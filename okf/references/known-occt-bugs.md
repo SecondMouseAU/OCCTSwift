@@ -24,6 +24,13 @@ question [Pinned kernel patch check](../policies/pinned-kernel-patch-check.md) e
 **bridge** means fixed or guarded in `Sources/OCCTBridge` with no kernel change. **8.0.1** means the
 fix shipped upstream and the pinned kernel has it natively, so the patch was retired.
 
+**Three rows below have a script reading them, so rewriting one has a consumer.** #2827, #597
+(kernel) and #1018 are registered in `Scripts/census-unmeasured-values.py`'s sub-kind 5 (#2844),
+which is how this repo detects a value the KERNEL fabricated rather than one our own code did.
+Each registration carries a regex that must match its row; delete or rewrite the row past
+recognition and that census **refuses to report** rather than printing a clean run, which is
+deliberate. Change a row and run `python3 Scripts/census-unmeasured-values.py --kernel-fabricated`.
+
 ## Crashes and wrong answers
 
 | Issue | OCCT site | Defect | Fix | Writeup |

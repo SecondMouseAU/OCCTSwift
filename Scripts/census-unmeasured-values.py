@@ -2,8 +2,9 @@
 """Census #726, first pass: values that were never computed but are returned through an API whose
 shape says they were measured.
 
-Four sub-kinds: three from the issue (the third added for #771), and a fourth added for the
-blind spot Pass 4a (#385) demonstrated in the first three, see sub-kind 4 below.
+Five sub-kinds: three from the issue (the third added for #771), a fourth added for the blind spot
+Pass 4a (#385) demonstrated in the first three, and a fifth added for the channel #2844 measured,
+where the value is fabricated by the KERNEL rather than by our code.
 
   1. PRODUCTION code assigning a bare literal to one field of an aggregate result while a sibling
      field of the same local variable, reached under the same control-flow condition, is assigned
@@ -42,6 +43,28 @@ blind spot Pass 4a (#385) demonstrated in the first three, see sub-kind 4 below.
      shape (a literal RHS, a pinned count, a flag that never flips) and report NONE of the six,
      which is what Pass 4a found and what this sub-kind exists to close. See SUB-KIND 4 ALGORITHM
      below.
+
+  5. A value a public API returns that some OCCT call COMPUTED AND DISCARDED, or never computed.
+     Sub-kinds 1 to 4 all key on our code fabricating the value; #2827 is none of them, because
+     `OCCTBRepGPropVinertPlane` passes every caller input to a real `BRepGProp_Vinert::Perform`
+     and reads a real `Mass()`. The overwrite is one layer down, in `BRepGProp_Gauss::convert`,
+     and no textual detector over `Sources/` can see it. So sub-kind 5 is a REGISTRY of such
+     sites with three derived questions asked of each every run, and the registry is not the
+     detector: see SUB-KIND 5 ALGORITHM below.
+
+WHERE THIS CENSUS IS STILL BLIND, so a clean run is not read as an all-clear (#2844):
+
+  * **A kernel defect nobody has root-caused yet is invisible, and always will be.** Sub-kind 5
+    reports on sites the registry names, and the registry is fed by investigation. It cannot find
+    a new instance of its own shape; what it can do is notice that a known one stopped being
+    described, stopped citing its issue, or grew a reader it used to have none of.
+  * **The other kernel-side channel has its own script.** A value that is garbage because OCCT's
+    validity check was compiled out of this build is `census-compiled-out-validation.py`'s subject
+    (#2801), not this one's. `Geom_Direction` returning `(nan, nan, nan)` is that shape, not this.
+  * Sub-kind 1 sees an aggregate built field by field and not a single-field return; sub-kind 2's
+    receiver list is curated, so an operation not on it is unexamined; sub-kind 3 needs the flag
+    to be a `bool` on a bridge struct or a Swift computed property; sub-kind 4's taint walk stops
+    at a helper it cannot inline.
 
 WHY A SCRIPT, NOT A LIST IN THE ISSUE: this repo's own history of censuses built by grep and
 written into an issue body is a list of wrong numbers. #558 said 14, measured 28; #571 said 3,
@@ -431,18 +454,41 @@ real, observed source of noise in the candidate list, not a hypothetical:
     VERIFICATION looks for). 5 sites in the first run's 68 are this shape; each was confirmed by
     reading the site, not detected, and is called out individually in the README's table.
 
+SUB-KIND 5 ALGORITHM (#2844). Not a scan: a registry of sites, plus three derived questions asked
+of each one on every run. #2844 measured that extending the scan itself is the wrong shape, because
+deciding that a kernel call discards its own result needs the kernel source read per defect, which
+is a hand-maintained judgement and not a derivation. What IS derivable is whether each recorded
+judgement still describes this tree:
+
+  - does the defect's row in `okf/references/known-occt-bugs.md` still exist? A registered regex
+    that matches nothing is this census going blind, and a blind detector reports all clear exactly
+    as loudly as a clean tree, so this is a REFUSAL (exit 2) and not a finding. The precedent is
+    `check-inventory-prose.py`, which fails when a registered pattern matches nothing.
+  - does the bridge site that reads the value still exist, and does it still cite the issue? A
+    value that was fabricated until a pinned patch is a measurement only while that pin holds, and
+    the citation is what makes the next repin re-read it rather than inherit it. A missing citation
+    is a FINDING, because whether it matters is a reading.
+  - for a defect whose only reader was deleted, has a reader come back? #1018 is the live case:
+    `GeomPlate_BuildPlateSurface::G0Error` is uninitialised memory after a point-only `Perform()`,
+    patch `0028` is NOT pinned, and the only thing keeping that value out of the API is that #999
+    deleted its reader.
+
 Usage (from the repo root):
 
-    python3 Scripts/census-unmeasured-values.py                 # all three sub-kinds, full listing
-    python3 Scripts/census-unmeasured-values.py --production    # sub-kind 1 only
-    python3 Scripts/census-unmeasured-values.py --tests         # sub-kind 2 only
-    python3 Scripts/census-unmeasured-values.py --gate-flags    # sub-kind 3 only
-    python3 Scripts/census-unmeasured-values.py --subjects      # sub-kind 4 only
-    python3 Scripts/census-unmeasured-values.py --quiet         # counts only
-    python3 Scripts/census-unmeasured-values.py --self-test     # prove each shape is caught
+    python3 Scripts/census-unmeasured-values.py                  # every sub-kind, full listing
+    python3 Scripts/census-unmeasured-values.py --production     # sub-kind 1 only
+    python3 Scripts/census-unmeasured-values.py --tests          # sub-kind 2 only
+    python3 Scripts/census-unmeasured-values.py --gate-flags     # sub-kind 3 only
+    python3 Scripts/census-unmeasured-values.py --subjects       # sub-kind 4 only
+    python3 Scripts/census-unmeasured-values.py --kernel-fabricated  # sub-kind 5 only
+    python3 Scripts/census-unmeasured-values.py --quiet          # counts only
+    python3 Scripts/census-unmeasured-values.py --self-test      # prove each shape is caught
 
-Exit status is always 0 in report mode (this is a census, not a gate, see above); `--self-test`
-exits 1 if any fixture is misclassified. Exits 2 if run from anywhere but the repo root (#625).
+Exit status is always 0 in report mode (this is a census, not a gate, see above), with one
+exception that is not a verdict on the tree: sub-kind 5 exits 2 when its own registry no longer
+resolves, because reporting from a population it has lost track of is the failure this page's
+rules exist to prevent. `--self-test` exits 1 if any fixture is misclassified, and it carries the
+live-registry check, which is what CI runs. Exits 2 if run from anywhere but the repo root (#625).
 """
 import argparse
 import glob
@@ -2357,11 +2403,212 @@ def self_test():
         print(f'  {"ok  " if not hit else "FALSE"} should be clean (echo), {name}: '
               f'{[(h[2], h[3]) for h in hit] if hit else "not flagged"}')
 
-    total = (len(PROD_MISSED) + len(PROD_CLEAN) + len(TEST_MISSED) + len(TEST_CLEAN) +
+    print('sub-kind 5 (a value the kernel fabricated):')
+    fixture_bugs = ("| #9001 | `Wibble_Gauss::convert` | discards the mass | patch `0099` | x |\n"
+                    "| #9002 | `Wibble_Plate::G0Error` | uninitialised | not pinned | x |\n")
+    fixture_bridge = [('fixture.mm',
+                       "// #9001: the kernel discarded this until patch 0099.\n"
+                       "double OCCTWibbleMass(OCCTFaceRef face)\n{\n"
+                       "  return vinert.Mass();\n}\n")]
+    fixture_swift = [('Face.swift', "public func wibbleMass() -> Double { 0 }\n")]
+    fixture_registry = (
+        {'issue': '#9001', 'occt': 'Wibble_Gauss::convert', 'what': 'the mass',
+         'state': 'measurement-since-a-pin', 'reads': 'OCCTWibbleMass', 'swift': 'wibbleMass',
+         'cites': '#9001', 'row': r'^\|\s*#9001\s*\|.*Wibble_Gauss::convert'},
+        {'issue': '#9002', 'occt': 'Wibble_Plate::G0Error', 'what': 'uninitialised memory',
+         'state': 'no-reader', 'forbidden': r'\bplate\s*\.\s*G[012]Error\s*\(',
+         'row': r'^\|\s*#9002\s*\|.*Wibble_Plate::G0Error'},
+    )
+
+    def sub5(bugs=fixture_bugs, bridge=None, swift=None, registry=fixture_registry):
+        return kernel_fabricated_candidates(bugs, fixture_bridge if bridge is None else bridge,
+                                            fixture_swift if swift is None else swift, registry)
+
+    def sub5_case(name, ok, detail):
+        nonlocal_failed[0] += not ok
+        print(f'  {"ok  " if ok else "FAIL"} {name}: {detail}')
+
+    nonlocal_failed = [0]
+
+    problems, sites = sub5()
+    sub5_case('clean registry reports nothing and refuses nothing',
+              not problems and not sites, str(problems + sites))
+
+    # Question 1: the reference-page row is the record. Losing it is a REFUSAL, not a clean run,
+    # which is the check-inventory-prose.py rule: a registered pattern that matches nothing is
+    # the detector going blind, and a blind detector reports all clear exactly as loudly.
+    problems, _ = sub5(bugs='| #9002 | `Wibble_Plate::G0Error` | x | x | x |\n')
+    sub5_case('a lost known-occt-bugs row is a refusal',
+              any('#9001' in p and 'no row matching' in p for p in problems), str(problems))
+
+    # Question 2, the same shape one layer down: the site that reads the value is gone.
+    problems, _ = sub5(bridge=[('fixture.mm', 'double OCCTSomethingElse() { return 0; }\n')])
+    sub5_case('a vanished bridge site is a refusal',
+              any('OCCTWibbleMass' in p for p in problems), str(problems))
+
+    # A finding, not a refusal: the site is there and says nothing about why the number has a
+    # history, so the next repin inherits a value nobody re-reads. #2827 is exactly that risk.
+    _, sites = sub5(bridge=[('fixture.mm',
+                             'double OCCTWibbleMass(OCCTFaceRef face)\n{\n'
+                             '  return vinert.Mass();\n}\n')])
+    sub5_case('an uncited site is reported',
+              any(site[3] == 'the site does not cite the issue' for site in sites), str(sites))
+
+    # And the reverse direction, which is the one #1018 needs: its only reader was deleted by
+    # #999, patch 0028 is not pinned, and nothing but that deletion keeps the uninitialised value
+    # out of the API. A reader coming back is the finding.
+    _, sites = sub5(bridge=fixture_bridge + [('back.mm',
+                                              'double OCCTNew() { return plate.G0Error(); }\n')])
+    sub5_case('a reader that came back is reported',
+              any(site[3] == 'a reader came back' for site in sites), str(sites))
+
+    # The live registry, which is what CI actually runs, since a census's bare run never gates.
+    # This case is the whole reason the registry is safe to hand-maintain.
+    if os.path.isfile(KNOWN_OCCT_BUGS) and os.path.isdir(BRIDGE_SRC_DIR):
+        live_problems, live_sites = kernel_fabricated_candidates(
+            open(KNOWN_OCCT_BUGS, errors='ignore').read(), bridge_sources(), swift_sources())
+        sub5_case('the live registry still resolves against this tree',
+                  not live_problems, str(live_problems))
+        sub5_case('the live registry reports its findings without crashing',
+                  isinstance(live_sites, list), str(live_sites))
+    else:
+        sub5_case('the live registry still resolves against this tree', False,
+                  'run from the repo root')
+
+    failed += nonlocal_failed[0]
+    total = (7 + len(PROD_MISSED) + len(PROD_CLEAN) + len(TEST_MISSED) + len(TEST_CLEAN) +
              len(GATE_MISSED) + len(GATE_CLEAN) + len(SWIFT_GATE_MISSED) + len(SWIFT_GATE_CLEAN) +
              len(SUBJECT_MISSED) + len(SUBJECT_CLEAN) + len(ECHO_MISSED) + len(ECHO_CLEAN))
     print(f'{total - failed}/{total} cases correct')
     return 1 if failed else 0
+
+
+
+# ===========================================================================
+# Sub-kind 5 (#2844): a value the KERNEL fabricated, which no textual rule over
+# Sources/ can see. Sub-kinds 1 to 4 all key on OUR code producing the value: a
+# bare literal beside a computed sibling, a pinned count, a flag that never
+# flips, a subject the caller never fed. #2827 is none of them.
+# `OCCTBRepGPropVinertPlane` builds a `BRepGProp_Face` from the caller's face,
+# hands it to `BRepGProp_Vinert::Perform(face, domain, plane)` and reads
+# `vinert.Mass()`: every input reaches the subject and the value comes off a
+# real OCCT call. The fabrication is one layer down, in
+# `BRepGProp_Gauss::convert`, which computed the mass and then overwrote it
+# with 0.0 for every by-plane call.
+#
+# WHY THIS IS A REGISTRY AND NOT A DERIVATION, which #2844 settled before the
+# code was written: deciding that a kernel call discards its own result needs
+# the kernel's source read per defect. That is a hand-maintained list, and a
+# hand-maintained list inside a census is the failure this whole workstream
+# exists to avoid. So the list is not the detector. The list names sites, and
+# the DETECTOR is three derived questions asked about each one, every run:
+#
+#   1. does the `okf/references/known-occt-bugs.md` row still exist? The rows
+#      are the record; a row deleted or rewritten past recognition means the
+#      entry below is describing a defect this repo no longer believes in.
+#   2. does the site that reads the fabricated value still exist in
+#      `Sources/`, and does it still cite the issue, so the next repin re-reads
+#      it rather than inheriting a number nobody checked?
+#   3. for a defect whose only reader was deleted, has a reader come BACK?
+#
+# Question 1 failing is a refusal, not a finding: the census cannot report on a
+# population it has lost track of, and `check-inventory-prose.py` is the
+# precedent, which fails when a registered regex matches nothing rather than
+# reporting all clear. Questions 2 and 3 failing are findings, because whether
+# a missing citation matters is a reading.
+# ===========================================================================
+
+KNOWN_OCCT_BUGS = os.path.join('okf', 'references', 'known-occt-bugs.md')
+
+# Each entry is a value a PUBLIC API of this repo returns, or would return, that some OCCT call
+# computed and discarded, or never computed. `row` must match the defect's row on the reference
+# page; `reads` is the bridge symbol that reads the value; `cites` is what a reader of that site
+# must find to know the value has a history. Every field below was re-checked against the tree on
+# 2026-09-30.
+KERNEL_FABRICATED = (
+    {
+        'issue': '#2827',
+        'occt': 'BRepGProp_Gauss::convert, the six-argument overload',
+        'what': 'the by-plane mass, computed and then overwritten with 0.0',
+        'state': 'measurement-since-a-pin',
+        'reads': 'OCCTBRepGPropVinertPlane',
+        'swift': 'volumeInertia',
+        'cites': '#2827',
+        'row': r'^\|\s*#2827\s*\|.*BRepGProp_Gauss::convert',
+    },
+    {
+        'issue': '#597',
+        'occt': 'GeomFill_Sweep::BuildAll',
+        'what': 'ErrorOnSurface(), which reported the requested tolerance and not the achieved '
+                'deviation, so a gate on it compares a number with itself',
+        'state': 'measurement-since-a-pin',
+        'reads': 'OCCTGeomFillSweep',
+        'swift': 'geomFillSweep',
+        'cites': '#597',
+        'row': r'^\|\s*#597 \(kernel\)\s*\|.*GeomFill_Sweep::BuildAll',
+    },
+    {
+        'issue': '#1018',
+        'occt': 'GeomPlate_BuildPlateSurface::G0Error / G1Error / G2Error',
+        'what': 'uninitialised memory after a point-only Perform(), proved with a 0x5A-filled '
+                'placement-new. Patch 0028 is NOT pinned, so this one is live in the kernel we '
+                'ship and the only thing keeping it out of the API is that nobody reads it',
+        'state': 'no-reader',
+        'forbidden': r'\b(?:plateBuilder|plate|builder)\s*\.\s*G[012]Error\s*\(',
+        'row': r'^\|\s*#1018\s*\|.*GeomPlate_BuildPlateSurface',
+    },
+)
+
+
+def kernel_fabricated_candidates(bugs_text, sources, swift, registry=KERNEL_FABRICATED):
+    """(problems, findings) for the registry above. Problems are a refusal; findings are a list.
+
+    `problems` is what makes this a detector rather than a list: an entry whose reference-page row
+    has gone, or whose bridge site has gone, means the census is reporting about something it can
+    no longer see, and okf/policies/static-gates.md's rule is that such a run must say so rather
+    than print a clean report.
+    """
+    problems, findings = [], []
+    for entry in registry:
+        if not re.search(entry['row'], bugs_text, re.M):
+            problems.append(
+                f"{entry['issue']}: no row matching {entry['row']!r} in {KNOWN_OCCT_BUGS}, so "
+                f"this entry describes a defect the record no longer carries")
+            continue
+        if entry['state'] == 'no-reader':
+            for path, text in sources:
+                body = strip_comments(text)
+                for m in re.finditer(entry['forbidden'], body):
+                    line = body[:m.start()].count('\n') + 1
+                    findings.append((path, line, entry['issue'], 'a reader came back',
+                                     m.group(0).strip()))
+            continue
+        site = None
+        for path, text in sources:
+            if entry['reads'] not in text:
+                continue
+            body = strip_comments(text)
+            for name, _params, start, end in c_functions(body):
+                if name == entry['reads']:
+                    site = (path, body[:start].count('\n') + 1, text[max(0, start - 1200):end])
+                    break
+            if site:
+                break
+        if site is None:
+            problems.append(
+                f"{entry['issue']}: {entry['reads']} is the site that reads the value and it is "
+                f"not defined in {BRIDGE_SRC_DIR}; if the wrapper was removed, remove the entry "
+                f"and say so in {KNOWN_OCCT_BUGS}")
+            continue
+        path, line, context = site
+        if entry['cites'] not in context:
+            findings.append((path, line, entry['issue'], 'the site does not cite the issue',
+                             entry['reads']))
+        if entry.get('swift') and not any(entry['swift'] in text for _p, text in swift):
+            findings.append((path, line, entry['issue'],
+                             'no Sources/OCCTSwift symbol named in the entry still matches',
+                             entry['swift']))
+    return problems, findings
 
 
 # ===========================================================================
@@ -2430,12 +2677,37 @@ def report_subjects(quiet):
     return 0
 
 
+def report_kernel_fabricated(quiet):
+    if not os.path.isfile(KNOWN_OCCT_BUGS):
+        print(f'{KNOWN_OCCT_BUGS} not found - run from the repo root', file=sys.stderr)
+        return 2
+    bugs = open(KNOWN_OCCT_BUGS, errors='ignore').read()
+    swift = swift_sources() if os.path.isdir(SWIFT_SRC_DIR) else []
+    problems, sites = kernel_fabricated_candidates(bugs, bridge_sources(), swift)
+    if problems:
+        print('sub-kind 5 (kernel-fabricated): refusing to report, the registry no longer '
+              'describes this tree:')
+        for problem in problems:
+            print(f'  {problem}')
+        return 2
+    print(f'sub-kind 5 (kernel-fabricated): {len(KERNEL_FABRICATED)} registered site(s), '
+          f'{len(sites)} candidate(s)')
+    if not quiet:
+        for path, line, issue, why, detail in sites:
+            print(f'  {path}:{line}  {issue}: {why} ({detail})')
+        for entry in KERNEL_FABRICATED:
+            print(f"  registered  {entry['issue']}  {entry['occt']}: {entry['what']} "
+                  f"[{entry['state']}]")
+    return 0
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument('--production', action='store_true', help='sub-kind 1 only')
     ap.add_argument('--tests', action='store_true', help='sub-kind 2 only')
     ap.add_argument('--gate-flags', action='store_true', help='sub-kind 3 only')
     ap.add_argument('--subjects', action='store_true', help='sub-kind 4 only')
+    ap.add_argument('--kernel-fabricated', action='store_true', help='sub-kind 5 only')
     ap.add_argument('--quiet', action='store_true', help='counts only')
     ap.add_argument('--self-test', action='store_true', help='prove each shape is caught')
     args = ap.parse_args()
@@ -2444,7 +2716,7 @@ def main():
         return self_test()
 
     all_kinds = (not args.production and not args.tests and not args.gate_flags
-                 and not args.subjects)
+                 and not args.subjects and not args.kernel_fabricated)
     rc = 0
     if args.production or all_kinds:
         rc = report_production(args.quiet) or rc
@@ -2454,6 +2726,8 @@ def main():
         rc = report_gate_flags(args.quiet) or rc
     if args.subjects or all_kinds:
         rc = report_subjects(args.quiet) or rc
+    if args.kernel_fabricated or all_kinds:
+        rc = report_kernel_fabricated(args.quiet) or rc
     return rc
 
 
