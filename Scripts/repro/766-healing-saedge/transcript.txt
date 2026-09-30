@@ -1,0 +1,14 @@
+box edge0 == face0 edge0: 1
+HasCurve3d(e0)=1 IsClosed3d(e0)=0 HasPCurve(e0,f0)=1 IsSeam(e0,f0)=0
+CheckSameParameter(e0)=0 maxdev=0.000e+00
+CheckVerticesWithCurve3d(e0, -1)=0  (e0, 1e-6)=0
+CheckVerticesWithPCurve(e0, f0, -1)=0 CheckCurve3dWithPCurve(e0, f0)=0
+FirstVertex(e0)=(-5, -5, -5) LastVertex(e0)=(-5, -5, 5)
+CheckVertexTolerance(e0, f0)=0 toler1=1.000e-07 toler2=1.000e-07
+CheckOverlapping(e0, e1, 1e-7)=0 tol=1.000e-07
+CheckOverlapping(e0, e0, 1e-7)=1 tol=1.000e-07
+BoundUV(fe, f0)=1 first=(0, 0) last=(10, 0)
+GetEndTangent2d(fe, f0, start)=1 pos=(0, 0) tangent=(1, 0)
+CheckPCurveRange(fe, f0, 0, 10)=1
+#1577 wire done=1: edge1: fixed1e-6=1 sentinel=0; edge2: fixed1e-6=1 sentinel=0;
+#1438 CheckPCurveRange(0, pi)=1 CheckPCurveRange(0, 2pi+0.5)=0

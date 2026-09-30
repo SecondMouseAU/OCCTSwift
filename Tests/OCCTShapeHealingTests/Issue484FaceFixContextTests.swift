@@ -115,18 +115,30 @@ struct Issue484FaceFixContextTests {
     }
 
     /// Same guard for an analytic curved face, where a seam is involved.
+    ///
+    /// #766: this asserted only `isValid` per face, and only over whatever `faces()` yielded, so a
+    /// fixer that returned two faces for one, or a cylinder with no faces, passed. It now matches
+    /// the box test: three faces (the lateral surface and two caps), each fixed to one valid face,
+    /// and all three counted, which is what the parity record claims (3 of 3, Scripts/repro/
+    /// 766-healing-446-484/transcript.txt).
     @Test("Face.fixed leaves cylinder faces valid")
     func cylinderFacesUnaffected() {
         guard let cyl = Shape.cylinder(radius: 5, height: 12) else {
             Issue.record("cylinder")
             return
         }
-        for face in cyl.faces() {
+        let faces = cyl.faces()
+        #expect(faces.count == 3)
+        var validSingle = 0
+        for face in faces {
             guard let fixed = face.fixed(tolerance: 1e-6) else {
                 Issue.record("Face.fixed returned nil for a cylinder face")
                 continue
             }
             #expect(fixed.isValid)
+            #expect(fixed.faces().count == 1)
+            if fixed.isValid && fixed.faces().count == 1 { validSingle += 1 }
         }
+        #expect(validSingle == 3)
     }
 }

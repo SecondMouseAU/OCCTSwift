@@ -107,7 +107,13 @@ struct Issue446UnifyInputMutationTests {
         let volumeBefore = body.volume
         let builder = UnifySameDomainBuilder(shape: body, unifyEdges: true, unifyFaces: true)
         builder.build()
-        _ = builder.shape  // result deliberately discarded
+        // #766: on this fixture the three properties below hold with or without the #446 copy
+        // (measured: they stayed green with the copy removed), so on their own this test could
+        // not fail. The merge the caller declines must still have happened, though, or there is
+        // nothing to decline: the kernel unifies the stacked pair to 3 faces
+        // (Scripts/repro/766-healing-446-484), and the caller's body keeps its 4.
+        #expect(builder.shape?.subShapeCount(ofType: .face) == 3)
+        #expect(body.subShapeCount(ofType: .face) == 4)
         #expect(body.isSelfIntersecting(hardTimeout: 5) == selfIntersectingBefore)
         #expect(body.isValid == validBefore)
         if let v0 = volumeBefore, let v1 = body.volume { #expect(abs(v1 - v0) < 1e-9) }

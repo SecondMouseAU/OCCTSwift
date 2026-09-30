@@ -6,72 +6,49 @@ import simd
 
 @Suite("ShapeAnalysis_ShapeTolerance")
 struct ShapeToleranceTests {
-    @Test func averageTolerance() {
-        let box = Shape.box(width: 10, height: 20, depth: 30)
-        if let b = box {
-            let avg = b.toleranceValue(mode: .average)
-            #expect(avg > 0)
-        }
+    // #766: the eight tests below were nested in `if let` (silently green on a failed box) and
+    // asserted `> 0`, `<=` orderings or `count > 0`. ShapeAnalysis_ShapeTolerance's own answers on
+    // the same box (Scripts/repro/766-healing-shapetolerance/probe.mm): every sub-shape at 1e-7,
+    // nothing over 1e-3, 30 in [0, 1e-3].
+    private func box() throws -> Shape {
+        try #require(Shape.box(width: 10, height: 20, depth: 30))
     }
 
-    @Test func maximumTolerance() {
-        let box = Shape.box(width: 10, height: 20, depth: 30)
-        if let b = box {
-            let max = b.toleranceValue(mode: .maximum)
-            #expect(max > 0)
-        }
+    @Test func averageTolerance() throws {
+        #expect(abs(try box().toleranceValue(mode: .average) - 1e-7) < 1e-15)
     }
 
-    @Test func minimumTolerance() {
-        let box = Shape.box(width: 10, height: 20, depth: 30)
-        if let b = box {
-            let min = b.toleranceValue(mode: .minimum)
-            #expect(min > 0)
-        }
+    @Test func maximumTolerance() throws {
+        #expect(abs(try box().toleranceValue(mode: .maximum) - 1e-7) < 1e-15)
     }
 
-    @Test func toleranceOrdering() {
-        let box = Shape.box(width: 10, height: 20, depth: 30)
-        if let b = box {
-            let minT = b.toleranceValue(mode: .minimum)
-            let avgT = b.toleranceValue(mode: .average)
-            let maxT = b.toleranceValue(mode: .maximum)
-            #expect(minT <= avgT)
-            #expect(avgT <= maxT)
-        }
+    @Test func minimumTolerance() throws {
+        #expect(abs(try box().toleranceValue(mode: .minimum) - 1e-7) < 1e-15)
     }
 
-    @Test func overToleranceCount() {
-        let box = Shape.box(width: 10, height: 20, depth: 30)
-        if let b = box {
-            // Default tolerance is ~1e-7, so nothing should exceed 1e-3
-            let count = b.toleranceOverCount(value: 1e-3)
-            #expect(count == 0)
-        }
+    @Test func toleranceOrdering() throws {
+        let b = try box()
+        let minT = b.toleranceValue(mode: .minimum)
+        let avgT = b.toleranceValue(mode: .average)
+        let maxT = b.toleranceValue(mode: .maximum)
+        #expect(minT <= avgT)
+        #expect(avgT <= maxT)
     }
 
-    @Test func inToleranceRangeCount() {
-        let box = Shape.box(width: 10, height: 20, depth: 30)
-        if let b = box {
-            let count = b.toleranceInRangeCount(min: 0, max: 1e-3)
-            #expect(count > 0)  // All sub-shapes should be within this range
-        }
+    @Test func overToleranceCount() throws {
+        #expect(try box().toleranceOverCount(value: 1e-3) == 0)
     }
 
-    @Test func vertexTolerance() {
-        let box = Shape.box(width: 10, height: 20, depth: 30)
-        if let b = box {
-            let tol = b.toleranceValue(mode: .average, subShapeType: 7)  // VERTEX
-            #expect(tol > 0)
-        }
+    @Test func inToleranceRangeCount() throws {
+        #expect(try box().toleranceInRangeCount(min: 0, max: 1e-3) == 30)
     }
 
-    @Test func edgeTolerance() {
-        let box = Shape.box(width: 10, height: 20, depth: 30)
-        if let b = box {
-            let tol = b.toleranceValue(mode: .average, subShapeType: 6)  // EDGE
-            #expect(tol > 0)
-        }
+    @Test func vertexTolerance() throws {
+        #expect(abs(try box().toleranceValue(mode: .average, subShapeType: 7) - 1e-7) < 1e-15)  // VERTEX
+    }
+
+    @Test func edgeTolerance() throws {
+        #expect(abs(try box().toleranceValue(mode: .average, subShapeType: 6) - 1e-7) < 1e-15)  // EDGE
     }
 
     // #1438: OCCTShapeToleranceValue/OverCount/InRangeCount had no pointer guard at all (unlike
