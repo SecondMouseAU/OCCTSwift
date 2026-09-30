@@ -665,7 +665,7 @@ let wasmUnportableTestTargets: Set<String> = [
     // `BRep_CurveOnSurface`, after 8 of its 10 tests (#2895). `Tests/OCCTIntegrationTests/` is a
     // single file, so there is nothing narrower to exclude. A trap ends the module, so it cannot be
     // carried as a known failure the way a wrong answer can.
-    "OCCTIntegrationTests"
+    "OCCTIntegrationTests",
 ]
 
 // Individual test files the remaining 13 targets cannot build for wasm, and why (#2793).
@@ -734,7 +734,7 @@ let wasmExcludedTestFiles: [String: [String]] = [
     //   vtable or function-pointer disagreement that wasm type-checks and a native link does not.
     "OCCTXCAFTests": [
         "TObjApplicationTests.swift",
-        "Issue1588TObjApplicationReleaseTests.swift"
+        "Issue1588TObjApplicationReleaseTests.swift",
     ],
     "OCCTCurveTests": [
         "Issue479SampleCountBoundTests.swift",
@@ -749,11 +749,11 @@ let wasmExcludedTestFiles: [String: [String]] = [
         // same code performs where it is meant to run. It is excluded because seven minutes for two
         // tests is not a sensible CI cost, not because it fails: it PASSES, slowly. Worth running
         // again when #2052's rung 3 puts a real engine behind the suites.
-        "GCPntsSamplerBoundsTests.swift"
+        "GCPntsSamplerBoundsTests.swift",
     ],
     "OCCTMathTests": [
         "Issue640MathDimensionBoundsTests.swift",
-        "Issue2860MathGuardTests.swift"
+        "Issue2860MathGuardTests.swift",
     ],
     "OCCTModelingTests": [
         "BRepFillEvolvedTests.swift",
@@ -766,13 +766,13 @@ let wasmExcludedTestFiles: [String: [String]] = [
         // failed unwind leaves behind (#2894), not an independent memory bug.
         "Issue612FilletContourSelectionTests.swift",
         "Issue208SelfIntersectionTests.swift",
-        "Issue598PipeShellFrenetModeTests.swift"
+        "Issue598PipeShellFrenetModeTests.swift",
     ],
     "OCCTSurfaceTests": ["EvolvedSurfaceTests.swift"],
     "OCCTShapeHealingTests": [
         "Issue446UnifyInputMutationTests.swift",
-        "Issue772SelfIntersectionAnalysisTests.swift"
-    ]
+        "Issue772SelfIntersectionAnalysisTests.swift",
+    ],
 ]
 
 // Drop the test targets wasm cannot build, and give the ones it can the `simd` stand-in.

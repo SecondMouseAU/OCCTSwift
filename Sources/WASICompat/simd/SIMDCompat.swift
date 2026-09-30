@@ -1,3 +1,16 @@
+// swift-format-ignore-file: AlwaysUseLowerCamelCase, TypeNamesShouldBeCapitalized
+//
+// TWO RULES ARE DISABLED FOR THIS FILE AND ONLY TWO. Every public name here has to be spelled
+// exactly as Apple's `simd` module spells it, because the point of the module is that 196 files in
+// `Sources/OCCTSwift` and 1,179 under `Tests/` write `import simd` and compile unchanged on both
+// platforms. `simd_float4x4` cannot become `SimdFloat4x4` and `simd_dot` cannot become `simdDot`
+// without defeating that, so `TypeNamesShouldBeCapitalized` and `AlwaysUseLowerCamelCase` are
+// suppressed here by name rather than the whole file being exempted: everything else swift-format
+// checks, including the spacing, the doc comments and the one-variable-per-line rule, still applies.
+//
+// This replaces a blanket entry on `Scripts/style-manifest-swift-wave2.txt`, removed in #2793
+// because `check-style-manifest.py` requires a file this PR touches to come into compliance.
+
 // SIMDCompat.swift
 //
 // A `simd` module for `wasm32-unknown-wasip1`, where Apple's is not available.
@@ -123,7 +136,6 @@ public struct simd_double3x3: Equatable, Sendable {
         columns = (column0, column1, column2)
     }
 
-
     /// The column at `index`, which is what Apple's subscript returns.
     ///
     /// Measured on macOS 27, not assumed, because a symmetric test matrix cannot tell a column
@@ -168,7 +180,9 @@ public struct simd_double3x3: Equatable, Sendable {
 public let matrix_identity_float4x4 = simd_float4x4(
     SIMD4(1, 0, 0, 0), SIMD4(0, 1, 0, 0), SIMD4(0, 0, 1, 0), SIMD4(0, 0, 0, 1))
 
-/// The 3x3 identity, under Apple's own name for it. See `matrix_identity_float4x4`.
+/// The 3x3 identity, under Apple's own name for it.
+///
+/// See `matrix_identity_float4x4`.
 public let matrix_identity_double3x3 = simd_double3x3(
     SIMD3(1, 0, 0), SIMD3(0, 1, 0), SIMD3(0, 0, 1))
 
@@ -183,8 +197,10 @@ where V.Scalar: FloatingPoint {
 }
 
 /// Squared Euclidean length, which avoids the square root where a comparison is all that is
-/// wanted. Four of the five call sites in `Sources/OCCTSwift` compare it against a squared
-/// tolerance for exactly that reason.
+/// wanted.
+///
+/// Four of the five call sites in `Sources/OCCTSwift` compare it against a squared tolerance for
+/// exactly that reason.
 public func simd_length_squared<V: SIMD>(_ a: V) -> V.Scalar
 where V.Scalar: FloatingPoint {
     simd_dot(a, a)
@@ -283,8 +299,9 @@ public func dot<V: SIMD>(_ a: V, _ b: V) -> V.Scalar where V.Scalar: FloatingPoi
     simd_dot(a, b)
 }
 
-/// The unit vector in the same direction, the spelling Apple's `simd` also exports. A zero vector
-/// normalises to NaNs here exactly as it does through `simd_normalize`.
+/// The unit vector in the same direction, the spelling Apple's `simd` also exports.
+///
+/// A zero vector normalises to NaNs here exactly as it does through `simd_normalize`.
 public func normalize<V: SIMD>(_ a: V) -> V where V.Scalar: BinaryFloatingPoint {
     simd_normalize(a)
 }
@@ -333,10 +350,22 @@ public func simd_determinant(_ matrix: simd_float4x4) -> Float {
     let columns = matrix.columns
 
     // Named by (row, column), so the expansion below reads like the textbook one.
-    let m00 = columns.0.x, m01 = columns.1.x, m02 = columns.2.x, m03 = columns.3.x
-    let m10 = columns.0.y, m11 = columns.1.y, m12 = columns.2.y, m13 = columns.3.y
-    let m20 = columns.0.z, m21 = columns.1.z, m22 = columns.2.z, m23 = columns.3.z
-    let m30 = columns.0.w, m31 = columns.1.w, m32 = columns.2.w, m33 = columns.3.w
+    let m00 = columns.0.x
+    let m01 = columns.1.x
+    let m02 = columns.2.x
+    let m03 = columns.3.x
+    let m10 = columns.0.y
+    let m11 = columns.1.y
+    let m12 = columns.2.y
+    let m13 = columns.3.y
+    let m20 = columns.0.z
+    let m21 = columns.1.z
+    let m22 = columns.2.z
+    let m23 = columns.3.z
+    let m30 = columns.0.w
+    let m31 = columns.1.w
+    let m32 = columns.2.w
+    let m33 = columns.3.w
 
     // Laplace expansion along the first row.
     return m00 * determinant3(m11, m12, m13, m21, m22, m23, m31, m32, m33)

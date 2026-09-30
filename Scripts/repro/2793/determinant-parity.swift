@@ -12,10 +12,22 @@ import simd
 
 func standInDeterminant(_ matrix: simd_float4x4) -> Float {
     let columns = matrix.columns
-    let m00 = columns.0.x, m01 = columns.1.x, m02 = columns.2.x, m03 = columns.3.x
-    let m10 = columns.0.y, m11 = columns.1.y, m12 = columns.2.y, m13 = columns.3.y
-    let m20 = columns.0.z, m21 = columns.1.z, m22 = columns.2.z, m23 = columns.3.z
-    let m30 = columns.0.w, m31 = columns.1.w, m32 = columns.2.w, m33 = columns.3.w
+    let m00 = columns.0.x
+    let m01 = columns.1.x
+    let m02 = columns.2.x
+    let m03 = columns.3.x
+    let m10 = columns.0.y
+    let m11 = columns.1.y
+    let m12 = columns.2.y
+    let m13 = columns.3.y
+    let m20 = columns.0.z
+    let m21 = columns.1.z
+    let m22 = columns.2.z
+    let m23 = columns.3.z
+    let m30 = columns.0.w
+    let m31 = columns.1.w
+    let m32 = columns.2.w
+    let m33 = columns.3.w
     return m00 * determinant3(m11, m12, m13, m21, m22, m23, m31, m32, m33)
         - m01 * determinant3(m10, m12, m13, m20, m22, m23, m30, m32, m33)
         + m02 * determinant3(m10, m11, m13, m20, m21, m23, m30, m31, m33)
@@ -107,7 +119,9 @@ var generator = LCG()
 for index in 1...20_000 {
     let m = simd_float4x4(
         column(&generator), column(&generator), column(&generator), column(&generator))
-    if index <= 4 { check("random #\(index)", m) } else {
+    if index <= 4 {
+        check("random #\(index)", m)
+    } else {
         let apple = simd_determinant(m)
         let standIn = standInDeterminant(m)
         let relative = abs(apple - standIn) / max(abs(apple), 1)
