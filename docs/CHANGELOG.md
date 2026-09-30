@@ -1624,8 +1624,6 @@ case or persisting the raw value.
 
 Closes #1568
 
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
-
 ### Fixed OOB reads in `weightedCentroid`/`loadLinearXYZ` on mismatched parallel-array lengths (#1583)
 
 `GeometryProperties.weightedCentroid(points:weights:)` and `PlateSolver.loadLinearXYZ(uvPoints:targets:coefficients:)` now guard that their parallel caller-supplied arrays are the same length before forwarding to the bridge, returning a clean refusal (`(0, nil)` / `false`) on a mismatch instead of reading past the shorter array's end.

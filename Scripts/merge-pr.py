@@ -21,6 +21,9 @@ What it does, in order:
   1. Reads the PR body and extracts the `## CHANGELOG entry` block VERBATIM. It never drafts and
      never retypes: `feedback-changelog-transcription-repunctuation` records a hand transcription
      silently repunctuating an entry against the em-dash ban, which is what extraction is for.
+     The block ends at the next `##` heading OR at the attribution footer, so the entry may be
+     the body's last section, and fenced code is tracked by matching each opening marker with its
+     closing one, so an illustrative fence in prose cannot hide the heading below it (#2890).
   2. If the block is an entry, splices it under `## Unreleased` in `docs/CHANGELOG.md`, commits that
      on the PR's own branch tip and pushes. That is exactly the "last commit on the branch,
      immediately before merging" the policy asks for, and it means the merge commit carries the file
@@ -401,7 +404,8 @@ def main(argv=None):
 # Self-test
 #
 # Every case is a fixture through the pure functions, and every one was run once against a broken
-# subject before landing: the 14-row removal matrix is in PR #2796's body, per
+# subject before landing: the 14-row removal matrix is in PR #2796's body, and #2890's ten-case
+# matrix, one injection per new rule, is in the body of the PR that added them, per
 # okf/policies/prove-the-test-fails.md. One case was decorative on the first pass and was rewritten
 # rather than kept: `crlf-body-handled` asserted only that a CRLF body still classified as an entry,
 # which `line.strip()` makes true whether or not the text was normalised.
@@ -622,8 +626,11 @@ def self_test():
     case("a-tilde-fence-is-not-closed-by-backticks",
          extract_section("~~~\n```\n## CHANGELOG entry\n") is None,
          repr(extract_section("~~~\n```\n## CHANGELOG entry\n")))
+    case("an-indented-marker-with-no-partner-opens-nothing",
+         extract_section("    ```swift no-run: writes a 40 MB STEP file\n\n"
+                         "## CHANGELOG entry\n\n### A (#1)\n") is not None)
     case("a-longer-closer-closes-a-shorter-opener",
-         extract_section("````\n## not the heading\n````\n"
+         extract_section("```\n## not the heading\n````\n"
                          "## CHANGELOG entry\n\n### A (#1)\n") is not None)
     case("a-shorter-marker-does-not-close-a-longer-opener",
          extract_section("````\n```\n## CHANGELOG entry\n") is None,
