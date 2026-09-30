@@ -574,6 +574,20 @@ def build_script_occt_version(text=None):
     return match.group(1) if match else None
 
 
+def version_triple(version):
+    """The leading `N.N.N` of an OCCT version string, or the string unchanged if it has none.
+
+    `tree_occt_version` appends `OCC_VERSION_DEVELOPMENT` when the tree states one, and says in its
+    own docstring that the suffix is "appended for a reader and not compared". Nothing enforced
+    that: the comparison below was string equality, so a stamp written from a development tree
+    ("8.0.2.dev") would not match `Scripts/build-occt.sh`'s bare `OCCT_VERSION` ("8.0.2") and the
+    check would report a version bump that had not happened. Found in review of #2893, before the
+    8.0.2 bump that would have triggered it.
+    """
+    match = re.match(r"^(\d+\.\d+\.\d+)", version or "")
+    return match.group(1) if match else version
+
+
 def check_raise_map_provenance():
     """The raise map's stamp names exactly the carried patches on disk, at the version we build.
 
@@ -600,13 +614,13 @@ def check_raise_map_provenance():
     if stamp is None:
         return ["%s: carries no provenance stamp, so nothing knows which patch set it was derived "
                 "against. %s (#2885)" % (RAISE_MAP, regenerate)]
-    if not stamp["patches"]:
+    on_disk = carried_patch_digests()
+    if not stamp["patches"] and on_disk:
         return ["%s: has a stamp but it names no patch, which is this check going blind rather "
                 "than a clean tree: the `# patch: <stem> <digest>` lines have been reworded or "
                 "dropped. Fix parse_provenance() in Scripts/check-inventory-prose.py alongside "
                 "the rewording (#2885)." % RAISE_MAP]
     problems = []
-    on_disk = carried_patch_digests()
     for stem in sorted(set(on_disk) - set(stamp["patches"])):
         problems.append(
             "Scripts/patches/%s.patch is on disk and not in %s's stamp, so the map was derived "
@@ -634,7 +648,7 @@ def check_raise_map_provenance():
         problems.append(
             "%s: the stamp records no `# occt-version:` line, so a version bump would not show "
             "here. %s (#2885)" % (RAISE_MAP, regenerate))
-    elif stamp["version"] != built:
+    elif version_triple(stamp["version"]) != version_triple(built):
         problems.append(
             "%s: derived against OCCT %s, but Scripts/build-occt.sh builds %s. An OCCT version "
             "bump moves raise sites wholesale. %s (#2885)"
@@ -1029,8 +1043,37 @@ def self_test():
             re.sub(r"^# patch: ", "# patch = ", real_map, flags=re.MULTILINE))
         case("map-stamp-that-parses-to-no-patch-is-a-blindness-report",
              any("going blind" in p for p in check_raise_map_provenance()))
+
+        # ...and the same stamp is CLEAN when the tree really carries no patch, which is the
+        # difference between "the parser stopped matching" and "there is nothing to name". Found
+        # in review of #2893: the blind report ran before the on-disk set was read, so a full
+        # retirement would have been reported as this check failing.
+        saved_digests = globals()["carried_patch_digests"]
+        globals()["carried_patch_digests"] = lambda: {}
+        try:
+            case("stamp-naming-no-patch-is-clean-when-no-patch-is-on-disk",
+                 not any("going blind" in p for p in check_raise_map_provenance()),
+                 "; ".join(check_raise_map_provenance()[:1]))
+        finally:
+            globals()["carried_patch_digests"] = saved_digests
+
+        # A development tree states OCC_VERSION_DEVELOPMENT and tree_occt_version appends it, so
+        # the stamp can read "8.0.1.dev" against build-occt.sh's bare "8.0.1". Comparing the
+        # triple is what the docstring always claimed; string equality is what it did (#2893).
+        globals()["read"] = with_map(
+            re.sub(r"^# occt-version: .*$", "# occt-version: 8.0.1.dev", real_map, count=1,
+                   flags=re.MULTILINE))
+        case("a-development-suffix-on-the-stamp-is-not-a-version-bump",
+             not any("Scripts/build-occt.sh builds" in p
+                     for p in check_raise_map_provenance()),
+             "; ".join(check_raise_map_provenance()[:1]))
     finally:
         globals()["read"] = saved_read_12
+
+    case("version-triple-strips-a-development-suffix-and-leaves-a-bare-triple",
+         version_triple("8.0.1.dev") == "8.0.1" and version_triple("8.0.1") == "8.0.1"
+         and version_triple("8.0.2.beta") == "8.0.2" and version_triple(None) is None
+         and version_triple("not-a-version") == "not-a-version")
 
     case("build-script-version-read",
          build_script_occt_version('OCCT_VERSION="8.0.1"\nOCCT_RC=""\n') == "8.0.1"
