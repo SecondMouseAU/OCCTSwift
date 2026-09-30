@@ -352,43 +352,6 @@ static bool occtSurfaceCurvaturePair(OCCTSurfaceRef s,
   }
 }
 
-static Handle(Geom_BSplineCurve) toBSplineCurve(const Handle(Geom_Curve)& curve)
-{
-  Handle(Geom_BSplineCurve) bsc = Handle(Geom_BSplineCurve)::DownCast(curve);
-  if (!bsc.IsNull())
-  {
-    // Re-convert to ensure consistent parameterization
-    return GeomConvert::CurveToBSplineCurve(curve, Convert_QuasiAngular);
-  }
-  // Convert any Geom_Curve to BSpline
-  return GeomConvert::CurveToBSplineCurve(curve, Convert_QuasiAngular);
-}
-
-// #725: GeomConvert_CompBezierSurfacesToBSplineSurface has no rational path at all.
-// GeomConvert_CompBezierSurfacesToBSplineSurface.cxx:374-389 computes
-// `isrational |= IsURational() || IsVRational()` over every patch and then
-// `Standard_NotImplemented_Raise_if(isrational, ...)`, which this project's Release kernel
-// compiles out via No_Exception (the same defect class #640 fixed for
-// math_GaussSetIntegration). The converter proceeds anyway, silently dropping every patch's
-// weights and returning the POLYNOMIAL surface through the same control net, with
-// IsDone() == true: measured on a rational quarter-cylinder Bezier patch, a 0.606602 radius
-// error reported as success. Reject before constructing the converter using the exact
-// predicate the compiled-out guard uses, mirroring #640's resolution. Clamping or silently
-// dropping the weights is not an option here, for the same reason it was not in #430/#437.
-static bool occtAnyBezierPatchIsRational(const TColGeom_Array2OfBezierSurface& bezArray)
-{
-  for (int32_t r = bezArray.LowerRow(); r <= bezArray.UpperRow(); r++)
-  {
-    for (int32_t c = bezArray.LowerCol(); c <= bezArray.UpperCol(); c++)
-    {
-      const Handle(Geom_BezierSurface)& bez = bezArray.Value(r, c);
-      if (!bez.IsNull() && (bez->IsURational() || bez->IsVRational()))
-        return true;
-    }
-  }
-  return false;
-}
-
 struct OCCTGeomIntSS
 {
   GeomInt_IntSS intss;
@@ -401,37 +364,6 @@ struct OCCTContapContour
   bool           valid;
   bool           empty;
 };
-
-static OCCTTrihedronFrame makeEmptyFrame()
-{
-  return {0, 0, 0, 0, 0, 0, 0, 0, 0};
-}
-
-// Helper: extract poles from GeomFill_Filling into flat array
-// Returns actual pole count (nbU * nbV), outPoints must be pre-sized
-static int extractFillingPoles(GeomFill_Filling& filling, double* outPoints, int maxPoints)
-{
-  int nbU   = filling.NbUPoles();
-  int nbV   = filling.NbVPoles();
-  int total = nbU * nbV;
-  if (total > maxPoints)
-    total = maxPoints;
-  NCollection_Array2<gp_Pnt> poles(1, nbU, 1, nbV);
-  filling.Poles(poles);
-  int idx = 0;
-  for (int i = 1; i <= nbU && idx < maxPoints; i++)
-  {
-    for (int j = 1; j <= nbV && idx < maxPoints; j++)
-    {
-      gp_Pnt pt              = poles(i, j);
-      outPoints[idx * 3]     = pt.X();
-      outPoints[idx * 3 + 1] = pt.Y();
-      outPoints[idx * 3 + 2] = pt.Z();
-      idx++;
-    }
-  }
-  return total;
-}
 
 // Package one occtSurfaceToAnalytical answer as the C result both entry points return.
 static OCCTSurfToAnaSurfResult occtSurfToAnaSurfResult(OCCTSurfaceRef _Nullable surfaceRef,
