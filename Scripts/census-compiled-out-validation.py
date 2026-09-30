@@ -88,7 +88,9 @@ import glob
 import importlib.util
 import os
 import re
+import shutil
 import sys
+import tempfile
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SCRIPTS = os.path.join(REPO, "Scripts")
@@ -1976,9 +1978,6 @@ def self_test():
     # says about a tree that does NOT carry a patch, and the real tree carries all of them. The
     # fixture is written under a temporary directory and removed, so no case depends on cleanup
     # having run in an earlier one.
-    import shutil
-    import tempfile
-
     fixture = tempfile.mkdtemp(prefix="raise-map-provenance-")
     try:
         os.makedirs(os.path.join(fixture, "adm", "cmake"))
@@ -1992,7 +1991,8 @@ def self_test():
 
         os.makedirs(os.path.join(fixture, "src", "Pkg"))
         target = os.path.join(fixture, "src", "Pkg", "Pkg_Thing.cxx")
-        patched = "void Pkg_Thing::Do()\n{\n  if (myS.IsNull())\n    throw Standard_NullObject();\n  use(myS);\n}\n"
+        patched = ("void Pkg_Thing::Do()\n{\n  if (myS.IsNull())\n"
+                   "    throw Standard_NullObject();\n  use(myS);\n}\n")
         vanilla = "void Pkg_Thing::Do()\n{\n  use(myS);\n}\n"
         patch_text = (
             "--- a/src/Pkg/Pkg_Thing.cxx\n"
