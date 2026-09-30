@@ -570,24 +570,63 @@ public func knotsAndMults() -> (knots: [Double], mults: [Int])
 
 ### `Surface.stretchFill(p1:p2:p3:p4:)`
 
-Creates a BSpline surface by stretch-filling from four ordered boundary point arrays.
+Computes a stretch filling pole grid from four boundary point arrays.
 
 ```swift
 public static func stretchFill(p1: [SIMD3<Double>], p2: [SIMD3<Double>],
                                 p3: [SIMD3<Double>], p4: [SIMD3<Double>]) -> StretchFillResult?
 ```
 
-- **Parameters:** `p1`–`p4`, four boundary polylines, all of equal length ≥ 2. The order is: bottom, right, top, left (or equivalent opposing boundary pairs).
-- **Returns:** A `StretchFillResult` containing pole grid dimensions and the flat pole array, or `nil` if the arrays have mismatched lengths, are too short, or the algorithm fails.
+**The four arrays are not in head-to-tail order round the patch.** `GeomFill_Stretch::Init` lays the
+grid out the way `GeomFill_Curved` does, not the way `GeomFill_Coons` does
+(`GeomFill_Stretch.cxx:60-99`):
+
+- `p1` and `p3` are the two **opposite** boundaries indexed along U, on the `V = first` and
+  `V = last` edges.
+- `p4` lands on the `U = first` edge and `p2` on the `U = last` edge, the reverse of
+  `GeomFill_Coons`.
+
+So for the four sides of a quadrilateral the order is `(bottom, right, top, left)`, the same as
+`Shape.curvedFilling` and the opposite of `Shape.coonsFilling`'s `(bottom, left, top, right)`. OCCT's
+own production caller settles it: `GeomFill_BSplineCurves::Init` passes
+`GeomFill_Stretch(P1, P2, P3, P4)` and `GeomFill_Curved(P1, P2, P3, P4)` unswapped from the same four
+arranged curves and swaps only for `GeomFill_Coons`, which gets `(P1, P4, P3, P2)`
+(`GeomFill_BSplineCurves.cxx:344-350`).
+
+**The corner behaviour is Stretch's own.** The second loop runs only over the interior V range, so
+the four corner poles keep `p1`'s and `p3`'s values and a disagreeing `p2[0]`, `p2[n - 1]`, `p4[0]`
+or `p4[n - 1]` is dropped from the boundary rather than honoured. But `GeomFill_Stretch` also
+subtracts a bilinear patch through `p1[0]`, `p2[0]`, `p3[n - 1]` and `p4[n - 1]` from every interior
+pole (`GeomFill_Stretch.cxx:92-96`), a term `GeomFill_Curved` has no counterpart for, so **`p2[0]`
+and `p4[n - 1]` still move the interior even while the boundary ignores them.** Measured: moving
+`p2[0]` of a flat 10 x 10 square to `(10, 0, 99)` leaves the corner pole at `(10, 0, 0)` and drags
+the neighbouring interior pole to `z = -18.5625`, while the same move leaves a `GeomFill_Curved` grid
+pole for pole identical. `p2[n - 1]` and `p4[0]` are genuinely never read.
+
+`poles` comes back row-major in U with V varying fastest, so the pole at `(u, v)`, both zero-based,
+is `poles[u * nbVPoles + v]`.
+
+- **Parameters:** `p1`, points along U on the `V = first` edge; `p2`, points along V on the
+  `U = last` edge; `p3`, points along U on the `V = last` edge, opposite `p1`; `p4`, points along V
+  on the `U = first` edge, opposite `p2`. All four of equal length ≥ 2.
+- **Returns:** A `StretchFillResult` with the pole grid dimensions and the flat pole array, or `nil`
+  if the arrays have mismatched lengths, are too short, or the algorithm fails.
 - **OCCT:** `GeomFill_Stretch`.
+- **Measured in:** `Scripts/repro/2795-geomfill-boundary-arrangement/`, which prints every
+  arrangement of a flat square for all three `GeomFill_Filling` classes side by side (#2795, #2843).
 - **Example:**
   ```swift
-  let p1: [SIMD3<Double>] = [SIMD3(0,0,0), SIMD3(10,0,0)]
-  let p2: [SIMD3<Double>] = [SIMD3(10,0,0), SIMD3(10,10,0)]
-  let p3: [SIMD3<Double>] = [SIMD3(10,10,0), SIMD3(0,10,0)]
-  let p4: [SIMD3<Double>] = [SIMD3(0,10,0), SIMD3(0,0,0)]
-  if let r = Surface.stretchFill(p1: p1, p2: p2, p3: p3, p4: p4) {
-      print(r.nbUPoles, r.nbVPoles)
+  // A flat 10 x 10 square, in the arrangement GeomFill_Stretch wants.
+  let n = 5
+  let t = (0..<n).map { Double($0) / Double(n - 1) * 10 }
+  let bottom = t.map { SIMD3<Double>($0, 0, 0) }    // along U, the V = first edge
+  let right = t.map { SIMD3<Double>(10, $0, 0) }    // along V, the U = last edge
+  let top = t.map { SIMD3<Double>($0, 10, 0) }      // along U, the V = last edge
+  let left = t.map { SIMD3<Double>(0, $0, 0) }      // along V, the U = first edge
+
+  if let r = Surface.stretchFill(p1: bottom, p2: right, p3: top, p4: left) {
+      print(r.nbUPoles, r.nbVPoles)   // 5 5
+      print(r.poles[12])              // (5.0, 5.0, 0.0), the square's centre
   }
   ```
 

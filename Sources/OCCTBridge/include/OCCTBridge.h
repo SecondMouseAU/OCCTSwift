@@ -504,7 +504,9 @@ typedef enum
 //
 // --- GeomFill ---
 // GeomFill_BSplineCurves              → OCCTSurfaceFillBSpline2Curves,
-// OCCTSurfaceFillBSpline4Curves GeomFill_BezierCurves               → OCCTSurfaceBezierFill*
+//                                       OCCTSurfaceFillBSpline3Curves (#2841),
+//                                       OCCTSurfaceFillBSpline4Curves
+// GeomFill_BezierCurves               → OCCTSurfaceBezierFill*
 // GeomFill_ConstrainedFilling         → OCCTGeomFillConstrained
 // GeomFill_Coons                      → OCCTGeomFillCoonsPoles
 // GeomFill_CoonsAlgPatch              → OCCTGeomFillCoonsAlgPatchEval
