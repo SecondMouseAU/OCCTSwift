@@ -312,23 +312,6 @@
 // Shared private structs/helpers (#396): every one of the twelve split files gets this
 // identical block, compiled independently per TU -- see this split's own README for why.
 
-static bool occtDrawingReachAlongDirection(const TopoDS_Shape& shape,
-                                           const gp_Dir&       viewDir,
-                                           double&             outReach)
-{
-  Bnd_Box bounds;
-  BRepBndLib::Add(shape, bounds);
-  if (bounds.IsVoid())
-    return false;
-
-  double xmin, ymin, zmin, xmax, ymax, zmax;
-  bounds.Get(xmin, ymin, zmin, xmax, ymax, zmax);
-  outReach = (viewDir.X() > 0 ? xmax : xmin) * viewDir.X()
-             + (viewDir.Y() > 0 ? ymax : ymin) * viewDir.Y()
-             + (viewDir.Z() > 0 ? zmax : zmin) * viewDir.Z();
-  return true;
-}
-
 // OCCTBooleanHistory struct definition
 struct OCCTBooleanHistory
 {
@@ -363,22 +346,6 @@ struct OCCTBooleanHistory
   {
   }
 };
-
-// Convenience for the common 1- and 2-argument builders.
-static TopTools_ListOfShape occtArgList(const TopoDS_Shape& a)
-{
-  TopTools_ListOfShape l;
-  l.Append(a);
-  return l;
-}
-
-static TopTools_ListOfShape occtArgList(const TopoDS_Shape& a, const TopoDS_Shape& b)
-{
-  TopTools_ListOfShape l;
-  l.Append(a);
-  l.Append(b);
-  return l;
-}
 
 // 3D points sampled along a wire in traversal order, `samplesPerEdge + 1` per edge (both
 // endpoints included, so consecutive edges repeat their shared point). Arc-aware: sampling the
@@ -482,131 +449,6 @@ static bool occtFacePlane(const TopoDS_Face& face, gp_Pln& plane)
   return false;
 }
 
-// Shared by both pattern history functions: apply `count` transforms (the i-th
-// given by `trsfForIndex`) to `shape`, add each instance to a compound, and fold
-// each instance's Modified/Generated for the original sub-shapes into one
-// BRepTools_History. Returns the compound in `outResult` and the history handle,
-// or nullptr if no instance succeeded.
-static OCCTBooleanHistoryRef occtPatternHistory(OCCTShapeRef                           shape,
-                                                int32_t                                count,
-                                                const std::function<gp_Trsf(int32_t)>& trsfForIndex,
-                                                OCCTShapeRef*                          outResult)
-{
-  if (outResult)
-    *outResult = nullptr;
-  if (!shape || count < 1)
-    return nullptr;
-  try
-  {
-    BRep_Builder    builder;
-    TopoDS_Compound compound;
-    builder.MakeCompound(compound);
-
-    TopTools_IndexedMapOfShape subMap;
-    TopExp::MapShapes(shape->shape, subMap);
-
-    Handle(BRepTools_History) hist    = new BRepTools_History();
-    bool                      anyDone = false;
-    for (int32_t i = 0; i < count; i++)
-    {
-      BRepBuilderAPI_Transform xform(shape->shape, trsfForIndex(i), Standard_True);
-      if (!xform.IsDone())
-        continue;
-      anyDone = true;
-      builder.Add(compound, xform.Shape());
-
-      for (int32_t j = 1; j <= subMap.Extent(); j++)
-      {
-        const TopoDS_Shape& sub = subMap(j);
-        if (!BRepTools_History::IsSupportedType(sub))
-          continue;
-        for (TopTools_ListIteratorOfListOfShape it(xform.Modified(sub)); it.More(); it.Next())
-        {
-          hist->AddModified(sub, it.Value());
-        }
-        for (TopTools_ListIteratorOfListOfShape it(xform.Generated(sub)); it.More(); it.Next())
-        {
-          hist->AddGenerated(sub, it.Value());
-        }
-      }
-    }
-    if (!anyDone)
-      return nullptr;
-
-    if (outResult)
-      *outResult = new OCCTShape(compound);
-    return new OCCTBooleanHistory(hist);
-  }
-  catch (...)
-  {
-    occtRecordCaughtException(__func__);
-    return nullptr;
-  }
-}
-
-// #794: shared helper for WireInterpolate (base vs WithTangents)
-static OCCTWireRef occtWireInterpolateImpl(const double* points,
-                                           int32_t       count,
-                                           double        tolerance,
-                                           bool          closed,
-                                           double        startTanX,
-                                           double        startTanY,
-                                           double        startTanZ,
-                                           double        endTanX,
-                                           double        endTanY,
-                                           double        endTanZ,
-                                           bool          hasTangents)
-{
-  if (!points || count < 2)
-    return nullptr;
-
-  try
-  {
-    // Build array of points
-    Handle(TColgp_HArray1OfPnt) hPoints = new TColgp_HArray1OfPnt(1, count);
-    for (int32_t i = 0; i < count; i++)
-    {
-      hPoints->SetValue(i + 1, gp_Pnt(points[i * 3], points[i * 3 + 1], points[i * 3 + 2]));
-    }
-
-    // Create interpolator
-    GeomAPI_Interpolate interpolator(hPoints, closed ? Standard_True : Standard_False, tolerance);
-
-    if (hasTangents)
-    {
-      gp_Vec startTangent(startTanX, startTanY, startTanZ);
-      gp_Vec endTangent(endTanX, endTanY, endTanZ);
-      interpolator.Load(startTangent, endTangent);
-    }
-
-    interpolator.Perform();
-
-    if (!interpolator.IsDone())
-      return nullptr;
-
-    Handle(Geom_BSplineCurve) curve = interpolator.Curve();
-    if (curve.IsNull())
-      return nullptr;
-
-    // Create edge from curve
-    BRepBuilderAPI_MakeEdge makeEdge(curve);
-    if (!makeEdge.IsDone())
-      return nullptr;
-
-    // Create wire from edge
-    BRepBuilderAPI_MakeWire makeWire(makeEdge.Edge());
-    if (!makeWire.IsDone())
-      return nullptr;
-
-    return new OCCTWire(makeWire.Wire());
-  }
-  catch (...)
-  {
-    occtRecordCaughtException(__func__);
-    return nullptr;
-  }
-}
-
 struct OCCTLawFunction
 {
   Handle(Law_Function) law;
@@ -670,20 +512,6 @@ struct OCCTBRepAlgoImage
   BRepAlgo_Image image;
 };
 
-static void _storeTrsf(const gp_Trsf& t, double* matrix)
-{
-  for (int r = 1; r <= 3; r++)
-    for (int c = 1; c <= 4; c++)
-      matrix[(r - 1) * 4 + (c - 1)] = t.Value(r, c);
-}
-
-static void _storeTrsf2d(const gp_Trsf2d& t, double* matrix)
-{
-  for (int r = 1; r <= 2; r++)
-    for (int c = 1; c <= 3; c++)
-      matrix[(r - 1) * 3 + (c - 1)] = t.Value(r, c);
-}
-
 struct OCCTPipeShell
 {
   Handle(BRepFill_PipeShell) ps;
@@ -724,19 +552,6 @@ struct OCCTWireBuilder
 {
   BRepBuilderAPI_MakeWire maker;
 };
-
-static BOPAlgo_GlueEnum toGlueEnum(int32_t mode)
-{
-  switch (mode)
-  {
-    case 0:
-      return BOPAlgo_GlueShift;
-    case 1:
-      return BOPAlgo_GlueFull;
-    default:
-      return BOPAlgo_GlueOff;
-  }
-}
 
 struct OCCTThruSections
 {
@@ -790,71 +605,6 @@ struct OCCTChamferBuilder
   {
   }
 };
-
-// #794: shared helper for FilletBuilder history queries (Generated/Modified)
-static int32_t occtFilletBuilderHistoryQuery(
-  OCCTFilletBuilderRef builder,
-  OCCTShapeRef         shape,
-  OCCTShapeRef**       outShapes,
-  const TopTools_ListOfShape& (BRepFilletAPI_MakeFillet::*query)(const TopoDS_Shape&))
-{
-  if (!builder || !shape || !outShapes)
-    return 0;
-  *outShapes = nullptr;
-  try
-  {
-    const TopTools_ListOfShape& list  = (builder->fillet.*query)(shape->shape);
-    int                         count = static_cast<int>(list.Size());
-    if (count == 0)
-      return 0;
-    OCCTShapeRef* shapes = (OCCTShapeRef*)malloc(count * sizeof(OCCTShapeRef));
-    if (!shapes)
-      return 0;
-    int i = 0;
-    for (auto it = list.cbegin(); it != list.cend(); ++it, ++i)
-    {
-      shapes[i] = new OCCTShape(*it);
-    }
-    *outShapes = shapes;
-    return count;
-  }
-  catch (...)
-  {
-    occtRecordCaughtException(__func__);
-    return 0;
-  }
-}
-
-// #794: shared helper for ChamferBuilder history queries (Generated/Modified)
-static int32_t occtChamferBuilderHistoryQuery(
-  OCCTChamferBuilderRef builder,
-  OCCTShapeRef          shape,
-  OCCTShapeRef**        outShapes,
-  const TopTools_ListOfShape& (BRepFilletAPI_MakeChamfer::*query)(const TopoDS_Shape&))
-{
-  if (!builder || !shape || !outShapes)
-    return 0;
-  *outShapes = nullptr;
-  try
-  {
-    const TopTools_ListOfShape& list  = (builder->chamfer.*query)(shape->shape);
-    int32_t                     count = static_cast<int32_t>(list.Size());
-    if (count == 0)
-      return 0;
-    *outShapes = (OCCTShapeRef*)malloc(count * sizeof(OCCTShapeRef));
-    int32_t i  = 0;
-    for (auto it = list.cbegin(); it != list.cend(); ++it, ++i)
-    {
-      (*outShapes)[i] = new OCCTShape{*it};
-    }
-    return count;
-  }
-  catch (...)
-  {
-    occtRecordCaughtException(__func__);
-    return 0;
-  }
-}
 
 struct OCCTSectionBuilder
 {
