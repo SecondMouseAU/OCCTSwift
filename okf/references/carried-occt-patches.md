@@ -96,12 +96,12 @@ mistake the rest of this page is about.
 
 ### The xcframework
 
-`Scripts/patches/` holds thirty-one patches. The v4.0.0-kernel.3 asset `Package.swift` pins lacks none of them,
+`Scripts/patches/` holds thirty-two patches. The v4.0.0-kernel.3 asset `Package.swift` pins lacks one of them,
 per [Pinned kernel patch check](../policies/pinned-kernel-patch-check.md):
 
 | Unpinned | What it leaves exposed |
 |---|---|
-| none | |
+| `0044-Extrema-ExtSS-ExtCS-Points-bound-against-point-sequence-2840` | Nothing reachable from Swift. `Extrema_ExtSS::Points` and `Extrema_ExtCS::Points` still fault on a parallel pair in the pinned kernel, and every bridge entry point that reads a point from either class gates on `IsParallel()` first, so the input never reaches them (#2831, #2840). The exposure is to a future bridge author who adds a point read without that gate, which is why `OCCTCurve3DDistanceToSurface` carries a comment saying so |
 
 `0043` (#2827) was the last entry here, and it was the shortest-lived: carried unbuilt on 2026-09-29
 because OCCT 8.0.2 was days out and a repin was on hold until it lands, then built and pinned the
@@ -129,11 +129,16 @@ older asset. `Package.swift`'s pin block records that exception against
 `libOCCT-wasm.a` and its header tree are a **second** pinned asset, recorded in
 `Scripts/wasm-kernel-pin.txt` rather than in `Package.swift`, because SwiftPM has no `binaryTarget`
 for a bare static library. It carries **thirty** patches, `0010` to `0042`, plus the eleven in
-`Scripts/patches-wasi/`, and native now carries thirty-one, so it **lacks one of them**:
+`Scripts/patches-wasi/`, and the pinned native asset carries thirty-one, so it **lacks one of them**:
 
 | Unpinned on wasm | What it leaves exposed |
 |---|---|
 | `0043-BRepGProp_Gauss-keeps-the-by-plane-mass-2827` | In the browser only, `Face.volumeInertia(planeNormal:planeDistance:)` still returns the fabricated `0.0` that `v4.0.0-kernel.3` fixed natively. No other API reaches the by-plane `BRepGProp_Vinert` path, and the by-point `Face.volumeInertia` is unaffected on both platforms |
+
+`0044` is **not** a second row here. It is unpinned on both platforms, so it is not a divergence
+between them, and `Scripts/check-wasm-kernel-parity.py` compares the wasm pin against
+`Package.swift`'s enumeration of what the native **asset** holds rather than against the directory
+listing. The 8.0.2 rebuild that closes the row above picks `0044` up on both platforms at once.
 
 **Acknowledged, not ignored**, by `OCCT_WASM_PARITY_ACKNOWLEDGED_AGAINST=31` in
 `Scripts/wasm-kernel-pin.txt`: the wasm kernel is a 69-minute build and this repin did not take it,
