@@ -15,8 +15,6 @@
 //
 // Exit status is the number of failed cases, so the runner needs no output parsing to know.
 
-import OCCTSwift
-
 // FoundationEssentials, and the choice matters more than it looks. #2761's saving is
 // ALL-OR-NOTHING PER MODULE: one linked file importing full Foundation pulls the
 // internationalisation data back in, and that includes the CONSUMER'S OWN code, not just
@@ -28,6 +26,7 @@ import OCCTSwift
 #else
     import Foundation
 #endif
+import OCCTSwift
 
 // The C library, for `exit`. Foundation re-exported it; FoundationEssentials does not.
 #if canImport(Darwin)
@@ -220,9 +219,7 @@ do {
         to: URL(fileURLWithPath: brokenPath))
     let (outcome, internalDiagnostics) = OCCTDiagnostics.capturing {
         () -> Result<Shape, Error> in
-        do { return .success(try Shape.load(fromPath: brokenPath)) } catch {
-            return .failure(error)
-        }
+        do { return .success(try Shape.load(fromPath: brokenPath)) } catch { return .failure(error) }
     }
     switch outcome {
     case .success:

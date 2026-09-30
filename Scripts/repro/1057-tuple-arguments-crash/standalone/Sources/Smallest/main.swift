@@ -41,14 +41,10 @@ func v6(_ a: (SIMD3<Double>, SIMD3<Double>), _: isolated (any Actor)? = Iso.shar
 }
 
 // V7: V1's shape with a reference-counted element and a word-sized one.
-func v7(_ a: (String, Int), _: isolated (any Actor)? = Iso.shared) async {
-    precondition(!a.0.isEmpty)
-}
+func v7(_ a: (String, Int), _: isolated (any Actor)? = Iso.shared) async { precondition(!a.0.isEmpty) }
 
 // V8: V1's shape with the vector alone, no reference-counted element.
-func v8(_ a: SIMD3<Double>, _: isolated (any Actor)? = Iso.shared) async {
-    precondition(a != SIMD3())
-}
+func v8(_ a: SIMD3<Double>, _: isolated (any Actor)? = Iso.shared) async { precondition(a != SIMD3()) }
 
 // V9: V1's shape with the reference-counted element alone.
 func v9(_ a: String, _: isolated (any Actor)? = Iso.shared) async { precondition(!a.isEmpty) }
@@ -127,8 +123,7 @@ func v19(_ a: Mixed) async {
 
 // V20: V15's shape with a 16-byte vector.
 func v20(_ a: (String, SIMD2<Double>)) async {
-    @Sendable func local(_ a: (String, SIMD2<Double>), _: isolated (any Actor)? = Iso.shared) async
-    {
+    @Sendable func local(_ a: (String, SIMD2<Double>), _: isolated (any Actor)? = Iso.shared) async {
         precondition(!a.0.isEmpty)
     }
     await local(a)
@@ -166,8 +161,7 @@ struct Size32Align16: Sendable {
     var b: SIMD2<Double>
 }
 func v24(_ a: (String, Size32Align16)) async {
-    @Sendable func local(_ a: (String, Size32Align16), _: isolated (any Actor)? = Iso.shared) async
-    {
+    @Sendable func local(_ a: (String, Size32Align16), _: isolated (any Actor)? = Iso.shared) async {
         precondition(!a.0.isEmpty)
     }
     await local(a)
@@ -307,10 +301,7 @@ func v39(_ a: Mixed) async throws {
 // V26 is the crashing form and V27 to V39 pin its edges. V40 onward vary only the element type
 // inside it, which is what the swift-testing grid varied.
 
-final class Ref: Sendable {
-    let n: Int
-    init(_ n: Int) { self.n = n }
-}
+final class Ref: Sendable { let n: Int; init(_ n: Int) { self.n = n } }
 
 // Each of these is V26 with one element type substituted, written out concretely rather than
 // through a generic, because a generic would change the shape as well as the type.
@@ -380,15 +371,8 @@ func v46(_ a: (String, SIMD16<Float>)) async throws {
 // the same shapes without importing `simd`, so `Smallest` stays dependency-free.
 
 struct Vec1: Sendable { var a: SIMD3<Double> }
-struct Vec2: Sendable {
-    var a: SIMD3<Double>
-    var b: SIMD3<Double>
-}
-struct Vec3: Sendable {
-    var a: SIMD3<Double>
-    var b: SIMD3<Double>
-    var c: SIMD3<Double>
-}
+struct Vec2: Sendable { var a: SIMD3<Double>; var b: SIMD3<Double> }
+struct Vec3: Sendable { var a: SIMD3<Double>; var b: SIMD3<Double>; var c: SIMD3<Double> }
 
 func v53(_ a: (String, Vec1)) async throws {
     @Sendable func local(_ a: (String, Vec1), _: isolated (any Actor)? = Iso.shared) async throws {
@@ -431,26 +415,10 @@ func v57(_ a: (String, SIMD4<Int64>)) async throws {
 // "contains a 32-byte vector". V58 to V62 walk the parameter size up in 8-byte steps to find where
 // it flips, and each prints its own `MemoryLayout` so the table labels itself.
 
-struct Pad1: Sendable {
-    var a: SIMD3<Double>
-    var b: SIMD3<Double>
-    var p0: Double
-}
-struct Pad2: Sendable {
-    var a: SIMD3<Double>
-    var b: SIMD3<Double>
-    var p0, p1: Double
-}
-struct Pad3: Sendable {
-    var a: SIMD3<Double>
-    var b: SIMD3<Double>
-    var p0, p1, p2: Double
-}
-struct Pad4: Sendable {
-    var a: SIMD3<Double>
-    var b: SIMD3<Double>
-    var p0, p1, p2, p3: Double
-}
+struct Pad1: Sendable { var a: SIMD3<Double>; var b: SIMD3<Double>; var p0: Double }
+struct Pad2: Sendable { var a: SIMD3<Double>; var b: SIMD3<Double>; var p0, p1: Double }
+struct Pad3: Sendable { var a: SIMD3<Double>; var b: SIMD3<Double>; var p0, p1, p2: Double }
+struct Pad4: Sendable { var a: SIMD3<Double>; var b: SIMD3<Double>; var p0, p1, p2, p3: Double }
 
 func v58(_ a: (String, Pad1)) async throws {
     @Sendable func local(_ a: (String, Pad1), _: isolated (any Actor)? = Iso.shared) async throws {
@@ -484,14 +452,8 @@ func v61(_ a: (String, Pad4)) async throws {
 // size looks like the second half of the rule. V63 and V64 test that against vector *count*: one
 // vector at 80 bytes, and one vector at 96.
 
-struct One80: Sendable {
-    var a: SIMD3<Double>
-    var p0, p1, p2, p3: Double
-}
-struct One88: Sendable {
-    var a: SIMD3<Double>
-    var p0, p1, p2, p3, p4: Double
-}
+struct One80: Sendable { var a: SIMD3<Double>; var p0, p1, p2, p3: Double }
+struct One88: Sendable { var a: SIMD3<Double>; var p0, p1, p2, p3, p4: Double }
 
 func v63(_ a: (String, One80)) async throws {
     @Sendable func local(_ a: (String, One80), _: isolated (any Actor)? = Iso.shared) async throws {
@@ -507,9 +469,7 @@ func v64(_ a: (String, One88)) async throws {
     try await local(a)
 }
 
-func size<T>(_ t: T.Type) -> String {
-    "size=\(MemoryLayout<T>.size) stride=\(MemoryLayout<T>.stride)"
-}
+func size<T>(_ t: T.Type) -> String { "size=\(MemoryLayout<T>.size) stride=\(MemoryLayout<T>.stride)" }
 
 func v51(_ a: (String, Int)) async throws {
     @Sendable func local(_ a: (String, Int), _: isolated (any Actor)? = Iso.shared) async throws {
@@ -576,9 +536,7 @@ await variant(8, "bare SIMD3<Double> + isolated default") { await v8(SIMD3(1, 0,
 await variant(9, "bare String + isolated default") { await v9("+X") }
 await variant(10, "String and SIMD3 as separate parameters") { await v10("+X", SIMD3(1, 0, 0)) }
 await variant(11, "isolated parameter first") { await v11(Iso.shared, mixed) }
-await variant(12, "a struct with the same two members") {
-    await v12(Pair(name: "+X", v: SIMD3(1, 0, 0)))
-}
+await variant(12, "a struct with the same two members") { await v12(Pair(name: "+X", v: SIMD3(1, 0, 0))) }
 await variant(13, "(String, SIMD2<Double>) + isolated default") { await v13(("+X", SIMD2(1, 0))) }
 await variant(14, "synchronous function with an isolated parameter") { await callV14() }
 
@@ -588,13 +546,9 @@ await variant(17, "V15 without @Sendable on the local func") { await v17(mixed) 
 await variant(18, "V15 with the isolated argument passed explicitly") { await v18(mixed) }
 await variant(19, "V15 without the isolated parameter") { await v19(mixed) }
 await variant(20, "V15's shape with SIMD2<Double>, 16 bytes") { await v20(("+X", SIMD2(1, 0))) }
-await variant(21, "V15's shape with a struct instead of a tuple") {
-    await v21(Pair(name: "+X", v: SIMD3(1, 0, 0)))
-}
+await variant(21, "V15's shape with a struct instead of a tuple") { await v21(Pair(name: "+X", v: SIMD3(1, 0, 0))) }
 await variant(22, "V15's shape with separate parameters") { await v22("+X", SIMD3(1, 0, 0)) }
-await variant(23, "V15's shape with SIMD8<Float>, 32 bytes") {
-    await v23(("+X", SIMD8(repeating: 1)))
-}
+await variant(23, "V15's shape with SIMD8<Float>, 32 bytes") { await v23(("+X", SIMD8(repeating: 1))) }
 await variant(24, "V15's shape with a 32-byte 16-aligned struct, no vector") {
     await v24(("+X", Size32Align16(a: SIMD2(1, 1), b: SIMD2(2, 2))))
 }
@@ -625,9 +579,7 @@ await variant(42, "V26 with SIMD4<Float>, 16 bytes") { try await v42(("+X", SIMD
 await variant(43, "V26 with a class instead of String") { try await v43((Ref(1), SIMD3(1, 0, 0))) }
 await variant(44, "V26 with an Array instead of String") { try await v44(([1], SIMD3(1, 0, 0))) }
 await variant(45, "V26 with the two members swapped") { try await v45((SIMD3(1, 0, 0), "+X")) }
-await variant(46, "V26 with SIMD16<Float>, 64 bytes") {
-    try await v46(("+X", SIMD16(repeating: 1)))
-}
+await variant(46, "V26 with SIMD16<Float>, 64 bytes") { try await v46(("+X", SIMD16(repeating: 1))) }
 await variant(47, "V26 with a three-element tuple") {
     try await v47(("+X", SIMD3(1, 0, 0), SIMD3(0, 1, 0)))
 }
@@ -676,17 +628,13 @@ await variant(62, "layouts of every crashing and clean parameter type") {
     print("  (String, SIMD3<Double>)                  \(size((String, SIMD3<Double>).self))  crash")
     print("  (String, SIMD4<Int64>)                   \(size((String, SIMD4<Int64>).self))  crash")
     print("  (String, SIMD16<Float>)                  \(size((String, SIMD16<Float>).self))  crash")
-    print(
-        "  (String, SIMD3<Double>, SIMD3<Double>)   \(size((String, SIMD3<Double>, SIMD3<Double>).self))  crash"
-    )
+    print("  (String, SIMD3<Double>, SIMD3<Double>)   \(size((String, SIMD3<Double>, SIMD3<Double>).self))  crash")
     print("  (String, Vec1)                           \(size((String, Vec1).self))  crash")
     print("  (String, Vec2)                           \(size((String, Vec2).self))  crash")
     print("  (String, Vec3)                           \(size((String, Vec3).self))  clean")
     print("  (String, SIMD2<Double>)                  \(size((String, SIMD2<Double>).self))  clean")
     print("  (String, Size32Align16)                  \(size((String, Size32Align16).self))  clean")
-    print(
-        "  (SIMD3<Double>, SIMD3<Double>)           \(size((SIMD3<Double>, SIMD3<Double>).self))  clean"
-    )
+    print("  (SIMD3<Double>, SIMD3<Double>)           \(size((SIMD3<Double>, SIMD3<Double>).self))  clean")
     print("  ", terminator: "")
 }
 

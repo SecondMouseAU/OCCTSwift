@@ -28,7 +28,7 @@ import PackageDescription
 /// Read from the environment rather than restated, so this package cannot drift away from
 /// `Scripts/wasm-toolchain-versions.txt` and keep passing on flags nothing else uses.
 guard let ehFlagsValue = ProcessInfo.processInfo.environment["PROBE_CXX_EH_FLAGS"],
-    !ehFlagsValue.isEmpty
+      !ehFlagsValue.isEmpty
 else {
     fatalError("PROBE_CXX_EH_FLAGS is not set. Build this through Scripts/repro/2171/run.sh.")
 }
@@ -38,7 +38,7 @@ let ehFlags = ehFlagsValue.split(separator: " ").map(String.init)
 /// bundled WASI sysroot carries the no-exceptions flavour and no `__cxa_throw`, so a throwing
 /// target compiles against its headers and then fails to link. See #2169.
 guard let wasiSDKPrefix = ProcessInfo.processInfo.environment["WASI_SDK_PREFIX"],
-    !wasiSDKPrefix.isEmpty
+      !wasiSDKPrefix.isEmpty
 else {
     fatalError("WASI_SDK_PREFIX is not set. Build this through Scripts/repro/2171/run.sh.")
 }
@@ -46,15 +46,12 @@ let exceptionLibraries = "\(wasiSDKPrefix)/share/wasi-sysroot/lib/wasm32-wasip1/
 
 let ehSettings: [CXXSetting] = [.unsafeFlags(ehFlags, .when(platforms: [.wasi]))]
 let linkSettings: [LinkerSetting] = [
-    .unsafeFlags(
-        [
-            "-L\(exceptionLibraries)", "-Xlinker", "-lc++abi", "-Xlinker", "-lunwind",
-            // setjmp/longjmp are not in wasip1's libc. wasi-sdk puts the Wasm SjLj
-            // support routines in a separate libsetjmp, which OCCT's OSD_signal and
-            // OSD_ThreadPool will need on the link line.
-            "-Xlinker", "-lsetjmp",
-        ],
-        .when(platforms: [.wasi]))
+    .unsafeFlags(["-L\(exceptionLibraries)", "-Xlinker", "-lc++abi", "-Xlinker", "-lunwind",
+                  // setjmp/longjmp are not in wasip1's libc. wasi-sdk puts the Wasm SjLj
+                  // support routines in a separate libsetjmp, which OCCT's OSD_signal and
+                  // OSD_ThreadPool will need on the link line.
+                  "-Xlinker", "-lsetjmp"],
+                 .when(platforms: [.wasi]))
 ]
 
 let package = Package(
@@ -70,23 +67,17 @@ let package = Package(
         // setjmp/longjmp pair into the __wasm_setjmp / __wasm_longjmp that libsetjmp defines.
         // Without it clang emits plain calls to setjmp and longjmp, warns about nothing, and the
         // link fails on two undefined symbols.
-        .target(
-            name: "ProbeSetjmp",
-            cSettings: [
-                .unsafeFlags(
-                    ehFlags + ["-mllvm", "-wasm-enable-sjlj"],
-                    .when(platforms: [.wasi]))
-            ]),
+        .target(name: "ProbeSetjmp",
+                cSettings: [.unsafeFlags(ehFlags + ["-mllvm", "-wasm-enable-sjlj"],
+                                         .when(platforms: [.wasi]))]),
         // Stands in for Sources/OCCTBridge: catches at a flat C boundary, returns sentinels.
         .target(
             name: "ProbeBridge",
             dependencies: ["ProbeKernel", "ProbeMiddleNoEH", "ProbeSetjmp"],
             cxxSettings: ehSettings
         ),
-        .executableTarget(
-            name: "probe", dependencies: ["ProbeBridge"], linkerSettings: linkSettings),
-        .executableTarget(
-            name: "probe-uncaught", dependencies: ["ProbeBridge"],
-            linkerSettings: linkSettings),
+        .executableTarget(name: "probe", dependencies: ["ProbeBridge"], linkerSettings: linkSettings),
+        .executableTarget(name: "probe-uncaught", dependencies: ["ProbeBridge"],
+                          linkerSettings: linkSettings),
     ]
 )

@@ -149,8 +149,7 @@ await stage(14, "tuple of two generic parameters, serially, crashing tuple") {
 // type, wrapping a nested `@Sendable func` that carries an `isolated (any Actor)?` parameter with a
 // default value, whose body goes through `__requiringAwait`-style `@autoclosure` helpers.
 
-@_transparent func requiringAwait<T>(_ value: @autoclosure () async throws -> T) async rethrows -> T
-{
+@_transparent func requiringAwait<T>(_ value: @autoclosure () async throws -> T) async rethrows -> T {
     try await value()
 }
 
@@ -161,7 +160,7 @@ await stage(14, "tuple of two generic parameters, serially, crashing tuple") {
 struct SuiteLikeCrashing: Sendable {
     func run(_ f: Crashing) { precondition(!f.0.isEmpty) }
 
-    @Sendable static func expansion(_ arg0: Crashing) async throws {
+    @Sendable static func expansion(_ arg0: Crashing) async throws -> Void {
         @Sendable func local(
             _ arg0: Crashing,
             _: isolated (any Actor)? = DefaultIsolation.shared
@@ -176,7 +175,7 @@ struct SuiteLikeCrashing: Sendable {
 struct SuiteLikeControl: Sendable {
     func run(_ f: Control) { precondition(f.0 != f.1) }
 
-    @Sendable static func expansion(_ arg0: Control) async throws {
+    @Sendable static func expansion(_ arg0: Control) async throws -> Void {
         @Sendable func local(
             _ arg0: Control,
             _: isolated (any Actor)? = DefaultIsolation.shared

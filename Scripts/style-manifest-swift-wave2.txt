@@ -21,8 +21,30 @@
 # edited rather than lines rewrapped: 607 BeginDocumentationCommentWithOneLineSummary,
 # 12 EndOfLineComment, 12 AlwaysUseLowerCamelCase, 4 ReplaceForEachWithForLoop, and 2 each of
 # ValidateDocumentationComments, NoBlockComments and OneCasePerLine.
+#
+# The Scripts/repro/ entries below are a different kind of listing and will not shrink the
+# way the rest do. They are frozen evidence: standalone probes kept so a measurement can be
+# repeated, several of them attached to an upstream report. `swift-format format -i` rewrote
+# ten of them in this issue's own PR and the change was reverted, because one of the
+# rewrites deleted `-> Void` from the two functions in #1057's minimal reproducer, whose
+# whole point is to pin the exact shape swift-testing's macro expands to for
+# swiftlang/swift#91639. A reformatted reproducer that stops reproducing reads as "fixed
+# upstream". Retire one by deleting the probe when its issue closes, not by formatting it.
+#
+# Scripts/repro/runner-core/, censuses/ and harnesses/ are NOT this: they are real targets
+# declared in Package.swift, they were formatted, and they are not listed here.
+Scripts/repro/1057-tuple-arguments-crash/standalone/Sources/MinimalRepro/main.swift
+Scripts/repro/1057-tuple-arguments-crash/standalone/Sources/Smallest/main.swift
 Scripts/repro/1057-tuple-arguments-crash/standalone/Tests/TupleGridTests/TupleGridTests.swift
+Scripts/repro/1689/probe/Package.swift
+Scripts/repro/1689/probe/Sources/ValveGearProbe/main.swift
+Scripts/repro/2048/consumer/Package.swift
 Scripts/repro/2048/stub/Package.swift
+Scripts/repro/2048/stub/Sources/StubOCCT/StubOCCT.swift
+Scripts/repro/2169/standalone/Package.swift
+Scripts/repro/2171/standalone/Package.swift
+Scripts/repro/2171/standalone/Sources/probe/main.swift
+Scripts/repro/2175/spike/Sources/OCCTWasmSpike/main.swift
 Scripts/repro/990-orthonormal-radial-basis/basis-compare.swift
 Scripts/repro/censuses/ClusterB.swift
 Scripts/repro/censuses/ClusterD.swift

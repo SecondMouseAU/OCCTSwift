@@ -8,8 +8,6 @@ let package = Package(
         .package(url: "https://github.com/SecondMouseAU/OCCTSwift.git", branch: "main")
     ],
     targets: [
-        .executableTarget(
-            name: "ValveGearProbe",
-            dependencies: [.product(name: "OCCTSwift", package: "OCCTSwift")])
+        .executableTarget(name: "ValveGearProbe", dependencies: [.product(name: "OCCTSwift", package: "OCCTSwift")])
     ]
 )

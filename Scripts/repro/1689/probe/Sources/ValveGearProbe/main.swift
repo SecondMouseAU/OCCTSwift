@@ -8,10 +8,7 @@
 import Foundation
 import OCCTSwift
 
-guard CommandLine.arguments.count >= 2 else {
-    print("usage: probe <dir>")
-    exit(2)
-}
+guard CommandLine.arguments.count >= 2 else { print("usage: probe <dir>"); exit(2) }
 let dir = CommandLine.arguments[1]
 var failures = 0
 
@@ -38,9 +35,8 @@ check("box", near(box?.volume, 8000, 1e-6), "volume=\(show(box?.volume)) expecte
 
 let cyl = Shape.cylinder(radius: 5, height: 20)
 let cylExpected = Double.pi * 25 * 20
-check(
-    "cylinder", near(cyl?.volume, cylExpected, 1e-3),
-    "volume=\(show(cyl?.volume)) expected=\(cylExpected)")
+check("cylinder", near(cyl?.volume, cylExpected, 1e-3),
+      "volume=\(show(cyl?.volume)) expected=\(cylExpected)")
 
 // A valve-gear-ish part: a bar with a hole through it, which is what a linkage is.
 var linkage: Shape?
@@ -103,12 +99,10 @@ if let linkage {
         let norms = m.normals
         let maxIndex = idx.max().map { Int($0) } ?? -1
         let finite = verts.allSatisfy { $0.x.isFinite && $0.y.isFinite && $0.z.isFinite }
-        let ok =
-            !verts.isEmpty && !idx.isEmpty && idx.count % 3 == 0
+        let ok = !verts.isEmpty && !idx.isEmpty && idx.count % 3 == 0
             && maxIndex < verts.count && finite
-        check(
-            "mesh (three.js)", ok,
-            "\(verts.count) verts, \(m.triangleCount) tris, \(idx.count) indices, "
+        check("mesh (three.js)", ok,
+              "\(verts.count) verts, \(m.triangleCount) tris, \(idx.count) indices, "
                 + "\(norms.count) normals, maxIndex=\(maxIndex), allFinite=\(finite)")
     } else {
         check("mesh (three.js)", false, "Shape.mesh returned nil")
