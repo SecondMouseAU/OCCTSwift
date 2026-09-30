@@ -27,8 +27,10 @@ import simd
 /// SIGSEGV and the whole suite fails, which is what was observed and is recorded in the PR.
 ///
 /// The refusal loses a real number, the constant gap between the two surfaces.
-/// `SurfaceExtremaResult` has no shape for "a distance with no points", and giving it one is a
-/// SemVer event, so that part is #2876's.
+/// `SurfaceExtremaResult` has no shape for "a distance with no points", so #2876 gave the distance
+/// its own entry point, `Surface.minDistance(to:uvBounds1:uvBounds2:)`, rather than giving the
+/// struct four optional fields. `Issue2876ParallelSurfaceDistanceTests` covers it, and the two
+/// suites pin the pair: `extrema` refuses here, `minDistance` answers there, for the same input.
 @Suite("Surface.extrema returns nil, not SIGSEGV, on parallel surfaces (#2840)")
 struct Issue2840SurfaceExtremaParallelTests {
 

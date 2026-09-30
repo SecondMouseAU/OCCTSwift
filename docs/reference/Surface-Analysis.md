@@ -333,7 +333,9 @@ When `uvBounds1` or `uvBounds2` is `nil`, each surface's own `domain` is used. T
   reading it faults uncatchably on this build, measured in `Scripts/repro/2831/probe.mm`. This page's
   example was two parallel planes with the comment `≈ 10.0`, which is what the kernel would report if
   it reported anything, and what running it actually did was take the process down. #2840 carries the
-  kernel fix and the decision about reporting a distance with no points.
+  kernel fix. **The gap itself is now reported by
+  [`minDistance(to:uvBounds1:uvBounds2:)`](#mindistancetouvbounds1uvbounds2) (#2876)**, which reads
+  `LowerDistance()` and nothing else, so it is correct where this one has to refuse.
 - **Example:**
   ```swift
   // Two separated spheres: a genuine discrete nearest pair.
@@ -344,6 +346,62 @@ When `uvBounds1` or `uvBounds2` is `nil`, each surface's own `domain` is used. T
   }
   ```
 - **Note:** Infinite (untrimmed) surfaces need explicit `uvBounds` to bound the search; otherwise the solver may fail or return a nonsensical result.
+
+---
+
+### `minDistance(to:uvBounds1:uvBounds2:)`
+
+The minimum distance between two surfaces, and the only entry point that answers when the two are
+parallel.
+
+```swift
+public func minDistance(
+    to other: Surface,
+    uvBounds1: (uMin: Double, uMax: Double, vMin: Double, vMax: Double)? = nil,
+    uvBounds2: (uMin: Double, uMax: Double, vMin: Double, vMax: Double)? = nil
+) -> Double?
+```
+
+Same `GeomAPI_ExtremaSurfaceSurface` computation as `extrema(to:uvBounds1:uvBounds2:)`, over the
+same bounds, with the same `domain` defaults. The difference is what it reads: `LowerDistance()`
+alone, never `NearestPoints()` or `LowerDistanceParameters()`.
+
+- **Parameters:** `other`, the second surface; `uvBounds1` / `uvBounds2`, optional UV bounds, each
+  defaulting to that surface's own `domain`.
+- **Returns:** the distance, or `nil` when the extrema computation finds nothing at all. Two
+  crossing planes are the clearest case of `nil`: they intersect, so there is no extremum, and
+  `NbExtrema()` is 0.
+- **OCCT:** `GeomAPI_ExtremaSurfaceSurface::LowerDistance()`.
+- **Why it exists separately (#2876).** `SurfaceExtremaResult` has five non-optional stored
+  properties and so cannot express "a distance, and no points". A parallel pair is exactly that
+  case, so the distance gets its own entry point rather than the struct getting four optional
+  fields. This is also what OCCT's own caller does: the `extrema` Draw command branches on
+  `IsParallel()` and prints `Infinite number of extremas, distance = ...` from `LowerDistance()`
+  alone (`GeometryTest_APICommands.cxx:631`). And it completes a family that was inconsistent:
+  `curve.minDistance(to: otherCurve)` and `curve.minDistance(to: surface)` have always read
+  `LowerDistance()` alone and have always answered for parallel input.
+- **A returned `0` is a measurement.** Two coincident planes are parallel with a computed distance
+  of zero. `Scripts/repro/2876/probe.mm` measures both: mode 0 gives 5 for planes 5 apart and
+  mode 5 gives 0 for coincident ones, out of the same code path.
+- **Example:**
+  ```swift
+  // Parallel: extrema refuses, minDistance answers.
+  if let p1 = Surface.plane(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1)),
+     let p2 = Surface.plane(origin: SIMD3(0, 0, 5), normal: SIMD3(0, 0, 1)) {
+      print(p1.extrema(to: p2) == nil)      // true
+      print(p1.minDistance(to: p2) ?? -1)   // 5.0
+  }
+
+  // Not parallel: both answer, with the same number.
+  if let s1 = Surface.sphere(center: SIMD3(0, 0, 0), radius: 3),
+     let s2 = Surface.sphere(center: SIMD3(20, 0, 0), radius: 5) {
+      print(s1.minDistance(to: s2) ?? -1)      // ≈ 12.0
+      print(s1.extrema(to: s2)?.distance ?? -1) // ≈ 12.0
+  }
+  ```
+- **Note:** to tell the two cases apart, a non-`nil` distance alongside a `nil`
+  `extrema(to:uvBounds1:uvBounds2:)` over the same bounds is the parallel one, and
+  `extremaSS(other:)` reports `isParallel` directly from an untrimmed computation.
 
 ---
 

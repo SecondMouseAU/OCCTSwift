@@ -446,7 +446,7 @@ typedef enum
 // --- GeomAPI ---
 // GeomAPI_ExtremaCurveCurve           → OCCTCurve3DMinDistanceToCurve, OCCTCurve3DExtrema
 // GeomAPI_ExtremaCurveSurface         → OCCTCurve3DDistanceToSurface
-// GeomAPI_ExtremaSurfaceSurface       → OCCTSurfaceExtrema
+// GeomAPI_ExtremaSurfaceSurface       → OCCTSurfaceExtrema, OCCTSurfaceMinDistanceToSurface
 // GeomAPI_IntCS                       → OCCTCurve3DIntersectSurface
 // GeomAPI_IntSS                       → OCCTSurfaceSurfaceIntersect
 // GeomAPI_PointsToBSpline             → OCCTCurve3DFitPoints, OCCTPointsToBSplineWithParams,

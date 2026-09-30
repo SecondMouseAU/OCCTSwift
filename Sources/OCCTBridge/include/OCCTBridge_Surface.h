@@ -519,6 +519,29 @@ int32_t OCCTSurfaceExtrema(OCCTSurfaceRef            s1,
                            double                    v2Max,
                            OCCTSurfaceExtremaResult* outResult);
 
+/// Minimum distance between two surfaces, from GeomAPI_ExtremaSurfaceSurface::LowerDistance().
+///
+/// The distance-only half of OCCTSurfaceExtrema, and the reason it exists separately: LowerDistance
+/// reads Extrema_ExtSS::mySqDist alone, which the analytic parallel branch DOES populate, so this
+/// answers for a parallel pair where OCCTSurfaceExtrema must refuse (#2876). Same shape as
+/// OCCTCurve3DMinDistanceToCurve and OCCTCurve3DDistanceToSurface, which are the other two members
+/// of the family and have always read LowerDistance() alone.
+///
+/// @param s1, s2 Surface handles
+/// @param u1Min..v2Max UV bounds for each surface
+/// @return The minimum distance, or -1.0 if either handle is null, the extrema computation found
+///         nothing (NbExtrema() == 0), or OCCT threw
+double OCCTSurfaceMinDistanceToSurface(OCCTSurfaceRef s1,
+                                       OCCTSurfaceRef s2,
+                                       double         u1Min,
+                                       double         u1Max,
+                                       double         v1Min,
+                                       double         v1Max,
+                                       double         u2Min,
+                                       double         u2Max,
+                                       double         v2Min,
+                                       double         v2Max);
+
 /// Check edge-on-surface consistency (max deviation between 3D curve and pcurve)
 /// @param shape Shape containing edges and faces
 /// @param outMaxDist Maximum distance found across all edge-face pairs
