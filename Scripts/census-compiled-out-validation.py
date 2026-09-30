@@ -2159,7 +2159,11 @@ def patches_not_applied(occt_src, paths=None):
     for path in paths:
         stem = os.path.basename(path)[: -len(".patch")]
         cache = {}
-        for rel, post in patch_postimages(open(path, encoding="utf-8").read()):
+        # errors="replace" on both sides, and on both sides for the same reason: OCCT carries a
+        # handful of Latin-1 bytes in comments, and a decode error here would be a traceback
+        # blaming the tool where the two texts still agree byte for byte.
+        patch_text = open(path, encoding="utf-8", errors="replace").read()
+        for rel, post in patch_postimages(patch_text):
             target = os.path.join(occt_src, rel)
             if rel not in cache:
                 try:
