@@ -79,7 +79,29 @@ reported `NCollection_Array1::at` as a standard-library survivor, on the reasoni
 checked accessor. It is not. `NCollection_Array1.hxx:510` and `:516` write
 `Standard_OutOfRange_Raise_if(theIndex >= mySize, "NCollection_Array1::at")`, the same macro
 `Value` and `SetValue` use, so `at` vanishes with the rest. There is no "safe accessor" on that
-class.
+class. **Re-checked 2026-09-30** against the same tree when #2858 proposed the claim a second time:
+both lines are unchanged, and `dynamic_cast` to a reference is still zero `.cxx` files.
+
+**One survivor the sweep did find and this page did not record: `std::get<T>` on a
+`std::variant`.** It throws `std::bad_variant_access`, no macro gates it, and it is not a
+`Standard_Failure`. Measured 2026-09-30: 213 uses across four files, and the ones that matter are
+the type accessors of `GeomAdaptor_Curve`, `GeomAdaptor_Surface` and `Geom2dAdaptor_Curve`, each
+written as a compiled-out guard followed by the unguarded access:
+
+```cpp
+gp_Circ GeomAdaptor_Curve::Circle() const
+{
+  Standard_NoSuchObject_Raise_if(myTypeCurve != GeomAbs_Circle, "...");  // gone
+  return std::get<gp_Circ>(myCurveData);                                 // throws instead
+}
+```
+
+So `Circle()`, `Ellipse()`, `Hyperbola()` and `Parabola()` on a curve of the wrong type refuse in
+this build after all, by a route their signature does not mention and their documented exception is
+not. **Today that costs nothing**, because the bridge is uniformly `catch (...)`: 3,628 blocks, and
+the only narrow clause is `occtRecordCaughtException`'s own classification ladder, which ends in a
+`catch (...)` arm. It is a trap for the first `catch (Standard_Failure&)` anybody writes, which is
+the same conclusion the `std::bad_alloc` paragraph above reaches by a different route.
 
 `gp_Ax2` is the case that shows it, and it is the case `CLAUDE.md` had wrong. `gp_Ax2.hxx` documents
 "Raises ConstructionError if theN and theVx are parallel". `gp_Ax2` holds no `_Raise_if` of its own:
@@ -136,9 +158,11 @@ SwiftPM compiles the bridge and once as cmake compiled the kernel):
 
 ## What the census measures, and what it found
 
-`Scripts/census-compiled-out-validation.py` has two channels and a committed derived map,
+`Scripts/census-compiled-out-validation.py` has four channels and a committed derived map,
 `Scripts/occt-raise-if-map.txt`. It is a census and not a gate: whether a given `catch` had another
-reason to exist is a reading. Measured 2026-09-29 against the `v4.0.0-kernel.2` pin.
+reason to exist is a reading. Channels one and two were measured 2026-09-29 against the
+`v4.0.0-kernel.2` pin; channels three and four and the depth qualifier were added by #2858 and
+measured 2026-09-30 against `v4.0.0-kernel.3`.
 
 **Channel one**, try blocks protecting a construction from `check-throwing-calls.py`'s
 caller-values vocabulary: 363 of the bridge's 3,608 try blocks are in that population, and
@@ -159,9 +183,18 @@ both cases where the fault is not in the class the map names: #2840's fault is i
 `NCollection_Sequence::Value`, not in `Extrema_ExtSS::Points`, and #2855's 4 MB out-of-bounds write
 happens in `NCollection_Array1`, not in `TDataStd_IntegerArray`. `NCollection` holds 135 of the map's
 inline sites and `math_` 128, so a class reading as protected because it reaches an inline check is
-the common case rather than the corner. **Do not use the map to conclude a site is safe.** #2858
-tracks the additions that would narrow this, and records that channel two's population is
-`StdFail_NotDone` only, 1 of the 28 exception kinds among the out-of-line sites.
+the common case rather than the corner. **Do not use the map to conclude a site is safe.**
+
+**#2858 gave that bias a number, and the number is the `inline-dead-at-depth` kind.** For every
+inline-checked class, `--write-table` now counts the OCCT out-of-line translation units that name
+it, and each one is a unit that expanded the same header with `No_Exception` defined. 100 of the
+104 inline-checked classes have at least one; `NCollection_Array1` has **1,151**, `gp_Vec` 736,
+`NCollection_List` 623, `gp_Dir` 602, `TopoDS` 600 and `NCollection_Sequence` 498. So read the
+verdict `live-inline` as "live where the bridge is the immediate caller", which is what the map's
+own wording always said and what nothing before this derived a population from. The count is an
+upper bound on call sites, because naming a class is not calling a guarded member, and it is blind
+to a typedef, because `TColgp_Array1OfPnt` never spells `NCollection_Array1`. Both directions are
+in the map header.
 
 **That number was 89 before the script was fixed, and the fix is the lesson.** The first version
 reused `check-throwing-calls.py`'s construction regex, which takes everything up to the next `;`, so
@@ -185,6 +218,14 @@ one site the scan could not attribute and 265 name no member at all, and of the 
 `TopoDSToStep_MakeShellBasedSurfaceModel`), none of which the bridge constructs. So the cost to the
 105 today is zero, and the number is in the output so the next reader does not have to re-derive that.
 
+**A second limitation of that column, and it is not about attribution: it is ACCESS-BLIND.** The
+scan finds a definition written `Class::Member`, and a `private` one is written exactly that way.
+`GeomAdaptor_Curve::LocalContinuity` and `Geom2dAdaptor_Curve::LocalContinuity` are private
+(`GeomAdaptor_Curve.hxx:273`, `Geom2dAdaptor_Curve.hxx:251`) and are in the column anyway, so any
+channel reading it will keep proposing a member no caller can reach. Stated in the map header
+beside the `<file-scope>` note, because a channel author who does not know it will spend the time
+twice (#2858).
+
 **Deriving that number found a defect behind it**, which is the argument for deriving it rather than
 leaving the limitation as a note. The scan's regex required at least one character before the
 qualified name, and OCCT writes every out-of-line constructor and destructor with the class name at
@@ -195,6 +236,51 @@ fix: 823 sites now, 524 of them in a `.hxx` where OCCT defines the member inside
 there is no `Class::` to find at all, against 281 in a `.cxx` or `.pxx` and 18 in a `.lxx`. Fixing the
 regex cut the unattributed rows from 514 to 332 and moved **no** number the census reports, which is
 itself the useful fact: the members column has one consumer, and channel one does not read it.
+
+**Channel three** (#2858), a caller-controlled index or dimension handed to a member whose only
+bound test was an out-of-line `Standard_OutOfRange`, `RangeError`, `DimensionError` or
+`DimensionMismatch` macro: **7 calls, all seven bound-checked**, which is PR #2870's ten guards
+seen from the other side. Channel two's population is `StdFail_NotDone` alone, 1 of the 28
+exception kinds among the 828 out-of-line sites, and all three defects the sweep proved sat
+outside it, which is why this channel exists.
+
+**A clean run here is a result rather than an absence, because the channel was calibrated against
+the defect it was written after.** Run over the two bridge files as they stood at `f846b34f^`, the
+commit before PR #2870, it reports all seven sites as `guard none`, and three of them
+`ASYMMETRIC`, naming `OCCTCurve2DBSplineGetPole`, `OCCTCurve2DBSplineSetPole` and
+`OCCTSurfaceBSplineGetPole` as the functions one screen away that do bound-check the same accessor
+name. That is exactly how #2859 was found by hand. **The asymmetry key is the member name and not
+the class**, and it has to be: the guarded side is `Geom2d_BSplineCurve`, whose own checks are
+literal throws, so that class is not in this channel's population at all and a (class, member) key
+makes the comparison impossible.
+
+Its edge is narrow and stated in the script's own output. An index reaching OCCT as anything but an
+integer parameter passed by value is outside it, and so is a container the bridge declares itself:
+a `TColStd_Array1OfReal` local expands `NCollection_Array1`'s check in the bridge's own unit, where
+it is live.
+
+**Channel four** (#2858), the `#ifndef No_Exception` code regions, which are a different defect
+from everything above: the dead region swallows the **condition** as well as the raise, so the
+check's own answer is discarded and the next statement runs on data the kernel knows is wrong. A
+census keyed on `_Raise_if` sites cannot tell that apart from "check gone, data still valid". Six
+files, derived rather than listed (a region is swallowing when, with directives and comments
+dropped, something remains that assigns) and committed as a literal table that
+`--verify-no-exception-regions` re-derives:
+
+| file | swallowed | status | named in the bridge |
+|---|---|---|---|
+| `GeomFill_BSplineCurves.cxx:282` | `bool IsOK =` | guarded bridge-side, PR #2849 | yes |
+| `GeomFill_BezierCurves.cxx:204` | `bool IsOK =` | guarded bridge-side, PR #2849 | yes |
+| `Convert_EllipseToBSplineCurve.cxx:126` | `Tol`, `delta` | open | yes |
+| `Convert_TorusToBSplineSurface.cxx:197` | `delta` | open | yes |
+| `Convert_SphereToBSplineSurface.cxx:195` | `delta` | open | yes |
+| `GeomFill_Profiler.cxx:334` | `int n = NbKnots()` | open | yes |
+
+The other 18 out-of-line files that name the symbol swallow nothing: 14 `#define No_Exception`
+themselves, which changes nothing because the whole kernel already has it, two print a diagnostic,
+and two hold an extra check that throws rather than a value the code goes on to read. All four of
+the open rows are reachable in the sense that matters least, that the bridge names the class; **no
+bridge call to any of them has been adjudicated**, and that is what #2884 is for.
 
 ## The build flag: a recorded decision, not an inherited default
 
@@ -231,6 +317,30 @@ SwiftPM gives `Sources/OCCTBridge/src/*.mm` nothing.
 **And the census says the flag would buy little.** Zero fabricated catches in channel one and one
 unguarded accessor in channel two is not the exposure profile that justifies a kernel-wide behaviour
 change; a guard at the site is cheaper, targeted, and works on the kernel we already ship.
+
+**Two measured cases where the flag would not have fixed the defect at all**, which strengthens
+that argument rather than weakening it. Both are from the #2801 sweep and both were re-checked
+against the pinned tree on 2026-09-30:
+
+- **`Adaptor3d_CurveOnSurface::BSpline()` faults on an input its compiled-out guard would have
+  passed.** The dead line is
+  `Standard_NoSuchObject_Raise_if(mySurface->GetType() != GeomAbs_Plane, ...)`
+  (`Adaptor3d_CurveOnSurface.cxx:1491`). When the support surface **is** a plane the check lets the
+  call through, and the next two lines are `myCurve->BSpline()` and `Bsp2d->NbPoles()`.
+  `Geom2dAdaptor_Curve::BSpline()` (`Geom2dAdaptor_Curve.cxx:1342`) has **no check of any kind** and
+  returns a null `Handle` on a non-BSpline curve, so the dereference is the fault and restoring the
+  macro does not reach it. Its 3D twin `GeomAdaptor_Curve::BSpline()` (`:1284`) has a literal
+  `throw`, which is the asymmetry rule 4 is about. Not a bridge finding: the bridge builds an
+  `Adaptor3d_CurveOnSurface` at three sites and calls no type accessor on one, and the three
+  consumer `.cxx` files were grepped for all seven accessors with zero hits.
+- **`math_Uzawa` writes out of bounds on a shape its guard does not describe.** `Errinit` is sized
+  `(1, Cont.ColNumber())` (`math_Uzawa.cxx:47`, `:67`) and written `Errinit(i)` for `i` up to
+  `Cont.RowNumber()` (`:101`). The `Standard_DimensionError_Raise_if` at `:94` relates
+  `Secont.Length()` and `Nce + Nci` to the row count and never relates rows to columns, so
+  restoring it catches nothing on the crashing input. The file also `#define`s
+  `No_Standard_RangeError`, `No_Standard_OutOfRange` and `No_Standard_DimensionError` at `:27-29`,
+  which is the other half: those checks are gone from a **Debug** kernel too, whatever the flag
+  says (#2860).
 
 **What would settle it**, if somebody wants to: build the native kernel both ways (about 65 minutes
 each, three slices), run the full `swift test` against each and diff the results, which measures the

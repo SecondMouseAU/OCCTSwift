@@ -375,6 +375,18 @@ OCCTSurfaceRef OCCTSurfaceBezierFill4(OCCTCurve3DRef c1,
                                       OCCTCurve3DRef c4,
                                       int32_t        fillStyle);
 
+/// Create a Bezier surface by filling 3 Bezier boundary curves, closing the fourth side with a
+/// straight chord between the far ends of c1 and c3 (GeomFill_BezierCurves.cxx:304-335).
+/// @param c1 First boundary curve, adjacent to c2 (must be a Bezier curve)
+/// @param c2 The MIDDLE boundary curve, adjacent to both c1 and c3
+/// @param c3 Third boundary curve, adjacent to c2
+/// @param fillStyle Filling style: 0=stretch, 1=coons, 2=curved
+/// @return Surface reference, or NULL if c2 is not adjacent to both others (#2841)
+OCCTSurfaceRef OCCTSurfaceBezierFill3(OCCTCurve3DRef c1,
+                                      OCCTCurve3DRef c2,
+                                      OCCTCurve3DRef c3,
+                                      int32_t        fillStyle);
+
 /// Create a Bezier surface by filling 2 Bezier boundary curves.
 /// @param c1, c2 The two boundary curves (must be Bezier curves)
 /// @param fillStyle Filling style: 0=stretch, 1=coons, 2=curved
@@ -454,6 +466,18 @@ bool OCCTSurfaceIsDegenerated(OCCTSurfaceRef surface,
 /// @return Surface handle, or NULL on failure
 OCCTSurfaceRef OCCTSurfaceFillBSpline2Curves(OCCTCurve3DRef curve1,
                                              OCCTCurve3DRef curve2,
+                                             int32_t        fillStyle);
+
+/// Create a BSpline surface from 3 boundary curves, closing the fourth side with a straight
+/// chord between the far ends of c1 and c3 (GeomFill_BSplineCurves.cxx:396-439).
+/// @param c1 First boundary curve, adjacent to c2
+/// @param c2 The MIDDLE boundary curve, adjacent to both c1 and c3
+/// @param c3 Third boundary curve, adjacent to c2
+/// @param fillStyle 0=Stretch, 1=Coons, 2=Curved
+/// @return Surface handle, or NULL if c2 is not adjacent to both others (#2841)
+OCCTSurfaceRef OCCTSurfaceFillBSpline3Curves(OCCTCurve3DRef c1,
+                                             OCCTCurve3DRef c2,
+                                             OCCTCurve3DRef c3,
                                              int32_t        fillStyle);
 
 /// Create a BSpline surface from 4 boundary curves

@@ -15,6 +15,16 @@
 #                    case; the members column names the classes delegated to.
 #   inherited-live   a transitive base class holds a live site, so a bridge call through
 #                    this class can still throw. The members column names that base.
+#   inline-dead-at-depth  the count of OCCT out-of-line translation units that NAME an
+#                    inline-checked class, and so expand its inline check with
+#                    No_Exception defined. Every one of them is a path on which that
+#                    check is COMPILED OUT, which is the qualifier inline-raise's word
+#                    "live" leaves out: live in whichever unit expands it, and the
+#                    bridge is that unit only when the bridge is the immediate caller.
+#                    The members column names the OCCT packages doing the naming, the
+#                    top few by unit count, with a +N-more token where it is cut. An
+#                    upper bound on call sites (naming is not calling) and blind to a
+#                    typedef (TColgp_Array1OfPnt never spells NCollection_Array1).
 #
 # A class the walk examined and found no site of any kind gets no row. The packages line
 # below is what separates that from a name the walk never saw, which is uncertainty rather
@@ -27,17 +37,23 @@
 # a StdFail_NotDone site recorded <file-scope> is outside its population; the count below
 # is how much of the map that covers.
 #
+# The members column is also ACCESS-BLIND: it names a private member no caller can reach
+# as readily as a public one. GeomAdaptor_Curve::LocalContinuity and its 2D twin are
+# private (GeomAdaptor_Curve.hxx:273, Geom2dAdaptor_Curve.hxx:251) and are in the column
+# anyway, so any channel reading it will keep proposing them (#2858).
+#
 # Regenerate after an OCCT version bump or a carried patch that touches a raise site, and
 # check the totals below moved the way the change predicts.
 #
 # totals: inline-raise       462 site(s) in  104 class(es)
 # totals: outofline-raise    828 site(s) in  284 class(es)
 # totals: inline-throw       501 site(s) in  212 class(es)
-# totals: outofline-throw   3763 site(s) in  829 class(es)
+# totals: outofline-throw   3764 site(s) in  830 class(es)
 # totals: outofline-delegated  5978 site(s) in  926 class(es)
 # totals: inherited-live    2587 site(s) in 2587 class(es)
+# totals: inline-dead-at-depth  9913 site(s) in  100 class(es)
 #
-# member attribution: 332 of 4942 row(s) carry at least one <file-scope> site, 265 name no member at all
+# member attribution: 332 of 5043 row(s) carry at least one <file-scope> site, 265 name no member at all
 #
 # packages examined: 404
 # packages: AIS,APIHeaderSection,Adaptor2d,Adaptor3d,AdvApp2Var,AdvApprox,AppBlend,AppCont,AppDef,AppParCurves,AppStd,AppStdL
@@ -105,6 +121,7 @@ AIS_Manipulator inline-raise 1 Standard_ProgramError <file-scope>
 AIS_Manipulator outofline-raise 2 Standard_ProgramError Object,SetPart
 AIS_Manipulator outofline-throw 1 Standard_ProgramError <file-scope>
 AIS_Manipulator outofline-delegated 16 Standard_ConstructionError,Standard_OutOfRange,gp_VectorWithNullMagnitude Poly_Triangle,gp_Dir,gp_Trsf,gp_Vec
+AIS_Manipulator inline-dead-at-depth 2 Standard_ProgramError AIS,ViewerTest
 AIS_ManipulatorOwner inherited-live 1 Standard_ProgramError Standard_Transient
 AIS_MediaPlayer inherited-live 1 Standard_NotImplemented SelectMgr_SelectableObject
 AIS_MultipleConnectedInteractive inherited-live 1 Standard_NotImplemented SelectMgr_SelectableObject
@@ -214,6 +231,7 @@ Aspect_GenId outofline-throw 2 Aspect_IdentDefinitionError Aspect_GenId,Next
 Aspect_GraphicDeviceDefinitionError inline-throw 1 Aspect_GraphicDeviceDefinitionError <file-scope>
 Aspect_Grid inherited-live 1 Standard_ProgramError Standard_Transient
 Aspect_GridParams inline-raise 6 Standard_NegativeValue <file-scope>
+Aspect_GridParams inline-dead-at-depth 5 Standard_NegativeValue Aspect,OpenGl,V3d,ViewerTest
 Aspect_IdentDefinitionError inline-throw 1 Aspect_IdentDefinitionError <file-scope>
 Aspect_NeutralWindow inherited-live 1 Standard_ProgramError Standard_Transient
 Aspect_OpenVRSession outofline-throw 4 Standard_ProgramError GetAnalogActionData,GetDigitalActionData,GetPoseActionDataForNextFrame,triggerHapticVibrationAction
@@ -298,6 +316,7 @@ BRepBuilderAPI_FastSewing inline-raise 3 Standard_RangeError <file-scope>
 BRepBuilderAPI_FastSewing outofline-raise 4 Standard_ProgramError CreateTopologicalEdge,CreateTopologicalFace,CreateTopologicalWire,UpdateEdgeInfo
 BRepBuilderAPI_FastSewing outofline-throw 2 Standard_OutOfRange <file-scope>,CreateTopologicalEdge
 BRepBuilderAPI_FastSewing outofline-delegated 10 Standard_ConstructionError,Standard_OutOfRange,Standard_OutOfRange_Always Standard_OutOfRange,gp_Dir2d
+BRepBuilderAPI_FastSewing inline-dead-at-depth 2 Standard_RangeError BRepBuilderAPI,BRepTest
 BRepBuilderAPI_FindPlane outofline-delegated 2 Standard_ConstructionError,gp_VectorWithNullMagnitude gp_Vec
 BRepBuilderAPI_GTransform inherited-live 1 Standard_NullObject BRepBuilderAPI_ModifyShape
 BRepBuilderAPI_MakeEdge inherited-live 1 StdFail_NotDone BRepBuilderAPI_Command
@@ -399,6 +418,7 @@ BRepGProp_VinertGK outofline-delegated 3 Standard_ConstructionError,Standard_Out
 BRepGProp_VinertGK inherited-live 1 Standard_DomainError GProp_GProps
 BRepGraphInc_BoundaryBuilder outofline-delegated 7 Standard_ConstructionError,Standard_OutOfRange gp_Dir2d
 BRepGraphInc_ParityOrientation inline-raise 1 Standard_ProgramError <file-scope>
+BRepGraphInc_ParityOrientation inline-dead-at-depth 1 Standard_ProgramError BRepGraph
 BRepGraphInc_Populate outofline-delegated 1 Standard_OutOfRange Poly_Triangle
 BRepGraphInc_PopulateRegression_Test outofline-delegated 2 Standard_ConstructionError,Standard_OutOfRange,gp_VectorWithNullMagnitude gp_Dir,gp_Vec
 BRepGraphInc_Test outofline-delegated 9 Standard_ConstructionError,Standard_OutOfRange,gp_VectorWithNullMagnitude gp_Dir2d,gp_Vec
@@ -430,6 +450,7 @@ BRepGraph_LayerParametric inherited-live 1 Standard_ProgramError BRepGraph_Layer
 BRepGraph_LayerRegistry outofline-raise 2 Standard_OutOfRange,Standard_ProgramError registerLayerLocked
 BRepGraph_LayerTopoSupplement outofline-throw 3 Standard_ProgramError Validate
 BRepGraph_MutGuard inline-raise 3 Standard_ProgramError <file-scope>
+BRepGraph_MutGuard inline-dead-at-depth 23 Standard_ProgramError BRepGraph,BRepGraphInc
 BRepGraph_ParentExplorer_Test outofline-delegated 5 Standard_ConstructionError,Standard_OutOfRange,gp_VectorWithNullMagnitude gp_Dir,gp_Vec
 BRepGraph_PermissionUpdate_Test outofline-delegated 5 Standard_ConstructionError,Standard_OutOfRange,gp_VectorWithNullMagnitude gp_Dir,gp_Vec
 BRepGraph_RelatedIterator_Test outofline-delegated 1 Standard_ConstructionError,gp_VectorWithNullMagnitude gp_Vec
@@ -828,8 +849,10 @@ CDM_MetaData inherited-live 1 Standard_ProgramError Standard_Transient
 CDM_Reference inherited-live 1 Standard_ProgramError Standard_Transient
 CPnts_AbscissaPoint inline-raise 1 StdFail_NotDone Parameter
 CPnts_AbscissaPoint outofline-throw 4 Standard_ConstructionError Length
+CPnts_AbscissaPoint inline-dead-at-depth 2 StdFail_NotDone CPnts,GCPnts
 CPnts_UniformDeflection inline-raise 3 Standard_OutOfRange,StdFail_NotDone Next,Point,Value
 CPnts_UniformDeflection outofline-delegated 4 Standard_ConstructionError,gp_VectorWithNullMagnitude gp_Vec
+CPnts_UniformDeflection inline-dead-at-depth 2 Standard_OutOfRange,StdFail_NotDone CPnts,GCPnts
 CSLib outofline-delegated 5 Standard_ConstructionError,Standard_OutOfRange gp_Dir
 CSLib_Test outofline-delegated 13 Standard_ConstructionError,Standard_OutOfRange,gp_VectorWithNullMagnitude gp_Dir,gp_Vec
 ChFi2d_AnaFilletAlgo outofline-throw 8 Standard_Failure,Standard_TypeMismatch Init
@@ -1224,6 +1247,7 @@ FairCurve_Batten inline-throw 1 Standard_NegativeValue SetHeight
 FairCurve_Batten outofline-throw 4 Standard_NegativeValue,Standard_NullValue FairCurve_Batten,SetP1,SetP2
 FairCurve_EnergyOfMVC outofline-raise 1 Standard_DomainError FairCurve_EnergyOfMVC
 FairCurve_MinimalVariation inline-raise 1 Standard_DomainError SetPhysicalRatio
+FairCurve_MinimalVariation inline-dead-at-depth 3 Standard_DomainError DrawFairCurve,FairCurve,GeometryTest
 FairCurve_Newton outofline-delegated 1 StdFail_NotDone math_NewtonMinimum
 FairCurve_Newton inherited-live 1 StdFail_NotDone math_NewtonMinimum
 FilletSurf_Builder outofline-throw 19 Standard_OutOfRange,StdFail_NotDone CurveOnFace1,CurveOnFace2,EndSectionStatus,FirstParameter,LastParameter,NbSection,NbSurface,PCurve1OnFillet,PCurve2OnFillet,PCurveOnFace1,PCurveOnFace2,Section,StartSectionStatus,SupportFace1,SupportFace2,SurfaceFillet,TolApp3d
@@ -1239,13 +1263,17 @@ Full inherited-live 1 Standard_ProgramError Standard_Transient
 GCPnts_AbscissaPoint outofline-throw 1 Standard_ConstructionError compute
 GCPnts_AbscissaPoint_Test outofline-delegated 5 Standard_ConstructionError,Standard_OutOfRange gp_Dir
 GCPnts_QuasiUniformAbscissa inline-raise 2 StdFail_NotDone <file-scope>
+GCPnts_QuasiUniformAbscissa inline-dead-at-depth 5 StdFail_NotDone BRepExtrema,BRepTest,GCPnts,ProjLib,ShapeAnalysis
 GCPnts_QuasiUniformDeflection inline-raise 3 StdFail_NotDone <file-scope>
 GCPnts_QuasiUniformDeflection outofline-raise 1 StdFail_NotDone Value
 GCPnts_QuasiUniformDeflection outofline-delegated 1 Standard_ConstructionError,gp_VectorWithNullMagnitude gp_Vec
+GCPnts_QuasiUniformDeflection inline-dead-at-depth 15 StdFail_NotDone +3-more,BRepFeat,BRepLib,BRepOffset,BRepTopAdaptor,GeomFill,IntTools,StdPrs,VrmlConverter
 GCPnts_TangentialDeflection outofline-raise 2 Standard_ConstructionError ArcAngularStep,initialize
 GCPnts_UniformAbscissa inline-raise 3 StdFail_NotDone <file-scope>
+GCPnts_UniformAbscissa inline-dead-at-depth 8 StdFail_NotDone BRepBuilderAPI,BRepFill,GCPnts,GeometryTest,PrsDim,QABugs
 GCPnts_UniformDeflection inline-raise 3 StdFail_NotDone <file-scope>
 GCPnts_UniformDeflection outofline-raise 1 StdFail_NotDone Value
+GCPnts_UniformDeflection inline-dead-at-depth 4 StdFail_NotDone DrawTrSurf,GCPnts,QABugs
 GC_MakeArcOfCircle outofline-raise 1 StdFail_NotDone Value
 GC_MakeArcOfCircle outofline-delegated 1 Standard_ConstructionError gp_Circ
 GC_MakeArcOfCircle2d outofline-raise 1 StdFail_NotDone Value
@@ -1486,6 +1514,7 @@ Geom2dHatch_Elements outofline-delegated 1 Standard_ConstructionError,Standard_O
 Geom2dHatch_Elements_Test outofline-delegated 1 Standard_ConstructionError,Standard_OutOfRange gp_Dir2d
 Geom2dHatch_Hatcher inline-raise 13 Standard_NoSuchObject,Standard_OutOfRange,StdFail_NotDone Element,ElementCurve,Hatching,HatchingCurve,IsDone,NbDomains,NbPoints,Point,Status,TrimDone,TrimFailed
 Geom2dHatch_Hatcher outofline-raise 9 Standard_NoSuchObject,Standard_OutOfRange,StdFail_NotDone ComputeDomains,Domain,RemElement,RemHatching,Trim
+Geom2dHatch_Hatcher inline-dead-at-depth 6 Standard_NoSuchObject,Standard_OutOfRange,StdFail_NotDone BOPTools,ChFi3d,DBRep,Geom2dHatch,HLRTopoBRep,IntTools
 Geom2dHatch_Intersector outofline-delegated 1 Standard_ConstructionError,Standard_OutOfRange gp_Dir2d
 Geom2dHatch_Intersector inherited-live 1 StdFail_NotDone IntRes2d_Intersection
 Geom2dHatch_Intersector_Test outofline-delegated 2 Standard_ConstructionError,Standard_OutOfRange gp_Dir2d
@@ -1743,6 +1772,7 @@ GeomInt_Gradient_BFGSOfMyGradientbisOfTheComputeLineOfWLApprox inherited-live 1 
 GeomInt_Gradient_BFGSOfMyGradientbisOfTheComputeLineOfWLApprox_0 outofline-delegated 1 StdFail_NotDone math_BFGS
 GeomInt_IntSS inline-raise 1 StdFail_NotDone NbBoundaries
 GeomInt_IntSS outofline-raise 7 Standard_OutOfRange,StdFail_NotDone Boundary,HasLineOnS1,HasLineOnS2,Line,LineOnS1,LineOnS2
+GeomInt_IntSS inline-dead-at-depth 15 StdFail_NotDone +1-more,BRepOffset,ChFi3d,Draft,GeomInt,GeometryTest,IntTools,LocOpe,QABugs
 GeomInt_IntSS_1 outofline-throw 1 Standard_ConstructionError <file-scope>
 GeomInt_IntSS_1 outofline-delegated 8 Standard_ConstructionError,Standard_OutOfRange gp_Dir2d
 GeomInt_LineConstructor inline-throw 2 StdFail_NotDone NbParts,Part
@@ -1751,10 +1781,12 @@ GeomInt_LineTool outofline-raise 2 StdFail_NotDone LowerDistance,LowerDistancePa
 GeomInt_LineTool outofline-delegated 2 Standard_ConstructionError gp_Vec2d
 GeomLProp outofline-throw 1 Standard_Failure Continuity
 GeomLProp_CLProps inline-raise 3 Standard_OutOfRange <file-scope>
+GeomLProp_CLProps inline-dead-at-depth 18 Standard_OutOfRange +5-more,BOPAlgo,BRepClass,BRepFill,Bisector,ChFi3d,DrawTrSurf,GeomFill,GeomLProp
 GeomLProp_CLProps2d_Test outofline-delegated 3 Standard_ConstructionError,Standard_OutOfRange gp_Dir2d
 GeomLProp_CurAndInf2d inherited-live 1 Standard_OutOfRange LProp_CurAndInf
 GeomLProp_CurAndInf2d_Test outofline-delegated 4 Standard_ConstructionError,Standard_OutOfRange gp_Dir2d
 GeomLProp_SLProps inline-raise 3 Standard_OutOfRange <file-scope>
+GeomLProp_SLProps inline-dead-at-depth 12 Standard_OutOfRange +1-more,BRepFill,BRepLib,DsgPrs,GeomConvert,GeomPlate,GeomToIGES,GeomliteTest,LocalAnalysis
 GeomLProp_SurfaceUtils inline-throw 6 LProp_NotDefined <file-scope>
 GeomLib outofline-throw 6 Standard_ConstructionError,Standard_Failure,Standard_NotImplemented <file-scope>,AdjustExtremity,ExtendCurveToPoint,SameRange,To3d
 GeomLib outofline-delegated 2 Standard_ConstructionError,Standard_OutOfRange gp_Dir2d,gp_Vec2d
@@ -1917,6 +1949,7 @@ Graphic3d_ArrayOfPrimitives inline-raise 21 Standard_OutOfRange,Standard_TypeMis
 Graphic3d_ArrayOfPrimitives outofline-raise 4 Standard_OutOfRange AddBound,AddEdge
 Graphic3d_ArrayOfPrimitives outofline-throw 3 Standard_TypeMismatch AddPolylineEdges,AddTriangleFanEdges,AddTriangleStripEdges
 Graphic3d_ArrayOfPrimitives outofline-delegated 1 Standard_OutOfRange Graphic3d_MutableIndexBuffer
+Graphic3d_ArrayOfPrimitives inline-dead-at-depth 19 Standard_OutOfRange,Standard_TypeMismatch +2-more,AIS,DsgPrs,Graphic3d,MeshVS,OpenGl,Prs3d,PrsDim,StdPrs
 Graphic3d_ArrayOfQuadrangleStrips inherited-live 1 Standard_OutOfRange,Standard_TypeMismatch Graphic3d_ArrayOfPrimitives
 Graphic3d_ArrayOfQuadrangles inherited-live 1 Standard_OutOfRange,Standard_TypeMismatch Graphic3d_ArrayOfPrimitives
 Graphic3d_ArrayOfSegments inherited-live 1 Standard_OutOfRange,Standard_TypeMismatch Graphic3d_ArrayOfPrimitives
@@ -1951,6 +1984,7 @@ Graphic3d_Flipper inherited-live 1 Standard_ProgramError Standard_Transient
 Graphic3d_Flipper_Test outofline-delegated 16 Standard_ConstructionError,Standard_OutOfRange gp_Dir
 Graphic3d_FrameStats inherited-live 1 Standard_ProgramError Standard_Transient
 Graphic3d_GraduatedTrihedron inline-raise 2 Standard_OutOfRange <file-scope>
+Graphic3d_GraduatedTrihedron inline-dead-at-depth 4 Standard_OutOfRange OpenGl,V3d,ViewerTest
 Graphic3d_GraphicDriver outofline-throw 1 Standard_OutOfRange ZLayerSettings
 Graphic3d_GraphicDriver outofline-delegated 1 Standard_OutOfRange_Always Standard_OutOfRange
 Graphic3d_GraphicDriverFactory inherited-live 1 Standard_ProgramError Standard_Transient
@@ -1968,6 +2002,7 @@ Graphic3d_MaterialDefinitionError inline-throw 1 Graphic3d_MaterialDefinitionErr
 Graphic3d_MediaTexture inherited-live 1 Standard_OutOfRange Graphic3d_Texture2D
 Graphic3d_MediaTextureSet inherited-live 1 Standard_ProgramError Standard_Transient
 Graphic3d_MutableIndexBuffer inline-raise 1 Standard_OutOfRange <file-scope>
+Graphic3d_MutableIndexBuffer inline-dead-at-depth 2 Standard_OutOfRange Graphic3d
 Graphic3d_PBRMaterial outofline-raise 5 Graphic3d_MaterialDefinitionError SetAlpha,SetEmission,SetIOR,SetMetallic,SetRoughness
 Graphic3d_PBRMaterial outofline-throw 1 Standard_ProgramError GenerateEnvLUT
 Graphic3d_PresentationAttributes inherited-live 1 Standard_ProgramError Standard_Transient
@@ -2011,6 +2046,7 @@ HLRAlgo_PolyInternalNode inherited-live 1 Standard_ProgramError Standard_Transie
 HLRAlgo_PolyShellData inherited-live 1 Standard_ProgramError Standard_Transient
 HLRAlgo_Projector inline-raise 1 Standard_NoSuchObject Focus
 HLRAlgo_Projector outofline-delegated 3 Standard_ConstructionError,Standard_OutOfRange,gp_VectorWithNullMagnitude gp_Dir,gp_Vec
+HLRAlgo_Projector inline-dead-at-depth 17 Standard_NoSuchObject +2-more,DBRep,HLRAlgo,HLRAppli,HLRBRep,HLRTest,HLRTopoBRep,QABugs,StdPrs
 HLRAlgo_WiresBlock inherited-live 1 Standard_ProgramError Standard_Transient
 HLRAppli_ReflectLines outofline-delegated 1 Standard_NoSuchObject HLRAlgo_Projector
 HLRBRep_Algo inherited-live 1 Standard_ProgramError Standard_Transient
@@ -2045,6 +2081,7 @@ HLRTopoBRep_DSFiller outofline-throw 1 Standard_ProgramError InsertFace
 HLRTopoBRep_OutLiner inherited-live 1 Standard_ProgramError Standard_Transient
 HShape inherited-live 1 Standard_ProgramError Standard_Transient
 HatchGen_Domain inline-raise 2 Standard_DomainError FirstPoint,SecondPoint
+HatchGen_Domain inline-dead-at-depth 7 Standard_DomainError BOPTools,ChFi3d,DBRep,Geom2dHatch,HLRTopoBRep,HatchGen
 Hatch_Hatcher outofline-throw 5 Standard_OutOfRange Coordinate,End,EndIndex,Start,StartIndex
 Hatch_Hatcher outofline-delegated 5 Standard_OutOfRange_Always Standard_OutOfRange
 HeaderSection_FileDescription inherited-live 1 Standard_ProgramError Standard_Transient
@@ -2588,6 +2625,7 @@ IntWalk_IWalking inline-throw 4 StdFail_NotDone NbLines,NbSinglePnts,SinglePnt,V
 IntWalk_PWalking inline-raise 1 Standard_OutOfRange <file-scope>
 IntWalk_PWalking inline-throw 7 StdFail_NotDone IsClosed,Line,NbPoints,TangentAtFirst,TangentAtLast,TangentAtLine,Value
 IntWalk_PWalking outofline-delegated 3 Standard_ConstructionError,Standard_OutOfRange gp_Dir2d,gp_Vec2d
+IntWalk_PWalking inline-dead-at-depth 3 Standard_OutOfRange ChFi3d,IntPatch,IntWalk
 Integer inherited-live 1 Standard_ProgramError Standard_Transient
 Interface_Check outofline-throw 3 Standard_OutOfRange Fail,InfoMsg,Warning
 Interface_Check outofline-delegated 3 Standard_OutOfRange_Always Standard_OutOfRange
@@ -2774,24 +2812,33 @@ MoniTool_TypedValue outofline-throw 8 Standard_ConstructionError AddEnum,AddEnum
 NCollection_AccAllocator outofline-throw 1 Standard_ProgramError Free
 NCollection_AliasedArray inline-raise 8 Standard_OutOfRange,Standard_TypeMismatch <file-scope>
 NCollection_AliasedArray inline-throw 8 Standard_DimensionMismatch,Standard_OutOfMemory,Standard_RangeError <file-scope>
+NCollection_AliasedArray inline-dead-at-depth 2 Standard_OutOfRange,Standard_TypeMismatch Poly
 NCollection_AlignedAllocator inherited-live 1 Standard_ProgramError Standard_Transient
 NCollection_Array1 inline-raise 9 Standard_DimensionMismatch,Standard_OutOfRange,Standard_RangeError <file-scope>
+NCollection_Array1 inline-dead-at-depth 1151 Standard_DimensionMismatch,Standard_OutOfRange,Standard_RangeError +223-more,BRepFill,Convert,Expr,GccAna,GeomFill,GeomGridEval,RWStepAP214,RWStepVisual
 NCollection_Array2 inline-raise 6 Standard_DimensionMismatch,Standard_OutOfRange,Standard_RangeError <file-scope>
+NCollection_Array2 inline-dead-at-depth 198 Standard_DimensionMismatch,Standard_OutOfRange,Standard_RangeError +66-more,BSplSLib,Convert,FEmTool,Geom,GeomConvert,GeomFill,GeomGridEval,RWStepGeom
 NCollection_BaseAllocator inherited-live 1 Standard_ProgramError Standard_Transient
 NCollection_BaseList outofline-raise 6 Standard_NoSuchObject PInsertAfter,PInsertBefore,PRemove,PRemoveFirst
 NCollection_BaseMap inline-raise 1 Standard_OutOfRange <file-scope>
+NCollection_BaseMap inline-dead-at-depth 2 Standard_OutOfRange NCollection,Poly
 NCollection_BaseSequence outofline-raise 5 Standard_DomainError,Standard_OutOfRange PExchange,PSplit,RemoveSeq
 NCollection_BaseSequence outofline-throw 1 Standard_OutOfRange PInsertAfter
 NCollection_BaseSequence outofline-delegated 1 Standard_OutOfRange_Always Standard_OutOfRange
 NCollection_Buffer inherited-live 1 Standard_ProgramError Standard_Transient
 NCollection_DataMap inline-raise 4 Standard_NoSuchObject,Standard_OutOfRange <file-scope>
 NCollection_DataMap inline-throw 2 Standard_NoSuchObject <file-scope>
+NCollection_DataMap inline-dead-at-depth 375 Standard_NoSuchObject,Standard_OutOfRange +117-more,AIS,BOPAlgo,BRepGraph,ShapeFix,TopOpeBRepBuild,TopOpeBRepDS,TopOpeBRepTool,TopoDSToStep
 NCollection_DoubleMap inline-raise 4 Standard_NoSuchObject,Standard_OutOfRange <file-scope>
 NCollection_DoubleMap inline-throw 4 Standard_MultiplyDefined,Standard_NoSuchObject <file-scope>
+NCollection_DoubleMap inline-dead-at-depth 15 Standard_NoSuchObject,Standard_OutOfRange BinMFunction,IVtkDraw,NCollection,QABugs,TDF,TFunction,ViewerTest
 NCollection_DynamicArray inline-raise 11 Standard_OutOfRange <file-scope>
+NCollection_DynamicArray inline-dead-at-depth 136 Standard_OutOfRange +50-more,AIS,BOPAlgo,BRepExtrema,BRepGraph,BRepGraphInc,BRepOffset,OpenGl,SelectMgr
 NCollection_FlatDataMap inline-raise 3 Standard_OutOfRange <file-scope>
 NCollection_FlatDataMap inline-throw 2 Standard_NoSuchObject <file-scope>
+NCollection_FlatDataMap inline-dead-at-depth 8 Standard_OutOfRange BRepGraph,NCollection
 NCollection_FlatMap inline-raise 1 Standard_OutOfRange <file-scope>
+NCollection_FlatMap inline-dead-at-depth 14 Standard_OutOfRange BRepGraph,BRepGraphInc,NCollection
 NCollection_HArray1 inherited-live 1 Standard_DimensionMismatch,Standard_OutOfRange,Standard_RangeError NCollection_Array1
 NCollection_HArray2 inherited-live 1 Standard_DimensionMismatch,Standard_OutOfRange,Standard_RangeError NCollection_Array2
 NCollection_HSequence inherited-live 1 Standard_NoSuchObject,Standard_OutOfRange NCollection_Sequence
@@ -2799,22 +2846,32 @@ NCollection_HeapAllocator outofline-throw 1 Standard_OutOfMemory Allocate
 NCollection_IncAllocator inherited-live 1 Standard_ProgramError Standard_Transient
 NCollection_IndexedDataMap inline-raise 19 Standard_NoSuchObject,Standard_OutOfRange <file-scope>
 NCollection_IndexedDataMap inline-throw 3 Standard_DomainError,Standard_NoSuchObject <file-scope>
+NCollection_IndexedDataMap inline-dead-at-depth 190 Standard_NoSuchObject,Standard_OutOfRange +67-more,BOPAlgo,BRepFill,BRepOffset,LocOpe,TopOpeBRep,TopOpeBRepBuild,TopOpeBRepTool,Transfer
 NCollection_IndexedMap inline-raise 10 Standard_NoSuchObject,Standard_OutOfRange <file-scope>
 NCollection_IndexedMap inline-throw 1 Standard_DomainError <file-scope>
+NCollection_IndexedMap inline-dead-at-depth 251 Standard_NoSuchObject,Standard_OutOfRange +70-more,BOPAlgo,BRepOffset,BinMDataStd,BinMDataXtd,BinMXCAFDoc,TopOpeBRep,TopOpeBRepBuild,TopOpeBRepTool
 NCollection_LinearVector inline-raise 13 Standard_OutOfMemory,Standard_OutOfRange <file-scope>
+NCollection_LinearVector inline-dead-at-depth 94 Standard_OutOfMemory,Standard_OutOfRange +18-more,BOPDS,BRepGraph,BRepGraphInc,BRepMesh,GeomFill,OpenGl,QABugs,RWGltf
 NCollection_List inline-raise 4 Standard_NoSuchObject <file-scope>
+NCollection_List inline-dead-at-depth 623 Standard_NoSuchObject +133-more,BOPAlgo,BOPTest,BRepOffsetAPI,LocOpe,TopOpeBRep,TopOpeBRepBuild,TopOpeBRepDS,TopOpeBRepTool
 NCollection_Map inline-raise 3 Standard_NoSuchObject,Standard_OutOfRange <file-scope>
+NCollection_Map inline-dead-at-depth 306 Standard_NoSuchObject,Standard_OutOfRange +76-more,BOPAlgo,BRepGraph,DNaming,LocOpe,StepTidy,TNaming,TopOpeBRepBuild,TopOpeBRepTool
 NCollection_Mat3 inline-throw 1 Standard_ConstructionError <file-scope>
 NCollection_Mat4 inline-throw 1 Standard_ConstructionError <file-scope>
 NCollection_OrderedDataMap inline-raise 4 Standard_NoSuchObject,Standard_OutOfRange <file-scope>
 NCollection_OrderedDataMap inline-throw 8 Standard_NoSuchObject <file-scope>
+NCollection_OrderedDataMap inline-dead-at-depth 1 Standard_NoSuchObject,Standard_OutOfRange NCollection
 NCollection_OrderedMap inline-raise 3 Standard_NoSuchObject,Standard_OutOfRange <file-scope>
 NCollection_OrderedMap inline-throw 2 Standard_NoSuchObject <file-scope>
+NCollection_OrderedMap inline-dead-at-depth 1 Standard_NoSuchObject,Standard_OutOfRange NCollection
 NCollection_PackedMap inline-raise 1 Standard_NoSuchObject <file-scope>
+NCollection_PackedMap inline-dead-at-depth 1 Standard_NoSuchObject NCollection
 NCollection_Sequence inline-raise 30 Standard_NoSuchObject,Standard_OutOfRange <file-scope>
+NCollection_Sequence inline-dead-at-depth 498 Standard_NoSuchObject,Standard_OutOfRange +141-more,AIS,BRepFill,ChFi3d,GeomFill,IFSelect,IntPatch,ShapeUpgrade,XCAFDoc
 NCollection_Shared inherited-live 1 Standard_ProgramError Standard_Transient
 NCollection_SparseArray inherited-live 1 Standard_OutOfRange NCollection_SparseArrayBase
 NCollection_SparseArrayBase inline-raise 1 Standard_OutOfRange <file-scope>
+NCollection_SparseArrayBase inline-dead-at-depth 1 Standard_OutOfRange NCollection
 NCollection_WinHeapAllocator outofline-throw 1 Standard_OutOfMemory Allocate
 NLPlate_HGPPConstraint inherited-live 1 Standard_ProgramError Standard_Transient
 NLPlate_HPG0Constraint inherited-live 1 Standard_ProgramError Standard_Transient
@@ -2946,9 +3003,11 @@ Poly outofline-delegated 1 Standard_OutOfRange Poly_Triangle
 Poly_ArrayOfNodes inline-raise 2 Standard_OutOfRange SetValue,Value
 Poly_ArrayOfNodes inline-throw 1 Standard_ProgramError <file-scope>
 Poly_ArrayOfNodes outofline-throw 1 Standard_DimensionMismatch Assign
+Poly_ArrayOfNodes inline-dead-at-depth 2 Standard_OutOfRange Poly
 Poly_ArrayOfUVNodes inline-raise 2 Standard_OutOfRange SetValue,Value
 Poly_ArrayOfUVNodes inline-throw 1 Standard_ProgramError <file-scope>
 Poly_ArrayOfUVNodes outofline-throw 1 Standard_DimensionMismatch Assign
+Poly_ArrayOfUVNodes inline-dead-at-depth 2 Standard_OutOfRange Poly
 Poly_CoherentLink outofline-raise 1 Standard_ProgramError Poly_CoherentLink
 Poly_CoherentNode inherited-live 1 Standard_ConstructionError,Standard_OutOfRange gp_XYZ
 Poly_CoherentTriangle outofline-throw 1 Standard_ProgramError RemoveConnection
@@ -2961,7 +3020,9 @@ Poly_Polygon3D inherited-live 1 Standard_ProgramError Standard_Transient
 Poly_PolygonOnTriangulation inline-raise 3 Standard_NullObject <file-scope>
 Poly_PolygonOnTriangulation outofline-throw 1 Standard_OutOfRange SetParameters
 Poly_PolygonOnTriangulation outofline-delegated 1 Standard_OutOfRange_Always Standard_OutOfRange
+Poly_PolygonOnTriangulation inline-dead-at-depth 57 Standard_NullObject +13-more,BRep,BRepGraph,BRepGraphInc,BRepMesh,BRepTools,BinTools,MeshTest,StdPrs
 Poly_Triangle inline-raise 3 Standard_OutOfRange <file-scope>
+Poly_Triangle inline-dead-at-depth 64 Standard_OutOfRange +32-more,AIS,BRepGraph,BRepMesh,BRepTools,BinTools,DESTL,Poly,Prs3d
 Poly_Triangulation outofline-throw 1 Standard_DomainError SetNormals
 Poly_TriangulationParameters inherited-live 1 Standard_ProgramError Standard_Transient
 Polygon3D inherited-live 1 Standard_ProgramError Standard_Transient
@@ -3184,6 +3245,7 @@ SelectMgr_ViewerSelector outofline-throw 1 Standard_ProgramError ToPixMap
 SelectMgr_ViewerSelector outofline-delegated 4 Standard_ConstructionError,Standard_OutOfRange gp_GTrsf,gp_Trsf,gp_XYZ
 ShapeAlgo_AlgoContainer inherited-live 1 Standard_ProgramError Standard_Transient
 ShapeAlgo_ToolContainer inherited-live 1 Standard_ProgramError Standard_Transient
+ShapeAnalysis outofline-throw 1 Standard_NullObject GetFaceUVBounds
 ShapeAnalysis_BoxBndTree outofline-throw 1 Standard_NoSuchObject Accept
 ShapeAnalysis_CanonicalRecognition_Test outofline-delegated 16 Standard_ConstructionError,Standard_OutOfRange gp_Dir
 ShapeAnalysis_Curve outofline-delegated 2 Standard_ConstructionError gp_Vec2d
@@ -3302,6 +3364,7 @@ Standard_NumericError inline-throw 1 Standard_NumericError <file-scope>
 Standard_OutOfMemory inline-throw 1 Standard_OutOfMemory <file-scope>
 Standard_OutOfRange inline-raise 1 Standard_OutOfRange_Always <file-scope>
 Standard_OutOfRange inline-throw 2 Standard_OutOfRange <file-scope>
+Standard_OutOfRange inline-dead-at-depth 255 Standard_OutOfRange_Always +66-more,AppDef,BRepApprox,Expr,Extrema,GccAna,Geom2dGcc,GeomInt,gp
 Standard_Overflow inline-throw 1 Standard_Overflow <file-scope>
 Standard_Persistent inherited-live 1 Standard_ProgramError Standard_Transient
 Standard_ProgramError inline-throw 1 Standard_ProgramError <file-scope>
@@ -3326,8 +3389,10 @@ StdLPersistent_Document inherited-live 1 Standard_ProgramError Standard_Transien
 StdLPersistent_Function inherited-live 1 Standard_ProgramError Standard_Transient
 StdLPersistent_HArray1 inline-raise 1 Standard_NullValue <file-scope>
 StdLPersistent_HArray1 inline-throw 1 Standard_NotImplemented <file-scope>
+StdLPersistent_HArray1 inline-dead-at-depth 10 Standard_NullValue ShapePersistent,StdLPersistent,StdPersistent
 StdLPersistent_HArray2 inline-raise 1 Standard_NullValue <file-scope>
 StdLPersistent_HArray2 inline-throw 1 Standard_NotImplemented <file-scope>
+StdLPersistent_HArray2 inline-dead-at-depth 4 Standard_NullValue ShapePersistent,StdLPersistent
 StdLPersistent_NamedData inherited-live 1 Standard_ProgramError Standard_Transient
 StdLPersistent_Real inherited-live 1 Standard_ProgramError Standard_Transient
 StdLPersistent_TreeNode inherited-live 1 Standard_ProgramError Standard_Transient
@@ -4552,6 +4617,7 @@ TopOpeBRep_vpr outofline-delegated 2 Standard_ConstructionError,Standard_OutOfRa
 TopOpeBRep_vprclo outofline-throw 1 Standard_Failure GetEdgeTrans
 TopTrans_SurfaceTransition_Test outofline-delegated 12 Standard_ConstructionError,Standard_OutOfRange gp_Dir
 TopoDS inline-raise 16 Standard_TypeMismatch <file-scope>
+TopoDS inline-dead-at-depth 600 Standard_TypeMismatch +97-more,BRepFill,LocOpe,PrsDim,ShapeFix,TopOpeBRep,TopOpeBRepBuild,TopOpeBRepDS,TopOpeBRepTool
 TopoDSToStep_Builder outofline-raise 2 StdFail_NotDone TessellatedValue,Value
 TopoDSToStep_MakeBrepWithVoids outofline-raise 2 StdFail_NotDone TessellatedValue,Value
 TopoDSToStep_MakeFacetedBrep outofline-raise 2 StdFail_NotDone TessellatedValue,Value
@@ -4578,6 +4644,7 @@ TopoDS_Face inherited-live 1 Standard_DomainError TopoDS_Shape
 TopoDS_FrozenShape inline-throw 1 TopoDS_FrozenShape <file-scope>
 TopoDS_HShape inherited-live 1 Standard_ProgramError Standard_Transient
 TopoDS_Iterator inline-raise 1 Standard_NoSuchObject <file-scope>
+TopoDS_Iterator inline-dead-at-depth 206 Standard_NoSuchObject +56-more,BOPAlgo,BRepFill,BRepGraph,BRepOffset,BRepTools,DNaming,ShapeFix,ShapeUpgrade
 TopoDS_Iterator_Test outofline-delegated 1 Standard_ConstructionError,gp_VectorWithNullMagnitude gp_Vec
 TopoDS_LockedShape inline-throw 1 TopoDS_LockedShape <file-scope>
 TopoDS_Shape inline-throw 1 Standard_DomainError <file-scope>
@@ -4735,6 +4802,7 @@ XCAFDoc_AssemblyGraph inherited-live 1 Standard_ProgramError Standard_Transient
 XCAFDoc_AssemblyItemRef inherited-live 1 Standard_DomainError,Standard_ImmutableObject TDF_Attribute
 XCAFDoc_AssemblyIterator outofline-raise 7 Standard_NoSuchObject,Standard_NullObject,Standard_RangeError XCAFDoc_AssemblyIterator
 XCAFDoc_AssemblyTool inline-raise 1 Standard_NullObject <file-scope>
+XCAFDoc_AssemblyTool inline-dead-at-depth 2 Standard_NullObject XCAFDoc,XDEDRAW
 XCAFDoc_Centroid inherited-live 1 Standard_DomainError,Standard_ImmutableObject TDF_Attribute
 XCAFDoc_ClippingPlaneTool inherited-live 1 Standard_DomainError,Standard_ImmutableObject TDF_Attribute
 XCAFDoc_Color inherited-live 1 Standard_DomainError,Standard_ImmutableObject TDF_Attribute
@@ -4768,6 +4836,7 @@ XCAFNoteObjects_NoteObject inherited-live 1 Standard_ProgramError Standard_Trans
 XCAFPrs_AISObject inherited-live 1 Standard_NotImplemented SelectMgr_SelectableObject
 XCAFPrs_DocumentExplorer inline-raise 1 Standard_OutOfRange <file-scope>
 XCAFPrs_DocumentExplorer outofline-throw 2 Standard_ProgramError Next,initCurrent
+XCAFPrs_DocumentExplorer inline-dead-at-depth 7 Standard_OutOfRange DEPLY,RWGltf,RWMesh,RWObj,RWPly,XCAFPrs,XSDRAWPLY
 XCAFPrs_Driver inherited-live 1 Standard_ProgramError Standard_Transient
 XCAFPrs_Texture inherited-live 1 Standard_OutOfRange Graphic3d_Texture2D
 XCAFView_Object inherited-live 1 Standard_ProgramError Standard_Transient
@@ -4906,102 +4975,150 @@ gce_MakeTranslation2d outofline-delegated 1 Standard_ConstructionError gp_Vec2d
 gp_Ax2 outofline-delegated 3 Standard_ConstructionError,Standard_OutOfRange gp_Dir
 gp_Ax3 outofline-delegated 3 Standard_ConstructionError,Standard_OutOfRange gp_Dir
 gp_Circ inline-raise 2 Standard_ConstructionError <file-scope>
+gp_Circ inline-dead-at-depth 214 Standard_ConstructionError +68-more,ChFiKPart,DrawDim,DsgPrs,ExtremaPC,Geom,GeomBndLib,ProjLib,PrsDim
 gp_Circ2d inline-raise 3 Standard_ConstructionError <file-scope>
+gp_Circ2d inline-dead-at-depth 159 Standard_ConstructionError +41-more,Adaptor2d,ChFiKPart,GccAna,Geom2d,Geom2dGcc,IntAna2d,IntCurve,ProjLib
 gp_Circ_Test outofline-delegated 9 Standard_ConstructionError,Standard_OutOfRange gp_Dir
 gp_Cone inline-raise 3 Standard_ConstructionError <file-scope>,SetSemiAngle,gp_Cone
+gp_Cone inline-dead-at-depth 86 Standard_ConstructionError +39-more,Adaptor3d,BRepOffset,ChFiKPart,Extrema,GeomAdaptor,IntAna,IntPatch,ProjLib
 gp_Cylinder inline-raise 2 Standard_ConstructionError <file-scope>
+gp_Cylinder inline-dead-at-depth 85 Standard_ConstructionError +39-more,Adaptor3d,BOPTools,ChFiKPart,Extrema,GeomAdaptor,IntAna,IntTools,ProjLib
 gp_Dir inline-raise 5 Standard_ConstructionError,Standard_OutOfRange Cross,CrossCross,SetCoord,gp_Dir
+gp_Dir inline-dead-at-depth 602 Standard_ConstructionError,Standard_OutOfRange +144-more,AIS,DsgPrs,Geom,GeomFill,GeomGridEval,IGESSolid,PrsDim,gp
 gp_Dir2d inline-raise 3 Standard_ConstructionError,Standard_OutOfRange SetCoord,gp_Dir2d
+gp_Dir2d inline-dead-at-depth 313 Standard_ConstructionError,Standard_OutOfRange +81-more,ChFiKPart,Convert,GccAna,Geom2d,Geom2dGcc,ProjLib,TopOpeBRepTool,gp
 gp_Dir2d_Test outofline-delegated 1 Standard_ConstructionError,Standard_OutOfRange gp_Dir2d
 gp_Dir_Test outofline-delegated 11 Standard_ConstructionError,Standard_OutOfRange gp_Dir
 gp_Elips inline-raise 5 Standard_ConstructionError <file-scope>,Directrix1,Directrix2
+gp_Elips inline-dead-at-depth 85 Standard_ConstructionError +41-more,Adaptor3d,BRepLib,BiTgte,BndLib,DsgPrs,ExtremaPC,ProjLib,PrsDim
 gp_Elips2d inline-raise 6 Standard_ConstructionError <file-scope>,Directrix1,Directrix2
+gp_Elips2d inline-dead-at-depth 63 Standard_ConstructionError +30-more,Adaptor2d,BndLib,Convert,Geom2d,HLRBRep,IntAna2d,IntCurve,ProjLib
 gp_GTrsf inline-raise 2 Standard_OutOfRange SetValue,Value
 gp_GTrsf inline-throw 1 Standard_ConstructionError Trsf
 gp_GTrsf outofline-throw 1 Standard_ConstructionError SetForm
 gp_GTrsf outofline-delegated 1 Standard_ConstructionError,Standard_OutOfRange gp_XYZ
+gp_GTrsf inline-dead-at-depth 82 Standard_OutOfRange +13-more,IGESData,IGESDimen,IGESDraw,IGESGeom,IGESSolid,IGESToBRep,SelectMgr,gp
 gp_GTrsf2d inline-raise 2 Standard_OutOfRange SetValue,Value
 gp_GTrsf2d outofline-throw 4 Standard_ConstructionError Trsf2d
 gp_GTrsf2d outofline-delegated 1 Standard_ConstructionError,Standard_OutOfRange gp_XY
+gp_GTrsf2d inline-dead-at-depth 19 Standard_OutOfRange +1-more,Approx,BRepGraph,BRepTools,Geom,GeomConvert,GeomLib,GeomPlate,gp
 gp_GTrsf_Test outofline-delegated 2 Standard_ConstructionError,Standard_OutOfRange gp_Dir
 gp_Hypr inline-raise 7 Standard_ConstructionError,Standard_DomainError <file-scope>,Asymptote1,Asymptote2
+gp_Hypr inline-dead-at-depth 58 Standard_ConstructionError,Standard_DomainError +26-more,Adaptor3d,BiTgte,BndLib,ElCLib,Extrema,ExtremaPC,GC,ProjLib
 gp_Hypr2d inline-raise 8 Standard_ConstructionError,Standard_DomainError <file-scope>,Asymptote1,Asymptote2
+gp_Hypr2d inline-dead-at-depth 63 Standard_ConstructionError,Standard_DomainError +31-more,Adaptor2d,BndLib,Convert,ElCLib,HLRBRep,IntAna2d,IntCurve,ProjLib
 gp_Lin outofline-delegated 2 Standard_ConstructionError,gp_VectorWithNullMagnitude gp_Vec
 gp_Lin2d outofline-raise 1 Standard_ConstructionError gp_Lin2d
 gp_Lin_Test outofline-delegated 20 Standard_ConstructionError,Standard_OutOfRange,gp_VectorWithNullMagnitude gp_Dir,gp_Vec
 gp_Mat inline-raise 4 Standard_ConstructionError,Standard_OutOfRange <file-scope>,Divide
 gp_Mat outofline-raise 5 Standard_ConstructionError,Standard_OutOfRange Column,Invert,Row,SetCol,SetRow
 gp_Mat outofline-delegated 7 Standard_ConstructionError,Standard_OutOfRange gp_XYZ
+gp_Mat inline-dead-at-depth 52 Standard_ConstructionError,Standard_OutOfRange +12-more,BRepFill,BRepGProp,BRepTest,BRepTools,BinTools,GProp,GeomFill,gp
 gp_Mat2d inline-raise 3 Standard_OutOfRange <file-scope>
 gp_Mat2d outofline-raise 5 Standard_ConstructionError,Standard_OutOfRange Column,Invert,Row,SetCol,SetRow
 gp_Mat2d outofline-delegated 5 Standard_ConstructionError,Standard_OutOfRange gp_XY
+gp_Mat2d inline-dead-at-depth 7 Standard_OutOfRange BSplCLib,ProjLib,SelectMgr,gp
 gp_Parab inline-raise 2 Standard_ConstructionError <file-scope>
+gp_Parab inline-dead-at-depth 57 Standard_ConstructionError +26-more,Adaptor3d,BiTgte,BndLib,ElCLib,Extrema,ExtremaPC,IntCurveSurface,ProjLib
 gp_Parab2d inline-raise 3 Standard_ConstructionError <file-scope>
 gp_Parab2d outofline-delegated 1 Standard_ConstructionError,Standard_OutOfRange gp_Dir2d
+gp_Parab2d inline-dead-at-depth 62 Standard_ConstructionError +31-more,Adaptor2d,BndLib,Convert,GC,HLRBRep,IntAna2d,IntCurve,ProjLib
 gp_Pln outofline-delegated 18 Standard_ConstructionError,Standard_OutOfRange gp_Dir
 gp_Pln_Test outofline-delegated 13 Standard_ConstructionError,Standard_OutOfRange,gp_VectorWithNullMagnitude gp_Dir,gp_Vec
 gp_Pnt2d_Test outofline-delegated 3 Standard_ConstructionError,Standard_OutOfRange gp_Dir2d,gp_Vec2d
 gp_Pnt_Test outofline-delegated 4 Standard_ConstructionError,Standard_OutOfRange,gp_VectorWithNullMagnitude gp_Dir,gp_Vec
 gp_Quaternion outofline-delegated 1 Standard_ConstructionError,gp_VectorWithNullMagnitude gp_Vec
 gp_Sphere inline-raise 2 Standard_ConstructionError <file-scope>
+gp_Sphere inline-dead-at-depth 67 Standard_ConstructionError +30-more,Adaptor3d,Extrema,GeomAdaptor,IntAna,IntPatch,IntTools,ProjLib,ShapeAnalysis
 gp_Torus inline-raise 3 Standard_ConstructionError <file-scope>
 gp_Torus outofline-raise 1 Standard_DimensionError Coefficients
+gp_Torus inline-dead-at-depth 58 Standard_ConstructionError +29-more,Adaptor3d,BndLib,ChFi3d,Convert,Extrema,GeomAdaptor,IntTools,ProjLib
 gp_Torus_Test outofline-delegated 2 Standard_ConstructionError,Standard_OutOfRange gp_Dir
 gp_Trsf inline-raise 1 Standard_OutOfRange Value
 gp_Trsf outofline-raise 5 Standard_ConstructionError Invert,SetScale,SetScaleFactor,SetValues
 gp_Trsf outofline-delegated 1 Standard_ConstructionError,Standard_OutOfRange gp_XYZ
+gp_Trsf inline-dead-at-depth 329 Standard_OutOfRange +103-more,AIS,BRepFill,BRepGraph,Geom,GeomEval,Prs3d,SelectMgr,gp
 gp_Trsf2d inline-raise 1 Standard_OutOfRange Value
 gp_Trsf2d outofline-raise 3 Standard_ConstructionError Invert,SetValues
 gp_Trsf2d outofline-delegated 3 Standard_ConstructionError,Standard_OutOfRange gp_XY
+gp_Trsf2d inline-dead-at-depth 97 Standard_OutOfRange +16-more,Bisector,Convert,Geom2d,Geom2dEval,IGESToBRep,ShapeFix,gce,gp
 gp_Trsf_Test outofline-delegated 2 Standard_ConstructionError,Standard_OutOfRange gp_Dir
 gp_Vec inline-raise 4 Standard_ConstructionError,gp_VectorWithNullMagnitude <file-scope>,Angle,AngleWithRef,Normalized
+gp_Vec inline-dead-at-depth 736 Standard_ConstructionError,gp_VectorWithNullMagnitude +135-more,BRepBlend,BRepFill,BlendFunc,Geom,GeomEval,GeomFill,GeomGridEval,PrsDim
 gp_Vec2d inline-raise 2 Standard_ConstructionError <file-scope>,Normalized
+gp_Vec2d inline-dead-at-depth 376 Standard_ConstructionError +97-more,BRepBlend,BlendFunc,Geom2d,Geom2dEval,Geom2dGcc,Geom2dGridEval,GeomFill,IntPatch
 gp_XY inline-raise 5 Standard_ConstructionError,Standard_OutOfRange <file-scope>,Normalize
+gp_XY inline-dead-at-depth 205 Standard_ConstructionError,Standard_OutOfRange +56-more,BRepMesh,GccAna,Geom2dGcc,IGESDimen,IGESGeom,NLPlate,Plate,gp
 gp_XYZ inline-raise 5 Standard_ConstructionError,Standard_OutOfRange <file-scope>,Normalize
+gp_XYZ inline-dead-at-depth 428 Standard_ConstructionError,Standard_OutOfRange +115-more,Geom,GeomFill,IGESDimen,IGESDraw,IGESGeom,IGESSolid,Plate,gp
 instance inherited-live 1 Standard_ProgramError Standard_Transient
 integer inherited-live 1 Standard_ProgramError Standard_Transient
 listBase inherited-live 1 Standard_ProgramError Standard_Transient
 mapBase inherited-live 1 Standard_ProgramError Standard_Transient
 math_BFGS inline-raise 6 StdFail_NotDone Gradient,Location,Minimum,NbIterations
+math_BFGS inline-dead-at-depth 16 StdFail_NotDone AppDef,BRepApprox,Extrema,GeomInt,MathOpt,math
 math_BissecNewton inline-raise 3 StdFail_NotDone Derivative,Root,Value
+math_BissecNewton inline-dead-at-depth 5 StdFail_NotDone Bisector,MathRoot,math
 math_BracketMinimum outofline-raise 2 StdFail_NotDone FunctionValues,Values
 math_BracketedRoot inline-raise 3 StdFail_NotDone NbIterations,Root,Value
+math_BracketedRoot inline-dead-at-depth 6 StdFail_NotDone GeomLProp,MathRoot,math
 math_BrentMinimum inline-raise 3 StdFail_NotDone Location,Minimum,NbIterations
+math_BrentMinimum inline-dead-at-depth 11 StdFail_NotDone GCPnts,GeomBndLib,GeometryTest,MathOpt,ProjLib,math
 math_Crout inline-raise 3 StdFail_NotDone Determinant,Inverse,Invert
 math_Crout outofline-raise 3 Standard_DimensionError,StdFail_NotDone,math_NotSquare Solve,math_Crout
+math_Crout inline-dead-at-depth 3 StdFail_NotDone math
 math_DirectPolynomialRoots inline-raise 3 Standard_RangeError,StdFail_InfiniteSolutions NbSolutions,Value
+math_DirectPolynomialRoots inline-dead-at-depth 16 Standard_RangeError,StdFail_InfiniteSolutions Extrema,GccAna,IntAna,IntAna2d,MathPoly,math
 math_FRPR inline-raise 6 StdFail_NotDone Gradient,Location,Minimum,NbIterations
+math_FRPR inline-dead-at-depth 5 StdFail_NotDone Extrema,MathOpt,math
 math_FunctionAllRoots inline-raise 6 StdFail_NotDone GetInterval,GetIntervalState,GetPoint,GetPointState,NbIntervals,NbPoints
 math_FunctionAllRoots outofline-raise 8 Standard_NumericError math_FunctionAllRoots
+math_FunctionAllRoots inline-dead-at-depth 4 StdFail_NotDone GeomLib,IntCurveSurface,math
 math_FunctionRoot inline-raise 4 StdFail_NotDone Derivative,NbIterations,Root,Value
+math_FunctionRoot inline-dead-at-depth 9 StdFail_NotDone Bisector,CPnts,ChFi3d,Geom2dGcc,GeomFill,MathRoot,math
 math_FunctionRoots inline-raise 4 StdFail_NotDone IsAllNull,NbSolutions,StateNumber,Value
 math_FunctionRoots outofline-raise 2 StdFail_NotDone math_FunctionRoots
+math_FunctionRoots inline-dead-at-depth 8 StdFail_NotDone Adaptor3d,Bisector,CSLib,GeomLProp,MathRoot,math
 math_FunctionSample outofline-raise 1 Standard_OutOfRange GetParameter
 math_FunctionSetRoot inline-raise 7 Standard_DimensionError,StdFail_NotDone <file-scope>
 math_FunctionSetRoot outofline-raise 4 Standard_DimensionError,StdFail_NotDone FunctionSetErrors,Root
 math_FunctionSetRoot outofline-throw 1 Standard_DimensionError Perform
+math_FunctionSetRoot inline-dead-at-depth 33 Standard_DimensionError,StdFail_NotDone +7-more,BRepApprox,BRepBlend,Extrema,Geom2dGcc,IntCurveSurface,IntPatch,IntWalk,math
 math_Gauss outofline-raise 6 Standard_DimensionError,StdFail_NotDone,math_NotSquare Determinant,Invert,Solve,math_Gauss
 math_Gauss outofline-throw 1 Standard_DimensionError Solve
 math_GaussLeastSquare outofline-raise 2 Standard_DimensionError,StdFail_NotDone Solve
 math_GaussMultipleIntegration inline-raise 1 StdFail_NotDone Value
+math_GaussMultipleIntegration inline-dead-at-depth 1 StdFail_NotDone math
 math_GaussSetIntegration inline-raise 1 StdFail_NotDone Value
 math_GaussSetIntegration outofline-raise 1 Standard_NotImplemented math_GaussSetIntegration
+math_GaussSetIntegration inline-dead-at-depth 6 StdFail_NotDone FEmTool,FairCurve,math
 math_GaussSingleIntegration inline-raise 1 StdFail_NotDone Value
+math_GaussSingleIntegration inline-dead-at-depth 4 StdFail_NotDone MathInteg,math
 math_Householder inline-raise 3 Standard_OutOfRange,StdFail_NotDone AllValues,Value
 math_Householder outofline-raise 1 Standard_DimensionError Perform
+math_Householder inline-dead-at-depth 3 Standard_OutOfRange,StdFail_NotDone MathLin,math
 math_Jacobi inline-raise 4 StdFail_NotDone Value,Values,Vector,Vectors
 math_Jacobi outofline-raise 1 math_NotSquare math_Jacobi
+math_Jacobi inline-dead-at-depth 12 StdFail_NotDone BRepLib,GProp,GeomLib,GeomPlate,MathLin,ProjLib,math
 math_KronrodSingleIntegration inline-raise 5 StdFail_NotDone AbsolutError,ErrorReached,NbIterReached,OrderReached,Value
+math_KronrodSingleIntegration inline-dead-at-depth 5 StdFail_NotDone BRepGProp,MathInteg,math
 math_Matrix inline-raise 16 Standard_DimensionError,Standard_DivideByZero,math_NotSquare Add,Added,Divide,Divided,Multiplied,Multiply,Set,SetDiag,Subtract,Subtracted,TMultiply,Transpose
 math_Matrix outofline-raise 5 Standard_DimensionError,math_NotSquare Invert,Multiplied,Multiply,SetCol,SetRow
+math_Matrix inline-dead-at-depth 173 Standard_DimensionError,Standard_DivideByZero,math_NotSquare +31-more,AppDef,BRepApprox,BRepBlend,BlendFunc,FairCurve,GeomFill,GeomInt,math
 math_NewtonFunctionRoot inline-raise 4 StdFail_NotDone Derivative,NbIterations,Root,Value
+math_NewtonFunctionRoot inline-dead-at-depth 5 StdFail_NotDone Geom2dAPI,MathRoot,math
 math_NewtonFunctionSetRoot inline-raise 7 StdFail_NotDone Derivative,FunctionSetErrors,NbIterations,Root
+math_NewtonFunctionSetRoot inline-dead-at-depth 9 StdFail_NotDone Extrema,GeomFill,MathSys,ProjLib,math
 math_NewtonMinimum inline-raise 6 StdFail_NotDone Gradient,Location,Minimum,NbIterations
+math_NewtonMinimum inline-dead-at-depth 7 StdFail_NotDone BRepFill,FairCurve,GeomLib,MathOpt,math
 math_Powell inline-raise 4 StdFail_NotDone Location,Minimum,NbIterations
+math_Powell inline-dead-at-depth 6 StdFail_NotDone GeomConvert,MathOpt,ShapeAnalysis,math
 math_SVD outofline-raise 3 Standard_DimensionError,StdFail_NotDone PseudoInverse,Solve
 math_TrigonometricFunctionRoots inline-raise 5 Standard_OutOfRange,StdFail_InfiniteSolutions,StdFail_NotDone NbSolutions,Value
+math_TrigonometricFunctionRoots inline-dead-at-depth 10 Standard_OutOfRange,StdFail_InfiniteSolutions,StdFail_NotDone Extrema,GeomLib,IntAna,IntAna2d,math
 math_Uzawa inline-raise 5 StdFail_NotDone Error,InitialError,InverseCont,NbIterations,Value
 math_Uzawa outofline-raise 1 Standard_DimensionError Perform
+math_Uzawa inline-dead-at-depth 2 StdFail_NotDone math
 math_VectorBase inline-raise 18 Standard_DimensionError,Standard_DivideByZero,Standard_NullValue,Standard_RangeError <file-scope>
 named_instance inherited-live 1 Standard_ProgramError Standard_Transient
 node inherited-live 1 Standard_ProgramError Standard_Transient

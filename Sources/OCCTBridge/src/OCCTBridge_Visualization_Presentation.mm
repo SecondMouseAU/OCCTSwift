@@ -461,6 +461,11 @@ void OCCTShadedMeshDataFree(OCCTShadedMeshData* data)
   data->triangleCount = 0;
 }
 
+/// The angular half of the `GCPnts_TangentialDeflection` request `OCCTShapeGetEdgeMesh`'s curve
+/// fallback makes. Named so the guard on the pair and the constructor cannot drift apart: a guard
+/// testing a different angular value from the one actually passed would be testing nothing (#2872).
+static constexpr double kEdgeMeshFallbackAngularDeflection = 0.1;
+
 bool OCCTShapeGetEdgeMesh(OCCTShapeRef shape, double deflection, OCCTEdgeMeshData* out)
 {
   if (!shape || !out)
@@ -554,10 +559,30 @@ bool OCCTShapeGetEdgeMesh(OCCTShapeRef shape, double deflection, OCCTEdgeMeshDat
         else
         {
           // Fall back to curve discretization
+          //
+          // #2872: see occtValidTangentialDeflection (OCCTBridge_Internal.h). The sampler's own
+          // precondition on the pair is a Standard_ConstructionError_Raise_if in the .cxx and so
+          // is absent from the pinned Release kernel, and this loop has no point ceiling, unlike
+          // the Curve3D entry points PR #2870 guarded. Measured on a free circular edge with the
+          // guard removed: `deflection` NaN produced 22,216 vertices for that one edge, where a
+          // valid request gives tens. The guard sits here and not at the entry point because
+          // `deflection` has a second consumer, BRepMesh_IncrementalMesh above, whose bound is not
+          // this one. The refusal is that this edge contributes no segment, which is what the
+          // catch below already does for an edge that cannot be discretised, and a shape no edge
+          // of which contributes falls out as `false` at the allVerts.empty() check.
+          if (!occtValidTangentialDeflection(kEdgeMeshFallbackAngularDeflection, deflection))
+            continue;
           try
           {
+            // #2872: the constructor is (curve, angularDeflection [radians], curvatureDeflection
+            // [linear]) -- GCPnts_TangentialDeflection.hxx, confirmed against the 8.0.1 refman.
+            // `deflection` is this entry point's caller-supplied LINEAR tolerance, the same value
+            // BRepMesh_IncrementalMesh took as its linear deflection above, so it belongs in the
+            // third slot. It was in the second, which is exactly the swap #1440 fixed in
+            // DiscretizeEdgeInto (OCCTBridge_Mesh.mm); this site was missed then because it lives
+            // in another file. Invisible at the API default, where both slots are 0.1.
             BRepAdaptor_Curve           curve(edge);
-            GCPnts_TangentialDeflection disc(curve, deflection, 0.1);
+            GCPnts_TangentialDeflection disc(curve, kEdgeMeshFallbackAngularDeflection, deflection);
             if (disc.NbPoints() >= 2)
             {
               segStarts.push_back((int32_t)(allVerts.size() / 3));

@@ -28,7 +28,7 @@ import simd
 ///
 /// The refusal loses a real number, the constant gap between the two surfaces.
 /// `SurfaceExtremaResult` has no shape for "a distance with no points", and giving it one is a
-/// SemVer event, so that part is #2840's.
+/// SemVer event, so that part is #2876's.
 @Suite("Surface.extrema returns nil, not SIGSEGV, on parallel surfaces (#2840)")
 struct Issue2840SurfaceExtremaParallelTests {
 

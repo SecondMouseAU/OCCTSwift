@@ -1,0 +1,241 @@
+#2841 ground truth: the THREE-curve constructors of GeomFill_BSplineCurves and
+GeomFill_BezierCurves, which of the three filling styles each accepts, and what the kernel we
+ship does when the caller puts the wrong curve in the C2 slot.
+
+Built and run 2026-09-30 against the PINNED asset, v4.0.0-kernel.3
+(.build/artifacts/<pkg>/OCCT/OCCT.xcframework/macos-arm64), not a local Libraries/ build:
+
+  clang++ -std=c++17 -ObjC++ -w -I"$XCF/macos-arm64/Headers" -L"$XCF/macos-arm64" -lOCCT-macos \
+    -framework Foundation -framework AppKit -lz -lc++ Scripts/repro/2841/probe.mm -o probe
+
+Each section runs as its own process (probe <A..H>) because three of them crash. Section G forks
+a child per case instead, so the crashing cases can be counted rather than avoided.
+
+WHAT IT SETTLES
+
+1. C2 IS THE MIDDLE CURVE, POSITIONALLY, AND GETTING IT WRONG CRASHES.
+   Both 3-curve Inits synthesise a straight two-pole fourth side between the FAR ends of C1 and
+   C3, where "far" is the endpoint that does not meet C2 (GeomFill_BSplineCurves.cxx:396-439,
+   GeomFill_BezierCurves.cxx:304-335), then call the 4-curve Init. Put a curve that is not
+   adjacent to both others in the C2 slot and the synthesised side closes nothing: Arrange
+   returns false, the refusal behind it is compiled out (#2842), and Init reads CC1->Degree()
+   off a null handle. Sections [D] (BSpline) and [E] (Bezier) are exit 139, and so is [F], three
+   curves that form no chain at all. This is why the bridge wrappers need the same guard the
+   4-curve ones got in #2829, extended over the synthesised side.
+
+2. THE DIRECTION OF EACH CURVE DOES NOT MATTER; ONLY WHICH ONE IS IN C2 DOES.
+   Section [G] walks 3 middle-slot assignments x 8 direction flips, for both flavours, 48 cases.
+   The 16 canonical-middle cases all build a surface and the 32 wrong-middle ones all crash the
+   kernel. The far-end test is direction-independent by construction: it asks which endpoint of
+   C1 is not within Precision::Confusion() of either endpoint of C2, and answers the same either
+   way round. Arrange then handles the rest.
+
+3. THE TRANSCRIBED GUARD AGREES WITH THE KERNEL ON ALL 48. Synthesise the chord's two endpoints
+   with the kernel's own two tests (Tol = Precision::Confusion() squared, against SquareDistance,
+   so the effective tolerance is 1e-7), then run the #2829 predicate over the four endpoint
+   pairs. 48/48, and the 32 disagreements it would take to be wrong are exactly the 32 crashes.
+
+4. .coons IS REACHABLE FOR BOTH FLAVOURS, WHICH #2841 LEFT OPEN.
+   #2841 expected the synthesised degree-1 side to keep NbVPoles below 4 and put .coons out of
+   reach for the BSpline flavour. It does not: the 4-curve Init raises degrees BEFORE aligning
+   knot distributions (GeomFill_BSplineCurves.cxx:288-309), so the chord is raised to
+   DegV = max(deg CC2, deg CC4) first. Section [A]: three degree-3 sides give a 4x4 Coons
+   surface. What does put .coons out of reach is a low-degree MIDDLE curve, because then DegV is
+   low too: a two-pole degree-1 C2 gives NbVPoles = 2 and a real, catchable
+   Standard_ConstructionError "invalid filling style" (GeomFill_BSplineCurves.cxx:300), which
+   the bridge's catch (...) already turns into nullptr. The Bezier flavour has no such limit at
+   all, because its Coons branch raises every side to at least degree 3 first
+   (GeomFill_BezierCurves.cxx:212-215): section [B] builds 4x4 from a two-pole middle.
+
+5. A PERIODIC SUPPORT BEHAVES THE SAME WAY, per the #430 rule. Section [C] is a quarter patch on
+   a cylinder of radius 5: bottom arc, seam, top arc, with the chord closing the second seam.
+   .stretch and .curved build a 3x4 surface whose own bounds are u=[0,1.5708] v=[0,1], and
+   .coons throws the same catchable "invalid filling style" because the arcs carry 3 poles.
+
+6. THE WRAPPER AND THE RAW KERNEL DISAGREE ON .coons, AND THE BRIDGE'S CONVERSION IS WHY.
+   toBSplineCurve in OCCTBridge_Surface_Fill.mm runs
+   GeomConvert::CurveToBSplineCurve(curve, Convert_QuasiAngular) on every input, not the default
+   conversion this probe's other sections use. Section [H]: that takes the quarter arc from 3
+   poles to 7, so the cylinder patch comes back 7x4 and .coons is reachable through the wrapper
+   while section [C]'s default-converted 3x4 refuses it. Measured rather than reasoned about,
+   because the test had assumed [C] carried over and it does not.
+
+7. THE SYNTHESISED SIDE IS A BOUNDARY OF THE RESULT, NOT A DEGENERATE CORNER.
+   Section [A]'s square comes back with all four corners distinct: (uMin,vMin) = C1's far end,
+   (uMax,vMin) = C1's near end, and the chord runs along the U = first edge. A 3-curve fill is a
+   three-sided boundary closed with a straight chord, not a triangular patch.
+
+================================================================ probe A
+[A] GeomFill_BSplineCurves 3-curve, canonical (bottom, right, top) of a flat square.
+    The synthesised fourth side is the chord A->D, the left side.
+
+  square stretch: poles 4x4  bounds u=[0,1] v=[0,1]
+      (uMin,vMin)=(0.0000,0.0000,0.0000)  (uMax,vMin)=(10.0000,0.0000,0.0000)
+      (uMin,vMax)=(0.0000,10.0000,0.0000)  (uMax,vMax)=(10.0000,10.0000,0.0000)
+  square coons  : poles 4x4  bounds u=[0,1] v=[0,1]
+      (uMin,vMin)=(0.0000,0.0000,0.0000)  (uMax,vMin)=(10.0000,0.0000,0.0000)
+      (uMin,vMax)=(0.0000,10.0000,0.0000)  (uMax,vMax)=(10.0000,10.0000,0.0000)
+  square curved : poles 4x4  bounds u=[0,1] v=[0,1]
+      (uMin,vMin)=(0.0000,0.0000,0.0000)  (uMax,vMin)=(10.0000,0.0000,0.0000)
+      (uMin,vMax)=(0.0000,10.0000,0.0000)  (uMax,vMax)=(10.0000,10.0000,0.0000)
+
+    The same three sides with a TWO-POLE degree-1 middle curve, which is what
+    decides whether .coons is reachable: DegV = max(deg C2, deg C4) and both are 1.
+
+  2-pole C2 stretch: poles 4x2  bounds u=[0,1] v=[0,1]
+      (uMin,vMin)=(0.0000,0.0000,0.0000)  (uMax,vMin)=(10.0000,0.0000,0.0000)
+      (uMin,vMax)=(0.0000,10.0000,0.0000)  (uMax,vMax)=(10.0000,10.0000,0.0000)
+  2-pole C2 coons  : THREW Standard_ConstructionError (GeomFill_BSplineCurves: invalid filling style)
+  2-pole C2 curved : poles 4x2  bounds u=[0,1] v=[0,1]
+      (uMin,vMin)=(0.0000,0.0000,0.0000)  (uMax,vMin)=(10.0000,0.0000,0.0000)
+      (uMin,vMax)=(0.0000,10.0000,0.0000)  (uMax,vMax)=(10.0000,10.0000,0.0000)
+
+=== section A done ===
+[exit 0]
+
+================================================================ probe B
+[B] GeomFill_BezierCurves 3-curve, the same three sides.
+    Its 4-curve Init raises every side to at least degree 3 for Coons style
+    (GeomFill_BezierCurves.cxx:212-215), so a two-pole middle is not a limit here.
+
+  square stretch: poles 4x4  bounds u=[0,1] v=[0,1]
+      (uMin,vMin)=(0.0000,0.0000,0.0000)  (uMax,vMin)=(10.0000,0.0000,0.0000)
+      (uMin,vMax)=(0.0000,10.0000,0.0000)  (uMax,vMax)=(10.0000,10.0000,0.0000)
+  square coons  : poles 4x4  bounds u=[0,1] v=[0,1]
+      (uMin,vMin)=(0.0000,0.0000,0.0000)  (uMax,vMin)=(10.0000,0.0000,0.0000)
+      (uMin,vMax)=(0.0000,10.0000,0.0000)  (uMax,vMax)=(10.0000,10.0000,0.0000)
+  square curved : poles 4x4  bounds u=[0,1] v=[0,1]
+      (uMin,vMin)=(0.0000,0.0000,0.0000)  (uMax,vMin)=(10.0000,0.0000,0.0000)
+      (uMin,vMax)=(0.0000,10.0000,0.0000)  (uMax,vMax)=(10.0000,10.0000,0.0000)
+
+    With a two-pole degree-1 middle curve:
+
+  2-pole C2 stretch: poles 4x2  bounds u=[0,1] v=[0,1]
+      (uMin,vMin)=(0.0000,0.0000,0.0000)  (uMax,vMin)=(10.0000,0.0000,0.0000)
+      (uMin,vMax)=(0.0000,10.0000,0.0000)  (uMax,vMax)=(10.0000,10.0000,0.0000)
+  2-pole C2 coons  : poles 4x4  bounds u=[0,1] v=[0,1]
+      (uMin,vMin)=(0.0000,0.0000,0.0000)  (uMax,vMin)=(10.0000,0.0000,0.0000)
+      (uMin,vMax)=(0.0000,10.0000,0.0000)  (uMax,vMax)=(10.0000,10.0000,0.0000)
+  2-pole C2 curved : poles 4x2  bounds u=[0,1] v=[0,1]
+      (uMin,vMin)=(0.0000,0.0000,0.0000)  (uMax,vMin)=(10.0000,0.0000,0.0000)
+      (uMin,vMax)=(0.0000,10.0000,0.0000)  (uMax,vMax)=(10.0000,10.0000,0.0000)
+
+=== section B done ===
+[exit 0]
+
+================================================================ probe C
+[C] BSpline 3-curve on a PERIODIC support: a quarter patch on a cylinder of radius 5,
+    bottom arc, seam, top arc. The synthesised chord closes the second seam.
+
+  cylinder stretch: poles 3x4  bounds u=[0,1.5708] v=[0,1]
+      (uMin,vMin)=(5.0000,0.0000,0.0000)  (uMax,vMin)=(0.0000,5.0000,0.0000)
+      (uMin,vMax)=(5.0000,0.0000,8.0000)  (uMax,vMax)=(0.0000,5.0000,8.0000)
+  cylinder coons  : THREW Standard_ConstructionError (GeomFill_BSplineCurves: invalid filling style)
+  cylinder curved : poles 3x4  bounds u=[0,1.5708] v=[0,1]
+      (uMin,vMin)=(5.0000,0.0000,0.0000)  (uMax,vMin)=(0.0000,5.0000,0.0000)
+      (uMin,vMax)=(5.0000,0.0000,8.0000)  (uMax,vMax)=(0.0000,5.0000,8.0000)
+
+=== section C done ===
+[exit 0]
+
+================================================================ probe D
+[D] BSpline 3-curve with the WRONG middle: (bottom, top, right). The chord is then
+    A->B, which duplicates C1 rather than closing anything, Arrange returns false,
+    and the refusal is compiled out. Expect a signal.
+    guard says: refuse
+/private/tmp/claude-501/-Users-elb-Projects-OCCTSwift/7ca7a65c-aee4-4ed2-ac7a-0732e49711a4/scratchpad/2841-run.sh: line 3: 65412 Segmentation fault: 11     "$D/2841-probe" "$s"
+[exit 139]
+
+================================================================ probe E
+[E] Bezier 3-curve, the same wrong middle. Expect a signal.
+    guard says: refuse
+/private/tmp/claude-501/-Users-elb-Projects-OCCTSwift/7ca7a65c-aee4-4ed2-ac7a-0732e49711a4/scratchpad/2841-run.sh: line 3: 65419 Segmentation fault: 11     "$D/2841-probe" "$s"
+[exit 139]
+
+================================================================ probe F
+[F] BSpline 3-curve, three curves that form no chain at all: bottom, a floating
+    segment lifted to z = 5, and top. Expect a signal.
+    guard says: refuse
+/private/tmp/claude-501/-Users-elb-Projects-OCCTSwift/7ca7a65c-aee4-4ed2-ac7a-0732e49711a4/scratchpad/2841-run.sh: line 3: 65422 Segmentation fault: 11     "$D/2841-probe" "$s"
+[exit 139]
+
+================================================================ probe G
+Agreement between the transcribed guard and the kernel, over 3 middle-slot assignments
+x 8 direction flips, for both flavours. Each kernel case runs in a forked child, so a
+SIGSEGV is counted rather than avoided.
+
+  flavour  middle  flips  guard   kernel
+  bspline       0      0  refuse  SIGNAL   
+  bspline       0      1  refuse  SIGNAL   
+  bspline       0      2  refuse  SIGNAL   
+  bspline       0      3  refuse  SIGNAL   
+  bspline       0      4  refuse  SIGNAL   
+  bspline       0      5  refuse  SIGNAL   
+  bspline       0      6  refuse  SIGNAL   
+  bspline       0      7  refuse  SIGNAL   
+  bspline       1      0  accept  surface  
+  bspline       1      1  accept  surface  
+  bspline       1      2  accept  surface  
+  bspline       1      3  accept  surface  
+  bspline       1      4  accept  surface  
+  bspline       1      5  accept  surface  
+  bspline       1      6  accept  surface  
+  bspline       1      7  accept  surface  
+  bspline       2      0  refuse  SIGNAL   
+  bspline       2      1  refuse  SIGNAL   
+  bspline       2      2  refuse  SIGNAL   
+  bspline       2      3  refuse  SIGNAL   
+  bspline       2      4  refuse  SIGNAL   
+  bspline       2      5  refuse  SIGNAL   
+  bspline       2      6  refuse  SIGNAL   
+  bspline       2      7  refuse  SIGNAL   
+  bezier        0      0  refuse  SIGNAL   
+  bezier        0      1  refuse  SIGNAL   
+  bezier        0      2  refuse  SIGNAL   
+  bezier        0      3  refuse  SIGNAL   
+  bezier        0      4  refuse  SIGNAL   
+  bezier        0      5  refuse  SIGNAL   
+  bezier        0      6  refuse  SIGNAL   
+  bezier        0      7  refuse  SIGNAL   
+  bezier        1      0  accept  surface  
+  bezier        1      1  accept  surface  
+  bezier        1      2  accept  surface  
+  bezier        1      3  accept  surface  
+  bezier        1      4  accept  surface  
+  bezier        1      5  accept  surface  
+  bezier        1      6  accept  surface  
+  bezier        1      7  accept  surface  
+  bezier        2      0  refuse  SIGNAL   
+  bezier        2      1  refuse  SIGNAL   
+  bezier        2      2  refuse  SIGNAL   
+  bezier        2      3  refuse  SIGNAL   
+  bezier        2      4  refuse  SIGNAL   
+  bezier        2      5  refuse  SIGNAL   
+  bezier        2      6  refuse  SIGNAL   
+  bezier        2      7  refuse  SIGNAL   
+
+  agreement 48/48, kernel crashed in 32 of them
+
+=== section G done ===
+[exit 0]
+
+================================================================ probe H
+[H] What the bridge's Convert_QuasiAngular conversion does to an arc's pole count,
+    and therefore to .coons on the cylinder patch of section [C].
+
+    arc poles: default conversion 3, Convert_QuasiAngular 7
+
+    the same cylinder patch, every curve converted the way the bridge converts it:
+  cylinder(QA) stretch: poles 7x4  bounds u=[0,1.5708] v=[0,1]
+      (uMin,vMin)=(5.0000,0.0000,0.0000)  (uMax,vMin)=(0.0000,5.0000,0.0000)
+      (uMin,vMax)=(5.0000,0.0000,8.0000)  (uMax,vMax)=(0.0000,5.0000,8.0000)
+  cylinder(QA) coons  : poles 7x4  bounds u=[0,1.5708] v=[0,1]
+      (uMin,vMin)=(5.0000,0.0000,0.0000)  (uMax,vMin)=(0.0000,5.0000,0.0000)
+      (uMin,vMax)=(5.0000,0.0000,8.0000)  (uMax,vMax)=(0.0000,5.0000,8.0000)
+  cylinder(QA) curved : poles 7x4  bounds u=[0,1.5708] v=[0,1]
+      (uMin,vMin)=(5.0000,0.0000,0.0000)  (uMax,vMin)=(0.0000,5.0000,0.0000)
+      (uMin,vMax)=(5.0000,0.0000,8.0000)  (uMax,vMax)=(0.0000,5.0000,8.0000)
+
+=== section H done ===
+[exit 0]
+

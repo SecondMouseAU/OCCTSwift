@@ -279,6 +279,7 @@ func setBooleanArray(tag: Int, values: [Bool]) -> Bool
 - **Parameters:** `tag`, label tag; `values`, array to store.
 - **Returns:** `true` on success.
 - **OCCT:** `TDataStd_BooleanArray::Set`.
+- **An empty `values` is refused**, answering `false` and creating nothing. `TDataStd_BooleanArray` has no empty range: the bounds this passes for `[]` are `1, 0`, which OCAF's own persistence drivers reject on both the store and the retrieve side, so an attribute built that way saved as a truncated record and reloaded as a read failure (#2866). Use `setBooleanList(tag:values:)` for a collection that may legitimately be empty.
 - **Example:**
   ```swift
   doc.setBooleanArray(tag: 10, values: [true, false, true])
@@ -383,6 +384,7 @@ func setByteArray(tag: Int, values: [UInt8]) -> Bool
 ```
 
 - **OCCT:** `TDataStd_ByteArray::Set`.
+- **An empty `values` is refused**, answering `false` and creating nothing. `TDataStd_ByteArray` has no empty range: the bounds this passes for `[]` are `0, -1`, which OCAF's own persistence drivers reject on both the store and the retrieve side, so an attribute built that way saved as a truncated record and reloaded as a read failure (#2866).
 - **Example:**
   ```swift
   doc.setByteArray(tag: 20, values: [0xDE, 0xAD, 0xBE, 0xEF])
@@ -548,6 +550,7 @@ func setExtStringArray(tag: Int, values: [String]) -> Bool
 ```
 
 - **OCCT:** `TDataStd_ExtStringArray::Set`.
+- **An empty `values` is refused**, answering `false` and creating nothing. `TDataStd_ExtStringArray` has no empty range: the bounds this passes for `[]` are `1, 0`, which OCAF's own persistence drivers reject on both the store and the retrieve side, so an attribute built that way saved as a truncated record and reloaded as a read failure (#2866). Use `setExtStringList(tag:values:)` for a collection that may legitimately be empty.
 - **Example:**
   ```swift
   doc.setExtStringArray(tag: 30, values: ["alpha", "beta", "gamma"])
@@ -682,6 +685,7 @@ func setReferenceArray(tag: Int, refTags: [Int32]) -> Bool
 ```
 
 - **OCCT:** `TDataStd_ReferenceArray::Set`.
+- **An empty `refTags` is refused**, answering `false` and creating nothing. `TDataStd_ReferenceArray` has no empty range: the bounds this passes for `[]` are `1, 0`, which OCAF's own persistence drivers reject on both the store and the retrieve side, so an attribute built that way saved as a truncated record and reloaded as a read failure (#2866). Use `setReferenceList(tag:refTags:)` for a collection that may legitimately be empty.
 
 ---
 
