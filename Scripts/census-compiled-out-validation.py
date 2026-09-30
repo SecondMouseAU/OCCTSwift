@@ -1138,6 +1138,14 @@ NO_EXCEPTION_DIRECTIVE_RE = re.compile(
     r"^\s*#\s*if(n?def\s+No_Exception|\s+!?\s*defined\s*\(?\s*No_Exception)", re.MULTILINE)
 # An assignment, which is what makes a region swallow rather than merely disappear. `=` that is
 # part of `==`, `!=`, `<=`, `>=`, `+=` and friends is not one.
+#
+# Known limits, from review of #2887: a structured binding (`auto [x, y] = ...`), a range-for
+# (`for (auto x : y)`) and a lambda init-capture (`[x = 1]{}`) would each read as an assignment or
+# as none, and this does not distinguish them. It over-reports rather than under-reports, and the
+# six regions it selects are a committed table that `--verify-no-exception-regions` re-checks, so a
+# wrong selection shows up as a table row nobody can justify rather than as a silent miss. Worth
+# revisiting if OCCT's `#ifndef No_Exception` regions ever stop being the C++03-shaped code they are
+# in 8.0.1.
 ASSIGNMENT_RE = re.compile(r"(?<![=!<>+\-*/%&|^])=(?!=)")
 
 
@@ -1267,9 +1275,12 @@ def assert_view_is_plausible(table, packages, counts, paths):
         problems.append("NCollection_Array1 carries no inline-dead-at-depth row, so either the "
                         "map predates that kind or the walk saw no OCCT source naming the class "
                         "OCCT's own code names most; regenerate with --write-table")
-    elif depth_rows < 2:
+    elif depth_rows < 50:
+        # 50 is half the measured 100 of 104. The threshold was 2 when this landed, which the
+        # sentence below already contradicted: a map carrying two rows is not one that "yields one
+        # for most" of them, and 2 would have passed a map that was almost entirely ungenerated.
         problems.append("only %d class(es) carry an inline-dead-at-depth row; the pinned tree "
-                        "yields one for most of the 104 inline-checked classes" % depth_rows)
+                        "yields one for 100 of the 104 inline-checked classes" % depth_rows)
     if len(paths) < 50:
         problems.append("only %d bridge .mm file(s) found under %s" % (len(paths), SRC))
     if counts["try-blocks"] < 1000:
