@@ -2032,6 +2032,16 @@ extension Surface {
     /// ``extrema(to:uvBounds1:uvBounds2:)`` over the same bounds is the parallel case, and
     /// ``extremaSS(other:)`` reports `isParallel` directly from an untrimmed computation.
     ///
+    /// **"Parallel" here means two parallel planes, and nothing else.** It is OCCT's own
+    /// predicate, and it is much narrower than "the two surfaces are everywhere equidistant":
+    /// `Extrema_ExtSS::Perform` reaches the analytic `Extrema_ExtElSS` only in its `Plane` x
+    /// `Plane` arm and sends every other pair to the general solver, which never sets the flag,
+    /// and `Extrema_ExtElSS` itself sets it in its `gp_Pln`/`gp_Pln` overload alone. So coaxial
+    /// cylinders and concentric spheres, which are equidistant everywhere, come back with two
+    /// ordinary extrema and a real point pair, measured as modes 8 and 9 of
+    /// `Scripts/repro/2876/probe.mm`. ``extrema(to:uvBounds1:uvBounds2:)`` answers for both of
+    /// those, and so does this.
+    ///
     /// A returned `0` is a measurement, not a placeholder: two coincident planes are parallel with
     /// a computed distance of zero, measured as mode 5 of `Scripts/repro/2876/probe.mm`.
     ///

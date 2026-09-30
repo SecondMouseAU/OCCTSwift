@@ -92,12 +92,24 @@ struct Issue2876ParallelSurfaceDistanceTests {
         }
     }
 
-    @Test("Parallel cylinders about the same axis report the radius difference")
-    func parallelCylinders() throws {
-        // A second construction, and a different OCCT surface type: two coaxial cylinders are
-        // everywhere equidistant too, so this must reach the same parallel branch and report
-        // r2 - r1. Planes alone would leave the result attributable to Geom_Plane's infinite
-        // domain rather than to parallelism.
+    @Test("Coaxial cylinders are everywhere equidistant and are NOT the parallel case")
+    func coaxialCylindersAreNotTheParallelCase() throws {
+        // Written first as a second parallel construction, on the assumption that two coaxial
+        // cylinders reach the same branch as two parallel planes. Measured, they do not, and the
+        // assumption is worth keeping as a test because it is the obvious one to make.
+        //
+        // `IsParallel()` is NOT the predicate "the two surfaces are everywhere equidistant". In
+        // this kernel the surface-surface parallel case is exactly two parallel planes:
+        // `Extrema_ExtSS::Perform` reaches `myExtElSS` only in its `Plane` x `Plane` arm
+        // (`Extrema_ExtSS.cxx:120-127`) and every other pair goes to `Extrema_GenExtSS`, which
+        // leaves `myIsPar` false; and `Extrema_ExtElSS` sets `myIsPar = true` in its
+        // `gp_Pln`/`gp_Pln` overload alone, every other overload assigning false. So coaxial
+        // cylinders and concentric spheres both come back with a discrete point pair.
+        //
+        // Measured as modes 8 and 9 of `Scripts/repro/2876/probe.mm`: r3 and r8, coaxial
+        // cylinders and concentric spheres alike, give `IsParallel() == false`, `NbExtrema() == 2`
+        // and `LowerDistance() == 4.9999999999999991` with a real pair behind it. This is the same
+        // narrowness #636 records for `Extrema_ExtCC`, one class over.
         let inner = try #require(
             Surface.cylinder(origin: .zero, axis: SIMD3(0, 0, 1), radius: 3))
         let outer = try #require(
@@ -105,6 +117,12 @@ struct Issue2876ParallelSurfaceDistanceTests {
         let bounds = (uMin: 0.0, uMax: 2.0 * Double.pi, vMin: -10.0, vMax: 10.0)
         let d = try #require(inner.minDistance(to: outer, uvBounds1: bounds, uvBounds2: bounds))
         #expect(abs(d - 5.0) < 1e-6, "coaxial cylinders r3 and r8 measured \(d)")
+        // ...and because they are not the parallel case, extrema answers for them too, with the
+        // same number. A future change that widened the refusal to "looks equidistant" would fail
+        // here rather than quietly costing callers their point pair.
+        let pair = try #require(
+            inner.extrema(to: outer, uvBounds1: bounds, uvBounds2: bounds))
+        #expect(pair.distance == d)
     }
 
     // MARK: - Not a fabricated zero
@@ -147,6 +165,19 @@ struct Issue2876ParallelSurfaceDistanceTests {
         let viaMinDistance = try #require(s1.minDistance(to: s2))
         #expect(viaMinDistance == viaExtrema)
         #expect(abs(viaMinDistance - 12.0) < 0.5)
+
+        // ...and over explicit bounds too, which is the half that has teeth. Agreement over the
+        // defaults alone would still hold if this method quietly ignored its uvBounds, because a
+        // sphere's default bounds are its whole domain. Over a trimmed box the two entry points
+        // agree only if they are genuinely the same computation.
+        let sliver = (uMin: 2.0, uMax: 3.0, vMin: 0.5, vMax: 1.0)
+        let boundedExtrema = try #require(
+            s1.extrema(to: s2, uvBounds1: sliver, uvBounds2: sliver)
+        ).distance
+        let boundedMinDistance = try #require(
+            s1.minDistance(to: s2, uvBounds1: sliver, uvBounds2: sliver))
+        #expect(boundedMinDistance == boundedExtrema)
+        #expect(boundedMinDistance != viaMinDistance)
     }
 
     @Test("Explicit UV bounds change the answer, so they are not ignored")

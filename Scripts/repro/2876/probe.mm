@@ -11,7 +11,7 @@
 // The three questions, and the three things the modes have to keep apart:
 //
 //   "distance reported, points absent"  LowerDistance() is 5 and NearestPoints() faults.
-//   "nothing reported"                  myIsDone false, so LowerDistance() itself raises.
+//   "nothing reported"                  NbExtrema() is 0 and LowerDistance() itself raises.
 //   "a fabricated zero"                 LowerDistance() returning 0.0, or the caller's zero-filled
 //                                       output struct surviving untouched, would look like two
 //                                       coincident surfaces. Every mode prints the number.
@@ -38,13 +38,25 @@
 //      OCCTCurve3DDistanceToSurface, and it is the asymmetry #2876 is closing: curve-surface
 //      answers, surface-surface refuses.
 //   7  CS control, a line 40 above a sphere of radius 3: not parallel, LowerDistance 37.
+//   8  SS, two COAXIAL CYLINDERS of radius 3 and 8. Everywhere equidistant to the eye, and the
+//      reason this mode exists: IsParallel() is NOT the predicate "the two surfaces are everywhere
+//      equidistant", so an assumption that this reaches the parallel branch needs measuring rather
+//      than reasoning. Whatever it reports, LowerDistance() must be 5.
+//   9  SS, two CONCENTRIC SPHERES of radius 3 and 8, for the same question with a second
+//      curved-surface pair.
+//  10  A sweep over fourteen fixtures printing every Distance(i) beside LowerDistance(), looking
+//      for one where the minimum is not at index 1. Without such a fixture a wrapper returning
+//      Distance(1) is indistinguishable from a correct one, which is how a test-injection run
+//      found this mode necessary. Result: index 1 is the minimum in twelve of the fourteen, and
+//      in the other two the gap is 2.22e-16, so no fixture here separates them at a testable
+//      magnitude. See transcript.txt, finding 8.
 //
 //   clang++ -std=c++17 -ObjC++ -w -O0 -g \
 //     -I"Libraries/OCCT.xcframework/macos-arm64/Headers" \
 //     -L"Libraries/OCCT.xcframework/macos-arm64" \
 //     -lOCCT-macos -framework Foundation -framework AppKit -lz -lc++ \
 //     Scripts/repro/2876/probe.mm -o /tmp/occt_probe_2876
-//   for m in 0 1 2 3 4 5 6 7; do /tmp/occt_probe_2876 $m; echo "  mode $m exit=$?"; done
+//   for m in 0 1 2 3 4 5 6 7 8 9; do /tmp/occt_probe_2876 $m; echo "  mode $m exit=$?"; done
 //
 // The transcript this produced is committed next to it as transcript.txt.
 
@@ -52,6 +64,7 @@
 #include <GeomAPI_ExtremaSurfaceSurface.hxx>
 #include <Geom_Line.hxx>
 #include <Geom_Plane.hxx>
+#include <Geom_CylindricalSurface.hxx>
 #include <Geom_SphericalSurface.hxx>
 #include <Standard_Failure.hxx>
 #include <gp_Ax3.hxx>
@@ -70,6 +83,11 @@ static occ::handle<Geom_Plane> planeZ(double z)
 static occ::handle<Geom_SphericalSurface> sphere(double x, double r)
 {
   return new Geom_SphericalSurface(gp_Ax3(gp_Pnt(x, 0, 0), gp_Dir(0, 0, 1)), r);
+}
+
+static occ::handle<Geom_CylindricalSurface> cylinder(double r)
+{
+  return new Geom_CylindricalSurface(gp_Ax3(gp_Pnt(0, 0, 0), gp_Dir(0, 0, 1)), r);
 }
 
 // GeomAPI_ExtremaSurfaceSurface over an explicit UV box, which is the bounded Init the bridge's
@@ -156,6 +174,48 @@ static void extremaCS(const char*                      label,
   std::fflush(stdout);
 }
 
+// Which index is the minimum? LowerDistance() reads myIndex, the index of the smallest
+// SquareDistance, while Distance(N) reads N. They differ only where the solver does not happen to
+// find the minimum first, so a wrapper that returned Distance(1) is indistinguishable from a
+// correct one on every fixture where myIndex == 1. Mode 10 sweeps for a fixture where it is not.
+static void indexSweep(const char*                      label,
+                       const occ::handle<Geom_Surface>& s1,
+                       const occ::handle<Geom_Surface>& s2,
+                       const double                     uv1[4],
+                       const double                     uv2[4])
+{
+  GeomAPI_ExtremaSurfaceSurface ex(s1,
+                                   s2,
+                                   uv1[0],
+                                   uv1[1],
+                                   uv1[2],
+                                   uv1[3],
+                                   uv2[0],
+                                   uv2[1],
+                                   uv2[2],
+                                   uv2[3]);
+  std::printf("  %-40s NbExtrema=%d", label, ex.NbExtrema());
+  if (ex.NbExtrema() == 0)
+  {
+    std::printf(" (no extrema)\n");
+    return;
+  }
+  const double lower = ex.LowerDistance();
+  std::printf(" LowerDistance=%.17g  Distance(i) =", lower);
+  bool firstIsLowest = true;
+  for (int i = 1; i <= ex.NbExtrema(); ++i)
+  {
+    const double d = ex.Distance(i);
+    std::printf(" %.6g", d);
+    if (i == 1 && d != lower)
+    {
+      firstIsLowest = false;
+    }
+  }
+  std::printf("   Distance(1)==LowerDistance: %s\n", firstIsLowest ? "yes" : "NO");
+  std::fflush(stdout);
+}
+
 int main(int argc, char** argv)
 {
   const int mode = (argc > 1) ? std::atoi(argv[1]) : 0;
@@ -164,6 +224,9 @@ int main(int argc, char** argv)
   static const double square[4]   = {-10.0, 10.0, -10.0, 10.0};
   static const double infinite[4] = {-1.0e100, 1.0e100, -1.0e100, 1.0e100};
   static const double ball[4]     = {0.0, 2.0 * M_PI, -M_PI_2, M_PI_2};
+  static const double tube[4]     = {0.0, 2.0 * M_PI, -10.0, 10.0};
+  static const double halfBall[4] = {0.0, M_PI, -M_PI_2, M_PI_2};
+  static const double halfTube[4] = {0.0, M_PI, -10.0, 10.0};
 
   try
   {
@@ -222,6 +285,29 @@ int main(int argc, char** argv)
                   sphere(0, 3),
                   ball);
         break;
+      case 8:
+        extremaSS("SS coaxial cylinders r3 and r8", cylinder(3), cylinder(8), tube, tube, true);
+        break;
+      case 9:
+        extremaSS("SS concentric spheres r3 and r8", sphere(0, 3), sphere(0, 8), ball, ball, true);
+        break;
+      case 10: {
+        indexSweep("spheres r3/r5, 20 apart", sphere(0, 3), sphere(20, 5), ball, ball);
+        indexSweep("spheres r3/r5, 8 apart", sphere(0, 3), sphere(8, 5), ball, ball);
+        indexSweep("coaxial cylinders r3/r8", cylinder(3), cylinder(8), tube, tube);
+        indexSweep("concentric spheres r3/r8", sphere(0, 3), sphere(0, 8), ball, ball);
+        indexSweep("sphere r3 and a plane 9 above", sphere(0, 3), planeZ(9), ball, square);
+        indexSweep("sphere r3 and a plane 1 above", sphere(0, 3), planeZ(1), ball, square);
+        indexSweep("cylinder r3 and a plane 9 above", cylinder(3), planeZ(9), tube, square);
+        indexSweep("spheres r3/r5 20 apart, half UV", sphere(0, 3), sphere(20, 5), halfBall, ball);
+        indexSweep("plane 9 above, sphere r3 (swapped)", planeZ(9), sphere(0, 3), square, ball);
+        indexSweep("plane 9 above, cylinder r3 (swapped)", planeZ(9), cylinder(3), square, tube);
+        indexSweep("sphere r3 / sphere r5 at x=4", sphere(0, 3), sphere(4, 5), ball, ball);
+        indexSweep("cylinder r3 / sphere r2 at x=30", cylinder(3), sphere(30, 2), tube, ball);
+        indexSweep("sphere r3 / cylinder r8", sphere(0, 3), cylinder(8), ball, tube);
+        indexSweep("cylinder r3 / cylinder r8, half U", cylinder(3), cylinder(8), halfTube, tube);
+        break;
+      }
       default:
         std::printf("  unknown mode\n");
         return 2;

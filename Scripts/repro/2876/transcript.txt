@@ -11,7 +11,7 @@ BUILD_RELEASE_DISABLE_EXCEPTIONS, which is why mode 1 is a fault rather than a t
     -L"Libraries/OCCT.xcframework/macos-arm64" \
     -lOCCT-macos -framework Foundation -framework AppKit -lz -lc++ \
     Scripts/repro/2876/probe.mm -o /tmp/occt_probe_2876
-  for m in 0 1 2 3 4 5 6 7; do /tmp/occt_probe_2876 $m; echo "  mode $m exit=$?"; done
+  for m in 0 1 2 3 4 5 6 7 8 9 10; do /tmp/occt_probe_2876 $m; echo "  mode $m exit=$?"; done
 
 mode 0
   SS parallel planes, gap 5, finite UV         IsParallel=true NbExtrema=1 LowerDistance=5
@@ -41,10 +41,36 @@ mode 6
 mode 7
   CS control, line 40 above a sphere r3        IsParallel=false NbExtrema=2 LowerDistance=37
   mode 7 exit=0
+mode 8
+  SS coaxial cylinders r3 and r8               IsParallel=false NbExtrema=2 LowerDistance=4.9999999999999991
+    NearestPoints() behind NbExtrema()...
+    returned (2.83608 0.978085 -9.995) (7.56288 2.60823 -9.995), |p1p2|=4.9999999999999991
+  mode 8 exit=0
+mode 9
+  SS concentric spheres r3 and r8              IsParallel=false NbExtrema=2 LowerDistance=4.9999999999999991
+    NearestPoints() behind NbExtrema()...
+    returned (1.58807 2.43643 -0.736096) (4.23485 6.49715 -1.96292), |p1p2|=4.9999999999999991
+  mode 9 exit=0
+mode 10
+  spheres r3/r5, 20 apart                  NbExtrema=2 LowerDistance=12.000000001961356  Distance(i) = 12 28   Distance(1)==LowerDistance: yes
+  spheres r3/r5, 8 apart                   NbExtrema=2 LowerDistance=2.3786873389043813e-11  Distance(i) = 2.37869e-11 16   Distance(1)==LowerDistance: yes
+  coaxial cylinders r3/r8                  NbExtrema=2 LowerDistance=4.9999999999999991  Distance(i) = 5 11   Distance(1)==LowerDistance: yes
+  concentric spheres r3/r8                 NbExtrema=2 LowerDistance=4.9999999999999991  Distance(i) = 5 11   Distance(1)==LowerDistance: yes
+  sphere r3 and a plane 9 above            NbExtrema=1 LowerDistance=12  Distance(i) = 12   Distance(1)==LowerDistance: yes
+  sphere r3 and a plane 1 above            NbExtrema=2 LowerDistance=0  Distance(i) = 0 4.44089e-16   Distance(1)==LowerDistance: yes
+  cylinder r3 and a plane 9 above          NbExtrema=2 LowerDistance=0  Distance(i) = 2.22045e-16 0   Distance(1)==LowerDistance: NO
+  spheres r3/r5 20 apart, half UV          NbExtrema=1 LowerDistance=28  Distance(i) = 28   Distance(1)==LowerDistance: yes
+  plane 9 above, sphere r3 (swapped)       NbExtrema=1 LowerDistance=12  Distance(i) = 12   Distance(1)==LowerDistance: yes
+  plane 9 above, cylinder r3 (swapped)     NbExtrema=2 LowerDistance=0  Distance(i) = 2.22045e-16 0   Distance(1)==LowerDistance: NO
+  sphere r3 / sphere r5 at x=4             NbExtrema=2 LowerDistance=1.0550966718583014e-15  Distance(i) = 1.0551e-15 12   Distance(1)==LowerDistance: yes
+  cylinder r3 / sphere r2 at x=30          NbExtrema=2 LowerDistance=25  Distance(i) = 25 35   Distance(1)==LowerDistance: yes
+  sphere r3 / cylinder r8                  NbExtrema=2 LowerDistance=4.9999999999999991  Distance(i) = 5 11   Distance(1)==LowerDistance: yes
+  cylinder r3 / cylinder r8, half U        NbExtrema=2 LowerDistance=4.9999999999999991  Distance(i) = 5 11   Distance(1)==LowerDistance: yes
+  mode 10 exit=0
 
 
-What the eight modes establish
-------------------------------
+What the eleven modes establish
+-------------------------------
 
 1. The distance is real and it is the kernel's own. Mode 0: LowerDistance() is exactly 5 on two
    planes built 5 apart, with IsParallel() true and NbExtrema() 1. Mode 2 repeats it over the
@@ -79,6 +105,35 @@ What the eight modes establish
    a plane through GeomAPI_ExtremaCurveSurface, reports IsParallel() true and LowerDistance() 5, and
    OCCTCurve3DDistanceToSurface already returns that number to Swift. Mode 7 is its non-parallel
    control at 37. Curve-surface has always answered; surface-surface is the one that refused.
+
+7. IsParallel() is NOT "the two surfaces are everywhere equidistant", and modes 8 and 9 exist
+   because that is the obvious assumption to make. Coaxial cylinders of radius 3 and 8, and
+   concentric spheres of radius 3 and 8, are everywhere exactly 5 apart, and BOTH report
+   IsParallel() false, NbExtrema() 2 and a real point pair. Read afterwards rather than before,
+   which is the wrong order and is recorded as such: Extrema_ExtSS::Perform reaches myExtElSS only
+   in its Plane x Plane arm (Extrema_ExtSS.cxx:120-127) and sends every other pair to
+   Extrema_GenExtSS, which never sets myIsPar; and Extrema_ExtElSS assigns myIsPar = true in its
+   gp_Pln/gp_Pln overload alone (Extrema_ExtElSS.cxx:49), every other overload assigning false.
+   So in this kernel the surface-surface parallel case is exactly two parallel planes. This is the
+   same narrowness #636 records for Extrema_ExtCC one class over, arrived at independently.
+
+8. A LIMIT OF THE TEST SUITE, found by injection rather than by reading, and recorded because it
+   will not be visible from the tests. Mode 10 exists because replacing LowerDistance() with
+   Distance(1) in the bridge failed no test at all. LowerDistance() is
+   sqrt(SquareDistance(myIndex)) where myIndex is the index of the smallest square distance, so the
+   two differ only where the solver does not find the minimum first. Over fourteen fixtures,
+   spheres near and far, coaxial and concentric pairs, sphere/plane, cylinder/plane, mixed types,
+   swapped argument order and trimmed UV, index 1 is the minimum in twelve, and in the two where
+   it is not the gap is 2.22e-16. So NO fixture found here separates the two at a testable
+   magnitude, and the case for reading LowerDistance() rather than Distance(1) rests on the source
+   (GeomAPI_ExtremaSurfaceSurface.cxx:225-230) and not on a red test. Anyone adding a fixture that
+   does separate them should add the assertion with it.
+
+   Two incidental measurements from the same sweep, neither chased here: a sphere of radius 3 and
+   an untrimmed plane 9 above it reports ONE extremum at 12, which is the far side of the sphere
+   rather than the near one at 6; and every near-touching pair reports its zero as 1e-11 to 1e-16
+   rather than as 0, so an equality test against zero is the wrong shape for anything but the
+   coincident-plane case in mode 5, which is exact.
 
 Second construction
 -------------------

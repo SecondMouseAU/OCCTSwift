@@ -402,6 +402,16 @@ alone, never `NearestPoints()` or `LowerDistanceParameters()`.
 - **Note:** to tell the two cases apart, a non-`nil` distance alongside a `nil`
   `extrema(to:uvBounds1:uvBounds2:)` over the same bounds is the parallel one, and
   `extremaSS(other:)` reports `isParallel` directly from an untrimmed computation.
+- **"Parallel" means two parallel planes, and nothing else.** It is OCCT's own predicate and it is
+  much narrower than "the two surfaces are everywhere equidistant". `Extrema_ExtSS::Perform`
+  reaches the analytic `Extrema_ExtElSS` only in its `Plane` x `Plane` arm
+  (`Extrema_ExtSS.cxx:120-127`) and sends every other pair to `Extrema_GenExtSS`, which never sets
+  the flag; `Extrema_ExtElSS` in turn assigns `myIsPar = true` in its `gp_Pln`/`gp_Pln` overload
+  alone (`Extrema_ExtElSS.cxx:49`). Measured as modes 8 and 9 of `Scripts/repro/2876/probe.mm`:
+  coaxial cylinders of radius 3 and 8, and concentric spheres of radius 3 and 8, are everywhere 5
+  apart and both report `IsParallel() == false`, `NbExtrema() == 2` and a real point pair, so
+  `extrema(to:)` answers for them normally. Same narrowness `Curve3D.extrema(with:)` documents for
+  `Extrema_ExtCC` (#636).
 
 ---
 
