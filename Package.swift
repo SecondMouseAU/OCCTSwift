@@ -735,6 +735,13 @@ let wasmExcludedTestFiles: [String: [String]] = [
     "OCCTModelingTests": [
         "BRepFillEvolvedTests.swift",
         "EvolvedAdvancedTests.swift",
+        // A second instance of #2895's out-of-bounds free, and it is what made that issue's second
+        // reading the likely one: `TopLoc_SListOfItemLocation::Clear()` inside
+        // `TopoDS_Shape::~TopoDS_Shape()`, reached through `OCCTShapeFilletVariable`. Both this and
+        // #2895's original trace are a fillet OCCT REFUSES, through two different fillet APIs, so
+        // the corruption follows the refusal rather than the geometry: it is most likely what a
+        // failed unwind leaves behind (#2894), not an independent memory bug.
+        "Issue612FilletContourSelectionTests.swift",
         "Issue208SelfIntersectionTests.swift",
         "Issue598PipeShellFrenetModeTests.swift"
     ],
