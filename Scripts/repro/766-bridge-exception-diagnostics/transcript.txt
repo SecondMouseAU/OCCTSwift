@@ -1,0 +1,7 @@
+IsDirsCoinside((0,0,0),(0,0,1)): kind=Standard_Failure type=Standard_ConstructionError message="gp_Dir() - input vector has zero norm" stackEmpty=true
+IsDirsCoinside((0,0,1),(0,0,1)) returned true, no throw
+gp_Ax1(origin, gp_Dir(0,0,0)): kind=Standard_Failure type=Standard_ConstructionError message="gp_Dir() - input vector has zero norm" stackEmpty=true
+DefaultStackTraceLength at start = 0
+after SetDefaultStackTraceLength(16) = 16
+gp_Dir(0,0,0) at depth 16: kind=Standard_Failure type=Standard_ConstructionError message="gp_Dir() - input vector has zero norm" stackEmpty=false
+after SetDefaultStackTraceLength(-5) = -5
