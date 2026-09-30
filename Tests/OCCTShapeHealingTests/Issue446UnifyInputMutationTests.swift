@@ -7,8 +7,10 @@ import simd
 /// Issue #446: `ShapeUpgrade_UnifySameDomain` rewrites sub-shapes of the shape it is handed, and
 /// those rewrites reach the `TShape`s the caller's `Shape` still shares, so the caller's solid came
 /// back different even when the merge result was discarded (reported downstream as a clean manifold
-/// turning self-intersecting on a declined merge). Every unify entry point now works on a private
-/// copy: `Shape.unified()`, `Shape.simplified()` and `UnifySameDomainBuilder`.
+/// turning self-intersecting on a declined merge).
+///
+/// Every unify entry point now works on a private copy: `Shape.unified()`, `Shape.simplified()`
+/// and `UnifySameDomainBuilder`.
 ///
 /// The fixture is two stacked coaxial cylinders. Their two cylindrical faces are same-domain but
 /// differently parameterised, which drives the algorithm's `TransformPCurves` path, the one that
@@ -52,8 +54,10 @@ struct Issue446UnifyInputMutationTests {
     }
 
     /// The price of the copy, pinned so it is a decision rather than a surprise: the result shares
-    /// no sub-shapes with the input, even where nothing was merged. Callers that mapped selections
-    /// or attributes across by `isSame(as:)` have to key off geometry instead.
+    /// no sub-shapes with the input, even where nothing was merged.
+    ///
+    /// Callers that mapped selections or attributes across by `isSame(as:)` have to key off
+    /// geometry instead.
     @Test("The result no longer shares sub-shapes with the input")
     func resultDoesNotShareSubShapesWithInput() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),  // nothing to merge
@@ -131,8 +135,10 @@ struct Issue446UnifyInputMutationTests {
     }
 
     /// `keepShape` names a sub-shape of the CALLER's shape, so working on a copy means it has to be
-    /// mapped onto its counterpart there. Without that mapping every `keepShape` would silently keep
-    /// nothing, and every case below would collapse to the 3-face plain merge.
+    /// mapped onto its counterpart there.
+    ///
+    /// Without that mapping every `keepShape` would silently keep nothing, and every case below
+    /// would collapse to the 3-face plain merge.
     ///
     /// Which edge is kept decides the answer, so the assertion is per-edge rather than a count:
     /// keeping the junction circle (the seam the two cylindrical faces meet on, at z = 10) blocks

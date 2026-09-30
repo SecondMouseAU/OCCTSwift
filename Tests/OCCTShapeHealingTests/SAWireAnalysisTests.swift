@@ -10,9 +10,18 @@ import simd
 // asserted `>= 0` on distances, and all returned early, silently green, if the box failed.
 //
 // Several checks report a "problem" on this healthy box face (order, 3D/2D gaps, edge curves, the
-// gap at edge 1) with gap distances of 14.14 = 10 sqrt 2, a diagonal. The kernel does that on the
-// face's own wire and on the same wire re-oriented FORWARD (probe); it is pinned as measured and
-// flagged in the PR as a finding to understand, not asserted as correct behaviour.
+// gap at edge 1) with gap distances of 14.142135623730951 = 10 sqrt 2, the face's diagonal rather
+// than any gap in it. The kernel answers the same on the face's own wire and on that wire
+// re-oriented FORWARD, so orientation is not the cause (probe).
+//
+// `checkOrder == true` is the cause, and it is the kernel saying the edges are not in connection
+// order. OCCT's own caller treats that as a stop condition rather than one result among many: the
+// shape_healing user guide writes `if (aCheckWire.CheckOrder()) { "Some edges in the wire need to
+// be reordered"; return; }` and runs no later check. On an out-of-order square the "next" edge in
+// the analyzer's sequence is the opposite one, which is where the diagonal comes from. So these
+// are correct answers to a question OCCT's own usage says not to ask, the values are pinned here
+// as regression values rather than as a claim that a box face has four defects, and the missing
+// precondition on the Swift surface is #2906.
 @Suite("ShapeAnalysis_Wire Tests")
 struct SAWireAnalysisTests {
     private func faceAndWire() throws -> (face: Shape, wire: Shape) {

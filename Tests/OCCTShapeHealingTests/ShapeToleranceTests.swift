@@ -44,11 +44,13 @@ struct ShapeToleranceTests {
     }
 
     @Test func vertexTolerance() throws {
-        #expect(abs(try box().toleranceValue(mode: .average, subShapeType: 7) - 1e-7) < 1e-15)  // VERTEX
+        // subShapeType 7 is TopAbs_VERTEX.
+        #expect(abs(try box().toleranceValue(mode: .average, subShapeType: 7) - 1e-7) < 1e-15)
     }
 
     @Test func edgeTolerance() throws {
-        #expect(abs(try box().toleranceValue(mode: .average, subShapeType: 6) - 1e-7) < 1e-15)  // EDGE
+        // subShapeType 6 is TopAbs_EDGE.
+        #expect(abs(try box().toleranceValue(mode: .average, subShapeType: 6) - 1e-7) < 1e-15)
     }
 
     // #1438: OCCTShapeToleranceValue/OverCount/InRangeCount had no pointer guard at all (unlike

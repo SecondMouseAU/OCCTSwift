@@ -47,11 +47,18 @@ struct SAEdgeAnalysisTests {
         #expect(!EdgeAnalysis.isSeam(edge, face: face))  // box edges are not seam edges
     }
 
+    // `ok` is a misnomer this test is deliberately not reading at face value. OCCT's own caller,
+    // the shape_healing user guide, writes `if (aCheckEdge.CheckSameParameter(theEdge, aMaxDev))
+    // { "Incorrect SameParameter flag"; aFixEdge.FixSameParameter(theEdge); }`, so `true` means a
+    // problem was found, exactly like every sibling on `ShapeAnalysis_Edge`. The header's own
+    // doxygen says the opposite ("If deviation is greater than tolerance ... returns False, else
+    // returns True"); it is the guide and the call site that are right, per
+    // okf/policies/follow-occt-callers.md. So `false` below is "this box edge is fine", and the
+    // Swift tuple label inverts that (#2901).
     @Test func edgeSameParameter() throws {
-        // ShapeAnalysis_Edge::CheckSameParameter reports a problem; kernel: none, deviation 0.
         let (edge, _, _) = try boxEdgeAndFace()
         let result = EdgeAnalysis.checkSameParameter(edge)
-        #expect(result.ok == false)
+        #expect(result.ok == false)  // no problem found
         #expect(result.maxDeviation == 0)
     }
 

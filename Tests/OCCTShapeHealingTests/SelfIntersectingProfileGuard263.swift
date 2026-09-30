@@ -9,11 +9,13 @@ import simd
 /// A self-intersecting ("bowtie") outline, extruded into a prism and then healed by OCCT's
 /// `ShapeFix_Shape`, corrupts the heap and aborts the process with an uncatchable OS signal
 /// (#263, upstream OCCT; backtrace `ShapeFix_Face::FixOrientation` → `BRep_Tool::Curve` →
-/// `BRep_TEdge::EmptyCopy`). Since `OCC_CATCH_SIGNALS` is inert in this build, the bridge cannot
-/// recover from the signal, so the prism/heal wrappers detect the `BRepCheck_SelfIntersectingWire`
-/// status and refuse the input, returning `nil` instead of crashing. A self-intersecting profile can
-/// never form a valid extruded solid, so refusing it loses nothing. These tests would abort the
-/// whole test process (not just fail) prior to the guard.
+/// `BRep_TEdge::EmptyCopy`).
+///
+/// Since `OCC_CATCH_SIGNALS` is inert in bridge code, the bridge cannot recover from the signal,
+/// so the prism/heal wrappers detect the `BRepCheck_SelfIntersectingWire` status and refuse the
+/// input, returning `nil` instead of crashing. A self-intersecting profile can never form a valid
+/// extruded solid, so refusing it loses nothing. These tests would abort the whole test process
+/// (not just fail) prior to the guard.
 @Suite("Self-Intersecting Profile Crash Guard (#263)")
 struct SelfIntersectingProfileGuard263 {
     /// Bowtie quad: (0,0)→(1,1)→(1,0)→(0,1)→close, the two diagonals cross, so the wire

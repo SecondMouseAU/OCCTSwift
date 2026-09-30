@@ -7,9 +7,10 @@ import simd
 /// and the only one the #317 pass missed, it built a bare `ShapeFix_Face` with no
 /// `SetContext(new ShapeBuild_ReShape)`, leaving it exposed to the #317 mechanism
 /// (`FixPeriodicDegenerated` null-dereferencing `Context()`) on any unpatched kernel, and silently
-/// skipping the context-dependent fixes on a patched one. The only #317 regression test
-/// (`Issue317PeriodicConicalSingleWireTests`) covers `Shape.face(from:boundary:)`, a different call
-/// site.
+/// skipping the context-dependent fixes on a patched one.
+///
+/// The only #317 regression test (`Issue317PeriodicConicalSingleWireTests`) covers
+/// `Shape.face(from:boundary:)`, a different call site.
 ///
 /// These tests pin both halves: the #317 crash shape now goes through `Face.fixed(tolerance:)`, and
 /// ordinary faces must be unaffected by the added context (the real risk of the change).
