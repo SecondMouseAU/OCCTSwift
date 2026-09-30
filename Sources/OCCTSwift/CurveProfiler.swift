@@ -42,7 +42,23 @@ public final class CurveProfiler: @unchecked Sendable {
 
     /// Perform the homogenization.
     ///
-    /// Returns true on success.
+    /// Returns true on success, and false when no curve has been added.
+    ///
+    /// The empty case is refused in the bridge rather than passed on: `GeomFill_Profiler::Perform`
+    /// indexes the first curve of its own sequence with no bound test that survives this Release
+    /// kernel, so an empty profiler takes the process down uncatchably rather than reporting a
+    /// failure (#2884, measured in `Scripts/repro/2884`). One curve is enough.
+    ///
+    /// ```swift
+    /// let profiler = CurveProfiler.create()
+    /// if let a = Curve3D.segment(from: SIMD3(0, 0, 0), to: SIMD3(10, 0, 0)),
+    ///     let b = Curve3D.segment(from: SIMD3(0, 0, 5), to: SIMD3(10, 0, 5))
+    /// {
+    ///     profiler.addCurve(a)
+    ///     profiler.addCurve(b)
+    ///     print(profiler.perform())
+    /// }
+    /// ```
     @discardableResult
     public func perform(tolerance: Double = 1e-6) -> Bool {
         OCCTGeomFillProfilerPerform(handle, tolerance)
@@ -61,6 +77,28 @@ public final class CurveProfiler: @unchecked Sendable {
     public var isPeriodic: Bool { OCCTGeomFillProfilerIsPeriodic(handle) }
 
     /// Get poles for a curve at 1-based index.
+    ///
+    /// Returns `[]` when `curveIndex` is outside `1...n`, where `n` is the number of curves
+    /// `addCurve(_:)` actually added, and when `perform()` has not run.
+    ///
+    /// The range is enforced in the bridge, against a count the bridge keeps itself.
+    /// `GeomFill_Profiler::Poles` documents the same range and tests it with two checks this
+    /// Release kernel compiles out, so measured on the pinned kernel an index of 0 crashed the
+    /// process and an index past the end returned another curve's poles read from beyond the end
+    /// of the sequence (#2884, `Scripts/repro/2884`).
+    ///
+    /// ```swift
+    /// let profiler = CurveProfiler.create()
+    /// if let a = Curve3D.segment(from: SIMD3(0, 0, 0), to: SIMD3(10, 0, 0)),
+    ///     let b = Curve3D.segment(from: SIMD3(0, 0, 5), to: SIMD3(10, 0, 5))
+    /// {
+    ///     profiler.addCurve(a)
+    ///     profiler.addCurve(b)
+    ///     if profiler.perform() {
+    ///         print(profiler.poles(curveIndex: 1).count)
+    ///     }
+    /// }
+    /// ```
     public func poles(curveIndex: Int) -> [SIMD3<Double>] {
         let n = poleCount
         guard n > 0 else { return [] }

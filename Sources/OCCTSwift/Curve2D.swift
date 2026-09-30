@@ -2864,8 +2864,17 @@ extension Curve2D {
     ///   - minorRadius: semi-minor axis. Must be greater than zero and no larger than
     ///     `majorRadius`; equal radii are a circle and are valid.
     ///   - u1: start angle, in radians.
-    ///   - u2: end angle, in radians.
-    /// - Returns: the converted curve, or `nil` if the ellipse is degenerate.
+    ///   - u2: end angle, in radians. The sweep `u2 - u1` must be greater than zero and no more
+    ///     than a full turn; `u2` below `u1`, a sweep past `2 * .pi`, and a non-finite bound all
+    ///     return `nil`.
+    /// - Returns: the converted curve, or `nil` if the ellipse is degenerate or the sweep is
+    ///   outside `0 ..< 2 * .pi` inclusive of the upper bound.
+    ///
+    /// The sweep is checked here because `Convert_EllipseToBSplineCurve` states that range and
+    /// this Release kernel compiles its check away along with the two locals it tested. Measured
+    /// on the pinned kernel (#2884, `Scripts/repro/2884`): a sweep of `-2 * .pi`, which is what
+    /// swapping `u1` and `u2` on a full ellipse produces, took the process down uncatchably, and
+    /// a sweep of `1e9` asked the kernel for 763,943,729 poles.
     ///
     /// ```swift
     /// if let c = Curve2D.fromEllipseArc(centerX: 0, centerY: 0,
