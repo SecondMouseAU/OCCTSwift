@@ -455,8 +455,11 @@ public final class Drawing: @unchecked Sendable {
     /// - Parameters:
     ///   - shape: The 3D shape to project
     ///   - direction: View direction
-    ///   - deflection: Mesh deflection (smaller = more accurate, default 0.01)
-    /// - Returns: Drawing containing the projected edges, or nil if projection fails or deflection is not positive
+    ///   - deflection: Mesh deflection (smaller = more accurate, default 0.01). The floor is
+    ///     `1e-7`, OCCT's `Precision::Confusion()`; a value below it, a negative one, or NaN
+    ///     is refused (#2879).
+    /// - Returns: Drawing containing the projected edges, or nil if projection fails or the
+    ///   deflection is refused
     public static func projectFast(
         _ shape: Shape,
         direction: SIMD3<Double>,

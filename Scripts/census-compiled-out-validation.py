@@ -46,6 +46,10 @@ Four channels, and #2858 added the last two plus the depth qualifier:
          as well as the raise, so the check's answer is discarded and the next statement runs on
          data the kernel knows is wrong (PR #2849). Committed as a literal table, because no
          derivation over raise sites can see it; `--verify-no-exception-regions` re-derives it.
+         Every row now carries an adjudication against the bridge rather than "the bridge names
+         this class", which is what #2884 settled: three guarded bridge-side, two reachable only
+         through a constructor overload the bridge never calls, and one whose swallowed condition
+         the bridge's only call site satisfies by construction.
 
 WHAT IS STILL DARK, so nobody reads a clean run as an all-clear (#2858):
 
@@ -1143,14 +1147,18 @@ def index_census(table, src=SRC, paths=None, text_by_path=None):
 #
 # The population is small enough to commit literally, in the shape `derive-gdt-enums.py --verify`
 # uses: `--verify-no-exception-regions` re-derives it from an OCCT tree and diffs.
+# The status column is an ADJUDICATION against the bridge, not a reachability guess. "The bridge
+# names this class", which the printout still reports, is the weakest possible statement and was
+# all this table carried when #2884 opened; every row now says what a bridge caller can actually
+# reach. Measurements behind the four #2884 rows are in Scripts/repro/2884, one process per case.
 NO_EXCEPTION_REGIONS = (
     # (file stem, what the region swallows, what is known about it)
-    ("Convert_EllipseToBSplineCurve", "Tol, delta", "open, #2858"),
-    ("Convert_SphereToBSplineSurface", "delta", "open, #2858"),
-    ("Convert_TorusToBSplineSurface", "delta", "open, #2858"),
+    ("Convert_EllipseToBSplineCurve", "Tol, delta", "guarded bridge-side, #2884"),
+    ("Convert_SphereToBSplineSurface", "delta", "unreachable: 1-arg ctor only, #2884"),
+    ("Convert_TorusToBSplineSurface", "delta", "unreachable: 1-arg ctor only, #2884"),
     ("GeomFill_BSplineCurves", "bool IsOK", "guarded bridge-side, PR #2849"),
     ("GeomFill_BezierCurves", "bool IsOK", "guarded bridge-side, PR #2849"),
-    ("GeomFill_Profiler", "int n = NbKnots()", "open, #2858"),
+    ("GeomFill_Profiler", "int n = NbKnots()", "condition holds by construction, #2884"),
 )
 
 NO_EXCEPTION_DIRECTIVE_RE = re.compile(

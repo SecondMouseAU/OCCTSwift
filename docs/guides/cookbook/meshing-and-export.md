@@ -55,6 +55,30 @@ Deflection is a quality/size trade-off:
 | Fine FDM (0.1 mm) | 0.05 |
 | SLA / display-quality | 0.02 |
 
+### The deflection floor, and what a degenerate value does
+
+Every linear deflection this library takes has a floor of **`1e-7`**, OCCT's `Precision::Confusion()`.
+It is OCCT's bound rather than ours: `BRepMesh_IncrementalMesh::initParameters` throws below it, the
+`incmesh` DRAW command clamps its `LinDefl` argument up to it, and `Prs3d::GetDeflection`, which is
+the presentation path, applies the same floor to the value it derives from a relative coefficient.
+
+A value below the floor, a negative one, and **NaN** are all refused, and a refusal is the same `nil`
+(or empty result) the call already gives a shape it cannot mesh. NaN is the reason the check exists:
+`NaN < x` is false, so OCCT's own test lets it through, and a NaN deflection on a curved solid does
+not return.
+
+```swift
+let cyl = Shape.cylinder(radius: 10, height: 5)!
+cyl.mesh(linearDeflection: 0)         // nil
+cyl.mesh(linearDeflection: -1)        // nil
+cyl.mesh(linearDeflection: .nan)      // nil
+cyl.edgeMesh(deflection: .nan)        // nil
+```
+
+A *small* deflection is expensive rather than invalid and is not refused. On a radius-10 cylinder,
+measured against the pinned kernel: `1e-4` meshes in about a second, `1e-5` in five, `1e-6` in
+seventy and the floor itself, `1e-7`, in ninety, at 88,862 nodes. Choose the number for the job.
+
 ## Mesh → shape
 
 A triangle mesh can be lifted back to a B-Rep (a shell of planar faces). The **weld tolerance** must

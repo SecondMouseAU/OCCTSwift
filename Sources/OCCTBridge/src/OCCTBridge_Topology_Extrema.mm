@@ -327,6 +327,11 @@ OCCTSelfIntersectionResult OCCTShapeSelfIntersection(OCCTShapeRef shape,
   OCCTSelfIntersectionResult result = {0, false};
   if (!shape)
     return result;
+  // #2879: see occtValidMeshDeflection (OCCTBridge_Internal.h) for the bound and whose call site
+  // it comes from. The refusal is `isDone = false`, which this function already reports when the
+  // algorithm does not finish, and never a `0` overlap count that would read as "measured none".
+  if (!occtValidMeshDeflection(meshDeflection))
+    return result;
   try
   {
     // Ensure the shape is meshed
@@ -1290,6 +1295,11 @@ int32_t OCCTShapeSelfIntersectionPairs(OCCTShapeRef shape,
                                        double       deflection)
 {
   if (!shape || !outFaceIdx1 || !outFaceIdx2 || maxPairs <= 0)
+    return -1;
+  // #2879: see occtValidMeshDeflection (OCCTBridge_Internal.h). The refusal is the `-1` this
+  // function already gives when the algorithm does not finish, never the `0` that means "no
+  // self-intersecting pairs".
+  if (!occtValidMeshDeflection(deflection))
     return -1;
   try
   {

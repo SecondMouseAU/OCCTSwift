@@ -515,6 +515,16 @@ the reproducer). What a bridge author needs without opening it:
   must not acquire a guard, and is the shape the upstream fix should take. Unlike #2773 there is no
   signal disposition under which the kernel survives: `ShapeCustom::ApplyModifier` has no live
   `OCC_CATCH_SIGNALS` above the fault.
+- **A NaN linear deflection passes every check `BRepMesh_IncrementalMesh` and its callers make,
+  and the mesh it starts does not finish** (#2879). The floor is `Precision::Confusion()` and all
+  four sites that state it use a comparison NaN cannot fail: the kernel's own
+  `Deflection < Precision::Confusion()` throw (`BRepMesh_IncrementalMesh.hxx:81`), `incmesh`'s
+  `std::max(value, Precision::Confusion())` (`MeshTest.cxx:208`), its `-di` refusal on `<=`
+  (`:199`) and `Prs3d::GetDeflection`'s same `std::max` (`Prs3d.hxx:71`). Measured: NaN on a
+  radius-10 cylinder did not return in 600 s, while 0.0, -1.0 and 1e-12 throw in under a second.
+  Call `occtValidMeshDeflection` (`OCCTBridge_Internal.h`) before **any** new
+  `BRepMesh_IncrementalMesh`; it is the same bound spelled `>=`. A small deflection is expensive,
+  not invalid, and is not refused: the floor value itself finishes in 92 s.
 - `GeomAbs_G2` is never a valid order for `BRepFill_Filling`: curvature continuity is
   `GeomAbs_C1` (ordinal 2), whatever `BRepOffsetAPI_MakeFilling.hxx` says. Test any filling change
   on both a planar and a periodic support surface, since #430 was catchable on one and an

@@ -71,6 +71,13 @@ tables and issue links.
 
 Do not touch `docs/CHANGELOG.md`. If your diff contains it, that is a review finding.
 
+The block ends at the next `##` heading or at the attribution footer, whichever comes first, so
+the entry may be the body's last section and nothing has to follow it. Fenced code inside the
+entry is kept verbatim, and a fence quoted in prose elsewhere in the body does not hide the
+heading: `merge-pr.py` matches each opening marker with its closing one rather than counting
+them. Both of those were defects until #2890, and both were hit while merging on 2026-09-30, one
+of them leaving a stray attribution line in the release record.
+
 Write it as the finished text, not as notes. The merger transcribes; they do not draft. This
 sentence is the canonical statement of that rule; the PR template points here rather than
 restating it.
