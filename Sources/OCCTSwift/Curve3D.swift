@@ -3710,7 +3710,11 @@ extension Curve3D {
         /// ```
         ///
         /// - Parameters:
-        ///   - index: Where to insert, 1-based, valid over `1...poleCount`.
+        ///   - index: Where to insert, 1-based. `0` prepends, so the valid range is
+        ///     `0...poleCount`, the same as ``Curve2D/bezierInsertPoleAfter(index:point:)``.
+        ///     `Geom_BezierCurve.hxx` says `[1, NbPoles]`, and that is wrong: the implementation
+        ///     guards `Index < 0 || Index > nbpoles`, and index `0` was measured prepending on
+        ///     both the 3D and the 2D class (`Scripts/repro/2875/`).
         ///   - point: The new pole.
         /// - Returns: `false` if the curve is not a 3D Bezier, if `index` is out of range, or if
         ///   the curve already has ``Curve3D/bezierMaxDegree`` poles.

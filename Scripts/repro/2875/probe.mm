@@ -241,9 +241,51 @@ static void case6()
   printf("  final NbPoles = %d, MaxDegree()+1 = %d\n", c->NbPoles(), md + 1);
 }
 
+// Kilo's review of PR #2878 asked whether the 3D doc's index range is right. It is not, and
+// neither is the OCCT header it was copied from. Geom_BezierCurve.hxx:134 documents
+// "Raised if Index is not in the range [1, NbPoles]", while Geom_BezierCurve.cxx guards
+// `Index < 0 || Index > nbpoles`, so 0 is legal and prepends. The 2D class documents [0, NbPoles]
+// and guards the same way, so the two classes agree in code and disagree in prose.
+static void case7()
+{
+  printf("case 7: InsertPoleAfter(0) prepends on both classes, against the 3D header's [1, NbPoles]\n");
+  {
+    NCollection_Array1<gp_Pnt> poles(1, 3);
+    poles(1) = gp_Pnt(0, 0, 0);
+    poles(2) = gp_Pnt(1, 1, 0);
+    poles(3) = gp_Pnt(2, 0, 0);
+    Handle(Geom_BezierCurve) c = new Geom_BezierCurve(poles);
+    try
+    {
+      c->InsertPoleAfter(0, gp_Pnt(-1, 0, 0));
+      printf("  3D index 0: accepted, NbPoles %d, Pole(1).X() = %.1f\n", c->NbPoles(), c->Pole(1).X());
+    }
+    catch (Standard_Failure& e)
+    {
+      printf("  3D index 0: refused, %s\n", e.GetMessageString());
+    }
+  }
+  {
+    NCollection_Array1<gp_Pnt2d> poles(1, 3);
+    poles(1) = gp_Pnt2d(0, 0);
+    poles(2) = gp_Pnt2d(1, 1);
+    poles(3) = gp_Pnt2d(2, 0);
+    Handle(Geom2d_BezierCurve) c = new Geom2d_BezierCurve(poles);
+    try
+    {
+      c->InsertPoleAfter(0, gp_Pnt2d(-1, 0));
+      printf("  2D index 0: accepted, NbPoles %d, Pole(1).X() = %.1f\n", c->NbPoles(), c->Pole(1).X());
+    }
+    catch (Standard_Failure& e)
+    {
+      printf("  2D index 0: refused, %s\n", e.GetMessageString());
+    }
+  }
+}
+
 int main(int argc, const char** argv)
 {
-  void (*cases[])() = {case0, case1, case2, case3, case4, case5, case6};
+  void (*cases[])() = {case0, case1, case2, case3, case4, case5, case6, case7};
   const int n       = (int)(sizeof(cases) / sizeof(cases[0]));
   int       only    = (argc > 1) ? atoi(argv[1]) : -1;
   if (argc > 1)

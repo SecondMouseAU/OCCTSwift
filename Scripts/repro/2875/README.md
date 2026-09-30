@@ -81,3 +81,30 @@ pin. Held for the OCCT 8.0.2 survey under the same hold as patch `0043`.
 
 `Tests/OCCTGeom2dTests/Issue2875BezierPoleCeilingTests.swift` pins every number above through the
 Swift API, so a kernel bump that moves either boundary fails a test rather than passing quietly.
+
+## Case 7, added in review: the index range, where the 3D header is also wrong
+
+Kilo's review of PR #2878 read the Swift doc for `Curve3D.Bezier.insertPoleAfter` as inconsistent
+with its 2D twin, and it was right. The two classes agree in code and disagree in prose:
+
+| | header says | implementation guards | index `0` |
+|---|---|---|---|
+| `Geom_BezierCurve` | `[1, NbPoles]` (`.hxx:134`) | `Index < 0 \|\| Index > nbpoles` | accepted, prepends |
+| `Geom2d_BezierCurve` | `[0, NbPoles]` (`.hxx:136`) | `Index < 0 \|\| Index > nbpoles` | accepted, prepends |
+
+Measured, case 7:
+
+```
+case 7: InsertPoleAfter(0) prepends on both classes, against the 3D header's [1, NbPoles]
+  3D index 0: accepted, NbPoles 4, Pole(1).X() = -1.0
+  2D index 0: accepted, NbPoles 4, Pole(1).X() = -1.0
+```
+
+So the 3D header's `[1, NbPoles]` is a documentation defect in OCCT, and the Swift doc had copied
+it. Corrected on `Curve3D.Bezier.insertPoleAfter` to `0...poleCount`, matching the 2D wording and
+the measurement. No code changed: the 3D bridge passes the index straight through to a literal
+`throw` that is live in the Release kernel, and the 2D bridge's own guard already uses
+`index < 0 || index > nbPoles`, so both accepted `0` before this and still do.
+
+This also corrects a claim made while closing #2875, that "the implementations match their own
+headers". The 2D one does. The 3D one does not.
