@@ -173,95 +173,6 @@ struct OCCTFindSurfaceResult
   bool                 existed          = false;
 };
 
-static OCCTFindSurfaceResult occtRunFindSurface(OCCTShapeRef        shape,
-                                                double              tolerance,
-                                                bool                onlyPlane,
-                                                OCCTFindSurfaceWant want)
-{
-  OCCTFindSurfaceResult result;
-  if (!shape)
-    return result;
-  try
-  {
-    BRepLib_FindSurface finder(shape->shape, tolerance, onlyPlane);
-    result.found = finder.Found();
-    if (!result.found)
-      return result;
-    switch (want)
-    {
-      case OCCTFindSurfaceWant::Surface:
-        try
-        {
-          result.surface = finder.Surface();
-        }
-        catch (...)
-        {
-          // Recorded even though this is not the outermost catch (#1161/#2077). The three inner
-          // catches in this switch neither rethrow nor recover: each converts the exception into
-          // a refusal that the function-level catch below will never see, so without a record
-          // here the reason a query came back empty is lost entirely.
-          occtRecordCaughtException(__func__);
-          // Matches the pre-consolidation behavior of every surface-returning caller: a
-          // throwing Surface() was caught by that caller's own single try/catch and
-          // treated as "not found" (OCCTShapeFindSurfaceEx set *outFound = false in
-          // exactly this case), not as "found, but no surface available".
-          result.found   = false;
-          result.surface = Handle(Geom_Surface)();
-        }
-        break;
-      case OCCTFindSurfaceWant::Tolerance:
-        try
-        {
-          result.toleranceReached = finder.ToleranceReached();
-        }
-        catch (...)
-        {
-          occtRecordCaughtException(__func__);
-          result.toleranceReached = -1.0;
-        }
-        break;
-      case OCCTFindSurfaceWant::Existed:
-        try
-        {
-          result.existed = finder.Existed();
-        }
-        catch (...)
-        {
-          occtRecordCaughtException(__func__);
-          result.existed = false;
-        }
-        break;
-    }
-  }
-  catch (...)
-  {
-    occtRecordCaughtException(__func__);
-    result = OCCTFindSurfaceResult();
-  }
-  return result;
-}
-
-// Unwraps an OCCTFindSurfaceResult into the OCCTSurfaceRef each of the three surface-returning
-// callers (OCCTShapeFindSurface, OCCTShapeFindSurfaceEx, OCCTFindSurface) returns, or nullptr on
-// any failure, including allocation failure for the `new OCCTSurface(...)` wrapper itself, which
-// must be try/catch-guarded here rather than left to each caller: an exception escaping this
-// extern "C" bridge boundary into Swift-generated call frames is uncatchable and undefined
-// behavior, not the graceful nullptr every caller here otherwise guarantees (PR #866 review).
-static OCCTSurfaceRef occtSurfaceRefOrNull(const OCCTFindSurfaceResult& result)
-{
-  if (!result.found || result.surface.IsNull())
-    return nullptr;
-  try
-  {
-    return new OCCTSurface(result.surface);
-  }
-  catch (...)
-  {
-    occtRecordCaughtException(__func__);
-    return nullptr;
-  }
-}
-
 // The single solid a shape denotes: itself if it IS a solid, else the sole solid a
 // compound/compsolid wraps. False when the container holds two or more: a set of bodies has no
 // one outer shell, and answering with the first silently measures against the wrong solid. #439
@@ -283,23 +194,6 @@ static bool occtSoleSolid(const TopoDS_Shape& shape, TopoDS_Solid& outSolid)
     return false; // two or more solids, no single body to answer for
   outSolid = TopoDS::Solid(first);
   return true;
-}
-
-static int32_t mapTopAbsState(TopAbs_State state)
-{
-  switch (state)
-  {
-    case TopAbs_IN:
-      return 0;
-    case TopAbs_OUT:
-      return 1;
-    case TopAbs_ON:
-      return 2;
-    case TopAbs_UNKNOWN:
-      return 3;
-    default:
-      return 3;
-  }
 }
 
 // #726/#763: OCCTShapeAxis.extentMin/extentMax/hasExtent were hardcoded 0/0/false on every call
@@ -424,39 +318,6 @@ struct OCCTBoundSortBox
   Bnd_BoundSortBox                     sorter;
   Handle(NCollection_HArray1<Bnd_Box>) boxes;
 };
-
-// Map our convention (0=Convex,1=Concave,2=Tangent) to ChFiDS (0=Concave,1=Convex,2=Tangential)
-static ChFiDS_TypeOfConcavity _mapConcavity(int32_t ourType)
-{
-  switch (ourType)
-  {
-    case 0:
-      return ChFiDS_Convex;
-    case 1:
-      return ChFiDS_Concave;
-    case 2:
-      return ChFiDS_Tangential;
-    default:
-      return ChFiDS_Convex;
-  }
-}
-
-static int32_t _mapConcavityBack(ChFiDS_TypeOfConcavity chiType)
-{
-  switch (chiType)
-  {
-    case ChFiDS_Convex:
-      return 0;
-    case ChFiDS_Concave:
-      return 1;
-    case ChFiDS_Tangential:
-      return 2;
-    case ChFiDS_FreeBound:
-      return 3;
-    default:
-      return 4;
-  }
-}
 
 struct OCCTReShape
 {
