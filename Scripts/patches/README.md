@@ -7,6 +7,14 @@ release. `Scripts/build-occt.sh` applies each one (idempotently, `-p1`, `a/`,`b/
 until a rebuild + release. See ["Shipping a rebuild"](../../docs/guides/building-occt.md#shipping-a-rebuild)
 for what that takes.
 
+**Adding or retiring a patch means regenerating `Scripts/occt-raise-if-map.txt` in the same PR.**
+That map is a committed derivation of this directory's effect on `Libraries/occt-src`, so a patch
+that adds or moves an `<Exception>_Raise_if` or a `throw` changes it.
+`python3 Scripts/census-compiled-out-validation.py --write-table` rewrites it from the tree
+`build-occt.sh` patched, and refuses a tree that does not carry every patch here.
+`check-inventory-prose.py` fails when the map's provenance stamp and this directory disagree,
+which is what nothing did while `0042` sat in the kernel and not in the map for two pins (#2885).
+
 **Numbers are never reused, with one recorded exception.** Re-pinning to OCCT `V8_0_1` on
 2026-08-03 retired ten patches, `0032`
 retired 2026-09-02 (superseded by upstream's own fix, not shipped in our pin), and `0035` retired

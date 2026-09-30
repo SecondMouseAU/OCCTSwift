@@ -1,0 +1,5 @@
+closedSquare: IsDone=1 WireExplorer edges=4
+openTriangle: IsDone=1 WireExplorer edges=2
+nonPlanarPolygon: IsDone=1 WireExplorer edges=4
+twoPointPolygon: IsDone=1 WireExplorer edges=1
+singlePointReturnsNil (kernel, closed): threw BRep_API: command not done

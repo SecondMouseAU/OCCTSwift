@@ -1,0 +1,23 @@
+draftAcceptsOwnFaces: vertical=4 done=1 volume=12024.71917796442
+draftRejectsWhollyForeignFaceList [foreign] -> no face: done=1 volume=12000
+draftRejectsPartiallyForeignFaceList [own, foreign] -> [own]: done=1 volume=12000
+shellAcceptsOwnFaces / shellRejectsPartiallyForeignFaceList [own, foreign] -> [own]: upward=1 done=1 valid=1 volume=4519.4099853010057
+shellRejectsPartiallyForeignFaceList [foreign] -> no open face: done=1 valid=1 volume=-13587.492558290329
+historyChamferAcceptsResolvableIndices [0, 1]: done=1 volume=7980.3333333333339
+historyChamferAcceptsResolvableIndices [0]: done=1 volume=7990
+historyChamferRejectsOutOfRangeIndex [0, 99999] -> [0]: done=1 volume=7990
+historyChamferRejectsOutOfRangeIndex [-1] -> no edge: threw There are no suitable edges for chamfer or fillet
+rectangle face: vertices=4 edges=4
+fillet2DAcceptsResolvableVertices [0,1,2,3] r=2: done=1 edges=8
+fillet2DRejectsOutOfRangeVertex [0, 99999] -> [0]: done=1 edges=5
+fillet2DRejectsOutOfRangeVertex [-1] -> no vertex: done=0 edges=-1
+chamfer2DAcceptsResolvablePairs [(0,1),(2,3)] d=2: done=1 edges=6
+chamfer2DAcceptsSharedEdgeAcrossDifferentPairs [(0,1),(1,2),(2,3),(3,0)] d=1: done=1 edges=8
+chamfer2DRejectsOutOfRangePairMember [(0,1),(2,99999)] and [(0,1),(99999,3)] -> [(0,1)]: done=1 edges=5
+chamfer2DRejectsOutOfRangePairMember [(-1,1)] -> no pair: done=0 edges=-1
+chamfer2DRejectsDuplicatePair [(0,1),(0,1)] d=[1,2]: done=0 status=7 edges=-1
+chamfer2DRejectsDuplicatePair [(0,1),(0,1)] d=[1,2]: child exited=1 signal=0
+chamfer2DRejectsDuplicatePair [(0,1),(1,0)] d=[1,2]: done=0 status=7 edges=-1
+chamfer2DRejectsDuplicatePair [(0,1),(1,0)] d=[1,2]: child exited=1 signal=0
+chamfer2DRejectsDuplicatePair [(0,1),(0,1),(0,1)] d=[1,1,1]: done=0 status=7 edges=-1
+chamfer2DRejectsDuplicatePair [(0,1),(0,1),(0,1)] d=[1,1,1]: child exited=1 signal=0

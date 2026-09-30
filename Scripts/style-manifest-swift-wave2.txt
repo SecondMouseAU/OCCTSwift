@@ -109,7 +109,6 @@ Tests/OCCTCurveTests/Issue965Curve3DPropertyLifetimeTests.swift
 Tests/OCCTCurveTests/Issue995BuildTrsf3DTests.swift
 Tests/OCCTDrawingTests/DrawingStyleTests.swift
 Tests/OCCTDrawingTests/DrawingTestFixtures.swift
-Tests/OCCTFoundationTests/OCCTFoundationTests.swift
 Tests/OCCTFoundationTests/PathParsingContractTests.swift
 Tests/OCCTGeom2dTests/BSplineCurve2DCompletionsV121Tests.swift
 Tests/OCCTGeom2dTests/Curve2DApproximatedOverloadParityTests.swift
@@ -238,7 +237,6 @@ Tests/OCCTSurfaceTests/GeomFillGuideTrihedronACTests.swift
 Tests/OCCTSurfaceTests/Issue1460PlatePointG1Tests.swift
 Tests/OCCTSurfaceTests/Issue1502DarbouxTrihedronTests.swift
 Tests/OCCTSurfaceTests/Issue1515CoonsPatchUParameterTests.swift
-Tests/OCCTSurfaceTests/Issue266FaceWithHolesTests.swift
 Tests/OCCTSurfaceTests/Issue2829GeomFillBoundaryJoinTests.swift
 Tests/OCCTSurfaceTests/Issue2859BezierSurfacePoleBoundsTests.swift
 Tests/OCCTSurfaceTests/Issue2862NegativeContinuityOrderSurfaceTests.swift

@@ -26,6 +26,10 @@ struct Issue233FaceFromSurfaceWireTests {
             return
         }
         #expect(trimmedArea > 0)
+        // #766: the kernel's area for this UV quadrilateral, r x its UV area 7.95. `> 0` and the
+        // 0.4 to 1.0 band against the 60 of the rectangle passed a polygon scaled in u by 0.9.
+        // #766: kernel values from Scripts/repro/766-issue233-244-266-317/.
+        #expect(abs(trimmedArea - 39.75) < 1e-6)
 
         // The rectangular UV patch over the polygon's bounding box (u 0…2, v 0…6) is strictly larger
         //, confirming the face follows the polygon, not the box.
@@ -65,6 +69,9 @@ struct Issue233FaceFromSurfaceWireTests {
             return
         }
         #expect(face.isValid)
-        if let a = face.surfaceArea { #expect(a > 0) }
+        // #766: `if let a { a > 0 }` passed a face that ignored its boundary. The healed face
+        // spans the same 39.75 as the UV-polygon test.
+        // #766: kernel values from Scripts/repro/766-issue233-244-266-317/.
+        #expect(abs((face.surfaceArea ?? 0) - 39.75) < 1e-6)
     }
 }

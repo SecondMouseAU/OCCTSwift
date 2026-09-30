@@ -1,0 +1,16 @@
+233 uvPolygon: valid=1 area=39.75 rect(0..2 x 0..6) area=60
+233 wireBoundary: ok=1 area=39.75
+244 n=4 clamped [3, 3]: done=1 degree=(3, 3) poles=4x4 | unclamped [3, 8]: done=1 degree=(3, 3) poles=4x4
+244 n=5 clamped [3, 4]: done=1 degree=(4, 4) poles=5x5 | unclamped [3, 8]: done=1 degree=(4, 4) poles=5x5
+244 n=7 clamped [3, 6]: done=1 degree=(6, 6) poles=7x7 | unclamped [3, 8]: done=1 degree=(6, 6) poles=7x7
+266 holes one: ok=1 area=84
+266 holes none: ok=1 area=100
+266 holes two: ok=1 area=87
+266 holes off-surface: ok=1 area=84
+266 uvFromIso: gap=0 u=0 v=3
+266 cone: NbSingularities(1e-7)=1 singularity(1)=(0, 0, -9.15243860856) firstUV=(0, -10.4291) lastUV=(6.28319, -10.4291) Singularity(99) ok=0
+266 projectInDomain: uv=(0, 2) gap=0
+266 integration: UIntegrationOrder=8 VIntegrationOrder=8 UKnots=0 10 SIntOrder(eps)=3 SUIntSubs=1 SVIntSubs=1
+266 boundary edge 0: LIntOrder=9 LIntSubs=1 edges=4
+266 tangents at (5,5): D1U=(1,0,-0) D1V=(-0,1,0)
+266 faceFixer: result valid=1 area=100

@@ -1,0 +1,14 @@
+d1|exception_type|"Standard_ConstructionError"
+d1|message|"gp_Dir() - input vector has zero norm"
+d1|stack_trace_empty|true
+d6|exception_type|"Standard_ConstructionError"
+d6|message|"gp_Dir() - input vector has zero norm"
+d2|exception_type|"Standard_ConstructionError"
+d2|message|"gp_Dir() - input vector has zero norm"
+d3|value|true
+d3|threw|false
+d4|depth_initial|0
+d4|depth0_stack_empty|true
+d4|depth_after_set_16|16
+d4|depth16_stack_empty|false
+d5|read_back|-5
