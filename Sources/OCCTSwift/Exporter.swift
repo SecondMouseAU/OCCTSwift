@@ -131,6 +131,7 @@ public enum Exporter {
     ///   - shape: The shape to export
     ///   - url: Destination file URL (should end in .stl)
     ///   - deflection: Tessellation quality - smaller = finer mesh (default: 0.1)
+    ///     A value below `1e-7`, a negative one, or NaN is refused (#2879).
     ///   - ascii: If true, write ASCII STL; if false, write binary (default: false)
     ///
     /// - Throws: `ExportError` if export fails
@@ -176,6 +177,7 @@ public enum Exporter {
     /// - Parameters:
     ///   - shape: The shape to export
     ///   - deflection: Tessellation quality
+    ///     A value below `1e-7`, a negative one, or NaN is refused (#2879).
     ///
     /// - Returns: STL file data
     /// - Throws: `ExportError` if export fails
@@ -544,6 +546,7 @@ public enum Exporter {
     ///   - shape: The shape to export
     ///   - url: Destination file URL (should end in .obj)
     ///   - deflection: Tessellation quality - smaller = finer mesh (default: 0.1)
+    ///     A value below `1e-7`, a negative one, or NaN is refused (#2879).
     ///
     /// - Throws: `ExportError` if export fails
     public static func writeOBJ(
@@ -571,6 +574,7 @@ public enum Exporter {
     ///   - shape: The shape to export
     ///   - url: Destination file URL (should end in .ply)
     ///   - deflection: Tessellation quality - smaller = finer mesh (default: 0.1)
+    ///     A value below `1e-7`, a negative one, or NaN is refused (#2879).
     ///
     /// - Throws: `ExportError` if export fails
     public static func writePLY(
@@ -724,6 +728,7 @@ extension Shape {
     /// - Parameters:
     ///   - url: Destination file URL
     ///   - deflection: Tessellation quality (default: 0.1)
+    ///     A value below `1e-7`, a negative one, or NaN is refused (#2879).
     /// - Throws: `Exporter.ExportError` if export fails
     public func writeSTL(to url: URL, deflection: Double = 0.1) throws {
         try Exporter.writeSTL(shape: self, to: url, deflection: deflection)
@@ -767,6 +772,7 @@ extension Shape {
     /// Get STL data for this shape.
     ///
     /// - Parameter deflection: Tessellation quality (default: 0.1)
+    ///     A value below `1e-7`, a negative one, or NaN is refused (#2879).
     /// - Returns: STL file data
     /// - Throws: `Exporter.ExportError` if export fails
     public func stlData(deflection: Double = 0.1) throws -> Data {
@@ -873,6 +879,7 @@ extension Shape {
     /// - Parameters:
     ///   - url: Destination file URL
     ///   - deflection: Tessellation quality (default: 0.1)
+    ///     A value below `1e-7`, a negative one, or NaN is refused (#2879).
     /// - Throws: `Exporter.ExportError` if export fails
     public func writeOBJ(to url: URL, deflection: Double = 0.1) throws {
         try Exporter.writeOBJ(shape: self, to: url, deflection: deflection)
@@ -885,6 +892,7 @@ extension Shape {
     /// - Parameters:
     ///   - url: Destination file URL
     ///   - deflection: Tessellation quality (default: 0.1)
+    ///     A value below `1e-7`, a negative one, or NaN is refused (#2879).
     /// - Throws: `Exporter.ExportError` if export fails
     public func writePLY(to url: URL, deflection: Double = 0.1) throws {
         try Exporter.writePLY(shape: self, to: url, deflection: deflection)
@@ -898,6 +906,7 @@ extension Exporter {
     ///   - url: Output file URL (.gltf or .glb).
     ///   - binary: If true, writes binary GLB. If false, writes text GLTF.
     ///   - deflection: Mesh deflection tolerance.
+    ///     A value below `1e-7`, a negative one, or NaN is refused (#2879).
     /// - Throws: `ExportError` if export fails
     public static func writeGLTF(
         shape: Shape, to url: URL, binary: Bool = true, deflection: Double = 0.1

@@ -231,6 +231,12 @@ OCCTMeshRef OCCTShapeCreateMesh(OCCTShapeRef shape,
   if (!shape)
     return nullptr;
 
+  // #2879: see occtValidMeshDeflection (OCCTBridge_Internal.h) for the bound and whose call site
+  // it comes from. The refusal is the `nullptr` this function already gives a shape it cannot
+  // mesh.
+  if (!occtValidMeshDeflection(linearDeflection))
+    return nullptr;
+
   occtEnsureSignals();
   OCCTMesh* mesh = nullptr;
   try
@@ -282,6 +288,12 @@ OCCTMeshParameters OCCTMeshParametersDefault(void)
 OCCTMeshRef OCCTShapeCreateMeshWithParams(OCCTShapeRef shape, OCCTMeshParameters params)
 {
   if (!shape)
+    return nullptr;
+
+  // #2879: see occtValidMeshDeflection (OCCTBridge_Internal.h). Only `deflection` needs the test:
+  // `deflectionInterior` reaches IMeshTools_Parameters only through `> 0`, which NaN fails, and
+  // initParameters replaces an interior value below the floor with this one.
+  if (!occtValidMeshDeflection(params.deflection))
     return nullptr;
 
   OCCTMesh* mesh = nullptr;
@@ -1844,6 +1856,11 @@ OCCTCoherentTriangulationRef OCCTCoherentTriangulationCreate(void)
 OCCTCoherentTriangulationRef OCCTCoherentTriangulationCreateFromMesh(OCCTShapeRef _Nonnull shapeRef,
                                                                      double deflection)
 {
+  // #2879: see occtValidMeshDeflection (OCCTBridge_Internal.h). The refusal is the `nullptr` this
+  // function already gives a shape with no face triangulation.
+  if (!occtValidMeshDeflection(deflection))
+    return nullptr;
+
   try
   {
     const TopoDS_Shape& shape = *(const TopoDS_Shape*)shapeRef;
