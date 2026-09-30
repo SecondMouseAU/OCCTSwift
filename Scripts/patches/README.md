@@ -1956,21 +1956,39 @@ oblique one, all three give sum 743.45133223538 against volume 743.4513322353836
 `VolumeProperties`. A 10-cube and a cylinder agree to the same precision.
 
 **A third identity, per face rather than summed.** For a *planar* face the integral reduces to
-`(n_hat . n_face) * area * (n_hat . C + d)` with `C` the face's area centroid, so the by-plane mass
-is affine in the plane offset with slope the face's signed projected area. Measured on the plate's
+`(n_hat . n_face) * area * (n_hat . C - d)` with `C` the face's area centroid and `d` the offset the
+caller asked for, so the by-plane mass is affine in the plane offset with slope minus the face's
+signed projected area. (Written with a `+` here until #2873: see below.) Measured on the plate's
 seven faces with the plane normal along z: the two caps have slope +371.72566611769 and
 -371.72566611769, exactly `+-area`, and the four sides and the cylindrical wall have slope 0, as
 faces parallel to the normal must.
 
-**The offset's sign is inverted, and `loc` does not re-base it.** `aCoeff[3] = d - n_hat . loc` and
-the integrand then subtracts it, so what reaches `d1` is `n_hat . P - d` where the signed distance to
-the plane is `n_hat . P + d`, and `loc` cancels out entirely. Measured on a flat cap where
-`mass / area` reads `d1` off directly: the cap at z = 2 gives `d1` 2, 3 and -98 for planes at z = 0,
-1 and -100, and identical numbers for `SetLocation` at the origin and at z = 3. That is a **separate**
-defect from this patch, it does not disturb either identity above (`d1` is still affine with gradient
-`n_hat`, which is all they need), and it is held as
-[#2873](https://github.com/SecondMouseAU/OCCTSwift/issues/2873) for the same upstream PR rather than
-patched here days before 8.0.2.
+**The offset's sign is inverted, so the value is measured about the plane mirrored through the
+origin.** The integrand reads `theCoeff[3]` as the right-hand side of `n_hat . X = theCoeff[3]` and
+subtracts it, while `aCoeff[3] = d - n_hat . loc` fills it from `gp_Pln::Coefficients`' `d`, which
+belongs to the `n_hat . X + d = 0` form. Measured on a flat cap where `mass / area` reads `d1` off
+directly: the cap at z = 2 gives `d1` 2, 3, -98 and 7 for planes at z = 0, 1, -100 and 5, where the
+geometric signed distance is 2, 1, 102 and -3. That is a **separate** defect from this patch, it does
+not disturb either identity above (`d1` is still affine with gradient `n_hat`, which is all they
+need), and it is held as [#2873](https://github.com/SecondMouseAU/OCCTSwift/issues/2873) for the same
+upstream PR rather than patched here days before 8.0.2.
+
+Two corrections to that paragraph as it first stood, both from #2873's own probe
+(`Scripts/repro/2873/`). **`loc` is not a second defect.** `SetLocation` moves `d1` by nothing at the
+origin, at (0, 0, 3) and at the non-axial (-4, 11, 2.5), and that is the behaviour a distance to a
+plane has to have: the `- n_hat . loc` term exists to cancel the `P - loc` the integrand works in,
+and it cancels exactly, before and after the sign is corrected. There is one defect here, not two.
+**And it is three sites, not one:** `BRepGProp_VinertGK.cxx:219` and `:244` make the same conversion
+for the Kronrod path, whose integrand subtracts it at `BRepGProp_UFunction.cxx:99`, so the upstream
+hunk covers `BRepGProp_Vinert.cxx:279` and both of those. The two implementations print identical
+`d1` on every row of the probe, which is what makes this a second construction rather than a re-run.
+
+**The bridge compensates in the meantime.** `OCCTBRepGPropVinertPlane` is handed
+`(planeNormal, planeDistance)` and builds the `gp_Pln` itself, so it builds the mirrored one and
+`Face.volumeInertia(planeNormal:planeDistance:)` measures about the plane the caller named. **A
+kernel carrying the upstream hunk while that mirror is still in place measures about the mirrored
+plane again**, so the mirror comes out in the same change that retires this patch.
+`BRepGPropVinertTests`' two sign assertions fail if it does not.
 
 ### CI coverage, and the pin
 
@@ -2009,10 +2027,11 @@ Not filed upstream yet: #2827 holds the upstream PR, per
 [`okf/policies/upstream-occt-patch-process.md`](../../okf/policies/upstream-occt-patch-process.md)
 and the standing hold on kernel-patch findings until 8.0.2 lands. **The submission carries a second
 hunk**, for [#2873](https://github.com/SecondMouseAU/OCCTSwift/issues/2873): `aCoeff[3] = d - n . loc`
-at `BRepGProp_Vinert.cxx:279` is subtracted by the integrand, so the offset reaches it with the
-opposite sign to a geometric distance and `loc` cancels out. This patch exposes that rather than
-causing it, and the two belong in one PR because a reviewer reading the first will ask about the
-second. The upstream submission is where
+at `BRepGProp_Vinert.cxx:279`, and the same two lines at `BRepGProp_VinertGK.cxx:219` and `:244`, are
+subtracted by the integrand, so the offset reaches it with the opposite sign to a geometric distance
+and the value is measured about the plane mirrored through the origin. `loc` is not part of it: it
+cancels, correctly, both before and after. This patch exposes that rather than causing it, and the
+two belong in one PR because a reviewer reading the first will ask about the second. The upstream submission is where
 the GTest goes; the carried patch is the one-liner alone, as `0042` was.
 
 **Retire** once the bundled OCCT includes this fix.

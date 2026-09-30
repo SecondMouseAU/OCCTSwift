@@ -21,6 +21,64 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### The four buffer-taking OCAF array setters refuse a reversed range (#2866)
+
+`Document.setBooleanArray`, `setByteArray`, `setExtStringArray` and `setReferenceArray`, and the
+four `OCCTDocumentSet*Array` bridge functions behind them, now refuse a range whose `upper` is
+below its `lower` instead of handing it to `TDataStd_*Array::Set`. Three of the four were an
+uncatchable SIGSEGV on such a range, measured: `TDataStd_ByteArray`, `TDataStd_ExtStringArray` and
+`TDataStd_ReferenceArray` each asked `NCollection_Array1` for 18446744073709551608 elements,
+because `mySize` is `upper - lower + 1` evaluated in `int` and stored in a `size_t`, and the
+`Standard_RangeError_Raise_if` that would have caught it is out-of-line and absent from the kernel
+we link. `TDataStd_BooleanArray` survived on the `>> 3` in its own `Init` and built an attribute
+whose `Upper()` was below its `Lower()`.
+
+The reversed ranges were reachable only through the public C ABI; the Swift wrappers always pass
+`1, count`. What changes for a Swift caller is the empty case: `setByteArray(tag: 1, values: [])`
+and its three siblings now answer `false` and create nothing, where they answered `true`. That
+`true` was not a working outcome. An array attribute built on the exactly-empty range saves to
+BinOcaf or XmlOcaf and reloads as `failure reading attribute` from OCCT's own drivers, measured
+against a one-element control that round-trips clean, because the store driver writes no payload
+for it. Use the `TDataStd_*List` attributes (`setBooleanList`, `setExtStringList`,
+`setReferenceList`) for a collection that may legitimately be empty; they are unchanged and still
+take one.
+
+The measurement is in `Scripts/repro/2866/`.
+
+### Fixed
+- `Face.volumeInertia(planeNormal:planeDistance:)` measured the column between the face and the plane
+  at `-planeDistance` rather than at `planeDistance`. Both of OCCT's by-plane implementations consume
+  the plane as `planeNormal . X = theCoeff[3]` and subtract that constant, while the conversion that
+  fills it from a `gp_Pln` supplies `gp_Pln::Coefficients`' `d`, which belongs to the
+  `planeNormal . X + d = 0` form, so the offset arrived inverted. `OCCTBRepGPropVinertPlane` now
+  builds the plane mirrored through the origin, and `planeDistance` is an ordinary geometric offset:
+  a face lying in the plane contributes 0, and the returned `centerOfMass` is the midpoint between a
+  flat face and the plane. The closed form for a planar face is
+  `(planeNormal . faceNormal) * area * (planeNormal . areaCentroid - planeDistance)`. Both
+  divergence-theorem identities are unaffected, since they need only that the weight is affine with
+  gradient `planeNormal` (#2873).
+
+### Changed
+- The "pass `-d` to measure about the plane at offset `d`" note is gone from
+  `Face.volumeInertia(planeNormal:planeDistance:)`, from `docs/reference/Shape-HLR-Geom.md` and from
+  `CLAUDE.md`. No released version ever returned a non-zero value from this overload, so nothing can
+  have been built on the inverted sign, but a reader who took that advice now measures about the
+  mirrored plane (#2873).
+- `okf/references/known-occt-bugs.md` gains a `#2873` row, and the `#2827` row's closing claim that
+  `loc` fails to re-base is corrected: `SetLocation` correctly moves the weight by nothing, measured
+  at three locations. `Scripts/patches/README.md` and `okf/references/carried-occt-patches.md` record
+  that the upstream hunk riding with `0043` covers three conversion sites, not one, and that the
+  bridge's mirror must be removed in the same change that retires the patch (#2873).
+
+### Added
+- `Scripts/repro/2873/probe.mm` and `Scripts/repro/2873/transcript.txt`, which measure what the
+  by-plane overloads weight each element by, from both of OCCT's by-plane implementations, over a grid
+  of `SetLocation` points and plane offsets, against `gp_Pln`'s own coefficient arithmetic (#2873).
+- `BRepGPropVinertTests`' "the by-plane column runs to the plane the caller named, not its mirror",
+  two assertions that separate the named plane from its mirror without using the closed form: the
+  plane a cap lies in leaves no column, and the column's centroid is the midpoint between the cap and
+  the plane. The fixture is translated to z = 4 and 6 so that no assertion has a mirror-symmetric
+  twin (#2873).
 ### The bridge's 462 dead file-static helpers are gone (#1628)
 
 The `.mm` splits under #396 gave every file in a domain a copy of that domain's shared helper block
