@@ -577,8 +577,8 @@ void OCCTShadedMeshDataFree(OCCTShadedMeshData* data)
 }
 
 /// The angular half of the `GCPnts_TangentialDeflection` request `OCCTShapeGetEdgeMesh`'s curve
-/// fallback makes. Named because the entry point validates the pair up front, and a guard that
-/// tested a different angular value from the one actually passed would be testing nothing (#2872).
+/// fallback makes. Named so the guard on the pair and the constructor cannot drift apart: a guard
+/// testing a different angular value from the one actually passed would be testing nothing (#2872).
 static constexpr double kEdgeMeshFallbackAngularDeflection = 0.1;
 
 bool OCCTShapeGetEdgeMesh(OCCTShapeRef shape, double deflection, OCCTEdgeMeshData* out)
