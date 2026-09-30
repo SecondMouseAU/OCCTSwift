@@ -245,72 +245,6 @@ struct OCCTSelector
   }
 };
 
-static int32_t OCCTSelectorCollectResults(OCCTSelectorRef sel,
-                                          OCCTPickResult* out,
-                                          int32_t         maxResults)
-{
-  int32_t count = 0;
-  for (int i = 1; i <= sel->selector->NbPicked() && count < maxResults; i++)
-  {
-    Handle(SelectMgr_EntityOwner) owner = sel->selector->Picked(i);
-    if (owner.IsNull())
-      continue;
-
-    Handle(OCCTBRepSelectable) selectable =
-      Handle(OCCTBRepSelectable)::DownCast(owner->Selectable());
-    if (selectable.IsNull())
-      continue;
-
-    int32_t foundId = -1;
-    for (NCollection_DataMap<int32_t, Handle(OCCTBRepSelectable)>::Iterator it(sel->objects);
-         it.More();
-         it.Next())
-    {
-      if (it.Value() == selectable)
-      {
-        foundId = it.Key();
-        break;
-      }
-    }
-    if (foundId < 0)
-      continue;
-
-    const SelectMgr_SortCriterion& criterion = sel->selector->PickedData(i);
-
-    out[count].shapeId = foundId;
-    out[count].depth   = criterion.Depth;
-    out[count].pointX  = criterion.Point.X();
-    out[count].pointY  = criterion.Point.Y();
-    out[count].pointZ  = criterion.Point.Z();
-
-    // Extract sub-shape information from BRepOwner
-    out[count].subShapeType  = static_cast<int32_t>(TopAbs_SHAPE);
-    out[count].subShapeIndex = -1;
-
-    Handle(StdSelect_BRepOwner) brepOwner = Handle(StdSelect_BRepOwner)::DownCast(owner);
-    if (!brepOwner.IsNull() && brepOwner->HasShape())
-    {
-      const TopoDS_Shape& subShape = brepOwner->Shape();
-      out[count].subShapeType      = static_cast<int32_t>(subShape.ShapeType());
-
-      // #541: a picked sub-shape's index is 0-based, so it can be handed straight to
-      // OCCTShapeGetFaceAtIndex / GetSubShapeByTypeIndex. It used to be 1-based with 0
-      // meaning "the whole shape", which both misaddressed every pick by one and made
-      // the sentinel indistinguishable from a hit on sub-shape 0; the sentinel is -1 now.
-      if (brepOwner->ComesFromDecomposition())
-      {
-        TopTools_IndexedMapOfShape map;
-        TopExp::MapShapes(selectable->Shape(), subShape.ShapeType(), map);
-        int idx                  = map.FindIndex(subShape);
-        out[count].subShapeIndex = (idx > 0) ? idx - 1 : -1;
-      }
-    }
-
-    count++;
-  }
-  return count;
-}
-
 struct OCCTDrawer
 {
   Handle(Prs3d_Drawer) drawer;
@@ -328,58 +262,9 @@ struct OCCTZLayerSettings
   Graphic3d_ZLayerSettings settings;
 };
 
-static void fillMaterialProps(const Graphic3d_MaterialAspect& mat, OCCTMaterialProperties* props)
-{
-  Quantity_Color ac      = mat.AmbientColor();
-  props->ambientR        = ac.Red();
-  props->ambientG        = ac.Green();
-  props->ambientB        = ac.Blue();
-  Quantity_Color dc      = mat.DiffuseColor();
-  props->diffuseR        = dc.Red();
-  props->diffuseG        = dc.Green();
-  props->diffuseB        = dc.Blue();
-  Quantity_Color sc      = mat.SpecularColor();
-  props->specularR       = sc.Red();
-  props->specularG       = sc.Green();
-  props->specularB       = sc.Blue();
-  Quantity_Color ec      = mat.EmissiveColor();
-  props->emissiveR       = ec.Red();
-  props->emissiveG       = ec.Green();
-  props->emissiveB       = ec.Blue();
-  props->transparency    = mat.Transparency();
-  props->shininess       = mat.Shininess();
-  props->refractionIndex = mat.RefractionIndex();
-  props->isPhysic        = (mat.MaterialType() == Graphic3d_MATERIAL_PHYSIC);
-  // PBR
-  Graphic3d_PBRMaterial pbr = mat.PBRMaterial();
-  props->pbrMetallic        = pbr.Metallic();
-  // #1419: NormalizedRoughness() is the authored [0,1] value; Roughness() remaps it into
-  // [MinRoughness,1] for OCCT's own internal calculations, which is not what a caller reading
-  // this struct back (e.g. for glTF's roughnessFactor) wants.
-  props->pbrRoughness        = pbr.NormalizedRoughness();
-  props->pbrIOR              = pbr.IOR();
-  props->pbrAlpha            = pbr.Alpha();
-  NCollection_Vec3<float> em = pbr.Emission();
-  props->pbrEmissionR        = em.x();
-  props->pbrEmissionG        = em.y();
-  props->pbrEmissionB        = em.z();
-}
-
 static NCollection_List<Handle(Font_SystemFont)> g_fontList;
 
 static bool g_fontListPopulated = false;
-
-// Caller must hold fontListMutex().
-static void ensureFontListLocked()
-{
-  if (!g_fontListPopulated)
-  {
-    Handle(Font_FontMgr) mgr = Font_FontMgr::GetInstance();
-    mgr->InitFontDataBase();
-    g_fontList          = mgr->GetAvailableFonts();
-    g_fontListPopulated = true;
-  }
-}
 
 struct OCCTImage
 {

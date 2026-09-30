@@ -211,31 +211,6 @@
 // Shared private structs/helpers (#1380): every split file gets this identical block,
 // compiled independently per TU -- see this split's own README for why.
 
-static bool occtNearestProjectionOnCurve2d(OCCTCurve2DRef  curve,
-                                           const gp_Pnt2d& point,
-                                           gp_Pnt2d*       outNearest,
-                                           double*         outParameter,
-                                           double*         outDistance)
-{
-  if (!curve || curve->curve.IsNull())
-    return false;
-  try
-  {
-    return occtNearestPointOnCurve2dRange(curve->curve,
-                                          point,
-                                          curve->curve->FirstParameter(),
-                                          curve->curve->LastParameter(),
-                                          outNearest,
-                                          outParameter,
-                                          outDistance);
-  }
-  catch (...)
-  {
-    occtRecordCaughtException(__func__);
-    return false;
-  }
-}
-
 struct OCCTMedialAxis
 {
   BRepMAT2d_BisectingLocus locus;
@@ -275,98 +250,6 @@ struct OCCTMedialAxis
   }
 };
 
-static GccEnt_Position toGccPosition(int32_t q)
-{
-  switch (q)
-  {
-    case 1:
-      return GccEnt_enclosing;
-    case 2:
-      return GccEnt_enclosed;
-    case 3:
-      return GccEnt_outside;
-    default:
-      return GccEnt_unqualified;
-  }
-}
-
-// #556: no guard here by design. The return type has no null-safe value to fall back to, so the
-// precondition lives in the callers: every one of them rejects a null pointer and a null handle
-// before calling. Keep that true when adding a caller: Geom2dAdaptor_Curve::load() dereferences.
-static Geom2dGcc_QualifiedCurve makeQualifiedCurve(OCCTCurve2DRef c, int32_t q)
-{
-  Geom2dAdaptor_Curve adaptor(c->curve);
-  return Geom2dGcc_QualifiedCurve(adaptor, toGccPosition(q));
-}
-
-// Helper to extract bisector solution from GccInt_Bisec
-static void extractBisecSolution(const Handle(GccInt_Bisec)& bisec, OCCTBisecSolution* out)
-{
-  GccInt_IType type = bisec->ArcType();
-  switch (type)
-  {
-    case GccInt_Lin: {
-      gp_Lin2d lin = bisec->Line();
-      out->type    = OCCTBisecTypeLine;
-      out->px      = lin.Location().X();
-      out->py      = lin.Location().Y();
-      out->dx      = lin.Direction().X();
-      out->dy      = lin.Direction().Y();
-      out->radius  = 0;
-      break;
-    }
-    case GccInt_Cir: {
-      gp_Circ2d circ = bisec->Circle();
-      out->type      = OCCTBisecTypeCircle;
-      out->px        = circ.Location().X();
-      out->py        = circ.Location().Y();
-      out->dx        = 0;
-      out->dy        = 0;
-      out->radius    = circ.Radius();
-      break;
-    }
-    case GccInt_Ell: {
-      gp_Elips2d ell = bisec->Ellipse();
-      out->type      = OCCTBisecTypeEllipse;
-      out->px        = ell.Location().X();
-      out->py        = ell.Location().Y();
-      out->dx        = ell.MajorRadius();
-      out->dy        = ell.MinorRadius();
-      out->radius    = 0;
-      break;
-    }
-    case GccInt_Hpr: {
-      gp_Hypr2d hyp = bisec->Hyperbola();
-      out->type     = OCCTBisecTypeHyperbola;
-      out->px       = hyp.Location().X();
-      out->py       = hyp.Location().Y();
-      out->dx       = hyp.MajorRadius();
-      out->dy       = hyp.MinorRadius();
-      out->radius   = 0;
-      break;
-    }
-    case GccInt_Par: {
-      gp_Parab2d par = bisec->Parabola();
-      out->type      = OCCTBisecTypeParabola;
-      out->px        = par.Location().X();
-      out->py        = par.Location().Y();
-      out->dx        = par.Focal();
-      out->dy        = 0;
-      out->radius    = 0;
-      break;
-    }
-    default: {
-      out->type   = OCCTBisecTypePoint;
-      out->px     = 0;
-      out->py     = 0;
-      out->dx     = 0;
-      out->dy     = 0;
-      out->radius = 0;
-      break;
-    }
-  }
-}
-
 struct OCCTPoint2D
 {
   Handle(Geom2d_CartesianPoint) point;
@@ -396,27 +279,6 @@ struct OCCTAxisPlacement2D
   {
   }
 };
-
-static void extractCircSolutions(const GccAna_Circ2d3Tan& solver,
-                                 OCCTCircle2DSolution*    outSolutions,
-                                 int32_t                  maxSolutions,
-                                 int32_t*                 count)
-{
-  if (!solver.IsDone())
-  {
-    *count = 0;
-    return;
-  }
-  int nb = std::min((int)maxSolutions, solver.NbSolutions());
-  for (int i = 0; i < nb; i++)
-  {
-    gp_Circ2d sol           = solver.ThisSolution(i + 1);
-    outSolutions[i].centerX = sol.Location().X();
-    outSolutions[i].centerY = sol.Location().Y();
-    outSolutions[i].radius  = sol.Radius();
-  }
-  *count = (int32_t)nb;
-}
 
 // Concrete adapter for Intf_Polygon2d (abstract base)
 class OCCTSimplePolygon2d : public Intf_Polygon2d
@@ -448,38 +310,6 @@ private:
   std::vector<gp_Pnt2d> myPoints;
 };
 
-// Helper: build Geom2d_BSplineCurve from Convert_ConicToBSplineCurve result
-// #801: use batch accessors (Poles/Weights/Knots/Multiplicities) instead of deprecated
-// per-index accessors (Pole/Weight/Knot/Multiplicity) on Convert_ConicToBSplineCurve.
-static OCCTCurve2DRef buildCurve2DFromConic(const Convert_ConicToBSplineCurve& conv)
-{
-  int                     np = conv.NbPoles(), nk = conv.NbKnots(), deg = conv.Degree();
-  TColgp_Array1OfPnt2d    poles(1, np);
-  TColStd_Array1OfReal    weights(1, np), knots(1, nk);
-  TColStd_Array1OfInteger mults(1, nk);
-  // Batch copy: batch accessors return NCollection_Array1 by const reference
-  const TColgp_Array1OfPnt2d&    convPoles   = conv.Poles();
-  const TColStd_Array1OfReal&    convWeights = conv.Weights();
-  const TColStd_Array1OfReal&    convKnots   = conv.Knots();
-  const TColStd_Array1OfInteger& convMults   = conv.Multiplicities();
-  for (int i = 1; i <= np; i++)
-  {
-    poles(i)   = convPoles.Value(i);
-    weights(i) = convWeights.Value(i);
-  }
-  for (int i = 1; i <= nk; i++)
-  {
-    knots(i) = convKnots.Value(i);
-    mults(i) = convMults.Value(i);
-  }
-  Handle(Geom2d_BSplineCurve) bsc = new Geom2d_BSplineCurve(poles, weights, knots, mults, deg);
-  if (bsc.IsNull())
-    return nullptr;
-  OCCTCurve2D* result = new OCCTCurve2D();
-  result->curve       = bsc;
-  return result;
-}
-
 struct OCCTHatcher
 {
   Hatch_Hatcher hatcher;
@@ -489,71 +319,6 @@ struct OCCTHatcher
   {
   }
 };
-
-// The three OCCTConic2dFrom* entry points share one failure encoding: the six coefficients are
-// zeroed and false returned. Zeroing alone could not carry it: 0 = 0 holds at every point of the
-// plane, so an all-zero result reads as a conic rather than as no answer, and a degenerate ellipse
-// produced exactly that (#514).
-static bool occtConic2dCoefficients(const IntAna2d_Conic& conic, double* coeffs)
-{
-  double A, B, C, D, E, F;
-  conic.Coefficients(A, B, C, D, E, F);
-  coeffs[0] = A;
-  coeffs[1] = B;
-  coeffs[2] = C;
-  coeffs[3] = D;
-  coeffs[4] = E;
-  coeffs[5] = F;
-  return true;
-}
-
-static bool occtConic2dFailed(double* coeffs)
-{
-  for (int i = 0; i < 6; i++)
-    coeffs[i] = 0;
-  return false;
-}
-
-// === #478: one gp_Trsf2d builder behind both Curve2D transform families ===
-//
-// Curve2D has the same two-family shape as Curve3D (#416) and Surface (#488): an in-place
-// mutating dispatcher (OCCTCurve2DTransform, taking a transformType selector) and an immutable
-// OCCTCurve2DTranslate/Rotate/Scale/MirrorAxis/MirrorPoint family that returns a transformed
-// copy. Both build the same five transformations; each family built them its own way, so the
-// two could drift, and had already drifted on the null guard below. They share this builder now,
-// mirroring occtBuildTrsf3D, which the two 3D families share from OCCTBridge_Internal.h (#995).
-//
-// The scale case is the only one whose construction changes. The dispatcher used to compose it
-// by hand as SetScaleFactor(S) + SetTranslationPart(C * (1 - S)); gp_Trsf2d::SetScale(C, S) is
-// what the immutable family reached through Geom2d_Geometry::Scale, and what occtBuildTrsf3D uses.
-// Verified equivalent before switching, over factors {2.5, 0.25, 1, -1, -3, 0, 1e-9, 1e9} x three
-// centres including (1e6, 1e-6): identical ScaleFactor(), identical TranslationPart(), identical
-// transformed coordinates, to the bit. The two disagree only on the internal gp_TrsfForm tag at
-// S = 1 (gp_Scale vs gp_Identity) and S = -1 (gp_Scale vs gp_PntMirror), which is a dispatch hint,
-// not a result: transforming a real BSpline curve through both gives identical poles.
-static bool buildTrsf2D(gp_Trsf2d& trsf, int32_t type, double p1, double p2, double p3, double p4)
-{
-  switch (type)
-  {
-    case 0: // translation (dx, dy)
-      trsf.SetTranslation(gp_Vec2d(p1, p2));
-      return true;
-    case 1: // rotation (cx, cy, angle)
-      trsf.SetRotation(gp_Pnt2d(p1, p2), p3);
-      return true;
-    case 2: // scale (cx, cy, factor)
-      trsf.SetScale(gp_Pnt2d(p1, p2), p3);
-      return true;
-    case 3: // mirror point (px, py)
-      trsf.SetMirror(gp_Pnt2d(p1, p2));
-      return true;
-    case 4: // mirror axis (ox, oy, dx, dy)
-      trsf.SetMirror(gp_Ax2d(gp_Pnt2d(p1, p2), gp_Dir2d(p3, p4)));
-      return true;
-    default:
-      return false;
-  }
-}
 
 // Signed area of the loop formed by walking `curves` in array order, sampled as a polyline via
 // each curve's own parameterization (shoelace sum). A positive result means the loop as

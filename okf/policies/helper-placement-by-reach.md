@@ -98,6 +98,12 @@ three mechanical classes a "the name appears exactly once" rule cannot see: an o
 name also appears in a comment. Nothing the grep counted is disputed; the grep's population is a
 strict subset.
 
+**The population is now zero.** #1628's deletion pass removed all 462 remaining definitions across
+the ten split domains, 13,719 lines with the comment blocks attached to them, and the census
+reports 146 `static` definitions in the 74 bridge files with a use in their own file and none
+without. The figure above is what the
+population was, not what it is; re-run the census rather than quoting either number.
+
 Its `--divergence` mode is the half that finds defects rather than tidying, and its comparison is
 **dead against live**, not dead against dead. Five names had a live copy that no longer matched its
 dead ones, `fillCommonPart` among them, and each dead body held a defect the live one had been fixed
@@ -114,6 +120,16 @@ Counting sites therefore answers two questions at once, and they want different 
   one live copy after the stale sets went, and six of them moved to `OCCTBridge_Internal.h` under
   #1628 (`occtQuiltShells`, `mapBRepCheckStatus`, `getLabelForTag`,
   `occtDimensionApplyTolerance`, `occtNearestProjectionOnCurve3d`, `clearCancelOut`).
+
+  **Count the live copies after the dead ones go, not before.** Twelve names read as reachable
+  duplication on the tree the deletion pass started from, across 71 definitions. Six of them were
+  an artifact of the dead population: their extra copies counted as live only because a dead helper
+  in the same file called them, so deleting the dead caller left the copy dead too and the name
+  ended with exactly one definition (`toGccPosition`, `occtFreeBoundsPerformed`,
+  `occtShapeToleranceOfTypeGuard`, `occtShellIsInsideSolid`, `occtExportCafImpl`,
+  `occtDocumentGdtObjectAtImpl`, seven copies each bar the last). The hoist backlog is therefore
+  six names across 15 definitions, not twelve across 71, and a hoist planned from the earlier
+  figure would have moved six helpers into a shared header that one file reaches.
 - **Dead copies** are not a correctness bug, and they are not nothing either: they cost every later
   audit, and they make a fixed defect look unfixed. Delete them where you are already touching the
   file, and never "fix" one to match, which propagates the body rather than retiring it.
@@ -122,16 +138,17 @@ Counting sites therefore answers two questions at once, and they want different 
 
 **A hoist can be blocked by a duplicated file-local TYPE, and a type is invisible to the function
 census.** The splits copied file-scope `struct`s and `class`es into every file of a domain exactly as
-they copied functions, and three of the nine reachable-duplication helpers cannot move until their
-type does:
+they copied functions, and three of the six helpers that are still reachable duplication cannot
+move until their type does:
 
 - `setCancelOut` names `BridgeProgressIndicator`, a `Message_ProgressIndicator` subclass defined in
   seven `OCCTBridge_IO_*.mm` files. Moving an ODR-sensitive polymorphic class into a header every
   bridge translation unit includes is a decision of its own, not a step in a deletion pass.
 - `occtAnalyzeShellOrientation` names `OCCTShellOrientationScan`, a `struct` defined in seven
   `OCCTBridge_Healing_*.mm` files.
-- `occtSignedWireAreaInPlane` calls `occtSampleWirePoints`, itself twelve copies. Hoisting one
-  without the other moves the reach problem rather than solving it.
+- `occtSignedWireAreaInPlane` calls `occtSampleWirePoints`, which had twelve copies and, after
+  #1628's deletion pass, has two live ones in the same two files. Hoisting one without the other
+  moves the reach problem rather than solving it.
 
 `census-dead-file-statics.py` covers functions only, and says so, so a type is invisible to it and to
 every count on this page. **The type population is measured separately**, by
@@ -147,6 +164,9 @@ that answer is the same as for a helper, and it is this page.
 whatever it called. The census reports that fixpoint separately (`Dead only once the above go`),
 and deleting the thirty-eight stale definitions above moved nine definitions from live to dead.
 A deletion pass therefore re-measures after each slice instead of working from one up-front list.
+The full pass needed three rounds: 412 in the first, 50 that only existed once those went, and a
+third that found nothing. Fifty of the 462, more than a tenth, are invisible to any single
+measurement of the tree.
 
 ## It cuts the other way: a helper with one caller is not owed one
 
