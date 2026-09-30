@@ -83,6 +83,17 @@ The seven censuses today and what each is for:
   first version reported 89 findings that were an artefact of reusing a gate's regex for a census's
   question.
 
+  **#2858 widened it from two channels to four and added a kind to the map**, and the calibration
+  is the part to copy. Channel three (a caller-controlled index handed to a member whose bound
+  test is an out-of-line macro) was written after PR #2870 fixed ten such sites, so it could be
+  run against the tree as it stood at that PR's parent: it reports all seven of the sites the PR
+  guarded, three of them naming the bound-checked sibling one screen away that is how #2859 was
+  found by hand. A channel that reports nothing on a clean tree and everything on the tree the
+  defect shipped in is calibrated; one that reports nothing on both is untested. Channel four is a
+  committed table with a `--verify` that re-derives it, on the `derive-gdt-enums.py` precedent,
+  because its subject (a `#ifndef No_Exception` region that swallows the condition variable and
+  not only the raise) cannot be derived from raise sites at all.
+
 Three gates read `Scripts/patches/` and `Scripts/patches-wasi/` rather than `Sources/`, and all
 three for the same reason: `check-patch-deletes-guarded-symbol.py` (#2058), which fails when a
 carried patch deletes a line naming an OCCT symbol a `Tests/` comment says its invariant depends

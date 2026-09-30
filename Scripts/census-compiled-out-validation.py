@@ -30,12 +30,47 @@ shape applied to control flow. This script reports those sites. It is a census a
 verdict on each one is whether the `catch` had another reason to exist, and that is a reading, not a
 mechanical fact. See `okf/policies/occt-validation-is-compiled-out.md`.
 
-Two halves, and only the second runs without an OCCT source tree:
+Four channels, and #2858 added the last two plus the depth qualifier:
+
+  one    try blocks protecting a construction from `check-throwing-calls.py`'s caller-values
+         vocabulary (`gp_Dir`, `gp_Ax*`, `Geom_Direction`, the evaluators), verdict per class.
+  two    bridge locals of a class whose `StdFail_NotDone` guard is out-of-line, read through one
+         of the accessors that guard was protecting, and whether the bridge tests `IsDone()`.
+  three  a caller-controlled index or dimension handed to a member whose only bound test was an
+         out-of-line `Standard_OutOfRange` / `RangeError` / `DimensionError` macro. Channel two's
+         population is `StdFail_NotDone` and nothing else, 1 of the 28 exception kinds among the
+         828 out-of-line sites, and all three defects the #2801 sweep proved sat outside it.
+         Carries the within-file asymmetry signal: a sibling function in the same file that DOES
+         bound-check the same accessor name, which is how #2859 and #2861 were found by hand.
+  four   the six OCCT out-of-line files whose `#ifndef No_Exception` region swallows the CONDITION
+         as well as the raise, so the check's answer is discarded and the next statement runs on
+         data the kernel knows is wrong (PR #2849). Committed as a literal table, because no
+         derivation over raise sites can see it; `--verify-no-exception-regions` re-derives it.
+
+WHAT IS STILL DARK, so nobody reads a clean run as an all-clear (#2858):
+
+  * **Channel one's verdict is class-level**, so a class with an inline check on ANY member reads
+    as protected even where the member actually called has its check in the `.cxx`. The bias is
+    deliberate and it is the reason a clean channel-one run is weaker evidence than a finding.
+  * **The map's `members` column is access-blind.** It nominates `private` members no caller can
+    reach (`GeomAdaptor_Curve::LocalContinuity`), and it aggregates every exception on a class into
+    one row, so channel three's member set includes members guarded by something else.
+  * **`inline-raise` does not mean live.** It means live in whichever unit expands it. The
+    `inline-dead-at-depth` kind counts the OCCT out-of-line units that name each inline-checked
+    class, which is where the same check is compiled out; `gp_Dir` is named by 602 of them.
+  * **Neither of the two P1s the sweep found is visible as a finding.** #2840 faults in
+    `NCollection_Sequence::Value` and #2855 writes out of bounds in `NCollection_Array1`, in each
+    case inside somebody else's `.cxx`, and the class the bridge names reads as protected.
+  * **A value the KERNEL fabricates is not this script's subject at all**, nor
+    `census-unmeasured-values.py`'s: see that script's sub-kind 5 and #2844.
+
+Modes, and only the bare run works without an OCCT source tree:
 
   --write-table / --reverify-table   derive `Scripts/occt-raise-if-map.txt` from
                                      `Libraries/occt-src`, one row per OCCT class per kind of
                                      raise site. Needs the tree; `--reverify-table` reports SKIPPED
                                      without it unless `--require-occt-src` is given.
+  --verify-no-exception-regions      re-derive channel four's committed table, same rules.
   (bare run)                         the census, pure Python over the committed table and
                                      `Sources/OCCTBridge/src/*.mm`.
 
@@ -102,7 +137,7 @@ INLINE_EXTS = (".hxx", ".lxx")
 OUTOFLINE_EXTS = (".cxx", ".pxx")
 
 KINDS = ("inline-raise", "outofline-raise", "inline-throw", "outofline-throw",
-         "outofline-delegated", "inherited-live")
+         "outofline-delegated", "inherited-live", "inline-dead-at-depth")
 
 CLASS_DECL_RE = re.compile(r"^\s*class\s+(?:Standard_EXPORT\s+)?([A-Za-z_]\w*)\s*:\s*([^{;]*)",
                            re.MULTILINE)
@@ -288,7 +323,75 @@ def derive(occt_src):
                  % (files, occt_src, "\n  ".join(problems)))
     derive_delegated(occt_src, table)
     derive_inherited(table, bases)
+    derive_dead_at_depth(occt_src, table)
     return table, packages
+
+
+# How many packages a dead-at-depth row names before it stops naming them. The column is colour
+# rather than payload (the payload is the unit count), and NCollection_Array1 is named by 273
+# packages, which is a row no reader reads. The truncation is written into the data as a
+# `+N-more` token rather than left to this comment, because a silently truncated list is the kind
+# of number this repo has been wrong about before.
+DEAD_AT_DEPTH_PACKAGES = 8
+
+
+def outofline_sources(occt_src):
+    """(stem, raw) for every OCCT out-of-line source file under a tree.
+
+    The two derivations below take this as a parameter so their self-test cases drive the real
+    loop rather than a restatement of it, which is the rule `file_sites` records above: a removal
+    matrix found this script's comment-stripping decorative precisely because a fixture that
+    reimplements the loop cannot notice a rule going missing.
+    """
+    for root, _dirs, names in os.walk(os.path.join(occt_src, "src")):
+        for name in sorted(names):
+            stem, ext = os.path.splitext(name)
+            if ext not in OUTOFLINE_EXTS:
+                continue
+            try:
+                yield stem, open(os.path.join(root, name), encoding="utf-8",
+                                 errors="replace").read()
+            except OSError:
+                continue
+
+
+def derive_dead_at_depth(occt_src, table, sources=None):
+    """Record, per inline-checked class, how many OCCT out-of-line units compile that check dead.
+
+    This is #2858's first item, and the thing it corrects is the map's single most misleading
+    statement. `inline-raise` is described as "live", and the qualifier that matters is in the
+    second clause: live **in whichever unit expands it**. An OCCT `.cxx` that names the class
+    expands the same header with `No_Exception` defined, so on that path the check is gone. The
+    classes carrying the most inline sites are exactly the ones OCCT's own code uses constantly,
+    `NCollection` 135 sites and `math` 128, and both of the P1s the #2801 sweep read as protected
+    fault inside one: #2840 in `NCollection_Sequence::Value` and #2855 in
+    `NCollection_Array1::SetValue`, each expanded inside somebody else's `.cxx`.
+
+    The count is **out-of-line translation units that name the class**, which is an upper bound on
+    the call sites and a lower bound on nothing: a unit that names the class may not call a guarded
+    member, and a unit that reaches it through a typedef (`TColgp_Array1OfPnt`) does call one and is
+    not counted. Both directions are disclosed here and in the map header; what the number is for is
+    telling a reader that a class is reached at depth constantly rather than never, and no
+    tighter derivation changes that answer. The class's own `.cxx` counts, because the check is
+    equally dead there.
+    """
+    inline_checked = sorted(cls for cls, entry in table.items() if "inline-raise" in entry)
+    if not inline_checked:
+        return
+    pattern = re.compile(r"\b(" + "|".join(re.escape(c) for c in inline_checked) + r")\b")
+    units = {}
+    for stem, raw in (outofline_sources(occt_src) if sources is None else sources):
+        package = stem.split("_", 1)[0] if "_" in stem else stem
+        for match in pattern.finditer(strip_comments(raw)):
+            seen = units.setdefault(match.group(1), {})
+            seen.setdefault(package, set()).add(stem)
+    for cls, by_package in units.items():
+        total = sum(len(stems) for stems in by_package.values())
+        ranked = sorted(by_package, key=lambda p: (-len(by_package[p]), p))
+        shown = ranked[:DEAD_AT_DEPTH_PACKAGES]
+        if len(ranked) > DEAD_AT_DEPTH_PACKAGES:
+            shown.append("+%d-more" % (len(ranked) - DEAD_AT_DEPTH_PACKAGES))
+        table[cls]["inline-dead-at-depth"] = (table[cls]["inline-raise"][0], set(shown), total)
 
 
 def derive_inherited(table, bases):
@@ -386,6 +489,16 @@ def format_table(derived):
         "#                    case; the members column names the classes delegated to.",
         "#   inherited-live   a transitive base class holds a live site, so a bridge call through",
         "#                    this class can still throw. The members column names that base.",
+        "#   inline-dead-at-depth  the count of OCCT out-of-line translation units that NAME an",
+        "#                    inline-checked class, and so expand its inline check with",
+        "#                    No_Exception defined. Every one of them is a path on which that",
+        "#                    check is COMPILED OUT, which is the qualifier inline-raise's word",
+        "#                    \"live\" leaves out: live in whichever unit expands it, and the",
+        "#                    bridge is that unit only when the bridge is the immediate caller.",
+        "#                    The members column names the OCCT packages doing the naming, the",
+        "#                    top few by unit count, with a +N-more token where it is cut. An",
+        "#                    upper bound on call sites (naming is not calling) and blind to a",
+        "#                    typedef (TColgp_Array1OfPnt never spells NCollection_Array1).",
         "#",
         "# A class the walk examined and found no site of any kind gets no row. The packages line",
         "# below is what separates that from a name the walk never saw, which is uncertainty rather",
@@ -397,6 +510,11 @@ def format_table(derived):
         "# NCollection_ templates are written. Channel two reads this column for accessor names, so",
         "# a StdFail_NotDone site recorded <file-scope> is outside its population; the count below",
         "# is how much of the map that covers.",
+        "#",
+        "# The members column is also ACCESS-BLIND: it names a private member no caller can reach",
+        "# as readily as a public one. GeomAdaptor_Curve::LocalContinuity and its 2D twin are",
+        "# private (GeomAdaptor_Curve.hxx:273, Geom2dAdaptor_Curve.hxx:251) and are in the column",
+        "# anyway, so any channel reading it will keep proposing them (#2858).",
         "#",
         "# Regenerate after an OCCT version bump or a carried patch that touches a raise site, and",
         "# check the totals below moved the way the change predicts.",
@@ -716,6 +834,393 @@ def notdone_census(table, src=SRC, paths=None, text_by_path=None):
     return findings, counts
 
 
+# Channel three (#2858). Channel two's population is `StdFail_NotDone` and nothing else, which is
+# 1 of the 28 exception kinds among the map's 828 out-of-line sites and 122 of its 284 classes. The
+# three defects the #2801 sweep proved all sat in the part no channel read: #2856 and #2857 are
+# `Standard_OutOfRange`, #2855 is `Standard_RangeError`. This channel is the same question asked of
+# the index-and-dimension family: the bridge hands a caller-controlled number to a member whose
+# only bound test was one of these macros, so with the macro empty the number is used unchecked.
+#
+# It is a different shape from channel two's and not a generalisation of its code. Channel two asks
+# "was the construction done", a question about one object's state that `IsDone()` answers. This one
+# asks "is this index inside this object's bounds", which is answered by comparing the index against
+# a bound the object reports, so the guard it looks for is a comparison rather than a call.
+INDEX_EXCS = ("Standard_DimensionError", "Standard_DimensionMismatch", "Standard_OutOfRange",
+              "Standard_OutOfRange_Always", "Standard_RangeError")
+
+# A bound the object reports about itself. Copied from the predicates OCCT's own out-of-line
+# `_Raise_if` lines test, which is where the guard has to come from: `Index < 1 || Index >
+# NbPoles()` (`Geom2d_BezierCurve.cxx:609`), `theRow < LowerRow() || theRow > UpperRow()`
+# (`math_Matrix`), `Index > Length()` (`NCollection_Sequence`).
+BOUND_ACCESSOR_RE = re.compile(r"\b(?:Nb\w+|Upper\w*|Lower\w*|Length|Size|Extent|Degree|"
+                               r"RowNumber|ColNumber|NbRows|NbColumns)\s*\(")
+COMPARISON_RE = re.compile(r"<=?|>=?|==|!=")
+INT_LITERAL_RE = re.compile(r"(?<![\w.])\d+(?![\w.])")
+CONDITION_HEAD_RE = re.compile(r"\b(?:if|while)\s*\(")
+AUTO_DECL_RE = re.compile(r"\bauto\s*[*&]?\s*(\w+)\s*=\s*([^;]*);")
+
+# `bound` is the guard PR #2870 wrote at ten sites; `literal-only` tests the index against a
+# constant and not against the object, which catches `index < 1` and misses every overrun; `none`
+# is the shape #2859 and #2861 shipped with.
+INDEX_GUARDS = ("bound", "literal-only", "none")
+
+
+def index_classes(table):
+    """{class: members} whose out-of-line guard is an index-or-dimension raise, so it is gone.
+
+    The members set is the map's, which aggregates every out-of-line raise on the class regardless
+    of which exception each one carried: the map's row is per (class, kind), not per (class, kind,
+    exception). So a class that raises `StdFail_NotDone` on `Value` and `Standard_OutOfRange` on
+    `Pole` contributes both names here. That over-includes rather than under-includes, which is the
+    direction a census should err in when its output is a list to read, and it is why this channel
+    prints a guard column rather than a verdict.
+    """
+    out = {}
+    for cls, entry in table.items():
+        if "outofline-raise" not in entry:
+            continue
+        excs, members, _count = entry["outofline-raise"]
+        if not set(excs) & set(INDEX_EXCS):
+            continue
+        named = {m for m in members if m != UNATTRIBUTED}
+        if named:
+            out[cls] = named
+    return out
+
+
+# An index or a dimension arrives as an integer by value. A pointer parameter is an out-parameter
+# here, which is what `LowerDistanceParameters(u, v)` takes and what makes it not this channel's
+# subject: nothing about it is a number OCCT was going to range-check. Without this filter the
+# channel reported four such calls, all of them noise, and every one of them a member the map lists
+# because its class ALSO raises StdFail_NotDone somewhere (see index_classes).
+INDEX_PARAM_TYPE_RE = re.compile(r"^(?:const\s+)?(?:unsigned\s+|signed\s+)?"
+                                 r"(?:int\d*_t|int|long|short|size_t|Standard_Integer|"
+                                 r"Standard_Size)$")
+
+
+def parameters_of(text, brace):
+    """{name: type} for the parameters of the function whose body opens at `brace`.
+
+    Written here rather than taken from `check-throwing-calls.py`, which yields bodies and not
+    signatures. It walks back from the `(` matching the signature's `)` so a defaulted argument or
+    a function-pointer parameter cannot truncate it.
+    """
+    close = text.rfind(")", 0, brace)
+    if close < 0:
+        return {}
+    depth = 0
+    open_paren = -1
+    for i in range(close, -1, -1):
+        if text[i] == ")":
+            depth += 1
+        elif text[i] == "(":
+            depth -= 1
+            if depth == 0:
+                open_paren = i
+                break
+    if open_paren < 0:
+        return {}
+    params = {}
+    depth = 0
+    current = ""
+    for ch in text[open_paren + 1:close] + ",":
+        if ch in "(<[":
+            depth += 1
+        elif ch in ")>]":
+            depth -= 1
+        if ch == "," and depth == 0:
+            found = re.findall(r"[A-Za-z_]\w*", current)
+            if len(found) > 1 and "*" not in current and "&" not in current:
+                params[found[-1]] = " ".join(found[:-1])
+            current = ""
+        else:
+            current += ch
+    return params
+
+
+def index_parameters(params):
+    """The subset of a bridge signature that can be an index or a dimension OCCT would check."""
+    return {name for name, ty in params.items() if INDEX_PARAM_TYPE_RE.match(ty.strip())}
+
+
+def typed_locals(body, classes, decl_re):
+    """{variable: class} for every local the bridge declares of one of `classes`.
+
+    Four spellings, all of which the bridge writes: `Handle(C) v`, `occ::handle<C> v`, `C v(...)`
+    and `auto v = <anything naming C>`, the last being how #2870's own sites are written
+    (`auto bezier = occ::handle<Geom2d_BezierCurve>::DownCast(c->curve);`). A census that knew only
+    the first three would have been blind to the file the defect was in.
+    """
+    out = {}
+    for match in AUTO_DECL_RE.finditer(body):
+        for cls in classes:
+            if re.search(r"\b" + re.escape(cls) + r"\b", match.group(2)):
+                out.setdefault(match.group(1), cls)
+                break
+    for match in decl_re.finditer(body):
+        cls = match.group(1) or match.group(2) or match.group(3)
+        var = match.group(4)
+        if var in ("const", "DownCast", "return"):
+            continue
+        out.setdefault(var, cls)
+    return out
+
+
+def paren_argument_text(body, open_paren):
+    """The argument text of a call whose `(` sits at `open_paren`, nested parens included.
+
+    `SetPole(index, gp_Pnt2d(x, y))` is why this is paren-matched rather than `[^)]*`: the naive
+    form stopped at the inner `)` and the outer call's own index argument was never seen, which is
+    the same defect `vocabulary_sites` records one screen up for channel one.
+    """
+    depth = 0
+    for i in range(open_paren, len(body)):
+        if body[i] == "(":
+            depth += 1
+        elif body[i] == ")":
+            depth -= 1
+            if depth == 0:
+                return body[open_paren + 1:i]
+    return body[open_paren + 1:]
+
+
+def conditions(body):
+    """The paren-matched text of every `if (...)` and `while (...)` condition in a body."""
+    out = []
+    for match in CONDITION_HEAD_RE.finditer(body):
+        open_paren = body.index("(", match.end() - 1)
+        depth = 0
+        for i in range(open_paren, len(body)):
+            if body[i] == "(":
+                depth += 1
+            elif body[i] == ")":
+                depth -= 1
+                if depth == 0:
+                    out.append(body[open_paren:i + 1])
+                    break
+    return out
+
+
+# A bound the function hoisted into a local before testing against it. `const int nbPoles =
+# bz->NbPoles(); if (index < 1 || index > nbPoles || nbPoles <= 2)` is how six of the ten guards
+# PR #2870 wrote are spelled, and reading only the condition text scored two of them
+# `literal-only`: a false finding, and in the direction that matters most, since it would have sent
+# a reader to re-guard a site that is already correct.
+BOUND_LOCAL_RE = re.compile(r"\b(?:const\s+)?(?:auto|int\d*_t|int|unsigned|long|size_t|"
+                            r"Standard_Integer|Standard_Size)\s+(\w+)\s*=\s*([^;]*);")
+
+
+def bound_locals(body):
+    """Local names initialised from a bound the object reports, so a test against one is a bound."""
+    return {m.group(1) for m in BOUND_LOCAL_RE.finditer(body)
+            if BOUND_ACCESSOR_RE.search(m.group(2))}
+
+
+def index_guard_for(param, conds, bounds=()):
+    """How well the function constrains `param` before handing it to OCCT."""
+    verdict = "none"
+    bound_re = (re.compile(r"\b(?:" + "|".join(re.escape(b) for b in sorted(bounds)) + r")\b")
+                if bounds else None)
+    for cond in conds:
+        if not re.search(r"\b" + re.escape(param) + r"\b", cond):
+            continue
+        if not COMPARISON_RE.search(cond):
+            continue
+        if BOUND_ACCESSOR_RE.search(cond) or (bound_re and bound_re.search(cond)):
+            return "bound"
+        if INT_LITERAL_RE.search(cond):
+            verdict = "literal-only"
+    return verdict
+
+
+def index_census(table, src=SRC, paths=None, text_by_path=None):
+    """Caller-controlled indices handed to a member whose bound test this build compiled out.
+
+    Returns (findings, counts). Each finding carries `asymmetric`, which is the signal #2858 asked
+    to encode: another function in the SAME bridge file passes a caller value to the same member of
+    the same class and does bound-check it. That within-file split found three of the #2801 sweep's
+    defects, and it is a fact about the file rather than a judgement about the call.
+    """
+    findings = []
+    counts = {g: 0 for g in INDEX_GUARDS}
+    classes = index_classes(table)
+    if not classes:
+        return findings, counts
+    alt = "|".join(re.escape(c) for c in sorted(classes))
+    decl_re = re.compile(r"(?:Handle\s*\(\s*(%s)\s*\)|occ::handle\s*<\s*(%s)\s*>|\b(%s))"
+                         r"\s*(?:const\s+)?[*&]?\s*(\w+)\s*[;=({,]" % (alt, alt, alt))
+    member_alt = re.compile(r"\b(\w+)\s*(?:\.|->)\s*("
+                            + "|".join(sorted({re.escape(m) for ms in classes.values()
+                                               for m in ms})) + r")\s*\(")
+    paths = sorted(glob.glob(os.path.join(src, "*.mm"))) if paths is None else paths
+    for path in paths:
+        text = (text_by_path or {}).get(path)
+        if text is None:
+            text = open(path, encoding="utf-8").read()
+        rel = os.path.relpath(path, REPO) if os.path.isabs(path) else path
+        per_file = []
+        # Members of the same name that some OTHER function in this file bound-checks, whatever
+        # class it called them on. This is the sibling half of the asymmetry signal and it has to
+        # look outside the population: #2859's guarded side is `Geom2d_BSplineCurve::Pole`, whose
+        # own check is a literal throw, so that class is not in `index_classes` at all and the
+        # comparison the issue asked for cannot be made from the population alone.
+        siblings = {}
+        for func, start, raw_body in THROWING.function_bodies(text):
+            body = THROWING.strip_noise(raw_body)
+            params = index_parameters(parameters_of(text, start))
+            if not params:
+                continue
+            conds = conditions(body)
+            bounds = bound_locals(body)
+            for match in member_alt.finditer(body):
+                args = paren_argument_text(body, match.end() - 1)
+                fed = [p for p in params if re.search(r"\b" + re.escape(p) + r"\b", args)]
+                if not fed:
+                    continue
+                if max((index_guard_for(p, conds, bounds) for p in fed),
+                       key=INDEX_GUARDS.index) == "bound":
+                    siblings.setdefault(match.group(2), set()).add(func)
+            locals_by_name = typed_locals(body, classes, decl_re)
+            if not locals_by_name:
+                continue
+            for var, cls in sorted(locals_by_name.items()):
+                for member in sorted(classes[cls]):
+                    call = re.compile(r"\b" + re.escape(var) + r"\s*(?:\.|->)\s*"
+                                      + re.escape(member) + r"\s*\(")
+                    for match in call.finditer(body):
+                        args = paren_argument_text(body, match.end() - 1)
+                        fed = sorted(p for p in params
+                                     if re.search(r"\b" + re.escape(p) + r"\b", args))
+                        if not fed:
+                            continue  # not a caller-controlled index: nothing for a guard to do
+                        guard = max((index_guard_for(p, conds, bounds) for p in fed),
+                                    key=INDEX_GUARDS.index)
+                        counts[guard] += 1
+                        per_file.append({
+                            "file": rel,
+                            "line": text[:start + match.start()].count("\n") + 1,
+                            "function": func, "class": cls, "member": member,
+                            "variable": var, "arguments": sorted(fed), "guard": guard,
+                        })
+        # Keyed on the MEMBER NAME within the file, not on (class, member), and that is the whole
+        # signal. #2859 is `Geom2d_BSplineCurve::Pole` bound-checked in `OCCTCurve2DBSplineGetPole`
+        # and `Geom2d_BezierCurve::Pole` not bound-checked in `OCCTCurve2DBezierGetPole`, one screen
+        # apart in one file: same accessor name, same shape of input, different class. Keyed on the
+        # class as well, the pair is two unrelated rows and the asymmetry is invisible.
+        for f in per_file:
+            others = sorted(siblings.get(f["member"], set()) - {f["function"]})
+            f["asymmetric"] = others if f["guard"] != "bound" else []
+        findings.extend(per_file)
+    return findings, counts
+
+
+# Channel four (#2858). The `#ifndef No_Exception` code regions, which are a different defect from
+# every other population on this page: the dead region swallows the CONDITION VARIABLE and not only
+# the raise, so the check's own answer is discarded and the next statement runs on data the kernel
+# knows is wrong. `GeomFill_BSplineCurves.cxx:282` is the worked case (PR #2849): `bool IsOK =` sits
+# inside the `#ifndef`, `Arrange`'s `false` goes nowhere, and `Init` dereferences the null handle
+# `Arrange` never filled. A census keyed on `_Raise_if` sites cannot tell that apart from "check
+# gone, data still valid", which is why this is a table rather than a derivation over the map.
+#
+# The population is small enough to commit literally, in the shape `derive-gdt-enums.py --verify`
+# uses: `--verify-no-exception-regions` re-derives it from an OCCT tree and diffs.
+NO_EXCEPTION_REGIONS = (
+    # (file stem, what the region swallows, what is known about it)
+    ("Convert_EllipseToBSplineCurve", "Tol, delta", "open, #2858"),
+    ("Convert_SphereToBSplineSurface", "delta", "open, #2858"),
+    ("Convert_TorusToBSplineSurface", "delta", "open, #2858"),
+    ("GeomFill_BSplineCurves", "bool IsOK", "guarded bridge-side, PR #2849"),
+    ("GeomFill_BezierCurves", "bool IsOK", "guarded bridge-side, PR #2849"),
+    ("GeomFill_Profiler", "int n = NbKnots()", "open, #2858"),
+)
+
+NO_EXCEPTION_DIRECTIVE_RE = re.compile(
+    r"^\s*#\s*if(n?def\s+No_Exception|\s+!?\s*defined\s*\(?\s*No_Exception)", re.MULTILINE)
+# An assignment, which is what makes a region swallow rather than merely disappear. `=` that is
+# part of `==`, `!=`, `<=`, `>=`, `+=` and friends is not one.
+ASSIGNMENT_RE = re.compile(r"(?<![=!<>+\-*/%&|^])=(?!=)")
+
+
+def no_exception_region_texts(raw):
+    """The `#ifndef No_Exception` regions of one file that SWALLOW a value, as text.
+
+    **Swallowing is derived, not listed.** Measured over the pinned tree, 24 out-of-line files hold
+    such a region and 18 of them are inert for one of three reasons: 14 `#define No_Exception`
+    themselves (the `HLRBRep`/`HLRAlgo` block, `ElSLib.cxx`, `Intrv_Intervals.cxx`), which changes
+    nothing because the whole kernel already has it; two are diagnostics that print a message
+    (`Draw_BasicCommands.cxx`, `IFSelect_ShareOutResult.cxx`); and two hold an extra check that
+    throws rather than a value the surrounding code goes on to read
+    (`NCollection_AccAllocator.cxx`, and in a comment `GCPnts_*Abscissa.cxx`). All three collapse
+    to one mechanical test: with the directives and the comments dropped, does anything remain that
+    ASSIGNS? A list of the eighteen names would have said the same thing today and would have gone
+    stale silently.
+    """
+    lines = raw.splitlines()
+    regions = []
+    for match in NO_EXCEPTION_DIRECTIVE_RE.finditer(raw):
+        first = raw[:match.start()].count("\n")
+        depth = 0
+        body = []
+        for line in lines[first:]:
+            stripped = line.strip()
+            if stripped.startswith("#if"):
+                depth += 1
+                continue
+            if stripped.startswith("#endif"):
+                depth -= 1
+                if depth <= 0:
+                    break
+                continue
+            if (not stripped or stripped.startswith("#") or stripped.startswith("//")
+                    or stripped.startswith("*") or stripped.startswith("/*")):
+                continue
+            body.append(stripped)
+        text = " ".join(body)
+        if text and ASSIGNMENT_RE.search(text):
+            regions.append(text)
+    return regions
+
+
+def derive_no_exception_regions(occt_src, sources=None):
+    """{file stem: [region text]} for the out-of-line files whose region swallows a value.
+
+    Out-of-line only, and that is the whole point: a region in a `.hxx` is expanded with the
+    bridge's own flags and so is live for us. A `.cxx` region is dead in the kernel binary.
+    OCCT's `GTests/` fixtures are skipped: they write `#ifndef No_Exception` around an
+    `EXPECT_THROW` deliberately, to assert both spellings, and no shipped library holds them.
+    """
+    found = {}
+    for stem, raw in (outofline_sources(occt_src) if sources is None else sources):
+        if stem.endswith("_Test") or "No_Exception" not in raw:
+            continue
+        regions = no_exception_region_texts(raw)
+        if regions:
+            found[stem] = regions
+    return found
+
+
+def no_exception_problems(occt_src):
+    """Whatever the committed `#ifndef No_Exception` table gets wrong about an OCCT tree."""
+    return no_exception_problems_for(derive_no_exception_regions(occt_src))
+
+
+def no_exception_problems_for(derived):
+    committed = {stem for stem, _swallowed, _status in NO_EXCEPTION_REGIONS}
+    out = []
+    for stem in sorted(set(derived) - committed):
+        out.append("%s holds a #ifndef No_Exception region that swallows a value and the committed "
+                   "table does not list it: %s" % (stem, derived[stem][0][:120]))
+    for stem in sorted(committed - set(derived)):
+        out.append("%s is in the committed table and swallows nothing in this tree; if the kernel "
+                   "fixed it, drop the row and say so" % stem)
+    for stem, swallowed, _status in NO_EXCEPTION_REGIONS:
+        if stem in derived and not any(w.strip() in region for region in derived[stem]
+                                       for w in swallowed.split(",")):
+            out.append("%s swallows %r in this tree, and the committed row says %r"
+                       % (stem, derived[stem][0][:80], swallowed))
+    return out
+
+
 def assert_view_is_plausible(table, packages, counts, paths):
     """Fail rather than report clean when the script is looking at the wrong thing.
 
@@ -746,6 +1251,25 @@ def assert_view_is_plausible(table, packages, counts, paths):
     if "GeomAPI_ProjectPointOnSurf" not in dead_notdone:
         problems.append("GeomAPI_ProjectPointOnSurf is not among the classes whose NotDone guard "
                         "is out-of-line, and its LowerDistance is one of the measured cases")
+    # Channel three and the depth kind, each as a canary rather than a floor, per
+    # okf/policies/static-gates.md's rule after #2833: name the measured fact whose absence means
+    # the channel is reporting about a population it never examined.
+    dead_index = index_classes(table)
+    if "Geom2d_BezierCurve" not in dead_index:
+        problems.append("Geom2d_BezierCurve, whose index guards #2859 measured as out-of-line "
+                        "macros, is not among the classes channel three examines")
+    if "Geom_BezierCurve" in dead_index:
+        problems.append("Geom_BezierCurve is in channel three's population, and #2859 measured "
+                        "every one of its index guards as a literal throw; the map is describing "
+                        "some other tree")
+    depth_rows = sum(1 for entry in table.values() if "inline-dead-at-depth" in entry)
+    if "inline-dead-at-depth" not in table.get("NCollection_Array1", {}):
+        problems.append("NCollection_Array1 carries no inline-dead-at-depth row, so either the "
+                        "map predates that kind or the walk saw no OCCT source naming the class "
+                        "OCCT's own code names most; regenerate with --write-table")
+    elif depth_rows < 2:
+        problems.append("only %d class(es) carry an inline-dead-at-depth row; the pinned tree "
+                        "yields one for most of the 104 inline-checked classes" % depth_rows)
     if len(paths) < 50:
         problems.append("only %d bridge .mm file(s) found under %s" % (len(paths), SRC))
     if counts["try-blocks"] < 1000:
@@ -824,6 +1348,58 @@ def run(verbose=False):
                 print("  %s:%d  %s  %s %s.%s()"
                       % (f["file"], f["line"], f["function"], f["class"], f["variable"],
                          "(), .".join(f["members"])))
+    ix_findings, ix_counts = index_census(table, paths=paths)
+    total_ix = sum(ix_counts.values())
+    print("\ncensus-compiled-out-validation, channel three: %d bridge call(s) handing a "
+          "caller-controlled index or dimension to a member whose only bound test is an "
+          "out-of-line %s macro" % (total_ix, "/".join(e.split("_", 1)[1] for e in INDEX_EXCS)))
+    for guard in INDEX_GUARDS:
+        rate = (100.0 * ix_counts[guard] / total_ix) if total_ix else 0.0
+        print("  guard %-13s %4d  %5.1f%%" % (guard, ix_counts[guard], rate))
+    print("  the edge of this population: an index reaching OCCT through anything but an integer "
+          "parameter passed by value, or through a local of a class the map has no row for, is "
+          "outside it. A `TColStd_Array1OfReal` the bridge declares itself is deliberately outside "
+          "too: the bridge's own unit expands NCollection_Array1's check, so there it is live.")
+    for guard, heading in (
+            ("none", "nothing in the bridge function bounds the index, so the caller's number "
+                     "reaches an accessor whose own bound test this build removed:"),
+            ("literal-only", "bounded against a constant and not against the object, which stops "
+                             "a negative index and no overrun:")):
+        rows = [f for f in ix_findings if f["guard"] == guard]
+        if rows:
+            print("\n%s" % heading)
+            for f in rows:
+                print("  %s:%d  %s  %s::%s(%s)%s"
+                      % (f["file"], f["line"], f["function"], f["class"], f["member"],
+                         ",".join(f["arguments"]),
+                         ("  ASYMMETRIC: bounded in " + ", ".join(f["asymmetric"])
+                          + " in this same file") if f["asymmetric"] else ""))
+
+    print("\ncensus-compiled-out-validation, channel four: the %d OCCT out-of-line file(s) whose "
+          "`#ifndef No_Exception` region swallows the CONDITION as well as the raise, so the "
+          "check's own answer is discarded and the next statement runs on data the kernel knows is "
+          "wrong. Committed, because it cannot be derived from the raise map; "
+          "--verify-no-exception-regions re-derives it from an OCCT tree."
+          % len(NO_EXCEPTION_REGIONS))
+    bridge_text = "".join(open(p, encoding="utf-8").read() for p in paths)
+    for stem, swallowed, status in NO_EXCEPTION_REGIONS:
+        named = re.search(r"\b" + re.escape(stem) + r"\b", bridge_text) is not None
+        print("  %-32s swallows %-22s %s  (%s)"
+              % (stem, swallowed, "the bridge names this class" if named
+                 else "not named in the bridge", status))
+
+    dead = sorted(((cls, entry["inline-dead-at-depth"]) for cls, entry in table.items()
+                   if "inline-dead-at-depth" in entry),
+                  key=lambda row: (-row[1][2], row[0]))
+    inline_total = sum(1 for entry in table.values() if "inline-raise" in entry)
+    print("\ncensus-compiled-out-validation, the depth qualifier: %d of the %d class(es) the map "
+          "calls inline-checked are NAMED by at least one OCCT out-of-line unit, which is a unit "
+          "that expands the same check with No_Exception on. The verdict `live-inline` above means "
+          "live where the BRIDGE is the immediate caller, and nowhere else."
+          % (len(dead), inline_total))
+    for cls, (_excs, members, count) in dead[:10]:
+        print("  %-28s %5d unit(s)  %s" % (cls, count, ",".join(sorted(members))))
+
     print("\nA `catch` here is not automatically wrong: it may be guarding against a future OCCT "
           "build with the checks on, or against a literal throw this map cannot see through a call "
           "chain. What it must not be is the only thing standing between a caller's bad number and "
@@ -1146,6 +1722,201 @@ def self_test():
          len(found) == 1 and found[0]["verdict"] == "fabricated"
          and found[0]["other_unknown"] == [], str(found))
 
+    # ---------------------------------------------------------------- channel three (#2858).
+    # The fixture class is the one #2859 was measured on: Geom2d_BezierCurve's index guards are
+    # all out-of-line macros, and Geom2d_BSplineCurve's are literal throws, which is why only one
+    # of the pair is in this channel's population at all.
+    ix_table = dict(FIXTURE_TABLE, **{
+        "Geom2d_BezierCurve": {
+            "outofline-raise": ({"Standard_OutOfRange", "Standard_ConstructionError"},
+                                {"Pole", "SetPole", "InsertPoleAfter"}, 14)},
+    })
+
+    def ix(source):
+        return index_census(ix_table, paths=["<f>"], text_by_path={"<f>": source})
+
+    # The shipped defect this channel exists for, in the shape PR #2870's own "before" had: a
+    # caller's int32_t reaches Pole() and nothing bounds it.
+    unbounded = ("void OCCTCurve2DBezierGetPole(OCCTCurve2DRef curve, int32_t index, double* x)\n"
+                 "{\n  auto bz = Handle(Geom2d_BezierCurve)::DownCast(curve->curve);\n"
+                 "  if (bz.IsNull())\n    return;\n"
+                 "  gp_Pnt2d p = bz->Pole(index);\n  *x = p.X();\n}\n")
+    found, _counts = ix(unbounded)
+    case("index-unbounded-caller-index-reported",
+         len(found) == 1 and found[0]["guard"] == "none"
+         and found[0]["member"] == "Pole", str(found))
+
+    # The guard PR #2870 wrote. Bounding against the object clears the site.
+    bounded = ("void OCCTCurve2DBezierGetPole(OCCTCurve2DRef curve, int32_t index, double* x)\n"
+               "{\n  auto bz = Handle(Geom2d_BezierCurve)::DownCast(curve->curve);\n"
+               "  if (bz.IsNull() || index < 1 || index > bz->NbPoles())\n    return;\n"
+               "  gp_Pnt2d p = bz->Pole(index);\n  *x = p.X();\n}\n")
+    found, _ = ix(bounded)
+    case("index-bounded-against-the-object-is-clean",
+         len(found) == 1 and found[0]["guard"] == "bound", str(found))
+
+    # Six of those ten guards hoist the bound into a local first, and reading the condition text
+    # alone scored two of them literal-only: a false finding pointing at a correct site.
+    hoisted = ("bool OCCTCurve2DBezierRemovePole(OCCTCurve2DRef curve, int32_t index)\n"
+               "{\n  auto bz = Handle(Geom2d_BezierCurve)::DownCast(curve->curve);\n"
+               "  const int nbPoles = bz->NbPoles();\n"
+               "  if (index < 1 || index > nbPoles || nbPoles <= 2)\n    return false;\n"
+               "  bz->Pole(index);\n  return true;\n}\n")
+    found, _ = ix(hoisted)
+    case("index-bound-hoisted-into-a-local-is-still-a-bound",
+         len(found) == 1 and found[0]["guard"] == "bound", str(found))
+
+    # A constant floor stops a negative index and no overrun, which is a different verdict from
+    # both of the above and is reported for a reading rather than cleared.
+    literal = ("void OCCTThing(OCCTCurve2DRef curve, int32_t index)\n"
+               "{\n  auto bz = Handle(Geom2d_BezierCurve)::DownCast(curve->curve);\n"
+               "  if (index < 1)\n    return;\n  bz->Pole(index);\n}\n")
+    found, _ = ix(literal)
+    case("index-bounded-against-a-constant-only-is-reported",
+         len(found) == 1 and found[0]["guard"] == "literal-only", str(found))
+
+    # An out-parameter is not an index, whatever it points at. Without this the channel reported
+    # four such calls, every one of them noise, and every one on a member the map lists only
+    # because its class also raises StdFail_NotDone somewhere else. The fixture points at an
+    # int32_t deliberately: a `double*` is rejected by the type filter below as well, so it would
+    # not show which of the two rules is doing the work.
+    outparam = ("void OCCTThing(OCCTCurve2DRef curve, int32_t* outIndex)\n"
+                "{\n  auto bz = Handle(Geom2d_BezierCurve)::DownCast(curve->curve);\n"
+                "  bz->Pole(outIndex);\n}\n")
+    found, _ = ix(outparam)
+    case("index-out-parameters-are-not-in-the-population", found == [], str(found))
+
+    # And the case the TYPE filter alone decides, since the one above is carried by
+    # `parameters_of` dropping a pointer parameter before the filter ever sees it. A double is a
+    # coordinate or a tolerance; nothing about it is a number OCCT was going to range-check, and
+    # without this the channel reports every `Segment(u1, u2)` in the bridge.
+    scalar = ("void OCCTThing(OCCTCurve2DRef curve, double u1, double u2)\n"
+              "{\n  auto bz = Handle(Geom2d_BezierCurve)::DownCast(curve->curve);\n"
+              "  bz->SetPole(u1, u2);\n}\n")
+    found, _ = ix(scalar)
+    case("index-a-by-value-double-is-not-an-index", found == [], str(found))
+
+    # A loop variable the function derived itself is not a caller-controlled index: the bridge
+    # already knows it is in range, and OCCTCurve2DBezierGetPoles is the real instance.
+    internal = ("void OCCTThing(OCCTCurve2DRef curve, int32_t unused)\n"
+                "{\n  auto bz = Handle(Geom2d_BezierCurve)::DownCast(curve->curve);\n"
+                "  for (int i = 1; i <= bz->NbPoles(); i++)\n    bz->Pole(i);\n}\n")
+    found, _ = ix(internal)
+    case("index-loop-variable-is-not-caller-controlled", found == [], str(found))
+
+    # The nested-argument scan, the same defect channel one had: an argument list read as
+    # `[^)]*` stops at the first inner `)`. **No site in the bridge needs this today**, because
+    # OCCT puts the index first in every such signature and a truncated list still holds it; the
+    # case therefore puts the index after the nested call, which is a parser case and not a shape
+    # the tree writes. It is kept because the direction of the error is a false clean, and a
+    # census that misses a defect is the one failure this page's whole argument is about.
+    nested = ("bool OCCTThing(OCCTCurve2DRef curve, int32_t index, double x, double y)\n"
+              "{\n  auto bz = Handle(Geom2d_BezierCurve)::DownCast(curve->curve);\n"
+              "  bz->SetPole(gp_Pnt2d(x, y), index);\n  return true;\n}\n")
+    found, _ = ix(nested)
+    case("index-after-a-nested-call-argument-is-still-found",
+         len(found) == 1 and found[0]["member"] == "SetPole", str(found))
+
+    # The asymmetry signal, which is how #2859 was found by hand. The guarded sibling is a
+    # DIFFERENT class whose own check is a literal throw, so it is not in the population: keyed on
+    # (class, member) rather than on the member name, this comparison cannot be made at all.
+    asymmetric = ("void OCCTCurve2DBSplineGetPole(OCCTCurve2DRef curve, int32_t index)\n"
+                  "{\n  auto bs = Handle(Geom2d_BSplineCurve)::DownCast(curve->curve);\n"
+                  "  if (index < 1 || index > bs->NbPoles())\n    return;\n"
+                  "  bs->Pole(index);\n}\n"
+                  "void OCCTCurve2DBezierGetPole(OCCTCurve2DRef curve, int32_t index)\n"
+                  "{\n  auto bz = Handle(Geom2d_BezierCurve)::DownCast(curve->curve);\n"
+                  "  bz->Pole(index);\n}\n")
+    found, _ = ix(asymmetric)
+    case("index-asymmetry-names-the-guarded-sibling-in-the-same-file",
+         len(found) == 1 and found[0]["guard"] == "none"
+         and found[0]["asymmetric"] == ["OCCTCurve2DBSplineGetPole"], str(found))
+
+    # A class with no index-family out-of-line raise is not in the population whatever it is
+    # handed, or the channel would be a census of every integer the bridge passes anywhere.
+    unrelated = ("void OCCTThing(OCCTCurve2DRef curve, int32_t index)\n"
+                 "{\n  Handle(Geom_Direction) d = Handle(Geom_Direction)::DownCast(curve->curve);\n"
+                 "  d->Pole(index);\n}\n")
+    found, _ = ix(unrelated)
+    case("index-class-with-no-index-raise-is-out-of-the-population", found == [], str(found))
+
+    # ---------------------------------------------------------------- channel four (#2858).
+    swallow = ("#ifndef No_Exception\n  bool IsOK =\n#endif\n"
+               "    Arrange(C1, C2, C3, C4, Tol);\n"
+               "  Standard_ConstructionError_Raise_if(!IsOK, \" not joining\");\n")
+    case("no-exception-region-holding-an-assignment-swallows",
+         no_exception_region_texts(swallow) == ["bool IsOK ="],
+         str(no_exception_region_texts(swallow)))
+
+    # The 14 files that define the symbol themselves change nothing: the whole kernel already has
+    # it. Listing them by name would have been the same answer today and stale tomorrow.
+    defines = "#ifndef No_Exception\n  #define No_Exception\n#endif\n"
+    case("no-exception-region-defining-the-symbol-swallows-nothing",
+         no_exception_region_texts(defines) == [], str(no_exception_region_texts(defines)))
+
+    diagnostic = ("#ifdef No_Exception\n  di << \"Exceptions disabled\\n\";\n"
+                  "#else\n  di << \"Exceptions enabled\\n\";\n#endif\n")
+    case("no-exception-diagnostic-region-swallows-nothing",
+         no_exception_region_texts(diagnostic) == [],
+         str(no_exception_region_texts(diagnostic)))
+
+    guard_only = ("#ifndef No_Exception\n"
+                  "  if (aBlock == nullptr)\n    throw Standard_ProgramError(\"x\");\n#endif\n")
+    case("no-exception-region-that-only-throws-swallows-nothing",
+         no_exception_region_texts(guard_only) == [],
+         str(no_exception_region_texts(guard_only)))
+
+    # The committed table against a tree, all three ways it can be wrong, because a table that
+    # silently matched nothing would report all clear exactly as loudly as a clean tree.
+    complete = {stem: [swallowed] for stem, swallowed, _status in NO_EXCEPTION_REGIONS}
+    case("no-exception-table-agrees-with-a-tree-holding-exactly-it",
+         no_exception_problems_for(complete) == [], str(no_exception_problems_for(complete)))
+    added = dict(complete, Wibble_Thing=["double x = 1;"])
+    case("no-exception-table-reports-a-region-it-does-not-list",
+         any("Wibble_Thing holds" in p for p in no_exception_problems_for(added)),
+         str(no_exception_problems_for(added)))
+    missing = {k: v for k, v in complete.items() if k != "GeomFill_BSplineCurves"}
+    case("no-exception-table-reports-a-row-the-tree-no-longer-has",
+         any("GeomFill_BSplineCurves is in the committed table" in p
+             for p in no_exception_problems_for(missing)), str(no_exception_problems_for(missing)))
+    moved = dict(complete, GeomFill_BSplineCurves=["double somethingElse = 1;"])
+    case("no-exception-table-reports-a-row-whose-region-changed",
+         any("GeomFill_BSplineCurves swallows" in p for p in no_exception_problems_for(moved)),
+         str(no_exception_problems_for(moved)))
+
+    # ---------------------------------------------------------------- the depth kind (#2858).
+    depth_table = {"NCollection_Array1": {"inline-raise": ({"Standard_OutOfRange"},
+                                                           {UNATTRIBUTED}, 9)}}
+    derive_dead_at_depth(None, depth_table, sources=[
+        ("BRepMesh_Delaun", "void f() { NCollection_Array1<int> a(1, 2); a.Value(1); }"),
+        ("BRepMesh_Circle", "NCollection_Array1<int> b(1, 2);"),
+        ("Poly_Triangulation", "// NCollection_Array1 in a comment only\n"),
+        ("gp_Dir", "void g() { return; }"),
+    ])
+    row = depth_table["NCollection_Array1"].get("inline-dead-at-depth")
+    case("dead-at-depth-counts-every-unit-that-names-the-class",
+         row is not None and row[2] == 2 and row[1] == {"BRepMesh"}, str(row))
+    case("dead-at-depth-does-not-count-a-mention-in-a-comment",
+         row is not None and "Poly" not in row[1], str(row))
+    clean = {"gp_Dir": {"outofline-raise": ({"Standard_ConstructionError"}, {"gp_Dir"}, 1)}}
+    derive_dead_at_depth(None, clean, sources=[("gp_Ax2", "gp_Dir d(1, 0, 0);")])
+    case("dead-at-depth-says-nothing-about-a-class-with-no-inline-check",
+         "inline-dead-at-depth" not in clean["gp_Dir"], str(clean))
+
+    # The plausibility assertions for the two additions that read the map. A map without either
+    # canary would let the census print a channel that examined nothing.
+    for absent, needle in (("Geom2d_BezierCurve", "channel three examines"),
+                           ("NCollection_Array1", "carries no inline-dead-at-depth row")):
+        thinned = dict(ix_table, **{"NCollection_Array1": {
+            "inline-raise": ({"Standard_OutOfRange"}, {UNATTRIBUTED}, 9),
+            "inline-dead-at-depth": ({"Standard_OutOfRange"}, {"BRepMesh"}, 400)}})
+        thinned.pop(absent, None)
+        problems = assert_view_is_plausible(thinned,
+                                            FIXTURE_PACKAGES | {"x%d" % i for i in range(200)},
+                                            {"try-blocks": 9999}, ["x"] * 74)
+        case("plausibility-check-fires-when-%s-is-absent" % absent,
+             any(needle in problem for problem in problems), str(problems))
+
     # The live tree, which is the run anybody reads.
     if os.path.exists(TABLE):
         real, real_packages = parse_table()
@@ -1158,6 +1929,16 @@ def self_test():
         _nd, real_nd_counts = notdone_census(real, paths=real_paths)
         case("live-tree-channel-two-population-is-non-empty",
              sum(real_nd_counts.values()) > 0, str(real_nd_counts))
+        _ix, real_ix_counts = index_census(real, paths=real_paths)
+        case("live-tree-channel-three-population-is-non-empty",
+             sum(real_ix_counts.values()) > 0, str(real_ix_counts))
+        # Channel four's table is only worth printing while the bridge can still reach one of the
+        # classes in it, and `Surface.bsplineFill` is why it exists at all (PR #2849).
+        bridge = "".join(open(path, encoding="utf-8").read() for path in real_paths)
+        reachable = [stem for stem, _s, _t in NO_EXCEPTION_REGIONS
+                     if re.search(r"\b" + re.escape(stem) + r"\b", bridge)]
+        case("live-tree-channel-four-table-is-reachable-from-the-bridge",
+             "GeomFill_BSplineCurves" in reachable, str(reachable))
     else:
         case("committed-map-exists", False, "%s is missing" % os.path.relpath(TABLE, REPO))
 
@@ -1177,6 +1958,28 @@ def write_table(occt_src):
           % (os.path.relpath(TABLE, REPO),
              len([l for l in text.splitlines() if l and not l.startswith("#")]), occt_src))
     return 0
+
+
+def verify_no_exception_regions(occt_src, require):
+    """Re-derive channel four's table from an OCCT tree, in the shape --reverify-table uses."""
+    if not os.path.isdir(occt_src):
+        message = ("census-compiled-out-validation: SKIPPED, no OCCT source tree at %s, so the "
+                   "committed #ifndef No_Exception table cannot be re-derived" % occt_src)
+        if require:
+            print(message.replace("SKIPPED", "FAILED"))
+            return 2
+        print(message)
+        return 0
+    problems = no_exception_problems(occt_src)
+    if not problems:
+        print("census-compiled-out-validation: the %d committed #ifndef No_Exception region(s) "
+              "are exactly the ones %s holds" % (len(NO_EXCEPTION_REGIONS), occt_src))
+        return 0
+    print("census-compiled-out-validation: the committed #ifndef No_Exception table no longer "
+          "describes %s:" % occt_src)
+    for problem in problems:
+        print("  %s" % problem)
+    return 1
 
 
 def reverify_table(occt_src, require):
@@ -1214,9 +2017,13 @@ if __name__ == "__main__":
                         help="regenerate Scripts/occt-raise-if-map.txt from an OCCT source tree")
     parser.add_argument("--reverify-table", action="store_true",
                         help="re-derive the map and diff it against the committed copy")
+    parser.add_argument("--verify-no-exception-regions", action="store_true",
+                        help="re-derive channel four's committed #ifndef No_Exception table from "
+                             "an OCCT source tree and report every way it disagrees")
     parser.add_argument("--require-occt-src", action="store_true",
-                        help="with --reverify-table, fail instead of skipping when the tree is "
-                             "absent, so a run that examined nothing is not a green one")
+                        help="with --reverify-table or --verify-no-exception-regions, fail "
+                             "instead of skipping when the tree is absent, so a run that examined "
+                             "nothing is not a green one")
     parser.add_argument("--occt-src", default=DEFAULT_OCCT_SRC,
                         help="OCCT source tree to derive from (default: Libraries/occt-src)")
     args = parser.parse_args()
@@ -1226,4 +2033,6 @@ if __name__ == "__main__":
         sys.exit(write_table(args.occt_src))
     if args.reverify_table:
         sys.exit(reverify_table(args.occt_src, args.require_occt_src))
+    if args.verify_no_exception_regions:
+        sys.exit(verify_no_exception_regions(args.occt_src, args.require_occt_src))
     sys.exit(run(args.verbose))
