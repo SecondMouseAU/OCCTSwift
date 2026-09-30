@@ -121,10 +121,12 @@ jobs:
       #
       # After the cache save rather than before it, so a re-derivation failure never costs the
       # 79 minutes the build just banked. Skipped on a cache hit, and that skip is sound rather
-      # than convenient: on a hit there is no occt-src at all (only the xcframework is cached),
-      # and the cache key IS the patch set plus the build script, so a hit means this exact tree
-      # was re-derived on the run that built it. --require-occt-src per #2098, so a run that
-      # examined nothing fails here instead of reporting clean, which is what the same flag's
+      # than convenient: on a hit there is no occt-src at all (only the xcframework is cached, not
+      # the source tree), and the cache key IS the patch set plus the build script, so a hit means
+      # some earlier run already built from this exact patch set. From the first miss after this
+      # lands, that earlier run also ran these steps; an entry cached before it did not, which is
+      # what the per-PR stamp check covers in the meantime. --require-occt-src per #2098, so a run
+      # that examined nothing fails here instead of reporting clean, which is what the same flag's
       # absence would make of an unexpectedly missing tree.
       - name: Re-derive the OCCT raise map against the patched tree
         if: steps.occt-cache.outputs.cache-hit != 'true'
