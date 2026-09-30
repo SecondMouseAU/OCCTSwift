@@ -16,6 +16,14 @@ ahead of an official OCCT release. Each patch is **temporary**: retire it once t
 bundled OCCT version includes the fix. Full rationale + validation per patch lives in
 `Scripts/patches/README.md`: this note is the ecosystem-level pointer.
 
+**A patch landing or retiring also changes a derived file that is not in this directory.**
+`Scripts/occt-raise-if-map.txt` is a committed derivation of the patched `Libraries/occt-src`, so a
+patch that adds or moves an `<Exception>_Raise_if` or a `throw` changes it, and for two pins
+nothing re-derived it: `0042` put a throw in `ShapeAnalysis::GetFaceUVBounds` and the map said that
+class held no live throw (#2885). Regenerate with
+`python3 Scripts/census-compiled-out-validation.py --write-table`;
+`check-inventory-prose.py` fails when the map's provenance stamp and `Scripts/patches/` disagree.
+
 Each patch is also meant to be **offered upstream** as an OCCT PR. When you do, follow
 [Upstream OCCT PRs, style and submission workflow](../policies/upstream-occt-style.md): clang-format
 with OCCT's own `.clang-format`, OCCT's terse comment style, not OCCTSwift's, and, as of
