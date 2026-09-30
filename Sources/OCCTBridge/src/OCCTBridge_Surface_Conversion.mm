@@ -585,7 +585,8 @@ int32_t OCCTSurfaceExtrema(OCCTSurfaceRef            s1,
     // So gate on IsParallel(), as OCCTCurve3DExtrema does for Extrema_ExtCC's identical shape
     // (#636) and as OCCTExtremaExtElSSPlanes does one layer down. The refusal loses a real
     // measurement, the constant gap between the two surfaces, because OCCTSurfaceExtremaResult has
-    // no way to report a distance with no points; giving it one is a SemVer event, held as #2876.
+    // no way to report a distance with no points. OCCTSurfaceMinDistanceToSurface below reports it
+    // instead, reading LowerDistance() alone (#2876); do not relax this gate to do it here.
     //
     // Carried patch 0044 fixes the kernel half, bounding Extrema_ExtSS::Points against myPOnS1
     // rather than NbExt(), but it is NOT in the pinned asset and THIS GATE IS NOT RETIRED WHEN IT
@@ -613,6 +614,58 @@ int32_t OCCTSurfaceExtrema(OCCTSurfaceRef            s1,
   {
     occtRecordCaughtException(__func__);
     return 0;
+  }
+}
+
+double OCCTSurfaceMinDistanceToSurface(OCCTSurfaceRef s1,
+                                       OCCTSurfaceRef s2,
+                                       double         u1Min,
+                                       double         u1Max,
+                                       double         v1Min,
+                                       double         v1Max,
+                                       double         u2Min,
+                                       double         u2Max,
+                                       double         v2Min,
+                                       double         v2Max)
+{
+  if (!s1 || s1->surface.IsNull() || !s2 || s2->surface.IsNull())
+    return -1.0;
+  try
+  {
+    GeomAPI_ExtremaSurfaceSurface
+      extrema(s1->surface, s2->surface, u1Min, u1Max, v1Min, v1Max, u2Min, u2Max, v2Min, v2Max);
+
+    // #2876: NO IsParallel() gate here, deliberately, and this is the one entry point in the
+    // family where that is right. OCCTSurfaceExtrema above needs the gate because it reads
+    // NearestPoints() and LowerDistanceParameters(), which index myPOnS1/myPOnS2, and
+    // Extrema_ExtSS's analytic parallel branch leaves both sequences empty (#2840). LowerDistance()
+    // reads mySqDist alone, which that same branch DOES populate, so it is correct for a parallel
+    // pair and is the whole reason this function exists: two everywhere-equidistant surfaces have
+    // a real gap and no nearest pair, and OCCTSurfaceExtremaResult has no shape for that.
+    //
+    // This is what OCCT's own caller does. GeometryTest_APICommands.cxx:631-637, the `extrema`
+    // Draw command, branches on IsParallel() and reports LowerDistance() alone for the parallel
+    // case, printing "Infinite number of extremas, distance = <d>"
+    // (okf/policies/follow-occt-callers.md).
+    //
+    // Measured, Scripts/repro/2876/probe.mm against a kernel without patch 0044: two Geom_Planes 5
+    // apart give IsParallel true, NbExtrema 1 and LowerDistance exactly 5, over a trimmed UV square
+    // (mode 0) and over the planes' own natural domain (mode 2) alike, while NearestPoints() on the
+    // same object exits 139 (mode 1). Two coincident planes give a computed 0 (mode 5), so a zero
+    // here is a measurement and not a fabrication.
+    //
+    // The NbExtrema() test is required and is not decoration: two crossing planes have no extremum
+    // at all, and LowerDistance() then raises Standard_OutOfRange out of
+    // NCollection_Sequence::Value with myIndex == 0 (mode 4). Same test, same reason, as
+    // OCCTCurve3DDistanceToSurface.
+    if (extrema.NbExtrema() == 0)
+      return -1.0;
+    return extrema.LowerDistance();
+  }
+  catch (...)
+  {
+    occtRecordCaughtException(__func__);
+    return -1.0;
   }
 }
 

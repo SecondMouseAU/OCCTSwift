@@ -1950,26 +1950,29 @@ extension Surface {
     /// // Parallel surfaces have no discrete nearest pair, so this refuses (#2840):
     /// let p1 = Surface.plane(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1))!
     /// let p2 = Surface.plane(origin: SIMD3(0, 0, 5), normal: SIMD3(0, 0, 1))!
-    /// p1.extrema(to: p2)              // nil, even though the gap is a well-defined 5
+    /// p1.extrema(to: p2)              // nil: there is no pair to report
+    /// p1.minDistance(to: p2)          // 5.0: the gap itself is well defined (#2876)
     /// ```
     ///
-    /// **Parallel surfaces return `nil` (#2840), and the gap they do not report is real.** Where the
-    /// two surfaces are everywhere equidistant, OCCT reports a distance and no point pair:
-    /// `Extrema_ExtSS`'s parallel branch fills its distance sequence and leaves its two point
-    /// sequences empty, while `NbExtrema()` counts the distances, so the count says there is a
-    /// nearest pair to read and there is not. Reading it faults uncatchably on this build, which is
-    /// measured in `Scripts/repro/2831/probe.mm`, so this refuses instead. ``SurfaceExtremaResult``
-    /// has no shape for a distance without points, and giving it one is a SemVer change held as
-    /// #2876. The kernel half is carried patch `0044` (#2840), which makes the same read raise
-    /// rather than fault; this still refuses, because the refusal is the API decision and not the
-    /// crash workaround.
+    /// **Parallel surfaces return `nil` (#2840), and their gap is reported by
+    /// ``minDistance(to:uvBounds1:uvBounds2:)`` instead (#2876).** Where the two surfaces are
+    /// everywhere equidistant, OCCT reports a distance and no point pair: `Extrema_ExtSS`'s
+    /// parallel branch fills its distance sequence and leaves its two point sequences empty, while
+    /// `NbExtrema()` counts the distances, so the count says there is a nearest pair to read and
+    /// there is not. Reading it faults uncatchably on this build, which is measured in
+    /// `Scripts/repro/2831/probe.mm`, so this refuses instead. ``SurfaceExtremaResult`` has every
+    /// stored property non-optional and so has no shape for a distance without points, which is
+    /// why the distance has its own entry point rather than a hole in this one. The kernel half is
+    /// carried patch `0044` (#2840), which makes the same read raise rather than fault; this still
+    /// refuses, because the refusal is the API decision and not the crash workaround.
     ///
     /// - Parameters:
     ///   - other: The other surface
     ///   - uvBounds1: UV bounds on this surface (uMin, uMax, vMin, vMax). Uses full surface bounds if nil.
     ///   - uvBounds2: UV bounds on the other surface. Uses full surface bounds if nil.
     /// - Returns: The extrema result, or `nil` if the computation fails, if the surfaces have no
-    ///   discrete extremum in the given bounds, or if they are parallel (#2840).
+    ///   discrete extremum in the given bounds, or if they are parallel (#2840). Use
+    ///   ``minDistance(to:uvBounds1:uvBounds2:)`` for the distance in the parallel case.
     public func extrema(
         to other: Surface,
         uvBounds1: (uMin: Double, uMax: Double, vMin: Double, vMax: Double)? = nil,
@@ -1992,6 +1995,77 @@ extension Surface {
             uv1: SIMD2(result.u1, result.v1),
             uv2: SIMD2(result.u2, result.v2)
         )
+    }
+
+    /// Minimum distance between this surface and another, including when the two are parallel.
+    ///
+    /// Wraps `GeomAPI_ExtremaSurfaceSurface::LowerDistance()`, and reads nothing else. That is the
+    /// whole difference from ``extrema(to:uvBounds1:uvBounds2:)``, which reads the nearest point
+    /// pair as well and therefore has to refuse a parallel pair: `Extrema_ExtSS`'s parallel branch
+    /// fills the distance sequence and leaves both point sequences empty (#2840). The distance is
+    /// real, it is the kernel's own, and this is how you get it (#2876).
+    ///
+    /// ```swift
+    /// // Two everywhere-equidistant planes: a well-defined gap and no nearest pair.
+    /// let p1 = Surface.plane(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1))!
+    /// let p2 = Surface.plane(origin: SIMD3(0, 0, 5), normal: SIMD3(0, 0, 1))!
+    /// print(p1.minDistance(to: p2) ?? -1)   // 5.0
+    /// print(p1.extrema(to: p2) == nil)      // true: no pair to report
+    ///
+    /// // An ordinary pair answers through either entry point, with the same number.
+    /// let a = Surface.sphere(center: SIMD3(0, 0, 0), radius: 3)!
+    /// let b = Surface.sphere(center: SIMD3(20, 0, 0), radius: 5)!
+    /// print(a.minDistance(to: b) ?? -1)     // 12.0
+    /// print(a.extrema(to: b)?.distance ?? -1)  // 12.0, plus the point pair
+    /// ```
+    ///
+    /// Reporting a distance with no points is OCCT's own behaviour rather than an interpretation
+    /// added here: the `extrema` Draw command branches on `IsParallel()` and prints
+    /// "Infinite number of extremas, distance = ..." from `LowerDistance()` alone
+    /// (`GeometryTest_APICommands.cxx:631`). It completes the family, too. `Curve3D` has answered
+    /// the same question for curve-curve and curve-surface since the beginning, through
+    /// ``Curve3D/minDistance(to:)-(Curve3D)`` and ``Curve3D/minDistance(to:)-(Surface)``, both of
+    /// which read `LowerDistance()` alone and are both correct on parallel input. Surface-surface
+    /// was the one member with no such entry point.
+    ///
+    /// To tell a parallel pair apart from an ordinary one, ask: a non-`nil` distance with a `nil`
+    /// ``extrema(to:uvBounds1:uvBounds2:)`` over the same bounds is the parallel case, and
+    /// ``extremaSS(other:)`` reports `isParallel` directly from an untrimmed computation.
+    ///
+    /// **"Parallel" here means two parallel planes, and nothing else.** It is OCCT's own
+    /// predicate, and it is much narrower than "the two surfaces are everywhere equidistant":
+    /// `Extrema_ExtSS::Perform` reaches the analytic `Extrema_ExtElSS` only in its `Plane` x
+    /// `Plane` arm and sends every other pair to the general solver, which never sets the flag,
+    /// and `Extrema_ExtElSS` itself sets it in its `gp_Pln`/`gp_Pln` overload alone. So coaxial
+    /// cylinders and concentric spheres, which are equidistant everywhere, come back with two
+    /// ordinary extrema and a real point pair, measured as modes 8 and 9 of
+    /// `Scripts/repro/2876/probe.mm`. ``extrema(to:uvBounds1:uvBounds2:)`` answers for both of
+    /// those, and so does this.
+    ///
+    /// A returned `0` is a measurement, not a placeholder: two coincident planes are parallel with
+    /// a computed distance of zero, measured as mode 5 of `Scripts/repro/2876/probe.mm`.
+    ///
+    /// - Parameters:
+    ///   - other: The other surface.
+    ///   - uvBounds1: UV bounds on this surface (uMin, uMax, vMin, vMax). Uses the full surface
+    ///     domain if nil, matching ``extrema(to:uvBounds1:uvBounds2:)``.
+    ///   - uvBounds2: UV bounds on the other surface. Uses the full surface domain if nil.
+    /// - Returns: The minimum distance, or `nil` if the extrema computation finds nothing at all.
+    ///   Two crossing planes are the clearest case of that: they intersect, so there is no
+    ///   extremum, and `nil` means "no answer" rather than "zero".
+    public func minDistance(
+        to other: Surface,
+        uvBounds1: (uMin: Double, uMax: Double, vMin: Double, vMax: Double)? = nil,
+        uvBounds2: (uMin: Double, uMax: Double, vMin: Double, vMax: Double)? = nil
+    ) -> Double? {
+        let b1 = uvBounds1 ?? self.domain
+        let b2 = uvBounds2 ?? other.domain
+        let d = OCCTSurfaceMinDistanceToSurface(
+            handle, other.handle,
+            b1.uMin, b1.uMax, b1.vMin, b1.vMax,
+            b2.uMin, b2.uMax, b2.vMin, b2.vMax
+        )
+        return d >= 0 ? d : nil
     }
 
     // MARK: - ShapeAnalysis_Surface expansion (v0.49.0)

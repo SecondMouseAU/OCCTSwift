@@ -8,9 +8,10 @@ import simd
 
 /// `Surface.extrema(to:uvBounds1:uvBounds2:)` (`OCCTSurfaceExtrema`) wraps
 /// `GeomAPI_ExtremaSurfaceSurface`, and until #2831 it read `NearestPoints()` and
-/// `LowerDistanceParameters()` behind `NbExtrema() > 0`. That count is not the guard it looks like.
+/// `LowerDistanceParameters()` behind `NbExtrema() > 0`.
 ///
-/// `Extrema_ExtSS::NbExt()` is `mySqDist.Length()`, and the analytic parallel branch
+/// That count is not the guard it looks like. `Extrema_ExtSS::NbExt()` is `mySqDist.Length()`, and
+/// the analytic parallel branch
 /// (`Extrema_ExtSS.cxx:226-234`) appends one entry to `mySqDist` and **nothing** to
 /// `myPOnS1`/`myPOnS2`. `Extrema_ExtSS::Points` bounds only against `NbExt()`, so index 1 passes the
 /// range test and then reads `myPOnS1.Value(1)` on an empty `NCollection_Sequence`. The check that
@@ -27,8 +28,10 @@ import simd
 /// SIGSEGV and the whole suite fails, which is what was observed and is recorded in the PR.
 ///
 /// The refusal loses a real number, the constant gap between the two surfaces.
-/// `SurfaceExtremaResult` has no shape for "a distance with no points", and giving it one is a
-/// SemVer event, so that part is #2876's.
+/// `SurfaceExtremaResult` has no shape for "a distance with no points", so #2876 gave the distance
+/// its own entry point, `Surface.minDistance(to:uvBounds1:uvBounds2:)`, rather than giving the
+/// struct four optional fields. `Issue2876ParallelSurfaceDistanceTests` covers it, and the two
+/// suites pin the pair: `extrema` refuses here, `minDistance` answers there, for the same input.
 @Suite("Surface.extrema returns nil, not SIGSEGV, on parallel surfaces (#2840)")
 struct Issue2840SurfaceExtremaParallelTests {
 
