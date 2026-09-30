@@ -1,0 +1,94 @@
+#2873: which plane the by-plane BRepGProp_Vinert overloads measure about.
+
+Kernel: the pinned v4.0.0-kernel.3 asset (upstream V8_0_1 plus the thirty-one carried patches,
+0043 among them, so the by-plane mass is a measurement rather than the discarded 0.0 of #2827).
+Tree: abb61a9a, branch fix/2873-vinert-byplane-mirror off origin/main.
+Built and run 2026-09-30 on macos-arm64:
+
+  clang++ -std=c++17 -ObjC++ -w \
+    -I".build/artifacts/<pkg>/OCCT/OCCT.xcframework/macos-arm64/Headers" \
+    -L".build/artifacts/<pkg>/OCCT/OCCT.xcframework/macos-arm64" \
+    -lOCCT-macos -framework Foundation -framework AppKit -lz -lc++ \
+    Scripts/repro/2873/probe.mm -o /tmp/occt_probe_2873
+
+Read the four blocks in order:
+
+  1. `Vinert d1` and `VinertGK d1` are equal in every row, so OCCT's two by-plane implementations
+     agree with each other. BRepGProp_Vinert integrates through BRepGProp_Gauss, BRepGProp_VinertGK
+     through math_KronrodSingleIntegration and BRepGProp_UFunction; they share no code, and both
+     convert the gp_Pln the same way (BRepGProp_Vinert.cxx:279, BRepGProp_VinertGK.cxx:219 and
+     :244, both `aCoeff[3] = d - n . loc`, both consumed with a minus at BRepGProp_Gauss.cxx:343
+     and BRepGProp_UFunction.cxx:99). This is a second construction, not a re-run of the first.
+  2. Both disagree with the gp_Pln they were handed. `gp_Pln n.C+d` is the plane's own signed
+     distance to the cap's area centroid, computed from gp_Pln::Coefficients, and it matches the
+     `geometric` column and not the two measured ones. `d1` is its mirror through the origin:
+     2 against 2, 3 against 1, -98 against 102, 7 against -3.
+  3. SetLocation does not move `d1`, at the origin, at (0, 0, 3) and at the non-axial (-4, 11, 2.5).
+     That is the correct behaviour and not a second defect: the distance from a plane to a point is
+     not a function of the moment reference, and the `- n . loc` re-basing exists precisely to
+     cancel the `P - loc` the integrand works in. It cancels exactly, both today and after the
+     sign is corrected.
+  4. Handing the kernel the plane mirrored through the origin, gp_Pln(gp_Pnt(n * -offset), n),
+     makes `d1` the geometric signed distance to the plane at `offset`, for both implementations
+     and all three locations. That is the bridge-side fix in OCCTBRepGPropVinertPlane, measured
+     before it was written.
+
+The column centroid block is the same conclusion in a form that needs no closed form: the cap is at
+z = 2, so the column between it and the plane at z = p has its centroid at z = (2 + p) / 2. Passing
+the plane as-is puts the centroid at 0.5 for offset 1, which is the midpoint to z = -1. Mirrored, it
+is 1.5, the midpoint to z = 1.
+
+The last block re-measures #2827's two aggregate identities under the mirrored plane, on a fixture
+translated off the origin so the first moment is not (0, 0, 0): the per-face sum is still
+BRepGProp::VolumeProperties' volume and the mass-weighted centre sum is still its first moment, for
+a plane through the origin, one 100 away and an oblique one. Both identities need only that the
+weight is affine with gradient n, which mirroring preserves, so the fix moves the per-face
+decomposition and leaves the totals untouched.
+
+--------------------------------------------------------------------------------------------------
+
+cap: area 371.7256661, area centroid (10, 10, 2), n . C = 2
+
+what the kernel weights each element by, on the cap (mass / area = d1)
+  the plane passed is gp_Pln(gp_Pnt(n * offset), n), the plane AT that offset
+  SetLocation        offset      Vinert d1    VinertGK d1   gp_Pln n.C+d      geometric
+  (0, 0, 0)               0              2              2              2              2
+  (0, 0, 0)               1              3              3              1              1
+  (0, 0, 0)            -100            -98            -98            102            102
+  (0, 0, 0)               5              7              7             -3             -3
+  (0, 0, 3)               0              2              2              2              2
+  (0, 0, 3)               1              3              3              1              1
+  (0, 0, 3)            -100            -98            -98            102            102
+  (0, 0, 3)               5              7              7             -3             -3
+  (-4, 11, 2.5)           0              2              2              2              2
+  (-4, 11, 2.5)           1              3              3              1              1
+  (-4, 11, 2.5)        -100            -98            -98            102            102
+  (-4, 11, 2.5)           5              7              7             -3             -3
+
+the same, handing the kernel gp_Pln(gp_Pnt(n * -offset), n) instead
+  SetLocation        offset      Vinert d1    VinertGK d1      geometric
+  (0, 0, 0)               0              2              2              2
+  (0, 0, 0)               1              1              1              1
+  (0, 0, 0)            -100            102            102            102
+  (0, 0, 0)               5             -3             -3             -3
+  (0, 0, 3)               0              2              2              2
+  (0, 0, 3)               1              1              1              1
+  (0, 0, 3)            -100            102            102            102
+  (0, 0, 3)               5             -3             -3             -3
+  (-4, 11, 2.5)           0              2              2              2
+  (-4, 11, 2.5)           1              1              1              1
+  (-4, 11, 2.5)        -100            102            102            102
+  (-4, 11, 2.5)           5             -3             -3             -3
+
+the column's centroid, cap at z = 2, SetLocation at the origin
+    offset centre.z, plane as-is   centre.z, mirrored (2 + offset) / 2
+         0                    1                    1                1
+         1                  0.5                  1.5              1.5
+      -100                   51                  -49              -49
+         5                 -1.5                  3.5              3.5
+
+the #2827 identities under the mirrored plane, plate shifted by (7, -3, 2)
+  VolumeProperties        743.4513322353836   first moment (12638.672648, 5204.15932565, 2230.35399671)
+  n (0, 0, 1) off       0   sum 743.4513322353836   first moment (12638.672648, 5204.15932565, 2230.35399671)
+  n (0, 0, 1) off    -100   sum 743.4513322353887   first moment (12638.672648, 5204.15932565, 2230.35399671)
+  n (0.267261, 0.534522, 0.801784) off       7   sum 743.4513322353838   first moment (12638.672648, 5204.15932565, 2230.35399671)

@@ -1251,7 +1251,11 @@ public final class Shape: @unchecked Sendable {
     ///
     /// - Parameters:
     ///   - index: Edge index (0-based)
-    ///   - deflection: Maximum chord deviation
+    ///   - deflection: Maximum chord deviation. Must be at least `Precision::Confusion()` (1e-7);
+    ///     below that the result is nil (#2872), because `GCPnts_TangentialDeflection`'s own check
+    ///     on it is compiled out of the pinned kernel and the sampler subdivides to an internal
+    ///     million-point cap instead, of which `maxPoints` would return the leading fraction of a
+    ///     percent of the edge with nothing marking it as partial.
     ///   - maxPoints: Output *capacity*, clamped into `0`...``Sampling/maximumSampleCount``;
     ///     a capacity of 0 or less returns nil (#558). The deflection decides the actual point count.
     /// - Returns: Array of 3D points along the edge, or nil if edge not found
@@ -1296,7 +1300,9 @@ public final class Shape: @unchecked Sendable {
     /// ``allEdgePolylinesIndexed(deflection:maxPointsPerEdge:)`` instead.
     ///
     /// - Parameters:
-    ///   - deflection: Maximum chord deviation
+    ///   - deflection: Maximum chord deviation. Must be at least `Precision::Confusion()` (1e-7);
+    ///     below that the result is empty (#2872), on the same reasoning as
+    ///     ``edgePolyline(at:deflection:maxPoints:)``.
     ///   - maxPointsPerEdge: Maximum points per edge
     /// - Returns: Array of polylines, one per successfully discretized edge
     public func allEdgePolylines(
@@ -1319,7 +1325,9 @@ public final class Shape: @unchecked Sendable {
     /// O(edges), issue #275.
     ///
     /// - Parameters:
-    ///   - deflection: Maximum chord deviation
+    ///   - deflection: Maximum chord deviation. Must be at least `Precision::Confusion()` (1e-7);
+    ///     below that the result is empty (#2872), on the same reasoning as
+    ///     ``edgePolyline(at:deflection:maxPoints:)``.
     ///   - maxPointsPerEdge: Per-edge output *capacity*, honoured within `2...`
     ///     ``Sampling/maximumSampleCount``; outside that range the result is empty (#558). This
     ///     one keeps its existing lower bound of 2 rather than clamping to 0, since it is also

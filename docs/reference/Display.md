@@ -1090,9 +1090,9 @@ Extracts wireframe edge polylines from the shape.
 func edgeMesh(deflection: Double = 0.1) -> EdgeMeshData?
 ```
 
-- **Parameters:** `deflection`, chord deviation tolerance (default 0.1).
+- **Parameters:** `deflection`, chord deviation tolerance (default 0.1). Almost every edge is served by tessellation, which meshes free edges as well as face edges; an edge tessellation leaves without a polygon falls back to `GCPnts_TangentialDeflection`, which takes the value as the linear tolerance against a fixed 0.1 rad angular one and refuses anything below `Precision::Confusion()` (1e-7) by contributing no segment for that edge ([#2872](https://github.com/SecondMouseAU/OCCTSwift/issues/2872)). A degenerate value is not rejected up front, because it is the tessellator's parameter first: `deflection: 0` on a shape with a face does not return, and NaN yields thousands of tessellation nodes for one edge ([#2879](https://github.com/SecondMouseAU/OCCTSwift/issues/2879)).
 - **Returns:** `EdgeMeshData`, or `nil` if extraction fails or produces no vertices.
-- **OCCT:** `BRepMesh_IncrementalMesh::Perform` + `TopTools_IndexedMapOfShape` + `BRep_Tool::PolygonOnTriangulation` / `Polygon3D` / `GCPnts_TangentialDeflection` (fallback).
+- **OCCT:** `BRepMesh_IncrementalMesh::Perform` + `TopTools_IndexedMapOfShape` + `BRep_Tool::PolygonOnTriangulation` / `Polygon3D` / `GCPnts_TangentialDeflection` (fallback, taking `deflection` as its linear tolerance against a fixed 0.1 rad angular one).
 - **Example:**
   ```swift
   if let wf = box.edgeMesh(deflection: 0.1) {

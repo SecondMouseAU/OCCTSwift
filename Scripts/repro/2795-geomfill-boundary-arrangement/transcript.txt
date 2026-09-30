@@ -60,3 +60,45 @@ Coons: move P2(1) off the square's (0,0,0) corner and read pole (1,1).
   P1(1)=(0,0,0) P2(1)=(0,0,99) -> pole(1,1)=(0,0,99)  [P2 wins]
 Curved: the same disagreement, same corner.
   P1(1)=(0,0,0) P4(1)=(0,0,99) -> pole(1,1)=(0,0,0)  [P1 wins, P4(1) unread]
+
+=== GeomFill_Stretch (#2843) ===
+Init places P1 at V=1 and P3 at V=NPolV indexed along U, then P4 at U=1 and P2 at
+U=NPolU indexed along V, for j = 2..NPolV-1 only: the Curved arrangement, NOT the
+Coons one. GeomFill_BSplineCurves::Init confirms it from the caller side, passing
+GeomFill_Stretch(P1,P2,P3,P4) and GeomFill_Curved(P1,P2,P3,P4) unswapped while
+GeomFill_Coons gets (P1,P4,P3,P2) (GeomFill_BSplineCurves.cxx:344-350).
+
+Stretch (b1,b2,b3,b4)  [the Coons-ordered fixture] nbU=5 nbV=5
+  (0,0,0)(10,2.5,0)(10,5,0)(10,7.5,0)(0,0,0)
+  (2.5,0,0)(8.125,0.625,0)(6.25,1.25,0)(4.375,1.875,0)(0,2.5,0)
+  (5,0,0)(8.75,1.25,0)(7.5,2.5,0)(6.25,3.75,0)(0,5,0)
+  (7.5,0,0)(9.375,1.875,0)(8.75,3.75,0)(8.125,5.625,0)(0,7.5,0)
+  (10,0,0)(2.5,10,0)(5,10,0)(7.5,10,0)(0,10,0)
+  uniform 5x5 flat square grid: no
+
+Stretch (b1,b3,b2,b4)  [the Coons arrangement, wrong for Stretch] nbU=5 nbV=5
+  (0,0,0)(10,2.5,0)(10,5,0)(10,7.5,0)(0,10,0)
+  (2.5,0,0)(7.5,2.5,0)(5,5,0)(2.5,7.5,0)(2.5,10,0)
+  (5,0,0)(7.5,2.5,0)(5,5,0)(2.5,7.5,0)(5,10,0)
+  (7.5,0,0)(7.5,2.5,0)(5,5,0)(2.5,7.5,0)(7.5,10,0)
+  (10,0,0)(0,2.5,0)(0,5,0)(0,7.5,0)(10,10,0)
+  uniform 5x5 flat square grid: no
+
+Stretch (b1,b4,b2,b3)  [the correct arrangement: bottom,right,top,left] nbU=5 nbV=5
+  (0,0,0)(0,2.5,0)(0,5,0)(0,7.5,0)(0,10,0)
+  (2.5,0,0)(2.5,2.5,0)(2.5,5,0)(2.5,7.5,0)(2.5,10,0)
+  (5,0,0)(5,2.5,0)(5,5,0)(5,7.5,0)(5,10,0)
+  (7.5,0,0)(7.5,2.5,0)(7.5,5,0)(7.5,7.5,0)(7.5,10,0)
+  (10,0,0)(10,2.5,0)(10,5,0)(10,7.5,0)(10,10,0)
+  uniform 5x5 flat square grid: YES
+
+=== #2843: which corners Stretch reads, and where ===
+Stretch's interior subtracts a bilinear patch through P1(1), P2(1), P3(NPolU) and
+P4(NPolV) (GeomFill_Stretch.cxx:92-96). Curved has no such term. So a disagreeing
+corner is dropped from the BOUNDARY by both, but still moves Stretch's INTERIOR.
+
+  P2(1) moved to (10,0,99):
+    boundary corner pole(NPolU,1) = (10,0,0)   [clean (10,0,0)]
+    interior pole(2,2)            = (2.5,2.5,-18.5625)   [clean (2.5,2.5,0)]
+  P2(NPolV) moved to (10,10,99): whole pole grid unchanged: YES [never read]
+  Curved, same P2(1) move:       whole pole grid unchanged: YES [never read]
