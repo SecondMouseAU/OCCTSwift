@@ -64,7 +64,12 @@ fi
 # mode printed 563 "started" lines and **zero** completions, because the slow tests interleave with
 # everything else and nothing finishes. The same runner with `--no-parallel` completed 281 tests in
 # under three minutes. Parallelism buys nothing here and costs the ability to see progress at all.
-RUN_ARGS=(--testing-library swift-testing --no-parallel)
+# TWO ARGUMENT LISTS, AND THE SPLIT IS NOT COSMETIC. `wasmkit run [options] <module> [args...]`:
+# anything after the module path is handed to the GUEST, so a `--dir` or `--env` placed there is
+# silently accepted, passed to Swift Testing, ignored, and the preopen never happens. That cost a
+# round of wrong conclusions here, because running wasmkit by hand with the flags in the right order
+# passed while the script with the same flags in the wrong order failed.
+TEST_ARGS=(--testing-library swift-testing --no-parallel)
 
 # THE SUITES NEED A WRITABLE PREOPEN, and a missing one does not look like an environment problem, it
 # looks like a geometry failure. `Issue336ChainedHistoryTests` failed with
@@ -87,7 +92,7 @@ RUN_ARGS=(--testing-library swift-testing --no-parallel)
 # bridge reports a denied write as `.exportFailed`, which reads as a geometry or history defect.
 WASM_TEST_WORK_DIR="${WASM_TEST_WORK_DIR:-/tmp/occt-wasm-tests}"
 mkdir -p "$WASM_TEST_WORK_DIR"
-RUN_ARGS+=(--dir "$WASM_TEST_WORK_DIR" --dir /tmp --env "TMPDIR=$WASM_TEST_WORK_DIR")
+WASMKIT_ARGS=(--dir "$WASM_TEST_WORK_DIR" --dir /tmp --env "TMPDIR=$WASM_TEST_WORK_DIR")
 
 BUILD_ARGS=(
     --toolset "$TOOLSET"
@@ -145,9 +150,13 @@ failing_names() {
         | grep -v '^run with ' || true; } | sort -u
 }
 
+# TWO SPACES BEFORE THE `#`, AND THAT IS THE WHOLE COMMENT SYNTAX. Test names in this project contain
+# issue references: `"the by-plane per-face sum is the volume, for any plane (#2827)"`. Stripping from
+# the first `#` truncated every one of them mid-name and turned the comparison below into nonsense, so
+# the marker is `<two spaces>#` and `(#2827)` cannot collide with it.
 expected_names() {
     { grep -v '^[[:space:]]*#' "$KNOWN_FAILURES" | grep -v '^[[:space:]]*$' \
-        | sed 's/[[:space:]]*#.*$//' | sed 's/[[:space:]]*$//' || true; } | sort -u
+        | sed 's/  #.*$//' | sed 's/[[:space:]]*$//' || true; } | sort -u
 }
 
 BIN=""
@@ -164,8 +173,13 @@ case "${1:-all}" in
 esac
 
 RUNNERS=()
+FULL_RUN=1
 if [ "$#" -gt 0 ]; then
     for n in "$@"; do RUNNERS+=("$BIN/$n-test-runner.wasm"); done
+    # A subset cannot say anything about the whole known-failure list: every entry belonging to a
+    # suite that did not run would read as "started passing". Named suites therefore check only for
+    # NEW failures, and the exact-set assertion is kept for the full run.
+    FULL_RUN=0
 else
     for r in "$BIN"/*-test-runner.wasm; do RUNNERS+=("$r"); done
 fi
@@ -186,7 +200,7 @@ for runner in "${RUNNERS[@]}"; do
     # wasmkit's exit status is the module's, so a non-zero here is "tests failed" or "trapped", and
     # the two are told apart below by whether the transcript has a summary line at all.
     set +e
-    with_timeout "$WASMKIT" run "$runner" "${RUN_ARGS[@]}" > "$log" 2>&1
+    with_timeout "$WASMKIT" run "${WASMKIT_ARGS[@]}" "$runner" "${TEST_ARGS[@]}" > "$log" 2>&1
     run_status=$?
     set -e
     summary="$(sed -n 's/.*Test run with \([0-9]*\) tests in \([0-9]*\) suites.*/\1 tests, \2 suites/p' "$log" | tail -1)"
@@ -238,7 +252,7 @@ if [ -n "$UNEXPECTED_FAILS" ]; then
     echo "$UNEXPECTED_FAILS" | sed 's/^/  /'
     status=1
 fi
-if [ -n "$UNEXPECTED_PASSES" ]; then
+if [ -n "$UNEXPECTED_PASSES" ] && [ "$FULL_RUN" = "1" ]; then
     echo ""
     echo "These are listed as known failures and PASSED. Remove them from the list: a line nobody"
     echo "removes is how a fixed defect stays recorded as broken."
@@ -247,6 +261,10 @@ if [ -n "$UNEXPECTED_PASSES" ]; then
 fi
 
 if [ "$status" = "0" ]; then
-    echo "$(echo "$EXPECTED" | grep -c . ) known failures, all accounted for. PASS"
+    if [ "$FULL_RUN" = "1" ]; then
+        echo "$(echo "$EXPECTED" | grep -c .) known failures, all accounted for. PASS"
+    else
+        echo "no new failures in the named suite(s). PASS (subset: the known-failure list is not asserted)"
+    fi
 fi
 exit $status
