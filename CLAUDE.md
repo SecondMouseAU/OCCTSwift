@@ -122,7 +122,7 @@ python3 Scripts/census-comment-staleness.py      # CENSUS, not a gate: comments 
 python3 Scripts/census-api-reference-rows.py     # CENSUS, not a gate: API_REFERENCE category-row entries resolving to no declaration (#1679)
 python3 Scripts/census-dead-file-statics.py      # CENSUS, not a gate: bridge `static` definitions with no use in their own file (#1628)
 python3 Scripts/census-compiled-out-validation.py # CENSUS, not a gate: bridge protection resting on an OCCT check No_Exception removed (#2801)
-python3 Scripts/check-inventory-prose.py        # every counted claim about the patch and gate inventories matches them (#1408)
+python3 Scripts/check-inventory-prose.py        # every counted claim about the patch and gate inventories matches them (#1408), and occt-raise-if-map.txt's stamp names the patch set on disk (#2885)
 python3 Scripts/check-changelog-transcription.py # REPORT, never a gate: merges that landed with no CHANGELOG entry (#742, #2779)
 python3 Scripts/check-pinned-asset-patches.py --self-test  # RELEASE CHECK: only the self-test runs here; the real run reads the pinned asset (#2190)
 ```
@@ -560,6 +560,16 @@ macOS SDK sysroot and can no longer incrementally compile, so a fresh `cmake` co
 to pick up patches. The lifecycle from GTest to upstream PR is
 [`okf/policies/upstream-occt-patch-process.md`](okf/policies/upstream-occt-patch-process.md) and
 [`okf/policies/upstream-occt-style.md`](okf/policies/upstream-occt-style.md).
+
+**A new patch means regenerating `Scripts/occt-raise-if-map.txt` in the same PR.** That map is a
+committed derivation of the PATCHED `Libraries/occt-src`, so a patch that adds or moves a raise
+site changes it, and nothing re-derived it for two pins: `0042` put a throw in
+`ShapeAnalysis::GetFaceUVBounds` and the map said `ShapeAnalysis` held no live throw while the
+kernel we ship held one (#2885). `python3 Scripts/census-compiled-out-validation.py --write-table`
+rewrites it from the tree `build-occt.sh` patched, and refuses a tree that does not carry every
+patch on disk. `check-inventory-prose.py` fails on every PR when the map's provenance stamp and
+`Scripts/patches/` disagree, and `kernel-integration.yml`, the one job with a tree, re-derives the
+rows themselves.
 
 `Scripts/patches-wasi/*.patch` are a different sequence: WASI-only, unnumbered, not upstream-bound,
 and applied by `build-occt-wasm.sh` alone, **after** the carried set. One rule governs them, and

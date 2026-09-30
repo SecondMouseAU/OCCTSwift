@@ -106,6 +106,36 @@ jobs:
           path: Libraries/OCCT.xcframework
           key: occt-xcframework-${{ hashFiles('Scripts/patches/*.patch', 'Scripts/build-occt.sh') }}
 
+      # #2885. Two committed derivations of Libraries/occt-src, re-derived against the tree the
+      # step above just patched. THIS JOB IS THE ONLY ONE THAT HAS THAT TREE: ci.yml's
+      # gate-scripts is pure Python with no checkout of OCCT, and build-and-test resolves the
+      # pinned asset. So the map's rows went two pins without anyone re-deriving them, and
+      # Scripts/occt-raise-if-map.txt said ShapeAnalysis held no live throw while patch 0042 had
+      # put one in the kernel we ship.
+      #
+      # The trigger and the tree line up exactly: this workflow runs on a change to
+      # Scripts/patches/ or build-occt.sh, which is precisely when the map goes stale.
+      # check-inventory-prose.py catches the same staleness on every PR from the map's provenance
+      # stamp alone, with no tree; this is the half that checks the ROWS, which no amount of text
+      # comparison can reach.
+      #
+      # After the cache save rather than before it, so a re-derivation failure never costs the
+      # 79 minutes the build just banked. Skipped on a cache hit, and that skip is sound rather
+      # than convenient: on a hit there is no occt-src at all (only the xcframework is cached),
+      # and the cache key IS the patch set plus the build script, so a hit means this exact tree
+      # was re-derived on the run that built it. --require-occt-src per #2098, so a run that
+      # examined nothing fails here instead of reporting clean, which is what the same flag's
+      # absence would make of an unexpectedly missing tree.
+      - name: Re-derive the OCCT raise map against the patched tree
+        if: steps.occt-cache.outputs.cache-hit != 'true'
+        run: python3 Scripts/census-compiled-out-validation.py --reverify-table --require-occt-src
+
+      - name: Re-derive the No_Exception region table against the patched tree
+        if: steps.occt-cache.outputs.cache-hit != 'true'
+        run: |
+          python3 Scripts/census-compiled-out-validation.py \
+            --verify-no-exception-regions --require-occt-src
+
   swift-test:
     name: swift test against patched kernel (macOS)
     needs: build-kernel
