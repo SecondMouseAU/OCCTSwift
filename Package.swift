@@ -686,7 +686,18 @@ let wasmExcludedTestFiles: [String: [String]] = [
     "OCCTAnalysisTests": ["Issue2857IntfToolIndexGuardTests.swift"],
     "OCCTCurveTests": [
         "Issue479SampleCountBoundTests.swift",
-        "Issue558SamplingCountBoundsTests.swift"
+        "Issue558SamplingCountBoundsTests.swift",
+        // Not a portability problem and not a defect: this one is the cost of an INTERPRETER.
+        // `GCPntsSamplerBoundsTests` walks arc length on an ellipse with a 1e9 aspect ratio
+        // (majorRadius 1e6, minorRadius 1e-3) for each of 16 measured overshoot counts. Measured
+        // under wasmkit: ONE of its tests passed after 422.275 seconds, about 26 s per count, and
+        // the suite's other 281 tests together took under three minutes.
+        //
+        // wasmkit interprets; a browser compiles wasm, so this says almost nothing about how the
+        // same code performs where it is meant to run. It is excluded because seven minutes for two
+        // tests is not a sensible CI cost, not because it fails: it PASSES, slowly. Worth running
+        // again when #2052's rung 3 puts a real engine behind the suites.
+        "GCPntsSamplerBoundsTests.swift"
     ],
     "OCCTMathTests": [
         "Issue640MathDimensionBoundsTests.swift",

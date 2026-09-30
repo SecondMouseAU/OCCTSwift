@@ -153,7 +153,7 @@ here. It sits next to #2757, the invalid `br_table` from setjmp plus wasm except
 explain why the check is inline in the bridge's TU at all, and name `gp_Ax2(P, N, Vx)` as the worked
 example of the same shape.
 
-## 6. Four things about running Swift Testing on wasm that are not written down elsewhere
+## 6. Six things about running Swift Testing on wasm that are not written down elsewhere
 
 1. **SwiftPM builds one `<Target>-test-runner.wasm` per test target** and has no runner for the
    triple, so `swift test --swift-sdk` cannot be used. There is no single bundle.
@@ -165,6 +165,21 @@ example of the same shape.
    system relinks the runner with XCTest anyway; the runner's mtime updates and its size does not.
 4. **`-Xswiftc -enable-testing` is required in release configuration.** Without it all 13 targets
    fail with `module 'OCCTSwift' was not compiled for testing`.
+5. **`--no-parallel` is required, and not for speed.** Swift Testing parallelises by default, which on
+   a single-threaded target means hundreds of concurrent tasks on one cooperative executor. Running
+   `OCCTCurveTests` in the default mode printed **563 "started" lines and zero completions**: the slow
+   tests interleave with everything else and nothing finishes, so the run looks hung and gives no way
+   to tell which test is responsible. The same runner with `--no-parallel` completed 281 tests in
+   under three minutes. This also cost a wrong diagnosis worth recording: with 563 tests started and
+   none finished, the last `◇ Test ... started` line looks like the culprit, and it was not. Those two
+   `GCPntsTangentialDeflectionTests` cases pass in **0.017 s** when run alone.
+6. **One test can cost seven minutes, and that is the interpreter, not wasm.**
+   `GCPntsSamplerBoundsTests` walks arc length on an ellipse with a 1e9 aspect ratio for each of 16
+   measured overshoot counts. Under wasmkit one of its two tests **passed after 422.275 seconds**,
+   about 26 s per count, while the other 281 tests in that suite took under three minutes between
+   them. wasmkit interprets and a browser compiles wasm, so this is close to meaningless as a
+   statement about the port: the test passes, slowly, and is excluded for CI cost. It is worth
+   running again when #2052's rung 3 puts a real engine behind the suites.
 
 And one local-development trap, which CI does not have because CI always builds clean:
 **Swift Build does not re-plan when a target's `exclude:` list changes.** After adding exclusions the
