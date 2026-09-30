@@ -85,7 +85,9 @@ struct MaterialTests {
 @Suite("OCCT signal handling (#175)")
 struct OCCTSignalHandlingTests {
     /// Degenerate / incompatible loft profiles must FAIL GRACEFULLY (return nil) rather than
-    /// SIGSEGV the process. NOTE: the SIGSEGV class here is NOT caught by OCC_CATCH_SIGNALS, that
+    /// SIGSEGV the process.
+    ///
+    /// NOTE: the SIGSEGV class here is NOT caught by OCC_CATCH_SIGNALS, that
     /// macro is inert unless OCCT is compiled with OCC_CONVERT_SIGNALS (it is not, by design: the
     /// setjmp/longjmp path corrupts allocator state). The crash is instead prevented at source by
     /// the BRepFill_CompatibleWires polar-iterator guard carried in Scripts/patches/ (issue #176).
@@ -744,7 +746,6 @@ struct ReportTests {
     }
 }
 
-
 @Suite("OSD Timer Tests")
 struct OSDTimerTests {
 
@@ -919,47 +920,112 @@ struct ResourceManagerTests {
 @Suite("OSD_Host Tests")
 struct OSDHostTests {
 
-    @Test func hostName() {
-        let name = HostInfo.hostName
-        #expect(name != nil)
-        if let n = name { #expect(!n.isEmpty) }
+    // #1987: this accepted any non-empty string. OSD_Host::HostName() resolves the name through
+    // the system resolver, so it can differ from gethostname(2) in form: on the macOS CI runner
+    // gethostname gives "<host>.local" and OSD_Host gives "<host>." (trailing dot), while a
+    // developer machine gets the identical string from both. Both name the same host, so the two
+    // are compared by first DNS label, case-insensitively. That still rejects a bridge that
+    // returns a fixed or wrong name.
+    @Test func hostName() throws {
+        var buf = [CChar](repeating: 0, count: 256)
+        #expect(gethostname(&buf, buf.count) == 0)
+        let expected = String(cString: buf)
+        #expect(!expected.isEmpty)
+        func firstLabel(_ name: String) -> String {
+            String(name.prefix { $0 != "." }).lowercased()
+        }
+        let actual = try #require(HostInfo.hostName)
+        #expect(!firstLabel(actual).isEmpty)
+        #expect(firstLabel(actual) == firstLabel(expected))
     }
 
+    // #1987: OSD_Host::SystemVersion() is uname(3)'s sysname and release joined by a space.
     @Test func systemVersion() {
-        let ver = HostInfo.systemVersion
-        #expect(ver != nil)
-        if let v = ver { #expect(v.contains("Darwin")) }
+        var u = utsname()
+        #expect(uname(&u) == 0)
+        func field(_ raw: UnsafeRawBufferPointer) -> String {
+            guard let base = raw.bindMemory(to: CChar.self).baseAddress else { return "" }
+            return String(cString: base)
+        }
+        let sysname = withUnsafeBytes(of: &u.sysname, field)
+        let release = withUnsafeBytes(of: &u.release, field)
+        #expect(HostInfo.systemVersion == "\(sysname) \(release)")
+        // Do not assert on the sysname value; it varies by OS (Darwin, Linux, etc.)
     }
 
-    @Test func internetAddress() {
-        // May be nil on some systems
-        let _ = HostInfo.internetAddress
+    // #1987: this used to be `let _ = HostInfo.internetAddress`, with no assertion at all. The
+    // kernel returns a dotted-quad IPv4 address (the loopback address in one probe run, a LAN
+    // address in another), so the result must parse as one.
+    @Test func internetAddress() throws {
+        let address = try #require(HostInfo.internetAddress)
+        var parsed = in_addr()
+        #expect(inet_pton(AF_INET, address, &parsed) == 1)
     }
 }
 
 @Suite("OSD_PerfMeter Tests")
 struct PerfMeterTests {
 
+    // #1987: this asserted `elapsed >= 0` after a 10,000-iteration loop, which a meter that never
+    // started also satisfies. Two facts about OSD_PerfMeter shape the replacement
+    // (Scripts/repro/766-foundation-osd-io):
+    //
+    //  - It reads CPU time, not wall time: a sleeping process reads 0.0000.
+    //  - It reads the CPU summed over the process's LIVE threads, not the calling thread's. Other
+    //    threads inflate a window (three others still running at Stop: 1.03 against 0.26 s of
+    //    wall), and a thread that exits inside the window takes its whole CPU history out of the
+    //    sum (four workers exited before Stop read 0.193 of the 0.800 s the process used; under
+    //    thread churn single windows read as low as -1.17 s, and 72 of 150 fell below the
+    //    thread's own CPU).
+    //
+    // A first version bounded the reading by wall time and failed on the CI runner (0.2156
+    // against 0.2101), where thousands of other tests share the process. So both bounds are in
+    // CPU time. The reading can never exceed the CPU the whole process used across the window,
+    // however loaded, so that bound is checked on every window. The lower bound cannot hold in
+    // every window, so it must hold in at least one of up to 20: the window spins until THIS
+    // thread has used 0.1 s of CPU, which a live meter must then show. It costs one 0.1 s window
+    // in the normal case; a meter that never started, or reports the wrong unit, fails them all.
     @Test func measureTime() {
-        let meter = PerfMeter(name: "swift_test")
-        var sum = 0.0
-        for i in 0..<10000 { sum += Double(i) }
-        meter.stop()
-        #expect(meter.elapsed >= 0)
-        _ = sum
+        func processCPU() -> Double {
+            var r = rusage()
+            getrusage(RUSAGE_SELF, &r)
+            return Double(r.ru_utime.tv_sec) + Double(r.ru_utime.tv_usec) * 1e-6
+                + Double(r.ru_stime.tv_sec) + Double(r.ru_stime.tv_usec) * 1e-6
+        }
+        func threadCPU() -> Double {
+            Double(clock_gettime_nsec_np(CLOCK_THREAD_CPUTIME_ID)) * 1e-9
+        }
+        var readOwnCPU = false
+        var attempt = 0
+        while !readOwnCPU && attempt < 20 {
+            let cpuBefore = processCPU()
+            let meter = PerfMeter(name: "swift_test_766_\(attempt)")
+            let threadStart = threadCPU()
+            var sum = 0.0
+            while threadCPU() - threadStart < 0.1 {
+                for i in 0..<1000 { sum += Double(i) }
+            }
+            meter.stop()
+            let cpuAfter = processCPU()
+            let elapsed = meter.elapsed
+            #expect(sum > 0)
+            #expect(elapsed <= cpuAfter - cpuBefore + 0.02)
+            readOwnCPU = elapsed >= 0.09
+            attempt += 1
+        }
+        #expect(readOwnCPU)
     }
 }
 
 @Suite("OSD_Directory Tests")
 struct OSDDirectoryTests {
 
-    @Test func tempDirectory() {
-        let tmpDir = DirectoryUtils.buildTemporary()
-        #expect(tmpDir != nil)
-        if let dir = tmpDir {
-            #expect(DirectoryUtils.exists(dir))
-            DirectoryUtils.remove(dir)
-        }
+    @Test func tempDirectory() throws {
+        let dir = try #require(DirectoryUtils.buildTemporary())
+        #expect(DirectoryUtils.exists(dir))
+        // #1987: the removal used to go unchecked.
+        #expect(DirectoryUtils.remove(dir))
+        #expect(!DirectoryUtils.exists(dir))
     }
 
     @Test func createAndRemoveDirectory() {
@@ -976,11 +1042,16 @@ struct OSDDirectoryTests {
 @Suite("Resource_Unicode Tests")
 struct ResourceUnicodeTests {
 
+    // #1987: this set and read back `.ansi`, which is also the default, so a setFormat that did
+    // nothing passed. It now goes through `.sjis` first and restores `.ansi`.
     @Test func setAndGetFormat() {
         OCCTSerial.withLock {
+            UnicodeUtils.setFormat(.sjis)
+            let sjis = UnicodeUtils.format
             UnicodeUtils.setFormat(.ansi)
-            let fmt = UnicodeUtils.format
-            #expect(fmt == .ansi)
+            let ansi = UnicodeUtils.format
+            #expect(sjis == .sjis)
+            #expect(ansi == .ansi)
         }
     }
 
@@ -1007,66 +1078,92 @@ struct ResourceUnicodeTests {
     }
 }
 
+/// A fresh directory holding subdirectories `a` and `b` and files `x.txt`, `y.txt`, `z.dat`.
+///
+/// #1987: the iterator tests used to walk /tmp and assert `count >= 0`, which nothing can fail.
+private func makeIteratorFixture() throws -> String {
+    let root = NSTemporaryDirectory() + "occt_766_iter_\(UUID().uuidString)"
+    let fm = FileManager.default
+    try fm.createDirectory(atPath: root + "/a", withIntermediateDirectories: true)
+    try fm.createDirectory(atPath: root + "/b", withIntermediateDirectories: true)
+    for f in ["x.txt", "y.txt", "z.dat"] {
+        guard fm.createFile(atPath: root + "/" + f, contents: Data()) else {
+            throw CocoaError(.fileWriteUnknown)
+        }
+    }
+    return root
+}
+
 @Suite("OSD_DirectoryIterator Tests")
 struct OSDDirectoryIteratorTests {
 
-    @Test func countDirectories() {
-        let count = DirectoryIterator.count(path: "/tmp")
-        #expect(count >= 0)
+    // OSD_DirectoryIterator reports "." and ".." alongside the real subdirectories, and bare
+    // names rather than paths: the probe gives ".", "..", "a", "b" for this fixture.
+    @Test func countDirectories() throws {
+        let root = try makeIteratorFixture()
+        defer { try? FileManager.default.removeItem(atPath: root) }
+        #expect(DirectoryIterator.count(path: root) == 4)
     }
 
-    @Test func nameAtIndex() {
-        let count = DirectoryIterator.count(path: "/tmp")
-        if count > 0 {
-            if let name = DirectoryIterator.name(path: "/tmp", index: 0) {
-                #expect(!name.isEmpty)
-            }
-        }
+    @Test func nameAtIndex() throws {
+        let root = try makeIteratorFixture()
+        defer { try? FileManager.default.removeItem(atPath: root) }
+        let names = (0..<4).compactMap { DirectoryIterator.name(path: root, index: $0) }
+        #expect(Set(names) == [".", "..", "a", "b"])
+        #expect(DirectoryIterator.name(path: root, index: 4) == nil)
     }
 
-    @Test func listDirectories() {
-        let dirs = DirectoryIterator.list(path: "/tmp", maxCount: 50)
-        #expect(dirs.count >= 0)
+    @Test func listDirectories() throws {
+        let root = try makeIteratorFixture()
+        defer { try? FileManager.default.removeItem(atPath: root) }
+        let dirs = DirectoryIterator.list(path: root, maxCount: 50)
+        #expect(dirs.sorted() == [".", "..", "a", "b"])
     }
 }
 
 @Suite("OSD_FileIterator Tests")
 struct OSDFileIteratorTests {
 
-    @Test func countFiles() {
-        let count = FileIterator.count(path: "/tmp")
-        #expect(count >= 0)
+    @Test func countFiles() throws {
+        let root = try makeIteratorFixture()
+        defer { try? FileManager.default.removeItem(atPath: root) }
+        #expect(FileIterator.count(path: root) == 3)
+        #expect(FileIterator.count(path: root, mask: "*.txt") == 2)
     }
 
-    @Test func nameAtIndex() {
-        let count = FileIterator.count(path: "/tmp")
-        if count > 0 {
-            if let name = FileIterator.name(path: "/tmp", index: 0) {
-                #expect(!name.isEmpty)
-            }
-        }
+    @Test func nameAtIndex() throws {
+        let root = try makeIteratorFixture()
+        defer { try? FileManager.default.removeItem(atPath: root) }
+        let names = (0..<3).compactMap { FileIterator.name(path: root, index: $0) }
+        #expect(Set(names) == ["x.txt", "y.txt", "z.dat"])
+        #expect(FileIterator.name(path: root, index: 3) == nil)
     }
 
-    @Test func listFiles() {
-        let files = FileIterator.list(path: "/tmp", maxCount: 50)
-        #expect(files.count >= 0)
+    @Test func listFiles() throws {
+        let root = try makeIteratorFixture()
+        defer { try? FileManager.default.removeItem(atPath: root) }
+        let files = FileIterator.list(path: root, maxCount: 50)
+        #expect(files.sorted() == ["x.txt", "y.txt", "z.dat"])
     }
 }
 
 @Suite("OSD_Disk")
 struct OSDDiskTests {
+    // #1987: `size >= 0` and `free >= 0` passed a bridge returning 0. OSD_Disk::DiskSize() is
+    // f_blocks * (f_frsize / 512) 512-byte blocks, which the bridge halves to KB; total size does
+    // not move between two reads, so it is compared exactly. Issue1442DiskUnicodeOSDUtilitiesTests
+    // holds the finer regression coverage for #1442.
     @Test func diskSize() {
-        let size = DiskInfo.size()
-        // Fixed by #1442 (bridge now constructs OSD_Disk from the path string directly
-        // rather than via OSD_Path, whose Disk() component is never populated on
-        // macOS/iOS/Linux): a real path now reports a real, nonzero KB figure. See
-        // Issue1442DiskUnicodeOSDUtilitiesTests for the precise regression coverage.
-        #expect(size >= 0)
+        var vfs = statvfs()
+        #expect(statvfs("/", &vfs) == 0)
+        let blocks = UInt64(vfs.f_blocks) * (UInt64(vfs.f_frsize) / 512)
+        #expect(DiskInfo.size() == Int64(blocks / 2))
     }
 
     @Test func diskFreeSpace() {
         let free = DiskInfo.freeSpace()
-        #expect(free >= 0)
+        #expect(free > 0)
+        #expect(free <= DiskInfo.size())
     }
 
     @Test func diskIsValid() {
@@ -1074,10 +1171,11 @@ struct OSDDiskTests {
         #expect(valid)
     }
 
+    // #1987: `name != nil` passed any string. OSD_Disk built from an OSD_Path, as the bridge
+    // does, has an empty name on macOS because OSD_Path never fills its disk component (#1442);
+    // pinned to what the kernel returns.
     @Test func diskName() {
-        let name = DiskInfo.name()
-        // May return empty string or actual name
-        #expect(name != nil)
+        #expect(DiskInfo.name() == "")
     }
 }
 
@@ -1208,57 +1306,138 @@ struct ColorToolGetAllColorsTests {
 
 // MARK: - Thread Safety Tests
 
+/// Mutable state shared between the test thread and worker threads, every access under one NSLock.
+private final class SerialLockProbeState: @unchecked Sendable {
+    private let lock = NSLock()
+    private var _otherRan = false
+    private var _inside = 0
+    private var _maxInside = 0
+    private var _volumes: [Int: Double] = [:]
+
+    var otherRan: Bool { lock.withLock { _otherRan } }
+    var maxInside: Int { lock.withLock { _maxInside } }
+    func volume(_ i: Int) -> Double? { lock.withLock { _volumes[i] } }
+
+    func markOtherRan() { lock.withLock { _otherRan = true } }
+    func setVolume(_ i: Int, _ v: Double?) { lock.withLock { _volumes[i] = v } }
+    func enter() {
+        lock.withLock {
+            _inside += 1
+            _maxInside = max(_maxInside, _inside)
+        }
+    }
+    func leave() { lock.withLock { _inside -= 1 } }
+}
+
 @Suite("Thread Safety: OCCTSerial")
 struct ThreadSafetyTests {
+    // OCCTSerial is one process-wide lock, and on CI this suite shares a process with thousands
+    // of tests that take it (Shape, Drawing and every STEP/IGES entry point do, for seconds at a
+    // time). Waiting behind them is not a hang, so the two tests below wait up to `contended` for
+    // anything that depends on another suite releasing the lock. The first version waited 10 s on
+    // a GCD worker and failed on the runner: the worker was still queued behind other tests,
+    // `volume(0)` was nil, and the 126.0 in that failure is abs(-1 - 125).
+    private static let contended: TimeInterval = 600
+
+    // #1987: this used to assert only `box != nil` inside the lock, which passes with
+    // OCCTSerialLockAcquire/Release reduced to no-ops. It now checks the lock excludes: while this
+    // thread holds it, a second thread's `withLock` body must not run.
     @Test func serialLockBasic() {
-        OCCTSerial.withLock {
-            let box = Shape.box(width: 10, height: 10, depth: 10)
-            #expect(box != nil)
-        }
-    }
-
-    @Test func serialLockReentrant() {
-        OCCTSerial.withLock {
-            OCCTSerial.withLock {
-                let box = Shape.box(width: 5, height: 5, depth: 5)
-                #expect(box != nil)
+        let state = SerialLockProbeState()
+        let started = DispatchSemaphore(value: 0)
+        let done = DispatchSemaphore(value: 0)
+        var workerStarted = false
+        let ranWhileHeld = OCCTSerial.withLock { () -> Bool in
+            state.setVolume(0, Shape.box(width: 10, height: 10, depth: 10)?.volume)
+            Thread.detachNewThread {
+                started.signal()
+                OCCTSerial.withLock { state.markOtherRan() }
+                done.signal()
             }
+            // Starting a thread does not need the lock. The 0.2 s hold begins once the worker is
+            // running and about to contend, so a lock that does not exclude is caught even when
+            // the machine is slow to schedule it.
+            workerStarted = started.wait(timeout: .now() + 60) == .success
+            Thread.sleep(forTimeInterval: 0.2)
+            return state.otherRan
         }
+        // Joining the worker waits for the lock, which other suites may hold: see `contended`.
+        let finished = done.wait(timeout: .now() + Self.contended) == .success
+        #expect(workerStarted)
+        #expect(!ranWhileHeld)
+        #expect(finished)
+        #expect(abs((state.volume(0) ?? -1) - 1000) < 1e-6)
     }
 
-    @Test func deepCopyForParallel() {
-        if let orig = Shape.box(width: 10, height: 10, depth: 10) {
-            if let copy = orig.deepCopy() {
-                if let origVol = orig.volume, let copyVol = copy.volume {
-                    #expect(abs(origVol - copyVol) < 1e-6)
+    // #1987: the nested acquire is tried on a worker thread so that a lock that is not recursive
+    // fails this test rather than hanging it. The worker signals once it holds the OUTER lock; from
+    // then on no other thread can be in the way, so the nested acquire of a recursive lock is
+    // immediate and only that step gets a tight timeout. Waiting for the outer lock is a wait
+    // behind other suites and is not bounded tightly (see `contended`).
+    @Test func serialLockReentrant() throws {
+        let state = SerialLockProbeState()
+        let outerHeld = DispatchSemaphore(value: 0)
+        let innerHeld = DispatchSemaphore(value: 0)
+        let done = DispatchSemaphore(value: 0)
+        Thread.detachNewThread {
+            OCCTSerial.withLock {
+                outerHeld.signal()
+                OCCTSerial.withLock {
+                    innerHeld.signal()
+                    state.setVolume(0, Shape.box(width: 5, height: 5, depth: 5)?.volume)
                 }
             }
+            done.signal()
         }
+        let gotOuter = outerHeld.wait(timeout: .now() + Self.contended) == .success
+        try #require(gotOuter)
+        let gotInner = innerHeld.wait(timeout: .now() + 30) == .success
+        // A worker stuck on its own nested acquire never finishes; there is nothing left to check,
+        // so this stops the test at the failure instead of passing it early.
+        try #require(gotInner)
+        let finished = done.wait(timeout: .now() + Self.contended) == .success
+        #expect(finished)
+        #expect(abs((state.volume(0) ?? -1) - 125) < 1e-6)
     }
 
+    // #1987: every assertion used to sit under three `if let`s, so a deepCopy returning nil, or
+    // one handing back the original shape, passed. A copy made for another thread must share no
+    // TShape with the original (TNaming_CopyShape::CopyTool gives IsSame false) and keep its
+    // volume.
+    @Test func deepCopyForParallel() throws {
+        let orig = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let copy = try #require(orig.deepCopy())
+        #expect(!copy.isSame(as: orig))
+        #expect(abs((orig.volume ?? -1) - 1000) < 1e-6)
+        #expect(abs((copy.volume ?? -1) - 1000) < 1e-6)
+    }
+
+    // #1987: used to assert only that each worker got a volume, which passes with no lock at
+    // all. It now also records how many workers were inside `withLock` at once, which must never
+    // exceed one, and pins each box's volume.
     @Test func serializedConcurrentAccess() {
+        let state = SerialLockProbeState()
         let group = DispatchGroup()
-        var results = [Double?](repeating: nil, count: 4)
-        let resultsLock = NSLock()
         for i in 0..<4 {
             group.enter()
             DispatchQueue.global().async {
                 let vol = OCCTSerial.withLock { () -> Double? in
-                    let box = Shape.box(
-                        width: Double(i + 1) * 10,
-                        height: Double(i + 1) * 10,
-                        depth: Double(i + 1) * 10)
-                    return box?.volume
+                    state.enter()
+                    let edge = Double(i + 1) * 10
+                    let v = Shape.box(width: edge, height: edge, depth: edge)?.volume
+                    Thread.sleep(forTimeInterval: 0.05)
+                    state.leave()
+                    return v
                 }
-                resultsLock.lock()
-                results[i] = vol
-                resultsLock.unlock()
+                state.setVolume(i, vol)
                 group.leave()
             }
         }
         group.wait()
+        #expect(state.maxInside == 1)
         for i in 0..<4 {
-            #expect(results[i] != nil)
+            let edge = Double(i + 1) * 10
+            #expect(abs((state.volume(i) ?? -1) - edge * edge * edge) < 1e-6)
         }
     }
 }
@@ -1291,21 +1470,32 @@ struct SheetStandardLayoutTests {
         #expect(layout.top.offset.y > layout.front.offset.y)
     }
 
+    // #1987: this used to check only each view's offset, the point its centre lands on, at 1:1
+    // where a 20 mm box fits any cell with room to spare. Dropping the fit-to-cell clamp left it
+    // green. It now asks for 100:1, far more than a cell holds, and checks every view's placed
+    // extent, not just its centre.
     @Test("All four placed views fall inside the inner frame")
     func viewsFitInsideInnerFrame() {
         let sheet = Sheet(size: .a3, orientation: .landscape, projection: .first)
         guard let box = Shape.box(width: 20, height: 15, depth: 10),
-            let layout = sheet.standardLayout(of: box, margin: 20)
+            let layout = sheet.standardLayout(of: box, scale: .custom(100), margin: 20)
         else {
             Issue.record("setup nil")
             return
         }
         let frame = sheet.innerFrame
+        #expect(layout.placed.count == 4)
         for placed in layout.placed {
-            #expect(placed.offset.x >= frame.min.x)
-            #expect(placed.offset.x <= frame.max.x)
-            #expect(placed.offset.y >= frame.min.y)
-            #expect(placed.offset.y <= frame.max.y)
+            guard let b = placed.drawing.bounds(includeAnnotations: false) else {
+                Issue.record("placed view has no bounds")
+                continue
+            }
+            let lo = placed.offset + placed.scale * b.min
+            let hi = placed.offset + placed.scale * b.max
+            #expect(lo.x >= frame.min.x)
+            #expect(hi.x <= frame.max.x)
+            #expect(lo.y >= frame.min.y)
+            #expect(hi.y <= frame.max.y)
         }
     }
 
@@ -1381,7 +1571,11 @@ struct SheetStandardLayoutTests {
         let writer = DXFWriter()
         layout.render(into: writer)
         let counts = writer.entityCounts
-        #expect(counts.lines + counts.polylines > 0)
+        // #1987: `> 0` passed with only one of the four views rendered. HLRBRep_Algo gives this
+        // box 4 visible + 4 hidden sharp edges in each of front, top and side and 9 + 3 in the
+        // isometric view, all straight, so every placed view drawn is exactly 36 lines.
+        #expect(counts.lines == 36)
+        #expect(counts.polylines == 0)
     }
 
     // #1180: `StandardLayout.render(into:)` used to accept only `DXFWriter`, even though its
@@ -1399,7 +1593,9 @@ struct SheetStandardLayoutTests {
         let writer = PDFWriter()
         layout.render(into: writer)
         let counts = writer.entityCounts
-        #expect(counts.lines + counts.polylines > 0)
+        // #1987: pinned to all four views' 36 edges, as in the DXFWriter case above.
+        #expect(counts.lines == 36)
+        #expect(counts.polylines == 0)
     }
 
     @Test("render(into:) emits geometry for every placed view onto an SVGWriter")
@@ -1414,7 +1610,9 @@ struct SheetStandardLayoutTests {
         let writer = SVGWriter()
         layout.render(into: writer)
         let counts = writer.entityCounts
-        #expect(counts.lines + counts.polylines > 0)
+        // #1987: pinned to all four views' 36 edges, as in the DXFWriter case above.
+        #expect(counts.lines == 36)
+        #expect(counts.polylines == 0)
     }
 }
 
@@ -1471,7 +1669,13 @@ struct BillOfMaterialsTests {
         let writer = DXFWriter()
         let topRight = sheet.renderBOM(bom, into: writer)
         let frame = sheet.innerFrame
-        #expect(topRight.x <= frame.max.x + 0.001)
-        #expect(topRight.y <= frame.max.y + 0.001)
+        // #1987: this used to bound only the top-right corner from above, so a BOM anchored at
+        // the frame's bottom-left corner, 177 mm of it hanging off the left edge, passed. The
+        // default anchor is the frame's top-right corner, and the table's left edge (the seven
+        // default column widths sum to 177) and bottom edge (2 rows of 6) must be inside too.
+        #expect(abs(topRight.x - frame.max.x) < 1e-9)
+        #expect(abs(topRight.y - frame.max.y) < 1e-9)
+        #expect(topRight.x - 177 >= frame.min.x)
+        #expect(topRight.y - 12 >= frame.min.y)
     }
 }
