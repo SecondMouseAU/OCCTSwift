@@ -1,0 +1,9 @@
+cylinder face 0 u=1.1 v=6 value=(1.360788364276732, 2.6736220801843062, 6) curvDefined=1 kMax=0 kMin=-0.33333333333333331 mean=-0.16666666666666666 gauss=-0 umbilic=0
+cylinder face 1 u=1.1 v=6 value=(1.1000000000000001, 6, 12) curvDefined=1 kMax=0 kMin=0 mean=0 gauss=0 umbilic=1
+cylinder face 2 u=1.1 v=6 value=(1.1000000000000001, 6, 0) curvDefined=1 kMax=0 kMin=0 mean=0 gauss=0 umbilic=1
+plane u=0 v=0 value=(0, 0, 0) curvDefined=1 kMax=0 kMin=0 mean=0 gauss=0 umbilic=1
+cone apex u=0 v=0 value=(0, 0, 0) curvDefined=0
+sphere north pole u=0 v=1.5708 value=(3.0616169978683831e-16, 0, 5) curvDefined=0
+sphere south pole u=0 v=-1.5708 value=(3.0616169978683831e-16, 0, -5) curvDefined=0
+TopoDS::Face on shape type 2 throws Standard_TypeMismatch
+TopoDS::Face on shape type 6 throws Standard_TypeMismatch

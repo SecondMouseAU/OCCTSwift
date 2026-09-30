@@ -1,0 +1,13 @@
+twoCubes (asymmetricSolid, propertiesAgrees, agreesWithCentroid, agreesWithInertia) (type 0): OnlyClosed mass=1008 com=(0.15873015873015864, -1.2166469331116701e-16, 0) Iyy=19846.603174603173 | OnlyClosed=false mass=1008 | bbox x=[-5, 21] centre=(8, 0, 0)
+  twoCubes surface area=623.99999999999989
+cone r=10 h=20 (conePrimitive, agreesWithCentroid) (type 2): OnlyClosed mass=2094.395102393195 com=(-1.4113181306547449e-15, 3.2141842483381629e-16, 4.9999999999999982) Iyy=62831.853071795485 | OnlyClosed=false mass=2094.395102393195 | bbox x=[-10, 10] centre=(0, 0, 10)
+10-cube moved +20 x (inertiaIsAboutTheCentreOfMass) (type 2): OnlyClosed mass=999.99999999999977 com=(20, -1.2256862191861732e-16, 0) Iyy=16666.666666666744 | OnlyClosed=false mass=999.99999999999977 | bbox x=[15, 25] centre=(20, 0, 0)
+subShapesWithoutVolume: face 0 (type 4): OnlyClosed mass=0 -> nil | OnlyClosed=false mass=0 | bbox x=[95, 95] centre=(95, 200, 300)
+  face 0 area=600
+subShapesWithoutVolume: edge 0 (type 6): OnlyClosed mass=0 -> nil | OnlyClosed=false mass=0 | bbox x=[95, 95] centre=(95, 190, 300)
+  edge 0 length=30
+subShapesWithoutVolume: wire 0 (type 5): OnlyClosed mass=0 -> nil | OnlyClosed=false mass=0 | bbox x=[95, 95] centre=(95, 200, 300)
+subShapesWithoutVolume: vertex 0 (type 7): OnlyClosed mass=0 -> nil | OnlyClosed=false mass=0 | bbox x=[95, 95] centre=(95, 190, 315)
+openShellIsRefused: 5 faces sewn (type 3): OnlyClosed mass=0 -> nil | OnlyClosed=false mass=4800 | bbox x=[95, 105] centre=(100, 200, 300)
+openShellIsRefused: 6 faces sewn (type 2): OnlyClosed mass=6000 com=(100, 200, 300) Iyy=500000 | OnlyClosed=false mass=6000 | bbox x=[95, 105] centre=(100, 200, 300)
+closedShellNotInASolid: shell 0 (type 3): OnlyClosed mass=6000 com=(100, 200, 300) Iyy=500000 | OnlyClosed=false mass=6000 | bbox x=[95, 105] centre=(100, 200, 300)

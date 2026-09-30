@@ -1,0 +1,8 @@
+curved spine, rect 5x3: enum frenet=177.34755725657078 enum corrected=180.28672436859057 oracle frenet=177.34755725657078 oracle corrected=180.28672436859057
+straight spine, circle r2: frenet=251.32741228718339 corrected=251.32741228718339
+inflection spine: minCurvature=0 frenetSelfIntersects=1 correctedSelfIntersects=0
+spring (placed at measured start (-10, -1.7763568394002505e-15, 0)): enum frenet=2225.1520024595375 enum corrected=2225.1517092617 oracle frenet=2225.1520024595375 oracle corrected=2225.1517092617 textbook=2225.1564400078882
+misplaced pitch=1: frenet/textbook=0.99999796193429624 corrected/textbook=1.0051367032052414 (issue's 1.005)
+misplaced pitch=4: frenet/textbook=0.99999765760871406 corrected/textbook=1.074731388744016 (issue's 1.075)
+misplaced pitch=12: frenet/textbook=0.9999930050086222 corrected/textbook=1.2757734790672379 (issue's 1.276)
+misplaced pitch=30: frenet/textbook=0.99999005747263525 corrected/textbook=0.80097135519481089 (issue's 0.801)

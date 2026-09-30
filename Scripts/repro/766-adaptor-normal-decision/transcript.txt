@@ -1,0 +1,34 @@
+== primitiveFaceNormalsUnchanged
+box: horizontal=2 upward=1 planarWithoutNormal=0
+cylinder: horizontal=2 upward=1 planarWithoutNormal=0
+cone: horizontal=1 upward=0 planarWithoutNormal=0
+sphere: horizontal=0 upward=0 planarWithoutNormal=0
+== skewedExtrusionHasANormal
+res=1e-07 normal=(0, 0, 1)
+res=1e-06 normal=undefined
+== raycastNormalsSurviveALooseTolerance
+sphere tol=0.001 hits=2
+  w=15 point=(-5.000000,0.000000,0.000000) normal=(-1.000000,0.000000,0.000000) | at tol: normalDefined=1
+  w=25 point=(5.000000,0.000000,0.000000) normal=(1.000000,0.000000,0.000000) | at tol: normalDefined=1
+sphere tol=0.1 hits=2
+  w=15 point=(-5.000000,0.000000,0.000000) normal=(-1.000000,0.000000,0.000000) | at tol: normalDefined=1
+  w=25 point=(5.000000,0.000000,0.000000) normal=(1.000000,0.000000,0.000000) | at tol: normalDefined=1
+sphere tol=1 hits=2
+  w=15 point=(-5.000000,0.000000,0.000000) normal=(-1.000000,0.000000,0.000000) | at tol: normalDefined=1
+  w=25 point=(5.000000,0.000000,0.000000) normal=(1.000000,0.000000,0.000000) | at tol: normalDefined=1
+sphere tol=2 hits=2
+  w=15 point=(-5.000000,0.000000,0.000000) normal=(-1.000000,0.000000,0.000000) | at tol: normalDefined=0
+  w=25 point=(5.000000,0.000000,0.000000) normal=(1.000000,0.000000,0.000000) | at tol: normalDefined=0
+sphere tol=5 hits=2
+  w=15 point=(-5.000000,0.000000,0.000000) normal=(-1.000000,0.000000,0.000000) | at tol: normalDefined=0
+  w=25 point=(5.000000,0.000000,0.000000) normal=(1.000000,0.000000,0.000000) | at tol: normalDefined=0
+== raycastKeepsFaceOrientationAtALooseTolerance
+box tol=0.001 hits=2
+  w=35 point=(0.000000,0.000000,5.000000) normal=(0.000000,0.000000,1.000000) | at tol: normalDefined=1
+  w=45 point=(0.000000,0.000000,-5.000000) normal=(-0.000000,-0.000000,-1.000000) | at tol: normalDefined=1
+box tol=1 hits=2
+  w=35 point=(0.000000,0.000000,5.000000) normal=(0.000000,0.000000,1.000000) | at tol: normalDefined=1
+  w=45 point=(0.000000,0.000000,-5.000000) normal=(-0.000000,-0.000000,-1.000000) | at tol: normalDefined=1
+box tol=5 hits=2
+  w=35 point=(0.000000,0.000000,5.000000) normal=(0.000000,0.000000,1.000000) | at tol: normalDefined=0
+  w=45 point=(0.000000,0.000000,-5.000000) normal=(-0.000000,-0.000000,-1.000000) | at tol: normalDefined=0

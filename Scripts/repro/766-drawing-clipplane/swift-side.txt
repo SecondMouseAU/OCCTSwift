@@ -1,0 +1,12 @@
+# Swift-side values the #2317 ClipPlaneTests observe, printed by a temporary print-only test
+# (Tests/OCCTDrawingTests/ZZEvidenceDump2.swift, never committed) that replays each test's scene.
+# One EV|key|value line per quantity.
+EV|clip.cappingColor|[1.0, 0.0, 0.5]
+EV|clip.probePoint.inside|1
+EV|clip.probePoint.outside|0
+EV|clip.probeBox.inside|1
+EV|clip.probeBox.partial|2
+EV|clip.probeBox.outside|0
+EV|clip.chain.length|[1, 2]
+EV|clip.chain.in|1
+EV|clip.chain.out|0
