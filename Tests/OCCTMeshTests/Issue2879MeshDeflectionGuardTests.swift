@@ -88,16 +88,19 @@ struct Issue2879MeshDeflectionGuardTests {
         defer { try? FileManager.default.removeItem(at: dir) }
 
         #expect(throws: (any Error).self) {
-            try Exporter.writeSTL(shape: shape, to: dir.appendingPathComponent("a.stl"),
-                                  deflection: .nan)
+            try Exporter.writeSTL(
+                shape: shape, to: dir.appendingPathComponent("a.stl"),
+                deflection: .nan)
         }
         #expect(throws: (any Error).self) {
-            try Exporter.writeOBJ(shape: shape, to: dir.appendingPathComponent("a.obj"),
-                                  deflection: .nan)
+            try Exporter.writeOBJ(
+                shape: shape, to: dir.appendingPathComponent("a.obj"),
+                deflection: .nan)
         }
         #expect(throws: (any Error).self) {
-            try Exporter.writeGLTF(shape: shape, to: dir.appendingPathComponent("a.glb"),
-                                   deflection: .nan)
+            try Exporter.writeGLTF(
+                shape: shape, to: dir.appendingPathComponent("a.glb"),
+                deflection: .nan)
         }
     }
 
