@@ -755,7 +755,10 @@ let wasmExcludedTestFiles: [String: [String]] = [
 func adjustedForWASM(_ target: Target) -> Target? {
     guard isWASI, target.type == .test else { return target }
     guard !wasmUnportableTestTargets.contains(target.name) else { return nil }
-    var target = target
+    // `Target` IS A CLASS, so these mutate the object the array literal above already holds and
+    // there is nothing to copy or reassign. Worth stating because the first version of this function
+    // wrote `var target = target` out of struct habit, and the compiler's
+    // "variable 'target' was never mutated" warning is what gave the reference semantics away.
     target.dependencies.append("simd")
     if let excluded = wasmExcludedTestFiles[target.name] {
         target.exclude += excluded
