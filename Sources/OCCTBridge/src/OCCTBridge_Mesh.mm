@@ -330,11 +330,19 @@ OCCTMeshRef OCCTShapeCreateMeshWithParams(OCCTShapeRef shape, OCCTMeshParameters
 namespace
 {
 
+/// The angular half of the `GCPnts_TangentialDeflection` request `DiscretizeEdgeInto` makes. Named
+/// because the two public entry points validate the pair before calling, and a guard that tested a
+/// different angular value from the one actually passed would be testing nothing (#2872).
+constexpr double kEdgePolylineAngularDeflection = 0.1;
+
 /// Discretise one edge into `outPoints` (flat xyz triples). Returns points written, or -1.
 ///
 /// `parentShape` + `fallbackMap` back the pcurve fallback: the edge→face ancestor map is built
 /// lazily on first use and reused across calls, so a bulk caller pays for it at most once
 /// (and not at all when no edge needs the fallback).
+///
+/// `deflection` is validated by both callers, against `occtValidTangentialDeflection` (#2872);
+/// this function does not re-test it.
 int32_t DiscretizeEdgeInto(const TopoDS_Edge&                                          edge,
                            double                                                      deflection,
                            int32_t                                                     maxPoints,
@@ -356,7 +364,7 @@ int32_t DiscretizeEdgeInto(const TopoDS_Edge&                                   
     // A prior version had these swapped (#1440): the caller's chordal tolerance landed in the
     // angular slot and this fixed 0.1 landed in the linear slot, backwards.
     BRepAdaptor_Curve           curve(edge);
-    GCPnts_TangentialDeflection discretizer(curve, 0.1, deflection);
+    GCPnts_TangentialDeflection discretizer(curve, kEdgePolylineAngularDeflection, deflection);
 
     if (discretizer.NbPoints() >= 2)
     {
@@ -431,6 +439,14 @@ int32_t OCCTShapeGetEdgePolyline(OCCTShapeRef shape,
 {
   if (!shape || !outPoints || maxPoints < 2 || edgeIndex < 0)
     return -1;
+  // #2872: see occtValidTangentialDeflection (OCCTBridge_Internal.h). GCPnts_TangentialDeflection's
+  // own precondition on this pair is a Standard_ConstructionError_Raise_if in the .cxx, so the
+  // pinned Release kernel compiles it out; without it the sampler subdivides to an internal 1e6
+  // cap and the `maxPoints` truncation in DiscretizeEdgeInto hands back the first fraction of a
+  // percent of the edge as if it were the whole. The refusal is -1, which is what this function
+  // already returns for a null shape, an unusable capacity or a missing edge.
+  if (!occtValidTangentialDeflection(kEdgePolylineAngularDeflection, deflection))
+    return -1;
 
   try
   {
@@ -469,6 +485,11 @@ OCCTEdgePolylinesRef OCCTShapeComputeAllEdgePolylines(OCCTShapeRef shape,
                                                       int32_t      maxPointsPerEdge)
 {
   if (!shape || maxPointsPerEdge < 2)
+    return nullptr;
+  // #2872: the bulk twin of OCCTShapeGetEdgePolyline above, same compiled-out precondition. The
+  // refusal is nullptr, which is what this function already returns for a null shape or an
+  // unusable per-edge capacity, and which Swift turns into an empty result.
+  if (!occtValidTangentialDeflection(kEdgePolylineAngularDeflection, deflection))
     return nullptr;
 
   try
