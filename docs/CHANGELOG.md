@@ -21,6 +21,29 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### The three-curve `GeomFill` fills are wrapped, and the whole family is documented (#2841, #2842, #2843)
+
+`Surface.bsplineFill(curves:style:)` and `Surface.bezierFill(_:_:_:style:)` now take **three**
+boundary curves as well as two and four, wrapping the last unwrapped constructors of
+`GeomFill_BSplineCurves` and `GeomFill_BezierCurves`. OCCT closes the fourth side with a straight
+chord between the far ends of the first and third curves, so the **middle** curve goes in the second
+slot and must be adjacent to both others. Each curve's own direction is free.
+
+A wrong middle returns `nil`. Without the guard it was an uncatchable SIGSEGV: OCCT's own
+`Standard_ConstructionError` refusal is `Standard_ConstructionError_Raise_if`, which a Release kernel
+compiles out along with the local that feeds it, leaving `Init` to dereference a null handle
+(#2842, now a row in `okf/references/known-occt-bugs.md`). The guard transcribes OCCT's own
+acceptance test and agrees with the kernel on all 48 measured three-curve cases.
+
+`.coons` works on three cubic sides for both flavours; for the BSpline one it refuses a middle curve
+of degree 1, because the V direction then has only two poles.
+
+`Surface.stretchFill(p1:p2:p3:p4:)` is documented for the first time. `GeomFill_Stretch` takes
+`(bottom, right, top, left)`, the `GeomFill_Curved` arrangement rather than the `GeomFill_Coons` one,
+and unlike `GeomFill_Curved` it reads `p2[0]` and `p4[n - 1]`: a disagreeing corner is dropped from
+the boundary and still moves the interior. The existing reference example passed the four sides in
+head-to-tail loop order, which is the wrong arrangement, and is corrected.
+
 ```markdown
 ### The Bezier pole ceiling is stated three times and stated differently (#2875)
 
