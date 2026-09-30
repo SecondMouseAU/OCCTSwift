@@ -199,18 +199,6 @@ struct OCCTBndSphere
   Bnd_Sphere sphere;
 };
 
-static void fillBounds6(const Bnd_Box& box, double* bounds6)
-{
-  double x0, y0, z0, x1, y1, z1;
-  box.Get(x0, y0, z0, x1, y1, z1);
-  bounds6[0] = x0;
-  bounds6[1] = y0;
-  bounds6[2] = z0;
-  bounds6[3] = x1;
-  bounds6[4] = y1;
-  bounds6[5] = z1;
-}
-
 // #1645: the six math_* callback adapters below were emitted into all five
 // OCCTBridge_Spatial_*.mm split files by #1380's shared preamble, and instantiated only here.
 // The four dead copies are gone; the anonymous namespace is what makes a future re-duplication
