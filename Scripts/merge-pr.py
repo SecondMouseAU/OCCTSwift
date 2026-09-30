@@ -84,23 +84,88 @@ def strip_html_comments(text):
     return re.sub(r"<!--.*?-->", "", text, flags=re.S)
 
 
+def is_footer_line(line):
+    """Whether `line` belongs to the attribution footer every PR body in this repo ends with.
+
+    Two shapes, both written by the harness rather than by the author:
+
+        🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+        https://claude.ai/code/session_01ABC...
+
+    Matched loosely at the front, because the emoji is sometimes dropped and the first line is
+    sometimes bolded, and strictly on the text that identifies it. Neither line is ever CHANGELOG
+    content, so terminating an entry on one costs nothing even when a `##` heading follows too.
+    """
+    s = line.strip()
+    if not s:
+        return False
+    if re.match(r"^\W*Generated with \[Claude Code\]", s):
+        return True
+    return bool(re.match(r"^<?https://claude\.ai/code/session[_/-]", s))
+
+
+FENCE_RE = re.compile(r"^(?P<indent> {0,3})(?P<marker>`{3,}|~{3,})(?P<info>.*)$")
+
+
+def code_block_mask(lines):
+    """One bool per line: True when that line belongs to a fenced code block, fences included.
+
+    Fences are tracked by MATCHING an opener against its closer, never by counting parity (#2890).
+    Parity desyncs on the first unbalanced fence and the desync then runs to the end of the body:
+    that is how PR #2889's prose example of a fence marker hid a `## CHANGELOG entry` heading two
+    hundred lines below it, and the tool then refused a body that was correct. The rules here are
+    CommonMark's, which is what GitHub renders:
+
+      * an opener is indented at most three spaces. At four the line is an indented code block, so
+        an illustrative fence quoted inside prose opens nothing, which is the shape #2889 used;
+      * a backtick opener's info string may not itself contain a backtick, so `` ``` `` written
+        inline is not an opener;
+      * a closer is the same character as its opener, at least as long, indented at most three
+        spaces, and carries nothing after the marker but whitespace. A line with an info string is
+        therefore never a closer, so two openers in a row are two openers rather than a pair;
+      * an unclosed opener runs to the end of the body, exactly as it renders.
+    """
+    mask = [False] * len(lines)
+    marker = None
+    for i, line in enumerate(lines):
+        m = FENCE_RE.match(line)
+        if marker is None:
+            if m and not (m.group("marker")[0] == "`" and "`" in m.group("info")):
+                marker = m.group("marker")
+                mask[i] = True
+            continue
+        mask[i] = True
+        if (m and m.group("marker")[0] == marker[0]
+                and len(m.group("marker")) >= len(marker)
+                and not m.group("info").strip()):
+            marker = None
+    return mask
+
+
 def extract_section(body, heading=HEADING):
-    """The text under `heading`, verbatim, up to the next heading of the SAME level or the end.
+    """The text under `heading`, verbatim, to the next same-level heading, the footer, or the end.
 
     Returns None when the heading is absent. A `###` sub-heading belongs to the section, which is
-    the normal shape of an entry, and a `## ` line inside a fenced code block does not end it.
+    the normal shape of an entry, and neither a `## ` line nor a footer line inside a fenced code
+    block ends it.
+
+    The attribution footer is a terminator in its own right because the entry is often the body's
+    LAST section, and "or the end of the body" then swallowed the footer into the release record:
+    `docs/CHANGELOG.md` carried a stray `Generated with [Claude Code]` line from one such merge,
+    and two of the nine PRs merged on 2026-09-30 needed the body edited by hand before the tool
+    would do the right thing (#2890). Requiring a terminating heading instead would have worked,
+    but it puts a step back on every author, and removing exactly that kind of step is why this
+    tool exists. The footer is mandated on every PR body, has a fixed shape, and is never content.
     """
     if body is None:
         return None
     text = body.replace("\r\n", "\n").replace("\r", "\n")
     lines = text.split("\n")
+    in_code = code_block_mask(lines)
     start = None
-    fenced = False
     for i, line in enumerate(lines):
-        if line.lstrip().startswith("```"):
-            fenced = not fenced
-            continue
-        if fenced:
+        if in_code[i]:
             continue
         if line.strip() == heading:
             start = i + 1
@@ -108,15 +173,13 @@ def extract_section(body, heading=HEADING):
     if start is None:
         return None
     out = []
-    fenced = False
-    for line in lines[start:]:
-        if line.lstrip().startswith("```"):
-            fenced = not fenced
-            out.append(line)
-            continue
-        if not fenced and re.match(r"^##(?!#)\s", line):
-            break
-        out.append(line)
+    for i in range(start, len(lines)):
+        if not in_code[i]:
+            if re.match(r"^##(?!#)\s", lines[i]):
+                break
+            if is_footer_line(lines[i]):
+                break
+        out.append(lines[i])
     return "\n".join(out)
 
 
@@ -395,6 +458,94 @@ Tail line.
 ## SemVer impact
 """
 
+# The body shape defect 1 of #2890 was measured on: the entry is the LAST section, so "or the end
+# of the body" used to run straight through the attribution footer and into the release record.
+BODY_FOOTER_LAST = """## What & why
+
+Something.
+
+Closes #9
+
+## CHANGELOG entry
+
+### A thing (#9)
+
+Prose exactly as it should land.
+
+\U0001F916 Generated with [Claude Code](https://claude.com/claude-code)
+
+https://claude.ai/code/session_01NWwhHu3LTRQQkNn9WSnb7U
+"""
+
+# The footer quoted INSIDE the entry, which the entry for this very change does. Terminating on
+# the footer must not terminate on a fenced illustration of it.
+BODY_FOOTER_IN_FENCE = """## CHANGELOG entry
+
+### The entry now stops at the attribution footer (#2890)
+
+The footer this stops at looks like:
+
+```text
+\U0001F916 Generated with [Claude Code](https://claude.com/claude-code)
+```
+
+and it no longer reaches the release record.
+
+\U0001F916 Generated with [Claude Code](https://claude.com/claude-code)
+
+https://claude.ai/code/session_01NWwhHu3LTRQQkNn9WSnb7U
+"""
+
+# The body shape defect 2 of #2890 was measured on, reconstructed from PR #2889: one indented
+# marker shown as a documentation example, which GitHub renders as an indented code block, plus a
+# real balanced block. Three markers, so parity counting believed the rest of the body was code
+# and never saw the heading two hundred lines below.
+BODY_INDENTED_FENCE_EXAMPLE = """## What & why
+
+The new marker is written like this:
+
+    ```swift no-run: writes a 40 MB STEP file
+
+which is an indented code block, not a fence.
+
+```text
+a real block
+```
+
+## CHANGELOG entry
+
+### A thing (#9)
+
+Prose.
+
+## SemVer impact
+
+PATCH.
+"""
+
+# A forgotten closer. GitHub renders everything from the first marker to the last as one block,
+# because an info string makes a line an opener and never a closer. Parity instead reads the
+# second marker as the first one's partner and the third as a new opener that never closes.
+BODY_MISSING_CLOSER = """## What & why
+
+```swift
+let a = 1
+
+```swift
+let b = 2
+```
+
+## CHANGELOG entry
+
+### A thing (#9)
+
+Prose.
+
+## SemVer impact
+
+PATCH.
+"""
+
 CHANGELOG_FIXTURE = """# Changelog
 
 ## Current: v3.0.0
@@ -438,6 +589,48 @@ def self_test():
     case("fenced-h2-does-not-end-the-section", "Tail line." in (fenced or ""), repr(fenced))
     case("heading-inside-a-fence-is-not-the-heading",
          extract_section("```\n## CHANGELOG entry\n```\n") is None)
+
+    # #2890, defect 1: the attribution footer terminates the block. Without it the entry runs to
+    # the end of the body whenever it is the last section, and the footer lands in the release
+    # record, which is where `docs/CHANGELOG.md`'s stray `Generated with` line came from.
+    footer_last = classify(extract_section(BODY_FOOTER_LAST))[1]
+    case("footer-terminates-the-last-section",
+         footer_last == "### A thing (#9)\n\nProse exactly as it should land.",
+         repr(footer_last))
+    case("footer-url-line-alone-terminates",
+         classify(extract_section("## CHANGELOG entry\n\n### A (#1)\n\n"
+                                  "https://claude.ai/code/session_01X\n"))[1] == "### A (#1)",
+         repr(classify(extract_section("## CHANGELOG entry\n\n### A (#1)\n\n"
+                                       "https://claude.ai/code/session_01X\n"))[1]))
+    # ...and an entry that ILLUSTRATES the footer inside a fence keeps it, so the new terminator
+    # cannot truncate an entry that is legitimately about the footer. This entry is one.
+    in_fence = classify(extract_section(BODY_FOOTER_IN_FENCE))[1]
+    case("footer-inside-a-fence-is-not-a-terminator",
+         in_fence.endswith("and it no longer reaches the release record.")
+         and in_fence.count("Generated with [Claude Code]") == 1,
+         repr(in_fence))
+
+    # #2890, defect 2: fences match opener to closer rather than counting parity.
+    indented = extract_section(BODY_INDENTED_FENCE_EXAMPLE)
+    case("indented-fence-example-does-not-hide-the-heading", indented is not None, indented)
+    case("indented-fence-example-does-not-swallow-the-next-h2",
+         classify(indented)[1] == "### A thing (#9)\n\nProse.", repr(indented))
+    missing_closer = extract_section(BODY_MISSING_CLOSER)
+    case("an-opener-with-an-info-string-is-not-a-closer",
+         missing_closer is not None and classify(missing_closer)[1] == "### A thing (#9)\n\nProse.",
+         repr(missing_closer))
+    case("a-tilde-fence-is-not-closed-by-backticks",
+         extract_section("~~~\n```\n## CHANGELOG entry\n") is None,
+         repr(extract_section("~~~\n```\n## CHANGELOG entry\n")))
+    case("a-longer-closer-closes-a-shorter-opener",
+         extract_section("````\n## not the heading\n````\n"
+                         "## CHANGELOG entry\n\n### A (#1)\n") is not None)
+    case("a-shorter-marker-does-not-close-a-longer-opener",
+         extract_section("````\n```\n## CHANGELOG entry\n") is None,
+         repr(extract_section("````\n```\n## CHANGELOG entry\n")))
+    case("a-marker-line-holding-another-marker-is-not-an-opener",
+         extract_section("``` shown inline: ```\n## CHANGELOG entry\n\n### A (#1)\n")
+         is not None)
 
     # Asserting only that a CRLF body still classifies as an entry proved decorative under the
     # removal matrix: `line.strip()` hides a trailing `\r` from every comparison while leaving it
