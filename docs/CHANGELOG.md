@@ -21,6 +21,21 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### `Scripts/merge-pr.py` no longer mis-extracts the CHANGELOG entry from a PR body (#2890)
+
+The merge tool's `extract_section` had two defects, both hit while merging on 2026-09-30. The block
+ran to the end of the body, so an entry that was the PR's last section swallowed the trailing
+attribution footer into the release record, which had already happened once. And the fenced-code
+skip toggled on any line whose first non-space characters were three backticks, so a single
+unbalanced marker shown as an example in prose desynced the parse for the rest of the body and hid
+the `## CHANGELOG entry` heading entirely, producing a refusal that read as the author's fault.
+
+The block now also ends at the attribution footer, so the entry may be the body's last section, and
+fenced code is tracked by matching each opening marker with its closing one, per CommonMark, so an
+indented illustrative fence in prose opens nothing. Twelve new `--self-test` cases cover both, and
+the old and new parsers agree on all 134 open PR bodies. One stray attribution line is removed from
+`docs/CHANGELOG.md`.
+
 ### The doc-snippet gate runs the examples it compiles, and the lint steps read the whole tree (#2851, #2852)
 
 `Scripts/check-doc-snippets.py` now executes every fenced `swift` example that type-checks, not just compiles it. A documented example that compiled and then took the process down used to pass: `docs/reference/Surface-Analysis.md`'s `extrema(to:)` entry was #2840's crash reproducer and read as green for as long as that defect existed. Measured on one laptop over three runs each, the type-check alone is a median 5 s over 3,183 snippets and the type-check plus the run is 18 s over the 1,735 that compile, so running is the default rather than a flag. Every runnable snippet becomes one function in one executable, which a resume driver restarts past whatever kills it, in a scratch working directory, with a planted case that must die as the canary.
@@ -1623,8 +1638,6 @@ Swift call site relied on the old values. **Breaking change** for any caller swi
 case or persisting the raw value.
 
 Closes #1568
-
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
 
 ### Fixed OOB reads in `weightedCentroid`/`loadLinearXYZ` on mismatched parallel-array lengths (#1583)
 

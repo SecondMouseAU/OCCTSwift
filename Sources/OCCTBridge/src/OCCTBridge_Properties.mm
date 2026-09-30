@@ -826,6 +826,12 @@ int32_t OCCTShapeProximity(OCCTShapeRef           shape1,
   if (!shape1 || !shape2 || !outPairs || maxPairs <= 0)
     return 0;
 
+  // #2879: see occtValidMeshDeflection (OCCTBridge_Internal.h) for the bound and whose call site
+  // it comes from. The refusal is the `0` pairs this function already reports when the proximity
+  // algorithm does not finish.
+  if (!occtValidMeshDeflection(deflection))
+    return 0;
+
   try
   {
     // BRepExtrema_ShapeProximity requires triangulated shapes

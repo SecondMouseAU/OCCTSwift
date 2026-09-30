@@ -1728,6 +1728,9 @@ OCCTCurve2DRef _Nullable OCCTConvertCircleToBSpline2D(double cx,
 
 /// Convert a 2D ellipse arc to a BSpline curve.
 /// Requires 0 < minorRadius <= majorRadius (#514); returns NULL otherwise.
+/// Requires 0 < u2 - u1 <= 2*pi + Precision::PConfusion(), which is
+/// Convert_EllipseToBSplineCurve's own precondition, compiled out of this kernel (#2884);
+/// returns NULL otherwise, including for a non-finite bound.
 OCCTCurve2DRef _Nullable OCCTConvertEllipseToBSpline2D(double cx,
                                                        double cy,
                                                        double majorRadius,

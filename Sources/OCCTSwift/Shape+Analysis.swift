@@ -774,7 +774,8 @@ extension Shape {
     ///
     /// - Parameters:
     ///   - tolerance: Tolerance for detecting intersections (default 0.001)
-    ///   - meshDeflection: Mesh deflection for triangulation (default 0.5)
+    ///   - meshDeflection: Mesh deflection for triangulation (default 0.5). A value below
+    ///     `1e-7`, a negative one, or NaN is refused and returns `nil` (#2879).
     /// - Returns: Self-intersection result, or nil if the check failed
     public func selfIntersection(
         tolerance: Double = 0.001,
@@ -2099,6 +2100,7 @@ extension Shape {
     ///   - maxPairs: Output *capacity* (default: 100), clamped into `0...`
     ///     ``Sampling/maximumSampleCount``; 0 or less returns empty (#622).
     ///   - deflection: Linear mesh deflection (mm) for the detection triangulation. Default `0.1`.
+    ///     A value below `1e-7`, a negative one, or NaN is refused and returns empty (#2879).
     /// - Returns: Array of overlapping face index pairs, empty if none found.
     public func selfIntersectionPairs(
         tolerance: Double = 0.0,

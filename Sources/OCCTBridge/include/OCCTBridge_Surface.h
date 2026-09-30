@@ -1261,12 +1261,19 @@ bool OCCTGeomConvertIsCanonical(OCCTSurfaceRef _Nonnull surfaceRef);
 OCCTGeomFillProfilerRef OCCTGeomFillProfilerCreate(void);
 void                    OCCTGeomFillProfilerAddCurve(OCCTGeomFillProfilerRef _Nonnull ref,
                                                      OCCTCurve3DRef _Nonnull curveRef);
+/// Homogenizes every curve added so far. Returns false when none was added: an empty
+/// GeomFill_Profiler::Perform indexes its own empty sequence and takes the process down
+/// uncatchably in this kernel (#2884).
 bool OCCTGeomFillProfilerPerform(OCCTGeomFillProfilerRef _Nonnull ref, double tolerance);
 int  OCCTGeomFillProfilerDegree(OCCTGeomFillProfilerRef _Nonnull ref);
 int  OCCTGeomFillProfilerNbPoles(OCCTGeomFillProfilerRef _Nonnull ref);
 int  OCCTGeomFillProfilerNbKnots(OCCTGeomFillProfilerRef _Nonnull ref);
 bool OCCTGeomFillProfilerIsPeriodic(OCCTGeomFillProfilerRef _Nonnull ref);
 /// Gets poles for curve at index (1-based). outX/Y/Z must be sized to NbPoles.
+/// Returns false when curveIndex is outside [1, the number of curves added]:
+/// GeomFill_Profiler::Poles states that range and its two checks are compiled out of
+/// this kernel, so index 0 faults and an index past the end reads past the sequence
+/// (#2884).
 bool OCCTGeomFillProfilerPoles(OCCTGeomFillProfilerRef _Nonnull ref,
                                int curveIndex,
                                double* _Nonnull outX,

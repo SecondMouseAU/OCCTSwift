@@ -189,7 +189,10 @@ OCCTDrawingRef OCCTDrawingCreatePoly(OCCTShapeRef shape,
 {
   if (!shape)
     return nullptr;
-  if (!(deflection > 0))
+  // #2879: was `if (!(deflection > 0))`, which already refused NaN but let a positive value below
+  // the floor through to BRepMesh_IncrementalMesh. Same refusal, the kernel's own bound; see
+  // occtValidMeshDeflection (OCCTBridge_Internal.h).
+  if (!occtValidMeshDeflection(deflection))
     return nullptr;
   try
   {

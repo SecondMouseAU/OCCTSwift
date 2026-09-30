@@ -393,6 +393,11 @@ struct GeomFillProfilerOpaque
 {
   GeomFill_Profiler profiler;
   bool              isDone;
+  // #2884: GeomFill_Profiler exposes no curve count, and two of the members the bridge calls
+  // index into mySequence with no live bound test. The bridge is the only caller of AddCurve, so
+  // it counts what it added. Kept in step across all seven copies of this struct by
+  // check-bridge-type-odr.py (#2820).
+  int curveCount;
 };
 
 // MARK: - GeomFill_LocationDraft (v0.79)
@@ -2029,8 +2034,9 @@ OCCTGeomFillProfilerRef OCCTGeomFillProfilerCreate(void)
 {
   try
   {
-    auto* opaque   = new GeomFillProfilerOpaque();
-    opaque->isDone = false;
+    auto* opaque       = new GeomFillProfilerOpaque();
+    opaque->isDone     = false;
+    opaque->curveCount = 0;
     return opaque;
   }
   catch (...)
@@ -2040,11 +2046,20 @@ OCCTGeomFillProfilerRef OCCTGeomFillProfilerCreate(void)
   }
 }
 
+// #2884: GeomFill_Profiler::Perform reaches UnifyByInsertingAllKnots, whose first statement is
+// `theCurves(1)` on the sequence AddCurve filled. NCollection_Sequence::Value guards that with an
+// inline Standard_OutOfRange_Raise_if, which is live where the bridge expands it and compiled out
+// inside GeomFill_Profiler.cxx, so on an empty profiler the kernel walks an empty list and the
+// process SIGSEGVs before Perform returns (Scripts/repro/2884 mode 36; one curve is already
+// enough, mode 38). Nothing downstream can recover from that, so the count is tested here rather
+// than in the accessors, and the answer is the `false` this function already gives a failure.
 bool OCCTGeomFillProfilerPerform(OCCTGeomFillProfilerRef _Nonnull ref, double tolerance)
 {
   try
   {
     auto* opaque = (GeomFillProfilerOpaque*)ref;
+    if (opaque->curveCount < 1)
+      return false;
     opaque->profiler.Perform(tolerance);
     opaque->isDone = true;
     return true;
@@ -2112,6 +2127,12 @@ bool OCCTGeomFillProfilerIsPeriodic(OCCTGeomFillProfilerRef _Nonnull ref)
   }
 }
 
+// #2884: GeomFill_Profiler::Poles states "Raises if <Index> not in the range [1,NbCurves]", and
+// both of the Standard_DomainError_Raise_if lines that would do it are in
+// GeomFill_Profiler.cxx:283-285, compiled out of this kernel. Measured on the pinned asset with
+// two curves in the profiler (Scripts/repro/2884): index 0 SIGSEGVs, and index 5 or 1000000
+// returns, filling the caller's array with another curve's poles read from past the end of the
+// sequence. The class exposes no curve count, so the bridge uses the one it kept itself.
 bool OCCTGeomFillProfilerPoles(OCCTGeomFillProfilerRef _Nonnull ref,
                                int curveIndex,
                                double* _Nonnull outX,
@@ -2122,7 +2143,9 @@ bool OCCTGeomFillProfilerPoles(OCCTGeomFillProfilerRef _Nonnull ref,
   try
   {
     auto* opaque = (GeomFillProfilerOpaque*)ref;
-    int   nPoles = opaque->profiler.NbPoles();
+    if (curveIndex < 1 || curveIndex > opaque->curveCount)
+      return false;
+    int nPoles = opaque->profiler.NbPoles();
     if (nPoles > maxPoles)
       return false;
     NCollection_Array1<gp_Pnt> poles(1, nPoles);
@@ -2142,6 +2165,12 @@ bool OCCTGeomFillProfilerPoles(OCCTGeomFillProfilerRef _Nonnull ref,
   }
 }
 
+// #2884: this is the function the census's channel-four row is about, and it owes no guard.
+// GeomFill_Profiler.cxx:334 swallows `int n = NbKnots()` inside its `#ifndef No_Exception`
+// region, and the check it fed asks whether Knots and Mults are that long. Both arrays below are
+// sized from NbKnots() on the same object two statements earlier, so the condition holds by
+// construction; a short array is memory-safe in this kernel in any case, because
+// NCollection_Array1::operator= reallocates (Scripts/repro/2884 mode 31).
 bool OCCTGeomFillProfilerKnotsAndMults(OCCTGeomFillProfilerRef _Nonnull ref,
                                        double* _Nonnull outKnots,
                                        int* _Nonnull outMults,
