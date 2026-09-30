@@ -23,8 +23,9 @@ in the kernel", run
 read [`okf/policies/pinned-kernel-patch-check.md`](okf/policies/pinned-kernel-patch-check.md) for
 why the count is necessary and not sufficient, and
 [`okf/references/carried-occt-patches.md`](okf/references/carried-occt-patches.md) for the current
-divergence (thirty-one on disk, thirty-one pinned, as of 2026-09-29: none, since the
-`v4.0.0-kernel.3` repin) and what an unpinned patch leaves exposed. A divergence with a written
+divergence (thirty-two on disk, thirty-one pinned, as of 2026-09-30: `0044`, carried unbuilt
+because the OCCT 8.0.2 repin absorbs it and the bridge already refuses the input it fixes) and what
+an unpinned patch leaves exposed. A divergence with a written
 reason is expected; one without is a finding.
 
 **The comparison runs the other way too, and nothing used to make it.** The pinned asset holds
@@ -484,8 +485,14 @@ the reproducer). What a bridge author needs without opening it:
   mass was always exactly 0** whatever you passed, because `BRepGProp_Gauss::convert` discarded it
   (#2827); carried patch `0043` keeps it and is pinned from `v4.0.0-kernel.3`, so the by-plane
   overload now measures the signed volume between the face and the reference plane, summing to the
-  solid's volume over a closed shell for any plane. The offset enters as `n . P + planeDistance`,
-  not minus, so a caller who wants the distance to the plane at offset `d` passes `-d` (#2873).
+  solid's volume over a closed shell for any plane. **The kernel then measures it about the plane
+  mirrored through the origin** (#2873): its integrand reads `theCoeff[3]` as the right-hand side of
+  `n . X = theCoeff[3]` and subtracts it, while the `gp_Pln` conversion at
+  `BRepGProp_Vinert.cxx:279` (and `BRepGProp_VinertGK.cxx:219`, `:244`) fills it from
+  `gp_Pln::Coefficients`' `d`, which belongs to `n . X + d = 0`. `OCCTBRepGPropVinertPlane` builds
+  the `gp_Pln` itself, so it builds the mirrored one and `planeDistance` is an ordinary geometric
+  offset; delete that mirror when the kernel hunk lands with `0043`'s upstream PR. `loc` is a red
+  herring: it cancels, which is what a distance to a plane has to do.
 - **Retired at the `v4.0.0-kernel.1` repin**, all three, because the pinned asset now carries every
   carried patch: the datum lookup guard in `occtDocumentDatumObjectAt` (#1030, it was refusing a
   datum `0029` makes readable), the `Scripts/tsan.supp` lines for `TopoDS_TShape::myState`

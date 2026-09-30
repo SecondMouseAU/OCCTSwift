@@ -1826,8 +1826,10 @@ extension Surface {
     /// sequences empty, while `NbExtrema()` counts the distances, so the count says there is a
     /// nearest pair to read and there is not. Reading it faults uncatchably on this build, which is
     /// measured in `Scripts/repro/2831/probe.mm`, so this refuses instead. ``SurfaceExtremaResult``
-    /// has no shape for a distance without points; #2840 holds both the kernel fix and that API
-    /// decision.
+    /// has no shape for a distance without points, and giving it one is a SemVer change held as
+    /// #2876. The kernel half is carried patch `0044` (#2840), which makes the same read raise
+    /// rather than fault; this still refuses, because the refusal is the API decision and not the
+    /// crash workaround.
     ///
     /// - Parameters:
     ///   - other: The other surface

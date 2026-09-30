@@ -1,0 +1,93 @@
+From: OCCTSwift ecosystem <noreply@secondmouse.au>
+Subject: [PATCH] Modeling Data - bound Extrema_ExtSS::Points and
+ Extrema_ExtCS::Points against the point sequence
+
+Extrema_ExtSS and Extrema_ExtCS count their extrema with
+
+  int Extrema_ExtSS::NbExt() const { ...; return mySqDist.Length(); }
+
+and bound Points() against that count alone. Their analytic branches append a
+distance with no matching point pair when the pair is parallel:
+
+  myIsPar = myExtElSS.IsParallel();
+  if (myIsPar)
+  {
+    mySqDist.Append(myExtElSS.SquareDistance(1));   // and nothing to myPOnS1/myPOnS2
+  }
+
+An equidistant family has no unique witness point, so there is nothing to
+append, but NbExt() then reports 1 and Points(1, ...) passes its range test and
+reads myPOnS1.Value(1) on an empty NCollection_Sequence. Extrema_ExtCS is the
+same shape at Extrema_ExtCS.cxx:302-306 with myPOnC/myPOnS. Bound each Points()
+against its own point sequence, which is the fix Extrema_ExtCC::Points already
+carries.
+
+The tighter bound changes nothing for a non-parallel result: mySqDist and the
+point sequences are appended together in every other branch, so they are the
+same length there.
+
+Measured on macOS arm64 against V8_0_1 with both translation units
+override-linked, two parallel Geom_Planes 5 apart and a Geom_Line 5 above a
+Geom_Plane. Before: NbExt() is 1, SquareDistance(1) is 25, and Points(1, ...)
+exits 139 in both classes. After: the same calls raise Standard_OutOfRange, and
+two non-parallel controls report the same two extrema with the same coordinates
+as before.
+
+The reproducer is Scripts/repro/2840/probe.mm and the transcript is
+Scripts/repro/2840/override-link-transcript.txt in the OCCTSwift repository.
+OCCTSwift issue #2840; Extrema_ExtCC is #636.
+
+diff --git a/src/ModelingData/TKGeomBase/Extrema/Extrema_ExtCS.cxx b/src/ModelingData/TKGeomBase/Extrema/Extrema_ExtCS.cxx
+--- a/src/ModelingData/TKGeomBase/Extrema/Extrema_ExtCS.cxx
++++ b/src/ModelingData/TKGeomBase/Extrema/Extrema_ExtCS.cxx
+@@ -564,7 +564,9 @@ int Extrema_ExtCS::NbExt() const
+
+ void Extrema_ExtCS::Points(const int N, Extrema_POnCurv& P1, Extrema_POnSurf& P2) const
+ {
+-  if (N < 1 || N > NbExt())
++  // NbExt() counts mySqDist; the parallel branch appends a distance with no matching point pair
++  // (an equidistant family has no unique witness), so bound against the point sequence instead.
++  if (N < 1 || N > myPOnC.Length())
+   {
+     throw Standard_OutOfRange();
+   }
+diff --git a/src/ModelingData/TKGeomBase/Extrema/Extrema_ExtCS.hxx b/src/ModelingData/TKGeomBase/Extrema/Extrema_ExtCS.hxx
+--- a/src/ModelingData/TKGeomBase/Extrema/Extrema_ExtCS.hxx
++++ b/src/ModelingData/TKGeomBase/Extrema/Extrema_ExtCS.hxx
+@@ -92,6 +92,9 @@ public:
+   Standard_EXPORT double SquareDistance(const int N) const;
+
+   //! Returns the point of the Nth resulting distance.
++  //! Exceptions
++  //! Standard_OutOfRange if N is not in [1, NbExt()], or if N has a distance but no
++  //! representative point pair (a parallel curve/surface pair with an equidistant family).
+   Standard_EXPORT void Points(const int N, Extrema_POnCurv& P1, Extrema_POnSurf& P2) const;
+
+ private:
+diff --git a/src/ModelingData/TKGeomBase/Extrema/Extrema_ExtSS.cxx b/src/ModelingData/TKGeomBase/Extrema/Extrema_ExtSS.cxx
+--- a/src/ModelingData/TKGeomBase/Extrema/Extrema_ExtSS.cxx
++++ b/src/ModelingData/TKGeomBase/Extrema/Extrema_ExtSS.cxx
+@@ -290,7 +290,9 @@ int Extrema_ExtSS::NbExt() const
+
+ void Extrema_ExtSS::Points(const int N, Extrema_POnSurf& P1, Extrema_POnSurf& P2) const
+ {
+-  if (N < 1 || N > NbExt())
++  // NbExt() counts mySqDist; the parallel branch appends a distance with no matching point pair
++  // (an equidistant family has no unique witness), so bound against the point sequence instead.
++  if (N < 1 || N > myPOnS1.Length())
+   {
+     throw Standard_OutOfRange();
+   }
+diff --git a/src/ModelingData/TKGeomBase/Extrema/Extrema_ExtSS.hxx b/src/ModelingData/TKGeomBase/Extrema/Extrema_ExtSS.hxx
+--- a/src/ModelingData/TKGeomBase/Extrema/Extrema_ExtSS.hxx
++++ b/src/ModelingData/TKGeomBase/Extrema/Extrema_ExtSS.hxx
+@@ -89,6 +89,9 @@ public:
+   Standard_EXPORT double SquareDistance(const int N) const;
+
+   //! Returns the point of the Nth resulting distance.
++  //! Exceptions
++  //! Standard_OutOfRange if N is not in [1, NbExt()], or if N has a distance but no
++  //! representative point pair (a parallel surface pair with an equidistant family).
+   Standard_EXPORT void Points(const int N, Extrema_POnSurf& P1, Extrema_POnSurf& P2) const;
+
+ private:

@@ -11,7 +11,7 @@ for what that takes.
 2026-08-03 retired ten patches, `0032`
 retired 2026-09-02 (superseded by upstream's own fix, not shipped in our pin), and `0035` retired
 2026-09-20 (it reintroduced #280; see its [Retired patches](#retired-patches) entry).
-The carried sequence now reads 0010–0012, 0014–0031, 0033–0034, 0036–0043.
+The carried sequence now reads 0010–0012, 0014–0031, 0033–0034, 0036–0044.
 The gaps are the retirements, not missing files:
 the numbers are cited across `CLAUDE.md`, `docs/`, closed issues and `Scripts/repro/`, and
 renumbering would have silently repointed every one of those citations at a different fix.
@@ -1956,21 +1956,39 @@ oblique one, all three give sum 743.45133223538 against volume 743.4513322353836
 `VolumeProperties`. A 10-cube and a cylinder agree to the same precision.
 
 **A third identity, per face rather than summed.** For a *planar* face the integral reduces to
-`(n_hat . n_face) * area * (n_hat . C + d)` with `C` the face's area centroid, so the by-plane mass
-is affine in the plane offset with slope the face's signed projected area. Measured on the plate's
+`(n_hat . n_face) * area * (n_hat . C - d)` with `C` the face's area centroid and `d` the offset the
+caller asked for, so the by-plane mass is affine in the plane offset with slope minus the face's
+signed projected area. (Written with a `+` here until #2873: see below.) Measured on the plate's
 seven faces with the plane normal along z: the two caps have slope +371.72566611769 and
 -371.72566611769, exactly `+-area`, and the four sides and the cylindrical wall have slope 0, as
 faces parallel to the normal must.
 
-**The offset's sign is inverted, and `loc` does not re-base it.** `aCoeff[3] = d - n_hat . loc` and
-the integrand then subtracts it, so what reaches `d1` is `n_hat . P - d` where the signed distance to
-the plane is `n_hat . P + d`, and `loc` cancels out entirely. Measured on a flat cap where
-`mass / area` reads `d1` off directly: the cap at z = 2 gives `d1` 2, 3 and -98 for planes at z = 0,
-1 and -100, and identical numbers for `SetLocation` at the origin and at z = 3. That is a **separate**
-defect from this patch, it does not disturb either identity above (`d1` is still affine with gradient
-`n_hat`, which is all they need), and it is held as
-[#2873](https://github.com/SecondMouseAU/OCCTSwift/issues/2873) for the same upstream PR rather than
-patched here days before 8.0.2.
+**The offset's sign is inverted, so the value is measured about the plane mirrored through the
+origin.** The integrand reads `theCoeff[3]` as the right-hand side of `n_hat . X = theCoeff[3]` and
+subtracts it, while `aCoeff[3] = d - n_hat . loc` fills it from `gp_Pln::Coefficients`' `d`, which
+belongs to the `n_hat . X + d = 0` form. Measured on a flat cap where `mass / area` reads `d1` off
+directly: the cap at z = 2 gives `d1` 2, 3, -98 and 7 for planes at z = 0, 1, -100 and 5, where the
+geometric signed distance is 2, 1, 102 and -3. That is a **separate** defect from this patch, it does
+not disturb either identity above (`d1` is still affine with gradient `n_hat`, which is all they
+need), and it is held as [#2873](https://github.com/SecondMouseAU/OCCTSwift/issues/2873) for the same
+upstream PR rather than patched here days before 8.0.2.
+
+Two corrections to that paragraph as it first stood, both from #2873's own probe
+(`Scripts/repro/2873/`). **`loc` is not a second defect.** `SetLocation` moves `d1` by nothing at the
+origin, at (0, 0, 3) and at the non-axial (-4, 11, 2.5), and that is the behaviour a distance to a
+plane has to have: the `- n_hat . loc` term exists to cancel the `P - loc` the integrand works in,
+and it cancels exactly, before and after the sign is corrected. There is one defect here, not two.
+**And it is three sites, not one:** `BRepGProp_VinertGK.cxx:219` and `:244` make the same conversion
+for the Kronrod path, whose integrand subtracts it at `BRepGProp_UFunction.cxx:99`, so the upstream
+hunk covers `BRepGProp_Vinert.cxx:279` and both of those. The two implementations print identical
+`d1` on every row of the probe, which is what makes this a second construction rather than a re-run.
+
+**The bridge compensates in the meantime.** `OCCTBRepGPropVinertPlane` is handed
+`(planeNormal, planeDistance)` and builds the `gp_Pln` itself, so it builds the mirrored one and
+`Face.volumeInertia(planeNormal:planeDistance:)` measures about the plane the caller named. **A
+kernel carrying the upstream hunk while that mirror is still in place measures about the mirrored
+plane again**, so the mirror comes out in the same change that retires this patch.
+`BRepGPropVinertTests`' two sign assertions fail if it does not.
 
 ### CI coverage, and the pin
 
@@ -2009,11 +2027,119 @@ Not filed upstream yet: #2827 holds the upstream PR, per
 [`okf/policies/upstream-occt-patch-process.md`](../../okf/policies/upstream-occt-patch-process.md)
 and the standing hold on kernel-patch findings until 8.0.2 lands. **The submission carries a second
 hunk**, for [#2873](https://github.com/SecondMouseAU/OCCTSwift/issues/2873): `aCoeff[3] = d - n . loc`
-at `BRepGProp_Vinert.cxx:279` is subtracted by the integrand, so the offset reaches it with the
-opposite sign to a geometric distance and `loc` cancels out. This patch exposes that rather than
-causing it, and the two belong in one PR because a reviewer reading the first will ask about the
-second. The upstream submission is where
+at `BRepGProp_Vinert.cxx:279`, and the same two lines at `BRepGProp_VinertGK.cxx:219` and `:244`, are
+subtracted by the integrand, so the offset reaches it with the opposite sign to a geometric distance
+and the value is measured about the plane mirrored through the origin. `loc` is not part of it: it
+cancels, correctly, both before and after. This patch exposes that rather than causing it, and the
+two belong in one PR because a reviewer reading the first will ask about the second. The upstream submission is where
 the GTest goes; the carried patch is the one-liner alone, as `0042` was.
+
+**Retire** once the bundled OCCT includes this fix.
+
+## 0044-Extrema-ExtSS-ExtCS-Points-bound-against-point-sequence-2840.patch
+
+**`Points()` reads an empty point sequence on a parallel pair**
+([#2840](https://github.com/SecondMouseAU/OCCTSwift/issues/2840)). `Extrema_ExtSS` and
+`Extrema_ExtCS` both count extrema with `NbExt() == mySqDist.Length()` and bound `Points()` against
+that count alone, and both analytic branches append a distance with no matching point pair when the
+pair is parallel (`Extrema_ExtSS.cxx:226-234`, `Extrema_ExtCS.cxx:302-306` in the pinned tree):
+
+```cpp
+  myIsPar = myExtElSS.IsParallel();
+  if (myIsPar)
+  {
+    mySqDist.Append(myExtElSS.SquareDistance(1));   // and nothing to myPOnS1/myPOnS2
+  }
+```
+
+An equidistant family has no unique witness point, so there is nothing to append. `NbExt()` then
+reports 1, `Points(1, ...)` passes its range test, and `myPOnS1.Value(1)` reads an empty
+`NCollection_Sequence`. The fix is the one `Extrema_ExtCC::Points` already carries as `0024`: bound
+against the point sequence. The tighter bound changes nothing for a non-parallel result, since
+`mySqDist` and the point sequences are appended together in every other branch.
+
+**The fault is not in `Points()`' own bound test.** That test is a literal `throw`, live in this
+Release build. What faults is `NCollection_Sequence::Value`'s `Standard_OutOfRange_Raise_if`, which
+is **inline** and therefore compiled out by `BUILD_RELEASE_DISABLE_EXCEPTIONS` in whichever
+translation unit expands it, here `Extrema_ExtSS.cxx`. So the read is an OS fault rather than a
+throw, uncatchable in-process (#345), and
+`Scripts/census-compiled-out-validation.py` has no channel that could have seen it: filed as
+[#2858](https://github.com/SecondMouseAU/OCCTSwift/issues/2858).
+
+### The family is exactly three, and generalising has nothing to generalise over
+
+This patch is the third instance of `0024`'s shape and the question of whether to generalise rather
+than copy was asked before it was written, in #2840 and answered by #2801's sweep. Every `.cxx`
+under `src/ModelingData/TKGeomBase/Extrema` that mentions `myIsPar`, compared for `mySqDist.Append`
+count against point-append count:
+
+| class | sqdist appends | point appends | verdict |
+|---|---|---|---|
+| `Extrema_ExtCC` | 11 | 0 | #636, carried patch `0024` |
+| `Extrema_ExtCS` | 4 | 6 | this patch |
+| `Extrema_ExtSS` | 4 | 3 | this patch |
+| `Extrema_ExtCC2d` | 2 | 0 | clean: `Points` bounds against `mynbext`, which moves in lockstep with `mypoints.Append` in both `Results` overloads |
+| `Extrema_ExtElC2d` | 0 | 0 | clean: fixed-size member array bounded against `myNbExt` |
+| `Extrema_ExtElC`, `Extrema_ExtElCS`, `Extrema_ExtElSS` | 0 | 0 | no appends at all |
+
+**There is no fourth, so the shared fix has three call sites and will not acquire more.** And there
+is no shared thing to put the fix in: the three classes hold their points in three different member
+shapes, `mypoints` interleaved for `Extrema_ExtCC`, `myPOnC`/`myPOnS` for `Extrema_ExtCS`,
+`myPOnS1`/`myPOnS2` for `Extrema_ExtSS`, with no common base and no accessor in common. A helper
+over that is a new base class or a new free function for a one-line predicate, which is a larger
+change to propose upstream than the three one-line bounds it would replace, and which upstream has
+no precedent for in this package. So the shape is copied, deliberately, and the two remaining sites
+land together rather than one at a time.
+
+### Measured, macOS arm64, before and after
+
+`Scripts/repro/2840/probe.mm` against the pinned `v4.0.0-kernel.3` asset with both translation units
+override-linked, per
+[`okf/policies/upstream-occt-patch-process.md`](../../okf/policies/upstream-occt-patch-process.md)
+section 3. The transcript is committed as `Scripts/repro/2840/override-link-transcript.txt`.
+
+| mode | before | after |
+|---|---|---|
+| `Extrema_ExtSS`, two `Geom_Plane`s 5 apart, `Points(1, ...)` | exit 139 | `Standard_OutOfRange`, exit 0 |
+| `Extrema_ExtCS`, a `Geom_Line` 5 above a `Geom_Plane`, `Points(1, ...)` | exit 139 | `Standard_OutOfRange`, exit 0 |
+| `Extrema_ExtSS` control, two spheres 20 apart | 2 extrema, points returned | identical |
+| `Extrema_ExtCS` control, a line 40 above a sphere | 2 extrema, points returned | identical |
+
+`IsDone()`, `IsParallel()`, `NbExt()` and `SquareDistance(1)` are unchanged on every mode: the
+parallel pair still reports its one real measurement, 25 as a square distance in both cases. Only
+the point read moves, from a fault to a refusal. The unpatched override-linked run is
+byte-identical to the archive alone, which is how the pinned asset is known to carry no fix of its
+own here.
+
+### CI coverage, and the pin
+
+**Carried, not pinned.** `Scripts/patches/` holds thirty-two and the pinned `v4.0.0-kernel.3` asset
+holds thirty-one, so this patch is in **no** required check:
+`ci.yml`'s `build-and-test` resolves the asset. `kernel-integration.yml` triggers on
+`Scripts/patches/**` and builds `V8_0_1` plus every carried patch from source, so the PR that adds
+this one gets it compiled, and that proves it applies, compiles and regresses nothing. It cannot
+prove the fix reaches a consumer, and here it could not even if it ran on every PR, because **the
+bridge already refuses the input before the kernel sees it**.
+
+That is the argument for not rebuilding now. `0043` was rebuilt the day it was carried because what
+it left exposed was a value a caller reads. This one leaves nothing exposed: `OCCTSurfaceExtrema`
+gained an `IsParallel()` gate with #2831, and every other bridge entry point that reaches either
+class through a point read already had one (`OCCTExtremaExtSSPoint`, `OCCTExtremaExtCSPoint`,
+`OCCTCurve3DDistanceToSurface`, which reads `LowerDistance()` alone). The standing hold on repinning
+until OCCT 8.0.2 lands therefore wins, and the 8.0.2 rebuild absorbs this patch for free.
+
+**Retargeting risk at 8.0.2.** No other carried patch touches either file, and both `Points()`
+bodies are three lines that have not changed since the class was written, so the hunks are expected
+to apply to `V8_0_2` unchanged. Re-run `git -C occt-src apply --check` at the repin rather than
+assuming it.
+
+Not filed upstream yet: the standing hold in
+[`okf/policies/upstream-occt-patch-process.md`](../../okf/policies/upstream-occt-patch-process.md)
+holds every upstream PR until 8.0.2 ships. The submission is staged in
+`Scripts/repro/2840/upstream/`: two GTests, `Extrema_ExtSS_Test.cxx` and `Extrema_ExtCS_Test.cxx`,
+compiled and run both ways (each parallel case exits 139 unpatched and passes patched, both controls
+pass on both sides), plus the two `FILES.cmake` lines they need. `0024` is still unfiled too, so one
+PR covering all three classes may read better than two.
 
 **Retire** once the bundled OCCT includes this fix.
 
