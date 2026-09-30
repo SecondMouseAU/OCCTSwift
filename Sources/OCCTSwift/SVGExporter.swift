@@ -173,7 +173,22 @@ public final class SVGWriter: @unchecked Sendable, DrawingPrimitiveSink, Drawing
         }
         s += "</g>\n</svg>\n"
         do {
-            try s.write(to: url, atomically: true, encoding: .utf8)
+            // `atomically: true` CANNOT BE USED ON WASI. It writes a temporary file and renames it
+            // over the target, and the rename is not supported there: the write fails with
+            // `NSCocoaErrorDomain Code=3328 "The requested operation is not supported."`, which this
+            // reported as a SVG write failure rather than as a platform limitation. Measured by
+            // #2793's wasm test run, where it failed five Drawing tests, three of them indirectly
+            // as a `content.contains(...)` assertion against a file that was never written.
+            //
+            // The atomicity is worth keeping everywhere it works: it is what stops a crash mid-write
+            // leaving a half-written SVG that a reader will happily open. On WASI there is one
+            // thread and no way to get it, so a direct write is the only option rather than a
+            // preference.
+            #if os(WASI)
+                try s.write(to: url, atomically: false, encoding: .utf8)
+            #else
+                try s.write(to: url, atomically: true, encoding: .utf8)
+            #endif
         } catch {
             throw SVGError.writeFailed(error.exportDescription)
         }

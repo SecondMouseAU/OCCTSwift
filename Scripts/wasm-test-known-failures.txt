@@ -41,3 +41,16 @@ translateWithDegenerateSourceFallsBackToUnmoved()  # 2891
 "the by-plane column runs to the plane the caller named, not its mirror (#2873)"  # kernel skew
 "the by-plane first moments sum to the solid's (#2827)"  # kernel skew
 "the by-plane per-face sum is the volume, for any plane (#2827)"  # kernel skew
+
+# --- exact-equality baselines do not survive a different libm --------------------------------
+# `Issue791ConvertCircleHelperTests` compares a computed pole against a hardcoded baseline with `==`,
+# not a tolerance. The wasm build links WASILibc's math functions and the Apple build links Darwin's,
+# and IEEE 754 does not pin the results of transcendentals to the last bit, so `sin`/`cos` on the two
+# platforms legitimately differ in the final places and an exact comparison cannot hold across both.
+#
+# Nothing is wrong with the geometry here and nothing is wrong with the port. The tests are wrong to
+# use `==` on a value derived through trigonometry, and the fix is a tolerance, which is a change to
+# an Apple-platform test and so belongs in its own PR rather than this one. Listed rather than
+# excluded because they are honest failures that a reader should see.
+fullCircleOriginMatchesPriorBaseline()  # exact-equality baseline vs a different libm
+offsetArcMatchesPriorBaseline()  # exact-equality baseline vs a different libm

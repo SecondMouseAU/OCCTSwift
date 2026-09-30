@@ -636,7 +636,13 @@ let wasmUnportableTestTargets: Set<String> = [
     "OCCTStressTests",
     "OCCTMiscTests",
     "OCCTFoundationTests",
-    "OCCTIOTests"
+    "OCCTIOTests",
+    // Added by the first full run rather than by reading the sources (#2793). This one is not an
+    // unportable API: the suite TRAPS with an out-of-bounds free while destroying a
+    // `BRep_CurveOnSurface`, after 8 of its 10 tests (#2895). `Tests/OCCTIntegrationTests/` is a
+    // single file, so there is nothing narrower to exclude. A trap ends the module, so it cannot be
+    // carried as a known failure the way a wrong answer can.
+    "OCCTIntegrationTests"
 ]
 
 // Individual test files the remaining 13 targets cannot build for wasm, and why (#2793).
@@ -684,6 +690,29 @@ let wasmExcludedTestFiles: [String: [String]] = [
     // The guards themselves are not wrong on wasm32, they are unreachable: `count > Int32.max`
     // cannot be true when `Int.max == Int32.max`. Nothing to fix in `Sources/`.
     "OCCTAnalysisTests": ["Issue2857IntfToolIndexGuardTests.swift"],
+    // THE THREE BELOW TRAP, and a trap is excluded per FILE so the rest of a large suite still runs.
+    // Excluding the four trapping targets outright would have cost about 1,600 tests; these four
+    // files cost 11. Each has its own issue and none is a known failure, because a trap ends the
+    // module: every test after it is unreported, so the suite's own counts stop being the truth.
+    //
+    //   BRepFillEvolvedTests / EvolvedAdvancedTests / EvolvedSurfaceTests: an OCCT exception inside
+    //   `BRepFill_Evolved::PrepareProfile` reaches `std::terminate` instead of the bridge's
+    //   `catch (...)`, in two targets with one stack (#2894). The counterpart of #2891: that is the
+    //   same seam failing on the raising side, this is it failing on the throwing side.
+    //
+    //   All three are every test file in the package that reaches `Shape.evolved` /
+    //   `OCCTShapeCreateEvolved`, which is how the third was found: excluding the first two left
+    //   `OCCTModelingTests` still trapping, on the same stack, from a file a grep for the entry
+    //   point would have caught at once and a test-by-test chase did not.
+    //
+    //   TObjApplicationTests / Issue1588TObjApplicationReleaseTests: an indirect call inside
+    //   `OCCTTObjApplicationCreateDocument` is typed (i32) where the call site expects
+    //   (i32, i32, i32) (#2897). The bridge's own declaration and definition agree, so this is a
+    //   vtable or function-pointer disagreement that wasm type-checks and a native link does not.
+    "OCCTXCAFTests": [
+        "TObjApplicationTests.swift",
+        "Issue1588TObjApplicationReleaseTests.swift"
+    ],
     "OCCTCurveTests": [
         "Issue479SampleCountBoundTests.swift",
         "Issue558SamplingCountBoundsTests.swift",
@@ -704,9 +733,12 @@ let wasmExcludedTestFiles: [String: [String]] = [
         "Issue2860MathGuardTests.swift"
     ],
     "OCCTModelingTests": [
+        "BRepFillEvolvedTests.swift",
+        "EvolvedAdvancedTests.swift",
         "Issue208SelfIntersectionTests.swift",
         "Issue598PipeShellFrenetModeTests.swift"
     ],
+    "OCCTSurfaceTests": ["EvolvedSurfaceTests.swift"],
     "OCCTShapeHealingTests": [
         "Issue446UnifyInputMutationTests.swift",
         "Issue772SelfIntersectionAnalysisTests.swift"

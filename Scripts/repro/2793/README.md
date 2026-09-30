@@ -153,7 +153,7 @@ here. It sits next to #2757, the invalid `br_table` from setjmp plus wasm except
 explain why the check is inline in the bridge's TU at all, and name `gp_Ax2(P, N, Vx)` as the worked
 example of the same shape.
 
-## 6. Seven things about running Swift Testing on wasm
+## 6. Eight things about running Swift Testing on wasm
 
 1. **SwiftPM builds one `<Target>-test-runner.wasm` per test target** and has no runner for the
    triple, so `swift test --swift-sdk` cannot be used. There is no single bundle.
@@ -173,7 +173,13 @@ example of the same shape.
    under three minutes. This also cost a wrong diagnosis worth recording: with 563 tests started and
    none finished, the last `◇ Test ... started` line looks like the culprit, and it was not. Those two
    `GCPntsTangentialDeflectionTests` cases pass in **0.017 s** when run alone.
-6. **`TMPDIR` must be set in the guest, and preopens alone are not enough.**
+6. **`wasmkit run` takes its own options BEFORE the module path.** Anything after the path is handed
+   to the guest, so `wasmkit run module.wasm --dir /tmp` is accepted, passed to Swift Testing,
+   ignored, and grants no preopen at all. This is the one that cost the most: running wasmkit by hand
+   with the flags in the right order passed while the script with the same flags failed, which sent
+   the diagnosis first to the work directory's path form and then to `TMPDIR` alone. `TMPDIR` was
+   necessary; the ordering is what made it take effect.
+7. **`TMPDIR` must be set in the guest, and preopens alone are not enough.**
    `docs/guides/wasm-consumer-setup.md` already says so for consumers ("set `TMPDIR` and preopen
    it"); this runner was not doing it. Measured on the full `OCCTBRepGraphTests` suite: **1 failing**
    with both preopens and no `TMPDIR`, **0 failing** with `TMPDIR` pointed at the work directory.
@@ -184,7 +190,7 @@ example of the same shape.
    uncovered, the write is denied, and the bridge reports
    `.exportFailed("BREP export to issue336-….brep failed")`, which reads as a geometry or history
    defect rather than a missing environment variable.
-7. **One test can cost seven minutes, and that is the interpreter, not wasm.**
+8. **One test can cost seven minutes, and that is the interpreter, not wasm.**
    `GCPntsSamplerBoundsTests` walks arc length on an ellipse with a 1e9 aspect ratio for each of 16
    measured overshoot counts. Under wasmkit one of its two tests **passed after 422.275 seconds**,
    about 26 s per count, while the other 281 tests in that suite took under three minutes between
