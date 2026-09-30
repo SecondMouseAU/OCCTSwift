@@ -1,0 +1,89 @@
+Scripts/repro/2876/probe.mm, run 2026-09-30, macOS arm64.
+
+Library: Libraries/OCCT.xcframework/macos-arm64/libOCCT-macos.a, a kernel WITHOUT carried patch
+0044 (0044 is carried and pinned nowhere), which for Extrema_ExtSS and Extrema_ExtCS is the same
+state as the v4.0.0-kernel.3 asset Package.swift pins and therefore the same state CI builds
+against. The probe is compiled -O0 -g; the kernel is its own Release build with
+BUILD_RELEASE_DISABLE_EXCEPTIONS, which is why mode 1 is a fault rather than a throw.
+
+  clang++ -std=c++17 -ObjC++ -w -O0 -g \
+    -I"Libraries/OCCT.xcframework/macos-arm64/Headers" \
+    -L"Libraries/OCCT.xcframework/macos-arm64" \
+    -lOCCT-macos -framework Foundation -framework AppKit -lz -lc++ \
+    Scripts/repro/2876/probe.mm -o /tmp/occt_probe_2876
+  for m in 0 1 2 3 4 5 6 7; do /tmp/occt_probe_2876 $m; echo "  mode $m exit=$?"; done
+
+mode 0
+  SS parallel planes, gap 5, finite UV         IsParallel=true NbExtrema=1 LowerDistance=5
+  mode 0 exit=0
+mode 1
+  SS parallel planes, gap 5, finite UV         IsParallel=true NbExtrema=1 LowerDistance=5
+    NearestPoints() behind NbExtrema()...
+  Segmentation fault: 11
+  mode 1 exit=139
+mode 2
+  SS parallel planes, gap 5, natural domain    IsParallel=true NbExtrema=1 LowerDistance=5
+  mode 2 exit=0
+mode 3
+  SS control, spheres r3/r5 20 apart           IsParallel=false NbExtrema=2 LowerDistance=12.000000001961356
+    NearestPoints() behind NbExtrema()...
+    returned (3 -2.33539e-05 -3.67263e-06) (15 0.000101131 -3.85962e-05), |p1p2|=12.000000001961356
+  mode 3 exit=0
+mode 4
+  SS control, crossing planes, no extremum     IsParallel=false NbExtrema=0 LowerDistance raised Standard_OutOfRange
+  mode 4 exit=0
+mode 5
+  SS coincident planes, a measured zero        IsParallel=true NbExtrema=1 LowerDistance=0
+  mode 5 exit=0
+mode 6
+  CS line 5 above a plane                      IsParallel=true NbExtrema=1 LowerDistance=5
+  mode 6 exit=0
+mode 7
+  CS control, line 40 above a sphere r3        IsParallel=false NbExtrema=2 LowerDistance=37
+  mode 7 exit=0
+
+
+What the eight modes establish
+------------------------------
+
+1. The distance is real and it is the kernel's own. Mode 0: LowerDistance() is exactly 5 on two
+   planes built 5 apart, with IsParallel() true and NbExtrema() 1. Mode 2 repeats it over the
+   planes' own +/-1e100 domain rather than a trimmed square, so the verdict belongs to the geometry
+   and not to the UV box the caller passed.
+
+2. The points really are absent, they are not merely withheld. Mode 1 asks the same object for
+   NearestPoints() immediately after reading the distance and the process dies with SIGSEGV. So
+   "distance yes, points no" is the kernel's own shape for this input, not a policy this package
+   invented, and an API that offers the distance alone is reporting exactly what OCCT computed.
+
+3. "Nothing reported" is a different outcome and stays distinguishable. Mode 4's two crossing
+   planes intersect, so there is no extremum at all: NbExtrema() is 0 and LowerDistance() itself
+   raises Standard_OutOfRange. (StdFail_NotDone_Raise_if at the top of LowerDistance is compiled
+   out by No_Exception; what raises is the inline bounds check inside
+   NCollection_Sequence::Value when myIndex is 0. Same mechanism as #2801.) A wrapper therefore
+   has to test NbExtrema() before calling LowerDistance(), exactly as OCCTCurve3DDistanceToSurface
+   already does, and the refusal it returns is distinct from any distance.
+
+4. A zero is not automatically a fabrication. Mode 5's two coincident planes are parallel with a
+   correct, computed LowerDistance() of 0. Mode 0 and mode 5 come out of the same code path with
+   two different numbers, so a wrapper that returned a zero-initialised struct would be caught by
+   mode 0's 5 and a wrapper that refused every zero would be wrong about mode 5.
+
+5. The non-parallel path is untouched and still returns points. Mode 3, two spheres of radius 3 and
+   5 with centres 20 apart, gives IsParallel() false, two extrema, 12.000000001961356 as the lower
+   distance, and a NearestPoints() pair whose own separation is the same number to every digit.
+   That is what makes modes 0 to 2 evidence about the parallel branch rather than about this build's
+   Points() in general.
+
+6. The asymmetry the issue names is confirmed at the layer the bridge calls. Mode 6, a line 5 above
+   a plane through GeomAPI_ExtremaCurveSurface, reports IsParallel() true and LowerDistance() 5, and
+   OCCTCurve3DDistanceToSurface already returns that number to Swift. Mode 7 is its non-parallel
+   control at 37. Curve-surface has always answered; surface-surface is the one that refused.
+
+Second construction
+-------------------
+
+#2840's probe measured Extrema_ExtSS and Extrema_ExtCS directly and reported SquareDistance(1) == 25
+for the same two planes. This probe measures one layer up, through the GeomAPI classes the bridge
+actually builds, and reports LowerDistance() == 5. sqrt(25) == 5, and the two constructions agree.
+They also agree on the point read: 25 with no point pair there, 5 with a SIGSEGV here.
