@@ -21,6 +21,20 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### The doc-snippet gate runs the examples it compiles, and the lint steps read the whole tree (#2851, #2852)
+
+`Scripts/check-doc-snippets.py` now executes every fenced `swift` example that type-checks, not just compiles it. A documented example that compiled and then took the process down used to pass: `docs/reference/Surface-Analysis.md`'s `extrema(to:)` entry was #2840's crash reproducer and read as green for as long as that defect existed. Measured on one laptop over three runs each, the type-check alone is a median 5 s over 3,183 snippets and the type-check plus the run is 18 s over the 1,735 that compile, so running is the default rather than a flag. Every runnable snippet becomes one function in one executable, which a resume driver restarts past whatever kills it, in a scratch working directory, with a planted case that must die as the canary.
+
+It found two crashing examples, both fixed. `Curve3D.circularHelix` is unbounded, so `drawAdaptive()` on the untrimmed curve never returns; the example trims it and the entry says why. `Surface.cylinder` is infinite and `BRepBuilderAPI_MakeShell` has no bounds of its own, so `Shape.shell(from:)` aborted rather than returning nil; the example uses `Surface.trimmedCylinder` and the entry says the surface must be bounded.
+
+A snippet that compiles and must not be run carries `no-run: <reason>` on its fence, a separate marker from `no-typecheck:` with the reason equally required.
+
+The code it links against is whatever SwiftPM built rather than a filename this repository expects: `swift package describe --type json` names the targets behind the `OCCTSwift` product and the objects are taken from theirs. `OCCTSwift` is an automatic library product, so one build system writes `libOCCTSwift.a` and the other writes no archive at all and links each target's objects directly, and a gate that knows only the first name refuses on a tree that is built correctly.
+
+`code-style.yml`'s `swift-format` step walked `Sources/OCCTSwift` alone, 230 of the repo's 1,730 tracked Swift files, leaving `Tests/`, `Scripts/`, `Sources/OCCTPlatform`, `Sources/OCCTTest`, `Sources/WASICompat` and `Package.swift` unchecked with nothing saying so. `Scripts/check-swift-format.py` owns the population now: `git ls-files '*.swift'` minus the exemption manifests, asserting on every run that selected plus listed accounts for every tracked file, and planting a canary violation so a silent `swift-format` aborts rather than passes. 418 of the newly reached files were rejected and are seeded on `Scripts/style-manifest-swift-wave2.txt`; the 137 that needed nothing but `swift-format format -i` are formatted and delisted, `Package.swift` among them, while ten standalone `Scripts/repro/` probes are deliberately left unformatted because a retyped reproducer that stops reproducing reads as fixed upstream, with `swift package dump-package` byte-identical across that reformat. `.swiftlint.yml` excluded `Tests` and `Scripts` for the same reason and now does not: 1,728 files, one finding, fixed.
+
+No public API changes.
+
 ### The three-curve `GeomFill` fills are wrapped, and the whole family is documented (#2841, #2842, #2843)
 
 `Surface.bsplineFill(curves:style:)` and `Surface.bezierFill(_:_:_:style:)` now take **three**
