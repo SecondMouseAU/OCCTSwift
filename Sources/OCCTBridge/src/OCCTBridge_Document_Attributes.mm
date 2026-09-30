@@ -236,6 +236,12 @@
 static Handle(Poly_Triangulation) occtMergedTriangulation(const TopoDS_Shape& shape,
                                                           double              deflection)
 {
+  // #2879: see occtValidMeshDeflection (OCCTBridge_Internal.h) for the bound and whose call site
+  // it comes from. The refusal is the null handle this function already returns for a shape that
+  // meshed nothing.
+  if (!occtValidMeshDeflection(deflection))
+    return Handle(Poly_Triangulation)();
+
   // The constructor meshes; no Perform() call, matching what this function did before.
   BRepMesh_IncrementalMesh mesher(shape, deflection);
 

@@ -398,6 +398,7 @@ public final class CoherentTriangulation: @unchecked Sendable {
     /// - Parameters:
     ///   - shape: A shape that has been triangulated.
     ///   - deflection: Linear mesh deflection (mm) for the auto-triangulation. Default `0.1`.
+    ///     A value below `1e-7`, a negative one, or NaN is refused and returns `nil` (#2879).
     /// - Returns: A CoherentTriangulation, or nil on failure.
     public static func createFromMesh(_ shape: Shape, deflection: Double = 0.1)
         -> CoherentTriangulation?

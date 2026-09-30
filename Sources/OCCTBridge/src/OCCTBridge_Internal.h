@@ -1274,6 +1274,50 @@ inline bool occtValidTangentialDeflection(double angularDeflection, double curva
   return curvatureDeflection >= Precision::Confusion() && angularDeflection >= Precision::Angular();
 }
 
+/// The linear-deflection precondition every `BRepMesh_IncrementalMesh` entry point has to apply
+/// itself. A different consumer and a different bound from `occtValidTangentialDeflection` above,
+/// which is the adaptive curve sampler's; the two share an argument in one bridge function and
+/// nothing else (#2879).
+///
+/// **The bound is `Precision::Confusion()` (1e-7), and it is OCCT's, not ours.** Three of OCCT's
+/// own callers apply it to an absolute linear deflection, and the kernel itself enforces it
+/// (okf/policies/follow-occt-callers.md):
+///
+///   - `MeshTest.cxx:208`, the `incmesh` DRAW command, parsing its `LinDefl` argument:
+///     `aMeshParams.Deflection = std::max(Draw::Atof(...), Precision::Confusion());`
+///   - `MeshTest.cxx:199`, the same command's `-di` (interior deflection), which *refuses*
+///     rather than clamping: `if (aVal <= Precision::Confusion()) { "Syntax error"; return 1; }`
+///   - `Prs3d.hxx:71`, reached from `StdPrs_ToolTriangulatedShape::GetDeflection`, which is the
+///     AIS presentation path: `std::max(aDiag.maxComp() * theDeviationCoefficient * 4.0,
+///     Precision::Confusion())`. Note what the bounding box is for there: it *derives* an absolute
+///     deflection from a relative coefficient. It does not floor an absolute one, so a
+///     bounding-box-derived floor is not a shape any OCCT caller applies to this argument.
+///   - `BRepMesh_IncrementalMesh::initParameters` (`BRepMesh_IncrementalMesh.hxx:81`) throws
+///     `Standard_NumericError` on `myParameters.Deflection < Precision::Confusion()`.
+///
+/// **That last one is a literal `throw` in an inline header function, so unlike the `*_Raise_if`
+/// family it does survive into the pinned kernel** (okf/policies/occt-validation-is-compiled-out.md
+/// covers the distinction). Measured on the pinned `v4.0.0-kernel.3` asset, on a radius-10 cylinder
+/// (`Scripts/repro/2879/`): 0.0, -1.0, 1e-12 and 9e-8 all throw from `initParameters` in under a
+/// second, and the bridge's own `catch` already turns that into the site's refusal.
+///
+/// **NaN is the value that gets through, and it is why this guard exists.** `NaN < x` is false, so
+/// `initParameters` accepts NaN, and so does every one of the three callers above: `std::max(NaN,
+/// Precision::Confusion())` returns NaN. On the same cylinder, NaN did not return in ten minutes.
+/// Spelled as `>=` so NaN takes the refusing branch, the same spelling and the same reason as
+/// `occtValidTangentialDeflection`. This is not a divergence from OCCT's bound; it is that bound
+/// applied to a value OCCT's own `<` test cannot place on either side of it.
+///
+/// **A small deflection is expensive, not invalid, and is deliberately not refused here.** On that
+/// cylinder the same probe measured 1e-4 in 1 s (3,978 nodes), 1e-5 in 5 s (12,570), 1e-6 in 72 s
+/// (39,742) and the floor value itself, 1e-7, in 92 s (88,862). It terminates; it is slow. And
+/// 1e-7 is the value `incmesh` clamps *to*, so refusing it would be inventing a bound OCCT does
+/// not have. Callers who need a cheap mesh choose the deflection, exactly as they do in `incmesh`.
+inline bool occtValidMeshDeflection(double linearDeflection)
+{
+  return linearDeflection >= Precision::Confusion();
+}
+
 // === #603: one Gauss quadrature is not enough to measure an arc ===
 //
 // `CPnts_AbscissaPoint::Length` integrates |C'(u)| with a SINGLE fixed-order Gauss rule over the
