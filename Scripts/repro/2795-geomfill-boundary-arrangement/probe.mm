@@ -6,6 +6,12 @@
 // on the U = NPolU boundary, the opposite of Coons, and its second loop runs only over the interior
 // V range, so the four corners stay P1's and P3's instead of being overwritten.
 //
+// Extended for #2843 with the third class of the family, GeomFill_Stretch. It takes the Curved
+// arrangement, not the Coons one, and it differs from Curved on exactly one point: its interior
+// formula carries a bilinear corner-correction term (GeomFill_Stretch.cxx:92-96) that Curved has
+// no counterpart for (GeomFill_Curved.cxx:115-119). So P2(1) and P4(NPolV) ARE read by Stretch,
+// in the interior only, while Curved reads no endpoint of P2 or P4 at all.
+//
 // Compile (from the repo root, in a worktree with no Libraries/OCCT.xcframework, so the pinned
 // v4.0.0-kernel.2 asset SwiftPM resolved is what gets linked):
 //
@@ -17,6 +23,7 @@
 
 #include <GeomFill_Coons.hxx>
 #include <GeomFill_Curved.hxx>
+#include <GeomFill_Stretch.hxx>
 #include <NCollection_Array1.hxx>
 #include <NCollection_Array2.hxx>
 #include <gp_Pnt.hxx>
@@ -151,6 +158,92 @@ int main()
            c.X(),
            c.Y(),
            c.Z());
+  }
+
+  // ==== #2843: GeomFill_Stretch, the third class of the family ================================
+  printf("\n=== GeomFill_Stretch (#2843) ===\n");
+  printf("Init places P1 at V=1 and P3 at V=NPolV indexed along U, then P4 at U=1 and P2 at\n"
+         "U=NPolU indexed along V, for j = 2..NPolV-1 only: the Curved arrangement, NOT the\n"
+         "Coons one. GeomFill_BSplineCurves::Init confirms it from the caller side, passing\n"
+         "GeomFill_Stretch(P1,P2,P3,P4) and GeomFill_Curved(P1,P2,P3,P4) unswapped while\n"
+         "GeomFill_Coons gets (P1,P4,P3,P2) (GeomFill_BSplineCurves.cxx:344-350).\n\n");
+  dump<GeomFill_Stretch>("Stretch (b1,b2,b3,b4)  [the Coons-ordered fixture]", b1, b2, b3, b4);
+  printf("\n");
+  dump<GeomFill_Stretch>("Stretch (b1,b3,b2,b4)  [the Coons arrangement, wrong for Stretch]",
+                         b1,
+                         b3,
+                         b2,
+                         b4);
+  printf("\n");
+  dump<GeomFill_Stretch>("Stretch (b1,b4,b2,b3)  [the correct arrangement: bottom,right,top,left]",
+                         b1,
+                         b4,
+                         b2,
+                         b3);
+
+  printf("\n=== #2843: which corners Stretch reads, and where ===\n");
+  printf("Stretch's interior subtracts a bilinear patch through P1(1), P2(1), P3(NPolU) and\n"
+         "P4(NPolV) (GeomFill_Stretch.cxx:92-96). Curved has no such term. So a disagreeing\n"
+         "corner is dropped from the BOUNDARY by both, but still moves Stretch's INTERIOR.\n\n");
+  {
+    // The correct Stretch arrangement is (bottom, right, top, left) = (b1, b4, b2, b3).
+    // P2 is the right row, so P2(1) is the square's (10, 0, 0) corner, which the boundary
+    // also gets from P1(NPolU).
+    GeomFill_Stretch           clean(b1, b4, b2, b3);
+    NCollection_Array2<gp_Pnt> cleanPoles(1, clean.NbUPoles(), 1, clean.NbVPoles());
+    clean.Poles(cleanPoles);
+
+    Row p2 = rightRow();
+    p2(1)  = gp_Pnt(10.0, 0.0, 99.0); // read by the correction term
+    GeomFill_Stretch           moved(b1, p2, b2, b3);
+    NCollection_Array2<gp_Pnt> movedPoles(1, moved.NbUPoles(), 1, moved.NbVPoles());
+    moved.Poles(movedPoles);
+    gp_Pnt corner = movedPoles(moved.NbUPoles(), 1);
+    gp_Pnt inner  = movedPoles(2, 2);
+    printf("  P2(1) moved to (10,0,99):\n");
+    printf("    boundary corner pole(NPolU,1) = (%g,%g,%g)   [clean (%g,%g,%g)]\n",
+           corner.X(),
+           corner.Y(),
+           corner.Z(),
+           cleanPoles(clean.NbUPoles(), 1).X(),
+           cleanPoles(clean.NbUPoles(), 1).Y(),
+           cleanPoles(clean.NbUPoles(), 1).Z());
+    printf("    interior pole(2,2)            = (%g,%g,%g)   [clean (%g,%g,%g)]\n",
+           inner.X(),
+           inner.Y(),
+           inner.Z(),
+           cleanPoles(2, 2).X(),
+           cleanPoles(2, 2).Y(),
+           cleanPoles(2, 2).Z());
+
+    // P2(NPolV) is the other end of the same row, and no term of Init reads it.
+    Row p2b   = rightRow();
+    p2b(N)    = gp_Pnt(10.0, 10.0, 99.0);
+    GeomFill_Stretch           unread(b1, p2b, b2, b3);
+    NCollection_Array2<gp_Pnt> unreadPoles(1, unread.NbUPoles(), 1, unread.NbVPoles());
+    unread.Poles(unreadPoles);
+    bool identical = true;
+    for (int u = 1; u <= unread.NbUPoles(); u++)
+      for (int v = 1; v <= unread.NbVPoles(); v++)
+        if (unreadPoles(u, v).Distance(cleanPoles(u, v)) > 1e-12)
+          identical = false;
+    printf("  P2(NPolV) moved to (10,10,99): whole pole grid unchanged: %s\n",
+           identical ? "YES [never read]" : "no");
+
+    // The same experiment on Curved, where BOTH ends of P2 are unread.
+    GeomFill_Curved            curvedClean(b1, b4, b2, b3);
+    NCollection_Array2<gp_Pnt> ccPoles(1, curvedClean.NbUPoles(), 1, curvedClean.NbVPoles());
+    curvedClean.Poles(ccPoles);
+    GeomFill_Curved            curvedMoved(b1, p2, b2, b3); // p2 still has P2(1) at z = 99
+    NCollection_Array2<gp_Pnt> cmPoles(1, curvedMoved.NbUPoles(), 1, curvedMoved.NbVPoles());
+    curvedMoved.Poles(cmPoles);
+    bool curvedIdentical = true;
+    for (int u = 1; u <= curvedMoved.NbUPoles(); u++)
+      for (int v = 1; v <= curvedMoved.NbVPoles(); v++)
+        if (cmPoles(u, v).Distance(ccPoles(u, v)) > 1e-12)
+          curvedIdentical = false;
+    printf("  Curved, same P2(1) move:       whole pole grid unchanged: %s\n",
+           curvedIdentical ? "YES [never read]" : "no");
   }
   return 0;
 }
