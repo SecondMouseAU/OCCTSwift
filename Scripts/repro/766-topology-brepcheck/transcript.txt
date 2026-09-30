@@ -1,0 +1,13 @@
+faceStatus: 0
+edgeStatus: 0
+vertexStatus: 0
+maxTolerance(vertex): 9.9999999999999995e-08
+minTolerance(vertex): 9.9999999999999995e-08
+edge tolerance min/avg/max: 9.9999999999999995e-08 9.9999999999999995e-08 9.9999999999999995e-08
+fixTolerance(0.01): vertex max 0.01 min 0.01, edge max 0.01, face max 0.01
+limitMaxTolerance(0.001) on fresh box: 0, vertex max after 9.9999999999999995e-08
+limitMaxTolerance(0.001) after fix to 0.01: 1, vertex max 0.001, edge max 0.001
+checkEdge(0) errors: 0
+checkWire(0) errors: 0
+checkShell(0) errors: 0
+checkVertex(0) errors: 0
