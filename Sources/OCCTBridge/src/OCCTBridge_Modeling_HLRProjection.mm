@@ -732,6 +732,10 @@ OCCTShapeRef _Nullable OCCTHLRPolyGetEdgesByCategory(OCCTShapeRef _Nonnull shape
   if (category == OCCTHLREdgeVisibleIso || category == OCCTHLREdgeHiddenIso
       || category == OCCTHLREdgeVisibleOutline3d)
     return nullptr;
+  // #2879: see occtValidMeshDeflection (OCCTBridge_Internal.h). The refusal is the `nullptr` this
+  // function already gives a category it cannot produce.
+  if (!occtValidMeshDeflection(deflection))
+    return nullptr;
   try
   {
     // Ensure triangulation (caller-tunable: finer = more drawing detail, coarser = faster)

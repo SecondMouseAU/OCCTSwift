@@ -71,6 +71,7 @@ extension Shape {
     ///   - other: The shape to compare against.
     ///   - tolerance: Maximum distance (model units) at which two faces count as proximate.
     ///   - deflection: Linear mesh deflection (mm) for the proximity triangulation. Default `0.1`.
+    ///     A value below `1e-7`, a negative one, or NaN is refused and reports no pairs (#2879).
     /// - Returns: The index pairs of faces closer than the tolerance, empty when none are.
     ///
     /// ```swift
@@ -1648,7 +1649,8 @@ extension Shape {
     ///     drawing (more, shorter edges); larger = coarser and faster. Default `0.1`. Meshing is
     ///     *incremental* (`BRepMesh_IncrementalMesh`): it refines but never coarsens an existing
     ///     triangulation, so on a shape already meshed more finely (e.g. by a prior export) this
-    ///     value is a floor, not an override.
+    ///     value is a floor, not an override. A value below `1e-7`, a negative one, or NaN is
+    ///     refused and returns `nil` (#2879).
     /// - Note: `.visibleIso`, `.hiddenIso`, and `.visibleOutline3d` are not available for poly HLR.
     /// - Returns: The projected polyline edges, or nil if the projection failed.
     public func hlrPolyEdges(

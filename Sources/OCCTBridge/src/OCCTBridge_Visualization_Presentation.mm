@@ -281,6 +281,11 @@ bool OCCTShapeGetShadedMesh(OCCTShapeRef shape, double deflection, OCCTShadedMes
   out->indices       = nullptr;
   out->triangleCount = 0;
 
+  // #2879: see occtValidMeshDeflection (OCCTBridge_Internal.h) for the bound and whose call site
+  // it comes from. The refusal is the `false` this function already gives a shape it cannot mesh.
+  if (!occtValidMeshDeflection(deflection))
+    return false;
+
   try
   {
     BRepMesh_IncrementalMesh mesher(shape->shape, deflection);
@@ -475,6 +480,13 @@ bool OCCTShapeGetEdgeMesh(OCCTShapeRef shape, double deflection, OCCTEdgeMeshDat
   out->vertexCount   = 0;
   out->segmentStarts = nullptr;
   out->segmentCount  = 0;
+
+  // #2879: see occtValidMeshDeflection (OCCTBridge_Internal.h) for the bound and whose call site
+  // it comes from. This is the tessellator's own bound, the second consumer the #2872 comment
+  // below names, and it is why that one could not sit at this entry point. The refusal is the
+  // `false` this function already gives a shape it cannot mesh.
+  if (!occtValidMeshDeflection(deflection))
+    return false;
 
   try
   {
@@ -1095,6 +1107,12 @@ bool OCCTShapeGetShadedMeshWithDrawer(OCCTShapeRef        shape,
   out->indices       = nullptr;
   out->triangleCount = 0;
 
+  // #2879: see occtValidMeshDeflection (OCCTBridge_Internal.h). Prs3d::GetDeflection already
+  // applies the same floor to the relative branch, and `std::max(NaN, x)` returns NaN, so a
+  // drawer carrying a NaN coefficient or a NaN MaximalChordialDeviation still arrives here.
+  if (!occtValidMeshDeflection(deflection))
+    return false;
+
   try
   {
     BRepMesh_IncrementalMesh mesher(shape->shape, deflection, Standard_False, angle);
@@ -1120,6 +1138,11 @@ bool OCCTShapeGetEdgeMeshWithDrawer(OCCTShapeRef shape, OCCTDrawerRef drawer, OC
   out->vertexCount   = 0;
   out->segmentStarts = nullptr;
   out->segmentCount  = 0;
+
+  // #2879: see occtValidMeshDeflection (OCCTBridge_Internal.h). Same NaN route through the drawer
+  // as OCCTShapeGetShadedMeshWithDrawer above.
+  if (!occtValidMeshDeflection(deflection))
+    return false;
 
   try
   {
