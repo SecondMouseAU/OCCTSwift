@@ -1,0 +1,4 @@
+[ext string array has] tag 351: FindAttribute before Set=false, after setExtStringArray(["A"])=true
+[ext string list has] tag 362: FindAttribute before Set=false, after setExtStringList(["A"])=true
+[integer list has] tag 332: FindAttribute before Set=false, after setIntegerList([1])=true
+[integer array out of bounds] initIntegerArray(0, 2): found=true Lower=0 Upper=2 index 99 within bounds=false; the raw Value(99) raised Standard_OutOfRange=false and returned a value=true

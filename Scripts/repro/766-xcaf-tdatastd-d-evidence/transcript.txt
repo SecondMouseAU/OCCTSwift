@@ -1,0 +1,5 @@
+[named data multiple] label 0:1:1: same attribute reused=true; HasInteger(count)=true count=5 HasReal(weight)=true weight=12.5 HasString(material)=true material="Steel"
+[notebook append real] tag 201: New returned a notebook=true, Append(3.14) returned an attribute=true child tag=1 (the bridge returns this tag, so a non-null attribute is a non-nil result)
+[notebook append integer] tag 202: New returned a notebook=true, Append(42) returned an attribute=true child tag=1
+[notebook multiple appends] tag 203: child tags real=1 real=2 integer=3; all attributes returned=true first two tags differ=true
+[real list has] tag 342: FindAttribute before Set=false, after setRealList([1.0])=true
