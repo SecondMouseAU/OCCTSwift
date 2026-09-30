@@ -842,7 +842,7 @@ JavaScriptKit reactor shape, which is Phase 5.
   require a check that has not yet reported.
 - ~~**Still open: the per-domain suites.**~~ **Done (#2793), and this closes the third condition on
   Phase 0's GO.** 13 targets run; five cannot exist on the platform and `Package.swift` says which and
-  why, with the measurements in `Scripts/repro/2793/`. Of the five, `OCCTThreadTests` is the honest
+  why, with the measurements in `Scripts/repro/2793/`. Of the five, `OCCTThreadTests` is the clearest
   case: its subject is concurrency and wasip1 non-threads has one thread by construction, so those 28
   files have no meaning here rather than failing here. The other four are `autoreleasepool`,
   `DispatchQueue`, `NSLock` and `ProcessInfo`, which is a narrowing job rather than a platform wall.

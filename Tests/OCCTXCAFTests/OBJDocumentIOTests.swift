@@ -53,7 +53,13 @@ struct OBJDocumentIOTests {
             """
         let tmpPath = NSTemporaryDirectory() + "swift_test_v59_obj_sp.obj"
         let url = URL(fileURLWithPath: tmpPath)
-        try obj.write(to: url, atomically: true, encoding: .utf8)
+        // `atomically: false` because `atomically: true` cannot work on WASI: it writes a temp
+        // file and renames it, and the rename is unsupported there (`NSCocoaErrorDomain Code=3328`).
+        // Nothing is lost by dropping it. Atomicity protects a reader from seeing a half-written
+        // file after a crash mid-write, and this is a fixture written and consumed by one test in
+        // one process. Measured by #2793's wasm run, which failed these tests on the fixture write
+        // rather than on anything they assert.
+        try obj.write(to: url, atomically: false, encoding: .utf8)
 
         func firstFaceNodes(singlePrecision: Bool) throws -> [SIMD3<Double>] {
             let doc = try #require(Document.loadOBJ(from: url, singlePrecision: singlePrecision))

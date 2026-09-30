@@ -654,7 +654,7 @@ let wasmUnportableTestTargets: Set<String> = [
 // wrapping a file or a function body in `#if` makes swift-format reindent the whole body, which
 // turned a 28-line change into a 1,400-line reformat when it was tried.
 //
-// Two of these four are the honest kind of exclusion and two are not, which is worth saying rather
+// Two of these four lose nothing and two lose real coverage, which is worth saying rather
 // than leaving for a reviewer to notice:
 //
 //   Issue208SelfIntersectionTests.swift and Issue772SelfIntersectionAnalysisTests.swift are ABOUT
