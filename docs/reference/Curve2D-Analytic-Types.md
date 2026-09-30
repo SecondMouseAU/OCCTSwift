@@ -1153,6 +1153,16 @@ its preconditions as `Standard_*_Raise_if`, which the pinned kernel compiles to 
 `true` while writing past the pole array, with no signal in 20 of 20 runs, and `index: 1000000`
 SIGBUSed.
 
+The pole ceiling is one lower than `Curve2D.bezier(poles:weights:)`'s, which builds
+`bezierMaxDegree + 1` poles, and that gap is OCCT's rather than ours. Both `InsertPoleAfter`
+implementations, 2D and 3D, refuse on `nbpoles >= MaxDegree()`, while both header comments promise
+a ceiling of `MaxDegree + 1` **resulting** poles and both constructors apply exactly that. The
+strict bound is kept here deliberately: `Geom_BezierCurve` throws on the insertion this refuses,
+that throw is a literal one the bridge cannot relax, and matching it is what makes `Curve2D` and
+`Curve3D` answer the same. Measured at every boundary in
+[`Scripts/repro/2875/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/2875)
+and recorded in [known-occt-bugs](../../okf/references/known-occt-bugs.md) (#2875).
+
 ---
 
 ### `bezierRemovePole(_:)`

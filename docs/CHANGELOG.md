@@ -21,6 +21,12 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+```markdown
+### The Bezier pole ceiling is stated three times and stated differently (#2875)
+
+`Geom2d_BezierCurve` and `Geom_BezierCurve` disagree with themselves about how many poles a Bezier may hold. Both sets of constructors refuse on `nbpoles > MaxDegree() + 1` and `Increase()` on `Deg > MaxDegree()`, so both top out at 26 poles; `InsertPoleAfter` refuses on `nbpoles >= MaxDegree()` and tops out at 25, one short of both and one short of its own header comment, which reads "Raised if the resulting number of poles is greater than MaxDegree + 1". The two classes carry the identical predicate, so the 3D twin has the same defect; they differ only in that the 3D one is a live literal `throw` and the 2D one a macro the Release kernel deletes, which is why the 2D kernel performs the insertion the 3D kernel refuses and produces a sound 26-pole curve. Measured at every boundary in `Scripts/repro/2875/`, recorded in `okf/references/known-occt-bugs.md`, and pinned by `Issue2875BezierPoleCeilingTests`. **No behaviour changes**: `OCCTCurve2DBezierInsertPoleAfter` keeps the strict kernel bound so `Curve2D` and `Curve3D` answer the same, and the upstream one-character fix is held for the OCCT 8.0.2 survey. `Curve3D.Bezier.insertPoleAfter(index:point:)` gains the documentation it had none of.
+```
+
 ### `Extrema_ExtSS::Points` and `Extrema_ExtCS::Points` no longer read an empty point sequence on a parallel pair (#2840)
 
 Carried OCCT patch `0044`. Both classes count their extrema with `NbExt() == mySqDist.Length()` and
