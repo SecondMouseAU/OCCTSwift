@@ -612,8 +612,13 @@ is derived, never chosen: `python3 Scripts/count-operations.py`.
    then **check the asset itself, not the count**:
    `python3 Scripts/check-pinned-asset-patches.py --require-asset`. The count compares prose
    against the tree and is blind to what is baked into the binary, which is how a thirty-one-patch
-   asset shipped under a twenty-nine-patch label (#2190). Finally retire the bridge-side
-   mitigations listed under Known OCCT Bugs above.
+   asset shipped under a twenty-nine-patch label (#2190). On the machine that built the kernel,
+   which is the only one with the tree, also re-derive what the repo has committed **about** that
+   tree: `python3 Scripts/census-compiled-out-validation.py --reverify-table --require-occt-src`
+   and the same with `--verify-no-exception-regions`, per step 1b of
+   [Shipping a rebuild](docs/guides/building-occt.md#shipping-a-rebuild). Nothing did, and
+   `Scripts/occt-raise-if-map.txt` went two pins describing a kernel we had stopped shipping
+   (#2885). Finally retire the bridge-side mitigations listed under Known OCCT Bugs above.
 5. **Verify.** Full `swift test`, every gate with its `--self-test`, and `Scripts/tsan-stress.sh all`
    if anything touched concurrency.
 6. **Counts.** `python3 Scripts/count-operations.py` must agree with README.md,
