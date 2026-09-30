@@ -1178,7 +1178,12 @@ PACKAGE_ARCHIVE = 'libOCCTSwift.a'
 
 
 def artefact_dirs(name, base=None, depth=MODULE_SEARCH_DEPTH):
-    """Directories under `.build` holding a file called `name`, most recently written first.
+    """Directories under `.build` holding an entry called `name`, most recently written first.
+
+    An *entry*, not a file: `Path.glob` matches a directory as readily as a file and `stat()`
+    works on both, so `artefact_dirs('OCCTSwift.build')` finds the per-target object directory
+    exactly as `artefact_dirs('libOCCTSwift.a')` finds the archive. Read as file-only on PR #2889
+    and reported as dead code, which a self-test case now settles.
 
     `module_dirs`' argument, applied to the other artefacts: SwiftPM has shipped at least three
     layouts this script has met, and neither the archive nor the merged object has to sit where
@@ -2296,6 +2301,31 @@ def _self_test_run_stage():
         globals()['product_targets'] = real_targets
         shutil.rmtree(targeted, ignore_errors=True)
 
+    # ...and the same search under `.build` at large, for the module that is not beside them.
+    # This path exists because none of the three layouts met so far promises that the module and
+    # the compiled code share a directory, and it was read on PR #2889 as dead code on the
+    # grounds that `artefact_dirs` can only find a file: `Path.glob` matches a directory too,
+    # which is what this case settles rather than leaves to a reading of the docs.
+    faraway = pathlib.Path(tempfile.mkdtemp(prefix='occt-doc-farobjs-'))
+    real_targets = globals()['product_targets']
+    try:
+        far_bin = faraway / '.build' / 'arm64-apple-macosx' / 'debug'
+        (far_bin / 'OCCTSwift.build').mkdir(parents=True)
+        (far_bin / 'OCCTSwift.build' / 'Shape.swift.o').write_bytes(b'')
+        (far_bin / 'libOCCT-macos.a').write_bytes(b'!<arch>\n')
+        elsewhere_mod = faraway / '.build' / 'elsewhere' / 'Modules'
+        elsewhere_mod.mkdir(parents=True)
+        globals()['product_targets'] = lambda product=PACKAGE_PRODUCT, base=None: (
+            'OCCTSwift', 'OCCTBridge', 'OCCT')
+        got = link_args(elsewhere_mod, base=faraway)
+        case('the per-target objects are found under .build when they are not beside the module',
+             got is not None
+             and str(far_bin / 'OCCTSwift.build' / 'Shape.swift.o') in got
+             and '-lOCCT-macos' in got, repr(got))
+    finally:
+        globals()['product_targets'] = real_targets
+        shutil.rmtree(faraway, ignore_errors=True)
+
     # ...and with nothing to find anywhere, it says so rather than returning a partial link.
     empty = pathlib.Path(tempfile.mkdtemp(prefix='occt-doc-noarchive-'))
     try:
@@ -2305,7 +2335,7 @@ def _self_test_run_stage():
     finally:
         shutil.rmtree(empty, ignore_errors=True)
 
-    fixed_cases = 9
+    fixed_cases = 10
     if shutil.which('swiftc') is None and shutil.which('xcrun') is None:
         return failures, fixed_cases, fixed_cases + 5
 
