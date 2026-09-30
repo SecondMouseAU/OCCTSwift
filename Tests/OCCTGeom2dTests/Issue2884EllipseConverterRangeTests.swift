@@ -3,11 +3,12 @@ import simd
 
 @testable import OCCTSwift
 
-/// #2884: `Convert_EllipseToBSplineCurve`'s arc constructor states its only precondition,
-/// `0 < ULast - UFirst <= 2*pi + PConfusion()`, as a `Standard_DomainError_Raise_if` whose two
-/// condition locals sit inside the `#ifndef No_Exception` region with it.
+/// The ellipse converter's parameter range, which the kernel states and does not check.
 ///
-/// The pinned Release kernel defines `No_Exception`, so nothing is left of either. The constructor
+/// #2884: the arc constructor of `Convert_EllipseToBSplineCurve` states its only precondition,
+/// `0 < ULast - UFirst <= 2*pi + PConfusion()`, as a `Standard_DomainError_Raise_if` whose two
+/// condition locals sit inside the `#ifndef No_Exception` region with it. The pinned Release
+/// kernel defines `No_Exception`, so nothing is left of either. The constructor
 /// hands the range to `Convert_ConicToBSplineCurve::BuildCosAndSin`, which derives
 /// `num_spans = trunc(1.2 * delta / pi) + 1` and `num_poles = 2 * num_spans + 1` from it. Measured
 /// in `Scripts/repro/2884`, one process per case:

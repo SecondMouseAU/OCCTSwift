@@ -3,8 +3,10 @@ import simd
 
 @testable import OCCTSwift
 
-/// #2884: adjudicating `GeomFill_Profiler`'s `#ifndef No_Exception` region found two defects the
-/// region is not about, both uncatchable and both two lines of public Swift away.
+/// The curve index and empty-profiler bounds that `GeomFill_Profiler` states and does not check.
+///
+/// #2884: adjudicating this class's `#ifndef No_Exception` region found two defects the region is
+/// not about, both uncatchable and both two lines of public Swift away.
 ///
 /// The named region, at `GeomFill_Profiler.cxx:334`, swallows `int n = NbKnots()` and the check it
 /// fed asks whether the caller's `Knots` and `Mults` are that long.
