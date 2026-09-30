@@ -258,13 +258,36 @@ copying:
   exits early, a pump thread reading nothing, a watchdog that never fires.
 
 And one more instance of **an artefact this repo has already been caught reading badly twice**,
-now a third time. The run stage links against `libOCCTSwift.a`, which the type-check stage never
-needed, and the first version took any `lib*.a` beside the module. On the CI runner the module's
-own directory held the OCCT kernel archive and nothing else, so the link failed on every
-`OCCTSwift` symbol, which looks exactly like finding no archive at all and cost a round trip to
-read. It now looks for that file **by name**, beside the module and then under `.build`, says in
-the refusal where it looked and what it found, and `ci.yml` deletes the archive alongside the
-module before the build for #2867's own reason.
+now three more times in the one PR. The run stage links against compiled code the type-check stage
+never needed, and each of the first two attempts answered a question nobody had put to the build
+system.
+
+The first took any `lib*.a` beside the module. On the CI runner the module's own directory held
+the OCCT kernel archive and nothing else, so the link failed on every `OCCTSwift` symbol, which
+looks exactly like finding no archive at all. The second looked for `libOCCTSwift.a` and
+`OCCTSwift.o` **by name**, beside the module and then under `.build`, and reported both as
+nowhere, which reads as a broken build rather than as a wrong search. **Neither file exists on the
+runner and neither ever did.** `OCCTSwift` is an *automatic* library product, so whether a
+standalone archive is written at all is SwiftPM's choice and not the manifest's: the Swift Build
+backend (`swiftbuild`, the default since Swift 6.4, which is what a laptop runs here) writes both
+into `.build/out/Products/Debug`, and the llbuild backend (`native`, still the default in the
+Xcode the runner has) writes **neither, anywhere**. It compiles each target into
+`<bin>/<Target>.build/` and links those objects straight into every executable.
+
+The third asks. `swift package describe --type json` names the targets behind the `OCCTSwift`
+product, a measured 0.7 s against a resolved package, and the objects are taken from each of those
+targets' own directories beside the module: `rglob`, not `glob`, because a Clang target nests its
+objects under the source directory they came from, so the 74 bridge objects are in
+`OCCTBridge.build/src/`. The refusal prints what all three searches saw, including the target list
+and whether `describe` could be read at all. `ci.yml` still deletes `libOCCTSwift.a` alongside the
+module before the build for #2867's own reason, and the per-target objects need no such step
+because they are only ever read from the directory holding the module whose age is already
+checked.
+
+**The layout was reproduced locally before the line was changed**, with
+`swift build --build-system native`, which is the whole lesson of the two failed attempts: in that
+tree the fix passes 1,735 of 1,735 and reverting it reproduces the CI refusal word for word.
+Guessing at a remote layout costs a round trip per guess; reproducing it costs one build.
 
 Its backlog was two, both fixed in the same PR, so it gated on its first day under the rule below:
 an untrimmed `Curve3D.circularHelix` whose `drawAdaptive()` subdivides an infinite domain forever,

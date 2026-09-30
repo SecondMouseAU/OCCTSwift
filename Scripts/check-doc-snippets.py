@@ -234,7 +234,9 @@ from __future__ import annotations
 
 import argparse
 import contextlib
+import functools
 import io
+import json
 import os
 import pathlib
 import re
@@ -1199,25 +1201,99 @@ def archive_dirs(base=None, depth=MODULE_SEARCH_DEPTH):
     return artefact_dirs(PACKAGE_ARCHIVE, base=base, depth=depth)
 
 
-# The merged object the llbuild layout writes per target when it writes no archive. Measured on
-# the CI runner, which produced `<bin>/Modules/OCCTSwift.swiftmodule` and no `lib*.a` at all,
-# while a local build of the same manifest produced both.
+# The merged object the Swift Build backend writes beside the archive. A last resort, one file
+# and free to look for, kept because a layout that writes it and no archive is cheap to survive.
 PACKAGE_OBJECT = 'OCCTSwift.o'
+
+# The library product this stage links against. Its NAME is all that is written here; which
+# targets stand behind it is SwiftPM's answer, not a list in this file. See `product_targets`.
+PACKAGE_PRODUCT = 'OCCTSwift'
+
+
+@functools.lru_cache(maxsize=None)
+def product_targets(product=PACKAGE_PRODUCT, base=None):
+    """The targets `product` is built from, transitively, as SwiftPM itself reports them.
+
+    **`swift package describe --type json`, because the two layouts disagree about everything
+    except this.** `OCCTSwift` is an *automatic* library product, so whether a standalone archive
+    is written at all is SwiftPM's choice and not the manifest's: the Swift Build backend
+    (`swiftbuild`, the default since Swift 6.4 and what a laptop runs here) writes
+    `libOCCTSwift.a` and `OCCTSwift.o` into `.build/out/Products/Debug`, and the llbuild backend
+    (`native`, still the default in the Xcode 26.3 the runner has) writes **neither**, anywhere.
+    It compiles each target into `<bin>/<Target>.build/` and links those objects straight into
+    every executable. Two CI round trips were spent looking for a file that layout never writes.
+
+    The target set is the one thing that does not vary, and asking for it costs a measured 0.7 s
+    against a resolved package. A list written here instead would be a fourth guess: today the
+    answer is `OCCTSwift`, `OCCTBridge` and `OCCTPlatform`, and `OCCTPlatform` joined it in #2839.
+
+    Returns a tuple, most-depended-on last, or `()` when `describe` cannot be run or does not
+    know the product. An empty answer is not silently fatal: `link_inventory` prints why.
+    """
+    root = REPO if base is None else pathlib.Path(base)
+    if not (root / 'Package.swift').is_file():
+        return ()
+    try:
+        proc = subprocess.run(['swift', 'package', 'describe', '--type', 'json'],
+                              cwd=str(root), capture_output=True, text=True, timeout=180)
+    except (OSError, subprocess.SubprocessError):
+        return ()
+    if proc.returncode != 0:
+        return ()
+    try:
+        described = json.loads(proc.stdout)
+    except ValueError:
+        return ()
+    deps = {t.get('name'): tuple(t.get('target_dependencies') or ())
+            for t in described.get('targets', [])}
+    roots = [tuple(p.get('targets') or ()) for p in described.get('products', [])
+             if p.get('name') == product]
+    if not roots:
+        return ()
+    seen, queue = [], list(roots[0])
+    while queue:
+        name = queue.pop(0)
+        if name in seen or name not in deps:
+            continue
+        seen.append(name)
+        queue.extend(deps[name])
+    return tuple(seen)
+
+
+def target_object_dirs(bin_dir, targets):
+    """The `<Target>.build` directories under `bin_dir` that exist, in `targets` order.
+
+    A binary target such as `OCCT` has no such directory, which is why this filters rather than
+    demanding one per target: the kernel arrives as `libOCCT-macos.a` in the bin root and is
+    picked up by the `lib*.a` glob alongside.
+    """
+    dirs = []
+    for name in targets:
+        d = bin_dir / f'{name}.build'
+        if d.is_dir():
+            dirs.append(d)
+    return dirs
 
 
 def link_args(module_dir, base=None):
     """Flags that link an executable against the built package, or None.
 
-    Two shapes, because SwiftPM emits two. **The merged static archive** is preferred: checked
-    beside the module first (`module_dir` may be the bin root or its `Modules/` subdirectory,
-    #2867), then searched for under `.build`. Every `lib*.a` in whichever directory holds it is
-    passed, rather than a fixed list of names, since SwiftPM merges every target and the whole
-    OCCT kernel into one archive here and a layout that splits them still answers the glob.
+    Three shapes, because SwiftPM emits three and which one a machine gets is the build system's
+    choice rather than the manifest's (see `product_targets`).
 
-    **The per-target objects** are the fallback, for the layout CI turned out to use: measured on
-    the runner, `swift build` wrote `<bin>/Modules/OCCTSwift.swiftmodule` and no archive anywhere
-    under `.build`. The objects are passed directly rather than through `-l`, which is why they
-    cannot be mixed with the archive: both define the same symbols.
+    1. **The merged static archive**, preferred: `libOCCTSwift.a` beside the module (`module_dir`
+       may be the bin root or its `Modules/` subdirectory, #2867), then searched for under
+       `.build`. Every `lib*.a` in whichever directory holds it is passed, rather than a fixed
+       list of names, since this layout merges every target and the whole OCCT kernel into one
+       archive and a layout that splits them still answers the glob.
+    2. **The per-target objects**, which is what the runner has: no archive exists, and the
+       compiled code is `<bin>/<Target>.build/**/*.o` for each target behind the `OCCTSwift`
+       product. `rglob`, not `glob`, because a Clang target nests its objects under the source
+       directory they came from: the 74 bridge objects are in `OCCTBridge.build/src/`.
+    3. **A single merged `OCCTSwift.o`**, the last resort.
+
+    The objects are passed directly rather than through `-l`, which is why a shape cannot be
+    mixed with the archive: both define the same symbols.
 
     Reading a cached artefact is the #2867 trap on a second artefact, and the answer is the same
     one: `ci.yml` deletes the archive alongside the module before the build, so anything found
@@ -1228,6 +1304,16 @@ def link_args(module_dir, base=None):
             return _archive_flags(d)
     for d in archive_dirs(base):
         return _archive_flags(d)
+    targets = product_targets(base=base)
+    if targets:
+        for d in (module_dir, module_dir.parent):
+            dirs = target_object_dirs(d, targets)
+            if dirs:
+                return _target_flags(d, dirs)
+        for d in artefact_dirs(f'{targets[0]}.build', base):
+            dirs = target_object_dirs(d, targets)
+            if dirs:
+                return _target_flags(d, dirs)
     for d in (module_dir, module_dir.parent):
         if (d / PACKAGE_OBJECT).is_file():
             return _object_flags(d)
@@ -1240,6 +1326,12 @@ def _archive_flags(d):
     return ['-L', str(d)] + [f'-l{a.stem[3:]}' for a in sorted(d.glob('lib*.a'))] + ['-lc++']
 
 
+def _target_flags(bin_dir, dirs):
+    objects = sorted(str(o) for d in dirs for o in d.rglob('*.o'))
+    return (objects + ['-L', str(bin_dir)]
+            + [f'-l{a.stem[3:]}' for a in sorted(bin_dir.glob('lib*.a'))] + ['-lc++'])
+
+
 def _object_flags(d):
     return ([str(o) for o in sorted(d.glob('*.o'))]
             + ['-L', str(d)] + [f'-l{a.stem[3:]}' for a in sorted(d.glob('lib*.a'))]
@@ -1247,7 +1339,14 @@ def _object_flags(d):
 
 
 def link_inventory(module_dir, base=None):
-    """What the two searches actually saw, for a refusal that names it rather than a directory."""
+    """What the three searches actually saw, for a refusal that names it rather than a directory.
+
+    Deliberately long, and it prints on a refusal only. #2867's refusal named one directory and
+    left "was this build's artefact there at all" to arithmetic across three jobs' logs; this
+    refusal's own predecessor named two filenames and so reported "nowhere" about a layout that
+    writes neither of them, which reads as a broken build rather than a wrong search. Each line
+    is capped at eight or twelve names, so the whole block is about twenty-five lines.
+    """
     lines = []
     for d in (module_dir, module_dir.parent):
         if not d.is_dir():
@@ -1255,9 +1354,14 @@ def link_inventory(module_dir, base=None):
             continue
         archives = sorted(p.name for p in d.glob('lib*.a'))
         objects = sorted(p.name for p in d.glob('*.o'))
+        builds = sorted(p.name for p in d.glob('*.build') if p.is_dir())
         lines.append(f'  {d}: {len(archives)} lib*.a {archives[:8]}, '
-                     f'{len(objects)} *.o {objects[:8]}')
-    for name in (PACKAGE_ARCHIVE, PACKAGE_OBJECT):
+                     f'{len(objects)} *.o {objects[:8]}, '
+                     f'{len(builds)} *.build {builds[:12]}')
+    targets = product_targets(base=base)
+    lines.append(f'  targets behind the {PACKAGE_PRODUCT} product, per '
+                 f'`swift package describe`: {list(targets) if targets else "could not be read"}')
+    for name in (PACKAGE_ARCHIVE, PACKAGE_OBJECT) + tuple(f'{t}.build' for t in targets):
         found = artefact_dirs(name, base)
         lines.append(f'  {name} under .build (depth {MODULE_SEARCH_DEPTH}): '
                      + (', '.join(str(d) for d in found) if found else 'nowhere'))
@@ -1416,9 +1520,16 @@ def execute_stage(cases, tc_args, stall=DEFAULT_STALL, keep=None, verbose=False,
     # sharing it puts 3,183 uncompilable fragments into the runner. Measured, once.
     outdir = (pathlib.Path(keep) / 'run') if keep else pathlib.Path(
         tempfile.mkdtemp(prefix='occt-doc-run-'))
+    # Emptied on entry, and only `--keep` can ever find anything here to empty. Reported on
+    # PR #2889: the directory used to be created with `exist_ok=True`, so a second `--keep` run
+    # inherited the first one's output twice over. A snippet reading a file an earlier run's
+    # snippet wrote would pass for the wrong reason, which is a correctness hole in a gate; and
+    # `build_runner` globs `*.swift` here, so a previous run's generated cases were compiled into
+    # this one. `--keep` is about what survives *after* a run, which this does not touch.
+    shutil.rmtree(outdir, ignore_errors=True)
     outdir.mkdir(parents=True, exist_ok=True)
     sandbox = outdir / 'cwd'
-    sandbox.mkdir(exist_ok=True)
+    sandbox.mkdir()
     try:
         canary_at = generate_runner(cases, outdir, canary=canaries, imports=imports)
         total = len(cases) + (1 if canaries else 0)
@@ -1442,9 +1553,10 @@ def execute_stage(cases, tc_args, stall=DEFAULT_STALL, keep=None, verbose=False,
             for d in searched:
                 inventory += link_inventory(d)
             return {}, 0.0, SkipNote(
-                f'neither {PACKAGE_ARCHIVE} nor {PACKAGE_OBJECT} was found, so nothing can be '
-                'linked against. The type-check stage needs only a .swiftmodule; this stage '
-                'needs the compiled code too. Run `swift build`. What the search saw:\n'
+                f'no {PACKAGE_ARCHIVE}, no per-target objects and no {PACKAGE_OBJECT} were '
+                'found, so nothing can be linked against. The type-check stage needs only a '
+                '.swiftmodule; this stage needs the compiled code too. Run `swift build`. '
+                'What the search saw:\n'
                 + '\n'.join(inventory),
                 fatal=True)
         exe, detail = build_runner(outdir, tc_args, extra_link=extra_link, verbose=verbose)
@@ -2148,6 +2260,42 @@ def _self_test_run_stage():
     finally:
         shutil.rmtree(objonly, ignore_errors=True)
 
+    # The layout the runner turned out to use, and the one two attempts at this missed: no
+    # archive and no merged object anywhere under `.build`, the compiled code in
+    # `<bin>/<Target>.build/`, one directory per target behind the product, and the Clang
+    # target's objects one level deeper again under the source directory they came from.
+    # Reproduced locally with `swift build --build-system native`, which is what the runner's
+    # SwiftPM still defaults to while a laptop on Swift 6.4 defaults to `swiftbuild`.
+    #
+    # `product_targets` is stubbed because the fixture is a bare directory with no manifest in
+    # it, and what this case is about is the search, not the `describe` call. The `describe` call
+    # is the case below, against the real tree.
+    targeted = pathlib.Path(tempfile.mkdtemp(prefix='occt-doc-targetobjs-'))
+    real_targets = globals()['product_targets']
+    try:
+        tgt_bin = targeted / '.build' / 'arm64-apple-macosx' / 'debug'
+        (tgt_bin / 'Modules').mkdir(parents=True)
+        (tgt_bin / 'OCCTSwift.build').mkdir()
+        (tgt_bin / 'OCCTSwift.build' / 'Shape.swift.o').write_bytes(b'')
+        (tgt_bin / 'OCCTBridge.build' / 'src').mkdir(parents=True)
+        (tgt_bin / 'OCCTBridge.build' / 'src' / 'OCCTBridge.mm.o').write_bytes(b'')
+        (tgt_bin / 'OCCTPlatform.build').mkdir()
+        (tgt_bin / 'OCCTPlatform.build' / 'Platform.swift.o').write_bytes(b'')
+        (tgt_bin / 'libOCCT-macos.a').write_bytes(b'!<arch>\n')
+        globals()['product_targets'] = lambda product=PACKAGE_PRODUCT, base=None: (
+            'OCCTSwift', 'OCCTBridge', 'OCCT', 'OCCTPlatform')
+        got = link_args(tgt_bin / 'Modules', base=targeted)
+        case('with no archive, every target behind the product contributes its objects, '
+             'including the Clang target nested under src/',
+             got is not None
+             and str(tgt_bin / 'OCCTSwift.build' / 'Shape.swift.o') in got
+             and str(tgt_bin / 'OCCTBridge.build' / 'src' / 'OCCTBridge.mm.o') in got
+             and str(tgt_bin / 'OCCTPlatform.build' / 'Platform.swift.o') in got
+             and '-lOCCT-macos' in got and '-lOCCTSwift' not in got, repr(got))
+    finally:
+        globals()['product_targets'] = real_targets
+        shutil.rmtree(targeted, ignore_errors=True)
+
     # ...and with nothing to find anywhere, it says so rather than returning a partial link.
     empty = pathlib.Path(tempfile.mkdtemp(prefix='occt-doc-noarchive-'))
     try:
@@ -2157,9 +2305,16 @@ def _self_test_run_stage():
     finally:
         shutil.rmtree(empty, ignore_errors=True)
 
-    fixed_cases = 8
+    fixed_cases = 9
     if shutil.which('swiftc') is None and shutil.which('xcrun') is None:
-        return failures, fixed_cases, fixed_cases + 3
+        return failures, fixed_cases, fixed_cases + 5
+
+    # The real tree, not a fixture: the target set the search above is driven by comes from
+    # SwiftPM rather than from a list in this file, so a `describe` that stops answering has to
+    # be a red case here and not a silent fall-through to the layouts CI does not have.
+    got = product_targets()
+    case('swift package describe names the targets behind the OCCTSwift product',
+         PACKAGE_PRODUCT in got and 'OCCTBridge' in got, repr(got))
 
     # End to end, with no OCCT in it: a plain Swift runner is enough to prove the driver names the
     # right case, resumes past it, and is not fooled by a silent one.
@@ -2213,7 +2368,29 @@ def _self_test_run_stage():
     finally:
         globals()['drive_runner'] = real
 
-    return failures, fixed_cases + 3, fixed_cases + 3
+    # `--keep` reuses `<keep>/run`, so a second run used to inherit the first one's output twice
+    # over (PR #2889 review). Both halves are planted here, because they fail differently: a file
+    # in the sandbox makes a snippet pass for the wrong reason, and a leftover generated case
+    # makes `build_runner`'s `*.swift` glob compile a program this run never wrote.
+    keepdir = pathlib.Path(tempfile.mkdtemp(prefix='occt-doc-keep-'))
+    try:
+        (keepdir / 'run' / 'cwd').mkdir(parents=True)
+        (keepdir / 'run' / 'cwd' / 'leftover.txt').write_text('an earlier run wrote this\n',
+                                                              encoding='utf-8')
+        (keepdir / 'run' / '__occtDocSnippetCase09999.swift').write_text(
+            'an earlier run left this and it is not Swift\n', encoding='utf-8')
+        keep_body = ['if FileManager.default.fileExists(atPath: "leftover.txt") {',
+                     '    fatalError("a previous run\'s sandbox survived")',
+                     '}']
+        outcomes, _, note = execute_stage(blocks_for([keep_body]), [], stall=20,
+                                          keep=str(keepdir), imports=plain_imports)
+        got = outcomes[0].kind if 0 in outcomes else 'missing'
+        case('--keep starts from an empty run directory, not a previous run\'s output',
+             note is None and got == 'ok', f'{got} note={note}')
+    finally:
+        shutil.rmtree(keepdir, ignore_errors=True)
+
+    return failures, fixed_cases + 5, fixed_cases + 5
 
 
 def _self_test_reporting():
