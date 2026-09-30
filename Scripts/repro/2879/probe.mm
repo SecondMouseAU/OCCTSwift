@@ -1,8 +1,11 @@
 // Ground-truth probe for #2879: what BRepMesh_IncrementalMesh does with a degenerate linear
 // deflection, on the kernel this repo pins.
 //
-// Usage: probe <deflection-literal>
+// Usage: probe <deflection-literal> [shape]
 //   e.g. probe 0.0 / probe 1e-12 / probe -1.0 / probe nan / probe 1e-7
+//   shape is "cylinder" (the default, a curved solid) or "box" (planar faces only), because
+//   whether a degenerate deflection is expensive at all depends on there being curvature to
+//   subdivide.
 //
 // Run each case in its own process under an external timeout: the zero case is reported (#2879)
 // not to return, and a hang cannot be caught in-process. run.sh does that.
@@ -15,6 +18,7 @@
 //     -lz -lc++ Scripts/repro/2879/probe.mm -o /tmp/occt_probe_2879
 
 #include <BRepMesh_IncrementalMesh.hxx>
+#include <BRepPrimAPI_MakeBox.hxx>
 #include <BRepPrimAPI_MakeCylinder.hxx>
 #include <BRep_Tool.hxx>
 #include <Poly_Triangulation.hxx>
@@ -44,7 +48,11 @@ int main(int argc, char** argv)
   std::printf("deflection = %g\n", defl);
   std::fflush(stdout);
 
-  TopoDS_Shape cyl = BRepPrimAPI_MakeCylinder(10.0, 5.0).Shape();
+  const char*  shapeArg = (argc > 2) ? argv[2] : "cylinder";
+  TopoDS_Shape cyl      = (std::strcmp(shapeArg, "box") == 0)
+                            ? BRepPrimAPI_MakeBox(10.0, 5.0, 3.0).Shape()
+                            : BRepPrimAPI_MakeCylinder(10.0, 5.0).Shape();
+  std::printf("shape = %s\n", shapeArg);
 
   try
   {
