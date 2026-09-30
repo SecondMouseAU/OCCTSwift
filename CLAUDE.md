@@ -153,6 +153,7 @@ required check it would fail every open PR for the previous merge's omission.
 
 ```bash
 python3 Scripts/check-doc-snippets.py              # GATE: every fenced swift snippet in docs/ and /// comments type-checks (#1683)
+python3 Scripts/check-doc-snippets.py --run        # ...and RUNS every one that compiles (#2851)
 python3 Scripts/check-doc-snippets.py --list       # inventory per kind, no compile
 python3 Scripts/check-doc-snippets.py --self-test
 ```
@@ -178,6 +179,30 @@ the script cannot derive. An elided placeholder is not one: `= ...`, `{ ... }`, 
 #2093 took that to zero. In CI both invocations take `--require-typecheck`, which fails the step
 rather than reporting on a population it never examined (#2098). A wrong signature *restatement* is
 a different question, and `check-docs-defaults.py` covers the enum case of it (#2145).
+
+**It runs them too, since #2851.** Type-checking says an example is a legal program, not that it
+works, and the strongest form of "does not work" is that running it takes the process down.
+`docs/reference/Surface-Analysis.md`'s `extrema(to:)` example was #2840's crash reproducer,
+carrying `≈ 10.0` as its expected answer, and it type-checked clean on every CI run for as long as
+#2840's defect existed. It compiles every snippet that type-checks into **one** executable (a
+link each would be over two hours for 1,735 of them), which announces each case and takes a
+starting index, so the driver restarts it past whatever killed it: a clean corpus is one process
+and each defect costs one more. A planted case that **must** die is the canary, the compile
+stages' device with its sign flipped, and the working directory is a scratch one, because a
+documented example that writes a STEP file writes it into `$PWD`. A snippet that compiles and must
+not be run says so on the page, in a marker distinct from `no-typecheck:` because it answers a
+different question. **It is the default, off by `--no-run`** rather than on by a flag CI passes,
+so a local run and CI cannot check different things; three runs each on one laptop measured a
+median 5 s without it and 18 s with it:
+
+    ```swift no-run: writes a 40 MB STEP file
+
+The reason is required, as with the other marker. A snippet that **throws** is not a failure: six
+do, all of them documented examples reading a `/tmp` path the repo does not ship. It gated on its
+first day because the backlog was two, both fixed in #2852's PR: an untrimmed
+`Curve3D.circularHelix` whose `drawAdaptive()` subdivides an infinite domain forever, and an
+untrimmed `Surface.cylinder` handed to `Shape.shell(from:)`, which is the User Directive about
+infinite surfaces, met in the reference documentation.
 
 **It does not build the module it compiles against, so it checks that module's age (#2816).** A
 `.swiftmodule` another branch left in `.build` makes a correct page look broken: an initialiser that

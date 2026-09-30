@@ -233,6 +233,38 @@ That sequence is the rule worth carrying, not the outcome: **measure the rate, f
 then gate.** #1407 is the same precedent. A detector promoted before its backlog is zero teaches
 people to ignore a red check, which costs more than the check was ever worth.
 
+**And type-checking was never the whole question, which is #2851.** A documented example that
+compiles and then takes the process down passed this gate, and one did:
+`docs/reference/Surface-Analysis.md`'s `extrema(to:)` entry was #2840's crash reproducer, carrying
+`≈ 10.0` as its expected answer, and it read as green for as long as #2840's defect existed. The
+issue offered four answers and leaned away from executing anything, on a cost argument nobody had
+priced. **Priced, the cost is 13 s**: three runs each on one laptop give a median 5 s to
+type-check 3,183 snippets and 18 s to type-check and then run the 1,735 that compile, of which
+about 6 s is the running and the rest is one compile and one link. So the answer is the one the
+issue called too expensive, and three design choices are what make it that cheap and are worth
+copying:
+
+- **One executable, not one per case.** Linking a single one-statement snippet against this
+  package's merged static archive is 4.4 s measured, so a link each is over two hours. Every
+  snippet becomes one function in one binary: one compile, one link, 1,735 cases in 7 s.
+- **A resume driver, not a process per case.** The binary takes a starting index and announces
+  each case before running it, so a crash names itself and the driver restarts past it. A clean
+  corpus is one process; each defect costs one more. The cost scales with the number of failures
+  rather than with the size of the population, which is the property that lets a per-PR check
+  execute 1,735 programs.
+- **A canary with the opposite sign.** The compile stages plant a file that must fail to compile;
+  this one plants a case that must fail to *run*. A driver reporting every case clean is
+  indistinguishable from a clean corpus, and the ways to get there are ordinary: a binary that
+  exits early, a pump thread reading nothing, a watchdog that never fires.
+
+Its backlog was two, both fixed in the same PR, so it gated on its first day under the rule below:
+an untrimmed `Curve3D.circularHelix` whose `drawAdaptive()` subdivides an infinite domain forever,
+and an untrimmed `Surface.cylinder` handed to `Shape.shell(from:)`. A snippet that **throws** is
+not a failure, and six do, every one of them a documented example reading a `/tmp` path the repo
+does not ship. A snippet that compiles and must not be run carries `no-run: <reason>` on the
+fence, a separate marker from `no-typecheck:` because it answers a separate question, with the
+reason required for the same reason.
+
 **Which is also what says when a detector may gate on its first day.** The sequence is about the
 backlog, not about a probationary period, so a detector whose backlog is *already* zero has nothing
 to work down and gating it immediately costs nobody a red check. `check-bridge-type-odr.py` (#2820)

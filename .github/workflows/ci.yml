@@ -459,15 +459,18 @@ jobs:
         run: swift build
 
       # #1683. This one cannot live in gate-scripts: that job is pure Python with no OCCT and no
-      # build, and type-checking a doc snippet needs the OCCTSwift module the step above just built.
-      # It is a CENSUS, so it exits 0 whatever it finds; the bare run still earns its place here
-      # because its output IS the number, and a minute against a build already paid for is the
-      # cheapest place to print it. Promotion to a gate is `--strict` plus a rename to `check-`,
-      # once the backlog it reports reaches zero. See okf/policies/static-gates.md.
+      # build, and type-checking a doc snippet needs the OCCTSwift module the step above just
+      # built. It is a GATE, promoted once #2092 and #2093 took its backlog to zero. See
+      # okf/policies/static-gates.md.
+      #
+      # Since #2851 it also RUNS every snippet that compiles, and that is the default rather than
+      # a flag this job passes, so a local run and this step cannot check different things.
+      # Measured on one laptop, three runs each: a median 5 s to type-check 3,183 snippets
+      # and 18 s to type-check and then run the 1,735 that compile.
       - name: check-doc-snippets --self-test
         run: python3 Scripts/check-doc-snippets.py --self-test --require-typecheck
 
-      - name: check-doc-snippets (every fenced Swift snippet type-checks)
+      - name: check-doc-snippets (every fenced Swift snippet type-checks, and runs)
         run: python3 Scripts/check-doc-snippets.py --require-typecheck
 
       # #2714: this single process runs all 6,388 tests in one `OCCTSwiftPackageTests` bundle
