@@ -1,0 +1,17 @@
+circle defaults: IsDone 1 HasResult 1 MaxError 0.000676011 degree 7 poles 13
+circle 1 seg deg 3 tol 1e-9: IsDone 1 HasResult 1 MaxError 5.10851 degree 3 poles 4
+circle 2 seg deg 3 tol 1e-9: IsDone 1 HasResult 1 MaxError 0.424165 degree 3 poles 7
+circle tol 1e-15: IsDone 1 HasResult 1 MaxError 4.59845e-05 degree 8 poles 605
+ellipse defaults: IsDone 1 HasResult 1 MaxError 0.000239135 degree 7 poles 13
+ellipse 1 seg deg 3: IsDone 1 HasResult 1 MaxError 24.1927 degree 3 poles 4
+ellipse deg 4 in 4 seg: IsDone 1 HasResult 1 MaxError 0.0533774 degree 5 poles 15
+line segment: IsDone 1 HasResult 1 MaxError 3.85891e-15 degree 1 poles 2
+ellipse seg 40 deg 5: IsDone 1 HasResult 1 MaxError 8.04551e-07 degree 5 poles 87
+ellipse seg 5 deg 40: IsDone 1 HasResult 1 MaxError 2.27106e-08 degree 14 poles 15
+square tol 1e-06: IsDone 1 periodic 1 closed 1 domain [0, 40]
+two points tol 1e-06: IsDone 1 periodic 1 closed 1 domain [0, 20]
+one point tol 1e-06: throws BSplCLib::Interpolate
+near-coincident tol 1e-06: IsDone 1 periodic 1 closed 1 domain [0, 20.001999999999999]
+near-coincident tol 1e-09: IsDone 1 periodic 1 closed 1 domain [0, 20.001999999999999]
+near-coincident tol 0.01: throws 
+non-planar tol 1e-05: IsDone 1 periodic 1 closed 1 domain [0, 29.393876913398138]

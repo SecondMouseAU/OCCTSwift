@@ -1,0 +1,21 @@
+Curve3D cusp bezier u=0: IsTangentDefined=1 Curvature=1.7976931348623157e+308
+  RealLast()=1.7976931348623157e+308
+Curve2D segment (0,0)-(10,0) u=5: IsTangentDefined=1 Curvature=0
+Curve2D dead bezier u=0.5: IsTangentDefined=0
+Curve2D circle r4 u=1: IsTangentDefined=1 Curvature=0.25
+Curve2D cusp bezier u=0: IsTangentDefined=1 Curvature=1.7976931348623157e+308
+box edge occurrences=24 with tangent defined and curvature exactly 0 at u=5: 24
+sphere degenerated edge: IsTangentDefined=0
+sphere degenerated edge: IsTangentDefined=0
+TopoDS::Edge(solid) threw TopoDS::Edge
+plane (u=3, v=4): IsCurvatureDefined=1 Gaussian=0 Mean=0
+cylinder r3 (u=1.1, v=6): IsCurvatureDefined=1 Gaussian=-0 Mean=-0.16666666666666666
+cone r0 semi pi/6 (u=0, v=1): IsCurvatureDefined=1 Gaussian=-0 Mean=-0.86602540378443882
+cone r0 semi pi/6 (u=0, v=0): IsCurvatureDefined=0
+sphere r5 (u=0, v=1.5708): IsCurvatureDefined=0
+circle r4 u=1: |d1xd2|^2=256 torsion=0
+line X u=5: |d1xd2|^2=0 torsion undefined
+helix-like bezier u=0.5: |d1xd2|^2=75.683703520550836 torsion=0.22972926879367631
+straight wire (0,0,0)-(10,0,0) t=0.5: |d1|=10 curvature=0
+circle wire r10 t=0.5: |d1|=62.831853071795862 curvature=0.10000000000000002
+cusp wire t=0: |d1|=0 curvature undefined

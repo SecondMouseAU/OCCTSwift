@@ -1,0 +1,11 @@
+average=9.9999999999999995e-08
+maximum=9.9999999999999995e-08
+minimum=9.9999999999999995e-08
+ordering min=9.9999999999999995e-08 avg=9.9999999999999995e-08 max=9.9999999999999995e-08 minLeAvg=1 avgLeMax=1
+overToleranceCount=0
+inToleranceRangeCount=30
+vertexAverage=9.9999999999999995e-08
+edgeAverage=9.9999999999999995e-08
+nullAverage=0
+nullOverToleranceCount=0
+nullInToleranceRangeCount=0

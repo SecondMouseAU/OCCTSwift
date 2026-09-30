@@ -122,7 +122,7 @@ python3 Scripts/census-comment-staleness.py      # CENSUS, not a gate: comments 
 python3 Scripts/census-api-reference-rows.py     # CENSUS, not a gate: API_REFERENCE category-row entries resolving to no declaration (#1679)
 python3 Scripts/census-dead-file-statics.py      # CENSUS, not a gate: bridge `static` definitions with no use in their own file (#1628)
 python3 Scripts/census-compiled-out-validation.py # CENSUS, not a gate: bridge protection resting on an OCCT check No_Exception removed (#2801)
-python3 Scripts/check-inventory-prose.py        # every counted claim about the patch and gate inventories matches them (#1408)
+python3 Scripts/check-inventory-prose.py        # every counted claim about the patch and gate inventories matches them (#1408), and occt-raise-if-map.txt's stamp names the patch set on disk (#2885)
 python3 Scripts/check-changelog-transcription.py # REPORT, never a gate: merges that landed with no CHANGELOG entry (#742, #2779)
 python3 Scripts/check-pinned-asset-patches.py --self-test  # RELEASE CHECK: only the self-test runs here; the real run reads the pinned asset (#2190)
 ```
@@ -571,6 +571,16 @@ to pick up patches. The lifecycle from GTest to upstream PR is
 [`okf/policies/upstream-occt-patch-process.md`](okf/policies/upstream-occt-patch-process.md) and
 [`okf/policies/upstream-occt-style.md`](okf/policies/upstream-occt-style.md).
 
+**A new patch means regenerating `Scripts/occt-raise-if-map.txt` in the same PR.** That map is a
+committed derivation of the PATCHED `Libraries/occt-src`, so a patch that adds or moves a raise
+site changes it, and nothing re-derived it for two pins: `0042` put a throw in
+`ShapeAnalysis::GetFaceUVBounds` and the map said `ShapeAnalysis` held no live throw while the
+kernel we ship held one (#2885). `python3 Scripts/census-compiled-out-validation.py --write-table`
+rewrites it from the tree `build-occt.sh` patched, and refuses a tree that does not carry every
+patch on disk. `check-inventory-prose.py` fails on every PR when the map's provenance stamp and
+`Scripts/patches/` disagree, and `kernel-integration.yml`, the one job with a tree, re-derives the
+rows themselves.
+
 `Scripts/patches-wasi/*.patch` are a different sequence: WASI-only, unnumbered, not upstream-bound,
 and applied by `build-occt-wasm.sh` alone, **after** the carried set. One rule governs them, and
 [`okf/policies/wasi-patch-base.md`](okf/policies/wasi-patch-base.md) owns it: a WASI patch is
@@ -612,8 +622,13 @@ is derived, never chosen: `python3 Scripts/count-operations.py`.
    then **check the asset itself, not the count**:
    `python3 Scripts/check-pinned-asset-patches.py --require-asset`. The count compares prose
    against the tree and is blind to what is baked into the binary, which is how a thirty-one-patch
-   asset shipped under a twenty-nine-patch label (#2190). Finally retire the bridge-side
-   mitigations listed under Known OCCT Bugs above.
+   asset shipped under a twenty-nine-patch label (#2190). On the machine that built the kernel,
+   which is the only one with the tree, also re-derive what the repo has committed **about** that
+   tree: `python3 Scripts/census-compiled-out-validation.py --reverify-table --require-occt-src`
+   and the same with `--verify-no-exception-regions`, per step 1b of
+   [Shipping a rebuild](docs/guides/building-occt.md#shipping-a-rebuild). Nothing did, and
+   `Scripts/occt-raise-if-map.txt` went two pins describing a kernel we had stopped shipping
+   (#2885). Finally retire the bridge-side mitigations listed under Known OCCT Bugs above.
 5. **Verify.** Full `swift test`, every gate with its `--self-test`, and `Scripts/tsan-stress.sh all`
    if anything touched concurrency.
 6. **Counts.** `python3 Scripts/count-operations.py` must agree with README.md,

@@ -1,0 +1,7 @@
+[boolean array set/get] tag 300, Set(1, 5): found=true Length=5 Lower=1 values(1..3)=1 0 1
+[boolean array has] tag 301: FindAttribute before Set=false, after setBooleanArray([true])=true
+[boolean array empty] tag 302, nothing set: FindAttribute=false (the bridge returns -1, which Swift reads as nil)
+[boolean list set/get] tag 310: found=true Extent=3 values(1..2)=1 0
+[boolean list has] tag 312: FindAttribute before Set=false, after setBooleanList([true])=true
+[byte array set/get] tag 320, Set(0, 3): found=true Length=4 Lower=0 values(0..3)=42 255 0 128
+[byte array has] tag 321: FindAttribute before Set=false, after setByteArray([1, 2, 3])=true

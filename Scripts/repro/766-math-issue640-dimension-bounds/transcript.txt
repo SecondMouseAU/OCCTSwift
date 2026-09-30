@@ -1,0 +1,4 @@
+gaussDeterminantBounds control: math_Gauss IsDone=1 Determinant=5
+gaussDeterminantSentinelDistinguishability singular: math_Gauss IsDone=0
+croutDeterminantBounds control: math_Crout IsDone=1 Determinant=8
+croutDeterminantSentinelDistinguishability singular: math_Crout IsDone=0

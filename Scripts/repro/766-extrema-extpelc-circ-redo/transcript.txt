@@ -1,0 +1,6 @@
+pointToCircle: point=(10, 0, 0) done=1 nbExt=2
+  [1] squareDistance=25 isMin=1 point=(5, 0, 0)
+  [2] squareDistance=225 isMin=0 point=(-5, 6.1232339957367663e-16, 0)
+pointOnCircle: point=(5, 0, 0) done=1 nbExt=2
+  [1] squareDistance=0 isMin=1 point=(5, 0, 0)
+  [2] squareDistance=100 isMin=0 point=(-5, 6.1232339957367663e-16, 0)

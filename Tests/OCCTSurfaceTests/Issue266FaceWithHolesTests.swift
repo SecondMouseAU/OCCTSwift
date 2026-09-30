@@ -8,8 +8,10 @@ import simd
 @Suite("Issue #266, face from surface with holes")
 struct Issue266FaceWithHolesTests {
 
-    /// A 10×10 outer square and a 4×4 centred hole, both in the z = 0 plane (so they lie exactly on
-    /// a planar surface). Returns (surface, outer, hole).
+    /// A 10×10 outer square and a 4×4 centred hole, both in the z = 0 plane.
+    ///
+    /// Both lie exactly on a planar surface, so they need no projection.
+    /// Returns (surface, outer, hole).
     private func panelWithWindow() -> (Surface, Wire, Wire)? {
         guard let plane = Surface.plane(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1)),
             let outer = Wire.polygon3D(
@@ -38,9 +40,7 @@ struct Issue266FaceWithHolesTests {
         // Two wires: the outer boundary + the one hole.
         #expect(face.subShapeCount(ofType: .wire) == 2)
         // Area ≈ outer (100) − hole (16) = 84, the window is a real opening, not spanned.
-        if let area = face.surfaceArea {
-            #expect(abs(area - 84) < 1e-6)
-        }
+        #expect(abs((face.surfaceArea ?? 0) - 84) < 1e-6)
     }
 
     @Test("empty innerWires gives the plain trimmed face (full area)")
@@ -55,7 +55,7 @@ struct Issue266FaceWithHolesTests {
         }
         #expect(face.isValid)
         #expect(face.subShapeCount(ofType: .wire) == 1)
-        if let area = face.surfaceArea { #expect(abs(area - 100) < 1e-6) }
+        #expect(abs((face.surfaceArea ?? 0) - 100) < 1e-6)
     }
 
     @Test("multiple holes each become an opening")
@@ -83,7 +83,7 @@ struct Issue266FaceWithHolesTests {
         }
         #expect(face.isValid)
         #expect(face.subShapeCount(ofType: .wire) == 3)  // outer + 2 holes
-        if let area = face.surfaceArea { #expect(abs(area - (100 - 4 - 9)) < 1e-6) }
+        #expect(abs((face.surfaceArea ?? 0) - (100 - 4 - 9)) < 1e-6)
     }
 
     @Test("a hole off the surface fails rather than producing garbage")
@@ -104,6 +104,18 @@ struct Issue266FaceWithHolesTests {
         }
         // Must not crash; an off-surface hole yields an invalid face → nil.
         let face = Shape.face(from: plane, outer: outer, innerWires: [hole])
-        if let f = face { #expect(!f.isValid || (f.surfaceArea ?? 0) > 0) }  // tolerate either nil or a defined result
+        // #766: this used to accept anything, nil or any valid face with any positive area. What
+        // the pinned kernel does: BRepBuilderAPI_MakeFace::Add takes a hole five units off the
+        // plane without complaint, and ShapeFix_Face then projects it into the face, so the
+        // result is a valid face with the window cut, area 84, exactly as if the hole had been
+        // on the plane (Scripts/repro/766-issue233-244-266-317/). The title's contract, refusal,
+        // is not met; kept as a known issue so this goes red if the bridge starts refusing.
+        #expect(face != nil)
+        #expect(abs((face?.surfaceArea ?? 0) - 84) < 1e-6)
+        withKnownIssue(
+            "an off-surface hole is projected into the face, not refused (#766 finding)"
+        ) {
+            #expect(face == nil)
+        }
     }
 }

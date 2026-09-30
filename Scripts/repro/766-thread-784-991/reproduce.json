@@ -1,0 +1,24 @@
+{
+  "argv": {
+    "value": [
+      "."
+    ],
+    "reason": "the probe requires a BREP directory as argv[1] and exits 2 with `usage: probe <brep-dir>` without one, so a run with no arguments measures nothing at all. The directory the capture used held the 990_*_shank.brep / 990_*_threaded.brep / 991_block.brep / 991_tapped.brep files that a temporary, since-reverted instrumentation of Issue990ThreadAxisBasisTests and Issue991ThreadProfileFlatWidthTests wrote; those files were never committed, so any directory gives the same result here and \".\" is the one that exists. Part 1, which is pure gp_Ax2 and needs no input, reproduces exactly."
+  },
+  "rerun_drop": [
+    {
+      "pattern": "BREP read failed$",
+      "reason": "with no committed BREP inputs each load fails and the probe prints `<axis>: BREP read failed` in place of the measurement. This is the documented rerun_drop case: a line the rerun prints that the capture's inputs made impossible."
+    }
+  ],
+  "transcript_only": [
+    {
+      "pattern": "^[+-][XYZ]: degrees=",
+      "reason": "the six Issue990 groove measurements are of the solids the reverted Swift instrumentation wrote to BREP and nobody committed. They cannot be re-derived from this repository, so they are a record of that run rather than something this probe reproduces. Part 1's six YDirection lines, which are the part the Swift thread datum is checked against, do reproduce."
+    },
+    {
+      "pattern": "^block volume=",
+      "reason": "the one Issue991 cutPathStillCuts measurement, of the same uncommitted BREP pair. Same reason as the Issue990 lines above."
+    }
+  ]
+}
