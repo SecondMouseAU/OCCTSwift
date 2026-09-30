@@ -271,16 +271,49 @@ dropped, something remains that assigns) and committed as a literal table that
 |---|---|---|---|
 | `GeomFill_BSplineCurves.cxx:282` | `bool IsOK =` | guarded bridge-side, PR #2849 | yes |
 | `GeomFill_BezierCurves.cxx:204` | `bool IsOK =` | guarded bridge-side, PR #2849 | yes |
-| `Convert_EllipseToBSplineCurve.cxx:126` | `Tol`, `delta` | open | yes |
-| `Convert_TorusToBSplineSurface.cxx:197` | `delta` | open | yes |
-| `Convert_SphereToBSplineSurface.cxx:195` | `delta` | open | yes |
-| `GeomFill_Profiler.cxx:334` | `int n = NbKnots()` | open | yes |
+| `Convert_EllipseToBSplineCurve.cxx:126` | `Tol`, `delta` | guarded bridge-side, #2884 | yes |
+| `Convert_TorusToBSplineSurface.cxx:197` | `delta` | no bridge caller, #2884 | yes |
+| `Convert_SphereToBSplineSurface.cxx:195` | `delta` | no bridge caller, #2884 | yes |
+| `GeomFill_Profiler.cxx:334` | `int n = NbKnots()` | condition holds by construction, #2884 | yes |
 
 The other 18 out-of-line files that name the symbol swallow nothing: 14 `#define No_Exception`
 themselves, which changes nothing because the whole kernel already has it, two print a diagnostic,
-and two hold an extra check that throws rather than a value the code goes on to read. All four of
-the open rows are reachable in the sense that matters least, that the bridge names the class; **no
-bridge call to any of them has been adjudicated**, and that is what #2884 is for.
+and two hold an extra check that throws rather than a value the code goes on to read.
+
+**The four open rows were adjudicated by #2884, and "the bridge names the class" turned out to
+mean three different things.** Measured one process per case against the `v4.0.0-kernel.3` pin in
+[`Scripts/repro/2884/`](../../Scripts/repro/2884/):
+
+- **`Convert_EllipseToBSplineCurve` is reached with caller values and is the same defect as
+  #2861's cylinder and cone.** `OCCTConvertEllipseToBSpline2D` passes `u1` and `u2` straight into
+  the arc constructor, which derives `num_spans = trunc(1.2 * delta / pi) + 1` from them. A sweep
+  at or below `-5*pi/3` gives a negative pole count and **SIGSEGVs inside the constructor**, and
+  `u1 = 2*pi, u2 = 0` is in that band, so swapping two adjacent arguments on a full ellipse takes
+  the process down. A sweep above `2*pi` returns a self-overlapping curve, and at `1e9` asks for
+  763,943,729 poles and does not come back. Guarded with OCCT's own predicate,
+  `0 < delta <= 2*pi + PConfusion()`.
+- **`Convert_SphereToBSplineSurface` and `Convert_TorusToBSplineSurface` hold the region in a
+  constructor overload the bridge does not call.** `OCCTConvertSphereToBSplineSurface` and
+  `OCCTConvertTorusToBSplineSurface` call the **one-argument** whole-surface constructors, which
+  have no such region; the region is in `(S, Param1, Param2, UTrim)`, and no bridge function takes
+  a parameter range for either. Measured anyway, because an unreachable row is worth a number: the
+  4-argument constructors SIGSEGV on `Param1 = 2*pi, Param2 = 0` exactly as the ellipse does, which
+  is the guard a future parameterised wrapper owes on its first day.
+- **`GeomFill_Profiler`'s swallowed condition is satisfied by construction at the bridge's only
+  caller.** The region discards `int n = NbKnots()`, and the check it fed asks whether the caller's
+  `Knots` and `Mults` are that long. `OCCTGeomFillProfilerKnotsAndMults` sizes both arrays from
+  `NbKnots()` on the same object two statements earlier, so it cannot violate it, and a short array
+  is memory-safe today in any case because `NCollection_Array1::operator=` reallocates.
+
+**That last one is the row worth reading twice, because adjudicating it found two defects the
+region itself is not about**, both uncatchable and both reachable from public Swift. The class
+guards `Poles(Index, ...)` with two `Standard_DomainError_Raise_if` lines on the index, and
+`Perform()` walks its own sequence with no test at all: with two curves loaded, `Poles(0, ...)`
+faulted and `Poles(5, ...)` returned another curve's poles read past the end of the sequence, and
+`Perform()` on a profiler with no curves faulted before returning. Both are now bounded in the
+bridge against a curve count the bridge keeps itself, since `GeomFill_Profiler` exposes none. The
+transferable part: **a channel-four row is a reason to read the class, not only the region**, and
+the region was the least of what was wrong with this one.
 
 ## The build flag: a recorded decision, not an inherited default
 

@@ -743,6 +743,39 @@ OCCTCurve2DRef OCCTCurve2DApproximate2D(const double* xs, const double* ys, int3
   }
 }
 
+// === #2884: the ellipse converter's only range check is gone, and it is gone harder than #2861's
+// === cylinder and cone
+//
+// Convert_EllipseToBSplineCurve.cxx:126 opens the arc constructor with
+//
+//   #ifndef No_Exception
+//     double Tol = Precision::PConfusion(); double delta = ULast - UFirst;
+//   #endif
+//   Standard_DomainError_Raise_if((delta > (2 * M_PI + Tol)) || (delta <= 0.0), ...)
+//
+// and this Release kernel defines No_Exception, so both the raise AND the two locals it tests are
+// compiled out (okf/policies/occt-validation-is-compiled-out.md). The constructor then hands the
+// range straight to Convert_ConicToBSplineCurve::BuildCosAndSin, which derives
+// `num_spans = trunc(1.2 * delta / pi) + 1` and `num_poles = 2 * num_spans + 1` from it. Measured
+// against the pinned v4.0.0-kernel.3 asset, Scripts/repro/2884 modes 1-12:
+//
+//   delta <= -5*pi/3   num_spans <= -1, num_poles <= -1, and NCollection_Array1(1, num_poles)
+//                      SIGSEGVs inside the constructor. u1 = 2*pi, u2 = 0 is in this band, so
+//                      swapping two adjacent arguments takes the process down (modes 5, 6, 7).
+//   -5*pi/3 < delta    a degenerate 1 to 3 pole array, which Geom2d_BSplineCurve then refuses
+//     <= 0             with a literal throw: caught here, nil to the caller (modes 2, 3, 4).
+//   2*pi + Tol         a non-null curve that winds past a full turn and overlaps itself; at
+//     < delta          delta = 1e9 it asks for 763,943,729 poles and the process never returns
+//                      (modes 9, 10, 11).
+//   delta is NaN       OCCT's own predicate is FALSE here, because both of its comparisons are
+//                      false on a NaN, so restoring the macro would not refuse this one either.
+//                      The result is a curve whose every pole is NaN (mode 12).
+//
+// The condition below is OCCT's own, spelled as a positive test so a NaN falls out of it rather
+// than slipping between two comparisons, the same shape occtValidElementaryConvertRange uses for
+// the cylinder and cone. It is one caller, so it stays inline rather than becoming a helper
+// (okf/policies/helper-placement-by-reach.md); the sibling circle converter needs none, because
+// Convert_CircleToBSplineCurve.cxx:129 writes the same precondition as a literal throw.
 OCCTCurve2DRef OCCTConvertEllipseToBSpline2D(double cx,
                                              double cy,
                                              double majorRadius,
@@ -751,6 +784,9 @@ OCCTCurve2DRef OCCTConvertEllipseToBSpline2D(double cx,
                                              double u2)
 {
   if (!occtValidEllipseRadii(majorRadius, minorRadius))
+    return nullptr;
+  const double delta = u2 - u1;
+  if (!(delta > 0.0 && delta <= 2 * M_PI + Precision::PConfusion()))
     return nullptr;
   try
   {
