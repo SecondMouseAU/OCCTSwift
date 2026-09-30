@@ -1168,19 +1168,52 @@ class RunOutcome:
         return f'<{self.kind}{" " + self.detail if self.detail else ""}>'
 
 
-def link_args(module_dir):
+# The archive that has to be found, by name, because finding *an* archive is not the same thing.
+# The first version took any `lib*.a` beside the module and CI had exactly one, the OCCT kernel,
+# with `libOCCTSwift.a` in a different directory entirely. The link then failed on every OCCTSwift
+# symbol, which is the same outcome as finding nothing and cost a CI round trip to read.
+PACKAGE_ARCHIVE = 'libOCCTSwift.a'
+
+
+def archive_dirs(base=None, depth=MODULE_SEARCH_DEPTH):
+    """Directories under `.build` holding `libOCCTSwift.a`, most recently written first.
+
+    `module_dirs`' argument, applied to the other artefact: SwiftPM has shipped at least three
+    layouts this script has met, and the archive does not have to sit where the module sits.
+    """
+    root = REPO if base is None else pathlib.Path(base)
+    hits = []
+    for d in range(1, depth + 1):
+        hits.extend(root.glob('/'.join(['.build'] + ['*'] * d + [PACKAGE_ARCHIVE])))
+    ordered = []
+    for hit in sorted(hits, key=lambda h: h.stat().st_mtime, reverse=True):
+        if hit.parent not in ordered:
+            ordered.append(hit.parent)
+    return ordered
+
+
+def link_args(module_dir, base=None):
     """`-L`/`-l` flags that link an executable against the built package, or None.
 
-    Derived from the archives the build wrote rather than named: SwiftPM merges every target and
-    the whole OCCT kernel into one `libOCCTSwift.a` here, and a layout that splits them differently
-    still answers this glob. `module_dir` may be the bin root or its `Modules/` subdirectory
-    (#2867), so both are searched, nearest first.
+    The directory is the one holding `libOCCTSwift.a`, checked beside the module first (it is
+    usually there, and `module_dir` may be the bin root or its `Modules/` subdirectory, #2867) and
+    searched for under `.build` otherwise. Every `lib*.a` in that directory is then passed, rather
+    than a fixed list of names: SwiftPM merges every target and the whole OCCT kernel into one
+    archive here, and a layout that splits them still answers the glob.
+
+    Reading a cached archive is the #2867 trap on a second artefact, and the answer is the same
+    one: `ci.yml` deletes both before the build, so anything found was written by that build.
     """
     for d in (module_dir, module_dir.parent):
-        archives = sorted(d.glob('lib*.a'))
-        if archives:
-            return ['-L', str(d)] + [f'-l{a.stem[3:]}' for a in archives] + ['-lc++']
+        if (d / PACKAGE_ARCHIVE).is_file():
+            return _flags_for(d)
+    for d in archive_dirs(base):
+        return _flags_for(d)
     return None
+
+
+def _flags_for(d):
+    return ['-L', str(d)] + [f'-l{a.stem[3:]}' for a in sorted(d.glob('lib*.a'))] + ['-lc++']
 
 
 def runnable(blocks, results):
@@ -1347,9 +1380,21 @@ def execute_stage(cases, tc_args, stall=DEFAULT_STALL, keep=None, verbose=False,
                     extra_link = found
                     break
         if tc_args and not extra_link:
+            # Name what was looked for and where, per static-gates.md: #2867's refusal named a
+            # directory and left "was it this build's artefact at all" to arithmetic across three
+            # jobs' logs.
+            searched = [d for d in (pathlib.Path(a) for i, a in enumerate(tc_args)
+                                    if i and tc_args[i - 1] == '-I')]
+            found = archive_dirs()
             return {}, 0.0, SkipNote(
-                'no lib*.a beside the built module, so nothing can be linked against. The '
-                'type-check stage needs only a .swiftmodule; this stage needs the archive too.',
+                f'no {PACKAGE_ARCHIVE} beside the built module, so nothing can be linked '
+                'against. The type-check stage needs only a .swiftmodule; this stage needs the '
+                'archive too. Looked beside '
+                + ', '.join(str(d) for d in searched)
+                + ' and their parents, then under '
+                + str(REPO / '.build') + f' to depth {MODULE_SEARCH_DEPTH}, which holds it in '
+                + (', '.join(str(d) for d in found) if found else 'no directory')
+                + '. Run `swift build`.',
                 fatal=True)
         exe, detail = build_runner(outdir, tc_args, extra_link=extra_link, verbose=verbose)
         if exe is None:
@@ -2005,19 +2050,46 @@ def _self_test_run_stage():
     case('runnable() takes the clean, unmarked snippets and nothing else',
          picked == [plain], f'{[x.info for x in picked]}')
 
-    # The link flags are derived from the archives the build wrote, not named.
+    # The link flags come from the directory holding libOCCTSwift.a, and every archive in it.
     holder = pathlib.Path(tempfile.mkdtemp(prefix='occt-doc-linkargs-'))
     try:
-        (holder / 'libOCCTSwift.a').write_bytes(b'!<arch>\n')
-        (holder / 'libZed.a').write_bytes(b'!<arch>\n')
-        got = link_args(holder)
-        case('link_args derives -l from every archive beside the module',
-             got is not None and got[:2] == ['-L', str(holder)]
+        bin_dir = holder / '.build' / 'debug'
+        (bin_dir / 'Modules').mkdir(parents=True)
+        (bin_dir / PACKAGE_ARCHIVE).write_bytes(b'!<arch>\n')
+        (bin_dir / 'libZed.a').write_bytes(b'!<arch>\n')
+        # `base` points at an empty tree, so only the beside-the-module path can answer and the
+        # fallback below cannot stand in for it.
+        nowhere = pathlib.Path(tempfile.mkdtemp(prefix='occt-doc-nobuild-'))
+        try:
+            got = link_args(bin_dir / 'Modules', base=nowhere)
+        finally:
+            shutil.rmtree(nowhere, ignore_errors=True)
+        case('link_args finds the archive one level up and passes every one beside it',
+             got is not None and got[:2] == ['-L', str(bin_dir)]
              and '-lOCCTSwift' in got and '-lZed' in got, repr(got))
+
+        # CI's layout, and the reason this is not "any lib*.a beside the module": on the runner
+        # the module's own directory held the OCCT kernel archive and nothing else, and taking it
+        # produced a link that failed on every OCCTSwift symbol.
+        elsewhere = holder / '.build' / 'other'
+        (elsewhere / 'Modules').mkdir(parents=True)
+        (elsewhere / 'libOCCT-macos.a').write_bytes(b'!<arch>\n')
+        got = link_args(elsewhere / 'Modules', base=holder)
+        case('a kernel archive beside the module is not mistaken for the package archive',
+             got is not None and got[:2] == ['-L', str(bin_dir)], repr(got))
     finally:
         shutil.rmtree(holder, ignore_errors=True)
 
-    fixed_cases = 5
+    # ...and with nothing to find anywhere, it says so rather than returning a partial link.
+    empty = pathlib.Path(tempfile.mkdtemp(prefix='occt-doc-noarchive-'))
+    try:
+        (empty / '.build').mkdir()
+        case('no archive anywhere is None, not a partial set of flags',
+             link_args(empty / 'nowhere', base=empty) is None)
+    finally:
+        shutil.rmtree(empty, ignore_errors=True)
+
+    fixed_cases = 7
     if shutil.which('swiftc') is None and shutil.which('xcrun') is None:
         return failures, fixed_cases, fixed_cases + 3
 

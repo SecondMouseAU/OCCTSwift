@@ -447,10 +447,16 @@ jobs:
       # exactly as far as the search it is clearing and no further. `-prune` keeps find out of a
       # bundle it is about to delete, and the `-d` test is for the cache-miss run, where there is no
       # `.build` yet and a bare `find` would exit 1 under `bash -e`.
-      - name: Drop any OCCTSwift module the cache restored (#2867)
+      # `libOCCTSwift.a` is dropped alongside the module for #2867's own argument, applied to the
+      # second artefact `check-doc-snippets.py` now reads: it links the snippets against that
+      # archive (#2851), and deleting it here means anything the gate finds was written during
+      # this job, after the checkout, rather than restored from a cache key that outlived a
+      # layout change.
+      - name: Drop any OCCTSwift module or archive the cache restored (#2867, #2851)
         run: |
           if [ -d .build ]; then
             find .build -maxdepth 6 -name OCCTSwift.swiftmodule -prune -print -exec rm -rf {} +
+            find .build -maxdepth 6 -name libOCCTSwift.a -print -delete
           else
             echo "no .build restored, nothing to clear"
           fi

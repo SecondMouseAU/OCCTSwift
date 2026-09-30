@@ -257,6 +257,15 @@ copying:
   indistinguishable from a clean corpus, and the ways to get there are ordinary: a binary that
   exits early, a pump thread reading nothing, a watchdog that never fires.
 
+And one more instance of **an artefact this repo has already been caught reading badly twice**,
+now a third time. The run stage links against `libOCCTSwift.a`, which the type-check stage never
+needed, and the first version took any `lib*.a` beside the module. On the CI runner the module's
+own directory held the OCCT kernel archive and nothing else, so the link failed on every
+`OCCTSwift` symbol, which looks exactly like finding no archive at all and cost a round trip to
+read. It now looks for that file **by name**, beside the module and then under `.build`, says in
+the refusal where it looked and what it found, and `ci.yml` deletes the archive alongside the
+module before the build for #2867's own reason.
+
 Its backlog was two, both fixed in the same PR, so it gated on its first day under the rule below:
 an untrimmed `Curve3D.circularHelix` whose `drawAdaptive()` subdivides an infinite domain forever,
 and an untrimmed `Surface.cylinder` handed to `Shape.shell(from:)`. A snippet that **throws** is
