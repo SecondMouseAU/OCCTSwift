@@ -21,6 +21,24 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### `Extrema_ExtSS::Points` and `Extrema_ExtCS::Points` no longer read an empty point sequence on a parallel pair (#2840)
+
+Carried OCCT patch `0044`. Both classes count their extrema with `NbExt() == mySqDist.Length()` and
+bound `Points()` against that count alone, and both analytic branches append a distance with no
+matching point pair when the two inputs are parallel, because an equidistant family has no unique
+witness. Index 1 therefore passed the range test and read `Value(1)` on an empty
+`NCollection_Sequence`, which is an OS fault rather than a throw on this build. The patch bounds
+each `Points()` against its own point sequence, as `Extrema_ExtCC::Points` already does under
+`0024`. Measured by override-link: both faulted with exit 139 before and raise
+`Standard_OutOfRange` after, with two non-parallel controls returning the same extrema and the same
+coordinates.
+
+**Nothing a Swift caller does changes.** `Surface.extrema(to:)` already refuses a parallel pair
+(#2831), and so does every other bridge entry point that reads a point from either class, so the
+patch closes the kernel half of a crash the bridge no longer reaches. It is carried and **not
+pinned**: the `v4.0.0-kernel.3` asset does not contain it, so it is exercised only by
+`kernel-integration.yml`, and the OCCT 8.0.2 repin picks it up.
+
 ### The four buffer-taking OCAF array setters refuse a reversed range (#2866)
 
 `Document.setBooleanArray`, `setByteArray`, `setExtStringArray` and `setReferenceArray`, and the
