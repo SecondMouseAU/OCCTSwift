@@ -8,7 +8,7 @@ Built and run 2026-09-30 against the PINNED asset, v4.0.0-kernel.3
   clang++ -std=c++17 -ObjC++ -w -I"$XCF/macos-arm64/Headers" -L"$XCF/macos-arm64" -lOCCT-macos \
     -framework Foundation -framework AppKit -lz -lc++ Scripts/repro/2841/probe.mm -o probe
 
-Each section runs as its own process (probe <A..G>) because three of them crash. Section G forks
+Each section runs as its own process (probe <A..H>) because three of them crash. Section G forks
 a child per case instead, so the crashing cases can be counted rather than avoided.
 
 WHAT IT SETTLES
@@ -52,7 +52,15 @@ WHAT IT SETTLES
    .stretch and .curved build a 3x4 surface whose own bounds are u=[0,1.5708] v=[0,1], and
    .coons throws the same catchable "invalid filling style" because the arcs carry 3 poles.
 
-6. THE SYNTHESISED SIDE IS A BOUNDARY OF THE RESULT, NOT A DEGENERATE CORNER.
+6. THE WRAPPER AND THE RAW KERNEL DISAGREE ON .coons, AND THE BRIDGE'S CONVERSION IS WHY.
+   toBSplineCurve in OCCTBridge_Surface_Fill.mm runs
+   GeomConvert::CurveToBSplineCurve(curve, Convert_QuasiAngular) on every input, not the default
+   conversion this probe's other sections use. Section [H]: that takes the quarter arc from 3
+   poles to 7, so the cylinder patch comes back 7x4 and .coons is reachable through the wrapper
+   while section [C]'s default-converted 3x4 refuses it. Measured rather than reasoned about,
+   because the test had assumed [C] carried over and it does not.
+
+7. THE SYNTHESISED SIDE IS A BOUNDARY OF THE RESULT, NOT A DEGENERATE CORNER.
    Section [A]'s square comes back with all four corners distinct: (uMin,vMin) = C1's far end,
    (uMax,vMin) = C1's near end, and the chord runs along the U = first edge. A 3-curve fill is a
    three-sided boundary closed with a straight chord, not a triangular patch.
@@ -135,20 +143,20 @@ WHAT IT SETTLES
     A->B, which duplicates C1 rather than closing anything, Arrange returns false,
     and the refusal is compiled out. Expect a signal.
     guard says: refuse
-2841-run.sh: line 3: 63070 Segmentation fault: 11     "$D/2841-probe" "$s"
+/private/tmp/claude-501/-Users-elb-Projects-OCCTSwift/7ca7a65c-aee4-4ed2-ac7a-0732e49711a4/scratchpad/2841-run.sh: line 3: 65412 Segmentation fault: 11     "$D/2841-probe" "$s"
 [exit 139]
 
 ================================================================ probe E
 [E] Bezier 3-curve, the same wrong middle. Expect a signal.
     guard says: refuse
-2841-run.sh: line 3: 63074 Segmentation fault: 11     "$D/2841-probe" "$s"
+/private/tmp/claude-501/-Users-elb-Projects-OCCTSwift/7ca7a65c-aee4-4ed2-ac7a-0732e49711a4/scratchpad/2841-run.sh: line 3: 65419 Segmentation fault: 11     "$D/2841-probe" "$s"
 [exit 139]
 
 ================================================================ probe F
 [F] BSpline 3-curve, three curves that form no chain at all: bottom, a floating
     segment lifted to z = 5, and top. Expect a signal.
     guard says: refuse
-2841-run.sh: line 3: 63076 Segmentation fault: 11     "$D/2841-probe" "$s"
+/private/tmp/claude-501/-Users-elb-Projects-OCCTSwift/7ca7a65c-aee4-4ed2-ac7a-0732e49711a4/scratchpad/2841-run.sh: line 3: 65422 Segmentation fault: 11     "$D/2841-probe" "$s"
 [exit 139]
 
 ================================================================ probe G
@@ -209,5 +217,25 @@ SIGSEGV is counted rather than avoided.
   agreement 48/48, kernel crashed in 32 of them
 
 === section G done ===
+[exit 0]
+
+================================================================ probe H
+[H] What the bridge's Convert_QuasiAngular conversion does to an arc's pole count,
+    and therefore to .coons on the cylinder patch of section [C].
+
+    arc poles: default conversion 3, Convert_QuasiAngular 7
+
+    the same cylinder patch, every curve converted the way the bridge converts it:
+  cylinder(QA) stretch: poles 7x4  bounds u=[0,1.5708] v=[0,1]
+      (uMin,vMin)=(5.0000,0.0000,0.0000)  (uMax,vMin)=(0.0000,5.0000,0.0000)
+      (uMin,vMax)=(5.0000,0.0000,8.0000)  (uMax,vMax)=(0.0000,5.0000,8.0000)
+  cylinder(QA) coons  : poles 7x4  bounds u=[0,1.5708] v=[0,1]
+      (uMin,vMin)=(5.0000,0.0000,0.0000)  (uMax,vMin)=(0.0000,5.0000,0.0000)
+      (uMin,vMax)=(5.0000,0.0000,8.0000)  (uMax,vMax)=(0.0000,5.0000,8.0000)
+  cylinder(QA) curved : poles 7x4  bounds u=[0,1.5708] v=[0,1]
+      (uMin,vMin)=(5.0000,0.0000,0.0000)  (uMax,vMin)=(0.0000,5.0000,0.0000)
+      (uMin,vMax)=(5.0000,0.0000,8.0000)  (uMax,vMax)=(0.0000,5.0000,8.0000)
+
+=== section H done ===
 [exit 0]
 

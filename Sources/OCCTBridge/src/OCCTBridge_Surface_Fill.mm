@@ -524,6 +524,47 @@ static bool occtGeomFillCurvesJoin(const OCCTGeomFillBoundaryEnds ends[4],
   return true;
 }
 
+// === #2841: the same guard, extended over the three-curve overloads' synthesised fourth side ===
+//
+// GeomFill_BSplineCurves::Init(C1, C2, C3, Type) (GeomFill_BSplineCurves.cxx:396-439) and
+// GeomFill_BezierCurves::Init(C1, C2, C3, Type) (GeomFill_BezierCurves.cxx:304-335) build a
+// straight two-pole fourth side between the FAR ends of C1 and C3, where "far" means the endpoint
+// that does not meet C2, and then call the four-curve Init above. So C2 is positionally the middle
+// curve, and a caller who puts a curve that is not adjacent to both others in that slot hands the
+// four-curve Init a set that cannot close: the same discarded Arrange, the same null CC1, the same
+// uncatchable SIGSEGV (Scripts/repro/2841/transcript.txt, sections [D], [E] and [F], all exit 139).
+//
+// occtGeomFillThreeCurveChord is the kernel's C4 synthesis reduced to its two endpoints, which is
+// all the guard needs: the same two tests, against the same Tol, which is Precision::Confusion()
+// SQUARED because the kernel compares it with SquareDistance. The effective tolerance is therefore
+// the same 1e-7 occtGeomFillCurvesJoin uses. Whole-predicate agreement with the kernel is 48/48
+// over 3 middle-slot assignments x 8 direction flips x both flavours (section [G]).
+static void occtGeomFillThreeCurveChord(const OCCTGeomFillBoundaryEnds ends[3],
+                                        gp_Pnt&                        outStart,
+                                        gp_Pnt&                        outEnd)
+{
+  double tol = Precision::Confusion();
+  tol        = tol * tol;
+  outStart   = (ends[0].start.SquareDistance(ends[1].start) > tol
+                && ends[0].start.SquareDistance(ends[1].end) > tol)
+                 ? ends[0].start
+                 : ends[0].end;
+  outEnd     = (ends[2].start.SquareDistance(ends[1].start) > tol
+                && ends[2].start.SquareDistance(ends[1].end) > tol)
+                 ? ends[2].start
+                 : ends[2].end;
+}
+
+// True when the kernel's three-curve Init would reach a surface rather than a null handle.
+static bool occtGeomFillThreeCurvesJoin(const OCCTGeomFillBoundaryEnds ends[3],
+                                        bool                           degeneratePrePass)
+{
+  gp_Pnt chordStart, chordEnd;
+  occtGeomFillThreeCurveChord(ends, chordStart, chordEnd);
+  const OCCTGeomFillBoundaryEnds four[4] = {ends[0], ends[1], ends[2], {chordStart, chordEnd}};
+  return occtGeomFillCurvesJoin(four, Precision::Confusion(), degeneratePrePass);
+}
+
 // Package one occtSurfaceToAnalytical answer as the C result both entry points return.
 static OCCTSurfToAnaSurfResult occtSurfToAnaSurfResult(OCCTSurfaceRef _Nullable surfaceRef,
                                                        double        tolerance,
@@ -743,6 +784,46 @@ OCCTSurfaceRef OCCTSurfaceBezierFill4(OCCTCurve3DRef c1,
   }
 }
 
+OCCTSurfaceRef OCCTSurfaceBezierFill3(OCCTCurve3DRef c1,
+                                      OCCTCurve3DRef c2,
+                                      OCCTCurve3DRef c3,
+                                      int32_t        fillStyle)
+{
+  if (!c1 || c1->curve.IsNull() || !c2 || c2->curve.IsNull() || !c3 || c3->curve.IsNull())
+    return nullptr;
+  try
+  {
+    Handle(Geom_BezierCurve) bc1 = Handle(Geom_BezierCurve)::DownCast(c1->curve);
+    Handle(Geom_BezierCurve) bc2 = Handle(Geom_BezierCurve)::DownCast(c2->curve);
+    Handle(Geom_BezierCurve) bc3 = Handle(Geom_BezierCurve)::DownCast(c3->curve);
+    if (bc1.IsNull() || bc2.IsNull() || bc3.IsNull())
+      return nullptr;
+    // #2841: bc2 is the middle curve, and a wrong guess crashes rather than refusing. See
+    // occtGeomFillThreeCurvesJoin. GeomFill_BezierCurves' Arrange has no degenerate-curve pre-pass.
+    const OCCTGeomFillBoundaryEnds ends[3] = {{bc1->StartPoint(), bc1->EndPoint()},
+                                              {bc2->StartPoint(), bc2->EndPoint()},
+                                              {bc3->StartPoint(), bc3->EndPoint()}};
+    if (!occtGeomFillThreeCurvesJoin(ends, false))
+      return nullptr;
+
+    GeomFill_FillingStyle style = GeomFill_StretchStyle;
+    if (fillStyle == 1)
+      style = GeomFill_CoonsStyle;
+    else if (fillStyle == 2)
+      style = GeomFill_CurvedStyle;
+    GeomFill_BezierCurves      filler(bc1, bc2, bc3, style);
+    Handle(Geom_BezierSurface) surf = filler.Surface();
+    if (surf.IsNull())
+      return nullptr;
+    return new OCCTSurface(surf);
+  }
+  catch (...)
+  {
+    occtRecordCaughtException(__func__);
+    return nullptr;
+  }
+}
+
 OCCTSurfaceRef OCCTSurfaceBezierFill2(OCCTCurve3DRef c1, OCCTCurve3DRef c2, int32_t fillStyle)
 {
   if (!c1 || c1->curve.IsNull() || !c2 || c2->curve.IsNull())
@@ -791,6 +872,50 @@ OCCTSurfaceRef OCCTSurfaceFillBSpline2Curves(OCCTCurve3DRef curve1,
       style = GeomFill_CurvedStyle;
 
     GeomFill_BSplineCurves      filler(c1, c2, style);
+    Handle(Geom_BSplineSurface) surf = filler.Surface();
+    if (surf.IsNull())
+      return nullptr;
+    return new OCCTSurface(surf);
+  }
+  catch (...)
+  {
+    occtRecordCaughtException(__func__);
+    return nullptr;
+  }
+}
+
+OCCTSurfaceRef OCCTSurfaceFillBSpline3Curves(OCCTCurve3DRef c1,
+                                             OCCTCurve3DRef c2,
+                                             OCCTCurve3DRef c3,
+                                             int32_t        fillStyle)
+{
+  if (!c1 || !c2 || !c3)
+    return nullptr;
+  if (c1->curve.IsNull() || c2->curve.IsNull() || c3->curve.IsNull())
+    return nullptr;
+  try
+  {
+    Handle(Geom_BSplineCurve) bc1 = toBSplineCurve(c1->curve);
+    Handle(Geom_BSplineCurve) bc2 = toBSplineCurve(c2->curve);
+    Handle(Geom_BSplineCurve) bc3 = toBSplineCurve(c3->curve);
+    if (bc1.IsNull() || bc2.IsNull() || bc3.IsNull())
+      return nullptr;
+
+    // #2841: bc2 is the middle curve, and a wrong guess crashes rather than refusing. See
+    // occtGeomFillThreeCurvesJoin. The BSpline Arrange does have the degenerate-curve pre-pass.
+    const OCCTGeomFillBoundaryEnds ends[3] = {{bc1->StartPoint(), bc1->EndPoint()},
+                                              {bc2->StartPoint(), bc2->EndPoint()},
+                                              {bc3->StartPoint(), bc3->EndPoint()}};
+    if (!occtGeomFillThreeCurvesJoin(ends, true))
+      return nullptr;
+
+    GeomFill_FillingStyle style = GeomFill_StretchStyle;
+    if (fillStyle == 1)
+      style = GeomFill_CoonsStyle;
+    else if (fillStyle == 2)
+      style = GeomFill_CurvedStyle;
+
+    GeomFill_BSplineCurves      filler(bc1, bc2, bc3, style);
     Handle(Geom_BSplineSurface) surf = filler.Surface();
     if (surf.IsNull())
       return nullptr;

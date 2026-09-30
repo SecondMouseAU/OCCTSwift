@@ -1398,6 +1398,68 @@ extension Surface {
         return Surface(handle: h)
     }
 
+    /// Create a Bezier surface by filling 3 Bezier boundary curves, closing the fourth side with
+    /// a straight chord.
+    ///
+    /// **`c2` is the middle curve, and the position is not negotiable.**
+    /// `GeomFill_BezierCurves::Init(C1, C2, C3, Type)` builds the missing fourth side as a
+    /// two-pole segment between the **far** ends of `c1` and `c3`, where "far" means the endpoint
+    /// that does not meet `c2` (`GeomFill_BezierCurves.cxx:304-335`), and then runs the four-curve
+    /// construction. So `c2` has to be adjacent to both of the others; put one of the outer curves
+    /// in that slot and the synthesised side closes nothing.
+    ///
+    /// **The direction of each of the three does not matter.** The far-end test asks which
+    /// endpoint of `c1` is not within `Precision::Confusion()` (1e-7) of either endpoint of `c2`,
+    /// which answers the same either way round, and the four-curve `Arrange` reverses whatever
+    /// still runs backwards. Measured over all 8 direction combinations, in
+    /// `Scripts/repro/2841/`.
+    ///
+    /// A wrong middle returns `nil`. OCCT refuses it too, with `Standard_ConstructionError`
+    /// ("Courbes non jointives"), but that refusal is compiled out of the kernel this package
+    /// ships, where it is an uncatchable crash: the bridge restores it (#2841, #2842).
+    ///
+    /// The result is a four-sided patch whose fourth side is straight, not a triangle. For a
+    /// genuine three-sided patch, collapse one side to a point and use
+    /// ``bezierFill(_:_:_:_:style:)``.
+    ///
+    /// ```swift
+    /// // Three sides of a square. The fourth, from (0, 10, 0) back to (0, 0, 0), is synthesised.
+    /// let a = SIMD3<Double>(0, 0, 0), b = SIMD3<Double>(10, 0, 0)
+    /// let c = SIMD3<Double>(10, 10, 0), d = SIMD3<Double>(0, 10, 0)
+    /// func side(_ p: SIMD3<Double>, _ q: SIMD3<Double>) -> Curve3D? {
+    ///     let step = (q - p) / 3
+    ///     return Curve3D.bezier(poles: [p, p + step, p + step * 2, q])
+    /// }
+    /// if let bottom = side(a, b), let right = side(b, c), let top = side(c, d),
+    ///     let surface = Surface.bezierFill(bottom, right, top, style: .coons)
+    /// {
+    ///     print(surface.point(atU: 0, v: 0))   // (0.0, 0.0, 0.0), the a corner
+    /// }
+    ///
+    /// // The same three sides with the middle slot guessed wrong: no surface.
+    /// if let bottom = side(a, b), let right = side(b, c), let top = side(c, d) {
+    ///     print(Surface.bezierFill(bottom, top, right) == nil)   // true
+    /// }
+    /// ```
+    ///
+    /// - Parameters:
+    ///   - c1: An outer boundary curve, adjacent to `c2`. Either direction.
+    ///   - c2: The middle boundary curve, adjacent to both `c1` and `c3`. Either direction.
+    ///   - c3: The other outer boundary curve, adjacent to `c2`. Either direction.
+    ///   - style: Filling style. `.coons` raises every side to at least degree 3 first
+    ///     (`GeomFill_BezierCurves.cxx:212-215`), so unlike the BSpline flavour it has no minimum
+    ///     pole count here and works even on two-pole sides.
+    /// - Returns: Bezier surface, or `nil` if any curve is not Bezier, `c2` is not adjacent to
+    ///   both of the others, or the fill fails.
+    public static func bezierFill(
+        _ c1: Curve3D, _ c2: Curve3D, _ c3: Curve3D,
+        style: BezierFillStyle = .stretch
+    ) -> Surface? {
+        guard let h = OCCTSurfaceBezierFill3(c1.handle, c2.handle, c3.handle, style.rawValue)
+        else { return nil }
+        return Surface(handle: h)
+    }
+
     /// Create a Bezier surface by filling 2 Bezier boundary curves.
     ///
     /// The two curves are used as opposite edges of the surface.
@@ -1722,6 +1784,77 @@ extension Surface {
         -> Surface?
     {
         guard let ref = OCCTSurfaceFillBSpline2Curves(curve1.handle, curve2.handle, style.rawValue)
+        else {
+            return nil
+        }
+        return Surface(handle: ref)
+    }
+
+    /// Create a BSpline surface from 3 boundary curves, closing the fourth side with a straight
+    /// chord.
+    ///
+    /// **`curves.1` is the middle curve, and the position is not negotiable.**
+    /// `GeomFill_BSplineCurves::Init(C1, C2, C3, Type)` builds the missing fourth side as a
+    /// degree-1 two-pole segment between the **far** ends of `curves.0` and `curves.2`, where
+    /// "far" means the endpoint that does not meet `curves.1`
+    /// (`GeomFill_BSplineCurves.cxx:396-439`), and then runs the four-curve construction. So
+    /// `curves.1` has to be adjacent to both of the others; put one of the outer curves in that
+    /// slot and the synthesised side closes nothing.
+    ///
+    /// **The direction of each of the three does not matter.** The far-end test asks which
+    /// endpoint of `curves.0` is not within `Precision::Confusion()` (1e-7) of either endpoint of
+    /// `curves.1`, which answers the same either way round, and the four-curve `Arrange` reverses
+    /// whatever still runs backwards. Measured over all 8 direction combinations, and over all 3
+    /// choices of middle slot, in `Scripts/repro/2841/`: the 16 correct-middle cases all build a
+    /// surface and the 32 wrong-middle ones all refuse.
+    ///
+    /// A wrong middle returns `nil`. OCCT refuses it too, with `Standard_ConstructionError`
+    /// ("Courbes non jointives"), but that refusal is compiled out of the kernel this package
+    /// ships, where it is an uncatchable crash: the bridge restores it (#2841, #2842).
+    ///
+    /// `.coons` needs at least 4 poles per direction after the knots are aligned, and here the V
+    /// direction is `curves.1` against the synthesised side. Degrees are raised **before** the
+    /// knot distributions are aligned, so the synthesised side is lifted to `curves.1`'s degree
+    /// first and does not cap anything by itself: three cubic sides give a 4 x 4 Coons surface.
+    /// What does refuse is a low-degree **middle** curve, because then there is nothing to raise
+    /// it to: a two-pole straight `curves.1` returns `nil` for `.coons` and builds for `.stretch`
+    /// and `.curved`. Note that every curve is converted with `Convert_QuasiAngular` on the way
+    /// in, which takes a quarter arc from 3 poles to 7, so an arc boundary does not trip the
+    /// Coons minimum here even though OCCT's default conversion of the same arc would.
+    ///
+    /// The result is a four-sided patch whose fourth side is straight, not a triangle. For a
+    /// genuine three-sided patch, collapse one side to a point and use the four-curve overload,
+    /// whose `Arrange` accepts a degenerate side.
+    ///
+    /// ```swift
+    /// // A quarter patch on a cylinder of radius 5: the bottom arc, one seam, the top arc.
+    /// // The second seam, from (5, 0, 8) back to (5, 0, 0), is the synthesised chord.
+    /// let p0 = SIMD3<Double>(5, 0, 0), p1 = SIMD3<Double>(0, 5, 0)
+    /// let p2 = SIMD3<Double>(0, 5, 8), p3 = SIMD3<Double>(5, 0, 8)
+    /// let mid = 5 * 0.7071067811865476
+    /// if let bottom = Curve3D.arc(through: p0, SIMD3(mid, mid, 0), p1),
+    ///     let seam = Curve3D.bezier(poles: [p1, p2]),
+    ///     let top = Curve3D.arc(through: p3, SIMD3(mid, mid, 8), p2),
+    ///     let surface = Surface.bsplineFill(curves: (bottom, seam, top), style: .curved)
+    /// {
+    ///     let d = surface.domain
+    ///     print(surface.point(atU: d.uMin, v: d.vMin))   // (5.0, 0.0, 0.0), the p0 corner
+    /// }
+    /// ```
+    ///
+    /// - Parameters:
+    ///   - curves: The three boundary curves. `curves.1` is the middle one and must be adjacent
+    ///     to both others within 1e-7; each individual direction is free.
+    ///   - style: Filling style (default: `.coons`, which needs at least 4 poles per direction
+    ///     and so needs a middle curve of degree 3 or more).
+    /// - Returns: BSpline surface, or `nil` if `curves.1` is not adjacent to both of the others,
+    ///   `.coons` was asked for too few poles, or the fill fails.
+    public static func bsplineFill(curves: (Curve3D, Curve3D, Curve3D), style: FillStyle = .coons)
+        -> Surface?
+    {
+        guard
+            let ref = OCCTSurfaceFillBSpline3Curves(
+                curves.0.handle, curves.1.handle, curves.2.handle, style.rawValue)
         else {
             return nil
         }

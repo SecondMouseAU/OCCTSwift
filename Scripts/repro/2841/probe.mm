@@ -26,6 +26,7 @@
 // Section G forks a child per case so the crashing cases can be counted rather than avoided.
 
 #include <GC_MakeArcOfCircle.hxx>
+#include <Convert_ParameterisationType.hxx>
 #include <GeomConvert.hxx>
 #include <GeomFill_BSplineCurves.hxx>
 #include <GeomFill_BezierCurves.hxx>
@@ -471,6 +472,39 @@ int main(int argc, char** argv)
   else if (sec == 'G')
   {
     sectionG();
+  }
+  else if (sec == 'H')
+  {
+    // The bridge does not hand OCCT the curve it was given: toBSplineCurve in
+    // OCCTBridge_Surface_Fill.mm runs GeomConvert::CurveToBSplineCurve(curve, Convert_QuasiAngular)
+    // on every input. That changes the pole count of an arc, and the pole count is what decides
+    // whether .coons is reachable, so the Swift wrapper and the raw kernel disagree on the same
+    // three curves. This section measures the difference rather than leaving the test to assume it.
+    printf("[H] What the bridge's Convert_QuasiAngular conversion does to an arc's pole count,\n"
+           "    and therefore to .coons on the cylinder patch of section [C].\n\n");
+    gp_Pnt             p0(5, 0, 0), p1(0, 5, 0), p2(0, 5, 8), p3(5, 0, 8);
+    double             m = 5 * 0.7071067811865476;
+    GC_MakeArcOfCircle arc0(p0, gp_Pnt(m, m, 0), p1);
+    GC_MakeArcOfCircle arc8(p3, gp_Pnt(m, m, 8), p2);
+    if (!arc0.IsDone() || !arc8.IsDone())
+    {
+      printf("    arc construction failed\n");
+      return 1;
+    }
+    Handle(Geom_BSplineCurve) defBottom = GeomConvert::CurveToBSplineCurve(arc0.Value());
+    Handle(Geom_BSplineCurve) qaBottom =
+      GeomConvert::CurveToBSplineCurve(arc0.Value(), Convert_QuasiAngular);
+    printf("    arc poles: default conversion %d, Convert_QuasiAngular %d\n",
+           defBottom->NbPoles(),
+           qaBottom->NbPoles());
+
+    Handle(Geom_BSplineCurve) qaTop =
+      GeomConvert::CurveToBSplineCurve(arc8.Value(), Convert_QuasiAngular);
+    Handle(Geom_BSplineCurve) qaSeam =
+      GeomConvert::CurveToBSplineCurve(bez(p1, p2), Convert_QuasiAngular);
+    printf("\n    the same cylinder patch, every curve converted the way the bridge converts it:\n");
+    for (int s = 0; s <= 2; s++)
+      reportBSpline("cylinder(QA)", qaBottom, qaSeam, qaTop, (GeomFill_FillingStyle)s);
   }
   else
   {
