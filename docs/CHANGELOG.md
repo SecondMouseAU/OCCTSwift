@@ -21,6 +21,88 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+```markdown
+### The Bezier pole ceiling is stated three times and stated differently (#2875)
+
+`Geom2d_BezierCurve` and `Geom_BezierCurve` disagree with themselves about how many poles a Bezier may hold. Both sets of constructors refuse on `nbpoles > MaxDegree() + 1` and `Increase()` on `Deg > MaxDegree()`, so both top out at 26 poles; `InsertPoleAfter` refuses on `nbpoles >= MaxDegree()` and tops out at 25, one short of both and one short of its own header comment, which reads "Raised if the resulting number of poles is greater than MaxDegree + 1". The two classes carry the identical predicate, so the 3D twin has the same defect; they differ only in that the 3D one is a live literal `throw` and the 2D one a macro the Release kernel deletes, which is why the 2D kernel performs the insertion the 3D kernel refuses and produces a sound 26-pole curve. Measured at every boundary in `Scripts/repro/2875/`, recorded in `okf/references/known-occt-bugs.md`, and pinned by `Issue2875BezierPoleCeilingTests`. **No behaviour changes**: `OCCTCurve2DBezierInsertPoleAfter` keeps the strict kernel bound so `Curve2D` and `Curve3D` answer the same, and the upstream one-character fix is held for the OCCT 8.0.2 survey. `Curve3D.Bezier.insertPoleAfter(index:point:)` gains the documentation it had none of.
+```
+
+### `Extrema_ExtSS::Points` and `Extrema_ExtCS::Points` no longer read an empty point sequence on a parallel pair (#2840)
+
+Carried OCCT patch `0044`. Both classes count their extrema with `NbExt() == mySqDist.Length()` and
+bound `Points()` against that count alone, and both analytic branches append a distance with no
+matching point pair when the two inputs are parallel, because an equidistant family has no unique
+witness. Index 1 therefore passed the range test and read `Value(1)` on an empty
+`NCollection_Sequence`, which is an OS fault rather than a throw on this build. The patch bounds
+each `Points()` against its own point sequence, as `Extrema_ExtCC::Points` already does under
+`0024`. Measured by override-link: both faulted with exit 139 before and raise
+`Standard_OutOfRange` after, with two non-parallel controls returning the same extrema and the same
+coordinates.
+
+**Nothing a Swift caller does changes.** `Surface.extrema(to:)` already refuses a parallel pair
+(#2831), and so does every other bridge entry point that reads a point from either class, so the
+patch closes the kernel half of a crash the bridge no longer reaches. It is carried and **not
+pinned**: the `v4.0.0-kernel.3` asset does not contain it, so it is exercised only by
+`kernel-integration.yml`, and the OCCT 8.0.2 repin picks it up.
+
+### The four buffer-taking OCAF array setters refuse a reversed range (#2866)
+
+`Document.setBooleanArray`, `setByteArray`, `setExtStringArray` and `setReferenceArray`, and the
+four `OCCTDocumentSet*Array` bridge functions behind them, now refuse a range whose `upper` is
+below its `lower` instead of handing it to `TDataStd_*Array::Set`. Three of the four were an
+uncatchable SIGSEGV on such a range, measured: `TDataStd_ByteArray`, `TDataStd_ExtStringArray` and
+`TDataStd_ReferenceArray` each asked `NCollection_Array1` for 18446744073709551608 elements,
+because `mySize` is `upper - lower + 1` evaluated in `int` and stored in a `size_t`, and the
+`Standard_RangeError_Raise_if` that would have caught it is out-of-line and absent from the kernel
+we link. `TDataStd_BooleanArray` survived on the `>> 3` in its own `Init` and built an attribute
+whose `Upper()` was below its `Lower()`.
+
+The reversed ranges were reachable only through the public C ABI; the Swift wrappers always pass
+`1, count`. What changes for a Swift caller is the empty case: `setByteArray(tag: 1, values: [])`
+and its three siblings now answer `false` and create nothing, where they answered `true`. That
+`true` was not a working outcome. An array attribute built on the exactly-empty range saves to
+BinOcaf or XmlOcaf and reloads as `failure reading attribute` from OCCT's own drivers, measured
+against a one-element control that round-trips clean, because the store driver writes no payload
+for it. Use the `TDataStd_*List` attributes (`setBooleanList`, `setExtStringList`,
+`setReferenceList`) for a collection that may legitimately be empty; they are unchanged and still
+take one.
+
+The measurement is in `Scripts/repro/2866/`.
+
+### Fixed
+- `Face.volumeInertia(planeNormal:planeDistance:)` measured the column between the face and the plane
+  at `-planeDistance` rather than at `planeDistance`. Both of OCCT's by-plane implementations consume
+  the plane as `planeNormal . X = theCoeff[3]` and subtract that constant, while the conversion that
+  fills it from a `gp_Pln` supplies `gp_Pln::Coefficients`' `d`, which belongs to the
+  `planeNormal . X + d = 0` form, so the offset arrived inverted. `OCCTBRepGPropVinertPlane` now
+  builds the plane mirrored through the origin, and `planeDistance` is an ordinary geometric offset:
+  a face lying in the plane contributes 0, and the returned `centerOfMass` is the midpoint between a
+  flat face and the plane. The closed form for a planar face is
+  `(planeNormal . faceNormal) * area * (planeNormal . areaCentroid - planeDistance)`. Both
+  divergence-theorem identities are unaffected, since they need only that the weight is affine with
+  gradient `planeNormal` (#2873).
+
+### Changed
+- The "pass `-d` to measure about the plane at offset `d`" note is gone from
+  `Face.volumeInertia(planeNormal:planeDistance:)`, from `docs/reference/Shape-HLR-Geom.md` and from
+  `CLAUDE.md`. No released version ever returned a non-zero value from this overload, so nothing can
+  have been built on the inverted sign, but a reader who took that advice now measures about the
+  mirrored plane (#2873).
+- `okf/references/known-occt-bugs.md` gains a `#2873` row, and the `#2827` row's closing claim that
+  `loc` fails to re-base is corrected: `SetLocation` correctly moves the weight by nothing, measured
+  at three locations. `Scripts/patches/README.md` and `okf/references/carried-occt-patches.md` record
+  that the upstream hunk riding with `0043` covers three conversion sites, not one, and that the
+  bridge's mirror must be removed in the same change that retires the patch (#2873).
+
+### Added
+- `Scripts/repro/2873/probe.mm` and `Scripts/repro/2873/transcript.txt`, which measure what the
+  by-plane overloads weight each element by, from both of OCCT's by-plane implementations, over a grid
+  of `SetLocation` points and plane offsets, against `gp_Pln`'s own coefficient arithmetic (#2873).
+- `BRepGPropVinertTests`' "the by-plane column runs to the plane the caller named, not its mirror",
+  two assertions that separate the named plane from its mirror without using the closed form: the
+  plane a cap lies in leaves no column, and the column's centroid is the midpoint between the cap and
+  the plane. The fixture is translated to z = 4 and 6 so that no assertion has a mirror-symmetric
+  twin (#2873).
 ### The bridge's 462 dead file-static helpers are gone (#1628)
 
 The `.mm` splits under #396 gave every file in a domain a copy of that domain's shared helper block

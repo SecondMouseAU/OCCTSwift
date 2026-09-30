@@ -1513,6 +1513,20 @@ extension Document {
 
 extension Document {
     /// Set a boolean array attribute on a label.
+    ///
+    /// An empty `values` is refused, answering `false` and creating nothing. `TDataStd_BooleanArray`
+    /// has no empty range: the bounds this passes for `[]` are `1, 0`, which OCAF's own persistence
+    /// drivers reject on both the store and the retrieve side, so an attribute built that way used
+    /// to save as a truncated record and reload as a read failure (#2866). Use
+    /// ``setBooleanList(tag:values:)`` for a collection that may legitimately be empty.
+    ///
+    /// ```swift
+    /// let doc = Document.create()
+    /// if let doc {
+    ///     _ = doc.setBooleanArray(tag: 1, values: [true, false, true])
+    ///     print(doc.booleanArray(tag: 1) ?? [])
+    /// }
+    /// ```
     public func setBooleanArray(tag: Int, values: [Bool]) -> Bool {
         let cValues = values.map { $0 }
         return cValues.withUnsafeBufferPointer { buf in
@@ -1582,6 +1596,19 @@ extension Document {
 
 extension Document {
     /// Set a byte array attribute on a label.
+    ///
+    /// An empty `values` is refused, answering `false` and creating nothing. `TDataStd_ByteArray`
+    /// has no empty range: the bounds this passes for `[]` are `0, -1`, which OCAF's own
+    /// persistence drivers reject on both the store and the retrieve side, so an attribute built
+    /// that way used to save as a truncated record and reload as a read failure (#2866).
+    ///
+    /// ```swift
+    /// let doc = Document.create()
+    /// if let doc {
+    ///     _ = doc.setByteArray(tag: 1, values: [0x01, 0x02, 0xff])
+    ///     print(doc.byteArray(tag: 1) ?? [])
+    /// }
+    /// ```
     public func setByteArray(tag: Int, values: [UInt8]) -> Bool {
         values.withUnsafeBufferPointer { buf in
             OCCTDocumentSetByteArray(
@@ -1721,6 +1748,18 @@ private func withCStringArray<R>(
 
 extension Document {
     /// Set an extended string array attribute on a label.
+    ///
+    /// An empty `values` is refused, answering `false` and creating nothing, for the reason given
+    /// on ``setByteArray(tag:values:)`` (#2866). Use ``setExtStringList(tag:values:)`` for a
+    /// collection that may legitimately be empty.
+    ///
+    /// ```swift
+    /// let doc = Document.create()
+    /// if let doc {
+    ///     _ = doc.setExtStringArray(tag: 1, values: ["alpha", "beta"])
+    ///     print(doc.extStringArrayValue(tag: 1, index: 1) ?? "")
+    /// }
+    /// ```
     public func setExtStringArray(tag: Int, values: [String]) -> Bool {
         let count = values.count
         return withCStringArray(values) { pointers in
@@ -1796,6 +1835,18 @@ extension Document {
 
 extension Document {
     /// Set a reference array attribute on a label (array of label tags).
+    ///
+    /// An empty `refTags` is refused, answering `false` and creating nothing, for the reason given
+    /// on ``setByteArray(tag:values:)`` (#2866). Use ``setReferenceList(tag:refTags:)`` for a
+    /// collection that may legitimately be empty.
+    ///
+    /// ```swift
+    /// let doc = Document.create()
+    /// if let doc {
+    ///     _ = doc.setReferenceArray(tag: 1, refTags: [2, 3])
+    ///     print(doc.referenceArray(tag: 1) ?? [])
+    /// }
+    /// ```
     public func setReferenceArray(tag: Int, refTags: [Int32]) -> Bool {
         refTags.withUnsafeBufferPointer { buf in
             OCCTDocumentSetReferenceArray(

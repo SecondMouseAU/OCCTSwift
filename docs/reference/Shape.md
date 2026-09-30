@@ -1426,7 +1426,7 @@ Adaptively samples points along a B-Rep edge using curvature-based deflection co
 
 - **Parameters:**
   - `index`: edge index (0-based).
-  - `deflection`: maximum chord deviation.
+  - `deflection`: maximum chord deviation. Must be at least `Precision::Confusion()` (1e-7); below that the result is `nil` ([#2872](https://github.com/SecondMouseAU/OCCTSwift/issues/2872)). `GCPnts_TangentialDeflection`'s own check on it is compiled out of the pinned Release kernel, and without it the sampler subdivides to an internal million-point cap, of which `maxPoints` returns the leading fraction of a percent of the edge with nothing marking it as partial.
   - `maxPoints`: output *capacity*, clamped into `0...Sampling.maximumSampleCount` (10,000,000), so an unservable capacity returns the same points rather than a coarser sampling; 0 or less returns `nil` (#558). The deflection decides the actual point count.
 - **Returns:** Array of 3D points along the edge, or `nil` if the edge is not found.
 - **OCCT:** `GCPnts_TangentialDeflection` / `BRep_Tool::Curve` (via `OCCTShapeGetEdgePolyline`).
@@ -1455,7 +1455,7 @@ public func allEdgePolylines(
 Discretises every edge in a single bridge pass, building the shape's edge map once. Also calls [`buildCurves3d(tolerance:)`](Document-Mesh-Fixing.md#shapebuildcurves3dtolerance) at `1e-5` beforehand to ensure lofted/swept shapes (which may have only pcurves) have explicit 3D curves before discretisation.
 
 - **Parameters:**
-  - `deflection`: maximum chord deviation per edge.
+  - `deflection`: maximum chord deviation per edge. Must be at least `Precision::Confusion()` (1e-7); below that the result is `[]` ([#2872](https://github.com/SecondMouseAU/OCCTSwift/issues/2872)), on the same reasoning as `edgePolyline(at:deflection:maxPoints:)`.
   - `maxPointsPerEdge`: per-edge capacity, honoured within `2...Sampling.maximumSampleCount` (10,000,000); outside that range the result is `[]` (#558).
 - **Returns:** Array of polylines, one per edge. Edges that fail discretisation (including degenerate ones) are skipped, the result is **dense**, so a polyline's position does not reliably equal its edge index; use [`allEdgePolylinesIndexed`](#alledgepolylinesindexeddeflectionmaxpointsperedge) when that mapping matters.
 - **OCCT:** `BRepLib::BuildCurves3d` + `GCPnts_TangentialDeflection` (via `OCCTBRepLibBuildCurves3dForShape` and `OCCTShapeComputeAllEdgePolylines`).

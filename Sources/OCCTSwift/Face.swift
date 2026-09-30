@@ -859,20 +859,26 @@ extension Face {
     ///   ``Shape/volume`` gives ``Shape/centerOfMass``, again for any plane.
     ///
     /// For a planar face the integral has a closed form: `volume` is
-    /// `(planeNormal . faceNormal) * area * (planeNormal . areaCentroid + planeDistance)`, so it is
-    /// affine in `planeDistance` with slope the face's signed projected area. A face parallel to
-    /// `planeNormal` therefore contributes 0 whatever the offset.
+    /// `(planeNormal . faceNormal) * area * (planeNormal . areaCentroid - planeDistance)`, so it is
+    /// affine in `planeDistance` with slope minus the face's signed projected area. A face
+    /// parallel to `planeNormal` therefore contributes 0 whatever the offset, and so does a face
+    /// whose own area centroid lies in the plane.
     ///
     /// Until #2827 every call returned exactly `0.0` with a `nil` `centerOfMass`, on every kernel
     /// this package had pinned: `BRepGProp_Gauss::convert` computed the mass and then overwrote it,
     /// because it kept the value only when its `theIsByPoint` flag was set and no by-plane path sets
     /// it. Carried patch `0043` drops that condition and is pinned from `v4.0.0-kernel.3`.
     ///
-    /// **`planeDistance` enters with the opposite sign to the geometric distance (#2873).** The
-    /// kernel weights each element by `planeNormal . P + planeDistance` where the signed distance to
-    /// the plane is `planeNormal . P - planeDistance`, so to measure about the plane at offset `d`,
-    /// pass `-d`. Both identities above are unaffected, since they need only that the weight is
-    /// affine with gradient `planeNormal`. Measured, not inferred: `Scripts/repro/2827/probe.mm`.
+    /// **`planeDistance` is an ordinary geometric offset, and it took a bridge-side correction to
+    /// make it one (#2873).** Both of OCCT's by-plane implementations weight each element by
+    /// `planeNormal . P` minus the plane's fourth `gp_Pln` coefficient, which inverts the offset, so
+    /// the kernel handed the plane at `d` measures about the plane at `-d`. The bridge hands it the
+    /// plane mirrored through the origin, and what comes back is measured about the plane you asked
+    /// for. No released version ever returned a non-zero value here, so nothing downstream can have
+    /// been built on the inverted sign, but a reader who took the previous advice to pass `-d`
+    /// should stop: that now measures about the mirrored plane. Both identities above hold either
+    /// way, since they need only that the weight is affine with gradient `planeNormal`. Measured,
+    /// not inferred: `Scripts/repro/2873/transcript.txt`.
     ///
     /// ```swift
     /// let holed = Shape.box(width: 20, height: 20, depth: 2)!
@@ -886,15 +892,22 @@ extension Face {
     ///
     /// // One face on its own is a column, not a volume: this plate's caps are 1 from the origin,
     /// // so with the plane through the origin each contributes its own area.
-    /// let cap = holed.faces().first { $0.area() > 300 }!
-    /// cap.volumeInertia(planeNormal: n).volume   // 371.7256661176918, and cap.area() is the same
+    /// let topCap = holed.faces().first {
+    ///     $0.area() > 300 && ($0.surfaceInertia.centerOfMass?.z ?? 0) > 0
+    /// }!
+    /// topCap.volumeInertia(planeNormal: n).volume   // 371.7256661176918, and .area() is the same
+    ///
+    /// // And the offset is a geometric one: the plane through the cap leaves no column, the plane
+    /// // 2 below it leaves one twice as deep.
+    /// topCap.volumeInertia(planeNormal: n, planeDistance: 1).volume    // 0
+    /// topCap.volumeInertia(planeNormal: n, planeDistance: -1).volume   // 743.4513322353836
     /// ```
     ///
     /// - Parameters:
     ///   - planeNormal: normal of the reference plane.
-    ///   - planeDistance: offset of the plane from the origin along `planeNormal`. It enters the
-    ///     kernel's integrand with the opposite sign to a geometric distance, so pass `-d` for the
-    ///     plane at offset `d` (#2873).
+    ///   - planeDistance: offset of the plane from the origin along `planeNormal`, so the plane is
+    ///     `planeNormal . X == planeDistance`. An ordinary geometric offset: a face lying in that
+    ///     plane contributes 0 (#2873).
     /// - Returns: the face's signed column volume against that plane, and the centroid of that
     ///   column. `centerOfMass` is `nil` exactly when `volume` is 0, which is a real answer for a
     ///   face parallel to `planeNormal` or one whose centroid lies in the plane. ``FaceVolumeInertia``

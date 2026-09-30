@@ -3643,6 +3643,10 @@ bool OCCTCurve2DBezierInsertPoleAfter(OCCTCurve2DRef curve, int32_t index, doubl
   // signal in 20 of 20 runs; index 1000000 SIGBUSed. The kernel's third condition,
   // Weight <= gp::Resolution(), cannot hold here because this entry point takes no weight and
   // InsertPoleAfter defaults it to 1.
+  // #2875: nbpoles >= MaxDegree() is one pole stricter than the constructors, than Increase(), and
+  // than this function's own header comment, all of which top out at MaxDegree() + 1 poles. It is
+  // kept anyway: Geom_BezierCurve carries the identical predicate as a live literal throw, so
+  // relaxing it here alone would make Curve2D accept what Curve3D refuses.
   const int nbPoles = bz->NbPoles();
   if (index < 0 || index > nbPoles || nbPoles >= Geom2d_BezierCurve::MaxDegree())
     return false;
