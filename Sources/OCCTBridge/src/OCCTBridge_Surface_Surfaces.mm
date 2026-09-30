@@ -2165,6 +2165,12 @@ bool OCCTGeomFillProfilerPoles(OCCTGeomFillProfilerRef _Nonnull ref,
   }
 }
 
+// #2884: this is the function the census's channel-four row is about, and it owes no guard.
+// GeomFill_Profiler.cxx:334 swallows `int n = NbKnots()` inside its `#ifndef No_Exception`
+// region, and the check it fed asks whether Knots and Mults are that long. Both arrays below are
+// sized from NbKnots() on the same object two statements earlier, so the condition holds by
+// construction; a short array is memory-safe in this kernel in any case, because
+// NCollection_Array1::operator= reallocates (Scripts/repro/2884 mode 31).
 bool OCCTGeomFillProfilerKnotsAndMults(OCCTGeomFillProfilerRef _Nonnull ref,
                                        double* _Nonnull outKnots,
                                        int* _Nonnull outMults,

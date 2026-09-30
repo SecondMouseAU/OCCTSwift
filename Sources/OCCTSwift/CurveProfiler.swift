@@ -79,7 +79,8 @@ public final class CurveProfiler: @unchecked Sendable {
     /// Get poles for a curve at 1-based index.
     ///
     /// Returns `[]` when `curveIndex` is outside `1...n`, where `n` is the number of curves
-    /// `addCurve(_:)` actually added, and when `perform()` has not run.
+    /// `addCurve(_:)` actually added, and when `perform()` has not run. An index too large for
+    /// the bridge's `Int32` parameter is out of range like any other, not a trap.
     ///
     /// The range is enforced in the bridge, against a count the bridge keeps itself.
     /// `GeomFill_Profiler::Poles` documents the same range and tests it with two checks this
@@ -100,12 +101,15 @@ public final class CurveProfiler: @unchecked Sendable {
     /// }
     /// ```
     public func poles(curveIndex: Int) -> [SIMD3<Double>] {
+        // `Int32(_:)` traps on an `Int` that does not fit, so an out-of-range index would take
+        // the process down here rather than reach the bridge's own bound test (#2884).
+        guard let index = Int32(exactly: curveIndex) else { return [] }
         let n = poleCount
         guard n > 0 else { return [] }
         var xs = [Double](repeating: 0, count: n)
         var ys = [Double](repeating: 0, count: n)
         var zs = [Double](repeating: 0, count: n)
-        guard OCCTGeomFillProfilerPoles(handle, Int32(curveIndex), &xs, &ys, &zs, Int32(n)) else {
+        guard OCCTGeomFillProfilerPoles(handle, index, &xs, &ys, &zs, Int32(n)) else {
             return []
         }
         return (0..<n).map { SIMD3(xs[$0], ys[$0], zs[$0]) }
