@@ -21,6 +21,24 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### The bridge's 462 dead file-static helpers are gone (#1628)
+
+The `.mm` splits under #396 gave every file in a domain a copy of that domain's shared helper block
+while the callers stayed in one file, so a domain's twelve files each held a definition and eleven
+of them were called by nobody. `Scripts/census-dead-file-statics.py` counted 412 such definitions
+across ten domains, plus 50 more that became dead only once their sole caller went. All 462 are
+deleted, 13,719 lines, and the census now reports zero.
+
+**No API changes, and none possible**: a file-scope `static` is confined to one translation unit, so
+nothing outside the file it sat in could reach it. `count-operations.py` is unmoved at 4369.
+
+Two things the pass found that are not tidying. Deleting the dead copy of `occtSampleWirePoints`
+from `OCCTBridge_Modeling_Boolean.mm` falsified that file's own header, which named it as the one
+`catch (...)` block in the file that deliberately does not record what it caught; every catch block
+there now records, and the header says so. And six of the twelve helper names that read as reachable
+duplication before the pass turned out to have only one live copy once their dead callers went, so
+the hoist backlog that #2821 left is six names across 15 definitions rather than twelve across 71.
+
 ### The wasm module is 10.1 MB smaller, and platform conditionals live in one place (#2761)
 
 The Swift layer now builds against `FoundationEssentials` on `wasm32-unknown-wasip1`, which leaves
