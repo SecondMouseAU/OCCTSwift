@@ -1475,9 +1475,9 @@ public func volumeInertia(planeNormal: SIMD3<Double>, planeDistance: Double = 0)
 
 - **Parameters:**
   - `planeNormal`: normal of the reference plane.
-  - `planeDistance`: offset of the plane from the origin along `planeNormal`. It reaches the kernel's
-    integrand with the opposite sign to a geometric distance, so pass `-d` for the plane at offset
-    `d` (#2873, measured).
+  - `planeDistance`: offset of the plane from the origin along `planeNormal`, so the plane is
+    `planeNormal . X == planeDistance`. An ordinary geometric offset: a face lying in that plane
+    contributes 0 (#2873, measured).
 - **Returns:** a `FaceVolumeInertia` whose `volume` is the signed volume of the column between this
   face and the reference plane, and whose `centerOfMass` is that column's centroid. `centerOfMass` is
   `nil` exactly when `volume` is 0, which is a real answer for a face parallel to `planeNormal`.
@@ -1495,8 +1495,9 @@ public func volumeInertia(planeNormal: SIMD3<Double>, planeDistance: Double = 0)
   Both are asserted in `Tests/OCCTAnalysisTests/BRepGPropVinertTests.swift` against
   `BRepGProp::VolumeProperties`, which shares no code with this path, on a fixture translated off the
   origin so the second is not a comparison against `(0, 0, 0)`. For a **planar** face there is also a
-  closed form, `(planeNormal . faceNormal) * area * (planeNormal . areaCentroid + planeDistance)`, so
-  `volume` is affine in `planeDistance` with slope the face's signed projected area.
+  closed form, `(planeNormal . faceNormal) * area * (planeNormal . areaCentroid - planeDistance)`, so
+  `volume` is affine in `planeDistance` with slope minus the face's signed projected area, and it is
+  0 when the plane passes through the face's own area centroid.
 - **It returned a fabricated 0 on every kernel before `v4.0.0-kernel.3` (#2827).** OCCT computed the
   by-plane mass and discarded it: `BRepGProp_Gauss::convert` kept the value only when its
   `theIsByPoint` flag was set (`BRepGProp_Gauss.cxx:494-528`), and every by-plane path, all four
@@ -1517,6 +1518,21 @@ public func volumeInertia(planeNormal: SIMD3<Double>, planeDistance: Double = 0)
   the measurement and `Scripts/repro/2827/patched-kernel-transcript.txt` the transcript, and the
   patch is recorded in
   [`okf/references/carried-occt-patches.md`](../../okf/references/carried-occt-patches.md).
+- **And once it was a measurement, it was about the wrong plane (#2873).** The kernel's by-plane
+  integrand consumes `theCoeff[0..3]` as the plane `planeNormal . X = theCoeff[3]` and **subtracts**
+  that fourth entry (`BRepGProp_Gauss.cxx:343`, and `BRepGProp_UFunction.cxx:99` for the Kronrod
+  path). The conversion that fills it from a `gp_Pln` feeds in `gp_Pln::Coefficients`' `d`, which
+  belongs to the `planeNormal . X + d = 0` form (`BRepGProp_Vinert.cxx:279`,
+  `BRepGProp_VinertGK.cxx:219` and `:244`), so the offset arrives inverted and the value is measured
+  about the plane mirrored through the origin. **This bridge function is not handed a `gp_Pln`**, it
+  builds one from `planeNormal` and `planeDistance`, so it builds the mirrored plane and the result
+  is about the plane the caller named. Measured before it was written, in
+  `Scripts/repro/2873/probe.mm` and `Scripts/repro/2873/transcript.txt`: on a cap at z = 2 the
+  as-passed weights are 2, 3, -98, 7 for planes at z = 0, 1, -100, 5 where the geometric distances
+  are 2, 1, 102, -3, both of OCCT's by-plane implementations print the same numbers, and
+  `SetLocation` moves none of them. The one-line kernel fix rides with `0043`'s upstream submission;
+  when it lands, the bridge's mirror comes out, and `BRepGPropVinertTests`' two sign assertions are
+  what fail if it does not.
 - **Example:**
   ```swift
   let holed = Shape.box(width: 20, height: 20, depth: 2)!
@@ -1530,8 +1546,15 @@ public func volumeInertia(planeNormal: SIMD3<Double>, planeDistance: Double = 0)
 
   // One face is a column: this plate's caps are 1 from the origin, so with the plane through the
   // origin each contributes its own area.
-  let cap = holed.faces().first { $0.area() > 300 }!
-  cap.volumeInertia(planeNormal: n).volume   // 371.7256661176918, and cap.area() is the same
+  let topCap = holed.faces().first {
+      $0.area() > 300 && ($0.surfaceInertia.centerOfMass?.z ?? 0) > 0
+  }!
+  topCap.volumeInertia(planeNormal: n).volume   // 371.7256661176918, and .area() is the same
+
+  // The offset is geometric: no column to the plane the cap lies in, twice the column to the
+  // plane 2 below it.
+  topCap.volumeInertia(planeNormal: n, planeDistance: 1).volume    // 0
+  topCap.volumeInertia(planeNormal: n, planeDistance: -1).volume   // 743.4513322353836
   ```
 
 ---
