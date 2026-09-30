@@ -21,6 +21,30 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### The four buffer-taking OCAF array setters refuse a reversed range (#2866)
+
+`Document.setBooleanArray`, `setByteArray`, `setExtStringArray` and `setReferenceArray`, and the
+four `OCCTDocumentSet*Array` bridge functions behind them, now refuse a range whose `upper` is
+below its `lower` instead of handing it to `TDataStd_*Array::Set`. Three of the four were an
+uncatchable SIGSEGV on such a range, measured: `TDataStd_ByteArray`, `TDataStd_ExtStringArray` and
+`TDataStd_ReferenceArray` each asked `NCollection_Array1` for 18446744073709551608 elements,
+because `mySize` is `upper - lower + 1` evaluated in `int` and stored in a `size_t`, and the
+`Standard_RangeError_Raise_if` that would have caught it is out-of-line and absent from the kernel
+we link. `TDataStd_BooleanArray` survived on the `>> 3` in its own `Init` and built an attribute
+whose `Upper()` was below its `Lower()`.
+
+The reversed ranges were reachable only through the public C ABI; the Swift wrappers always pass
+`1, count`. What changes for a Swift caller is the empty case: `setByteArray(tag: 1, values: [])`
+and its three siblings now answer `false` and create nothing, where they answered `true`. That
+`true` was not a working outcome. An array attribute built on the exactly-empty range saves to
+BinOcaf or XmlOcaf and reloads as `failure reading attribute` from OCCT's own drivers, measured
+against a one-element control that round-trips clean, because the store driver writes no payload
+for it. Use the `TDataStd_*List` attributes (`setBooleanList`, `setExtStringList`,
+`setReferenceList`) for a collection that may legitimately be empty; they are unchanged and still
+take one.
+
+The measurement is in `Scripts/repro/2866/`.
+
 ### The bridge's 462 dead file-static helpers are gone (#1628)
 
 The `.mm` splits under #396 gave every file in a domain a copy of that domain's shared helper block
