@@ -28,6 +28,21 @@ The seven censuses today and what each is for:
   this line used to give was a laptop figure with no method recorded, and re-measuring it in #2203
   produced 21, 60 and 75 s on three consecutive runs of one loaded laptop, which is why there is no
   number here now. See "How long the job takes" below for the figure that is measurable.
+
+  **Its sub-kind 5 is the one detector here that is a registry rather than a scan**, and the
+  reason is worth copying rather than repeating. #2844 measured that this census cannot see a
+  value the KERNEL fabricated: every sub-kind keys on our own code producing it, and #2827's
+  by-plane mass came off a real `Mass()` call with every caller input reaching the subject, so
+  nothing textual over `Sources/` could reach it. Extending the scan would have meant reading the
+  kernel per defect, which is a judgement and not a derivation. So the judgement is written down
+  once, per site, and what runs every time is three derived questions about each written judgement:
+  does its `okf/references/known-occt-bugs.md` row still exist, does the bridge site that reads the
+  value still exist and still cite the issue, and for a defect whose only reader was deleted, has a
+  reader come back. **The first failing is a refusal and not a finding** (exit 2), on
+  `check-inventory-prose.py`'s precedent: a registered pattern matching nothing is the detector
+  going blind, and a blind detector reports all clear exactly as loudly as a clean tree. Because
+  CI runs a census's `--self-test` alone, that live-registry check is a `--self-test` case, which
+  is what makes a hand-maintained list safe to keep here at all.
 - `census-doc-occt-attribution.py` (#928): docs attributing a method to an OCCT class its bridge
   function never reaches, #807's over-coverage detector. The class-existence half wants
   `Libraries/OCCT.xcframework`'s pinned headers and reports SKIPPED without them, the normal case in
