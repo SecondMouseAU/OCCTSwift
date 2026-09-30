@@ -4,11 +4,13 @@ import simd
 @testable import OCCTSwift
 
 /// #2875: `Geom2d_BezierCurve` and `Geom_BezierCurve` state their pole ceiling three times and
-/// state it differently each time. The constructors take `nbpoles > MaxDegree() + 1` as the
-/// refusal, so they build 26 poles and refuse 27. `Increase()` agrees with them. `InsertPoleAfter`
-/// takes `nbpoles >= MaxDegree()`, so it stops at 25, one pole short, and stops one pole short of
-/// what its own header comment promises: "Raised if the resulting number of poles is greater than
-/// MaxDegree + 1" (`Geom2d_BezierCurve.hxx:137`, `Geom_BezierCurve.hxx:134`).
+/// state it differently each time.
+///
+/// The constructors take `nbpoles > MaxDegree() + 1` as the refusal, so they build 26 poles and
+/// refuse 27. `Increase()` agrees with them. `InsertPoleAfter` takes `nbpoles >= MaxDegree()`, so
+/// it stops at 25, one pole short, and stops one pole short of what its own header comment
+/// promises: "Raised if the resulting number of poles is greater than MaxDegree + 1"
+/// (`Geom2d_BezierCurve.hxx:137`, `Geom_BezierCurve.hxx:134`).
 ///
 /// **The 3D twin carries the identical predicate**, at `Geom_BezierCurve.cxx:214` against
 /// `Geom2d_BezierCurve.cxx:199`, so neither side is the odd one out; they differ only in that the

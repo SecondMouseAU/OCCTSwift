@@ -111,8 +111,9 @@ struct Issue2843StretchFillArrangementTests {
 
     @Test("Mismatched or too-short boundary arrays are refused")
     func lengthContract() throws {
-        #expect(Surface.stretchFill(p1: bottom, p2: right, p3: top, p4: Array(left.dropLast()))
-            == nil)
+        #expect(
+            Surface.stretchFill(p1: bottom, p2: right, p3: top, p4: Array(left.dropLast()))
+                == nil)
         let one = [SIMD3<Double>(0, 0, 0)]
         #expect(Surface.stretchFill(p1: one, p2: one, p3: one, p4: one) == nil)
     }
