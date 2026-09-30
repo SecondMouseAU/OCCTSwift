@@ -66,6 +66,29 @@ fi
 # under three minutes. Parallelism buys nothing here and costs the ability to see progress at all.
 RUN_ARGS=(--testing-library swift-testing --no-parallel)
 
+# THE SUITES NEED A WRITABLE PREOPEN, and a missing one does not look like an environment problem, it
+# looks like a geometry failure. `Issue336ChainedHistoryTests` failed with
+# `.exportFailed("BREP export to issue336-....brep failed")` until this was added: the test writes a
+# BREP to a temp path, WASI grants no filesystem access unless the host preopens it, and the bridge
+# reported the refusal the same way it reports a bad shape.
+#
+# `/tmp` is preopened as well because that is what `FileManager.default.temporaryDirectory` falls
+# back to, which is the same pair `Scripts/repro/2175/run.sh` passes and for the same reason.
+#
+# TMPDIR IS PINNED, AND THE PREOPENS ALONE ARE NOT ENOUGH. wasmkit passes no host environment, so
+# without this the guest's TMPDIR is unset and `FileManager.default.temporaryDirectory` resolves
+# somewhere the preopens do not cover. Measured on the full `OCCTBRepGraphTests` suite: 1 failing with
+# both preopens and no TMPDIR, 0 failing with TMPDIR set to the work directory. It passed under
+# `--filter Issue336` either way, which is what made the preopens look sufficient.
+#
+# `docs/guides/wasm-consumer-setup.md` already states this requirement for consumers ("set `TMPDIR`
+# and preopen it", with a browser example that passes `TMPDIR=/tmp`). This script simply was not
+# following it. Worth knowing that the symptom does not look like a configuration problem: the
+# bridge reports a denied write as `.exportFailed`, which reads as a geometry or history defect.
+WASM_TEST_WORK_DIR="${WASM_TEST_WORK_DIR:-/tmp/occt-wasm-tests}"
+mkdir -p "$WASM_TEST_WORK_DIR"
+RUN_ARGS+=(--dir "$WASM_TEST_WORK_DIR" --dir /tmp --env "TMPDIR=$WASM_TEST_WORK_DIR")
+
 BUILD_ARGS=(
     --toolset "$TOOLSET"
     --swift-sdk "$SDK_ID"
