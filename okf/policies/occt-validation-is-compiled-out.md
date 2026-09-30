@@ -164,6 +164,14 @@ reason to exist is a reading. Channels one and two were measured 2026-09-29 agai
 `v4.0.0-kernel.2` pin; channels three and four and the depth qualifier were added by #2858 and
 measured 2026-09-30 against `v4.0.0-kernel.3`.
 
+**The map is only as current as the tree it was derived from, and that is now checked rather than
+assumed.** It describes `Libraries/occt-src` after the carried patches are applied, so a patch that
+adds or moves a raise site changes it; nothing re-derived it when `0042` did, and it went two pins
+saying `ShapeAnalysis` held no live throw (#2885). `--write-table` now stamps it with the OCCT
+version and the carried patch set the tree held, verified applied, and
+`check-inventory-prose.py` fails when that stamp and `Scripts/patches/` disagree. Read a number
+below as a measurement of the patch set the stamp names, not of whatever tree is on your machine.
+
 **Channel one**, try blocks protecting a construction from `check-throwing-calls.py`'s
 caller-values vocabulary: 363 of the bridge's 3,608 try blocks are in that population, and
 **none of them is protection against a check that is entirely compiled out**. 285 reach a live
