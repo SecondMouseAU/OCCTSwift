@@ -589,8 +589,9 @@ let occtBridgeTarget: Target = useBridgeLocalBinary
 // and would still need the definitions this module carries.
 //
 // What it defines is what Sources/OCCTSwift measurably uses and no more; see the file's own
-// header for the counts and for the one behavioural difference from Apple's module
-// (`simd_normalize` of a zero vector).
+// header for the counts. It re-exports the platform C library for the same reason Apple's module
+// does, measured rather than assumed (#2793), so a file whose only import is `simd` gets `cos` and
+// `atan2` in scope on both platforms.
 let wasiCompatTargets: [Target] =
     isWASI
     ? [
@@ -608,6 +609,116 @@ let swiftLayerDependencies: [Target.Dependency] =
     isWASI
     ? ["OCCTBridge", "OCCT", "OCCTPlatform", "simd"]
     : ["OCCTBridge", "OCCT", "OCCTPlatform"]
+
+// Which per-domain test targets can exist on wasm32-unknown-wasip1, and why the rest cannot (#2793).
+//
+// Phase 0's GO carried four conditions and this is the third: six spike calls are not a test suite.
+// 13 of the 18 domain targets compile and run for wasm unchanged. The five below cannot, and each
+// is a property of the platform rather than of the test:
+//
+//   OCCTThreadTests       28 files whose subject is concurrency. wasip1 non-threads has one thread
+//                         by construction (#2169), so these do not fail here, they have no meaning
+//                         here. Excluded rather than subsetted; #2793 holds the question of whether
+//                         a single-threaded subset is worth asserting.
+//   OCCTStressTests       `withTaskGroup` across cores, and `ProcessInfo.processorCount`.
+//   OCCTMiscTests         `autoreleasepool` (no Objective-C runtime), `DispatchQueue`,
+//                         `DispatchGroup`, `NSLock`, `withTaskGroup`.
+//   OCCTFoundationTests   `DispatchQueue`, `DispatchGroup`, `NSLock`, `ProcessInfo`.
+//   OCCTIOTests           `NSLock` around a shared fixture directory.
+//
+// Excluding a whole target is the coarse answer and it is deliberate for a first increment: the
+// alternative is `#if !os(WASI)` inside 1,428 files, and wrapping a file in `#if` makes
+// swift-format reindent the entire body, which is the 1,400-line reformat the Harnesses target
+// below records. Narrowing these five to the files that genuinely cannot build is follow-up work,
+// and it is worth doing in the order the numbers suggest: OCCTIOTests is one lock.
+let wasmUnportableTestTargets: Set<String> = [
+    "OCCTThreadTests",
+    "OCCTStressTests",
+    "OCCTMiscTests",
+    "OCCTFoundationTests",
+    "OCCTIOTests"
+]
+
+// Individual test files the remaining 13 targets cannot build for wasm, and why (#2793).
+//
+// All four call `Shape.isSelfIntersecting(hardTimeout:)`, which is `#if !os(WASI)` because its
+// contract needs a second thread the non-threads target does not have (#2760). 19 call sites.
+//
+// Excluded rather than guarded, for the reason the Harnesses target below records at length:
+// wrapping a file or a function body in `#if` makes swift-format reindent the whole body, which
+// turned a 28-line change into a 1,400-line reformat when it was tried.
+//
+// Two of these four are the honest kind of exclusion and two are not, which is worth saying rather
+// than leaving for a reviewer to notice:
+//
+//   Issue208SelfIntersectionTests.swift and Issue772SelfIntersectionAnalysisTests.swift are ABOUT
+//   self-intersection analysis. On a platform where the hard-timeout form cannot exist, excluding
+//   them loses nothing that could have run.
+//
+//   Issue446UnifyInputMutationTests.swift and Issue598PipeShellFrenetModeTests.swift call it
+//   INCIDENTALLY, as one assertion inside a test about input mutation and about Frenet mode. Those
+//   two lose real wasm coverage of subjects that have nothing to do with threads, and narrowing
+//   them to the statement is follow-up work on #2793 rather than something this first increment
+//   settles.
+let wasmExcludedTestFiles: [String: [String]] = [
+    // `Int` IS 32 BITS ON wasm32, so an input "past Int32.max" is not representable at all and
+    // these five files cannot say what they exist to say. Measured, not inferred: a wasm32 module
+    // prints `Int.bitWidth = 32`, `Int.max = 2147483647`, and `Int(Int32.max) + 1` reports
+    // overflow. The transcript is in `Scripts/repro/2793/`.
+    //
+    // Each file tests that a count past the bridge's `int32_t` is refused, and each spells the
+    // input `Int(Int32.max) + 1`, which on wasm32 traps the process rather than producing a value.
+    // The first run of `OCCTMathTests` under wasmkit died exactly there, in
+    // `Issue640MathDimensionBoundsTests.findAllRootsSamplesBounds`, after 500 lines of passing
+    // suites.
+    //
+    // Two repairs were tried and rejected. `Int(clamping: Int64(Int32.max) + 1)` does not trap but
+    // clamps to `Int32.max` on wasm32, which is a DIFFERENT assertion: the guards under test refuse
+    // counts GREATER than `Int32.max`, so at exactly `Int32.max` the call proceeds and tries the
+    // two-billion-element allocation for real. Swift Testing's `.enabled(if: Int.bitWidth > 32)` is
+    // the idiomatic skip and is the likely end state, but two of these sites sit inside a
+    // `@Test(arguments:)` list and one in a `static let`, and whether a trait suppresses evaluation
+    // of an argument list has to be measured before it is relied on. Narrowing these five is
+    // follow-up work on #2793.
+    //
+    // The guards themselves are not wrong on wasm32, they are unreachable: `count > Int32.max`
+    // cannot be true when `Int.max == Int32.max`. Nothing to fix in `Sources/`.
+    "OCCTAnalysisTests": ["Issue2857IntfToolIndexGuardTests.swift"],
+    "OCCTCurveTests": [
+        "Issue479SampleCountBoundTests.swift",
+        "Issue558SamplingCountBoundsTests.swift"
+    ],
+    "OCCTMathTests": [
+        "Issue640MathDimensionBoundsTests.swift",
+        "Issue2860MathGuardTests.swift"
+    ],
+    "OCCTModelingTests": [
+        "Issue208SelfIntersectionTests.swift",
+        "Issue598PipeShellFrenetModeTests.swift"
+    ],
+    "OCCTShapeHealingTests": [
+        "Issue446UnifyInputMutationTests.swift",
+        "Issue772SelfIntersectionAnalysisTests.swift"
+    ]
+]
+
+// Drop the test targets wasm cannot build, and give the ones it can the `simd` stand-in.
+//
+// The dependency is declared here rather than left to resolve itself. Measured: `import simd` in a
+// test file already compiles for wasm WITHOUT this, because every target shares one build-products
+// directory and `simd` is always in it (OCCTSwift depends on it). That is module visibility by
+// accident of layout, it is not a declared edge, and it would break the first time the layout or
+// the dependency changed. 1,179 of the 1,428 test files import `simd`.
+func adjustedForWASM(_ target: Target) -> Target? {
+    guard isWASI, target.type == .test else { return target }
+    guard !wasmUnportableTestTargets.contains(target.name) else { return nil }
+    var target = target
+    target.dependencies.append("simd")
+    if let excluded = wasmExcludedTestFiles[target.name] {
+        target.exclude += excluded
+    }
+    return target
+}
 
 let package = Package(
     name: "OCCTSwift",
@@ -805,6 +916,6 @@ let package = Package(
                 .swiftLanguageMode(.v6)
             ]
         ),
-    ] + wasiCompatTargets,
+    ].compactMap(adjustedForWASM) + wasiCompatTargets,
     cxxLanguageStandard: .cxx17
 )
