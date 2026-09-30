@@ -485,52 +485,6 @@ struct OCCTFreeBoundsProps
   bool                               performed;
 };
 
-// Run the analysis once. Returns whether results can be read.
-static bool occtFreeBoundsPerformed(OCCTFreeBoundsPropsRef props)
-{
-  if (!props)
-    return false;
-  if (props->performed)
-    return true;
-  try
-  {
-    if (!props->fbp.IsLoaded())
-      return false;
-    props->fbp.Perform();
-    props->performed = true;
-    return true;
-  }
-  catch (...)
-  {
-    occtRecordCaughtException(__func__);
-    return false;
-  }
-}
-
-// Resolve a 0-based index within one of the two sequences, range-checked here rather than left
-// to NCollection_Sequence::Value's own throw: that check is compiled into this TU, so it does
-// fire, but it costs an exception per out-of-range read and cannot distinguish "no such bound"
-// from a genuine OCCT failure.
-static Handle(ShapeAnalysis_FreeBoundData) occtFreeBound(OCCTFreeBoundsPropsRef props,
-                                                         OCCTFreeBoundKind      kind,
-                                                         int32_t                index)
-{
-  if (!occtFreeBoundsPerformed(props) || index < 0)
-    return nullptr;
-  const bool closed = (kind == OCCTFreeBoundClosed);
-  try
-  {
-    if (index >= (closed ? props->fbp.NbClosedFreeBounds() : props->fbp.NbOpenFreeBounds()))
-      return nullptr;
-    return closed ? props->fbp.ClosedFreeBound(index + 1) : props->fbp.OpenFreeBound(index + 1);
-  }
-  catch (...)
-  {
-    occtRecordCaughtException(__func__);
-    return nullptr;
-  }
-}
-
 struct OCCTShapeFixer
 {
   Handle(ShapeFix_Shape) fixer;
