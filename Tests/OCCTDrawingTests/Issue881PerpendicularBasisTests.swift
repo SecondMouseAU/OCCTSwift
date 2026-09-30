@@ -21,8 +21,11 @@ struct Issue881DrawingPerpendicularBasisTests {
     @Test("projectPointToPlane's basis matches OCCT's gp_Ax2 canonical basis")
     func projectPointToPlaneMatchesGpAx2() {
         let projectedRight = projectPointToPlane(
-            PerpendicularBasisGroundTruth.expectedRight, viewDirection: PerpendicularBasisGroundTruth.nearDegenerate)
-        let projectedUp = projectPointToPlane(PerpendicularBasisGroundTruth.expectedUp, viewDirection: PerpendicularBasisGroundTruth.nearDegenerate)
+            PerpendicularBasisGroundTruth.expectedRight,
+            viewDirection: PerpendicularBasisGroundTruth.nearDegenerate)
+        let projectedUp = projectPointToPlane(
+            PerpendicularBasisGroundTruth.expectedUp,
+            viewDirection: PerpendicularBasisGroundTruth.nearDegenerate)
         #expect(abs(projectedRight.x - 1.0) < 1e-9)
         #expect(abs(projectedRight.y) < 1e-9)
         #expect(abs(projectedUp.x) < 1e-9)

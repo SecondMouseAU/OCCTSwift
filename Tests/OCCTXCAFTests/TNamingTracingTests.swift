@@ -113,7 +113,8 @@ struct TNamingTracingTests {
         let backward = doc.tracedBackward(from: sphere, scope: label2)
         #expect(backward.count >= 1, "Should find source shape")
         for shape in backward {
-            #expect(!shape.isSame(as: sphere), "Backward trace should not include the generated shape")
+            #expect(
+                !shape.isSame(as: sphere), "Backward trace should not include the generated shape")
         }
     }
 }

@@ -11,7 +11,7 @@ import simd
 ///
 /// `DrawingPrimitiveSink`/`collectDrawing` are `internal`, reachable here only via
 /// `@testable import`.
-fileprivate final class RecordingSink: DrawingPrimitiveSink {
+private final class RecordingSink: DrawingPrimitiveSink {
     var deflection: Double = 0.1
     var cachedPrimitiveOps: DrawingPrimitiveOps?
     var entityBuffer = DrawingEntityBuffer()

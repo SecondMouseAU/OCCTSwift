@@ -16,4 +16,3 @@ struct ArcOfParabolaTests {
         #expect(simd_length(mid) < 0.01)
     }
 }
-

@@ -12,4 +12,3 @@ struct TrimmedCylinderTests {
         #expect(surf.handle != nil)
     }
 }
-

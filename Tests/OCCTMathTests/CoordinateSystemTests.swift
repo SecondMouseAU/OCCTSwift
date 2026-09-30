@@ -36,4 +36,3 @@ struct CoordinateSystemTests {
         #expect(abs(result.z + 2.0) < 1e-6)
     }
 }
-

@@ -16,16 +16,26 @@ import RunnerCore
 
 enum CensusRunner {
     static let censuses: [RunnableEntry] = [
-        RunnableEntry(name: "cluster-a", summary: "sub-shape enumeration and orientation (#664)", run: ClusterA.run),
-        RunnableEntry(name: "cluster-b", summary: "fillet and chamfer edge-set contract (#665)", run: ClusterB.run),
-        RunnableEntry(name: "cluster-d", summary: "continuity handling across the kernel and bridge (#513/#667)", run: ClusterD.run),
-        RunnableEntry(name: "issue-761", summary: "AAG vs BRepGraph face/edge adjacency (#761)", run: Issue761.run),
+        RunnableEntry(
+            name: "cluster-a", summary: "sub-shape enumeration and orientation (#664)",
+            run: ClusterA.run),
+        RunnableEntry(
+            name: "cluster-b", summary: "fillet and chamfer edge-set contract (#665)",
+            run: ClusterB.run),
+        RunnableEntry(
+            name: "cluster-d",
+            summary: "continuity handling across the kernel and bridge (#513/#667)",
+            run: ClusterD.run),
+        RunnableEntry(
+            name: "issue-761", summary: "AAG vs BRepGraph face/edge adjacency (#761)",
+            run: Issue761.run),
     ]
 
     static func main() {
         GenericRunner.main(
             toolName: "Censuses",
-            blurb: "Censuses: runnable measurement artifacts for docs/v2.0.0-plan.md's census-once rule.",
+            blurb:
+                "Censuses: runnable measurement artifacts for docs/v2.0.0-plan.md's census-once rule.",
             entries: censuses)
     }
 }

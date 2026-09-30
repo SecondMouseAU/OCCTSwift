@@ -176,7 +176,9 @@ struct MeshAndExportProgressTests {
     // copy-paste mistake (the wrong bridge call, or the wrong format name, wired to the wrong
     // overload) would be invisible to the existing round-trip-only tests above.
 
-    @Test("Exporter.writeSTEP(progress:) rejects an invalid shape, matching every other STEP overload")
+    @Test(
+        "Exporter.writeSTEP(progress:) rejects an invalid shape, matching every other STEP overload"
+    )
     func exportSTEPWithProgressInvalidShape() throws {
         let invalid = invalidBowtieShape()
         let url = FileManager.default.temporaryDirectory
@@ -191,7 +193,9 @@ struct MeshAndExportProgressTests {
         }
     }
 
-    @Test("Exporter.writeIGES(progress:) rejects an invalid shape, matching every other IGES overload")
+    @Test(
+        "Exporter.writeIGES(progress:) rejects an invalid shape, matching every other IGES overload"
+    )
     func exportIGESWithProgressInvalidShape() throws {
         let invalid = invalidBowtieShape()
         let url = FileManager.default.temporaryDirectory

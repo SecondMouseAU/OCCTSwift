@@ -48,4 +48,3 @@ struct PolynomialSolverLaguerreTests {
         #expect(roots.count >= 3)
     }
 }
-

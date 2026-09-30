@@ -922,12 +922,18 @@ public static func shell(from surface: Surface) -> Shape?
 
 Converts a `Surface` to a topological shell shape (a single face inside a shell, no trimming).
 
-- **Parameters:** `surface`, the parametric surface to convert.
+**The surface must already be bounded.** `BRepBuilderAPI_MakeShell` has no bounds of its own to
+fall back on, and `Surface.cylinder` / `.plane` / `.cone` are infinite, so handing one of those
+straight to this factory takes the process down rather than returning nil. Build the bounded form
+(`Surface.trimmedCylinder(...)`, `trimmed(u1:u2:v1:v2:)`) first.
+
+- **Parameters:** `surface`, the parametric surface to convert. Must be bounded.
 - **Returns:** Shell shape, or nil on failure.
 - **OCCT:** `BRepBuilderAPI_MakeShell` (via `OCCTShapeCreateShellFromSurface`).
 - **Example:**
   ```swift
-  let cyl = Surface.cylinder(origin: .zero, axis: SIMD3(0, 0, 1), radius: 5)!
+  let cyl = Surface.trimmedCylinder(
+      origin: .zero, direction: SIMD3(0, 0, 1), radius: 5, height: 20)!
   if let shell = Shape.shell(from: cyl) { }
   ```
 

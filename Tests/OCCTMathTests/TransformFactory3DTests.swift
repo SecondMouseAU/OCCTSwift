@@ -60,4 +60,3 @@ struct TransformFactory3DTests {
         #expect(abs(p.z - 3) < 1e-6)
     }
 }
-

@@ -42,4 +42,3 @@ struct ElSLibTests {
         #expect(abs(uv.v) < 1e-10)
     }
 }
-

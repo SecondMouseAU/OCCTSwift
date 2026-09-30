@@ -42,7 +42,8 @@ struct FreeBoundsTests {
     func fixFreeBoundsCallable() throws {
         let rect = try #require(Wire.rectangle(width: 10, height: 10))
         let face = try #require(Shape.face(from: rect))
-        let repair = try #require(face.fixedFreeBounds(sewingTolerance: 1e-6, closingTolerance: 1e-4))
+        let repair = try #require(
+            face.fixedFreeBounds(sewingTolerance: 1e-6, closingTolerance: 1e-4))
         // `_ = result` was the whole test until #1636, which is how it passed while the returned
         // shape was a compound of wires with no faces in it.
         #expect(repair.shape.subShapes(ofType: .face).count == 1)

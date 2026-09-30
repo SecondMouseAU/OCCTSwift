@@ -50,7 +50,8 @@ struct XCAFViewObjectTests {
         for (raw, expected) in cases {
             OCCTViewObjectSetType(ref, raw)
             let readBack = OCCTViewObjectGetType(ref)
-            #expect(readBack == raw, "bridge round-trip changed the raw XCAFView_ProjectionType value")
+            #expect(
+                readBack == raw, "bridge round-trip changed the raw XCAFView_ProjectionType value")
             let decoded = ViewObject.ProjectionType(rawValue: readBack)
             #expect(decoded == expected)
         }

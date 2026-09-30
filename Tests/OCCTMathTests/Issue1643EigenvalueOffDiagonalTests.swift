@@ -122,7 +122,8 @@ struct Issue1643EigenvalueOffDiagonal {
     func lengthGuard() {
         // The old shape. A caller who did not notice the rename gets nil, not a spectrum.
         #expect(MathSolver.eigenvalues(diagonal: [2, 2, 2], offDiagonal: [1, 1, 0]) == nil)
-        #expect(MathSolver.eigenvaluesAndVectors(diagonal: [2, 2, 2], offDiagonal: [1, 1, 0]) == nil)
+        #expect(
+            MathSolver.eigenvaluesAndVectors(diagonal: [2, 2, 2], offDiagonal: [1, 1, 0]) == nil)
         // Too short, the #640 out-of-bounds read.
         #expect(MathSolver.eigenvalues(diagonal: [2, 2, 2], offDiagonal: [1]) == nil)
         #expect(MathSolver.eigenvaluesAndVectors(diagonal: [2, 2, 2], offDiagonal: [1]) == nil)

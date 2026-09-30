@@ -96,7 +96,8 @@ struct ShapeRevolutionAxesTests {
     // axis direction, so it's never "the same line"), forces exactly 300 distinct axes: enough to
     // overrun the real 256-element buffer through the real public API, no shipped constant
     // changed to get there.
-    @Test("More than 256 distinct revolution axes: reported count never exceeds the buffer capacity")
+    @Test(
+        "More than 256 distinct revolution axes: reported count never exceeds the buffer capacity")
     func manyDistinctAxesCountNeverExceedsBufferCapacity() {
         let n = 300
         var cylinders: [Shape] = []

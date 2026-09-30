@@ -37,4 +37,3 @@ struct Axis1PlacementTests {
         #expect(abs(ax.location.x - 5) < 1e-10)
     }
 }
-

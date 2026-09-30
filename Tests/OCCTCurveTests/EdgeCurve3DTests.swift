@@ -42,7 +42,9 @@ struct EdgeCurve3DTests {
 
     // MARK: - #1584: curve3D is deliberately the raw, untrimmed curve
 
-    @Test("Straight edge's curve3D domain is the underlying Geom_Line's unbounded range, not the edge's own finite span")
+    @Test(
+        "Straight edge's curve3D domain is the underlying Geom_Line's unbounded range, not the edge's own finite span"
+    )
     func straightEdgeCurve3DIsUntrimmed() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10) else {
             Issue.record("box nil")
@@ -65,7 +67,9 @@ struct EdgeCurve3DTests {
         #expect(checked)
     }
 
-    @Test("Circular edge's curve3D domain is the underlying circle's full period, not the arc's own sweep")
+    @Test(
+        "Circular edge's curve3D domain is the underlying circle's full period, not the arc's own sweep"
+    )
     func circularEdgeCurve3DIsUntrimmed() {
         // A quarter-circle arc: its own parameter range is far short of a full
         // 2*pi period, but curve3D's domain should still report the full period

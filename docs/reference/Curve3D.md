@@ -1294,12 +1294,17 @@ The helix is parameterized as `C(t) = R·cos(t)·X + R·sin(t)·Y + (P·t / 2π)
 - **OCCT:** `GeomEval_CircularHelixCurve(ax, radius, pitch)`.
 - **Example:**
   ```swift
-  if let helix = Curve3D.circularHelix(radius: 5, pitch: 2) {
-      let pts = helix.drawAdaptive()
+  if let helix = Curve3D.circularHelix(radius: 5, pitch: 2),
+     let oneTurn = helix.trimmed(from: 0, to: 2 * .pi)
+  {
+      let pts = oneTurn.drawAdaptive()
       // pts trace one full revolution from t=0 to t=2π
   }
   ```
-- **Note:** Use `trimmed(from:to:)` to limit the helix to a specific number of turns: `helix.trimmed(from: 0, to: turns * 2 * .pi)`.
+- **Note:** The helix itself is **unbounded**, so trim it before sampling. `drawAdaptive()` on the
+  untrimmed curve does not return: it subdivides an infinite domain. `trimmed(from:to:)` limits it
+  to a number of turns, `helix.trimmed(from: 0, to: turns * 2 * .pi)`, which is what the example
+  above does.
 
 ---
 

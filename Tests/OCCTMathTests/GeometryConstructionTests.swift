@@ -85,4 +85,3 @@ struct GeometryConstructionTests {
         #expect(abs(volume - 150.0) < 0.1)  // 10 * 5 * 3
     }
 }
-

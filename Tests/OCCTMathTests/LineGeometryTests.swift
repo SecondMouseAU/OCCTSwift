@@ -48,4 +48,3 @@ struct LineGeometryTests {
         #expect(!r)
     }
 }
-

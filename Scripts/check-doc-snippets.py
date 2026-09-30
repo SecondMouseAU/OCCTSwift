@@ -184,11 +184,48 @@ than its inputs is still a refusal, exactly as #2816 left it, and `module_invent
 the module and its absolute write time on every outcome, so the next instance of this is one line in
 the run that refused rather than arithmetic across three that did.
 
+## Stage 3: running them (#2851)
+
+Type-checking says a documented example is a legal program. It does not say the example *works*,
+and the strongest available form of "does not work" is that running it takes the process down.
+`docs/reference/Surface-Analysis.md`'s `extrema(to:)` example was #2840's crash reproducer,
+carrying `≈ 10.0` as its expected answer, and it type-checked clean on every CI run for as long as
+#2840's defect existed. This closes that, and its shape is dictated by what the costs turned out
+to be. It is the **default**, off by `--no-run` rather than on by a flag CI would have to pass, so
+a local run and CI cannot check different things; three runs each on one laptop measured a median
+5 s for the type-check alone and 18 s with the running, of which about 6 s is the running itself:
+
+  - **One executable, not one per snippet.** Linking a single one-statement snippet against this
+    package's merged static archive takes 4.4 s measured, so 1,735 separate links is over two
+    hours. Every runnable snippet becomes one top-level function in one binary instead: one
+    compile, one link.
+  - **The binary takes a starting index** and announces each case on stderr before running it, so
+    the driver can restart it after whatever killed it. A clean corpus is one process; each defect
+    costs one more. The cost is proportional to the number of failures, not to the population.
+  - **A watchdog, not a per-case timeout**, for the same reason: a per-case timeout needs a
+    process per case.
+  - **A scratch working directory**, because a documented example that writes a STEP file writes
+    it into `$PWD`, and `$PWD` in CI is the checkout.
+  - **A planted case that must die.** A driver reporting every case clean is indistinguishable
+    from a clean corpus, and the ways to get there are ordinary: a binary that exits early, a pump
+    thread that reads nothing, a watchdog that never fires. The canary's sign is the opposite of
+    the compile stages': theirs must fail to compile, this one must fail to run.
+
+A snippet that compiles and must not be run carries its own marker, which is a different question
+from `no-typecheck:` and needs a different word:
+
+    ```swift no-run: writes a 40 MB STEP file
+
+The reason after the colon is required, and a bare `no-run` is reported the same way a bare
+`no-typecheck` is. `no-typecheck` implies `no-run`, since a fence that does not compile is never
+linked into the runner.
+
 ## Usage
 
     python3 Scripts/check-doc-snippets.py              # extract, type-check, report; exit 1 on a failure
     python3 Scripts/check-doc-snippets.py --list       # inventory per kind, no compile
     python3 Scripts/check-doc-snippets.py --fragments  # also list the fragment sites
+    python3 Scripts/check-doc-snippets.py --run        # ...and EXECUTE the ones that compile (#2851)
     python3 Scripts/check-doc-snippets.py --self-test  # prove the detector is not blind
     python3 Scripts/check-doc-snippets.py --paths docs/reference/Curve3D-Analysis.md
 """
@@ -197,7 +234,9 @@ from __future__ import annotations
 
 import argparse
 import contextlib
+import functools
 import io
+import json
 import os
 import pathlib
 import re
@@ -206,6 +245,7 @@ import platform
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 
 REPO = pathlib.Path(__file__).resolve().parent.parent
@@ -246,6 +286,17 @@ DECL_OPENERS = frozenset({
 })
 
 OPT_OUT = 'no-typecheck'
+
+# #2851's marker, and it is a different question from `no-typecheck`. That one says "this fence is
+# not compilable Swift". This one says "this snippet compiles, and running it is not something CI
+# should do": it writes somewhere it should not, it takes minutes, it needs a file the repo does
+# not ship, or it is a deliberate reproducer of a crash the kernel still has. The reason after the
+# colon is required, same as the other marker and for the same reason.
+#
+#     ```swift no-run: writes a 40 MB STEP file
+#
+# `no-typecheck` implies it: a fence that does not compile is never linked into the runner.
+NO_RUN = 'no-run'
 
 # Errors that mean "this snippet opens mid-flow", not "this snippet is wrong".
 MISSING_NAME = re.compile(r"cannot find (?:type )?'[^']+' in scope")
@@ -289,7 +340,7 @@ MIN_CHUNK = 250
 class Block:
     """One fenced ```swift``` block, wherever it came from."""
 
-    __slots__ = ('path', 'start_line', 'info', 'body', 'origin', 'kind', 'reason')
+    __slots__ = ('path', 'start_line', 'info', 'body', 'origin', 'kind', 'reason', 'no_run')
 
     def __init__(self, path, start_line, info, body, origin):
         self.path = path            # repo-relative str
@@ -299,6 +350,7 @@ class Block:
         self.origin = origin        # 'markdown' | 'doc-comment'
         self.kind = None            # 'declaration' | 'snippet' | 'opt-out' | 'opt-out-no-reason'
         self.reason = None          # opt-out reason
+        self.no_run = None          # `no-run:` reason, '' for the marker with none, None for absent
 
     def __repr__(self):
         return f'<Block {self.path}:{self.start_line} {self.kind}>'
@@ -405,8 +457,11 @@ def first_significant(body):
 
 
 def classify(block):
-    """Set `block.kind` (and `block.reason` for an opt-out)."""
+    """Set `block.kind` (and `block.reason` for an opt-out, `block.no_run` for `no-run:`)."""
     info = block.info
+    if NO_RUN in info:
+        _, _, no_run_reason = info.partition(NO_RUN)
+        block.no_run = no_run_reason.lstrip(': ').strip()
     if OPT_OUT in info:
         _, _, reason = info.partition(OPT_OUT)
         reason = reason.lstrip(': ').strip()
@@ -1058,6 +1113,477 @@ def check(blocks, verbose=False, keep=None, canaries=True, jobs=None, wmo=True):
             shutil.rmtree(outdir, ignore_errors=True)
 
 
+# --------------------------------------------------------------------------------------------------
+# Stage 3: execution (#2851)
+# --------------------------------------------------------------------------------------------------
+#
+# Type-checking says a documented example is a legal program. It does not say the example works,
+# and the strongest available form of "does not work" is that running it takes the process down.
+# That is not hypothetical: `docs/reference/Surface-Analysis.md`'s `extrema(to:)` example was
+# #2840's crash reproducer, carrying `≈ 10.0` as its expected answer, and it type-checked clean on
+# every CI run for as long as #2840's defect existed.
+#
+# THE SHAPE, and why it is not "one process per snippet". Linking one executable per snippet costs
+# a link each (4.4 s measured for a one-statement snippet against this package's merged static
+# archive), so the 1,735 compiling snippets would be over two hours of linking. Instead every
+# runnable snippet becomes one top-level function in ONE executable, which is one compile and one
+# link, and the executable takes a starting index and runs from there to the end, announcing each
+# case on stderr before it begins.
+#
+# THE DRIVER resumes. A snippet that dies takes the process with it, which is the point: the last
+# announced index is the one that died, the driver records it and restarts the binary at the next
+# one. A snippet that hangs is the same case with a watchdog instead of an exit status. So one
+# clean run is one process, and each failure costs one more, which makes the cost proportional to
+# the number of defects rather than to the size of the population.
+#
+# THE CANARY is the same device stages 1 and 2 carry, with the sign this stage needs: a planted
+# case that MUST die. A driver that reports every case clean looks exactly like a clean corpus,
+# and the ways to get there are not exotic (a binary that exits before running anything, a pump
+# thread that reads nothing, a watchdog that never fires). If the canary survives, the run is
+# refused rather than reported.
+#
+# THE WORKING DIRECTORY is a fresh temp directory, because a documented example that writes a STEP
+# file writes it into `$PWD`, and `$PWD` in CI is the checkout.
+
+RUN_IMPORTS = ('import Foundation', 'import simd', 'import OCCTSwift')
+
+# The planted case. `Shape.box` with a zero dimension is not it: that returns nil, which is a
+# correct refusal. An unconditional trap is, and it must be a trap rather than a `throw`, because
+# the driver treats a throw as a snippet's own business.
+CANARY_RUN = ('fatalError("__occtDocSnippetRunCanary")',)
+
+# Seconds without a new case announcement before the driver calls it a hang. Generous, because a
+# cookbook example that meshes a solid is slow and not wrong.
+DEFAULT_STALL = 60.0
+
+
+class RunOutcome:
+    """What running one snippet did. `kind` is 'ok', 'threw', 'crash' or 'stall'."""
+
+    __slots__ = ('kind', 'detail')
+
+    def __init__(self, kind, detail=''):
+        self.kind = kind
+        self.detail = detail
+
+    def __repr__(self):
+        return f'<{self.kind}{" " + self.detail if self.detail else ""}>'
+
+
+# The archive that has to be found, by name, because finding *an* archive is not the same thing.
+# The first version took any `lib*.a` beside the module and CI had exactly one, the OCCT kernel,
+# with `libOCCTSwift.a` in a different directory entirely. The link then failed on every OCCTSwift
+# symbol, which is the same outcome as finding nothing and cost a CI round trip to read.
+PACKAGE_ARCHIVE = 'libOCCTSwift.a'
+
+
+def artefact_dirs(name, base=None, depth=MODULE_SEARCH_DEPTH):
+    """Directories under `.build` holding an entry called `name`, most recently written first.
+
+    An *entry*, not a file: `Path.glob` matches a directory as readily as a file and `stat()`
+    works on both, so `artefact_dirs('OCCTSwift.build')` finds the per-target object directory
+    exactly as `artefact_dirs('libOCCTSwift.a')` finds the archive. Read as file-only on PR #2889
+    and reported as dead code, which a self-test case now settles.
+
+    `module_dirs`' argument, applied to the other artefacts: SwiftPM has shipped at least three
+    layouts this script has met, and neither the archive nor the merged object has to sit where
+    the module sits. Measured on the CI runner, which put the module in `<bin>/Modules/` and the
+    compiled code somewhere a search beside it did not reach.
+    """
+    root = REPO if base is None else pathlib.Path(base)
+    hits = []
+    for d in range(1, depth + 1):
+        hits.extend(root.glob('/'.join(['.build'] + ['*'] * d + [name])))
+    ordered = []
+    for hit in sorted(hits, key=lambda h: h.stat().st_mtime, reverse=True):
+        if hit.parent not in ordered:
+            ordered.append(hit.parent)
+    return ordered
+
+
+def archive_dirs(base=None, depth=MODULE_SEARCH_DEPTH):
+    """Directories under `.build` holding `libOCCTSwift.a`, most recently written first."""
+    return artefact_dirs(PACKAGE_ARCHIVE, base=base, depth=depth)
+
+
+# The merged object the Swift Build backend writes beside the archive. A last resort, one file
+# and free to look for, kept because a layout that writes it and no archive is cheap to survive.
+PACKAGE_OBJECT = 'OCCTSwift.o'
+
+# The library product this stage links against. Its NAME is all that is written here; which
+# targets stand behind it is SwiftPM's answer, not a list in this file. See `product_targets`.
+PACKAGE_PRODUCT = 'OCCTSwift'
+
+
+@functools.lru_cache(maxsize=None)
+def product_targets(product=PACKAGE_PRODUCT, base=None):
+    """The targets `product` is built from, transitively, as SwiftPM itself reports them.
+
+    **`swift package describe --type json`, because the two layouts disagree about everything
+    except this.** `OCCTSwift` is an *automatic* library product, so whether a standalone archive
+    is written at all is SwiftPM's choice and not the manifest's: the Swift Build backend
+    (`swiftbuild`, the default since Swift 6.4 and what a laptop runs here) writes
+    `libOCCTSwift.a` and `OCCTSwift.o` into `.build/out/Products/Debug`, and the llbuild backend
+    (`native`, still the default in the Xcode 26.3 the runner has) writes **neither**, anywhere.
+    It compiles each target into `<bin>/<Target>.build/` and links those objects straight into
+    every executable. Two CI round trips were spent looking for a file that layout never writes.
+
+    The target set is the one thing that does not vary, and asking for it costs a measured 0.7 s
+    against a resolved package. A list written here instead would be a fourth guess: today the
+    answer is `OCCTSwift`, `OCCTBridge` and `OCCTPlatform`, and `OCCTPlatform` joined it in #2839.
+
+    Returns a tuple, most-depended-on last, or `()` when `describe` cannot be run or does not
+    know the product. An empty answer is not silently fatal: `link_inventory` prints why.
+    """
+    root = REPO if base is None else pathlib.Path(base)
+    if not (root / 'Package.swift').is_file():
+        return ()
+    try:
+        proc = subprocess.run(['swift', 'package', 'describe', '--type', 'json'],
+                              cwd=str(root), capture_output=True, text=True, timeout=180)
+    except (OSError, subprocess.SubprocessError):
+        return ()
+    if proc.returncode != 0:
+        return ()
+    try:
+        described = json.loads(proc.stdout)
+    except ValueError:
+        return ()
+    deps = {t.get('name'): tuple(t.get('target_dependencies') or ())
+            for t in described.get('targets', [])}
+    roots = [tuple(p.get('targets') or ()) for p in described.get('products', [])
+             if p.get('name') == product]
+    if not roots:
+        return ()
+    seen, queue = [], list(roots[0])
+    while queue:
+        name = queue.pop(0)
+        if name in seen or name not in deps:
+            continue
+        seen.append(name)
+        queue.extend(deps[name])
+    return tuple(seen)
+
+
+def target_object_dirs(bin_dir, targets):
+    """The `<Target>.build` directories under `bin_dir` that exist, in `targets` order.
+
+    A binary target such as `OCCT` has no such directory, which is why this filters rather than
+    demanding one per target: the kernel arrives as `libOCCT-macos.a` in the bin root and is
+    picked up by the `lib*.a` glob alongside.
+    """
+    dirs = []
+    for name in targets:
+        d = bin_dir / f'{name}.build'
+        if d.is_dir():
+            dirs.append(d)
+    return dirs
+
+
+def link_args(module_dir, base=None):
+    """Flags that link an executable against the built package, or None.
+
+    Three shapes, because SwiftPM emits three and which one a machine gets is the build system's
+    choice rather than the manifest's (see `product_targets`).
+
+    1. **The merged static archive**, preferred: `libOCCTSwift.a` beside the module (`module_dir`
+       may be the bin root or its `Modules/` subdirectory, #2867), then searched for under
+       `.build`. Every `lib*.a` in whichever directory holds it is passed, rather than a fixed
+       list of names, since this layout merges every target and the whole OCCT kernel into one
+       archive and a layout that splits them still answers the glob.
+    2. **The per-target objects**, which is what the runner has: no archive exists, and the
+       compiled code is `<bin>/<Target>.build/**/*.o` for each target behind the `OCCTSwift`
+       product. `rglob`, not `glob`, because a Clang target nests its objects under the source
+       directory they came from: the 74 bridge objects are in `OCCTBridge.build/src/`.
+    3. **A single merged `OCCTSwift.o`**, the last resort.
+
+    The objects are passed directly rather than through `-l`, which is why a shape cannot be
+    mixed with the archive: both define the same symbols.
+
+    Reading a cached artefact is the #2867 trap on a second artefact, and the answer is the same
+    one: `ci.yml` deletes the archive alongside the module before the build, so anything found
+    was written by that build.
+    """
+    for d in (module_dir, module_dir.parent):
+        if (d / PACKAGE_ARCHIVE).is_file():
+            return _archive_flags(d)
+    for d in archive_dirs(base):
+        return _archive_flags(d)
+    targets = product_targets(base=base)
+    if targets:
+        for d in (module_dir, module_dir.parent):
+            dirs = target_object_dirs(d, targets)
+            if dirs:
+                return _target_flags(d, dirs)
+        for d in artefact_dirs(f'{targets[0]}.build', base):
+            dirs = target_object_dirs(d, targets)
+            if dirs:
+                return _target_flags(d, dirs)
+    for d in (module_dir, module_dir.parent):
+        if (d / PACKAGE_OBJECT).is_file():
+            return _object_flags(d)
+    for d in artefact_dirs(PACKAGE_OBJECT, base):
+        return _object_flags(d)
+    return None
+
+
+def _archive_flags(d):
+    return ['-L', str(d)] + [f'-l{a.stem[3:]}' for a in sorted(d.glob('lib*.a'))] + ['-lc++']
+
+
+def _target_flags(bin_dir, dirs):
+    objects = sorted(str(o) for d in dirs for o in d.rglob('*.o'))
+    return (objects + ['-L', str(bin_dir)]
+            + [f'-l{a.stem[3:]}' for a in sorted(bin_dir.glob('lib*.a'))] + ['-lc++'])
+
+
+def _object_flags(d):
+    return ([str(o) for o in sorted(d.glob('*.o'))]
+            + ['-L', str(d)] + [f'-l{a.stem[3:]}' for a in sorted(d.glob('lib*.a'))]
+            + ['-lc++'])
+
+
+def link_inventory(module_dir, base=None):
+    """What the three searches actually saw, for a refusal that names it rather than a directory.
+
+    Deliberately long, and it prints on a refusal only. #2867's refusal named one directory and
+    left "was this build's artefact there at all" to arithmetic across three jobs' logs; this
+    refusal's own predecessor named two filenames and so reported "nowhere" about a layout that
+    writes neither of them, which reads as a broken build rather than a wrong search. Each line
+    is capped at eight or twelve names, so the whole block is about twenty-five lines.
+    """
+    lines = []
+    for d in (module_dir, module_dir.parent):
+        if not d.is_dir():
+            lines.append(f'  {d}: not a directory')
+            continue
+        archives = sorted(p.name for p in d.glob('lib*.a'))
+        objects = sorted(p.name for p in d.glob('*.o'))
+        builds = sorted(p.name for p in d.glob('*.build') if p.is_dir())
+        lines.append(f'  {d}: {len(archives)} lib*.a {archives[:8]}, '
+                     f'{len(objects)} *.o {objects[:8]}, '
+                     f'{len(builds)} *.build {builds[:12]}')
+    targets = product_targets(base=base)
+    lines.append(f'  targets behind the {PACKAGE_PRODUCT} product, per '
+                 f'`swift package describe`: {list(targets) if targets else "could not be read"}')
+    for name in (PACKAGE_ARCHIVE, PACKAGE_OBJECT) + tuple(f'{t}.build' for t in targets):
+        found = artefact_dirs(name, base)
+        lines.append(f'  {name} under .build (depth {MODULE_SEARCH_DEPTH}): '
+                     + (', '.join(str(d) for d in found) if found else 'nowhere'))
+    build = (REPO if base is None else pathlib.Path(base)) / '.build'
+    for d in range(1, 4):
+        got = sorted(build.glob('/'.join(['*'] * d)))
+        lines.append(f'  .build depth {d}: {len(got)} entr(ies) '
+                     + str([p.name for p in got[:12]]))
+    return lines
+
+
+def runnable(blocks, results):
+    """The snippets this stage runs, in order: type-checked clean and not marked `no-run`."""
+    snippets = [b for b in blocks if b.kind == 'snippet']
+    out = []
+    for n, b in enumerate(snippets):
+        kind = results.get(f's{n:05d}.swift', ('', []))[0]
+        if kind == 'clean' and b.no_run is None:
+            out.append(b)
+    return out
+
+
+def generate_runner(cases, outdir, canary=True, imports=RUN_IMPORTS):
+    """Write one Swift file per case plus the dispatcher. Returns the index of the canary, or None.
+
+    The canary is appended last so that a driver which stops early still has to reach it: a run
+    that never got there reports fewer cases than exist, which the caller checks separately.
+    """
+    bodies = [rewrite_for_compile(b.body) for b in cases]
+    canary_at = None
+    if canary:
+        canary_at = len(bodies)
+        bodies.append(list(CANARY_RUN))
+    names = []
+    for n, body in enumerate(bodies):
+        name = f'__occtDocSnippetCase{n:05d}'
+        names.append(name)
+        lines = list(imports) + [f'func {name}() async throws {{'] + list(body) + ['}']
+        (outdir / f'{name}.swift').write_text('\n'.join(lines) + '\n', encoding='utf-8')
+    table = ',\n'.join(f'            {n}' for n in names)
+    (outdir / 'zzmain.swift').write_text(
+        'import Foundation\n'
+        '\n'
+        '@main\n'
+        'struct __OCCTDocSnippetRunner {\n'
+        '    static func say(_ s: String) {\n'
+        '        FileHandle.standardError.write((s + "\\n").data(using: .utf8)!)\n'
+        '    }\n'
+        '\n'
+        '    // A local, not a static: a global array of async closures is not Sendable under\n'
+        '    // Swift 6, and the package builds in Swift 6 language mode, so the runner must too.\n'
+        '    static func main() async {\n'
+        '        let cases: [() async throws -> Void] = [\n'
+        f'{table}\n'
+        '        ]\n'
+        '        let from = Int(CommandLine.arguments.dropFirst().first ?? "0") ?? 0\n'
+        '        for i in from..<cases.count {\n'
+        '            say("CASE \\(i)")\n'
+        '            do { try await cases[i]() } catch { say("THREW \\(i)") }\n'
+        '        }\n'
+        '        say("DONE")\n'
+        '        exit(0)\n'
+        '    }\n'
+        '}\n', encoding='utf-8')
+    return canary_at
+
+
+def build_runner(outdir, tc_args, extra_link=(), verbose=False):
+    """Compile and link the runner. Returns `(exe, seconds)` or `(None, message)`.
+
+    `-wmo` for the same reason stages 1 and 2 use it: this is thousands of files, and batch mode
+    spends its whole budget on process startup. `-num-threads` is what keeps whole-module from
+    serialising the code generation it then has to do, which type-checking never reached.
+    """
+    exe = outdir / 'occt-doc-snippet-runner'
+    cmd = (['xcrun', 'swiftc', '-swift-version', '6', '-parse-as-library', '-Onone',
+            '-wmo', '-num-threads', str(max(1, (os.cpu_count() or 2)))]
+           + list(tc_args) + list(extra_link) + ['-o', str(exe)]
+           + [str(p) for p in sorted(outdir.glob('*.swift'))])
+    if verbose:
+        print(f'stage 3, link: {len(list(outdir.glob("*.swift")))} files', file=sys.stderr)
+    t0 = time.time()
+    proc = subprocess.run(cmd, cwd=str(outdir), capture_output=True, text=True)
+    secs = time.time() - t0
+    if proc.returncode != 0:
+        # Both: the `error:` lines name a snippet, and the tail carries the linker's own output,
+        # which has no `error:` prefix at all and is where an undefined symbol appears.
+        errs = [ln for ln in (proc.stderr + proc.stdout).splitlines() if ' error:' in ln]
+        tail = (proc.stderr + proc.stdout)[-4000:]
+        return None, '\n'.join(errs[:20]) + '\n--- last 4000 chars ---\n' + tail
+    return exe, secs
+
+
+def drive_runner(exe, total, cwd, stall=DEFAULT_STALL, verbose=False):
+    """Run every case, resuming past whatever kills the process. Returns `{index: RunOutcome}`."""
+    outcome = {}
+    start = 0
+    while start < total:
+        proc = subprocess.Popen([str(exe), str(start)], cwd=str(cwd),
+                                stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True)
+        state = {'cur': None, 'last': time.time(), 'threw': set(), 'done': False}
+
+        def pump(stream=proc.stderr, st=state):
+            for line in stream:
+                line = line.strip()
+                st['last'] = time.time()
+                if line.startswith('CASE '):
+                    st['cur'] = int(line.split()[1])
+                elif line.startswith('THREW '):
+                    st['threw'].add(int(line.split()[1]))
+                elif line == 'DONE':
+                    st['done'] = True
+
+        pump_thread = threading.Thread(target=pump, daemon=True)
+        pump_thread.start()
+        stalled = False
+        while proc.poll() is None:
+            time.sleep(0.2)
+            if time.time() - state['last'] > stall:
+                stalled = True
+                proc.kill()
+                break
+        pump_thread.join(timeout=2)
+        rc = proc.wait()
+        cur = state['cur']
+        settled = cur if cur is not None else start
+        for i in range(start, settled):
+            outcome.setdefault(i, RunOutcome('threw' if i in state['threw'] else 'ok'))
+        if state['done']:
+            if cur is not None:
+                outcome.setdefault(cur, RunOutcome('threw' if cur in state['threw'] else 'ok'))
+            break
+        if cur is None:
+            # The process died before announcing anything, so no case can be blamed and every
+            # later one is unexamined. Reported by the count, never by a verdict on a page.
+            break
+        outcome[cur] = RunOutcome('stall' if stalled else 'crash',
+                                  'no progress for %.0fs' % stall if stalled
+                                  else f'exit {rc}' if rc >= 0 else f'signal {-rc}')
+        if verbose:
+            print(f'stage 3: {outcome[cur].kind} at case {cur}', file=sys.stderr)
+        start = cur + 1
+    return outcome
+
+
+def execute_stage(cases, tc_args, stall=DEFAULT_STALL, keep=None, verbose=False, canaries=True,
+                  imports=RUN_IMPORTS):
+    """Compile, link and run `cases`. Returns `(outcomes, seconds, note)`.
+
+    Raises `BlindRun` when the planted canary survives, on the same argument the compile stages
+    make: a driver that reports a corpus clean because it examined none of it is indistinguishable
+    from one reporting a clean corpus.
+    """
+    # A `run` subdirectory even under --keep: the compile stages write their own generated files
+    # and their canaries into the top of that directory, and this stage globs `*.swift`, so
+    # sharing it puts 3,183 uncompilable fragments into the runner. Measured, once.
+    outdir = (pathlib.Path(keep) / 'run') if keep else pathlib.Path(
+        tempfile.mkdtemp(prefix='occt-doc-run-'))
+    # Emptied on entry, and only `--keep` can ever find anything here to empty. Reported on
+    # PR #2889: the directory used to be created with `exist_ok=True`, so a second `--keep` run
+    # inherited the first one's output twice over. A snippet reading a file an earlier run's
+    # snippet wrote would pass for the wrong reason, which is a correctness hole in a gate; and
+    # `build_runner` globs `*.swift` here, so a previous run's generated cases were compiled into
+    # this one. `--keep` is about what survives *after* a run, which this does not touch.
+    shutil.rmtree(outdir, ignore_errors=True)
+    outdir.mkdir(parents=True, exist_ok=True)
+    sandbox = outdir / 'cwd'
+    sandbox.mkdir()
+    try:
+        canary_at = generate_runner(cases, outdir, canary=canaries, imports=imports)
+        total = len(cases) + (1 if canaries else 0)
+        # The compile stages only ever type-check, so `tc_args` carries `-I` and no `-L`/`-l` at
+        # all. The first `-I` is the module directory `toolchain_args` settled on, and the
+        # archives sit there or one level up.
+        extra_link = ()
+        for i, a in enumerate(tc_args):
+            if a == '-I' and i + 1 < len(tc_args):
+                found = link_args(pathlib.Path(tc_args[i + 1]))
+                if found:
+                    extra_link = found
+                    break
+        if tc_args and not extra_link:
+            # Name what was looked for and where, per static-gates.md: #2867's refusal named a
+            # directory and left "was it this build's artefact at all" to arithmetic across three
+            # jobs' logs.
+            searched = [pathlib.Path(a) for i, a in enumerate(tc_args)
+                        if i and tc_args[i - 1] == '-I']
+            inventory = []
+            for d in searched:
+                inventory += link_inventory(d)
+            return {}, 0.0, SkipNote(
+                f'no {PACKAGE_ARCHIVE}, no per-target objects and no {PACKAGE_OBJECT} were '
+                'found, so nothing can be linked against. The type-check stage needs only a '
+                '.swiftmodule; this stage needs the compiled code too. Run `swift build`. '
+                'What the search saw:\n'
+                + '\n'.join(inventory),
+                fatal=True)
+        exe, detail = build_runner(outdir, tc_args, extra_link=extra_link, verbose=verbose)
+        if exe is None:
+            return {}, 0.0, SkipNote(f'the runner did not link:\n{detail}', fatal=True)
+        t0 = time.time()
+        outcomes = drive_runner(exe, total, sandbox, stall=stall, verbose=verbose)
+        secs = time.time() - t0
+        if canaries:
+            got = outcomes.get(canary_at)
+            if got is None or got.kind not in ('crash', 'stall'):
+                raise BlindRun(
+                    'the planted run canary calls fatalError and the driver reported it as '
+                    f'{got.kind if got else "never reached"}. The driver ran {len(outcomes)} of '
+                    f'{total} cases; a canary that survives means those numbers describe nothing.')
+            outcomes.pop(canary_at, None)
+        return outcomes, secs, None
+    finally:
+        if keep is None:
+            shutil.rmtree(outdir, ignore_errors=True)
+
+
 def report(blocks, results, show_fragments=False, show_declarations=False):
     """Print the census and the failures. Returns the exit status."""
     snippets = [b for b in blocks if b.kind == 'snippet']
@@ -1095,6 +1621,13 @@ def report(blocks, results, show_fragments=False, show_declarations=False):
         status = 1
         print(f'\n{len(bad_optouts)} `{OPT_OUT}` marker(s) with no reason after the colon:')
         for b in bad_optouts:
+            print(f'  {b.path}:{b.start_line}')
+
+    bad_noruns = [b for b in blocks if b.no_run == '']
+    if bad_noruns:
+        status = 1
+        print(f'\n{len(bad_noruns)} `{NO_RUN}` marker(s) with no reason after the colon:')
+        for b in bad_noruns:
             print(f'  {b.path}:{b.start_line}')
 
     mangled = [b for b in blocks if b.kind == 'snippet' and unsupported_macro(b.body)]
@@ -1139,6 +1672,40 @@ def report(blocks, results, show_fragments=False, show_declarations=False):
     if 'skipped' in by_kind:
         print('\ntype-check stage was skipped; this run proves nothing about the snippets')
 
+    return status
+
+
+def report_run(cases, outcomes, secs):
+    """Print the execution stage's result. Returns the exit status."""
+    tally = {}
+    for o in outcomes.values():
+        tally[o.kind] = tally.get(o.kind, 0) + 1
+    print()
+    print(f'  stage 3, run: {len(outcomes)} of {len(cases)} case(s) executed in {secs:.0f}s')
+    for kind in ('ok', 'threw', 'crash', 'stall'):
+        if kind in tally:
+            print(f'      {tally[kind]:5d} {kind}')
+
+    status = 0
+    if len(outcomes) < len(cases):
+        # Not a verdict on any page: the driver stopped before the corpus ended, so the rest was
+        # never examined, and saying nothing about them would be the false green this whole script
+        # is built against.
+        status = 1
+        print(f'\nFAIL: {len(cases) - len(outcomes)} case(s) were never executed. The runner died '
+              'before announcing\n  a case, so nothing can be said about them.')
+
+    bad = [(i, o) for i, o in sorted(outcomes.items()) if o.kind in ('crash', 'stall')]
+    if bad:
+        status = 1
+        print(f'\n{len(bad)} documented example(s) took the process down or hung:')
+        for i, o in bad:
+            b = cases[i]
+            print(f'  {b.path}:{b.start_line}  ({o.kind}, {o.detail})')
+        print()
+        print(f'A crashing example is the strongest form of a wrong one. Fix the example, or, if '
+              f'it is\n  reproducing a defect on purpose, mark the fence '
+              f'```swift {NO_RUN}: <reason>.')
     return status
 
 
@@ -1610,6 +2177,252 @@ def _self_test_canary():
     return failures
 
 
+def _self_test_run_stage():
+    """#2851's stage. Returns `(failures, ran, total)`.
+
+    The last three cases compile a real executable, so they skip where `swiftc` is absent, and the
+    caller says so rather than folding the difference into one number (#2867).
+    """
+    failures = 0
+
+    def case(name, ok, detail=''):
+        nonlocal failures
+        if ok:
+            print(f'  ok    {name}')
+        else:
+            failures += 1
+            print(f'  FAIL  {name}  {detail}')
+
+    def mk(info, body, kind='snippet'):
+        b = Block('docs/x.md', 1, info, body, 'markdown')
+        classify(b)
+        return b
+
+    # The marker, and the two ways it can be written.
+    b = mk(f'{NO_RUN}: writes a 40 MB STEP file', ['let s = 1'])
+    case(f'`{NO_RUN}: <reason>` is read off the fence and keeps the snippet type-checked',
+         b.no_run == 'writes a 40 MB STEP file' and b.kind == 'snippet', repr(b.no_run))
+
+    bare = mk(NO_RUN, ['let s = 1'])
+    case(f'a bare `{NO_RUN}` records an empty reason, which report() fails on',
+         bare.no_run == '', repr(bare.no_run))
+
+    plain = mk('', ['let s = 1'])
+    case('a fence with no marker is runnable', plain.no_run is None, repr(plain.no_run))
+
+    # `no-typecheck` implies it: an opt-out is never compiled, so it is never linked either.
+    opt = mk(f'{OPT_OUT}: a listing of case spellings', ['case a'])
+    results = {'s00000.swift': ('clean', []), 's00001.swift': ('clean', []),
+               's00002.swift': ('broken', [(1, 'no')])}
+    picked = runnable([b, plain, mk('', ['let t = 2']), opt], results)
+    case('runnable() takes the clean, unmarked snippets and nothing else',
+         picked == [plain], f'{[x.info for x in picked]}')
+
+    # The link flags come from the directory holding libOCCTSwift.a, and every archive in it.
+    holder = pathlib.Path(tempfile.mkdtemp(prefix='occt-doc-linkargs-'))
+    try:
+        bin_dir = holder / '.build' / 'debug'
+        (bin_dir / 'Modules').mkdir(parents=True)
+        (bin_dir / PACKAGE_ARCHIVE).write_bytes(b'!<arch>\n')
+        (bin_dir / 'libZed.a').write_bytes(b'!<arch>\n')
+        # `base` points at an empty tree, so only the beside-the-module path can answer and the
+        # fallback below cannot stand in for it.
+        nowhere = pathlib.Path(tempfile.mkdtemp(prefix='occt-doc-nobuild-'))
+        try:
+            got = link_args(bin_dir / 'Modules', base=nowhere)
+        finally:
+            shutil.rmtree(nowhere, ignore_errors=True)
+        case('link_args finds the archive one level up and passes every one beside it',
+             got is not None and got[:2] == ['-L', str(bin_dir)]
+             and '-lOCCTSwift' in got and '-lZed' in got, repr(got))
+
+        # CI's layout, and the reason this is not "any lib*.a beside the module": on the runner
+        # the module's own directory held the OCCT kernel archive and nothing else, and taking it
+        # produced a link that failed on every OCCTSwift symbol.
+        elsewhere = holder / '.build' / 'other'
+        (elsewhere / 'Modules').mkdir(parents=True)
+        (elsewhere / 'libOCCT-macos.a').write_bytes(b'!<arch>\n')
+        got = link_args(elsewhere / 'Modules', base=holder)
+        case('a kernel archive beside the module is not mistaken for the package archive',
+             got is not None and got[:2] == ['-L', str(bin_dir)], repr(got))
+    finally:
+        shutil.rmtree(holder, ignore_errors=True)
+
+    # The layout CI turned out to use: a module, per-target objects, and no archive anywhere.
+    objonly = pathlib.Path(tempfile.mkdtemp(prefix='occt-doc-objects-'))
+    try:
+        obj_bin = objonly / '.build' / 'debug'
+        (obj_bin / 'Modules').mkdir(parents=True)
+        for name in (PACKAGE_OBJECT, 'OCCTBridge.o', 'OCCTPlatform.o'):
+            (obj_bin / name).write_bytes(b'')
+        (obj_bin / 'libOCCT-macos.a').write_bytes(b'!<arch>\n')
+        got = link_args(obj_bin / 'Modules', base=objonly)
+        case('with no archive, the per-target objects are passed directly and the kernel by -l',
+             got is not None
+             and str(obj_bin / PACKAGE_OBJECT) in got
+             and '-lOCCT-macos' in got
+             and '-lOCCTSwift' not in got, repr(got))
+    finally:
+        shutil.rmtree(objonly, ignore_errors=True)
+
+    # The layout the runner turned out to use, and the one two attempts at this missed: no
+    # archive and no merged object anywhere under `.build`, the compiled code in
+    # `<bin>/<Target>.build/`, one directory per target behind the product, and the Clang
+    # target's objects one level deeper again under the source directory they came from.
+    # Reproduced locally with `swift build --build-system native`, which is what the runner's
+    # SwiftPM still defaults to while a laptop on Swift 6.4 defaults to `swiftbuild`.
+    #
+    # `product_targets` is stubbed because the fixture is a bare directory with no manifest in
+    # it, and what this case is about is the search, not the `describe` call. The `describe` call
+    # is the case below, against the real tree.
+    targeted = pathlib.Path(tempfile.mkdtemp(prefix='occt-doc-targetobjs-'))
+    real_targets = globals()['product_targets']
+    try:
+        tgt_bin = targeted / '.build' / 'arm64-apple-macosx' / 'debug'
+        (tgt_bin / 'Modules').mkdir(parents=True)
+        (tgt_bin / 'OCCTSwift.build').mkdir()
+        (tgt_bin / 'OCCTSwift.build' / 'Shape.swift.o').write_bytes(b'')
+        (tgt_bin / 'OCCTBridge.build' / 'src').mkdir(parents=True)
+        (tgt_bin / 'OCCTBridge.build' / 'src' / 'OCCTBridge.mm.o').write_bytes(b'')
+        (tgt_bin / 'OCCTPlatform.build').mkdir()
+        (tgt_bin / 'OCCTPlatform.build' / 'Platform.swift.o').write_bytes(b'')
+        (tgt_bin / 'libOCCT-macos.a').write_bytes(b'!<arch>\n')
+        globals()['product_targets'] = lambda product=PACKAGE_PRODUCT, base=None: (
+            'OCCTSwift', 'OCCTBridge', 'OCCT', 'OCCTPlatform')
+        got = link_args(tgt_bin / 'Modules', base=targeted)
+        case('with no archive, every target behind the product contributes its objects, '
+             'including the Clang target nested under src/',
+             got is not None
+             and str(tgt_bin / 'OCCTSwift.build' / 'Shape.swift.o') in got
+             and str(tgt_bin / 'OCCTBridge.build' / 'src' / 'OCCTBridge.mm.o') in got
+             and str(tgt_bin / 'OCCTPlatform.build' / 'Platform.swift.o') in got
+             and '-lOCCT-macos' in got and '-lOCCTSwift' not in got, repr(got))
+    finally:
+        globals()['product_targets'] = real_targets
+        shutil.rmtree(targeted, ignore_errors=True)
+
+    # ...and the same search under `.build` at large, for the module that is not beside them.
+    # This path exists because none of the three layouts met so far promises that the module and
+    # the compiled code share a directory, and it was read on PR #2889 as dead code on the
+    # grounds that `artefact_dirs` can only find a file: `Path.glob` matches a directory too,
+    # which is what this case settles rather than leaves to a reading of the docs.
+    faraway = pathlib.Path(tempfile.mkdtemp(prefix='occt-doc-farobjs-'))
+    real_targets = globals()['product_targets']
+    try:
+        far_bin = faraway / '.build' / 'arm64-apple-macosx' / 'debug'
+        (far_bin / 'OCCTSwift.build').mkdir(parents=True)
+        (far_bin / 'OCCTSwift.build' / 'Shape.swift.o').write_bytes(b'')
+        (far_bin / 'libOCCT-macos.a').write_bytes(b'!<arch>\n')
+        elsewhere_mod = faraway / '.build' / 'elsewhere' / 'Modules'
+        elsewhere_mod.mkdir(parents=True)
+        globals()['product_targets'] = lambda product=PACKAGE_PRODUCT, base=None: (
+            'OCCTSwift', 'OCCTBridge', 'OCCT')
+        got = link_args(elsewhere_mod, base=faraway)
+        case('the per-target objects are found under .build when they are not beside the module',
+             got is not None
+             and str(far_bin / 'OCCTSwift.build' / 'Shape.swift.o') in got
+             and '-lOCCT-macos' in got, repr(got))
+    finally:
+        globals()['product_targets'] = real_targets
+        shutil.rmtree(faraway, ignore_errors=True)
+
+    # ...and with nothing to find anywhere, it says so rather than returning a partial link.
+    empty = pathlib.Path(tempfile.mkdtemp(prefix='occt-doc-noarchive-'))
+    try:
+        (empty / '.build').mkdir()
+        case('no archive and no object anywhere is None, not a partial set of flags',
+             link_args(empty / 'nowhere', base=empty) is None)
+    finally:
+        shutil.rmtree(empty, ignore_errors=True)
+
+    fixed_cases = 10
+    if shutil.which('swiftc') is None and shutil.which('xcrun') is None:
+        return failures, fixed_cases, fixed_cases + 5
+
+    # The real tree, not a fixture: the target set the search above is driven by comes from
+    # SwiftPM rather than from a list in this file, so a `describe` that stops answering has to
+    # be a red case here and not a silent fall-through to the layouts CI does not have.
+    got = product_targets()
+    case('swift package describe names the targets behind the OCCTSwift product',
+         PACKAGE_PRODUCT in got and 'OCCTBridge' in got, repr(got))
+
+    # End to end, with no OCCT in it: a plain Swift runner is enough to prove the driver names the
+    # right case, resumes past it, and is not fooled by a silent one.
+    def blocks_for(bodies):
+        out = []
+        for i, body in enumerate(bodies):
+            blk = Block('docs/fixture.md', i + 1, '', body, 'markdown')
+            blk.kind = 'snippet'
+            out.append(blk)
+        return out
+
+    plain_imports = ('import Foundation',)
+    bodies = [['print("a")'],
+              ['fatalError("deliberate")'],
+              ['print("c")'],
+              ['throw NSError(domain: "x", code: 1)'],
+              ['print("e")']]
+    outcomes, _, note = execute_stage(blocks_for(bodies), [], stall=20, imports=plain_imports)
+    kinds = [outcomes[i].kind if i in outcomes else 'missing' for i in range(5)]
+    case('the driver names the crashing case and resumes past it',
+         note is None and kinds == ['ok', 'crash', 'ok', 'threw', 'ok'], f'{kinds} note={note}')
+
+    # `Thread.sleep` is unavailable from an async context and `Task.sleep` is cancellable, so the
+    # hang is written as the thing a real snippet hangs on: a loop that does not finish.
+    #
+    # This case's injected-failure signature is a TIMEOUT, not a red line, and that is not a
+    # weakness in it. Disable the watchdog and there is nothing left to report with: the battery
+    # runs forever, which is the outcome this stage exists to prevent and is what the job timeout
+    # above CI catches. Measured that way when proving it fails.
+    stall_bodies = [['print("a")'],
+                    ['var n = 0.0', 'while true { n += 1 }', '_ = n'],
+                    ['print("c")']]
+    outcomes, _, note = execute_stage(blocks_for(stall_bodies), [], stall=3,
+                                      imports=plain_imports)
+    kinds = [outcomes[i].kind if i in outcomes else 'missing' for i in range(3)]
+    case('the driver names a hanging case and resumes past it',
+         note is None and kinds == ['ok', 'stall', 'ok'], f'{kinds} note={note}')
+
+    # The canary. A driver that reports every case clean must be refused, which is the run-stage
+    # form of the argument the compile stages' canaries make.
+    real = globals()['drive_runner']
+    globals()['drive_runner'] = lambda exe, total, cwd, **k: {
+        i: RunOutcome('ok') for i in range(total)}
+    try:
+        raised = False
+        try:
+            execute_stage(blocks_for([['print("a")']]), [], imports=plain_imports)
+        except BlindRun:
+            raised = True
+        case('a driver that reports the planted fatalError as clean is refused', raised)
+    finally:
+        globals()['drive_runner'] = real
+
+    # `--keep` reuses `<keep>/run`, so a second run used to inherit the first one's output twice
+    # over (PR #2889 review). Both halves are planted here, because they fail differently: a file
+    # in the sandbox makes a snippet pass for the wrong reason, and a leftover generated case
+    # makes `build_runner`'s `*.swift` glob compile a program this run never wrote.
+    keepdir = pathlib.Path(tempfile.mkdtemp(prefix='occt-doc-keep-'))
+    try:
+        (keepdir / 'run' / 'cwd').mkdir(parents=True)
+        (keepdir / 'run' / 'cwd' / 'leftover.txt').write_text('an earlier run wrote this\n',
+                                                              encoding='utf-8')
+        (keepdir / 'run' / '__occtDocSnippetCase09999.swift').write_text(
+            'an earlier run left this and it is not Swift\n', encoding='utf-8')
+        keep_body = ['if FileManager.default.fileExists(atPath: "leftover.txt") {',
+                     '    fatalError("a previous run\'s sandbox survived")',
+                     '}']
+        outcomes, _, note = execute_stage(blocks_for([keep_body]), [], stall=20,
+                                          keep=str(keepdir), imports=plain_imports)
+        got = outcomes[0].kind if 0 in outcomes else 'missing'
+        case('--keep starts from an empty run directory, not a previous run\'s output',
+             note is None and got == 'ok', f'{got} note={note}')
+    finally:
+        shutil.rmtree(keepdir, ignore_errors=True)
+
+    return failures, fixed_cases + 5, fixed_cases + 5
+
+
 def _self_test_reporting():
     """Prove the two things a weakened or refusing run has to say out loud.
 
@@ -1912,6 +2725,9 @@ def self_test(require_typecheck=False):
     failures += _self_test_attribution()
     print('canary guard:')
     failures += _self_test_canary()
+    print('run stage (#2851):')
+    run_failures, run_ran, run_total = _self_test_run_stage()
+    failures += run_failures
     print('reporting:')
     report_failures, report_cases = _self_test_reporting()
     failures += report_failures
@@ -1927,8 +2743,8 @@ def self_test(require_typecheck=False):
     # difference rather than leave it to be inferred from a number nobody has the other half of.
     fixed = (len(EXTRACT_CASES) + len(BODY_CASES) + len(HISTORICAL) + 7 + 2 + 2 + report_cases)
     compile_cases = 2 * len(COMPILE_CASES) + 2
-    ran = fixed + staleness_ran + (0 if skipped else compile_cases)
-    total = fixed + staleness_total + compile_cases
+    ran = fixed + staleness_ran + run_ran + (0 if skipped else compile_cases)
+    total = fixed + staleness_total + run_total + compile_cases
     print(f'\nself-test: {ran - failures} passed, {failures} failed '
           f'({ran} of {total} cases ran)')
     notice = weakened_run_notice(ran, total, skip_reason)
@@ -1967,6 +2783,18 @@ def main():
                     help='write the generated Swift files here and leave them in place')
     ap.add_argument('--jobs', type=int, metavar='N',
                     help='parallel swiftc processes (default: one less than the core count)')
+    # ON BY DEFAULT, measured at 5 s on top of an 18 s type-check run over 1,735 snippets, and
+    # off by a flag rather than on by one so that a local run and CI cannot check different
+    # things. That is the same property `format-bridge.sh` gives the bridge and the reason
+    # `--strict` stopped being a flag here.
+    ap.add_argument('--run', dest='run', action='store_true', default=True,
+                    help='EXECUTE every snippet that type-checks and carries no `no-run:` '
+                         'marker, in a scratch working directory (#2851). The default')
+    ap.add_argument('--no-run', dest='run', action='store_false',
+                    help='type-check only, the behaviour before #2851')
+    ap.add_argument('--run-stall', type=float, metavar='SECONDS', default=DEFAULT_STALL,
+                    help=f'seconds without progress before a case is called a hang '
+                         f'(default: {DEFAULT_STALL:.0f})')
     ap.add_argument('--verbose', action='store_true', help='progress on stderr')
     args = ap.parse_args()
 
@@ -2009,6 +2837,29 @@ def main():
         print(note)
     status = report(blocks, results, show_fragments=args.fragments,
                     show_declarations=args.declarations)
+
+    if args.run and note is not None:
+        # The type-check stage was skipped and `--require-typecheck` was not given, so this is a
+        # machine with no built package. Stage 3 needs strictly more than stage 2 does, so it
+        # skips for the same reason and says so rather than reporting a clean corpus.
+        print('\n  stage 3, run: SKIPPED, because the type-check stage was')
+    elif args.run:
+        tc_args, _, why_not = toolchain_args()
+        if tc_args is None:
+            print(f'ABORTED: the run stage needs the same built module the type-check stage '
+                  f'needs: {why_not}', file=sys.stderr)
+            return 2
+        cases = runnable(blocks, results)
+        try:
+            outcomes, secs, run_note = execute_stage(
+                cases, tc_args, stall=args.run_stall, keep=args.keep, verbose=args.verbose)
+        except BlindRun as exc:
+            print(f'ABORTED: {exc}', file=sys.stderr)
+            return 2
+        if run_note is not None:
+            print(f'ABORTED: {run_note}', file=sys.stderr)
+            return 2
+        status = max(status, report_run(cases, outcomes, secs))
     return status
 
 

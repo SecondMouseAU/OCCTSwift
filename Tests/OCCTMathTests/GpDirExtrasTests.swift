@@ -38,4 +38,3 @@ struct GpDirExtrasTests {
         #expect(Shape.dirIsNormal(d1, d2, tolerance: 0.01))
     }
 }
-

@@ -31,4 +31,3 @@ struct Vector3DMathTests {
         if let n = n { #expect(abs(Vector3DMath.modulus(n) - 1.0) < 1e-10) }
     }
 }
-

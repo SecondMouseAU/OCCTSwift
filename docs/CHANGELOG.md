@@ -21,6 +21,35 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### `Scripts/merge-pr.py` no longer mis-extracts the CHANGELOG entry from a PR body (#2890)
+
+The merge tool's `extract_section` had two defects, both hit while merging on 2026-09-30. The block
+ran to the end of the body, so an entry that was the PR's last section swallowed the trailing
+attribution footer into the release record, which had already happened once. And the fenced-code
+skip toggled on any line whose first non-space characters were three backticks, so a single
+unbalanced marker shown as an example in prose desynced the parse for the rest of the body and hid
+the `## CHANGELOG entry` heading entirely, producing a refusal that read as the author's fault.
+
+The block now also ends at the attribution footer, so the entry may be the body's last section, and
+fenced code is tracked by matching each opening marker with its closing one, per CommonMark, so an
+indented illustrative fence in prose opens nothing. Twelve new `--self-test` cases cover both, and
+the old and new parsers agree on all 134 open PR bodies. One stray attribution line is removed from
+`docs/CHANGELOG.md`.
+
+### The doc-snippet gate runs the examples it compiles, and the lint steps read the whole tree (#2851, #2852)
+
+`Scripts/check-doc-snippets.py` now executes every fenced `swift` example that type-checks, not just compiles it. A documented example that compiled and then took the process down used to pass: `docs/reference/Surface-Analysis.md`'s `extrema(to:)` entry was #2840's crash reproducer and read as green for as long as that defect existed. Measured on one laptop over three runs each, the type-check alone is a median 5 s over 3,183 snippets and the type-check plus the run is 18 s over the 1,735 that compile, so running is the default rather than a flag. Every runnable snippet becomes one function in one executable, which a resume driver restarts past whatever kills it, in a scratch working directory, with a planted case that must die as the canary.
+
+It found two crashing examples, both fixed. `Curve3D.circularHelix` is unbounded, so `drawAdaptive()` on the untrimmed curve never returns; the example trims it and the entry says why. `Surface.cylinder` is infinite and `BRepBuilderAPI_MakeShell` has no bounds of its own, so `Shape.shell(from:)` aborted rather than returning nil; the example uses `Surface.trimmedCylinder` and the entry says the surface must be bounded.
+
+A snippet that compiles and must not be run carries `no-run: <reason>` on its fence, a separate marker from `no-typecheck:` with the reason equally required.
+
+The code it links against is whatever SwiftPM built rather than a filename this repository expects: `swift package describe --type json` names the targets behind the `OCCTSwift` product and the objects are taken from theirs. `OCCTSwift` is an automatic library product, so one build system writes `libOCCTSwift.a` and the other writes no archive at all and links each target's objects directly, and a gate that knows only the first name refuses on a tree that is built correctly.
+
+`code-style.yml`'s `swift-format` step walked `Sources/OCCTSwift` alone, 230 of the repo's 1,730 tracked Swift files, leaving `Tests/`, `Scripts/`, `Sources/OCCTPlatform`, `Sources/OCCTTest`, `Sources/WASICompat` and `Package.swift` unchecked with nothing saying so. `Scripts/check-swift-format.py` owns the population now: `git ls-files '*.swift'` minus the exemption manifests, asserting on every run that selected plus listed accounts for every tracked file, and planting a canary violation so a silent `swift-format` aborts rather than passes. 418 of the newly reached files were rejected and are seeded on `Scripts/style-manifest-swift-wave2.txt`; the 137 that needed nothing but `swift-format format -i` are formatted and delisted, `Package.swift` among them, while ten standalone `Scripts/repro/` probes are deliberately left unformatted because a retyped reproducer that stops reproducing reads as fixed upstream, with `swift package dump-package` byte-identical across that reformat. `.swiftlint.yml` excluded `Tests` and `Scripts` for the same reason and now does not: 1,728 files, one finding, fixed.
+
+No public API changes.
+
 ### The three-curve `GeomFill` fills are wrapped, and the whole family is documented (#2841, #2842, #2843)
 
 `Surface.bsplineFill(curves:style:)` and `Surface.bezierFill(_:_:_:style:)` now take **three**
@@ -1609,8 +1638,6 @@ Swift call site relied on the old values. **Breaking change** for any caller swi
 case or persisting the raw value.
 
 Closes #1568
-
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
 
 ### Fixed OOB reads in `weightedCentroid`/`loadLinearXYZ` on mismatched parallel-array lengths (#1583)
 

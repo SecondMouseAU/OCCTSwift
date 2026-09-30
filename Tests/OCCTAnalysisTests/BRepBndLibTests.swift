@@ -101,7 +101,8 @@ struct BRepBndLibTests {
     @Test func voidShapeReportsNoBoxFromAnyAccessor() throws {
         // A far-disjoint intersection is the reliable way to get a genuinely void Shape:
         // Shape.compound([]) refuses to construct (OCCTShapeCreateCompound requires count >= 1).
-        let voidShape = try #require(makeVoidShape(), "disjoint intersection should still construct a (void) shape")
+        let voidShape = try #require(
+            makeVoidShape(), "disjoint intersection should still construct a (void) shape")
         #expect(voidShape.boundingBox == nil)
         #expect(voidShape.bounds == nil)
         #expect(voidShape.size == nil)

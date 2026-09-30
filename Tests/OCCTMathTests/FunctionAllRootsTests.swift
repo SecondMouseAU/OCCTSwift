@@ -13,4 +13,3 @@ struct FunctionAllRootsTests {
         #expect(roots.count >= 3)  // pi, 2pi, 3pi
     }
 }
-

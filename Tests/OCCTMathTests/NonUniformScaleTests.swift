@@ -30,4 +30,3 @@ struct NonUniformScaleTests {
         #expect(abs(scaledVol / origVol - 3.0) < 0.1)
     }
 }
-

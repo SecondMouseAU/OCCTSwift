@@ -106,4 +106,3 @@ struct CoordinateSystem3DTests {
         #expect(translated.origin == SIMD3(5, 3, 2))
     }
 }
-

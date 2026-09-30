@@ -14,4 +14,3 @@ struct NewtonRootTests {
         if let r = result { #expect(abs(r.root - 2.0) < 1e-8) }
     }
 }
-
