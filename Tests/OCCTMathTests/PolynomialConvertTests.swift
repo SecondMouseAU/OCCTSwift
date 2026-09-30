@@ -45,4 +45,3 @@ struct PolynomialConvertTests {
         #expect(result != nil)
     }
 }
-

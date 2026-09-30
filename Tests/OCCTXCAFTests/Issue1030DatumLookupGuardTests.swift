@@ -133,8 +133,8 @@ struct Issue1030DatumLookupGuardTests {
         // already a datum target of a non-Area type (#1038), and clearDatumTarget above has just
         // cleared that, so its answer is about #1038 rather than about this guard. Listing it with
         // an assertion would be asserting the wrong subject.
-        _ = (
-            doc.setDatumTargetPlacement(
+        _ =
+            (doc.setDatumTargetPlacement(
                 at: index,
                 location: SIMD3(1, 2, 3),
                 normal: SIMD3(0, 0, 1),

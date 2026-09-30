@@ -25,4 +25,3 @@ struct ArcOfHyperbolaTests {
         #expect(end.y > 0)
     }
 }
-

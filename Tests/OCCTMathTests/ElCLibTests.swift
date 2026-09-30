@@ -56,4 +56,3 @@ struct ElCLibTests {
         #expect(u >= 0.0 && u < 2 * .pi)
     }
 }
-

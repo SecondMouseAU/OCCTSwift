@@ -132,10 +132,14 @@ enum PropertiesLifetime {
     fileprivate static func controlReads() {
         // The workaround the issue documents: bind the parent to a local so it outlives the read.
         if let curve = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5) {
-            say("  control  Curve3D circle radius = \(curve.circleProperties.radius), expecting 5.0")
+            say(
+                "  control  Curve3D circle radius = \(curve.circleProperties.radius), expecting 5.0"
+            )
         }
         if let curve = Curve2D.circle(center: .zero, radius: 7) {
-            say("  control  Curve2D circle radius = \(curve.circleProperties.radius), expecting 7.0")
+            say(
+                "  control  Curve2D circle radius = \(curve.circleProperties.radius), expecting 7.0"
+            )
         }
         if let surface = Surface.sphere(center: .zero, radius: 11) {
             say(

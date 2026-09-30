@@ -4,11 +4,13 @@ import Testing
 
 @testable import OCCTSwift
 
-/// #2866. The four buffer-taking OCAF array setters handed the caller's `lower`/`upper` straight
-/// to a `TDataStd_*Array::Set`. Every `Init` in that family opens with
+/// #2866: the four buffer-taking OCAF array setters handed the caller's `lower`/`upper` straight
+/// to a `TDataStd_*Array::Set`.
+///
+/// Every `Init` in that family opens with
 /// `Standard_RangeError_Raise_if(upper < lower)`, which is out-of-line and therefore absent from
-/// the Release kernel we link, so the range reached `NCollection_HArray1` unchecked, where
-/// `mySize` is `upper - lower + 1` evaluated in `int` and stored in a `size_t`.
+/// the Release kernel we link, so the range reached `NCollection_HArray1` unchecked, where `mySize`
+/// is `upper - lower + 1` evaluated in `int` and stored in a `size_t`.
 ///
 /// Measured in `Scripts/repro/2866/`, one process per case, against the pinned kernel: with
 /// `lower` 10 and `upper` 1, `OCCTDocumentSetByteArray`, `OCCTDocumentSetExtStringArray` and
@@ -28,8 +30,10 @@ import Testing
 @Suite("Issue 2866: OCAF array setter ranges")
 struct Issue2866OCAFArraySetterRangeTests {
 
-    /// Reversed by more than one, the ranges that fault. One document per case: a process that
-    /// survives a corrupt allocation is not a process to reuse.
+    /// Reversed by more than one, the ranges that fault.
+    ///
+    /// One document per case: a process that survives a corrupt allocation is not a process to
+    /// reuse.
     @Test("the four buffer-taking array setters refuse a reversed range")
     func reversedRangeIsRefused() {
         // Written as one test walking a list rather than @Test(arguments:), per
@@ -78,7 +82,9 @@ struct Issue2866OCAFArraySetterRangeTests {
     }
 
     /// The boolean setter alone never faulted, so it is the case that fails as an assertion rather
-    /// than as a signal. Kept separate so a crash in the sibling above cannot mask it.
+    /// than as a signal.
+    ///
+    /// Kept separate so a crash in the sibling above cannot mask it.
     @Test("setBooleanArray no longer builds an array whose Upper is below its Lower")
     func setBooleanArrayReversedRangeIsRefused() {
         guard let doc = Document.create() else {
@@ -93,11 +99,12 @@ struct Issue2866OCAFArraySetterRangeTests {
         #expect(doc.hasBooleanArray(tag: 31) == false)
     }
 
-    /// `upper == lower - 1` is the one reversed spelling that does not fault, and it is the one
-    /// the Swift wrappers produce for an empty array. It is refused anyway: OCAF cannot persist
-    /// it. Measured in `Scripts/repro/2866/`, an attribute built that way saves to BinOcaf and to
-    /// XmlOcaf and reloads as "failure reading attribute" from OCCT's own drivers, while a
-    /// one-element control round-trips clean.
+    /// `upper == lower - 1` is the one reversed spelling that does not fault, and it is the one the
+    /// Swift wrappers produce for an empty array.
+    ///
+    /// It is refused anyway: OCAF cannot persist it. Measured in `Scripts/repro/2866/`, an
+    /// attribute built that way saves to BinOcaf and to XmlOcaf and reloads as "failure reading
+    /// attribute" from OCCT's own drivers, while a one-element control round-trips clean.
     @Test("the exactly-empty range is refused too, since OCAF cannot persist it")
     func exactlyEmptyRangeIsRefused() {
         guard let doc = Document.create() else {
@@ -115,8 +122,10 @@ struct Issue2866OCAFArraySetterRangeTests {
         #expect(doc.hasReferenceArray(tag: 44) == false)
     }
 
-    /// The `TDataStd_*List` attributes are what an empty collection belongs in, and they still
-    /// take one. This is the assertion that keeps the refusal above from reading as a dead end.
+    /// The `TDataStd_*List` attributes are what an empty collection belongs in, and they still take
+    /// one.
+    ///
+    /// This is the assertion that keeps the refusal above from reading as a dead end.
     @Test("the list attributes still accept an empty collection")
     func listAttributesStillAcceptEmpty() {
         guard let doc = Document.create() else {
@@ -130,7 +139,9 @@ struct Issue2866OCAFArraySetterRangeTests {
     }
 
     /// Nothing above is worth anything if the guard also refuses the ranges the wrappers really
-    /// use. Every well-formed range still lands and reads back.
+    /// use.
+    ///
+    /// Every well-formed range still lands and reads back.
     @Test("well-formed ranges are unaffected")
     func wellFormedRangesStillWork() {
         guard let doc = Document.create() else {

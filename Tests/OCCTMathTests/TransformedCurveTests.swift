@@ -17,4 +17,3 @@ struct TransformedCurveTests {
         #expect(abs(pt.x - 15.0) < 0.1)
     }
 }
-

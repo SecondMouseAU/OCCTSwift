@@ -24,4 +24,3 @@ struct Vector2DMathTests {
         if let n = n { #expect(abs(Vector2DMath.modulus(n) - 1.0) < 1e-10) }
     }
 }
-

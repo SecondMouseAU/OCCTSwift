@@ -85,4 +85,3 @@ struct IntrvIntervalTests {
         #expect(abs(iv.bounds.end - 8.0) < 1e-10)
     }
 }
-

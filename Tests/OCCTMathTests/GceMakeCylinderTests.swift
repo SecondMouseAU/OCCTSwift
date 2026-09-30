@@ -35,4 +35,3 @@ struct GceMakeCylinderTests {
                 < 1e-9)
     }
 }
-

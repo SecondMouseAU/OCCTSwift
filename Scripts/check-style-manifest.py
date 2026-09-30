@@ -8,10 +8,22 @@ clang-format diff already measured across Sources/OCCTSwift and Sources/OCCTBrid
 can turn on is the outcome the ecosystem's rollout plan explicitly rejected in favor of
 riding the refactor: fix what you touch, not the whole tree at once.
 
-Two manifest files hold the exemption list, seeded once on rollout day with every file
-that existed then:
-  - Scripts/style-manifest-swift.txt   (Sources/OCCTSwift/*.swift)
-  - Scripts/style-manifest-bridge.txt  (Sources/OCCTBridge/**/*.h, *.mm)
+Three manifest files hold the exemption list, each seeded once with every file the
+gate step reached and rejected on the day it started reaching it:
+  - Scripts/style-manifest-swift.txt        (Sources/OCCTSwift/*.swift, rollout day)
+  - Scripts/style-manifest-bridge.txt       (Sources/OCCTBridge/**/*.h, *.mm, rollout day)
+  - Scripts/style-manifest-swift-wave2.txt  (#2852: every other tracked .swift file, on the
+                                             day code-style.yml's swift-format step stopped
+                                             walking one directory and started walking
+                                             `git ls-files '*.swift'`)
+
+The third is a separate file rather than more lines in the first BECAUSE of rule 3
+below. Growing a manifest is grandfathering something new, which the rule forbids;
+seeding one that did not exist at the base ref is not, which `read_manifest_at`'s
+docstring already spells out and which this script's own self-test pins. So widening
+the gate's population needs its own manifest, and that in turn keeps the two seedings
+separately auditable: one shrinking to zero says Sources/OCCTSwift is finished, and it
+cannot be muddled by the 418 files the widening added.
 
 The rule, checked against the PR's diff relative to a base ref (`origin/main` by
 default):
@@ -37,6 +49,7 @@ import sys
 
 MANIFESTS = [
     'Scripts/style-manifest-swift.txt',
+    'Scripts/style-manifest-swift-wave2.txt',
     'Scripts/style-manifest-bridge.txt',
 ]
 

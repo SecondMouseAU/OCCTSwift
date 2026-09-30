@@ -447,10 +447,16 @@ jobs:
       # exactly as far as the search it is clearing and no further. `-prune` keeps find out of a
       # bundle it is about to delete, and the `-d` test is for the cache-miss run, where there is no
       # `.build` yet and a bare `find` would exit 1 under `bash -e`.
-      - name: Drop any OCCTSwift module the cache restored (#2867)
+      # `libOCCTSwift.a` is dropped alongside the module for #2867's own argument, applied to the
+      # second artefact `check-doc-snippets.py` now reads: it links the snippets against that
+      # archive (#2851), and deleting it here means anything the gate finds was written during
+      # this job, after the checkout, rather than restored from a cache key that outlived a
+      # layout change.
+      - name: Drop any OCCTSwift module or archive the cache restored (#2867, #2851)
         run: |
           if [ -d .build ]; then
             find .build -maxdepth 6 -name OCCTSwift.swiftmodule -prune -print -exec rm -rf {} +
+            find .build -maxdepth 6 -name libOCCTSwift.a -print -delete
           else
             echo "no .build restored, nothing to clear"
           fi
@@ -459,15 +465,18 @@ jobs:
         run: swift build
 
       # #1683. This one cannot live in gate-scripts: that job is pure Python with no OCCT and no
-      # build, and type-checking a doc snippet needs the OCCTSwift module the step above just built.
-      # It is a CENSUS, so it exits 0 whatever it finds; the bare run still earns its place here
-      # because its output IS the number, and a minute against a build already paid for is the
-      # cheapest place to print it. Promotion to a gate is `--strict` plus a rename to `check-`,
-      # once the backlog it reports reaches zero. See okf/policies/static-gates.md.
+      # build, and type-checking a doc snippet needs the OCCTSwift module the step above just
+      # built. It is a GATE, promoted once #2092 and #2093 took its backlog to zero. See
+      # okf/policies/static-gates.md.
+      #
+      # Since #2851 it also RUNS every snippet that compiles, and that is the default rather than
+      # a flag this job passes, so a local run and this step cannot check different things.
+      # Measured on one laptop, three runs each: a median 5 s to type-check 3,183 snippets
+      # and 18 s to type-check and then run the 1,735 that compile.
       - name: check-doc-snippets --self-test
         run: python3 Scripts/check-doc-snippets.py --self-test --require-typecheck
 
-      - name: check-doc-snippets (every fenced Swift snippet type-checks)
+      - name: check-doc-snippets (every fenced Swift snippet type-checks, and runs)
         run: python3 Scripts/check-doc-snippets.py --require-typecheck
 
       # #2714: this single process runs all 6,388 tests in one `OCCTSwiftPackageTests` bundle

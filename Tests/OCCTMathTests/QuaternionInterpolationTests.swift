@@ -27,4 +27,3 @@ struct QuaternionInterpolationTests {
         #expect(abs(mid.translation.x - 5.0) < 0.5)
     }
 }
-

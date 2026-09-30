@@ -53,4 +53,3 @@ struct DrawingCompositionTests {
         #expect(counts.lines + counts.polylines > 0)
     }
 }
-

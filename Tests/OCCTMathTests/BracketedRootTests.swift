@@ -22,4 +22,3 @@ struct BracketedRootTests {
         if let r = result { #expect(abs(r.root - .pi) < 1e-8) }
     }
 }
-

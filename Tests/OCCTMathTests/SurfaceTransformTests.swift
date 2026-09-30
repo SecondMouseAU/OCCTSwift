@@ -84,4 +84,3 @@ struct SurfaceTransformTests {
         #expect(abs(after.z - before.z - 100) < 1e-9)
     }
 }
-

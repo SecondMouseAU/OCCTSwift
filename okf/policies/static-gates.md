@@ -259,6 +259,70 @@ That sequence is the rule worth carrying, not the outcome: **measure the rate, f
 then gate.** #1407 is the same precedent. A detector promoted before its backlog is zero teaches
 people to ignore a red check, which costs more than the check was ever worth.
 
+**And type-checking was never the whole question, which is #2851.** A documented example that
+compiles and then takes the process down passed this gate, and one did:
+`docs/reference/Surface-Analysis.md`'s `extrema(to:)` entry was #2840's crash reproducer, carrying
+`≈ 10.0` as its expected answer, and it read as green for as long as #2840's defect existed. The
+issue offered four answers and leaned away from executing anything, on a cost argument nobody had
+priced. **Priced, the cost is 13 s**: three runs each on one laptop give a median 5 s to
+type-check 3,183 snippets and 18 s to type-check and then run the 1,735 that compile, of which
+about 6 s is the running and the rest is one compile and one link. So the answer is the one the
+issue called too expensive, and three design choices are what make it that cheap and are worth
+copying:
+
+- **One executable, not one per case.** Linking a single one-statement snippet against this
+  package's merged static archive is 4.4 s measured, so a link each is over two hours. Every
+  snippet becomes one function in one binary: one compile, one link, 1,735 cases in 7 s.
+- **A resume driver, not a process per case.** The binary takes a starting index and announces
+  each case before running it, so a crash names itself and the driver restarts past it. A clean
+  corpus is one process; each defect costs one more. The cost scales with the number of failures
+  rather than with the size of the population, which is the property that lets a per-PR check
+  execute 1,735 programs.
+- **A canary with the opposite sign.** The compile stages plant a file that must fail to compile;
+  this one plants a case that must fail to *run*. A driver reporting every case clean is
+  indistinguishable from a clean corpus, and the ways to get there are ordinary: a binary that
+  exits early, a pump thread reading nothing, a watchdog that never fires.
+
+And one more instance of **an artefact this repo has already been caught reading badly twice**,
+now three more times in the one PR. The run stage links against compiled code the type-check stage
+never needed, and each of the first two attempts answered a question nobody had put to the build
+system.
+
+The first took any `lib*.a` beside the module. On the CI runner the module's own directory held
+the OCCT kernel archive and nothing else, so the link failed on every `OCCTSwift` symbol, which
+looks exactly like finding no archive at all. The second looked for `libOCCTSwift.a` and
+`OCCTSwift.o` **by name**, beside the module and then under `.build`, and reported both as
+nowhere, which reads as a broken build rather than as a wrong search. **Neither file exists on the
+runner and neither ever did.** `OCCTSwift` is an *automatic* library product, so whether a
+standalone archive is written at all is SwiftPM's choice and not the manifest's: the Swift Build
+backend (`swiftbuild`, the default since Swift 6.4, which is what a laptop runs here) writes both
+into `.build/out/Products/Debug`, and the llbuild backend (`native`, still the default in the
+Xcode the runner has) writes **neither, anywhere**. It compiles each target into
+`<bin>/<Target>.build/` and links those objects straight into every executable.
+
+The third asks. `swift package describe --type json` names the targets behind the `OCCTSwift`
+product, a measured 0.7 s against a resolved package, and the objects are taken from each of those
+targets' own directories beside the module: `rglob`, not `glob`, because a Clang target nests its
+objects under the source directory they came from, so the 74 bridge objects are in
+`OCCTBridge.build/src/`. The refusal prints what all three searches saw, including the target list
+and whether `describe` could be read at all. `ci.yml` still deletes `libOCCTSwift.a` alongside the
+module before the build for #2867's own reason, and the per-target objects need no such step
+because they are only ever read from the directory holding the module whose age is already
+checked.
+
+**The layout was reproduced locally before the line was changed**, with
+`swift build --build-system native`, which is the whole lesson of the two failed attempts: in that
+tree the fix passes 1,735 of 1,735 and reverting it reproduces the CI refusal word for word.
+Guessing at a remote layout costs a round trip per guess; reproducing it costs one build.
+
+Its backlog was two, both fixed in the same PR, so it gated on its first day under the rule below:
+an untrimmed `Curve3D.circularHelix` whose `drawAdaptive()` subdivides an infinite domain forever,
+and an untrimmed `Surface.cylinder` handed to `Shape.shell(from:)`. A snippet that **throws** is
+not a failure, and six do, every one of them a documented example reading a `/tmp` path the repo
+does not ship. A snippet that compiles and must not be run carries `no-run: <reason>` on the
+fence, a separate marker from `no-typecheck:` because it answers a separate question, with the
+reason required for the same reason.
+
 **Which is also what says when a detector may gate on its first day.** The sequence is about the
 backlog, not about a probationary period, so a detector whose backlog is *already* zero has nothing
 to work down and gating it immediately costs nobody a red check. `check-bridge-type-odr.py` (#2820)

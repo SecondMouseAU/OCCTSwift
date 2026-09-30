@@ -35,4 +35,3 @@ struct GpVecExtrasTests {
         #expect(abs(mag - 12.0) < 1e-10)
     }
 }
-

@@ -28,4 +28,3 @@ struct MathSolverGaussIntegrateTests {
         #expect(abs(result - 5.0) < 0.01)
     }
 }
-

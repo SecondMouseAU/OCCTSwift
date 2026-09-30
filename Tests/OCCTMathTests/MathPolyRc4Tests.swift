@@ -71,4 +71,3 @@ struct MathPolyRc4Tests {
         }
     }
 }
-

@@ -154,6 +154,7 @@ required check it would fail every open PR for the previous merge's omission.
 
 ```bash
 python3 Scripts/check-doc-snippets.py              # GATE: every fenced swift snippet in docs/ and /// comments type-checks (#1683)
+python3 Scripts/check-doc-snippets.py --run        # ...and RUNS every one that compiles (#2851)
 python3 Scripts/check-doc-snippets.py --list       # inventory per kind, no compile
 python3 Scripts/check-doc-snippets.py --self-test
 ```
@@ -180,6 +181,30 @@ the script cannot derive. An elided placeholder is not one: `= ...`, `{ ... }`, 
 rather than reporting on a population it never examined (#2098). A wrong signature *restatement* is
 a different question, and `check-docs-defaults.py` covers the enum case of it (#2145).
 
+**It runs them too, since #2851.** Type-checking says an example is a legal program, not that it
+works, and the strongest form of "does not work" is that running it takes the process down.
+`docs/reference/Surface-Analysis.md`'s `extrema(to:)` example was #2840's crash reproducer,
+carrying `≈ 10.0` as its expected answer, and it type-checked clean on every CI run for as long as
+#2840's defect existed. It compiles every snippet that type-checks into **one** executable (a
+link each would be over two hours for 1,735 of them), which announces each case and takes a
+starting index, so the driver restarts it past whatever killed it: a clean corpus is one process
+and each defect costs one more. A planted case that **must** die is the canary, the compile
+stages' device with its sign flipped, and the working directory is a scratch one, because a
+documented example that writes a STEP file writes it into `$PWD`. A snippet that compiles and must
+not be run says so on the page, in a marker distinct from `no-typecheck:` because it answers a
+different question. **It is the default, off by `--no-run`** rather than on by a flag CI passes,
+so a local run and CI cannot check different things; three runs each on one laptop measured a
+median 5 s without it and 18 s with it:
+
+    ```swift no-run: writes a 40 MB STEP file
+
+The reason is required, as with the other marker. A snippet that **throws** is not a failure: six
+do, all of them documented examples reading a `/tmp` path the repo does not ship. It gated on its
+first day because the backlog was two, both fixed in #2852's PR: an untrimmed
+`Curve3D.circularHelix` whose `drawAdaptive()` subdivides an infinite domain forever, and an
+untrimmed `Surface.cylinder` handed to `Shape.shell(from:)`, which is the User Directive about
+infinite surfaces, met in the reference documentation.
+
 **It does not build the module it compiles against, so it checks that module's age (#2816).** A
 `.swiftmodule` another branch left in `.build` makes a correct page look broken: an initialiser that
 is failable here and was not there reports `initializer for conditional binding must have Optional
@@ -191,6 +216,30 @@ are `MODULE_INPUT_GLOBS`, and it is the extensions that count rather than the di
 missing module stays a skip, because a skip is visible to whoever has no build while a stale module
 is not. `docs/` is not an input, so editing a snippet never trips it, and CI never meets it, because
 the `swift build` step ahead of it recompiles the module on every run.
+
+### Swift Format Lint
+
+```bash
+python3 Scripts/check-swift-format.py            # GATE: every tracked .swift file not on a manifest passes swift-format lint --strict (#2852)
+python3 Scripts/check-swift-format.py --list     # the population and the manifest accounting, lint nothing
+python3 Scripts/check-swift-format.py --self-test
+```
+
+**Outside `gate-scripts` too**, because it shells out to `swift-format`, which that job does not
+have. It runs in `code-style.yml` beside the SwiftLint and clang-format steps, and is counted in no
+total on this page.
+
+**The population is `git ls-files '*.swift'` minus the exemption manifests, not a directory.** Until
+#2852 this was four lines of shell walking `find Sources/OCCTSwift`, which reached 230 of the repo's
+1,730 tracked Swift files: `Tests/`, `Scripts/`, `Sources/OCCTPlatform`, `Sources/OCCTTest`,
+`Sources/WASICompat` and `Package.swift` were outside the step and nothing said so, because an
+exemption manifest can only exempt a file the population already reaches. Two manifests now hold the
+exempt list, both shrink-only and both enforced by `check-style-manifest.py`:
+`Scripts/style-manifest-swift.txt` (rollout day, empty) and
+`Scripts/style-manifest-swift-wave2.txt` (what the widening reached, 272 files). The real run
+asserts **selected + listed == tracked** and plants a canary violation in every `swift-format`
+invocation, so a narrowing and a silent tool are both a red gate rather than a quieter one. There is
+deliberately no `--fix`, for the reason `Scripts/format-bridge.sh`'s header gives.
 
 ### Pinned-Asset Patch Check
 

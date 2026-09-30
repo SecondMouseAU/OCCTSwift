@@ -3,14 +3,14 @@ import simd
 
 @testable import OCCTSwift
 
-/// #2872: `DiscretizeEdgeInto` (`Sources/OCCTBridge/src/OCCTBridge_Mesh.mm`) hands a
-/// caller-supplied deflection to `GCPnts_TangentialDeflection`, whose own precondition on the
-/// pair, `theCurvatureDeflection >= Precision::Confusion() && theAngularDeflection >=
+/// #2872: `DiscretizeEdgeInto` (`Sources/OCCTBridge/src/OCCTBridge_Mesh.mm`) hands a caller-
+/// supplied deflection to `GCPnts_TangentialDeflection`, whose own precondition on the pair,
+/// `theCurvatureDeflection >= Precision::Confusion() && theAngularDeflection >=
 /// Precision::Angular()`, is a `Standard_ConstructionError_Raise_if` in the `.cxx` and so is
-/// compiled out of the pinned Release kernel
-/// (`okf/policies/occt-validation-is-compiled-out.md`). PR #2870 guarded the four
-/// `GCPnts_TangentialDeflection` entry points in the Curve3D and Geom2d bridge files; these two
-/// sit in `OCCTBridge_Mesh.mm`, which that PR did not own.
+/// compiled out of the pinned Release kernel (`okf/policies/occt-validation-is-compiled-out.md`).
+///
+/// PR #2870 guarded the four `GCPnts_TangentialDeflection` entry points in the Curve3D and Geom2d
+/// bridge files; these two sit in `OCCTBridge_Mesh.mm`, which that PR did not own.
 ///
 /// Without the guard the sampler subdivides until an internal million-point cap stops it, and the
 /// bridge's `maxPoints` truncation then returns the leading fraction of the edge as if it were a
@@ -24,8 +24,9 @@ import simd
 @Suite("#2872: edge polyline deflection bounds")
 struct Issue2872EdgePolylineDeflectionBoundsTests {
 
-    /// A full circle, so the sampler has real curvature to subdivide against. A straight edge
-    /// needs two points at any deflection and would hide the defect entirely.
+    /// A full circle, so the sampler has real curvature to subdivide against.
+    ///
+    /// A straight edge needs two points at any deflection and would hide the defect entirely.
     private func circleEdgeShape() -> Shape? {
         guard let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 10)
         else { return nil }

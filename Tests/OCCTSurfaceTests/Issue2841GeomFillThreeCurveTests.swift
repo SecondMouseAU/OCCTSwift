@@ -24,9 +24,10 @@ import simd
 @Suite("Issue 2841: GeomFill three-curve fills")
 struct Issue2841GeomFillThreeCurveTests {
 
-    /// A straight segment as a 4-pole Bezier. Four poles matter for the BSpline flavour: `.coons`
-    /// refuses fewer than 4 poles per direction after knot alignment, a different refusal from
-    /// the joining one under test.
+    /// A straight segment as a 4-pole Bezier.
+    ///
+    /// Four poles matter for the BSpline flavour: `.coons` refuses fewer than 4 poles per direction
+    /// after knot alignment, a different refusal from the joining one under test.
     private func segment(_ a: SIMD3<Double>, _ b: SIMD3<Double>) -> Curve3D? {
         let d = b - a
         return Curve3D.bezier(poles: [a, a + d / 3, a + d * (2.0 / 3.0), b])
@@ -230,7 +231,9 @@ struct Issue2841GeomFillThreeCurveTests {
     }
 
     /// A quarter patch on a cylinder of radius 5 between z = 0 and z = 8, given as the bottom arc,
-    /// one vertical seam and the top arc. The second seam is the synthesised chord.
+    /// one vertical seam and the top arc.
+    ///
+    /// The second seam is the synthesised chord.
     private func cylinderPatch() -> CylinderPatch? {
         let r = 5.0
         let s = r * 0.7071067811865476

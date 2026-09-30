@@ -43,7 +43,8 @@ struct Issue1479HealingFixNullGuardsTests {
         #expect(nulled.composeShell() == nil)
     }
 
-    @Test("a genuinely-null OCCTShapeRef passed to OCCTShapeFixComposeShell returns nil, not a crash")
+    @Test(
+        "a genuinely-null OCCTShapeRef passed to OCCTShapeFixComposeShell returns nil, not a crash")
     func composeShellNullRawPointerReturnsNil() {
         let nullShape: OCCTShapeRef = unsafeBitCast(UInt(0), to: OCCTShapeRef.self)
         let result = OCCTShapeFixComposeShell(nullShape, 1e-6, 1, 1)
@@ -63,7 +64,8 @@ struct Issue1479HealingFixNullGuardsTests {
 
     // MARK: - Finding 2: OCCTShapeFixEdgeConnect
 
-    @Test("a genuinely-null OCCTShapeRef passed to OCCTShapeFixEdgeConnect returns nil, not a crash")
+    @Test(
+        "a genuinely-null OCCTShapeRef passed to OCCTShapeFixEdgeConnect returns nil, not a crash")
     func edgeConnectNullRawPointerReturnsNil() {
         let nullShape: OCCTShapeRef = unsafeBitCast(UInt(0), to: OCCTShapeRef.self)
         let result = OCCTShapeFixEdgeConnect(nullShape)

@@ -40,4 +40,3 @@ struct GceMakeConeTests {
                 < 1e-9)
     }
 }
-

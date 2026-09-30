@@ -23,11 +23,15 @@
 only_rules:
   - orphaned_doc_comment
 
+# Tests/ and Scripts/ were excluded here until #2852, which is the same gap that issue found in
+# the swift-format step: a lint whose population is a path nobody states. Measured on widening,
+# `orphaned_doc_comment` had exactly one finding across the 1,494 files it newly reached
+# (Issue633BlendedEdgesDuplicateReportTests.swift, a `///` block detached from its declaration by
+# an inserted `// MARK:`, which is the same shape as both of #877's), fixed in that PR. 1,728
+# files are linted now, against 234 before.
 excluded:
   - .build
   - Libraries
-  - Tests
-  - Scripts
   # Two known, named, tracked orphaned-doc-comment findings (#877), not fixed
   # in the rollout PR that added this rule: fixing either one obligates a full
   # swift-format sweep of the file under the manifest's own "touch it, fix it"

@@ -3,6 +3,8 @@ import Testing
 
 @testable import OCCTSwift
 
+/// A duplicated edge index is last-wins in `blendedEdges(_:)`, and nothing said so.
+///
 /// `BRepFilletAPI_MakeFillet::Add(radius, edge)` resolves the edge's own slot within its fillet
 /// contour and writes there, so a second `Add` call naming the same edge index silently overwrites
 /// the first radius rather than combining the two or erroring. `blendedEdges(_:)` never deduplicates
@@ -23,8 +25,8 @@ import Testing
 @Suite("blendedEdges reports overwritten duplicates (#633)")
 struct Issue633BlendedEdgesDuplicateReport {
 
-    /// Uses `FilletTestFixtures.openShell()` and `FilletTestFixtures.declinedIndices` for the
-    /// open-shell fixture with known declined edges.
+    // Uses `FilletTestFixtures.openShell()` and `FilletTestFixtures.declinedIndices` for the
+    // open-shell fixture with known declined edges.
 
     // MARK: - overwrittenDuplicateIndices: a single duplicated edge
 
@@ -132,7 +134,10 @@ struct Issue633BlendedEdgesDuplicateReport {
             return
         }
         let edgeCount = shell.edges().count
-        guard let accepted = (0..<edgeCount).first(where: { !FilletTestFixtures.declinedIndices.contains($0) })
+        guard
+            let accepted = (0..<edgeCount).first(where: {
+                !FilletTestFixtures.declinedIndices.contains($0)
+            })
         else {
             Issue.record("fixture has no accepted edge")
             return

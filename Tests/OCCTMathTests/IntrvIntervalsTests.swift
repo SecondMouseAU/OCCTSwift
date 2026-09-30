@@ -59,4 +59,3 @@ struct IntrvIntervalsTests {
         #expect(set.count == 2)
     }
 }
-

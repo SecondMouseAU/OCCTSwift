@@ -12,4 +12,3 @@ struct BracketMinimumTests {
         if let r = result { #expect(r.fb <= r.fa && r.fb <= r.fc) }
     }
 }
-

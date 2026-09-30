@@ -69,7 +69,9 @@ struct Issue1434DihedralAngleRangeTests {
             return
         }
         let angleDegrees = angle * 180.0 / Double.pi
-        #expect(angle < Double.pi, "a convex edge should report less than PI, got \(angleDegrees) degrees")
+        #expect(
+            angle < Double.pi,
+            "a convex edge should report less than PI, got \(angleDegrees) degrees")
         #expect(abs(angleDegrees - 60.0) < 1.0, "expected ~60 degrees, got \(angleDegrees)")
     }
 
@@ -99,7 +101,9 @@ struct Issue1434DihedralAngleRangeTests {
                 let p0 = edge.point(at: bounds.first),
                 let p1 = edge.point(at: bounds.last)
             else { continue }
-            if abs(p0.x - 5) < 1e-3, abs(p0.z - 5) < 1e-3, abs(p1.x - 5) < 1e-3, abs(p1.z - 5) < 1e-3 {
+            if abs(p0.x - 5) < 1e-3, abs(p0.z - 5) < 1e-3, abs(p1.x - 5) < 1e-3,
+                abs(p1.z - 5) < 1e-3
+            {
                 reflexEdge = edge
                 break
             }
@@ -117,7 +121,9 @@ struct Issue1434DihedralAngleRangeTests {
             return
         }
         let angleDegrees = angle * 180.0 / Double.pi
-        #expect(angle > Double.pi, "a concave edge should report greater than PI, got \(angleDegrees) degrees")
+        #expect(
+            angle > Double.pi,
+            "a concave edge should report greater than PI, got \(angleDegrees) degrees")
         #expect(abs(angleDegrees - 200.0) < 1.0, "expected ~200 degrees, got \(angleDegrees)")
     }
 }

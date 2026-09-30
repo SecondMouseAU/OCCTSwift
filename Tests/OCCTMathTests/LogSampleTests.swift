@@ -21,4 +21,3 @@ struct LogSampleTests {
         #expect(params.count == 1)
     }
 }
-

@@ -114,4 +114,3 @@ struct PlaneFactoryParityTests {
         #expect(Surface.plane(origin: origin, normal: tiny) == nil)
     }
 }
-

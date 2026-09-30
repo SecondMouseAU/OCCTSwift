@@ -14,4 +14,3 @@ struct GCMakeHyperbolaTests {
         #expect(h != nil)
     }
 }
-

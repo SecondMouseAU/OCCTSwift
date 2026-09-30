@@ -32,11 +32,13 @@ struct Issue1636FixedFreeBoundsShapeTests {
         let input = try twoAdjacentFaces()
         #expect(input.subShapes(ofType: .face).count == 2)
 
-        let repair = try #require(input.fixedFreeBounds(sewingTolerance: 1e-6, closingTolerance: 1e-4))
+        let repair = try #require(
+            input.fixedFreeBounds(sewingTolerance: 1e-6, closingTolerance: 1e-4))
 
         #expect(
             repair.shape.subShapes(ofType: .face).count == 2,
-            "ShapeFix_FreeBounds::GetShape() is the modified source shape; the old result had 0 faces")
+            "ShapeFix_FreeBounds::GetShape() is the modified source shape; the old result had 0 faces"
+        )
         #expect(repair.shape.subShapes(ofType: .edge).count == input.subShapes(ofType: .edge).count)
     }
 
@@ -55,7 +57,8 @@ struct Issue1636FixedFreeBoundsShapeTests {
     @Test("the free-bound wires are still reachable, on the result")
     func wiresAreStillAvailable() throws {
         let input = try twoAdjacentFaces()
-        let repair = try #require(input.fixedFreeBounds(sewingTolerance: 1e-6, closingTolerance: 1e-4))
+        let repair = try #require(
+            input.fixedFreeBounds(sewingTolerance: 1e-6, closingTolerance: 1e-4))
 
         #expect(repair.closedWireCount == 1, "two faces sharing an edge give one outer loop")
         #expect(repair.openWireCount == 0)
@@ -63,7 +66,8 @@ struct Issue1636FixedFreeBoundsShapeTests {
         #expect(closed.subShapeCount(ofType: .wire) == repair.closedWireCount)
         #expect(
             closed.subShapes(ofType: .face).isEmpty,
-            "the wire compound is wires; that is exactly why it was the wrong thing to return as `shape`")
+            "the wire compound is wires; that is exactly why it was the wrong thing to return as `shape`"
+        )
     }
 
     @Test("two faces with a gap under the sewing tolerance stay two free-bound loops")
@@ -74,7 +78,8 @@ struct Issue1636FixedFreeBoundsShapeTests {
         let second = try #require(secondFace.translated(by: SIMD3(10.00005, 0, 0)))
         let input = try #require(Shape.compound([first, second]))
 
-        let repair = try #require(input.fixedFreeBounds(sewingTolerance: 1e-6, closingTolerance: 1e-3))
+        let repair = try #require(
+            input.fixedFreeBounds(sewingTolerance: 1e-6, closingTolerance: 1e-3))
         #expect(repair.shape.subShapes(ofType: .face).count == 2)
         #expect(
             repair.closedWireCount == 2,

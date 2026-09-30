@@ -48,4 +48,3 @@ struct PlaneGeometryTests {
         #expect(!r)
     }
 }
-

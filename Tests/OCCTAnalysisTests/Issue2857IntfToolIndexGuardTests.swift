@@ -109,7 +109,8 @@ struct Issue2857IntfToolIndexGuardTests {
             Int.max,
         ]
         for index in badIndices {
-            #expect(tool.beginParam(segment: index) == nil, "beginParam(segment: \(index)) returned")
+            #expect(
+                tool.beginParam(segment: index) == nil, "beginParam(segment: \(index)) returned")
             #expect(tool.endParam(segment: index) == nil, "endParam(segment: \(index)) returned")
         }
         // The refusals left the tool usable.

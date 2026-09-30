@@ -19,7 +19,9 @@ import Testing
 // `OCCTFilletSurfBuild`), so nothing in `swift test` reaches it and these tests call the C bridge
 // function directly, matching how `Issue761SharedEdgeCountCapTests` exercises
 // `OCCTFaceGetSharedEdges`/`OCCTFaceGetSharedEdgeCount`.
-@Suite("OCCTFilletSurfError's exception fallback doesn't collide with a real NotSharpEdge verdict (#1439)")
+@Suite(
+    "OCCTFilletSurfError's exception fallback doesn't collide with a real NotSharpEdge verdict (#1439)"
+)
 struct Issue1439FilletSurfErrorFallbackTests {
 
     /// Calls `OCCTFilletSurfError` with a single edge shape and radius, matching the argument
@@ -31,7 +33,9 @@ struct Issue1439FilletSurfErrorFallbackTests {
         }
     }
 
-    @Test("A genuine exception inside FilletSurf_Builder reports PbFilletCompute (5), not the value a real NotSharpEdge verdict also uses")
+    @Test(
+        "A genuine exception inside FilletSurf_Builder reports PbFilletCompute (5), not the value a real NotSharpEdge verdict also uses"
+    )
     func exceptionFallbackReportsPbFilletCompute() {
         // A radius of 0 on an otherwise legitimate sharp box edge (shared by exactly two
         // distinct, C0-continuous faces, so it passes every up-front check
@@ -54,7 +58,9 @@ struct Issue1439FilletSurfErrorFallbackTests {
         #expect(result == 5, "expected FilletSurf_PbFilletCompute (5) from the catch fallback")
     }
 
-    @Test("A genuine NotSharpEdge verdict from FilletSurf_Builder itself still reports 4, matching the corrected doc")
+    @Test(
+        "A genuine NotSharpEdge verdict from FilletSurf_Builder itself still reports 4, matching the corrected doc"
+    )
     func realNotSharpEdgeVerdictReportsFour() {
         // A shape containing only a single face gives none of that face's boundary edges a
         // second owning face, so FilletSurf_InternalBuilder::Add's "does this edge have two
