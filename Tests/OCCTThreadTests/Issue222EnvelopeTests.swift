@@ -41,7 +41,8 @@ struct Issue222Envelope {
     @Test("Direct build keeps the crest within the nominal major radius (iso68, coarse)")
     func directInEnvelopeISO() throws {
         let rod = try #require(Shape.cylinder(radius: 6, height: 40))
-        let spec = ThreadSpec(form: .iso68, nominalDiameter: 12, pitch: 1.75)  // nominal major radius 6.0
+        // Nominal major radius 6.0.
+        let spec = ThreadSpec(form: .iso68, nominalDiameter: 12, pitch: 1.75)
         let t = try #require(
             rod.threadedShaft(
                 axisOrigin: .zero, axisDirection: SIMD3(0, 0, 1),
@@ -54,7 +55,8 @@ struct Issue222Envelope {
         // Measured: optimal 6.00000696, mesh 6.00000715.
         let optimal = try crestRadiusOptimal(t)
         #expect(optimal <= 6.0 * 1.005, "optimal crest \(optimal) > nominal 6.0")
-        #expect(optimal >= 6.0 * 0.995, "optimal crest \(optimal) < nominal 6.0, no thread cut here")
+        #expect(
+            optimal >= 6.0 * 0.995, "optimal crest \(optimal) < nominal 6.0, no thread cut here")
         let mesh = try #require(
             meshMaxRadialExtent(t, deflection: 0.05), "mesh crest measurement was nil")
         #expect(mesh <= 6.0 * 1.005, "mesh crest \(mesh) > nominal 6.0")
@@ -83,7 +85,8 @@ struct Issue222Envelope {
         // 6.00000658, mesh 6.00000668.
         let optimal = try crestRadiusOptimal(t)
         #expect(optimal <= 6.0 * 1.005, "optimal crest \(optimal) > nominal 6.0")
-        #expect(optimal >= 6.0 * 0.995, "optimal crest \(optimal) < nominal 6.0, no thread cut here")
+        #expect(
+            optimal >= 6.0 * 0.995, "optimal crest \(optimal) < nominal 6.0, no thread cut here")
         let mesh = try #require(
             meshMaxRadialExtent(t, deflection: 0.05), "mesh crest measurement was nil")
         #expect(mesh <= 6.0 * 1.005, "mesh crest \(mesh) > nominal 6.0")

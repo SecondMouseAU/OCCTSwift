@@ -55,7 +55,8 @@ struct ExtremaExtCCTests {
         // IsParallel from one wired to true, so the same construction is run on a pair that is
         // NOT parallel and the opposite answer is required. Inverting IsParallel in
         // OCCTExtremaExtCC now fails whichever way it is inverted.
-        let crossing = try #require(Curve3D.line(through: SIMD3(0, 3, 0), direction: SIMD3(0, 1, 0)))
+        let crossing = try #require(
+            Curve3D.line(through: SIMD3(0, 3, 0), direction: SIMD3(0, 1, 0)))
         let notParallel = line1.extremaCC(range1: -10...10, other: crossing, range2: -10...10)
         #expect(notParallel.isDone)
         #expect(!notParallel.isParallel, "a +x line and a +y line are not parallel")

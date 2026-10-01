@@ -19,7 +19,8 @@ struct BOPAlgoCellsBuilderTests {
         // gives 2 solids and 13 faces of total volume 16000. 13 because each box's facing side is
         // cut by the other's, 7 faces each, with the shared quarter counted once.
         let box1 = try #require(Shape.box(width: 20, height: 20, depth: 20))
-        let box2 = try #require(Shape.box(origin: SIMD3(10, 0, 0), width: 20, height: 20, depth: 20))
+        let box2 = try #require(
+            Shape.box(origin: SIMD3(10, 0, 0), width: 20, height: 20, depth: 20))
         let builder = try #require(CellsBuilder(shapes: [box1, box2]))
 
         let parts = try #require(builder.allParts(), "construction produced no split parts")
