@@ -24,10 +24,12 @@ import simd
 @Suite("Edge check polarity (#2901)")
 struct Issue2901EdgeCheckPolarityTests {
 
-    /// An edge whose 3D curve is the segment `(0,0,0)-(10,0,0)` and whose pcurve on the `z = 0`
-    /// plane is the parallel segment at `v = 1`, both on parameter domain `[0, 1]`. The two
-    /// therefore disagree by exactly `1.0` at every parameter, and the edge's vertices, which sit
-    /// on the 3D curve, are `1.0` from the pcurve's surface points.
+    /// Builds an edge whose 3D curve and pcurve are parallel, one unit apart.
+    ///
+    /// The 3D curve is the segment `(0,0,0)-(10,0,0)` and the pcurve on the `z = 0` plane is the
+    /// parallel segment at `v = 1`, both on parameter domain `[0, 1]`. The two therefore disagree
+    /// by exactly `1.0` at every parameter, and the edge's vertices, which sit on the 3D curve,
+    /// are `1.0` from the pcurve's surface points.
     ///
     /// Assembled the same way as `Issue1461ValidateEdgeSameParameterTests`'s fixture, which is the
     /// only Swift-reachable route to an edge carrying a pcurve that was never verified against its
@@ -39,7 +41,8 @@ struct Issue2901EdgeCheckPolarityTests {
             let plane = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1)),
             let planeFace = Shape.face(from: plane, uRange: -50...50, vRange: -50...50),
             let curveEdgeHandle = OCCTMakeEdgeFromCurveParams(curve3d.handle, 0, 1),
-            let pcurveEdgeHandle = OCCTMakeEdgeOnSurfaceParams(offsetPCurve.handle, plane.handle, 0, 1)
+            let pcurveEdgeHandle = OCCTMakeEdgeOnSurfaceParams(
+                offsetPCurve.handle, plane.handle, 0, 1)
         else { return nil }
 
         let edge = Shape(handle: curveEdgeHandle)

@@ -4,9 +4,13 @@ import simd
 
 @testable import OCCTSwift
 
-/// #2906: `SAWireAnalysis` carries `ShapeAnalysis_Wire`'s ordering precondition. Every member
-/// except `checkOrder` compares each edge against the next one *in the analyzer's sequence*, so on
-/// an out-of-order wire the "next" edge is the wrong one. OCCT's own caller, the shape_healing
+/// The ordering precondition that `ShapeAnalysis_Wire` imposes, carried onto `SAWireAnalysis`.
+///
+/// Filed as #2906.
+///
+/// Every member except `checkOrder` compares each edge against the next one *in the analyzer's
+/// sequence*, so on an out-of-order wire the "next" edge is the wrong one. OCCT's own caller, the
+/// shape_healing
 /// user guide, treats `CheckOrder()` as a stop condition and returns rather than running the later
 /// checks, and per okf/policies/follow-occt-callers.md that early return is the contract.
 ///
@@ -72,8 +76,9 @@ struct Issue2906WireOrderPreconditionTests {
     func distancesAreZeroOnAnOrderedWire() throws {
         let (face, wire) = try boxFaceAndWire()
         // 14.142135623730951 is 10 * sqrt(2), the 10x10 face's diagonal rather than any gap in it.
-        #expect(abs(SAWireAnalysis.maxDistance3d(wire: wire, face: face) - 10 * 2.0.squareRoot())
-            < 1e-9)
+        let diagonal = 10 * 2.0.squareRoot()
+        let before = SAWireAnalysis.maxDistance3d(wire: wire, face: face)
+        #expect(abs(before - diagonal) < 1e-9)
 
         let (fixedFace, fixedWire) = try reorderedBoxFaceWire()
         #expect(SAWireAnalysis.minDistance3d(wire: fixedWire, face: fixedFace) == 0)
