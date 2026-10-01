@@ -724,6 +724,10 @@ OCCTBRepGraphRef _Nullable OCCTBRepGraphCopyFace(OCCTBRepGraphRef _Nonnull graph
                                                  bool    copyGeom);
 
 /// Transform the graph by a translation vector.
+///
+/// Returns NULL for `copyGeom == false` with a non-zero translation: that selects OCCT's
+/// location-only mode, which needs a root Product to compose the location into, and no graph this
+/// bridge builds has one (#2913, see the implementation's comment).
 OCCTBRepGraphRef _Nullable OCCTBRepGraphTransformTranslation(OCCTBRepGraphRef _Nonnull graph,
                                                              double dx,
                                                              double dy,
