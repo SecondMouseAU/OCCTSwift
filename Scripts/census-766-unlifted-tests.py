@@ -671,11 +671,15 @@ def self_test():
                       labels("struct S {\n  @Test func t() { #expect(1 == 1) }\n"
                              "  @Test func t(x: Int) { #expect(x == 1) }\n}\n")
                       == ["S.t", "S.t#2"]))
+        # Both ghosts are placed so that the span they would open swallows the test: the
+        # comment's brace closes on the suite's, and the string's declaration adopts the
+        # suite's own brace. A ghost that opens a span the test is outside of proves nothing,
+        # which is what the first draft of these two cases did.
         cases.append(("a `struct` named in a comment is not taken for a suite",
-                      labels("// struct Ghost {\nstruct S {\n"
+                      labels("struct S {\n  // struct Ghost {\n"
                              "  @Test func t() { #expect(1 == 1) }\n}\n") == ["S.t"]))
         cases.append(("a `struct` named in a string literal is not taken for a suite",
-                      labels("let s = \"struct Ghost {\"\nstruct S {\n"
+                      labels("let a = \"struct Ghost\"\nstruct S {\n"
                              "  @Test func t() { #expect(1 == 1) }\n}\n") == ["S.t"]))
         cases.append(("a type the test is not inside does not reach its key",
                       labels("struct Before {\n  func helper() {}\n}\nstruct S {\n"
