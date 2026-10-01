@@ -519,6 +519,29 @@ int32_t OCCTSurfaceExtrema(OCCTSurfaceRef            s1,
                            double                    v2Max,
                            OCCTSurfaceExtremaResult* outResult);
 
+/// Minimum distance between two surfaces, from GeomAPI_ExtremaSurfaceSurface::LowerDistance().
+///
+/// The distance-only half of OCCTSurfaceExtrema, and the reason it exists separately: LowerDistance
+/// reads Extrema_ExtSS::mySqDist alone, which the analytic parallel branch DOES populate, so this
+/// answers for a parallel pair where OCCTSurfaceExtrema must refuse (#2876). Same shape as
+/// OCCTCurve3DMinDistanceToCurve and OCCTCurve3DDistanceToSurface, which are the other two members
+/// of the family and have always read LowerDistance() alone.
+///
+/// @param s1, s2 Surface handles
+/// @param u1Min..v2Max UV bounds for each surface
+/// @return The minimum distance, or -1.0 if either handle is null, the extrema computation found
+///         nothing (NbExtrema() == 0), or OCCT threw
+double OCCTSurfaceMinDistanceToSurface(OCCTSurfaceRef s1,
+                                       OCCTSurfaceRef s2,
+                                       double         u1Min,
+                                       double         u1Max,
+                                       double         v1Min,
+                                       double         v1Max,
+                                       double         u2Min,
+                                       double         u2Max,
+                                       double         v2Min,
+                                       double         v2Max);
+
 /// Check edge-on-surface consistency (max deviation between 3D curve and pcurve)
 /// @param shape Shape containing edges and faces
 /// @param outMaxDist Maximum distance found across all edge-face pairs
@@ -1238,12 +1261,19 @@ bool OCCTGeomConvertIsCanonical(OCCTSurfaceRef _Nonnull surfaceRef);
 OCCTGeomFillProfilerRef OCCTGeomFillProfilerCreate(void);
 void                    OCCTGeomFillProfilerAddCurve(OCCTGeomFillProfilerRef _Nonnull ref,
                                                      OCCTCurve3DRef _Nonnull curveRef);
+/// Homogenizes every curve added so far. Returns false when none was added: an empty
+/// GeomFill_Profiler::Perform indexes its own empty sequence and takes the process down
+/// uncatchably in this kernel (#2884).
 bool OCCTGeomFillProfilerPerform(OCCTGeomFillProfilerRef _Nonnull ref, double tolerance);
 int  OCCTGeomFillProfilerDegree(OCCTGeomFillProfilerRef _Nonnull ref);
 int  OCCTGeomFillProfilerNbPoles(OCCTGeomFillProfilerRef _Nonnull ref);
 int  OCCTGeomFillProfilerNbKnots(OCCTGeomFillProfilerRef _Nonnull ref);
 bool OCCTGeomFillProfilerIsPeriodic(OCCTGeomFillProfilerRef _Nonnull ref);
 /// Gets poles for curve at index (1-based). outX/Y/Z must be sized to NbPoles.
+/// Returns false when curveIndex is outside [1, the number of curves added]:
+/// GeomFill_Profiler::Poles states that range and its two checks are compiled out of
+/// this kernel, so index 0 faults and an index past the end reads past the sequence
+/// (#2884).
 bool OCCTGeomFillProfilerPoles(OCCTGeomFillProfilerRef _Nonnull ref,
                                int curveIndex,
                                double* _Nonnull outX,

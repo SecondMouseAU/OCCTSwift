@@ -202,13 +202,23 @@ bool OCCTDeflectionIsConsistent(double current, double required, bool allowDecre
 // --- BRepLib_ToolTriangulatedShape ---
 
 /// Compute normals on the triangulation of a shape's faces, in place.
-/// The shape must be meshed first. This is a no-op on a face whose triangulation already carries
-/// normals, which since #2337 includes every face OCCTShapeCreateMesh has walked: that function
-/// calls the same OCCT entry point itself, so this one is for a shape triangulated by another route
-/// (a .brep or STEP import, BRepMesh_IncrementalMesh called directly) whose normals a caller wants
-/// stored on the shape rather than read out through a Mesh.
-/// @return true if at least one face carried a triangulation to compute normals on
-bool OCCTBRepLibComputeNormals(OCCTShapeRef shape);
+///
+/// The shape must be meshed first. `BRepLib_ToolTriangulatedShape::ComputeNormals` is an
+/// idempotent *ensure*: it opens `if (theTris.IsNull() || theTris->HasNormals()) return;`, so it
+/// is a no-op on a face whose triangulation already carries normals, which since #2337 includes
+/// every face OCCTShapeCreateMesh has walked. This entry point is for a shape triangulated by
+/// another route (a .brep or STEP import, BRepMesh_IncrementalMesh called directly, the
+/// OCCTCoherentTriangulationCreateFromMesh path) whose normals a caller wants stored on the shape
+/// rather than read out through a Mesh.
+///
+/// @return the number of faces whose triangulation **gained** normals in this call, measured by
+/// testing `HasNormals()` before and after each one, or `-1` if the shape handle is null or OCCT
+/// threw. `0` means every triangulated face already had them and there was nothing to do, which is
+/// a success and not a failure. It used to return `bool`, and that `bool` was `true` for every
+/// non-null triangulation whether or not the call did anything, so after #2337 it was `true`
+/// unconditionally for any shape reachable from Swift: a value returned as a measurement that was
+/// never taken (#2905).
+int32_t OCCTBRepLibComputeNormals(OCCTShapeRef shape);
 
 // --- BRepLib_PointCloudShape ---
 

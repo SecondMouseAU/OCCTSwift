@@ -1,0 +1,78 @@
+// Source of the temporary Swift Testing probe that produced perfmeter-churn-transcript.txt.
+// Stored as .txt so no gate or build picks it up. To re-run, drop it into
+// Tests/OCCTFoundationTests/ZZChurnProbe.swift and run: swift test --filter ZZChurnProbe
+import Foundation
+import Testing
+@testable import OCCTSwift
+
+// TEMPORARY local-only probe, never committed: how often does a single PerfMeter window read
+// less than the calling thread's own CPU when other threads exit during the window?
+@Suite(.serialized) struct ZZChurnProbe {
+    private static func processCPU() -> Double {
+        var r = rusage()
+        getrusage(RUSAGE_SELF, &r)
+        return Double(r.ru_utime.tv_sec) + Double(r.ru_utime.tv_usec) * 1e-6
+            + Double(r.ru_stime.tv_sec) + Double(r.ru_stime.tv_usec) * 1e-6
+    }
+    private static func threadCPU() -> Double {
+        Double(clock_gettime_nsec_np(CLOCK_THREAD_CPUTIME_ID)) * 1e-9
+    }
+    private static func window(_ n: Int) -> (elapsed: Double, processDelta: Double) {
+        let before = processCPU()
+        let meter = PerfMeter(name: "zz_churn_\(n)_\(UInt32.random(in: 0..<UInt32.max))")
+        let t0 = threadCPU()
+        var sum = 0.0
+        while threadCPU() - t0 < 0.1 { for i in 0..<1000 { sum += Double(i) } }
+        meter.stop()
+        let after = processCPU()
+        if sum < 0 { print(sum) }
+        return (meter.elapsed, after - before)
+    }
+
+    @Test func churn() {
+        let stop = Locked(false)
+        // Churn: repeatedly spawn short-lived threads that each burn ~0.3 s of CPU, then exit.
+        Thread.detachNewThread {
+            while !stop.value {
+                for _ in 0..<3 {
+                    Thread.detachNewThread {
+                        let t0 = ZZChurnProbe.threadCPU()
+                        var s = 0.0
+                        while ZZChurnProbe.threadCPU() - t0 < 0.3 { for i in 0..<1000 { s += Double(i) } }
+                        if s < 0 { print(s) }
+                    }
+                }
+                Thread.sleep(forTimeInterval: 0.15)
+            }
+        }
+        var singleLow = 0, singleTotal = 0, retryFail = 0, upperViolations = 0
+        var minSeen = Double.infinity
+        for k in 0..<150 {
+            let w = Self.window(k)
+            singleTotal += 1
+            minSeen = min(minSeen, w.elapsed)
+            if w.elapsed < 0.09 { singleLow += 1 }
+            if w.elapsed > w.processDelta + 0.02 { upperViolations += 1 }
+            // retry rule: up to 5 windows, pass when one reads >= 0.09
+            var ok = w.elapsed >= 0.09
+            var a = 1
+            while !ok && a < 5 {
+                let r = Self.window(1000 + k * 10 + a)
+                if r.elapsed > r.processDelta + 0.02 { upperViolations += 1 }
+                ok = r.elapsed >= 0.09
+                a += 1
+            }
+            if !ok { retryFail += 1 }
+        }
+        stop.set(true)
+        print("PROBE churn: single-window lower-bound failures \(singleLow)/\(singleTotal) (min reading \(minSeen)); retry-rule failures \(retryFail)/\(singleTotal); upper-bound violations \(upperViolations)")
+    }
+}
+
+final class Locked<T>: @unchecked Sendable {
+    private let l = NSLock()
+    private var v: T
+    init(_ v: T) { self.v = v }
+    var value: T { l.lock(); defer { l.unlock() }; return v }
+    func set(_ n: T) { l.lock(); v = n; l.unlock() }
+}

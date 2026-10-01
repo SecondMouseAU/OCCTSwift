@@ -120,7 +120,8 @@ extension Shape {
     /// Extract a triangulated mesh from the shape for shaded rendering.
     ///
     /// - Parameter deflection: Tessellation chord deviation. Smaller values produce
-    ///   finer meshes. Default is 0.1.
+    ///   finer meshes. Default is 0.1. A value below `1e-7` (OCCT's `Precision::Confusion()`),
+    ///   a negative one, or NaN is refused and returns `nil` (#2879).
     /// - Returns: Shaded mesh data, or `nil` if tessellation fails.
     public func shadedMesh(deflection: Double = 0.1) -> ShadedMeshData? {
         var data = OCCTShadedMeshData()
@@ -138,10 +139,15 @@ extension Shape {
     /// refuses a value below `Precision::Confusion()` (1e-7) by contributing no segment for that
     /// edge, as it already does for an edge it cannot discretise (#2872).
     ///
-    /// - Parameter deflection: Tessellation chord deviation. Default is 0.1. A degenerate value is
-    ///   not rejected here, because it is the tessellator's parameter first; `deflection: 0` on a
-    ///   shape with a face does not return, and a NaN deflection yields thousands of tessellation
-    ///   nodes for a single edge (#2879).
+    /// The tessellator applies the same floor to the same argument, for its own reason, so the
+    /// whole call is refused below it rather than just the fallback: see
+    /// [Meshing & Export](../../docs/guides/cookbook/meshing-and-export.md) for the bound and
+    /// where in OCCT it comes from.
+    ///
+    /// - Parameter deflection: Tessellation chord deviation. Default is 0.1. A value below `1e-7`
+    ///   (OCCT's `Precision::Confusion()`), a negative one, or NaN is refused and returns `nil`.
+    ///   NaN is the value that made this a defect: it passes every comparison OCCT makes, and on a
+    ///   shape with a curved face the tessellation it starts does not return (#2879).
     /// - Returns: Edge mesh data, or `nil` if extraction fails.
     public func edgeMesh(deflection: Double = 0.1) -> EdgeMeshData? {
         var data = OCCTEdgeMeshData()

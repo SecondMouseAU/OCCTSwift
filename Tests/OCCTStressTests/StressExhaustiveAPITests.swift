@@ -1,6 +1,11 @@
 // StressExhaustiveAPITests.swift
 // Category 1: Smoke-call every major public method with standard fixtures.
 // Goal: verify no crash and reasonable output for each API entry point.
+//
+// Epic #766: many of these smoke calls held their result behind `if let` (so a nil result passed)
+// or read it into `_` (so only a crash could fail them). Those now require the result and, where
+// the check was only "positive" or "non-empty", pin the value OCCT gives for the same input,
+// measured by Scripts/repro/766-stress-exhaustive-api/probe.mm (transcript.txt beside it).
 
 import Foundation
 import OCCTSwift
@@ -102,8 +107,9 @@ struct StressShapeFeatureTests {
         if let r { #expect(r.isValid) }
     }
 
-    /// #2830: this used to call `shelled(thickness:)` on a closed box, which is refused for every
-    /// thickness, so the `isValid` assertion never ran and the API row measured nothing. The
+    /// #2830: this used to shell a closed box, which is refused for every thickness.
+    ///
+    /// The `isValid` assertion therefore never ran and the API row measured nothing. The
     /// algorithm is `MakeThickSolidBySimple`, whose domain is a non-closed shell or face (#2739),
     /// hence the open shell. 210.857143 is the kernel's own figure for this input.
     @Test func shell() throws {
@@ -289,18 +295,21 @@ struct StressWireAPITests {
     @Test func wireLength() {
         let w = standardWire()
         if let len = w.length { #expect(len > 0) }
+        #expect(abs((w.length ?? 0) - 40) < 1e-9)
     }
 
     @Test func wireEdges() {
         let w = standardWire()
         let edges = w.edges()
         #expect(!edges.isEmpty)
+        #expect(edges.count == 4)
     }
 
-    @Test func wireOffset() {
+    // An inward offset of 1 of the 10 × 10 square is the 8 × 8 square.
+    @Test func wireOffset() throws {
         let w = standardWire()
-        let offset = w.offset(by: -1.0)
-        if let o = offset { if let len = o.length { #expect(len > 0) } }
+        let o = try #require(w.offset(by: -1.0))
+        #expect(abs((o.length ?? 0) - 32) < 1e-9)
     }
 }
 
@@ -309,21 +318,22 @@ struct StressWireAPITests {
 @Suite("Stress: Edge API")
 struct StressEdgeAPITests {
 
-    @Test func edgeFromShape() {
+    @Test func edgeFromShape() throws {
         let box = standardBox()
         let edges = box.edges()
         #expect(!edges.isEmpty)
-        if let edge = edges.first {
-            _ = edge.curveType
-            _ = edge.length
-            _ = edge.length
-        }
+        // Epic #766: both properties were read and discarded. Edge 0 of the box is a straight
+        // 10-long line.
+        let edge = try #require(edges.first)
+        #expect(edge.curveType == .line)
+        #expect(abs(edge.length - 10) < 1e-9)
     }
 
     @Test func edgeFromWire() {
         let wire = standardWire()
         let edges = wire.edges()
         #expect(!edges.isEmpty)
+        #expect(edges.count == 4)
     }
 }
 
@@ -332,14 +342,16 @@ struct StressEdgeAPITests {
 @Suite("Stress: Face API")
 struct StressFaceAPITests {
 
-    @Test func faceNormal() {
+    @Test func faceNormal() throws {
         let box = standardBox()
         let faces = box.faces()
+        #expect(faces.count == 6)
         for face in faces {
-            if let n = face.normal {
-                let len = sqrt(n.x * n.x + n.y * n.y + n.z * n.z)
-                #expect(abs(len - 1.0) < 0.01)
-            }
+            let n = try #require(face.normal)
+            let len = sqrt(n.x * n.x + n.y * n.y + n.z * n.z)
+            #expect(abs(len - 1.0) < 0.01)
+            // Unit length held for any direction; a box face normal is one axis, outward.
+            #expect(abs(abs(n.x) + abs(n.y) + abs(n.z) - 1) < 1e-9)
         }
     }
 
@@ -349,25 +361,33 @@ struct StressFaceAPITests {
         for face in faces {
             let area = face.area()
             #expect(area > 0)
+            #expect(abs(area - 100) < 1e-9)
         }
     }
 
-    @Test func faceBounds() {
+    @Test func faceBounds() throws {
         let box = standardBox()
         let faces = box.faces()
+        // Epic #766: the bounds were read and discarded. Each face is a 10 × 10 square flat in one
+        // axis (width 2e-7, the tolerance gap, in that axis).
+        #expect(faces.count == 6)
         for face in faces {
-            let b = face.bounds!
-            _ = b.min
-            _ = b.max
+            let b = try #require(face.bounds)
+            let size = b.max - b.min
+            let dims = [size.x, size.y, size.z].sorted()
+            #expect(dims[0] < 1e-6)
+            #expect(abs(dims[1] - 10) < 1e-6)
+            #expect(abs(dims[2] - 10) < 1e-6)
         }
     }
 
+    // Epic #766: the type was read and discarded. Every box face is a plane.
     @Test func faceSurfaceType() {
         let box = standardBox()
         let faces = box.faces()
+        #expect(faces.count == 6)
         for face in faces {
-            let st = face.surfaceType
-            _ = st
+            #expect(face.surfaceType == .plane)
         }
     }
 
@@ -383,6 +403,9 @@ struct StressFaceAPITests {
             if face.isVertical() { vert += 1 }
         }
         #expect(up + down + vert == 6)
+        #expect(up == 1)
+        #expect(down == 1)
+        #expect(vert == 4)
     }
 }
 
@@ -406,12 +429,17 @@ struct StressCurve3DAPITests {
         let domain = c.domain
         let pt = c.point(at: (domain.lowerBound + domain.upperBound) / 2.0)
         #expect(pt.x.isFinite)
+        // Half way round the radius-5 circle.
+        #expect(abs(pt.x - -5) < 1e-12)
+        #expect(abs(pt.y) < 1e-12)
     }
 
     @Test func domainAndClosed() {
         let c = standardCurve3D()
         let domain = c.domain
         #expect(domain.upperBound > domain.lowerBound)
+        #expect(domain.lowerBound == 0)
+        #expect(abs(domain.upperBound - 2 * .pi) < 1e-15)
     }
 
     @Test func localCurvature() {
@@ -419,18 +447,21 @@ struct StressCurve3DAPITests {
         // #595: localCurvature is deprecated onto curvature(at:), which reports definedness.
         let k = c.curvature(at: 0)
         #expect(k?.isFinite == true)
+        #expect(abs((k ?? 0) - 0.2) < 1e-12)
     }
 
-    @Test func localTangent() {
+    @Test func localTangent() throws {
         let c = standardCurve3D()
-        let t = c.localTangent(at: 0)
-        #expect(t != nil)
+        let t = try #require(c.localTangent(at: 0))
+        #expect(abs(t.x) < 1e-12)
+        #expect(abs(t.y - 1) < 1e-12)
     }
 
-    @Test func localNormal() {
+    @Test func localNormal() throws {
         let c = standardCurve3D()
-        let n = c.localNormal(at: 0)
-        #expect(n != nil)
+        let n = try #require(c.localNormal(at: 0))
+        #expect(abs(n.x - -1) < 1e-12)
+        #expect(abs(n.y) < 1e-12)
     }
 
     @Test func continuity() {
@@ -447,6 +478,10 @@ struct StressCurve3DAPITests {
         #expect(props.poleCount > 0)
         #expect(props.knotCount > 0)
         #expect(props.degree > 0)
+        // GeomAPI_Interpolate through five points: a cubic with 7 poles and 5 knots.
+        #expect(props.poleCount == 7)
+        #expect(props.knotCount == 5)
+        #expect(props.degree == 3)
     }
 
     @Test func arcLength() {
@@ -482,11 +517,16 @@ struct StressCurve2DAPITests {
         let domain = c.domain
         let pt = c.point(at: (domain.lowerBound + domain.upperBound) / 2.0)
         #expect(pt.x.isFinite)
+        #expect(abs(pt.x - -5) < 1e-12)
+        #expect(abs(pt.y) < 1e-12)
     }
 
+    // Epic #766: `allCases.contains(...)` was true for every value it could return. A circle is
+    // infinitely continuous (GeomAbs_CN).
     @Test func continuity() {
         let c = standardCurve2D()
         #expect(ContinuityClass.allCases.contains(c.continuityClass))
+        #expect(c.continuityClass == .cN)
     }
 }
 

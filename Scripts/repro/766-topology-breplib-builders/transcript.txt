@@ -1,0 +1,9 @@
+edgeFromLine: length 10, from (0, 0, 0) to (10, 0, 0)
+edgeFromPoints: length 11.575836902790225, from (0, 0, 0) to (10, 5, 3)
+edgeFromCircle: length 15.707963267948966, from (5, 0, 0) to (-5, 6.1232339957367663e-16, 0)
+faceFromPlane: area 99.999999999999986
+faceFromCylinder: area 157.07963267948966
+shellFromPlane: faces 1, area 99.999999999999986
+pointCloudByTriangulation: 24 points (triangulation nodes 24)
+pointCloudByDensity(1.0): 600 points
+computeNormals: 6 triangulated faces, 6 with normals after

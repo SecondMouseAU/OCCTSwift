@@ -9,7 +9,7 @@
 
 A comprehensive Swift wrapper for [OpenCASCADE Technology (OCCT)](https://www.opencascade.com/) 8.0.1, providing B-Rep solid modeling for macOS and iOS. **v3.0.0. SemVer-stable; see [SEMVER.md](docs/SEMVER.md#v300) before upgrading from v2.x.**
 
-**4,371 wrapped operations** | macOS 12+ / iOS 15+ (arm64), visionOS and tvOS untested | OCCT 8.0.1
+**4,372 wrapped operations** | macOS 12+ / iOS 15+ (arm64), visionOS and tvOS untested | OCCT 8.0.1
 ## Quick Start
 
 ### Installation
@@ -144,8 +144,8 @@ try Exporter.writeGLTF(shape: model, to: glbURL)                   // binary glT
 
 ```
 Sources/OCCTSwift/          Swift public API
-Sources/OCCTBridge/include/ C function declarations (15 per-domain headers + a slim OCCTBridge.h umbrella)
-Sources/OCCTBridge/src/     Objective-C++ implementations (16 per-domain .mm files)
+Sources/OCCTBridge/include/ C function declarations (17 per-domain headers + a slim OCCTBridge.h umbrella)
+Sources/OCCTBridge/src/     74 Objective-C++ implementation files (ten domains split by subsystem)
 Libraries/OCCT.xcframework  Pre-built OCCT 8.0.1 static library (arm64)
 Tests/OCCT<Domain>Tests/    Per-domain Swift Testing targets (focused compile/run)
 ```

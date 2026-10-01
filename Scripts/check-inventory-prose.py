@@ -9,6 +9,26 @@ than once:
   * the static gate scripts run by ``ci.yml``'s ``gate-scripts`` job, counted in that job's own
     comment, in ``CLAUDE.md`` and in ``okf/policies/static-gates.md``.
 
+A third record of the first inventory joined them in #2885: ``Scripts/occt-raise-if-map.txt`` is a
+committed derivation of the PATCHED ``Libraries/occt-src``, and it carries a stamp naming the
+carried patches the tree held. Nothing re-derived that map when a patch changed a raise site, so it
+described a kernel we had stopped shipping for two pins. The re-derivation needs the tree; the
+stamp does not, which is what lets this gate hold it against ``Scripts/patches/`` on every PR.
+
+#2910 widened it past the kernel. ``CLAUDE.md`` is the working summary of how this repo works, and
+three more of its counted claims about the repo's own shape had no derivation at all: the
+swift-format exemption manifest, the bridge file counts and the test-target list. The manifest is
+the sharpest case, because it is the one inventory designed to drain: #2852's rule is that a PR
+touching an exempt file brings it into compliance and deletes its line, so that number falls on its
+own and the prose was stale within days of being written. The bridge counts are the opposite shape
+and failed the same way: "All 33 bridge files are enforced" described the tree before the
+#1378/#1380 split multiplied it to 93, and no edit was needed to make the sentence wrong.
+
+**Correct today with nothing keeping it so is the finding, not just wrong today.** The sweep that
+filed these measured five claims and found three wrong and two right, and both of the right ones
+are registered here anyway: which is which was not knowable from reading the file, and that is the
+property the gate restores.
+
 The recurrence is the argument for a gate rather than another proofread: ci.yml called the job's
 scripts "five" while running thirteen (#1066), the pinned-patch count went stale at
 v2.0.0-kernel.1 through .3, at #1032 and at #1157/#1402, and one carried-patch row key was written
@@ -25,6 +45,7 @@ Run from anywhere; paths resolve from __file__.
 
 import argparse
 import glob
+import hashlib
 import os
 import re
 import sys
@@ -166,6 +187,72 @@ def hook_invocations(text=None):
     return len(re.findall(r'^run "[^"]+"\s+Scripts/[A-Za-z0-9_.-]+\.py', text, re.MULTILINE))
 
 
+def style_manifest_entries(rel):
+    """The files listed on a shrink-only style exemption manifest, parsed as its own gate parses it.
+
+    #2910. ``Scripts/style-manifest-swift-wave2.txt`` is the one inventory in this repo designed to
+    drain continuously: #2852's rule is that a PR touching an exempt file brings it into compliance
+    and deletes its line, so the count falls with nearly every such PR. ``CLAUDE.md`` stated that
+    count in prose and nothing read it, which made it the claim most certain to go stale and the
+    only one that would do so silently every time the rule worked as intended.
+
+    The line test is `Scripts/check-style-manifest.py`'s `read_manifest_at`, character for
+    character: non-blank and not starting with `#`. Two readers of one file that disagreed about
+    what an entry is would produce two defensible counts for the same manifest, which is the shape
+    of drift this gate exists to end rather than to introduce.
+    """
+    return [line.strip() for line in read(rel).splitlines()
+            if line.strip() and not line.strip().startswith("#")]
+
+
+def bridge_source_files(*suffixes):
+    """Every file under Sources/OCCTBridge/ with one of `suffixes`, recursively.
+
+    #2910. Three counted claims in CLAUDE.md's bridge paragraphs are derivable from this tree and
+    none of them was derived: the enforced clang-format population, the per-domain header set and
+    the Objective-C++ implementation count. Two of the three were wrong when the sweep measured
+    them, both because the bridge split (#1378, #1380) multiplied the file count and the prose that
+    described the old layout stayed.
+    """
+    found = []
+    for root, _dirs, names in os.walk(os.path.join(REPO, "Sources", "OCCTBridge")):
+        for name in names:
+            if name.endswith(suffixes):
+                found.append(os.path.relpath(os.path.join(root, name), REPO))
+    return sorted(found)
+
+
+def bridge_enforced_files():
+    r"""The population `Scripts/format-bridge.sh` clang-formats: the bridge tree minus its manifest.
+
+    Mirrors that script's `enforced_files()`, which is `comm -23` of `find Sources/OCCTBridge
+    \( -name '*.h' -o -name '*.mm' \)` against `Scripts/style-manifest-bridge.txt`. The manifest
+    is empty today, so the two numbers coincide; deriving the subtraction anyway means the prose
+    stays true if a file is ever exempted, which is the whole reason the manifest exists.
+    """
+    exempt = set(style_manifest_entries("Scripts/style-manifest-bridge.txt"))
+    return [f for f in bridge_source_files(".h", ".mm") if f not in exempt]
+
+
+def bridge_domain_headers():
+    """The per-domain headers in Sources/OCCTBridge/include/, excluding the OCCTBridge.h umbrella.
+
+    #395 split one header into an umbrella plus one per domain, and CLAUDE.md has stated the split
+    as "N files: OCCTBridge.h umbrella + M per-domain headers" ever since. Both halves are derived
+    here so the sentence cannot describe a different number of domains from the directory.
+    """
+    include = os.path.join("Sources", "OCCTBridge", "include")
+    return sorted(f for f in bridge_source_files(".h")
+                  if os.path.dirname(f) == include
+                  and os.path.basename(f) != "OCCTBridge.h")
+
+
+def test_target_names(text=None):
+    """Every `.testTarget(name:)` declared in Package.swift, in declaration order."""
+    text = read("Package.swift") if text is None else text
+    return re.findall(r"\.testTarget\(\s*name:\s*\"([^\"]+)\"", text)
+
+
 def classify(text=None):
     """The gate/census/audit/release-check split, derived from the job, not a hand-kept list.
 
@@ -233,6 +320,19 @@ def facts():
         # scripts, because that is what the sentence counts.
         "job_invocations": gate_job_invocations(),
         "hook_invocations": hook_invocations(),
+        # #2910: the inventory built to drain. Every PR that touches an exempt Swift file deletes
+        # its line, so this number falls on its own and the prose that stated it was stale within
+        # days of being written.
+        "swift_wave2_exempt": len(
+            style_manifest_entries("Scripts/style-manifest-swift-wave2.txt")),
+        # #2910: the three bridge-tree counts CLAUDE.md states and nothing read. Unlike the
+        # manifest these grow, and two of the three were already wrong when the sweep measured
+        # them, left behind by the #1378/#1380 split.
+        "bridge_enforced_files": len(bridge_enforced_files()),
+        "bridge_domain_headers": len(bridge_domain_headers()),
+        "bridge_include_headers": len(bridge_domain_headers()) + 1,
+        "bridge_impl_files": len(bridge_source_files(".mm")),
+        "test_targets": len(test_target_names()),
     }
 
 
@@ -268,6 +368,14 @@ CLAIMS = [
     # mismatch rather than as "no sentence matches", which reads like the regex rotted.
     ("Scripts/patches-wasi/README.md",
      r"`Scripts/patches-wasi/` holds (\S+) patch(?:es)?\b", "wasi_patches_on_disk"),
+    # #2885: the count line in Scripts/occt-raise-if-map.txt's provenance stamp. The digest
+    # comparison in check_raise_map_provenance() below would catch a stale count too, and this
+    # entry is still here rather than left to it: the stamp states a count in prose, every counted
+    # claim in this repo is registered in this table, and the issue asked for it to be registered
+    # rather than checked only by new code. The two failures read differently on purpose, one as a
+    # count mismatch and one naming the patch the map predates.
+    ("Scripts/occt-raise-if-map.txt",
+     r"# derived against: (\d+) carried patch\(es\)", "patches_on_disk"),
     ("CLAUDE.md", r"\((\S+) on disk, \S+ pinned", "patches_on_disk"),
     ("CLAUDE.md", r"\(\S+ on disk, (\S+) pinned", "patches_pinned"),
     ("CLAUDE.md", r"(\S+) gates, \S+ censuses and \S+ merge-history audit", "gate_scripts"),
@@ -290,6 +398,47 @@ CLAIMS = [
      r"pre-commit` runs ([A-Za-z-]+) of `gate-scripts`'", "hook_invocations"),
     ("okf/policies/static-gates.md",
      r"of `gate-scripts`' ([A-Za-z-]+) invocations", "job_invocations"),
+    # #2910. The swift-format exemption manifest, the one inventory designed to shrink with every
+    # PR that touches a listed file, stated in CLAUDE.md with nothing reading it. It said 272 while
+    # the manifest held 269 and had been drifting since the day it was written.
+    ("CLAUDE.md",
+     r"what the widening reached, (\S+) files still listed", "swift_wave2_exempt"),
+    # #2910, the bridge tree. "All N bridge files are enforced" said 33 against a tree of 93, and
+    # the architecture block said 16 headers and one .mm per domain against 18 and 74. Both
+    # predate the #1378/#1380 split, which is how a sentence goes stale without anybody editing it.
+    #
+    # The neighbouring "21.1.8 and 22.1.8 disagree on 10 of the files" is deliberately NOT here and
+    # lost its denominator instead. It is a measurement somebody took on the tree of the day, not a
+    # count of an inventory, so re-deriving its denominator would restate a comparison nobody ran
+    # across 93 files. A frozen measurement has to read as frozen; this gate's subject is the
+    # claims that describe the tree as it is now.
+    ("CLAUDE.md", r"All (\S+) bridge files are\s*\n?enforced", "bridge_enforced_files"),
+    ("CLAUDE.md",
+     r"C function declarations \((\S+) files: OCCTBridge\.h umbrella", "bridge_include_headers"),
+    ("CLAUDE.md",
+     r"OCCTBridge\.h umbrella \+ (\S+) per-domain headers", "bridge_domain_headers"),
+    ("CLAUDE.md", r"^Sources/OCCTBridge/src/\s+(\S+) Objective-C\+\+ implementations",
+     "bridge_impl_files"),
+    # #2910, the same two facts in the four other places the sweep found them. Each had drifted
+    # independently, which is the argument for registering a copy rather than deleting it: the
+    # architecture sketch is useful where it is, and a reader of README.md is not going to open
+    # CLAUDE.md to find out whether its numbers are the live ones.
+    ("README.md", r"\((\S+) per-domain headers \+ a slim OCCTBridge\.h umbrella\)",
+     "bridge_domain_headers"),
+    ("README.md", r"^Sources/OCCTBridge/src/\s+(\S+) Objective-C\+\+ implementation files",
+     "bridge_impl_files"),
+    ("docs/architecture/overview.md", r"# (\S+) per-domain C declaration files",
+     "bridge_domain_headers"),
+    ("docs/architecture/overview.md", r"# (\S+) implementation files, ten domains split",
+     "bridge_impl_files"),
+    ("Scripts/derive-bridge-header-split.py",
+     r"so there are (\S+) \.mm files against \S+ headers", "bridge_impl_files"),
+    ("Scripts/derive-bridge-header-split.py",
+     r"so there are \S+ \.mm files against (\S+) headers", "bridge_include_headers"),
+    ("Scripts/derive-bridge-header-split.py",
+     r"All (\S+) bridge header files: the umbrella", "bridge_include_headers"),
+    ("Scripts/derive-bridge-header-split.py",
+     r"the umbrella plus the (\S+) per-domain headers", "bridge_domain_headers"),
 ]
 
 
@@ -467,6 +616,180 @@ def check_tsan_suppressions():
     return problems
 
 
+# --- the raise map's provenance stamp (#2885) ---------------------------------------------------
+#
+# Scripts/occt-raise-if-map.txt is a committed derivation of Libraries/occt-src, which is the tree
+# AFTER Scripts/build-occt.sh applies the carried patches. Nothing re-derived it when that tree
+# changed: patch 0042 added a `throw Standard_NullObject` to ShapeAnalysis::GetFaceUVBounds, and
+# the map said ShapeAnalysis held no live throw for two pins while the kernel we ship held one.
+# The re-derivation itself needs the tree, which no gate-scripts runner has, so what is checked
+# here is the TREE'S INPUTS: the map records which carried patches produced the tree it came from,
+# and that record is text this gate can hold against Scripts/patches/ on every PR.
+#
+# Keyed on the patch set ON DISK, not on the pinned asset. The tree build-occt.sh patches is the
+# one Scripts/patches/ describes, so an unpinned patch is in the map's subject and not in the
+# asset's; check-pinned-asset-patches.py is the check keyed the other way, and the two are meant
+# to be able to disagree.
+#
+# Implemented here rather than as its own gate, on check_tsan_suppressions()' precedent above:
+# one committed derivation has this shape today, this file already reads Scripts/patches/ and
+# already owns "every record this repo keeps of the patch inventory matches it", and a standalone
+# script for one artefact would be disproportionate.
+
+RAISE_MAP = os.path.join("Scripts", "occt-raise-if-map.txt")
+
+
+def patch_digest(path):
+    """sha256 of a patch file's bytes, to 12 hex.
+
+    A count moves when a patch lands; this moves when one is EDITED in place, which is the half a
+    count cannot see and which happens every time a patch is revised under review.
+    """
+    with open(path, "rb") as handle:
+        return hashlib.sha256(handle.read()).hexdigest()[:12]
+
+
+def carried_patch_digests():
+    """{stem: digest} over Scripts/patches/*.patch, the fact the map's stamp records."""
+    paths = glob.glob(os.path.join(REPO, "Scripts", "patches", "*.patch"))
+    return {os.path.basename(p)[: -len(".patch")]: patch_digest(p) for p in sorted(paths)}
+
+
+def format_provenance(version, digests):
+    """The stamp `--write-table` writes into Scripts/occt-raise-if-map.txt, as `#` lines.
+
+    Written here rather than in the census that emits it, because the parser below is what has to
+    keep reading it: a format whose writer and reader sit in different files is a format that
+    drifts, and this one is load-bearing on exactly the day nobody is thinking about it.
+    """
+    lines = [
+        "#",
+        "# PROVENANCE (#2885). This map describes Libraries/occt-src AFTER Scripts/build-occt.sh",
+        "# applies the carried patches, so a patch that touches a raise site changes this file.",
+        "# Nothing re-derived it for two pins, and this stamp is what makes the next one fail",
+        "# loudly: Scripts/check-inventory-prose.py compares it against Scripts/patches/ on every",
+        "# PR, with no OCCT tree needed. Regenerate with --write-table, which rewrites the stamp",
+        "# and the rows together; the rows themselves are re-checked with --reverify-table, which",
+        "# needs the tree and runs in kernel-integration.yml, the one job that has one.",
+        "#",
+        "# The stamp says which carried patches the tree held. It does NOT say the tree held",
+        "# nothing else: a retired patch whose edits were never reverted is #2190's question, and",
+        "# the stray check in docs/guides/building-occt.md's \"Shipping a rebuild\" answers it.",
+        "#",
+        "# occt-version: %s" % version,
+        "# derived against: %d carried patch(es) in Scripts/patches/, every one of them verified"
+        % len(digests),
+        "# derived against: applied in the tree the rows below were derived from.",
+    ]
+    for stem in sorted(digests):
+        lines.append("# patch: %s %s" % (stem, digests[stem]))
+    return lines
+
+
+def parse_provenance(text):
+    """{'version': str or None, 'patches': {stem: digest}} from a stamped map, None if unstamped.
+
+    None and an empty patch set are different answers and the caller reports them differently: an
+    unstamped map is one written before this check existed, and a stamped map naming no patch is
+    a parser that has stopped matching. Both are failures; only the second is this gate going
+    blind, which okf/policies/static-gates.md asks every detector to be able to say out loud.
+    """
+    patches = dict(re.findall(r"^# patch: (\S+) ([0-9a-f]{6,64})$", text, re.MULTILINE))
+    version = re.search(r"^# occt-version: (\S+)$", text, re.MULTILINE)
+    if not patches and not version:
+        return None
+    return {"version": version.group(1) if version else None, "patches": patches}
+
+
+def build_script_occt_version(text=None):
+    """The OCCT version Scripts/build-occt.sh checks out, e.g. "8.0.1", or None."""
+    text = read(os.path.join("Scripts", "build-occt.sh")) if text is None else text
+    match = re.search(r'^OCCT_VERSION="([^"]+)"', text, re.MULTILINE)
+    return match.group(1) if match else None
+
+
+def version_triple(version):
+    """The leading `N.N.N` of an OCCT version string, or the string unchanged if it has none.
+
+    `tree_occt_version` appends `OCC_VERSION_DEVELOPMENT` when the tree states one, and says in its
+    own docstring that the suffix is "appended for a reader and not compared". Nothing enforced
+    that: the comparison below was string equality, so a stamp written from a development tree
+    ("8.0.2.dev") would not match `Scripts/build-occt.sh`'s bare `OCCT_VERSION` ("8.0.2") and the
+    check would report a version bump that had not happened. Found in review of #2893, before the
+    8.0.2 bump that would have triggered it.
+    """
+    match = re.match(r"^(\d+\.\d+\.\d+)", version or "")
+    return match.group(1) if match else version
+
+
+def check_raise_map_provenance():
+    """The raise map's stamp names exactly the carried patches on disk, at the version we build.
+
+    #2885. Three failure directions, each reported by name rather than as one digest mismatch,
+    because the message has to say which patch the map predates: that is the whole content of the
+    finding. An added patch is the 0042 case verbatim; a removed one is a retirement the map still
+    describes; a changed one is a patch revised in place, which no count can see.
+
+    The version half covers the other trigger the map's header has always named, an OCCT version
+    bump, and it compares the numeric triple only: `Scripts/build-occt.sh` composes its tag from
+    OCCT_VERSION plus an OCCT_RC token, while the tree states a development suffix in a different
+    vocabulary, so the triple is the part that is comparable between the two.
+    """
+    try:
+        text = read(RAISE_MAP)
+    except OSError as exc:
+        return ["%s: cannot read (%s). It is a committed derivation of Libraries/occt-src and "
+                "Scripts/census-compiled-out-validation.py reads it on every run (#2885)."
+                % (RAISE_MAP, exc)]
+    stamp = parse_provenance(text)
+    regenerate = ("Regenerate with `python3 Scripts/census-compiled-out-validation.py "
+                  "--write-table`, which needs Libraries/occt-src with the carried patches "
+                  "applied (Scripts/build-occt.sh produces one).")
+    if stamp is None:
+        return ["%s: carries no provenance stamp, so nothing knows which patch set it was derived "
+                "against. %s (#2885)" % (RAISE_MAP, regenerate)]
+    on_disk = carried_patch_digests()
+    if not stamp["patches"] and on_disk:
+        return ["%s: has a stamp but it names no patch, which is this check going blind rather "
+                "than a clean tree: the `# patch: <stem> <digest>` lines have been reworded or "
+                "dropped. Fix parse_provenance() in Scripts/check-inventory-prose.py alongside "
+                "the rewording (#2885)." % RAISE_MAP]
+    problems = []
+    for stem in sorted(set(on_disk) - set(stamp["patches"])):
+        problems.append(
+            "Scripts/patches/%s.patch is on disk and not in %s's stamp, so the map was derived "
+            "before that patch reached the tree. That is patch 0042's case exactly: it added a "
+            "throw the map went two pins without. %s (#2885)" % (stem, RAISE_MAP, regenerate))
+    for stem in sorted(set(stamp["patches"]) - set(on_disk)):
+        problems.append(
+            "%s's stamp names %s, which is not in Scripts/patches/ any more. A retired patch's "
+            "raise sites stay in the map until it is re-derived from a tree without them, and "
+            "build-occt.sh never reverts, so check the tree too. %s (#2885)"
+            % (RAISE_MAP, stem, regenerate))
+    for stem in sorted(set(on_disk) & set(stamp["patches"])):
+        if on_disk[stem] != stamp["patches"][stem]:
+            problems.append(
+                "Scripts/patches/%s.patch has changed since %s was derived (%s on disk, %s in the "
+                "stamp). A patch revised in place moves no count, which is why the stamp records "
+                "a digest. %s (#2885)"
+                % (stem, RAISE_MAP, on_disk[stem], stamp["patches"][stem], regenerate))
+    built = build_script_occt_version()
+    if built is None:
+        problems.append(
+            "Scripts/build-occt.sh: no `OCCT_VERSION=\"...\"` line, so the version half of the "
+            "map's provenance is unchecked. Reword the check with the script (#2885).")
+    elif stamp["version"] is None:
+        problems.append(
+            "%s: the stamp records no `# occt-version:` line, so a version bump would not show "
+            "here. %s (#2885)" % (RAISE_MAP, regenerate))
+    elif version_triple(stamp["version"]) != version_triple(built):
+        problems.append(
+            "%s: derived against OCCT %s, but Scripts/build-occt.sh builds %s. An OCCT version "
+            "bump moves raise sites wholesale. %s (#2885)"
+            % (RAISE_MAP, stamp["version"], built, regenerate))
+    return problems
+
+
 def check_patch_naming():
     """Every .patch in Scripts/patches/ is NNNN-named (#2148).
 
@@ -517,10 +840,45 @@ def check_release_checks():
     return problems
 
 
+def check_test_target_list(claude=None, package=None):
+    """CLAUDE.md's Test Layout list names exactly the test targets Package.swift declares.
+
+    #2910. The list is not a count, so the CLAIMS table cannot hold it, and it is the same species
+    of claim: a written inventory of the repository with nothing deriving it. It is stated as bare
+    domain names ("`Analysis`, `Curve`, ...") because the surrounding prose has already said each
+    one is `Tests/OCCT<Domain>Tests/`, so the comparison strips that affix off Package.swift's
+    target names rather than asking the prose to spell them out.
+
+    A target added without a line here reads to the next author as a target that does not exist,
+    which is the failure that matters: "If nothing fits, use `OCCTMiscTests`" sends work to the
+    wrong module when the right one is missing from the list.
+    """
+    claude = read("CLAUDE.md") if claude is None else claude
+    declared = [re.fullmatch(r"OCCT(.+)Tests", name) for name in test_target_names(package)]
+    expected = {m.group(1) for m in declared if m}
+    match = re.search(
+        r"Each is `Tests/OCCT<Domain>Tests/`, declared in `Package\.swift`:\s*\n+(.+?)\.\s*\n",
+        claude, re.DOTALL)
+    if not match:
+        return ["CLAUDE.md: the Test Layout target list no longer matches the sentence this gate "
+                "reads it by, so nothing is checking it. Update the regex in "
+                "Scripts/check-inventory-prose.py alongside the rewording (#2910)."]
+    listed = set(re.findall(r"`([A-Za-z0-9]+)`", match.group(1)))
+    problems = []
+    for name in sorted(expected - listed):
+        problems.append("CLAUDE.md: Test Layout omits `%s`, declared in Package.swift as "
+                        "OCCT%sTests" % (name, name))
+    for name in sorted(listed - expected):
+        problems.append("CLAUDE.md: Test Layout names `%s`, which Package.swift declares no "
+                        "OCCT%sTests target for" % (name, name))
+    return problems
+
+
 def run():
     problems = (check_claims() + check_patch_rows() + check_carried_sequence()
                 + check_tsan_suppressions() + check_patch_naming() + check_wasi_patch_rows()
-                + check_release_checks())
+                + check_release_checks() + check_raise_map_provenance()
+                + check_test_target_list())
     if problems:
         print("check-inventory-prose: %d problem(s)\n" % len(problems))
         for problem in problems:
@@ -532,10 +890,20 @@ def run():
     print("check-inventory-prose: clean")
     print("  patches: %d on disk, %d pinned" % (values["patches_on_disk"], values["patches_pinned"]))
     print("  patches-wasi: %d on disk, each with a README row" % values["wasi_patches_on_disk"])
+    stamp = parse_provenance(read(RAISE_MAP))
+    print("  raise map: derived against OCCT %s and %d carried patch(es), each matching on disk"
+          % (stamp["version"], len(stamp["patches"])))
     print("  gate-scripts job: %d gates, %d censuses, %d merge-history audit, %d release check, "
           "%d scripts total"
           % (values["gate_scripts"], values["census_scripts"], values["audit_scripts"],
              values["release_check_scripts"], values["job_scripts"]))
+    print("  swift-format exemptions: %d still listed on style-manifest-swift-wave2.txt"
+          % values["swift_wave2_exempt"])
+    print("  bridge: %d enforced files, %d headers (umbrella + %d per-domain), "
+          "%d Objective-C++ implementations"
+          % (values["bridge_enforced_files"], values["bridge_include_headers"],
+             values["bridge_domain_headers"], values["bridge_impl_files"]))
+    print("  test targets: %d, each named in CLAUDE.md's Test Layout" % values["test_targets"])
     print("  %d claims checked across %d files"
           % (len(CLAIMS), len({c[0] for c in CLAIMS})))
     return 0
@@ -553,7 +921,8 @@ def self_test():
     # 1. The real repo is clean, which is what the gate asserts in CI.
     problems = (check_claims() + check_patch_rows() + check_carried_sequence()
                 + check_tsan_suppressions() + check_patch_naming() + check_wasi_patch_rows()
-                + check_release_checks())
+                + check_release_checks() + check_raise_map_provenance()
+                + check_test_target_list())
     case("live-tree-clean", not problems, "; ".join(problems[:2]))
 
     # 2. A stated count that disagrees with the derived one is caught.
@@ -779,9 +1148,196 @@ def self_test():
          and not (set(wasi_patch_files()) & set(patch_files())),
          "wasi=%d carried=%d" % (len(wasi_patch_files()), len(patch_files())))
 
+    # 12. #2885: the raise map's provenance stamp. Every case here monkeypatches `read`, because
+    #     the subject is a 5,000-line committed derivation and a case that rewrote it on disk
+    #     would leave the tree broken if it failed part-way.
+    real_map = read(RAISE_MAP)
+    saved_read_12 = globals()["read"]
+
+    def with_map(text):
+        return lambda rel: text if rel == RAISE_MAP else saved_read_12(rel)
+
+    try:
+        # The round trip first: what format_provenance writes, parse_provenance reads back. This
+        # is the pair that a reworded stamp silently breaks, and the two live in this file
+        # together precisely so that a change to one fails here rather than in six months.
+        written = "\n".join(format_provenance("8.0.1", {"0010-a": "abc123abc123",
+                                                        "0042-b": "def456def456"}))
+        back = parse_provenance(written)
+        case("provenance-round-trips",
+             back == {"version": "8.0.1",
+                      "patches": {"0010-a": "abc123abc123", "0042-b": "def456def456"}},
+             str(back))
+
+        # The 0042 case verbatim: a patch on disk that the stamp does not name. Built by deleting
+        # a line from the real stamp rather than by adding a file, so the case exercises the real
+        # map's format and leaves Scripts/patches/ alone.
+        one_stem = sorted(carried_patch_digests())[-1]
+        globals()["read"] = with_map(
+            "\n".join(line for line in real_map.split("\n")
+                      if not line.startswith("# patch: " + one_stem)))
+        case("map-missing-a-carried-patch-detected",
+             any(one_stem in p and "is on disk and not in" in p
+                 for p in check_raise_map_provenance()),
+             "; ".join(check_raise_map_provenance()[:1]))
+
+        # A patch revised in place. No count moves, which is the whole reason the stamp records a
+        # digest rather than only the count line the CLAIMS table reads.
+        globals()["read"] = with_map(
+            re.sub(r"^(# patch: %s )[0-9a-f]+$" % re.escape(one_stem), r"\g<1>000000000000",
+                   real_map, count=1, flags=re.MULTILINE))
+        case("map-patch-changed-in-place-detected",
+             any("has changed since" in p and one_stem in p
+                 for p in check_raise_map_provenance()))
+
+        # A retired patch the map still describes.
+        globals()["read"] = with_map(
+            real_map.replace("# occt-version:",
+                             "# patch: 0099-retired-but-still-in-the-stamp aaaaaaaaaaaa\n"
+                             "# occt-version:", 1))
+        case("map-naming-a-retired-patch-detected",
+             any("0099-retired-but-still-in-the-stamp" in p
+                 for p in check_raise_map_provenance()))
+
+        # An OCCT version bump. The map's own header has named this trigger since it was written
+        # and nothing read it, which is half of #2885.
+        globals()["read"] = with_map(
+            re.sub(r"^# occt-version: .*$", "# occt-version: 7.9.0", real_map, count=1,
+                   flags=re.MULTILINE))
+        case("map-derived-against-another-occt-version-detected",
+             any("Scripts/build-occt.sh builds" in p for p in check_raise_map_provenance()))
+
+        # A map written before the stamp existed, which is every copy of it until #2885.
+        globals()["read"] = with_map(
+            "\n".join(line for line in real_map.split("\n")
+                      if not line.startswith(("# patch: ", "# occt-version: "))))
+        case("map-with-no-stamp-at-all-detected",
+             any("carries no provenance stamp" in p for p in check_raise_map_provenance()))
+
+        # The detector going blind, which is a different report from the tree being dirty: the
+        # stamp is there and the patch lines have stopped parsing.
+        globals()["read"] = with_map(
+            re.sub(r"^# patch: ", "# patch = ", real_map, flags=re.MULTILINE))
+        case("map-stamp-that-parses-to-no-patch-is-a-blindness-report",
+             any("going blind" in p for p in check_raise_map_provenance()))
+
+        # ...and the same stamp is CLEAN when the tree really carries no patch, which is the
+        # difference between "the parser stopped matching" and "there is nothing to name". Found
+        # in review of #2893: the blind report ran before the on-disk set was read, so a full
+        # retirement would have been reported as this check failing.
+        saved_digests = globals()["carried_patch_digests"]
+        globals()["carried_patch_digests"] = lambda: {}
+        try:
+            case("stamp-naming-no-patch-is-clean-when-no-patch-is-on-disk",
+                 not any("going blind" in p for p in check_raise_map_provenance()),
+                 "; ".join(check_raise_map_provenance()[:1]))
+        finally:
+            globals()["carried_patch_digests"] = saved_digests
+
+        # A development tree states OCC_VERSION_DEVELOPMENT and tree_occt_version appends it, so
+        # the stamp can read "8.0.1.dev" against build-occt.sh's bare "8.0.1". Comparing the
+        # triple is what the docstring always claimed; string equality is what it did (#2893).
+        globals()["read"] = with_map(
+            re.sub(r"^# occt-version: .*$", "# occt-version: 8.0.1.dev", real_map, count=1,
+                   flags=re.MULTILINE))
+        case("a-development-suffix-on-the-stamp-is-not-a-version-bump",
+             not any("Scripts/build-occt.sh builds" in p
+                     for p in check_raise_map_provenance()),
+             "; ".join(check_raise_map_provenance()[:1]))
+    finally:
+        globals()["read"] = saved_read_12
+
+    case("version-triple-strips-a-development-suffix-and-leaves-a-bare-triple",
+         version_triple("8.0.1.dev") == "8.0.1" and version_triple("8.0.1") == "8.0.1"
+         and version_triple("8.0.2.beta") == "8.0.2" and version_triple(None) is None
+         and version_triple("not-a-version") == "not-a-version")
+
+    case("build-script-version-read",
+         build_script_occt_version('OCCT_VERSION="8.0.1"\nOCCT_RC=""\n') == "8.0.1"
+         and build_script_occt_version("# OCCT_VERSION is set below\n") is None)
+
+    # The view check, not the verdict. A digest function reading the wrong directory, or a stamp
+    # parser matching a comment somewhere else, would report clean forever.
+    live_stamp = parse_provenance(read(RAISE_MAP))
+    case("raise-map-stamp-is-read-from-the-real-map",
+         live_stamp is not None and len(live_stamp["patches"]) == len(carried_patch_digests())
+         and len(live_stamp["patches"]) > 10,
+         "stamped=%d on-disk=%d" % (len(live_stamp["patches"]) if live_stamp else -1,
+                                    len(carried_patch_digests())))
+
     case("patch-number-reads-nnnn-and-rejects-the-rest",
          patch_number("0010-Intf-319") == 10 and patch_number("wasi-osd-environment") is None
          and patch_number("001-too-short") is None)
+
+    # 13. #2910: the manifest reader, the bridge-tree readers and the test-target list.
+    #
+    #     The manifest parse is held to `check-style-manifest.py`'s, because the count is only
+    #     meaningful if both readers agree what an entry is: a comment line or a blank counted as
+    #     an entry would make the prose and the shrink rule describe different inventories.
+    manifest_sample = (
+        "# a header comment\n"
+        "#\n"
+        "Tests/A.swift\n"
+        "\n"
+        "   Tests/B.swift   \n"
+        "   # an indented comment\n")
+    saved_read_13 = read
+    try:
+        globals()["read"] = lambda rel: manifest_sample
+        entries = style_manifest_entries("whatever")
+    finally:
+        globals()["read"] = saved_read_13
+    case("manifest-reader-counts-entries-not-comments-or-blanks",
+         entries == ["Tests/A.swift", "Tests/B.swift"], str(entries))
+
+    values_manifest = dict(values)
+    values_manifest["swift_wave2_exempt"] -= 1
+    case("wave2-manifest-count-mismatch-detected",
+         any("swift_wave2_exempt" in problem for problem in check_claims(values_manifest)))
+
+    #     The view check for the same claim. A mistyped manifest path would read as an empty file
+    #     and derive zero, and a prose number of zero would then be "correct" forever. The live
+    #     manifest is the only thing that can say the reader found it.
+    case("wave2-manifest-is-read-from-the-real-file",
+         values["swift_wave2_exempt"] > 0,
+         "entries=%d" % values["swift_wave2_exempt"])
+
+    for fact in ("bridge_enforced_files", "bridge_domain_headers", "bridge_include_headers",
+                 "bridge_impl_files"):
+        bumped_bridge = dict(values)
+        bumped_bridge[fact] += 1
+        case("%s-mismatch-detected" % fact.replace("_", "-"),
+             any(fact in problem for problem in check_claims(bumped_bridge)))
+
+    #     The bridge walk reaches both directories, which is what the stale prose got wrong: the
+    #     implementations live in src/ and the declarations in include/, and a walk that found one
+    #     and not the other would still produce two plausible numbers.
+    case("bridge-walk-reaches-src-and-include",
+         values["bridge_impl_files"] > 1 and values["bridge_domain_headers"] > 1
+         and values["bridge_enforced_files"]
+         >= values["bridge_impl_files"] + values["bridge_include_headers"],
+         "impl=%d headers=%d enforced=%d" % (values["bridge_impl_files"],
+                                             values["bridge_include_headers"],
+                                             values["bridge_enforced_files"]))
+
+    #     The test-target list, which is an inventory rather than a count and so cannot live in
+    #     CLAIMS. Both directions: a target Package.swift declares and the list omits, and a name
+    #     the list carries that no target answers to.
+    listed_claude = ("Each is `Tests/OCCT<Domain>Tests/`, declared in `Package.swift`:\n\n"
+                     "`Analysis`, `Curve`, `Ghost`.\n")
+    two_targets = ('.testTarget(\n    name: "OCCTAnalysisTests"),\n'
+                   '.testTarget(\n    name: "OCCTCurveTests"),\n'
+                   '.testTarget(\n    name: "OCCTMeshTests"),\n')
+    drift = check_test_target_list(listed_claude, two_targets)
+    case("test-target-omitted-from-the-list-detected",
+         any("omits `Mesh`" in problem for problem in drift), "; ".join(drift))
+    case("test-target-named-with-no-target-detected",
+         any("names `Ghost`" in problem for problem in drift), "; ".join(drift))
+    case("test-target-list-reworded-away-detected",
+         any("no longer matches the sentence" in problem
+             for problem in check_test_target_list("nothing here", two_targets)))
+    case("test-target-list-clean-on-the-live-tree", not check_test_target_list(),
+         "; ".join(check_test_target_list()[:2]))
 
     failed = [c for c in cases if not c[1]]
     for name, ok, detail in cases:

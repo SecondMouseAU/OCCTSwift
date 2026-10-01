@@ -411,19 +411,33 @@ Extensions on `Shape` wrapping `BRepLib`, added in v0.122.0.
 
 ### `Shape.ensureNormalConsistency(maxAngle:)`
 
-Ensure normal consistency of a triangulated shape, optionally clamping to `maxAngle`.
+Average node normals across smooth shared edges, so a node on a tangent join carries one normal
+rather than one per adjacent face.
 
 ```swift
 @discardableResult
 public func ensureNormalConsistency(maxAngle: Double = 0.001) -> Bool
 ```
 
-- **Parameters:** `maxAngle`, maximum deviation angle in radians; defaults to 0.001.
-- **Returns:** `true` if normals were corrected.
+It does two things, and `true` means it wrote a normal in either: it adds surface-derived normals
+to a triangulated face that has none, and it replaces the two normals at each node of a shared
+edge with their average wherever their dot product exceeds `cos(maxAngle)`.
+
+So `false` is the ordinary answer for a shape whose normals are present and whose edges are all
+sharp. Measured on the pinned kernel (`Scripts/repro/2905/`) at `maxAngle: 0.01`: a box that came
+through `mesh(linearDeflection:angularDeflection:)` answers `false`, because #2337 left every face
+with normals and a 90 degree join is nowhere near `cos(0.01)`; a box triangulated without normals
+answers `true` once and `false` after; a cylinder or sphere answers `true` on every pass.
+
+- **Parameters:** `maxAngle`, the angular tolerance in radians below which two normals at a shared
+  node count as the same normal and are averaged; defaults to 0.001.
+- **Returns:** `true` if any normal was written, `false` if there was nothing to do.
 - **OCCT:** `BRepLib::EnsureNormalConsistency`.
 - **Example:**
   ```swift
-  shape.ensureNormalConsistency()
+  let cylinder = Shape.cylinder(radius: 10, height: 5)!
+  _ = cylinder.mesh(linearDeflection: 0.5)
+  print(cylinder.ensureNormalConsistency(maxAngle: 0.01))  // true: the seam is smooth
   ```
 
 ---

@@ -46,6 +46,10 @@ Four channels, and #2858 added the last two plus the depth qualifier:
          as well as the raise, so the check's answer is discarded and the next statement runs on
          data the kernel knows is wrong (PR #2849). Committed as a literal table, because no
          derivation over raise sites can see it; `--verify-no-exception-regions` re-derives it.
+         Every row now carries an adjudication against the bridge rather than "the bridge names
+         this class", which is what #2884 settled: three guarded bridge-side, two reachable only
+         through a constructor overload the bridge never calls, and one whose swallowed condition
+         the bridge's only call site satisfies by construction.
 
 WHAT IS STILL DARK, so nobody reads a clean run as an all-clear (#2858):
 
@@ -69,7 +73,13 @@ Modes, and only the bare run works without an OCCT source tree:
   --write-table / --reverify-table   derive `Scripts/occt-raise-if-map.txt` from
                                      `Libraries/occt-src`, one row per OCCT class per kind of
                                      raise site. Needs the tree; `--reverify-table` reports SKIPPED
-                                     without it unless `--require-occt-src` is given.
+                                     without it unless `--require-occt-src` is given. Both stamp
+                                     the map with the OCCT version and the carried patch set the
+                                     tree held, after verifying every carried patch is really in
+                                     it, and refuse the tree if one is not (#2885).
+                                     `check-inventory-prose.py` is what then fails, on every PR
+                                     and with no tree, when that stamp and `Scripts/patches/`
+                                     disagree.
   --verify-no-exception-regions      re-derive channel four's committed table, same rules.
   (bare run)                         the census, pure Python over the committed table and
                                      `Sources/OCCTBridge/src/*.mm`.
@@ -82,7 +92,9 @@ import glob
 import importlib.util
 import os
 import re
+import shutil
 import sys
+import tempfile
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SCRIPTS = os.path.join(REPO, "Scripts")
@@ -107,6 +119,13 @@ def _load(name, filename):
 # census reads the ones inside, so the two must agree on what a try block and a construction are.
 # One copy, per okf/policies/helper-placement-by-reach.md.
 THROWING = _load("check_throwing_calls", "check-throwing-calls.py")
+
+# check-inventory-prose.py owns the provenance stamp `--write-table` writes into the map: the
+# format, the patch digests it records and the parser that reads them back. It is the gate that
+# fails when that stamp and `Scripts/patches/` disagree, which is the only reason the stamp exists
+# (#2885), so the writer borrows the format from the reader rather than keeping a second copy of
+# it. One copy, per okf/policies/helper-placement-by-reach.md, the same as THROWING above.
+INVENTORY = _load("check_inventory_prose", "check-inventory-prose.py")
 
 # ---------------------------------------------------------------------------
 # half one: derive the map from OCCT's own sources
@@ -469,7 +488,7 @@ def derive_delegated(occt_src, table):
                                             old_count + sum(hits.values()))
 
 
-def format_table(derived):
+def format_table(derived, provenance=()):
     lines = [
         "# OCCT raise-site map, derived by Scripts/census-compiled-out-validation.py "
         "--write-table.",
@@ -519,6 +538,10 @@ def format_table(derived):
         "# Regenerate after an OCCT version bump or a carried patch that touches a raise site, and",
         "# check the totals below moved the way the change predicts.",
     ]
+    # The provenance stamp (#2885). Empty only where a caller formats a table for its own
+    # inspection; --write-table and --reverify-table both pass one, so the committed copy always
+    # carries it and check-inventory-prose.py fails when it disagrees with Scripts/patches/.
+    lines.extend(provenance)
     table, packages = derived
     totals = {kind: 0 for kind in KINDS}
     classes = {kind: 0 for kind in KINDS}
@@ -1124,14 +1147,18 @@ def index_census(table, src=SRC, paths=None, text_by_path=None):
 #
 # The population is small enough to commit literally, in the shape `derive-gdt-enums.py --verify`
 # uses: `--verify-no-exception-regions` re-derives it from an OCCT tree and diffs.
+# The status column is an ADJUDICATION against the bridge, not a reachability guess. "The bridge
+# names this class", which the printout still reports, is the weakest possible statement and was
+# all this table carried when #2884 opened; every row now says what a bridge caller can actually
+# reach. Measurements behind the four #2884 rows are in Scripts/repro/2884, one process per case.
 NO_EXCEPTION_REGIONS = (
     # (file stem, what the region swallows, what is known about it)
-    ("Convert_EllipseToBSplineCurve", "Tol, delta", "open, #2858"),
-    ("Convert_SphereToBSplineSurface", "delta", "open, #2858"),
-    ("Convert_TorusToBSplineSurface", "delta", "open, #2858"),
+    ("Convert_EllipseToBSplineCurve", "Tol, delta", "guarded bridge-side, #2884"),
+    ("Convert_SphereToBSplineSurface", "delta", "unreachable: 1-arg ctor only, #2884"),
+    ("Convert_TorusToBSplineSurface", "delta", "unreachable: 1-arg ctor only, #2884"),
     ("GeomFill_BSplineCurves", "bool IsOK", "guarded bridge-side, PR #2849"),
     ("GeomFill_BezierCurves", "bool IsOK", "guarded bridge-side, PR #2849"),
-    ("GeomFill_Profiler", "int n = NbKnots()", "open, #2858"),
+    ("GeomFill_Profiler", "int n = NbKnots()", "condition holds by construction, #2884"),
 )
 
 NO_EXCEPTION_DIRECTIVE_RE = re.compile(
@@ -1953,6 +1980,87 @@ def self_test():
     else:
         case("committed-map-exists", False, "%s is missing" % os.path.relpath(TABLE, REPO))
 
+    # --- the provenance stamp's tree half (#2885) ---------------------------------------------
+    #
+    # A fixture tree rather than the real one, because the property under test is what the checker
+    # says about a tree that does NOT carry a patch, and the real tree carries all of them. The
+    # fixture is written under a temporary directory and removed, so no case depends on cleanup
+    # having run in an earlier one.
+    fixture = tempfile.mkdtemp(prefix="raise-map-provenance-")
+    try:
+        os.makedirs(os.path.join(fixture, "adm", "cmake"))
+        open(os.path.join(fixture, "adm", "cmake", "version.cmake"), "w", encoding="utf-8").write(
+            "set (OCC_VERSION_MAJOR 8 )\nset (OCC_VERSION_MINOR 0 )\n"
+            "set (OCC_VERSION_MAINTENANCE 1 )\n")
+        case("tree-version-read-from-version-cmake", tree_occt_version(fixture) == "8.0.1",
+             str(tree_occt_version(fixture)))
+        case("tree-version-absent-is-none", tree_occt_version(os.path.join(fixture, "nope"))
+             is None)
+
+        os.makedirs(os.path.join(fixture, "src", "Pkg"))
+        target = os.path.join(fixture, "src", "Pkg", "Pkg_Thing.cxx")
+        patched = ("void Pkg_Thing::Do()\n{\n  if (myS.IsNull())\n"
+                   "    throw Standard_NullObject();\n  use(myS);\n}\n")
+        vanilla = "void Pkg_Thing::Do()\n{\n  use(myS);\n}\n"
+        patch_text = (
+            "--- a/src/Pkg/Pkg_Thing.cxx\n"
+            "+++ b/src/Pkg/Pkg_Thing.cxx\n"
+            "@@ -1,3 +1,5 @@\n"
+            " void Pkg_Thing::Do()\n"
+            " {\n"
+            "+  if (myS.IsNull())\n"
+            "+    throw Standard_NullObject();\n"
+            "   use(myS);\n"
+            " }\n")
+        patch_path = os.path.join(fixture, "0099-fixture.patch")
+        open(patch_path, "w", encoding="utf-8").write(patch_text)
+
+        case("postimage-is-context-plus-added-lines",
+             patch_postimages(patch_text) == [(
+                 "src/Pkg/Pkg_Thing.cxx",
+                 ["void Pkg_Thing::Do()", "{", "  if (myS.IsNull())",
+                  "    throw Standard_NullObject();", "  use(myS);", "}"])],
+             str(patch_postimages(patch_text)))
+
+        open(target, "w", encoding="utf-8").write(patched)
+        case("applied-patch-is-not-reported",
+             patches_not_applied(fixture, [patch_path]) == [],
+             str(patches_not_applied(fixture, [patch_path])))
+
+        # This is #2885 itself, in miniature: the patch is on disk and the tree predates it, which
+        # is the state `--write-table` must refuse rather than stamp.
+        open(target, "w", encoding="utf-8").write(vanilla)
+        reported = patches_not_applied(fixture, [patch_path])
+        case("unapplied-patch-is-reported",
+             len(reported) == 1 and "0099-fixture" in reported[0]
+             and "does not hold" in reported[0], str(reported))
+
+        os.remove(target)
+        reported = patches_not_applied(fixture, [patch_path])
+        case("patch-targeting-a-file-the-tree-lacks-is-reported",
+             len(reported) == 1 and "is not in the tree" in reported[0], str(reported))
+    finally:
+        shutil.rmtree(fixture, ignore_errors=True)
+
+    # The writer and the reader of the stamp are in different files on purpose, so the round trip
+    # is asserted from both ends: check-inventory-prose.py owns the format and has the same case.
+    sample = "\n".join(INVENTORY.format_provenance("8.0.1", {"0042-x": "0123456789ab"}))
+    case("stamp-borrowed-from-check-inventory-prose-round-trips",
+         INVENTORY.parse_provenance(sample)
+         == {"version": "8.0.1", "patches": {"0042-x": "0123456789ab"}},
+         str(INVENTORY.parse_provenance(sample)))
+
+    # The view check: the committed map must carry a stamp naming every carried patch. A
+    # --write-table that silently stopped emitting it would leave the gate in check-inventory-prose
+    # reporting on nothing, and this is the case that says so from the writer's side.
+    if os.path.exists(TABLE):
+        live = INVENTORY.parse_provenance(open(TABLE, encoding="utf-8").read())
+        case("committed-map-carries-a-stamp-for-every-carried-patch",
+             live is not None
+             and set(live["patches"]) == set(INVENTORY.carried_patch_digests()),
+             "stamped=%d on-disk=%d" % (len(live["patches"]) if live else -1,
+                                        len(INVENTORY.carried_patch_digests())))
+
     failed = [c for c in cases if not c[1]]
     for name, ok, detail in cases:
         print("[%s] %s%s" % ("PASS" if ok else "FAIL", name, (" -- " + detail) if detail else ""))
@@ -1960,10 +2068,160 @@ def self_test():
     return 1 if failed else 0
 
 
+# ---------------------------------------------------------------------------
+# the map's provenance stamp (#2885)
+# ---------------------------------------------------------------------------
+#
+# The map describes the tree AFTER `Scripts/build-occt.sh` applies the carried patches, and nothing
+# re-derived it when that tree changed: `0042` added a throw to `ShapeAnalysis::GetFaceUVBounds`
+# and the map said `ShapeAnalysis` held no live throw for two pins. The trigger that was missing is
+# a stamp saying which patch set produced the tree, because that is text a runner with no OCCT
+# checkout can compare against `Scripts/patches/`.
+#
+# The stamp is only worth as much as its truthfulness, so `--write-table` MEASURES it rather than
+# asserting it: every carried patch has to be verifiably present in the tree being derived from, or
+# nothing is written. Without that, running `--write-table` against a tree patched a month ago
+# would stamp today's patch list onto yesterday's rows and put the gate to sleep, which is a worse
+# state than the one this closes.
+
+
+def tree_occt_version(occt_src):
+    """The OCCT version the tree states, e.g. "8.0.1", or None.
+
+    `adm/cmake/version.cmake` is where OCCT keeps it in 8.x; there is no `Standard_Version.hxx` in
+    the source tree, it is generated into the build. The numeric triple is what
+    `Scripts/build-occt.sh`'s `OCCT_VERSION` can be compared against; the optional
+    `OCC_VERSION_DEVELOPMENT` string is a different vocabulary from that script's `OCCT_RC` token,
+    so it is appended for a reader and not compared.
+    """
+    path = os.path.join(occt_src, "adm", "cmake", "version.cmake")
+    try:
+        text = open(path, encoding="utf-8").read()
+    except OSError:
+        return None
+    parts = []
+    for name in ("MAJOR", "MINOR", "MAINTENANCE"):
+        match = re.search(r"set\s*\(\s*OCC_VERSION_%s\s+(\d+)" % name, text)
+        if not match:
+            return None
+        parts.append(match.group(1))
+    version = ".".join(parts)
+    dev = re.search(r"set\s*\(\s*OCC_VERSION_DEVELOPMENT\s+\"?([A-Za-z0-9._]+)", text)
+    return version + "." + dev.group(1) if dev else version
+
+
+def patch_postimages(text):
+    """[(path, [lines])] for every hunk in a unified diff: the lines the patch leaves behind.
+
+    Context and added lines, in order, with removed lines dropped. A hunk is applied exactly when
+    its post-image appears in the target file, which is a property of the file alone and needs no
+    `git`, no index and no clean tree. `git apply --reverse --check` is the authority
+    `build-occt.sh` and docs/guides/building-occt.md use; this is the same question asked of text,
+    so that `--write-table` can refuse a stale tree on a machine where the tree is not a checkout.
+    """
+    out, path, post = [], None, None
+    for line in text.split("\n"):
+        if line.startswith("+++ "):
+            target = line[4:].split("\t")[0].strip()
+            path = None if target == "/dev/null" else (
+                target[2:] if target[:2] in ("a/", "b/") else target)
+            continue
+        if line.startswith("@@"):
+            if post is not None and path:
+                out.append((path, post))
+            post = []
+            continue
+        if post is None:
+            continue
+        if line[:1] in ("+", " "):
+            post.append(line[1:])
+        elif line[:1] in ("-", "\\"):
+            continue
+        else:
+            if path:
+                out.append((path, post))
+            post = None
+    if post is not None and path:
+        out.append((path, post))
+    return out
+
+
+def _contains_block(haystack, needle):
+    if not needle:
+        return True
+    for i in range(len(haystack) - len(needle) + 1):
+        if haystack[i:i + len(needle)] == needle:
+            return True
+    return False
+
+
+def patches_not_applied(occt_src, paths=None):
+    """["<stem>: <why>"] for every carried patch this tree does not carry.
+
+    `paths` is for the self-test; the real run reads `Scripts/patches/*.patch`. Trailing whitespace
+    is ignored on both sides, because a patch file that survived an editor is still the patch.
+    """
+    if paths is None:
+        paths = sorted(glob.glob(os.path.join(SCRIPTS, "patches", "*.patch")))
+    problems = []
+    for path in paths:
+        stem = os.path.basename(path)[: -len(".patch")]
+        cache = {}
+        # errors="replace" on both sides, and on both sides for the same reason: OCCT carries a
+        # handful of Latin-1 bytes in comments, and a decode error here would be a traceback
+        # blaming the tool where the two texts still agree byte for byte.
+        patch_text = open(path, encoding="utf-8", errors="replace").read()
+        for rel, post in patch_postimages(patch_text):
+            target = os.path.join(occt_src, rel)
+            if rel not in cache:
+                try:
+                    cache[rel] = [line.rstrip() for line
+                                  in open(target, encoding="utf-8", errors="replace").read()
+                                  .split("\n")]
+                except OSError:
+                    cache[rel] = None
+            if cache[rel] is None:
+                problems.append("%s: %s is not in the tree" % (stem, rel))
+                break
+            if not _contains_block(cache[rel], [line.rstrip() for line in post]):
+                problems.append("%s: %s does not hold this patch's lines" % (stem, rel))
+                break
+    return problems
+
+
+def provenance_or_exit(occt_src):
+    """The stamp lines for this tree, or exit 2 saying which patch it does not carry.
+
+    A refusal rather than a warning, on okf/policies/static-gates.md's rule that a detector must
+    fail rather than report about a population it did not examine. The stamp's whole claim is
+    "these patches were in the tree these rows came from", and a tree that lacks one cannot support
+    it.
+    """
+    version = tree_occt_version(occt_src)
+    if version is None:
+        sys.exit("census-compiled-out-validation: cannot read OCC_VERSION_* from %s; the map's "
+                 "provenance stamp records the version and cannot be written (#2885)"
+                 % os.path.join(occt_src, "adm", "cmake", "version.cmake"))
+    missing = patches_not_applied(occt_src)
+    if missing:
+        print("census-compiled-out-validation: %s does not carry %d of the carried patches, so a "
+              "map derived from it cannot be stamped with them (#2885):" % (occt_src, len(missing)))
+        for problem in missing:
+            print("  %s" % problem)
+        print("\nRun Scripts/build-occt.sh, which applies Scripts/patches/*.patch to that tree, "
+              "and try again.")
+        sys.exit(2)
+    return INVENTORY.format_provenance(version, INVENTORY.carried_patch_digests())
+
+
 def write_table(occt_src):
     if not os.path.isdir(occt_src):
         sys.exit("census-compiled-out-validation: no OCCT source tree at %s" % occt_src)
-    text = format_table(derive(occt_src))
+    # The stamp first, because it is the cheap half and it is the half that can refuse: a tree
+    # missing a carried patch is not one this map may be derived from at all, and finding that out
+    # after a 70-second walk teaches nobody anything extra.
+    provenance = provenance_or_exit(occt_src)
+    text = format_table(derive(occt_src), provenance)
     open(TABLE, "w", encoding="utf-8").write(text)
     print("census-compiled-out-validation: wrote %s (%d rows) from %s"
           % (os.path.relpath(TABLE, REPO),
@@ -2002,7 +2260,7 @@ def reverify_table(occt_src, require):
             return 2
         print(message)
         return 0
-    derived = format_table(derive(occt_src))
+    derived = format_table(derive(occt_src), provenance_or_exit(occt_src))
     committed = open(TABLE, encoding="utf-8").read()
     if derived == committed:
         print("census-compiled-out-validation: %s matches %s"

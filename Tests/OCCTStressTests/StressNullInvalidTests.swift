@@ -16,25 +16,28 @@ struct StressNilPropagationTests {
         #expect(badFillet == nil)
     }
 
-    @Test func failedBooleanChain() {
+    // Epic #766: both steps used to sit behind `if let`, so a nil from either passed. The cut and
+    // the fillet of the cut both succeed in the kernel (Scripts/repro/766-stress-null-invalid/);
+    // the values are BRepGProp's, 1000 - 4/3·π·125 for the cut.
+    @Test func failedBooleanChain() throws {
         let box = standardBox()
         let sphere = standardSphere()
-        // Normal subtract works
-        if let result = box.subtracting(sphere) {
-            #expect(result.isValid)
-            // Now try to fillet the result, should succeed or return nil, not crash
-            let filleted = result.filleted(radius: 0.5)
-            if let f = filleted { #expect(f.isValid) }
-        }
+        let result = try #require(box.subtracting(sphere))
+        #expect(result.isValid)
+        #expect(abs((result.volume ?? 0) - 476.4012244) < 1e-6)
+        let filleted = try #require(result.filleted(radius: 0.5))
+        #expect(filleted.isValid)
+        #expect(abs((filleted.volume ?? 0) - 993.7293492) < 1e-6)
     }
 
-    /// #2830: the shell here does not "may fail", it always fails, and for a reason that has
-    /// nothing to do with the thickness. `shelled(thickness:)` is `MakeThickSolidBySimple`, whose
-    /// domain is a non-closed shell or face, so a closed box is refused before the magnitude is
-    /// ever considered (#2739, `Scripts/repro/2830-openshell-fixture/`). That made the whole
-    /// `if let` body unreachable, and this test asserted nothing at all. The refusal is now pinned
-    /// and the drill runs on the input the caller still holds, which is the scenario the name
-    /// describes.
+    /// #2830: the shell here does not "may fail", it always fails.
+    ///
+    /// The reason has nothing to do with the thickness. `shelled(thickness:)` is
+    /// `MakeThickSolidBySimple`, whose domain is a non-closed shell or face, so a closed box is
+    /// refused before the magnitude is ever considered (#2739,
+    /// `Scripts/repro/2830-openshell-fixture/`). That made the whole `if let` body unreachable,
+    /// and this test asserted nothing at all. The refusal is now pinned and the drill runs on the
+    /// input the caller still holds, which is the scenario the name describes.
     @Test func drillAfterFailedShell() throws {
         let box = standardBox()
         #expect(box.shelled(thickness: -6.0) == nil, "a closed box has no MakeThickSolidBySimple")
@@ -48,44 +51,41 @@ struct StressNilPropagationTests {
         #expect(drilledVolume < boxVolume)
     }
 
-    @Test func chamferAfterFailedFillet() {
+    // Epic #766: the fillet succeeds (volume 993.7293492), and chamfering every edge of the
+    // filleted box throws Standard_Failure "There are no suitable edges for chamfer or fillet",
+    // which OCCTShapeChamfer's catch turns into nil. Both outcomes are now pinned.
+    @Test func chamferAfterFailedFillet() throws {
         let box = standardBox()
-        let result = box.filleted(radius: 0.5)
-        if let filleted = result {
-            let chamfered = filleted.chamfered(distance: 0.3)
-            if let c = chamfered { #expect(c.isValid) }
-        }
+        let filleted = try #require(box.filleted(radius: 0.5))
+        #expect(abs((filleted.volume ?? 0) - 993.7293492) < 1e-6)
+        let chamfered = filleted.chamfered(distance: 0.3)
+        #expect(chamfered == nil)
     }
 
-    @Test func unionWithSelf() {
+    @Test func unionWithSelf() throws {
         let box = standardBox()
-        let result = box.union(box)
-        if let r = result {
-            #expect(r.isValid)
-            if let vol = r.volume, let origVol = box.volume {
-                #expect(abs(vol - origVol) / origVol < 0.05)
-            }
-        }
+        let r = try #require(box.union(box))
+        #expect(r.isValid)
+        #expect(abs((r.volume ?? 0) - 1000.0) < 1e-6)
+        #expect(r.subShapeCount(ofType: .face) == 6)
     }
 
-    @Test func subtractSelf() {
+    // Epic #766: BRepAlgoAPI_Cut of a box by itself is done and empty: no faces, and a zero
+    // volume integral that ``Shape/volume`` reports as nil rather than as a measured 0.
+    @Test func subtractSelf() throws {
         let box = standardBox()
-        let result = box.subtracting(box)
-        // Should produce empty/nil shape
-        if let r = result {
-            // Volume should be ~0
-            if let vol = r.volume { #expect(vol < 1.0) }
-        }
+        let r = try #require(box.subtracting(box))
+        #expect(r.subShapeCount(ofType: .face) == 0)
+        #expect(r.volume == nil)
     }
 
-    @Test func intersectDisjoint() {
+    @Test func intersectDisjoint() throws {
         let b1 = Shape.box(width: 10, height: 10, depth: 10)!
         let b2 = Shape.box(origin: SIMD3(100, 100, 100), width: 10, height: 10, depth: 10)!
-        let result = b1.intersection(b2)
-        // Disjoint shapes, should produce empty or nil
-        if let r = result {
-            if let vol = r.volume { #expect(vol < 0.001) }
-        }
+        // Epic #766: BRepAlgoAPI_Common is done and empty for disjoint arguments.
+        let r = try #require(b1.intersection(b2))
+        #expect(r.subShapeCount(ofType: .face) == 0)
+        #expect(r.volume == nil)
     }
 }
 
@@ -94,56 +94,56 @@ struct StressNilPropagationTests {
 @Suite("Stress: Zero-Dimension Shapes")
 struct StressZeroDimensionTests {
 
+    // Epic #766: every test here used to read the result and assert nothing, so only a crash
+    // could fail it. Each now pins what the kernel does with the input
+    // (Scripts/repro/766-stress-null-invalid/transcript.txt). BRepPrimAPI_MakeBox and
+    // BRepPrimAPI_MakeCone throw Standard_DomainError, which the bridge's catch turns into nil.
+    // MakeCylinder, MakeSphere and MakeTorus do not throw at zero size: they build a shape that
+    // BRepCheck_Analyzer rejects and that encloses no volume.
     @Test func zeroBox() {
         let box = Shape.box(width: 0, height: 0, depth: 0)
-        // Should be nil or degenerate
-        if let b = box {
-            _ = b.isValid
-            _ = b.volume
-            _ = b.bounds
-        }
+        #expect(box == nil)
     }
 
-    @Test func zeroCylinder() {
-        let cyl = Shape.cylinder(radius: 0, height: 0)
-        if let c = cyl { _ = c.isValid }
+    @Test func zeroCylinder() throws {
+        let c = try #require(Shape.cylinder(radius: 0, height: 0))
+        #expect(!c.isValid)
+        #expect(c.volume == nil)
     }
 
-    @Test func zeroSphere() {
-        let sphere = Shape.sphere(radius: 0)
-        if let s = sphere { _ = s.isValid }
+    @Test func zeroSphere() throws {
+        let s = try #require(Shape.sphere(radius: 0))
+        #expect(!s.isValid)
+        #expect(s.volume == nil)
     }
 
     @Test func zeroCone() {
         let cone = Shape.cone(bottomRadius: 0, topRadius: 0, height: 0)
-        if let c = cone { _ = c.isValid }
+        #expect(cone == nil)
     }
 
-    @Test func zeroTorus() {
-        let torus = Shape.torus(majorRadius: 0, minorRadius: 0)
-        if let t = torus { _ = t.isValid }
+    @Test func zeroTorus() throws {
+        let t = try #require(Shape.torus(majorRadius: 0, minorRadius: 0))
+        #expect(!t.isValid)
+        #expect(t.volume == nil)
     }
 
     @Test func zeroWidthBox() {
-        // One dimension zero
+        // One dimension zero: Standard_DomainError, as for the all-zero box.
         let box = Shape.box(width: 10, height: 10, depth: 0)
-        if let b = box {
-            _ = b.isValid
-            _ = b.volume
-            _ = b.surfaceArea
-        }
+        #expect(box == nil)
     }
 
-    @Test func queriesOnZeroBox() {
-        if let box = Shape.box(width: 0.001, height: 0.001, depth: 0.001) {
-            _ = box.volume
-            _ = box.surfaceArea
-            _ = box.bounds
-            _ = box.subShapeCount(ofType: .face)
-            _ = box.subShapeCount(ofType: .edge)
-            _ = box.subShapeCount(ofType: .vertex)
-            _ = box.isValid
-        }
+    @Test func queriesOnZeroBox() throws {
+        let box = try #require(Shape.box(width: 0.001, height: 0.001, depth: 0.001))
+        #expect(abs((box.volume ?? 0) - 1e-9) < 1e-15)
+        #expect(abs((box.surfaceArea ?? 0) - 6e-6) < 1e-12)
+        let b = try #require(box.bounds)
+        #expect(b.max.x - b.min.x >= 0.001)
+        #expect(box.subShapeCount(ofType: .face) == 6)
+        #expect(box.subShapeCount(ofType: .edge) == 12)
+        #expect(box.subShapeCount(ofType: .vertex) == 8)
+        #expect(box.isValid)
     }
 }
 
@@ -152,42 +152,54 @@ struct StressZeroDimensionTests {
 @Suite("Stress: Empty Containers")
 struct StressEmptyContainerTests {
 
+    // Epic #766: an empty BRepBuilderAPI_MakeWire reports IsDone() == false, so there is no
+    // wire. Both were read and discarded before.
     @Test func emptyWireBuilder() {
         let builder = WireBuilder()
-        let wire = builder.wire
-        _ = wire
-        _ = builder.isDone
+        #expect(builder.wire == nil)
+        #expect(!builder.isDone)
     }
 
     @Test func thruSectionsNoSections() {
         let loft = ThruSectionsBuilder(isSolid: true, isRuled: false)
         let ok = loft.build()
         // Guard prevents OCCT segfault, returns false for < 2 sections
+        // Epic #766: against the pinned 8.0.1 kernel an unguarded BRepOffsetAPI_ThruSections
+        // Build() with no wires returns normally with IsDone() false; the segfault the guard was
+        // written for does not reproduce (Scripts/repro/766-stress-null-invalid/). The guard is
+        // still the contract this test pins: false, and no shape.
         #expect(!ok)
         #expect(loft.shape == nil)
     }
 
-    @Test func sewingNothing() {
-        guard let sewing = SewingBuilder(tolerance: 1e-6) else { return }
+    // Epic #766: BRepBuilderAPI_Sewing with nothing added sews a null shape, which the bridge
+    // reports as nil.
+    @Test func sewingNothing() throws {
+        let sewing = try #require(SewingBuilder(tolerance: 1e-6))
         sewing.perform()
-        _ = sewing.result
+        #expect(sewing.result == nil)
     }
 
-    @Test func sectionBuilderEmpty() {
-        guard let section = SectionBuilder() else { return }
-        _ = section.build()
+    // Epic #766: a BRepAlgoAPI_Section with no arguments is not done after Build().
+    @Test func sectionBuilderEmpty() throws {
+        let section = try #require(SectionBuilder())
+        #expect(section.build() == nil)
     }
 
     @Test func cellsBuilderEmpty() {
         // Empty array returns nil, guard prevents OCCT segfault
+        // Epic #766: unguarded, BOPAlgo_CellsBuilder::Perform with no arguments returns normally
+        // with HasErrors() true against the pinned 8.0.1 kernel, so no segfault reproduces; nil is
+        // still the answer, from the guard or from the HasErrors check behind it.
         let builder = CellsBuilder(shapes: [])
         #expect(builder == nil)
     }
 
     @Test func emptyWireRectangle() {
         // Very tiny rectangle, approaches empty
+        // Epic #766: below Precision::Confusion() the bridge refuses before OCCT is reached.
         let wire = Wire.rectangle(width: 1e-15, height: 1e-15)
-        if let w = wire { _ = w.length }
+        #expect(wire == nil)
     }
 }
 
@@ -223,11 +235,12 @@ struct StressInvalidParameterTests {
         if let r = result { _ = r.isValid }
     }
 
-    /// #2830: the sign is not what decides this. `shelled(thickness:)` is
-    /// `MakeThickSolidBySimple`, which refuses a closed solid at either sign and every magnitude
-    /// (#2739), so the previous `if let r = result { _ = r.isValid }` was unreachable and discarded
-    /// its own result besides. Both signs are pinned here; hollowing a closed solid is
-    /// `shelled(thickness:openFaces:)`.
+    /// #2830: the sign is not what decides this.
+    ///
+    /// `shelled(thickness:)` is `MakeThickSolidBySimple`, which refuses a closed solid at either
+    /// sign and every magnitude (#2739), so the previous `if let r = result { _ = r.isValid }`
+    /// was unreachable and discarded its own result besides. Both signs are pinned here;
+    /// hollowing a closed solid is `shelled(thickness:openFaces:)`.
     @Test func negativeShell() {
         let box = standardBox()
         #expect(box.shelled(thickness: -1.0) == nil)
@@ -331,8 +344,14 @@ struct StressPostOperationStateTests {
         #expect(v1 != nil)
         #expect(v2 != nil)
         let r2 = box.subtracting(sphere)
-        if let r1 { #expect(r1.isValid) }
-        if let r2 { #expect(r2.isValid) }
+        // Epic #766: both used to sit behind `if let`. The sphere of radius 5 is inscribed in the
+        // 10-wide box, so the union is the box and the cut is 1000 - 4/3·π·125.
+        #expect(abs((v1 ?? 0) - 1000.0) < 1e-6)
+        #expect(abs((v2 ?? 0) - 523.5987756) < 1e-6)
+        #expect(abs((r1?.volume ?? 0) - 1000.0) < 1e-6)
+        #expect(abs((r2?.volume ?? 0) - 476.4012244) < 1e-6)
+        #expect(r1?.isValid == true)
+        #expect(r2?.isValid == true)
     }
 
     @Test func shapeQueriesAfterExport() throws {
@@ -366,16 +385,19 @@ struct StressPostOperationStateTests {
         let m1 = box.mesh(linearDeflection: 0.5)
         let m2 = box.mesh(linearDeflection: 0.1)
         let m3 = box.mesh(linearDeflection: 1.0)
-        #expect(m1 != nil)
-        #expect(m2 != nil)
-        #expect(m3 != nil)
+        // Epic #766: a planar box meshes to 2 triangles and 4 nodes per face at any deflection
+        // (BRepMesh_IncrementalMesh, Scripts/repro/766-stress-null-invalid/).
+        for m in [m1, m2, m3] {
+            #expect(m?.vertexCount == 24)
+            #expect(m?.triangleCount == 12)
+        }
     }
 
     @Test func volumeCalledManyTimes() {
         let box = standardBox()
         for _ in 0..<100 {
             let v = box.volume
-            #expect(v != nil)
+            #expect(abs((v ?? 0) - 1000.0) < 1e-9)
         }
     }
 }
@@ -385,87 +407,94 @@ struct StressPostOperationStateTests {
 @Suite("Stress: Unusual Input Combinations")
 struct StressUnusualInputTests {
 
-    @Test func booleanWireShapes() {
+    @Test func booleanWireShapes() throws {
         // Create wire shapes (not solids) and try boolean ops
         guard let w1 = Wire.rectangle(width: 10, height: 10),
             let w2 = Wire.rectangle(width: 5, height: 5),
             let s1 = Shape.fromWire(w1), let s2 = Shape.fromWire(w2)
         else { return }
-        let result = s1.union(s2)
-        // May fail for non-solid inputs, should not crash
-        if let r = result { _ = r.isValid }
+        // Epic #766: BRepAlgoAPI_Fuse on two nested rectangle wires is done: a valid result
+        // with the 4 + 4 edges.
+        let r = try #require(s1.union(s2))
+        #expect(r.isValid)
+        #expect(r.subShapeCount(ofType: .edge) == 8)
     }
 
     @Test func filletOnNonSolid() {
         guard let wire = Wire.rectangle(width: 10, height: 10),
             let shape = Shape.fromWire(wire)
         else { return }
-        let result = shape.filleted(radius: 1.0)
-        if let r = result { _ = r.isValid }
+        // Epic #766: BRepFilletAPI_MakeFillet on a wire throws "There are no suitable edges for
+        // chamfer or fillet"; the bridge's catch makes that nil.
+        #expect(shape.filleted(radius: 1.0) == nil)
     }
 
     @Test func volumeOnWireShape() {
         guard let wire = Wire.rectangle(width: 10, height: 10),
             let shape = Shape.fromWire(wire)
         else { return }
-        let vol = shape.volume
-        // Wire has no volume, should be nil or 0
-        if let v = vol { #expect(v <= 0.001) }
+        // Epic #766: a wire encloses nothing, and the zero integral is reported as nil, not as a
+        // measured 0.
+        #expect(shape.volume == nil)
     }
 
-    @Test func meshOnWireShape() {
+    @Test func meshOnWireShape() throws {
         guard let wire = Wire.rectangle(width: 10, height: 10),
             let shape = Shape.fromWire(wire)
         else { return }
-        let mesh = shape.mesh(linearDeflection: 0.5)
-        // Wire can't be meshed, should return nil
-        _ = mesh
+        // Epic #766: the old comment said nil, and the result was discarded. OCCTShapeCreateMesh
+        // meshes the faces it finds, and a wire has none, so the answer is an empty mesh.
+        let mesh = try #require(shape.mesh(linearDeflection: 0.5))
+        #expect(mesh.vertexCount == 0)
+        #expect(mesh.triangleCount == 0)
     }
 
-    @Test func sectionOfSameShape() {
+    @Test func sectionOfSameShape() throws {
         let box = standardBox()
-        guard let section = SectionBuilder(shape1: box, shape2: box) else { return }
-        let result = section.build()
-        // Section of shape with itself, edge case
-        if let r = result { _ = r.isValid }
+        let section = try #require(SectionBuilder(shape1: box, shape2: box))
+        // Epic #766: BRepAlgoAPI_Section of a box with itself is done and has no edges, since
+        // every face is coincident rather than crossing.
+        let r = try #require(section.build())
+        #expect(r.isValid)
+        #expect(r.subShapeCount(ofType: .edge) == 0)
     }
 
-    @Test func translateByZero() {
+    @Test func translateByZero() throws {
         let box = standardBox()
-        let result = box.translated(by: SIMD3(0, 0, 0))
-        if let r = result {
-            #expect(r.isValid)
-            if let vol = r.volume { #expect(abs(vol - 1000.0) < 0.01) }
-        }
+        let r = try #require(box.translated(by: SIMD3(0, 0, 0)))
+        #expect(r.isValid)
+        #expect(abs((r.volume ?? 0) - 1000.0) < 1e-6)
     }
 
-    @Test func rotateByZero() {
+    @Test func rotateByZero() throws {
         let box = standardBox()
-        let result = box.rotated(axis: SIMD3(0, 0, 1), angle: 0)
-        if let r = result {
-            #expect(r.isValid)
-        }
+        let r = try #require(box.rotated(axis: SIMD3(0, 0, 1), angle: 0))
+        #expect(r.isValid)
+        #expect(abs((r.volume ?? 0) - 1000.0) < 1e-6)
     }
 
-    @Test func scaleByOne() {
+    @Test func scaleByOne() throws {
         let box = standardBox()
-        let result = box.scaled(by: 1.0)
-        if let r = result {
-            #expect(r.isValid)
-            if let vol = r.volume { #expect(abs(vol - 1000.0) < 0.01) }
-        }
+        let r = try #require(box.scaled(by: 1.0))
+        #expect(r.isValid)
+        #expect(abs((r.volume ?? 0) - 1000.0) < 1e-6)
     }
 
-    @Test func scaleByZero() {
+    // Epic #766: gp_Trsf::SetScale(0) does not throw in a release kernel, and
+    // BRepBuilderAPI_Transform collapses the box to a point: six faces, invalid, no volume.
+    @Test func scaleByZero() throws {
         let box = standardBox()
-        let result = box.scaled(by: 0.0)
-        if let r = result { _ = r.isValid }
+        let r = try #require(box.scaled(by: 0.0))
+        #expect(!r.isValid)
+        #expect(r.volume == nil)
     }
 
-    @Test func scaleByNegative() {
+    // A factor of -1 is a point reflection through the origin: a valid box of the same volume.
+    @Test func scaleByNegative() throws {
         let box = standardBox()
-        let result = box.scaled(by: -1.0)
-        if let r = result { _ = r.isValid }
+        let r = try #require(box.scaled(by: -1.0))
+        #expect(r.isValid)
+        #expect(abs((r.volume ?? 0) - 1000.0) < 1e-6)
     }
 }
 
@@ -488,7 +517,11 @@ struct StressUnifySameDomainNullPCurveTests {
         let unifier = UnifySameDomainBuilder(shape: shape, unifyEdges: true, unifyFaces: true)
         unifier.setAngularTolerance(1.0 * .pi / 180)
         unifier.build()
-        _ = unifier.shape
+        // Epic #766: the result used to be discarded. ShapeUpgrade_UnifySameDomain with the same
+        // settings merges the fixture's 662 faces / 1072 edges into 228 / 627.
+        let unified = try #require(unifier.shape)
+        #expect(unified.subShapeCount(ofType: .face) == 228)
+        #expect(unified.subShapeCount(ofType: .edge) == 627)
     }
 }
 
@@ -591,13 +624,23 @@ struct StressEvalAndUpdateTolNullPCurveTests {
         let cylinderFaces = cylinder.subShapes(ofType: .face)
         try #require(!cylinderFaces.isEmpty)
 
+        // Epic #766: the lateral face (index 0) is the one with no pcurve, so it must answer the
+        // edge's own tolerance, 1e-7, and it is asked first, before a planar cap's evaluation
+        // raises that tolerance. The caps do project a pcurve, and BRepTools::EvalAndUpdateTol
+        // measures the edge 15 away from each (Scripts/repro/766-stress-null-invalid/).
+        var tols: [Double] = []
         for face in cylinderFaces {
             let tol = Shape.evalAndUpdateTolerance(edge: boxEdges[0], face: face)
             // The contract for "nothing to evaluate against this face" is the edge's own
             // tolerance, which is finite and non-negative, not a fabricated zero.
             #expect(tol.isFinite)
             #expect(tol >= 0)
+            tols.append(tol)
         }
+        try #require(tols.count == 3)
+        #expect(abs(tols[0] - 1e-7) < 1e-12)
+        #expect(abs(tols[1] - 15) < 1e-9)
+        #expect(abs(tols[2] - 15) < 1e-9)
     }
 
     // The route OCCT 8.0.1 opened: #1402 made BRep_Tool::CurveOnPlane validate the edge range and
@@ -613,10 +656,22 @@ struct StressEvalAndUpdateTolNullPCurveTests {
         try #require(!edges.isEmpty)
         try #require(!faces.isEmpty)
 
+        var tols: [Double] = []
         for face in faces {
             let tol = Shape.evalAndUpdateTolerance(edge: edges[0], face: face)
             #expect(tol.isFinite)
             #expect(tol >= 0)
+            tols.append(tol)
+        }
+        // Epic #766: in OCCT 8.0.1 as pinned, BRep_Tool::CurveOnSurface projects a pcurve for this
+        // edge on every face of the small box (none is null), so the null-pcurve route the comment
+        // above describes is not the one this input takes. BRepTools::EvalAndUpdateTol measures
+        // 3.5 against the first face and 6.5 against the rest, and the stored tolerance only ever
+        // rises (Scripts/repro/766-stress-null-invalid/transcript.txt).
+        let expected = [3.5, 6.5, 6.5, 6.5, 6.5, 6.5]
+        #expect(tols.count == expected.count)
+        for (got, want) in zip(tols, expected) {
+            #expect(abs(got - want) < 1e-9)
         }
     }
 }

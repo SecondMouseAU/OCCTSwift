@@ -271,11 +271,11 @@ OCCTSwift/
 │   └── OCCTBridge/             # Objective-C++ bridge
 │       ├── include/
 │       │   ├── OCCTBridge.h                  # Umbrella: handle typedefs, class index, imports (#395)
-│       │   └── OCCTBridge_<Domain>.h         # 15 per-domain C declaration files
+│       │   └── OCCTBridge_<Domain>.h         # 17 per-domain C declaration files
 │       └── src/
-│           └── OCCTBridge_<Domain>.mm        # 16 files (15 domains + OCCTBridge.mm), OCCT C++ implementations
+│           └── OCCTBridge_<Domain>[_<Bucket>].mm  # 74 implementation files, ten domains split (#1378, #1380)
 ├── Libraries/
-│   ├── OCCT.xcframework/       # Pre-built OCCT 8.0.0-rc5
+│   ├── OCCT.xcframework/       # Pre-built OCCT 8.0.1
 │   └── OCCTBridge.xcframework/ # Pre-built bridge (DISABLED on the v2.0.0 line)
 ├── Scripts/
 │   ├── build-occt.sh           # Build OCCT from source

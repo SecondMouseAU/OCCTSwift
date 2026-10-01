@@ -2533,6 +2533,33 @@ OCCTBRepGraphRef OCCTBRepGraphTransformTranslation(OCCTBRepGraphRef g,
 {
   if (!g)
     return nullptr;
+  // #2913: refuse a real translation under GeomPolicy::Share, because this bridge's graphs have
+  // nowhere to put the answer.
+  //
+  // Share is not "transform the shared geometry", which would move the source too. It selects
+  // OCCT's location-only mode: BRepGraph_Transform::Perform computes
+  // useGeomModif = (GeomPolicy == Copy) || isNegative || isScaled, and for a plain translation
+  // under Share that is false, so it runs applyLocationTransformInCopiedRange
+  // (BRepGraph_Transform.cxx). That walks BRepGraph_RootProductIterator and composes the trsf
+  // into each root Product's top-level OccurrenceRef::LocalLocation. Vertex definition points
+  // are deliberately left alone; OCCT's own BRepGraph_TransformTest.LocationOnly_NoCopyGeom
+  // asserts exactly that, then reads the root OccurrenceRef's LocalLocation and applies it to
+  // the reconstructed solid by hand.
+  //
+  // Both halves of that caller are missing here. OCCTBRepGraphCreate and the two other creation
+  // sites all pass Options::CreateAutoProduct = false, so Topo().Products().Nb() is 0 and the
+  // iterator visits nothing: the location is composed into no ref at all, rather than into a ref
+  // the caller could read. And nothing on the Swift surface applies an occurrence location to a
+  // reconstructed shape. Measured both ways against the pinned kernel in
+  // Scripts/repro/2913/probe.mm: with CreateAutoProduct = true the root occurrence comes back
+  // holding (100, 200, 300); with it false, products = 0 and the translation is gone.
+  //
+  // So the combination cannot be honoured and cannot be reported, which is why it is refused
+  // rather than documented. nullptr is what this function already returns for an input it cannot
+  // act on. A zero translation is still allowed: it asks for no placement, so the light copy it
+  // produces is the answer, identical to OCCTBRepGraphCopy(g, false).
+  if (!copyGeom && (dx != 0.0 || dy != 0.0 || dz != 0.0))
+    return nullptr;
   try
   {
     gp_Trsf trsf;

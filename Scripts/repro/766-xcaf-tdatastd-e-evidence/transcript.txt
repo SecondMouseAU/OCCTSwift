@@ -1,0 +1,8 @@
+[relation set/get] tag 390: found=true relation="x + y = z"
+[relation has] tag 391: FindAttribute before Set=false, after setRelation("a = b")=true
+[reference array has] tag 371: FindAttribute before Set=false, after setReferenceArray([500])=true
+[reference list has] tag 382: FindAttribute before Set=false, after setReferenceList([500])=true
+[tree node create] label 0:1:1: Set returned a node=true found by the default tree id=true HasFather=false Depth=0
+[tree node parent-child] labels root=0:1:1 child1=0:1:2 child2=0:1:3; Append(child1)=true Append(child2)=true
+[tree node parent-child] child1 HasFather=true Depth=1 root NbChildren=2 child1 father is root=true root first is child1=true child1 next is child2=true child2 HasNext=false
+[real] label 0:1:1: after Set(3.14) Get=3.14, after Set(2.718) Get=2.718

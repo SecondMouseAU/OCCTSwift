@@ -1558,8 +1558,9 @@ public static func fromEllipseArc(centerX: Double, centerY: Double,
                                    u1: Double, u2: Double) -> Curve2D?
 ```
 
-- **Parameters:** `centerX`, `centerY`: ellipse centre; `majorRadius`, `minorRadius`: semi-axes, both greater than zero with `minorRadius <= majorRadius` (equal radii are a circle and are valid); `u1`, `u2`: parameter range.
-- **Returns:** BSpline curve, or `nil` on failure or a degenerate ellipse.
+- **Parameters:** `centerX`, `centerY`: ellipse centre; `majorRadius`, `minorRadius`: semi-axes, both greater than zero with `minorRadius <= majorRadius` (equal radii are a circle and are valid); `u1`, `u2`: parameter range, whose sweep `u2 - u1` must be greater than zero and no more than a full turn.
+- **Returns:** BSpline curve, or `nil` on failure, on a degenerate ellipse, or on a sweep outside `0 < u2 - u1 <= 2 * .pi`.
+- **Range:** `Convert_EllipseToBSplineCurve` states that precondition and this Release kernel compiles its check away along with the two locals it tested, so the bridge applies it (#2884). Measured on the pinned kernel: a sweep of `-2 * .pi`, which is `u1` and `u2` swapped on a full ellipse, took the process down uncatchably; a sweep of `1e9` asked for 763,943,729 poles; a NaN bound produced a curve whose poles were all NaN, and OCCT's own predicate would not have refused that one either, because both of its comparisons are false on a NaN.
 - **OCCT:** `Convert_EllipseToBSplineCurve` (via `OCCTConvertEllipseToBSpline2D`).
 - **Example:**
   ```swift

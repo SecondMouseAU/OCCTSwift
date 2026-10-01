@@ -45,6 +45,54 @@
 # Regenerate after an OCCT version bump or a carried patch that touches a raise site, and
 # check the totals below moved the way the change predicts.
 #
+# PROVENANCE (#2885). This map describes Libraries/occt-src AFTER Scripts/build-occt.sh
+# applies the carried patches, so a patch that touches a raise site changes this file.
+# Nothing re-derived it for two pins, and this stamp is what makes the next one fail
+# loudly: Scripts/check-inventory-prose.py compares it against Scripts/patches/ on every
+# PR, with no OCCT tree needed. Regenerate with --write-table, which rewrites the stamp
+# and the rows together; the rows themselves are re-checked with --reverify-table, which
+# needs the tree and runs in kernel-integration.yml, the one job that has one.
+#
+# The stamp says which carried patches the tree held. It does NOT say the tree held
+# nothing else: a retired patch whose edits were never reverted is #2190's question, and
+# the stray check in docs/guides/building-occt.md's "Shipping a rebuild" answers it.
+#
+# occt-version: 8.0.1
+# derived against: 32 carried patch(es) in Scripts/patches/, every one of them verified
+# derived against: applied in the tree the rows below were derived from.
+# patch: 0010-Intf_Interference-O1-tangent-zone-checkpoint-breaker-319 79fe529c26ef
+# patch: 0011-XCAFDoc_ShapeTool-AutoNamingScope-341 76898e2438a2
+# patch: 0012-CDF_Directory-XCAFApp_Application-thread-safety-344 03d4ef212549
+# patch: 0014-CDF-driver-reentrancy-mutex-349 ee2bad3190b3
+# patch: 0015-CDM_Application-metadata-lookup-table-mutex-353 5072884b8452
+# patch: 0016-Resource_Manager-atomic-Debug-Storage_Schema-per-instance-374 b2358f4d01e5
+# patch: 0017-null-reshape-context-ComposeShell-WireDivide-484 c0569555b41a
+# patch: 0018-GCPnts-degenerate-count-and-duplicate-end-point-555 16e06c6a7be2
+# patch: 0019-AdvApp2Var-jacobi-max-wrong-workspace-slot-522 66b25e11a6e1
+# patch: 0020-BRepFeat_MakeCylindricalHole-select-tool-parts-532 afaa1f1e5b7c
+# patch: 0021-CPnts-adaptive-arc-length-integration-603 fa8490c843b1
+# patch: 0022-ChFi2d_Builder-AddChamfer-connexion-error-check-705 e4e39a36e7b8
+# patch: 0023-GeomTools_Curve2dSet-SurfaceSet-null-handle-643 edddced8c62e
+# patch: 0024-Extrema_ExtCC-Points-bound-against-mypoints-636 df8f8821f9b3
+# patch: 0025-GeomFill_Sweep-report-achieved-conversion-error-597 ee1537e29f39
+# patch: 0026-BRepOffsetAPI_ThruSections-capping-guard-905 b039e598d4e9
+# patch: 0027-BRepOffsetAPI_ThruSections-CreateSmoothed-section-edge-count-guard-913 064dbcebbbdc
+# patch: 0028-GeomPlate_BuildPlateSurface-uninitialised-G0-G1-G2-errors-1018 89e36b4349ba
+# patch: 0029-XCAFDoc_Datum-point-read-from-plane-array-1022 d2fb2ba52ec8
+# patch: 0030-TopoDS_TShape-myState-atomic-1154 efabc01f31f2
+# patch: 0031-bspline-adaptor-cache-thread-safety-1153 3a99d396788f
+# patch: 0033-Interface_Static-thread-safety-mutex-1157 c21a2ee573ac
+# patch: 0034-GeomFill-CoonsAlgPatch-Value-U-parameter-1515 a16958a08528
+# patch: 0036-IFSelect_WorkSession-per-instance-error-guard-1403 e8f54ab54929
+# patch: 0037-STEPControl-ActorRead-non-manifold-flag-per-instance-2061 b81401095e9f
+# patch: 0038-Interface_CheckTool-errh-per-instance-1403 42fc2b4e9fda
+# patch: 0039-Interface_FileReaderData-per-instance-param-cache-1403 aeaf127eb1b3
+# patch: 0040-controller-one-time-init-thread-safe-1403 bcc09becc30a
+# patch: 0041-DE-registry-maps-synchronised-1403 915c6fd8f9c4
+# patch: 0042-ShapeAnalysis-GetFaceUVBounds-null-surface-2773 1cf9dbde5fce
+# patch: 0043-BRepGProp_Gauss-keeps-the-by-plane-mass-2827 5db36c8e8661
+# patch: 0044-Extrema-ExtSS-ExtCS-Points-bound-against-point-sequence-2840 0b0b4a459980
+#
 # totals: inline-raise       462 site(s) in  104 class(es)
 # totals: outofline-raise    828 site(s) in  284 class(es)
 # totals: inline-throw       501 site(s) in  212 class(es)

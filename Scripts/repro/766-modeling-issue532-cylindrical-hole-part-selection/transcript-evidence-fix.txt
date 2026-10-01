@@ -1,0 +1,22 @@
+bore(r5 x 20)=1570.7963267948967 2*bore=3141.5926535897934 3*bore=4712.3889803846905 blind15=1178.0972450961724
+untilEndAndRange untilEnd stack2: status=0 removed=3141.5926535897888 solids=2 valid=true
+untilEndAndRange range(0,70) stack2: status=0 removed=3141.5926535897888 solids=2 valid=true
+blindDrillsIntoAStack blind(20) stack2: status=0 removed=1178.0972450961708 solids=2 valid=true
+threePlateStack untilEnd stack3: status=0 removed=4712.3889803846541 solids=3 valid=true
+threePlateStack range(0,70) stack3: status=0 removed=3141.5926535897306 solids=3 valid=true
+singleSolid expected=1407.2952180016125
+singleSolid untilEnd: status=0 removed=1407.2952180016182 solids=2 valid=true
+singleSolid thruNext: status=0 removed=1407.2952180016182 solids=2 valid=true
+singleSolid range(0,30): status=0 removed=1407.2952180016182 solids=2 valid=true
+singlePlate throughAll: status=0 removed=1570.7963267948944 solids=1 valid=true
+singlePlate untilEnd: status=0 removed=1570.7963267948944 solids=1 valid=true
+singlePlate thruNext: status=0 removed=1570.7963267948944 solids=1 valid=true
+singlePlate range(0,30): status=0 removed=1570.7963267948944 solids=1 valid=true
+singlePlate range(10,20): status=0 removed=1570.7963267948944 solids=1 valid=true
+singlePlate blind(20): status=0 removed=1178.0972450961635 solids=1 valid=true
+hollow expected=785.39816339744834
+hollowBox throughAll: status=0 removed=785.39816339746903 solids=1 valid=true
+hollowBox untilEnd: status=0 removed=785.39816339746903 solids=1 valid=true
+hollowBox range(0,60): status=0 removed=785.39816339746903 solids=1 valid=true
+rangeOverTheGap range(26,44) stack2: status=1
+(BRepFeat_InvalidPlacement=1)

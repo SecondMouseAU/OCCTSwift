@@ -1274,6 +1274,106 @@ inline bool occtValidTangentialDeflection(double angularDeflection, double curva
   return curvatureDeflection >= Precision::Confusion() && angularDeflection >= Precision::Angular();
 }
 
+/// The linear-deflection precondition every `BRepMesh_IncrementalMesh` entry point has to apply
+/// itself. A different consumer and a different bound from `occtValidTangentialDeflection` above,
+/// which is the adaptive curve sampler's; the two share an argument in one bridge function and
+/// nothing else (#2879).
+///
+/// **The bound is `Precision::Confusion()` (1e-7), and it is OCCT's, not ours.** Three of OCCT's
+/// own callers apply it to an absolute linear deflection, and the kernel itself enforces it
+/// (okf/policies/follow-occt-callers.md):
+///
+///   - `MeshTest.cxx:208`, the `incmesh` DRAW command, parsing its `LinDefl` argument:
+///     `aMeshParams.Deflection = std::max(Draw::Atof(...), Precision::Confusion());`
+///   - `MeshTest.cxx:199`, the same command's `-di` (interior deflection), which *refuses*
+///     rather than clamping: `if (aVal <= Precision::Confusion()) { "Syntax error"; return 1; }`
+///   - `Prs3d.hxx:71`, reached from `StdPrs_ToolTriangulatedShape::GetDeflection`, which is the
+///     AIS presentation path: `std::max(aDiag.maxComp() * theDeviationCoefficient * 4.0,
+///     Precision::Confusion())`. Note what the bounding box is for there: it *derives* an absolute
+///     deflection from a relative coefficient. It does not floor an absolute one, so a
+///     bounding-box-derived floor is not a shape any OCCT caller applies to this argument.
+///   - `BRepMesh_IncrementalMesh::initParameters` (`BRepMesh_IncrementalMesh.hxx:81`) throws
+///     `Standard_NumericError` on `myParameters.Deflection < Precision::Confusion()`.
+///
+/// **That last one is a literal `throw` in an inline header function, so unlike the `*_Raise_if`
+/// family it does survive into the pinned kernel** (okf/policies/occt-validation-is-compiled-out.md
+/// covers the distinction). Measured on the pinned `v4.0.0-kernel.3` asset, on a radius-10 cylinder
+/// (`Scripts/repro/2879/`): 0.0, -1.0, 1e-12 and 9e-8 all throw from `initParameters` in under a
+/// second, and the bridge's own `catch` already turns that into the site's refusal.
+///
+/// **NaN is the value that gets through, and it is why this guard exists.** `NaN < x` is false, so
+/// `initParameters` accepts NaN, and so does every one of the three callers above: `std::max(NaN,
+/// Precision::Confusion())` returns NaN. On the same cylinder, NaN did not return in ten minutes.
+/// Spelled as `>=` so NaN takes the refusing branch, the same spelling and the same reason as
+/// `occtValidTangentialDeflection`. This is not a divergence from OCCT's bound; it is that bound
+/// applied to a value OCCT's own `<` test cannot place on either side of it.
+///
+/// **A small deflection is expensive, not invalid, and is deliberately not refused here.** On that
+/// cylinder the same probe measured 1e-4 in 1 s (3,978 nodes), 1e-5 in 5 s (12,570), 1e-6 in 72 s
+/// (39,742) and the floor value itself, 1e-7, in 92 s (88,862). It terminates; it is slow. And
+/// 1e-7 is the value `incmesh` clamps *to*, so refusing it would be inventing a bound OCCT does
+/// not have. Callers who need a cheap mesh choose the deflection, exactly as they do in `incmesh`.
+inline bool occtValidMeshDeflection(double linearDeflection)
+{
+  return linearDeflection >= Precision::Confusion();
+}
+
+/// The angular-deflection precondition every `BRepMesh_IncrementalMesh` entry point has to apply
+/// itself: the same hole as `occtValidMeshDeflection` above, one field along, at the same call
+/// (#2900).
+///
+/// `BRepMesh_IncrementalMesh::initParameters` (`BRepMesh_IncrementalMesh.hxx:99`) tests the angle
+/// exactly as it tests the linear value, `myParameters.Angle < Precision::Angular()`, and throws
+/// `Standard_NumericError`. That is a literal `throw` in an inline header function, so
+/// `No_Exception` does not remove it (`okf/policies/occt-validation-is-compiled-out.md`) and the
+/// refusal for an ordinary too-small angle is live. `NaN < x` is false, so NaN alone walks past it.
+///
+/// **Measured on the pinned `v4.0.0-kernel.3` asset** (`Scripts/repro/2900/`), 36 cases over a
+/// radius-10 cylinder and a 10x5x3 box, through both the 4-argument constructor and the
+/// `IMeshTools_Parameters` one. `0.0`, `-1.0` and `9e-13` throw from `initParameters` in under a
+/// second on both shapes and through both constructors, leaving no triangulation, and the bridge's
+/// own `catch` already turns that into the site's refusal. **NaN is the value that gets through**,
+/// and unlike the linear case it does not hang: it returns in about a second with `IsDone() == 1`,
+/// no status flag, and a mesh. The mesh is the wrong one. Every comparison against a NaN angle is
+/// false, so the angular criterion never asks for a subdivision, and the result is the coarsest
+/// tessellation the linear rule alone will accept. On the cylinder with a linear deflection of
+/// 10.0, where the angle is the criterion that decides:
+///
+///   angle    nodes   triangles
+///   0.05       254         248
+///   0.2        254         248
+///   0.5        106         100
+///   1.0         54          48
+///   NaN         18          12
+///
+/// Eighteen nodes for a cylinder, returned as a measurement of the shape with no error signal,
+/// which is the #726 shape rather than #2879's hang. Spelled as `>=` so NaN takes the refusing
+/// branch, the same spelling and the same reason as `occtValidMeshDeflection`.
+///
+/// **Three call sites, not the five the linear guard has.** `OCCTShapeCreateMesh`,
+/// `OCCTShapeCreateMeshWithParams` and `OCCTShapeIncrementalMeshProgress` take the angle straight
+/// from the caller. The two presentation sites that read `Prs3d_Drawer::DeviationAngle()` do not
+/// need it and deliberately do not call it: that accessor is
+/// `myDeviationAngle > 0.0 ? myDeviationAngle : (link ? link->DeviationAngle() : 20 deg)`
+/// (`Prs3d_Drawer.hxx:243-248`), a test NaN fails in the safe direction, so the drawer answers
+/// 20 degrees for NaN, zero and negative alike. Measured: a NaN on the drawer produces the
+/// ordinary 24-vertex box mesh, not a degraded one. #2900 named those two sites from a reading of
+/// `SetDeviationAngle`, and the measurement closed them.
+///
+/// **`AngleInterior` deliberately gets no guard of its own.** `initParameters` *rewrites* a
+/// sub-threshold interior angle to `2.0 * Angle` rather than refusing it, so a NaN `Angle` would
+/// propagate into it by arithmetic; guarding `Angle` is what closes that, and the probe confirms
+/// `AngleInterior` is NaN in exactly the cases `Angle` is. In the other direction a NaN
+/// `AngleInterior` cannot reach the kernel from Swift at all: `OCCTShapeCreateMeshWithParams` sets
+/// it through `params.angleInterior > 0 ? ... : params.angle`, a test NaN fails, and it is the
+/// only bridge site that sets the field. Measured anyway, with `Angle` held at 0.5: a NaN
+/// `AngleInterior` that does reach `initParameters` changes neither the node count nor the triangle
+/// count on either fixture.
+inline bool occtValidMeshAngle(double angularDeflection)
+{
+  return angularDeflection >= Precision::Angular();
+}
+
 // === #603: one Gauss quadrature is not enough to measure an arc ===
 //
 // `CPnts_AbscissaPoint::Length` integrates |C'(u)| with a SINGLE fixed-order Gauss rule over the

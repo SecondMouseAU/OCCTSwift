@@ -1,0 +1,76 @@
+# Re-measured for #2916 on 2026-10-01 against the asset Package.swift pins,
+# v4.0.0-kernel.3 (sha256 27810c46220a77303c322bc24119e3aa1fe983707e9f88ce8455e7e9b9db82bc,
+# which is the `checksum:` in Package.swift), not against a locally built kernel.
+#
+# The GCPnts/CPnts lines reproduce the #766 run byte for byte. The `reference` and `bridge` lines
+# are new, and between them they answer what the #766 run could not:
+#
+#   * `reference` is what Issue477ArcLengthAccuracyTests actually asserts on, a 20,000/40,000
+#     -sample Richardson-extrapolated polyline. Every figure its comments quote is a relative
+#     error against this, not a GCPnts-against-CPnts difference, so without it this probe could
+#     say the two integrators now agree and could not say what either one is wrong by.
+#   * `bridge` is what Curve3D.length and length(from:to:) actually compute. Not
+#     GCPnts_AbscissaPoint::Length, which is what the suite's docstring says: occtAdaptorArcLength
+#     splits at the GeomAbs_CN boundaries and integrates each span with CPnts, and only a curve
+#     with one interval reaches GCPnts at all. The out-of-domain clamp is a third place again,
+#     occtConfineToDomain inside occtAdaptorLengthBetween.
+#
+# Two things to read off it.
+#
+# Carried patch 0021 closed the gap the suite's prose is built on. CPnts_AbscissaPoint::Length,
+# the whole-domain quadrature #477 is written about, is now within 3.3e-10 of the reference on the
+# zigzag and 1.0e-10 on the helix, so it passes every accuracy bound in the suite. The comments
+# quoting 5.1e-2, 2.2e-2 and 3.9e-6 describe the kernel before that patch.
+#
+# The "now" figures in the same comments are stale too, by a smaller margin, and for an unrelated
+# reason: #1259 replaced a plain chord sum with the Richardson-extrapolated reference, which moved
+# the measured error from 2.9e-7 to 3.1e-14.
+#
+# What the suite still guards is in the out-of-domain line. The clamp is real and is the one
+# comparison here the pinned kernel still bears out: over [f - s, l + s] the bridge returns the
+# domain length while CPnts unclamped returns 442165.86, 1241x the curve's own 356.25.
+#
+zigzag 40 points: domain [0, 344.37555969396806]
+  GCPnts whole 356.25037951382484 | CPnts whole 356.25037939669323
+  GCPnts [1/3, 2/3] 117.00618367226606 | CPnts 117.00618367097974
+  GCPnts [1/4, 3/4] 175.90029293500169 reversed 175.90029293500169
+  CPnts over [f - s, l + s] (unclamped extension) 442165.85815271176
+  reference whole 356.2503795138137 | GCPnts rel 3.13e-14 | CPnts rel 3.29e-10
+  reference [1/3, 2/3] 117.00618367253823 | GCPnts rel 2.33e-12 | CPnts rel 1.33e-11
+  reference [1/4, 3/4] 175.90029293526564 | GCPnts rel 1.5e-12 | CPnts rel 1.55e-11
+  unclamped CPnts over [f - s, l + s] is 1241x the curve's own length 356.2503795138137
+  bridge (occtAdaptorArcLength) 39 interval(s): whole 356.25037951382484 rel 3.13e-14 | [1/3, 2/3] rel 2.33e-12 | [1/4, 3/4] rel 1.5e-12
+  bridge (occtAdaptorLengthBetween, non-periodic arm) confines [f - s, l + s] to 356.25037951382484 and [l + s, l + 2s] to 0; CPnts unclamped gives 442165.85815271176
+helix 60 points: domain [0, 191.4434851805353]
+  GCPnts whole 192.22708964718808 | CPnts whole 192.22708966671243
+  GCPnts [1/3, 2/3] 64.075222871849348 | CPnts 64.075222838171129
+  GCPnts [1/4, 3/4] 96.112844923442168 reversed 96.112844923442168
+  CPnts over [f - s, l + s] (unclamped extension) 24024.379608956602
+  reference whole 192.22708964718814 | GCPnts rel 2.96e-16 | CPnts rel 1.02e-10
+  reference [1/3, 2/3] 64.075222871849647 | GCPnts rel 4.66e-15 | CPnts rel 5.26e-10
+  reference [1/4, 3/4] 96.112844923441173 | GCPnts rel 1.03e-14 | CPnts rel 3.45e-12
+  unclamped CPnts over [f - s, l + s] is 125x the curve's own length 192.22708964718814
+  bridge (occtAdaptorArcLength) 59 interval(s): whole 192.22708964718808 rel 2.96e-16 | [1/3, 2/3] rel 4.66e-15 | [1/4, 3/4] rel 1.03e-14
+  bridge (occtAdaptorLengthBetween, non-periodic arm) confines [f - s, l + s] to 192.22708964718808 and [l + s, l + 2s] to 0; CPnts unclamped gives 24024.379608956602
+segment (0,0,0)-(3,4,0): domain [0, 5]
+  GCPnts whole 5 | CPnts whole 5
+  GCPnts [1/3, 2/3] 1.6666666666666667 | CPnts 1.6666666666666667
+  GCPnts [1/4, 3/4] 2.5 reversed 2.5
+  CPnts over [f - s, l + s] (unclamped extension) 15
+  reference whole 4.9999999999999796 | GCPnts rel 4.09e-15 | CPnts rel 4.09e-15
+  reference [1/3, 2/3] 1.6666666666655274 | GCPnts rel 6.84e-13 | CPnts rel 6.84e-13
+  reference [1/4, 3/4] 2.4999999999997793 | GCPnts rel 8.83e-14 | CPnts rel 8.83e-14
+  unclamped CPnts over [f - s, l + s] is 3x the curve's own length 4.9999999999999796
+  bridge (occtAdaptorArcLength) 1 interval(s): whole 5 rel 4.09e-15 | [1/3, 2/3] rel 6.84e-13 | [1/4, 3/4] rel 8.83e-14
+  bridge (occtAdaptorLengthBetween, non-periodic arm) confines [f - s, l + s] to 5 and [l + s, l + 2s] to 0; CPnts unclamped gives 15
+circle r 7: domain [0, 6.2831853071795862]
+  GCPnts whole 43.982297150257104 | CPnts whole 43.982297150257104
+  GCPnts [1/3, 2/3] 14.660765716752367 | CPnts 14.660765716752366
+  GCPnts [1/4, 3/4] 21.991148575128552 reversed 21.991148575128552
+  CPnts over [f - s, l + s] (unclamped extension) 131.94689145077132
+  reference whole 43.982297150289398 | GCPnts rel 7.34e-13 | CPnts rel 7.34e-13
+  reference [1/3, 2/3] 14.660765716753692 | GCPnts rel 9.04e-14 | CPnts rel 9.05e-14
+  reference [1/4, 3/4] 21.99114857511649 | GCPnts rel 5.48e-13 | CPnts rel 5.48e-13
+  unclamped CPnts over [f - s, l + s] is 3x the curve's own length 43.982297150289398
+  bridge (occtAdaptorArcLength) 1 interval(s): whole 43.982297150257104 rel 7.34e-13 | [1/3, 2/3] rel 9.04e-14 | [1/4, 3/4] rel 5.48e-13
+  bridge (occtAdaptorLengthBetween, non-periodic arm) confines [f - s, l + s] to 43.982297150257104 and [l + s, l + 2s] to 0; CPnts unclamped gives 131.94689145077132

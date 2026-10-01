@@ -1,0 +1,11 @@
+[/home/üser/mødel.step] name=[mødel] ext=[.step] trek=[|home|üser|] system=[/home/üser/mødel.step] folder=[/home/üser/] file=[mødel.step] isValid=1 isUnix=1 isRelative=0 isAbsolute=1
+[/home/user/模型.step] name=[模型] ext=[.step] trek=[|home|user|] system=[/home/user/模型.step] folder=[/home/user/] file=[模型.step] isValid=1 isUnix=1 isRelative=0 isAbsolute=1
+[/home/user/model.step] name=[model] ext=[.step] trek=[|home|user|] system=[/home/user/model.step] folder=[/home/user/] file=[model.step] isValid=1 isUnix=1 isRelative=0 isAbsolute=1
+[/home/user/archive.tar.gz] name=[archive.tar] ext=[.gz] trek=[|home|user|] system=[/home/user/archive.tar.gz] folder=[/home/user/] file=[archive.tar.gz] isValid=1 isUnix=1 isRelative=0 isAbsolute=1
+[/home/user/model] name=[model] ext=[] trek=[|home|user|] system=[/home/user/model] folder=[/home/user/] file=[model] isValid=1 isUnix=1 isRelative=0 isAbsolute=1
+[../up/f.txt] name=[f] ext=[.txt] trek=[^|up|] system=[../up/f.txt] folder=[../up/] file=[f.txt] isValid=1 isUnix=0 isRelative=1 isAbsolute=0
+[model.step] name=[model] ext=[.step] trek=[] system=[model.step] folder=[] file=[model.step] isValid=1 isUnix=0 isRelative=1 isAbsolute=0
+[./sub/f.txt] name=[f] ext=[.txt] trek=[.|sub|] system=[./sub/f.txt] folder=[./sub/] file=[f.txt] isValid=1 isUnix=0 isRelative=1 isAbsolute=0
+[/home/a.b/model] name=[model] ext=[] trek=[|home|a.b|] system=[/home/a.b/model] folder=[/home/a.b/] file=[model] isValid=1 isUnix=1 isRelative=0 isAbsolute=1
+[/tmp/test.txt] name=[test] ext=[.txt] trek=[|tmp|] system=[/tmp/test.txt] folder=[/tmp/] file=[test.txt] isValid=1 isUnix=1 isRelative=0 isAbsolute=1
+[] name=[] ext=[] trek=[] system=[] folder=[] file=[] isValid=1 isUnix=0 isRelative=1 isAbsolute=0

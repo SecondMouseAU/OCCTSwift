@@ -303,6 +303,11 @@ static bool occtExportCafImpl(OCCTShapeRef    shape,
 {
   if (!shape || !path)
     return false;
+  // #2879: see occtValidMeshDeflection (OCCTBridge_Internal.h) for the bound and whose call site
+  // it comes from. The refusal is the `false` every caller of this template already gives a shape
+  // it cannot write.
+  if (!occtValidMeshDeflection(deflection))
+    return false;
   try
   {
     // Tessellate the shape first
@@ -356,6 +361,12 @@ static bool occtDocumentWriteImpl(OCCTDocumentRef doc,
   try
   {
     // Re-mesh if deflection > 0
+    //
+    // #2879: deliberately NOT guarded with occtValidMeshDeflection here. `0` is this function's
+    // documented "do not re-mesh" sentinel, so refusing it would remove a working input, and NaN
+    // fails `> 0` and so takes that same no-re-mesh path already. A tiny positive value reaches
+    // BRepMesh_IncrementalMesh, whose own initParameters throws Standard_NumericError below
+    // Precision::Confusion(), which the catch below turns into the same `false` the guard would.
     if (deflection > 0)
     {
       TDF_LabelSequence freeShapes;
@@ -512,6 +523,10 @@ bool OCCTExportSTL(OCCTShapeRef shape, const char* path, double deflection)
   if (!shape || !path)
     return false;
 
+  // #2879: see occtValidMeshDeflection (OCCTBridge_Internal.h). Refusal as for a failed write.
+  if (!occtValidMeshDeflection(deflection))
+    return false;
+
   try
   {
     // The ctor meshes; a following Perform() would only re-check the triangulation it
@@ -532,6 +547,10 @@ bool OCCTExportSTL(OCCTShapeRef shape, const char* path, double deflection)
 bool OCCTExportSTLWithMode(OCCTShapeRef shape, const char* path, double deflection, bool ascii)
 {
   if (!shape || !path)
+    return false;
+
+  // #2879: see occtValidMeshDeflection (OCCTBridge_Internal.h). Refusal as for a failed write.
+  if (!occtValidMeshDeflection(deflection))
     return false;
 
   try
@@ -558,6 +577,15 @@ OCCTShapeRef OCCTShapeIncrementalMeshProgress(OCCTShapeRef              shape,
 {
   clearCancelOut(outCancelled);
   if (!shape)
+    return nullptr;
+  // #2879: see occtValidMeshDeflection (OCCTBridge_Internal.h). The refusal is the `nullptr` this
+  // function already gives a mesh it could not build, with `outCancelled` left false, since a
+  // refused parameter is not a user cancellation.
+  if (!occtValidMeshDeflection(linearDeflection))
+    return nullptr;
+  // #2900: the angular half of the same precondition, see occtValidMeshAngle
+  // (OCCTBridge_Internal.h). Same refusal, and `outCancelled` stays false for the same reason.
+  if (!occtValidMeshAngle(angularDeflection))
     return nullptr;
   // Declared outside the try so the catch below can still answer "was this cancelled?" (#525).
   opencascade::handle<BridgeProgressIndicator> indicator;
@@ -840,6 +868,9 @@ bool OCCTExportGLTF(OCCTShapeRef _Nonnull shape,
                     double deflection)
 {
   if (!shape || !path)
+    return false;
+  // #2879: see occtValidMeshDeflection (OCCTBridge_Internal.h). Refusal as for a failed write.
+  if (!occtValidMeshDeflection(deflection))
     return false;
   try
   {

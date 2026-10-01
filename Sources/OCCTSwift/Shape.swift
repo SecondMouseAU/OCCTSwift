@@ -1093,6 +1093,16 @@ public final class Shape: @unchecked Sendable {
 
     /// Generate a triangulated mesh for visualization.
     ///
+    /// `linearDeflection` has a floor of `1e-7`, OCCT's `Precision::Confusion()`. A value below
+    /// it, a negative one, or NaN is refused and returns `nil`; see
+    /// [Meshing & Export](../../docs/guides/cookbook/meshing-and-export.md) for where that bound
+    /// comes from in OCCT and why NaN needs a check of its own (#2879).
+    ///
+    /// `angularDeflection` has its own floor, `1e-12`, OCCT's `Precision::Angular()`, and is
+    /// refused on the same terms (#2900). A NaN angle is the case worth naming: it does not throw
+    /// and does not hang, it silently disables the angular criterion, so a radius-10 cylinder
+    /// comes back with 18 nodes where a valid angle gives 54 to 254.
+    ///
     /// - Warning: **This call can take minutes on a degenerate offset surface**, the geometry
     ///   `shelled(thickness:)` / `offset(by:)` produce (`Geom_OffsetSurface`). It is not a hang:
     ///   measured on the fitted-then-offset B-spline panel from
@@ -1194,7 +1204,10 @@ public final class Shape: @unchecked Sendable {
     /// - Throws: `ImportError.cancelled` if the meshing was cancelled cooperatively.
     /// - Returns: The same shape (with triangulations attached) on success, or nil on
     ///   internal failure (no exception thrown for non-cancellation failures, matching
-    ///   the existing `mesh()` API).
+    ///   the existing `mesh()` API). A `linearDeflection` below `1e-7`, negative, or NaN is
+    ///   refused before any meshing starts, and is not reported as a cancellation, so the shape
+    ///   comes back with no triangulation attached (#2879). An `angularDeflection` below `1e-12`,
+    ///   negative, or NaN is refused on the same terms (#2900).
     @discardableResult
     public func meshWithProgress(
         linearDeflection: Double = 0.1,
@@ -1227,7 +1240,11 @@ public final class Shape: @unchecked Sendable {
     /// let mesh = shape.mesh(parameters: params)
     /// ```
     ///
-    /// - Parameter parameters: Enhanced mesh parameters
+    /// - Parameter parameters: Enhanced mesh parameters. `parameters.deflection` takes the same
+    ///   `1e-7` floor as ``mesh(linearDeflection:angularDeflection:)``, and a value below it, a
+    ///   negative one or NaN returns `nil` (#2879). `parameters.angle` takes the `1e-12` floor on
+    ///   the same terms (#2900). `deflectionInterior` and `angleInterior` need no floor of their
+    ///   own: `0` means "use the boundary value", and anything below the floor is replaced by it.
     /// - Returns: A `Mesh` with the specified quality settings
     /// - Note: Same orientation guarantee as ``mesh(linearDeflection:angularDeflection:)``, see
     ///   its doc for details on why a valid solid's mesh is always consistently outward.

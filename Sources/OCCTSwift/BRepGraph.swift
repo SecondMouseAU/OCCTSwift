@@ -1181,6 +1181,37 @@ public final class BRepGraph: @unchecked Sendable {
     }
 
     /// Transform the graph by a translation.
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)
+    /// if let box, let graph = BRepGraph(shape: box),
+    ///     let moved = graph.translated(dx: 100, dy: 200, dz: 300)
+    /// {
+    ///     let before = graph.vertexPoint(0)
+    ///     let after = moved.vertexPoint(0)
+    ///     print(after.x - before.x)  // 100.0
+    /// }
+    /// ```
+    ///
+    /// - Parameters:
+    ///   - dx: Translation along X, in model units.
+    ///   - dy: Translation along Y, in model units.
+    ///   - dz: Translation along Z, in model units.
+    ///   - copyGeometry: Whether to deep-copy the geometry handles (default: `true`). Pass
+    ///     `false` only with a zero translation; see below.
+    /// - Returns: The translated graph, or `nil` on failure, which now includes the refused
+    ///   combination below.
+    ///
+    /// - Important: `copyGeometry: false` with a non-zero translation returns `nil` (#2913).
+    ///   It is not "transform the shared geometry", which would move the source as well. It
+    ///   selects `BRepGraph_Copy::GeomPolicy::Share`, OCCT's location-only mode, which leaves
+    ///   every vertex, curve and surface where it was and composes the translation into the root
+    ///   `Product`'s occurrence location instead. A `BRepGraph` built by this package has no
+    ///   `Product` (``productCount`` is `0` for every graph the initialisers produce), so the
+    ///   location lands nowhere and the translation is lost. Rather than hand back an
+    ///   untranslated graph that reports success, the call is refused. Use the default
+    ///   `copyGeometry: true` to translate, or ``copy(copyGeometry:)`` with `false` for a light
+    ///   structural copy that shares geometry and moves nothing.
     public func translated(dx: Double, dy: Double, dz: Double, copyGeometry: Bool = true)
         -> BRepGraph?
     {

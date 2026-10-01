@@ -72,12 +72,12 @@ Scripts/format-bridge.sh             # clang-format every enforced Sources/OCCTB
 Scripts/format-bridge.sh --check     # ...or just report, which is exactly what CI and the hook run
 ```
 
-**Run `Scripts/format-bridge.sh` after any edit to a bridge `.h`/`.mm`.** All 33 bridge files are
+**Run `Scripts/format-bridge.sh` after any edit to a bridge `.h`/`.mm`.** All 93 bridge files are
 enforced (`Scripts/style-manifest-bridge.txt` is empty), and OCCT's style aligns consecutive
 declarations and assignments, so two ordinary new locals in a row are a violation unless the tool
 wrote them. Hand-aligning is not a substitute. The version is pinned in
 `Scripts/clang-format-version.txt`; a clang-format on a different major is refused, since 21.1.8
-and 22.1.8 were measured to disagree on 10 of the 33 files. `Scripts/install-clang-format.py` gets
+and 22.1.8 were measured to disagree on 10 of the files. `Scripts/install-clang-format.py` gets
 the pinned version onto a machine with no pip or venv; see
 [`docs/guides/clang-format-setup.md`](docs/guides/clang-format-setup.md).
 
@@ -122,7 +122,7 @@ python3 Scripts/census-comment-staleness.py      # CENSUS, not a gate: comments 
 python3 Scripts/census-api-reference-rows.py     # CENSUS, not a gate: API_REFERENCE category-row entries resolving to no declaration (#1679)
 python3 Scripts/census-dead-file-statics.py      # CENSUS, not a gate: bridge `static` definitions with no use in their own file (#1628)
 python3 Scripts/census-compiled-out-validation.py # CENSUS, not a gate: bridge protection resting on an OCCT check No_Exception removed (#2801)
-python3 Scripts/check-inventory-prose.py        # every counted claim about the patch and gate inventories matches them (#1408)
+python3 Scripts/check-inventory-prose.py        # every counted claim about the patch, gate, swift-format-exemption, bridge-file and test-target inventories matches them (#1408, #2910), and occt-raise-if-map.txt's stamp names the patch set on disk (#2885)
 python3 Scripts/check-changelog-transcription.py # REPORT, never a gate: merges that landed with no CHANGELOG entry (#742, #2779)
 python3 Scripts/check-pinned-asset-patches.py --self-test  # RELEASE CHECK: only the self-test runs here; the real run reads the pinned asset (#2190)
 ```
@@ -236,10 +236,13 @@ total on this page.
 exemption manifest can only exempt a file the population already reaches. Two manifests now hold the
 exempt list, both shrink-only and both enforced by `check-style-manifest.py`:
 `Scripts/style-manifest-swift.txt` (rollout day, empty) and
-`Scripts/style-manifest-swift-wave2.txt` (what the widening reached, 272 files). The real run
-asserts **selected + listed == tracked** and plants a canary violation in every `swift-format`
-invocation, so a narrowing and a silent tool are both a red gate rather than a quieter one. There is
-deliberately no `--fix`, for the reason `Scripts/format-bridge.sh`'s header gives.
+`Scripts/style-manifest-swift-wave2.txt` (what the widening reached, 269 files still listed).
+That second count drains with nearly every PR, since touching a listed file means fixing it and
+deleting its line, so it is derived from the manifest by `check-inventory-prose.py` rather than
+trusted here (#2910). The real run asserts **selected + listed == tracked** and plants a canary
+violation in every `swift-format` invocation, so a narrowing and a silent tool are both a red gate
+rather than a quieter one. There is deliberately no `--fix`, for the reason
+`Scripts/format-bridge.sh`'s header gives.
 
 ### Pinned-Asset Patch Check
 
@@ -309,10 +312,13 @@ what to do when OCCT does not answer are in
 
 ```
 Sources/OCCTSwift/          Swift public API (Shape, Wire, Surface, Face, Edge, Curve3D, Mesh, etc.)
-Sources/OCCTBridge/include/ C function declarations (16 files: OCCTBridge.h umbrella + 15 per-domain headers, #395)
-Sources/OCCTBridge/src/     Objective-C++ implementations (one per domain, matching the headers,
-                             except Modeling: split into 12 OCCTBridge_Modeling_<Bucket>.mm files
-                             by OCCT subsystem under one shared OCCTBridge_Modeling.h, #396)
+Sources/OCCTBridge/include/ C function declarations (18 files: OCCTBridge.h umbrella + 17 per-domain headers, #395)
+Sources/OCCTBridge/src/     74 Objective-C++ implementations. Ten domains are split into
+                             OCCTBridge_<Domain>_<Bucket>.mm by OCCT subsystem under one shared
+                             per-domain header (Modeling 12, Surface/IO/Healing/Geom2d 7 each,
+                             Document/Curve3D 6, Topology/Spatial 5, Visualization 4); the other
+                             seven are a single file each, beside OCCTBridge.mm itself
+                             (#396, #1378, #1380)
 Libraries/OCCT.xcframework  Pre-built OCCT static library (arm64 macOS/iOS)
 Tests/OCCT<Domain>Tests/    Per-domain Swift Testing targets (see "Test Layout")
 Scripts/build-occt.sh       Builds OCCT.xcframework from source
@@ -515,6 +521,22 @@ the reproducer). What a bridge author needs without opening it:
   must not acquire a guard, and is the shape the upstream fix should take. Unlike #2773 there is no
   signal disposition under which the kernel survives: `ShapeCustom::ApplyModifier` has no live
   `OCC_CATCH_SIGNALS` above the fault.
+- **A NaN linear deflection passes every check `BRepMesh_IncrementalMesh` and its callers make,
+  and the mesh it starts does not finish** (#2879). The floor is `Precision::Confusion()` and all
+  four sites that state it use a comparison NaN cannot fail: the kernel's own
+  `Deflection < Precision::Confusion()` throw (`BRepMesh_IncrementalMesh.hxx:81`), `incmesh`'s
+  `std::max(value, Precision::Confusion())` (`MeshTest.cxx:208`), its `-di` refusal on `<=`
+  (`:199`) and `Prs3d::GetDeflection`'s same `std::max` (`Prs3d.hxx:71`). Measured: NaN on a
+  radius-10 cylinder did not return in 600 s, while 0.0, -1.0 and 1e-12 throw in under a second.
+  Call `occtValidMeshDeflection` (`OCCTBridge_Internal.h`) before **any** new
+  `BRepMesh_IncrementalMesh`; it is the same bound spelled `>=`. A small deflection is expensive,
+  not invalid, and is not refused: the floor value itself finishes in 92 s.
+  **The angular deflection beside it has the same hole and a different symptom** (#2900):
+  `Angle < Precision::Angular()` at `:99`, NaN walks past, and the result is not a hang but the
+  coarsest mesh the linear rule alone accepts, returned with `IsDone()` true (18 nodes for a
+  cylinder where a valid angle gives 54 to 254). Call `occtValidMeshAngle` at the three sites that
+  take a caller angle. `AngleInterior` and `Prs3d_Drawer::DeviationAngle()` need no guard, both
+  measured.
 - `GeomAbs_G2` is never a valid order for `BRepFill_Filling`: curvature continuity is
   `GeomAbs_C1` (ordinal 2), whatever `BRepOffsetAPI_MakeFilling.hxx` says. Test any filling change
   on both a planar and a periodic support surface, since #430 was catchable on one and an
@@ -561,6 +583,16 @@ to pick up patches. The lifecycle from GTest to upstream PR is
 [`okf/policies/upstream-occt-patch-process.md`](okf/policies/upstream-occt-patch-process.md) and
 [`okf/policies/upstream-occt-style.md`](okf/policies/upstream-occt-style.md).
 
+**A new patch means regenerating `Scripts/occt-raise-if-map.txt` in the same PR.** That map is a
+committed derivation of the PATCHED `Libraries/occt-src`, so a patch that adds or moves a raise
+site changes it, and nothing re-derived it for two pins: `0042` put a throw in
+`ShapeAnalysis::GetFaceUVBounds` and the map said `ShapeAnalysis` held no live throw while the
+kernel we ship held one (#2885). `python3 Scripts/census-compiled-out-validation.py --write-table`
+rewrites it from the tree `build-occt.sh` patched, and refuses a tree that does not carry every
+patch on disk. `check-inventory-prose.py` fails on every PR when the map's provenance stamp and
+`Scripts/patches/` disagree, and `kernel-integration.yml`, the one job with a tree, re-derives the
+rows themselves.
+
 `Scripts/patches-wasi/*.patch` are a different sequence: WASI-only, unnumbered, not upstream-bound,
 and applied by `build-occt-wasm.sh` alone, **after** the carried set. One rule governs them, and
 [`okf/policies/wasi-patch-base.md`](okf/policies/wasi-patch-base.md) owns it: a WASI patch is
@@ -602,8 +634,13 @@ is derived, never chosen: `python3 Scripts/count-operations.py`.
    then **check the asset itself, not the count**:
    `python3 Scripts/check-pinned-asset-patches.py --require-asset`. The count compares prose
    against the tree and is blind to what is baked into the binary, which is how a thirty-one-patch
-   asset shipped under a twenty-nine-patch label (#2190). Finally retire the bridge-side
-   mitigations listed under Known OCCT Bugs above.
+   asset shipped under a twenty-nine-patch label (#2190). On the machine that built the kernel,
+   which is the only one with the tree, also re-derive what the repo has committed **about** that
+   tree: `python3 Scripts/census-compiled-out-validation.py --reverify-table --require-occt-src`
+   and the same with `--verify-no-exception-regions`, per step 1b of
+   [Shipping a rebuild](docs/guides/building-occt.md#shipping-a-rebuild). Nothing did, and
+   `Scripts/occt-raise-if-map.txt` went two pins describing a kernel we had stopped shipping
+   (#2885). Finally retire the bridge-side mitigations listed under Known OCCT Bugs above.
 5. **Verify.** Full `swift test`, every gate with its `--self-test`, and `Scripts/tsan-stress.sh all`
    if anything touched concurrency.
 6. **Counts.** `python3 Scripts/count-operations.py` must agree with README.md,

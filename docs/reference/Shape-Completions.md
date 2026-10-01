@@ -476,7 +476,8 @@ Performs the homogenization of all added curves.
 public func perform(tolerance: Double = 1e-6) -> Bool
 ```
 
-- **Returns:** `true` on success.
+- **Returns:** `true` on success, `false` when no curve has been added.
+- **Empty profiler:** refused in the bridge rather than passed on. `GeomFill_Profiler::Perform` reaches `UnifyByInsertingAllKnots`, whose first statement indexes the first curve of the sequence, and the bound test that would refuse an empty one is compiled out of this Release kernel, so the process faults before `Perform` returns (#2884, measured in `Scripts/repro/2884`). One curve is enough.
 - **OCCT:** `GeomFill_Profiler::Perform`.
 
 ---
@@ -537,8 +538,9 @@ Returns the poles for a specific curve (1-based index) after `perform()`.
 public func poles(curveIndex: Int) -> [SIMD3<Double>]
 ```
 
-- **Parameters:** `curveIndex`, 1-based index of the curve.
-- **Returns:** An array of 3D pole positions, or empty if not computed or index is out of range.
+- **Parameters:** `curveIndex`, 1-based index of the curve, in `1...n` where `n` is the number of curves `addCurve(_:)` actually added.
+- **Returns:** An array of 3D pole positions, or empty if not computed or `curveIndex` is out of range.
+- **Range:** enforced in the bridge, against a count the bridge keeps itself because `GeomFill_Profiler` exposes none. The class documents the same range and tests it with two `Standard_DomainError_Raise_if` lines this Release kernel compiles out, so measured on the pinned kernel with two curves loaded, index 0 faulted the process and index 5 or 1000000 returned another curve's poles read from past the end of the sequence (#2884).
 - **OCCT:** `GeomFill_Profiler::Poles`.
 
 ---

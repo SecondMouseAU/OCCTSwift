@@ -4,15 +4,37 @@ import simd
 
 @testable import OCCTSwift
 
-/// Regression cover for #477: `Curve3D.length` / `length(from:to:)` integrated arc length with
-/// `CPnts_AbscissaPoint::Length`, a single Gauss quadrature across the whole parameter domain.
-/// On a multi-span BSpline that is wrong by up to several percent with no error signalled.
-/// The bridge now uses `GCPnts_AbscissaPoint::Length`, which splits the curve at its `GeomAbs_CN`
-/// interval boundaries and integrates each span.
+/// Regression cover for #477, arc-length accuracy on multi-span curves.
+///
+/// `Curve3D.length` / `length(from:to:)` integrated arc length with a single
+/// `CPnts_AbscissaPoint::Length` Gauss quadrature across the whole parameter domain, which on a
+/// multi-span BSpline was wrong by up to several percent with no error signalled. #477 made the
+/// measurement composite.
 ///
 /// Every assertion here is against an **independently computed** reference (a densely sampled
 /// polyline, Richardson-extrapolated), never against whatever the implementation happens to
-/// return, so the suite fails on the old integrator rather than ratifying it.
+/// return. That is what the assertions are worth; it is no longer what separates the integrators.
+///
+/// **The contrast this suite was written around is gone from the kernel we ship** (#2916).
+/// Carried patch `0021` subdivides inside `CPnts` too, so on the pinned asset the whole-domain
+/// quadrature #477 replaced agrees with the reference to 3.3e-10 on the zigzag below and 1.0e-10
+/// on the helix, and passes every accuracy bound here. Re-measured 2026-10-01 against
+/// `v4.0.0-kernel.3`, the asset `Package.swift` pins:
+/// `Scripts/repro/766-curve-arclength-accuracy/`. Every figure quoted below cites that transcript
+/// and none of them claims the old quadrature would now fail.
+///
+/// **The composite measurement is the bridge's, not `GCPnts`'.** `occtAdaptorArcLength`
+/// (`OCCTBridge_Internal.h`) splits at the `GeomAbs_CN` interval boundaries and integrates each
+/// span with `CPnts`; only a curve with one interval reaches `GCPnts_AbscissaPoint::Length`, so
+/// on the two fixtures below the bridge never calls it. The two agree bit for bit, because
+/// `GCPnts` splits on the same array and delegates the same way, which is the point rather than
+/// a reason to let the prose stand: the accuracy these tests measure is the per-span `CPnts`
+/// sum's, and `0021` is what made that sum right. The out-of-domain clamp is a third place again,
+/// `occtConfineToDomain` inside `occtAdaptorLengthBetween`.
+///
+/// What the suite still guards, each proven red under its own injection during the #766 Curve
+/// lift: the bridge's wiring to the composite measurement, the out-of-domain clamp, the
+/// zero-width short-circuit, and agreement across all five arc-length spellings.
 @Suite("Curve3D arc-length accuracy on multi-span curves (#477)")
 struct Issue477ArcLengthAccuracyTests {
 
@@ -22,9 +44,15 @@ struct Issue477ArcLengthAccuracyTests {
     // `CurveTestFixtures.swift` (#1259): this file's copy was byte-identical to
     // `Issue603SingleSpanQuadratureTests`'s.
 
-    /// 40 interpolated points with sharply varying speed (cubic acceleration in x) and a zigzag
-    /// in y, 39 `GeomAbs_CN` spans: the ordinary shape of an interpolated toolpath or an
-    /// imported spline. The old integrator was ~5% low on this curve.
+    /// A pathological multi-span fixture: 40 interpolated points, 39 `GeomAbs_CN` spans.
+    ///
+    /// Sharply varying speed (cubic acceleration in x) and a zigzag in y, the ordinary shape of
+    /// an interpolated toolpath or an imported spline. Domain `[0, 344.4]`, length 356.25.
+    ///
+    /// The old integrator was several percent low on it before carried patch `0021`; on the
+    /// pinned asset it is 3.3e-10 low (`Scripts/repro/766-curve-arclength-accuracy/`, "zigzag 40
+    /// points"). This is still the suite's pathological fixture, by construction rather than by
+    /// measured divergence.
     private func zigzagCurve() -> Curve3D? {
         var pts: [SIMD3<Double>] = []
         for i in 0..<40 {
@@ -38,9 +66,12 @@ struct Issue477ArcLengthAccuracyTests {
         return Curve3D.interpolate(points: pts)
     }
 
-    /// 60 interpolated points along three turns of a helix, 59 spans, smooth and constant-speed,
-    /// where the old integrator was only 3.9e-6 out relative. Included so the suite covers a
-    /// benign multi-span curve as well as a pathological one.
+    /// A benign multi-span fixture: 60 interpolated points along three turns of a helix.
+    ///
+    /// 59 spans, smooth and constant-speed. Included so the suite covers a benign multi-span
+    /// curve as well as a pathological one. On the pinned asset both integrators land within
+    /// 1.0e-10 of the reference here (`Scripts/repro/766-curve-arclength-accuracy/`, "helix 60
+    /// points").
     private func helixCurve() -> Curve3D? {
         var pts: [SIMD3<Double>] = []
         for i in 0..<60 {
@@ -63,9 +94,14 @@ struct Issue477ArcLengthAccuracyTests {
 
         if let measured = curve.length {
             let relative = abs(measured - reference) / reference
-            // Measured: 2.9e-7 with the composite integrator, 5.1e-2 with the whole-domain
-            // quadrature it replaced. 1e-5 keeps 35x headroom over the former (and over the
-            // reference's own residual error) while still failing the latter by 5000x.
+            // Measured 3.1e-14 against the reference on the pinned asset
+            // (`Scripts/repro/766-curve-arclength-accuracy/`, zigzag "reference whole"). 1e-5 is
+            // not a line drawn between two integrators any more, because patch `0021` brought
+            // the old one to 3.3e-10 here. What it bounds now is the reference's own residual:
+            // the worst agreement anywhere in that transcript between `GCPnts` and the
+            // Richardson-extrapolated chord sum is 2.3e-12, on the zigzag's `[1/3, 2/3]`
+            // sub-range, which leaves 1e-5 seven orders of headroom. Deliberately loose, so a
+            // toolchain difference in `sin`/`cos` cannot flake it.
             #expect(
                 relative < 1e-5,
                 "length \(measured) is \(relative * 100)% away from reference \(reference)")
@@ -88,7 +124,9 @@ struct Issue477ArcLengthAccuracyTests {
 
         if let measured = curve.length(from: u1, to: u2) {
             let relative = abs(measured - reference) / reference
-            // The ranged overload had the identical defect: measured 4.8e-10 now, 2.2e-2 before.
+            // The ranged overload had the identical defect. Measured 2.3e-12 against the
+            // reference on the pinned asset, where the old integrator is 1.3e-11
+            // (`Scripts/repro/766-curve-arclength-accuracy/`, zigzag "reference [1/3, 2/3]").
             #expect(
                 relative < 1e-5,
                 "length(from:to:) \(measured) is \(relative * 100)% away from reference \(reference)"
@@ -119,11 +157,16 @@ struct Issue477ArcLengthAccuracyTests {
         #expect(abs(curve.arcLength(from: u1, to: u2) - rangedReference) / rangedReference < 1e-5)
         #expect(abs(curve.arcLengthBetween(u1, u2) - rangedReference) / rangedReference < 1e-5)
 
+        // #766: a nil from either optional spelling used to skip its check.
         if let length = curve.length {
             #expect(abs(length - wholeReference) / wholeReference < 1e-5)
+        } else {
+            Issue.record("length returned nil")
         }
         if let ranged = curve.length(from: u1, to: u2) {
             #expect(abs(ranged - rangedReference) / rangedReference < 1e-5)
+        } else {
+            Issue.record("length(from:to:) returned nil")
         }
     }
 
@@ -137,8 +180,11 @@ struct Issue477ArcLengthAccuracyTests {
         let reference = referenceLength(curve, from: d.lowerBound, to: d.upperBound)
 
         if let measured = curve.length {
-            // Measured 4.3e-15 now, 3.9e-6 before: a smooth curve is where the two integrators
-            // come closest, so this is the tightest bound the suite can draw between them.
+            // Measured 3.0e-16 against the reference on the pinned asset
+            // (`Scripts/repro/766-curve-arclength-accuracy/`, helix "reference whole"). 1e-8 is
+            // the tightest bound the suite draws anywhere: a smooth constant-speed curve is where
+            // the chord-sum reference converges best, so it is the fixture that can carry one.
+            // It no longer separates the integrators; the old one is 1.0e-10 here.
             #expect(
                 abs(measured - reference) / reference < 1e-8,
                 "helix length \(measured) vs reference \(reference)")
@@ -150,12 +196,15 @@ struct Issue477ArcLengthAccuracyTests {
     @Test("analytic curves stay exact")
     func analyticCurvesStayExact() {
         // Both integrators are exact on these; the assertions guard the swap itself.
+        // #766: a failed factory, or a nil half-circle length, used to skip its check.
         if let segment = Curve3D.segment(from: SIMD3(0, 0, 0), to: SIMD3(3, 4, 0)) {
             if let l = segment.length {
                 #expect(abs(l - 5.0) < 1e-9)
             } else {
                 Issue.record("length returned nil on a line segment")
             }
+        } else {
+            Issue.record("could not build the segment")
         }
 
         if let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 7) {
@@ -167,7 +216,11 @@ struct Issue477ArcLengthAccuracyTests {
             let d = circle.domain
             if let half = circle.length(from: d.lowerBound, to: d.lowerBound + .pi) {
                 #expect(abs(half - .pi * 7) < 1e-9)
+            } else {
+                Issue.record("length(from:to:) returned nil on a half circle")
             }
+        } else {
+            Issue.record("could not build the circle")
         }
     }
 
@@ -211,9 +264,17 @@ struct Issue477ArcLengthAccuracyTests {
         let span = d.upperBound - d.lowerBound
 
         // The old whole-domain quadrature evaluated the BSpline's polynomial extension outside
-        // its knots and returned a length many times the curve's own (2711 for a 56-unit curve).
-        // The composite integrator clamps to the domain, which is the safer reading of a caller
-        // that overshot.
+        // its knots and returned a length many times the curve's own. Still does, and patch
+        // `0021` did not change it: over `[f - s, l + s]` on this fixture
+        // `CPnts_AbscissaPoint::Length` returns 442165.86 against the curve's own 356.25, 1241x
+        // (`Scripts/repro/766-curve-arclength-accuracy/`, zigzag "unclamped CPnts"). This is the
+        // one comparison in the suite the pinned kernel still bears out.
+        //
+        // What clamps is `occtConfineToDomain` in `occtAdaptorLengthBetween`, before any
+        // integrator is called, which is the safer reading of a caller that overshot. The same
+        // transcript's "bridge (occtAdaptorLengthBetween, non-periodic arm)" line is this test's
+        // two assertions exactly: the overshot range confines to the domain length, and the range
+        // wholly past the end confines to nothing and measures 0.
         guard let whole = curve.length else {
             Issue.record("length returned nil on a valid interpolated BSpline")
             return

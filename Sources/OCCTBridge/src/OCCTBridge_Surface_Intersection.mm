@@ -228,6 +228,11 @@ struct GeomFillProfilerOpaque
 {
   GeomFill_Profiler profiler;
   bool              isDone;
+  // #2884: GeomFill_Profiler exposes no curve count, and two of the members the bridge calls
+  // index into mySequence with no live bound test. The bridge is the only caller of AddCurve, so
+  // it counts what it added. Kept in step across all seven copies of this struct by
+  // check-bridge-type-odr.py (#2820).
+  int curveCount;
 };
 
 // MARK: - GeomFill_LocationDraft (v0.79)

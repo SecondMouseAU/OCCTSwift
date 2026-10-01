@@ -21,6 +21,45 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### Six BRepCheck tests could not tell a wrong answer from a right one (#2904)
+
+`BRepCheckSubShapeTests`' four tests each asserted a single boolean, `isValid == true`, on a
+primitive box that is valid by construction, so a bridge that never ran
+`BRepCheck_Edge::Minimum()` and returned a hardcoded `true` passed all four. `minTolerance` and
+`avgTolerance` asserted only that one measurement bounds another, which is invariant under scaling
+min, avg and max by the same factor.
+
+Each sub-shape test now exercises both answers and pins the specific `BRepCheck_Status`: an edge
+whose `SameParameter`/`SameRange` pair has gone stale reports `.invalidSameParameterFlag`, a wire
+with no edge reports `.emptyWire`, a shell of two faces sharing no edge reports `.notConnected`.
+All four also pin the difference between a fault (`errorCount > 0`, a status) and an index that
+names no sub-shape of the type (`errorCount == 0`, no status), which reading `isValid` alone
+cannot see. `checkVertex(at:)` has no invalid answer, since `BRepCheck_Vertex::Minimum()` has no
+branch, so its test pins that invariant instead. The two tolerance tests are pinned to values and
+re-measured on a compound whose min, avg and max differ. Tests only; no API change.
+
+### `BRepGraph.translated` refuses `copyGeometry: false` with a non-zero translation (#2913)
+
+`BRepGraph.translated(dx:dy:dz:copyGeometry:)` with `copyGeometry: false` returned a graph with the
+source's placement and reported success. `copyGeometry: false` selects
+`BRepGraph_Copy::GeomPolicy::Share`, which is OCCT's *location-only* transform: it leaves every
+vertex, curve and surface where it was and composes the translation into the root `Product`'s
+occurrence location instead. No `BRepGraph` this package builds has a `Product` (all three creation
+sites pass `Options::CreateAutoProduct = false`, so `productCount` is always `0`), so the location
+landed nowhere and the translation was lost while `BRepGraph_Transform::Perform` still returned
+`true`. The combination now returns `nil`:
+
+```swift
+let graph = BRepGraph(shape: box)!
+graph.translated(dx: 10, dy: 0, dz: 0, copyGeometry: false)  // nil, was an untranslated graph
+graph.translated(dx: 10, dy: 0, dz: 0)                       // unchanged: translated by 10 along X
+graph.translated(dx: 0, dy: 0, dz: 0, copyGeometry: false)   // unchanged: a light copy, shares geometry
+```
+
+A zero translation is still accepted, since it asks for no placement and the light copy it produces
+is the answer. `copy(copyGeometry:)` and `copyFace(_:copyGeometry:)` are unaffected: no transform is
+involved, so sharing geometry is harmless there.
+
 ### `Scripts/merge-pr.py` no longer mis-extracts the CHANGELOG entry from a PR body (#2890)
 
 The merge tool's `extract_section` had two defects, both hit while merging on 2026-09-30. The block
