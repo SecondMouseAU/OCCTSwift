@@ -30,9 +30,11 @@ PR and strict; this one is per path and over a whole branch.
 sides, every `@Test` is tiered on each side with `census-766-weak-assertions.py`'s own detector
 (SEVERE, nothing pins a value; ESCAPABLE, a value is pinned behind a nil-skip; clean). A test is
 a **gain** when the head's tier is better than `main`'s, or when the head has a clean test
-`main` has not at all. That is exactly the quantity the programme exists to move: `main`'s 1,579
-SEVERE tests are what "`main`'s tests cannot fail" means, and a lift is worth its cost in
-proportion to how many of them it retires.
+`main` has not at all. That is exactly the quantity the programme exists to move: `main`'s SEVERE
+tests, 1,492 of 6,663 when `python3 Scripts/census-766-weak-assertions.py --summary` was last run
+on 2026-10-02, are what "`main`'s tests cannot fail" means, and a lift is worth its cost in
+proportion to how many of them it retires. Re-run that command rather than quoting this line: it
+said 1,579 for as long as it took the tree to move under it.
 
 Paths are ranked by gain count, so the top of the list is where the next batch should go.
 
