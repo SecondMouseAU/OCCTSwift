@@ -1,0 +1,85 @@
+# Tests that pass on Apple and fail on wasm32-unknown-wasip1, one per line, with the issue that
+# owns each. `Scripts/run-wasm-tests.sh` asserts the failure set is EXACTLY this list: a new failure
+# fails the run, and so does a test in this list that starts passing, because a line nobody removes
+# is how a fixed bug gets recorded as still broken.
+#
+# Format: <suite-or-test-name-as-swift-testing-prints-it>  # <issue>
+#
+# This is not a suppression list. Everything here is a measured cross-platform difference in shipped
+# behaviour, and each line is a claim that the difference is understood and tracked, not tolerated.
+#
+# The identifier is matched against the text Swift Testing prints after `✘ Test `, up to the first
+# ` recorded an issue` or ` failed after`. Quote-wrapped display names are matched with their quotes.
+
+# --- #2891: OCCT's inline argument validation does not raise on wasm ---------------------------
+# gp_Dir's zero-norm check is inline in gp_Dir.hxx and `No_Exception` is NOT defined when the bridge
+# compiles for wasm (both measured), so the check should fire on both platforms. It does not.
+# Measured with OCCTDiagnostics.capturing around one call, same inputs:
+#   Apple: records=2, "Standard_ConstructionError: gp_Dir() - input vector has zero norm",
+#          translated origin (5, 3, 2), the documented unmoved fallback.
+#   wasm:  records=0, no exception at all, translated origin (6, 5, 5) -- the degenerate axis was
+#          used as though it were valid.
+# Both header trees are byte-identical for gp_Dir.hxx and both are 7,160 files, so this is not a
+# header or macro difference. It is the exception path itself.
+"OCCTAx3Create: parallel direction/xDirection overwrites sentinel outputs, not left untouched"  # 2891
+"OCCTAx3MirrorPoint: degenerate input axis overwrites sentinel outputs with the input point unmoved"  # 2891
+"OCCTAx3Translate: degenerate input axis overwrites sentinel outputs with the input point unmoved"  # 2891
+createWithParallelDirectionAndXDirectionSignalsFailure()  # 2891
+mirrorPointWithDegenerateSourceFallsBackToUnmoved()  # 2891
+translateWithDegenerateSourceFallsBackToUnmoved()  # 2891
+
+# --- the kernel skew: wasm is one patch behind native (#2827, #2873) --------------------------
+# These are NOT a wasm defect. `Scripts/wasm-kernel-pin.txt` acknowledges in prose that the
+# `v4.0.0-kernel.3` repin pinned patch `0043` (the by-plane `BRepGProp_Vinert` mass) on native
+# without taking the 69-minute wasm rebuild, so native carries 31 carried patches and wasm 30, and
+# `Face.volumeInertia(planeNormal:planeDistance:)` still returns the fabricated 0.0 here.
+#
+# Until #2793 that acknowledgement was a sentence in a text file. These four lines are the same claim
+# with a test behind it, which is the point: the next wasm kernel rebuild makes them pass, and the
+# runner then fails until they are deleted from this list.
+"a planar face's by-plane volume is its projected area times its centroid distance (#2827)"  # kernel skew
+"the by-plane column runs to the plane the caller named, not its mirror (#2873)"  # kernel skew
+"the by-plane first moments sum to the solid's (#2827)"  # kernel skew
+"the by-plane per-face sum is the volume, for any plane (#2827)"  # kernel skew
+
+# --- exact-equality baselines do not survive a different libm --------------------------------
+# `Issue791ConvertCircleHelperTests` (Geom2d, 2 tests) and `Issue791ConvertSphereHelperTests`
+# (Surface, 2 tests) each compare a computed pole against a hardcoded baseline with `==`,
+# not a tolerance. The wasm build links WASILibc's math functions and the Apple build links Darwin's,
+# and IEEE 754 does not pin the results of transcendentals to the last bit, so `sin`/`cos` on the two
+# platforms legitimately differ in the final places and an exact comparison cannot hold across both.
+#
+# Nothing is wrong with the geometry here and nothing is wrong with the port. The tests are wrong to
+# use `==` on a value derived through trigonometry, and the fix is a tolerance, which is a change to
+# an Apple-platform test and so belongs in its own PR rather than this one. Listed rather than
+# excluded because they are real failures a reader should see.
+fullCircleOriginMatchesPriorBaseline()  # exact-equality baseline vs a different libm
+offsetArcMatchesPriorBaseline()  # exact-equality baseline vs a different libm
+unitOriginMatchesPriorBaseline()  # exact-equality baseline vs a different libm
+offsetTiltedMatchesPriorBaseline()  # exact-equality baseline vs a different libm
+
+# --- #2926: a live parameter goes inert on wasm -----------------------------------------------
+# `nlPlateDeformedG3(constraints:tolerance:)` run at 1e-1 and at 1e-3 returns surfaces that differ by
+# exactly 0.0 here, so the tolerance has no effect. It does on Apple, which is what #999 was filed to
+# prove: these parameters were once declared and dropped by the bridge, and these tests exist to keep
+# them live. Three readings are open and the issue names the test for each: the value not reaching
+# OCCT, the solver terminating on an iteration limit either way (a different libm changes the
+# arithmetic, so the iteration counts need not match Apple's), or an exception inside the solver being
+# swallowed differently (#2894). Only the first and third would make it a defect.
+#
+# Listed and not excluded, because it is a wrong answer rather than a trap: the suite reports it and
+# carries on, which is what this list is for.
+"Varying the tolerance changes the G3 result"  # 2926
+
+# --- #2929: BRepCheck does not fault a cleared SameParameter flag ------------------------------
+# `BRepLibExtendedTests."Same parameter all"` clears edge 0's SameParameter flag on a box and expects
+# BRepCheck to fault it. On Apple it does; here the box still reads valid, so the assertion that
+# fails is the one proving the fixture is genuinely broken rather than the one testing the subject.
+# Without that assertion the test would pass VACUOUSLY on wasm, which is the blind-test shape #2904
+# was filed to remove: the test is doing its job and the kernel behaviour underneath differs.
+#
+# Two causes are open and the issue names the single measurement that separates them: the flag write
+# not taking effect, or BRepCheck_Analyzer not faulting the flag/geometry mismatch. The second would
+# make every flag-based validity verdict on wasm suspect, and `Shape.isValid` is on the path every
+# IGES export takes through `Exporter.validateExportInputs`, so it wants a sweep rather than a fix.
+"Same parameter all"  # 2929

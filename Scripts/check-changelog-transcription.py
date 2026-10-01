@@ -199,18 +199,40 @@ def declares_none(entry):
     return bool(prose) and bool(DECLARED_NONE.search(prose))
 
 
+# Keep a Changelog's six category headings. `### Fixed` identifies nothing, so an entry opening
+# with one matched any file that held the words anywhere, and this check called nine genuinely
+# missing entries "transcribed late" for as long as they were missing (#2951). `merge-pr.py`
+# carries the same six words; see the note beside its copy for why they are not shared.
+CATEGORY_HEADINGS = ("added", "changed", "deprecated", "fixed", "removed", "security")
+CATEGORY_HEADING_RE = re.compile(r"^#{2,6}\s+([A-Za-z]+)\s*:?\s*$")
+
+
+def is_category_heading(line):
+    """Whether `line` is a bare category heading, which identifies no particular entry."""
+    m = CATEGORY_HEADING_RE.match(line.strip())
+    return bool(m) and m.group(1).lower() in CATEGORY_HEADINGS
+
+
 def entry_is_present(entry, changelog_text):
     """Is this PR-body entry actually in the CHANGELOG, however it got there?
 
     Matches on the entry's own first substantive line, which is its `### ...` heading for the usual
     shape and its first `- ` bullet otherwise. Comparing whole blocks would fail on any reflow, and
     reflow during transcription is normal and harmless.
+
+    **A bare `### Fixed` is skipped rather than matched** (#2951). It names no entry, so a file
+    holding those six words anywhere answered yes for every such PR: nine entries lost on
+    2026-09-30 and 2026-10-01 were reported here as "transcribed late, nothing to do" for the
+    whole time they were absent, which is the same blindness that lost them in `merge-pr.py`. The
+    next substantive line, which is the first bullet, is what identifies the entry in that shape.
     """
     if not entry:
         return False
     prose = re.sub(r"<!--.*?-->", "", entry, flags=re.S)
     for line in prose.split("\n"):
         t = line.strip()
+        if t.startswith("###") and is_category_heading(t):
+            continue
         if t.startswith("###") or t.startswith("- "):
             if t in changelog_text:
                 return True
@@ -478,6 +500,13 @@ def _verify_cases():
         # The same shape with nothing distinctive before the em-dash. Still reported, because a
         # short prefix would match an unrelated entry and turn the relaxation into a rubber stamp.
         "20": "## CHANGELOG entry\n\n### Pass 10 \u2014 a heading that is all em-dash clause (#20)\n",
+        # #2951. The shape of all nine entries lost on 2026-09-30 and 2026-10-01: a bare Keep a
+        # Changelog category heading over a bullet list. This one IS in the file, matched on its
+        # bullet rather than on the six words that identify nothing.
+        "21": "## CHANGELOG entry\n\n### Fixed\n\n- A category-headed entry that did land (#21).\n",
+        # ...and this one is NOT, over a `### Fixed` the file does hold. Before #2951 the heading
+        # alone matched and this read as "transcribed late, nothing to do", nine times over.
+        "22": "## CHANGELOG entry\n\n### Fixed\n\n- A category-headed entry that never landed (#22).\n",
     }
     changelog = ("# Changelog\n\n## Unreleased\n\n"
                  "### Widget rotation is no longer inverted (#10)\n\nBody.\n\n"
@@ -485,7 +514,8 @@ def _verify_cases():
                  "A prose entry with no heading and no bullet, long enough to be distinctive (#15).\n\n"
                  "### A real entry sitting under None-shaped boilerplate (#17)\n\n"
                  "### Pass 9: a duplication audit of some breadth (#19)\n\n"
-                 "### Pass 10, a heading that is all em-dash clause (#20)\n")
+                 "### Pass 10, a heading that is all em-dash clause (#20)\n\n"
+                 "### Fixed\n\n- A category-headed entry that did land (#21).\n")
     rows = [
         ("aaa1111", "Merge pull request #10 from x/late"),
         ("bbb2222", "Merge pull request #11 from x/missing"),
@@ -500,6 +530,8 @@ def _verify_cases():
         ("kkk1234", "Merge pull request #18 from x/none-as-heading"),
         ("lll5555", "Merge pull request #19 from x/em-dash-repunctuated"),
         ("mmm6666", "Merge pull request #20 from x/em-dash-only-heading"),
+        ("nnn7777", "Merge pull request #21 from x/category-heading-present"),
+        ("ooo8888", "Merge pull request #22 from x/category-heading-missing"),
     ]
     b = classify_untranscribed(rows, changelog, lookup=lambda n: bodies.get(str(n)))
     late = {s for s, _, _ in b["late"]}
@@ -508,8 +540,12 @@ def _verify_cases():
     unknown = {s for s, _, _ in b["unknown"]}
     dnone = {s for s, _, _ in b["declared_none"]}
     return [
-        ("#788: an entry present in the CHANGELOG classifies as transcribed late", late == {"aaa1111", "ddd4444", "hhh8888", "jjj0000", "lll5555"}),
-        ("#788: an entry in the PR body but not the file classifies as MISSING", missing == {"bbb2222", "iii9999", "mmm6666"}),
+        ("#788: an entry present in the CHANGELOG classifies as transcribed late", late == {"aaa1111", "ddd4444", "hhh8888", "jjj0000", "lll5555", "nnn7777"}),
+        ("#788: an entry in the PR body but not the file classifies as MISSING", missing == {"bbb2222", "iii9999", "mmm6666", "ooo8888"}),
+        ("#2951: an entry opening with a bare category heading is matched on its bullet, not on "
+         "the six words that identify nothing", "nnn7777" in late),
+        ("#2951: a category-headed entry that never landed is MISSING, over a `### Fixed` the "
+         "file does hold", "ooo8888" in missing),
         ("#1125: a heading repunctuated to drop a banned em-dash is still found", "lll5555" in late),
         ("#1125: a heading with nothing distinctive before the em-dash is still MISSING",
          "mmm6666" in missing),

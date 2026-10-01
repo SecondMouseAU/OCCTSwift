@@ -38,11 +38,11 @@ imitating the style by hand produces something that looks formatted and is not.
 
 **The clang-format version is pinned** in `Scripts/clang-format-version.txt`, read by CI, by the
 script, and through the script by the hook. clang-format's output changes between major versions:
-21.1.8 and 22.1.8 were measured to disagree on 10 of the 33 enforced bridge files, so an unpinned
-`brew install clang-format` can turn a green `main` red on a Homebrew bump with no code change. CI
-installs exactly the pinned version from PyPI (a ~2 MB wheel, byte-identical output to the Homebrew
-bottle of the same version) and asserts it; the script refuses a different major locally rather than
-letting you produce a diff CI will reject. OCCT's own CI pins for the same reason.
+21.1.8 and 22.1.8 were measured to disagree on 10 of the bridge files enforced that day, so an
+unpinned `brew install clang-format` can turn a green `main` red on a Homebrew bump with no code
+change. CI installs exactly the pinned version from PyPI (a ~2 MB wheel, byte-identical output to
+the Homebrew bottle of the same version) and asserts it; the script refuses a different major
+locally rather than letting you produce a diff CI will reject. OCCT's own CI pins for the same reason.
 `Scripts/install-clang-format.py` installs the pinned binary using nothing but the Python standard
 library, for images with no working pip or venv;
 [`docs/guides/clang-format-setup.md`](../../docs/guides/clang-format-setup.md) covers every route
@@ -103,10 +103,13 @@ work nobody has touched. Instead:
 - The manifest only shrinks. A new file is never grandfathered onto it; new code complies from
   creation, checked by the same `swift-format`/`clang-format`/SwiftLint steps running unconditionally
   against anything not already listed.
-- **The bridge half is finished.** `Scripts/style-manifest-bridge.txt` is empty: all 33
+- **The bridge half is finished.** `Scripts/style-manifest-bridge.txt` is empty: all 93
   `Sources/OCCTBridge` files are enforced. Nothing is grandfathered there any more, which is what
   made a local fix command and a pre-commit check worth adding rather than optional convenience.
   `Scripts/style-manifest-swift.txt` is empty too, so `Sources/OCCTSwift` is finished as well.
+  That 93 is the live population, derived from the tree by `check-inventory-prose.py` and held to
+  this sentence on every PR; `CLAUDE.md` used to carry a second copy of it, said 33 for as long as
+  the #1378/#1380 split had been in the tree, and no longer states it at all (#2910, #2954).
 
 Why: the ecosystem-wide proposal and evidence (comment:code ratios, a live doc-drift bug found in
 `docs/reference/CurveAdaptors.md`) live in
@@ -153,10 +156,18 @@ finished, and 418 new entries would have muddled that. The 272 left on seeding d
 diagnostics being `BeginDocumentationCommentWithOneLineSummary`.
 
 That 272 is a frozen measurement of 2026-09-30 and is deliberately written as one, because the
-manifest drains: every PR that touches a listed file fixes it and deletes its line. The live count
-is therefore stated in exactly one place, `CLAUDE.md`'s swift-format section, where
-`check-inventory-prose.py` derives it from the manifest and fails the PR that lets the two
-disagree (#2910). Do not restate it anywhere else; a second copy is a second thing to go stale.
+manifest drains: every PR that touches a listed file fixes it and deletes its line.
+
+**The live count is written down nowhere, and that is the decision rather than an omission**
+(#2954). It was stated in `CLAUDE.md` with `check-inventory-prose.py` deriving it from the
+manifest, which worked exactly as designed and was the problem: the claim is shared by every open
+PR and invalidated by every merged one, so on 2026-10-02 it moved 267 to 262 in a day and took
+three unrelated PRs red at merge time, one of them into a three-way conflict in which all three
+sides held a different number and none was right. Moving the sentence to another file would move
+the conflict with it, since what collides is the number and not its address. So there is no
+sentence: `python3 Scripts/check-inventory-prose.py` prints the figure on a clean run, and
+`grep -cvE '^[[:space:]]*(#|$)' Scripts/style-manifest-swift-wave2.txt` derives it in one command.
+Do not write it into prose anywhere; the manifest is the record, and its length is a `grep` away.
 
 Ecosystem standard: see
 [OKF-STANDARD.md](https://github.com/SecondMouseAU/ecosystem/blob/main/OKF-STANDARD.md).
