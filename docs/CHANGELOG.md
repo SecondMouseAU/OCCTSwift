@@ -21,6 +21,39 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### `EdgeAnalysis` verdicts say which way round they are, and `SAWireAnalysis` carries its precondition (#2901, #2906)
+
+`EdgeAnalysis.checkSameParameter` and `EdgeAnalysis.checkVertexTolerance` returned a `Bool` labelled
+`ok` whose `true` means a problem was found, so the obvious `if !r.ok { repair() }` repaired every
+healthy edge and skipped every broken one. The elements are now `problemFound` and `needsIncrease`,
+which is source-breaking for a caller destructuring by label:
+
+```swift
+let result = EdgeAnalysis.checkSameParameter(edge)
+if result.problemFound { print("deviation \(result.maxDeviation)") }   // was result.ok, inverted
+```
+
+OCCT's own header states the reverse of what the class does for `CheckSameParameter` ("If deviation
+is greater than tolerance of the edge ... returns False, else returns True"), while
+`ShapeAnalysis_Edge.cxx` ends in `return Status(ShapeExtend_DONE)` and the shape_healing guide's
+call site enters its repair branch on `true`. Measured in `Scripts/repro/2901/`: a pristine box edge
+answers `false` with zero deviation, an edge whose pcurve sits `1.0` from its 3D curve answers `true`
+with `maxDeviation == 1.00001`, and a geometrically clean edge whose `SameParameter` flag is `false`
+answers `true` with `maxDeviation == 0`, which is the second, independent trigger. The other five
+members of the family were swept: `checkCurve3dWithPCurve` was silent about its polarity and now
+states it, and `checkPCurveRange` is the one member whose `true` is the good answer, which its
+documentation now says and a test now pins.
+
+`SAWireAnalysis` carries `ShapeAnalysis_Wire`'s ordering precondition, which it had no way to
+express. On a pristine `Shape.box(width: 10, height: 10, depth: 10)` face's own wire, `checkOrder`
+answers `true` and four later checks then report problems with gaps of `14.142135623730951`, which
+is `10 * sqrt(2)`, the face's diagonal rather than any gap in it. OCCT's own caller treats
+`CheckOrder()` as a stop condition and returns. `Scripts/repro/2906/` measures that
+`WireFixer.fixReorder()`, which already wrapped `ShapeFix_Wire::FixReorder`, clears all of it: every
+check answers `false` and every distance is `0`. The precondition is documented on the enum, on each
+member it applies to and on `fixReorder()`; no new API was needed, and the combined entry point the
+issue floated is declined as a composite that belongs downstream.
+
 ### Six BRepCheck tests could not tell a wrong answer from a right one (#2904)
 
 `BRepCheckSubShapeTests`' four tests each asserted a single boolean, `isValid == true`, on a

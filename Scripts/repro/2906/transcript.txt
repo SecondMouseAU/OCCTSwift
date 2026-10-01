@@ -1,0 +1,47 @@
+# Scripts/repro/2906/probe.mm, run 2026-10-01 against the pinned v4.0.0-kernel.3 xcframework
+#
+#   clang++ -std=c++17 -ObjC++ -w \
+#     -I<OCCT.xcframework>/macos-arm64/Headers \
+#     -L<OCCT.xcframework>/macos-arm64 \
+#     -lOCCT-macos -framework Foundation -framework AppKit -lz -lc++ \
+#     Scripts/repro/2906/probe.mm -o /tmp/occt_probe_2906
+#
+# Verdict: ShapeFix_Wire::FixReorder, already wrapped as WireFixer.fixReorder(), satisfies the
+# precondition. Every reported problem and all four diagonal distances go to clean/0 after it,
+# so the 14.142135623730951 values are an artefact of the ordering, not a defect in the face.
+
+BEFORE: the box face's own first wire, as explored
+  NbEdges              = 4
+  CheckOrder           -> true
+  CheckConnected       -> false
+  CheckSmall           -> false
+  CheckDegenerated     -> false
+  CheckClosed          -> false
+  CheckGaps3d          -> true
+  CheckGaps2d          -> true
+  CheckEdgeCurves      -> true
+  CheckLacking         -> false
+  CheckSelfIntersection-> false
+  MinDistance3d        = 14.142135623730951
+  MaxDistance3d        = 14.142135623730951
+  MinDistance2d        = 14.142135623730951
+  MaxDistance2d        = 14.142135623730951
+
+ShapeFix_Wire::FixReorder() -> true
+
+AFTER: the same wire, reordered by ShapeFix_Wire::FixReorder
+  NbEdges              = 4
+  CheckOrder           -> false
+  CheckConnected       -> false
+  CheckSmall           -> false
+  CheckDegenerated     -> false
+  CheckClosed          -> false
+  CheckGaps3d          -> false
+  CheckGaps2d          -> false
+  CheckEdgeCurves      -> false
+  CheckLacking         -> false
+  CheckSelfIntersection-> false
+  MinDistance3d        = 0
+  MaxDistance3d        = 0
+  MinDistance2d        = 0
+  MaxDistance2d        = 0

@@ -14,7 +14,17 @@ public final class WireFixer: @unchecked Sendable {
 
     deinit { OCCTWireFixerRelease(ref) }
 
-    /// Fix the order of edges.
+    /// Fix the order of edges, putting them into connection order.
+    ///
+    /// This is how ``SAWireAnalysis``'s ordering precondition is satisfied: every member of that
+    /// type other than `checkOrder` compares each edge against the next one *in sequence*, so an
+    /// out-of-order wire gives correct answers to the wrong question. Measured in
+    /// `Scripts/repro/2906/`, on a face of `Shape.box(width:height:depth:)` whose own wire is out
+    /// of order: before this call the analyzer reports four problems with all four gap distances
+    /// at `10 * sqrt(2)`, the face's diagonal; after it, every check answers `false` and every
+    /// distance is `0`. Read the reordered wire back from ``wire`` (#2906).
+    ///
+    /// - Returns: `true` if the wire was modified.
     @discardableResult public func fixReorder() -> Bool { OCCTWireFixerFixReorder(ref) }
 
     /// Fix connectivity of edges.
