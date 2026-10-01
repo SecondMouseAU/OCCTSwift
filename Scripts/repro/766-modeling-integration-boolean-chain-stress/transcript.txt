@@ -1,0 +1,6 @@
+start: volume=1000000
+after 5: valid=1 volume=997393.6049
+after 10: valid=1 volume=994790.1094
+after 15: valid=1 volume=992186.6139
+after 20: valid=1 volume=989586.0182
+final: failures=0 valid=1 volume=989586.0182 removed=10413.98185 (20 disjoint spheres would remove 10471.97551)
