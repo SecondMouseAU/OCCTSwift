@@ -104,7 +104,10 @@ mistake the rest of this page is about.
 
 ### The xcframework
 
-`Scripts/patches/` holds thirty-two patches. The v4.0.0-kernel.3 asset `Package.swift` pins lacks one of them,
+`Scripts/patches/` holds thirty-two patches, of which the pinned asset carries thirty-one. **These
+are the counts `CLAUDE.md` used to restate and no longer does** (#2954); both are derived from
+`Scripts/patches/` and `Package.swift` by `check-inventory-prose.py`, which fails the PR that lets
+this page and the tree disagree. The v4.0.0-kernel.3 asset `Package.swift` pins lacks one of them,
 per [Pinned kernel patch check](../policies/pinned-kernel-patch-check.md):
 
 | Unpinned | What it leaves exposed |

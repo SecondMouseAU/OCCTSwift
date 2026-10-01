@@ -8,9 +8,20 @@ timestamp: 2026-09-07
 
 # Static gates and censuses
 
-The command list, and the sentence stating how many of each kind there are, live in `CLAUDE.md`'s
-"Static Gate Scripts" section; `Scripts/repro/819-gate-coverage-audit/gate_coverage.py` parses
-that sentence against `ci.yml` and fails if they disagree. This page is the rules behind the list.
+The command list lives in `CLAUDE.md`'s "Static Gate Scripts" section. **The counts live here**,
+because `CLAUDE.md` states no counted claim about the repo's own inventories any more (#2954): a
+number in the working summary is a copy whose only update path is somebody noticing, and this one
+was wrong twice before a gate was put on it. This page is the rules behind the list, and the place
+every number about the list is written down.
+
+## How many there are
+
+Sixteen gates, seven censuses and one merge-history audit run in `ci.yml`'s `gate-scripts` job,
+beside the release check that "The fourth kind" below counts apart from them. Every one of those
+numbers is derived from the job rather than kept by hand:
+`Scripts/check-inventory-prose.py` reads this sentence against `ci.yml` on every PR and fails when
+the two disagree, and `Scripts/repro/819-gate-coverage-audit/gate_coverage.py --check` reads the
+same sentence from the other direction, reporting the release check beside it.
 
 ## Gates versus censuses
 
