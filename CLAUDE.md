@@ -525,6 +525,12 @@ the reproducer). What a bridge author needs without opening it:
   Call `occtValidMeshDeflection` (`OCCTBridge_Internal.h`) before **any** new
   `BRepMesh_IncrementalMesh`; it is the same bound spelled `>=`. A small deflection is expensive,
   not invalid, and is not refused: the floor value itself finishes in 92 s.
+  **The angular deflection beside it has the same hole and a different symptom** (#2900):
+  `Angle < Precision::Angular()` at `:99`, NaN walks past, and the result is not a hang but the
+  coarsest mesh the linear rule alone accepts, returned with `IsDone()` true (18 nodes for a
+  cylinder where a valid angle gives 54 to 254). Call `occtValidMeshAngle` at the three sites that
+  take a caller angle. `AngleInterior` and `Prs3d_Drawer::DeviationAngle()` need no guard, both
+  measured.
 - `GeomAbs_G2` is never a valid order for `BRepFill_Filling`: curvature continuity is
   `GeomAbs_C1` (ordinal 2), whatever `BRepOffsetAPI_MakeFilling.hxx` says. Test any filling change
   on both a planar and a periodic support surface, since #430 was catchable on one and an

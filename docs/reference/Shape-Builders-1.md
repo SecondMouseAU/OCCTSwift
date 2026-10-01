@@ -1248,16 +1248,34 @@ public static func shellFromPlane(
 
 ### `computeNormals()`
 
-Compute normals on the triangulation of all faces in this shape.
+Compute node normals on the triangulation of every face in this shape, in place.
 
 ```swift
-public func computeNormals() -> Bool
+@discardableResult
+public func computeNormals() -> Int?
 ```
 
-The shape must be meshed first.
+The shape must be meshed first. The call is an idempotent *ensure*, not a recomputation: OCCT
+returns immediately from a face whose triangulation already carries normals, so a second call does
+nothing and reports `0`.
 
-- **Returns:** `true` if normals were computed successfully.
+`mesh(linearDeflection:angularDeflection:)` already makes this call on every face it walks
+(#2337), so on a shape meshed that way the answer is `0`. The paths that leave work for it are the
+ones that triangulate without normals: `CoherentTriangulation.createFromMesh`, a `.brep` or STEP
+import carrying its own triangulation, or writing the shape to STL.
+
+- **Returns:** the number of faces whose triangulation gained normals in this call, or `nil` if
+  the shape is empty or OCCT threw. `0` is a success, not a failure. Before v4.0.0 this returned
+  `Bool`, and the `Bool` was `true` whenever any face carried a triangulation, which after #2337
+  made it unconditionally `true` for any shape a caller could reach it on (#2905).
 - **OCCT:** `BRepLib_ToolTriangulatedShape::ComputeNormals` via `OCCTBRepLibComputeNormals`.
+- **Example:**
+  ```swift
+  let box = Shape.box(width: 10, height: 10, depth: 10)!
+  _ = CoherentTriangulation.createFromMesh(box, deflection: 0.1)
+  print(box.computeNormals() ?? -1)  // 6
+  print(box.computeNormals() ?? -1)  // 0, nothing left to do
+  ```
 
 ---
 
