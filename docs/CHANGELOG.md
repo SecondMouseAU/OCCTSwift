@@ -21,6 +21,31 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### Counted claims leave CLAUDE.md for the pages that own them (#2954)
+
+`CLAUDE.md` stated eleven counted claims about the repo's own inventories, each gated by
+`check-inventory-prose.py`. The gate worked and the claims were still expensive: a count in the
+working summary is shared by every open PR and invalidated by every merged one. The swift-format
+wave2 manifest row made that concrete on 2026-10-02, moving 267 to 262 in a day and taking three
+unrelated PRs red at merge time, after review and CI had passed, one into a three-way conflict in
+which all three sides held a different number and none was right.
+
+All eleven move, with the gate following each to its new home: the patch counts to
+`okf/references/carried-occt-patches.md`, the gate, census and merge-history-audit counts to a new
+"How many there are" in `okf/policies/static-gates.md`, the enforced bridge population to
+`okf/policies/code-style.md`, which had said 33 against a tree of 93, and the bridge header and
+implementation counts to no new place at all, because `README.md` and
+`docs/architecture/overview.md` already state and gate them.
+
+The wave2 manifest's size is the one count not preserved. Rehoming it would have rehomed the
+conflict, since what collides is the number rather than its address, so its size is now stated
+nowhere: `check-inventory-prose.py` prints it on a clean run and a one-line `grep` derives it. A
+self-test case asserts that no claim states it, so writing it down again fails loudly.
+
+A sweep of the remaining numbers in `CLAUDE.md` found twenty more derived counts no gate reads.
+Five are fixed here, including the per-domain bridge bucket breakdown and the pinned-asset
+evidence tally; the other fifteen are filed as #2959.
+
 ### `Exporter.writeDXF` and `Exporter.writeSVG` work on WebAssembly, and 5,501 tests now run there (#2793)
 
 Both exporters wrote with `atomically: true`, which cannot be used on `wasm32-unknown-wasip1`: the call throws `NSCocoaErrorDomain Code=3328 "The requested operation is not supported."` there, so every DXF and SVG export failed. Measured: the same call with `atomically: false` succeeds. Both now write directly on that platform and keep atomicity everywhere else, which is what stops a crash mid-write leaving a half-written file a reader will open. Which operation underneath is unsupported was not established: the atomic path writes a temporary file and renames it, so the rename is the obvious candidate, but nothing here rules out the temp-file creation, and the fix does not depend on knowing. No behaviour changes on any Apple platform.
