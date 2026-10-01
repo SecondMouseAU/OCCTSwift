@@ -32,10 +32,10 @@ emits, and a line with no content left after those. Nothing numeric in the measu
 
 reproduce.json: WHAT THE CAPTURE DID, DECLARED NEXT TO THE PROBE
 ----------------------------------------------------------------
-Thirteen of 344 transcripts did not reproduce and **none of the thirteen was a kernel divergence**
+Thirteen transcripts did not reproduce and **none of the thirteen was a kernel divergence**
 (PR #2823). Each was a way in which "transcript.txt is one run of probe.mm from its own directory with
 no arguments" was not true of the capture, so each is declared in an optional `reproduce.json`
-beside the probe rather than normalised away for all 344. Every key takes a required `reason`, and
+beside the probe rather than normalised away for every pair. Every key takes a required `reason`, and
 a key whose pattern matches nothing is DECL-UNUSED rather than ignored.
 
 **Each key takes one of two shapes, and which one is decided by its consumer**: `cwd`, `argv` and
@@ -90,7 +90,8 @@ links. `--require-pinned-asset` refuses to report at all unless identity is prov
 
 NOT A GATE, AND NOT FOR `gate-scripts`
 --------------------------------------
-It reads a 1.3 GB xcframework that CI does not check out and compiles 344 translation units, which
+It reads a 1.3 GB xcframework that CI does not check out and compiles one translation unit per pair
+(160 of them over 120 directories, derived by the run and printed in its banner), which
 is the release-check shape `okf/policies/static-gates.md` describes: a question about something the
 repo points at rather than something it contains. `--require-asset` makes a run that examined
 nothing exit 2 instead of reporting clean (#2098's mode). It exits 1 when any probe fails to
@@ -225,7 +226,7 @@ DECL_KEYS = PATTERN_KEYS + REGEX_KEYS + VALUE_KEYS
 def load_declaration(d: str, decl_file: str = DECL_FILE):
     """(declaration, errors) for the pair in `d` whose declaration is `decl_file`.
 
-    An absent declaration is `{}`, which is the normal case: all but five of the pairs reproduce
+    An absent declaration is `{}`, which is the normal case: the large majority of pairs reproduce
     with no declaration at all and must keep doing so. A declaration that names an unknown key, or
     an allowance with no reason, is an error rather than a silently ignored line, because a typo in
     a suppression file is indistinguishable from a suppression that works.
