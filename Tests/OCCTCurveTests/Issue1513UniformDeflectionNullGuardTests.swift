@@ -4,7 +4,9 @@ import simd
 
 @testable import OCCTSwift
 
-/// #1513: `occtCPntsUniformDeflectionImpl` (`OCCTBridge_Curve3D_ArcLength.mm`, backing
+/// Regression cover for #1513, the CPnts uniform-deflection null-shape guard.
+///
+/// `occtCPntsUniformDeflectionImpl` (`OCCTBridge_Curve3D_ArcLength.mm`, backing
 /// `OCCTCPntsUniformDeflection`/`Range`) only guarded the wrapper pointer (`if (!shape) return
 /// false;`), never `occtShapeIsPresent(shape)` -- so `TopoDS::Edge(shape->shape)` handed a
 /// null-wrapping `OCCTShapeRef` a null `TopoDS_Shape`, and the immediately following
@@ -47,6 +49,10 @@ struct Issue1513UniformDeflectionNullGuardTests {
         for edgeShape in cyl.subShapes(ofType: .edge) {
             if let result = edgeShape.uniformDeflection(0.1), result.points.count > 4 {
                 #expect(result.parameters.count == result.points.count)
+                // #766: CPnts_UniformDeflection at 0.1 on a radius-10 circle edge gives 24
+                // points (Scripts/repro/766-curve-issue1476-1513-1675); "more than 4" held for
+                // any deflection up to about 2.
+                #expect(result.points.count == 24, "points \(result.points.count)")
                 found = true
                 break
             }
