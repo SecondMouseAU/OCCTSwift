@@ -15,6 +15,20 @@ carried patches the tree held. Nothing re-derived that map when a patch changed 
 described a kernel we had stopped shipping for two pins. The re-derivation needs the tree; the
 stamp does not, which is what lets this gate hold it against ``Scripts/patches/`` on every PR.
 
+#2910 widened it past the kernel. ``CLAUDE.md`` is the working summary of how this repo works, and
+three more of its counted claims about the repo's own shape had no derivation at all: the
+swift-format exemption manifest, the bridge file counts and the test-target list. The manifest is
+the sharpest case, because it is the one inventory designed to drain: #2852's rule is that a PR
+touching an exempt file brings it into compliance and deletes its line, so that number falls on its
+own and the prose was stale within days of being written. The bridge counts are the opposite shape
+and failed the same way: "All 33 bridge files are enforced" described the tree before the
+#1378/#1380 split multiplied it to 93, and no edit was needed to make the sentence wrong.
+
+**Correct today with nothing keeping it so is the finding, not just wrong today.** The sweep that
+filed these measured five claims and found three wrong and two right, and both of the right ones
+are registered here anyway: which is which was not knowable from reading the file, and that is the
+property the gate restores.
+
 The recurrence is the argument for a gate rather than another proofread: ci.yml called the job's
 scripts "five" while running thirteen (#1066), the pinned-patch count went stale at
 v2.0.0-kernel.1 through .3, at #1032 and at #1157/#1402, and one carried-patch row key was written
@@ -173,6 +187,72 @@ def hook_invocations(text=None):
     return len(re.findall(r'^run "[^"]+"\s+Scripts/[A-Za-z0-9_.-]+\.py', text, re.MULTILINE))
 
 
+def style_manifest_entries(rel):
+    """The files listed on a shrink-only style exemption manifest, parsed as its own gate parses it.
+
+    #2910. ``Scripts/style-manifest-swift-wave2.txt`` is the one inventory in this repo designed to
+    drain continuously: #2852's rule is that a PR touching an exempt file brings it into compliance
+    and deletes its line, so the count falls with nearly every such PR. ``CLAUDE.md`` stated that
+    count in prose and nothing read it, which made it the claim most certain to go stale and the
+    only one that would do so silently every time the rule worked as intended.
+
+    The line test is `Scripts/check-style-manifest.py`'s `read_manifest_at`, character for
+    character: non-blank and not starting with `#`. Two readers of one file that disagreed about
+    what an entry is would produce two defensible counts for the same manifest, which is the shape
+    of drift this gate exists to end rather than to introduce.
+    """
+    return [line.strip() for line in read(rel).splitlines()
+            if line.strip() and not line.strip().startswith("#")]
+
+
+def bridge_source_files(*suffixes):
+    """Every file under Sources/OCCTBridge/ with one of `suffixes`, recursively.
+
+    #2910. Three counted claims in CLAUDE.md's bridge paragraphs are derivable from this tree and
+    none of them was derived: the enforced clang-format population, the per-domain header set and
+    the Objective-C++ implementation count. Two of the three were wrong when the sweep measured
+    them, both because the bridge split (#1378, #1380) multiplied the file count and the prose that
+    described the old layout stayed.
+    """
+    found = []
+    for root, _dirs, names in os.walk(os.path.join(REPO, "Sources", "OCCTBridge")):
+        for name in names:
+            if name.endswith(suffixes):
+                found.append(os.path.relpath(os.path.join(root, name), REPO))
+    return sorted(found)
+
+
+def bridge_enforced_files():
+    r"""The population `Scripts/format-bridge.sh` clang-formats: the bridge tree minus its manifest.
+
+    Mirrors that script's `enforced_files()`, which is `comm -23` of `find Sources/OCCTBridge
+    \( -name '*.h' -o -name '*.mm' \)` against `Scripts/style-manifest-bridge.txt`. The manifest
+    is empty today, so the two numbers coincide; deriving the subtraction anyway means the prose
+    stays true if a file is ever exempted, which is the whole reason the manifest exists.
+    """
+    exempt = set(style_manifest_entries("Scripts/style-manifest-bridge.txt"))
+    return [f for f in bridge_source_files(".h", ".mm") if f not in exempt]
+
+
+def bridge_domain_headers():
+    """The per-domain headers in Sources/OCCTBridge/include/, excluding the OCCTBridge.h umbrella.
+
+    #395 split one header into an umbrella plus one per domain, and CLAUDE.md has stated the split
+    as "N files: OCCTBridge.h umbrella + M per-domain headers" ever since. Both halves are derived
+    here so the sentence cannot describe a different number of domains from the directory.
+    """
+    include = os.path.join("Sources", "OCCTBridge", "include")
+    return sorted(f for f in bridge_source_files(".h")
+                  if os.path.dirname(f) == include
+                  and os.path.basename(f) != "OCCTBridge.h")
+
+
+def test_target_names(text=None):
+    """Every `.testTarget(name:)` declared in Package.swift, in declaration order."""
+    text = read("Package.swift") if text is None else text
+    return re.findall(r"\.testTarget\(\s*name:\s*\"([^\"]+)\"", text)
+
+
 def classify(text=None):
     """The gate/census/audit/release-check split, derived from the job, not a hand-kept list.
 
@@ -240,6 +320,19 @@ def facts():
         # scripts, because that is what the sentence counts.
         "job_invocations": gate_job_invocations(),
         "hook_invocations": hook_invocations(),
+        # #2910: the inventory built to drain. Every PR that touches an exempt Swift file deletes
+        # its line, so this number falls on its own and the prose that stated it was stale within
+        # days of being written.
+        "swift_wave2_exempt": len(
+            style_manifest_entries("Scripts/style-manifest-swift-wave2.txt")),
+        # #2910: the three bridge-tree counts CLAUDE.md states and nothing read. Unlike the
+        # manifest these grow, and two of the three were already wrong when the sweep measured
+        # them, left behind by the #1378/#1380 split.
+        "bridge_enforced_files": len(bridge_enforced_files()),
+        "bridge_domain_headers": len(bridge_domain_headers()),
+        "bridge_include_headers": len(bridge_domain_headers()) + 1,
+        "bridge_impl_files": len(bridge_source_files(".mm")),
+        "test_targets": len(test_target_names()),
     }
 
 
@@ -305,6 +398,27 @@ CLAIMS = [
      r"pre-commit` runs ([A-Za-z-]+) of `gate-scripts`'", "hook_invocations"),
     ("okf/policies/static-gates.md",
      r"of `gate-scripts`' ([A-Za-z-]+) invocations", "job_invocations"),
+    # #2910. The swift-format exemption manifest, the one inventory designed to shrink with every
+    # PR that touches a listed file, stated in CLAUDE.md with nothing reading it. It said 272 while
+    # the manifest held 269 and had been drifting since the day it was written.
+    ("CLAUDE.md",
+     r"what the widening reached, (\S+) files still listed", "swift_wave2_exempt"),
+    # #2910, the bridge tree. "All N bridge files are enforced" said 33 against a tree of 93, and
+    # the architecture block said 16 headers and one .mm per domain against 18 and 74. Both
+    # predate the #1378/#1380 split, which is how a sentence goes stale without anybody editing it.
+    #
+    # The neighbouring "21.1.8 and 22.1.8 disagree on 10 of the files" is deliberately NOT here and
+    # lost its denominator instead. It is a measurement somebody took on the tree of the day, not a
+    # count of an inventory, so re-deriving its denominator would restate a comparison nobody ran
+    # across 93 files. A frozen measurement has to read as frozen; this gate's subject is the
+    # claims that describe the tree as it is now.
+    ("CLAUDE.md", r"All (\S+) bridge files are\s*\n?enforced", "bridge_enforced_files"),
+    ("CLAUDE.md",
+     r"C function declarations \((\S+) files: OCCTBridge\.h umbrella", "bridge_include_headers"),
+    ("CLAUDE.md",
+     r"OCCTBridge\.h umbrella \+ (\S+) per-domain headers", "bridge_domain_headers"),
+    ("CLAUDE.md", r"^Sources/OCCTBridge/src/\s+(\S+) Objective-C\+\+ implementations",
+     "bridge_impl_files"),
 ]
 
 
@@ -706,10 +820,45 @@ def check_release_checks():
     return problems
 
 
+def check_test_target_list(claude=None, package=None):
+    """CLAUDE.md's Test Layout list names exactly the test targets Package.swift declares.
+
+    #2910. The list is not a count, so the CLAIMS table cannot hold it, and it is the same species
+    of claim: a written inventory of the repository with nothing deriving it. It is stated as bare
+    domain names ("`Analysis`, `Curve`, ...") because the surrounding prose has already said each
+    one is `Tests/OCCT<Domain>Tests/`, so the comparison strips that affix off Package.swift's
+    target names rather than asking the prose to spell them out.
+
+    A target added without a line here reads to the next author as a target that does not exist,
+    which is the failure that matters: "If nothing fits, use `OCCTMiscTests`" sends work to the
+    wrong module when the right one is missing from the list.
+    """
+    claude = read("CLAUDE.md") if claude is None else claude
+    declared = [re.fullmatch(r"OCCT(.+)Tests", name) for name in test_target_names(package)]
+    expected = {m.group(1) for m in declared if m}
+    match = re.search(
+        r"Each is `Tests/OCCT<Domain>Tests/`, declared in `Package\.swift`:\s*\n+(.+?)\.\s*\n",
+        claude, re.DOTALL)
+    if not match:
+        return ["CLAUDE.md: the Test Layout target list no longer matches the sentence this gate "
+                "reads it by, so nothing is checking it. Update the regex in "
+                "Scripts/check-inventory-prose.py alongside the rewording (#2910)."]
+    listed = set(re.findall(r"`([A-Za-z0-9]+)`", match.group(1)))
+    problems = []
+    for name in sorted(expected - listed):
+        problems.append("CLAUDE.md: Test Layout omits `%s`, declared in Package.swift as "
+                        "OCCT%sTests" % (name, name))
+    for name in sorted(listed - expected):
+        problems.append("CLAUDE.md: Test Layout names `%s`, which Package.swift declares no "
+                        "OCCT%sTests target for" % (name, name))
+    return problems
+
+
 def run():
     problems = (check_claims() + check_patch_rows() + check_carried_sequence()
                 + check_tsan_suppressions() + check_patch_naming() + check_wasi_patch_rows()
-                + check_release_checks() + check_raise_map_provenance())
+                + check_release_checks() + check_raise_map_provenance()
+                + check_test_target_list())
     if problems:
         print("check-inventory-prose: %d problem(s)\n" % len(problems))
         for problem in problems:
@@ -728,6 +877,13 @@ def run():
           "%d scripts total"
           % (values["gate_scripts"], values["census_scripts"], values["audit_scripts"],
              values["release_check_scripts"], values["job_scripts"]))
+    print("  swift-format exemptions: %d still listed on style-manifest-swift-wave2.txt"
+          % values["swift_wave2_exempt"])
+    print("  bridge: %d enforced files, %d headers (umbrella + %d per-domain), "
+          "%d Objective-C++ implementations"
+          % (values["bridge_enforced_files"], values["bridge_include_headers"],
+             values["bridge_domain_headers"], values["bridge_impl_files"]))
+    print("  test targets: %d, each named in CLAUDE.md's Test Layout" % values["test_targets"])
     print("  %d claims checked across %d files"
           % (len(CLAIMS), len({c[0] for c in CLAIMS})))
     return 0
@@ -745,7 +901,8 @@ def self_test():
     # 1. The real repo is clean, which is what the gate asserts in CI.
     problems = (check_claims() + check_patch_rows() + check_carried_sequence()
                 + check_tsan_suppressions() + check_patch_naming() + check_wasi_patch_rows()
-                + check_release_checks() + check_raise_map_provenance())
+                + check_release_checks() + check_raise_map_provenance()
+                + check_test_target_list())
     case("live-tree-clean", not problems, "; ".join(problems[:2]))
 
     # 2. A stated count that disagrees with the derived one is caught.
@@ -1091,6 +1248,76 @@ def self_test():
     case("patch-number-reads-nnnn-and-rejects-the-rest",
          patch_number("0010-Intf-319") == 10 and patch_number("wasi-osd-environment") is None
          and patch_number("001-too-short") is None)
+
+    # 13. #2910: the manifest reader, the bridge-tree readers and the test-target list.
+    #
+    #     The manifest parse is held to `check-style-manifest.py`'s, because the count is only
+    #     meaningful if both readers agree what an entry is: a comment line or a blank counted as
+    #     an entry would make the prose and the shrink rule describe different inventories.
+    manifest_sample = (
+        "# a header comment\n"
+        "#\n"
+        "Tests/A.swift\n"
+        "\n"
+        "   Tests/B.swift   \n"
+        "   # an indented comment\n")
+    saved_read_13 = read
+    try:
+        globals()["read"] = lambda rel: manifest_sample
+        entries = style_manifest_entries("whatever")
+    finally:
+        globals()["read"] = saved_read_13
+    case("manifest-reader-counts-entries-not-comments-or-blanks",
+         entries == ["Tests/A.swift", "Tests/B.swift"], str(entries))
+
+    values_manifest = dict(values)
+    values_manifest["swift_wave2_exempt"] -= 1
+    case("wave2-manifest-count-mismatch-detected",
+         any("swift_wave2_exempt" in problem for problem in check_claims(values_manifest)))
+
+    #     The view check for the same claim. A mistyped manifest path would read as an empty file
+    #     and derive zero, and a prose number of zero would then be "correct" forever. The live
+    #     manifest is the only thing that can say the reader found it.
+    case("wave2-manifest-is-read-from-the-real-file",
+         values["swift_wave2_exempt"] > 0,
+         "entries=%d" % values["swift_wave2_exempt"])
+
+    for fact in ("bridge_enforced_files", "bridge_domain_headers", "bridge_include_headers",
+                 "bridge_impl_files"):
+        bumped_bridge = dict(values)
+        bumped_bridge[fact] += 1
+        case("%s-mismatch-detected" % fact.replace("_", "-"),
+             any(fact in problem for problem in check_claims(bumped_bridge)))
+
+    #     The bridge walk reaches both directories, which is what the stale prose got wrong: the
+    #     implementations live in src/ and the declarations in include/, and a walk that found one
+    #     and not the other would still produce two plausible numbers.
+    case("bridge-walk-reaches-src-and-include",
+         values["bridge_impl_files"] > 1 and values["bridge_domain_headers"] > 1
+         and values["bridge_enforced_files"]
+         >= values["bridge_impl_files"] + values["bridge_include_headers"],
+         "impl=%d headers=%d enforced=%d" % (values["bridge_impl_files"],
+                                             values["bridge_include_headers"],
+                                             values["bridge_enforced_files"]))
+
+    #     The test-target list, which is an inventory rather than a count and so cannot live in
+    #     CLAIMS. Both directions: a target Package.swift declares and the list omits, and a name
+    #     the list carries that no target answers to.
+    listed_claude = ("Each is `Tests/OCCT<Domain>Tests/`, declared in `Package.swift`:\n\n"
+                     "`Analysis`, `Curve`, `Ghost`.\n")
+    two_targets = ('.testTarget(\n    name: "OCCTAnalysisTests"),\n'
+                   '.testTarget(\n    name: "OCCTCurveTests"),\n'
+                   '.testTarget(\n    name: "OCCTMeshTests"),\n')
+    drift = check_test_target_list(listed_claude, two_targets)
+    case("test-target-omitted-from-the-list-detected",
+         any("omits `Mesh`" in problem for problem in drift), "; ".join(drift))
+    case("test-target-named-with-no-target-detected",
+         any("names `Ghost`" in problem for problem in drift), "; ".join(drift))
+    case("test-target-list-reworded-away-detected",
+         any("no longer matches the sentence" in problem
+             for problem in check_test_target_list("nothing here", two_targets)))
+    case("test-target-list-clean-on-the-live-tree", not check_test_target_list(),
+         "; ".join(check_test_target_list()[:2]))
 
     failed = [c for c in cases if not c[1]]
     for name, ok, detail in cases:
