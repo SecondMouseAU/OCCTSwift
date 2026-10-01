@@ -51,12 +51,18 @@ struct Issue1675DocSnippetArcTests {
     @Test("The second arc used by the extrema snippets is constructible too")
     func secondArcConstructs() throws {
         // Curve3D-Analysis.md's extrema examples pair the canonical arc with a radius-3 arc
-        // centred at (10,0,0) and, in the extremaCC example, at (20,0,0).
-        _ = try #require(
-            Curve3D.arcOfCircle(
-                start: SIMD3(13, 0, 0), interior: SIMD3(10, 3, 0), end: SIMD3(7, 0, 0)))
-        _ = try #require(
-            Curve3D.arcOfCircle(
-                start: SIMD3(23, 0, 0), interior: SIMD3(20, 3, 0), end: SIMD3(17, 0, 0)))
+        // centred at (10,0,0) and, in the extremaCC example, at (20,0,0). #766: constructing them
+        // was all this checked; the centre and radius the snippets describe are now measured too
+        // (GC_MakeArcOfCircle gives the same, Scripts/repro/766-curve-issue1476-1513-1675).
+        for cx in [10.0, 20.0] {
+            let arc = try #require(
+                Curve3D.arcOfCircle(
+                    start: SIMD3(cx + 3, 0, 0), interior: SIMD3(cx, 3, 0), end: SIMD3(cx - 3, 0, 0)))
+            let u = arc.domain.lowerBound
+            let c = try #require(arc.centerOfCurvature(at: u))
+            #expect(abs(c.x - cx) < 1e-9 && abs(c.y) < 1e-9 && abs(c.z) < 1e-9, "centre \(c)")
+            let k = try #require(arc.curvature(at: u))
+            #expect(abs(k - 1.0 / 3.0) < 1e-9, "curvature \(k)")
+        }
     }
 }

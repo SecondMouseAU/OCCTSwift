@@ -47,6 +47,10 @@ struct Issue1513UniformDeflectionNullGuardTests {
         for edgeShape in cyl.subShapes(ofType: .edge) {
             if let result = edgeShape.uniformDeflection(0.1), result.points.count > 4 {
                 #expect(result.parameters.count == result.points.count)
+                // #766: CPnts_UniformDeflection at 0.1 on a radius-10 circle edge gives 24
+                // points (Scripts/repro/766-curve-issue1476-1513-1675); "more than 4" held for
+                // any deflection up to about 2.
+                #expect(result.points.count == 24, "points \(result.points.count)")
                 found = true
                 break
             }
