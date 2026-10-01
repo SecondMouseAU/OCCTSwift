@@ -1,0 +1,62 @@
+pointToCircle: query (10, 0, 0) IsDone=1 NbExt=2 min distance=5
+  [0] u=0 distance=5 point=(5, 0, 0)
+  [1] u=3.1415926535897931 distance=15 point=(-5, 6.1232339957367663e-16, 0)
+pointToLine (bounded 0..100): query (5, 3, 0) IsDone=1 NbExt=3 min distance=3
+  [0] u=5 distance=3 point=(5, 0, 0)
+  [1] u=0 distance=5.8309518948453007 point=(0, 0, 0)
+  [2] u=100 distance=95.047356617635614 point=(100, 0, 0)
+minimumDistanceConvenience: query (10, 0, 0) IsDone=1 NbExt=2 min distance=5
+  [0] u=0 distance=5 point=(5, 0, 0)
+  [1] u=3.1415926535897931 distance=15 point=(-5, 6.1232339957367663e-16, 0)
+pointToCircleOppositeStart: query (-10, 0, 0) IsDone=1 NbExt=2 min distance=1.2246467991473533e-15
+  [0] u=3.1415926535897931 distance=1.2246467991473533e-15 point=(-10, 1.2246467991473533e-15, 0)
+  [1] u=6.2831853071795862 distance=20 point=(10, -2.4492935982947065e-15, 0)
+pointToHelix: query (0, 0, 0) IsDone=1 NbExt=1 min distance=5
+  [0] u=0 distance=5 point=(5, 0, 0)
+segmentQueriedPastItsEnd: query (20, 0, 0) IsDone=1 NbExt=2 min distance=10
+  [0] u=10 distance=10 point=(10, 0, 0)
+  [1] u=0 distance=20 point=(0, 0, 0)
+segmentQueriedPastItsStart: query (-4, 3, 0) IsDone=1 NbExt=2 min distance=5
+  [0] u=0 distance=5 point=(0, 0, 0)
+  [1] u=10 distance=14.317821063276353 point=(10, 0, 0)
+interiorFootStillWinsAndIsStillReported: query (5, 3, 0) IsDone=1 NbExt=3 min distance=3
+  [0] u=5 distance=3 point=(5, 0, 0)
+  [1] u=0 distance=5.8309518948453007 point=(0, 0, 0)
+  [2] u=10 distance=5.8309518948453007 point=(10, 0, 0)
+arcEndBeatsTheInteriorMaximum: query (0, -6, 0) IsDone=1 NbExt=3 min distance=7.810249675906654
+  [0] u=1.5707963267948966 distance=11 point=(4.2875889837930912e-17, 5, 0)
+  [1] u=0 distance=7.810249675906654 point=(5, 0, 0)
+  [2] u=3.1415926535897931 distance=7.8102496759066549 point=(-5, 7.9229338608356059e-16, 0)
+fullCircleIsUnchanged: query (0, 10, 0) IsDone=1 NbExt=2 min distance=5
+  [0] u=1.5707963267948966 distance=5 point=(3.0616169978683831e-16, 5, 0)
+  [1] u=4.7123889803846897 distance=15 point=(-9.1848509936051479e-16, -5, 0)
+unboundedLineIsUnchanged: query (20, 3, 0) IsDone=1 NbExt=1 min distance=3
+  [0] u=20 distance=3 point=(20, 0, 0)
+boundedOverloadReportsItsOwnBounds [0,10]: query (20, 0, 0) IsDone=1 NbExt=2 min distance=10
+  [0] u=10 distance=10 point=(10, 0, 0)
+  [1] u=0 distance=20 point=(0, 0, 0)
+boundedOverloadReportsItsOwnBounds [0,4]: query (20, 0, 0) IsDone=1 NbExt=2 min distance=16
+  [0] u=4 distance=16 point=(4, 0, 0)
+  [1] u=0 distance=20 point=(0, 0, 0)
+bezierQueriedPastItsEnd: query (30, 0, 0) IsDone=1 NbExt=2 min distance=20
+  [0] u=1 distance=20 point=(10, 0, 0)
+  [1] u=0 distance=30 point=(0, 0, 0)
+bsplineQueriedPastItsEnd: query (30, 0, 0) IsDone=1 NbExt=2 min distance=20
+  [0] u=14 distance=20 point=(10, 0, 0)
+  [1] u=0 distance=30 point=(0, 0, 0)
+minimumDistanceAgreesWithTheExtremaArray: query (20, 0, 0) IsDone=1 NbExt=2 min distance=10
+  [0] u=10 distance=10 point=(10, 0, 0)
+  [1] u=0 distance=20 point=(0, 0, 0)
+minimumDistanceAgreesWithTheExtremaArray: query (-4, 3, 0) IsDone=1 NbExt=2 min distance=5
+  [0] u=0 distance=5 point=(0, 0, 0)
+  [1] u=10 distance=14.317821063276353 point=(10, 0, 0)
+minimumDistanceAgreesWithTheExtremaArray: query (5, 3, 0) IsDone=1 NbExt=3 min distance=3
+  [0] u=5 distance=3 point=(5, 0, 0)
+  [1] u=0 distance=5.8309518948453007 point=(0, 0, 0)
+  [2] u=10 distance=5.8309518948453007 point=(10, 0, 0)
+minimumDistanceAgreesWithTheExtremaArray: query (0, 0, 0) IsDone=1 NbExt=2 min distance=0
+  [0] u=0 distance=0 point=(0, 0, 0)
+  [1] u=10 distance=10 point=(10, 0, 0)
+minimumDistanceAgreesWithTheExtremaArray: query (10, 7, 2) IsDone=1 NbExt=2 min distance=7.2801098892805181
+  [0] u=10 distance=7.2801098892805181 point=(10, 0, 0)
+  [1] u=0 distance=12.369316876852981 point=(0, 0, 0)
