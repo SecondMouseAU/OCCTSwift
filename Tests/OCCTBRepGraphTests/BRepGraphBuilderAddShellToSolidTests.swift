@@ -16,8 +16,9 @@ struct BRepGraphBuilderAddShellToSolidTests {
         let shellIdx = try #require(graph.addShell())
         #expect(solidIdx == 1)
         #expect(shellIdx == 1)
-        let refIdx = try #require(graph.addShellToSolid(
-            solidIndex: solidIdx, shellIndex: shellIdx, orientation: 0))
+        let refIdx = try #require(
+            graph.addShellToSolid(
+                solidIndex: solidIdx, shellIndex: shellIdx, orientation: 0))
         #expect(refIdx == 1)
     }
 }

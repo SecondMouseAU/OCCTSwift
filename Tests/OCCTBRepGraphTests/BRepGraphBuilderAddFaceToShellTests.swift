@@ -14,8 +14,9 @@ struct BRepGraphBuilderAddFaceToShellTests {
         let graph = try #require(BRepGraph(shape: box))
         let shellIdx = try #require(graph.addShell())
         #expect(shellIdx == 1)
-        let refIdx = try #require(graph.addFaceToShell(
-            shellIndex: shellIdx, faceIndex: 0, orientation: 0))
+        let refIdx = try #require(
+            graph.addFaceToShell(
+                shellIndex: shellIdx, faceIndex: 0, orientation: 0))
         #expect(refIdx == 6)
     }
 }
