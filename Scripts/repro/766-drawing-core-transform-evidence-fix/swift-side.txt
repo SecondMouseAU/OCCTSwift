@@ -1,0 +1,8 @@
+# Swift-side values the #2415 DrawingTests and DrawingTransformUnificationTests observe, printed by a temporary print-only test
+# (Tests/OCCTDrawingTests/ZZEvidenceDump2.swift, never committed) that replays each test's scene.
+# One EV|key|value line per quantity.
+EV|core.iso.visible|edges=9 min=[-7.071067911865477, -8.164965909277262] max=[7.071067911865476, 8.16496590927726]
+EV|core.iso.hidden|edges=3 min=[-7.071067911865477, -4.082483004638631] max=[7.071067911865476, 8.16496590927726]
+EV|core.top.bounds|min=[-5.0, -5.0] max=[5.0, 5.0]
+EV|core.top.sinkExtent|min=[90.0, 190.0] max=[110.0, 210.0]
+EV|core.top.sinkPoints|16
