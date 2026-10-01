@@ -1,0 +1,7 @@
+linePlaneIntersection: done=1 parallel=0 inQuadric=0 nbPoints=1 point1=(0, 0, 0) param=5
+parallelLineAndPlane: done=1 parallel=1 inQuadric=0 nbPoints raised Standard_Failure: '' (bridge count stays 0)
+embeddedLineLiesInPlane: done=1 parallel=1 inQuadric=1 nbPoints raised Standard_Failure: '' (bridge count stays 0)
+planePlane: done=1 nbSolutions=1 typeInter=1 line1 origin=(0, 0, 0) direction=(-1, 0, 0)
+cylinderSphere: done=1 identical=0 nbCurve=2
+threePlanesAtOrigin: done=1 empty=0 point=(0, 0, 0)
+offsetPlanes: done=1 empty=0 point=(1, 2, 3)

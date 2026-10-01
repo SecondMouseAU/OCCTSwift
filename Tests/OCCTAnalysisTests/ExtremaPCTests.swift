@@ -47,7 +47,7 @@ struct ExtremaPCTests {
         // its query point's true closest point happens to sit at parameter 0, which is
         // the one point the [0,0] domain can ever "find". This probes a query point
         // diametrically opposite the u=0 point instead. With the bug, the search finds
-        // only the u=0 point -- here the FARTHEST point (distance 20) -- and reports it
+        // only the u=0 point, here the FARTHEST point (distance 20), and reports it
         // as the (and only) result, so `results.min(by: distance)` silently returns 20
         // instead of the true closest distance of 0. Ground-truth verified directly
         // against the pinned kernel (ExtremaPC_Curve's two Geom_Curve constructors).
@@ -65,16 +65,17 @@ struct ExtremaPCTests {
         }
     }
 
-    @Test func pointToHelix() {
-        guard let helix = Curve3D.circularHelix(radius: 5.0, pitch: 10.0) else { return }
-        // Point at center of helix, all points on helix are equidistant at radius 5
-        // (in the XY plane). This is an infinite solutions case but the API may
-        // return some extrema or handle it gracefully.
+    /// The query point is the origin, on the helix axis at the height of its start.
+    ///
+    /// The nearest
+    /// point is the start, (5, 0, 0), at exactly the radius. `ExtremaPC_Curve` reports that one
+    /// extremum (`Scripts/repro/766-extremapc/`). The old `if let d { d >= 4.9 }` passed a nil
+    /// and any distance above 4.9.
+    @Test func pointToHelix() throws {
+        let helix = try #require(Curve3D.circularHelix(radius: 5.0, pitch: 10.0))
         let d = helix.minimumDistance(from: SIMD3(0, 0, 0))
-        // Minimum distance should be at least close to the radius
-        if let d = d {
-            #expect(d >= 4.9)
-        }
+        #expect(d != nil)
+        if let d { #expect(abs(d - 5.0) < 1e-9) }
     }
 }
 
@@ -90,6 +91,7 @@ struct ExtremaPCTests {
 struct Issue1633PointCurveEndpoints {
 
     /// The exact case #1633 names: a segment `[0, 10]` along +X queried from `(20, 0, 0)`.
+    ///
     /// The true minimum is 10, at the end. `Perform` reports `NbExt() == 0`.
     @Test func segmentQueriedPastItsEnd() {
         guard let seg = Curve3D.segment(from: SIMD3(0, 0, 0), to: SIMD3(10, 0, 0)) else {
@@ -127,7 +129,9 @@ struct Issue1633PointCurveEndpoints {
         if let d { #expect(abs(d - 5.0) < 1e-9) }
     }
 
-    /// A query point that DOES have a perpendicular foot keeps that foot as the minimum. The two
+    /// A query point that DOES have a perpendicular foot keeps that foot as the minimum.
+    ///
+    /// The two
     /// ends join the array (3 results, not 1) but neither of them wins.
     @Test func interiorFootStillWinsAndIsStillReported() {
         guard let seg = Curve3D.segment(from: SIMD3(0, 0, 0), to: SIMD3(10, 0, 0)) else {
@@ -185,6 +189,7 @@ struct Issue1633PointCurveEndpoints {
     }
 
     /// A closed curve has no ends to add, so its answer is byte-for-byte the one `Perform` gave.
+    ///
     /// This is the control: the fix must not invent extrema where the domain has no boundary.
     @Test func fullCircleIsUnchanged() {
         guard let circ = Curve3D.circle(center: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5)
@@ -205,7 +210,9 @@ struct Issue1633PointCurveEndpoints {
         }
     }
 
-    /// An unbounded curve has no ends either. A line queried from `(20, 3, 0)` answers 3 whether
+    /// An unbounded curve has no ends either.
+    ///
+    /// A line queried from `(20, 3, 0)` answers 3 whether
     /// or not the endpoints are consulted.
     @Test func unboundedLineIsUnchanged() {
         guard let line = Curve3D.line(through: SIMD3(0, 0, 0), direction: SIMD3(1, 0, 0)) else {
@@ -220,7 +227,9 @@ struct Issue1633PointCurveEndpoints {
         }
     }
 
-    /// The bounded overload's own `uMin`/`uMax` are the ends that get reported. An infinite line
+    /// The bounded overload's own `uMin`/`uMax` are the ends that get reported.
+    ///
+    /// An infinite line
     /// restricted to `[0, 10]` and queried from `(20, 0, 0)` answers 10, the same as the trimmed
     /// segment above.
     @Test func boundedOverloadReportsItsOwnBounds() {
@@ -244,7 +253,9 @@ struct Issue1633PointCurveEndpoints {
         }
     }
 
-    /// The numeric evaluators, where `Perform` did not merely report zero extrema: it reported
+    /// The numeric evaluators, where `Perform` did not merely report zero extrema.
+    ///
+    /// It reported
     /// `IsDone() == false` on a past-the-end query, and `PerformWithEndpoints` reports the end.
     /// A Bezier over poles ending at `(10, 0, 0)`, queried from `(30, 0, 0)`, answers 20.
     @Test func bezierQueriedPastItsEnd() {

@@ -4,42 +4,63 @@ import simd
 
 @testable import OCCTSwift
 
+/// Every figure below is `Intf_Tool::LinBox` on the pinned kernel.
+///
+/// Measured in
+/// `Scripts/repro/766-inttools-intf-integration/`. The box is (0, 0, 0) to (10, 10, 10) throughout,
+/// and a segment's parameters are distances along the line from its origin, since the direction
+/// is a unit vector.
+///
+/// ``IntfTool/beginParam(segment:)`` and ``IntfTool/endParam(segment:)`` answer `Double?` since
+/// #2857, so each is required rather than bound with `if let`: a `nil` from a segment the clip
+/// reported is a defect, not a reason to skip the assertion.
 @Suite("Intf_Tool v0.112")
 struct IntfToolTests {
 
-    @Test func clipLineToBox() {
+    /// A line along Z through the box's (0, 0) corner edge enters at z = 0 and leaves at z = 10,
+    /// 10 and 20 along from its origin at z = -10.
+    @Test func clipLineToBox() throws {
         let tool = IntfTool()
         let nSeg = tool.clipLineToBox(
             lineOrigin: SIMD3(0, 0, -10),
             lineDirection: SIMD3(0, 0, 1),
             boxMin: SIMD3(0, 0, 0),
             boxMax: SIMD3(10, 10, 10))
-        // Line along Z should intersect the box
-        #expect(nSeg >= 0)
+        #expect(nSeg == 1)
+        let begin = try #require(tool.beginParam(segment: 1))
+        let end = try #require(tool.endParam(segment: 1))
+        #expect(abs(begin - 10) < 1e-9)
+        #expect(abs(end - 20) < 1e-9)
     }
 
-    @Test func segmentParameters() {
+    @Test func segmentParameters() throws {
         let tool = IntfTool()
         let nSeg = tool.clipLineToBox(
             lineOrigin: SIMD3(5, 5, -10),
             lineDirection: SIMD3(0, 0, 1),
             boxMin: SIMD3(0, 0, 0),
             boxMax: SIMD3(10, 10, 10))
-        if nSeg > 0, let begin = tool.beginParam(segment: 1),
-            let end = tool.endParam(segment: 1)
-        {
-            #expect(end > begin)
-        }
+        #expect(nSeg == 1)
+        let begin = try #require(tool.beginParam(segment: 1))
+        let end = try #require(tool.endParam(segment: 1))
+        #expect(abs(begin - 10) < 1e-9)
+        #expect(abs(end - 20) < 1e-9)
     }
 
-    @Test func lineParallelToFace() {
+    /// A line that starts inside the box runs both ways from its origin: the segment is centred on
+    /// parameter 0.
+    @Test func lineParallelToFace() throws {
         let tool = IntfTool()
         let nSeg = tool.clipLineToBox(
             lineOrigin: SIMD3(5, 5, 5),
             lineDirection: SIMD3(1, 0, 0),
             boxMin: SIMD3(0, 0, 0),
             boxMax: SIMD3(10, 10, 10))
-        #expect(nSeg >= 0)
+        #expect(nSeg == 1)
+        let begin = try #require(tool.beginParam(segment: 1))
+        let end = try #require(tool.endParam(segment: 1))
+        #expect(abs(begin + 5) < 1e-9)
+        #expect(abs(end - 5) < 1e-9)
     }
 
     @Test func lineMissesBox() {
@@ -49,21 +70,24 @@ struct IntfToolTests {
             lineDirection: SIMD3(0, 1, 0),
             boxMin: SIMD3(0, 0, 0),
             boxMax: SIMD3(10, 10, 10))
-        #expect(nSeg >= 0)  // should not crash
+        #expect(nSeg == 0)
+        // No segment exists, so neither parameter does either (#2857's guard).
+        #expect(tool.beginParam(segment: 1) == nil)
+        #expect(tool.endParam(segment: 1) == nil)
     }
 
-    @Test func lineThroughCenter() {
+    @Test func lineThroughCenter() throws {
         let tool = IntfTool()
         let nSeg = tool.clipLineToBox(
             lineOrigin: SIMD3(5, 5, -100),
             lineDirection: SIMD3(0, 0, 1),
             boxMin: SIMD3(0, 0, 0),
             boxMax: SIMD3(10, 10, 10))
-        if nSeg > 0, let begin = tool.beginParam(segment: 1),
-            let end = tool.endParam(segment: 1)
-        {
-            // Should represent the Z range through the box
-            #expect(begin < end)
-        }
+        // The Z range through the box, 100 and 110 along from z = -100.
+        #expect(nSeg == 1)
+        let begin = try #require(tool.beginParam(segment: 1))
+        let end = try #require(tool.endParam(segment: 1))
+        #expect(abs(begin - 100) < 1e-9)
+        #expect(abs(end - 110) < 1e-9)
     }
 }

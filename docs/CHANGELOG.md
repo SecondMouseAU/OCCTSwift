@@ -55,6 +55,25 @@ a yield count and its findings are a list, both correct at 6,663 and 3,901. It d
 shape of defect in `helpers_in`, which costs it 11 findings and 6 SEVERE, filed as #2964.
 
 ### Tests
+
+- Lifted the Analysis intersection and distance test work off `v5.0.0-766-execution` (#2669, #2670,
+  #2680, #2681, #2683, #2684): thirty-two tests across seventeen files in `OCCTAnalysisTests` now
+  pin the value the pinned kernel reports rather than a count, a sign or a nil-skip, and seven
+  ground-truth probes with their transcripts cross with them. Measured over those files,
+  `census-766-weak-assertions.py` falls from 13 SEVERE and 29 ESCAPABLE to 1 and 19.
+  `Contap_ContAna`'s sphere and cylinder contours, `GeomAPI_ExtremaCurveCurve`/`ExtremaCurveSurface`
+  distances, `Extrema_ExtElC` circle-circle and line-ellipse square distances, `IntAna`'s
+  line/plane, plane/plane, quadric and three-plane results, `IntCS` points,
+  `IntCurvesFace_ShapeIntersector` hits, `IntTools_BeanFaceIntersector` ranges,
+  `IntTools_FaceFace` curves and tangency, `IntTools_Tools::IntermediatePoint` and `ComputeIntRange`,
+  `Intf_Tool::LinBox` segments and `ExtremaPC_Curve`'s minimum are each pinned to a measured figure.
+
+### Fixed
+
+- `CLAUDE.md`'s swift-format exemption count, which said 269 where the manifest held 267
+  (`check-inventory-prose.py`).
+
+### Tests
 - Lifted the Stress test work from `v5.0.0-766-execution` by content rather than by PR: 109 test
   functions across `StressExhaustiveAPITests`, `StressBoundaryConditionTests` and
   `StressNullInvalidTests` now pin what the kernel answers instead of reading a result and

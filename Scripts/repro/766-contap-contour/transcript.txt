@@ -1,0 +1,7 @@
+sphereContourDir r=10 dir=(0,0,1): done=1 nb=1 circle centre=(0, 0, 0) radius=10
+cylinderContourDir r=5 dir=(1,0,0): done=1 nb=2 line1 loc=(0, 5, 0) dir=(0, 0, 1) line2 loc=(0, -5, 0) dir=(0, 0, 1)
+cylinderContourDirBothLines r=5 dir=normalize(2,1,0.5): done=1 nb=2 line1 loc=(-2.2360679774997898, 4.4721359549995796, 0) dir=(0, 0, 1) line2 loc=(2.2360679774997898, -4.4721359549995796, 0) dir=(0, 0, 1)
+sphereContourEye r=10 eye=(100,0,0): done=1 nb=1 circle centre=(1, 0, 0) radius=9.9498743710661994
+contourOnCylinder face 0 type=1: done=1 empty=0 lines=2 [line 1 type=0 nbPnts=-1] [line 2 type=0 nbPnts=-1]
+contourOnCylinder face 1 type=0: done=1 empty=0 lines=1 [line 1 type=3 nbPnts=-1]
+contourOnCylinder face 2 type=0: done=1 empty=0 lines=1 [line 1 type=3 nbPnts=-1]
