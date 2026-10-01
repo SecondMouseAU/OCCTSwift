@@ -1,0 +1,6 @@
+start: volume=999999.99999999988
+after 5: valid=1 volume=997393.60485972639
+after 10: valid=1 volume=994790.10939855792
+after 15: valid=1 volume=992186.61392791662
+after 20: valid=1 volume=989586.01815442857
+final: failures=0 allValid=1 volume=989586.01815442857

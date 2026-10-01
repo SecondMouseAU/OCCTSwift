@@ -1,0 +1,5 @@
+createCellsBuilder: produced=1
+addRemoveAll after AddAllToResult(0): null=0 valid=1 solids=2 volume=15999.999999999996
+addRemoveAll after RemoveAllFromResult: null=0 valid=1 solids=0 volume=0
+removeInternalBoundaries before: null=0 valid=1 solids=2 volume=15999.999999999996
+removeInternalBoundaries after: null=0 valid=1 solids=1 volume=15999.999999999996

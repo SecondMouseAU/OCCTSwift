@@ -1,0 +1,18 @@
+curveCurveDistance: IsDone=1 IsParallel=0 NbExt=1
+  [1] sq=25 p1=(0, 0, 0) p2=(0, 5, 0)
+parallelCurves: IsDone=1 IsParallel=1 SquareDistance(1)=9
+pointToLine: IsDone=1 NbExt=1
+  [1] sq=25 point=(0, 0, 0)
+pointToParabola: IsDone=1 NbExt=1
+  [1] sq=34.41825388339705 point=(3.52859630587839, 5.3130754226744346, 0)
+pointToCylinder: IsDone=1 NbExt=2
+  [1] sq=225 point=(5, 0, 0)
+  [2] sq=625 point=(-5, 6.1232339957367663e-16, 0)
+pointToSphere: IsDone=1 NbExt=2
+  [1] sq=225 point=(5, 0, 0)
+  [2] sq=625 point=(-5, 6.1232339957367663e-16, 0)
+pointToTorus: IsDone=1 NbExt=4
+  [1] sq=49 point=(13, 0, 0)
+  [2] sq=169 point=(7, 0, 0)
+  [3] sq=1089 point=(-13, 0, 0)
+  [4] sq=729 point=(-7, 0, 0)

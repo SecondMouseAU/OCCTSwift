@@ -6,44 +6,40 @@ import simd
 @Suite("BOPAlgo_Tools Tests")
 struct BOPAlgoToolsTests {
     @Test("EdgesToWires from rectangle edges")
-    func edgesToWires() {
-        let e1 = Shape.edgeFromPoints(SIMD3(0, 0, 0), SIMD3(10, 0, 0))
-        let e2 = Shape.edgeFromPoints(SIMD3(10, 0, 0), SIMD3(10, 10, 0))
-        let e3 = Shape.edgeFromPoints(SIMD3(10, 10, 0), SIMD3(0, 10, 0))
-        let e4 = Shape.edgeFromPoints(SIMD3(0, 10, 0), SIMD3(0, 0, 0))
-        if let edge1 = e1, let edge2 = e2, let edge3 = e3, let edge4 = e4 {
-            let compound = Shape.compound([edge1, edge2, edge3, edge4])
-            if let c = compound {
-                let result = c.edgesToWires()
-                #expect(result != nil)
-                if let r = result {
-                    let wires = r.subShapes(ofType: .wire)
-                    #expect(wires.count >= 1)
-                }
-            }
-        }
+    func edgesToWires() throws {
+        // #766: every step used to sit in a nested `if let`, so a fixture that failed to build
+        // skipped all the assertions, and the count was only `>= 1`. The fixtures are now
+        // `try #require`, and the kernel's answer is pinned (Scripts/repro/766-modeling-bopalgo-
+        // tools): BOPAlgo_Tools::EdgesToWires on the four edges of the 10 x 10 rectangle gives
+        // exactly 1 wire.
+        let edge1 = try #require(Shape.edgeFromPoints(SIMD3(0, 0, 0), SIMD3(10, 0, 0)))
+        let edge2 = try #require(Shape.edgeFromPoints(SIMD3(10, 0, 0), SIMD3(10, 10, 0)))
+        let edge3 = try #require(Shape.edgeFromPoints(SIMD3(10, 10, 0), SIMD3(0, 10, 0)))
+        let edge4 = try #require(Shape.edgeFromPoints(SIMD3(0, 10, 0), SIMD3(0, 0, 0)))
+        let c = try #require(Shape.compound([edge1, edge2, edge3, edge4]))
+        let r = try #require(c.edgesToWires())
+        let wires = r.subShapes(ofType: .wire)
+        #expect(wires.count >= 1)
+        #expect(wires.count == 1)
     }
 
     @Test("WiresToFaces from edge compound via EdgesToWires")
-    func wiresToFaces() {
+    func wiresToFaces() throws {
         // First convert edges to wires, then wires to faces
-        let e1 = Shape.edgeFromPoints(SIMD3(0, 0, 0), SIMD3(10, 0, 0))
-        let e2 = Shape.edgeFromPoints(SIMD3(10, 0, 0), SIMD3(10, 10, 0))
-        let e3 = Shape.edgeFromPoints(SIMD3(10, 10, 0), SIMD3(0, 10, 0))
-        let e4 = Shape.edgeFromPoints(SIMD3(0, 10, 0), SIMD3(0, 0, 0))
-        if let edge1 = e1, let edge2 = e2, let edge3 = e3, let edge4 = e4 {
-            let compound = Shape.compound([edge1, edge2, edge3, edge4])
-            if let c = compound {
-                let wires = c.edgesToWires()
-                if let w = wires {
-                    let result = w.wiresToFaces()
-                    #expect(result != nil)
-                    if let r = result {
-                        let faces = r.subShapes(ofType: .face)
-                        #expect(faces.count >= 1)
-                    }
-                }
-            }
-        }
+        // #766: as above; the kernel's WiresToFaces on that wire gives exactly 1 face of area 100
+        // (Scripts/repro/766-modeling-bopalgo-tools).
+        let edge1 = try #require(Shape.edgeFromPoints(SIMD3(0, 0, 0), SIMD3(10, 0, 0)))
+        let edge2 = try #require(Shape.edgeFromPoints(SIMD3(10, 0, 0), SIMD3(10, 10, 0)))
+        let edge3 = try #require(Shape.edgeFromPoints(SIMD3(10, 10, 0), SIMD3(0, 10, 0)))
+        let edge4 = try #require(Shape.edgeFromPoints(SIMD3(0, 10, 0), SIMD3(0, 0, 0)))
+        let c = try #require(Shape.compound([edge1, edge2, edge3, edge4]))
+        let w = try #require(c.edgesToWires())
+        let r = try #require(w.wiresToFaces())
+        let faces = r.subShapes(ofType: .face)
+        #expect(faces.count >= 1)
+        #expect(faces.count == 1)
+        let face = try #require(faces.first)
+        let area = try #require(face.surfaceArea)
+        #expect(abs(area - 100) < 1e-6)
     }
 }

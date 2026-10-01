@@ -1,0 +1,3 @@
+sectionBoxSphere: produced=1 type=compound edges=7 vertices=7
+sectionTwoBoxes: produced=1 type=compound edges=1 vertices=2
+staticSection: produced=1 type=compound edges=7 vertices=7

@@ -21,6 +21,28 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### The Modeling boolean tests stop passing for a bridge that drops its argument (#2687, #2688, #2697, #2702, #2708, #2709)
+
+Twenty-four tests across fourteen `Tests/OCCTModelingTests/` files, lifted off `v5.0.0-766-execution`
+and re-proved against the pinned kernel. Tests only; no public API moves.
+
+`BooleanToleranceTests` is the clearest case. Every fixture was built from the **centred**
+`Shape.box(width:height:depth:)` and then offset as if it were corner-based, so the second cube of
+`fuseWithTolerance` sat clear of the first, the two commons met at a single corner, and the cut
+returned its first cube unchanged. Neither the fuzzy value nor the glue mode ever reached the
+result, and all six tests passed for a bridge that dropped the argument. The fixtures are
+corner-based now, each chosen so the option changes the answer, and each test runs the same
+operation with the option off as a control.
+
+The rest pin what they used to bracket: the per-input `(modified, generated, deleted)` vectors from
+`BRepAlgoAPI_*` history rather than face 0 alone, the half-space's `shapeType` and the
+classification of a point on each side rather than non-nil, the BOPAlgo builders' exact counts and
+areas rather than `>= 1`, and a nil subtraction in the twenty-step boolean chain recorded rather
+than dropped. Fixtures go through `try #require` where an `if let` used to skip the whole test.
+
+Seventeen `Scripts/repro/766-modeling-*` ground-truth probes ship with them; all seventeen recompile
+against the pinned `v4.0.0-kernel.3` asset and reproduce their transcripts line for line.
+
 ### 2D geometry tests stop passing on a wrong answer (#1979)
 
 Forty-nine tests across fourteen `OCCTGeom2dTests` suites asserted a count, a `!= nil`, a
