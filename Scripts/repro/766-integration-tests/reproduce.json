@@ -1,0 +1,14 @@
+{
+  "rerun_drop": [
+    {
+      "pattern": "^brep truncated read: child exited ",
+      "reason": "the probe's last section forks a child, feeds it a truncated BREP string and reports how the child died. The child's two-line `*** Abort ***` block goes to its stderr and the parent's one-line verdict to the parent's stdout, so which lands first in a combined 2>&1 capture is scheduling, not a measurement: the capture recorded the parent's line last and a rerun here put it first. The line itself is identical in both, and it is dropped from the rerun and from the transcript together so that neither side's ordering is treated as the answer. Every other line of this transcript, all 75 of them, reproduces byte for byte against the pinned asset."
+    }
+  ],
+  "transcript_only": [
+    {
+      "pattern": "^brep truncated read: child exited ",
+      "reason": "the other half of the rerun_drop above: the same line, removed from the transcript side so the comparison does not see it move."
+    }
+  ]
+}

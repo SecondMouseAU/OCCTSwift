@@ -1,0 +1,21 @@
+box10 top visible: edges=4 bbox=(-5.0000001, -5.0000001)..(5.0000001, 5.0000001)
+box10 top hidden: edges=4 bbox=(-5.0000001, -5.0000001)..(5.0000001, 5.0000001)
+box10 top outline: nil
+box10 iso visible: edges=9 bbox=(-7.07106791, -8.16496591)..(7.07106791, 8.16496591)
+box10 iso hidden: edges=3 bbox=(-7.07106791, -4.082483)..(7.07106791, 8.16496591)
+box10 iso outline: nil
+sphere top visible: edges=1 bbox=(-10.0000001, -10.0000001)..(10.0000001, 10.0000001)
+sphere top hidden: nil
+sphere top outline: edges=1 bbox=(-10.0000001, -10.0000001)..(10.0000001, 10.0000001)
+sphere iso visible: edges=1 bbox=(-10.0000001, -10.0000001)..(10.0000001, 10.0000001)
+sphere iso hidden: nil
+sphere iso outline: edges=1 bbox=(-10.0000001, -10.0000001)..(10.0000001, 10.0000001)
+box10x20x30 top visible: edges=4 bbox=(-5.0000001, -10.0000001)..(5.0000001, 10.0000001)
+box10x20x30 top hidden: edges=4 bbox=(-5.0000001, -10.0000001)..(5.0000001, 10.0000001)
+box10x20x30 top outline: nil
+box10x20x30 front visible: edges=4 bbox=(-15.0000001, -5.0000001)..(15.0000001, 5.0000001)
+box10x20x30 front hidden: edges=4 bbox=(-15.0000001, -5.0000001)..(15.0000001, 5.0000001)
+box10x20x30 front outline: nil
+box10x20x30 side visible: edges=4 bbox=(-15.0000001, -10.0000001)..(15.0000001, 10.0000001)
+box10x20x30 side hidden: edges=4 bbox=(-15.0000001, -10.0000001)..(15.0000001, 10.0000001)
+box10x20x30 side outline: nil
