@@ -303,7 +303,13 @@ static OCCTShapeCheckResult checkSubShape(OCCTShapeRef shape, TopAbs_ShapeEnum t
         return result;
     }
 
-    checker->Minimum();
+    // No explicit Minimum() call: every BRepCheck_* constructor above calls
+    // BRepCheck_Result::Init, whose last statement is Minimum(), so the minimum analysis has
+    // already run by the time the handle is assigned (#2924). The subclass bodies are guarded by
+    // `if (!myMin)`, and the two that touch state outside that guard (BRepCheck_Wire sets
+    // myCdone/myGctrl, BRepCheck_Shell myCdone/myOdone) would only rewrite the values the
+    // constructor already left there. InContext() is still never run here, deliberately: it
+    // raises an uncatchable SIGSEGV on some inputs in this build (#2746).
     auto& statusList = checker->Status();
 
     result.isValid = true;
