@@ -1,0 +1,9 @@
+activeGeometryCounts: surfaces=6 curves3d=12 curves2d=24
+addCompoundFromSolids: before=0 idx=0 after=1
+addCompSolidFromSolids: before=0 idx=0 after=1
+linkFaceToShell: shell=1 ref=6
+addEmptyShell: before=1 idx=1 after=2
+linkShellToSolid: solid=1 shell=1 ref=1
+addEmptySolid: before=1 idx=1 after=2
+addVertexToGraph: before=8 idx=8 after=9 pnt=(5, 5, 5) tol=9.9999999999999995e-08
+addMultipleVertices: before=8 v1=8 v2=9 after=10
