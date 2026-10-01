@@ -1,0 +1,18 @@
+A. kernel default (CreateAutoProduct=1)
+  source                   v0=(-5.0,-5.0,-5.0) verts=8 faces=6 products=1
+  GeomPolicy::Copy  ok=1
+    copy target            v0=(95.0,195.0,295.0) verts=8 faces=6 products=1
+    copy target            rootOccLoc identity=1 trans=(0.0,0.0,0.0)
+  GeomPolicy::Share ok=1
+    share target           v0=(-5.0,-5.0,-5.0) verts=8 faces=6 products=1
+    share target           rootOccLoc identity=0 trans=(100.0,200.0,300.0)
+
+B. OCCTSwift's configuration (CreateAutoProduct=0)
+  source                   v0=(-5.0,-5.0,-5.0) verts=8 faces=6 products=0
+  GeomPolicy::Copy  ok=1
+    copy target            v0=(95.0,195.0,295.0) verts=8 faces=6 products=0
+    copy target            NO PRODUCT: nowhere for a location-only transform to land
+  GeomPolicy::Share ok=1
+    share target           v0=(-5.0,-5.0,-5.0) verts=8 faces=6 products=0
+    share target           NO PRODUCT: nowhere for a location-only transform to land
+

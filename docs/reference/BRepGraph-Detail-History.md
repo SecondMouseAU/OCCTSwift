@@ -973,11 +973,27 @@ public func translated(dx: Double, dy: Double, dz: Double, copyGeometry: Bool = 
 
 - **Parameters:**
   - `dx`, `dy`, `dz`, translation components in model units.
-  - `copyGeometry`: whether to copy geometry handles (default: `true`).
-- **Returns:** Translated `BRepGraph`, or `nil` on failure.
+  - `copyGeometry`: whether to copy geometry handles (default: `true`). Pass `false` only with a
+    zero translation; see the note below.
+- **Returns:** Translated `BRepGraph`, or `nil` on failure, which includes the refused combination
+  below.
 - **OCCT:** `BRepGraph_Transform::Perform` with a translation `gp_Trsf` (via
   `OCCTBRepGraphTransformTranslation`). It delegates to `BRepGraph_Copy::Perform`, so identity is
   inherited exactly as it is for [`copy(copyGeometry:)`](#copycopygeometry).
+- **`copyGeometry: false` with a non-zero translation returns `nil`** (#2913). `false` selects
+  `BRepGraph_Copy::GeomPolicy::Share`, which is not "transform the shared geometry" (that would
+  move the source too) but OCCT's *location-only* mode: `BRepGraph_Transform::Perform` computes
+  `useGeomModif = (GeomPolicy == Copy) || isNegative || isScaled`, takes the `false` branch for a
+  plain translation under `Share`, and composes the translation into each root `Product`'s
+  top-level `OccurrenceRef::LocalLocation` while leaving every vertex, curve and surface alone.
+  OCCT's own `BRepGraph_TransformTest.LocationOnly_NoCopyGeom` asserts that, then reads the root
+  occurrence location and applies it to the reconstructed solid by hand. A `BRepGraph` built by
+  this package has no `Product` at all (all three creation sites pass
+  `Options::CreateAutoProduct = false`, so [`productCount`](BRepGraph.md) is `0`), so the location
+  is composed into nothing and the translation is lost while `Perform` still reports success.
+  The combination is therefore refused rather than documented. To translate, keep the default; for
+  a light structural copy that shares geometry and moves nothing, use
+  [`copy(copyGeometry:)`](#copycopygeometry) with `false`.
 - **Example:**
   ```swift
   if let moved = graph.translated(dx: 10, dy: 0, dz: 0) {
