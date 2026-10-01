@@ -1,0 +1,6 @@
+parabolaFocal: focal=3
+parabolaSetFocal: focal after SetFocal(5)=5
+parabolaFocus: focus=(3, 0, 0)
+parabolaEccentricity: eccentricity=1
+parabolaParameter: parameter=6
+parabolaDirectrix: position=(-3, 0, 0) direction=(-0, 1, 0)
