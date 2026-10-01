@@ -47,18 +47,18 @@ struct SAEdgeAnalysisTests {
         #expect(!EdgeAnalysis.isSeam(edge, face: face))  // box edges are not seam edges
     }
 
-    // `ok` is a misnomer this test is deliberately not reading at face value. OCCT's own caller,
-    // the shape_healing user guide, writes `if (aCheckEdge.CheckSameParameter(theEdge, aMaxDev))
-    // { "Incorrect SameParameter flag"; aFixEdge.FixSameParameter(theEdge); }`, so `true` means a
-    // problem was found, exactly like every sibling on `ShapeAnalysis_Edge`. The header's own
-    // doxygen says the opposite ("If deviation is greater than tolerance ... returns False, else
-    // returns True"); it is the guide and the call site that are right, per
-    // okf/policies/follow-occt-callers.md. So `false` below is "this box edge is fine", and the
-    // Swift tuple label inverts that (#2901).
+    // #2901: `true` means a problem was found, which is the reverse of the OCCT header's own
+    // doxygen ("If deviation is greater than tolerance ... returns False, else returns True").
+    // ShapeAnalysis_Edge.cxx ends in `return Status(ShapeExtend_DONE)` after setting DONE1 on
+    // `maxdev > TE->Tolerance()`, and OCCT's own caller, the shape_healing user guide, writes
+    // `if (aCheckEdge.CheckSameParameter(theEdge, aMaxDev)) { "Incorrect SameParameter flag";
+    // aFixEdge.FixSameParameter(theEdge); }`, so the call site agrees with the code and not the
+    // header, per okf/policies/follow-occt-callers.md. Measured in Scripts/repro/2901/. The tuple
+    // element was labelled `ok` until #2901, which read as the opposite; it is `problemFound` now.
     @Test func edgeSameParameter() throws {
         let (edge, _, _) = try boxEdgeAndFace()
         let result = EdgeAnalysis.checkSameParameter(edge)
-        #expect(result.ok == false)  // no problem found
+        #expect(result.problemFound == false)  // no problem found
         #expect(result.maxDeviation == 0)
     }
 
@@ -115,9 +115,11 @@ struct SAEdgeAnalysisTests {
 
     @Test func edgeVertexTolerance() throws {
         // Kernel: no increase needed; both tolerances come back as the vertex default 1e-7.
+        // `true` would mean an increase IS needed, which is the problem (#2901): the element was
+        // labelled `ok` until then, and it is `needsIncrease` now.
         let (edge, face, _) = try boxEdgeAndFace()
         let r = EdgeAnalysis.checkVertexTolerance(edge, face: face)
-        #expect(r.ok == false)
+        #expect(r.needsIncrease == false)
         #expect(abs(r.toler1 - 1e-7) < 1e-12)
         #expect(abs(r.toler2 - 1e-7) < 1e-12)
     }

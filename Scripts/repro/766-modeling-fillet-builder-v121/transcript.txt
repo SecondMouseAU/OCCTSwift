@@ -1,0 +1,6 @@
+constant: edges=12 contours=1 isConstant=1 radius=2 build=done,valid
+evolving: contours=1 isConstant=0 build=done,valid
+multiple: contours=3 build=done,valid
+diagnostics: nbEdges(1)=1 length(1)=20 faultyContours=0 faultyVertices=0
+reset: contoursBefore=1 contoursAfter=1 build=done,valid
+remove: contoursBefore=1 contoursAfter=0

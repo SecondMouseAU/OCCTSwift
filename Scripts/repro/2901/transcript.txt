@@ -1,0 +1,25 @@
+# Scripts/repro/2901/probe.mm, run 2026-10-01 against the pinned v4.0.0-kernel.3 xcframework
+#
+#   clang++ -std=c++17 -ObjC++ -w \
+#     -I<OCCT.xcframework>/macos-arm64/Headers \
+#     -L<OCCT.xcframework>/macos-arm64 \
+#     -lOCCT-macos -framework Foundation -framework AppKit -lz -lc++ \
+#     Scripts/repro/2901/probe.mm -o /tmp/occt_probe_2901
+
+A. pristine box edge (BRepPrimAPI_MakeBox 10x10x10, first mapped edge)
+  CheckSameParameter   -> false  maxdev = 0  (edge tolerance 9.9999999999999995e-08)
+  CheckVertexTolerance -> false  toler1 = 9.9999999999999995e-08  toler2 = 9.9999999999999995e-08
+
+B. edge whose pcurve is offset 1.0 from its 3D curve, SameParameter flag = true
+  CheckSameParameter   -> true   maxdev = 1.0000100000000001  (edge tolerance 9.9999999999999995e-08)
+  CheckVertexTolerance -> true   toler1 = 1.0000001000000001  toler2 = 1.0000001000000001
+
+C. geometrically clean edge whose SameParameter flag is false
+  CheckSameParameter   -> true   maxdev = 0  (edge tolerance 9.9999999999999995e-08)
+  CheckVertexTolerance -> false  toler1 = 9.9999999999999995e-08  toler2 = 9.9999999999999995e-08
+
+Header doxygen: "If deviation is greater than tolerance of the edge (i.e. incorrect
+flag) returns False, else returns True."
+Measured above: the clean edge returns false and the defective ones return true, the
+reverse of the doxygen, and matching ShapeAnalysis_Edge.cxx's own
+`return Status(ShapeExtend_DONE)` and the shape_healing user guide's call site.

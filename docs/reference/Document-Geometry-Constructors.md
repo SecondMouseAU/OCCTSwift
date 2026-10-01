@@ -1734,6 +1734,28 @@ public static func edge2dFromCurve(_ curve: Curve2D, u1: Double, u2: Double) -> 
 
 Wire quality checks using `ShapeAnalysis_Wire`. All members are static on the `SAWireAnalysis` enum. Each check returns `true` when a problem is detected. `checkOuterBound(wire:face:)` returns `Bool?` rather than `Bool`, so its refusal is not the same value as its clean verdict; see its own entry for what `nil` covers and why the other fourteen check members do not have it (#1058, tracked as [#1074](https://github.com/SecondMouseAU/OCCTSwift/issues/1074)).
 
+**Precondition: the wire's edges must be in connection order before any member but `checkOrder` means anything (#2906).** `ShapeAnalysis_Wire` walks the wire as a sequence and compares each edge against the next *in that sequence*, so on an out-of-order wire the "next" edge is the wrong one. OCCT's own caller treats `CheckOrder()` as a stop condition: the shape_healing user guide prints "Some edges in the wire need to be reordered" and **returns**, running no later check, and per [`follow-occt-callers`](../../okf/policies/follow-occt-callers.md) that early return is the contract.
+
+This is reachable from the most ordinary shape in the library. A face of `Shape.box(width:height:depth:)` answers `checkOrder == true`, and `Scripts/repro/2906/` measures what follows: before reordering, that pristine 10x10 face reports four problems (3D gaps, 2D gaps, edge curves, and the gap at edge 1) with all four distances at `14.142135623730951`, which is `10 * sqrt(2)`, the face's diagonal rather than any gap in it. After `WireFixer.fixReorder()` every one of those answers `false` and all four distances are `0`.
+
+`WireFixer` (`ShapeFix_Wire`) is how the precondition is satisfied:
+
+```swift
+if let box = Shape.box(width: 10, height: 10, depth: 10),
+    let face = box.subShapes(ofType: .face).first,
+    let rawWire = face.subShapes(ofType: .wire).first
+{
+    var wire = rawWire
+    if SAWireAnalysis.checkOrder(wire: wire, face: face) {
+        if let fixer = WireFixer(wire: wire, face: face) {
+            fixer.fixReorder()
+            if let reordered = fixer.wire { wire = reordered }
+        }
+    }
+    print(SAWireAnalysis.maxDistance3d(wire: wire, face: face))  // a gap, not the diagonal
+}
+```
+
 ### `SAWireAnalysis.checkOrder(wire:face:precision:)`
 
 Check whether wire edges are correctly ordered on a face.
@@ -1744,6 +1766,7 @@ public static func checkOrder(wire: Shape, face: Shape, precision: Double = 1e-6
 
 - **Parameters:** `wire`, the wire to analyse; `face`, the supporting face; `precision`, tolerance.
 - **Returns:** `true` if the edge order is incorrect.
+- **Precondition:** none. This is the gate the other members have, not one result among them (#2906).
 - **OCCT:** `ShapeAnalysis_Wire::CheckOrder`
 - **Example:**
   ```swift
@@ -2080,17 +2103,19 @@ public static func isSeam(_ edge: Shape, face: Shape) -> Bool
 
 ### `EdgeAnalysis.checkSameParameter(_:)`
 
-Verify the same-parameter property and report maximum deviation.
+Check the edge's `SameParameter` flag against the real deviation between its 3D curve and its pcurves.
 
 ```swift
-public static func checkSameParameter(_ edge: Shape) -> (ok: Bool, maxDeviation: Double)
+public static func checkSameParameter(_ edge: Shape) -> (problemFound: Bool, maxDeviation: Double)
 ```
 
-- **Returns:** `ok` is `true` when the edge is within tolerance; `maxDeviation` is the worst observed deviation.
+- **Returns:** `problemFound` is `true` when a problem was detected; `maxDeviation` is the worst observed deviation.
+- **Polarity:** `true` means a problem, which is the reverse of what `ShapeAnalysis_Edge.hxx` says. The implementation ends in `return Status(ShapeExtend_DONE)` having set `DONE1` when `maxdev > TE->Tolerance()` and `DONE2` when the stored flag is already false, and OCCT's own caller enters the repair branch on `true`, so the call site is the contract (#2901). `problemFound == true` with `maxDeviation == 0` means the geometry agrees but the stored flag says it does not. The element was called `ok` before #2901, which read as the opposite.
 - **OCCT:** `ShapeAnalysis_Edge::CheckSameParameter`
 - **Example:**
   ```swift
-  let (ok, dev) = EdgeAnalysis.checkSameParameter(e)
+  let result = EdgeAnalysis.checkSameParameter(e)
+  if result.problemFound { print("deviation \(result.maxDeviation)") }
   ```
 
 ---
@@ -2167,17 +2192,19 @@ public static func lastVertex(_ edge: Shape) -> SIMD3<Double>
 
 ### `EdgeAnalysis.checkVertexTolerance(_:face:)`
 
-Verify vertex tolerances on a face edge and return tolerance values.
+Check whether the edge's vertex tolerances need increasing to reach the ends of its 3D curve and of its pcurve on the face.
 
 ```swift
-public static func checkVertexTolerance(_ edge: Shape, face: Shape) -> (ok: Bool, toler1: Double, toler2: Double)
+public static func checkVertexTolerance(_ edge: Shape, face: Shape) -> (needsIncrease: Bool, toler1: Double, toler2: Double)
 ```
 
-- **Returns:** `ok` when within tolerance; `toler1`, `toler2`, first and last vertex tolerance values.
+- **Returns:** `needsIncrease` is `true` when either vertex's stored tolerance is too small; `toler1`, `toler2` are the tolerances the first and last vertex would need.
+- **Polarity:** `true` means a problem, matching OCCT's own description ("Checks if it is necessary to increase tolerances of the edge vertices"): needing an increase is the defect. `toler1` and `toler2` are filled in either way. The element was called `ok` before #2901, which read as the opposite.
 - **OCCT:** `ShapeAnalysis_Edge::CheckVertexTolerance`
 - **Example:**
   ```swift
-  let (ok, t1, t2) = EdgeAnalysis.checkVertexTolerance(e, face: f)
+  let result = EdgeAnalysis.checkVertexTolerance(e, face: f)
+  if result.needsIncrease { print("raise to \(result.toler1), \(result.toler2)") }
   ```
 
 ---

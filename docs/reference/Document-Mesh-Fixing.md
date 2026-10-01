@@ -1672,12 +1672,14 @@ public init?(wire: Shape, face: Shape, precision: Double = 1e-6)
 
 ### `WireFixer.fixReorder()`
 
-Fix the order of edges in the wire.
+Fix the order of edges in the wire, putting them into connection order.
 
 ```swift
 @discardableResult public func fixReorder() -> Bool
 ```
 
+- **Returns:** `true` if the wire was modified. Read the reordered wire back from `WireFixer.wire`.
+- **Why it matters beyond healing:** this is how `SAWireAnalysis`'s ordering precondition is satisfied. Every member of that enum other than `checkOrder` compares each edge against the next one *in sequence*, so an out-of-order wire gives correct answers to the wrong question. Measured in `Scripts/repro/2906/`, on a face of `Shape.box(width:height:depth:)` whose own wire is out of order: before this call the analyzer reports four problems with all four gap distances at `10 * sqrt(2)`, the face's diagonal; after it, every check answers `false` and every distance is `0` (#2906).
 - **OCCT:** `ShapeFix_Wire::FixReorder`.
 
 ---
