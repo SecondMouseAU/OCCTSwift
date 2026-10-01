@@ -43,8 +43,8 @@ translateWithDegenerateSourceFallsBackToUnmoved()  # 2891
 "the by-plane per-face sum is the volume, for any plane (#2827)"  # kernel skew
 
 # --- exact-equality baselines do not survive a different libm --------------------------------
-# `Issue791ConvertCircleHelperTests` (Geom2d) and `Issue791ConvertSphereHelperTests` (Surface) each
-# compare a computed pole against a hardcoded baseline with `==`,
+# `Issue791ConvertCircleHelperTests` (Geom2d, 2 tests) and `Issue791ConvertSphereHelperTests`
+# (Surface, 2 tests) each compare a computed pole against a hardcoded baseline with `==`,
 # not a tolerance. The wasm build links WASILibc's math functions and the Apple build links Darwin's,
 # and IEEE 754 does not pin the results of transcendentals to the last bit, so `sin`/`cos` on the two
 # platforms legitimately differ in the final places and an exact comparison cannot hold across both.
@@ -56,3 +56,17 @@ translateWithDegenerateSourceFallsBackToUnmoved()  # 2891
 fullCircleOriginMatchesPriorBaseline()  # exact-equality baseline vs a different libm
 offsetArcMatchesPriorBaseline()  # exact-equality baseline vs a different libm
 unitOriginMatchesPriorBaseline()  # exact-equality baseline vs a different libm
+offsetTiltedMatchesPriorBaseline()  # exact-equality baseline vs a different libm
+
+# --- #2926: a live parameter goes inert on wasm -----------------------------------------------
+# `nlPlateDeformedG3(constraints:tolerance:)` run at 1e-1 and at 1e-3 returns surfaces that differ by
+# exactly 0.0 here, so the tolerance has no effect. It does on Apple, which is what #999 was filed to
+# prove: these parameters were once declared and dropped by the bridge, and these tests exist to keep
+# them live. Three readings are open and the issue names the test for each: the value not reaching
+# OCCT, the solver terminating on an iteration limit either way (a different libm changes the
+# arithmetic, so the iteration counts need not match Apple's), or an exception inside the solver being
+# swallowed differently (#2894). Only the first and third would make it a defect.
+#
+# Listed and not excluded, because it is a wrong answer rather than a trap: the suite reports it and
+# carries on, which is what this list is for.
+"Varying the tolerance changes the G3 result"  # 2926
