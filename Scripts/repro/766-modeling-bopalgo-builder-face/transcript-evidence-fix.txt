@@ -1,0 +1,1 @@
+buildFaceFromEdges: edges=4 produced=1 count=1 totalArea=99.999999999999986
