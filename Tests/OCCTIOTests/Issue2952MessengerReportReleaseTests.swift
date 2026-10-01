@@ -73,7 +73,9 @@ struct Issue2952MessengerReportReleaseTests {
     }
 
     /// The zero-bit-pattern pointer the `_Nonnull` annotation says cannot exist, synthesized the
-    /// way #1424 / #1492 / #1507 do. It is reinterpreted from a null `Optional` pointer rather
+    /// way #1424 / #1492 / #1507 do.
+    ///
+    /// It is reinterpreted from a null `Optional` pointer rather
     /// than from `UInt(0)`: `UnsafeMutableRawPointer(bitPattern:)` cannot express it, since it
     /// returns `nil` for 0 by construction, and `unsafeBitCast` from an integer earns a fix-it
     /// warning pointing at that initializer. Same eight zero bytes, no warning.
@@ -96,6 +98,7 @@ struct Issue2952MessengerReportReleaseTests {
     }
 
     /// The registry's point is that the bridge releases what it handed out, not what it is handed.
+    ///
     /// A heap block the bridge never produced is the clearest case of the second: `malloc` is used
     /// rather than a stack address so the pointer is unambiguously valid memory that is simply not
     /// a `Message_Messenger`, which is exactly what a consumer passing the wrong handle supplies.

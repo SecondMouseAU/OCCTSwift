@@ -244,6 +244,32 @@ public struct CircleProperties: Sendable, NativeHandleView {
 `Scripts/check-borrowed-handles.py` fails the build on any struct or enum in `Sources/OCCTSwift`
 that stores an `OCCT*Ref`, so a new view cannot reintroduce the borrow.
 
+### A release the bridge never handed out is refused
+
+A bridge release gives back a reference the matching create took. Giving back one it did not take
+is not a no-op, so where the create hands out a raw `Standard_Transient*` the release checks an
+address-keyed registry (`occtBorrowRegister` / `occtBorrowGiveBack` in `OCCTBridge_Internal.h`)
+before touching the object. A null, a second release of the same pointer, or a pointer this bridge
+never produced is declined and counted by `OCCTBridgeRefusedReleaseCount`.
+
+`_Nonnull` on the declaration is not what stops the null: it is a promise the compiler does not
+enforce, and section 6 above measures that a consumer can call these entry points directly.
+
+Two defects are behind this, with the same cause and different endings. `TObj_Application` is a
+process-wide singleton whose own function-local static `Handle` holds a permanent reference, so an
+over-release freed nothing at the time and left the count one below the truth; the object died
+later, in the next ordinary handle to fall out of scope, about 660 test lines from the call that
+doomed it, as a SIGSEGV on Apple and an `indirect call type mismatch` on wasm
+([#2897](https://github.com/SecondMouseAU/OCCTSwift/issues/2897)). `Message_Messenger` and
+`Message_Report` have no such static, so there the first release already deletes and a second one
+reads `GetRefCount()` out of freed memory and may delete the block again
+([#2952](https://github.com/SecondMouseAU/OCCTSwift/issues/2952)).
+
+The two read differently in one respect. The singleton's release refuses through a borrow *count*
+and can expose `OCCTTObjApplicationRefCount`, because the object survives and its reference count
+is readable across the operation. Nothing survives a correct messenger or report release, so there
+the refusal itself is the only observable, which is what `OCCTBridgeRefusedReleaseCount` is for.
+
 ### Thread Safety
 
 - OCCT is not thread-safe for shared objects
