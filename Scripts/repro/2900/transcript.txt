@@ -1,0 +1,226 @@
+# Scripts/repro/2900/run.sh against the pinned v4.0.0-kernel.3 xcframework, 2026-10-01.
+# Precision::Angular() = 1e-12. See okf/references/known-occt-bugs.md, row #2900.
+#
+# The finding: 0.0, -1.0 and 9e-13 throw Standard_NumericError from initParameters on both
+# shapes through both constructors, leaving no triangulation. NaN returns in about a second
+# with IsDone=1 and a mesh. The last sweep, at linear deflection 10.0 where the angle is the
+# criterion that decides, is the one that shows what that mesh is: 254/254/106/54 nodes for
+# angles 0.05/0.2/0.5/1.0, and 18 for NaN.
+
+kernel: .build/artifacts/agent-a02609eb4321fea70/OCCT/OCCT.xcframework
+=== angle 0.5  shape cylinder  mode ctor  linear 0.1 ===
+Precision::Angular() = 1e-12
+angle = 0.5  shape = cylinder  mode = ctor  linear = 0.10000000000000001
+returned: IsDone=1 status=128 Angle=0.5 AngleInterior=1
+faces=3 meshed=3 nodes=130 triangles=124
+exit=0  after 1s
+=== angle 9e-13  shape cylinder  mode ctor  linear 0.1 ===
+Precision::Angular() = 1e-12
+angle = 9e-13  shape = cylinder  mode = ctor  linear = 0.10000000000000001
+threw Standard_Failure: 21Standard_NumericError: BRepMesh_IncrementalMesh::initParameters : invalid parameter value
+faces=3 meshed=0 nodes=0 triangles=0
+exit=0  after 1s
+=== angle 0.0  shape cylinder  mode ctor  linear 0.1 ===
+Precision::Angular() = 1e-12
+angle = 0  shape = cylinder  mode = ctor  linear = 0.10000000000000001
+threw Standard_Failure: 21Standard_NumericError: BRepMesh_IncrementalMesh::initParameters : invalid parameter value
+faces=3 meshed=0 nodes=0 triangles=0
+exit=0  after 1s
+=== angle -1.0  shape cylinder  mode ctor  linear 0.1 ===
+Precision::Angular() = 1e-12
+angle = -1  shape = cylinder  mode = ctor  linear = 0.10000000000000001
+threw Standard_Failure: 21Standard_NumericError: BRepMesh_IncrementalMesh::initParameters : invalid parameter value
+faces=3 meshed=0 nodes=0 triangles=0
+exit=0  after 1s
+=== angle nan  shape cylinder  mode ctor  linear 0.1 ===
+Precision::Angular() = 1e-12
+angle = nan  shape = cylinder  mode = ctor  linear = 0.10000000000000001
+returned: IsDone=1 status=128 Angle=nan AngleInterior=nan
+faces=3 meshed=3 nodes=130 triangles=124
+exit=0  after 1s
+=== angle 0.5  shape cylinder  mode params  linear 0.1 ===
+Precision::Angular() = 1e-12
+angle = 0.5  shape = cylinder  mode = params  linear = 0.10000000000000001
+returned: IsDone=1 status=128 Angle=0.5 AngleInterior=0.5
+faces=3 meshed=3 nodes=130 triangles=124
+exit=0  after 1s
+=== angle 9e-13  shape cylinder  mode params  linear 0.1 ===
+Precision::Angular() = 1e-12
+angle = 9e-13  shape = cylinder  mode = params  linear = 0.10000000000000001
+threw Standard_Failure: 21Standard_NumericError: BRepMesh_IncrementalMesh::initParameters : invalid parameter value
+faces=3 meshed=0 nodes=0 triangles=0
+exit=0  after 1s
+=== angle 0.0  shape cylinder  mode params  linear 0.1 ===
+Precision::Angular() = 1e-12
+angle = 0  shape = cylinder  mode = params  linear = 0.10000000000000001
+threw Standard_Failure: 21Standard_NumericError: BRepMesh_IncrementalMesh::initParameters : invalid parameter value
+faces=3 meshed=0 nodes=0 triangles=0
+exit=0  after 1s
+=== angle -1.0  shape cylinder  mode params  linear 0.1 ===
+Precision::Angular() = 1e-12
+angle = -1  shape = cylinder  mode = params  linear = 0.10000000000000001
+threw Standard_Failure: 21Standard_NumericError: BRepMesh_IncrementalMesh::initParameters : invalid parameter value
+faces=3 meshed=0 nodes=0 triangles=0
+exit=0  after 1s
+=== angle nan  shape cylinder  mode params  linear 0.1 ===
+Precision::Angular() = 1e-12
+angle = nan  shape = cylinder  mode = params  linear = 0.10000000000000001
+returned: IsDone=1 status=128 Angle=nan AngleInterior=nan
+faces=3 meshed=3 nodes=130 triangles=124
+exit=0  after 1s
+=== angle 0.5  shape box  mode ctor  linear 0.1 ===
+Precision::Angular() = 1e-12
+angle = 0.5  shape = box  mode = ctor  linear = 0.10000000000000001
+returned: IsDone=1 status=128 Angle=0.5 AngleInterior=1
+faces=6 meshed=6 nodes=24 triangles=12
+exit=0  after 1s
+=== angle 9e-13  shape box  mode ctor  linear 0.1 ===
+Precision::Angular() = 1e-12
+angle = 9e-13  shape = box  mode = ctor  linear = 0.10000000000000001
+threw Standard_Failure: 21Standard_NumericError: BRepMesh_IncrementalMesh::initParameters : invalid parameter value
+faces=6 meshed=0 nodes=0 triangles=0
+exit=0  after 1s
+=== angle 0.0  shape box  mode ctor  linear 0.1 ===
+Precision::Angular() = 1e-12
+angle = 0  shape = box  mode = ctor  linear = 0.10000000000000001
+threw Standard_Failure: 21Standard_NumericError: BRepMesh_IncrementalMesh::initParameters : invalid parameter value
+faces=6 meshed=0 nodes=0 triangles=0
+exit=0  after 1s
+=== angle -1.0  shape box  mode ctor  linear 0.1 ===
+Precision::Angular() = 1e-12
+angle = -1  shape = box  mode = ctor  linear = 0.10000000000000001
+threw Standard_Failure: 21Standard_NumericError: BRepMesh_IncrementalMesh::initParameters : invalid parameter value
+faces=6 meshed=0 nodes=0 triangles=0
+exit=0  after 1s
+=== angle nan  shape box  mode ctor  linear 0.1 ===
+Precision::Angular() = 1e-12
+angle = nan  shape = box  mode = ctor  linear = 0.10000000000000001
+returned: IsDone=1 status=128 Angle=nan AngleInterior=nan
+faces=6 meshed=6 nodes=24 triangles=12
+exit=0  after 1s
+=== angle 0.5  shape box  mode params  linear 0.1 ===
+Precision::Angular() = 1e-12
+angle = 0.5  shape = box  mode = params  linear = 0.10000000000000001
+returned: IsDone=1 status=128 Angle=0.5 AngleInterior=0.5
+faces=6 meshed=6 nodes=24 triangles=12
+exit=0  after 1s
+=== angle 9e-13  shape box  mode params  linear 0.1 ===
+Precision::Angular() = 1e-12
+angle = 9e-13  shape = box  mode = params  linear = 0.10000000000000001
+threw Standard_Failure: 21Standard_NumericError: BRepMesh_IncrementalMesh::initParameters : invalid parameter value
+faces=6 meshed=0 nodes=0 triangles=0
+exit=0  after 1s
+=== angle 0.0  shape box  mode params  linear 0.1 ===
+Precision::Angular() = 1e-12
+angle = 0  shape = box  mode = params  linear = 0.10000000000000001
+threw Standard_Failure: 21Standard_NumericError: BRepMesh_IncrementalMesh::initParameters : invalid parameter value
+faces=6 meshed=0 nodes=0 triangles=0
+exit=0  after 1s
+=== angle -1.0  shape box  mode params  linear 0.1 ===
+Precision::Angular() = 1e-12
+angle = -1  shape = box  mode = params  linear = 0.10000000000000001
+threw Standard_Failure: 21Standard_NumericError: BRepMesh_IncrementalMesh::initParameters : invalid parameter value
+faces=6 meshed=0 nodes=0 triangles=0
+exit=0  after 1s
+=== angle nan  shape box  mode params  linear 0.1 ===
+Precision::Angular() = 1e-12
+angle = nan  shape = box  mode = params  linear = 0.10000000000000001
+returned: IsDone=1 status=128 Angle=nan AngleInterior=nan
+faces=6 meshed=6 nodes=24 triangles=12
+exit=0  after 1s
+=== angle 9e-13  shape cylinder  mode interior  linear 0.1 ===
+Precision::Angular() = 1e-12
+angle = 9e-13  shape = cylinder  mode = interior  linear = 0.10000000000000001
+returned: IsDone=1 status=128 Angle=0.5 AngleInterior=1
+faces=3 meshed=3 nodes=130 triangles=124
+exit=0  after 1s
+=== angle 0.0  shape cylinder  mode interior  linear 0.1 ===
+Precision::Angular() = 1e-12
+angle = 0  shape = cylinder  mode = interior  linear = 0.10000000000000001
+returned: IsDone=1 status=128 Angle=0.5 AngleInterior=1
+faces=3 meshed=3 nodes=130 triangles=124
+exit=0  after 1s
+=== angle -1.0  shape cylinder  mode interior  linear 0.1 ===
+Precision::Angular() = 1e-12
+angle = -1  shape = cylinder  mode = interior  linear = 0.10000000000000001
+returned: IsDone=1 status=128 Angle=0.5 AngleInterior=1
+faces=3 meshed=3 nodes=130 triangles=124
+exit=0  after 1s
+=== angle nan  shape cylinder  mode interior  linear 0.1 ===
+Precision::Angular() = 1e-12
+angle = nan  shape = cylinder  mode = interior  linear = 0.10000000000000001
+returned: IsDone=1 status=128 Angle=0.5 AngleInterior=nan
+faces=3 meshed=3 nodes=130 triangles=124
+exit=0  after 1s
+=== angle 9e-13  shape box  mode interior  linear 0.1 ===
+Precision::Angular() = 1e-12
+angle = 9e-13  shape = box  mode = interior  linear = 0.10000000000000001
+returned: IsDone=1 status=128 Angle=0.5 AngleInterior=1
+faces=6 meshed=6 nodes=24 triangles=12
+exit=0  after 1s
+=== angle 0.0  shape box  mode interior  linear 0.1 ===
+Precision::Angular() = 1e-12
+angle = 0  shape = box  mode = interior  linear = 0.10000000000000001
+returned: IsDone=1 status=128 Angle=0.5 AngleInterior=1
+faces=6 meshed=6 nodes=24 triangles=12
+exit=0  after 1s
+=== angle -1.0  shape box  mode interior  linear 0.1 ===
+Precision::Angular() = 1e-12
+angle = -1  shape = box  mode = interior  linear = 0.10000000000000001
+returned: IsDone=1 status=128 Angle=0.5 AngleInterior=1
+faces=6 meshed=6 nodes=24 triangles=12
+exit=0  after 1s
+=== angle nan  shape box  mode interior  linear 0.1 ===
+Precision::Angular() = 1e-12
+angle = nan  shape = box  mode = interior  linear = 0.10000000000000001
+returned: IsDone=1 status=128 Angle=0.5 AngleInterior=nan
+faces=6 meshed=6 nodes=24 triangles=12
+exit=0  after 1s
+=== angle 0.05  shape cylinder  mode ctor  linear 10.0 ===
+Precision::Angular() = 1e-12
+angle = 0.050000000000000003  shape = cylinder  mode = ctor  linear = 10
+returned: IsDone=1 status=128 Angle=0.050000000000000003 AngleInterior=0.10000000000000001
+faces=3 meshed=3 nodes=254 triangles=248
+exit=0  after 1s
+=== angle 0.2  shape cylinder  mode ctor  linear 10.0 ===
+Precision::Angular() = 1e-12
+angle = 0.20000000000000001  shape = cylinder  mode = ctor  linear = 10
+returned: IsDone=1 status=128 Angle=0.20000000000000001 AngleInterior=0.40000000000000002
+faces=3 meshed=3 nodes=254 triangles=248
+exit=0  after 1s
+=== angle 0.5  shape cylinder  mode ctor  linear 10.0 ===
+Precision::Angular() = 1e-12
+angle = 0.5  shape = cylinder  mode = ctor  linear = 10
+returned: IsDone=1 status=128 Angle=0.5 AngleInterior=1
+faces=3 meshed=3 nodes=106 triangles=100
+exit=0  after 1s
+=== angle 1.0  shape cylinder  mode ctor  linear 10.0 ===
+Precision::Angular() = 1e-12
+angle = 1  shape = cylinder  mode = ctor  linear = 10
+returned: IsDone=1 status=128 Angle=1 AngleInterior=2
+faces=3 meshed=3 nodes=54 triangles=48
+exit=0  after 1s
+=== angle nan  shape cylinder  mode ctor  linear 10.0 ===
+Precision::Angular() = 1e-12
+angle = nan  shape = cylinder  mode = ctor  linear = 10
+returned: IsDone=1 status=128 Angle=nan AngleInterior=nan
+faces=3 meshed=3 nodes=18 triangles=12
+exit=0  after 1s
+=== angle 0.05  shape cylinder  mode interior  linear 10.0 ===
+Precision::Angular() = 1e-12
+angle = 0.050000000000000003  shape = cylinder  mode = interior  linear = 10
+returned: IsDone=1 status=128 Angle=0.5 AngleInterior=0.050000000000000003
+faces=3 meshed=3 nodes=106 triangles=100
+exit=0  after 1s
+=== angle 1.0  shape cylinder  mode interior  linear 10.0 ===
+Precision::Angular() = 1e-12
+angle = 1  shape = cylinder  mode = interior  linear = 10
+returned: IsDone=1 status=128 Angle=0.5 AngleInterior=1
+faces=3 meshed=3 nodes=106 triangles=100
+exit=0  after 1s
+=== angle nan  shape cylinder  mode interior  linear 10.0 ===
+Precision::Angular() = 1e-12
+angle = nan  shape = cylinder  mode = interior  linear = 10
+returned: IsDone=1 status=128 Angle=0.5 AngleInterior=nan
+faces=3 meshed=3 nodes=106 triangles=100
+exit=0  after 1s

@@ -1481,11 +1481,38 @@ extension Shape {
 
     // MARK: BRepLib_ToolTriangulatedShape
 
-    /// Compute normals on the triangulation of all faces in this shape.
+    /// Compute node normals on the triangulation of every face in this shape, in place.
     ///
-    /// The shape must be meshed first.
-    public func computeNormals() -> Bool {
-        OCCTBRepLibComputeNormals(handle)
+    /// Wraps `BRepLib_ToolTriangulatedShape::ComputeNormals`, the call `StdPrs_ShadedShape` makes
+    /// before it reads a node normal. It is an idempotent *ensure*, not a recomputation: OCCT
+    /// returns immediately from a face whose triangulation already carries normals, so calling it
+    /// twice is safe and the second call does nothing.
+    ///
+    /// The shape must be meshed first. ``mesh(linearDeflection:angularDeflection:)`` already makes
+    /// this call on every face it walks (#2337), so on a shape meshed that way the answer is `0`:
+    /// there is nothing left to compute. The paths that do leave work for it are the ones that
+    /// triangulate without normals, such as ``CoherentTriangulation/createFromMesh(_:deflection:)``,
+    /// a `.brep` or STEP import that carried its own triangulation, or writing the shape to STL.
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    ///
+    /// // CoherentTriangulation.createFromMesh triangulates without computing normals.
+    /// _ = CoherentTriangulation.createFromMesh(box, deflection: 0.1)
+    /// print(box.computeNormals() ?? -1)  // 6: one per face, all six gained normals
+    /// print(box.computeNormals() ?? -1)  // 0: idempotent, nothing left to do
+    /// ```
+    ///
+    /// - Returns: the number of faces whose triangulation gained normals in this call, or `nil`
+    ///   if the shape is empty or OCCT threw. `0` is a success: every triangulated face already
+    ///   had normals, or the shape has no triangulated face. Before v4.0.0 this returned `Bool`,
+    ///   and that `Bool` was `true` whenever any face carried a triangulation, whether or not the
+    ///   call computed anything, which made it unconditionally `true` for any shape a caller could
+    ///   reach it on (#2905).
+    @discardableResult
+    public func computeNormals() -> Int? {
+        let computed = OCCTBRepLibComputeNormals(handle)
+        return computed < 0 ? nil : Int(computed)
     }
 
     // MARK: BRepLib_PointCloudShape
@@ -3507,9 +3534,35 @@ extension Shape {
 }
 
 extension Shape {
-    /// Ensure normal consistency of triangulated shape.
+    /// Average node normals across smooth shared edges, so a node on a tangent join carries one
+    /// normal rather than one per adjacent face.
     ///
-    /// Returns true if normals were fixed.
+    /// Wraps `BRepLib::EnsureNormalConsistency`. It does two things, and `true` means it wrote a
+    /// normal in either of them: it adds surface-derived normals to any triangulated face that
+    /// has none, and it then replaces the two normals at each node of a shared edge with their
+    /// average wherever their dot product exceeds `cos(maxAngle)`.
+    ///
+    /// So `false` is the ordinary answer for a shape whose normals are already present and whose
+    /// edges are all sharp. Measured on the pinned kernel (`Scripts/repro/2905/`), at
+    /// `maxAngle: 0.01`: a box that came through ``mesh(linearDeflection:angularDeflection:)``
+    /// answers `false`, because #2337 left every face with normals and a 90 degree join is nowhere
+    /// near `cos(0.01)`; the same box triangulated without normals answers `true` on the first
+    /// call and `false` on the second; and a cylinder or a sphere answers `true` every time,
+    /// because the seam nodes are smooth and get re-averaged on each pass.
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// _ = box.mesh(linearDeflection: 0.5)
+    /// print(box.ensureNormalConsistency(maxAngle: 0.01))  // false: nothing to average
+    ///
+    /// let cylinder = Shape.cylinder(radius: 10, height: 5)!
+    /// _ = cylinder.mesh(linearDeflection: 0.5)
+    /// print(cylinder.ensureNormalConsistency(maxAngle: 0.01))  // true: the seam is smooth
+    /// ```
+    ///
+    /// - Parameter maxAngle: the angular tolerance, in radians, below which two normals at a
+    ///   shared node count as the same normal and are averaged.
+    /// - Returns: `true` if any normal was written, `false` if there was nothing to do.
     @discardableResult
     public func ensureNormalConsistency(maxAngle: Double = 0.001) -> Bool {
         OCCTBRepLibEnsureNormalConsistency(handle, maxAngle)

@@ -134,7 +134,8 @@ Each normal is a unit vector perpendicular to the surface at that vertex. Array 
 `vertexCount`.
 
 `BRepMesh_IncrementalMesh` does **not** compute node normals: `Poly_Triangulation::HasNormals()` is
-false for every face it meshes. They are computed when the mesh is built, by
+false for every face it meshes and nothing else has touched. They are computed when the mesh is
+built, by
 `BRepLib_ToolTriangulatedShape::ComputeNormals`, which takes the normal from the surface itself
 (`GeomLib::NormEstim` at the node's UV) where UV nodes exist and from the average of the incident
 triangle normals where they do not. That is what OCCT's own consumers do: `StdPrs_ShadedShape.cxx:186`
@@ -150,6 +151,11 @@ Until #2337 this returned `(0, 0, 1)` at every vertex of every meshed shape: the
 placeholder wherever `HasNormals()` was false, which was always. `(0, 0, 1)` is still reported for a
 node whose incident triangles all cancel, which is OCCT's own answer for a normal it cannot define
 (`Poly_Triangulation.cxx:472`) and needs a degenerate triangulation to reach.
+
+`ComputeNormals` is a **write**, not a read: it calls `AddNormals()` on the handle
+`BRep_Tool::Triangulation` hands back, so building a `Mesh` leaves the normals stored on the shape
+as well. That is why `Shape.computeNormals()` reports `0` for a shape that has been through
+`mesh(...)`: there is nothing left for it to do (#2905).
 
 - **Returns:** Normal array; `[]` if the mesh is empty.
 - **OCCT:** `OCCTMeshGetNormals`, copies the internal normal float buffer; the values come from
