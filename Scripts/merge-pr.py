@@ -34,11 +34,31 @@ What it does, in order:
   4. Merges with `gh pr merge --merge`, which is the method this repo uses.
 
 It refuses rather than guesses. An unfilled template placeholder, an empty section, a missing
-heading, a PR that is not open, a PR whose own diff already touches `docs/CHANGELOG.md`, and a
-cross-repository head branch are all refusals with the reason printed, because each of them is a
-question for a human and none of them is a transcription.
+heading, an entry opening with a bare `### Fixed` / `### Added` / `### Changed`, a PR that is not
+open, a PR whose own diff already touches `docs/CHANGELOG.md`, and a cross-repository head branch
+are all refusals with the reason printed, because each of them is a question for a human and none
+of them is a transcription.
 
-Re-running is safe: an entry already present in `docs/CHANGELOG.md` is detected and not duplicated.
+Re-running is safe: an entry already present in `docs/CHANGELOG.md`'s `## Unreleased` section is
+detected and not duplicated. **Detected, and then proved.** This silently wrote nothing for nine
+merges between 2026-09-30 and 2026-10-01, reporting success each time, because `already_present`
+compared the entry's first line against the whole file and all nine opened with a bare Keep a
+Changelog category heading (#2951). Three things changed, and only the second of them would have
+stopped it:
+
+  * the duplicate test is scoped to `## Unreleased`, the only section `splice` writes. Measured:
+    this alone saves **none** of the nine, because the `### Fixed` / `### Changed` / `### Added`
+    each matched was itself inside `## Unreleased` at the moment of that merge. It is still the
+    right scope, and saying so with a measurement is better than implying it was the fix;
+  * a bare category heading is **refused**, before any git command runs. It is not an identifier,
+    so no duplicate test over first lines can work on it, and comparing whole blocks instead trades
+    this failure for the opposite one: a reflowed hand edit then reads as absent and the entry
+    lands twice. It is also not the convention `## Unreleased` is written in, and splicing N of
+    them leaves N separate `### Fixed` buckets for whoever assembles the release;
+  * **nothing reports "nothing is written" without proving it.** The skip prints the file and line
+    number it matched, and the splice re-reads the file and asserts the entry's opening line is in
+    `## Unreleased` before anything is committed, pushed or merged. A skip that was wrong is now a
+    loud failure rather than a line claiming the work is already done.
 
 It checks out the PR's branch, so run it from a checkout where that branch is free. This repo is
 worked in linked worktrees, and `git checkout` refuses a branch another worktree holds; the refusal
@@ -71,6 +91,13 @@ UNRELEASED = "## Unreleased"
 # The template's own placeholder text. A body still carrying it was never filled in, and
 # transcribing it would put a literal `<one-line summary of the change>` in the release record.
 PLACEHOLDERS = ("<one-line summary of the change>", "<#<issue>>", "<#issue>")
+
+# Keep a Changelog's six category headings. An entry opening with one of these bare is refused;
+# see category_heading() for why. `check-changelog-transcription.py` carries the same six words
+# for the same reason, deliberately restated rather than imported: these are two standalone
+# scripts with no shared module, and an importlib dance across a hyphenated filename costs more
+# than six words of vocabulary that has not changed since 2017.
+CATEGORY_HEADINGS = ("added", "changed", "deprecated", "fixed", "removed", "security")
 
 
 # ------------------------------------------------------------------------------------------------
@@ -214,17 +241,90 @@ def no_changelog_trailer(reason):
     return "No-Changelog: " + (one_line if one_line else "no entry warranted")
 
 
-def already_present(changelog_text, entry):
-    """Whether this entry is already in the file, so a re-run adds nothing.
+def first_substantive_line(text):
+    """The first non-blank line, stripped. Empty string when there is none."""
+    return next((l.strip() for l in text.split("\n") if l.strip()), "")
 
-    Compares the entry's first non-blank line, which is its `###` heading and carries the issue
-    number, rather than the whole block: the block may have been reflowed by a hand edit, and the
-    heading is what a duplicate would duplicate.
+
+CATEGORY_HEADING_RE = re.compile(r"^#{2,6}\s+([A-Za-z]+)\s*:?\s*$")
+
+
+def category_heading(entry):
+    """The bare Keep a Changelog category heading this entry OPENS with, or None.
+
+    `### Fixed` is not an identifier. Every duplicate test this tool can make over an entry's
+    opening line therefore reports a match the moment any other entry in the file opens the same
+    way, which is what cost nine entries between 2026-09-30 and 2026-10-01 (#2951). Measured on
+    those nine: each matched a heading that was itself inside `## Unreleased`, so scoping the
+    comparison does not rescue the shape and nothing short of comparing whole blocks would. That
+    trade is worse, because a reflowed hand edit then reads as absent and the entry lands twice.
+
+    So the shape is refused instead, and the refusal is not only about this tool. `## Unreleased`
+    is written as descriptive headings carrying their issue numbers, and `splice` puts each entry
+    at the top of the section, so three entries opening `### Fixed` leave three separate `Fixed`
+    buckets in merge order for whoever assembles the release to merge by hand.
+
+    The match is deliberately narrow: ONE word, optionally followed by a colon, and nothing else
+    on the line. `### Fixed the thing (#1)` is a descriptive heading that happens to start with a
+    category word, and refusing it would be the tool blocking a merge for no reason at all.
     """
-    first = next((l.strip() for l in entry.split("\n") if l.strip()), "")
+    m = CATEGORY_HEADING_RE.match(first_substantive_line(entry))
+    if not m:
+        return None
+    return m.group(0).strip() if m.group(1).lower() in CATEGORY_HEADINGS else None
+
+
+def unreleased_section(changelog_text):
+    """`(first_line_index, lines)` of the `## Unreleased` body, or None when there is no heading.
+
+    The body runs from the line after the heading to the next `## ` heading or the end of the
+    file, with fenced code masked, so a changelog entry quoting a `## ` line inside a fence does
+    not truncate the section. The index is 0-based into `changelog_text.split("\\n")` so a caller
+    can report a line number the operator can open the file at.
+    """
+    lines = changelog_text.split("\n")
+    in_code = code_block_mask(lines)
+    at = None
+    for i, line in enumerate(lines):
+        if not in_code[i] and line.strip() == UNRELEASED:
+            at = i + 1
+            break
+    if at is None:
+        return None
+    end = len(lines)
+    for j in range(at, len(lines)):
+        if not in_code[j] and re.match(r"^##(?!#)\s", lines[j]):
+            end = j
+            break
+    return (at, lines[at:end])
+
+
+def find_in_unreleased(changelog_text, entry):
+    """The 1-based line of the entry's opening line inside `## Unreleased`, or None.
+
+    Scoped to that section because it is the only place `splice` writes. The same heading in a
+    released section is a different entry in a different release and says nothing about whether
+    this one landed.
+
+    It returns the line rather than a bool so that both callers can show their work: the skip
+    prints the match it is skipping on, and the post-splice check prints where the entry landed.
+    """
+    first = first_substantive_line(entry)
     if not first:
-        return False
-    return first in [l.strip() for l in changelog_text.split("\n")]
+        return None
+    found = unreleased_section(changelog_text)
+    if found is None:
+        return None
+    at, body = found
+    for k, line in enumerate(body):
+        if line.strip() == first:
+            return at + k + 1
+    return None
+
+
+def already_present(changelog_text, entry):
+    """Whether this entry is already under `## Unreleased`, so a re-run adds nothing."""
+    return find_in_unreleased(changelog_text, entry) is not None
 
 
 def splice(changelog_text, entry):
@@ -363,6 +463,28 @@ def main(argv=None):
         return 0
 
     entry = payload
+    bare = category_heading(entry)
+    if bare:
+        sys.stderr.write(
+            "error: the `%s` section opens with `%s`, a bare Keep a Changelog category heading.\n"
+            "\n"
+            "Entries under `%s` in %s are headed descriptively and carry their issue numbers:\n"
+            "\n"
+            "    ### `Shape.thing` no longer returns the wrong answer (#123)\n"
+            "\n"
+            "Two things go wrong with a bare one. It identifies nothing, so this tool cannot tell\n"
+            "your entry from any other entry opening the same way, and it silently wrote nothing\n"
+            "for nine merges between 2026-09-30 and 2026-10-01 for exactly that reason (#2951).\n"
+            "And each entry is spliced in at the top of the section, so N of them leave N separate\n"
+            "`%s` buckets in merge order for whoever assembles the release.\n"
+            "\n"
+            "Rewrite the heading in the PR body and leave the prose as it is. An entry covering\n"
+            "several kinds of change takes one descriptive heading, not an `### Added` /\n"
+            "`### Changed` / `### Fixed` split. See okf/policies/changelog-on-merge.md.\n"
+            "\n"
+            "Nothing has been written, nothing has been pushed, and PR #%s is not merged.\n"
+            % (HEADING, bare, UNRELEASED, CHANGELOG, bare, args.number))
+        return 1
     if not args.allow_changelog_in_diff:
         refusal = refuse_for_diff(changed_paths(args.number))
         if refusal:
@@ -379,16 +501,33 @@ def main(argv=None):
 
     with open(CHANGELOG, encoding="utf-8") as fh:
         text = fh.read()
-    if already_present(text, entry):
-        print("  the entry is already in %s, so nothing is written." % CHANGELOG)
+    at = find_in_unreleased(text, entry)
+    if at is not None:
+        # Never claim "nothing is written" without showing the match it rests on (#2951).
+        print("  the entry's opening line is already under `%s`, so nothing is written. The match:"
+              % UNRELEASED)
+        print("    %s:%d: %s" % (CHANGELOG, at, first_substantive_line(entry)))
     else:
         new = splice(text, entry)
         if args.dry_run:
             print("  would write %s with the entry spliced under `%s`" % (CHANGELOG, UNRELEASED))
+            written = new
         else:
             with open(CHANGELOG, "w", encoding="utf-8") as fh:
                 fh.write(new)
             print("  wrote %s" % CHANGELOG)
+            with open(CHANGELOG, encoding="utf-8") as fh:
+                written = fh.read()
+        # ...and never claim it WAS written without re-reading the file and finding it (#2951).
+        at = find_in_unreleased(written, entry)
+        if at is None:
+            sys.stderr.write(
+                "error: the entry is not under `%s` in %s after the splice, so the transcription "
+                "did not happen. Nothing is committed, pushed or merged. This check exists "
+                "because the tool used to report success while writing nothing (#2951).\n"
+                % (UNRELEASED, CHANGELOG))
+            return 1
+        print("  verified: %s:%d holds `%s`" % (CHANGELOG, at, first_substantive_line(entry)))
         message = ("docs: transcribe PR #%s's CHANGELOG entry (#%s)\n\n"
                    "Copied verbatim from the PR body by Scripts/merge-pr.py, per\n"
                    "okf/policies/changelog-on-merge.md.\n" % (pr["number"], pr["number"]))
@@ -553,6 +692,26 @@ Prose.
 PATCH.
 """
 
+# The shape of all nine entries lost between 2026-09-30 and 2026-10-01 (#2951): a bare Keep a
+# Changelog category heading over a bullet list. Reconstructed from PR #2886's body.
+BODY_CATEGORY_HEADING = """## What & why
+
+Something.
+
+Closes #2872
+
+## CHANGELOG entry
+
+### Fixed
+
+- `Shape.edgePolyline` now applies the deflection bound OCCT documents and the pinned Release
+  kernel compiles out (#2872).
+
+## SemVer impact
+
+PATCH.
+"""
+
 CHANGELOG_FIXTURE = """# Changelog
 
 ## Current: v3.0.0
@@ -566,6 +725,56 @@ Blurb.
 ### An earlier entry (#100)
 
 Text.
+"""
+
+# The duplicate test is scoped to `## Unreleased`, so an identical heading in a RELEASED section
+# below it is a different entry in a different release and must not read as this one landing.
+CHANGELOG_HEADING_IN_RELEASED = """# Changelog
+
+## Unreleased
+
+### An earlier entry (#100)
+
+Text.
+
+## v2.0.0
+
+### `Shape.thing` no longer returns the wrong answer (#123)
+
+Text.
+"""
+
+# The file as it stood at each of the nine merges, measured: ONE `### Fixed`, and it was inside
+# `## Unreleased`. This is the fixture that shows scoping alone rescues nothing.
+CHANGELOG_CATEGORY_IN_UNRELEASED = """# Changelog
+
+## Unreleased
+
+### Fixed
+- Something else entirely (#55).
+
+## v2.0.0
+
+### Older (#1)
+"""
+
+# An entry that quotes a `## ` heading inside a fence. Masking fences is what keeps that from
+# ending the section early and making an entry below it read as absent.
+CHANGELOG_FENCED_H2 = """# Changelog
+
+## Unreleased
+
+### An entry that quotes a release heading (#7)
+
+```markdown
+## v2.0.0
+```
+
+### A thing (#9)
+
+## v2.0.0
+
+### Older (#1)
 """
 
 
@@ -709,6 +918,75 @@ def self_test():
 
     case("already-present-detected", already_present(spliced, entry))
     case("already-present-is-false-before", not already_present(CHANGELOG_FIXTURE, entry))
+
+    # ------------------------------------------------------------------------------------------
+    # #2951. Nine entries, about 162 lines, were extracted, printed to the operator and discarded
+    # between 2026-09-30 and 2026-10-01, with a line each saying the work was already done. Every
+    # case below was absent from the 40 that stood before: all 40 used a descriptive heading, so
+    # the whole category-heading population was untested.
+    # ------------------------------------------------------------------------------------------
+
+    cat_entry = classify(extract_section(BODY_CATEGORY_HEADING))[1]
+    case("a-category-heading-entry-still-classifies-as-an-entry",
+         classify(extract_section(BODY_CATEGORY_HEADING))[0] == "entry")
+    case("a-bare-category-heading-is-detected",
+         category_heading(cat_entry) == "### Fixed", repr(category_heading(cat_entry)))
+    case("all-six-keep-a-changelog-words-are-detected",
+         all(category_heading("### %s\n\n- x\n" % w.capitalize()) is not None
+             for w in CATEGORY_HEADINGS),
+         [w for w in CATEGORY_HEADINGS
+          if category_heading("### %s\n\n- x\n" % w.capitalize()) is None])
+    case("a-category-heading-is-detected-whatever-its-case-or-level",
+         category_heading("#### fixed\n") == "#### fixed"
+         and category_heading("### FIXED:\n") == "### FIXED:",
+         (category_heading("#### fixed\n"), category_heading("### FIXED:\n")))
+    # The over-refusal guard, and the reason the match is one word and nothing else: a merge
+    # blocked for a heading that was correct all along is this refusal costing more than it saves.
+    case("a-descriptive-heading-starting-with-a-category-word-is-not-refused",
+         category_heading("### Fixed the thing (#1)\n") is None
+         and category_heading("### Added a wrapper for GeomFill (#2)\n") is None,
+         (category_heading("### Fixed the thing (#1)\n"),
+          category_heading("### Added a wrapper for GeomFill (#2)\n")))
+    case("the-ordinary-entry-fixture-is-not-refused", category_heading(entry) is None,
+         repr(category_heading(entry)))
+    # The measured reason the fix is a refusal rather than a scoped comparison: at every one of
+    # the nine merges the `### Fixed` / `### Changed` / `### Added` that matched was itself inside
+    # `## Unreleased`, so scoping the duplicate test saves none of them. It is still the right
+    # scope, and this case is what keeps the claim from being an assertion.
+    case("scoping-alone-does-not-rescue-a-category-heading",
+         already_present(CHANGELOG_CATEGORY_IN_UNRELEASED, cat_entry))
+    case("the-refusal-is-what-catches-the-2026-10-01-shape",
+         category_heading(cat_entry) is not None)
+
+    # The scope itself. A heading in a RELEASED section is a different entry in a different
+    # release; before #2951 the comparison was over the whole file and read it as this one.
+    case("a-heading-in-a-released-section-is-not-this-entry-landing",
+         not already_present(CHANGELOG_HEADING_IN_RELEASED, entry),
+         find_in_unreleased(CHANGELOG_HEADING_IN_RELEASED, entry))
+    case("unreleased-section-stops-at-the-next-h2",
+         unreleased_section(CHANGELOG_HEADING_IN_RELEASED)[1]
+         == ["", "### An earlier entry (#100)", "", "Text.", ""],
+         unreleased_section(CHANGELOG_HEADING_IN_RELEASED))
+    case("a-fenced-h2-does-not-truncate-the-unreleased-section",
+         find_in_unreleased(CHANGELOG_FENCED_H2, "### A thing (#9)\n") == 11,
+         find_in_unreleased(CHANGELOG_FENCED_H2, "### A thing (#9)\n"))
+    # No `## Unreleased` heading means no match, and the entry sits ABOVE the first release
+    # heading on purpose: a fallback that treats the whole file as the section would otherwise
+    # find it, and a fixture that puts it below is green whether the fallback exists or not.
+    case("no-unreleased-heading-means-no-match",
+         find_in_unreleased("# Changelog\n\n### A (#1)\n\n## v1.0.0\n", "### A (#1)\n") is None,
+         find_in_unreleased("# Changelog\n\n### A (#1)\n\n## v1.0.0\n", "### A (#1)\n"))
+
+    # The post-splice proof, which is the half that generalises: a skip that was wrong used to be
+    # silent, and now fails loudly. These are the two answers the check has to be able to give.
+    case("the-post-splice-check-finds-a-spliced-entry",
+         find_in_unreleased(splice(CHANGELOG_FIXTURE, entry), entry) == 11,
+         find_in_unreleased(splice(CHANGELOG_FIXTURE, entry), entry))
+    case("the-post-splice-check-fails-when-nothing-was-written",
+         find_in_unreleased(CHANGELOG_FIXTURE, entry) is None)
+    case("the-skip-reports-the-line-it-matched",
+         find_in_unreleased(CHANGELOG_CATEGORY_IN_UNRELEASED, cat_entry) == 5,
+         find_in_unreleased(CHANGELOG_CATEGORY_IN_UNRELEASED, cat_entry))
 
     case("diff-carrying-the-changelog-is-refused",
          refuse_for_diff(["docs/CHANGELOG.md", "a.swift"]) is not None)
