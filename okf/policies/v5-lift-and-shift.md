@@ -3,7 +3,7 @@ type: policy
 title: Lifting work off v5.0.0-766-execution
 description: The #766 execution branch is drained onto main by lifting each PR's work as a fresh PR, never by merging the branch. The unit of the backlog is the path and the test inside it, never the open PR, because 84 percent of the available work is in PRs already merged into the branch. The delta is taken against the PR's own base, tests and probes cross while the evidence records stay, three screens triage what is worth lifting, and the batch ends by closing what it lifted.
 tags: [policy, process, v5, 766, lift, branches, agents]
-timestamp: 2026-10-01
+timestamp: 2026-10-02
 ---
 
 # Lifting work off `v5.0.0-766-execution`
@@ -27,6 +27,16 @@ There are three populations and only one of them was ever being counted:
 | open | 61 | 220 | 219 |
 | closed unmerged | 134, 104 heads alive | 109 | 4 |
 
+**Every figure in that table is low, and the merged row has been re-measured.** It was taken with
+a census that keyed each test on its function name alone, so two same-named `@Test` functions in
+different suites of one file collapsed into one entry (#2949). Re-run against `main` at `6aa5ad2`
+with the corrected key, the merged row's gain count is **1,229** rather than 1,210, over the same
+417 paths; three paths moved, and `StressBuilderLifecycleTests.swift` went from 12 gains to 32 and
+from ninth in the ranking to fifth. The open and closed-unmerged rows have **not** been
+re-measured, because each needs its own head screened. Re-run before quoting any of them. No path
+the old key reported at zero gain has one under the new key, so nothing a batch declared drained
+on the merged population was wrongly declared.
+
 So **the backlog the programme worked is 15 percent of the work**, and the merged population,
 which nothing in the programme can see, is 84 percent of it. The two are near-disjoint by
 construction: an open PR's commits live on its own `exec/766-*` head and are not on the branch,
@@ -35,7 +45,7 @@ merged, so `git log --merges` does not list it either, and `check-766-already-la
 PR number, so nothing would ever have pointed it at one. Its `HatchTests.swift` pins sat on the
 branch for as long as the programme ran.
 
-Measured the same day: of the 61 open PRs, **one** reaches any of the 1,210 merged gains, and the
+Measured the same day: of the 61 open PRs, **one** reaches any of the merged gains, and the
 104 surviving closed-unmerged heads carry **four** gains that are nowhere else. Closed-unmerged is
 therefore almost empty, which shrinks the programme rather than growing it: most of those PRs are
 evidence-record corrections, and the records never cross (#2854).
@@ -65,12 +75,13 @@ weaker than the v5 base by 25 lines belonging to a third PR. Read the file.
 **346 is not the remaining work, in either direction.** That is the commit count #2937 quotes,
 `git log --no-merges origin/v5.0.0-766-execution ^origin/main -- Tests/ Scripts/repro/`, and it
 counts commits by identity, including every one whose content `main` has already taken through a
-lift rewritten rather than copied. Measuring by content gives 417 paths and 1,210 tests, and both
+lift rewritten rather than copied. Measuring by content gives 417 paths and 1,229 tests, and both
 of those are the number to carve batches out of. The commit count answers nothing.
 
 Every count the census prints is a **lower** bound. Two tests that both tier clean can still
 differ, and #2937's own `islandsCutHoles` is one: the branch pins two exact half-spans `main` does
-not, and the detector scores both sides the same.
+not, and the detector scores both sides the same. It was a lower bound for a second reason until
+#2949, which is why the figures on this page carry a date and a commit: re-measure, never quote.
 
 ## What the first two content batches measured
 
