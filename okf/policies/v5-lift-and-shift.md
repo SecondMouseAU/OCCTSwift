@@ -72,12 +72,55 @@ Every count the census prints is a **lower** bound. Two tests that both tier cle
 differ, and #2937's own `islandsCutHoles` is one: the branch pins two exact half-spans `main` does
 not, and the detector scores both sides the same.
 
+## What the first two content batches measured
+
+#2937's prediction was that the merged population holds the work and nothing in the programme
+could reach it. Batch 8 ran two lifts picked by path rather than by PR and both came back the same
+way:
+
+| batch | paths | source PRs | merged | open | SEVERE in those paths |
+|---|---|---|---|---|---|
+| Stress | 3 | 9 | **9** | 0 | 191 to 100 |
+| Foundation | 1 | 6 | **6** | 0 | 31 to 7 |
+
+**Fifteen source PRs, every one of them merged into the branch and invisible to an open-PR
+screen.** Repo-wide the two together move SEVERE from 1,496 to about 1,381. Take this as settled:
+pick paths from `census-766-unlifted-tests.py`, and expect the sources to be merged PRs you cannot
+close.
+
+### The census picks candidates, and three of its shapes are not gains
+
+A gain is a candidate, not a verdict, and batch 8 measured three ways it misleads:
+
+* **`main` ahead but scoring worse.** `main`'s stronger version of a test carried an extra
+  `guard let ... else { Issue.record; continue }`, which the detector reads as a nil-skip. Lifting
+  the branch's version would have removed pins, not added them.
+* **A sibling test inlined into its neighbour.** The detector inlines any same-file `func` whose
+  name a test calls, so a test calling `Color.fromName(` picked up the body of the sibling
+  `@Test func fromName` and inherited its `if let`. Five gains cleared themselves once the
+  neighbour was fixed. Any file where a test's name is a prefix of another test's call shows this.
+* **Same-named tests in different suites of one file collapse**, because the tier map is keyed on
+  the function name (#2949). `StressExhaustiveAPITests.swift` holds 112 tests and the census says
+  100. It under-reports, and it can report zero gains for a path that still has some, which is the
+  one claim it must not get wrong.
+
+The complement also holds: both batches strengthened tests the census could not count, because a
+test can tier clean and still be loose. `#expect(distance > 1.0)` where the answer is 2, and
+`#expect(msg != nil || msg == nil)`, both tier clean. Read around what the census points at.
+
 ## The rules
 
 **1. Take the delta against the PR's own base, never against `main`.** An execution PR's merge-base
-with `v5.0.0-766-execution` is its own branch point, which every batch so far has measured as the
-same commit; `main`'s merge-base with the same head is older, and a delta taken there drags in the
-epic. Measure it, do not copy the hash out of a previous batch, and state it in the lift PR body.
+with `v5.0.0-766-execution` is its own branch point; `main`'s merge-base with the same head is
+older, and a delta taken there drags in the epic. Measure it, do not copy the hash out of a
+previous batch, and state it in the lift PR body.
+
+This page used to add that every batch had measured that base as the same commit. **That was an
+artefact of batching by domain**, and batch 8 disproved it: the six source PRs behind the
+Foundation lift have **six distinct merge-bases**, and their `main drops N lines` figures climb
+161, 203, 285, 370, 420, 505 because the six deltas overlap in one file. A shared base is a
+property of a batch somebody assembled, never of the branch, so there is nothing to carry
+forward.
 
 **2. Never merge or cherry-pick an `exec/766-*` branch.** The work is applied by hand onto `main`.
 The branch is several hundred commits ahead (492 when #2854 measured it) and carries a tree `main`
@@ -102,6 +145,18 @@ already holds the branch's post-image. LANDED means stop and close the source. N
 read the per-file lines it prints, not lift unseen: containment is strict, so two comments `main`
 dropped are enough for DIFFERENT. Run it over the whole batch before any reading. It is a blob
 comparison and the script's docstring says what it cannot answer.
+
+**DIFFERENT does not say which side moved, and that is the question.** Resolve it before reading
+the branch's version at all:
+
+    git diff <the PR's own base> origin/main -- <path>
+
+Empty means `main` has not touched the path since the branch point, so the difference is the
+branch's and the branch is the candidate. Non-empty means `main` moved, and `main` is then as
+likely to be ahead as behind: batch 3 met a test whose contract `main` had legitimately changed
+under it (#2769), batch 7 met a return type that became an optional (#2857), and batch 8 met a
+file where `main`'s version pins strictly more while scoring worse on the detector. Taking the
+branch's side without this check is how a lift becomes a regression.
 
 It is **per candidate**, so it answers only about work somebody has already decided to look at.
 It cannot find work, and pointed at a PR number it cannot reach a merged one at all. Finding what
@@ -146,9 +201,15 @@ commit on `main` that carries its work, so the record survives at the PR URL. "D
 recommend" produced a queue of recommendations nobody actioned and a backlog count the programme
 was steered by (#2909). Closing is the batch's last step, not the next batch's first.
 
-A merged source PR cannot be closed, so for the merged population the record goes in the lift PR
-body instead: name the source PR, and comment on it with the commit on `main` that carries its
-work. The branch is drained when the census reports no gain worth taking, not when the open-PR
+**The close follows the merge, not the push.** A source PR closed while the lift is still open
+points at work that may never land, and if the lift is then reworked the comment is wrong with no
+one watching it. So the lifting agent names the source PRs in its PR body and comments on each,
+and **whoever merges the lift closes them**, with the merge commit in hand. Batches 6 and 7 both
+left this step to a later sweep and both needed one.
+
+A merged source PR cannot be closed at all, so for the merged population the record is the comment
+alone: name the source PR in the lift PR body, and comment on it with the commit on `main` that
+carries its work. The branch is drained when the census reports no gain worth taking, not when the open-PR
 list empties: emptying that list would leave 84 percent of the work on a branch about to be
 dropped, which is the condition #2937 was filed to prevent.
 
