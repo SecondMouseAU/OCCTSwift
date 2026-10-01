@@ -1,0 +1,20 @@
+zigzag 40 points: domain [0, 344.37555969396806]
+  GCPnts whole 356.25037951382484 | CPnts whole 356.25037939669323
+  GCPnts [1/3, 2/3] 117.00618367226606 | CPnts 117.00618367097974
+  GCPnts [1/4, 3/4] 175.90029293500169 reversed 175.90029293500169
+  CPnts over [f - s, l + s] (unclamped extension) 442165.85815271176
+helix 60 points: domain [0, 191.4434851805353]
+  GCPnts whole 192.22708964718808 | CPnts whole 192.22708966671243
+  GCPnts [1/3, 2/3] 64.075222871849348 | CPnts 64.075222838171129
+  GCPnts [1/4, 3/4] 96.112844923442168 reversed 96.112844923442168
+  CPnts over [f - s, l + s] (unclamped extension) 24024.379608956602
+segment (0,0,0)-(3,4,0): domain [0, 5]
+  GCPnts whole 5 | CPnts whole 5
+  GCPnts [1/3, 2/3] 1.6666666666666667 | CPnts 1.6666666666666667
+  GCPnts [1/4, 3/4] 2.5 reversed 2.5
+  CPnts over [f - s, l + s] (unclamped extension) 15
+circle r 7: domain [0, 6.2831853071795862]
+  GCPnts whole 43.982297150257104 | CPnts whole 43.982297150257104
+  GCPnts [1/3, 2/3] 14.660765716752367 | CPnts 14.660765716752366
+  GCPnts [1/4, 3/4] 21.991148575128552 reversed 21.991148575128552
+  CPnts over [f - s, l + s] (unclamped extension) 131.94689145077132

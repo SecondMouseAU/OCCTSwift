@@ -1,0 +1,22 @@
+[ProjectionOnCurve] NbPoints=2
+  i=1 point=(5,0,0) param=0 dist=5
+  i=2 point=(-5,6.12323399574e-16,0) param=3.14159265359 dist=15
+  LowerDistance=5 LowerDistanceParameter=0
+[QuasiUniformAbscissa] segment n=5 IsDone=1 NbPoints=5 params: 0 2.5 5 7.5 10
+[QuasiUniformAbscissa] segment n=2 IsDone=1 NbPoints=2 params: 0 10
+[QuasiUniformAbscissa] circle r=5 n=10 IsDone=1 NbPoints=10 params: 0 0.698131700798 1.3962634016 2.09439510239 2.79252680319 3.49065850399 4.18879020479 4.88692190558 5.58505360638 6.28318530718
+[QuasiUniformDeflection] r=10 defl=0.1 IsDone=1 NbPoints=24 maxRadialErr=1.78e-15 maxSagitta=0.0931405396367 first=(10,0) last=(10,-2.02128619923e-14)
+[QuasiUniformDeflection] r=10 defl=1 IsDone=1 NbPoints=8 maxRadialErr=1.78e-15 maxSagitta=0.990311320976 first=(10,0) last=(10,-2.44929359829e-15)
+[QuasiUniformDeflection] r=10 defl=0.01 IsDone=1 NbPoints=72 maxRadialErr=1.78e-15 maxSagitta=0.00978773480026 first=(10,0) last=(10,-2.90946461893e-14)
+[SketchArcCircle] segments=50 inputPoints=52 IsDone=1 edges=51 length=25.7053795391 closed=1
+[SurfToAnaSurf] resultNull=0 type=Geom_Plane gap=0
+  plane normal=(0,0,1) origin=(0,0,0)
+[SurfToAnaSurf] IsCanonical(plane)=1 IsCanonical(bspline)=0
+[TopTrans] basic before=OUT(1) after=IN(0)
+[TopTrans] curvature before=OUT(1) after=IN(0)
+[TopTrans] crossing (normal +x) before=OUT(1) after=IN(0)
+[UniformAbscissa] edge1 range=[0,10] start=(-5,-5,-5) end=(-5,-5,5)
+  byCount 5: IsDone=1 NbPoints=5 params: 0 2.5 5 7.5 10
+  byDistance 3: IsDone=1 NbPoints=5 params: 0 3 6 9 10
+  byCountRange 3 [0,1]: IsDone=1 NbPoints=3 params: 0 0.5 1
+[WireEdgePolyline] edge0 NbPoints=2: (-5,-2.5,0) (5,-2.5,0)

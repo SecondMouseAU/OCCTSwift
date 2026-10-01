@@ -1,0 +1,11 @@
+GeomAbs_OffsetCurve 7 GeomAbs_OtherCurve 8 GeomAbs_Line 0
+line GetType 0
+cylinder edge type 1 uniform deflection 0.1 -> 24 points
+cylinder edge type 0 uniform deflection 0.1 -> 2 points
+cylinder edge type 1 uniform deflection 0.1 -> 24 points
+cylinder edge type 0 uniform deflection 0.1 -> 2 points
+cylinder edge type 1 uniform deflection 0.1 -> 24 points
+cylinder edge type 1 uniform deflection 0.1 -> 24 points
+arc: curvature 0.20000000000000001 centre (0, 9e-17, 0) start (5, 0) end (-5, 7.92e-16)
+arc: curvature 0.33333333333333331 centre (10, -2.84e-16, 0) start (13, 0) end (7, -2e-16)
+arc: curvature 0.33333333333333331 centre (20, -2.84e-16, 0) start (23, 0) end (17, -2e-16)
