@@ -21,6 +21,31 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### Counted claims leave CLAUDE.md for the pages that own them (#2954)
+
+`CLAUDE.md` stated eleven counted claims about the repo's own inventories, each gated by
+`check-inventory-prose.py`. The gate worked and the claims were still expensive: a count in the
+working summary is shared by every open PR and invalidated by every merged one. The swift-format
+wave2 manifest row made that concrete on 2026-10-02, moving 267 to 262 in a day and taking three
+unrelated PRs red at merge time, after review and CI had passed, one into a three-way conflict in
+which all three sides held a different number and none was right.
+
+All eleven move, with the gate following each to its new home: the patch counts to
+`okf/references/carried-occt-patches.md`, the gate, census and merge-history-audit counts to a new
+"How many there are" in `okf/policies/static-gates.md`, the enforced bridge population to
+`okf/policies/code-style.md`, which had said 33 against a tree of 93, and the bridge header and
+implementation counts to no new place at all, because `README.md` and
+`docs/architecture/overview.md` already state and gate them.
+
+The wave2 manifest's size is the one count not preserved. Rehoming it would have rehomed the
+conflict, since what collides is the number rather than its address, so its size is now stated
+nowhere: `check-inventory-prose.py` prints it on a clean run and a one-line `grep` derives it. A
+self-test case asserts that no claim states it, so writing it down again fails loudly.
+
+A sweep of the remaining numbers in `CLAUDE.md` found twenty more derived counts no gate reads.
+Five are fixed here, including the per-domain bridge bucket breakdown and the pinned-asset
+evidence tally; the other fifteen are filed as #2959.
+
 ### The Modeling boolean tests stop passing for a bridge that drops its argument (#2687, #2688, #2697, #2702, #2708, #2709)
 
 Twenty-four tests across fourteen `Tests/OCCTModelingTests/` files, lifted off `v5.0.0-766-execution`
