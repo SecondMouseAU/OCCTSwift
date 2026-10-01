@@ -34,14 +34,16 @@ import Testing
 @Suite("Issue2900 Mesh Angle Guard")
 struct Issue2900MeshAngleGuardTests {
 
-    /// A curved solid, where the angular deflection is the parameter that decides the
-    /// tessellation at all. Cheap at every value here, because none of them subdivides finely.
+    /// A curved solid, where the angular deflection decides the tessellation at all.
+    ///
+    /// Cheap at every value here, because none of them subdivides finely.
     private func cylinder() -> Shape? {
         Shape.cylinder(radius: 10, height: 5)
     }
 
-    /// A planar solid, where the angular deflection changes nothing about the result. The refusal
-    /// must still be the value's and not the geometry's.
+    /// A planar solid, where the angular deflection changes nothing about the result.
+    ///
+    /// The refusal must still be the value's and not the geometry's.
     private func box() -> Shape? {
         Shape.box(width: 10, height: 5, depth: 3)
     }
@@ -57,12 +59,15 @@ struct Issue2900MeshAngleGuardTests {
         }
     }
 
-    /// The two presentation entry points read their angle from `Prs3d_Drawer::DeviationAngle()`,
-    /// which is `myDeviationAngle > 0.0 ? myDeviationAngle : 20 degrees`
-    /// (`Prs3d_Drawer.hxx:243-248`). `NaN > 0.0` is false, so the drawer answers 20 degrees and a
-    /// NaN never reaches `initParameters`. #2900 named those sites from a reading of
-    /// `SetDeviationAngle`; this is the measurement that closed them, and it is here so that a
-    /// later change to `DeviationAngle()`'s fallback is a red test rather than a silent hole.
+    /// OCCT's own drawer accessor already refuses a degenerate angle, so the two presentation
+    /// entry points need no guard of ours.
+    ///
+    /// `Prs3d_Drawer::DeviationAngle()` is
+    /// `myDeviationAngle > 0.0 ? myDeviationAngle : 20 degrees` (`Prs3d_Drawer.hxx:243-248`), and
+    /// `NaN > 0.0` is false, so the drawer answers 20 degrees and a NaN never reaches
+    /// `initParameters`. #2900 named those sites from a reading of `SetDeviationAngle`; this is
+    /// the measurement that closed them, and it is here so that a later change to that fallback
+    /// is a red test rather than a silent hole.
     @Test("A NaN on the drawer is absorbed by OCCT's own accessor, not passed to the mesher")
     func nanOnTheDrawerIsAbsorbedByPrs3dDrawer() throws {
         let shape = try #require(box())
@@ -75,8 +80,9 @@ struct Issue2900MeshAngleGuardTests {
         let viaNaN = try #require(shape.shadedMesh(drawer: nanDrawer))
         let viaDefault = try #require(shape.shadedMesh(drawer: defaultDrawer))
         #expect(viaNaN.vertices.count == viaDefault.vertices.count)
-        #expect(try #require(shape.edgeMesh(drawer: nanDrawer)).vertices.count
-            == #require(shape.edgeMesh(drawer: defaultDrawer)).vertices.count)
+        #expect(
+            try #require(shape.edgeMesh(drawer: nanDrawer)).vertices.count
+                == #require(shape.edgeMesh(drawer: defaultDrawer)).vertices.count)
 
         // A positive angle below the floor is not absorbed: it reaches initParameters, which
         // throws, and the bridge's own catch answers nil. No guard of ours is involved.
