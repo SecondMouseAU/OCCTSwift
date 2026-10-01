@@ -40,6 +40,260 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 - `CLAUDE.md`'s swift-format exemption count, which said 269 where the manifest held 267
   (`check-inventory-prose.py`).
 
+### The TObj_Application singleton stops being freed by a release nobody paid for (#2897)
+
+`OCCTXCAFTests` trapped on wasm inside `OCCTTObjApplicationCreateDocument` with an
+`indirect call type mismatch`, which reads like a vtable or ABI disagreement between the headers
+the bridge compiles against and the kernel it links. It is not one: the slot is right and the
+object is gone.
+
+`OCCTTObjApplicationRelease` was a bare `DecrementRefCounter()`, so a release with no matching
+`OCCTTObjApplicationGetInstance()` took the place of the one reference
+`TObj_Application::GetInstance()`'s own function-local static `Handle` holds. Nothing was freed at
+that moment, which is what made it look safe. The object dies later, when the next ordinary
+`occ::handle` falls out of scope, decrements to zero and calls `Delete()`; the static handle then
+dangles and every later caller dispatches through a vptr read from reclaimed memory. In the
+failing run the over-release and the trap are about 660 transcript lines apart, which is why
+`Issue1588TObjApplicationReleaseTests.doubleReleaseDoesNotCorruptSingleton` performed it and
+passed.
+
+**Apple was exposed too**, and not benignly: `Scripts/repro/2897/run.sh --native` is a SIGSEGV on
+the same sequence against the pinned xcframework. The macOS suite survives only because an open
+`TObj` document holds a reference of its own, so the count has further to fall.
+
+The release now gives back only a borrow the bridge took. `OCCTTObjApplicationRefCount` is the
+observable the invariant needs, which #1588 considered and declined, and whose absence is why the
+property went untested. With the fix, `OCCTXCAFTests` on wasm runs 505 tests in 133 suites clean
+with both previously excluded files restored.
+
+The sweep the issue asked for found nothing else: `Scripts/repro/2897/vtable-parity.py` compares
+every vtable the bridge's own translation units lay out against the archive's `_ZTV` relocations,
+**253 classes and 3,363 slots**, and reports no disagreement in slot count, name or arity. There
+is no mistyped indirect call in the bridge.
+
+### Counted claims leave CLAUDE.md for the pages that own them (#2954)
+
+`CLAUDE.md` stated eleven counted claims about the repo's own inventories, each gated by
+`check-inventory-prose.py`. The gate worked and the claims were still expensive: a count in the
+working summary is shared by every open PR and invalidated by every merged one. The swift-format
+wave2 manifest row made that concrete on 2026-10-02, moving 267 to 262 in a day and taking three
+unrelated PRs red at merge time, after review and CI had passed, one into a three-way conflict in
+which all three sides held a different number and none was right.
+
+All eleven move, with the gate following each to its new home: the patch counts to
+`okf/references/carried-occt-patches.md`, the gate, census and merge-history-audit counts to a new
+"How many there are" in `okf/policies/static-gates.md`, the enforced bridge population to
+`okf/policies/code-style.md`, which had said 33 against a tree of 93, and the bridge header and
+implementation counts to no new place at all, because `README.md` and
+`docs/architecture/overview.md` already state and gate them.
+
+The wave2 manifest's size is the one count not preserved. Rehoming it would have rehomed the
+conflict, since what collides is the number rather than its address, so its size is now stated
+nowhere: `check-inventory-prose.py` prints it on a clean run and a one-line `grep` derives it. A
+self-test case asserts that no claim states it, so writing it down again fails loudly.
+
+A sweep of the remaining numbers in `CLAUDE.md` found twenty more derived counts no gate reads.
+Five are fixed here, including the per-domain bridge bucket breakdown and the pinned-asset
+evidence tally; the other fifteen are filed as #2959.
+
+### `Exporter.writeDXF` and `Exporter.writeSVG` work on WebAssembly, and 5,501 tests now run there (#2793)
+
+Both exporters wrote with `atomically: true`, which cannot be used on `wasm32-unknown-wasip1`: the call throws `NSCocoaErrorDomain Code=3328 "The requested operation is not supported."` there, so every DXF and SVG export failed. Measured: the same call with `atomically: false` succeeds. Both now write directly on that platform and keep atomicity everywhere else, which is what stops a crash mid-write leaving a half-written file a reader will open. Which operation underneath is unsupported was not established: the atomic path writes a temporary file and renames it, so the rename is the obvious candidate, but nothing here rules out the temp-file creation, and the fix does not depend on knowing. No behaviour changes on any Apple platform.
+
+The port also gains test coverage. 12 of the 18 per-domain suites build and run for wasm under the pinned `wasmkit`, 5,501 tests, driven by `Scripts/run-wasm-tests.sh` and run in CI. `Scripts/wasm-test-known-failures.txt` records every cross-platform difference found so far, and the runner fails both on a new failure and on a listed failure that starts passing. Six targets and sixteen files cannot run there, each with its reason in `Package.swift`. This closes the third of the four conditions on Phase 0's GO.
+
+### The merge tool stops discarding a CHANGELOG entry and reporting success, and nine lost entries come back (#2951)
+
+`Scripts/merge-pr.py` compared an entry's first non-blank line against the whole of
+`docs/CHANGELOG.md` to decide whether it had already been transcribed. A bare `### Fixed`,
+`### Added` or `### Changed` identifies nothing, so the match was unconditional: nine entries
+merged between 2026-09-30 and 2026-10-01 were extracted, printed to the operator and discarded,
+under a line saying the work was already done. All nine are restored here, verbatim from their PR
+bodies, in merge order, and they include `Shape.computeNormals()` reporting success for work it had
+not done (#2905), a NaN angular mesh deflection silently dropping the angular criterion (#2900),
+`Curve2D.fromEllipseArc` taking the process down on a swept range OCCT documents (#2884) and four
+`Document` naming calls doing the same on a document with no naming recorded (#766).
+
+The tool now refuses a bare category heading before it runs any git command, naming the convention
+and showing what to write instead, and neither it nor
+`Scripts/check-changelog-transcription.py` claims an entry is present without showing where: the
+skip prints the file and line it matched, and the splice re-reads the file and refuses to commit,
+push or merge unless the entry is under `## Unreleased`. The backstop report had the same blindness
+and had been calling all nine "transcribed late, nothing to do" for as long as they were missing;
+fixing it surfaced sixteen further merges whose entries never landed, filed separately.
+
+No library code changes.
+
+### Fixed
+
+- `Shape.edgePolyline` and `Shape.allEdgePolylines` now apply the deflection bound that OCCT
+  documents and the pinned Release kernel compiles out. A deflection below `Precision::Confusion()`
+  is refused with the `nil` or `[]` these already gave a null handle, rather than returning a
+  `maxPoints`-truncated leading sliver of each edge labelled as a sampling of the whole. The same
+  guard goes on `Shape.edgeMesh`'s curve fallback, where it is defensive: measurement puts every
+  Swift input through tessellation instead, and the degenerate-deflection behaviour of the
+  tessellator is filed separately as #2879. That fallback also had the caller's linear tolerance in
+  `GCPnts_TangentialDeflection`'s angular slot, the swap #1440 fixed in the edge-polyline path and
+  invisible at the default `0.1` (#2872).
+
+### Changed
+
+- The compiled-out-validation census (`Scripts/census-compiled-out-validation.py`) gains two
+  channels and the raise map gains a kind (#2858). Channel three reports a caller-controlled index
+  or dimension handed to an OCCT member whose only bound test is an out-of-line
+  `Standard_OutOfRange` / `RangeError` / `DimensionError` macro, and flags a sibling function in
+  the same file that does bound-check the same accessor name, which is how #2859 was found by
+  hand. Channel four lists the six OCCT files whose `#ifndef No_Exception` region swallows the
+  condition as well as the raise, re-derivable with `--verify-no-exception-regions`. The new
+  `inline-dead-at-depth` map kind counts, per inline-checked class, the OCCT out-of-line
+  translation units that expand the same check with `No_Exception` defined: 1,151 for
+  `NCollection_Array1` and 602 for `gp_Dir`, so `live-inline` means live only where the bridge is
+  the immediate caller. `Scripts/occt-raise-if-map.txt` is regenerated and picks up patch `0042`'s
+  throw row, which it had been missing since `v4.0.0-kernel.2`.
+- `Scripts/census-unmeasured-values.py` gains sub-kind 5, for a value the kernel fabricated rather
+  than one our own code did (#2844). It is a registry of three recorded sites (#2827, #597, #1018)
+  plus three derived checks run every time: the defect's `known-occt-bugs.md` row still exists, the
+  bridge site that reads the value still exists and still cites the issue, and no reader has come
+  back for a defect whose reader was deleted. A registry that no longer resolves is a refusal
+  (exit 2) rather than a clean report.
+- `okf/policies/occt-validation-is-compiled-out.md` records `std::get<T>` on a `std::variant` as a
+  survivor at depth that is not a `Standard_Failure`, re-checks and keeps the rejection of the
+  `NCollection_Array1::at` claim, and adds two measured cases where restoring
+  `BUILD_RELEASE_DISABLE_EXCEPTIONS` would not fix the defect.
+
+### Fixed
+- Every mesh entry point now refuses a linear deflection below `Precision::Confusion()` (1e-7), a
+  negative one, or NaN, returning the refusal it already gives an unusable input. NaN previously
+  passed every check OCCT makes and, on a shape with a curved face, started a tessellation that did
+  not return; on a box it produced a mesh at no stated deflection, and on a free edge 22,216
+  wireframe nodes where a valid request gives 33. The bound is OCCT's own, taken from `incmesh`,
+  `Prs3d::GetDeflection` and `BRepMesh_IncrementalMesh::initParameters`. A small deflection is
+  expensive rather than invalid and is still accepted. (#2879)
+
+### Fixed
+
+- `Curve2D.fromEllipseArc` applies the sweep range `Convert_EllipseToBSplineCurve` documents and the
+  pinned Release kernel compiles out along with the two locals that fed it. A sweep at or below
+  `-5*pi/3`, which `u1: 2 * .pi, u2: 0` reaches by swapping two adjacent arguments, was an
+  uncatchable SIGSEGV; a sweep past `2 * .pi` returned a curve that winds past a full turn and
+  overlaps itself, and at `1e9` asked the kernel for 763,943,729 poles and did not return; a NaN
+  bound returned a curve whose every pole was NaN, which OCCT's own predicate would not have refused
+  either. All of them now return `nil` (#2884).
+- `CurveProfiler.perform()` returns `false` for a profiler with no curves added instead of taking
+  the process down, and `CurveProfiler.poles(curveIndex:)` returns `[]` for an index outside
+  `1...n` instead of faulting at 0 or handing back another curve's poles read from past the end of
+  the sequence. `GeomFill_Profiler` documents that range and exposes no curve count, so the bridge
+  counts what it adds. An index too large for the bridge's `Int32` parameter is out of range like
+  any other rather than a Swift trap (#2884).
+- The census's four open `#ifndef No_Exception` rows are adjudicated rather than open:
+  `Convert_SphereToBSplineSurface` and `Convert_TorusToBSplineSurface` hold theirs in a constructor
+  overload no bridge function calls, and `GeomFill_Profiler`'s swallowed condition is satisfied by
+  construction at the bridge's only caller (#2884).
+
+### Added
+
+- `Surface.minDistance(to:uvBounds1:uvBounds2:)`, the minimum distance between two surfaces,
+  wrapping `GeomAPI_ExtremaSurfaceSurface::LowerDistance()` (#2876). It answers where
+  `Surface.extrema(to:)` has to refuse: two everywhere-equidistant surfaces have a real gap and no
+  nearest pair, and `Extrema_ExtSS`'s parallel branch fills the distance sequence while leaving
+  both point sequences empty (#2840), so reading the distance alone is correct and reading the
+  pair is an out-of-bounds read. Two parallel planes 5 apart now report 5 instead of nothing. It
+  completes a family that was inconsistent: `Curve3D.minDistance(to: Curve3D)` and
+  `Curve3D.minDistance(to: Surface)` have always read `LowerDistance()` alone and have always been
+  correct on parallel input, and surface-surface was the one member with no such entry point.
+  Additive: `SurfaceExtremaResult` is unchanged and `Surface.extrema(to:)` still returns `nil` for
+  a parallel pair. Documented along the way, and measured in `Scripts/repro/2876/`: `IsParallel()`
+  for surfaces means two parallel planes and nothing else, because `Extrema_ExtSS::Perform` reaches
+  the analytic branch only for `Plane` x `Plane`, so coaxial cylinders and concentric spheres are
+  ordinary two-extrema pairs that `extrema(to:)` answers for.
+
+### Changed
+
+- `Scripts/occt-raise-if-map.txt` now carries a provenance stamp naming the OCCT version and the
+  carried patch set the tree it was derived from held, one line per patch with a digest, and
+  `Scripts/check-inventory-prose.py` fails when that stamp and `Scripts/patches/` disagree (#2885).
+  Nothing re-derived that map when a carried patch changed a raise site, so it was one row stale
+  for two pins: `0042`'s throw in `ShapeAnalysis::GetFaceUVBounds` was in the shipped kernel and
+  not in the map. `--write-table` verifies every carried patch is really applied in the tree before
+  stamping it and refuses otherwise, so the stamp is a measurement rather than an assertion, and
+  `kernel-integration.yml`, the one job with an OCCT source tree, now re-derives the map and the
+  `No_Exception` region table against the tree it just patched. Adding or retiring a carried patch
+  therefore means regenerating the map in the same PR, which `Scripts/patches/README.md`,
+  `CLAUDE.md` and `docs/guides/building-occt.md` now say, and the repin step in `CLAUDE.md`'s
+  Release Process takes the same verdict on the machine that built the kernel.
+
+### Fixed
+
+- **`Shape.computeNormals()` reported success for work it had not done, and now returns a count
+  (#2905).** `OCCTBRepLibComputeNormals` set its flag for every face carrying a triangulation,
+  whether or not `BRepLib_ToolTriangulatedShape::ComputeNormals` did anything, and since #2337
+  `Shape.mesh` computes those normals itself, so the public call could not return anything but
+  `true` on any shape a caller could reach it on. It now returns `Int?`: the number of faces whose
+  triangulation gained normals, `0` when every triangulated face already had them, and `nil` when
+  the shape is empty or OCCT threw. OCCT offers no verdict to copy here, because its own
+  `ComputeNormals` returns `void` and all four of its production callers invoke it unconditionally
+  as an idempotent ensure; the one signal OCCT distinguishes is per-triangulation `HasNormals()`,
+  which `TopoDSToStep_MakeTessellatedItem.cxx:56` tests for itself, and that is what the count
+  measures. **This is a source-breaking change to a public API**: `if shape.computeNormals()`
+  becomes `if (shape.computeNormals() ?? 0) > 0`, or `shape.computeNormals() != nil` for the
+  failure question. `Shape.ensureNormalConsistency(maxAngle:)` is unchanged but its documentation
+  now records what it answers and why, measured rather than asserted.
+- **A NaN angular mesh deflection returned a mesh built as though there were no angular criterion
+  (#2900).** `BRepMesh_IncrementalMesh::initParameters` tests `Angle < Precision::Angular()`, which
+  NaN passes, the same hole #2879 closed on the linear deflection one field along. Unlike the
+  linear case it neither throws nor hangs: measured on a radius-10 cylinder at a linear deflection
+  of 10.0, a valid angle gives 254 to 54 nodes and NaN gives 18, returned with `IsDone()` true and
+  no status flag. `Shape.mesh(linearDeflection:angularDeflection:)`,
+  `Shape.mesh(parameters:)` and `Shape.meshWithProgress(...)` now refuse an angle below `1e-12`,
+  negative or NaN with the `nil` each already gave a shape it could not mesh. `MeshParameters.angleInterior`
+  and `DisplayDrawer.deviationAngle` were measured and need no guard: the bridge's `> 0` test drops
+  a NaN interior angle, and `Prs3d_Drawer::DeviationAngle()` answers 20 degrees for any value that
+  is not positive.
+
+### Fixed
+
+- `CLAUDE.md`'s counted claims about the repository's own shape are derived rather than restated
+  (#2910). `Scripts/style-manifest-swift-wave2.txt` was stated at 272 against 269 on disk, and it
+  is the one inventory built to drain, so it goes stale on its own with nearly every PR. The sweep
+  it triggered measured four more: "All 33 bridge files are enforced" against 93, "16 files:
+  OCCTBridge.h umbrella + 15 per-domain headers" against 18 and 17, "Objective-C++ implementations
+  (one per domain)" against 74 in ten split domains, all three left behind by the #1378/#1380
+  bridge split, and the Test Layout target list, which was correct. All five are now held to the
+  tree by `check-inventory-prose.py`, the four counts as CLAIMS rows and the target list as its own
+  two-directional check, because correct with nothing keeping it so is the same finding as wrong.
+  The two bridge counts turned out to be restated in four more places, all stale: `README.md`'s
+  and `docs/architecture/overview.md`'s architecture sketches, and both the module docstring and
+  the `header_files()` docstring of `derive-bridge-header-split.py`, the script that derives the
+  split and said 16 headers while reading 18. `overview.md` also described the pinned kernel as
+  8.0.0-rc5. All are corrected and derived.
+- `Issue477ArcLengthAccuracyTests`' comments describe the kernel OCCTSwift ships (#2916). Four of
+  them quoted a 5e-2 relative gap between `CPnts_AbscissaPoint::Length` and the composite
+  measurement that carried patch `0021` closed; on the pinned asset that gap is 3.3e-10 and the old
+  quadrature passes every accuracy bound in the suite. One named a "56-unit curve" whose domain is
+  344.4 and whose length is 356.25. Re-measured against v4.0.0-kernel.3 with
+  `Scripts/repro/766-curve-arclength-accuracy/`, extended with the independent reference the suite
+  actually asserts on and with the bridge's own composition, and each corrected comment cites it.
+  Two further corrections came out of the measurement: the bridge does not call
+  `GCPnts_AbscissaPoint::Length` on a multi-span curve at all, it is `occtAdaptorArcLength`
+  integrating each `GeomAbs_CN` span with `CPnts`, and the out-of-domain clamp is
+  `occtConfineToDomain` inside `occtAdaptorLengthBetween` rather than anything in either
+  integrator. No assertion changed.
+
+### Fixed
+
+- `Document.sameShapeCount(shape:)`, `Document.sameShapeLabels(shape:)`,
+  `Document.namingFindLabel(shape:)` and `Document.namingValidUntil(shape:)` took the process down
+  when called on a document that had never had naming recorded. `TNaming_SameShapeIterator`'s
+  `TDF_Label` constructor leaves its node pointer uninitialised when the document root carries no
+  `TNaming_UsedShapes` attribute, and `TNaming_Tool::Label` / `TNaming_Tool::ValidUntil` guard the
+  same state with a precondition that is compiled out of the kernel we link. All four bridge
+  functions now guard with `TNaming_Tool::HasLabel` and answer "nothing found". (#766)
+
+### Changed
+
+- Twelve `Tests/OCCTXCAFTests/` suites rewritten to pin measured kernel values instead of `!= nil`,
+  `count > 0` and bare Bools, taking the directory's #766 SEVERE count from 78 to 41. All 63
+  touched tests are proven red against a semantic injection. (#766)
 ### The Modeling boolean tests stop passing for a bridge that drops its argument (#2687, #2688, #2697, #2702, #2708, #2709)
 
 Twenty-four tests across fourteen `Tests/OCCTModelingTests/` files, lifted off `v5.0.0-766-execution`
@@ -85,7 +339,6 @@ pins the value OCCT returns, measured by a ground-truth probe committed beside i
   assertion whenever a factory returned nil.
 
 No public API changes.
-
 ### `EdgeAnalysis` verdicts say which way round they are, and `SAWireAnalysis` carries its precondition (#2901, #2906)
 
 `EdgeAnalysis.checkSameParameter` and `EdgeAnalysis.checkVertexTolerance` returned a `Bool` labelled
@@ -118,7 +371,6 @@ is `10 * sqrt(2)`, the face's diagonal rather than any gap in it. OCCT's own cal
 check answers `false` and every distance is `0`. The precondition is documented on the enum, on each
 member it applies to and on `fixReorder()`; no new API was needed, and the combined entry point the
 issue floated is declined as a composite that belongs downstream.
-
 ### Six BRepCheck tests could not tell a wrong answer from a right one (#2904)
 
 `BRepCheckSubShapeTests`' four tests each asserted a single boolean, `isValid == true`, on a

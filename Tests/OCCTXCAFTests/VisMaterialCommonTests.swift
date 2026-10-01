@@ -86,8 +86,14 @@ struct VisMaterialCommonTests {
             v 0 1 0
             f 1 2 3
             """
-        try mtlContents.write(to: mtlURL, atomically: true, encoding: .utf8)
-        try objContents.write(to: objURL, atomically: true, encoding: .utf8)
+        // `atomically: false` because `atomically: true` cannot work on WASI: it writes a temp
+        // file and renames it, and the rename is unsupported there (`NSCocoaErrorDomain Code=3328`).
+        // Nothing is lost by dropping it. Atomicity protects a reader from seeing a half-written
+        // file after a crash mid-write, and this is a fixture written and consumed by one test in
+        // one process. Measured by #2793's wasm run, which failed these tests on the fixture write
+        // rather than on anything they assert.
+        try mtlContents.write(to: mtlURL, atomically: false, encoding: .utf8)
+        try objContents.write(to: objURL, atomically: false, encoding: .utf8)
 
         let doc = Document.loadOBJ(from: objURL)
         #expect(doc != nil)

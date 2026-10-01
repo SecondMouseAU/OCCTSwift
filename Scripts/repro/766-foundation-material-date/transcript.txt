@@ -1,0 +1,26 @@
+NumberOfMaterials=24
+MaterialName(1)=[Brass]
+MaterialFromName(Brass): ok=1 enum=0
+Brass: name=[Brass] isPhysic=1 shininess=0.649999976 transparency=0 ambient.r=0.0884279981 diffuse.r=0.570482016 specular.r=0.991999984 pbrMetallic=1 pbrNormalizedRoughness=0.212132037 pbrRoughness(remapped)=0.220010713 pbrIOR=1.5
+MaterialFromName(Gold): ok=1 enum=3
+Gold: name=[Gold] isPhysic=1 shininess=0.800000012 transparency=0 ambient.r=0.0732389987 diffuse.r=0.525642991 specular.r=1 pbrMetallic=1 pbrNormalizedRoughness=0.212132037 pbrRoughness(remapped)=0.220010713 pbrIOR=1.5
+MaterialFromName(Copper): ok=1 enum=2
+Copper: name=[Copper] isPhysic=1 shininess=0.649999976 transparency=0 ambient.r=0.0303700007 diffuse.r=0.323235989 specular.r=0.949999988 pbrMetallic=1 pbrNormalizedRoughness=0.212132037 pbrRoughness(remapped)=0.220010713 pbrIOR=1.5
+MaterialFromName(Water): ok=1 enum=20
+Water: name=[Water] isPhysic=1 shininess=0.899999976 transparency=0.800000012 ambient.r=0.170644999 diffuse.r=0.00393600017 specular.r=0.379999995 pbrMetallic=0 pbrNormalizedRoughness=0 pbrRoughness(remapped)=0.00999999978 pbrIOR=1.33000004
+MaterialFromName(NOT_A_MATERIAL_XYZ): ok=0
+index 1 (enum 0): name=[Brass] isPhysic=1 shininess=0.649999976 transparency=0 ambient.r=0.0884279981 diffuse.r=0.570482016 specular.r=0.991999984 pbrMetallic=1 pbrNormalizedRoughness=0.212132037 pbrRoughness(remapped)=0.220010713 pbrIOR=1.5
+MinRoughness=0.00999999978
+RoughnessFromSpecular(white, 0.8)=0.200000003
+MetallicFromSpecular(white)=1
+default Quantity_Date (epoch): 1979-01-01 00:00:00 ms=0 us=0
+Date(6,15,2000,14,30): 2000-06-15 14:30:00 ms=0 us=0
+Date(1,1,2000) + Period(days:1): 2000-01-02 00:00:00 ms=0 us=0
+Date(1,15,2000,12) - Period(hours:6): 2000-01-15 06:00:00 ms=0 us=0
+Date(1,1,2000).Difference(Date(1,2,2000)): sec=86400 usec=0
+Date(1,1,2000) < Date(1,2,2000): 1, > : 1, IsEqual(self): 1
+Date(1,1,2000) + Period(hours:24): 2000-01-02 00:00:00 ms=0 us=0
+IsValid(6,15,2000)=1 IsValid(13,1,2000)=0 IsValid(2,30,2000)=0
+IsLeap(2000)=1 IsLeap(1900)=0 IsLeap(2024)=1
+Date(1,1,2000, ms=123, us=456): 2000-01-01 00:00:00 ms=123 us=456
+IsValid(0,0,1900)=0
