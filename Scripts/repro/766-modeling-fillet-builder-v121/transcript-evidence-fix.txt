@@ -1,0 +1,6 @@
+filletBuilderConstantRadius: edges=12 contourCount=1 isConstant=true radius=2 buildValid=true
+filletBuilderEvolvingRadius: contourCount=1 isConstant=false buildValid=true
+filletBuilderMultipleEdges: added=3 contourCount=3 buildValid=true
+filletBuilderDiagnostics: edgeCount=1 length=20 faultyContours=0 faultyVertices=0
+filletBuilderReset: contourCountBefore=1 contourCountAfter=1 buildValid=true
+filletBuilderRemoveEdge: removed=true contourCountBefore=1 contourCountAfter=0
