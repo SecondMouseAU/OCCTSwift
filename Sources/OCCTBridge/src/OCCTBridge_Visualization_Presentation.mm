@@ -1112,6 +1112,12 @@ bool OCCTShapeGetShadedMeshWithDrawer(OCCTShapeRef        shape,
   // drawer carrying a NaN coefficient or a NaN MaximalChordialDeviation still arrives here.
   if (!occtValidMeshDeflection(deflection))
     return false;
+  // #2900: the angular half, see occtValidMeshAngle (OCCTBridge_Internal.h). The test is here
+  // rather than in OCCTDrawerSetDeviationAngle because Prs3d_Drawer::SetDeviationAngle stores
+  // whatever it is given and the mesh is built from DeviationAngle() at this point of use, which
+  // is where the deflection beside it is tested too.
+  if (!occtValidMeshAngle(angle))
+    return false;
 
   try
   {
@@ -1142,6 +1148,9 @@ bool OCCTShapeGetEdgeMeshWithDrawer(OCCTShapeRef shape, OCCTDrawerRef drawer, OC
   // #2879: see occtValidMeshDeflection (OCCTBridge_Internal.h). Same NaN route through the drawer
   // as OCCTShapeGetShadedMeshWithDrawer above.
   if (!occtValidMeshDeflection(deflection))
+    return false;
+  // #2900: the angular half, as in OCCTShapeGetShadedMeshWithDrawer above.
+  if (!occtValidMeshAngle(angle))
     return false;
 
   try

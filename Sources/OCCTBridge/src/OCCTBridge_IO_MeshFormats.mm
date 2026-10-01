@@ -583,6 +583,10 @@ OCCTShapeRef OCCTShapeIncrementalMeshProgress(OCCTShapeRef              shape,
   // refused parameter is not a user cancellation.
   if (!occtValidMeshDeflection(linearDeflection))
     return nullptr;
+  // #2900: the angular half of the same precondition, see occtValidMeshAngle
+  // (OCCTBridge_Internal.h). Same refusal, and `outCancelled` stays false for the same reason.
+  if (!occtValidMeshAngle(angularDeflection))
+    return nullptr;
   // Declared outside the try so the catch below can still answer "was this cancelled?" (#525).
   opencascade::handle<BridgeProgressIndicator> indicator;
   try
