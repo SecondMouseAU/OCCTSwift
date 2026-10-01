@@ -24,6 +24,19 @@ own and the prose was stale within days of being written. The bridge counts are 
 and failed the same way: "All 33 bridge files are enforced" described the tree before the
 #1378/#1380 split multiplied it to 93, and no edit was needed to make the sentence wrong.
 
+**#2954 then took every counted claim out of ``CLAUDE.md``.** The gates were working and the
+claims were still expensive: a count in the working summary is shared by every open PR, so a
+correct edit to the inventory reds every other branch at merge time, which the manifest row did
+three times in one day. The counts were not deleted. Each went to the page that owns its subject,
+where the gate follows it: the patch counts to ``okf/references/carried-occt-patches.md``, the
+gate/census/audit counts to ``okf/policies/static-gates.md``, the enforced-bridge population to
+``okf/policies/code-style.md``, and the bridge header and implementation counts nowhere at all,
+because ``README.md`` and ``docs/architecture/overview.md`` already carried and gated them. The
+one real deletion is the manifest's size, which is now stated in no file, because every file is
+equally shared and rehoming the sentence would have rehomed the collision. ``CLAUDE.md`` still
+appears below, for the test-target list: that is an inventory rather than a count, so no PR
+invalidates it by draining it.
+
 **Correct today with nothing keeping it so is the finding, not just wrong today.** The sweep that
 filed these measured five claims and found three wrong and two right, and both of the right ones
 are registered here anyway: which is which was not knowable from reading the file, and that is the
@@ -323,6 +336,15 @@ def facts():
         # #2910: the inventory built to drain. Every PR that touches an exempt Swift file deletes
         # its line, so this number falls on its own and the prose that stated it was stale within
         # days of being written.
+        #
+        # #2954: and it is the one derived fact here with NO claim in CLAIMS, deliberately. The
+        # gate worked; the claim was the problem. It is shared by every open PR and invalidated by
+        # every merged one, so on 2026-10-02 it went 267 to 262 in a day and failed three unrelated
+        # PRs at merge time, after review and CI had passed. Rehoming the sentence would have moved
+        # the collision with it, because what collides is the number rather than its address, so
+        # the sentence is gone and no file states the figure. The fact stays derived because run()
+        # prints it: that is the cheap answer for anyone who wants it, with nothing to go stale.
+        # Do not register a claim for it without reading #2954 first.
         "swift_wave2_exempt": len(
             style_manifest_entries("Scripts/style-manifest-swift-wave2.txt")),
         # #2910: the three bridge-tree counts CLAUDE.md states and nothing read. Unlike the
@@ -359,6 +381,14 @@ CLAIMS = [
      r"`Scripts/patches/` holds ([A-Za-z-]+) patches", "patches_on_disk"),
     ("okf/references/carried-occt-patches.md",
      r"pins lacks (\S+) of them", "patches_unpinned"),
+    # #2954. The pinned count moved here from CLAUDE.md, which states no count now. Both of this
+    # page's statements of it are registered: the xcframework section's, which the move added, and
+    # the wasm section's, which was already written and which nothing read, so it could have gone
+    # stale at a repin exactly as the CLAUDE.md copy did.
+    ("okf/references/carried-occt-patches.md",
+     r"of which the pinned asset carries ([A-Za-z0-9-]+)", "patches_pinned"),
+    ("okf/references/carried-occt-patches.md",
+     r"the pinned native asset carries ([A-Za-z0-9-]+)", "patches_pinned"),
     ("Package.swift", r"`ls Scripts/patches/\*\.patch \| wc -l` answers (\d+)", "patches_on_disk"),
     # #2166: the WASI sequence. `Scripts/patches-wasi/` was outside this gate entirely until the
     # patch-number parser stopped being the reason, and its README said "both patches here apply
@@ -376,16 +406,19 @@ CLAIMS = [
     # count mismatch and one naming the patch the map predates.
     ("Scripts/occt-raise-if-map.txt",
      r"# derived against: (\d+) carried patch\(es\)", "patches_on_disk"),
-    ("CLAUDE.md", r"\((\S+) on disk, \S+ pinned", "patches_on_disk"),
-    ("CLAUDE.md", r"\(\S+ on disk, (\S+) pinned", "patches_pinned"),
-    ("CLAUDE.md", r"(\S+) gates, \S+ censuses and \S+ merge-history audit", "gate_scripts"),
-    ("CLAUDE.md", r"\S+ gates, (\S+) censuses and \S+ merge-history audit", "census_scripts"),
-    ("CLAUDE.md", r"\S+ gates, \S+ censuses and (\S+) merge-history audit", "audit_scripts"),
-    # #2196: the fourth kind, stated in its own sentence in both files rather than folded into the
-    # one above. It is not a gate (its real run is not in this job at all) and not a census (its
-    # real run reaches a verdict), so counting it as either would make a checked sentence untrue,
-    # which is the failure this gate exists to prevent rather than to commit.
-    ("CLAUDE.md", r"also runs (\S+) release check", "release_check_scripts"),
+    # #2954. The gate/census/audit headline sentence moved out of CLAUDE.md to the page that owns
+    # the subject. The claim is the same claim, read in its new home: CLAUDE.md states no count.
+    ("okf/policies/static-gates.md",
+     r"(\S+) gates, \S+ censuses and \S+ merge-history audit", "gate_scripts"),
+    ("okf/policies/static-gates.md",
+     r"\S+ gates, (\S+) censuses and \S+ merge-history audit", "census_scripts"),
+    ("okf/policies/static-gates.md",
+     r"\S+ gates, \S+ censuses and (\S+) merge-history audit", "audit_scripts"),
+    # #2196: the fourth kind, stated in its own sentence rather than folded into the one above. It
+    # is not a gate (its real run is not in this job at all) and not a census (its real run reaches
+    # a verdict), so counting it as either would make a checked sentence untrue, which is the
+    # failure this gate exists to prevent rather than to commit. CLAUDE.md carried a second copy of
+    # this sentence until #2954; the one here is the survivor.
     ("okf/policies/static-gates.md", r"runs (\S+) release check", "release_check_scripts"),
     (".github/workflows/ci.yml", r"because all (\S+) are pure Python", "job_scripts"),
     (".github/workflows/ci.yml", r"does not hide the\s*#\s*other (\S+)\.", "job_scripts_minus_one"),
@@ -398,31 +431,24 @@ CLAIMS = [
      r"pre-commit` runs ([A-Za-z-]+) of `gate-scripts`'", "hook_invocations"),
     ("okf/policies/static-gates.md",
      r"of `gate-scripts`' ([A-Za-z-]+) invocations", "job_invocations"),
-    # #2910. The swift-format exemption manifest, the one inventory designed to shrink with every
-    # PR that touches a listed file, stated in CLAUDE.md with nothing reading it. It said 272 while
-    # the manifest held 269 and had been drifting since the day it was written.
-    ("CLAUDE.md",
-     r"what the widening reached, (\S+) files still listed", "swift_wave2_exempt"),
     # #2910, the bridge tree. "All N bridge files are enforced" said 33 against a tree of 93, and
-    # the architecture block said 16 headers and one .mm per domain against 18 and 74. Both
+    # CLAUDE.md's architecture block said 16 headers and one .mm per domain against 18 and 74. Both
     # predate the #1378/#1380 split, which is how a sentence goes stale without anybody editing it.
+    # #2954 moved the enforced-population sentence to the policy that owns the manifest, and
+    # deleted CLAUDE.md's three architecture numbers outright rather than rehoming them, because
+    # README.md and docs/architecture/overview.md already state and gate all three below.
     #
     # The neighbouring "21.1.8 and 22.1.8 disagree on 10 of the files" is deliberately NOT here and
-    # lost its denominator instead. It is a measurement somebody took on the tree of the day, not a
-    # count of an inventory, so re-deriving its denominator would restate a comparison nobody ran
-    # across 93 files. A frozen measurement has to read as frozen; this gate's subject is the
-    # claims that describe the tree as it is now.
-    ("CLAUDE.md", r"All (\S+) bridge files are\s*\n?enforced", "bridge_enforced_files"),
-    ("CLAUDE.md",
-     r"C function declarations \((\S+) files: OCCTBridge\.h umbrella", "bridge_include_headers"),
-    ("CLAUDE.md",
-     r"OCCTBridge\.h umbrella \+ (\S+) per-domain headers", "bridge_domain_headers"),
-    ("CLAUDE.md", r"^Sources/OCCTBridge/src/\s+(\S+) Objective-C\+\+ implementations",
-     "bridge_impl_files"),
-    # #2910, the same two facts in the four other places the sweep found them. Each had drifted
-    # independently, which is the argument for registering a copy rather than deleting it: the
-    # architecture sketch is useful where it is, and a reader of README.md is not going to open
-    # CLAUDE.md to find out whether its numbers are the live ones.
+    # lost its denominator instead, in both files that carry it. It is a measurement somebody took
+    # on the tree of the day, not a count of an inventory, so re-deriving its denominator would
+    # restate a comparison nobody ran across 93 files. A frozen measurement has to read as frozen;
+    # this gate's subject is the claims that describe the tree as it is now.
+    ("okf/policies/code-style.md",
+     r"all (\S+)\s*\n?\s*`Sources/OCCTBridge` files are enforced", "bridge_enforced_files"),
+    # #2910, the same two facts in the four places the sweep found them outside CLAUDE.md. Each had
+    # drifted independently, which is the argument for registering a copy rather than deleting it:
+    # the architecture sketch is useful where it is, and a reader of README.md is not going to open
+    # docs/architecture/overview.md to find out whether its numbers are the live ones.
     ("README.md", r"\((\S+) per-domain headers \+ a slim OCCTBridge\.h umbrella\)",
      "bridge_domain_headers"),
     ("README.md", r"^Sources/OCCTBridge/src/\s+(\S+) Objective-C\+\+ implementation files",
@@ -1290,14 +1316,21 @@ def self_test():
     case("manifest-reader-counts-entries-not-comments-or-blanks",
          entries == ["Tests/A.swift", "Tests/B.swift"], str(entries))
 
-    values_manifest = dict(values)
-    values_manifest["swift_wave2_exempt"] -= 1
-    case("wave2-manifest-count-mismatch-detected",
-         any("swift_wave2_exempt" in problem for problem in check_claims(values_manifest)))
+    #     #2954: the manifest's size is registered in NO claim, and that is the thing to hold. It
+    #     was a claim, the claim passed, and passing is what cost three PRs a red merge in one day,
+    #     because every open branch shares the number and every merged one moves it. A future
+    #     sweep that re-adds a sentence stating it, in any file, fails here and is sent to read the
+    #     issue before deciding again. The figure is not lost: run() prints it, derived.
+    case("wave2-manifest-count-is-claimed-in-no-prose",
+         not any(fact == "swift_wave2_exempt" for _rel, _pattern, fact in CLAIMS),
+         ", ".join(rel for rel, _p, fact in CLAIMS if fact == "swift_wave2_exempt"))
+    case("wave2-manifest-count-is-still-derived-and-reported",
+         "swift_wave2_exempt" in values,
+         "entries=%s" % values.get("swift_wave2_exempt"))
 
-    #     The view check for the same claim. A mistyped manifest path would read as an empty file
-    #     and derive zero, and a prose number of zero would then be "correct" forever. The live
-    #     manifest is the only thing that can say the reader found it.
+    #     The view check that outlived the claim. A mistyped manifest path would read as an empty
+    #     file and derive zero, and with nothing to compare against, a zero would simply be
+    #     printed as fact. The live manifest is the only thing that can say the reader found it.
     case("wave2-manifest-is-read-from-the-real-file",
          values["swift_wave2_exempt"] > 0,
          "entries=%d" % values["swift_wave2_exempt"])
@@ -1308,6 +1341,32 @@ def self_test():
         bumped_bridge[fact] += 1
         case("%s-mismatch-detected" % fact.replace("_", "-"),
              any(fact in problem for problem in check_claims(bumped_bridge)))
+
+    # 14. #2954. The counts that moved out of CLAUDE.md still fail when they go stale in the page
+    #     they moved to, and the report names that page. A move that left a claim reading a
+    #     sentence nobody writes any more would pass this file's own live-tree case and protect
+    #     nothing, which is the failure mode "no sentence matches" exists for; these pin the pairing
+    #     of fact to destination, which no other case does.
+    for fact, destination in (("patches_pinned", "okf/references/carried-occt-patches.md"),
+                              ("gate_scripts", "okf/policies/static-gates.md"),
+                              ("census_scripts", "okf/policies/static-gates.md"),
+                              ("audit_scripts", "okf/policies/static-gates.md"),
+                              ("release_check_scripts", "okf/policies/static-gates.md"),
+                              ("bridge_enforced_files", "okf/policies/code-style.md")):
+        moved = dict(values)
+        moved[fact] += 1
+        reports = [p for p in check_claims(moved) if fact in p]
+        case("%s-mismatch-reported-against-%s" % (fact.replace("_", "-"),
+                                                  os.path.basename(destination)),
+             any(p.startswith(destination) for p in reports),
+             "; ".join(reports[:1]))
+
+    #     And CLAUDE.md states no count at all any more, which is the whole of #2954. Written as a
+    #     case rather than left to a reviewer, because the next counted sentence added to that file
+    #     will be added by somebody who did not read the issue.
+    case("claude-md-registers-no-counted-claim",
+         not any(rel == "CLAUDE.md" for rel, _pattern, _fact in CLAIMS),
+         ", ".join(fact for rel, _p, fact in CLAIMS if rel == "CLAUDE.md"))
 
     #     The bridge walk reaches both directories, which is what the stale prose got wrong: the
     #     implementations live in src/ and the declarations in include/, and a walk that found one

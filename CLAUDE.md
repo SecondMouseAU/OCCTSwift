@@ -22,14 +22,14 @@ in the kernel", run
 `ls Scripts/patches/*.patch | wc -l` against the count in `Package.swift`'s manifest comment, and
 read [`okf/policies/pinned-kernel-patch-check.md`](okf/policies/pinned-kernel-patch-check.md) for
 why the count is necessary and not sufficient, and
-[`okf/references/carried-occt-patches.md`](okf/references/carried-occt-patches.md) for the current
-divergence (thirty-two on disk, thirty-one pinned, as of 2026-09-30: `0044`, carried unbuilt
-because the OCCT 8.0.2 repin absorbs it and the bridge already refuses the input it fixes) and what
-an unpinned patch leaves exposed. A divergence with a written
+[`okf/references/carried-occt-patches.md`](okf/references/carried-occt-patches.md) for both counts,
+the current divergence and what an unpinned patch leaves exposed. **The numbers themselves are on
+that page and not on this one**, per #2954: a count restated in the working summary is a copy that
+drifts, and this one drifted for three pins. A divergence with a written
 reason is expected; one without is a finding.
 
-**The comparison runs the other way too, and nothing used to make it.** The pinned asset holds
-**thirty-one** patches while `v4.0.0-kernel.1` was pinned: the twenty-nine carried then, plus `0032` and the retired
+**The comparison runs the other way too, and nothing used to make it.** The `v4.0.0-kernel.1` asset
+held **thirty-one** patches: the twenty-nine carried then, plus `0032` and the retired
 `0034-LocOpe_SplitDrafts-trim-infinite-pipe-curves-1393`, both deleted from `Scripts/patches/` but
 never reverted out of the `Libraries/occt-src` tree it was built from, since `build-occt.sh`
 applies patches idempotently and never reverts. Both are inert, and the divergence is written up in
@@ -52,9 +52,9 @@ xcframework would notice. `Scripts/check-wasm-kernel-parity.py` is the gate, and
 touches no wasm path. It takes a dated acknowledgement for the 69-minute rebuild, keyed to the native
 patch count so it expires at the next repin. It fired on its first real occasion **29 seconds** after
 the asset was published; that gap (`0042`) was rebuilt and closed the next day. **They are apart
-again right now, deliberately:** native is `v4.0.0-kernel.3` with thirty-one patches, wasm is
-`v4.0.0-kernel.2` with thirty, and the acknowledgement in `Scripts/wasm-kernel-pin.txt` is keyed to
-thirty-one so it expires at the OCCT 8.0.2 rebuild that closes it. The rule and that story are in
+again right now, deliberately:** native is on `v4.0.0-kernel.3` and wasm on `v4.0.0-kernel.2`, and
+the acknowledgement in `Scripts/wasm-kernel-pin.txt` is keyed to the native patch count so it
+expires at the OCCT 8.0.2 rebuild that closes it. The rule and that story are in
 [`okf/policies/pinned-kernel-patch-check.md`](okf/policies/pinned-kernel-patch-check.md); the current
 divergence is in
 [`okf/references/carried-occt-patches.md`](okf/references/carried-occt-patches.md).
@@ -72,10 +72,11 @@ Scripts/format-bridge.sh             # clang-format every enforced Sources/OCCTB
 Scripts/format-bridge.sh --check     # ...or just report, which is exactly what CI and the hook run
 ```
 
-**Run `Scripts/format-bridge.sh` after any edit to a bridge `.h`/`.mm`.** All 93 bridge files are
-enforced (`Scripts/style-manifest-bridge.txt` is empty), and OCCT's style aligns consecutive
-declarations and assignments, so two ordinary new locals in a row are a violation unless the tool
-wrote them. Hand-aligning is not a substitute. The version is pinned in
+**Run `Scripts/format-bridge.sh` after any edit to a bridge `.h`/`.mm`.** Every bridge `.h` and
+`.mm` is enforced with nothing grandfathered, because `Scripts/style-manifest-bridge.txt` is empty;
+[`okf/policies/code-style.md`](okf/policies/code-style.md) holds the file count. OCCT's style
+aligns consecutive declarations and assignments, so two ordinary new locals in a row are a
+violation unless the tool wrote them. Hand-aligning is not a substitute. The version is pinned in
 `Scripts/clang-format-version.txt`; a clang-format on a different major is refused, since 21.1.8
 and 22.1.8 were measured to disagree on 10 of the files. `Scripts/install-clang-format.py` gets
 the pinned version onto a machine with no pip or venv; see
@@ -83,14 +84,15 @@ the pinned version onto a machine with no pip or venv; see
 
 ### Static Gate Scripts
 
-Sixteen gates, seven censuses and one merge-history audit, all pure Python over the repo's own text.
-No OCCT, no build, no network, and the whole job reports in under a minute on the runner. The
-measured breakdown, and the recipe for re-deriving it rather than trusting it, are in
-[`okf/policies/static-gates.md`](okf/policies/static-gates.md): this line claimed `~3s for the lot`
-while the measured figure was about fifteen times that, and nothing checked it (#2203).
+Gates, censuses and a merge-history audit, all pure Python over the repo's own text. No OCCT, no
+build, no network, and the whole job reports in under a minute on the runner. **How many there are
+of each kind is counted in [`okf/policies/static-gates.md`](okf/policies/static-gates.md)**, not
+here (#2954), along with the measured breakdown and the recipe for re-deriving it rather than
+trusting it: this line claimed `~3s for the lot` while the measured figure was about fifteen times
+that, and nothing checked it (#2203).
 CI runs every gate, plus every `--self-test` including the censuses', in `ci.yml`'s `gate-scripts`
 job, a **required status check on `main`**. Each gate exits 1 on a defect and 0 when clean; a census
-exits 0 always, so CI runs only its `--self-test`. The job also runs one release check's
+exits 0 always, so CI runs only its `--self-test`. The job also runs a release check's
 `--self-test` and nothing else: `check-pinned-asset-patches.py` reaches a verdict like a gate, but
 reads the pinned xcframework to reach it, so its real run belongs to the pin step and it is counted
 as neither a gate nor a census. The rules behind the list, the gate/census/release-check
@@ -129,7 +131,8 @@ python3 Scripts/check-pinned-asset-patches.py --self-test  # RELEASE CHECK: only
 
 Run a script's `--self-test` whenever you change it: three gates were confidently wrong while
 reporting all clear (#618, #624/#630, #626). `count-operations.py` has no `--self-test` and exits 2
-on the option. Four scripts exit 2 if run from anywhere but the repo root (#625).
+on the option. A handful of scripts exit 2 if run from anywhere but the repo root;
+[`static-gates`](okf/policies/static-gates.md) names them (#625).
 
 **Optional pre-commit hook**: `ln -s ../../Scripts/git-hooks/pre-commit .git/hooks/pre-commit` in
 the main checkout, or `git config core.hooksPath Scripts/git-hooks` in a linked worktree (its
@@ -236,10 +239,16 @@ total on this page.
 exemption manifest can only exempt a file the population already reaches. Two manifests now hold the
 exempt list, both shrink-only and both enforced by `check-style-manifest.py`:
 `Scripts/style-manifest-swift.txt` (rollout day, empty) and
-`Scripts/style-manifest-swift-wave2.txt` (what the widening reached, 264 files still listed).
-That second count drains with nearly every PR, since touching a listed file means fixing it and
-deleting its line, so it is derived from the manifest by `check-inventory-prose.py` rather than
-trusted here (#2910). The real run asserts **selected + listed == tracked** and plants a canary
+`Scripts/style-manifest-swift-wave2.txt` (what the widening reached).
+
+**How many files are still listed on that second one is stated nowhere, on purpose** (#2954). It
+is the one inventory built to drain: touching a listed file means fixing it and deleting its line,
+so the number falls several times a day, and a copy of it in prose is invalidated by every PR that
+does the intended thing. Measured on 2026-10-02 it moved five times and reddened three unrelated
+PRs at merge time, after review and CI had passed. Nothing in the repo is worse off for not
+knowing it: `python3 Scripts/check-inventory-prose.py` prints the live figure on a clean run, and
+`grep -cvE '^[[:space:]]*(#|$)' Scripts/style-manifest-swift-wave2.txt` answers it directly.
+Do not write it down. The real run asserts **selected + listed == tracked** and plants a canary
 violation in every `swift-format` invocation, so a narrowing and a silent tool are both a red gate
 rather than a quieter one. There is deliberately no `--fix`, for the reason
 `Scripts/format-bridge.sh`'s header gives.
@@ -261,8 +270,9 @@ Every other patch count in this repo compares text against text. This one compar
 against the built binary, which is the comparison nothing made until a thirty-one-patch asset
 shipped under a twenty-nine-patch label (#2190). It derives, from each patch's own diff, a shipped
 header line, a string literal, a `thread_local` wrapper symbol or a name the patch introduces, and
-looks for it in all three slices. Today: **16 confirmed, 13 not derivable, 0 absent**, plus two
-acknowledged retired patches. The thirteen are real: a patch that changes a comparison adds no name,
+looks for it in all three slices. `--list` prints the verdict per patch, confirmed or not derivable
+or absent, and the tally is read there rather than restated in prose (#2954). The not-derivable
+rows are real rather than a gap: a patch that changes a comparison adds no name,
 and `0033` adds a name that libc++ optimises out of existence at `-O2`, so **absence of a symbol is
 never reported as absence of a patch**. A verdict the script cannot reach is printed as one it
 cannot reach. Per #2098, `--require-asset` makes a run that examined nothing fail rather than pass.
@@ -312,17 +322,23 @@ what to do when OCCT does not answer are in
 
 ```
 Sources/OCCTSwift/          Swift public API (Shape, Wire, Surface, Face, Edge, Curve3D, Mesh, etc.)
-Sources/OCCTBridge/include/ C function declarations (18 files: OCCTBridge.h umbrella + 17 per-domain headers, #395)
-Sources/OCCTBridge/src/     74 Objective-C++ implementations. Ten domains are split into
-                             OCCTBridge_<Domain>_<Bucket>.mm by OCCT subsystem under one shared
-                             per-domain header (Modeling 12, Surface/IO/Healing/Geom2d 7 each,
-                             Document/Curve3D 6, Topology/Spatial 5, Visualization 4); the other
-                             seven are a single file each, beside OCCTBridge.mm itself
-                             (#396, #1378, #1380)
+Sources/OCCTBridge/include/ C function declarations: the OCCTBridge.h umbrella plus one header
+                             per domain (#395)
+Sources/OCCTBridge/src/     Objective-C++ implementations. A domain big enough to split becomes
+                             OCCTBridge_<Domain>_<Bucket>.mm, bucketed by OCCT subsystem under one
+                             shared per-domain header; the rest are a single file each, beside
+                             OCCTBridge.mm itself (#396, #1378, #1380)
 Libraries/OCCT.xcframework  Pre-built OCCT static library (arm64 macOS/iOS)
 Tests/OCCT<Domain>Tests/    Per-domain Swift Testing targets (see "Test Layout")
 Scripts/build-occt.sh       Builds OCCT.xcframework from source
 ```
+
+**The file counts live in** [`docs/architecture/overview.md`](docs/architecture/overview.md) **and
+`README.md`**, which both state the header and implementation totals with
+`check-inventory-prose.py` holding them to the tree; this page states neither (#2954). For the
+current bucketing, `ls Sources/OCCTBridge/src/` is the derivation, and
+`python3 Scripts/derive-bridge-header-split.py` is what proves every declaration sits in the
+header its `.mm` owns.
 
 ### Handle-Based Memory Management
 
