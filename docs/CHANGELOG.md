@@ -21,6 +21,12 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### `Exporter.writeDXF` and `Exporter.writeSVG` work on WebAssembly, and 5,501 tests now run there (#2793)
+
+Both exporters wrote with `atomically: true`, which cannot be used on `wasm32-unknown-wasip1`: the call throws `NSCocoaErrorDomain Code=3328 "The requested operation is not supported."` there, so every DXF and SVG export failed. Measured: the same call with `atomically: false` succeeds. Both now write directly on that platform and keep atomicity everywhere else, which is what stops a crash mid-write leaving a half-written file a reader will open. Which operation underneath is unsupported was not established: the atomic path writes a temporary file and renames it, so the rename is the obvious candidate, but nothing here rules out the temp-file creation, and the fix does not depend on knowing. No behaviour changes on any Apple platform.
+
+The port also gains test coverage. 12 of the 18 per-domain suites build and run for wasm under the pinned `wasmkit`, 5,501 tests, driven by `Scripts/run-wasm-tests.sh` and run in CI. `Scripts/wasm-test-known-failures.txt` records every cross-platform difference found so far, and the runner fails both on a new failure and on a listed failure that starts passing. Six targets and sixteen files cannot run there, each with its reason in `Package.swift`. This closes the third of the four conditions on Phase 0's GO.
+
 ### The merge tool stops discarding a CHANGELOG entry and reporting success, and nine lost entries come back (#2951)
 
 `Scripts/merge-pr.py` compared an entry's first non-blank line against the whole of
@@ -213,7 +219,6 @@ No library code changes.
 - Twelve `Tests/OCCTXCAFTests/` suites rewritten to pin measured kernel values instead of `!= nil`,
   `count > 0` and bare Bools, taking the directory's #766 SEVERE count from 78 to 41. All 63
   touched tests are proven red against a semantic injection. (#766)
-
 ### The Modeling boolean tests stop passing for a bridge that drops its argument (#2687, #2688, #2697, #2702, #2708, #2709)
 
 Twenty-four tests across fourteen `Tests/OCCTModelingTests/` files, lifted off `v5.0.0-766-execution`
@@ -259,7 +264,6 @@ pins the value OCCT returns, measured by a ground-truth probe committed beside i
   assertion whenever a factory returned nil.
 
 No public API changes.
-
 ### `EdgeAnalysis` verdicts say which way round they are, and `SAWireAnalysis` carries its precondition (#2901, #2906)
 
 `EdgeAnalysis.checkSameParameter` and `EdgeAnalysis.checkVertexTolerance` returned a `Bool` labelled
@@ -292,7 +296,6 @@ is `10 * sqrt(2)`, the face's diagonal rather than any gap in it. OCCT's own cal
 check answers `false` and every distance is `0`. The precondition is documented on the enum, on each
 member it applies to and on `fixReorder()`; no new API was needed, and the combined entry point the
 issue floated is declined as a composite that belongs downstream.
-
 ### Six BRepCheck tests could not tell a wrong answer from a right one (#2904)
 
 `BRepCheckSubShapeTests`' four tests each asserted a single boolean, `isValid == true`, on a

@@ -52,7 +52,6 @@ Scripts/repro/censuses/Issue761.swift
 Scripts/repro/censuses/SharedFixtures.swift
 Scripts/repro/harnesses/AnalyzeSelfIntersectionTiming.swift
 Scripts/repro/harnesses/PocketEnclosureTiming.swift
-Sources/WASICompat/simd/SIMDCompat.swift
 Tests/OCCTAnalysisTests/AdaptorCurvatureDefinednessTests.swift
 Tests/OCCTAnalysisTests/AdaptorLocalPropsParityTests.swift
 Tests/OCCTAnalysisTests/AdaptorNormalDecisionTests.swift
