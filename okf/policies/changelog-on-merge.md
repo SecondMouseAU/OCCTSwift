@@ -82,6 +82,17 @@ Write it as the finished text, not as notes. The merger transcribes; they do not
 sentence is the canonical statement of that rule; the PR template points here rather than
 restating it.
 
+**Head the entry descriptively, and carry the issue numbers in the heading.** `### Fixed`,
+`### Added` and `### Changed` on their own are refused by `merge-pr.py`, with the reason printed
+and nothing written. A bare category heading identifies nothing, so the tool cannot tell your
+entry from any other entry opening the same way, and nine entries between 2026-09-30 and
+2026-10-01 were extracted, printed to the operator and silently discarded for exactly that reason
+(#2951). It is also not how the section reads: each entry is spliced in at the top, so N of them
+leave N separate `Fixed` buckets in merge order for whoever assembles the release. An entry
+covering several kinds of change takes one descriptive heading, not a category split under it.
+Clearing the refusal is a one-line edit to the PR body; nothing has been pushed and the PR is not
+merged when it fires.
+
 ### If you are merging a PR
 
 **Run `python3 Scripts/merge-pr.py <n>`.** It does the whole of what this section asks, in the order
@@ -161,6 +172,18 @@ Three things hold it:
 A missed entry is a visible gap in a released changelog. A silently dropped one during a hand
 conflict resolution is not visible at all, and the old way produced several opportunities for that
 per day.
+
+**And a fourth thing, added after the third turned out to be insufficient.** Point 3 says a missed
+entry is recoverable because the text is in the PR body forever, which is true and is how #2951's
+nine were recovered. What it does not cover is a miss nobody is looking for, because the tool said
+the work was already done and the backstop report agreed. Both of those claims are now proved
+rather than asserted: `merge-pr.py` prints the file and line its duplicate test matched, re-reads
+`docs/CHANGELOG.md` after the splice and refuses to commit, push or merge if the entry is not
+under `## Unreleased`; and `check-changelog-transcription.py` skips a bare category heading when
+deciding what a PR-body entry is, instead of matching six words that identify nothing. Measured,
+the report called all nine of them "transcribed late, nothing to do" for the whole time they were
+absent. A detector's "all clear" is worth what its ability to say otherwise is worth, which is
+[prove-the-test-fails](prove-the-test-fails.md)'s rule applied to a tool rather than a test.
 
 ## Related
 
