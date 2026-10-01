@@ -21,6 +21,19 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### Sixteen CHANGELOG entries that never landed are recovered (#2957)
+
+Sixteen merges between 2026-08-28 and 2026-09-29 landed with a `## CHANGELOG entry` section in the
+PR body that nobody transcribed into `docs/CHANGELOG.md`. The backstop report could not see them:
+most of the sixteen open with a bare `### Fixed`, which the file has held since 2026-09-30, so
+`check-changelog-transcription.py` classified every one as "transcribed late, nothing to do" until
+#2951's fix taught it to match the first bullet instead. All sixteen are restored verbatim from
+their PR bodies, in merge order. They include `Mesh.normals` having been `(0, 0, 1)` at every vertex
+of every shape (#2337), four `BRep_Tool` wrappers crashing the process on a null shape instead of
+refusing it (#2812), three separate uncatchable-SIGSEGV guards against a face with no surface
+(#2750, #2777, #2790, #2789), twelve shape-upgrade operations with the same exposure (#2773), and
+`Surface.bsplineFill`/`bezierFill` crashing on four curves that do not close a loop (#2829).
+
 ### The v5 lift census stops collapsing same-named tests across suites, and 24 hidden gains come back (#2949)
 
 `Scripts/census-766-unlifted-tests.py` keyed its per-test tier map on the `@Test` function's name,
