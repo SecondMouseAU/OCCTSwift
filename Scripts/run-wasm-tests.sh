@@ -154,6 +154,20 @@ fi
 
 # The failure identifier as Swift Testing prints it, which is what the known-failure list holds.
 #
+# WHICH LINE SHAPES THIS HANDLES, and which it does not. Measured across the twelve transcripts of a
+# full run, the `✘` lines are: `✘ Test <name> recorded an issue ...`, `✘ Test <name> failed after
+# ...`, `✘ Test run with N tests ...` and `✘ Suite <name> failed after ...`. The first two are the
+# ones taken. The run line is dropped by the `grep -v` below, and suite lines are ignored
+# deliberately: a failing suite always prints its failing tests too, so counting it as well would
+# double-count and would put a suite name in a list that holds test names.
+#
+# NOT handled: `✘ Test case passing N arguments ... to "<name>"`, which is what a parameterised case
+# prints. No failure in this project takes that shape today, measured, so nothing is missed now. If
+# one appears, the identifier extracted carries the argument list, matches no entry in the
+# known-failure list, and is reported as a NEW FAILURE. That is the safe direction: the run fails
+# loudly rather than passing something unrecognised, and the fix at that point is to teach this
+# function the shape rather than to widen the list.
+#
 # `|| true` ON BOTH, AND IT IS LOAD-BEARING. `grep -v` exits 1 when it emits nothing, so under
 # `set -e` a suite with ZERO failures made the `failed=$(failing_names ...)` assignment fail and the
 # script exit silently, mid-loop, on the first clean suite. It reported two suites and stopped, and
