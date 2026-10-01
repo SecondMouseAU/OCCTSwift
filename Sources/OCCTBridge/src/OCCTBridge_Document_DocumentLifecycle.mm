@@ -3963,6 +3963,9 @@ OCCTTObjAppRef OCCTTObjApplicationGetInstance()
       return nullptr;
     // Prevent reference count from going to 0
     app->IncrementRefCounter();
+    // #2897: record the borrow, so OCCTTObjApplicationRelease can tell a matched release from an
+    // unmatched one. Incremented AFTER the OCCT counter, never before; see OCCTBridge_Internal.h.
+    tobjApplicationBorrowCount().fetch_add(1, std::memory_order_relaxed);
     return app.get();
   }
   catch (...)
@@ -3977,6 +3980,13 @@ std::mutex& tobjApplicationMutex()
 {
   static std::mutex mutex;
   return mutex;
+}
+
+// #2897: outstanding OCCTTObjApplicationGetInstance borrows, see OCCTBridge_Internal.h.
+std::atomic<int>& tobjApplicationBorrowCount()
+{
+  static std::atomic<int> count{0};
+  return count;
 }
 
 void OCCTTObjApplicationSetVerbose(OCCTTObjAppRef app, bool verbose)
@@ -4049,18 +4059,53 @@ void OCCTTObjApplicationRelease(OCCTTObjAppRef app)
 
   try
   {
+    // #2897: undo a borrow this bridge actually took, and nothing else. A release with no
+    // matching OCCTTObjApplicationGetInstance() is refused here rather than passed through to
+    // DecrementRefCounter(), because passing it through frees the process-wide singleton: it
+    // leaves the count one below what TObj_Application::GetInstance()'s own function-local static
+    // Handle represents, and the next ordinary occ::handle to fall out of scope then decrements
+    // to 0 and calls Delete(). Measured both ways in Scripts/repro/2897: on Apple the later
+    // dispatch through the dangling vptr is a SIGSEGV, and on wasm it is #2897's
+    // `indirect call type mismatch`, because wasm type-checks the table entry that garbage vptr
+    // selects. The claim this function's previous comment made, that a decrement-only
+    // implementation survives an over-release, was false, and the suite asserting it is what
+    // performed the over-release.
+    int borrowed = tobjApplicationBorrowCount().load(std::memory_order_relaxed);
+    while (borrowed > 0
+           && !tobjApplicationBorrowCount().compare_exchange_weak(borrowed,
+                                                                  borrowed - 1,
+                                                                  std::memory_order_relaxed))
+    {
+      // compare_exchange_weak refreshed `borrowed`; retry while there is still one to give back.
+    }
+    if (borrowed <= 0)
+      return;
+
     auto* a = static_cast<TObj_Application*>(app);
-    // Undo the OCCTTObjApplicationGetInstance() IncrementRefCounter(). Unlike
-    // OCCTMessengerRelease/OCCTReportRelease, never delete on a zero count: GetInstance()'s own
-    // function-local static Handle (TObj_Application.cxx) holds a permanent reference for the
-    // whole process, so a caller matching every GetInstance() with one Release can never actually
-    // drive this to 0, and deleting the singleton out from under that still-live static handle
-    // would corrupt it for the rest of the process's life.
+    // Never delete on a zero count, unlike OCCTMessengerRelease/OCCTReportRelease: that static
+    // Handle holds a permanent reference for the whole process, and deleting the singleton out
+    // from under it would corrupt it for the rest of the process's life.
     a->DecrementRefCounter();
   }
   catch (...)
   {
     occtRecordCaughtException(__func__);
+  }
+}
+
+int OCCTTObjApplicationRefCount(OCCTTObjAppRef app)
+{
+  if (!app)
+    return 0;
+
+  try
+  {
+    return static_cast<TObj_Application*>(app)->GetRefCount();
+  }
+  catch (...)
+  {
+    occtRecordCaughtException(__func__);
+    return 0;
   }
 }
 
