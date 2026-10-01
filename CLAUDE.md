@@ -153,6 +153,15 @@ five consecutive merges did not do it (#2779). `check-changelog-transcription.py
 backstop for a merge made without it, and is not a gate: it asks a post-merge question, so as a
 required check it would fail every open PR for the previous merge's omission.
 
+**Head the entry descriptively, with its issue numbers.** A bare `### Fixed` / `### Added` /
+`### Changed` is refused, because it identifies nothing and so defeats the duplicate test: nine
+entries were extracted, printed to the operator and silently discarded between 2026-09-30 and
+2026-10-01, with a line each saying the work was already done (#2951). Neither tool now claims an
+entry is present without printing where: the merge re-reads `docs/CHANGELOG.md` after the splice
+and refuses to push or merge if the entry is not under `## Unreleased`, and the backstop skips a
+category heading rather than matching six words that identify nothing. The convention and the
+refusal are in [`changelog-on-merge`](okf/policies/changelog-on-merge.md).
+
 ### Doc Snippet Type-Check
 
 ```bash

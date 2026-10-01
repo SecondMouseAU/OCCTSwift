@@ -170,7 +170,31 @@ public final class DXFWriter: @unchecked Sendable, DrawingPrimitiveSink, Drawing
         out += entities()
         out += eof()
         do {
-            try out.write(to: url, atomically: true, encoding: .utf8)
+            // `atomically: true` CANNOT BE USED ON WASI, and what follows separates what was
+            // measured from what was inferred, because the first draft of this comment did not.
+            //
+            // MEASURED, by #2793's wasm test run: with `atomically: true` the call throws
+            // `Error Domain=NSCocoaErrorDomain Code=3328 "The requested operation is not supported."`
+            // and with `atomically: false` it succeeds. That failed five Drawing tests, three of them
+            // indirectly, as a `content.contains(...)` assertion against a file never written, and
+            // this reported it as a DXF write failure rather than as a platform limitation.
+            // `NSCocoaErrorDomain` is not an Apple-only domain: swift-corelibs-foundation uses the
+            // same domain string on WASI, which is why the text reads oddly for this platform.
+            //
+            // NOT MEASURED: which operation underneath is the unsupported one. The atomic path writes
+            // a temporary file and renames it over the target, so the rename is the obvious
+            // candidate, but nothing here establishes that rather than the temp-file creation, and
+            // the fix does not depend on knowing.
+            //
+            // The atomicity is worth keeping everywhere it works: it is what stops a crash mid-write
+            // leaving a half-written DXF that a reader will happily open. On WASI there is one
+            // thread and no way to get it, so a direct write is the only option rather than a
+            // preference.
+            #if os(WASI)
+                try out.write(to: url, atomically: false, encoding: .utf8)
+            #else
+                try out.write(to: url, atomically: true, encoding: .utf8)
+            #endif
         } catch {
             throw DXFError.writeFailed(error.exportDescription)
         }

@@ -859,9 +859,10 @@ JavaScriptKit reactor shape, which is Phase 5.
 
 ### Phase 4. Test + CI
 
-- A wasm test path (the pinned `wasmkit`, or a headless browser runner) for a **subset** of the
-  per-domain suites. Full parity is unrealistic initially; target the modeling +
-  IO domains first.
+- ~~A wasm test path (the pinned `wasmkit`, or a headless browser runner) for a **subset** of the
+  per-domain suites.~~ **Done (#2793):** `Scripts/run-wasm-tests.sh` builds and runs **13 of the 18**
+  per-domain targets under the pinned `wasmkit`. The subset is larger than this line expected, and
+  it is not the modeling + IO pair it names: `OCCTIOTests` is one of the five that cannot run.
 - ~~A GitHub Actions matrix entry that builds the wasm slice.~~ **Done (#2269):**
   `.github/workflows/wasm.yml` is the first CI job in this repository that builds for
   WebAssembly. It restores the pinned kernel asset rather than building OCCT, so it
@@ -870,11 +871,32 @@ JavaScriptKit reactor shape, which is Phase 5.
   Node with the browser shim, which asserts. **Not a required check yet**, per
   [`required-status-checks.md`](../okf/policies/required-status-checks.md): never
   require a check that has not yet reported.
-- **Still open: the per-domain suites.** Six calls are not a test suite, and nothing
-  runs a `Tests/OCCT<Domain>Tests/` target for wasm.
-- **Bring this forward.** #2175 ran six calls and no test target, and Phase 2's
-  remaining work changes the Swift layer's API surface. Changing an API surface with
-  no wasm test coverage is how the third condition on Phase 0's GO gets violated.
+- ~~**Still open: the per-domain suites.**~~ **Done (#2793), and this closes the third condition on
+  Phase 0's GO.** 13 targets run; five cannot exist on the platform and `Package.swift` says which and
+  why, with the measurements in `Scripts/repro/2793/`. Of the five, `OCCTThreadTests` is the clearest
+  case: its subject is concurrency and wasip1 non-threads has one thread by construction, so those 28
+  files have no meaning here rather than failing here. The other four are `autoreleasepool`,
+  `DispatchQueue`, `NSLock` and `ProcessInfo`, which is a narrowing job rather than a platform wall.
+- **Parity is assertion parity, deliberately.** The suites run the same assertions on both platforms
+  and are allowed to disagree loudly, which is what the existing tests already encode. Capturing
+  Apple-kernel outputs as a fixture and diffing against them was the alternative, and it was not
+  taken: it needs a fixture format and a refresh rule, and a fixture nobody refreshes is a test that
+  passes forever. `Scripts/wasm-test-known-failures.txt` holds the disagreements, and the runner
+  fails both on a new failure and on a listed failure that starts passing.
+- **What running them found, which is the argument for having done it.** Two classes no smoke test
+  could reach. `Int` is 32 bits on wasm32, so five test files that assert a count past `Int32.max` is
+  refused cannot express their own input and trapped or hung instead. And OCCT's inline
+  `gp_Dir` zero-norm check does not raise on wasm at all (#2891): the same call records two
+  `Standard_ConstructionError`s on Apple and none on wasm, and hands back a silently wrong result
+  built from a degenerate axis. `No_Exception`, the header trees, the build type and the condition
+  itself were each ruled out by measurement.
+- **It also made the kernel skew observable.** The `v4.0.0-kernel.3` repin left wasm a patch behind on
+  `0043`, which `Scripts/wasm-kernel-pin.txt` acknowledges in prose. The `#2827`/`#2873` by-plane
+  inertia tests now fail on wasm and pass on Apple, so the acknowledgement has a test behind it and
+  the next wasm kernel rebuild will make those lines disappear from the known-failure list.
+- **Bring this forward.** ~~#2175 ran six calls and no test target~~ Done, and for the reason this
+  line gave: Phase 2's remaining work (#2759, #2760) changes the Swift layer's wasm API surface, and
+  that surface now has coverage under it.
 
 ### Phase 5. Consumer validation
 

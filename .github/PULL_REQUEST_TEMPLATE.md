@@ -19,6 +19,10 @@ See okf/policies/changelog-on-merge.md.
 
 Write it finished, not as notes: see the policy for why the merger transcribes rather than drafts.
 
+Head it DESCRIPTIVELY, with the issue numbers, as below. A bare `### Fixed` / `### Added` /
+`### Changed` is refused by merge-pr.py: it identifies nothing, which is how nine entries were
+silently discarded between 2026-09-30 and 2026-10-01 (#2951).
+
 If the change genuinely warrants no entry, replace the heading below with "None, <reason>" rather
 than deleting the section, so the decision is visible instead of looking like an omission.
 -->
