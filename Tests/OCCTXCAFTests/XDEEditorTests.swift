@@ -30,10 +30,12 @@ struct XDEEditorTests {
         #expect(after.isAssembly, "expansion is what makes the compound an assembly")
         #expect(after.children.count == 2, "one child per member of the compound")
         // The two members, by volume: box 10 x 20 x 30, sphere r = 5.
+        // Through `first`/`last`, not by index: `#expect` does not short-circuit, so an
+        // empty array here would be a fatal subscript rather than a reported failure.
         let volumes = after.children.compactMap { $0.shape?.volume }.sorted()
         #expect(volumes.count == 2)
-        #expect(abs(volumes[0] - 523.598_775_598_299) < 1e-9)
-        #expect(abs(volumes[1] - 6000.0) < 1e-9)
+        #expect(abs(try #require(volumes.first) - 523.598_775_598_299) < 1e-9)
+        #expect(abs(try #require(volumes.last) - 6000.0) < 1e-9)
         #expect(doc.shapeCount == 3, "the compound plus its two members")
         #expect(doc.freeShapeCount == 1, "the members are components, not free shapes")
 

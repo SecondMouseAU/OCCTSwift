@@ -87,10 +87,13 @@ struct TNamingTracingTests {
         #expect(forward.filter { $0.isSame(as: sphere) }.count == 1)
         #expect(forward.filter { $0.isSame(as: cyl) }.count == 1)
         #expect(forward.filter { $0.isSame(as: box) }.isEmpty)
+        // `#expect` does not short-circuit, so take the elements through `first`/`last`
+        // rather than by index: a subscript past the end is a fatal error that takes the whole
+        // test process down, which is how an injection sweep loses the tests after this one.
         let volumes = forward.compactMap(\.volume).sorted()
         #expect(volumes.count == 2)
-        #expect(abs(volumes[0] - Self.cylR3H8Volume) < 1e-9)
-        #expect(abs(volumes[1] - Self.sphereR5Volume) < 1e-9)
+        #expect(abs(try #require(volumes.first) - Self.cylR3H8Volume) < 1e-9)
+        #expect(abs(try #require(volumes.last) - Self.sphereR5Volume) < 1e-9)
     }
 
     @Test("A shape the document never saw traces to nothing")

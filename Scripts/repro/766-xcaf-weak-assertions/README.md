@@ -69,3 +69,44 @@ Measured: `selectShape` accepts it and writes a `.selected` evolution, and `reso
 returns nil, so every assertion in the suite was running on the refusal path. The suite now selects
 a real face of the box, and keeps the foreign-face case as its own test with the refusal it
 actually produces.
+
+## Proving the tests fail
+
+[`okf/policies/prove-the-test-fails.md`](../../../okf/policies/prove-the-test-fails.md) asks for a
+red against an injected defect for every test touched. Sixty-three tests is too many to rebuild
+once each, so the harness is one build with a runtime switch: `apply-injections.py` patches 43
+semantic defects into the bridge and the Swift layer, each selected by `OCCT766_INJECT`,
+`run-injection-matrix.py` runs the suite once per id, and `score-injection-matrix.py` maps the
+display names Swift Testing prints back to function names and asserts coverage.
+
+`injection-matrix.txt` is the scored result: **43 injections, 63 touched tests, 63 covered**, with
+the baseline green and no crash. `injection-matrix-raw.txt` is the unscored run.
+
+None of the injections is of the "bridge returns nil" shape, because that is the weakness being
+removed and a test that notices only total failure would pass it. Each is a plausible wrong answer:
+a trace that also emits its own source, a `FindShape` that descends like `SearchShape`, a
+`removeShape` that reports success and removes nothing, a path ID that loses its trailing
+separator, an extent off by one, a tag counter pinned at 1, an `isKept` that answers true for
+everything, an `Expand` that reports success and expands nothing, a `RescaleGeometry` that scales
+nothing.
+
+Three things the sweep caught that a looser one would have reported as clean:
+
+1. **`OCCTSWIFT_BRIDGE_PREBUILT=1` is ambient in this environment** and makes every `.mm` edit
+   inert. The driver pops it from the environment of the **test run**, not just the build.
+2. **The first attempt scraped nothing.** Driving `swiftpm-testing-helper` directly produced no
+   parseable output, and the matrix printed 43 rows of "reds 0", which reads exactly like a suite
+   full of blind tests. The baseline assertion ("0 seen passing") is what caught it; without a
+   baseline row the run would have been reported as a finding about the tests.
+3. **Two injections landed past an early exit, and both were real.** INJ29 sat after the
+   `FindAttribute` guard in `OCCTDocumentNamingGetEvolution`, so the one fixture with no attribute
+   (`noEvolutionOnEmptyLabel`) never reached it; moving the injection above the guard reds it.
+   INJ42 exposed a defect in the new test itself: `XDEEditorTests.editorExpand` read `volumes[0]`
+   after `#expect(volumes.count == 2)`, and `#expect` does not short-circuit, so an empty array was
+   a fatal subscript that killed the process and the test after it (`editorExpandRefusals`) never
+   ran. The array equivalent of the force-unwrap `CLAUDE.md` forbids. Fixed, in four places, by
+   taking elements through `first`/`last` with `try #require`.
+
+The switch count is asserted against the test count for exactly the reason the brief gives: an
+injection that was never wired shows up as an uncovered test, which is what a blind test also looks
+like, and the two must not be confused.

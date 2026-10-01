@@ -123,9 +123,10 @@ struct TNamingBasicTests {
 
         let history = doc.namingHistory(on: label)
         #expect(history.count == 1)
-        #expect(history[0].evolution == .primitive)
-        #expect(!history[0].hasOldShape, "Primitive should not have old shape")
-        #expect(history[0].hasNewShape, "Primitive should have new shape")
+        let entry = try #require(history.first)
+        #expect(entry.evolution == .primitive)
+        #expect(!entry.hasOldShape, "Primitive should not have old shape")
+        #expect(entry.hasNewShape, "Primitive should have new shape")
     }
 
     @Test("New shape from history entry")
@@ -181,8 +182,9 @@ struct TNamingBasicTests {
         #expect(doc.namingEvolution(on: label) == .generated)
         let history = doc.namingHistory(on: label)
         #expect(history.count == 1)
-        #expect(history[0].hasOldShape)
-        #expect(history[0].hasNewShape)
+        let entry = try #require(history.first)
+        #expect(entry.hasOldShape)
+        #expect(entry.hasNewShape)
     }
 
     /// A second `recordNaming` on the same label REPLACES the first: the bridge opens a fresh
@@ -207,9 +209,10 @@ struct TNamingBasicTests {
 
         let history = doc.namingHistory(on: label)
         #expect(history.count == 1)
-        #expect(history[0].evolution == .modify)
-        #expect(history[0].hasOldShape)
-        #expect(history[0].hasNewShape)
+        let entry = try #require(history.first)
+        #expect(entry.evolution == .modify)
+        #expect(entry.hasOldShape)
+        #expect(entry.hasNewShape)
         #expect(try #require(doc.oldShape(on: label, at: 0)).isSame(as: box))
         #expect(try #require(doc.newShape(on: label, at: 0)).isSame(as: sphere))
     }

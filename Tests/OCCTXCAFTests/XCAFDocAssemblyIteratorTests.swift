@@ -19,9 +19,10 @@ struct XCAFDocAssemblyIteratorTests {
         #expect(doc.assemblyItemCount() == 1)
     }
 
-    /// #964: a document small enough to walk completely reports a count, never `nil`. Before the
-    /// fix this could not be asserted at all, the method returned `Int`, so "counted 100,001" and
-    /// "gave up at 100,001" were the same value.
+    /// #964: a document small enough to walk completely reports a count, never `nil`.
+    ///
+    /// Before the fix this could not be asserted at all, the method returned `Int`, so
+    /// "counted 100,001" and "gave up at 100,001" were the same value.
     @Test func smallAssemblyCountIsComplete() throws {
         let doc = try #require(Document.create())
         for i in 1...3 {
