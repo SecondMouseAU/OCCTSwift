@@ -1,0 +1,3 @@
+fuseBlendBoxes: booleanDone=1 booleanVolume=1500 contours=0 valid=1 volume=1500
+fuseBlendBoxCylinder: booleanDone=1 booleanVolume=5079.922475 contours=5 filletDone=1 valid=1 volume=5085.86567
+cutBlend: booleanDone=1 booleanVolume=7803.650459 contours=5 filletDone=1 valid=1 volume=7796.570703
