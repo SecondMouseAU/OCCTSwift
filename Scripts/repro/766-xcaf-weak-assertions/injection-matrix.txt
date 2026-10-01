@@ -1,0 +1,48 @@
+43 injections scored
+
+INJ1   -> emptyTraceForUnrelated, forwardTraceExcludesSource, multipleGenerations, traceForward, traceModificationChain
+INJ2   -> backwardTraceExcludesGenerated, traceBackward
+INJ3   -> addShapeAndCount, editorExpand, freeShapeCount, newAndRemove
+INJ4   -> addShapeAndCount, freeShapeCount, newAndRemove
+INJ5   -> findAndSearch
+INJ6   -> newAndRemove
+INJ7   -> labelQueries
+INJ8   -> exploreDocumentWithShape
+INJ9   -> explorerShapeAtIndex
+INJ10  -> explorerPathId, findShapeFromPathId
+INJ11  -> findShapeFromPathId
+INJ12  -> explorerDepthUnderAnAssemblyIsOne
+INJ13  -> explorerDepth, explorerDepthUnderAnAssemblyIsOne
+INJ14  -> setShapeAndQuery
+INJ15  -> namingIsEmptyAfterRecord, recordPrimitive, selectSubShape
+INJ16  -> namingIsEmpty, recordPrimitive
+INJ17  -> namingVersion
+INJ18  -> namingOriginalShape, namingOriginalShapeFromModify
+INJ19  -> namingHasLabel, sameShapeQueriesOnADocumentWithNoNaming
+INJ20  -> namingFindLabel, sameShapeQueriesOnADocumentWithNoNaming
+INJ21  -> namingValidUntil, sameShapeQueriesOnADocumentWithNoNaming
+INJ22  -> sameShapeCount
+INJ23  -> sameShapeLabels
+INJ24  -> createChildLabel, createLabel
+INJ25  -> createChildLabel, createLabel
+INJ27  -> currentShapeAfterPrimitive, modifyEvolution
+INJ28  -> recordPrimitive, storedShape
+INJ29  -> deleteEvolution, generatedEvolution, modifyEvolution, noEvolutionOnEmptyLabel, resolveWithoutSelection, selectForeignFace, selectSubShape, selectedEvolution
+INJ30  -> deleteEvolution, evolutionType, generatedEvolution, modifyEvolution, recordPrimitive, selectForeignFace, selectSubShape, selectedEvolution
+INJ31  -> historyAfterPrimitive
+INJ32  -> newShapeFromHistory, secondRecordReplacesHistory
+INJ35  -> createDirectory, findDirectory
+INJ36  -> addSubDirectory, makeObjectLabel
+INJ37  -> makeObjectLabel
+INJ38  -> addSubDirectory, createDirectory, findDirectory, makeObjectLabel
+INJ39  -> createFilter, ignoreGUID, keepGUID
+INJ40  -> createFilter, ignoreGUID, keepGUID
+INJ41  -> keepMode, toggleIgnoreAll
+INJ42  -> editorExpand, editorExpandRefusals
+INJ43  -> rescaleGeometry, rescaleGeometryRefusals
+INJ44  -> resolveShape, resolveWithoutSelection, selectForeignFace
+INJ45  -> resolveShape, selectForeignFace, selectSubShape, selectedEvolution
+INJ46  -> iterateAssembly, smallAssemblyCountIsComplete
+
+touched tests: 63   covered: 63
+every touched test is red under at least one injection

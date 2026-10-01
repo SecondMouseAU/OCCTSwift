@@ -1,0 +1,83 @@
+BASELINE: 69 seen passing, 0 failing, crash=False
+INJ1   reds  5: A modify evolution traces forward to the modified shape, A shape the document never saw traces to nothing, Both generations from the same source come back, and only those two, Forward trace does not find source shape, Trace forward yields exactly the generated shape
+INJ2   reds  2: Backward trace does not find generated shape, Trace backward yields exactly the source shape
+INJ3   reds  4: AddShape raises both counts by exactly one and returns the new label, Adding one top-level shape leaves exactly one free shape, EditorExpand turns a compound label into a two-child assembly, RemoveShape takes the shape out of the document, not just reports success
+INJ4   reds  3: AddShape raises both counts by exactly one and returns the new label, Adding one top-level shape leaves exactly one free shape, RemoveShape takes the shape out of the document, not just reports success
+INJ5   reds  1: FindShape is top-level only, SearchShape descends into sub-shapes
+INJ6   reds  1: RemoveShape takes the shape out of the document, not just reports success
+INJ7   reds  1: IsTopLevel, IsComponent, IsCompound on node
+INJ8   reds  1: exploreDocumentWithShape
+INJ9   reds  1: explorerShapeAtIndex
+INJ10  reds  2: explorerPathId, findShapeFromPathId
+INJ11  reds  1: findShapeFromPathId
+INJ12  reds  1: explorerDepthUnderAnAssemblyIsOne
+INJ13  reds  2: explorerDepth, explorerDepthUnderAnAssemblyIsOne
+INJ14  reds  1: setShapeAndQuery
+INJ15  reds  3: Record primitive shape, Selecting a real face of the context writes a selected evolution, namingIsEmptyAfterRecord
+INJ16  reds  2: Record primitive shape, namingIsEmpty
+INJ17  reds  1: namingVersion
+INJ18  reds  2: namingOriginalShape, namingOriginalShapeFromModify
+INJ19  reds  2: namingHasLabel, sameShapeQueriesOnADocumentWithNoNaming
+INJ20  reds  2: namingFindLabel, sameShapeQueriesOnADocumentWithNoNaming
+INJ21  reds  2: namingValidUntil, sameShapeQueriesOnADocumentWithNoNaming
+INJ22  reds  1: sameShapeCount
+INJ23  reds  1: sameShapeLabels
+INJ24  reds  2: Create child label under parent, Create label on document
+INJ25  reds  2: Create child label under parent, Create label on document
+INJ27  reds  2: Current shape after primitive, Modify evolution updates current shape
+INJ28  reds  2: Record primitive shape, Stored shape matches recorded
+INJ29  reds  8: A face foreign to the context selects but does not resolve, Delete evolution records correctly, Generated evolution with old and new shapes, Modify evolution updates current shape, No evolution on empty label, Resolving a label with no selection is a refusal, Selected evolution type, Selecting a real face of the context writes a selected evolution
+INJ30  reds  8: A face foreign to the context selects but does not resolve, Delete evolution records correctly, Evolution type is primitive, Generated evolution with old and new shapes, Modify evolution updates current shape, Record primitive shape, Selected evolution type, Selecting a real face of the context writes a selected evolution
+INJ31  reds  1: History count after primitive
+INJ32  reds  2: A second record on one label replaces the history rather than appending, New shape from history entry
+INJ35  reds  2: createDirectory, findDirectory
+INJ36  reds  2: addSubDirectory, makeObjectLabel
+INJ37  reds  1: makeObjectLabel
+INJ38  reds  4: addSubDirectory, createDirectory, findDirectory, makeObjectLabel
+INJ39  reds  3: createFilter, ignoreGUID, keepGUID
+INJ40  reds  3: createFilter, ignoreGUID, keepGUID
+INJ41  reds  2: keepMode, toggleIgnoreAll
+INJ42  reds  2: EditorExpand refuses a label that is not an expandable compound, EditorExpand turns a compound label into a two-child assembly
+INJ43  reds  2: RescaleGeometry refuses a zero factor and an unknown label, RescaleGeometry scales the stored shape by the factor cubed in volume
+INJ44  reds  3: A face foreign to the context selects but does not resolve, Resolving a label with no selection is a refusal, Resolving a selection returns the context faces, measured
+INJ45  reds  4: A face foreign to the context selects but does not resolve, Resolving a selection returns the context faces, measured, Selected evolution type, Selecting a real face of the context writes a selected evolution
+INJ46  reds  2: iterateAssembly, smallAssemblyCountIsComplete
+
+switch count: 43 injections run
+test count:   63 touched tests
+covered:      29
+UNCOVERED (a test no injection reds is exactly what a blind test looks like):
+    addShapeAndCount
+    backwardTraceExcludesGenerated
+    createChildLabel
+    createLabel
+    currentShapeAfterPrimitive
+    deleteEvolution
+    editorExpand
+    editorExpandRefusals
+    emptyTraceForUnrelated
+    evolutionType
+    findAndSearch
+    forwardTraceExcludesSource
+    freeShapeCount
+    generatedEvolution
+    historyAfterPrimitive
+    labelQueries
+    modifyEvolution
+    multipleGenerations
+    newAndRemove
+    newShapeFromHistory
+    noEvolutionOnEmptyLabel
+    recordPrimitive
+    rescaleGeometry
+    rescaleGeometryRefusals
+    resolveShape
+    resolveWithoutSelection
+    secondRecordReplacesHistory
+    selectForeignFace
+    selectSubShape
+    selectedEvolution
+    storedShape
+    traceBackward
+    traceForward
+    traceModificationChain

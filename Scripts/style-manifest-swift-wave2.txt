@@ -297,4 +297,3 @@ Tests/OCCTXCAFTests/Issue2855OCAFArrayBoundsTests.swift
 Tests/OCCTXCAFTests/Issue443TriangulationAttributeTests.swift
 Tests/OCCTXCAFTests/Issue970TransactionAPITests.swift
 Tests/OCCTXCAFTests/XCAFDocAssemblyGraphTests.swift
-Tests/OCCTXCAFTests/XCAFDocAssemblyIteratorTests.swift
