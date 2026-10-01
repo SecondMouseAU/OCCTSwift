@@ -2009,8 +2009,17 @@ OCCTDocumentRef _Nullable OCCTTObjApplicationCreateDocument(OCCTTObjAppRef _Nonn
 
 /// Release a reference obtained from OCCTTObjApplicationGetInstance. TObj_Application is a
 /// process-wide singleton whose own function-local static Handle keeps a permanent reference,
-/// so this only undoes the increment GetInstance made; it never deletes the object.
+/// so this only undoes the increment GetInstance made; it never deletes the object. A release
+/// with no matching GetInstance is refused rather than passed through, because passing it
+/// through frees the singleton a later caller then dispatches through (#2897).
 void OCCTTObjApplicationRelease(OCCTTObjAppRef _Nonnull app);
+
+/// Standard_Transient::GetRefCount() for the TObj_Application singleton, the one observable this
+/// object's lifetime invariant has. Returns 0 for a null handle. Counts every reference OCCT
+/// holds, including GetInstance's own static Handle and any open document, so its absolute value
+/// depends on what else is alive; what it is for is comparing it across an operation that must
+/// not change it (#2897).
+int OCCTTObjApplicationRefCount(OCCTTObjAppRef _Nullable app);
 
 /// Create an ID filter (ignoreAll=true: ignore all except kept; false: keep all except ignored)
 OCCTIDFilterRef _Nullable OCCTIDFilterCreate(bool ignoreAll);
