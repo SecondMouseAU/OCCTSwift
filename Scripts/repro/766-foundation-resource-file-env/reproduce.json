@@ -1,0 +1,8 @@
+{
+  "volatile": [
+    {
+      "pattern": "^user [0-9.]+ s, getrusage user \\[[0-9.]+, [0-9.]+\\], within 0\\.02 s: 1; user > 0: 1$",
+      "reason": "process CPU time, 0.060000 s at capture and 0.070000 s on rerun. The two verdicts the line carries, \"within 0.02 s: 1\" and \"user > 0: 1\", are part of the pattern, so a run where OCCT and getrusage stop agreeing is still a difference."
+    }
+  ]
+}

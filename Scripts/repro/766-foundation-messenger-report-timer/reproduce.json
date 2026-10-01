@@ -1,0 +1,16 @@
+{
+  "volatile": [
+    {
+      "pattern": "^ElapsedTime\\(\\) over a 50 ms sleep = [0-9.]+ s$",
+      "reason": "wall-clock elapsed time over a sleep. Measured 0.0600 s at capture and 0.0519 s on rerun. The shape is the assertion: the line must still be there and must still report a number of seconds."
+    },
+    {
+      "pattern": "^GetWallClockTime\\(\\) - gettimeofday\\(\\) = -?[0-9.]+ s$",
+      "reason": "an absolute epoch offset, so it changes every second the probe is run: -1790177368 at capture, -1790587323 on rerun. What the test asserts is that the two clocks agree, which the Swift side checks, not the value."
+    },
+    {
+      "pattern": "^PrintInfo\\(\\) first line: \\\"  Working Set: +[0-9]+ MiB\\\"$",
+      "reason": "the process working-set size, 7 MiB at capture and 6 MiB on rerun. The line above it, \"Value(MemHeapUsage) > 0: 1\", is the measurement and it is not volatile."
+    }
+  ]
+}
