@@ -32,6 +32,14 @@ struct HatchTests {
         #expect(segments.count > 0)
     }
 
+    /// An empty boundary hatches nothing, even when islands are supplied.
+    ///
+    /// It is rejected before the kernel is reached, by `HatchPattern.generate` and again by
+    /// `OCCTHatchLines`. The first assertion alone could not fail: with both of those guards
+    /// removed, an empty boundary still yields an empty perpendicular extent, so no hatch line
+    /// is ever added and the result is empty anyway (`Scripts/repro/766-hatch-redo/`). The island
+    /// case is what makes a missing rejection observable: unguarded, the island sets the
+    /// extent on its own and its edges trim the lines into three segments filling the hole.
     @Test("Empty boundary returns nothing")
     func emptyBoundary() {
         let segments = HatchPattern.generate(
@@ -40,6 +48,15 @@ struct HatchTests {
             spacing: 1.0
         )
         #expect(segments.isEmpty)
+
+        let islandOnly = HatchPattern.generate(
+            boundary: [],
+            direction: SIMD2(1, 0),
+            spacing: 2.0,
+            islands: [[SIMD2(7, 7), SIMD2(13, 7), SIMD2(13, 13), SIMD2(7, 13)]]
+        )
+        #expect(
+            islandOnly.isEmpty, "an island with no boundary fills nothing, got \(islandOnly.count)")
     }
 
     @Test("Triangle boundary")
