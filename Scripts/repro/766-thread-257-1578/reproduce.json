@@ -1,0 +1,6 @@
+{
+  "transcript_tail_from": {
+    "pattern": "^257 partial n=2 \\(BREP from Swift\\):",
+    "reason": "the last three lines re-measure shapes the Swift side wrote to BREP and passed as argv[1..3], per the transcript's own header line. Those files came from a temporary, since-reverted instrumentation of Issue257MultiStartTests and Issue1578ThreadedHoleMinorDiameterTests and were never committed, so they cannot be re-derived from this repository and a rerun with no arguments stops before them. Everything above, the eight lines the probe derives itself, reproduces byte for byte against the pinned asset, including the three startCount cluster rows this PR's rewritten test is pinned against."
+  }
+}

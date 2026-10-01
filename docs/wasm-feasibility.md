@@ -160,6 +160,37 @@ section listed as unknown have answers, and one of them is not the answer the qu
 - `-lsetjmp` and `-lwasi-emulated-getpid` have now been on a link line; see
   [`Scripts/repro/2174/README.md`](../Scripts/repro/2174/README.md).
 
+### The one exception to all of it: an optimised frame can unwind wrongly (#2894)
+
+**Everything above holds, and one thing on top of it does not.** An exception that unwinds through
+`BRepFill_Evolved::PrepareProfile` reaches `std::terminate` and takes the module down, where the
+bridge's `catch (...)` catches it on Apple. The discriminator is **not** the exception type, the
+translation unit it was raised in, the number of frames it crosses, or `setjmp`: all four were
+measured and none of them separates a throw that is caught from this one. It is the **optimisation
+level of the frame being unwound through**, and inlining in particular.
+
+The same OCCT unit, the same source, the same exception flags, case B of
+[`Scripts/repro/2894`](../Scripts/repro/2894):
+
+| `BRepFill_Evolved.cxx` compiled | outcome |
+|---|---|
+| `-O0` | caught, `Standard_ConstructionError: Geom_TrimmedCurve::U1 == U2` |
+| `-O1`, `-O2` | `std::terminate` |
+| `-O2 -fno-inline` | caught |
+| `-O2 -mllvm -inline-threshold=0` | trap, out of bounds, in `~NCollection_Sequence<double>` |
+
+`__cxa_throw`, interposed with `wasm-ld --wrap`, fires exactly **once**, so nothing threw during
+the unwind. The cleanup that runs belongs to a local of the inlined `CutEdgeProf` whose constructor
+the throw precedes. So this is a **code-generation defect in the WebAssembly exception lowering**,
+where the inliner and that lowering disagree about which cleanups are live in an inlined region. It
+is not an OCCT bug and no bridge guard reaches it.
+
+**What a consumer should expect.** A call that returns a refusal on Apple can abort the module on
+wasm, and nothing at the call site predicts which. The measured bound is #2793's suite: of roughly
+3,600 wasm tests, two suites trap, and both reach `BRepFill_Evolved`. The only measured workaround
+is `-fno-inline` on the affected unit, which costs a kernel rebuild and a republish, and which
+would be guessing at the population while the defect is in the compiler.
+
 ### The bridge is compiled as C++, not Objective-C++ (#2256)
 
 The exception flags above cannot reach a bridge translation unit while it is compiled as
@@ -828,9 +859,10 @@ JavaScriptKit reactor shape, which is Phase 5.
 
 ### Phase 4. Test + CI
 
-- A wasm test path (the pinned `wasmkit`, or a headless browser runner) for a **subset** of the
-  per-domain suites. Full parity is unrealistic initially; target the modeling +
-  IO domains first.
+- ~~A wasm test path (the pinned `wasmkit`, or a headless browser runner) for a **subset** of the
+  per-domain suites.~~ **Done (#2793):** `Scripts/run-wasm-tests.sh` builds and runs **13 of the 18**
+  per-domain targets under the pinned `wasmkit`. The subset is larger than this line expected, and
+  it is not the modeling + IO pair it names: `OCCTIOTests` is one of the five that cannot run.
 - ~~A GitHub Actions matrix entry that builds the wasm slice.~~ **Done (#2269):**
   `.github/workflows/wasm.yml` is the first CI job in this repository that builds for
   WebAssembly. It restores the pinned kernel asset rather than building OCCT, so it
@@ -839,11 +871,32 @@ JavaScriptKit reactor shape, which is Phase 5.
   Node with the browser shim, which asserts. **Not a required check yet**, per
   [`required-status-checks.md`](../okf/policies/required-status-checks.md): never
   require a check that has not yet reported.
-- **Still open: the per-domain suites.** Six calls are not a test suite, and nothing
-  runs a `Tests/OCCT<Domain>Tests/` target for wasm.
-- **Bring this forward.** #2175 ran six calls and no test target, and Phase 2's
-  remaining work changes the Swift layer's API surface. Changing an API surface with
-  no wasm test coverage is how the third condition on Phase 0's GO gets violated.
+- ~~**Still open: the per-domain suites.**~~ **Done (#2793), and this closes the third condition on
+  Phase 0's GO.** 13 targets run; five cannot exist on the platform and `Package.swift` says which and
+  why, with the measurements in `Scripts/repro/2793/`. Of the five, `OCCTThreadTests` is the clearest
+  case: its subject is concurrency and wasip1 non-threads has one thread by construction, so those 28
+  files have no meaning here rather than failing here. The other four are `autoreleasepool`,
+  `DispatchQueue`, `NSLock` and `ProcessInfo`, which is a narrowing job rather than a platform wall.
+- **Parity is assertion parity, deliberately.** The suites run the same assertions on both platforms
+  and are allowed to disagree loudly, which is what the existing tests already encode. Capturing
+  Apple-kernel outputs as a fixture and diffing against them was the alternative, and it was not
+  taken: it needs a fixture format and a refresh rule, and a fixture nobody refreshes is a test that
+  passes forever. `Scripts/wasm-test-known-failures.txt` holds the disagreements, and the runner
+  fails both on a new failure and on a listed failure that starts passing.
+- **What running them found, which is the argument for having done it.** Two classes no smoke test
+  could reach. `Int` is 32 bits on wasm32, so five test files that assert a count past `Int32.max` is
+  refused cannot express their own input and trapped or hung instead. And OCCT's inline
+  `gp_Dir` zero-norm check does not raise on wasm at all (#2891): the same call records two
+  `Standard_ConstructionError`s on Apple and none on wasm, and hands back a silently wrong result
+  built from a degenerate axis. `No_Exception`, the header trees, the build type and the condition
+  itself were each ruled out by measurement.
+- **It also made the kernel skew observable.** The `v4.0.0-kernel.3` repin left wasm a patch behind on
+  `0043`, which `Scripts/wasm-kernel-pin.txt` acknowledges in prose. The `#2827`/`#2873` by-plane
+  inertia tests now fail on wasm and pass on Apple, so the acknowledgement has a test behind it and
+  the next wasm kernel rebuild will make those lines disappear from the known-failure list.
+- **Bring this forward.** ~~#2175 ran six calls and no test target~~ Done, and for the reason this
+  line gave: Phase 2's remaining work (#2759, #2760) changes the Swift layer's wasm API surface, and
+  that surface now has coverage under it.
 
 ### Phase 5. Consumer validation
 

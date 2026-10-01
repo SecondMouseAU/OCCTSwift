@@ -37,6 +37,7 @@
 #endif
 
 #include <algorithm>
+#include <atomic>
 #include <mutex>
 #include <string>
 #include <vector>
@@ -408,6 +409,25 @@ std::mutex& fontListMutex();
 // than a carried patch: the class has no lock of its own, the API is niche, and upstream has no
 // PR in this area (checked against Open-Cascade-SAS/OCCT before filing).
 std::mutex& tobjApplicationMutex();
+
+// #2897: the number of IncrementRefCounter() calls OCCTTObjApplicationGetInstance has made and
+// OCCTTObjApplicationRelease has not yet undone, so a release with no matching get can be refused
+// instead of decrementing a reference the bridge never took.
+//
+// Without it that release is not harmless. It leaves the process-wide singleton one reference
+// BELOW what TObj_Application::GetInstance()'s own function-local static handle represents, and
+// nothing is freed at that moment, which is exactly what made it look safe. The object is freed
+// later, by the next ordinary occ::handle to fall out of scope: its EndScope decrements to zero
+// and calls Delete(), which is `delete this`. The static handle then dangles and every later
+// caller reads a vptr out of reclaimed memory and dispatches through it.
+//
+// Atomic rather than guarded by tobjApplicationMutex(), because neither entry point takes that
+// lock today and giving them one would be a wider change than the defect needs. The ordering is
+// what makes the counter sound: GetInstance increments the OCCT counter first and this one
+// second, Release decrements this one first and the OCCT counter second, so this count is never
+// ABOVE the number of outstanding increments and a concurrent release can only refuse, never
+// over-release.
+std::atomic<int>& tobjApplicationBorrowCount();
 
 // === OCCT signal handling ===
 //

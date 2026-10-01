@@ -23,11 +23,17 @@ Two things live here:
    `--strict`-shaped flag exists and is withheld), not by matching English words in a comment, so it
    survives a comment being reworded. #2196 added a fourth kind, the RELEASE CHECK: self-test-only
    like a census, but declaring a `--require-...` flag because its real run needs an input this job
-   does not have, and reaching a verdict rather than a list. CLAUDE.md's sentence counts the first
-   three; `--check` holds it to those and prints the fourth beside it. `--check` cross-references the live count against the
-   sentence in `CLAUDE.md`'s own "Static Gate Scripts" section and fails if they disagree, and
-   against `Scripts/*.py` actually present on disk, so a renamed or deleted script shows up as a
-   dangling reference rather than silently vanishing from the count.
+   does not have, and reaching a verdict rather than a list. The counting sentence covers the first
+   three; `--check` holds it to those and prints the fourth beside it. `--check` cross-references
+   the live count against that sentence and fails if they disagree, and against `Scripts/*.py`
+   actually present on disk, so a renamed or deleted script shows up as a dangling reference rather
+   than silently vanishing from the count.
+
+   **The sentence moved in #2954.** It was in `CLAUDE.md`'s "Static Gate Scripts" section and is
+   now in `okf/policies/static-gates.md`'s "How many there are", because `CLAUDE.md` states no
+   counted claim about the repo's own inventories any more: a count there is shared by every open
+   PR, so a correct edit to the inventory reds every other branch at merge time. This script reads
+   wherever the sentence lives, which is `COUNT_PAGE` below.
 
 2. **A defect-class cross-reference** (`DEFECT_CLASSES`), hand-built from reading `CLAUDE.md`'s
    Known OCCT Bugs section in full, `docs/v2.0.0-plan.md`'s cluster descriptions, and a
@@ -61,7 +67,9 @@ from dataclasses import dataclass, field
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO_ROOT = os.path.abspath(os.path.join(HERE, "..", "..", ".."))
 CI_YML = os.path.join(REPO_ROOT, ".github", "workflows", "ci.yml")
-CLAUDE_MD = os.path.join(REPO_ROOT, "CLAUDE.md")
+# #2954: the counting sentence lives on the policy page, not in CLAUDE.md.
+COUNT_PAGE_REL = os.path.join("okf", "policies", "static-gates.md")
+COUNT_PAGE = os.path.join(REPO_ROOT, COUNT_PAGE_REL)
 SCRIPTS_DIR = os.path.join(REPO_ROOT, "Scripts")
 
 
@@ -197,7 +205,7 @@ def find_dangling_scripts(script_names, existing_names) -> list:
 
 
 # ---------------------------------------------------------------------------
-# CLAUDE.md's own stated count, parsed the same way count-operations.py parses a headline
+# The repo's own stated count, parsed the same way count-operations.py parses a headline
 # ---------------------------------------------------------------------------
 
 NUMBER_WORDS = {
@@ -207,17 +215,17 @@ NUMBER_WORDS = {
     "nineteen": 19, "twenty": 20,
 }
 _WORD = "|".join(NUMBER_WORDS)
-CLAUDE_COUNT_RE = re.compile(
+STATED_COUNT_RE = re.compile(
     rf"\b({_WORD})\s+gates?,\s+({_WORD})\s+census(?:es)?\s+and\s+({_WORD})\s+merge-history audit",
     re.IGNORECASE,
 )
 
 
-def parse_claude_md_count(text: str):
-    """Return (gates, censuses, audits) parsed from the "Static Gate Scripts" headline sentence,
+def parse_stated_count(text: str):
+    """Return (gates, censuses, audits) parsed from the "How many there are" headline sentence,
     or None if no such sentence is found at all (a stronger signal than a wrong number: the section
     was reworded away from this shape entirely)."""
-    m = CLAUDE_COUNT_RE.search(text)
+    m = STATED_COUNT_RE.search(text)
     if not m:
         return None
     return tuple(NUMBER_WORDS[w.lower()] for w in m.groups())
@@ -727,7 +735,7 @@ def run_report(quiet=False):
 
 
 def run_check() -> int:
-    """Exit 1 if the live enumeration disagrees with CLAUDE.md's own stated count, or if any
+    """Exit 1 if the live enumeration disagrees with the repo's own stated count, or if any
     script ci.yml references is missing on disk. This is the one place this artifact behaves like
     a gate; everything else here is a report for a human to read."""
     problems = []
@@ -740,19 +748,19 @@ def run_check() -> int:
     for k in kinds.values():
         counts[k] += 1
 
-    with open(CLAUDE_MD, "r", encoding="utf-8") as fh:
-        claude_text = fh.read()
-    stated = parse_claude_md_count(claude_text)
+    with open(COUNT_PAGE, "r", encoding="utf-8") as fh:
+        page_text = fh.read()
+    stated = parse_stated_count(page_text)
     if stated is None:
-        problems.append("CLAUDE.md's 'Static Gate Scripts' section no longer states a "
-                         "'N gates, M censuses and K merge-history audit' sentence in the shape "
-                         "this script parses -- update CLAUDE_COUNT_RE or check the section by "
-                         "hand.")
+        problems.append(f"{COUNT_PAGE_REL}'s 'How many there are' section no longer states a "
+                         f"'N gates, M censuses and K merge-history audit' sentence in the shape "
+                         f"this script parses. Update STATED_COUNT_RE, or check the section by "
+                         f"hand. (#2954 moved this sentence here from CLAUDE.md.)")
     elif stated != (counts["gate"], counts["census"], counts["audit"]):
         problems.append(
-            f"CLAUDE.md states ({stated[0]} gates, {stated[1]} censuses, {stated[2]} audit) but "
-            f"ci.yml's gate-scripts job derives ({counts['gate']} gates, {counts['census']} "
-            f"censuses, {counts['audit']} audit) -- one of the two has drifted."
+            f"{COUNT_PAGE_REL} states ({stated[0]} gates, {stated[1]} censuses, {stated[2]} "
+            f"audit) but ci.yml's gate-scripts job derives ({counts['gate']} gates, "
+            f"{counts['census']} censuses, {counts['audit']} audit). One of the two has drifted."
         )
 
     existing = {
@@ -768,7 +776,7 @@ def run_check() -> int:
             print(f"DRIFT: {p}")
         return 1
     print(f"OK: live enumeration ({counts['gate']} gates, {counts['census']} censuses, "
-          f"{counts['audit']} audit) matches CLAUDE.md's stated count, and every referenced "
+          f"{counts['audit']} audit) matches {COUNT_PAGE_REL}'s stated count, and every referenced "
           f"script exists on disk. Plus {counts['release-check']} release check(s), which that "
           f"sentence deliberately does not count; check-inventory-prose.py holds their own "
           f"sentence to this number (#2196).")
@@ -919,8 +927,8 @@ def self_test() -> bool:
                          f"{kinds_i.get('release1')!r}")
     if counts_i["census"] != 4:
         failures.append(f"RELEASE-CHECK fixture: the release check inflated the census count to "
-                         f"{counts_i['census']}, which is how CLAUDE.md's sentence would go "
-                         f"stale without anyone editing it")
+                         f"{counts_i['census']}, which is how the counting sentence would "
+                         f"go stale without anyone editing it")
     kinds_i_nodecl = classify(scripts_i, _clean_strict_lookup,
                                require_flag_lookup=lambda name: False)
     if kinds_i_nodecl.get("release1") != "census":
@@ -934,26 +942,26 @@ def self_test() -> bool:
         failures.append("RELEASE-CHECK reader: a census was read as declaring a --require-... "
                          "flag, so the two kinds would be indistinguishable")
 
-    # --- Case G: parse_claude_md_count ----------------------------------------------------------
+    # --- Case G: parse_stated_count -------------------------------------------------------------
     correct = "blah blah Eight gates, four censuses and one merge-history audit, all pure Python"
-    if parse_claude_md_count(correct) != (8, 4, 1):
-        failures.append(f"CLAUDE-COUNT fixture (correct): expected (8, 4, 1), "
-                         f"got {parse_claude_md_count(correct)}")
+    if parse_stated_count(correct) != (8, 4, 1):
+        failures.append(f"STATED-COUNT fixture (correct): expected (8, 4, 1), "
+                         f"got {parse_stated_count(correct)}")
 
     stale = "Six gates, one census and one merge-history audit exist now"  # #819's own stale claim
-    if parse_claude_md_count(stale) != (6, 1, 1):
-        failures.append(f"CLAUDE-COUNT fixture (#819's own stale wording): expected (6, 1, 1), "
-                         f"got {parse_claude_md_count(stale)}")
+    if parse_stated_count(stale) != (6, 1, 1):
+        failures.append(f"STATED-COUNT fixture (#819's own stale wording): expected (6, 1, 1), "
+                         f"got {parse_stated_count(stale)}")
 
     two_digit = "Twelve gates, three censuses and one merge-history audit"
-    if parse_claude_md_count(two_digit) != (12, 3, 1):
-        failures.append(f"CLAUDE-COUNT fixture (two-digit word): expected (12, 3, 1), "
-                         f"got {parse_claude_md_count(two_digit)}")
+    if parse_stated_count(two_digit) != (12, 3, 1):
+        failures.append(f"STATED-COUNT fixture (two-digit word): expected (12, 3, 1), "
+                         f"got {parse_stated_count(two_digit)}")
 
     missing = "This section no longer states a count sentence at all."
-    if parse_claude_md_count(missing) is not None:
-        failures.append(f"CLAUDE-COUNT fixture (absent): expected None, "
-                         f"got {parse_claude_md_count(missing)}")
+    if parse_stated_count(missing) is not None:
+        failures.append(f"STATED-COUNT fixture (absent): expected None, "
+                         f"got {parse_stated_count(missing)}")
 
     # --- Case H: find_dangling_scripts() (the exact function --check calls) reports the renamed
     # script as dangling against a fixture "disk listing" that only has the old name, and reports
@@ -973,7 +981,7 @@ def self_test() -> bool:
         return False
     print("SELF-TEST: OK (9 cases: clean enumeration, gate removed, script renamed, script "
           "added, census-grows-a-gate reclassification, audit-gains---strict reclassification, "
-          "release-check-vs-census on the same ci.yml shape, CLAUDE.md count parsing incl. a "
+          "release-check-vs-census on the same ci.yml shape, stated-count parsing incl. a "
           "two-digit word and an absent sentence, dangling reference against a fixture disk "
           "listing)")
     return True

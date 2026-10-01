@@ -52,7 +52,6 @@ Scripts/repro/censuses/Issue761.swift
 Scripts/repro/censuses/SharedFixtures.swift
 Scripts/repro/harnesses/AnalyzeSelfIntersectionTiming.swift
 Scripts/repro/harnesses/PocketEnclosureTiming.swift
-Sources/WASICompat/simd/SIMDCompat.swift
 Tests/OCCTAnalysisTests/AdaptorCurvatureDefinednessTests.swift
 Tests/OCCTAnalysisTests/AdaptorLocalPropsParityTests.swift
 Tests/OCCTAnalysisTests/AdaptorNormalDecisionTests.swift
@@ -251,12 +250,10 @@ Tests/OCCTSurfaceTests/SurfaceCurvatureParityTests.swift
 Tests/OCCTSurfaceTests/SurfaceNormalParityTests.swift
 Tests/OCCTSurfaceTests/SurfaceTestFixtures.swift
 Tests/OCCTSurfaceTests/SurfaceTransformFamilyParityTests.swift
-Tests/OCCTThreadTests/Issue1266CrestRadiusSentinelTests.swift
 Tests/OCCTThreadTests/Issue1578ThreadedHoleMinorDiameterTests.swift
 Tests/OCCTThreadTests/Issue222EnvelopeTests.swift
 Tests/OCCTThreadTests/Issue232BoundsTests.swift
 Tests/OCCTThreadTests/Issue254BuildModesTests.swift
-Tests/OCCTThreadTests/Issue257MultiStartTests.swift
 Tests/OCCTThreadTests/Issue298FilletThreadSafetyTests.swift
 Tests/OCCTThreadTests/Issue784ThreadBuildCodableCompatTests.swift
 Tests/OCCTThreadTests/Issue988ThreadProfileFactoryTests.swift

@@ -18,6 +18,17 @@ import Testing
 /// byte for byte): a true baseline of 1 (just the static handle) becomes 2 after one such call and
 /// its own local `Handle` unwinding, exactly the one net leaked increment the issue describes.
 ///
+/// **The paragraph below was wrong where it said a decrement-only implementation survives an
+/// over-release, and #2897 is what it cost.** It does not delete the singleton itself, which is
+/// what the ground-truth probe measured and what the paragraph reports accurately; what it does
+/// instead is leave the count one below the static handle's own reference, so the next ordinary
+/// `occ::handle` to fall out of scope deletes it. `doubleReleaseDoesNotCorruptSingleton` below
+/// performs exactly that over-release and then passes, because the damage is not visible in the
+/// same test: `OCCTXCAFTests` trapped inside `OCCTTObjApplicationCreateDocument` about 660 test
+/// lines later. The release now refuses a release no `GetInstance` paid for, which is what makes
+/// this suite's own claim true; `Issue2897TObjApplicationOverReleaseTests` is the test that can
+/// see it, through the `OCCTTObjApplicationRefCount` accessor this suite declined to add.
+///
 /// `OCCTTObjApplicationRelease` (new) undoes that increment with `DecrementRefCounter()` alone. It
 /// deliberately does NOT follow `OCCTMessengerRelease`/`OCCTReportRelease`'s sibling pattern of
 /// `if (GetRefCount() == 0) delete`: those two wrap ordinary, non-singleton `Standard_Transient`

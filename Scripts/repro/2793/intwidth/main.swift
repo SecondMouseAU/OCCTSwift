@@ -1,0 +1,5 @@
+print("Int.bitWidth =", Int.bitWidth)
+print("Int.max =", Int.max)
+print("Int32.max =", Int32.max)
+let overflows = Int(Int32.max).addingReportingOverflow(1)
+print("Int(Int32.max) + 1 overflows:", overflows.overflow, "->", overflows.partialValue)

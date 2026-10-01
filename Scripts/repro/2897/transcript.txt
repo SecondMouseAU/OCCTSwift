@@ -1,0 +1,130 @@
+#2897 transcripts. Each block is the measured output of one command, on 2026-10-02, against
+the pinned kernels: OCCT.xcframework v4.0.0-kernel.3 natively, and libOCCT-wasm.a
+v4.0.0-kernel.2 under the pinned wasmkit 0.3.1.
+
+================================================================================
+BEFORE THE FIX
+$ Scripts/repro/2897/run.sh --native
+================================================================================
+PHASE 1: the control, a healthy singleton
+  at rest                      refcount = 1
+  after GetInstance            refcount = 2
+                               vptr = 0x100651508, slot 26 (CreateNewDocument) = 0x100588d14
+  CreateNewDocument            a document
+  after Release                refcount = 1
+PHASE 2: one unmatched release, which is what the test suite performs
+  after GetInstance            refcount = 2
+  after Release                refcount = 1
+  after the UNMATCHED one      refcount = 0
+PHASE 3: the next ordinary handle to fall out of scope frees it
+  a scoped handle              refcount = 10
+  dropped                      Delete() ran, so GetInstance()'s static handle now dangles
+PHASE 4: the call #2897's trace names, through the dangling singleton
+  after GetInstance            app = 0x100efed60
+[the process died here: Segmentation fault: 11, exit 139]
+
+================================================================================
+BEFORE THE FIX
+$ Scripts/repro/2897/run.sh                 (wasm32-unknown-wasip1, under wasmkit)
+================================================================================
+PHASE 1: the control, a healthy singleton
+  at rest                      refcount = 1
+  after GetInstance            refcount = 2
+                               vptr = 0xae434, slot 26 (CreateNewDocument) = 0x309
+  CreateNewDocument            a document
+  after Release                refcount = 1
+PHASE 2: one unmatched release, which is what the test suite performs
+  after GetInstance            refcount = 2
+  after Release                refcount = 1
+  after the UNMATCHED one      refcount = 0
+PHASE 3: the next ordinary handle to fall out of scope frees it
+  a scoped handle              refcount = 798313
+  dropped                      Delete() ran, so GetInstance()'s static handle now dangles
+PHASE 4: the call #2897's trace names, through the dangling singleton
+  after GetInstance            app = 0xc2e70
+  read from freed memory       vptr = 0xc2e68, slot 26 (CreateNewDocument) = 0
+Error: Trap: indirect call to null element (uninitialized element 0)
+    0: (0x0000007917249248) (anonymous namespace)::createAndCloseDocument(void*)
+    1: (0x00000079170f4258) __original_main
+    2: (0x000000016b3aa9c8) _start
+    3: (0x0000000100000003) unknown
+
+================================================================================
+BEFORE THE FIX: the real suite, with the two files un-excluded on PR #2927's branch
+$ Scripts/run-wasm-tests.sh run OCCTXCAFTests
+================================================================================
+>>> running 1 suite(s) under 0.3.1
+>>> transcripts in /var/folders/qg/vl7hjxld1dj2z8lvcrjp_klm0000gn/T/wasm-tests.p8hTw3B4po
+
+  TRAPPED  OCCTXCAFTests
+           no summary line: the module died rather than reporting. Transcript: /var/folders/qg/vl7hjxld1dj2z8lvcrjp_klm0000gn/T/wasm-tests.p8hTw3B4po/OCCTXCAFTests.out
+           Error: Trap: indirect call to null element (uninitialized element 12)
+               0: (0x000000749782be80) OCCTTObjApplicationCreateDocument
+               1: (0x00000074884ddc60) $s9OCCTSwift15TObjApplicationC14createDocumentAA0E0CSgyF
+               2: (0x000000749809ab48) $s13OCCTXCAFTests20TObjApplicationTestsV14createDocumentyyFyyXEfU_
+               3: (0x00000074979d3870) $s13OCCTXCAFTests20TObjApplicationTestsV019$s13OCCTXCAFTests20bcD54V11verboseFlag4TestfMp_25generatorae4c8f5338d95457fMu_33_FBA4F71659156E543D678F6E16B3C65DLL7Testing4TestVyYaYbFZyyYaYbKcfu_Tf4d_nTY1_Tm
+
+>>> 0 tests across 1 suite(s)
+
+A suite trapped or timed out. Neither is ever an expected outcome and neither can be listed
+as a known failure: both end the module, so every test after the one that did it is
+unreported and the counts above are not the whole suite.
+exit=1
+
+the over-release and the trap, located in that run's own transcript:
+  467  Test "releasing more times than the singleton was fetched (double-release)" started
+  468  ...passed
+  1143 Trap, OCCTTObjApplicationCreateDocument, inside TObjApplicationTests.createDocument
+
+================================================================================
+AFTER THE FIX: the same branch, the same two files un-excluded
+$ Scripts/run-wasm-tests.sh run OCCTXCAFTests
+================================================================================
+>>> running 1 suite(s) under 0.3.1
+>>> transcripts in /var/folders/qg/vl7hjxld1dj2z8lvcrjp_klm0000gn/T/wasm-tests.BQz8XWcCoE
+
+  ok       OCCTXCAFTests            505 tests, 133 suites
+
+>>> 505 tests across 1 suite(s)
+no new failures in the named suite(s). PASS (subset: the known-failure list is not asserted)
+exit=0
+
+================================================================================
+THE SWEEP
+$ Scripts/repro/2897/run.sh --vtable-parity
+================================================================================
+classes laid out by the bridge: 300
+  of those, plain class names:  282
+  with a vtable in the archive: 253
+  compared slot for slot:       3363 slots
+  disagreements:                0
+
+The first run of the sweep reported 109 disagreements and every one was the comparison's
+own doing, not the kernel's: the secondary vtable of a multiply-inherited base read as
+extra slots, a pure slot prints as a named declaration on the clang side and as
+__cxa_pure_virtual on the archive side, and clang aliases a derived complete destructor to
+its base's. None of the three is a function-type difference, which is the only thing a
+wasm call_indirect checks. vtable-parity.py normalises all three; its docstring says why.
+
+================================================================================
+PROVE THE TEST FAILS: the guard removed from OCCTTObjApplicationRelease, then restored
+$ swift test --filter Issue2897
+================================================================================
+INJECTED: the borrow guard is gone
+=== INJECTED BUILD DONE ===
+◇ Test run started.
+◇ Suite "Issue #2897: an over-release must not strand the TObj_Application singleton" started.
+◇ Test "a release with no matching GetInstance leaves the reference count alone" started.
+✘ Test "a release with no matching GetInstance leaves the reference count alone" recorded an issue at Issue2897TObjApplicationOverReleaseTests.swift:47:13: Expectation failed: OCCTTObjApplicationRefCount(app) == balanced
+✘ Test "a release with no matching GetInstance leaves the reference count alone" recorded an issue at Issue2897TObjApplicationOverReleaseTests.swift:52:13: Expectation failed: OCCTTObjApplicationRefCount(app) == balanced
+✘ Test "a release with no matching GetInstance leaves the reference count alone" failed after 0.001 seconds with 2 issues.
+✘ Suite "Issue #2897: an over-release must not strand the TObj_Application singleton" failed after 0.001 seconds with 2 issues.
+✘ Test run with 1 test in 1 suite failed after 0.001 seconds with 2 issues.
+=== INJECTED RUN DONE ===
+=== RESTORED BUILD DONE ===
+◇ Test run started.
+◇ Suite "Issue #2897: an over-release must not strand the TObj_Application singleton" started.
+◇ Test "a release with no matching GetInstance leaves the reference count alone" started.
+✔ Test "a release with no matching GetInstance leaves the reference count alone" passed after 0.001 seconds.
+✔ Suite "Issue #2897: an over-release must not strand the TObj_Application singleton" passed after 0.001 seconds.
+✔ Test run with 1 test in 1 suite passed after 0.001 seconds.
