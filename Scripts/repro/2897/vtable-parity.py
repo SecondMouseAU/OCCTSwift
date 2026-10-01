@@ -47,6 +47,11 @@ VTABLE_HEADER = re.compile(r"^Vtable for '(.+)' \((\d+) entries\)\.$")
 ENTRY = re.compile(r"^\s*(\d+) \| (.*)$")
 # Lines the dump emits that are not function slots.
 NOT_A_SLOT = re.compile(r"^(offset_to_top|vbase_offset|vcall_offset|.* RTTI$)")
+# A second `offset_to_top` opens the SECONDARY vtable of a multiply-inherited base. Only the
+# primary one is what a call through the class's own pointer indexes, and the archive side reads
+# the primary one too, so the parse stops there. Without this, `BRepAlgoAPI_Common` reads as
+# sixteen slots against the archive's thirteen and every boolean class is a false finding.
+SECONDARY = re.compile(r"^offset_to_top \(-")
 
 
 def qualified_name_and_arity(text: str) -> tuple[str, int] | None:
@@ -128,32 +133,62 @@ def read_clang_dumps(dump_dir: str) -> dict[str, list[tuple[str, int]]]:
                     continue
                 item = ENTRY.match(line)
                 if not item:
+                    # A `[this adjustment: ...] method: ...` continuation, or a
+                    # `-- (Base, 0) vtable address --` marker. Neither is a slot.
                     continue
                 body = item.group(2).strip()
+                if SECONDARY.match(body):
+                    layouts.setdefault(cls, slots)
+                    cls = None
+                    continue
                 if NOT_A_SLOT.match(body):
                     continue
-                parsed = qualified_name_and_arity(body)
-                if parsed is None:
-                    slots.append((body, -1))
-                    continue
-                name, arity = parsed
-                if "~" in name:
-                    kind = "deleting" if "[deleting]" in body else "complete"
-                    slots.append((name + "#" + kind, arity))
-                else:
-                    slots.append((name, arity))
+                slots.append(normalised_slot(body))
         if cls is not None:
             layouts.setdefault(cls, slots)
     return layouts
+
+
+def normalised_slot(body: str) -> tuple[str, int]:
+    """One clang slot, reduced to what a wasm `call_indirect` would actually check.
+
+    Two normalisations, each for a difference that is not a type difference:
+
+    A **pure** slot prints as a named declaration here and is `__cxa_pure_virtual` in the archive.
+    Both sides reduce to `#pure`, so a class that is pure in the headers and concrete in the
+    archive is still a finding while the ordinary case is not.
+
+    A **destructor** is compared by kind rather than by owner. The archive's slot 0 is sometimes
+    the BASE's `D2`, because clang aliases a derived complete destructor that destroys nothing
+    extra; `BRepLib_MakeFace`, `BRepLib_MakeShell`, `BRepLib_MakeVertex`, `BRepBuilderAPI_Copy`
+    and `BRepOffsetAPI_MakeThickSolid` all read that way and none of them is a type difference.
+    """
+    if body.endswith("[pure]"):
+        return ("#pure", -1)
+    parsed = qualified_name_and_arity(body)
+    if parsed is None:
+        return (body, -1)
+    name, arity = parsed
+    if "~" in name:
+        return ("#dtor-deleting" if "[deleting]" in body else "#dtor-complete", arity)
+    return (name, arity)
 
 
 def archive_layouts(
     archive: str, nm: str, ar: str, objdump: str, cxxfilt: str, wanted: set[str]
 ) -> dict[str, list[tuple[str, int]]]:
     """Every `_ZTV<class>` in the archive, as class -> ordered list of (name, arity)."""
-    listing = subprocess.run(
-        [nm, "--defined-only", archive], capture_output=True, text=True
-    ).stdout
+    # `llvm-nm` over a 153 MB archive is about seven minutes, and the listing depends only on the
+    # archive, so it is cached rather than paid again on every rerun.
+    cache = os.environ.get("NM_CACHE", os.path.join(tempfile.gettempdir(), "occt2897-nm.txt"))
+    if os.path.isfile(cache) and os.path.getmtime(cache) > os.path.getmtime(archive):
+        listing = open(cache, errors="replace").read()
+    else:
+        listing = subprocess.run(
+            [nm, "--defined-only", archive], capture_output=True, text=True
+        ).stdout
+        with open(cache, "w") as handle:
+            handle.write(listing)
     # object file -> the mangled vtable symbols it defines, for the classes asked about.
     by_object: dict[str, set[str]] = {}
     current = ""
@@ -236,14 +271,15 @@ def longest_table_run(rows: list[tuple[int, str, str]], typeinfo: str) -> list[s
 
 
 def demangled_slot(mangled: str, cxxfilt: str) -> tuple[str, int]:
+    if mangled == "__cxa_pure_virtual":
+        return ("#pure", -1)
     text = subprocess.run([cxxfilt, mangled], capture_output=True, text=True).stdout.strip()
     parsed = qualified_name_and_arity(text)
     if parsed is None:
         return (text, -1)
     name, arity = parsed
     if "~" in name:
-        kind = "deleting" if mangled.endswith("D0Ev") else "complete"
-        return (name + "#" + kind, arity)
+        return ("#dtor-deleting" if mangled.endswith("D0Ev") else "#dtor-complete", arity)
     return (name, arity)
 
 
