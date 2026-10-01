@@ -1,0 +1,10 @@
+check3DOrdinaryCurve: fixFirst=0 fixLast=0 isDone=0
+check3DReversedFirstTangent: fixFirst=1 fixLast=0 isDone=0
+check3DReversedLastTangent: fixFirst=0 fixLast=1 isDone=0
+fix3D: FixedTangent(revF, true, false) null=0 poles=4 (2,0,0) (3,0,0) (4,0,0) (8,0,0)
+fix3D recheck of fixed curve: fixFirst=0 fixLast=0 isDone=0
+check2DOrdinaryCurve: fixFirst=0 fixLast=0 isDone=0
+check2DReversedFirstTangent: fixFirst=1 fixLast=0 isDone=0
+check2DReversedLastTangent: fixFirst=0 fixLast=1 isDone=0
+fix2D: FixedTangent(revF, true, false) null=0 poles=4 (2,0) (3,0) (4,0) (8,0)
+fix2D recheck of fixed curve: fixFirst=0 fixLast=0 isDone=0
