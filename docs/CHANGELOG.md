@@ -21,6 +21,37 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### The TObj_Application singleton stops being freed by a release nobody paid for (#2897)
+
+`OCCTXCAFTests` trapped on wasm inside `OCCTTObjApplicationCreateDocument` with an
+`indirect call type mismatch`, which reads like a vtable or ABI disagreement between the headers
+the bridge compiles against and the kernel it links. It is not one: the slot is right and the
+object is gone.
+
+`OCCTTObjApplicationRelease` was a bare `DecrementRefCounter()`, so a release with no matching
+`OCCTTObjApplicationGetInstance()` took the place of the one reference
+`TObj_Application::GetInstance()`'s own function-local static `Handle` holds. Nothing was freed at
+that moment, which is what made it look safe. The object dies later, when the next ordinary
+`occ::handle` falls out of scope, decrements to zero and calls `Delete()`; the static handle then
+dangles and every later caller dispatches through a vptr read from reclaimed memory. In the
+failing run the over-release and the trap are about 660 transcript lines apart, which is why
+`Issue1588TObjApplicationReleaseTests.doubleReleaseDoesNotCorruptSingleton` performed it and
+passed.
+
+**Apple was exposed too**, and not benignly: `Scripts/repro/2897/run.sh --native` is a SIGSEGV on
+the same sequence against the pinned xcframework. The macOS suite survives only because an open
+`TObj` document holds a reference of its own, so the count has further to fall.
+
+The release now gives back only a borrow the bridge took. `OCCTTObjApplicationRefCount` is the
+observable the invariant needs, which #1588 considered and declined, and whose absence is why the
+property went untested. With the fix, `OCCTXCAFTests` on wasm runs 505 tests in 133 suites clean
+with both previously excluded files restored.
+
+The sweep the issue asked for found nothing else: `Scripts/repro/2897/vtable-parity.py` compares
+every vtable the bridge's own translation units lay out against the archive's `_ZTV` relocations,
+**253 classes and 3,363 slots**, and reports no disagreement in slot count, name or arity. There
+is no mistyped indirect call in the bridge.
+
 ### Counted claims leave CLAUDE.md for the pages that own them (#2954)
 
 `CLAUDE.md` stated eleven counted claims about the repo's own inventories, each gated by
