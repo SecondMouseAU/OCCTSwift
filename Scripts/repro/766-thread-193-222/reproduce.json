@@ -1,0 +1,6 @@
+{
+  "status": {
+    "value": "not-reproducible",
+    "reason": "the transcript is not one capture of one run. It interleaves two programs over at least five invocations: the BRIDGE lines are printed by dump.swift in this directory, run as a temporary test in Tests/OCCTThreadTests/, and the KERNEL lines by five separate runs of this mode-dispatching probe (`probe prim`, `probe brep <names...>`, `probe hlr <brep> <defl>`, `probe meshcrest <brep> <defl>`, `probe step <path>`). With no arguments the probe returns 2 and prints nothing, which is why a bare rerun reproduces none of it. Four of the five modes also read BREP files that dump.swift wrote into a temporary directory and nobody committed, so even per-invocation they cannot be re-derived from this repository. Only the `prim` mode, the three `KERNEL prim_*` cylinders, needs no input; it is not separable from the rest of the file. The deflection sweep this transcript is cited for, 1869 and 17088 edges at 0.05 against 2089 and 3578 at 0.8, is also measured in-process by Issue196PolyHLRTests, which pins 1873 and 17041 to 1 percent and fails if the kernel moves."
+  }
+}

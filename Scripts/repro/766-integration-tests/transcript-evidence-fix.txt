@@ -1,0 +1,1 @@
+selfUnion vol=999.99999999999977 valid=1 solids=1 faces=6
