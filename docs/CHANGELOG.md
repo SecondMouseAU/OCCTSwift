@@ -21,6 +21,12 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### `Exporter.writeDXF` and `Exporter.writeSVG` work on WebAssembly, and 5,501 tests now run there (#2793)
+
+Both exporters wrote with `atomically: true`, which cannot be used on `wasm32-unknown-wasip1`: the call throws `NSCocoaErrorDomain Code=3328 "The requested operation is not supported."` there, so every DXF and SVG export failed. Measured: the same call with `atomically: false` succeeds. Both now write directly on that platform and keep atomicity everywhere else, which is what stops a crash mid-write leaving a half-written file a reader will open. Which operation underneath is unsupported was not established; the atomic path writes a temporary file and renames it, so the rename is the candidate, and the fix does not depend on knowing. No behaviour changes on any Apple platform.
+
+The port also gains test coverage. 12 of the 18 per-domain suites build and run for wasm under the pinned `wasmkit`, 5,501 tests, driven by `Scripts/run-wasm-tests.sh` and run in CI. `Scripts/wasm-test-known-failures.txt` records every cross-platform difference found so far, and the runner fails both on a new failure and on a listed failure that starts passing. Six targets and sixteen files cannot run there, each with its reason in `Package.swift`. This closes the third of the four conditions on Phase 0's GO.
+
 ### Six BRepCheck tests could not tell a wrong answer from a right one (#2904)
 
 `BRepCheckSubShapeTests`' four tests each asserted a single boolean, `isValid == true`, on a
