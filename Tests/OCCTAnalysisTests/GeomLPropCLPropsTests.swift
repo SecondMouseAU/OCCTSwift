@@ -7,8 +7,10 @@ import simd
 @Suite("GeomLProp CLProps")
 struct GeomLPropCLPropsTests {
     /// A cylinder (r 10, h 5) has three edges: two circles of radius 10 at z = 0 and z = 5, and
-    /// the straight seam. At parameter 0 each circle is at (10, 0, z), with curvature 1/10, tangent
-    /// +Y, the normal pointing back at the axis and the centre of curvature on it, which is what
+    /// the straight seam.
+    ///
+    /// At parameter 0 each circle is at (10, 0, z), with curvature 1/10, tangent +Y, the normal
+    /// pointing back at the axis and the centre of curvature on it, which is what
     /// `GeomLProp_CLProps` reports for both.
     ///
     /// This used to look for any edge with curvature above 0.01 and check only that the
