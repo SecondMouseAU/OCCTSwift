@@ -208,31 +208,50 @@ struct StressEmptyContainerTests {
 @Suite("Stress: Invalid Parameters")
 struct StressInvalidParameterTests {
 
-    @Test func negativeBox() {
-        let box = Shape.box(width: -10, height: -10, depth: -10)
-        if let b = box { _ = b.isValid }
+    // Epic #766: every test in this suite read its result and asserted nothing, so a kernel that
+    // had stopped answering passed them all. Each now pins what the kernel does with the input.
+    // Where that answer is a refusal, the test also runs the neighbouring input the same call
+    // accepts, so "nil" cannot be read as "the whole factory is broken".
+
+    // BRepPrimAPI_MakeBox takes a negative size as a box on the other side of the corner point,
+    // so this is a valid 1000-unit box and not a refusal at all.
+    @Test func negativeBox() throws {
+        let b = try #require(Shape.box(width: -10, height: -10, depth: -10))
+        #expect(b.isValid)
+        #expect(abs(try #require(b.volume) - 1000.0) < 1e-6)
+        #expect(b.subShapeCount(ofType: .face) == 6)
     }
 
-    @Test func negativeCylinder() {
-        let cyl = Shape.cylinder(radius: -5, height: -10)
-        if let c = cyl { _ = c.isValid }
+    // MakeCylinder throws Standard_ConstructionError for a negative radius; the same call with
+    // the sign flipped builds the cylinder, which is what separates the refusal from a dead API.
+    @Test func negativeCylinder() throws {
+        #expect(Shape.cylinder(radius: -5, height: -10) == nil)
+        let ok = try #require(Shape.cylinder(radius: 5, height: 10))
+        #expect(abs(try #require(ok.volume) - 250 * .pi) < 1e-6)
     }
 
-    @Test func negativeSphere() {
-        let sphere = Shape.sphere(radius: -5)
-        if let s = sphere { _ = s.isValid }
+    // MakeSphere, likewise.
+    @Test func negativeSphere() throws {
+        #expect(Shape.sphere(radius: -5) == nil)
+        let ok = try #require(Shape.sphere(radius: 5))
+        #expect(abs(try #require(ok.volume) - 4.0 / 3.0 * .pi * 125) < 1e-6)
     }
 
-    @Test func negativeFillet() {
+    // BRepFilletAPI_MakeFillet is not done for a negative radius. The positive radius on the same
+    // box is the control: it removes material, so the nil above is the sign and not the box.
+    @Test func negativeFillet() throws {
         let box = standardBox()
-        let result = box.filleted(radius: -1.0)
-        if let r = result { _ = r.isValid }
+        #expect(box.filleted(radius: -1.0) == nil)
+        let ok = try #require(box.filleted(radius: 1.0))
+        #expect(abs(try #require(ok.volume) - 975.5870139) < 1e-6)
     }
 
-    @Test func negativeChamfer() {
+    // BRepFilletAPI_MakeChamfer, likewise.
+    @Test func negativeChamfer() throws {
         let box = standardBox()
-        let result = box.chamfered(distance: -1.0)
-        if let r = result { _ = r.isValid }
+        #expect(box.chamfered(distance: -1.0) == nil)
+        let ok = try #require(box.chamfered(distance: 1.0))
+        #expect(abs(try #require(ok.volume) - 945.3333333) < 1e-6)
     }
 
     /// #2830: the sign is not what decides this.
@@ -247,52 +266,80 @@ struct StressInvalidParameterTests {
         #expect(box.shelled(thickness: 1.0) == nil)
     }
 
-    @Test func zeroDrill() {
+    // A zero radius is refused by occtValidDrillRadius before OCCT is reached. Unguarded, the
+    // kernel cut succeeds and removes nothing, so a missing guard would read as a drilled hole:
+    // the control below is the drill that does remove material.
+    @Test func zeroDrill() throws {
         let box = standardBox()
-        let result = box.drilled(
-            at: SIMD3(0, 0, 5), direction: SIMD3(0, 0, -1), radius: 0, depth: 0)
-        if let r = result { _ = r.isValid }
+        #expect(
+            box.drilled(at: SIMD3(0, 0, 5), direction: SIMD3(0, 0, -1), radius: 0, depth: 0) == nil)
+        let ok = try #require(
+            box.drilled(at: SIMD3(0, 0, 5), direction: SIMD3(0, 0, -1), radius: 2, depth: 0))
+        #expect(abs(try #require(ok.volume) - (1000 - 40 * .pi)) < 1e-6)
     }
 
-    @Test func zeroDirectionVector() {
+    // A zero direction is refused by occtValidDrillDirection; unguarded, gp_Dir throws
+    // Standard_ConstructionError. The same drill along -Z is the control.
+    @Test func zeroDirectionVector() throws {
         let box = standardBox()
-        let result = box.drilled(at: SIMD3(0, 0, 5), direction: SIMD3(0, 0, 0), radius: 1, depth: 5)
-        if let r = result { _ = r.isValid }
+        #expect(
+            box.drilled(at: SIMD3(0, 0, 5), direction: SIMD3(0, 0, 0), radius: 1, depth: 5) == nil)
+        let ok = try #require(
+            box.drilled(at: SIMD3(0, 0, 5), direction: SIMD3(0, 0, -1), radius: 1, depth: 5))
+        #expect(abs(try #require(ok.volume) - (1000 - 5 * .pi)) < 1e-6)
     }
 
-    @Test func outOfBoundsSubShapeIndex() {
+    // The box has 12 edges, so index 999 has no edge and no polyline. The old assertion ended in
+    // `|| true` and could not fail whatever the call returned; index 0 is the control.
+    @Test func outOfBoundsSubShapeIndex() throws {
         let box = standardBox()
-        // Edge index way out of bounds
-        let polyline = box.edgePolyline(at: 999, deflection: 0.1)
-        #expect(polyline == nil || polyline!.isEmpty || true)  // Just don't crash
+        #expect(box.edgePolyline(at: 999, deflection: 0.1) == nil)
+        let pts = try #require(box.edgePolyline(at: 0, deflection: 0.1))
+        #expect(pts.count >= 2)
     }
 
+    // Geom_Circle is periodic, so a parameter past the domain evaluates at the wrapped angle:
+    // 5·(cos 10, sin 10, 0), not a clamp to the end point. The wrap is the claim, so the same
+    // point one period down has to agree.
     @Test func curveEvalOutsideDomain() {
         let curve = standardCurve3D()
         let domain = curve.domain
-        // Evaluate slightly outside
         let pt = curve.point(at: domain.upperBound + 10.0)
-        // Should return something or NaN, not crash
-        _ = pt
+        #expect(abs(pt.x - -4.1953576453822627) < 1e-9)
+        #expect(abs(pt.y - -2.7201055544468482) < 1e-9)
+        #expect(abs(pt.z) < 1e-12)
+        let wrapped = curve.point(at: 10.0)
+        #expect(abs(pt.x - wrapped.x) < 1e-9)
+        #expect(abs(pt.y - wrapped.y) < 1e-9)
     }
 
+    // A plane has no parametric bound; (u, v) far out maps to (u, v, 0). The two parameters
+    // differ, and differ in sign, so a u/v swap or a dropped sign would show.
     @Test func surfaceEvalOutsideDomain() {
         let surf = standardSurface()
-        let pt = surf.point(atU: 1e12, v: 1e12)
-        _ = pt
+        let pt = surf.point(atU: 1e12, v: -2e12)
+        #expect(pt.x == 1e12)
+        #expect(pt.y == -2e12)
+        #expect(pt.z == 0)
     }
 
-    @Test func wireFromZeroLengthLine() {
-        let wire = Wire.line(from: SIMD3(0, 0, 0), to: SIMD3(0, 0, 0))
-        if let w = wire { _ = w.length }
+    // Refused in Swift (distance <= 1e-10). Unguarded, BRepBuilderAPI_MakeEdge is not done on
+    // coincident points (BRepBuilderAPI_LineThroughIdenticPoints). A 1-long line is the control.
+    @Test func wireFromZeroLengthLine() throws {
+        #expect(Wire.line(from: SIMD3(0, 0, 0), to: SIMD3(0, 0, 0)) == nil)
+        let ok = try #require(Wire.line(from: SIMD3(0, 0, 0), to: SIMD3(0, 0, 1)))
+        #expect(abs(try #require(ok.length) - 1) < 1e-9)
     }
 
-    @Test func booleanIdenticalPosition() {
-        let b1 = Shape.box(width: 10, height: 10, depth: 10)!
-        let b2 = Shape.box(width: 10, height: 10, depth: 10)!
-        // Same position, union should produce roughly same volume
-        let result = b1.union(b2)
-        if let r = result { #expect(r.isValid) }
+    // Fusing a box with a coincident copy of itself gives the box back: the same volume, and
+    // still six faces rather than twelve coincident ones.
+    @Test func booleanIdenticalPosition() throws {
+        let b1 = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let b2 = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let r = try #require(b1.union(b2))
+        #expect(r.isValid)
+        #expect(abs(try #require(r.volume) - 1000.0) < 1e-6)
+        #expect(r.subShapeCount(ofType: .face) == 6)
     }
 
     // #345: a zero-length direction/normal vector reaching gp_Dir's constructor throws
@@ -300,9 +347,16 @@ struct StressInvalidParameterTests {
     // crossing the bridge boundary is a guaranteed std::terminate()/abort() (SIGABRT).
     // These exercise bridge entry points that used to construct gp_Dir directly from
     // caller doubles with no try/catch.
+    //
+    // Epic #766: the catch leaves the caller's zero-filled buffer untouched, so the answer for an
+    // undefined mirror is the all-zero matrix. Pinned, so a fallback that silently changed it
+    // (to the identity, say) would show, and pinned beside the defined mirror the same call
+    // builds, so the zeros cannot be read as "this factory returns zeros".
     @Test func mirrorAxisZeroDirection() {
         let m = TransformFactory3D.mirrorAxis(point: SIMD3(0, 0, 0), direction: SIMD3(0, 0, 0))
-        _ = m
+        #expect(m.values == [Double](repeating: 0, count: 12))
+        let ok = TransformFactory3D.mirrorAxis(point: SIMD3(0, 0, 0), direction: SIMD3(0, 0, 1))
+        #expect(ok.values != [Double](repeating: 0, count: 12))
     }
 
     // #1473: same shape as #345 above, but for the 2D sibling. OCCTMakeMirror2dAxis built
@@ -310,12 +364,16 @@ struct StressInvalidParameterTests {
     // Standard_ConstructionError crossing the bridge boundary and aborting the process.
     @Test func mirror2dAxisZeroDirection() {
         let m = TransformFactory2D.mirrorAxis(point: SIMD2(0, 0), direction: SIMD2(0, 0))
-        _ = m
+        #expect(m.values == [Double](repeating: 0, count: 6))
+        let ok = TransformFactory2D.mirrorAxis(point: SIMD2(0, 0), direction: SIMD2(1, 0))
+        #expect(ok.values != [Double](repeating: 0, count: 6))
     }
 
     @Test func mirrorPlaneZeroNormal() {
         let m = TransformFactory3D.mirrorPlane(point: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 0))
-        _ = m
+        #expect(m.values == [Double](repeating: 0, count: 12))
+        let ok = TransformFactory3D.mirrorPlane(point: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1))
+        #expect(ok.values != [Double](repeating: 0, count: 12))
     }
 
     // #2331: unlike gp_Dir, Geom_Direction does not throw on the zero vector, because its

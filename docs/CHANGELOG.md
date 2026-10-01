@@ -40,6 +40,16 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 - `CLAUDE.md`'s swift-format exemption count, which said 269 where the manifest held 267
   (`check-inventory-prose.py`).
 
+### Tests
+- Lifted the Stress test work from `v5.0.0-766-execution` by content rather than by PR: 109 test
+  functions across `StressExhaustiveAPITests`, `StressBoundaryConditionTests` and
+  `StressNullInvalidTests` now pin what the kernel answers instead of reading a result and
+  asserting nothing. SEVERE in `Tests/OCCTStressTests/` falls from 191 of 431 to 100, and
+  `StressBoundaryConditionTests.swift` reaches zero. Each pinned refusal also runs the neighbouring
+  input the same call accepts, so a nil cannot be read as a dead API.
+  `Scripts/repro/766-stress-boundary/` crosses with the tests that cite it and reproduces byte for
+  byte against the pinned kernel.
+
 ### The TObj_Application singleton stops being freed by a release nobody paid for (#2897)
 
 `OCCTXCAFTests` trapped on wasm inside `OCCTTObjApplicationCreateDocument` with an
