@@ -27,6 +27,51 @@ Both exporters wrote with `atomically: true`, which cannot be used on `wasm32-un
 
 The port also gains test coverage. 12 of the 18 per-domain suites build and run for wasm under the pinned `wasmkit`, 5,501 tests, driven by `Scripts/run-wasm-tests.sh` and run in CI. `Scripts/wasm-test-known-failures.txt` records every cross-platform difference found so far, and the runner fails both on a new failure and on a listed failure that starts passing. Six targets and sixteen files cannot run there, each with its reason in `Package.swift`. This closes the third of the four conditions on Phase 0's GO.
 
+### The Modeling boolean tests stop passing for a bridge that drops its argument (#2687, #2688, #2697, #2702, #2708, #2709)
+
+Twenty-four tests across fourteen `Tests/OCCTModelingTests/` files, lifted off `v5.0.0-766-execution`
+and re-proved against the pinned kernel. Tests only; no public API moves.
+
+`BooleanToleranceTests` is the clearest case. Every fixture was built from the **centred**
+`Shape.box(width:height:depth:)` and then offset as if it were corner-based, so the second cube of
+`fuseWithTolerance` sat clear of the first, the two commons met at a single corner, and the cut
+returned its first cube unchanged. Neither the fuzzy value nor the glue mode ever reached the
+result, and all six tests passed for a bridge that dropped the argument. The fixtures are
+corner-based now, each chosen so the option changes the answer, and each test runs the same
+operation with the option off as a control.
+
+The rest pin what they used to bracket: the per-input `(modified, generated, deleted)` vectors from
+`BRepAlgoAPI_*` history rather than face 0 alone, the half-space's `shapeType` and the
+classification of a point on each side rather than non-nil, the BOPAlgo builders' exact counts and
+areas rather than `>= 1`, and a nil subtraction in the twenty-step boolean chain recorded rather
+than dropped. Fixtures go through `try #require` where an `if let` used to skip the whole test.
+
+Seventeen `Scripts/repro/766-modeling-*` ground-truth probes ship with them; all seventeen recompile
+against the pinned `v4.0.0-kernel.3` asset and reproduce their transcripts line for line.
+
+### 2D geometry tests stop passing on a wrong answer (#1979)
+
+Forty-nine tests across fourteen `OCCTGeom2dTests` suites asserted a count, a `!= nil`, a
+one-sided bound or a tolerance wide enough to swallow the defect, and several put their only
+assertion inside a `guard let ... else { return }` that a nil result skipped entirely. Each now
+pins the value OCCT returns, measured by a ground-truth probe committed beside it under
+`Scripts/repro/766-geom2d-*/`:
+
+- `Curve2DAnalysisTests` pins both line-circle intersection points, the exact distance 5 where a
+  0.5 tolerance had passed 5.3, the 6-pole degree-2 circle BSpline, all three Bezier arcs, and all
+  four normals from an ellipse's centre.
+- `Curve2DBisectorTests.bisectorTwoLines` asserted nothing at all, because `Bisector_BisecCC`
+  reports an empty bisector for two segments sharing only their start point; it now pins that nil.
+- Both `Curve2DBoundingBoxTests` cases pin all four sides instead of `min <= a` / `max >= b`.
+- `Curve2DBSplineLocalTests` requires the local span instead of returning green when it cannot be
+  located, and pins each of `LocalD0`/`D1`/`D2`/`D3`/`DN`/`LocalValue`.
+- `Curve2DBSplineTests` pins the domain and a sampled point for the cubic factory, the end
+  derivatives for the tangent-loaded interpolation, degree 3 with 22 poles for the fit, and 30
+  points for `drawAdaptive`.
+- The `Transform2D` suites `#require` their factories: all eleven tests had been skipping every
+  assertion whenever a factory returned nil.
+
+No public API changes.
 ### `EdgeAnalysis` verdicts say which way round they are, and `SAWireAnalysis` carries its precondition (#2901, #2906)
 
 `EdgeAnalysis.checkSameParameter` and `EdgeAnalysis.checkVertexTolerance` returned a `Bool` labelled

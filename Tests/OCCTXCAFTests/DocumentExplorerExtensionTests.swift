@@ -6,17 +6,36 @@ import Testing
 @Suite("DocumentExplorer Extension Tests")
 struct DocumentExplorerExtensionTests {
 
-    @Test func explorerDepth() {
-        guard let doc = Document.create() else { return }
+    // #766: this used to be `#expect(depth >= 0)` inside `if count > 0`, which is true of every
+    // Int32 the walk could return, and also of the 0 the bridge hands back for an index outside
+    // the explorer's range. The flat case alone cannot distinguish a working depth from a
+    // hardcoded 0, so the assembly case below supplies the non-zero answer. Measured; see
+    // `Scripts/repro/766-xcaf-weak-assertions/probe-output.txt`.
+    @Test func explorerDepth() throws {
+        let doc = try #require(Document.create())
         doc.defineAllFormats()
-        if let box = Shape.box(width: 10, height: 10, depth: 10) {
-            _ = doc.addShape(box)
-            let count = doc.explorerNodeCount
-            if count > 0 {
-                let depth = doc.explorerDepth(at: 0)
-                #expect(depth >= 0)
-            }
-        }
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        _ = doc.addShape(box)
+        #expect(doc.explorerNodeCount == 1)
+        #expect(doc.explorerDepth(at: 0) == 0, "a free shape with no parent is at depth 0")
+    }
+
+    @Test func explorerDepthUnderAnAssemblyIsOne() throws {
+        let doc = try #require(Document.create())
+        doc.defineAllFormats()
+        let part = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let partLabelId = doc.addShape(part, makeAssembly: false)
+        let assemblyLabelId = doc.newShapeLabel()
+        #expect(
+            doc.addComponent(
+                assemblyLabelId: assemblyLabelId, shapeLabelId: partLabelId,
+                translation: (5, 0, 0)) >= 0)
+        doc.updateAssemblies()
+
+        // The part is now instantiated one level under the assembly, and the leaf-only walk
+        // reports that level. A depth stuck at 0 fails here.
+        #expect(doc.explorerNodeCount == 1)
+        #expect(doc.explorerDepth(at: 0) == 1)
     }
 
     @Test func explorerIsAssembly() {

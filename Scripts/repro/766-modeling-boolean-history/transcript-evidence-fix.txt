@@ -1,0 +1,2 @@
+fuseWithHistory: done=true volume=1499.9999999999993 solids=1 modifiedFaces=8 allFaces=true
+fuseNonOverlappingHistory: done=true volume=249.99999999999989 solids=2 modifiedFaces=0 allFaces=true

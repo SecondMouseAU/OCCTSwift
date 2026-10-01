@@ -1,0 +1,6 @@
+fuseWithTolerance: done=1 valid=1 solids=2 volume=2000
+cutWithTolerance: done=1 valid=1 solids=1 volume=1000
+commonWithTolerance: done=1 valid=1 solids=0 volume=0
+fuseWithGlue: done=1 valid=1 solids=2 volume=2000
+cutWithGlue: done=1 valid=1 solids=1 volume=7875
+commonWithGlue: done=1 valid=1 solids=0 volume=0

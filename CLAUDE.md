@@ -236,7 +236,7 @@ total on this page.
 exemption manifest can only exempt a file the population already reaches. Two manifests now hold the
 exempt list, both shrink-only and both enforced by `check-style-manifest.py`:
 `Scripts/style-manifest-swift.txt` (rollout day, empty) and
-`Scripts/style-manifest-swift-wave2.txt` (what the widening reached, 268 files still listed).
+`Scripts/style-manifest-swift-wave2.txt` (what the widening reached, 265 files still listed).
 That second count drains with nearly every PR, since touching a listed file means fixing it and
 deleting its line, so it is derived from the manifest by `check-inventory-prose.py` rather than
 trusted here (#2910). The real run asserts **selected + listed == tracked** and plants a canary
