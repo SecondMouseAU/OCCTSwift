@@ -6,15 +6,18 @@ import simd
 
 @Suite("BRepGraph Builder AddShellToSolid")
 struct BRepGraphBuilderAddShellToSolidTests {
-    @Test func linkShellToSolid() {
-        if let box = Shape.box(width: 10, height: 10, depth: 10) {
-            if let graph = BRepGraph(shape: box) {
-                if let solidIdx = graph.addSolid(), let shellIdx = graph.addShell() {
-                    let refIdx = graph.addShellToSolid(
-                        solidIndex: solidIdx, shellIndex: shellIdx, orientation: 0)
-                    #expect(refIdx != nil)
-                }
-            }
-        }
+    // New solid 1 and new shell 1; the box's own solid already holds shell ref 0, so the
+    // link is ref 1, per the kernel probe. Both adds are required rather than wrapped in
+    // `if let`, which let a failing addSolid/addShell skip the assertion (#1986).
+    @Test func linkShellToSolid() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let graph = try #require(BRepGraph(shape: box))
+        let solidIdx = try #require(graph.addSolid())
+        let shellIdx = try #require(graph.addShell())
+        #expect(solidIdx == 1)
+        #expect(shellIdx == 1)
+        let refIdx = try #require(graph.addShellToSolid(
+            solidIndex: solidIdx, shellIndex: shellIdx, orientation: 0))
+        #expect(refIdx == 1)
     }
 }
