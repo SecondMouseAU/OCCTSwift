@@ -107,8 +107,9 @@ struct StressShapeFeatureTests {
         if let r { #expect(r.isValid) }
     }
 
-    /// #2830: this used to call `shelled(thickness:)` on a closed box, which is refused for every
-    /// thickness, so the `isValid` assertion never ran and the API row measured nothing. The
+    /// #2830: this used to shell a closed box, which is refused for every thickness.
+    ///
+    /// The `isValid` assertion therefore never ran and the API row measured nothing. The
     /// algorithm is `MakeThickSolidBySimple`, whose domain is a non-closed shell or face (#2739),
     /// hence the open shell. 210.857143 is the kernel's own figure for this input.
     @Test func shell() throws {
