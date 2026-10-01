@@ -112,6 +112,13 @@ Upstream, in LLVM: the inliner and the WebAssembly exception lowering disagree a
 are live in an inlined region. The reduction for that report is the remaining work, and
 `run.sh bisect` is the harness for it: one translation unit, one flag, two outcomes.
 
+**The obvious small shape does not reproduce**, which is recorded so it is not re-derived. A
+file-static callee with three tracked locals, inlined into a loop in its single caller, throwing
+on the second iteration before the second and third constructors run, with the caller holding a
+cleanup of its own, compiled with the same flags at `-O2`: every constructor pairs with its own
+destructor and the `catch` fires. Whatever the real trigger is, it needs more structure than that,
+which is why the reduction has to start from `BRepFill_Evolved.cxx` rather than from a sketch.
+
 Locally, the only measured workaround is `-fno-inline` on the affected unit, which is a kernel
 rebuild (69 minutes) plus a republish of the pinned wasm asset. That rebuild is already owed to the
 OCCT 8.0.2 repin, and taking it for one unit before the mechanism is understood would be guessing
