@@ -149,8 +149,14 @@ then formatted and delisted the 146 that needed nothing but `swift-format format
 separate file because the shrink rule above forbids growing an existing manifest while allowing
 the seeding of one that did not exist at the base ref, and the split keeps the two seedings
 separately auditable: `style-manifest-swift.txt` reaching zero says `Sources/OCCTSwift` is
-finished, and 418 new entries would have muddled that. The 272 left need prose edited rather than lines rewrapped, 607 of their
+finished, and 418 new entries would have muddled that. The 272 left on seeding day needed prose edited rather than lines rewrapped, 607 of their
 diagnostics being `BeginDocumentationCommentWithOneLineSummary`.
+
+That 272 is a frozen measurement of 2026-09-30 and is deliberately written as one, because the
+manifest drains: every PR that touches a listed file fixes it and deletes its line. The live count
+is therefore stated in exactly one place, `CLAUDE.md`'s swift-format section, where
+`check-inventory-prose.py` derives it from the manifest and fails the PR that lets the two
+disagree (#2910). Do not restate it anywhere else; a second copy is a second thing to go stale.
 
 Ecosystem standard: see
 [OKF-STANDARD.md](https://github.com/SecondMouseAU/ecosystem/blob/main/OKF-STANDARD.md).
