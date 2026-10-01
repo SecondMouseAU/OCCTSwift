@@ -21,6 +21,26 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### The v5 lift census stops collapsing same-named tests across suites, and 24 hidden gains come back (#2949)
+
+`Scripts/census-766-unlifted-tests.py` keyed its per-test tier map on the `@Test` function's name,
+so two same-named tests in different `@Suite` structs of one file collapsed into one entry: the
+file's test population, its SEVERE and ESCAPABLE counts and its gain count all read low, and where
+the duplicates tiered differently on the two sides a gain could be attributed to the wrong function
+or vanish. That last case is how the census could report "0 gains remaining" for a path that still
+has some, which is the claim two batches used to declare a path drained. The key is now the
+enclosing type path and the function name, resolved from the parse by a new `type_spans()` that
+skips comments and string literals and takes each declaration's extent from
+`census-766-weak-assertions.py`'s own `balanced_body`; an overload of one name in one type is
+numbered in source order. `Tests/OCCTStressTests/StressExhaustiveAPITests.swift` now tiers 112
+tests rather than 100. Repo-wide, against the same `main`, the branch's gain count goes from 1,209
+to 1,233 over the same 417 paths, and `StressBuilderLifecycleTests.swift` goes from 12 gains to 32
+and from ninth to fifth in the ranking the next batch is picked from. No path previously reported
+at zero gain has one under the new key, so nothing declared drained was wrongly declared.
+`census-766-weak-assertions.py` was verified unaffected rather than assumed: its test population is
+a yield count and its findings are a list, both correct at 6,663 and 3,901. It does carry the same
+shape of defect in `helpers_in`, which costs it 11 findings and 6 SEVERE, filed as #2964.
+
 ### Tests
 - Lifted the Stress test work from `v5.0.0-766-execution` by content rather than by PR: 109 test
   functions across `StressExhaustiveAPITests`, `StressBoundaryConditionTests` and
