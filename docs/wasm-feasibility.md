@@ -160,6 +160,37 @@ section listed as unknown have answers, and one of them is not the answer the qu
 - `-lsetjmp` and `-lwasi-emulated-getpid` have now been on a link line; see
   [`Scripts/repro/2174/README.md`](../Scripts/repro/2174/README.md).
 
+### The one exception to all of it: an optimised frame can unwind wrongly (#2894)
+
+**Everything above holds, and one thing on top of it does not.** An exception that unwinds through
+`BRepFill_Evolved::PrepareProfile` reaches `std::terminate` and takes the module down, where the
+bridge's `catch (...)` catches it on Apple. The discriminator is **not** the exception type, the
+translation unit it was raised in, the number of frames it crosses, or `setjmp`: all four were
+measured and none of them separates a throw that is caught from this one. It is the **optimisation
+level of the frame being unwound through**, and inlining in particular.
+
+The same OCCT unit, the same source, the same exception flags, case B of
+[`Scripts/repro/2894`](../Scripts/repro/2894):
+
+| `BRepFill_Evolved.cxx` compiled | outcome |
+|---|---|
+| `-O0` | caught, `Standard_ConstructionError: Geom_TrimmedCurve::U1 == U2` |
+| `-O1`, `-O2` | `std::terminate` |
+| `-O2 -fno-inline` | caught |
+| `-O2 -mllvm -inline-threshold=0` | trap, out of bounds, in `~NCollection_Sequence<double>` |
+
+`__cxa_throw`, interposed with `wasm-ld --wrap`, fires exactly **once**, so nothing threw during
+the unwind. The cleanup that runs belongs to a local of the inlined `CutEdgeProf` whose constructor
+the throw precedes. So this is a **code-generation defect in the WebAssembly exception lowering**,
+where the inliner and that lowering disagree about which cleanups are live in an inlined region. It
+is not an OCCT bug and no bridge guard reaches it.
+
+**What a consumer should expect.** A call that returns a refusal on Apple can abort the module on
+wasm, and nothing at the call site predicts which. The measured bound is #2793's suite: of roughly
+3,600 wasm tests, two suites trap, and both reach `BRepFill_Evolved`. The only measured workaround
+is `-fno-inline` on the affected unit, which costs a kernel rebuild and a republish, and which
+would be guessing at the population while the defect is in the compiler.
+
 ### The bridge is compiled as C++, not Objective-C++ (#2256)
 
 The exception flags above cannot reach a bridge translation unit while it is compiled as
