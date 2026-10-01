@@ -1,0 +1,5 @@
+getBoundsForEvolvingRadius: getBounds=true first=-5 last=15
+getLawForEvolvingRadius: lawNull=false law(first)=0.5 law(last)=2
+generated: generatedFromEdge=1
+isDeleted: isDeleted=true
+modified: faces=6 facesWithModified=4
