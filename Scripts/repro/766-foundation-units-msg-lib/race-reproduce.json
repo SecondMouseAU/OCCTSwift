@@ -1,0 +1,6 @@
+{
+  "status": {
+    "value": "not-reproducible",
+    "reason": "the transcript is not one capture of one run: `race.mm` prints exactly one line per invocation and the transcript holds ten identical ones, so the capture ran the binary ten times and concatenated the output. That repetition IS the measurement here, since the line is the answer to \"does ShapeExtend::Init() return before its messages are loaded when a second thread calls it concurrently\" and ten of ten is what makes the race a race rather than a coincidence. One invocation against the pinned v4.0.0-kernel.3 asset prints `thread0 HasMsg after Init = 1, thread1 HasMsg after Init = 0`, identical to all ten, so the race does still reproduce; what cannot be re-derived from one run is the ten-of-ten rate. This pair was reached by this script only from #2934, which made the pair rather than the directory the unit and taught it the `race.mm` / `race-transcript.txt` spelling."
+  }
+}

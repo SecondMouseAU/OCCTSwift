@@ -399,24 +399,28 @@ def apply_declaration(want: list[str], got: list[str], decl: dict):
 
 
 def pair_names(stem: str):
-    """(transcript, declaration, argv) basenames for the probe `stem`.mm, or three Nones.
+    """(transcript, declaration, argv) basenames for the probe `stem`.mm.
 
-    Every companion is derived by substituting the whole `probe` token, so ONE naming rule covers
-    all three spellings on disk: `probe.mm` / `transcript.txt`,
+    Where the name carries a `probe` token, every companion is that name with the token replaced,
+    which covers three of the four spellings on disk with ONE rule: `probe.mm` / `transcript.txt`,
     `probe-evidence-fix.mm` / `transcript-evidence-fix.txt`, and the older word order
     `evidence-fix-probe.mm` / `evidence-fix-transcript.txt`.
+
+    Where it does not, the probe is named for what it probes and the companion carries the role as
+    a suffix: `race.mm` / `race-transcript.txt` in `766-foundation-units-msg-lib`. So the fallback
+    appends the role rather than giving up, and no `.mm` in a `766-*` directory is left with no
+    companion to look for.
 
     Hard-coding `probe.mm` and `transcript.txt` is #2934: a second, corrected probe added beside
     the first was not a MISSING pair and not a DIFF, it was nothing at all, and the parity records
     whose `source` named the corrected transcript were asserted by no run of this script. Thirty-
-    nine pairs on `main` were in that position. A probe whose name carries no `probe` token has no
-    derivable transcript, which is itself a defect rather than a reason to skip it.
+    nine pairs on `main` were in that position.
     """
-    t = retoken(stem, "probe", "transcript")
-    if t is None:
-        return None, None, None
-    return t + ".txt", retoken(stem, "probe", "reproduce") + ".json", \
-        retoken(stem, "probe", "argv") + ".txt"
+    sub = retoken(stem, "probe", "transcript")
+    if sub is not None:
+        return sub + ".txt", retoken(stem, "probe", "reproduce") + ".json", \
+            retoken(stem, "probe", "argv") + ".txt"
+    return stem + "-transcript.txt", stem + "-reproduce.json", stem + "-argv.txt"
 
 
 def pairs_in(d: str) -> list[dict]:
@@ -437,12 +441,6 @@ def pairs_in(d: str) -> list[dict]:
             continue
         stem = n[: -len(".mm")]
         tname, dname, aname = pair_names(stem)
-        if tname is None:
-            pairs.append({"dir": d, "probe": n, "transcript": None, "decl": DECL_FILE,
-                          "argv": None,
-                          "why": f"{n} carries no `probe` token, so the transcript it was "
-                                 "captured into cannot be derived from its name"})
-            continue
         claimed.add(tname)
         have = os.path.isfile(os.path.join(d, tname))
         pairs.append({"dir": d, "probe": n, "transcript": tname if have else None,
@@ -882,13 +880,20 @@ def self_test() -> int:
                   ("reproduce-evidence-fix.json", "argv-evidence-fix.txt")))
     cases.append(("`probe` is not matched inside a longer word",
                   retoken("subprobe", "probe", "transcript") is None))
-    cases.append(("a .mm carrying no `probe` token has no derivable transcript",
-                  pair_names("sweep") == (None, None, None)))
+    # A probe named for what it probes rather than with a `probe` token: `766-foundation-units-msg-lib`
+    # holds `race.mm` beside `race-transcript.txt`, which arrived six directories after the pair
+    # rule did. Falling back to a suffix rather than giving up is what keeps it one pair instead of
+    # two MISSINGs that are each other's answer.
+    cases.append(("a .mm with no `probe` token pairs by suffix instead",
+                  pair_names("race") == ("race-transcript.txt", "race-reproduce.json",
+                                         "race-argv.txt")))
     with tempfile.TemporaryDirectory() as d:
         orphan = os.path.join(d, "766-orphan")
         os.makedirs(orphan)
         write_text(os.path.join(orphan, "transcript-evidence-fix.txt"), "a\n")
-        write_text(os.path.join(orphan, "sweep.mm"), "int main(){return 0;}\n")
+        write_text(os.path.join(orphan, "race.mm"),
+                   '#include <stdio.h>\nint main(){printf("a\\n");return 0;}\n')
+        write_text(os.path.join(orphan, "race-transcript.txt"), "a\n")
         write_text(os.path.join(orphan, "bridge-observed.txt"), "swift-side output\n")
         found = {pair_label(q) for q in pairs_in(orphan)}
         cases.append(("a transcript with no probe beside it is a pair, and MISSING",
@@ -896,8 +901,11 @@ def self_test() -> int:
                       check_pair([q for q in pairs_in(orphan)
                                   if q["transcript"] == "transcript-evidence-fix.txt"][0],
                                  os.path.join(d, "no-asset"), 5)["status"] == "MISSING"))
-        cases.append(("a .mm whose name derives no transcript is reported, not skipped",
-                      "766-orphan/sweep.mm" in found))
+        cases.append(("`race.mm` and `race-transcript.txt` are ONE pair, not two orphans",
+                      "766-orphan/race.mm" in found and
+                      [q for q in pairs_in(orphan)
+                       if q["probe"] == "race.mm"][0]["transcript"] == "race-transcript.txt" and
+                      "766-orphan/race-transcript.txt" not in found))
         cases.append(("a sibling capture that is neither probe nor transcript is left alone",
                       not any(q["transcript"] == "bridge-observed.txt" for q in pairs_in(orphan))))
 
