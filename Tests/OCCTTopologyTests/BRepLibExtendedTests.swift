@@ -10,25 +10,48 @@ import simd
 // Three of them are now pinned to what the BRepLib static reports in
 // Scripts/repro/766-topology-brepclass-breplib/transcript.txt.
 //
-// `ensureNormalConsistency` is the exception and is left as it was. The version written against
-// the v5 execution branch pins `== true`, which was the kernel's answer there and is not the
-// kernel's answer here: #2337 made `occtAppendFaceTriangulation` call
-// `BRepLib_ToolTriangulatedShape::ComputeNormals` on every face it walks, so `Shape.mesh` now
-// leaves each triangulation carrying surface-derived normals, and
-// `BRepLib::EnsureNormalConsistency` finds nothing left to change. Re-pinning it to `false`
-// needs a ground-truth probe against this kernel, not a value read off a failing assertion.
-// See #2905.
+// `ensureNormalConsistency` was the exception and is now pinned too, to the values
+// `Scripts/repro/2905/` measures against this kernel rather than to the `== true` the v5
+// execution branch wrote. #2337 made `occtAppendFaceTriangulation` call
+// `BRepLib_ToolTriangulatedShape::ComputeNormals` on every face it walks, so `Shape.mesh` leaves
+// each triangulation carrying surface-derived normals and `BRepLib::EnsureNormalConsistency` has
+// nothing left to add on a box. See #2905.
 @Suite("v0.122.0, BRepLib Extended Statics")
 struct BRepLibExtendedTests {
+    /// `BRepLib::EnsureNormalConsistency` returns true when it **wrote** a normal, in either of
+    /// the two things it does: adding surface-derived normals to a triangulated face that has
+    /// none, and averaging the two normals at a shared node whose dot product exceeds
+    /// `cos(maxAngle)`.
+    ///
+    /// So the answer depends on both the shape and how it was triangulated, and the three cases
+    /// here are the three answers, all measured in `Scripts/repro/2905/`:
+    ///
+    /// - a box through `Shape.mesh` is `false`, because the normals are already there and a
+    ///   90 degree join is nowhere near `cos(0.01)`;
+    /// - a box triangulated without normals is `true` once and `false` after that;
+    /// - a cylinder is `true` every time, because its seam nodes are smooth and get re-averaged.
     @Test("Ensure normal consistency")
-    func ensureNormalConsistency() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)
-        if let b = box {
-            let _ = b.mesh(linearDeflection: 0.5)
-            let _ = b.ensureNormalConsistency(maxAngle: 0.01)
-            // Just verify no crash
-            #expect(b.isValid)
-        }
+    func ensureNormalConsistency() throws {
+        let meshed = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        _ = try #require(meshed.mesh(linearDeflection: 0.5))
+        #expect(meshed.ensureNormalConsistency(maxAngle: 0.01) == false)
+        #expect(meshed.isValid)
+
+        // CoherentTriangulation.createFromMesh triangulates without computing normals, so here
+        // the call has the first of its two jobs to do.
+        let bare = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        _ = try #require(CoherentTriangulation.createFromMesh(bare, deflection: 0.5))
+        #expect(bare.subShapes(ofType: .face).allSatisfy { !$0.triangulationHasNormals })
+        #expect(bare.ensureNormalConsistency(maxAngle: 0.01) == true)
+        #expect(bare.subShapes(ofType: .face).allSatisfy { $0.triangulationHasNormals })
+        #expect(bare.ensureNormalConsistency(maxAngle: 0.01) == false)
+
+        // A curved solid has the second job to do, on every pass, because the seam normals stay
+        // within the tolerance of each other after averaging.
+        let curved = try #require(Shape.cylinder(radius: 10, height: 5))
+        _ = try #require(curved.mesh(linearDeflection: 0.5))
+        #expect(curved.ensureNormalConsistency(maxAngle: 0.01) == true)
+        #expect(curved.ensureNormalConsistency(maxAngle: 0.01) == true)
     }
 
     /// BRepLib::UpdateDeflection rewrites each triangulation's recorded deflection, which

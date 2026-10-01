@@ -1350,6 +1350,16 @@ inline bool occtValidMeshDeflection(double linearDeflection)
 /// which is the #726 shape rather than #2879's hang. Spelled as `>=` so NaN takes the refusing
 /// branch, the same spelling and the same reason as `occtValidMeshDeflection`.
 ///
+/// **Three call sites, not the five the linear guard has.** `OCCTShapeCreateMesh`,
+/// `OCCTShapeCreateMeshWithParams` and `OCCTShapeIncrementalMeshProgress` take the angle straight
+/// from the caller. The two presentation sites that read `Prs3d_Drawer::DeviationAngle()` do not
+/// need it and deliberately do not call it: that accessor is
+/// `myDeviationAngle > 0.0 ? myDeviationAngle : (link ? link->DeviationAngle() : 20 deg)`
+/// (`Prs3d_Drawer.hxx:243-248`), a test NaN fails in the safe direction, so the drawer answers
+/// 20 degrees for NaN, zero and negative alike. Measured: a NaN on the drawer produces the
+/// ordinary 24-vertex box mesh, not a degraded one. #2900 named those two sites from a reading of
+/// `SetDeviationAngle`, and the measurement closed them.
+///
 /// **`AngleInterior` deliberately gets no guard of its own.** `initParameters` *rewrites* a
 /// sub-threshold interior angle to `2.0 * Angle` rather than refusing it, so a NaN `Angle` would
 /// propagate into it by arithmetic; guarding `Angle` is what closes that, and the probe confirms
