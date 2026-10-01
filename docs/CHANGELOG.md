@@ -21,6 +21,28 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### The merge tool stops discarding a CHANGELOG entry and reporting success, and nine lost entries come back (#2951)
+
+`Scripts/merge-pr.py` compared an entry's first non-blank line against the whole of
+`docs/CHANGELOG.md` to decide whether it had already been transcribed. A bare `### Fixed`,
+`### Added` or `### Changed` identifies nothing, so the match was unconditional: nine entries
+merged between 2026-09-30 and 2026-10-01 were extracted, printed to the operator and discarded,
+under a line saying the work was already done. All nine are restored here, verbatim from their PR
+bodies, in merge order, and they include `Shape.computeNormals()` reporting success for work it had
+not done (#2905), a NaN angular mesh deflection silently dropping the angular criterion (#2900),
+`Curve2D.fromEllipseArc` taking the process down on a swept range OCCT documents (#2884) and four
+`Document` naming calls doing the same on a document with no naming recorded (#766).
+
+The tool now refuses a bare category heading before it runs any git command, naming the convention
+and showing what to write instead, and neither it nor
+`Scripts/check-changelog-transcription.py` claims an entry is present without showing where: the
+skip prints the file and line it matched, and the splice re-reads the file and refuses to commit,
+push or merge unless the entry is under `## Unreleased`. The backstop report had the same blindness
+and had been calling all nine "transcribed late, nothing to do" for as long as they were missing;
+fixing it surfaced sixteen further merges whose entries never landed, filed separately.
+
+No library code changes.
+
 ### Fixed
 
 - `Shape.edgePolyline` and `Shape.allEdgePolylines` now apply the deflection bound that OCCT
