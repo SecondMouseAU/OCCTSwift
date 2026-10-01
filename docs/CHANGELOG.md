@@ -21,6 +21,72 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### Tests
+- Lifted the Stress test work from `v5.0.0-766-execution` by content rather than by PR: 109 test
+  functions across `StressExhaustiveAPITests`, `StressBoundaryConditionTests` and
+  `StressNullInvalidTests` now pin what the kernel answers instead of reading a result and
+  asserting nothing. SEVERE in `Tests/OCCTStressTests/` falls from 191 of 431 to 100, and
+  `StressBoundaryConditionTests.swift` reaches zero. Each pinned refusal also runs the neighbouring
+  input the same call accepts, so a nil cannot be read as a dead API.
+  `Scripts/repro/766-stress-boundary/` crosses with the tests that cite it and reproduces byte for
+  byte against the pinned kernel.
+
+### The TObj_Application singleton stops being freed by a release nobody paid for (#2897)
+
+`OCCTXCAFTests` trapped on wasm inside `OCCTTObjApplicationCreateDocument` with an
+`indirect call type mismatch`, which reads like a vtable or ABI disagreement between the headers
+the bridge compiles against and the kernel it links. It is not one: the slot is right and the
+object is gone.
+
+`OCCTTObjApplicationRelease` was a bare `DecrementRefCounter()`, so a release with no matching
+`OCCTTObjApplicationGetInstance()` took the place of the one reference
+`TObj_Application::GetInstance()`'s own function-local static `Handle` holds. Nothing was freed at
+that moment, which is what made it look safe. The object dies later, when the next ordinary
+`occ::handle` falls out of scope, decrements to zero and calls `Delete()`; the static handle then
+dangles and every later caller dispatches through a vptr read from reclaimed memory. In the
+failing run the over-release and the trap are about 660 transcript lines apart, which is why
+`Issue1588TObjApplicationReleaseTests.doubleReleaseDoesNotCorruptSingleton` performed it and
+passed.
+
+**Apple was exposed too**, and not benignly: `Scripts/repro/2897/run.sh --native` is a SIGSEGV on
+the same sequence against the pinned xcframework. The macOS suite survives only because an open
+`TObj` document holds a reference of its own, so the count has further to fall.
+
+The release now gives back only a borrow the bridge took. `OCCTTObjApplicationRefCount` is the
+observable the invariant needs, which #1588 considered and declined, and whose absence is why the
+property went untested. With the fix, `OCCTXCAFTests` on wasm runs 505 tests in 133 suites clean
+with both previously excluded files restored.
+
+The sweep the issue asked for found nothing else: `Scripts/repro/2897/vtable-parity.py` compares
+every vtable the bridge's own translation units lay out against the archive's `_ZTV` relocations,
+**253 classes and 3,363 slots**, and reports no disagreement in slot count, name or arity. There
+is no mistyped indirect call in the bridge.
+
+### Counted claims leave CLAUDE.md for the pages that own them (#2954)
+
+`CLAUDE.md` stated eleven counted claims about the repo's own inventories, each gated by
+`check-inventory-prose.py`. The gate worked and the claims were still expensive: a count in the
+working summary is shared by every open PR and invalidated by every merged one. The swift-format
+wave2 manifest row made that concrete on 2026-10-02, moving 267 to 262 in a day and taking three
+unrelated PRs red at merge time, after review and CI had passed, one into a three-way conflict in
+which all three sides held a different number and none was right.
+
+All eleven move, with the gate following each to its new home: the patch counts to
+`okf/references/carried-occt-patches.md`, the gate, census and merge-history-audit counts to a new
+"How many there are" in `okf/policies/static-gates.md`, the enforced bridge population to
+`okf/policies/code-style.md`, which had said 33 against a tree of 93, and the bridge header and
+implementation counts to no new place at all, because `README.md` and
+`docs/architecture/overview.md` already state and gate them.
+
+The wave2 manifest's size is the one count not preserved. Rehoming it would have rehomed the
+conflict, since what collides is the number rather than its address, so its size is now stated
+nowhere: `check-inventory-prose.py` prints it on a clean run and a one-line `grep` derives it. A
+self-test case asserts that no claim states it, so writing it down again fails loudly.
+
+A sweep of the remaining numbers in `CLAUDE.md` found twenty more derived counts no gate reads.
+Five are fixed here, including the per-domain bridge bucket breakdown and the pinned-asset
+evidence tally; the other fifteen are filed as #2959.
+
 ### `Exporter.writeDXF` and `Exporter.writeSVG` work on WebAssembly, and 5,501 tests now run there (#2793)
 
 Both exporters wrote with `atomically: true`, which cannot be used on `wasm32-unknown-wasip1`: the call throws `NSCocoaErrorDomain Code=3328 "The requested operation is not supported."` there, so every DXF and SVG export failed. Measured: the same call with `atomically: false` succeeds. Both now write directly on that platform and keep atomicity everywhere else, which is what stops a crash mid-write leaving a half-written file a reader will open. Which operation underneath is unsupported was not established: the atomic path writes a temporary file and renames it, so the rename is the obvious candidate, but nothing here rules out the temp-file creation, and the fix does not depend on knowing. No behaviour changes on any Apple platform.

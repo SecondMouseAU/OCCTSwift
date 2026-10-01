@@ -41,18 +41,24 @@ struct StressShapeFactoryTests {
         #expect(face != nil)
     }
 
-    @Test func extrude() {
+    // The 10 x 10 square swept 10 along +Z: a 1000-unit prism.
+    @Test func extrude() throws {
         let wire = standardWire()
-        let solid = Shape.extrude(profile: wire, direction: SIMD3(0, 0, 1), length: 10)
-        if let s = solid { #expect(s.isValid) }
+        let s = try #require(Shape.extrude(profile: wire, direction: SIMD3(0, 0, 1), length: 10))
+        #expect(s.isValid)
+        #expect(abs(try #require(s.volume) - 1000) < 1e-6)
     }
 
-    @Test func revolve() {
-        // Revolve a line segment to create a cylinder-like shape
-        if let wire = Wire.line(from: SIMD3(5, 0, 0), to: SIMD3(5, 0, 10)) {
-            let rev = Shape.revolve(profile: wire, axisOrigin: .zero, axisDirection: SIMD3(0, 0, 1))
-            if let r = rev { _ = r.isValid }  // Revolution of open wire may not be "valid" solid
-        }
+    // Revolving an open segment gives the cylindrical side only: one face, 2·π·5·10 of area, and
+    // no enclosed volume.
+    @Test func revolve() throws {
+        let wire = try #require(Wire.line(from: SIMD3(5, 0, 0), to: SIMD3(5, 0, 10)))
+        let r = try #require(
+            Shape.revolve(profile: wire, axisOrigin: .zero, axisDirection: SIMD3(0, 0, 1)))
+        #expect(r.isValid)
+        #expect(r.subShapeCount(ofType: .face) == 1)
+        #expect(abs(try #require(r.surfaceArea) - 100 * .pi) < 1e-6)
+        #expect(r.volume == nil)
     }
 }
 
@@ -61,34 +67,51 @@ struct StressShapeFactoryTests {
 @Suite("Stress: Shape Booleans")
 struct StressShapeBooleanTests {
 
-    @Test func union() {
-        let result = standardBox().union(standardSphere())
-        if let r = result { #expect(r.isValid) }
+    // The sphere of radius 5 is inscribed in the 10-wide box: union 1000, cut 1000 - 4/3·π·125,
+    // common the sphere. The three answers differ, so a boolean that returned the wrong operand
+    // shows up in the value and not only in `isValid`.
+    @Test func union() throws {
+        let r = try #require(standardBox().union(standardSphere()))
+        #expect(r.isValid)
+        #expect(abs(try #require(r.volume) - 1000) < 1e-6)
     }
 
-    @Test func subtract() {
-        let result = standardBox().subtracting(standardSphere())
-        if let r = result { #expect(r.isValid) }
+    @Test func subtract() throws {
+        let r = try #require(standardBox().subtracting(standardSphere()))
+        #expect(r.isValid)
+        #expect(abs(try #require(r.volume) - 476.4012244) < 1e-6)
     }
 
-    @Test func intersect() {
-        let result = standardBox().intersection(standardSphere())
-        if let r = result { #expect(r.isValid) }
+    @Test func intersect() throws {
+        let r = try #require(standardBox().intersection(standardSphere()))
+        #expect(r.isValid)
+        #expect(abs(try #require(r.volume) - 523.5987756) < 1e-6)
     }
 
-    @Test func section() {
-        let result = standardBox().section(standardSphere())
-        if let r = result { #expect(r.isValid) }
+    // The inscribed sphere touches each face at one point: the section is six vertices, no edge.
+    @Test func section() throws {
+        let r = try #require(standardBox().section(standardSphere()))
+        #expect(r.isValid)
+        #expect(r.subShapeCount(ofType: .edge) == 0)
+        #expect(r.subShapeCount(ofType: .vertex) == 6)
     }
 
-    @Test func split() {
-        let result = standardBox().split(by: standardSphere())
-        if let r = result { #expect(!r.isEmpty) }
+    @Test func split() throws {
+        let r = try #require(standardBox().split(by: standardSphere()))
+        #expect(!r.isEmpty)
+        let volumes = r.compactMap(\.volume).sorted()
+        #expect(volumes.count == 2)
+        if volumes.count == 2 {
+            #expect(abs(volumes[0] - 476.4012244) < 1e-6)
+            #expect(abs(volumes[1] - 523.5987756) < 1e-6)
+        }
     }
 
-    @Test func splitAtPlane() {
-        let result = standardBox().split(atPlane: .zero, normal: SIMD3(0, 0, 1))
-        if let r = result { #expect(!r.isEmpty) }
+    @Test func splitAtPlane() throws {
+        let r = try #require(standardBox().split(atPlane: .zero, normal: SIMD3(0, 0, 1)))
+        #expect(!r.isEmpty)
+        #expect(r.count == 2)
+        for part in r { #expect(abs(try #require(part.volume) - 500) < 1e-6) }
     }
 }
 
@@ -97,14 +120,16 @@ struct StressShapeBooleanTests {
 @Suite("Stress: Shape Features")
 struct StressShapeFeatureTests {
 
-    @Test func fillet() {
-        let r = standardBox().filleted(radius: 1.0)
-        if let r { #expect(r.isValid) }
+    @Test func fillet() throws {
+        let r = try #require(standardBox().filleted(radius: 1.0))
+        #expect(r.isValid)
+        #expect(abs(try #require(r.volume) - 975.5870139) < 1e-6)
     }
 
-    @Test func chamfer() {
-        let r = standardBox().chamfered(distance: 1.0)
-        if let r { #expect(r.isValid) }
+    @Test func chamfer() throws {
+        let r = try #require(standardBox().chamfered(distance: 1.0))
+        #expect(r.isValid)
+        #expect(abs(try #require(r.volume) - 945.3333333) < 1e-6)
     }
 
     /// #2830: this used to shell a closed box, which is refused for every thickness.
@@ -118,34 +143,47 @@ struct StressShapeFeatureTests {
         #expect(abs(try #require(r.volume) - 210.857143) < 1e-5)
     }
 
-    @Test func drill() {
-        let r = standardBox().drilled(
-            at: SIMD3(0, 0, 5), direction: SIMD3(0, 0, -1), radius: 2, depth: 0)
-        if let r { #expect(r.isValid) }
+    // A through hole of radius 2 in the 10 box: 1000 - π·4·10.
+    @Test func drill() throws {
+        let r = try #require(
+            standardBox().drilled(
+                at: SIMD3(0, 0, 5), direction: SIMD3(0, 0, -1), radius: 2, depth: 0))
+        #expect(r.isValid)
+        #expect(abs(try #require(r.volume) - (1000 - 40 * .pi)) < 1e-6)
     }
 
-    @Test func offset() {
-        let r = standardBox().offset(by: 1.0)
-        if let r { #expect(r.isValid) }
+    // PerformBySimple offsets the faces without rounding the edges: a 12-wide box.
+    @Test func offset() throws {
+        let r = try #require(standardBox().offset(by: 1.0))
+        #expect(r.isValid)
+        #expect(abs(try #require(r.volume) - 1200) < 1e-6)
     }
 
-    @Test func linearPattern() {
-        let r = standardBox().linearPattern(direction: SIMD3(15, 0, 0), spacing: 15, count: 3)
-        if let r { #expect(r.isValid) }
+    // Three translated copies in one compound.
+    @Test func linearPattern() throws {
+        let r = try #require(
+            standardBox().linearPattern(direction: SIMD3(15, 0, 0), spacing: 15, count: 3))
+        #expect(r.isValid)
+        #expect(r.solidCount == 3)
+        #expect(abs(try #require(r.volume) - 3000) < 1e-6)
     }
 
-    @Test func circularPattern() {
-        let r = standardBox().circularPattern(
-            axisPoint: .zero, axisDirection: SIMD3(0, 0, 1), count: 4)
-        if let r { #expect(r.isValid) }
+    // Four quarter-turn copies of a centred cube, each coincident with the original.
+    @Test func circularPattern() throws {
+        let r = try #require(
+            standardBox().circularPattern(axisPoint: .zero, axisDirection: SIMD3(0, 0, 1), count: 4)
+        )
+        #expect(r.isValid)
+        #expect(r.solidCount == 4)
+        #expect(abs(try #require(r.volume) - 4000) < 1e-6)
     }
 
-    @Test func sectionWires() {
+    // Cutting the 10 box at z = 0 gives one closed 10 x 10 loop, of perimeter 40.
+    @Test func sectionWires() throws {
         let wires = standardBox().sectionWiresAtZ(0.0)
-        #expect(!wires.isEmpty)
-        for w in wires {
-            if let len = w.length { #expect(len > 0) }
-        }
+        #expect(wires.count == 1)
+        let first = try #require(wires.first)
+        #expect(abs(try #require(first.length) - 40) < 1e-9)
     }
 }
 
@@ -154,24 +192,34 @@ struct StressShapeFeatureTests {
 @Suite("Stress: Shape Transforms")
 struct StressShapeTransformTests {
 
-    @Test func translate() {
-        let r = standardBox().translated(by: SIMD3(10, 20, 30))
-        if let r { #expect(r.isValid) }
+    // The three offsets differ, so a transform that dropped a component would show.
+    @Test func translate() throws {
+        let r = try #require(standardBox().translated(by: SIMD3(10, 20, 30)))
+        #expect(r.isValid)
+        let b = try #require(r.bounds)
+        #expect(abs(b.min.x - 5) < 1e-6)
+        #expect(abs(b.min.y - 15) < 1e-6)
+        #expect(abs(b.min.z - 25) < 1e-6)
     }
 
-    @Test func rotate() {
-        let r = standardBox().rotated(axis: SIMD3(0, 0, 1), angle: .pi / 4)
-        if let r { #expect(r.isValid) }
+    @Test func rotate() throws {
+        let r = try #require(standardBox().rotated(axis: SIMD3(0, 0, 1), angle: .pi / 4))
+        #expect(r.isValid)
+        // An eighth turn puts the corners on the axes at 5·√2.
+        let b = try #require(r.bounds)
+        #expect(abs(b.max.x - 5 * 2.0.squareRoot()) < 1e-6)
     }
 
-    @Test func scale() {
-        let r = standardBox().scaled(by: 2.0)
-        if let r { #expect(r.isValid) }
+    @Test func scale() throws {
+        let r = try #require(standardBox().scaled(by: 2.0))
+        #expect(r.isValid)
+        #expect(abs(try #require(r.volume) - 8000) < 1e-6)
     }
 
-    @Test func mirror() {
-        let r = standardBox().mirrored(planeNormal: SIMD3(1, 0, 0))
-        if let r { #expect(r.isValid) }
+    @Test func mirror() throws {
+        let r = try #require(standardBox().mirrored(planeNormal: SIMD3(1, 0, 0)))
+        #expect(r.isValid)
+        #expect(abs(try #require(r.volume) - 1000) < 1e-6)
     }
 }
 
@@ -181,11 +229,13 @@ struct StressShapeTransformTests {
 struct StressShapeQueryTests {
 
     @Test func isValid() { #expect(standardBox().isValid) }
-    @Test func volume() { if let v = standardBox().volume { #expect(v > 0) } }
-    @Test func surfaceArea() { if let a = standardBox().surfaceArea { #expect(a > 0) } }
-    @Test func bounds() {
-        let b = standardBox().bounds!
+    @Test func volume() { #expect(abs((standardBox().volume ?? 0) - 1000) < 1e-9) }
+    @Test func surfaceArea() { #expect(abs((standardBox().surfaceArea ?? 0) - 600) < 1e-9) }
+    @Test func bounds() throws {
+        let b = try #require(standardBox().bounds)
         #expect(b.max.x > b.min.x)
+        #expect(abs(b.min.x - -5) < 1e-6)
+        #expect(abs(b.max.x - 5) < 1e-6)
     }
     @Test func faceCount() { #expect(standardBox().subShapeCount(ofType: .face) == 6) }
     @Test func edgeCount() { #expect(standardBox().subShapeCount(ofType: .edge) == 12) }
@@ -196,16 +246,19 @@ struct StressShapeQueryTests {
         #expect(faces.count == 6)
     }
 
-    @Test func mesh() {
-        let m = standardBox().mesh(linearDeflection: 0.5)
-        #expect(m != nil)
-        if let m { #expect(m.vertexCount > 0) }
+    // A planar box meshes to two triangles and four nodes a face, at any deflection.
+    @Test func mesh() throws {
+        let m = try #require(standardBox().mesh(linearDeflection: 0.5))
+        #expect(m.vertexCount == 24)
+        #expect(m.triangleCount == 12)
     }
 
-    @Test func edgePolyline() {
+    // Edge 0 is straight: the polyline is its two end points.
+    @Test func edgePolyline() throws {
         let box = standardBox()
-        let pts = box.edgePolyline(at: 0, deflection: 0.1)
-        if let pts { #expect(pts.count >= 2) }
+        let pts = try #require(box.edgePolyline(at: 0, deflection: 0.1))
+        #expect(pts.count >= 2)
+        #expect(pts == [SIMD3(-5, -5, -5), SIMD3(-5, -5, 5)])
     }
 
     @Test func faces() {
@@ -218,32 +271,34 @@ struct StressShapeQueryTests {
         #expect(edges.count == 12)
     }
 
-    @Test func distance() {
-        let b1 = Shape.box(width: 10, height: 10, depth: 10)!
-        let b2 = Shape.box(origin: SIMD3(20, 0, 0), width: 10, height: 10, depth: 10)!
-        let dist = b1.distance(to: b2)
-        if let d = dist { #expect(d.distance > 0) }
+    @Test func distance() throws {
+        let b1 = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let b2 = try #require(Shape.box(origin: SIMD3(20, 0, 0), width: 10, height: 10, depth: 10))
+        // b1 is centred on the origin (x up to 5) and b2's corner is at x = 20: 15 apart.
+        let d = try #require(b1.distance(to: b2))
+        #expect(abs(d.distance - 15) < 1e-9)
     }
 
-    @Test func boundingBoxOptimal() {
+    @Test func boundingBoxOptimal() throws {
         let box = standardBox()
-        let opt = box.boundingBoxOptimal()
-        if let o = opt {
-            #expect(o.max.x > o.min.x)
-        }
+        let o = try #require(box.boundingBoxOptimal())
+        #expect(o.max.x > o.min.x)
+        #expect(abs(o.max.x - 5) < 1e-6)
+        #expect(abs(o.min.x - -5) < 1e-6)
     }
 
-    @Test func orientedBoundingBox() {
+    @Test func orientedBoundingBox() throws {
         let box = standardBox()
-        if let obb = box.orientedBoundingBox(optimal: false) {
-            #expect(obb.volume > 0)
-        }
+        let obb = try #require(box.orientedBoundingBox(optimal: false))
+        #expect(abs(obb.volume - 1000) < 1e-3)
     }
 
     @Test func toleranceValue() {
         let box = standardBox()
         let tol = box.toleranceValue(mode: .average)
         #expect(tol >= 0)
+        // Every sub-shape of a fresh primitive carries Precision::Confusion().
+        #expect(abs(tol - 1e-7) < 1e-12)
     }
 
     @Test func isBooleanValid() {
@@ -252,16 +307,15 @@ struct StressShapeQueryTests {
         #expect(valid)
     }
 
-    @Test func brepString() {
+    @Test func brepString() throws {
         let box = standardBox()
-        let brep = box.toBREPString()
-        if let brep { #expect(!brep.isEmpty) }
+        let brep = try #require(box.toBREPString())
+        #expect(!brep.isEmpty)
     }
 
     @Test func typeName() {
         let box = standardBox()
-        let name = box.typeName
-        #expect(name != nil)
+        #expect(box.typeName == "SOLID")
     }
 }
 
@@ -564,13 +618,17 @@ struct StressSurfaceAPITests {
         let s = standardBezierSurface()
         let dom = s.domain
         #expect(dom.uMax > dom.uMin)
+        #expect(dom.uMin == 0 && dom.uMax == 1 && dom.vMin == 0 && dom.vMax == 1)
     }
 
+    // The patch centre of the 4 x 4 fixture: (7.5, 7.5) in plan, lifted 1.125 by the inner poles.
     @Test func pointEval() {
         let s = standardBezierSurface()
         let dom = s.domain
         let pt = s.point(atU: (dom.uMin + dom.uMax) / 2.0, v: (dom.vMin + dom.vMax) / 2.0)
-        #expect(pt.x.isFinite)
+        #expect(abs(pt.x - 7.5) < 1e-12)
+        #expect(abs(pt.y - 7.5) < 1e-12)
+        #expect(abs(pt.z - 1.125) < 1e-12)
     }
 
     @Test func gaussianCurvature() {
@@ -605,44 +663,58 @@ struct StressDocumentAPITests {
         #expect(doc != nil)
     }
 
-    @Test func addShape() {
-        guard let doc = Document.create() else { return }
+    // Epic #766: `guard let doc = Document.create() else { return }` passed when creation
+    // failed; these now require the document.
+    @Test func addShape() throws {
+        let doc = try #require(Document.create())
         let label = doc.addShape(standardBox())
         #expect(label >= 0)
     }
 
     @Test func shapeCount() {
         let doc = standardDocument()
-        #expect(doc.shapeCount >= 1)
+        #expect(doc.shapeCount == 1)
     }
 
-    @Test func colorToolAdd() {
-        guard let doc = Document.create() else { return }
+    @Test func colorToolAdd() throws {
+        let doc = try #require(Document.create())
         let id = doc.colorToolAddColor(r: 1, g: 0, b: 0)
-        _ = id
-        #expect(doc.colorToolColorCount >= 1)
+        #expect(id >= 0)
+        #expect(doc.colorToolColorCount == 1)
     }
 
-    @Test func colorToolFind() {
-        guard let doc = Document.create() else { return }
-        doc.colorToolAddColor(r: 0.5, g: 0.5, b: 0.5)
+    // The colour found is the label the add returned (the result was discarded before). A second
+    // colour is added first, so a lookup that answered the first label for anything would show.
+    @Test func colorToolFind() throws {
+        let doc = try #require(Document.create())
+        let other = doc.colorToolAddColor(r: 1, g: 0, b: 0)
+        let added = doc.colorToolAddColor(r: 0.5, g: 0.5, b: 0.5)
+        #expect(added != other)
         let found = doc.colorToolFindColor(r: 0.5, g: 0.5, b: 0.5)
-        _ = found
+        #expect(found == added)
     }
 
-    @Test func shapeToolQueries() {
-        guard let doc = Document.create() else { return }
+    // A box added at the top level is a free, simple shape and not a component. All three
+    // answers were discarded before, and the third is the one that differs.
+    @Test func shapeToolQueries() throws {
+        let doc = try #require(Document.create())
         let label = doc.addShape(standardBox())
-        _ = doc.shapeToolIsFree(labelId: label)
-        _ = doc.shapeToolIsSimpleShape(labelId: label)
-        _ = doc.shapeToolIsComponent(labelId: label)
+        #expect(doc.shapeToolIsFree(labelId: label))
+        #expect(doc.shapeToolIsSimpleShape(labelId: label))
+        #expect(!doc.shapeToolIsComponent(labelId: label))
     }
 
+    // Epic #766: `try doc.writeSTEP(to: url)` resolves to the non-throwing overload returning
+    // Bool (`writeSTEP(to:modelType:modes:)`, `@discardableResult`), so the `try` never threw and
+    // the result was discarded: a failed export passed. The result is asserted now, and the file
+    // has to exist with content.
     @Test func stepExport() throws {
         let doc = standardDocument()
         let url = tempURL("step")
         defer { cleanupTemp(url) }
-        try doc.writeSTEP(to: url)
+        #expect(doc.writeSTEP(to: url))
+        let size = (try? FileManager.default.attributesOfItem(atPath: url.path)[.size] as? Int) ?? 0
+        #expect(size > 0)
     }
 }
 
@@ -651,15 +723,21 @@ struct StressDocumentAPITests {
 @Suite("Stress: Math Utilities")
 struct StressMathUtilTests {
 
+    // math_DirectPolynomialRoots on x² - 3x + 2: 1 and 2.
     @Test func polynomialSolverQuadratic() {
         let roots = PolynomialSolver.quadraticRc4(a: 1, b: -3, c: 2)
-        #expect(roots != nil)
-        if let r = roots { #expect(r.count == 2) }
+        let sorted = (roots ?? []).sorted()
+        #expect(sorted.count == 2)
+        if sorted.count == 2 {
+            #expect(abs(sorted[0] - 1) < 1e-12)
+            #expect(abs(sorted[1] - 2) < 1e-12)
+        }
     }
 
+    // x³ - x: -1, 0, 1.
     @Test func polynomialSolverCubic() {
         let roots = PolynomialSolver.cubicRc4(a: 1, b: 0, c: -1, d: 0)
-        #expect(roots != nil)
+        #expect((roots ?? []).sorted() == [-1, 0, 1])
     }
 
     @Test func gaussIntegration() {
@@ -701,39 +779,48 @@ struct StressMathUtilTests {
 @Suite("Stress: Mesh API")
 struct StressMeshAPITests {
 
-    @Test func meshGeneration() {
-        let m = standardBox().mesh(linearDeflection: 0.5)
-        #expect(m != nil)
-        if let m {
-            #expect(m.vertexCount > 0)
-            #expect(m.triangleCount > 0)
+    @Test func meshGeneration() throws {
+        let m = try #require(standardBox().mesh(linearDeflection: 0.5))
+        #expect(m.vertexCount == 24)
+        #expect(m.triangleCount == 12)
+    }
+
+    @Test func meshVertices() throws {
+        let m = try #require(standardSphere().mesh(linearDeflection: 0.5))
+        let verts = m.vertices
+        #expect(!verts.isEmpty)
+        #expect(verts.count == m.vertexCount)
+        // Every node lies on the radius-5 sphere; the count alone was satisfied by zeros.
+        for v in verts {
+            let rad = Double(v.x * v.x + v.y * v.y + v.z * v.z).squareRoot()
+            #expect(abs(rad - 5) < 1e-4)
         }
     }
 
-    @Test func meshVertices() {
-        if let m = standardSphere().mesh(linearDeflection: 0.5) {
-            let verts = m.vertices
-            #expect(!verts.isEmpty)
+    @Test func meshNormals() throws {
+        let m = try #require(standardCylinder().mesh(linearDeflection: 0.5))
+        let normals = m.normals
+        #expect(!normals.isEmpty)
+        #expect(normals.count == m.vertexCount)
+        // Every normal is a unit vector; the count alone was satisfied by zeros.
+        for n in normals {
+            let len = Double(n.x * n.x + n.y * n.y + n.z * n.z).squareRoot()
+            #expect(abs(len - 1) < 1e-5)
         }
     }
 
-    @Test func meshNormals() {
-        if let m = standardCylinder().mesh(linearDeflection: 0.5) {
-            let normals = m.normals
-            #expect(!normals.isEmpty)
-        }
+    @Test func meshTriangles() throws {
+        let m = try #require(standardTorus().mesh(linearDeflection: 0.5))
+        #expect(m.triangleCount == 1352)
     }
 
-    @Test func meshTriangles() {
-        if let m = standardTorus().mesh(linearDeflection: 0.5) {
-            #expect(m.triangleCount > 0)
-        }
-    }
-
+    // `m != nil` was the whole assertion, and an empty mesh is not nil: every shape in the
+    // fixture set has a surface, so every one of them has to produce triangles.
     @Test func meshOnAllShapes() throws {
         for (name, shape) in try allStandardShapes() {
-            let m = shape.mesh(linearDeflection: 0.5)
-            #expect(m != nil, "Mesh failed for \(name)")
+            let m = try #require(shape.mesh(linearDeflection: 0.5), "Mesh failed for \(name)")
+            #expect(m.triangleCount > 0, "\(name) meshed to no triangles")
+            #expect(m.vertexCount > 0, "\(name) meshed to no nodes")
         }
     }
 }
@@ -749,15 +836,20 @@ struct StressFeatureRecognitionTests {
         #expect(aag.nodes.count == 6)
     }
 
+    // One node per face. The filleted box has 26: six shrunken originals, twelve edge rolls and
+    // eight corner patches.
     @Test func aagOnFilletedBox() throws {
         let box = try filletedBox()
         let aag = AAG(shape: box)
-        #expect(aag.nodes.count > 6)
+        #expect(aag.nodes.count == box.subShapeCount(ofType: .face))
+        #expect(aag.nodes.count == 26)
     }
 
+    // Six box faces plus the hole's cylindrical face.
     @Test func aagOnDrilledPlate() throws {
         let plate = try drilledPlate()
         let aag = AAG(shape: plate)
-        #expect(aag.nodes.count > 6)
+        #expect(aag.nodes.count == plate.subShapeCount(ofType: .face))
+        #expect(aag.nodes.count == 7)
     }
 }
