@@ -711,9 +711,11 @@ OCCTShapeCheckResult OCCTCheckFace(OCCTFaceRef face)
   }
   try
   {
-    Handle(BRepCheck_Face) checker = new BRepCheck_Face(face->face);
-    checker->Minimum();
-    const auto& statusList = checker->Status();
+    // No explicit Minimum() call: BRepCheck_Face's constructor calls BRepCheck_Result::Init,
+    // whose last statement is Minimum(), so the minimum analysis has already run and a second
+    // call is a no-op behind BRepCheck_Face::Minimum's own `if (!myMin)` (#2924).
+    Handle(BRepCheck_Face) checker    = new BRepCheck_Face(face->face);
+    const auto&            statusList = checker->Status();
     for (auto it = statusList.begin(); it != statusList.end(); ++it)
     {
       if (*it != BRepCheck_NoError)
@@ -805,10 +807,11 @@ OCCTShapeCheckResult OCCTCheckSolid(OCCTShapeRef shape)
   {
     for (TopExp_Explorer exp(shape->shape, TopAbs_SOLID); exp.More(); exp.Next())
     {
-      TopoDS_Solid            solid   = TopoDS::Solid(exp.Current());
-      Handle(BRepCheck_Solid) checker = new BRepCheck_Solid(solid);
-      checker->Minimum();
-      const auto& statusList = checker->Status();
+      TopoDS_Solid solid = TopoDS::Solid(exp.Current());
+      // No explicit Minimum() call, for the reason given in OCCTCheckFace above:
+      // BRepCheck_Result::Init runs it from the constructor (#2924).
+      Handle(BRepCheck_Solid) checker    = new BRepCheck_Solid(solid);
+      const auto&             statusList = checker->Status();
       for (auto it = statusList.begin(); it != statusList.end(); ++it)
       {
         if (*it != BRepCheck_NoError)

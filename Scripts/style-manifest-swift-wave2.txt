@@ -108,7 +108,6 @@ Tests/OCCTDrawingTests/DrawingTestFixtures.swift
 Tests/OCCTFoundationTests/PathParsingContractTests.swift
 Tests/OCCTGeom2dTests/BSplineCurve2DCompletionsV121Tests.swift
 Tests/OCCTGeom2dTests/Curve2DApproximatedOverloadParityTests.swift
-Tests/OCCTGeom2dTests/Curve2DBSplineLocalTests.swift
 Tests/OCCTGeom2dTests/Curve2DCircleFactoryParityTests.swift
 Tests/OCCTGeom2dTests/Curve2DConicFactoryParityTests.swift
 Tests/OCCTGeom2dTests/Curve2DInterpolatePeriodicParityTests.swift
@@ -123,7 +122,6 @@ Tests/OCCTGeom2dTests/Issue2861Curve2DDrawAdaptiveTests.swift
 Tests/OCCTGeom2dTests/Issue480Curve2DKnotSplitContinuityTests.swift
 Tests/OCCTGeom2dTests/Issue485Curve2DContinuityTests.swift
 Tests/OCCTGeom2dTests/Issue486Curve2DBatchTests.swift
-Tests/OCCTGeom2dTests/Issue514Conic2dDegenerateTests.swift
 Tests/OCCTGeom2dTests/Issue549Curve2DArcLengthRangeTests.swift
 Tests/OCCTGeom2dTests/Issue553GccZeroRadiusTests.swift
 Tests/OCCTGeom2dTests/Issue562Curve2DKnotSplitDuplicateTests.swift
