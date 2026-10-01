@@ -2,8 +2,9 @@
 #
 # #2897: build and run probe.cpp against the pinned OCCT kernel.
 #
-#   ./run.sh            wasm32-unknown-wasip1, under the pinned wasmkit
-#   ./run.sh --native   macOS arm64, against Libraries/OCCT.xcframework
+#   ./run.sh                   wasm32-unknown-wasip1, under the pinned wasmkit
+#   ./run.sh --native          macOS arm64, against Libraries/OCCT.xcframework
+#   ./run.sh --vtable-parity   the sweep: every vtable the bridge lays out, against the archive's
 #
 # Both are needed to answer the question #2897 asks. The same source on both platforms is what
 # distinguishes "wasm traps on something only wasm checks" from "wasm traps on something real".
@@ -86,16 +87,39 @@ ln -sfn "$TOOLCHAIN_RESOURCE_DIR/include" "$RESOURCE_DIR/include"
 ln -sfn "$WASI_SWIFT_BUILTINS_DIR/libclang_rt.builtins-wasm32.a" \
     "$RESOURCE_DIR/lib/wasm32-unknown-wasip1/libclang_rt.builtins.a"
 
+COMMON_FLAGS=(
+    --target="$SWIFT_WASM_TRIPLE"
+    --sysroot "$SWIFT_WASI_SYSROOT"
+    -resource-dir "$RESOURCE_DIR"
+    -std=c++17
+    -fwasm-exceptions -mllvm -wasm-use-legacy-eh=false -mllvm -wasm-enable-sjlj
+    -include "$REPO/Scripts/wasm-shims/wasi-std-threading.hpp"
+    -I "$LIB_DIR/occt-headers-wasm"
+    -DOCCT_AVAILABLE=1 -DOCCT_NO_DEPRECATED
+)
+
+if [ "${1:-}" = "--vtable-parity" ]; then
+    # One clang vtable-layout dump per bridge translation unit, which is the set of vtables the
+    # bridge can dispatch through and the slot indices its call_indirects use, then the comparison
+    # against the archive's own `_ZTV` relocations. The dump needs codegen: `-fsyntax-only`
+    # produces an empty file, because clang lays a vtable out only when it emits or uses one.
+    DUMPS="${DUMPS:-$(mktemp -d -t occt2897-vt)}"
+    echo ">>> dumping vtable layouts for 74 bridge translation units into $DUMPS"
+    for f in "$REPO"/Sources/OCCTBridge/src/*.mm; do
+        b="$(basename "$f" .mm)"
+        "$TOOLCHAIN_BIN/clang++" "${COMMON_FLAGS[@]}" -w \
+            -x c++ \
+            -I "$REPO/Sources/OCCTBridge/include" -I "$REPO/Scripts/wasm-shims" \
+            -Xclang -fdump-vtable-layouts -c -o /dev/null "$f" > "$DUMPS/$b.txt" 2>&1
+        echo "    $b"
+    done
+    exec env LLVM_BIN="${LLVM_BIN:-$WASI_SDK_PREFIX/bin}" \
+        python3 "$HERE/vtable-parity.py" --dumps "$DUMPS" --archive "$LIB_DIR/libOCCT-wasm.a"
+fi
+
 set -x
 "$TOOLCHAIN_BIN/clang++" \
-    --target="$SWIFT_WASM_TRIPLE" \
-    --sysroot "$SWIFT_WASI_SYSROOT" \
-    -resource-dir "$RESOURCE_DIR" \
-    -std=c++17 \
-    -fwasm-exceptions -mllvm -wasm-use-legacy-eh=false -mllvm -wasm-enable-sjlj \
-    -include "$REPO/Scripts/wasm-shims/wasi-std-threading.hpp" \
-    -I "$LIB_DIR/occt-headers-wasm" \
-    -DOCCT_AVAILABLE=1 -DOCCT_NO_DEPRECATED \
+    "${COMMON_FLAGS[@]}" \
     -o "$OUT" "$HERE/probe.cpp" \
     -L"$WASI_SDK_EH_LIBDIR" \
     -L"$WASI_SWIFT_BUILTINS_DIR" \
