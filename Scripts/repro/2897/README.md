@@ -18,8 +18,9 @@ It is not that. The slot is right, the vtable is right, and the **object is not 
 |---|---|
 | `./run.sh` | the sequence on wasm: traps, as #2897 reports |
 | `./run.sh --native` | the same source on macOS arm64: **SIGSEGV**, exit 139 |
-| `./run.sh --vtable-parity` | every vtable the bridge lays out against the archive's: no disagreement |
+| `./run.sh --vtable-parity` | 253 classes, 3,363 slots, **0** disagreements |
 | `spike/` | the two excluded suites replayed through the shipped bridge and Swift wrapper |
+| `OCCTXCAFTests` on wasm | **trapped** after 387 tests before the fix, **505 tests in 133 suites, clean** after it |
 
 ## The mechanism
 
@@ -75,7 +76,18 @@ would be exactly the defect #2897 suspected.
 
     ./run.sh --vtable-parity
 
-See `transcript.txt` for the run. There is no disagreement.
+**253 classes, 3,363 slots, no disagreement.** Of the 300 vtables the bridge lays out, 282 have a
+plain class name whose Itanium mangling is derivable from it (templates and namespaced types are
+out of scope, and OCCT's polymorphic hierarchy is plain classes), and 253 of those have a `_ZTV`
+in the archive.
+
+Its first run reported **109** disagreements, and every one of them was the comparison's own
+doing. The secondary vtable of a multiply-inherited base read as extra slots, a pure slot prints
+as a named declaration on the clang side and as `__cxa_pure_virtual` on the archive side, and
+clang aliases a derived complete destructor to its base's when it destroys nothing extra. None of
+the three is a function-type difference, which is the only thing a `call_indirect` checks. All
+three are normalised now; the script's docstring says so, and `transcript.txt` keeps the number,
+because a sweep that reports 109 findings nobody checks is worse than no sweep.
 
 ## Files
 

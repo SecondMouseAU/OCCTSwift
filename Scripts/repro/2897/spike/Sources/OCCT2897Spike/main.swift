@@ -57,7 +57,7 @@ func doubleReleaseDoesNotCorruptSingleton() {
     step("Issue1588.doubleReleaseDoesNotCorruptSingleton")
     guard let app = OCCTTObjApplicationGetInstance() else { return }
     OCCTTObjApplicationRelease(app)
-    OCCTTObjApplicationRelease(app) // the unmatched one
+    OCCTTObjApplicationRelease(app)  // the unmatched one
     guard let again = OCCTTObjApplicationGetInstance() else { return }
     OCCTTObjApplicationSetVerbose(again, false)
     precondition(!OCCTTObjApplicationIsVerbose(again))
