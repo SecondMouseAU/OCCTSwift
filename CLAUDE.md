@@ -237,10 +237,12 @@ exemption manifest can only exempt a file the population already reaches. Two ma
 exempt list, both shrink-only and both enforced by `check-style-manifest.py`:
 `Scripts/style-manifest-swift.txt` (rollout day, empty) and
 `Scripts/style-manifest-swift-wave2.txt` (what the widening reached, 269 files still listed).
-The real run
-asserts **selected + listed == tracked** and plants a canary violation in every `swift-format`
-invocation, so a narrowing and a silent tool are both a red gate rather than a quieter one. There is
-deliberately no `--fix`, for the reason `Scripts/format-bridge.sh`'s header gives.
+That second count drains with nearly every PR, since touching a listed file means fixing it and
+deleting its line, so it is derived from the manifest by `check-inventory-prose.py` rather than
+trusted here (#2910). The real run asserts **selected + listed == tracked** and plants a canary
+violation in every `swift-format` invocation, so a narrowing and a silent tool are both a red gate
+rather than a quieter one. There is deliberately no `--fix`, for the reason
+`Scripts/format-bridge.sh`'s header gives.
 
 ### Pinned-Asset Patch Check
 
