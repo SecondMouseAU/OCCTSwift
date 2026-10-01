@@ -144,8 +144,8 @@ try Exporter.writeGLTF(shape: model, to: glbURL)                   // binary glT
 
 ```
 Sources/OCCTSwift/          Swift public API
-Sources/OCCTBridge/include/ C function declarations (15 per-domain headers + a slim OCCTBridge.h umbrella)
-Sources/OCCTBridge/src/     Objective-C++ implementations (16 per-domain .mm files)
+Sources/OCCTBridge/include/ C function declarations (17 per-domain headers + a slim OCCTBridge.h umbrella)
+Sources/OCCTBridge/src/     74 Objective-C++ implementation files (ten domains split by subsystem)
 Libraries/OCCT.xcframework  Pre-built OCCT 8.0.1 static library (arm64)
 Tests/OCCT<Domain>Tests/    Per-domain Swift Testing targets (focused compile/run)
 ```

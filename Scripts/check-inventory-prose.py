@@ -419,6 +419,26 @@ CLAIMS = [
      r"OCCTBridge\.h umbrella \+ (\S+) per-domain headers", "bridge_domain_headers"),
     ("CLAUDE.md", r"^Sources/OCCTBridge/src/\s+(\S+) Objective-C\+\+ implementations",
      "bridge_impl_files"),
+    # #2910, the same two facts in the four other places the sweep found them. Each had drifted
+    # independently, which is the argument for registering a copy rather than deleting it: the
+    # architecture sketch is useful where it is, and a reader of README.md is not going to open
+    # CLAUDE.md to find out whether its numbers are the live ones.
+    ("README.md", r"\((\S+) per-domain headers \+ a slim OCCTBridge\.h umbrella\)",
+     "bridge_domain_headers"),
+    ("README.md", r"^Sources/OCCTBridge/src/\s+(\S+) Objective-C\+\+ implementation files",
+     "bridge_impl_files"),
+    ("docs/architecture/overview.md", r"# (\S+) per-domain C declaration files",
+     "bridge_domain_headers"),
+    ("docs/architecture/overview.md", r"# (\S+) implementation files, ten domains split",
+     "bridge_impl_files"),
+    ("Scripts/derive-bridge-header-split.py",
+     r"so there are (\S+) \.mm files against \S+ headers", "bridge_impl_files"),
+    ("Scripts/derive-bridge-header-split.py",
+     r"so there are \S+ \.mm files against (\S+) headers", "bridge_include_headers"),
+    ("Scripts/derive-bridge-header-split.py",
+     r"All (\S+) bridge header files: the umbrella", "bridge_include_headers"),
+    ("Scripts/derive-bridge-header-split.py",
+     r"the umbrella plus the (\S+) per-domain headers", "bridge_domain_headers"),
 ]
 
 

@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """Derive the OCCTBridge.h -> per-domain header split from the .mm files (#395).
 
-The implementation side of the bridge was split into 16 domain files long ago; the header
-followed in #395, into 15 per-domain headers plus a slim umbrella (OCCTBridge.mm itself has no
-domain header of its own -- its 2 functions live in the umbrella). This computes, for every
-function declared across those 16 header files, which .mm file defines it, which is the only
-thing the split needs to be decided by. Run it before touching the split and again afterwards to
+The implementation side of the bridge was split into one file per domain long ago; the header
+followed in #395, into 17 per-domain headers plus a slim umbrella (OCCTBridge.mm itself has no
+domain header of its own -- its 2 functions live in the umbrella). #1378 and #1380 then split ten
+of the domains into buckets under their one header, so there are 74 .mm files against 18 headers.
+This computes, for every function declared across those 18 header files, which .mm file defines
+it, which is the only thing the split needs to be decided by. Run it before touching the split and again afterwards to
 prove nothing moved to the wrong header.
 
     python3 Scripts/derive-bridge-header-split.py            # print the manifest summary
@@ -129,7 +130,11 @@ def target_header(mm_name, known_headers=None):
 
 
 def header_files():
-    """All 16 bridge header files: the umbrella plus the 15 per-domain headers (#395)."""
+    """All 18 bridge header files: the umbrella plus the 17 per-domain headers (#395).
+
+    The two counts are held to the directory by check-inventory-prose.py (#2910), which found this
+    docstring and four other sites still describing the pre-#1378 tree.
+    """
     return sorted(glob.glob(os.path.join(HEADER_DIR, "OCCTBridge*.h")))
 
 
