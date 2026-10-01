@@ -1,0 +1,170 @@
+◇ Test run started.
+PROBE trace.forward.count=1
+PROBE trace.forward[0] sameAsSphere=true sameAsBox=false type=solid vol=523.598775598299
+PROBE trace.backward.count=1
+PROBE trace.backward[0] sameAsBox=true sameAsSphere=false vol=999.9999999999998
+PROBE trace.multi.count=2
+PROBE trace.multi[0] sphere=true cyl=false vol=523.598775598299
+PROBE trace.multi[1] sphere=false cyl=true vol=226.19467105846508
+PROBE trace.unrelated.count=0
+PROBE trace.modify.count=1
+PROBE trace.modify[0] sameAsSphere=true vol=523.598775598299
+PROBE st.before.shapeCount=0 free=0
+PROBE st.addShape.id=0
+PROBE st.after.shapeCount=1 free=1
+PROBE st.findShape=0
+PROBE st.searchShape=0
+PROBE st.findShape.other=-1
+PROBE st.searchShape.other=-1
+PROBE st.box.faceCount=6
+PROBE st.searchShape.face=1
+PROBE st.roots.count=1
+PROBE st.root.labelId=0 isTopLevel=true isComponent=false isAssembly=false
+PROBE st.remove=true shapeCountAfter=0 freeAfter=0 findAfter=-1
+PROBE ex.count=1
+PROBE ex.shape0 vol=999.9999999999998 type=solid sameAsBox=true
+PROBE ex.pathId0=0:1:1:1.
+PROBE ex.depth0=0
+PROBE ex.isAssembly0=false
+PROBE ex.find vol=999.9999999999998 sameAsBox=true
+PROBE ex.find.bogus=nil
+PROBE ex.shape.outOfRange=nil
+PROBE ex.pathId.outOfRange=<nil>
+PROBE smt.set=true
+PROBE smt.setShape=true
+PROBE smt.extent=33
+PROBE smt.counts f=6 e=12 v=8
+PROBE smt.isSub.face=true
+PROBE smt.isSub.edge=true
+PROBE smt.isSub.self=false
+PROBE smt.isSub.foreign=false
+PROBE smt.isSub.foreignFace=false
+PROBE nx.find.n1=0 n1Id=0
+PROBE nx.validUntil=0
+PROBE nx.sameCount.one=1
+PROBE nx.sameCount.two=2
+PROBE nx.sameLabels=[0, 1] n1=0 n2=1
+PROBE nx.sameCount.unseen=0
+PROBE nx.find.unseen=-99
+PROBE nx.validUntil.unseen=-1
+PROBE nb.label.id=0
+PROBE nb.child.id=1
+PROBE nb.child2.id=2
+PROBE nb.record=true
+PROBE nb.current vol=999.9999999999998 sameAsBox=true
+PROBE nb.stored vol=999.9999999999998 sameAsBox=true type=solid
+PROBE nb.history.count=1
+PROBE nb.history[0] evo=modify old=true new=true
+PROBE nb.currentAfterModify vol=523.598775598299 sameAsSphere=true
+PROBE dir.hasBefore=false
+PROBE dir.create=true
+PROBE dir.hasAfter=true
+PROBE dir.hasOther=false
+PROBE dir.sub1=1
+PROBE dir.sub2=2
+PROBE dir.obj1=3
+PROBE dir.obj2=4
+PROBE dir.subNoParent=nil
+PROBE dir.objNoParent=nil
+PROBE idf.ignoreAll.mode=true keptA=false ignoredA=true
+PROBE idf.ignoreAll.afterKeep keptA=true ignoredA=false keptB=false ignoredB=true
+PROBE idf.keepAll.mode=false keptA=true ignoredA=false
+PROBE idf.keepAll.afterIgnore keptA=false ignoredA=true keptB=true ignoredB=false
+✔ Test run with 8 tests in 1 suite passed after 0.021 seconds.
+
+[exited with code 0]
+◇ Test run started.
+PROBE lbl.l id=0 tag=11 depth=2 root=false
+PROBE lbl.l.father=1
+PROBE lbl.c id=2 tag=1 depth=3 father=0
+PROBE lbl.c2 id=3 tag=2 father=0
+PROBE lbl.sibling id=4 tag=12 depth=2
+PROBE lbl.main id=1 tag=1 depth=1
+PROBE fs.id=0
+PROBE fs.find.face=-1 search.face=1
+PROBE fs.find.edge=-1 search.edge=2
+PROBE fs.shapeCountAfterSearch=1 free=1
+PROBE map.Solid=1
+PROBE map.Shell=1
+PROBE map.Face=6
+PROBE map.Wire=6
+PROBE map.Edge=12
+PROBE map.Vertex=8
+PROBE map.Compound=0
+PROBE map.CompSolid=0
+PROBE dirf.firstSub=1
+PROBE dirf.firstObj=1
+PROBE dirf.subNoDir=nil
+PROBE dirf.objNoDir=nil
+PROBE dirf.d4.has100=true has0=false
+PROBE dirf.subUnder101=nil
+PROBE exd.count=1
+PROBE exd.depth0=0
+PROBE exd.depthOut=0
+PROBE sr.faces=6
+PROBE sr.selectRealFace=true
+PROBE sr.evo=Optional(OCCTSwift.NamingEvolution.selected)
+PROBE sr.resolve type=compound sameAsFace=false area=599.9999999999999
+PROBE sr.selectForeign=true
+PROBE sr.evoForeign=Optional(OCCTSwift.NamingEvolution.selected)
+PROBE sr.resolveForeign=nil
+PROBE ed.id=0 shapeCount=1 free=1
+PROBE ed.beforeExpand isAssembly=false children=0
+PROBE ed.expand=true shapeCount=3 free=1
+PROBE ed.afterExpand isAssembly=true children=2
+PROBE ed2.volBefore=6000.0
+PROBE ed2.rescale=true volAfter=48000.0
+PROBE ed2.rescaleZero=false
+✔ Test run with 7 tests in 1 suite passed after 0.008 seconds.
+
+[exited with code 0]
+◇ Test run started.
+PROBE tc.beforeGeneration=0
+PROBE tc.afterGeneration=1
+PROBE tc.unrelated=0
+PROBE exa.partId=0 asmId=1 compId=2
+PROBE exa.count=1 free=1 shapes=2
+PROBE exa[0] depth=1 path=0:1:1:2./0:1:1:2:1. vol=999.9999999999998
+PROBE ai.oneBox=Optional(1)
+PROBE ai.threeBoxes=Optional(3)
+PROBE ai.empty=Optional(0)
+PROBE srd.faceArea=99.99999999999999 boxArea=599.9999999999999
+PROBE srd.select=true
+PROBE srd.resolved type=compound area=599.9999999999999 faces=6 sameAsBox=false
+PROBE srd.resolveBare=nil
+PROBE srd.evoBare=nil
+PROBE ee.before isAssembly=false children=0
+PROBE ee.expandNonRecursive=true
+PROBE ee.after isAssembly=true children=2 shapeCount=3 free=1
+PROBE ee.child[0] vol=6000.0
+PROBE ee.child[1] vol=523.598775598299
+PROBE ee.expandAgain=false
+PROBE ee.expandSolid=false
+PROBE ee.expandBadLabel=false
+PROBE rs.before=6000.0
+PROBE rs.scale2=true vol=48000.0
+PROBE rs.scaleHalf=true vol=6000.0
+PROBE rs.scaleZero=false vol=6000.0
+PROBE rs.scaleNeg=true vol=6000.0
+PROBE rs.badLabel=false
+✔ Test run with 6 tests in 1 suite passed after 0.005 seconds.
+
+[exited with code 0]
+error: Process '/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/libexec/swift/pm/swiftpm-testing-helper --test-bundle-path /Users/elb/Projects/OCCTSwift/.claude/worktrees/agent-ab47633332e4e61a9/.build/out/Products/Debug/OCCTXCAFTests.xctest/Contents/MacOS/OCCTXCAFTests --filter ZzMeasureProbeTests --no-parallel /Users/elb/Projects/OCCTSwift/.claude/worktrees/agent-ab47633332e4e61a9/.build/out/Products/Debug/OCCTXCAFTests.xctest/Contents/MacOS/OCCTXCAFTests --testing-library swift-testing' exited with unexpected signal code 11
+PROBE v.start
+PROBE v.count=0
+PROBE v.labels=0
+PROBE v.hasLabel=false
+
+[exited with code 0]
+◇ Test run started.
+PROBE v.start
+PROBE v.count=0
+PROBE v.labels=0
+PROBE v.hasLabel=false
+PROBE v.findLabel=-99
+PROBE v.validUntil=-1
+PROBE v.end
+✔ Test run with 1 test in 1 suite passed after 0.009 seconds.
+
+[exited with code 0]

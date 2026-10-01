@@ -1153,7 +1153,17 @@ int64_t OCCTNamingFindLabel(OCCTDocumentRef doc, OCCTShapeRef shape)
     return -1;
   try
   {
-    TDF_Label root     = doc->doc->Main();
+    TDF_Label root = doc->doc->Main();
+    // #766: TNaming_Tool::Label's own precondition is an OUT-OF-LINE
+    // Standard_NoSuchObject_Raise_if, so it is compiled out of the kernel we link
+    // (okf/policies/occt-validation-is-compiled-out.md; the row is already in
+    // Scripts/occt-raise-if-map.txt as TNaming_NamedShape outofline-raise, member Label).
+    // Without it, Label falls through to TNaming_Tool::Label(US, S, Trans) with a NULL
+    // TNaming_UsedShapes handle on any document no naming has ever been recorded on, and
+    // dereferences it, which took the test process down rather than reaching the catch below.
+    // Guard the value before the call: HasLabel does the same lookup without the dereference.
+    if (!TNaming_Tool::HasLabel(root, shape->shape))
+      return -1;
     int       transDef = 0;
     TDF_Label label    = TNaming_Tool::Label(root, shape->shape, transDef);
     if (label.IsNull())
@@ -1181,6 +1191,11 @@ int OCCTNamingValidUntil(OCCTDocumentRef doc, OCCTShapeRef shape)
   try
   {
     TDF_Label root = doc->doc->Main();
+    // #766: same compiled-out precondition as OCCTNamingFindLabel. ValidUntil's own
+    // out-of-line Standard_NoSuchObject_Raise_if is absent from the kernel we link, so it
+    // dereferences a NULL TNaming_UsedShapes on a document with no naming.
+    if (!TNaming_Tool::HasLabel(root, shape->shape))
+      return -1;
     return TNaming_Tool::ValidUntil(root, shape->shape);
   }
   catch (...)
@@ -1196,8 +1211,18 @@ int32_t OCCTNamingSameShapeCount(OCCTDocumentRef doc, OCCTShapeRef shape)
     return 0;
   try
   {
-    TDF_Label root  = doc->doc->Main();
-    int       count = 0;
+    TDF_Label root = doc->doc->Main();
+    // #766: TNaming_SameShapeIterator's TDF_Label constructor leaves its raw `myNode` pointer
+    // UNINITIALISED when the root carries no TNaming_UsedShapes, which is the state of any
+    // document no TNaming_Builder has ever run on (TNaming_NamedShape.cxx:1358). More() then
+    // reads that garbage pointer and Next() dereferences it, which took the test process down
+    // rather than reaching the catch below. This one is an upstream defect, not the
+    // No_Exception hole the two lookups above hit. HasLabel is the safe form of the same
+    // lookup: it returns false both when the attribute is missing and when the shape is not in
+    // its map, which are exactly the two cases that must answer 0.
+    if (!TNaming_Tool::HasLabel(root, shape->shape))
+      return 0;
+    int count = 0;
     for (TNaming_SameShapeIterator it(shape->shape, root); it.More(); it.Next())
       count++;
     return count;
@@ -1219,7 +1244,11 @@ int32_t OCCTNamingSameShapeLabels(OCCTDocumentRef doc,
   try
   {
     TDF_Label root = doc->doc->Main();
-    int32_t   i    = 0;
+    // #766: see OCCTNamingSameShapeCount. Without this the iterator's uninitialised myNode is
+    // an uncatchable SIGSEGV on any document that has never had naming recorded.
+    if (!TNaming_Tool::HasLabel(root, shape->shape))
+      return 0;
+    int32_t i = 0;
     for (TNaming_SameShapeIterator it(shape->shape, root); it.More() && i < maxCount; it.Next())
     {
       TDF_Label label = it.Label();
