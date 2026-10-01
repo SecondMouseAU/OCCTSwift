@@ -72,12 +72,12 @@ Scripts/format-bridge.sh             # clang-format every enforced Sources/OCCTB
 Scripts/format-bridge.sh --check     # ...or just report, which is exactly what CI and the hook run
 ```
 
-**Run `Scripts/format-bridge.sh` after any edit to a bridge `.h`/`.mm`.** All 33 bridge files are
+**Run `Scripts/format-bridge.sh` after any edit to a bridge `.h`/`.mm`.** All 93 bridge files are
 enforced (`Scripts/style-manifest-bridge.txt` is empty), and OCCT's style aligns consecutive
 declarations and assignments, so two ordinary new locals in a row are a violation unless the tool
 wrote them. Hand-aligning is not a substitute. The version is pinned in
 `Scripts/clang-format-version.txt`; a clang-format on a different major is refused, since 21.1.8
-and 22.1.8 were measured to disagree on 10 of the 33 files. `Scripts/install-clang-format.py` gets
+and 22.1.8 were measured to disagree on 10 of the files. `Scripts/install-clang-format.py` gets
 the pinned version onto a machine with no pip or venv; see
 [`docs/guides/clang-format-setup.md`](docs/guides/clang-format-setup.md).
 
@@ -122,7 +122,7 @@ python3 Scripts/census-comment-staleness.py      # CENSUS, not a gate: comments 
 python3 Scripts/census-api-reference-rows.py     # CENSUS, not a gate: API_REFERENCE category-row entries resolving to no declaration (#1679)
 python3 Scripts/census-dead-file-statics.py      # CENSUS, not a gate: bridge `static` definitions with no use in their own file (#1628)
 python3 Scripts/census-compiled-out-validation.py # CENSUS, not a gate: bridge protection resting on an OCCT check No_Exception removed (#2801)
-python3 Scripts/check-inventory-prose.py        # every counted claim about the patch and gate inventories matches them (#1408), and occt-raise-if-map.txt's stamp names the patch set on disk (#2885)
+python3 Scripts/check-inventory-prose.py        # every counted claim about the patch, gate, swift-format-exemption, bridge-file and test-target inventories matches them (#1408, #2910), and occt-raise-if-map.txt's stamp names the patch set on disk (#2885)
 python3 Scripts/check-changelog-transcription.py # REPORT, never a gate: merges that landed with no CHANGELOG entry (#742, #2779)
 python3 Scripts/check-pinned-asset-patches.py --self-test  # RELEASE CHECK: only the self-test runs here; the real run reads the pinned asset (#2190)
 ```
@@ -236,10 +236,13 @@ total on this page.
 exemption manifest can only exempt a file the population already reaches. Two manifests now hold the
 exempt list, both shrink-only and both enforced by `check-style-manifest.py`:
 `Scripts/style-manifest-swift.txt` (rollout day, empty) and
-`Scripts/style-manifest-swift-wave2.txt` (what the widening reached, 272 files). The real run
-asserts **selected + listed == tracked** and plants a canary violation in every `swift-format`
-invocation, so a narrowing and a silent tool are both a red gate rather than a quieter one. There is
-deliberately no `--fix`, for the reason `Scripts/format-bridge.sh`'s header gives.
+`Scripts/style-manifest-swift-wave2.txt` (what the widening reached, 269 files still listed).
+That second count drains with nearly every PR, since touching a listed file means fixing it and
+deleting its line, so it is derived from the manifest by `check-inventory-prose.py` rather than
+trusted here (#2910). The real run asserts **selected + listed == tracked** and plants a canary
+violation in every `swift-format` invocation, so a narrowing and a silent tool are both a red gate
+rather than a quieter one. There is deliberately no `--fix`, for the reason
+`Scripts/format-bridge.sh`'s header gives.
 
 ### Pinned-Asset Patch Check
 
@@ -309,10 +312,13 @@ what to do when OCCT does not answer are in
 
 ```
 Sources/OCCTSwift/          Swift public API (Shape, Wire, Surface, Face, Edge, Curve3D, Mesh, etc.)
-Sources/OCCTBridge/include/ C function declarations (16 files: OCCTBridge.h umbrella + 15 per-domain headers, #395)
-Sources/OCCTBridge/src/     Objective-C++ implementations (one per domain, matching the headers,
-                             except Modeling: split into 12 OCCTBridge_Modeling_<Bucket>.mm files
-                             by OCCT subsystem under one shared OCCTBridge_Modeling.h, #396)
+Sources/OCCTBridge/include/ C function declarations (18 files: OCCTBridge.h umbrella + 17 per-domain headers, #395)
+Sources/OCCTBridge/src/     74 Objective-C++ implementations. Ten domains are split into
+                             OCCTBridge_<Domain>_<Bucket>.mm by OCCT subsystem under one shared
+                             per-domain header (Modeling 12, Surface/IO/Healing/Geom2d 7 each,
+                             Document/Curve3D 6, Topology/Spatial 5, Visualization 4); the other
+                             seven are a single file each, beside OCCTBridge.mm itself
+                             (#396, #1378, #1380)
 Libraries/OCCT.xcframework  Pre-built OCCT static library (arm64 macOS/iOS)
 Tests/OCCT<Domain>Tests/    Per-domain Swift Testing targets (see "Test Layout")
 Scripts/build-occt.sh       Builds OCCT.xcframework from source

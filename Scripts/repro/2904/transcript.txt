@@ -1,0 +1,46 @@
+MEAS box edge 0: isValid=true errorCount=0 firstError=nil
+MEAS box wire 0: isValid=true errorCount=0 firstError=nil
+MEAS box shell 0: isValid=true errorCount=0 firstError=nil
+MEAS box vertex 0: isValid=true errorCount=0 firstError=nil
+MEAS box edge 999: isValid=false errorCount=0 firstError=nil
+MEAS box wire 999: isValid=false errorCount=0 firstError=nil
+MEAS box shell 999: isValid=false errorCount=0 firstError=nil
+MEAS box vertex 999: isValid=false errorCount=0 firstError=nil
+MEAS bezier edges=12 isValid=false
+MEAS bezier edge 0 sameParam=true sameRange=false
+MEAS bezier edge 0: isValid=false errorCount=1 firstError=Optional(OCCTSwift.Shape.CheckStatus.invalidSameParameterFlag)
+MEAS bezier edge 1 sameParam=true sameRange=false
+MEAS bezier edge 1: isValid=false errorCount=1 firstError=Optional(OCCTSwift.Shape.CheckStatus.invalidSameParameterFlag)
+MEAS bezier edge 2 sameParam=true sameRange=false
+MEAS bezier edge 2: isValid=false errorCount=1 firstError=Optional(OCCTSwift.Shape.CheckStatus.invalidSameParameterFlag)
+MEAS bezier edge 3 sameParam=true sameRange=false
+MEAS bezier edge 3: isValid=false errorCount=1 firstError=Optional(OCCTSwift.Shape.CheckStatus.invalidSameParameterFlag)
+MEAS bezier edge 4 sameParam=true sameRange=false
+MEAS bezier edge 4: isValid=false errorCount=1 firstError=Optional(OCCTSwift.Shape.CheckStatus.invalidSameParameterFlag)
+MEAS bezier edge 5 sameParam=true sameRange=false
+MEAS bezier edge 5: isValid=false errorCount=1 firstError=Optional(OCCTSwift.Shape.CheckStatus.invalidSameParameterFlag)
+MEAS bezier edge 6 sameParam=true sameRange=false
+MEAS bezier edge 6: isValid=false errorCount=1 firstError=Optional(OCCTSwift.Shape.CheckStatus.invalidSameParameterFlag)
+MEAS bezier edge 7 sameParam=true sameRange=false
+MEAS bezier edge 7: isValid=false errorCount=1 firstError=Optional(OCCTSwift.Shape.CheckStatus.invalidSameParameterFlag)
+MEAS bezier edge 8 sameParam=true sameRange=false
+MEAS bezier edge 8: isValid=false errorCount=1 firstError=Optional(OCCTSwift.Shape.CheckStatus.invalidSameParameterFlag)
+MEAS bezier edge 9 sameParam=true sameRange=false
+MEAS bezier edge 9: isValid=false errorCount=1 firstError=Optional(OCCTSwift.Shape.CheckStatus.invalidSameParameterFlag)
+MEAS bezier edge 10 sameParam=true sameRange=false
+MEAS bezier edge 10: isValid=false errorCount=1 firstError=Optional(OCCTSwift.Shape.CheckStatus.invalidSameParameterFlag)
+MEAS bezier edge 11 sameParam=true sameRange=false
+MEAS bezier edge 11: isValid=false errorCount=1 firstError=Optional(OCCTSwift.Shape.CheckStatus.invalidSameParameterFlag)
+MEAS empty wire: isValid=false errorCount=1 firstError=Optional(OCCTSwift.Shape.CheckStatus.emptyWire)
+MEAS disconnected shell faces=2
+MEAS disconnected shell: isValid=false errorCount=1 firstError=Optional(OCCTSwift.Shape.CheckStatus.notConnected)
+MEAS one-face shell: isValid=true errorCount=0 firstError=nil
+MEAS vertex tol=1000000.0
+MEAS huge vertex: isValid=true errorCount=0 firstError=nil
+MEAS box tol t=0 min=1e-07 avg=1e-07 max=1e-07
+MEAS comp tol t=0 min=1e-07 avg=0.005000050000000003 max=0.01
+MEAS box tol t=1 min=1e-07 avg=1e-07 max=1e-07
+MEAS comp tol t=1 min=1e-07 avg=0.0050000500000000015 max=0.01
+MEAS box tol t=2 min=1e-07 avg=1e-07 max=1e-07
+MEAS comp tol t=2 min=1e-07 avg=0.005000050000000001 max=0.01
+MEAS avg target = 0.00500005

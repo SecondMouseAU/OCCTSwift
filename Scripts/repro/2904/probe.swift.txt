@@ -1,0 +1,94 @@
+// #2904 measurement harness. Saved as .txt rather than .swift so it is not part of the
+// swift-format lint population; drop it into Tests/OCCTTopologyTests/ as Scratch2904Measure.swift
+// and run:
+//
+//   unset OCCTSWIFT_BRIDGE_PREBUILT
+//   swift test --filter Scratch2904
+//
+// Its output is transcript.txt beside this file.
+
+import Foundation
+import OCCTBridge
+import Testing
+import simd
+
+@testable import OCCTSwift
+
+@Suite("Scratch2904", .serialized)
+struct Scratch2904Measure {
+    private func show(_ label: String, _ r: Shape.CheckResult) {
+        print(
+            "MEAS \(label): isValid=\(r.isValid) errorCount=\(r.errorCount) "
+                + "firstError=\(String(describing: r.firstError))")
+    }
+
+    @Test func measure() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        show("box edge 0", box.checkEdge(at: 0))
+        show("box wire 0", box.checkWire(at: 0))
+        show("box shell 0", box.checkShell(at: 0))
+        show("box vertex 0", box.checkVertex(at: 0))
+        show("box edge 999", box.checkEdge(at: 999))
+        show("box wire 999", box.checkWire(at: 999))
+        show("box shell 999", box.checkShell(at: 999))
+        show("box vertex 999", box.checkVertex(at: 999))
+
+        // bezier-converted box: SameRange goes stale (#2732)
+        if let bez = box.convertSurfacesToBezier(
+            planeMode: true, revolutionMode: false, extrusionMode: false, bsplineMode: false)
+        {
+            print("MEAS bezier edges=\(bez.edges().count) isValid=\(bez.isValid)")
+            for (i, e) in bez.subShapes(ofType: .edge).enumerated() {
+                print(
+                    "MEAS bezier edge \(i) sameParam=\(e.edgeSameParameter) "
+                        + "sameRange=\(e.edgeSameRange)")
+                show("bezier edge \(i)", bez.checkEdge(at: i))
+            }
+        } else {
+            print("MEAS bezier: nil")
+        }
+
+        // empty wire
+        let emptyWire = try #require(Shape.builderMakeWire())
+        show("empty wire", emptyWire.checkWire(at: 0))
+
+        // disconnected shell
+        let shell = try #require(Shape.builderMakeShell())
+        let f1 = try #require(
+            Shape.faceFromPlane(
+                origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), uRange: 0...1, vRange: 0...1))
+        let f2 = try #require(
+            Shape.faceFromPlane(
+                origin: SIMD3(50, 50, 50), normal: SIMD3(0, 0, 1), uRange: 0...1, vRange: 0...1))
+        #expect(shell.builderAdd(f1))
+        #expect(shell.builderAdd(f2))
+        print("MEAS disconnected shell faces=\(shell.subShapes(ofType: .face).count)")
+        show("disconnected shell", shell.checkShell(at: 0))
+
+        // single-face shell control
+        let oneFace = try #require(Shape.builderMakeShell())
+        #expect(oneFace.builderAdd(f1))
+        show("one-face shell", oneFace.checkShell(at: 0))
+
+        // malformed vertex
+        let v = try #require(Shape.vertex(at: SIMD3(1e12, -1e12, 1e12)))
+        v.fixTolerance(1e6)
+        print("MEAS vertex tol=\(v.maxTolerance(type: 0))")
+        show("huge vertex", v.checkVertex(at: 0))
+
+        // tolerances
+        let a = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let b = try #require(Shape.box(origin: SIMD3(50, 0, 0), width: 10, height: 10, depth: 10))
+        b.fixTolerance(0.01)
+        let comp = try #require(Shape.compound([a, b]))
+        for t in 0...2 {
+            print(
+                "MEAS box tol t=\(t) min=\(box.minTolerance(type: t)) "
+                    + "avg=\(box.avgTolerance(type: t)) max=\(box.maxTolerance(type: t))")
+            print(
+                "MEAS comp tol t=\(t) min=\(comp.minTolerance(type: t)) "
+                    + "avg=\(comp.avgTolerance(type: t)) max=\(comp.maxTolerance(type: t))")
+        }
+        print("MEAS avg target = \((1e-7 + 0.01) / 2)")
+    }
+}
