@@ -5,10 +5,12 @@ import Testing
 
 // MARK: - #636: Curve3D.extrema SIGSEGVs on parallel curves at every capacity
 
-/// `Curve3D.extrema(with:maxCount:)` (`OCCTCurve3DExtrema` in `OCCTBridge_Curve3D.mm`) wraps
+/// Regression cover for #636, the parallel-curve SIGSEGV in `Curve3D.extrema(with:maxCount:)`.
+///
+/// `OCCTCurve3DExtrema` in `OCCTBridge_Curve3D.mm` wraps
 /// `GeomAPI_ExtremaCurveCurve`, which in turn wraps `Extrema_ExtCC`: the same class
-/// `BRepExtrema_ExtCC`'s documented parallel-curve crash (see `CLAUDE.md`'s Known OCCT Bugs) traces
-/// back to, one layer down.
+/// `BRepExtrema_ExtCC`'s documented parallel-curve crash (see `CLAUDE.md`'s Known OCCT Bugs)
+/// traces back to, one layer down.
 ///
 /// On parallel curves, `Extrema_ExtCC::PrepareParallelResult` reports exactly one "extremum" by
 /// appending a distance to its private `mySqDist` sequence, but several of its branches (an
@@ -43,10 +45,12 @@ import Testing
 @Suite("Curve3D.extrema returns empty, not SIGSEGV, on parallel curves (#636)")
 struct Issue636ExtremaParallelCurvesTests {
 
-    /// The two crashing shapes, defined once. `minDistanceUnaffectedByTheGuard` below exercises the
-    /// same geometry as the two tests above it, and the point of that test is that it is the same
-    /// geometry, so the fixtures are shared rather than copied. Copies drift: tighten one and the
-    /// test asserting the contrast silently starts contrasting something else.
+    /// The offset shared by both crashing fixtures, defined once.
+    ///
+    /// `minDistanceUnaffectedByTheGuard` below exercises the same geometry as the two tests above
+    /// it, and the point of that test is that it is the same geometry, so the fixtures are shared
+    /// rather than copied. Copies drift: tighten one and the test asserting the contrast silently
+    /// starts contrasting something else.
     ///
     /// Both pairs are 5.0 apart, which every distance assertion here depends on.
     private static let parallelOffset = 5.0
@@ -59,7 +63,9 @@ struct Issue636ExtremaParallelCurvesTests {
         )
     }
 
-    /// Bounded, and their projected ranges OVERLAP, which is the condition that makes
+    /// Two bounded parallel segments whose projected ranges overlap.
+    ///
+    /// The overlap is the condition that makes
     /// `Extrema_ExtCC` report a solution it never stored. Disjoint ranges are a different case:
     /// `IsParallel()` returns false for those and the endpoint solution is real, so they are not a
     /// fixture for this bug. See the suite's own note and PR #730's verification comment.
@@ -88,10 +94,11 @@ struct Issue636ExtremaParallelCurvesTests {
         #expect(a.extrema(with: b).isEmpty)
     }
 
-    /// `minDistance(to:)` (`OCCTCurve3DMinDistanceToCurve`) shares the same
-    /// `GeomAPI_ExtremaCurveCurve` construction but only ever calls `LowerDistance()`, which reads
-    /// `mySqDist`, which is populated correctly in every parallel branch. It never touches the empty
-    /// `mypoints` sequence, so it needs no guard and must keep reporting the real distance.
+    /// `minDistance(to:)` needs no guard, and must keep reporting the real distance.
+    ///
+    /// `OCCTCurve3DMinDistanceToCurve` shares the same `GeomAPI_ExtremaCurveCurve` construction but
+    /// only ever calls `LowerDistance()`, which reads `mySqDist`, which is populated correctly in
+    /// every parallel branch. It never touches the empty `mypoints` sequence.
     @Test("minDistance(to:) keeps reporting the true offset for the same parallel pairs")
     func minDistanceUnaffectedByTheGuard() throws {
         let (a, b) = try Self.unboundedParallelLines()
@@ -103,11 +110,12 @@ struct Issue636ExtremaParallelCurvesTests {
         #expect(abs(sd - Self.parallelOffset) < 1e-9)
     }
 
-    /// The case PR #730's review argued was silently regressed by the guard, measured and kept as a
-    /// regression lock. Two parallel segments whose projected ranges are DISJOINT have one real
-    /// nearest-endpoint solution, and `IsParallel()` returns false for them, so the guard never
-    /// fires and that solution is still returned. If a future change widens the guard to test
-    /// tangent direction rather than trusting `IsParallel()`, this goes red.
+    /// The case PR #730's review argued the guard silently regressed, measured and locked.
+    ///
+    /// Two parallel segments whose projected ranges are DISJOINT have one real nearest-endpoint
+    /// solution, and `IsParallel()` returns false for them, so the guard never fires and that
+    /// solution is still returned. If a future change widens the guard to test tangent direction
+    /// rather than trusting `IsParallel()`, this goes red.
     @Test("Parallel segments with disjoint ranges keep their real endpoint solution")
     func disjointParallelSegmentsStillReportTheirEndpointSolution() throws {
         let a = try #require(Curve3D.segment(from: SIMD3(0, 0, 0), to: SIMD3(10, 0, 0)))
@@ -139,9 +147,10 @@ struct Issue636ExtremaParallelCurvesTests {
     }
 }
 
-/// Compiles and runs the doc snippet on `Curve3D.extrema(with:maxCount:)` verbatim. A doc snippet
-/// that does not compile is the documentation equivalent of a pinned value nobody measured (#726),
-/// and this one asserts specific numbers.
+/// Compiles and runs the doc snippet on `Curve3D.extrema(with:maxCount:)` verbatim.
+///
+/// A doc snippet that does not compile is the documentation equivalent of a pinned value nobody
+/// measured (#726), and this one asserts specific numbers.
 @Suite("The extrema doc snippet is runnable and its printed values are true (#636)")
 struct Issue636ExtremaDocSnippetTests {
     @Test("the snippet's API calls resolve and its stated values hold")

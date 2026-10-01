@@ -4,7 +4,9 @@ import simd
 
 @testable import OCCTSwift
 
-/// Regression cover for #477: `Curve3D.length` / `length(from:to:)` integrated arc length with
+/// Regression cover for #477, arc-length accuracy on multi-span curves.
+///
+/// `Curve3D.length` / `length(from:to:)` integrated arc length with
 /// `CPnts_AbscissaPoint::Length`, a single Gauss quadrature across the whole parameter domain.
 /// On a multi-span BSpline that is wrong by up to several percent with no error signalled.
 /// The bridge now uses `GCPnts_AbscissaPoint::Length`, which splits the curve at its `GeomAbs_CN`
@@ -22,9 +24,10 @@ struct Issue477ArcLengthAccuracyTests {
     // `CurveTestFixtures.swift` (#1259): this file's copy was byte-identical to
     // `Issue603SingleSpanQuadratureTests`'s.
 
-    /// 40 interpolated points with sharply varying speed (cubic acceleration in x) and a zigzag
-    /// in y, 39 `GeomAbs_CN` spans: the ordinary shape of an interpolated toolpath or an
-    /// imported spline. The old integrator was ~5% low on this curve.
+    /// A pathological multi-span fixture: 40 interpolated points, 39 `GeomAbs_CN` spans.
+    ///
+    /// Sharply varying speed (cubic acceleration in x) and a zigzag in y, the ordinary shape of
+    /// an interpolated toolpath or an imported spline. The old integrator was ~5% low on it.
     private func zigzagCurve() -> Curve3D? {
         var pts: [SIMD3<Double>] = []
         for i in 0..<40 {
@@ -38,9 +41,11 @@ struct Issue477ArcLengthAccuracyTests {
         return Curve3D.interpolate(points: pts)
     }
 
-    /// 60 interpolated points along three turns of a helix, 59 spans, smooth and constant-speed,
-    /// where the old integrator was only 3.9e-6 out relative. Included so the suite covers a
-    /// benign multi-span curve as well as a pathological one.
+    /// A benign multi-span fixture: 60 interpolated points along three turns of a helix.
+    ///
+    /// 59 spans, smooth and constant-speed, where the old integrator was only 3.9e-6 out
+    /// relative. Included so the suite covers a benign multi-span curve as well as a
+    /// pathological one.
     private func helixCurve() -> Curve3D? {
         var pts: [SIMD3<Double>] = []
         for i in 0..<60 {

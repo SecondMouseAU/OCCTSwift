@@ -4,7 +4,9 @@ import simd
 
 @testable import OCCTSwift
 
-/// #1513: `occtCPntsUniformDeflectionImpl` (`OCCTBridge_Curve3D_ArcLength.mm`, backing
+/// Regression cover for #1513, the CPnts uniform-deflection null-shape guard.
+///
+/// `occtCPntsUniformDeflectionImpl` (`OCCTBridge_Curve3D_ArcLength.mm`, backing
 /// `OCCTCPntsUniformDeflection`/`Range`) only guarded the wrapper pointer (`if (!shape) return
 /// false;`), never `occtShapeIsPresent(shape)` -- so `TopoDS::Edge(shape->shape)` handed a
 /// null-wrapping `OCCTShapeRef` a null `TopoDS_Shape`, and the immediately following

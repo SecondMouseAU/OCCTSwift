@@ -4,7 +4,9 @@ import simd
 
 @testable import OCCTSwift
 
-/// #853: `Shape.uniformAbscissa(distance:)` and `uniformAbscissa(distance:u1:u2:)` had no
+/// Regression cover for #853, the sample ceiling on the `distance:` overloads.
+///
+/// `Shape.uniformAbscissa(distance:)` and `uniformAbscissa(distance:u1:u2:)` had no
 /// ceiling at all. Their `pointCount:` siblings reject an unservable request through
 /// `Sampling.requested` before the bridge ever runs; the two `distance:` overloads had no
 /// caller-supplied count to check and sized their Swift allocation directly off whatever count

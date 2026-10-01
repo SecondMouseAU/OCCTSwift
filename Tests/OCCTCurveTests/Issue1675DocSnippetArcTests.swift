@@ -57,7 +57,8 @@ struct Issue1675DocSnippetArcTests {
         for cx in [10.0, 20.0] {
             let arc = try #require(
                 Curve3D.arcOfCircle(
-                    start: SIMD3(cx + 3, 0, 0), interior: SIMD3(cx, 3, 0), end: SIMD3(cx - 3, 0, 0)))
+                    start: SIMD3(cx + 3, 0, 0), interior: SIMD3(cx, 3, 0), end: SIMD3(cx - 3, 0, 0))
+            )
             let u = arc.domain.lowerBound
             let c = try #require(arc.centerOfCurvature(at: u))
             #expect(abs(c.x - cx) < 1e-9 && abs(c.y) < 1e-9 && abs(c.z) < 1e-9, "centre \(c)")
