@@ -62,6 +62,7 @@ See [`references/`](references/index.md): OpenCASCADE upstream and licensing (LG
 - [Static gates and censuses](policies/static-gates.md)
 - [Required status checks on main](policies/required-status-checks.md)
 - [Issue labels and project-board tracking](policies/issue-tracking.md)
+- [Lifting work off v5.0.0-766-execution](policies/v5-lift-and-shift.md)
 - [Code structure](policies/code-structure.md)
 - [CHANGELOG entries are written in the PR, not the diff](policies/changelog-on-merge.md)
 - [SemVer is assessed at release, not per PR](policies/semver-at-release.md)
