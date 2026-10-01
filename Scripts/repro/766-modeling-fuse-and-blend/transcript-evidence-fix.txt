@@ -1,0 +1,3 @@
+fuseBlendBoxes: produced=1 contours=0 type=compound faces=14 valid=1 volume=1499.9999999999993
+fuseBlendBoxCylinder: produced=1 contours=5 type=compound faces=14 valid=1 volume=5085.8656699868006
+cutBlend: produced=1 contours=5 type=compound faces=13 valid=1 volume=7796.5707029233081

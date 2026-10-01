@@ -1,7 +1,7 @@
 ---
 type: policy
 title: Lifting work off v5.0.0-766-execution
-description: The #766 execution branch is drained onto main by lifting each PR's work as a fresh PR, never by merging the branch. The delta is taken against the PR's own base, tests and probes cross while the evidence records stay, three screens triage what is worth lifting, and the batch ends by closing what it lifted.
+description: The #766 execution branch is drained onto main by lifting each PR's work as a fresh PR, never by merging the branch. The unit of the backlog is the path and the test inside it, never the open PR, because 84 percent of the available work is in PRs already merged into the branch. The delta is taken against the PR's own base, tests and probes cross while the evidence records stay, three screens triage what is worth lifting, and the batch ends by closing what it lifted.
 tags: [policy, process, v5, 766, lift, branches, agents]
 timestamp: 2026-10-01
 ---
@@ -14,6 +14,63 @@ fresh PR, in batches by domain. The branch ends when there is nothing left worth
 
 This page is the method. It existed only in issue bodies and in agent briefs regenerated per
 batch, which is how batch 1 lifted five PRs and closed none of them (#2909).
+
+## The unit is the path, not the open PR
+
+Six batches were steered by the count of **open** PRs targeting the branch, a number that fell
+through the programme and stood at 61 when #2937 measured it. It counts the wrong population.
+There are three populations and only one of them was ever being counted:
+
+| Population | PRs | tests `main` has weak that it has stronger | unique to it |
+|---|---|---|---|
+| merged into the branch | 403 | 1,210 | 1,206 |
+| open | 61 | 220 | 219 |
+| closed unmerged | 134, 104 heads alive | 109 | 4 |
+
+So **the backlog the programme worked is 15 percent of the work**, and the merged population,
+which nothing in the programme can see, is 84 percent of it. The two are near-disjoint by
+construction: an open PR's commits live on its own `exec/766-*` head and are not on the branch,
+while a merged PR's commits **are** the branch and appear in no open-PR list. #2271 was squash
+merged, so `git log --merges` does not list it either, and `check-766-already-landed.py` takes a
+PR number, so nothing would ever have pointed it at one. Its `HatchTests.swift` pins sat on the
+branch for as long as the programme ran.
+
+Measured the same day: of the 61 open PRs, **one** reaches any of the 1,210 merged gains, and the
+104 surviving closed-unmerged heads carry **four** gains that are nowhere else. Closed-unmerged is
+therefore almost empty, which shrinks the programme rather than growing it: most of those PRs are
+evidence-record corrections, and the records never cross (#2854).
+
+**The measurement, and the ranking it produces:**
+
+    python3 Scripts/census-766-unlifted-tests.py --prs-from <gh pr list dump> --top 40
+
+It takes every `Tests/**` and `Scripts/repro/766-*` path that differs between `main` and the
+branch, gives each the same blob verdict `check-766-already-landed.py` gives (imported, not
+restated), attributes it to the PR that put it there, and then tiers every `@Test` on both sides
+with `census-766-weak-assertions.py`'s detector. A **gain** is a test `main` has SEVERE or
+ESCAPABLE and the branch has better. That is the quantity to carve batches out of, because it is
+the quantity the programme exists to move.
+
+Attribution over the whole ranked list is unanimous: the 417 gainful paths trace to **218 distinct
+PRs and every one of them is merged**, with six paths unattributed because the difference is
+`main`'s own later work rather than a commit on the branch. Not one open or closed-unmerged PR
+appears.
+
+**Rank by gain, never by PR count.** Of 1,681 differing paths, 698 are probes `main` lacks, 254
+are `main`'s own later work, and 727 are test files present on both sides. Of those 727, **417
+have a gain and 310 have none**: `main` is already level or ahead there, and a path differing is
+not a path worth taking. Batch 6 met the reverse case too, where `main`'s `HatchTests.swift` was
+weaker than the v5 base by 25 lines belonging to a third PR. Read the file.
+
+**346 is not the remaining work, in either direction.** That is the commit count #2937 quotes,
+`git log --no-merges origin/v5.0.0-766-execution ^origin/main -- Tests/ Scripts/repro/`, and it
+counts commits by identity, including every one whose content `main` has already taken through a
+lift rewritten rather than copied. Measuring by content gives 417 paths and 1,210 tests, and both
+of those are the number to carve batches out of. The commit count answers nothing.
+
+Every count the census prints is a **lower** bound. Two tests that both tier clean can still
+differ, and #2937's own `islandsCutHoles` is one: the branch pins two exact half-spans `main` does
+not, and the detector scores both sides the same.
 
 ## The rules
 
@@ -45,6 +102,11 @@ already holds the branch's post-image. LANDED means stop and close the source. N
 read the per-file lines it prints, not lift unseen: containment is strict, so two comments `main`
 dropped are enough for DIFFERENT. Run it over the whole batch before any reading. It is a blob
 comparison and the script's docstring says what it cannot answer.
+
+It is **per candidate**, so it answers only about work somebody has already decided to look at.
+It cannot find work, and pointed at a PR number it cannot reach a merged one at all. Finding what
+a batch should contain is the census above, and the two are not alternatives: the census picks the
+paths, this screen clears the candidate.
 
 **5. Three screens triage what is left, and the first is a screen and not a verdict.**
 
@@ -84,6 +146,12 @@ commit on `main` that carries its work, so the record survives at the PR URL. "D
 recommend" produced a queue of recommendations nobody actioned and a backlog count the programme
 was steered by (#2909). Closing is the batch's last step, not the next batch's first.
 
+A merged source PR cannot be closed, so for the merged population the record goes in the lift PR
+body instead: name the source PR, and comment on it with the commit on `main` that carries its
+work. The branch is drained when the census reports no gain worth taking, not when the open-PR
+list empties: emptying that list would leave 84 percent of the work on a branch about to be
+dropped, which is the condition #2937 was filed to prevent.
+
 ## What the records' fate means for a finding about them
 
 A defect in an evidence record on `v5.0.0-766-execution` is **not** repaired there by default. The
@@ -104,6 +172,8 @@ channel.
 
 ## Related
 
+- [#2937](https://github.com/SecondMouseAU/OCCTSwift/issues/2937), the three populations and the
+  measurement, and `Scripts/census-766-unlifted-tests.py`, which is that measurement.
 - [#2854](https://github.com/SecondMouseAU/OCCTSwift/issues/2854), why the records stay.
 - [#2198](https://github.com/SecondMouseAU/OCCTSwift/issues/2198), the stub gate and the 72 percent.
 - [prove-the-test-fails](prove-the-test-fails.md), which every lift PR satisfies on `main`'s kernel
