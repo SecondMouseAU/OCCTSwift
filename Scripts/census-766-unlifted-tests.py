@@ -213,11 +213,11 @@ def test_labels(wa, path, text):
     """[(line_no, label)] for every `@Test` in the blob, each label unique within the file.
 
     The label is the enclosing type path and the function name, `StressShapeQueryTests.cylinder`,
-    because the function name alone does not identify a test. Nine names repeat across the fifteen
-    suites of `StressExhaustiveAPITests.swift`, twelve functions in all, so keying the tier map on
-    the name collapsed them and reported that file at 100 tests of its 112, with fewer weak tests
-    and fewer gains to match, and a gain attributable to whichever duplicate the detector reached
-    last (#2949).
+    because the function name alone does not identify a test. Twenty-one of the 112 `@Test`
+    functions in `StressExhaustiveAPITests.swift` share nine names across its fifteen suites, so
+    keying the tier map on the name collapsed them and reported that file at 100 tests, with
+    fewer weak tests and fewer gains to match, and a gain attributable to whichever duplicate the
+    detector reached last (#2949).
 
     What it cannot resolve: two `@Test` functions of the same name in the **same** type, which
     Swift allows as overloads. Those are suffixed `#2`, `#3` in source order, so the pairing
