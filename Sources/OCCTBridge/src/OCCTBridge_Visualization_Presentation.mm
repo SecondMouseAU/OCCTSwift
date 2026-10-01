@@ -1112,6 +1112,14 @@ bool OCCTShapeGetShadedMeshWithDrawer(OCCTShapeRef        shape,
   // drawer carrying a NaN coefficient or a NaN MaximalChordialDeviation still arrives here.
   if (!occtValidMeshDeflection(deflection))
     return false;
+  // #2900 names this site as a route for a caller's angle and it is not one, measured: unlike
+  // the deflection above, `angle` here cannot be NaN or negative however
+  // OCCTDrawerSetDeviationAngle was called. `Prs3d_Drawer::DeviationAngle()` is `myDeviationAngle >
+  // 0.0 ? myDeviationAngle : (link ? link->DeviationAngle() : 20 deg)`
+  // (`Prs3d_Drawer.hxx:243-248`), and `NaN > 0.0` is false, so the drawer answers 20 degrees for a
+  // NaN, a zero and a negative alike. A positive value below `Precision::Angular()` does reach
+  // initParameters, which throws, and the catch below already turns that into this function's
+  // `false`. So no occtValidMeshAngle call here: it could never be the difference.
 
   try
   {
@@ -1143,6 +1151,8 @@ bool OCCTShapeGetEdgeMeshWithDrawer(OCCTShapeRef shape, OCCTDrawerRef drawer, OC
   // as OCCTShapeGetShadedMeshWithDrawer above.
   if (!occtValidMeshDeflection(deflection))
     return false;
+  // #2900: `angle` needs no test here either, for the reason spelled out in
+  // OCCTShapeGetShadedMeshWithDrawer above.
 
   try
   {

@@ -1,0 +1,47 @@
+# Scripts/repro/2905/run.sh against the pinned v4.0.0-kernel.3 xcframework, 2026-10-01.
+# These are the values Tests/OCCTTopologyTests/BRepLibToolTriangulatedShapeTests.swift and
+# BRepLibExtendedTests.swift pin. See okf/references/known-occt-bugs.md and #2905.
+
+kernel: .build/artifacts/agent-a02609eb4321fea70/OCCT/OCCT.xcframework
+=== box ===
+shape = box
+  A after BRepMesh alone:      faces=6 meshed=6 withNormals=0 nodes=24
+  A ComputeNormals changed 6 face(s)
+  A after ComputeNormals:      faces=6 meshed=6 withNormals=6 nodes=24
+  A ComputeNormals again changed 0 face(s)
+  B after mesh+ComputeNormals: faces=6 meshed=6 withNormals=6 nodes=24
+  B ComputeNormals again changed 0 face(s)
+  C EnsureNormalConsistency(0.01) on B = 0
+  C EnsureNormalConsistency(0.01) on B, second call = 0
+  D after BRepMesh alone:      faces=6 meshed=6 withNormals=0 nodes=24
+  D EnsureNormalConsistency(0.01) = 1
+  D after EnsureNormalConsistency: faces=6 meshed=6 withNormals=6 nodes=24
+  D EnsureNormalConsistency(0.01), second call = 0
+=== cylinder ===
+shape = cylinder
+  A after BRepMesh alone:      faces=3 meshed=3 withNormals=0 nodes=130
+  A ComputeNormals changed 3 face(s)
+  A after ComputeNormals:      faces=3 meshed=3 withNormals=3 nodes=130
+  A ComputeNormals again changed 0 face(s)
+  B after mesh+ComputeNormals: faces=3 meshed=3 withNormals=3 nodes=130
+  B ComputeNormals again changed 0 face(s)
+  C EnsureNormalConsistency(0.01) on B = 1
+  C EnsureNormalConsistency(0.01) on B, second call = 1
+  D after BRepMesh alone:      faces=3 meshed=3 withNormals=0 nodes=130
+  D EnsureNormalConsistency(0.01) = 1
+  D after EnsureNormalConsistency: faces=3 meshed=3 withNormals=3 nodes=130
+  D EnsureNormalConsistency(0.01), second call = 1
+=== sphere ===
+shape = sphere
+  A after BRepMesh alone:      faces=1 meshed=1 withNormals=0 nodes=273
+  A ComputeNormals changed 1 face(s)
+  A after ComputeNormals:      faces=1 meshed=1 withNormals=1 nodes=273
+  A ComputeNormals again changed 0 face(s)
+  B after mesh+ComputeNormals: faces=1 meshed=1 withNormals=1 nodes=273
+  B ComputeNormals again changed 0 face(s)
+  C EnsureNormalConsistency(0.01) on B = 1
+  C EnsureNormalConsistency(0.01) on B, second call = 1
+  D after BRepMesh alone:      faces=1 meshed=1 withNormals=0 nodes=273
+  D EnsureNormalConsistency(0.01) = 1
+  D after EnsureNormalConsistency: faces=1 meshed=1 withNormals=1 nodes=273
+  D EnsureNormalConsistency(0.01), second call = 1

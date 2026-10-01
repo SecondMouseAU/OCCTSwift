@@ -1,0 +1,6 @@
+parallel lines 5 apart: done 1 parallel 1 sqdist(1) 25
+overlapping parallel segments: done 1 parallel 1 sqdist(1) 25
+disjoint parallel segments: done 1 parallel 0 NbExt 1 | dist 11.1803399
+skew lines: done 1 parallel 0 NbExt 1 | dist 1
+box edge [0, 10] by distance 3: done 1 NbPoints 5
+box edge [0, 1] by distance 0.2: done 1 NbPoints 6

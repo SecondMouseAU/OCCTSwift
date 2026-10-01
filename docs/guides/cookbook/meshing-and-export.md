@@ -31,7 +31,9 @@ mesh.indices              // [UInt32], every 3 = one triangle
 `BRepMesh_IncrementalMesh` stores no node normals, so `normals` is computed at mesh time by
 `BRepLib_ToolTriangulatedShape::ComputeNormals`, the same call `StdPrs_ShadedShape` makes before
 shading: from the surface itself where the triangulation has UV nodes, and from the average of the
-incident triangle normals where it does not. Before #2337 every entry was `(0, 0, 1)`.
+incident triangle normals where it does not. Before #2337 every entry was `(0, 0, 1)`. That call
+writes the normals onto the shape's own triangulation as well as into the `Mesh`, so
+`Shape.computeNormals()` has nothing left to do afterwards and reports `0` (#2905).
 
 The `Mesh` also exposes `boundingBox`, `size`, `center`, raw interleaved `vertexData`/`normalData`
 (ready for a GPU buffer), and `trianglesWithFaces()`, per-triangle access that carries the **source
@@ -78,6 +80,31 @@ cyl.edgeMesh(deflection: .nan)        // nil
 A *small* deflection is expensive rather than invalid and is not refused. On a radius-10 cylinder,
 measured against the pinned kernel: `1e-4` meshes in about a second, `1e-5` in five, `1e-6` in
 seventy and the floor itself, `1e-7`, in ninety, at 88,862 nodes. Choose the number for the job.
+
+### The angular floor
+
+The **angular** deflection beside it has its own floor, **`1e-12`**, OCCT's `Precision::Angular()`,
+and the same hole: `initParameters` tests it with `Angle < Precision::Angular()`, which NaN passes.
+Zero, negative and sub-floor values already threw and came back as `nil`; NaN did not. It neither
+threw nor hung. It returned a mesh, built as though there were no angular criterion at all, because
+every comparison against NaN is false.
+
+Measured on a radius-10 cylinder at a linear deflection of `10.0`, where the angle is the criterion
+that decides the tessellation (`Scripts/repro/2900/`): `0.05` and `0.2` give 254 nodes, `0.5` gives
+106, `1.0` gives 54, and NaN gives **18**, with `IsDone()` true and no status flag. So it is
+refused for the same reason the linear value is, and the refusal is the same `nil`.
+
+```swift
+let cyl = Shape.cylinder(radius: 10, height: 5)!
+cyl.mesh(linearDeflection: 0.1, angularDeflection: .nan)   // nil
+cyl.mesh(linearDeflection: 0.1, angularDeflection: 0)      // nil
+cyl.mesh(linearDeflection: 0.1, angularDeflection: 0.5)    // a mesh
+```
+
+`MeshParameters.angleInterior` needs no floor of its own: `0` means "use `angle`", and OCCT
+replaces anything below the floor with `2 x angle`. Nor does a `DisplayDrawer`:
+`Prs3d_Drawer::DeviationAngle()` answers 20 degrees for any value that is not positive, NaN
+included, so a degenerate angle set on a drawer never reaches the mesher.
 
 ## Mesh → shape
 

@@ -26,6 +26,9 @@ public struct MeshParameters: Sendable {
     public var deflection: Double
 
     /// Angular deflection for boundary edges (radians).
+    ///
+    /// Floored at `1e-12`, OCCT's `Precision::Angular()`. A value below it, a negative one or NaN
+    /// makes ``Shape/mesh(parameters:)`` return `nil` rather than mesh (#2900).
     public var angle: Double
 
     /// Linear deflection for face interior (0 = same as deflection).

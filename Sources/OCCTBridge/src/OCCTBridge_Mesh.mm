@@ -98,8 +98,9 @@ namespace
 // what keeps the fix from having to be made twice.
 //
 // Computing node normals is the *consumer's* job in OCCT, not the mesher's.
-// BRepMesh_IncrementalMesh never stores them, so HasNormals() is false for every face it meshes,
-// and each OCCT caller that wants them computes them at the point of use:
+// BRepMesh_IncrementalMesh never stores them, so HasNormals() is false for every face it meshes
+// and nothing else has touched (measured, Scripts/repro/2905/), and each OCCT caller that wants
+// them computes them at the point of use:
 //
 //   - StdPrs_ShadedShape.cxx:186, the production shaded-display path, calls
 //     StdPrs_ToolTriangulatedShape::ComputeNormals(aFace, aT) immediately before reading
@@ -117,6 +118,12 @@ namespace
 //
 // ComputeNormals is a no-op on a triangulation that already carries normals, so a shape meshed
 // elsewhere, or one OCCTBRepLibComputeNormals has already run over, keeps the normals it has.
+//
+// It is also a WRITE, not a read: it calls theTris->AddNormals() on the handle
+// BRep_Tool::Triangulation hands back, so this loop mutates the shape it is reading. That is what
+// StdPrs_ShadedShape does too, and it is why OCCTBRepLibComputeNormals now reports a count of
+// faces it changed rather than a boolean that was true the moment a triangulation existed: after
+// this call there is nothing left for it to do on any shape that came through here (#2905).
 void occtAppendFaceTriangulation(OCCTMesh* mesh, const TopoDS_Face& face, int32_t faceIndex)
 {
   TopLoc_Location            location;
@@ -236,6 +243,11 @@ OCCTMeshRef OCCTShapeCreateMesh(OCCTShapeRef shape,
   // mesh.
   if (!occtValidMeshDeflection(linearDeflection))
     return nullptr;
+  // #2900: the angular half of the same precondition, same refusal. A NaN angle does not throw
+  // from initParameters and does not hang; it returns the coarsest mesh the linear rule alone
+  // accepts, as a measurement of the shape.
+  if (!occtValidMeshAngle(angularDeflection))
+    return nullptr;
 
   occtEnsureSignals();
   OCCTMesh* mesh = nullptr;
@@ -294,6 +306,10 @@ OCCTMeshRef OCCTShapeCreateMeshWithParams(OCCTShapeRef shape, OCCTMeshParameters
   // `deflectionInterior` reaches IMeshTools_Parameters only through `> 0`, which NaN fails, and
   // initParameters replaces an interior value below the floor with this one.
   if (!occtValidMeshDeflection(params.deflection))
+    return nullptr;
+  // #2900: the angular half, and `angleInterior` needs no test of its own for the same reason
+  // `deflectionInterior` does not. See occtValidMeshAngle for the measurement behind that.
+  if (!occtValidMeshAngle(params.angle))
     return nullptr;
 
   OCCTMesh* mesh = nullptr;
@@ -956,31 +972,50 @@ bool OCCTDeflectionIsConsistent(double current, double required, bool allowDecre
 // MARK: - BRepLib_ToolTriangulatedShape Compute Normals (v0.62)
 // --- BRepLib_ToolTriangulatedShape ---
 
-bool OCCTBRepLibComputeNormals(OCCTShapeRef shape)
+// #2905: report what the call DID, per face, rather than what it found.
+//
+// `BRepLib_ToolTriangulatedShape::ComputeNormals` returns `void`, and every one of OCCT's own
+// callers treats it as an unconditional idempotent ensure immediately before reading
+// `Normal(i)`: StdPrs_ShadedShape.cxx:186, IVtkOCC_ShapeMesher.cxx:73,
+// BRepLib_PointCloudShape.cxx:257, and (through Poly::ComputeNormals, the no-surface sibling)
+// VrmlData_IndexedFaceSet.cxx:240. None of them branches on whether work was done, so OCCT offers
+// no verdict to copy here and the boolean this function used to return had no OCCT contract
+// behind it at all. What it had instead was `true` for every non-null triangulation, which after
+// #2337 made `Shape.computeNormals()` a call that cannot report anything but success.
+//
+// The one signal OCCT itself distinguishes is per-triangulation `HasNormals()`, which
+// TopoDSToStep_MakeTessellatedItem.cxx:56 tests for itself before calling
+// (`if (!theMesh->HasNormals()) Poly::ComputeNormals(theMesh);`). So that is what this counts:
+// the faces for which that test would have said yes, measured either side of the call rather than
+// assumed. Ground truth in Scripts/repro/2905/: a box meshed by BRepMesh alone reports 6, a second
+// call on the same box reports 0, and a box that came through OCCTShapeCreateMesh reports 0 on the
+// first call.
+int32_t OCCTBRepLibComputeNormals(OCCTShapeRef shape)
 {
-  if (!shape)
-    return false;
+  if (!occtShapeIsPresent(shape))
+    return -1;
   try
   {
-    bool            computedAny = false;
+    int32_t         computed = 0;
     TopExp_Explorer exp(shape->shape, TopAbs_FACE);
     for (; exp.More(); exp.Next())
     {
       TopoDS_Face                face = TopoDS::Face(exp.Current());
       TopLoc_Location            loc;
       Handle(Poly_Triangulation) tri = BRep_Tool::Triangulation(face, loc);
-      if (!tri.IsNull())
-      {
-        BRepLib_ToolTriangulatedShape::ComputeNormals(face, tri);
-        computedAny = true;
-      }
+      if (tri.IsNull())
+        continue;
+      const bool hadNormals = tri->HasNormals();
+      BRepLib_ToolTriangulatedShape::ComputeNormals(face, tri);
+      if (!hadNormals && tri->HasNormals())
+        ++computed;
     }
-    return computedAny;
+    return computed;
   }
   catch (...)
   {
     occtRecordCaughtException(__func__);
-    return false;
+    return -1;
   }
 }
 
