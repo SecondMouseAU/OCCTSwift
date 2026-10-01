@@ -104,6 +104,19 @@ BUILD_ARGS=(
 )
 
 build() {
+    # THE TEST PRODUCTS ARE DELETED FIRST, AND THIS IS NOT BELT AND BRACES. Swift Build does not
+    # re-plan when a target's `exclude:` list changes: the archive is rebuilt, with a fresh mtime and
+    # an identical size, still containing the excluded file's symbols. Measured twice, the second
+    # time after the first had already been written down in `Scripts/repro/2793/README.md`: the
+    # manifest listed `Issue612FilletContourSelectionTests.swift` as excluded while
+    # `libOCCTModelingTests.a` still held 256 of its symbols, so the suite kept trapping on a test
+    # that was supposed to be gone.
+    #
+    # Deleting them costs the same two minutes the build already costs, and CI builds clean anyway,
+    # so the only thing this changes is that a local run cannot silently test a stale exclusion set.
+    local products
+    products="$(bin_path)"
+    rm -rf "$products"/libOCCT*Tests.a "$products"/*-test-runner.wasm
     echo ">>> building the wasm test runners"
     OCCTSWIFT_WASI=1 "$SWIFT" build "${BUILD_ARGS[@]}"
 }
