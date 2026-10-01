@@ -429,6 +429,38 @@ std::mutex& tobjApplicationMutex();
 // over-release.
 std::atomic<int>& tobjApplicationBorrowCount();
 
+// === #2952: the borrow registry for bridge-owned Standard_Transient objects ===
+//
+// Definitions live in OCCTBridge.mm, non-static so every per-area TU shares one registry.
+//
+// A bridge function that hands a caller a raw `Standard_Transient*` and takes one
+// IncrementRefCounter() for it (OCCTMessengerCreate, OCCTReportCreate) records the pointer here,
+// and the matching release gives it back. The release then acts on the object only when the
+// registry says this bridge actually handed that pointer out and has not already taken it back.
+//
+// Without that check the release is not merely wrong, it is a use-after-free and a double free in
+// the same call. These objects have no process-wide static holding a reference the way
+// TObj_Application does (#2897), so the FIRST release already drops the count to zero and
+// deletes; a second one reads GetRefCount() out of freed memory and may delete it again. #2897 is
+// the same mistake with the slower ending, and it cost a SIGSEGV on Apple and an
+// `indirect call type mismatch` on wasm about 660 test lines from its cause.
+//
+// Keyed on the address, and type-agnostic on purpose: the addresses of two live objects are
+// always distinct, so one registry serves every adopter, and a pointer the allocator later
+// recycles is registered again by whichever create returned it. What it does NOT check is that
+// the pointer is being released as the type it was created as; releasing a messenger through
+// OCCTReportRelease was already undefined through the static_cast and is not what this guards.
+//
+// A set rather than tobjApplicationBorrowCount()'s single counter above, because that object is
+// one process-wide singleton and these are per-caller: with N messengers alive, a bare count of N
+// would let a double release of one consume another's borrow and delete a live object.
+//
+// occtBorrowRegister returns false if the pointer is null or already registered.
+// occtBorrowGiveBack returns true only for a pointer that was registered, removing it; every
+// false, null included, is counted by OCCTBridgeRefusedReleaseCount.
+bool occtBorrowRegister(const void* theObject);
+bool occtBorrowGiveBack(const void* theObject);
+
 // === OCCT signal handling ===
 //
 // Installs OCCT's signal handlers (OSD::SetSignal) once, process-wide, so an OS signal raised

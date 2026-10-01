@@ -362,6 +362,10 @@ OCCTMessengerRef OCCTMessengerCreate()
     if (msg.IsNull())
       return nullptr;
     msg->IncrementRefCounter();
+    // #2952: record the reference this bridge just took, so OCCTMessengerRelease can tell a release
+    // it owes from one it does not. After IncrementRefCounter, never before; see
+    // OCCTBridge_Internal.h.
+    occtBorrowRegister(msg.get());
     return msg.get();
   }
   catch (...)
@@ -373,6 +377,17 @@ OCCTMessengerRef OCCTMessengerCreate()
 
 void OCCTMessengerRelease(OCCTMessengerRef messenger)
 {
+  // #2952: give back a reference this bridge actually took, and nothing else. A null, a second
+  // release of the same pointer, or a pointer OCCTMessengerCreate never returned is refused here
+  // and counted by OCCTBridgeRefusedReleaseCount. `_Nonnull` on the declaration is a promise the
+  // compiler does not enforce, and OCCTBridge is reachable to a consumer (#967), so the null
+  // does arrive. Unlike OCCTTObjApplicationRelease (#2897) there is no process-wide static
+  // holding a reference to absorb an over-release: the first release already drops the count to
+  // zero and deletes, so a second one reads GetRefCount() out of freed memory and may delete it
+  // again. This one guard covers both cases because a null is never registered.
+  if (!occtBorrowGiveBack(messenger))
+    return;
+
   try
   {
     auto* m = static_cast<Message_Messenger*>(messenger);
@@ -453,6 +468,10 @@ OCCTReportRef OCCTReportCreate()
     if (report.IsNull())
       return nullptr;
     report->IncrementRefCounter();
+    // #2952: record the reference this bridge just took, so OCCTReportRelease can tell a release
+    // it owes from one it does not. After IncrementRefCounter, never before; see
+    // OCCTBridge_Internal.h.
+    occtBorrowRegister(report.get());
     return report.get();
   }
   catch (...)
@@ -464,6 +483,10 @@ OCCTReportRef OCCTReportCreate()
 
 void OCCTReportRelease(OCCTReportRef report)
 {
+  // #2952: the OCCTMessengerRelease guard above, for the same reasons. See OCCTBridge_Internal.h.
+  if (!occtBorrowGiveBack(report))
+    return;
+
   try
   {
     auto* r = static_cast<Message_Report*>(report);
