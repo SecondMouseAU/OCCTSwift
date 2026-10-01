@@ -18,12 +18,13 @@ batch, which is how batch 1 lifted five PRs and closed none of them (#2909).
 ## The rules
 
 **1. Take the delta against the PR's own base, never against `main`.** An execution PR's merge-base
-with `v5.0.0-766-execution` is its own branch point, usually `f01eebc8`; `main`'s merge-base with
-the same head is older, and a delta taken there drags in the epic. Every lift PR body states the
-merge-base it used.
+with `v5.0.0-766-execution` is its own branch point, which every batch so far has measured as the
+same commit; `main`'s merge-base with the same head is older, and a delta taken there drags in the
+epic. Measure it, do not copy the hash out of a previous batch, and state it in the lift PR body.
 
 **2. Never merge or cherry-pick an `exec/766-*` branch.** The work is applied by hand onto `main`.
-The branch is 492 commits ahead and carries a tree `main` has decided not to take.
+The branch is several hundred commits ahead (492 when #2854 measured it) and carries a tree `main`
+has decided not to take.
 
 **3. What crosses and what stays.** Tests cross. `Scripts/repro/766-*` probes and transcripts
 cross, with the probe compiled and its transcript committed. The

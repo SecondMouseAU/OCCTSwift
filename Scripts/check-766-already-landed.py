@@ -42,6 +42,11 @@ It is a blob comparison and it is meant to be cheap: four `git` invocations per 
 `gh pr view` when the candidate is a number. All 62 open execution PRs screen in 45 s, almost all
 of it the `gh` round trips.
 
+**`git` is the only hard dependency.** A PR-number candidate also needs an authenticated `gh`, to
+read that PR's own head and base; `--branch` and `--ref` need neither, and are what to use where
+`gh` is unavailable. Every ref it reads must be fetched: an unresolvable one is exit 2 naming
+`git fetch origin`, never a verdict.
+
 **The two verdicts are not symmetric, deliberately.** LANDED is a stop: nothing is left to copy,
 so do not lift and close the source instead. NOT-LANDED is "read the lines below", not "lift it":
 the containment test is strict, so `main` dropping a single comment is enough for DIFFERENT. That
@@ -153,7 +158,10 @@ def pr_candidate(number, default_base):
 
 
 def delta_paths(root, merge_base, head):
-    """Every path the branch touched, post-image paths included, deletions included."""
+    """Every path the branch touched, post-image paths included, deletions included.
+
+    `--no-renames` is what makes "every path" true: a rename then lists both the old path, as a
+    deletion, and the new one, so neither side of it goes unscreened."""
     out = git(root, "diff", "--name-only", "--no-renames", "-z", merge_base, head)
     return [p for p in out.split("\0") if p]
 
@@ -303,10 +311,12 @@ def run(args):
     cands = []
     for n in args.prs:
         cands.append(pr_candidate(n, args.base))
+    # The label is the whole branch or ref. Truncating it collided: two exec branches in one
+    # domain share their first nine characters, and the report would name them both the same.
     for b in args.branch:
-        cands.append({"label": b.split("/")[-1][:9], "head_name": b, "base": args.base})
+        cands.append({"label": b, "head_name": b, "base": args.base})
     for b in args.ref:
-        cands.append({"label": b[:9], "head_ref": b, "base": args.base})
+        cands.append({"label": b, "head_ref": b, "base": args.base})
     if not cands:
         raise Refusal("no candidates: give PR numbers, --branch or --ref")
     exclude = () if args.all_paths else NEVER_CROSSES
