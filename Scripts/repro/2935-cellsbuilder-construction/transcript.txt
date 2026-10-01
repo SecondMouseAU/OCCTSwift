@@ -1,0 +1,3 @@
+createCellsBuilder: hasErrors=0
+createCellsBuilder GetAllParts: null=0 valid=1 solids=2 faces=13 volume=16000
+createCellsBuilder Shape before any AddToResult: null=0 valid=1 solids=0 faces=0 volume=0
