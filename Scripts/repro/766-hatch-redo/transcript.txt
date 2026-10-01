@@ -1,0 +1,9 @@
+horizontalHatch: segments=5 totalLength=50
+diagonalHatch: segments=9 totalLength=67.279220613578545
+emptyBoundary (unguarded kernel path): segments=0 totalLength=0
+emptyBoundary + island (unguarded kernel path): segments=3 totalLength=18
+triangleBoundary: segments=9 totalLength=45
+islandsCutHoles: segments=13 totalLength=182
+  y=10 segment: (-0, 10) -> (7, 10)
+  y=10 segment: (13, 10) -> (20, 10)
+islandsCutHoles without island trim: segments=10 totalLength=200
