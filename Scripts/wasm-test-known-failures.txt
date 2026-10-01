@@ -70,3 +70,16 @@ offsetTiltedMatchesPriorBaseline()  # exact-equality baseline vs a different lib
 # Listed and not excluded, because it is a wrong answer rather than a trap: the suite reports it and
 # carries on, which is what this list is for.
 "Varying the tolerance changes the G3 result"  # 2926
+
+# --- #2929: BRepCheck does not fault a cleared SameParameter flag ------------------------------
+# `BRepLibExtendedTests."Same parameter all"` clears edge 0's SameParameter flag on a box and expects
+# BRepCheck to fault it. On Apple it does; here the box still reads valid, so the assertion that
+# fails is the one proving the fixture is genuinely broken rather than the one testing the subject.
+# Without that assertion the test would pass VACUOUSLY on wasm, which is the blind-test shape #2904
+# was filed to remove: the test is doing its job and the kernel behaviour underneath differs.
+#
+# Two causes are open and the issue names the single measurement that separates them: the flag write
+# not taking effect, or BRepCheck_Analyzer not faulting the flag/geometry mismatch. The second would
+# make every flag-based validity verdict on wasm suspect, and `Shape.isValid` is on the path every
+# IGES export takes through `Exporter.validateExportInputs`, so it wants a sweep rather than a fix.
+"Same parameter all"  # 2929
