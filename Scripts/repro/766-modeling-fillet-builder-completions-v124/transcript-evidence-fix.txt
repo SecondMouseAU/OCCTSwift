@@ -1,0 +1,6 @@
+filletContourAccess: contour=1 contourCount=1 edgeCount=1
+filletEdgeVertexQueries: edgeSameAsInput=true firstVertex=[-5,-5,-5] lastVertex=[-5,-5,5] abscissa(first)=0 relativeAbscissa(first)=0 abscissa(last)=10 relativeAbscissa(last)=1
+filletClosedAndTangent: closed=false closedAndTangent=false
+filletSurfaces: done=true surfaceCount=2
+filletSetRadius: setRadius=true setTwoRadii=true builtAfter=true
+filletStripeAndFaulty: stripeStatus=0 computedSurfaceCount=1 faultyContours=0 faultyVertices=0

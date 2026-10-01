@@ -1,0 +1,6 @@
+boxAAG: faces=6 adjacentPairs=12
+aagNodeNormals: faces=6 normalDefined=6 planar=6 normals=[[-1,0,0],[1,0,0],[0,-1,0],[0,1,0],[0,0,-1],[0,0,1]]
+aagNeighbors: degrees=[4,4,4,4,4,4]
+aagEdgeBetween: adjacentPairs=12 sharedEdgesPerAdjacentPair=[1,1,1,1,1,1,1,1,1,1,1,1]
+detectPocket: done=1 boxVolume=7999.9999999999982 resultVolume=6999.9999999999982 faces=11 concavePairs=8 convexPairs=16
+convexConcaveNeighbors: fillet.done=1 plainConvex=12 filletedFaces=26 filletedAdjacentPairs=48 filletedConvex=0 filletedConcave=0 filletedSmooth=48
