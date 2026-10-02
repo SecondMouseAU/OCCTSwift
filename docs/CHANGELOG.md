@@ -63,6 +63,31 @@ the caller; not a kernel defect, and both answers are now pinned with the rule b
 - Also filed, not fixed: #3011, `Geom_BezierSurface`'s insert-pole entry points carry no
   `MaxDegree` bound and four of its accessors index a fixed 26-element table by pole count.
 
+### Seventeen CHANGELOG entries the report named all along are recovered, and the merge tool stops splicing a presentation fence (#2962, #2963)
+
+Seventeen merges between 2026-09-07 and 2026-09-29 landed with a `## CHANGELOG entry` section in
+the PR body that nobody transcribed into `docs/CHANGELOG.md`. Unlike the nine of #2951 and the
+sixteen of #2957, no detector was blind to these: every one carries a descriptive, issue-numbered
+heading, so the backstop report named them correctly for as long as each was absent and nothing
+acted on it. All seventeen are restored verbatim from their PR bodies, in merge order. They include
+`Shape.glue` using `BOPAlgo_GlueShift` where it should use `BOPAlgo_GlueFull` (#2749),
+`GeomDirection` returning NaN components rather than refusing a vector it cannot normalise (#2331),
+`Face.volumeInertia` and `Shape.vinertGK` measuring the untrimmed surface of a trimmed face
+(#2806), `faceFaceExtrema` fabricating witness points for parallel faces (#2249),
+`convertSurfacesToBezier` always returning nil (#2732), and the `v4.0.0-kernel.2` repin itself
+(#2782).
+
+`Scripts/merge-pr.py` gains the two fixes those recoveries found in it. An entry wrapped whole in a
+bare fence to present it as literal markdown is now refused, with the correction printed, rather
+than spliced fence and all so that the release record renders it as a code block; four of the
+entries recovered in PR #2961 have that shape, and
+`okf/policies/changelog-on-merge.md`'s own worked example, which is where it comes from, now says
+the fence around it is display. And the duplicate test no longer compares the entry's first
+substantive line, which is a bucket heading or a fence often enough that it reported all sixteen of
+#2957's entries as already present while they were absent. It compares the first line that is
+neither fenced nor a bare category heading, and refuses an entry that has no such line at all
+rather than guessing.
+
 ### `census-766-weak-assertions.py` saw none of three defects, and all three hid weak tests (#2982, #2985, #2964)
 
 The #766 programme's detector under-reported three ways at once, and because every figure the
@@ -94,6 +119,326 @@ because the branch's own versions carry the multi-line `guard` too.
 corrected figures, and the script gains a `WHAT IT CANNOT SEE` section recording the one shape
 left uncaught on purpose: a threshold a correct answer clears by a whole unit, which no static
 shape can reach without also reaching every tolerance comparison.
+
+### Read the `booleans` family of #1399's unlaned refman-coverage lane ([#1399](https://github.com/SecondMouseAU/OCCTSwift/issues/1399))
+
+31 OCCT classes with real bridge presence that sit in no #807 lane's table and that no claim
+`census-doc-occt-attribution.py` parses, given one verdict each with the evidence in
+`Scripts/repro/1399-refman-coverage-unlaned/family-booleans.md`: 19 `ok`, 6 `deliberate, recorded`,
+1 `under`, 5 `over`. Six findings, measured against the pinned 8.0.1 kernel by
+`Scripts/repro/1399-refman-coverage-unlaned/probe_booleans.mm` (transcript committed beside it).
+
+Four of the six are behaviour, and are filed rather than changed here:
+[#1631](https://github.com/SecondMouseAU/OCCTSwift/issues/1631)
+(`Shape.edgeFaceIntersection(with:)` returns an empty array for every input, because
+`OCCTIntToolsEdgeFace` never calls `IntTools_EdgeFace::SetRange` and `IntTools_Range`'s default is
+`(0, 0)`),
+[#1632](https://github.com/SecondMouseAU/OCCTSwift/issues/1632)
+(`ExtremaElSS.planeToSphere` and `sphereToSphere` always return `[]`, because
+`Extrema_ExtElSS::Perform` is `throw Standard_NotImplemented();` for both pairs in OCCT itself, and
+`planeToPlane` answers only its parallel case with zeroed points),
+[#1633](https://github.com/SecondMouseAU/OCCTSwift/issues/1633)
+(`Curve3D.minimumDistance(from:)` and `extrema` report interior extrema only, so a point past the
+end of a bounded curve gets `nil` rather than the distance to the nearer endpoint), and
+[#1635](https://github.com/SecondMouseAU/OCCTSwift/issues/1635)
+(`ContapContourResult` has no reachable geometry for an analytic silhouette).
+
+The documentation corrections in this change:
+
+- `docs/reference/Curve3D-Analysis.md` attributed `Curve3D.extrema(from:)`,
+  `extrema(from:uMin:uMax:)` and `minimumDistance(from:)` to `Extrema_ExtPC` at six sites, one of
+  them "with bounded `GeomAdaptor_Curve`". The bridge constructs `ExtremaPC_Curve` from the
+  `Geom_Curve` handle and builds no adaptor. The three entries now name the real class and state
+  that the solve reports interior extrema only.
+- `Shape.FilletSurfaceInfo.startStatus`/`endStatus` were documented as
+  "(0 = ok, 1 = not ok, 2 = partial)", which is `FilletSurf_StatusDone`, the enum on the sibling
+  `FilletSurfaceResult.status`. They carry `FilletSurf_StatusType`, whose ordinals are
+  `TwoExtremityOnEdge`/`OneExtremityOnEdge`/`NoExtremityOnEdge`. `OCCTBridge_Modeling.h`'s own
+  field comment had the first two transposed and wrote "OnFace" for OCCT's "OnEdge".
+  `firstParameter`/`lastParameter` were undocumented, and come from `FirstParameter()`/
+  `LastParameter()`, which take no surface index, so the same pair is repeated into every element.
+- `Shape.CommonPart.param2Range` was documented as the parameter range "on the second edge". From
+  `edgeFaceIntersection(with:)` there is no second edge and the value is always `(0, 0)`:
+  `IntTools_EdgeFace` never calls `AppendRange2` or `SetVertexParameter2`, so `Ranges2()` is empty
+  and `VertexParameter2()` is the `0.0` its constructor set.
+- `ContapContourResult.pointCount(line:)`, `point(line:index:)` and `points(line:)` answer for
+  `.walking` contours only. `Contap_Line::NbPnts()` and `Point(Index)` throw
+  `Standard_DomainError` on any other type, so an analytic silhouette (a cylinder's two tangent
+  rulings, the common case) reports `0` points and `point(line:index:)` hands back
+  `SIMD3(0, 0, 0)`, a zero rather than a measurement.
+- `QuadricIntersection.coneSphere` was attributed to `IntAna_QuadQuadGeo`. The bridge builds an
+  `IntAna_Quadric` from the sphere and runs `IntAna_IntQuadQuad`.
+- `Shape.polygonInterference(poly1:poly2:)` and `polygonSelfInterference(polygon:)` cap their
+  output at 100 points and truncate silently, which is now stated as the sibling
+  `Curve2D.intersections(with:)` already states its own 128.
+
+The pass also adjudicated `census-doc-occt-attribution.py`'s own boolean and extrema findings,
+which are parsed on every run and had never been read. The census reported **431** findings at this
+branch's base commit and reports **421** here, with no new findings added: beyond the two above, it
+had been reporting that `Curve3D.projectPointAll` is `GeomAPI_ProjectPointOnCurve` rather than
+`GeomAPI_ExtremaCurveCurve`/`Extrema_ExtPC`, that `Surface.locateNearestPoint` is
+`Extrema_GenLocateExtPS` rather than the global `Extrema_ExtPS`, and that `Shape.split(by:)` and
+`split(atPlane:normal:)` run `BRepAlgoAPI_Splitter` rather than its base class
+`BRepAlgoAPI_BuilderAlgo`, which is General Fuse and returns a compound of split parts rather than
+splitting arguments by tools.
+
+### Carried patch `0035`: `STEPControl_Writer` stops re-initialising the shared actor per transfer (#1403)
+
+`STEPControl_Writer::Transfer` called `InitializeMissingParameters()` on every transfer, which writes
+through to the process-shared `STEPControl_ActorWrite`. Upstream removed that call in
+[OCCT#1259](https://github.com/Open-Cascade-SAS/OCCT/pull/1259); this backports the one line of that
+PR the pinned kernel lacks, byte-identical to upstream's change.
+
+The call is nearly inert in the default path, because the controller's constructor already populates
+both fields its guards test, so it matters only for a caller that has customised shape-fix
+parameters while another thread writes. It is **not** the fix for #1403's residual data-exchange
+races, which are measured separately and sit in `IFSelect_WorkSession`'s `errhand` global and the
+shared write actor. Not in the pinned asset, so nothing changes for consumers until a rebuild.
+
+`check-inventory-prose.py` also grows three claims and one structural check it was blind to, after
+adding `0034` left three prose statements stale that the gate reported clean.
+
+### The three repin-due mitigations are retired (#1030, #603, #1515)
+
+The pinned kernel carries every carried patch as of `v4.0.0-kernel.1`, so three bridge-side workarounds for kernel defects are gone. `Document.datum(at:)`, the five datum mutators, `dimTolToolToleranceCount` and `rescaleGeometry` no longer refuse a datum carrying an annotation point with no annotation plane: patch `0029` makes it readable, and the guard was blocking a datum a caller can have. The bridge-side arc-length subdivision is removed as redundant against patch `0021`, measured inert across the full suite. `Shape.coonsAlgPatch` loses its warning and gains the test that patch `0034` made possible, asserting the bilinear surface a flat square's Coons patch must produce.
+
+### `Shape.glue` uses `BOPAlgo_GlueFull`, not `BOPAlgo_GlueShift` (#2749)
+
+`OCCTShapeGlue` now sets `BOPAlgo_GlueFull` rather than `BOPAlgo_GlueShift`, OCCT's option for
+fully coincident faces, which is the case `Shape.glue` exists to serve
+(`BOPAlgo_GlueShift` is documented for partially coincident faces that need splitting).
+`Scripts/repro/2749-glue-mode-choice/` measured both modes across five fixtures: identical
+results on every one (including a non-coincident input and a genuine partial-overlap input), and
+`GlueFull` measurably faster once a fixture was large enough to move past scheduler noise. Depends
+on #2740's fix to #2735, which made `OCCTShapeGlue` reach its glue-mode path at all.
+
+### `convertCurves3dToBezier`: circleMode alone leaves circles unconverted, documented and tested (#2748)
+
+`Shape.convertCurves3dToBezier(circleMode: true, conicMode: false)` converts none of a shape's circular edges, even though `circleMode` names exactly that curve kind, and returns the unconverted shape rather than `nil`. Read from `ShapeUpgrade_ConvertCurve3dToBezier::Compute()` in a same-tag OCCT 8.0.1 source checkout, not from recall: `Geom_Circle` is a subtype of `Geom_Conic`, so the kernel's own skip test treats a circle as an unwanted conic whenever `conicMode` is false, whatever `circleMode` says. Circle conversion needs **both** `circleMode` and `conicMode` true; `circleMode` alone can only exclude circles from an already-enabled conic pass, never independently include them. This is `ShapeUpgrade`'s own behavior, not a bridge defect, and is now documented on `Shape.convertCurves3dToBezier`, `docs/reference/Shape-Builders-2.md`, and `okf/references/known-occt-bugs.md`'s "Not a bug" table, with regression tests proving both the no-op and the two-flags-together conversion (`Scripts/repro/2748-bezier-circle-mode/`). Layered on top of #2743 (#2732): the master switch `Set3dConversion(true)` this PR also sets on `OCCTShapeUpgradeConvertCurves3dToBezier` is the same one line #2743 adds, carried here only so this fix's own tests could run.
+
+### `Document.createLabel()` no longer returns an existing XCAFDoc_DocumentTool label (#2730)
+
+On an XCAF document, `Document.createLabel()`'s first two calls used to return the existing
+`XCAFDoc_ShapeTool`/`XCAFDoc_ColorTool` labels (each already holding two attributes) instead of a
+new one, and the next two returned the tags `XCAFDoc_DocumentTool` later uses for its Layers and
+DGTs labels. `TDF_Label::NewChild()` draws its tag from a `TDF_TagSource` attribute a fresh
+document's root doesn't have, so it was created lazily starting at 1 and collided with whichever
+fixed tag (1-5, 7-10) `XCAFDoc_DocumentTool` already reserved there, or reserved later.
+`OCCTDocumentCreateLabel` now seeds that counter past every reserved tag before the first label is
+created, so `createLabel()` always returns a genuinely new, empty label. Entry ids returned by
+`createLabel()` on the document root now start at `0:1:11` instead of `0:1:1`.
+
+### `checkEdge`, `checkWire`, `checkShell` and `checkVertex` now report a real `errorCount` and `firstError` (#2734)
+
+`checkSubShape`, the bridge helper behind all four, set `isValid` and `firstError` from `BRepCheck_Edge`/`Wire`/`Shell`/`Vertex`'s status list but never incremented `errorCount`, unlike the sibling functions in `OCCTBridge_Healing_Analysis.mm` (`OCCTCheckFace`, `OCCTCheckSolid`, `OCCTCheckShape`). An invalid sub-shape reported `isValid == false` with `errorCount == 0` and `firstError == nil`, since the Swift wrappers derive `firstError` from `errorCount > 0`. Measured on the pinned kernel: a disconnected wire and an empty shell both now report the real count and status (`Scripts/repro/2734-checksubshape-errorcount/`); the issue's own suggested edge repro (a 3D curve removed) does not fault `BRepCheck_Edge::Minimum()` in this OCCT build in any variant tried.
+
+### `shelled(thickness:openFaces:)`, `hollowed(removingFaces:...)` and `shelledWithFullHistory(facesToRemove:...)` doc comments corrected: positive thickness shells outward (#2736)
+
+Their doc comments said positive thickness shells inward; the measured behaviour, and
+`BRepOffsetAPI_MakeThickSolid`'s own convention, is the opposite, matching `offset(by:)`. No
+behaviour changed, only the documentation. Also corrected `shelled(thickness:)`'s doc comment,
+which claimed to hollow a closed solid; measured that it always returns `nil` on one (box, cylinder
+or sphere, any sign), since the underlying `MakeThickSolidBySimple` requires a non-closed shell or
+face. That gap is tracked separately as #2739.
+
+### `checkEdge(at:)` and `checkVertex(at:)` document what `BRepCheck_Edge`/`Vertex::Minimum()` actually check (#2747)
+
+Measured against the OCCT source rather than assumed: `BRepCheck_Edge::Minimum()` checks four
+structural faults on the edge's own curve/flag bookkeeping (a missing or duplicate 3D curve
+representation, an inconsistent `SameRange`/`SameParameter` pair, an inverted or out-of-domain
+parameter range, and the `Degenerated` flag against a present curve), none of which a shape built
+through this package's own API can produce. `BRepCheck_Vertex::Minimum()` has no conditional logic
+at all and always reports `NoError`, so `checkVertex(at:)` cannot report an error for any input.
+Neither function's behaviour changes; both doc comments and `docs/reference/Shape-Measurement.md`
+now say so, so `isValid == true` is not read as "this edge/vertex is geometrically valid". The real
+fix (checking against an owning shape via `InContext()`) is blocked on #2746's uncatchable SIGSEGV.
+
+### `convertSurfacesToBezier` no longer always returns nil (#2732)
+
+Both Bezier-conversion wrappers set `ShapeUpgrade_ShapeConvertToBezier`'s per-kind modes but never its master switch (`Set3dConversion`/`SetSurfaceConversion`), so `Perform()` was a no-op and every call returned nil regardless of input. `convertCurves3dToBezier` was fixed under #2748; this adds the surfaces-side call, `SetSurfaceConversion(true)`, which completes #2732. Three of the six affected fixtures now convert to a shape that itself reports `isValid == false`: `ShapeUpgrade_ShapeConvertToBezier` replaces curve/surface geometry without re-deriving the affected edges' `SameRange`/pcurve consistency, which is documented OCCT behaviour (`ShapeFix`'s job, not `ShapeUpgrade`'s), not a defect in this wrapper. A ground-truth measurement is in `Scripts/repro/2732-bezier-master-flag/`; both functions' doc comments and `docs/reference/Shape-Builders-2.md` now say so.
+
+### `convertedToBezier` no longer returns nil for a shape with nothing left to convert (#2765)
+
+`OCCTShapeConvertToBezier` treated `ShapeUpgrade_ShapeConvertToBezier::Perform()`'s return value as a success flag. It is not one: it forwards `ShapeUpgrade_ShapeDivide::Perform()` unchanged, which returns `false` for "nothing was split" with its result holding the input shape, and whose only genuine-failure `false` is a null-shape guard the bridge already covers. `Shape.convertedToBezier` therefore reported "nothing left to convert" as a failure. The gate is dropped and the `Result().IsNull()` check that follows it, the real failure signal, is kept, matching `convertCurves3dToBezier` and `convertSurfacesToBezier`. Reachable from Swift, measured in `Scripts/repro/2765-convert-to-bezier-perform/`: a one-edge shape whose curve is already a Bezier, such as the result of converting a line edge, came back `nil` on a second conversion. Re-converting a solid was never affected. The same defect in the seven other `ShapeUpgrade_ShapeDivide` wrappers is measured in the same directory and filed as #2766.
+
+### CI now collects crash evidence for the intermittent macOS test-startup crash (#2714)
+
+`ci.yml`'s `swift build + test (macOS)` job uploads a macOS crash report (`~/Library/Logs/DiagnosticReports/*` and `/Library/Logs/DiagnosticReports/*`) whenever it fails, and records a job-summary note when the failure matches #2714's uncatchable-SIGSEGV/SIGBUS-at-startup signature. A new `workflow_dispatch`-only workflow, `malloc-scribble-stress.yml`, runs the CI job's own shape in a loop with malloc scribbling enabled, for chasing a use-after-free under #2714. Neither changes what makes a PR pass or fail; `gate-scripts` remains the only required check.
+
+### Kernel repinned at `v4.0.0-kernel.2`: OCCT `V8_0_1` + thirty carried patches
+
+`Package.swift` now resolves `v4.0.0-kernel.2`, which carries patch `0042` (#2773): `ShapeAnalysis::GetFaceUVBounds` raises `Standard_NullObject` instead of dereferencing a null surface on a face that is both surface-less and edgeless, an uncatchable SIGSEGV reachable from a `.brep` file. Thirty patches on disk and thirty pinned, so no carried patch is unexercised by `build-and-test` for the first time since `0042` landed. PR #2776's bridge guard is kept: the kernel now refuses the same input by raising, so the guard is redundant rather than wrong, and it still covers consumers on an older pin.
+
+`docs/CHANGELOG.md` is untouched in this diff. Its `## Current:` line describes what v3.0.0 shipped and this is a v4.0.0-stream pre-release, so the entry above is transcribed at merge per `okf/policies/changelog-on-merge.md`.
+
+### `Scripts/merge-pr.py`: the CHANGELOG entry is transcribed by the merge, not before it (#2779)
+
+[`changelog-on-merge`](../okf/policies/changelog-on-merge.md) moves each PR's CHANGELOG entry into
+the PR body and asks whoever merges to copy it into `docs/CHANGELOG.md` as the last commit on the
+branch. Three of the five merges between `8740d62d` and `1429ff69` did not, and a fourth needed a
+`No-Changelog:` trailer it can no longer gain. `python3 Scripts/merge-pr.py <n>` extracts the
+`## CHANGELOG entry` block from the PR body verbatim, splices it under `## Unreleased`, commits that
+on the PR's own branch, pushes and merges; a section saying "None" becomes a `No-Changelog:` trailer
+on the merge commit instead. `--dry-run` prints every action and changes nothing, and it refuses
+rather than guesses on an unfilled template placeholder, an empty section, a cross-repository head
+branch or a PR whose own diff already touches the file.
+
+#742's plan to promote `Scripts/check-changelog-transcription.py` to a required check is dropped
+rather than deferred: it asks a post-merge question, so on a protected base it would fail every open
+PR for the *previous* merge's omission. Its bare run in CI was also found to examine nothing, because
+`actions/checkout`'s depth-1 fetch collapses its audit window to HEAD; that is recorded in
+[`static-gates`](../okf/policies/static-gates.md) and in the job comment rather than changed.
+
+### `Standard_ErrorHandler::Abort` takes the `longjmp` branch in the pinned kernel (#2763)
+
+#2750 recorded the fault that reaches `Standard_ErrorHandler::Abort` as "a plain `throw` with
+`OCC_CONVERT_SIGNALS` undefined" and, at the same site, said `BRepCheck_Analyzer::Perform()`'s
+`OCC_CATCH_SIGNALS` "absorbs nothing". Both are wrong, measured two independent ways against the
+pinned asset in `Scripts/repro/2763-abort-signal-mechanism/`: the shipped `OSD_signal.cxx.o`
+references `FindHandler()` and `_longjmp` and carries the `#else` body's own "no catch was found"
+string, and a self-raised `SIGSEGV` after `OSD::SetSignal` exits 1 with that message rather than
+reaching a plain `catch (Standard_Failure const&)`. The macro is live in OCCT's own translation units,
+and `BRepCheck_Analyzer.cxx`'s use of it around every `InContext` call is what makes the analyzer
+survive a fault that kills a bridge-only process. #2750's observation, its guard and its regression
+test are unchanged; only the explanation was assumed.
+
+### The static gate job's timing figure is measured on the runner (#2203)
+
+`CLAUDE.md` claimed the gate scripts take "~3s for the lot". Measured from the runner's own step
+timings over the 21 most recent successful `gate-scripts` jobs, the 37 invocations sum to a median
+44 s and the job to a median 52 s, about 30 s of it `check-throwing-calls.py` across its two
+invocations. `CLAUDE.md` now claims only "under a minute on the runner", which survives another
+script being added, and [`static-gates`](../okf/policies/static-gates.md) carries the table, the
+method, the date, the outlier and a `gh api` recipe for re-deriving it. `census-unmeasured-values.py`'s
+"`~13 s`" is removed for the same reason rather than replaced: it was a laptop figure with no method,
+and re-measuring gave 21, 60 and 75 s on three consecutive runs.
+
+### `faceFaceExtrema` no longer fabricates witness points for parallel faces (#2249)
+
+`Shape.FaceFaceExtrema` gains `isParallel`, and `pointOnFace1`, `pointOnFace2`, `face1UV` and
+`face2UV` become optional. `BRepExtrema_ExtFF` appends a square distance and no points at all when
+the two surfaces are parallel, so `NbExt()` is 1 while `ParameterOnFace1` throws; the bridge's
+function-level `catch (...)` used to return the half-written struct, and the four witness fields
+arrived as zeros beside a real `distance`. OCCT's own callers split the same way, one counting a
+parallel result as having no extrema (`BRepExtrema_DistanceSS.cxx:1209`) and DRAW's offset dimension
+reading only its square distance, so both facts are now reported.
+
+```swift
+let box1 = Shape.box(width: 5, height: 5, depth: 5)!
+let box2 = Shape.box(origin: SIMD3(10, 0, 0), width: 5, height: 5, depth: 5)!
+if let e = box1.faceFaceExtrema(faceIndex1: 1, other: box2, faceIndex2: 0) {
+    e.distance       // 7.5, the offset between the facing x caps
+    e.isParallel     // true
+    e.pointOnFace1   // nil, where it used to be (0, 0, 0)
+}
+```
+
+On the parallel branch the distance is between the underlying surfaces, not between the trimmed
+faces, because the kernel takes that branch before it reaches `BRepClass_FaceClassifier`. Use
+`minDistance(to:)` for a trimmed-region answer.
+
+### `CommonPart.point` is a point on the intersection, not the origin (#2251)
+
+`Shape.CommonPart.point` becomes optional and is now the first edge's curve evaluated at the
+representative parameter of `param1Range`. It was the midpoint of
+`IntTools_CommonPrt::BoundingPoints`, which only `IntTools_EdgeFace` ever sets, so every part from
+`edgeEdgeIntersection(with:)` reported `(0, 0, 0)` whatever the overlap, and an edge part from
+`edgeFaceIntersection(with:)` reported the chord midpoint across the overlap rather than a point on
+it: a semicircular overlap of radius 10 reported the circle's centre.
+
+```swift
+let a = Shape.edgeFromPoints(SIMD3(0, 0, 0), SIMD3(2, 0, 0))!
+let b = Shape.edgeFromPoints(SIMD3(1, 0, 0), SIMD3(3, 0, 0))!
+if let p = a.edgeEdgeIntersection(with: b)?.first {
+    p.param1Range   // (1, 2)
+    p.point         // a point inside the overlap, where it used to be (0, 0, 0)
+}
+```
+
+`edgeFaceIntersection(with:)`'s warning that it "returns an empty array for every input" was stale
+from before #1631 and is gone. The caveat that replaces it is real: an edge-type part is not clipped
+to the face, so an in-plane edge running past the face boundary reports its whole parameter range.
+
+### `Face.surfaceInertia` and `surfaceInertia(epsilon:)` integrate the face, not the patch (#2204)
+
+Both overloads now build the face's `BRepGProp_Domain`, the way `BRepGProp::surfaceProperties` does.
+The adaptive overload returned area 0 for every face, planar or curved, because
+`BRepGProp_Sinert::Perform(face, eps)` builds an empty domain of its own and integrates nothing; the
+non-adaptive one integrated the surface's natural UV bounds and so over-reported a trimmed face.
+
+```swift
+let sphere = Shape.sphere(radius: 10)!.faces()[0]
+sphere.surfaceInertia(epsilon: 1e-6).area   // 1256.6370614359173, where it used to be 0
+
+let plate = Shape.box(width: 20, height: 20, depth: 2)!
+let holed = plate.subtracting(Shape.cylinder(radius: 3, height: 10)!.translated(by: SIMD3(0, 0, -5))!)!
+let big = holed.faces().first { $0.area() > 300 }!
+big.surfaceInertia.area   // 371.7256661176920, the trimmed area, where it used to be 400
+```
+
+### `GeomDirection` refuses a vector it cannot normalise, instead of returning NaN coordinates (#2331)
+
+`GeomDirection(x: 0, y: 0, z: 0)` used to succeed and hand back `(nan, nan, nan)`. `Geom_Direction`'s
+constructor, `SetCoord` and `Crossed` each carry a zero-length check, and each is an out-of-line
+kernel member, so all three checks are compiled away by the `-DNo_Exception` that OCCT's default
+Release configuration adds. `gp_Dir`'s identical check does fire, because it is inline and compiles
+into the caller, which is why the bridge's `(0, 0, 1)` fallback in the `catch` was unreachable
+rather than merely unused.
+
+`init(x:y:z:)` and `init(simd:)` are now failable, `setCoordinates(x:y:z:)` returns a
+`@discardableResult Bool` and leaves the direction untouched when it refuses, and
+`crossed(with:)` finally returns the `nil` for a parallel pair that it has always been documented to
+return. The refusal, and both of its thresholds, come from OCCT's own production STEP importer,
+`StepToGeom::MakeDirection`: a component at or beyond `1e100` (OCCT's `Precision::Infinite() / 2`,
+which takes in `NaN` and IEEE infinity), or a squared magnitude at or below `gp::Resolution()`
+squared. The square modulus rather than the length is deliberate and copied: `sqrt(x*x + y*y + z*z)`
+underflows to `0` for an input like `(1e-200, 0, 0)` that a length test accepts and that still
+divides by zero.
+
+### `Document.layerCount` and `layerNames` read the real layer table (#2413)
+
+Both read a layer tool attached to the document's `Main()` label, which enumerates the nine XCAF
+tool labels (`Shapes`, `Colors`, `Layers`, `D&GTs`, `Materials`, `Views`, `Clipping Planes`,
+`Notes`, `VisMaterials`) as though they were layers, while the six write-side functions in the same
+file use `XCAFDoc_DocumentTool::LayerTool(Main())`, the layer table at `0:1:3`. So the count and the
+names were wrong for every document, a layer that had been set never appeared, and the count was
+order-dependent on which tool labels had been created. Both now use the same accessor as the write
+side, the one every OCCT caller uses.
+
+`layerCount` is therefore `0` and `layerNames` empty for a freshly created document, which is
+correct: an XCAF document starts with an empty layer table, and layers arrive from a file that
+carries them or from a write.
+
+`docs/CHANGELOG.md` is untouched in this diff; the entries above are transcribed at merge per
+`okf/policies/changelog-on-merge.md`.
+
+### `Face.volumeInertia` and `Shape.vinertGK` measure a trimmed face, not its untrimmed patch (#2806)
+
+`OCCTBRepGPropVinert`, `OCCTBRepGPropVinertPlane` and `OCCTBRepGPropVinertGK` passed no
+`BRepGProp_Domain`, so the kernel integrated each face over its surface's natural UV bounds and a
+face the wires trim reported the untrimmed patch. The per-face contributions of a 20x20x2 plate with
+a radius-3 hole summed to 762.3008881569225 against `Shape.volume` 743.4513322353836, over by 6 * pi,
+the hole counted on both caps; a cylinder's planar cap was integrated over the square that bounds its
+disc, 856.932108931632 against 785.3981633974482. `BRepGProp::volumePropertiesFaces`
+(`BRepGProp.cxx:355-390`) and `volumePropertiesGK` (`BRepGProp.cxx:698-710`) load the domain whenever
+the face has wires, and all three wrappers now do the same, through the helper #2204 added.
+Orientation needed nothing: `BRepGProp_Face::Load` already carries the `REVERSED` sign and
+`BRepGProp_Domain::Init` normalises the face to `FORWARD` itself.
+
+```swift
+let plate = Shape.box(width: 20, height: 20, depth: 2)!
+let drill = Shape.cylinder(radius: 3, height: 10)!.translated(by: SIMD3(0, 0, -5))!
+let holed = plate.subtracting(drill)!
+
+holed.faces().reduce(0) { $0 + $1.volumeInertia.volume }   // 743.4513322353836, was 762.3008881569225
+holed.volume                                              // 743.4513322353836, the same
+```
+
+`Face.volumeInertia(planeNormal:planeDistance:)` got the same domain and still returns `0.0`, because
+OCCT discards the by-plane mass in `BRepGProp_Gauss::convert` for every face and every plane (#2827).
+Its doc comment, `docs/reference/Shape-HLR-Geom.md` and `okf/references/known-occt-bugs.md` say so,
+and a regression test pins the zero and fails when a repin fixes it. Use `Face.volumeInertia`
+meanwhile.
 
 ### Unread counts leave `CLAUDE.md`, the gate-coverage audit stops reporting a drift that is not there, and the surface rationality flags say which axis they mean (#2959, #2960, #2976)
 
