@@ -123,8 +123,8 @@ public struct Bend: Sendable {
 
 - `angle`: bend angle in radians; `nil` means infer from flange placements. `0` = flat continuation; `±π` = fully closed. Positive = concave; negative = convex. When `direction` is `.auto` (the default), a non-nil, non-zero `angle` decides concave vs. convex by this sign, overriding geometric inference; an explicit `direction` always wins over `angle`.
 - `insideRadius`: concave (inner) bend radius. `0` for a sharp inside corner.
-- `outsideRadius`: convex (outer) bend radius; documented default is `insideRadius + thickness` when `nil`, but **not yet read by `Builder.build()`** — setting it has no effect on the built shape today (#1565).
-- `materialThicknessAtBend`: material thickness through the bend zone; documented default is the builder's global `thickness`, but **not yet read by `Builder.build()`** — setting it has no effect on the built shape today (#1565).
+- `outsideRadius`: convex (outer) bend radius; documented default is `insideRadius + thickness` when `nil`, but **not yet read by `Builder.build()`**, so setting it has no effect on the built shape today (#1565).
+- `materialThicknessAtBend`: material thickness through the bend zone; documented default is the builder's global `thickness`, but **not yet read by `Builder.build()`**, so setting it has no effect on the built shape today (#1565).
 - `direction`: explicit override; defaults to `.auto`.
 
 ---
@@ -147,7 +147,7 @@ Convex (outer) bend radius; documented default is `insideRadius + thickness` whe
 
 ### `Bend.materialThicknessAtBend`
 
-Material thickness through the bend zone; documented default is the builder's global `thickness`. **Not yet read by `Builder.build()`** — same gap as `outsideRadius` above. Set to a fraction for etched/thinned bend lines is the intended, not-yet-implemented, use (#1565).
+Material thickness through the bend zone; documented default is the builder's global `thickness`. **Not yet read by `Builder.build()`**: same gap as `outsideRadius` above. Set to a fraction for etched/thinned bend lines is the intended, not-yet-implemented, use (#1565).
 
 ---
 

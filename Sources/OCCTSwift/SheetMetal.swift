@@ -703,6 +703,7 @@ public enum SheetMetal {
             seamUnit: SIMD3<Double>, thickness: Double
         ) -> ClosedRange<Double>? {
             guard info.alignedToProfiles else {
+                // The tolerance `findSeamEdges` uses for its own plane tests.
                 let tolerance = max(1e-6, thickness * 1e-4)
                 guard
                     let aRun = Self.seamLineRun(
@@ -732,20 +733,26 @@ public enum SheetMetal {
         /// An edge counts when both its ends are within `tolerance` of both
         /// planes. nil when no edge does, which is a flange whose seam passes
         /// through its interior or misses it.
+        ///
+        /// `a` and `b` are the two flanges the bend joins, and `flange` is one
+        /// of them, so one of the two plane tests holds by construction.
         private static func seamLineRun(
-            of f: Flange, between a: Flange, and b: Flange,
+            of flange: Flange, between a: Flange, and b: Flange,
             seamUnit: SIMD3<Double>, tolerance: Double
         ) -> ClosedRange<Double>? {
             func onSeamLine(_ p: SIMD3<Double>) -> Bool {
+                // A point lifted from `flange`'s profile is on its own plane already, so for
+                // `flange` equal to `a` or `b` one of these two is trivially true and the other is
+                // the test that matters. Both are written out so either flange takes the same path.
                 abs(Vector3DMath.dot(p - a.origin, a.normal)) < tolerance
                     && abs(Vector3DMath.dot(p - b.origin, b.normal)) < tolerance
             }
             var lo = Double.infinity
             var hi = -Double.infinity
-            let n = f.profile.count
+            let n = flange.profile.count
             for i in 0..<n {
-                let p1 = f.placement.lift(f.profile[i])
-                let p2 = f.placement.lift(f.profile[(i + 1) % n])
+                let p1 = flange.placement.lift(flange.profile[i])
+                let p2 = flange.placement.lift(flange.profile[(i + 1) % n])
                 guard onSeamLine(p1), onSeamLine(p2) else { continue }
                 let s1 = Vector3DMath.dot(p1, seamUnit)
                 let s2 = Vector3DMath.dot(p2, seamUnit)
