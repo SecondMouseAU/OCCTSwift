@@ -659,6 +659,88 @@ int OCCTDefaultMessengerPrinterCount()
   }
 }
 
+// MARK: - The trace level of the host's printers (#3029)
+//
+// Every STEP write prints a statistics block through Message::DefaultMessenger() at Message_Info,
+// and nothing in the writer lets a caller turn it off: two of its four messages go through the
+// writer's own Transfer_FinderProcess messenger and two are Message::SendInfo() calls inside
+// IFSelect_ModelCopier and StepSelect_WorkLibrary::WriteFile, so a per-writer messenger silences
+// half of it (measured in Scripts/repro/3029-step-write-statistics). OCCT's convention is that the
+// host owns the default messenger: src/Draw/TKDraw/Draw/Draw_BasicCommands.cxx's `dtracelevel`
+// sets the trace level of every printer on it, and a printer drops a message below its level
+// (Message_Printer.hxx). These two functions are that command, and nothing more.
+
+namespace
+{
+
+// The printers whose level is the host's: the default messenger's own outside a capture, and the
+// ones a capture set aside inside it. The messenger holds only the capture's accumulating printer
+// while a capture runs, so reading or writing the level there would change what the capture
+// collects and leave the level of the printers that print to the host's stream where it was.
+// The caller holds occtMessengerCaptureState().mutex, since `active` and `detached` are read here.
+const NCollection_Sequence<Handle(Message_Printer)>& occtHostPrinters(
+  const Handle(Message_Messenger)& theMessenger,
+  const OCCTMessengerCaptureState& theState)
+{
+  return theState.active ? theState.detached : theMessenger->Printers();
+}
+
+} // namespace
+
+int OCCTDefaultMessengerTraceLevel()
+{
+  OCCTMessengerCaptureState& aState = occtMessengerCaptureState();
+  try
+  {
+    std::lock_guard<std::recursive_mutex> aLock(aState.mutex);
+    const Handle(Message_Messenger)&      messenger = Message::DefaultMessenger();
+    if (messenger.IsNull())
+      return -1;
+
+    const NCollection_Sequence<Handle(Message_Printer)>& printers =
+      occtHostPrinters(messenger, aState);
+    int lowest = -1;
+    for (int index = 1; index <= printers.Size(); ++index)
+    {
+      const int level = static_cast<int>(printers.Value(index)->GetTraceLevel());
+      if (lowest < 0 || level < lowest)
+        lowest = level;
+    }
+    return lowest;
+  }
+  catch (...)
+  {
+    occtRecordCaughtException(__func__);
+    return -1;
+  }
+}
+
+int OCCTDefaultMessengerSetTraceLevel(int level)
+{
+  if (level < static_cast<int>(Message_Trace) || level > static_cast<int>(Message_Fail))
+    return -1;
+
+  OCCTMessengerCaptureState& aState = occtMessengerCaptureState();
+  try
+  {
+    std::lock_guard<std::recursive_mutex> aLock(aState.mutex);
+    const Handle(Message_Messenger)&      messenger = Message::DefaultMessenger();
+    if (messenger.IsNull())
+      return 0;
+
+    const NCollection_Sequence<Handle(Message_Printer)>& printers =
+      occtHostPrinters(messenger, aState);
+    for (int index = 1; index <= printers.Size(); ++index)
+      printers.Value(index)->SetTraceLevel(static_cast<Message_Gravity>(level));
+    return static_cast<int>(printers.Size());
+  }
+  catch (...)
+  {
+    occtRecordCaughtException(__func__);
+    return -1;
+  }
+}
+
 OCCTReportRef OCCTReportCreate()
 {
   try
