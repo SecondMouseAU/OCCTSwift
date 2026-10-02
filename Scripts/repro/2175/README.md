@@ -27,21 +27,39 @@ they were defined, which has already produced two wrong conclusions in this init
 ## The headline
 
 **The whole stack runs.** Swift, over the OCCTSwift public API, over the C bridge, over OCCT, in
-one `wasm32-unknown-wasip1` module, under the pinned `wasmkit`:
+one `wasm32-unknown-wasip1` module. Measured 2026-10-02 under Node 26.10.0 with
+`@bjorn3/browser_wasi_shim@0.4.2`, which is the runtime `Scripts/run-wasm-tests.sh` uses since
+#2894 and the one closest to #1689's browser target:
 
     OCCTSwift wasm spike, wasm32-unknown-wasip1: Swift -> OCCTSwift -> bridge -> OCCT
-    case box                  PASS  10x20x30 volume=6000.0 faces=6 edges=12 vertices=8
-    case fuse                 PASS  two 10-cubes overlapping in one octant, volume=1875.0 expected=1875.0 faces=12 valid=true
-    case step-export          PASS  wrote .../spike-fused.step bytes=36189 header=ISO-10303-21;
-    case step-import          PASS  read back volume=1875.0 faces=12 against the written shape's 1875.0/12
-    case must-fail-raise      PASS  Shape.box(0,0,0) -> nil, records=1 [OCCTShapeCreateBox: Standard_DomainError: ]
-    case must-fail-internal   PASS  malformed STEP refused as readFailed(..., status: IFSelect_RetFail: the step ran and failed), bridge records=0
+    case occt-output-capture  PASS  default printers before=1 inside=1 after=1, OCCT: silent
+    case box                  PASS  10x20x30 volume=6000.0 faces=6 edges=12 vertices=8, OCCT: silent
+    case fuse                 PASS  two 10-cubes overlapping in one octant, volume=1875.0 expected=1875.0 faces=12 valid=true, OCCT: silent
+    case step-export          PASS  wrote /work/spike-fused.step bytes=36189 header=ISO-10303-21;, OCCT: said all 4 expected thing(s)
+    case step-import          PASS  read back volume=1875.0 faces=12 against the written shape's 1875.0/12, OCCT: silent
+    case must-fail-raise      PASS  Shape.box(0,0,0) -> nil, records=1 [OCCTShapeCreateBox: Standard_DomainError: ], OCCT: silent
+    case unwind-depth-1       PASS  Curve3D.trimmed(1,1) -> nil, records=1 [Standard_ConstructionError: Geom_TrimmedCurve::U1 == U2], OCCT: silent
+    case unwind-depth-n       PASS  Shape.evolved -> nil, records=1 [Standard_ConstructionError: Geom_TrimmedCurve::U1 == U2], OCCT: silent
+    case must-fail-internal   PASS  malformed STEP refused as readFailed(..., status: IFSelect_RetFail: the step ran and failed), bridge records=0, OCCT: said all 3 expected thing(s)
     note stepData             bytes=36189 via FileManager.default.temporaryDirectory = /tmp
     failures: 0
 
 Everything in that list goes through the published Swift surface. Nothing calls the bridge
 directly, because the question this gate answers is whether a SwiftWasm application consuming
 OCCTSwift as a SwiftPM dependency can do real CAD work, not whether the C functions are reachable.
+
+**The `OCCT:` column is #3021, and the transcript used to carry OCCT's own words instead of a
+verdict on them.** Before this, OCCT printed through `Message::DefaultMessenger()` onto the same
+stream as the `case` lines: a red `**** ERR StepFile : Undefined Parsing` block from
+`must-fail-internal`, both expected and both uninvited, plus a seven-line green
+`Statistics on Transfer (Write)` block from `step-export` and another from the `stepData` note. A
+reader of #2997's green CI output investigated the red line as a defect. Every case now runs inside
+`Messenger.capturingDefaultOutput` and states what OCCT is expected to say: `OCCT: silent` for the
+seven cases measured to say nothing, and the named strings for the two that talk. **That is the half
+that makes the spike stronger rather than quieter**: an absent complaint in `must-fail-internal`
+would mean the STEP parser never ran, which neither the `IFSelect_RetFail` status nor the empty
+bridge capture can see, and an OCCT message appearing in any other case is now a FAIL rather than a
+line nobody reads.
 
 **One blocker stood between the link and that output, and it was not in any of the places this
 effort had been looking.** A C++ function carrying both a lowered `setjmp` and wasm exceptions
@@ -60,7 +78,10 @@ Four smaller gaps, all in merged code, all invisible to every check that existed
 ## The five calls, and why each one is there
 
 The issue asked for five. Two of them are the same call: the must-fail one has two halves, because
-a refusal that OCCT raises and a refusal OCCT handles internally are different measurements.
+a refusal that OCCT raises and a refusal OCCT handles internally are different measurements. Nine
+`case` lines come out of them: #2894 added `unwind-depth-1` and `unwind-depth-n`, the same exception
+at two unwind depths, and #3021 added `occt-output-capture`, which is about the harness rather than
+about OCCT and runs first for that reason.
 
 ### 1, `Shape.box(width:height:depth:)`
 
@@ -165,12 +186,20 @@ propagated as far as the bridge.
     malformed STEP refused as readFailed(..., status: IFSelect_RetFail: the step ran and failed),
     bridge records=0
 
-OCCT also printed its own parser diagnostic on the way, which is the handler being reached rather
+OCCT also prints its own parser diagnostic on the way, which is the handler being reached rather
 than skipped:
 
     **** ERR StepFile : Undefined Parsing: Line 2: Incorrect syntax: unexpected TYPE, expecting STEP
 
-### Proving the six cases can fail
+**#3021 turned that line from an aside into the assertion.** It used to land loose in the transcript,
+in red, where it looked like a failure on a run that passed. The case now REQUIRES it, through
+`Messenger.capturingDefaultOutput`, matching on `**** ERR StepFile`, `Undefined Parsing` and
+`Incorrect syntax` and leaving the line number and the token names out, because those are bison's
+and not a contract. It is the only case in this spike whose expected OCCT output is known exactly,
+and it is the strongest assertion available here: the status and the empty bridge capture are both
+consistent with a parser that never ran, and an absent complaint is not.
+
+### Proving the cases can fail
 
 [`prove-the-test-fails`](../../../okf/policies/prove-the-test-fails.md), for the spike itself
 rather than for the blocker below. The box case's expected volume was changed from 6000 to 6001,
@@ -180,10 +209,24 @@ the module rebuilt and re-run:
     *** FAILED: wasmkit exit 1
     >>> 1 case(s) failed.
 
-and restoring it returns `6 of 6 cases PASS, exit 0`. Two things are being proved there and both
+and restoring it returns all cases PASS, exit 0. Two things are being proved there and both
 matter: the module's own `exit(Int32(failures))` reaches the runner, and `run.sh run` fails the
-invocation rather than printing a red line into a green exit status. It also asserts six PASS lines
-rather than only the exit status, so a module that printed nothing and exited 0 cannot pass.
+invocation rather than printing a red line into a green exit status. It also asserts a PASS line per
+case rather than only the exit status, so a module that printed nothing and exited 0 cannot pass.
+
+**The OCCT-output assertions were proved the same way (#3021), with three switches over one build
+each, measured on macOS 2026-10-02 where the build is minutes rather than hours.** The red sets are
+disjoint, which is what says each switch isolates something:
+
+| Switch | What it breaks | Cases red |
+|---|---|---|
+| `OCCTDiagnostics.isLoggingEnabled = true` at the top | a real mechanism that makes the default messenger talk on the raise paths, at `Message_Alarm` | 3: `must-fail-raise`, `unwind-depth-1`, `unwind-depth-n`, each `OCCT: UNEXPECTED OCCTBridge: ... caught ...` |
+| the capturing printer accumulates nothing | the capture starts and collects nothing, so every case reads as silence | 2: `step-export` and `must-fail-internal`, each `OCCT: MISSING [...]` |
+| `Begin` no longer detaches the existing printers | output is duplicated rather than redirected, and the transcript is noisy again | 1: `occt-output-capture`, `inside=2` |
+
+The first switch also confirms `occt-output-capture` is deliberately blind to content, and the second
+confirms it is deliberately blind to an empty capture: each is covered by the other rows, which is
+why that case asserts only on the printer counts.
 
 ## The blocker: setjmp and wasm exceptions in one function emit an invalid module
 

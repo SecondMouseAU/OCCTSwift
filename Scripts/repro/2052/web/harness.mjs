@@ -35,15 +35,24 @@ export const WORK_DIR = "/work";
 /// than asserting it, and so does this.
 export const TMP_DIR = "/tmp";
 
-/// The six cases the module reports, in the order it prints them. Used to check that a run that
+/// Every case the module reports, in the order it prints them. Used to check that a run that
 /// exits 0 actually ran everything, because an exit code of 0 is also what a module that printed
 /// nothing and fell out of `_start` would give.
+///
+/// MEMBERSHIP, NOT A COUNT, and that is why a stale entry here is invisible: `verdict` reports a
+/// name that is missing or failed and says nothing about an extra one. So this list went two
+/// additions without noticing them, and each was a case the browser rung was not gating:
+/// #2894's two `unwind-depth` cases and #3021's `occt-output-capture`. Add a case here in the same
+/// change that adds it to `Scripts/repro/2175/spike`.
 export const EXPECTED_CASES = [
+  "occt-output-capture",
   "box",
   "fuse",
   "step-export",
   "step-import",
   "must-fail-raise",
+  "unwind-depth-1",
+  "unwind-depth-n",
   "must-fail-internal",
 ];
 
