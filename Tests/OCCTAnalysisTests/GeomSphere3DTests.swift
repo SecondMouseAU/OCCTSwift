@@ -54,7 +54,8 @@ struct GeomSphere3DTests {
         // 4 * pi * r^3 / 3, OCCT's own association. The old tolerance was 1.0, which left a
         // 0.19 percent error unseen.
         let expected = 4 * Double.pi * Self.radius * Self.radius * Self.radius / 3
-        #expect(abs(s.sphereProperties.volume - expected) < 1e-9, "got \(s.sphereProperties.volume)")
+        let volume = s.sphereProperties.volume
+        #expect(abs(volume - expected) < 1e-9, "got \(volume)")
     }
 
     @Test func sphereCenter() throws {
