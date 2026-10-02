@@ -434,11 +434,19 @@ one domain never recompiles the rest. Each is `Tests/OCCT<Domain>Tests/`, declar
 ## Test Conventions
 
 - Framework: Swift Testing (`@Suite`, `@Test`, `#expect`)
-- **Never force-unwrap in `#expect`**: Swift Testing does NOT short-circuit. Use:
+- **Never force-unwrap in `#expect`**: Swift Testing does NOT short-circuit, so
+  `#expect(result != nil); #expect(result!.isValid)` crashes the run instead of failing the test.
+  **Require the value, do not escape it:**
   ```swift
-  if let r = result { #expect(r.isValid) }
+  let r = try #require(result, "the operation returned nil")
+  #expect(r.isValid)
   ```
-  Not: `#expect(result != nil); #expect(result!.isValid)`
+  `if let r = result { #expect(r.isValid) }` also avoids the crash, and it is the wrong fix for a
+  value the test needs: a nil skips every assertion and Swift Testing records a pass for a test
+  that executed none. Nine tests shipped that way (#2794). Use `if let` only where nil is itself
+  an acceptable outcome, and then assert something in the `else`. See
+  [`okf/policies/prove-the-test-fails.md`](okf/policies/prove-the-test-fails.md) → "A setup step is
+  required, not escaped".
 - Edge indices may vary across runs, iterate edges to find a working one when testing edge-specific operations
 - Wrap OCCT calls that may throw `StdFail_NotDone` in try-catch on the C bridge side
 - **Prove the test fails.** Every new test, and every new `--self-test` case, is run once with its

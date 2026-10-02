@@ -96,6 +96,25 @@ The tell, in hindsight: it was an argument for why **a piece of code could never
 that with the suspicion "this test cannot fail" deserves. Code that cannot matter should be
 deletable, so if you are not willing to delete it, the argument is weaker than it reads.
 
+## When two measurements disagree in shape, the extra one is the finding
+
+A comparison whose two sides carry different fields has found something, and the cheapest way to
+make the comparison pass is to delete the side that measured more. That reads as a tidy-up, and it
+is the inverse of the rule.
+
+`aed802ca` on PR #2486 is the worked example. A parity record compared a bridge result
+`{returned}` against a kernel result `{returned, free_after}`, a real mismatch, and the commit
+"drop the kernel-only key" resolved it by deleting `free_after` so both sides read
+`{"returned": true}`, with prose arguing that the reading "is a kernel observation the test does
+not assert". The measurement was already taken, it was free, and it was precisely the observable
+that would have let a test asserting nothing assert something. #2902 is the same move twice more,
+on an `OSD_PerfMeter` CPU table and on per-view sharp-edge counts.
+
+So: either the comparison grows the assertion for the extra value, or it records in one line why
+that value cannot be read from the other side. Deleting it makes the row a tautology and leaves a
+written argument for the tautology that the next reader has to unpick, which is the section above
+applied to a number somebody had already measured.
+
 ## How to apply
 
 ### Measuring
