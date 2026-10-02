@@ -42,14 +42,16 @@ struct StressFilletBuilderLifecycleTests {
         #expect(builder.contourCount == 1)
     }
 
-    @Test func destroyWithoutBuild() {
+    // Epic #766: the release this test is about happened only if the `if let` bound, and nothing
+    // said so when it did not. #2432 found exactly that on CellsBuilder, where the builder was
+    // always nil and the test could not fail. Requiring the builder makes the release happen.
+    @Test func destroyWithoutBuild() throws {
         let box = standardBox()
         let edges = box.edges()
-        if let builder = FilletBuilder(shape: box), !edges.isEmpty {
-            builder.addEdge(edges[0], radius: 1.0)
-            // Let builder go out of scope without calling build()
-        }
-        // If we reach here, no crash on dealloc
+        try #require(!edges.isEmpty)
+        let builder = try #require(FilletBuilder(shape: box))
+        builder.addEdge(edges[0], radius: 1.0)
+        // Let builder go out of scope without calling build(): no crash on dealloc.
     }
 
     @Test func invalidInput() throws {
@@ -127,12 +129,13 @@ struct StressChamferBuilderLifecycleTests {
         #expect(abs((result.volume ?? 0) - 995) < 1e-6)
     }
 
-    @Test func destroyWithoutBuild() {
+    // As for FilletBuilder.destroyWithoutBuild: the builder is required so the release runs.
+    @Test func destroyWithoutBuild() throws {
         let box = standardBox()
-        if let builder = ChamferBuilder(shape: box) {
-            let edges = box.edges()
-            if !edges.isEmpty { builder.addEdge(edges[0], distance: 1.0) }
-        }
+        let builder = try #require(ChamferBuilder(shape: box))
+        let edges = box.edges()
+        try #require(!edges.isEmpty)
+        builder.addEdge(edges[0], distance: 1.0)
     }
 
     @Test func invalidInput() throws {
@@ -217,38 +220,44 @@ struct StressPipeShellBuilderLifecycleTests {
         #expect(abs((shape.surfaceArea ?? 0) - 789.5683521) < 1e-6)
     }
 
-    @Test func destroyWithoutBuild() {
-        guard let spine = makeSpine(), let profile = makeProfile(),
-            let builder = PipeShellBuilder(spine: spine)
-        else { return }
+    @Test func destroyWithoutBuild() throws {
+        let spine = try #require(makeSpine())
+        let profile = try #require(makeProfile())
+        let builder = try #require(PipeShellBuilder(spine: spine))
         builder.add(profile: profile)
         // Let go without build
     }
 
-    @Test func simulateBeforeBuild() {
-        guard let spine = makeSpine(), let profile = makeProfile(),
-            let builder = PipeShellBuilder(spine: spine)
-        else { return }
+    @Test func simulateBeforeBuild() throws {
+        let spine = try #require(makeSpine())
+        let profile = try #require(makeProfile())
+        let builder = try #require(PipeShellBuilder(spine: spine))
         builder.setFrenet(true)
         builder.add(profile: profile)
         let sections = builder.simulate(numberOfSections: 5)
-        #expect(sections.count >= 0)  // May produce sections or empty
-        // `>= 0` held for any array; Simulate(5) gives five sections.
+        // Epic #766: `sections.count >= 0` held for every array, the empty one included.
+        // Simulate(5) gives five sections, each the r = 2 profile circle carried to its station
+        // on the spine, so each is a one-edge wire.
         #expect(sections.count == 5)
         for sect in sections {
             #expect(sect.isValid)
+            #expect(sect.subShapeCount(ofType: .edge) == 1)
         }
     }
 
-    @Test func doubleBuild() {
-        guard let spine = makeSpine(), let profile = makeProfile(),
-            let builder = PipeShellBuilder(spine: spine)
-        else { return }
+    @Test func doubleBuild() throws {
+        let spine = try #require(makeSpine())
+        let profile = try #require(makeProfile())
+        let builder = try #require(PipeShellBuilder(spine: spine))
         builder.setFrenet(true)
         builder.add(profile: profile)
         #expect(builder.build())
         #expect(builder.build())  // Second build, should not crash, and still succeeds
-        #expect(builder.shape != nil)
+        // Epic #766: `shape != nil` cannot tell the second build's torus from any other shape.
+        // Unlike FilletBuilder and ChamferBuilder above, a second Build() here rebuilds the same
+        // pipe, so the area is the one normalCycle() pins.
+        let shape = try #require(builder.shape)
+        #expect(abs((shape.surfaceArea ?? 0) - 789.5683521) < 1e-6)
     }
 }
 
@@ -288,8 +297,8 @@ struct StressSewingBuilderLifecycleTests {
         #expect(result.subShapeCount(ofType: .face) == 12)
     }
 
-    @Test func destroyWithoutPerform() {
-        guard let sewing = SewingBuilder(tolerance: 1e-6) else { return }
+    @Test func destroyWithoutPerform() throws {
+        let sewing = try #require(SewingBuilder(tolerance: 1e-6))
         sewing.add(standardBox())
     }
 
@@ -329,24 +338,23 @@ struct StressWireBuilderLifecycleTests {
         #expect(wire.subShapeCount(ofType: .edge) == 4)
     }
 
-    @Test func destroyWithoutGettingWire() {
+    @Test func destroyWithoutGettingWire() throws {
         let builder = WireBuilder()
         let box = standardBox()
         let edges = box.subShapes(ofType: .edge)
-        if let edge = edges.first {
-            builder.addEdge(edge)
-        }
+        let edge = try #require(edges.first)
+        builder.addEdge(edge)
     }
 
-    @Test func addWireShape() {
+    @Test func addWireShape() throws {
         let builder = WireBuilder()
         let wires = standardBox().subShapes(ofType: .wire)
-        if let wire = wires.first {
-            builder.addWire(wire)
-        }
+        let wire = try #require(wires.first)
+        builder.addWire(wire)
         // One of the box's four-edge face wires, taken whole.
         #expect(builder.isDone)
-        #expect(builder.wire?.subShapeCount(ofType: .edge) == 4)
+        let built = try #require(builder.wire)
+        #expect(built.subShapeCount(ofType: .edge) == 4)
     }
 }
 
@@ -355,24 +363,24 @@ struct StressWireBuilderLifecycleTests {
 @Suite("Stress: HatchBuilder Lifecycle")
 struct StressHatchBuilderLifecycleTests {
 
-    @Test func buildEmpty() {
-        guard let hatcher = HatchBuilder(tolerance: 1e-6) else { return }
+    @Test func buildEmpty() throws {
+        let hatcher = try #require(HatchBuilder(tolerance: 1e-6))
         #expect(hatcher.nbLines == 0)
     }
 
-    @Test func normalCycle() {
-        guard let hatcher = HatchBuilder(tolerance: 1e-6) else { return }
+    @Test func normalCycle() throws {
+        let hatcher = try #require(HatchBuilder(tolerance: 1e-6))
         hatcher.addXLine(0)
         hatcher.addXLine(5)
         hatcher.addYLine(0)
         hatcher.addYLine(5)
-        #expect(hatcher.nbLines >= 0)
-        // `>= 0` held for any count; four lines were added.
+        // Epic #766: `nbLines >= 0` held for any count a Hatcher can report, nought included.
+        // Four lines were added.
         #expect(hatcher.nbLines == 4)
     }
 
-    @Test func destroyWithoutQuery() {
-        guard let hatcher = HatchBuilder(tolerance: 1e-6) else { return }
+    @Test func destroyWithoutQuery() throws {
+        let hatcher = try #require(HatchBuilder(tolerance: 1e-6))
         hatcher.addXLine(1)
         hatcher.addYLine(2)
     }
@@ -457,21 +465,20 @@ struct StressThruSectionsBuilderLifecycleTests {
         #expect(abs((shape.volume ?? 0) - 513.1268001) < 1e-6)
     }
 
-    @Test func singleSection() {
-        guard let w1 = Wire.circle(origin: .zero, normal: SIMD3(0, 0, 1), radius: 5),
-            let s1 = Shape.fromWire(w1)
-        else { return }
+    @Test func singleSection() throws {
+        let w1 = try #require(Wire.circle(origin: .zero, normal: SIMD3(0, 0, 1), radius: 5))
+        let s1 = try #require(Shape.fromWire(w1))
         let loft = ThruSectionsBuilder(isSolid: true, isRuled: false)
         loft.addWire(s1)
         // Single section, guard returns false (need >= 2)
         let ok = loft.build()
         #expect(!ok)
+        #expect(loft.shape == nil)
     }
 
-    @Test func destroyWithoutBuild() {
-        guard let w1 = Wire.circle(origin: .zero, normal: SIMD3(0, 0, 1), radius: 5),
-            let s1 = Shape.fromWire(w1)
-        else { return }
+    @Test func destroyWithoutBuild() throws {
+        let w1 = try #require(Wire.circle(origin: .zero, normal: SIMD3(0, 0, 1), radius: 5))
+        let s1 = try #require(Shape.fromWire(w1))
         let loft = ThruSectionsBuilder(isSolid: true, isRuled: false)
         loft.addWire(s1)
     }
@@ -885,10 +892,8 @@ struct StressSectionBuilderLifecycleTests {
         #expect(result.subShapeCount(ofType: .edge) == 4)
     }
 
-    @Test func destroyWithoutBuild() {
-        guard let builder = SectionBuilder(shape1: standardBox(), shape2: standardSphere()) else {
-            return
-        }
+    @Test func destroyWithoutBuild() throws {
+        let builder = try #require(SectionBuilder(shape1: standardBox(), shape2: standardSphere()))
         _ = builder
     }
 
@@ -963,15 +968,15 @@ struct StressSectionBuilderLifecycleTests {
 @Suite("Stress: WireAnalyzer Lifecycle")
 struct StressWireAnalyzerLifecycleTests {
 
-    @Test func normalCycle() {
+    @Test func normalCycle() throws {
         let box = standardBox()
         let faces = box.subShapes(ofType: .face)
         let wires = box.subShapes(ofType: .wire)
-        guard let face = faces.first, let wire = wires.first else { return }
+        let face = try #require(faces.first)
+        _ = try #require(wires.first)
         let sectionWires = box.sectionWiresAtZ(0.0)
-        guard let sectionWire = sectionWires.first,
-            let analyzer = WireAnalyzer(wire: sectionWire, face: face)
-        else { return }
+        let sectionWire = try #require(sectionWires.first)
+        let analyzer = try #require(WireAnalyzer(wire: sectionWire, face: face))
         // Every value was read into `_` before. The z = 0 section wire has four edges; the
         // analysis against face 0 performs, loads and is ready, with zero 3D gaps.
         #expect(analyzer.perform())
@@ -982,13 +987,13 @@ struct StressWireAnalyzerLifecycleTests {
         #expect(analyzer.isReady)
     }
 
-    @Test func checkMethods() {
+    @Test func checkMethods() throws {
         let box = standardBox()
         let faces = box.subShapes(ofType: .face)
         let sectionWires = box.sectionWiresAtZ(0.0)
-        guard let face = faces.first, let wire = sectionWires.first,
-            let analyzer = WireAnalyzer(wire: wire, face: face)
-        else { return }
+        let face = try #require(faces.first)
+        let wire = try #require(sectionWires.first)
+        let analyzer = try #require(WireAnalyzer(wire: wire, face: face))
         analyzer.perform()
         // A clean closed loop reports no order, self-intersection, closure or gap problem (all
         // five were read into `_` before).
@@ -1000,12 +1005,13 @@ struct StressWireAnalyzerLifecycleTests {
         #expect(analyzer.edgeCount == 4)
     }
 
-    @Test func destroyWithoutPerform() {
+    @Test func destroyWithoutPerform() throws {
         let box = standardBox()
         let faces = box.subShapes(ofType: .face)
         let sectionWires = box.sectionWiresAtZ(0.0)
-        guard let face = faces.first, let wire = sectionWires.first else { return }
-        _ = WireAnalyzer(wire: wire, face: face)
+        let face = try #require(faces.first)
+        let wire = try #require(sectionWires.first)
+        _ = try #require(WireAnalyzer(wire: wire, face: face))
     }
 }
 
@@ -1052,12 +1058,13 @@ struct StressWireFixerLifecycleTests {
         #expect(fixed.subShapeCount(ofType: .edge) == 4)
     }
 
-    @Test func destroyWithoutGettingResult() {
+    @Test func destroyWithoutGettingResult() throws {
         let box = standardBox()
         let faces = box.subShapes(ofType: .face)
         let wires = box.subShapes(ofType: .wire)
-        guard let face = faces.first, let wireShape = wires.first else { return }
-        _ = WireFixer(wire: wireShape, face: face)
+        let face = try #require(faces.first)
+        let wireShape = try #require(wires.first)
+        _ = try #require(WireFixer(wire: wireShape, face: face))
     }
 }
 
@@ -1080,11 +1087,11 @@ struct StressFaceFixerLifecycleTests {
         #expect(abs((result.surfaceArea ?? 0) - 100) < 1e-9)
     }
 
-    @Test func destroyWithoutPerform() {
+    @Test func destroyWithoutPerform() throws {
         let box = standardBox()
         let faces = box.subShapes(ofType: .face)
-        guard let faceShape = faces.first else { return }
-        _ = FaceFixer(face: faceShape)
+        let faceShape = try #require(faces.first)
+        _ = try #require(FaceFixer(face: faceShape))
     }
 }
 

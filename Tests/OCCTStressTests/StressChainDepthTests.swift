@@ -220,7 +220,7 @@ struct StressFeatureChainTests {
 @Suite("Stress: Transform Chains")
 struct StressTransformChainTests {
 
-    @Test func thousandTranslations() {
+    @Test func thousandTranslations() throws {
         var shape = standardBox()
         for _ in 0..<1000 {
             if let t = shape.translated(by: SIMD3(0.001, 0, 0)) {
@@ -377,7 +377,7 @@ struct StressDocumentAssemblyTests {
     @Test func deepAssemblyTree() throws {
         let doc = try #require(Document.create())
         // Build 5-level deep assembly
-        var lastLabel = doc.addShape(standardBox())
+        let lastLabel = doc.addShape(standardBox())
         for _ in 0..<5 {
             let childBox = Shape.box(width: 5, height: 5, depth: 5)!
             let childLabel = doc.addShape(childBox)
