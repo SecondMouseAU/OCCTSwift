@@ -14,6 +14,12 @@ import simd
 ///   C  `Shape.evolved(spine:profile:)`    the SAME exception, from the SAME OCCT class, but raised
 ///                                         several frames down inside `BRepFill_Evolved`.
 ///
+/// IT ASSERTS NOTHING, DELIBERATELY, and that is why it lives under `Scripts/repro/` rather than in a
+/// test target. A `std::terminate` ends the wasm module, so a case that fails takes the report with
+/// it: what carries the information is which `print` lines appear and in what order, not an
+/// expectation that never gets a chance to be recorded. Reading it as a test suite would be reading
+/// it wrong.
+///
 /// B is the discriminator. If B is caught and C is not, the exception's class and its translation
 /// unit are both fine and what breaks is the unwind through the intervening frames. If B also
 /// terminates, then anything thrown by `Geom_TrimmedCurve` is uncatchable here and the origin is

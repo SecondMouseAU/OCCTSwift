@@ -70,7 +70,8 @@ ensure_shim() {
     # refuses one beginning with a dot, which under `set -e` ends the run with no output at all.
     printf '{"name":"occtswift-wasm-test-shim","version":"0.0.0","private":true,"type":"module"}\n' \
         > "$staging/package.json"
-    ( cd "$staging" && npm install --silent "$SHIM_PKG" >/dev/null )
+    ( cd "$staging" && npm install --silent "$SHIM_PKG" >/dev/null ) \
+        || die "npm install $SHIM_PKG failed in $staging. The shim is the only network dependency these suites have; WASM_TEST_RUNTIME=wasmkit runs them without it, at the cost of the exception behaviour #2894 measured."
     cp -R "$staging/node_modules/@bjorn3/browser_wasi_shim/dist" "$SHIM_DIR"
     rm -rf "$staging/node_modules" "$staging/package.json" "$staging/package-lock.json"
 }

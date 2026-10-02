@@ -17,6 +17,7 @@
 // so every test after it is unreported.
 
 import { readFile } from "node:fs/promises";
+import { basename } from "node:path";
 import { pathToFileURL } from "node:url";
 
 const [, , shimDir, modulePath, ...guestArgs] = process.argv;
@@ -50,7 +51,7 @@ const fds = [
   new PreopenDirectory(TMP_DIR, tmpContents), // 4
 ];
 
-const moduleName = modulePath.split("/").pop() ?? "test-runner.wasm";
+const moduleName = basename(modulePath);
 const args = [moduleName, ...guestArgs];
 const env = [`TMPDIR=${TMP_DIR}`];
 
