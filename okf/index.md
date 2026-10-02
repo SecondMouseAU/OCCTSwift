@@ -30,7 +30,8 @@ geometry, topology, modelling, mesh, shape-healing, I/O, XCAF, analysis, drawing
 ## References
 
 See [`references/`](references/index.md): OpenCASCADE upstream and licensing (LGPL + exception), the
-[carried OCCT patches](references/carried-occt-patches.md) and the [known OCCT bugs](references/known-occt-bugs.md) index.
+[carried OCCT patches](references/carried-occt-patches.md), the [known OCCT bugs](references/known-occt-bugs.md) index
+and the [injection sweep mechanics](references/injection-sweep-mechanics.md).
 
 ## Notes
 
