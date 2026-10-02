@@ -4082,9 +4082,16 @@ void OCCTTObjApplicationRelease(OCCTTObjAppRef app)
       return;
 
     auto* a = static_cast<TObj_Application*>(app);
+    // transient-release-exempt: TObj_Application is a process-wide singleton whose own
+    // function-local static Handle holds a permanent reference, so a zero count here is never
+    // the last one and must never destroy (#2897).
+    //
     // Never delete on a zero count, unlike OCCTMessengerRelease/OCCTReportRelease: that static
     // Handle holds a permanent reference for the whole process, and deleting the singleton out
-    // from under it would corrupt it for the rest of the process's life.
+    // from under it would corrupt it for the rest of the process's life. The marker above is
+    // what check-transient-release-idiom.py (#2974) reads: this is the one site in the bridge
+    // that diverges from opencascade::handle::EndScope deliberately, and the gate requires the
+    // argument for a divergence to be written beside it rather than inferred.
     a->DecrementRefCounter();
   }
   catch (...)
