@@ -50,6 +50,11 @@ Three failure modes disappear with it:
 
 One build serves every switch, gated at runtime by an environment variable.
 
+**It does not work where the test calls the C symbol itself.** A test file carrying both
+`@testable import OCCTSwift` and `import OCCTBridge` sees the shadow and the import as equally
+visible, and the compiler refuses with `ambiguous use of`. Those switches go in as a one-line
+splice at an anchor whose uniqueness you have verified, as below.
+
 ## Resolve every anchor uniquely before the first build
 
 Where you do edit source by pattern, assert the pattern is unique **before** compiling anything.
@@ -89,6 +94,11 @@ harness cannot be mistaken for a passing one.
 * **`swift test --filter` is a regex over the whole test ID across every target.** A bare `degree`
   or `segment` matches other modules and runs far more than intended. Anchor it:
   `OCCTGeom2dTests\.<Suite>/<func>`.
+* **Swift Testing colours the failure glyph, and the reset sits between the glyph and the word.**
+  The line is `\x1b[91m✘\x1b[0m Test name() failed`, so a pattern anchored on `✘\s+Test` matches
+  nothing at all. One sweep's first scraper **read all eleven of its reds as green** on exactly
+  that. Strip ANSI before matching, every time. This is the worst of the three because it fails in
+  the reassuring direction and the run itself looks normal.
 
 ## A result that is not a result
 
