@@ -32,9 +32,11 @@ private func expectBox(
         sourceLocation: sourceLocation)
 }
 
-/// The three axes of a ``Shape/DetailedOBB`` are an orthonormal frame, whatever orientation
-/// `Bnd_OBB` chose. Pinning the half-sizes without this would not notice a frame that had
-/// collapsed or lost normalisation, which is what makes the half-sizes mean anything.
+/// The three axes of a ``Shape/DetailedOBB`` are an orthonormal frame.
+///
+/// Whatever orientation `Bnd_OBB` chose, that frame is what makes the half-sizes mean anything,
+/// and pinning the half-sizes alone would not notice one that had collapsed or lost its
+/// normalisation.
 private func expectOrthonormalFrame(
     _ obb: Shape.DetailedOBB, sourceLocation: SourceLocation = #_sourceLocation
 ) {
@@ -48,10 +50,12 @@ private func expectOrthonormalFrame(
 
 @Suite("BRepBndLib")
 struct BRepBndLibTests {
-    /// `BRepBndLib::Add` walks the shape's vertices, edges and faces and enlarges the box by each
-    /// one's tolerance, so a primitive box comes back one ``shapeTolerance`` oversize on every
-    /// side. The old form asserted each span exceeded a threshold the nominal box clears by a
-    /// whole unit, so it could not see the box mis-centred, nor the tolerance dropped (#1869).
+    /// A primitive box comes back one ``shapeTolerance`` oversize on every side.
+    ///
+    /// `BRepBndLib::Add` walks the shape's vertices, edges and faces and enlarges the box by
+    /// each one's tolerance. The old form asserted each span exceeded a threshold the nominal
+    /// box clears by a whole unit, so it could not see the box mis-centred, nor the tolerance
+    /// dropped (#1869).
     @Test func shapeBoundingBox() throws {
         let b = try #require(Shape.box(width: 10, height: 20, depth: 30))
         let bb = try #require(b.boundingBox)
@@ -67,9 +71,10 @@ struct BRepBndLibTests {
         expectBox(bb, min: -boxHalfExtent, max: boxHalfExtent)
     }
 
-    /// #1871: this asserted only `bb != nil`, so a bridge that dropped `useShapeTolerance`
-    /// entirely and measured the exact box instead passed. The flag's whole effect is one
-    /// ``shapeTolerance`` on each side, so the two calls are made here side by side and the
+    /// The `useShapeTolerance` flag's whole effect is one ``shapeTolerance`` on each side.
+    ///
+    /// #1871: this asserted only `bb != nil`, so a bridge that dropped the flag entirely and
+    /// measured the exact box instead passed. Both calls are made here side by side, and the
     /// difference between them is what the test pins.
     @Test func shapeBoundingBoxOptimalWithTolerance() throws {
         let b = try #require(Shape.box(width: 10, height: 20, depth: 30))
@@ -80,10 +85,11 @@ struct BRepBndLibTests {
         expectBox(exact, min: -boxHalfExtent, max: boxHalfExtent)
     }
 
-    /// #1872: this asserted the three half-sizes were positive, which the box of any non-empty
-    /// shape satisfies. For an axis-aligned box `BRepBndLib::AddOBB` returns the axis-aligned
-    /// frame, so the half-sizes are the nominal half-extents plus one ``shapeTolerance`` each,
-    /// in order, about a centre at the origin.
+    /// For an axis-aligned box, `BRepBndLib::AddOBB` returns the axis-aligned frame.
+    ///
+    /// So the half-sizes are the nominal half-extents plus one ``shapeTolerance`` each, in
+    /// order, about a centre at the origin. #1872: this asserted the three half-sizes were
+    /// positive, which the box of any non-empty shape satisfies.
     @Test func orientedBoundingBoxDetailed() throws {
         let b = try #require(Shape.box(width: 10, height: 20, depth: 30))
         let obb = try #require(b.orientedBoundingBoxDetailed())
@@ -95,9 +101,11 @@ struct BRepBndLibTests {
         expectOrthonormalFrame(obb)
     }
 
-    /// #1873: this asserted only `obb != nil`. A radius-5 sphere has no preferred orientation, so
-    /// whatever frame `AddOBB` picks the three half-sizes are all the radius plus one
-    /// ``shapeTolerance``, about a centre on the origin.
+    /// A radius-5 sphere has no preferred orientation, so every half-size is the same.
+    ///
+    /// Whatever frame `AddOBB` picks, the three half-sizes are all the radius plus one
+    /// ``shapeTolerance``, about a centre on the origin. #1873: this asserted only
+    /// `obb != nil`.
     @Test func orientedBoundingBoxDetailedOptimal() throws {
         let s = try #require(Shape.sphere(radius: 5))
         let obb = try #require(s.orientedBoundingBoxDetailed(optimal: true))

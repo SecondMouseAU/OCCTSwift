@@ -67,10 +67,12 @@ struct BndLibTests {
         expectAnalyticBounds(b, min: SIMD3(-12, -12, -2), max: SIMD3(12, 12, 2))
     }
 
-    /// Every edge of a centred 10 x 20 x 30 box is an axis-aligned segment, so each edge's box
-    /// has extent along exactly one axis, the twelve extents are four of each side length, and
-    /// the twelve boxes together span the solid. The old form asserted `max.x >= min.x` on one
-    /// edge, which the bridge's all-zero refusal output also satisfies.
+    /// The twelve edge boxes of a centred 10 x 20 x 30 box, each one and all of them together.
+    ///
+    /// Every edge of that box is an axis-aligned segment, so each edge's box has extent along
+    /// exactly one axis, the twelve extents are four of each side length, and the twelve boxes
+    /// together span the solid. The old form asserted `max.x >= min.x` on one edge, which the
+    /// bridge's all-zero refusal output also satisfies.
     @Test func edgeBounds() throws {
         let box = try #require(Shape.box(width: 10, height: 20, depth: 30))
         let edges = box.subShapes(ofType: .edge)
@@ -93,11 +95,12 @@ struct BndLibTests {
         #expect(hi == SIMD3(5, 10, 15))
     }
 
+    /// The one face of a radius-5 sphere, which measures to exactly the cube of side 10.
+    ///
     /// `BndLib_AddSurface::Add` at tolerance 0 works from the analytic `gp_Sphere` the face
-    /// carries, so the one face of a radius-5 sphere measures to exactly the cube of side 10,
-    /// with none of the 1e-7 shape tolerance `BRepBndLib::Add` would add (see
-    /// `BRepBndLibTests.boundingBoxSphere`, which is the same sphere through the other entry
-    /// point). The old form pinned the two x coordinates at 0.1 and left y and z unasserted.
+    /// carries, so none of the 1e-7 shape tolerance `BRepBndLib::Add` would add appears here.
+    /// `BRepBndLibTests.boundingBoxSphere` is the same sphere through that other entry point.
+    /// The old form pinned the two x coordinates at 0.1 and left y and z unasserted.
     @Test func faceBounds() throws {
         let sph = try #require(Shape.sphere(radius: 5))
         let faces = sph.subShapes(ofType: .face)

@@ -44,9 +44,11 @@ struct BndLibExtraTests {
         expectAnalyticBounds(b, min: SIMD3(-10, -5, 0), max: SIMD3(10, 5, 0))
     }
 
-    /// `gp_Cone`'s point at (u, v) is `loc + (R + v sin a) (cos u X + sin u Y) + v cos a Z`, so
-    /// reference radius 5 at v = 0, half-angle 30 degrees and v to 10 give a top circle of radius
-    /// 5 + 10 sin 30 = 10 at height 10 cos 30.
+    /// The cone segment's analytic extent from v = 0 to v = 10.
+    ///
+    /// `gp_Cone`'s point at (u, v) is `loc + (R + v sin a) (cos u X + sin u Y) + v cos a Z`, so a
+    /// reference radius of 5 at v = 0 with a half-angle of 30 degrees gives a top circle of
+    /// radius 5 + 10 sin 30 = 10, at height 10 cos 30.
     @Test func coneBounds() {
         let b = BndLib.cone(
             center: .zero, axis: SIMD3(0, 0, 1),
@@ -71,8 +73,10 @@ struct BndLibExtraTests {
         expectAnalyticBounds(b, min: SIMD3(0, 0, 0), max: SIMD3(10, 5, 0))
     }
 
-    /// `gp_Parab`'s point at u is `(u^2 / 4f, u)`, so for f = 2 and u in [-1, 1] the x extent is
-    /// 0 (at the apex, u = 0, which the range contains) to 1/8, and y is the parameter itself.
+    /// The parabola arc's analytic extent over u in [-1, 1].
+    ///
+    /// `gp_Parab`'s point at u is `(u^2 / 4f, u)`, so for f = 2 the x extent runs from 0, at the
+    /// apex u = 0 that the range contains, to 1/8, and y is the parameter itself.
     @Test func parabolaArcBounds() {
         let b = BndLib.parabolaArc(
             center: .zero, normal: SIMD3(0, 0, 1), xDirection: SIMD3(1, 0, 0),
@@ -80,8 +84,10 @@ struct BndLibExtraTests {
         expectAnalyticBounds(b, min: SIMD3(0, -1, 0), max: SIMD3(0.125, 1, 0))
     }
 
-    /// `gp_Hypr`'s point at u is `(a cosh u, b sinh u)`, so x runs from a at u = 0 to a cosh 1 and
-    /// y from -b sinh 1 to b sinh 1.
+    /// The hyperbola branch's analytic extent over u in [-1, 1].
+    ///
+    /// `gp_Hypr`'s point at u is `(a cosh u, b sinh u)`, so x runs from a at u = 0 to a cosh 1,
+    /// and y from -b sinh 1 to b sinh 1.
     @Test func hyperbolaArcBounds() {
         let b = BndLib.hyperbolaArc(
             center: .zero, normal: SIMD3(0, 0, 1), xDirection: SIMD3(1, 0, 0),
