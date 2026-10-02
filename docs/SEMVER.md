@@ -157,7 +157,7 @@ these, so nothing stops compiling, and a caller that compensated for the old num
 change.
 
 - `Mesh.normals` returns real surface normals where it returned `(0, 0, 1)` at every vertex (#2337).
-  The three mesh Booleans, `union(with:deflection:)`, `subtracting(_:deflection:)` and
+  The mesh Booleans, `union(with:deflection:)`, `subtracting(_:deflection:)` and
   `intersection(with:deflection:)`, are documented for what they always did, Booleans on the sewn
   surfaces rather than on volumes (#2301); `Shape.solid(from:)` is the route to the volume answer.
 - `Face.surfaceInertia(epsilon:)` returns a real area and centre of mass where it returned `0` and
@@ -182,7 +182,7 @@ change.
 **Refusals, MINOR: input that was answered with garbage is refused.** The return type already
 allowed the refusal in each case, so nothing stops compiling.
 
-- The eight `isCN` wrappers, `Curve3D.isCN(_:)`, `Curve3D.bezierIsCN(_:)`, `Curve2D.isCN(_:)`,
+- The `isCN` wrappers, `Curve3D.isCN(_:)`, `Curve3D.bezierIsCN(_:)`, `Curve2D.isCN(_:)`,
   `Curve2D.bsplineIsCN(_:)`, `Surface.isCNu(_:)`, `Surface.isCNv(_:)`, `Surface.bezierIsCNu(_:)` and
   `Surface.bezierIsCNv(_:)`, return `false` for a negative order where they returned `true` (#2862).
 - `bezierInsertPoleAfter`, `bezierRemovePole`, `bezierIncreaseDegree`, `setPole(at:point:)` and
@@ -223,12 +223,14 @@ allowed the refusal in each case, so nothing stops compiling.
   arrives with the kernel, as carried patch `0045` (#2875, #3013).
 
 **Crash to refusal, PATCH.** Calls that killed the process on malformed input now return their
-documented refusal: the `ShapeCustom` converters on a face with no surface (#2790), four `BRep_Tool`
-wrappers on a null shape (#2812), `Surface.bsplineFill(curves:style:)` and
-`bezierFill(_:_:_:_:style:)` on four boundary curves that do not close a loop (#2829),
-`Surface.extrema(to:)` on two parallel surfaces (#2831), `SewingBuilder.deletedFace(at:)` (#2856),
-and four `Document` TNaming lookups on a document that never recorded naming (#766). A crash is not
-a contract a caller can have depended on.
+documented refusal: the `ShapeCustom` converters on a face with no surface (#2790), the `BRep_Tool`
+wrappers `Shape.evalAndUpdateTolerance(edge:face:)`, `curveOnSurface(edge:face:)`,
+`isDegenerated(edge:)` and `rangeOnFace(edge:face:)` on a null shape (#2812),
+`Surface.bsplineFill(curves:style:)` and `bezierFill(_:_:_:_:style:)` on four boundary curves that
+do not close a loop (#2829), `Surface.extrema(to:)` on two parallel surfaces (#2831),
+`SewingBuilder.deletedFace(at:)` (#2856), and the `Document` naming lookups `sameShapeCount`,
+`sameShapeLabels`, `namingFindLabel` and `namingValidUntil` on a document that never recorded
+naming (#766). A crash is not a contract a caller can have depended on.
 
 **WebAssembly.** `Exporter.writeDXF` and `Exporter.writeSVG` work on `wasm32-unknown-wasip1`, where
 every export threw (#2793). The module is about 37 percent smaller: #2839 moved the Swift layer to
@@ -250,7 +252,7 @@ it cannot see a changed value behind an unchanged signature: those are the PRs' 
 against their diffs.
 
 **What the C comparison found that the PR bodies did not say.** Several bridge functions changed
-signature in PRs that state only their Swift half, and the C structs behind three results gained
+signature in PRs that state only their Swift half, and the C structs behind those results gained
 fields. They are tabulated at the end of the beta.5 breaks. `OCCTBridge` is a target and not a
 product, and it is reachable anyway (#967), so they are breaks for a direct caller and not for one
 that goes through `OCCTSwift`.
@@ -269,10 +271,10 @@ major already.
 #2980, #3001, #3016 and #3023 carry none, and no statement was written for their authors. Each was
 read against its diff instead. All but #2886 change no public declaration and nothing a consumer can
 reach: a bridge-internal deletion (#2883), documentation, policy and CI only (#2922, #2955, #2973,
-#2980, #3001, #3023), tests only (#2942), and two kernel patches (#3016) that #3031 has since
-pinned, whose effect reaches a consumer through the repin and is recorded there. #2886 changes
-behaviour: its body grades the change MINOR under a "Behaviour change" heading and not under the
-required one, and it is recorded above as the `edgePolyline` refusal (issue #2872).
+#2980, #3001, #3023), tests only (#2942), and the kernel patches `0045` and `0046` (#3016) that
+#3031 has since pinned, whose effect reaches a consumer through the repin and is recorded there.
+#2886 changes behaviour: its body grades the change MINOR under a "Behaviour change" heading and
+not under the required one, and it is recorded above as the `edgePolyline` refusal (issue #2872).
 
 Everything else in this release is internal: the bridge and Swift correctness sweeps (#1413,
 #1551), the data-exchange thread-safety series (#1403), the #766 test-quality lift, and the gate
@@ -557,14 +559,14 @@ if part.type == .vertex, let t = part.vertexParameter1 { … }
 ##### v4.0.0: `Shape.isSubShapeValid(type:at:)` can say it did not check (#2755)
 
 The return type changes from `Bool` to `Bool?` (PR #2837). `BRepCheck_Analyzer::Perform()` walks the
-whole parent shape whichever sub-shape the caller asks after, so a parent carrying one of the two
-shapes the analyzer cannot survive, a face edge with no valid 3D curve and a pcurve (#2746) or a face
-with no surface that carries a wire (#2789), has to be refused before the analyzer is built. The old
+whole parent shape whichever sub-shape the caller asks after, so a parent carrying a shape the
+analyzer cannot survive, a face edge with no valid 3D curve and a pcurve (#2746) or a face with no
+surface that carries a wire (#2789), has to be refused before the analyzer is built. The old
 `false` for that refusal claimed the sub-shape was invalid, which nothing had measured. `nil` is that
 case and only that case; an index that names no sub-shape of that type still answers `false`.
 
 **Migration.** `if shape.isSubShapeValid(type: .edge, at: 0)` stops compiling. For a caller that wanted
-a verdict and does not care about the distinction it is one comparison, `== true`, which is what three
+a verdict and does not care about the distinction it is one comparison, `== true`, which is what the
 call sites in this repository's own tests became.
 
 ##### v4.0.0: `Shape.computeNormals()` reports what it computed (#2905)
@@ -621,7 +623,7 @@ PR #2871. Each returned a bare `Double` that could not say "out of range" or "no
   begin parameter of a segment that does not exist, and a large index was a SIGBUS or SIGSEGV.
 
 **Migration.** `m.value(row: r, col: c)` becomes `m.value(row: r, col: c) ?? <your fallback>`, or an
-`if let`, and the other three take the same shape. There is no non-breaking form: `0`, the bridge's
+`if let`, and the others take the same shape. There is no non-breaking form: `0`, the bridge's
 old refusal for a null handle, is also a legitimate curve parameter, which was the defect, and #640
 settled the same argument for `MathGauss.determinant`.
 
@@ -663,9 +665,9 @@ migrate to, because the old ones came from searching nothing.
 ##### v4.0.0: `Document.layerCount` and `layerNames` read the real layer table (#2413)
 
 No signature moves, and the answer changes for every document (PR #2799). Both read a layer tool
-attached to the document's `Main()` label, which enumerates the nine XCAF tool labels as though they
-were layers, while the six write-side functions use the layer table at `0:1:3`. So both were wrong for
-every document: a fresh one reported nine layers named after tool labels, a layer that had been set
+attached to the document's `Main()` label, which enumerates the XCAF tool labels as though they were
+layers, while the write-side functions use the layer table at `0:1:3`. So both were wrong for every
+document: a fresh one reported `9` layers named after tool labels, a layer that had been set
 never appeared, and the count depended on which tool labels happened to exist. They now read the table
 the write side writes: `0` and `[]` for a fresh document, and the real layers for one that has them.
 
