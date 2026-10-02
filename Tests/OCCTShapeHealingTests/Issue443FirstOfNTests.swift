@@ -138,6 +138,11 @@ struct Issue443FirstOfN {
         #expect(viaMakeSolid.solids.count == 2)
         expectVolume(viaMakeSolid, 2000.0, "solid(from:)")
         expectVolume(viaShapeFix, 2000.0, "solidFromShellFixed()")
+        // Required before indexing: a result of the wrong size must fail here, not trap below.
+        try #require(
+            viaMakeSolid.solids.count == viaShapeFix.solids.count,
+            "the entry points return \(viaMakeSolid.solids.count) and \(viaShapeFix.solids.count) bodies"
+        )
         for (index, body) in viaMakeSolid.solids.enumerated() {
             try expectSameBounds(
                 body, viaShapeFix.solids[index], "the entry points disagree on body \(index)")
@@ -324,8 +329,8 @@ struct Issue443FirstOfN {
         try #require(boxes.count == count, "built \(boxes.count) boxes, not \(count)")
         let compound = try #require(Shape.compound(boxes), "could not compound the boxes")
         let sewn = try #require(compound.sewn(tolerance: 1e-6), "could not sew \(count) boxes")
-        #expect(sewn.solids.isEmpty, "sewing left solids standing, so these are not free shells")
-        #expect(sewn.shells.count == count)
+        try #require(sewn.solids.isEmpty, "sewing left solids standing, so these are not free shells")
+        try #require(sewn.shells.count == count, "sewing gave \(sewn.shells.count) shells")
 
         let solids = try #require(Shape.solid(from: sewn), "solid(from:) returned nil")
         #expect(solids.solids.count == count)
