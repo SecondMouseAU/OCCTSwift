@@ -546,15 +546,15 @@ def main(argv=None):
     fence = wrapping_fence(entry)
     if fence:
         sys.stderr.write(
-            "error: the `%s` section is wrapped whole in `%s`, which presents the entry as\n"
-            "literal markdown rather than writing it.\n"
+            "error: the `%s` section is wrapped whole in a bare %s fence, which presents the\n"
+            "entry as literal markdown rather than writing it.\n"
             "\n"
             "This tool transcribes the section verbatim, so the fence goes into %s with it and\n"
             "the entry renders as a preformatted block: no heading, no bullets, no links, in the\n"
             "one file whose job is to be read. Four entries recovered in PR #2961 have that\n"
             "shape (#2963).\n"
             "\n"
-            "Delete the opening and closing `%s` lines from the PR body and leave everything\n"
+            "Delete the opening and closing %s lines from the PR body and leave everything\n"
             "between them exactly as it is. A fence INSIDE the entry, around a snippet, is kept\n"
             "and is not what this is about. The worked example in\n"
             "okf/policies/changelog-on-merge.md is fenced to display it; the fence is not part of\n"
@@ -1180,6 +1180,12 @@ def self_test():
          first_substantive_line(wrapped) == "```", repr(first_substantive_line(wrapped)))
     case("already-present-cannot-answer-on-a-fence-wrapped-entry",
          identifying_line(wrapped) is None, repr(identifying_line(wrapped)))
+    # The shape the "nothing identifies this entry" refusal exists for, and the only one that
+    # reaches it: an info-stringed block is not a bare wrapper, so the fence refusal passes it on.
+    case("an-entry-that-is-only-a-fenced-block-has-no-identifying-line",
+         wrapping_fence("```text\nnothing but a code block\n```\n") is None
+         and identifying_line("```text\nnothing but a code block\n```\n") is None,
+         repr(identifying_line("```text\nnothing but a code block\n```\n")))
     case("a-fence-is-never-the-identifying-line",
          identifying_line("```\ncode\n```\n\n### A real heading (#1)\n")
          == "### A real heading (#1)",
