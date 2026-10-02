@@ -23,6 +23,11 @@ struct OCAFSaveLoadBinaryTests {
 
         let (loaded, readStatus) = Document.loadOCAF(from: tmpPath)
         #expect(readStatus == .ok)
+        // Asserted, not merely bound: an `.ok` status with a nil document skipped
+        // the whole round-trip check below and the test still passed, which is the
+        // one failure this test exists to catch. Its two siblings in this domain
+        // already assert it (#2803).
+        #expect(loaded != nil)
         if let loaded = loaded {
             #expect(loaded.storageFormat == "BinOcaf")
             // Read the values back, which is what "survived the round trip"
