@@ -1466,7 +1466,7 @@ public struct CommonPart: Sendable {
 
 | field | meaning |
 |---|---|
-| `type` | `.vertex` or `.edge`: the kind of intersection found. |
+| `type` | `.vertex` or `.edge`: what OCCT means a boolean operation to make of this part, **not** what the intersection geometrically is. See below. |
 | `param1Range` | Parameter range `(first, last)` on the first edge; equal endpoints for a vertex intersection. |
 | `param2Range` | Parameter range `(first, last)` on the second edge; equal endpoints for a vertex intersection. **Only `edgeEdgeIntersection(with:)` has a second edge**, see below. |
 | `point` | A point on the intersection, the first edge's curve evaluated at the representative parameter of `param1Range`. `nil` only if the part carries no first edge, which no current entry point produces. |
@@ -1481,6 +1481,19 @@ whatever the overlap. Nothing in OCCT reads `BoundingPoints` back. What OCCT doe
 intersection point, for an edge part an interior point of the overlap that lies on the edge rather
 than on the chord across it. A semicircular overlap of radius 10 used to report the circle's centre,
 a point 10 away from every point of the intersection.
+
+**`.vertex` does not mean the two edges meet at a point** (#2994). A tangential overlap comes back
+`.vertex` whenever it covers the whole of neither edge: `IntTools_EdgeEdge::MergeSolutions` starts
+at `TopAbs_VERTEX` and promotes to `TopAbs_EDGE` only on whole-range coverage
+(`IntTools_EdgeEdge.cxx:756-765`). Two arcs of one radius-10 circle, `[0, pi]` against
+`[pi/2, 3pi/2]`, report `.vertex` for a genuine quarter circle of coincidence, while `[0, pi]`
+against `[pi/4, 3pi/4]` reports `.edge`. Two straight edges never take that route: `ComputeLineLine`
+types every coincident overlap `.edge`, so the same relation answers differently for lines and for
+arcs, which is an inconsistency inside OCCT rather than a bridge choice. `Type()` is a directive to
+`BOPAlgo_PaveFiller::PerformEE`, which discards both of those parts and still splits both fixtures
+correctly because vertex/edge interference ran first. To ask whether two edges overlap and over
+what, read `param1Range`. Seven fixtures and the General Fuse comparison are in
+`Scripts/repro/2994-edgeedge-overlap-type/`.
 
 **`param2Range` is always `(0, 0)` from `edgeFaceIntersection(with:)`.** A face is not an edge, and
 `IntTools_EdgeFace` reflects that: `IntTools_EdgeFace.cxx` never calls `AppendRange2` or

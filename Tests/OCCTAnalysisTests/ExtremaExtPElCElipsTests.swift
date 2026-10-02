@@ -27,15 +27,22 @@ struct ExtremaExtPElCElipsTests {
         let farthest = try #require(sorted.last)
         // Nearest: the near vertex (5, 0, 0), distance 5.
         #expect(abs(nearest.squareDistance - 25) < 1e-9)
-        #expect(simd_distance(nearest.point2, SIMD3(5, 0, 0)) < 1e-9)
+        let nearPoint = try #require(nearest.point2, "a point-ellipse extremum has a witness pair")
+        #expect(simd_distance(nearPoint, SIMD3(5, 0, 0)) < 1e-9)
         // Farthest: the far vertex (-5, 0, 0), distance 15.
         #expect(abs(farthest.squareDistance - 225) < 1e-9)
-        #expect(simd_distance(farthest.point2, SIMD3(-5, 0, 0)) < 1e-9)
+        let farPoint = try #require(farthest.point2, "a point-ellipse extremum has a witness pair")
+        #expect(simd_distance(farPoint, SIMD3(-5, 0, 0)) < 1e-9)
         // point1 is the query point on every result, and the reported square distance is the one
-        // between the pair the same result reports, not a number arriving beside them.
+        // between the pair the same result reports, not a number arriving beside them. Neither
+        // point is optional in practice here: `Extrema_ExtPElC` has no parallel branch, so #2993's
+        // `nil` never appears and `isParallel` is false on every result.
         for r in sorted {
-            #expect(simd_distance(r.point1, SIMD3(10, 0, 0)) < 1e-12)
-            #expect(abs(simd_distance_squared(r.point1, r.point2) - r.squareDistance) < 1e-9)
+            #expect(!r.isParallel)
+            let p1 = try #require(r.point1)
+            let p2 = try #require(r.point2)
+            #expect(simd_distance(p1, SIMD3(10, 0, 0)) < 1e-12)
+            #expect(abs(simd_distance_squared(p1, p2) - r.squareDistance) < 1e-9)
         }
     }
 }

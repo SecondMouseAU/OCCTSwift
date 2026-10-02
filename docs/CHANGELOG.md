@@ -21,6 +21,26 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### `Extrema_ExtElC` parallel witnesses are optional (#2993), and `IntTools_EdgeEdge`'s two common-part types are settled (#2994)
+
+**Fixed.** `ExtremaResult.point1` and `ExtremaResult.point2` are now `SIMD3<Double>?`, `nil` on a
+parallel branch, where the bridge used to report `SIMD3(0, 0, 0)` beside a correct distance. For a
+line on a circle's own axis that zero was the circle's centre, a point the radius away from every
+point of the circle. The struct gains `isParallel`, which is `true` exactly when the witnesses are
+`nil`, and the square distance is unchanged because `Extrema_ExtCC::PrepareResults`, OCCT's own
+production caller, keeps exactly that value and reads no point there. All five parallel-capable
+entry points are covered: `ExtremaElC.lineToLine`, `.lineToCircle`, `.circleToCircle`,
+`.lineToEllipse` and `ExtremaElCS.lineToPlane` (#2993).
+
+**Documented.** `Shape.CommonPart.type` is a directive to a boolean operation, not a
+classification of the geometry: a tangential overlap of two arcs reports `.vertex` whenever it
+covers the whole of neither edge, because `IntTools_EdgeEdge::MergeSolutions` promotes to
+`TopAbs_EDGE` only on whole-range coverage, while two straight edges take `ComputeLineLine` and
+report `.edge` for any coincidence. `param1Range` is the true overlap under either answer and is
+what a caller should read. Settled with a C++ probe and `BOPAlgo_PaveFiller::PerformEE` read as
+the caller; not a kernel defect, and both answers are now pinned with the rule beside them
+(#2994).
+
 ### Two carried kernel patches: Bezier `InsertPoleAfter` reaches the pole count the constructors allow, and `math_Uzawa` stops overrunning its initial-error vector (#2875, #2860)
 
 - **#2875, patch `0045`.** `Geom2d_BezierCurve::InsertPoleAfter` and

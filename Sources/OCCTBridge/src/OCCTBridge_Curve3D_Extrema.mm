@@ -401,6 +401,33 @@ int32_t OCCTCurve3DExtrema(OCCTCurve3DRef    c1,
   }
 }
 
+// The parallel branch of Extrema_ExtElC and Extrema_ExtElCS: a real square distance and no
+// witness points. Each constructor sets mySqDist[0] and myNbExt = 1 and never touches myPoint
+// (Extrema_ExtElC.cxx:341-344, :595-597, :729-732), while Points() bounds on NbExt(), so it hands
+// back a default-constructed pair. For a line on a circle's own axis that reads as the circle's
+// CENTRE, a point the radius away from every point of the circle, beside a correct distance
+// (#2993, measured in Scripts/repro/2993-extremaelc-parallel-witnesses/).
+//
+// OCCT's own production caller never reads one: Extrema_ExtCC::PrepareResults branches on
+// IsParallel() before the Points() loop and hands only AlgExt.SquareDistance() to
+// PrepareParallelResult, which recomputes any representative pair it can from the trimming and
+// appends none where it cannot (Extrema_ExtCC.cxx:845-852, :399-447). So the distance is reported
+// and hasWitnessPoints is false. The zeroed coordinates are placeholders the flag disowns, never
+// a measurement, and they are written rather than skipped so a C caller with an uninitialised
+// buffer reads a constant instead of a stale one.
+static void occtFillParallelExtremaResult(double squareDistance, OCCTExtremaElResult& out)
+{
+  out.squareDistance   = squareDistance;
+  out.isParallel       = true;
+  out.hasWitnessPoints = false;
+  out.x1               = 0;
+  out.y1               = 0;
+  out.z1               = 0;
+  out.x2               = 0;
+  out.y2               = 0;
+  out.z2               = 0;
+}
+
 int32_t OCCTExtremaElCLinLin(double               l1px,
                              double               l1py,
                              double               l1pz,
@@ -431,13 +458,7 @@ int32_t OCCTExtremaElCLinLin(double               l1px,
     {
       if (max > 0)
       {
-        out[0].squareDistance = ext.SquareDistance(1);
-        out[0].x1             = 0;
-        out[0].y1             = 0;
-        out[0].z1             = 0;
-        out[0].x2             = 0;
-        out[0].y2             = 0;
-        out[0].z2             = 0;
+        occtFillParallelExtremaResult(ext.SquareDistance(1), out[0]);
       }
       return 1;
     }
@@ -447,13 +468,15 @@ int32_t OCCTExtremaElCLinLin(double               l1px,
     {
       Extrema_POnCurv p1, p2;
       ext.Points(i, p1, p2);
-      out[count].squareDistance = ext.SquareDistance(i);
-      out[count].x1             = p1.Value().X();
-      out[count].y1             = p1.Value().Y();
-      out[count].z1             = p1.Value().Z();
-      out[count].x2             = p2.Value().X();
-      out[count].y2             = p2.Value().Y();
-      out[count].z2             = p2.Value().Z();
+      out[count].squareDistance   = ext.SquareDistance(i);
+      out[count].isParallel       = false;
+      out[count].hasWitnessPoints = true;
+      out[count].x1               = p1.Value().X();
+      out[count].y1               = p1.Value().Y();
+      out[count].z1               = p1.Value().Z();
+      out[count].x2               = p2.Value().X();
+      out[count].y2               = p2.Value().Y();
+      out[count].z2               = p2.Value().Z();
       count++;
     }
     return count;
@@ -493,13 +516,7 @@ int32_t OCCTExtremaElCLinCirc(double               lpx,
     {
       if (max > 0)
       {
-        out[0].squareDistance = ext.SquareDistance(1);
-        out[0].x1             = 0;
-        out[0].y1             = 0;
-        out[0].z1             = 0;
-        out[0].x2             = 0;
-        out[0].y2             = 0;
-        out[0].z2             = 0;
+        occtFillParallelExtremaResult(ext.SquareDistance(1), out[0]);
       }
       return 1;
     }
@@ -509,13 +526,15 @@ int32_t OCCTExtremaElCLinCirc(double               lpx,
     {
       Extrema_POnCurv p1, p2;
       ext.Points(i, p1, p2);
-      out[count].squareDistance = ext.SquareDistance(i);
-      out[count].x1             = p1.Value().X();
-      out[count].y1             = p1.Value().Y();
-      out[count].z1             = p1.Value().Z();
-      out[count].x2             = p2.Value().X();
-      out[count].y2             = p2.Value().Y();
-      out[count].z2             = p2.Value().Z();
+      out[count].squareDistance   = ext.SquareDistance(i);
+      out[count].isParallel       = false;
+      out[count].hasWitnessPoints = true;
+      out[count].x1               = p1.Value().X();
+      out[count].y1               = p1.Value().Y();
+      out[count].z1               = p1.Value().Z();
+      out[count].x2               = p2.Value().X();
+      out[count].y2               = p2.Value().Y();
+      out[count].z2               = p2.Value().Z();
       count++;
     }
     return count;
@@ -555,13 +574,7 @@ int32_t OCCTExtremaElCCircCirc(double               c1x,
     {
       if (max > 0)
       {
-        out[0].squareDistance = ext.SquareDistance(1);
-        out[0].x1             = 0;
-        out[0].y1             = 0;
-        out[0].z1             = 0;
-        out[0].x2             = 0;
-        out[0].y2             = 0;
-        out[0].z2             = 0;
+        occtFillParallelExtremaResult(ext.SquareDistance(1), out[0]);
       }
       return 1;
     }
@@ -571,13 +584,15 @@ int32_t OCCTExtremaElCCircCirc(double               c1x,
     {
       Extrema_POnCurv p1, p2;
       ext.Points(i, p1, p2);
-      out[count].squareDistance = ext.SquareDistance(i);
-      out[count].x1             = p1.Value().X();
-      out[count].y1             = p1.Value().Y();
-      out[count].z1             = p1.Value().Z();
-      out[count].x2             = p2.Value().X();
-      out[count].y2             = p2.Value().Y();
-      out[count].z2             = p2.Value().Z();
+      out[count].squareDistance   = ext.SquareDistance(i);
+      out[count].isParallel       = false;
+      out[count].hasWitnessPoints = true;
+      out[count].x1               = p1.Value().X();
+      out[count].y1               = p1.Value().Y();
+      out[count].z1               = p1.Value().Z();
+      out[count].x2               = p2.Value().X();
+      out[count].y2               = p2.Value().Y();
+      out[count].z2               = p2.Value().Z();
       count++;
     }
     return count;
@@ -625,13 +640,7 @@ int32_t OCCTExtremaElCLinElips(double               lpx,
     {
       if (max > 0)
       {
-        out[0].squareDistance = ext.SquareDistance(1);
-        out[0].x1             = 0;
-        out[0].y1             = 0;
-        out[0].z1             = 0;
-        out[0].x2             = 0;
-        out[0].y2             = 0;
-        out[0].z2             = 0;
+        occtFillParallelExtremaResult(ext.SquareDistance(1), out[0]);
       }
       return 1;
     }
@@ -641,13 +650,15 @@ int32_t OCCTExtremaElCLinElips(double               lpx,
     {
       Extrema_POnCurv p1, p2;
       ext.Points(i, p1, p2);
-      out[count].squareDistance = ext.SquareDistance(i);
-      out[count].x1             = p1.Value().X();
-      out[count].y1             = p1.Value().Y();
-      out[count].z1             = p1.Value().Z();
-      out[count].x2             = p2.Value().X();
-      out[count].y2             = p2.Value().Y();
-      out[count].z2             = p2.Value().Z();
+      out[count].squareDistance   = ext.SquareDistance(i);
+      out[count].isParallel       = false;
+      out[count].hasWitnessPoints = true;
+      out[count].x1               = p1.Value().X();
+      out[count].y1               = p1.Value().Y();
+      out[count].z1               = p1.Value().Z();
+      out[count].x2               = p2.Value().X();
+      out[count].y2               = p2.Value().Y();
+      out[count].z2               = p2.Value().Z();
       count++;
     }
     return count;
@@ -688,13 +699,7 @@ int32_t OCCTExtremaElCSLinPlane(double               lpx,
     {
       if (max > 0)
       {
-        out[0].squareDistance = ext.SquareDistance(1);
-        out[0].x1             = 0;
-        out[0].y1             = 0;
-        out[0].z1             = 0;
-        out[0].x2             = 0;
-        out[0].y2             = 0;
-        out[0].z2             = 0;
+        occtFillParallelExtremaResult(ext.SquareDistance(1), out[0]);
       }
       return 1;
     }
@@ -705,13 +710,15 @@ int32_t OCCTExtremaElCSLinPlane(double               lpx,
       Extrema_POnCurv pc;
       Extrema_POnSurf ps;
       ext.Points(i, pc, ps);
-      out[count].squareDistance = ext.SquareDistance(i);
-      out[count].x1             = pc.Value().X();
-      out[count].y1             = pc.Value().Y();
-      out[count].z1             = pc.Value().Z();
-      out[count].x2             = ps.Value().X();
-      out[count].y2             = ps.Value().Y();
-      out[count].z2             = ps.Value().Z();
+      out[count].squareDistance   = ext.SquareDistance(i);
+      out[count].isParallel       = false;
+      out[count].hasWitnessPoints = true;
+      out[count].x1               = pc.Value().X();
+      out[count].y1               = pc.Value().Y();
+      out[count].z1               = pc.Value().Z();
+      out[count].x2               = ps.Value().X();
+      out[count].y2               = ps.Value().Y();
+      out[count].z2               = ps.Value().Z();
       count++;
     }
     return count;
@@ -750,13 +757,15 @@ int32_t OCCTExtremaElCSLinSphere(double               lpx,
       Extrema_POnCurv pc;
       Extrema_POnSurf ps;
       ext.Points(i, pc, ps);
-      out[count].squareDistance = ext.SquareDistance(i);
-      out[count].x1             = pc.Value().X();
-      out[count].y1             = pc.Value().Y();
-      out[count].z1             = pc.Value().Z();
-      out[count].x2             = ps.Value().X();
-      out[count].y2             = ps.Value().Y();
-      out[count].z2             = ps.Value().Z();
+      out[count].squareDistance   = ext.SquareDistance(i);
+      out[count].isParallel       = false;
+      out[count].hasWitnessPoints = true;
+      out[count].x1               = pc.Value().X();
+      out[count].y1               = pc.Value().Y();
+      out[count].z1               = pc.Value().Z();
+      out[count].x2               = ps.Value().X();
+      out[count].y2               = ps.Value().Y();
+      out[count].z2               = ps.Value().Z();
       count++;
     }
     return count;
@@ -804,13 +813,15 @@ int32_t OCCTExtremaElCSLinCylinder(double               lpx,
       Extrema_POnCurv pc;
       Extrema_POnSurf ps;
       ext.Points(i, pc, ps);
-      out[count].squareDistance = ext.SquareDistance(i);
-      out[count].x1             = pc.Value().X();
-      out[count].y1             = pc.Value().Y();
-      out[count].z1             = pc.Value().Z();
-      out[count].x2             = ps.Value().X();
-      out[count].y2             = ps.Value().Y();
-      out[count].z2             = ps.Value().Z();
+      out[count].squareDistance   = ext.SquareDistance(i);
+      out[count].isParallel       = false;
+      out[count].hasWitnessPoints = true;
+      out[count].x1               = pc.Value().X();
+      out[count].y1               = pc.Value().Y();
+      out[count].z1               = pc.Value().Z();
+      out[count].x2               = ps.Value().X();
+      out[count].y2               = ps.Value().Y();
+      out[count].z2               = ps.Value().Z();
       count++;
     }
     return count;
@@ -852,14 +863,16 @@ int32_t OCCTExtremaExtPElCLin(double               px,
     int count = 0;
     for (int i = 1; i <= n && count < max; i++)
     {
-      out[count].squareDistance = ext.SquareDistance(i);
-      gp_Pnt pt                 = ext.Point(i).Value();
-      out[count].x1             = px;
-      out[count].y1             = py;
-      out[count].z1             = pz;
-      out[count].x2             = pt.X();
-      out[count].y2             = pt.Y();
-      out[count].z2             = pt.Z();
+      out[count].squareDistance   = ext.SquareDistance(i);
+      out[count].isParallel       = false;
+      out[count].hasWitnessPoints = true;
+      gp_Pnt pt                   = ext.Point(i).Value();
+      out[count].x1               = px;
+      out[count].y1               = py;
+      out[count].z1               = pz;
+      out[count].x2               = pt.X();
+      out[count].y2               = pt.Y();
+      out[count].z2               = pt.Z();
       count++;
     }
     return count;
@@ -896,14 +909,16 @@ int32_t OCCTExtremaExtPElCCirc(double               px,
     int count = 0;
     for (int i = 1; i <= n && count < max; i++)
     {
-      out[count].squareDistance = ext.SquareDistance(i);
-      gp_Pnt pt                 = ext.Point(i).Value();
-      out[count].x1             = px;
-      out[count].y1             = py;
-      out[count].z1             = pz;
-      out[count].x2             = pt.X();
-      out[count].y2             = pt.Y();
-      out[count].z2             = pt.Z();
+      out[count].squareDistance   = ext.SquareDistance(i);
+      out[count].isParallel       = false;
+      out[count].hasWitnessPoints = true;
+      gp_Pnt pt                   = ext.Point(i).Value();
+      out[count].x1               = px;
+      out[count].y1               = py;
+      out[count].z1               = pz;
+      out[count].x2               = pt.X();
+      out[count].y2               = pt.Y();
+      out[count].z2               = pt.Z();
       count++;
     }
     return count;
@@ -950,14 +965,16 @@ int32_t OCCTExtremaExtPElCElips(double               px,
     int count = 0;
     for (int i = 1; i <= n && count < max; i++)
     {
-      out[count].squareDistance = ext.SquareDistance(i);
-      gp_Pnt pt                 = ext.Point(i).Value();
-      out[count].x1             = px;
-      out[count].y1             = py;
-      out[count].z1             = pz;
-      out[count].x2             = pt.X();
-      out[count].y2             = pt.Y();
-      out[count].z2             = pt.Z();
+      out[count].squareDistance   = ext.SquareDistance(i);
+      out[count].isParallel       = false;
+      out[count].hasWitnessPoints = true;
+      gp_Pnt pt                   = ext.Point(i).Value();
+      out[count].x1               = px;
+      out[count].y1               = py;
+      out[count].z1               = pz;
+      out[count].x2               = pt.X();
+      out[count].y2               = pt.Y();
+      out[count].z2               = pt.Z();
       count++;
     }
     return count;
@@ -1001,14 +1018,16 @@ int32_t OCCTExtremaExtPElCParab(double               px,
     int count = 0;
     for (int i = 1; i <= n && count < max; i++)
     {
-      out[count].squareDistance = ext.SquareDistance(i);
-      gp_Pnt pt                 = ext.Point(i).Value();
-      out[count].x1             = px;
-      out[count].y1             = py;
-      out[count].z1             = pz;
-      out[count].x2             = pt.X();
-      out[count].y2             = pt.Y();
-      out[count].z2             = pt.Z();
+      out[count].squareDistance   = ext.SquareDistance(i);
+      out[count].isParallel       = false;
+      out[count].hasWitnessPoints = true;
+      gp_Pnt pt                   = ext.Point(i).Value();
+      out[count].x1               = px;
+      out[count].y1               = py;
+      out[count].z1               = pz;
+      out[count].x2               = pt.X();
+      out[count].y2               = pt.Y();
+      out[count].z2               = pt.Z();
       count++;
     }
     return count;
