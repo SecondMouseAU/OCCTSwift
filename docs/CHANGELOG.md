@@ -21,6 +21,38 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### A messenger or report release the bridge never handed out is refused, rather than freeing the object twice (#2952)
+
+`OCCTMessengerRelease` and `OCCTReportRelease` acted on whatever pointer they were given. Their
+parameters are `_Nonnull`, which the compiler does not enforce and which a consumer on the
+`OCCTBridge` surface (#967) can ignore, so a null reached `DecrementRefCounter()` as an uncatchable
+signal. A second release of the same pointer was worse: unlike `TObj_Application` (#2897) neither
+`Message_Messenger` nor `Message_Report` has a process-wide static holding a reference, so the
+first release already deletes and the second reads `GetRefCount()` out of freed memory and may
+delete the block again.
+
+Both now give back a reference through an address-keyed registry of the references
+`OCCTMessengerCreate` and `OCCTReportCreate` actually took. A null, a second release, or a pointer
+the bridge never produced is declined and counted by the new
+`OCCTBridgeRefusedReleaseCount`. That counter is the observable the invariant has:
+`OCCTTObjApplicationRefCount` could not serve here, because a correctly released messenger is gone
+and its reference count cannot be read.
+
+Both releases also now do what `opencascade::handle::EndScope` does, which is the only caller of
+`DecrementRefCounter` anywhere in the pinned kernel: act on the value the decrement returns, and
+call the virtual `Delete()`. They had discarded that value, re-read with a separate relaxed
+`GetRefCount()` and called `delete`. The re-read is a window in which another thread can hide a
+zero and leak, or free the block about to be read, and it skips the acquire fence
+`DecrementRefCounter` issues only on the decrement that reaches zero. Registering a borrow is
+likewise OCCT's model rather than ours: a live object's address can never already be registered,
+because the bridge's own reference keeps the storage alive, so a collision is met with
+`Standard_ProgramError` the way `Standard_Transient::This()` meets a zero count, recorded as a
+diagnostic and reported as a null handle.
+
+No caller in this repo reached the defect, which is why it was filed as hardening rather than
+folded into #2897's fix. `Messenger`/`Report`'s `deinit` is 1:1 with their initialisers and no
+behaviour changes for them.
+
 ### The BSpline surface manipulation suite had never run an expectation, and five weak-assertion test files come off the v5 branch (#766, #2464, #2444, #2503, #2318, #2320)
 
 Batch 9 of the v5 lift takes the tail of the ranked path list: 42 gains over five files, from five
