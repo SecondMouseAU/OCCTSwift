@@ -102,7 +102,6 @@ Tests/OCCTCurveTests/Issue995BuildTrsf3DTests.swift
 Tests/OCCTDrawingTests/DrawingStyleTests.swift
 Tests/OCCTDrawingTests/DrawingTestFixtures.swift
 Tests/OCCTFoundationTests/PathParsingContractTests.swift
-Tests/OCCTGeom2dTests/BSplineCurve2DCompletionsV121Tests.swift
 Tests/OCCTGeom2dTests/Curve2DApproximatedOverloadParityTests.swift
 Tests/OCCTGeom2dTests/Curve2DCircleFactoryParityTests.swift
 Tests/OCCTGeom2dTests/Curve2DConicFactoryParityTests.swift
