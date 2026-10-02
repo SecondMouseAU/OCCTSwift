@@ -361,7 +361,7 @@ struct Issue443FirstOfN {
         expectVolume(solids, 2000.0, "solid(from: two touching shells)")
         // A at 0...10 and B at 10...20: the shared face is not a reason to lose either body.
         try expectBoxBodies(
-            solids, [(SIMD3(0, 0, 0), 10.0), (SIMD3(10, 0, 0), 10.0)], inOrder: true,
+            solids, [boxBody(0, 0, 0, size: 10), boxBody(10, 0, 0, size: 10)], inOrder: true,
             "solid(from: two touching shells)")
     }
 
@@ -611,7 +611,7 @@ struct Issue443FirstOfN {
         expectVolume(upgraded, 8512.0, "upgraded(body nested in a cavity)")
         // WHICH two: the 20mm outer shell's body and the 8mm inner cube, in their own places.
         try expectBoxBodies(
-            upgraded, [(SIMD3(0, 0, 0), 20.0), (SIMD3(6, 6, 6), 8.0)], inOrder: false,
+            upgraded, [boxBody(0, 0, 0, size: 20), boxBody(6, 6, 6, size: 8)], inOrder: false,
             "upgraded(body nested in a cavity)")
     }
 

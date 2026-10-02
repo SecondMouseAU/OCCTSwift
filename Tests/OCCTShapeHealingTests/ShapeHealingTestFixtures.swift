@@ -63,6 +63,13 @@ func twoBoxBodies() -> [(origin: SIMD3<Double>, size: Double)] {
     [(origin: SIMD3<Double>(0, 0, 0), size: 10.0), (origin: SIMD3<Double>(20, 0, 0), size: 10.0)]
 }
 
+/// The expected-body spelling `expectBoxBodies` takes, with every literal a `Double`.
+func boxBody(
+    _ x: Double, _ y: Double, _ z: Double, size: Double
+) -> (origin: SIMD3<Double>, size: Double) {
+    (origin: SIMD3<Double>(x, y, z), size: size)
+}
+
 /// A 20mm cube with a 10mm cavity fully inside it: one solid, two shells.
 ///
 /// The outer shell bounds 8000 and the cavity 1000, so the solid is 7000. The cavity spans 5...15

@@ -232,7 +232,7 @@ struct Issue442FixSolidMultiBody {
         expectVolume(bodies, 35000.0, "solidFromShellFixed(cavity + wider sibling)")
         // WHICH two: A's 20mm outer shell and B's 30mm cube, and neither A's cavity.
         try expectBoxBodies(
-            bodies, [(SIMD3(0, 0, 0), 20.0), (SIMD3(50, 0, 0), 30.0)], inOrder: true,
+            bodies, [boxBody(0, 0, 0, size: 20), boxBody(50, 0, 0, size: 30)], inOrder: true,
             "solidFromShellFixed(cavity + wider sibling)")
     }
 
