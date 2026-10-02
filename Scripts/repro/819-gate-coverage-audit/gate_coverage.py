@@ -22,9 +22,14 @@ Two things live here:
    classification is derived structurally (self-test-only vs self-test-plus-bare, and whether a
    `--strict`-shaped flag exists and is withheld), not by matching English words in a comment, so it
    survives a comment being reworded. #2196 added a fourth kind, the RELEASE CHECK: self-test-only
-   like a census, but declaring a `--require-...` flag because its real run needs an input this job
-   does not have, and reaching a verdict rather than a list. The counting sentence covers the first
-   three; `--check` holds it to those and prints the fourth beside it. `--check` cross-references
+   like a census, because its real run needs an input this job does not have, and reaching a
+   verdict rather than a list. **#2960**: a census is recognised by its `census-` name prefix
+   BEFORE either of the other two tests, as the gated `Scripts/check-inventory-prose.py` has always
+   done. Keying on the `--require-...` flag instead, which this script did from #2196 until #2960,
+   reclassified every census that grew one, and two had: this artifact then reported a drift that
+   did not exist against a counting sentence that was correct. The counting sentence covers the
+   first three kinds; `--check` holds it to those and prints the fourth beside it. `--check`
+   cross-references
    the live count against that sentence and fails if they disagree, and against `Scripts/*.py`
    actually present on disk, so a renamed or deleted script shows up as a dangling reference rather
    than silently vanishing from the count.
@@ -54,6 +59,12 @@ Usage (from anywhere; paths are derived from this file's location):
     python3 Scripts/repro/819-gate-coverage-audit/gate_coverage.py             # full report
     python3 Scripts/repro/819-gate-coverage-audit/gate_coverage.py --check     # enumeration only, exit 1 on drift
     python3 Scripts/repro/819-gate-coverage-audit/gate_coverage.py --self-test # prove the parser isn't blind
+
+No CI job runs any of the three, which is why #2960's two red modes sat unnoticed for weeks. What
+keeps the enumeration true is not this file: it is `check-inventory-prose.py`, which derives the
+same split on every PR from the same `ci.yml` and fails the build when the counting sentence
+drifts. Keep this one as the cross-check and the defect-class record, run it by hand when the gate
+suite changes, and treat a disagreement between the two as a question about THIS file first.
 """
 from __future__ import annotations
 
@@ -80,11 +91,14 @@ SCRIPTS_DIR = os.path.join(REPO_ROOT, "Scripts")
 RUN_SCRIPT_RE = re.compile(r"run:\s*python3\s+Scripts/([A-Za-z0-9_\-]+)\.py(.*)$")
 JOB_HEADER_RE = re.compile(r"^  ([A-Za-z_][A-Za-z0-9_-]*):\s*$")
 STRICT_FLAG_RE = re.compile(r"""(['"])--strict\1""")
-# #2196. A script the job runs ONLY as --self-test is a census unless it declares that its real run
-# needs an input this job does not have, which #2098 says such a script must declare: a
-# `--require-...` flag turning "examined nothing" into an error. That is the one structural
-# difference between a census (its bare run could run here and would exit 0 either way) and a
-# release check (its bare run cannot run here at all, and does reach a verdict).
+# #2196/#2098. A `--require-...` flag turns "this run examined nothing" into an error, which a
+# script whose real input is absent from the checkout must declare. #2960: that is a PROPERTY of a
+# release check, not the test for one. Reading it as the test misclassified the two censuses that
+# have since grown such a flag (`census-compiled-out-validation.py --require-occt-src`,
+# `census-doc-occt-attribution.py --require-typecheck`), because a census needs #2098's mode
+# exactly as much as a release check does. `classify()` keys on the `census-` prefix instead, as
+# the gated `Scripts/check-inventory-prose.py` has always done; this reader survives to annotate
+# the report and to let `--self-test` pin the property apart from the kind.
 REQUIRE_FLAG_RE = re.compile(r"""(['"])--require-[a-z-]+\1""")
 
 
@@ -157,26 +171,31 @@ def script_defines_require_flag(path: str) -> bool:
     return bool(REQUIRE_FLAG_RE.search(_script_text(path)))
 
 
-def classify(scripts: "dict[str, ScriptSteps]", strict_flag_lookup,
-             require_flag_lookup=None) -> "dict[str, str]":
-    """GATE / CENSUS / AUDIT / RELEASE-CHECK, derived structurally, not from a comment's wording.
+def classify(scripts: "dict[str, ScriptSteps]", strict_flag_lookup) -> "dict[str, str]":
+    """GATE / CENSUS / AUDIT / RELEASE-CHECK, in the order `check-inventory-prose.py` applies them.
 
-    - Only `--self-test` runs in CI, and the script declares no `--require-...` flag -> CENSUS
-      (the bare run, if it exists at all as a local invocation, is documented to always exit 0;
-      CI never even calls it).
-    - Only `--self-test` runs in CI, and the script DOES declare one -> RELEASE-CHECK (#2196): its
-      bare run reaches a verdict, but over an input this job does not have, so it is taken at the
-      release step instead. `check-pinned-asset-patches.py` is the one today.
-    - Both run, and the script defines a `--strict`-shaped flag CI's bare invocation does NOT pass
-      -> AUDIT (the bare run executes but is architecturally unable to fail the build today).
-    - Both run, and either the script has no such flag or CI's invocation DOES pass it -> GATE.
+    - The name begins `census-` -> CENSUS. A census is a census because its bare run reports a
+      list for a human rather than reaching a verdict, which is a property of the script and not
+      of how `ci.yml` happens to invoke it today. #2960: this has to be the FIRST discriminator,
+      because each of the other two properties below is one a census can also have.
+    - Otherwise, only `--self-test` runs in CI -> RELEASE-CHECK (#2196): the bare run reaches a
+      verdict, but over an input this job does not have, so it is taken at the release step
+      instead. `check-pinned-asset-patches.py` is the one today.
+    - Otherwise, the bare run executes and the script defines a `--strict`-shaped flag CI's
+      invocation does NOT pass -> AUDIT (it runs, and is architecturally unable to fail the build).
+    - Otherwise -> GATE.
+
+    Only the AUDIT rule is derived structurally here; the gated sibling recognises its one audit by
+    name. That is the one classification this artifact still derives for itself, and the reason to
+    keep the pair rather than collapse them.
     """
-    require_flag_lookup = (real_require_flag_lookup if require_flag_lookup is None
-                           else require_flag_lookup)
     kinds = {}
     for name, steps in scripts.items():
+        if name.startswith("census-"):
+            kinds[name] = "census"
+            continue
         if not steps.bare_ran:
-            kinds[name] = "release-check" if require_flag_lookup(name) else "census"
+            kinds[name] = "release-check"
             continue
         has_strict = strict_flag_lookup(name)
         strict_passed = "--strict" in steps.bare_flags
@@ -185,6 +204,19 @@ def classify(scripts: "dict[str, ScriptSteps]", strict_flag_lookup,
         else:
             kinds[name] = "gate"
     return kinds
+
+
+def release_checks_missing_require_flag(kinds, require_flag_lookup=None) -> list:
+    """Release checks that declare no `--require-...` flag, #2098's "examined nothing" mode.
+
+    Not a classifier (that was #2960's defect), and not part of `--check`, which would duplicate
+    `check-inventory-prose.py`'s gated `check_release_checks()`. It annotates the report, and gives
+    `--self-test` a fixture that pins the property apart from the kind.
+    """
+    require_flag_lookup = (real_require_flag_lookup if require_flag_lookup is None
+                           else require_flag_lookup)
+    return sorted(n for n, k in kinds.items()
+                  if k == "release-check" and not require_flag_lookup(n))
 
 
 def real_strict_flag_lookup(name: str) -> bool:
@@ -705,9 +737,13 @@ def render_defect_table():
     return "\n".join(lines)
 
 
-def run_report(quiet=False):
+def _read_ci_yml() -> str:
     with open(CI_YML, "r", encoding="utf-8") as fh:
-        ci_text = fh.read()
+        return fh.read()
+
+
+def run_report(quiet=False):
+    ci_text = _read_ci_yml()
     scripts = parse_gate_scripts_job(ci_text)
     kinds = classify(scripts, real_strict_flag_lookup)
     counts = {"gate": 0, "census": 0, "audit": 0, "release-check": 0}
@@ -725,6 +761,11 @@ def run_report(quiet=False):
         print("=== Defect-class cross-reference ===")
         print(render_defect_table())
         print()
+        missing_require = release_checks_missing_require_flag(kinds)
+        if missing_require:
+            print(f"Release checks declaring no --require-... flag (#2098): "
+                  f"{', '.join(missing_require)}")
+            print()
         disp = summarize_dispositions()
         print("Disposition summary: " + ", ".join(f"{k}={v}" for k, v in sorted(disp.items())))
     else:
@@ -740,8 +781,7 @@ def run_check() -> int:
     a gate; everything else here is a report for a human to read."""
     problems = []
 
-    with open(CI_YML, "r", encoding="utf-8") as fh:
-        ci_text = fh.read()
+    ci_text = _read_ci_yml()
     scripts = parse_gate_scripts_job(ci_text)
     kinds = classify(scripts, real_strict_flag_lookup)
     counts = {"gate": 0, "census": 0, "audit": 0, "release-check": 0}
@@ -819,7 +859,8 @@ def _census_step(name: str) -> str:
 
 
 CLEAN_GATES = [f"gate{i}" for i in range(1, 9)]      # 8 gate-shaped scripts
-CLEAN_CENSUSES = [f"census{i}" for i in range(1, 5)]  # 4 census-shaped scripts
+# #2960: the `census-` prefix IS the discriminator, so the fixture names have to carry it.
+CLEAN_CENSUSES = [f"census-{i}" for i in range(1, 5)]  # 4 census-shaped scripts
 CLEAN_AUDIT = "audit1"                                # 1 audit-shaped script
 
 
@@ -889,16 +930,24 @@ def self_test() -> bool:
         failures.append(f"NEW-SCRIPT fixture: expected 14 scripts including gate9-new, "
                          f"got {len(scripts_d)}: {sorted(scripts_d)}")
 
-    # --- Case E: a census-shaped script grows a bare run (no --strict) -> must reclassify as ---
-    # --- 'gate', proving the classifier is live-derived, not trusting a fixed label ------------
-    mislabeled_body = _clean_fixture_body().replace(
-        _census_step("census1"), _gate_step("census1")
+    # --- Case E: the two directions of the #2960 discriminator, on one ci.yml shape -----------
+    # A `census-` script whose bare run CI starts invoking is STILL a census: what makes it one is
+    # that its run reports a list rather than reaching a verdict, which no ci.yml edit changes.
+    # The same shape under a non-census name is a gate, so the prefix and not the shape is doing
+    # the work, and neither answer is merely the default.
+    grown_body = _clean_fixture_body().replace(
+        _census_step("census-1"), _gate_step("census-1")
     )
-    scripts_e = parse_gate_scripts_job(_fixture(mislabeled_body))
+    scripts_e = parse_gate_scripts_job(_fixture(grown_body))
     kinds_e = classify(scripts_e, _clean_strict_lookup)
-    if kinds_e.get("census1") != "gate":
-        failures.append(f"MISLABELED fixture: census1 grew a bare run with no --strict and "
-                         f"should reclassify as 'gate', got {kinds_e.get('census1')!r}")
+    if kinds_e.get("census-1") != "census":
+        failures.append(f"CENSUS-PREFIX fixture: census-1 with a bare run is still a census, "
+                         f"got {kinds_e.get('census-1')!r}")
+    renamed_e = _fixture(grown_body.replace("census-1", "check-not-a-census"))
+    kinds_e2 = classify(parse_gate_scripts_job(renamed_e), _clean_strict_lookup)
+    if kinds_e2.get("check-not-a-census") != "gate":
+        failures.append(f"CENSUS-PREFIX fixture: the SAME ci.yml shape under a non-census name "
+                         f"is a gate, got {kinds_e2.get('check-not-a-census')!r}")
 
     # --- Case F: the audit script's bare run gains --strict -> must reclassify as 'gate' -------
     strict_body = _clean_fixture_body().replace(
@@ -910,37 +959,50 @@ def self_test() -> bool:
         failures.append(f"STRICT-PASSED fixture: {CLEAN_AUDIT} with --strict now passed should "
                          f"reclassify as 'gate', got {kinds_f.get(CLEAN_AUDIT)!r}")
 
-    # --- Case I: #2196's fourth kind. Two scripts with IDENTICAL ci.yml shapes, self-test and
-    # --- nothing else, must classify differently on the one property that distinguishes them: the
-    # --- census cannot reach a verdict here, the release check cannot reach its INPUT here and
-    # --- says so with a --require-... flag. Both directions, so neither answer is the default.
-    release_body = _clean_fixture_body() + "\n" + _census_step("release1")
+    # --- Case I: #2196's fourth kind, and #2960's regression. Two scripts with IDENTICAL ci.yml
+    # --- shapes, self-test and nothing else, classify differently on the name alone: the census
+    # --- reports a list wherever it runs, the release check reaches a verdict over an input this
+    # --- job does not have. Both directions, so neither answer is the default.
+    release_body = _clean_fixture_body() + "\n" + _census_step("check-release1")
     scripts_i = parse_gate_scripts_job(_fixture(release_body))
-    kinds_i = classify(scripts_i, _clean_strict_lookup,
-                        require_flag_lookup=lambda name: name == "release1")
+    kinds_i = classify(scripts_i, _clean_strict_lookup)
     counts_i = {"gate": 0, "census": 0, "audit": 0, "release-check": 0}
     for k in kinds_i.values():
         counts_i[k] += 1
-    if kinds_i.get("release1") != "release-check":
-        failures.append(f"RELEASE-CHECK fixture: a self-test-only script declaring a "
-                         f"--require-... flag should classify 'release-check', got "
-                         f"{kinds_i.get('release1')!r}")
+    if kinds_i.get("check-release1") != "release-check":
+        failures.append(f"RELEASE-CHECK fixture: a self-test-only script outside the census- "
+                         f"namespace should classify 'release-check', got "
+                         f"{kinds_i.get('check-release1')!r}")
     if counts_i["census"] != 4:
         failures.append(f"RELEASE-CHECK fixture: the release check inflated the census count to "
                          f"{counts_i['census']}, which is how the counting sentence would "
                          f"go stale without anyone editing it")
-    kinds_i_nodecl = classify(scripts_i, _clean_strict_lookup,
-                               require_flag_lookup=lambda name: False)
-    if kinds_i_nodecl.get("release1") != "census":
-        failures.append(f"RELEASE-CHECK fixture: the SAME ci.yml shape with no --require-... flag "
-                         f"declared should stay a census, got {kinds_i_nodecl.get('release1')!r}")
+    census_i = parse_gate_scripts_job(
+        _fixture(_clean_fixture_body() + "\n" + _census_step("census-5")))
+    if classify(census_i, _clean_strict_lookup).get("census-5") != "census":
+        failures.append("RELEASE-CHECK fixture: the SAME ci.yml shape under a census- name "
+                         "should stay a census")
+    # The #2098 property, read off the real scripts, and now asserted apart from the kind.
+    # Before #2960 this battery asserted the opposite of the second clause: that no census
+    # declares a --require-... flag. Two had grown one, which is how a correct repository turned
+    # this artifact red.
     if not script_defines_require_flag(os.path.join(SCRIPTS_DIR,
                                                      "check-pinned-asset-patches.py")):
         failures.append("RELEASE-CHECK reader: check-pinned-asset-patches.py declares "
                          "--require-asset, but the reader did not see it")
-    if script_defines_require_flag(os.path.join(SCRIPTS_DIR, "census-comment-staleness.py")):
-        failures.append("RELEASE-CHECK reader: a census was read as declaring a --require-... "
-                         "flag, so the two kinds would be indistinguishable")
+    declaring_censuses = sorted(
+        os.path.splitext(os.path.basename(p))[0]
+        for p in glob.glob(os.path.join(SCRIPTS_DIR, "census-*.py"))
+        if script_defines_require_flag(p))
+    if not declaring_censuses:
+        failures.append("RELEASE-CHECK reader: no census declares a --require-... flag, so the "
+                         "#2960 regression fixture is no longer exercising anything; either the "
+                         "reader went blind or the flags were removed, and both want looking at")
+    live_kinds = classify(parse_gate_scripts_job(_read_ci_yml()), real_strict_flag_lookup)
+    misread = [n for n in declaring_censuses if live_kinds.get(n, "census") != "census"]
+    if misread:
+        failures.append(f"CENSUS-PREFIX regression (#2960): {misread} declare a --require-... "
+                         f"flag and were classified as something other than a census")
 
     # --- Case G: parse_stated_count -------------------------------------------------------------
     correct = "blah blah Eight gates, four censuses and one merge-history audit, all pure Python"
@@ -980,10 +1042,11 @@ def self_test() -> bool:
             print(f"SELF-TEST FAILURE: {f}")
         return False
     print("SELF-TEST: OK (9 cases: clean enumeration, gate removed, script renamed, script "
-          "added, census-grows-a-gate reclassification, audit-gains---strict reclassification, "
-          "release-check-vs-census on the same ci.yml shape, stated-count parsing incl. a "
-          "two-digit word and an absent sentence, dangling reference against a fixture disk "
-          "listing)")
+          "added, census-prefix wins over the ci.yml shape in both directions, "
+          "audit-gains---strict reclassification, release-check-vs-census on the same ci.yml "
+          "shape plus the #2960 regression read off the real Scripts/ directory, stated-count "
+          "parsing incl. a two-digit word and an absent sentence, dangling reference against a "
+          "fixture disk listing)")
     return True
 
 

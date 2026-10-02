@@ -2118,10 +2118,32 @@ public var vDegree: Int
 
 #### `BezierProperties.isURational`
 
-Whether the surface is rational in U.
+Whether the weights vary along **V**, which is what OCCT calls U-rational.
 
 ```swift
 public var isURational: Bool
+```
+
+Same convention as `Surface.BSpline.isURational`, and measured rather than copied from it:
+`Geom_BezierSurface.hxx` says "identical in the U direction" while printing the BSpline page's
+example matrix, whose **rows** are the constant ones, so its prose and its example disagree. The
+example is the behaviour. The flag is false when every row of the weight matrix is constant, a row
+being one U index across every V, so it is true exactly when the weights change as V advances
+(#2976, `Scripts/repro/2976-surface-rational-axes/`).
+
+```swift
+let bezier = Surface.bezier(poles: [
+    [SIMD3(0, 0, 0), SIMD3(0, 5, 1), SIMD3(0, 10, 0)],
+    [SIMD3(5, 0, 1), SIMD3(5, 5, 2), SIMD3(5, 10, 1)],
+    [SIMD3(10, 0, 0), SIMD3(10, 5, 1), SIMD3(10, 10, 0)],
+])!
+let properties = bezier.bezierProperties
+// One weight per U row, each row constant: the weights vary along U, not along V.
+for v in 1...properties.nbVPoles {
+    properties.setWeight(uIndex: 2, vIndex: v, weight: 0.5)
+}
+#expect(properties.isURational == false)
+#expect(properties.isVRational == true)
 ```
 
 - **OCCT:** `OCCTSurfaceBezierIsURational` → `Geom_BezierSurface::IsURational`.
@@ -2130,10 +2152,29 @@ public var isURational: Bool
 
 #### `BezierProperties.isVRational`
 
-Whether the surface is rational in V.
+Whether the weights vary along **U**, which is what OCCT calls V-rational.
 
 ```swift
 public var isVRational: Bool
+```
+
+False when every **column** of the weight matrix is constant, a column being one V index across
+every U. See `BezierProperties.isURational` above for the convention and for what the kernel's own
+header gets wrong about it.
+
+```swift
+let bezier = Surface.bezier(poles: [
+    [SIMD3(0, 0, 0), SIMD3(0, 5, 1), SIMD3(0, 10, 0)],
+    [SIMD3(5, 0, 1), SIMD3(5, 5, 2), SIMD3(5, 10, 1)],
+    [SIMD3(10, 0, 0), SIMD3(10, 5, 1), SIMD3(10, 10, 0)],
+])!
+let properties = bezier.bezierProperties
+// The transpose: one weight per V column, each column constant.
+for u in 1...properties.nbUPoles {
+    properties.setWeight(uIndex: u, vIndex: 2, weight: 0.5)
+}
+#expect(properties.isURational == true)
+#expect(properties.isVRational == false)
 ```
 
 - **OCCT:** `OCCTSurfaceBezierIsVRational` → `Geom_BezierSurface::IsVRational`.
