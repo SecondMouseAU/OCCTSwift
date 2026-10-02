@@ -21,6 +21,20 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### Bounding-box tests pin all six coordinates instead of an ordering tautology (#766, #1748-#1753, #1869-#1875, #1922-#1928)
+
+- Twenty-one tests across `BndLibTests`, `BndLibExtraTests` and `BRepBndLibTests` pinned at most
+  two of a box's six coordinates, and five pinned only `max >= min`, which is true of every
+  `Bnd_Box` OCCT can construct and of the all-zero box a refusing `OCCTBndLib*` bridge function
+  leaves behind. Every expected box is now derived from OCCT's parametrisation of the primitive
+  and pinned on all six coordinates.
+- `BRepBndLib`'s `Precision::Confusion()` enlargement is written out rather than absorbed into a
+  1e-6 comparison, so `Add`, `AddOptimal` and `AddOptimal` with `useShapeTolerance` are
+  distinguishable from one another; dropping the flag silently used to pass.
+- Three ground-truth probes added under `Scripts/repro/766-bndlib/`,
+  `Scripts/repro/766-bndlib-extra/` and `Scripts/repro/766-brepbndlib/`, with transcripts
+  measured against the pinned kernel.
+
 ### Analysis property tests pinned to closed forms, and two `gp_Cone` kernel defects found (#1759, #1760, #1786-#1789, #1811-#1814, #2992)
 
 - `GPropCylConeTests`, `BRepLPropEdgeTests` and `BRepGPropVinertGKTests` now pin closed-form values
