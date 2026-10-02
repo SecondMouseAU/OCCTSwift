@@ -889,6 +889,12 @@ JavaScriptKit reactor shape, which is Phase 5.
 
   It is also faster, which was not the reason but is worth recording: 13 suites in **224 s** against
   roughly seven minutes for 12 under `wasmkit`, and the slowest single test drops from 422 s to 27.8 s.
+
+  **#2928 spent that headroom and more.** The 18 suites measure about **RUNTIME**, and the jump is
+  `OCCTThreadTests`, 8 minutes 34 seconds of screw-thread geometry on its own, with one test taking 32
+  seconds. The per-suite cap in `Scripts/run-wasm-tests.sh` is raised from 900 s to 1800 s so that it
+  stays a cap on a stuck suite rather than a coin toss on a slow one, and `wasm.yml`'s job timeout from
+  75 to 120 minutes. Both carry the measurement at each step rather than a round number.
 - ~~A GitHub Actions matrix entry that builds the wasm slice.~~ **Done (#2269):**
   `.github/workflows/wasm.yml` is the first CI job in this repository that builds for
   WebAssembly. It restores the pinned kernel asset rather than building OCCT, so it
