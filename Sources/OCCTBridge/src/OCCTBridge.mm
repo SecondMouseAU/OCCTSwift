@@ -58,13 +58,16 @@ std::atomic<int32_t>& occtRefusedReleaseCount()
 
 } // namespace
 
-bool occtBorrowRegister(const void* theObject)
+void occtBorrowRegister(const void* theObject)
 {
   if (theObject == nullptr)
-    return false;
+    return;
 
+  // Idempotent: insert leaves the key present whether or not it was already there, so the
+  // post-condition this function exists for holds on both paths. See OCCTBridge_Internal.h for
+  // why that is the right answer rather than a failure to report.
   std::lock_guard<std::mutex> aLock(occtBorrowMutex());
-  return occtBorrowSet().insert(theObject).second;
+  occtBorrowSet().insert(theObject);
 }
 
 bool occtBorrowGiveBack(const void* theObject)

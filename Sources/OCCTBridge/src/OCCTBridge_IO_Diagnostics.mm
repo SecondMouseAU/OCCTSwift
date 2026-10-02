@@ -363,8 +363,10 @@ OCCTMessengerRef OCCTMessengerCreate()
       return nullptr;
     msg->IncrementRefCounter();
     // #2952: record the reference this bridge just took, so OCCTMessengerRelease can tell a release
-    // it owes from one it does not. After IncrementRefCounter, never before; see
-    // OCCTBridge_Internal.h.
+    // it owes from one it does not. After IncrementRefCounter, never before. It returns void
+    // because it is a post-condition and not a query: the address is registered when it returns,
+    // and there is no outcome a create could act on; OCCTBridge_Internal.h weighs the three
+    // answers.
     occtBorrowRegister(msg.get());
     return msg.get();
   }
@@ -469,8 +471,8 @@ OCCTReportRef OCCTReportCreate()
       return nullptr;
     report->IncrementRefCounter();
     // #2952: record the reference this bridge just took, so OCCTReportRelease can tell a release
-    // it owes from one it does not. After IncrementRefCounter, never before; see
-    // OCCTBridge_Internal.h.
+    // it owes from one it does not. After IncrementRefCounter, never before. Void for the same
+    // reason as OCCTMessengerCreate above; OCCTBridge_Internal.h weighs the three answers.
     occtBorrowRegister(report.get());
     return report.get();
   }

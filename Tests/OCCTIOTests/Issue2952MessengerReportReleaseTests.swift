@@ -100,8 +100,8 @@ struct Issue2952MessengerReportReleaseTests {
     /// The registry's point is that the bridge releases what it handed out, not what it is handed.
     ///
     /// A heap block the bridge never produced is the clearest case of the second: `malloc` is used
-    /// rather than a stack address so the pointer is unambiguously valid memory that is simply not
-    /// a `Message_Messenger`, which is exactly what a consumer passing the wrong handle supplies.
+    /// rather than a stack address so the pointer is unambiguously valid memory that is not a
+    /// `Message_Messenger`, which is exactly what a consumer passing the wrong handle supplies.
     @Test("a pointer this bridge never handed out is refused by both entry points")
     func foreignPointerReleaseIsRefused() throws {
         let foreign = try #require(malloc(64))

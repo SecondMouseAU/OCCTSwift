@@ -455,10 +455,33 @@ std::atomic<int>& tobjApplicationBorrowCount();
 // one process-wide singleton and these are per-caller: with N messengers alive, a bare count of N
 // would let a double release of one consume another's borrow and delete a live object.
 //
-// occtBorrowRegister returns false if the pointer is null or already registered.
-// occtBorrowGiveBack returns true only for a pointer that was registered, removing it; every
+// occtBorrowRegister is a POST-CONDITION, not a query, and that is why it returns void. After it
+// returns, a non-null theObject IS registered, whether or not an entry was already there; the
+// registration is idempotent because the registry is a set keyed on the address. Three answers to
+// "what if an entry is already there" were weighed and this is the one left standing:
+//
+//   check the return and fail the create   WRONG. It turns a bookkeeping anomaly somewhere else
+//                                          into a nullptr from a construction that succeeded, and
+//                                          strands the IncrementRefCounter() already taken for it.
+//   assert that it cannot happen           WRONG. assert is inert under NDEBUG, which is where it
+//                                          would have to fire, and an abort in this build is an
+//                                          uncatchable signal (no OCC_CONVERT_SIGNALS) for a
+//                                          bookkeeping anomaly that costs nothing to absorb.
+//   make it idempotent                     RIGHT, and a set already is: an insert that reports
+//                                          "already present" leaves the key present, so the
+//                                          address is claimed by the only object that can be at
+//                                          it, which is the one just constructed, and its release
+//                                          is accepted.
+//
+// An already-registered address is in any case unreachable from this bridge: the registry holds
+// addresses of LIVE bridge-owned objects, so for `new` to return one the previous object would
+// have to have been destroyed without its release running, and no bridge entry point can do that.
+// A bool nothing can act on, on a branch nothing can reach, is the blind guard this repo treats as
+// a defect, so the value is not returned at all.
+//
+// occtBorrowGiveBack is the query: true only for a pointer that was registered, removing it; every
 // false, null included, is counted by OCCTBridgeRefusedReleaseCount.
-bool occtBorrowRegister(const void* theObject);
+void occtBorrowRegister(const void* theObject);
 bool occtBorrowGiveBack(const void* theObject);
 
 // === OCCT signal handling ===
