@@ -21,6 +21,16 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### Analysis extrema and distance tests pin derived answers (#1754, #1756, #1767, #1793, #1794, #1818, #1819, #1916, #1917)
+
+The twelve tests in `IntToolsEdgeEdgeTests`, `ExtremaExtPElCElipsTests`, `ExtremaElCLinCircTests`,
+`BRepExtremaDistanceSSTests` and `DistanceSolutionDetailTests` asserted a count threshold, a
+`!= nil` or a bare Bool, every one of them nested inside an `if let` on a fixture that could not
+fail without skipping the test. They now pin the point-to-ellipse, line-to-circle, box-vertex and
+box-to-sphere answers, each derived in closed form, with the witness points and the parametric
+locations asserted beside the distances; the distance-solution detail's `(u, v)` is handed back to
+the face's own surface and has to return the point the same solution reports. No behaviour change.
+
 ### Bounding-box tests pin all six coordinates instead of an ordering tautology (#766, #1748-#1753, #1869-#1875, #1922-#1928)
 
 - Twenty-one tests across `BndLibTests`, `BndLibExtraTests` and `BRepBndLibTests` pinned at most
