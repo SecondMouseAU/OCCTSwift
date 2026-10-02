@@ -21,6 +21,21 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### Stress builder-lifecycle and chain-depth suites now pin kernel values instead of accepting any answer (v5 lift of #2429, #2430, #2431, #2433, #2342; refs #766)
+
+`StressBuilderLifecycleTests.swift` and `StressChainDepthTests.swift` had 62 of their 89 tests in a
+state where no wrong value could fail them: results read into `_`, `guard let ... else { return }`
+over a fallible factory, and thresholds (`>= 0`, `>= 1`, `> 0`, a 10 percent band) that hold for
+every answer a working or a broken kernel can give. They now pin what the wrapped OCCT builder
+actually computes: fillet, chamfer, pipe-shell, sewing, wire, hatch, unify, loft, analyzer and
+fixer results by volume, area, face and edge count and contour flags, and the boolean, feature,
+transform, wire and document chains by their end-state volumes and bounds. Each value is either
+closed form or reproduced by a carried C++ probe that recompiles against the pinned kernel and
+matches its transcript exactly. Three refusals are pinned as refusals rather than skipped, and
+`FilletBuilder`'s `hasResult` is pinned false after a successful build, correcting a comment that
+called OCCT's partial-result flag a version quirk. SEVERE in the Stress domain falls from 100 to
+41, and repo-wide from 1,365 to 1,306.
+
 ### A messenger or report release the bridge never handed out is refused, rather than freeing the object twice (#2952)
 
 `OCCTMessengerRelease` and `OCCTReportRelease` acted on whatever pointer they were given. Their
