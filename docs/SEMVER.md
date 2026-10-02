@@ -58,9 +58,9 @@ asset carried seventeen. A kernel rebuild is a MINOR trigger at most and forces 
 What forces the major is Rule 2, carried by the breaking changes tabulated below.
 
 **The kernel pin of `v4.0.0-beta.5`, a frozen measurement of 2026-10-03.** `Package.swift` pins
-`v4.0.0-kernel.4` (#3031). That asset holds thirty-nine carried patches on the native kernel and the
-same thirty-nine on the wasm kernel, with the eleven WASI-only source changes on top of the wasm one,
-and `Scripts/check-wasm-kernel-parity.py` reports the two clean with no acknowledgement standing.
+`v4.0.0-kernel.4` (#3031). That release carries thirty-nine patches in the native asset and the same
+thirty-nine in the wasm asset, with the eleven WASI-only source changes on top of the wasm one, and
+`Scripts/check-wasm-kernel-parity.py` reports the two clean with no acknowledgement standing.
 `ls Scripts/patches/*.patch | wc -l` and that script re-derive it, and
 [`okf/references/carried-occt-patches.md`](../okf/references/carried-occt-patches.md) is where the
 inventory is kept.
@@ -130,7 +130,7 @@ working, but a caller asserting on the old refusal will see the new value.
 
 **What `v4.0.0-beta.5` adds to the picture.** Its breaks are in
 [their own table](#new-in-v400-beta5-every-break-and-what-a-caller-does) below, each with a
-migration, and nothing was removed. Four other kinds of change are not compile errors and are listed
+migration, and nothing was removed. The other kinds of change are not compile errors and are listed
 here, because a consumer upgrading from beta.4 should read them.
 
 **Additive API, MINOR.**
@@ -143,6 +143,8 @@ here, because a consumer upgrading from beta.4 should read them.
   three-curve `GeomFill` constructors (#2841, #2842).
 - `Messenger.capturingDefaultOutput(_:)`, `Messenger.silencingDefaultOutput(_:)`,
   `Messenger.defaultPrinterCount` and `Messenger.isDefaultOutputCaptured` (#3021).
+- `Shape.CommonPart.vertexParameter1` and `vertexParameter2`, the parameters at which OCCT places the
+  new vertex of a `.vertex` part (#3012).
 - `IntfTool.segmentCount` and `MathMatrix.isSquare`, and a `@discardableResult Bool` return on
   `MathMatrix.setValue(row:col:value:)`, `MathMatrix.transpose()` and
   `GeomDirection.setCoordinates(x:y:z:)` (#2857, #2860, #2331).
@@ -463,6 +465,7 @@ Breaks recorded after beta.4. The table above is unchanged. Each row links to it
 | `Shape.FaceFaceExtrema`: `face1UV`, `face2UV`, `pointOnFace1` and `pointOnFace2` become Optional, and `isParallel` is added | compile error | [#2249](#v400-three-results-stop-reporting-zeros-as-witness-points-2249-2251-2993) |
 | `Shape.CommonPart.point` becomes Optional, and its value changes | compile error, and a different value | [#2251](#v400-three-results-stop-reporting-zeros-as-witness-points-2249-2251-2993) |
 | `ExtremaResult.point1` and `.point2` become Optional, and `isParallel` is added | compile error | [#2993](#v400-three-results-stop-reporting-zeros-as-witness-points-2249-2251-2993) |
+| `Shape.CommonPart.param1Range` and `param2Range` change value for a `.vertex` part | silent value change | [#3012](#v400-commonpartparam1range-and-param2range-keep-the-kernels-ranges-for-a-vertex-part-3012) |
 | `Shape.isSubShapeValid(type:at:)` returns `Bool?` | compile error | [#2755](#v400-shapeissubshapevalidtypeat-can-say-it-did-not-check-2755) |
 | `Shape.computeNormals()` returns `Int?` | compile error where the result is a condition | [#2905](#v400-shapecomputenormals-reports-what-it-computed-2905) |
 | `GeomDirection.init(x:y:z:)` and `init(simd:)` are failable | compile error | [#2331](#v400-geomdirection-refuses-a-vector-it-cannot-normalise-2331) |
@@ -514,6 +517,38 @@ if let p = result.point1 { … } else if result.isParallel { /* the gap is resul
 
 A caller that worked around the zeros must remove the workaround. The C structs behind these gain
 matching fields, listed under the bridge signatures below.
+
+##### v4.0.0: `CommonPart.param1Range` and `param2Range` keep the kernel's ranges for a vertex part (#3012)
+
+PR #3043. On a `.vertex` part the bridge overwrote `IntTools_CommonPrt::Range1()` and `Ranges2()(1)` with
+`VertexParameter1()` and `VertexParameter2()`, so `param1Range` and `param2Range` reported `(t, t)`
+whatever the kernel held. A transversal crossing lost the tolerance window OCCT puts round it, and a
+tangential overlap that `IntTools_EdgeEdge::MergeSolutions` types `.vertex` (#2994) lost the overlap
+itself: two arcs of one circle sharing a quarter of it reported a single point, `(3pi/4, 3pi/4)`, where
+the kernel held `(pi/2, pi)`. **No signature changes and the values do.** Both ranges are now the
+kernel's own, for either part type, and the window is not small: 3e-7 across for two lines at right
+angles, 3.4e-5 at one degree, 3.4e-3 at one hundredth of a degree.
+
+`CommonPart` also gains `vertexParameter1` and `vertexParameter2`, the parameters at which OCCT places
+the new vertex of a `.vertex` part, resolved the way `BOPAlgo_PaveFiller::PerformEE` and `PerformEF`
+resolve them. They are `nil` for an `.edge` part, which OCCT never gives one, and always `nil` for the
+second edge of an edge-face part, where `param2Range` stays the documented `(0, 0)` (#1399). `point`
+follows them, and moves by 8.7e-4 along the curve in one measured corner, a tangent contact at a
+closed edge's seam.
+
+**Migration.** A caller that read `param1Range.first` as the crossing parameter of a `.vertex` part
+reads `vertexParameter1` instead:
+
+```swift
+// before
+let t = part.param1Range.first
+
+// after
+if part.type == .vertex, let t = part.vertexParameter1 { … }
+```
+
+`param1Range` is now the true overlap, or the crossing window, under either part type, which is what
+#2994's documentation already claimed.
 
 ##### v4.0.0: `Shape.isSubShapeValid(type:at:)` can say it did not check (#2755)
 
@@ -653,9 +688,10 @@ at the release commit.
 | `OCCTMathMatrixSetValue`, `OCCTMathMatrixTranspose` | `void` | `bool` |
 | `OCCTIntfToolBeginParam`, `OCCTIntfToolEndParam` | return `double` | return `bool`, the value through a trailing `double*` |
 
-`OCCTCommonPart`, `OCCTFaceFaceExtremaResult` and `OCCTExtremaElResult` gain `hasPoint`,
-`hasWitnessPoints` and `isParallel` fields. That is additive for a reader of the struct, and a Swift
-caller that builds one with its imported memberwise initialiser gains parameters.
+`OCCTCommonPart` gains `hasPoint`, `vertexParam1`, `vertexParam2`, `hasVertexParam1` and
+`hasVertexParam2`, and `OCCTFaceFaceExtremaResult` and `OCCTExtremaElResult` gain `hasWitnessPoints`
+and `isParallel`. That is additive for a reader of the struct, and a Swift caller that builds one
+with its imported memberwise initialiser gains parameters.
 
 **Migration.** Read the new return and the out-parameter. The Swift wrappers in `Sources/OCCTSwift` are
 the worked examples.
