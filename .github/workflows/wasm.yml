@@ -63,10 +63,11 @@ jobs:
     # Raised from 45 when #2793 added the per-domain suites, and from 75 by #2928, which brought the
     # last five targets in. Measured locally at each step: 12 suites and 4,778 tests in about 7
     # minutes under wasmkit, 13 suites and 5,555 tests in 224 seconds under Node, and now 18 suites
-    # and about 6,950 tests in 17 minutes. The jump is `OCCTThreadTests`, 8 minutes 34 seconds of
-    # screw-thread geometry on its own. A CI runner is slower than the machine that was measured on,
-    # so the headroom is deliberate; the suites also have their own per-suite cap inside
-    # Scripts/run-wasm-tests.sh, so a single stuck suite fails there rather than burning this.
+    # and 6,548 tests in 17 minutes idle or 29 minutes with a dozen other builds on the same machine.
+    # The jump is `OCCTThreadTests`, 8 minutes 34 seconds of screw-thread geometry idle and 16:52
+    # loaded. A CI runner has three vCPUs, so the loaded figure is the one this budget is set against;
+    # the suites also have their own per-suite cap inside Scripts/run-wasm-tests.sh, raised to 1800 s
+    # by the same measurement, so a single stuck suite fails there rather than burning this.
     timeout-minutes: 120
 
     env:
