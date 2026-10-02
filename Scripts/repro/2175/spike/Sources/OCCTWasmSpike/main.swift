@@ -127,6 +127,15 @@ let workDir = CommandLine.arguments[1]
 let stepPath = workDir + "/spike-fused.step"
 let brokenPath = workDir + "/spike-broken.step"
 
+// Pinned off rather than left to the environment (#3021). `OCCTSWIFT_BRIDGE_DIAGNOSTICS` switches
+// this on at startup, and it sends every bridge-caught exception to the SAME default messenger the
+// cases below capture, at Message_Alarm. With it on, the three cases whose subject is a raise would
+// read an `OCCTBridge: ... caught ...` line as an unexpected OCCT message and FAIL for a reason that
+// is not a defect. The records themselves come from `OCCTDiagnostics.capturing`, which is
+// independent of this switch, so nothing is lost by fixing it here and the measurement stops
+// depending on an ambient variable.
+OCCTDiagnostics.isLoggingEnabled = false
+
 print("OCCTSwift wasm spike, wasm32-unknown-wasip1: Swift -> OCCTSwift -> bridge -> OCCT")
 print("preopened directory: \(workDir)")
 
