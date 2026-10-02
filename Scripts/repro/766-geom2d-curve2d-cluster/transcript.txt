@@ -1,0 +1,102 @@
+arch rational=0 Resolution(0.1)=0.00333333333333333 Resolution(0.2)=0.00666666666666667
+arch after SetPole(2, (3, 7)) Resolution(0.1)=0.00357142857142857 (0.1 / 28 = 0.00357142857142857)
+weights [1, 2, 1] rational=1; weights [1, 1, 1] rational=0
+weights [1, 3, 2] rational=1 value(0.5)=(5.55555555556, 6.66666666667)
+cubic degree=3 poles=4
+InsertPoleAfter(1, (0.25, 0.75)) degree=2 poles=[(0, 0), (0.25, 0.75), (1, 1)]
+InsertPoleAfter(0, (0.25, 0.75)) degree=2 poles=[(0.25, 0.75), (0, 0), (1, 1)]
+InsertPoleAfter(2, (0.25, 0.75)) degree=2 poles=[(0, 0), (1, 1), (0.25, 0.75)]
+Increase(3) of the quadratic degree=3 poles=[(0, 0), (3.33333333333, 6.66666666667), (6.66666666667, 6.66666666667), (10, 0)]
+  largest drift of the curve over 6 samples: 1.78e-15
+start/end of [(1, 2), (5, 10), (9, 3)]: start=(1, 2) end=(9, 3)
+Reverse of [(0, 0), (10, 20), (30, 5)] degree=2 poles=[(30, 5), (10, 20), (0, 0)]
+ellipse 10x5 u=0 curvature=0.4
+ellipse 10x5 u=1.57079632679 curvature=0.05
+ellipse 10x5 u=3.14159265359 curvature=0.4
+ellipse 10x5 u=4.71238898038 curvature=0.05
+ellipse 10x5 u=0: normal=(-1, -0) tangent=(-0, 1) centre=(7.5, 0)
+ellipse 10x5 u=1.57079632679: normal=(-3.06161699787e-17, -1) tangent=(-1, 3.06161699787e-17) centre=(-9.86076131526e-32, -15)
+ellipse 10x5 PerformCurExt done=1 points=4
+  u=0 type=MinCur curvature=0.4
+  u=1.57079632679 type=MaxCur curvature=0.05
+  u=3.14159265359 type=MinCur curvature=0.4
+  u=4.71238898038 type=MaxCur curvature=0.05
+ellipse 10x5 reversed PerformCurExt done=1 points=4
+  u=0 type=MinCur curvature=0.4
+  u=1.57079632679 type=MaxCur curvature=0.05
+  u=3.14159265359 type=MinCur curvature=0.4
+  u=4.71238898038 type=MaxCur curvature=0.05
+circle (3,4) r5 u=pi/2: point=(3, 9) normal=(-6.12323399574e-17, -1) tangent=(-1, 6.12323399574e-17)
+circle (3,4) r5 u=2.1: curvature=0.2 centre=(3, 4)
+circle r5 u=1.3 curvature=0.2; circle r2 u=0 curvature=0.5
+segment (1,1)-(4,5) u=2 tangent=(0.6, 0.8)
+S-curve PerformInf points=1
+  u=10.3042200457 du=-0.01 cross(D1, D2)=-0.000233
+  u=10.3042200457 du=0 cross(D1, D2)=-2.07e-17
+  u=10.3042200457 du=0.01 cross(D1, D2)=0.000233
+arch (0,0), (5,3), (10,0) PerformInf points=0
+circle (3,4) r5 PerformInf points=0
+arc about (1,1) r10 from pi/6: first=0.523598775598 last=2.09439510239 length=15.7079632679 param(L/2)=1.308996939 param(L)=2.09439510239
+segment (1,2)-(4,6): first=0 last=5 length=5 param(2.5)=2.5 param(L)=5 point(2.5)=(2.5, 4)
+segment (0,0)-(10,0): -5 from u=0 -> -5; 0 from u=4 -> 4; -3 from u=7 -> 4
+segment (0,0)-(10,0): a NaN distance, done=1
+segment (0,0)-(20,0): 5 from u=0 -> 5; 7 from there -> 12; length between = 7; -5 from u=10 -> 5
+arch plain: done=1 closed=0 periodic=0 poles=3 domain=[0, 14.1421356237]
+  knot 0 u=0 miss=0 direction=(0.4472135955, 0.894427191)
+  knot 1 u=7.07106781187 miss=0 direction=(1, -8.46813396956e-17)
+  knot 2 u=14.1421356237 miss=1.05e-15 direction=(0.4472135955, -0.894427191)
+arch tangents (1,0) at 0 and 2: done=1 closed=0 periodic=0 poles=5 domain=[0, 14.1421356237]
+  knot 0 u=0 miss=0 direction=(1, 0)
+  knot 1 u=7.07106781187 miss=0 direction=(0.723759683659, -0.690052114198)
+  knot 2 u=14.1421356237 miss=1.63e-15 direction=(1, -1.14668576021e-16)
+sym5 plain: done=1 closed=0 periodic=0 poles=7 domain=[0, 13.5356578713]
+  knot 0 u=0 miss=0 direction=(0.0953422618822, 0.995444550489)
+  knot 1 u=3.60555127546 miss=4.44e-16 direction=(0.98161647058, -0.190864100046)
+  knot 2 u=6.76782893563 miss=0 direction=(1, 3.3377678412e-17)
+  knot 3 u=9.9301065958 miss=0 direction=(0.98161647058, 0.190864100046)
+  knot 4 u=13.5356578713 miss=2.78e-16 direction=(0.0953422618822, -0.995444550489)
+sym5 tangent (1,2) at 2: done=1 closed=0 periodic=0 poles=8 domain=[0, 13.5356578713]
+  knot 0 u=0 miss=0 direction=(0.0953422618822, 0.995444550489)
+  knot 1 u=3.60555127546 miss=4.44e-16 direction=(0.87366363489, -0.486530423581)
+  knot 2 u=6.76782893563 miss=0 direction=(0.4472135955, 0.894427191)
+  knot 3 u=9.9301065958 miss=4.44e-16 direction=(0.979287015502, -0.202477014176)
+  knot 4 u=13.5356578713 miss=5.67e-16 direction=(0.0953422618822, -0.995444550489)
+quad closed plain: done=1 closed=1 periodic=1 poles=5 domain=[0, 27.523971693]
+  knot 0 u=0 miss=7.83e-17 direction=(0.901106204212, -0.433598441799)
+  knot 1 u=6.32455532034 miss=8.88e-16 direction=(0.761395018069, 0.64828822792)
+  knot 2 u=13.5356578713 miss=1.78e-15 direction=(-0.499286197581, 0.866437125766)
+  knot 3 u=20.8157677605 miss=9.93e-16 direction=(-0.799687995113, -0.600415781331)
+quad closed tangent (1,0) at 1: done=1 closed=1 periodic=1 poles=6 domain=[0, 27.523971693]
+  knot 0 u=0 miss=7.83e-17 direction=(0.901106204212, -0.433598441799)
+  knot 1 u=6.32455532034 miss=8.88e-16 direction=(1, 7.44617064151e-17)
+  knot 2 u=13.5356578713 miss=1.78e-15 direction=(-0.458578100222, 0.888654109312)
+  knot 3 u=20.8157677605 miss=8.88e-16 direction=(-0.776906977297, -0.629615397387)
+two plain: done=1 closed=0 periodic=0 poles=2 domain=[0, 10]
+  knot 0 u=0 miss=0 direction=(1, 0)
+  knot 1 u=10 miss=0 direction=(1, 0)
+two tangents (1,0) both: done=1 closed=0 periodic=0 poles=4 domain=[0, 10]
+  knot 0 u=0 miss=0 direction=(1, 0)
+  knot 1 u=10 miss=0 direction=(1, 0)
+two tangents (0,1) both: done=1 closed=0 periodic=0 poles=4 domain=[0, 10]
+  knot 0 u=0 miss=0 direction=(0, 1)
+  knot 1 u=10 miss=3.88e-15 direction=(-9.99200722163e-16, 1)
+two tangents (0,1) both: value(2.5)=(1.5625, 0.9375) value(5)=(5, 0)
+circle r10 Approx_Curve2d tol=1e-6: done=1 degree=8 poles=27 MaxError2dU=6.92e-08 MaxError2dV=6.92e-08
+point translate (-1.5, 0.5) (1, 2) -> (-0.5, 2.5)
+point rotate pi/2 about (1,1) (3, 1) -> (1, 3)
+point rotate pi about (1,1) (3, 1) -> (-1, 1)
+point scale 3 about (1,1) (3, 5) -> (7, 13)
+point scale -1 about (1,1) (3, 5) -> (-1, -3)
+point mirror through (1,1) (3, 1) -> (-1, 1)
+point mirror across the y axis (1, 1) -> (-1, 1)
+point mirror across y = x (2, 0) -> (-3.54604637167e-16, 2)
+point mirror across y = 2 (1, 5) -> (1, -1)
+point mirror across y = x - 1 (3, 0) -> (1, 2)
+line (1,2)+(1,1) translate (5,3): value(0)=(6, 5) value(1)=(6.70710678119, 5.70710678119)
+line (3,1)+x rotate pi/2 about (1,1): value(0)=(1, 3) value(1)=(1, 4)
+line (1,2)+(1,1) rotate pi/2 about (1,1): value(0)=(0, 1) value(1)=(-0.707106781187, 1.70710678119)
+line (3,1)+x scale 3 about (1,1): value(0)=(7, 1) value(1)=(8, 1)
+line (3,1)+x mirror through (1,1): value(0)=(-1, 1) value(1)=(-2, 1)
+line (1,1)+x mirror across the y axis: value(0)=(-1, 1) value(1)=(-2, 1)
+line (3,0)+x mirror across y = x: value(0)=(-5.31906955751e-16, 3) value(1)=(-7.09209274334e-16, 4)
+line (1,5)+x mirror across y = 2: value(0)=(1, -1) value(1)=(2, -1)

@@ -21,6 +21,25 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### Geom2d Curve2D tests: eight files lifted off the v5 branch and strengthened, catching 68 injection switches their predecessors missed (#766, #3034, #3035, #3036)
+
+Eight `Tests/OCCTGeom2dTests/` files lifted off `v5.0.0-766-execution` by content, from the merged
+execution PRs #2472, #2520, #2516, #2617, #2513, #2471 and #2561: `Curve2DBezierTests`,
+`Curve2DBezierCompletionsTests`, `Curve2DParameterAtLengthTests`, `Curve2DLocalPropertiesTests`,
+`Point2DTransformTests`, `Curve2DInteriorTangentTests`, `Curve2DApproximatedOverloadParityTests` and
+`Curve2DTransformTests`. They asserted `!= nil`, `count >= 2`, `r > 0` or only the `Bool` a transform
+returned, mostly inside an `if let`. Each now requires its curve and pins a value worked out from
+closed forms or a second construction: the Bezier resolution from `BSplCLib::Resolution`, the
+ellipse's quarter symmetry and a Simpson integral for `parameterAtLength`, the tangent direction with
+its sign where a constraint was asked for, and rigid motions about a centre and an axis that are not
+the origin. Where a constraint or a centre could be ignored without any assertion noticing, a control
+was added. Each of 137 injection switches over 51 bridge functions now turns at least one of the 57
+tests red, where `main`'s 47 caught 69 of them and 15 of the 47 caught none. Eight
+`Scripts/repro/766-geom2d-*` probes cross with them and reproduce against the pinned kernel, one of
+them new. Three defects found on the way are
+filed: `parameterAtLength`'s contract (#3034), the `minCurvature` label (#3035), and a silently
+dropped tangent index (#3036). No production code changes.
+
 ### `Shape.CommonPart` keeps the kernel's ranges and gains OCCT's vertex parameters (#3012), and two CHANGELOG entries that never landed are recovered (#3004)
 
 **Changed.** `CommonPart.param1Range` and `param2Range` are now `IntTools_CommonPrt::Range1()` and `Ranges2()(1)` exactly as the kernel computed them, for either part type. The bridge used to overwrite both with `VertexParameter1/2` on a `.vertex` part, so they reported `(t, t)` whatever the kernel held: a transversal crossing lost the tolerance window OCCT puts round it, and a tangential overlap that `IntTools_EdgeEdge::MergeSolutions` typed `.vertex` (#2994) lost the overlap itself, so two arcs of one circle sharing a quarter of it reported a single point. OCCT does neither. `BOPAlgo_PaveFiller::PerformEE` and `PerformEF` read both facts off a `.vertex` part and never one in place of the other, the vertex parameters to place the new vertex and the ranges as the part's extent, and `IntTools_EdgeFace.cxx` carries the collapse commented out at four places. The window is not small: 3e-7 across for two lines at right angles, 3.4e-5 at one degree, 3.4e-3 at one hundredth of a degree. **To migrate**, a caller that read `param1Range.first` as the crossing parameter of a `.vertex` part reads `vertexParameter1`.
