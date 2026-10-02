@@ -50,6 +50,81 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
   `Tests/OCCTAnalysisTests/BezierSurfaceTests.swift` gains
   `rationalFlagsReportTheOppositeAxis` to pin both directions.
 
+### Geom_Ellipse and Geom_SphericalSurface property tests pin values derived in closed form (#766)
+
+- `Tests/OCCTAnalysisTests/GeomEllipse3DTests.swift` and
+  `Tests/OCCTAnalysisTests/GeomSphere3DTests.swift` lifted off the `v5.0.0-766-execution`
+  programme (source PRs #2255 and #2214, both open, neither one's work on that branch). All
+  fifteen tests reached their subject through `if let`, so a nil factory left every one of them
+  green with nothing asserted. They now use `try #require`, and every expectation is derived in
+  closed form from the construction inputs rather than copied from what the code returned: the
+  ellipse's eccentricity, focal distance, foci, semi-latus rectum and directrix from its two
+  radii, and the sphere's area, volume and iso-curves from its radius. `ellipseEccentricity`
+  (`0 < e < 1`), `ellipseFocal` and `ellipseParameter` (`> 0`) and `ellipseFoci` (symmetry about
+  the centre alone) each accepted a different, plausible quantity; `ellipseDirectrix1` computed
+  its own expectation through the wrapper pair it was testing; `sphereArea` and `sphereVolume`
+  were tolerant to 0.1 and 1.0; and `sphereUIso` and `sphereVIso` had no assertion at all, their
+  bodies being `let _ = iso.domain`. Both files fall from 4 tests that pin nothing and 11 behind a
+  nil-skip, to zero of each.
+- `Scripts/repro/766-geom-ellipse3d` and `Scripts/repro/766-geomsphere3d`, two ground-truth probes
+  with their transcripts, each recompiled against the pinned kernel and reproducing byte for byte.
+
+### Analysis extrema and distance tests pin derived answers (#1754, #1756, #1767, #1793, #1794, #1818, #1819, #1916, #1917)
+
+The twelve tests in `IntToolsEdgeEdgeTests`, `ExtremaExtPElCElipsTests`, `ExtremaElCLinCircTests`,
+`BRepExtremaDistanceSSTests` and `DistanceSolutionDetailTests` asserted a count threshold, a
+`!= nil` or a bare Bool, every one of them nested inside an `if let` on a fixture that could not
+fail without skipping the test. They now pin the point-to-ellipse, line-to-circle, box-vertex and
+box-to-sphere answers, each derived in closed form, with the witness points and the parametric
+locations asserted beside the distances; the distance-solution detail's `(u, v)` is handed back to
+the face's own surface and has to return the point the same solution reports. No behaviour change.
+
+### Bounding-box tests pin all six coordinates instead of an ordering tautology (#766, #1748-#1753, #1869-#1875, #1922-#1928)
+
+- Twenty-one tests across `BndLibTests`, `BndLibExtraTests` and `BRepBndLibTests` pinned at most
+  two of a box's six coordinates, and five pinned only `max >= min`, which is true of every
+  `Bnd_Box` OCCT can construct and of the all-zero box a refusing `OCCTBndLib*` bridge function
+  leaves behind. Every expected box is now derived from OCCT's parametrisation of the primitive
+  and pinned on all six coordinates.
+- `BRepBndLib`'s `Precision::Confusion()` enlargement is written out rather than absorbed into a
+  1e-6 comparison, so `Add`, `AddOptimal` and `AddOptimal` with `useShapeTolerance` are
+  distinguishable from one another; dropping the flag silently used to pass.
+- Three ground-truth probes added under `Scripts/repro/766-bndlib/`,
+  `Scripts/repro/766-bndlib-extra/` and `Scripts/repro/766-brepbndlib/`, with transcripts
+  measured against the pinned kernel.
+
+### Analysis property tests pinned to closed forms, and two `gp_Cone` kernel defects found (#1759, #1760, #1786-#1789, #1811-#1814, #2992)
+
+- `GPropCylConeTests`, `BRepLPropEdgeTests` and `BRepGPropVinertGKTests` now pin closed-form values
+  instead of `> 0` bounds and `if let` skips: 4 SEVERE and 4 ESCAPABLE tests to zero of each, and
+  repo-wide SEVERE from 1,203 to 1,199.
+- Deriving the cone's closed forms found that `GProp_SelGProps::Perform(gp_Cone)` returns
+  `cos(semiAngle)` times the lateral area and `GProp_VelGProps::Perform(gp_Cone)` returns a volume
+  that collapses to zero rather than to the cylinder's as the semi-angle does, filed as #2992. The
+  tests pin the kernel's current answers as a regression pin and hold the correct values in
+  `withKnownIssue`.
+- Three ground-truth probes added under `Scripts/repro/766-*`, all reproducing against the pinned
+  kernel.
+
+### Gate the Standard_Transient release idiom, and record what the compiled-out-validation census cannot see (#2974, #2946)
+
+- **New gate `check-transient-release-idiom.py` (#2974).** Every function in
+  `Sources/OCCTBridge/src/*.mm` that calls `DecrementRefCounter` is now held to
+  `opencascade::handle::EndScope`: the decrement's value compared against `0`, no second
+  `GetRefCount()` read, no bare `delete` where the kernel calls the virtual `Delete()`. The
+  divergence PR #2969 fixed in `OCCTMessengerRelease` and `OCCTReportRelease` had stood since those
+  functions were written and survived two reviews. A deliberate divergence carries
+  `transient-release-exempt: <reason>`; `OCCTTObjApplicationRelease` holds the one, for the
+  process-wide singleton whose static `Handle` must never let a zero count destroy. Seventeenth
+  gate, in `gate-scripts` and the pre-commit hook.
+- **`census-compiled-out-validation.py` now states what it cannot see (#2946).** Every channel ends
+  at a bridge `catch`, so the census is blind to a compiled-out check whose absence faults before
+  any `catch` runs, which is uncatchable in-process. It is not derivable from
+  `Scripts/occt-raise-if-map.txt`, measured three ways, so the limitation is recorded instead: the
+  `WHAT IS STILL DARK` list moves into a `DARK` constant printed at the end of every bare run, with
+  `--self-test` cases holding the roster, each entry's argument, and the report's call to the
+  printer.
+
 ### A red injection row now means keep going, not stop, after 300 of 339 #766 PRs read it as stop (#2970)
 
 `okf/policies/prove-the-test-fails.md` told an author to inject the defect, watch the test fail,
