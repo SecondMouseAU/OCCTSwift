@@ -533,6 +533,55 @@ bool OCCTMessengerAddFilePrinter(OCCTMessengerRef _Nonnull messenger,
 /// Remove all printers
 void OCCTMessengerRemoveAllPrinters(OCCTMessengerRef _Nonnull messenger);
 
+// --- Message::DefaultMessenger(), the stream OCCT itself prints through (#3021) ---
+
+/// Begin capturing everything OCCT sends through `Message::DefaultMessenger()`, process-wide.
+///
+/// Detaches every printer currently attached to the default messenger and attaches one that
+/// accumulates into a buffer this bridge owns, so OCCT's own output stops reaching stdout and
+/// becomes readable instead. Both halves are the point: a scope whose expected OCCT output is
+/// known can assert on it rather than only silencing it, and an absent message then fails the
+/// assertion instead of passing unnoticed.
+///
+/// PROCESS-WIDE and not per-thread, because `Message::DefaultMessenger()` is one static object
+/// that every OCCT translation unit prints through, and because a reader such as
+/// `Transfer_ProcessForFinder::SetMessenger` copies that handle rather than its printers. So this
+/// is not safe to use from one thread while another is doing OCCT work whose output matters.
+///
+/// Returns false and captures nothing when a capture is already in force. Nesting would detach
+/// the outer capture's own printer and the outer scope would then miss every message the inner one
+/// saw, which is the opposite of what a nested scope should do.
+///
+/// The attached printer filters on gravity exactly as `Message_PrinterOStream` does, at
+/// `Message_Info`, which is the level OCCT's own default printer uses. A `Message_Trace` message is
+/// therefore absent from the capture for the same reason it is absent from stdout.
+bool OCCTDefaultMessengerBeginCapture(void);
+
+/// End the capture `OCCTDefaultMessengerBeginCapture` began, and return what it collected.
+///
+/// Detaches the capturing printer and re-attaches the printers that were detached, so a host that
+/// had customised the default messenger gets its own printers back. A printer attached DURING the
+/// capture is left attached.
+///
+/// Each message is one line terminated by `\n`, which is what `Message_PrinterOStream` writes.
+/// Past 1 MiB the text stops growing and gains one `[OCCTSwift: messenger capture truncated ...]`
+/// line, so a capture left running across a large import is bounded but never silently short.
+///
+/// NULL when no capture was in force, or when the result could not be allocated. An EMPTY STRING
+/// means a capture ran and OCCT said nothing, which is a different answer and the one a scope that
+/// expects silence asserts on. Caller must free a non-NULL result with OCCTGeomToolsFreeString.
+const char* _Nullable OCCTDefaultMessengerEndCapture(void);
+
+/// Whether a capture is in force.
+bool OCCTDefaultMessengerIsCapturing(void);
+
+/// How many printers are attached to `Message::DefaultMessenger()` right now.
+///
+/// 1 in a process that has not touched it: OCCT's own `std::cout` printer. This is the only
+/// observable that distinguishes a capture which put the detached printers back from one which did
+/// not, so it is what a test of the capture asserts on either side of the scope.
+int OCCTDefaultMessengerPrinterCount(void);
+
 /// Create a new empty report
 OCCTReportRef _Nullable OCCTReportCreate(void);
 
