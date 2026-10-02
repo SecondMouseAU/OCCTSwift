@@ -13,10 +13,16 @@ struct BOPAlgoSplitterTests {
             #expect(false, "Failed to create boxes")
             return
         }
-        let result = Shape.split(objects: [box1], by: [box2])
-        if let result = result {
-            #expect(result.isValid)
+        // #766: this asserted only inside `if let result`, so a split that returned nil passed.
+        // box2 spans x = 10...30 and box1 -10...10, so they share only the face x = 10 and the
+        // kernel returns box1 whole: 1 valid solid of volume 8000
+        // (Scripts/repro/766-modeling-bopalgo-splitter).
+        guard let result = Shape.split(objects: [box1], by: [box2]) else {
+            Issue.record("split returned nil")
+            return
         }
+        #expect(result.isValid)
+        #expect(result.solidCount == 1)
     }
 
     @Test("Split produces multiple solids")
@@ -28,9 +34,12 @@ struct BOPAlgoSplitterTests {
             #expect(false, "Failed to create boxes")
             return
         }
-        let result = Shape.split(objects: [box1], by: [box2])
-        if let result = result {
-            #expect(result.solidCount >= 2)
+        // #766: this asserted only inside `if let result`, so a split that returned nil passed.
+        // The kernel splits box1 into exactly 2 solids (Scripts/repro/766-modeling-bopalgo-splitter).
+        guard let result = Shape.split(objects: [box1], by: [box2]) else {
+            Issue.record("split returned nil")
+            return
         }
+        #expect(result.solidCount == 2)
     }
 }
