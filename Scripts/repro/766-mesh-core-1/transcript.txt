@@ -1,0 +1,26 @@
+meshFromShape:
+  box 10x5x3 at 0.1: vertexCount=24 triangleCount=12 volume=150.000000
+meshDataAccess:
+  sphere r5 at 0.5: vertexCount=168 triangleCount=306 volume=499.001314
+  every face triangulation carries normals: 0
+enhancedMeshParameters:
+  box 10 at 0.05 (parameters): vertexCount=24 triangleCount=12 volume=1000.000000
+trianglesWithFaces:
+  box 10 at 0.1: vertexCount=24 triangleCount=12 volume=1000.000000
+  faceIndex range 0...5
+meshToShape / meshToShapeWeldTolerance:
+  box mesh toShape(1e-6): null=0 edges=18
+  gappy mesh: edges at 1e-6=6, at 2.0=5
+mesh booleans (deflection 0.5):
+  union: vertexCount=168 triangleCount=72 volume=2000.000000
+    (subtract, same inputs): vertexCount=44 triangleCount=20 volume=666.666667
+    (intersect, same inputs): vertexCount=40 triangleCount=16 volume=333.333333
+  subtraction (box - cylinder r3 h15): vertexCount=148 triangleCount=120 volume=1000.000000
+    (union, same inputs): vertexCount=660 triangleCount=328 volume=1419.998983
+  intersection (box and sphere r7): vertexCount=0 triangleCount=0 volume=0.000000
+    (union, same inputs): vertexCount=2136 triangleCount=1108 volume=2369.259622
+reference: the same booleans on the B-Rep solids, BRepGProp::VolumeProperties:
+  union of the two boxes: 1500.000000
+  box - cylinder: 858.628331
+  box and sphere r7: 959.232938
+  toShape(box mesh) top-level type: 3 (TopAbs_SHELL=3, TopAbs_SOLID=2)
