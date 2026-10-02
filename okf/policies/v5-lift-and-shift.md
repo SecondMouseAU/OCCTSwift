@@ -41,8 +41,8 @@ declared drained on the merged population was wrongly declared.
 **The merged row stands at 876 gains over 396 paths**, measured on 2026-10-02 against
 `origin/main` at `e6a3b8f` and branch head `ee42388`. Most of the fall from 1,229 is the
 programme working: batches have lifted that work onto `main`. A small part of it is the detector
-getting honest, and the two have been separated, because the same two runs differ in nothing but
-the script: the old detector reports **889 gains over 399 paths** on exactly those refs and the
+getting three defects fixed, and the two have been separated, because the same two runs differ in
+nothing but the script: the old detector reports **889 gains over 399 paths** on those refs and the
 corrected one reports 876 over 396. **The correction lowers the gain count**, which is worth
 understanding before the next batch reads the ranking. A gain needs the head to be strictly
 better, and the branch's own versions carry the same multi-line `guard` the old detector could
@@ -73,16 +73,18 @@ with `census-766-weak-assertions.py`'s detector. A **gain** is a test `main` has
 ESCAPABLE and the branch has better. That is the quantity to carve batches out of, because it is
 the quantity the programme exists to move.
 
-Attribution over the whole ranked list is unanimous: the 417 gainful paths trace to **218 distinct
-PRs and every one of them is merged**, with six paths unattributed because the difference is
-`main`'s own later work rather than a commit on the branch. Not one open or closed-unmerged PR
-appears.
+Attribution over the whole ranked list is unanimous and has stayed unanimous through every
+re-measurement: on 2026-10-02 the 396 gainful paths trace to **185 distinct PRs and every one of
+them is merged**, with eight paths unattributed because the difference is `main`'s own later work
+rather than a commit on the branch. Not one open or closed-unmerged PR appears, which was 218 PRs
+over 417 paths when #2937 measured it and is the same finding.
 
-**Rank by gain, never by PR count.** Of 1,681 differing paths, 698 are probes `main` lacks, 254
-are `main`'s own later work, and 727 are test files present on both sides. Of those 727, **417
-have a gain and 310 have none**: `main` is already level or ahead there, and a path differing is
-not a path worth taking. Batch 6 met the reverse case too, where `main`'s `HatchTests.swift` was
-weaker than the v5 base by 25 lines belonging to a third PR. Read the file.
+**Rank by gain, never by PR count.** Of the 1,858 differing paths in that run, 641 are ABSENT
+(the branch has them and `main` does not, overwhelmingly probes), 406 are UNDELETED and 811 are
+test files tiered on both sides. Of those 811, **396 have a gain and 415 have none**: `main` is
+already level or ahead there, and a path differing is not a path worth taking. Batch 6 met the
+reverse case too, where `main`'s `HatchTests.swift` was weaker than the v5 base by 25 lines
+belonging to a third PR. Read the file.
 
 **346 is not the remaining work, in either direction.** That is the commit count #2937 quotes,
 `git log --no-merges origin/v5.0.0-766-execution ^origin/main -- Tests/ Scripts/repro/`, and it
@@ -251,7 +253,7 @@ the census delta for the same batch was three SEVERE. The census still undercoun
 reasons under "WHAT IT CANNOT SEE" rather than for the four defects since fixed, and the sharpest
 of them is exactly a batch-10 shape: `bb.max.x - bb.min.x > 9.0` for a true span of 10 scores as
 a pin and cannot fail on anything a working kernel returns. So where a batch's value is in
-question the counterfactual is the honest number and it costs one more run of a harness already
+question the counterfactual is the number to trust and it costs one more run of a harness already
 built.
 [Injection sweep mechanics](../references/injection-sweep-mechanics.md) has the how.
 

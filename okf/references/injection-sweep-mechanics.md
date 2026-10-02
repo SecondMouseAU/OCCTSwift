@@ -125,7 +125,7 @@ magnitude, for the reasons under "a gain is a candidate". #2985 was one of them 
 an ordering tautology no longer scores as a pin; what remains is in
 `census-766-weak-assertions.py`'s "WHAT IT CANNOT SEE", and its first entry is a batch-10 shape
 the sweep caught and the census never will: `bb.max.x - bb.min.x > 9.0` where the true span is
-10. So where a batch's value is in question, the counterfactual is the honest measure and it
+10. So where a batch's value is in question, the counterfactual is the measure to trust and it
 costs one extra run of a harness you have already built. Report both.
 
 ## Measure both sides at the same instant
