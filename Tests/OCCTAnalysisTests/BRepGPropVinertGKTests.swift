@@ -49,6 +49,8 @@ struct BRepGPropVinertGKTests {
             "a planar face integrates essentially exactly; got \(r.errorReached)")
     }
 
+    /// A curved face reports a nonzero integration error, and that error bounds the real one.
+    ///
     /// #732: `errorReached` was hardcoded to `0.0` on every call, which reads as "this integration
     /// was exact" even when it was not. A planar box face (the two tests above) genuinely can
     /// converge with zero measured error, so it cannot distinguish the hardcode from a real answer;
@@ -79,6 +81,8 @@ struct BRepGPropVinertGKTests {
         )
     }
 
+    /// As `mass` is driven toward zero, `errorReached` must grow and stay finite.
+    ///
     /// PR #738 review, finding 2: the doc comment on `errorReached` promised a *relative* error,
     /// "as a fraction of mass," unconditionally, but `BRepGProp_VinertGK.cxx` (~line 492) only
     /// divides by `|mass|` when it clears an internal `Epsilon()`-scaled floor (on the order of

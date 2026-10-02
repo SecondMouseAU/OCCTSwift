@@ -53,9 +53,10 @@ struct GPropCylConeTests {
         #expect(abs(vol - expected) < 1e-9, "expected \(expected), got \(vol)")
     }
 
-    /// #1813. The lateral area of the cone patch `u in [0, 2 pi]`, `v in [0, 10]` is
-    /// `2 pi (R h + h^2 sin a / 2) = 471.23889803846896`, because `|dP/du x dP/dv| = R + v sin a`
-    /// on `gp_Cone`'s generatrix parametrisation.
+    /// The lateral area of a cone patch is `2 pi (R h + h^2 sin a / 2)`.
+    ///
+    /// #1813. For `u in [0, 2 pi]`, `v in [0, 10]` that is `471.23889803846896`, because
+    /// `|dP/du x dP/dv| = R + v sin a` on `gp_Cone`'s generatrix parametrisation.
     ///
     /// The kernel returns `408.10485695269909`, which is that area times `cos(a)` to 16 digits
     /// (`GProp_SelGProps.cxx:125` multiplies by `Cnt`). The first expectation is the regression
@@ -78,10 +79,11 @@ struct GPropCylConeTests {
         }
     }
 
-    /// #1814. The cone patch `u in [0, 2 pi]`, `v in [0, 10]` bounds a frustum of axial height
-    /// `h cos a` between radii `R` and `R + h sin a`, so its volume is
-    /// `pi H / 3 (R^2 + R R2 + R2^2) = 1587.0744437049404`. That is the convention the cylinder
-    /// and sphere overloads of `GProp_VelGProps` both use.
+    /// The cone patch bounds a frustum, whose volume is `pi H / 3 (R1^2 + R1 R2 + R2^2)`.
+    ///
+    /// #1814. For `u in [0, 2 pi]`, `v in [0, 10]` the axial height is `h cos a` and the radii
+    /// are `R` and `R + h sin a`, so the volume is `1587.0744437049404`. That is the convention
+    /// the cylinder and sphere overloads of `GProp_VelGProps` both use.
     ///
     /// The kernel returns `2040.524284763495`, and the decisive evidence that this is wrong rather
     /// than a different convention is the cylinder limit: `GProp_VelGProps.cxx:171` carries a
