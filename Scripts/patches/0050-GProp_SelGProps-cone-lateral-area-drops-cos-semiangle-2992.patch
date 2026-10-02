@@ -1,0 +1,72 @@
+From: OCCTSwift ecosystem <noreply@secondmouse.au>
+Subject: [PATCH] Modeling Data - GProp_SelGProps returns cos(semiAngle) times
+ the lateral area of a gp_Cone
+
+GProp_SelGProps::Perform(const gp_Cone&, ...) computes
+
+  double Auxi1 = R + (Z2 + Z1) * Snt / 2.;
+  dim          = (Alpha2 - Alpha1) * Cnt * (Z2 - Z1) * Auxi1;
+
+gp_Cone's v parameter runs along the generatrix:
+
+  P(u, v) = Loc + (R + v sin a)(cos u X + sin u Y) + v cos a Z
+
+so dP/du = (R + v sin a)(-sin u X + cos u Y) and dP/dv = sin a (cos u X +
+sin u Y) + cos a Z. The two are orthogonal, |dP/du| is R + v sin a and |dP/dv|
+is 1, so the area element is
+
+  |dP/du ^ dP/dv| du dv = (R + v sin a) du dv
+
+and the lateral area over u in [Alpha1, Alpha2], v in [Z1, Z2] is
+
+  A = (Alpha2 - Alpha1) (Z2 - Z1) (R + (Z2 + Z1) sin a / 2)
+
+which is Auxi1 times (Alpha2 - Alpha1) (Z2 - Z1). The Cnt factor has no term to
+come from, and dim is therefore A cos(a). No reading of Z saves it: were Z the
+axial coordinate rather than the slant, the correction would be a division by
+cos(a), not a multiplication. The factor goes to 1 as a goes to 0, which is why
+the gp_Cylinder overload beside it, dim = R (Z2 - Z1) (Alpha2 - Alpha1), is
+exact and never showed this.
+
+The centre of mass in the same function is already right and is untouched:
+Iz = Cnt (R (Z2 + Z1) / 2 + Snt Auxi2) / Auxi1 is the first moment of the same
+area element divided by Auxi1, so it is independent of how dim is scaled.
+
+GProp_SelGProps and GProp_VelGProps have no caller anywhere in the OCCT tree,
+so there is no call site whose use of the result could settle the convention.
+The arbiters are therefore the closed form above and the cylinder limit: a cone
+of vanishing semi-angle is the cylinder that the same class answers exactly, and
+with this change it converges on it.
+
+Measured on macOS arm64 against V8_0_1 with the translation unit
+override-linked, gp_Cone(gp::XOY(), pi/6, 5) over u in [0, 2 pi], v in [0, 10].
+Before: Mass() is 408.10485695269909 against the closed form 471.23889803846896,
+a ratio of 0.86602540378443882 where cos(pi/6) is 0.86602540378443871. After:
+Mass() is 471.23889803846896, equal to the closed form to the last bit, the
+centre of mass is unchanged at (0, 0, 4.81125224325), and the near-cylinder
+cases at semiAngle 1e-3, 1e-6 and 1e-9 converge on the cylinder's
+314.15926535897933.
+
+The inertia terms below dim carry a separate discrepancy of their own, measured
+but deliberately not touched here: Dm(3, 3) comes out cos(a) sin(a) times the
+second moment about the axis. That is a distinct defect with its own derivation
+and no measurement behind it in a caller, and fixing it here would change a
+second result under cover of this one.
+
+The reproducer is Scripts/repro/2992/probe.cxx and the transcript is
+Scripts/repro/2992/override-link-transcript.txt in the OCCTSwift repository.
+OCCTSwift issue #2992; the volume half of the same issue is patch 0051.
+
+diff --git a/src/ModelingData/TKGeomBase/GProp/GProp_SelGProps.cxx b/src/ModelingData/TKGeomBase/GProp/GProp_SelGProps.cxx
+--- a/src/ModelingData/TKGeomBase/GProp/GProp_SelGProps.cxx
++++ b/src/ModelingData/TKGeomBase/GProp/GProp_SelGProps.cxx
+@@ -122,7 +122,8 @@ void GProp_SelGProps::Perform(const gp_Cone& S,
+
+   double Auxi1 = R + (Z2 + Z1) * Snt / 2.;
+   double Auxi2 = (Z2 * Z2 + Z1 * Z2 + Z1 * Z1) / 3.;
+-  dim          = (Alpha2 - Alpha1) * Cnt * (Z2 - Z1) * Auxi1;
++  // |dP/du ^ dP/dv| is R + v sin(a) on gp_Cone, so the area carries no cos(a) factor.
++  dim = (Alpha2 - Alpha1) * (Z2 - Z1) * Auxi1;
+
+   double Ix = (R * R + R * (Z2 + Z1) * Snt + Snt * Auxi2) / Auxi1;
+   double Iy = Ix * (Cn1 - Cn2) / (Alpha2 - Alpha1);
