@@ -321,7 +321,9 @@ source of truth). It documents the upstream C++ API the bridge wraps, not the Sw
 **A signature is not a contract.** Where OCCT leaves the meaning of a result open, the answer is how
 OCCT's own callers use it, not what we reason out from the callee's source: read
 `ShapeProcess_OperLibrary.cxx` and the `src/Draw/` commands in `Libraries/occt-src`, do exactly what
-they do, and cite the call site in the comment. Reading `Perform()`'s own return statements, which
+they do, and cite the call site in the comment. The same applies to a **design** choice, not just
+to a result: lifetime and ownership, what counts as a programming error, how a condition is
+reported, which tolerance to use. Where OCCT has already decided, copy it. Reading `Perform()`'s own return statements, which
 three merged PRs did correctly, tells you what the value is and not which value is an error; that
 gap left eleven wrappers in one file with two opposite defects (#2769). The rule, where to look and
 what to do when OCCT does not answer are in
