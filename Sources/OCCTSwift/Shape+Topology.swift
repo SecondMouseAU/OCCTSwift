@@ -2464,7 +2464,7 @@ extension Shape {
     ///
     /// This is `TopoDS_Shape::IsNull()`, nothing more: it answers "is there a shape here at all",
     /// not "does this shape have any content". The two differ, and the difference is a trap that
-    /// the old name (`isEmptyShape`) invited:
+    /// the name this property had before #1034 (`isEmptyShape`) invited:
     ///
     /// ```swift
     /// let box = Shape.box(width: 10, height: 10, depth: 10)!
@@ -2478,16 +2478,6 @@ extension Shape {
     public var isNull: Bool {
         OCCTShapeIsEmpty(handle)
     }
-
-    /// Whether the underlying `TopoDS_Shape` is null.
-    @available(
-        *, deprecated, renamed: "isNull",
-        message: """
-            Renamed to isNull. It is TopoDS_Shape::IsNull(), and 'empty' collided with `emptied`, \
-            which produces a shape with no content that this predicate reports as NOT empty. #1034
-            """
-    )
-    public var isEmptyShape: Bool { isNull }
 
     /// Check if two shapes are partners (same TShape).
     public func isPartner(with other: Shape) -> Bool {
@@ -3608,12 +3598,12 @@ extension Shape {
 }
 
 extension Shape {
-    /// Get a nullified copy of the shape.
+    /// Get a copy of the shape that holds a null `TopoDS_Shape`.
     ///
     /// The result has **no topological type**: `TopoDS_Shape::Nullify()` clears the `TShape`
     /// handle outright rather than emptying a shape of a kept type. Every type query answers the
-    /// absence rather than a type, and ``isEmptyShape`` is the query that reports it directly.
-    /// For a copy that keeps its type and loses only its sub-shapes, use ``emptied``.
+    /// absence rather than a type, and ``isNull`` is the query that reports it directly. For a copy
+    /// that keeps its type and loses only its sub-shapes, use ``emptied``.
     ///
     /// ```swift
     /// let box = Shape.box(width: 10, height: 10, depth: 10)!
@@ -3622,14 +3612,24 @@ extension Shape {
     /// print(nulled.shapeType)     // Unknown, not Solid
     /// print(nulled.typeName)      // nil
     /// ```
-    @available(
-        *, deprecated,
-        message: """
-            Use `emptied` for a copy with its content dropped. `Nullify()` is how OCCT clears a \
-            local variable, not a value to hand around: the result has no topological type, and \
-            until #1026 it crashed nine other public properties. No ecosystem repo calls it. #1034
-            """
-    )
+    ///
+    /// ## What it is for
+    ///
+    /// It is the only public way to hold a null shape, and that is its use: it builds the input
+    /// that every operation's refusal of a null shape has to be tested with. Every operation
+    /// refuses it (`nil`, `false` or empty) and none can use it, so it is no help for modelling.
+    /// The bridge's null-shape guards (#1026, #1035) exist because this value once reached
+    /// functions that dereferenced it and crashed the process, and their regression tests construct
+    /// it here. A consumer can use it the same way, to test that its own code copes with a null
+    /// result.
+    ///
+    /// ``emptied`` cannot stand in for it. It keeps the type, so it clears every guard that a null
+    /// shape trips: it exercises a different kernel branch, not the same one more gently.
+    ///
+    /// It was deprecated in favour of ``emptied`` in v4.0.0-beta.1 and is not any more (#1034): the
+    /// advice could not be taken at any of this package's own call sites, each of which wants a
+    /// shape with no type, and a deprecation nobody can satisfy is a standing warning rather than a
+    /// migration.
     public var nullified: Shape? {
         guard let h = OCCTShapeNullified(handle) else { return nil }
         return Shape(handle: h)
@@ -3650,7 +3650,7 @@ extension Shape {
     ///
     /// `TopoDS_Shape::EmptyCopied()`. The result has no content but is **not** null, so `isNull`
     /// reports `false` for it and `shapeType` still answers the original type. That is the
-    /// distinction `isEmptyShape` used to blur, which is why it was renamed (#1034).
+    /// distinction `isEmptyShape`, the name ``isNull`` had before #1034, used to blur.
     public var emptied: Shape? {
         guard let h = OCCTShapeEmptied(handle) else { return nil }
         return Shape(handle: h)

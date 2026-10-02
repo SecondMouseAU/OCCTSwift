@@ -7,7 +7,16 @@ import Testing
 ///
 /// `emptied` produces a shape with no content that the predicate reports as NOT empty, so the two
 /// adjacent members used "empty" for contradictory things. Renamed to `isNull`, which is what it
-/// measures. `nullified` is deprecated in the same change: it has no caller in any ecosystem repo.
+/// measures. `v4.0.0-beta.1` shipped it with the old name kept as a deprecated alias, and the
+/// alias has since been removed. The test that was named for it went too: its body never called
+/// `isEmptyShape`, so it pinned nothing about the alias and would have passed with the alias
+/// returning the wrong answer.
+///
+/// `nullified` was deprecated in the same change, on the premise that `emptied` could take its
+/// place. It cannot: `emptied` keeps the type, so it clears every null-shape guard that
+/// `nullified`'s result trips, and no call site in this package could take the advice. It is the
+/// only public way to hold a null shape and it is no longer deprecated, which is why both tests
+/// below call it without a warning.
 @Suite("Issue1034 null and empty are different questions")
 struct Issue1034NullAndEmptyTests {
 
@@ -31,14 +40,5 @@ struct Issue1034NullAndEmptyTests {
         let nulled = try #require(box.nullified)
         #expect(nulled.isNull == true)
         #expect(nulled.shapeType != box.shapeType)
-    }
-
-    /// The deprecated alias still answers, so the rename is source-compatible until the next major.
-    @Test("the deprecated isEmptyShape alias agrees with isNull")
-    func deprecatedAliasAgrees() throws {
-        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
-        let nulled = try #require(box.nullified)
-        #expect(box.isNull == false)
-        #expect(nulled.isNull == true)
     }
 }

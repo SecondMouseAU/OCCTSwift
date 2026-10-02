@@ -593,7 +593,7 @@ struct StressUnifySameDomainNullPCurveTests {
 // `OCCTShapeCreateExtrusionShape`, `OCCTShapeMakeSolidFromShell`,
 // `OCCTShapeCreateRevolutionFromCurve`), which already guard with `occtShapeIsPresent(...)`.
 //
-// Four of the five sites are reachable one line from Swift via the deprecated
+// Four of the five sites are reachable one line from Swift via the public
 // `Shape.nullified` property (a real, non-null `OCCTShapeRef` wrapping a null `TopoDS_Shape`):
 // `occtShapePeriodicImpl` (`makePeriodic`/`repeated`), `OCCTShapeMakeDraft` (`draft`),
 // `OCCTShapeCreateRevolutionFull` (`revolved(axisOrigin:axisDirection:)`) and

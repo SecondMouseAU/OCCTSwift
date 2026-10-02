@@ -11,7 +11,7 @@ import simd
 /// check, and reached OCCT via `*(const TopoDS_Shape*)faceRef`, a raw pointer cast rather than
 /// this bridge's usual `shape->shape` field access -- which is why `check-null-handle-guards.py`
 /// reported the file clean, its pattern-matcher expects the field-access form. Reachable from the
-/// public (deprecated) `Shape.nullified` -> `Shape.composeShell(precision:)`: a non-null
+/// public `Shape.nullified` -> `Shape.composeShell(precision:)`: a non-null
 /// `OCCTShapeRef` wrapping a null `TopoDS_Shape`. `TopoDS::Face()` passes a null shape through
 /// without throwing, and `BRep_Tool::Surface(const TopoDS_Face&)` then dereferences a null `TF`
 /// unconditionally, an OS signal (SIGSEGV), not a C++ exception, so the enclosing `try/catch (...)`

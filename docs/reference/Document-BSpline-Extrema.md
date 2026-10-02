@@ -211,10 +211,12 @@ public var isNull: Bool
   separates "this shape is null" from a real negative: every type and flag query answers `false`,
   `.unknown` or `nil` for a null shape, the same way it answers for a real shape of another type
   (#1026).
-- **Renamed in #1034.** It was `isEmptyShape`, which read as "has no sub-shapes" and did not mean
-  that: `Shape.emptied` (`TopoDS_Shape::EmptyCopied`) drops the sub-shapes while keeping the type,
-  so `isNull` is `false` for its result even though it has no content. The old name survives as a
-  deprecated alias until the next major.
+- **Renamed in #1034, and the old name is gone.** It was `isEmptyShape`, which read as "has no
+  sub-shapes" and did not mean that: `Shape.emptied` (`TopoDS_Shape::EmptyCopied`) drops the
+  sub-shapes while keeping the type, so `isNull` is `false` for its result even though it has no
+  content. `v4.0.0-beta.1` shipped the rename with `isEmptyShape` kept as a deprecated alias, and
+  the alias has since been removed: `isEmptyShape` is a compile error now, and `isNull` is the
+  same predicate under the name that says what it tests.
 
 ---
 

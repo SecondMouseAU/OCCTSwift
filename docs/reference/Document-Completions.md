@@ -1349,19 +1349,29 @@ Extensions on `Shape` added in v0.123.0.
 
 ### `Shape.nullified`
 
-Return a copy of this shape with its `TShape` handle cleared.
+Return a copy of this shape with its `TShape` handle cleared: a `Shape` that holds a null
+`TopoDS_Shape`.
 
 ```swift
 public var nullified: Shape?
 ```
 
-- **Returns:** A nullified shape, or `nil` on failure.
-- **OCCT:** `TopoDS_Shape::Nullify`.
+- **Returns:** A shape holding a null `TopoDS_Shape`, or `nil` on failure.
+- **OCCT:** `TopoDS_Shape::Nullify`, on a copy.
+- **What it is for.** It is the only public way to hold a null shape, which makes it the input every
+  null-shape refusal needs: the bridge guards of #1026 and #1035 exist because this value reached
+  functions that dereferenced it, and their regression tests construct it here. It is also what a
+  consumer needs to test its own handling of a result that is null. It was deprecated in favour of
+  `emptied` in v4.0.0-beta.1 and is not any more (#1034): `emptied` keeps the type and cannot stand
+  in for it, because a typed empty shape clears every guard that a null one trips, and not one of this
+  package's own call sites could take that advice.
 - **Note:** `Nullify()` clears the handle outright, so the result has **no topological type at
   all**, not "the same type with no sub-shapes". Every type query answers the absence:
-  `shapeType` is `.unknown`, `typeName` is `nil`, and `isSolid` and its siblings are `false`. Use
-  `emptied` for a copy that keeps its type and loses only its sub-shapes. Reading a type off this
-  shape used to crash the process with a SIGSEGV that no bridge-side `catch` could absorb (#1026).
+  `shapeType` is `.unknown`, `typeName` is `nil`, and `isSolid` and its siblings are `false`, and
+  every operation refuses it (`nil`, `false` or empty), which is the point and also why it is no
+  use for modelling. Use `emptied` for a copy that keeps its type and loses only its sub-shapes.
+  Reading a type off this shape used to crash the process with a SIGSEGV that no bridge-side
+  `catch` could absorb (#1026).
 - **Example:**
   ```swift
   let box = Shape.box(width: 10, height: 10, depth: 10)!
