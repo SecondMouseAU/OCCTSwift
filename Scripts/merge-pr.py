@@ -268,8 +268,11 @@ def category_heading(entry):
     opening line therefore reports a match the moment any other entry in the file opens the same
     way, which is what cost nine entries between 2026-09-30 and 2026-10-01 (#2951). Measured on
     those nine: each matched a heading that was itself inside `## Unreleased`, so scoping the
-    comparison does not rescue the shape and nothing short of comparing whole blocks would. That
-    trade is worse, because a reflowed hand edit then reads as absent and the entry lands twice.
+    comparison rescues none of them. Comparing whole blocks would, and is worse, because a
+    reflowed hand edit then reads as absent and the entry lands twice. What the duplicate test
+    does instead is skip the bucket heading and compare the bullet under it (`identifying_line`,
+    #2963), which is correct and is still not a reason to accept the shape: the refusal below is
+    about how `## Unreleased` reads, not only about telling two entries apart.
 
     So the shape is refused instead, and the refusal is not only about this tool. `## Unreleased`
     is written as descriptive headings carrying their issue numbers, and `splice` puts each entry
