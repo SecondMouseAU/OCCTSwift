@@ -1,0 +1,241 @@
+From: OCCTSwift ecosystem <noreply@secondmouse.au>
+Subject: [PATCH] Modeling Algorithms - BRepOffset_MakeOffset visits the arc-join
+ offset faces in the order they were bound
+
+BRepOffset_MakeOffset::BuildOffsetByArc builds a BRepOffset_Offset for every face, every convex
+edge (a tube) and every vertex (a sphere) of the shape and keeps them in
+
+  NCollection_DataMap<TopoDS_Shape, BRepOffset_Offset, TopTools_ShapeMapHasher> MapSF;
+
+It then iterates MapSF to register each offset face as a root of myInitOffsetFace and
+myImageOffset. MakeShells passes myImageOffset.Roots() to BRepTools_Quilt in that order, and the
+quilt keeps the faces in the order it is given them, so the order of the roots is the order of the
+faces of the result.
+
+std::hash<TopoDS_Shape> is the address of the TShape (TopoDS_Shape.hxx), so the iteration order is
+decided by where the allocator put the shapes. It differs between processes and, as the heap
+evolves, between two builds in one process. Every arc-join offset (BRepOffsetAPI_MakeOffsetShape
+and BRepOffsetAPI_MakeThickSolid with GeomAbs_Arc) therefore returns its faces in a different
+order from run to run, and the volume, which BRepGProp sums over the faces in the order the shape
+holds them, moves in its last digits.
+
+Nothing is parallel (the process has one thread and BOPAlgo_Options::GetParallelMode() is false)
+and nothing is read uninitialised: with the roots visited in a fixed order the same inputs give the
+same bits, in every process and every build.
+
+Measured on macOS arm64 against the V8_0_1 asset with its carried patches, 60 fresh processes per
+row (Scripts/repro/3003-offset-roots-hash-order, run.sh):
+
+  request                                       volumes   BinTools dumps
+  box 10, offset +1, GeomAbs_Arc                      6               60
+  box 20, thick solid 2.0, top face open              3               60
+  box 20, thick solid 2.0, nothing open               5               60
+  box 10, offset -1, GeomAbs_Arc                      1               57
+  cylinder, offset +1, GeomAbs_Arc                    1               28
+  box 10, offset +1, GeomAbs_Intersection             1                1
+
+"Volumes" and "BinTools dumps" count the distinct volumes, and the distinct hashes of the bit-exact
+BinTools dump of the result. The rows at one volume and 57 or 28 dumps return the same solid with
+its faces in another order, and sum to the same volume because their faces are symmetric enough to
+add exactly in any order. The last row does not go through BuildOffsetByArc and is already
+reproducible. Recompiling the unmodified file with the kernel's own flags and linking it ahead of
+the archive reproduces the drift, which rules out the build; with this change every row is 1 and 1.
+In one process, 32 builds of the first row with a different amount of heap held before each give 32
+different face orders without the change and 1 with it.
+
+Over a battery of 72 requests (nine shapes, eight requests each) run in 20 processes, 29 returned
+more than one distinct result before the change and none after. In 26 of them only the order of the
+faces differed; 3 are the case below. The other 69 return the same outcome with and without the
+change.
+
+The change records the order the entries are bound in (the faces as MakeOffsetFaces binds them,
+that is BRepLib::SortFaces over myFaceComp and then the faces BRepOffset_Analyse added, then the
+tubes, then the spheres) and walks that list, looking each entry up in MapSF, from which ToContext
+may have removed it. Which offset faces are built, and how, does not change.
+
+For an input whose success depends on the order the roots arrive in, the result is now the same
+every time instead of depending on the heap. The one found is the fuse of two boxes, which keeps
+its coplanar faces split: BRepOffsetAPI_MakeOffsetShape with GeomAbs_Arc and +1 returns a solid in
+8 of 20 processes and, in the others, reports IsDone() with a null shape; over 300 shuffled root
+orders 125 succeed. The order chosen here is one of the failing ones for that input, so it now
+fails every time. That order dependence belongs to the intersection stage that follows and is not
+addressed here.
+
+A GTest builds the same offset 32 times with a different amount of heap held before each and
+compares the order of the faces and the volume with the first build. It fails without the change
+(15 of 15 runs) and passes with it (15 of 15); the other 19 tests in the file pass either way.
+
+Reported as SecondMouseAU/OCCTSwift#3003.
+
+diff --git a/src/ModelingAlgorithms/TKOffset/BRepOffset/BRepOffset_MakeOffset.cxx b/src/ModelingAlgorithms/TKOffset/BRepOffset/BRepOffset_MakeOffset.cxx
+index 75132843..4395dfc8 100644
+--- a/src/ModelingAlgorithms/TKOffset/BRepOffset/BRepOffset_MakeOffset.cxx
++++ b/src/ModelingAlgorithms/TKOffset/BRepOffset/BRepOffset_MakeOffset.cxx
+@@ -1914,6 +1914,23 @@
+   {
+     return;
+   }
++  // MapSF is hashed on TShape addresses. Visit its entries in the order they were bound,
++  // otherwise the roots of myImageOffset, and so the faces of the result, change from run to run.
++  NCollection_IndexedMap<TopoDS_Shape, TopTools_ShapeMapHasher> aBindOrder;
++  {
++    // The order MakeOffsetFaces binds the faces in.
++    NCollection_List<TopoDS_Shape> aSortedFaces;
++    BRepLib::SortFaces(myFaceComp, aSortedFaces);
++    for (NCollection_List<TopoDS_Shape>::Iterator anIt(aSortedFaces); anIt.More(); anIt.Next())
++    {
++      aBindOrder.Add(anIt.Value());
++    }
++    for (NCollection_List<TopoDS_Shape>::Iterator anIt(myAnalyse.NewFaces()); anIt.More();
++         anIt.Next())
++    {
++      aBindOrder.Add(anIt.Value());
++    }
++  }
+   //--------------------------------------------------------
+   // Construction of tubes on edge.
+   //--------------------------------------------------------
+@@ -1987,6 +2004,7 @@
+           }
+           BRepOffset_Offset OF(E, EOn1, EOn2, CurOffset, E1f, E1l);
+           MapSF.Bind(E, OF);
++          aBindOrder.Add(E);
+         }
+       }
+       else
+@@ -2046,6 +2064,7 @@
+ 
+         BRepOffset_Offset OF(V, LOE, CurOffset);
+         MapSF.Bind(V, OF);
++        aBindOrder.Add(V);
+       }
+       //--------------------------------------------------------------
+       // Particular processing if V is at least a free border.
+@@ -2089,17 +2108,22 @@
+   {
+     RT = ChFiDS_Convex;
+   }
+-  NCollection_DataMap<TopoDS_Shape, BRepOffset_Offset, TopTools_ShapeMapHasher>::Iterator It(MapSF);
+-  Message_ProgressScope aPS3(aPSOuter.Next(), nullptr, MapSF.Length());
+-  for (; It.More(); It.Next(), aPS3.Next())
++  Message_ProgressScope aPS3(aPSOuter.Next(), nullptr, aBindOrder.Extent());
++  for (int anIdx = 1; anIdx <= aBindOrder.Extent(); ++anIdx, aPS3.Next())
+   {
+     if (!aPS3.More())
+     {
+       myError = BRepOffset_UserBreak;
+       return;
+     }
+-    const TopoDS_Shape&      SI = It.Key();
+-    const BRepOffset_Offset& SF = It.Value();
++    const TopoDS_Shape&      SI     = aBindOrder(anIdx);
++    const BRepOffset_Offset* aSFPtr = MapSF.Seek(SI);
++    if (aSFPtr == nullptr)
++    {
++      // Unbound by ToContext.
++      continue;
++    }
++    const BRepOffset_Offset& SF = *aSFPtr;
+     if (SF.Status() == BRepOffset_Reversed || SF.Status() == BRepOffset_Degenerated)
+     {
+       //------------------------------------------------
+@@ -2108,7 +2132,7 @@
+       continue;
+     }
+ 
+-    const TopoDS_Face& OF = It.Value().Face();
++    const TopoDS_Face& OF = SF.Face();
+     myInitOffsetFace.Bind(SI, OF);
+     myInitOffsetFace.SetRoot(SI); // Initial<-> Offset
+     myImageOffset.SetRoot(OF);    // FaceOffset root of images
+@@ -2127,7 +2151,7 @@
+         if (!L.IsEmpty() && L.First().Type() != RT)
+         {
+           TopAbs_Orientation OO          = E.Orientation();
+-          TopoDS_Shape       aLocalShape = It.Value().Generated(E);
++          TopoDS_Shape       aLocalShape = SF.Generated(E);
+           TopoDS_Edge        OE          = TopoDS::Edge(aLocalShape);
+           //          TopoDS_Edge        OE  = TopoDS::Edge(It.Value().Generated(E));
+           myAsDes->Add(OF, OE.Oriented(OO));
+diff --git a/src/ModelingAlgorithms/TKOffset/GTests/BRepOffset_MakeOffset_Test.cxx b/src/ModelingAlgorithms/TKOffset/GTests/BRepOffset_MakeOffset_Test.cxx
+index 6c3bfe59..6fdd44b4 100644
+--- a/src/ModelingAlgorithms/TKOffset/GTests/BRepOffset_MakeOffset_Test.cxx
++++ b/src/ModelingAlgorithms/TKOffset/GTests/BRepOffset_MakeOffset_Test.cxx
+@@ -13,6 +13,8 @@
+ 
+ #include <gtest/gtest.h>
+ 
++#include <BRepGProp.hxx>
++#include <BRepOffsetAPI_MakeOffsetShape.hxx>
+ #include <BRepOffsetAPI_MakeThickSolid.hxx>
+ #include <BRepOffsetAPI_ThruSections.hxx>
+ #include <BRepOffset_MakeOffset.hxx>
+@@ -25,6 +27,7 @@
+ #include <BRepPrimAPI_MakeSphere.hxx>
+ #include <BRepCheck_Analyzer.hxx>
+ #include <BRepAlgoAPI_Fuse.hxx>
++#include <GProp_GProps.hxx>
+ #include <Geom_Circle.hxx>
+ #include <Geom_Ellipse.hxx>
+ #include <Geom_BSplineCurve.hxx>
+@@ -41,6 +44,9 @@
+ #include <TopExp_Explorer.hxx>
+ #include <NCollection_List.hxx>
+ 
++#include <memory>
++#include <vector>
++
+ //=================================================================================================
+ // Helper function to create a circular wire
+ //=================================================================================================
+@@ -1027,3 +1033,50 @@
+   // Octagon is closer to a circle, corners are less sharp
+   EXPECT_TRUE(aThickMaker.IsDone()) << "ThickSolid on circle-to-octagon loft failed.";
+ }
++
++//=================================================================================================
++// Test: the faces of an arc-join offset come out in the same order whatever the heap looks like
++//=================================================================================================
++
++TEST(BRepOffset_MakeOffsetTest, ArcJoin_FaceOrderDoesNotDependOnAddresses)
++{
++  // Hold a different amount of heap before each build, so that the shapes of each one get other
++  // addresses. BuildOffsetByArc must not let that reach the order of the faces it returns.
++  std::vector<std::unique_ptr<char[]>> aHeap;
++  std::vector<gp_Pnt>                  aRefCentres;
++  double                               aRefVolume = 0.0;
++  for (int aRun = 0; aRun < 32; ++aRun)
++  {
++    aHeap.emplace_back(new char[16 + 16 * aRun]);
++
++    const TopoDS_Shape aBox = BRepPrimAPI_MakeBox(gp_Pnt(-5, -5, -5), 10, 10, 10).Shape();
++    BRepOffsetAPI_MakeOffsetShape aMaker;
++    aMaker.PerformByJoin(aBox, 1.0, 1.0e-7, BRepOffset_Skin, false, false, GeomAbs_Arc, false);
++    ASSERT_TRUE(aMaker.IsDone());
++
++    std::vector<gp_Pnt> aCentres;
++    for (TopExp_Explorer anExp(aMaker.Shape(), TopAbs_FACE); anExp.More(); anExp.Next())
++    {
++      GProp_GProps aProps;
++      BRepGProp::SurfaceProperties(anExp.Current(), aProps);
++      aCentres.push_back(aProps.CentreOfMass());
++    }
++    GProp_GProps aVolume;
++    BRepGProp::VolumeProperties(aMaker.Shape(), aVolume, true);
++
++    if (aRun == 0)
++    {
++      aRefCentres = aCentres;
++      aRefVolume  = aVolume.Mass();
++      continue;
++    }
++    ASSERT_EQ(aCentres.size(), aRefCentres.size());
++    for (size_t aFaceIdx = 0; aFaceIdx < aCentres.size(); ++aFaceIdx)
++    {
++      EXPECT_TRUE(aCentres[aFaceIdx].IsEqual(aRefCentres[aFaceIdx], 1.0e-9))
++        << "face " << aFaceIdx << " of run " << aRun << " is not where it was in run 0";
++    }
++    // The order the faces are summed in decides the last digits of the volume.
++    EXPECT_EQ(aVolume.Mass(), aRefVolume) << "volume of run " << aRun;
++  }
++}
