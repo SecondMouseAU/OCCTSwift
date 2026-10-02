@@ -6,7 +6,7 @@ import simd
 
 @Suite("Extrema_ExtPElS Point-Cylinder")
 struct ExtremaExtPElSCylTests {
-    @Test func pointToCylinder() {
+    @Test func pointToCylinder() throws {
         let results = ExtremaPointSurface.pointToCylinder(
             point: SIMD3(20, 0, 0),
             center: SIMD3(0, 0, 0), axis: SIMD3(0, 0, 1), radius: 5
@@ -19,9 +19,11 @@ struct ExtremaExtPElSCylTests {
             #expect(abs(sq[0] - 225) < 1e-9)
             #expect(abs(sq[1] - 625) < 1e-9)
         }
-        if let near = results.min(by: { $0.squareDistance < $1.squareDistance }) {
-            #expect(abs(near.point2.x - 5) < 1e-9)
-            #expect(abs(near.point2.y) < 1e-9)
-        }
+        let near = try #require(results.min(by: { $0.squareDistance < $1.squareDistance }))
+        // `Extrema_ExtPElS` has no parallel branch, so #2993's `nil` witness never appears here.
+        #expect(!near.isParallel)
+        let p = try #require(near.point2, "a point-cylinder extremum has a witness point")
+        #expect(abs(p.x - 5) < 1e-9)
+        #expect(abs(p.y) < 1e-9)
     }
 }

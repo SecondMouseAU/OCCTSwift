@@ -4,8 +4,8 @@
 This is what "kernel parity" verification actually means. A `kernel_output` record cites a line of
 `Scripts/repro/766-*/transcript.txt`; nothing until now re-ran the probe that produced it, so a
 transcript could be an edited copy of the bridge's answer and every count in the tree would agree.
-`check-test-validity.py`'s `run_sample_kernel_parity` is a `return True` stub (#2198), and this is
-the thing that should eventually replace it.
+`check-test-validity.py`'s `run_sample_kernel_parity` was a `return True` stub, so that script was
+retired from `main` when #2198 closed and this is what replaces its kernel-parity half.
 
 Per probe: compile `probe.mm` against the xcframework with the line from the `ground-truth-probe`
 skill, run it, and compare stdout+stderr with `transcript.txt`. Verdicts:

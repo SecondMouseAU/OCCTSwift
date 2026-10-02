@@ -3,13 +3,47 @@ import OCCTPlatform
 import simd
 
 /// Result of an elementary extrema computation.
+///
+/// ``squareDistance`` is always a measurement. ``point1`` and ``point2`` are `nil` together, and
+/// only when ``isParallel`` is `true`, because the kernel computes no witness pair on that branch
+/// (#2993).
+///
+/// ```swift
+/// // Two parallel lines 3 apart: the gap is real and there is no nearest pair.
+/// let (parallel, results) = ExtremaElC.lineToLine(
+///     line1Point: .zero, line1Dir: SIMD3(1, 0, 0),
+///     line2Point: SIMD3(0, 3, 0), line2Dir: SIMD3(1, 0, 0))
+/// if parallel, let r = results.first {
+///     r.squareDistance.squareRoot()  // 3.0
+///     r.point1                       // nil, not SIMD3(0, 0, 0)
+/// }
+/// ```
 public struct ExtremaResult: Sendable {
     /// Squared distance between the closest/farthest points.
+    ///
+    /// Computed on every branch, the parallel one included: it is the one value OCCT's own
+    /// callers read there. `Extrema_ExtCC::PrepareResults` hands `AlgExt.SquareDistance()` to
+    /// `PrepareParallelResult` and reads nothing else (`Extrema_ExtCC.cxx:845-852`), and DRAW's
+    /// `vrelation` offset dimension accepts only the parallel case and reports exactly this
+    /// value.
     public let squareDistance: Double
-    /// Point on the first element.
-    public let point1: SIMD3<Double>
-    /// Point on the second element.
-    public let point2: SIMD3<Double>
+    /// Point on the first element, `nil` when ``isParallel``.
+    public let point1: SIMD3<Double>?
+    /// Point on the second element, `nil` when ``isParallel``.
+    public let point2: SIMD3<Double>?
+    /// `true` when the extremum is an equidistant family rather than an isolated solution.
+    ///
+    /// Only `ExtremaElC.lineToLine`, `ExtremaElC.lineToCircle`, `ExtremaElC.circleToCircle`,
+    /// `ExtremaElC.lineToEllipse` and `ExtremaElCS.lineToPlane` can report it; every other
+    /// function in this file answers `false` on every result.
+    ///
+    /// There is no witness pair to report when it is `true`, and the kernel does not have one
+    /// either: `Extrema_ExtElC`'s parallel branches set the square distance and the extremum
+    /// count and never touch the point array (`Extrema_ExtElC.cxx:341-344`, `:595-597`,
+    /// `:729-732`), so `Points()` hands back a default-constructed pair. Before #2993 that pair
+    /// reached Swift as `SIMD3(0, 0, 0)`, which for a line on a circle's own axis is the circle's
+    /// centre, a point the radius away from every point of the circle.
+    public let isParallel: Bool
 }
 
 /// Elementary curve-curve distance computations (Extrema_ExtElC).
@@ -17,7 +51,21 @@ public enum ExtremaElC {
 
     /// Distance between two 3D lines.
     ///
-    /// Returns (isParallel, results) where results contains the extrema.
+    /// Two parallel lines take `Extrema_ExtElC`'s degenerate branch: the distance between them is
+    /// real and constant, and there is no nearest pair, so the one result's
+    /// ``ExtremaResult/point1`` and ``ExtremaResult/point2`` are `nil` and its
+    /// ``ExtremaResult/isParallel`` is `true` (#2993).
+    ///
+    /// ```swift
+    /// let crossing = ExtremaElC.lineToLine(
+    ///     line1Point: .zero, line1Dir: SIMD3(1, 0, 0),
+    ///     line2Point: SIMD3(0, 0, 4), line2Dir: SIMD3(0, 1, 0))
+    /// crossing.isParallel            // false
+    /// crossing.results.first?.point1 // the point on line 1, non-nil
+    /// ```
+    ///
+    /// - Returns: `isParallel`, which is the same fact as every result's
+    ///   ``ExtremaResult/isParallel``, and the extrema.
     public static func lineToLine(
         line1Point: SIMD3<Double>, line1Dir: SIMD3<Double>,
         line2Point: SIMD3<Double>, line2Dir: SIMD3<Double>,
@@ -36,14 +84,32 @@ public enum ExtremaElC {
         let results = (0..<Int(n)).map { i in
             ExtremaResult(
                 squareDistance: buf[i].squareDistance,
-                point1: SIMD3(buf[i].x1, buf[i].y1, buf[i].z1),
-                point2: SIMD3(buf[i].x2, buf[i].y2, buf[i].z2)
+                point1: buf[i].hasWitnessPoints ? SIMD3(buf[i].x1, buf[i].y1, buf[i].z1) : nil,
+                point2: buf[i].hasWitnessPoints ? SIMD3(buf[i].x2, buf[i].y2, buf[i].z2) : nil,
+                isParallel: buf[i].isParallel
             )
         }
         return (isParallel, results)
     }
 
     /// Distance between a 3D line and circle.
+    ///
+    /// A line lying along the circle's own axis is equidistant from every point of the circle, so
+    /// `Extrema_ExtElC` takes its degenerate branch: one result, the circle's radius as the
+    /// distance, ``ExtremaResult/isParallel`` `true` and both witness points `nil` (#1501, #2993).
+    /// There is no separate `isParallel` return, because the flag is per result and the
+    /// degenerate branch produces exactly one.
+    ///
+    /// ```swift
+    /// let onAxis = ExtremaElC.lineToCircle(
+    ///     linePoint: SIMD3(0, 0, 10), lineDir: SIMD3(0, 0, 1),
+    ///     circleCenter: .zero, circleNormal: SIMD3(0, 0, 1), radius: 5)
+    /// if let r = onAxis.first {
+    ///     r.isParallel                   // true
+    ///     r.squareDistance.squareRoot()  // 5.0, the radius
+    ///     r.point2                       // nil; it used to be the circle's centre
+    /// }
+    /// ```
     public static func lineToCircle(
         linePoint: SIMD3<Double>, lineDir: SIMD3<Double>,
         circleCenter: SIMD3<Double>, circleNormal: SIMD3<Double>, radius: Double,
@@ -61,13 +127,29 @@ public enum ExtremaElC {
         return (0..<Int(n)).map { i in
             ExtremaResult(
                 squareDistance: buf[i].squareDistance,
-                point1: SIMD3(buf[i].x1, buf[i].y1, buf[i].z1),
-                point2: SIMD3(buf[i].x2, buf[i].y2, buf[i].z2)
+                point1: buf[i].hasWitnessPoints ? SIMD3(buf[i].x1, buf[i].y1, buf[i].z1) : nil,
+                point2: buf[i].hasWitnessPoints ? SIMD3(buf[i].x2, buf[i].y2, buf[i].z2) : nil,
+                isParallel: buf[i].isParallel
             )
         }
     }
 
     /// Distance between two 3D circles.
+    ///
+    /// Two coaxial circles are everywhere equidistant, so `Extrema_ExtElC` takes its degenerate
+    /// branch: one result carrying the real distance with ``ExtremaResult/isParallel`` `true` and
+    /// both witness points `nil` (#1501, #2993).
+    ///
+    /// ```swift
+    /// let concentric = ExtremaElC.circleToCircle(
+    ///     center1: .zero, normal1: SIMD3(0, 0, 1), radius1: 5,
+    ///     center2: .zero, normal2: SIMD3(0, 0, 1), radius2: 3)
+    /// if let r = concentric.first {
+    ///     r.isParallel                   // true
+    ///     r.squareDistance.squareRoot()  // 2.0, the difference of the radii
+    ///     r.point1                       // nil
+    /// }
+    /// ```
     public static func circleToCircle(
         center1: SIMD3<Double>, normal1: SIMD3<Double>, radius1: Double,
         center2: SIMD3<Double>, normal2: SIMD3<Double>, radius2: Double
@@ -84,8 +166,9 @@ public enum ExtremaElC {
         return (0..<Int(n)).map { i in
             ExtremaResult(
                 squareDistance: buf[i].squareDistance,
-                point1: SIMD3(buf[i].x1, buf[i].y1, buf[i].z1),
-                point2: SIMD3(buf[i].x2, buf[i].y2, buf[i].z2)
+                point1: buf[i].hasWitnessPoints ? SIMD3(buf[i].x1, buf[i].y1, buf[i].z1) : nil,
+                point2: buf[i].hasWitnessPoints ? SIMD3(buf[i].x2, buf[i].y2, buf[i].z2) : nil,
+                isParallel: buf[i].isParallel
             )
         }
     }
@@ -106,6 +189,11 @@ public enum ExtremaElC {
     ///
     /// There is no tolerance: `Extrema_ExtElC(gp_Lin, gp_Elips)` takes none. Only its line/line and
     /// line/circle siblings do.
+    ///
+    /// A genuinely parallel configuration takes the degenerate branch, where the one result has
+    /// ``ExtremaResult/isParallel`` `true` and both witness points `nil` (#2993). A line on the
+    /// ellipse's own axis is **not** one: measured, it reports four ordinary extrema with real
+    /// points, unlike the circle of the same construction.
     public static func lineToEllipse(
         linePoint: SIMD3<Double>, lineDir: SIMD3<Double>,
         center: SIMD3<Double>, normal: SIMD3<Double>, xDir: SIMD3<Double>,
@@ -125,8 +213,9 @@ public enum ExtremaElC {
         return (0..<Int(n)).map { i in
             ExtremaResult(
                 squareDistance: buf[i].squareDistance,
-                point1: SIMD3(buf[i].x1, buf[i].y1, buf[i].z1),
-                point2: SIMD3(buf[i].x2, buf[i].y2, buf[i].z2)
+                point1: buf[i].hasWitnessPoints ? SIMD3(buf[i].x1, buf[i].y1, buf[i].z1) : nil,
+                point2: buf[i].hasWitnessPoints ? SIMD3(buf[i].x2, buf[i].y2, buf[i].z2) : nil,
+                isParallel: buf[i].isParallel
             )
         }
     }
@@ -136,6 +225,28 @@ public enum ExtremaElC {
 public enum ExtremaElCS {
 
     /// Distance between a line and a plane.
+    ///
+    /// A line parallel to the plane is everywhere the same distance from it, so `Extrema_ExtElCS`
+    /// takes its degenerate branch: one result with the real distance,
+    /// ``ExtremaResult/isParallel`` `true` and both witness points `nil` (#2993).
+    ///
+    /// ```swift
+    /// let flat = ExtremaElCS.lineToPlane(
+    ///     linePoint: SIMD3(0, 0, 4), lineDir: SIMD3(1, 0, 0),
+    ///     planePoint: .zero, planeNormal: SIMD3(0, 0, 1))
+    /// flat.isParallel                            // true
+    /// flat.results.first?.squareDistance         // 16.0
+    /// flat.results.first?.point1                 // nil
+    /// ```
+    ///
+    /// Reading a point there is not merely meaningless, it is fatal: `Extrema_ExtElCS` leaves
+    /// `myPoint1` and `myPoint2` as null handles on that branch while `NbExt()` returns 1, so
+    /// `Points(1, ...)` dereferences null and the process dies with a signal the bridge cannot
+    /// catch. The bridge returns before the loop, measured in
+    /// `Scripts/repro/2993-extremaelc-parallel-witnesses/`.
+    ///
+    /// - Returns: `isParallel`, which is the same fact as every result's
+    ///   ``ExtremaResult/isParallel``, and the extrema.
     public static func lineToPlane(
         linePoint: SIMD3<Double>, lineDir: SIMD3<Double>,
         planePoint: SIMD3<Double>, planeNormal: SIMD3<Double>
@@ -153,8 +264,9 @@ public enum ExtremaElCS {
         let results = (0..<Int(n)).map { i in
             ExtremaResult(
                 squareDistance: buf[i].squareDistance,
-                point1: SIMD3(buf[i].x1, buf[i].y1, buf[i].z1),
-                point2: SIMD3(buf[i].x2, buf[i].y2, buf[i].z2)
+                point1: buf[i].hasWitnessPoints ? SIMD3(buf[i].x1, buf[i].y1, buf[i].z1) : nil,
+                point2: buf[i].hasWitnessPoints ? SIMD3(buf[i].x2, buf[i].y2, buf[i].z2) : nil,
+                isParallel: buf[i].isParallel
             )
         }
         return (isParallel, results)
@@ -176,8 +288,9 @@ public enum ExtremaElCS {
         return (0..<Int(n)).map { i in
             ExtremaResult(
                 squareDistance: buf[i].squareDistance,
-                point1: SIMD3(buf[i].x1, buf[i].y1, buf[i].z1),
-                point2: SIMD3(buf[i].x2, buf[i].y2, buf[i].z2)
+                point1: buf[i].hasWitnessPoints ? SIMD3(buf[i].x1, buf[i].y1, buf[i].z1) : nil,
+                point2: buf[i].hasWitnessPoints ? SIMD3(buf[i].x2, buf[i].y2, buf[i].z2) : nil,
+                isParallel: buf[i].isParallel
             )
         }
     }
@@ -199,8 +312,9 @@ public enum ExtremaElCS {
         return (0..<Int(n)).map { i in
             ExtremaResult(
                 squareDistance: buf[i].squareDistance,
-                point1: SIMD3(buf[i].x1, buf[i].y1, buf[i].z1),
-                point2: SIMD3(buf[i].x2, buf[i].y2, buf[i].z2)
+                point1: buf[i].hasWitnessPoints ? SIMD3(buf[i].x1, buf[i].y1, buf[i].z1) : nil,
+                point2: buf[i].hasWitnessPoints ? SIMD3(buf[i].x2, buf[i].y2, buf[i].z2) : nil,
+                isParallel: buf[i].isParallel
             )
         }
     }
@@ -296,8 +410,9 @@ public enum ExtremaPointCurve {
         return (0..<Int(n)).map { i in
             ExtremaResult(
                 squareDistance: buf[i].squareDistance,
-                point1: SIMD3(buf[i].x1, buf[i].y1, buf[i].z1),
-                point2: SIMD3(buf[i].x2, buf[i].y2, buf[i].z2)
+                point1: buf[i].hasWitnessPoints ? SIMD3(buf[i].x1, buf[i].y1, buf[i].z1) : nil,
+                point2: buf[i].hasWitnessPoints ? SIMD3(buf[i].x2, buf[i].y2, buf[i].z2) : nil,
+                isParallel: buf[i].isParallel
             )
         }
     }
@@ -319,8 +434,9 @@ public enum ExtremaPointCurve {
         return (0..<Int(n)).map { i in
             ExtremaResult(
                 squareDistance: buf[i].squareDistance,
-                point1: SIMD3(buf[i].x1, buf[i].y1, buf[i].z1),
-                point2: SIMD3(buf[i].x2, buf[i].y2, buf[i].z2)
+                point1: buf[i].hasWitnessPoints ? SIMD3(buf[i].x1, buf[i].y1, buf[i].z1) : nil,
+                point2: buf[i].hasWitnessPoints ? SIMD3(buf[i].x2, buf[i].y2, buf[i].z2) : nil,
+                isParallel: buf[i].isParallel
             )
         }
     }
@@ -358,8 +474,9 @@ public enum ExtremaPointCurve {
         return (0..<Int(n)).map { i in
             ExtremaResult(
                 squareDistance: buf[i].squareDistance,
-                point1: SIMD3(buf[i].x1, buf[i].y1, buf[i].z1),
-                point2: SIMD3(buf[i].x2, buf[i].y2, buf[i].z2)
+                point1: buf[i].hasWitnessPoints ? SIMD3(buf[i].x1, buf[i].y1, buf[i].z1) : nil,
+                point2: buf[i].hasWitnessPoints ? SIMD3(buf[i].x2, buf[i].y2, buf[i].z2) : nil,
+                isParallel: buf[i].isParallel
             )
         }
     }
@@ -392,8 +509,9 @@ public enum ExtremaPointCurve {
         return (0..<Int(n)).map { i in
             ExtremaResult(
                 squareDistance: buf[i].squareDistance,
-                point1: SIMD3(buf[i].x1, buf[i].y1, buf[i].z1),
-                point2: SIMD3(buf[i].x2, buf[i].y2, buf[i].z2)
+                point1: buf[i].hasWitnessPoints ? SIMD3(buf[i].x1, buf[i].y1, buf[i].z1) : nil,
+                point2: buf[i].hasWitnessPoints ? SIMD3(buf[i].x2, buf[i].y2, buf[i].z2) : nil,
+                isParallel: buf[i].isParallel
             )
         }
     }
@@ -419,8 +537,9 @@ public enum ExtremaPointSurface {
         return (0..<Int(n)).map { i in
             ExtremaResult(
                 squareDistance: buf[i].squareDistance,
-                point1: SIMD3(buf[i].x1, buf[i].y1, buf[i].z1),
-                point2: SIMD3(buf[i].x2, buf[i].y2, buf[i].z2)
+                point1: buf[i].hasWitnessPoints ? SIMD3(buf[i].x1, buf[i].y1, buf[i].z1) : nil,
+                point2: buf[i].hasWitnessPoints ? SIMD3(buf[i].x2, buf[i].y2, buf[i].z2) : nil,
+                isParallel: buf[i].isParallel
             )
         }
     }
@@ -441,8 +560,9 @@ public enum ExtremaPointSurface {
         return (0..<Int(n)).map { i in
             ExtremaResult(
                 squareDistance: buf[i].squareDistance,
-                point1: SIMD3(buf[i].x1, buf[i].y1, buf[i].z1),
-                point2: SIMD3(buf[i].x2, buf[i].y2, buf[i].z2)
+                point1: buf[i].hasWitnessPoints ? SIMD3(buf[i].x1, buf[i].y1, buf[i].z1) : nil,
+                point2: buf[i].hasWitnessPoints ? SIMD3(buf[i].x2, buf[i].y2, buf[i].z2) : nil,
+                isParallel: buf[i].isParallel
             )
         }
     }
@@ -464,8 +584,9 @@ public enum ExtremaPointSurface {
         return (0..<Int(n)).map { i in
             ExtremaResult(
                 squareDistance: buf[i].squareDistance,
-                point1: SIMD3(buf[i].x1, buf[i].y1, buf[i].z1),
-                point2: SIMD3(buf[i].x2, buf[i].y2, buf[i].z2)
+                point1: buf[i].hasWitnessPoints ? SIMD3(buf[i].x1, buf[i].y1, buf[i].z1) : nil,
+                point2: buf[i].hasWitnessPoints ? SIMD3(buf[i].x2, buf[i].y2, buf[i].z2) : nil,
+                isParallel: buf[i].isParallel
             )
         }
     }
@@ -489,8 +610,9 @@ public enum ExtremaPointSurface {
         return (0..<Int(n)).map { i in
             ExtremaResult(
                 squareDistance: buf[i].squareDistance,
-                point1: SIMD3(buf[i].x1, buf[i].y1, buf[i].z1),
-                point2: SIMD3(buf[i].x2, buf[i].y2, buf[i].z2)
+                point1: buf[i].hasWitnessPoints ? SIMD3(buf[i].x1, buf[i].y1, buf[i].z1) : nil,
+                point2: buf[i].hasWitnessPoints ? SIMD3(buf[i].x2, buf[i].y2, buf[i].z2) : nil,
+                isParallel: buf[i].isParallel
             )
         }
     }
@@ -514,8 +636,9 @@ public enum ExtremaPointSurface {
         return (0..<Int(n)).map { i in
             ExtremaResult(
                 squareDistance: buf[i].squareDistance,
-                point1: SIMD3(buf[i].x1, buf[i].y1, buf[i].z1),
-                point2: SIMD3(buf[i].x2, buf[i].y2, buf[i].z2)
+                point1: buf[i].hasWitnessPoints ? SIMD3(buf[i].x1, buf[i].y1, buf[i].z1) : nil,
+                point2: buf[i].hasWitnessPoints ? SIMD3(buf[i].x2, buf[i].y2, buf[i].z2) : nil,
+                isParallel: buf[i].isParallel
             )
         }
     }

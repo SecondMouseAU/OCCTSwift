@@ -14,7 +14,7 @@ struct ExtremaElCLinCircTests {
     /// `t = 5 cos u`, which leaves `25 sin^2 u + 100`, stationary in `u` at `sin u = 0` and at
     /// `cos u = 0`. So four extrema: `(±5, 0, 0)` beneath `(±5, 0, 10)` at 100, and `(0, ±5, 0)`
     /// beneath `(0, 0, 10)` at 125.
-    @Test func lineCircleDistance() {
+    @Test func lineCircleDistance() throws {
         let results = ExtremaElC.lineToCircle(
             linePoint: SIMD3(0, 0, 10), lineDir: SIMD3(1, 0, 0),
             circleCenter: SIMD3(0, 0, 0), circleNormal: SIMD3(0, 0, 1), radius: 5
@@ -25,13 +25,17 @@ struct ExtremaElCLinCircTests {
             #expect(abs(got - want) < 1e-9, "square distances \(squares)")
         }
         // Each result pairs a point on the line with the circle point directly beneath it, and
-        // the square distance it reports is the one between that pair.
+        // the square distance it reports is the one between that pair. This configuration is not
+        // parallel, so both witnesses are present: a `nil` here is a failure, not a skip (#2993).
         for r in results {
-            #expect(abs(r.point1.z - 10) < 1e-9, "p1 \(r.point1)")
-            #expect(abs(r.point1.y) < 1e-9, "p1 \(r.point1)")
-            #expect(abs(r.point2.z) < 1e-9, "p2 \(r.point2)")
-            #expect(abs(simd_length(r.point2) - 5) < 1e-9, "p2 \(r.point2)")
-            #expect(abs(simd_distance_squared(r.point1, r.point2) - r.squareDistance) < 1e-9)
+            #expect(!r.isParallel)
+            let p1 = try #require(r.point1, "a non-parallel extremum has a point on the line")
+            let p2 = try #require(r.point2, "a non-parallel extremum has a point on the circle")
+            #expect(abs(p1.z - 10) < 1e-9, "p1 \(p1)")
+            #expect(abs(p1.y) < 1e-9, "p1 \(p1)")
+            #expect(abs(p2.z) < 1e-9, "p2 \(p2)")
+            #expect(abs(simd_length(p2) - 5) < 1e-9, "p2 \(p2)")
+            #expect(abs(simd_distance_squared(p1, p2) - r.squareDistance) < 1e-9)
         }
     }
 
@@ -51,21 +55,25 @@ struct ExtremaElCLinCircTests {
         let nearest = try #require(results.min(by: { $0.squareDistance < $1.squareDistance }))
         let farthest = try #require(results.max(by: { $0.squareDistance < $1.squareDistance }))
         #expect(abs(nearest.squareDistance - 25) < 1e-9)
-        #expect(simd_distance(nearest.point1, SIMD3(10, 0, 0)) < 1e-9)
-        #expect(simd_distance(nearest.point2, SIMD3(5, 0, 0)) < 1e-9)
+        #expect(simd_distance(try #require(nearest.point1), SIMD3(10, 0, 0)) < 1e-9)
+        #expect(simd_distance(try #require(nearest.point2), SIMD3(5, 0, 0)) < 1e-9)
         #expect(abs(farthest.squareDistance - 225) < 1e-9)
-        #expect(simd_distance(farthest.point1, SIMD3(10, 0, 0)) < 1e-9)
-        #expect(simd_distance(farthest.point2, SIMD3(-5, 0, 0)) < 1e-9)
+        #expect(simd_distance(try #require(farthest.point1), SIMD3(10, 0, 0)) < 1e-9)
+        #expect(simd_distance(try #require(farthest.point2), SIMD3(-5, 0, 0)) < 1e-9)
     }
 
     /// A line coincident with the circle's own axis (#1501): `Extrema_ExtElC` reports
     /// `IsParallel()`, a degenerate case with a well-defined constant distance (the circle's own
     /// radius), which the bridge used to discard and return an empty array for.
     ///
-    /// Only the square distance is asserted. On that branch `OCCTExtremaElCLinCirc` zeroes both
-    /// witness points and `ExtremaResult` reports them as `(0, 0, 0)`, which is not a point of the
-    /// circle and is indistinguishable from a measurement; filed as #2993. Pinning those zeros
-    /// here would pin the defect.
+    /// The distance is kept because OCCT's own caller keeps it: `Extrema_ExtCC::PrepareResults`
+    /// hands `AlgExt.SquareDistance()` to `PrepareParallelResult` and reads nothing else
+    /// (`Extrema_ExtCC.cxx:845-852`). The witnesses are `nil` because OCCT never computes them:
+    /// the constructor sets `mySqDist[0]` and `myNbExt = 1` and leaves `myPoint`
+    /// default-constructed, so `Points(1, ...)` hands back `(0, 0, 0)`, which here is the
+    /// circle's **centre**, a point 5 from every point of the circle. Until #2993 that reached
+    /// Swift as a `SIMD3` indistinguishable from a measurement. Measured in
+    /// `Scripts/repro/2993-extremaelc-parallel-witnesses/`.
     @Test func lineOnCircleAxisReturnsRadius() throws {
         let results = ExtremaElC.lineToCircle(
             linePoint: SIMD3(0, 0, 10), lineDir: SIMD3(0, 0, 1),
@@ -75,5 +83,10 @@ struct ExtremaElCLinCircTests {
         let first = try #require(results.first)
         #expect(abs(first.squareDistance - 25) < 1e-6)
         #expect(abs(first.squareDistance.squareRoot() - 5) < 1e-6)
+        #expect(first.isParallel, "a line on the circle's own axis is the degenerate branch")
+        // Not `== nil` as a courtesy: the old value was the circle's centre, and the assertion
+        // that would have caught it is this one.
+        #expect(first.point1 == nil, "point1 is \(String(describing: first.point1))")
+        #expect(first.point2 == nil, "point2 is \(String(describing: first.point2))")
     }
 }

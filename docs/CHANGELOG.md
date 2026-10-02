@@ -21,6 +21,80 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### `Extrema_ExtElC` parallel witnesses are optional (#2993), and `IntTools_EdgeEdge`'s two common-part types are settled (#2994)
+
+**Fixed.** `ExtremaResult.point1` and `ExtremaResult.point2` are now `SIMD3<Double>?`, `nil` on a
+parallel branch, where the bridge used to report `SIMD3(0, 0, 0)` beside a correct distance. For a
+line on a circle's own axis that zero was the circle's centre, a point the radius away from every
+point of the circle. The struct gains `isParallel`, which is `true` exactly when the witnesses are
+`nil`, and the square distance is unchanged because `Extrema_ExtCC::PrepareResults`, OCCT's own
+production caller, keeps exactly that value and reads no point there. All five parallel-capable
+entry points are covered: `ExtremaElC.lineToLine`, `.lineToCircle`, `.circleToCircle`,
+`.lineToEllipse` and `ExtremaElCS.lineToPlane` (#2993).
+
+**Documented.** `Shape.CommonPart.type` is a directive to a boolean operation, not a
+classification of the geometry: a tangential overlap of two arcs reports `.vertex` whenever it
+covers the whole of neither edge, because `IntTools_EdgeEdge::MergeSolutions` promotes to
+`TopAbs_EDGE` only on whole-range coverage, while two straight edges take `ComputeLineLine` and
+report `.edge` for any coincidence. `param1Range` is the true overlap under either answer and is
+what a caller should read. Settled with a C++ probe and `BOPAlgo_PaveFiller::PerformEE` read as
+the caller; not a kernel defect, and both answers are now pinned with the rule beside them
+(#2994).
+
+### Two carried kernel patches: Bezier `InsertPoleAfter` reaches the pole count the constructors allow, and `math_Uzawa` stops overrunning its initial-error vector (#2875, #2860)
+
+- **#2875, patch `0045`.** `Geom2d_BezierCurve::InsertPoleAfter` and
+  `Geom_BezierCurve::InsertPoleAfter` refused once the curve held `MaxDegree()` poles, where both
+  constructors and `Increase()` allow `MaxDegree() + 1`: the check compared a pole count against a
+  degree bound. Both sites now compare with `>`, which are the only two in the tree that got this
+  wrong. Half the patch is inert in the kernel this package ships, because `No_Exception` empties
+  the 2d class's `Standard_ConstructionError_Raise_if` and leaves the bridge guard as the only
+  bound; the 3d class's literal throw does move, from 25 poles to 26. `Curve2D`'s guard therefore
+  stays and must be edited rather than retired at the repin, filed as #3013.
+- **#2860, patch `0046`.** `math_Uzawa` sized its initial-error vector `Errinit` by the number of
+  unknowns and wrote it by constraint, so every overdetermined system wrote past its end: 4
+  constraints in 2 unknowns returned a wrong answer, 100 in 2 was a deterministic SIGSEGV. Both
+  constructors now size it by `Cont.RowNumber()`, which is what `Perform` writes, what every reader
+  indexes, and what `InitialError()`'s own declaration documents. The kernel's own dimension check
+  never related rows to columns, so this is a defect on its own terms rather than a compiled-out
+  one, and `MathSolver.uzawa`'s bridge guard stays.
+- Neither patch is pinned yet. `Scripts/patches/` now holds thirty-four against an asset holding
+  thirty-one, written up in `okf/references/carried-occt-patches.md` and `Package.swift`.
+- Also filed, not fixed: #3011, `Geom_BezierSurface`'s insert-pole entry points carry no
+  `MaxDegree` bound and four of its accessors index a fixed 26-element table by pole count.
+
+### `census-766-weak-assertions.py` saw none of three defects, and all three hid weak tests (#2982, #2985, #2964)
+
+The #766 programme's detector under-reported three ways at once, and because every figure the
+programme steers by comes out of it, all three are fixed and re-measured together.
+
+* **A multi-line `guard let ... else { return }` was invisible** (#2982). `GUARD_RETURN` was
+  `\bguard\b[^\n]*\belse\b`, and `[^\n]*` cannot cross a newline, so the form Swift's formatter
+  produces as soon as the binding list wraps matched nothing. The span now runs to the `else`
+  across newlines, bounded by `;` and by an unpaired `}`.
+* **An ordering tautology counted as a pin** (#2985). What pins a value was decided by complement,
+  so `b.max.x >= b.min.x`, true of every `Bnd_Box`, lifted a test out of SEVERE. A sixth weak
+  shape catches an ordering between two member paths rooted at the same identifier and leaves
+  `fine.count >= coarse.count` a pin.
+* **A same-named helper in another suite was scored against the wrong test** (#2964). `helpers_in`
+  keyed every `func` on its bare name, last one wins, so the four tests of
+  `StressFormatRoundTripTests.swift`'s OBJ suite, whose own helper asserts nothing, were scored
+  against the IGES suite's and read as clean. Helpers now carry an owner.
+
+Measured against a frozen `git archive origin/main Tests` at `e6a3b8f`, over 1,473 files and
+6,671 `@Test` functions, repo-wide SEVERE rises from **1,185 to 1,230** and ESCAPABLE from 2,288
+to 2,576. Per defect: #2982 adds 320 findings in 138 files and no SEVERE, #2985 adds 40 SEVERE,
+#2964 adds 5. The suite did not get worse; the detector stopped missing things. One finding is
+lost and it was a false positive, a nested class's method borrowed into a test of the enclosing
+suite.
+
+The branch survey moves the other way, 889 gains over 399 paths to 876 over 396 on identical refs,
+because the branch's own versions carry the multi-line `guard` too.
+`okf/policies/v5-lift-and-shift.md` and `census-766-unlifted-tests.py`'s docstring carry the
+corrected figures, and the script gains a `WHAT IT CANNOT SEE` section recording the one shape
+left uncaught on purpose: a threshold a correct answer clears by a whole unit, which no static
+shape can reach without also reaching every tolerance comparison.
+
 ### Unread counts leave `CLAUDE.md`, the gate-coverage audit stops reporting a drift that is not there, and the surface rationality flags say which axis they mean (#2959, #2960, #2976)
 
 - **#2959.** The fifteen derived counts `CLAUDE.md` still carried, which no gate read, are gone:

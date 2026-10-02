@@ -1347,8 +1347,10 @@ extern "C"
   typedef struct
   {
     double squareDistance;
-    double x1, y1, z1; ///< Point on first element
-    double x2, y2, z2; ///< Point on second element
+    double x1, y1, z1;       ///< Point on first element, meaningful only if hasWitnessPoints
+    double x2, y2, z2;       ///< Point on second element, meaningful only if hasWitnessPoints
+    bool   isParallel;       ///< The extremum is an equidistant family, not an isolated solution
+    bool   hasWitnessPoints; ///< The six coordinates above were computed rather than left at zero
   } OCCTExtremaElResult;
 
   // MARK: - BRepAlgo_NormalProjection (v0.109.0)
