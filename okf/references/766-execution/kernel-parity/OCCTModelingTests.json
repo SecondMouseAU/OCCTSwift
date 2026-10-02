@@ -2,9 +2,18 @@
   {
     "test_name": "Modeling domain kernel parity",
     "bridge_function": "OCCTModelingPlaceholder",
-    "bridge_output": {"type": "object", "data": {}},
-    "kernel_output": {"type": "object", "data": {}},
-    "comparison": {"equal": null, "differences": []},
+    "bridge_output": {
+      "type": "object",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "object",
+      "data": {}
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
     "status": "PENDING"
   },
   {
@@ -406,5 +415,139 @@
       "differences": []
     },
     "status": "N/A"
+  },
+  {
+    "test_name": "v0.122.0, History Extended::mergeHistories",
+    "bridge_function": "OCCTHistoryMerge",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "beforeMerge": {
+          "hasModified": true,
+          "hasGenerated": false
+        },
+        "afterMerge": {
+          "hasModified": true,
+          "hasGenerated": true,
+          "generatedB1": 1,
+          "modifiedB1": 1
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "beforeMerge": {
+          "hasModified": true,
+          "hasGenerated": false
+        },
+        "afterMerge": {
+          "hasModified": true,
+          "hasGenerated": true,
+          "generatedB1": 1,
+          "modifiedB1": 1
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantities on both sides. Bridge values are what the test observed, read from a temporary print of Shape.History (run once and reverted, not committed). Kernel values are from Scripts/repro/766-modeling-history-extended/transcript.txt, from the earlier probe.mm, which repeats the same BRepTools_History calls on three centred boxes of 10, 5 and 3 mm (the probe prints booleans as 0 and 1 and sizes as counts). history1 holds b1 -> b2 modified, history2 holds b2 -> b3 generated; the state of history1 before and after the merge, with the number of shapes generated and modified from b1 afterwards. The test asserts hasModified and hasGenerated after the merge, which only the merge can make true; the before-merge state and the counts are measured as well.",
+    "probe": "Scripts/repro/766-modeling-history-extended/"
+  },
+  {
+    "test_name": "v0.122.0, History Extended::replaceGeneratedModified",
+    "bridge_function": "OCCTHistoryReplaceGenerated",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "hasGenerated": true,
+        "generated": 1,
+        "generatedIsB3": true,
+        "hasModified": true,
+        "modified": 1,
+        "modifiedIsB3": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "hasGenerated": true,
+        "generated": 1,
+        "generatedIsB3": true,
+        "hasModified": true,
+        "modified": 1,
+        "modifiedIsB3": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantities on both sides. Bridge values are what the test observed, read from a temporary print of Shape.History (run once and reverted, not committed). Kernel values are from Scripts/repro/766-modeling-history-extended/transcript.txt, from the earlier probe.mm, which repeats the same BRepTools_History calls on three centred boxes of 10, 5 and 3 mm (the probe prints booleans as 0 and 1 and sizes as counts). After AddGenerated(b1, b2) then ReplaceGenerated(b1, b3), and AddModified(b1, b2) then ReplaceModified(b1, b3): whether the history has generated and modified entries, how many shapes each holds for b1, and whether the one left IsSame as b3. The earlier record spelled these keys differently on the two sides.",
+    "probe": "Scripts/repro/766-modeling-history-extended/"
+  },
+  {
+    "test_name": "v0.122.0, History Extended::getModifiedGeneratedShapes",
+    "bridge_function": "OCCTHistoryGetModifiedShapes",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "modified": 1,
+        "generated": 1
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "modified": 1,
+        "generated": 1
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantities on both sides. Bridge values are what the test observed, read from a temporary print of Shape.History (run once and reverted, not committed). Kernel values are from Scripts/repro/766-modeling-history-extended/transcript.txt, from the earlier probe.mm, which repeats the same BRepTools_History calls on three centred boxes of 10, 5 and 3 mm (the probe prints booleans as 0 and 1 and sizes as counts). The number of shapes modified from b1 after AddModified(b1, b2), and generated from b1 after AddGenerated(b1, b3). The earlier record spelled these keys differently on the two sides.",
+    "probe": "Scripts/repro/766-modeling-history-extended/"
+  },
+  {
+    "test_name": "Integration: Boolean Chain Stress::twentySubtractions",
+    "bridge_function": "OCCTShapeSubtractEx",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "start": 999999.9999999999,
+        "after5": 997393.6048628209,
+        "after10": 994790.1094001405,
+        "after15": 992186.613928406,
+        "after20": 989586.0181544268,
+        "allValid": true,
+        "cutFailures": 0
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "start": 999999.9999999999,
+        "after5": 997393.6048597264,
+        "after10": 994790.1093985579,
+        "after15": 992186.6139279166,
+        "after20": 989586.0181544286,
+        "allValid": true,
+        "cutFailures": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantities on both sides, all at %.17g: the volume of the 100 mm box before the first cut and after the 5th, 10th, 15th and 20th subtraction of a radius-5 sphere on the radius-30 ring, whether the shape was valid at each of those and at the end, and how many of the twenty subtractions produced no shape. Bridge values are what the test observed, read from a temporary print (run once and reverted, not committed). Kernel values are from Scripts/repro/766-modeling-integration-boolean-chain-stress/transcript-evidence-fix.txt, made by probe-evidence-fix.mm, which repeats the chain (OCCTShapeSubtractEx is BRepAlgoAPI_Cut). The volumes differ by at most 3e-12 relative between the bridge and the kernel. The test now fails on any subtraction that produces no shape (it used to drop it and carry on) and pins the final volume to 989586.0182.",
+    "probe": "Scripts/repro/766-modeling-integration-boolean-chain-stress/"
   }
 ]
