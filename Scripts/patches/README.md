@@ -2306,7 +2306,7 @@ thePlane.Coefficients(aCoeff[0], aCoeff[1], aCoeff[2], aCoeff[3]);
 aCoeff[3] = aCoeff[3] - aCoeff[0] * loc.X() - aCoeff[1] * loc.Y() - aCoeff[2] * loc.Z();
 ```
 
-and both integrands then **subtract** that coefficient: `BRepGProp_Gauss.cxx:343` for the Gauss
+and both integrands then **subtract** that coefficient: `BRepGProp_Gauss.cxx:344 with 0043 applied, :343 without` for the Gauss
 path and `BRepGProp_UFunction.cxx:99` for the Gauss-Kronrod one, in each case against
 `P - loc`. `gp_Pln::Coefficients` gives `a, b, c, d` for `a x + b y + c z + d = 0`, so the signed
 distance from the plane to `P` is `n . P + d`, and substituting the stored coefficient gives

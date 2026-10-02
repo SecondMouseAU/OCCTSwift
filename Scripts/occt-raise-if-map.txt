@@ -93,7 +93,7 @@
 # patch: 0043-BRepGProp_Gauss-keeps-the-by-plane-mass-2827 5db36c8e8661
 # patch: 0044-Extrema-ExtSS-ExtCS-Points-bound-against-point-sequence-2840 0b0b4a459980
 # patch: 0047-BRepMesh_IncrementalMesh-initParameters-refuses-NaN-2879-2900 dcfeed5d0e2b
-# patch: 0048-BRepGProp-by-plane-offset-sign-2873 0f2cf3ba295c
+# patch: 0048-BRepGProp-by-plane-offset-sign-2873 5948949ee30f
 #
 # totals: inline-raise       462 site(s) in  104 class(es)
 # totals: outofline-raise    828 site(s) in  284 class(es)

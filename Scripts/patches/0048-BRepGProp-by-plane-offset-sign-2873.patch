@@ -9,7 +9,7 @@ plane's fourth coefficient on the location point the same way:
   aCoeff[3] = aCoeff[3] - aCoeff[0] * loc.X() - aCoeff[1] * loc.Y() - aCoeff[2] * loc.Z();
 
 and both integrands then subtract that coefficient rather than adding it.
-BRepGProp_Gauss::computeVInertiaOfElementaryPart (BRepGProp_Gauss.cxx:343):
+BRepGProp_Gauss::computeVInertiaOfElementaryPart (BRepGProp_Gauss.cxx:344 with 0043 applied, :343 without):
 
   double d1 = theCoeff[0] * x + theCoeff[1] * y + theCoeff[2] * z - theCoeff[3];
 
