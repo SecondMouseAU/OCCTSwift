@@ -1781,18 +1781,31 @@ Carrier value type for a single extremum solution.
 ```swift
 public struct ExtremaResult: Sendable {
     public let squareDistance: Double
-    public let point1: SIMD3<Double>
-    public let point2: SIMD3<Double>
+    public let point1: SIMD3<Double>?
+    public let point2: SIMD3<Double>?
+    public let isParallel: Bool
 }
 ```
 
-- `squareDistance`: squared Euclidean distance at this extremum.
-- `point1`: closest/farthest point on the first geometric element.
-- `point2`: closest/farthest point on the second geometric element.
+- `squareDistance`: squared Euclidean distance at this extremum, computed on every branch.
+- `point1`: closest/farthest point on the first geometric element, `nil` when `isParallel`.
+- `point2`: closest/farthest point on the second geometric element, `nil` when `isParallel`.
+- `isParallel`: the extremum is an equidistant family rather than an isolated solution.
 
-`point1`/`point2` are measured points on every entry point on this page. `ExtremaElSS.planeToPlane`
-used to be the exception, reporting `SIMD3(0, 0, 0)` for a case where OCCT computes no points at
-all; since #1632 it does not return an `ExtremaResult`, see the `ExtremaElSS` section below.
+`point1`/`point2` are measured points wherever they are non-`nil`, and they are `nil` together and
+only on a parallel branch (#2993). Five entry points can take one: `ExtremaElC.lineToLine`,
+`ExtremaElC.lineToCircle`, `ExtremaElC.circleToCircle`, `ExtremaElC.lineToEllipse` and
+`ExtremaElCS.lineToPlane`. Everything else on this page answers `isParallel == false` with both
+points present.
+
+Until #2993 the two fields were non-optional and the parallel branch filled them with
+`SIMD3(0, 0, 0)`, which for a line on a circle's own axis is the circle's centre, a point the
+radius away from every point of the circle, beside a correct distance. OCCT computes no pair
+there: the constructors set the square distance and the extremum count and leave the point array
+default-constructed, and `Extrema_ExtCC::PrepareResults`, OCCT's own production caller, branches
+on `IsParallel()` before its `Points()` loop and keeps only the distance.
+`ExtremaElSS.planeToPlane` had the same defect and was fixed differently in #1632, by dropping the
+points from its return type altogether; see the `ExtremaElSS` section below.
 
 ---
 
@@ -1812,7 +1825,9 @@ public static func lineToLine(
 ) -> (isParallel: Bool, results: [ExtremaResult])
 ```
 
-- **Returns:** `isParallel` is `true` when the lines are parallel (infinitely many solutions, check this before using `results`); otherwise `results` holds 1–2 extrema.
+- **Returns:** `isParallel` is `true` when the lines are parallel, and the single result then
+  carries the real square distance with both witness points `nil` and its own `isParallel` set
+  (#2993); otherwise `results` holds 1–2 extrema with points.
 - **OCCT:** `Extrema_ExtElC` (line–line).
 - **Example:**
   ```swift
@@ -1820,8 +1835,9 @@ public static func lineToLine(
       line1Point: .zero, line1Dir: SIMD3(1, 0, 0),
       line2Point: SIMD3(0, 5, 0), line2Dir: SIMD3(1, 0, 0)
   )
-  if !r.isParallel, let e = r.results.first {
-      print(sqrt(e.squareDistance)) // 5.0
+  if let e = r.results.first {
+      print(e.squareDistance.squareRoot())  // 5.0, parallel or not
+      print(e.point1 as Any)                // nil here: the lines are parallel
   }
   ```
 
@@ -1839,6 +1855,11 @@ public static func lineToCircle(
 ) -> [ExtremaResult]
 ```
 
+A line along the circle's own axis is equidistant from the whole circle, so the one result has
+`isParallel == true`, the radius as its distance, and both witness points `nil` (#1501, #2993).
+There is no separate `isParallel` return here, because the flag is per result and that branch
+produces exactly one.
+
 - **OCCT:** `Extrema_ExtElC` (line–circle).
 
 ---
@@ -1853,6 +1874,9 @@ public static func circleToCircle(
     center2: SIMD3<Double>, normal2: SIMD3<Double>, radius2: Double
 ) -> [ExtremaResult]
 ```
+
+Two coaxial circles are everywhere equidistant, so the one result has `isParallel == true`, the
+difference of the radii as its distance, and both witness points `nil` (#1501, #2993).
 
 - **OCCT:** `Extrema_ExtElC` (circle–circle).
 
@@ -1872,6 +1896,10 @@ public static func lineToEllipse(
 
 There is no tolerance. Of `Extrema_ExtElC`'s six constructors only the line/line and line/circle ones take one (`AngTol` and `Tol` respectively); `Extrema_ExtElC(gp_Lin, gp_Elips)` takes none.
 
+A genuinely parallel configuration takes the degenerate branch, with both witness points `nil`
+and `isParallel` set (#2993). A line on the ellipse's own axis is not one: measured, it reports
+four ordinary extrema with real points, unlike the circle of the same construction.
+
 - **OCCT:** `Extrema_ExtElC` (line–ellipse).
 
 ---
@@ -1887,8 +1915,15 @@ public static func lineToPlane(
 ) -> (isParallel: Bool, results: [ExtremaResult])
 ```
 
-- **Returns:** `isParallel` is `true` when line lies in the plane; otherwise one extremum.
+- **Returns:** `isParallel` is `true` when the line is parallel to the plane, and the single
+  result then carries the real square distance with both witness points `nil` (#2993); otherwise
+  one extremum with points.
 - **OCCT:** `Extrema_ExtElCS` (line–plane).
+
+Reading a point on that branch is fatal rather than merely meaningless: `Extrema_ExtElCS` leaves
+`myPoint1` and `myPoint2` as null handles while `NbExt()` returns 1, so `Points(1, ...)`
+dereferences null and the process dies with a signal the bridge cannot catch. The bridge returns
+before the loop. Measured in `Scripts/repro/2993-extremaelc-parallel-witnesses/`.
 
 ---
 

@@ -93,7 +93,9 @@ struct IntToolsEdgeEdgeTests {
         let parts = try #require(a.edgeEdgeIntersection(with: b))
         #expect(parts.count == 1)
         for part in parts {
-            #expect(part.type == .vertex, "neither range is wholly covered, so #2994's rule says vertex")
+            #expect(
+                part.type == .vertex,
+                "neither range is wholly covered, so #2994's rule says vertex")
             // Whatever the part's type, it has to sit inside the overlap, [pi/2, pi] on a.
             #expect(part.param1Range.first >= .pi / 2 - 1e-6, "r1 \(part.param1Range)")
             #expect(part.param1Range.last <= .pi + 1e-6, "r1 \(part.param1Range)")
@@ -108,10 +110,12 @@ struct IntToolsEdgeEdgeTests {
         }
     }
 
-    /// The companion fixture that makes the rule visible rather than leaving it a single
-    /// observation (#2994). Same circle, same `a`, and a `b` that `a` wholly contains: the merged
-    /// range is then the whole of `b`, `MergeSolutions` promotes it, and the part is `.edge` over
-    /// the real overlap instead of a vertex at its middle.
+    /// The companion fixture that makes #2994's rule visible rather than leaving it one
+    /// observation.
+    ///
+    /// Same circle, same `a`, and a `b` that `a` wholly contains: the merged range is then the
+    /// whole of `b`, `MergeSolutions` promotes it, and the part is `.edge` over the real overlap
+    /// instead of a vertex at its middle.
     ///
     /// The two rows together are the invariant worth pinning: `param1Range` is the true overlap in
     /// **both** cases, whatever the type says, which is what a caller asking "do these overlap,

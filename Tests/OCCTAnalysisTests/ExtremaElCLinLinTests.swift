@@ -6,10 +6,12 @@ import simd
 
 @Suite("Extrema_ExtElC Line-Line")
 struct ExtremaElCLinLinTests {
-    /// Two parallel lines are everywhere 5 apart, so no pair of points is the extremum and OCCT
-    /// computes none: `Extrema_ExtElC.cxx:341-344` sets the square distance and the count and
-    /// leaves `myPoint` default-constructed. Until #2993 the bridge passed that through as
-    /// `SIMD3(0, 0, 0)` for both, a pair 0 apart beside a distance of 5.
+    /// Two parallel lines have a real gap and no nearest pair.
+    ///
+    /// No pair of points is the extremum, so OCCT computes none: `Extrema_ExtElC.cxx:341-344`
+    /// sets the square distance and the count and leaves `myPoint` default-constructed. Until
+    /// #2993 the bridge passed that through as `SIMD3(0, 0, 0)` for both, a pair 0 apart beside
+    /// a distance of 5.
     @Test func parallelLines() throws {
         let r = ExtremaElC.lineToLine(
             line1Point: SIMD3(0, 0, 0), line1Dir: SIMD3(1, 0, 0),
