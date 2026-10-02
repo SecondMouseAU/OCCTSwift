@@ -19,7 +19,7 @@ which is what nothing did while `0042` sat in the kernel and not in the map for 
 2026-08-03 retired ten patches, `0032`
 retired 2026-09-02 (superseded by upstream's own fix, not shipped in our pin), and `0035` retired
 2026-09-20 (it reintroduced #280; see its [Retired patches](#retired-patches) entry).
-The carried sequence now reads 0010–0012, 0014–0031, 0033–0034, 0036–0044.
+The carried sequence now reads 0010–0012, 0014–0031, 0033–0034, 0036–0046.
 The gaps are the retirements, not missing files:
 the numbers are cited across `CLAUDE.md`, `docs/`, closed issues and `Scripts/repro/`, and
 renumbering would have silently repointed every one of those citations at a different fix.
@@ -2150,6 +2150,192 @@ pass on both sides), plus the two `FILES.cmake` lines they need. `0024` is still
 PR covering all three classes may read better than two.
 
 **Retire** once the bundled OCCT includes this fix.
+
+## 0045-Geom-Bezier-InsertPoleAfter-pole-bound-2875.patch
+
+**`InsertPoleAfter` refuses two poles short of what the constructors build**
+([#2875](https://github.com/SecondMouseAU/OCCTSwift/issues/2875)). Both Bezier curve classes accept
+up to `MaxDegree() + 1` poles at construction (`Geom2d_BezierCurve.cxx:78` and `:93`,
+`Geom_BezierCurve.cxx:93` and `:109`):
+
+```cpp
+  if (nbpoles < 2 || nbpoles > (Geom2d_BezierCurve::MaxDegree() + 1))
+    throw Standard_ConstructionError();
+```
+
+and `Increase()` tops out at a degree of `MaxDegree()`, the same bound written as a degree.
+`InsertPoleAfter` compares the pole count against the degree bound instead
+(`Geom2d_BezierCurve.cxx:199`, `Geom_BezierCurve.cxx:214`):
+
+```cpp
+  Standard_ConstructionError_Raise_if(nbpoles >= Geom2d_BezierCurve::MaxDegree()
+                                        || Weight <= gp::Resolution(), ...);
+```
+
+so insertion stops at `MaxDegree()` poles. A caller can hold a legally constructed curve longer
+than `InsertPoleAfter` will grow a shorter one to. The fix is one character at each site, `>=` to
+`>`, plus the one-line comment that says which quantity `MaxDegree()` bounds.
+
+**`MaxDegree()` is a degree bound, and the classes' own tables say so.** `BSplCLib::MaxDegree()` is
+25. Both classes size the static tables behind `Multiplicities()` and `KnotSequence()` as
+`MaxDegree() + 1` and index them by `myPoles.Length() - 1`, so a curve of `MaxDegree() + 1` poles
+is in range for every one of them, which is what makes the relaxed bound safe rather than merely
+symmetric. Measured rather than reasoned: at 26 poles the 2d class answers `degree=25`,
+`Multiplicities().Length()=2`, `KnotSequence().Length()=52`.
+
+**Both sites in the tree are changed, which is the whole of the defect.** A grep for a pole count
+compared against `MaxDegree()` with `>=` returns exactly two hits, the 2d class and the 3d one, and
+no more. `Geom_BezierSurface::InsertPoleColAfter` / `InsertPoleRowAfter` carry **no** `MaxDegree`
+bound at all, and `UMultiplicities()` / `UKnotSequence()` index the same fixed 26-element tables by
+pole count, so growing a Bezier surface past 26 poles in one direction reads off the end of a
+`std::array`. That is a different defect with a different fix and it is deliberately not in this
+patch; it is filed separately.
+
+### Half of this patch is inert in the shipped kernel, and that is the reason the bridge guard stays
+
+The two sites are not written the same way. The 3d class throws literally; the 2d class goes
+through `Standard_ConstructionError_Raise_if`, which `No_Exception` empties in a Release build
+(#2801). So in the kernel this repo ships, **the 2d class has no pole bound at all**, patched or
+not, and the only thing enforcing one is `OCCTCurve2DBezierInsertPoleAfter`'s own guard. The probe
+shows it directly: under `-DNo_Exception` the 2d curve grows past 100 poles on both sides of the
+patch, while the 3d curve moves from 25 to 26.
+
+### Measured, macOS arm64, before and after
+
+`Scripts/repro/2875-bezier-insertpole-bound/`, both translation units override-linked ahead of the
+pinned macOS slice, per
+[`okf/policies/upstream-occt-patch-process.md`](../../okf/policies/upstream-occt-patch-process.md)
+section 3, in both build configurations. Transcript committed as `transcript.txt`.
+
+| build | class | ctor max poles | insert max, before | insert max, after |
+|---|---|---|---|---|
+| shipped (`No_Exception`) | `Geom2d_BezierCurve` | 26 | 102 (unbounded) | 102 (unbounded) |
+| shipped (`No_Exception`) | `Geom_BezierCurve` | 26 | 25 | **26** |
+| exceptions enabled | `Geom2d_BezierCurve` | 26 | 25 | **26** |
+| exceptions enabled | `Geom_BezierCurve` | 26 | 25 | **26** |
+
+The 102 is the probe's own insertion limit, not a kernel one.
+
+### Compiled, three slices
+
+The two translation units this patch touches were compiled for all three xcframework slices by
+hand rather than through a full kernel rebuild, `-std=c++17 -O3 -DNDEBUG -DNo_Exception -arch
+arm64` against each slice's own SDK and headers: `arm64-apple-macos12`, `arm64-apple-ios15` and the
+iOS simulator. Six compiles, no warnings and no errors. The log is committed as
+`Scripts/repro/2875-bezier-insertpole-bound/compile-log.txt`. The `.pxx` private headers
+(`Geom2dEval_RepUtils.pxx`, `GeomEval_RepUtils.pxx`) are not installed into the xcframework, so the
+compile line adds their package directories from `Libraries/occt-src`.
+
+### CI coverage, and the pin
+
+**Carried, not pinned.** `ci.yml`'s `build-and-test` resolves the pinned asset, so this patch is in
+no required check. `kernel-integration.yml` triggers on `Scripts/patches/**` and builds `V8_0_1`
+plus every carried patch from source, which proves it applies, compiles and regresses nothing.
+
+**Retargeting risk at 8.0.2.** No other carried patch touches either file, and neither
+`InsertPoleAfter` has changed shape in years, so the hunks are expected to apply to `V8_0_2`
+unchanged. Re-run the apply check at the repin rather than assuming it.
+
+Not filed upstream yet: the standing hold in
+[`okf/policies/upstream-occt-patch-process.md`](../../okf/policies/upstream-occt-patch-process.md)
+holds every upstream PR until 8.0.2 ships. A GTest is still owed before it goes, per section 2.
+
+**Retire** once the bundled OCCT includes this fix, **but keep the bridge guard**: it is the only
+bound the 2d class has in a `No_Exception` build.
+
+## 0046-math_Uzawa-Errinit-row-dimension-2860.patch
+
+**The initial-error vector is sized by unknowns and written by constraints**
+([#2860](https://github.com/SecondMouseAU/OCCTSwift/issues/2860), finding 1). Both `math_Uzawa`
+constructors size `Errinit` on the column count (`math_Uzawa.cxx:47` and `:67`):
+
+```cpp
+    : Resul(1, Cont.ColNumber()),
+      Erruza(1, Cont.ColNumber()),
+      Errinit(1, Cont.ColNumber()),
+```
+
+and `Perform` then writes the whole thing by row (`:101`, `:104`):
+
+```cpp
+  for (i = 1; i <= Nlig; i++)        // Nlig = Cont.RowNumber()
+    Errinit(i) = Cont(i, 1) * StartingPoint(1) - Secont(i);
+```
+
+Every read is a row index too: `:131`-`:138` in the direct branch and `:215` in the iterative one.
+The accessor's own declaration says what the vector is, "the initial error
+`Cont*StartingPoint-Secont`", which has one entry per constraint. So `RowNumber()` is the
+documented length as well as the written one, and the fix is one word at each of the two
+constructors.
+
+**The dimension check above it cannot catch this.**
+`Standard_DimensionError_Raise_if((Secont.Length() != Nlig) || ((Nce + Nci) != Nlig), " ")` relates
+`Secont` and `Nce + Nci` to the row count and never relates rows to columns, so restoring it with
+`-DBUILD_RELEASE_DISABLE_EXCEPTIONS=OFF` would not catch an overdetermined system. That is this
+finding's bearing on
+[`okf/policies/occt-validation-is-compiled-out.md`](../../okf/policies/occt-validation-is-compiled-out.md):
+it is a kernel defect on its own terms, not a compiled-out check.
+
+`math_Uzawa.cxx` also `#define`s `No_Standard_OutOfRange` and `No_Standard_DimensionError` itself,
+at the top of the file, so `NCollection_Array1`'s inline bounds check is gone here even in a Debug
+build and nothing reports the overrun.
+
+**The three sibling members are correct and are left alone.** `Resul` and `Erruza` are indexed by
+unknown (`:144`-`:147`, `:194`-`:198`), `Vardua` and `CTCinv` by constraint. Only `Errinit` is
+indexed by one and sized by the other.
+
+### Measured, macOS arm64, before and after
+
+`Scripts/repro/2860-uzawa-errinit-dimension/`, one process per size because the largest faults,
+the translation unit override-linked ahead of the pinned macOS slice. `math_Vector` inlines 32
+doubles, so the outcome is decided by size rather than by validity, and the probe carries cases
+either side of that threshold. Transcript committed as `transcript.txt`.
+
+| constraints x unknowns | `InitialError().Length()` before | after | exit before / after |
+|---|---|---|---|
+| 2 x 2, the shape every existing test uses | 2, correct | 2 | 0 / 0 |
+| 4 x 2, below the inline buffer | 2, expected 4 | **4** | 0 / 0 |
+| 33 x 32, one slot past the inline buffer | 32, expected 33 | **33** | 0 / 0 |
+| 40 x 33, seven past a heap block | 33, expected 40 | **40** | 0 / 0 |
+| 100 x 2 | fault | **100** | **139** / 0 |
+
+`IsDone()` and `Value(1)` are unchanged on every size that returned at all, including the
+`-0.0234375` at 33 x 32 that #2860 recorded. Only the vector's length, and the write it bounds,
+move.
+
+### Compiled, three slices
+
+`math_Uzawa.cxx` compiled by hand for all three xcframework slices, `-std=c++17 -O3 -DNDEBUG
+-DNo_Exception -arch arm64` against each slice's own SDK and headers: `arm64-apple-macos12`,
+`arm64-apple-ios15` and the iOS simulator. Three compiles, no warnings and no errors. The log is
+committed as `Scripts/repro/2875-bezier-insertpole-bound/compile-log.txt`, which covers all three
+translation units of both patches in one run.
+
+### CI coverage, and the pin
+
+**Carried, not pinned**, and unlike `0044` this one does leave something exposed: the fault is in
+the pinned kernel and `OCCTMathUzawa`'s `nConstraints > nVars` guard is the only thing between a
+Swift caller and it. That guard was added for exactly this, so nothing is exposed in practice, but
+the exposure is to a future bridge author rather than nil.
+
+**The bridge guard stays when this is pinned**, a deliberate exception to the rule in
+[`okf/policies/pinned-kernel-patch-check.md`](../../okf/policies/pinned-kernel-patch-check.md) that
+a repin retires the mitigation its patch supersedes. Patched, the kernel returns a correctly sized
+initial error for an overdetermined system instead of faulting, which is a behaviour the Swift
+surface has not decided to expose: `MathSolver.uzawa` refusing `nConstraints > nVars` is an API
+decision as well as a crash guard, and relaxing it is a SemVer change, not a cleanup. The guard
+also still covers anyone pinning an older asset.
+
+**Retargeting risk at 8.0.2.** No other carried patch touches `math_Uzawa.cxx`, and the two
+constructors have not changed shape, so the hunks are expected to apply to `V8_0_2` unchanged.
+Re-run the apply check at the repin rather than assuming it.
+
+Not filed upstream yet: the standing hold holds every upstream PR until 8.0.2 ships. #2860 already
+names this as the upstream-worthy item of its cluster, and the reading above is the report. A
+GTest is owed before it goes, per section 2 of the process policy.
+
+**Retire** once the bundled OCCT includes this fix, keeping the bridge guard.
+
 
 # Retired patches
 

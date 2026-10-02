@@ -1,0 +1,63 @@
+From: OCCTSwift ecosystem <noreply@secondmouse.au>
+Subject: [PATCH] Modeling Data - bound Bezier InsertPoleAfter by the pole count
+ the constructors accept
+
+Geom2d_BezierCurve and Geom_BezierCurve disagree with themselves about how many
+poles a Bezier curve may hold. Both constructors accept up to MaxDegree() + 1:
+
+  if (nbpoles < 2 || nbpoles > (Geom2d_BezierCurve::MaxDegree() + 1))
+    throw Standard_ConstructionError();
+
+and Increase() tops out at a degree of MaxDegree(), which is the same bound
+written as a degree. InsertPoleAfter compares the pole count against the degree
+bound instead:
+
+  Standard_ConstructionError_Raise_if(nbpoles >= Geom2d_BezierCurve::MaxDegree()
+                                        || Weight <= gp::Resolution(), ...);
+
+so insertion refuses once the curve holds MaxDegree() poles, two short of the
+length the constructor would have built directly. A caller can hold a legally
+constructed curve longer than InsertPoleAfter will grow a shorter one to.
+
+MaxDegree() is a degree bound, not a pole bound: BSplCLib::MaxDegree() is 25,
+and both classes size their static Multiplicities()/KnotSequence() tables as
+MaxDegree() + 1 and index them by myPoles.Length() - 1, so a curve of
+MaxDegree() + 1 poles is in range for every one of them. Comparing with > lets
+insertion reach exactly the degree the constructors and Increase() allow and no
+further.
+
+Both sites in the package are changed, the 2d class and the 3d one; they are
+the only two in the tree that compare a pole count against MaxDegree() with >=.
+Geom_BezierSurface's InsertPoleColAfter/InsertPoleRowAfter carry no MaxDegree
+bound at all, which is a different defect and is left alone here.
+
+Reported as SecondMouseAU/OCCTSwift#2875.
+
+diff --git a/src/ModelingData/TKG2d/Geom2d/Geom2d_BezierCurve.cxx b/src/ModelingData/TKG2d/Geom2d/Geom2d_BezierCurve.cxx
+index 4ea38940..4270c7f0 100644
+--- a/src/ModelingData/TKG2d/Geom2d/Geom2d_BezierCurve.cxx
++++ b/src/ModelingData/TKG2d/Geom2d/Geom2d_BezierCurve.cxx
+@@ -196,7 +196,8 @@
+ {
+   int nbpoles = NbPoles();
+ 
+-  Standard_ConstructionError_Raise_if(nbpoles >= Geom2d_BezierCurve::MaxDegree()
++  // MaxDegree() bounds the degree, so MaxDegree() + 1 poles are legal, as the constructors allow.
++  Standard_ConstructionError_Raise_if(nbpoles > Geom2d_BezierCurve::MaxDegree()
+                                         || Weight <= gp::Resolution(),
+                                       "Geom2d_BezierCurve::InsertPoleAfter");
+ 
+diff --git a/src/ModelingData/TKG3d/Geom/Geom_BezierCurve.cxx b/src/ModelingData/TKG3d/Geom/Geom_BezierCurve.cxx
+index c6e4bd3a..ba5b4d5f 100644
+--- a/src/ModelingData/TKG3d/Geom/Geom_BezierCurve.cxx
++++ b/src/ModelingData/TKG3d/Geom/Geom_BezierCurve.cxx
+@@ -211,7 +211,8 @@
+ {
+   int nbpoles = NbPoles();
+ 
+-  if (nbpoles >= Geom_BezierCurve::MaxDegree() || Weight <= gp::Resolution())
++  // MaxDegree() bounds the degree, so MaxDegree() + 1 poles are legal, as the constructors allow.
++  if (nbpoles > Geom_BezierCurve::MaxDegree() || Weight <= gp::Resolution())
+   {
+     throw Standard_ConstructionError("Geom_BezierCurve::InsertPoleAfter");
+   }

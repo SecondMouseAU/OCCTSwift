@@ -1,0 +1,59 @@
+From: OCCTSwift ecosystem <noreply@secondmouse.au>
+Subject: [PATCH] Foundation Classes - size math_Uzawa's initial-error vector by
+ the constraint count
+
+math_Uzawa stores the initial error Cont*StartingPoint - Secont, which has one
+entry per constraint, in a vector sized by the number of unknowns:
+
+  Errinit(1, Cont.ColNumber()),
+
+Both constructors do it, and Perform then writes the whole thing by row:
+
+  for (i = 1; i <= Nlig; i++)        // Nlig = Cont.RowNumber()
+    Errinit(i) = Cont(i, 1) * StartingPoint(1) - Secont(i);
+
+Every other use of Errinit is a row index too: the Cont*T(Cont) solve at the
+direct branch reads Errinit(j) for j up to Nlig, and the iterative branch reads
+Errinit(i) over the same range. The accessor is declared as "the initial error
+Cont*StartingPoint-Secont", so RowNumber() is the length the class documents.
+
+An overdetermined system, more constraints than unknowns, therefore writes past
+the end of Errinit. math_Vector inlines 32 doubles, so the outcome depends on
+size rather than on validity: 4 constraints and 2 unknowns reports IsDone and a
+wrong answer, 33 and 32 writes one slot past the inlined buffer, 40 and 33 runs
+seven past a heap block, and 100 and 2 is a deterministic SIGSEGV. The
+dimension check at the top of Perform does not catch any of them, because it
+relates Secont and Nce + Nci to the row count and never relates rows to
+columns.
+
+The three sibling members are already sized correctly and are left alone: Resul
+and Erruza are indexed by unknown, Vardua and CTCinv by constraint.
+
+math_Uzawa.cxx defines No_Standard_OutOfRange and No_Standard_DimensionError
+itself, at the top of the file, so NCollection_Array1's own inline bounds check
+is compiled out here even in a debug build and nothing reports the overrun.
+
+Reported as SecondMouseAU/OCCTSwift#2860.
+
+diff --git a/src/FoundationClasses/TKMath/math/math_Uzawa.cxx b/src/FoundationClasses/TKMath/math/math_Uzawa.cxx
+index 0bbf9589..f903d737 100644
+--- a/src/FoundationClasses/TKMath/math/math_Uzawa.cxx
++++ b/src/FoundationClasses/TKMath/math/math_Uzawa.cxx
+@@ -44,7 +44,7 @@
+                        const int          NbIterations)
+     : Resul(1, Cont.ColNumber()),
+       Erruza(1, Cont.ColNumber()),
+-      Errinit(1, Cont.ColNumber()),
++      Errinit(1, Cont.RowNumber()),
+       Vardua(1, Cont.RowNumber()),
+       CTCinv(1, Cont.RowNumber(), 1, Cont.RowNumber()),
+       NbIter(0),
+@@ -64,7 +64,7 @@
+                        const int          NbIterations)
+     : Resul(1, Cont.ColNumber()),
+       Erruza(1, Cont.ColNumber()),
+-      Errinit(1, Cont.ColNumber()),
++      Errinit(1, Cont.RowNumber()),
+       Vardua(1, Cont.RowNumber()),
+       CTCinv(1, Cont.RowNumber(), 1, Cont.RowNumber()),
+       NbIter(0),
