@@ -61,6 +61,22 @@ def name_map(root):
     return names, order
 
 
+def dump_matrix(data):
+    """JSON with one line per switch, so a diff of two matrices reads switch by switch."""
+    rows = list(data["rows"].items())
+    lines = [
+        "{",
+        f' "label": {json.dumps(data["label"])},',
+        f' "tests": {json.dumps(data["tests"])},',
+        ' "rows": {',
+    ]
+    for i, (switch, row) in enumerate(rows):
+        comma = "," if i < len(rows) - 1 else ""
+        lines.append(f"  {json.dumps(switch)}: {json.dumps(row)}{comma}")
+    lines += [" }", "}", ""]
+    return "\n".join(lines)
+
+
 def run(bundle, switch):
     env = dict(os.environ)
     env.pop("SWEEP_HEALING_SWITCH", None)
@@ -115,7 +131,7 @@ def main():
                     "ran": len(red) + len(green)}
         print(f"{sw:34s} exit={code:<4} reds={len(red):<3}{'  CRASH' if crashed else ''}")
     data = {"label": label, "tests": [f"{a}.{b}" for a, b in order], "rows": rows}
-    (HERE / f"matrix-{label}.json").write_text(json.dumps(data, indent=1))
+    (HERE / f"matrix-{label}.json").write_text(dump_matrix(data))
 
     all_red = set()
     for r in rows.values():
