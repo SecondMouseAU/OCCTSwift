@@ -40,7 +40,7 @@
 <pre id="log">(waiting)</pre>
 
 <script type="module">
-  import { runSpike, verdict, WORK_DIR } from "./harness.mjs";
+  import { runSpike, verdict, WORK_DIR, EXPECTED_CASES } from "./harness.mjs";
 
   const $ = (id) => document.getElementById(id);
   const logLines = [];
@@ -76,7 +76,7 @@
 
   $("verdict").className = v.ok ? "pass" : "fail";
   $("verdict").textContent = v.ok
-    ? `PASS: all six cases, exit ${run.exitCode}, no trap`
+    ? `PASS: all ${EXPECTED_CASES.length} cases, exit ${run.exitCode}, no trap`
     : `FAIL: ${v.problems.join(" | ")}`;
 
   for (const [name, c] of Object.entries(run.cases)) {

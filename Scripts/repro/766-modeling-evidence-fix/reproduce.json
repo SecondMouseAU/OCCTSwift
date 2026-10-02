@@ -1,0 +1,9 @@
+{
+  "tolerance": [
+    {
+      "pattern": "^offsetArc \\(\\+1\\): done=1 valid=1 volume=[-0-9.eE+]+ input=[-0-9.eE+]+$",
+      "relative": 1e-14,
+      "reason": "BRepOffsetAPI_MakeThickSolid does not return this volume twice. One binary compiled once and run thirty times against the pinned v4.0.0-kernel.3 asset printed seven distinct values, 1698.4365698478466 to 1698.436569847848, a relative spread of 8.2e-16 or a few units in the last place of a double; the transcript's 1698.4365698478475 is the most common of them. It is the only drifting line of this probe: the other four offset volumes and every other line were identical across all thirty runs, so this is the measurement and not the machine. Declared as a tolerance rather than volatile because the volume IS what the record claims: the value stays compared, `done=1 valid=1` and the non-numeric text have to match exactly, and 1e-14 is twelve times the observed spread and two orders below the cap. The cause is #3003, which this does not close. #2965."
+    }
+  ]
+}

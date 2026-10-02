@@ -1,0 +1,16 @@
+{
+  "volatile": [
+    {
+      "pattern": "^Elapsed\\(\\) after a 0\\.1 s thread-CPU spin = [0-9.]+ s; process CPU \\(getrusage\\) over the same interval = [0-9.]+ s$",
+      "reason": "two CPU-time readings over the same window, 0.0965 and 0.1000 s in the capture, 0.0961 and 0.1000 s here. Neither is byte-reproducible on a machine with other work on it. What the record cites is the NEXT line, `0.09 <= Elapsed() <= process CPU + 0.02: 1`, which is the kernel's answer scored against both figures and which this declaration deliberately does not reach: it stays byte-compared, so a PerfMeter that stopped tracking the spin still fails. #2967."
+    },
+    {
+      "pattern": "^4 thread\\(s\\), workers still running at Stop: Elapsed\\(\\) = [0-9.-]+ s, process CPU over the interval = [0-9.-]+ s$",
+      "reason": "the one PerfMeter row whose magnitude is set by the scheduler: four workers alive at Stop, so Elapsed() sums four live threads' CPU over a wall window whose length depends on how fast the machine finishes the spin (1.04 / 1.05 s in the capture, 0.76 / 0.77 s here). The two rows above it, `workers none` at 0.19 / 0.20 and `workers exited` at 0.19 / 0.80, reproduce to the digit and are NOT declared: they are the pair that carries #1987's finding, that an exited worker takes its whole CPU history out of the sum, and freeing them would free it. #2967."
+    },
+    {
+      "pattern": "^DiskFree\\(\\)/2 = [0-9]+ KB \\(> 0: 1\\)$",
+      "reason": "free disk space, which changes between two runs minutes apart (40800504 KB in the capture, 398315900 KB here). The measurement on the line is that OSD_Disk::DiskFree returns something positive on a real volume, and the pattern pins that `1` literally, so a DiskFree that started answering zero no longer matches and is reported. The DiskSize line above is deliberately NOT declared: total volume size reproduces, and its statvfs half cross-checks the same unit conversion. #2967."
+    }
+  ]
+}
