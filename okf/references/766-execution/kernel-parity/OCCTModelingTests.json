@@ -2,9 +2,18 @@
   {
     "test_name": "Modeling domain kernel parity",
     "bridge_function": "OCCTModelingPlaceholder",
-    "bridge_output": {"type": "object", "data": {}},
-    "kernel_output": {"type": "object", "data": {}},
-    "comparison": {"equal": null, "differences": []},
+    "bridge_output": {
+      "type": "object",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "object",
+      "data": {}
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
     "status": "PENDING"
   },
   {
@@ -406,5 +415,273 @@
       "differences": []
     },
     "status": "N/A"
+  },
+  {
+    "test_name": "Feature Recognition, AAG::boxAAG",
+    "bridge_function": "OCCTFaceGetSharedEdgeSummary",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "faces": 6,
+        "adjacentPairs": 12
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "faces": 6,
+        "adjacentPairs": 12
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: face count and adjacent-face-pair count of the 10 mm box. Bridge: AAG.nodes.count (one node per face occurrence) and AAG.edges.count (one graph edge per face pair that OCCTFaceGetSharedEdgeSummary reports sharing an edge); the test observed 6 and 12. Kernel: TopExp_Explorer over the box faces, a pair counted when the two faces' TopExp::MapShapes edge maps share an edge by IsSame; boxAAG line of the transcript printed faces=6 adjacentPairs=12.",
+    "probe": "Scripts/repro/766-modeling-aag/probe-evidence-fix.mm (transcript-evidence-fix.txt)"
+  },
+  {
+    "test_name": "Feature Recognition, AAG::aagNodeNormals",
+    "bridge_function": "OCCTFaceGetNormal",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "faces": 6,
+        "normalDefined": 6,
+        "planar": 6,
+        "normals": [
+          [
+            -1,
+            0,
+            0
+          ],
+          [
+            1,
+            0,
+            0
+          ],
+          [
+            0,
+            -1,
+            0
+          ],
+          [
+            0,
+            1,
+            0
+          ],
+          [
+            0,
+            0,
+            -1
+          ],
+          [
+            0,
+            0,
+            1
+          ]
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "faces": 6,
+        "normalDefined": 6,
+        "planar": 6,
+        "normals": [
+          [
+            -1,
+            0,
+            0
+          ],
+          [
+            1,
+            0,
+            0
+          ],
+          [
+            0,
+            -1,
+            0
+          ],
+          [
+            0,
+            1,
+            0
+          ],
+          [
+            0,
+            0,
+            -1
+          ],
+          [
+            0,
+            0,
+            1
+          ]
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: for each of the 6 faces, whether the normal is defined and whether the face is planar (counts), and the six normals themselves in face order (-0 written as 0). Bridge: AAG node.normal (OCCTFaceGetNormal, nil when undefined) and node.isPlanar; the test observed all 6 defined and planar and the normals listed. Kernel: BRepLProp_SLProps at the parametric midpoint, reversed for a REVERSED face, and BRepAdaptor_Surface::GetType() == GeomAbs_Plane, per face in TopExp_Explorer order; aagNodeNormals line of the transcript.",
+    "probe": "Scripts/repro/766-modeling-aag/probe-evidence-fix.mm (transcript-evidence-fix.txt)"
+  },
+  {
+    "test_name": "Feature Recognition, AAG::aagNeighbors",
+    "bridge_function": "OCCTFaceGetSharedEdgeSummary",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "degrees": [
+          4,
+          4,
+          4,
+          4,
+          4,
+          4
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "degrees": [
+          4,
+          4,
+          4,
+          4,
+          4,
+          4
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: the number of neighbours (adjacent faces) of each of the 6 box faces, in face order. Bridge: AAG.neighbors(of: i).count for i in 0..<6; the test observed 4 for every face. Kernel: per-face count of the face pairs sharing an edge in the same face-pair walk; aagNeighbors line of the transcript printed degrees=[4,4,4,4,4,4].",
+    "probe": "Scripts/repro/766-modeling-aag/probe-evidence-fix.mm (transcript-evidence-fix.txt)"
+  },
+  {
+    "test_name": "Feature Recognition, AAG::aagEdgeBetween",
+    "bridge_function": "OCCTFaceGetSharedEdgeSummary",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "adjacentPairs": 12,
+        "sharedEdgesPerAdjacentPair": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "adjacentPairs": 12,
+        "sharedEdgesPerAdjacentPair": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: the number of edges each adjacent face pair shares, over all 12 pairs of the 10 mm box (the neighbour index itself is not compared: AAG.neighbors(of:) returns dictionary-key order). Bridge: the sharedEdgeCount of every AAG edge, the value OCCTFaceGetSharedEdgeSummary returns per pair; the test observed edge(between: 0, and: first) non-nil with sharedEdgeCount 1, and every pair reports 1. Kernel: the count of IsSame-shared edges per adjacent pair; aagEdgeBetween line of the transcript.",
+    "probe": "Scripts/repro/766-modeling-aag/probe-evidence-fix.mm (transcript-evidence-fix.txt)"
+  },
+  {
+    "test_name": "Feature Recognition, AAG::detectPocket",
+    "bridge_function": "OCCTEdgeGetConvexity",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "boxVolume": 7999.999999999998,
+        "resultVolume": 6999.999999999998,
+        "faces": 11,
+        "concavePairs": 8,
+        "convexPairs": 16
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "boxVolume": 7999.999999999998,
+        "resultVolume": 6999.999999999998,
+        "faces": 11,
+        "concavePairs": 8,
+        "convexPairs": 16
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: volumes of the 20 mm box and of the box minus the 10x10x15 tool from z=0, and the face and concave/convex pair counts of the cut result. Bridge: Shape.volume of both, then AAG.nodes.count and the AAG edges whose convexity (OCCTEdgeGetConvexity) is concave and convex; the test observed a smaller result volume and detectPocketsAAG() returned 1 pocket (the pocket count is a Swift-level result of these concave pairs and is not carried on either side). Kernel: BRepAlgoAPI_Cut, BRepGProp::VolumeProperties, and ChFi3d::DefineConnectType (SinTol 0.01, CorrectPoint true) on the first shared edge of each pair; detectPocket line of the transcript at %.17g.",
+    "probe": "Scripts/repro/766-modeling-aag/probe-evidence-fix.mm (transcript-evidence-fix.txt)"
+  },
+  {
+    "test_name": "Feature Recognition, AAG::convexConcaveNeighbors",
+    "bridge_function": "OCCTEdgeGetConvexity",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "plainConvex": 12,
+        "filletedFaces": 26,
+        "filletedAdjacentPairs": 48,
+        "filletedConvex": 0,
+        "filletedConcave": 0,
+        "filletedSmooth": 48
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "plainConvex": 12,
+        "filletedFaces": 26,
+        "filletedAdjacentPairs": 48,
+        "filletedConvex": 0,
+        "filletedConcave": 0,
+        "filletedSmooth": 48
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: convex pair count of the plain 10 mm box, and face count, adjacent pair count and convex/concave/smooth pair counts of the box with every edge filleted at r=1. Bridge: AAG.edges filtered by convexity (.convex, .concave, .smooth) and AAG.nodes.count / AAG.edges.count on box and box.filleted(radius: 1); smooth is OCCT's ChFiDS_Tangential. The test observed 12, then 26, 48, 0, 0, 48. Kernel: BRepFilletAPI_MakeFillet on every edge at r=1 and ChFi3d::DefineConnectType per pair; convexConcaveNeighbors line of the transcript.",
+    "probe": "Scripts/repro/766-modeling-aag/probe-evidence-fix.mm (transcript-evidence-fix.txt)"
   }
 ]
