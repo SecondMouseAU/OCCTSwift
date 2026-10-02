@@ -1,0 +1,24 @@
+{
+  "volatile": [
+    {
+      "pattern": "^\\{\"id\":\"1442-free\",\"data\":\\{\"free_kb_within_tolerance_of_statvfs\":true,\"free_kb\":[-0-9.eE+]+,\"statvfs_free_kb\":[-0-9.eE+]+\\}\\}$",
+      "reason": "free disk space, which is a property of the machine and changes between two runs minutes apart (13302024 KB in the capture, 398293876 KB here, and a different figure on each run). The measurement on this line is `free_kb_within_tolerance_of_statvfs`, which is OSD_Disk::DiskFree agreeing with statvfs, and the pattern pins it to `true` literally: if the two stop agreeing the pattern no longer matches and the line is reported. The `1442-size` line above is deliberately NOT declared, because total volume size reproduces and its two halves cross-check the same conversion. #2967."
+    },
+    {
+      "pattern": "^\\{\"id\":\"cpu-processCPU\",\"data\":\\{\"user_cpu_positive\":true,\"user_cpu_within_0_02_s_of_getrusage\":true,\"user_cpu_s\":[-0-9.eE+]+,\"getrusage_user_s_before\":[-0-9.eE+]+,\"getrusage_user_s_after\":[-0-9.eE+]+,\"sum\":[-0-9.eE+]+\\}\\}$",
+      "reason": "process CPU time, on both sides of the comparison: `user_cpu_s` is OSD_Chronometer::GetProcessCPU's own figure and the two `getrusage` readings bracket it. `sum` is the spin loop's accumulator, so it counts how many iterations this machine needed to reach 0.05 s of CPU and is a speed measurement by another name. What the record cites is the pair of booleans, that GetProcessCPU returns a positive user time and that it lands within 0.02 s of getrusage over the same interval, and the pattern pins both literally. #2967."
+    },
+    {
+      "pattern": "^\\{\"id\":\"timer-basicTiming\",\"data\":\\{\"elapsed_at_least_0_04_s\":true,\"elapsed_under_5_s\":true,\"elapsed_s\":[-0-9.eE+]+\\}\\}$",
+      "reason": "wall-clock elapsed time over a 50 ms sleep, which no two runs agree on to 17 significant figures. The two bounds the record cites, at least 0.04 s and under 5 s, are pinned literally in the pattern. #2967."
+    },
+    {
+      "pattern": "^\\{\"id\":\"timer-wallClockTime\",\"data\":\\{\"wall_clock_positive\":true,\"advance_at_least_0_04_s\":true,\"advance_under_5_s\":true,\"t0\":[-0-9.eE+]+,\"advance_s\":[-0-9.eE+]+\\}\\}$",
+      "reason": "OSD_Timer::GetWallClockTime at an arbitrary instant, and the advance over a 50 ms sleep. The three bounds the record cites are pinned literally in the pattern. #2967."
+    },
+    {
+      "pattern": "^\\{\"id\":\"meminfo-heapUsageMiB\",\"data\":\\{\"mib_positive\":true,\"mib_within_25_percent_of_bytes_over_2_20\":true,\"mib\":[-0-9.eE+]+,\"bytes_over_2_20_before\":[-0-9.eE+]+,\"bytes_over_2_20_after\":[-0-9.eE+]+\\}\\}$",
+      "reason": "heap usage at three instants of this process, which depends on the allocator's state and on everything the probe did before reaching this block. The measurement is that OSD_MemInfo::ValuePreciseMiB agrees with Value(MemHeapUsage) over 2^20 to within 25 percent, and the pattern pins that boolean and `mib_positive` literally. #2967."
+    }
+  ]
+}
