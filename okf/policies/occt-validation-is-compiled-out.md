@@ -323,6 +323,58 @@ bridge against a curve count the bridge keeps itself, since `GeomFill_Profiler` 
 transferable part: **a channel-four row is a reason to read the class, not only the region**, and
 the region was the least of what was wrong with this one.
 
+## What the census cannot see, and what covers it instead (#2946)
+
+**A census that silently cannot reach a category is worse than one that says so.** It reads as
+coverage of its whole subject and is coverage of part of it, which is the argument #2934 settled
+for the probe harness. So the list of categories
+`Scripts/census-compiled-out-validation.py` is known to be blind to is a constant in the script,
+`DARK`, **printed at the end of every bare run** rather than kept in a docstring, and held by a
+`--self-test` case, which is the only invocation CI makes of a census. Dropping an entry is a red
+check instead of a shorter, greener report.
+
+The entry #2946 added is the one that matters most, and it is a limitation rather than a defect to
+fix. **Every channel ends at a bridge `catch` or an accessor read**, and asks what a swallowed value
+costs. Where the absent check means the kernel dereferences something that is not there, there is
+no value and no `catch`, only a fault, and `OCC_CATCH_SIGNALS` is inert in bridge code, so the
+fault is uncatchable in-process. That is the expensive half of what the compiled-out validation
+costs, and this script measures the other one.
+
+PR #2945's four TNaming lookups are the worked example: `OCCTNamingFindLabel`,
+`OCCTNamingValidUntil`, `OCCTNamingSameShapeCount` and `OCCTNamingSameShapeLabels` took the test
+process down on a document with no naming recorded, and are guarded there with
+`TNaming_Tool::HasLabel`. The issue asked whether a correct channel could find them **from the map
+alone**. Measured, it cannot, and the three reasons are each worth more than the answer:
+
+- **The map is keyed on the file stem, not the class.** `derive()` files every site under
+  `os.path.splitext(name)[0]`, and `TNaming_Tool::Label` is defined in
+  `TNaming_NamedShape.cxx:1447`, so its row is `TNaming_NamedShape outofline-raise` with `Label`
+  and `ValidUntil` in the members column. There is **no `TNaming_Tool` row at all**: the file of
+  that name holds no raise site. A lookup by the class the bridge names finds nothing.
+- **Two of the four are not a compiled-out check in the first place.** The `SameShapeIterator`
+  pair fault on an uninitialised `myNode` that `TNaming_SameShapeIterator`'s `TDF_Label`
+  constructor never writes when the root carries no `TNaming_UsedShapes`
+  (`TNaming_NamedShape.cxx:1358`). That is an upstream defect with no raise site anywhere, so no
+  map of raise sites can ever carry it, however it is keyed.
+- **Whether an absence faults or merely returns a wrong value is not in the map.** It is what the
+  kernel does several frames later, which a derivation over `_Raise_if` and `throw` sites does not
+  record and could not. A probe answers it; text does not.
+
+**So the route for this category is the Known OCCT Bugs route, not a channel**: measure the fault
+with a probe under `Scripts/repro/`, write the row in
+[`known-occt-bugs`](../references/known-occt-bugs.md), add a bridge predicate, guard every call
+site, and keep it with a regression test that fails if the guard comes back out. Guarding the
+value before a faulting entry point is the same family `Scripts/check-null-handle-guards.py`
+enforces for null handles, per [`null-handle-guards`](null-handle-guards.md), and `CLAUDE.md`'s
+Known OCCT Bugs list is where each measured faulting entry point is written down.
+
+A running check over this category is possible and is deliberately not built here. Its shape would
+be `census-unmeasured-values.py`'s sub-kind 5, a registry rather than a scan: the judgement per
+site is written down once and what runs every time is derived questions about each written
+judgement. It is not built because the four sites already have `Tests/OCCTXCAFTests/` regression
+tests from PR #2945 and the registry would have one entry, which is a mechanism heavier than its
+subject. Build it at the second entry, not the first.
+
 ## The build flag: a recorded decision, not an inherited default
 
 `-DBUILD_RELEASE_DISABLE_EXCEPTIONS=OFF` restores all 828. **The decision, 2026-09-29, is to leave
