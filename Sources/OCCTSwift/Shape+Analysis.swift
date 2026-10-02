@@ -1709,15 +1709,23 @@ extension Shape {
         ///   To ask whether two edges overlap and over what, read ``param1Range``, which is the
         ///   true overlap under either type.
         public let type: CommonPartType
-        /// Parameter range on edge 1 (first, last), same for vertex type.
+        /// Parameter range on edge 1, `(first, last)`: `IntTools_CommonPrt::Range1()` exactly as
+        /// the kernel computed it, for either type (#3012).
         ///
-        /// For a `.vertex` part this is `IntTools_CommonPrt::VertexParameter1` twice over, not
-        /// the kernel's `Range1()`. For a transversal crossing those agree to within the
-        /// tolerance window OCCT puts round the hit, and for the tangential `.vertex` case above
-        /// the window is the whole overlap, so the value is a representative parameter inside it
-        /// rather than its extent (#2994).
+        /// For an `.edge` part it is the overlap. For a `.vertex` part it is the extent OCCT
+        /// attaches to the vertex, which `BOPAlgo_PaveFiller::PerformEE` reads beside the vertex
+        /// parameter and never in place of it. A transversal crossing carries the tolerance window
+        /// `IntTools_EdgeEdge` puts round the hit, `(t - dt, t + dt)` with `dt` from
+        /// `IntTools_Tools::ComputeIntRange`: 3e-7 across for two lines at right angles, 3.4e-5 at
+        /// one degree and 3.4e-3 at one hundredth of a degree, so it widens as the crossing nears
+        /// tangency. A tangential overlap that `MergeSolutions` typed `.vertex` (see ``type``)
+        /// carries the whole overlap here.
+        ///
+        /// To locate a crossing, read ``vertexParameter1``. This range is an extent, not a point.
         public let param1Range: (first: Double, last: Double)
-        /// Parameter range on edge 2 (first, last), same for vertex type.
+        /// Parameter range on edge 2, `(first, last)`: `IntTools_CommonPrt::Ranges2()(1)` exactly
+        /// as the kernel computed it, for either type, and the counterpart of ``param1Range`` on the
+        /// second edge (#3012).
         ///
         /// - Warning: only ``edgeEdgeIntersection(with:)`` has a second edge. From
         ///   ``edgeFaceIntersection(with:)`` this is always `(0, 0)`, a default rather than a
@@ -1725,15 +1733,45 @@ extension Shape {
         ///   `SetVertexParameter2`, so `IntTools_CommonPrt` hands back an empty `Ranges2()` and
         ///   the `0.0` its own constructor set (#1399). Read ``param1Range`` and ``point``.
         public let param2Range: (first: Double, last: Double)
-        /// A point on the intersection, at the representative parameter of ``param1Range``.
+        /// The parameter on edge 1 at which OCCT places the new vertex of a `.vertex` part, or
+        /// `nil` for an `.edge` part (#3012).
         ///
-        /// For a `vertex` part that is the intersection point itself. For an `edge` part it is an
-        /// interior point of the overlap, `IntTools_Tools::IntermediatePoint` of the range, so it
-        /// lies on the edge rather than on the chord between the overlap's two ends.
+        /// It is what `BOPAlgo_PaveFiller::PerformEE` and `PerformEF` resolve and build their vertex
+        /// from, `IntTools_Tools::VertexParameters` for an edge-edge part and
+        /// `IntTools_Tools::VertexParameter` for an edge-face one: `IntTools_CommonPrt`'s
+        /// `VertexParameter1` unless that lies outside ``param1Range``, when OCCT takes the middle
+        /// of the range instead. It therefore always lies inside ``param1Range``. For a
+        /// transversal crossing it is the crossing; for a tangential `.vertex` part it is a
+        /// representative parameter inside the overlap, which is not its extent.
+        ///
+        /// `nil` for `.edge` because OCCT never sets one: the field holds the `0.0` that
+        /// `IntTools_CommonPrt`'s constructor gave it, a default and not a measurement.
+        public let vertexParameter1: Double?
+        /// The parameter on edge 2 at which OCCT places the new vertex of a `.vertex` part, the
+        /// counterpart of ``vertexParameter1`` (#3012).
+        ///
+        /// `nil` for an `.edge` part and, always, from ``edgeFaceIntersection(with:)``, which has
+        /// no second edge.
+        public let vertexParameter2: Double?
+        /// A point on the intersection, at the representative parameter of the part.
+        ///
+        /// For a `.vertex` part that is the intersection point itself, the first edge's curve at
+        /// ``vertexParameter1``. For an `.edge` part it is an interior point of the overlap,
+        /// `IntTools_Tools::IntermediatePoint` of ``param1Range``, so it lies on the edge rather
+        /// than on the chord between the overlap's two ends.
         ///
         /// `nil` when the kernel handed back a part with no first edge, which no current entry
         /// point produces; it is never a zero standing in for an uncomputed point (#2251).
         public let point: SIMD3<Double>?
+
+        init(_ part: OCCTCommonPart) {
+            type = CommonPartType(rawValue: part.type) ?? .vertex
+            param1Range = (part.param1First, part.param1Last)
+            param2Range = (part.param2First, part.param2Last)
+            vertexParameter1 = part.hasVertexParam1 ? part.vertexParam1 : nil
+            vertexParameter2 = part.hasVertexParam2 ? part.vertexParam2 : nil
+            point = part.hasPoint ? SIMD3(part.pointX, part.pointY, part.pointZ) : nil
+        }
     }
 
     /// Intersect two edges to find common vertices and edge overlaps.
@@ -1744,9 +1782,39 @@ extension Shape {
     /// let a = Shape.edgeFromPoints(SIMD3(0, 0, 0), SIMD3(2, 0, 0))!
     /// let b = Shape.edgeFromPoints(SIMD3(1, 0, 0), SIMD3(3, 0, 0))!
     /// if let parts = a.edgeEdgeIntersection(with: b), let p = parts.first {
-    ///     p.type         // .edge, the two are collinear and overlap
-    ///     p.param1Range  // (1, 2) on a
-    ///     p.point        // a point inside the overlap, on a
+    ///     p.type              // .edge, the two are collinear and overlap
+    ///     p.param1Range       // (1, 2) on a
+    ///     p.vertexParameter1  // nil, OCCT gives an .edge part no vertex parameter
+    ///     p.point             // a point inside the overlap, on a
+    /// }
+    /// ```
+    ///
+    /// A crossing is a `.vertex` part. ``CommonPart/vertexParameter1`` is where the edges cross
+    /// and ``CommonPart/param1Range`` the tolerance window OCCT puts round it, which widens as the
+    /// edges approach tangency (#3012):
+    ///
+    /// ```swift
+    /// let x = Shape.edgeFromPoints(SIMD3(-1, 0, 0), SIMD3(1, 0, 0))!
+    /// let y = Shape.edgeFromPoints(SIMD3(0, -1, 0), SIMD3(0, 1, 0))!
+    /// if let p = x.edgeEdgeIntersection(with: y)?.first {
+    ///     p.type              // .vertex
+    ///     p.vertexParameter1  // 1, the crossing, on x
+    ///     p.param1Range       // about (1 - 1.5e-7, 1 + 1.5e-7), the window round it
+    ///     p.point             // (0, 0, 0)
+    /// }
+    /// ```
+    ///
+    /// A tangential overlap that covers the whole of neither edge is also `.vertex` (see
+    /// ``CommonPart/type``), and ``CommonPart/param1Range`` still holds the whole overlap:
+    ///
+    /// ```swift
+    /// let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 10)!
+    /// let first = Shape.edgeFromCurve(circle, u1: 0, u2: .pi)!
+    /// let second = Shape.edgeFromCurve(circle, u1: .pi / 2, u2: 3 * .pi / 2)!
+    /// if let p = first.edgeEdgeIntersection(with: second)?.first {
+    ///     p.type              // .vertex, neither arc is wholly covered
+    ///     p.param1Range       // about (pi/2, pi), the quarter circle the arcs share
+    ///     p.vertexParameter1  // about 3pi/4, OCCT's representative parameter inside it
     /// }
     /// ```
     ///
@@ -1757,15 +1825,7 @@ extension Shape {
         var count: Int32 = 0
         guard OCCTIntToolsEdgeEdge(handle, other.handle, &parts, &count) else { return nil }
         defer { parts?.deallocate() }
-        return (0..<Int(count)).map { i in
-            let p = parts![i]
-            return CommonPart(
-                type: CommonPartType(rawValue: p.type) ?? .vertex,
-                param1Range: (p.param1First, p.param1Last),
-                param2Range: (p.param2First, p.param2Last),
-                point: p.hasPoint ? SIMD3(p.pointX, p.pointY, p.pointZ) : nil
-            )
-        }
+        return (0..<Int(count)).map { CommonPart(parts![$0]) }
     }
 
     /// Intersect an edge with a face to find common vertices and edge overlaps.
@@ -1791,6 +1851,22 @@ extension Shape {
     /// hits.count   // 2, the z = -5 and z = 5 caps the edge runs through
     /// ```
     ///
+    /// A crossing is a `.vertex` part: ``CommonPart/vertexParameter1`` is the parameter OCCT
+    /// builds its vertex at and ``CommonPart/param1Range`` the stretch of the edge within
+    /// tolerance of the face, which widens as the edge runs closer to the face's plane (#3012).
+    /// ``CommonPart/vertexParameter2`` is `nil`, since a face has no second edge:
+    ///
+    /// ```swift
+    /// let slab = Shape.box(width: 200, height: 200, depth: 10)!
+    /// let edge = Shape.edgeFromPoints(SIMD3(-10, 0, 4.99), SIMD3(10, 0, 5.01))!
+    /// for face in slab.subShapes(ofType: .face) {
+    ///     for part in edge.edgeFaceIntersection(with: face) ?? [] {
+    ///         part.vertexParameter1  // about 10.000005, where the edge meets z = 5
+    ///         part.param1Range       // about (9.9997, 10.0003), a slope of 1e-3 widens it
+    ///     }
+    /// }
+    /// ```
+    ///
     /// - Parameter face: Face to intersect with
     /// - Returns: Array of common parts, or nil if intersection failed
     public func edgeFaceIntersection(with face: Shape) -> [CommonPart]? {
@@ -1798,15 +1874,7 @@ extension Shape {
         var count: Int32 = 0
         guard OCCTIntToolsEdgeFace(handle, face.handle, &parts, &count) else { return nil }
         defer { parts?.deallocate() }
-        return (0..<Int(count)).map { i in
-            let p = parts![i]
-            return CommonPart(
-                type: CommonPartType(rawValue: p.type) ?? .vertex,
-                param1Range: (p.param1First, p.param1Last),
-                param2Range: (p.param2First, p.param2Last),
-                point: p.hasPoint ? SIMD3(p.pointX, p.pointY, p.pointZ) : nil
-            )
-        }
+        return (0..<Int(count)).map { CommonPart(parts![$0]) }
     }
 
     /// Result of a face-face intersection curve.

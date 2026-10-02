@@ -1,0 +1,67 @@
+changed tests derived from git diff origin/main...HEAD (12):
+  arcInFaceReportsAPointOnTheArc
+  arcOverlapPointLiesOnTheArc
+  containedArcOverlapIsAnEdgePart
+  eachEdgeKeepsItsOwnRangeAndVertexParameter
+  edgeEdgeOverlap
+  edgeEdgeVertex
+  inPlaneEdgeIsNotClippedToTheFace
+  onlyCrossedFacesIntersect
+  secondStaggeredArcOverlap
+  shallowCrossingsWidenTheRange
+  shallowerCrossingsCarryWiderWindows
+  vertexParameterStaysInsideItsRangeAtTheSeam
+both anchors resolve uniquely in Sources/OCCTBridge/src/OCCTBridge_Modeling_Boolean.mm
+built once with every switch compiled in
+control (no switch): Test run with 14 tests in 2 suites passed, exit 0, 14 passed, 0 failed
+COLLAPSE        red  8 of 12 changed  exit 1
+    arcOverlapPointLiesOnTheArc
+    eachEdgeKeepsItsOwnRangeAndVertexParameter
+    edgeEdgeVertex
+    onlyCrossedFacesIntersect
+    secondStaggeredArcOverlap
+    shallowCrossingsWidenTheRange
+    shallowerCrossingsCarryWiderWindows
+    vertexParameterStaysInsideItsRangeAtTheSeam
+COLLAPSE_EDGE2  red  4 of 12 changed  exit 1
+    arcOverlapPointLiesOnTheArc
+    eachEdgeKeepsItsOwnRangeAndVertexParameter
+    edgeEdgeVertex
+    secondStaggeredArcOverlap
+RANGE_SWAP      red  2 of 12 changed  exit 1
+    eachEdgeKeepsItsOwnRangeAndVertexParameter
+    edgeEdgeOverlap
+EDGE_VP         red  4 of 12 changed  exit 1
+    arcInFaceReportsAPointOnTheArc
+    containedArcOverlapIsAnEdgePart
+    edgeEdgeOverlap
+    inPlaneEdgeIsNotClippedToTheFace
+EF_VP2          red  3 of 12 changed  exit 1
+    inPlaneEdgeIsNotClippedToTheFace
+    onlyCrossedFacesIntersect
+    shallowCrossingsWidenTheRange
+NO_VP           red  9 of 12 changed  exit 1
+    arcOverlapPointLiesOnTheArc
+    eachEdgeKeepsItsOwnRangeAndVertexParameter
+    edgeEdgeVertex
+    inPlaneEdgeIsNotClippedToTheFace
+    onlyCrossedFacesIntersect
+    secondStaggeredArcOverlap
+    shallowCrossingsWidenTheRange
+    shallowerCrossingsCarryWiderWindows
+    vertexParameterStaysInsideItsRangeAtTheSeam
+VP_SWAP         red  1 of 12 changed  exit 1
+    eachEdgeKeepsItsOwnRangeAndVertexParameter
+VP_RAW          red  1 of 12 changed  exit 1
+    vertexParameterStaysInsideItsRangeAtTheSeam
+POINT_AT_FIRST  red  4 of 12 changed  exit 1
+    arcOverlapPointLiesOnTheArc
+    edgeEdgeOverlap
+    onlyCrossedFacesIntersect
+    secondStaggeredArcOverlap
+restored Sources/OCCTBridge/src/OCCTBridge_Modeling_Boolean.mm with git checkout --
+rebuild 1 after the restore: injection marker absent in the test bundle
+restored bundle with a switch set, which it must ignore: Test run with 14 tests in 2 suites passed, exit 0
+
+both directions hold: every changed test is red under at least one switch, and every switch reddens at least one changed test (12 tests, 9 switches)
+exit=0

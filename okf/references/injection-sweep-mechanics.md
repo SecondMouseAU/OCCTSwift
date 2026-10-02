@@ -4,7 +4,7 @@ title: Injection sweep mechanics
 resource: https://github.com/SecondMouseAU/OCCTSwift
 tags: [reference, testing, agents, prove-the-test-fails]
 description: How to run an injection sweep cheaply and without lying to yourself. Run the built .xctest directly rather than `swift test`, inject by shadowing the bridge import rather than editing a .mm, resolve every anchor uniquely before the first build, and assert the switch set against the test set in both directions.
-timestamp: 2026-10-02
+timestamp: 2026-10-03
 ---
 
 # Injection sweep mechanics
@@ -109,6 +109,22 @@ does not.
 **A pipe hides the exit status.** `Scripts/tsan-stress.sh swift | tail -40` reports `$?` from
 `tail`, so a gate exiting 66 on a race is indistinguishable from one exiting 0. Redirect to a file
 and read the status separately, or use `set -o pipefail`.
+
+## A restore is not finished until the bundle is relinked
+
+Measured on #3012's sweep, 2026-10-03, and it fails silently. After the sweep put the injected
+`.mm` back with `git checkout --`, one `swift build` naming two test targets recompiled
+`OCCTBridge.o` and linked the second target against it, and left the first target's bundle linked
+against the **injected** bridge. The plain run of that bundle was green, because every switch is off
+unless its environment variable is set, so nothing looked wrong. What showed it was running the
+bundle with a switch set, which a clean bundle must ignore and the stale one did not: 36 issues. A
+second `swift build` relinked it.
+
+So after the restore: rebuild until the bundle holds no injection marker
+(`strings <bundle> | grep -c <marker>`, where the marker is a string that exists only in the injected
+code), then run it once with a switch set and require green. `swift build` exiting 0 says neither.
+`Scripts/repro/3012-commonpart-range1/run-injection-sweep.py` does both and refuses to report a
+matrix for a tree it could not prove clean.
 
 ## Run the switches against the old version too
 

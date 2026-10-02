@@ -21,6 +21,16 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### `Shape.CommonPart` keeps the kernel's ranges and gains OCCT's vertex parameters (#3012), and two CHANGELOG entries that never landed are recovered (#3004)
+
+**Changed.** `CommonPart.param1Range` and `param2Range` are now `IntTools_CommonPrt::Range1()` and `Ranges2()(1)` exactly as the kernel computed them, for either part type. The bridge used to overwrite both with `VertexParameter1/2` on a `.vertex` part, so they reported `(t, t)` whatever the kernel held: a transversal crossing lost the tolerance window OCCT puts round it, and a tangential overlap that `IntTools_EdgeEdge::MergeSolutions` typed `.vertex` (#2994) lost the overlap itself, so two arcs of one circle sharing a quarter of it reported a single point. OCCT does neither. `BOPAlgo_PaveFiller::PerformEE` and `PerformEF` read both facts off a `.vertex` part and never one in place of the other, the vertex parameters to place the new vertex and the ranges as the part's extent, and `IntTools_EdgeFace.cxx` carries the collapse commented out at four places. The window is not small: 3e-7 across for two lines at right angles, 3.4e-5 at one degree, 3.4e-3 at one hundredth of a degree. **To migrate**, a caller that read `param1Range.first` as the crossing parameter of a `.vertex` part reads `vertexParameter1`.
+
+**Added.** `CommonPart.vertexParameter1` and `vertexParameter2`, the parameters on each edge at which OCCT places the new vertex of a `.vertex` part, resolved the way `PerformEE` and `PerformEF` resolve them: the raw `VertexParameter1()` unless it lies outside the range, when OCCT takes the middle of the range. They are `nil` for an `.edge` part, which OCCT never gives one, and always `nil` for the second edge of an edge-face part. `point` follows them, and moves by 8.7e-4 along the curve for one measured corner, a tangent contact at a closed edge's seam.
+
+**Corrected.** The entry above for #2994 says `param1Range` is the true overlap under either answer. That held for the kernel and not for the bridge, which returned a point for the `.vertex` answer; it holds now.
+
+**Recovered.** Two entries that merged by hand and never reached this file are transcribed verbatim from their PR bodies: #2950's sixty-eight `OCCTFoundationTests` assertions that stop accepting any answer, and #3009's WebAssembly build fix (#3007). `check-changelog-transcription.py --verify-transcribed` reports 0 missing for the first time (#3004).
+
 ### The kernel is rebuilt on all thirty-nine carried patches, and two bridge compensations go with it (#2873, #2875, #2860, #2879, #2900, #2991, #2992)
 
 The pinned OCCT asset moves to `v4.0.0-kernel.4`, which carries every patch this repository has written, eight more than its predecessor. `Face.volumeInertia(planeNormal:planeDistance:)` now measures about the plane you name without a bridge-side mirror, `Curve2D.bezierInsertPoleAfter` accepts the same pole count as the 3D class, an overdetermined `MathSolver.uzawa` no longer crashes, a NaN mesh deflection is refused rather than hanging, and a cone's area and volume are correct.
@@ -212,6 +222,10 @@ because the branch's own versions carry the multi-line `guard` too.
 corrected figures, and the script gains a `WHAT IT CANNOT SEE` section recording the one shape
 left uncaught on purpose: a threshold a correct answer clears by a whole unit, which no static
 shape can reach without also reaching every tolerance comparison.
+
+### The WebAssembly build is green again (#3007)
+
+`simd_distance_squared` reached the WASI `simd` stand-in, which did not have it, so every WebAssembly build failed to compile two `OCCTAnalysisTests` suites from PR #2998 onwards. The stand-in now defines it as the squared length of the difference, by delegation, so it cannot diverge from Apple's.
 
 ### Read the `booleans` family of #1399's unlaned refman-coverage lane ([#1399](https://github.com/SecondMouseAU/OCCTSwift/issues/1399))
 
@@ -857,6 +871,20 @@ shape of defect in `helpers_in`, which costs it 11 findings and 6 SEVERE, filed 
   input the same call accepts, so a nil cannot be read as a dead API.
   `Scripts/repro/766-stress-boundary/` crosses with the tests that cite it and reproduces byte for
   byte against the pinned kernel.
+
+### Changed
+
+- The `OCCTFoundationTests` suite can now fail. Sixty-eight tests across Color, Material,
+  `Quantity_Date`, FontManager, PixMap, UnitsAPI, Messenger, Message_Report, OSD_Timer,
+  OSD_MemInfo, OSD_Environment, OSD_Chronometer, OSD_Process, OSD_File, OSD_SharedLibrary,
+  Message_Msg, UnitsConversion and `XCAFDoc_ColorTool` replace an `if let` with no `else`, a
+  `>= 0` bound or a bare `_ =` with the value the pinned kernel actually returns, lifted from six
+  execution PRs already merged into `v5.0.0-766-execution` (#2319, #2326, #2329, #2334, #2411,
+  #2440). `Tests/OCCTFoundationTests/` goes from 31 SEVERE and 47 ESCAPABLE to 7 and 25 on
+  `Scripts/census-766-weak-assertions.py`, and the file falls from first place in
+  `Scripts/census-766-unlifted-tests.py`'s ranking, at 53 gains, to one. Six
+  `Scripts/repro/766-foundation-*` ground-truth probes cross with them and reproduce against the
+  pinned asset.
 
 ### The TObj_Application singleton stops being freed by a release nobody paid for (#2897)
 
