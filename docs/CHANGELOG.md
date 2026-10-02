@@ -21,6 +21,22 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### Added: capturing what OCCT itself prints (#3021)
+
+`Messenger.capturingDefaultOutput(_:)` runs a closure with every printer on
+`Message::DefaultMessenger()` detached and replaced by one that accumulates, then restores them and
+returns the text. `Messenger.silencingDefaultOutput(_:)` is the same scope with the text discarded,
+and `Messenger.defaultPrinterCount` / `Messenger.isDefaultOutputCaptured` report the messenger's
+state. Until now `Messenger` wrapped only a messenger the caller created, which is a different
+object from the static OCCT writes through, so a kernel message such as
+`**** ERR StepFile : Undefined Parsing` or a `Statistics on Transfer (Write)` block could not be
+redirected at all and landed on standard output. The captured form is deliberately richer than
+silence: an expected message can be asserted on, so an absent one fails rather than passing
+unnoticed.
+
+The wasm spike (`Scripts/repro/2175/spike`) and `Issue1644IOReturnStatus` adopt it, and the
+transcript each produces now carries a verdict on OCCT's output instead of the output itself.
+
 ### Nineteen test assertions that could not fail now measure their subject (#3018)
 
 The test targets built with 22 compiler warnings naming assertions that cannot fail: 19
