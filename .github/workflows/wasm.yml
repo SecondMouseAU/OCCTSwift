@@ -215,8 +215,14 @@ jobs:
       # difference found so far, each with the issue that owns it.
       #
       # The script fails on a NEW failure and also on a listed failure that starts passing, so the
-      # list cannot quietly outlive the defects in it. It needs no node: wasmkit ships inside the
-      # Swift toolchain, which is this container.
+      # list cannot quietly outlive the defects in it.
+      #
+      # IT RUNS UNDER NODE, NOT wasmkit, AND #2894 IS WHY. One module file, byte for byte, under both:
+      # an OCCT exception thrown several frames below the bridge's `catch (...)` is caught under Node
+      # and reaches `std::terminate` under wasmkit 0.3.1. Three issues and seven file exclusions were
+      # that interpreter rather than this port. The target for #1689 is a browser, so the suites run
+      # under the browser's own WASI shim; the step below therefore needs the Node set up for #2052's
+      # cases, plus npm once to fetch the pinned shim.
       #
       # Placed after the spike so a kernel or bridge regression is still reported by the cheap six
       # cases first, and before the size step so `if: always()` still records the size when the

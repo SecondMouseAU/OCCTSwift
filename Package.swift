@@ -694,12 +694,18 @@ let wasmUnportableTestTargets: Set<String> = [
 // five files cannot express an input past `Int32.max`, and four call
 // `Shape.isSelfIntersecting(hardTimeout:)`, which is `#if !os(WASI)` because its contract needs a
 // second thread (#2760). Narrowing both is #2928.
+//
+// `GCPntsSamplerBoundsTests` also used to be excluded, because one of its two tests PASSED after
+// 422 seconds under wasmkit. Under Node it takes 27.8 s and its sibling 24.6 s, where before only
+// one of the two finished inside the window at all, so that exclusion went with the runtime too. It
+// is still the slowest thing in the suites by a wide margin, and for a real reason: an ellipse with
+// a 1e9 aspect ratio walked for arc length against 16 measured overshoot counts. The whole 13-suite
+// run is 224 s, so it is affordable.
 let wasmExcludedTestFiles: [String: [String]] = [
     "OCCTAnalysisTests": ["Issue2857IntfToolIndexGuardTests.swift"],
     "OCCTCurveTests": [
         "Issue479SampleCountBoundTests.swift",
         "Issue558SamplingCountBoundsTests.swift",
-        "GCPntsSamplerBoundsTests.swift",
     ],
     "OCCTMathTests": [
         "Issue640MathDimensionBoundsTests.swift",
