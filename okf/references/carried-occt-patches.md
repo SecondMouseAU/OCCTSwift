@@ -71,6 +71,9 @@ without silently closing it, see
 | `0043-BRepGProp_Gauss-keeps-the-by-plane-mass-2827` | `BRepGProp_Gauss::convert` computes the by-plane mass in its four-argument form and then overwrites it with `0.0`, with the gravity centre set to `(0, 0, 0)`, because the six-argument form guards the keep with `if (std::abs(theInertia.Mass) >= EPS_DIM && theIsByPoint)` and no by-plane path sets that flag. All four by-plane `BRepGProp_Vinert::Perform` overloads and both `Compute` paths reach it. Dropping `&& theIsByPoint` also makes the dead inner `else` live, and that `else` is the correct by-plane gravity centre rather than merely the reachable one: by-plane `theCoeff` is four plane coefficients, not the three-element translation the by-point branch adds. OCCT has no caller of the path (`BRepGProp.cxx:311` passes a point), so what the value means was derived from the integrand and measured: each face's mass is the signed volume of the column between it and the plane, the per-face sum over a closed shell is the enclosed volume for any plane, and the mass-weighted sum of the centres is the solid's first moment ([#2827](https://github.com/SecondMouseAU/OCCTSwift/issues/2827)) | **authored and held, not filed**, under the same standing decision as `0042`: the upstream PR waits for OCCT 8.0.2, due 2026-10-02, so the hunk is tested against the tree it will be filed against. The submission carries a second hunk for [#2873](https://github.com/SecondMouseAU/OCCTSwift/issues/2873), the inverted offset sign in `BRepGProp_Vinert.cxx:279` and, measured since, in `BRepGProp_VinertGK.cxx:219` and `:244` as well, which this patch exposes rather than causes. **`OCCTBRepGPropVinertPlane` now compensates for that on the bridge side**, by building the `gp_Pln` mirrored through the origin, so a kernel carrying the second hunk while the mirror is still there measures about the mirrored plane again: take the mirror out in the same change that retires this patch. `BRepGPropVinertTests`' two sign assertions fail if it is left in. Submit from `upstream/occt`, where direnv loads the scoped token | bundled OCCT includes the fix |
 | `0045-Geom-Bezier-InsertPoleAfter-pole-bound-2875` | `Geom2d_BezierCurve::InsertPoleAfter` and `Geom_BezierCurve::InsertPoleAfter` refuse once the curve holds `MaxDegree()` poles, where both constructors and `Increase()` allow `MaxDegree() + 1`, so insertion stops two poles short of a length the constructor builds happily. `MaxDegree()` is a degree bound, not a pole bound, and both classes' static `Multiplicities()`/`KnotSequence()` tables are sized `MaxDegree() + 1` and indexed by pole count, so the relaxed bound is in range for every derived query. The two sites are the only ones in the tree that compare a pole count against `MaxDegree()` with `>=` ([#2875](https://github.com/SecondMouseAU/OCCTSwift/issues/2875)) | **authored and held, not filed**, under the standing hold that keeps every upstream PR back until OCCT 8.0.2 ships. A GTest is owed before it goes | bundled OCCT includes the fix; `OCCTCurve2DBezierInsertPoleAfter`'s guard stays regardless, because `No_Exception` empties the 2d class's `Standard_ConstructionError_Raise_if` and the bridge guard is then the only bound that exists |
 | `0046-math_Uzawa-Errinit-row-dimension-2860` | `math_Uzawa` sizes `Errinit` by `Cont.ColNumber()` in both constructors and `Perform` writes it by row, so any overdetermined system writes past its end. The accessor documents the vector as `Cont*StartingPoint-Secont`, one entry per constraint, and every read of it is a row index, so `RowNumber()` is the documented length as well as the written one. `math_Vector` inlines 32 doubles, so the outcome is decided by size: 4 constraints in 2 unknowns returns a wrong answer, 100 in 2 is a deterministic SIGSEGV. The dimension check at the top of `Perform` never relates rows to columns, so `-DBUILD_RELEASE_DISABLE_EXCEPTIONS=OFF` would not catch it either ([#2860](https://github.com/SecondMouseAU/OCCTSwift/issues/2860)) | **authored and held, not filed**, under the same standing hold. #2860 already names this as the upstream-worthy item of its cluster | bundled OCCT includes the fix; `OCCTMathUzawa`'s `nConstraints > nVars` guard stays regardless, since refusing an overdetermined system is an API decision as well as a crash guard, and relaxing it is a SemVer change |
+| `0050-GProp_SelGProps-cone-lateral-area-drops-cos-semiangle-2992` | `GProp_SelGProps::Perform(gp_Cone)` returns `cos(semiAngle)` times the lateral area. `gp_Cone`'s `v` runs along the generatrix, so the area element is `R + v sin a` and the closed form is `(A2 - A1)(Z2 - Z1)(R + (Z2 + Z1) sin a / 2)`; the `Cnt` factor at `GProp_SelGProps.cxx:125` has no term to come from. Neither this class nor `GProp_VelGProps` has a caller anywhere in `Libraries/occt-src`, so per [follow the OCCT callers](../policies/follow-occt-callers.md) the arbiters are the closed form and the cylinder limit: the `gp_Cylinder` overload beside it is exact, and a cone of vanishing semi-angle is that cylinder ([#2992](https://github.com/SecondMouseAU/OCCTSwift/issues/2992)) | **authored and held, not filed**, under the same standing decision as `0042` and `0043`: the upstream PR waits for OCCT 8.0.2 so the hunk is tested against the tree it will be filed against. The inertia terms below `dim` carry a separate discrepancy of their own, measured, deliberately out of scope here and filed as [#3010](https://github.com/SecondMouseAU/OCCTSwift/issues/3010) | bundled OCCT includes the fix |
+| `0051-GProp_VelGProps-cone-volume-is-the-frustum-2992` | `GProp_VelGProps::Perform(gp_Cone)` returns a quantity carrying a spurious `sin a`, so the reported volume goes to **zero** as the cone becomes the cylinder whose volume the same class answers exactly. The volume of revolution is the frustum, `(A2 - A1) cos a (Z2 - Z1)(R1^2 + R1 R2 + R2^2) / 6`, which reduces to the cylinder overload's `(A2 - A1) R^2 (Z2 - Z1) / 2` at `a = 0`. Same no-caller situation and same two arbiters as `0050` ([#2992](https://github.com/SecondMouseAU/OCCTSwift/issues/2992)) | **authored and held, not filed**, with `0050`, which it should be filed alongside: the old `dim` is exactly `0050`'s old `dim` times `(Z2 - Z1) sin a`, so one was derived from the other | bundled OCCT includes the fix |
+| `0052-Geom_BezierSurface-rational-axis-prose-matches-example-2991` | `Geom_BezierSurface.hxx`'s prose for `IsURational`/`IsVRational` contradicts its own example matrix, and the example is the one that matches the code: the static `Rational()` sets `Urational` from `Weights(I, J) != Weights(I, J + 1)`, walking the **column** index, which is V. Each flag therefore names the axis opposite the one it compares along. `Geom_BSplineSurface.hxx` already states the row rule correctly, so the two headers disagree with each other as well. Documentation only ([#2991](https://github.com/SecondMouseAU/OCCTSwift/issues/2991)) | **authored and held, not filed.** It joins the OCCT 8.0.2 documentation batch with `#2875`'s and `#2860`'s one-character fixes rather than going alone | bundled OCCT includes the fix |
 
 **Retired in OCCT 8.0.1** (re-pinned 2026-08-03): `0001`-`0009` and `0013`, shipped upstream as
 OCCT#1323, #1334, #1374, #1377, #1380, #1382, #1331, #1329, #1318 and #1392 respectively. Their
@@ -106,17 +109,28 @@ mistake the rest of this page is about.
 
 ### The xcframework
 
-`Scripts/patches/` holds thirty-four patches, of which the pinned asset carries thirty-one. **These
+`Scripts/patches/` holds thirty-nine patches, of which the pinned asset carries thirty-nine. **These
 are the counts `CLAUDE.md` used to restate and no longer does** (#2954); both are derived from
 `Scripts/patches/` and `Package.swift` by `check-inventory-prose.py`, which fails the PR that lets
-this page and the tree disagree. The v4.0.0-kernel.3 asset `Package.swift` pins lacks three of them,
-per [Pinned kernel patch check](../policies/pinned-kernel-patch-check.md):
+this page and the tree disagree. The v4.0.0-kernel.4 asset `Package.swift` pins lacks zero of them,
+per [Pinned kernel patch check](../policies/pinned-kernel-patch-check.md).
 
-| Unpinned | What it leaves exposed |
+**The native divergence is closed.** It stood at one patch (`0044`) and widened to eight as `0045`
+through `0052` were authored, every one of them live nowhere, and the v4.0.0-kernel.4 rebuild
+pinned the lot. The table below is kept as the record of what each of those eight left exposed
+while it was unpinned, and of which bridge mitigation the repin did and did not retire; it is
+history now, not a live gap.
+
+| Was unpinned until v4.0.0-kernel.4 | What it left exposed |
 |---|---|
 | `0044-Extrema-ExtSS-ExtCS-Points-bound-against-point-sequence-2840` | Nothing reachable from Swift. `Extrema_ExtSS::Points` and `Extrema_ExtCS::Points` still fault on a parallel pair in the pinned kernel, and every bridge entry point that reads a point from either class gates on `IsParallel()` first, so the input never reaches them (#2831, #2840). The exposure is to a future bridge author who adds a point read without that gate, which is why `OCCTCurve3DDistanceToSurface` carries a comment saying so |
 | `0045-Geom-Bezier-InsertPoleAfter-pole-bound-2875` | Almost nothing, and not for the reason it looks. The 3d class's bound is a literal throw and is still one pole too strict in the pinned kernel, so `Curve3D.bezierInsertPoleAfter` refuses a 26-pole curve the 3d constructor would build. The 2d class's bound is a `_Raise_if` that `No_Exception` empties, so the pinned kernel enforces nothing there and `OCCTCurve2DBezierInsertPoleAfter`'s guard is the bound, patched or not (#2801, #2875) |
 | `0046-math_Uzawa-Errinit-row-dimension-2860` | The out-of-bounds write itself. `math_Uzawa` still overruns `Errinit` for any overdetermined system in the pinned kernel, deterministically SIGSEGVing at 100 constraints in 2 unknowns, and `OCCTMathUzawa`'s `nConstraints > nVars` guard is the only thing between a Swift caller and it (#2860) |
+| `0047-BRepMesh_IncrementalMesh-initParameters-refuses-NaN-2879-2900` | Nothing reachable from Swift. All five of `initParameters`' bounds tests are spelled `value < bound`, which NaN defeats, so a NaN linear deflection starts a tessellation that does not return and a NaN angle returns the coarsest mesh the linear rule alone accepts with `IsDone()` true (#2879, #2900). `occtValidMeshDeflection` and `occtValidMeshAngle` refuse both at every bridge site that takes a caller value, so the kernel never sees one from here. The exposure is to a future bridge author who constructs a `BRepMesh_IncrementalMesh` without either guard, which is why `check-null-handle-guards.py`'s siblings and the two helpers' doc comments say so. **Keep both guards at the repin**, the same `0042` and `0044` exception |
+| `0048-BRepGProp-by-plane-offset-sign-2873` | Nothing, and this row is the opposite case to the two above: the bridge does not refuse an input here, it **compensates**. `OCCTBRepGPropVinertPlane` builds the `gp_Pln` mirrored through the origin so the unpatched kernel answers about the plane the Swift caller asked for, which is why `Face.volumeInertia(planeNormal:planeDistance:)` is correct today. **A kernel carrying `0048` with that mirror still in place is wrong again**, and `BRepGPropVinertTests`' two sign assertions fail. The repin deletes the mirror, flips those assertions to `n . C - d`, and drops the "pass `-d`" note from the Swift doc comment and `docs/reference/Shape-HLR-Geom.md`, in the same change |
+| `0050-GProp_SelGProps-cone-lateral-area-drops-cos-semiangle-2992` | `GeometryProperties.coneSurfaceArea(semiAngle:refRadius:height:)` returns `cos(semiAngle)` times the lateral area on the pinned kernel, a wrong value a caller reads rather than a latent fault. Nothing on the bridge side can recover it: the factor is applied inside `GProp_SelGProps::Perform` and the bridge sees only `Mass()`. Multiplying it back out in the bridge was rejected as a mitigation, because it would have to be retired at the repin and would silently double-correct a kernel that already carries the patch |
+| `0051-GProp_VelGProps-cone-volume-is-the-frustum-2992` | `GeometryProperties.coneVolume(semiAngle:refRadius:height:)` returns a quantity that is not the volume on the pinned kernel, and collapses to zero as the semi-angle does. Same reasoning as `0050`: a value a caller reads, with no bridge-side recovery |
+| `0052-Geom_BezierSurface-rational-axis-prose-matches-example-2991` | Nothing. It is a header comment, so it changes no binary and the pinned asset's behaviour is already what the corrected prose describes. It is carried so the tree we build and the tree we file upstream from agree, and because the wrong prose nearly cost a lift batch a false defect report |
 
 `0043` (#2827) was the last entry here, and it was the shortest-lived: carried unbuilt on 2026-09-29
 because OCCT 8.0.2 was days out and a repin was on hold until it lands, then built and pinned the
@@ -139,30 +153,48 @@ both answer nil and the guard is redundant rather than wrong, and it still cover
 older asset. `Package.swift`'s pin block records that exception against
 [Pinned kernel patch check](../policies/pinned-kernel-patch-check.md)'s retire-the-mitigation rule.
 
-### The wasm kernel: one patch behind, as of 2026-09-29
+### The wasm kernel: in step with the native one since v4.0.0-kernel.4
 
 `libOCCT-wasm.a` and its header tree are a **second** pinned asset, recorded in
 `Scripts/wasm-kernel-pin.txt` rather than in `Package.swift`, because SwiftPM has no `binaryTarget`
-for a bare static library. It carries **thirty** patches, `0010` to `0042`, plus the eleven in
-`Scripts/patches-wasi/`, and the pinned native asset carries thirty-one, so it **lacks one of them**:
+for a bare static library. Both kernels carry the same patches, `0010` to `0052`. As of this
+writing the pinned native asset carries thirty-nine, and so does this one, plus the eleven in
+`Scripts/patches-wasi/` that only the wasm build applies. They were built from one tree in one
+sitting and published to one release tag, so **there is no divergence between the two platforms to
+record**.
 
-| Unpinned on wasm | What it leaves exposed |
+`Scripts/check-wasm-kernel-parity.py` reports both sides at the same count, and
+`wasm-kernel-pin.txt` carries no `ACKNOWLEDGED_*` keys. They were deleted rather than re-keyed,
+because that field's own rule is that the "against" number is never bumped: an acknowledgement that
+no longer acknowledges anything is removed, and its text is kept below as history.
+
+#### History: how the wasm kernel stood at v4.0.0-kernel.2, as of 2026-09-29
+
+Everything from here to the end of this section describes an asset that has been superseded. It is
+kept because the failure it records, a divergence nothing counted, is the argument for the parity
+gate. None of it describes what is pinned now.
+
+
+That asset carried **thirty** patches, `0010` to `0042`, plus the eleven in `Scripts/patches-wasi/`,
+while the native asset carried thirty-one, so it **lacked one of them**:
+
+| Was unpinned on wasm until v4.0.0-kernel.4 | What it leaves exposed |
 |---|---|
-| `0043-BRepGProp_Gauss-keeps-the-by-plane-mass-2827` | In the browser only, `Face.volumeInertia(planeNormal:planeDistance:)` still returns the fabricated `0.0` that `v4.0.0-kernel.3` fixed natively. No other API reaches the by-plane `BRepGProp_Vinert` path, and the by-point `Face.volumeInertia` is unaffected on both platforms |
+| `0043-BRepGProp_Gauss-keeps-the-by-plane-mass-2827` | In the browser only, `Face.volumeInertia(planeNormal:planeDistance:)` still returned the fabricated `0.0` that `v4.0.0-kernel.3` fixed natively. No other API reached the by-plane `BRepGProp_Vinert` path, and the by-point `Face.volumeInertia` is unaffected on both platforms |
 
-`0044` is **not** a second row here. It is unpinned on both platforms, so it is not a divergence
+`0044` was **not** a second row here. It was unpinned on both platforms, so it was not a divergence
 between them, and `Scripts/check-wasm-kernel-parity.py` compares the wasm pin against
 `Package.swift`'s enumeration of what the native **asset** holds rather than against the directory
-listing. The 8.0.2 rebuild that closes the row above picks `0044` up on both platforms at once.
+listing. The v4.0.0-kernel.4 rebuild picked `0044` up on both platforms at once, which closed the row above.
 
 **Acknowledged, not ignored**, by `OCCT_WASM_PARITY_ACKNOWLEDGED_AGAINST=31` in
-`Scripts/wasm-kernel-pin.txt`: the wasm kernel is a 69-minute build and this repin did not take it,
-so the divergence is written down with the native count it was accepted at. That keying is the whole
+`Scripts/wasm-kernel-pin.txt`: the wasm kernel is a 69-minute build and that repin did not take it,
+so the divergence was written down with the native count it was accepted at. That keying is the whole
 point, per [Pinned kernel patch check](../policies/pinned-kernel-patch-check.md): the NEXT native
 repin makes the acknowledgement stale and `Scripts/check-wasm-kernel-parity.py` fires again, so it
-cannot become a permanent suppression the way two `ACKNOWLEDGED` rows in
-`Scripts/patches/README.md` did before #2190. What closes it is the OCCT 8.0.2 wasm rebuild, which
-is already owed: 8.0.2 is due 2026-10-02 and will rebuild both kernels from one patch set.
+could not become a permanent suppression the way two `ACKNOWLEDGED` rows in
+`Scripts/patches/README.md` did before #2190. What closed it was the rebuild of both kernels from one patch set. That was expected to
+be OCCT 8.0.2, due 2026-10-02; 8.0.2 did not ship, so it was done anyway for v4.0.0-kernel.4 (#3031).
 
 `0042` was the entry here for one day. PR #2784 published the asset for `v4.0.0-kernel.1` and PR
 #2782 repinned native to `v4.0.0-kernel.2` **twenty-nine seconds later**, so the browser briefly

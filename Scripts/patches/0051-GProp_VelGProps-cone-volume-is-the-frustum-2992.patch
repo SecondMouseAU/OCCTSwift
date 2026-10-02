@@ -1,0 +1,77 @@
+From: OCCTSwift ecosystem <noreply@secondmouse.au>
+Subject: [PATCH] Modeling Data - GProp_VelGProps returns a quantity that
+ vanishes at the cylinder limit instead of the volume of a gp_Cone
+
+GProp_VelGProps::Perform(const gp_Cone&, ...) computes
+
+  double ZZ    = (Z2 - Z1) * (Z2 - Z1) * Cnt * Snt;
+  double Auxi1 = 2 * R + (Z2 + Z1) * Snt;
+  dim          = ZZ * (Alpha2 - Alpha1) * Auxi1 / 2.;
+
+which carries a factor of sin a and therefore goes to zero as the semi-angle
+does. A cone of vanishing semi-angle is a cylinder, and the gp_Cylinder
+overload in the same class answers that exactly with
+dim = (Alpha2 - Alpha1) R^2 (Z2 - Z1) / 2, so the two disagree in the limit
+where they describe the same solid.
+
+The volume swept between the axis and the cone patch, which is the convention
+the cylinder and sphere overloads of this class both use, is the frustum. With
+z = v cos a and r(z) = R + v sin a,
+
+  V = int du int r(z)^2 / 2 dz
+    = (Alpha2 - Alpha1) cos a / 2 int_{Z1}^{Z2} (R + v sin a)^2 dv
+    = (Alpha2 - Alpha1) cos a (Z2 - Z1) (R1^2 + R1 R2 + R2^2) / 6
+
+with R1 = R + Z1 sin a and R2 = R + Z2 sin a, which over a full turn is the
+familiar pi H (R1^2 + R1 R2 + R2^2) / 3 with H = (Z2 - Z1) cos a. Expanded in
+R and sin a, R1^2 + R1 R2 + R2^2 is
+
+  3 R^2 + 3 R (Z1 + Z2) sin a + (Z1^2 + Z1 Z2 + Z2^2) sin^2 a
+
+which is the form used below, so that the existing R1, R2 and Coef0 locals can
+keep their position after dim and the declaration block is left alone. At
+a = 0 the expression collapses to (Alpha2 - Alpha1) R^2 (Z2 - Z1) / 2, exactly
+the cylinder overload.
+
+GProp_VelGProps and GProp_SelGProps have no caller anywhere in the OCCT tree,
+so there is no call site whose use of the result could settle the convention.
+The arbiters are therefore the closed form above and the cylinder limit.
+
+Note that the old dim is exactly the old GProp_SelGProps cone dim times
+(Z2 - Z1) sin a, which suggests one was derived from the other; that is the
+subject of patch 0050.
+
+Measured on macOS arm64 against V8_0_1 with the translation unit
+override-linked, gp_Cone(gp::XOY(), pi/6, 5) over u in [0, 2 pi], v in [0, 10].
+Before: Mass() is 2040.524284763495 against the frustum 1587.0744437049404, and
+the near-cylinder cases read 3.14473214923 at semiAngle 1e-3, 0.00314159580 at
+1e-6 and 0.00000314159 at 1e-9, against the cylinder's 785.39816339744823.
+After: Mass() is 1587.0744437049409, within 4.6e-13 of the frustum, and the
+same three near-cylinder cases read 786.96961317468, 785.39973419443 and
+785.39816496824, converging on the cylinder. The centre of mass is unchanged.
+
+The inertia terms below dim carry a separate discrepancy of their own,
+measured but deliberately not touched here: IR2 is built from a four term
+quartic over 4 where the second moment about the axis integrates to a five term
+quartic over 20, and it keeps the same spurious sin a. That is a distinct
+defect with its own derivation, and fixing it here would change a second result
+under cover of this one.
+
+The reproducer is Scripts/repro/2992/probe.cxx and the transcript is
+Scripts/repro/2992/override-link-transcript.txt in the OCCTSwift repository.
+OCCTSwift issue #2992; the area half of the same issue is patch 0050.
+
+diff --git a/src/ModelingData/TKGeomBase/GProp/GProp_VelGProps.cxx b/src/ModelingData/TKGeomBase/GProp/GProp_VelGProps.cxx
+--- a/src/ModelingData/TKGeomBase/GProp/GProp_VelGProps.cxx
++++ b/src/ModelingData/TKGeomBase/GProp/GProp_VelGProps.cxx
+@@ -168,7 +168,9 @@ void GProp_VelGProps::Perform(const gp_Cone& S,
+   double ZZ    = (Z2 - Z1) * (Z2 - Z1) * Cnt * Snt;
+   double Auxi1 = 2 * R + (Z2 + Z1) * Snt;
+
+-  dim = ZZ * (Alpha2 - Alpha1) * Auxi1 / 2.;
++  // Frustum volume pi/3 H (R1^2 + R1 R2 + R2^2); the old form carried sin(a) and vanished at a = 0.
++  dim = (Alpha2 - Alpha1) * Cnt * (Z2 - Z1)
++        * (3 * R * R + 3 * R * (Z2 + Z1) * Snt + (Z2 * Z2 + Z2 * Z1 + Z1 * Z1) * Snt * Snt) / 6.;
+
+   double R1    = R + Z1 * Snt;
+   double R2    = R + Z2 * Snt;

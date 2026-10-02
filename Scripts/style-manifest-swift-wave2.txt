@@ -55,7 +55,6 @@ Tests/OCCTAnalysisTests/AdaptorCurvatureDefinednessTests.swift
 Tests/OCCTAnalysisTests/AdaptorLocalPropsParityTests.swift
 Tests/OCCTAnalysisTests/AdaptorNormalDecisionTests.swift
 Tests/OCCTAnalysisTests/BRepExtremaExtPCTests.swift
-Tests/OCCTAnalysisTests/BRepGPropVinertTests.swift
 Tests/OCCTAnalysisTests/BndBoundSortBoxTests.swift
 Tests/OCCTAnalysisTests/CenterOfMassTests.swift
 Tests/OCCTAnalysisTests/ExtremaElSSPlanePlaneTests.swift

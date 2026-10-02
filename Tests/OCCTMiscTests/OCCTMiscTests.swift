@@ -1936,7 +1936,15 @@ struct SheetMetalTests {
         // BELOW the flange volumes alone: the fillet also ran along the base's free edge for the
         // surplus 30 on each side, and -19.314 is exactly 40 * 1.5^2 * (1 - pi/4).
         let v = shape.volume ?? -1
-        #expect(abs(v - 7609.603645881255) < 1e-6 * 7609.603645881255, "volume \(v)")
+        // 1e-5, not the 1e-6 this carried. The value is the end of an iterative fillet closure, and
+        // two builds of the SAME kernel source disagree in it by 2.2e-6 relative: the published
+        // `v4.0.0-kernel.4` asset measures 7609.603645881255 here and the kernel that
+        // `kernel-integration.yml` compiles on CI measures 7609.620447958993, a different compiler
+        // on identical source (the 39 carried patches are the same in both; the shipped asset
+        // reproduces the old pin exactly, so the patches are not what moved it). The closed form
+        // below is what guards correctness and the new value is nearer to it, 0.0366 under against
+        // 0.0534. This pin only has to notice the volume moving, not a compiler change.
+        #expect(abs(v - 7609.603645881255) < 1e-5 * 7609.603645881255, "volume \(v)")
         let derived = 7600.0 + 20.0 * 1.5 * 1.5 * (1.0 - Double.pi / 4.0)
         #expect(abs(v - derived) < 0.07, "volume \(v) against the closed form \(derived)")
         // The base's free back corner left of the tab (tab spans x in [30, 50]) is sharp.
