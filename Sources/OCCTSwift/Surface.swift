@@ -5189,10 +5189,48 @@ extension Surface {
         /// V degree.
         public var vDegree: Int { Int(OCCTSurfaceBSplineVDegree(surface.handle)) }
 
-        /// Whether the surface is U-rational.
+        /// Whether the weights vary along **V**, which is what OCCT calls U-rational.
+        ///
+        /// `Geom_BSplineSurface::IsURational()` is defined as false when, for each **row** of the
+        /// weight matrix, all the weights are identical. A row is one U index across every V
+        /// (the header's own bounds: rows run `1...nbUPoles`, columns `1...nbVPoles`), so the
+        /// flag is false exactly when the weights do not change as V advances, and true when they
+        /// do. It reports on the axis opposite the one its name suggests to most readers. That is
+        /// faithful to OCCT rather than a wrapper defect, and it is measured, not read off the
+        /// header: `Scripts/repro/2976-surface-rational-axes/`.
+        ///
+        /// The cylinder is where this bites, and every cone, sphere and surface of revolution
+        /// with it. Converted to BSpline form it carries the circle's weights around U and
+        /// constant weights along the axis V, so it reads **not** U-rational and V-rational.
+        ///
+        /// ```swift
+        /// let cylinder = Surface.cylinder(origin: .zero, axis: SIMD3(0, 0, 1), radius: 5)!
+        /// let bspline = cylinder.trimmed(u1: 0, u2: 2 * .pi, v1: 0, v2: 10)!.toBSpline()!
+        /// #expect(bspline.bsplineSurface.isURational == false)
+        /// #expect(bspline.bsplineSurface.isVRational == true)
+        /// ```
+        ///
+        /// - Note: ``BSpline/exchangeUV()`` transposes the weight matrix, so it swaps this pair.
         public var isURational: Bool { OCCTSurfaceBSplineIsURational(surface.handle) }
 
-        /// Whether the surface is V-rational.
+        /// Whether the weights vary along **U**, which is what OCCT calls V-rational.
+        ///
+        /// `Geom_BSplineSurface::IsVRational()` is defined as false when, for each **column** of
+        /// the weight matrix, all the weights are identical. A column is one V index across every
+        /// U, so the flag is false exactly when the weights do not change as U advances. See
+        /// ``BSpline/isURational`` for why the pair reads inverted and for the cylinder that
+        /// shows it.
+        ///
+        /// ```swift
+        /// // The cylinder's weights go around U, so it is V-rational. `exchangeUV()`
+        /// // transposes the weight matrix, and the pair swaps with it.
+        /// let cylinder = Surface.cylinder(origin: .zero, axis: SIMD3(0, 0, 1), radius: 5)!
+        /// let bspline = cylinder.trimmed(u1: 0, u2: 2 * .pi, v1: 0, v2: 10)!.toBSpline()!
+        /// #expect(bspline.bsplineSurface.isVRational == true)
+        /// bspline.bsplineSurface.exchangeUV()
+        /// #expect(bspline.bsplineSurface.isVRational == false)
+        /// #expect(bspline.bsplineSurface.isURational == true)
+        /// ```
         public var isVRational: Bool { OCCTSurfaceBSplineIsVRational(surface.handle) }
 
         /// Get a pole at (uIndex, vIndex), both 1-based.
@@ -5598,10 +5636,59 @@ extension Surface {
         /// V degree.
         public var vDegree: Int { Int(OCCTSurfaceBezierVDegree(handle)) }
 
-        /// Whether the surface is rational in U.
+        /// Whether the weights vary along **V**, which is what OCCT calls U-rational.
+        ///
+        /// Same convention as ``Surface/BSpline/isURational``, and **measured rather than copied
+        /// from it**: `Geom_BezierSurface.hxx` says "returns False if the weights are identical
+        /// in the U direction" and then prints the same example matrix as the BSpline page, whose
+        /// rows are the constant ones, so its prose and its example say opposite things. The
+        /// example is the behaviour. `Geom_BezierSurface::IsURational()` is false when every
+        /// **row** of the weight matrix is constant, a row being one U index across every V, so
+        /// the flag is true exactly when the weights change as V advances. Measured in
+        /// `Scripts/repro/2976-surface-rational-axes/` against the pinned kernel, four weight
+        /// matrices, both axes.
+        ///
+        /// ```swift
+        /// let bezier = Surface.bezier(poles: [
+        ///     [SIMD3(0, 0, 0), SIMD3(0, 5, 1), SIMD3(0, 10, 0)],
+        ///     [SIMD3(5, 0, 1), SIMD3(5, 5, 2), SIMD3(5, 10, 1)],
+        ///     [SIMD3(10, 0, 0), SIMD3(10, 5, 1), SIMD3(10, 10, 0)],
+        /// ])!
+        /// let properties = bezier.bezierProperties
+        /// #expect(properties.isURational == false)  // every weight is 1
+        ///
+        /// // Give the middle U row a weight of its own. Each row is still constant, so the
+        /// // weights now vary along U and not along V: V-rational, not U-rational.
+        /// for v in 1...properties.nbVPoles {
+        ///     properties.setWeight(uIndex: 2, vIndex: v, weight: 0.5)
+        /// }
+        /// #expect(properties.isURational == false)
+        /// #expect(properties.isVRational == true)
+        /// ```
         public var isURational: Bool { OCCTSurfaceBezierIsURational(handle) }
 
-        /// Whether the surface is rational in V.
+        /// Whether the weights vary along **U**, which is what OCCT calls V-rational.
+        ///
+        /// False when every **column** of the weight matrix is constant, a column being one V
+        /// index across every U, so the flag is true exactly when the weights change as U
+        /// advances. See ``BezierProperties/isURational`` for why the pair reads inverted and for
+        /// what the kernel's own header gets wrong about it.
+        ///
+        /// ```swift
+        /// // Weights that vary along V and not along U: U-rational, not V-rational, the mirror
+        /// // of the example on `isURational`.
+        /// let bezier = Surface.bezier(poles: [
+        ///     [SIMD3(0, 0, 0), SIMD3(0, 5, 1), SIMD3(0, 10, 0)],
+        ///     [SIMD3(5, 0, 1), SIMD3(5, 5, 2), SIMD3(5, 10, 1)],
+        ///     [SIMD3(10, 0, 0), SIMD3(10, 5, 1), SIMD3(10, 10, 0)],
+        /// ])!
+        /// let properties = bezier.bezierProperties
+        /// for u in 1...properties.nbUPoles {
+        ///     properties.setWeight(uIndex: u, vIndex: 2, weight: 0.5)
+        /// }
+        /// #expect(properties.isURational == true)
+        /// #expect(properties.isVRational == false)
+        /// ```
         public var isVRational: Bool { OCCTSurfaceBezierIsVRational(handle) }
 
         /// Get a pole (1-based indices).

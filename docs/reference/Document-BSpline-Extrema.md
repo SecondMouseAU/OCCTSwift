@@ -661,10 +661,26 @@ public var vDegree: Int
 
 ### `Surface.BSpline.isURational`
 
-Whether the surface is rational in the U direction.
+Whether the weights vary along **V**, which is what OCCT calls U-rational.
 
 ```swift
 public var isURational: Bool
+```
+
+`Geom_BSplineSurface::IsURational()` is false when, for each **row** of the weight matrix, all the
+weights are identical. A row is one U index across every V (rows run `1...nbUPoles`, columns
+`1...nbVPoles`), so the flag is false exactly when the weights do not change as V advances.
+Each flag names the axis **opposite** the one a reader supplies, and that is faithful to
+OCCT rather than a wrapper defect (#2976). A cylinder, cone, sphere or surface of revolution
+converted to this form carries its weights around U and constant weights along V, so it reads
+`isURational == false` and `isVRational == true`. Measured in
+`Scripts/repro/2976-surface-rational-axes/`.
+
+```swift
+let cylinder = Surface.cylinder(origin: .zero, axis: SIMD3(0, 0, 1), radius: 5)!
+let bspline = cylinder.trimmed(u1: 0, u2: 2 * .pi, v1: 0, v2: 10)!.toBSpline()!
+#expect(bspline.bsplineSurface.isURational == false)
+#expect(bspline.bsplineSurface.isVRational == true)
 ```
 
 - **OCCT:** `Geom_BSplineSurface::IsURational`.
@@ -673,10 +689,22 @@ public var isURational: Bool
 
 ### `Surface.BSpline.isVRational`
 
-Whether the surface is rational in the V direction.
+Whether the weights vary along **U**, which is what OCCT calls V-rational.
 
 ```swift
 public var isVRational: Bool
+```
+
+False when every **column** of the weight matrix is constant, a column being one V index across
+every U. `exchangeUV()` transposes the matrix, so it swaps this pair; see
+`Surface.BSpline.isURational` above for the convention and the cylinder that shows it.
+
+```swift
+let cylinder = Surface.cylinder(origin: .zero, axis: SIMD3(0, 0, 1), radius: 5)!
+let bspline = cylinder.trimmed(u1: 0, u2: 2 * .pi, v1: 0, v2: 10)!.toBSpline()!
+#expect(bspline.bsplineSurface.isVRational == true)
+bspline.bsplineSurface.exchangeUV()
+#expect(bspline.bsplineSurface.isVRational == false)
 ```
 
 - **OCCT:** `Geom_BSplineSurface::IsVRational`.

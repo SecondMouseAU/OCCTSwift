@@ -50,6 +50,11 @@ Three failure modes disappear with it:
 
 One build serves every switch, gated at runtime by an environment variable.
 
+**It does not work where the test calls the C symbol itself.** A test file carrying both
+`@testable import OCCTSwift` and `import OCCTBridge` sees the shadow and the import as equally
+visible, and the compiler refuses with `ambiguous use of`. Those switches go in as a one-line
+splice at an anchor whose uniqueness you have verified, as below.
+
 ## Resolve every anchor uniquely before the first build
 
 Where you do edit source by pattern, assert the pattern is unique **before** compiling anything.
@@ -89,6 +94,11 @@ harness cannot be mistaken for a passing one.
 * **`swift test --filter` is a regex over the whole test ID across every target.** A bare `degree`
   or `segment` matches other modules and runs far more than intended. Anchor it:
   `OCCTGeom2dTests\.<Suite>/<func>`.
+* **Swift Testing colours the failure glyph, and the reset sits between the glyph and the word.**
+  The line is `\x1b[91m✘\x1b[0m Test name() failed`, so a pattern anchored on `✘\s+Test` matches
+  nothing at all. One sweep's first scraper **read all eleven of its reds as green** on exactly
+  that. Strip ANSI before matching, every time. This is the worst of the three because it fails in
+  the reassuring direction and the run itself looks normal.
 
 ## A result that is not a result
 
@@ -99,6 +109,21 @@ does not.
 **A pipe hides the exit status.** `Scripts/tsan-stress.sh swift | tail -40` reports `$?` from
 `tail`, so a gate exiting 66 on a race is indistinguishable from one exiting 0. Redirect to a file
 and read the status separately, or use `set -o pipefail`.
+
+## Run the switches against the old version too
+
+The sweep's usual job is to prove the new tests have teeth. Running the **same** switches against
+the version you replaced measures something the census cannot: what the change actually bought.
+
+Batch 10's BndLib lift reported it, and the two numbers are not close. Against `main`'s versions,
+**14 of 19 switches reddened nothing and 17 of 21 tests caught nothing**. After the lift, zero and
+zero. One switch was the exact defect its own issue described in its own words, and `main` was
+silent on it.
+
+The census delta for the same batch was **three SEVERE**, which understates it by an order of
+magnitude, for the reasons under "a gain is a candidate" and in #2985. So where a batch's value is
+in question, the counterfactual is the honest measure and it costs one extra run of a harness you
+have already built. Report both.
 
 ## Measure both sides at the same instant
 
@@ -115,6 +140,18 @@ the rebase rather than carrying it across.
 The same applies to a figure handed to you in a brief. Three batches in one day were given a
 repo-wide SEVERE number that had already moved; every one of them re-measured and said so, which
 is the behaviour to copy. **Re-measure, do not quote.**
+
+## A rebase can leave the module stale, and `swift build` will not fix it
+
+After a rebase, `check-doc-snippets.py` refuses with `module ... OLDER than the newest module
+input`, and rebuilding does not clear it. The build system is content-hashed, so a source whose
+content the rebase did not change but whose mtime it bumped leaves the module's own mtime behind,
+and nothing rebuilds.
+
+    rm -rf .build/out/Products/Debug/OCCTSwift.swiftmodule && swift build
+
+With an ambient `OCCTSWIFT_BRIDGE_PREBUILT=1` this is guaranteed on any rebase that touches a
+bridge `.mm`.
 
 ## Restore with git, never by reverse-replacement
 

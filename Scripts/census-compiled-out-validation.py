@@ -51,22 +51,11 @@ Four channels, and #2858 added the last two plus the depth qualifier:
          through a constructor overload the bridge never calls, and one whose swallowed condition
          the bridge's only call site satisfies by construction.
 
-WHAT IS STILL DARK, so nobody reads a clean run as an all-clear (#2858):
-
-  * **Channel one's verdict is class-level**, so a class with an inline check on ANY member reads
-    as protected even where the member actually called has its check in the `.cxx`. The bias is
-    deliberate and it is the reason a clean channel-one run is weaker evidence than a finding.
-  * **The map's `members` column is access-blind.** It nominates `private` members no caller can
-    reach (`GeomAdaptor_Curve::LocalContinuity`), and it aggregates every exception on a class into
-    one row, so channel three's member set includes members guarded by something else.
-  * **`inline-raise` does not mean live.** It means live in whichever unit expands it. The
-    `inline-dead-at-depth` kind counts the OCCT out-of-line units that name each inline-checked
-    class, which is where the same check is compiled out; `gp_Dir` is named by 602 of them.
-  * **Neither of the two P1s the sweep found is visible as a finding.** #2840 faults in
-    `NCollection_Sequence::Value` and #2855 writes out of bounds in `NCollection_Array1`, in each
-    case inside somebody else's `.cxx`, and the class the bridge names reads as protected.
-  * **A value the KERNEL fabricates is not this script's subject at all**, nor
-    `census-unmeasured-values.py`'s: see that script's sub-kind 5 and #2844.
+WHAT IS STILL DARK, so nobody reads a clean run as an all-clear (#2858), is the `DARK` list below
+rather than a paragraph here. It moved there in #2946 and the move is the point: a docstring is read
+by whoever opens the script, and the person who needs this is whoever reads the run. Every bare run
+now prints it, and a `--self-test` case holds the list to the categories that have been measured
+dark, so dropping one is a red check rather than a quieter report.
 
 Modes, and only the bare run works without an OCCT source tree:
 
@@ -90,6 +79,8 @@ Run from anywhere; paths resolve from __file__.
 import argparse
 import glob
 import importlib.util
+import inspect
+import io
 import os
 import re
 import shutil
@@ -101,6 +92,61 @@ SCRIPTS = os.path.join(REPO, "Scripts")
 SRC = os.path.join(REPO, "Sources", "OCCTBridge", "src")
 TABLE = os.path.join(SCRIPTS, "occt-raise-if-map.txt")
 DEFAULT_OCCT_SRC = os.path.join(REPO, "Libraries", "occt-src")
+
+# ---------------------------------------------------------------------------
+# what this census cannot see, printed on every bare run (#2946)
+# ---------------------------------------------------------------------------
+#
+# A census that silently cannot reach a category reads as coverage of its whole subject and is
+# coverage of part of it. That is the argument #2934 settled for the probe harness, and #2946 is
+# the same argument here: this script's name promises "what the compiled-out validation costs us"
+# and it measures one of the two ways it costs us.
+#
+# Each entry is (key, headline, detail). The key is what the self-test holds the list to, so a
+# category cannot be dropped from the output without a red check. Keep them one paragraph each:
+# this prints into a CI log, and a page nobody reads is the state it is replacing.
+
+DARK = [
+    ("fault-before-catch",
+     "A compiled-out check whose absence FAULTS before any catch runs",
+     "Every channel here ends at a bridge `catch` or an accessor read, and asks what a swallowed "
+     "value costs. Where the absent check means the kernel dereferences something that is not "
+     "there, there is no value and no catch, only a fault, and `OCC_CATCH_SIGNALS` is inert in "
+     "bridge code so it is uncatchable in-process. The worked examples are the four TNaming "
+     "lookups PR #2945 found taking the process down on a document with no naming recorded, "
+     "guarded there with `TNaming_Tool::HasLabel`. It is not derivable from the map, measured "
+     "three ways: the map is keyed on the FILE STEM, so `TNaming_Tool::Label`'s raise is filed "
+     "under `TNaming_NamedShape` and there is no `TNaming_Tool` row at all; two of the four are "
+     "not a compiled-out check in the first place but `TNaming_SameShapeIterator`'s uninitialised "
+     "`myNode`, an upstream defect with no raise site anywhere; and whether an absence faults or "
+     "merely returns a wrong value is what the kernel does several frames later, which no map of "
+     "raise sites records. A probe answers it and text does not, so the route is the Known OCCT "
+     "Bugs one: measure it under `Scripts/repro/`, write the row, add a bridge predicate, guard "
+     "every site, and keep it with a regression test. See #2946."),
+    ("channel-one-is-class-level",
+     "Channel one's verdict is class-level",
+     "A class with an inline check on ANY member reads as protected even where the member "
+     "actually called has its check in the `.cxx`. The bias is deliberate, and it is the reason a "
+     "clean channel-one run is weaker evidence than a channel-one finding."),
+    ("members-column-is-access-blind",
+     "The map's `members` column is access-blind",
+     "It nominates `private` members no caller can reach (`GeomAdaptor_Curve::LocalContinuity`), "
+     "and it aggregates every exception on a class into one row, so channel three's member set "
+     "includes members guarded by something else."),
+    ("inline-raise-is-not-live",
+     "`inline-raise` does not mean live",
+     "It means live in whichever unit expands it. The `inline-dead-at-depth` kind counts the OCCT "
+     "out-of-line units that name each inline-checked class, which is where the same check is "
+     "compiled out; `gp_Dir` is named by 602 of them."),
+    ("the-sweep-p1s-are-not-findings",
+     "Neither of the two P1s the #2801 sweep found is visible as a finding",
+     "#2840 faults in `NCollection_Sequence::Value` and #2855 writes out of bounds in "
+     "`NCollection_Array1`, in each case inside somebody else's `.cxx`, and the class the bridge "
+     "names reads as protected."),
+    ("kernel-fabricated-values",
+     "A value the KERNEL fabricates is not this script's subject at all",
+     "Nor `census-unmeasured-values.py`'s scan: see that script's sub-kind 5 and #2844."),
+]
 
 # ---------------------------------------------------------------------------
 # shared bridge parsing, borrowed rather than copied
@@ -1443,7 +1489,23 @@ def run(verbose=False):
           "chain. What it must not be is the only thing standing between a caller's bad number and "
           "a value that reads as a measurement. See okf/policies/"
           "occt-validation-is-compiled-out.md.")
+    print_dark()
     return 0
+
+
+def print_dark():
+    """The categories this census is known to be unable to reach, on every run (#2946).
+
+    Printed rather than left in the docstring, because the reader who needs it is the one reading
+    the run. A clean report over a subject with a hole in it is the shape okf/policies/
+    static-gates.md opens on: blind and clean look identical from the outside unless the detector
+    says which is which.
+    """
+    print("\nWHAT THIS CENSUS CANNOT SEE, so a clean report above is not an all-clear. %d "
+          "category(ies), each measured rather than supposed:" % len(DARK))
+    for key, headline, detail in DARK:
+        print("\n  [%s] %s." % (key, headline))
+        print("      %s" % detail)
 
 
 # ---------------------------------------------------------------------------
@@ -2060,6 +2122,52 @@ def self_test():
              and set(live["patches"]) == set(INVENTORY.carried_patch_digests()),
              "stamped=%d on-disk=%d" % (len(live["patches"]) if live else -1,
                                         len(INVENTORY.carried_patch_digests())))
+
+    # #2946. The dark list is the one part of this script that reports nothing and so can never
+    # fail on its own: dropping an entry makes the report shorter and greener, which is exactly
+    # the direction nobody notices. CI runs only this self-test for a census, so the list has to
+    # be held here or it is held nowhere.
+    keys = [key for key, _headline, _detail in DARK]
+    case("every-measured-dark-category-is-still-listed",
+         set(keys) >= {"fault-before-catch", "channel-one-is-class-level",
+                       "members-column-is-access-blind", "inline-raise-is-not-live",
+                       "the-sweep-p1s-are-not-findings", "kernel-fabricated-values"},
+         str(sorted(keys)))
+    case("no-dark-category-is-listed-twice", len(keys) == len(set(keys)), str(sorted(keys)))
+    # Each entry has to carry an argument, not only a title. An entry reduced to its headline
+    # reads as a limitation somebody noted and nobody measured, which is the state #2946 closed.
+    case("every-dark-category-carries-its-measurement",
+         all(len(detail) >= 80 and headline and key for key, headline, detail in DARK),
+         str([key for key, _h, detail in DARK if len(detail) < 80]))
+    # ...and the fault-before-catch entry has to keep naming what DOES cover the category, since
+    # "this census cannot see it" is only half an answer.
+    # .get rather than [], so dropping the entry reports a named FAIL on this case and on
+    # the roster case above, rather than a traceback that says nothing about which category
+    # went missing.
+    fault = dict((key, detail) for key, _headline, detail in DARK).get("fault-before-catch", "")
+    case("fault-before-catch-names-what-covers-it-instead",
+         "Scripts/repro/" in fault and "#2946" in fault and "#2945" in fault, fault[:120])
+    # The printer has to actually print them. A list nothing reads is the docstring it replaced.
+    buffer = io.StringIO()
+    stdout = sys.stdout
+    try:
+        sys.stdout = buffer
+        print_dark()
+    finally:
+        sys.stdout = stdout
+    printed = buffer.getvalue()
+    case("a-run-prints-every-dark-category",
+         all(key in printed for key in keys) and "CANNOT SEE" in printed,
+         "%d chars, %d/%d keys" % (len(printed), sum(1 for k in keys if k in printed), len(keys)))
+    # ...and the report has to CALL it. The case above proves the printer works, which is a
+    # different claim from the report using it, and deleting the one call site was measured to
+    # leave this battery green while the run went silent. Read off `run`'s own source rather than
+    # from a restatement of it; the residual blind spot is a call the source holds and control
+    # flow never reaches, which no cheap check can see and which a 2.5 s end-to-end run in this
+    # battery would double the script's CI cost to close.
+    case("the-report-calls-the-dark-printer",
+         "print_dark()" in inspect.getsource(run),
+         "print_dark() in run(): %s" % ("print_dark()" in inspect.getsource(run)))
 
     failed = [c for c in cases if not c[1]]
     for name, ok, detail in cases:

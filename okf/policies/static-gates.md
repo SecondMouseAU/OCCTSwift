@@ -16,12 +16,70 @@ every number about the list is written down.
 
 ## How many there are
 
-Sixteen gates, seven censuses and one merge-history audit run in `ci.yml`'s `gate-scripts` job,
+Seventeen gates, seven censuses and one merge-history audit run in `ci.yml`'s `gate-scripts` job,
 beside the release check that "The fourth kind" below counts apart from them. Every one of those
 numbers is derived from the job rather than kept by hand:
 `Scripts/check-inventory-prose.py` reads this sentence against `ci.yml` on every PR and fails when
 the two disagree, and `Scripts/repro/819-gate-coverage-audit/gate_coverage.py --check` reads the
 same sentence from the other direction, reporting the release check beside it.
+
+## A frozen number says when
+
+A counted claim in prose is one of two things, and the sentence has to say which.
+
+A **live** claim describes the repository as it is now. It is only safe where a script re-derives
+it and fails when the two disagree, which is what every entry in `check-inventory-prose.py`'s
+`CLAIMS` table is. Written without that, it is a number whose only update path is somebody
+noticing, and the repository has watched that fail at the patch count, the gate count, the bridge
+file count and the enforced-style population.
+
+A **frozen** claim is a measurement, and a measurement has a date. "The pinned asset holds
+thirty-one patches" and "the `v4.0.0-kernel.1` asset held thirty-one patches" are the same number
+about the same thing, and only the second stays true. The model sentence is in
+[code-style](code-style.md): *"That 272 is a frozen measurement of 2026-09-30 and is deliberately
+written as one."* Past tense, or a date, or both. A frozen claim also names the command that
+re-derives it, so a reader who needs today's figure does not have to find one.
+
+So, for any number about this repository: **gate it, date it, or delete it.** Prefer deleting. Most
+counted clauses carry no information the universal quantifier does not: "guarded at all 20
+construction sites" and "guarded at every construction site" tell a bridge author the same thing,
+and only one of them goes stale when the twenty-first is added. The count is worth keeping where it
+is evidence rather than instruction, which is why "36 of the 57 entry points crash uncatchably" is
+written down in [null-handle-guards](null-handle-guards.md) and no longer in `CLAUDE.md` (#2959).
+
+And **no counted claim about the repository belongs in `CLAUDE.md`** at all (#2954, #2959), gated
+or not. That page is loaded into every session in every branch, so a correct edit to the thing
+counted reds every other open PR at merge time. The count goes on the `okf/` page that owns the
+subject, and `CLAUDE.md` links to it.
+
+## The detectors outside `gate-scripts`
+
+Two detectors gate on every PR from another job, so no count on this page includes them:
+`check-doc-snippets.py` in `swift build + test (macOS)` (see "The one gate outside `gate-scripts`"
+below) and `check-swift-format.py` in `code-style.yml`. Their populations are recorded here rather
+than in `CLAUDE.md`, and each is a frozen measurement, read under the rule above.
+
+**The doc-snippet corpus**, one frozen measurement of **2026-10-02**, from a full
+`python3 Scripts/check-doc-snippets.py --require-typecheck` run on the PR for #2976: 8,325 fenced
+```swift``` blocks in `docs/` and `///` comments, of which 5,101 are signature restatements the
+gate skips (a bodiless `func` is uncompilable anywhere), 3,216 are snippets it type-checks, and 8
+carry a `no-typecheck:` exemption. Of the snippets, 1,770 compile and 1,446 are fragments opening
+mid-flow with a receiver the prose introduced. Those same 1,770 are linked into the one executable
+the `--run` stage executes, because a link each measured over two hours; 1,764 ran clean and six
+threw, all of them documented examples reading a `/tmp` path the repo does not ship. `--list` is
+the cheap re-derivation of the first four figures and a full run gives the rest.
+
+The shape of the split is the load-bearing part and it is stable: the restatements outnumber the
+snippets, which is why a label-matching regex over the whole corpus was the wrong instrument
+(#1675).
+
+**The swift-format population**, a frozen measurement of **2026-09-30** (PR for #2852, `de18a98f`):
+the four lines of shell it replaced walked `find Sources/OCCTSwift` and reached **230** of the
+repo's **1,730** tracked Swift files. The population is now `git ls-files '*.swift'` minus the two
+exemption manifests; `git ls-files '*.swift' | wc -l` is today's denominator and
+`python3 Scripts/check-swift-format.py --list` is the accounting. How many files remain on
+`Scripts/style-manifest-swift-wave2.txt` is deliberately written down nowhere, for the reason
+`CLAUDE.md`'s "Swift Format Lint" section gives.
 
 ## Gates versus censuses
 
@@ -109,6 +167,21 @@ The seven censuses today and what each is for:
   first version reported 89 findings that were an artefact of reusing a gate's regex for a census's
   question.
 
+  **#2946 is the limitation it now states out loud, and the decision is the transferable part.**
+  Every channel ends at a `catch`, so the census cannot see a compiled-out check whose absence
+  faults before any `catch` runs, which is the expensive half, since `OCC_CATCH_SIGNALS` is inert
+  in bridge code. It is not fixable as a derived channel: the map is keyed on the file stem rather
+  than the class, two of the four worked examples are an uninitialised member with no raise site
+  anywhere, and whether an absence faults rather than returning a wrong value is what the kernel
+  does frames later, which no derivation over raise sites records. So the limitation is **recorded
+  where it is read**: the `DARK` constant in the script, printed at the end of every bare run and
+  held by a `--self-test` case, since a census's self-test is the only thing CI runs. The general
+  rule it instances: **a detector that cannot reach a category of its own subject owes that
+  category in its output, not in its docstring**, and a case holding the list, because dropping an
+  entry otherwise makes the report shorter and greener. The same argument #2934 settled for the
+  probe harness. Where the category goes instead is in
+  [occt-validation-is-compiled-out](occt-validation-is-compiled-out.md).
+
   **#2858 widened it from two channels to four and added a kind to the map**, and the calibration
   is the part to copy. Channel three (a caller-controlled index handed to a member whose bound
   test is an out-of-line macro) was written after PR #2870 fixed ten such sites, so it could be
@@ -155,6 +228,29 @@ The seven censuses today and what each is for:
   and a standalone script for one artefact would be disproportionate. The patch **count** in the
   stamp is a CLAIMS row like every other counted claim; the per-patch digests are what catch a
   patch revised in place, which no count can see.
+
+**One gate holds the bridge to the kernel's protocol rather than to a convention of this repo.**
+`check-transient-release-idiom.py` (#2974) reads every function in `Sources/OCCTBridge/src/*.mm`
+that calls `DecrementRefCounter`, three today, and requires each to be
+`opencascade::handle::EndScope` (`Standard_Handle.hxx:389-394`) written out by hand: destroy on the
+value the decrement returned, and call the virtual `Delete()`. Two releases wrote a discarded
+decrement, a separate relaxed `GetRefCount()` re-read and a bare `delete` instead, which is a race
+window three ways over and a bypassed virtual, and that divergence stood from the day those
+functions were written, survived review, and survived the PR that was specifically about their
+correctness (PR #2969). Three things about it are the general shape rather than this gate's detail.
+
+- **It gates on its first day**, on the rule below: the backlog was zero once #2969 landed, and the
+  subject is a use-after-free rather than a list to adjudicate.
+- **Its third rule is only usable because it is scoped.** A bare `delete` is correct code in most
+  of this tree, since the bridge `new`s its own opaque handle structs; keyed on the functions that
+  also call `DecrementRefCounter`, the same rule has a population of three. The rule is not "do not
+  write `delete`", it is "do not write `delete` where the kernel writes `Delete()`".
+- **A population of zero is a refusal and not a clean run.** If the last raw `Standard_Transient`
+  release goes, the gate examined nothing, and nothing in a green check distinguishes that from a
+  clean tree, so it exits 2 and says which of the two to check. Its deliberate divergence
+  (`OCCTTObjApplicationRelease`, whose singleton must never destroy on a zero count) carries
+  `transient-release-exempt: <reason>` in the comment beside it, with the reason required on
+  `check-doc-snippets.py`'s precedent.
 
 Three gates read `Scripts/patches/` and `Scripts/patches-wasi/` rather than `Sources/`, and all
 three for the same reason: `check-patch-deletes-guarded-symbol.py` (#2058), which fails when a
@@ -473,7 +569,7 @@ build was on disk.
 
 ## Every detector proves it is not blind
 
-Fifteen of the sixteen gates, all seven censuses, the merge-history audit and the release check
+Sixteen of the seventeen gates, all seven censuses, the merge-history audit and the release check
 take `--self-test`, a fixture battery proving the *detector* catches each failure mode. Run it
 whenever you change one of these scripts. Three gate scripts were confidently wrong while
 reporting all clear (#618, #624/#630, #626), and a detector reporting "all clear" because it is
@@ -583,7 +679,7 @@ change to the ruleset.
 
 ## The pre-commit hook
 
-`Scripts/git-hooks/pre-commit` runs forty of `gate-scripts`' forty-one invocations, flag for
+`Scripts/git-hooks/pre-commit` runs forty-two of `gate-scripts`' forty-three invocations, flag for
 flag. The one it omits is `check-changelog-transcription.py`'s real run, which answers a question
 about the branch rather than about the commit being made; its `--self-test` does run. That is the
 only deliberate divergence, and it is written here because an undocumented difference between the

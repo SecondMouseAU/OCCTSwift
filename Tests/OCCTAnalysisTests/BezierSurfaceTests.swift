@@ -55,6 +55,34 @@ struct BezierSurfaceTests {
         }
     }
 
+    /// Which parametric axis each rationality flag actually reports on (#2976).
+    ///
+    /// `Geom_BezierSurface::IsURational()` is false when every ROW of the weight matrix is
+    /// constant, a row being one U index across every V, so the flag is true exactly when the
+    /// weights change as V advances. Each flag therefore names the axis opposite the one a reader
+    /// supplies, and `Geom_BezierSurface.hxx` is no help: its prose says "identical in the U
+    /// direction" while its example matrix is the BSpline page's, whose ROWS are the constant
+    /// ones. The example is the behaviour, measured in
+    /// `Scripts/repro/2976-surface-rational-axes/` and pinned here so the documented sentence
+    /// has a test under it. Do not "correct" this pair.
+    @Test func rationalFlagsReportTheOppositeAxis() throws {
+        let varyingAlongU = try #require(makeBezierSurface()).bezierProperties
+        // One weight per U row, each row constant: the weights vary with U, not with V.
+        for v in 1...varyingAlongU.nbVPoles {
+            varyingAlongU.setWeight(uIndex: 2, vIndex: v, weight: 0.5)
+        }
+        #expect(varyingAlongU.isURational == false)
+        #expect(varyingAlongU.isVRational == true)
+
+        let varyingAlongV = try #require(makeBezierSurface()).bezierProperties
+        // The transpose: one weight per V column, each column constant.
+        for u in 1...varyingAlongV.nbUPoles {
+            varyingAlongV.setWeight(uIndex: u, vIndex: 2, weight: 0.5)
+        }
+        #expect(varyingAlongV.isURational == true)
+        #expect(varyingAlongV.isVRational == false)
+    }
+
     @Test func exchangeUV() {
         if let surf = makeBezierSurface() {
             let bp = surf.bezierProperties

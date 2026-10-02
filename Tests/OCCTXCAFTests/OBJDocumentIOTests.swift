@@ -28,11 +28,15 @@ struct OBJDocumentIOTests {
             #expect(shapes.count == 2)
             // The mesh carries the box's own extents, so a load that dropped
             // the geometry and kept the label structure cannot pass.
-            if let bb = shapes.first?.boundingBox {
-                #expect(abs((bb.max.x - bb.min.x) - 10) < 1e-3)
-                #expect(abs((bb.max.y - bb.min.y) - 20) < 1e-3)
-                #expect(abs((bb.max.z - bb.min.z) - 30) < 1e-3)
-            }
+            //
+            // `try #require` rather than `if let`: `boundingBox` is nil exactly
+            // when the box is void, which is what an empty shape gives, so an
+            // `if let` here skipped all three extents on precisely the load
+            // this assertion exists to catch (#2803).
+            let bb = try #require(shapes.first?.boundingBox)
+            #expect(abs((bb.max.x - bb.min.x) - 10) < 1e-3)
+            #expect(abs((bb.max.y - bb.min.y) - 20) < 1e-3)
+            #expect(abs((bb.max.z - bb.min.z) - 30) < 1e-3)
         }
         try? FileManager.default.removeItem(atPath: tmpPath)
     }
@@ -154,13 +158,17 @@ struct OBJDocumentIOTests {
             // extents, 10 x 20 x 30 becoming 10 x 30 x 20. Measured both ways,
             // outputCS: .zUp leaves 10 x 20 x 30, so the assertion separates
             // the two settings rather than merely proving the file parsed.
+            //
+            // `try #require` rather than `if let`: these three extents are the
+            // only thing in this test that observes the conversion at all, and
+            // a nil `boundingBox` from an empty shape made every one of them
+            // skippable (#2803).
             let shapes = doc.allShapes()
             #expect(shapes.count == 2)
-            if let bb = shapes.first?.boundingBox {
-                #expect(abs((bb.max.x - bb.min.x) - 10) < 1e-3)
-                #expect(abs((bb.max.y - bb.min.y) - 30) < 1e-3)
-                #expect(abs((bb.max.z - bb.min.z) - 20) < 1e-3)
-            }
+            let bb = try #require(shapes.first?.boundingBox)
+            #expect(abs((bb.max.x - bb.min.x) - 10) < 1e-3)
+            #expect(abs((bb.max.y - bb.min.y) - 30) < 1e-3)
+            #expect(abs((bb.max.z - bb.min.z) - 20) < 1e-3)
         }
         try? FileManager.default.removeItem(atPath: tmpPath)
     }
