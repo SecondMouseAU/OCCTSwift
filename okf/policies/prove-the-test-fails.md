@@ -111,6 +111,53 @@ than a count, and every fallible fixture factory needs to throw rather than fall
 A `?? input` fallback and an `if let` append are the two shapes to look for; both read as defensive
 and both are the defect.
 
+## A setup step is required, not escaped
+
+`guard let x = ... else { return }` and a bare `if let x = x { ... }` wrapped around a test's body
+are production shapes, and in a test each one is an escape: Swift Testing records a **pass** for a
+function that executed no expectation at all. A test built that way is falsifiable against the one
+thing it names and unfalsifiable against everything upstream of it.
+
+`try #require` is the same one-liner and turns each escape into a failure that names itself. It is
+also what `CLAUDE.md`'s "never force-unwrap in `#expect`" asks for: that rule is against `result!`
+reaching a non-short-circuiting `#expect`, not against requiring the value.
+
+Measured, in `Tests/OCCTXCAFTests/ShapeToolCompletionsTests.swift` (#2794, fixed in PR #2800). All
+nine tests in the suite opened with the same three-deep chain:
+
+```swift
+guard let doc = Document.create() else { return }           // passes silently
+if let box = Shape.box(width: 10, height: 10, depth: 10) {  // passes silently
+    let labelId = doc.addShape(box)
+    if labelId >= 0 {                                       // passes silently
+        #expect(doc.shapeToolIsFree(labelId: labelId))
+```
+
+A `Document.create()` that starts returning nil, a `Shape.box` that starts returning nil, or an
+`addShape` that starts returning `-1` makes all nine pass having executed nothing, with no
+diagnostic anywhere. The record certifying them was accurate in every column and could not see
+this, because every injection in it substituted a wrong **return value** in the bridge function
+under test, which leaves the chain intact. So every row was a real expectation failure at a named
+line, and not one of them asked whether the expectation was reachable at all.
+
+Two shapes to reject on sight, in review as well as in authoring:
+
+- **A setup step a test escapes rather than requires.** Each escape becomes a `try #require` with a
+  message saying what was not there.
+- **A test whose only failure mode is a crash.** A subject returning `void` is asserted on the
+  state afterwards. Where there is genuinely nothing observable, the test says what was looked for
+  and why it is not there, rather than "just check it doesn't crash".
+
+An escape also hides the missing control. Six of those nine subjects assert `false` or `0`, and
+`false` and `0` are what the same bridge functions return for a label they cannot resolve, so the
+suite needed `findShape(box) == labelId` as independent proof that the label exists and holds the
+box before any of its negative assertions meant anything.
+
+`Scripts/census-766-weak-assertions.py` reports the shape, as SEVERE and ESCAPABLE counts over a
+file list. It is a census and not a gate because every shape it reads is sometimes correct, and it
+has four known blind spots (#2964, #2982, #2985, and a nil-skip whose `else` records nothing), so
+a clean count is a reading order rather than a verdict.
+
 ## How to apply
 
 For a test: break the code it covers, run it, see red, restore, see green.
