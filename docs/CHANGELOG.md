@@ -21,6 +21,23 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### Mesh and Misc tests pin measured values instead of `!= nil` (#766)
+
+- `Tests/OCCTMeshTests/OCCTMeshTests.swift` and `Tests/OCCTMiscTests/OCCTMiscTests.swift` lifted
+  off `v5.0.0-766-execution` (source PRs #2455, #2438, #2418, #2343 and #2397, all merged into that
+  branch). 77 test functions now pin the value the kernel gives rather than accepting any non-nil
+  result: mesh and triangulation counts, `BRepGProp_MeshProps` masses, `Poly_*` accessors and
+  mutators, `BRepGraph`'s two mesh tiers, `GeomAPI_Interpolate`'s tangents and parameters, the
+  ISO 5457 sheet entity counts, and the `SheetMetal` `BuildError` cases. Taken together the two
+  files fall from 46 tests that pin nothing to 7.
+- `Scripts/repro/766-mesh-core-{1,2,3,4}` and `Scripts/repro/766-misc-*`, seven ground-truth probes
+  with their transcripts, each recompiled against the pinned kernel and reproducing byte for byte.
+- Not taken: the branch's three `withKnownIssue` "Mesh boolean" tests, which `main` had already
+  replaced with the stronger `Issue2301MeshBooleanContractTests`.
+- Eight `SheetMetal` volume pins are regression pins rather than derived answers, and say so;
+  see #2972.
+- `Tests/OCCTMiscTests/OCCTMiscTests.swift` is off `Scripts/style-manifest-swift-wave2.txt`.
+
 ### Geom2d 2D curve tests: 56 blind assertions replaced with pinned kernel values (#766)
 
 Six `Tests/OCCTGeom2dTests/` files lifted off `v5.0.0-766-execution` by content, from the merged

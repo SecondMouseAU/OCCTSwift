@@ -16,5 +16,9 @@ timestamp: 2026-09-07
 - [**Carried OCCT source patches**](carried-occt-patches.md), upstream-bound OCCT fixes we build
   into the xcframework until they ship in an OCCT release, one row per patch, plus which of them the
   pinned release asset does not yet hold.
+- [**Injection sweep mechanics**](injection-sweep-mechanics.md), how to run a
+  prove-the-test-fails sweep cheaply and without a false clean: run the built `.xctest` directly
+  rather than `swift test`, inject by shadowing the bridge import, and the scrapers and exit codes
+  that read a pass where there was none.
 - [**Known OCCT bugs**](known-occt-bugs.md), every kernel defect this project has root-caused, one
   row per defect, keyed by issue rather than by patch, with where the writeup lives.

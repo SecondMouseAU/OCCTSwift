@@ -122,6 +122,13 @@ needs rewriting, not celebrating.
 Report the matrix. A table of "guard removed" against "cases correct" is short, and it is the
 difference between a reviewer trusting the suite and taking your word for it.
 
+**For a sweep of any size, read
+[Injection sweep mechanics](../references/injection-sweep-mechanics.md) first.** It is how to run
+one cheaply (the built `.xctest` through `swiftpm-testing-helper` is 0.5 s against `swift test`'s
+1.5 to 5 minutes under load) and how to stop it lying to you: inject by shadowing the bridge
+import rather than editing a `.mm`, resolve every anchor uniquely before the first build, and
+assert the switch set against the test set in both directions.
+
 ## Related
 
 - [Measure, do not assume, and verify with a second construction](measure-dont-assume.md). That is

@@ -145,7 +145,6 @@ Tests/OCCTMeshTests/Issue2301MeshBooleanContractTests.swift
 Tests/OCCTMeshTests/Issue375MeshWindingTests.swift
 Tests/OCCTMeshTests/Issue613MeshIndexContractTests.swift
 Tests/OCCTMiscTests/Issue1009Matrix12GroupedTests.swift
-Tests/OCCTMiscTests/OCCTMiscTests.swift
 Tests/OCCTModelingTests/BRepFeatBuilderTests.swift
 Tests/OCCTModelingTests/BooleanTestFixtures.swift
 Tests/OCCTModelingTests/FilletTestFixtures.swift
