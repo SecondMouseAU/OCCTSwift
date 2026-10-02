@@ -1084,7 +1084,12 @@ struct StressWireAnalyzerLifecycleTests {
         let face = try #require(faces.first)
         let wire = try #require(sectionWires.first)
         let analyzer = try #require(WireAnalyzer(wire: wire, face: face))
-        analyzer.perform()
+        // #2983: the Bool `perform()` answers was dropped here and in the two controls below.
+        // Perform ORs eight checks, and CheckEdgeCurves reports DONE for every wire this test builds,
+        // the clean ones and the defective ones alike (Scripts/repro/2983-stress/probe.mm, "Perform"),
+        // so what `true` pins is that the bridge reaches Perform: a stub that answered false fails
+        // here. It does not say a wire is clean, which is what the per-check answers are for.
+        #expect(analyzer.perform())
         // A clean closed loop reports no order, self-intersection, closure or gap problem (all
         // five were read into `_` before).
         #expect(!analyzer.checkOrder())
@@ -1105,7 +1110,7 @@ struct StressWireAnalyzerLifecycleTests {
         let bowtie = try #require(
             Wire.polygon3D([SIMD3(-5, -5, 0), SIMD3(5, 5, 0), SIMD3(5, -5, 0), SIMD3(-5, 5, 0)]))
         let crossing = try #require(WireAnalyzer(wire: bowtie, face: upFace))
-        crossing.perform()
+        #expect(crossing.perform())
         #expect(crossing.checkSelfIntersection())
         #expect(!crossing.checkGap3d(edgeNum: 1))
 
@@ -1114,7 +1119,7 @@ struct StressWireAnalyzerLifecycleTests {
         ]
         let openWire = try #require(Wire.polygon3D(corners, closed: false))
         let gapped = try #require(WireAnalyzer(wire: openWire, face: upFace))
-        gapped.perform()
+        #expect(gapped.perform())
         #expect(gapped.checkGap3d(edgeNum: 1))
         #expect(gapped.checkGap2d(edgeNum: 1))
         #expect(!gapped.checkSelfIntersection())

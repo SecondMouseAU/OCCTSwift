@@ -354,18 +354,37 @@ struct StressShapeTransformTests {
         #expect(abs(b.min.z - 25) < 1e-6)
     }
 
+    // An eighth turn puts the corners on the axes at 5·√2. #2983: a cube turned an eighth about +Z
+    // has the same max.x as one turned about +Y, and as one turned the other way, so the axis and the
+    // sense are pinned on a box that is off the axis and not a cube: a quarter turn about +Z sends
+    // (x, y, z) to (-y, x, z), so [2, 6] x [1, 4] x [3, 5] becomes [-4, -1] x [2, 6] x [3, 5].
     @Test func rotate() throws {
         let r = try #require(standardBox().rotated(axis: SIMD3(0, 0, 1), angle: .pi / 4))
         #expect(r.isValid)
-        // An eighth turn puts the corners on the axes at 5·√2.
         let b = try #require(r.bounds)
         #expect(abs(b.max.x - 5 * 2.0.squareRoot()) < 1e-6)
+
+        let offset = try #require(Shape.box(origin: SIMD3(2, 1, 3), width: 4, height: 3, depth: 2))
+        let quarter = try #require(offset.rotated(axis: SIMD3(0, 0, 1), angle: .pi / 2))
+        let q = try #require(quarter.bounds)
+        #expect(near(q.min, SIMD3(-4, 2, 3)))
+        #expect(near(q.max, SIMD3(-1, 6, 5)))
     }
 
+    // Doubling the 10-cube makes 8000. #2983: that cannot tell scaling about the origin, which is
+    // what `scaled(by:)` documents, from scaling about the shape's own centre, since the centred
+    // box is the same either way. The box [2, 6] x [1, 4] x [3, 5] doubled about the origin is
+    // [4, 12] x [2, 8] x [6, 10].
     @Test func scale() throws {
         let r = try #require(standardBox().scaled(by: 2.0))
         #expect(r.isValid)
         #expect(abs(try #require(r.volume) - 8000) < 1e-6)
+
+        let offset = try #require(Shape.box(origin: SIMD3(2, 1, 3), width: 4, height: 3, depth: 2))
+        let doubled = try #require(offset.scaled(by: 2.0))
+        let b = try #require(doubled.bounds)
+        #expect(near(b.min, SIMD3(4, 2, 6)))
+        #expect(near(b.max, SIMD3(12, 8, 10)))
     }
 
     // The centred box is its own mirror image across x = 0, so mirroring it measures nothing (the
