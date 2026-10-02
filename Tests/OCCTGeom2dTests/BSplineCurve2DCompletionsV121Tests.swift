@@ -117,5 +117,9 @@ struct BSplineCurve2DCompletionsV121Tests {
         let curve = try makeBSplineCurve2D()
         let r = curve.bsplineSetOrigin(index: 1)
         #expect(!r)
+        // #766: `!r` alone also holds for a bridge that mangles the curve and then reports
+        // failure, so the refusal pins that the curve is the one the helper built.
+        #expect(curve.bsplineMultiplicities == [4, 4])
+        #expect(simd_distance(curve.point(at: 0.5), SIMD2(5, 3.75)) < 1e-9)
     }
 }

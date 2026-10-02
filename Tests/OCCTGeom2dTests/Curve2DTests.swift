@@ -173,19 +173,17 @@ struct Curve2DTests {
     /// counts. `outXY` only holds `pointCount` pairs, so the surplus used to be written past its
     /// end; the surplus point is the curve's end parameter, so it is the last slot that keeps it.
     @Test("Uniform draw stays within the requested count on an overshooting ellipse")
-    func uniformDrawRespectsCount() {
-        guard let ellipse = Curve2D.ellipse(center: .zero, majorRadius: 1e6, minorRadius: 1e-3)
-        else {
-            Issue.record("could not build the high-aspect-ratio ellipse")
-            return
-        }
+    func uniformDrawRespectsCount() throws {
+        // #766: the surplus-point pin sat behind `if let last = points.last`, which a sampler
+        // returning nothing skips, and the count behind an `Issue.record` guard. Both are now
+        // `#require`, so an empty sample stops the case instead of passing it.
+        let ellipse = try #require(
+            Curve2D.ellipse(center: .zero, majorRadius: 1e6, minorRadius: 1e-3))
         let endPoint = ellipse.point(at: ellipse.domain.upperBound)
         for count in [4, 5, 8, 12, 14, 18, 20, 22, 25, 26, 31, 33, 34, 35, 39, 40] {
             let points = ellipse.drawUniform(pointCount: count)
-            #expect(points.count == count)
-            if let last = points.last {
-                #expect(distance(last, endPoint) < 1e-6)
-            }
+            try #require(points.count == count)
+            #expect(distance(points[count - 1], endPoint) < 1e-6)
         }
     }
 
@@ -219,10 +217,10 @@ struct Curve2DTests {
             startAngle: 0, endAngle: .pi)
         let a = try #require(arc)  // #1979: was `if let`
         let points = a.drawAdaptive()
-        #expect(points.count == 43)  // GCPnts_TangentialDeflection(0.1, 0.01)
-        if let first = points.first, let last = points.last {
-            #expect(simd_distance(first, SIMD2(10, 0)) < 1e-9)
-            #expect(simd_distance(last, SIMD2(-10, 0)) < 1e-9)
-        }
+        // #766: the lift wrote the two endpoint pins inside `if let points.first/.last`, which an
+        // empty sample skips, so the count is required rather than expected and the ends indexed.
+        try #require(points.count == 43)  // GCPnts_TangentialDeflection(0.1, 0.01)
+        #expect(simd_distance(points[0], SIMD2(10, 0)) < 1e-9)
+        #expect(simd_distance(points[42], SIMD2(-10, 0)) < 1e-9)
     }
 }
