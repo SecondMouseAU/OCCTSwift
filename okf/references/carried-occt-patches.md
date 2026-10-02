@@ -104,15 +104,17 @@ mistake the rest of this page is about.
 
 ### The xcframework
 
-`Scripts/patches/` holds thirty-two patches, of which the pinned asset carries thirty-one. **These
+`Scripts/patches/` holds thirty-four patches, of which the pinned asset carries thirty-one. **These
 are the counts `CLAUDE.md` used to restate and no longer does** (#2954); both are derived from
 `Scripts/patches/` and `Package.swift` by `check-inventory-prose.py`, which fails the PR that lets
-this page and the tree disagree. The v4.0.0-kernel.3 asset `Package.swift` pins lacks one of them,
+this page and the tree disagree. The v4.0.0-kernel.3 asset `Package.swift` pins lacks three of them,
 per [Pinned kernel patch check](../policies/pinned-kernel-patch-check.md):
 
 | Unpinned | What it leaves exposed |
 |---|---|
 | `0044-Extrema-ExtSS-ExtCS-Points-bound-against-point-sequence-2840` | Nothing reachable from Swift. `Extrema_ExtSS::Points` and `Extrema_ExtCS::Points` still fault on a parallel pair in the pinned kernel, and every bridge entry point that reads a point from either class gates on `IsParallel()` first, so the input never reaches them (#2831, #2840). The exposure is to a future bridge author who adds a point read without that gate, which is why `OCCTCurve3DDistanceToSurface` carries a comment saying so |
+| `0047-BRepMesh_IncrementalMesh-initParameters-refuses-NaN-2879-2900` | Nothing reachable from Swift. All five of `initParameters`' bounds tests are spelled `value < bound`, which NaN defeats, so a NaN linear deflection starts a tessellation that does not return and a NaN angle returns the coarsest mesh the linear rule alone accepts with `IsDone()` true (#2879, #2900). `occtValidMeshDeflection` and `occtValidMeshAngle` refuse both at every bridge site that takes a caller value, so the kernel never sees one from here. The exposure is to a future bridge author who constructs a `BRepMesh_IncrementalMesh` without either guard, which is why `check-null-handle-guards.py`'s siblings and the two helpers' doc comments say so. **Keep both guards at the repin**, the same `0042` and `0044` exception |
+| `0048-BRepGProp-by-plane-offset-sign-2873` | Nothing, and this row is the opposite case to the two above: the bridge does not refuse an input here, it **compensates**. `OCCTBRepGPropVinertPlane` builds the `gp_Pln` mirrored through the origin so the unpatched kernel answers about the plane the Swift caller asked for, which is why `Face.volumeInertia(planeNormal:planeDistance:)` is correct today. **A kernel carrying `0048` with that mirror still in place is wrong again**, and `BRepGPropVinertTests`' two sign assertions fail. The repin deletes the mirror, flips those assertions to `n . C - d`, and drops the "pass `-d`" note from the Swift doc comment and `docs/reference/Shape-HLR-Geom.md`, in the same change |
 
 `0043` (#2827) was the last entry here, and it was the shortest-lived: carried unbuilt on 2026-09-29
 because OCCT 8.0.2 was days out and a repin was on hold until it lands, then built and pinned the

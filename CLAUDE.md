@@ -580,7 +580,8 @@ the reproducer). What a bridge author needs without opening it:
   coarsest mesh the linear rule alone accepts, returned with `IsDone()` true (18 nodes for a
   cylinder where a valid angle gives 54 to 254). Call `occtValidMeshAngle` at every site that
   takes a caller angle. `AngleInterior` and `Prs3d_Drawer::DeviationAngle()` need no guard, both
-  measured.
+  measured. Both holes are fixed in the kernel by carried patch `0047`, which respells all five of
+  `initParameters`' tests; **both bridge guards stay when it is pinned**, the `0042` exception.
 - `GeomAbs_G2` is never a valid order for `BRepFill_Filling`: curvature continuity is
   `GeomAbs_C1` (ordinal 2), whatever `BRepOffsetAPI_MakeFilling.hxx` says. Test any filling change
   on both a planar and a periodic support surface, since #430 was catchable on one and an
@@ -606,7 +607,9 @@ the reproducer). What a bridge author needs without opening it:
   `BRepGProp_Vinert.cxx:279` (and `BRepGProp_VinertGK.cxx:219`, `:244`) fills it from
   `gp_Pln::Coefficients`' `d`, which belongs to `n . X + d = 0`. `OCCTBRepGPropVinertPlane` builds
   the `gp_Pln` itself, so it builds the mirrored one and `planeDistance` is an ordinary geometric
-  offset; delete that mirror when the kernel hunk lands with `0043`'s upstream PR. `loc` is a red
+  offset. The kernel hunk is now carried as `0048`, which negates the stored offset at all five
+  by-plane sites; **that mirror is a compensation and not a guard, so the repin that pins `0048`
+  deletes it in the same change**, or the sign flips back. `loc` is a red
   herring: it cancels, which is what a distance to a plane has to do.
 - **Retired at the `v4.0.0-kernel.1` repin**, all three, because the pinned asset now carries every
   carried patch: the datum lookup guard in `occtDocumentDatumObjectAt` (#1030, it was refusing a
