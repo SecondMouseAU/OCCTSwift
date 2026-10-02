@@ -94,7 +94,7 @@ The causal test is the override-link below, not the reading: the unmodified file
 kernel's own flags reproduces the spread (`transcript-lines-control.txt`: 8, 1, 1, 1, 3, 5 volumes),
 and the same file with only that loop changed removes it.
 
-## The fix: `Scripts/patches/0047-BRepOffset_MakeOffset-arc-join-roots-in-binding-order-3003.patch`
+## The fix: `Scripts/patches/0053-BRepOffset_MakeOffset-arc-join-roots-in-binding-order-3003.patch`
 
 `BuildOffsetByArc` records the order the entries are bound in (the faces in the order
 `MakeOffsetFaces` binds them, `BRepLib::SortFaces` over `myFaceComp` then the faces
@@ -187,10 +187,10 @@ body of the PR that carries it.
 ## What this means for the two #766 probes
 
 `766-modeling-evidence-fix/reproduce.json` and `766-modeling-issue568-index-skip/reproduce-evidence-fix.json`
-keep their `tolerance` declarations: the pinned asset does not carry `0047`, so those three lines
+keep their `tolerance` declarations: the pinned asset does not carry `0053`, so those three lines
 still drift against it and removing the allowance now would make `check-766-probe-reproduction.py`
 red about one run in three again. Their `reason` text now names this cause. **They come out, and the
-three transcripts are recaptured, at the repin that pins `0047`**, and the patched value is
+three transcripts are recaptured, at the repin that pins `0053`**, and the patched value is
 `1698.436569847848` for `offsetArc`, not the transcript's `...475`: the patched build picks one
 value out of the distribution, deterministically.
 

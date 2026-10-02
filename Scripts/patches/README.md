@@ -19,7 +19,7 @@ which is what nothing did while `0042` sat in the kernel and not in the map for 
 2026-08-03 retired ten patches, `0032`
 retired 2026-09-02 (superseded by upstream's own fix, not shipped in our pin), and `0035` retired
 2026-09-20 (it reintroduced #280; see its [Retired patches](#retired-patches) entry).
-The carried sequence now reads 0010–0012, 0014–0031, 0033–0034, 0036–0047.
+The carried sequence now reads 0010–0012, 0014–0031, 0033–0034, 0036–0053.
 The gaps are the retirements, not missing files:
 the numbers are cited across `CLAUDE.md`, `docs/`, closed issues and `Scripts/repro/`, and
 renumbering would have silently repointed every one of those citations at a different fix.
@@ -2336,7 +2336,7 @@ GTest is owed before it goes, per section 2 of the process policy.
 
 **Retire** once the bundled OCCT includes this fix, keeping the bridge guard.
 
-## 0047-BRepOffset_MakeOffset-arc-join-roots-in-binding-order-3003.patch
+## 0053-BRepOffset_MakeOffset-arc-join-roots-in-binding-order-3003.patch
 
 **An arc-join offset returns its faces in an order set by allocation addresses**
 ([#3003](https://github.com/SecondMouseAU/OCCTSwift/issues/3003)). `BRepOffset_MakeOffset::BuildOffsetByArc`

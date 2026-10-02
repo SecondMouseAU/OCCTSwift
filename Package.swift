@@ -231,7 +231,7 @@ let occtTarget: Target =
         // back rather than staying suppressed.
         //
         // The asset holds thirty-one and Scripts/patches/ holds thirty-five, so 0044, 0045, 0046 and
-        // 0047 are the untested set of four, written up where the counts are, above.
+        // 0053 are the untested set of four, written up where the counts are, above.
         // If you rebuild and the checksum does not match the value below, that is a real difference to
         // investigate rather than an expected one, which is the opposite of what this paragraph said
         // while kernel.1 was pinned.
@@ -321,7 +321,7 @@ let occtTarget: Target =
         //         still covers anyone pinning an older asset. Measured before and after in
         //         Scripts/repro/2860-uzawa-errinit-dimension/.
         //
-        //   0047  BRepOffset_MakeOffset::BuildOffsetByArc registers the offset faces as roots   #3003
+        //   0053  BRepOffset_MakeOffset::BuildOffsetByArc registers the offset faces as roots   #3003
         //         by walking a DataMap hashed on TShape addresses, so every arc-join offset
         //         (MakeOffsetShape, MakeThickSolid) returns its faces in an order that changes
         //         between processes and between builds in one, and the volume summed over them

@@ -8,12 +8,12 @@ import Testing
 /// `BRepOffset_MakeOffset::BuildOffsetByArc` registered the offset faces as roots by walking a
 /// `DataMap` hashed on `TShape` pointers, so two identical calls gave the same solid with its faces
 /// in a different order, and `BRepGProp` summed the volume in that order, so the last digits moved
-/// (4e-16 to 9e-16 on three lines of two #766 probes). Carried kernel patch `0047` walks the
+/// (4e-16 to 9e-16 on three lines of two #766 probes). Carried kernel patch `0053` walks the
 /// entries in the order they were bound.
 ///
 /// `Scripts/repro/3003-offset-roots-hash-order/` holds the measurement. Against the pinned
 /// `v4.0.0-kernel.3` asset, 32 builds in one process with a different amount of heap held before
-/// each gave 32 face orders; with `0047` they give one.
+/// each gave 32 face orders; with `0053` they give one.
 @Suite("Issue 3003: arc-join offsets do not depend on allocation addresses")
 struct Issue3003OffsetOrderTests {
 
@@ -36,7 +36,7 @@ struct Issue3003OffsetOrderTests {
     /// The faces and the volume of an arc-join offset do not depend on where the heap put things.
     ///
     /// Gated on `OCCTSWIFT_LOCAL=1`, the way `StressBuilderLifecycleTests`' `0027` test is: the fix
-    /// is carried patch `0047`, which the pinned asset does not carry, and `ci.yml`'s
+    /// is carried patch `0053`, which the pinned asset does not carry, and `ci.yml`'s
     /// `build-and-test` resolves that asset. `kernel-integration.yml` builds the patches from source
     /// with `OCCTSWIFT_LOCAL=1`, which is where this runs. A skipped test and a passing one both
     /// report green, so the per-test line in the log is the only signal: read `started`, not

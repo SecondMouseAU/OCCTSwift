@@ -1,7 +1,7 @@
 kernel: /private/tmp/claude-501/-Users-elb-Projects-OCCTSwift/7ca7a65c-aee4-4ed2-ac7a-0732e49711a4/scratchpad/3003-k3/OCCT.xcframework
 libOCCT-macos.a: sha256 6d51d59022d2cef98152a8f3c5a6b640a5bac2a5968678e80e40cd5dac6ebc18, 157575280 bytes
 variant: patched, what: battery, runs: 20
-applied 0047-BRepOffset_MakeOffset-arc-join-roots-in-binding-order-3003.patch to a copy of BRepOffset_MakeOffset.cxx
+applied 0053-BRepOffset_MakeOffset-arc-join-roots-in-binding-order-3003.patch to a copy of BRepOffset_MakeOffset.cxx
 runs: 20, cases per run: 72
 cases with more than one distinct result over the runs: 0
   of which only the dump differs (the sub-shapes came back in another order): 0

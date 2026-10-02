@@ -15,7 +15,7 @@
 #               control   recompile the UNMODIFIED BRepOffset_MakeOffset.cxx from --occt-src with the
 #                         kernel's own flags and link it ahead of the archive. The census must match
 #                         `asset`, which is what shows the override toolchain is not the variable.
-#               patched   the same file with Scripts/patches/0047-*.patch applied to a copy.
+#               patched   the same file with Scripts/patches/0053-*.patch applied to a copy.
 #   --runs      processes to run (default 60). One process shows nothing; the claim is a spread.
 #   --xcframework  the OCCT.xcframework to read. Default: $OCCT_XCFRAMEWORK, then SwiftPM's resolved
 #               asset under .build/artifacts, then Libraries/OCCT.xcframework. Which kernel it was is
@@ -94,7 +94,7 @@ if [ "$VARIANT" != "asset" ]; then
   mkdir -p "$TMP/ovr/$(dirname "$REL")" "$TMP/ovr/$(dirname "$GREL")"
   cp "$OCCT_SRC/$REL" "$TMP/ovr/$REL"
   cp "$OCCT_SRC/$GREL" "$TMP/ovr/$GREL"
-  PATCH="$(ls "$REPO"/Scripts/patches/0047-*.patch | head -1)"
+  PATCH="$(ls "$REPO"/Scripts/patches/0053-*.patch | head -1)"
   # `aBindOrder` is the patch's own local, so whether the copy carries it says whether the patch is
   # in, and it is checked again after applying. `patch -R --dry-run` is not a usable test: Apple's
   # patch 2.0-12u11 exits 0 on a copy the patch is NOT in ("Unreversed patch detected! Ignore -R?
