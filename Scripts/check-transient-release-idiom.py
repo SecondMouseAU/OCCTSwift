@@ -73,6 +73,12 @@ WHAT IT CANNOT SEE
     observable, `OCCTBridgeRefusedReleaseCount`.
   * **Order.** It does not check that the decrement follows the registry give-back, only that the
     decrement itself is written the way the kernel writes it.
+  * **A comparison spelled some other way**: a Yoda condition `0 == t->DecrementRefCounter()`, a
+    typed literal `0ULL`, a parenthesised `(0)`. None is in this tree. All of them **fail safe**,
+    because the accepted continuation is matched after the decrement's closing paren, so an
+    unrecognised spelling reports `decrement-not-compared-against-zero` rather than passing. That
+    is noise a reader resolves in one look, and widening the regex to accept more spellings risks
+    accepting one that is not a comparison at all, which would not fail safe.
 
 It is a GATE rather than a census, decided on `okf/policies/static-gates.md`'s measure-then-gate
 rule: the backlog is zero (PR #2969 fixed the two sites, and the third is exempt with a reason), the
@@ -147,8 +153,23 @@ def exemption_for(raw, lineno):
         break
     for line in candidates:
         match = EXEMPT_RE.search(line)
-        if match:
-            return match.group(1)
+        if not match:
+            continue
+        # clang-format wraps a long reason onto the following comment lines, and the rest of the
+        # argument is usually where the substance is. Read the continuation too, so the report
+        # carries the whole reason rather than whatever fitted on the marker's own line.
+        reason = [match.group(1)]
+        probe = lines.index(line) + 1 if line in lines else len(lines)
+        while probe < len(lines):
+            stripped = lines[probe].strip()
+            if not (stripped.startswith("//") or stripped.startswith("*")):
+                break
+            tail = stripped.lstrip("/*").strip()
+            if not tail or EXEMPT_RE.search(lines[probe]):
+                break
+            reason.append(tail)
+            probe += 1
+        return " ".join(reason)
     return None
 
 
@@ -157,7 +178,11 @@ def findings_for(path, text=None):
 
     A finding is a dict with `path`, `line`, `function`, `kind`, `detail` and `exempt`.
     """
-    raw = open(path, encoding="utf-8").read() if text is None else text
+    if text is None:
+        with open(path, encoding="utf-8") as handle:
+            raw = handle.read()
+    else:
+        raw = text
     stripped = THROWING.strip_noise(raw)
     findings = []
     examined = 0
@@ -472,6 +497,19 @@ def self_test():
          == [("discards-the-decrement", False)],
          str(kinds(wrap("  // the singleton's static Handle holds a permanent reference.\n"
                         "  t->DecrementRefCounter();\n"))))
+    # A reason clang-format wrapped is read whole, not truncated at the marker's own line: the
+    # substance of an argument is usually past the first line, and a report that shows half of it
+    # invites the reader to re-derive the rest.
+    wrapped = wrap("  // transient-release-exempt: the singleton's own static Handle holds\n"
+                   "  // a permanent reference, so this release can never reach zero.\n"
+                   "  t->DecrementRefCounter();\n")
+    wrapped_found, _e, _d = findings_for("<f>", wrapped)
+    wrapped_reason = [f["exempt"] for f in wrapped_found]
+    case("a-wrapped-exemption-reason-is-read-whole",
+         wrapped_reason == ["the singleton's own static Handle holds "
+                            "a permanent reference, so this release can never reach zero."],
+         str(wrapped_reason))
+
     # A marker with no reason after the colon is not an exemption, on check-doc-snippets.py's
     # precedent: the argument is the whole value of the marker.
     bare_marker = wrap("  // transient-release-exempt:\n  t->DecrementRefCounter();\n")
