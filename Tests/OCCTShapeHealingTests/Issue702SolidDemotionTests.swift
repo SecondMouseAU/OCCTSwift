@@ -28,7 +28,7 @@ import simd
 // `analyze(tolerance:)` read zero free edges regardless of the input, because `OCCTShapeAnalyze`
 // called `ShapeAnalysis_Shell::LoadShells()`, which only registers a shell for bookkeeping, instead
 // of `CheckOrientedShells()`, the call that actually populates the free-edge set. Fixed in
-// `OCCTBridge_Healing.mm`.
+// `OCCTShapeAnalyze`, which now lives in `OCCTBridge_Healing_Analysis.mm`.
 //
 // `Shape.isValidSolid` already existed (added for #206/#208, an unrelated self-intersection hazard)
 // and already answers the issue's question correctly, unaffected by either bug: it checks
@@ -375,11 +375,12 @@ struct Issue702SolidDemotion {
 
     // MARK: - isHealthy follows the free edges (and nothing else stands in front of them)
 
-    /// A one-face shell around a 10x10 polygon: four free edges, and nothing else wrong.
+    /// A planar 10x10 face on a polygon wire whose edges are in connection order.
     ///
-    /// Unlike the open box shell this fixture's wire is in connection order, so it measures no gap
-    /// at all, and a face that is not in a shell measures no free edge. That is what lets
-    /// `isHealthy` be read as a function of the free edges and not of the primitive's bogus gaps.
+    /// Unlike the box's faces its wire is in order, so it measures no gap at all, and a face that
+    /// is not in a shell measures no free edge. Put alone it is healthy; as the only face of a
+    /// shell it has four free edges and nothing else wrong. That is what lets `isHealthy` be read
+    /// as a function of the free edges and not of the primitive's bogus gaps (#3040).
     private func polygonFace() throws -> Shape {
         let outer = try #require(
             Wire.polygon3D(
