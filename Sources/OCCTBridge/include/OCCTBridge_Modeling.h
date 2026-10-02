@@ -2476,12 +2476,22 @@ OCCTLawFunctionRef _Nullable OCCTLawComposite(const OCCTLawFunctionRef _Nonnull*
 typedef struct
 {
   int32_t type;        // 0 = vertex, 1 = edge (TopAbs_VERTEX=7, TopAbs_EDGE=6 mapped to 0/1)
-  double  param1First; // First parameter on edge 1
-  double  param1Last;  // Last parameter on edge 1 (same as first for vertex)
-  double  param2First; // First parameter on edge 2
-  double  param2Last;  // Last parameter on edge 2 (same as first for vertex)
+  double  param1First; // Range1().First(), the part's range on edge 1, whatever its type (#3012)
+  double  param1Last;  // Range1().Last()
+  double  param2First; // Ranges2()(1).First(), the range on edge 2; 0 from an edge-face part
+  double  param2Last;  // Ranges2()(1).Last(); 0 from an edge-face part, which has no second edge
+  // The parameter on each edge at which OCCT places the new vertex of a VERTEX part, as resolved
+  // by IntTools_Tools::VertexParameters (edge-edge) or ::VertexParameter (edge-face), the calls
+  // BOPAlgo_PaveFiller::PerformEE and PerformEF make. hasVertexParam1 is false for an EDGE part,
+  // which OCCT never gives a vertex parameter (its field is the constructor's 0.0, not a
+  // measurement), and hasVertexParam2 is false for that and for every edge-face part (#3012).
+  double vertexParam1;
+  double vertexParam2;
+  bool   hasVertexParam1;
+  bool   hasVertexParam2;
   // A point on the intersection, IntTools_CommonPrt::Edge1() evaluated at the representative
-  // parameter of [param1First, param1Last]. hasPoint is false, and the three are left at zero,
+  // parameter of the part: vertexParam1 for a VERTEX part, IntTools_Tools::IntermediatePoint of
+  // [param1First, param1Last] for an EDGE part. hasPoint is false, and the three are left at zero,
   // only when the part carries no first edge or that parameter falls outside its curve (#2251).
   double pointX, pointY, pointZ;
   bool   hasPoint;
