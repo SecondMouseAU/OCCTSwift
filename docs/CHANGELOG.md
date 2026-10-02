@@ -21,6 +21,30 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### Probe evidence that could not be re-derived, and the screens that could not see it (#2987, #2967, #2965)
+
+- **`census-766-unlifted-tests.py` screens the merged population instead of assuming it (#2987).**
+  With `--prs-from` it resolves every merged PR's merge commit against the branch and names the
+  ones that are off it, with the refs that do hold them. Measured on the live dump: 403 merged,
+  401 on the branch, #2232 off it and #2003 unresolvable. What it still cannot reach is printed by
+  every run as a `DARK` list of eight measured blind spots, following #2946, and
+  `okf/policies/v5-lift-and-shift.md`'s "a merged PR's commits are the branch" is corrected to the
+  401 of 403 it measures.
+- **The five #766 probe pairs that did not reproduce are adjudicated (#2967).** All five were
+  undeclared capture conditions and the kernel is implicated in none of them, including the one
+  that aborted with `There are no suitable edges for chamfer or fillet`, which turns out to be a
+  probe run without the fixture directory its own transcript header records. Four now reproduce
+  against the pinned kernel, one says on every run why it cannot be compared, and one transcript
+  line that no revision of its probe could print is corrected.
+- **`reproduce.json` grows a `tolerance` key for a measurement whose last place the kernel does
+  not reproduce (#2965).** Unlike `volatile` it compares the numbers rather than freeing them:
+  the non-numeric text must match exactly, every number must agree to a declared `relative`
+  capped at 1e-12, and the worst difference measured is printed on every run. Three shelling
+  volumes from `BRepOffsetAPI_MakeThickSolid` are declared at 1e-14, twelve times their measured
+  spread over thirty runs; the cause is filed as #3003.
+- The whole probe population now reports no red against the pinned `v4.0.0-kernel.3` asset: 202
+  pairs, 183 MATCH, 14 MATCH-DECLARED, 5 NOT-REPRODUCIBLE with printed reasons, exit 0.
+
 ### `Extrema_ExtElC` parallel witnesses are optional (#2993), and `IntTools_EdgeEdge`'s two common-part types are settled (#2994)
 
 **Fixed.** `ExtremaResult.point1` and `ExtremaResult.point2` are now `SIMD3<Double>?`, `nil` on a
