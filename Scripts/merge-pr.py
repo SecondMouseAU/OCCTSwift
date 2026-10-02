@@ -589,7 +589,7 @@ def main(argv=None):
         sys.stderr.write(
             "error: nothing in the `%s` section identifies the entry: every line is blank, a\n"
             "bucket heading, or inside a fenced block. The duplicate test has no line to look\n"
-            "for, so it can neither find this entry in %s nor honestly say it is absent, and a\n"
+            "for, so it can neither find this entry in %s nor say it is absent, and a\n"
             "guess either way is a lost entry or a duplicated one (#2963).\n"
             "\n"
             "Give the entry a descriptive `### ` heading carrying its issue numbers, outside any\n"
