@@ -1,9 +1,14 @@
 {
   "tolerance": [
     {
+      "pattern": "^shellAcceptsOwnFaces / shellRejectsPartiallyForeignFaceList \\[own, foreign\\] -> \\[own\\]: upward=1 done=1 valid=1 volume=[-0-9.eE+]+$",
+      "relative": 1e-14,
+      "reason": "the same kernel non-determinism as the line below, in the same BRepOffsetAPI_MakeThickSolid family. Thirty runs of one binary against the pinned v4.0.0-kernel.3 asset printed 4519.4099853010057 seventeen times, ...66 twelve times and ...48 once, a relative spread of 4.0e-16. It drifts less often than its neighbour, which is why #2965 reported only one line of this probe: a whole-population run caught it on the third try. `upward=1 done=1 valid=1` and every word of the label stay compared exactly. The cause is #3003. #2965."
+    },
+    {
       "pattern": "^shellRejectsPartiallyForeignFaceList \\[foreign\\] -> no open face: done=1 valid=1 volume=[-0-9.eE+]+$",
       "relative": 1e-14,
-      "reason": "the same kernel non-determinism as 766-modeling-evidence-fix's offsetArc, in the same BRepOffsetAPI_MakeThickSolid family. One binary compiled once and run ten times against the pinned v4.0.0-kernel.3 asset printed -13587.492558290325, ...29, ...31 five times and ...32 three times, a relative spread of 5.2e-16, a couple of units in the last place of a double; the transcript's -13587.492558290329 is one of them. The eleven other measurements in this transcript, four of them volumes from the same probe, reproduce to the last digit every run. Declared as a tolerance rather than volatile because the volume IS the measurement: `done=1 valid=1` and every word of the label stay compared exactly, and the run prints the worst difference it saw. The cause is #3003. #2965."
+      "reason": "the line #2965 measured. Thirty runs of one binary against the pinned asset printed four distinct values, -13587.492558290327 to ...32, a relative spread of 3.7e-16, a couple of units in the last place of a double; the transcript's ...29 is one of them. Declared as a tolerance rather than volatile because the volume IS the measurement: `done=1 valid=1` and every word of the label stay compared exactly, and the run prints the worst difference it saw. The cause is #3003. #2965."
     }
   ]
 }
