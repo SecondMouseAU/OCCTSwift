@@ -21,6 +21,29 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### `Shape.beanFaceIntersect` searched an empty parameter interval, and four suites of tests could not have noticed (#2935, #2938, #2941, #2943)
+
+`IntTools_BeanFaceIntersector`'s `(edge, face)` constructor sets the surface parameters and leaves
+the bean parameters at `(0, 0)`, because a "bean" is a part of an edge and which part is the
+caller's to say. The bridge never set them, so every call searched the empty interval `[0, 0]`: an
+edge lying in a face came back with a zero-length range and an edge crossing one came back with no
+range at all. Both of OCCT's own callers repair it from `BRep_Tool::Range` immediately after
+constructing (`BRepFill_TrimShellCorner.cxx:2580-2582`, `IntTools_EdgeFace.cxx:566`), and the bridge
+now does the same, which is the identical fix #1631 made to `IntTools_EdgeFace` in the same file.
+`BeanFaceIntersection.minSquareDistance` also becomes `Double?`: `MinimalSquareDistance()` is
+initialised to `RealLast()` and left there on every measured path, so `1.797e308` was reaching
+callers as a distance.
+
+Ten tests across four suites are rewritten to pin the kernel's measured answer rather than accept
+whatever it returns, each proved against a semantic injection: the three `IntTools_BeanFaceIntersector`
+tests, which asserted only `minSquareDistance >= 0.0` and a range count (#2943); three Extrema tests
+whose bodies sat inside an `if let` with no `else`, so a nil fixture ran no assertion at all, and
+which pinned `count >= 1` where the answer is exactly 1 (#2941); the three `Issue222EnvelopeTests`
+cases, which asked for `build: .direct` and checked nothing only the direct build satisfies, now
+pinning the 7-face signature that separates it from the faceted fallback (#2938); and
+`BOPAlgoCellsBuilderTests.createCellsBuilder`, which asserted only that a builder came back and now
+pins the cells construction actually produced (#2935).
+
 ### Sixteen CHANGELOG entries that never landed are recovered (#2957)
 
 Sixteen merges between 2026-08-28 and 2026-09-29 landed with a `## CHANGELOG entry` section in the
