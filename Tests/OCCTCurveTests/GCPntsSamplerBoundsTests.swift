@@ -10,12 +10,22 @@ import simd
 /// `GCPnts_UniformAbscissa` takes one extra step and snaps it to the end parameter. That surplus
 /// point used to be written past the end of the caller's buffer; clamping it away without keeping
 /// the sampler's last point would instead leave the distribution stopping short of the curve.
-fileprivate func overshootingEllipse() -> Curve3D? {
+///
+/// **#2977: it does not overshoot on the pinned kernel, and the name is historical.** Carried
+/// patch `0018` fixes the sampler, so `NbPoints()` equals the request here. Re-measured
+/// 2026-10-02 against `v4.0.0-kernel.3`, both samplers, 2D and 3D, across this ellipse and a
+/// wider set: nothing overshoots. These cases are therefore pinning the clamp and the end point,
+/// not the surplus-point path, and the bridge keeps that path on purpose; see the #2977 block
+/// above `occtSamplerKept` in `OCCTBridge_Internal.h` and
+/// `Scripts/repro/2977-uniformabscissa-no-overshoot/`.
+private func overshootingEllipse() -> Curve3D? {
     Curve3D.ellipse(center: .zero, normal: SIMD3(0, 0, 1), majorRadius: 1e6, minorRadius: 1e-3)
 }
 
-/// Counts measured to overshoot on that ellipse (22 of the first 59 do).
-fileprivate let overshootingCounts = [4, 5, 8, 12, 14, 18, 20, 22, 25, 26, 31, 33, 34, 35, 39, 40]
+/// The counts #501 measured to overshoot on that ellipse, 22 of the first 59. None of them
+/// overshoots on the pinned kernel (#2977); they are kept because they are still the hardest
+/// arc-length inputs the suite has.
+private let overshootingCounts = [4, 5, 8, 12, 14, 18, 20, 22, 25, 26, 31, 33, 34, 35, 39, 40]
 
 @Suite("GCPnts sampler bounds (#501)")
 struct GCPntsSamplerBoundsTests {

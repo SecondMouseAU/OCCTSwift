@@ -176,7 +176,21 @@ struct Curve2DTests {
     /// points than were asked for: one more, on a 1e6 x 1e-3 ellipse, for 22 of the first 59
     /// counts. `outXY` only holds `pointCount` pairs, so the surplus used to be written past its
     /// end; the surplus point is the curve's end parameter, so it is the last slot that keeps it.
-    @Test("Uniform draw stays within the requested count on an overshooting ellipse")
+    ///
+    /// **#2977: this is a clamp test, not a surplus-point test, on the pinned kernel.** Carried
+    /// patch `0018` fixes the sampler itself, so `NbPoints()` never exceeds the request and
+    /// `occtSamplerIndex` is the identity at every slot. Re-measured 2026-10-02 against
+    /// `v4.0.0-kernel.3`: both `GCPnts_UniformAbscissa` and `GCPnts_QuasiUniformAbscissa`, 2D and
+    /// 3D, over this ellipse's sixteen counts and counts 2..60, over ellipses down to 1e6 x 1e-6,
+    /// over 1e8 and 1e10 majors and over a degenerate-aspect Bezier: nothing overshoots. So the
+    /// kernel moved under the test; the 2D uniform path is not an odd one out, and #501's own
+    /// quasi-uniform reproducer does not overshoot either. The transcript is in
+    /// `Scripts/repro/2977-uniformabscissa-no-overshoot/`.
+    ///
+    /// What is still pinned here is the clamp and the end point, which are the contract whatever
+    /// the kernel does. The end-point rule is unexercised, and the bridge keeps it on purpose; see
+    /// the #2977 block above `occtSamplerKept` in `OCCTBridge_Internal.h` for why.
+    @Test("Uniform draw holds the requested count and ends on the curve's end")
     func uniformDrawRespectsCount() throws {
         // #766: the surplus-point pin sat behind `if let last = points.last`, which a sampler
         // returning nothing skips, and the count behind an `Issue.record` guard. Both are now

@@ -131,5 +131,5 @@ flange some *other* bend split, resolves to that first sliver. Measured on `zBra
 
 It did not change `zBracket`'s answer, because OCCT's fillet propagates along the tangent-continuous
 chain and recovered the other 35, and the plane tests are identical for every piece of one flange.
-It is still wrong, and the convex path's `seamSegment(of: a, ...)` reads that piece's profile
-directly with no propagation to save it. Filed as a separate issue with this measurement.
+It is still wrong: the convex path's `seamSegment(of: a, ...)` reads that piece's profile directly,
+with no propagation to save it. Filed as #3019 with this measurement.

@@ -1304,6 +1304,23 @@ inline double occtUniformParameter(double lo, double hi, int32_t index, int32_t 
 // tail drops the end of the curve. Keep the first `capacity - 1` samples and the sampler's own last
 // one, which is what OCCTGCPntsQuasiUniform (the only member of the family that already clamped)
 // was silently getting wrong.
+//
+// === #2977: on the PINNED kernel nothing overshoots, and these stay anyway ===
+//
+// Carried patch `0018` fixes the sampler itself: it accepts a step within `theTol` of the end in 3D
+// as well as within the parametric epsilon, so the walk stops instead of taking the extra step.
+// Re-measured 2026-10-02 against `v4.0.0-kernel.3`, both samplers, 2D and 3D, over #501's own
+// 1e6 x 1e-3 ellipse (the test's sixteen counts and counts 2..60), ellipses down to 1e6 x 1e-6,
+// 1e8 and 1e10 majors, and a degenerate-aspect Bezier: NbPoints() never exceeds the request.
+// Scripts/repro/2977-uniformabscissa-no-overshoot/ holds the probe and the transcript, and a second
+// probe there confirms `0018` is in the asset behaviourally, since the patch adds no symbol for
+// `check-pinned-asset-patches.py` to find.
+//
+// So `occtSamplerKept` returns `total` and `occtSamplerIndex` is the identity `slot + 1` at every
+// slot, on every input measured. **Do not read a green test over these as evidence they are
+// unnecessary.** They are what makes the bridge correct against a kernel without `0018`, which is
+// what `kernel-integration.yml` builds and what shipping `0018` upstream will eventually leave us
+// with. The last-slot rule in particular has no live caller on this kernel and is kept on purpose.
 
 /// How many of a GCPnts sampler's `nbPoints` samples fit in a buffer of `capacity` slots.
 inline int32_t occtSamplerKept(int32_t nbPoints, int32_t capacity)
