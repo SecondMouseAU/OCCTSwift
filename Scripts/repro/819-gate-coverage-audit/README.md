@@ -13,38 +13,47 @@ letting this document go stale the same way.
 
 ## The live count
 
+Run it rather than reading a number here:
+
 ```
 $ python3 Scripts/repro/819-gate-coverage-audit/gate_coverage.py --check
-OK: live enumeration (8 gates, 4 censuses, 1 audit) matches CLAUDE.md's stated count, and every
-referenced script exists on disk.
 ```
 
-**Eight gates, four censuses, one merge-history audit. Thirteen scripts total**, derived by parsing
-`.github/workflows/ci.yml`'s `gate-scripts` job directly (not by reading `CLAUDE.md`'s prose and
-trusting it), and cross-checked against `CLAUDE.md`'s own "Static Gate Scripts" section, which
-currently agrees. That agreement is worth stating plainly rather than assuming: at the time #819 was
-filed the true count was six gates and one census (a different, smaller set, from before
-`check-borrowed-handles.py`, `census-arguments-tuple-shapes.py` and `census-comment-staleness.py`
-shipped); `CLAUDE.md` was kept in sync by hand across three intervening PRs and happens to be correct
-today. Nothing forces that to stay true tomorrow, which is the entire reason this artifact exists
-rather than a one-off count in this README.
+**Eight gates, four censuses, one merge-history audit, thirteen scripts total** is a frozen
+measurement of 2026-08-31, the day this artifact landed, and is deliberately written as one. The
+figure today is larger and the command above derives it; no number in this README is live. That
+split is the point of the artifact: the count is derived by parsing
+`.github/workflows/ci.yml`'s `gate-scripts` job directly rather than by reading the repo's own
+prose and trusting it, and `--check` cross-references the two. At the time #819 was filed the true
+count was six gates and one census, a different and smaller set, and the prose was kept in sync by
+hand across three intervening PRs.
 
-| Kind | Scripts |
-|---|---|
-| **GATE** (8) | `check-borrowed-handles`, `check-bridge-index`, `check-docs-defaults`, `check-docs-existence`, `check-null-handle-guards`, `count-operations`, `derive-bridge-header-split --verify`, `derive-gdt-enums --verify` |
-| **CENSUS** (4) | `census-arguments-tuple-shapes`, `census-comment-staleness`, `census-doc-occt-attribution`, `census-unmeasured-values` |
-| **AUDIT** (1) | `check-changelog-transcription` |
+**The counting sentence has since moved.** #2954 took it out of `CLAUDE.md`, where a count is
+shared by every open PR and a correct edit to the inventory reds every other branch at merge time,
+and into `okf/policies/static-gates.md`'s "How many there are". `gate_coverage.py` reads wherever
+the sentence lives, which is its `COUNT_PAGE` constant; #2958 repointed it.
 
-The classification is derived **structurally**, not by matching an English word in a comment
-(comments get reworded; structure doesn't drift the same way):
+The classification is applied in the order `Scripts/check-inventory-prose.py` applies it, which is
+the gated derivation of the same split and therefore the authority:
 
-- **CENSUS**: only `--self-test` runs in `ci.yml`. The bare run either never executes in CI at all,
-  or is documented to always exit 0 by design.
+- **CENSUS**: the script's name begins `census-`. Its bare run reports a list for a human rather
+  than reaching a verdict, which is a property of the script and not of how `ci.yml` invokes it,
+  so this is tested first.
+- **RELEASE CHECK** (#2196): not a census, and only `--self-test` runs in `ci.yml`. Its bare run
+  reaches a verdict, over an input the checkout does not have, so it is taken at the release step.
 - **AUDIT**: the bare run DOES execute in CI, but the script defines a `--strict`-shaped flag CI
   deliberately withholds, so it is architecturally unable to fail the build today (only
-  `check-changelog-transcription.py` fits this; verified by grepping all thirteen scripts for a
-  `'--strict'`/`"--strict"` `add_argument` call, only one has it).
+  `check-changelog-transcription.py` fits). This is the one kind `gate_coverage.py` still derives
+  structurally where the gated sibling recognises it by name, and the reason to keep both.
 - **GATE**: the bare run executes and nothing softens it.
+
+**#2960, recorded here because it is an instance of what this artifact exists to catch, caught by
+nothing.** From #2196 until 2026-10-02 the classifier above tested the `--require-...` flag before
+the `census-` prefix, so any census that grew #2098's "examined nothing" mode was reclassified as a
+release check. Two had, and both `--check` and `--self-test` were red on `main` for weeks against a
+counting sentence that was correct the whole time. No CI job runs this file, so nothing said so.
+Two derivations of one quantity disagreed and the unrun one was wrong; the fix was to give this one
+the gated one's discriminator, and the standing instruction is to suspect this file first.
 
 Two sibling scripts sit outside `gate-scripts` entirely and are correctly excluded from this count:
 `check-style-manifest.py` and `comment-ratio-check.py` belong to the separate `code-style` CI job.
@@ -157,7 +166,7 @@ human review judgment, out of reach for a static Python text scanner by construc
 | Kernel silent wrong-answer (`IsDone()` true, geometry/error actually incorrect) | #522, #532, #597, #603, #905, #913, #1018 | Nothing; found only by cross-checking two independent measurements or probing internals |
 | A defect in a *proposed* kernel patch itself | #1153 (PR #1322's self-deadlocking mutex, rejected on review) | Nothing, and cannot be; only human/agent code review catches this |
 
-This is the honest negative result the task asked for: **should TSan count as "covered"?** This
+This is the negative result the task asked for: **should TSan count as "covered"?** This
 audit's answer is *a qualified no* for the purpose of "gate-scripts coverage" specifically.
 `Scripts/tsan-stress.sh` is real, working coverage for the data-race row, and it is why 12 real
 kernel races were found and fixed rather than zero. But it is not what "gate-scripts" means
@@ -171,16 +180,24 @@ one distinction this whole audit exists to keep sharp.
 | Defect class | Issues | Disposition |
 |---|---|---|
 | Missing try/catch around a known-throwing OCCT call in bridge code | #345 (49 sites) | **Filed as #1407.** Plausibly gateable (a known-throwing-call list + a "lexically inside a try block" scope tracker), comparable in build cost to `check-null-handle-guards.py` itself; not "small and obviously correct," so not built here. |
-| Semantic code duplication distributed across the codebase | #377, #380-#392, #490, #502, #443, #446, #791/#792/#794/#795, #881/#899/#903/#908, #784/#1391 | **Not proposed as a new gate.** Covered by periodic, LLM-driven audits (`bridge-duplication-audit`/`duplication-audit` skills, the #784/#1391 rescans), by design: this class needs judgement a mechanical script can't safely automate, and #792 already measured the one mechanical scan tool in this space (`Scripts/repro/784-duplication-rescan/detect-duplicate-logic.py`) blind to a one-line duplication whose call syntax differs. The least self-test-disciplined mechanism this audit found (no `--self-test`, not wired into `ci.yml` at all) — worth knowing, not worth "fixing" by forcing it into this suite's shape. |
+| Semantic code duplication distributed across the codebase | #377, #380-#392, #490, #502, #443, #446, #791/#792/#794/#795, #881/#899/#903/#908, #784/#1391 | **Not proposed as a new gate.** Covered by periodic, LLM-driven audits (`bridge-duplication-audit`/`duplication-audit` skills, the #784/#1391 rescans), by design: this class needs judgement a mechanical script can't safely automate, and #792 already measured the one mechanical scan tool in this space (`Scripts/repro/784-duplication-rescan/detect-duplicate-logic.py`) blind to a one-line duplication whose call syntax differs. The least self-test-disciplined mechanism this audit found (no `--self-test`, not wired into `ci.yml` at all), worth knowing, not worth "fixing" by forcing it into this suite's shape. |
 | Stale self-referential count in CLAUDE.md/Package.swift/ci.yml prose | Recurred at v2.0.0-kernel.1-3, #1032, #1157/#1402; **#1066 (open) is an independent, still-live instance in `ci.yml`'s own comment block** | **Filed as #1408.** `count-operations.py` covers exactly one instance (the operation-count headline); nothing covers the patch count or the gate-scripts step count against their own stated prose. Not built here: parsing an arbitrary, ever-changing English sentence is fragile in exactly the way this script's own `CLAUDE_COUNT_RE` demonstrates on a much narrower, self-controlled case. |
 | Stale `Scripts/tsan.supp` suppression past its own "remove when fixed" policy | #1154's nine `race:TopoDS_TShape::*` entries are the live example of the state this policy warns about (correctly still present today, patch 0030 not yet in a rebuilt xcframework) | **Filed as #1409.** Half mechanical (cross-reference cited patch numbers against `Scripts/patches/*.patch`); half needs the manual "is patch N in the *pinned* asset" verification `CLAUDE.md` already documents, not a text-only check. |
 
 ## Verification
 
-**This script's own `--self-test`** (`python3 gate_coverage.py --self-test`): 8 fixture cases,
-covering the live-parsing (`parse_gate_scripts_job`), classification (`classify`), dangling-reference
-detection (`find_dangling_scripts`), and `CLAUDE.md`-count-parsing (`parse_claude_md_count`) logic.
-All 8 pass against the correct code.
+**This script's own `--self-test`** (`python3 gate_coverage.py --self-test`): nine fixture cases as
+of 2026-10-02, covering the live-parsing (`parse_gate_scripts_job`), classification (`classify`),
+dangling-reference detection (`find_dangling_scripts`), and stated-count-parsing
+(`parse_stated_count`) logic. All nine pass against the correct code.
+
+#2960 replaced two of them. Case E asserted that a `census-` script whose bare run `ci.yml` starts
+invoking reclassifies as a gate, which is false under the prefix-first rule, and now asserts both
+directions: the prefix wins over the `ci.yml` shape, and the same shape under a non-census name is
+a gate. Case I asserted that no census declares a `--require-...` flag, which two censuses had made
+false, and now asserts the opposite and useful thing: that a census declaring one is still
+classified a census, read off the real `Scripts/` directory rather than a fixture, so the
+regression cannot return quietly.
 
 **Prove-the-test-fails discipline, run for real, not just described**: five targeted mutations,
 each applied to a scratch copy, self-test re-run, failure(s) recorded, restored, clean re-confirmed.
@@ -192,6 +209,14 @@ each applied to a scratch copy, self-test re-run, failure(s) recorded, restored,
 | 3 | `classify()`'s `strict_passed` check dropped from the audit condition | F only (cleanly isolated) |
 | 4 | `NUMBER_WORDS["twelve"]` mapped to a wrong value | G only (cleanly isolated) |
 | 5 | `find_dangling_scripts()` made to always return `[]` | H only (cleanly isolated) |
+
+Three more at the #2960 fix (2026-10-02), same discipline, each applied and reverted:
+
+| Mutation | Logic broken | Self-test cases that failed |
+|---|---|---|
+| 6 | the `--require-...` test put back in front of the `census-` prefix (the #2960 defect itself) | I, in all three of its clauses, naming the two real censuses by file; `--check` goes red with the original 16/5/1 message |
+| 7 | the `census-` prefix made to win only when the bare run is absent | E only (cleanly isolated) |
+| 8 | `REQUIRE_FLAG_RE` pointed at a flag no script declares | I's two reader clauses only, including the "no census declares one any more" guard |
 
 Mutations 3, 4 and 5 each isolate exactly one case, proving those three guards are load-bearing and
 independently testable. Mutation 1 (the core parser) and mutation 2 (the census/gate split) each
@@ -207,7 +232,7 @@ byte-identical against the pre-mutation copy before re-confirming a clean run.
 touches nothing existing): `check-docs-existence.py` (6614 symbol references, 0 stale),
 `census-comment-staleness.py --self-test`, `check-bridge-index.py --self-test` (18/18),
 `check-null-handle-guards.py --self-test` (50/50), `count-operations.py` (4365, three headlines
-agree), `check-changelog-transcription.py --self-test` (25/25) — all clean, matching their state
+agree), `check-changelog-transcription.py --self-test` (25/25), all clean, matching their state
 before this PR.
 
 ## What this pass did not do
