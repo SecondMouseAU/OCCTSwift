@@ -161,13 +161,18 @@ struct Issue2860MathGuardTests {
         //   (1, 4) STAYS inside it and returned 1.0, the element at (2, 1). No try can see that
         //   one, which is why the guard tests both indices rather than relying on the throw, and
         //   why this test asserts nil for every entry rather than only for the large ones.
-        let bad: [(Int, Int)] = [
+        var bad: [(Int, Int)] = [
             (0, 1), (1, 0), (4, 1), (1, 4), (9, 9), (-1, 1), (1, -1),
             (Int(Int32.max), 1), (Int(Int32.min), 1),
-            // Beyond Int32 entirely: the bridge takes an int32_t, so the wrapper has to refuse
-            // rather than trap on the conversion.
-            (Int(Int32.max) + 1, 1), (Int.max, Int.max),
+            (Int.max, Int.max),
         ]
+        // Beyond Int32 entirely: the bridge takes an int32_t, so the wrapper has to refuse rather
+        // than trap on the conversion. ABSENT rather than skipped where `Int` is 32 bits (wasm32),
+        // because `Int.max` IS `Int32.max` there: the entry above already covers the largest index
+        // the platform can express, and `Int(Int32.max) + 1` would overflow on evaluation (#2928).
+        // A ternary rather than an `if`, because the compiler folds `Int.bitWidth > 32` and warns
+        // `will never be executed` on the statement form.
+        bad += Int.bitWidth > 32 ? [(Int(Int32.max) + 1, 1)] : []
         for (row, col) in bad {
             #expect(m.value(row: row, col: col) == nil, "value(row: \(row), col: \(col)) returned")
             #expect(

@@ -62,6 +62,16 @@ translateWithDegenerateSourceFallsBackToUnmoved()  # 2891
 # use `==` on a value derived through trigonometry, and the fix is a tolerance, which is a change to
 # an Apple-platform test and so belongs in its own PR rather than this one. Listed rather than
 # excluded because they are real failures a reader should see.
+#
+# `Issue196PolyHLRTests` is the same cause with a tolerance rather than an exact comparison, and it
+# reached a wasm run for the first time under #2928. Its subject holds here: a coarser mesh really
+# does draw fewer outline edges and more sharp ones, and both relational assertions pass, as do both
+# FINE baselines (17,041 and 1,873 within 1%). The two COARSE baselines do not: measured 3,532 against
+# 3,578 (-1.3%) and 2,160 against 2,089 (+3.4%). A coarse triangulation has proportionally fewer
+# facets, so the same last-place libm differences move more of them, and 1% is tighter than the
+# mesher's own cross-platform reproducibility at that deflection. The fix is a wider tolerance on the
+# two coarse figures, which is a change to an Apple-platform test and belongs in its own PR.
+"deflection is honoured, a coarser mesh draws fewer outline edges and more sharp ones"  # coarse mesh baseline vs a different libm
 fullCircleOriginMatchesPriorBaseline()  # exact-equality baseline vs a different libm
 offsetArcMatchesPriorBaseline()  # exact-equality baseline vs a different libm
 unitOriginMatchesPriorBaseline()  # exact-equality baseline vs a different libm
@@ -92,3 +102,23 @@ offsetTiltedMatchesPriorBaseline()  # exact-equality baseline vs a different lib
 # make every flag-based validity verdict on wasm suspect, and `Shape.isValid` is on the path every
 # IGES export takes through `Exporter.validateExportInputs`, so it wants a sweep rather than a fix.
 "Same parameter all"  # 2929
+
+# --- #3025: an OCCT wrapper reaching a host facility wasip1 does not have -------------------
+# #2928 brought every per-domain target back, which is the first time OCCTFoundationTests and
+# OCCTMiscTests have run here. Eight tests pass on Apple and fail on wasm, all because the facility
+# the OCCT wrapper reaches does not exist on this target and the wrapper answers rather than
+# refusing. Each is measured, and #3025 holds the open question, which is a decision per row rather
+# than a fix per row: document the limit on the wasm surface, fix the harness, or leave it listed.
+#
+# Listed and not excluded, deliberately. Every one of these is a real property of the wasm surface
+# that a consumer targeting the browser needs to know, and the run asserts this set exactly, so none
+# of them can quietly change. Contrast the six OCCTStressTests files Package.swift EXCLUDES for
+# #3026: those never reach the behaviour they are named for, because the fixture is unreadable.
+heapUsageMiB()  # 3025: OSD_MemInfo has no wasip1 implementation, so every figure reads 0
+infoString()  # 3025: the same, one level up: no "Heap memory" line
+openLibrary()  # 3025: wasm32-wasip1 has no dynamic linking, so OSD_SharedLibrary::DlOpen cannot succeed
+tempDirectory()  # 3025: the shim's in-memory filesystem creates a directory and will not remove one
+createAndRemoveDirectory()  # 3025: the same, on an explicit /tmp path
+readHome()  # 3025: the guest environment carries only TMPDIR, so the test's own getenv oracle is nil
+"A real, accessible path is reported valid"  # 3025: no statvfs, and "/" is not a preopen
+"a stack trace appears only when a depth is asked for"  # 3025: no backtrace facility on this target

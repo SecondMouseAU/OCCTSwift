@@ -39,8 +39,23 @@ import simd
 @Suite("Issue #622: result-buffer capacities bound the count a caller can supply", .serialized)
 struct Issue622AllocationBounds {
 
-    // `Int32.max + 1`, the first count provably past the bridge's own count type.
-    private static let pastInt32 = Int(Int32.max) + 1
+    // `Int32.max + 1`, the first count provably past the bridge's own count type, and `Int.max`
+    // where `Int` is 32 bits, which is `wasm32-unknown-wasip1`.
+    //
+    // THE SUBSTITUTION IS SAFE HERE AND WOULD NOT BE EVERYWHERE, so it is worth saying which
+    // property each site depends on. Every use below is a CAPACITY, which this layer clamps rather
+    // than rejects, so what the assertion needs is a number no ceiling can honour and not the
+    // `int32_t` boundary itself; `Int.max` is 2^31 - 1 there, four orders of magnitude past
+    // `Sampling.maximumSampleCount`, and clamps identically. Naming the boundary unconditionally is
+    // not an option: no `Int` is past `Int32.max` on that target, so the expression overflows on
+    // evaluation and a trap ends the whole test module rather than failing one test. This file was
+    // the sixth with that shape and the only one not on #2793's list, because the whole of
+    // `OCCTMiscTests` was excluded for an unrelated reason and nothing had ever run it (#2928).
+    //
+    // One consequence, stated rather than left to be noticed: in the walked list at the end of this
+    // file `Int.max` appears twice on wasm32, once as itself and once as this. That is the same
+    // assertion made twice, not a case lost.
+    private static let pastInt32 = Int.bitWidth > 32 ? Int(Int32.max) + 1 : Int.max
 
     private func box() -> Shape { Shape.box(width: 10, height: 10, depth: 10)! }
     private func sphere() -> Shape { Shape.sphere(radius: 5)! }

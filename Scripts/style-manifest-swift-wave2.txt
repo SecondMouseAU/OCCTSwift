@@ -124,14 +124,12 @@ Tests/OCCTGeom2dTests/Issue965Curve2DPropertyLifetimeTests.swift
 Tests/OCCTIOTests/CancellationReportingTests.swift
 Tests/OCCTIOTests/ExporterDrawingCollectionGoldenTests.swift
 Tests/OCCTIOTests/Issue1504IGESFormatDefectsTests.swift
-Tests/OCCTIOTests/Issue375STLWindingTests.swift
 Tests/OCCTIOTests/MultibodyRobustImportTests.swift
 Tests/OCCTIOTests/RobustImportProgressTests.swift
 Tests/OCCTIOTests/STEPWriterOversizedNameTests.swift
 Tests/OCCTMathTests/GaussLeastSquareTests.swift
 Tests/OCCTMathTests/GeomDirectionTests.swift
 Tests/OCCTMathTests/Issue1443Ax3EmptyCatchTests.swift
-Tests/OCCTMathTests/Issue640MathDimensionBoundsTests.swift
 Tests/OCCTMathTests/MathCroutTests.swift
 Tests/OCCTMathTests/MathHouseholderTests.swift
 Tests/OCCTMathTests/MathSVDTests.swift
@@ -163,7 +161,6 @@ Tests/OCCTModelingTests/Issue532CylindricalHolePartSelectionTests.swift
 Tests/OCCTModelingTests/Issue568IndexSkipTests.swift
 Tests/OCCTModelingTests/Issue572SweepApproxTests.swift
 Tests/OCCTModelingTests/Issue578DefeatureFaceMembershipTests.swift
-Tests/OCCTModelingTests/Issue598PipeShellFrenetModeTests.swift
 Tests/OCCTModelingTests/Issue612FilletContourSelectionTests.swift
 Tests/OCCTModelingTests/Issue639FilletDeclinedEdgeReportTests.swift
 Tests/OCCTModelingTests/Issue642AAGNodeIdentityTests.swift

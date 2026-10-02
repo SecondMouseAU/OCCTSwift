@@ -727,56 +727,40 @@ let swiftLayerDependencies: [Target.Dependency] =
     ? ["OCCTBridge", "OCCT", "OCCTPlatform", "simd"]
     : ["OCCTBridge", "OCCT", "OCCTPlatform"]
 
-// Which per-domain test targets can exist on wasm32-unknown-wasip1, and why the rest cannot (#2793).
+// Per-domain test targets that cannot exist on wasm32-unknown-wasip1 at all (#2793, emptied by
+// #2928).
 //
-// Phase 0's GO carried four conditions and this is the third: six spike calls are not a test suite.
-// 13 of the 18 domain targets compile and run for wasm unchanged. The five below cannot, and each
-// is a property of the platform rather than of the test:
+// EVERY DOMAIN TARGET RUNS FOR WASM. #2793 excluded five of the eighteen whole, deliberately coarse
+// for a first increment, and #2928 measured what each exclusion was actually avoiding. The
+// measurements are in `Scripts/repro/2928/`, and two of the five reasons recorded here were not true
+// of the platform at all:
 //
-//   OCCTThreadTests       28 files whose subject is concurrency. wasip1 non-threads has one thread
-//                         by construction (#2169), so these do not fail here, they have no meaning
-//                         here. Excluded rather than subsetted; #2793 holds the question of whether
-//                         a single-threaded subset is worth asserting.
-//   OCCTStressTests       `withTaskGroup` across cores, and `ProcessInfo.processorCount`.
-//   OCCTMiscTests         `autoreleasepool` (no Objective-C runtime), `DispatchQueue`,
-//                         `DispatchGroup`, `NSLock`, `withTaskGroup`.
-//   OCCTFoundationTests   `DispatchQueue`, `DispatchGroup`, `NSLock`, `ProcessInfo`.
-//   OCCTIOTests           `NSLock` around a shared fixture directory.
+//   `NSLock` and `ProcessInfo` COMPILE for this triple. The wasm SDK ships the whole
+//   swift-corelibs-foundation, not only FoundationEssentials; `Sources/OCCTPlatform/PlatformLock.swift`
+//   avoids `NSLock` because the shipped LIBRARY cannot afford full Foundation's 10 MB of
+//   internationalisation data (#2761), which is a module-size constraint and not an availability
+//   one, and a test target has no size budget. `OCCTIOTests` went out over `NSLock`, 46 files for a
+//   type that was there, and needed no edit of any kind to come back.
 //
-// Excluding a whole target is the coarse answer and it is deliberate for a first increment: the
-// alternative is `#if !os(WASI)` inside 1,428 files, and wrapping a file in `#if` makes
-// swift-format reindent the entire body, which is the 1,400-line reformat the Harnesses target
-// below records. Narrowing these five to the files that genuinely cannot build is follow-up work,
-// and it is worth doing in the order the numbers suggest: OCCTIOTests is one lock.
-let wasmUnportableTestTargets: Set<String> = [
-    "OCCTThreadTests",
-    "OCCTStressTests",
-    "OCCTMiscTests",
-    "OCCTFoundationTests",
-    "OCCTIOTests",
-]
+//   `OCCTThreadTests` IS NOT A SUITE ABOUT CONCURRENCY. The note here read "28 files whose subject
+//   is concurrency" and the target's subject is SCREW THREADS: M8 fasteners, thread forms,
+//   designation parsing, helical sweeps, V-profiles. Six of its 28 files are about CPU threads, and
+//   those six are excluded below. The name is right for the contents and was wrong for the reason.
+//
+// What genuinely does not exist on this target is `DispatchQueue`, `DispatchGroup` and
+// `DispatchSemaphore`, `autoreleasepool`, and the host-OS facilities `getrusage`, `statvfs`,
+// `getpwuid`, `gethostname` and `uname`. Those are handled file by file below, and `autoreleasepool`
+// by a shim. A sixth reason surfaced only on the build and was on no list: a bare `import Darwin` in
+// `OCCTFoundationTests/Issue1442DiskUnicodeOSDUtilitiesTests.swift`, for two `free` calls, now the
+// same per-platform conditional `Sources/OCCTPlatform/Platform.swift` uses. It is not a concurrency
+// primitive, so the survey that found the others could not have found it; the build did.
+//
+// The empty set is kept rather than deleted because it is the mechanism for a target that someday
+// cannot build at all, and because an empty one is the measurement.
+let wasmUnportableTestTargets: Set<String> = []
 
-// Individual test files the remaining 13 targets cannot build for wasm, and why (#2793).
+// Individual test files no wasm suite builds or runs, and why (#2793, narrowed by #2928).
 //
-// All four call `Shape.isSelfIntersecting(hardTimeout:)`, which is `#if !os(WASI)` because its
-// contract needs a second thread the non-threads target does not have (#2760). 19 call sites.
-//
-// Excluded rather than guarded, for the reason the Harnesses target below records at length:
-// wrapping a file or a function body in `#if` makes swift-format reindent the whole body, which
-// turned a 28-line change into a 1,400-line reformat when it was tried.
-//
-// Two of these four lose nothing and two lose real coverage, which is worth saying rather
-// than leaving for a reviewer to notice:
-//
-//   Issue208SelfIntersectionTests.swift and Issue772SelfIntersectionAnalysisTests.swift are ABOUT
-//   self-intersection analysis. On a platform where the hard-timeout form cannot exist, excluding
-//   them loses nothing that could have run.
-//
-//   Issue446UnifyInputMutationTests.swift and Issue598PipeShellFrenetModeTests.swift call it
-//   INCIDENTALLY, as one assertion inside a test about input mutation and about Frenet mode. Those
-//   two lose real wasm coverage of subjects that have nothing to do with threads, and narrowing
-//   them to the statement is follow-up work on #2793 rather than something this first increment
-//   settles.
 // NOTHING HERE IS EXCLUDED FOR A TRAP, and that is #2894's result rather than an accident. Four
 // files and one whole target used to be, because the suites ran under wasmkit 0.3.1, which does not
 // unwind a C++ exception through several frames: measured on one module file byte for byte, a throw
@@ -784,34 +768,102 @@ let wasmUnportableTestTargets: Set<String> = [
 // WASI shim, and `OCCTIntegrationTests`, the two evolved files, the two TObj files and the
 // variable-fillet file all pass. #2894, #2895 and #2897 were that interpreter, not this port.
 //
-// What is left is five files for two reasons, neither of them a trap: `Int` is 32 bits on wasm32 so
-// five files cannot express an input past `Int32.max`, and four call
-// `Shape.isSelfIntersecting(hardTimeout:)`, which is `#if !os(WASI)` because its contract needs a
-// second thread (#2760). Narrowing both is #2928.
+// NOTHING HERE IS EXCLUDED FOR `Int32` EITHER, which is #2928's result. Five files spelled an input
+// past `Int32.max`, which `Int` cannot hold where it is 32 bits. That input is a run-time OVERFLOW
+// TRAP and not a compile error, measured (`Scripts/repro/2928/run-overflow.sh`), and a trap ends the
+// module, so excluding the file was the only way to keep the suite reporting. All five now build the
+// case rather than naming it: a `pastInt32` that is `nil` where `Int` is 32 bits, so the one
+// assertion that cannot exist is absent and the rest of the file runs. `.enabled(if:)` was the
+// alternative and `Scripts/repro/2928/trait-measurement.md` records why it is the weaker one here.
+//
+// What is left is the eighteen files below, for four reasons, and all four are properties of the
+// platform or of the harness rather than of the code under test:
+//
+//   TWO CALL `Shape.isSelfIntersecting(hardTimeout:)`, which is `#if !os(WASI)` because its
+//   contract is a hard wall-clock deadline and needs a second thread to run the check on while the
+//   caller waits (#2760). #2928 narrowed this from four files to two. `Issue446Unify...` and
+//   `Issue598PipeShell...` called it INCIDENTALLY, inside tests about input mutation and about
+//   Frenet mode, and each now reads the verdict through a three-line platform helper that uses
+//   `isSelfIntersecting(timeout: 0)` on wasm: the same bridge call with the same `0`, so the
+//   no-watchdog property #1054 needs is kept and only the wall-clock escape is lost.
+//   `Issue208SelfIntersectionTests` and `Issue772SelfIntersectionAnalysisTests` are ABOUT
+//   self-intersection analysis and stay out. The old note here said excluding them "loses nothing
+//   that could have run", and that is not quite true: three of `Issue208`'s eight tests use the
+//   portable `isSelfIntersecting()`, and one of the other five is about the 0.001 s deadline itself,
+//   which no wasm spelling has. Splitting those three out is the remaining narrowing and is worth
+//   less than the file split it costs.
+//
+//   NINE ARE ABOUT CONCURRENCY ITSELF, and have no meaning on a target with one thread rather than
+//   failing on it (#2169). They are what is left of four whole-target exclusions:
+//   `StressConcurrencyTests` is the one file in `OCCTStressTests` that runs work across
+//   cores; `SerialLockThreadSafetyTests` and `ConstructionContextConcurrencyTests` were lifted out of
+//   `OCCTFoundationTests.swift` and `OCCTMiscTests.swift` by #2928 for this purpose, because those
+//   two files' other 157 and 79 tests had nothing to do with locks or with races. Each of the three
+//   states at the top of the file why it is not portable and should not be made portable, and in
+//   every case it is that a detector which cannot fail is worse than one that does not run.
+//   `OCCTThreadTests` contributes six of its 28 files, listed by name below.
+//
+//   SIX READ A `.brep` FIXTURE OUT OF THE SOURCE TREE, which the module cannot see. That one is a
+//   harness limitation and not a platform one, it is #3026, and the per-target note below says why
+//   those six are excluded rather than listed as known failures.
+//
+//   ONE COMPARES AN OCCT READING AGAINST THE HOST OS, which wasi-libc cannot be asked.
+//   `HostOSCrossCheckTests` holds the six suites that bracket an OCCT reading with `getrusage`,
+//   `statvfs`, `getpwuid`, `gethostname`, `uname` or `inet_pton`, five lifted out of
+//   `OCCTFoundationTests.swift` and one out of `Issue1442DiskUnicodeOSDUtilitiesTests.swift`, whose
+//   other four tests need no host oracle and run. These are not weakened to `>= 0` so that they build
+//   here: `>= 0` is the assertion #1987 removed from five of them, because a bridge returning 0
+//   passes it.
+//
+// `autoreleasepool` genuinely does not exist here and is NOT in this list, which is the one place a
+// shim was the right answer: its single call site makes a `Document` die at the end of a loop
+// iteration, which plain ARC already does on a target with no Objective-C runtime to pool anything
+// in, so `Tests/OCCTMiscTests/WASIAutoreleasepoolShim.swift` declares the no-op and says why at
+// length.
 //
 // `GCPntsSamplerBoundsTests` also used to be excluded, because one of its two tests PASSED after
 // 422 seconds under wasmkit. Under Node it takes 27.8 s and its sibling 24.6 s, where before only
 // one of the two finished inside the window at all, so that exclusion went with the runtime too. It
 // is still the slowest thing in the suites by a wide margin, and for a real reason: an ellipse with
-// a 1e9 aspect ratio walked for arc length against 16 measured overshoot counts. The whole 13-suite
-// run is 224 s, so it is affordable.
+// a 1e9 aspect ratio walked for arc length against 16 measured overshoot counts.
 let wasmExcludedTestFiles: [String: [String]] = [
-    "OCCTAnalysisTests": ["Issue2857IntfToolIndexGuardTests.swift"],
-    "OCCTCurveTests": [
-        "Issue479SampleCountBoundTests.swift",
-        "Issue558SamplingCountBoundsTests.swift",
+    "OCCTFoundationTests": [
+        "HostOSCrossCheckTests.swift",
+        "SerialLockThreadSafetyTests.swift",
     ],
-    "OCCTMathTests": [
-        "Issue640MathDimensionBoundsTests.swift",
-        "Issue2860MathGuardTests.swift",
+    "OCCTMiscTests": ["ConstructionContextConcurrencyTests.swift"],
+    "OCCTModelingTests": ["Issue208SelfIntersectionTests.swift"],
+    "OCCTShapeHealingTests": ["Issue772SelfIntersectionAnalysisTests.swift"],
+    // One concurrency file, plus the six that read a `.brep` out of `Fixtures/` by `#filePath`.
+    // `#filePath` is an absolute HOST path baked in at compile time, and the suites run against an
+    // in-memory filesystem whose only preopens are `/tmp` and `/work`, so every one of those tests
+    // fails with `.importFailed`, 56 recorded issues with no second cause among them. Excluded
+    // rather than listed, for two reasons: the tests never reach the kernel guard they are named
+    // for (#2746, #2773, #2777, #2789, #2790), so a known-failure line would record a property of
+    // the harness under the name of a guard; and the five guard suites reuse test names
+    // deliberately, which the known-failure list cannot tell apart. Teaching
+    // `wasm-test-node-runner.mjs` to preopen the fixture directories is the fix, and is #3026.
+    // `StressUnifySameDomainNullPCurveTests` is the one of the six that was lifted into a file of
+    // its own, because its fixture test was one of 60 in `StressNullInvalidTests.swift`.
+    "OCCTStressTests": [
+        "StressAnalyzerSurfacelessFaceGuardTests.swift",
+        "StressBRepCheckInContextGuardTests.swift",
+        "StressConcurrencyTests.swift",
+        "StressIgesExportSurfacelessFaceGuardTests.swift",
+        "StressShapeCustomSurfacelessFaceGuardTests.swift",
+        "StressShapeDivideSurfacelessFaceGuardTests.swift",
+        "StressUnifySameDomainNullPCurveTests.swift",
     ],
-    "OCCTModelingTests": [
-        "Issue208SelfIntersectionTests.swift",
-        "Issue598PipeShellFrenetModeTests.swift",
-    ],
-    "OCCTShapeHealingTests": [
-        "Issue446UnifyInputMutationTests.swift",
-        "Issue772SelfIntersectionAnalysisTests.swift",
+    // The six files of 28 whose subject is CPU threads rather than screw threads. Measured:
+    // `grep -ln 'Dispatch\|NSLock\|withTaskGroup\|Thread\.' Tests/OCCTThreadTests/*.swift` returns
+    // exactly these, and the other 22 are fastener geometry.
+    "OCCTThreadTests": [
+        "Issue1404TObjApplicationThreadSafetyTests.swift",
+        "Issue298FilletThreadSafetyTests.swift",
+        "Issue341MeshCafThreadSafetyTests.swift",
+        "Issue359STEPThreadSafetyTests.swift",
+        "Issue361SharedSingletonThreadSafetyTests.swift",
+        "Issue367FuseMultiThreadSafetyTests.swift",
     ],
 ]
 
