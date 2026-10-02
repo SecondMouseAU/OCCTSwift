@@ -321,6 +321,32 @@ let occtTarget: Target =
         //         still covers anyone pinning an older asset. Measured before and after in
         //         Scripts/repro/2860-uzawa-errinit-dimension/.
         //
+        //   0047  BRepMesh_IncrementalMesh::initParameters refuses a NaN parameter: all five    #2879
+        //         of its tests are spelled `value < bound`, which NaN defeats, so the two that  #2900
+        //         throw do not throw and the three that substitute do not substitute. Carried
+        //         2026-10-02 for the OCCT 8.0.2 rebuild. It leaves nothing exposed to a Swift
+        //         caller: occtValidMeshDeflection and occtValidMeshAngle already refuse the same
+        //         input at every bridge site, so the kernel never sees it from here.
+        //         KEEP BOTH BRIDGE GUARDS WHEN THIS IS PINNED. Same shape as 0042 and 0044: with
+        //         the patch the kernel throws Standard_NumericError for the same input the guards
+        //         refuse, so both answer the site's refusal and the guards are redundant rather
+        //         than wrong, and they still cover anyone pinning an older asset or the wasm one.
+        //
+        //   0048  The by-plane BRepGProp_Vinert and BRepGProp_VinertGK overloads measure about    #2873
+        //         the plane the caller passed rather than its mirror through the origin: the
+        //         stored fourth coefficient carried the wrong sign, which also made loc cancel
+        //         out instead of re-basing. Carried 2026-10-02 for the OCCT 8.0.2 rebuild.
+        //         THIS ONE IS THE OPPOSITE CASE AND THE REPIN MUST ACT ON IT.
+        //         OCCTBRepGPropVinertPlane does not guard an input, it COMPENSATES: it builds the
+        //         gp_Pln mirrored through the origin so that the unpatched kernel answers about
+        //         the plane the Swift caller asked for. A kernel carrying 0048 with that mirror
+        //         still in place measures about the mirrored plane again, and
+        //         BRepGPropVinertTests' two sign assertions fail. Delete the mirror, flip those
+        //         assertions to n . C - d, and drop the "pass -d" note from
+        //         Face.volumeInertia(planeNormal:planeDistance:) and
+        //         docs/reference/Shape-HLR-Geom.md, IN THE SAME CHANGE THAT REPINS. Until then
+        //         the mirror is correct and must stay, because CI resolves the unpatched asset.
+        //
         // 0043 (#2827, BRepGProp_Gauss keeps the by-plane mass) was the one outstanding before it,
         // and it went the other way, which is the comparison worth keeping beside 0044: carried
         // 2026-09-29 unbuilt, because OCCT 8.0.2 was days out and there is a standing hold on repinning
