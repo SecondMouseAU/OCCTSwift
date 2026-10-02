@@ -12,6 +12,8 @@
 #include <mutex>
 #include <unordered_set>
 
+#include <Standard_ProgramError.hxx>
+
 // Non-static (declared in OCCTBridge_Internal.h) so per-area TUs share the
 // same underlying mutex via the linker.
 std::recursive_mutex& occtGlobalMutex()
@@ -63,11 +65,24 @@ void occtBorrowRegister(const void* theObject)
   if (theObject == nullptr)
     return;
 
-  // Idempotent: insert leaves the key present whether or not it was already there, so the
-  // post-condition this function exists for holds on both paths. See OCCTBridge_Internal.h for
-  // why that is the right answer rather than a failure to report.
-  std::lock_guard<std::mutex> aLock(occtBorrowMutex());
-  occtBorrowSet().insert(theObject);
+  bool inserted = false;
+  {
+    std::lock_guard<std::mutex> aLock(occtBorrowMutex());
+    inserted = occtBorrowSet().insert(theObject).second;
+  }
+
+  if (!inserted)
+  {
+    // The address of a LIVE borrowed object cannot already be registered: see
+    // OCCTBridge_Internal.h for the two OCCT sources that settle it. Reaching here means the
+    // borrow protocol was broken somewhere else, and OCCT's own answer to a broken reference
+    // count is Standard_Transient::This() (Standard_Transient.cxx:68-76), which throws
+    // Standard_ProgramError rather than tolerating it. Caught by the calling create's
+    // catch (...), recorded as an OCCTFailure with this message, and reported as a null handle.
+    throw Standard_ProgramError(
+      "OCCTSwift borrow registry: an address handed out by this bridge was never given back "
+      "before being handed out again");
+  }
 }
 
 bool occtBorrowGiveBack(const void* theObject)

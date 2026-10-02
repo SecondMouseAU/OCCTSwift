@@ -361,13 +361,15 @@ OCCTMessengerRef OCCTMessengerCreate()
     Handle(Message_Messenger) msg = new Message_Messenger();
     if (msg.IsNull())
       return nullptr;
-    msg->IncrementRefCounter();
-    // #2952: record the reference this bridge just took, so OCCTMessengerRelease can tell a release
-    // it owes from one it does not. After IncrementRefCounter, never before. It returns void
-    // because it is a post-condition and not a query: the address is registered when it returns,
-    // and there is no outcome a create could act on; OCCTBridge_Internal.h weighs the three
-    // answers.
+    // #2952: record the borrow, so OCCTMessengerRelease can tell a release it owes from one it
+    // does not. BEFORE the IncrementRefCounter it is made of, because it throws
+    // Standard_ProgramError on an address already registered the way Standard_Transient::This()
+    // throws on a zero count, and This() throws before any reference is taken; throwing after the
+    // increment would leave the Handle unwinding to one rather than zero and strand the object.
+    // IncrementRefCounter is noexcept, so nothing can throw in between. OCCTBridge_Internal.h
+    // carries the OCCT sources this follows.
     occtBorrowRegister(msg.get());
+    msg->IncrementRefCounter();
     return msg.get();
   }
   catch (...)
@@ -385,17 +387,20 @@ void OCCTMessengerRelease(OCCTMessengerRef messenger)
   // compiler does not enforce, and OCCTBridge is reachable to a consumer (#967), so the null
   // does arrive. Unlike OCCTTObjApplicationRelease (#2897) there is no process-wide static
   // holding a reference to absorb an over-release: the first release already drops the count to
-  // zero and deletes, so a second one reads GetRefCount() out of freed memory and may delete it
-  // again. This one guard covers both cases because a null is never registered.
+  // zero and destroys, so a second one reads the reference count out of freed memory and may
+  // free the block again. This one guard covers both cases because a null is never registered.
   if (!occtBorrowGiveBack(messenger))
     return;
 
   try
   {
     auto* m = static_cast<Message_Messenger*>(messenger);
-    m->DecrementRefCounter();
-    if (m->GetRefCount() == 0)
-      delete m;
+    // Exactly opencascade::handle::EndScope (Standard_Handle.hxx:389-394), which is the kernel's
+    // only caller of DecrementRefCounter: use the value the decrement returns, and call the
+    // virtual Delete(). This used to re-read with GetRefCount() and call `delete`; see
+    // OCCTBridge_Internal.h for what the separate relaxed read costs.
+    if (m->DecrementRefCounter() == 0)
+      m->Delete();
   }
   catch (...)
   {
@@ -469,11 +474,10 @@ OCCTReportRef OCCTReportCreate()
     Handle(Message_Report) report = new Message_Report();
     if (report.IsNull())
       return nullptr;
-    report->IncrementRefCounter();
-    // #2952: record the reference this bridge just took, so OCCTReportRelease can tell a release
-    // it owes from one it does not. After IncrementRefCounter, never before. Void for the same
-    // reason as OCCTMessengerCreate above; OCCTBridge_Internal.h weighs the three answers.
+    // #2952: record the borrow before the reference it is made of, exactly as OCCTMessengerCreate
+    // above and for the same reason; OCCTBridge_Internal.h carries the OCCT sources this follows.
     occtBorrowRegister(report.get());
+    report->IncrementRefCounter();
     return report.get();
   }
   catch (...)
@@ -492,9 +496,9 @@ void OCCTReportRelease(OCCTReportRef report)
   try
   {
     auto* r = static_cast<Message_Report*>(report);
-    r->DecrementRefCounter();
-    if (r->GetRefCount() == 0)
-      delete r;
+    // opencascade::handle::EndScope (Standard_Handle.hxx:389-394), as in OCCTMessengerRelease.
+    if (r->DecrementRefCounter() == 0)
+      r->Delete();
   }
   catch (...)
   {

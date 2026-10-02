@@ -252,10 +252,20 @@ address-keyed registry (`occtBorrowRegister` / `occtBorrowGiveBack` in `OCCTBrid
 before touching the object. A null, a second release of the same pointer, or a pointer this bridge
 never produced is declined and counted by `OCCTBridgeRefusedReleaseCount`.
 
-Registration is a post-condition rather than a query, which is why `occtBorrowRegister` returns
-nothing: when it returns, the address is registered. The registry is a set keyed on the address, so
-registering one twice is idempotent, and a create has no outcome to act on. The reasoning, and the
-two answers that were weighed and rejected, are at the declaration.
+The contract comes from OCCT, not from us. The kernel has no precedent to copy for handing a raw
+`Standard_Transient*` to a foreign caller: `opencascade::handle`'s `BeginScope` and `EndScope` are
+the only callers of `IncrementRefCounter` and `DecrementRefCounter` anywhere in the pinned tree, so
+the handle is its whole borrow protocol. Two narrower questions it does answer decide the rest.
+`EndScope` destroys only when `DecrementRefCounter()` returns zero, so the reference the bridge
+holds keeps the storage alive for the whole borrow and a live object's address can never collide
+with an entry already in the registry. And when a reference count says something impossible,
+`Standard_Transient::This()` throws `Standard_ProgramError` in every build rather than tolerating
+it. So `occtBorrowRegister` returns nothing and throws on a collision, which the create's existing
+`catch` records as a diagnostic and reports as a null handle.
+
+A release likewise does what `EndScope` does: act on the value `DecrementRefCounter()` returns and
+call the virtual `Delete()`, never a second `GetRefCount()` read and never a bare `delete`. The
+sources, and the answers weighed and rejected, are at the declaration.
 
 `_Nonnull` on the declaration is not what stops the null: it is a promise the compiler does not
 enforce, and section 6 above measures that a consumer can call these entry points directly.
