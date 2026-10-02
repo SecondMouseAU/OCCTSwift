@@ -412,7 +412,8 @@ struct DrawerMeshTests {
         #expect(mesh.triangleCount == 648)
     }
 
-    @Test("Relative deflection scales with shape size, matching OCCT's own reference caller (#1418)")
+    @Test(
+        "Relative deflection scales with shape size, matching OCCT's own reference caller (#1418)")
     func relativeDeflectionScalesWithShapeSize() {
         // A drawer's TypeOfDeflection() default is .relative, and DeviationCoefficient() (default
         // ~0.001) is documented as a coefficient of the shape's own bounding-box diagonal, not a
