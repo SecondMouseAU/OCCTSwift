@@ -218,6 +218,14 @@ found it clean: it changed `"equal": false` to `"equal": null` with a written re
 whose kernel side was already N/A because a null `TopoDS_Shape` has nothing to measure. Read the
 diff, not the label.
 
+**5a. Report the injection counterfactual, not only the census delta.** Run the batch's own
+switches against the versions you replaced. Batch 10's BndLib lift measured 14 of 19 switches
+reddening nothing and 17 of 21 tests catching nothing on `main`, against zero and zero after, while
+the census delta for the same batch was three SEVERE. The census undercounts for reasons it cannot
+fix (#2949, #2964, #2985, and a nil-skip it cannot see), so where a batch's value is in question
+the counterfactual is the honest number and it costs one more run of a harness already built.
+[Injection sweep mechanics](../references/injection-sweep-mechanics.md) has the how.
+
 **6. A lifted test that fails on `main` is evidence, and is never weakened to make it pass.** The
 v5 base and `main` pin different kernels, so a pinned value that moved is a finding about the
 repin and a refusal the kernel no longer makes is a finding about the kernel. Pin what `main`

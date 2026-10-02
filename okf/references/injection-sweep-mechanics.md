@@ -110,6 +110,21 @@ does not.
 `tail`, so a gate exiting 66 on a race is indistinguishable from one exiting 0. Redirect to a file
 and read the status separately, or use `set -o pipefail`.
 
+## Run the switches against the old version too
+
+The sweep's usual job is to prove the new tests have teeth. Running the **same** switches against
+the version you replaced measures something the census cannot: what the change actually bought.
+
+Batch 10's BndLib lift reported it, and the two numbers are not close. Against `main`'s versions,
+**14 of 19 switches reddened nothing and 17 of 21 tests caught nothing**. After the lift, zero and
+zero. One switch was the exact defect its own issue described in its own words, and `main` was
+silent on it.
+
+The census delta for the same batch was **three SEVERE**, which understates it by an order of
+magnitude, for the reasons under "a gain is a candidate" and in #2985. So where a batch's value is
+in question, the counterfactual is the honest measure and it costs one extra run of a harness you
+have already built. Report both.
+
 ## Measure both sides at the same instant
 
 `origin/main` is shared across every worktree and moves while you work. A batch that measures
@@ -125,6 +140,18 @@ the rebase rather than carrying it across.
 The same applies to a figure handed to you in a brief. Three batches in one day were given a
 repo-wide SEVERE number that had already moved; every one of them re-measured and said so, which
 is the behaviour to copy. **Re-measure, do not quote.**
+
+## A rebase can leave the module stale, and `swift build` will not fix it
+
+After a rebase, `check-doc-snippets.py` refuses with `module ... OLDER than the newest module
+input`, and rebuilding does not clear it. The build system is content-hashed, so a source whose
+content the rebase did not change but whose mtime it bumped leaves the module's own mtime behind,
+and nothing rebuilds.
+
+    rm -rf .build/out/Products/Debug/OCCTSwift.swiftmodule && swift build
+
+With an ambient `OCCTSWIFT_BRIDGE_PREBUILT=1` this is guaranteed on any rebase that touches a
+bridge `.mm`.
 
 ## Restore with git, never by reverse-replacement
 
