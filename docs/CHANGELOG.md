@@ -21,6 +21,21 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### Geom2d 2D curve tests: 56 blind assertions replaced with pinned kernel values (#766)
+
+Six `Tests/OCCTGeom2dTests/` files lifted off `v5.0.0-766-execution` by content, from the merged
+execution PRs #2467, #2468, #2474, #2575 and #2628. `GCMake2dConicTests`, `Curve2DTests`,
+`BSplineCurve2DManipulationTests`, `Curve2DBSplineKnotQueryTests`,
+`BSplineCurve2DCompletionsV121Tests` and `BSplineCurve2dKnotSplitTests` asserted `!= nil`,
+`isClosed`, `knotCount > 0`, `degree >= 1`, `points.count >= 10` or nothing at all, mostly inside an
+`if let` that let a nil curve pass. Each now pins what `Geom2d_BSplineCurve`, `GC_Make*2d` and
+`GCPnts_*` give for the same input: conic radii and foci, knot vectors and multiplicities, pole
+coordinates, continuity codes and exact sampler point counts. Three further loose shapes the lift
+itself left are closed, including `main`'s own `uniformDrawRespectsCount` (#501), whose
+surplus-point pin sat behind an `if let`. Five `Scripts/repro/766-geom2d-*` probes cross with them.
+SEVERE goes from 38 to 0 across the six files and from 1,362 to 1,324 repo-wide; no production code
+changes.
+
 ### Stress builder-lifecycle and chain-depth suites now pin kernel values instead of accepting any answer (v5 lift of #2429, #2430, #2431, #2433, #2342; refs #766)
 
 `StressBuilderLifecycleTests.swift` and `StressChainDepthTests.swift` had 62 of their 89 tests in a
