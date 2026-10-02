@@ -714,3 +714,12 @@ Probe: `Scripts/repro/766-geom2d-curve2d-basics/`. Every row was run red with th
 | ProjLib ComputeApproxOnPolarSurface::Project edge onto sphere face | `OCCTProjLibComputeApproxOnPolarSurface` | returns nullptr | ✅ | ✅ | MATCH | "may or may not succeed": nothing asserted on failure |
 | ProjLib_ProjectOnSurface Tests::projectLineOnCylinder | `OCCTProjLibProjectOnSurface` | trim end halved | ✅ | ✅ | MATCH | two `if let`s, `upper > lower`; now domain and start pinned |
 | Geom2dEval TBezier 2D Curve::createAndEval | `OCCTGeom2dEvalTBezierCurveCreate` | alpha + 0.5 | ✅ | ✅ | MATCH | domain signs only |
+### #1979 executed: `Curve2DBisectorTests.swift`, `Curve2DBoundingBoxTests.swift`, `Curve2DBSplineExtrasTests.swift`
+Probe: `Scripts/repro/766-geom2d-bisector-bbox-weights/`. Every row was run red with the injection applied and green after it was reverted.
+| Curve2D Bisector Tests::Bisector between two lines | `OCCTCurve2DBisectorCC` | return the curve even when IsEmpty() | ✅ | ✅ | MATCH | the assertion sat inside `if let bis` and the kernel returns empty, so nothing was ever checked; now pins nil |
+| Curve2D Bisector Tests::Bisector between point and line | `OCCTCurve2DBisectorPC` | move the point 1 up | ✅ | ✅ | MATCH | `pts.count >= 2` inside `if let bis`; now pins the parabola y = (x^2 + 25) / 10 |
+| Curve2D Bounding Box Tests::Bounding box of segment | `OCCTCurve2DGetBoundingBox` | BndLib_Add2dCurve gap 0 -> 1 | ✅ | ✅ | MATCH | one-sided bounds; now pins all four |
+| Curve2D Bounding Box Tests::Bounding box of circle | `OCCTCurve2DGetBoundingBox` | BndLib_Add2dCurve gap 0 -> 1 | ✅ | ✅ | MATCH | one-sided bounds; now pins all four |
+| Curve2D_BSpline_Extras::getWeight | `OCCTCurve2DBSplineGetWeight` | weight + 1 | ✅ | ✅ | MATCH | nested in `if let c` |
+| Curve2D_BSpline_Extras::getAllWeights | `OCCTCurve2DBSplineGetWeights` | each weight + 1 | ✅ | ✅ | MATCH | `!weights.isEmpty` inside `if let c`; now pins six weights of 1 |
+| Curve2D_BSpline_Extras::setPeriodic | `OCCTCurve2DBSplineSetPeriodic` | return true without SetPeriodic() | ✅ | ✅ | MATCH | `#expect(true)`; now pins the non-periodic -> periodic change and 6 poles |
