@@ -1,0 +1,9 @@
+ellipseRadii: major=10 minor=5
+ellipseEccentricity: 0.86602540378443871
+ellipseFocal: 17.320508075688775
+ellipseFoci: focus1=(8.6602540378443873, 0, 0) focus2=(-8.6602540378443873, 0, 0)
+ellipseFoci: minorAxisPoint=(6.1232339957367663e-16, 5, 0) focalSum=20
+ellipseParameter: 2.5
+ellipseDirectrix1: loc=(11.547005383792515, 0, 0) dir=(-0, 1, 0)
+ellipseSetRadii: after SetMajorRadius(20) major=20 minor=5
+ellipseSetRadii: after SetMinorRadius(8) major=20 minor=8
