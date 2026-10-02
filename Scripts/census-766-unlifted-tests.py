@@ -166,47 +166,15 @@ def in_scope(path):
 
 # ------------------------------------------------------------------ test identity
 
-DECL = re.compile(r"\b(?:struct|class|enum|actor|extension)\s+([A-Za-z_][A-Za-z0-9_]*)")
-
 
 def type_spans(wa, text):
     """[(body start, body end, type name)] for every type declaration in `text`.
 
-    Walked a character at a time rather than regexed over the whole blob, so that a `struct`
-    written in a comment or inside a string literal is not taken for a declaration. The body's
-    extent is `census-766-weak-assertions.py`'s own `balanced_body`, imported and not restated,
-    so the two cannot disagree about where a brace closes.
-
-    A Swift triple-quoted multi-line literal is read as an empty string followed by an ordinary
-    one, which is `balanced_body`'s own reading of it; a type declared inside one would be
-    reported. No test file holds that shape and none should."""
-    spans = []
-    i, n = 0, len(text)
-    while i < n:
-        c = text[i]
-        if c == '"':
-            i += 1
-            while i < n and text[i] != '"':
-                i += 2 if text[i] == "\\" else 1
-            i += 1
-        elif c == "/" and i + 1 < n and text[i + 1] == "/":
-            j = text.find("\n", i)
-            i = n if j < 0 else j + 1
-        elif c == "/" and i + 1 < n and text[i + 1] == "*":
-            j = text.find("*/", i + 2)
-            i = n if j < 0 else j + 2
-        elif c in "scea":
-            m = DECL.match(text, i)
-            if not m:
-                i += 1
-                continue
-            s, e = wa.balanced_body(text, m.end())
-            if s >= 0 and e > 0:
-                spans.append((s, e, m.group(1)))
-            i = m.end()
-        else:
-            i += 1
-    return sorted(spans)
+    The walk itself lives in `census-766-weak-assertions.py` as of #2964, which needed it there
+    to scope a helper to the suite that declares it. It is called rather than restated, so the
+    two scripts cannot disagree about where a type body begins and ends, exactly as they already
+    share `balanced_body`. This wrapper keeps the `(wa, text)` signature the callers use."""
+    return wa.type_spans(text)
 
 
 def test_labels(wa, path, text):
