@@ -24,7 +24,11 @@ enum HarnessRunner {
             RunnableEntry(
                 name: "965-properties-lifetime",
                 summary: "do the *Properties views keep their parent alive? (#965)",
-                run: PropertiesLifetime.run)
+                run: PropertiesLifetime.run),
+            RunnableEntry(
+                name: "2972-sheetmetal-volumes",
+                summary: "SheetMetal volumes against a term-by-term prediction (#2972)",
+                run: SheetMetalVolumes.run),
         ]
         #if !os(WASI)
             entries += [

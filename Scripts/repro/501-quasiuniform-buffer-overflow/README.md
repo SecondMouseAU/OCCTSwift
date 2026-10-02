@@ -124,9 +124,18 @@ After: `PASS: 0 overflowing calls`, and the end parameter kept everywhere.
 
 Those "before" numbers need a kernel without `Scripts/patches/0018` to reproduce. That patch
 ([#555](https://github.com/SecondMouseAU/OCCTSwift/issues/555)) fixes the sampler itself, so on the
-current xcframework `NbPoints()` never exceeds the request and the bridge guards described here have
-nothing left to clamp. They stay in place regardless: they are what makes the bridge correct against
-any kernel, including one built from unpatched OCCT.
+current xcframework the ellipse above no longer overshoots and the bridge guards described here
+have nothing left to clamp **on this input**. They stay in place regardless: they are what makes
+the bridge correct against any kernel, including one built from unpatched OCCT.
+
+**And they are not idle, measured 2026-10-02 (#2977).** `0018`'s added end condition is an
+absolute 3D test against `theTol`, so it stops helping as the curve grows: a **1e8 x 0.1** ellipse
+returns `count + 1` for eight of the first 59 counts, identically for `GCPnts_UniformAbscissa` and
+`GCPnts_QuasiUniformAbscissa` and identically in 2D and 3D. The surplus sample is the end parameter
+and the one before it is 5.43e-8 short, exactly the shape above. The regression tests are pointed
+at that ellipse now, because against the one above they had stopped reaching the surplus-point path
+at all and a distortion of the last-slot rule left them green. See
+`Scripts/repro/2977-uniformabscissa-no-overshoot/`.
 
 ## Not examined
 

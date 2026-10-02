@@ -79,7 +79,6 @@ Tests/OCCTBRepGraphTests/Issue336ChainedHistoryTests.swift
 Tests/OCCTBRepGraphTests/Issue617FaceGridLayoutTests.swift
 Tests/OCCTCurveTests/BSplineCurve3DCompletionsV121Tests.swift
 Tests/OCCTCurveTests/CurveTestFixtures.swift
-Tests/OCCTCurveTests/GCPntsSamplerBoundsTests.swift
 Tests/OCCTCurveTests/Issue1399LawKnotSplitFactoryReachTests.swift
 Tests/OCCTCurveTests/Issue1476CurveTypeOtherCurveFallbackTests.swift
 Tests/OCCTCurveTests/Issue2861TangentialDeflectionTests.swift
