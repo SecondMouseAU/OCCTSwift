@@ -20,23 +20,6 @@
 # The identifier is matched against the text Swift Testing prints after `✘ Test `, up to the first
 # ` recorded an issue` or ` failed after`. Quote-wrapped display names are matched with their quotes.
 
-# --- #2891: OCCT's inline argument validation does not raise on wasm ---------------------------
-# gp_Dir's zero-norm check is inline in gp_Dir.hxx and `No_Exception` is NOT defined when the bridge
-# compiles for wasm (both measured), so the check should fire on both platforms. It does not.
-# Measured with OCCTDiagnostics.capturing around one call, same inputs:
-#   Apple: records=2, "Standard_ConstructionError: gp_Dir() - input vector has zero norm",
-#          translated origin (5, 3, 2), the documented unmoved fallback.
-#   wasm:  records=0, no exception at all, translated origin (6, 5, 5) -- the degenerate axis was
-#          used as though it were valid.
-# Both header trees are byte-identical for gp_Dir.hxx and both are 7,160 files, so this is not a
-# header or macro difference. It is the exception path itself.
-"OCCTAx3Create: parallel direction/xDirection overwrites sentinel outputs, not left untouched"  # 2891
-"OCCTAx3MirrorPoint: degenerate input axis overwrites sentinel outputs with the input point unmoved"  # 2891
-"OCCTAx3Translate: degenerate input axis overwrites sentinel outputs with the input point unmoved"  # 2891
-createWithParallelDirectionAndXDirectionSignalsFailure()  # 2891
-mirrorPointWithDegenerateSourceFallsBackToUnmoved()  # 2891
-translateWithDegenerateSourceFallsBackToUnmoved()  # 2891
-
 # --- the kernel skew: wasm is one patch behind native (#2827, #2873) --------------------------
 # These are NOT a wasm defect. `Scripts/wasm-kernel-pin.txt` acknowledges in prose that the
 # `v4.0.0-kernel.3` repin pinned patch `0043` (the by-plane `BRepGProp_Vinert` mass) on native
