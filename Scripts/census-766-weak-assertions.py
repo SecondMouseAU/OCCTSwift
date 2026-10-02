@@ -50,7 +50,13 @@ TEST_ATTR = re.compile(r"^\s*@Test\b")
 FUNC = re.compile(r"\bfunc\s+(?P<name>[A-Za-z_][A-Za-z0-9_]*)\s*\(")
 ASSERT_CALL = re.compile(r"#(?:expect|require)\s*\(")
 
-GUARD_RETURN = re.compile(r"\bguard\b[^\n]*\belse\b")
+# A `guard`'s binding list runs to its `else`, and Swift's formatter puts that `else` on its own
+# line as soon as the list wraps, which is the house style for the multi-binding guards these
+# tests use. So the span crosses newlines. It is bounded by `;` and by an unpaired `}`, and a
+# closure argument inside the list (`first(where: { $0 > 1 })`) is allowed as one paired group,
+# so the match cannot run past the statement it starts in. Until #2982 this was
+# `\bguard\b[^\n]*\belse\b`, and 284 tests in 122 files carried a nil-skip nothing could see.
+GUARD_RETURN = re.compile(r"\bguard\b(?:[^{};]|\{[^{}]*\})*?\belse\b")
 IF_LET = re.compile(r"\bif\s+(?:let|case\s+let|var)\b")
 NONNEG_INT = re.compile(r"\bif\s+[A-Za-z0-9_.()\[\] ]+\s*>=\s*0\s*[{,]")
 
@@ -58,6 +64,22 @@ NIL_ONLY = re.compile(r"^[^=<>]*(?:!=|==)\s*nil\s*$")
 COUNT_ONLY = re.compile(r"^[^=<>]*(?:>\s*0|>=\s*\d+|\.isEmpty\s*==\s*false)\s*$")
 NOT_EMPTY = re.compile(r"^\s*!\s*[A-Za-z0-9_.()\[\]]+\.isEmpty\s*$")
 BARE_BOOL = re.compile(r"^\s*[A-Za-z_][A-Za-z0-9_.()\[\]?!]*\s*$")
+
+# An ordering between two member paths rooted at the SAME identifier: `b.max.x >= b.min.x`,
+# `curve.domain.upperBound >= curve.domain.lowerBound`, `delta.endTime >= delta.beginTime`. A
+# `Bnd_Box` has `max >= min` by construction, a curve's domain is ordered by construction, and an
+# end time follows a begin time by construction, so the comparison holds whatever the kernel
+# returned and the test pins nothing (#2985). The shared root is what makes it decidable: an
+# ordering between two independently derived quantities (`fine.count >= coarse.count`,
+# `deviation <= tolerance`, `resultFaces.count <= filletedFaces.count`) is a real relational
+# contract and stays a pin. Two bare locals (`lastU >= firstU`) are left as a pin for the same
+# reason: nothing in the text tells them apart from `deviation <= tolerance`.
+_PATH = r"[A-Za-z_][A-Za-z0-9_]*[?!]?"
+SAME_ROOT_ORDER = re.compile(
+    r"^\s*(?P<lroot>" + _PATH + r")(?P<lrest>(?:\." + _PATH + r")+)\s*"
+    r"(?:>=|<=|>|<)\s*"
+    r"(?P<rroot>" + _PATH + r")(?P<rrest>(?:\." + _PATH + r")+)\s*$"
+)
 
 # An assertion that pins a value: an equality against something that is not nil, a tolerance
 # comparison, or a comparison against a non-integer literal. These are what a wrong value trips.
@@ -103,6 +125,57 @@ def balanced_body(text: str, open_at: int) -> tuple[int, int]:
                 return (i, j + 1)
         j += 1
     return (i, -1)
+
+
+DECL = re.compile(r"\b(?:struct|class|enum|actor|extension)\s+([A-Za-z_][A-Za-z0-9_]*)")
+
+
+def type_spans(text: str) -> list[tuple[int, int, str]]:
+    """[(body start, body end, type name)] for every type declaration in `text`.
+
+    Walked a character at a time rather than regexed over the whole blob, so that a `struct`
+    written in a comment or inside a string literal is not taken for a declaration. The body's
+    extent is `balanced_body`'s, so the two cannot disagree about where a brace closes.
+
+    A Swift triple-quoted multi-line literal is read as an empty string followed by an ordinary
+    one, which is `balanced_body`'s own reading of it; a type declared inside one would be
+    reported. No test file holds that shape and none should.
+
+    It lived in `census-766-unlifted-tests.py` until #2964, which needed it here to scope a
+    helper to the suite that declares it. That script imports this one, so it now calls this.
+    """
+    spans: list[tuple[int, int, str]] = []
+    i, n = 0, len(text)
+    while i < n:
+        c = text[i]
+        if c == '"':
+            i += 1
+            while i < n and text[i] != '"':
+                i += 2 if text[i] == "\\" else 1
+            i += 1
+        elif c == "/" and i + 1 < n and text[i + 1] == "/":
+            j = text.find("\n", i)
+            i = n if j < 0 else j + 1
+        elif c == "/" and i + 1 < n and text[i + 1] == "*":
+            j = text.find("*/", i + 2)
+            i = n if j < 0 else j + 2
+        elif c in "scea":
+            m = DECL.match(text, i)
+            if not m:
+                i += 1
+                continue
+            s, e = balanced_body(text, m.end())
+            if s >= 0 and e > 0:
+                spans.append((s, e, m.group(1)))
+            i = m.end()
+        else:
+            i += 1
+    return sorted(spans)
+
+
+def owner_at(spans: list[tuple[int, int, str]], offset: int) -> str:
+    """The dotted type path enclosing `offset`, or "" for file scope."""
+    return ".".join(nm for s, e, nm in spans if s <= offset < e)
 
 
 def strip_comments(body: str) -> str:
@@ -160,6 +233,11 @@ def weak(arg: str) -> str | None:
     a = arg.strip()
     if not a:
         return "empty"
+    m = SAME_ROOT_ORDER.match(a)
+    if m and m.group("lroot") == m.group("rroot"):
+        # Checked before PINS_VALUE, which does not see this shape at all: neither side carries a
+        # literal, a tolerance or an `==`, so the complement in `inspect` counted it as a pin.
+        return "same-root-ordering"
     if PINS_VALUE.search(a):
         return None
     if NIL_ONLY.match(a):
@@ -173,20 +251,41 @@ def weak(arg: str) -> str | None:
     return None
 
 
-def helpers_in(path: str) -> dict[str, str]:
-    """Every `func` body in `path`, by name.
+def helpers_in(path: str) -> dict[str, dict[str, str]]:
+    """Every `func` body in `path`, by declaring type path and then by name.
 
     A test that delegates its assertions to a helper in the same file has none of its own, and a
     detector that stops at the test body reports it as having no assertions at all. Measured on
     `Issue493InterpolatePeriodicParityTests.swift`: three of its five tests call one private
     `expectSameCurve` holding eleven assertions, and all three were reported SEVERE.
+
+    The owner dimension is #2964. Keyed on the bare name alone, last one wins, so a test was
+    expanded with whichever same-named helper appeared **last in the file** rather than with its
+    own suite's. `StressFormatRoundTripTests.swift` is the worked case: six suites each declare a
+    `private func roundTrip`, the OBJ suite's asserts nothing at all, and its four tests were
+    scored against the IGES suite's and reported clean.
     """
     text = open(path, encoding="utf-8", errors="ignore").read()
-    out: dict[str, str] = {}
+    spans = type_spans(text)
+    out: dict[str, dict[str, str]] = {}
     for m in FUNC.finditer(text):
         s, e = balanced_body(text, m.end())
         if s >= 0 and e > 0:
-            out[m.group("name")] = text[s:e]
+            out.setdefault(owner_at(spans, m.start()), {})[m.group("name")] = text[s:e]
+    return out
+
+
+def helpers_for(helpers: dict[str, dict[str, str]], owner: str) -> dict[str, str]:
+    """The helpers visible to a member of `owner`: file scope first, the owner's own last.
+
+    Swift resolves an unqualified call to a member of the enclosing type before anything at file
+    scope, so the owner's own declarations are applied last and win. The enclosing types of a
+    nested suite are applied in order, outermost first.
+    """
+    out: dict[str, str] = dict(helpers.get("", {}))
+    parts = owner.split(".") if owner else []
+    for i in range(len(parts)):
+        out.update(helpers.get(".".join(parts[:i + 1]), {}))
     return out
 
 
@@ -232,8 +331,16 @@ def tests_in(path: str):
 def inspect(path: str):
     """Yield one finding dict per `@Test` whose assertions cannot fail on a wrong value."""
     helpers = helpers_in(path)
+    text = open(path, encoding="utf-8", errors="ignore").read()
+    spans = type_spans(text)
+    offsets, pos = [], 0
+    for line in text.split("\n"):
+        offsets.append(pos)
+        pos += len(line) + 1
     for line_no, name, raw in tests_in(path):
-        body = expand(strip_comments(raw), {k: strip_comments(v) for k, v in helpers.items()
+        off = offsets[line_no - 1] if 0 < line_no <= len(offsets) else 0
+        visible = helpers_for(helpers, owner_at(spans, off))
+        body = expand(strip_comments(raw), {k: strip_comments(v) for k, v in visible.items()
                                             if k != name})
         args = assertion_args(body)
         shapes = [weak(a) for a in args]
@@ -498,6 +605,104 @@ func k(n: Int) {
 """)
     cases.append(("a second if-let with no else is still flagged",
                   len(got) == 1 and "if-let-no-else" in got[0]["reasons"]))
+
+    # 15. #2982. A MULTI-LINE `guard let ... else { return }` is flagged. `GUARD_RETURN` was
+    #     `\bguard\b[^\n]*\belse\b`, which cannot cross a newline, and Swift's formatter moves the
+    #     `else` onto its own line as soon as the binding list wraps. 284 tests in 122 files sat
+    #     in this shape and nothing in the detector saw it. Isolates the newline span alone: case
+    #     1 above is the same test with the `else` pulled onto the `guard` line, so only the
+    #     wrapping differs between them.
+    got, _ = run("""@Test func q() throws {
+  guard let axis = AxisPlacement2D(origin: SIMD2(0, 0), direction: SIMD2(1, 0)),
+      let rev = axis.reversed()
+  else { return }
+  #expect(abs(rev.direction.x + 1.0) < 1e-10)
+}
+""")
+    cases.append(("a multi-line guard-else-return is flagged (#2982)",
+                  len(got) == 1 and "guard-else-return" in got[0]["reasons"]))
+
+    # 16. #2982, the other side. The widened span is bounded by the statement it starts in, so a
+    #     `guard` whose own `else` has no `return` is not credited with a `return` belonging to
+    #     some later statement's `else`. Without the `[^{};]` bound the match would run on.
+    got, _ = run("""@Test func r() throws {
+  guard let v = s.volume,
+      let a = s.area
+  else {
+    Issue.record("no measurement")
+    throw TestError.missing
+  }
+  #expect(abs(v - 8) < 1e-9)
+  #expect(abs(a - 24) < 1e-9)
+}
+""")
+    cases.append(("a multi-line guard whose else does not return is silent (#2982)",
+                  got == []))
+
+    # 17. #2985. An ordering between two member paths rooted at the same identifier is weak, so a
+    #     test whose only assertion is one is SEVERE. `b.max.x >= b.min.x` is true of every
+    #     `Bnd_Box`, and until this shape existed `inspect` counted it as a pin by complement,
+    #     because `PINS_VALUE` never ran.
+    got, _ = run("""@Test func t() {
+  let b = BndLib.ellipseArc(ellipse: e, from: 0, to: 1)
+  #expect(b.max.x >= b.min.x)
+}
+""")
+    cases.append(("a same-root ordering is weak, so the test is SEVERE (#2985)",
+                  len(got) == 1 and got[0]["tier"] == "SEVERE"
+                  and any("same-root-ordering" in r for r in got[0]["reasons"])))
+
+    # 18. #2985, the other side. An ordering between two independently derived quantities is a
+    #     real relational contract and stays a pin. A shape that flagged every ordering would
+    #     reclassify `fine.count >= coarse.count` and `deviation <= tolerance`, which are the
+    #     measurement those tests exist to make.
+    got, _ = run("""@Test func u() {
+  #expect(fine.count >= coarse.count)
+}
+""")
+    cases.append(("an ordering between two different roots is still a pin (#2985)", got == []))
+
+    # 19. #2964. A same-named helper in another suite of the same file is not used. `helpers_in`
+    #     keyed every `func` on its bare name, last one wins, so the four tests of the OBJ suite
+    #     in `StressFormatRoundTripTests.swift` were scored against the IGES suite's `roundTrip`
+    #     and reported clean while their own helper asserts nothing.
+    got, _ = run("""struct ObjSuite {
+  private func roundTrip(_ shape: Shape) throws {
+    let url = tempURL("obj")
+    try Exporter.writeOBJ(shape: shape, to: url)
+    let reimported = try Shape.loadOBJ(from: url)
+    _ = reimported
+  }
+  @Test func objBox() throws { try roundTrip(standardBox()) }
+}
+struct IgesSuite {
+  private func roundTrip(_ shape: Shape) throws {
+    let url = tempURL("iges")
+    try Exporter.writeIGES(shape: shape, to: url)
+    let reimported = try Shape.loadIGES(from: url)
+    #expect(abs((reimported.volume ?? 0) - 1) < 1e-9)
+  }
+  @Test func igesBox() throws { try roundTrip(standardBox()) }
+}
+""")
+    objbox = [f for f in got if f["test"] == "objBox"]
+    cases.append(("a same-named helper in another suite is not borrowed (#2964)",
+                  len(objbox) == 1 and "no-assertions" in objbox[0]["reasons"]
+                  and not [f for f in got if f["test"] == "igesBox"]))
+
+    # 20. #2964, the other side. A file-scope helper is still visible to a test inside a suite,
+    #     which is the false-positive class case 12b exists for. Scoping helpers to their owner
+    #     must not take that away.
+    got, _ = run("""private func expectSameCurve(_ a: Curve3D?, _ b: Curve3D?) {
+  #expect(abs(a.domain.lowerBound - b.domain.lowerBound) < 1e-12)
+}
+struct OnlySuite {
+  @Test func delegatingToFileScope() {
+    expectSameCurve(Curve3D.interpolatePeriodic(points: pts), Curve3D.interpolate(points: pts))
+  }
+}
+""")
+    cases.append(("a file-scope helper is still visible inside a suite (#2964)", got == []))
 
     failures = 0
     for label, ok in cases:
