@@ -2,9 +2,18 @@
   {
     "test_name": "Modeling domain kernel parity",
     "bridge_function": "OCCTModelingPlaceholder",
-    "bridge_output": {"type": "object", "data": {}},
-    "kernel_output": {"type": "object", "data": {}},
-    "comparison": {"equal": null, "differences": []},
+    "bridge_output": {
+      "type": "object",
+      "data": {}
+    },
+    "kernel_output": {
+      "type": "object",
+      "data": {}
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
     "status": "PENDING"
   },
   {
@@ -406,5 +415,809 @@
       "differences": []
     },
     "status": "N/A"
+  },
+  {
+    "test_name": "Advanced Modeling Tests::filletSpecificEdges",
+    "bridge_function": "OCCTShapeFilletEdges",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "done": true,
+        "valid": true,
+        "faces": 10,
+        "volume": 3951.5634099876793
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "done": true,
+        "valid": true,
+        "faces": 10,
+        "volume": 3951.5634099876793
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: done, valid, face count and volume of the filleted box (the 20x20x10 box, first four edges, r=2). The test asserted non-nil and valid (an unfilleted box passes both); it now asserts valid, 10 faces and the volume. Bridge: Shape.filleted non-nil (OCCTShapeFilletEdges / ...Linear return nullptr exactly when BRepFilletAPI_MakeFillet::IsDone() is false, so a non-nil result is done true), isValid (BRepCheck), subShapes(ofType: .face).count and Shape.volume. Kernel: BRepFilletAPI_MakeFillet on the same edge-map indices, IsDone(), BRepCheck_Analyzer, TopExp::MapShapes face count, BRepGProp::VolumeProperties; the filletSpecificEdges line of the transcript at %.17g. Doubles are compared to 1e-9 relative.",
+    "probe": "Scripts/repro/766-modeling-advanced/probe-evidence-fix.mm (transcript-evidence-fix.txt)"
+  },
+  {
+    "test_name": "Advanced Modeling Tests::filletSingleEdge",
+    "bridge_function": "OCCTShapeFilletEdges",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "done": true,
+        "valid": true,
+        "faces": 7,
+        "volume": 1997.8539816339744
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "done": true,
+        "valid": true,
+        "faces": 7,
+        "volume": 1997.8539816339744
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: done, valid, face count and volume of the filleted box (the 20x10x10 box, edge 0, r=1). The test asserted only non-nil (the input box passes); it now asserts valid, 7 faces (the box's six and the fillet) and the volume. Bridge: Shape.filleted non-nil (OCCTShapeFilletEdges / ...Linear return nullptr exactly when BRepFilletAPI_MakeFillet::IsDone() is false, so a non-nil result is done true), isValid (BRepCheck), subShapes(ofType: .face).count and Shape.volume. Kernel: BRepFilletAPI_MakeFillet on the same edge-map indices, IsDone(), BRepCheck_Analyzer, TopExp::MapShapes face count, BRepGProp::VolumeProperties; the filletSingleEdge line of the transcript at %.17g. Doubles are compared to 1e-9 relative.",
+    "probe": "Scripts/repro/766-modeling-advanced/probe-evidence-fix.mm (transcript-evidence-fix.txt)"
+  },
+  {
+    "test_name": "Advanced Modeling Tests::filletVariableRadius",
+    "bridge_function": "OCCTShapeFilletEdgesLinear",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "done": true,
+        "valid": true,
+        "faces": 7,
+        "volume": 2990.5237334555886
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "done": true,
+        "valid": true,
+        "faces": 7,
+        "volume": 2990.5237334555886
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: done, valid, face count and volume of the filleted box (the 30x10x10 box, edge 0, radius 1 to 3). The test asserted only non-nil (the input box passes); it now asserts valid, 7 faces and the volume. Bridge: Shape.filleted non-nil (OCCTShapeFilletEdges / ...Linear return nullptr exactly when BRepFilletAPI_MakeFillet::IsDone() is false, so a non-nil result is done true), isValid (BRepCheck), subShapes(ofType: .face).count and Shape.volume. Kernel: BRepFilletAPI_MakeFillet on the same edge-map indices, IsDone(), BRepCheck_Analyzer, TopExp::MapShapes face count, BRepGProp::VolumeProperties; the filletVariableRadius line of the transcript at %.17g. Doubles are compared to 1e-9 relative.",
+    "probe": "Scripts/repro/766-modeling-advanced/probe-evidence-fix.mm (transcript-evidence-fix.txt)"
+  },
+  {
+    "test_name": "Advanced Modeling Tests::edgeHasIndex",
+    "bridge_function": "OCCTShapeGetEdgeAtIndex",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "index": 5
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "edges": 12
+      }
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "Advanced Modeling Tests::faceHasIndex",
+    "bridge_function": "OCCTShapeGetFaceAtIndex",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "index": 3
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "faces": 6
+      }
+    },
+    "comparison": {
+      "equal": null,
+      "differences": []
+    },
+    "status": "N/A"
+  },
+  {
+    "test_name": "Advanced Modeling Tests::draftVerticalFaces",
+    "bridge_function": "OCCTShapeDraft",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "verticalFaces": 4,
+        "done": true,
+        "valid": true,
+        "faces": 6,
+        "volume": 12024.71917796442
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "verticalFaces": 4,
+        "done": true,
+        "valid": true,
+        "faces": 6,
+        "volume": 12024.71917796442
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: the count of vertical faces of the 20x20x30 box and done, valid, face count and volume of the result of drafting them 3 degrees about the z=0 neutral plane. The test asserted 4 vertical faces and non-nil (the input box passes); it now asserts valid, 6 faces and the volume. Bridge: faces().filter(isVertical()).count and Shape.drafted (nil exactly when BRepOffsetAPI_DraftAngle is not done), isValid, subShapes(ofType: .face).count, Shape.volume. Kernel: the faces whose OCCTFaceGetNormal-style normal has |z| < sin(0.01), BRepOffsetAPI_DraftAngle::Add/Build/IsDone, BRepCheck_Analyzer, TopExp::MapShapes face count, BRepGProp; draftVerticalFaces line of the transcript at %.17g. Doubles are compared to 1e-9 relative.",
+    "probe": "Scripts/repro/766-modeling-advanced/probe-evidence-fix.mm (transcript-evidence-fix.txt)"
+  },
+  {
+    "test_name": "Advanced Modeling Tests::removeFeatures",
+    "bridge_function": "OCCTShapeRemoveFeatures",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "faces": 7,
+        "nonPlanarFaces": 1,
+        "done": true,
+        "valid": true,
+        "resultFaces": 6,
+        "volume": 7999.999999999998
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "faces": 7,
+        "nonPlanarFaces": 1,
+        "done": true,
+        "valid": true,
+        "resultFaces": 6,
+        "volume": 7999.999999999998
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: face count and non-planar face count of the box with a through hole, then done, valid, face count and volume of the box after defeaturing the cylindrical face. The test asserted more than 6 faces, at least one non-planar, valid and a volume within 100 of 8000, reading defeatured.volume! inside #expect; it now asserts valid, 6 faces and the volume within 1e-6 of the kernel's. Bridge: boxWithHole.faces().count, the count of faces with isPlanar false, Shape.withoutFeatures (nil exactly when BRepAlgoAPI_Defeaturing is not done), isValid, subShapes(ofType: .face).count, Shape.volume. Kernel: BRepAlgoAPI_Cut, TopExp::MapShapes faces, BRepAdaptor_Surface type != GeomAbs_Plane, BRepAlgoAPI_Defeaturing, BRepCheck_Analyzer, BRepGProp; removeFeatures line of the transcript at %.17g. Doubles are compared to 1e-9 relative.",
+    "probe": "Scripts/repro/766-modeling-advanced/probe-evidence-fix.mm (transcript-evidence-fix.txt)"
+  },
+  {
+    "test_name": "Advanced Modeling Tests::pipeShellFrenet",
+    "bridge_function": "OCCTShapeCreatePipeShellMultiSection",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "done": true,
+        "type": "SOLID",
+        "valid": true,
+        "volume": 436.39600453178826,
+        "controlCorrectedFrenetVolume": 445.0331455462985
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "done": true,
+        "type": "SOLID",
+        "valid": true,
+        "volume": 436.39600453178826,
+        "controlCorrectedFrenetVolume": 445.0331455462985
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: done, result type, validity and volume of the Frenet sweep of an r=2 circle across the start of the S-curve spine through (0,0,0), (10,0,0), (20,10,0), (30,10,0) (Wire.bspline, a GeomAPI_PointsToBSpline fit), next to the corrected-Frenet volume of the same spine and profile (controlCorrectedFrenetVolume, 445.03, the section area times the spine's length; plain Frenet gives 436.40 because the curve has an inflection). The profile is built at Wire.point(at: 0) with Wire.tangent(at: 0) as its normal. The earlier profile lay in the XY plane (a circle at the origin with the Z normal), which holds the whole spine, so the sweep was degenerate (mass -6.9e-16) and the test asserted only non-nil; it now asserts non-nil, valid, SOLID and the volume within 1e-6. Bridge: Shape.pipeShell(mode: .frenet) non-nil (OCCTShapeCreatePipeShellMultiSection returns nullptr when the sweep is not done or MakeSolid fails), isValid, shapeType and Shape.volume; the control* keys are the same spine and profile in another mode. Kernel: BRepOffsetAPI_MakePipeShell with SetMode(true) (Frenet), SetTransitionMode(Transformed), Add(profile, false, false), SetIsBuildHistory(false), Build, MakeSolid, BRepCheck_Analyzer, BRepGProp::VolumeProperties; the pipeShellFrenet line of the transcript at %.17g. Doubles are compared to 1e-9 relative.",
+    "probe": "Scripts/repro/766-modeling-advanced/probe-evidence-fix.mm (transcript-evidence-fix.txt)"
+  },
+  {
+    "test_name": "Advanced Modeling Tests::pipeShellCorrectedFrenet",
+    "bridge_function": "OCCTShapeCreatePipeShellMultiSection",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "done": true,
+        "type": "SOLID",
+        "valid": true,
+        "volume": 299.0653688793438,
+        "controlFrenetVolume": 293.005990594174
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "done": true,
+        "type": "SOLID",
+        "valid": true,
+        "volume": 299.0653688793438,
+        "controlFrenetVolume": 293.005990594174
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: done, result type, validity and volume of the corrected-Frenet sweep of an r=1.5 circle across the start of the 3D spine through (0,0,0), (10,5,0), (20,-5,10), (30,0,10), next to the plain-Frenet volume of the same spine and profile (controlFrenetVolume). The profile is built at Wire.point(at: 0) with Wire.tangent(at: 0) as its normal. The earlier profile lay in the XY plane, oblique to the spine's start, and swept 84.96 where the same circle across the start sweeps 299.07; the test asserted only non-nil and now asserts non-nil, valid, SOLID and the volume within 1e-6. Bridge: Shape.pipeShell(mode: .correctedFrenet) non-nil (OCCTShapeCreatePipeShellMultiSection returns nullptr when the sweep is not done or MakeSolid fails), isValid, shapeType and Shape.volume; the control* keys are the same spine and profile in another mode. Kernel: BRepOffsetAPI_MakePipeShell with SetMode(false) (corrected Frenet), SetTransitionMode(Transformed), Add(profile, false, false), SetIsBuildHistory(false), Build, MakeSolid, BRepCheck_Analyzer, BRepGProp::VolumeProperties; the pipeShellCorrectedFrenet line of the transcript at %.17g. Doubles are compared to 1e-9 relative.",
+    "probe": "Scripts/repro/766-modeling-advanced/probe-evidence-fix.mm (transcript-evidence-fix.txt)"
+  },
+  {
+    "test_name": "Advanced Modeling Tests::pipeShellFixedBinormal",
+    "bridge_function": "OCCTShapeCreatePipeShellMultiSection",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "done": true,
+        "type": "SOLID",
+        "valid": true,
+        "volume": 508.593806100242,
+        "controlCorrectedFrenetVolume": 634.6361074609554,
+        "controlFrenetVolume": 624.2896412548378
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "done": true,
+        "type": "SOLID",
+        "valid": true,
+        "volume": 508.5938061002418,
+        "controlCorrectedFrenetVolume": 634.636107460954,
+        "controlFrenetVolume": 624.2896412542175
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: done, result type, validity and volume of the fixed-binormal (Z) sweep of a 5 x 3 rectangle across the start of the 3D spine through (0,0,0), (10,5,0), (20,-5,10), (30,0,10), next to the corrected-Frenet and plain-Frenet volumes of the same spine and profile (controlCorrectedFrenetVolume 634.64, controlFrenetVolume 624.29): the three modes give three volumes, so the volume names the mode (on a planar spine fixed binormal and corrected Frenet coincide). The rectangle's width runs along tangent x Z and its height along tangent x that, normalised, centred on Wire.point(at: 0) (Wire.polygon3D, closed). The earlier profile was the XY-plane Wire.rectangle(5, 3) on a straight spine along X, which lies in the plane holding the spine, so the sweep was an invalid solid of mass 0 and the test asserted only non-nil; it now asserts non-nil, valid, SOLID and the volume within 1e-6. The rectangle's corners are computed by simd on the bridge side and by gp_Vec in the probe, so the volumes agree to about 1e-12 relative (the plain-Frenet control, which is sensitive to the curve's inflection, the least). Bridge: Shape.pipeShell(mode: .fixed(binormal: Z)) non-nil (OCCTShapeCreatePipeShellMultiSection returns nullptr when the sweep is not done or MakeSolid fails), isValid, shapeType and Shape.volume; the control* keys are the same spine and profile in another mode. Kernel: BRepOffsetAPI_MakePipeShell with SetMode(gp_Dir(0, 0, 1)) (fixed binormal), SetTransitionMode(Transformed), Add(profile, false, false), SetIsBuildHistory(false), Build, MakeSolid, BRepCheck_Analyzer, BRepGProp::VolumeProperties; the pipeShellFixedBinormal line of the transcript at %.17g. Doubles are compared to 1e-9 relative.",
+    "probe": "Scripts/repro/766-modeling-advanced/probe-evidence-fix.mm (transcript-evidence-fix.txt)"
+  },
+  {
+    "test_name": "Advanced Modeling Tests::pipeShellCreatesShell",
+    "bridge_function": "OCCTShapeCreatePipeShellMultiSection",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "done": true,
+        "type": "SHELL",
+        "valid": true,
+        "faces": 1,
+        "area": 376.99111843077515
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "done": true,
+        "type": "SHELL",
+        "valid": true,
+        "faces": 1,
+        "area": 376.99111843077515
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: done, result type, valid, face count and surface area of a sweep asked to be a shell (line spine along X of 20 mm, an r=3 circle whose normal is the spine's direction +X, Frenet, solid false; no volume is compared, the result is open): one lateral face of area 2 * pi * 3 * 20. The earlier circle had the default Z normal, so it lay in the XY plane holding the spine, the degenerate sweep of the three pipe tests before #766, and the test asserted only non-nil; it now asserts SHELL, valid, 1 face and the area. Bridge: Shape.pipeShell(solid: false) non-nil, shapeType, isValid, subShapes(ofType: .face).count, Shape.surfaceArea. Kernel: BRepOffsetAPI_MakePipeShell IsDone() with no MakeSolid call, TopAbs::ShapeTypeToString, BRepCheck_Analyzer, TopExp::MapShapes face count, BRepGProp::SurfaceProperties; the pipeShellCreatesShell line of the transcript at %.17g. Doubles are compared to 1e-9 relative.",
+    "probe": "Scripts/repro/766-modeling-advanced/probe-evidence-fix.mm (transcript-evidence-fix.txt)"
+  },
+  {
+    "test_name": "Advanced Modeling Tests::multiSectionFrenetVaryingRadius",
+    "bridge_function": "OCCTShapeCreatePipeShellMultiSection",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "done": true,
+        "type": "SOLID",
+        "valid": true,
+        "signedVolume": 58.643062441853715
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "done": true,
+        "type": "SOLID",
+        "valid": true,
+        "signedVolume": 58.643062441853715
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: done, result type, valid and signedVolume of the sweep (line spine, three coaxial circles r=2,1,2, Frenet). Bridge: Shape.pipeShell / pipeShellMultiSection non-nil (OCCTShapeCreatePipeShellMultiSection returns nullptr when Build() is not done or, for a solid, when MakeSolid() returns false), shapeType, isValid, Shape.signedVolume. Kernel: BRepOffsetAPI_MakePipeShell with the same mode, transition and Add calls, done = IsDone() and, for a solid, MakeSolid(); TopAbs::ShapeTypeToString, BRepCheck_Analyzer, raw BRepGProp::VolumeProperties mass; multiSectionFrenetVaryingRadius line of the transcript at %.17g. signedVolume is used instead of volume because Shape.volume refuses a zero or negative mass. Doubles are compared to 1e-9 relative. #766 tightening: The test asserted valid and `if let v = pipe.volume { #expect(v > 0) }`; it now requires a non-nil volume and asserts it within 1e-6 of the kernel's. The volume the test reads is Shape.volume, equal to signedVolume for a valid solid.",
+    "probe": "Scripts/repro/766-modeling-advanced/probe-evidence-fix.mm (transcript-evidence-fix.txt)"
+  },
+  {
+    "test_name": "Advanced Modeling Tests::multiSectionAuxiliarySpine",
+    "bridge_function": "OCCTShapeCreatePipeShellMultiSection",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "done": true,
+        "type": "SOLID",
+        "valid": true,
+        "signedVolume": 73.30382760882533
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "done": true,
+        "type": "SOLID",
+        "valid": true,
+        "signedVolume": 73.30382760882533
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: done, result type, valid and signedVolume of the sweep (line spine, circles r=2 and r=1, auxiliary spine). Bridge: Shape.pipeShell / pipeShellMultiSection non-nil (OCCTShapeCreatePipeShellMultiSection returns nullptr when Build() is not done or, for a solid, when MakeSolid() returns false), shapeType, isValid, Shape.signedVolume. Kernel: BRepOffsetAPI_MakePipeShell with the same mode, transition and Add calls, done = IsDone() and, for a solid, MakeSolid(); TopAbs::ShapeTypeToString, BRepCheck_Analyzer, raw BRepGProp::VolumeProperties mass; multiSectionAuxiliarySpine line of the transcript at %.17g. signedVolume is used instead of volume because Shape.volume refuses a zero or negative mass. Doubles are compared to 1e-9 relative. #766 tightening: The test asserted non-nil and valid; it now also asserts the volume within 1e-6 of the kernel's (the frustum pi * 10 / 3 * (4 + 2 + 1)). The volume the test reads is Shape.volume, equal to signedVolume for a valid solid.",
+    "probe": "Scripts/repro/766-modeling-advanced/probe-evidence-fix.mm (transcript-evidence-fix.txt)"
+  },
+  {
+    "test_name": "Advanced Modeling Tests::multiSectionProfileCountBounds",
+    "bridge_function": "OCCTShapeCreatePipeShellMultiSection",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "singleProfile": {
+          "done": true,
+          "type": "SOLID",
+          "valid": true,
+          "signedVolume": 125.6637061435917
+        }
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "singleProfile": {
+          "done": true,
+          "type": "SOLID",
+          "valid": true,
+          "signedVolume": 125.6637061435917
+        }
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: done, type, valid and signedVolume of a single-profile sweep (line spine, r=2 circle, Frenet). Bridge: Shape.pipeShellMultiSection(profiles: [one]) non-nil, shapeType, isValid, Shape.signedVolume. Kernel: BRepOffsetAPI_MakePipeShell with one Add, IsDone() and MakeSolid(), BRepCheck_Analyzer, BRepGProp; multiSectionProfileCountBounds(single) line of the transcript at %.17g. The test's other half, that an empty profile list returns nil, is refused by the bridge argument guard (profileCount < 1) before any OCCT call and has no kernel counterpart, so it is not carried here. #766 tightening: The test asserted the sweep non-nil; it now also asserts valid and the volume within 1e-6 of the kernel's (pi * 4 * 10). The volume the test reads is Shape.volume, equal to signedVolume for a valid solid.",
+    "probe": "Scripts/repro/766-modeling-advanced/probe-evidence-fix.mm (transcript-evidence-fix.txt)"
+  },
+  {
+    "test_name": "Advanced Modeling Tests::wireLengthLine",
+    "bridge_function": "OCCTWireGetLength",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "length": 10
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "length": 10
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: the length of the line (0,0,0) to (10,0,0). Bridge: Wire.length (OCCTWireGetLength); the test asserted within 0.01 of 10. Kernel: GCPnts_AbscissaPoint::Length over BRepAdaptor_CompCurve, wireLengthLine line of the transcript at %.17g. Doubles are compared to 1e-9 relative.",
+    "probe": "Scripts/repro/766-modeling-advanced/probe-evidence-fix.mm (transcript-evidence-fix.txt)"
+  },
+  {
+    "test_name": "Advanced Modeling Tests::wireLengthCircle",
+    "bridge_function": "OCCTWireGetLength",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "length": 62.83185307179586
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "length": 62.83185307179586
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: the circumference of the r=10 circle. Bridge: Wire.length (OCCTWireGetLength); the test asserted within 0.1 of 62.8319. Kernel: GCPnts_AbscissaPoint::Length over BRepAdaptor_CompCurve, wireLengthCircle line of the transcript at %.17g. Doubles are compared to 1e-9 relative.",
+    "probe": "Scripts/repro/766-modeling-advanced/probe-evidence-fix.mm (transcript-evidence-fix.txt)"
+  },
+  {
+    "test_name": "Advanced Modeling Tests::wireCurveInfoCircle",
+    "bridge_function": "OCCTWireGetCurveInfo",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "closed": true,
+        "length": 31.41592653589793
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "closed": true,
+        "length": 31.41592653589793
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: closed flag and length of the r=5 circle (the bridge isClosed and the kernel IsClosed are one flag under two spellings). Bridge: Wire.curveInfo isClosed and length (OCCTWireGetCurveInfo); the test asserted closed and length within 0.1 of 31.4159. Kernel: BRepAdaptor_CompCurve::IsClosed and GCPnts_AbscissaPoint::Length, wireCurveInfoCircle line of the transcript at %.17g. Doubles are compared to 1e-9 relative.",
+    "probe": "Scripts/repro/766-modeling-advanced/probe-evidence-fix.mm (transcript-evidence-fix.txt)"
+  },
+  {
+    "test_name": "Advanced Modeling Tests::wireCurveInfoLine",
+    "bridge_function": "OCCTWireGetCurveInfo",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "closed": false,
+        "length": 20,
+        "start": [
+          0,
+          0,
+          0
+        ],
+        "end": [
+          20,
+          0,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "closed": false,
+        "length": 20,
+        "start": [
+          0,
+          0,
+          0
+        ],
+        "end": [
+          20,
+          0,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: closed flag, length and the start and end points of the line (0,0,0) to (20,0,0). Bridge: Wire.curveInfo isClosed, length, startPoint, endPoint (OCCTWireGetCurveInfo); the test asserted open, length within 0.01 of 20, start.x near 0 and end.x within 0.01 of 20. Kernel: BRepAdaptor_CompCurve IsClosed, Length, Value at the first and last parameter; wireCurveInfoLine line of the transcript at %.17g. Doubles are compared to 1e-9 relative.",
+    "probe": "Scripts/repro/766-modeling-advanced/probe-evidence-fix.mm (transcript-evidence-fix.txt)"
+  },
+  {
+    "test_name": "Advanced Modeling Tests::wirePointAtParameter",
+    "bridge_function": "OCCTWireGetPointAt",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "x@0": 0,
+        "x@0.5": 10,
+        "x@1": 20
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "x@0": 0,
+        "x@0.5": 10,
+        "x@1": 20
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: the x coordinate of the point at normalised parameter 0, 0.5 and 1 of the line (0,0,0) to (20,0,0). Bridge: Wire.point(at:).x (OCCTWireGetPointAt); the test asserted each within 0.01 of 0, 10, 20. Kernel: BRepAdaptor_CompCurve::Value at first + t * (last - first), wirePointAtParameter line of the transcript at %.17g. Doubles are compared to 1e-9 relative.",
+    "probe": "Scripts/repro/766-modeling-advanced/probe-evidence-fix.mm (transcript-evidence-fix.txt)"
+  },
+  {
+    "test_name": "Advanced Modeling Tests::wireTangentAtParameter",
+    "bridge_function": "OCCTWireGetTangentAt",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "tangent": "~(1, 0, 0)"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "tangent": [
+          1,
+          0,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS"
+  },
+  {
+    "test_name": "Advanced Modeling Tests::wireCurvatureCircle",
+    "bridge_function": "OCCTWireGetCurvatureAt",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "curvature": 0.10000000000000002
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "curvature": 0.10000000000000002
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: the curvature at normalised parameter 0.5 of the r=10 circle. Bridge: Wire.curvature(at: 0.5) (OCCTWireGetCurvatureAt); the test asserted within 0.001 of 0.1. Kernel: |d1 x d2| / |d1|^3 from BRepAdaptor_CompCurve::D2, wireCurvatureCircle line of the transcript at %.17g. Doubles are compared to 1e-9 relative.",
+    "probe": "Scripts/repro/766-modeling-advanced/probe-evidence-fix.mm (transcript-evidence-fix.txt)"
+  },
+  {
+    "test_name": "Advanced Modeling Tests::wireCurvatureLine",
+    "bridge_function": "OCCTWireGetCurvatureAt",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "curvature": 0
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "curvature": 0
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: the curvature at normalised parameter 0.5 of the line (0,0,0) to (10,0,0). Bridge: Wire.curvature(at: 0.5) (OCCTWireGetCurvatureAt); the test asserted within 0.001 of 0. Kernel: |d1 x d2| / |d1|^3 from BRepAdaptor_CompCurve::D2, wireCurvatureLine line of the transcript at %.17g. Doubles are compared to 1e-9 relative.",
+    "probe": "Scripts/repro/766-modeling-advanced/probe-evidence-fix.mm (transcript-evidence-fix.txt)"
+  },
+  {
+    "test_name": "Advanced Modeling Tests::wireCurvePointDerivatives",
+    "bridge_function": "OCCTWireGetCurvePointAt",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "point": [
+          3.061616997868383e-16,
+          5,
+          0
+        ],
+        "curvature": 0.20000000000000004,
+        "normal": [
+          -6.123233995736766e-17,
+          -1,
+          0
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "point": [
+          3.061616997868383e-16,
+          5,
+          0
+        ],
+        "curvature": 0.20000000000000004,
+        "normal": [
+          -6.123233995736766e-17,
+          -1,
+          0
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: position, curvature and principal normal at normalised parameter 0.25 of the r=5 circle. Bridge: Wire.curvePoint(at: 0.25) position, curvature and normal (OCCTWireGetCurvePointAt); the test asserted curvature within 0.001 of 0.2 and a non-nil normal. Kernel: BRepAdaptor_CompCurve::D2 at first + 0.25 * (last - first), curvature |d1 x d2| / |d1|^3 and the normal of d2 orthogonal to the unit tangent; wireCurvePointDerivatives line of the transcript at %.17g. Doubles are compared to 1e-9 relative.",
+    "probe": "Scripts/repro/766-modeling-advanced/probe-evidence-fix.mm (transcript-evidence-fix.txt)"
+  },
+  {
+    "test_name": "Advanced Modeling Tests::wireOffset3D",
+    "bridge_function": "OCCTWireOffset3D",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "start": [
+          5,
+          0,
+          10
+        ]
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "start": [
+          5,
+          0,
+          10
+        ]
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: the start point of the r=5 circle translated 10 along +z. Bridge: Wire.offset3D(distance: 10, direction: +z).curveInfo.startPoint (OCCTWireOffset3D); the test asserted start.z within 0.01 of 10. Kernel: BRepBuilderAPI_Transform with a translation of (0,0,10) and BRepAdaptor_CompCurve::Value at the first parameter; wireOffset3D line of the transcript at %.17g. Doubles are compared to 1e-9 relative.",
+    "probe": "Scripts/repro/766-modeling-advanced/probe-evidence-fix.mm (transcript-evidence-fix.txt)"
+  },
+  {
+    "test_name": "Advanced Modeling Tests::bsplineSurface",
+    "bridge_function": "OCCTShapeCreateBSplineSurface",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "done": true,
+        "valid": true
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "done": true,
+        "valid": true
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: done and valid of the face built on the 4x4 control-point B-spline surface. Bridge: Shape.surface(poles:) non-nil (OCCTShapeCreateBSplineSurface returns nullptr when BRepBuilderAPI_MakeFace is not done) and isValid. Kernel: Geom_BSplineSurface (degree 3, clamped knots), BRepBuilderAPI_MakeFace(surface, 1e-6) IsDone(), BRepCheck_Analyzer; bsplineSurface line of the transcript.",
+    "probe": "Scripts/repro/766-modeling-advanced/probe-evidence-fix.mm (transcript-evidence-fix.txt)"
+  },
+  {
+    "test_name": "Advanced Modeling Tests::ruledSurfaceBetweenCircles",
+    "bridge_function": "OCCTShapeCreateRuled",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "done": true,
+        "type": "SHELL"
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "done": true,
+        "type": "SHELL"
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: done and result type of the ruled surface between the r=10 circle and the same circle raised 20. Bridge: Shape.ruled non-nil (OCCTShapeCreateRuled returns nullptr when BRepFill::Shell gives a null shape) and shapeType (ordinal 3, TopAbs_SHELL). Kernel: BRepFill::Shell, done is not IsNull(), TopAbs::ShapeTypeToString; ruledSurfaceBetweenCircles line of the transcript.",
+    "probe": "Scripts/repro/766-modeling-advanced/probe-evidence-fix.mm (transcript-evidence-fix.txt)"
+  },
+  {
+    "test_name": "Advanced Modeling Tests::shellWithOpenFaces",
+    "bridge_function": "OCCTShapeShellWithOpenFaces",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "upwardFaces": 1,
+        "done": true,
+        "valid": true,
+        "volume": 4519.409985301006
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "upwardFaces": 1,
+        "done": true,
+        "valid": true,
+        "volume": 4519.409985301007
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: the count of upward faces of the 20 mm box (the open face), then done, valid and volume of the box shelled 2 mm inward. Bridge: Shape.upwardFaces().count, Shape.shelled non-nil (nil exactly when BRepOffsetAPI_MakeThickSolid is not done), isValid, Shape.volume; the test asserted at least one upward face, non-nil and valid. Kernel: faces whose normal z exceeds cos(0.01), MakeThickSolidByJoin(2.0, 1e-6), IsDone, BRepCheck_Analyzer, BRepGProp; shellWithOpenFaces line of the transcript at %.17g. Doubles are compared to 1e-9 relative.",
+    "probe": "Scripts/repro/766-modeling-advanced/probe-evidence-fix.mm (transcript-evidence-fix.txt)"
+  },
+  {
+    "test_name": "Advanced Modeling Tests::shellWithSpecificFaceOpen",
+    "bridge_function": "OCCTShapeShellWithOpenFaces",
+    "bridge_output": {
+      "type": "value",
+      "data": {
+        "done": true,
+        "valid": true,
+        "volume": 3325.1548397129905
+      }
+    },
+    "kernel_output": {
+      "type": "value",
+      "data": {
+        "done": true,
+        "valid": true,
+        "volume": 3325.154839712991
+      }
+    },
+    "comparison": {
+      "equal": true,
+      "differences": []
+    },
+    "status": "PASS",
+    "source": "Same quantity on both sides: done, valid and volume of the 30x20x10 box shelled 1.5 mm inward with its first face open. Bridge: Shape.shelled non-nil (nil exactly when MakeThickSolid is not done), isValid, Shape.volume; the test asserted only non-nil. Kernel: MakeThickSolidByJoin(1.5, 1e-6) on the first face of the TopExp face map, IsDone, BRepCheck_Analyzer, BRepGProp; shellWithSpecificFaceOpen line of the transcript at %.17g. Doubles are compared to 1e-9 relative.",
+    "probe": "Scripts/repro/766-modeling-advanced/probe-evidence-fix.mm (transcript-evidence-fix.txt)"
   }
 ]
