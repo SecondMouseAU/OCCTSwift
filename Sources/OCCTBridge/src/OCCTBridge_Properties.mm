@@ -1902,7 +1902,7 @@ OCCTFaceVolumeInertia OCCTBRepGPropVinertPlane(OCCTFaceRef _Nonnull face,
     // #2873: MIRRORED THROUGH THE ORIGIN ON PURPOSE, so that what comes back is measured about the
     // plane at planeDist. The long comment below is the derivation and the measurement; do not
     // "correct" this minus without reading it.
-    gp_Pln           plane(gp_Pnt(normal.XYZ() * -planeDist), normal);
+    gp_Pln           plane(gp_Pnt(normal.XYZ() * planeDist), normal);
     BRepGProp_Domain domain;
     BRepGProp_Vinert vinert;
     vinert.SetLocation(gp_Pnt(0, 0, 0));
@@ -1957,10 +1957,11 @@ OCCTFaceVolumeInertia OCCTBRepGPropVinertPlane(OCCTFaceRef _Nonnull face,
     // offsets and all three locations above, the centroid is the column's own, and both of #2827's
     // aggregate identities stay exact.
     //
-    // WHEN THE KERNEL IS FIXED, DELETE THE MINUS. The upstream submission carries the one-line
-    // kernel hunk alongside 0043 (Scripts/patches/README.md), and a kernel carrying it plus this
-    // mirror would measure about the mirrored plane again. BRepGPropVinertTests' two sign
-    // assertions fail in exactly that case, which is what they are for.
+    // THE KERNEL IS FIXED AND THE MINUS IS GONE (#3015). Carried patch 0048 corrects the
+    // conversion at all five sites, and this function now hands the kernel the plane the caller
+    // named. The mirror had to go in the same change that pinned 0048: a kernel carrying the
+    // patch plus the mirror measures about the mirrored plane again, which is what
+    // BRepGPropVinertTests' two sign assertions caught on PR #3014 before the repin.
     result.mass    = vinert.Mass();
     gp_Pnt cm      = vinert.CentreOfMass();
     result.centerX = cm.X();

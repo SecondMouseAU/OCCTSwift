@@ -201,11 +201,14 @@ struct BRepGPropVinertTests {
     /// The minus is #2873, and it is why this is written as a formula rather than as pinned numbers.
     /// The kernel weights each element by `n . P` minus the plane's fourth `gp_Pln` coefficient,
     /// which belongs to the `n . X + d = 0` form and so arrives inverted, and
-    /// `OCCTBRepGPropVinertPlane` hands it the plane mirrored through the origin to undo that. This
-    /// test stood here with a `+` and passed against the mirrored convention; it fails under that
-    /// convention now, and it fails again if the bridge's mirror is left in place against a kernel
-    /// that has the fix.
-    @Test("a planar face's by-plane volume is its projected area times its centroid distance (#2827)")
+    /// `OCCTBRepGPropVinertPlane` used to hand it the plane mirrored through the origin to undo
+    /// that. Carried patch `0048` fixes the conversion at all five sites and the repin that pinned
+    /// it deleted the mirror (#3015), so the bridge now passes the plane the caller named. This
+    /// test stood here with a `+` against the old mirrored convention; written as it is, it fails
+    /// against that convention and it fails again on a kernel with the fix and the mirror still in
+    /// place, which is exactly what it caught on PR #3014 before the repin.
+    @Test(
+        "a planar face's by-plane volume is its projected area times its centroid distance (#2827)")
     func byPlaneVolumeOnAPlanarFaceHasTheClosedForm() throws {
         let holed = try holedPlate()
         let normal = SIMD3(0.0, 0.0, 1.0)
@@ -235,7 +238,8 @@ struct BRepGPropVinertTests {
             // offset's contribution, so these three cases are what separate the two conventions.
             for distance in [0.0, 1.0, -100.0] {
                 let measured = face.volumeInertia(
-                    planeNormal: normal, planeDistance: distance).volume
+                    planeNormal: normal, planeDistance: distance
+                ).volume
                 let predicted = projectedArea * (simd_dot(normal, centroid) - distance)
                 #expect(
                     abs(measured - predicted) < 1e-9 * max(1.0, abs(predicted)),
@@ -302,7 +306,9 @@ struct BRepGPropVinertTests {
         #expect(caps == 2, "found \(caps) faces over 300 in area, expected the plate's 2 caps")
     }
 
-    /// #2806: `BRepGProp_VinertGK` had the same missing domain, and a null domain pointer means
+    /// `BRepGProp_VinertGK` sums to the volume once its domain is supplied (#2806).
+    ///
+    /// It had the same missing domain, and a null domain pointer means
     /// something different inside it: `PrivatePerform` treats it as "there is only one curve to
     /// treat, the U isoline at UMax" (`BRepGProp_VinertGK.cxx:271-276`). The unfixed sum was
     /// 762.3008881569224, the same overshoot by the same hole.

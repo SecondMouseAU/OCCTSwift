@@ -19,7 +19,7 @@ which is what nothing did while `0042` sat in the kernel and not in the map for 
 2026-08-03 retired ten patches, `0032`
 retired 2026-09-02 (superseded by upstream's own fix, not shipped in our pin), and `0035` retired
 2026-09-20 (it reintroduced #280; see its [Retired patches](#retired-patches) entry).
-The carried sequence now reads 0010–0012, 0014–0031, 0033–0034, 0036–0053.
+The carried sequence now reads 0010–0012, 0014–0031, 0033–0034, 0036–0048, 0050–0053.
 The gaps are the retirements, not missing files:
 the numbers are cited across `CLAUDE.md`, `docs/`, closed issues and `Scripts/repro/`, and
 renumbering would have silently repointed every one of those citations at a different fix.
@@ -2121,7 +2121,7 @@ own here.
 
 ### CI coverage, and the pin
 
-**Carried, not pinned.** `Scripts/patches/` holds thirty-two and the pinned `v4.0.0-kernel.3` asset
+**Carried, not pinned.** `Scripts/patches/` holds thirty-four and the pinned `v4.0.0-kernel.3` asset
 holds thirty-one, so this patch is in **no** required check:
 `ci.yml`'s `build-and-test` resolves the asset. `kernel-integration.yml` triggers on
 `Scripts/patches/**` and builds `V8_0_1` plus every carried patch from source, so the PR that adds
@@ -2335,6 +2335,576 @@ names this as the upstream-worthy item of its cluster, and the reading above is 
 GTest is owed before it goes, per section 2 of the process policy.
 
 **Retire** once the bundled OCCT includes this fix, keeping the bridge guard.
+
+## 0047-BRepMesh_IncrementalMesh-initParameters-refuses-NaN-2879-2900.patch
+
+**`initParameters` validates five meshing parameters with five tests NaN defeats**
+([#2879](https://github.com/SecondMouseAU/OCCTSwift/issues/2879),
+[#2900](https://github.com/SecondMouseAU/OCCTSwift/issues/2900)).
+`BRepMesh_IncrementalMesh::initParameters` is an inline private member of
+`BRepMesh_IncrementalMesh.hxx`, called once, from `BRepMesh_IncrementalMesh.cxx:87`, and it is the
+only place the kernel checks these values at all:
+
+```cpp
+if (myParameters.Deflection < Precision::Confusion())         { throw ... }
+if (myParameters.DeflectionInterior < Precision::Confusion()) { ... = Deflection; }
+if (myParameters.MinSize < Precision::Confusion())            { ... = recomputed; }
+if (myParameters.Angle < Precision::Angular())                { throw ... }
+if (myParameters.AngleInterior < Precision::Angular())        { ... = 2.0 * Angle; }
+```
+
+Every comparison with NaN is false. So a NaN parameter satisfies none of the five: the two tests
+that refuse do not refuse, the three that substitute a usable value do not substitute, and the NaN
+reaches `BRepMesh_FaceDiscret` intact. The patch spells each test `!(value >= bound)`, which puts
+NaN on the refusing or substituting branch because an unordered comparison makes `>=` false and the
+negation true. For every ordered value the two spellings are the same test, so no bound moves and
+no valid input changes behaviour.
+
+The two throwing tests are literal `throw` statements rather than `*_Raise_if` macros, so
+`No_Exception` does not remove them and the refusal is live in this Release build. That is why the
+ordinary too-small value was already refused promptly and catchably, and why NaN is the single
+input that walked through.
+
+### Why #2879 and #2900 are one patch and not two
+
+They are one mechanism, in one function, in one header, reached by one set of callers. The linear
+hole is `Deflection < Precision::Confusion()` at `:81` and the angular one is
+`Angle < Precision::Angular()` at `:99`, eighteen lines apart in the same `initParameters` body.
+#2896's PR body already recorded the kernel fix as `!(Deflection >= Precision::Confusion())` and
+said the angular test wanted the identical treatment, with the two travelling together as one
+upstream change rather than two; #2900 was filed to measure the angular half before anything was
+written, and it did. Splitting them would ask an upstream reviewer to accept the argument twice and
+would leave the function half-guarded against a single failure mode in between.
+
+### The symptoms are different, which is the reason to measure both halves
+
+Linear, `Scripts/repro/2879/`, on `BRepPrimAPI_MakeCylinder(10, 5)`, one process per case with an
+external timeout because a tessellation that does not return is not catchable in-process:
+
+| deflection | result |
+|---|---|
+| 0.1 | 130 nodes, 1 s |
+| 1e-4 | 3,978 nodes, 1 s |
+| 1e-5 | 12,570 nodes, 5 s |
+| 1e-6 | 39,742 nodes, 72 s |
+| **1e-7**, the floor itself | 88,862 nodes, 92 s |
+| 9e-8, 1e-12, 0.0, -1.0 | `Standard_NumericError` from `initParameters`, under 1 s each |
+| **NaN** | **did not return in 600 s** |
+
+On a box, whose faces are all planar, the same NaN returned a mesh at no stated deflection (24
+nodes); on a free circular edge it gave 22,216 `Poly_Polygon3D` nodes where a valid request gives
+33. One input, three different wrong answers, none of them a refusal.
+
+Angular, `Scripts/repro/2900/`, same cylinder, at linear deflection 10.0 so that the angle is the
+criterion that decides:
+
+| angle | result |
+|---|---|
+| 0.05 | 254 nodes |
+| 0.2 | 254 nodes |
+| 0.5 | 106 nodes |
+| 1.0 | 54 nodes |
+| 9e-13, 0.0, -1.0 | `Standard_NumericError` from `initParameters` |
+| **NaN** | `IsDone()` **true**, `Angle` NaN, `AngleInterior` NaN, **18 nodes** |
+
+So the angular hole is not a hang and not a refusal. It is the coarsest mesh the linear rule alone
+will accept, reported as done, which is harder to notice than either.
+
+### `AngleInterior`, and the other two substituting tests
+
+The three substituting tests are in the patch for the function's own invariant rather than for a
+measured defect, and the difference is worth stating rather than blurring.
+
+`AngleInterior` is the one the issue asked about, because it is **rewritten** to `2.0 * Angle`
+rather than refused, so a NaN `Angle` reaches it by arithmetic. Guarding `Angle` is what closes
+that direction, and the probe confirms `AngleInterior` is NaN in exactly the cases `Angle` is. The
+other direction was measured too, with `Angle` held at 0.5: a NaN `AngleInterior` that does reach
+`initParameters` changes neither the node count nor the triangle count on either fixture, 106 nodes
+on the cylinder, the same as a valid interior angle gives. That is the measurement behind the
+bridge's decision not to guard the field (`occtValidMeshAngle`'s doc comment), and it is the same
+measurement here.
+
+It is guarded in the kernel anyway, along with `DeflectionInterior` and `MinSize`, for two reasons
+that are about the function rather than about any one fixture. A function whose contract is that
+nothing out of bounds reaches the mesher cannot leave three of its five tests permeable to the one
+value that defeats all five. And the substitutions themselves are only finite once the two throwing
+guards are in place: `(std::min)(Deflection, DeflectionInterior)` inside the `MinSize` branch and
+`2.0 * myParameters.Angle` inside the `AngleInterior` branch would otherwise manufacture a fresh
+NaN from one they were handed. `DeflectionInterior` and `MinSize` were not separately measured, and
+this entry says so rather than implying a measurement that was not made.
+
+### Compiled, 2026-10-02
+
+`BRepMesh_IncrementalMesh.cxx` is the only translation unit that calls this function, and the
+patched header was put ahead of the pinned ones on the include path, confirmed with `clang++ -H`
+rather than assumed. Compiled clean, no diagnostics, on all three slices:
+
+| slice | target | result |
+|---|---|---|
+| `macos-arm64` | `arm64-apple-macos12.0` | exit 0, no output |
+| `ios-arm64` | `arm64-apple-ios15.0` | exit 0, no output |
+| `ios-arm64-simulator` | `arm64-apple-ios15.0-simulator` | exit 0, no output |
+
+`git apply --check` is clean against the patched `Libraries/occt-src`, which is the tree
+`build-occt.sh` hands to cmake, with `0001` through `0044` already applied.
+
+### CI coverage, and the pin
+
+**Carried, not pinned.** `ci.yml`'s `build-and-test` resolves the pinned asset, so this patch is in
+**no** required check. `kernel-integration.yml` triggers on `Scripts/patches/**` and builds `V8_0_1`
+plus every carried patch from source, so the PR that adds this one gets it compiled, and that proves
+it applies, compiles and regresses nothing. It cannot prove the fix reaches a consumer, and here it
+could not even if it ran on every PR, because the bridge already refuses the input first.
+
+### The bridge guards stay
+
+`occtValidMeshDeflection` and `occtValidMeshAngle` in `OCCTBridge_Internal.h` are **not** retired
+when this is pinned. This is the `0042` and `0044` shape, the deliberate exception to the rule in
+[`okf/policies/pinned-kernel-patch-check.md`](../../okf/policies/pinned-kernel-patch-check.md) that
+a repin retires the mitigation its patch supersedes: with the patch the kernel throws
+`Standard_NumericError` for the same input the guards refuse, so both answer the site's documented
+refusal and the guards are redundant rather than wrong. They also still cover anyone pinning an
+older asset, and the wasm kernel, which is a pin behind.
+
+### Retargeting risk at 8.0.2
+
+No other carried patch touches `BRepMesh_IncrementalMesh.hxx`, and `initParameters` is a
+twenty-line body that has not moved since `MinSize` was added to it. Re-run
+`git -C occt-src apply --check` at the repin rather than assuming it.
+
+Not filed upstream yet: the standing hold in
+[`okf/policies/upstream-occt-patch-process.md`](../../okf/policies/upstream-occt-patch-process.md)
+holds every upstream PR until 8.0.2 ships. A GTest is owed before it is filed, per that policy's
+section 2, in `src/ModelingAlgorithms/TKMesh/GTests/`.
+
+**Retire** once the bundled OCCT includes this fix.
+
+## 0048-BRepGProp-by-plane-offset-sign-2873.patch
+
+**The by-plane overloads measure about the plane mirrored through the origin**
+([#2873](https://github.com/SecondMouseAU/OCCTSwift/issues/2873)). Every by-plane
+`BRepGProp_Vinert` and `BRepGProp_VinertGK` overload stores the plane the same way:
+
+```cpp
+thePlane.Coefficients(aCoeff[0], aCoeff[1], aCoeff[2], aCoeff[3]);
+aCoeff[3] = aCoeff[3] - aCoeff[0] * loc.X() - aCoeff[1] * loc.Y() - aCoeff[2] * loc.Z();
+```
+
+and both integrands then **subtract** that coefficient: `BRepGProp_Gauss.cxx:344 with 0043 applied, :343 without` for the Gauss
+path and `BRepGProp_UFunction.cxx:99` for the Gauss-Kronrod one, in each case against
+`P - loc`. `gp_Pln::Coefficients` gives `a, b, c, d` for `a x + b y + c z + d = 0`, so the signed
+distance from the plane to `P` is `n . P + d`, and substituting the stored coefficient gives
+
+```
+d1 = n . (P - loc) - (d - n . loc) = n . P - d
+```
+
+which is the distance to the plane at `n . X == d`, the reflection of the caller's plane through
+the origin. Both halves of that one line are wrong in the same direction: the offset carries the
+wrong sign, and `loc` cancels out of the result entirely rather than re-basing it, so
+`SetLocation` has no effect on a by-plane computation at all.
+
+Negating the coefficient as it is stored fixes both halves at once. With `aCoeff[3] = -d - n . loc`
+the integrands compute `d1 = n . (P - loc) + d + n . loc = n . P + d`, the signed distance to the
+plane as passed, independent of `loc` as a distance to a plane must be. The integrands are left
+alone: their minus sign is what makes `loc` re-base correctly once the stored offset has the right
+sign, and changing them instead would need the same edit at these five sites anyway.
+
+### All five sites, because they are one convention and not five defects
+
+| file | lines | what reaches them |
+|---|---|---|
+| `BRepGProp_Vinert.cxx` | 280, 297, 314 | the four `Perform(gp_Pln)` overloads, through `BRepGProp_Gauss` |
+| `BRepGProp_VinertGK.cxx` | 219, 244 | the two `Perform(gp_Pln)` overloads, through `BRepGProp_UFunction` |
+
+Fixing one class and not the other would leave `BRepGProp::VolumeProperties` and
+`BRepGProp::VolumePropertiesGK` disagreeing per face about which plane they measured. Those are the
+only five: a grep for the coefficient assignment across `Libraries/occt-src/src` returns exactly
+them.
+
+### Measured
+
+`Scripts/repro/2827/probe.mm`'s `reportSignConvention`, macOS arm64 against the
+`v4.0.0-kernel.3` asset, on a flat cap of area 371.7256661 square to the plane normal, where
+`mass == (n . n_face) * area * d1` exactly, so `mass / area` reads `d1` off directly. The cap is at
+z = 2:
+
+| `loc.z` | plane at z = | `mass` | `d1` | geometric distance |
+|---|---|---|---|---|
+| 0 | 0 | 743.45133223538 | 2 | 2 |
+| 0 | 1 | 1115.1769983531 | 3 | 1 |
+| 0 | -100 | -36429.115279534 | -98 | 102 |
+| 3 | 0 | 743.45133223538 | 2 | 2 |
+| 3 | 1 | 1115.1769983531 | 3 | 1 |
+| 3 | -100 | -36429.115279534 | -98 | 102 |
+
+`d1` tracks `z + planeOffset` where it should track `z - planeOffset`, and `loc` changes nothing.
+Both are what the derivation predicts.
+
+### What does not change
+
+**Aggregates.** `d1` stays an affine function of `P` with gradient `n`, which is the only property
+the divergence-theorem identities need, so the per-face sum over a closed shell is still the
+enclosed volume and the mass-weighted sum of the per-face centres is still the first moment, for
+any plane. `BRepGProp::VolumePropertiesGK(S, Props, thePln, ...)` therefore reports the same volume
+and centre of mass before and after. What changes is a per-face reading, which is the decomposition
+a caller asks for when it passes a plane rather than a point.
+
+**Anything in OCCT.** Nothing in the kernel reads a per-face by-plane value: `BRepGProp.cxx:311` is
+the only `BRepGProp_Vinert` call site and passes a point, and `:809` and `:892` forward a plane to
+`BRepGProp_VinertGK` for an aggregate. And until `0043` the by-plane mass was overwritten with
+`0.0` before any caller could see it, so the value this corrects has never been readable from a
+release build.
+
+### Does `0043` already carry this hunk? No
+
+`0043`'s own `Scripts/patches/README.md` entry and
+[`okf/references/carried-occt-patches.md`](../../okf/references/carried-occt-patches.md) both say
+"the submission carries a second hunk for #2873", which describes the **upstream PR** that is still
+being held, not the carried `.patch` file. The file touches one file,
+`BRepGProp_Gauss.cxx`, and one line in it, the `&& theIsByPoint` in `convert`. It contains no sign
+change and does not mention `BRepGProp_Vinert.cxx` or `BRepGProp_VinertGK.cxx`. So this is its own
+patch. The two still travel upstream in one PR, where they are two hunks of one story: `0043` makes
+the by-plane value readable and `0048` makes it right.
+
+### Compiled, 2026-10-02
+
+Both changed translation units, compiled clean with no diagnostics on all three slices:
+
+| TU | `macos-arm64` | `ios-arm64` | `ios-arm64-simulator` |
+|---|---|---|---|
+| `BRepGProp_Vinert.cxx` | exit 0 | exit 0 | exit 0 |
+| `BRepGProp_VinertGK.cxx` | exit 0 | exit 0 | exit 0 |
+
+`git apply --check` is clean against the patched `Libraries/occt-src`, `0043` included, which is
+the tree `build-occt.sh` hands to cmake.
+
+### The bridge side is a COMPENSATION, not a guard, and the repin must delete it
+
+This is the one carried patch whose bridge-side companion has to come out at the repin rather than
+stay. `OCCTBRepGPropVinertPlane` (`OCCTBridge_Properties.mm:1905`) does not refuse an input, it
+builds the `gp_Pln` **mirrored through the origin on purpose**, so that the unpatched kernel
+answers about the plane the Swift caller asked for:
+
+```cpp
+gp_Pln plane(gp_Pnt(normal.XYZ() * -planeDist), normal);
+```
+
+A kernel carrying `0048` with that mirror still in place measures about the mirrored plane again,
+and the two sign assertions in `Tests/OCCTAnalysisTests/BRepGPropVinertTests.swift` fail. So in the
+same change that repins to an asset carrying `0048`:
+
+- delete the mirror in `OCCTBRepGPropVinertPlane` and the comment block that explains it,
+- flip the per-face closed-form assertion in `BRepGPropVinertTests` to `n . C - d`,
+- drop the "pass `-d`" note from `Face.volumeInertia(planeNormal:planeDistance:)` and from
+  `docs/reference/Shape-HLR-Geom.md`.
+
+**Until then the mirror is correct and must stay**, because CI resolves the unpatched asset and
+removing it now turns a correct answer into a sign-flipped one on every consumer.
+
+### Retargeting risk at 8.0.2
+
+`0043` touches `BRepGProp_Gauss.cxx` and this one touches `BRepGProp_Vinert.cxx` and
+`BRepGProp_VinertGK.cxx`, so they do not overlap, and all five target lines are a single assignment
+that has not changed since the classes were written. Re-run `git -C occt-src apply --check` at the
+repin rather than assuming it.
+
+Not filed upstream yet, for the same hold as `0043`, and it goes in `0043`'s PR rather than its
+own. A GTest is owed with it.
+
+**Retire** once the bundled OCCT includes this fix, and delete the bridge mirror in the same change.
+
+
+## 0050-GProp_SelGProps-cone-lateral-area-drops-cos-semiangle-2992.patch
+
+**`GProp_SelGProps::Perform(gp_Cone)` returns `cos(semiAngle)` times the lateral area**
+([#2992](https://github.com/SecondMouseAU/OCCTSwift/issues/2992)). `GProp_SelGProps.cxx:123-125`
+in the pinned tree:
+
+```cpp
+  double Auxi1 = R + (Z2 + Z1) * Snt / 2.;
+  double Auxi2 = (Z2 * Z2 + Z1 * Z2 + Z1 * Z1) / 3.;
+  dim          = (Alpha2 - Alpha1) * Cnt * (Z2 - Z1) * Auxi1;
+```
+
+`gp_Cone`'s `v` runs along the generatrix:
+
+    P(u, v) = Loc + (R + v sin a)(cos u X + sin u Y) + v cos a Z
+
+so `dP/du = (R + v sin a)(-sin u X + cos u Y)` and `dP/dv = sin a (cos u X + sin u Y) + cos a Z`.
+The two are orthogonal, `|dP/du|` is `R + v sin a`, `|dP/dv|` is 1, and the area element is
+therefore `(R + v sin a) du dv`. Integrated over `u in [Alpha1, Alpha2]`, `v in [Z1, Z2]`:
+
+    A = (Alpha2 - Alpha1) (Z2 - Z1) (R + (Z2 + Z1) sin a / 2)
+
+which is `Auxi1` times `(Alpha2 - Alpha1) (Z2 - Z1)`. The `Cnt` has no term to come from, so the
+fix is to delete it and nothing else.
+
+**No reading of `Z` saves it.** Were `Z` the axial coordinate rather than the slant, the correction
+would be a *division* by `cos(a)`. And the factor goes to 1 as `a` does, which is why the
+`gp_Cylinder` overload beside it (`dim = R (Z2 - Z1) (Alpha2 - Alpha1)`, exact) never showed this.
+
+**The centre of mass in the same function is already correct and is untouched.**
+`Iz = Cnt (R (Z2 + Z1) / 2 + Snt * Auxi2) / Auxi1` is the first moment of the same area element
+divided by `Auxi1`, so it is independent of how `dim` is scaled. The override-link run below
+confirms it does not move.
+
+### Why the closed form is the arbiter, and not a call site
+
+`GProp_SelGProps` and `GProp_VelGProps` have **no caller anywhere in `Libraries/occt-src`**:
+
+```
+grep -rn 'GProp_SelGProps\|GProp_VelGProps' --include=*.cxx --include=*.hxx
+```
+
+returns only their own definitions. So
+[`okf/policies/follow-occt-callers.md`](../../okf/policies/follow-occt-callers.md)'s usual answer,
+copy what OCCT's own callers do, has nothing to copy, and its "when OCCT does not answer" branch
+applies. The two arbiters used instead are the closed form above and the **cylinder limit**: a cone
+of vanishing semi-angle is the cylinder that the same class answers exactly, and the patched form
+converges on it while the unpatched one does not.
+
+### The derivation was re-checked, not inherited
+
+#2992 derived the fix rather than measuring it, and
+[#2970](https://github.com/SecondMouseAU/OCCTSwift/issues/2970) is about exactly that failure mode.
+The surface integral above was re-derived from `gp_Cone`'s parametrisation before the hunk was
+written, evaluated symbolically against the kernel's own expression, and then measured in the
+kernel by override-link. All three agree.
+
+### Measured, macOS arm64, before and after
+
+`Scripts/repro/2992/probe.cxx` against the pinned `v4.0.0-kernel.3` asset with
+`GProp_SelGProps.cxx` and `GProp_VelGProps.cxx` override-linked, per
+[`okf/policies/upstream-occt-patch-process.md`](../../okf/policies/upstream-occt-patch-process.md)
+section 3. The transcript is `Scripts/repro/2992/override-link-transcript.txt`.
+`gp_Cone(gp::XOY(), pi/6, 5)`, `u in [0, 2 pi]`, `v in [0, 10]`:
+
+| quantity | before | after | closed form |
+|---|---|---|---|
+| `Mass()` | `408.10485695269909` | `471.23889803846896` | `471.23889803846896` |
+| ratio to the closed form | `0.86602540378443882` | `1` exactly | `cos(pi/6)` is `0.86602540378443871` |
+| `CentreOfMass()` | `(0, 0, 4.81125224325)` | identical | unchanged by the patch |
+
+Cylinder limit, same R and slant height, against the cylinder's `314.15926535897933`:
+
+| semiAngle | before | after |
+|---|---|---|
+| `1e-3` | `314.47326733528` | `314.47342457198` |
+| `1e-6` | `314.15957951809` | `314.15957951824` |
+| `1e-9` | `314.15926567314` | `314.15926567314` |
+
+Both converge, because the defect is a factor rather than a term, which is also why the area half
+of #2992 took a closed-form comparison to find at all. The residual at `1e-9` is the first-order
+term `pi h^2 sin a`, `3.14e-7`, not an error.
+
+### What was deliberately NOT fixed
+
+The inertia terms below `dim` carry a **separate** discrepancy, found while re-deriving this one
+and measured, not fixed here. `Dm(3, 3) = IR2 * (Alpha2 - Alpha1)` should be the second moment
+about the axis:
+
+    int r^2 dA = (A2 - A1) int (R + v s)^3 dv = (A2 - A1)(Z2 - Z1)(R1^3 + R1^2 R2 + R1 R2^2 + R2^3) / 4
+
+and the kernel's `IR2 = ZZ * Snt * (...) / 4` with `ZZ = (Z2 - Z1) * Cnt` is that times
+`cos a sin a`: `12753.276779771842` against `29452.43112740431`, a ratio of `0.4330127018922193`
+where `cos(pi/6) sin(pi/6)` is `0.4330127018922193`. `IZ2` is wrong in a third way (an extra
+`(Z2 - Z1) Cnt`, and a `/ 4` applied to a term that should not have it). None of that is in this
+patch: it is a distinct defect with its own derivation, nothing in the bridge reads it, and
+changing a second result under cover of this one is how a patch stops being reviewable. Filed
+separately as [#3010](https://github.com/SecondMouseAU/OCCTSwift/issues/3010).
+
+### CI coverage, and the pin
+
+**Carried and not yet pinned**, like `0051` and `0052`. `ci.yml`'s `build-and-test` resolves the
+pinned asset, so `Tests/OCCTAnalysisTests/GPropCylConeTests.swift` will be **red there** until the
+repin; `kernel-integration.yml` triggers on `Scripts/patches/**`, builds `V8_0_1` plus every
+carried patch from source, and is where those tests pass. That split is #585 and it is the expected
+state of a PR carrying a kernel fix and its regression together.
+
+**Unlike `0044`, this one leaves a value a caller reads wrong**, through
+`GeometryProperties.coneSurfaceArea(semiAngle:refRadius:height:)`, which is `0043`'s situation
+rather than `0044`'s. No bridge-side mitigation was added anyway: dividing the factor back out in
+the bridge would have to be retired at the repin, and would double-correct a kernel that already
+carries the patch in the window between. The rebuild is same-night, so the window is hours.
+
+**Retargeting risk at 8.0.2.** No other carried patch touches this file and the expression has not
+changed since the class was written, so the hunk is expected to apply to `V8_0_2` unchanged. Re-run
+`git -C occt-src apply --check` at the repin rather than assuming it.
+
+Not filed upstream yet: the standing hold in
+[`okf/policies/upstream-occt-patch-process.md`](../../okf/policies/upstream-occt-patch-process.md)
+holds every upstream PR until 8.0.2 ships. File it with `0051`, one PR for both, since they are one
+defect in two files and the old `GProp_VelGProps` `dim` is exactly this one's old `dim` times
+`(Z2 - Z1) sin a`. A GTest is owed before submission, per section 2 of that policy.
+
+**Retire** once the bundled OCCT includes this fix.
+
+## 0051-GProp_VelGProps-cone-volume-is-the-frustum-2992.patch
+
+**`GProp_VelGProps::Perform(gp_Cone)` returns a quantity that vanishes at the cylinder limit**
+([#2992](https://github.com/SecondMouseAU/OCCTSwift/issues/2992)). `GProp_VelGProps.cxx:168-171`
+in the pinned tree:
+
+```cpp
+  double ZZ    = (Z2 - Z1) * (Z2 - Z1) * Cnt * Snt;
+  double Auxi1 = 2 * R + (Z2 + Z1) * Snt;
+
+  dim = ZZ * (Alpha2 - Alpha1) * Auxi1 / 2.;
+```
+
+The `Snt` in `ZZ` carries straight into `dim`, so the reported volume goes to **zero** as the
+semi-angle does. The `gp_Cylinder` overload in the same class answers that same solid exactly with
+`dim = (Alpha2 - Alpha1) R^2 (Z2 - Z1) / 2`, so the two disagree in the limit where they describe
+the same thing.
+
+### The frustum, derived
+
+The solid between the axis and the cone patch. With `z = v cos a` and `r(z) = R + v sin a`:
+
+    V = int du int r(z)^2 / 2 dz
+      = (Alpha2 - Alpha1) cos a / 2 int_{Z1}^{Z2} (R + v sin a)^2 dv
+      = (Alpha2 - Alpha1) cos a (Z2 - Z1) (R1^2 + R1 R2 + R2^2) / 6
+
+with `R1 = R + Z1 sin a`, `R2 = R + Z2 sin a`, which over a full turn is the familiar
+`pi H (R1^2 + R1 R2 + R2^2) / 3` with `H = (Z2 - Z1) cos a`. That is the convention the cylinder and
+sphere overloads of this class both use (sphere: `4 pi R^3 / 3` over the full range).
+
+Expanded in `R` and `sin a`, `R1^2 + R1 R2 + R2^2` is
+
+    3 R^2 + 3 R (Z1 + Z2) sin a + (Z1^2 + Z1 Z2 + Z2^2) sin^2 a
+
+which is the form the hunk uses, so that the existing `R1`, `R2` and `Coef0` locals keep their
+position after `dim` and clang-format's declaration-alignment block is left alone. At `a = 0` it
+collapses to `(Alpha2 - Alpha1) R^2 (Z2 - Z1) / 2`, exactly the cylinder overload.
+
+### Why the closed form is the arbiter, and the derivation re-checked
+
+Same as `0050`: neither class has a caller anywhere in `Libraries/occt-src`, so
+[`okf/policies/follow-occt-callers.md`](../../okf/policies/follow-occt-callers.md)'s "when OCCT does
+not answer" branch applies and the arbiters are the closed form plus the cylinder limit. The
+integral above was re-derived from `gp_Cone`'s parametrisation rather than taken from #2992, and
+#2992's own candidate expression,
+`(A2 - A1) cos a / 2 [R^2 (Z2 - Z1) + R sin a (Z2^2 - Z1^2) + sin^2 a (Z2^3 - Z1^3) / 3]`, was
+checked against it and agrees to the last bit. The form carried differs from it by one ulp and is
+preferred only for the diff shape.
+
+**Note the relationship between the two halves of #2992**: the old `dim` here is exactly `0050`'s
+old `dim` times `(Z2 - Z1) sin a`, confirmed numerically (`4.999999999999999` against
+`(Z2 - Z1) sin a = 4.999999999999999`). One was derived from the other, which is why the two
+patches are one upstream PR.
+
+### Measured, macOS arm64, before and after
+
+Same probe and transcript as `0050`, `gp_Cone(gp::XOY(), pi/6, 5)`, `u in [0, 2 pi]`,
+`v in [0, 10]`:
+
+| quantity | before | after | frustum |
+|---|---|---|---|
+| `Mass()` | `2040.524284763495` | `1587.0744437049409` | `1587.0744437049404` |
+| error | `453` | `4.6e-13` | |
+
+Cylinder limit, against the cylinder's `785.39816339744823`, which is the decisive evidence:
+
+| semiAngle | before | after |
+|---|---|---|
+| `1e-3` | `3.14473214923` | `786.96961317468` |
+| `1e-6` | `0.00314159580` | `785.39973419443` |
+| `1e-9` | `0.00000314159` | `785.39816496824` |
+
+Before, it converges on zero. After, on the cylinder. The residual at `1e-9` is the first-order
+term `pi R h^2 sin a`, `1.57e-6`. The centre of mass is unchanged on every case.
+
+### What was deliberately NOT fixed
+
+As in `0050`, the inertia terms below `dim` carry their own discrepancy: `IR2` is built from a
+four-term quartic over 4 where the second moment about the axis integrates to
+`cos a (Z2 - Z1)(R1^4 + R1^3 R2 + R1^2 R2^2 + R1 R2^3 + R2^4) / 20`, a five-term quartic over 20,
+and it keeps the same spurious `sin a` in `ZZ`. Out of scope here, for the same reason, and filed
+as [#3010](https://github.com/SecondMouseAU/OCCTSwift/issues/3010) with `0050`'s half.
+
+### CI coverage, and the pin
+
+Identical to `0050`'s, and for the same reason: `GeometryProperties.coneVolume(semiAngle:refRadius:height:)`
+returns the wrong value on the pinned asset, so this is `0043`'s situation and not `0044`'s. Filed
+upstream with `0050` as one PR.
+
+**Retire** once the bundled OCCT includes this fix.
+
+## 0052-Geom_BezierSurface-rational-axis-prose-matches-example-2991.patch
+
+**`Geom_BezierSurface.hxx`'s `IsURational`/`IsVRational` prose contradicts its own example matrix**
+([#2991](https://github.com/SecondMouseAU/OCCTSwift/issues/2991)). The header says:
+
+```
+  //! Returns False if the weights are identical in the U direction,
+  //! Example :
+  //!               |1.0, 1.0, 1.0|
+  //! if Weights =  |0.5, 0.5, 0.5|   returns False
+  //!               |2.0, 2.0, 2.0|
+  Standard_EXPORT bool IsURational() const;
+```
+
+The weights in that matrix are **not** identical in the U direction, they run `1.0, 0.5, 2.0` down
+a column. They are identical in the V direction. Prose and example contradict each other, and the
+example is the one that matches the code.
+
+**The implementation is the authority.** `Geom_BezierSurface.cxx`'s static `Rational()` sets
+`Urational` from
+
+```cpp
+  Urational = (std::abs(Weights(I, J) - Weights(I, J + 1)) > Epsilon(std::abs(Weights(I, J))));
+```
+
+inside a loop over `I` that walks `J`, so the comparison is between neighbours in the **column**
+index, which is V. `Urational` is therefore false exactly when every **row** is constant, and
+`Vrational` false exactly when every column is. Each flag names the axis opposite the one it
+compares along.
+
+**`Geom_BSplineSurface.hxx` already states this correctly**, with the same two example matrices
+("Returns False if for each row of weights all the weights are identical"), so the two headers
+disagree with one another as well as one of them disagreeing with the implementation. The patch
+gives `Geom_BezierSurface` the wording `Geom_BSplineSurface` already has, leaving the example
+matrices and the tolerance sentence untouched, which is the smallest change that makes all three
+agree.
+
+### Measured
+
+`Scripts/repro/2976-surface-rational-axes/probe.mm`, four explicit weight matrices against the
+pinned kernel:
+
+| weights | `IsURational` | `IsVRational` |
+|---|---|---|
+| rows constant, varies along U | 0 | 1 |
+| columns constant, varies along V | 1 | 0 |
+| all equal | 0 | 0 |
+| varies along both | 1 | 1 |
+
+A `Geom_BSplineSurface` converted from a `r = 5`, `h = 10` cylinder reports `(0, 1)`, and `(1, 0)`
+after `ExchangeUV()`, the same way round.
+
+### Why carry a comment fix at all
+
+It changes no binary, so it leaves nothing exposed and it is in no test. It is carried for two
+reasons. The tree we build and the tree we file upstream from should agree, so that the 8.0.2
+submission is cut from the same source as everything else; and the wrong prose has already cost
+something, having nearly been recorded as a defect by one lift batch reading a converted cylinder's
+`(0, 1)` as an inverted conversion.
+
+`Geom_BezierSurface.cxx` was compiled against the corrected header on all three slices to confirm
+the header still builds, which is the only compile a documentation patch can offer.
+
+### CI coverage, and the pin
+
+Carried and unpinned with `0050` and `0051`, and unlike them it leaves nothing for a caller to
+read wrong: PR #2990 already documents the real behaviour on all four Swift properties with the
+cylinder as the worked example and a test pinning both directions.
+
+Not filed upstream yet. It joins the OCCT 8.0.2 documentation batch with #2875's and #2860's
+one-character fixes rather than going alone, per the standing decision to batch upstream
+submissions.
+
+**Retire** once the bundled OCCT includes this fix.
 
 ## 0053-BRepOffset_MakeOffset-arc-join-roots-in-binding-order-3003.patch
 

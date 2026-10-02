@@ -1,0 +1,136 @@
+From: OCCTSwift ecosystem <noreply@secondmouse.au>
+Subject: [PATCH] Mesh - BRepMesh_IncrementalMesh::initParameters refuses a NaN
+ parameter instead of handing it to the mesher
+
+BRepMesh_IncrementalMesh::initParameters validates five meshing parameters, and
+every one of the five tests is written as `value < bound`:
+
+  if (myParameters.Deflection < Precision::Confusion())         { throw ... }
+  if (myParameters.DeflectionInterior < Precision::Confusion()) { ... = Deflection; }
+  if (myParameters.MinSize < Precision::Confusion())            { ... = recomputed; }
+  if (myParameters.Angle < Precision::Angular())                { throw ... }
+  if (myParameters.AngleInterior < Precision::Angular())        { ... = 2.0 * Angle; }
+
+Every comparison with NaN is false, so a NaN parameter satisfies none of the
+five: the two tests that refuse do not refuse, the three that substitute a
+usable value do not substitute, and the NaN reaches the mesher intact. The
+function exists so that no value outside its bounds gets that far, and NaN is
+outside every one of them.
+
+Spelling each test !(value >= bound) puts NaN on the refusing or substituting
+branch, because an unordered comparison makes >= false and the negation true.
+For every ordered value the two spellings are the same test, so no bound moves
+and no valid input changes behaviour. This is a NaN fix only.
+
+Ordering then holds where it has to. Deflection and Angle are validated before
+the expressions that consume them, so `(std::min)(Deflection, DeflectionInterior)`
+inside the MinSize substitution and `2.0 * myParameters.Angle` in the
+AngleInterior substitution can no longer produce a NaN of their own from a NaN
+they were handed.
+
+Measured on macOS arm64 against the pinned V8_0_1 asset, one process per case
+with an external timeout, because a tessellation that does not return is not
+catchable in-process.
+
+Linear, Scripts/repro/2879/, on BRepPrimAPI_MakeCylinder(10, 5):
+
+  deflection       result
+  0.1              130 nodes, 1 s
+  1e-4             3,978 nodes, 1 s
+  1e-5             12,570 nodes, 5 s
+  1e-6             39,742 nodes, 72 s
+  1e-7, the floor  88,862 nodes, 92 s
+  9e-8, 1e-12,     Standard_NumericError from initParameters, under 1 s each
+  0.0, -1.0
+  NaN              did not return in 600 s
+
+On a box, whose faces are all planar, the same NaN returned a mesh at no stated
+deflection (24 nodes); on a free circular edge it gave 22,216 Poly_Polygon3D
+nodes where a valid request gives 33. One input, three different wrong answers,
+none of them a refusal. The ordinary too-small value is already refused
+promptly, so NaN is the single input that walks through, and 1e-7 terminating
+in 92 s is why the floor itself is not the problem.
+
+Angular, Scripts/repro/2900/, same cylinder, at linear deflection 10.0 so that
+the angle is the criterion that decides:
+
+  angle   result
+  0.05    254 nodes
+  0.2     254 nodes
+  0.5     106 nodes
+  1.0     54 nodes
+  9e-13   Standard_NumericError from initParameters
+  0.0     Standard_NumericError from initParameters
+  -1.0    Standard_NumericError from initParameters
+  NaN     IsDone() true, Angle NaN, AngleInterior NaN, 18 nodes
+
+So the angular hole has a different symptom from the linear one and is worse to
+diagnose: no hang and no refusal, just the coarsest mesh the linear rule alone
+will accept, reported as done. The two travel as one change because they are one
+mechanism in one function, reached by one set of callers.
+
+The three substituting tests are in the change for the function's own invariant
+rather than for a measured defect, and the difference is worth stating. A NaN
+AngleInterior reaching initParameters with a valid Angle was measured in the
+same run and changes neither the node count nor the triangle count on either
+fixture: 106 nodes on the cylinder, the same as a valid interior angle gives.
+DeflectionInterior and MinSize were not separately measured. All three are
+included because a function whose contract is that nothing out of bounds reaches
+the mesher cannot leave three of its five tests permeable to the one value that
+defeats all five, and because the substitutions the two throwing guards protect
+are only finite once those guards are in place.
+
+initParameters is the one place the kernel checks these values, so it is the
+one place the fix is needed. Prs3d::GetDeflection (Prs3d.hxx:71) and the incmesh
+DRAW command (MeshTest.cxx:199, :208) share the blind spot in their own
+std::max and <= tests, but every value they produce arrives here.
+
+The check is a literal throw in an inline header function rather than a
+*_Raise_if, so Standard_NoException does not remove it and the refusal is live
+in a release build.
+
+SecondMouseAU/OCCTSwift#2879, SecondMouseAU/OCCTSwift#2900.
+---
+ src/ModelingAlgorithms/TKMesh/BRepMesh/BRepMesh_IncrementalMesh.hxx | 11 ++++++-----
+ 1 file changed, 6 insertions(+), 5 deletions(-)
+
+diff --git a/src/ModelingAlgorithms/TKMesh/BRepMesh/BRepMesh_IncrementalMesh.hxx b/src/ModelingAlgorithms/TKMesh/BRepMesh/BRepMesh_IncrementalMesh.hxx
+--- a/src/ModelingAlgorithms/TKMesh/BRepMesh/BRepMesh_IncrementalMesh.hxx
++++ b/src/ModelingAlgorithms/TKMesh/BRepMesh/BRepMesh_IncrementalMesh.hxx
+@@ -78,17 +78,18 @@
+   //! Initializes specific parameters
+   void initParameters()
+   {
+-    if (myParameters.Deflection < Precision::Confusion())
++    // Each test is spelled !(value >= bound) so that a NaN parameter takes the refusing branch.
++    if (!(myParameters.Deflection >= Precision::Confusion()))
+     {
+       throw Standard_NumericError(
+         "BRepMesh_IncrementalMesh::initParameters : invalid parameter value");
+     }
+-    if (myParameters.DeflectionInterior < Precision::Confusion())
++    if (!(myParameters.DeflectionInterior >= Precision::Confusion()))
+     {
+       myParameters.DeflectionInterior = myParameters.Deflection;
+     }
+ 
+-    if (myParameters.MinSize < Precision::Confusion())
++    if (!(myParameters.MinSize >= Precision::Confusion()))
+     {
+       myParameters.MinSize =
+         (std::max)(IMeshTools_Parameters::RelMinSize()
+@@ -96,12 +97,12 @@
+                    Precision::Confusion());
+     }
+ 
+-    if (myParameters.Angle < Precision::Angular())
++    if (!(myParameters.Angle >= Precision::Angular()))
+     {
+       throw Standard_NumericError(
+         "BRepMesh_IncrementalMesh::initParameters : invalid parameter value");
+     }
+-    if (myParameters.AngleInterior < Precision::Angular())
++    if (!(myParameters.AngleInterior >= Precision::Angular()))
+     {
+       myParameters.AngleInterior = 2.0 * myParameters.Angle;
+     }

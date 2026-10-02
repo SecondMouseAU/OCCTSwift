@@ -1,0 +1,145 @@
+From: OCCTSwift ecosystem <noreply@secondmouse.au>
+Subject: [PATCH] Modeling Algorithms - BRepGProp by-plane overloads measure
+ about the plane the caller passed, not its mirror through the origin
+
+Every by-plane BRepGProp_Vinert and BRepGProp_VinertGK overload re-bases the
+plane's fourth coefficient on the location point the same way:
+
+  thePlane.Coefficients(aCoeff[0], aCoeff[1], aCoeff[2], aCoeff[3]);
+  aCoeff[3] = aCoeff[3] - aCoeff[0] * loc.X() - aCoeff[1] * loc.Y() - aCoeff[2] * loc.Z();
+
+and both integrands then subtract that coefficient rather than adding it.
+BRepGProp_Gauss::computeVInertiaOfElementaryPart (BRepGProp_Gauss.cxx:344 with 0043 applied, :343 without):
+
+  double d1 = theCoeff[0] * x + theCoeff[1] * y + theCoeff[2] * z - theCoeff[3];
+
+and BRepGProp_UFunction::VolumeValue (BRepGProp_UFunction.cxx:99), which the
+Gauss-Kronrod path uses:
+
+  theD1 = thePMP0.X() * aCoeff[0] + thePMP0.Y() * aCoeff[1] + thePMP0.Z() * aCoeff[2] - aCoeff[3];
+
+In both, x, y, z (thePMP0) is P - loc. gp_Pln::Coefficients gives a, b, c, d for
+a x + b y + c z + d = 0, so the signed distance from the plane to P is n . P + d.
+Substituting the stored coefficient gives
+
+  d1 = n . (P - loc) - (d - n . loc) = n . P - d
+
+which is the signed distance to the plane at n . X == d, the reflection of the
+caller's plane through the origin. Both halves of the stored line are wrong in
+the same direction: the offset carries the wrong sign, and loc cancels out of
+the result entirely rather than re-basing it, so SetLocation has no effect on a
+by-plane computation at all.
+
+Negating the coefficient as it is stored fixes both halves at once. With
+aCoeff[3] = -d - n . loc the integrands compute
+
+  d1 = n . (P - loc) + d + n . loc = n . P + d
+
+which is the signed distance to the plane as passed, and is independent of loc,
+as a distance to a plane must be. The integrands are left alone: their minus
+sign is what makes loc re-base correctly once the stored offset has the right
+sign, and changing them instead would need the same edit at these five sites
+anyway.
+
+Measured on macOS arm64 against the v4.0.0-kernel.3 asset by
+Scripts/repro/2827/probe.mm's reportSignConvention, on a flat cap of area
+371.7256661 square to the plane normal, where mass == (n . n_face) * area * d1
+exactly, so mass / area reads d1 off directly. The cap is at z = 2:
+
+  loc.z  plane at z =   mass              d1     geometric distance
+  0      0              743.45133223538    2      2
+  0      1             1115.1769983531     3      1
+  0      -100         -36429.115279534   -98    102
+  3      0              743.45133223538    2      2
+  3      1             1115.1769983531     3      1
+  3      -100         -36429.115279534   -98    102
+
+d1 tracks z + planeOffset where it should track z - planeOffset, and loc changes
+nothing. Both are what the derivation above predicts.
+
+Aggregates do not change. d1 stays an affine function of P with gradient n,
+which is the only property the divergence-theorem identities need, so the
+per-face sum over a closed shell is still the enclosed volume and the
+mass-weighted sum of the per-face centres is still the first moment, for any
+plane. BRepGProp::VolumePropertiesGK(S, Props, thePln, ...) therefore reports
+the same volume and centre of mass before and after. What changes is a per-face
+reading, which is the decomposition a caller asks for when it passes a plane
+rather than a point.
+
+All five by-plane sites are in this change, because they are one convention
+rather than five defects: BRepGProp_Vinert.cxx:280, :297 and :314, covering the
+four Perform(gp_Pln) overloads and the Gauss integrand, and
+BRepGProp_VinertGK.cxx:219 and :244, covering the two Perform(gp_Pln) overloads
+and the Gauss-Kronrod integrand. Fixing one class and not the other would leave
+BRepGProp::VolumeProperties and BRepGProp::VolumePropertiesGK disagreeing per
+face about which plane they measured.
+
+Nothing in OCCT reads a per-face by-plane value, so nothing in OCCT depends on
+the old convention: BRepGProp.cxx:311 is the only BRepGProp_Vinert call site and
+passes a point, and BRepGProp.cxx:809 and :892 forward a plane to
+BRepGProp_VinertGK for an aggregate, which this does not change. Until carried
+patch 0043 the by-plane mass was overwritten with 0.0 before any caller could
+see it, so the value this corrects has never been readable from a release build.
+
+SecondMouseAU/OCCTSwift#2873.
+---
+ src/ModelingAlgorithms/TKTopAlgo/BRepGProp/BRepGProp_Vinert.cxx | 9 ++++++---
+ src/ModelingAlgorithms/TKTopAlgo/BRepGProp/BRepGProp_VinertGK.cxx | 6 ++++--
+ 2 files changed, 10 insertions(+), 5 deletions(-)
+
+diff --git a/src/ModelingAlgorithms/TKTopAlgo/BRepGProp/BRepGProp_Vinert.cxx b/src/ModelingAlgorithms/TKTopAlgo/BRepGProp/BRepGProp_Vinert.cxx
+--- a/src/ModelingAlgorithms/TKTopAlgo/BRepGProp/BRepGProp_Vinert.cxx
++++ b/src/ModelingAlgorithms/TKTopAlgo/BRepGProp/BRepGProp_Vinert.cxx
+@@ -277,7 +277,8 @@
+ {
+   double aCoeff[4];
+   thePlane.Coefficients(aCoeff[0], aCoeff[1], aCoeff[2], aCoeff[3]);
+-  aCoeff[3] = aCoeff[3] - aCoeff[0] * loc.X() - aCoeff[1] * loc.Y() - aCoeff[2] * loc.Z();
++  // The integrand subtracts aCoeff[3], so negate d to measure about the plane as given.
++  aCoeff[3] = -aCoeff[3] - aCoeff[0] * loc.X() - aCoeff[1] * loc.Y() - aCoeff[2] * loc.Z();
+ 
+   BRepGProp_Gauss aGauss(BRepGProp_Gauss::Vinert);
+ 
+@@ -294,7 +295,8 @@
+ 
+   thePlane.Coefficients(aCoeff[0], aCoeff[1], aCoeff[2], aCoeff[3]);
+ 
+-  aCoeff[3] = aCoeff[3] - aCoeff[0] * loc.X() - aCoeff[1] * loc.Y() - aCoeff[2] * loc.Z();
++  // The integrand subtracts aCoeff[3], so negate d to measure about the plane as given.
++  aCoeff[3] = -aCoeff[3] - aCoeff[0] * loc.X() - aCoeff[1] * loc.Y() - aCoeff[2] * loc.Z();
+ 
+   myEpsilon = 1.0;
+   aGauss.Compute(theSurface, loc, aCoeff, false, dim, g, inertia);
+@@ -311,7 +313,8 @@
+ 
+   thePlane.Coefficients(aCoeff[0], aCoeff[1], aCoeff[2], aCoeff[3]);
+ 
+-  aCoeff[3] = aCoeff[3] - aCoeff[0] * loc.X() - aCoeff[1] * loc.Y() - aCoeff[2] * loc.Z();
++  // The integrand subtracts aCoeff[3], so negate d to measure about the plane as given.
++  aCoeff[3] = -aCoeff[3] - aCoeff[0] * loc.X() - aCoeff[1] * loc.Y() - aCoeff[2] * loc.Z();
+ 
+   myEpsilon = 1.0;
+   aGauss.Compute(theSurface, theDomain, loc, aCoeff, false, dim, g, inertia);
+diff --git a/src/ModelingAlgorithms/TKTopAlgo/BRepGProp/BRepGProp_VinertGK.cxx b/src/ModelingAlgorithms/TKTopAlgo/BRepGProp/BRepGProp_VinertGK.cxx
+--- a/src/ModelingAlgorithms/TKTopAlgo/BRepGProp/BRepGProp_VinertGK.cxx
++++ b/src/ModelingAlgorithms/TKTopAlgo/BRepGProp/BRepGProp_VinertGK.cxx
+@@ -216,7 +216,8 @@
+ 
+   loc.Coord(aXLoc, aYLoc, aZLoc);
+   thePlane.Coefficients(aCoeff[0], aCoeff[1], aCoeff[2], aCoeff[3]);
+-  aCoeff[3] = aCoeff[3] - aCoeff[0] * aXLoc - aCoeff[1] * aYLoc - aCoeff[2] * aZLoc;
++  // The integrand subtracts aCoeff[3], so negate d to measure about the plane as given.
++  aCoeff[3] = -aCoeff[3] - aCoeff[0] * aXLoc - aCoeff[1] * aYLoc - aCoeff[2] * aZLoc;
+ 
+   return PrivatePerform(theSurface, nullptr, false, aCoeff, theTolerance, theCGFlag, theIFlag);
+ }
+@@ -241,7 +242,8 @@
+ 
+   loc.Coord(aXLoc, aYLoc, aZLoc);
+   thePlane.Coefficients(aCoeff[0], aCoeff[1], aCoeff[2], aCoeff[3]);
+-  aCoeff[3] = aCoeff[3] - aCoeff[0] * aXLoc - aCoeff[1] * aYLoc - aCoeff[2] * aZLoc;
++  // The integrand subtracts aCoeff[3], so negate d to measure about the plane as given.
++  aCoeff[3] = -aCoeff[3] - aCoeff[0] * aXLoc - aCoeff[1] * aYLoc - aCoeff[2] * aZLoc;
+ 
+   return PrivatePerform(theSurface, &theDomain, false, aCoeff, theTolerance, theCGFlag, theIFlag);
+ }

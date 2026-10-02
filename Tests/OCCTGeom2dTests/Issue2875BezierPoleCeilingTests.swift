@@ -65,7 +65,7 @@ struct Issue2875BezierPoleCeilingTests {
             "Curve3D.bezier accepted \(md + 2) poles")
     }
 
-    @Test("2D insertion stops one pole below the constructor's own ceiling")
+    @Test("2D insertion reaches the constructor's own ceiling, since 0045 and #3013")
     func insertionCeiling2D() {
         let md = Curve2D.bezierMaxDegree
         // One below the insertion ceiling: accepted, and the result is a legal curve.
@@ -76,16 +76,19 @@ struct Issue2875BezierPoleCeilingTests {
         #expect(ok.bezierInsertPoleAfter(md - 1, point: SIMD2(99, 0)))
         #expect(ok.bezierProperties.poleCount == md)
 
-        // At the insertion ceiling: refused, although the constructor builds md + 1 poles happily
-        // and the kernel, with its own check compiled out, produces a sound curve here.
+        // At md poles: now ACCEPTED, and it is the same ceiling the constructors and Increase()
+        // already used. Carried patch 0045 moved the kernel's own bound and #3013 moved
+        // OCCTCurve2DBezierInsertPoleAfter's to match, in the change that pinned it
+        // (v4.0.0-kernel.4). Before that this assertion was `!...` and the comment here explained
+        // why 2D refused what 3D also refused; both now reach md + 1.
         guard let atCeiling = Curve2D.bezier(poles: poles2d(md)) else {
             Issue.record("Curve2D.bezier returned nil for \(md) poles")
             return
         }
         #expect(
-            !atCeiling.bezierInsertPoleAfter(md, point: SIMD2(99, 0)),
-            "bezierInsertPoleAfter accepted a \(md)-pole curve")
-        #expect(atCeiling.bezierProperties.poleCount == md)
+            atCeiling.bezierInsertPoleAfter(md, point: SIMD2(99, 0)),
+            "bezierInsertPoleAfter refused a \(md)-pole curve, which 0045 accepts")
+        #expect(atCeiling.bezierProperties.poleCount == md + 1)
 
         // At the constructor's ceiling: refused too. This is the one that matters for safety.
         // Unguarded, the kernel reaches md + 2 poles and Multiplicities() then reads a
@@ -105,7 +108,7 @@ struct Issue2875BezierPoleCeilingTests {
         #expect(p.x.isFinite && p.y.isFinite)
     }
 
-    @Test("3D insertion stops at the same pole count, from the kernel's own live throw")
+    @Test("3D insertion reaches the same ceiling as 2D, from the kernel's own live throw")
     func insertionCeiling3D() {
         let md = Curve3D.bezierMaxDegree
         guard let ok = Curve3D.bezier(poles: poles3d(md - 1)) else {
@@ -119,10 +122,12 @@ struct Issue2875BezierPoleCeilingTests {
             Issue.record("Curve3D.bezier returned nil for \(md) poles")
             return
         }
+        // Accepted since 0045. The 3D site is a literal throw rather than a _Raise_if, so unlike
+        // the 2D half this one genuinely moves in a Release kernel: measured 25 poles to 26.
         #expect(
-            !atCeiling.bezier.insertPoleAfter(index: md, point: SIMD3(99, 0, 0)),
-            "3D insertPoleAfter accepted a \(md)-pole curve")
-        #expect(atCeiling.bezier.poleCount == md)
+            atCeiling.bezier.insertPoleAfter(index: md, point: SIMD3(99, 0, 0)),
+            "3D insertPoleAfter refused a \(md)-pole curve, which 0045 accepts")
+        #expect(atCeiling.bezier.poleCount == md + 1)
 
         guard let atMax = Curve3D.bezier(poles: poles3d(md + 1)) else {
             Issue.record("Curve3D.bezier returned nil for \(md + 1) poles")
