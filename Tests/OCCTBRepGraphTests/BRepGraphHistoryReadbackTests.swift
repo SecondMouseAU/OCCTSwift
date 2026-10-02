@@ -192,11 +192,16 @@ struct BRepGraphHistoryReadbackTests {
         #expect(graph.findOriginal(of: node3) == node3, "an empty log")
 
         // With records present, a node they do not mention still comes back as itself and is not
-        // confused with any original or replacement they do mention.
+        // confused with any original or replacement they do mention. The last two share an index
+        // with the original and with the replacement of the record below and differ in kind, so
+        // a reverse lookup that ignored the kind would answer face 7 for the second of them.
         graph.recordHistory(
             operationName: "A", original: node(.face, 7), replacements: [node(.face, 70)])
         #expect(graph.findOriginal(of: node3) == node3, "a log that does not mention it")
-        #expect(graph.findOriginal(of: node(.edge, 7)) == node(.edge, 7), "same index, other kind")
+        #expect(graph.findOriginal(of: node(.edge, 7)) == node(.edge, 7), "original's index")
+        #expect(graph.findOriginal(of: node(.edge, 70)) == node(.edge, 70), "replacement's index")
+        // And the replacement itself does lead back, so the lookups above are not all a refusal.
+        #expect(graph.findOriginal(of: node(.face, 70)) == node(.face, 7))
     }
 
     // MARK: - The setup every test above leans on
