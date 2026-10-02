@@ -423,6 +423,31 @@ def pair_names(stem: str):
     return stem + "-transcript.txt", stem + "-reproduce.json", stem + "-argv.txt"
 
 
+def probe_names_for(stem: str) -> list[str]:
+    """Every probe stem whose `pair_names` derives the transcript `stem`.txt, best spelling first.
+
+    The inverse of `pair_names`, and it is deliberately not single-valued, because `pair_names` is
+    not injective: `race-transcript.txt` is what the token rule derives from `race-probe.mm` AND
+    what the suffix fallback derives from `race.mm`. Reverse-mapping with the token rule alone
+    named only the first, so an orphan `race-transcript.txt` reported "has no race-probe.mm beside
+    it" about a directory whose convention, and whose deleted probe, is `race.mm`. The pair, the
+    verdict and the declaration name were right either way; the sentence a reader acts on was not,
+    and a report that names the wrong file is the same silence #2934 is about.
+    """
+    out: list[str] = []
+    sub = retoken(stem, "transcript", "probe")
+    if sub is not None:
+        out.append(sub)
+    if stem.endswith("-transcript"):
+        base = stem[: -len("-transcript")]
+        # Only where `pair_names` would actually take its fallback branch for `base`: a stem that
+        # already holds a `probe` token takes the token rule, so `probe-transcript.txt` is not a
+        # transcript of `probe.mm` (that one is `transcript.txt`).
+        if base and retoken(base, "probe", "transcript") is None and base not in out:
+            out.append(base)
+    return out
+
+
 def pairs_in(d: str) -> list[dict]:
     """Every (probe, transcript) pair in `d`, with the orphans on BOTH sides kept as pairs.
 
@@ -450,12 +475,13 @@ def pairs_in(d: str) -> list[dict]:
         if not n.endswith(".txt") or n in claimed:
             continue
         stem = n[: -len(".txt")]
-        pname = retoken(stem, "transcript", "probe")
-        if pname is None:
+        pnames = probe_names_for(stem)
+        if not pnames:
             continue
+        want = " or ".join(x + ".mm" for x in pnames)
         pairs.append({"dir": d, "probe": None, "transcript": n,
                       "decl": retoken(stem, "transcript", "reproduce") + ".json", "argv": None,
-                      "why": f"{n} has no {pname}.mm beside it"})
+                      "why": f"{n} has no {want} beside it"})
     if not pairs:
         pairs.append({"dir": d, "probe": None, "transcript": None, "decl": DECL_FILE,
                       "argv": None, "why": "the directory holds no probe and no transcript"})
@@ -908,6 +934,28 @@ def self_test() -> int:
                       "766-orphan/race-transcript.txt" not in found))
         cases.append(("a sibling capture that is neither probe nor transcript is left alone",
                       not any(q["transcript"] == "bridge-observed.txt" for q in pairs_in(orphan))))
+    # The reverse map has to be the inverse of `pair_names`, not just the token rule read
+    # backwards. Reverse-mapping `race-transcript` with the token rule alone gives `race-probe`,
+    # which is a spelling this tree does not use, so an orphan left behind by a deleted `race.mm`
+    # was reported against a filename that never existed.
+    cases.append(("an orphan transcript names the SUFFIX spelling, not just the token one",
+                  probe_names_for("race-transcript") == ["race-probe", "race"]))
+    cases.append(("an orphan transcript in the token spelling names the token probe",
+                  probe_names_for("transcript-evidence-fix") == ["probe-evidence-fix"]))
+    cases.append(("`probe-transcript` is not a suffix preimage of `probe`",
+                  "probe" not in probe_names_for("probe-transcript")))
+    cases.append(("a .txt that is no transcript at all maps to no probe",
+                  probe_names_for("bridge-observed") == []))
+    with tempfile.TemporaryDirectory() as d:
+        gone = os.path.join(d, "766-gone")
+        os.makedirs(gone)
+        write_text(os.path.join(gone, "race-transcript.txt"), "a\n")
+        q = pairs_in(gone)[0]
+        cases.append(("the orphan report names race.mm, the spelling the pair rule derives",
+                      "race.mm" in q["why"]))
+        cases.append(("and it is still MISSING, with its declaration name unchanged",
+                      q["decl"] == "race-reproduce.json" and
+                      check_pair(q, os.path.join(d, "no-asset"), 5)["status"] == "MISSING"))
 
     # 9. The blank-line rule. It is the only normalisation that drops a line, so it needs both
     #    halves: a blank line is erased, and a line with content is not.
