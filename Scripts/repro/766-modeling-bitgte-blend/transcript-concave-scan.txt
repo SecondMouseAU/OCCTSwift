@@ -1,0 +1,30 @@
+input: faces=14 volume=24000 edges=28
+edge 0: done=true faces=14 volume=24000 unchanged
+edge 1: done=true faces=14 volume=24000 unchanged
+edge 2: done=true faces=14 volume=24000 unchanged
+edge 3: done=true faces=14 volume=24000 unchanged
+edge 4: done=true faces=14 volume=24000 unchanged
+edge 5: done=true faces=14 volume=24000 unchanged
+edge 6: done=true faces=14 volume=24000 unchanged
+edge 7: done=true faces=14 volume=24000 unchanged
+edge 8: done=true faces=14 volume=24000 unchanged
+edge 9: done=true faces=14 volume=24000 unchanged
+edge 10: done=true faces=14 volume=24000 unchanged
+edge 11: done=true faces=14 volume=24000 unchanged
+edge 12: done=true faces=14 volume=24000 unchanged
+edge 13: done=true faces=14 volume=24000 unchanged
+edge 14: done=true faces=14 volume=24000 unchanged
+edge 15: done=true faces=14 volume=24000 unchanged
+edge 16: done=true faces=14 volume=24000 unchanged
+edge 17: done=true faces=14 volume=24000 unchanged
+edge 18: done=true faces=14 volume=24000 unchanged
+edge 19: done=true faces=14 volume=24000 unchanged
+edge 20: done=true faces=14 volume=24000 unchanged
+edge 21: done=true faces=14 volume=24000 unchanged
+edge 22: done=true faces=17 volume=24076.815240690972 CHANGED
+edge 23: done=true faces=14 volume=24000 unchanged
+edge 24: done=true faces=14 volume=24000 unchanged
+edge 25: done=true faces=14 volume=24000 unchanged
+edge 26: done=true faces=14 volume=24000 unchanged
+edge 27: done=true faces=14 volume=24000 unchanged
+summary: 1 of 28 edges change the shape, the last at index 22
