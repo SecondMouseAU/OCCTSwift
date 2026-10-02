@@ -21,6 +21,19 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### Analysis property tests pinned to closed forms, and two `gp_Cone` kernel defects found (#1759, #1760, #1786-#1789, #1811-#1814, #2992)
+
+- `GPropCylConeTests`, `BRepLPropEdgeTests` and `BRepGPropVinertGKTests` now pin closed-form values
+  instead of `> 0` bounds and `if let` skips: 4 SEVERE and 4 ESCAPABLE tests to zero of each, and
+  repo-wide SEVERE from 1,203 to 1,199.
+- Deriving the cone's closed forms found that `GProp_SelGProps::Perform(gp_Cone)` returns
+  `cos(semiAngle)` times the lateral area and `GProp_VelGProps::Perform(gp_Cone)` returns a volume
+  that collapses to zero rather than to the cylinder's as the semi-angle does, filed as #2992. The
+  tests pin the kernel's current answers as a regression pin and hold the correct values in
+  `withKnownIssue`.
+- Three ground-truth probes added under `Scripts/repro/766-*`, all reproducing against the pinned
+  kernel.
+
 ### Gate the Standard_Transient release idiom, and record what the compiled-out-validation census cannot see (#2974, #2946)
 
 - **New gate `check-transient-release-idiom.py` (#2974).** Every function in
