@@ -40,6 +40,14 @@ struct IntToolsEdgeEdgeTests {
     ///
     /// The two edges overlap x in [1, 2], and the origin is outside that, so no fabricated zero can
     /// satisfy the range assertion.
+    ///
+    /// The `.edge` here is also half of #2994's finding, and the half that is a real
+    /// inconsistency inside OCCT. Two straight edges short-circuit into
+    /// `IntTools_EdgeEdge::ComputeLineLine`, which never reaches `MergeSolutions` and types
+    /// **every** coincident overlap `TopAbs_EDGE` (`IntTools_EdgeEdge.cxx:989`), whole-range or
+    /// not. The overlap here covers neither edge, and the geometrically identical arc fixture
+    /// below (`arcOverlapPointLiesOnTheArc`) comes back `.vertex` for exactly that reason. If a
+    /// kernel bump makes these two agree, this assertion and that one are where it shows up.
     @Test("Overlapping collinear edges produce edge common part")
     func edgeEdgeOverlap() throws {
         let edge1 = try #require(Shape.edgeFromPoints(SIMD3(0, 0, 0), SIMD3(2, 0, 0)))
@@ -67,12 +75,14 @@ struct IntToolsEdgeEdgeTests {
     /// reported has to lie on the circle, so it is 10 from the centre; the origin, which the
     /// unset bounding points produced, is 0 from it.
     ///
-    /// `type` is deliberately not asserted. Measured on the pinned kernel, this fixture comes back
-    /// as a single **vertex** part at 3pi/4, the midpoint of the overlap, while the same two arcs
-    /// with one contained in the other ([0, pi] against [pi/4, 3pi/4]) come back as an **edge**
-    /// part over the whole overlap. `fillCommonPart` passes `IntTools_CommonPrt::Type()` through
-    /// unchanged, so that difference is the kernel's; it is recorded in #2994 and pinning either
-    /// answer here would pin whichever of the two turns out to be wrong.
+    /// `type` is `.vertex` here and `.edge` for the contained overlap below, and #2994 settled
+    /// why. `IntTools_EdgeEdge::MergeSolutions` starts at `TopAbs_VERTEX` and promotes the merged
+    /// range to `TopAbs_EDGE` only when it covers the **whole** of one of the two edges
+    /// (`IntTools_EdgeEdge.cxx:756-765`). `[pi/2, pi]` is the whole of neither `[0, pi]` nor
+    /// `[pi/2, 3pi/2]`, so it stays a vertex. Predicted from that rule and confirmed on seven arc
+    /// fixtures in `Scripts/repro/2994-edgeedge-overlap-type/`, which also retires #2994's guess
+    /// that the trigger is the overlap reaching an edge endpoint: `[0, pi]` against `[pi/2, pi]`
+    /// ends at `a`'s own last parameter and comes back `.edge`.
     @Test("An overlap on a circular arc reports a point on the arc (#2251)")
     func arcOverlapPointLiesOnTheArc() throws {
         let circle = try #require(
@@ -83,6 +93,7 @@ struct IntToolsEdgeEdgeTests {
         let parts = try #require(a.edgeEdgeIntersection(with: b))
         #expect(parts.count == 1)
         for part in parts {
+            #expect(part.type == .vertex, "neither range is wholly covered, so #2994's rule says vertex")
             // Whatever the part's type, it has to sit inside the overlap, [pi/2, pi] on a.
             #expect(part.param1Range.first >= .pi / 2 - 1e-6, "r1 \(part.param1Range)")
             #expect(part.param1Range.last <= .pi + 1e-6, "r1 \(part.param1Range)")
@@ -95,6 +106,40 @@ struct IntToolsEdgeEdgeTests {
                 "point \(point) is \(simd_length(point)) from the centre, not 10")
             #expect(abs(point.z) < 1e-9)
         }
+    }
+
+    /// The companion fixture that makes the rule visible rather than leaving it a single
+    /// observation (#2994). Same circle, same `a`, and a `b` that `a` wholly contains: the merged
+    /// range is then the whole of `b`, `MergeSolutions` promotes it, and the part is `.edge` over
+    /// the real overlap instead of a vertex at its middle.
+    ///
+    /// The two rows together are the invariant worth pinning: `param1Range` is the true overlap in
+    /// **both** cases, whatever the type says, which is what a caller asking "do these overlap,
+    /// and over what" should read. `type` is OCCT's directive to a boolean operation, not a
+    /// geometric classification, and `BOPAlgo_PaveFiller::PerformEE` discards both of these parts
+    /// (the vertex one at its `bIsOnPave` test, the edge one at `HasSameBounds`) and still splits
+    /// both fixtures correctly, because `PerformVE` ran first. Measured in
+    /// `Scripts/repro/2994-edgeedge-overlap-type/`.
+    @Test("A wholly contained arc overlap is an edge part over the overlap (#2994)")
+    func containedArcOverlapIsAnEdgePart() throws {
+        let circle = try #require(
+            Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 10))
+        let a = try #require(Shape.edgeFromCurve(circle, u1: 0, u2: .pi))
+        let b = try #require(Shape.edgeFromCurve(circle, u1: .pi / 4, u2: 3 * .pi / 4))
+
+        let parts = try #require(a.edgeEdgeIntersection(with: b))
+        #expect(parts.count == 1)
+        let part = try #require(parts.first)
+        #expect(part.type == .edge, "b is wholly covered, so #2994's rule says edge")
+        // The whole of b's range, reported on a, where a and b share a parameterisation.
+        #expect(abs(part.param1Range.first - .pi / 4) < 1e-6, "r1 \(part.param1Range)")
+        #expect(abs(part.param1Range.last - 3 * .pi / 4) < 1e-6, "r1 \(part.param1Range)")
+        // An edge part's point is interior to the overlap and on the circle, not on the chord.
+        let point = try #require(part.point)
+        #expect(
+            abs(simd_length(point) - 10.0) < 1e-6,
+            "point \(point) is \(simd_length(point)) from the centre, not 10")
+        #expect(abs(point.z) < 1e-9)
     }
 
     /// #1756: this nested `isEmpty` inside an `if let` on the two edges, so a nil edge passed it.

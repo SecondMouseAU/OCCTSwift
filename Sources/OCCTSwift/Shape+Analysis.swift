@@ -1692,9 +1692,30 @@ extension Shape {
 
     /// Result of an edge-edge or edge-face intersection.
     public struct CommonPart: Sendable {
-        /// Type of intersection (vertex or edge overlap).
+        /// What OCCT means a boolean operation to make of this part, which is not the same as
+        /// what the intersection geometrically is.
+        ///
+        /// - Warning: `.vertex` does **not** mean the two edges meet at a point. A tangential
+        ///   overlap of two arcs comes back `.vertex` whenever it covers the whole of neither
+        ///   edge, because `IntTools_EdgeEdge::MergeSolutions` starts at `TopAbs_VERTEX` and
+        ///   promotes to `TopAbs_EDGE` only on whole-range coverage
+        ///   (`IntTools_EdgeEdge.cxx:756-765`). Two arcs of one circle, `[0, pi]` against
+        ///   `[pi/2, 3pi/2]`, report `.vertex` for a genuine quarter circle of coincidence, while
+        ///   `[0, pi]` against `[pi/4, 3pi/4]` reports `.edge`. Two straight edges never take
+        ///   that route at all: `ComputeLineLine` types every coincident overlap `.edge`, so the
+        ///   same relation answers differently for lines and for arcs. Settled in #2994 and
+        ///   measured in `Scripts/repro/2994-edgeedge-overlap-type/`.
+        ///
+        ///   To ask whether two edges overlap and over what, read ``param1Range``, which is the
+        ///   true overlap under either type.
         public let type: CommonPartType
         /// Parameter range on edge 1 (first, last), same for vertex type.
+        ///
+        /// For a `.vertex` part this is `IntTools_CommonPrt::VertexParameter1` twice over, not
+        /// the kernel's `Range1()`. For a transversal crossing those agree to within the
+        /// tolerance window OCCT puts round the hit, and for the tangential `.vertex` case above
+        /// the window is the whole overlap, so the value is a representative parameter inside it
+        /// rather than its extent (#2994).
         public let param1Range: (first: Double, last: Double)
         /// Parameter range on edge 2 (first, last), same for vertex type.
         ///
