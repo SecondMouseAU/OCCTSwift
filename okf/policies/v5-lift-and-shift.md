@@ -19,7 +19,8 @@ batch, which is how batch 1 lifted five PRs and closed none of them (#2909).
 
 Six batches were steered by the count of **open** PRs targeting the branch, a number that fell
 through the programme and stood at 61 when #2937 measured it. It counts the wrong population.
-There are three populations and only one of them was ever being counted:
+There are three populations and only one of them was ever being counted. #2937's own measurement,
+kept here as the shape of the finding rather than as a current figure:
 
 | Population | PRs | tests `main` has weak that it has stronger | unique to it |
 |---|---|---|---|
@@ -27,15 +28,26 @@ There are three populations and only one of them was ever being counted:
 | open | 61 | 220 | 219 |
 | closed unmerged | 134, 104 heads alive | 109 | 4 |
 
-**Every figure in that table is low, and the merged row has been re-measured.** It was taken with
-a census that keyed each test on its function name alone, so two same-named `@Test` functions in
-different suites of one file collapsed into one entry (#2949). Re-run against `main` at `6aa5ad2`
-with the corrected key, the merged row's gain count is **1,229** rather than 1,210, over the same
-417 paths; three paths moved, and `StressBuilderLifecycleTests.swift` went from 12 gains to 32 and
-from ninth in the ranking to fifth. The open and closed-unmerged rows have **not** been
-re-measured, because each needs its own head screened. Re-run before quoting any of them. No path
-the old key reported at zero gain has one under the new key, so nothing a batch declared drained
-on the merged population was wrongly declared.
+**Every figure in that table is stale, and only the merged row has been re-measured.** It was
+taken with a census that keyed each test on its function name alone, so two same-named `@Test`
+functions in different suites of one file collapsed into one entry (#2949). Re-run against `main`
+at `6aa5ad2` with the corrected key, the merged row's gain count was **1,229** rather than 1,210,
+over the same 417 paths; three paths moved, and `StressBuilderLifecycleTests.swift` went from 12
+gains to 32 and from ninth in the ranking to fifth. The open and closed-unmerged rows have
+**not** been re-measured, because each needs its own head screened. Re-run before quoting any of
+them. No path the old key reported at zero gain has one under the new key, so nothing a batch
+declared drained on the merged population was wrongly declared.
+
+**The merged row stands at 876 gains over 396 paths**, measured on 2026-10-02 against
+`origin/main` at `e6a3b8f` and branch head `ee42388`. Most of the fall from 1,229 is the
+programme working: batches have lifted that work onto `main`. A small part of it is the detector
+getting three defects fixed, and the two have been separated, because the same two runs differ in
+nothing but the script: the old detector reports **889 gains over 399 paths** on those refs and the
+corrected one reports 876 over 396. **The correction lowers the gain count**, which is worth
+understanding before the next batch reads the ranking. A gain needs the head to be strictly
+better, and the branch's own versions carry the same multi-line `guard` the old detector could
+not see, so some of what scored ESCAPABLE-to-clean was never a gain. The transition mix moves the
+same way: SEVERE-to-ESCAPABLE rises 263 to 314 while ESCAPABLE-to-clean falls 330 to 282.
 
 So **the backlog the programme worked is 15 percent of the work**, and the merged population,
 which nothing in the programme can see, is 84 percent of it. The two are near-disjoint by
@@ -61,29 +73,41 @@ with `census-766-weak-assertions.py`'s detector. A **gain** is a test `main` has
 ESCAPABLE and the branch has better. That is the quantity to carve batches out of, because it is
 the quantity the programme exists to move.
 
-Attribution over the whole ranked list is unanimous: the 417 gainful paths trace to **218 distinct
-PRs and every one of them is merged**, with six paths unattributed because the difference is
-`main`'s own later work rather than a commit on the branch. Not one open or closed-unmerged PR
-appears.
+Attribution over the whole ranked list is unanimous and has stayed unanimous through every
+re-measurement: on 2026-10-02 the 396 gainful paths trace to **185 distinct PRs and every one of
+them is merged**, with eight paths unattributed because the difference is `main`'s own later work
+rather than a commit on the branch. Not one open or closed-unmerged PR appears, which was 218 PRs
+over 417 paths when #2937 measured it and is the same finding.
 
-**Rank by gain, never by PR count.** Of 1,681 differing paths, 698 are probes `main` lacks, 254
-are `main`'s own later work, and 727 are test files present on both sides. Of those 727, **417
-have a gain and 310 have none**: `main` is already level or ahead there, and a path differing is
-not a path worth taking. Batch 6 met the reverse case too, where `main`'s `HatchTests.swift` was
-weaker than the v5 base by 25 lines belonging to a third PR. Read the file.
+**Rank by gain, never by PR count.** Of the 1,858 differing paths in that run, 641 are ABSENT
+(the branch has them and `main` does not, overwhelmingly probes), 406 are UNDELETED and 811 are
+test files tiered on both sides. Of those 811, **396 have a gain and 415 have none**: `main` is
+already level or ahead there, and a path differing is not a path worth taking. Batch 6 met the
+reverse case too, where `main`'s `HatchTests.swift` was weaker than the v5 base by 25 lines
+belonging to a third PR. Read the file.
 
 **346 is not the remaining work, in either direction.** That is the commit count #2937 quotes,
 `git log --no-merges origin/v5.0.0-766-execution ^origin/main -- Tests/ Scripts/repro/`, and it
 counts commits by identity, including every one whose content `main` has already taken through a
-lift rewritten rather than copied. Measuring by content gives 417 paths and 1,229 tests, and both
-of those are the number to carve batches out of. The commit count answers nothing.
+lift rewritten rather than copied. Measuring by content gives the path and test counts above, and
+both of those are the number to carve batches out of. The commit count answers nothing.
 
 Every count the census prints is a **lower** bound. Two tests that both tier clean can still
 differ, and #2937's own `islandsCutHoles` is one: the branch pins two exact half-spans `main` does
-not, and the detector scores both sides the same. It was a lower bound for a second reason until
-#2949, which is why the figures on this page carry a date and a commit: re-measure, never quote.
-A third reason is open: the detector reads a `guard` only when its `else` is on the same line, so
-the multi-line form is invisible to it, and 284 tests on `main` sit in one (#2982).
+not, and the detector scores both sides the same. It has been a lower bound for four further
+reasons, and three of them are now closed: the name-keyed tier map (#2949), the invisible
+multi-line `guard` (#2982), the ordering tautology counted as a pin (#2985), and the same-named
+helper borrowed across suites (#2964). **Three separate defects were found in one instrument in
+one day**, which is why the figures on this page carry a date and a commit: re-measure, never
+quote.
+
+What is still open, and what no fix is going to reach, is in
+`census-766-weak-assertions.py`'s "WHAT IT CANNOT SEE": a threshold a correct answer clears by a
+whole unit (`bb.max.x - bb.min.x > 9.0` for a true span of 10, which carries a literal and so
+scores as a pin), a helper one file away from its callers, and a sibling `@Test` inlined into its
+neighbour. The first is a deliberate non-target, because every mechanical shape that reaches it
+also reaches the tolerance comparisons the detector exists to respect; the injection
+counterfactual under rule 5a is what catches it instead.
 
 ## What the first two content batches measured
 
@@ -97,7 +121,8 @@ way:
 | Foundation | 1 | 6 | **6** | 0 | 31 to 7 |
 
 **Fifteen source PRs, every one of them merged into the branch and invisible to an open-PR
-screen.** Repo-wide the two together move SEVERE from 1,496 to about 1,381. Take this as settled:
+screen.** Repo-wide the two together moved SEVERE from 1,496 to about 1,381, a frozen measurement
+of the day batch 8 ran and taken with the detector as it then was. Take this as settled:
 pick paths from `census-766-unlifted-tests.py`, and expect the sources to be merged PRs you cannot
 close.
 
@@ -112,10 +137,13 @@ A gain is a candidate, not a verdict, and batch 8 measured three ways it mislead
   name a test calls, so a test calling `Color.fromName(` picked up the body of the sibling
   `@Test func fromName` and inherited its `if let`. Five gains cleared themselves once the
   neighbour was fixed. Any file where a test's name is a prefix of another test's call shows this.
-* **Same-named tests in different suites of one file collapse**, because the tier map is keyed on
-  the function name (#2949). `StressExhaustiveAPITests.swift` holds 112 tests and the census says
-  100. It under-reports, and it can report zero gains for a path that still has some, which is the
-  one claim it must not get wrong.
+* **Same-named tests in different suites of one file collapsed**, because the tier map was keyed
+  on the function name (#2949). `StressExhaustiveAPITests.swift` holds 112 tests and the census
+  said 100. Fixed, and the same shape was then found in the detector's helper map and fixed
+  there too (#2964): a test was expanded with whichever same-named helper came last in the file,
+  so the four tests of `StressFormatRoundTripTests.swift`'s OBJ suite scored against the IGES
+  suite's `roundTrip` and read as clean while their own helper asserts nothing. Both were
+  under-reporting, and under-reporting is the one direction a census must not fail in.
 
 The complement also holds: both batches strengthened tests the census could not count, because a
 test can tier clean and still be loose. `#expect(distance > 1.0)` where the answer is 2, and
@@ -221,9 +249,12 @@ diff, not the label.
 **5a. Report the injection counterfactual, not only the census delta.** Run the batch's own
 switches against the versions you replaced. Batch 10's BndLib lift measured 14 of 19 switches
 reddening nothing and 17 of 21 tests catching nothing on `main`, against zero and zero after, while
-the census delta for the same batch was three SEVERE. The census undercounts for reasons it cannot
-fix (#2949, #2964, #2985, and a nil-skip it cannot see), so where a batch's value is in question
-the counterfactual is the honest number and it costs one more run of a harness already built.
+the census delta for the same batch was three SEVERE. The census still undercounts, now for the
+reasons under "WHAT IT CANNOT SEE" rather than for the four defects since fixed, and the sharpest
+of them is exactly a batch-10 shape: `bb.max.x - bb.min.x > 9.0` for a true span of 10 scores as
+a pin and cannot fail on anything a working kernel returns. So where a batch's value is in
+question the counterfactual is the number to trust and it costs one more run of a harness already
+built.
 [Injection sweep mechanics](../references/injection-sweep-mechanics.md) has the how.
 
 **6. A lifted test that fails on `main` is evidence, and is never weakened to make it pass.** The
