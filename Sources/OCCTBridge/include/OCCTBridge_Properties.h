@@ -572,8 +572,10 @@ OCCTFaceVolumeInertia OCCTBRepGPropVinert(OCCTFaceRef _Nonnull face);
 /// computed the mass and then discarded it, so this returned exactly 0.0 with a (0, 0, 0) centre on
 /// every kernel pinned before v4.0.0-kernel.3, which is the first to carry
 /// Scripts/patches/0043-BRepGProp_Gauss-keeps-the-by-plane-mass-2827.patch. **#2873**: the kernel
-/// measures about the plane mirrored through the origin, so the gp_Pln this function builds from
-/// planeN and planeDist is mirrored to compensate, and planeDist is an ordinary geometric offset.
+/// measured about the plane mirrored through the origin until Scripts/patches/0048 (pinned from
+/// v4.0.0-kernel.4) corrected the conversion, so this function used to mirror the gp_Pln it builds
+/// from planeN and planeDist to compensate, and no longer does (#3015). planeDist is an ordinary
+/// geometric offset.
 OCCTFaceVolumeInertia OCCTBRepGPropVinertPlane(OCCTFaceRef _Nonnull face,
                                                double planeNX,
                                                double planeNY,
