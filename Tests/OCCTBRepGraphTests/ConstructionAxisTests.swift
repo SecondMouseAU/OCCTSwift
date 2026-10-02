@@ -325,8 +325,8 @@ struct ConstructionAxisTests {
         #expect(graph.revolutionAxis(ofEdgeAt: branch.edgeIndex) == nil)
 
         // The fallback is the edge's own chord, exactly: it starts where the edge starts and runs
-        // to where it ends. That is not either candidate face's axis (the pre-fix bug), which the
-        // search above guaranteed is more than 0.9 off the chord in dot product.
+        // to where it ends. That is not either candidate face's axis (the pre-fix bug): the search
+        // above only took an edge whose chord has a dot product below 0.9 with both of them.
         let ax = try alongEdge(graph, branch.edgeIndex).get()
         #expect(isClose(ax.origin, branch.start), "origin \(ax.origin), edge start \(branch.start)")
         let chord = simd_normalize(branch.end - branch.start)
@@ -744,11 +744,13 @@ struct ConstructionAxisTests {
         // The fixture is a half turn, from 45 to 225 degrees, not the full turn that would make
         // the secant exactly axis-parallel. This test used to build the full turn, and measured,
         // it never contained a helix: `Shape.face(from:boundary:)` could not fit a wire that
-        // touches the cylinder's seam, fell back to projecting points, and left 622 edges of a
-        // few hundredths of a unit each, so the "helical edge" the test picked was the first
-        // non-line fragment of that shredding. The half turn avoids the seam, and the helix is
-        // approximated to 1e-8 (the 1e-3 default is too loose for the exact fit, which then
-        // shreds it the same way), so it arrives as the single edge this test is about.
+        // touches the cylinder's seam, fell back to projecting points, and left 622 edges, one
+        // long loop at almost constant height and 621 pieces about 0.05 long, so the "helical
+        // edge" the test picked, the first non-line edge, was that loop. The half turn avoids the
+        // seam, and the helix is approximated to 1e-8 (the 1e-3 default is too loose for the
+        // exact fit, which then shreds it the same way), so it arrives as the single edge this
+        // test is about. Measured, `isClockwise: true` is the winding that runs counterclockwise
+        // seen from +Z here (45, 135, 225 degrees), and the other one crosses the seam.
         let radius = 5.0
         let pitch = 10.0
         let start = Double.pi / 4
@@ -1110,9 +1112,9 @@ struct ConstructionAxisTests {
         #expect(axis.kind == .sphere, "fixture is not a spherical face")
         let poleDirection = simd_normalize(axis.direction)
 
-        // Find the two real pole vertices by position, not by assuming fixed indices 0/1 --
+        // Find the two real pole vertices by position, not by assuming fixed indices 0/1:
         // vertex enumeration order isn't guaranteed stable across an OCCT kernel rebuild or
-        // platform (CLAUDE.md Test Conventions; #897 review, second xhigh pass, finding 4) --
+        // platform (CLAUDE.md Test Conventions; #897 review, second xhigh pass, finding 4),
         // matching `tangentToFaceConeApexFallsBackToNormal`'s own by-position search.
         var poleIndices: [Int] = []
         for vertexIndex in 0..<graph.vertexCount {
@@ -1229,10 +1231,11 @@ struct ConstructionAxisTests {
         //
         // The box corner is placed one unit off the patch along its own normal at
         // (u, v) = (0.25, 0.75): the patch point S = (0.75, 2.25, 1.875), whose normal is
-        // (0.5, -0.5, 1) normalised. A point on a surface normal at a distance well inside the
-        // radius of curvature (about 4 here) projects straight back onto that foot point, so the
-        // expected origin and direction are known in closed form, and are neither the raw corner
-        // nor the patch's UV midpoint (1.5, 1.5, 1.5) with normal +Z.
+        // (0.5, -0.5, 1) normalised. A point on a surface normal at a distance inside both
+        // principal radii of curvature there (about 1.8 and 2.8, from the patch's fundamental
+        // forms) projects straight back onto that foot point, so the expected origin and
+        // direction are known in closed form, and are neither the raw corner nor the patch's UV
+        // midpoint (1.5, 1.5, 1.5) with normal +Z.
         let surface = try saddleSurface()
         let saddleFace = try #require(
             Shape.face(from: surface, uBounds: 0...1, vBounds: 0...1), "saddle face")
@@ -1281,9 +1284,10 @@ struct ConstructionAxisTests {
         // cross-section, constant height/radius across all 5 of `coaxialCrossSection`'s own
         // sampled fractions, built as a degree-1 BSpline whose first two poles are IDENTICAL: a
         // textbook cusp (the segment [0, 0.05] has zero length, so the right-derivative at u=0 is
-        // the zero vector). `GeomLProp_CLProps::IsTangentDefined()`, and so `Edge.tangent(at:)`
-        // , correctly reports undefined there, while `Edge.point(at:)` at the same parameter
-        // still succeeds (plain D0 evaluation, unaffected by a degenerate derivative).
+        // the zero vector). `GeomLProp_CLProps::IsTangentDefined()`, and so
+        // `Edge.tangent(at:)`, correctly reports undefined there, while `Edge.point(at:)` at the
+        // same parameter still succeeds (plain D0 evaluation, unaffected by a degenerate
+        // derivative).
         //
         // Knots are placed at exactly the 5 fractions `coaxialCrossSection` samples (0, 0.25,
         // 0.5, 0.75, 1.0), with the extra cusp pole tucked into [0, 0.05], so every sample lands
@@ -1430,8 +1434,8 @@ struct ConstructionAxisTests {
         // always compared against the machine-precision floor alone, so this call would have
         // returned `false` regardless of what tolerance the caller measured.
         #expect(isCoaxial(noisy, edgeTolerance: 1e-4))
-        // And the tolerance is a real bound, not a switch: just under the 7e-5 spread it still
-        // refuses, so the comparison is made against the number the edge reports.
+        // And the tolerance is a real bound, not a switch: below the 7e-5 spread it refuses, so
+        // the comparison is made against the number the edge reports.
         #expect(!isCoaxial(noisy, edgeTolerance: 5e-5))
     }
 
