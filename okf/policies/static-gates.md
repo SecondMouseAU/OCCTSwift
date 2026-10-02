@@ -23,6 +23,64 @@ numbers is derived from the job rather than kept by hand:
 the two disagree, and `Scripts/repro/819-gate-coverage-audit/gate_coverage.py --check` reads the
 same sentence from the other direction, reporting the release check beside it.
 
+## A frozen number says when
+
+A counted claim in prose is one of two things, and the sentence has to say which.
+
+A **live** claim describes the repository as it is now. It is only safe where a script re-derives
+it and fails when the two disagree, which is what every entry in `check-inventory-prose.py`'s
+`CLAIMS` table is. Written without that, it is a number whose only update path is somebody
+noticing, and the repository has watched that fail at the patch count, the gate count, the bridge
+file count and the enforced-style population.
+
+A **frozen** claim is a measurement, and a measurement has a date. "The pinned asset holds
+thirty-one patches" and "the `v4.0.0-kernel.1` asset held thirty-one patches" are the same number
+about the same thing, and only the second stays true. The model sentence is in
+[code-style](code-style.md): *"That 272 is a frozen measurement of 2026-09-30 and is deliberately
+written as one."* Past tense, or a date, or both. A frozen claim also names the command that
+re-derives it, so a reader who needs today's figure does not have to find one.
+
+So, for any number about this repository: **gate it, date it, or delete it.** Prefer deleting. Most
+counted clauses carry no information the universal quantifier does not: "guarded at all 20
+construction sites" and "guarded at every construction site" tell a bridge author the same thing,
+and only one of them goes stale when the twenty-first is added. The count is worth keeping where it
+is evidence rather than instruction, which is why "36 of the 57 entry points crash uncatchably" is
+written down in [null-handle-guards](null-handle-guards.md) and no longer in `CLAUDE.md` (#2959).
+
+And **no counted claim about the repository belongs in `CLAUDE.md`** at all (#2954, #2959), gated
+or not. That page is loaded into every session in every branch, so a correct edit to the thing
+counted reds every other open PR at merge time. The count goes on the `okf/` page that owns the
+subject, and `CLAUDE.md` links to it.
+
+## The detectors outside `gate-scripts`
+
+Two detectors gate on every PR from another job, so no count on this page includes them:
+`check-doc-snippets.py` in `swift build + test (macOS)` (see "The one gate outside `gate-scripts`"
+below) and `check-swift-format.py` in `code-style.yml`. Their populations are recorded here rather
+than in `CLAUDE.md`, and each is a frozen measurement, read under the rule above.
+
+**The doc-snippet corpus**, from `python3 Scripts/check-doc-snippets.py --list`, measured
+**2026-10-02**: 8,317 fenced ```swift``` blocks in `docs/` and `///` comments, of which 5,101 are
+signature restatements the gate skips (a bodiless `func` is uncompilable anywhere), 3,208 are
+snippets it type-checks, and 8 carry a `no-typecheck:` exemption. The shape of the split is the
+load-bearing part and it is stable: the restatements outnumber the snippets, which is why a
+label-matching regex over the whole corpus was the wrong instrument (#1675).
+
+**What the type-check and the run cost**, a frozen measurement of **2026-09-30** (PR for #2851,
+`cee5e202`), when the corpus held 3,105 snippets: 1,661 compiled and 1,444 were fragments opening
+mid-flow with a receiver the prose introduced; 1,735 were linked into the single executable the
+`--run` driver executes, because a link each measured over two hours; six threw, all of them
+documented examples reading a `/tmp` path the repo does not ship. Re-derive the first pair with
+`--list`, and the rest from a `--run` log.
+
+**The swift-format population**, a frozen measurement of **2026-09-30** (PR for #2852, `de18a98f`):
+the four lines of shell it replaced walked `find Sources/OCCTSwift` and reached **230** of the
+repo's **1,730** tracked Swift files. The population is now `git ls-files '*.swift'` minus the two
+exemption manifests; `git ls-files '*.swift' | wc -l` is today's denominator and
+`python3 Scripts/check-swift-format.py --list` is the accounting. How many files remain on
+`Scripts/style-manifest-swift-wave2.txt` is deliberately written down nowhere, for the reason
+`CLAUDE.md`'s "Swift Format Lint" section gives.
+
 ## Gates versus censuses
 
 A **gate** exits 1 on a defect and 0 when clean, and CI's `gate-scripts` job runs it bare. A

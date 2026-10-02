@@ -178,10 +178,14 @@ count toward the gate/census totals above, which are derived from `gate-scripts`
 
 It hands every snippet to `swiftc` rather than matching argument labels with a regex: #1675 holds
 two attempts at the regex and a record of how each reported a real API as missing, and a checker
-that does that is worse than no checker. Of 8,200 fences, 5,092 are signature restatements a
-bodiless `func` makes uncompilable anywhere, 3,105 are snippets, and of those **1,661 compile and
-1,444 are fragments opening mid-flow with a receiver the prose introduced**. A snippet that is
-deliberately not compilable carries its exemption on the page, in the fence info string:
+that does that is worse than no checker. **Most fences in the corpus are not snippets at all**: a
+signature restatement is uncompilable anywhere, because a bodiless `func` is, and they outnumber
+the snippets the gate type-checks; of the snippets, a large minority are fragments opening mid-flow
+with a receiver the prose introduced. `--list` prints the population per kind, and
+[`static-gates`](okf/policies/static-gates.md#the-detectors-outside-gate-scripts) records the last
+measurement of it, dated, because no counted claim about the repository lives on this page
+(#2959). A snippet that is deliberately not compilable carries its exemption on the page, in the
+fence info string:
 
     ```swift no-typecheck: a listing of case spellings, not statements
 
@@ -197,8 +201,8 @@ a different question, and `check-docs-defaults.py` covers the enum case of it (#
 works, and the strongest form of "does not work" is that running it takes the process down.
 `docs/reference/Surface-Analysis.md`'s `extrema(to:)` example was #2840's crash reproducer,
 carrying `≈ 10.0` as its expected answer, and it type-checked clean on every CI run for as long as
-#2840's defect existed. It compiles every snippet that type-checks into **one** executable (a
-link each would be over two hours for 1,735 of them), which announces each case and takes a
+#2840's defect existed. It compiles every snippet that type-checks into **one** executable (a link
+each would be hours rather than the minute the job takes), which announces each case and takes a
 starting index, so the driver restarts it past whatever killed it: a clean corpus is one process
 and each defect costs one more. A planted case that **must** die is the canary, the compile
 stages' device with its sign flipped, and the working directory is a scratch one, because a
@@ -210,8 +214,9 @@ median 5 s without it and 18 s with it:
 
     ```swift no-run: writes a 40 MB STEP file
 
-The reason is required, as with the other marker. A snippet that **throws** is not a failure: six
-do, all of them documented examples reading a `/tmp` path the repo does not ship. It gated on its
+The reason is required, as with the other marker. A snippet that **throws** is not a failure: a
+handful do, all of them documented examples reading a `/tmp` path the repo does not ship. It gated
+on its
 first day because the backlog was two, both fixed in #2852's PR: an untrimmed
 `Curve3D.circularHelix` whose `drawAdaptive()` subdivides an infinite domain forever, and an
 untrimmed `Surface.cylinder` handed to `Shape.shell(from:)`, which is the User Directive about
@@ -242,8 +247,10 @@ have. It runs in `code-style.yml` beside the SwiftLint and clang-format steps, a
 total on this page.
 
 **The population is `git ls-files '*.swift'` minus the exemption manifests, not a directory.** Until
-#2852 this was four lines of shell walking `find Sources/OCCTSwift`, which reached 230 of the repo's
-1,730 tracked Swift files: `Tests/`, `Scripts/`, `Sources/OCCTPlatform`, `Sources/OCCTTest`,
+#2852 this was four lines of shell walking `find Sources/OCCTSwift`, which reached about an eighth
+of the repo's tracked Swift files and no more (both figures, as measured on the day, are in
+[`static-gates`](okf/policies/static-gates.md#the-detectors-outside-gate-scripts)): `Tests/`,
+`Scripts/`, `Sources/OCCTPlatform`, `Sources/OCCTTest`,
 `Sources/WASICompat` and `Package.swift` were outside the step and nothing said so, because an
 exemption manifest can only exempt a file the population already reaches. Two manifests now hold the
 exempt list, both shrink-only and both enforced by `check-style-manifest.py`:
@@ -369,15 +376,17 @@ a new OCCT class first with `/ground-truth`.
 **Guard the handle, not just the pointer.** A function taking an `OCCTCurve3DRef` /
 `OCCTCurve2DRef` / `OCCTSurfaceRef` starts with
 `if (!x || x->curve.IsNull()) return <the fallback the catch below uses>;` wherever the OCCT call
-dereferences the handle, since 36 of the 57 such entry points crash uncatchably on a null one. A
+dereferences the handle, since most such entry points crash uncatchably on a null one. A
 function taking an `OCCTShapeRef`/`OCCTWireRef`/`OCCTEdgeRef`/`OCCTFaceRef` guards with
 `occtShapeIsPresent(x)` or `occtShapeIsType(x, TopAbs_T)` before any of the ten `TopoDS_Shape`
-members that dereference `myTShape`, and before any of the 17 measured OCCT entry points that
+members that dereference `myTShape`, and before any OCCT entry point measured to
 dereference the shape for you (`BRep_Tool::Curve` and family, the `BRepAdaptor_Curve` constructors,
-`ShapeFix_Shape::Perform`). The guard returns the refusal the function already gives a wrong-typed
-input, never a value that reads as a measurement. `check-null-handle-guards.py` enforces both;
-where the guard is required, where it is noise, the alias shapes the checker knows and the ones it
-is blind to are in [`okf/policies/null-handle-guards.md`](okf/policies/null-handle-guards.md).
+`ShapeFix_Shape::Perform`). Both populations, and the sweep that measured each, are on the policy
+page below rather than here (#2959). The guard returns the refusal the function already gives a
+wrong-typed input, never a value that reads as a measurement. `check-null-handle-guards.py`
+enforces both; where the guard is required, where it is noise, the alias shapes the checker knows
+and the ones it is blind to are in
+[`okf/policies/null-handle-guards.md`](okf/policies/null-handle-guards.md).
 
 **Where an extracted helper lives is a correctness decision, not a style one.** A `static` helper in
 a `.mm` reaches that translation unit and nothing else, so a copy of the same logic in another `.mm`
@@ -463,20 +472,26 @@ the reproducer). What a bridge author needs without opening it:
   none of OCCT's own sites above it is uncatchable in-process, and so is a C++ exception that
   reaches the Swift boundary (#345), which is why every `gp_Dir`/`gp_Ax*`/`Geom_Direction`
   construction from caller doubles sits inside a `try`.
-  **A `try` is necessary and not sufficient, and 828 of OCCT's validity checks are not in the
+  **A `try` is necessary and not sufficient, and most of OCCT's validity checks are not in the
   kernel at all (#2801).** `No_Exception` is defined for OCCT's own units, so every
-  `<Exception>_Raise_if` in a `.cxx` is compiled away and 462 inline ones survive. Which of the two
-  a member is, nothing in its signature or its documentation says. **And an inline check is live
-  only where the bridge itself expands it**: `gp_Ax2(P, N, Vx)` documents ConstructionError, has no
+  `<Exception>_Raise_if` in a `.cxx` is compiled away and only the inline ones survive. Which of
+  the two a member is, nothing in its signature or its documentation says. Both populations are
+  counted in
+  [`occt-validation-is-compiled-out`](okf/policies/occt-validation-is-compiled-out.md), the page
+  that owns them, and `Scripts/census-compiled-out-validation.py --write-table` re-derives them
+  from `Libraries/occt-src`; they move at an OCCT bump and at any carried patch that adds a raise
+  site, which is what #2885 was about, so they are not restated here (#2959).
+  **And an inline check is live only where the bridge itself expands it**: `gp_Ax2(P, N, Vx)`
+  documents ConstructionError, has no
   check of its own, and reaches one by building a `gp_Dir` inside `gp_Ax2.cxx`, so it never raises,
   measured. `Geom_Direction` returns `(nan, nan, nan)` (#2331) and `gp_Dir` throws. The largest
-  class is `StdFail_NotDone`, 122 out-of-line against 30 inline, so **test `IsDone()` or
+  class is `StdFail_NotDone`, and it is overwhelmingly out-of-line, so **test `IsDone()` or
   `Status()` before any `Value()`/`Shape()`/`Solid()`**, which otherwise hands back a null. Guard
   the value before the call, keep the `try`, and read
   [`okf/policies/occt-validation-is-compiled-out.md`](okf/policies/occt-validation-is-compiled-out.md),
   which also records the decision to leave `BUILD_RELEASE_DISABLE_EXCEPTIONS` ON.
   **Do not read that as "the process always dies", measured #2750.** Once `occtEnsureSignals()`
-  has run, which any of fourteen bridge entry points does once per process, OCCT's own
+  has run, which any of a good many bridge entry points does once per process, OCCT's own
   `SegvHandler` reaches `Standard_ErrorHandler::Abort`, and the same fault therefore kills one
   process and comes back as a caught `Standard_Failure` in another, depending on nothing the
   caller controls. Guard the fault; never rely on either outcome. The mechanism is the `longjmp`
@@ -489,8 +504,8 @@ the reproducer). What a bridge author needs without opening it:
   `BRepCheck_Edge::InContext(face)`, which dereferences a failed `down_cast<GeomAdaptor_Curve>` on
   a non-degenerated **edge of a face** with no valid 3D curve and at least one pcurve (#2746).
   `Minimum()` reports `NoError` first, only the one owning face whose pcurve became `myCref`
-  faults, and a `.brep` file round-trips the state, so an imported shape reaches it. Guarded at all
-  20 bridge construction sites by `occtShapeHasPCurveOnlyEdge` /
+  faults, and a `.brep` file round-trips the state, so an imported shape reaches it. Guarded at
+  every bridge construction site by `occtShapeHasPCurveOnlyEdge` /
   `occtShapePCurveOnlyEdgeCount` in `OCCTBridge_Internal.h` (#2750): call one of them before any
   new `BRepCheck_Analyzer`, and answer "invalid" for a whole-shape question or the site's existing
   "could not determine" for a per-sub-shape one. The predicate is **not** "has a null `Curve3D`
@@ -500,11 +515,11 @@ the reproducer). What a bridge author needs without opening it:
   `!pcurvefound` branch that a face with **no surface** always takes, since a null handle is
   handle-equal to no pcurve's. That line is outside both `if (myGctrl)` blocks, so `geometryChecks`
   does not gate it. So **both** predicates go before every analyzer: `occtShapeHasPCurveOnlyEdge`
-  **and** `occtShapeHasSurfacelessFace`. Sixteen sites, and two of them are invisible to a grep for
+  **and** `occtShapeHasSurfacelessFace`. Two of those sites are invisible to a grep for
   `BRepCheck_Analyzer`, because `BRepAlgoAPI_Check::Perform` builds one for you
   (`BRepAlgoAPI_Check.cxx:92`): derive the population from the class that **faults**, not the class
   the bridge writes. `BRepCheck_Face::Minimum` answers `BRepCheck_NoSurface` on the same face without
-  faulting, which is the status a guarded site reports. The four `OCCTBRepCheckFace*` wrappers and
+  faulting, which is the status a guarded site reports. The `OCCTBRepCheckFace*` wrappers and
   `checkSubShape`'s `Minimum()`-only checkers need no guard, measured.
 - **`ShapeUpgrade_ShapeDivide::Perform()` is not crash-safe on a shape it did not build.** Its
   `TopAbs_FACE` loop hands every face to `ShapeUpgrade_FaceDivide::SplitSurface`, which calls
@@ -512,8 +527,8 @@ the reproducer). What a bridge author needs without opening it:
   branch it takes when the face has **no edges** (`ShapeAnalysis.cxx:280`, #2773). The loop's own
   `catch (Standard_Failure const&)` encodes `ShapeExtend_FAIL2` for exactly this case and fires only
   where `OSD::SetSignal` has already run, which no divide wrapper and no `.brep` import does. A
-  `.brep` round trip preserves the state exactly, so an imported shape reaches it. Guarded at all 11
-  sites in `OCCTBridge_Healing_Upgrade.mm` by `occtShapeHasSurfacelessEdgelessFace` /
+  `.brep` round trip preserves the state exactly, so an imported shape reaches it. Guarded at every
+  site in `OCCTBridge_Healing_Upgrade.mm` by `occtShapeHasSurfacelessEdgelessFace` /
   `occtShapeSurfacelessEdgelessFaceCount` in `OCCTBridge_Internal.h`, answering the `nullptr` each
   already gives a genuine `ShapeExtend_FAIL`. The predicate needs **both** clauses: a surface-less
   face that carries a wire is handled correctly and must not be refused. STEP drops the face and
@@ -540,9 +555,10 @@ the reproducer). What a bridge author needs without opening it:
   with no test of anything, so the answer per operation is whether its own `BRepTools_Modification`
   subclass tests the handle it just fetched. Three do not:
   `ShapeCustom_SweptToElementary.cxx:59`, `ShapeCustom_ConvertToRevolution.cxx:54` and
-  `ShapeCustom_ConvertToBSpline.cxx:104` (#2790). Guarded by `occtShapeHasSurfacelessFace` at six
-  sites, four in `OCCTBridge_Healing_Fix.mm` and two in `OCCTBridge_Healing_Upgrade.mm` that drive
-  `BRepTools_Modifier` directly and so are invisible to a search for `ShapeCustom::` calls. **Two
+  `ShapeCustom_ConvertToBSpline.cxx:104` (#2790). Guarded by `occtShapeHasSurfacelessFace` in
+  `OCCTBridge_Healing_Fix.mm` and in `OCCTBridge_Healing_Upgrade.mm`, the latter holding the sites
+  that drive `BRepTools_Modifier` directly and so are invisible to a search for `ShapeCustom::`
+  calls. **Two
   subclasses do hold the test**, `ShapeCustom_BSplineRestriction.cxx:430` and
   `BRepTools_TrsfModification.cxx:73`, which is why `ScaleShape` and `BSplineRestriction` are safe and
   must not acquire a guard, and is the shape the upstream fix should take. Unlike #2773 there is no
@@ -561,8 +577,8 @@ the reproducer). What a bridge author needs without opening it:
   **The angular deflection beside it has the same hole and a different symptom** (#2900):
   `Angle < Precision::Angular()` at `:99`, NaN walks past, and the result is not a hang but the
   coarsest mesh the linear rule alone accepts, returned with `IsDone()` true (18 nodes for a
-  cylinder where a valid angle gives 54 to 254). Call `occtValidMeshAngle` at the three sites that
-  take a caller angle. `AngleInterior` and `Prs3d_Drawer::DeviationAngle()` need no guard, both
+  cylinder where a valid angle gives 54 to 254). Call `occtValidMeshAngle` at every site that
+  takes a caller angle. `AngleInterior` and `Prs3d_Drawer::DeviationAngle()` need no guard, both
   measured.
 - `GeomAbs_G2` is never a valid order for `BRepFill_Filling`: curvature continuity is
   `GeomAbs_C1` (ordinal 2), whatever `BRepOffsetAPI_MakeFilling.hxx` says. Test any filling change
@@ -625,8 +641,9 @@ and applied by `build-occt-wasm.sh` alone, **after** the carried set. One rule g
 [`okf/policies/wasi-patch-base.md`](okf/policies/wasi-patch-base.md) owns it: a WASI patch is
 generated by `git diff` in `Libraries/occt-src` with `Scripts/patches/` already applied, and
 verified by `git apply --check` in that same state. PR #2076 authored fifteen against a pristine
-`V8_0_1`, which is how nobody noticed that nine carried patches inject `std::mutex` into OCCT and
-that 15 of the 76 threading-dependent files are files we patch ourselves.
+`V8_0_1`, which is how nobody noticed that carried patches inject `std::mutex` into OCCT at all,
+and that some of the threading-dependent files are files we patch ourselves. That page counts both
+populations; this one does not (#2959).
 `check-wasi-patch-base.py` holds the text-only part of that; its `--tree` mode runs the real
 `git apply --check` and needs a checkout, so it is not in `gate-scripts`.
 
@@ -671,9 +688,9 @@ is derived, never chosen: `python3 Scripts/count-operations.py`.
 5. **Verify.** Full `swift test`, every gate with its `--self-test`, and `Scripts/tsan-stress.sh all`
    if anything touched concurrency.
 6. **Counts.** `python3 Scripts/count-operations.py` must agree with README.md,
-   `docs/API_REFERENCE.md` and `docs/index.md`. Never hand-edit a total to match. Two headlines
-   are outside the gate (`docs/occtswift-wrapping-gaps.md`, `docs/integration-tests.md`); re-derive
-   with `grep -rn 'operations' docs/ README.md`.
+   `docs/API_REFERENCE.md` and `docs/index.md`. Never hand-edit a total to match. The headlines in
+   `docs/occtswift-wrapping-gaps.md` and `docs/integration-tests.md` are outside the gate;
+   re-derive them with `grep -rn 'operations' docs/ README.md`, which also finds any added since.
 7. `git tag vX.Y.Z`, `gh release create`. `main` takes the release commit by PR like everything else.
 
 ## Workflow Automations
@@ -696,6 +713,14 @@ is derived, never chosen: `python3 Scripts/count-operations.py`.
 - **No version-specific release notes** as separate files, everything goes in `CHANGELOG.md`.
 - **No duplicate content**: one canonical location per topic. Link, don't copy. This file included.
 - **Keep docs current**: when upgrading OCCT or changing architecture, update the relevant doc in the same commit.
+- **No counted claim about the repository lives on this page**, per #2954 and #2959. A count here
+  is shared by every open PR, so a correct edit to the thing counted reds every other branch at
+  merge time, and nothing re-derives it. It belongs on the `okf/` page that owns the subject, where
+  a gate can read it, and this page links there.
+- **A frozen number says when, or says it is frozen**, per
+  [`static-gates`](okf/policies/static-gates.md#a-frozen-number-says-when). "The pinned asset holds
+  thirty-one patches" and "the `v4.0.0-kernel.1` asset held thirty-one patches" are the same number
+  about the same thing, and only the second is a measurement rather than a claim about today.
 - **Operation counts and version numbers** must match reality. Grep for stale numbers when releasing.
 - **Code reviews and handoff docs** are ephemeral, don't commit them.
 - **Document with a runnable Swift snippet so context7 indexes it.** Our Swift API is indexed on
