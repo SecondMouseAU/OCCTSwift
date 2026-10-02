@@ -111,8 +111,9 @@ struct Issue2857IntfToolIndexGuardTests {
         // such `Int` there: `Int.max` IS `Int32.max`, two entries above already cover the largest
         // index the platform can express, and `Int(Int32.max) + 1` would overflow on evaluation
         // (#2928). Appended rather than written into the literal so nothing about the 64-bit list
-        // changes.
-        if Int.bitWidth > 32 { badIndices.append(Int(Int32.max) + 1) }
+        // changes, and written as a ternary rather than an `if` because the compiler folds
+        // `Int.bitWidth > 32` and warns `will never be executed` on the statement form.
+        badIndices += Int.bitWidth > 32 ? [Int(Int32.max) + 1] : []
         for index in badIndices {
             #expect(
                 tool.beginParam(segment: index) == nil, "beginParam(segment: \(index)) returned")

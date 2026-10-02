@@ -170,7 +170,9 @@ struct Issue2860MathGuardTests {
         // than trap on the conversion. ABSENT rather than skipped where `Int` is 32 bits (wasm32),
         // because `Int.max` IS `Int32.max` there: the entry above already covers the largest index
         // the platform can express, and `Int(Int32.max) + 1` would overflow on evaluation (#2928).
-        if Int.bitWidth > 32 { bad.append((Int(Int32.max) + 1, 1)) }
+        // A ternary rather than an `if`, because the compiler folds `Int.bitWidth > 32` and warns
+        // `will never be executed` on the statement form.
+        bad += Int.bitWidth > 32 ? [(Int(Int32.max) + 1, 1)] : []
         for (row, col) in bad {
             #expect(m.value(row: row, col: col) == nil, "value(row: \(row), col: \(col)) returned")
             #expect(

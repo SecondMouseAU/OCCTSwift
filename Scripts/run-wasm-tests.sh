@@ -176,7 +176,14 @@ bin_path() {
 #
 # `timeout` is coreutils and is not on a stock macOS; `gtimeout` is there with Homebrew coreutils.
 # Neither is required: the fallback is a watchdog subshell, and a suite killed that way exits 137.
-WASM_TEST_TIMEOUT="${WASM_TEST_TIMEOUT:-900}"
+#
+# RAISED FROM 900 BY #2928, which brought the remaining five targets in. `OCCTThreadTests` is now the
+# slowest suite by a wide margin: measured 8 minutes 34 seconds locally, against 224 seconds for the
+# whole 13-suite run before it. Screw-thread geometry is helical sweeps and booleans, and one of its
+# tests takes 32 seconds on its own. A CI runner is slower than the machine that was measured on, so
+# 900 would have left that suite a coin toss rather than a cap on a stuck one, which is what it is
+# for. The whole 18-suite run measured 17 minutes locally.
+WASM_TEST_TIMEOUT="${WASM_TEST_TIMEOUT:-1800}"
 
 if command -v timeout >/dev/null 2>&1; then
     with_timeout() { timeout -s KILL "$WASM_TEST_TIMEOUT" "$@"; }

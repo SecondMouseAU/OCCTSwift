@@ -73,7 +73,13 @@ struct Issue375STLWindingTests {
             .appendingPathComponent(UUID().uuidString)
             .appendingPathExtension("stl")
         defer { try? FileManager.default.removeItem(at: tempURL) }
-        try stl.write(to: tempURL, atomically: true, encoding: .utf8)
+        // `atomically: false` because `atomically: true` cannot work on WASI: it writes a temp
+        // file and renames it, and the rename is unsupported there (`NSCocoaErrorDomain Code=3328`).
+        // Nothing is lost by dropping it. Atomicity protects a reader from seeing a half-written
+        // file after a crash mid-write, and this is a fixture written and consumed by one test in
+        // one process. Same change, same reason, as `OCCTXCAFTests/OBJDocumentIOTests.swift` (#2793);
+        // this file reached a wasm run for the first time under #2928.
+        try stl.write(to: tempURL, atomically: false, encoding: .utf8)
         return try Shape.loadSTL(from: tempURL)
     }
 

@@ -704,10 +704,10 @@ let wasmUnportableTestTargets: Set<String> = []
 // assertion that cannot exist is absent and the rest of the file runs. `.enabled(if:)` was the
 // alternative and `Scripts/repro/2928/trait-measurement.md` records why it is the weaker one here.
 //
-// What is left is the twelve files below, for three reasons, and all three are properties of the
-// platform:
+// What is left is the eighteen files below, for four reasons, and all four are properties of the
+// platform or of the harness rather than of the code under test:
 //
-//   FOUR CALL `Shape.isSelfIntersecting(hardTimeout:)`, which is `#if !os(WASI)` because its
+//   TWO CALL `Shape.isSelfIntersecting(hardTimeout:)`, which is `#if !os(WASI)` because its
 //   contract is a hard wall-clock deadline and needs a second thread to run the check on while the
 //   caller waits (#2760). #2928 narrowed this from four files to two. `Issue446Unify...` and
 //   `Issue598PipeShell...` called it INCIDENTALLY, inside tests about input mutation and about
@@ -723,13 +723,17 @@ let wasmUnportableTestTargets: Set<String> = []
 //
 //   NINE ARE ABOUT CONCURRENCY ITSELF, and have no meaning on a target with one thread rather than
 //   failing on it (#2169). They are what is left of four whole-target exclusions:
-//   `StressConcurrencyTests` is the one file of thirteen in `OCCTStressTests` that runs work across
+//   `StressConcurrencyTests` is the one file in `OCCTStressTests` that runs work across
 //   cores; `SerialLockThreadSafetyTests` and `ConstructionContextConcurrencyTests` were lifted out of
 //   `OCCTFoundationTests.swift` and `OCCTMiscTests.swift` by #2928 for this purpose, because those
 //   two files' other 157 and 79 tests had nothing to do with locks or with races. Each of the three
 //   states at the top of the file why it is not portable and should not be made portable, and in
 //   every case it is that a detector which cannot fail is worse than one that does not run.
 //   `OCCTThreadTests` contributes six of its 28 files, listed by name below.
+//
+//   SIX READ A `.brep` FIXTURE OUT OF THE SOURCE TREE, which the module cannot see. That one is a
+//   harness limitation and not a platform one, it is #3026, and the per-target note below says why
+//   those six are excluded rather than listed as known failures.
 //
 //   ONE COMPARES AN OCCT READING AGAINST THE HOST OS, which wasi-libc cannot be asked.
 //   `HostOSCrossCheckTests` holds the six suites that bracket an OCCT reading with `getrusage`,
@@ -758,7 +762,26 @@ let wasmExcludedTestFiles: [String: [String]] = [
     "OCCTMiscTests": ["ConstructionContextConcurrencyTests.swift"],
     "OCCTModelingTests": ["Issue208SelfIntersectionTests.swift"],
     "OCCTShapeHealingTests": ["Issue772SelfIntersectionAnalysisTests.swift"],
-    "OCCTStressTests": ["StressConcurrencyTests.swift"],
+    // One concurrency file, plus the six that read a `.brep` out of `Fixtures/` by `#filePath`.
+    // `#filePath` is an absolute HOST path baked in at compile time, and the suites run against an
+    // in-memory filesystem whose only preopens are `/tmp` and `/work`, so every one of those tests
+    // fails with `.importFailed`, 56 recorded issues with no second cause among them. Excluded
+    // rather than listed, for two reasons: the tests never reach the kernel guard they are named
+    // for (#2746, #2773, #2777, #2789, #2790), so a known-failure line would record a property of
+    // the harness under the name of a guard; and the five guard suites reuse test names
+    // deliberately, which the known-failure list cannot tell apart. Teaching
+    // `wasm-test-node-runner.mjs` to preopen the fixture directories is the fix, and is #3026.
+    // `StressUnifySameDomainNullPCurveTests` is the one of the six that was lifted into a file of
+    // its own, because its fixture test was one of 60 in `StressNullInvalidTests.swift`.
+    "OCCTStressTests": [
+        "StressAnalyzerSurfacelessFaceGuardTests.swift",
+        "StressBRepCheckInContextGuardTests.swift",
+        "StressConcurrencyTests.swift",
+        "StressIgesExportSurfacelessFaceGuardTests.swift",
+        "StressShapeCustomSurfacelessFaceGuardTests.swift",
+        "StressShapeDivideSurfacelessFaceGuardTests.swift",
+        "StressUnifySameDomainNullPCurveTests.swift",
+    ],
     // The six files of 28 whose subject is CPU threads rather than screw threads. Measured:
     // `grep -ln 'Dispatch\|NSLock\|withTaskGroup\|Thread\.' Tests/OCCTThreadTests/*.swift` returns
     // exactly these, and the other 22 are fastener geometry.

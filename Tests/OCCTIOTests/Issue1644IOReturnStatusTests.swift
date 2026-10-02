@@ -47,8 +47,14 @@ struct Issue1644IOReturnStatus {
         let missing = Self.tempURL("missing")
 
         let corrupt = Self.tempURL("corrupt")
+        // `atomically: false` because `atomically: true` cannot work on WASI: it writes a temp
+        // file and renames it, and the rename is unsupported there (`NSCocoaErrorDomain Code=3328`).
+        // Nothing is lost by dropping it. Atomicity protects a reader from seeing a half-written
+        // file after a crash mid-write, and this is a fixture written and consumed by one test in
+        // one process. Same change, same reason, as `OCCTXCAFTests/OBJDocumentIOTests.swift` (#2793);
+        // this file reached a wasm run for the first time under #2928.
         try "this is not a STEP file at all\n".write(
-            to: corrupt, atomically: true, encoding: .utf8)
+            to: corrupt, atomically: false, encoding: .utf8)
         defer { try? FileManager.default.removeItem(at: corrupt) }
 
         var missingStatus: IOStatus?
@@ -104,7 +110,13 @@ struct Issue1644IOReturnStatus {
         // transferred roots, not a status. Measured; the issue expected RetVoid here.
         let empty = Self.tempURL("empty")
         defer { try? FileManager.default.removeItem(at: empty) }
-        try Self.emptyModel.write(to: empty, atomically: true, encoding: .utf8)
+        // `atomically: false` because `atomically: true` cannot work on WASI: it writes a temp
+        // file and renames it, and the rename is unsupported there (`NSCocoaErrorDomain Code=3328`).
+        // Nothing is lost by dropping it. Atomicity protects a reader from seeing a half-written
+        // file after a crash mid-write, and this is a fixture written and consumed by one test in
+        // one process. Same change, same reason, as `OCCTXCAFTests/OBJDocumentIOTests.swift` (#2793);
+        // this file reached a wasm run for the first time under #2928.
+        try Self.emptyModel.write(to: empty, atomically: false, encoding: .utf8)
 
         var emptyStatus = OCCTReturnStatusNotReached
         let emptyHandle = OCCTImportSTEPProgress(empty.path, nil, nil, &emptyStatus)
@@ -152,7 +164,13 @@ struct Issue1644IOReturnStatus {
     @Test("optimizeSTEP reports the step that failed rather than one message for both")
     func optimizeReportsTheFailedStep() throws {
         let corrupt = Self.tempURL("optimize_in")
-        try "not step\n".write(to: corrupt, atomically: true, encoding: .utf8)
+        // `atomically: false` because `atomically: true` cannot work on WASI: it writes a temp
+        // file and renames it, and the rename is unsupported there (`NSCocoaErrorDomain Code=3328`).
+        // Nothing is lost by dropping it. Atomicity protects a reader from seeing a half-written
+        // file after a crash mid-write, and this is a fixture written and consumed by one test in
+        // one process. Same change, same reason, as `OCCTXCAFTests/OBJDocumentIOTests.swift` (#2793);
+        // this file reached a wasm run for the first time under #2928.
+        try "not step\n".write(to: corrupt, atomically: false, encoding: .utf8)
         defer { try? FileManager.default.removeItem(at: corrupt) }
         let out = Self.tempURL("optimize_out")
         defer { try? FileManager.default.removeItem(at: out) }

@@ -60,13 +60,14 @@ jobs:
     # Linux toolchain, which is the one thing Scripts/install-wasm-toolchain.sh declines to install
     # for you, so using it here means the script's remaining steps are all that is left.
     container: swift:6.4.0
-    # Raised from 45 when #2793 added the per-domain suites. Measured locally: 12 suites, 4,778
-    # tests, about 7 minutes of wall clock, most of which is wasmkit instantiating a 150 MB module
-    # twelve times rather than running tests (Swift Testing's own totals for the same run add up to
-    # well under two minutes). A CI runner is slower than the machine that was measured on, so the
-    # headroom is deliberate; the suites also have their own per-suite cap inside
+    # Raised from 45 when #2793 added the per-domain suites, and from 75 by #2928, which brought the
+    # last five targets in. Measured locally at each step: 12 suites and 4,778 tests in about 7
+    # minutes under wasmkit, 13 suites and 5,555 tests in 224 seconds under Node, and now 18 suites
+    # and about 6,950 tests in 17 minutes. The jump is `OCCTThreadTests`, 8 minutes 34 seconds of
+    # screw-thread geometry on its own. A CI runner is slower than the machine that was measured on,
+    # so the headroom is deliberate; the suites also have their own per-suite cap inside
     # Scripts/run-wasm-tests.sh, so a single stuck suite fails there rather than burning this.
-    timeout-minutes: 75
+    timeout-minutes: 120
 
     env:
       # Scripts/install-wasm-toolchain.sh defaults this to <repo>/Libraries/wasi-sdk-<ver>-<arch>-<os>
