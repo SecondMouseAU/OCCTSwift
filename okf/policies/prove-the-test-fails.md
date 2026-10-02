@@ -139,7 +139,8 @@ survive it:
 
 [#2679](https://github.com/SecondMouseAU/OCCTSwift/pull/2679) used the injection row's colour as
 its rewrite trigger: it rewrote the four tests that stayed green under their injection and left the
-three that went red byte for byte, and all three carried all four weaknesses (#2941). That is not
+three that went red byte for byte. All three carried the first two weaknesses and between them
+they carried all four (#2941). That is not
 one PR's slip. Measured over the 403 PRs merged into `v5.0.0-766-execution`, **300 of the 339 that
 recorded a Red row left at least one of those tests unchanged, and 266 of them are still weak on
 `main`** (#2970).
