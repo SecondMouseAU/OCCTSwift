@@ -360,7 +360,7 @@ struct GraphHistoryAbsorbTests {
         // The control, on the same graph and with the same two recipes: the absorb is the only
         // thing that changes, and it is what makes them resolve.
         try Self.absorb(c)
-        #expect(c.graph.historyRecordCount > 0)
+        #expect(c.graph.historyRecordCount == Self.expectedRecordCount(c))
         #expect(!c.graph.currentForms(of: c.pinnedTop).isEmpty)
         let nowSplit = try c.graph.resolve(split).get()
         #expect(nowSplit.kind == .face)

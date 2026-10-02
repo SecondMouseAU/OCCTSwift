@@ -809,11 +809,11 @@ struct ConstructionAxisTests {
         // The chord fallback: origin is the helix's own start point (on the cylinder wall, never
         // on the centerline) and the direction is the secant, which climbs and turns and is
         // nowhere near the axis.
+        let secant = simd_normalize(helixEnd - helixStart)
+        #expect(abs(simd_dot(secant, Self.zAxis)) < 0.5, "fixture: the secant must not be axial")
         let ax = try alongEdge(graph, helixIndex).get()
         #expect(isClose(ax.origin, helixStart, 1e-6), "origin \(ax.origin), helix start")
-        let secant = simd_normalize(helixEnd - helixStart)
         #expect(isClose(ax.direction, secant, 1e-6), "direction \(ax.direction), secant \(secant)")
-        #expect(abs(simd_dot(ax.direction, Self.zAxis)) < 0.5, "direction \(ax.direction)")
 
         // The control, on the same face: its floor arc IS a perpendicular cross-section of the
         // wall and does resolve to the axis, on the centerline at its own height, running the
@@ -1073,7 +1073,7 @@ struct ConstructionAxisTests {
             graph.shape(nodeKind: .face, nodeIndex: 0)?.faces().first, "the face")
         let axis = try #require(face.primaryAxis, "the primary axis")
         #expect(axis.kind == .extrusion, "fixture is not an extrusion-surface face")
-        #expect(abs(axis.direction.z) > 0.99, "sweep direction should be along Z")
+        #expect(abs(abs(axis.direction.z) - 1.0) < 1e-9, "sweep direction should be along Z")
 
         // The surface is S(u, v) = (u, 0, v), so its normal d_u x d_v = X x Z = -Y, and the
         // fallback samples it, with its point, at the UV midpoint (5, 0, 5). Neither depends on
@@ -1270,7 +1270,9 @@ struct ConstructionAxisTests {
         #expect(isClose(ax.origin, foot, 1e-6), "origin \(ax.origin), the foot point is \(foot)")
         let surfaceZ = ax.origin.x + ax.origin.y - 2.0 * ax.origin.x * ax.origin.y / 3.0
         #expect(abs(ax.origin.z - surfaceZ) < 1e-6, "origin \(ax.origin) is off the surface")
-        #expect(simd_distance(ax.origin, corner) > 0.5, "origin should differ from the raw point")
+        // And it is the unit of distance the corner was placed off the face, not the raw corner.
+        let offset = simd_distance(ax.origin, corner)
+        #expect(abs(offset - 1.0) < 1e-6, "the origin is \(offset) from the raw point, not 1")
         #expect(isClose(ax.direction, normal, 1e-6), "direction \(ax.direction), normal \(normal)")
     }
 
