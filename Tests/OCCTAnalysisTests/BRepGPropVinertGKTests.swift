@@ -7,28 +7,46 @@ import simd
 
 @Suite("BRepGProp_VinertGK")
 struct BRepGPropVinertGKTests {
+    /// The volume integrated from the origin to one face of a centred box is the pyramid on that
+    /// face with its apex at the origin.
+    ///
+    /// #1759: this asserted `#expect(Bool(true))` and read `r.mass` into `_`, so it could not
+    /// fail. `Shape.box` is centred, so the 10-cube spans `-5...5` and its first face is the
+    /// 10 x 10 square at `x = -5`. `vinertGK`'s default location is the origin, and the flux
+    /// integral over a single face is `(1/3) (P - loc) . n` times the area, which for a plane at
+    /// distance 5 with outward normal `(-1, 0, 0)` is `(1/3) * 5 * 100 = 500/3`. A pyramid's
+    /// centroid is three quarters of the way from apex to base, so the centre of mass is
+    /// `(-3.75, 0, 0)` exactly. Measured in `Scripts/repro/766-brepgprop-vinertgk/`.
     @Test("volume integration on box face")
-    func volumeIntegration() {
-        if let box = Shape.box(width: 10, height: 10, depth: 10) {
-            let faces = box.subShapes(ofType: .face)
-            if let face = faces.first {
-                let r = face.vinertGK()
-                // Just verify it completes without crash
-                #expect(Bool(true))
-                let _ = r.mass
-            }
-        }
+    func volumeIntegration() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let face = try #require(box.subShapes(ofType: .face).first)
+        let r = face.vinertGK()
+        #expect(abs(r.mass - 500.0 / 3.0) < 1e-9, "expected 500/3, got \(r.mass)")
+        let center = try #require(r.center)
+        #expect(simd_distance(center, SIMD3(-3.75, 0, 0)) < 1e-9, "got \(center)")
     }
 
+    /// The same integral at a different size, with the reported error bounded above as well as
+    /// below.
+    ///
+    /// #1760: the box and the face were unwrapped with `if let`, so a missing either passed
+    /// silently, and the sole assertion `errorReached >= 0` is true of every value an unsigned
+    /// residual can take, including the hardcoded `0.0` that #732 removed. The 5-cube spans
+    /// `-2.5...2.5`, so the pyramid on its first face is `(1/3) * 2.5 * 25 = 125/6`, and the
+    /// kernel reports a residual of `4.5e-16` on this planar integration: small, and not zero.
+    /// The upper bound is the half of the claim that can fail, since a Gauss-Kronrod integration
+    /// of a plane that reports a large error has stopped working.
     @Test("error bounds")
-    func errorBounds() {
-        if let box = Shape.box(width: 5, height: 5, depth: 5) {
-            let faces = box.subShapes(ofType: .face)
-            if let face = faces.first {
-                let r = face.vinertGK(tolerance: 0.001)
-                #expect(r.errorReached >= 0)
-            }
-        }
+    func errorBounds() throws {
+        let box = try #require(Shape.box(width: 5, height: 5, depth: 5))
+        let face = try #require(box.subShapes(ofType: .face).first)
+        let r = face.vinertGK(tolerance: 0.001)
+        #expect(abs(r.mass - 125.0 / 6.0) < 1e-9, "expected 125/6, got \(r.mass)")
+        #expect(r.errorReached >= 0, "an integration error is never negative")
+        #expect(
+            r.errorReached < 1e-12,
+            "a planar face integrates essentially exactly; got \(r.errorReached)")
     }
 
     /// #732: `errorReached` was hardcoded to `0.0` on every call, which reads as "this integration
