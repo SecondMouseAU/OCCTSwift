@@ -858,6 +858,20 @@ shape of defect in `helpers_in`, which costs it 11 findings and 6 SEVERE, filed 
   `Scripts/repro/766-stress-boundary/` crosses with the tests that cite it and reproduces byte for
   byte against the pinned kernel.
 
+### Changed
+
+- The `OCCTFoundationTests` suite can now fail. Sixty-eight tests across Color, Material,
+  `Quantity_Date`, FontManager, PixMap, UnitsAPI, Messenger, Message_Report, OSD_Timer,
+  OSD_MemInfo, OSD_Environment, OSD_Chronometer, OSD_Process, OSD_File, OSD_SharedLibrary,
+  Message_Msg, UnitsConversion and `XCAFDoc_ColorTool` replace an `if let` with no `else`, a
+  `>= 0` bound or a bare `_ =` with the value the pinned kernel actually returns, lifted from six
+  execution PRs already merged into `v5.0.0-766-execution` (#2319, #2326, #2329, #2334, #2411,
+  #2440). `Tests/OCCTFoundationTests/` goes from 31 SEVERE and 47 ESCAPABLE to 7 and 25 on
+  `Scripts/census-766-weak-assertions.py`, and the file falls from first place in
+  `Scripts/census-766-unlifted-tests.py`'s ranking, at 53 gains, to one. Six
+  `Scripts/repro/766-foundation-*` ground-truth probes cross with them and reproduce against the
+  pinned asset.
+
 ### The TObj_Application singleton stops being freed by a release nobody paid for (#2897)
 
 `OCCTXCAFTests` trapped on wasm inside `OCCTTObjApplicationCreateDocument` with an
