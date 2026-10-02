@@ -36,36 +36,40 @@
 # for why a count alone is necessary and not sufficient.
 
 # --- where the asset is ---
-OCCT_WASM_RELEASE_TAG=v4.0.0-kernel.2
+OCCT_WASM_RELEASE_TAG=v4.0.0-kernel.4
 OCCT_WASM_ASSET_NAME=libOCCT-wasm.tar.gz
-OCCT_WASM_ASSET_URL=https://github.com/SecondMouseAU/OCCTSwift/releases/download/v4.0.0-kernel.2/libOCCT-wasm.tar.gz
-OCCT_WASM_ASSET_SHA256=65dae210ea66b56337c1398bca67fb070db49f75c4c7f6b12d310b17f17b5e94
-OCCT_WASM_ASSET_BYTES=40254925
+OCCT_WASM_ASSET_URL=https://github.com/SecondMouseAU/OCCTSwift/releases/download/v4.0.0-kernel.4/libOCCT-wasm.tar.gz
+OCCT_WASM_ASSET_SHA256=8b3e467842bca146fd28c5d76005ab15e0f15a598dc01c2cd60213dfac518a27
+OCCT_WASM_ASSET_BYTES=40257980
 
 # --- what is inside it, for the parity gate ---
 # The carried patches are Scripts/patches/NNNN-*.patch. FIRST and LAST are the numbers, not an
 # assertion that every number between them exists: the gate reads the actual file list.
 OCCT_VERSION=V8_0_1
-OCCT_WASM_PATCH_COUNT=30
+OCCT_WASM_PATCH_COUNT=39
 OCCT_WASM_PATCH_FIRST=0010
-OCCT_WASM_PATCH_LAST=0042
+OCCT_WASM_PATCH_LAST=0052
 # The WASI-only source changes, Scripts/patches-wasi/*.patch, which only build-occt-wasm.sh applies.
 OCCT_WASM_WASI_PATCH_COUNT=11
 
 # --- the acknowledged divergence, and what closes it ---
-# AGAINST is the NATIVE patch count this divergence was accepted at, never a number to bump: the next
-# native repin makes it stale and check-wasm-kernel-parity.py fires again. Two ACKNOWLEDGED rows in
-# Scripts/patches/README.md outlived their reason before #2190 caught them, which is why this one is
-# keyed rather than dated.
-OCCT_WASM_PARITY_ACKNOWLEDGED_AGAINST=31
-OCCT_WASM_PARITY_ACKNOWLEDGED_REASON=v4.0.0-kernel.3 pinned 0043 (#2827, the by-plane BRepGProp_Vinert mass) on native without rebuilding this 69-minute wasm asset. The browser therefore still returns the fabricated 0.0 from Face.volumeInertia(planeNormal:planeDistance:); no other API reaches that path and the by-point form is unaffected. CLOSED BY the OCCT 8.0.2 rebuild, due 2026-10-02, which rebuilds both kernels from one patch set: the standing hold on repinning until 8.0.2 lands is exactly why this one was not taken now.
+# THERE IS NO DIVERGENCE. Both kernels in v4.0.0-kernel.4 were built from one tree carrying all
+# thirty-nine carried patches, in one sitting, which is what the retired acknowledgement below
+# said would close it. The two ACKNOWLEDGED_* keys are deliberately absent rather than set to a
+# zero or a nil: this field's own rule is that AGAINST is never a number to bump, so an
+# acknowledgement that no longer acknowledges anything is deleted, not updated. Retired here:
+#
+#   v4.0.0-kernel.3 pinned 0043 (#2827) natively without rebuilding this 69-minute wasm asset,
+#   so the browser returned the fabricated 0.0 from Face.volumeInertia(planeNormal:planeDistance:).
+#   It was keyed to 31 native patches and expected the OCCT 8.0.2 rebuild to close it. 8.0.2 did
+#   not ship, so the rebuild happened anyway (#3031) and closed it on 2026-10-03.
 
 # --- provenance ---
 # The commit whose Scripts/patches/ and Scripts/patches-wasi/ the archive was built from, so the
 # claim above can be checked rather than believed: `git show <sha>:Scripts/patches` lists them.
-OCCT_WASM_BUILT_FROM=46947392f4f0cb4a31ebcc27086d1d073e90bd05
-OCCT_WASM_BUILT_ON=2026-09-28
+OCCT_WASM_BUILT_FROM=2cde37714000469ade8cff382790220300050c78
+OCCT_WASM_BUILT_ON=2026-10-03
 # Unpacked sizes, so a truncated or wrong-shaped extraction is caught before a 69-minute rebuild is
 # blamed for it.
-OCCT_WASM_ARCHIVE_BYTES=153195088
+OCCT_WASM_ARCHIVE_BYTES=153201080
 OCCT_WASM_HEADER_FILES=7160
