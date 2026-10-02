@@ -44,7 +44,6 @@ Scripts/repro/2048/stub/Sources/StubOCCT/StubOCCT.swift
 Scripts/repro/2169/standalone/Package.swift
 Scripts/repro/2171/standalone/Package.swift
 Scripts/repro/2171/standalone/Sources/probe/main.swift
-Scripts/repro/2175/spike/Sources/OCCTWasmSpike/main.swift
 Scripts/repro/990-orthonormal-radial-basis/basis-compare.swift
 Scripts/repro/censuses/ClusterB.swift
 Scripts/repro/censuses/ClusterD.swift
@@ -255,7 +254,6 @@ Tests/OCCTThreadTests/OCCTThreadTests.swift
 Tests/OCCTTopologyTests/BRepClassFClassifierTests.swift
 Tests/OCCTTopologyTests/BRepLibUtilitiesTests.swift
 Tests/OCCTTopologyTests/BuildCurves3dTests.swift
-Tests/OCCTTopologyTests/EdgeDiscretizationTests.swift
 Tests/OCCTTopologyTests/Issue1035NullShapeUnwrapTests.swift
 Tests/OCCTTopologyTests/Issue1088SelfIntersectsAnswerTests.swift
 Tests/OCCTTopologyTests/Issue1440EdgeDeflectionArgumentOrderTests.swift

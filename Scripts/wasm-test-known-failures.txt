@@ -1,5 +1,14 @@
 # Tests that pass on Apple and fail on wasm32-unknown-wasip1, one per line, with the issue that
-# owns each. `Scripts/run-wasm-tests.sh` asserts the failure set is EXACTLY this list: a new failure
+# owns each.
+#
+# MEASURED UNDER NODE, NOT wasmkit, and the distinction is not academic. #2894 ran one module file
+# byte for byte under both: an OCCT exception thrown several frames below the bridge's `catch (...)`
+# is caught under Node and reaches `std::terminate` under wasmkit 0.3.1. Three entries that used to
+# be on this list, and four file exclusions plus a whole target in `Package.swift`, were that
+# interpreter and not this port. They are gone. The target for #1689 is a browser, so the runner
+# drives Node with the browser's own WASI shim.
+#
+# `Scripts/run-wasm-tests.sh` asserts the failure set is EXACTLY this list: a new failure
 # fails the run, and so does a test in this list that starts passing, because a line nobody removes
 # is how a fixed bug gets recorded as still broken.
 #

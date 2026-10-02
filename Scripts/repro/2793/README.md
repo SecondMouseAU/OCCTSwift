@@ -1,5 +1,15 @@
 # #2793: the per-domain test suites, built and run for `wasm32-unknown-wasip1`
 
+> **Superseded in one important respect by #2894.** Everything below was measured under `wasmkit`,
+> and the suites now run under Node with the browser's WASI shim. #2894 measured one module file byte
+> for byte under both runtimes: an OCCT exception thrown several frames below the bridge's
+> `catch (...)` is caught under Node and reaches `std::terminate` under `wasmkit` 0.3.1. **Three of
+> the defects recorded here were that interpreter, not this port**, and so were seven file exclusions
+> and a whole target. Section 8's observation that one test "passes after 422.275 seconds" is the same
+> story: it is 27.8 s under Node. The parts about `Int` being 32 bits, the `simd` stand-in, and the
+> Swift Testing mechanics are unaffected and still hold.
+
+
 Phase 0's GO carried four conditions. The third was "six calls are not a test suite": nothing but
 #2052's six spike calls had ever run for wasm, and there was no parity check against the Apple
 kernel. This directory holds the measurements behind closing it.
