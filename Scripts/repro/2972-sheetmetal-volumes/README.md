@@ -120,7 +120,7 @@ because it lands exactly on its flange sum and so reads as a sharp square corner
 `t^2 L = 460.8`, the same quantity the top/web overlap removed. The issue's reading accounted for
 the convex corner and not the concave bend, which is how one number came out twice.
 
-## A second defect, measured here and filed rather than fixed
+## A second defect, measured here, filed as #3019 and since fixed
 
 The extent is read off the bend's own `aIntersection` rather than off the matched pieces, because
 the matched pieces cannot be trusted to be the right ones. `splitFlange` names a flange's first
@@ -133,3 +133,8 @@ It did not change `zBracket`'s answer, because OCCT's fillet propagates along th
 chain and recovered the other 35, and the plane tests are identical for every piece of one flange.
 It is still wrong: the convex path's `seamSegment(of: a, ...)` reads that piece's profile directly,
 with no propagation to save it. Filed as #3019 with this measurement.
+
+**Fixed afterwards.** The convex path was reachable and wrong, three ways, and the diagonal seam
+that review of this fix raised (#3033) turned out to share the root. The harness now carries those
+fixtures as well; the measurement, the before and after, and the injection sweep are in
+[`Scripts/repro/3019-3033-sheetmetal-seam-extent/`](../3019-3033-sheetmetal-seam-extent/README.md).

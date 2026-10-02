@@ -21,7 +21,19 @@
 // well outside every bend's extent. `inside` means that corner is sharp; `outside` means the
 // surplus fillet reached it.
 //
+// #3019 and #3033 add eight fixtures after the ten, with a third prediction and point probes:
+//
+//   misbuilt = ideal - (pi/4) t^2 * (L - built) for a CONVEX bend whose prism came out `built`
+//              long instead of `L`, which is what a bend resolved to the wrong flange piece (#3019)
+//              or to the wrong flange's whole edge (#3033) produced
+//
+// `built` is declared per fixture, before the fixture is run, so a measurement that lands on
+// `misbuilt` names the defect and one that lands on neither is reported `unexplained`. A probe is a
+// point in the quarter-disc a convex bend fills, or just past the run it should stop at: a volume
+// tolerance can swallow a prism built in the wrong place, and a point cannot.
+//
 // `swift run Harnesses 2972-sheetmetal-volumes`
+// The measurement and the injection sweep are in `Scripts/repro/3019-3033-sheetmetal-seam-extent/`.
 
 import Foundation
 import OCCTSwift
@@ -34,7 +46,11 @@ private enum BendTerm {
     /// A concave bend: the fillet fills the inside corner, adding `radius^2 (1 - pi/4)` per unit.
     case concave(radius: Double, length: Double)
     /// A convex bend: a quarter-disc prism of radius `thickness`, adding `(pi/4) t^2` per unit.
-    case convex(thickness: Double, length: Double)
+    ///
+    /// `builtLength` is only for a fixture that exposes a defect: the length the UNFIXED builder
+    /// gave the prism, so the harness can say which defect a measurement matches. Left nil, the
+    /// builder is expected to build the prism over the whole `length`.
+    case convex(thickness: Double, length: Double, builtLength: Double? = nil)
     /// Seam line outside the bend's own extent. Not a bend at all; the free edge there is convex,
     /// so a fillet rolled along it REMOVES `radius^2 (1 - pi/4)` per unit.
     case surplus(radius: Double, length: Double)
@@ -42,9 +58,22 @@ private enum BendTerm {
     var idealContribution: Double {
         switch self {
         case .concave(let r, let l): return r * r * quarter * l
-        case .convex(let t, let l): return (Double.pi / 4.0) * t * t * l
+        case .convex(let t, let l, _): return (Double.pi / 4.0) * t * t * l
         case .surplus: return 0
         }
+    }
+
+    /// What this term changes if the convex prism comes out `builtLength` long instead of `length`.
+    var misbuiltContribution: Double {
+        switch self {
+        case .convex(let t, let l, let built?): return (Double.pi / 4.0) * t * t * (built - l)
+        default: return 0
+        }
+    }
+
+    var isMisbuilt: Bool {
+        if case .convex(_, _, .some) = self { return true }
+        return false
     }
 
     var leakedContribution: Double {
@@ -55,6 +84,17 @@ private enum BendTerm {
     }
 }
 
+/// A point classified against the built solid, with the state the construction should give it.
+///
+/// Used where a volume tolerance could swallow the defect, or where the defect moves material
+/// rather than removing it: a probe in the quarter-disc a convex bend should fill reads `outside`
+/// when the prism was built over the wrong run of the seam, whatever the volume does.
+private struct Probe {
+    let label: String
+    let point: SIMD3<Double>
+    let want: Shape.PointState
+}
+
 private struct Fixture {
     let name: String
     /// Sum of each flange's own extruded volume, before any body-body overlap is deducted.
@@ -62,15 +102,23 @@ private struct Fixture {
     /// Volume counted twice by `flangeSum` because two flange bodies interpenetrate.
     let overlap: Double
     let terms: [BendTerm]
-    /// The volume currently pinned in `Tests/OCCTMiscTests/OCCTMiscTests.swift`.
+    /// The volume pinned in `Tests/OCCTMiscTests`, or for the #3019 and #3033 fixtures the value
+    /// measured on the fixed builder, so a kernel move shows up as a NOTE line.
     let pinned: Double
     let build: () throws -> Shape
     /// A point just inside the base flange's free corner, outside every bend's extent, or nil
     /// where the fixture has no stepped seam.
     let sharpCornerProbe: SIMD3<Double>?
+    /// Points inside or outside the bend material, for the fixtures that exist to expose a
+    /// convex-bend defect (#3019, #3033).
+    ///
+    /// Empty for the rest.
+    var bendProbes: [Probe] = []
 
     var ideal: Double { flangeSum - overlap + terms.reduce(0) { $0 + $1.idealContribution } }
     var leaked: Double { ideal + terms.reduce(0) { $0 + $1.leakedContribution } }
+    var misbuilt: Double { ideal + terms.reduce(0) { $0 + $1.misbuiltContribution } }
+    var hasMisbuiltTerm: Bool { terms.contains { $0.isMisbuilt } }
 }
 
 private func flange(
@@ -83,6 +131,83 @@ private func flange(
 
 private func rect(_ w: Double, _ h: Double) -> [SIMD2<Double>] {
     [SIMD2(0, 0), SIMD2(w, 0), SIMD2(w, h), SIMD2(0, h)]
+}
+
+/// A span of a flange's seam-parallel axis as a rectangle `width` wide in the other axis.
+private func spanProfile(_ width: Double, _ span: ClosedRange<Double>) -> [SIMD2<Double>] {
+    let lo = span.lowerBound
+    let hi = span.upperBound
+    return [SIMD2(0, lo), SIMD2(width, lo), SIMD2(width, hi), SIMD2(0, hi)]
+}
+
+/// The Z-section the #3019 fixtures share.
+///
+/// Every flange is 2 thick:
+///
+///     foot  x in [0, 30],  z in [-2, 0],  y in `foot`   concave bend from the web, radius 1.5
+///     web   x in [28, 30], z in [0, 20],  y in [0, 45]
+///     lip   x in [30, 60], z in [20, 22], y in `lip`    convex bend from the web
+///     tab   optional: x in [20, 30], z in [8, 16] on the web's back edge y = 45, radius 1.5
+///
+/// A `foot` narrower than the web splits the web along y, and the convex bend leaves the web along
+/// y as well. A tab narrower than the web's height splits it along z, the OTHER profile axis,
+/// while the convex bend still runs along y.
+///
+/// The concave radius is below the thickness and the bodies only touch, on purpose. A stepped
+/// concave bend came out `isValid == false` once its radius reached the thickness, and also where
+/// the two bodies interpenetrate (#3045). That is a separate limitation and these fixtures stay
+/// clear of it, so they read #3019 and nothing else.
+private func steppedZ(
+    foot: ClosedRange<Double>, lip: ClosedRange<Double>, tab: Bool
+) throws -> Shape {
+    let x = SIMD3<Double>(1, 0, 0)
+    let y = SIMD3<Double>(0, 1, 0)
+    let z = SIMD3<Double>(0, 0, 1)
+    let footProfile: [SIMD2<Double>] = [
+        SIMD2(foot.lowerBound, 0), SIMD2(foot.upperBound, 0),
+        SIMD2(foot.upperBound, 30), SIMD2(foot.lowerBound, 30),
+    ]
+    let footFlange = flange("foot", footProfile, SIMD3(0, 0, 0), normal: -z, u: y, v: x)
+    let web = flange("web", rect(20, 45), SIMD3(30, 0, 0), normal: -x, u: z, v: y)
+    let lipFlange = flange(
+        "lip", spanProfile(30.0, lip), SIMD3(30, 0, 20), normal: z, u: x, v: y)
+    var flanges = [footFlange, web, lipFlange]
+    var bends = [
+        SheetMetal.Bend(from: "web", to: "foot", radius: 1.5),
+        SheetMetal.Bend(from: "web", to: "lip", radius: 1.5),
+    ]
+    if tab {
+        flanges.append(flange("tab", rect(10, 8), SIMD3(30, 45, 8), normal: y, u: -x, v: z))
+        bends.append(SheetMetal.Bend(from: "web", to: "tab", radius: 1.5))
+    }
+    return try SheetMetal.Builder(thickness: 2.0).build(flanges: flanges, bends: bends)
+}
+
+/// A 20 x 20 base with a chamfered corner, and an upright standing on the 11.31 chamfer edge,
+/// which is diagonal to the base's own axes (#3033).
+///
+/// Thickness 2, radius 1.5.
+///
+/// `start` and `width` place the upright along the edge from its (20, 12) end. `down` hangs it
+/// below the base instead of standing it on top, which makes the bend convex. `uprightFirst`
+/// declares the bend from the upright to the base.
+private func diagonalUpright(
+    start: Double, width: Double, down: Bool, uprightFirst: Bool, declareBend: Bool = true
+) throws -> Shape {
+    let s: Double = 1.0 / 2.0.squareRoot()
+    let seam = SIMD3<Double>(-s, s, 0)
+    let base = flange(
+        "base", [SIMD2(0, 0), SIMD2(20, 0), SIMD2(20, 12), SIMD2(12, 20), SIMD2(0, 20)],
+        SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), u: SIMD3(1, 0, 0), v: SIMD3(0, 1, 0))
+    let upright = flange(
+        "upright", rect(width, 10), SIMD3<Double>(20, 12, 0) + start * seam,
+        normal: SIMD3(s, s, 0), u: seam, v: SIMD3(0, 0, down ? -1 : 1))
+    let bend =
+        uprightFirst
+        ? SheetMetal.Bend(from: "upright", to: "base", radius: 1.5)
+        : SheetMetal.Bend(from: "base", to: "upright", radius: 1.5)
+    let bends = declareBend ? [bend] : []
+    return try SheetMetal.Builder(thickness: 2.0).build(flanges: [base, upright], bends: bends)
 }
 
 enum SheetMetalVolumes {
@@ -157,7 +282,7 @@ enum SheetMetalVolumes {
                     .concave(radius: 1.5, length: 28),
                     .surplus(radius: 1.5, length: 65.0 - 28.0),
                 ],
-                pinned: 8815.654315677795,
+                pinned: 8833.505966569946,
                 build: {
                     let base = flange(
                         "base", rect(65, 28), SIMD3(0, 0, 0),
@@ -182,7 +307,7 @@ enum SheetMetalVolumes {
                     .surplus(radius: 1.5, length: 30),
                     .surplus(radius: 1.5, length: 30),
                 ],
-                pinned: 7580.685854250031,
+                pinned: 7609.603645881255,
                 build: {
                     let base = flange(
                         "base", rect(80, 40), SIMD3(0, 0, 0),
@@ -205,7 +330,7 @@ enum SheetMetalVolumes {
                     .concave(radius: 1.5, length: 20),
                     .surplus(radius: 1.5, length: 30),
                 ],
-                pinned: 6219.3141848384885,
+                pinned: 6233.76158899466,
                 build: {
                     let base = flange(
                         "base", rect(50, 30), SIMD3(0, 0, 0),
@@ -240,7 +365,7 @@ enum SheetMetalVolumes {
                     .surplus(radius: 1.5, length: 10),
                     .surplus(radius: 1.5, length: 10),
                 ],
-                pinned: 12857.94265223678,
+                pinned: 12876.881759332367,
                 build: {
                     let spine = flange(
                         "spine", rect(40, 100), SIMD3(0, 0, 0),
@@ -381,30 +506,222 @@ enum SheetMetalVolumes {
                 },
                 sharpCornerProbe: nil))
 
+        // --- #3019: a convex bend on a flange some OTHER bend split ---
+        //
+        // The unfixed builder resolved a bend to the one flange piece whose range on the seam axis
+        // equalled the bend's, and to the FIRST piece when none did. The convex path read its kiss
+        // segment off that piece's own profile, so the quarter-disc prism came out as long as the
+        // piece. `builtLength` is what that produced, so the harness can name the defect.
+        let webSpan: Double = 45.0
+        let steppedWebSum: Double = 30.0 * 25.0 * 2.0 + 20.0 * 45.0 * 2.0 + 30.0 * 45.0 * 2.0
+        all.append(
+            Fixture(
+                name: "Issue3019.steppedWebZ",
+                flangeSum: steppedWebSum,
+                overlap: 0.0,
+                terms: [
+                    .concave(radius: 1.5, length: 25.0),
+                    .convex(thickness: 2.0, length: webSpan, builtLength: 10.0),
+                ],
+                pinned: 6153.364427799075,
+                build: { try steppedZ(foot: 10.0...35.0, lip: 0.0...45.0, tab: false) },
+                sharpCornerProbe: nil,
+                bendProbes: [
+                    Probe(
+                        label: "bend material, y = 30", point: SIMD3<Double>(29.5, 30.0, 20.5),
+                        want: .inside),
+                    Probe(
+                        label: "bend material, y = 5", point: SIMD3<Double>(29.5, 5.0, 20.5),
+                        want: .inside),
+                ]))
+        let doingTheSplitSum: Double = 30.0 * 45.0 * 2.0 + 20.0 * 45.0 * 2.0 + 30.0 * 25.0 * 2.0
+        all.append(
+            Fixture(
+                name: "Issue3019.convexBendDoesTheSplitting",
+                flangeSum: doingTheSplitSum,
+                overlap: 0.0,
+                terms: [
+                    .concave(radius: 1.5, length: 45.0),
+                    .convex(thickness: 2.0, length: 25.0),
+                ],
+                pinned: 6100.268252295755,
+                build: { try steppedZ(foot: 0.0...45.0, lip: 10.0...35.0, tab: false) },
+                sharpCornerProbe: nil,
+                bendProbes: [
+                    Probe(
+                        label: "bend material, y = 20", point: SIMD3<Double>(29.5, 20.0, 20.5),
+                        want: .inside),
+                    Probe(
+                        label: "no bend material, y = 5", point: SIMD3<Double>(29.5, 5.0, 20.5),
+                        want: .outside),
+                ]))
+        let severalCellsSum: Double = 30.0 * 25.0 * 2.0 + 20.0 * 45.0 * 2.0 + 30.0 * 35.0 * 2.0
+        all.append(
+            Fixture(
+                name: "Issue3019.convexBendSpansSeveralCells",
+                flangeSum: severalCellsSum,
+                overlap: 0.0,
+                terms: [
+                    .concave(radius: 1.5, length: 25.0),
+                    .convex(thickness: 2.0, length: 35.0, builtLength: 5.0),
+                ],
+                pinned: 5521.948704796732,
+                build: { try steppedZ(foot: 10.0...35.0, lip: 5.0...40.0, tab: false) },
+                sharpCornerProbe: nil,
+                bendProbes: [
+                    Probe(
+                        label: "bend material, y = 20", point: SIMD3<Double>(29.5, 20.0, 20.5),
+                        want: .inside),
+                    Probe(
+                        label: "no bend material, y = 2.5", point: SIMD3<Double>(29.5, 2.5, 20.5),
+                        want: .outside),
+                ]))
+        let acrossSum: Double = 30.0 * 45.0 * 2.0 + 20.0 * 45.0 * 2.0 + 30.0 * 45.0 * 2.0
+        all.append(
+            Fixture(
+                name: "Issue3019.convexBendAcrossTheSplitAxis",
+                flangeSum: acrossSum + 10.0 * 8.0 * 2.0,
+                overlap: 0.0,
+                terms: [
+                    .concave(radius: 1.5, length: 45.0),
+                    .convex(thickness: 2.0, length: webSpan, builtLength: 0.0),
+                    .concave(radius: 1.5, length: 8.0),
+                ],
+                pinned: 7526.937587717613,
+                build: { try steppedZ(foot: 0.0...45.0, lip: 0.0...45.0, tab: true) },
+                sharpCornerProbe: nil,
+                bendProbes: [
+                    Probe(
+                        label: "bend material, y = 20", point: SIMD3<Double>(29.5, 20.0, 20.5),
+                        want: .inside)
+                ]))
+
+        // --- #3033: a stepped seam diagonal to the flange's axes ---
+        let edge: Double = 8.0 * 2.0.squareRoot()
+        let root: Double = 1.0 / 2.0.squareRoot()
+        let narrowFlange: Double = 368.0 * 2.0 + 4.0 * 10.0 * 2.0
+        let wideRun: Double = edge + 6.0
+        let wideFlange: Double = 368.0 * 2.0 + wideRun * 10.0 * 2.0
+        // 0.2 inside the base's free chamfer corner, on the run 1.5 along the edge from its (20, 12)
+        // end, which the 4-wide upright standing 3 along the edge does not reach.
+        let freeX: Double = 20.0 - 1.7 * root
+        let freeY: Double = 12.0 + 1.3 * root
+        let freeCorner = SIMD3<Double>(freeX, freeY, 1.8)
+        // A point in the quarter-disc of a convex bend, 0.5 up and 0.5 out from a kiss point that
+        // lies `along` the chamfer edge from its (20, 12) end.
+        let midX: Double = 20.0 - 4.5 * root
+        let midY: Double = 12.0 + 5.5 * root
+        let kissMid = SIMD3<Double>(midX, midY, 0.5)
+        let beyondX: Double = 20.0 - 8.5 * root
+        let beyondY: Double = 12.0 + 9.5 * root
+        let kissBeyond = SIMD3<Double>(beyondX, beyondY, 0.5)
+        let beforeX: Double = 20.0 + 2.0 * root
+        let beforeY: Double = 12.0 - 1.0 * root
+        let kissBefore = SIMD3<Double>(beforeX, beforeY, 0.5)
+        all.append(
+            Fixture(
+                name: "Issue3033.diagonalSteppedConcave",
+                flangeSum: narrowFlange,
+                overlap: 0.0,
+                terms: [.concave(radius: 1.5, length: 4.0)],
+                pinned: 817.931416529423,
+                build: {
+                    try diagonalUpright(start: 3.0, width: 4.0, down: false, uprightFirst: false)
+                },
+                sharpCornerProbe: freeCorner))
+        all.append(
+            Fixture(
+                name: "Issue3033.diagonalSteppedConvexBaseFirst",
+                flangeSum: narrowFlange,
+                overlap: 0.0,
+                terms: [.convex(thickness: 2.0, length: 4.0, builtLength: edge)],
+                pinned: 828.566370614359,
+                build: {
+                    try diagonalUpright(start: 3.0, width: 4.0, down: true, uprightFirst: false)
+                },
+                sharpCornerProbe: nil,
+                bendProbes: [
+                    Probe(label: "bend material, mid run", point: kissMid, want: .inside),
+                    Probe(
+                        label: "no bend material, past the upright", point: kissBeyond,
+                        want: .outside),
+                ]))
+        all.append(
+            Fixture(
+                name: "Issue3033.diagonalSteppedConvexUprightFirst",
+                flangeSum: narrowFlange,
+                overlap: 0.0,
+                terms: [.convex(thickness: 2.0, length: 4.0)],
+                pinned: 828.566370614359,
+                build: {
+                    try diagonalUpright(start: 3.0, width: 4.0, down: true, uprightFirst: true)
+                },
+                sharpCornerProbe: nil,
+                bendProbes: [
+                    Probe(label: "bend material, mid run", point: kissMid, want: .inside),
+                    Probe(
+                        label: "no bend material, past the upright", point: kissBeyond,
+                        want: .outside),
+                ]))
+        all.append(
+            Fixture(
+                name: "Issue3033.diagonalWideConvexUprightFirst",
+                flangeSum: wideFlange,
+                overlap: 0.0,
+                terms: [.convex(thickness: 2.0, length: edge, builtLength: wideRun)],
+                pinned: 1117.817233484962,
+                build: {
+                    try diagonalUpright(start: -3.0, width: wideRun, down: true, uprightFirst: true)
+                },
+                sharpCornerProbe: nil,
+                bendProbes: [
+                    Probe(label: "bend material, mid run", point: kissMid, want: .inside),
+                    Probe(
+                        label: "no bend material, before the base's edge", point: kissBefore,
+                        want: .outside),
+                ]))
+
         return all
     }
 
     static func run() {
-        print("#2972: SheetMetal volumes against a term-by-term prediction")
-        print(String(repeating: "=", count: 108))
+        let ruleWidth = 122
+        print("#2972, #3019, #3033: SheetMetal volumes against a term-by-term prediction")
+        print(String(repeating: "=", count: ruleWidth))
+        print("ideal    = flanges - overlap + concave r^2(1-pi/4)L + convex (pi/4)t^2 L")
         print(
-            "ideal  = flanges - overlap + concave r^2(1-pi/4)L + convex (pi/4)t^2 L")
+            "leaked   = ideal - r^2(1-pi/4)L over every seam run OUTSIDE the bend's own extent (#2972)"
+        )
         print(
-            "leaked = ideal - r^2(1-pi/4)L over every seam run OUTSIDE the bend's own extent")
+            "misbuilt = ideal - (pi/4)t^2 (L - built) where a convex prism came out `built` long (#3019, #3033)"
+        )
         print("")
-        print(
-            pad("fixture", 42) + pad("measured", 22) + pad("ideal", 14) + pad("leaked", 14)
-                + "verdict")
-        print(String(repeating: "-", count: 108))
+        var header = pad("fixture", 42)
+        header += pad("measured", 22)
+        header += pad("ideal", 14)
+        header += pad("leaked", 14)
+        header += pad("misbuilt", 14)
+        header += "verdict"
+        print(header)
+        print(String(repeating: "-", count: ruleWidth))
 
         var defects = 0
+        var probeFailures = 0
         for f in fixtures() {
-            guard let shape = try? f.build(), let v = shape.volume else {
-                print(pad(f.name, 42) + "BUILD FAILED")
+            let shape: Shape
+            do {
+                shape = try f.build()
+            } catch {
+                print(pad(f.name, 42), "THREW", error)
+                continue
+            }
+            guard let v = shape.volume else {
+                print(pad(f.name, 42), "NO VOLUME")
                 continue
             }
             let dIdeal = v - f.ideal
             let dLeaked = v - f.leaked
+            let dMisbuilt = v - f.misbuilt
             let hasSurplus = f.terms.contains {
                 if case .surplus = $0 { return true } else { return false }
             }
@@ -422,16 +739,30 @@ enum SheetMetalVolumes {
             } else if abs(dLeaked) < tol {
                 verdict = hasSurplus ? "LEAKED (surplus fillet)" : "leaked (== ideal)"
                 if hasSurplus { defects += 1 }
+            } else if f.hasMisbuiltTerm && abs(dMisbuilt) < tol {
+                verdict = "MISBUILT (convex prism over the wrong run)"
+                defects += 1
             } else {
                 verdict = "unexplained"
             }
-            print(
-                pad(f.name, 42) + pad(fmt(v), 22) + pad(fmt6(dIdeal), 14) + pad(fmt6(dLeaked), 14)
-                    + verdict)
+            var line = pad(f.name, 42)
+            line += pad(fmt(v), 22)
+            line += pad(fmt6(dIdeal), 14)
+            line += pad(fmt6(dLeaked), 14)
+            line += pad(f.hasMisbuiltTerm ? fmt6(dMisbuilt) : "-", 14)
+            line += verdict
+            print(line)
             if abs(v - f.pinned) > 1e-9 * max(1.0, f.pinned) {
                 print(
                     "    NOTE: differs from the pinned value \(fmt(f.pinned)) by "
                         + fmt6(v - f.pinned))
+            }
+            for probe in f.bendProbes {
+                let got = shape.classifyPoint(probe.point)
+                let ok = got == probe.want
+                if !ok { probeFailures += 1 }
+                let mark = ok ? "ok  " : "FAIL"
+                print("    probe", mark, probe.label, "want", probe.want, "got", got)
             }
         }
 
@@ -486,6 +817,38 @@ enum SheetMetalVolumes {
         }
 
         print("")
+        print("Pre-fillet seam line, diagonal geometry (Issue3033.diagonalSteppedConcave)")
+        print(String(repeating: "-", count: 108))
+        // The same base and upright with no bend declared, which is exactly the solid `build()`
+        // fillets. The seam is diagonal to the base's axes, so `build()` does not split the base,
+        // yet the fused solid already holds the chamfer's top edge as separate edges at the
+        // contact boundary. That is what lets an extent filter select the bend alone (#3033).
+        // Positions are along the chamfer edge from its (20, 12) end; the upright covers 3 to 7.
+        let diagRoot: Double = 1.0 / 2.0.squareRoot()
+        for (label, start, width) in [("narrow", 3.0, 4.0), ("wide", -3.0, 17.31)] {
+            guard
+                let bare = try? diagonalUpright(
+                    start: start, width: width, down: false, uprightFirst: false,
+                    declareBend: false)
+            else {
+                print("    \(label): fuse FAILED")
+                continue
+            }
+            var runs: [String] = []
+            for e in bare.edges() where e.isLine {
+                let (p0, p1) = e.endpoints
+                guard abs(p0.x + p0.y - 32) < 1e-6, abs(p1.x + p1.y - 32) < 1e-6 else { continue }
+                guard abs(p0.z - 2) < 1e-6, abs(p1.z - 2) < 1e-6 else { continue }
+                let c0 = (20.0 - p0.x) / diagRoot
+                let c1 = (20.0 - p1.x) / diagRoot
+                runs.append(String(format: "[%.6f, %.6f]", min(c0, c1), max(c0, c1)))
+            }
+            print(
+                "    \(label) upright: \(runs.count) edge(s) on the chamfer's top line:",
+                runs.joined(separator: " "))
+        }
+
+        print("")
         print(
             "Fillet run-out at the step boundary (narrowUprightStepSucceeds, r = 1.5, step x = 28)")
         print(String(repeating: "-", count: 108))
@@ -535,10 +898,15 @@ enum SheetMetalVolumes {
         }
 
         print("")
-        print(
-            defects == 0
-                ? "No fixture needs the surplus term to explain its volume."
-                : "\(defects) fixture(s) match only once the surplus fillet is subtracted.")
+        if defects == 0 && probeFailures == 0 {
+            print(
+                "No fixture matches a defect model, and every probe reads as the construction says."
+            )
+        } else {
+            print(
+                "\(defects) fixture(s) match only a defect model, \(probeFailures) probe(s) read wrongly."
+            )
+        }
     }
 
     fileprivate static func pad(_ s: String, _ n: Int) -> String {
