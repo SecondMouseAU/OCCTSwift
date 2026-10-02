@@ -100,6 +100,31 @@ does not.
 `tail`, so a gate exiting 66 on a race is indistinguishable from one exiting 0. Redirect to a file
 and read the status separately, or use `set -o pipefail`.
 
+## Measure both sides at the same instant
+
+`origin/main` is shared across every worktree and moves while you work. A batch that measures
+"before" against `origin/main` at the start and "after" against it at the end is comparing two
+different trees, and the error is not small: one batch's repo-wide SEVERE comparison read **+20**
+when the true delta was **-39**, and two runs of an identical `census-766-unlifted-tests.py
+--onto origin/main` minutes apart disagreed about which paths were ABSENT.
+
+`git archive origin/main Tests` into a scratch tree, then measure both sides against that frozen
+copy. Rebase immediately before pushing, and re-derive any figure you quote in the PR body after
+the rebase rather than carrying it across.
+
+The same applies to a figure handed to you in a brief. Three batches in one day were given a
+repo-wide SEVERE number that had already moved; every one of them re-measured and said so, which
+is the behaviour to copy. **Re-measure, do not quote.**
+
+## Restore with git, never by reverse-replacement
+
+Undoing an injection by replacing the new text with the old looks symmetrical and is not. Two
+edits in one injection shared a replacement string, so the reverse-replace matched twice and threw
+**from inside a `finally`**, which both left the tree dirty and discarded that injection's result.
+
+`git checkout -- <paths>` is the only safe restore. It is also the only one that cannot leave a
+half-reverted file behind when the sweep is interrupted.
+
 ## A green switch can be the finding
 
 A switch that reddens nothing is usually a bad switch, and occasionally it is a measurement.
