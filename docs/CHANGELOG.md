@@ -21,6 +21,20 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### Nineteen test assertions that could not fail now measure their subject (#3018)
+
+The test targets built with 22 compiler warnings naming assertions that cannot fail: 19
+`comparing non-optional value of type 'X' to 'nil' always returns true` and 3 redundant
+`#require`s on a non-optional. Each site now asserts the geometry, document content or
+parameter range the test was written to check, rather than the non-optional handle it came back
+in. No public API changed; this is test-side only. The surface-factory suites
+(`ConicalSurfaceTests`, `CylindricalSurfaceTests`, `GceMakeConeTests`, `GceMakeCylinderTests`,
+`PlaneConstructionTests`, `TrimmedConeTests`, `TrimmedCylinderTests`, `JoinBezierPatchesTests`)
+now pin the semi-angle, radius, axis, apex, plane equation and trim bounds of what they build;
+`BSplineApproxInterpTests` measures the fitted curve against the data it was fitted to;
+`CurveConvertToPeriodicTests` and `CurveSplitTests` pin periodicity and the split partition; and
+`VrmlWriterTests` checks that the OBJ and STEP round trips carry the geometry.
+
 ### Probe evidence that could not be re-derived, and the screens that could not see it (#2987, #2967, #2965)
 
 - **`census-766-unlifted-tests.py` screens the merged population instead of assuming it (#2987).**

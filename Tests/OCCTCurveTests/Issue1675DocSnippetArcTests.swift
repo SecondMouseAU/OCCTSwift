@@ -42,8 +42,12 @@ struct Issue1675DocSnippetArcTests {
     @Test("The arc spans the half circle the snippets assume")
     func endpointsAreTheHalfCircle() throws {
         let arc = try #require(canonicalArc())
-        let p0 = try #require(arc.point(at: arc.domain.lowerBound))
-        let p1 = try #require(arc.point(at: arc.domain.upperBound))
+        // No `try #require` on these two: `point(at:)` returns a non-optional `SIMD3<Double>`, so
+        // the macro reported itself as redundant in every build (#3018). Unlike the rest of that
+        // issue's sites, nothing has to be added here, because the two assertions below already
+        // measure the arc rather than its existence.
+        let p0 = arc.point(at: arc.domain.lowerBound)
+        let p1 = arc.point(at: arc.domain.upperBound)
         #expect(abs(p0.x - 5) < 1e-9 && abs(p0.y) < 1e-9, "start should be (5,0,0), got \(p0)")
         #expect(abs(p1.x + 5) < 1e-9 && abs(p1.y) < 1e-9, "end should be (-5,0,0), got \(p1)")
     }

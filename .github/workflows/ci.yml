@@ -67,6 +67,51 @@ jobs:
   # rule, the check would drop out of "required" and the PR UI would look identical to a working
   # gate. Falling back to the job id makes the required context a stable identifier nobody edits for
   # readability. This job is required on refactor/** (#649); see CLAUDE.md before renaming it.
+  # Which heavy jobs are worth running, decided from the diff rather than from a workflow-level
+  # `paths-ignore`. `gate-scripts` below is the one REQUIRED check on `main`, and a workflow that
+  # `paths-ignore` skips never reports, which blocks the PR permanently with "Expected, waiting for
+  # status to be reported" and cannot be cleared: see okf/policies/required-status-checks.md. So
+  # the required job always runs and only the expensive ones are gated, by `needs` on this one.
+  #
+  # `docs/**` is deliberately NOT prose for this purpose. It holds 5,381 fenced Swift snippets and
+  # `check-doc-snippets.py --require-typecheck` compiles them inside `build-and-test`, so a
+  # docs-only change is exactly when that job earns its time. What is skippable is `okf/**` and the
+  # root Markdown, which no gate compiles: check-doc-snippets' own population is `docs/**/*.md`.
+  changes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      build: ${{ steps.classify.outputs.build }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: classify
+        name: Does anything outside okf/ and the root Markdown change?
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            base='${{ github.event.pull_request.base.sha }}'
+          else
+            base='${{ github.event.before }}'
+          fi
+          # No usable base (a dispatch, a first push, a force-push past the old tip): build.
+          if [ -z "$base" ] || [ "$base" = "0000000000000000000000000000000000000000" ] \
+             || ! git cat-file -e "$base^{commit}" 2>/dev/null; then
+            echo "no usable base ref, running the full set"
+            echo "build=true" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          changed=$(git diff --name-only "$base" "${{ github.sha }}")
+          echo "$changed" | sed 's/^/  /'
+          # Prose this repo compiles nothing from. Everything else, docs/ included, builds.
+          rest=$(echo "$changed" | grep -vE '^okf/|^[A-Z0-9_]+\.md$' || true)
+          if [ -z "$rest" ]; then
+            echo "prose only, skipping the macOS and iOS jobs"
+            echo "build=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "build=true" >> "$GITHUB_OUTPUT"
+          fi
+
   gate-scripts:
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -416,6 +461,8 @@ jobs:
   build-and-test:
     name: swift build + test (macOS)
     runs-on: macos-15
+    needs: changes
+    if: needs.changes.outputs.build == 'true'
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
@@ -566,6 +613,8 @@ jobs:
   ios-simulator-build:
     name: swift build (iOS Simulator, smoke)
     runs-on: macos-15
+    needs: changes
+    if: needs.changes.outputs.build == 'true'
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
