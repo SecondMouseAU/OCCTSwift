@@ -21,6 +21,39 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### Gate the Standard_Transient release idiom, and record what the compiled-out-validation census cannot see (#2974, #2946)
+
+- **New gate `check-transient-release-idiom.py` (#2974).** Every function in
+  `Sources/OCCTBridge/src/*.mm` that calls `DecrementRefCounter` is now held to
+  `opencascade::handle::EndScope`: the decrement's value compared against `0`, no second
+  `GetRefCount()` read, no bare `delete` where the kernel calls the virtual `Delete()`. The
+  divergence PR #2969 fixed in `OCCTMessengerRelease` and `OCCTReportRelease` had stood since those
+  functions were written and survived two reviews. A deliberate divergence carries
+  `transient-release-exempt: <reason>`; `OCCTTObjApplicationRelease` holds the one, for the
+  process-wide singleton whose static `Handle` must never let a zero count destroy. Seventeenth
+  gate, in `gate-scripts` and the pre-commit hook.
+- **`census-compiled-out-validation.py` now states what it cannot see (#2946).** Every channel ends
+  at a bridge `catch`, so the census is blind to a compiled-out check whose absence faults before
+  any `catch` runs, which is uncatchable in-process. It is not derivable from
+  `Scripts/occt-raise-if-map.txt`, measured three ways, so the limitation is recorded instead: the
+  `WHAT IS STILL DARK` list moves into a `DARK` constant printed at the end of every bare run, with
+  `--self-test` cases holding the roster, each entry's argument, and the report's call to the
+  printer.
+
+### A red injection row now means keep going, not stop, after 300 of 339 #766 PRs read it as stop (#2970)
+
+`okf/policies/prove-the-test-fails.md` told an author to inject the defect, watch the test fail,
+restore and report, and said nothing about what to do when the test already fails. #2679 read that
+gap as a rewrite trigger: it rewrote the four tests that stayed green under their injection and
+left the three that went red exactly as they were, and all three were still unable to tell a right
+answer from a wrong one (#2941). Measured over the 403 PRs merged into `v5.0.0-766-execution`, 355
+used that certification format, 339 recorded at least one Red row, and **300 of them left at least
+one Red-rowed test unchanged**: 266 of those tests, in 69 paths from 64 source PRs, are still weak
+on `main`. The policy now says to pin the measured answer whether or not the test already caught
+the injection, and names the four weaknesses a Red row cannot see: a fixture bound with no `else`
+branch, a `count >= 1` where the answer is 1, a tolerance window wider than a real error, and a
+pair of booleans with no control requiring the opposite verdict.
+
 ### Mesh and Misc tests pin measured values instead of `!= nil` (#766)
 
 - `Tests/OCCTMeshTests/OCCTMeshTests.swift` and `Tests/OCCTMiscTests/OCCTMiscTests.swift` lifted

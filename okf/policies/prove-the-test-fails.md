@@ -122,6 +122,29 @@ needs rewriting, not celebrating.
 Report the matrix. A table of "guard removed" against "cases correct" is short, and it is the
 difference between a reviewer trusting the suite and taking your word for it.
 
+## A red row is a reason to keep going, not a reason to stop
+
+**Pin the measured answer whether or not the test already caught the injection.** A red row proves
+the test notices the one defect you picked and says nothing about any other, and four weaknesses
+survive it:
+
+- a fixture bound by `if let`, or by a `guard let` whose `else` sits on a later line, with no
+  `else` branch that records a failure: no arithmetic injection can produce the nil that skips
+  every assertion;
+- `count >= 1` where the answer is exactly 1: a value injection changes a value, never a count;
+- a tolerance window wide enough to swallow a real error but not the injection's delta, such as
+  `0.1` on a square distance of 25 against a `+1.0` injection;
+- a two-boolean test on one fixture, where inverting the verdict is red and wiring it to a
+  constant is green, because the test has no control requiring the opposite answer.
+
+[#2679](https://github.com/SecondMouseAU/OCCTSwift/pull/2679) used the injection row's colour as
+its rewrite trigger: it rewrote the four tests that stayed green under their injection and left the
+three that went red byte for byte. All three carried the first two weaknesses and between them
+they carried all four (#2941). That is not
+one PR's slip. Measured over the 403 PRs merged into `v5.0.0-766-execution`, **300 of the 339 that
+recorded a Red row left at least one of those tests unchanged, and 266 of them are still weak on
+`main`** (#2970).
+
 **For a sweep of any size, read
 [Injection sweep mechanics](../references/injection-sweep-mechanics.md) first.** It is how to run
 one cheaply (the built `.xctest` through `swiftpm-testing-helper` is 0.5 s against `swift test`'s
