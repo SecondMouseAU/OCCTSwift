@@ -21,6 +21,41 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### A stepped sheet-metal seam stops rounding away the flange's free edge, and #501's sampler tests stop missing their own path (#2972, #2054, #2977)
+
+- **#2972.** `SheetMetal.Builder.build()` filleted the whole seam *line* rather than the bend.
+  Both of `findSeamEdges`'s plane tests hold along the full line, so on a stepped seam the free
+  edge of the wider flange's outer split piece was filleted too; that edge is convex, so the fillet
+  removed material from a corner the builder documents as staying flat. All four stepped fixtures
+  in the suite came out **below their flange volumes**, by exactly `r^2 (1 - pi/4)` times the
+  surplus length, and a point 0.2 inside the free corner classified as outside in all four. The
+  selection is now bounded by the bend's own intersection range, read off the bend rather than off
+  the matched pieces, because a flange split by one bend names its first piece after the whole
+  flange and a second bend covering that flange's full width resolves to the sliver (#3019). The
+  four convex-bend fixtures were never wrong: the arithmetic that called them unexplained left out
+  the flange-body overlap and, in each part, the concave bend beside the convex one, and all four
+  derive to the last digit once both are counted. Eight regression pins become derivations, with
+  the measurement in `Scripts/repro/2972-sheetmetal-volumes/` and a harness,
+  `swift run Harnesses 2972-sheetmetal-volumes`, that predicts every fixture's volume term by term.
+- **#2977.** `Curve2DTests.uniformDrawRespectsCount` and
+  `Tests/OCCTCurveTests/GCPntsSamplerBoundsTests.swift` had stopped reaching #501's surplus-point
+  path, and a distortion of the last-slot rule left them green. Carried patch `0018` is why: it
+  also accepts a sampler step within `theTol` of the end in 3D, which settles #501's 1e6 x 1e-3
+  ellipse. That test is absolute, so it stops helping as the curve grows, and a 1e8 x 0.1 ellipse
+  still returns `count + 1` for eight of the first 59 counts, identically for
+  `GCPnts_UniformAbscissa` and `GCPnts_QuasiUniformAbscissa` and identically in 2D and 3D. Both
+  suites now run on that ellipse with #501's own kept as a control, their end-point tolerances
+  tightened from `1e-6` to `1e-9` against a 1.5e-7 shortfall, and three cases that bound the result
+  with `if let` and asserted nothing on an empty sample now require the count. Transcripts in
+  `Scripts/repro/2977-uniformabscissa-no-overshoot/`, including a behavioural check that `0018` is
+  in the pinned asset, which `check-pinned-asset-patches.py` cannot reach.
+- **#2054.** Measurement only. `IFSelect_WorkSession::GiveFileRoot`/`GiveFileComplete` have zero
+  callers in the whole `V8_0_1` tree and zero in `Sources/`, and of the 57 bridge functions
+  returning a `const char*` 48 copy into fresh storage while the other nine return a string
+  literal, a `Standard_Type` singleton's name, or storage the caller already owns. Nothing hands
+  Swift a pointer into mutable shared OCCT state, so a wrapper would bound the exposure to its own
+  frame. Recorded in `okf/references/known-occt-bugs.md`; the fix stays upstream's call.
+
 ### Added: capturing what OCCT itself prints (#3021)
 
 `Messenger.capturingDefaultOutput(_:)` runs a closure with every printer on
