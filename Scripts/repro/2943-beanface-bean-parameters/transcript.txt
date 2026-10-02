@@ -1,0 +1,6 @@
+edgeOnFace setBean=0 BRep_Tool::Range=[0, 6] IsDone=1 MinSqDist=RealLast(SENTINEL) NbRanges=1 [1]=(0, 0)
+edgeOnFace setBean=1 BRep_Tool::Range=[0, 6] IsDone=1 MinSqDist=RealLast(SENTINEL) NbRanges=1 [1]=(0, 6)
+edgeCrossingFace setBean=0 BRep_Tool::Range=[0, 10] IsDone=1 MinSqDist=RealLast(SENTINEL) NbRanges=0
+edgeCrossingFace setBean=1 BRep_Tool::Range=[0, 10] IsDone=1 MinSqDist=RealLast(SENTINEL) NbRanges=1 [1]=(4.9999998999999997, 5.0000001000000003)
+edgeOffFace setBean=0 BRep_Tool::Range=[0, 6] IsDone=1 MinSqDist=RealLast(SENTINEL) NbRanges=0
+edgeOffFace setBean=1 BRep_Tool::Range=[0, 6] IsDone=1 MinSqDist=RealLast(SENTINEL) NbRanges=0

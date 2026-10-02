@@ -21,6 +21,124 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### The BSpline surface manipulation suite had never run an expectation, and five weak-assertion test files come off the v5 branch (#766, #2464, #2444, #2503, #2318, #2320)
+
+Batch 9 of the v5 lift takes the tail of the ranked path list: 42 gains over five files, from five
+execution PRs all merged into `v5.0.0-766-execution` and therefore invisible to the open-PR screen
+the programme used to be steered by. Across the five paths the weak-assertion census goes from 23
+SEVERE and 31 ESCAPABLE of 56 tests to 0 and 2, and repo-wide SEVERE goes from 1,365 to 1,342.
+
+The largest single finding is a fixture. `makeCylinderDerivedBSplineSurface()` converted an
+untrimmed `Surface.cylinder`, which `GeomConvert::SurfaceToBSplineSurface` refuses as an infinite
+surface, so it always returned nil and every one of the twelve tests in
+`BSplineSurfaceManipulationTests` skipped its whole body behind `if let`: not one expectation in
+that suite had ever executed. The fixture trims V to `[0, 10]` first, and the twelve tests now pin
+the trimmed cylinder's actual BSpline form (4 x 2 knots, 6 x 2 poles, degree 2 x 1, bounds
+`[0, 2 pi] x [0, 10]`) and what each manipulation does to it.
+
+`BSplineCurve3DManipulationTests` pins the chord-length knot vector, the pole counts and
+multiplicities before and after each edit, and the fact that `segment` at 25 and 75 percent lands
+exactly on the second and fourth interpolation points; two of its fifteen tests previously asserted
+nothing at all. `ShapeBuildEdgeTests` pins what `ShapeBuild_Edge` does to an edge rather than
+`shapeType == .edge`, which an untouched edge also satisfies, and moves the pcurve cases to a
+cylinder's lateral face because a plane re-projects a removed pcurve on demand.
+`BRepGraphEdgeGeometryTests` adds a sphere beside the box so that answers which never vary (not
+degenerated, has a curve, not a seam) can fail. `BRepGraphDurableUIDTests` replaces every nil-skip
+around a UID lookup with `#require`, which is what had let eight of its tests, including every
+"does not cross" test, return early and pass.
+
+Each test was proved by a semantic injection on `main`'s own kernel: 56 of 56 red, 56 of 56 green
+once reverted. The five ground-truth probes cross with their transcripts and all five reproduce
+against the pinned kernel.
+
+### Tooling: the #766 probe reproduction check reaches 41 pairs it had never compiled (#2934)
+
+`Scripts/check-766-probe-reproduction.py` took the directory as its unit and opened `probe.mm` and
+`transcript.txt` by name, so a second, corrected probe added beside the first was neither `MISSING`
+nor a `DIFF`: it was absent from the run, while the parity records whose `source` named
+`transcript-evidence-fix.txt` read as verified. The unit is now a `(probe, transcript)` pair,
+derived by substituting the whole `probe` token, which reaches `probe-evidence-fix.mm`, the older
+`evidence-fix-probe.mm` word order, a probe named for its subject such as `race.mm`, and a
+transcript with no probe at all. Declarations are named per pair, so one pair's
+`status: not-reproducible` can no longer excuse another from being compiled. Run against the pinned
+`v4.0.0-kernel.3` asset, 37 of the 41 newly reached pairs reproduce byte for byte and the other
+four are declared or filed; none is a kernel divergence.
+
+### `Shape.beanFaceIntersect` searched an empty parameter interval, and four suites of tests could not have noticed (#2935, #2938, #2941, #2943)
+
+`IntTools_BeanFaceIntersector`'s `(edge, face)` constructor sets the surface parameters and leaves
+the bean parameters at `(0, 0)`, because a "bean" is a part of an edge and which part is the
+caller's to say. The bridge never set them, so every call searched the empty interval `[0, 0]`: an
+edge lying in a face came back with a zero-length range and an edge crossing one came back with no
+range at all. Both of OCCT's own callers repair it from `BRep_Tool::Range` immediately after
+constructing (`BRepFill_TrimShellCorner.cxx:2580-2582`, `IntTools_EdgeFace.cxx:566`), and the bridge
+now does the same, which is the identical fix #1631 made to `IntTools_EdgeFace` in the same file.
+`BeanFaceIntersection.minSquareDistance` also becomes `Double?`: `MinimalSquareDistance()` is
+initialised to `RealLast()` and left there on every measured path, so `1.797e308` was reaching
+callers as a distance.
+
+Ten tests across four suites are rewritten to pin the kernel's measured answer rather than accept
+whatever it returns, each proved against a semantic injection: the three `IntTools_BeanFaceIntersector`
+tests, which asserted only `minSquareDistance >= 0.0` and a range count (#2943); three Extrema tests
+whose bodies sat inside an `if let` with no `else`, so a nil fixture ran no assertion at all, and
+which pinned `count >= 1` where the answer is exactly 1 (#2941); the three `Issue222EnvelopeTests`
+cases, which asked for `build: .direct` and checked nothing only the direct build satisfies, now
+pinning the 7-face signature that separates it from the faceted fallback (#2938); and
+`BOPAlgoCellsBuilderTests.createCellsBuilder`, which asserted only that a builder came back and now
+pins the cells construction actually produced (#2935).
+
+### Sixteen CHANGELOG entries that never landed are recovered (#2957)
+
+Sixteen merges between 2026-08-28 and 2026-09-29 landed with a `## CHANGELOG entry` section in the
+PR body that nobody transcribed into `docs/CHANGELOG.md`. The backstop report could not see them:
+most of the sixteen open with a bare `### Fixed`, which the file has held since 2026-09-30, so
+`check-changelog-transcription.py` classified every one as "transcribed late, nothing to do" until
+#2951's fix taught it to match the first bullet instead. All sixteen are restored verbatim from
+their PR bodies, in merge order. They include `Mesh.normals` having been `(0, 0, 1)` at every vertex
+of every shape (#2337), four `BRep_Tool` wrappers crashing the process on a null shape instead of
+refusing it (#2812), three separate uncatchable-SIGSEGV guards against a face with no surface
+(#2750, #2777, #2790, #2789), twelve shape-upgrade operations with the same exposure (#2773), and
+`Surface.bsplineFill`/`bezierFill` crashing on four curves that do not close a loop (#2829).
+
+### The v5 lift census stops collapsing same-named tests across suites, and 24 hidden gains come back (#2949)
+
+`Scripts/census-766-unlifted-tests.py` keyed its per-test tier map on the `@Test` function's name,
+so two same-named tests in different `@Suite` structs of one file collapsed into one entry: the
+file's test population, its SEVERE and ESCAPABLE counts and its gain count all read low, and where
+the duplicates tiered differently on the two sides a gain could be attributed to the wrong function
+or vanish. That last case is how the census could report "0 gains remaining" for a path that still
+has some, which is the claim two batches used to declare a path drained. The key is now the
+enclosing type path and the function name, resolved from the parse by a new `type_spans()` that
+skips comments and string literals and takes each declaration's extent from
+`census-766-weak-assertions.py`'s own `balanced_body`; an overload of one name in one type is
+numbered in source order. `Tests/OCCTStressTests/StressExhaustiveAPITests.swift` now tiers 112
+tests rather than 100. Repo-wide, against the same `main`, the branch's gain count goes from 1,209
+to 1,233 over the same 417 paths, and `StressBuilderLifecycleTests.swift` goes from 12 gains to 32
+and from ninth to fifth in the ranking the next batch is picked from. No path previously reported
+at zero gain has one under the new key, so nothing declared drained was wrongly declared.
+`census-766-weak-assertions.py` was verified unaffected rather than assumed: its test population is
+a yield count and its findings are a list, both correct at 6,663 and 3,901. It does carry the same
+shape of defect in `helpers_in`, which costs it 11 findings and 6 SEVERE, filed as #2964.
+
+### Tests
+
+- Lifted the Analysis intersection and distance test work off `v5.0.0-766-execution` (#2669, #2670,
+  #2680, #2681, #2683, #2684): thirty-two tests across seventeen files in `OCCTAnalysisTests` now
+  pin the value the pinned kernel reports rather than a count, a sign or a nil-skip, and seven
+  ground-truth probes with their transcripts cross with them. Measured over those files,
+  `census-766-weak-assertions.py` falls from 13 SEVERE and 29 ESCAPABLE to 1 and 19.
+  `Contap_ContAna`'s sphere and cylinder contours, `GeomAPI_ExtremaCurveCurve`/`ExtremaCurveSurface`
+  distances, `Extrema_ExtElC` circle-circle and line-ellipse square distances, `IntAna`'s
+  line/plane, plane/plane, quadric and three-plane results, `IntCS` points,
+  `IntCurvesFace_ShapeIntersector` hits, `IntTools_BeanFaceIntersector` ranges,
+  `IntTools_FaceFace` curves and tangency, `IntTools_Tools::IntermediatePoint` and `ComputeIntRange`,
+  `Intf_Tool::LinBox` segments and `ExtremaPC_Curve`'s minimum are each pinned to a measured figure.
+
+### Fixed
+
+- `CLAUDE.md`'s swift-format exemption count, which said 269 where the manifest held 267
+  (`check-inventory-prose.py`).
+
 ### Tests
 - Lifted the Stress test work from `v5.0.0-766-execution` by content rather than by PR: 109 test
   functions across `StressExhaustiveAPITests`, `StressBoundaryConditionTests` and
@@ -86,6 +204,260 @@ self-test case asserts that no claim states it, so writing it down again fails l
 A sweep of the remaining numbers in `CLAUDE.md` found twenty more derived counts no gate reads.
 Five are fixed here, including the per-domain bridge bucket breakdown and the pinned-asset
 evidence tally; the other fifteen are filed as #2959.
+
+### Fixed
+
+- Refman coverage audit (Pass 4c, #813): three OCCT-attribution doc fixes — `Shape.toBinaryData()`/
+  `fromBinaryData()`/`writeBinary()`/`loadBinary()` corrected to `BinTools_ShapeWriter::Write`/
+  `BinTools_ShapeReader::Read`; `Shape.loadIGESRoot` corrected to `IGESControl_Reader::TransferOneRoot`;
+  `Shape.loadSTEP(unitInMeters:)` corrected to `STEPControl_Reader::SetSystemLengthUnit`. New census
+  artifact at `Scripts/repro/813-refman-coverage-export-interop/` audits the export/interop lane's
+  192 classes; 170 previously-unrecorded unwrapped classes now have a reason in
+  `docs/occtswift-wrapping-gaps.md`, including 4 recorded, small, unaddressed real gaps
+  (`RWMesh_EdgeIterator`, `RWGltf_DracoParameters`, `Interface_Check`, `Interface_CheckIterator`).
+
+### Added
+
+- **The bridge can say why it refused (#1161).** Every bridge function wraps its OCCT calls in `try { } catch (...) { return <refusal>; }`, which is what keeps a `Standard_Failure` from reaching the Swift boundary where it would be uncatchable (#345), but until now the failure's type and message went with it: 3,652 catch-all handlers in `Sources/OCCTBridge/src` and not one catching `Standard_Failure`. `OCCTDiagnostics` is the channel that carries them across. `OCCTDiagnostics.capturing { }` returns the work's value alongside the records instrumented catch sites produced, each carrying the OCCT exception's own class name (`Standard_ConstructionError`, `StdFail_NotDone`), its message (`gp_Dir() - input vector has zero norm`) and, if `stackTraceDepth` is raised, its stack trace. `OCCTDiagnostics.isLoggingEnabled`, or `OCCTSWIFT_BRIDGE_DIAGNOSTICS=1` in the environment, sends the same records to OCCT's default messenger so a process explains itself with no code change.
+
+  The mechanism is a bare `throw;` in one shared helper, which rethrows what the caller's `catch (...)` already holds and catches it again by type, so instrumenting a site costs one line and no control-flow change. Measured against the pinned kernel first, in `Scripts/repro/1161/`.
+
+  **Nothing here can see an OS signal.** `OCC_CONVERT_SIGNALS` is undefined in this build, so `OCC_CATCH_SIGNALS` expands to nothing and a `SIGSEGV` raised inside OCCT never becomes a C++ exception. Six of the ten defects #1161 cites are that shape and stay invisible.
+
+  **Coverage is partial and per-site.** `OCCTBridge_Modeling_Boolean.mm` is instrumented in full (102 of 103 blocks; the exception recovers and says so in place); the other 73 files are not. An empty capture means "no instrumented site reported", not "nothing was caught". Derive coverage with `grep -rc '^ *occtRecordCaughtException(__func__);' Sources/OCCTBridge/src`; extend it with `Scripts/add-bridge-diagnostics.py`.
+
+  No signature, return type or default changed anywhere, and both switches default off.
+
+### Fixed
+
+- `Sources/OCCTBridge/include/OCCTBridge.h` no longer writes a bridge source glob as `Sources/OCCTBridge/src/*.mm` in a comment. `derive-bridge-header-split.py` reads the `/*` in that path as a block-comment opener and swallows the rest of the header through to `#endif /* OCCTBridge_h */`, so the gate reported `0 misfiled` while seeing 2 of the umbrella's declarations instead of 16 (#1161).
+
+### Fixed
+
+- `BRepCheck_Analyzer` no longer faults inside `BRepCheck_Edge::InContext` on a shape carrying a
+  non-degenerated face edge with no valid 3D curve and at least one pcurve, which a `.brep` file
+  alone can produce (#2750, kernel defect #2746). All twenty bridge sites that construct a
+  `BRepCheck_Analyzer` now refuse such a shape first. `Shape.isValid`, `Shape.analyzeValidity()`
+  and `Shape.isValidSolid` report it invalid, `Shape.checkResult` reports `.no3DCurve` with the
+  number of offending edges, `Shape.detailedCheckStatuses` lists one `.no3DCurve` per offending
+  edge, `Shape.analyze()` sets `hasInvalidTopology` while still returning its other measurements,
+  the three `check*Status(...)` lookups return `-1`, IGES export refuses the shape, and
+  `Shape.healed()` returns nil.
+
+### Fixed
+
+- Twelve shape-upgrade operations no longer take the process down on a shape carrying a face with
+  no surface and no edges, which a `.brep` file can carry and which `ShapeUpgrade_ShapeDivide`'s own
+  `ShapeExtend_FAIL2` handler cannot catch. `Shape.divided(at:)`, `splitByAngle`, `dividedByNumber`,
+  `dividedClosedEdges`, `dividedByArea`, `dividedByParts`, `convertedToBezier`,
+  `dividedClosedFaces`, `divideFace`, `convertCurves3dToBezier` and `convertSurfacesToBezier` now
+  return `nil` for such a shape, the same refusal they already give a genuine kernel failure (#2773).
+
+### Fixed
+
+- Carried OCCT patch `0042`: `ShapeAnalysis::GetFaceUVBounds` no longer dereferences a null surface
+  on a face with no surface and no edges, an uncatchable fault that landed exactly where
+  `ShapeUpgrade_ShapeDivide`'s own `ShapeExtend_FAIL2` handler was meant to report. It raises
+  `Standard_NullObject` instead, which is what the function's other failure path already does and
+  what makes the kernel's existing handler fire. The patch is **not** in the pinned kernel asset, so
+  the bridge guard shipped for #2773 is what protects consumers until a repin (#2773).
+
+### Fixed
+
+- **IGES export no longer kills the process on a face with no surface** (#2777).
+  `IGESControl_Writer::AddShape` runs a shape processor before it transfers anything, and the one
+  operation it enables, `DirectFaces`, dereferences each face's surface handle with no null test
+  (`ShapeCustom_DirectModification.cxx:55`); the writer dereferences it again unguarded at
+  `BRepToIGES_BRShell.cxx:382`. Every `Exporter` IGES method, `Shape.directFaces()` and
+  `Shape.isValid` now refuse such a shape instead of faulting, answering what each already answered
+  for a failed export. The predicate is the surface clause alone, measured: unlike #2773's, this fault
+  does not care whether the face has edges, and OCCT's own STEP writer screens the same face the same
+  way (`STEPControl_ActorWrite::hasGeometry`), which is why STEP export was never affected. The face is
+  not constructible through the Swift API but a `.brep` file carries one exactly. Ninety-three
+  measurements, including the negatives, in `Scripts/repro/2777-iges-writer-surfaceless-face/`.
+
+### Changed
+- Nine `Curve2D` tests in `Tests/OCCTGeom2dTests/` no longer pass on a nil fixture. Each stops at a
+  nil with `try #require` and pins the value `Scripts/repro/766-geom2d-eval-extras/probe.mm` measures
+  from the same OCCT calls: `ShapeCustom_Curve2d::ConvertToLine2d`'s kept range and deviation,
+  `Geom2d_Circle::D0/D1/D2`, the geometry `Geom2d_Line::Reverse` produces rather than the `Bool` it
+  returns, the independence of a `Geom2d_Curve::Copy` from its original, and
+  `Geom2dAPI_ProjectPointOnCurve`'s parameter, whose assertion tightened from 0.1 to 1e-9 (#766,
+  #1979, lifted from #2483).
+
+### Fixed
+- `Mesh.normals` is a real measurement. It was `(0, 0, 1)` at every vertex of every shape meshed by
+  `Shape.mesh(linearDeflection:)` or `mesh(parameters:)`, because `BRepMesh_IncrementalMesh` stores
+  no node normals and the bridge wrote a placeholder wherever `Poly_Triangulation::HasNormals()` was
+  false, which was always. Node normals are now computed at mesh time by
+  `BRepLib_ToolTriangulatedShape::ComputeNormals`, the same call `StdPrs_ShadedShape` makes before
+  shading, with StdPrs's orientation, mirror and location treatment copied. A radius-5 sphere at
+  deflection 0.5 goes from one distinct normal to 168, all radial and unit length (#2337).
+
+### Changed
+- `Mesh.union(with:)`, `Mesh.subtracting(_:)` and `Mesh.intersection(with:)` are documented as what
+  they are: Booleans on the sewn tessellated **surfaces**, not on volumes. `toShape()` gives a shell,
+  and `BOPAlgo_BOP` takes the dimension of its arguments, so the union keeps the interior walls
+  (2000 rather than 1500 for two overlapping 10-cubes), the subtraction removes no volume, and the
+  intersection usually returns an empty mesh rather than `nil`. Behaviour is unchanged. OCCT has no
+  mesh Boolean and never promotes a sewn shell to a solid, so the promotion stays the caller's, and
+  the doc comments and `docs/reference/Mesh.md` now give the route: `toShape()`, `Shape.solid(from:)`,
+  the `Shape` Boolean, then `mesh()` (#2301).
+- `OCCTBRepLibComputeNormals` is documented as the entry point for a shape triangulated by another
+  route, since `OCCTShapeCreateMesh` now computes normals itself and `ComputeNormals` is a no-op on a
+  triangulation that already carries them.
+
+### Fixed
+
+- **Three `ShapeCustom` conversions no longer kill the process on a face with no surface** (#2790).
+  `BRepTools_Modifier::FillNewSurfaceInfo` calls `NewSurface` on every face of a shape with no test of
+  anything, and three of the five `ShapeCustom` modification subclasses dereference the handle they
+  have just fetched: `ShapeCustom_SweptToElementary.cxx:59`,
+  `ShapeCustom_ConvertToRevolution.cxx:54` and `ShapeCustom_ConvertToBSpline.cxx:104`, three separate
+  lines, none of them #2777's. `Shape.sweptToElementary()`, `Shape.convertedToBSpline()`,
+  `Shape.withSurfacesAsBSpline(...)`, `Shape.withSurfacesAsRevolution()`,
+  `Shape.convertToBSplineAdvanced(_:...)` and `Shape.directModification()` now refuse such a shape
+  instead of faulting, answering the `nil` each already answered for a failure. The last two reach the
+  fault by driving `BRepTools_Modifier` themselves and so were absent from the issue's derived
+  population, and from #2777's. The predicate is the surface clause alone, measured per site: unlike
+  #2773's fault these do not care whether the face has edges, and unlike #2773 there is no signal
+  disposition under which the kernel survives. `Shape.scaledGeometry(factor:)`,
+  `Shape.trsfModificationScale(_:)` and both `bsplineRestriction` overloads are deliberately
+  unguarded, because their own subclasses hold the null test OCCT is missing in the other three, which
+  is also the shape the upstream fix should take. The face is not constructible through the Swift API
+  but a `.brep` file carries one exactly. Every measurement, including the negatives and the
+  six-row injection matrix, in `Scripts/repro/2790-shapecustom-surfaceless-face/`.
+
+### Fixed
+- `ShapeToolCompletionsTests`'s nine tests could pass having executed no expectation at all. Each
+  opened with a three-deep silent escape (`guard let doc ... else { return }`, `if let box`,
+  `if labelId >= 0`), so any regression in `Document.create`, `Shape.box` or `addShape` made all
+  nine green with nothing asserted, and `computeShapes` asserted nothing in any case. They now
+  `try #require` each setup step, prove the label holds the box through `findShape` before asserting
+  the six predicates whose `false`/`0` is also the bridge's answer for an unresolvable label, and
+  assert the state `ComputeShapes` leaves behind (#2794).
+
+### Added
+- `Scripts/repro/766-xcaf-shape-tool-completions/`, the ground-truth record of what
+  `XCAFDoc_ShapeTool`'s nine completion methods return for a box added with
+  `AddShape(shape, makeAssembly = true)`, salvaged from PR #2486 and re-measured against the pinned
+  `v4.0.0-kernel.2` asset (#2794).
+
+### Changed
+- Nine `GeomFill` tests in `Tests/OCCTSurfaceTests/` no longer pass on a nil fixture, a nil result or
+  any value at all. Each stops at a nil with `try #require` and pins the value
+  `Scripts/repro/766-geomfill-a/probe.mm` measures from the same OCCT calls: `GeomFill_AppSurf`'s
+  reported surface shape, `GeomFill_BoundWithSurf`'s point and normal, `GeomFill_CoonsAlgPatch`'s
+  grid, `GeomFill_Coons` and `GeomFill_Curved`'s pole grids, the `CorrectedFrenet`,
+  `DiscreteTrihedron` and `DraftTrihedron` trihedrons, and `GeomFill_EvolvedSection`'s section shape.
+  The four tests that measure a cylinder's first edge now assert that edge's identity first, so a
+  kernel that reorders the shape map fails on the edge rather than on the measurement (#766, lifted
+  from #2482).
+
+### Fixed
+
+- Four `BRep_Tool` wrappers crashed the process instead of refusing a null shape:
+  `Shape.evalAndUpdateTolerance(edge:face:)`, `Shape.curveOnSurface(edge:face:)`,
+  `Shape.isDegenerated(edge:)` and `Shape.rangeOnFace(edge:face:)` passed a shape from
+  `Shape.nullified` through `TopoDS::Edge`/`TopoDS::Face` into `BRep_Tool::Curve`,
+  `CurveOnSurface`, `Degenerated` and `Range`, each of which dereferences it and raises an OS
+  signal no `catch (...)` can absorb. All four now return the refusal they already gave a null
+  pointer. `check-null-handle-guards.py` reported the tree clean throughout: the walk that #1513
+  added for the split-statement `TopoDS::` cast matched only the value declaration
+  `TopoDS_Edge e = TopoDS::Edge(x->shape);` and not the reference form
+  `const TopoDS_Edge& e = ...`, which is 53 of the bridge's 162 such sites. The gate now accepts
+  both, with fixtures for each direction. `OCCTIntToolsEdgeEdge`, the unguarded function that led
+  to this, is measured to need no guard: `IntTools_EdgeEdge` tolerates a null `TopoDS_Edge` and
+  answers `IsDone() == false`, where `IntTools_EdgeFace` faults, so the asymmetry between the two
+  siblings is correct. (#2812)
+
+### Fixed
+- `Shape.shelled(thickness:)` now documents its real domain, a non-closed shell or a face, and the
+  routing question in [#2739](https://github.com/SecondMouseAU/OCCTSwift/issues/2739) is settled in
+  place: `MakeThickSolidBySimple` stays, because `MakeThickSolidByJoin` with an empty closing-face
+  list does not hollow a closed solid either (measured: it returns the plain offset solid, a 24-box
+  from a 20-box at `+2.0`, which `offset(by:)` already gives) and because `BRep_Tool::IsClosed`
+  cannot express the guard the alternative would need. Four new tests pin the refusal on a closed
+  box, cylinder and sphere at both signs, the acceptance of a single face, the reversed orientation a
+  positive thickness leaves behind, and the hollowing that `shelled(thickness:openFaces:)` does.
+- `Shape.coonsFilling` and `Shape.curvedFilling` now document the boundary arrangement
+  `GeomFill_Coons::Init` and `GeomFill_Curved::Init` require, including the corner-agreement rule
+  ([#2795](https://github.com/SecondMouseAU/OCCTSwift/issues/2795)). The two are **not** the same
+  arrangement: `GeomFill_Curved` places `boundary4` on the `U = first` edge and `boundary2` on the
+  `U = last` edge, the reverse of `GeomFill_Coons`, and its corners come from `boundary1`/`boundary3`
+  rather than being overwritten. Four new tests pin both arrangements and both corner rules.
+- `OBJDocumentIOTests.loadOBJSinglePrecision` now observes the parameter it names
+  ([#2802](https://github.com/SecondMouseAU/OCCTSwift/issues/2802)). The old fixture was a box, whose
+  coordinates are float-exact, so nothing in the test could tell `singlePrecision: true` from
+  `false`. It now loads a hand-written OBJ with coordinates no `float` can hold and asserts the two
+  loads differ on the stored triangulation nodes, and that a float-exact vertex does not.
+
+### Changed
+- The dead `TopTools_ListOfShape facesToRemove` local in `OCCTShapeShell`, and its comment claiming
+  that an empty list means "hollow shell", are gone: measured, an empty list means no hollowing at
+  all. The function now guards with `occtShapeIsPresent` rather than a bare pointer test.
+
+### Fixed
+
+- `BRepGraph.findNode(for:)` and `hasNode(for:)` now resolve the sub-shapes of a placed instance in
+  a compound or an imported assembly, which previously returned `nil` and `false`. The answer is the
+  definition node the instance instantiates, so the several occurrences of one part resolve to one
+  node, which is OCCT's own model; per-instance identity belongs to the occurrence path rather than
+  to the node, and `findNode(for:)`, `hasNode(for:)`, `docs/reference/BRepGraph.md` and the
+  BRep graph UID cookbook now say so. A placed shape the graph never ingested still does not resolve
+  (#2650).
+
+### Fixed
+
+- **`BRepCheck_Analyzer` no longer takes the process down on a face with no surface that carries a
+  wire** (#2789). The faulting line is `BRepCheck_Edge.cxx:463`, which dereferences the face surface
+  it fetched untested at `:336`, in the `!pcurvefound` branch that such a face always takes because a
+  null surface handle is handle-equal to no pcurve's. It is the same function as #2746's fault at a
+  different line with the opposite precondition, so `occtShapeHasPCurveOnlyEdge` did not cover it,
+  and the analyzer's own `geometryChecks` flag does not gate it. `occtShapeHasSurfacelessFace` now
+  runs ahead of all sixteen bridge sites that construct a `BRepCheck_Analyzer`, each answering what
+  it already answered for an analyzer-invalid shape, and the two that carry a status channel
+  answering `BRepCheck_NoSurface`, which is what `BRepCheck_Face::Minimum` reports for the same face
+  without faulting. Reachable from `Shape.loadBREP(from:)` alone, since a `.brep` file round-trips
+  the state.
+- **`Shape.isBooleanValid()` and `isBooleanValidWith(_:)` were unguarded against both analyzer
+  faults** (#2789). `BRepAlgoAPI_Check::Perform` constructs a `BRepCheck_Analyzer` for you at
+  `BRepAlgoAPI_Check.cxx:92`, so neither function contains the words a search for the class would
+  have found, and both exited 139 on #2746's fixture as well as #2789's. They now screen both
+  predicates and answer `false`, which is what they already answered for a shape that is not valid
+  for a boolean.
+
+### Changed
+
+- **`Shape.isSubShapeValid(type:at:)` returns `Bool?` instead of `Bool`** (#2755), **source-breaking**.
+  `BRepCheck_Analyzer::Perform()` walks the whole parent shape whichever sub-shape is asked after, so
+  a parent carrying either of the two shapes the analyzer cannot survive has to be refused before the
+  analyzer is built, and the old `false` was a claim about the named sub-shape that nothing had
+  measured. `nil` is that case and only that case: it is the "could not determine" channel
+  `isInside(_:)` and `checkFaceStatus(face:)` already use, over the same bridge tri-state, rather
+  than a new idiom. An index that names no sub-shape of that type still answers `false`, which is a
+  statement about the index and the contract `checkEdge(at:)` shares (#613, #844). A caller that only
+  wanted a verdict migrates with `== true`. The bridge function
+  `OCCTBRepCheckSubShapeValid` returns the new `OCCTSubShapeValidity` enum instead of `bool`.
+
+### Fixed
+
+- `Surface.bsplineFill(curves:style:)` and `Surface.bezierFill(_:_:_:_:style:)` return `nil` for four
+  boundary curves that do not close a loop, instead of crashing the process. OCCT's own
+  `GeomFill_BSplineCurves`/`GeomFill_BezierCurves` refuse such a set with
+  `Standard_ConstructionError`, but the refusal is a `Standard_ConstructionError_Raise_if` and our
+  Release kernel is built with `-DNo_Exception`, which compiles it out and leaves `Init` to
+  dereference a null handle. The bridge now applies OCCT's own `Arrange` predicate, at
+  `Precision::Confusion()`, ahead of the call. Measured on the pinned kernel for both classes and on
+  a periodic support (#2829).
+
+### Changed
+
+- `Surface.bsplineFill(curves:style:)` no longer documents an argument order it never required.
+  `GeomFill_BSplineCurves` reorders and reverses the four boundaries itself, so any order and any
+  individual direction gives the same surface, except that the first curve's direction becomes U. The
+  `.coons` minimum of 4 poles per direction, the two-curve `.curved` requirement that the pair share
+  an endpoint, and the corrected note on `Shape.coonsFilling` are documented with it (#2829).
 
 ### `Exporter.writeDXF` and `Exporter.writeSVG` work on WebAssembly, and 5,501 tests now run there (#2793)
 

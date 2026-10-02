@@ -30,9 +30,11 @@ PR and strict; this one is per path and over a whole branch.
 sides, every `@Test` is tiered on each side with `census-766-weak-assertions.py`'s own detector
 (SEVERE, nothing pins a value; ESCAPABLE, a value is pinned behind a nil-skip; clean). A test is
 a **gain** when the head's tier is better than `main`'s, or when the head has a clean test
-`main` has not at all. That is exactly the quantity the programme exists to move: `main`'s 1,579
-SEVERE tests are what "`main`'s tests cannot fail" means, and a lift is worth its cost in
-proportion to how many of them it retires.
+`main` has not at all. That is exactly the quantity the programme exists to move: `main`'s SEVERE
+tests, 1,492 of 6,663 when `python3 Scripts/census-766-weak-assertions.py --summary` was last run
+on 2026-10-02, are what "`main`'s tests cannot fail" means, and a lift is worth its cost in
+proportion to how many of them it retires. Re-run that command rather than quoting this line: it
+said 1,579 for as long as it took the tree to move under it.
 
 Paths are ranked by gain count, so the top of the list is where the next batch should go.
 
@@ -67,8 +69,10 @@ WHAT IT CANNOT ANSWER
   both clean can still differ, and the head's can be far stronger: #2937's own `islandsCutHoles`
   pins two exact half-spans the `main` copy does not, and both sides tier clean, so this script
   scores that file at one gain and not two. Every count here is a **lower** bound on the work.
-* **It compares by test-function name.** A lift that renamed the function while keeping the
-  assertions reads as a gain plus an unmatched test, wrongly. Read the file.
+* **It compares by the enclosing suite and the function name.** A lift that renamed either, while
+  keeping the assertions, reads as a gain plus an unmatched test, wrongly. Read the file. The key
+  was the bare function name until #2949, which collapsed nine names repeated across the fifteen
+  suites of `StressExhaustiveAPITests.swift` and reported that file at 100 tests of its 112.
 * **`main` is sometimes the correct side.** Batch 6 met a `HatchTests.swift` where `main` was
   weaker than the v5 base by 25 lines belonging to a third PR, and also an `#2918` case where
   `main`'s own work was stronger than the hunk. A path differing is not a path worth taking.
@@ -160,20 +164,105 @@ def in_scope(path):
     return any(path.startswith(pre) for pre in SCOPE)
 
 
+# ------------------------------------------------------------------ test identity
+
+DECL = re.compile(r"\b(?:struct|class|enum|actor|extension)\s+([A-Za-z_][A-Za-z0-9_]*)")
+
+
+def type_spans(wa, text):
+    """[(body start, body end, type name)] for every type declaration in `text`.
+
+    Walked a character at a time rather than regexed over the whole blob, so that a `struct`
+    written in a comment or inside a string literal is not taken for a declaration. The body's
+    extent is `census-766-weak-assertions.py`'s own `balanced_body`, imported and not restated,
+    so the two cannot disagree about where a brace closes.
+
+    A Swift triple-quoted multi-line literal is read as an empty string followed by an ordinary
+    one, which is `balanced_body`'s own reading of it; a type declared inside one would be
+    reported. No test file holds that shape and none should."""
+    spans = []
+    i, n = 0, len(text)
+    while i < n:
+        c = text[i]
+        if c == '"':
+            i += 1
+            while i < n and text[i] != '"':
+                i += 2 if text[i] == "\\" else 1
+            i += 1
+        elif c == "/" and i + 1 < n and text[i + 1] == "/":
+            j = text.find("\n", i)
+            i = n if j < 0 else j + 1
+        elif c == "/" and i + 1 < n and text[i + 1] == "*":
+            j = text.find("*/", i + 2)
+            i = n if j < 0 else j + 2
+        elif c in "scea":
+            m = DECL.match(text, i)
+            if not m:
+                i += 1
+                continue
+            s, e = wa.balanced_body(text, m.end())
+            if s >= 0 and e > 0:
+                spans.append((s, e, m.group(1)))
+            i = m.end()
+        else:
+            i += 1
+    return sorted(spans)
+
+
+def test_labels(wa, path, text):
+    """[(line_no, label)] for every `@Test` in the blob, each label unique within the file.
+
+    The label is the enclosing type path and the function name, `StressShapeQueryTests.cylinder`,
+    because the function name alone does not identify a test. Twenty-one of the 112 `@Test`
+    functions in `StressExhaustiveAPITests.swift` share nine names across its fifteen suites, so
+    keying the tier map on the name collapsed them and reported that file at 100 tests, with
+    fewer weak tests and fewer gains to match, and a gain attributable to whichever duplicate the
+    detector reached last (#2949).
+
+    What it cannot resolve: two `@Test` functions of the same name in the **same** type, which
+    Swift allows as overloads. Those are suffixed `#2`, `#3` in source order, so the pairing
+    between the two sides survives an edit to either but not a reorder of the pair. A suite
+    renamed between the two sides reads as unmatched tests, exactly as a renamed function already
+    did, and the docstring says so."""
+    spans = type_spans(wa, text)
+    offsets, pos = [], 0
+    for line in text.split("\n"):
+        offsets.append(pos)
+        pos += len(line) + 1
+    out, seen = [], {}
+    for line_no, name, _body in wa.tests_in(path):
+        off = offsets[line_no - 1] if 0 < line_no <= len(offsets) else 0
+        prefix = ".".join(nm for s, e, nm in spans if s <= off < e)
+        label = "%s.%s" % (prefix, name) if prefix else name
+        seen[label] = seen.get(label, 0) + 1
+        if seen[label] > 1:
+            label = "%s#%d" % (label, seen[label])
+        out.append((line_no, label))
+    return out
+
+
 # ------------------------------------------------------------------ tiering and gains
 
 
 def tier_map(wa, text, scratch, tag):
-    """{test function name: 2 SEVERE / 1 ESCAPABLE / 0 clean} for one Swift blob's text.
+    """{test label: 2 SEVERE / 1 ESCAPABLE / 0 clean} for one Swift blob's text.
 
     The detector reads a file, so the blob is written to the scratch directory first. Giving it
-    the real extension matters: `tests_in` does not care, but a future caller that globs would."""
+    the real extension matters: `tests_in` does not care, but a future caller that globs would.
+
+    The key is `test_labels`' suite-qualified label and not the bare function name (#2949). The
+    line number is the join between the two parses: `inspect` iterates `tests_in`, so a finding's
+    line is one `tests_in` yielded, and `TEST_ATTR` anchors at the start of a line, so no two
+    `@Test`s can share one."""
     f = os.path.join(scratch, tag + ".swift")
     with open(f, "w", encoding="utf-8") as fh:
         fh.write(text)
-    out = {name: 0 for _line, name, _body in wa.tests_in(f)}
+    by_line = dict(test_labels(wa, f, text))
+    out = {label: 0 for label in by_line.values()}
     for finding in wa.inspect(f):
-        out[finding["test"]] = TIER_RANK[finding["tier"]]
+        label = by_line.get(finding["line"])
+        if label is not None:
+            out[label] = TIER_RANK[finding["tier"]]
     return out
 
 
@@ -432,6 +521,9 @@ def _write(cwd, path, text):
         fh.write(text)
 
 
+# `dup` is #2949's shape: one name in two suites of one file, tiered the opposite way round on
+# the two sides. Keyed on the bare function name the two collapse, both sides read SEVERE, and
+# the census reports no gain at all for a file that has one.
 WEAK_TEST = """import Testing
 
 @Suite("F") struct FTests {
@@ -445,6 +537,15 @@ WEAK_TEST = """import Testing
     }
     @Test func alreadyStrong() {
         #expect(abs(Shape.box()!.volume - 8.0) < 1e-9)
+    }
+    @Test func dup() {
+        #expect(abs(Shape.box()!.volume - 8.0) < 1e-9)
+    }
+}
+
+@Suite("G") struct GTests {
+    @Test func dup() {
+        #expect(Shape.box() != nil)
     }
 }
 """
@@ -462,8 +563,17 @@ STRONG_TEST = """import Testing
     @Test func alreadyStrong() {
         #expect(abs(Shape.box()!.volume - 8.0) < 1e-9)
     }
+    @Test func dup() {
+        #expect(Shape.box() != nil)
+    }
     @Test func onlyOnHead() {
         #expect(abs(Shape.box()!.area - 24.0) < 1e-9)
+    }
+}
+
+@Suite("G") struct GTests {
+    @Test func dup() {
+        #expect(abs(Shape.box()!.volume - 8.0) < 1e-9)
     }
 }
 """
@@ -518,20 +628,64 @@ def self_test():
         cases.append(("the blob verdict is the imported one, and reads DIFFERENT here",
                       f is not None and f["verdict"] == al.DIFFERENT))
         cases.append(("a test main has weak and the head has clean is a gain",
-                      f is not None and f["strengthened"] == ["pinned"]))
+                      f is not None and "FTests.pinned" in f["strengthened"]))
         cases.append(("a test weak on both sides is not a gain",
-                      f is not None and "alsoWeak" not in f["strengthened"]))
+                      f is not None and "FTests.alsoWeak" not in f["strengthened"]))
         cases.append(("a test already strong on main is not a gain",
-                      f is not None and "alreadyStrong" not in f["strengthened"]))
+                      f is not None and "FTests.alreadyStrong" not in f["strengthened"]))
         cases.append(("a clean test only the head has counts as a new_strong gain",
-                      f is not None and f["new_strong"] == ["onlyOnHead"]))
+                      f is not None and f["new_strong"] == ["FTests.onlyOnHead"]))
         cases.append(("the gain is the two kinds summed",
-                      f is not None and f["gain"] == 2))
+                      f is not None and f["gain"] == 3))
         cases.append(("the transition is named, so a gain can be read without the file",
-                      f is not None and f["transitions"] == {"SEVERE -> ESCAPABLE": 1}))
+                      f is not None and f["transitions"] == {"SEVERE -> ESCAPABLE": 1,
+                                                             "SEVERE -> clean": 1}))
         cases.append(("main's own weak tally is reported beside the gain",
-                      f is not None and f["onto_tests"] == 3
-                      and f["onto_severe"] + f["onto_escapable"] == 2))
+                      f is not None and f["onto_tests"] == 5
+                      and f["onto_severe"] + f["onto_escapable"] == 3))
+
+        # #2949: the key must identify a test, and the function name alone does not.
+        cases.append(("a name repeated across two suites of one file is two tests, not one",
+                      f is not None and f["onto_tests"] == 5 and f["head_tests"] == 6))
+        cases.append(("the gain the name collapse hid is counted, in the suite that has it",
+                      f is not None and "GTests.dup" in f["strengthened"]
+                      and "FTests.dup" not in f["strengthened"]))
+        cases.append(("a test the head made weaker is not a gain even under a shared name",
+                      f is not None and sorted(f["strengthened"])
+                      == ["FTests.pinned", "GTests.dup"]))
+
+        def labels(src):
+            p = os.path.join(scratch, "labels.swift")
+            with open(p, "w", encoding="utf-8") as fh:
+                fh.write(src)
+            return [lab for _ln, lab in test_labels(wa, p, src)]
+
+        cases.append(("the key is the enclosing suite and the function, not the name alone",
+                      labels(WEAK_TEST) == ["FTests.pinned", "FTests.alsoWeak",
+                                            "FTests.alreadyStrong", "FTests.dup", "GTests.dup"]))
+        cases.append(("a @Test outside any type keeps its bare name as its key",
+                      labels("@Test func loose() { #expect(1 == 1) }\n") == ["loose"]))
+        cases.append(("a nested suite's key carries the whole type path",
+                      labels("struct Outer {\n  struct Inner {\n"
+                             "    @Test func t() { #expect(1 == 1) }\n  }\n}\n")
+                      == ["Outer.Inner.t"]))
+        cases.append(("an overload of one name in one suite is numbered in source order",
+                      labels("struct S {\n  @Test func t() { #expect(1 == 1) }\n"
+                             "  @Test func t(x: Int) { #expect(x == 1) }\n}\n")
+                      == ["S.t", "S.t#2"]))
+        # Both ghosts are placed so that the span they would open swallows the test: the
+        # comment's brace closes on the suite's, and the string's declaration adopts the
+        # suite's own brace. A ghost that opens a span the test is outside of proves nothing,
+        # which is what the first draft of these two cases did.
+        cases.append(("a `struct` named in a comment is not taken for a suite",
+                      labels("struct S {\n  // struct Ghost {\n"
+                             "  @Test func t() { #expect(1 == 1) }\n}\n") == ["S.t"]))
+        cases.append(("a `struct` named in a string literal is not taken for a suite",
+                      labels("let a = \"struct Ghost\"\nstruct S {\n"
+                             "  @Test func t() { #expect(1 == 1) }\n}\n") == ["S.t"]))
+        cases.append(("a type the test is not inside does not reach its key",
+                      labels("struct Before {\n  func helper() {}\n}\nstruct S {\n"
+                             "  @Test func t() { #expect(1 == 1) }\n}\n") == ["S.t"]))
 
         p = by_path.get("Scripts/repro/766-foo/probe.mm")
         cases.append(("a probe main lacks is ABSENT and is never tiered",

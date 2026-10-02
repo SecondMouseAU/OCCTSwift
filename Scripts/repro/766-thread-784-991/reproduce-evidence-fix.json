@@ -1,0 +1,20 @@
+{
+  "argv": {
+    "value": [
+      "."
+    ],
+    "reason": "the probe requires a BREP directory as argv[1] and exits 2 with `usage: probe <brep-dir>` without one, so a run with no arguments measures nothing at all. This is the same `argv` its sibling probe.mm declares, for the same capture: the directory held the 990_*_shank.brep / 990_*_threaded.brep files that a temporary, since-reverted instrumentation of Issue990ThreadAxisBasisTests wrote, which were never committed, so any directory gives the same result here and \".\" is the one that exists. Part 1, the six gp_Ax2 YDirection lines, needs no input and reproduces byte for byte against the pinned asset."
+  },
+  "rerun_drop": [
+    {
+      "pattern": "BREP read failed$",
+      "reason": "with no committed BREP inputs each load fails and the probe prints `<axis>: BREP read failed` in place of the measurement. This is the documented rerun_drop case: a line the rerun prints that the capture's inputs made impossible."
+    }
+  ],
+  "transcript_only": [
+    {
+      "pattern": "^[+-][XYZ]: degrees=",
+      "reason": "the six Issue990 groove measurements are of the solids the reverted Swift instrumentation wrote to BREP and nobody committed. They cannot be re-derived from this repository, so they are a record of that run rather than something this probe reproduces. The sibling probe.mm declares the same six lines; this probe is that one with Part 2b dropped and Part 2a printed at %.17g, and Part 1's six YDirection lines, which are the part the Swift thread datum is checked against, do reproduce. This pair was reached by this script only from #2934; same class as #2824."
+    }
+  ]
+}
