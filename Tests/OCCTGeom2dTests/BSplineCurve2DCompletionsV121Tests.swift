@@ -11,7 +11,10 @@ import simd
 @Suite("BSplineCurve 2D Completions v121")
 struct BSplineCurve2DCompletionsV121Tests {
 
-    /// Helper: create a simple 2D BSpline curve
+    /// A cubic BSpline over one span, which is the Bezier with these four poles.
+    ///
+    /// Knots [0, 1] with multiplicities [4, 4] and degree 3 leave four poles, so the Bernstein
+    /// basis gives its values directly: (2.40625, 2.8125) at 0.25 and (5, 3.75) at 0.5.
     private func makeBSplineCurve2D() throws -> Curve2D {
         let poles: [SIMD2<Double>] = [
             SIMD2(0, 0), SIMD2(3, 5), SIMD2(7, 5), SIMD2(10, 0),

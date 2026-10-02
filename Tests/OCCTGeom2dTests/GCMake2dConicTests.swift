@@ -11,7 +11,9 @@ import simd
 @Suite("GC_Make*2d Conic Tests")
 struct GCMake2dConicTests {
 
-    private func expectCircle(_ c: Curve2D, radius: Double, _ loc: SourceLocation = #_sourceLocation) {
+    private func expectCircle(
+        _ c: Curve2D, radius: Double, _ loc: SourceLocation = #_sourceLocation
+    ) {
         #expect(c.isClosed, sourceLocation: loc)
         #expect(abs(c.circleProperties.radius - radius) < 1e-9, sourceLocation: loc)
         #expect(simd_length(c.circleProperties.center) < 1e-9, sourceLocation: loc)
@@ -33,7 +35,8 @@ struct GCMake2dConicTests {
     }
 
     @Test func circle2dAxis() throws {
-        let c = try #require(Curve2D.gceCircle(axisCenter: SIMD2(0, 0), axisDirection: SIMD2(1, 0), radius: 5))
+        let c = try #require(
+            Curve2D.gceCircle(axisCenter: SIMD2(0, 0), axisDirection: SIMD2(1, 0), radius: 5))
         expectCircle(c, radius: 5)
     }
 
@@ -71,7 +74,8 @@ struct GCMake2dConicTests {
     /// `GC_MakeEllipse2d(S1, S2, Center)`: S1 is the apex on the major axis, so the
     /// major radius is |S1 - Center|; S2 fixes the minor radius off that axis.
     @Test func ellipse2dFrom3Points() throws {
-        let e = try #require(Curve2D.gceEllipse(s1: SIMD2(10, 0), s2: SIMD2(0, 5), center: SIMD2(0, 0)))
+        let e = try #require(
+            Curve2D.gceEllipse(s1: SIMD2(10, 0), s2: SIMD2(0, 5), center: SIMD2(0, 0)))
         #expect(e.isClosed)
         #expect(abs(e.ellipseProperties.majorRadius - 10) < 1e-9)
         #expect(abs(e.ellipseProperties.minorRadius - 5) < 1e-9)
@@ -100,13 +104,15 @@ struct GCMake2dConicTests {
     /// `GC_MakeHyperbola2d(S1, S2, Center)`: S1 is the main-branch vertex on the
     /// major axis; S2 is the conjugate-branch vertex giving the minor radius.
     @Test func hyperbola2dFrom3Points() throws {
-        let h = try #require(Curve2D.gceHyperbola(s1: SIMD2(10, 0), s2: SIMD2(0, 5), center: SIMD2(0, 0)))
+        let h = try #require(
+            Curve2D.gceHyperbola(s1: SIMD2(10, 0), s2: SIMD2(0, 5), center: SIMD2(0, 0)))
         #expect(abs(h.hyperbolaProperties.majorRadius - 10) < 1e-9)
         #expect(abs(h.hyperbolaProperties.minorRadius - 5) < 1e-9)
     }
 
     @Test func parabola2dFromAxis() throws {
-        let p = try #require(Curve2D.gceParabola(center: SIMD2(0, 0), direction: SIMD2(1, 0), focalDistance: 5))
+        let p = try #require(
+            Curve2D.gceParabola(center: SIMD2(0, 0), direction: SIMD2(1, 0), focalDistance: 5))
         // Vertex at the origin, focus (5, 0): (u^2 / 20, u).
         #expect(abs(p.parabolaProperties.focal - 5) < 1e-9)
         #expect(simd_distance(p.parabolaProperties.focus, SIMD2(5, 0)) < 1e-9)

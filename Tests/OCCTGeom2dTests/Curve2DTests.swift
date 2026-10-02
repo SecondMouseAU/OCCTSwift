@@ -68,7 +68,10 @@ struct Curve2DTests {
         #expect(abs(start.y - 0) < 1e-6)
         // The half circle through the three points: ends at (10, 0), passes (5, 5) at mid-domain.
         #expect(simd_distance(arc.endPoint, SIMD2(10, 0)) < 1e-9)
-        #expect(simd_distance(arc.point(at: (arc.domain.lowerBound + arc.domain.upperBound) / 2), SIMD2(5, 5)) < 1e-9)
+        #expect(
+            simd_distance(
+                arc.point(at: (arc.domain.lowerBound + arc.domain.upperBound) / 2), SIMD2(5, 5))
+                < 1e-9)
     }
 
     @Test("Create ellipse and verify closed")
@@ -95,7 +98,8 @@ struct Curve2DTests {
 
     @Test("Parabola creation")
     func createParabola() throws {
-        let p = try #require(Curve2D.parabola(focus: SIMD2(1, 0), direction: SIMD2(1, 0), focalLength: 1))
+        let p = try #require(
+            Curve2D.parabola(focus: SIMD2(1, 0), direction: SIMD2(1, 0), focalLength: 1))
         #expect(abs(p.parabolaProperties.focal - 1) < 1e-12)
         #expect(simd_distance(p.parabolaProperties.focus, SIMD2(1, 0)) < 1e-12)
     }
