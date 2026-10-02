@@ -715,7 +715,8 @@ struct PolygonOnTriangulationTests {
     func createWithParams() throws {
         let indices: [Int32] = [1, 2, 3]
         let params: [Double] = [0.0, 1.0, 2.0]
-        let poly = try #require(PolygonOnTriangulation.create(nodeIndices: indices, parameters: params))
+        let poly = try #require(
+            PolygonOnTriangulation.create(nodeIndices: indices, parameters: params))
         #expect(poly.nodeCount == 3)
         #expect(poly.hasParameters)
         #expect(abs(poly.parameter(at: 1) - 1.0) < 1e-10)
@@ -1079,7 +1080,8 @@ struct PolyCopyMutatorTests {
     func polygonOnTriSetParameters() throws {
         let indices: [Int32] = [1, 2, 3]
         let params: [Double] = [0.0, 1.0, 2.0]
-        let poly = try #require(PolygonOnTriangulation.create(nodeIndices: indices, parameters: params))
+        let poly = try #require(
+            PolygonOnTriangulation.create(nodeIndices: indices, parameters: params))
         #expect(poly.hasParameters)
         #expect(poly.setParameters([10.0, 20.0, 30.0]))
         #expect(abs(poly.parameter(at: 1) - 20.0) < 1e-12)

@@ -470,11 +470,13 @@ struct ConstructionContextConcurrencyTests {
     // routing through `ConstructionContext.allEntitiesSnapshot`, the same atomic-under-
     // `crossStoreLock` read `count`/`removeAll` already use.
 
+    /// Returns every torn per-kind broken-count observation seen while `removeAll()` races
+    /// `allBroken(in:)`.
+    ///
     /// Populates `entitiesPerKind` per kind with entities that always fail resolution (broken
-    /// `TopologyRef` references), races `removeAll()` against `readerCount` tasks hammering
-    /// `allBroken(in:)`, and returns every torn per-kind broken-count observation, same
-    /// all-or-nothing bucketing as `tornCountObservations`, applied to `allBroken`'s result
-    /// instead of `count`.
+    /// `TopologyRef` references), then races `removeAll()` against `readerCount` tasks hammering
+    /// `allBroken(in:)`. Same all-or-nothing bucketing as `tornCountObservations`, applied to
+    /// `allBroken`'s result instead of `count`.
     private func tornAllBrokenObservations(
         entitiesPerKind: Int,
         readerCount: Int,
@@ -536,10 +538,12 @@ struct ConstructionContextConcurrencyTests {
     }
 
     /// Races `removeAll()` against `readerCount` tasks, each calling `materialize(in:graph:)`
-    /// once per `iterations` pass on its own private `Document`/`BRepGraph`, independent per
-    /// task, since concurrent mutation of *one* shared `Document` from multiple threads isn't a
-    /// documented-safe pattern here (see docs/thread-safety.md); every task here does get its own
-    /// private `Document`, matching the pattern #371 validated. Real OCCT geometry work per entity
+    /// once per `iterations` pass on its own private `Document`/`BRepGraph`.
+    ///
+    /// Independent per task, since concurrent mutation of *one* shared `Document` from multiple
+    /// threads isn't a documented-safe pattern here (see docs/thread-safety.md); every task here
+    /// does get its own private `Document`, matching the pattern #371 validated. Real OCCT
+    /// geometry work per entity
     /// makes a single, large `readsPerReader`-style loop (as `count`/`allBroken` above use)
     /// impractically slow, so this instead repeats the whole population/race/clear cycle
     /// `iterations` times, giving many independent chances to land in the (very narrow, since
@@ -1427,7 +1431,7 @@ struct PaperSizeTests {
 struct SheetRenderingTests {
     enum WriterKind: CaseIterable, Sendable {
         case dxf, pdf, svg
-        
+
         func makeWriter() -> DrawingWriter {
             switch self {
             case .dxf: return DXFWriter()
@@ -1479,7 +1483,9 @@ struct SheetRenderingTests {
         #expect(frame.max.y == 210 - 7)  // 7 mm top
     }
 
-    @Test("Projection symbol renders two circles for both conventions", arguments: WriterKind.allCases)
+    @Test(
+        "Projection symbol renders two circles for both conventions",
+        arguments: WriterKind.allCases)
     func projectionSymbolCircles(kind: WriterKind) {
         let writer = kind.makeWriter()
         ProjectionSymbol.render(.first, at: SIMD2(0, 0), into: writer)
@@ -1855,10 +1861,10 @@ struct SheetMetalTests {
         }
     }
 
-    /// Stepped seam (v0.151: throws filletFailed; v0.153: succeeds via
-    /// flange splitting). #86. The builder splits the wider base at the
-    /// upright's seam-extent endpoints; the matched-extent middle piece
-    /// carries the bend, and the outer pieces stay flat.
+    /// Stepped seam (v0.151: throws filletFailed; v0.153: succeeds via flange splitting).
+    ///
+    /// #86. The builder splits the wider base at the upright's seam-extent endpoints; the
+    /// matched-extent middle piece carries the bend, and the outer pieces stay flat.
     @Test("Stepped seam (narrow upright over wider base) succeeds in v0.153")
     func narrowUprightStepSucceeds() throws {
         let base = SheetMetal.Flange(
@@ -1919,8 +1925,9 @@ struct SheetMetalTests {
         #expect(abs(v - 7580.685854250031) < 1e-6 * 7580.685854250031, "volume \(v)")
     }
 
-    /// Z-bracket from issue #86: 50×30 base, 50×30 mid (full seam),
-    /// 20×30 top tab (stepped seam). Two bends.
+    /// Z-bracket from issue #86: 50×30 base, 50×30 mid (full seam), 20×30 top tab.
+    ///
+    /// The top tab's seam is stepped. Two bends.
     @Test("Z-bracket: full + stepped seams")
     func zBracket() throws {
         let base = SheetMetal.Flange(
@@ -2110,8 +2117,9 @@ struct ConvexBendIssue89 {
         #expect(s.subShapes(ofType: .solid).count == 1)
     }
 
-    /// Offset L with a very short web (5mm). Stresses the radius-vs-web-
-    /// length corner case for convex bends.
+    /// Offset L with a very short web (5mm).
+    ///
+    /// Stresses the radius-vs-web-length corner case for convex bends.
     @Test("Offset L with very short web (5mm) and 90° opposite bends")
     func offsetLShortWeb() throws {
         let top = SheetMetal.Flange(
@@ -2143,8 +2151,10 @@ struct ConvexBendIssue89 {
         #expect(abs(volume - pinned) < 1e-6 * pinned, "volume \(volume)")
     }
 
-    /// Mixed concave + convex chain. Spine 100×40, two walls 30×40 fold up
-    /// (concave from spine), tab 20×40 folds back convex from one wall.
+    /// Mixed concave + convex chain.
+    ///
+    /// Spine 100×40, two walls 30×40 fold up (concave from spine), tab 20×40 folds back convex
+    /// from one wall.
     @Test("Channel with flange, mixed concave + convex bends")
     func channelWithFlange() throws {
         let spine = SheetMetal.Flange(
@@ -2183,10 +2193,10 @@ struct ConvexBendIssue89 {
         #expect(s.subShapes(ofType: .solid).count == 1)
     }
 
-    /// Auto-detection sanity: the same Z built with `direction: .auto`
-    /// (default) and with explicit `direction: .convex` for the second
-    /// bend should produce identical-volume solids. If auto-detection
-    /// were broken, the explicit override would change behaviour.
+    /// Auto-detection sanity: the same Z built with `direction: .auto` (default) and with an
+    /// explicit `direction: .convex` for the second bend should produce identical-volume solids.
+    ///
+    /// If auto-detection were broken, the explicit override would change behaviour.
     @Test("Explicit `.convex` matches auto-detected convex behaviour")
     func explicitDirectionMatchesAuto() throws {
         let make = { (direction: SheetMetal.BendDirection) throws -> Shape in
