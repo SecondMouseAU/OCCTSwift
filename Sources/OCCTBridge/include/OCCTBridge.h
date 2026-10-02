@@ -961,6 +961,26 @@ extern "C"
   /// The stack-trace depth in force, `Standard_Failure::DefaultStackTraceLength()`.
   int32_t OCCTDiagnosticsStackTraceDepth(void);
 
+  // MARK: - Release Refusals (Issue #2952)
+
+  /// How many release calls this bridge has refused since the process started.
+  ///
+  /// A bridge release that hands back a reference the bridge took (`OCCTMessengerRelease`,
+  /// `OCCTReportRelease`) acts on the object only for a pointer the matching create handed out
+  /// and that has not already been given back. Everything else is refused and counted here: a
+  /// null, a second release of the same pointer, or a pointer this bridge never produced. The
+  /// refusal is silent by design, because the alternative is a use-after-free and a double free
+  /// in the same call, and because a caller that over-releases has nothing useful to do with a
+  /// return value it is already not reading.
+  ///
+  /// Independent of the diagnostics ring above: `OCCTDiagnosticsClear` does not reset it and
+  /// nothing else does, so read it before and after the operation under test rather than
+  /// treating its absolute value as meaningful. It is the only observable this invariant has,
+  /// since a correctly released object is gone and its reference count cannot be read; the
+  /// sibling fix for the `TObj_Application` singleton (#2897) could use
+  /// `OCCTTObjApplicationRefCount` precisely because that object survives.
+  int32_t OCCTBridgeRefusedReleaseCount(void);
+
   // MARK: - Opaque Handle Types
 
   typedef struct OCCTShape* OCCTShapeRef;
