@@ -33,7 +33,10 @@ import OCCTPlatform
 ///   upright on a wider base) now build cleanly. The builder splits the
 ///   wider flange at the seam-intersection endpoints before extruding;
 ///   the matched-extent middle piece carries the bend, and the outer
-///   pieces stay flat. Issue #86.
+///   pieces stay flat. Issue #86. The outer pieces did *not* stay flat
+///   until #2972: the fillet was rolled along the whole seam line, which
+///   rounds away a free edge rather than adding bend material, and took
+///   all four stepped fixtures below their flange volumes.
 public enum SheetMetal {
 
     /// A single sheet-metal flange: a closed 2D profile positioned in world

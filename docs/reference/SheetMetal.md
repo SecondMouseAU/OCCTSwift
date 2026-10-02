@@ -363,8 +363,12 @@ public func build(flanges: [Flange], bends: [Bend] = []) throws -> Shape
 2. For each bend, compute the seam direction (`cross(a.normal, b.normal)`) and the overlap range along the seam. If a flange extends past the intersection (a *stepped* seam), split that flange's profile at the intersection endpoints, the matched-extent middle piece carries the bend; outer pieces remain flat.
 3. Extrude every piece via `Wire.polygon3D` + `Shape.extrude(profile:direction:length:)`.
 4. Fuse all pieces with sequential `Shape.union`.
-5. For each **concave** bend: locate seam edges between the matched-extent pieces and call `Shape.filleted(edges:radius:)`.
+5. For each **concave** bend: locate seam edges between the matched-extent pieces, **restricted to the run of the seam line the bend itself occupies**, and call `Shape.filleted(edges:radius:)`.
    For each **convex** bend: build a curved-triangle prism of bend material (three-point arc cross-section extruded along the seam) and fuse it in.
+
+**On a stepped seam, the outer pieces keep their sharp edges.** The two plane tests that find the seam edge hold along the whole seam *line*, not just along the bend, so until #2972 the outer piece's free edge was filleted too. That edge is convex, so the fillet removed material there: all four stepped fixtures in the suite came out below their flange volumes, by exactly `r^2 (1 - pi/4)` times the surplus length. The selection is now bounded by the bend's own intersection range. Measurement and derivations: [`Scripts/repro/2972-sheetmetal-volumes/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/2972-sheetmetal-volumes).
+
+**A bend's volume is predictable, to about 3e-5.** Flange body volumes, less any volume where two bodies interpenetrate, plus `r^2 (1 - pi/4) * L` for each concave bend over its matched seam length and `(pi/4) * t^2 * L` for each convex one. A seam that runs on into a flat neighbour costs a little more: the fillet closes off over about 0.1 past the step, which is the only reason the stepped fixtures are not exact.
 
 - **Parameters:**
   - `flanges`: ordered list of flanges; IDs must be unique; each profile needs ≥ 3 points.
