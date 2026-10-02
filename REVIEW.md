@@ -171,7 +171,14 @@ issue closes.
 
 - **Never force unwrap inside `#expect`.** Swift Testing does not short circuit, so
   `#expect(r != nil)` followed by `#expect(r!.isValid)` crashes the run instead of failing the test.
-  The `if let r = result { ... }` form is the one to use.
+  `let r = try #require(result)` is the form to use.
+- **Reject a setup step the test escapes rather than requires.** `guard let x = ... else { return }`
+  and a bare `if let x = x { ... }` around the body mean a nil skips every assertion and the test
+  still passes, so the test is unfalsifiable against any regression upstream of its subject. Nine
+  tests in one suite shipped behind a three-deep chain of them (#2794). A test whose only failure
+  mode is a crash is the same finding: a `void` subject is asserted on the state afterwards.
+  [`okf/policies/prove-the-test-fails.md`](okf/policies/prove-the-test-fails.md) → "A setup step is
+  required, not escaped". WARNING.
 - **`@Suite` struct names are unique within a target**, and `swift test --filter` matches the struct
   name rather than the `@Suite` display string.
 - **A new suite belongs in the domain target that matches it** (`Tests/OCCT<Domain>Tests/`), falling

@@ -218,6 +218,18 @@ where V.Scalar: BinaryFloatingPoint {
     simd_length(a - b)
 }
 
+/// Squared distance between two points.
+///
+/// Apple's `simd` defines this as the squared length of the difference, and so does this, by
+/// calling the two functions above rather than restating either. It is here because two
+/// `OCCTAnalysisTests` suites compare a bridge-reported square distance against the one they can
+/// compute from the two witness points, and taking a square root to compare squares would add an
+/// error the comparison exists to measure (#3007).
+public func simd_distance_squared<V: SIMD>(_ a: V, _ b: V) -> V.Scalar
+where V.Scalar: FloatingPoint {
+    simd_length_squared(a - b)
+}
+
 /// The unit vector in the same direction.
 ///
 /// A zero vector normalises to a vector of NaNs, which is what Apple's `simd_normalize` does, and
