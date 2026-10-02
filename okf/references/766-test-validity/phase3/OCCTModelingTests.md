@@ -279,3 +279,11 @@ Probe: `Scripts/repro/766-modeling-multi-offset-wire/`.
 | multipleInwardOffsets | `OCCTWireMultiOffset` returns 0 wires | `:15 Expectation failed: wires.count >= 3` | pass | `OCCTWireMultiOffset` | PASS |
 | outwardOffset | `OCCTWireMultiOffset` returns 0 wires | `:32 Expectation failed: wires.count >= 2` | pass | `OCCTWireMultiOffset` | PASS |
 | emptyOffsets | `Shape.multiOffsetWires` treats an empty offset list as a single 0 offset | `:39 Expectation failed: wires.isEmpty` | pass | `OCCTWireMultiOffset` | N/A: an empty list is refused in Swift and in the bridge before any kernel call |
+### `FilletBuilderV121Tests.swift` (6 tests)
+Probe: `Scripts/repro/766-modeling-fillet-builder-v121/`.
+| filletBuilderConstantRadius | `OCCTFilletBuilderGetRadius` returns twice `Radius(IC)` | `:27 Expectation failed: abs(builder.radius(contour: 1) - 2.0) < 1e-10` | pass | `OCCTFilletBuilderGetRadius` | PASS |
+| filletBuilderEvolvingRadius | `OCCTFilletBuilderIsConstant` inverts `IsConstant(IC)` | `:38 Expectation failed: !builder.isConstant(contour: 1)` | pass | `OCCTFilletBuilderIsConstant` | PASS |
+| filletBuilderMultipleEdges | `OCCTFilletBuilderNbContours` returns -1 | `:51 Expectation failed: builder.contourCount == 3` | pass | `OCCTFilletBuilderNbContours` | PASS |
+| filletBuilderDiagnostics | `OCCTFilletBuilderGetLength` returns half `Length(IC)` | `:62 Expectation failed: abs(builder.length(contour: 1) - 20.0) < 1e-9` | pass | `OCCTFilletBuilderGetLength` | PASS |
+| filletBuilderReset | `OCCTFilletBuilderReset` also removes every contour | `:77 Expectation failed: builder.contourCount == 1`, `:78 Expectation failed: builder.build()?.isValid == true` | pass | `OCCTFilletBuilderReset` | PASS |
+| filletBuilderRemoveEdge | `OCCTFilletBuilderRemoveEdge` returns false without removing | `:88 Expectation failed: builder.removeEdge(edge)`, `:89 Expectation failed: builder.contourCount == 0` | pass | `OCCTFilletBuilderRemoveEdge` | PASS |
