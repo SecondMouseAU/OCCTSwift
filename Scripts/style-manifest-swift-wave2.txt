@@ -60,10 +60,8 @@ Tests/OCCTAnalysisTests/BRepGPropVinertGKTests.swift
 Tests/OCCTAnalysisTests/BRepGPropVinertTests.swift
 Tests/OCCTAnalysisTests/BndBoundSortBoxTests.swift
 Tests/OCCTAnalysisTests/CenterOfMassTests.swift
-Tests/OCCTAnalysisTests/ContapContourTests.swift
 Tests/OCCTAnalysisTests/ExtremaElSSPlanePlaneTests.swift
 Tests/OCCTAnalysisTests/ExtremaExtSSTests.swift
-Tests/OCCTAnalysisTests/ExtremaPCTests.swift
 Tests/OCCTAnalysisTests/GPropTorusTests.swift
 Tests/OCCTAnalysisTests/Issue1424BndLibFaceNullGuardTests.swift
 Tests/OCCTAnalysisTests/Issue1493MedialAxisDistanceOnArcTests.swift
@@ -250,7 +248,6 @@ Tests/OCCTSurfaceTests/SurfaceNormalParityTests.swift
 Tests/OCCTSurfaceTests/SurfaceTestFixtures.swift
 Tests/OCCTSurfaceTests/SurfaceTransformFamilyParityTests.swift
 Tests/OCCTThreadTests/Issue1578ThreadedHoleMinorDiameterTests.swift
-Tests/OCCTThreadTests/Issue222EnvelopeTests.swift
 Tests/OCCTThreadTests/Issue232BoundsTests.swift
 Tests/OCCTThreadTests/Issue254BuildModesTests.swift
 Tests/OCCTThreadTests/Issue298FilletThreadSafetyTests.swift

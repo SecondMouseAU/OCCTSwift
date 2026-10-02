@@ -12,7 +12,14 @@ struct ExtremaElCLinElipsTests {
             center: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), xDir: SIMD3(1, 0, 0),
             majorRadius: 5, minorRadius: 3
         )
-        #expect(results.count > 0)
+        // Four extrema: the ends of the major axis at square distance 100 and of the minor axis
+        // at 109 (`Scripts/repro/766-edge-distance-elc/`). `count > 0` passed any distance.
+        #expect(results.count == 4)
+        let sq = results.map(\.squareDistance).sorted()
+        let expected: [Double] = [100, 100, 109, 109]
+        if sq.count == expected.count {
+            for (a, b) in zip(sq, expected) { #expect(abs(a - b) < 1e-9) }
+        }
     }
 
     /// A line coincident with the ellipse's own axis (#1501): `Extrema_ExtElC` reports

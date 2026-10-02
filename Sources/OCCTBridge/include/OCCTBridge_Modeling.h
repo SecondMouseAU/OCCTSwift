@@ -2646,17 +2646,24 @@ typedef struct
 } OCCTParameterRange;
 
 /// Intersect an edge curve with a face surface to find coincident ranges.
+///
+/// The search runs over the edge's whole `BRep_Tool::Range`, which is what OCCT's own two callers
+/// of this class set before `Perform()` (#2943).
 /// @param edge The edge
 /// @param face The face
 /// @param outRanges Pointer to receive allocated array of ranges (caller must free)
 /// @param outCount Number of ranges found
-/// @param outMinSquareDist Minimum square distance between edge and face
+/// @param outMinSquareDist Minimum square distance between edge and face, written only when
+///        outHasMinSquareDist is set
+/// @param outHasMinSquareDist true when the kernel actually measured a distance; false when it
+///        left MinimalSquareDistance() at its RealLast() sentinel
 /// @return true if intersection succeeded
 bool OCCTIntToolsBeanFaceIntersect(OCCTShapeRef _Nonnull edge,
                                    OCCTShapeRef _Nonnull face,
                                    OCCTParameterRange* _Nullable* _Nonnull outRanges,
                                    int32_t* _Nonnull outCount,
-                                   double* _Nonnull outMinSquareDist);
+                                   double* _Nonnull outMinSquareDist,
+                                   bool* _Nonnull outHasMinSquareDist);
 
 // MARK: - BOPAlgo_WireSplitter (v0.71.0)
 
