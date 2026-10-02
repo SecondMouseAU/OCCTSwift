@@ -1,5 +1,5 @@
 == OSD_Host (OCCTHostName / OCCTSystemVersion / OCCTInternetAddress) ==
-HostName() == gethostname(): 1; HostName() ends with '.': 0; first DNS labels equal: 1; length 3
+HostName() == gethostname(): 1; HostName() ends with '.': 0; first DNS labels equal: 1
 SystemVersion() = "Darwin 27.0.0", uname sysname+release = "Darwin 27.0.0"
 InternetAddress() parses as an IPv4 dotted quad: 1
 == OSD_PerfMeter (OCCTPerfMeterCreate / Stop / Elapsed) ==

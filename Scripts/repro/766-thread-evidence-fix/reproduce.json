@@ -1,0 +1,16 @@
+{
+  "cwd": {
+    "value": "repo-root",
+    "reason": "the argv below is a repo-relative path, because the transcript's own header records the capture as `probe Scripts/repro/766-thread-safety/inputs`. #2967."
+  },
+  "argv": {
+    "value": [
+      "Scripts/repro/766-thread-safety/inputs"
+    ],
+    "reason": "the probe takes the directory holding fillet298_in1.brep / in2.brep / fillet298_args.txt as argv[1] and defaults to \".\", where they are not; it reuses 766-thread-safety's inputs unchanged, as its own header comment says. Without it the args file is never opened, so radius and both index lists stay empty, BRepTools::Read leaves in2 null, and BRepFilletAPI_MakeFillet(null).Build() raises `Standard_Failure: There are no suitable edges for chamfer or fillet`, which the process does not catch. #2967 reported that abort as the one of its four where the kernel was plausibly implicated. It is not: the kernel is never handed the fixture. Declared with argv, the three measured lines reproduce against v4.0.0-kernel.3 to the last digit, although the capture was taken against v4.0.0-kernel.1."
+  },
+  "rerun_keep": {
+    "pattern": "^[0-9]{3,4} ",
+    "reason": "the capture applied this filter and the transcript's header says so: `probe Scripts/repro/766-thread-safety/inputs 2>&1 | grep -E '^[0-9]{3,4} '`, with the note that RWObj_CafReader prints progress lines and the grep filters those and nothing else. Every line this probe prints starts with its issue number, so the filter cannot reach a measurement."
+  }
+}

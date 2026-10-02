@@ -1,0 +1,6 @@
+{
+  "status": {
+    "value": "not-reproducible",
+    "reason": "this directory is an injection-matrix study, not a (probe, transcript) pair, and it has reported MISSING on every run of this script since the script existed. It holds no `.mm` and no transcript: `run-injection-matrix.py` drives `apply-injections.py` over the XCAF test target, `score-injection-matrix.py` reduces the result, and `injection-matrix.txt`, `injection-matrix-raw.txt` and `probe-output.txt` are that study's output. There is nothing for this script to compile, and `probe-output.txt` is a record of a Swift test run under injection rather than one capture of one run of a C++ probe, so re-running it is `python3 run-injection-matrix.py` and not a diff against a transcript. README.md in this directory is what says how. Declared here rather than renamed out of the `766-*` glob, because the glob is what makes an evidence directory enumerable and a directory this script cannot reach should say so on every run rather than be hidden from it. #2967."
+  }
+}

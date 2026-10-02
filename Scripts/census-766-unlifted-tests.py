@@ -66,36 +66,34 @@ NOT FOR `gate-scripts`
 ----------------------
 Its subject is a branch CI never checks out, like every other `766` screen.
 
+THE MERGED POPULATION IS SCREENED, NOT BELIEVED (#2987)
+-------------------------------------------------------
+The default run rests on "a merged PR's commits ARE the branch". Measured, that is 401 of 403:
+#2232 and #2003 are MERGED and their merge commits are not reachable from
+`v5.0.0-766-execution`, so for those two paths this script reports no gain where there is one.
+With `--prs-from` every merged PR's merge commit is now screened against `git rev-list` of the
+branch and the ones that are off it are named, with the refs that do hold them, so a reader is
+told which population the ranking above does not cover rather than left to assume it covers all
+of it. Two `git` calls for the whole dump.
+
 WHAT IT CANNOT ANSWER
 ---------------------
-* **A gain is a candidate, not a verdict.** The tier detector is `census-766-weak-assertions.py`'s
-  and inherits every one of its false positives: `guard let` is the house style for a fallible
-  factory, so a perfectly good test reads as ESCAPABLE. A SEVERE-to-clean gain says the head's
-  version pins something `main`'s does not; it does not say the pinned value is right, or that
-  `main` has not achieved the same thing in a shape the detector scores the same. It inherits the
-  detector's blind spots too, and that script's "WHAT IT CANNOT SEE" is the list.
-* **It is blind in the direction that matters least and loudest in the other.** Two tests that are
-  both clean can still differ, and the head's can be far stronger: #2937's own `islandsCutHoles`
-  pins two exact half-spans the `main` copy does not, and both sides tier clean, so this script
-  scores that file at one gain and not two. Every count here is a **lower** bound on the work.
-* **It compares by the enclosing suite and the function name.** A lift that renamed either, while
-  keeping the assertions, reads as a gain plus an unmatched test, wrongly. Read the file. The key
-  was the bare function name until #2949, which collapsed nine names repeated across the fifteen
-  suites of `StressExhaustiveAPITests.swift` and reported that file at 100 tests of its 112.
-* **`main` is sometimes the correct side.** Batch 6 met a `HatchTests.swift` where `main` was
-  weaker than the v5 base by 25 lines belonging to a third PR, and also an `#2918` case where
-  `main`'s own work was stronger than the hunk. A path differing is not a path worth taking.
-* **It answers for `--onto` as of now.** Re-run at the head of a batch, never from a note.
-* **It says nothing about the records.** `okf/references/766-*` never crosses (#2854) and is out
-  of scope here as it is there.
-* **The default run reads every differing path twice out of git**, which is a couple of minutes
-  for the whole branch. That is the price of measuring content rather than counting PRs.
+In the `DARK` list below, printed by **every run**, not here. It moved there in #2987 and the
+move is the point, which is #2946's argument applied to this script: a docstring is read by
+whoever opens the file, and the person who needs these is whoever reads the output. A
+`--self-test` case holds the list to the categories that have been measured dark, so dropping one
+is a red check rather than a shorter, greener report.
+
+One cost rather than a blind spot: **the default run reads every differing path twice out of
+git**, which is a couple of minutes for the whole branch. That is the price of measuring content
+rather than counting PRs.
 
 See okf/policies/v5-lift-and-shift.md for the programme this measures.
 """
 
 import argparse
 import importlib.util
+import io
 import json
 import os
 import re
@@ -292,6 +290,213 @@ def load_pr_map(path):
     return {"by_merge": by_merge, "by_head": by_head, "by_number": by_number, "all": data}
 
 
+def merged_off_branch(root, head, pr_map):
+    """Every merged PR in the dump whose merge commit is not on `head`, which the survey misses.
+
+    The whole default run rests on one sentence: a merged PR's commits ARE the branch, so
+    differencing `onto` against the branch finds the merged population's work. #2987 measured that
+    at 401 of 403 true. Two merge commits that GitHub reports as merged into
+    `v5.0.0-766-execution` are not reachable from it, because the branch was force-pushed or
+    rewound after they landed, and for those two the survey above reports nothing to take while
+    the work exists. Nobody can see that from a PR list: both read as merged and their issues read
+    as done.
+
+    So the dump is screened against the branch rather than believed. Two `git` calls for the whole
+    population, not one per PR: `rev-list` once for what the branch holds, and `cat-file
+    --batch-check` once for whether this clone can resolve the rest at all. The second question is
+    separate because the two cases need different work, measured on the two: #2232's merge commit
+    resolves and is reachable from another ref, so its content can be read and lifted, while
+    #2003's does not resolve in a fresh clone at all and only its head branch, while that head
+    survives, holds the work.
+
+    `where` is one of:
+      on-branch       the ordinary case, and the one the survey can see
+      off-branch      resolves here, not reachable from `head`; `refs` names what does hold it
+      unresolvable    the clone cannot resolve the oid, so nothing but its head branch is left
+      no-merge-commit the dump records no merge commit, so the question cannot be put
+    """
+    if not pr_map:
+        return None
+    merged = [pr for pr in pr_map["all"] if (pr.get("state") or "").upper() == "MERGED"]
+    if not merged:
+        return []
+    on_branch = set(git(root, "rev-list", head).split())
+    oids = sorted({(pr.get("mergeCommit") or {}).get("oid") for pr in merged} - {None, ""})
+    present = set()
+    if oids:
+        p = subprocess.run(["git", "-C", root, "cat-file", "--batch-check"],
+                           input="\n".join(oids) + "\n", capture_output=True, text=True)
+        for line in p.stdout.splitlines():
+            parts = line.split()
+            if len(parts) == 3 and parts[1] == "commit":
+                present.add(parts[0])
+    rows = []
+    for pr in merged:
+        oid = (pr.get("mergeCommit") or {}).get("oid")
+        row = {"number": pr.get("number"), "title": pr.get("title") or "",
+               "head": pr.get("headRefName") or "", "oid": oid, "refs": [], "refs_error": None}
+        if not oid:
+            row["where"] = "no-merge-commit"
+        elif oid in on_branch:
+            row["where"] = "on-branch"
+        elif oid not in present:
+            row["where"] = "unresolvable"
+        else:
+            row["where"] = "off-branch"
+            # Only for the handful that get here, so the per-ref walk costs nothing in the
+            # ordinary case. It is what turns "invisible" into "diff it from this ref instead".
+            #
+            # The return code is read rather than discarded, and a failure gives `refs` None
+            # rather than []. The two mean opposite things to whoever acts on the row: [] is "no
+            # ref in this clone holds it, so you have nothing to lift from" and None is "the
+            # lookup did not run, so nobody has asked the question yet". Collapsing them would
+            # print the first sentence on the evidence for the second, which is this PR's own
+            # subject one level down (PR #3008's review).
+            p = subprocess.run(
+                ["git", "-C", root, "for-each-ref", "--contains", oid,
+                 "--format=%(refname:short)"], capture_output=True, text=True)
+            if p.returncode == 0:
+                row["refs"] = sorted(r.strip() for r in p.stdout.split("\n") if r.strip())
+            else:
+                row["refs"] = None
+                row["refs_error"] = p.stderr.strip().split("\n")[-1][:160] or \
+                    "git exited %d with nothing on stderr" % p.returncode
+        rows.append(row)
+    return rows
+
+
+def report_merged_off_branch(rows, head):
+    """The merged population's own screen, printed whether or not it found anything.
+
+    Printed on a clean result too. "No merged PR is off the branch" is the sentence that makes the
+    survey above trustworthy, and a screen that says nothing when it is happy cannot be told from
+    a screen nobody ran.
+    """
+    off = [r for r in rows if r["where"] == "off-branch"]
+    gone = [r for r in rows if r["where"] == "unresolvable"]
+    nomc = [r for r in rows if r["where"] == "no-merge-commit"]
+    merged = len(rows)
+    print("\n  MERGED PRs SCREENED AGAINST %s, because a merged PR's commits being the branch is\n"
+          "  what the survey above assumes and #2987 measured it at 401 of 403: %d merged, "
+          "%d on the branch,\n  %d off it, %d unresolvable here, %d with no merge commit recorded."
+          % (head, merged, merged - len(off) - len(gone) - len(nomc), len(off), len(gone),
+             len(nomc)))
+    if not (off or gone or nomc):
+        print("  Nothing off the branch, so the survey above covers the merged population.")
+        return
+    for r in off:
+        print("    #%-5s off-branch   %s" % (r["number"], r["title"][:88]))
+        print("           merge commit %s is not reachable from %s" % (r["oid"][:9], head))
+        if r["refs"] is None:
+            print("           the ref lookup itself FAILED (%s), so whether anything holds it "
+                  "is unknown" % r.get("refs_error"))
+            print("           rather than answered. Re-run; this is not evidence that the work "
+                  "is gone.")
+        elif r["refs"]:
+            print("           its content IS readable, from: %s" % ", ".join(r["refs"][:4]))
+            print("           screen it with --heads <that ref>, since no run over the branch "
+                  "can reach it")
+        else:
+            print("           and no ref in this clone holds it either, so its content cannot "
+                  "be read here.")
+            print("           git fetch every exec/766-* head, then re-run before concluding "
+                  "the work is lost.")
+    for r in gone:
+        print("    #%-5s unresolvable %s" % (r["number"], r["title"][:88]))
+        print("           merge commit %s does not resolve in this clone, so its content cannot "
+              "be read" % (r["oid"] or "?")[:9])
+        print("           at all. The head branch %s is the only place left to look, and only "
+              "while it lives."
+              % (("origin/" + r["head"]) if r["head"] else "it was merged from"))
+    for r in nomc:
+        print("    #%-5s no merge commit recorded in the dump: %s"
+              % (r["number"], r["title"][:88]))
+
+
+# ---------------------------------------------------------------------------
+# what this census cannot see, printed on every run (#2987, following #2946)
+# ---------------------------------------------------------------------------
+#
+# These were a "WHAT IT CANNOT ANSWER" section of the docstring, which is read by whoever opens
+# the script and not by whoever reads the run. #2946 made the same move in
+# census-compiled-out-validation.py for the same reason, and the reason is this script's own
+# subject: a census that silently cannot reach a population reads as coverage of its whole
+# subject. #2987 is one level down again, a blind spot in the backstop for a blind spot.
+#
+# Each entry is (key, headline, detail). The key is what the self-test holds the list to, so a
+# category cannot drop out of the output without a red check.
+
+DARK = [
+    ("merged-but-not-on-the-branch",
+     "A merged PR whose commits are not on the branch",
+     "The default run differences `--onto` against the branch, so it sees the merged population "
+     "only inasmuch as the branch holds it. #2987 measured that at 401 of 403: #2232 and #2003 "
+     "are reported MERGED by GitHub and their merge commits are not reachable from "
+     "`v5.0.0-766-execution`, because it was force-pushed or rewound after they landed. For "
+     "those the survey reports zero gain on a path that has one, which is the one claim this "
+     "script must not get wrong. **With `--prs-from` it now names them**, by screening every "
+     "merged PR's merge commit against `git rev-list` of the branch; without a dump it cannot, "
+     "and this entry is all the warning there is. What it still cannot do is measure their "
+     "content: that needs a ref that holds the commit, passed as `--heads`."),
+    ("unresolvable-merge-commit",
+     "A merge commit no clone can resolve",
+     "#2003's `faf7ac4f` does not resolve here at all, so neither this script nor any other can "
+     "read what it merged. Its head branch `feat/766-misc-tests` is alive at `8f7bba46` and is "
+     "the only place the work survives; screen it with `--heads origin/feat/766-misc-tests "
+     "--no-branch` and expect the delta to include the whole branch rather than that PR's own. "
+     "The screen names these, and naming is the whole of what it can do."),
+    ("gain-is-a-candidate",
+     "A gain is a candidate, not a verdict",
+     "The tier detector is `census-766-weak-assertions.py`'s and inherits every false positive "
+     "it has: `guard let` is the house style for a fallible factory, so a good test reads "
+     "ESCAPABLE. A SEVERE-to-clean gain says the head pins something `main` does not; it does "
+     "not say the pinned value is right, or that `main` has not achieved the same thing in a "
+     "shape that scores the same. Batch 8 met all three of the ways this misleads and they are "
+     "in okf/policies/v5-lift-and-shift.md."),
+    ("every-count-is-a-lower-bound",
+     "Two tests that both tier clean can still differ",
+     "#2937's own `islandsCutHoles` pins two exact half-spans the `main` copy does not and both "
+     "sides tier clean, so that file scores one gain rather than two. The detector also reads a "
+     "`guard` only when its `else` is on the same line, so the multi-line form is invisible to "
+     "it, and 284 tests on `main` sat in one, until #2982 closed that along with the ordering tautology counted as a pin (#2985) and the helper borrowed across suites (#2964). What is left is the shapes nothing mechanical reaches: a threshold a correct answer clears by a whole unit, a helper one file away from its callers, and a sibling `@Test` inlined into its neighbour. Every count printed above is still a floor."),
+    ("renames-read-as-gains",
+     "A renamed suite or function reads as a gain plus an unmatched test",
+     "The comparison key is the enclosing suite plus the function name, so a lift that renamed "
+     "either while keeping the assertions is counted wrongly in both directions. The key was the "
+     "bare function name until #2949, which collapsed nine names repeated across the fifteen "
+     "suites of `StressExhaustiveAPITests.swift`."),
+    ("main-is-sometimes-the-correct-side",
+     "A path differing is not a path worth taking",
+     "Batch 6 met a `HatchTests.swift` where `main` was weaker than the v5 base by 25 lines "
+     "belonging to a third PR, and batch 8 met a file where `main` pins strictly more while "
+     "scoring worse on the detector. Resolve which side moved with `git diff <the PR's own base> "
+     "origin/main -- <path>` before reading the branch's version at all."),
+    ("the-records-never-cross",
+     "It says nothing about the evidence records",
+     "`okf/references/766-execution/` and `766-test-validity/` do not cross to `main` (#2854) "
+     "and are out of scope here as they are there. A finding about a record is not a finding "
+     "this script can report."),
+    ("it-answers-for-now",
+     "It answers for `--onto` as of this run",
+     "Re-run at the head of a batch, never quote it from a note. The figures in "
+     "okf/policies/v5-lift-and-shift.md carry a date and a commit for exactly this reason."),
+]
+
+
+def print_dark():
+    """The categories this census cannot reach, on every run (#2987).
+
+    Printed rather than left in the docstring, because the reader who needs it is the one reading
+    the run. A clean report over a subject with a hole in it is indistinguishable from a clean
+    report over the whole subject unless the detector says which it is.
+    """
+    print("\n  WHAT THIS CENSUS CANNOT SEE, so the ranking above is not the whole backlog. %d "
+          "category(ies),\n  each measured rather than supposed:" % len(DARK))
+    for key, headline, detail in DARK:
+        print("\n    [%s] %s." % (key, headline))
+        print("        %s" % detail)
+
+
 def attribute(root, head, onto, paths, pr_map):
     """{path: [source label, ...]}: which PR, or which commit, put each path where it is.
 
@@ -433,8 +638,7 @@ def report(rows, head, onto, attribution, top, show_absent):
                 src = ", ".join(attribution.get(r["path"], [])) or "unattributed"
                 print("    %s   from %s" % (r["path"], src))
 
-    print("\n  Each gain is a candidate, not a defect, and every count here is a lower bound:")
-    print("  two tests that both tier clean can still differ. See the docstring.")
+    print("\n  Each gain is a candidate, not a defect, and every count here is a lower bound.")
     return 0
 
 
@@ -478,7 +682,12 @@ def run(args):
                         attribution.setdefault(r["path"], []).append(
                             "#%s %s" % (label["number"], (label.get("state") or "?").lower()))
             report(rows, head, args.onto, attribution, args.top, args.show_absent)
+            # Only for the branch being drained: the merged population is defined by the base of
+            # the PRs, so the question has no meaning against one PR's own `exec/766-*` head.
+            if head == args.head and pr_map:
+                report_merged_off_branch(merged_off_branch(root, head, pr_map), head)
             print()
+        print_dark()
     finally:
         shutil.rmtree(scratch, ignore_errors=True)
     return 0
@@ -577,8 +786,20 @@ def _fixture(tmp):
     _sh(tmp, "git", "commit", "-qm", "strengthen FTests (#4242)")
     head_sha = subprocess.run(["git", "rev-parse", "HEAD"], cwd=tmp, capture_output=True,
                               text=True).stdout.strip()
+
+    # A commit that exists and is NOT reachable from `headbranch`, which is the shape #2987 is
+    # about: a PR GitHub reports as merged into the branch whose merge commit the branch does not
+    # hold, because the branch was rewound under it. Built as a sibling branch, since any
+    # ancestor of `headbranch` would be reachable and so could not stand for it.
+    _sh(tmp, "git", "checkout", "-q", "-b", "offbranch", "mainbranch")
+    _write(tmp, "Tests/OCCTFooTests/OffTests.swift", STRONG_TEST)
+    _sh(tmp, "git", "add", "-A")
+    _sh(tmp, "git", "commit", "-qm", "work the branch no longer holds (#4243)")
+    off_sha = subprocess.run(["git", "rev-parse", "HEAD"], cwd=tmp, capture_output=True,
+                             text=True).stdout.strip()
+
     _sh(tmp, "git", "checkout", "-q", "mainbranch")
-    return head_sha
+    return head_sha, off_sha
 
 
 def self_test():
@@ -586,7 +807,7 @@ def self_test():
     tmp = tempfile.mkdtemp(prefix="unlifted-selftest-")
     scratch = tempfile.mkdtemp(prefix="unlifted-selftest-scratch-")
     try:
-        head_sha = _fixture(tmp)
+        head_sha, off_sha = _fixture(tmp)
         al = _load("already_landed", "check-766-already-landed.py")
         wa = _load("weak_assertions", "census-766-weak-assertions.py")
         root = repo_root(tmp)
@@ -705,6 +926,122 @@ def self_test():
         # uncaught when it was injected out, so the case names every path and not one.
         cases.append(("every path a commit touched is attributed, the first one included",
                       set(attr) == set(by_path)))
+
+        # The merged-off-branch screen (#2987). The fixture's one commit is on `headbranch`, so a
+        # dump naming it is the ordinary case and must report nothing; the other three `where`
+        # verdicts are built from oids the fixture does not hold.
+        off_dump = os.path.join(scratch, "off.json")
+        with open(off_dump, "w", encoding="utf-8") as fh:
+            json.dump([
+                {"number": 1, "state": "MERGED", "headRefName": "exec/766-on",
+                 "mergeCommit": {"oid": head_sha}, "title": "on the branch"},
+                {"number": 2, "state": "MERGED", "headRefName": "exec/766-off",
+                 "mergeCommit": {"oid": off_sha}, "title": "merged, not on the branch"},
+                {"number": 3, "state": "MERGED", "headRefName": "feat/766-gone",
+                 "mergeCommit": {"oid": "f" * 40}, "title": "merge commit does not resolve"},
+                {"number": 4, "state": "MERGED", "headRefName": "exec/766-nomc",
+                 "mergeCommit": None, "title": "no merge commit recorded"},
+                {"number": 5, "state": "OPEN", "headRefName": "exec/766-open",
+                 "mergeCommit": None, "title": "open, not in this population"},
+            ], fh)
+        off_map = load_pr_map(off_dump)
+        where = {r["number"]: r["where"]
+                 for r in merged_off_branch(root, "headbranch", off_map)}
+        cases.append(("a merged PR whose merge commit is on the branch is the ordinary case",
+                      where.get(1) == "on-branch"))
+        cases.append(("a merged PR whose merge commit resolves but is not on the branch is named",
+                      where.get(2) == "off-branch"))
+        cases.append(("a merge commit this clone cannot resolve is a separate verdict",
+                      where.get(3) == "unresolvable"))
+        cases.append(("a dump with no merge commit is not silently read as on-branch",
+                      where.get(4) == "no-merge-commit"))
+        cases.append(("an open PR is not in the merged population at all",
+                      5 not in where and len(where) == 4))
+        # The off-branch row has to say where the content IS, or naming it helps nobody: the one
+        # action it leaves is `--heads <that ref>`, and the row is where that ref comes from.
+        # `next(..., default)` rather than `[0]`: a screen that stopped finding the off-branch row
+        # must report a named FAIL on this case and on the one above it, not an IndexError that
+        # says nothing about which verdict went missing.
+        off_row = next((r for r in merged_off_branch(root, "headbranch", off_map)
+                        if r["where"] == "off-branch"), {"refs": []})
+        cases.append(("an off-branch row names a ref that does hold the commit",
+                      any(r == "offbranch" for r in off_row["refs"])))
+        # It prints on a clean screen too. A screen that is silent when happy cannot be told
+        # from a screen nobody ran, which is the shape this whole script is about.
+        clean_dump = os.path.join(scratch, "clean.json")
+        with open(clean_dump, "w", encoding="utf-8") as fh:
+            json.dump([{"number": 1, "state": "MERGED", "headRefName": "exec/766-on",
+                        "mergeCommit": {"oid": head_sha}, "title": "t"}], fh)
+        buf, stdout = io.StringIO(), sys.stdout
+        try:
+            sys.stdout = buf
+            report_merged_off_branch(
+                merged_off_branch(root, "headbranch", load_pr_map(clean_dump)), "headbranch")
+        finally:
+            sys.stdout = stdout
+        cases.append(("a clean merged screen still says it ran and what it found",
+                      "MERGED PRs SCREENED" in buf.getvalue()
+                      and "Nothing off the branch" in buf.getvalue()))
+        buf, stdout = io.StringIO(), sys.stdout
+        try:
+            sys.stdout = buf
+            report_merged_off_branch(merged_off_branch(root, "headbranch", off_map), "headbranch")
+        finally:
+            sys.stdout = stdout
+        printed = buf.getvalue()
+        cases.append(("an off-branch screen prints the PR number and the remedy",
+                      "#2 " in printed and "--heads" in printed and "#3 " in printed
+                      and "only place left to look" in printed))
+        # "no ref holds it" and "the lookup did not run" are opposite instructions to whoever
+        # acts on the row, and `git(check=False)` returned "" for both (PR #3008's review). The
+        # three shapes are asserted on the reporter, which is where acting on the wrong one
+        # happens.
+        def _say(refs, error=None):
+            b, s = io.StringIO(), sys.stdout
+            try:
+                sys.stdout = b
+                report_merged_off_branch(
+                    [{"number": 9, "title": "t", "head": "h", "oid": "a" * 40,
+                      "where": "off-branch", "refs": refs, "refs_error": error}], "headbranch")
+            finally:
+                sys.stdout = s
+            return b.getvalue()
+        cases.append(("a ref that holds the commit is reported as a place to lift from",
+                      "IS readable, from: origin/exec/766-x" in _say(["origin/exec/766-x"])))
+        cases.append(("no ref holding it says so, and says to fetch before concluding",
+                      "no ref in this clone holds it" in _say([])
+                      and "git fetch" in _say([])))
+        cases.append(("a failed ref lookup is unknown rather than reported as nothing",
+                      "FAILED" in _say(None, "fatal: bad object")
+                      and "is unknown" in _say(None, "fatal: bad object")
+                      and "no ref in this clone holds it" not in _say(None, "fatal: bad object")))
+
+        # The dark list (#2987, after #2946). It is the one part of this script that reports
+        # nothing, so it can never fail on its own: dropping an entry makes the output shorter and
+        # greener, which is the direction nobody notices.
+        keys = [k for k, _h, _d in DARK]
+        cases.append(("every measured dark category is still listed",
+                      set(keys) >= {"merged-but-not-on-the-branch", "unresolvable-merge-commit",
+                                    "gain-is-a-candidate", "every-count-is-a-lower-bound",
+                                    "renames-read-as-gains", "main-is-sometimes-the-correct-side",
+                                    "the-records-never-cross", "it-answers-for-now"}))
+        cases.append(("no dark category is listed twice", len(keys) == len(set(keys))))
+        # An entry reduced to its headline reads as a limitation somebody noted and nobody
+        # measured, which is the state this move was meant to leave behind.
+        cases.append(("every dark category carries its measurement",
+                      all(k and h and len(d) >= 120 for k, h, d in DARK)))
+        cases.append(("the merged-but-not-on-the-branch entry names what covers it instead",
+                      "--prs-from" in dict((k, d) for k, _h, d in DARK)
+                      .get("merged-but-not-on-the-branch", "")))
+        buf, stdout = io.StringIO(), sys.stdout
+        try:
+            sys.stdout = buf
+            print_dark()
+        finally:
+            sys.stdout = stdout
+        printed = buf.getvalue()
+        cases.append(("a run prints every dark category",
+                      all(k in printed for k in keys) and "CANNOT SEE" in printed))
 
         # Refusals, which must not read as a clean census.
         for label, fn in (
