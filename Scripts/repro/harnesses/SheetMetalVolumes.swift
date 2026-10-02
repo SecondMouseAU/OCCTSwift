@@ -849,6 +849,51 @@ enum SheetMetalVolumes {
         }
 
         print("")
+        print("Diagonal stepped seam survey (#3033): volume over the flange sum")
+        print(String(repeating: "-", count: 108))
+        // The 20 x 20 base with a chamfered corner and an upright on its 11.31 chamfer edge, every
+        // upright width, both bends, both declaration orders. The upright's flange sum is
+        // `736 + 20 * width`, so the number printed is what the bend added.
+        //
+        // Expected on the fixed builder: a concave bend adds r^2 (1 - pi/4) over the run the two
+        // share, plus 0.161787 at each end of that run that falls on the base's own corner (where
+        // the chamfer meets the base's side faces at 135 degrees); a convex bend adds pi per unit
+        // of the shared run; and the two declaration orders agree. A concave bend declared
+        // upright first is read as convex by `.auto`, because the base sits on the upright's
+        // -normal side, so it adds nothing: that is the documented inference and not a result.
+        let surveyEdge: Double = 8.0 * 2.0.squareRoot()
+        let flushStart: Double = surveyEdge - 4.0
+        let wideWidth: Double = surveyEdge + 6.0
+        let wideShort: Double = surveyEdge + 3.0
+        var uprights: [(String, Double, Double)] = []
+        uprights.append(("spans the edge", 0.0, surveyEdge))
+        uprights.append(("narrow, centred", 3.0, 4.0))
+        uprights.append(("narrow, flush at the start", 0.0, 4.0))
+        uprights.append(("narrow, flush at the end", flushStart, 4.0))
+        uprights.append(("wide, centred", -3.0, wideWidth))
+        uprights.append(("wide, past the start", -3.0, wideShort))
+        uprights.append(("staggered", -3.0, 8.0))
+        for down in [false, true] {
+            for uprightFirst in [false, true] {
+                let kind = down ? "convex, upright hung below" : "concave, upright on top"
+                let order = uprightFirst ? "declared upright first" : "declared base first"
+                print("  \(kind), \(order)")
+                for (name, start, width) in uprights {
+                    let flat: Double = 736.0 + 20.0 * width
+                    do {
+                        let built = try diagonalUpright(
+                            start: start, width: width, down: down, uprightFirst: uprightFirst)
+                        let v = built.volume ?? Double.nan
+                        let added = fmt6(v - flat)
+                        print("    \(pad(name, 30)) adds \(added)  valid \(built.isValid)")
+                    } catch {
+                        print("    \(pad(name, 30)) THREW \(error)")
+                    }
+                }
+            }
+        }
+
+        print("")
         print(
             "Fillet run-out at the step boundary (narrowUprightStepSucceeds, r = 1.5, step x = 28)")
         print(String(repeating: "-", count: 108))

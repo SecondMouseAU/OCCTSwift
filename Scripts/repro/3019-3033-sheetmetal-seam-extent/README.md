@@ -117,6 +117,21 @@ declaration orders, on the unfixed builder):
 | convex | narrower | **+22.98, prism the whole 11.31** | correct |
 | convex | wider | correct | **+18.85, prism the upright's whole edge** |
 
+The harness prints this survey (the `Diagonal stepped seam survey` section of
+`swift run Harnesses 2972-sheetmetal-volumes`), on either builder. **After the change all 28
+configurations build, valid, and each lands on its closed form**:
+
+- a concave bend adds `r^2 (1 - pi/4)` over the run the two flanges share, plus 0.161787 at each
+  end of that run that falls on the base's own corner, where the chamfer meets the base's side
+  faces at 135 degrees. The control's +5.786447 is the 5.462871 fillet over the whole edge and two of
+  those, the narrow centred upright's +1.931417 is the fillet over its 4 alone, and the narrow
+  upright flush at either end adds 1.931417 + 0.161787 = 2.093204;
+- a convex bend adds `pi` per unit of the shared run (12.566371 over 4, 35.543064 over the whole
+  edge, 15.707963 for the staggered upright's 5), and the two declaration orders now agree on
+  every width, where before at least one of them was wrong for every upright except the one
+  spanning the edge;
+- every row that built correctly before is unchanged to the last digit printed.
+
 The convex rows are the part the issue did not know about. A diagonal stepped convex seam never
 failed: it built, with the prism cut to the *from* flange's edge whatever the other flange
 covered, so the two declaration orders disagreed and one of them was wrong. A refusal for the
