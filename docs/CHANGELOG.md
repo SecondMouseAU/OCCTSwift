@@ -21,6 +21,48 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### `Extrema_ExtElC` parallel witnesses are optional (#2993), and `IntTools_EdgeEdge`'s two common-part types are settled (#2994)
+
+**Fixed.** `ExtremaResult.point1` and `ExtremaResult.point2` are now `SIMD3<Double>?`, `nil` on a
+parallel branch, where the bridge used to report `SIMD3(0, 0, 0)` beside a correct distance. For a
+line on a circle's own axis that zero was the circle's centre, a point the radius away from every
+point of the circle. The struct gains `isParallel`, which is `true` exactly when the witnesses are
+`nil`, and the square distance is unchanged because `Extrema_ExtCC::PrepareResults`, OCCT's own
+production caller, keeps exactly that value and reads no point there. All five parallel-capable
+entry points are covered: `ExtremaElC.lineToLine`, `.lineToCircle`, `.circleToCircle`,
+`.lineToEllipse` and `ExtremaElCS.lineToPlane` (#2993).
+
+**Documented.** `Shape.CommonPart.type` is a directive to a boolean operation, not a
+classification of the geometry: a tangential overlap of two arcs reports `.vertex` whenever it
+covers the whole of neither edge, because `IntTools_EdgeEdge::MergeSolutions` promotes to
+`TopAbs_EDGE` only on whole-range coverage, while two straight edges take `ComputeLineLine` and
+report `.edge` for any coincidence. `param1Range` is the true overlap under either answer and is
+what a caller should read. Settled with a C++ probe and `BOPAlgo_PaveFiller::PerformEE` read as
+the caller; not a kernel defect, and both answers are now pinned with the rule beside them
+(#2994).
+
+### Two carried kernel patches: Bezier `InsertPoleAfter` reaches the pole count the constructors allow, and `math_Uzawa` stops overrunning its initial-error vector (#2875, #2860)
+
+- **#2875, patch `0045`.** `Geom2d_BezierCurve::InsertPoleAfter` and
+  `Geom_BezierCurve::InsertPoleAfter` refused once the curve held `MaxDegree()` poles, where both
+  constructors and `Increase()` allow `MaxDegree() + 1`: the check compared a pole count against a
+  degree bound. Both sites now compare with `>`, which are the only two in the tree that got this
+  wrong. Half the patch is inert in the kernel this package ships, because `No_Exception` empties
+  the 2d class's `Standard_ConstructionError_Raise_if` and leaves the bridge guard as the only
+  bound; the 3d class's literal throw does move, from 25 poles to 26. `Curve2D`'s guard therefore
+  stays and must be edited rather than retired at the repin, filed as #3013.
+- **#2860, patch `0046`.** `math_Uzawa` sized its initial-error vector `Errinit` by the number of
+  unknowns and wrote it by constraint, so every overdetermined system wrote past its end: 4
+  constraints in 2 unknowns returned a wrong answer, 100 in 2 was a deterministic SIGSEGV. Both
+  constructors now size it by `Cont.RowNumber()`, which is what `Perform` writes, what every reader
+  indexes, and what `InitialError()`'s own declaration documents. The kernel's own dimension check
+  never related rows to columns, so this is a defect on its own terms rather than a compiled-out
+  one, and `MathSolver.uzawa`'s bridge guard stays.
+- Neither patch is pinned yet. `Scripts/patches/` now holds thirty-four against an asset holding
+  thirty-one, written up in `okf/references/carried-occt-patches.md` and `Package.swift`.
+- Also filed, not fixed: #3011, `Geom_BezierSurface`'s insert-pole entry points carry no
+  `MaxDegree` bound and four of its accessors index a fixed 26-element table by pole count.
+
 ### Seventeen CHANGELOG entries the report named all along are recovered, and the merge tool stops splicing a presentation fence (#2962, #2963)
 
 Seventeen merges between 2026-09-07 and 2026-09-29 landed with a `## CHANGELOG entry` section in

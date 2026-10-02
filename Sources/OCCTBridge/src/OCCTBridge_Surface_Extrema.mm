@@ -344,14 +344,16 @@ int32_t OCCTExtremaExtPElSPlane(double               px,
     int count = 0;
     for (int i = 1; i <= n && count < max; i++)
     {
-      out[count].squareDistance = ext.SquareDistance(i);
-      gp_Pnt pt                 = ext.Point(i).Value();
-      out[count].x1             = px;
-      out[count].y1             = py;
-      out[count].z1             = pz;
-      out[count].x2             = pt.X();
-      out[count].y2             = pt.Y();
-      out[count].z2             = pt.Z();
+      out[count].squareDistance   = ext.SquareDistance(i);
+      out[count].isParallel       = false;
+      out[count].hasWitnessPoints = true;
+      gp_Pnt pt                   = ext.Point(i).Value();
+      out[count].x1               = px;
+      out[count].y1               = py;
+      out[count].z1               = pz;
+      out[count].x2               = pt.X();
+      out[count].y2               = pt.Y();
+      out[count].z2               = pt.Z();
       count++;
     }
     return count;
@@ -385,14 +387,16 @@ int32_t OCCTExtremaExtPElSSphere(double               px,
     int count = 0;
     for (int i = 1; i <= n && count < max; i++)
     {
-      out[count].squareDistance = ext.SquareDistance(i);
-      gp_Pnt pt                 = ext.Point(i).Value();
-      out[count].x1             = px;
-      out[count].y1             = py;
-      out[count].z1             = pz;
-      out[count].x2             = pt.X();
-      out[count].y2             = pt.Y();
-      out[count].z2             = pt.Z();
+      out[count].squareDistance   = ext.SquareDistance(i);
+      out[count].isParallel       = false;
+      out[count].hasWitnessPoints = true;
+      gp_Pnt pt                   = ext.Point(i).Value();
+      out[count].x1               = px;
+      out[count].y1               = py;
+      out[count].z1               = pz;
+      out[count].x2               = pt.X();
+      out[count].y2               = pt.Y();
+      out[count].z2               = pt.Z();
       count++;
     }
     return count;
@@ -429,14 +433,16 @@ int32_t OCCTExtremaExtPElSCylinder(double               px,
     int count = 0;
     for (int i = 1; i <= n && count < max; i++)
     {
-      out[count].squareDistance = ext.SquareDistance(i);
-      gp_Pnt pt                 = ext.Point(i).Value();
-      out[count].x1             = px;
-      out[count].y1             = py;
-      out[count].z1             = pz;
-      out[count].x2             = pt.X();
-      out[count].y2             = pt.Y();
-      out[count].z2             = pt.Z();
+      out[count].squareDistance   = ext.SquareDistance(i);
+      out[count].isParallel       = false;
+      out[count].hasWitnessPoints = true;
+      gp_Pnt pt                   = ext.Point(i).Value();
+      out[count].x1               = px;
+      out[count].y1               = py;
+      out[count].z1               = pz;
+      out[count].x2               = pt.X();
+      out[count].y2               = pt.Y();
+      out[count].z2               = pt.Z();
       count++;
     }
     return count;
@@ -474,14 +480,16 @@ int32_t OCCTExtremaExtPElSCone(double               px,
     int count = 0;
     for (int i = 1; i <= n && count < max; i++)
     {
-      out[count].squareDistance = ext.SquareDistance(i);
-      gp_Pnt pt                 = ext.Point(i).Value();
-      out[count].x1             = px;
-      out[count].y1             = py;
-      out[count].z1             = pz;
-      out[count].x2             = pt.X();
-      out[count].y2             = pt.Y();
-      out[count].z2             = pt.Z();
+      out[count].squareDistance   = ext.SquareDistance(i);
+      out[count].isParallel       = false;
+      out[count].hasWitnessPoints = true;
+      gp_Pnt pt                   = ext.Point(i).Value();
+      out[count].x1               = px;
+      out[count].y1               = py;
+      out[count].z1               = pz;
+      out[count].x2               = pt.X();
+      out[count].y2               = pt.Y();
+      out[count].z2               = pt.Z();
       count++;
     }
     return count;
@@ -519,14 +527,16 @@ int32_t OCCTExtremaExtPElSTorus(double               px,
     int count = 0;
     for (int i = 1; i <= n && count < max; i++)
     {
-      out[count].squareDistance = ext.SquareDistance(i);
-      gp_Pnt pt                 = ext.Point(i).Value();
-      out[count].x1             = px;
-      out[count].y1             = py;
-      out[count].z1             = pz;
-      out[count].x2             = pt.X();
-      out[count].y2             = pt.Y();
-      out[count].z2             = pt.Z();
+      out[count].squareDistance   = ext.SquareDistance(i);
+      out[count].isParallel       = false;
+      out[count].hasWitnessPoints = true;
+      gp_Pnt pt                   = ext.Point(i).Value();
+      out[count].x1               = px;
+      out[count].y1               = py;
+      out[count].z1               = pz;
+      out[count].x2               = pt.X();
+      out[count].y2               = pt.Y();
+      out[count].z2               = pt.Z();
       count++;
     }
     return count;

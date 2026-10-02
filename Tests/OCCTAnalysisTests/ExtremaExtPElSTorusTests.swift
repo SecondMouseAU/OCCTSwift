@@ -6,7 +6,7 @@ import simd
 
 @Suite("Extrema_ExtPElS Point-Torus")
 struct ExtremaExtPElSTorusTests {
-    @Test func pointToTorus() {
+    @Test func pointToTorus() throws {
         let results = ExtremaPointSurface.pointToTorus(
             point: SIMD3(20, 0, 0),
             center: SIMD3(0, 0, 0), axis: SIMD3(0, 0, 1),
@@ -20,8 +20,10 @@ struct ExtremaExtPElSTorusTests {
         if sq.count == expected.count {
             for (a, b) in zip(sq, expected) { #expect(abs(a - b) < 1e-9) }
         }
-        if let near = results.min(by: { $0.squareDistance < $1.squareDistance }) {
-            #expect(abs(near.point2.x - 13) < 1e-9)
-        }
+        let near = try #require(results.min(by: { $0.squareDistance < $1.squareDistance }))
+        // `Extrema_ExtPElS` has no parallel branch, so #2993's `nil` witness never appears here.
+        #expect(!near.isParallel)
+        let p = try #require(near.point2, "a point-torus extremum has a witness point")
+        #expect(abs(p.x - 13) < 1e-9)
     }
 }

@@ -1,0 +1,73 @@
+########## BEZIER (#2875 / patch 0045)
+ld: warning: ignoring duplicate libraries: '-lc++'
+--- PRISTINE
+MaxDegree               = 25
+Geom2d ctor max poles   = 26
+Geom2d insert max poles = 102
+Geom   ctor max poles   = 26
+Geom   insert max poles = 25
+Geom2d insert check live = no (No_Exception)
+Geom2d at ctor max: degree=25 mults=2 knotseq=52
+VERDICT: 3d ctor and insert DISAGREE
+exit=1
+ld: warning: ignoring duplicate libraries: '-lc++'
+--- PATCHED
+MaxDegree               = 25
+Geom2d ctor max poles   = 26
+Geom2d insert max poles = 102
+Geom   ctor max poles   = 26
+Geom   insert max poles = 26
+Geom2d insert check live = no (No_Exception)
+Geom2d at ctor max: degree=25 mults=2 knotseq=52
+VERDICT: 3d ctor and insert AGREE
+exit=0
+
+########## BEZIER, exceptions enabled (no -DNo_Exception), 2d check live
+ld: warning: ignoring duplicate libraries: '-lc++'
+--- PRISTINE
+MaxDegree               = 25
+Geom2d ctor max poles   = 26
+Geom2d insert max poles = 25
+Geom   ctor max poles   = 26
+Geom   insert max poles = 25
+Geom2d insert check live = yes
+Geom2d at ctor max: degree=25 mults=2 knotseq=52
+VERDICT: 3d ctor and insert DISAGREE
+exit=1
+ld: warning: ignoring duplicate libraries: '-lc++'
+--- PATCHED
+MaxDegree               = 25
+Geom2d ctor max poles   = 26
+Geom2d insert max poles = 26
+Geom   ctor max poles   = 26
+Geom   insert max poles = 26
+Geom2d insert check live = yes
+Geom2d at ctor max: degree=25 mults=2 knotseq=52
+VERDICT: 3d ctor and insert AGREE
+exit=0
+
+########## UZAWA (#2860 / patch 0046)
+ld: warning: ignoring duplicate libraries: '-lc++'
+--- PRISTINE
+square       rows=2 cols=2 IsDone=1 InitialError().Length()=2 expected=2 Value(1)=0.8
+             exit=0
+small-over   rows=4 cols=2 IsDone=1 InitialError().Length()=2 expected=4 Value(1)=0
+             exit=1
+edge-over    rows=33 cols=32 IsDone=1 InitialError().Length()=32 expected=33 Value(1)=-0.0234375
+             exit=1
+heap-over    rows=40 cols=33 IsDone=1 InitialError().Length()=33 expected=40 Value(1)=0
+             exit=1
+far-over     /private/tmp/claude-501/-Users-elb-Projects-OCCTSwift/7ca7a65c-aee4-4ed2-ac7a-0732e49711a4/scratchpad/0045-run-probes.sh: line 59: 98663 Segmentation fault: 11     "$SP/obj/uzawa-$side" "$mode"
+             exit=139
+ld: warning: ignoring duplicate libraries: '-lc++'
+--- PATCHED
+square       rows=2 cols=2 IsDone=1 InitialError().Length()=2 expected=2 Value(1)=0.8
+             exit=0
+small-over   rows=4 cols=2 IsDone=1 InitialError().Length()=4 expected=4 Value(1)=0
+             exit=0
+edge-over    rows=33 cols=32 IsDone=1 InitialError().Length()=33 expected=33 Value(1)=-0.0234375
+             exit=0
+heap-over    rows=40 cols=33 IsDone=1 InitialError().Length()=40 expected=40 Value(1)=0
+             exit=0
+far-over     rows=100 cols=2 IsDone=1 InitialError().Length()=100 expected=100 Value(1)=0
+             exit=0

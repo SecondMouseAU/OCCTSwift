@@ -22,10 +22,15 @@ struct ExtremaExtPElCLinTests {
             abs(first.squareDistance - 25.0) < 1e-9,
             "square distance \(first.squareDistance) != 25")
         // The foot itself, `Extrema_ExtPElC::Point(1)`, which nothing pinned before: the origin,
-        // since the query point is directly above it.
-        #expect(simd_distance(first.point2, SIMD3(0, 0, 0)) < 1e-9, "foot is \(first.point2)")
+        // since the query point is directly above it. Required rather than optional-chained:
+        // since #2993 a witness point is `nil` on a parallel branch, and `Extrema_ExtPElC` has
+        // none, so a `nil` here would be a real failure rather than a case to skip.
+        #expect(!first.isParallel)
+        let foot = try #require(first.point2, "a point-line extremum has a foot")
+        #expect(simd_distance(foot, SIMD3(0, 0, 0)) < 1e-9, "foot is \(foot)")
         // `point1` is the query point echoed by the bridge rather than a kernel value, so this
         // asserts the pair is not transposed and nothing more.
-        #expect(simd_distance(first.point1, SIMD3(0, 5, 0)) < 1e-9, "point1 is \(first.point1)")
+        let query = try #require(first.point1)
+        #expect(simd_distance(query, SIMD3(0, 5, 0)) < 1e-9, "point1 is \(query)")
     }
 }

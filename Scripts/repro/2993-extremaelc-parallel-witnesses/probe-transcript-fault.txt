@@ -1,0 +1,26 @@
+=== Extrema_ExtElC: the parallel branch's witness points ===
+
+Line/Circle, line on the circle's axis (ExtremaElCLinCircTests fixture)
+  IsParallel=1 NbExt=1 SquareDistance(1)=25.000000000 (distance 5.000000000)
+    Points(1): p1=(0.000000000, 0.000000000, 0.000000000) u1=0.000000000 | p2=(0.000000000, 0.000000000, 0.000000000) u2=0.000000000
+  the circle's centre is (0, 0, 0), which is 5 from EVERY point of the circle
+
+Line/Line, parallel 3 apart
+  IsParallel=1 NbExt=1 SquareDistance(1)=9.000000000 (distance 3.000000000)
+    Points(1): p1=(0.000000000, 0.000000000, 0.000000000) u1=0.000000000 | p2=(0.000000000, 0.000000000, 0.000000000) u2=0.000000000
+
+Circle/Circle, concentric radii 5 and 3
+  IsParallel=1 NbExt=1 SquareDistance(1)=4.000000000 (distance 2.000000000)
+    Points(1): p1=(0.000000000, 0.000000000, 0.000000000) u1=0.000000000 | p2=(0.000000000, 0.000000000, 0.000000000) u2=0.000000000
+
+Line/Ellipse, line on the ellipse's axis
+  IsParallel=0 NbExt=4 SquareDistance(1)=25.000000000 (distance 5.000000000)
+    Points(1): p1=(0.000000000, 0.000000000, 0.000000000) u1=-10.000000000 | p2=(5.000000000, 0.000000000, 0.000000000) u2=0.000000000
+    Points(2): p1=(0.000000000, 0.000000000, 0.000000000) u1=-10.000000000 | p2=(0.000000000, 3.000000000, 0.000000000) u2=1.570796327
+    Points(3): p1=(0.000000000, 0.000000000, 0.000000000) u1=-10.000000000 | p2=(-5.000000000, 0.000000000, 0.000000000) u2=3.141592654
+    Points(4): p1=(0.000000000, 0.000000000, 0.000000000) u1=-10.000000000 | p2=(-0.000000000, -3.000000000, 0.000000000) u2=4.712388980
+
+Line/Plane, line parallel to the plane at z = 4
+  IsParallel=1 NbExt=1 SquareDistance(1)=16.000000000
+    calling Points(1, ...) on the parallel branch, which faults...
+exit=139

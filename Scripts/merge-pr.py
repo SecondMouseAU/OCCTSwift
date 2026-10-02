@@ -268,7 +268,7 @@ def category_heading(entry):
     opening line therefore reports a match the moment any other entry in the file opens the same
     way, which is what cost nine entries between 2026-09-30 and 2026-10-01 (#2951). Measured on
     those nine: each matched a heading that was itself inside `## Unreleased`, so scoping the
-    comparison rescues none of them. Comparing whole blocks would, and is worse, because a
+    comparison addresses none of them. Comparing whole blocks would, and is worse, because a
     reflowed hand edit then reads as absent and the entry lands twice. What the duplicate test
     does instead is skip the bucket heading and compare the bullet under it (`identifying_line`,
     #2963), which is correct and is still not a reason to accept the shape: the refusal below is
@@ -305,6 +305,7 @@ def wrapping_fence(entry):
     it, and so does any shape this cannot read unambiguously, since the cost of answering wrongly
     here is a wrong release record and the cost of not answering is the status quo.
     """
+    # Blank lines are not substantive, so they cannot be the identifying line.
     lines = [l for l in entry.split("\n") if l.strip()]
     if len(lines) < 2:
         return None
@@ -557,7 +558,7 @@ def main(argv=None):
             "one file whose job is to be read. Four entries recovered in PR #2961 have that\n"
             "shape (#2963).\n"
             "\n"
-            "Delete the opening and closing %s lines from the PR body and leave everything\n"
+            "Delete the lines holding the opening and closing %s from the PR body, and leave\n"
             "between them exactly as it is. A fence INSIDE the entry, around a snippet, is kept\n"
             "and is not what this is about. The worked example in\n"
             "okf/policies/changelog-on-merge.md is fenced to display it; the fence is not part of\n"
