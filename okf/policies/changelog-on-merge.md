@@ -71,6 +71,14 @@ tables and issue links.
 
 Do not touch `docs/CHANGELOG.md`. If your diff contains it, that is a review finding.
 
+**The fence around that example is how this page displays it, and is not part of what you write.**
+An author who copies the illustration literally wraps the whole entry in a bare ``` fence, and the
+merge transcribes verbatim, so the fence lands in `docs/CHANGELOG.md` and the entry renders as a
+code block: no heading, no bullets, no links, in the one file whose job is to be read. Four of the
+sixteen entries recovered in PR #2961 have exactly that shape, and `merge-pr.py` now refuses it
+with the correction printed (#2963). A fence *inside* the entry, around a snippet, is content and
+is kept.
+
 The block ends at the next `##` heading or at the attribution footer, whichever comes first, so
 the entry may be the body's last section and nothing has to follow it. Fenced code inside the
 entry is kept verbatim, and a fence quoted in prose elsewhere in the body does not hide the

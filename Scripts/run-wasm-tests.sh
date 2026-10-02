@@ -33,6 +33,7 @@ cd "$REPO_DIR"
 
 PINS="$SCRIPT_DIR/wasm-toolchain-versions.txt"
 pin() { sed -n "s/^$1=//p" "$PINS" | head -1; }
+die() { echo "$*" >&2; exit 2; }
 
 TOOLCHAIN_BIN="${SWIFT_TOOLCHAIN_BIN:-/Library/Developer/Toolchains/swift-$(pin SWIFT_TOOLCHAIN_VERSION).xctoolchain/usr/bin}"
 if [ ! -x "$TOOLCHAIN_BIN/swift" ]; then
@@ -41,11 +42,54 @@ if [ ! -x "$TOOLCHAIN_BIN/swift" ]; then
 fi
 SWIFT="$TOOLCHAIN_BIN/swift"
 WASMKIT="${WASMKIT:-$TOOLCHAIN_BIN/wasmkit}"
+
+# THE SUITES RUN UNDER NODE, NOT wasmkit, AND #2894 IS WHY. The same module file, byte for byte, was
+# measured under both: an OCCT exception thrown several frames below the bridge's `catch (...)` is
+# caught under Node and reaches `std::terminate` under wasmkit 0.3.1, ending the module. The compiler
+# output is not the variable, so a suite run under wasmkit measures the interpreter's exception
+# handling rather than the target's, and the target for #1689 is a browser.
+#
+# wasmkit is kept reachable with WASM_TEST_RUNTIME=wasmkit, because the comparison is worth being able
+# to repeat and because it is what `Scripts/repro/2175/run.sh` still uses for the spike.
+WASM_TEST_RUNTIME="${WASM_TEST_RUNTIME:-node}"
+SHIM_PKG="@bjorn3/browser_wasi_shim@0.4.2"
+SHIM_DIR="${WASM_TEST_SHIM_DIR:-$REPO_DIR/.build/wasm-test-shim/browser_wasi_shim}"
+
+# Fetched once and cached, keyed by nothing cleverer than the directory existing: the package is
+# pinned by exact version above, which is the same pin #2052's browser rungs use so that a
+# disagreement between this and the browser page isolates the browser and not the WASI surface.
+ensure_shim() {
+    [ -f "$SHIM_DIR/index.js" ] && return 0
+    command -v npm >/dev/null || die "npm not on PATH; needed once to fetch $SHIM_PKG"
+    local staging
+    staging="$(dirname "$SHIM_DIR")"
+    rm -rf "$staging"
+    mkdir -p "$staging"
+    echo ">>> fetching $SHIM_PKG (once, cached in $staging)"
+    # The manifest is written rather than `npm init -y`'d: npm infers the name from the directory and
+    # refuses one beginning with a dot, which under `set -e` ends the run with no output at all.
+    printf '{"name":"occtswift-wasm-test-shim","version":"0.0.0","private":true,"type":"module"}\n' \
+        > "$staging/package.json"
+    ( cd "$staging" && npm install --silent "$SHIM_PKG" >/dev/null ) \
+        || die "npm install $SHIM_PKG failed in $staging. The shim is the only network dependency these suites have; WASM_TEST_RUNTIME=wasmkit runs them without it, at the cost of the exception behaviour #2894 measured."
+    cp -R "$staging/node_modules/@bjorn3/browser_wasi_shim/dist" "$SHIM_DIR"
+    rm -rf "$staging/node_modules" "$staging/package.json" "$staging/package-lock.json"
+}
 SDK_ID="$(pin SWIFT_WASM_SDK_ID)"
 TRIPLE="$(pin SWIFT_WASM_TRIPLE)"
 KNOWN_FAILURES="$SCRIPT_DIR/wasm-test-known-failures.txt"
 
-[ -x "$WASMKIT" ] || { echo "no wasmkit at $WASMKIT (set WASMKIT=)"; exit 2; }
+case "$WASM_TEST_RUNTIME" in
+    node)
+        command -v node >/dev/null || die "node not on PATH (or set WASM_TEST_RUNTIME=wasmkit)"
+        ;;
+    wasmkit)
+        [ -x "$WASMKIT" ] || die "no wasmkit at $WASMKIT (set WASMKIT=)"
+        ;;
+    *)
+        die "WASM_TEST_RUNTIME must be 'node' or 'wasmkit', not '$WASM_TEST_RUNTIME'"
+        ;;
+esac
 [ -f Libraries/libOCCT-wasm.a ] || { echo "no Libraries/libOCCT-wasm.a: run Scripts/fetch-occt-wasm.sh"; exit 2; }
 
 TOOLSET="${TOOLSET:-}"
@@ -213,7 +257,13 @@ fi
 
 OUT_DIR="${WASM_TEST_OUT_DIR:-$(mktemp -d -t wasm-tests)}"
 mkdir -p "$OUT_DIR"
-echo ">>> running ${#RUNNERS[@]} suite(s) under $("$WASMKIT" --version 2>/dev/null || echo wasmkit)"
+if [ "$WASM_TEST_RUNTIME" = "node" ]; then
+    ensure_shim
+    runtime_label="node $(node --version) + $SHIM_PKG"
+else
+    runtime_label="wasmkit $("$WASMKIT" --version 2>/dev/null || echo "(version unknown)")"
+fi
+echo ">>> running ${#RUNNERS[@]} suite(s) under $runtime_label"
 echo ">>> transcripts in $OUT_DIR"
 echo ""
 
@@ -227,10 +277,23 @@ for runner in "${RUNNERS[@]}"; do
     # wasmkit's exit status is the module's, so a non-zero here is "tests failed" or "trapped", and
     # the two are told apart below by whether the transcript has a summary line at all.
     set +e
-    with_timeout "$WASMKIT" run "${WASMKIT_ARGS[@]}" "$runner" "${TEST_ARGS[@]}" > "$log" 2>&1
+    if [ "$WASM_TEST_RUNTIME" = "node" ]; then
+        # The preopens and TMPDIR live inside the runner script, because they are properties of the
+        # in-memory filesystem it builds rather than of this loop.
+        with_timeout node "$SCRIPT_DIR/wasm-test-node-runner.mjs" "$SHIM_DIR" "$runner" \
+            "${TEST_ARGS[@]}" > "$log" 2>&1
+    else
+        with_timeout "$WASMKIT" run "${WASMKIT_ARGS[@]}" "$runner" "${TEST_ARGS[@]}" > "$log" 2>&1
+    fi
     run_status=$?
     set -e
     summary="$(sed -n 's/.*Test run with \([0-9]*\) tests in \([0-9]*\) suites.*/\1 tests, \2 suites/p' "$log" | tail -1)"
+    if [ "$run_status" = "70" ]; then
+        echo "  TRAPPED  $name"
+        sed -n 's/^TRAP: /           /p' "$log" | head -2
+        echo "$name: TRAPPED" >> "$ALL_FAILING"
+        continue
+    fi
     if [ "$run_status" = "137" ] || [ "$run_status" = "124" ]; then
         echo "  TIMEOUT  $name"
         echo "           no result after ${WASM_TEST_TIMEOUT}s. Last line: $(tail -1 "$log" | cut -c1-100)"

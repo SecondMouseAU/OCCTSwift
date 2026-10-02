@@ -23,6 +23,10 @@ Head it DESCRIPTIVELY, with the issue numbers, as below. A bare `### Fixed` / `#
 `### Changed` is refused by merge-pr.py: it identifies nothing, which is how nine entries were
 silently discarded between 2026-09-30 and 2026-10-01 (#2951).
 
+Write the entry as markdown, not inside a ``` fence. The whole section is transcribed verbatim, so
+a fence around the entry lands in the file and renders it as a code block (#2963). A fence INSIDE
+the entry, around a snippet, is kept and is what you want.
+
 If the change genuinely warrants no entry, replace the heading below with "None, <reason>" rather
 than deleting the section, so the decision is visible instead of looking like an omission.
 -->

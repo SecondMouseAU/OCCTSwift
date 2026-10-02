@@ -15,6 +15,8 @@
 //
 // Exit status is the number of failed cases, so the runner needs no output parsing to know.
 
+import OCCTSwift
+
 // FoundationEssentials, and the choice matters more than it looks. #2761's saving is
 // ALL-OR-NOTHING PER MODULE: one linked file importing full Foundation pulls the
 // internationalisation data back in, and that includes the CONSUMER'S OWN code, not just
@@ -26,7 +28,6 @@
 #else
     import Foundation
 #endif
-import OCCTSwift
 
 // The C library, for `exit`. Foundation re-exported it; FoundationEssentials does not.
 #if canImport(Darwin)
@@ -201,6 +202,57 @@ report(
         + "\(raiseDiagnostics.map { "[\($0.function): \($0.exceptionType): \($0.message)]" }.joined(separator: " "))"
 )
 
+// MARK: - cases 5c and 5d (#2894): the SAME exception at two unwind depths
+//
+// #2894's measurement, moved into the spike because the spike is the only module this repository
+// runs under BOTH wasmkit and Node, and the open question is whether the defect belongs to the
+// generated code or to the runtime that executes it.
+//
+// Both cases raise `Standard_ConstructionError` from `Geom_TrimmedCurve` with the message
+// `Geom_TrimmedCurve::U1 == U2`. They differ in ONE variable, the number of frames between the throw
+// and the bridge's `catch (...)`:
+//
+//   5c  `Curve3D.trimmed(from: 1, to: 1)`  one frame: the bridge constructs it inside its own `try`
+//   5d  `Shape.evolved(spine:profile:)`    several, through BRepFill_Evolved's Perform chain
+//
+// Measured under wasmkit: 5c is caught, 5d reaches `std::terminate` and ends the module. Measured on
+// macOS: both are caught, with the identical message. So the exception's type and its translation
+// unit are not the variable; the unwind is.
+//
+// 5d IS LAST FOR A REASON. A terminate ends the module, so anything after it is unreported.
+
+let shallowBasis = Curve3D.line(through: SIMD3(0, 0, 0), direction: SIMD3(1, 0, 0))
+if let basis = shallowBasis {
+    let (shallowTrim, shallowDiagnostics) = OCCTDiagnostics.capturing {
+        basis.trimmed(from: 1.0, to: 1.0)
+    }
+    report(
+        "unwind-depth-1", shallowTrim == nil && shallowDiagnostics.count == 1,
+        "Curve3D.trimmed(1,1) -> \(shallowTrim == nil ? "nil" : "A CURVE"), "
+            + "records=\(shallowDiagnostics.count) "
+            + "\(shallowDiagnostics.map { "[\($0.exceptionType): \($0.message)]" }.joined(separator: " "))"
+    )
+} else {
+    report("unwind-depth-1", false, "the basis line fixture failed to build")
+}
+
+let evolvedSpine = Wire.arc(center: SIMD3(0, 0, 0), radius: 20, startAngle: 0, endAngle: .pi / 2)
+let evolvedProfile = Wire.rectangle(width: 2, height: 2)
+if let spine = evolvedSpine, let profile = evolvedProfile {
+    print("case unwind-depth-n       ATTEMPTING: no further output means the throw was not caught")
+    let (evolved, evolvedDiagnostics) = OCCTDiagnostics.capturing {
+        Shape.evolved(spine: spine, profile: profile)
+    }
+    report(
+        "unwind-depth-n", evolved == nil && evolvedDiagnostics.count == 1,
+        "Shape.evolved -> \(evolved == nil ? "nil" : "A SHAPE"), "
+            + "records=\(evolvedDiagnostics.count) "
+            + "\(evolvedDiagnostics.map { "[\($0.exceptionType): \($0.message)]" }.joined(separator: " "))"
+    )
+} else {
+    report("unwind-depth-n", false, "the spine or profile fixture failed to build")
+}
+
 // MARK: - case 5b, the must-fail call: OCCT's OWN handler, no raise reaching the bridge
 //
 // The other half the issue asks for: a call whose documented failure mode is a false return
@@ -219,7 +271,9 @@ do {
         to: URL(fileURLWithPath: brokenPath))
     let (outcome, internalDiagnostics) = OCCTDiagnostics.capturing {
         () -> Result<Shape, Error> in
-        do { return .success(try Shape.load(fromPath: brokenPath)) } catch { return .failure(error) }
+        do { return .success(try Shape.load(fromPath: brokenPath)) } catch {
+            return .failure(error)
+        }
     }
     switch outcome {
     case .success:

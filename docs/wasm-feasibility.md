@@ -860,9 +860,25 @@ JavaScriptKit reactor shape, which is Phase 5.
 ### Phase 4. Test + CI
 
 - ~~A wasm test path (the pinned `wasmkit`, or a headless browser runner) for a **subset** of the
-  per-domain suites.~~ **Done (#2793):** `Scripts/run-wasm-tests.sh` builds and runs **13 of the 18**
-  per-domain targets under the pinned `wasmkit`. The subset is larger than this line expected, and
-  it is not the modeling + IO pair it names: `OCCTIOTests` is one of the five that cannot run.
+  per-domain suites.~~ **Done (#2793), and re-pointed at Node by #2894.**
+  `Scripts/run-wasm-tests.sh` builds and runs **13 of the 18** per-domain targets, 5,553 tests, under
+  **Node with the browser's own WASI shim** rather than under `wasmkit`. The subset is larger than
+  this line expected, and it is not the modeling + IO pair it names: `OCCTIOTests` is one of the five
+  targets that cannot run.
+
+  **The runtime is the load-bearing part of that sentence.** The suites ran under `wasmkit` first, and
+  #2894 measured one module file byte for byte under both: an OCCT exception thrown several frames
+  below the bridge's `catch (...)` is caught under Node and reaches `std::terminate` under
+  `wasmkit` 0.3.1, ending the module. **Three filed issues and seven file exclusions plus a whole
+  target were that interpreter and not this port** (#2894, #2895, #2897, all three now retargeted).
+  A suite run under `wasmkit` measures the interpreter's exception handling; the target for #1689 is a
+  browser, and the shim is the same pinned `@bjorn3/browser_wasi_shim` #2052's browser rungs import,
+  so a disagreement between the suites and a real browser isolates the browser rather than the WASI
+  surface. `WASM_TEST_RUNTIME=wasmkit` still selects the old runtime, because the comparison is worth
+  being able to repeat.
+
+  It is also faster, which was not the reason but is worth recording: 13 suites in **224 s** against
+  roughly seven minutes for 12 under `wasmkit`, and the slowest single test drops from 422 s to 27.8 s.
 - ~~A GitHub Actions matrix entry that builds the wasm slice.~~ **Done (#2269):**
   `.github/workflows/wasm.yml` is the first CI job in this repository that builds for
   WebAssembly. It restores the pinned kernel asset rather than building OCCT, so it
