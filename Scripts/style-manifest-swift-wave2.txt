@@ -72,7 +72,6 @@ Tests/OCCTAnalysisTests/Issue595CurvatureDefinednessTests.swift
 Tests/OCCTAnalysisTests/Issue943BoundsVoidTests.swift
 Tests/OCCTAnalysisTests/LocalPropsParityTests.swift
 Tests/OCCTAnalysisTests/ZeroMassResultsTests.swift
-Tests/OCCTBRepGraphTests/BRepGraphDurableUIDTests.swift
 Tests/OCCTBRepGraphTests/BRepGraphExplorerTests.swift
 Tests/OCCTBRepGraphTests/BRepGraphRootNodeTests.swift
 Tests/OCCTBRepGraphTests/ConstructionAxisTests.swift
@@ -245,7 +244,6 @@ Tests/OCCTSurfaceTests/Issue965SurfacePropertyLifetimeTests.swift
 Tests/OCCTSurfaceTests/SurfaceApproximateDefaultsParityTests.swift
 Tests/OCCTSurfaceTests/SurfaceCurvatureParityTests.swift
 Tests/OCCTSurfaceTests/SurfaceNormalParityTests.swift
-Tests/OCCTSurfaceTests/SurfaceTestFixtures.swift
 Tests/OCCTSurfaceTests/SurfaceTransformFamilyParityTests.swift
 Tests/OCCTThreadTests/Issue1578ThreadedHoleMinorDiameterTests.swift
 Tests/OCCTThreadTests/Issue222EnvelopeTests.swift

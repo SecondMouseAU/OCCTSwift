@@ -60,8 +60,10 @@ func quarterCylinderReferencePoint(
 }
 
 /// Asserts `surface` matches the reference quarter-cylinder (radius 5, height 10) at its
-/// own corner, mid, and far parameters. The historical p1 defect moved the mid-parameter
-/// point by ~0.177 units (5% of the radius); `tolerance` here is 5 orders tighter.
+/// own corner, mid, and far parameters.
+///
+/// The historical p1 defect moved the mid-parameter point by ~0.177 units (5% of the
+/// radius); `tolerance` here is 5 orders tighter.
 func assertMatchesQuarterCylinder(_ surface: Surface, tolerance: Double = 1e-6) {
     let bounds = surface.parameterBounds
     let fractions: [(fu: Double, fv: Double)] = [(0, 0), (0.5, 0.5), (1, 1)]
@@ -112,8 +114,9 @@ func makeContinuityBSplineSurface(interiorMultiplicityU multiplicity: Int32) -> 
 // than the same name reused four times. Each keeps its exact prior construction.
 
 /// A rational BSpline surface obtained by converting a cylinder, trimmed to height 10, to
-/// BSpline form via `toBSpline()` (6 x 2 poles, degree 2 x 1). Used by
-/// `BSplineSurfaceManipulationTests` as a generic rational surface to poke at.
+/// BSpline form via `toBSpline()` (6 x 2 poles, degree 2 x 1).
+///
+/// Used by `BSplineSurfaceManipulationTests` as a generic rational surface to poke at.
 ///
 /// #766: the cylinder must be trimmed first. `Surface.cylinder` is infinite in V and
 /// `GeomConvert::SurfaceToBSplineSurface` refuses an infinite surface ("infinite surface",
@@ -128,6 +131,7 @@ func makeCylinderDerivedBSplineSurface(radius: Double = 5) -> Surface? {
 }
 
 /// A 4x4 BSpline surface fit through a point grid spaced 3 units apart, `z = (u+v) % 3`.
+///
 /// Used by `BSplineSurfaceExtrasTests`.
 func makeModThreeGridBSplineSurface() -> Surface? {
     var pts = [SIMD3<Double>]()
@@ -139,8 +143,9 @@ func makeModThreeGridBSplineSurface() -> Surface? {
     return Surface.fromPointGrid(points: pts, uCount: 4, vCount: 4)
 }
 
-/// A 4x4 BSpline surface fit through a point grid, `z = sin(u*0.5) * cos(v*0.5)`. Used by
-/// `BSplineSurfaceRemoveVKnotTests`.
+/// A 4x4 BSpline surface fit through a point grid, `z = sin(u*0.5) * cos(v*0.5)`.
+///
+/// Used by `BSplineSurfaceRemoveVKnotTests`.
 func makeSinCosGridBSplineSurface() -> Surface? {
     var points = [SIMD3<Double>]()
     for v in 0..<4 {
@@ -153,8 +158,9 @@ func makeSinCosGridBSplineSurface() -> Surface? {
 }
 
 /// A 4x4 non-periodic degree-3x3 BSpline surface built from an explicit, hand-written pole
-/// grid (single knot span each direction, full multiplicity). Used by
-/// `BSplineSurfaceCompletionsV121Tests`.
+/// grid (single knot span each direction, full multiplicity).
+///
+/// Used by `BSplineSurfaceCompletionsV121Tests`.
 func makeExplicitPoleBSplineSurface() -> Surface? {
     let poles: [[SIMD3<Double>]] = [
         [SIMD3(0, 0, 0), SIMD3(3, 0, 0), SIMD3(7, 0, 0), SIMD3(10, 0, 0)],

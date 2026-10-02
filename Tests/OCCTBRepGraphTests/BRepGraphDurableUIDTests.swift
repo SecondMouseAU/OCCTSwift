@@ -46,8 +46,10 @@ struct BRepGraphDurableUIDTests {
     }
 
     /// A UID minted by a *different* graph must not resolve, the case that matters, and the one
-    /// that silently returned a wrong node before #295. Its counter is in range for the foreign
-    /// graph (counters restart at 1 per graph), so nothing but provenance can reject it.
+    /// that silently returned a wrong node before #295.
+    ///
+    /// Its counter is in range for the foreign graph (counters restart at 1 per graph), so
+    /// nothing but provenance can reject it.
     @Test func uidFromAnotherGraphDoesNotResolve() throws {
         let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let cyl = try #require(Shape.cylinder(radius: 3, height: 7))
@@ -66,7 +68,9 @@ struct BRepGraphDurableUIDTests {
     }
 
     /// Two graphs over the *same* shape are still two graphs: identity is the instance, not the
-    /// geometry. This is the case a consumer is most likely to assume works.
+    /// geometry.
+    ///
+    /// This is the case a consumer is most likely to assume works.
     @Test func uidDoesNotCrossIdenticallyBuiltGraphs() throws {
         let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let a = try #require(BRepGraph(shape: box))
@@ -79,7 +83,8 @@ struct BRepGraphDurableUIDTests {
     }
 
     /// Mean sampled position + normal, a signature that actually distinguishes a box's faces.
-    /// (A single grid corner does not: adjacent faces share corners.)
+    ///
+    /// A single grid corner does not: adjacent faces share corners.
     private func faceSignature(
         _ g: BRepGraph, _ i: Int,
         shift: SIMD3<Double> = .zero
@@ -97,9 +102,11 @@ struct BRepGraphDurableUIDTests {
     }
 
     /// A full `copy()` INHERITS the source's identity, so every source UID still resolves, and
-    /// resolves to the geometrically same face. This is the kernel's own contract, not an
-    /// accident: `BRepGraph_Copy::Perform` transplants the UID counter space, the Generation and
-    /// the GraphGUID into the target. Guards the #295 provenance check against over-rejecting.
+    /// resolves to the geometrically same face.
+    ///
+    /// This is the kernel's own contract, not an accident: `BRepGraph_Copy::Perform` transplants
+    /// the UID counter space, the Generation and the GraphGUID into the target. Guards the #295
+    /// provenance check against over-rejecting.
     @Test func uidSurvivesAFullCopyAndNamesTheSameFace() throws {
         let box = try #require(Shape.box(width: 10, height: 20, depth: 30))
         let graph = try #require(BRepGraph(shape: box))
@@ -142,8 +149,10 @@ struct BRepGraphDurableUIDTests {
 
     /// `copyFace()` is the opposite case: it lifts ONE face into an empty graph without
     /// transplanting the counter space, so the extracted face restarts at counter 1, the
-    /// source's face-0 counter. Before #295 a source UID resolved here and returned the wrong
-    /// face. The extracted graph gets a fresh identity, so it now returns nil.
+    /// source's face-0 counter.
+    ///
+    /// Before #295 a source UID resolved here and returned the wrong face. The extracted graph
+    /// gets a fresh identity, so it now returns nil.
     @Test func uidDoesNotCrossACopiedOutFace() throws {
         let box = try #require(Shape.box(width: 10, height: 20, depth: 30))
         let graph = try #require(BRepGraph(shape: box))
@@ -160,8 +169,10 @@ struct BRepGraphDurableUIDTests {
         #expect(!lifted.contains(uid: uidFace0))
     }
 
-    /// An out-of-range counter must not resolve either. Stamped with this graph's own id, so it
-    /// tests the counter path rather than being rejected on provenance first.
+    /// An out-of-range counter must not resolve either.
+    ///
+    /// Stamped with this graph's own id, so it tests the counter path rather than being rejected
+    /// on provenance first.
     @Test func outOfRangeCounterDoesNotResolve() throws {
         let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let graph = try #require(BRepGraph(shape: box))
@@ -190,8 +201,10 @@ struct BRepGraphDurableUIDTests {
         #expect(!graph.contains(uid: unstamped))
     }
 
-    /// The property the UID exists for: it survives a mutation that renumbers indices, within the
-    /// graph that minted it. Guards against the #295 provenance check over-rejecting.
+    /// The property the UID exists for: it survives a mutation that renumbers indices, within
+    /// the graph that minted it.
+    ///
+    /// Guards against the #295 provenance check over-rejecting.
     @Test func uidSurvivesCompactionOfItsOwnGraph() throws {
         let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let graph = try #require(BRepGraph(shape: box))

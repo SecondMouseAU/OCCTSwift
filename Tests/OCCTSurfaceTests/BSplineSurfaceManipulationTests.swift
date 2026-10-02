@@ -42,11 +42,13 @@ struct BSplineSurfaceManipulationTests {
         #expect(bs.bsplineSurface.vDegree == 1)
     }
 
-    /// Was two discarded reads. The kernel's answer looks inverted and is not: OCCT defines
-    /// `IsURational()` as "False if for each ROW of weights all the weights are identical"
-    /// (`Geom_BSplineSurface.hxx`), a row being one U index across every V. A cylinder's weights
-    /// are the circle's, constant down each row and varying across each column, so the exact
-    /// answer is U non-rational and V rational. Do not "correct" this pair.
+    /// The kernel's rationality answer looks inverted and is not.
+    ///
+    /// Was two discarded reads. OCCT defines `IsURational()` as "False if for each ROW of
+    /// weights all the weights are identical" (`Geom_BSplineSurface.hxx`), a row being one U
+    /// index across every V. A cylinder's weights are the circle's, constant down each row and
+    /// varying across each column, so the exact answer is U non-rational and V rational. Do not
+    /// "correct" this pair.
     @Test func isRational() throws {
         let bs = try makeBSplineSurface()
         #expect(!bs.bsplineSurface.isURational)
