@@ -1,6 +1,16 @@
 // #766 kernel parity for IntCSResultsTests, IntCurvesFaceShapeIntersectorTests,
 // IntToolsBeanFaceIntersectorTests and IntToolsFaceFaceTests: the same OCCT calls, on the same
 // inputs, that the bridge functions those tests reach make.
+//
+// SUPERSEDED FOR THE BeanFace BLOCK (#2943). Its call sequence is the one
+// OCCTIntToolsBeanFaceIntersect made until #2943: construct from (edge, face) and Perform without
+// SetBeanParameters, which searches the empty interval [0, 0]. That is why the transcript records
+// NbRanges=0 for the crossing edge and [0, 0] for the edge in the face. The bridge now sets the
+// bean parameters from BRep_Tool::Range, as both of OCCT's own callers do
+// (BRepFill_TrimShellCorner.cxx:2580-2582, IntTools_EdgeFace.cxx:566), and the answers for these
+// two fixtures are in Scripts/repro/2943-beanface-bean-parameters/. This block and its transcript
+// lines are kept unchanged, because they are the evidence for what the defect produced; read them
+// as that, not as the bridge's current behaviour. The other three blocks are unaffected.
 #include <BRepBuilderAPI_MakeFace.hxx>
 #include <BRepLib_MakeEdge.hxx>
 #include <BRepPrimAPI_MakeBox.hxx>
