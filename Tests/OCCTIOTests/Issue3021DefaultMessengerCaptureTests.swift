@@ -4,6 +4,22 @@ import Testing
 
 @testable import OCCTSwift
 
+/// The default messenger's printer count and capture flag, read together under the module lock.
+///
+/// Both live on one process-wide static, and any read of them from a test that is not itself inside
+/// a capture races a sibling suite's. `.serialized` orders only the suite it is written on, and
+/// `Issue1644IOReturnStatus` also captures, so mid-capture the count is 1 and the flag is true
+/// whatever the messenger looks like at rest. That is what failed #3031's kernel-integration run:
+/// a pre-capture `#expect(!Messenger.isDefaultOutputCaptured)` that read `true`.
+///
+/// Reads INSIDE `capturingOCCTOutput` must stay raw instead, because the lock is held there and is
+/// not reentrant.
+private func defaultMessengerState() -> (printers: Int, captured: Bool) {
+    withoutConcurrentOCCTCapture {
+        (Messenger.defaultPrinterCount, Messenger.isDefaultOutputCaptured)
+    }
+}
+
 /// #3021: OCCT's own messages go to `Message::DefaultMessenger()`, and nothing could redirect them.
 ///
 /// A malformed STEP file makes OCCT's parser write
@@ -74,7 +90,7 @@ struct Issue3021DefaultMessengerCaptureTests {
 
     @Test("during a capture the detached printers are gone, which is the silencing half")
     func captureDetachesTheExistingPrinters() throws {
-        let before = Messenger.defaultPrinterCount
+        let before = defaultMessengerState().printers
         #expect(
             before >= 1,
             "OCCT's default messenger carries its own std::cout printer until something removes it")
@@ -90,20 +106,20 @@ struct Issue3021DefaultMessengerCaptureTests {
         // than redirected.
         #expect(inside == 1, "the capture must be the only printer attached while it runs")
         #expect(
-            Messenger.defaultPrinterCount == before,
+            defaultMessengerState().printers == before,
             "the detached printers must come back, or OCCT is silent for the rest of the process")
     }
 
     @Test("a capture reports itself while it runs and not afterwards")
     func capturingIsObservableOnlyInsideTheScope() throws {
-        #expect(!Messenger.isDefaultOutputCaptured)
+        #expect(!defaultMessengerState().captured)
         var inside = false
         let (_, output) = capturingOCCTOutput {
             inside = Messenger.isDefaultOutputCaptured
         }
         _ = try #require(output)
         #expect(inside)
-        #expect(!Messenger.isDefaultOutputCaptured)
+        #expect(!defaultMessengerState().captured)
     }
 
     @Test("a nested capture collects nothing and says so, and the outer one still collects")
@@ -149,31 +165,31 @@ struct Issue3021DefaultMessengerCaptureTests {
     @Test("a body that throws still gives the printers back")
     func throwingBodyRestoresThePrinters() throws {
         struct Deliberate: Error {}
-        let before = Messenger.defaultPrinterCount
+        let before = defaultMessengerState().printers
 
         #expect(throws: Deliberate.self) {
             _ = try capturingOCCTOutput { throw Deliberate() }
         }
 
         #expect(
-            !Messenger.isDefaultOutputCaptured,
+            !defaultMessengerState().captured,
             "a throw must end the capture, or every later one is refused")
         #expect(
-            Messenger.defaultPrinterCount == before,
+            defaultMessengerState().printers == before,
             "a throw must not leave OCCT's default messenger with no printers")
     }
 
     @Test("silencing returns the body's value and leaves the messenger as it found it")
     func silencingReturnsTheValue() {
-        let before = Messenger.defaultPrinterCount
+        let before = defaultMessengerState().printers
         let valid = withoutConcurrentOCCTCapture {
             Messenger.silencingDefaultOutput {
                 Shape.box(width: 10, height: 10, depth: 10)?.isValid ?? false
             }
         }
         #expect(valid)
-        #expect(Messenger.defaultPrinterCount == before)
-        #expect(!Messenger.isDefaultOutputCaptured)
+        #expect(defaultMessengerState().printers == before)
+        #expect(!defaultMessengerState().captured)
     }
 
     @Test("ending a capture nobody began reports nil rather than an empty string")
@@ -187,5 +203,31 @@ struct Issue3021DefaultMessengerCaptureTests {
             #expect(OCCTDefaultMessengerEndCapture() == nil)
             #expect(Messenger.defaultPrinterCount >= 1)
         }
+    }
+
+    @Test(
+        "an unlocked read of the capture state sees a sibling's capture and a locked one does not")
+    func captureStateIsOnlyExactUnderTheLock() {
+        let started = DispatchSemaphore(value: 0)
+        let finished = DispatchSemaphore(value: 0)
+        DispatchQueue.global().async {
+            _ = capturingOCCTOutput {
+                started.signal()
+                Thread.sleep(forTimeInterval: 0.4)
+            }
+            finished.signal()
+        }
+        started.wait()
+
+        // The sibling is now mid-capture. A raw read is what the other tests in this suite used to
+        // do, and it sees the sibling's capture as though it were this test's own state.
+        let raw = Messenger.isDefaultOutputCaptured
+        // A locked read waits for the sibling to finish, so it sees the messenger at rest.
+        let locked = defaultMessengerState()
+        finished.wait()
+
+        #expect(raw, "an unlocked read must see the sibling's capture, or the lock is unneeded")
+        #expect(!locked.captured, "a locked read must wait out the sibling and see no capture")
+        #expect(locked.printers >= 1, "the messenger at rest carries its own printer")
     }
 }
