@@ -71,7 +71,6 @@ Tests/OCCTAnalysisTests/Issue595CurvatureDefinednessTests.swift
 Tests/OCCTAnalysisTests/Issue943BoundsVoidTests.swift
 Tests/OCCTAnalysisTests/LocalPropsParityTests.swift
 Tests/OCCTAnalysisTests/ZeroMassResultsTests.swift
-Tests/OCCTBRepGraphTests/BRepGraphDurableUIDTests.swift
 Tests/OCCTBRepGraphTests/BRepGraphExplorerTests.swift
 Tests/OCCTBRepGraphTests/BRepGraphRootNodeTests.swift
 Tests/OCCTBRepGraphTests/ConstructionAxisTests.swift
@@ -102,7 +101,6 @@ Tests/OCCTCurveTests/Issue995BuildTrsf3DTests.swift
 Tests/OCCTDrawingTests/DrawingStyleTests.swift
 Tests/OCCTDrawingTests/DrawingTestFixtures.swift
 Tests/OCCTFoundationTests/PathParsingContractTests.swift
-Tests/OCCTGeom2dTests/BSplineCurve2DCompletionsV121Tests.swift
 Tests/OCCTGeom2dTests/Curve2DApproximatedOverloadParityTests.swift
 Tests/OCCTGeom2dTests/Curve2DCircleFactoryParityTests.swift
 Tests/OCCTGeom2dTests/Curve2DConicFactoryParityTests.swift
@@ -244,7 +242,6 @@ Tests/OCCTSurfaceTests/Issue965SurfacePropertyLifetimeTests.swift
 Tests/OCCTSurfaceTests/SurfaceApproximateDefaultsParityTests.swift
 Tests/OCCTSurfaceTests/SurfaceCurvatureParityTests.swift
 Tests/OCCTSurfaceTests/SurfaceNormalParityTests.swift
-Tests/OCCTSurfaceTests/SurfaceTestFixtures.swift
 Tests/OCCTSurfaceTests/SurfaceTransformFamilyParityTests.swift
 Tests/OCCTThreadTests/Issue1578ThreadedHoleMinorDiameterTests.swift
 Tests/OCCTThreadTests/Issue232BoundsTests.swift

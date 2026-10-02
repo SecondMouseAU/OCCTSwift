@@ -32,10 +32,13 @@ emits, and a line with no content left after those. Nothing numeric in the measu
 
 reproduce.json: WHAT THE CAPTURE DID, DECLARED NEXT TO THE PROBE
 ----------------------------------------------------------------
-Thirteen of 344 transcripts did not reproduce and **none of the thirteen was a kernel divergence**
-(PR #2823). Each was a way in which "transcript.txt is one run of probe.mm from its own directory with
-no arguments" was not true of the capture, so each is declared in an optional `reproduce.json`
-beside the probe rather than normalised away for all 344. Every key takes a required `reason`, and
+In the sweep this file came out of (PR #2823), thirteen transcripts did not reproduce and **none
+of them was a kernel divergence**. That thirteen is the count that sweep adjudicated and not the
+current population, which the run derives and prints in its banner; a count restated in prose has
+no update path, so no other one is given here. Each of the thirteen was a way in which
+"transcript.txt is one run of probe.mm from its own directory with no arguments" was not true of
+the capture, so each is declared in an optional `reproduce.json` beside the probe rather than
+normalised away for every pair. Every key takes a required `reason`, and
 a key whose pattern matches nothing is DECL-UNUSED rather than ignored.
 
 **Each key takes one of two shapes, and which one is decided by its consumer**: `cwd`, `argv` and
@@ -44,7 +47,7 @@ against lines and takes `{"pattern": <regex>, "reason": ...}`, as a list for the
 several. A declaration that offers the other shape is DECL-INVALID rather than accepted, because the
 validator used to take either and each consumer read exactly one: a `pattern`-only `argv` raised
 KeyError, and a `pattern`-only `cwd` ran the probe in the wrong directory and said nothing, which is
-the mistake two of the thirteen transcripts below were captured with (PR #2822's review).
+the mistake two of that sweep's thirteen transcripts were captured with (PR #2822's review).
 
     cwd             "repo-root", for a probe whose fixture path is relative to the repo root
                     (`Tests/OCCTStressTests/Fixtures/...`). Running it in its own directory turned
@@ -90,7 +93,8 @@ links. `--require-pinned-asset` refuses to report at all unless identity is prov
 
 NOT A GATE, AND NOT FOR `gate-scripts`
 --------------------------------------
-It reads a 1.3 GB xcframework that CI does not check out and compiles 344 translation units, which
+It reads a 1.3 GB xcframework that CI does not check out and compiles one translation unit per pair
+(the count is derived by the run and printed in its banner, never restated here), which
 is the release-check shape `okf/policies/static-gates.md` describes: a question about something the
 repo points at rather than something it contains. `--require-asset` makes a run that examined
 nothing exit 2 instead of reporting clean (#2098's mode). It exits 1 when any probe fails to
@@ -186,6 +190,21 @@ def strip_header(lines: list[str]) -> list[str]:
     return lines[i:]
 
 
+TOKEN_SPLIT = re.compile(r"([-_.])")
+
+
+def retoken(stem: str, frm: str, to: str) -> str | None:
+    """`stem` with the whole token `frm` replaced by `to`, or None if it holds no such token.
+
+    Whole token, split on `-`, `_` and `.`, so `probe` is replaced in `probe-evidence-fix` and in
+    `evidence-fix-probe` and never inside a longer word.
+    """
+    parts = TOKEN_SPLIT.split(stem)
+    if frm not in parts:
+        return None
+    return "".join(to if p == frm else p for p in parts)
+
+
 DECL_FILE = "reproduce.json"
 # Every allowance is a way for a real difference to pass, so every one carries a reason that the
 # report prints. There are three shapes of entry, and which shape a key takes is decided by what
@@ -196,8 +215,8 @@ DECL_FILE = "reproduce.json"
 # The validator accepted `value` OR `pattern` for every key in the last two groups while the
 # consumers read exactly one of them, which is PR #2822's CRITICAL: a `pattern`-only `argv` reached
 # `decl["argv"]["value"]` and raised KeyError, and a `pattern`-only `cwd` read as None and ran the
-# probe in the WRONG DIRECTORY, silently, which is the failure two of the thirteen transcripts this
-# script exists to adjudicate were produced by. A validator that admits a shape no consumer reads is
+# probe in the WRONG DIRECTORY, silently, which is the failure two of PR #2823's thirteen
+# transcripts were produced by. A validator that admits a shape no consumer reads is
 # not a laxer validator, it is a validator for a different file.
 PATTERN_KEYS = ("rerun_drop", "volatile", "transcript_only")
 REGEX_KEYS = ("rerun_keep", "transcript_tail_from")
@@ -207,71 +226,78 @@ VALUE_KEYS = ("cwd", "argv", "status")
 DECL_KEYS = PATTERN_KEYS + REGEX_KEYS + VALUE_KEYS
 
 
-def load_declaration(d: str):
-    """(declaration, errors) for the probe directory `d`.
+def load_declaration(d: str, decl_file: str = DECL_FILE):
+    """(declaration, errors) for the pair in `d` whose declaration is `decl_file`.
 
-    An absent `reproduce.json` is `{}`, which is the normal case: 331 of 344 probes reproduce with
-    no declaration at all and must keep doing so. A declaration that names an unknown key, or an
-    allowance with no reason, is an error rather than a silently ignored line, because a typo in a
-    suppression file is indistinguishable from a suppression that works.
+    An absent declaration is `{}`, which is the normal case: the large majority of pairs reproduce
+    with no declaration at all and must keep doing so. A declaration that names an unknown key, or
+    an allowance with no reason, is an error rather than a silently ignored line, because a typo in
+    a suppression file is indistinguishable from a suppression that works.
+
+    The file is named per PAIR, not per directory, by the same token substitution that pairs a
+    probe with its transcript: `probe.mm` declares in `reproduce.json`, `probe-evidence-fix.mm` in
+    `reproduce-evidence-fix.json`. A directory-wide declaration would let one pair's allowances
+    adjudicate another pair that nothing had measured, which is #2934's defect wearing the other
+    hat: `766-thread-193-222`'s `status: not-reproducible` would have excused its evidence-fix
+    probe from ever being compiled.
     """
-    path = os.path.join(d, DECL_FILE)
+    path = os.path.join(d, decl_file)
     if not os.path.isfile(path):
         return {}, []
     try:
         with open(path, encoding="utf-8") as fh:
             decl = json.load(fh)
     except (ValueError, OSError) as exc:
-        return {}, [f"{DECL_FILE} is not readable JSON: {exc}"]
+        return {}, [f"{decl_file} is not readable JSON: {exc}"]
     if not isinstance(decl, dict):
-        return {}, [f"{DECL_FILE} must hold a JSON object"]
-    errors = [f"{DECL_FILE}: unknown key {k!r}" for k in decl if k not in DECL_KEYS]
+        return {}, [f"{decl_file} must hold a JSON object"]
+    errors = [f"{decl_file}: unknown key {k!r}" for k in decl if k not in DECL_KEYS]
     for k in PATTERN_KEYS:
         entries = decl.get(k, [])
         if not isinstance(entries, list):
-            errors.append(f"{DECL_FILE}: {k} must be a list")
+            errors.append(f"{decl_file}: {k} must be a list")
             continue
         for e in entries:
             if not isinstance(e, dict) or not e.get("pattern") or not e.get("reason"):
-                errors.append(f"{DECL_FILE}: every {k} entry needs a pattern and a reason")
+                errors.append(f"{decl_file}: every {k} entry needs a pattern and a reason")
                 continue
             try:
                 re.compile(e["pattern"])
             except re.error as exc:
-                errors.append(f"{DECL_FILE}: {k} pattern {e['pattern']!r} does not compile: {exc}")
+                errors.append(f"{decl_file}: {k} pattern {e['pattern']!r} does not compile: {exc}")
     for k in REGEX_KEYS:
         if k not in decl:
             continue
         e = decl[k]
         if not isinstance(e, dict) or not e.get("pattern") or not e.get("reason"):
-            errors.append(f"{DECL_FILE}: {k} needs a pattern and a reason")
+            errors.append(f"{decl_file}: {k} needs a pattern and a reason")
             continue
         try:
             re.compile(e["pattern"])
         except re.error as exc:
-            errors.append(f"{DECL_FILE}: {k} pattern {e['pattern']!r} does not compile: {exc}")
+            errors.append(f"{decl_file}: {k} pattern {e['pattern']!r} does not compile: {exc}")
     for k in VALUE_KEYS:
         if k not in decl:
             continue
         e = decl[k]
         if not isinstance(e, dict) or "value" not in e or not e.get("reason"):
-            errors.append(f"{DECL_FILE}: {k} needs a value and a reason")
+            errors.append(f"{decl_file}: {k} needs a value and a reason")
             continue
         # Each of the three is read as a literal by exactly one consumer, so each literal is checked
         # here rather than where reading it wrong is silent.
         if k == "cwd" and e["value"] not in ("repo-root", "probe"):
-            errors.append(f"{DECL_FILE}: cwd must be \"repo-root\" or \"probe\"")
+            errors.append(f"{decl_file}: cwd must be \"repo-root\" or \"probe\"")
         if k == "status" and e["value"] != "not-reproducible":
-            errors.append(f"{DECL_FILE}: the only status is \"not-reproducible\"")
+            errors.append(f"{decl_file}: the only status is \"not-reproducible\"")
         if k == "argv":
             if not isinstance(e["value"], list):
-                errors.append(f"{DECL_FILE}: argv value must be a list of arguments, and a bare "
+                errors.append(f"{decl_file}: argv value must be a list of arguments, and a bare "
                               "string would be passed one character at a time")
             elif not all(isinstance(a, str) for a in e["value"]):
                 # A JSON number would reach the probe through `str()`, and `1.50` arrives as "1.5",
                 # which is a different argument from the one the capture passed. The capture's
                 # command line is text, so it is declared as text.
-                errors.append(f"{DECL_FILE}: every argv element must be a string, because a JSON "
+                errors.append(f"{decl_file}: every argv element must be a string, because a JSON "
                               "number does not round-trip to the argument the capture passed")
     return decl, errors
 
@@ -375,15 +401,118 @@ def apply_declaration(want: list[str], got: list[str], decl: dict):
     return want, got, covered, unused
 
 
+def pair_names(stem: str):
+    """(transcript, declaration, argv) basenames for the probe `stem`.mm.
+
+    Where the name carries a `probe` token, every companion is that name with the token replaced,
+    which covers three of the four spellings on disk with ONE rule: `probe.mm` / `transcript.txt`,
+    `probe-evidence-fix.mm` / `transcript-evidence-fix.txt`, and the older word order
+    `evidence-fix-probe.mm` / `evidence-fix-transcript.txt`.
+
+    Where it does not, the probe is named for what it probes and the companion carries the role as
+    a suffix: `race.mm` / `race-transcript.txt` in `766-foundation-units-msg-lib`. So the fallback
+    appends the role rather than giving up, and no `.mm` in a `766-*` directory is left with no
+    companion to look for.
+
+    Hard-coding `probe.mm` and `transcript.txt` is #2934: a second, corrected probe added beside
+    the first was not a MISSING pair and not a DIFF, it was nothing at all, and the parity records
+    whose `source` named the corrected transcript were asserted by no run of this script. Thirty-
+    nine pairs on `main` were in that position.
+    """
+    sub = retoken(stem, "probe", "transcript")
+    if sub is not None:
+        return sub + ".txt", retoken(stem, "probe", "reproduce") + ".json", \
+            retoken(stem, "probe", "argv") + ".txt"
+    return stem + "-transcript.txt", stem + "-reproduce.json", stem + "-argv.txt"
+
+
+def probe_names_for(stem: str) -> list[str]:
+    """Every probe stem whose `pair_names` derives the transcript `stem`.txt, best spelling first.
+
+    The inverse of `pair_names`, and it is deliberately not single-valued, because `pair_names` is
+    not injective: `race-transcript.txt` is what the token rule derives from `race-probe.mm` AND
+    what the suffix fallback derives from `race.mm`. Reverse-mapping with the token rule alone
+    named only the first, so an orphan `race-transcript.txt` reported "has no race-probe.mm beside
+    it" about a directory whose convention, and whose deleted probe, is `race.mm`. The pair, the
+    verdict and the declaration name were right either way; the sentence a reader acts on was not,
+    and a report that names the wrong file is the same silence #2934 is about.
+    """
+    out: list[str] = []
+    sub = retoken(stem, "transcript", "probe")
+    if sub is not None:
+        out.append(sub)
+    if stem.endswith("-transcript"):
+        base = stem[: -len("-transcript")]
+        # Only where `pair_names` would actually take its fallback branch for `base`: a stem that
+        # already holds a `probe` token takes the token rule, so `probe-transcript.txt` is not a
+        # transcript of `probe.mm` (that one is `transcript.txt`).
+        if base and retoken(base, "probe", "transcript") is None and base not in out:
+            out.append(base)
+    return out
+
+
+def pairs_in(d: str) -> list[dict]:
+    """Every (probe, transcript) pair in `d`, with the orphans on BOTH sides kept as pairs.
+
+    The unit this script checks is a pair, not a directory. A directory contributes as many pairs
+    as it holds probes, plus one for every transcript no probe claims, plus one standing for the
+    directory itself when it holds neither. An orphan on either side is a pair with a `None` in it
+    and becomes MISSING in `check_pair`, which is the verdict the directory-level code already
+    gave for a directory with no `probe.mm`; nothing a directory holds can now be silently passed
+    over.
+    """
+    names = sorted(os.listdir(d)) if os.path.isdir(d) else []
+    pairs: list[dict] = []
+    claimed: set[str] = set()
+    for n in names:
+        if not n.endswith(".mm"):
+            continue
+        stem = n[: -len(".mm")]
+        tname, dname, aname = pair_names(stem)
+        claimed.add(tname)
+        have = os.path.isfile(os.path.join(d, tname))
+        pairs.append({"dir": d, "probe": n, "transcript": tname if have else None,
+                      "decl": dname, "argv": aname,
+                      "why": "" if have else f"{n} has no {tname} beside it"})
+    for n in names:
+        if not n.endswith(".txt") or n in claimed:
+            continue
+        stem = n[: -len(".txt")]
+        pnames = probe_names_for(stem)
+        if not pnames:
+            continue
+        want = " or ".join(x + ".mm" for x in pnames)
+        pairs.append({"dir": d, "probe": None, "transcript": n,
+                      "decl": retoken(stem, "transcript", "reproduce") + ".json", "argv": None,
+                      "why": f"{n} has no {want} beside it"})
+    if not pairs:
+        pairs.append({"dir": d, "probe": None, "transcript": None, "decl": DECL_FILE,
+                      "argv": None, "why": "the directory holds no probe and no transcript"})
+    return pairs
+
+
+def pair_label(p: dict) -> str:
+    """`766-dir/probe-evidence-fix.mm`: which PAIR a verdict is about, not just which directory.
+
+    The directory name alone stopped identifying a verdict the moment a directory could hold two
+    pairs, and a report that says `766-modeling-glue MATCH` about one of two probes is the same
+    silence #2934 is about.
+    """
+    leaf = p["probe"] or p["transcript"]
+    base = os.path.basename(p["dir"])
+    return f"{base}/{leaf}" if leaf else base
+
+
 def compile_and_run(probe: str, asset: str, workdir: str, timeout: int, decl: dict | None = None,
-                    repo_root: str = ROOT):
+                    repo_root: str = ROOT, argv_file: str | None = None):
     """(status, output_or_error) for one probe.mm compiled against `asset`.
 
     The binary runs with the probe's own directory as its working directory, because several probes
     read a fixture by a path relative to it (`inputs/fillet298_in1.brep`). Running elsewhere
     silently produced `faces=0 edges=0` and read as a kernel divergence. Two probes need the
     opposite, because their fixture path is relative to the repo root, and say so in their
-    `reproduce.json` `cwd`. An optional `argv.txt` beside the probe, or the declaration's `argv`,
+    `reproduce.json` `cwd`. An optional per-pair argv file beside the probe (`argv.txt` for
+    `probe.mm`, `argv-evidence-fix.txt` for `probe-evidence-fix.mm`), or the declaration's `argv`,
     supplies the arguments a probe needs.
     """
     decl = decl or {}
@@ -406,9 +535,9 @@ def compile_and_run(probe: str, asset: str, workdir: str, timeout: int, decl: di
     if "argv" in decl:
         argv += [str(a) for a in decl["argv"]["value"]]
     else:
-        argv_file = os.path.join(probe_dir, "argv.txt")
-        if os.path.isfile(argv_file):
-            with open(argv_file, encoding="utf-8") as fh:
+        argv_path = os.path.join(probe_dir, argv_file or "argv.txt")
+        if os.path.isfile(argv_path):
+            with open(argv_path, encoding="utf-8") as fh:
                 argv += [a for a in fh.read().split() if a]
     cwd = repo_root if decl.get("cwd", {}).get("value") == "repo-root" else probe_dir
     try:
@@ -418,25 +547,35 @@ def compile_and_run(probe: str, asset: str, workdir: str, timeout: int, decl: di
     return "RAN", (run.stdout + run.stderr)
 
 
-def check_one(d: str, asset: str, timeout: int, repo_root: str = ROOT) -> dict:
-    name = os.path.basename(d)
-    probe = os.path.join(d, "probe.mm")
-    transcript = os.path.join(d, "transcript.txt")
-    if not os.path.isfile(probe) or not os.path.isfile(transcript):
-        return {"name": name, "status": "MISSING",
-                "detail": f"probe.mm={os.path.isfile(probe)} transcript.txt={os.path.isfile(transcript)}"}
-    decl, decl_errors = load_declaration(d)
+def check_pair(p: dict, asset: str, timeout: int, repo_root: str = ROOT) -> dict:
+    """The verdict for ONE (probe, transcript) pair, which is this script's unit of evidence.
+
+    The declaration is read BEFORE the existence check, so that an orphan on either side can be
+    declared `not-reproducible` with a printed reason rather than failing forever with no way to
+    say why. The orphan the tree actually holds is `766-foundation-osd-io`'s
+    `perfmeter-churn-transcript.txt`, captured from a Swift Testing probe stored as
+    `perfmeter-churn-probe.swift.txt` so that no gate or build picks it up; there is no `.mm` for
+    this script to compile and saying so every run is the point.
+    """
+    d = p["dir"]
+    name = pair_label(p)
+    decl, decl_errors = load_declaration(d, p["decl"])
     if decl_errors:
         return {"name": name, "status": "DECL-INVALID", "detail": "\n".join(decl_errors)}
     if decl.get("status", {}).get("value") == "not-reproducible":
-        # Not a pass and not a failure: a transcript that was never one capture of one run cannot be
-        # compared at all, and saying so out loud on every run is the whole point. The reason is
-        # printed; no measurement of this probe is ever reported as verified.
-        return {"name": name, "status": "NOT-REPRODUCIBLE",
-                "detail": decl["status"]["reason"]}
+        # Not a pass and not a failure: a transcript that was never one capture of one run of a
+        # `.mm` probe cannot be compared at all, and saying so out loud on every run is the whole
+        # point. The reason is printed; no measurement of this pair is ever reported as verified.
+        return {"name": name, "status": "NOT-REPRODUCIBLE", "detail": decl["status"]["reason"]}
+    if not p["probe"] or not p["transcript"]:
+        held = ", ".join(sorted(os.listdir(d))) if os.path.isdir(d) else "nothing"
+        return {"name": name, "status": "MISSING",
+                "detail": f"{p['why']}. The directory holds: {held}"}
+    probe = os.path.join(d, p["probe"])
+    transcript = os.path.join(d, p["transcript"])
     work = tempfile.mkdtemp(prefix="probe766-")
     try:
-        status, out = compile_and_run(probe, asset, work, timeout, decl, repo_root)
+        status, out = compile_and_run(probe, asset, work, timeout, decl, repo_root, p["argv"])
         if status != "RAN":
             return {"name": name, "status": status, "detail": out}
         with open(transcript, encoding="utf-8", errors="ignore") as fh:
@@ -498,20 +637,25 @@ def run(args) -> int:
     ident = identity_helper.identify(ROOT, identity_helper.explicit_from(args, DEFAULT_ASSET), SLICE)
     asset = ident.path
     dirs = [d for d in probe_dirs(args) if os.path.isdir(d)]
+    pairs = [p for d in dirs for p in pairs_in(d)]
 
     print("check-766-probe-reproduction: recompile each probe and diff it against its transcript")
     for line in ident.banner():
         print(line)
     print(f"  probe directories: {len(dirs)}")
+    # The population is pairs, not directories, and the two numbers differ by every second probe a
+    # directory holds. Printing only the directory count is what let thirty-nine pairs sit
+    # unexamined under a line that said 120 (#2934).
+    print(f"  probe/transcript pairs: {len(pairs)}")
 
     refusal = identity_helper.refusal(ident, args.require_pinned_asset)
     if refusal:
         print(f"  ERROR: {refusal}", file=sys.stderr)
         return 2
 
-    if not ident.present or not dirs:
+    if not ident.present or not pairs:
         why = (ident.reason if not ident.present
-               else "no 766-* probe directory was found.")
+               else "no 766-* probe/transcript pair was found.")
         if args.require_asset:
             print(f"  ERROR: --require-asset and {why} A clean report over a population that "
                   "was never compiled is a false green, not a result.", file=sys.stderr)
@@ -521,7 +665,7 @@ def run(args) -> int:
 
     results = []
     with concurrent.futures.ThreadPoolExecutor(max_workers=args.jobs) as pool:
-        futures = {pool.submit(check_one, d, asset, args.timeout): d for d in dirs}
+        futures = {pool.submit(check_pair, p, asset, args.timeout): p for p in pairs}
         for fut in concurrent.futures.as_completed(futures):
             results.append(fut.result())
     results.sort(key=lambda r: r["name"])
@@ -627,10 +771,10 @@ def self_test() -> int:
     with tempfile.TemporaryDirectory() as d:
         empty = os.path.join(d, "766-empty")
         os.makedirs(empty)
-        r = check_one(empty, os.path.join(d, "no-asset"), 5)
+        r = check_pair(pairs_in(empty)[0], os.path.join(d, "no-asset"), 5)
         cases.append(("a directory with no probe is MISSING", r["status"] == "MISSING"))
         write_text(os.path.join(empty, "probe.mm"), "int main(){return 0;}\n")
-        r = check_one(empty, os.path.join(d, "no-asset"), 5)
+        r = check_pair(pairs_in(empty)[0], os.path.join(d, "no-asset"), 5)
         cases.append(("a probe with no transcript is MISSING", r["status"] == "MISSING"))
 
     # 7 and 8. The real compile line, against a stand-in asset: an empty `libOCCT-macos.a` and an
@@ -665,11 +809,11 @@ def self_test() -> int:
             write_text(os.path.join(p, "transcript.txt"), want)
         os.makedirs(os.path.join(d, "766-cwd", "inputs"))
         write_text(os.path.join(d, "766-cwd", "inputs", "x.txt"), "fixture\n")
-        ok = check_one(os.path.join(d, "766-ok"), asset, 60)
-        bad = check_one(os.path.join(d, "766-bad"), asset, 60)
-        broken = check_one(os.path.join(d, "766-broken"), asset, 60)
-        extra = check_one(os.path.join(d, "766-extra"), asset, 60)
-        cwd = check_one(os.path.join(d, "766-cwd"), asset, 60)
+        ok = check_pair(pairs_in(os.path.join(d, "766-ok"))[0], asset, 60)
+        bad = check_pair(pairs_in(os.path.join(d, "766-bad"))[0], asset, 60)
+        broken = check_pair(pairs_in(os.path.join(d, "766-broken"))[0], asset, 60)
+        extra = check_pair(pairs_in(os.path.join(d, "766-extra"))[0], asset, 60)
+        cwd = check_pair(pairs_in(os.path.join(d, "766-cwd"))[0], asset, 60)
         cases.append(("a probe reproducing its transcript is MATCH", ok["status"] == "MATCH"))
         cases.append(("a probe printing a different value is DIFF-VALUES",
                       bad["status"] == "DIFF-VALUES"))
@@ -681,6 +825,140 @@ def self_test() -> int:
         # Running it in a scratch directory turned a missing fixture into `faces=0 edges=0`, which
         # reads as a kernel divergence rather than as a harness bug.
         cases.append(("a probe reads its fixture by a relative path", cwd["status"] == "MATCH"))
+
+        # 8b. #2934, THE SHAPE THAT WAS BEING SKIPPED, end to end against the stand-in asset. A
+        #     directory holding a second, corrected probe beside the first had its second pair
+        #     compiled by nothing: `check_one` opened `probe.mm` and `transcript.txt` by name, so
+        #     `probe-evidence-fix.mm` was not MISSING and not a DIFF, it was absent from the run,
+        #     while the parity records whose `source` field named `transcript-evidence-fix.txt`
+        #     read as verified. The case that proves it is a FAILING second pair behind a passing
+        #     first: under the old code the directory reported one MATCH and exit 0.
+        two = os.path.join(d, "766-two-pairs")
+        os.makedirs(two)
+        write_text(os.path.join(two, "probe.mm"),
+                   '#include <stdio.h>\nint main(){printf("area=6.0\\n");return 0;}\n')
+        write_text(os.path.join(two, "transcript.txt"), "area=6.0\n")
+        write_text(os.path.join(two, "probe-evidence-fix.mm"),
+                   '#include <stdio.h>\nint main(){printf("area=7.0\\n");return 0;}\n')
+        write_text(os.path.join(two, "transcript-evidence-fix.txt"), "area=6.0\n")
+        verdicts = {r["name"]: r["status"]
+                    for r in (check_pair(q, asset, 60) for q in pairs_in(two))}
+        cases.append(("a second probe beside the first is its own pair, not invisible",
+                      len(verdicts) == 2))
+        cases.append(("the corrected probe's own transcript is the one it is diffed against",
+                      verdicts.get("766-two-pairs/probe-evidence-fix.mm") == "DIFF-VALUES"))
+        cases.append(("and a passing first pair does not cover for it",
+                      verdicts.get("766-two-pairs/probe.mm") == "MATCH"))
+
+        # 8c. The older word order, which the issue's own suggested sweep (`probe-*.mm`) misses:
+        #     `766-bridge-exception-diagnostics` spells its second pair `evidence-fix-probe.mm` /
+        #     `evidence-fix-transcript.txt`. Pairing by token substitution rather than by prefix is
+        #     what reaches both spellings with one rule.
+        rev = os.path.join(d, "766-reversed")
+        os.makedirs(rev)
+        write_text(os.path.join(rev, "probe.mm"),
+                   '#include <stdio.h>\nint main(){printf("a\\n");return 0;}\n')
+        write_text(os.path.join(rev, "transcript.txt"), "a\n")
+        write_text(os.path.join(rev, "evidence-fix-probe.mm"),
+                   '#include <stdio.h>\nint main(){printf("b\\n");return 0;}\n')
+        write_text(os.path.join(rev, "evidence-fix-transcript.txt"), "b\n")
+        verdicts = {r["name"]: r["status"]
+                    for r in (check_pair(q, asset, 60) for q in pairs_in(rev))}
+        cases.append(("the older `evidence-fix-probe.mm` word order is paired too",
+                      verdicts.get("766-reversed/evidence-fix-probe.mm") == "MATCH"))
+
+        # 8d. The declaration is per PAIR. A directory-wide `reproduce.json` would let the first
+        #     pair's `status: not-reproducible` excuse the second from ever being compiled, which
+        #     is #2934 with the sign flipped: `766-thread-193-222` holds exactly that declaration
+        #     and exactly that second pair.
+        decl_dir = os.path.join(d, "766-declared")
+        os.makedirs(decl_dir)
+        write_text(os.path.join(decl_dir, "probe.mm"),
+                   '#include <stdio.h>\nint main(){printf("a\\n");return 0;}\n')
+        write_text(os.path.join(decl_dir, "transcript.txt"), "not this\n")
+        write_text(os.path.join(decl_dir, DECL_FILE), json.dumps(
+            {"status": {"value": "not-reproducible", "reason": "two programs, several runs"}}))
+        write_text(os.path.join(decl_dir, "probe-evidence-fix.mm"),
+                   '#include <stdio.h>\nint main(){printf("area=7.0\\n");return 0;}\n')
+        write_text(os.path.join(decl_dir, "transcript-evidence-fix.txt"), "area=6.0\n")
+        verdicts = {r["name"]: r["status"]
+                    for r in (check_pair(q, asset, 60) for q in pairs_in(decl_dir))}
+        cases.append(("reproduce.json declares the pair it is named for",
+                      verdicts.get("766-declared/probe.mm") == "NOT-REPRODUCIBLE"))
+        cases.append(("and does not excuse the second pair from being compiled",
+                      verdicts.get("766-declared/probe-evidence-fix.mm") == "DIFF-VALUES"))
+        write_text(os.path.join(decl_dir, "reproduce-evidence-fix.json"), json.dumps(
+            {"volatile": [{"pattern": r"^area=[0-9.]+$", "reason": "a per-pair allowance"}]}))
+        verdicts = {r["name"]: r["status"]
+                    for r in (check_pair(q, asset, 60) for q in pairs_in(decl_dir))}
+        cases.append(("a second pair declares in reproduce-evidence-fix.json",
+                      verdicts.get("766-declared/probe-evidence-fix.mm") == "MATCH-DECLARED"))
+
+    # 8e. Pairing by name, without compiling anything. `retoken` replaces a whole token, so it must
+    #     not fire inside a longer word, and both orphan directions must survive discovery as
+    #     pairs: a transcript nothing produced and a probe nothing captured are each a MISSING, and
+    #     each was invisible while the unit was a directory.
+    cases.append(("probe.mm pairs with transcript.txt",
+                  pair_names("probe")[0] == "transcript.txt"))
+    cases.append(("probe-evidence-fix.mm pairs with transcript-evidence-fix.txt",
+                  pair_names("probe-evidence-fix")[0] == "transcript-evidence-fix.txt"))
+    cases.append(("evidence-fix-probe.mm pairs with evidence-fix-transcript.txt",
+                  pair_names("evidence-fix-probe")[0] == "evidence-fix-transcript.txt"))
+    cases.append(("the declaration and argv files are derived the same way",
+                  pair_names("probe-evidence-fix")[1:] ==
+                  ("reproduce-evidence-fix.json", "argv-evidence-fix.txt")))
+    cases.append(("`probe` is not matched inside a longer word",
+                  retoken("subprobe", "probe", "transcript") is None))
+    # A probe named for what it probes rather than with a `probe` token: `766-foundation-units-msg-lib`
+    # holds `race.mm` beside `race-transcript.txt`, which arrived six directories after the pair
+    # rule did. Falling back to a suffix rather than giving up is what keeps it one pair instead of
+    # two MISSINGs that are each other's answer.
+    cases.append(("a .mm with no `probe` token pairs by suffix instead",
+                  pair_names("race") == ("race-transcript.txt", "race-reproduce.json",
+                                         "race-argv.txt")))
+    with tempfile.TemporaryDirectory() as d:
+        orphan = os.path.join(d, "766-orphan")
+        os.makedirs(orphan)
+        write_text(os.path.join(orphan, "transcript-evidence-fix.txt"), "a\n")
+        write_text(os.path.join(orphan, "race.mm"),
+                   '#include <stdio.h>\nint main(){printf("a\\n");return 0;}\n')
+        write_text(os.path.join(orphan, "race-transcript.txt"), "a\n")
+        write_text(os.path.join(orphan, "bridge-observed.txt"), "swift-side output\n")
+        found = {pair_label(q) for q in pairs_in(orphan)}
+        cases.append(("a transcript with no probe beside it is a pair, and MISSING",
+                      "766-orphan/transcript-evidence-fix.txt" in found and
+                      check_pair([q for q in pairs_in(orphan)
+                                  if q["transcript"] == "transcript-evidence-fix.txt"][0],
+                                 os.path.join(d, "no-asset"), 5)["status"] == "MISSING"))
+        cases.append(("`race.mm` and `race-transcript.txt` are ONE pair, not two orphans",
+                      "766-orphan/race.mm" in found and
+                      [q for q in pairs_in(orphan)
+                       if q["probe"] == "race.mm"][0]["transcript"] == "race-transcript.txt" and
+                      "766-orphan/race-transcript.txt" not in found))
+        cases.append(("a sibling capture that is neither probe nor transcript is left alone",
+                      not any(q["transcript"] == "bridge-observed.txt" for q in pairs_in(orphan))))
+    # The reverse map has to be the inverse of `pair_names`, not just the token rule read
+    # backwards. Reverse-mapping `race-transcript` with the token rule alone gives `race-probe`,
+    # which is a spelling this tree does not use, so an orphan left behind by a deleted `race.mm`
+    # was reported against a filename that never existed.
+    cases.append(("an orphan transcript names the SUFFIX spelling, not just the token one",
+                  probe_names_for("race-transcript") == ["race-probe", "race"]))
+    cases.append(("an orphan transcript in the token spelling names the token probe",
+                  probe_names_for("transcript-evidence-fix") == ["probe-evidence-fix"]))
+    cases.append(("`probe-transcript` is not a suffix preimage of `probe`",
+                  "probe" not in probe_names_for("probe-transcript")))
+    cases.append(("a .txt that is no transcript at all maps to no probe",
+                  probe_names_for("bridge-observed") == []))
+    with tempfile.TemporaryDirectory() as d:
+        gone = os.path.join(d, "766-gone")
+        os.makedirs(gone)
+        write_text(os.path.join(gone, "race-transcript.txt"), "a\n")
+        q = pairs_in(gone)[0]
+        cases.append(("the orphan report names race.mm, the spelling the pair rule derives",
+                      "race.mm" in q["why"]))
+        cases.append(("and it is still MISSING, with its declaration name unchanged",
+                      q["decl"] == "race-reproduce.json" and
+                      check_pair(q, os.path.join(d, "no-asset"), 5)["status"] == "MISSING"))
 
     # 9. The blank-line rule. It is the only normalisation that drops a line, so it needs both
     #    halves: a blank line is erased, and a line with content is not.
@@ -854,38 +1132,38 @@ def self_test() -> int:
                      'printf("fixture=%s\\n", f?"found":"missing");')
         p = mk("766-root", root_body, "fixture=found\n",
                {"cwd": {"value": "repo-root", "reason": "the fixture path is repo-root relative"}})
-        r = check_one(p, asset, 60, repo_root=fake_root)
+        r = check_pair(pairs_in(p)[0], asset, 60, repo_root=fake_root)
         cases.append(("cwd repo-root finds a repo-root-relative fixture",
                       r["status"] == "MATCH-DECLARED"))
         cases.append(("and the cwd reason is reported rather than left blank",
                       "repo-root relative" in r["detail"]))
         p = mk("766-root-undeclared", root_body, "fixture=found\n")
-        r = check_one(p, asset, 60, repo_root=fake_root)
+        r = check_pair(pairs_in(p)[0], asset, 60, repo_root=fake_root)
         cases.append(("without the cwd declaration the same probe fails",
                       r["status"] == "DIFF-VALUES"))
 
         # `argv`: the value reaches the program.
         p = mk("766-argv", 'printf("mode=%s\\n", argc>1?argv[1]:"none");', "mode=prim\n",
                {"argv": {"value": ["prim"], "reason": "the capture passed the mode"}})
-        r = check_one(p, asset, 60)
+        r = check_pair(pairs_in(p)[0], asset, 60)
         cases.append(("argv reaches the probe", r["status"] == "MATCH-DECLARED"))
 
         # `volatile` end to end, and the DECL-UNUSED twin.
         p = mk("766-vol", 'printf("free=%d\\n", 1234);', "free=9999\n",
                {"volatile": [{"pattern": r"^free=[0-9]+$", "reason": "free disk space"}]})
-        r = check_one(p, asset, 60)
+        r = check_pair(pairs_in(p)[0], asset, 60)
         cases.append(("a declared-volatile probe is MATCH-DECLARED",
                       r["status"] == "MATCH-DECLARED"))
         p = mk("766-vol-stale", 'printf("free=1234\\n");', "free=1234\n",
                {"volatile": [{"pattern": r"^used=[0-9]+$", "reason": "a pattern nothing matches"}]})
-        r = check_one(p, asset, 60)
+        r = check_pair(pairs_in(p)[0], asset, 60)
         cases.append(("an allowance that covers nothing is DECL-UNUSED",
                       r["status"] == "DECL-UNUSED"))
 
         # A declared allowance must not hide a difference on an undeclared line.
         p = mk("766-vol-plus-real", 'printf("free=1\\narea=7.0\\n");', "free=9\narea=6.0\n",
                {"volatile": [{"pattern": r"^free=[0-9]+$", "reason": "free disk space"}]})
-        r = check_one(p, asset, 60)
+        r = check_pair(pairs_in(p)[0], asset, 60)
         cases.append(("a volatile allowance does not hide a real divergence beside it",
                       r["status"] == "DIFF-VALUES"))
 
@@ -893,7 +1171,7 @@ def self_test() -> int:
         p = mk("766-nr", 'printf("anything\\n");', "something else\n",
                {"status": {"value": "not-reproducible",
                            "reason": "the transcript interleaves two programs over several runs"}})
-        r = check_one(p, asset, 60)
+        r = check_pair(pairs_in(p)[0], asset, 60)
         cases.append(("a declared not-reproducible transcript is NOT-REPRODUCIBLE",
                       r["status"] == "NOT-REPRODUCIBLE"))
         cases.append(("and its reason is what gets reported",
@@ -902,7 +1180,7 @@ def self_test() -> int:
         # An invalid declaration fails rather than being ignored.
         p = mk("766-badjson", 'printf("a\\n");', "a\n")
         write_text(os.path.join(p, DECL_FILE), "{oops")
-        r = check_one(p, asset, 60)
+        r = check_pair(pairs_in(p)[0], asset, 60)
         cases.append(("an unreadable reproduce.json is DECL-INVALID",
                       r["status"] == "DECL-INVALID"))
 
