@@ -1,0 +1,1583 @@
+{
+ "label": "after",
+ "tests": [
+  "Issue443FirstOfN.solidFromSewnMultiBody",
+  "Issue443FirstOfN.solidFromAgreesWithSibling",
+  "Issue443FirstOfN.solidFromSingleShell",
+  "Issue443FirstOfN.solidFromKeepsOpenBody",
+  "Issue443FirstOfN.solidFromSkipsCavity",
+  "Issue443FirstOfN.solidFromMulticonnex",
+  "Issue443FirstOfN.solidFromNoShell",
+  "Issue443FirstOfN.solidFromOrientsEveryBody",
+  "Issue443FirstOfN.sewnHollowIsOneBody",
+  "Issue443FirstOfN.sewnAndUnsewnHollowAgree",
+  "Issue443FirstOfN.manyFreeShells",
+  "Issue443FirstOfN.touchingBodiesNotPruned",
+  "Issue443FirstOfN.solidWithHistoryMultiBody",
+  "Issue443FirstOfN.solidWithHistoryQueryableForEveryBody",
+  "Issue443FirstOfN.solidWithHistoryRecordsEveryBodysRepair",
+  "Issue443FirstOfN.solidWithHistoryOrientsEveryBody",
+  "Issue443FirstOfN.solidWithHistoryHollowIsOneBody",
+  "Issue443FirstOfN.solidWithHistorySingleShell",
+  "Issue443FirstOfN.solidWithHistoryKeepsOpenBody",
+  "Issue443FirstOfN.upgradedMultiBody",
+  "Issue443FirstOfN.upgradedFromLooseFaces",
+  "Issue443FirstOfN.upgradedSingleBody",
+  "Issue443FirstOfN.upgradedHollow",
+  "Issue443FirstOfN.upgradedNestedBody",
+  "Issue443FirstOfN.upgradedKeepsOpenBody",
+  "Issue443FirstOfN.upgradedNoShell",
+  "Issue443FirstOfN.upgradedOrientsEveryBody",
+  "Issue442FixSolidMultiBody.fixSolidMultiBody",
+  "Issue442FixSolidMultiBody.fixSolidOrientsEveryBody",
+  "Issue442FixSolidMultiBody.fixSolidSingleBody",
+  "Issue442FixSolidMultiBody.fixSolidHollow",
+  "Issue442FixSolidMultiBody.fixSolidMulticonnex",
+  "Issue442FixSolidMultiBody.fixSolidNoSolid",
+  "Issue442FixSolidMultiBody.solidFromShellMultiBody",
+  "Issue442FixSolidMultiBody.solidFromShellOrientsEveryBody",
+  "Issue442FixSolidMultiBody.solidFromShellSingleBody",
+  "Issue442FixSolidMultiBody.solidFromShellSkipsCavity",
+  "Issue442FixSolidMultiBody.solidFromShellMulticonnex",
+  "Issue442FixSolidMultiBody.solidFromShellCavityWithWiderSibling",
+  "Issue442FixSolidMultiBody.solidFromShellFreeShells",
+  "Issue442FixSolidMultiBody.solidFromShellDeduplicates",
+  "Issue442FixSolidMultiBody.solidFromShellNoShell",
+  "Issue442FixSolidMultiBody.documentedUnclosedCheck",
+  "Issue442FixSolidMultiBody.openShellDoesNotPerturbParity",
+  "Issue442FixSolidMultiBody.reproducerTable",
+  "Issue702SolidDemotion.fakeSolidIsInvalid",
+  "Issue702SolidDemotion.fixSolidDemotes",
+  "Issue702SolidDemotion.healedDemotes",
+  "Issue702SolidDemotion.isValidAloneIsAmbiguous",
+  "Issue702SolidDemotion.isValidSolidDistinguishesDemotion",
+  "Issue702SolidDemotion.isValidSolidFalseOnNonSolidTypes",
+  "Issue702SolidDemotion.analyzeReportsFreeEdgesOnOpenShell",
+  "Issue702SolidDemotion.analyzeReportsFreeEdgesOnDemotedShell",
+  "Issue702SolidDemotion.analyzeReportsNoFreeEdgesOnClosedBox",
+  "Issue702SolidDemotion.analyzeCountsFreeFacesPerShell",
+  "Issue702SolidDemotion.totalProblemsExcludingFreeFaceIncludesSelfIntersection",
+  "Issue702SolidDemotion.freeEdgesAloneMakeAShapeUnhealthy",
+  "Issue702SolidDemotion.analyzeShellSeparatesOpenFromMisoriented",
+  "Issue702SolidDemotion.analyzeAgreesWithAnalyzeShellOnInternalDuplicate"
+ ],
+ "rows": {
+  "SOLID_NIL": {
+   "red": [
+    "Issue443FirstOfN.manyFreeShells",
+    "Issue443FirstOfN.sewnHollowIsOneBody",
+    "Issue443FirstOfN.solidFromAgreesWithSibling",
+    "Issue443FirstOfN.solidFromKeepsOpenBody",
+    "Issue443FirstOfN.solidFromMulticonnex",
+    "Issue443FirstOfN.solidFromNoShell",
+    "Issue443FirstOfN.solidFromOrientsEveryBody",
+    "Issue443FirstOfN.solidFromSewnMultiBody",
+    "Issue443FirstOfN.solidFromSingleShell",
+    "Issue443FirstOfN.solidFromSkipsCavity",
+    "Issue443FirstOfN.touchingBodiesNotPruned"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "SOLID_IDENTITY": {
+   "red": [
+    "Issue443FirstOfN.manyFreeShells",
+    "Issue443FirstOfN.sewnHollowIsOneBody",
+    "Issue443FirstOfN.solidFromAgreesWithSibling",
+    "Issue443FirstOfN.solidFromKeepsOpenBody",
+    "Issue443FirstOfN.solidFromMulticonnex",
+    "Issue443FirstOfN.solidFromNoShell",
+    "Issue443FirstOfN.solidFromOrientsEveryBody",
+    "Issue443FirstOfN.solidFromSewnMultiBody",
+    "Issue443FirstOfN.solidFromSingleShell",
+    "Issue443FirstOfN.solidFromSkipsCavity",
+    "Issue443FirstOfN.touchingBodiesNotPruned"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "SOLID_NIL_ON_MULTI": {
+   "red": [
+    "Issue443FirstOfN.manyFreeShells",
+    "Issue443FirstOfN.solidFromAgreesWithSibling",
+    "Issue443FirstOfN.solidFromKeepsOpenBody",
+    "Issue443FirstOfN.solidFromMulticonnex",
+    "Issue443FirstOfN.solidFromOrientsEveryBody",
+    "Issue443FirstOfN.solidFromSewnMultiBody",
+    "Issue443FirstOfN.touchingBodiesNotPruned"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "HIST_NIL": {
+   "red": [
+    "Issue443FirstOfN.solidWithHistoryHollowIsOneBody",
+    "Issue443FirstOfN.solidWithHistoryKeepsOpenBody",
+    "Issue443FirstOfN.solidWithHistoryMultiBody",
+    "Issue443FirstOfN.solidWithHistoryOrientsEveryBody",
+    "Issue443FirstOfN.solidWithHistoryQueryableForEveryBody",
+    "Issue443FirstOfN.solidWithHistoryRecordsEveryBodysRepair",
+    "Issue443FirstOfN.solidWithHistorySingleShell"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "HIST_IDENTITY": {
+   "red": [
+    "Issue443FirstOfN.solidWithHistoryHollowIsOneBody",
+    "Issue443FirstOfN.solidWithHistoryKeepsOpenBody",
+    "Issue443FirstOfN.solidWithHistoryMultiBody",
+    "Issue443FirstOfN.solidWithHistoryOrientsEveryBody",
+    "Issue443FirstOfN.solidWithHistoryQueryableForEveryBody",
+    "Issue443FirstOfN.solidWithHistoryRecordsEveryBodysRepair",
+    "Issue443FirstOfN.solidWithHistorySingleShell"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "SFS_NIL": {
+   "red": [
+    "Issue442FixSolidMultiBody.openShellDoesNotPerturbParity",
+    "Issue442FixSolidMultiBody.reproducerTable",
+    "Issue442FixSolidMultiBody.solidFromShellCavityWithWiderSibling",
+    "Issue442FixSolidMultiBody.solidFromShellDeduplicates",
+    "Issue442FixSolidMultiBody.solidFromShellFreeShells",
+    "Issue442FixSolidMultiBody.solidFromShellMultiBody",
+    "Issue442FixSolidMultiBody.solidFromShellMulticonnex",
+    "Issue442FixSolidMultiBody.solidFromShellNoShell",
+    "Issue442FixSolidMultiBody.solidFromShellOrientsEveryBody",
+    "Issue442FixSolidMultiBody.solidFromShellSingleBody",
+    "Issue442FixSolidMultiBody.solidFromShellSkipsCavity",
+    "Issue443FirstOfN.sewnAndUnsewnHollowAgree",
+    "Issue443FirstOfN.sewnHollowIsOneBody",
+    "Issue443FirstOfN.solidFromAgreesWithSibling"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "SFS_IDENTITY": {
+   "red": [
+    "Issue442FixSolidMultiBody.openShellDoesNotPerturbParity",
+    "Issue442FixSolidMultiBody.solidFromShellCavityWithWiderSibling",
+    "Issue442FixSolidMultiBody.solidFromShellDeduplicates",
+    "Issue442FixSolidMultiBody.solidFromShellFreeShells",
+    "Issue442FixSolidMultiBody.solidFromShellMulticonnex",
+    "Issue442FixSolidMultiBody.solidFromShellNoShell",
+    "Issue442FixSolidMultiBody.solidFromShellOrientsEveryBody",
+    "Issue442FixSolidMultiBody.solidFromShellSkipsCavity",
+    "Issue443FirstOfN.sewnAndUnsewnHollowAgree",
+    "Issue443FirstOfN.sewnHollowIsOneBody",
+    "Issue443FirstOfN.solidFromAgreesWithSibling"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "FIX_NIL": {
+   "red": [
+    "Issue442FixSolidMultiBody.documentedUnclosedCheck",
+    "Issue442FixSolidMultiBody.fixSolidHollow",
+    "Issue442FixSolidMultiBody.fixSolidMultiBody",
+    "Issue442FixSolidMultiBody.fixSolidMulticonnex",
+    "Issue442FixSolidMultiBody.fixSolidNoSolid",
+    "Issue442FixSolidMultiBody.fixSolidOrientsEveryBody",
+    "Issue442FixSolidMultiBody.fixSolidSingleBody",
+    "Issue442FixSolidMultiBody.reproducerTable",
+    "Issue702SolidDemotion.analyzeReportsFreeEdgesOnDemotedShell",
+    "Issue702SolidDemotion.fixSolidDemotes",
+    "Issue702SolidDemotion.healedDemotes",
+    "Issue702SolidDemotion.isValidAloneIsAmbiguous",
+    "Issue702SolidDemotion.isValidSolidDistinguishesDemotion"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "FIX_IDENTITY": {
+   "red": [
+    "Issue442FixSolidMultiBody.documentedUnclosedCheck",
+    "Issue442FixSolidMultiBody.fixSolidHollow",
+    "Issue442FixSolidMultiBody.fixSolidMulticonnex",
+    "Issue442FixSolidMultiBody.fixSolidNoSolid",
+    "Issue442FixSolidMultiBody.fixSolidOrientsEveryBody",
+    "Issue702SolidDemotion.analyzeReportsFreeEdgesOnDemotedShell",
+    "Issue702SolidDemotion.fixSolidDemotes",
+    "Issue702SolidDemotion.healedDemotes",
+    "Issue702SolidDemotion.isValidAloneIsAmbiguous",
+    "Issue702SolidDemotion.isValidSolidDistinguishesDemotion"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "FIX_NIL_ON_COMPOUND": {
+   "red": [
+    "Issue442FixSolidMultiBody.documentedUnclosedCheck",
+    "Issue442FixSolidMultiBody.fixSolidHollow",
+    "Issue442FixSolidMultiBody.fixSolidMultiBody",
+    "Issue442FixSolidMultiBody.fixSolidOrientsEveryBody",
+    "Issue442FixSolidMultiBody.reproducerTable"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "UP_NIL": {
+   "red": [
+    "Issue443FirstOfN.upgradedFromLooseFaces",
+    "Issue443FirstOfN.upgradedHollow",
+    "Issue443FirstOfN.upgradedKeepsOpenBody",
+    "Issue443FirstOfN.upgradedMultiBody",
+    "Issue443FirstOfN.upgradedNestedBody",
+    "Issue443FirstOfN.upgradedNoShell",
+    "Issue443FirstOfN.upgradedOrientsEveryBody",
+    "Issue443FirstOfN.upgradedSingleBody"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "UP_IDENTITY": {
+   "red": [
+    "Issue443FirstOfN.upgradedFromLooseFaces",
+    "Issue443FirstOfN.upgradedHollow",
+    "Issue443FirstOfN.upgradedKeepsOpenBody",
+    "Issue443FirstOfN.upgradedNestedBody",
+    "Issue443FirstOfN.upgradedOrientsEveryBody"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "UP_SEW_ONLY": {
+   "red": [
+    "Issue443FirstOfN.upgradedFromLooseFaces",
+    "Issue443FirstOfN.upgradedHollow",
+    "Issue443FirstOfN.upgradedKeepsOpenBody",
+    "Issue443FirstOfN.upgradedMultiBody",
+    "Issue443FirstOfN.upgradedNestedBody",
+    "Issue443FirstOfN.upgradedOrientsEveryBody"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "HEAL_NIL": {
+   "red": [
+    "Issue702SolidDemotion.healedDemotes",
+    "Issue702SolidDemotion.isValidSolidDistinguishesDemotion"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "HEAL_IDENTITY": {
+   "red": [
+    "Issue702SolidDemotion.healedDemotes",
+    "Issue702SolidDemotion.isValidSolidDistinguishesDemotion"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "AN_NIL": {
+   "red": [
+    "Issue702SolidDemotion.analyzeAgreesWithAnalyzeShellOnInternalDuplicate",
+    "Issue702SolidDemotion.analyzeCountsFreeFacesPerShell",
+    "Issue702SolidDemotion.analyzeReportsFreeEdgesOnDemotedShell",
+    "Issue702SolidDemotion.analyzeReportsFreeEdgesOnOpenShell",
+    "Issue702SolidDemotion.analyzeReportsNoFreeEdgesOnClosedBox",
+    "Issue702SolidDemotion.freeEdgesAloneMakeAShapeUnhealthy",
+    "Issue702SolidDemotion.totalProblemsExcludingFreeFaceIncludesSelfIntersection"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "SOLID_NONNIL_FOR_NOSHELL": {
+   "red": [
+    "Issue443FirstOfN.solidFromNoShell"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "SFS_NONNIL_FOR_NOSHELL": {
+   "red": [
+    "Issue442FixSolidMultiBody.solidFromShellNoShell"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "FIX_NONNIL_FOR_NOSOLID": {
+   "red": [
+    "Issue442FixSolidMultiBody.fixSolidNoSolid"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "SOLID_WRAP_SINGLE": {
+   "red": [
+    "Issue443FirstOfN.sewnHollowIsOneBody",
+    "Issue443FirstOfN.solidFromSingleShell",
+    "Issue443FirstOfN.solidFromSkipsCavity"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "HIST_WRAP_SINGLE": {
+   "red": [
+    "Issue443FirstOfN.solidWithHistoryHollowIsOneBody",
+    "Issue443FirstOfN.solidWithHistorySingleShell"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "SFS_WRAP_SINGLE": {
+   "red": [
+    "Issue442FixSolidMultiBody.solidFromShellDeduplicates",
+    "Issue442FixSolidMultiBody.solidFromShellSingleBody",
+    "Issue442FixSolidMultiBody.solidFromShellSkipsCavity",
+    "Issue443FirstOfN.sewnAndUnsewnHollowAgree",
+    "Issue443FirstOfN.sewnHollowIsOneBody"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "FIX_WRAP_SINGLE": {
+   "red": [
+    "Issue442FixSolidMultiBody.documentedUnclosedCheck",
+    "Issue442FixSolidMultiBody.fixSolidHollow",
+    "Issue442FixSolidMultiBody.fixSolidSingleBody",
+    "Issue702SolidDemotion.fixSolidDemotes",
+    "Issue702SolidDemotion.healedDemotes",
+    "Issue702SolidDemotion.isValidAloneIsAmbiguous",
+    "Issue702SolidDemotion.isValidSolidDistinguishesDemotion"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "UP_WRAP_SINGLE": {
+   "red": [
+    "Issue443FirstOfN.upgradedHollow",
+    "Issue443FirstOfN.upgradedNoShell",
+    "Issue443FirstOfN.upgradedSingleBody"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "SI_FALSE": {
+   "red": [
+    "Issue702SolidDemotion.totalProblemsExcludingFreeFaceIncludesSelfIntersection"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "SI_TRUE": {
+   "red": [
+    "Issue702SolidDemotion.totalProblemsExcludingFreeFaceIncludesSelfIntersection"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "SI_NIL": {
+   "red": [
+    "Issue702SolidDemotion.totalProblemsExcludingFreeFaceIncludesSelfIntersection"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "SI_FLIP": {
+   "red": [
+    "Issue702SolidDemotion.totalProblemsExcludingFreeFaceIncludesSelfIntersection"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "SOLID_FIRST_ONLY": {
+   "red": [
+    "Issue443FirstOfN.manyFreeShells",
+    "Issue443FirstOfN.solidFromAgreesWithSibling",
+    "Issue443FirstOfN.solidFromKeepsOpenBody",
+    "Issue443FirstOfN.solidFromMulticonnex",
+    "Issue443FirstOfN.solidFromOrientsEveryBody",
+    "Issue443FirstOfN.solidFromSewnMultiBody",
+    "Issue443FirstOfN.touchingBodiesNotPruned"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "SOLID_LAST_ONLY": {
+   "red": [
+    "Issue443FirstOfN.manyFreeShells",
+    "Issue443FirstOfN.solidFromAgreesWithSibling",
+    "Issue443FirstOfN.solidFromKeepsOpenBody",
+    "Issue443FirstOfN.solidFromMulticonnex",
+    "Issue443FirstOfN.solidFromOrientsEveryBody",
+    "Issue443FirstOfN.solidFromSewnMultiBody",
+    "Issue443FirstOfN.touchingBodiesNotPruned"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "SOLID_DUP_FIRST": {
+   "red": [
+    "Issue443FirstOfN.manyFreeShells",
+    "Issue443FirstOfN.solidFromAgreesWithSibling",
+    "Issue443FirstOfN.solidFromKeepsOpenBody",
+    "Issue443FirstOfN.solidFromMulticonnex",
+    "Issue443FirstOfN.solidFromOrientsEveryBody",
+    "Issue443FirstOfN.solidFromSewnMultiBody",
+    "Issue443FirstOfN.touchingBodiesNotPruned"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "SOLID_DROP_LAST": {
+   "red": [
+    "Issue443FirstOfN.manyFreeShells",
+    "Issue443FirstOfN.solidFromAgreesWithSibling",
+    "Issue443FirstOfN.solidFromKeepsOpenBody",
+    "Issue443FirstOfN.solidFromMulticonnex",
+    "Issue443FirstOfN.solidFromOrientsEveryBody",
+    "Issue443FirstOfN.solidFromSewnMultiBody",
+    "Issue443FirstOfN.touchingBodiesNotPruned"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "SOLID_SWAP": {
+   "red": [
+    "Issue443FirstOfN.manyFreeShells",
+    "Issue443FirstOfN.solidFromAgreesWithSibling",
+    "Issue443FirstOfN.solidFromKeepsOpenBody",
+    "Issue443FirstOfN.solidFromMulticonnex",
+    "Issue443FirstOfN.solidFromOrientsEveryBody",
+    "Issue443FirstOfN.solidFromSewnMultiBody",
+    "Issue443FirstOfN.touchingBodiesNotPruned"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "HIST_FIRST_ONLY": {
+   "red": [
+    "Issue443FirstOfN.solidWithHistoryKeepsOpenBody",
+    "Issue443FirstOfN.solidWithHistoryMultiBody",
+    "Issue443FirstOfN.solidWithHistoryOrientsEveryBody",
+    "Issue443FirstOfN.solidWithHistoryQueryableForEveryBody",
+    "Issue443FirstOfN.solidWithHistoryRecordsEveryBodysRepair"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "HIST_LAST_ONLY": {
+   "red": [
+    "Issue443FirstOfN.solidWithHistoryKeepsOpenBody",
+    "Issue443FirstOfN.solidWithHistoryMultiBody",
+    "Issue443FirstOfN.solidWithHistoryOrientsEveryBody",
+    "Issue443FirstOfN.solidWithHistoryQueryableForEveryBody",
+    "Issue443FirstOfN.solidWithHistoryRecordsEveryBodysRepair"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "HIST_DUP_FIRST": {
+   "red": [
+    "Issue443FirstOfN.solidWithHistoryKeepsOpenBody",
+    "Issue443FirstOfN.solidWithHistoryMultiBody",
+    "Issue443FirstOfN.solidWithHistoryOrientsEveryBody",
+    "Issue443FirstOfN.solidWithHistoryQueryableForEveryBody",
+    "Issue443FirstOfN.solidWithHistoryRecordsEveryBodysRepair"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "HIST_DROP_LAST": {
+   "red": [
+    "Issue443FirstOfN.solidWithHistoryKeepsOpenBody",
+    "Issue443FirstOfN.solidWithHistoryMultiBody",
+    "Issue443FirstOfN.solidWithHistoryOrientsEveryBody",
+    "Issue443FirstOfN.solidWithHistoryQueryableForEveryBody",
+    "Issue443FirstOfN.solidWithHistoryRecordsEveryBodysRepair"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "HIST_SWAP": {
+   "red": [
+    "Issue443FirstOfN.solidWithHistoryKeepsOpenBody",
+    "Issue443FirstOfN.solidWithHistoryMultiBody",
+    "Issue443FirstOfN.solidWithHistoryOrientsEveryBody",
+    "Issue443FirstOfN.solidWithHistoryQueryableForEveryBody",
+    "Issue443FirstOfN.solidWithHistoryRecordsEveryBodysRepair"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "SFS_FIRST_ONLY": {
+   "red": [
+    "Issue442FixSolidMultiBody.openShellDoesNotPerturbParity",
+    "Issue442FixSolidMultiBody.reproducerTable",
+    "Issue442FixSolidMultiBody.solidFromShellCavityWithWiderSibling",
+    "Issue442FixSolidMultiBody.solidFromShellFreeShells",
+    "Issue442FixSolidMultiBody.solidFromShellMultiBody",
+    "Issue442FixSolidMultiBody.solidFromShellMulticonnex",
+    "Issue442FixSolidMultiBody.solidFromShellOrientsEveryBody",
+    "Issue443FirstOfN.solidFromAgreesWithSibling"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "SFS_LAST_ONLY": {
+   "red": [
+    "Issue442FixSolidMultiBody.openShellDoesNotPerturbParity",
+    "Issue442FixSolidMultiBody.reproducerTable",
+    "Issue442FixSolidMultiBody.solidFromShellCavityWithWiderSibling",
+    "Issue442FixSolidMultiBody.solidFromShellFreeShells",
+    "Issue442FixSolidMultiBody.solidFromShellMultiBody",
+    "Issue442FixSolidMultiBody.solidFromShellMulticonnex",
+    "Issue442FixSolidMultiBody.solidFromShellOrientsEveryBody",
+    "Issue443FirstOfN.solidFromAgreesWithSibling"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "SFS_DUP_FIRST": {
+   "red": [
+    "Issue442FixSolidMultiBody.openShellDoesNotPerturbParity",
+    "Issue442FixSolidMultiBody.reproducerTable",
+    "Issue442FixSolidMultiBody.solidFromShellCavityWithWiderSibling",
+    "Issue442FixSolidMultiBody.solidFromShellFreeShells",
+    "Issue442FixSolidMultiBody.solidFromShellMultiBody",
+    "Issue442FixSolidMultiBody.solidFromShellMulticonnex",
+    "Issue442FixSolidMultiBody.solidFromShellOrientsEveryBody",
+    "Issue443FirstOfN.solidFromAgreesWithSibling"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "SFS_DROP_LAST": {
+   "red": [
+    "Issue442FixSolidMultiBody.openShellDoesNotPerturbParity",
+    "Issue442FixSolidMultiBody.reproducerTable",
+    "Issue442FixSolidMultiBody.solidFromShellCavityWithWiderSibling",
+    "Issue442FixSolidMultiBody.solidFromShellFreeShells",
+    "Issue442FixSolidMultiBody.solidFromShellMultiBody",
+    "Issue442FixSolidMultiBody.solidFromShellMulticonnex",
+    "Issue442FixSolidMultiBody.solidFromShellOrientsEveryBody",
+    "Issue443FirstOfN.solidFromAgreesWithSibling"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "SFS_SWAP": {
+   "red": [
+    "Issue442FixSolidMultiBody.openShellDoesNotPerturbParity",
+    "Issue442FixSolidMultiBody.reproducerTable",
+    "Issue442FixSolidMultiBody.solidFromShellCavityWithWiderSibling",
+    "Issue442FixSolidMultiBody.solidFromShellFreeShells",
+    "Issue442FixSolidMultiBody.solidFromShellMultiBody",
+    "Issue442FixSolidMultiBody.solidFromShellMulticonnex",
+    "Issue442FixSolidMultiBody.solidFromShellOrientsEveryBody",
+    "Issue443FirstOfN.solidFromAgreesWithSibling"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "FIX_FIRST_ONLY": {
+   "red": [
+    "Issue442FixSolidMultiBody.documentedUnclosedCheck",
+    "Issue442FixSolidMultiBody.fixSolidMultiBody",
+    "Issue442FixSolidMultiBody.fixSolidMulticonnex",
+    "Issue442FixSolidMultiBody.fixSolidOrientsEveryBody",
+    "Issue442FixSolidMultiBody.reproducerTable"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "FIX_LAST_ONLY": {
+   "red": [
+    "Issue442FixSolidMultiBody.documentedUnclosedCheck",
+    "Issue442FixSolidMultiBody.fixSolidMultiBody",
+    "Issue442FixSolidMultiBody.fixSolidMulticonnex",
+    "Issue442FixSolidMultiBody.fixSolidOrientsEveryBody",
+    "Issue442FixSolidMultiBody.reproducerTable"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "FIX_DUP_FIRST": {
+   "red": [
+    "Issue442FixSolidMultiBody.documentedUnclosedCheck",
+    "Issue442FixSolidMultiBody.fixSolidMultiBody",
+    "Issue442FixSolidMultiBody.fixSolidMulticonnex",
+    "Issue442FixSolidMultiBody.fixSolidOrientsEveryBody",
+    "Issue442FixSolidMultiBody.reproducerTable"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "FIX_DROP_LAST": {
+   "red": [
+    "Issue442FixSolidMultiBody.documentedUnclosedCheck",
+    "Issue442FixSolidMultiBody.fixSolidMultiBody",
+    "Issue442FixSolidMultiBody.fixSolidMulticonnex",
+    "Issue442FixSolidMultiBody.fixSolidOrientsEveryBody",
+    "Issue442FixSolidMultiBody.reproducerTable"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "FIX_SWAP": {
+   "red": [
+    "Issue442FixSolidMultiBody.documentedUnclosedCheck",
+    "Issue442FixSolidMultiBody.fixSolidMultiBody",
+    "Issue442FixSolidMultiBody.fixSolidMulticonnex",
+    "Issue442FixSolidMultiBody.fixSolidOrientsEveryBody",
+    "Issue442FixSolidMultiBody.reproducerTable"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "UP_FIRST_ONLY": {
+   "red": [
+    "Issue443FirstOfN.upgradedFromLooseFaces",
+    "Issue443FirstOfN.upgradedKeepsOpenBody",
+    "Issue443FirstOfN.upgradedMultiBody",
+    "Issue443FirstOfN.upgradedNestedBody",
+    "Issue443FirstOfN.upgradedOrientsEveryBody"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "UP_LAST_ONLY": {
+   "red": [
+    "Issue443FirstOfN.upgradedFromLooseFaces",
+    "Issue443FirstOfN.upgradedKeepsOpenBody",
+    "Issue443FirstOfN.upgradedMultiBody",
+    "Issue443FirstOfN.upgradedNestedBody",
+    "Issue443FirstOfN.upgradedOrientsEveryBody"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "UP_DUP_FIRST": {
+   "red": [
+    "Issue443FirstOfN.upgradedFromLooseFaces",
+    "Issue443FirstOfN.upgradedKeepsOpenBody",
+    "Issue443FirstOfN.upgradedMultiBody",
+    "Issue443FirstOfN.upgradedNestedBody",
+    "Issue443FirstOfN.upgradedOrientsEveryBody"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "UP_DROP_LAST": {
+   "red": [
+    "Issue443FirstOfN.upgradedFromLooseFaces",
+    "Issue443FirstOfN.upgradedKeepsOpenBody",
+    "Issue443FirstOfN.upgradedMultiBody",
+    "Issue443FirstOfN.upgradedNestedBody",
+    "Issue443FirstOfN.upgradedOrientsEveryBody"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "UP_SWAP": {
+   "red": [],
+   "exit": 0,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "SOLID_REVERSED": {
+   "red": [
+    "Issue443FirstOfN.manyFreeShells",
+    "Issue443FirstOfN.sewnHollowIsOneBody",
+    "Issue443FirstOfN.solidFromAgreesWithSibling",
+    "Issue443FirstOfN.solidFromKeepsOpenBody",
+    "Issue443FirstOfN.solidFromMulticonnex",
+    "Issue443FirstOfN.solidFromNoShell",
+    "Issue443FirstOfN.solidFromOrientsEveryBody",
+    "Issue443FirstOfN.solidFromSewnMultiBody",
+    "Issue443FirstOfN.solidFromSingleShell",
+    "Issue443FirstOfN.solidFromSkipsCavity",
+    "Issue443FirstOfN.touchingBodiesNotPruned"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "SOLID_REVERSE_SECOND": {
+   "red": [
+    "Issue443FirstOfN.manyFreeShells",
+    "Issue443FirstOfN.solidFromAgreesWithSibling",
+    "Issue443FirstOfN.solidFromMulticonnex",
+    "Issue443FirstOfN.solidFromOrientsEveryBody",
+    "Issue443FirstOfN.solidFromSewnMultiBody",
+    "Issue443FirstOfN.touchingBodiesNotPruned"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "SOLID_PARTIAL_UNFIXED": {
+   "red": [
+    "Issue443FirstOfN.solidFromOrientsEveryBody"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "HIST_REVERSED": {
+   "red": [
+    "Issue443FirstOfN.solidWithHistoryHollowIsOneBody",
+    "Issue443FirstOfN.solidWithHistoryKeepsOpenBody",
+    "Issue443FirstOfN.solidWithHistoryMultiBody",
+    "Issue443FirstOfN.solidWithHistoryOrientsEveryBody",
+    "Issue443FirstOfN.solidWithHistoryQueryableForEveryBody",
+    "Issue443FirstOfN.solidWithHistorySingleShell"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "HIST_REVERSE_SECOND": {
+   "red": [
+    "Issue443FirstOfN.solidWithHistoryMultiBody",
+    "Issue443FirstOfN.solidWithHistoryOrientsEveryBody",
+    "Issue443FirstOfN.solidWithHistoryQueryableForEveryBody"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "HIST_PARTIAL_UNFIXED": {
+   "red": [
+    "Issue443FirstOfN.solidWithHistoryOrientsEveryBody"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "SFS_REVERSED": {
+   "red": [
+    "Issue442FixSolidMultiBody.openShellDoesNotPerturbParity",
+    "Issue442FixSolidMultiBody.reproducerTable",
+    "Issue442FixSolidMultiBody.solidFromShellCavityWithWiderSibling",
+    "Issue442FixSolidMultiBody.solidFromShellDeduplicates",
+    "Issue442FixSolidMultiBody.solidFromShellFreeShells",
+    "Issue442FixSolidMultiBody.solidFromShellMultiBody",
+    "Issue442FixSolidMultiBody.solidFromShellMulticonnex",
+    "Issue442FixSolidMultiBody.solidFromShellNoShell",
+    "Issue442FixSolidMultiBody.solidFromShellOrientsEveryBody",
+    "Issue442FixSolidMultiBody.solidFromShellSingleBody",
+    "Issue442FixSolidMultiBody.solidFromShellSkipsCavity",
+    "Issue443FirstOfN.sewnAndUnsewnHollowAgree",
+    "Issue443FirstOfN.sewnHollowIsOneBody",
+    "Issue443FirstOfN.solidFromAgreesWithSibling"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "SFS_REVERSE_SECOND": {
+   "red": [
+    "Issue442FixSolidMultiBody.reproducerTable",
+    "Issue442FixSolidMultiBody.solidFromShellCavityWithWiderSibling",
+    "Issue442FixSolidMultiBody.solidFromShellFreeShells",
+    "Issue442FixSolidMultiBody.solidFromShellMultiBody",
+    "Issue442FixSolidMultiBody.solidFromShellMulticonnex",
+    "Issue442FixSolidMultiBody.solidFromShellOrientsEveryBody",
+    "Issue443FirstOfN.solidFromAgreesWithSibling"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "SFS_PARTIAL_UNFIXED": {
+   "red": [
+    "Issue442FixSolidMultiBody.solidFromShellOrientsEveryBody"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "FIX_REVERSED": {
+   "red": [
+    "Issue442FixSolidMultiBody.documentedUnclosedCheck",
+    "Issue442FixSolidMultiBody.fixSolidHollow",
+    "Issue442FixSolidMultiBody.fixSolidMultiBody",
+    "Issue442FixSolidMultiBody.fixSolidMulticonnex",
+    "Issue442FixSolidMultiBody.fixSolidNoSolid",
+    "Issue442FixSolidMultiBody.fixSolidOrientsEveryBody",
+    "Issue442FixSolidMultiBody.fixSolidSingleBody",
+    "Issue442FixSolidMultiBody.reproducerTable"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "FIX_REVERSE_SECOND": {
+   "red": [
+    "Issue442FixSolidMultiBody.documentedUnclosedCheck",
+    "Issue442FixSolidMultiBody.fixSolidMultiBody",
+    "Issue442FixSolidMultiBody.fixSolidMulticonnex",
+    "Issue442FixSolidMultiBody.fixSolidOrientsEveryBody",
+    "Issue442FixSolidMultiBody.reproducerTable"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "FIX_PARTIAL_UNFIXED": {
+   "red": [
+    "Issue442FixSolidMultiBody.documentedUnclosedCheck",
+    "Issue442FixSolidMultiBody.fixSolidOrientsEveryBody"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "UP_REVERSED": {
+   "red": [
+    "Issue443FirstOfN.upgradedFromLooseFaces",
+    "Issue443FirstOfN.upgradedHollow",
+    "Issue443FirstOfN.upgradedKeepsOpenBody",
+    "Issue443FirstOfN.upgradedMultiBody",
+    "Issue443FirstOfN.upgradedNestedBody",
+    "Issue443FirstOfN.upgradedOrientsEveryBody",
+    "Issue443FirstOfN.upgradedSingleBody"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "UP_REVERSE_SECOND": {
+   "red": [
+    "Issue443FirstOfN.upgradedFromLooseFaces",
+    "Issue443FirstOfN.upgradedMultiBody",
+    "Issue443FirstOfN.upgradedNestedBody",
+    "Issue443FirstOfN.upgradedOrientsEveryBody"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "UP_PARTIAL_UNFIXED": {
+   "red": [
+    "Issue443FirstOfN.upgradedKeepsOpenBody",
+    "Issue443FirstOfN.upgradedOrientsEveryBody"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "SOLID_NO_PARITY": {
+   "red": [
+    "Issue443FirstOfN.sewnHollowIsOneBody",
+    "Issue443FirstOfN.solidFromSkipsCavity"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "SOLID_DROP_OPEN": {
+   "red": [
+    "Issue443FirstOfN.solidFromKeepsOpenBody"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "HIST_NO_PARITY": {
+   "red": [
+    "Issue443FirstOfN.solidWithHistoryHollowIsOneBody",
+    "Issue443FirstOfN.solidWithHistoryRecordsEveryBodysRepair"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "HIST_DROP_OPEN": {
+   "red": [
+    "Issue443FirstOfN.solidWithHistoryKeepsOpenBody",
+    "Issue443FirstOfN.solidWithHistoryRecordsEveryBodysRepair"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "SFS_NO_PARITY": {
+   "red": [
+    "Issue442FixSolidMultiBody.openShellDoesNotPerturbParity",
+    "Issue442FixSolidMultiBody.solidFromShellCavityWithWiderSibling",
+    "Issue442FixSolidMultiBody.solidFromShellSkipsCavity",
+    "Issue443FirstOfN.sewnAndUnsewnHollowAgree",
+    "Issue443FirstOfN.sewnHollowIsOneBody"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "SFS_DEDUP_LOST": {
+   "red": [
+    "Issue442FixSolidMultiBody.openShellDoesNotPerturbParity",
+    "Issue442FixSolidMultiBody.solidFromShellCavityWithWiderSibling",
+    "Issue442FixSolidMultiBody.solidFromShellDeduplicates",
+    "Issue443FirstOfN.sewnAndUnsewnHollowAgree",
+    "Issue443FirstOfN.sewnHollowIsOneBody"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "FIX_FILLS_CAVITY": {
+   "red": [
+    "Issue442FixSolidMultiBody.fixSolidHollow"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "FIX_NO_FLATTEN": {
+   "red": [
+    "Issue442FixSolidMultiBody.documentedUnclosedCheck",
+    "Issue442FixSolidMultiBody.fixSolidMulticonnex"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "FIX_DROP_DEMOTED": {
+   "red": [
+    "Issue442FixSolidMultiBody.documentedUnclosedCheck",
+    "Issue702SolidDemotion.analyzeReportsFreeEdgesOnDemotedShell",
+    "Issue702SolidDemotion.fixSolidDemotes",
+    "Issue702SolidDemotion.healedDemotes",
+    "Issue702SolidDemotion.isValidAloneIsAmbiguous",
+    "Issue702SolidDemotion.isValidSolidDistinguishesDemotion"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "FIX_PER_INPUT_SOLID_ONLY_FIRST_SHELL": {
+   "red": [
+    "Issue442FixSolidMultiBody.fixSolidMulticonnex"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "UP_NO_PARITY": {
+   "red": [
+    "Issue443FirstOfN.upgradedHollow",
+    "Issue443FirstOfN.upgradedNestedBody",
+    "Issue443FirstOfN.upgradedNoShell"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "UP_DROP_OPEN": {
+   "red": [
+    "Issue443FirstOfN.upgradedKeepsOpenBody",
+    "Issue443FirstOfN.upgradedNoShell"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "UP_SKIP_HEAL": {
+   "red": [
+    "Issue443FirstOfN.upgradedKeepsOpenBody",
+    "Issue443FirstOfN.upgradedNoShell"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "HIST_FIRST_BODY_HISTORY_ONLY": {
+   "red": [
+    "Issue443FirstOfN.solidWithHistoryRecordsEveryBodysRepair"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "HIST_LAST_BODY_HISTORY_ONLY": {
+   "red": [
+    "Issue443FirstOfN.solidWithHistoryRecordsEveryBodysRepair"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "HIST_UNRELATED_HISTORY": {
+   "red": [
+    "Issue443FirstOfN.solidWithHistoryRecordsEveryBodysRepair"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "AN_FREE_ZERO": {
+   "red": [
+    "Issue702SolidDemotion.analyzeAgreesWithAnalyzeShellOnInternalDuplicate",
+    "Issue702SolidDemotion.analyzeCountsFreeFacesPerShell",
+    "Issue702SolidDemotion.analyzeReportsFreeEdgesOnDemotedShell",
+    "Issue702SolidDemotion.analyzeReportsFreeEdgesOnOpenShell",
+    "Issue702SolidDemotion.freeEdgesAloneMakeAShapeUnhealthy"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "AN_FREEFACE_ZERO": {
+   "red": [
+    "Issue702SolidDemotion.analyzeAgreesWithAnalyzeShellOnInternalDuplicate",
+    "Issue702SolidDemotion.analyzeCountsFreeFacesPerShell",
+    "Issue702SolidDemotion.analyzeReportsFreeEdgesOnDemotedShell",
+    "Issue702SolidDemotion.analyzeReportsFreeEdgesOnOpenShell",
+    "Issue702SolidDemotion.freeEdgesAloneMakeAShapeUnhealthy"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "AN_FREEFACE_CAP1": {
+   "red": [
+    "Issue702SolidDemotion.analyzeCountsFreeFacesPerShell"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "AN_FREEFACE_PLUS1": {
+   "red": [
+    "Issue702SolidDemotion.analyzeAgreesWithAnalyzeShellOnInternalDuplicate",
+    "Issue702SolidDemotion.analyzeCountsFreeFacesPerShell",
+    "Issue702SolidDemotion.analyzeReportsFreeEdgesOnDemotedShell",
+    "Issue702SolidDemotion.analyzeReportsFreeEdgesOnOpenShell",
+    "Issue702SolidDemotion.analyzeReportsNoFreeEdgesOnClosedBox",
+    "Issue702SolidDemotion.freeEdgesAloneMakeAShapeUnhealthy"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "AN_FREEEDGE_PLUS1": {
+   "red": [
+    "Issue702SolidDemotion.analyzeAgreesWithAnalyzeShellOnInternalDuplicate",
+    "Issue702SolidDemotion.analyzeCountsFreeFacesPerShell",
+    "Issue702SolidDemotion.analyzeReportsFreeEdgesOnDemotedShell",
+    "Issue702SolidDemotion.analyzeReportsFreeEdgesOnOpenShell",
+    "Issue702SolidDemotion.freeEdgesAloneMakeAShapeUnhealthy"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "AN_FREEEDGE_MINUS1": {
+   "red": [
+    "Issue702SolidDemotion.analyzeAgreesWithAnalyzeShellOnInternalDuplicate",
+    "Issue702SolidDemotion.analyzeCountsFreeFacesPerShell",
+    "Issue702SolidDemotion.analyzeReportsFreeEdgesOnDemotedShell",
+    "Issue702SolidDemotion.analyzeReportsFreeEdgesOnOpenShell",
+    "Issue702SolidDemotion.freeEdgesAloneMakeAShapeUnhealthy"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "AN_FREEEDGE_FIRST_SHELL_ONLY": {
+   "red": [
+    "Issue702SolidDemotion.analyzeCountsFreeFacesPerShell"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "AN_INVALID_FALSE": {
+   "red": [
+    "Issue702SolidDemotion.analyzeReportsFreeEdgesOnDemotedShell"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "AN_INVALID_TRUE": {
+   "red": [
+    "Issue702SolidDemotion.analyzeReportsFreeEdgesOnDemotedShell",
+    "Issue702SolidDemotion.analyzeReportsFreeEdgesOnOpenShell",
+    "Issue702SolidDemotion.analyzeReportsNoFreeEdgesOnClosedBox",
+    "Issue702SolidDemotion.freeEdgesAloneMakeAShapeUnhealthy"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "AN_CHECKINTERNAL_FALSE_REAL": {
+   "red": [
+    "Issue702SolidDemotion.analyzeAgreesWithAnalyzeShellOnInternalDuplicate"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "ASH_FREE_ZERO": {
+   "red": [
+    "Issue702SolidDemotion.analyzeAgreesWithAnalyzeShellOnInternalDuplicate",
+    "Issue702SolidDemotion.analyzeReportsFreeEdgesOnOpenShell",
+    "Issue702SolidDemotion.analyzeShellSeparatesOpenFromMisoriented"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "ASH_COUNT_PLUS1": {
+   "red": [
+    "Issue702SolidDemotion.analyzeAgreesWithAnalyzeShellOnInternalDuplicate",
+    "Issue702SolidDemotion.analyzeReportsFreeEdgesOnOpenShell",
+    "Issue702SolidDemotion.analyzeShellSeparatesOpenFromMisoriented"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "ASH_HASFREE_FALSE": {
+   "red": [
+    "Issue702SolidDemotion.analyzeReportsFreeEdgesOnOpenShell",
+    "Issue702SolidDemotion.analyzeShellSeparatesOpenFromMisoriented"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "ASH_ORIENT_PROBLEMS": {
+   "red": [
+    "Issue702SolidDemotion.analyzeReportsFreeEdgesOnOpenShell",
+    "Issue702SolidDemotion.analyzeReportsNoFreeEdgesOnClosedBox",
+    "Issue702SolidDemotion.analyzeShellSeparatesOpenFromMisoriented"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "TP_DOUBLE_FREEFACE": {
+   "red": [
+    "Issue702SolidDemotion.analyzeCountsFreeFacesPerShell",
+    "Issue702SolidDemotion.analyzeReportsFreeEdgesOnDemotedShell",
+    "Issue702SolidDemotion.analyzeReportsFreeEdgesOnOpenShell",
+    "Issue702SolidDemotion.freeEdgesAloneMakeAShapeUnhealthy"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "TP_DROP_SELFINT": {
+   "red": [
+    "Issue702SolidDemotion.totalProblemsExcludingFreeFaceIncludesSelfIntersection"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "TP_DROP_INVALID": {
+   "red": [
+    "Issue702SolidDemotion.analyzeReportsFreeEdgesOnDemotedShell"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "TP_DROP_FREEEDGE": {
+   "red": [
+    "Issue702SolidDemotion.analyzeCountsFreeFacesPerShell",
+    "Issue702SolidDemotion.analyzeReportsFreeEdgesOnDemotedShell",
+    "Issue702SolidDemotion.analyzeReportsFreeEdgesOnOpenShell",
+    "Issue702SolidDemotion.freeEdgesAloneMakeAShapeUnhealthy"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "HEALTHY_TRUE": {
+   "red": [
+    "Issue702SolidDemotion.analyzeReportsFreeEdgesOnDemotedShell",
+    "Issue702SolidDemotion.analyzeReportsFreeEdgesOnOpenShell",
+    "Issue702SolidDemotion.freeEdgesAloneMakeAShapeUnhealthy"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "HEALTHY_IGNORES_FREEEDGES": {
+   "red": [
+    "Issue702SolidDemotion.freeEdgesAloneMakeAShapeUnhealthy"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "VS_TRUE": {
+   "red": [
+    "Issue702SolidDemotion.fixSolidDemotes",
+    "Issue702SolidDemotion.healedDemotes",
+    "Issue702SolidDemotion.isValidSolidDistinguishesDemotion",
+    "Issue702SolidDemotion.isValidSolidFalseOnNonSolidTypes"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "VS_FALSE": {
+   "red": [
+    "Issue442FixSolidMultiBody.documentedUnclosedCheck",
+    "Issue442FixSolidMultiBody.fixSolidHollow",
+    "Issue442FixSolidMultiBody.fixSolidMultiBody",
+    "Issue442FixSolidMultiBody.fixSolidMulticonnex",
+    "Issue442FixSolidMultiBody.fixSolidOrientsEveryBody",
+    "Issue442FixSolidMultiBody.fixSolidSingleBody",
+    "Issue442FixSolidMultiBody.openShellDoesNotPerturbParity",
+    "Issue442FixSolidMultiBody.reproducerTable",
+    "Issue442FixSolidMultiBody.solidFromShellCavityWithWiderSibling",
+    "Issue442FixSolidMultiBody.solidFromShellDeduplicates",
+    "Issue442FixSolidMultiBody.solidFromShellFreeShells",
+    "Issue442FixSolidMultiBody.solidFromShellMultiBody",
+    "Issue442FixSolidMultiBody.solidFromShellMulticonnex",
+    "Issue442FixSolidMultiBody.solidFromShellOrientsEveryBody",
+    "Issue442FixSolidMultiBody.solidFromShellSingleBody",
+    "Issue442FixSolidMultiBody.solidFromShellSkipsCavity",
+    "Issue443FirstOfN.manyFreeShells",
+    "Issue443FirstOfN.sewnAndUnsewnHollowAgree",
+    "Issue443FirstOfN.sewnHollowIsOneBody",
+    "Issue443FirstOfN.solidFromAgreesWithSibling",
+    "Issue443FirstOfN.solidFromKeepsOpenBody",
+    "Issue443FirstOfN.solidFromMulticonnex",
+    "Issue443FirstOfN.solidFromOrientsEveryBody",
+    "Issue443FirstOfN.solidFromSewnMultiBody",
+    "Issue443FirstOfN.solidFromSingleShell",
+    "Issue443FirstOfN.solidFromSkipsCavity",
+    "Issue443FirstOfN.solidWithHistoryHollowIsOneBody",
+    "Issue443FirstOfN.solidWithHistoryKeepsOpenBody",
+    "Issue443FirstOfN.solidWithHistoryMultiBody",
+    "Issue443FirstOfN.solidWithHistoryOrientsEveryBody",
+    "Issue443FirstOfN.solidWithHistoryQueryableForEveryBody",
+    "Issue443FirstOfN.solidWithHistorySingleShell",
+    "Issue443FirstOfN.touchingBodiesNotPruned",
+    "Issue443FirstOfN.upgradedFromLooseFaces",
+    "Issue443FirstOfN.upgradedHollow",
+    "Issue443FirstOfN.upgradedKeepsOpenBody",
+    "Issue443FirstOfN.upgradedMultiBody",
+    "Issue443FirstOfN.upgradedNestedBody",
+    "Issue443FirstOfN.upgradedOrientsEveryBody",
+    "Issue443FirstOfN.upgradedSingleBody",
+    "Issue702SolidDemotion.isValidSolidDistinguishesDemotion",
+    "Issue702SolidDemotion.isValidSolidFalseOnNonSolidTypes"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "VS_TYPEBLIND": {
+   "red": [
+    "Issue702SolidDemotion.fixSolidDemotes",
+    "Issue702SolidDemotion.healedDemotes",
+    "Issue702SolidDemotion.isValidSolidDistinguishesDemotion",
+    "Issue702SolidDemotion.isValidSolidFalseOnNonSolidTypes"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "ISVALID_TRUE": {
+   "red": [
+    "Issue442FixSolidMultiBody.documentedUnclosedCheck",
+    "Issue443FirstOfN.solidFromKeepsOpenBody",
+    "Issue443FirstOfN.solidWithHistoryKeepsOpenBody",
+    "Issue702SolidDemotion.fakeSolidIsInvalid"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "ISVALID_FALSE": {
+   "red": [
+    "Issue442FixSolidMultiBody.fixSolidSingleBody",
+    "Issue443FirstOfN.solidFromSingleShell",
+    "Issue443FirstOfN.upgradedSingleBody",
+    "Issue702SolidDemotion.fakeSolidIsInvalid",
+    "Issue702SolidDemotion.fixSolidDemotes",
+    "Issue702SolidDemotion.healedDemotes",
+    "Issue702SolidDemotion.isValidAloneIsAmbiguous",
+    "Issue702SolidDemotion.isValidSolidDistinguishesDemotion",
+    "Issue702SolidDemotion.isValidSolidFalseOnNonSolidTypes"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "AN_SMALLEDGE_PLUS1": {
+   "red": [
+    "Issue702SolidDemotion.analyzeReportsFreeEdgesOnOpenShell",
+    "Issue702SolidDemotion.analyzeReportsNoFreeEdgesOnClosedBox",
+    "Issue702SolidDemotion.freeEdgesAloneMakeAShapeUnhealthy"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "AN_SMALLFACE_PLUS1": {
+   "red": [
+    "Issue702SolidDemotion.analyzeReportsFreeEdgesOnOpenShell",
+    "Issue702SolidDemotion.analyzeReportsNoFreeEdgesOnClosedBox",
+    "Issue702SolidDemotion.freeEdgesAloneMakeAShapeUnhealthy"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "AN_GAP_PLUS1": {
+   "red": [
+    "Issue702SolidDemotion.freeEdgesAloneMakeAShapeUnhealthy"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "FX_SEW_IDENTITY": {
+   "red": [
+    "Issue442FixSolidMultiBody.documentedUnclosedCheck",
+    "Issue442FixSolidMultiBody.openShellDoesNotPerturbParity",
+    "Issue443FirstOfN.manyFreeShells",
+    "Issue443FirstOfN.sewnAndUnsewnHollowAgree",
+    "Issue443FirstOfN.sewnHollowIsOneBody",
+    "Issue443FirstOfN.solidFromAgreesWithSibling",
+    "Issue443FirstOfN.solidFromSewnMultiBody",
+    "Issue443FirstOfN.solidWithHistoryHollowIsOneBody",
+    "Issue443FirstOfN.solidWithHistoryMultiBody",
+    "Issue702SolidDemotion.analyzeCountsFreeFacesPerShell",
+    "Issue702SolidDemotion.analyzeReportsFreeEdgesOnDemotedShell",
+    "Issue702SolidDemotion.analyzeReportsFreeEdgesOnOpenShell",
+    "Issue702SolidDemotion.analyzeShellSeparatesOpenFromMisoriented",
+    "Issue702SolidDemotion.fakeSolidIsInvalid",
+    "Issue702SolidDemotion.fixSolidDemotes",
+    "Issue702SolidDemotion.healedDemotes",
+    "Issue702SolidDemotion.isValidAloneIsAmbiguous",
+    "Issue702SolidDemotion.isValidSolidDistinguishesDemotion"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "FX_SFSH_NIL": {
+   "red": [
+    "Issue442FixSolidMultiBody.documentedUnclosedCheck",
+    "Issue442FixSolidMultiBody.fixSolidMulticonnex",
+    "Issue442FixSolidMultiBody.fixSolidOrientsEveryBody",
+    "Issue442FixSolidMultiBody.openShellDoesNotPerturbParity",
+    "Issue442FixSolidMultiBody.solidFromShellCavityWithWiderSibling",
+    "Issue442FixSolidMultiBody.solidFromShellMulticonnex",
+    "Issue443FirstOfN.solidFromMulticonnex",
+    "Issue702SolidDemotion.analyzeReportsFreeEdgesOnDemotedShell",
+    "Issue702SolidDemotion.fakeSolidIsInvalid",
+    "Issue702SolidDemotion.fixSolidDemotes",
+    "Issue702SolidDemotion.healedDemotes",
+    "Issue702SolidDemotion.isValidAloneIsAmbiguous",
+    "Issue702SolidDemotion.isValidSolidDistinguishesDemotion"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "FX_SFSH_AUTOHEAL": {
+   "red": [
+    "Issue442FixSolidMultiBody.documentedUnclosedCheck",
+    "Issue442FixSolidMultiBody.fixSolidMulticonnex",
+    "Issue442FixSolidMultiBody.fixSolidOrientsEveryBody",
+    "Issue442FixSolidMultiBody.solidFromShellMulticonnex",
+    "Issue443FirstOfN.solidFromMulticonnex",
+    "Issue702SolidDemotion.analyzeReportsFreeEdgesOnDemotedShell",
+    "Issue702SolidDemotion.fakeSolidIsInvalid",
+    "Issue702SolidDemotion.fixSolidDemotes",
+    "Issue702SolidDemotion.healedDemotes",
+    "Issue702SolidDemotion.isValidAloneIsAmbiguous",
+    "Issue702SolidDemotion.isValidSolidDistinguishesDemotion"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  },
+  "FX_REVERSE_NOOP": {
+   "red": [
+    "Issue442FixSolidMultiBody.fixSolidOrientsEveryBody",
+    "Issue442FixSolidMultiBody.solidFromShellOrientsEveryBody",
+    "Issue443FirstOfN.solidFromOrientsEveryBody",
+    "Issue443FirstOfN.solidWithHistoryOrientsEveryBody",
+    "Issue443FirstOfN.upgradedOrientsEveryBody",
+    "Issue702SolidDemotion.analyzeShellSeparatesOpenFromMisoriented"
+   ],
+   "exit": 1,
+   "crash": false,
+   "unmapped": [],
+   "ran": 59
+  }
+ }
+}
