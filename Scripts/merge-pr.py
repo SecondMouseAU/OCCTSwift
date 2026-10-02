@@ -34,10 +34,11 @@ What it does, in order:
   4. Merges with `gh pr merge --merge`, which is the method this repo uses.
 
 It refuses rather than guesses. An unfilled template placeholder, an empty section, a missing
-heading, an entry opening with a bare `### Fixed` / `### Added` / `### Changed`, a PR that is not
-open, a PR whose own diff already touches `docs/CHANGELOG.md`, and a cross-repository head branch
-are all refusals with the reason printed, because each of them is a question for a human and none
-of them is a transcription.
+heading, an entry opening with a bare `### Fixed` / `### Added` / `### Changed`, an entry wrapped
+whole in a bare fence to present it as literal markdown (#2963), a PR that is not open, a PR whose
+own diff already touches `docs/CHANGELOG.md`, and a cross-repository head branch are all refusals
+with the reason printed, because each of them is a question for a human and none of them is a
+transcription.
 
 Re-running is safe: an entry already present in `docs/CHANGELOG.md`'s `## Unreleased` section is
 detected and not duplicated. **Detected, and then proved.** This silently wrote nothing for nine
@@ -249,6 +250,17 @@ def first_substantive_line(text):
 CATEGORY_HEADING_RE = re.compile(r"^#{2,6}\s+([A-Za-z]+)\s*:?\s*$")
 
 
+def is_category_heading(line):
+    """Whether this one line is a bare Keep a Changelog category heading.
+
+    Split out from `category_heading` because two callers ask different questions of it: the
+    refusal asks it of the entry's FIRST substantive line, and `identifying_line` asks it of
+    every line while looking for one that names this entry rather than its bucket.
+    """
+    m = CATEGORY_HEADING_RE.match(line.strip())
+    return bool(m) and m.group(1).lower() in CATEGORY_HEADINGS
+
+
 def category_heading(entry):
     """The bare Keep a Changelog category heading this entry OPENS with, or None.
 
@@ -268,10 +280,75 @@ def category_heading(entry):
     on the line. `### Fixed the thing (#1)` is a descriptive heading that happens to start with a
     category word, and refusing it would be the tool blocking a merge for no reason at all.
     """
-    m = CATEGORY_HEADING_RE.match(first_substantive_line(entry))
-    if not m:
+    first = first_substantive_line(entry)
+    return first if is_category_heading(first) else None
+
+
+BARE_FENCE_RE = re.compile(r"^ {0,3}(`{3,}|~{3,})\s*$")
+
+
+def wrapping_fence(entry):
+    """The bare fence an author wrapped the WHOLE entry in, or None (#2963).
+
+    Four of the sixteen entries recovered in PR #2961 (#2756, #2809, #2800, #2804) put the entry
+    inside a bare ``` fence to present it as literal markdown, which is what
+    `okf/policies/changelog-on-merge.md`'s own worked example looks like. Spliced verbatim, the
+    fence lands in the release record and the whole entry renders as a preformatted block: no
+    heading, no bullets, no links, in a file whose only job is to be read.
+
+    The test is the one that recovery used, and it is deliberately narrow: the first and last
+    substantive lines are bare fences of the same character, and no other bare fence of that
+    character appears between them. An entry that legitimately CONTAINS a fenced snippet keeps
+    it, and so does any shape this cannot read unambiguously, since the cost of answering wrongly
+    here is a wrong release record and the cost of not answering is the status quo.
+    """
+    lines = [l for l in entry.split("\n") if l.strip()]
+    if len(lines) < 2:
         return None
-    return m.group(0).strip() if m.group(1).lower() in CATEGORY_HEADINGS else None
+    opener, closer = BARE_FENCE_RE.match(lines[0]), BARE_FENCE_RE.match(lines[-1])
+    if not opener or not closer or opener.group(1)[0] != closer.group(1)[0]:
+        return None
+    char = opener.group(1)[0]
+    for line in lines[1:-1]:
+        m = BARE_FENCE_RE.match(line)
+        if m and m.group(1)[0] == char:
+            return None
+    return lines[0].strip()
+
+
+def identifying_line(entry):
+    """The line that identifies THIS entry for the duplicate test, or None when there is none.
+
+    Not `first_substantive_line`, which is what `already_present` used and which two shapes make
+    useless (#2963):
+
+      * a bare category heading. `### Fixed` names a bucket, not an entry, so the test answered
+        "already present" for every entry opening that way the moment the file held those six
+        words anywhere under `## Unreleased`. The CLI now refuses that shape before reaching
+        here, but running the duplicate test directly still reported all sixteen of #2957's
+        entries as present while they were absent. A refusal at the door does not make the room
+        behind it correct, and the next caller is the one that finds out;
+      * a fence. It identifies nothing, and a whole entry wrapped in one has no unfenced line at
+        all, so the test answered "absent" unconditionally and a re-run would splice a second
+        copy.
+
+    So: the first line that is neither inside a fenced block nor a bare category heading, which
+    is the first `###` heading for the usual shape and the first bullet under a category heading.
+    This is `check-changelog-transcription.py`'s `entry_is_present` rule, arrived at for the same
+    reason in the same week; the two tools keep their own copies for the reason noted beside
+    `CATEGORY_HEADINGS`.
+
+    `None` means the entry cannot be identified at all, and a caller must not read that as
+    "absent": `main` refuses it instead.
+    """
+    lines = entry.split("\n")
+    in_code = code_block_mask(lines)
+    for i, line in enumerate(lines):
+        text = line.strip()
+        if not text or in_code[i] or is_category_heading(text):
+            continue
+        return text
+    return None
 
 
 def unreleased_section(changelog_text):
@@ -308,8 +385,11 @@ def find_in_unreleased(changelog_text, entry):
 
     It returns the line rather than a bool so that both callers can show their work: the skip
     prints the match it is skipping on, and the post-splice check prints where the entry landed.
+
+    The comparison is against `identifying_line`, not the entry's first substantive line, which
+    is a bucket heading or a fence often enough to have cost sixteen entries (#2963).
     """
-    first = first_substantive_line(entry)
+    first = identifying_line(entry)
     if not first:
         return None
     found = unreleased_section(changelog_text)
@@ -463,6 +543,26 @@ def main(argv=None):
         return 0
 
     entry = payload
+    fence = wrapping_fence(entry)
+    if fence:
+        sys.stderr.write(
+            "error: the `%s` section is wrapped whole in `%s`, which presents the entry as\n"
+            "literal markdown rather than writing it.\n"
+            "\n"
+            "This tool transcribes the section verbatim, so the fence goes into %s with it and\n"
+            "the entry renders as a preformatted block: no heading, no bullets, no links, in the\n"
+            "one file whose job is to be read. Four entries recovered in PR #2961 have that\n"
+            "shape (#2963).\n"
+            "\n"
+            "Delete the opening and closing `%s` lines from the PR body and leave everything\n"
+            "between them exactly as it is. A fence INSIDE the entry, around a snippet, is kept\n"
+            "and is not what this is about. The worked example in\n"
+            "okf/policies/changelog-on-merge.md is fenced to display it; the fence is not part of\n"
+            "what you write.\n"
+            "\n"
+            "Nothing has been written, nothing has been pushed, and PR #%s is not merged.\n"
+            % (HEADING, fence, CHANGELOG, fence, args.number))
+        return 1
     bare = category_heading(entry)
     if bare:
         sys.stderr.write(
@@ -485,6 +585,19 @@ def main(argv=None):
             "Nothing has been written, nothing has been pushed, and PR #%s is not merged.\n"
             % (HEADING, bare, UNRELEASED, CHANGELOG, bare, args.number))
         return 1
+    if identifying_line(entry) is None:
+        sys.stderr.write(
+            "error: nothing in the `%s` section identifies the entry: every line is blank, a\n"
+            "bucket heading, or inside a fenced block. The duplicate test has no line to look\n"
+            "for, so it can neither find this entry in %s nor honestly say it is absent, and a\n"
+            "guess either way is a lost entry or a duplicated one (#2963).\n"
+            "\n"
+            "Give the entry a descriptive `### ` heading carrying its issue numbers, outside any\n"
+            "fence. See okf/policies/changelog-on-merge.md.\n"
+            "\n"
+            "Nothing has been written, nothing has been pushed, and PR #%s is not merged.\n"
+            % (HEADING, CHANGELOG, args.number))
+        return 1
     if not args.allow_changelog_in_diff:
         refusal = refuse_for_diff(changed_paths(args.number))
         if refusal:
@@ -506,7 +619,7 @@ def main(argv=None):
         # Never claim "nothing is written" without showing the match it rests on (#2951).
         print("  the entry's opening line is already under `%s`, so nothing is written. The match:"
               % UNRELEASED)
-        print("    %s:%d: %s" % (CHANGELOG, at, first_substantive_line(entry)))
+        print("    %s:%d: %s" % (CHANGELOG, at, identifying_line(entry)))
     else:
         new = splice(text, entry)
         if args.dry_run:
@@ -527,7 +640,7 @@ def main(argv=None):
                 "because the tool used to report success while writing nothing (#2951).\n"
                 % (UNRELEASED, CHANGELOG))
             return 1
-        print("  verified: %s:%d holds `%s`" % (CHANGELOG, at, first_substantive_line(entry)))
+        print("  verified: %s:%d holds `%s`" % (CHANGELOG, at, identifying_line(entry)))
         message = ("docs: transcribe PR #%s's CHANGELOG entry (#%s)\n\n"
                    "Copied verbatim from the PR body by Scripts/merge-pr.py, per\n"
                    "okf/policies/changelog-on-merge.md.\n" % (pr["number"], pr["number"]))
@@ -712,6 +825,52 @@ Closes #2872
 PATCH.
 """
 
+# #2963. The shape four of the sixteen entries recovered in PR #2961 have (#2756, #2809, #2800,
+# #2804): the whole entry inside a bare fence, presenting it as literal markdown. Reconstructed
+# from PR #2756's body. Spliced verbatim it renders as a preformatted block.
+BODY_FENCE_WRAPPED = """## What & why
+
+Something.
+
+Closes #2755
+
+## CHANGELOG entry
+
+```
+### `BRepCheck_Analyzer` no longer faults inside `BRepCheck_Edge::InContext` (#2755)
+
+- Every bridge site that builds an analyzer now refuses a shape carrying a pcurve-only edge.
+```
+
+## SemVer impact
+
+PATCH.
+"""
+
+# `check-changelog-transcription.py`'s self-test carries this exact body as its case "13", and
+# #2963 asks the two tools' fixtures to agree about the shape rather than each inventing one.
+BODY_FENCE_WRAPPED_CASE_13 = "## CHANGELOG entry\n\n```\n- A bullet-shaped entry (#13)\n```\n"
+
+# The shape the narrow test must NOT touch: an entry that legitimately opens and closes with a
+# fenced snippet of its own. First and last substantive lines are bare fences, so only the
+# "no other bare fence between them" clause tells this apart from a wrapper.
+BODY_FENCED_SNIPPETS_AT_BOTH_ENDS = """## CHANGELOG entry
+
+```
+before
+```
+
+### A thing (#9)
+
+```
+after
+```
+
+## SemVer impact
+
+PATCH.
+"""
+
 CHANGELOG_FIXTURE = """# Changelog
 
 ## Current: v3.0.0
@@ -752,6 +911,25 @@ CHANGELOG_CATEGORY_IN_UNRELEASED = """# Changelog
 
 ### Fixed
 - Something else entirely (#55).
+
+## v2.0.0
+
+### Older (#1)
+"""
+
+# The same file once the category-headed entry HAS landed. The bullet is what distinguishes this
+# from the fixture above, and distinguishing them is the whole of #2963's duplicate-test fix: the
+# two files are identical on the line `first_substantive_line` used to compare.
+CHANGELOG_CATEGORY_BULLET_IN_UNRELEASED = """# Changelog
+
+## Unreleased
+
+### Fixed
+- Something else entirely (#55).
+
+### Fixed
+- `Shape.edgePolyline` now applies the deflection bound OCCT documents and the pinned Release
+  kernel compiles out (#2872).
 
 ## v2.0.0
 
@@ -949,14 +1127,78 @@ def self_test():
           category_heading("### Added a wrapper for GeomFill (#2)\n")))
     case("the-ordinary-entry-fixture-is-not-refused", category_heading(entry) is None,
          repr(category_heading(entry)))
-    # The measured reason the fix is a refusal rather than a scoped comparison: at every one of
-    # the nine merges the `### Fixed` / `### Changed` / `### Added` that matched was itself inside
-    # `## Unreleased`, so scoping the duplicate test saves none of them. It is still the right
-    # scope, and this case is what keeps the claim from being an assertion.
+    # The measured reason the refusal was needed at all: at every one of the nine merges the
+    # `### Fixed` / `### Changed` / `### Added` that matched was itself inside `## Unreleased`,
+    # so scoping the duplicate test saves none of them. The assertion is about the FILE, because
+    # the entry side of it is now fixed (see `identifying_line` below) and asserting the old
+    # answer here would be asserting the defect.
     case("scoping-alone-does-not-rescue-a-category-heading",
-         already_present(CHANGELOG_CATEGORY_IN_UNRELEASED, cat_entry))
+         find_in_unreleased(CHANGELOG_CATEGORY_IN_UNRELEASED, "### Fixed\n\n- x\n") is None
+         and "### Fixed" in unreleased_section(CHANGELOG_CATEGORY_IN_UNRELEASED)[1],
+         unreleased_section(CHANGELOG_CATEGORY_IN_UNRELEASED))
     case("the-refusal-is-what-catches-the-2026-10-01-shape",
          category_heading(cat_entry) is not None)
+
+    # ------------------------------------------------------------------------------------------
+    # #2963. Two defects inside the duplicate test, both reachable only with the CLI's refusals
+    # removed, and both found by running the function directly during #2957's recovery. A guard
+    # at the door does not make the room behind it correct.
+    # ------------------------------------------------------------------------------------------
+
+    # The bucket heading. `already_present` compared `first_substantive_line`, which for this
+    # shape is `### Fixed`, so it answered True for all sixteen of #2957's entries against a file
+    # that held those six words and none of the entries.
+    case("a-category-headed-entry-is-identified-by-its-bullet-not-its-bucket",
+         identifying_line(cat_entry)
+         == "- `Shape.edgePolyline` now applies the deflection bound OCCT documents and the "
+            "pinned Release",
+         repr(identifying_line(cat_entry)))
+    case("the-duplicate-test-says-absent-when-only-the-bucket-heading-is-there",
+         not already_present(CHANGELOG_CATEGORY_IN_UNRELEASED, cat_entry))
+    case("the-duplicate-test-says-present-when-the-bullet-is-there",
+         already_present(CHANGELOG_CATEGORY_BULLET_IN_UNRELEASED, cat_entry))
+    # The two files differ only in the entry's own bullet, so a test that cannot tell them apart
+    # is the defect, whatever answer it gives.
+    case("the-duplicate-test-tells-those-two-files-apart",
+         already_present(CHANGELOG_CATEGORY_BULLET_IN_UNRELEASED, cat_entry)
+         != already_present(CHANGELOG_CATEGORY_IN_UNRELEASED, cat_entry))
+
+    # The fence. A bare fence is never an entry's opening line in the file, so the test answered
+    # False unconditionally and a re-run would have spliced a second copy.
+    wrapped = classify(extract_section(BODY_FENCE_WRAPPED))[1]
+    case("a-fence-wrapped-entry-still-classifies-as-an-entry",
+         classify(extract_section(BODY_FENCE_WRAPPED))[0] == "entry")
+    case("a-whole-entry-wrapped-in-a-bare-fence-is-detected",
+         wrapping_fence(wrapped) == "```", repr(wrapping_fence(wrapped)))
+    case("the-wrapped-fixture-agrees-with-the-report-tool-case-13",
+         wrapping_fence(classify(extract_section(BODY_FENCE_WRAPPED_CASE_13))[1]) == "```",
+         repr(classify(extract_section(BODY_FENCE_WRAPPED_CASE_13))[1]))
+    case("a-tilde-wrapper-is-detected",
+         wrapping_fence("~~~\n### A (#1)\n\nProse.\n~~~\n") == "~~~",
+         repr(wrapping_fence("~~~\n### A (#1)\n\nProse.\n~~~\n")))
+    case("the-opening-fence-was-the-line-the-old-test-compared",
+         first_substantive_line(wrapped) == "```", repr(first_substantive_line(wrapped)))
+    case("already-present-cannot-answer-on-a-fence-wrapped-entry",
+         identifying_line(wrapped) is None, repr(identifying_line(wrapped)))
+    case("a-fence-is-never-the-identifying-line",
+         identifying_line("```\ncode\n```\n\n### A real heading (#1)\n")
+         == "### A real heading (#1)",
+         repr(identifying_line("```\ncode\n```\n\n### A real heading (#1)\n")))
+    # The over-refusal guards. The test is narrow because an entry that legitimately CONTAINS a
+    # fence must keep it, and a wrong strip or a wrong refusal both cost more than the shape does.
+    case("an-entry-containing-a-fenced-snippet-is-not-a-wrapper",
+         wrapping_fence(entry) is None, repr(wrapping_fence(entry)))
+    case("an-entry-opening-and-closing-with-its-own-fenced-snippets-is-not-a-wrapper",
+         wrapping_fence(classify(extract_section(BODY_FENCED_SNIPPETS_AT_BOTH_ENDS))[1]) is None,
+         repr(classify(extract_section(BODY_FENCED_SNIPPETS_AT_BOTH_ENDS))[1]))
+    case("a-fence-that-does-not-bracket-the-whole-entry-is-not-a-wrapper",
+         wrapping_fence("```\n### A (#1)\n```\n\nTrailing prose.\n") is None)
+    case("two-different-fence-characters-are-not-a-pair",
+         wrapping_fence("```\n### A (#1)\n~~~\n") is None)
+    case("an-info-string-means-the-fence-is-not-a-bare-wrapper",
+         wrapping_fence("```swift\nlet a = 1\n```\n") is None)
+    case("the-ordinary-entry-fixture-is-not-refused-as-a-wrapper",
+         wrapping_fence(entry) is None and wrapping_fence(cat_entry) is None)
 
     # The scope itself. A heading in a RELEASED section is a different entry in a different
     # release; before #2951 the comparison was over the whole file and read it as this one.
@@ -984,9 +1226,11 @@ def self_test():
          find_in_unreleased(splice(CHANGELOG_FIXTURE, entry), entry))
     case("the-post-splice-check-fails-when-nothing-was-written",
          find_in_unreleased(CHANGELOG_FIXTURE, entry) is None)
+    # The line the skip reports is the line it actually matched on, which since #2963 is the
+    # bullet rather than the bucket heading above it.
     case("the-skip-reports-the-line-it-matched",
-         find_in_unreleased(CHANGELOG_CATEGORY_IN_UNRELEASED, cat_entry) == 5,
-         find_in_unreleased(CHANGELOG_CATEGORY_IN_UNRELEASED, cat_entry))
+         find_in_unreleased(CHANGELOG_CATEGORY_BULLET_IN_UNRELEASED, cat_entry) == 9,
+         find_in_unreleased(CHANGELOG_CATEGORY_BULLET_IN_UNRELEASED, cat_entry))
 
     case("diff-carrying-the-changelog-is-refused",
          refuse_for_diff(["docs/CHANGELOG.md", "a.swift"]) is not None)

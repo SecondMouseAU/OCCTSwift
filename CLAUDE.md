@@ -160,8 +160,11 @@ entries were extracted, printed to the operator and silently discarded between 2
 2026-10-01, with a line each saying the work was already done (#2951). Neither tool now claims an
 entry is present without printing where: the merge re-reads `docs/CHANGELOG.md` after the splice
 and refuses to push or merge if the entry is not under `## Unreleased`, and the backstop skips a
-category heading rather than matching six words that identify nothing. The convention and the
-refusal are in [`changelog-on-merge`](okf/policies/changelog-on-merge.md).
+category heading rather than matching six words that identify nothing. **An entry wrapped whole in
+a bare ``` fence is refused too**, because the fence transcribes with it and renders the entry as a
+code block; the policy's own worked example is fenced to display it, and copying that literally is
+where the shape comes from (#2963). The convention and both
+refusals are in [`changelog-on-merge`](okf/policies/changelog-on-merge.md).
 
 ### Doc Snippet Type-Check
 
