@@ -154,9 +154,9 @@ struct Issue640MathDimensionBounds {
         // rows positive: this used to overflow rows*cols before the guard could reject it
         // (review finding 8). Rejected, not trapped.
         #expect(MathSVD.solve(matrix: [1.0], rows: .max, cols: 2, rhs: [1.0]) == nil)
-        let A: [Double] = [1, 0, 0, 1, 1, 1]
+        let matrixA: [Double] = [1, 0, 0, 1, 1, 1]
         let b: [Double] = [1, 2, 3]
-        #expect(MathSVD.solve(matrix: A, rows: 3, cols: 2, rhs: b) != nil)
+        #expect(MathSVD.solve(matrix: matrixA, rows: 3, cols: 2, rhs: b) != nil)
     }
 
     @Test("MathJacobi.eigenvalues rejects a consistent-but-negative n")
@@ -174,9 +174,9 @@ struct Issue640MathDimensionBounds {
     func householderSolveBounds() {
         #expect(MathHouseholder.solve(matrix: [], rows: 0, cols: -1, rhs: []) == nil)
         #expect(MathHouseholder.solve(matrix: [1.0], rows: .max, cols: 2, rhs: [1.0]) == nil)
-        let A: [Double] = [1, 0, 0, 1, 1, 1]
+        let matrixA: [Double] = [1, 0, 0, 1, 1, 1]
         let b: [Double] = [1, 2, 3]
-        #expect(MathHouseholder.solve(matrix: A, rows: 3, cols: 2, rhs: b) != nil)
+        #expect(MathHouseholder.solve(matrix: matrixA, rows: 3, cols: 2, rhs: b) != nil)
     }
 
     // MARK: - MathSolver.swift: the ten sites that had no consistency check at all
@@ -362,9 +362,9 @@ struct Issue640MathDimensionBounds {
         // rows positive: overflow guard (review finding 8).
         #expect(MathSolver.leastSquares(matrix: [1.0], rows: .max, cols: 2, rhs: [1.0]) == nil)
         // Control: a real 3x2 overdetermined system still solves.
-        let A: [Double] = [1, 0, 0, 1, 1, 1]
+        let matrixA: [Double] = [1, 0, 0, 1, 1, 1]
         let b: [Double] = [1, 2, 3]
-        #expect(MathSolver.leastSquares(matrix: A, rows: 3, cols: 2, rhs: b) != nil)
+        #expect(MathSolver.leastSquares(matrix: matrixA, rows: 3, cols: 2, rhs: b) != nil)
     }
 
     @Test("MathSolver.uzawa rejects non-positive dimensions and mismatched constraint arrays")
@@ -590,9 +590,12 @@ struct MathDimensionTests {
     func validSquareChecksPositivityConsistencyAndOverflow() {
         #expect(MathDimension.validSquare(2, count: 4))
         #expect(!MathDimension.validSquare(2, count: 3))  // consistency fails
-        #expect(!MathDimension.validSquare(0, count: 0))  // 0 * 0 == 0 holds, but 0 is not positive
-        #expect(!MathDimension.validSquare(-1, count: 1))  // (-1)*(-1) == 1 holds, but -1 is not positive
-        #expect(!MathDimension.validSquare(.max, count: 1))  // would overflow n * n: rejected, not trapped
+        // 0 * 0 == 0 holds, but 0 is not positive.
+        #expect(!MathDimension.validSquare(0, count: 0))
+        // (-1) * (-1) == 1 holds, but -1 is not positive.
+        #expect(!MathDimension.validSquare(-1, count: 1))
+        // Would overflow n * n: rejected, not trapped.
+        #expect(!MathDimension.validSquare(.max, count: 1))
     }
 
     @Test("validRectangle checks rows > 0, cols > 0, rows * cols == count, and does not overflow")
@@ -601,6 +604,7 @@ struct MathDimensionTests {
         #expect(!MathDimension.validRectangle(rows: 3, cols: 2, count: 5))
         #expect(!MathDimension.validRectangle(rows: 0, cols: -1, count: 0))  // 0 * -1 == 0 holds
         #expect(!MathDimension.validRectangle(rows: .max, cols: 2, count: 1))  // overflow: rejected
-        #expect(!MathDimension.validRectangle(rows: 2, cols: .max, count: 1))  // overflow the other factor
+        // Overflow the other factor.
+        #expect(!MathDimension.validRectangle(rows: 2, cols: .max, count: 1))
     }
 }

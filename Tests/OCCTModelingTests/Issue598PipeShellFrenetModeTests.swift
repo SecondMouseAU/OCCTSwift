@@ -17,10 +17,11 @@ import simd
 @Suite("PipeSweepMode Frenet/correctedFrenet were swapped (#598)")
 struct Issue598PipeShellFrenetModeTests {
 
-    /// Builds the same single-profile, transformed-transition, solid sweep as
-    /// `Shape.pipeShell(spine:profile:mode:)`'s defaults, but through `PipeShellBuilder`
-    /// (`BRepFill_PipeShell::Set(Standard_Boolean)` directly) instead of the `PipeSweepMode`
-    /// enum this issue's fix touches. An independent path to the same OCCT trihedron law.
+    /// Builds independently the sweep `Shape.pipeShell(spine:profile:mode:)` makes by default.
+    ///
+    /// Single-profile, transformed-transition and solid, but reached through `PipeShellBuilder`
+    /// (`BRepFill_PipeShell::Set(Standard_Boolean)` directly) instead of the `PipeSweepMode` enum
+    /// this issue's fix touches. An independent path to the same OCCT trihedron law.
     static func groundTruth(spine: Wire, profile: Wire, frenet: Bool) -> Shape? {
         guard let spineShape = Shape.fromWire(spine), let profileShape = Shape.fromWire(profile),
             let builder = PipeShellBuilder(spine: spineShape)
@@ -53,10 +54,12 @@ struct Issue598PipeShellFrenetModeTests {
         #endif
     }
 
-    /// A planar S-curve: the same interpolating fitter `Wire.bspline` always uses, through
-    /// points that reverse from curving one way to curving the other. Measured (not assumed):
-    /// sampling `curvature(at:)` every 0.5% of the domain finds the minimum is exactly 0.0 at
-    /// the midpoint (u=0.5), a genuine curvature-zero crossing, not just a low point.
+    /// A planar S-curve whose curvature reverses sign at its midpoint.
+    ///
+    /// The same interpolating fitter `Wire.bspline` always uses, through points that reverse from
+    /// curving one way to curving the other. Measured (not assumed): sampling `curvature(at:)`
+    /// every 0.5% of the domain finds the minimum is exactly 0.0 at the midpoint (u=0.5), a
+    /// genuine curvature-zero crossing, not just a low point.
     static func inflectionSpine() -> Wire? {
         Wire.bspline([
             SIMD3(0, 0, 0), SIMD3(10, 10, 0), SIMD3(20, 0, 0),
@@ -225,11 +228,13 @@ struct Issue598PipeShellFrenetModeTests {
             ".correctedFrenet must stay valid at the same inflection")
     }
 
+    /// Both sweep modes match the textbook volume once the profile is correctly placed.
+    ///
     /// Review of #715: the CHANGELOG claimed a circular profile makes `.frenet` and
-    /// `.correctedFrenet` produce "the identical swept volume" on
-    /// `docs/guides/cookbook/helices.md`'s spring recipe, so the page needed no update. This test
-    /// used to measure the opposite (`.correctedFrenet` ~12% larger than textbook), but #721
-    /// found that measurement's own construction was wrong, not `.correctedFrenet`.
+    /// `.correctedFrenet` produce "the identical swept volume" on the spring recipe in
+    /// `docs/guides/cookbook/helices.md`, so the page needed no update. This test used to measure
+    /// the opposite (`.correctedFrenet` ~12% larger than textbook), but #721 found that
+    /// measurement's own construction was wrong, not `.correctedFrenet`.
     ///
     /// The recipe placed the profile at `SIMD3(r, 0, 0)` with tangent
     /// `normalize(0, r, pitch/2pi)`, describing that as "the helix start, with its normal along
