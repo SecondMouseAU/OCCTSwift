@@ -16,8 +16,9 @@ import simd
 /// These tests have to separate a dropped intersection from a genuine miss, so they come in pairs:
 /// a fixture whose meeting point the old window cut off and must now be found, and a fixture with
 /// no reachable meeting point that must still report none. Every expected point is solved in closed
-/// form from the perpendicular-bisector equations, independent of OCCT. Measurements and the
-/// candidate-bound comparison are in `Scripts/repro/1050-bisector-domain/`.
+/// form from the perpendicular-bisector equations, independent of OCCT, and so is each parameter:
+/// the parameter of a bisector is the distance along its half-line from the pair's midpoint.
+/// Measurements and the candidate-bound comparison are in `Scripts/repro/1050-bisector-domain/`.
 ///
 /// Three of the seven are labelled **regression guards** rather than coverage, because they were
 /// measured to be insensitive to the thing under test and none of the six injections in the
@@ -27,6 +28,9 @@ import simd
 /// They earn their place by keeping "reported nothing" meaningful, which is the whole distinction
 /// this issue turns on, and a change that made one of them fail would be a regression rather than
 /// a caught defect. Saying so is the point: an unlabelled test that cannot fail looks like coverage.
+/// A guard is not blind to everything, though: a defect that **invents** a crossing, by solving the
+/// two infinite lines when the half-lines do not meet, does turn the parallel and dead-side
+/// guards red (#766, batch 11).
 @Suite("Issue1050 bisector intersection domain")
 struct Issue1050BisectorDomainTests {
 
@@ -34,34 +38,35 @@ struct Issue1050BisectorDomainTests {
     ///
     /// Bisector of A(0,0) B(0,10) is the half-line running along -x from (0,5); bisector of
     /// C(-155,0) D(-145,0) is the half-line running along +y from (-150,0). They meet at (-150, 5),
-    /// at parameter 150 on the first, which the old `[-100, 100]` discarded.
+    /// at parameter 150 on the first, which the old `[-100, 100]` discarded, and at parameter 5 on
+    /// the second.
     @Test("A meeting point past the old window is found")
-    func meetingPointBeyondOldWindowIsFound() {
+    func meetingPointBeyondOldWindowIsFound() throws {
         let hits = bisectorIntersections(
             a: (0, 0), b: (0, 10),
             c: (-155, 0), d: (-145, 0))
-        #expect(!hits.isEmpty)
-        if let h = hits.first {
-            #expect(abs(h.x - (-150)) < 1e-6)
-            #expect(abs(h.y - 5) < 1e-6)
-            #expect(abs(h.paramOnFirst - 150) < 1e-6)
-        }
+        try #require(hits.count == 1)  // #1979: was `#expect(!hits.isEmpty)` and `if let`
+        let h = hits[0]
+        #expect(abs(h.x - (-150)) < 1e-6)
+        #expect(abs(h.y - 5) < 1e-6)
+        #expect(abs(h.paramOnFirst - 150) < 1e-6)
+        #expect(abs(h.paramOnSecond - 5) < 1e-6)
     }
 
     /// A meeting point well inside the old window is unchanged.
     ///
     /// So the fix widened the range the search covers rather than moving any answer it already had.
     @Test("A meeting point inside the old window is unchanged")
-    func meetingPointInsideOldWindowIsUnchanged() {
+    func meetingPointInsideOldWindowIsUnchanged() throws {
         let hits = bisectorIntersections(
             a: (0, 0), b: (0, 10),
             c: (-55, 0), d: (-45, 0))
-        #expect(!hits.isEmpty)
-        if let h = hits.first {
-            #expect(abs(h.x - (-50)) < 1e-6)
-            #expect(abs(h.y - 5) < 1e-6)
-            #expect(abs(h.paramOnFirst - 50) < 1e-6)
-        }
+        try #require(hits.count == 1)  // #1979: was `#expect(!hits.isEmpty)` and `if let`
+        let h = hits[0]
+        #expect(abs(h.x - (-50)) < 1e-6)
+        #expect(abs(h.y - 5) < 1e-6)
+        #expect(abs(h.paramOnFirst - 50) < 1e-6)
+        #expect(abs(h.paramOnSecond - 5) < 1e-6)
     }
 
     /// Regression guard.
@@ -108,20 +113,26 @@ struct Issue1050BisectorDomainTests {
     /// `Scripts/repro/1050-bisector-domain/build-discriminating-fixture.py`. This is the case that
     /// pins the bound to the curve's own range rather than to anything computed from the input.
     @Test("A meeting point past any input-derived bound is found")
-    func meetingPointBeyondInputExtentIsFound() {
+    func meetingPointBeyondInputExtentIsFound() throws {
         let hits = bisectorIntersections(
             a: (0, 0), b: (0, 10),
             c: (-19.0558, 25.0900), d: (-20.9442, 34.9100))
-        #expect(!hits.isEmpty)
-        if let h = hits.first {
-            // The expected value is the closed-form solve of the ROUNDED C and D actually
-            // passed, not of the construction's intended target, and OCCT agrees with it to
-            // 3e-14. 1e-9 matches the rest of this file; a looser 1e-4 would not notice a
-            // change that moved the crossing by 1e-5.
-            #expect(abs(h.x - (-150.004_236_390_595_37)) < 1e-9)
-            #expect(abs(h.y - 5) < 1e-6)
-            #expect(h.paramOnFirst > 82.42)
-        }
+        try #require(hits.count == 1)  // #1979: was `#expect(!hits.isEmpty)` and `if let`
+        let h = hits[0]
+        // The expected value is the closed-form solve of the ROUNDED C and D actually
+        // passed, not of the construction's intended target, and OCCT agrees with it to
+        // 3e-14. 1e-9 matches the rest of this file; a looser 1e-4 would not notice a
+        // change that moved the crossing by 1e-5.
+        let x = -150.004_236_390_595_37
+        #expect(abs(h.x - x) < 1e-9)
+        #expect(abs(h.y - 5) < 1e-6)
+        // Each parameter is the distance from that pair's midpoint to the meeting point: from
+        // (0, 5) along y = 5 on the first, and from the midpoint of C and D, (-20, 30), on the
+        // second. Both are far past the 82.42 an input-derived bound would have allowed.
+        #expect(abs(h.paramOnFirst - (-x)) < 1e-9)
+        let toSecond = (x + 20) * (x + 20) + 25 * 25
+        #expect(abs(h.paramOnSecond - toSecond.squareRoot()) < 1e-9)
+        #expect(h.paramOnFirst > 82.42 && h.paramOnSecond > 82.42)
     }
 
     /// The circumcentre example in `docs/reference/Shape-Recognition.md`, all four orderings.
@@ -130,13 +141,16 @@ struct Issue1050BisectorDomainTests {
     /// documented claim nobody executes drifts, and this one is the whole reason the half-line
     /// paragraph exists, so it is pinned here rather than left as prose.
     @Test("The documented circumcentre example holds, and its three reorderings do not")
-    func documentedCircumcentreExample() {
+    func documentedCircumcentreExample() throws {
         let hits = bisectorIntersections(a: (0, 0), b: (4, 0), c: (4, 0), d: (2, 3))
         #expect(hits.count == 1)
-        if let h = hits.first {
-            #expect(abs(h.x - 2) < 1e-9)
-            #expect(abs(h.y - 5.0 / 6.0) < 1e-9)
-        }
+        let h = try #require(hits.first)  // #1979: was `if let`
+        #expect(abs(h.x - 2) < 1e-9)
+        #expect(abs(h.y - 5.0 / 6.0) < 1e-9)
+        // On the first bisector, from the midpoint (2, 0) up to (2, 5/6); on the second, from the
+        // midpoint of C and D, (3, 1.5), to the same point: sqrt(1 + (2/3)^2) = sqrt 13 / 3.
+        #expect(abs(h.paramOnFirst - 5.0 / 6.0) < 1e-9)
+        #expect(abs(h.paramOnSecond - 13.0.squareRoot() / 3.0) < 1e-9)
         #expect(bisectorIntersections(a: (4, 0), b: (0, 0), c: (4, 0), d: (2, 3)).isEmpty)
         #expect(bisectorIntersections(a: (0, 0), b: (4, 0), c: (2, 3), d: (4, 0)).isEmpty)
         #expect(bisectorIntersections(a: (4, 0), b: (0, 0), c: (2, 3), d: (4, 0)).isEmpty)
@@ -172,82 +186,123 @@ struct Issue1085BisectorNonFiniteTests {
     /// NaN in any coordinate position returns empty rather than hanging.
     @Test("NaN in first point returns empty")
     func nanInFirstPoint() {
-        #expect(bisectorIntersections(a: (Double.nan, 0), b: (0, 10), c: (-55, 0), d: (-45, 0)).isEmpty)
-        #expect(bisectorIntersections(a: (0, Double.nan), b: (0, 10), c: (-55, 0), d: (-45, 0)).isEmpty)
+        #expect(
+            bisectorIntersections(a: (Double.nan, 0), b: (0, 10), c: (-55, 0), d: (-45, 0)).isEmpty)
+        #expect(
+            bisectorIntersections(a: (0, Double.nan), b: (0, 10), c: (-55, 0), d: (-45, 0)).isEmpty)
     }
 
     @Test("NaN in second point returns empty")
     func nanInSecondPoint() {
-        #expect(bisectorIntersections(a: (0, 0), b: (Double.nan, 10), c: (-55, 0), d: (-45, 0)).isEmpty)
-        #expect(bisectorIntersections(a: (0, 0), b: (0, Double.nan), c: (-55, 0), d: (-45, 0)).isEmpty)
+        #expect(
+            bisectorIntersections(a: (0, 0), b: (Double.nan, 10), c: (-55, 0), d: (-45, 0)).isEmpty)
+        #expect(
+            bisectorIntersections(a: (0, 0), b: (0, Double.nan), c: (-55, 0), d: (-45, 0)).isEmpty)
     }
 
     @Test("NaN in third point returns empty")
     func nanInThirdPoint() {
-        #expect(bisectorIntersections(a: (0, 0), b: (0, 10), c: (Double.nan, 0), d: (-45, 0)).isEmpty)
-        #expect(bisectorIntersections(a: (0, 0), b: (0, 10), c: (-55, Double.nan), d: (-45, 0)).isEmpty)
+        #expect(
+            bisectorIntersections(a: (0, 0), b: (0, 10), c: (Double.nan, 0), d: (-45, 0)).isEmpty)
+        #expect(
+            bisectorIntersections(a: (0, 0), b: (0, 10), c: (-55, Double.nan), d: (-45, 0)).isEmpty)
     }
 
     @Test("NaN in fourth point returns empty")
     func nanInFourthPoint() {
-        #expect(bisectorIntersections(a: (0, 0), b: (0, 10), c: (-55, 0), d: (Double.nan, 0)).isEmpty)
-        #expect(bisectorIntersections(a: (0, 0), b: (0, 10), c: (-55, 0), d: (-45, Double.nan)).isEmpty)
+        #expect(
+            bisectorIntersections(a: (0, 0), b: (0, 10), c: (-55, 0), d: (Double.nan, 0)).isEmpty)
+        #expect(
+            bisectorIntersections(a: (0, 0), b: (0, 10), c: (-55, 0), d: (-45, Double.nan)).isEmpty)
     }
 
     /// +Infinity in any coordinate position returns empty rather than hanging.
     @Test("Positive infinity in first point returns empty")
     func positiveInfinityInFirstPoint() {
-        #expect(bisectorIntersections(a: (Double.infinity, 0), b: (0, 10), c: (-55, 0), d: (-45, 0)).isEmpty)
-        #expect(bisectorIntersections(a: (0, Double.infinity), b: (0, 10), c: (-55, 0), d: (-45, 0)).isEmpty)
+        #expect(
+            bisectorIntersections(a: (Double.infinity, 0), b: (0, 10), c: (-55, 0), d: (-45, 0))
+                .isEmpty)
+        #expect(
+            bisectorIntersections(a: (0, Double.infinity), b: (0, 10), c: (-55, 0), d: (-45, 0))
+                .isEmpty)
     }
 
     @Test("Positive infinity in second point returns empty")
     func positiveInfinityInSecondPoint() {
-        #expect(bisectorIntersections(a: (0, 0), b: (Double.infinity, 10), c: (-55, 0), d: (-45, 0)).isEmpty)
-        #expect(bisectorIntersections(a: (0, 0), b: (0, Double.infinity), c: (-55, 0), d: (-45, 0)).isEmpty)
+        #expect(
+            bisectorIntersections(a: (0, 0), b: (Double.infinity, 10), c: (-55, 0), d: (-45, 0))
+                .isEmpty)
+        #expect(
+            bisectorIntersections(a: (0, 0), b: (0, Double.infinity), c: (-55, 0), d: (-45, 0))
+                .isEmpty)
     }
 
     @Test("Positive infinity in third point returns empty")
     func positiveInfinityInThirdPoint() {
-        #expect(bisectorIntersections(a: (0, 0), b: (0, 10), c: (Double.infinity, 0), d: (-45, 0)).isEmpty)
-        #expect(bisectorIntersections(a: (0, 0), b: (0, 10), c: (-55, Double.infinity), d: (-45, 0)).isEmpty)
+        #expect(
+            bisectorIntersections(a: (0, 0), b: (0, 10), c: (Double.infinity, 0), d: (-45, 0))
+                .isEmpty)
+        #expect(
+            bisectorIntersections(a: (0, 0), b: (0, 10), c: (-55, Double.infinity), d: (-45, 0))
+                .isEmpty)
     }
 
     @Test("Positive infinity in fourth point returns empty")
     func positiveInfinityInFourthPoint() {
-        #expect(bisectorIntersections(a: (0, 0), b: (0, 10), c: (-55, 0), d: (Double.infinity, 0)).isEmpty)
-        #expect(bisectorIntersections(a: (0, 0), b: (0, 10), c: (-55, 0), d: (-45, Double.infinity)).isEmpty)
+        #expect(
+            bisectorIntersections(a: (0, 0), b: (0, 10), c: (-55, 0), d: (Double.infinity, 0))
+                .isEmpty)
+        #expect(
+            bisectorIntersections(a: (0, 0), b: (0, 10), c: (-55, 0), d: (-45, Double.infinity))
+                .isEmpty)
     }
 
     /// -Infinity in any coordinate position returns empty rather than hanging.
     @Test("Negative infinity in first point returns empty")
     func negativeInfinityInFirstPoint() {
-        #expect(bisectorIntersections(a: (-Double.infinity, 0), b: (0, 10), c: (-55, 0), d: (-45, 0)).isEmpty)
-        #expect(bisectorIntersections(a: (0, -Double.infinity), b: (0, 10), c: (-55, 0), d: (-45, 0)).isEmpty)
+        #expect(
+            bisectorIntersections(a: (-Double.infinity, 0), b: (0, 10), c: (-55, 0), d: (-45, 0))
+                .isEmpty)
+        #expect(
+            bisectorIntersections(a: (0, -Double.infinity), b: (0, 10), c: (-55, 0), d: (-45, 0))
+                .isEmpty)
     }
 
     @Test("Negative infinity in second point returns empty")
     func negativeInfinityInSecondPoint() {
-        #expect(bisectorIntersections(a: (0, 0), b: (-Double.infinity, 10), c: (-55, 0), d: (-45, 0)).isEmpty)
-        #expect(bisectorIntersections(a: (0, 0), b: (0, -Double.infinity), c: (-55, 0), d: (-45, 0)).isEmpty)
+        #expect(
+            bisectorIntersections(a: (0, 0), b: (-Double.infinity, 10), c: (-55, 0), d: (-45, 0))
+                .isEmpty)
+        #expect(
+            bisectorIntersections(a: (0, 0), b: (0, -Double.infinity), c: (-55, 0), d: (-45, 0))
+                .isEmpty)
     }
 
     @Test("Negative infinity in third point returns empty")
     func negativeInfinityInThirdPoint() {
-        #expect(bisectorIntersections(a: (0, 0), b: (0, 10), c: (-Double.infinity, 0), d: (-45, 0)).isEmpty)
-        #expect(bisectorIntersections(a: (0, 0), b: (0, 10), c: (-55, -Double.infinity), d: (-45, 0)).isEmpty)
+        #expect(
+            bisectorIntersections(a: (0, 0), b: (0, 10), c: (-Double.infinity, 0), d: (-45, 0))
+                .isEmpty)
+        #expect(
+            bisectorIntersections(a: (0, 0), b: (0, 10), c: (-55, -Double.infinity), d: (-45, 0))
+                .isEmpty)
     }
 
     @Test("Negative infinity in fourth point returns empty")
     func negativeInfinityInFourthPoint() {
-        #expect(bisectorIntersections(a: (0, 0), b: (0, 10), c: (-55, 0), d: (-Double.infinity, 0)).isEmpty)
-        #expect(bisectorIntersections(a: (0, 0), b: (0, 10), c: (-55, 0), d: (-45, -Double.infinity)).isEmpty)
+        #expect(
+            bisectorIntersections(a: (0, 0), b: (0, 10), c: (-55, 0), d: (-Double.infinity, 0))
+                .isEmpty)
+        #expect(
+            bisectorIntersections(a: (0, 0), b: (0, 10), c: (-55, 0), d: (-45, -Double.infinity))
+                .isEmpty)
     }
 
-    /// Extremely large finite coordinates (exceeding 1e150) return empty rather than hanging or
-    /// producing garbage. These values are within Double's finite range but can cause numerical
-    /// issues in the OCCT bisector computation. The threshold matches the `maxSafeMagnitude` in
-    /// `BisectorResult.swift`.
+    /// Extremely large finite coordinates (exceeding 1e150) return empty rather than hanging.
+    ///
+    /// These values are within Double's finite range but can cause numerical issues in the OCCT
+    /// bisector computation, and some of these ten placements hang it outright. The threshold
+    /// matches the `maxSafeMagnitude` in `BisectorResult.swift`.
     @Test("Large finite coordinates exceeding 1e150 return empty")
     func largeFiniteCoordinatesReturnEmpty() {
         let large = 1e200  // Exceeds the 1e150 safe magnitude threshold
@@ -263,51 +318,110 @@ struct Issue1085BisectorNonFiniteTests {
         #expect(bisectorIntersections(a: (0, -large), b: (0, 10), c: (-55, 0), d: (-45, 0)).isEmpty)
     }
 
-    /// Coordinates just below the threshold (1e149) should still work normally.
+    /// Coordinates just below the threshold (1e149) still reach OCCT and are answered.
+    ///
+    /// #1979: this asserted nothing (`_ = hits`), and its fixture could not have been answered:
+    /// at 1e149, `-1e149 + 10 == -1e149` in `Double`, so C and D coincided and
+    /// `gp_Vec2d::Normalize()` refused the second bisector, an empty result indistinguishable from
+    /// the guard refusing. C and D now straddle the origin at +-1e149, so the second bisector is
+    /// the near-vertical half-line through (0, 5), and OCCT reports the meeting point there
+    /// (Scripts/repro/766-geom2d-bisector-domain-nonfinite/).
     @Test("Coordinates near but below threshold still work")
-    func coordinatesBelowThresholdWork() {
+    func coordinatesBelowThresholdWork() throws {
         let nearThreshold = 1e149  // Below the 1e150 safe magnitude threshold
-        // This should compute normally - using a simple case that has a known intersection
         let hits = bisectorIntersections(
             a: (0, 0), b: (0, 10),
-            c: (-nearThreshold, 0), d: (-nearThreshold + 10, 0))
-        // The bisectors should meet at x = -nearThreshold + 5, y = 5
-        // But due to the large coordinates, OCCT might still have issues
-        // The important thing is it doesn't hang - it either returns a result or empty
-        // We just verify it returns (doesn't hang)
-        _ = hits
+            c: (-nearThreshold, 0), d: (nearThreshold, 10))
+        try #require(hits.count == 1)
+        // Both half-lines start at their pair's midpoint and both midpoints are (0, 5), so they
+        // meet at their own starts: parameter 0 on each.
+        #expect(abs(hits[0].x) < 1e-9)
+        #expect(abs(hits[0].y - 5) < 1e-9)
+        #expect(abs(hits[0].paramOnFirst) < 1e-9)
+        #expect(abs(hits[0].paramOnSecond) < 1e-9)
+    }
+
+    /// The threshold itself, 1e150, is not exceeded, so it is answered like 1e149.
+    ///
+    /// The wrapper refuses a coordinate whose magnitude is **over** `maxSafeMagnitude`, so this
+    /// fixture, the straddle one at exactly +-1e150, reaches OCCT, which finds the same meeting
+    /// point (Scripts/repro/766-geom2d-bisector-domain-nonfinite/). With the one below it, this
+    /// pins the bound from underneath: a guard tightened to anything under 1e150 turns it red.
+    @Test("Coordinates exactly at the threshold are still answered")
+    func coordinatesAtThresholdWork() throws {
+        let atThreshold = 1e150
+        let hits = bisectorIntersections(
+            a: (0, 0), b: (0, 10),
+            c: (-atThreshold, 0), d: (atThreshold, 10))
+        try #require(hits.count == 1)
+        #expect(abs(hits[0].x) < 1e-9)
+        #expect(abs(hits[0].y - 5) < 1e-9)
+    }
+
+    /// Twice the threshold is refused although OCCT would answer it.
+    ///
+    /// The same straddle fixture at +-2e150: the probe shows OCCT returning (0, 5) for it, so an
+    /// empty result here is the wrapper's guard and nothing else. That is what separates this from
+    /// `largeFiniteCoordinatesReturnEmpty`, whose placements OCCT either hangs on or answers with
+    /// an empty array of its own, so a guard loosened to 1e160 or 1e250 passes that test (or hangs
+    /// it) without a clean failure, and fails this one with a meeting point.
+    @Test("Coordinates just over the threshold are refused by the guard, not by OCCT")
+    func coordinatesOverThresholdAreRefused() {
+        let overThreshold = 2e150
+        #expect(
+            bisectorIntersections(
+                a: (0, 0), b: (0, 10),
+                c: (-overThreshold, 0), d: (overThreshold, 10)
+            ).isEmpty)
     }
 }
 
-/// Test coincident bisectors - two identical pairs in same order
-/// Both bisectors are the same half-line, so they overlap everywhere.
-/// OCCT reports this as a segment; we return its endpoints (start and end at infinity).
+/// Coincident bisectors, two identical pairs in the same order.
+///
+/// Both bisectors are the same half-line, so they overlap everywhere. OCCT reports this as a
+/// segment; we return its endpoints (start and end at infinity).
 @Test("Coincident bisectors report intersection segment endpoints")
-func coincidentBisectorsReportSegmentEndpoints() {
-    // Both pairs are (0,0) to (4,0) - same bisector (horizontal, midpoint at (2,0))
+func coincidentBisectorsReportSegmentEndpoints() throws {
+    // #1979: each `count == 2` was an `#expect` followed by `hits[0]`/`hits[1]`, so a short
+    // result crashed the whole run instead of failing this test. Now `#require`.
+    // The far end is `Precision::Infinite()`, 2e100, along the half-line from the shared midpoint.
+    let infinite = 2e100
+
+    // Both pairs are (0,0) to (4,0) - same bisector (vertical, midpoint at (2,0), running +y)
     let hits = bisectorIntersections(a: (0, 0), b: (4, 0), c: (0, 0), d: (4, 0))
-    #expect(hits.count == 2)
+    try #require(hits.count == 2)
     // First point: the shared midpoint
     #expect(abs(hits[0].x - 2.0) < 1e-9)
     #expect(abs(hits[0].y - 0.0) < 1e-9)
     #expect(abs(hits[0].paramOnFirst - 0.0) < 1e-9)
     #expect(abs(hits[0].paramOnSecond - 0.0) < 1e-9)
-    // Second point: at infinity (Precision::Infinite() ≈ 2e100)
-    #expect(hits[1].paramOnFirst > 1e99)
-    #expect(hits[1].paramOnSecond > 1e99)
-    
-    // Pairs (0,0)-(4,0) and (1,0)-(3,0) - same line, different midpoints
-    // Both bisectors are the same vertical half-line from x=2
+    // Second point: at infinity (Precision::Infinite() = 2e100)
+    #expect(hits[1].paramOnFirst == infinite)
+    #expect(hits[1].paramOnSecond == infinite)
+    #expect(abs(hits[1].x - 2.0) < 1e-9)
+    #expect(hits[1].y == infinite)
+
+    // Pairs (0,0)-(4,0) and (1,0)-(3,0) - same line, both with the midpoint (2,0)
     let hits2 = bisectorIntersections(a: (0, 0), b: (4, 0), c: (1, 0), d: (3, 0))
-    #expect(hits2.count == 2)
+    try #require(hits2.count == 2)
     #expect(abs(hits2[0].x - 2.0) < 1e-9)
     #expect(abs(hits2[0].y - 0.0) < 1e-9)
-    #expect(hits2[1].paramOnFirst > 1e99)
-    
-    // Pairs (0,0)-(0,4) and (0,1)-(0,3) - same vertical line, horizontal bisector
+    #expect(abs(hits2[0].paramOnFirst) < 1e-9)
+    #expect(abs(hits2[0].paramOnSecond) < 1e-9)
+    #expect(hits2[1].paramOnFirst == infinite)
+    #expect(hits2[1].paramOnSecond == infinite)
+    #expect(abs(hits2[1].x - 2.0) < 1e-9)
+    #expect(hits2[1].y == infinite)
+
+    // Pairs (0,0)-(0,4) and (0,1)-(0,3) - same line, horizontal bisector running -x from (0,2)
     let hits3 = bisectorIntersections(a: (0, 0), b: (0, 4), c: (0, 1), d: (0, 3))
-    #expect(hits3.count == 2)
+    try #require(hits3.count == 2)
     #expect(abs(hits3[0].x - 0.0) < 1e-9)
     #expect(abs(hits3[0].y - 2.0) < 1e-9)
-    #expect(hits3[1].paramOnFirst > 1e99)
+    #expect(abs(hits3[0].paramOnFirst) < 1e-9)
+    #expect(abs(hits3[0].paramOnSecond) < 1e-9)
+    #expect(hits3[1].paramOnFirst == infinite)
+    #expect(hits3[1].paramOnSecond == infinite)
+    #expect(hits3[1].x == -infinite)
+    #expect(abs(hits3[1].y - 2.0) < 1e-9)
 }

@@ -1,0 +1,57 @@
+gce_MakeCirc2d 3 points: centre=(5, 0) r=5
+Circ2d3Tan points: done=1 n=1
+  centre=(5, 0) r=5
+Circ2d3Tan lines x-axis, y-axis, x=10: done=1 n=2
+  centre=(5, 5) r=5
+  centre=(5, -5) r=5
+Circ2d3Tan circles: done=1 n=8
+  centre=(5, 2.4375) r=8.5625
+  centre=(10.2242304481, 5.70264403009) r=8.70705074691
+  centre=(-0.224230448146, 5.70264403009) r=8.70705074691
+  centre=(5, -5.25) r=10.25
+  centre=(5, 6.10714285714) r=4.89285714286
+  centre=(8.02773482862, 0.545165732111) r=5.04622471437
+  centre=(1.97226517138, 0.545165732111) r=5.04622471437
+  centre=(5, 2.4375) r=2.5625
+Circ2d3Tan 2 circles + point: done=1 n=4
+  centre=(5, 8.30555555556) r=6.69444444444
+  centre=(5, 4.95833333333) r=10.0416666667
+  centre=(11.025, 6.96666666667) r=10.0416666667
+  centre=(-1.025, 6.96666666667) r=10.0416666667
+Circ2d3Tan circle + 2 points: done=1 n=2
+  centre=(17.9289927073, -2.9289927073) r=15.1666666667
+  centre=(-2.9289927073, 17.9289927073) r=15.1666666667
+Circ2d3Tan 2 lines + point: done=1 n=2
+  centre=(17.0710678119, 17.0710678119) r=17.0710678119
+  centre=(2.92893218813, 2.92893218813) r=2.92893218813
+Lin2d2Tan circle r1 + (3,0): done=1 n=2
+  loc=(0.333333333333, -0.942809041582) dir=(0.942809041582, 0.333333333333)
+  loc=(0.333333333333, 0.942809041582) dir=(0.942809041582, -0.333333333333)
+Lin2dTanPar point (5,5): done=1 n=1
+  loc=(5, 5) dir=(1, 0)
+Lin2dTanPar circle r5: done=1 n=2
+  loc=(0, 5) dir=(1, 0)
+  loc=(0, -5) dir=(1, 0)
+Lin2dTanPer point (5,5): done=1 n=1
+  loc=(5, 5) dir=(-0, 1)
+Lin2dTanPer circle r5: done=1 n=2
+  loc=(5, 0) dir=(-0, 1)
+  loc=(-5, 0) dir=(-0, 1)
+Lin2dTanObl point (5,5) pi/4: done=1 n=1
+  loc=(5, 5) dir=(0.707106781187, 0.707106781187)
+Geom2dGcc Lin2dTanObl circle r5 pi/4: done=1 n=2
+  loc=(3.53553390593, -3.53553390593) dir=(0.707106781187, 0.707106781187)
+  loc=(-3.53553390593, 3.53553390593) dir=(0.707106781187, 0.707106781187)
+Circ2d2TanOn y=0, y=10, centre on x=5: done=1 n=1
+  centre=(5, 5) r=5
+Circ2dTanOnRad y=0, centre on x=0, r5: done=1 n=2
+  centre=(-0, -5) r=5
+  centre=(-0, 5) r=5
+Geom2dGcc Circ2d2TanOn circles r5 @0 and @20, centre on x=10: done=1 n=2
+  centre=(10, 0) r=5
+  centre=(10, 0) r=15
+Geom2dGcc Circ2dTanOnRad circle r5, centre on x=0, r3: done=1 n=4
+  centre=(0, 2) r=3
+  centre=(0, -2) r=3
+  centre=(0, 8) r=3
+  centre=(0, -8) r=3
