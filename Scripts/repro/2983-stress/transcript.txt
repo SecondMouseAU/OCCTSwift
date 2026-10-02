@@ -1,0 +1,113 @@
+== Shape Factories (distinct inputs)
+box 10x20x30: volume=6000 area=2200 (6000, 2200) faces=6
+box 10x20x30: bounds min=(-5.0000001, -10.0000001, -15.0000001) max=(5.0000001, 10.0000001, 15.0000001)
+boxWithOrigin (1,2,3) 10x20x30: volume=6000 faces=6
+boxWithOrigin: bounds min=(0.9999999, 1.9999999, 2.9999999) max=(11.0000001, 22.0000001, 33.0000001)
+cylinder r5 h10: volume=785.3981634 (250 pi = 785.3981634) area=471.238898 (150 pi = 471.238898) faces=3
+cylinder: bounds min=(-5.0000001, -5.0000001, -1e-07) max=(5.0000001, 5.0000001, 10.0000001)
+cylinderAtPosition (3,4) z2 r5 h10: volume=785.3981634 faces=3
+cylinderAtPosition: bounds min=(-2.0000001, -1.0000001, 1.9999999) max=(8.0000001, 9.0000001, 12.0000001)
+sphere r5: volume=523.5987756 (500 pi / 3 = 523.5987756) area=314.1592654 (100 pi = 314.1592654) faces=1
+sphere: bounds min=(-5.0000001, -5.0000001, -5.0000001) max=(5.0000001, 5.0000001, 5.0000001)
+cone 5/2/10: volume=408.407045 (130 pi = 408.407045) area=320.7005186 (pi (7 sqrt(109) + 29) = 320.7005186) faces=3
+cone: bounds min=(-5.0000001, -5.0000001, -1e-07) max=(5.0000001, 5.0000001, 10.0000001)
+torus 10/3: volume=1776.528792 (180 pi^2 = 1776.528792) area=1184.352528 (120 pi^2 = 1184.352528) faces=1
+torus: bounds min=(-14.0710987, -14.0710987, -3.0000001) max=(14.0710987, 14.0710987, 3.0000001)
+torus: optimal min=(-13.0000001, -13.0000001, -3.0000001) max=(13.0000001, 13.0000001, 3.0000001)
+wedge 10/20/30 ltx 5: volume=4500 (4500) area=1968.465844 (1350 + 30 sqrt(425) = 1968.465844) faces=6
+wedge: bounds min=(-1e-07, -1e-07, -1e-07) max=(10.0000001, 20.0000001, 30.0000001)
+fromWire: edges=4 vertices=4 faces=0 length=40
+face: area=100 faces=1 edges=4
+face: bounds min=(-5.0000001, -5.0000001, -1e-07) max=(5.0000001, 5.0000001, 1e-07)
+== Shape Queries
+isValid: box=1 sphere=1 box scaled by 0=0 faces=6 volume=0
+isBooleanValid: box=1 overlapping compound (small edges on, self-interference on)=0 (self-interference off)=1 disjoint compound=1
+brepString: contains "CASCADE Topology V3"=1 length=2569
+brepString round trip: valid=1 type=2 (SOLID = 2) faces=6 volume=1000
+brepString cylinder: differs from the box's=1 faces=3 volume=785.3981634 (250 pi = 785.3981634)
+== Wire API
+circle r5 at (1,2,3) normal +X: length=31.41592654 (10 pi = 31.41592654) edges=1
+circle at (1,2,3) normal +X: bounds min=(0.9999999, -3.0000001, -2.0000001) max=(1.0000001, 7.0000001, 8.0000001)
+polygon closed: edges=4 length=40; open: edges=3 length=30
+line (1,2,3) to (4,6,3): length=5 edges=1
+rectangle 10x5: length=30 edges=4
+rectangle 10x5: bounds min=(-5.0000001, -2.5000001, -1e-07) max=(5.0000001, 2.5000001, 1e-07)
+== Curve3D API
+circle c(1,2,3) r5: domain=[0, 6.2831853071795862] p(0)=(6, 2, 3) p(pi/2)=(1, 7, 3) p(pi)=(-4, 2, 3)
+circle curvature at 0=0.20000000000000001
+interpolate (0,0,0) (5,5,0) (10,0,0): domain=[0, 14.1421356237] (10 sqrt(2) = 14.1421356237) start=(0, 0, 0) end=(10, 0, 0) degree=2 poles=3; middle point at parameter 7.07106781187 (5 sqrt(2) = 7.07106781187) distance 8.88e-16
+interpolate continuity=6 (CN = 6) IsCN(2)=1
+degree-1 polyline B-spline: continuity=0 (C0 = 0) IsCN(0)=1 IsCN(1)=0
+arcLength r5: (0, pi)=15.707963267949 (5 pi = 15.707963267949) (0, 2pi)=31.4159265358979 (10 pi = 31.4159265358979) (pi/2, pi)=7.85398163397448 (2.5 pi = 7.85398163397448)
+== Curve2D API
+circle c(1,2) r5: domain=[0, 6.2831853071795862] p(0)=(6, 2) p(pi/2)=(1, 7)
+line (0,0)+(1,1): p(1)=(0.707106781186547, 0.707106781186547) p(2)=(1.41421356237309, 1.41421356237309); line (3,4)+(0,2): p(0)=(3, 4) p(5)=(3, 9)
+interpolate (0,0) (5,5) (10,0): domain=[0, 14.1421356237] start=(0, 0) end=(10, 0) point at 5 sqrt(2)=(5, 5)
+2D degree-1 polyline B-spline: continuity=0 (C0 = 0); circle continuity=6 (CN = 6)
+== Surface API
+plane o(1,2,3) n=+Z (u=3, v=4) = (4, 6, 3)
+cylinder r5 (u=0, v=7) = (6, 2, 10)
+cylinder r5 (u=1.570796327, v=0) = (1, 7, 3)
+sphere r5 (u=0, v=0) = (6, 2, 3)
+sphere r5 (u=0, v=1.570796327) = (1, 2, 8)
+sphere r5 (u=1.570796327, v=0) = (1, 7, 3)
+cone r5 semiAngle pi/6 (u=0, v=0) = (6, 2, 3)
+cone r5 semiAngle pi/6 (u=0, v=10) = (11, 2, 11.6602540378)
+cone r5 semiAngle pi/6 (u=1.570796327, v=10) = (1, 12, 11.6602540378)
+cone: closed form (x, z) at v=10: x = 1 + 5 + 10 sin(pi/6) = 11, z = 3 + 10 cos(pi/6) = 11.6602540378
+torus 10/3 (u=0, v=0) = (14, 2, 3)
+torus 10/3 (u=0, v=1.570796327) = (11, 2, 6)
+torus 10/3 (u=0, v=3.141592654) = (8, 2, 3)
+torus 10/3 (u=1.570796327, v=0) = (1, 15, 3)
+sphere r10 (u=1, v=0.5): defined=1 gaussian=0.01 mean=-0.1
+sphere r10 (u=4, v=-1): defined=1 gaussian=0.01 mean=-0.1
+sphere r5 (u=1, v=0.5): defined=1 gaussian=0.04 mean=-0.2
+cylinder r5 (u=1, v=0.5): defined=1 gaussian=-0 mean=-0.1
+plane (u=1, v=0.5): defined=1 gaussian=0 mean=0
+roof (degree 1, interior u knot): IsCNu(0)=1 IsCNu(1)=0 IsCNv(2)=1; plane: IsCNu(2)=1 IsCNv(2)=1 continuity=6 (CN = 6)
+== Document API
+new document: shapes=0 free=0
+two shapes added: shapes=2 free=2; labels distinct=1; find(box)=1 is its label=1; find(sphere)=1 is its label=1; find(an unadded box)=0
+== Math
+gaussIntegration x^2 over [0, 1], 10 points: done=1 value=0.333333333333333
+gaussIntegration x^3 over [0, 2], 10 points: done=1 value=4
+gaussIntegration 1 over [0, 1], 10 points: done=1 value=1
+gaussIntegration 2x over [1, 3], 10 points: done=1 value=8
+== Builder lifecycle
+chamfer two distances (1, 2) on one 10-long edge: done=1 volume=990 (1000 - 0.5*1*2*10 = 990) contours=1 symmetric=0 twoDistances=1
+fillet ramp radius 1 to 2: done=1 contours=1 constant=0
+pipe shell before a profile: ready=0; after: ready=1
+shape fixer before perform: OK=1 DONE=0; after perform: returned 0 OK=0 DONE=1 faces=6
+ShapeAnalysis_Wire clean square: edges=4 selfIntersection=0 closed=0 order=0 gap3d(1)=0 gap2d(1)=0
+ShapeAnalysis_Wire bowtie: edges=4 selfIntersection=1 closed=0 order=0 gap3d(1)=0 gap2d(1)=0
+ShapeAnalysis_Wire open polygon: edges=3 selfIntersection=0 closed=0 order=0 gap3d(1)=1 gap2d(1)=1
+hatcher after an X and a Y line: NbLines=2
+sewing after Add, before Perform: SewedShape null=1; after Perform: null=0 faces=6
+empty MakeWire: IsDone=0; after one edge: IsDone=1 edges=1
+cells builder, box and its inscribed sphere: GetAllParts solids=2 volume=1000
+apex loft (apex, r4 at z10, r3 at z20, smoothed): done=1 valid=1 solids=1 volume=707.387966823 z=[-1e-07, 20.0000001]
+stale binding, build A (3 circles): done=1 faces=3 GeneratedFace(first edge) null=0 member=1
+build B (a triangle section, checkCompatibility(false)): done=0 status=3 (Done = 0)
+build C (checkCompatibility(true)): done=1 faces=5 valid=1 GeneratedFace(first edge) null=0 member of the new shape=0
+== Further pins: extrude, mirror, patterns, face kinds, shape tool, STEP, unify, Bezier grid
+extrude square +Z length 10: volume=1000
+extrude +Z: bounds min=(-5.0000001, -5.0000001, -1e-07) max=(5.0000001, 5.0000001, 10.0000001)
+extrude -Z: bounds min=(-5.0000001, -5.0000001, -10.0000001) max=(5.0000001, 5.0000001, 1e-07)
+mirror of the box (2,3,4)-(12,13,14): volume=1000
+mirror across x=0: bounds min=(-12.0000001, 2.9999999, 3.9999999) max=(-1.9999999, 13.0000001, 14.0000001)
+mirror across x=1: bounds min=(-10.0000001, 2.9999999, 3.9999999) max=(1e-07, 13.0000001, 14.0000001)
+circular pattern x4 of a 2-cube at (11,0,0): solids=4 volume=32
+circular pattern: bounds min=(-12.0000001, -12.0000001, -1.0000001) max=(12.0000001, 12.0000001, 1.0000001)
+linear pattern x3, spacing 15, of the 10 box: solids=3 volume=3000
+linear pattern: bounds min=(-5.0000001, -5.0000001, -5.0000001) max=(35.0000001, 5.0000001, 5.0000001)
+face kinds of cylinder (GeomAbs_SurfaceType: plane 0, cylinder 1, cone 2, sphere 3, torus 4): 1 0 0
+face kinds of cone (GeomAbs_SurfaceType: plane 0, cylinder 1, cone 2, sphere 3, torus 4): 2 0 0
+face kinds of sphere (GeomAbs_SurfaceType: plane 0, cylinder 1, cone 2, sphere 3, torus 4): 3
+face kinds of torus (GeomAbs_SurfaceType: plane 0, cylinder 1, cone 2, sphere 3, torus 4): 4
+face kinds of box (GeomAbs_SurfaceType: plane 0, cylinder 1, cone 2, sphere 3, torus 4): 0 0 0 0 0 0
+shape tool, a top-level box: free=1 simple=1 component=0
+after AddComponent: instance component=1 simple=0; the box free=0
+STEP of the box: header ISO-10303-21=1 manifold solid=1 advanced faces=6 spherical surface=0
+STEP of the sphere: header ISO-10303-21=1 manifold solid=1 advanced faces=1 spherical surface=1
+unify before Build: faces=6 volume=1000
+Bezier patch over the 4x4 grid: sum=(120, 120, 3.55555555556) (120, 120, 32/9 = 3.55555555556); points off x = 15 v, y = 15 u, z = 18 u(1-u) v(1-v) by more than 1e-12: 0
