@@ -34,8 +34,13 @@ struct StressFilletBuilderLifecycleTests {
         builder.addEdge(edges[0], radius: 1.0)
         let result = try #require(builder.build())
         #expect(result.isValid)
-        // hasResult may be false even after successful build in some OCCT versions
-        _ = builder.hasResult
+        // Epic #766: the comment here used to read "hasResult may be false even after successful
+        // build in some OCCT versions", and the value was discarded. It is not a version quirk.
+        // `ChFi3d_Builder::HasResult()` reports a PARTIAL result, the one `BadShape()` hands back:
+        // `Compute()` sets `hasresult = false` at the top and sets it true only in its failure
+        // branches (ChFi3d_Builder.cxx:234, :319, :328, :384, :510). A fully successful fillet
+        // therefore always reports false, and the probe records it.
+        #expect(!builder.hasResult)
         #expect(builder.contourCount >= 1)
         // One r = 1 round on one 10-long edge removes 10·(1 - π/4).
         #expect(abs((result.volume ?? 0) - 997.8539816) < 1e-6)
