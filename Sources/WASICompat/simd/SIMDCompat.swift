@@ -206,6 +206,18 @@ where V.Scalar: FloatingPoint {
     simd_dot(a, a)
 }
 
+/// Squared distance between two points, which avoids the square root the same way
+/// `simd_length_squared` does.
+///
+/// Added when a test from `main` reached for it and the build stopped with
+/// `cannot find 'simd_distance_squared' in scope`. That is the third time this module has grown by
+/// one name because the population it has to cover is `Tests/` as well as `Sources/OCCTSwift`, and
+/// the counts in the header are a census of what exists rather than a prediction of what will.
+public func simd_distance_squared<V: SIMD>(_ a: V, _ b: V) -> V.Scalar
+where V.Scalar: FloatingPoint {
+    simd_length_squared(a - b)
+}
+
 /// Euclidean length.
 public func simd_length<V: SIMD>(_ a: V) -> V.Scalar
 where V.Scalar: BinaryFloatingPoint {
@@ -292,6 +304,11 @@ public func length<V: SIMD>(_ a: V) -> V.Scalar where V.Scalar: BinaryFloatingPo
 /// Distance between two points, the spelling Apple's `simd` also exports.
 public func distance<V: SIMD>(_ a: V, _ b: V) -> V.Scalar where V.Scalar: BinaryFloatingPoint {
     simd_distance(a, b)
+}
+
+/// Squared distance between two points, the spelling Apple's `simd` also exports.
+public func distance_squared<V: SIMD>(_ a: V, _ b: V) -> V.Scalar where V.Scalar: FloatingPoint {
+    simd_distance_squared(a, b)
 }
 
 /// Sum of the componentwise products, the spelling Apple's `simd` also exports.
