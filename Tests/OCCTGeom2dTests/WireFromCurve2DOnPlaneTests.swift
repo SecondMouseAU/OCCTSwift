@@ -13,11 +13,12 @@ import simd
 // The plane is built as `gp_Ax2(origin, normal, xAxis)`, so the 2D point (u, v) lands at
 // `origin + u * xAxis + v * (normal x xAxis)`. A segment along u alone cannot tell the normal from
 // any other direction perpendicular to the x axis, so `liftFollowsTheNormalAndTheXAxis` lifts one
-// with both components onto planes whose `v` axis points three different ways.
+// with both components onto three planes: `v` along +z, along -z once the normal is flipped, and
+// along -z again on a plane through an oblique origin.
 @Suite("Wire fromCurve2D on Plane Tests")
 struct WireFromCurve2DOnPlaneTests {
 
-    /// A wire's own start and end, which a box or a length cannot say apart from each other.
+    /// A wire's own start and end, which a box and a length cannot tell apart from each other.
     private func ends(_ w: Wire) throws -> (start: SIMD3<Double>, end: SIMD3<Double>) {
         let info = try #require(w.curveInfo)
         return (info.startPoint, info.endPoint)

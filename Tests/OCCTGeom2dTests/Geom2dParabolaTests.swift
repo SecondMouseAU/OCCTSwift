@@ -8,13 +8,14 @@ import simd
 // focus asserted nothing (`let _ = f`). The values are Geom2d_Parabola's
 // (Scripts/repro/766-geom2d-conic-props-sine-lprop/).
 //
-// What `parabola(focus:direction:focalLength:)` calls the focus is the focus, and the parabola's
-// own axis location is its VERTEX, which sits `focalLength` behind the focus along the direction:
-// `OCCTCurve2DCreateParabola` builds the axis at `focus - direction * focalLength`. So the factory
-// for focus (0, 0), direction (1, 0), focal 3 builds the parabola with vertex (-3, 0), and the
-// vertex is what `point(at: 0)` returns, which is how these tests read it without trusting the
-// `focus` accessor to say so. OCCT's own Geom2d_Parabola_Test.cxx builds one at the origin with
-// focal 4 and finds the focus at (4, 0).
+// What `parabola(focus:direction:focalLength:)` calls the focus is the focus, for a unit
+// direction, and the parabola's own axis location is its VERTEX, which sits `focalLength` behind
+// the focus along the direction: `OCCTCurve2DCreateParabola` builds the axis at
+// `focus - direction * focalLength`. So the factory for focus (0, 0), direction (1, 0), focal 3
+// builds the parabola with vertex (-3, 0), and the vertex is what `point(at: 0)` returns, which is
+// how these tests read it without trusting the `focus` accessor to say so. OCCT's own
+// Geom2d_Parabola_Test.cxx builds one at the origin with focal 4 and finds the focus at (4, 0).
+// The last test is the direction that is not a unit vector, where that subtraction is wrong.
 @Suite("Geom2d_Parabola Properties")
 struct Geom2dParabolaTests {
     private func make() throws -> Curve2D {

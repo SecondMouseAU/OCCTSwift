@@ -70,7 +70,8 @@ struct GccAnaCirc2d3TanTests {
         #expect(
             solutions.allSatisfy { abs($0.centerX - 5) < 1e-9 && abs(abs($0.centerY) - 5) < 1e-9 })
         let lines: [Line] = [
-            (SIMD2(0, 0), SIMD2(1, 0)), (SIMD2(0, 0), SIMD2(0, 1)), (SIMD2(10, 0), SIMD2(0, 1)),
+            (SIMD2<Double>(0, 0), SIMD2<Double>(1, 0)), (SIMD2<Double>(0, 0), SIMD2<Double>(0, 1)),
+            (SIMD2<Double>(10, 0), SIMD2<Double>(0, 1)),
         ]
         for s in solutions {
             for l in lines { #expect(lineError(s, l) < 1e-9) }
@@ -97,7 +98,8 @@ struct GccAnaCirc2d3TanTests {
             #expect(simd_distance(center(got), SIMD2(expected.x, expected.y)) < 1e-9)
         }
         let lines: [Line] = [
-            (SIMD2(0, 0), SIMD2(1, 0)), (SIMD2(0, 0), SIMD2(0, 1)), (SIMD2(3, 0), SIMD2(-3, 4)),
+            (SIMD2<Double>(0, 0), SIMD2<Double>(1, 0)), (SIMD2<Double>(0, 0), SIMD2<Double>(0, 1)),
+            (SIMD2<Double>(3, 0), SIMD2<Double>(-3, 4)),
         ]
         for s in solutions {
             for l in lines { #expect(lineError(s, l) < 1e-9) }
@@ -105,7 +107,9 @@ struct GccAnaCirc2d3TanTests {
     }
 
     @Test func threeCircles() throws {
-        let discs: [Disc] = [(SIMD2(0, 0), 3), (SIMD2(10, 0), 3), (SIMD2(5, 8), 3)]
+        let discs: [Disc] = [
+            (SIMD2<Double>(0, 0), 3), (SIMD2<Double>(10, 0), 3), (SIMD2<Double>(5, 8), 3),
+        ]
         let solutions = Shape.circleTangent3Circles(
             c1Center: SIMD2(0, 0), c1Radius: 3.0,
             c2Center: SIMD2(10, 0), c2Radius: 3.0,
@@ -130,7 +134,9 @@ struct GccAnaCirc2d3TanTests {
         // Three different radii, so a radius or a centre handed to the wrong circle changes the
         // answer. Disjoint circles have all eight tangent circles, and each must touch all three
         // of THESE circles.
-        let discs: [Disc] = [(SIMD2(0, 0), 2), (SIMD2(10, 0), 3), (SIMD2(4, 9), 1)]
+        let discs: [Disc] = [
+            (SIMD2<Double>(0, 0), 2), (SIMD2<Double>(10, 0), 3), (SIMD2<Double>(4, 9), 1),
+        ]
         let solutions = Shape.circleTangent3Circles(
             c1Center: SIMD2(0, 0), c1Radius: 2.0,
             c2Center: SIMD2(10, 0), c2Radius: 3.0,
@@ -142,7 +148,7 @@ struct GccAnaCirc2d3TanTests {
     }
 
     @Test func twoCirclesPoint() throws {
-        let discs: [Disc] = [(SIMD2(0, 0), 3), (SIMD2(10, 0), 3)]
+        let discs: [Disc] = [(SIMD2<Double>(0, 0), 3), (SIMD2<Double>(10, 0), 3)]
         let point = SIMD2<Double>(5, 15)
         let solutions = Shape.circleTangent2CirclesPoint(
             c1Center: SIMD2(0, 0), c1Radius: 3.0,
@@ -159,7 +165,7 @@ struct GccAnaCirc2d3TanTests {
 
     @Test func twoCirclesPointOfDifferentRadii() throws {
         // As above with unequal radii, so each circle's radius has to reach its own circle.
-        let discs: [Disc] = [(SIMD2(0, 0), 2), (SIMD2(10, 0), 3)]
+        let discs: [Disc] = [(SIMD2<Double>(0, 0), 2), (SIMD2<Double>(10, 0), 3)]
         let point = SIMD2<Double>(4, 12)
         let solutions = Shape.circleTangent2CirclesPoint(
             c1Center: SIMD2(0, 0), c1Radius: 2.0,
@@ -173,7 +179,7 @@ struct GccAnaCirc2d3TanTests {
     }
 
     @Test func circleAndTwoPoints() throws {
-        let disc: Disc = (SIMD2(0, 0), 3)
+        let disc: Disc = (SIMD2<Double>(0, 0), 3)
         let points = [SIMD2<Double>(5, 5), SIMD2<Double>(10, 10)]
         let solutions = Shape.circleTangentCircle2Points(
             circleCenter: SIMD2(0, 0), circleRadius: 3.0,
@@ -187,13 +193,13 @@ struct GccAnaCirc2d3TanTests {
     }
 
     @Test func circleAndTwoPointsOffTheDiagonal() throws {
-        // Both points outside the circle, and nothing symmetric about y = x, so a swapped
-        // coordinate or a swapped point is not the same answer: two solutions, each through both
-        // points and tangent to the circle.
-        let disc: Disc = (SIMD2(0, 0), 3)
+        // A circle off the origin and both points outside it, with nothing symmetric about
+        // y = x, so a swapped coordinate or a swapped point is not the same answer: two
+        // solutions, each through both points and tangent to the circle.
+        let disc: Disc = (SIMD2<Double>(1, 2), 3)
         let points = [SIMD2<Double>(5, 1), SIMD2<Double>(9, 4)]
         let solutions = Shape.circleTangentCircle2Points(
-            circleCenter: SIMD2(0, 0), circleRadius: 3.0,
+            circleCenter: SIMD2(1, 2), circleRadius: 3.0,
             p1: SIMD2(5, 1), p2: SIMD2(9, 4))
         try #require(solutions.count == 2)
         for s in solutions {
@@ -215,7 +221,9 @@ struct GccAnaCirc2d3TanTests {
             solutions.allSatisfy {
                 abs($0.centerX - $0.radius) < 1e-9 && abs($0.centerY - $0.radius) < 1e-9
             })
-        let lines: [Line] = [(SIMD2(0, 0), SIMD2(1, 0)), (SIMD2(0, 0), SIMD2(0, 1))]
+        let lines: [Line] = [
+            (SIMD2<Double>(0, 0), SIMD2<Double>(1, 0)), (SIMD2<Double>(0, 0), SIMD2<Double>(0, 1)),
+        ]
         for s in solutions {
             #expect(pointError(s, SIMD2(5, 5)) < 1e-9)
             for l in lines { #expect(lineError(s, l) < 1e-9) }

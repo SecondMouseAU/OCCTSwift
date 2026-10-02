@@ -28,9 +28,10 @@ import simd
 /// They earn their place by keeping "reported nothing" meaningful, which is the whole distinction
 /// this issue turns on, and a change that made one of them fail would be a regression rather than
 /// a caught defect. Saying so is the point: an unlabelled test that cannot fail looks like coverage.
-/// A guard is not blind to everything, though: a defect that **invents** a crossing, by solving the
-/// two infinite lines when the half-lines do not meet, does turn the parallel and dead-side
-/// guards red (#766, batch 11).
+/// A guard is not blind to everything, though. A defect that **invents** a crossing, by solving
+/// the two infinite lines when the half-lines do not meet, turns the parallel and dead-side guards
+/// red, and #766 batch 11 gave each of them a control, the same shape of fixture tilted or
+/// reordered so that it does cross, so a bridge that reports nothing for everything fails them too.
 @Suite("Issue1050 bisector intersection domain")
 struct Issue1050BisectorDomainTests {
 
@@ -71,7 +72,8 @@ struct Issue1050BisectorDomainTests {
 
     /// Regression guard.
     ///
-    /// Two parallel bisectors have no solution at all, and must report none.
+    /// Two parallel bisectors have no solution at all, and must report none, whichever way round
+    /// the pairs are given.
     ///
     /// Both pairs are vertical, so both bisectors are horizontal lines, y=5 and y=50, and the
     /// closed-form solve is singular. Insensitive to the bound: all six injections in
@@ -79,30 +81,60 @@ struct Issue1050BisectorDomainTests {
     /// A symmetric `[-LastParameter, LastParameter]` domain also yields zero, but no committed
     /// probe builds one, so treat that as corroboration rather than evidence. It keeps
     /// "found nothing" meaningful, which is what the issue turns on.
+    ///
+    /// "Found nothing" says little about a fixture that could not have found anything, so #766
+    /// batch 11 gave it a control: the same pairs with the second tilted by one unit, (0,40) to
+    /// (1,60). The line through that pair's midpoint (0.5, 50) at right angles to (1, 20) meets
+    /// y = 5 at x = 0.5 + 20 * 45, so the bisectors now cross at (900.5, 5), at distance 900.5
+    /// from the first midpoint (0, 5) and sqrt(900^2 + 45^2) from the second.
     @Test("Parallel bisectors still report no intersection")
-    func parallelBisectorsReportNothing() {
-        let hits = bisectorIntersections(
-            a: (0, 0), b: (0, 10),
-            c: (0, 40), d: (0, 60))
-        #expect(hits.isEmpty)
+    func parallelBisectorsReportNothing() throws {
+        for hits in orderings(a: (0, 0), b: (0, 10), c: (0, 40), d: (0, 60)) {
+            #expect(hits.isEmpty)
+        }
+
+        let tilted = orderings(a: (0, 0), b: (0, 10), c: (0, 40), d: (1, 60))
+        let found = tilted.filter { !$0.isEmpty }
+        try #require(found.count == 1)
+        try #require(found[0].count == 1)
+        #expect(abs(found[0][0].x - 900.5) < 1e-6)
+        #expect(abs(found[0][0].y - 5) < 1e-6)
+        #expect(abs(found[0][0].paramOnFirst - 900.5) < 1e-6)
+        #expect(abs(found[0][0].paramOnSecond - (900.0 * 900.0 + 45.0 * 45.0).squareRoot()) < 1e-6)
     }
 
     /// Regression guard.
     ///
     /// The two bisector lines cross, but not on the half-lines OCCT keeps.
     ///
-    /// A stronger miss than the parallel one: the closed form has a solution here, at about
-    /// (10000, 5), and it is still correct to report nothing, because the first bisector's
-    /// half-line runs the other way from its midpoint. A bound wide enough to reach parameter
-    /// 10000 must not start inventing an answer on the dead side of the ray. Insensitive to the
-    /// bound on the same evidence as the parallel guard above, and with the same caveat about the
-    /// symmetric-domain half of it.
+    /// A stronger miss than the parallel one: the closed form has a solution here, at (10000, 5),
+    /// and it is still correct to report nothing, because the first bisector's half-line runs the
+    /// other way from its midpoint. A bound wide enough to reach parameter 10000 must not start
+    /// inventing an answer on the dead side of the ray. Insensitive to the bound on the same
+    /// evidence as the parallel guard above, and with the same caveat about the symmetric-domain
+    /// half of it.
+    ///
+    /// The control is the other three orderings of the same two pairs. Each half-line keeps one
+    /// side of its midpoint, and the crossing is on exactly one side of each, so exactly one of
+    /// the four orderings has both of them running toward it, and that one must find it. The
+    /// crossing is at (10000, 5): the line through the midpoint (20, 6) at right angles to
+    /// (0.001, 9.98) meets y = 5 where 0.001 * (x - 20) = 9.98. It is ill-conditioned in the
+    /// input, as `bisectorIntersections` documents, so it is pinned to 1e-6 and not 1e-9.
     @Test("A crossing on the dead side of the half-line reports no intersection")
-    func crossingOnDeadSideReportsNothing() {
-        let hits = bisectorIntersections(
+    func crossingOnDeadSideReportsNothing() throws {
+        let asGiven = bisectorIntersections(
             a: (0, 0), b: (0, 10),
             c: (19.9995, 1.01), d: (20.0005, 10.99))
-        #expect(hits.isEmpty)
+        #expect(asGiven.isEmpty)
+
+        let all = orderings(a: (0, 0), b: (0, 10), c: (19.9995, 1.01), d: (20.0005, 10.99))
+        let found = all.filter { !$0.isEmpty }
+        try #require(found.count == 1)
+        try #require(found[0].count == 1)
+        #expect(abs(found[0][0].x - 10000) < 1e-6)
+        #expect(abs(found[0][0].y - 5) < 1e-6)
+        #expect(abs(found[0][0].paramOnFirst - 10000) < 1e-6)
+        #expect(abs(found[0][0].paramOnSecond - (9980.0 * 9980.0 + 1.0).squareRoot()) < 1e-6)
     }
 
     /// The meeting point lies past any bound derived from the four points' own extent.
@@ -130,7 +162,7 @@ struct Issue1050BisectorDomainTests {
         // (0, 5) along y = 5 on the first, and from the midpoint of C and D, (-20, 30), on the
         // second. Both are far past the 82.42 an input-derived bound would have allowed.
         #expect(abs(h.paramOnFirst - (-x)) < 1e-9)
-        let toSecond = (x + 20) * (x + 20) + 25 * 25
+        let toSecond = (x + 20.0) * (x + 20.0) + 25.0 * 25.0
         #expect(abs(h.paramOnSecond - toSecond.squareRoot()) < 1e-9)
         #expect(h.paramOnFirst > 82.42 && h.paramOnSecond > 82.42)
     }
@@ -171,6 +203,24 @@ struct Issue1050BisectorDomainTests {
     func coincidentPointsReturnNothing() {
         #expect(bisectorIntersections(a: (5, 5), b: (5, 5), c: (-55, 0), d: (-45, 0)).isEmpty)
         #expect(bisectorIntersections(a: (5, 5), b: (5, 5), c: (-3, -3), d: (-3, -3)).isEmpty)
+    }
+
+    /// The crossing of two pairs' bisectors for every way round the pairs can be given:
+    /// (a, b, c, d), (b, a, c, d), (a, b, d, c) and (b, a, d, c).
+    ///
+    /// A half-line keeps one side of its midpoint and reversing a pair swaps the side. Which side
+    /// a given ordering keeps is the solver's convention and is not read here: what the tests rely
+    /// on is that a crossing lies on exactly one side of each bisector, so exactly one of the four
+    /// orderings reaches it.
+    private func orderings(
+        a: (Double, Double), b: (Double, Double), c: (Double, Double), d: (Double, Double)
+    ) -> [[BisectorIntersection]] {
+        [
+            bisectorIntersections(a: a, b: b, c: c, d: d),
+            bisectorIntersections(a: b, b: a, c: c, d: d),
+            bisectorIntersections(a: a, b: b, c: d, d: c),
+            bisectorIntersections(a: b, b: a, c: d, d: c),
+        ]
     }
 }
 
