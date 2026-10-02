@@ -201,10 +201,12 @@ struct BRepGPropVinertTests {
     /// The minus is #2873, and it is why this is written as a formula rather than as pinned numbers.
     /// The kernel weights each element by `n . P` minus the plane's fourth `gp_Pln` coefficient,
     /// which belongs to the `n . X + d = 0` form and so arrives inverted, and
-    /// `OCCTBRepGPropVinertPlane` hands it the plane mirrored through the origin to undo that. This
-    /// test stood here with a `+` and passed against the mirrored convention; it fails under that
-    /// convention now, and it fails again if the bridge's mirror is left in place against a kernel
-    /// that has the fix.
+    /// `OCCTBRepGPropVinertPlane` used to hand it the plane mirrored through the origin to undo
+    /// that. Carried patch `0048` fixes the conversion at all five sites and the repin that pinned
+    /// it deleted the mirror (#3015), so the bridge now passes the plane the caller named. This
+    /// test stood here with a `+` against the old mirrored convention; written as it is, it fails
+    /// against that convention and it fails again on a kernel with the fix and the mirror still in
+    /// place, which is exactly what it caught on PR #3014 before the repin.
     @Test("a planar face's by-plane volume is its projected area times its centroid distance (#2827)")
     func byPlaneVolumeOnAPlanarFaceHasTheClosedForm() throws {
         let holed = try holedPlate()

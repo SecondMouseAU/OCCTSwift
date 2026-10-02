@@ -109,13 +109,19 @@ mistake the rest of this page is about.
 
 ### The xcframework
 
-`Scripts/patches/` holds thirty-four patches, of which the pinned asset carries thirty-one. **These
+`Scripts/patches/` holds thirty-nine patches, of which the pinned asset carries thirty-nine. **These
 are the counts `CLAUDE.md` used to restate and no longer does** (#2954); both are derived from
 `Scripts/patches/` and `Package.swift` by `check-inventory-prose.py`, which fails the PR that lets
-this page and the tree disagree. The v4.0.0-kernel.3 asset `Package.swift` pins lacks three of them,
-per [Pinned kernel patch check](../policies/pinned-kernel-patch-check.md):
+this page and the tree disagree. The v4.0.0-kernel.4 asset `Package.swift` pins lacks zero of them,
+per [Pinned kernel patch check](../policies/pinned-kernel-patch-check.md).
 
-| Unpinned | What it leaves exposed |
+**The native divergence is closed.** It stood at one patch (`0044`) and widened to eight as `0045`
+through `0052` were authored, every one of them live nowhere, and the v4.0.0-kernel.4 rebuild
+pinned the lot. The table below is kept as the record of what each of those eight left exposed
+while it was unpinned, and of which bridge mitigation the repin did and did not retire; it is
+history now, not a live gap.
+
+| Was unpinned until v4.0.0-kernel.4 | What it left exposed |
 |---|---|
 | `0044-Extrema-ExtSS-ExtCS-Points-bound-against-point-sequence-2840` | Nothing reachable from Swift. `Extrema_ExtSS::Points` and `Extrema_ExtCS::Points` still fault on a parallel pair in the pinned kernel, and every bridge entry point that reads a point from either class gates on `IsParallel()` first, so the input never reaches them (#2831, #2840). The exposure is to a future bridge author who adds a point read without that gate, which is why `OCCTCurve3DDistanceToSurface` carries a comment saying so |
 | `0045-Geom-Bezier-InsertPoleAfter-pole-bound-2875` | Almost nothing, and not for the reason it looks. The 3d class's bound is a literal throw and is still one pole too strict in the pinned kernel, so `Curve3D.bezierInsertPoleAfter` refuses a 26-pole curve the 3d constructor would build. The 2d class's bound is a `_Raise_if` that `No_Exception` empties, so the pinned kernel enforces nothing there and `OCCTCurve2DBezierInsertPoleAfter`'s guard is the bound, patched or not (#2801, #2875) |
@@ -152,7 +158,10 @@ older asset. `Package.swift`'s pin block records that exception against
 `libOCCT-wasm.a` and its header tree are a **second** pinned asset, recorded in
 `Scripts/wasm-kernel-pin.txt` rather than in `Package.swift`, because SwiftPM has no `binaryTarget`
 for a bare static library. It carries **thirty** patches, `0010` to `0042`, plus the eleven in
-`Scripts/patches-wasi/`, and the pinned native asset carries thirty-one, so it **lacks one of them**:
+`Scripts/patches-wasi/`, and the pinned native asset carries thirty-nine, so it **lacks nine of
+them**: `0043` below, plus the eight the v4.0.0-kernel.4 rebuild added natively (`0044` through
+`0048`, `0050` through `0052`). The wasm kernel is rebuilt on its own schedule and that rebuild
+is not part of this repin:
 
 | Unpinned on wasm | What it leaves exposed |
 |---|---|

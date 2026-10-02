@@ -869,16 +869,17 @@ extension Face {
     /// because it kept the value only when its `theIsByPoint` flag was set and no by-plane path sets
     /// it. Carried patch `0043` drops that condition and is pinned from `v4.0.0-kernel.3`.
     ///
-    /// **`planeDistance` is an ordinary geometric offset, and it took a bridge-side correction to
-    /// make it one (#2873).** Both of OCCT's by-plane implementations weight each element by
-    /// `planeNormal . P` minus the plane's fourth `gp_Pln` coefficient, which inverts the offset, so
-    /// the kernel handed the plane at `d` measures about the plane at `-d`. The bridge hands it the
-    /// plane mirrored through the origin, and what comes back is measured about the plane you asked
-    /// for. No released version ever returned a non-zero value here, so nothing downstream can have
-    /// been built on the inverted sign, but a reader who took the previous advice to pass `-d`
-    /// should stop: that now measures about the mirrored plane. Both identities above hold either
-    /// way, since they need only that the weight is affine with gradient `planeNormal`. Measured,
-    /// not inferred: `Scripts/repro/2873/transcript.txt`.
+    /// **`planeDistance` is an ordinary geometric offset (#2873).** Both of OCCT's by-plane
+    /// implementations weighted each element by `planeNormal . P` minus the plane's fourth
+    /// `gp_Pln` coefficient, which inverts the offset, so the kernel handed the plane at `d`
+    /// measured about the plane at `-d`. Carried patch `0048` fixes that conversion at all five
+    /// sites and is pinned from `v4.0.0-kernel.4`; the bridge-side mirror that used to compensate
+    /// for it was deleted in the same change (#3015), because a patched kernel plus that mirror
+    /// measures about the mirrored plane again. No released version ever returned a non-zero
+    /// value here, so nothing downstream can have been built on the inverted sign, and a reader
+    /// who took the old advice to pass `-d` should stop. Both identities above hold either way,
+    /// since they need only that the weight is affine with gradient `planeNormal`. Measured, not
+    /// inferred: `Scripts/repro/2873/transcript.txt`.
     ///
     /// ```swift
     /// let holed = Shape.box(width: 20, height: 20, depth: 2)!
