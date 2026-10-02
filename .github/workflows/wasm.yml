@@ -21,7 +21,26 @@ name: wasm
 on:
   push:
     branches: [main]
+    paths-ignore: &irrelevant_to_wasm
+      # WHY THIS IS paths-ignore AND NOT paths. The obvious filter is "run only when something wasm
+      # changed", and it is wrong: this job COMPILES Sources/ and Tests/ for wasm32-unknown-wasip1, so
+      # a change to either can break it without touching a single wasm-named file. That is not
+      # hypothetical. On 2026-10-02 two tests added to `main` broke the wasm build with
+      # `cannot find 'simd_distance_squared' in scope`, because the WASI `simd` stand-in covers what
+      # the package measurably uses and a new test reached past it. Under a paths filter those PRs
+      # would have been green and `main` would have gone red for wasm only after merge, which is the
+      # gap #2269 built this job to close.
+      #
+      # So the list below is only what cannot affect the build: prose. It still skips the job for
+      # about a fifth of merged PRs, which in this repository is a lot of CHANGELOG transcriptions and
+      # okf policy edits, and it keeps the safety net for everything that is compiled.
+      - "docs/**"
+      - "okf/**"
+      - "*.md"
+      - ".github/ISSUE_TEMPLATE/**"
+      - ".github/PULL_REQUEST_TEMPLATE.md"
   pull_request:
+    paths-ignore: *irrelevant_to_wasm
   workflow_dispatch:
 
 permissions:
