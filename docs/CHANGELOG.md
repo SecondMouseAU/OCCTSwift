@@ -213,6 +213,10 @@ corrected figures, and the script gains a `WHAT IT CANNOT SEE` section recording
 left uncaught on purpose: a threshold a correct answer clears by a whole unit, which no static
 shape can reach without also reaching every tolerance comparison.
 
+### The WebAssembly build is green again (#3007)
+
+`simd_distance_squared` reached the WASI `simd` stand-in, which did not have it, so every WebAssembly build failed to compile two `OCCTAnalysisTests` suites from PR #2998 onwards. The stand-in now defines it as the squared length of the difference, by delegation, so it cannot diverge from Apple's.
+
 ### Read the `booleans` family of #1399's unlaned refman-coverage lane ([#1399](https://github.com/SecondMouseAU/OCCTSwift/issues/1399))
 
 31 OCCT classes with real bridge presence that sit in no #807 lane's table and that no claim
