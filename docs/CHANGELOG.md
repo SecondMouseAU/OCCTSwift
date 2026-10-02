@@ -21,6 +21,25 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### Gate the Standard_Transient release idiom, and record what the compiled-out-validation census cannot see (#2974, #2946)
+
+- **New gate `check-transient-release-idiom.py` (#2974).** Every function in
+  `Sources/OCCTBridge/src/*.mm` that calls `DecrementRefCounter` is now held to
+  `opencascade::handle::EndScope`: the decrement's value compared against `0`, no second
+  `GetRefCount()` read, no bare `delete` where the kernel calls the virtual `Delete()`. The
+  divergence PR #2969 fixed in `OCCTMessengerRelease` and `OCCTReportRelease` had stood since those
+  functions were written and survived two reviews. A deliberate divergence carries
+  `transient-release-exempt: <reason>`; `OCCTTObjApplicationRelease` holds the one, for the
+  process-wide singleton whose static `Handle` must never let a zero count destroy. Seventeenth
+  gate, in `gate-scripts` and the pre-commit hook.
+- **`census-compiled-out-validation.py` now states what it cannot see (#2946).** Every channel ends
+  at a bridge `catch`, so the census is blind to a compiled-out check whose absence faults before
+  any `catch` runs, which is uncatchable in-process. It is not derivable from
+  `Scripts/occt-raise-if-map.txt`, measured three ways, so the limitation is recorded instead: the
+  `WHAT IS STILL DARK` list moves into a `DARK` constant printed at the end of every bare run, with
+  `--self-test` cases holding the roster, each entry's argument, and the report's call to the
+  printer.
+
 ### A red injection row now means keep going, not stop, after 300 of 339 #766 PRs read it as stop (#2970)
 
 `okf/policies/prove-the-test-fails.md` told an author to inject the defect, watch the test fail,
