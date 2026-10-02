@@ -21,6 +21,38 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### `census-766-weak-assertions.py` saw none of three defects, and all three hid weak tests (#2982, #2985, #2964)
+
+The #766 programme's detector under-reported three ways at once, and because every figure the
+programme steers by comes out of it, all three are fixed and re-measured together.
+
+* **A multi-line `guard let ... else { return }` was invisible** (#2982). `GUARD_RETURN` was
+  `\bguard\b[^\n]*\belse\b`, and `[^\n]*` cannot cross a newline, so the form Swift's formatter
+  produces as soon as the binding list wraps matched nothing. The span now runs to the `else`
+  across newlines, bounded by `;` and by an unpaired `}`.
+* **An ordering tautology counted as a pin** (#2985). What pins a value was decided by complement,
+  so `b.max.x >= b.min.x`, true of every `Bnd_Box`, lifted a test out of SEVERE. A sixth weak
+  shape catches an ordering between two member paths rooted at the same identifier and leaves
+  `fine.count >= coarse.count` a pin.
+* **A same-named helper in another suite was scored against the wrong test** (#2964). `helpers_in`
+  keyed every `func` on its bare name, last one wins, so the four tests of
+  `StressFormatRoundTripTests.swift`'s OBJ suite, whose own helper asserts nothing, were scored
+  against the IGES suite's and read as clean. Helpers now carry an owner.
+
+Measured against a frozen `git archive origin/main Tests` at `e6a3b8f`, over 1,473 files and
+6,671 `@Test` functions, repo-wide SEVERE rises from **1,185 to 1,230** and ESCAPABLE from 2,288
+to 2,576. Per defect: #2982 adds 320 findings in 138 files and no SEVERE, #2985 adds 40 SEVERE,
+#2964 adds 5. The suite did not get worse; the detector stopped missing things. One finding is
+lost and it was a false positive, a nested class's method borrowed into a test of the enclosing
+suite.
+
+The branch survey moves the other way, 889 gains over 399 paths to 876 over 396 on identical refs,
+because the branch's own versions carry the multi-line `guard` too.
+`okf/policies/v5-lift-and-shift.md` and `census-766-unlifted-tests.py`'s docstring carry the
+corrected figures, and the script gains a `WHAT IT CANNOT SEE` section recording the one shape
+left uncaught on purpose: a threshold a correct answer clears by a whole unit, which no static
+shape can reach without also reaching every tolerance comparison.
+
 ### Unread counts leave `CLAUDE.md`, the gate-coverage audit stops reporting a drift that is not there, and the surface rationality flags say which axis they mean (#2959, #2960, #2976)
 
 - **#2959.** The fifteen derived counts `CLAUDE.md` still carried, which no gate read, are gone:
