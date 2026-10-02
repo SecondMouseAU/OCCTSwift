@@ -672,6 +672,13 @@ public enum SheetMetal {
             of info: BendIntersection, flange a: Flange, seamUnit: SIMD3<Double>
         ) -> ClosedRange<Double>? {
             let axis = info.aSeamAlongU ? a.uAxis : a.vAxis
+            // `aSeamAlongU` means "u" only by elimination, so it is `false` both for a v-aligned
+            // seam and for one aligned with neither axis. In the second case `intersect` returns
+            // its no-split fallback with `aIntersection` set to the whole profile range, which is
+            // not a projection onto the seam at all, and mapping it would select nothing: #1565's
+            // diagonal-seam fixture fails with `noSeamEdgeFound` if this guard tests only that
+            // the axis has some component along the seam.
+            guard Self.axisParallel(seamUnit, to: axis) else { return nil }
             let axisProj = Vector3DMath.dot(axis, seamUnit)
             guard abs(axisProj) > 1e-9 else { return nil }
             let originProj = Vector3DMath.dot(a.origin, seamUnit)
