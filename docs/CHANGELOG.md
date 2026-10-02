@@ -21,6 +21,35 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### Unread counts leave `CLAUDE.md`, the gate-coverage audit stops reporting a drift that is not there, and the surface rationality flags say which axis they mean (#2959, #2960, #2976)
+
+- **#2959.** The fifteen derived counts `CLAUDE.md` still carried, which no gate read, are gone:
+  eight guard-site populations and five kernel figures that `okf/references/known-occt-bugs.md`,
+  `okf/policies/occt-validation-is-compiled-out.md`, `okf/policies/wasi-patch-base.md` and
+  `okf/policies/null-handle-guards.md` already hold, plus the release-process headline count. The
+  doc-snippet corpus and the swift-format population move to
+  `okf/policies/static-gates.md`'s new "The detectors outside `gate-scripts`", dated. A new
+  "A frozen number says when" section on the same page states the rule the sweep was applying: a
+  number about this repository is gated, dated or deleted, deleting is the default, and none of
+  them belongs in `CLAUDE.md`. One count was already wrong when the sweep reached it:
+  `occtEnsureSignals()` is reached from fifteen bridge entry points, not fourteen.
+- **#2960.** `Scripts/repro/819-gate-coverage-audit/gate_coverage.py` failed `--check` and
+  `--self-test` on `main` and had for weeks, against a counting sentence that was correct.
+  #2196 gave two classifiers different tests for a release check, and this one keyed on the
+  `--require-` flag where `check-inventory-prose.py` keys on the `census-` prefix; two censuses
+  have since grown such a flag. The prefix is now the first discriminator here too, the
+  `--require-` reader survives as a reader rather than a classifier, and the self-test's
+  regression case reads the real `Scripts/` directory so it cannot go quiet again.
+- **#2976.** `Surface.BSpline.isURational` / `isVRational` and `BezierProperties.isURational` /
+  `isVRational` documented nothing. Each now gives OCCT's own definition (false when every row,
+  respectively column, of the weight matrix is constant), says plainly that each flag names the
+  axis opposite the one a reader supplies, and shows the cylinder that makes it look inverted.
+  The Bezier pair is measured rather than inferred, in
+  `Scripts/repro/2976-surface-rational-axes/`, because `Geom_BezierSurface.hxx`'s prose and its
+  own example matrix contradict each other: the example is the behaviour.
+  `Tests/OCCTAnalysisTests/BezierSurfaceTests.swift` gains
+  `rationalFlagsReportTheOppositeAxis` to pin both directions.
+
 ### A red injection row now means keep going, not stop, after 300 of 339 #766 PRs read it as stop (#2970)
 
 `okf/policies/prove-the-test-fails.md` told an author to inject the defect, watch the test fail,
