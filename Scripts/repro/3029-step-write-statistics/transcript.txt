@@ -1,0 +1,25 @@
+kernel: /private/tmp/claude-501/-Users-elb-Projects-OCCTSwift/7ca7a65c-aee4-4ed2-ac7a-0732e49711a4/scratchpad/3003-k3/OCCT.xcframework
+libOCCT-macos.a: sha256 6d51d59022d2cef98152a8f3c5a6b640a5bac2a5968678e80e40cd5dac6ebc18
+
+STEPControl_Writer, as OCCT ships it         stdout lines 13   4 (trace 0, info 4, warning 0, alarm 0, fail 0)
+  default printers at trace level warning    stdout lines  0   4 (trace 0, info 4, warning 0, alarm 0, fail 0)
+  default printers at trace level fail       stdout lines  0   4 (trace 0, info 4, warning 0, alarm 0, fail 0)
+  the issue's proposal: a writer-local messenger stdout lines  4   2 (trace 0, info 2, warning 0, alarm 0, fail 0)
+STEPCAFControl_Writer (an XDE document)      stdout lines 13   4 (trace 0, info 4, warning 0, alarm 0, fail 0)
+  default printers at trace level warning    stdout lines  0   4 (trace 0, info 4, warning 0, alarm 0, fail 0)
+IGESControl_Writer                           stdout lines  0   0 (trace 0, info 0, warning 0, alarm 0, fail 0)
+STEPControl_Reader on a malformed file       stdout lines  2   3 (trace 2, info 0, warning 0, alarm 0, fail 1)
+  default printers at trace level warning    stdout lines  2   3 (trace 2, info 0, warning 0, alarm 0, fail 1)
+
+what the writer-local messenger leaves on stdout:
+  ** WorkSession : Sending all data
+   Step File Name : /tmp/occt3029.XXXXXX(350 ents)  Write  Done
+
+what the same trace level leaves of a genuine failure (a malformed STEP file, level warning):
+  **** ERR StepFile : Undefined Parsing: Line 6: Incorrect syntax: unexpected ';'    ****
+
+gravity of each message of one STEPControl_Writer write:
+  [info] |*******************************************************************|******        Statistics on Transfer (Write)                 ******||***...
+  [info] ******        Transferring Shape, ShapeType = 2                      ******|
+  [info] ** WorkSession : Sending all data|
+  [info]  Step File Name : /tmp/occt3029.XXXXXX(350 ents)  Write  Done|

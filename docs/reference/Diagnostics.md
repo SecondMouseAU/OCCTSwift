@@ -278,7 +278,7 @@ Two shapes dominate. A malformed STEP file makes the parser write, in red:
 **** ERR StepFile : Undefined Parsing: Line 2: Incorrect syntax: unexpected TYPE, expecting STEP    ****
 ```
 
-and a successful STEP export writes a seven-line `Statistics on Transfer (Write)` block in green. Both are expected. **The cost is that a genuine kernel complaint is the same red text on the same stream as an expected one**, which is how a reader of a green CI run came to investigate the line above as a defect.
+and a successful STEP export writes a seven-line `Statistics on Transfer (Write)` block in green. Both are expected. **The cost is that a genuine kernel complaint is the same red text on the same stream as an expected one**, which is how a reader of a green CI run came to investigate the line above as a defect. A host that only wants the green block gone does not need a capture: raise the trace level, below.
 
 ### `Messenger.capturingDefaultOutput(_:)`
 
@@ -326,6 +326,30 @@ public static var isDefaultOutputCaptured: Bool
 ```
 
 `defaultPrinterCount` is `1` in a process that has not touched the default messenger: OCCT's own `std::cout` printer. It is the only observable that distinguishes a capture which put the detached printers back from one which did not, and exactly one printer *inside* a scope is what says the output was redirected rather than duplicated. Both are what `Issue3021DefaultMessengerCaptureTests` asserts on either side of a scope, and what the wasm spike reports as its `occt-output-capture` case.
+
+### `Messenger.defaultTraceLevel` and `Messenger.setDefaultTraceLevel(_:)`
+
+```swift
+public static var defaultTraceLevel: Messenger.Gravity? { get }
+@discardableResult
+public static func setDefaultTraceLevel(_ level: Messenger.Gravity) -> Bool
+```
+
+OCCT's own control over the chatter, and the one its DRAW harness exposes as `dtracelevel`: a printer drops every message whose gravity is below its trace level, and the `std::cout` printer starts at `Message_Info`. [#3029](https://github.com/SecondMouseAU/OCCTSwift/issues/3029) is the case that wants it. Every STEP write, of a shape or of a document, sends four `Message_Info` messages through the default messenger, thirteen lines of standard output, and the writers have no switch for them. Raising the level to `.warning` drops all four, and **keeps every warning, alarm and failure**: the `**** ERR StepFile` complaint of a malformed file is a `Message_Fail` and still prints, which `silencingDefaultOutput` cannot say.
+
+- **`defaultTraceLevel`:** the **lowest** level among the printers that print to the host's stream, or `nil` when there are none. The lowest because that answers the question a caller asks: a message of gravity `g` reaches some printer exactly when this is at most `g`. `.info` in a process that has not touched it.
+- **`setDefaultTraceLevel(_:)`:** sets every such printer, returns `true` when at least one changed. It does nothing else.
+- **Inside `capturingDefaultOutput`** both act on the printers the capture set aside, the host's, and leave the capture's own accumulating printer alone. So a level set during a scope is the level after it, and the captured text is the same whatever the level is.
+- **Not synchronised.** It is a write to a field another thread's printing reads, exactly as in DRAW: set it once, before OCCT work starts on other threads.
+- **Not done for you, deliberately.** OCCT's convention is that the host owns the messenger; its writers print unconditionally and leave the level to whoever embeds them. Two of the four messages a STEP write sends are `Message::SendInfo()` calls inside OCCT's work session, so no per-export switch could stop them either. `Scripts/repro/3029-step-write-statistics/` has the measurements and the OCCT call sites.
+- **OCCT:** `Message_Printer::SetTraceLevel` and `GetTraceLevel` over `Message::DefaultMessenger()->Printers()`.
+- **Example:**
+  ```swift
+  let before = Messenger.defaultTraceLevel
+  Messenger.setDefaultTraceLevel(.warning)   // the STEP statistics are Info, so they stop
+  // ... export as many parts as you like ...
+  if let before { Messenger.setDefaultTraceLevel(before) }
+  ```
 
 ### What is not covered
 

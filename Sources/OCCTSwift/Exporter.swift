@@ -234,6 +234,10 @@ public enum Exporter {
     /// - STEP preserves exact B-Rep geometry (not tessellated)
     /// - File sizes are typically larger than STL
     /// - Includes topological information (faces, edges, vertices)
+    /// - OCCT prints a `Statistics on Transfer (Write)` block to standard output on every STEP
+    ///   write, as `Message_Info` messages through its default messenger. It is the host's to
+    ///   silence, and ``Messenger/setDefaultTraceLevel(_:)`` does it without losing any warning
+    ///   or failure.
     public static func writeSTEP(
         shape: Shape,
         to url: URL,

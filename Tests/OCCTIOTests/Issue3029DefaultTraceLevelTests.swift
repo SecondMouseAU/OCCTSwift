@@ -20,9 +20,10 @@ import Testing
 @Suite("Issue #3029: OCCT's trace level is the host's to set", .serialized)
 struct Issue3029DefaultTraceLevelTests {
 
-    /// Set `level`, run `body`, and put back whatever was there. The level is process-wide, so a
-    /// test that leaves it raised would silence every sibling suite's Info output for the rest of
-    /// the run.
+    /// Set `level`, run `body`, and put back whatever was there.
+    ///
+    /// The level is process-wide, so a test that leaves it raised would silence every sibling
+    /// suite's Info output for the rest of the run.
     private func withTraceLevel<T>(
         _ level: Messenger.Gravity, _ body: () throws -> T
     ) throws -> T {
@@ -61,7 +62,8 @@ struct Issue3029DefaultTraceLevelTests {
         // surface, which takes an int: -1 is "refused", not "no printers", which is 0.
         #expect(OCCTDefaultMessengerSetTraceLevel(5) == -1)
         #expect(OCCTDefaultMessengerSetTraceLevel(-1) == -1)
-        #expect(Messenger.defaultTraceLevel == original, "a refused level must not move the printers")
+        #expect(
+            Messenger.defaultTraceLevel == original, "a refused level must not move the printers")
     }
 
     @Test("inside a capture the level belongs to the host's printers, not the capture's")
@@ -85,7 +87,9 @@ struct Issue3029DefaultTraceLevelTests {
         }
         let text = try #require(output, "a capture must report its text")
 
-        #expect(insideLevel == .fail, "the host's printers were set to .fail; read \(String(describing: insideLevel))")
+        #expect(
+            insideLevel == .fail,
+            "the host's printers were set to .fail; read \(String(describing: insideLevel))")
         #expect(
             text.contains("Statistics on Transfer (Write)"),
             "the capture's own printer must be unaffected by the host's level; captured: \(text)")
