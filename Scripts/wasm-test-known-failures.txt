@@ -92,16 +92,3 @@ offsetTiltedMatchesPriorBaseline()  # exact-equality baseline vs a different lib
 # make every flag-based validity verdict on wasm suspect, and `Shape.isValid` is on the path every
 # IGES export takes through `Exporter.validateExportInputs`, so it wants a sweep rather than a fix.
 "Same parameter all"  # 2929
-
-# --- the clock is too coarse for a timing ratio under a fast runtime -------------------------
-# `EdgeDiscretizationTests."allEdgePolylines scales linearly, not quadratically, in edge count"`
-# divides the large case's per-edge cost by the small case's. Under Node the 108-edge baseline
-# completes below the clock's resolution, so `small.cost` is 0.0, the ratio is infinite and the
-# guard fails. The shim reports CLOCKID_MONOTONIC resolution as 5000 ns and derives the time from
-# `performance.now()`, which is why a faster runtime makes this WORSE rather than better: under
-# wasmkit the interpreter was slow enough for the baseline to be measurable.
-#
-# Nothing is wrong with `allEdgePolylines` and #275's regression is not back. The test needs to
-# refuse to divide by an unmeasurable baseline, which is a change to an Apple-platform test and so
-# belongs in its own PR, like the libm baselines above.
-"allEdgePolylines scales linearly, not quadratically, in edge count"  # clock resolution

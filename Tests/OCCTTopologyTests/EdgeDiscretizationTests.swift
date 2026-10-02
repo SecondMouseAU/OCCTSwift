@@ -110,12 +110,30 @@ struct EdgeDiscretizationTests {
             let compound = Shape.compound(boxes)!
             let edges = compound.edgeCount
 
+            // REPEATED UNTIL THE CLOCK CAN SEE IT, because on a fast runtime it cannot. The 108-edge
+            // case completes inside `Date()`'s resolution under a JIT-compiled wasm runtime, so a
+            // single pass returns elapsed 0.0, the per-edge cost is 0.0, and the ratio below divides
+            // by zero. Measured both ways by #2894: as a single pass this failed on a fast
+            // development machine and passed on the slower CI runner, which is reporting the machine
+            // and not the code.
+            //
+            // Repeating is better than widening the multiplier or skipping: it keeps the comparison a
+            // real one on every machine instead of making it vacuous on the fast ones. The floor is
+            // 10 ms, comfortably above the millisecond-ish resolution the wasm shim reports, and the
+            // divisor counts the passes so the result stays a per-edge cost.
+            let floor = 0.010
+            var passes = 0
+            var elapsed = 0.0
+            var polylines: [[SIMD3<Double>]] = []
             let start = Date()
-            let polylines = compound.allEdgePolylines(deflection: 0.1)
-            let elapsed = Date().timeIntervalSince(start)
+            while elapsed < floor {
+                polylines = compound.allEdgePolylines(deflection: 0.1)
+                passes += 1
+                elapsed = Date().timeIntervalSince(start)
+            }
 
             #expect(polylines.count == edges)
-            return (elapsed / Double(edges), edges)
+            return (elapsed / Double(edges * passes), edges)
         }
 
         let small = perEdgeCost(gridSide: 3)  // 9 boxes   → 108 edges
@@ -131,8 +149,9 @@ struct EdgeDiscretizationTests {
         )
     }
 
-    /// `allEdgePolylinesIndexed` must carry ORIGINAL edge indices across skips: a sphere
-    /// has degenerate pole edges the discretizer skips, so the dense variant's positions
+    /// `allEdgePolylinesIndexed` must carry ORIGINAL edge indices across skips.
+    ///
+    /// A sphere has degenerate pole edges the discretizer skips, so the dense variant's positions
     /// drift out of the `edgePolyline(at:)` index space exactly there. The indexed variant
     /// exists for consumers (wireframe pick identity) that can't tolerate that drift.
     @Test("allEdgePolylinesIndexed preserves the edgePolyline(at:) index space across skips")
