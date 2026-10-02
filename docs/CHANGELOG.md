@@ -21,6 +21,28 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### Two carried kernel patches: Bezier `InsertPoleAfter` reaches the pole count the constructors allow, and `math_Uzawa` stops overrunning its initial-error vector (#2875, #2860)
+
+- **#2875, patch `0045`.** `Geom2d_BezierCurve::InsertPoleAfter` and
+  `Geom_BezierCurve::InsertPoleAfter` refused once the curve held `MaxDegree()` poles, where both
+  constructors and `Increase()` allow `MaxDegree() + 1`: the check compared a pole count against a
+  degree bound. Both sites now compare with `>`, which are the only two in the tree that got this
+  wrong. Half the patch is inert in the kernel this package ships, because `No_Exception` empties
+  the 2d class's `Standard_ConstructionError_Raise_if` and leaves the bridge guard as the only
+  bound; the 3d class's literal throw does move, from 25 poles to 26. `Curve2D`'s guard therefore
+  stays and must be edited rather than retired at the repin, filed as #3013.
+- **#2860, patch `0046`.** `math_Uzawa` sized its initial-error vector `Errinit` by the number of
+  unknowns and wrote it by constraint, so every overdetermined system wrote past its end: 4
+  constraints in 2 unknowns returned a wrong answer, 100 in 2 was a deterministic SIGSEGV. Both
+  constructors now size it by `Cont.RowNumber()`, which is what `Perform` writes, what every reader
+  indexes, and what `InitialError()`'s own declaration documents. The kernel's own dimension check
+  never related rows to columns, so this is a defect on its own terms rather than a compiled-out
+  one, and `MathSolver.uzawa`'s bridge guard stays.
+- Neither patch is pinned yet. `Scripts/patches/` now holds thirty-four against an asset holding
+  thirty-one, written up in `okf/references/carried-occt-patches.md` and `Package.swift`.
+- Also filed, not fixed: #3011, `Geom_BezierSurface`'s insert-pole entry points carry no
+  `MaxDegree` bound and four of its accessors index a fixed 26-element table by pole count.
+
 ### `census-766-weak-assertions.py` saw none of three defects, and all three hid weak tests (#2982, #2985, #2964)
 
 The #766 programme's detector under-reported three ways at once, and because every figure the
