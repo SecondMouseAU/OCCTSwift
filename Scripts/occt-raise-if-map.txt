@@ -58,7 +58,7 @@
 # the stray check in docs/guides/building-occt.md's "Shipping a rebuild" answers it.
 #
 # occt-version: 8.0.1
-# derived against: 34 carried patch(es) in Scripts/patches/, every one of them verified
+# derived against: 35 carried patch(es) in Scripts/patches/, every one of them verified
 # derived against: applied in the tree the rows below were derived from.
 # patch: 0010-Intf_Interference-O1-tangent-zone-checkpoint-breaker-319 79fe529c26ef
 # patch: 0011-XCAFDoc_ShapeTool-AutoNamingScope-341 76898e2438a2
@@ -94,6 +94,7 @@
 # patch: 0044-Extrema-ExtSS-ExtCS-Points-bound-against-point-sequence-2840 0b0b4a459980
 # patch: 0045-Geom-Bezier-InsertPoleAfter-pole-bound-2875 1693b869b897
 # patch: 0046-math_Uzawa-Errinit-row-dimension-2860 23ec02a28dd1
+# patch: 0047-BRepOffset_MakeOffset-arc-join-roots-in-binding-order-3003 dee7a1c5c86b
 #
 # totals: inline-raise       462 site(s) in  104 class(es)
 # totals: outofline-raise    828 site(s) in  284 class(es)

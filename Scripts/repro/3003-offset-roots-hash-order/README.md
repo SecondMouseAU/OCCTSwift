@@ -104,8 +104,10 @@ lines in one function, no signature change.
 
 `NCollection_OrderedDataMap`, which 8.0.0 added for exactly this and whose upgrade note recommends it
 "in new code", would be the idiomatic spelling and is not used here because `MapSF`'s type is the
-parameter type of `BRepOffset_Inter3d::ConnexIntByInt` and `ContextIntByInt` and `BiTgte_Blend` holds
-a member of it, so swapping it ripples through three classes. The patch keeps the type.
+parameter type of `BRepOffset_Inter3d::ConnexIntByInt` and `ContextIntByInt`, so swapping it
+changes the signatures in another header and translation unit as well as `BRepOffset_MakeOffset`'s
+own (three methods and three file statics); `BiTgte_Blend` holds a member of the same type for its
+own use. The patch keeps the type.
 
 | | asset | control (unmodified, recompiled) | patched |
 |---|---|---|---|

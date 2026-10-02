@@ -47,7 +47,7 @@ let useLocalXCFramework: Bool = {
         atPath: occtPackageDir + "/Libraries/OCCT.xcframework/Info.plist")
 }()
 
-// OCCT V8.0.1 plus the thirty-four carried patches are documented in Scripts/patches/README.md
+// OCCT V8.0.1 plus the thirty-five carried patches are documented in Scripts/patches/README.md
 // (patch list, verification status, and CI coverage gaps for maintainers).
 let occtTarget: Target =
     isWASI
@@ -230,8 +230,8 @@ let occtTarget: Target =
         // which is what they were built to do; if a later asset repeats either stray the finding comes
         // back rather than staying suppressed.
         //
-        // The asset holds thirty-one and Scripts/patches/ holds thirty-four, so 0044, 0045 and 0046
-        // are the untested set of three, written up where the counts are, above.
+        // The asset holds thirty-one and Scripts/patches/ holds thirty-five, so 0044, 0045, 0046 and
+        // 0047 are the untested set of four, written up where the counts are, above.
         // If you rebuild and the checksum does not match the value below, that is a real difference to
         // investigate rather than an expected one, which is the opposite of what this paragraph said
         // while kernel.1 was pinned.
@@ -275,9 +275,9 @@ let occtTarget: Target =
         // wrong: InitializeMissingParameters is also the REPAIR that re-sets DirectFaces on an actor a
         // STEPCAFControl_Reader has left with empty OperationsFlags, which is #280's exact mechanism.
         // kernel-integration.yml caught it on main. See Scripts/patches/README.md's retired 0035 entry.
-        // Scripts/patches/ holds thirty-four patches and the pinned asset holds thirty-one of them,
-        // enumerated above. `ls Scripts/patches/*.patch | wc -l` answers 34 against a list of 31.
-        // The pinned asset lacks three of them, and this is the written divergence:
+        // Scripts/patches/ holds thirty-five patches and the pinned asset holds thirty-one of them,
+        // enumerated above. `ls Scripts/patches/*.patch | wc -l` answers 35 against a list of 31.
+        // The pinned asset lacks four of them, and this is the written divergence:
         //
         //   0044  Extrema_ExtSS::Points / Extrema_ExtCS::Points bound against the point       #2840
         //         sequence rather than against NbExt(), which counts mySqDist and so counts
@@ -320,6 +320,19 @@ let occtTarget: Target =
         //         behaviour change the Swift surface has not decided to expose, and the guard
         //         still covers anyone pinning an older asset. Measured before and after in
         //         Scripts/repro/2860-uzawa-errinit-dimension/.
+        //
+        //   0047  BRepOffset_MakeOffset::BuildOffsetByArc registers the offset faces as roots   #3003
+        //         by walking a DataMap hashed on TShape addresses, so every arc-join offset
+        //         (MakeOffsetShape, MakeThickSolid) returns its faces in an order that changes
+        //         between processes and between builds in one, and the volume summed over them
+        //         moves in its last digits. Carried 2026-10-03 and NOT built. No crash and nothing
+        //         a bridge guard could cover: the effect is a face order and the last place of a
+        //         sum, which three lines of two #766 probes show and carry a `tolerance`
+        //         declaration for until this is pinned. It also fixes one outcome per input where
+        //         the outcome depends on the root order: the fuse of two boxes with its coplanar
+        //         faces left split returns IsDone() with a null shape in about six processes in
+        //         ten and, patched, in all of them. Measured before and after by override-link in
+        //         Scripts/repro/3003-offset-roots-hash-order/.
         //
         // 0043 (#2827, BRepGProp_Gauss keeps the by-plane mass) was the one outstanding before it,
         // and it went the other way, which is the comparison worth keeping beside 0044: carried
