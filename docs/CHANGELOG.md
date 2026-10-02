@@ -21,6 +21,31 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### Seventeen CHANGELOG entries the report named all along are recovered, and the merge tool stops splicing a presentation fence (#2962, #2963)
+
+Seventeen merges between 2026-09-07 and 2026-09-29 landed with a `## CHANGELOG entry` section in
+the PR body that nobody transcribed into `docs/CHANGELOG.md`. Unlike the nine of #2951 and the
+sixteen of #2957, no detector was blind to these: every one carries a descriptive, issue-numbered
+heading, so the backstop report named them correctly for as long as each was absent and nothing
+acted on it. All seventeen are restored verbatim from their PR bodies, in merge order. They include
+`Shape.glue` using `BOPAlgo_GlueShift` where it should use `BOPAlgo_GlueFull` (#2749),
+`GeomDirection` returning NaN components rather than refusing a vector it cannot normalise (#2331),
+`Face.volumeInertia` and `Shape.vinertGK` measuring the untrimmed surface of a trimmed face
+(#2806), `faceFaceExtrema` fabricating witness points for parallel faces (#2249),
+`convertSurfacesToBezier` always returning nil (#2732), and the `v4.0.0-kernel.2` repin itself
+(#2782).
+
+`Scripts/merge-pr.py` gains the two fixes those recoveries found in it. An entry wrapped whole in a
+bare fence to present it as literal markdown is now refused, with the correction printed, rather
+than spliced fence and all so that the release record renders it as a code block; four of the
+entries recovered in PR #2961 have that shape, and
+`okf/policies/changelog-on-merge.md`'s own worked example, which is where it comes from, now says
+the fence around it is display. And the duplicate test no longer compares the entry's first
+substantive line, which is a bucket heading or a fence often enough that it reported all sixteen of
+#2957's entries as already present while they were absent. It compares the first line that is
+neither fenced nor a bare category heading, and refuses an entry that has no such line at all
+rather than guessing.
+
 ### `census-766-weak-assertions.py` saw none of three defects, and all three hid weak tests (#2982, #2985, #2964)
 
 The #766 programme's detector under-reported three ways at once, and because every figure the
