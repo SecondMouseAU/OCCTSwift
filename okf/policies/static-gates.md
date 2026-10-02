@@ -59,19 +59,19 @@ Two detectors gate on every PR from another job, so no count on this page includ
 below) and `check-swift-format.py` in `code-style.yml`. Their populations are recorded here rather
 than in `CLAUDE.md`, and each is a frozen measurement, read under the rule above.
 
-**The doc-snippet corpus**, from `python3 Scripts/check-doc-snippets.py --list`, measured
-**2026-10-02**: 8,317 fenced ```swift``` blocks in `docs/` and `///` comments, of which 5,101 are
-signature restatements the gate skips (a bodiless `func` is uncompilable anywhere), 3,208 are
-snippets it type-checks, and 8 carry a `no-typecheck:` exemption. The shape of the split is the
-load-bearing part and it is stable: the restatements outnumber the snippets, which is why a
-label-matching regex over the whole corpus was the wrong instrument (#1675).
+**The doc-snippet corpus**, one frozen measurement of **2026-10-02**, from a full
+`python3 Scripts/check-doc-snippets.py --require-typecheck` run on the PR for #2976: 8,325 fenced
+```swift``` blocks in `docs/` and `///` comments, of which 5,101 are signature restatements the
+gate skips (a bodiless `func` is uncompilable anywhere), 3,216 are snippets it type-checks, and 8
+carry a `no-typecheck:` exemption. Of the snippets, 1,770 compile and 1,446 are fragments opening
+mid-flow with a receiver the prose introduced. Those same 1,770 are linked into the one executable
+the `--run` stage executes, because a link each measured over two hours; 1,764 ran clean and six
+threw, all of them documented examples reading a `/tmp` path the repo does not ship. `--list` is
+the cheap re-derivation of the first four figures and a full run gives the rest.
 
-**What the type-check and the run cost**, a frozen measurement of **2026-09-30** (PR for #2851,
-`cee5e202`), when the corpus held 3,105 snippets: 1,661 compiled and 1,444 were fragments opening
-mid-flow with a receiver the prose introduced; 1,735 were linked into the single executable the
-`--run` driver executes, because a link each measured over two hours; six threw, all of them
-documented examples reading a `/tmp` path the repo does not ship. Re-derive the first pair with
-`--list`, and the rest from a `--run` log.
+The shape of the split is the load-bearing part and it is stable: the restatements outnumber the
+snippets, which is why a label-matching regex over the whole corpus was the wrong instrument
+(#1675).
 
 **The swift-format population**, a frozen measurement of **2026-09-30** (PR for #2852, `de18a98f`):
 the four lines of shell it replaced walked `find Sources/OCCTSwift` and reached **230** of the
