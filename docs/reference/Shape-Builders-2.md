@@ -1874,14 +1874,14 @@ Result of an edge-face coincidence check.
 ```swift
 public struct BeanFaceIntersection: Sendable {
     public let ranges: [(first: Double, last: Double)]
-    public let minSquareDistance: Double
+    public let minSquareDistance: Double?
 }
 ```
 
 | field | meaning |
 |---|---|
 | `ranges` | Coincident `(first, last)` parameter ranges on the edge curve where it lies on the face. |
-| `minSquareDistance` | Minimum squared distance between the edge curve and the face surface. |
+| `minSquareDistance` | Minimum squared distance between the edge curve and the face surface, or `nil` when the kernel measured none. `IntTools_BeanFaceIntersector` initialises its minimum to `RealLast()` and leaves it there on every path that evaluates no distance, which on the pinned kernel is every path, coincidence found or not (#2943). |
 
 *(Per-field anchors below, for cross-reference; the table above has the actual meaning of each.)*
 
@@ -1891,19 +1891,27 @@ public struct BeanFaceIntersection: Sendable {
 
 ### `Shape.beanFaceIntersect(edge:face:)`
 
-Find coincident parameter ranges where an edge lies on a face surface.
+Find coincident parameter ranges where an edge lies on a face surface. The search covers the
+edge's whole `BRep_Tool::Range`: a "bean" is a part of an edge, so OCCT leaves the interval to the
+caller and both of its own callers pass the edge's full range (#2943).
 
 ```swift
 public static func beanFaceIntersect(edge: Shape, face: Shape) -> BeanFaceIntersection?
 ```
 
 - **Parameters:** `edge`, edge curve to test. `face`, face surface to test against.
-- **Returns:** Ranges of coincidence and minimum squared distance, or `nil` on failure.
+- **Returns:** Ranges of coincidence and minimum squared distance, or `nil` when either shape is
+  not of the required type or the kernel does not complete.
 - **OCCT:** `IntTools_BeanFaceIntersector`
 - **Example:**
   ```swift
-  if let r = Shape.beanFaceIntersect(edge: e, face: f) {
-      print(r.ranges.count, r.minSquareDistance)
+  if let plane = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1)),
+      let face = Shape.face(from: plane, uRange: -10...10, vRange: -10...10),
+      let e = Shape.edgeFromPoints(SIMD3(-3, 0, 0), SIMD3(3, 0, 0)),
+      let r = Shape.beanFaceIntersect(edge: e, face: face)
+  {
+      // The edge lies in the plane, so the whole of it is coincident: 1 (0.0, 6.0).
+      print(r.ranges.count, r.ranges.first?.first ?? -1, r.ranges.first?.last ?? -1)
   }
   ```
 

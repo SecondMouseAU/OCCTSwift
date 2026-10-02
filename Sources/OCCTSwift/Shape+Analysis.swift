@@ -1864,24 +1864,50 @@ extension Shape {
 
     /// Result of edge-face intersection using IntTools_BeanFaceIntersector.
     public struct BeanFaceIntersection: Sendable {
-        /// Coincident parameter ranges on the edge curve.
+        /// Coincident parameter ranges on the edge curve, in the edge's own curve parameter.
         public let ranges: [(first: Double, last: Double)]
-        /// Minimum square distance between edge and face.
-        public let minSquareDistance: Double
+        /// Minimum square distance between edge and face, or `nil` when the kernel measured none.
+        ///
+        /// `IntTools_BeanFaceIntersector` initialises its minimum to `RealLast()` and leaves it
+        /// there on every path that never evaluates a distance, which on the pinned kernel is
+        /// every path, including the ones that return a coincident range. That sentinel used to
+        /// reach callers here as a `Double` reading `1.797e308`, so it is now reported as the
+        /// absence of a measurement (#2943). `IntTools_EdgeFace` makes the same test before it
+        /// takes a square root.
+        public let minSquareDistance: Double?
     }
 
     /// Intersect an edge curve with a face surface to find coincident ranges.
     ///
-    /// Uses IntTools_BeanFaceIntersector to find where the edge lies on the face.
+    /// Uses `IntTools_BeanFaceIntersector` to find where the edge lies on the face. The search
+    /// covers the edge's whole parameter range: a "bean" is a part of an edge, so OCCT leaves the
+    /// interval to the caller and every one of its own callers passes the edge's full
+    /// `BRep_Tool::Range` (#2943).
+    ///
+    /// ```swift
+    /// if let plane = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1)),
+    ///     let face = Shape.face(from: plane, uRange: -10...10, vRange: -10...10),
+    ///     let edge = Shape.edgeFromPoints(SIMD3(-3, 0, 0), SIMD3(3, 0, 0)),
+    ///     let hit = Shape.beanFaceIntersect(edge: edge, face: face)
+    /// {
+    ///     // The edge lies in the plane, so the whole of it is coincident: one range, (0, 6).
+    ///     print(hit.ranges.count, hit.ranges.first?.first ?? -1, hit.ranges.first?.last ?? -1)
+    /// }
+    /// ```
+    ///
     /// - Parameters:
     ///   - edge: Edge shape to test.
     ///   - face: Face shape to test against.
-    /// - Returns: Intersection result with ranges and minimum distance, or nil on failure.
+    /// - Returns: Intersection result with ranges and minimum distance, or nil when either shape
+    ///   is not of the required type or the kernel does not complete.
     public static func beanFaceIntersect(edge: Shape, face: Shape) -> BeanFaceIntersection? {
         var ranges: UnsafeMutablePointer<OCCTParameterRange>?
         var count: Int32 = 0
         var minDist: Double = 0
-        guard OCCTIntToolsBeanFaceIntersect(edge.handle, face.handle, &ranges, &count, &minDist)
+        var hasMinDist = false
+        guard
+            OCCTIntToolsBeanFaceIntersect(
+                edge.handle, face.handle, &ranges, &count, &minDist, &hasMinDist)
         else {
             return nil
         }
@@ -1892,7 +1918,8 @@ extension Shape {
             }
             free(ranges)
         }
-        return BeanFaceIntersection(ranges: result, minSquareDistance: minDist)
+        return BeanFaceIntersection(
+            ranges: result, minSquareDistance: hasMinDist ? minDist : nil)
     }
     /// Result of shape-to-shape distance computation.
     public struct DistanceSSResult {
