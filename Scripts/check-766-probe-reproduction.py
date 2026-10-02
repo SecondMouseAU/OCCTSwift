@@ -41,8 +41,9 @@ the capture, so each is declared in an optional `reproduce.json` beside the prob
 normalised away for every pair. Every key takes a required `reason`, and
 a key whose pattern matches nothing is DECL-UNUSED rather than ignored.
 
-**Each key takes one of two shapes, and which one is decided by its consumer**: `cwd`, `argv` and
-`status` are read as literals and take `{"value": ..., "reason": ...}`; every other key is matched
+**Each key takes one of three shapes, and which one is decided by its consumer**: `cwd`, `argv` and
+`status` are read as literals and take `{"value": ..., "reason": ...}`; `tolerance` also carries a
+`relative` and is described below; every other key is matched
 against lines and takes `{"pattern": <regex>, "reason": ...}`, as a list for the three that hold
 several. A declaration that offers the other shape is DECL-INVALID rather than accepted, because the
 validator used to take either and each consumer read exactly one: a `pattern`-only `argv` raised
@@ -63,6 +64,17 @@ the mistake two of that sweep's thirteen transcripts were captured with (PR #282
                     still hold a line at the same position matching the same pattern, and only the
                     digits are free. Elapsed time, CPU time, working-set size and free disk space.
                     A volatile line that vanishes, or stops matching its shape, still fails.
+                    Write the line's own verdict into the pattern wherever it has one: a pattern
+                    that spells `(> 0: 1)` literally keeps that measurement compared while the
+                    free-space figure beside it goes free (#2967).
+    tolerance       the same positional comparison for a line whose VALUE is the measurement and
+                    whose last place or two the kernel does not reproduce. Takes a `relative` as
+                    well as a `pattern` and a `reason`. Everything on the line that is not a
+                    number must be identical, the two sides must hold the same count of numbers,
+                    and every number must agree to `relative` of the larger magnitude; the report
+                    prints the worst difference it actually saw, every run. `relative` is capped
+                    at `MAX_RELATIVE_TOLERANCE` below and a declaration above it is DECL-INVALID.
+                    See "A MEASUREMENT THAT DRIFTS" below for why this is not `volatile`.
     transcript_only lines the transcript holds that the probe does not print: an author's note that
                     the process died, or a measurement whose input shape was never committed.
     transcript_tail_from
@@ -73,6 +85,31 @@ the mistake two of that sweep's thirteen transcripts were captured with (PR #282
     status          "not-reproducible", for a transcript that is not one capture of one run at all
                     (`766-thread-181-189` interleaves two programs' output over several
                     invocations). Verdict NOT-REPRODUCIBLE, reason printed, exit code unaffected.
+
+A MEASUREMENT THAT DRIFTS, AND WHY IT IS NOT `volatile` (#2965)
+----------------------------------------------------------------
+Two shelling volumes do not come back the same twice. `766-modeling-evidence-fix`'s `offsetArc`
+printed six distinct values over ten runs of one binary against the pinned asset, spanning
+`1698.4365698478464` to `...77`, and `766-modeling-issue568-index-skip`'s
+`shellRejectsPartiallyForeignFaceList [foreign]` spanned `-13587.492558290325` to `...32`. Both are
+`BRepOffsetAPI_MakeThickSolid` work and the suspect is a reduction whose order is not fixed. The
+relative spread is 7.7e-16 and 5.2e-16, a few units in the last place of a double.
+
+`volatile` is the wrong instrument, and this is the distinction the key exists to hold. `volatile`
+frees a line's digits, which is right for a clock, a free-space figure or a working-set size,
+because those are not what the record claims. Here the number IS the claim, and an allowance over
+`^.*volume=[0-9.-]+$` would make the record say nothing at all while continuing to read as
+verified. Leaving it red is no better: these two pairs failed about one run in three, and a check
+that fails intermittently teaches people to re-run it rather than read it, which costs more than
+the two reds.
+
+So the value stays compared and the comparison is widened by a stated, capped amount, with the
+worst drift actually observed printed on every run. The policy is decided once, here: the cap, the
+rule that non-numeric text must match exactly, and the rule that the count of numbers must match.
+What is per pair is only which lines drift and why, which is what a `reason` is for.
+
+The cause is a separate and better fix, and declaring these does not close it: a kernel that
+returned the same bits twice would need no allowance. That is #3003, not this file's question.
 
 IT SAYS WHICH KERNEL IT MEASURED, AND WHETHER THAT IS THE PINNED ONE
 --------------------------------------------------------------------
@@ -218,12 +255,65 @@ DECL_FILE = "reproduce.json"
 # probe in the WRONG DIRECTORY, silently, which is the failure two of PR #2823's thirteen
 # transcripts were produced by. A validator that admits a shape no consumer reads is
 # not a laxer validator, it is a validator for a different file.
+#   TOLERANCE_KEYS a list of {"pattern": <regex>, "relative": <float>, "reason": <why>} objects,
+#                  the one allowance that reads the numbers rather than freeing them (#2965).
 PATTERN_KEYS = ("rerun_drop", "volatile", "transcript_only")
 REGEX_KEYS = ("rerun_keep", "transcript_tail_from")
 VALUE_KEYS = ("cwd", "argv", "status")
-# Derived, not restated: a key added to one of the three groups and forgotten here would be reported
+TOLERANCE_KEYS = ("tolerance",)
+# Derived, not restated: a key added to one of the four groups and forgotten here would be reported
 # as an unknown key in every declaration that used it.
-DECL_KEYS = PATTERN_KEYS + REGEX_KEYS + VALUE_KEYS
+DECL_KEYS = PATTERN_KEYS + REGEX_KEYS + VALUE_KEYS + TOLERANCE_KEYS
+
+# The hard cap on a declared `relative`, decided once here for the whole population rather than
+# per probe, which is what #2965 asks for. A double carries about 16 significant decimal digits,
+# so last-place drift in a kernel measurement is of the order of 1e-16 relative; the two pairs
+# #2965 measured drift by 7.7e-16 and 5.2e-16 over ten runs each. 1e-12 leaves four orders of
+# magnitude of headroom over that and is still four orders BELOW the smallest difference that
+# could mean anything about the geometry, so no declaration written under this cap can cover a
+# divergence. A declaration asking for more is DECL-INVALID and the error names the cap: the
+# answer to a value that moves by more than this is not a looser allowance.
+MAX_RELATIVE_TOLERANCE = 1e-12
+
+# Every run of digits that could be a number, used from both sides of a tolerance comparison. The
+# sign is part of the token, so a value that changes sign fails rather than reading as a small
+# relative difference in a positive one.
+NUMBER = re.compile(r"[-+]?(?:\d+\.?\d*|\.\d+)(?:[eE][-+]?\d+)?")
+
+
+def numeric_match(want: str, got: str, relative: float):
+    """(equal, worst) for two lines that agree except in their numbers, to `relative`.
+
+    Three things must hold, and the first is the one that keeps this from being `volatile` with
+    extra arithmetic: **everything that is not a number must be identical**, so a line whose text,
+    labels, flags or ordering moved is never covered however close its numbers are. Then the two
+    sides must hold the same count of numbers, and then every pair must agree to `relative` of the
+    larger magnitude.
+
+    `worst` is the largest relative difference seen, which the report prints whether the line was
+    covered or not: an allowance whose drift is growing is then visible in the run rather than
+    only in the day it finally exceeds the cap.
+    """
+    wn = NUMBER.findall(want)
+    gn = NUMBER.findall(got)
+    if len(wn) != len(gn) or NUMBER.sub("#", want) != NUMBER.sub("#", got):
+        return False, None
+    worst = 0.0
+    equal = True
+    for a, b in zip(wn, gn):
+        if a == b:
+            continue
+        try:
+            x, y = float(a), float(b)
+        except ValueError:  # pragma: no cover - the pattern only matches parsable runs
+            return False, None
+        scale = max(abs(x), abs(y))
+        # Both exactly zero spelled two ways ("0" and "0.0") is agreement, not a division.
+        diff = 0.0 if scale == 0.0 else abs(x - y) / scale
+        worst = max(worst, diff)
+        if diff > relative:
+            equal = False
+    return equal, worst
 
 
 def load_declaration(d: str, decl_file: str = DECL_FILE):
@@ -265,6 +355,31 @@ def load_declaration(d: str, decl_file: str = DECL_FILE):
                 re.compile(e["pattern"])
             except re.error as exc:
                 errors.append(f"{decl_file}: {k} pattern {e['pattern']!r} does not compile: {exc}")
+    for k in TOLERANCE_KEYS:
+        entries = decl.get(k, [])
+        if not isinstance(entries, list):
+            errors.append(f"{decl_file}: {k} must be a list")
+            continue
+        for e in entries:
+            if not isinstance(e, dict) or not e.get("pattern") or not e.get("reason"):
+                errors.append(f"{decl_file}: every {k} entry needs a pattern and a reason")
+                continue
+            try:
+                re.compile(e["pattern"])
+            except re.error as exc:
+                errors.append(f"{decl_file}: {k} pattern {e['pattern']!r} does not compile: {exc}")
+            rel = e.get("relative")
+            # `bool` is an `int`, and `"relative": true` is a declaration that means nothing, so
+            # it is refused here rather than read as 1.0, which would free every digit.
+            if isinstance(rel, bool) or not isinstance(rel, (int, float)):
+                errors.append(f"{decl_file}: every {k} entry needs a numeric `relative`")
+            elif not 0 < rel <= MAX_RELATIVE_TOLERANCE:
+                errors.append(
+                    f"{decl_file}: {k} relative {rel!r} is outside (0, {MAX_RELATIVE_TOLERANCE:g}]. "
+                    "That cap is the whole point of this key: it is four orders of magnitude above "
+                    "last-place drift in a double and four below anything that could mean "
+                    "something about the geometry. A value that moves by more than it is a "
+                    "divergence to investigate, not an allowance to widen.")
     for k in REGEX_KEYS:
         if k not in decl:
             continue
@@ -396,6 +511,49 @@ def apply_declaration(want: list[str], got: list[str], decl: dict):
     elif vol:
         for e in vol:
             unused.append(f"volatile {e['pattern']!r} was not applied: the two sides hold "
+                          f"{len(want)} and {len(got)} lines, so no line is at the same index "
+                          f"({e['reason']})")
+
+    # `tolerance` is `volatile` for the one shape `volatile` must not be used on: a MEASUREMENT
+    # whose last place or two the kernel does not reproduce (#2965). It is positional in the same
+    # way, and it differs in the only way that matters: it reads the numbers instead of freeing
+    # them. Everything that is not a number has to be identical, every number has to agree to the
+    # declared `relative`, and the report prints the worst difference it actually saw, so the
+    # allowance is a bounded statement about drift rather than a hole the shape of a value.
+    tol = decl.get("tolerance", [])
+    if tol and len(want) == len(got):
+        seen = {e["pattern"]: [0, 0, 0.0, 0] for e in tol}  # matched, differing, worst, exceeded
+        for i, (w, g) in enumerate(zip(want, got)):
+            for e in tol:
+                rx = re.compile(e["pattern"])
+                if not rx.search(w):
+                    continue
+                seen[e["pattern"]][0] += 1
+                if w == g:
+                    continue
+                seen[e["pattern"]][1] += 1
+                if not rx.search(g):
+                    continue
+                ok, worst = numeric_match(w, g, float(e["relative"]))
+                if worst is not None:
+                    seen[e["pattern"]][2] = max(seen[e["pattern"]][2], worst)
+                if ok:
+                    got[i] = w
+                else:
+                    seen[e["pattern"]][3] += 1
+        for e in tol:
+            matched, differing, worst, exceeded = seen[e["pattern"]]
+            note = (f"tolerance {e['pattern']!r} (relative {float(e['relative']):g}) matched "
+                    f"{matched} transcript line(s), {differing} of them differing on this run, "
+                    f"worst relative difference {worst:.3g}: {e['reason']}")
+            if exceeded:
+                note += (f" -- {exceeded} line(s) moved by MORE than the declared tolerance and "
+                         "are reported below as a divergence, which is what this key exists to "
+                         "leave possible.")
+            (covered if matched else unused).append(note)
+    elif tol:
+        for e in tol:
+            unused.append(f"tolerance {e['pattern']!r} was not applied: the two sides hold "
                           f"{len(want)} and {len(got)} lines, so no line is at the same index "
                           f"({e['reason']})")
     return want, got, covered, unused
@@ -1043,6 +1201,37 @@ def self_test() -> int:
                       decl_errors({"argv": {"value": ["inputs"], "reason": "the capture's argv"},
                                    "rerun_keep": {"pattern": "^[0-9]{3,4} ",
                                                   "reason": "the capture's grep"}}) == []))
+        #      `tolerance` (#2965). The cap is the key's whole justification, so a declaration
+        #      above it is refused here rather than accepted and then relied on.
+        cases.append(("a valid tolerance declaration has no errors",
+                      decl_errors({"tolerance": [{"pattern": "^v=", "relative": 1e-14,
+                                                  "reason": "a last-place drift"}]}) == []))
+        cases.append(("a tolerance with no relative is an error",
+                      bool(decl_errors({"tolerance": [{"pattern": "^v=", "reason": "x"}]}))))
+        cases.append(("a tolerance with no reason is an error",
+                      bool(decl_errors({"tolerance": [{"pattern": "^v=", "relative": 1e-14}]}))))
+        cases.append(("a tolerance above the cap is an error naming the cap",
+                      any("outside (0, 1e-12]" in e
+                          for e in decl_errors({"tolerance": [{"pattern": "^v=",
+                                                               "relative": 1e-6,
+                                                               "reason": "x"}]}))))
+        cases.append(("a tolerance of zero or less is an error",
+                      bool(decl_errors({"tolerance": [{"pattern": "^v=", "relative": 0,
+                                                       "reason": "x"}]}))
+                      and bool(decl_errors({"tolerance": [{"pattern": "^v=", "relative": -1e-14,
+                                                           "reason": "x"}]}))))
+        #      `true` is an `int` in Python and would read as a relative of 1.0, which frees every
+        #      digit of every number on the line: the one value this key must never take.
+        cases.append(("a boolean relative is an error rather than a tolerance of 1.0",
+                      bool(decl_errors({"tolerance": [{"pattern": "^v=", "relative": True,
+                                                       "reason": "x"}]}))))
+        cases.append(("a tolerance that is not a list is an error",
+                      bool(decl_errors({"tolerance": {"pattern": "^v=", "relative": 1e-14,
+                                                      "reason": "x"}}))))
+        cases.append(("a tolerance pattern that does not compile is an error",
+                      any("does not compile" in e
+                          for e in decl_errors({"tolerance": [{"pattern": "(", "relative": 1e-14,
+                                                               "reason": "x"}]}))))
 
     # 11. Each allowance, applied to lines, with the case that must still fail beside it. Every
     #     entry here is a way for a real difference to pass, which is why each has a negative twin.
@@ -1069,6 +1258,74 @@ def self_test() -> int:
     w, g, cov, un = apply_declaration(["t=0.06 s"], ["t=0.05 s"], vol2)
     cases.append(("two volatile patterns covering one differing line are both credited",
                   w == g and not un and sum("1 of them differing" in c for c in cov) == 2))
+
+    # `tolerance` (#2965). Every case here has its negative twin, and the negatives are the point:
+    # this is the one allowance that reads a measurement rather than removing it, so what it must
+    # not do matters more than what it does.
+    tol = {"tolerance": [{"pattern": r"^volume=[-0-9.]+$", "relative": 1e-14,
+                          "reason": "a shelling volume's last place"}]}
+    w, g, cov, un = apply_declaration(["volume=1698.4365698478475"],
+                                      ["volume=1698.4365698478471"], tol)
+    cases.append(("a declared-tolerance line may differ in its last place",
+                  w == g and cov and not un))
+    w, g, cov, un = apply_declaration(["volume=1698.4365698478475"],
+                                      ["volume=1698.4365698478475"], tol)
+    cases.append(("a tolerance line that agrees on this run is still a used allowance",
+                  w == g and cov and not un))
+    # The whole bound. 1698.4365 -> 1698.4366 is 6e-8 relative, which is still a tiny number and
+    # is sixty thousand times the declared tolerance, so it must be reported.
+    w, g, cov, un = apply_declaration(["volume=1698.4365698478475"],
+                                      ["volume=1698.4366698478475"], tol)
+    cases.append(("a difference larger than the declared tolerance is still a difference",
+                  w != g and any("MORE than the declared tolerance" in c for c in cov)))
+    # Non-numeric text is never free, which is what separates this key from `volatile`.
+    w, g, cov, un = apply_declaration(["done=1 valid=1 volume=10.0"],
+                                      ["done=1 valid=0 volume=10.0"],
+                                      {"tolerance": [{"pattern": r"^done=", "relative": 1e-12,
+                                                      "reason": "x"}]})
+    cases.append(("a tolerance does not free a flag that changed, however close the numbers",
+                  w != g))
+    # The same rule where the NUMBERS are identical and only the words moved: a verdict that went
+    # from `accepted` to `rejected` beside an unchanged volume is the whole finding, and dropping
+    # the non-numeric comparison is the one edit that would let it through silently.
+    w, g, cov, un = apply_declaration(["accepted volume=10.0"], ["rejected volume=10.0"],
+                                      {"tolerance": [{"pattern": r"volume=[-0-9.]+",
+                                                      "relative": 1e-12, "reason": "x"}]})
+    cases.append(("a tolerance does not free a word that changed beside an unchanged number",
+                  w != g))
+    w, g, cov, un = apply_declaration(["volume=10.0 faces=6"], ["volume=10.0 faces=5"],
+                                      {"tolerance": [{"pattern": r"^volume=", "relative": 1e-12,
+                                                      "reason": "x"}]})
+    cases.append(("a tolerance does not free an integer count beside the value it covers",
+                  w != g))
+    w, g, cov, un = apply_declaration(["volume=1.0"], ["volume=-1.0"],
+                                      {"tolerance": [{"pattern": r"^volume=", "relative": 1e-12,
+                                                      "reason": "x"}]})
+    cases.append(("a tolerance does not free a sign change", w != g))
+    w, g, cov, un = apply_declaration(["volume=0"], ["volume=0.0"],
+                                      {"tolerance": [{"pattern": r"^volume=", "relative": 1e-12,
+                                                      "reason": "x"}]})
+    cases.append(("zero spelled two ways is agreement and never a division", w == g))
+    w, g, cov, un = apply_declaration(["volume=0"], ["volume=1e-300"],
+                                      {"tolerance": [{"pattern": r"^volume=", "relative": 1e-12,
+                                                      "reason": "x"}]})
+    cases.append(("a value that was zero and is not is a difference, not a small one", w != g))
+    w, g, cov, un = apply_declaration(["a"], ["a"], tol)
+    cases.append(("a tolerance pattern that matches nothing is unused", bool(un)))
+    w, g, cov, un = apply_declaration(["volume=1.0", "x"], ["volume=1.0"], tol)
+    cases.append(("a tolerance line that vanishes is still a difference",
+                  w != g and any("not applied" in u for u in un)))
+    # The report has to print the drift it saw, every run, or the allowance is the silence the
+    # whole file exists to avoid: a value creeping toward the cap would otherwise be invisible
+    # until the day it crossed it.
+    w, g, cov, un = apply_declaration(["volume=1698.4365698478475"],
+                                      ["volume=1698.4365698478471"], tol)
+    cases.append(("a tolerance run prints the worst relative difference it measured",
+                  any("worst relative difference" in c and "e-16" in c for c in cov)))
+    cases.append(("numeric_match reads the numbers and not the shape",
+                  numeric_match("v=1.0", "v=1.0000000000001", 1e-12)[0] is True
+                  and numeric_match("v=1.0", "v=1.1", 1e-12)[0] is False
+                  and numeric_match("v=1.0", "w=1.0", 1e-12) == (False, None)))
 
     tonly = {"transcript_only": [{"pattern": r"^\(process terminated", "reason": "author's note"}]}
     w, g, cov, un = apply_declaration(["a", "(process terminated: SIGSEGV)"], ["a"], tonly)
@@ -1166,6 +1423,30 @@ def self_test() -> int:
         r = check_pair(pairs_in(p)[0], asset, 60)
         cases.append(("a volatile allowance does not hide a real divergence beside it",
                       r["status"] == "DIFF-VALUES"))
+
+        # `tolerance` end to end (#2965), with the same two twins: it must cover a last-place
+        # drift, and it must cover nothing else.
+        p = mk("766-tol", 'printf("volume=%.17g\\n", 1698.4365698478471);',
+               "volume=1698.4365698478475\n",
+               {"tolerance": [{"pattern": r"^volume=[-0-9.]+$", "relative": 1e-14,
+                               "reason": "a shelling volume's last place"}]})
+        r = check_pair(pairs_in(p)[0], asset, 60)
+        cases.append(("a declared-tolerance probe is MATCH-DECLARED",
+                      r["status"] == "MATCH-DECLARED"))
+        cases.append(("and the run reports the drift it measured rather than only the reason",
+                      "worst relative difference" in r["detail"]))
+        p = mk("766-tol-real", 'printf("volume=%.17g\\n", 1698.44);',
+               "volume=1698.4365698478475\n",
+               {"tolerance": [{"pattern": r"^volume=[-0-9.]+$", "relative": 1e-14,
+                               "reason": "a shelling volume's last place"}]})
+        r = check_pair(pairs_in(p)[0], asset, 60)
+        cases.append(("a tolerance allowance does not hide a real divergence on its own line",
+                      r["status"] == "DIFF-VALUES"))
+        p = mk("766-tol-invalid", 'printf("volume=1.0\\n");', "volume=1.0\n",
+               {"tolerance": [{"pattern": r"^volume=", "relative": 0.01, "reason": "too wide"}]})
+        r = check_pair(pairs_in(p)[0], asset, 60)
+        cases.append(("a tolerance above the cap is DECL-INVALID before anything is compiled",
+                      r["status"] == "DECL-INVALID"))
 
         # `status: not-reproducible` short-circuits before any compile, and is not a pass.
         p = mk("766-nr", 'printf("anything\\n");', "something else\n",
