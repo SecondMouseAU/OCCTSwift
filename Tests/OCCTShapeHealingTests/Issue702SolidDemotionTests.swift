@@ -41,12 +41,13 @@ import simd
 // is somewhere else. So each demotion below also pins the face count, the area, the bounds and the
 // absence of a volume, which is what says "the same open shell, no longer a solid".
 //
-// `gapCount` is deliberately not pinned anywhere in this file. `OCCTShapeAnalyze` counts it with
-// `ShapeAnalysis_Wire::CheckGap3d` on every wire without first asking `CheckOrder`, the
-// precondition OCCT's own usage puts in front of it (#2906 for `SAWireAnalysis`), so a flawless
-// primitive box reads 24 gaps and `isHealthy == false`. The totals tests therefore recompute the
-// expected sum from the fields rather than assume one, and the `isHealthy` pins use shapes whose
-// wires are in order, which measure 0.
+// `gapCount` is deliberately not pinned anywhere in this file, and #3040 is why. `OCCTShapeAnalyze`
+// counts it with `ShapeAnalysis_Wire::CheckGap3d` on every wire without first asking `CheckOrder`,
+// the precondition OCCT's own usage puts in front of it (#2906 for `SAWireAnalysis`), so a
+// flawless primitive box reads 24 gaps and `isHealthy == false`. The totals tests therefore
+// recompute the expected sum from the fields rather than assume one, and the `isHealthy` pins use
+// shapes whose wires are in order, which measure 0. Pinning the 20 an open box shell reads would
+// pin the defect as the answer.
 @Suite("Issue 702: solid demotion is reported accurately")
 struct Issue702SolidDemotion {
 
@@ -80,18 +81,25 @@ struct Issue702SolidDemotion {
     private func expectTheOpenShell(
         _ shape: Shape, _ what: String, sourceLocation: SourceLocation = #_sourceLocation
     ) throws {
-        #expect(shape.shapeType == .shell, "\(what): is a \(shape.shapeType)", sourceLocation: sourceLocation)
-        #expect(shape.solids.isEmpty, "\(what): still holds a solid", sourceLocation: sourceLocation)
         #expect(
-            shape.subShapeCount(ofType: .face) == 5, "\(what): faces", sourceLocation: sourceLocation)
+            shape.shapeType == .shell, "\(what): is a \(shape.shapeType)",
+            sourceLocation: sourceLocation)
+        #expect(
+            shape.solids.isEmpty, "\(what): still holds a solid", sourceLocation: sourceLocation)
+        #expect(
+            shape.subShapeCount(ofType: .face) == 5, "\(what): faces",
+            sourceLocation: sourceLocation)
         // Five 10x10 faces of the centred box.
-        let area = try #require(shape.surfaceArea, "\(what): no area", sourceLocation: sourceLocation)
+        let area = try #require(
+            shape.surfaceArea, "\(what): no area", sourceLocation: sourceLocation)
         #expect(abs(area - 500.0) < 1e-6, "\(what): area \(area)", sourceLocation: sourceLocation)
         try expectBounds(
-            shape, from: SIMD3(-5, -5, -5), to: SIMD3(5, 5, 5), what, sourceLocation: sourceLocation)
+            shape, from: SIMD3(-5, -5, -5), to: SIMD3(5, 5, 5), what, sourceLocation: sourceLocation
+        )
         // Open: it encloses nothing, so `volume` has no answer, and it is not a solid.
         #expect(shape.volume == nil, "\(what): encloses a volume", sourceLocation: sourceLocation)
-        #expect(!shape.isValidSolid, "\(what): reads as a valid solid", sourceLocation: sourceLocation)
+        #expect(
+            !shape.isValidSolid, "\(what): reads as a valid solid", sourceLocation: sourceLocation)
     }
 
     // MARK: - The fixture demotes (prove it before trusting any assertion about it)
@@ -296,12 +304,13 @@ struct Issue702SolidDemotion {
             "adding freeFaceCount again would double-count both shells' open boundaries")
     }
 
-    /// `totalProblems`'s own contract: every field summed once, except `freeFaceCount`.
+    /// Recomputes the total a result should report by summing each independent defect once.
     ///
-    /// See ``ShapeAnalysisResult/totalProblems``. `freeFaceCount` is a derived summary of the same
-    /// free-edge scan rather than an independent defect. Recomputed here instead of assumed, so the
-    /// tests above measure the real fields (including this fixture's own nonzero `gapCount`)
-    /// rather than a guessed total.
+    /// That is `totalProblems`'s own contract (see ``ShapeAnalysisResult/totalProblems``): every
+    /// field once, except `freeFaceCount`, a derived summary of the same free-edge scan rather
+    /// than an independent defect. Recomputed here instead of assumed, so the tests above measure
+    /// the real fields (including this fixture's own nonzero `gapCount`) rather than a guessed
+    /// total.
     ///
     /// #1288 review: this used to omit the `hasSelfIntersection` term the real contract has (see
     /// `ShapeAnalysisTests.analysisResultProperties`'s `expectedTotal`, the sibling mirror of the
@@ -420,7 +429,8 @@ struct Issue702SolidDemotion {
         let shell = try #require(Shape.builderMakeShell(), "could not start a shell")
         let flipped = try #require(faces[0].reversed, "could not reverse the first face")
         for (index, face) in faces.enumerated() {
-            try #require(shell.builderAdd(index == 0 ? flipped : face), "could not add face \(index)")
+            try #require(
+                shell.builderAdd(index == 0 ? flipped : face), "could not add face \(index)")
         }
         let volume = try #require(shell.volume, "the flipped shell has no volume")
         try #require(

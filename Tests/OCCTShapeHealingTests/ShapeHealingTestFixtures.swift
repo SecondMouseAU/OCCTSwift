@@ -190,8 +190,10 @@ func expectBounds(
 func expectSameBounds(
     _ a: Shape, _ b: Shape, _ what: String, sourceLocation: SourceLocation = #_sourceLocation
 ) throws {
-    let boxA = try #require(a.boundingBox, "\(what): first has no box", sourceLocation: sourceLocation)
-    let boxB = try #require(b.boundingBox, "\(what): second has no box", sourceLocation: sourceLocation)
+    let boxA = try #require(
+        a.boundingBox, "\(what): first has no box", sourceLocation: sourceLocation)
+    let boxB = try #require(
+        b.boundingBox, "\(what): second has no box", sourceLocation: sourceLocation)
     #expect(
         approximatelyEqual(boxA.min, boxB.min) && approximatelyEqual(boxA.max, boxB.max),
         "\(what): \(boxA) against \(boxB)", sourceLocation: sourceLocation)
@@ -212,7 +214,8 @@ func expectBoxBody(
         body.shapeType == .solid, "\(what): is a \(body.shapeType), not a solid",
         sourceLocation: sourceLocation)
     #expect(
-        body.subShapeCount(ofType: .face) == 6, "\(what): has \(body.subShapeCount(ofType: .face)) faces",
+        body.subShapeCount(ofType: .face) == 6,
+        "\(what): has \(body.subShapeCount(ofType: .face)) faces",
         sourceLocation: sourceLocation)
     expectVolume(body, cube, what, sourceLocation: sourceLocation)
     #expect(
@@ -248,13 +251,15 @@ func expectBoxBodies(
     }
     var unused = Array(bodies.indices)
     for (i, want) in expected.enumerated() {
-        let far = SIMD3<Double>(want.origin.x + want.size, want.origin.y + want.size, want.origin.z + want.size)
+        let far = SIMD3<Double>(
+            want.origin.x + want.size, want.origin.y + want.size, want.origin.z + want.size)
         let match = unused.first { index in
             guard let box = bodies[index].boundingBox else { return false }
             return approximatelyEqual(box.min, want.origin) && approximatelyEqual(box.max, far)
         }
         let index = try #require(
-            match, "\(what): no body spans \(want.origin) to \(far)", sourceLocation: sourceLocation)
+            match, "\(what): no body spans \(want.origin) to \(far)", sourceLocation: sourceLocation
+        )
         unused.removeAll { $0 == index }
         try expectBoxBody(
             bodies[index], at: want.origin, size: want.size, "\(what) expected body \(i)",

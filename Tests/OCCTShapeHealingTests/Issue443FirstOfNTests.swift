@@ -71,10 +71,10 @@ private func closedAndOpenShellCompound() throws -> Shape {
 
 /// A one-face open shell whose face has its outer wire's edges out of connection order.
 ///
-/// This is the smallest input `ShapeFix_Solid` has something to repair: `ShapeFix_Face` reorders
-/// the wire and replaces the face, and the shared reshape context records that replacement. A
-/// healthy box repairs nothing, so its history is empty and cannot say whether it covers a body at
-/// all. The face is a 10x10 square with its lower left corner at `x0`.
+/// This is the smallest input `ShapeFix_Solid` has something to repair: `ShapeFix_Face` replaces
+/// the face with one whose wire is in order, and the shared reshape context records that
+/// replacement. A healthy box repairs nothing, so its history is empty and cannot say whether it
+/// covers a body at all. The face is a 10x10 square with its lower left corner at `x0`.
 private func unorderedWireFaceShell(at x0: Double) throws -> (face: Shape, shell: Shape) {
     let corners: [SIMD3<Double>] = [
         SIMD3(x0, 0, 0), SIMD3(x0 + 10, 0, 0), SIMD3(x0 + 10, 10, 0), SIMD3(x0, 10, 0),
@@ -275,8 +275,9 @@ struct Issue443FirstOfN {
 
         let viaMakeSolid = Shape.solid(from: sewn)
         let viaShapeFix = sewn.solidFromShellFixed()
-        for (label, maybe) in [("solid(from:)", viaMakeSolid), ("solidFromShellFixed()", viaShapeFix)]
-        {
+        for (label, maybe) in [
+            ("solid(from:)", viaMakeSolid), ("solidFromShellFixed()", viaShapeFix),
+        ] {
             let result = try #require(maybe, "\(label) returned nil for a sewn hollow body")
             // Was 2 solids before the free-shell group went through parity.
             #expect(result.solids.count == 1, "\(label): solids")
@@ -430,6 +431,9 @@ struct Issue443FirstOfN {
     /// history built from the last body alone, from the first alone, or from an unrelated run
     /// has no record for one or both of them. Healthy input cannot show this, because it has no
     /// replacement to record (see `solidWithHistoryQueryableForEveryBody`).
+    ///
+    /// One half of the obvious expectation does not hold, and is carried as a known issue: the
+    /// result's body keeps the original face while the history says it was replaced (#3041).
     @Test("solidWithFullHistory(from:) records the repair of every body, not only the last")
     func solidWithHistoryRecordsEveryBodysRepair() throws {
         let (faceA, shellA) = try unorderedWireFaceShell(at: 0)
@@ -446,20 +450,36 @@ struct Issue443FirstOfN {
         try expectBounds(bodies[0], from: SIMD3(0, 0, 0), to: SIMD3(10, 10, 0), "body 0")
         try expectBounds(bodies[1], from: SIMD3(20, 0, 0), to: SIMD3(30, 10, 0), "body 1")
 
-        // Each face was replaced once, by a face in that body's own place.
+        // Each face was replaced once, by a face in that body's own place, and the replacement
+        // is a REPAIR: its wire is in connection order where the original's was not.
         let expectedBounds: [(label: String, face: Shape, lo: Double, hi: Double)] = [
             (label: "A", face: faceA, lo: 0.0, hi: 10.0),
             (label: "B", face: faceB, lo: 20.0, hi: 30.0),
         ]
-        for entry in expectedBounds {
+        for (index, entry) in expectedBounds.enumerated() {
             let record = history.record(of: entry.face)
-            #expect(record.modified.count == 1, "face \(entry.label): \(record.modified.count) records")
+            #expect(
+                record.modified.count == 1, "face \(entry.label): \(record.modified.count) records")
             #expect(!record.isDeleted, "face \(entry.label) was reported deleted")
             #expect(record.generated.isEmpty, "face \(entry.label) generated something")
             let repaired = try #require(record.modified.first, "face \(entry.label) not modified")
             try expectBounds(
                 repaired, from: SIMD3(entry.lo, 0, 0), to: SIMD3(entry.hi, 10, 0),
                 "face \(entry.label)'s replacement")
+            let repairedWire = try #require(
+                repaired.subShapes(ofType: .wire).first, "the replacement has no wire")
+            #expect(
+                SAWireAnalysis.checkOrder(wire: repairedWire, face: repaired) == false,
+                "face \(entry.label)'s replacement is still out of order, so it repairs nothing")
+
+            // The expectation that goes with a history: the body the call returns holds the face
+            // the history reports as the replacement. It does not today, because the bridge reads
+            // the body from `ShapeFix_Solid::Solid()`, which a shell that cannot close never
+            // updates, where OCCT's own caller reads the shared context (#3041).
+            withKnownIssue("#3041: the result keeps the face the history says was replaced") {
+                let held = bodies[index].subShapes(ofType: .face)
+                #expect(held.contains { $0.isSame(as: repaired) }, "body \(entry.label)")
+            }
         }
     }
 
@@ -497,7 +517,8 @@ struct Issue443FirstOfN {
             Shape.solidWithFullHistory(from: shell), "solidWithFullHistory(from:) returned nil")
         #expect(result.shapeType == .solid)
         expectVolume(result, 1000.0, "solidWithFullHistory(one shell)")
-        try expectBoxBody(result, at: SIMD3(-5, -5, -5), size: 10, "solidWithFullHistory(one shell)")
+        try expectBoxBody(
+            result, at: SIMD3(-5, -5, -5), size: 10, "solidWithFullHistory(one shell)")
     }
 
     /// Same review finding as `solidFromKeepsOpenBody`, for the history variant's own check.
@@ -633,7 +654,8 @@ struct Issue443FirstOfN {
     func upgradedKeepsOpenBody() throws {
         let compound = try closedAndOpenShellCompound()
         let upgraded = try #require(
-            compound.upgraded(tolerance: 1e-6), "upgraded() returned nil for the two-shell compound")
+            compound.upgraded(tolerance: 1e-6), "upgraded() returned nil for the two-shell compound"
+        )
         #expect(upgraded.subShapeCount(ofType: .face) == 11)
         // The closed body came through as the solid it was.
         #expect(upgraded.solids.count == 1)

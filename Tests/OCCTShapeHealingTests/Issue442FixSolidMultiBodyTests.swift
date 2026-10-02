@@ -331,7 +331,8 @@ struct Issue442FixSolidMultiBody {
         let fake = try #require(Shape.solidFromShells([openShell]), "could not wrap the open shell")
         #expect(fake.shapeType == .solid)
         #expect(!fake.isValid, "an open shell wrapped as a solid is not valid")
-        let mixed = try #require(Shape.compound([closedBox, fake]), "could not build the mixed part")
+        let mixed = try #require(
+            Shape.compound([closedBox, fake]), "could not build the mixed part")
         let mixedHealed = try #require(mixed.fixSolid(), "fixSolid returned nil for the mixed part")
         let mixedBodies = (0..<mixedHealed.nbChildren).compactMap { mixedHealed.child(at: $0) }
         #expect(mixedBodies.count == 2, "no body may be dropped to make this check work")
