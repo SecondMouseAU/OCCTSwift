@@ -6,10 +6,13 @@ the PR does **not** change a test it certifies, the certification is the only ev
 notices anything, and a test built out of the shapes below notices total failure and nothing else:
 
   * `guard let x = ... else { return }` - a nil result skips every assertion and the test passes.
+    The `else` is read wherever it falls, on the `guard`'s own line or on a later one (#2982).
   * `if let x = x { ... }` with no `else` - the same thing, one indentation level down.
   * `if n >= 0 { ... }` - true for every count a kernel can return.
   * a sole `!= nil` / `== nil`.
   * `> 0`, `>= n`, `!isEmpty`, or a bare Bool property as the only assertion.
+  * an ordering between two member paths rooted at the same identifier, `b.max.x >= b.min.x`,
+    which holds whatever the kernel returned (#2985).
 
 Measured on batch 1 of the walk: boolean-only evidence density predicted the blind tests with no
 false positives (7 of 9 in the rejected PR, 0 of 9 in the best one), and these shapes are the source
@@ -24,6 +27,34 @@ Bool property is the measurement for `isValid`. Nothing mechanical separates tho
 test, so this prints a list and always exits 0, per `okf/policies/static-gates.md`'s gate/census
 distinction. What it buys is a reading order: the flagged tests are where the laundering is, and a
 PR certifying one without changing it and without saying so is the finding.
+
+An `else` branch that records an issue before returning is one of those false positives, and it is
+the largest of them: of the 320 findings #2982's widening added on `main` at `e6a3b8f`, 220 have
+`Issue.record` or a `throw` in the `else` and so fail loudly rather than passing vacuously, 64
+have a silent `else { return }`, and 36 could not be classified by the one-off script that split
+them. The tier does not tell them apart, on the one-line form either, so the split is a reading
+aid and not a verdict. `guard-else-return` is ESCAPABLE, never SEVERE, for that reason.
+
+WHAT IT CANNOT SEE
+------------------
+**A threshold a correct answer clears by a whole unit.** `bb.max.x - bb.min.x > 9.0` for a box
+whose true span is 10 carries a literal, so `PINS_VALUE` matches it and it scores as a pin, and
+nothing here can know the answer is 10. Every mechanical shape that would reach it also reaches
+the tolerance comparisons this detector exists to respect: `< 1e-9`, `<= 0.5`, `deviation <=
+tolerance`. The margin is the defect, not the syntax. Measured, not reasoned: #2985's thread
+records `shapeBoundingBox` and `shapeBoundingBoxOptimal` scoring ESCAPABLE at `pinning=3` on
+exactly that assertion, and the instrument that does catch it is the injection counterfactual in
+`okf/references/injection-sweep-mechanics.md`, where a half-unit distortion reddens nothing and
+the sweep says so. Deliberately left as a known non-target.
+
+**A helper one file away.** Only same-file `func` bodies are inlined, so a shared helper moved to
+a neighbouring file makes every caller read as `no-assertions`. That is the safe direction, a
+false SEVERE rather than a false clean, and the fix is to keep the helper beside its callers.
+
+**A sibling `@Test` inlined into its neighbour.** `helpers_in` includes `@Test` functions, so a
+test calling `Document.loadOBJ(` picks up the body of the sibling `@Test func loadOBJ`. Scoping
+helpers to their declaring suite (#2964) does not reach this, because the sibling is usually in
+the same suite. Recorded on #2964's thread and open.
 
 NOT FOR `gate-scripts`
 ----------------------

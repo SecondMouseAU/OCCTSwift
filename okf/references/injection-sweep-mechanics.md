@@ -121,9 +121,12 @@ zero. One switch was the exact defect its own issue described in its own words, 
 silent on it.
 
 The census delta for the same batch was **three SEVERE**, which understates it by an order of
-magnitude, for the reasons under "a gain is a candidate" and in #2985. So where a batch's value is
-in question, the counterfactual is the honest measure and it costs one extra run of a harness you
-have already built. Report both.
+magnitude, for the reasons under "a gain is a candidate". #2985 was one of them and is fixed, so
+an ordering tautology no longer scores as a pin; what remains is in
+`census-766-weak-assertions.py`'s "WHAT IT CANNOT SEE", and its first entry is a batch-10 shape
+the sweep caught and the census never will: `bb.max.x - bb.min.x > 9.0` where the true span is
+10. So where a batch's value is in question, the counterfactual is the honest measure and it
+costs one extra run of a harness you have already built. Report both.
 
 ## Measure both sides at the same instant
 

@@ -31,10 +31,18 @@ sides, every `@Test` is tiered on each side with `census-766-weak-assertions.py`
 (SEVERE, nothing pins a value; ESCAPABLE, a value is pinned behind a nil-skip; clean). A test is
 a **gain** when the head's tier is better than `main`'s, or when the head has a clean test
 `main` has not at all. That is exactly the quantity the programme exists to move: `main`'s SEVERE
-tests, 1,492 of 6,663 when `python3 Scripts/census-766-weak-assertions.py --summary` was last run
-on 2026-10-02, are what "`main`'s tests cannot fail" means, and a lift is worth its cost in
-proportion to how many of them it retires. Re-run that command rather than quoting this line: it
-said 1,579 for as long as it took the tree to move under it.
+tests, 1,230 of 6,671 when `python3 Scripts/census-766-weak-assertions.py --summary` was last run,
+against `origin/main` at `e6a3b8f` on 2026-10-02, are what "`main`'s tests cannot fail" means, and
+a lift is worth its cost in proportion to how many of them it retires. Re-run that command rather
+than quoting this line: it said 1,579, then 1,492, then 1,185 for as long as it took the tree to
+move under it, and the step from 1,185 to 1,230 was the detector getting three defects fixed
+rather than the suite getting worse (#2982, #2985, #2964).
+
+**A fix to the detector moves the gain count too, and not always upward.** The same two runs,
+against the same `origin/main` at `e6a3b8f` and the same branch head `ee42388`, report 889 gains
+over 399 paths with the old detector and **876 over 396** with the corrected one. The branch's own
+versions carry the multi-line `guard` the old detector could not see, so some of what read as an
+ESCAPABLE-to-clean gain was never a gain at all.
 
 Paths are ranked by gain count, so the top of the list is where the next batch should go.
 
@@ -64,7 +72,8 @@ WHAT IT CANNOT ANSWER
   and inherits every one of its false positives: `guard let` is the house style for a fallible
   factory, so a perfectly good test reads as ESCAPABLE. A SEVERE-to-clean gain says the head's
   version pins something `main`'s does not; it does not say the pinned value is right, or that
-  `main` has not achieved the same thing in a shape the detector scores the same.
+  `main` has not achieved the same thing in a shape the detector scores the same. It inherits the
+  detector's blind spots too, and that script's "WHAT IT CANNOT SEE" is the list.
 * **It is blind in the direction that matters least and loudest in the other.** Two tests that are
   both clean can still differ, and the head's can be far stronger: #2937's own `islandsCutHoles`
   pins two exact half-spans the `main` copy does not, and both sides tier clean, so this script
