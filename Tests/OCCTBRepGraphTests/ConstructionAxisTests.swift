@@ -654,23 +654,12 @@ struct ConstructionAxisTests {
         let qMidBot = SIMD3(radius * cos(midAngle), radius * sin(midAngle), 0.0)
 
         /// The top arc's resolved axis and the point its own parameterization starts at.
-        func topArc(from faceShape: Shape) -> (axis: Axis, start: SIMD3<Double>)? {
-            guard let graph = BRepGraph(shape: faceShape) else { return nil }
-            for edgeIndex in 0..<graph.edgeCount {
-                guard
-                    let eShape = graph.shape(
-                        nodeKind: BRepGraph.NodeKind.edge, nodeIndex: edgeIndex),
-                    let edge = eShape.edges().first,
-                    edge.curveType == .circle,
-                    let bounds = edge.parameterBounds,
-                    let p = edge.point(at: bounds.first)
-                else { continue }
-                if abs(p.z - height) < 1e-6 {
-                    guard case .success(let ax) = alongEdge(graph, edgeIndex) else { return nil }
-                    return (ax, p)
-                }
-            }
-            return nil
+        func topArc(from faceShape: Shape) throws -> (axis: Axis, start: SIMD3<Double>) {
+            let graph = try #require(BRepGraph(shape: faceShape), "graph of the face")
+            let top = try #require(
+                circleEdges(in: graph).first(where: { abs($0.start.z - height) < 1e-6 }),
+                "the circular top arc")
+            return (try alongEdge(graph, top.index).get(), top.start)
         }
 
         // Top arc parameterized pA -> pB (bounds.first == pA).
@@ -694,7 +683,7 @@ struct ConstructionAxisTests {
             ]), "forward wire")
         let faceForward = try #require(
             Shape.face(from: surfaceForward, boundary: wireForward), "forward face")
-        let forward = try #require(topArc(from: faceForward), "forward-order fixture resolved")
+        let forward = try topArc(from: faceForward)
 
         // Top arc parameterized pB -> pA (bounds.first == pB), the physically identical rim,
         // opposite parameter order. Every other edge is rebuilt to match (see the wire-fitting
@@ -722,7 +711,7 @@ struct ConstructionAxisTests {
             ]), "reversed wire")
         let faceReversed = try #require(
             Shape.face(from: surfaceReversed, boundary: wireReversed), "reversed face")
-        let reversed = try #require(topArc(from: faceReversed), "reversed-order fixture resolved")
+        let reversed = try topArc(from: faceReversed)
 
         // The two fixtures really are the same rim traversed from opposite ends.
         #expect(isClose(forward.start, pA), "forward arc starts at \(forward.start)")

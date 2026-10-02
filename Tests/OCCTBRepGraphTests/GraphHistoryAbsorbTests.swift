@@ -52,10 +52,10 @@ struct GraphHistoryAbsorbTests {
 
         let faces = base.faces()
         let centroids = base.measure().faceCentroids
-        var heights: [(index: Int, z: Double)] = []
-        for (i, centroid) in centroids.enumerated() {
-            if let centroid { heights.append((i, centroid.z)) }
+        let heights = centroids.enumerated().compactMap { i, centroid in
+            centroid.map { (index: i, z: $0.z) }
         }
+        try #require(heights.count == faces.count, "every face of the base box has a centroid")
         let topIndex = try #require(heights.max(by: { $0.z < $1.z })?.index, "top face")
         let bottomIndex = try #require(heights.min(by: { $0.z < $1.z })?.index, "bottom face")
 
