@@ -358,7 +358,7 @@ def merged_off_branch(root, head, pr_map):
     for pr in merged:
         oid = (pr.get("mergeCommit") or {}).get("oid")
         row = {"number": pr.get("number"), "title": pr.get("title") or "",
-               "head": pr.get("headRefName") or "", "oid": oid, "refs": []}
+               "head": pr.get("headRefName") or "", "oid": oid, "refs": [], "refs_error": None}
         if not oid:
             row["where"] = "no-merge-commit"
         elif oid in on_branch:
@@ -369,10 +369,22 @@ def merged_off_branch(root, head, pr_map):
             row["where"] = "off-branch"
             # Only for the handful that get here, so the per-ref walk costs nothing in the
             # ordinary case. It is what turns "invisible" into "diff it from this ref instead".
-            row["refs"] = sorted(
-                r.strip() for r in
-                git(root, "for-each-ref", "--contains", oid, "--format=%(refname:short)",
-                    check=False).split("\n") if r.strip())
+            #
+            # The return code is read rather than discarded, and a failure gives `refs` None
+            # rather than []. The two mean opposite things to whoever acts on the row: [] is "no
+            # ref in this clone holds it, so you have nothing to lift from" and None is "the
+            # lookup did not run, so nobody has asked the question yet". Collapsing them would
+            # print the first sentence on the evidence for the second, which is this PR's own
+            # subject one level down (PR #3008's review).
+            p = subprocess.run(
+                ["git", "-C", root, "for-each-ref", "--contains", oid,
+                 "--format=%(refname:short)"], capture_output=True, text=True)
+            if p.returncode == 0:
+                row["refs"] = sorted(r.strip() for r in p.stdout.split("\n") if r.strip())
+            else:
+                row["refs"] = None
+                row["refs_error"] = p.stderr.strip().split("\n")[-1][:160] or \
+                    "git exited %d with nothing on stderr" % p.returncode
         rows.append(row)
     return rows
 
@@ -399,10 +411,20 @@ def report_merged_off_branch(rows, head):
     for r in off:
         print("    #%-5s off-branch   %s" % (r["number"], r["title"][:88]))
         print("           merge commit %s is not reachable from %s" % (r["oid"][:9], head))
-        print("           its content IS readable, from: %s"
-              % (", ".join(r["refs"][:4]) or "no ref in this clone"))
-        print("           screen it with --heads <that ref>, since no run over the branch can "
-              "reach it")
+        if r["refs"] is None:
+            print("           the ref lookup itself FAILED (%s), so whether anything holds it "
+                  "is unknown" % r.get("refs_error"))
+            print("           rather than answered. Re-run; this is not evidence that the work "
+                  "is gone.")
+        elif r["refs"]:
+            print("           its content IS readable, from: %s" % ", ".join(r["refs"][:4]))
+            print("           screen it with --heads <that ref>, since no run over the branch "
+                  "can reach it")
+        else:
+            print("           and no ref in this clone holds it either, so its content cannot "
+                  "be read here.")
+            print("           git fetch every exec/766-* head, then re-run before concluding "
+                  "the work is lost.")
     for r in gone:
         print("    #%-5s unresolvable %s" % (r["number"], r["title"][:88]))
         print("           merge commit %s does not resolve in this clone, so its content cannot "
@@ -994,6 +1016,29 @@ def self_test():
         cases.append(("an off-branch screen prints the PR number and the remedy",
                       "#2 " in printed and "--heads" in printed and "#3 " in printed
                       and "only place left to look" in printed))
+        # "no ref holds it" and "the lookup did not run" are opposite instructions to whoever
+        # acts on the row, and `git(check=False)` returned "" for both (PR #3008's review). The
+        # three shapes are asserted on the reporter, which is where acting on the wrong one
+        # happens.
+        def _say(refs, error=None):
+            b, s = io.StringIO(), sys.stdout
+            try:
+                sys.stdout = b
+                report_merged_off_branch(
+                    [{"number": 9, "title": "t", "head": "h", "oid": "a" * 40,
+                      "where": "off-branch", "refs": refs, "refs_error": error}], "headbranch")
+            finally:
+                sys.stdout = s
+            return b.getvalue()
+        cases.append(("a ref that holds the commit is reported as a place to lift from",
+                      "IS readable, from: origin/exec/766-x" in _say(["origin/exec/766-x"])))
+        cases.append(("no ref holding it says so, and says to fetch before concluding",
+                      "no ref in this clone holds it" in _say([])
+                      and "git fetch" in _say([])))
+        cases.append(("a failed ref lookup is unknown rather than reported as nothing",
+                      "FAILED" in _say(None, "fatal: bad object")
+                      and "is unknown" in _say(None, "fatal: bad object")
+                      and "no ref in this clone holds it" not in _say(None, "fatal: bad object")))
 
         # The dark list (#2987, after #2946). It is the one part of this script that reports
         # nothing, so it can never fail on its own: dropping an entry makes the output shorter and
