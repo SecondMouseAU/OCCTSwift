@@ -25,11 +25,16 @@ struct Issue3003OffsetOrderTests {
         try shape.faces().map { face in
             let box = try #require(
                 Shape.fromFace(face)?.boundingBox, "face \(face.index) has no bounding box")
-            func r(_ v: Double) -> String { String(format: "%.6f", (v * 1e6).rounded() / 1e6 + 0.0) }
-            return "\(r(box.min.x)),\(r(box.min.y)),\(r(box.min.z))..\(r(box.max.x)),\(r(box.max.y)),\(r(box.max.z))"
+            func r(_ v: Double) -> String {
+                String(format: "%.6f", (v * 1e6).rounded() / 1e6 + 0.0)
+            }
+            func p(_ v: SIMD3<Double>) -> String { "\(r(v.x)),\(r(v.y)),\(r(v.z))" }
+            return "\(p(box.min))..\(p(box.max))"
         }
     }
 
+    /// The faces and the volume of an arc-join offset do not depend on where the heap put things.
+    ///
     /// Gated on `OCCTSWIFT_LOCAL=1`, the way `StressBuilderLifecycleTests`' `0027` test is: the fix
     /// is carried patch `0047`, which the pinned asset does not carry, and `ci.yml`'s
     /// `build-and-test` resolves that asset. `kernel-integration.yml` builds the patches from source
