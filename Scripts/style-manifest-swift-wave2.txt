@@ -124,7 +124,6 @@ Tests/OCCTGeom2dTests/Issue840ClassifyPoint2dToleranceTests.swift
 Tests/OCCTGeom2dTests/Issue965Curve2DPropertyLifetimeTests.swift
 Tests/OCCTIOTests/CancellationReportingTests.swift
 Tests/OCCTIOTests/ExporterDrawingCollectionGoldenTests.swift
-Tests/OCCTIOTests/IOTestFixtures.swift
 Tests/OCCTIOTests/Issue1504IGESFormatDefectsTests.swift
 Tests/OCCTIOTests/Issue375STLWindingTests.swift
 Tests/OCCTIOTests/MultibodyRobustImportTests.swift

@@ -21,6 +21,36 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### Added: capturing what OCCT itself prints (#3021)
+
+`Messenger.capturingDefaultOutput(_:)` runs a closure with every printer on
+`Message::DefaultMessenger()` detached and replaced by one that accumulates, then restores them and
+returns the text. `Messenger.silencingDefaultOutput(_:)` is the same scope with the text discarded,
+and `Messenger.defaultPrinterCount` / `Messenger.isDefaultOutputCaptured` report the messenger's
+state. Until now `Messenger` wrapped only a messenger the caller created, which is a different
+object from the static OCCT writes through, so a kernel message such as
+`**** ERR StepFile : Undefined Parsing` or a `Statistics on Transfer (Write)` block could not be
+redirected at all and landed on standard output. The captured form is deliberately richer than
+silence: an expected message can be asserted on, so an absent one fails rather than passing
+unnoticed.
+
+The wasm spike (`Scripts/repro/2175/spike`) and `Issue1644IOReturnStatus` adopt it, and the
+transcript each produces now carries a verdict on OCCT's output instead of the output itself.
+
+### Nineteen test assertions that could not fail now measure their subject (#3018)
+
+The test targets built with 22 compiler warnings naming assertions that cannot fail: 19
+`comparing non-optional value of type 'X' to 'nil' always returns true` and 3 redundant
+`#require`s on a non-optional. Each site now asserts the geometry, document content or
+parameter range the test was written to check, rather than the non-optional handle it came back
+in. No public API changed; this is test-side only. The surface-factory suites
+(`ConicalSurfaceTests`, `CylindricalSurfaceTests`, `GceMakeConeTests`, `GceMakeCylinderTests`,
+`PlaneConstructionTests`, `TrimmedConeTests`, `TrimmedCylinderTests`, `JoinBezierPatchesTests`)
+now pin the semi-angle, radius, axis, apex, plane equation and trim bounds of what they build;
+`BSplineApproxInterpTests` measures the fitted curve against the data it was fitted to;
+`CurveConvertToPeriodicTests` and `CurveSplitTests` pin periodicity and the split partition; and
+`VrmlWriterTests` checks that the OBJ and STEP round trips carry the geometry.
+
 ### Probe evidence that could not be re-derived, and the screens that could not see it (#2987, #2967, #2965)
 
 - **`census-766-unlifted-tests.py` screens the merged population instead of assuming it (#2987).**
