@@ -21,6 +21,25 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### Geom_Ellipse and Geom_SphericalSurface property tests pin values derived in closed form (#766)
+
+- `Tests/OCCTAnalysisTests/GeomEllipse3DTests.swift` and
+  `Tests/OCCTAnalysisTests/GeomSphere3DTests.swift` lifted off the `v5.0.0-766-execution`
+  programme (source PRs #2255 and #2214, both open, neither one's work on that branch). All
+  fifteen tests reached their subject through `if let`, so a nil factory left every one of them
+  green with nothing asserted. They now use `try #require`, and every expectation is derived in
+  closed form from the construction inputs rather than copied from what the code returned: the
+  ellipse's eccentricity, focal distance, foci, semi-latus rectum and directrix from its two
+  radii, and the sphere's area, volume and iso-curves from its radius. `ellipseEccentricity`
+  (`0 < e < 1`), `ellipseFocal` and `ellipseParameter` (`> 0`) and `ellipseFoci` (symmetry about
+  the centre alone) each accepted a different, plausible quantity; `ellipseDirectrix1` computed
+  its own expectation through the wrapper pair it was testing; `sphereArea` and `sphereVolume`
+  were tolerant to 0.1 and 1.0; and `sphereUIso` and `sphereVIso` had no assertion at all, their
+  bodies being `let _ = iso.domain`. Both files fall from 4 tests that pin nothing and 11 behind a
+  nil-skip, to zero of each.
+- `Scripts/repro/766-geom-ellipse3d` and `Scripts/repro/766-geomsphere3d`, two ground-truth probes
+  with their transcripts, each recompiled against the pinned kernel and reproducing byte for byte.
+
 ### Analysis extrema and distance tests pin derived answers (#1754, #1756, #1767, #1793, #1794, #1818, #1819, #1916, #1917)
 
 The twelve tests in `IntToolsEdgeEdgeTests`, `ExtremaExtPElCElipsTests`, `ExtremaElCLinCircTests`,
