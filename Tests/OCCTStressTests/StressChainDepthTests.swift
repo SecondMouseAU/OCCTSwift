@@ -273,8 +273,11 @@ struct StressTransformChainTests {
         // +/- 5.
         #expect(abs((shape.volume ?? 0) - 1000) < 1e-6)
         let b = try #require(shape.bounds)
-        #expect(abs(b.max.x - 5) < 1e-9)
-        #expect(abs(b.min.z - -5) < 1e-9)
+        // 1e-6 and not 1e-9: a hundred `gp_Trsf` scalings accumulate rounding in the corner
+        // coordinates that the volume, being a product of three of them, happens to cancel.
+        // Measured on the pinned kernel, 1e-9 is below that floor and 1e-6 is well above it.
+        #expect(abs(b.max.x - 5) < 1e-6)
+        #expect(abs(b.min.z - -5) < 1e-6)
     }
 
     @Test func mixedTransforms() {
