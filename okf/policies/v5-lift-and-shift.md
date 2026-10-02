@@ -187,8 +187,9 @@ paths, this screen clears the candidate.
   why it passed with 18 boolean-only records. **A Red row is not a pass either**, and on this
   population it usually meant the test was never rewritten: of the 339 merged PRs recording one,
   300 left at least one red-rowed test unchanged, and 266 of those tests are still weak on `main`
-  at `9fcf0d08`, in 69 paths (#2970). Treat a certified-Red test exactly as you treat an
-  uncertified one, per
+  at `9fcf0d08`, in 69 paths (#2970, ranked for a re-sweep in #2983). Those are **not** gains and
+  no lift reaches them: the branch holds the same weak copy, so they have to be written rather
+  than taken. Treat a certified-Red test exactly as you treat an uncertified one, per
   [prove-the-test-fails](prove-the-test-fails.md)'s "a red row is a reason to keep going".
 - **Laundering by deletion.** A review round that resolved a parity mismatch by deleting the
   measured side rather than explaining it (#2486, #2902). Compare the `func` name set and the
