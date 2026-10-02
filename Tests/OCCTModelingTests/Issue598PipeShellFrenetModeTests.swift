@@ -33,6 +33,26 @@ struct Issue598PipeShellFrenetModeTests {
         return builder.shape
     }
 
+    /// The self-intersection verdict, read through whichever unwatchdogged bound this platform has.
+    ///
+    /// `hardTimeout:` is what the call site below needs and `hardTimeout:` is `#if !os(WASI)`,
+    /// because its contract needs a second thread to run the check on while the caller waits, and
+    /// the non-threads wasm target has one thread by construction (#2760). The PROPERTY the call
+    /// site depends on is not the deadline: it is that no watchdog exists, since a cooperative
+    /// `timeout:` that aborts an analysis answers `nil` where this test asserts `true` (#1054).
+    /// `hardTimeout:` gets that by passing `0` to the bridge from its background thread, and
+    /// `isSelfIntersecting(timeout: 0)` passes the same `0` to the same bridge function from this
+    /// one. So the wasm spelling keeps the property and loses only the wall-clock escape, which is
+    /// the part that needs the thread. The test measures 0.175 s here, so there is nothing for a
+    /// deadline to save; the whole file used to be excluded from the wasm suites over this (#2928).
+    static func selfIntersects(_ shape: Shape) -> Bool? {
+        #if os(WASI)
+            return shape.isSelfIntersecting(timeout: 0)
+        #else
+            return shape.isSelfIntersecting(hardTimeout: 30)
+        #endif
+    }
+
     /// A planar S-curve: the same interpolating fitter `Wire.bspline` always uses, through
     /// points that reverse from curving one way to curving the other. Measured (not assumed):
     /// sampling `curvature(at:)` every 0.5% of the domain finds the minimum is exactly 0.0 at
@@ -194,12 +214,14 @@ struct Issue598PipeShellFrenetModeTests {
         // from it, and it still returns at the caller's own deadline, so a machine slow enough to
         // matter turns these red rather than hanging the job. The whole test measures 0.175s here
         // (0.196s on a second machine), so 30s is 171x that here and 153x there. An earlier
-        // draft called it three orders of magnitude, which overstates it by about an order.
+        // draft called it three orders of magnitude, which overstates it by about an order. On
+        // wasm32 `Self.selfIntersects` keeps the no-watchdog property and drops the deadline, for
+        // the reason stated at that helper.
         #expect(
-            frenet.isSelfIntersecting(hardTimeout: 30) == true,
+            Self.selfIntersects(frenet) == true,
             ".frenet is expected to self-intersect at this spine's curvature inflection")
         #expect(
-            corrected.isSelfIntersecting(hardTimeout: 30) == false,
+            Self.selfIntersects(corrected) == false,
             ".correctedFrenet must stay valid at the same inflection")
     }
 

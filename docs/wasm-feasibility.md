@@ -860,11 +860,21 @@ JavaScriptKit reactor shape, which is Phase 5.
 ### Phase 4. Test + CI
 
 - ~~A wasm test path (the pinned `wasmkit`, or a headless browser runner) for a **subset** of the
-  per-domain suites.~~ **Done (#2793), and re-pointed at Node by #2894.**
-  `Scripts/run-wasm-tests.sh` builds and runs **13 of the 18** per-domain targets, 5,553 tests, under
-  **Node with the browser's own WASI shim** rather than under `wasmkit`. The subset is larger than
-  this line expected, and it is not the modeling + IO pair it names: `OCCTIOTests` is one of the five
-  targets that cannot run.
+  per-domain suites.~~ **Done (#2793), re-pointed at Node by #2894, and no longer a subset (#2928).**
+  `Scripts/run-wasm-tests.sh` builds and runs **all 18** per-domain targets under **Node with the
+  browser's own WASI shim** rather than under `wasmkit`. This line asked for a subset and a pair of
+  domains; what runs is every domain, including `OCCTIOTests`, which #2793 had excluded whole.
+
+  **The whole-target exclusion list is empty, and #2928 is why.** #2793 excluded five targets as the
+  coarse first increment and recorded a reason for each. Two of those reasons were not true of the
+  platform, measured in `Scripts/repro/2928/`: `NSLock` and `ProcessInfo` compile for
+  `wasm32-unknown-wasip1`, because the wasm SDK ships the whole swift-corelibs-foundation and the
+  library's avoidance of `NSLock` is a module-size constraint (#2761) rather than an availability one;
+  and `OCCTThreadTests` is a suite about SCREW threads, of which six files of 28 are about CPU
+  threads. What genuinely does not exist here is `DispatchQueue`/`DispatchGroup`/`DispatchSemaphore`,
+  `autoreleasepool`, and the host-OS facilities `getrusage`, `statvfs`, `getpwuid`, `gethostname` and
+  `uname`, which between them account for a dozen individual files that `Package.swift` still
+  excludes, each with its reason at the site.
 
   **The runtime is the load-bearing part of that sentence.** The suites ran under `wasmkit` first, and
   #2894 measured one module file byte for byte under both: an OCCT exception thrown several frames

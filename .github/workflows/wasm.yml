@@ -228,10 +228,11 @@ jobs:
           SPIKE_MODULE="${{ steps.spike.outputs.module }}" ./run.sh all
 
       # #2793, and the third of Phase 0's four conditions. The step above runs six calls; this runs
-      # 13 of the 18 per-domain suites, the same assertions the Apple jobs run, under the same
-      # wasmkit. Package.swift documents the five targets that cannot exist on wasip1 and the files
-      # excluded from the 13, and Scripts/wasm-test-known-failures.txt holds every cross-platform
-      # difference found so far, each with the issue that owns it.
+      # EVERY per-domain suite, the same assertions the Apple jobs run. #2928 took the whole-target
+      # exclusion list to empty by measuring what each of its five entries was actually avoiding;
+      # Package.swift documents the individual files still excluded and why each one is, and
+      # Scripts/wasm-test-known-failures.txt holds every cross-platform difference found so far, each
+      # with the issue that owns it.
       #
       # The script fails on a NEW failure and also on a listed failure that starts passing, so the
       # list cannot quietly outlive the defects in it.

@@ -3,9 +3,9 @@
 # Build and run the per-domain test suites for wasm32-unknown-wasip1 (#2793).
 #
 # Phase 0's GO carried four conditions and this closes the third: before this script the only thing
-# that ran for wasm was #2052's six spike calls, which is a smoke test and not coverage. 13 of the
-# 18 domain targets run here; `Package.swift` documents which five cannot exist on the platform and
-# why, and which individual files are excluded from the 13.
+# that ran for wasm was #2052's six spike calls, which is a smoke test and not coverage. EVERY
+# per-domain target runs here, since #2928 took `Package.swift`'s whole-target exclusion list to
+# empty; that file documents the individual files still excluded and why each one is.
 #
 #   ./Scripts/run-wasm-tests.sh                  build, then run every suite
 #   ./Scripts/run-wasm-tests.sh list             print the suites that would run

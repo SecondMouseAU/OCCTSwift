@@ -490,17 +490,25 @@ struct Issue640MathDimensionBounds {
 
     @Test("findAllRoots(samples:) routes through Sampling instead of trapping past Int32")
     func findAllRootsSamplesBounds() {
-        let pastInt32 = Int(Int32.max) + 1
-        #expect(
-            MathSolver.findAllRoots(in: 0...10, samples: pastInt32) { x in (x - 5, 1) }.count == 0)
+        // `Int32.max + 1`, and `nil` where `Int` is 32 bits, which is wasm32: `Int.max` IS
+        // `Int32.max` there, so no `Int` is past it, the case cannot be spelled rather than being
+        // skipped, and spelling it anyway is an overflow trap that would end the whole test module
+        // (#2928). `Int.max` is asserted on both platforms below, so neither is left with nothing.
+        let pastInt32: Int? = Int.bitWidth > 32 ? Int(Int32.max) + 1 : nil
         #expect(MathSolver.findAllRoots(in: 0...10, samples: -1) { x in (x - 5, 1) }.count == 0)
         #expect(MathSolver.findAllRoots(in: 0...10, samples: 0) { x in (x - 5, 1) }.count == 0)
-
         #expect(
-            MathSolver.findAllRoots(
-                in: 0...10, samples: pastInt32, epsX: 1e-8, epsF: 1e-8,
-                epsNul: 1e-8
-            ) { x in (x - 5, 1) }.count == 0)
+            MathSolver.findAllRoots(in: 0...10, samples: Int.max) { x in (x - 5, 1) }.count == 0)
+        if let pastInt32 {
+            #expect(
+                MathSolver.findAllRoots(in: 0...10, samples: pastInt32) { x in (x - 5, 1) }.count
+                    == 0)
+            #expect(
+                MathSolver.findAllRoots(
+                    in: 0...10, samples: pastInt32, epsX: 1e-8, epsF: 1e-8,
+                    epsNul: 1e-8
+                ) { x in (x - 5, 1) }.count == 0)
+        }
         #expect(
             MathSolver.findAllRoots(
                 in: 0...10, samples: -1, epsX: 1e-8, epsF: 1e-8,

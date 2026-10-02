@@ -20,6 +20,13 @@ import simd
 @Suite("Issue #479: arc-length sampling rejects counts it cannot allocate")
 struct Issue479SampleCountBound {
 
+    /// `Int32.max + 1`, a count past the `int32_t` the bridge takes its count in.
+    ///
+    /// `nil` where `Int` is 32 bits, which is `wasm32-unknown-wasip1`: no `Int` is past
+    /// `Int32.max` there, so the case cannot be spelled rather than being skipped, and spelling it
+    /// anyway is an overflow trap that would end the whole test module (#2928).
+    private static let pastInt32: Int? = Int.bitWidth > 32 ? Int(Int32.max) + 1 : nil
+
     // An L-shaped open wire: (0,0,0)→(100,0,0)→(100,100,0). Two edges, total length 200.
     private func lWireCurve() -> WireCurve? {
         guard
@@ -72,10 +79,16 @@ struct Issue479SampleCountBound {
         }
         #expect(wc.points(count: WireCurve.maximumSampleCount + 1).isEmpty)
         #expect(ec.points(count: EdgeCurve.maximumSampleCount + 1).isEmpty)
-        #expect(wc.points(count: Int(Int32.max) + 1).isEmpty)  // overflows the bridge's int32_t
-        #expect(ec.points(count: Int(Int32.max) + 1).isEmpty)
         #expect(wc.points(count: Int.max).isEmpty)  // overflows `count * 3`
         #expect(ec.points(count: Int.max).isEmpty)
+        // A count past the bridge's own int32_t, which exists only where `Int` is 64 bits: on
+        // wasm32 `Int.max` IS `Int32.max`, so the two assertions above are already the largest
+        // count the platform can express and `Int(Int32.max) + 1` would overflow on evaluation
+        // (#2928).
+        if let pastInt32 = Self.pastInt32 {
+            #expect(wc.points(count: pastInt32).isEmpty)
+            #expect(ec.points(count: pastInt32).isEmpty)
+        }
     }
 
     @Test("the ceiling is the documented number, and both adaptors share it")
