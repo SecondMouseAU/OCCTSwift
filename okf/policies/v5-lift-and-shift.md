@@ -194,6 +194,17 @@ third mechanically; `Scripts/check-766-probe-reproduction.py` re-runs a cited tr
 baselines are in [static-gates](static-gates.md)'s terms: none is in `gate-scripts`, because their
 subject is a branch CI never checks out.
 
+**A corrected probe added beside the first is named so that its pair derives.** An evidence-fix
+pass that re-measures something adds `probe-evidence-fix.mm` and `transcript-evidence-fix.txt` to
+the directory and points the record's `source` at the second transcript.
+`check-766-probe-reproduction.py` pairs a probe with its transcript, its `reproduce.json` and its
+argv file by substituting the whole `probe` token, so `probe-evidence-fix.mm` is diffed against
+`transcript-evidence-fix.txt` and declares in `reproduce-evidence-fix.json`; the older word order
+`evidence-fix-probe.mm` / `evidence-fix-transcript.txt` resolves the same way. Any other spelling
+pairs with nothing and is reported `MISSING`, which is deliberate: while the script opened
+`probe.mm` and `transcript.txt` by name, thirty-nine such pairs were re-run by nothing while the
+records citing them read as verified (#2934).
+
 **"Evidence-fix" in a commit message is not itself a tell.** Batch 5 examined a third such pass and
 found it clean: it changed `"equal": false` to `"equal": null` with a written reason, on records
 whose kernel side was already N/A because a null `TopoDS_Shape` has nothing to measure. Read the

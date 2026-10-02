@@ -246,7 +246,6 @@ Tests/OCCTSurfaceTests/SurfaceCurvatureParityTests.swift
 Tests/OCCTSurfaceTests/SurfaceNormalParityTests.swift
 Tests/OCCTSurfaceTests/SurfaceTransformFamilyParityTests.swift
 Tests/OCCTThreadTests/Issue1578ThreadedHoleMinorDiameterTests.swift
-Tests/OCCTThreadTests/Issue222EnvelopeTests.swift
 Tests/OCCTThreadTests/Issue232BoundsTests.swift
 Tests/OCCTThreadTests/Issue254BuildModesTests.swift
 Tests/OCCTThreadTests/Issue298FilletThreadSafetyTests.swift

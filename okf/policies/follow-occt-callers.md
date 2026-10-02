@@ -95,6 +95,40 @@ grep -rn 'ShapeUpgrade_ShapeDivideAngle' Libraries/occt-src/src --include=*.cxx 
 Weigh the count. Five call sites agreeing in the library that runs every STEP import is a contract.
 One call site in one DRAW command is a hint.
 
+## It is not only return values: any design decision follows OCCT's model
+
+The rule above is written about interpreting a result, because that is where it was first paid for.
+It is **not limited to results**. User direction, 2026-10-02: *design fixes should be based on how
+the underlying OCCT handles it.* Whenever the bridge has to decide a question OCCT has already
+decided for itself, OCCT's answer is the one to copy, and that covers:
+
+* **Lifetime and ownership.** Who holds a reference, when it is taken, when it is given back, and
+  whether a raw pointer may outlive the handle it came from. `Standard_Transient`'s reference
+  counting is a model, not an implementation detail, and a bridge that invents a parallel one will
+  disagree with it somewhere.
+* **What counts as a programming error** rather than a runtime condition. If OCCT treats a case as
+  impossible and does not check it, a bridge guard against it is either dead code or evidence that
+  the invariant is not what we think.
+* **Error reporting.** Whether a condition throws, returns a sentinel, or is silently tolerated.
+* **Defaults and tolerances.** `Precision::Confusion()` and friends exist so that every caller
+  agrees; a bridge-chosen epsilon is a divergence even when it looks safer.
+
+The failure this prevents is subtler than a wrong return value. A design argued from what seems
+sensible can be internally coherent, pass its own tests, and still be a second model of something
+OCCT already models, which is a disagreement waiting for an input neither of us thought about.
+
+**The worked example**, from the day this section was written. #2952 guards an unmatched
+`OCCTMessengerRelease` with an address-keyed borrow registry. A review asked what should happen
+when registering an address that is already in the registry. Three answers are available from first
+principles and all three sound reasonable. **None of them is the question.** The question is what
+OCCT's own reference counting guarantees about an address being reused while a borrow is
+outstanding: if a collision cannot happen, it is a programming error and the code should say so; if
+it can, the way OCCT tolerates it is the design. Reasoning about which option feels safest produces
+an answer that is unfalsifiable and probably wrong.
+
+So: before choosing between plausible designs, go and find out whether OCCT has already chosen. The
+next section covers what to do when it has not.
+
 ## When OCCT does not answer
 
 - **No callers at all**, which happens for classes OCCT exposes but does not itself use. Say so in
