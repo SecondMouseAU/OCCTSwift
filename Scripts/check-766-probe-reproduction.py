@@ -32,10 +32,13 @@ emits, and a line with no content left after those. Nothing numeric in the measu
 
 reproduce.json: WHAT THE CAPTURE DID, DECLARED NEXT TO THE PROBE
 ----------------------------------------------------------------
-Thirteen transcripts did not reproduce and **none of the thirteen was a kernel divergence**
-(PR #2823). Each was a way in which "transcript.txt is one run of probe.mm from its own directory with
-no arguments" was not true of the capture, so each is declared in an optional `reproduce.json`
-beside the probe rather than normalised away for every pair. Every key takes a required `reason`, and
+In the sweep this file came out of (PR #2823), thirteen transcripts did not reproduce and **none
+of them was a kernel divergence**. That thirteen is the count that sweep adjudicated and not the
+current population, which the run derives and prints in its banner; a count restated in prose has
+no update path, so no other one is given here. Each of the thirteen was a way in which
+"transcript.txt is one run of probe.mm from its own directory with no arguments" was not true of
+the capture, so each is declared in an optional `reproduce.json` beside the probe rather than
+normalised away for every pair. Every key takes a required `reason`, and
 a key whose pattern matches nothing is DECL-UNUSED rather than ignored.
 
 **Each key takes one of two shapes, and which one is decided by its consumer**: `cwd`, `argv` and
@@ -44,7 +47,7 @@ against lines and takes `{"pattern": <regex>, "reason": ...}`, as a list for the
 several. A declaration that offers the other shape is DECL-INVALID rather than accepted, because the
 validator used to take either and each consumer read exactly one: a `pattern`-only `argv` raised
 KeyError, and a `pattern`-only `cwd` ran the probe in the wrong directory and said nothing, which is
-the mistake two of the thirteen transcripts below were captured with (PR #2822's review).
+the mistake two of that sweep's thirteen transcripts were captured with (PR #2822's review).
 
     cwd             "repo-root", for a probe whose fixture path is relative to the repo root
                     (`Tests/OCCTStressTests/Fixtures/...`). Running it in its own directory turned
@@ -91,7 +94,7 @@ links. `--require-pinned-asset` refuses to report at all unless identity is prov
 NOT A GATE, AND NOT FOR `gate-scripts`
 --------------------------------------
 It reads a 1.3 GB xcframework that CI does not check out and compiles one translation unit per pair
-(160 of them over 120 directories, derived by the run and printed in its banner), which
+(the count is derived by the run and printed in its banner, never restated here), which
 is the release-check shape `okf/policies/static-gates.md` describes: a question about something the
 repo points at rather than something it contains. `--require-asset` makes a run that examined
 nothing exit 2 instead of reporting clean (#2098's mode). It exits 1 when any probe fails to
@@ -212,8 +215,8 @@ DECL_FILE = "reproduce.json"
 # The validator accepted `value` OR `pattern` for every key in the last two groups while the
 # consumers read exactly one of them, which is PR #2822's CRITICAL: a `pattern`-only `argv` reached
 # `decl["argv"]["value"]` and raised KeyError, and a `pattern`-only `cwd` read as None and ran the
-# probe in the WRONG DIRECTORY, silently, which is the failure two of the thirteen transcripts this
-# script exists to adjudicate were produced by. A validator that admits a shape no consumer reads is
+# probe in the WRONG DIRECTORY, silently, which is the failure two of PR #2823's thirteen
+# transcripts were produced by. A validator that admits a shape no consumer reads is
 # not a laxer validator, it is a validator for a different file.
 PATTERN_KEYS = ("rerun_drop", "volatile", "transcript_only")
 REGEX_KEYS = ("rerun_keep", "transcript_tail_from")
