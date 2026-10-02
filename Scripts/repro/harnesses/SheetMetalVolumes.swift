@@ -155,7 +155,7 @@ enum SheetMetalVolumes {
                 overlap: 0.0,
                 terms: [
                     .concave(radius: 1.5, length: 28),
-                    .surplus(radius: 1.5, length: 65 - 28),
+                    .surplus(radius: 1.5, length: 65.0 - 28.0),
                 ],
                 pinned: 8815.654315677795,
                 build: {
@@ -526,7 +526,7 @@ enum SheetMetalVolumes {
             bends: [SheetMetal.Bend(from: "base", to: "vertical", radius: 1.5)]),
             let cv = control.volume
         {
-            let cIdeal = 28 * 28 * 3 + 28 * 40 * 3 + 1.5 * 1.5 * quarter * 28
+            let cIdeal: Double = 28.0 * 28.0 * 3.0 + 28.0 * 40.0 * 3.0 + 1.5 * 1.5 * quarter * 28.0
             print(
                 "    measured " + fmt(cv) + "   ideal " + fmt(cIdeal) + "   delta "
                     + fmt6(cv - cIdeal))
