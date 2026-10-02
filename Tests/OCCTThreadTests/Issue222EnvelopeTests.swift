@@ -92,8 +92,11 @@ struct Issue222Envelope {
         #expect(mesh <= 6.0 * 1.005, "mesh crest \(mesh) > nominal 6.0")
         #expect(mesh >= 6.0 * 0.995, "mesh crest \(mesh) < nominal 6.0")
 
+        let v0 = try #require(rod.volume, "stock volume was nil")
         let v1 = try #require(t.volume, "threaded volume was nil")
+        #expect(abs(v0 - 4523.89342) < 1e-4, "stock volume \(v0) is not the measured 4523.89342")
         #expect(abs(v1 - 3521.6745) < 1e-4, "threaded volume \(v1) is not the measured 3521.6745")
+        #expect(v1 < v0, "no material removed, not a real thread")
     }
 
     @Test("default `.auto` still builds a valid single-start rod (no regression)")

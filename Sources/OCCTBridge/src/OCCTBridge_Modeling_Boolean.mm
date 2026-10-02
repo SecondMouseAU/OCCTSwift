@@ -2920,10 +2920,10 @@ bool OCCTIntToolsBeanFaceIntersect(OCCTShapeRef _Nonnull edge,
       return false;
 
     // #2943 / #726: myMinSqDistance is initialised to RealLast() and left there whenever nothing
-    // measured a distance, which is every run measured against the pinned asset, including the
-    // ones that find a range. Handing 1.797e308 back as a measurement is the thing the unmeasured
-    // -values census exists to stop, so report "not measured" instead, which is exactly the test
-    // IntTools_EdgeFace.cxx:567-570 makes before it takes the square root.
+    // measured a distance, which is every run measured against the pinned OCCT kernel, including
+    // the ones that find a range. Handing 1.797e308 back as a measurement is the thing the
+    // unmeasured -values census exists to stop, so report "not measured" instead, which is exactly
+    // the test IntTools_EdgeFace.cxx:567-570 makes before it takes the square root.
     const double minSq = bfi.MinimalSquareDistance();
     if (minSq < RealLast())
     {
