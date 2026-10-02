@@ -1827,7 +1827,7 @@ public static func lineToLine(
 
 - **Returns:** `isParallel` is `true` when the lines are parallel, and the single result then
   carries the real square distance with both witness points `nil` and its own `isParallel` set
-  (#2993); otherwise `results` holds 1–2 extrema with points.
+  (#2993); otherwise `results` holds one or two extrema with points.
 - **OCCT:** `Extrema_ExtElC` (line–line).
 - **Example:**
   ```swift
