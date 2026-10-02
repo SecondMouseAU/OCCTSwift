@@ -10,6 +10,9 @@
 
 // MARK: - Global Serial Lock for Thread Safety
 #include <mutex>
+#include <unordered_set>
+
+#include <Standard_ProgramError.hxx>
 
 // Non-static (declared in OCCTBridge_Internal.h) so per-area TUs share the
 // same underlying mutex via the linker.
@@ -27,6 +30,79 @@ void OCCTSerialLockAcquire(void)
 void OCCTSerialLockRelease(void)
 {
   occtGlobalMutex().unlock();
+}
+
+// MARK: - #2952: borrow registry for bridge-owned Standard_Transient objects
+//
+// See OCCTBridge_Internal.h for what this is for and why the alternative is a use-after-free and
+// a double free in the same call.
+
+namespace
+{
+
+std::mutex& occtBorrowMutex()
+{
+  static std::mutex aMutex;
+  return aMutex;
+}
+
+std::unordered_set<const void*>& occtBorrowSet()
+{
+  static std::unordered_set<const void*> aLive;
+  return aLive;
+}
+
+std::atomic<int32_t>& occtRefusedReleaseCount()
+{
+  static std::atomic<int32_t> aCount{0};
+  return aCount;
+}
+
+} // namespace
+
+void occtBorrowRegister(const void* theObject)
+{
+  if (theObject == nullptr)
+    return;
+
+  bool inserted = false;
+  {
+    std::lock_guard<std::mutex> aLock(occtBorrowMutex());
+    inserted = occtBorrowSet().insert(theObject).second;
+  }
+
+  if (!inserted)
+  {
+    // The address of a LIVE borrowed object cannot already be registered: see
+    // OCCTBridge_Internal.h for the two OCCT sources that settle it. Reaching here means the
+    // borrow protocol was broken somewhere else, and OCCT's own answer to a broken reference
+    // count is Standard_Transient::This() (Standard_Transient.cxx:68-76), which throws
+    // Standard_ProgramError rather than tolerating it. Caught by the calling create's
+    // catch (...), recorded as an OCCTFailure with this message, and reported as a null handle.
+    throw Standard_ProgramError(
+      "OCCTSwift borrow registry: an address handed out by this bridge was never given back "
+      "before being handed out again");
+  }
+}
+
+bool occtBorrowGiveBack(const void* theObject)
+{
+  {
+    std::lock_guard<std::mutex> aLock(occtBorrowMutex());
+    if (theObject != nullptr && occtBorrowSet().erase(theObject) > 0)
+      return true;
+  }
+
+  // Null, double release, or a pointer this bridge never handed out. The erase above is the whole
+  // race: two concurrent releases of the same object, exactly one wins it, so the loser lands
+  // here rather than deleting a second time.
+  occtRefusedReleaseCount().fetch_add(1, std::memory_order_relaxed);
+  return false;
+}
+
+int32_t OCCTBridgeRefusedReleaseCount(void)
+{
+  return occtRefusedReleaseCount().load(std::memory_order_relaxed);
 }
 
 // Install OCCT's signal handlers once (issue #175). OSD::SetSignal(false) installs
