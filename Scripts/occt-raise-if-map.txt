@@ -58,7 +58,7 @@
 # the stray check in docs/guides/building-occt.md's "Shipping a rebuild" answers it.
 #
 # occt-version: 8.0.1
-# derived against: 32 carried patch(es) in Scripts/patches/, every one of them verified
+# derived against: 35 carried patch(es) in Scripts/patches/, every one of them verified
 # derived against: applied in the tree the rows below were derived from.
 # patch: 0010-Intf_Interference-O1-tangent-zone-checkpoint-breaker-319 79fe529c26ef
 # patch: 0011-XCAFDoc_ShapeTool-AutoNamingScope-341 76898e2438a2
@@ -92,6 +92,9 @@
 # patch: 0042-ShapeAnalysis-GetFaceUVBounds-null-surface-2773 1cf9dbde5fce
 # patch: 0043-BRepGProp_Gauss-keeps-the-by-plane-mass-2827 5db36c8e8661
 # patch: 0044-Extrema-ExtSS-ExtCS-Points-bound-against-point-sequence-2840 0b0b4a459980
+# patch: 0050-GProp_SelGProps-cone-lateral-area-drops-cos-semiangle-2992 faba6d52df0b
+# patch: 0051-GProp_VelGProps-cone-volume-is-the-frustum-2992 e6459f8745f2
+# patch: 0052-Geom_BezierSurface-rational-axis-prose-matches-example-2991 760bc76effae
 #
 # totals: inline-raise       462 site(s) in  104 class(es)
 # totals: outofline-raise    828 site(s) in  284 class(es)

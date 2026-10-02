@@ -47,7 +47,7 @@ let useLocalXCFramework: Bool = {
         atPath: occtPackageDir + "/Libraries/OCCT.xcframework/Info.plist")
 }()
 
-// OCCT V8.0.1 plus the thirty-two carried patches are documented in Scripts/patches/README.md
+// OCCT V8.0.1 plus the thirty-five carried patches are documented in Scripts/patches/README.md
 // (patch list, verification status, and CI coverage gaps for maintainers).
 let occtTarget: Target =
     isWASI
@@ -275,9 +275,9 @@ let occtTarget: Target =
         // wrong: InitializeMissingParameters is also the REPAIR that re-sets DirectFaces on an actor a
         // STEPCAFControl_Reader has left with empty OperationsFlags, which is #280's exact mechanism.
         // kernel-integration.yml caught it on main. See Scripts/patches/README.md's retired 0035 entry.
-        // Scripts/patches/ holds thirty-two patches and the pinned asset holds thirty-one of them,
-        // enumerated above. `ls Scripts/patches/*.patch | wc -l` answers 32 against a list of 31.
-        // The pinned asset lacks one of them, and this is the written divergence:
+        // Scripts/patches/ holds thirty-five patches and the pinned asset holds thirty-one of them,
+        // enumerated above. `ls Scripts/patches/*.patch | wc -l` answers 35 against a list of 31.
+        // The pinned asset lacks four of them, and these are the written divergences:
         //
         //   0044  Extrema_ExtSS::Points / Extrema_ExtCS::Points bound against the point       #2840
         //         sequence rather than against NbExt(), which counts mySqDist and so counts
@@ -298,6 +298,26 @@ let occtTarget: Target =
         //         and the gate is redundant rather than wrong, it still covers anyone pinning an
         //         older asset, and it is also the deliberate API decision that a parallel pair is
         //         a refusal rather than a distance with no points (a SemVer change, still open).
+        //
+        //   0050  GProp_SelGProps::Perform(gp_Cone) drops the spurious cos(semiAngle) from the      #2992
+        //         lateral area, and
+        //   0051  GProp_VelGProps::Perform(gp_Cone) returns the frustum volume instead of a         #2992
+        //         quantity carrying a spurious sin(a), which collapsed to zero at the cylinder
+        //         limit the same class answers exactly. Carried 2026-10-02 and NOT built here:
+        //         the user's own rebuild takes them the same night. UNLIKE 0044, both leave a
+        //         value a CALLER READS wrong on the pinned asset, through
+        //         GeometryProperties.coneSurfaceArea and .coneVolume, which is 0043's situation
+        //         rather than 0044's, and is why neither is held for 8.0.2. No bridge-side
+        //         mitigation was added, deliberately: correcting the factor in the bridge would
+        //         have to be retired at the repin and would double-correct a patched kernel in
+        //         the window between. Both derivations were re-checked against the closed form
+        //         and the cylinder limit and measured by override-link in Scripts/repro/2992/.
+        //         The two classes have NO caller anywhere in Libraries/occt-src, which is why
+        //         those two arbiters are the ones used; see okf/policies/follow-occt-callers.md.
+        //   0052  Geom_BezierSurface.hxx's IsURational/IsVRational prose corrected to match its    #2991
+        //         own example matrix and the implementation. A header comment, so it changes no
+        //         binary and leaves nothing exposed; it is listed here only because it is carried
+        //         and unpinned like the three above.
         //
         // 0043 (#2827, BRepGProp_Gauss keeps the by-plane mass) was the one outstanding before it,
         // and it went the other way, which is the comparison worth keeping beside 0044: carried
