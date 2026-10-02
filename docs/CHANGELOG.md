@@ -21,6 +21,19 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### Tooling: the #766 probe reproduction check reaches 41 pairs it had never compiled (#2934)
+
+`Scripts/check-766-probe-reproduction.py` took the directory as its unit and opened `probe.mm` and
+`transcript.txt` by name, so a second, corrected probe added beside the first was neither `MISSING`
+nor a `DIFF`: it was absent from the run, while the parity records whose `source` named
+`transcript-evidence-fix.txt` read as verified. The unit is now a `(probe, transcript)` pair,
+derived by substituting the whole `probe` token, which reaches `probe-evidence-fix.mm`, the older
+`evidence-fix-probe.mm` word order, a probe named for its subject such as `race.mm`, and a
+transcript with no probe at all. Declarations are named per pair, so one pair's
+`status: not-reproducible` can no longer excuse another from being compiled. Run against the pinned
+`v4.0.0-kernel.3` asset, 37 of the 41 newly reached pairs reproduce byte for byte and the other
+four are declared or filed; none is a kernel divergence.
+
 ### `Shape.beanFaceIntersect` searched an empty parameter interval, and four suites of tests could not have noticed (#2935, #2938, #2941, #2943)
 
 `IntTools_BeanFaceIntersector`'s `(edge, face)` constructor sets the surface parameters and leaves
