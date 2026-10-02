@@ -252,6 +252,11 @@ address-keyed registry (`occtBorrowRegister` / `occtBorrowGiveBack` in `OCCTBrid
 before touching the object. A null, a second release of the same pointer, or a pointer this bridge
 never produced is declined and counted by `OCCTBridgeRefusedReleaseCount`.
 
+Registration is a post-condition rather than a query, which is why `occtBorrowRegister` returns
+nothing: when it returns, the address is registered. The registry is a set keyed on the address, so
+registering one twice is idempotent, and a create has no outcome to act on. The reasoning, and the
+two answers that were weighed and rejected, are at the declaration.
+
 `_Nonnull` on the declaration is not what stops the null: it is a promise the compiler does not
 enforce, and section 6 above measures that a consumer can call these entry points directly.
 
