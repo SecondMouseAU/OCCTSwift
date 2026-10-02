@@ -1,0 +1,16 @@
+shapeBoundingBox (Add): IsVoid=0 min=(-5.0000001000000003, -10.000000099999999, -15.000000099999999) max=(5.0000001000000003, 10.000000099999999, 15.000000099999999)
+shapeBoundingBoxOptimal (AddOptimal, useShapeTolerance=false): IsVoid=0 min=(-5, -10, -15) max=(5, 10, 15)
+shapeBoundingBoxOptimalWithTolerance (AddOptimal, useShapeTolerance=true): IsVoid=0 min=(-5.0000001000000003, -10.000000099999999, -15.000000099999999) max=(5.0000001000000003, 10.000000099999999, 15.000000099999999)
+orientedBoundingBoxDetailed (AddOBB, optimal=false): center=(0, 0, 0) half=(5.0000001000000003, 10.000000099999999, 15.000000099999999)
+orientedBoundingBoxDetailed (AddOBB, optimal=false): xDir=(-1, 0, 0) yDir=(0, 1, 0) zDir=(-0, 0, -1)
+orientedBoundingBoxDetailedOptimal sphere r=5 (AddOBB, optimal=true): center=(3.1302349591409014e-17, -1.1127863561900768e-17, -1.49213974509621e-16) half=(5.0000001000000003, 5.0000001000000003, 5.0000001000000003)
+orientedBoundingBoxDetailedOptimal sphere r=5 (AddOBB, optimal=true): xDir=(0.032846209335933144, 0.99946041769159633, 2.7571660549240028e-18) yDir=(0.99946041769159633, -0.032846209335933144, 1.6057330641452684e-16) zDir=(1.6057722635259762e-16, -2.5185460993550496e-18, -1)
+orientedBoundingBoxDetailedOptimal sphere r=5 (AddOBB, optimal=false): center=(3.1302349591409014e-17, -1.1127863561900768e-17, -1.49213974509621e-16) half=(5.0000001000000003, 5.0000001000000003, 5.0000001000000003)
+orientedBoundingBoxDetailedOptimal sphere r=5 (AddOBB, optimal=false): xDir=(0.032846209335933144, 0.99946041769159633, 2.7571660549240028e-18) yDir=(0.99946041769159633, -0.032846209335933144, 1.6057330641452684e-16) zDir=(1.6057722635259762e-16, -2.5185460993550496e-18, -1)
+orientedBoundingBoxDetailedMatchesPacked rotated box (AddOBB, optimal=false): center=(-0, 0, 0) half=(5.0000001000000012, 10.000000099999999, 15.000000099999999)
+orientedBoundingBoxDetailedMatchesPacked rotated box (AddOBB, optimal=false): xDir=(-0.86602540378443871, -0.49999999999999989, 0) yDir=(-0.49999999999999989, 0.86602540378443871, 0) zDir=(-0, -0, -1)
+boundingBoxSphere r=10 (Add): IsVoid=0 min=(-10.000000099999999, -10.000000099999999, -10.000000099999999) max=(10.000000099999999, 10.000000099999999, 10.000000099999999)
+voidShape: Common IsDone=1
+voidShape (Add): IsVoid=1
+pointVertexAtOrigin (AddOptimal): IsVoid=0 min=(0, 0, 0) max=(0, 0, 0)
+pointVertexAtOrigin (Add): IsVoid=0 min=(-9.9999999999999995e-08, -9.9999999999999995e-08, -9.9999999999999995e-08) max=(9.9999999999999995e-08, 9.9999999999999995e-08, 9.9999999999999995e-08)
