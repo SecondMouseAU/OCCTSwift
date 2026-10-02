@@ -2887,22 +2887,49 @@ bool OCCTIntToolsBeanFaceIntersect(OCCTShapeRef _Nonnull edge,
                                    OCCTShapeRef _Nonnull face,
                                    OCCTParameterRange* _Nullable* _Nonnull outRanges,
                                    int32_t* _Nonnull outCount,
-                                   double* _Nonnull outMinSquareDist)
+                                   double* _Nonnull outMinSquareDist,
+                                   bool* _Nonnull outHasMinSquareDist)
 {
-  *outRanges        = nullptr;
-  *outCount         = 0;
-  *outMinSquareDist = 0.0;
+  *outRanges           = nullptr;
+  *outCount            = 0;
+  *outMinSquareDist    = 0.0;
+  *outHasMinSquareDist = false;
+  if (!occtShapeIsType(edge, TopAbs_EDGE) || !occtShapeIsType(face, TopAbs_FACE))
+  {
+    return false;
+  }
   try
   {
     const TopoDS_Edge& e = TopoDS::Edge(edge->shape);
     const TopoDS_Face& f = TopoDS::Face(face->shape);
 
     IntTools_BeanFaceIntersector bfi(e, f);
+    // #2943: a "bean" is a *part* of an edge, so the (edge, face) constructor leaves the curve
+    // interval to the caller: Init() sets only the surface parameters and myFirstParameter /
+    // myLastParameter stay at 0. Perform() then searches [0, 0] and reports it, which is what
+    // produced the zero-length range this bridge used to hand back for an edge lying in the face.
+    // Both of OCCT's own callers repair it the same way, and the first does it on this very
+    // constructor: BRepFill_TrimShellCorner.cxx:2580-2582 reads BRep_Tool::Range into
+    // SetBeanParameters, and IntTools_EdgeFace.cxx:566 passes its own range. Same defect and same
+    // fix as #1631 one screen up in this file, which repaired IntTools_EdgeFace::myRange.
+    double first = 0.0, last = 0.0;
+    BRep_Tool::Range(e, first, last);
+    bfi.SetBeanParameters(first, last);
     bfi.Perform();
     if (!bfi.IsDone())
       return false;
 
-    *outMinSquareDist = bfi.MinimalSquareDistance();
+    // #2943 / #726: myMinSqDistance is initialised to RealLast() and left there whenever nothing
+    // measured a distance, which is every run measured against the pinned OCCT kernel, including
+    // the ones that find a range. Handing 1.797e308 back as a measurement is the thing the
+    // unmeasured -values census exists to stop, so report "not measured" instead, which is exactly
+    // the test IntTools_EdgeFace.cxx:567-570 makes before it takes the square root.
+    const double minSq = bfi.MinimalSquareDistance();
+    if (minSq < RealLast())
+    {
+      *outMinSquareDist    = minSq;
+      *outHasMinSquareDist = true;
+    }
 
     const NCollection_Sequence<IntTools_Range>& ranges = bfi.Result();
     int32_t                                     n      = ranges.Length();
