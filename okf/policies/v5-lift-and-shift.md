@@ -82,6 +82,8 @@ Every count the census prints is a **lower** bound. Two tests that both tier cle
 differ, and #2937's own `islandsCutHoles` is one: the branch pins two exact half-spans `main` does
 not, and the detector scores both sides the same. It was a lower bound for a second reason until
 #2949, which is why the figures on this page carry a date and a commit: re-measure, never quote.
+A third reason is open: the detector reads a `guard` only when its `else` is on the same line, so
+the multi-line form is invisible to it, and 284 tests on `main` sit in one (#2982).
 
 ## What the first two content batches measured
 
