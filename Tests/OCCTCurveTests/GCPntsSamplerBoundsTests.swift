@@ -6,8 +6,10 @@ import simd
 
 // MARK: - #501: GCPnts samplers can compute more points than were requested
 
-/// An ellipse whose arc-length walk lands short of the end by more than the sampler will accept,
-/// so `GCPnts_UniformAbscissa` takes one extra step and snaps it to the end parameter. That
+/// An ellipse the sampler overshoots: its arc-length walk lands short of the end.
+///
+/// It is short by more than the sampler will accept, so `GCPnts_UniformAbscissa` takes one extra
+/// step and snaps it to the end parameter. That
 /// surplus point used to be written past the end of the caller's buffer; clamping it away without
 /// keeping the sampler's last point would instead leave the distribution stopping short of the
 /// curve.
@@ -25,8 +27,10 @@ private func overshootingEllipse() -> Curve3D? {
     Curve3D.ellipse(center: .zero, normal: SIMD3(0, 0, 1), majorRadius: 1e8, minorRadius: 0.1)
 }
 
-/// The counts that still overshoot on that ellipse, eight of the first 59, measured on
-/// `v4.0.0-kernel.3`. Six of the eight, because each call costs about 1.4 s on this curve.
+/// The requested counts that still overshoot on that ellipse.
+///
+/// Eight of the first 59, measured on `v4.0.0-kernel.3`; six of the eight are listed, because
+/// each call costs about 1.4 s on this curve.
 private let overshootingCounts = [24, 34, 35, 41, 47, 51]
 
 /// #501's original fixture, as a control: the same counts on a curve the pinned kernel samples
@@ -88,8 +92,9 @@ struct GCPntsSamplerBoundsTests {
         }
     }
 
-    /// The control for the three cases above: #501's own ellipse, which the pinned kernel samples
-    /// exactly, at the same counts. Everything the overshooting fixture asserts has to hold here
+    /// The control for the three cases above.
+    ///
+    /// #501's own ellipse, which the pinned kernel samples exactly, at the same counts. Everything the overshooting fixture asserts has to hold here
     /// too, and does so without the clamp or the last-slot rule doing any work (#2977).
     @Test("A curve the sampler gets exactly still clamps and ends on the curve")
     func settledEllipseBehavesIdentically() throws {
@@ -106,6 +111,8 @@ struct GCPntsSamplerBoundsTests {
         }
     }
 
+    /// Fewer than two points is refused by the bridge, because the kernel will not refuse it.
+    ///
     /// OCCT documents `nbPoints >= 2` for both samplers but enforces it with a `Raise_if`, which
     /// the Release kernel compiles out (No_Exception, #487). Below 2 the algorithms do not fail
     /// cleanly: `GCPnts_QuasiUniformAbscissa(bezier_or_bspline, 0)` writes element 1 of an

@@ -88,7 +88,13 @@ private func rect(_ w: Double, _ h: Double) -> [SIMD2<Double>] {
 enum SheetMetalVolumes {
 
     fileprivate static func fixtures() -> [Fixture] {
-        [
+        // Built element by element rather than as one array literal. Ten `Fixture`s whose members
+        // are integer-literal arithmetic (`65 * 28 * 3 + 65 * 40 * 3`) give the solver a single
+        // constraint system over the whole literal and it gives up: CI reported "unable to
+        // type-check this expression in reasonable time" at this line. Appending keeps each
+        // system to one element, and the build goes from a hard failure to 39 seconds.
+        var all: [Fixture] = []
+        all += [
             // --- full-seam concave, the two the issue already derives ---
             Fixture(
                 name: "SheetMetalTests.lBracket",
@@ -362,6 +368,7 @@ enum SheetMetalVolumes {
                 },
                 sharpCornerProbe: nil),
         ]
+        return all
     }
 
     static func run() {
