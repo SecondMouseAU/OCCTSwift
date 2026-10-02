@@ -27,10 +27,10 @@ import Foundation
 import OCCTSwift
 
 // Everything here is `fileprivate`: the harnesses directory is one compilation target.
-fileprivate let quarter = 1.0 - Double.pi / 4.0
+private let quarter = 1.0 - Double.pi / 4.0
 
 /// One bend's contribution, in the form the construction is supposed to produce.
-fileprivate enum BendTerm {
+private enum BendTerm {
     /// A concave bend: the fillet fills the inside corner, adding `radius^2 (1 - pi/4)` per unit.
     case concave(radius: Double, length: Double)
     /// A convex bend: a quarter-disc prism of radius `thickness`, adding `(pi/4) t^2` per unit.
@@ -55,7 +55,7 @@ fileprivate enum BendTerm {
     }
 }
 
-fileprivate struct Fixture {
+private struct Fixture {
     let name: String
     /// Sum of each flange's own extruded volume, before any body-body overlap is deducted.
     let flangeSum: Double
@@ -73,7 +73,7 @@ fileprivate struct Fixture {
     var leaked: Double { ideal + terms.reduce(0) { $0 + $1.leakedContribution } }
 }
 
-fileprivate func flange(
+private func flange(
     _ id: String, _ profile: [SIMD2<Double>], _ origin: SIMD3<Double>,
     normal: SIMD3<Double>, u: SIMD3<Double>, v: SIMD3<Double>? = nil
 ) -> SheetMetal.Flange {
@@ -81,7 +81,7 @@ fileprivate func flange(
         id: id, profile: profile, origin: origin, normal: normal, uAxis: u, vAxis: v)
 }
 
-fileprivate func rect(_ w: Double, _ h: Double) -> [SIMD2<Double>] {
+private func rect(_ w: Double, _ h: Double) -> [SIMD2<Double>] {
     [SIMD2(0, 0), SIMD2(w, 0), SIMD2(w, h), SIMD2(0, h)]
 }
 
@@ -466,7 +466,8 @@ enum SheetMetalVolumes {
         }
 
         print("")
-        print("Fillet run-out at the step boundary (narrowUprightStepSucceeds, r = 1.5, step x = 28)")
+        print(
+            "Fillet run-out at the step boundary (narrowUprightStepSucceeds, r = 1.5, step x = 28)")
         print(String(repeating: "-", count: 108))
         // The void the bend fills is the quadrant y < 28, z > 3 (the upright runs the full height,
         // so the material is y > 28 everywhere plus the base at y < 28, z < 3). The ideal fillet is
@@ -475,11 +476,14 @@ enum SheetMetalVolumes {
         // distances from the step, so a taper or a spill shows up as a classification that changes
         // with x rather than with the radius.
         if let shape = try? fixtures()[2].build() {
-            print("    x        (27.7, 3.3) d=1.697 > r, want inside   (27.5, 3.5) d=1.414 < r, want outside")
+            print(
+                "    x        (27.7, 3.3) d=1.697 > r, want inside   (27.5, 3.5) d=1.414 < r, want outside"
+            )
             for x in [1.0, 14.0, 26.0, 27.5, 27.9, 27.99, 28.01, 28.1, 28.5, 30.0] {
                 let filled = shape.classifyPoint(SIMD3(x, 27.7, 3.3))
                 let hollow = shape.classifyPoint(SIMD3(x, 27.5, 3.5))
-                print("    " + pad(String(format: "%.2f", x), 9) + pad("\(filled)", 44) + "\(hollow)")
+                print(
+                    "    " + pad(String(format: "%.2f", x), 9) + pad("\(filled)", 44) + "\(hollow)")
             }
         }
 
@@ -503,7 +507,9 @@ enum SheetMetalVolumes {
             let cv = control.volume
         {
             let cIdeal = 28 * 28 * 3 + 28 * 40 * 3 + 1.5 * 1.5 * quarter * 28
-            print("    measured " + fmt(cv) + "   ideal " + fmt(cIdeal) + "   delta " + fmt6(cv - cIdeal))
+            print(
+                "    measured " + fmt(cv) + "   ideal " + fmt(cIdeal) + "   delta "
+                    + fmt6(cv - cIdeal))
         } else {
             print("    control build FAILED")
         }
