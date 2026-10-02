@@ -142,10 +142,12 @@ has decided not to take.
 **3. What crosses and what stays.** Tests cross. `Scripts/repro/766-*` probes and transcripts
 cross, with the probe compiled and its transcript committed. The
 `okf/references/766-execution/` and `okf/references/766-test-validity/` records **do not**, per
-[#2854](https://github.com/SecondMouseAU/OCCTSwift/issues/2854): `main` has no such tree,
-`Scripts/check-test-validity.py`'s `run_sample_red_green` and `run_sample_kernel_parity` are each a
-bare `return True`, no CI job runs that script on either branch, and #2198 measured that 72 percent
-of the existing evidence names a bridge function that does not exist. The per-test verdicts go in
+[#2854](https://github.com/SecondMouseAU/OCCTSwift/issues/2854): `main` has no such tree, nothing
+validates the records, and #2198 measured that 72 percent of the existing evidence names a bridge
+function that does not exist. `Scripts/check-test-validity.py` was retired from `main` when #2198
+closed; the branch keeps its own copy, whose `run_sample_red_green` and `run_sample_kernel_parity`
+are each a bare `return True` and whose two `766-execution.yml` invocations pass no `--strict`, so
+neither half of it can fail. The per-test verdicts go in
 the lift PR body instead, where a closed PR keeps them at its URL. Grep every lifted file for
 `okf/references/766-` and for paths `main` lacks before pushing.
 
