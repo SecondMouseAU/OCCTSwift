@@ -1,0 +1,10 @@
+wire null=0
+splitByWireOnFace face 0: faces=6 valid=1 directLeft=0
+splitByWireOnFace face 1: faces=6 valid=1 directLeft=0
+splitByWireOnFace face 2: faces=6 valid=1 directLeft=0
+splitByWireOnFace face 3: faces=6 valid=1 directLeft=0
+splitByWireOnFace face 4: faces=6 valid=1 directLeft=0
+splitByWireOnFace face 5: faces=7 valid=1 directLeft=1
+splitByWireOnFace: original=6 best=7
+autoSplit: done=1 faces=6 valid=1
+autoSplit (edge on z=5 face): done=1 faces=7 valid=1
