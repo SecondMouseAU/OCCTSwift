@@ -12,8 +12,10 @@ struct BRepGraphHistoryReadbackTests {
         BRepGraph.NodeRef(kind: kind, index: index)
     }
 
-    /// A box graph with history enabled and the log empty. The recorded nodes are inventions on
-    /// purpose: the log stores whatever it is given and never checks it against the topology.
+    /// A box graph with history enabled and the log empty.
+    ///
+    /// The recorded nodes are inventions on purpose: the log stores whatever it is given and never
+    /// checks it against the topology.
     private func makeGraph() throws -> BRepGraph {
         let box = try #require(Shape.box(width: 10, height: 10, depth: 10), "box")
         let graph = try #require(BRepGraph(shape: box), "graph of a box")

@@ -86,7 +86,8 @@ struct TopologyRefResolverTests {
 
         let past = TopologyRef.createdBy(operationName: "Extrude_1", kind: .face, occurrence: 3)
         #expect(
-            graph.resolve(past) == .failure(.occurrenceOutOfRange(past, available: 3, requested: 3)))
+            graph.resolve(past) == .failure(.occurrenceOutOfRange(past, available: 3, requested: 3))
+        )
     }
 
     @Test("createdBy with unknown operation fails with operationNotFound")
@@ -114,7 +115,8 @@ struct TopologyRefResolverTests {
         #expect(first == .success(only), "occurrence 0 is the control")
         // One past the end, well past it, and negative: none is clamped into range.
         for occurrence in [1, 5, -1] {
-            let ref = TopologyRef.createdBy(operationName: "Op", kind: .face, occurrence: occurrence)
+            let ref = TopologyRef.createdBy(
+                operationName: "Op", kind: .face, occurrence: occurrence)
             #expect(
                 graph.resolve(ref)
                     == .failure(.occurrenceOutOfRange(ref, available: 1, requested: occurrence)),
@@ -155,7 +157,8 @@ struct TopologyRefResolverTests {
         #expect(leaves == [.success(b), .success(refined)])
         let third = TopologyRef.createdBy(operationName: "Born", kind: .face, leafOccurrence: 2)
         #expect(
-            graph.resolve(third) == .failure(.occurrenceOutOfRange(third, available: 2, requested: 2)))
+            graph.resolve(third)
+                == .failure(.occurrenceOutOfRange(third, available: 2, requested: 2)))
         let bornAsCreated = graph.resolve(
             .createdBy(operationName: "Born", kind: .face, leafOccurrence: nil))
         #expect(bornAsCreated == .success(born))
