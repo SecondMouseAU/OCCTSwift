@@ -1,0 +1,8 @@
+circle r5: period=6.28318530717959 adaptive=64 uniformDeflection(0.1)=17
+arc r5 [0, pi/2]: end=(3.06161699787e-16, 5) closed=0
+arc through (0,0)(5,5)(10,0): end=(10, 6.12323399574e-16) mid=(5, 5)
+ellipse 10x5: period=6.28318530717959 value(0)=(10, 0)
+parabola focal 1: focus=(1, 0)
+hyperbola 5/3: major=5 value(0)=(5, 0)
+segment (0,0)-(10,5): domain=[0, 11.1803398874989] D1=(0.894427190999916, 0.447213595499958) adaptive=2
+ellipse arc 10x5 [0, pi]: adaptive=43

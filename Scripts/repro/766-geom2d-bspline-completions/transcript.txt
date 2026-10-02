@@ -1,0 +1,59 @@
+original periodic=0 domain=[0, 1] poles=4 knots=[0, 1] mults=[4, 4]
+  value(0)=(0, 0)
+  value(0.25)=(2.40625, 2.8125)
+  value(0.5)=(5, 3.75)
+  value(1)=(10, 0)
+periodic interpolant before SetNotPeriodic periodic=1 domain=[0, 40] poles=5 knots=[0, 10, 20, 30, 40] mults=[2, 1, 1, 1, 2]
+  value(0)=(0, 0)
+  value(10)=(10, 4.4408920985e-16)
+  value(20)=(10, 10)
+  value(40)=(0, 0)
+periodic interpolant after SetNotPeriodic periodic=0 domain=[0, 40] poles=7 knots=[-20, -10, 0, 10, 20, 30, 40, 50, 60] mults=[1, 1, 2, 1, 1, 1, 2, 1, 1]
+  value(0)=(0, 0)
+  value(10)=(10, 4.4408920985e-16)
+  value(20)=(10, 10)
+  value(40)=(0, 0)
+InsertKnot(0.5) + IncreaseMultiplicity(2, 2) periodic=0 domain=[0, 1] poles=6 knots=[0, 0.5, 1] mults=[4, 2, 4]
+  value(0)=(0, 0)
+  value(0.25)=(2.40625, 2.8125)
+  value(0.5)=(5, 3.75)
+  value(1)=(10, 0)
+Reverse periodic=0 domain=[0, 1] poles=4 knots=[0, 1] mults=[4, 4]
+  value(0)=(10, 0)
+  value(0.25)=(7.59375, 2.8125)
+  value(0.5)=(5, 3.75)
+  value(1)=(0, 0)
+SetKnots [0, 2] periodic=0 domain=[0, 2] poles=4 knots=[0, 2] mults=[4, 4]
+  value(0)=(0, 0)
+  value(0.5)=(2.40625, 2.8125)
+  value(1)=(5, 3.75)
+  value(2)=(10, 0)
+MovePointAndTangent(start 1, end 1) errorStatus=2
+  after periodic=0 domain=[0, 1] poles=4 knots=[0, 1] mults=[4, 4]
+  value(0)=(0, 0)
+  value(0.25)=(2.40625, 2.8125)
+  value(0.5)=(5, 3.75)
+  value(1)=(10, 0)
+  D1(0.5) point=(5, 3.75) tangent=(10.5, 0)
+MovePointAndTangent(start 1, end -1) errorStatus=0
+  after periodic=0 domain=[0, 1] poles=4 knots=[0, 1] mults=[4, 4]
+  value(0)=(0, 0)
+  value(0.25)=(3, 5.9375)
+  value(0.5)=(5, 10)
+  value(1)=(-9, -25)
+  D1(0.5) point=(5, 10) tangent=(1, 1.06581410364e-14)
+InsertKnot(0.3), InsertKnot(0.7), IncrementMultiplicity(2, 3, 1) periodic=0 domain=[0, 1] poles=8 knots=[0, 0.3, 0.7, 1] mults=[4, 2, 2, 4]
+  value(0)=(0, 0)
+  value(0.25)=(2.40625, 2.8125)
+  value(0.5)=(5, 3.75)
+  value(1)=(10, 0)
+SetOrigin(1) on non-periodic: 21Standard_NoSuchObject
+interpolant (0,0) (1,1) (2,0) (3,1) periodic=0 domain=[0, 4.24264068712] poles=6 knots=[0, 1.41421356237, 2.82842712475, 4.24264068712] mults=[4, 1, 1, 4]
+  value(0)=(0, 0)
+  value(1.06066017178)=(0.75, 1.09375)
+  value(2.12132034356)=(1.5, 0.5)
+  value(4.24264068712)=(3, 1)
+  KnotSplitting(continuity 0) NbSplits=2 values=[1, 4]
+  KnotSplitting(continuity 1) NbSplits=2 values=[1, 4]
+  KnotSplitting(continuity 2) NbSplits=2 values=[1, 4]
+  KnotSplitting(continuity 3) NbSplits=4 values=[1, 2, 3, 4]
