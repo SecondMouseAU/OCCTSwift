@@ -109,6 +109,21 @@ The seven censuses today and what each is for:
   first version reported 89 findings that were an artefact of reusing a gate's regex for a census's
   question.
 
+  **#2946 is the limitation it now states out loud, and the decision is the transferable part.**
+  Every channel ends at a `catch`, so the census cannot see a compiled-out check whose absence
+  faults before any `catch` runs, which is the expensive half, since `OCC_CATCH_SIGNALS` is inert
+  in bridge code. It is not fixable as a derived channel: the map is keyed on the file stem rather
+  than the class, two of the four worked examples are an uninitialised member with no raise site
+  anywhere, and whether an absence faults rather than returning a wrong value is what the kernel
+  does frames later, which no derivation over raise sites records. So the limitation is **recorded
+  where it is read**: the `DARK` constant in the script, printed at the end of every bare run and
+  held by a `--self-test` case, since a census's self-test is the only thing CI runs. The general
+  rule it instances: **a detector that cannot reach a category of its own subject owes that
+  category in its output, not in its docstring**, and a case holding the list, because dropping an
+  entry otherwise makes the report shorter and greener. The same argument #2934 settled for the
+  probe harness. Where the category goes instead is in
+  [occt-validation-is-compiled-out](occt-validation-is-compiled-out.md).
+
   **#2858 widened it from two channels to four and added a kind to the map**, and the calibration
   is the part to copy. Channel three (a caller-controlled index handed to a member whose bound
   test is an out-of-line macro) was written after PR #2870 fixed ten such sites, so it could be
