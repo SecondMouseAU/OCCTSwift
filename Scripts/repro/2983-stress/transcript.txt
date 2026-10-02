@@ -78,9 +78,11 @@ chamfer two distances (1, 2) on one 10-long edge: done=1 volume=990 (1000 - 0.5*
 fillet ramp radius 1 to 2: done=1 contours=1 constant=0
 pipe shell before a profile: ready=0; after: ready=1
 shape fixer before perform: OK=1 DONE=0; after perform: returned 0 OK=0 DONE=1 faces=6
-ShapeAnalysis_Wire clean square: edges=4 selfIntersection=0 closed=0 order=0 gap3d(1)=0 gap2d(1)=0
-ShapeAnalysis_Wire bowtie: edges=4 selfIntersection=1 closed=0 order=0 gap3d(1)=0 gap2d(1)=0
-ShapeAnalysis_Wire open polygon: edges=3 selfIntersection=0 closed=0 order=0 gap3d(1)=1 gap2d(1)=1
+ShapeAnalysis_Wire clean square: perform=1 edgeCurves=1 edges=4 selfIntersection=0 closed=0 order=0 gap3d(1)=0 gap2d(1)=0
+ShapeAnalysis_Wire bowtie: perform=1 edgeCurves=1 edges=4 selfIntersection=1 closed=0 order=0 gap3d(1)=0 gap2d(1)=0
+ShapeAnalysis_Wire open polygon: perform=1 edgeCurves=1 edges=3 selfIntersection=0 closed=0 order=0 gap3d(1)=1 gap2d(1)=1
+section wires at z=0: 1
+ShapeAnalysis_Wire section wire at z=0 on the box's first face: perform=1 edgeCurves=1 edges=4 selfIntersection=0 closed=0 order=0 gap3d(1)=0 gap2d(1)=0
 hatcher after an X and a Y line: NbLines=2
 sewing after Add, before Perform: SewedShape null=1; after Perform: null=0 faces=6
 empty MakeWire: IsDone=0; after one edge: IsDone=1 edges=1
@@ -96,6 +98,8 @@ extrude -Z: bounds min=(-5.0000001, -5.0000001, -10.0000001) max=(5.0000001, 5.0
 mirror of the box (2,3,4)-(12,13,14): volume=1000
 mirror across x=0: bounds min=(-12.0000001, 2.9999999, 3.9999999) max=(-1.9999999, 13.0000001, 14.0000001)
 mirror across x=1: bounds min=(-10.0000001, 2.9999999, 3.9999999) max=(1e-07, 13.0000001, 14.0000001)
+quarter turn about +Z of the box (2,1,3) 4 x 3 x 2: bounds min=(-4.0000001, 1.9999999, 2.9999999) max=(-0.9999999, 6.0000001, 5.0000001)
+the same box doubled about the origin: bounds min=(3.9999998, 1.9999998, 5.9999998) max=(12.0000002, 8.0000002, 10.0000002)
 circular pattern x4 of a 2-cube at (11,0,0): solids=4 volume=32
 circular pattern: bounds min=(-12.0000001, -12.0000001, -1.0000001) max=(12.0000001, 12.0000001, 1.0000001)
 linear pattern x3, spacing 15, of the 10 box: solids=3 volume=3000

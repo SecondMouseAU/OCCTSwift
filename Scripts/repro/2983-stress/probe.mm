@@ -19,6 +19,7 @@
 #include <BRepPrimAPI_MakePrism.hxx>
 #include <BRepBuilderAPI_Sewing.hxx>
 #include <BRepAlgoAPI_Check.hxx>
+#include <BRepAlgoAPI_Section.hxx>
 #include <BRepBndLib.hxx>
 #include <BRepBuilderAPI_MakeEdge.hxx>
 #include <BRepBuilderAPI_MakeFace.hxx>
@@ -68,6 +69,7 @@
 #include <Geom_SphericalSurface.hxx>
 #include <Geom_ToroidalSurface.hxx>
 #include <Precision.hxx>
+#include <ShapeAnalysis_FreeBounds.hxx>
 #include <ShapeAnalysis_Wire.hxx>
 #include <STEPControl_Writer.hxx>
 #include <ShapeUpgrade_UnifySameDomain.hxx>
@@ -84,6 +86,7 @@
 #include <TDocStd_Document.hxx>
 #include <TopExp.hxx>
 #include <TopExp_Explorer.hxx>
+#include <TopTools_HSequenceOfShape.hxx>
 #include <TopTools_IndexedMapOfShape.hxx>
 #include <TopTools_ListOfShape.hxx>
 #include <TopoDS.hxx>
@@ -91,6 +94,7 @@
 #include <XCAFApp_Application.hxx>
 #include <XCAFDoc_DocumentTool.hxx>
 #include <XCAFDoc_ShapeTool.hxx>
+#include <gp_Pln.hxx>
 #include <math_Function.hxx>
 #include <math_GaussSingleIntegration.hxx>
 #include <cmath>
@@ -584,14 +588,42 @@ int main()
       BRepBuilderAPI_MakePolygon bow(gp_Pnt(-5, -5, 0), gp_Pnt(5, 5, 0), gp_Pnt(5, -5, 0), gp_Pnt(-5, 5, 0), true);
       BRepBuilderAPI_MakePolygon gap(gp_Pnt(-5, -5, 0), gp_Pnt(5, -5, 0), gp_Pnt(5, 5, 0), gp_Pnt(-5, 5, 0), false);
       BRepBuilderAPI_MakePolygon sq(gp_Pnt(-5, -5, 0), gp_Pnt(5, -5, 0), gp_Pnt(5, 5, 0), gp_Pnt(-5, 5, 0), true);
+      // Perform ORs CheckOrder, CheckSmall, CheckConnected, CheckEdgeCurves, CheckDegenerated,
+      // CheckSelfIntersection, CheckLacking and CheckClosed (ShapeAnalysis_Wire.cxx). It answers 1 for
+      // every wire here, because CheckEdgeCurves answers 1 for every one of them, so the answer says
+      // that Perform was reached and says nothing about the wire's health.
+      auto report = [](const char* name, const TopoDS_Wire& w, const TopoDS_Face& f) {
+        Handle(ShapeAnalysis_Wire) a         = new ShapeAnalysis_Wire(w, f, 1e-7);
+        bool                       performed = a->Perform();
+        bool                       self      = a->CheckSelfIntersection();
+        bool                       closed    = a->CheckClosed();
+        bool                       order     = a->CheckOrder();
+        bool                       gap3d     = a->CheckGap3d(1);
+        bool                       gap2d     = a->CheckGap2d(1);
+        bool                       curves    = a->CheckEdgeCurves();
+        printf("ShapeAnalysis_Wire %s: perform=%d edgeCurves=%d edges=%d selfIntersection=%d closed=%d order=%d gap3d(1)=%d gap2d(1)=%d\n",
+               name, performed, curves, a->NbEdges(), self, closed, order, gap3d, gap2d);
+      };
       for (int k = 0; k < 3; ++k)
       {
-        const char*           name = k == 0 ? "clean square" : (k == 1 ? "bowtie" : "open polygon");
-        const TopoDS_Wire&    w    = k == 0 ? sq.Wire() : (k == 1 ? bow.Wire() : gap.Wire());
-        Handle(ShapeAnalysis_Wire) a = new ShapeAnalysis_Wire(w, up, 1e-7);
-        a->Perform();
-        printf("ShapeAnalysis_Wire %s: edges=%d selfIntersection=%d closed=%d order=%d gap3d(1)=%d gap2d(1)=%d\n", name, a->NbEdges(),
-               a->CheckSelfIntersection(), a->CheckClosed(), a->CheckOrder(), a->CheckGap3d(1), a->CheckGap2d(1));
+        const char*        name = k == 0 ? "clean square" : (k == 1 ? "bowtie" : "open polygon");
+        const TopoDS_Wire& w    = k == 0 ? sq.Wire() : (k == 1 ? bow.Wire() : gap.Wire());
+        report(name, w, up);
+      }
+      // The section wire the lifecycle test analyses: the box cut at z = 0 (the bridge's
+      // OCCTShapeSectionWiresAtZ: BRepAlgoAPI_Section, then ConnectEdgesToWires at 1e-6) against the
+      // box's first face, which it does not lie on.
+      {
+        BRepAlgoAPI_Section               section(box, gp_Pln(gp_Pnt(0, 0, 0), gp_Dir(0, 0, 1)));
+        Handle(TopTools_HSequenceOfShape) edges = new TopTools_HSequenceOfShape;
+        for (TopExp_Explorer e(section.Shape(), TopAbs_EDGE); e.More(); e.Next())
+          edges->Append(e.Current());
+        Handle(TopTools_HSequenceOfShape) wires = new TopTools_HSequenceOfShape;
+        ShapeAnalysis_FreeBounds::ConnectEdgesToWires(edges, 1e-6, false, wires);
+        TopExp_Explorer firstFace(box, TopAbs_FACE);
+        printf("section wires at z=0: %d\n", wires->Length());
+        report("section wire at z=0 on the box's first face", TopoDS::Wire(wires->Value(1)),
+               TopoDS::Face(firstFace.Current()));
       }
     }
     // The release-only builders: what each holds before it is let go.
@@ -684,6 +716,16 @@ int main()
     printf("mirror of the box (2,3,4)-(12,13,14): volume=%.10g\n", vol(BRepBuilderAPI_Transform(offsetBox, m0, true).Shape()));
     bbox("mirror across x=0", BRepBuilderAPI_Transform(offsetBox, m0, true).Shape());
     bbox("mirror across x=1", BRepBuilderAPI_Transform(offsetBox, m1, true).Shape());
+
+    // The rotate and scale tests: the box (2,1,3) 4 x 3 x 2 is [2,6] x [1,4] x [3,5]. A quarter turn
+    // about +Z sends (x, y, z) to (-y, x, z), closed form [-4,-1] x [2,6] x [3,5]; doubling about
+    // the origin gives [4,12] x [2,8] x [6,10].
+    TopoDS_Shape turnBox = BRepPrimAPI_MakeBox(gp_Pnt(2, 1, 3), 4, 3, 2).Shape();
+    gp_Trsf      quarter, doubled;
+    quarter.SetRotation(gp_Ax1(gp_Pnt(0, 0, 0), gp_Dir(0, 0, 1)), M_PI / 2);
+    doubled.SetScale(gp_Pnt(0, 0, 0), 2.0);
+    bbox("quarter turn about +Z of the box (2,1,3) 4 x 3 x 2", BRepBuilderAPI_Transform(turnBox, quarter, true).Shape());
+    bbox("the same box doubled about the origin", BRepBuilderAPI_Transform(turnBox, doubled, true).Shape());
 
     TopoDS_Shape small = BRepPrimAPI_MakeBox(gp_Pnt(10, -1, -1), 2, 2, 2).Shape();
     BRep_Builder    pb;
