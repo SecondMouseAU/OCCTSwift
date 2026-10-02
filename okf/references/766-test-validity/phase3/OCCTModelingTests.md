@@ -279,3 +279,10 @@ Probe: `Scripts/repro/766-modeling-multi-offset-wire/`.
 | multipleInwardOffsets | `OCCTWireMultiOffset` returns 0 wires | `:15 Expectation failed: wires.count >= 3` | pass | `OCCTWireMultiOffset` | PASS |
 | outwardOffset | `OCCTWireMultiOffset` returns 0 wires | `:32 Expectation failed: wires.count >= 2` | pass | `OCCTWireMultiOffset` | PASS |
 | emptyOffsets | `Shape.multiOffsetWires` treats an empty offset list as a single 0 offset | `:39 Expectation failed: wires.isEmpty` | pass | `OCCTWireMultiOffset` | N/A: an empty list is refused in Swift and in the bridge before any kernel call |
+### `FilletBuilderHistoryTests.swift` (5 tests)
+Probe: `Scripts/repro/766-modeling-fillet-builder-history/`.
+| getBoundsForEvolvingRadius | `OCCTFilletBuilderGetBounds` writes first and last into each other's slots | `:19 Expectation failed: bounds.first < bounds.last`, `:21 Expectation failed: abs(bounds.first - -5.0) < 1e-9`, `:22 Expectation failed: abs(bounds.last - 15.0) < 1e-9` | pass | `OCCTFilletBuilderGetBounds` | PASS |
+| getLawForEvolvingRadius | `OCCTFilletBuilderGetLaw` returns nullptr | `:33 Expectation failed: builder.getLaw(contour: 1, edge: edge) != nil` | pass | `OCCTFilletBuilderGetLaw` | PASS |
+| generated | `OCCTFilletBuilderGenerated` returns 0 shapes | `:51 Expectation failed: builder.generated(from: edgeShape).count == 1` | pass | `OCCTFilletBuilderGenerated` | PASS |
+| modified | `OCCTFilletBuilderModified` returns 0 shapes | `:66 Expectation failed: faces.filter { builder.modified(from: $0).count > 0 }.count == 4` | pass | `OCCTFilletBuilderModified` | PASS |
+| isDeleted | `OCCTFilletBuilderIsDeleted` returns false | `:77 Expectation failed: builder.isDeleted(edgeShape)` | pass | `OCCTFilletBuilderIsDeleted` | PASS |
