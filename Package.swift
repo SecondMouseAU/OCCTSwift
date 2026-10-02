@@ -47,7 +47,7 @@ let useLocalXCFramework: Bool = {
         atPath: occtPackageDir + "/Libraries/OCCT.xcframework/Info.plist")
 }()
 
-// OCCT V8.0.1 plus the thirty-two carried patches are documented in Scripts/patches/README.md
+// OCCT V8.0.1 plus the thirty-four carried patches are documented in Scripts/patches/README.md
 // (patch list, verification status, and CI coverage gaps for maintainers).
 let occtTarget: Target =
     isWASI
@@ -230,8 +230,8 @@ let occtTarget: Target =
         // which is what they were built to do; if a later asset repeats either stray the finding comes
         // back rather than staying suppressed.
         //
-        // The asset holds thirty-one and Scripts/patches/ holds thirty-two, so 0044 is the untested
-        // set of one, written up where the counts are, above.
+        // The asset holds thirty-one and Scripts/patches/ holds thirty-four, so 0044, 0045 and 0046
+        // are the untested set of three, written up where the counts are, above.
         // If you rebuild and the checksum does not match the value below, that is a real difference to
         // investigate rather than an expected one, which is the opposite of what this paragraph said
         // while kernel.1 was pinned.
@@ -275,9 +275,9 @@ let occtTarget: Target =
         // wrong: InitializeMissingParameters is also the REPAIR that re-sets DirectFaces on an actor a
         // STEPCAFControl_Reader has left with empty OperationsFlags, which is #280's exact mechanism.
         // kernel-integration.yml caught it on main. See Scripts/patches/README.md's retired 0035 entry.
-        // Scripts/patches/ holds thirty-two patches and the pinned asset holds thirty-one of them,
-        // enumerated above. `ls Scripts/patches/*.patch | wc -l` answers 32 against a list of 31.
-        // The pinned asset lacks one of them, and this is the written divergence:
+        // Scripts/patches/ holds thirty-four patches and the pinned asset holds thirty-one of them,
+        // enumerated above. `ls Scripts/patches/*.patch | wc -l` answers 34 against a list of 31.
+        // The pinned asset lacks three of them, and this is the written divergence:
         //
         //   0044  Extrema_ExtSS::Points / Extrema_ExtCS::Points bound against the point       #2840
         //         sequence rather than against NbExt(), which counts mySqDist and so counts
@@ -298,6 +298,28 @@ let occtTarget: Target =
         //         and the gate is redundant rather than wrong, it still covers anyone pinning an
         //         older asset, and it is also the deliberate API decision that a parallel pair is
         //         a refusal rather than a distance with no points (a SemVer change, still open).
+        //
+        //   0045  Geom2d_BezierCurve::InsertPoleAfter and Geom_BezierCurve::InsertPoleAfter      #2875
+        //         refuse at MaxDegree() poles, where both constructors and Increase() allow
+        //         MaxDegree() + 1. Carried 2026-10-02 and NOT built. Half of it is inert in a
+        //         Release kernel anyway: the 2d site is a Standard_ConstructionError_Raise_if,
+        //         which No_Exception empties, so the shipped 2d class has no bound at all and
+        //         the bridge's own guard is what enforces one. The 3d site is a literal throw
+        //         and does move, from 25 poles to 26, measured in
+        //         Scripts/repro/2875-bezier-insertpole-bound/.
+        //         DO NOT RETIRE OCCTCurve2DBezierInsertPoleAfter'S GUARD WHEN THIS IS PINNED:
+        //         it is the only check the 2d class has in this build, patched or not.
+        //
+        //   0046  math_Uzawa sizes Errinit by Cont.ColNumber() and writes it by row, so any     #2860
+        //         overdetermined system overruns it: 4 constraints in 2 unknowns returns a
+        //         wrong answer, 100 in 2 is a deterministic SIGSEGV. Carried 2026-10-02 and NOT
+        //         built, so the fault is still in the pinned kernel and OCCTMathUzawa's
+        //         nConstraints > nVars guard is the only thing between a Swift caller and it.
+        //         DO NOT RETIRE THAT GUARD WHEN THIS IS PINNED: patched, the kernel answers a
+        //         correctly sized initial error for an overdetermined system, which is a
+        //         behaviour change the Swift surface has not decided to expose, and the guard
+        //         still covers anyone pinning an older asset. Measured before and after in
+        //         Scripts/repro/2860-uzawa-errinit-dimension/.
         //
         // 0043 (#2827, BRepGProp_Gauss keeps the by-plane mass) was the one outstanding before it,
         // and it went the other way, which is the comparison worth keeping beside 0044: carried
