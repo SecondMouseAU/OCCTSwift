@@ -329,7 +329,8 @@ struct Issue443FirstOfN {
         try #require(boxes.count == count, "built \(boxes.count) boxes, not \(count)")
         let compound = try #require(Shape.compound(boxes), "could not compound the boxes")
         let sewn = try #require(compound.sewn(tolerance: 1e-6), "could not sew \(count) boxes")
-        try #require(sewn.solids.isEmpty, "sewing left solids standing, so these are not free shells")
+        try #require(
+            sewn.solids.isEmpty, "sewing left solids standing, so these are not free shells")
         try #require(sewn.shells.count == count, "sewing gave \(sewn.shells.count) shells")
 
         let solids = try #require(Shape.solid(from: sewn), "solid(from:) returned nil")
