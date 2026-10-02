@@ -21,6 +21,10 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### The kernel is rebuilt on all thirty-nine carried patches, and two bridge compensations go with it (#2873, #2875, #2860, #2879, #2900, #2991, #2992)
+
+The pinned OCCT asset moves to `v4.0.0-kernel.4`, which carries every patch this repository has written, eight more than its predecessor. `Face.volumeInertia(planeNormal:planeDistance:)` now measures about the plane you name without a bridge-side mirror, `Curve2D.bezierInsertPoleAfter` accepts the same pole count as the 3D class, an overdetermined `MathSolver.uzawa` no longer crashes, a NaN mesh deflection is refused rather than hanging, and a cone's area and volume are correct.
+
 ### A stepped sheet-metal seam stops rounding away the flange's free edge, and #501's sampler tests stop missing their own path (#2972, #2054, #2977)
 
 - **#2972.** `SheetMetal.Builder.build()` filleted the whole seam *line* rather than the bend.
