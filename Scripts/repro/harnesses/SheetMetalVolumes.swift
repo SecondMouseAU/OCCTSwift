@@ -88,18 +88,22 @@ private func rect(_ w: Double, _ h: Double) -> [SIMD2<Double>] {
 enum SheetMetalVolumes {
 
     fileprivate static func fixtures() -> [Fixture] {
-        // Built element by element rather than as one array literal. Ten `Fixture`s whose members
-        // are integer-literal arithmetic (`65 * 28 * 3 + 65 * 40 * 3`) give the solver a single
-        // constraint system over the whole literal and it gives up: CI reported "unable to
-        // type-check this expression in reasonable time" at this line. Appending keeps each
-        // system to one element, and the build goes from a hard failure to 39 seconds.
+        // One `append` per fixture, never one array literal over all ten. Each `Fixture` carries
+        // integer-literal arithmetic (`65 * 28 * 3 + 65 * 40 * 3`), so a ten-element literal is one
+        // constraint system over the whole expression and the type checker gives up: CI reported
+        // "unable to type-check this expression in reasonable time" at the literal's line.
+        //
+        // Splitting it into `all += [ ...ten... ]` looked like a fix and was not: it compiled in 39 s
+        // on a fast machine and timed out on the CI runner, moving the failure from line 91 to line
+        // 97. A literal's cost is a property of its size, not of what it is assigned to, so the only
+        // repair is for no single expression to contain more than one fixture.
         var all: [Fixture] = []
-        all += [
-            // --- full-seam concave, the two the issue already derives ---
+        // --- full-seam concave, the two the issue already derives ---
+        all.append(
             Fixture(
                 name: "SheetMetalTests.lBracket",
-                flangeSum: 65 * 28 * 3 + 65 * 40 * 3,
-                overlap: 0,
+                flangeSum: 65.0 * 28.0 * 3.0 + 65.0 * 40.0 * 3.0,
+                overlap: 0.0,
                 terms: [.concave(radius: 2.0, length: 65)],
                 pinned: 13315.796477516664,
                 build: {
@@ -113,11 +117,12 @@ enum SheetMetalVolumes {
                         flanges: [base, upright],
                         bends: [SheetMetal.Bend(from: "base", to: "upright", radius: 2.0)])
                 },
-                sharpCornerProbe: nil),
+                sharpCornerProbe: nil))
+        all.append(
             Fixture(
                 name: "SheetMetalTests.uChannel",
-                flangeSum: 40 * 20 * 2 + 2 * (20 * 15 * 2),
-                overlap: 0,
+                flangeSum: 40.0 * 20.0 * 2.0 + 2.0 * (20.0 * 15.0 * 2.0),
+                overlap: 0.0,
                 terms: [
                     .concave(radius: 1.5, length: 20),
                     .concave(radius: 1.5, length: 20),
@@ -140,13 +145,14 @@ enum SheetMetalVolumes {
                             SheetMetal.Bend(from: "bottom", to: "right", radius: 1.5),
                         ])
                 },
-                sharpCornerProbe: nil),
+                sharpCornerProbe: nil))
 
-            // --- stepped seams: base 65 wide, upright 28 wide, so 37 of surplus ---
+        // --- stepped seams: base 65 wide, upright 28 wide, so 37 of surplus ---
+        all.append(
             Fixture(
                 name: "SheetMetalTests.narrowUprightStepSucceeds",
-                flangeSum: 65 * 28 * 3 + 28 * 40 * 3,
-                overlap: 0,
+                flangeSum: 65.0 * 28.0 * 3.0 + 28.0 * 40.0 * 3.0,
+                overlap: 0.0,
                 terms: [
                     .concave(radius: 1.5, length: 28),
                     .surplus(radius: 1.5, length: 65 - 28),
@@ -165,11 +171,12 @@ enum SheetMetalVolumes {
                 },
                 // x = 50 is 22 clear of the upright's x <= 28 extent; the corner at y = 28, z = 3
                 // is the base's own free edge. 0.2 in from it on both faces.
-                sharpCornerProbe: SIMD3(50, 27.8, 2.8)),
+                sharpCornerProbe: SIMD3(50, 27.8, 2.8)))
+        all.append(
             Fixture(
                 name: "SheetMetalTests.lBracketStepSeamCentredTab",
-                flangeSum: 80 * 40 * 2 + 20 * 30 * 2,
-                overlap: 0,
+                flangeSum: 80.0 * 40.0 * 2.0 + 20.0 * 30.0 * 2.0,
+                overlap: 0.0,
                 terms: [
                     .concave(radius: 1.5, length: 20),
                     .surplus(radius: 1.5, length: 30),
@@ -187,11 +194,12 @@ enum SheetMetalVolumes {
                         flanges: [base, tab],
                         bends: [SheetMetal.Bend(from: "base", to: "tab", radius: 1.5)])
                 },
-                sharpCornerProbe: SIMD3(10, 39.8, 1.8)),
+                sharpCornerProbe: SIMD3(10, 39.8, 1.8)))
+        all.append(
             Fixture(
                 name: "SheetMetalTests.zBracket",
-                flangeSum: 50 * 30 * 2 + 50 * 20 * 2 + 20 * 30 * 2,
-                overlap: 0,
+                flangeSum: 50.0 * 30.0 * 2.0 + 50.0 * 20.0 * 2.0 + 20.0 * 30.0 * 2.0,
+                overlap: 0.0,
                 terms: [
                     .concave(radius: 1.5, length: 50),
                     .concave(radius: 1.5, length: 20),
@@ -218,11 +226,12 @@ enum SheetMetalVolumes {
                 // The mid riser's free top edge, outside the top tab's x in [15, 35]. The seam
                 // plane on the mid is its OUTER face y = 32 (the one the tab sits beside), not
                 // y = 30, so the corner under test is (y = 32, z = 20).
-                sharpCornerProbe: SIMD3(5, 31.8, 19.8)),
+                sharpCornerProbe: SIMD3(5, 31.8, 19.8)))
+        all.append(
             Fixture(
                 name: "SheetMetalTests.uChannelStepped",
-                flangeSum: 40 * 100 * 2 + 2 * (80 * 15 * 2),
-                overlap: 0,
+                flangeSum: 40.0 * 100.0 * 2.0 + 2.0 * (80.0 * 15.0 * 2.0),
+                overlap: 0.0,
                 terms: [
                     .concave(radius: 1.5, length: 80),
                     .concave(radius: 1.5, length: 80),
@@ -251,13 +260,14 @@ enum SheetMetalVolumes {
                 },
                 // y = 5 is below the walls' y in [10, 90]; the spine's own free edge at x = 0,
                 // z = 2.
-                sharpCornerProbe: SIMD3(0.2, 5, 1.8)),
+                sharpCornerProbe: SIMD3(0.2, 5, 1.8)))
 
-            // --- convex bends ---
+        // --- convex bends ---
+        all.append(
             Fixture(
                 name: "ConvexBendIssue89.zBracketRepro",
-                flangeSum: 18 * 45 * 3.2 + 25 * 45 * 3.2 + 45 * 45 * 3.2,
-                overlap: 3.2 * 3.2 * 45,
+                flangeSum: 18.0 * 45.0 * 3.2 + 25.0 * 45.0 * 3.2 + 45.0 * 45.0 * 3.2,
+                overlap: 3.2 * 3.2 * 45.0,
                 terms: [
                     .concave(radius: 3.2, length: 45),
                     .convex(thickness: 3.2, length: 45),
@@ -280,11 +290,12 @@ enum SheetMetalVolumes {
                             SheetMetal.Bend(from: "web", to: "bottom", radius: 3.2),
                         ])
                 },
-                sharpCornerProbe: nil),
+                sharpCornerProbe: nil))
+        all.append(
             Fixture(
                 name: "ConvexBendIssue89.symmetricZ",
-                flangeSum: 30 * 45 * 2 + 20 * 45 * 2 + 30 * 45 * 2,
-                overlap: 2 * 2 * 45,
+                flangeSum: 30.0 * 45.0 * 2.0 + 20.0 * 45.0 * 2.0 + 30.0 * 45.0 * 2.0,
+                overlap: 2.0 * 2.0 * 45.0,
                 terms: [
                     .concave(radius: 3, length: 45),
                     .convex(thickness: 2, length: 45),
@@ -307,11 +318,12 @@ enum SheetMetalVolumes {
                             SheetMetal.Bend(from: "web", to: "bottom", radius: 3),
                         ])
                 },
-                sharpCornerProbe: nil),
+                sharpCornerProbe: nil))
+        all.append(
             Fixture(
                 name: "ConvexBendIssue89.offsetLShortWeb",
-                flangeSum: 50 * 60 * 2 + 5 * 60 * 2 + 50 * 60 * 2,
-                overlap: 2 * 2 * 60,
+                flangeSum: 50.0 * 60.0 * 2.0 + 5.0 * 60.0 * 2.0 + 50.0 * 60.0 * 2.0,
+                overlap: 2.0 * 2.0 * 60.0,
                 terms: [
                     .concave(radius: 1.5, length: 60),
                     .convex(thickness: 2, length: 60),
@@ -334,11 +346,12 @@ enum SheetMetalVolumes {
                             SheetMetal.Bend(from: "web", to: "bottom", radius: 1.5),
                         ])
                 },
-                sharpCornerProbe: nil),
+                sharpCornerProbe: nil))
+        all.append(
             Fixture(
                 name: "ConvexBendIssue89.channelWithFlange",
-                flangeSum: 100 * 40 * 1.5 + 2 * (30 * 40 * 1.5) + 20 * 40 * 1.5,
-                overlap: 2 * (1.5 * 1.5 * 40),
+                flangeSum: 100.0 * 40.0 * 1.5 + 2.0 * (30.0 * 40.0 * 1.5) + 20.0 * 40.0 * 1.5,
+                overlap: 2.0 * (1.5 * 1.5 * 40.0),
                 terms: [
                     .concave(radius: 2, length: 40),
                     .concave(radius: 2, length: 40),
@@ -366,8 +379,8 @@ enum SheetMetalVolumes {
                             SheetMetal.Bend(from: "right", to: "tab", radius: 2),
                         ])
                 },
-                sharpCornerProbe: nil),
-        ]
+                sharpCornerProbe: nil))
+
         return all
     }
 
