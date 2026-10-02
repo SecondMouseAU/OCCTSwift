@@ -429,6 +429,92 @@ std::mutex& tobjApplicationMutex();
 // over-release.
 std::atomic<int>& tobjApplicationBorrowCount();
 
+// === #2952: the borrow registry for bridge-owned Standard_Transient objects ===
+//
+// Definitions live in OCCTBridge.mm, non-static so every per-area TU shares one registry.
+//
+// A bridge function that hands a caller a raw `Standard_Transient*` and takes one
+// IncrementRefCounter() for it (OCCTMessengerCreate, OCCTReportCreate) records the pointer here,
+// and the matching release gives it back. The release then acts on the object only when the
+// registry says this bridge actually handed that pointer out and has not already taken it back.
+//
+// Without that check the release is not merely wrong, it is a use-after-free and a double free in
+// the same call. These objects have no process-wide static holding a reference the way
+// TObj_Application does (#2897), so the FIRST release already drops the count to zero and
+// deletes; a second one reads GetRefCount() out of freed memory and may delete it again. #2897 is
+// the same mistake with the slower ending, and it cost a SIGSEGV on Apple and an
+// `indirect call type mismatch` on wasm about 660 test lines from its cause.
+//
+// Keyed on the address, and type-agnostic on purpose: the addresses of two live objects are
+// always distinct, so one registry serves every adopter, and a pointer the allocator later
+// recycles is registered again by whichever create returned it. What it does NOT check is that
+// the pointer is being released as the type it was created as; releasing a messenger through
+// OCCTReportRelease was already undefined through the static_cast and is not what this guards.
+//
+// A set rather than tobjApplicationBorrowCount()'s single counter above, because that object is
+// one process-wide singleton and these are per-caller: with N messengers alive, a bare count of N
+// would let a double release of one consume another's borrow and delete a live object.
+//
+// WHAT OCCT SAYS ABOUT A REGISTERED ADDRESS COMING BACK, which is what decides the contract
+// below. OCCT has no precedent for handing a raw Standard_Transient* to a foreign caller and
+// taking it back: grep the pinned tree and the ONLY callers of IncrementRefCounter and
+// DecrementRefCounter anywhere in it are opencascade::handle's BeginScope and EndScope
+// (Standard_Handle.hxx:382-394). The handle is the kernel's whole borrow protocol. So this
+// registry has no OCCT shape to copy and the reasoning is recorded here rather than cited. Two
+// narrower questions OCCT does answer, and they settle it:
+//
+//   1. Can a LIVE borrowed object's address collide with an entry already in the registry?
+//      No. EndScope destroys only when DecrementRefCounter() returns 0 (Standard_Handle.hxx:391).
+//      The reference this bridge takes keeps the count above zero for the whole borrow, so no
+//      other holder's EndScope can reach Delete(), the storage is never freed, and the allocator
+//      cannot hand that address out again. A collision is reachable only by breaking the borrow
+//      protocol itself, which is a programming error and not a state to absorb.
+//   2. What does OCCT do when a reference count says something impossible? It throws.
+//      Standard_Transient::This() (Standard_Transient.cxx:68-76) raises Standard_ProgramError
+//      on a zero count, with a message naming the programming error, in every build.
+//
+// So occtBorrowRegister returns void and THROWS Standard_ProgramError on a collision, which is
+// OCCT's answer rather than ours. It must be called inside the caller's catch (...), which both
+// creates already have: the throw is recorded by occtRecordCaughtException as an OCCTFailure
+// carrying the message, and the create returns a null handle.
+//
+// The two answers this replaced, for the record, because both were argued from first principles
+// before the kernel was read:
+//   return a bool and check it   The value is unreadable at a call site: nothing a create can do
+//                                with "already registered" is better than refusing, and refusing
+//                                silently is worse than OCCT's own raise.
+//   assert()                     Inert under NDEBUG, which is where it would have to fire, and an
+//                                abort in this build is an uncatchable signal (no
+//                                OCC_CONVERT_SIGNALS). Standard_ProgramError is OCCT's mechanism
+//                                for the same situation and it works in a release build.
+//
+// CALL ORDER: register BEFORE the IncrementRefCounter() the borrow is made of. Standard_Transient
+// ::This() throws before any reference is taken, and so must this: if it threw after the
+// increment, the Handle unwinding in the create would decrement back to one rather than zero and
+// strand the object. IncrementRefCounter is noexcept, so nothing can throw between the two and
+// leave an entry with no reference behind it.
+//
+// occtBorrowGiveBack is the query: true only for a pointer that was registered, removing it; every
+// false, null included, is counted by OCCTBridgeRefusedReleaseCount. It does not throw, because a
+// release of a pointer the bridge never handed out is exactly the consumer mistake this exists to
+// absorb, not a broken invariant.
+//
+// WHAT A RELEASE DOES AFTER THE GIVE-BACK is also OCCT's to decide, and EndScope decides it:
+//
+//     if (entity != nullptr && entity->DecrementRefCounter() == 0)
+//       entity->Delete();                              // Standard_Handle.hxx:389-394
+//
+// Use the value the decrement returns, and call the virtual Delete(). Never a second
+// GetRefCount() load (it is a separate relaxed read, so another thread's BeginScope between the
+// two hides a zero and leaks, an EndScope between them frees the block this one is about to read,
+// and the acquire fence DecrementRefCounter issues only on the zero-returning RMW is skipped), and
+// never a bare `delete` (Delete() is virtual, and OCCTTObjApplicationRelease's own comment already
+// names it as what the kernel calls). No class in the pinned tree overrides it, so today the two
+// spellings run the same code; the divergence is from the kernel's only caller, which is the thing
+// okf/policies/follow-occt-callers.md says not to do.
+void occtBorrowRegister(const void* theObject);
+bool occtBorrowGiveBack(const void* theObject);
+
 // === OCCT signal handling ===
 //
 // Installs OCCT's signal handlers (OSD::SetSignal) once, process-wide, so an OS signal raised

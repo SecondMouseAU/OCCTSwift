@@ -1,0 +1,6 @@
+{
+  "status": {
+    "value": "not-reproducible",
+    "reason": "there is no `perfmeter-churn-probe.mm` for this script to compile, and there never was. This transcript was captured from a Swift Testing probe, `perfmeter-churn-probe.swift.txt` beside it, whose own header says it was stored with a .txt extension so that no gate or build would pick it up: `swift test --filter ZZChurnProbe`, 150 windows of a 0.1 s thread-CPU spin under thread churn. A count of how often OSD_PerfMeter under-reads is a distribution over a loaded machine rather than one value, so re-running it would not reproduce these counts even with the probe in the tree. This transcript was reached by this script only from #2934, which made an orphan transcript a pair rather than something nothing enumerated."
+  }
+}

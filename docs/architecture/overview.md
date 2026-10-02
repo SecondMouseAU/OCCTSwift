@@ -244,6 +244,47 @@ public struct CircleProperties: Sendable, NativeHandleView {
 `Scripts/check-borrowed-handles.py` fails the build on any struct or enum in `Sources/OCCTSwift`
 that stores an `OCCT*Ref`, so a new view cannot reintroduce the borrow.
 
+### A release the bridge never handed out is refused
+
+A bridge release gives back a reference the matching create took. Giving back one it did not take
+is not a no-op, so where the create hands out a raw `Standard_Transient*` the release checks an
+address-keyed registry (`occtBorrowRegister` / `occtBorrowGiveBack` in `OCCTBridge_Internal.h`)
+before touching the object. A null, a second release of the same pointer, or a pointer this bridge
+never produced is declined and counted by `OCCTBridgeRefusedReleaseCount`.
+
+The contract comes from OCCT, not from us. The kernel has no precedent to copy for handing a raw
+`Standard_Transient*` to a foreign caller: `opencascade::handle`'s `BeginScope` and `EndScope` are
+the only callers of `IncrementRefCounter` and `DecrementRefCounter` anywhere in the pinned tree, so
+the handle is its whole borrow protocol. Two narrower questions it does answer decide the rest.
+`EndScope` destroys only when `DecrementRefCounter()` returns zero, so the reference the bridge
+holds keeps the storage alive for the whole borrow and a live object's address can never collide
+with an entry already in the registry. And when a reference count says something impossible,
+`Standard_Transient::This()` throws `Standard_ProgramError` in every build rather than tolerating
+it. So `occtBorrowRegister` returns nothing and throws on a collision, which the create's existing
+`catch` records as a diagnostic and reports as a null handle.
+
+A release likewise does what `EndScope` does: act on the value `DecrementRefCounter()` returns and
+call the virtual `Delete()`, never a second `GetRefCount()` read and never a bare `delete`. The
+sources, and the answers weighed and rejected, are at the declaration.
+
+`_Nonnull` on the declaration is not what stops the null: it is a promise the compiler does not
+enforce, and section 6 above measures that a consumer can call these entry points directly.
+
+Two defects are behind this, with the same cause and different endings. `TObj_Application` is a
+process-wide singleton whose own function-local static `Handle` holds a permanent reference, so an
+over-release freed nothing at the time and left the count one below the truth; the object died
+later, in the next ordinary handle to fall out of scope, about 660 test lines from the call that
+doomed it, as a SIGSEGV on Apple and an `indirect call type mismatch` on wasm
+([#2897](https://github.com/SecondMouseAU/OCCTSwift/issues/2897)). `Message_Messenger` and
+`Message_Report` have no such static, so there the first release already deletes and a second one
+reads `GetRefCount()` out of freed memory and may delete the block again
+([#2952](https://github.com/SecondMouseAU/OCCTSwift/issues/2952)).
+
+The two read differently in one respect. The singleton's release refuses through a borrow *count*
+and can expose `OCCTTObjApplicationRefCount`, because the object survives and its reference count
+is readable across the operation. Nothing survives a correct messenger or report release, so there
+the refusal itself is the only observable, which is what `OCCTBridgeRefusedReleaseCount` is for.
+
 ### Thread Safety
 
 - OCCT is not thread-safe for shared objects

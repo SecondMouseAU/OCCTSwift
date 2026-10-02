@@ -1,0 +1,6 @@
+{
+  "status": {
+    "value": "not-reproducible",
+    "reason": "the transcript is not one capture of one run, for the same reason its sibling transcript.txt is not: it interleaves three invocations of this mode-dispatching probe. `probe 196_0.05.brep 1.6 0.8 0.4 0.2 0.1 0.05` prints the first six KERNEL lines, `probe 196_0.8.brep 0.8` the seventh, and `probe groove <brep>` the eighth, and with fewer than two arguments main() returns 2 and prints nothing, which is why a bare rerun reproduces none of it. All three read BREP files that a temporary, since-reverted instrumentation of Issue196PolyHLRTests and Issue213VProfile wrote (the M10x1.0 thread on a 50 mm blank, and the M10x1.5 ISO-68 thread), and nobody committed them, so no invocation can be re-derived from this repository. The transcript's own header states that provenance and records the in-process bridge-side values beside each kernel one. The deflection sweep is also measured in-process by Issue196PolyHLRTests, which pins 1873 and 17041 to 1 percent and fails if the kernel moves, and the groove measurement by Issue213VProfile.flankAngleOfBuiltThread. This pair was reached by this script only from #2934, which made the pair rather than the directory the unit; it is the same class as #2824."
+  }
+}

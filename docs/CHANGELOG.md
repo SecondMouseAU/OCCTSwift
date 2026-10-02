@@ -21,6 +21,96 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### Stress builder-lifecycle and chain-depth suites now pin kernel values instead of accepting any answer (v5 lift of #2429, #2430, #2431, #2433, #2342; refs #766)
+
+`StressBuilderLifecycleTests.swift` and `StressChainDepthTests.swift` had 62 of their 89 tests in a
+state where no wrong value could fail them: results read into `_`, `guard let ... else { return }`
+over a fallible factory, and thresholds (`>= 0`, `>= 1`, `> 0`, a 10 percent band) that hold for
+every answer a working or a broken kernel can give. They now pin what the wrapped OCCT builder
+actually computes: fillet, chamfer, pipe-shell, sewing, wire, hatch, unify, loft, analyzer and
+fixer results by volume, area, face and edge count and contour flags, and the boolean, feature,
+transform, wire and document chains by their end-state volumes and bounds. Each value is either
+closed form or reproduced by a carried C++ probe that recompiles against the pinned kernel and
+matches its transcript exactly. Three refusals are pinned as refusals rather than skipped, and
+`FilletBuilder`'s `hasResult` is pinned false after a successful build, correcting a comment that
+called OCCT's partial-result flag a version quirk. SEVERE in the Stress domain falls from 100 to
+41, and repo-wide from 1,365 to 1,306.
+
+### A messenger or report release the bridge never handed out is refused, rather than freeing the object twice (#2952)
+
+`OCCTMessengerRelease` and `OCCTReportRelease` acted on whatever pointer they were given. Their
+parameters are `_Nonnull`, which the compiler does not enforce and which a consumer on the
+`OCCTBridge` surface (#967) can ignore, so a null reached `DecrementRefCounter()` as an uncatchable
+signal. A second release of the same pointer was worse: unlike `TObj_Application` (#2897) neither
+`Message_Messenger` nor `Message_Report` has a process-wide static holding a reference, so the
+first release already deletes and the second reads `GetRefCount()` out of freed memory and may
+delete the block again.
+
+Both now give back a reference through an address-keyed registry of the references
+`OCCTMessengerCreate` and `OCCTReportCreate` actually took. A null, a second release, or a pointer
+the bridge never produced is declined and counted by the new
+`OCCTBridgeRefusedReleaseCount`. That counter is the observable the invariant has:
+`OCCTTObjApplicationRefCount` could not serve here, because a correctly released messenger is gone
+and its reference count cannot be read.
+
+Both releases also now do what `opencascade::handle::EndScope` does, which is the only caller of
+`DecrementRefCounter` anywhere in the pinned kernel: act on the value the decrement returns, and
+call the virtual `Delete()`. They had discarded that value, re-read with a separate relaxed
+`GetRefCount()` and called `delete`. The re-read is a window in which another thread can hide a
+zero and leak, or free the block about to be read, and it skips the acquire fence
+`DecrementRefCounter` issues only on the decrement that reaches zero. Registering a borrow is
+likewise OCCT's model rather than ours: a live object's address can never already be registered,
+because the bridge's own reference keeps the storage alive, so a collision is met with
+`Standard_ProgramError` the way `Standard_Transient::This()` meets a zero count, recorded as a
+diagnostic and reported as a null handle.
+
+No caller in this repo reached the defect, which is why it was filed as hardening rather than
+folded into #2897's fix. `Messenger`/`Report`'s `deinit` is 1:1 with their initialisers and no
+behaviour changes for them.
+
+### The BSpline surface manipulation suite had never run an expectation, and five weak-assertion test files come off the v5 branch (#766, #2464, #2444, #2503, #2318, #2320)
+
+Batch 9 of the v5 lift takes the tail of the ranked path list: 42 gains over five files, from five
+execution PRs all merged into `v5.0.0-766-execution` and therefore invisible to the open-PR screen
+the programme used to be steered by. Across the five paths the weak-assertion census goes from 23
+SEVERE and 31 ESCAPABLE of 56 tests to 0 and 2, and repo-wide SEVERE goes from 1,365 to 1,342.
+
+The largest single finding is a fixture. `makeCylinderDerivedBSplineSurface()` converted an
+untrimmed `Surface.cylinder`, which `GeomConvert::SurfaceToBSplineSurface` refuses as an infinite
+surface, so it always returned nil and every one of the twelve tests in
+`BSplineSurfaceManipulationTests` skipped its whole body behind `if let`: not one expectation in
+that suite had ever executed. The fixture trims V to `[0, 10]` first, and the twelve tests now pin
+the trimmed cylinder's actual BSpline form (4 x 2 knots, 6 x 2 poles, degree 2 x 1, bounds
+`[0, 2 pi] x [0, 10]`) and what each manipulation does to it.
+
+`BSplineCurve3DManipulationTests` pins the chord-length knot vector, the pole counts and
+multiplicities before and after each edit, and the fact that `segment` at 25 and 75 percent lands
+exactly on the second and fourth interpolation points; two of its fifteen tests previously asserted
+nothing at all. `ShapeBuildEdgeTests` pins what `ShapeBuild_Edge` does to an edge rather than
+`shapeType == .edge`, which an untouched edge also satisfies, and moves the pcurve cases to a
+cylinder's lateral face because a plane re-projects a removed pcurve on demand.
+`BRepGraphEdgeGeometryTests` adds a sphere beside the box so that answers which never vary (not
+degenerated, has a curve, not a seam) can fail. `BRepGraphDurableUIDTests` replaces every nil-skip
+around a UID lookup with `#require`, which is what had let eight of its tests, including every
+"does not cross" test, return early and pass.
+
+Each test was proved by a semantic injection on `main`'s own kernel: 56 of 56 red, 56 of 56 green
+once reverted. The five ground-truth probes cross with their transcripts and all five reproduce
+against the pinned kernel.
+
+### Tooling: the #766 probe reproduction check reaches 41 pairs it had never compiled (#2934)
+
+`Scripts/check-766-probe-reproduction.py` took the directory as its unit and opened `probe.mm` and
+`transcript.txt` by name, so a second, corrected probe added beside the first was neither `MISSING`
+nor a `DIFF`: it was absent from the run, while the parity records whose `source` named
+`transcript-evidence-fix.txt` read as verified. The unit is now a `(probe, transcript)` pair,
+derived by substituting the whole `probe` token, which reaches `probe-evidence-fix.mm`, the older
+`evidence-fix-probe.mm` word order, a probe named for its subject such as `race.mm`, and a
+transcript with no probe at all. Declarations are named per pair, so one pair's
+`status: not-reproducible` can no longer excuse another from being compiled. Run against the pinned
+`v4.0.0-kernel.3` asset, 37 of the 41 newly reached pairs reproduce byte for byte and the other
+four are declared or filed; none is a kernel divergence.
+
 ### `Shape.beanFaceIntersect` searched an empty parameter interval, and four suites of tests could not have noticed (#2935, #2938, #2941, #2943)
 
 `IntTools_BeanFaceIntersector`'s `(edge, face)` constructor sets the surface parameters and leaves

@@ -1,0 +1,17 @@
+box: edges=12 vertices=8
+  edge  0: start=0 end=1 closed=0 degen=0 tol=9.9999999999999995e-08 range=(0, 10) hasCurve=1 sameParam=1 sameRange=1 faces=[ 0(seam=0) 2(seam=0) ]
+  edge  1: start=0 end=2 closed=0 degen=0 tol=9.9999999999999995e-08 range=(0, 10) hasCurve=1 sameParam=1 sameRange=1 faces=[ 0(seam=0) 4(seam=0) ]
+  edge  2: start=2 end=3 closed=0 degen=0 tol=9.9999999999999995e-08 range=(0, 10) hasCurve=1 sameParam=1 sameRange=1 faces=[ 0(seam=0) 3(seam=0) ]
+  edge  3: start=1 end=3 closed=0 degen=0 tol=9.9999999999999995e-08 range=(0, 10) hasCurve=1 sameParam=1 sameRange=1 faces=[ 0(seam=0) 5(seam=0) ]
+  edge  4: start=4 end=5 closed=0 degen=0 tol=9.9999999999999995e-08 range=(0, 10) hasCurve=1 sameParam=1 sameRange=1 faces=[ 1(seam=0) 2(seam=0) ]
+  edge  5: start=4 end=6 closed=0 degen=0 tol=9.9999999999999995e-08 range=(0, 10) hasCurve=1 sameParam=1 sameRange=1 faces=[ 1(seam=0) 4(seam=0) ]
+  edge  6: start=6 end=7 closed=0 degen=0 tol=9.9999999999999995e-08 range=(0, 10) hasCurve=1 sameParam=1 sameRange=1 faces=[ 1(seam=0) 3(seam=0) ]
+  edge  7: start=5 end=7 closed=0 degen=0 tol=9.9999999999999995e-08 range=(0, 10) hasCurve=1 sameParam=1 sameRange=1 faces=[ 1(seam=0) 5(seam=0) ]
+  edge  8: start=0 end=4 closed=0 degen=0 tol=9.9999999999999995e-08 range=(0, 10) hasCurve=1 sameParam=1 sameRange=1 faces=[ 2(seam=0) 4(seam=0) ]
+  edge  9: start=1 end=5 closed=0 degen=0 tol=9.9999999999999995e-08 range=(0, 10) hasCurve=1 sameParam=1 sameRange=1 faces=[ 2(seam=0) 5(seam=0) ]
+  edge 10: start=2 end=6 closed=0 degen=0 tol=9.9999999999999995e-08 range=(0, 10) hasCurve=1 sameParam=1 sameRange=1 faces=[ 3(seam=0) 4(seam=0) ]
+  edge 11: start=3 end=7 closed=0 degen=0 tol=9.9999999999999995e-08 range=(0, 10) hasCurve=1 sameParam=1 sameRange=1 faces=[ 3(seam=0) 5(seam=0) ]
+sphere: edges=3 vertices=2
+  edge  0: start=0 end=0 closed=1 degen=1 tol=9.9999999999999995e-08 range=(0, 0) hasCurve=0 sameParam=1 sameRange=1 faces=[ 0(seam=0) ]
+  edge  1: start=1 end=0 closed=0 degen=0 tol=9.9999999999999995e-08 range=(4.7123889803846897, 7.8539816339744828) hasCurve=1 sameParam=1 sameRange=1 faces=[ 0(seam=1) ]
+  edge  2: start=1 end=1 closed=1 degen=1 tol=9.9999999999999995e-08 range=(0, 0) hasCurve=0 sameParam=1 sameRange=1 faces=[ 0(seam=0) ]
