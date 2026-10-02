@@ -1305,22 +1305,30 @@ inline double occtUniformParameter(double lo, double hi, int32_t index, int32_t 
 // one, which is what OCCTGCPntsQuasiUniform (the only member of the family that already clamped)
 // was silently getting wrong.
 //
-// === #2977: on the PINNED kernel nothing overshoots, and these stay anyway ===
+// === #2977: carried patch `0018` moved the threshold, it did not close the hole ===
 //
-// Carried patch `0018` fixes the sampler itself: it accepts a step within `theTol` of the end in 3D
-// as well as within the parametric epsilon, so the walk stops instead of taking the extra step.
-// Re-measured 2026-10-02 against `v4.0.0-kernel.3`, both samplers, 2D and 3D, over #501's own
-// 1e6 x 1e-3 ellipse (the test's sixteen counts and counts 2..60), ellipses down to 1e6 x 1e-6,
-// 1e8 and 1e10 majors, and a degenerate-aspect Bezier: NbPoints() never exceeds the request.
-// Scripts/repro/2977-uniformabscissa-no-overshoot/ holds the probe and the transcript, and a second
-// probe there confirms `0018` is in the asset behaviourally, since the patch adds no symbol for
+// `0018` adds a second acceptance test to the walk's end condition: a step is also the end when it
+// is within `theTol` of the end **in 3D**, not only within the parametric epsilon. The ellipse
+// above stops overshooting under that, and #501's sixteen counts therefore do not reach the
+// surplus-point path any more on the pinned kernel.
+//
+// The hole is still open on a larger curve, because the same relative shortfall is a larger 3D
+// distance. Re-measured 2026-10-02 against `v4.0.0-kernel.3`, both samplers, 2D and 3D:
+//
+//   1e6 x 1e-3 ellipse, counts 2..60 and the test's sixteen   no overshoot
+//   1e6 x 1e-2, 1e-4, 1e-6 ellipses                           no overshoot
+//   degenerate-aspect 4-pole Bezier, 2D and 3D, 2..60         no overshoot
+//   1e8 x 0.1 ellipse                                         OVERSHOOTS, by one
+//   1e10 x 10 ellipse                                         OVERSHOOTS, by one
+//
+// The surplus point is the end parameter exactly, and the one before it is about 5.4e-8 short of
+// it, which is #501's shape unchanged. Both samplers agree on every row, so the 2D uniform path is
+// not an odd one out and #501's own quasi-uniform reproducer behaves the same way.
+// Scripts/repro/2977-uniformabscissa-no-overshoot/ holds the probes and the transcript, including
+// one that confirms `0018` is in the pinned asset behaviourally, since the patch adds no symbol for
 // `check-pinned-asset-patches.py` to find.
 //
-// So `occtSamplerKept` returns `total` and `occtSamplerIndex` is the identity `slot + 1` at every
-// slot, on every input measured. **Do not read a green test over these as evidence they are
-// unnecessary.** They are what makes the bridge correct against a kernel without `0018`, which is
-// what `kernel-integration.yml` builds and what shipping `0018` upstream will eventually leave us
-// with. The last-slot rule in particular has no live caller on this kernel and is kept on purpose.
+// So both helpers are live, and the regression tests are pointed at an input that reaches them.
 
 /// How many of a GCPnts sampler's `nbPoints` samples fit in a buffer of `capacity` slots.
 inline int32_t occtSamplerKept(int32_t nbPoints, int32_t capacity)

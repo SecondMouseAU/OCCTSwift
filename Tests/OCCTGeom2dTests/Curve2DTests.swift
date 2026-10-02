@@ -177,31 +177,46 @@ struct Curve2DTests {
     /// counts. `outXY` only holds `pointCount` pairs, so the surplus used to be written past its
     /// end; the surplus point is the curve's end parameter, so it is the last slot that keeps it.
     ///
-    /// **#2977: this is a clamp test, not a surplus-point test, on the pinned kernel.** Carried
-    /// patch `0018` fixes the sampler itself, so `NbPoints()` never exceeds the request and
-    /// `occtSamplerIndex` is the identity at every slot. Re-measured 2026-10-02 against
-    /// `v4.0.0-kernel.3`: both `GCPnts_UniformAbscissa` and `GCPnts_QuasiUniformAbscissa`, 2D and
-    /// 3D, over this ellipse's sixteen counts and counts 2..60, over ellipses down to 1e6 x 1e-6,
-    /// over 1e8 and 1e10 majors and over a degenerate-aspect Bezier: nothing overshoots. So the
-    /// kernel moved under the test; the 2D uniform path is not an odd one out, and #501's own
-    /// quasi-uniform reproducer does not overshoot either. The transcript is in
-    /// `Scripts/repro/2977-uniformabscissa-no-overshoot/`.
+    /// **#2977 re-pointed the fixture.** The 1e6 x 1e-3 ellipse no longer overshoots: carried
+    /// patch `0018` also accepts a step within `theTol` of the end in **3D**, not only within the
+    /// parametric epsilon, and at that size the leftover gap is inside it. So the old fixture had
+    /// stopped reaching the path the test exists for, and the natural distortion (drop the
+    /// last-slot rule, use `slot + 1` everywhere) left it green.
     ///
-    /// What is still pinned here is the clamp and the end point, which are the contract whatever
-    /// the kernel does. The end-point rule is unexercised, and the bridge keeps it on purpose; see
-    /// the #2977 block above `occtSamplerKept` in `OCCTBridge_Internal.h` for why.
-    @Test("Uniform draw holds the requested count and ends on the curve's end")
+    /// The hole is still open on a larger curve, because the same relative shortfall is a larger
+    /// 3D distance. Measured 2026-10-02 against `v4.0.0-kernel.3` on a **1e8 x 0.1** ellipse:
+    /// `GCPnts_UniformAbscissa` returns `count + 1` for counts 24, 34, 35, 41, 47, 48, 49 and 51
+    /// of the first 59, and `GCPnts_QuasiUniformAbscissa` for exactly the same eight. The surplus
+    /// sample is the end parameter 6.2831853071795862 and the one before it is 5.43e-8 short,
+    /// which is 1.5e-7 away in model space. The full transcript, and the rows that are clean, are
+    /// in `Scripts/repro/2977-uniformabscissa-no-overshoot/`.
+    @Test("Uniform draw clamps to the requested count and keeps the curve's end")
     func uniformDrawRespectsCount() throws {
         // #766: the surplus-point pin sat behind `if let last = points.last`, which a sampler
         // returning nothing skips, and the count behind an `Issue.record` guard. Both are now
         // `#require`, so an empty sample stops the case instead of passing it.
         let ellipse = try #require(
-            Curve2D.ellipse(center: .zero, majorRadius: 1e6, minorRadius: 1e-3))
+            Curve2D.ellipse(center: .zero, majorRadius: 1e8, minorRadius: 0.1))
         let endPoint = ellipse.point(at: ellipse.domain.upperBound)
-        for count in [4, 5, 8, 12, 14, 18, 20, 22, 25, 26, 31, 33, 34, 35, 39, 40] {
+        for count in [24, 34, 35, 41] {
             let points = ellipse.drawUniform(pointCount: count)
             try #require(points.count == count)
-            #expect(distance(points[count - 1], endPoint) < 1e-6)
+            // 1e-9, not the 1e-6 this carried while its fixture did not overshoot. The sampler's
+            // own last-but-one point sits 1.5e-7 from the end on this curve, so 1e-6 is wide
+            // enough to accept exactly the defect: the bridge dropping the surplus sample instead
+            // of giving the final slot the sampler's last one. The kept end point is the same
+            // double evaluated twice, so the distance is 0.
+            #expect(distance(points[count - 1], endPoint) < 1e-9)
+        }
+        // A control at the same counts on #501's own ellipse, which no longer overshoots: the
+        // clamp is a no-op there and the end arrives in the last slot anyway.
+        let settled = try #require(
+            Curve2D.ellipse(center: .zero, majorRadius: 1e6, minorRadius: 1e-3))
+        let settledEnd = settled.point(at: settled.domain.upperBound)
+        for count in [24, 34, 35, 41] {
+            let points = settled.drawUniform(pointCount: count)
+            try #require(points.count == count)
+            #expect(distance(points[count - 1], settledEnd) < 1e-9)
         }
     }
 
