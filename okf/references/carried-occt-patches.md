@@ -153,33 +153,48 @@ both answer nil and the guard is redundant rather than wrong, and it still cover
 older asset. `Package.swift`'s pin block records that exception against
 [Pinned kernel patch check](../policies/pinned-kernel-patch-check.md)'s retire-the-mitigation rule.
 
-### The wasm kernel: one patch behind, as of 2026-09-29
+### The wasm kernel: in step with the native one since v4.0.0-kernel.4
 
 `libOCCT-wasm.a` and its header tree are a **second** pinned asset, recorded in
 `Scripts/wasm-kernel-pin.txt` rather than in `Package.swift`, because SwiftPM has no `binaryTarget`
-for a bare static library. It carries **thirty** patches, `0010` to `0042`, plus the eleven in
-`Scripts/patches-wasi/`, and the pinned native asset carries thirty-nine, so it **lacks nine of
-them**: `0043` below, plus the eight the v4.0.0-kernel.4 rebuild added natively (`0044` through
-`0048`, `0050` through `0052`). The wasm kernel is rebuilt on its own schedule and that rebuild
-is not part of this repin:
+for a bare static library. Both kernels carry the same patches, `0010` to `0052`. As of this
+writing the pinned native asset carries thirty-nine, and so does this one, plus the eleven in
+`Scripts/patches-wasi/` that only the wasm build applies. They were built from one tree in one
+sitting and published to one release tag, so **there is no divergence between the two platforms to
+record**.
 
-| Unpinned on wasm | What it leaves exposed |
+`Scripts/check-wasm-kernel-parity.py` reports both sides at the same count, and
+`wasm-kernel-pin.txt` carries no `ACKNOWLEDGED_*` keys. They were deleted rather than re-keyed,
+because that field's own rule is that the "against" number is never bumped: an acknowledgement that
+no longer acknowledges anything is removed, and its text is kept below as history.
+
+#### History: how the wasm kernel stood at v4.0.0-kernel.2, as of 2026-09-29
+
+Everything from here to the end of this section describes an asset that has been superseded. It is
+kept because the failure it records, a divergence nothing counted, is the argument for the parity
+gate. None of it describes what is pinned now.
+
+
+That asset carried **thirty** patches, `0010` to `0042`, plus the eleven in `Scripts/patches-wasi/`,
+while the native asset carried thirty-one, so it **lacked one of them**:
+
+| Was unpinned on wasm until v4.0.0-kernel.4 | What it leaves exposed |
 |---|---|
-| `0043-BRepGProp_Gauss-keeps-the-by-plane-mass-2827` | In the browser only, `Face.volumeInertia(planeNormal:planeDistance:)` still returns the fabricated `0.0` that `v4.0.0-kernel.3` fixed natively. No other API reaches the by-plane `BRepGProp_Vinert` path, and the by-point `Face.volumeInertia` is unaffected on both platforms |
+| `0043-BRepGProp_Gauss-keeps-the-by-plane-mass-2827` | In the browser only, `Face.volumeInertia(planeNormal:planeDistance:)` still returned the fabricated `0.0` that `v4.0.0-kernel.3` fixed natively. No other API reached the by-plane `BRepGProp_Vinert` path, and the by-point `Face.volumeInertia` is unaffected on both platforms |
 
-`0044` is **not** a second row here. It is unpinned on both platforms, so it is not a divergence
+`0044` was **not** a second row here. It was unpinned on both platforms, so it was not a divergence
 between them, and `Scripts/check-wasm-kernel-parity.py` compares the wasm pin against
 `Package.swift`'s enumeration of what the native **asset** holds rather than against the directory
-listing. The 8.0.2 rebuild that closes the row above picks `0044` up on both platforms at once.
+listing. The v4.0.0-kernel.4 rebuild picked `0044` up on both platforms at once, which closed the row above.
 
 **Acknowledged, not ignored**, by `OCCT_WASM_PARITY_ACKNOWLEDGED_AGAINST=31` in
-`Scripts/wasm-kernel-pin.txt`: the wasm kernel is a 69-minute build and this repin did not take it,
-so the divergence is written down with the native count it was accepted at. That keying is the whole
+`Scripts/wasm-kernel-pin.txt`: the wasm kernel is a 69-minute build and that repin did not take it,
+so the divergence was written down with the native count it was accepted at. That keying is the whole
 point, per [Pinned kernel patch check](../policies/pinned-kernel-patch-check.md): the NEXT native
 repin makes the acknowledgement stale and `Scripts/check-wasm-kernel-parity.py` fires again, so it
-cannot become a permanent suppression the way two `ACKNOWLEDGED` rows in
-`Scripts/patches/README.md` did before #2190. What closes it is the OCCT 8.0.2 wasm rebuild, which
-is already owed: 8.0.2 is due 2026-10-02 and will rebuild both kernels from one patch set.
+could not become a permanent suppression the way two `ACKNOWLEDGED` rows in
+`Scripts/patches/README.md` did before #2190. What closed it was the rebuild of both kernels from one patch set. That was expected to
+be OCCT 8.0.2, due 2026-10-02; 8.0.2 did not ship, so it was done anyway for v4.0.0-kernel.4 (#3031).
 
 `0042` was the entry here for one day. PR #2784 published the asset for `v4.0.0-kernel.1` and PR
 #2782 repinned native to `v4.0.0-kernel.2` **twenty-nine seconds later**, so the browser briefly
