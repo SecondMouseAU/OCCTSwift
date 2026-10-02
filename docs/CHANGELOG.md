@@ -21,6 +21,36 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### The BSpline surface manipulation suite had never run an expectation, and five weak-assertion test files come off the v5 branch (#766, #2464, #2444, #2503, #2318, #2320)
+
+Batch 9 of the v5 lift takes the tail of the ranked path list: 42 gains over five files, from five
+execution PRs all merged into `v5.0.0-766-execution` and therefore invisible to the open-PR screen
+the programme used to be steered by. Across the five paths the weak-assertion census goes from 23
+SEVERE and 31 ESCAPABLE of 56 tests to 0 and 2, and repo-wide SEVERE goes from 1,365 to 1,342.
+
+The largest single finding is a fixture. `makeCylinderDerivedBSplineSurface()` converted an
+untrimmed `Surface.cylinder`, which `GeomConvert::SurfaceToBSplineSurface` refuses as an infinite
+surface, so it always returned nil and every one of the twelve tests in
+`BSplineSurfaceManipulationTests` skipped its whole body behind `if let`: not one expectation in
+that suite had ever executed. The fixture trims V to `[0, 10]` first, and the twelve tests now pin
+the trimmed cylinder's actual BSpline form (4 x 2 knots, 6 x 2 poles, degree 2 x 1, bounds
+`[0, 2 pi] x [0, 10]`) and what each manipulation does to it.
+
+`BSplineCurve3DManipulationTests` pins the chord-length knot vector, the pole counts and
+multiplicities before and after each edit, and the fact that `segment` at 25 and 75 percent lands
+exactly on the second and fourth interpolation points; two of its fifteen tests previously asserted
+nothing at all. `ShapeBuildEdgeTests` pins what `ShapeBuild_Edge` does to an edge rather than
+`shapeType == .edge`, which an untouched edge also satisfies, and moves the pcurve cases to a
+cylinder's lateral face because a plane re-projects a removed pcurve on demand.
+`BRepGraphEdgeGeometryTests` adds a sphere beside the box so that answers which never vary (not
+degenerated, has a curve, not a seam) can fail. `BRepGraphDurableUIDTests` replaces every nil-skip
+around a UID lookup with `#require`, which is what had let eight of its tests, including every
+"does not cross" test, return early and pass.
+
+Each test was proved by a semantic injection on `main`'s own kernel: 56 of 56 red, 56 of 56 green
+once reverted. The five ground-truth probes cross with their transcripts and all five reproduce
+against the pinned kernel.
+
 ### Tooling: the #766 probe reproduction check reaches 41 pairs it had never compiled (#2934)
 
 `Scripts/check-766-probe-reproduction.py` took the directory as its unit and opened `probe.mm` and
