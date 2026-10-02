@@ -15,7 +15,7 @@ import simd
 /// with a right distance.
 @Suite("BRepExtrema_DistanceSS")
 struct BRepExtremaDistanceSSTests {
-    /// #1793. `BRepExtrema_DistanceSS` on a vertex pair has one answer and one solution: the two
+    /// #1793: `BRepExtrema_DistanceSS` on a vertex pair has one answer and one solution: the two
     /// points themselves.
     @Test("distance between box vertices")
     func vertexDistance() throws {
@@ -40,7 +40,9 @@ struct BRepExtremaDistanceSSTests {
         #expect(abs(r.distance - (110.75 as Double).squareRoot()) < 1e-9, "got \(r.distance)")
     }
 
-    /// #1794. OCCT 8.0's low-level `BRepExtrema_DistanceSS` deliberately skips edge-vertex pairs
+    /// #1794, the endpoint case of an edge against a vertex.
+    ///
+    /// OCCT 8.0's low-level `BRepExtrema_DistanceSS` deliberately skips edge-vertex pairs
     /// whose closest point lands at one of the edge's endpoint-vertices (it expects the caller to
     /// pair vertices with vertices separately). This uses the high-level
     /// `BRepExtrema_DistShapeShape` wrapper, `Shape.distance(to:)`, which handles every subshape
@@ -59,15 +61,14 @@ struct BRepExtremaDistanceSSTests {
         #expect(simd_distance(r.pointOnShape2, target) < 1e-12, "p2 got \(r.pointOnShape2)")
         // The nearest point on the edge is one of its own endpoints, which is what makes this the
         // case the low-level algorithm skips.
-        let nearestEnd = ends.min { simd_distance($0, target) < simd_distance($1, target) }
-        if let nearestEnd {
-            #expect(
-                simd_distance(r.pointOnShape1, nearestEnd) < 1e-9,
-                "p1 got \(r.pointOnShape1), nearest endpoint is \(nearestEnd)")
-            #expect(
-                abs(r.distance - simd_distance(nearestEnd, target)) < 1e-9,
-                "expected \(simd_distance(nearestEnd, target)), got \(r.distance)")
-        }
+        let nearestEnd = try #require(
+            ends.min { simd_distance($0, target) < simd_distance($1, target) })
+        #expect(
+            simd_distance(r.pointOnShape1, nearestEnd) < 1e-9,
+            "p1 got \(r.pointOnShape1), nearest endpoint is \(nearestEnd)")
+        #expect(
+            abs(r.distance - simd_distance(nearestEnd, target)) < 1e-9,
+            "expected \(simd_distance(nearestEnd, target)), got \(r.distance)")
         // That endpoint is (-0.5, -0.5, 0.5) and the vertex is (5, 5, 1), so the answer is
         // sqrt(5.5^2 + 5.5^2 + 0.5^2) = sqrt(60.75).
         #expect(abs(r.distance - (60.75 as Double).squareRoot()) < 1e-9, "got \(r.distance)")

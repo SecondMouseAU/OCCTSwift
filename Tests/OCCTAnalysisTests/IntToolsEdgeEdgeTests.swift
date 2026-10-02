@@ -5,9 +5,10 @@ import simd
 @testable import OCCTSwift
 
 /// The fixtures are required rather than `if let`-wrapped: a nil edge used to skip every
-/// assertion and pass (#1754, #1756). The counts, parameter ranges and points are what
-/// `IntTools_EdgeEdge` reports for these inputs, each derivable from the two edges rather than
-/// read off a run.
+/// assertion and pass (#1754, #1756).
+///
+/// The counts, parameter ranges and points are what `IntTools_EdgeEdge` reports for these
+/// inputs, each derivable from the two edges rather than read off a run.
 @Suite("IntTools_EdgeEdge Tests")
 struct IntToolsEdgeEdgeTests {
     /// #1754: this read `type` and a 0.1-wide box round the origin, with every assertion inside
@@ -22,17 +23,11 @@ struct IntToolsEdgeEdgeTests {
         let edge2 = try #require(Shape.edgeFromPoints(SIMD3(0, -1, 0), SIMD3(0, 1, 0)))
         let parts = try #require(edge1.edgeEdgeIntersection(with: edge2))
         #expect(parts.count == 1)
-        guard let first = parts.first else {
-            Issue.record("two crossing edges have a common part")
-            return
-        }
+        let first = try #require(parts.first)
         #expect(first.type == .vertex)
         #expect(abs(first.param1Range.first - 1) < 1e-6, "r1 \(first.param1Range)")
         #expect(abs(first.param2Range.first - 1) < 1e-6, "r2 \(first.param2Range)")
-        guard let point = first.point else {
-            Issue.record("a vertex part reported no point")
-            return
-        }
+        let point = try #require(first.point, "a vertex part reported no point")
         #expect(simd_length(point) < 1e-6, "point \(point) is not the origin")
     }
 
@@ -51,20 +46,15 @@ struct IntToolsEdgeEdgeTests {
         let edge2 = try #require(Shape.edgeFromPoints(SIMD3(1, 0, 0), SIMD3(3, 0, 0)))
         let parts = try #require(edge1.edgeEdgeIntersection(with: edge2))
         #expect(parts.count == 1)
-        guard let first = parts.first else {
-            Issue.record("two overlapping edges have a common part")
-            return
-        }
+        let first = try #require(parts.first)
         #expect(first.type == .edge)
         #expect(first.param1Range.first == 1.0)
         #expect(first.param1Range.last == 2.0)
         // The same overlap on the second edge, which starts at x = 1, is [0, 1].
         #expect(abs(first.param2Range.first) < 1e-9, "r2 \(first.param2Range)")
         #expect(abs(first.param2Range.last - 1) < 1e-9, "r2 \(first.param2Range)")
-        guard let point = first.point else {
-            Issue.record("an edge part over a real overlap reported no point")
-            return
-        }
+        let point = try #require(
+            first.point, "an edge part over a real overlap reported no point")
         #expect(point.x > 1.0, "point x = \(point.x), outside the overlap")
         #expect(point.x < 2.0, "point x = \(point.x), outside the overlap")
         #expect(abs(point.y) < 1e-12)

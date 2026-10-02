@@ -42,18 +42,14 @@ struct ExtremaElCLinCircTests {
     /// `(10 - 5 cos u)^2 + (s - 5 sin u)^2` over the line parameter `s` leaves `(10 - 5 cos u)^2`,
     /// stationary only at `sin u = 0`: the near extremum is `(5, 0, 0)`, squared 25, and the far
     /// one `(-5, 0, 0)`, squared 225. The line point is `(10, 0, 0)` for both.
-    @Test func lineCircleCoplanar() {
+    @Test func lineCircleCoplanar() throws {
         let results = ExtremaElC.lineToCircle(
             linePoint: SIMD3(10, 0, 0), lineDir: SIMD3(0, 1, 0),
             circleCenter: SIMD3(0, 0, 0), circleNormal: SIMD3(0, 0, 1), radius: 5
         )
         #expect(results.count == 2)
-        guard let nearest = results.min(by: { $0.squareDistance < $1.squareDistance }),
-            let farthest = results.max(by: { $0.squareDistance < $1.squareDistance })
-        else {
-            Issue.record("a coplanar line and circle have extrema")
-            return
-        }
+        let nearest = try #require(results.min(by: { $0.squareDistance < $1.squareDistance }))
+        let farthest = try #require(results.max(by: { $0.squareDistance < $1.squareDistance }))
         #expect(abs(nearest.squareDistance - 25) < 1e-9)
         #expect(simd_distance(nearest.point1, SIMD3(10, 0, 0)) < 1e-9)
         #expect(simd_distance(nearest.point2, SIMD3(5, 0, 0)) < 1e-9)
@@ -70,15 +66,14 @@ struct ExtremaElCLinCircTests {
     /// witness points and `ExtremaResult` reports them as `(0, 0, 0)`, which is not a point of the
     /// circle and is indistinguishable from a measurement; filed as #2993. Pinning those zeros
     /// here would pin the defect.
-    @Test func lineOnCircleAxisReturnsRadius() {
+    @Test func lineOnCircleAxisReturnsRadius() throws {
         let results = ExtremaElC.lineToCircle(
             linePoint: SIMD3(0, 0, 10), lineDir: SIMD3(0, 0, 1),
             circleCenter: SIMD3(0, 0, 0), circleNormal: SIMD3(0, 0, 1), radius: 5
         )
         #expect(results.count == 1)
-        if let first = results.first {
-            #expect(abs(first.squareDistance - 25) < 1e-6)
-            #expect(abs(first.squareDistance.squareRoot() - 5) < 1e-6)
-        }
+        let first = try #require(results.first)
+        #expect(abs(first.squareDistance - 25) < 1e-6)
+        #expect(abs(first.squareDistance.squareRoot() - 5) < 1e-6)
     }
 }

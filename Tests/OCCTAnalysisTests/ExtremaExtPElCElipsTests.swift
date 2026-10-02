@@ -15,7 +15,7 @@ struct ExtremaExtPElCElipsTests {
     /// derivative is `sin t * (100 - 32 cos t)`. The right-hand factor is positive for every `t`,
     /// so the stationary points are exactly `t = 0` and `t = pi`: the near vertex `(5, 0, 0)` at
     /// distance 5, and the far vertex `(-5, 0, 0)` at distance 15. Two extrema, 25 and 225.
-    @Test func pointToEllipse() {
+    @Test func pointToEllipse() throws {
         let results = ExtremaPointCurve.pointToEllipse(
             point: SIMD3(10, 0, 0),
             center: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), xDir: SIMD3(1, 0, 0),
@@ -23,16 +23,14 @@ struct ExtremaExtPElCElipsTests {
         )
         #expect(results.count == 2)
         let sorted = results.sorted { $0.squareDistance < $1.squareDistance }
-        guard sorted.count == 2 else {
-            Issue.record("expected the two axis vertices, got \(results.count) extrema")
-            return
-        }
+        let nearest = try #require(sorted.first)
+        let farthest = try #require(sorted.last)
         // Nearest: the near vertex (5, 0, 0), distance 5.
-        #expect(abs(sorted[0].squareDistance - 25) < 1e-9)
-        #expect(simd_distance(sorted[0].point2, SIMD3(5, 0, 0)) < 1e-9)
+        #expect(abs(nearest.squareDistance - 25) < 1e-9)
+        #expect(simd_distance(nearest.point2, SIMD3(5, 0, 0)) < 1e-9)
         // Farthest: the far vertex (-5, 0, 0), distance 15.
-        #expect(abs(sorted[1].squareDistance - 225) < 1e-9)
-        #expect(simd_distance(sorted[1].point2, SIMD3(-5, 0, 0)) < 1e-9)
+        #expect(abs(farthest.squareDistance - 225) < 1e-9)
+        #expect(simd_distance(farthest.point2, SIMD3(-5, 0, 0)) < 1e-9)
         // point1 is the query point on every result, and the reported square distance is the one
         // between the pair the same result reports, not a number arriving beside them.
         for r in sorted {

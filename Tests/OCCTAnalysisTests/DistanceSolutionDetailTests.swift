@@ -15,7 +15,9 @@ import simd
 /// is numerically plausible but belongs to a different place on the face fails.
 @Suite("Distance Solution Detail")
 struct DistanceSolutionDetailTests {
-    /// #1818. Box 1 spans -5...5 on every axis; box 2 spans x in 17.5...22.5 and y, z in
+    /// #1818, four equal minimum-distance solutions between two separated boxes.
+    ///
+    /// Box 1 spans -5...5 on every axis; box 2 spans x in 17.5...22.5 and y, z in
     /// -2.5...2.5. The gap is 17.5 - 5 = 12.5, reached at each of box 2's four near vertices
     /// against box 1's x = 5 face, so there are four minimum-distance solutions, all at 12.5, and
     /// each is a vertex of box 2 against the interior of a face of box 1.
@@ -53,7 +55,9 @@ struct DistanceSolutionDetailTests {
         #expect(carries, "no face of box 1 maps \(detail.paramFaceUV1) to \(p1)")
     }
 
-    /// #1819. The sphere's centre (20, 5, 5) is level with box 1's corner (5, 5, 5) on two axes,
+    /// #1819, a sphere level with a box corner is nearest that vertex.
+    ///
+    /// The sphere's centre (20, 5, 5) is level with box 1's corner (5, 5, 5) on two axes,
     /// so the nearest point of the box is that vertex and the nearest point of the sphere is the
     /// one facing it, (17, 5, 5), 12 away. On a `Geom_SphericalSurface` about (20, 5, 5) that
     /// point is (u, v) = (pi, 0).
