@@ -2251,8 +2251,8 @@ and the kernel's `IR2 = ZZ * Snt * (...) / 4` with `ZZ = (Z2 - Z1) * Cnt` is tha
 where `cos(pi/6) sin(pi/6)` is `0.4330127018922193`. `IZ2` is wrong in a third way (an extra
 `(Z2 - Z1) Cnt`, and a `/ 4` applied to a term that should not have it). None of that is in this
 patch: it is a distinct defect with its own derivation, nothing in the bridge reads it, and
-changing a second result under cover of this one is how a patch stops being reviewable. File it
-separately before touching it.
+changing a second result under cover of this one is how a patch stops being reviewable. Filed
+separately as [#3010](https://github.com/SecondMouseAU/OCCTSwift/issues/3010).
 
 ### CI coverage, and the pin
 
@@ -2360,7 +2360,8 @@ term `pi R h^2 sin a`, `1.57e-6`. The centre of mass is unchanged on every case.
 As in `0050`, the inertia terms below `dim` carry their own discrepancy: `IR2` is built from a
 four-term quartic over 4 where the second moment about the axis integrates to
 `cos a (Z2 - Z1)(R1^4 + R1^3 R2 + R1^2 R2^2 + R1 R2^3 + R2^4) / 20`, a five-term quartic over 20,
-and it keeps the same spurious `sin a` in `ZZ`. Out of scope here, for the same reason.
+and it keeps the same spurious `sin a` in `ZZ`. Out of scope here, for the same reason, and filed
+as [#3010](https://github.com/SecondMouseAU/OCCTSwift/issues/3010) with `0050`'s half.
 
 ### CI coverage, and the pin
 

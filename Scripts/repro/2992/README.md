@@ -78,4 +78,5 @@ Found while re-deriving the two above, measured, and deliberately out of scope f
 (`12753.276779771842` against `29452.43112740431`), `IZ2` is wrong in a third way, and
 `GProp_VelGProps`' `IR2` integrates a four-term quartic over 4 where the volume moment is a
 five-term quartic over 20. `derivation-check.py` prints the `Dm(3, 3)` comparison. Nothing in the
-bridge reads any of it. File it before touching it.
+bridge reads any of it. Filed as
+[#3010](https://github.com/SecondMouseAU/OCCTSwift/issues/3010).
