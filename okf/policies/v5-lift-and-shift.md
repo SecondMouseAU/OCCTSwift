@@ -82,6 +82,8 @@ Every count the census prints is a **lower** bound. Two tests that both tier cle
 differ, and #2937's own `islandsCutHoles` is one: the branch pins two exact half-spans `main` does
 not, and the detector scores both sides the same. It was a lower bound for a second reason until
 #2949, which is why the figures on this page carry a date and a commit: re-measure, never quote.
+A third reason is open: the detector reads a `guard` only when its `else` is on the same line, so
+the multi-line form is invisible to it, and 284 tests on `main` sit in one (#2982).
 
 ## What the first two content batches measured
 
@@ -184,7 +186,13 @@ paths, this screen clears the candidate.
   against. "The bridge function returns null, false or zero" separates a working kernel from a
   broken one and nothing else; a semantic distortion (a verdict inverted, a distance offset, a
   count off by one, a flag dropped) proves the test pins a specific answer. #2487's inversions are
-  why it passed with 18 boolean-only records.
+  why it passed with 18 boolean-only records. **A Red row is not a pass either**, and on this
+  population it usually meant the test was never rewritten: of the 339 merged PRs recording one,
+  300 left at least one red-rowed test unchanged, and 266 of those tests are still weak on `main`
+  at `9fcf0d08`, in 69 paths (#2970, ranked for a re-sweep in #2983). Those are **not** gains and
+  no lift reaches them: the branch holds the same weak copy, so they have to be written rather
+  than taken. Treat a certified-Red test exactly as you treat an uncertified one, per
+  [prove-the-test-fails](prove-the-test-fails.md)'s "a red row is a reason to keep going".
 - **Laundering by deletion.** A review round that resolved a parity mismatch by deleting the
   measured side rather than explaining it (#2486, #2902). Compare the `func` name set and the
   pre-existing record set between base and head: a removal is the finding.
