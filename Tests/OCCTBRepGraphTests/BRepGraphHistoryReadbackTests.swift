@@ -199,6 +199,56 @@ struct BRepGraphHistoryReadbackTests {
         #expect(graph.findOriginal(of: node(.edge, 7)) == node(.edge, 7), "same index, other kind")
     }
 
+    // MARK: - The setup every test above leans on
+
+    @Test("clearHistory discards everything recorded, and recording follows the enabled flag")
+    func clearAndEnabledFlag() throws {
+        // Not `makeGraph()`: its two setup calls are what this test is about. On a fresh graph
+        // they have nothing to undo, so no other test here can tell a working one from a no-op.
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10), "box")
+        let graph = try #require(BRepGraph(shape: box), "graph of a box")
+        let orig = node(.face, 0)
+        let mid = node(.face, 1)
+        let gone = node(.face, 2)
+        graph.isHistoryEnabled = true
+        #expect(graph.isHistoryEnabled)
+        graph.recordHistory(operationName: "A", original: orig, replacements: [mid])
+        graph.recordHistory(operationName: "B", original: gone, replacements: [])
+        #expect(graph.historyRecordCount == 2)
+        #expect(graph.historyIsDeleted(gone))
+
+        // OCCT's Clear drops the records and every lookup built from them, the deleted set
+        // included, and leaves recording switched on.
+        graph.clearHistory()
+        #expect(graph.historyRecordCount == 0)
+        #expect(graph.historyRecord(at: 0) == nil)
+        #expect(graph.historyDeletedNodes.isEmpty)
+        #expect(!graph.historyIsDeleted(gone))
+        #expect(!graph.hasHistoryRecord(for: orig))
+        #expect(graph.findDerived(of: orig) == [])
+        #expect(graph.findOriginal(of: mid) == mid)
+        #expect(graph.isHistoryEnabled)
+
+        // Recording starts over from sequence 0.
+        graph.recordHistory(operationName: "C", original: orig, replacements: [mid])
+        let rec = try #require(graph.historyRecord(at: 0), "record 0 after the clear")
+        #expect(rec.operationName == "C")
+        #expect(rec.sequenceNumber == 0)
+
+        // Switched off, a record is dropped (BRepGraph_LayerHistory::Record returns at once when
+        // disabled); switched back on, it is kept.
+        graph.isHistoryEnabled = false
+        #expect(!graph.isHistoryEnabled)
+        graph.recordHistory(
+            operationName: "D", original: node(.face, 3), replacements: [node(.face, 4)])
+        #expect(graph.historyRecordCount == 1, "a record written while disabled is dropped")
+        graph.isHistoryEnabled = true
+        #expect(graph.isHistoryEnabled)
+        graph.recordHistory(
+            operationName: "E", original: node(.face, 3), replacements: [node(.face, 4)])
+        #expect(graph.historyRecordCount == 2)
+    }
+
     // MARK: - Readback shapes the original tests did not reach
 
     @Test("A record's replacements keep their own kinds, not the original's or the first one's")

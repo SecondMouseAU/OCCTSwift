@@ -170,15 +170,17 @@ struct TopologyRefResolverTests {
         let orig = node(.edge, 3)
         let a = node(.edge, 30)
         let b = node(.edge, 31)
-        let bRefined = node(.edge, 310)
+        let bFirst = node(.edge, 310)
+        let bSecond = node(.edge, 311)
         graph.recordHistory(operationName: "SplitEdge", original: orig, replacements: [a, b])
         #expect(graph.resolve(.splitOf(original: .literal(orig), occurrence: 0)) == .success(a))
         #expect(graph.resolve(.splitOf(original: .literal(orig), occurrence: 1)) == .success(b))
 
-        // The half it picks is reported in its current form: edge 31 is later modified into 310.
-        graph.recordHistory(operationName: "Refine", original: b, replacements: [bRefined])
+        // The half it picks is reported in its current form: edge 31 is later split again into
+        // 310 and 311, and the first leaf in index order is the one `currentForm` reports.
+        graph.recordHistory(operationName: "Refine", original: b, replacements: [bFirst, bSecond])
         #expect(
-            graph.resolve(.splitOf(original: .literal(orig), occurrence: 1)) == .success(bRefined))
+            graph.resolve(.splitOf(original: .literal(orig), occurrence: 1)) == .success(bFirst))
         #expect(graph.resolve(.splitOf(original: .literal(orig), occurrence: 0)) == .success(a))
 
         // A 1-to-1 modification is not a split, so there is nothing for the recipe to pick.
