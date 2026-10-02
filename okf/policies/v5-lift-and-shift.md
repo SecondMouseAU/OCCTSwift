@@ -40,10 +40,39 @@ on the merged population was wrongly declared.
 So **the backlog the programme worked is 15 percent of the work**, and the merged population,
 which nothing in the programme can see, is 84 percent of it. The two are near-disjoint by
 construction: an open PR's commits live on its own `exec/766-*` head and are not on the branch,
-while a merged PR's commits **are** the branch and appear in no open-PR list. #2271 was squash
-merged, so `git log --merges` does not list it either, and `check-766-already-landed.py` takes a
-PR number, so nothing would ever have pointed it at one. Its `HatchTests.swift` pins sat on the
-branch for as long as the programme ran.
+while a merged PR's commits are **almost always** the branch and appear in no open-PR list. #2271
+was squash merged, so `git log --merges` does not list it either, and
+`check-766-already-landed.py` takes a PR number, so nothing would ever have pointed it at one. Its
+`HatchTests.swift` pins sat on the branch for as long as the programme ran.
+
+**"A merged PR's commits are the branch" is 401 of 403 true, and the exceptions are measured**
+(#2987). Two merge commits GitHub reports as merged into `v5.0.0-766-execution` are not reachable
+from it, because the branch was force-pushed or rewound after they landed, and nobody can see that
+from a PR list: both read as merged and their issues read as done.
+
+| PR | its real subject | merge commit | where the work is |
+|---|---|---|---|
+| **#2232** | `Tests/OCCTAnalysisTests/BRepGPropVinertGKTests.swift` and `Scripts/repro/766-brepgprop-vinertgk/` | `0c58b5c9`, resolves, not an ancestor | `origin/exec/766-geomsphere3d`, which was cut from its head; its own `exec/766-brepgprop-vinertgk` is deleted |
+| **#2003** | `OCCTMiscTests`, the whole domain | `faf7ac4f`, **does not resolve in a fresh clone at all** | `origin/feat/766-misc-tests`, alive at `8f7bba46`, and nowhere else |
+
+Two corrections to earlier records of this, both measured on 2026-10-02 and both worth keeping
+because each was a plausible reading of the same branch. #2987 and batch 10's brief had #2232's
+subject down as `GeomSphere3DTests.swift`; it is not, and the sphere file's source is **#2214**,
+which is **closed unmerged** with its head alive, cut from #2232's head, so that one branch
+carries both files' work and screening the branch rather than the PR crosses them. #3000 recorded
+that correction and called #2214 open; `gh pr view 2214` says CLOSED. #3000 also recorded #2232's
+gain as unlifted, which it was at `5e27d0ce` and is not now: **PR #2995 lifted it the same day**,
+from `origin/exec/766-geomsphere3d`, and `main` is now ahead of the branch on that path. #2003 is
+still unlifted.
+
+**The census screens for this rather than assuming it.** `census-766-unlifted-tests.py` with
+`--prs-from` resolves every merged PR's merge commit against `git rev-list` of the branch and
+prints the ones that are off it, with the refs that do hold them, on every run and on a clean
+result too. What it still cannot do is measure their content, which needs a ref passed as
+`--heads`; for #2003 there is no such ref but its head branch, and for the day that head is
+deleted there is nothing. Everything the census cannot see is printed by every run as its `DARK`
+list, which is where that population and six other blind spots now live rather than in a
+docstring.
 
 Measured the same day: of the 61 open PRs, **one** reaches any of the merged gains, and the
 104 surviving closed-unmerged heads carry **four** gains that are nowhere else. Closed-unmerged is
@@ -83,7 +112,10 @@ differ, and #2937's own `islandsCutHoles` is one: the branch pins two exact half
 not, and the detector scores both sides the same. It was a lower bound for a second reason until
 #2949, which is why the figures on this page carry a date and a commit: re-measure, never quote.
 A third reason is open: the detector reads a `guard` only when its `else` is on the same line, so
-the multi-line form is invisible to it, and 284 tests on `main` sit in one (#2982).
+the multi-line form is invisible to it, and 284 tests on `main` sit in one (#2982). A fourth is
+the two merged PRs above, whose paths the survey cannot read at all (#2987). **The full list is
+printed by every run of the census**, so read it there rather than here: a limitation in a page
+is read by whoever opens the page, and the person who needs it is whoever reads the output.
 
 ## What the first two content batches measured
 
@@ -273,6 +305,9 @@ channel.
 
 - [#2937](https://github.com/SecondMouseAU/OCCTSwift/issues/2937), the three populations and the
   measurement, and `Scripts/census-766-unlifted-tests.py`, which is that measurement.
+- [#2987](https://github.com/SecondMouseAU/OCCTSwift/issues/2987), the two merged PRs the branch
+  does not hold, and [#3000](https://github.com/SecondMouseAU/OCCTSwift/issues/3000), the
+  correction to which file #2232 is about.
 - [#2854](https://github.com/SecondMouseAU/OCCTSwift/issues/2854), why the records stay.
 - [#2198](https://github.com/SecondMouseAU/OCCTSwift/issues/2198), the stub gate and the 72 percent.
 - [prove-the-test-fails](prove-the-test-fails.md), which every lift PR satisfies on `main`'s kernel
