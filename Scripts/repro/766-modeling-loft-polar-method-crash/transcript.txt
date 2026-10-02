@@ -1,0 +1,6 @@
+CheckCompatibility(true, what the bridge sets):
+profiles built: 8 of 8
+loft: returned from Build, done=0
+CheckCompatibility(false, for comparison):
+profiles built: 8 of 8
+loft: returned from Build, done=0

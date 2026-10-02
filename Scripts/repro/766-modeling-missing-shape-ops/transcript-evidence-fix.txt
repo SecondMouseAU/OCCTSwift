@@ -1,0 +1,7 @@
+torusCreation: valid=1 volume=1776.5287921960844 analytic=1776.5287921960846
+chamferBox: produced=1 valid=1 faces=26 volume=945.33333333333303
+offsetSolid: produced=1 valid=1 volume=1199.9999999999998 original=999.99999999999977
+scaleShape: valid=1 size=(20.000000400000001, 20.000000400000001, 20.000000400000001)
+mirrorShape: valid=1 centre=(-10, 5, 5)
+sliceAtZ(5): produced=1 valid=1 edges=4 centreZ=5
+sectionWiresAtZ(5): wires=1 [wire 1: edges=4 closed=1]

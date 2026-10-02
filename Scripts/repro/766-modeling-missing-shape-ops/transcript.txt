@@ -1,0 +1,16 @@
+torusCreation: valid=1 volume=1776.528792 expected 2*pi^2*10*9=1776.528792
+chamferBox: done=1 valid=1 faces=26 volume=945.3333333
+offsetSolid: done=1 valid=1 volume=1200 (original 1000)
+scaleShape: valid=1
+scaleShape: bounds min=(-10, -10, -10) max=(10, 10, 10) size=(20, 20, 20) centre=(0, 0, 0)
+mirrorShape: valid=1
+mirrorShape input: bounds min=(5, -1e-07, -1e-07) max=(15, 10, 10) size=(10, 10, 10) centre=(10, 5, 5)
+mirrorShape: bounds min=(-15, -1e-07, -1e-07) max=(-5, 10, 10) size=(10, 10, 10) centre=(-10, 5, 5)
+sliceAtZ(5): done=1 type=0 edges=4 vertices=4 valid=1
+  section: bounds min=(-5, -5, 5) max=(5, 5, 5) size=(10, 10, 2e-07) centre=(0, 0, 5)
+sectionWiresAtZ(5): wires=1 [wire 1: edges=4 closed=1]
+sliceAtZ(0): done=1 type=0 edges=4 vertices=4 valid=1
+  section: bounds min=(-5, -5, -1.5e-07) max=(5, 5, 1.5e-07) size=(10, 10, 3e-07) centre=(0, 0, 0)
+sectionWiresAtZ(0): wires=1 [wire 1: edges=4 closed=1]
+sliceAtZ(6): done=1 type=0 edges=0 vertices=0 valid=1
+sectionWiresAtZ(6): no edges (bridge returns nullptr, Swift [])
