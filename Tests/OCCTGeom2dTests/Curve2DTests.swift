@@ -198,7 +198,11 @@ struct Curve2DTests {
         let ellipse = try #require(
             Curve2D.ellipse(center: .zero, majorRadius: 1e8, minorRadius: 0.1))
         let endPoint = ellipse.point(at: ellipse.domain.upperBound)
-        for count in [24, 34, 35, 41] {
+        // The same six counts the 3D suite runs, so the two do not differ in coverage. Eight of the
+        // first 59 overshoot (24, 34, 35, 41, 47, 48, 49, 51); 48 and 49 are left out because they
+        // reach the same `occtSamplerIndex` last-slot rule as 47 and 51 and add no path, at about
+        // 1.4 s each on this curve.
+        for count in [24, 34, 35, 41, 47, 51] {
             let points = ellipse.drawUniform(pointCount: count)
             try #require(points.count == count)
             // 1e-9, not the 1e-6 this carried while its fixture did not overshoot. The sampler's

@@ -671,6 +671,16 @@ public enum SheetMetal {
         /// Returns nil where the seam runs along neither of the flange's own
         /// profile axes, which is `intersect`'s documented "no split" fallback
         /// and leaves the caller unfiltered rather than selecting nothing.
+        ///
+        /// That does not re-open #2972 for a diagonal *stepped* seam, which was
+        /// the worry on review: an upright narrower than the chamfer edge it
+        /// stands on builds nothing at all. The fillet fails with
+        /// `BuildError.filletFailed`, identically on `origin/main` before this
+        /// fix and after it, while the same geometry with the upright spanning
+        /// the whole edge builds. So the unfiltered path cannot return a
+        /// silently short volume here, which is what made the axis-aligned case
+        /// worth fixing. `Issue2972DiagonalSteppedSeamTests` pins both halves,
+        /// and its second test fails if that case ever starts building.
         fileprivate static func seamExtent(
             of info: BendIntersection, flange a: Flange, seamUnit: SIMD3<Double>
         ) -> ClosedRange<Double>? {
