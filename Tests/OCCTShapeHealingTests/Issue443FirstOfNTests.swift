@@ -77,7 +77,8 @@ private func closedAndOpenShellCompound() throws -> Shape {
 /// covers a body at all. The face is a 10x10 square with its lower left corner at `x0`.
 private func unorderedWireFaceShell(at x0: Double) throws -> (face: Shape, shell: Shape) {
     let corners: [SIMD3<Double>] = [
-        SIMD3(x0, 0, 0), SIMD3(x0 + 10, 0, 0), SIMD3(x0 + 10, 10, 0), SIMD3(x0, 10, 0),
+        SIMD3<Double>(x0, 0, 0), SIMD3<Double>(x0 + 10, 0, 0),
+        SIMD3<Double>(x0 + 10, 10, 0), SIMD3<Double>(x0, 10, 0),
     ]
     let ordered = try #require(Wire.polygon3D(corners, closed: true), "could not build the square")
     let edges = ordered.edges().compactMap { Shape.fromEdge($0) }

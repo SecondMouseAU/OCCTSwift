@@ -433,8 +433,10 @@ struct Issue702SolidDemotion {
                 shell.builderAdd(index == 0 ? flipped : face), "could not add face \(index)")
         }
         let volume = try #require(shell.volume, "the flipped shell has no volume")
+        let faceShare: Double = 1000.0 / 6.0
+        let expectedVolume: Double = 1000.0 - 2.0 * faceShare
         try #require(
-            abs(volume - (1000.0 - 2.0 * (1000.0 / 6.0))) < 1e-6,
+            abs(volume - expectedVolume) < 1e-6,
             "volume \(volume): the flipped face is not disagreeing with the others")
         return shell
     }
