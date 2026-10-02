@@ -58,7 +58,7 @@
 # the stray check in docs/guides/building-occt.md's "Shipping a rebuild" answers it.
 #
 # occt-version: 8.0.1
-# derived against: 32 carried patch(es) in Scripts/patches/, every one of them verified
+# derived against: 34 carried patch(es) in Scripts/patches/, every one of them verified
 # derived against: applied in the tree the rows below were derived from.
 # patch: 0010-Intf_Interference-O1-tangent-zone-checkpoint-breaker-319 79fe529c26ef
 # patch: 0011-XCAFDoc_ShapeTool-AutoNamingScope-341 76898e2438a2
@@ -92,6 +92,8 @@
 # patch: 0042-ShapeAnalysis-GetFaceUVBounds-null-surface-2773 1cf9dbde5fce
 # patch: 0043-BRepGProp_Gauss-keeps-the-by-plane-mass-2827 5db36c8e8661
 # patch: 0044-Extrema-ExtSS-ExtCS-Points-bound-against-point-sequence-2840 0b0b4a459980
+# patch: 0047-BRepMesh_IncrementalMesh-initParameters-refuses-NaN-2879-2900 dcfeed5d0e2b
+# patch: 0048-BRepGProp-by-plane-offset-sign-2873 0f2cf3ba295c
 #
 # totals: inline-raise       462 site(s) in  104 class(es)
 # totals: outofline-raise    828 site(s) in  284 class(es)

@@ -47,7 +47,7 @@ let useLocalXCFramework: Bool = {
         atPath: occtPackageDir + "/Libraries/OCCT.xcframework/Info.plist")
 }()
 
-// OCCT V8.0.1 plus the thirty-two carried patches are documented in Scripts/patches/README.md
+// OCCT V8.0.1 plus the thirty-four carried patches are documented in Scripts/patches/README.md
 // (patch list, verification status, and CI coverage gaps for maintainers).
 let occtTarget: Target =
     isWASI
@@ -230,8 +230,8 @@ let occtTarget: Target =
         // which is what they were built to do; if a later asset repeats either stray the finding comes
         // back rather than staying suppressed.
         //
-        // The asset holds thirty-one and Scripts/patches/ holds thirty-two, so 0044 is the untested
-        // set of one, written up where the counts are, above.
+        // The asset holds thirty-one and Scripts/patches/ holds thirty-four, so 0044, 0047 and 0048
+        // are the untested set of three, written up where the counts are, above.
         // If you rebuild and the checksum does not match the value below, that is a real difference to
         // investigate rather than an expected one, which is the opposite of what this paragraph said
         // while kernel.1 was pinned.
@@ -275,9 +275,9 @@ let occtTarget: Target =
         // wrong: InitializeMissingParameters is also the REPAIR that re-sets DirectFaces on an actor a
         // STEPCAFControl_Reader has left with empty OperationsFlags, which is #280's exact mechanism.
         // kernel-integration.yml caught it on main. See Scripts/patches/README.md's retired 0035 entry.
-        // Scripts/patches/ holds thirty-two patches and the pinned asset holds thirty-one of them,
-        // enumerated above. `ls Scripts/patches/*.patch | wc -l` answers 32 against a list of 31.
-        // The pinned asset lacks one of them, and this is the written divergence:
+        // Scripts/patches/ holds thirty-four patches and the pinned asset holds thirty-one of them,
+        // enumerated above. `ls Scripts/patches/*.patch | wc -l` answers 34 against a list of 31.
+        // The pinned asset lacks three of them, and this is the written divergence:
         //
         //   0044  Extrema_ExtSS::Points / Extrema_ExtCS::Points bound against the point       #2840
         //         sequence rather than against NbExt(), which counts mySqDist and so counts
@@ -298,6 +298,32 @@ let occtTarget: Target =
         //         and the gate is redundant rather than wrong, it still covers anyone pinning an
         //         older asset, and it is also the deliberate API decision that a parallel pair is
         //         a refusal rather than a distance with no points (a SemVer change, still open).
+        //
+        //   0047  BRepMesh_IncrementalMesh::initParameters refuses a NaN parameter: all five    #2879
+        //         of its tests are spelled `value < bound`, which NaN defeats, so the two that  #2900
+        //         throw do not throw and the three that substitute do not substitute. Carried
+        //         2026-10-02 for the OCCT 8.0.2 rebuild. It leaves nothing exposed to a Swift
+        //         caller: occtValidMeshDeflection and occtValidMeshAngle already refuse the same
+        //         input at every bridge site, so the kernel never sees it from here.
+        //         KEEP BOTH BRIDGE GUARDS WHEN THIS IS PINNED. Same shape as 0042 and 0044: with
+        //         the patch the kernel throws Standard_NumericError for the same input the guards
+        //         refuse, so both answer the site's refusal and the guards are redundant rather
+        //         than wrong, and they still cover anyone pinning an older asset or the wasm one.
+        //
+        //   0048  The by-plane BRepGProp_Vinert and BRepGProp_VinertGK overloads measure about    #2873
+        //         the plane the caller passed rather than its mirror through the origin: the
+        //         stored fourth coefficient carried the wrong sign, which also made loc cancel
+        //         out instead of re-basing. Carried 2026-10-02 for the OCCT 8.0.2 rebuild.
+        //         THIS ONE IS THE OPPOSITE CASE AND THE REPIN MUST ACT ON IT.
+        //         OCCTBRepGPropVinertPlane does not guard an input, it COMPENSATES: it builds the
+        //         gp_Pln mirrored through the origin so that the unpatched kernel answers about
+        //         the plane the Swift caller asked for. A kernel carrying 0048 with that mirror
+        //         still in place measures about the mirrored plane again, and
+        //         BRepGPropVinertTests' two sign assertions fail. Delete the mirror, flip those
+        //         assertions to n . C - d, and drop the "pass -d" note from
+        //         Face.volumeInertia(planeNormal:planeDistance:) and
+        //         docs/reference/Shape-HLR-Geom.md, IN THE SAME CHANGE THAT REPINS. Until then
+        //         the mirror is correct and must stay, because CI resolves the unpatched asset.
         //
         // 0043 (#2827, BRepGProp_Gauss keeps the by-plane mass) was the one outstanding before it,
         // and it went the other way, which is the comparison worth keeping beside 0044: carried
