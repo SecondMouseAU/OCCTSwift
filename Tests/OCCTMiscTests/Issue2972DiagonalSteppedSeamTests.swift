@@ -3,6 +3,8 @@ import Testing
 
 @testable import OCCTSwift
 
+/// A diagonal stepped seam refuses rather than returning a wrong volume, which this suite measures.
+///
 /// #2972's fix stops a stepped seam from filleting the wider flange's free edge, and it can only do
 /// that where it knows the run of the seam the bend occupies. That run is read off the bend
 /// intersection, which exists only when the seam runs along one of the flange's own profile axes.
@@ -65,10 +67,19 @@ struct Issue2972DiagonalSteppedSeamTests {
 
     @Test("the upright narrower than the chamfer edge refuses with filletFailed, as it always has")
     func steppedRefuses() {
-        #expect(
-            throws: SheetMetal.BuildError.filletFailed(fromID: "a", toID: "b", radius: 1.5)
-        ) {
-            _ = try build(start: 3, width: 4)
+        do {
+            let shape = try build(start: 3, width: 4)
+            let volume = shape.volume ?? Double.nan
+            Issue.record(
+                "built to \(volume), but this used to refuse: check it against the closed form")
+        } catch let error as SheetMetal.BuildError {
+            guard case .filletFailed(let from, let to, let radius) = error else {
+                Issue.record("refused with \(error), not the filletFailed it always gave")
+                return
+            }
+            #expect(from == "a" && to == "b" && radius == 1.5)
+        } catch {
+            Issue.record("refused with a non-BuildError: \(error)")
         }
     }
 }
