@@ -199,9 +199,12 @@ allowed the refusal in each case, so nothing stops compiling.
   outside the array's own range, where they wrote out of bounds and returned `true`, and
   `initIntegerArray(lower:upper:)` and `initRealArray(lower:upper:)` refuse `upper < lower` (#2855).
 - Every mesh, tessellating-export, proximity, self-intersection, poly-HLR and coherent-triangulation
-  entry point refuses a linear deflection below `1e-7`, a negative one or NaN, and the meshing entry
-  points refuse an angular deflection below `1e-12`, negative or NaN, each with that call's own
-  documented refusal: `nil`, an empty result, or a thrown `ExportError` (#2879, #2900).
+  entry point refuses a NaN linear deflection, and the meshing entry points refuse a NaN angular
+  deflection, each with that call's own documented refusal: `nil`, an empty result, or a thrown
+  `ExportError`. A NaN linear deflection started a tessellation that did not return, and a NaN angle
+  returned the coarsest mesh with `IsDone()` true. A value below the floor (`1e-7` linear, `1e-12`
+  angular) or negative was already refused by the kernel's own throw, so only NaN changes what a
+  consumer sees (#2879, #2900).
 - `Shape.edgePolyline(at:deflection:maxPoints:)` returns `nil`, and `Shape.allEdgePolylines` and
   `allEdgePolylinesIndexed` return `[]`, for a deflection below `Precision::Confusion()`, where they
   returned a truncated leading sliver of each edge labelled as the whole (#2872).
@@ -228,7 +231,7 @@ and four `Document` TNaming lookups on a document that never recorded naming (#7
 a contract a caller can have depended on.
 
 **WebAssembly.** `Exporter.writeDXF` and `Exporter.writeSVG` work on `wasm32-unknown-wasip1`, where
-every export threw (#2793). The module is about a third smaller: #2839 moved the Swift layer to
+every export threw (#2793). The module is about 37 percent smaller: #2839 moved the Swift layer to
 `FoundationEssentials` and took it from 26.98 MB to about 16.9 MB brotli, a frozen measurement of
 2026-09-29 with byte-identical geometry output. The saving is all or nothing per linked module, so a
 consumer keeps it only by making the same import change in its own sources, and the checklist is in
@@ -241,7 +244,8 @@ against its diff. The public Swift declarations (`Sources/OCCTSwift`) and the C 
 compared, keyed by container, name and argument labels, so that a break nobody declared would show
 as a changed declaration with no MAJOR attached. No declaration was removed and no enum case was
 added or removed, `SheetMetal.BuildError` included, and every changed Swift declaration traces to a
-MAJOR below. That comparison is a screen over declarations and not a `swift-api-digester` run, and
+MAJOR below, apart from the second `bsplineFill` overload (#2888), which is additive. That
+comparison is a screen over declarations and not a `swift-api-digester` run, and
 it cannot see a changed value behind an unchanged signature: those are the PRs' own statements, read
 against their diffs.
 
