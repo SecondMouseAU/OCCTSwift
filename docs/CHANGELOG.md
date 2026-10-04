@@ -21,6 +21,10 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### A degenerate `CoordinateSystem3D` is refused on WebAssembly, not silently used (#2891)
+
+`CoordinateSystem3D` built with `direction` parallel to `xDirection` has no X direction, and OCCT refuses it. On `wasm32-unknown-wasip1` that refusal did not happen: `mirrored(about:)`, `translated(by:)` and the initialiser itself used the degenerate axis and returned a plausible wrong answer, where every Apple platform reports the documented fallback of all-zero directions and an unmoved point. The bridge now refuses the parallel pair itself, at OCCT's own tolerance, so all platforms agree. No behaviour changes on any Apple platform.
+
 ### The BRepGraph construction-axis, history readback, recipe-resolver and absorb tests pin derived values instead of "it resolved" (#2983, #766, #3037, #3038)
 
 Four suites the #766 certification recorded Red and never rewrote, `ConstructionAxisTests`, `BRepGraphHistoryReadbackTests`, `TopologyRefResolverTests` and `GraphHistoryAbsorbTests`, are rewritten against `main`'s own kernel. All 48 of their tests now assert exact values derived from the geometry or from OCCT's own header and source, 9 tests are added, and the weak-assertion census reads 0 SEVERE and 0 ESCAPABLE where it read 4 and 44. Against 125 injected defects the old tests left 56 unnoticed and the new ones leave none. Four fixtures that had stopped meaning their name are replaced: the cylinder and torus origin tests asked at a vertex whose height equals the surface's own origin, the "helical edge" was one piece of a face the builder had shredded into 622 edges, so the fixture never contained a helix, and the tolerance test could not see the line that passes the edge's tolerance in. No library code changes.
