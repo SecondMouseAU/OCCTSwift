@@ -21,6 +21,31 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### Every per-domain test suite now runs for wasm, and the five whole-target exclusions are gone (#2928)
+
+`Scripts/run-wasm-tests.sh` runs all 18 per-domain targets for `wasm32-unknown-wasip1`, up from 13,
+and `Package.swift`'s whole-target exclusion list is empty. Two of the five reasons #2793 recorded
+were not true of the platform, measured in `Scripts/repro/2928/`: `NSLock` and `ProcessInfo` compile
+for the triple, so `OCCTIOTests` was 46 files out for a type that was there; and `OCCTThreadTests` is
+a suite about screw threads, of which six files of 28 are about CPU threads.
+
+Eighteen individual files remain excluded, each for a property of the platform or of the harness: two
+are about `isSelfIntersecting(hardTimeout:)`, which cannot exist without a second thread (#2760); nine
+are concurrency detectors that would pass having measured nothing on a single-threaded target; six
+read a `.brep` fixture out of the source tree, which the module cannot see (#3026); one compares an
+OCCT reading against host-OS facilities wasi-libc does not have. Four of those were lifted into files
+of their own so that the unrelated tests around them could run.
+
+Six files that could not express an input past `Int32.max` are back, each deriving the case from
+`Int.bitWidth` rather than naming it unconditionally. The sixth was on no list, because the target
+holding it had never run. No Apple behaviour changes.
+
+`Scripts/wasm-test-known-failures.txt` grows by nine, under #3025 and the existing libm-baseline
+block. `Scripts/repro/2928/trait-measurement.md` records the measurement the issue asked for first: a
+disabling `.enabled(if:)` trait does suppress evaluation of a `@Test(arguments:)` list, of a
+`static let` and of a body, and an enabled argument list is evaluated during test discovery, so an
+overflow there ends the module before any test reports.
+
 ### A degenerate `CoordinateSystem3D` is refused on WebAssembly, not silently used (#2891)
 
 `CoordinateSystem3D` built with `direction` parallel to `xDirection` has no X direction, and OCCT refuses it. On `wasm32-unknown-wasip1` that refusal did not happen: `mirrored(about:)`, `translated(by:)` and the initialiser itself used the degenerate axis and returned a plausible wrong answer, where every Apple platform reports the documented fallback of all-zero directions and an unmoved point. The bridge now refuses the parallel pair itself, at OCCT's own tolerance, so all platforms agree. No behaviour changes on any Apple platform.
