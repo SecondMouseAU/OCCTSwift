@@ -46,10 +46,12 @@ struct Issue375STLWindingTests {
         return out
     }
 
-    /// Fraction of `mesh`'s triangles whose (v1,v2,v3) winding faces away from `center` --
-    /// cross(v2-v1, v3-v1) points away from the center, the expected convention for a convex
-    /// solid's outward-facing mesh. 1.0 = fully outward, 0.0 = fully inward (a clean global
-    /// inversion), anything strictly between = locally inconsistent.
+    /// The fraction of triangles in `mesh` whose winding faces away from `center`.
+    ///
+    /// A triangle counts as outward when cross(v2-v1, v3-v1) points away from the center, which is
+    /// the expected convention for a convex solid's outward-facing mesh. 1.0 is fully outward, 0.0
+    /// is fully inward (a clean global inversion), and anything strictly between is locally
+    /// inconsistent.
     private func outwardFraction(of mesh: Mesh, center: SIMD3<Float>) -> Double {
         let verts = mesh.vertices
         let idx = mesh.indices
@@ -73,7 +75,13 @@ struct Issue375STLWindingTests {
             .appendingPathComponent(UUID().uuidString)
             .appendingPathExtension("stl")
         defer { try? FileManager.default.removeItem(at: tempURL) }
-        try stl.write(to: tempURL, atomically: true, encoding: .utf8)
+        // `atomically: false` because `atomically: true` cannot work on WASI: it writes a temp
+        // file and renames it, and the rename is unsupported there (`NSCocoaErrorDomain Code=3328`).
+        // Nothing is lost by dropping it. Atomicity protects a reader from seeing a half-written
+        // file after a crash mid-write, and this is a fixture written and consumed by one test in
+        // one process. Same change, same reason, as `OCCTXCAFTests/OBJDocumentIOTests.swift` (#2793);
+        // this file reached a wasm run for the first time under #2928.
+        try stl.write(to: tempURL, atomically: false, encoding: .utf8)
         return try Shape.loadSTL(from: tempURL)
     }
 

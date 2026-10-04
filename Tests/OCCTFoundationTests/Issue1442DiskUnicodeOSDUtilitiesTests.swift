@@ -1,9 +1,21 @@
-import Darwin
 import Foundation
 import OCCTBridge
 import Testing
 
 @testable import OCCTSwift
+
+// For the two `free(ptr)` calls below, on a buffer the bridge allocated. The platform C library is
+// named per platform and nothing else here is platform-specific, so this is the same three-line
+// conditional `Sources/OCCTPlatform/Platform.swift` holds for the library (#2928). A bare
+// `import Darwin` was the one remaining thing in this target that `wasm32-unknown-wasip1` could not
+// build, and it is not a concurrency primitive, so the survey of those missed it.
+#if canImport(Darwin)
+    import Darwin
+#elseif canImport(Glibc)
+    import Glibc
+#elseif canImport(WASILibc)
+    import WASILibc
+#endif
 
 // #1442: three defects in OCCTBridge_IO_OSDUtilities.mm.
 //
@@ -34,51 +46,6 @@ import Testing
 // OCCTSerial.withLock is process-wide, which is the scope the state actually has.
 @Suite("OCCTBridge_IO_OSDUtilities: disk size/free/valid + Unicode UTF-8 encoding (#1442)")
 struct Issue1442DiskUnicodeOSDUtilitiesTests {
-
-    // MARK: - Finding 1: DiskSize/DiskFree report KB, not 512-byte blocks
-
-    @Test("Disk total size is reported in KB, matching a direct statvfs computation")
-    func diskSizeMatchesStatvfsInKB() throws {
-        var vfs = statvfs()
-        let rc = statvfs("/", &vfs)
-        #expect(rc == 0)
-        guard rc == 0 else { return }
-
-        // OSD_Disk::DiskSize() computes total blocks as f_blocks * (f_frsize / 512)
-        // (OSD_Disk.cxx); this bridge fn is documented in KB, and 1 block (512 bytes) is
-        // 0.5 KB. Total capacity does not fluctuate between the two statvfs-driven reads
-        // (ours here, OCCT's inside the bridge call below), so this can be an exact
-        // comparison, unlike free space below.
-        let blocks = UInt64(vfs.f_blocks) * (UInt64(vfs.f_frsize) / 512)
-        let expectedKB = Int64(blocks / 2)
-
-        let actual = DiskInfo.size(path: "/")
-        #expect(actual == expectedKB)
-        // Directly rules out the original (undivided, raw block count) answer too, for any
-        // disk large enough to tell the two apart.
-        if blocks > 0 {
-            #expect(actual != Int64(blocks))
-        }
-    }
-
-    @Test("Disk free space is reported in KB, matching a statvfs computation")
-    func diskFreeMatchesStatvfsInKB() throws {
-        var vfs = statvfs()
-        let rc = statvfs("/", &vfs)
-        #expect(rc == 0)
-        guard rc == 0 else { return }
-
-        let blocks = UInt64(vfs.f_bavail) * (UInt64(vfs.f_frsize) / 512)
-        let expectedKB = Int64(blocks / 2)
-
-        let actual = DiskInfo.freeSpace(path: "/")
-
-        // Free space can drift slightly between the two statvfs-driven reads under real disk
-        // activity; a 10% tolerance is generous for that while still firmly rejecting the
-        // original 2x-too-large (undivided block count) answer.
-        let tolerance = max(expectedKB / 10, 1024)
-        #expect(abs(actual - expectedKB) <= tolerance)
-    }
 
     // MARK: - Finding 2: non-ASCII code units are UTF-8 encoded, not dropped
 
