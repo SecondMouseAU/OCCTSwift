@@ -21,6 +21,10 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### A degenerate `CoordinateSystem3D` is refused on WebAssembly, not silently used (#2891)
+
+`CoordinateSystem3D` built with `direction` parallel to `xDirection` has no X direction, and OCCT refuses it. On `wasm32-unknown-wasip1` that refusal did not happen: `mirrored(about:)`, `translated(by:)` and the initialiser itself used the degenerate axis and returned a plausible wrong answer, where every Apple platform reports the documented fallback of all-zero directions and an unmoved point. The bridge now refuses the parallel pair itself, at OCCT's own tolerance, so all platforms agree. No behaviour changes on any Apple platform.
+
 ### Probe evidence that could not be re-derived, and the screens that could not see it (#2987, #2967, #2965)
 
 - **`census-766-unlifted-tests.py` screens the merged population instead of assuming it (#2987).**
