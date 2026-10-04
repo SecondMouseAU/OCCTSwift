@@ -71,7 +71,6 @@ Tests/OCCTAnalysisTests/LocalPropsParityTests.swift
 Tests/OCCTAnalysisTests/ZeroMassResultsTests.swift
 Tests/OCCTBRepGraphTests/BRepGraphExplorerTests.swift
 Tests/OCCTBRepGraphTests/BRepGraphRootNodeTests.swift
-Tests/OCCTBRepGraphTests/ConstructionAxisTests.swift
 Tests/OCCTBRepGraphTests/ConstructionPlaneTests.swift
 Tests/OCCTBRepGraphTests/Issue2650LocatedInstanceFindNodeTests.swift
 Tests/OCCTBRepGraphTests/Issue336ChainedHistoryTests.swift
