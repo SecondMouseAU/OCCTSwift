@@ -1,6 +1,6 @@
-kernel: /private/tmp/claude-501/-Users-elb-Projects-OCCTSwift/7ca7a65c-aee4-4ed2-ac7a-0732e49711a4/scratchpad/3003-k3/OCCT.xcframework
-libOCCT-macos.a: sha256 6d51d59022d2cef98152a8f3c5a6b640a5bac2a5968678e80e40cd5dac6ebc18, 157575280 bytes
+kernel: /private/tmp/claude-501/-Users-elb-Projects-OCCTSwift/7ca7a65c-aee4-4ed2-ac7a-0732e49711a4/scratchpad/3003-k4/OCCT.xcframework
+libOCCT-macos.a: sha256 aa8fca8dececc454f3c012b6637487dc634947a0067a87dbee72917af130ad92, 157581864 bytes
 variant: asset, what: threads, runs: 1
-offsetArc 0x1.a89bf0c2a8bafp+10 e6f6c8e84e94a220 1698.4365698478466
+offsetArc 0x1.a89bf0c2a8bb3p+10 48068026a77d0dca 1698.4365698478475
 threads in the process after the operations: 1
 BOPAlgo_Options::GetParallelMode(): 0

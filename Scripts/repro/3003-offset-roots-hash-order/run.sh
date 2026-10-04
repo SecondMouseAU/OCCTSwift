@@ -9,7 +9,8 @@
 #               order     the hash iteration order of a DataMap of one result's faces (probe.mm order)
 #               threads   thread count and BOPAlgo_Options' parallel mode (probe.mm threads), one run
 #               perturb   32 builds in ONE process with a different amount of heap held before each,
-#                         and how many distinct face orders came out (probe.mm perturb). One run.
+#                         and how many distinct face orders came out (probe.mm perturb), over --runs
+#                         processes (default 20): one process is a draw, the spread is the measurement.
 #               perturb-quiet  the same without the perturbation.
 #   --variant   asset     link against the archive as shipped. This is the kernel a consumer runs.
 #               control   recompile the UNMODIFIED BRepOffset_MakeOffset.cxx from --occt-src with the
@@ -33,6 +34,7 @@ REPO="$(cd "$HERE/../../.." && pwd)"
 WHAT=lines
 VARIANT=asset
 RUNS=60
+RUNS_GIVEN=""
 XC=""
 RAW=""
 OCCT_SRC="$REPO/Libraries/occt-src"
@@ -41,7 +43,7 @@ while [ $# -gt 0 ]; do
   case "$1" in
     --what) WHAT="$2"; shift 2 ;;
     --variant) VARIANT="$2"; shift 2 ;;
-    --runs) RUNS="$2"; shift 2 ;;
+    --runs) RUNS="$2"; RUNS_GIVEN=1; shift 2 ;;
     --xcframework) XC="$2"; shift 2 ;;
     --occt-src) OCCT_SRC="$2"; shift 2 ;;
     --raw) RAW="$2"; shift 2 ;;
@@ -68,7 +70,10 @@ fi
 HDR="$XC/macos-arm64/Headers"
 LIB="$XC/macos-arm64"
 
-case "$WHAT" in threads|perturb|perturb-quiet) RUNS=1 ;; esac
+case "$WHAT" in
+  threads) RUNS=1 ;;
+  perturb|perturb-quiet) [ -n "$RUNS_GIVEN" ] || RUNS=20 ;;
+esac
 echo "kernel: $XC"
 echo "libOCCT-macos.a: sha256 $(shasum -a 256 "$LIB/libOCCT-macos.a" | cut -d' ' -f1), $(stat -f %z "$LIB/libOCCT-macos.a") bytes"
 echo "variant: $VARIANT, what: $WHAT, runs: $RUNS"
@@ -128,8 +133,14 @@ clang++ -arch arm64 "$TMP/probe.o" $OVR -L"$LIB" -lOCCT-macos -framework Foundat
 
 case "$WHAT" in
   threads) "$TMP/bin" threads; exit 0 ;;
-  perturb) "$TMP/bin" perturb; exit 0 ;;
-  perturb-quiet) "$TMP/bin" perturb quiet; exit 0 ;;
+  perturb|perturb-quiet)
+    i=0
+    while [ "$i" -lt "$RUNS" ]; do
+      if [ "$WHAT" = perturb ]; then "$TMP/bin" perturb; else "$TMP/bin" perturb quiet; fi
+      i=$((i + 1))
+    done > "$TMP/out.txt"
+    python3 "$HERE/census.py" perturb < "$TMP/out.txt"
+    exit 0 ;;
 esac
 
 i=0

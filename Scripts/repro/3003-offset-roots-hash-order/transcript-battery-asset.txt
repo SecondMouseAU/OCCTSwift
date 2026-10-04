@@ -1,10 +1,10 @@
-kernel: /private/tmp/claude-501/-Users-elb-Projects-OCCTSwift/7ca7a65c-aee4-4ed2-ac7a-0732e49711a4/scratchpad/3003-k3/OCCT.xcframework
-libOCCT-macos.a: sha256 6d51d59022d2cef98152a8f3c5a6b640a5bac2a5968678e80e40cd5dac6ebc18, 157575280 bytes
+kernel: /private/tmp/claude-501/-Users-elb-Projects-OCCTSwift/7ca7a65c-aee4-4ed2-ac7a-0732e49711a4/scratchpad/3003-k4/OCCT.xcframework
+libOCCT-macos.a: sha256 aa8fca8dececc454f3c012b6637487dc634947a0067a87dbee72917af130ad92, 157581864 bytes
 variant: asset, what: battery, runs: 20
 runs: 20, cases per run: 72
 cases with more than one distinct result over the runs: 29
   of which only the dump differs (the sub-shapes came back in another order): 26
   of which the outcome itself differs: 3
-    off arc +1 lshape: done, NULL shape  |  valid=1 volume=4558.8362688 faces=45 type=3
-    off arc +0.3 lshape: done, NULL shape  |  valid=1 volume=3434.0493970 faces=45 type=3
-    thick arc 2 none lshape: done, NULL shape  |  open=0 valid=1 volume=6450.9556924 faces=45
+    off arc +1 lshape: done, NULL shape x9  |  valid=1 volume=4558.8362688 faces=45 type=3 x11
+    off arc +0.3 lshape: done, NULL shape x9  |  valid=1 volume=3434.0493970 faces=45 type=3 x11
+    thick arc 2 none lshape: done, NULL shape x9  |  open=0 valid=1 volume=6450.9556924 faces=45 x11

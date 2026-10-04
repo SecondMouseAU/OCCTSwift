@@ -4,6 +4,7 @@
     census.py lines     the output of `probe lines` run in N fresh processes
     census.py battery   the output of `battery` run in N fresh processes
     census.py compare A B   two files of `battery` output, one per build
+    census.py perturb   the output of `probe perturb` run in N fresh processes
     census.py --self-test
 
 `lines` input is `<label> <volume as %a> <dump hash> <volume as %.17g>` per line, one block of
@@ -15,11 +16,16 @@ but whose dump does is a result that comes back in a different sub-shape order.
 one distinct result across the runs, split into the cases where only the dump (the sub-shape order)
 differs and the cases where the outcome itself differs: valid, volume, face count, or a NULL shape.
 
+`perturb` input is one line per process, `builds=<n> heap <perturbed|untouched>: distinct face
+orders=<k>`. It reports the smallest, median and largest k over the processes, because one
+process is one draw from a spread and the spread is what the experiment measures.
+
 `compare` reads the `battery` output of two builds and reports every case whose set of outcomes
 differs between them, the dump left out. It answers a different question from `battery`: not
 whether a build agrees with itself, but whether two builds return the same thing.
 """
 import collections
+import re
 import sys
 
 
@@ -45,6 +51,40 @@ def census_lines(text):
     return rows
 
 
+PERTURB_LINE = re.compile(r"^builds=(\d+) heap (perturbed|untouched): distinct face orders=(\d+)$")
+
+
+def census_perturb(text):
+    values, builds, heap = [], set(), set()
+    for line in text.splitlines():
+        m = PERTURB_LINE.match(line.strip())
+        if m:
+            builds.add(int(m.group(1)))
+            heap.add(m.group(2))
+            values.append(int(m.group(3)))
+    if not values or len(builds) != 1 or len(heap) != 1:
+        raise SystemExit("perturb: need `builds=<n> heap <mode>: distinct face orders=<k>` lines that all "
+                         "agree on <n> and <mode>; got %d line(s), %d build count(s), %d heap mode(s)"
+                         % (len(values), len(builds), len(heap)))
+    ordered = sorted(values)
+    return {
+        "processes": len(values),
+        "builds": builds.pop(),
+        "heap": heap.pop(),
+        "min": ordered[0],
+        "median": ordered[len(ordered) // 2],
+        "max": ordered[-1],
+        "values": values,
+    }
+
+
+def print_perturb(r):
+    print("processes: %d, builds per process: %d, heap %s" % (r["processes"], r["builds"], r["heap"]))
+    print("distinct face orders in one process: min %d, median %d, max %d"
+          % (r["min"], r["median"], r["max"]))
+    print("per process: %s" % " ".join(str(v) for v in r["values"]))
+
+
 def print_lines(rows):
     print("%-20s %5s %9s %9s %16s" % ("line", "runs", "volumes", "dumps", "relative spread"))
     for label, runs, nv, nd, spread in rows:
@@ -66,12 +106,19 @@ def census_battery(text, per_run=72):
 
     moved = [k for k, c in results.items() if len(c) > 1]
     outcome_differs = [k for k in moved if len({outcome(x) for x in results[k]}) > 1]
+
+    def outcome_counts(k):
+        counts = collections.Counter()
+        for line, n in results[k].items():
+            counts[outcome(line).split(": ", 1)[1]] += n
+        return dict(counts)
+
     return {
         "runs": len(runs),
         "cases": len(results),
         "moved": moved,
         "outcome_differs": outcome_differs,
-        "outcomes": {k: sorted({outcome(x).split(": ", 1)[1] for x in results[k]}) for k in outcome_differs},
+        "outcome_counts": {k: outcome_counts(k) for k in outcome_differs},
     }
 
 
@@ -112,7 +159,8 @@ def print_battery(r):
           % (len(r["moved"]) - len(r["outcome_differs"])))
     print("  of which the outcome itself differs: %d" % len(r["outcome_differs"]))
     for k in r["outcome_differs"]:
-        print("    %s: %s" % (k, "  |  ".join(r["outcomes"][k])))
+        counts = r["outcome_counts"][k]
+        print("    %s: %s" % (k, "  |  ".join("%s x%d" % (o, counts[o]) for o in sorted(counts))))
 
 
 def self_test():
@@ -144,6 +192,10 @@ def self_test():
     two_runs_outcome = "c1: valid=1 volume=1.0 faces=6 dump=aa\nc1: done, NULL shape\n"
     r = census_battery(two_runs_outcome, per_run=1)
     case("a NULL result against a solid is an outcome difference", r["outcome_differs"] == ["c1"])
+    flip = "c1: valid=1 volume=1.0 faces=6 dump=aa\nc1: done, NULL shape\nc1: done, NULL shape\n"
+    r = census_battery(flip, per_run=1)
+    case("an outcome that flips reports how often each side was seen",
+         r["outcome_counts"] == {"c1": {"valid=1 volume=1.0 faces=6": 1, "done, NULL shape": 2}})
     try:
         census_battery("a: x\nb: y\nc: z\n", per_run=2)
         case("a ragged battery input is refused", False)
@@ -164,6 +216,24 @@ def self_test():
     extra = "c1: valid=1 volume=1.0 faces=6 dump=aa\n"
     n, differing, missing = compare_batteries(same_a, extra, per_run=1)
     case("a case present in only one build is reported", missing == ["c2"])
+
+    one = census_perturb("builds=32 heap perturbed: distinct face orders=1\n" * 3)
+    case("a constant perturb census has min, median and max all equal",
+         (one["min"], one["median"], one["max"], one["processes"]) == (1, 1, 1, 3))
+    spread = census_perturb("".join("builds=32 heap untouched: distinct face orders=%d\n" % k
+                                    for k in (9, 32, 11, 10, 14)))
+    case("a spread reports its smallest, median and largest",
+         (spread["min"], spread["median"], spread["max"]) == (9, 11, 32))
+    case("the heap mode is carried through", spread["heap"] == "untouched")
+    for name, bad in (("an empty perturb input", "noise\n"),
+                      ("runs that disagree on the build count",
+                       "builds=32 heap perturbed: distinct face orders=1\n"
+                       "builds=16 heap perturbed: distinct face orders=1\n")):
+        try:
+            census_perturb(bad)
+            case(name + " is refused", False)
+        except SystemExit:
+            case(name + " is refused", True)
 
     for f in failures:
         print("self-test FAILED:", f)
@@ -187,6 +257,9 @@ def main(argv):
         return 0
     if mode == "battery":
         print_battery(census_battery(text))
+        return 0
+    if mode == "perturb":
+        print_perturb(census_perturb(text))
         return 0
     print(__doc__)
     return 2

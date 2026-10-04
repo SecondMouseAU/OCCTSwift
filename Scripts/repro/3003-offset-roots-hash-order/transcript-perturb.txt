@@ -1,18 +1,26 @@
-kernel: /private/tmp/claude-501/-Users-elb-Projects-OCCTSwift/7ca7a65c-aee4-4ed2-ac7a-0732e49711a4/scratchpad/3003-k3/OCCT.xcframework
-libOCCT-macos.a: sha256 6d51d59022d2cef98152a8f3c5a6b640a5bac2a5968678e80e40cd5dac6ebc18, 157575280 bytes
-variant: asset, what: perturb, runs: 1
-builds=32 heap perturbed: distinct face orders=32
-kernel: /private/tmp/claude-501/-Users-elb-Projects-OCCTSwift/7ca7a65c-aee4-4ed2-ac7a-0732e49711a4/scratchpad/3003-k3/OCCT.xcframework
-libOCCT-macos.a: sha256 6d51d59022d2cef98152a8f3c5a6b640a5bac2a5968678e80e40cd5dac6ebc18, 157575280 bytes
-variant: asset, what: perturb-quiet, runs: 1
-builds=32 heap untouched: distinct face orders=10
-kernel: /private/tmp/claude-501/-Users-elb-Projects-OCCTSwift/7ca7a65c-aee4-4ed2-ac7a-0732e49711a4/scratchpad/3003-k3/OCCT.xcframework
-libOCCT-macos.a: sha256 6d51d59022d2cef98152a8f3c5a6b640a5bac2a5968678e80e40cd5dac6ebc18, 157575280 bytes
-variant: patched, what: perturb, runs: 1
+kernel: /private/tmp/claude-501/-Users-elb-Projects-OCCTSwift/7ca7a65c-aee4-4ed2-ac7a-0732e49711a4/scratchpad/3003-k4/OCCT.xcframework
+libOCCT-macos.a: sha256 aa8fca8dececc454f3c012b6637487dc634947a0067a87dbee72917af130ad92, 157581864 bytes
+variant: asset, what: perturb, runs: 20
+processes: 20, builds per process: 32, heap perturbed
+distinct face orders in one process: min 11, median 32, max 32
+per process: 32 19 32 32 11 32 32 32 11 32 32 32 20 20 32 32 20 20 32 19
+kernel: /private/tmp/claude-501/-Users-elb-Projects-OCCTSwift/7ca7a65c-aee4-4ed2-ac7a-0732e49711a4/scratchpad/3003-k4/OCCT.xcframework
+libOCCT-macos.a: sha256 aa8fca8dececc454f3c012b6637487dc634947a0067a87dbee72917af130ad92, 157581864 bytes
+variant: asset, what: perturb-quiet, runs: 20
+processes: 20, builds per process: 32, heap untouched
+distinct face orders in one process: min 11, median 32, max 32
+per process: 32 32 32 32 32 32 32 32 32 32 32 32 11 11 32 11 12 32 11 32
+kernel: /private/tmp/claude-501/-Users-elb-Projects-OCCTSwift/7ca7a65c-aee4-4ed2-ac7a-0732e49711a4/scratchpad/3003-k4/OCCT.xcframework
+libOCCT-macos.a: sha256 aa8fca8dececc454f3c012b6637487dc634947a0067a87dbee72917af130ad92, 157581864 bytes
+variant: patched, what: perturb, runs: 20
 applied 0053-BRepOffset_MakeOffset-arc-join-roots-in-binding-order-3003.patch to a copy of BRepOffset_MakeOffset.cxx
-builds=32 heap perturbed: distinct face orders=1
-kernel: /private/tmp/claude-501/-Users-elb-Projects-OCCTSwift/7ca7a65c-aee4-4ed2-ac7a-0732e49711a4/scratchpad/3003-k3/OCCT.xcframework
-libOCCT-macos.a: sha256 6d51d59022d2cef98152a8f3c5a6b640a5bac2a5968678e80e40cd5dac6ebc18, 157575280 bytes
-variant: patched, what: perturb-quiet, runs: 1
+processes: 20, builds per process: 32, heap perturbed
+distinct face orders in one process: min 1, median 1, max 1
+per process: 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+kernel: /private/tmp/claude-501/-Users-elb-Projects-OCCTSwift/7ca7a65c-aee4-4ed2-ac7a-0732e49711a4/scratchpad/3003-k4/OCCT.xcframework
+libOCCT-macos.a: sha256 aa8fca8dececc454f3c012b6637487dc634947a0067a87dbee72917af130ad92, 157581864 bytes
+variant: patched, what: perturb-quiet, runs: 20
 applied 0053-BRepOffset_MakeOffset-arc-join-roots-in-binding-order-3003.patch to a copy of BRepOffset_MakeOffset.cxx
-builds=32 heap untouched: distinct face orders=1
+processes: 20, builds per process: 32, heap untouched
+distinct face orders in one process: min 1, median 1, max 1
+per process: 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
