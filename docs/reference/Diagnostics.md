@@ -9,7 +9,7 @@ parent: API Reference
 
 ## Topics
 
-- [OCCTDiagnostics](#occtdiagnostics) · [OCCTDiagnostics.Record](#occtdiagnosticsrecord) · [OCCTDiagnostics.Kind](#occtdiagnosticskind) · [Coverage](#coverage) · [What this cannot report](#what-this-cannot-report)
+- [OCCTDiagnostics](#occtdiagnostics) · [OCCTDiagnostics.Record](#occtdiagnosticsrecord) · [OCCTDiagnostics.Kind](#occtdiagnosticskind) · [Coverage](#coverage) · [What this cannot report](#what-this-cannot-report) · [OCCT's own output](#occts-own-output)
 
 ---
 
@@ -263,3 +263,72 @@ It instruments every function-level catch block, reports every deeper one instea
 That is not a gap in this channel so much as the reason it is a smaller thing than #1161's own evidence list suggests. Of the ten defects that issue cites, six (#345, #348, #484, #636, #913, #1022) were uncatchable signals and two (#905, #1018) were silent wrong values with no exception raised at all. A catch-site diagnostic reports neither shape. It reports the third: a real `Standard_Failure`, with a message, that the bridge caught and threw away.
 
 **A failure that raised nothing.** `IsDone() == false`, a null result handle, a rejected argument: these never construct an exception, so there is nothing for this channel to classify. They are why a `nil` return can come back with an empty capture even from an instrumented function.
+
+**What OCCT says out loud.** A `Standard_Failure` the bridge caught is this channel's subject. A message OCCT *printed* is a different stream and reaches Swift through `Messenger`, below.
+
+---
+
+## OCCT's own output
+
+OCCT writes through `Message::DefaultMessenger()`, one process-wide static with a `std::cout` printer attached by default. Nothing in this package reached it until [#3021](https://github.com/SecondMouseAU/OCCTSwift/issues/3021), so every message the kernel chose to print landed on standard output, interleaved with whatever the host was printing.
+
+Two shapes dominate. A malformed STEP file makes the parser write, in red:
+
+```
+**** ERR StepFile : Undefined Parsing: Line 2: Incorrect syntax: unexpected TYPE, expecting STEP    ****
+```
+
+and a successful STEP export writes a seven-line `Statistics on Transfer (Write)` block in green. Both are expected. **The cost is that a genuine kernel complaint is the same red text on the same stream as an expected one**, which is how a reader of a green CI run came to investigate the line above as a defect.
+
+### `Messenger.capturingDefaultOutput(_:)`
+
+Runs a closure with every printer on the default messenger detached and replaced by one that accumulates, then puts the printers back and returns what it collected.
+
+```swift
+public static func capturingDefaultOutput<T>(
+    _ body: () throws -> T
+) rethrows -> (value: T, output: String?)
+```
+
+Both halves matter, and the second is the point: a scope whose expected OCCT output is known **asserts on it** rather than only silencing it. Silence alone cannot tell a parser that ran and refused a file from one that never ran at all, and that distinction is the whole value of the malformed-STEP case in `Scripts/repro/2175/spike`.
+
+- **Returns:** `body`'s value, and the captured text. `nil` means no capture ran; an **empty string** means one ran and OCCT said nothing. Those are different answers, and a caller that conflates them reads silence it never observed.
+- **Format:** one line per message, terminated by `\n`, which is what `Message_PrinterOStream` writes. Past 1 MiB the text stops growing and gains one `[OCCTSwift: messenger capture truncated ...]` line, so it is bounded but never silently short.
+- **Gravity:** the attached printer filters at `Message_Info`, the level OCCT's own default printer uses, so a `Message_Trace` message is absent from the capture for the same reason it is absent from standard output.
+- **Does not nest, and is not concurrency-safe.** `Message::DefaultMessenger()` is one static. A nested capture would detach the outer capture's printer and the outer scope would lose every message the inner one saw, so an attempt to nest captures nothing and reports `nil` while `body` still runs. OCCT work on another thread during the scope has its output captured here too.
+- **OCCT:** `Message::DefaultMessenger()`, `Message_Messenger::ChangePrinters`/`AddPrinter`/`RemovePrinter`, and a `Message_Printer` subclass in `OCCTBridge_IO_Diagnostics.mm`.
+- **Example:**
+  ```swift
+  let (shape, occtOutput) = Messenger.capturingDefaultOutput {
+      try? Shape.load(fromPath: "/tmp/not-a-step-file.step")
+  }
+  if shape == nil, let occtOutput, occtOutput.contains("**** ERR StepFile") {
+      print("OCCT's STEP parser ran and refused the file, which is the expected answer")
+  }
+  ```
+
+### `Messenger.silencingDefaultOutput(_:)`
+
+The same scope with the text discarded, for work whose OCCT output is expected but not worth asserting on.
+
+```swift
+@discardableResult
+public static func silencingDefaultOutput<T>(_ body: () throws -> T) rethrows -> T
+```
+
+Prefer the capturing form wherever the expected output is known.
+
+### `Messenger.defaultPrinterCount` and `Messenger.isDefaultOutputCaptured`
+
+```swift
+public static var defaultPrinterCount: Int
+public static var isDefaultOutputCaptured: Bool
+```
+
+`defaultPrinterCount` is `1` in a process that has not touched the default messenger: OCCT's own `std::cout` printer. It is the only observable that distinguishes a capture which put the detached printers back from one which did not, and exactly one printer *inside* a scope is what says the output was redirected rather than duplicated. Both are what `Issue3021DefaultMessengerCaptureTests` asserts on either side of a scope, and what the wasm spike reports as its `occt-output-capture` case.
+
+### What is not covered
+
+The messenger, and nothing else. A `std::terminate` message, or anything else OCCT or the C++ runtime writes straight to `stderr`, is unaffected.
+
+`Messenger()` creates a **separate** messenger with its own printers, and attaching a file printer to it does not redirect anything OCCT prints. The two are different objects, which is the confusion #3021 records.

@@ -1467,13 +1467,25 @@ struct SheetMetalTests {
             flanges: [base, upright],
             bends: [SheetMetal.Bend(from: "base", to: "vertical", radius: 1.5)])
         #expect(shape.isValid)
-        // #1989: a regression pin and nothing more. Unlike `lBracket` and `uChannel`, whose
-        // volumes come out of flange volume plus r^2 (1 - pi/4) per unit of seam to the last
-        // digit, the stepped-seam and convex-bend paths land a few units off any such sum (#2972),
-        // so this number is what the builder returns and is NOT asserted to be the right answer.
-        // It still beats `v > 0`, which held with the bend skipped entirely.
+        // #2972: a correctness pin now, not a regression pin. The flanges only touch
+        // (65 x 28 x 3 = 5460 and 28 x 40 x 3 = 3360, a zero-volume intersection on y = 28), and
+        // a 90 degree concave bend of radius r adds r^2 (1 - pi/4) per unit of seam over the 28
+        // the upright actually covers:
+        // 8820 + 28 * 1.5^2 * (1 - pi/4) = 8833.519915705961.
+        // The builder sits 0.0139 under that, which is how OCCT closes the fillet off where the
+        // seam line runs on into the flat outer piece: the cross-section is full to within 0.01 of
+        // the step and the surface stops about 0.1 past it, and the same bend with the base
+        // trimmed to the upright's width, so there is no run-out, lands on its closed form to
+        // 1e-12. The old pin, 8815.654315677795, was BELOW the flange volumes alone, because the
+        // fillet was also rolled along the base's free edge for the surplus 37.
         let v = shape.volume ?? -1
-        #expect(abs(v - 8815.654315677795) < 1e-6 * 8815.654315677795, "volume \(v)")
+        #expect(abs(v - 8833.505966569946) < 1e-6 * 8833.505966569946, "volume \(v)")
+        let derived = 8820.0 + 28.0 * 1.5 * 1.5 * (1.0 - Double.pi / 4.0)
+        #expect(abs(v - derived) < 0.02, "volume \(v) against the closed form \(derived)")
+        // The base's free back corner, 22 clear of the upright, is sharp. 0.2 inside it on both
+        // faces: `outside` here is the surplus fillet, and no volume tolerance has to be trusted
+        // to read it.
+        #expect(shape.classifyPoint(SIMD3(50, 27.8, 2.8)) == .inside)
     }
 
     /// L-bracket from issue #86: 80×40 base, 20×30 vertical mounting tab
@@ -1498,13 +1510,27 @@ struct SheetMetalTests {
             flanges: [base, tab],
             bends: [SheetMetal.Bend(from: "base", to: "tab", radius: 1.5)])
         #expect(shape.isValid)
-        // #1989: a regression pin and nothing more. Unlike `lBracket` and `uChannel`, whose
-        // volumes come out of flange volume plus r^2 (1 - pi/4) per unit of seam to the last
-        // digit, the stepped-seam and convex-bend paths land a few units off any such sum (#2972),
-        // so this number is what the builder returns and is NOT asserted to be the right answer.
-        // It still beats `v > 0`, which held with the bend skipped entirely.
+        // #2972: a correctness pin now, not a regression pin. 80 x 40 x 2 = 6400 and
+        // 20 x 30 x 2 = 1200 only touch, and the bend covers the tab's 20 of the base's 80:
+        // 7600 + 20 * 1.5^2 * (1 - pi/4) = 7609.657082647115.
+        // The builder is 0.0534 under, two fillet run-outs at 0.027 each (see
+        // `narrowUprightStepSucceeds` for the measurement). The old pin, 7580.685854250031, was
+        // BELOW the flange volumes alone: the fillet also ran along the base's free edge for the
+        // surplus 30 on each side, and -19.314 is exactly 40 * 1.5^2 * (1 - pi/4).
         let v = shape.volume ?? -1
-        #expect(abs(v - 7580.685854250031) < 1e-6 * 7580.685854250031, "volume \(v)")
+        // 1e-5, not the 1e-6 this carried. The value is the end of an iterative fillet closure, and
+        // two builds of the SAME kernel source disagree in it by 2.2e-6 relative: the published
+        // `v4.0.0-kernel.4` asset measures 7609.603645881255 here and the kernel that
+        // `kernel-integration.yml` compiles on CI measures 7609.620447958993, a different compiler
+        // on identical source (the 39 carried patches are the same in both; the shipped asset
+        // reproduces the old pin exactly, so the patches are not what moved it). The closed form
+        // below is what guards correctness and the new value is nearer to it, 0.0366 under against
+        // 0.0534. This pin only has to notice the volume moving, not a compiler change.
+        #expect(abs(v - 7609.603645881255) < 1e-5 * 7609.603645881255, "volume \(v)")
+        let derived = 7600.0 + 20.0 * 1.5 * 1.5 * (1.0 - Double.pi / 4.0)
+        #expect(abs(v - derived) < 0.07, "volume \(v) against the closed form \(derived)")
+        // The base's free back corner left of the tab (tab spans x in [30, 50]) is sharp.
+        #expect(shape.classifyPoint(SIMD3(10, 39.8, 1.8)) == .inside)
     }
 
     /// Z-bracket from issue #86: 50×30 base, 50×30 mid (full seam), 20×30 top tab.
@@ -1543,13 +1569,20 @@ struct SheetMetalTests {
                 SheetMetal.Bend(from: "mid", to: "top", radius: 1.5),
             ])
         #expect(shape.isValid)
-        // #1989: a regression pin and nothing more. Unlike `lBracket` and `uChannel`, whose
-        // volumes come out of flange volume plus r^2 (1 - pi/4) per unit of seam to the last
-        // digit, the stepped-seam and convex-bend paths land a few units off any such sum (#2972),
-        // so this number is what the builder returns and is NOT asserted to be the right answer.
-        // It still beats `v > 0`, which held with the bend skipped entirely.
+        // #2972: a correctness pin now, not a regression pin. The three bodies only touch
+        // (50 x 30 x 2 = 3000, 50 x 20 x 2 = 2000, 20 x 30 x 2 = 1200), the base-to-mid bend runs
+        // the full 50 and the mid-to-top bend covers the tab's 20:
+        // 6200 + (50 + 20) * 1.5^2 * (1 - pi/4) = 6233.799789264902.
+        // The builder is 0.0382 under, two run-outs at the stepped bend. The old pin,
+        // 6219.3141848384885, was 19.314 (= 40 * 1.5^2 * (1 - pi/4)) low, the surplus 30 of the
+        // mid's free top edge filleted away against the 50 + 20 added.
         let v = shape.volume ?? -1
-        #expect(abs(v - 6219.3141848384885) < 1e-6 * 6219.3141848384885, "volume \(v)")
+        #expect(abs(v - 6233.76158899466) < 1e-6 * 6233.76158899466, "volume \(v)")
+        let derived = 6200.0 + 70.0 * 1.5 * 1.5 * (1.0 - Double.pi / 4.0)
+        #expect(abs(v - derived) < 0.06, "volume \(v) against the closed form \(derived)")
+        // The mid riser's free top corner left of the tab is sharp. The seam plane on the mid is
+        // its outer face y = 32, the one the tab sits beside, so the corner is (y = 32, z = 20).
+        #expect(shape.classifyPoint(SIMD3(5, 31.8, 19.8)) == .inside)
     }
 
     /// U-channel with narrower flanges (issue #86): 100×25 spine,
@@ -1589,13 +1622,19 @@ struct SheetMetalTests {
                 SheetMetal.Bend(from: "spine", to: "right", radius: 1.5),
             ])
         #expect(shape.isValid)
-        // #1989: a regression pin and nothing more. Unlike `lBracket` and `uChannel`, whose
-        // volumes come out of flange volume plus r^2 (1 - pi/4) per unit of seam to the last
-        // digit, the stepped-seam and convex-bend paths land a few units off any such sum (#2972),
-        // so this number is what the builder returns and is NOT asserted to be the right answer.
-        // It still beats `v > 0`, which held with the bend skipped entirely.
+        // #2972: a correctness pin now, not a regression pin. The walls sit outside the spine's
+        // footprint and only touch it (40 x 100 x 2 = 8000 and 80 x 15 x 2 = 2400 twice), and each
+        // bend covers the wall's 80 of the spine's 100:
+        // 12800 + 2 * 80 * 1.5^2 * (1 - pi/4) = 12877.256661176919.
+        // The builder is 0.375 under, four fillet run-outs, the largest residual in the suite at
+        // 2.9e-5 relative. The old pin, 12857.94265223678, filleted the surplus 10 at each of the
+        // four ends as well: 160 - 40 = 120 against the 160 the bends actually cover.
         let v = shape.volume ?? -1
-        #expect(abs(v - 12857.94265223678) < 1e-6 * 12857.94265223678, "volume \(v)")
+        #expect(abs(v - 12876.881759332367) < 1e-6 * 12876.881759332367, "volume \(v)")
+        let derived = 12800.0 + 160.0 * 1.5 * 1.5 * (1.0 - Double.pi / 4.0)
+        #expect(abs(v - derived) < 0.5, "volume \(v) against the closed form \(derived)")
+        // The spine's free edge below the walls (they span y in [10, 90]) is sharp.
+        #expect(shape.classifyPoint(SIMD3(0.2, 5, 1.8)) == .inside)
     }
 
     @Test("Parallel flanges cannot form a bend")
@@ -1656,8 +1695,15 @@ struct ConvexBendIssue89 {
                 SheetMetal.Bend(from: "web", to: "bottom", radius: 3.2),
             ])
         #expect(s.isValid)
-        // #1989: a regression pin, not a derived answer (#2972); validity and a single solid both
-        // held with the convex bend material never fused in.
+        // #2972: derived, not just pinned. The convex path was never wrong here; the arithmetic
+        // that called it unexplained left out the flange-body overlap and the concave bend in the
+        // same part. Bodies: 18 x 45 x 3.2 = 2592, 25 x 45 x 3.2 = 3600, 45 x 45 x 3.2 = 6480, and
+        // top and web interpenetrate over 3.2 x 3.2 x 45 = 460.8, so the fuse is 12211.2. The
+        // concave top-to-web bend adds r^2 (1 - pi/4) L and the convex web-to-bottom bend adds a
+        // quarter-disc prism of radius t, (pi/4) t^2 L. Here r = t = 3.2, so the two sum to
+        // t^2 L = 460.8 exactly, the same quantity the overlap removed, and the total is the
+        // flange sum: 12211.2 + 460.8 = 12672. That coincidence is why this one looked like a
+        // sharp square corner.
         let pinned = 12671.999999999995
         let volume = s.volume ?? -1
         #expect(abs(volume - pinned) < 1e-6 * pinned, "volume \(volume)")
@@ -1691,8 +1737,12 @@ struct ConvexBendIssue89 {
                 SheetMetal.Bend(from: "web", to: "bottom", radius: 3),
             ])
         #expect(s.isValid)
-        // #1989: a regression pin, not a derived answer (#2972); validity and a single solid both
-        // held with the convex bend material never fused in.
+        // #2972: derived, not just pinned. Bodies 30 x 45 x 2 = 2700, 20 x 45 x 2 = 1800 and
+        // 30 x 45 x 2 = 2700, less the 2 x 2 x 45 = 180 where top and web interpenetrate, so the
+        // fuse is 7020. The concave top-to-web bend of radius 3 adds 45 * 3^2 * (1 - pi/4), and
+        // the convex web-to-bottom bend adds a quarter-disc prism of radius t = 2,
+        // 45 * (pi/4) * 2^2 = 45 pi:
+        // 7020 + 405 * (1 - pi/4) + 45 * pi = 7248.285413235574, to the last digit.
         let pinned = 7248.285413235574
         let volume = s.volume ?? -1
         #expect(abs(volume - pinned) < 1e-6 * pinned, "volume \(volume)")
@@ -1726,8 +1776,11 @@ struct ConvexBendIssue89 {
                 SheetMetal.Bend(from: "web", to: "bottom", radius: 1.5),
             ])
         #expect(s.isValid)
-        // #1989: a regression pin, not a derived answer (#2972); validity and a single solid both
-        // held with the convex bend material never fused in.
+        // #2972: derived, not just pinned. Bodies 50 x 60 x 2 = 6000, 5 x 60 x 2 = 600 and
+        // 50 x 60 x 2 = 6000, less the 2 x 2 x 60 = 240 where top and web interpenetrate, so the
+        // fuse is 12360. Concave top-to-web at radius 1.5 adds 60 * 1.5^2 * (1 - pi/4); the convex
+        // web-to-bottom quarter-disc prism has radius t = 2, so 60 * (pi/4) * 2^2 = 60 pi:
+        // 12360 + 135 * (1 - pi/4) + 60 * pi = 12577.466807156732, to the last digit.
         let pinned = 12577.466807156732
         let volume = s.volume ?? -1
         #expect(abs(volume - pinned) < 1e-6 * pinned, "volume \(volume)")
@@ -1767,8 +1820,12 @@ struct ConvexBendIssue89 {
                 SheetMetal.Bend(from: "right", to: "tab", radius: 2),
             ])
         #expect(s.isValid)
-        // #1989: a regression pin, not a derived answer (#2972); validity and a single solid both
-        // held with the convex bend material never fused in.
+        // #2972: derived, not just pinned. Bodies 100 x 40 x 1.5 = 6000, 30 x 40 x 1.5 = 1800
+        // twice and 20 x 40 x 1.5 = 1200, less 1.5 x 1.5 x 40 = 90 where each wall interpenetrates
+        // the spine, so the fuse is 10620. The two concave bends at radius 2 add
+        // 2 * 40 * 2^2 * (1 - pi/4); the convex right-to-tab bend adds a quarter-disc prism of
+        // radius t = 1.5, 40 * (pi/4) * 1.5^2 = 22.5 pi:
+        // 10620 + 320 * (1 - pi/4) + 22.5 * pi = 10759.358422418583, to the last digit.
         let pinned = 10759.358422418583
         let volume = s.volume ?? -1
         #expect(abs(volume - pinned) < 1e-6 * pinned, "volume \(volume)")

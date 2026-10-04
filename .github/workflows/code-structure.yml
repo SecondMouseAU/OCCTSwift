@@ -14,10 +14,26 @@ name: code-structure
 
 on:
   pull_request:
+    paths-ignore:
+      # Prose. Neither job reads it: code-style lints Swift and bridge C++, code-structure runs
+      # file-size-check.py over Sources/. Safe to skip here in a way it is NOT safe in ci.yml,
+      # because neither of these is a required status check, so a skipped run blocks nothing
+      # (okf/policies/required-status-checks.md).
+      - 'okf/**'
+      - 'docs/**'
+      - '*.md'
   push:
     branches:
       - main
       - 'refactor/**'
+    paths-ignore:
+      # Prose. Neither job reads it: code-style lints Swift and bridge C++, code-structure runs
+      # file-size-check.py over Sources/. Safe to skip here in a way it is NOT safe in ci.yml,
+      # because neither of these is a required status check, so a skipped run blocks nothing
+      # (okf/policies/required-status-checks.md).
+      - 'okf/**'
+      - 'docs/**'
+      - '*.md'
   workflow_dispatch:
 
 concurrency:

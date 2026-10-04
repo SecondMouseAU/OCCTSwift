@@ -54,12 +54,20 @@ SDK and a 69-minute OCCT build.
 `run.sh` checks that sha256 and reports a mismatch rather than failing, since rebuilding it is
 legitimate. Every exact byte count below was taken against that binary.
 
-## The six cases
+## The cases
 
-Unchanged from #2175, because the point is to compare like with like. `Scripts/repro/2175/README.md`
-explains what each one is for; the short version is that the two must-fail cases are the load-bearing
-ones, since #2171 measured that a build with the exception flags missing returns correct boxes,
-correct fuses and correct STEP files and answers every error by trapping.
+Whatever `Scripts/repro/2175/spike` reports, because the point is to compare like with like.
+`Scripts/repro/2175/README.md` explains what each one is for; the short version is that the two
+must-fail cases are the load-bearing ones, since #2171 measured that a build with the exception
+flags missing returns correct boxes, correct fuses and correct STEP files and answers every error by
+trapping.
+
+**The set has grown twice since the three-rung comparison below was taken**, which is dated and is
+left as measured: #2894 added `unwind-depth-1` and `unwind-depth-n`, the same exception at two
+unwind depths, and #3021 added `occt-output-capture`. The live list is `EXPECTED_CASES` in
+[`web/harness.mjs`](web/harness.mjs), and it is membership rather than a count, so neither addition
+reddened anything here until somebody looked. Add a case there in the same change that adds it to
+the spike.
 
 ## The result: all three rungs agree, case for case
 

@@ -48,6 +48,7 @@
 #include <gp_Cone.hxx>
 #include <IntAna_QuadQuadGeo.hxx>
 #include <Intf_Tool.hxx>
+#include <gp.hxx>
 #include <gp_Ax3.hxx>
 #include <gp_Quaternion.hxx>
 #include <gp_QuaternionSLerp.hxx>
@@ -203,6 +204,55 @@ public:
 // MARK: - v0.116: Ax3 utilities + Quaternion SLerp/NLerp + Trsf interpolation + XY/XYZ utils +
 // math_BracketedRoot/BracketMinimum/FRPR/FunctionAllRoots/GaussLeastSquare/NewtonFunctionRoot/Uzawa/EigenValues/KronrodIntegration/GaussMultipleIntegration/GaussSetIntegration/Poly*
 // / Integ*
+namespace
+{
+
+// #2891: gp_Ax3's OWN check for a parallel direction/xDirection pair does not fire on
+// wasm32-unknown-wasip1, so this raises for it explicitly.
+//
+// WHAT WAS MEASURED, because the asymmetry is narrow and the obvious readings are wrong. A gp_Dir
+// built from caller doubles DOES raise on wasm when the bridge constructs it, which is why the two
+// constructions below need no help: `Curve3D.line(through:direction:)` with a zero direction
+// returns nil with one recorded Standard_ConstructionError there, exactly as on Apple. What does
+// not fire is the raise inside gp_Ax3's constructor, which reaches gp_Dir::CrossCross for (N x Vx)
+// x N. Both are inline in the pinned headers, both are constexpr, No_Exception is undefined for
+// this translation unit, and the header trees for the two platforms are identical, all measured;
+// none of those is the difference. Scripts/repro/2894/ and Scripts/repro/2793/ hold the
+// transcripts.
+//
+// Without this guard a parallel pair is used as though it were a valid axis: the degenerate case
+// returned a translated point of (6, 5, 5) on wasm where Apple reports the documented unmoved
+// (5, 3, 2).
+//
+// THE THRESHOLD IS OCCT'S OWN, not Precision::Angular(). gp_Dir::CrossCross refuses when the
+// result's squared modulus is at or below gp::Resolution() squared, and for two unit vectors |N x
+// Vx| is |sin t|, so comparing the cross product's squared modulus against the same bound accepts
+// and refuses exactly what OCCT does. Precision::Angular() is 1e-12 against that bound's ~1e-202
+// and would refuse nearly-parallel pairs OCCT builds, which would be a behaviour change on every
+// platform rather than a wasm repair.
+gp_Ax3 ax3OrRaise(const gp_Pnt& theOrigin,
+                  const double  theNx,
+                  const double  theNy,
+                  const double  theNz,
+                  const double  theXDirX,
+                  const double  theXDirY,
+                  const double  theXDirZ)
+{
+  // Each raises Standard_ConstructionError on a zero-length input, on both platforms.
+  const gp_Dir aNormal(theNx, theNy, theNz);
+  const gp_Dir anXDir(theXDirX, theXDirY, theXDirZ);
+
+  const gp_XYZ aCrossed = aNormal.XYZ().Crossed(anXDir.XYZ());
+  if (aCrossed.SquareModulus() <= gp::Resolution() * gp::Resolution())
+  {
+    throw Standard_ConstructionError(
+      "gp_Ax3: direction and xDirection are parallel, so no X direction exists");
+  }
+  return gp_Ax3(theOrigin, aNormal, anXDir);
+}
+
+} // namespace
+
 void OCCTAx3Create(double px,
                    double py,
                    double pz,
@@ -222,7 +272,7 @@ void OCCTAx3Create(double px,
 {
   try
   {
-    gp_Ax3 ax3(gp_Pnt(px, py, pz), gp_Dir(nx, ny, nz), gp_Dir(xDirX, xDirY, xDirZ));
+    gp_Ax3 ax3       = ax3OrRaise(gp_Pnt(px, py, pz), nx, ny, nz, xDirX, xDirY, xDirZ);
     *isDirect        = ax3.Direct();
     const gp_Dir& xd = ax3.XDirection();
     *xDx             = xd.X();
@@ -375,17 +425,17 @@ void OCCTAx3MirrorPoint(double px,
 {
   try
   {
-    gp_Ax3 ax3(gp_Pnt(px, py, pz), gp_Dir(nx, ny, nz), gp_Dir(xDx, xDy, xDz));
-    gp_Ax3 r = ax3.Mirrored(gp_Pnt(mx, my, mz));
-    *rpx     = r.Location().X();
-    *rpy     = r.Location().Y();
-    *rpz     = r.Location().Z();
-    *rnx     = r.Direction().X();
-    *rny     = r.Direction().Y();
-    *rnz     = r.Direction().Z();
-    *rxDx    = r.XDirection().X();
-    *rxDy    = r.XDirection().Y();
-    *rxDz    = r.XDirection().Z();
+    gp_Ax3 ax3 = ax3OrRaise(gp_Pnt(px, py, pz), nx, ny, nz, xDx, xDy, xDz);
+    gp_Ax3 r   = ax3.Mirrored(gp_Pnt(mx, my, mz));
+    *rpx       = r.Location().X();
+    *rpy       = r.Location().Y();
+    *rpz       = r.Location().Z();
+    *rnx       = r.Direction().X();
+    *rny       = r.Direction().Y();
+    *rnz       = r.Direction().Z();
+    *rxDx      = r.XDirection().X();
+    *rxDy      = r.XDirection().Y();
+    *rxDz      = r.XDirection().Z();
   }
   catch (...)
   {
@@ -430,17 +480,17 @@ void OCCTAx3Rotate(double px,
 {
   try
   {
-    gp_Ax3 ax3(gp_Pnt(px, py, pz), gp_Dir(nx, ny, nz), gp_Dir(xDx, xDy, xDz));
-    gp_Ax3 r = ax3.Rotated(gp_Ax1(gp_Pnt(axPx, axPy, axPz), gp_Dir(axDx, axDy, axDz)), angle);
-    *rpx     = r.Location().X();
-    *rpy     = r.Location().Y();
-    *rpz     = r.Location().Z();
-    *rnx     = r.Direction().X();
-    *rny     = r.Direction().Y();
-    *rnz     = r.Direction().Z();
-    *rxDx    = r.XDirection().X();
-    *rxDy    = r.XDirection().Y();
-    *rxDz    = r.XDirection().Z();
+    gp_Ax3 ax3 = ax3OrRaise(gp_Pnt(px, py, pz), nx, ny, nz, xDx, xDy, xDz);
+    gp_Ax3 r   = ax3.Rotated(gp_Ax1(gp_Pnt(axPx, axPy, axPz), gp_Dir(axDx, axDy, axDz)), angle);
+    *rpx       = r.Location().X();
+    *rpy       = r.Location().Y();
+    *rpz       = r.Location().Z();
+    *rnx       = r.Direction().X();
+    *rny       = r.Direction().Y();
+    *rnz       = r.Direction().Z();
+    *rxDx      = r.XDirection().X();
+    *rxDy      = r.XDirection().Y();
+    *rxDz      = r.XDirection().Z();
   }
   catch (...)
   {
@@ -475,11 +525,11 @@ void OCCTAx3Translate(double px,
 {
   try
   {
-    gp_Ax3 ax3(gp_Pnt(px, py, pz), gp_Dir(nx, ny, nz), gp_Dir(xDx, xDy, xDz));
-    gp_Ax3 r = ax3.Translated(gp_Vec(vx, vy, vz));
-    *rpx     = r.Location().X();
-    *rpy     = r.Location().Y();
-    *rpz     = r.Location().Z();
+    gp_Ax3 ax3 = ax3OrRaise(gp_Pnt(px, py, pz), nx, ny, nz, xDx, xDy, xDz);
+    gp_Ax3 r   = ax3.Translated(gp_Vec(vx, vy, vz));
+    *rpx       = r.Location().X();
+    *rpy       = r.Location().Y();
+    *rpz       = r.Location().Z();
   }
   catch (...)
   {

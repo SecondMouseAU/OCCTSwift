@@ -19,7 +19,15 @@ import Testing
 
 @testable import OCCTSwift
 
-@Suite("Issue #1644: STEP/IGES entry points report IFSelect_ReturnStatus")
+/// #3021: every deliberately-failing case here also made OCCT talk, in red, into the transcript.
+///
+/// One of those lines was read as a defect on a green CI run. They now run inside
+/// `capturingOCCTOutput` and ASSERT on what OCCT said, which is strictly stronger than silencing it:
+/// the parse complaint is the only evidence that a corrupt file reached the parser at all, and a
+/// missing file's silence is the only evidence it was refused before the parser ran. `.serialized`
+/// is for the suite's own ordering; the module lock is what keeps it apart from
+/// `Issue3021DefaultMessengerCaptureTests`.
+@Suite("Issue #1644: STEP/IGES entry points report IFSelect_ReturnStatus", .serialized)
 struct Issue1644IOReturnStatus {
 
     private static func tempURL(_ name: String) -> URL {
@@ -58,21 +66,25 @@ struct Issue1644IOReturnStatus {
         defer { try? FileManager.default.removeItem(at: corrupt) }
 
         var missingStatus: IOStatus?
-        #expect(throws: ImportError.self) {
-            do { _ = try Shape.loadSTEP(fromPath: missing.path) } catch ImportError.readFailed(
-                _, let s)
-            {
-                missingStatus = s
-                throw ImportError.readFailed(path: missing.path, status: s)
+        let (_, missingOutput) = capturingOCCTOutput {
+            #expect(throws: ImportError.self) {
+                do { _ = try Shape.loadSTEP(fromPath: missing.path) } catch ImportError.readFailed(
+                    _, let s)
+                {
+                    missingStatus = s
+                    throw ImportError.readFailed(path: missing.path, status: s)
+                }
             }
         }
         var corruptStatus: IOStatus?
-        #expect(throws: ImportError.self) {
-            do { _ = try Shape.loadSTEP(fromPath: corrupt.path) } catch ImportError.readFailed(
-                _, let s)
-            {
-                corruptStatus = s
-                throw ImportError.readFailed(path: corrupt.path, status: s)
+        let (_, corruptOutput) = capturingOCCTOutput {
+            #expect(throws: ImportError.self) {
+                do { _ = try Shape.loadSTEP(fromPath: corrupt.path) } catch ImportError.readFailed(
+                    _, let s)
+                {
+                    corruptStatus = s
+                    throw ImportError.readFailed(path: corrupt.path, status: s)
+                }
             }
         }
 
@@ -81,6 +93,25 @@ struct Issue1644IOReturnStatus {
         #expect(missingStatus == .error)
         #expect(corruptStatus == .fail)
         #expect(missingStatus != corruptStatus)
+
+        // #3021: OCCT's own commentary is a SECOND discriminator for the same pair, independent of
+        // the status, and it says why the two differ rather than only that they do. A file that is
+        // not there is refused before any parser runs, so OCCT says nothing at all; a file that is
+        // there and is not STEP reaches the parser, which complains by name from
+        // `StepFile_Interrupt`. The complaint used to land in the transcript in red, where a reader
+        // of a green run took it for a defect.
+        let missingText = try #require(missingOutput)
+        #expect(
+            missingText.isEmpty,
+            "a missing file is refused before the parser runs, so OCCT has nothing to say: \(missingText)"
+        )
+        let corruptText = try #require(corruptOutput)
+        #expect(
+            corruptText.contains("**** ERR StepFile"),
+            "a present non-STEP file must reach the parser and be complained about: \(corruptText)")
+        #expect(
+            corruptText.contains("Undefined Parsing"),
+            "the complaint must be the parse failure and not some other message: \(corruptText)")
     }
 
     @Test("The thrown error names the path and reads as prose")
@@ -98,13 +129,28 @@ struct Issue1644IOReturnStatus {
         let good = Self.tempURL("good")
         defer { try? FileManager.default.removeItem(at: good) }
         let box = try #require(Shape.box(width: 5, height: 5, depth: 5))
-        try Exporter.writeSTEP(shape: box, to: good)
+        // #3021: the writer prints its whole `Statistics on Transfer (Write)` block through OCCT's
+        // default messenger, which was most of this module's transcript. Required rather than
+        // tolerated, so the block is evidence that the writer ran a transfer instead of noise.
+        let (_, writeOutput) = capturingOCCTOutput {
+            try? Exporter.writeSTEP(shape: box, to: good)
+        }
+        let writeText = try #require(writeOutput)
+        #expect(
+            writeText.contains("Statistics on Transfer (Write)"),
+            "the STEP writer reports its transfer: \(writeText)")
+        #expect(writeText.contains("Write  Done"), "the write has to report Done: \(writeText)")
 
         var status = OCCTReturnStatusNotReached
-        let handle = OCCTImportSTEPProgress(good.path, nil, nil, &status)
+        let (handle, goodReadOutput) = capturingOCCTOutput {
+            OCCTImportSTEPProgress(good.path, nil, nil, &status)
+        }
         #expect(handle != nil)
         if let handle { OCCTShapeRelease(handle) }
         #expect(IOStatus(status) == .done)
+        #expect(
+            try #require(goodReadOutput).isEmpty,
+            "a STEP file this suite just wrote must parse without a word from OCCT")
 
         // A file that parses but holds nothing is still RetDone: the emptiness is zero
         // transferred roots, not a status. Measured; the issue expected RetVoid here.
@@ -119,9 +165,19 @@ struct Issue1644IOReturnStatus {
         try Self.emptyModel.write(to: empty, atomically: false, encoding: .utf8)
 
         var emptyStatus = OCCTReturnStatusNotReached
-        let emptyHandle = OCCTImportSTEPProgress(empty.path, nil, nil, &emptyStatus)
+        let (emptyHandle, emptyReadOutput) = capturingOCCTOutput {
+            OCCTImportSTEPProgress(empty.path, nil, nil, &emptyStatus)
+        }
         if let emptyHandle { OCCTShapeRelease(emptyHandle) }
         #expect(IOStatus(emptyStatus) == .done)
+        // #3021 found this, and it is the reason capturing beats silencing: the status is DONE while
+        // OCCT's parser reports a syntax failure on the same file, so the two disagree. Measured
+        // against the pinned kernel, and worth pinning rather than muting, because a future kernel
+        // that stops complaining here has changed its mind about an empty DATA section.
+        let emptyText = try #require(emptyReadOutput)
+        #expect(
+            emptyText.contains("**** ERR StepFile : Incorrect Syntax"),
+            "an empty DATA section reads as done AND is complained about: \(emptyText)")
     }
 
     @Test("A format with no IFSelect status keeps the message it always had")
@@ -150,15 +206,29 @@ struct Issue1644IOReturnStatus {
         let unwritable = URL(fileURLWithPath: "/this/directory/does/not/exist/out.step")
 
         var seen: IOStatus?
-        do {
-            try Exporter.writeSTEP(shape: box, to: unwritable)
-            Issue.record("expected the write to fail")
-        } catch Exporter.ExportError.writeFailed(_, let status) {
-            seen = status
-        } catch {
-            Issue.record("expected .writeFailed, got \(error)")
+        let (_, output) = capturingOCCTOutput {
+            do {
+                try Exporter.writeSTEP(shape: box, to: unwritable)
+                Issue.record("expected the write to fail")
+            } catch Exporter.ExportError.writeFailed(_, let status) {
+                seen = status
+            } catch {
+                Issue.record("expected .writeFailed, got \(error)")
+            }
         }
         #expect(seen == .stop)
+
+        // #3021: OCCT names the file it could not create, from `StepSelect_WorkLibrary::WriteFile`.
+        // That is the evidence that the writer got as far as opening the destination, which
+        // `.stop` alone does not say: a writer that refused the shape before ever touching the path
+        // would report the same status.
+        let text = try #require(output)
+        #expect(
+            text.contains("Step File could not be created"),
+            "the writer must have reached the destination and failed there: \(text)")
+        #expect(
+            text.contains(unwritable.path),
+            "and it must name the path it could not create: \(text)")
     }
 
     @Test("optimizeSTEP reports the step that failed rather than one message for both")
@@ -176,15 +246,28 @@ struct Issue1644IOReturnStatus {
         defer { try? FileManager.default.removeItem(at: out) }
 
         var seen: IOStatus?
-        do {
-            try Exporter.optimizeSTEP(input: corrupt, output: out)
-            Issue.record("expected the optimization to fail")
-        } catch Exporter.ExportError.writeFailed(_, let status) {
-            seen = status
-        } catch {
-            Issue.record("expected .writeFailed, got \(error)")
+        let (_, output) = capturingOCCTOutput {
+            do {
+                try Exporter.optimizeSTEP(input: corrupt, output: out)
+                Issue.record("expected the optimization to fail")
+            } catch Exporter.ExportError.writeFailed(_, let status) {
+                seen = status
+            } catch {
+                Issue.record("expected .writeFailed, got \(error)")
+            }
         }
         #expect(seen == .fail)
+
+        // #3021: the status says which step failed, and the parse complaint says the READ is the one
+        // that failed rather than the write. Without it, `.fail` on a two-step operation does not
+        // name the step, which is the very thing this test is about.
+        let text = try #require(output)
+        #expect(
+            text.contains("**** ERR StepFile"),
+            "the failing step must be the read, with the parser's own complaint: \(text)")
+        #expect(
+            text.contains("Undefined Parsing"),
+            "and it must be the parse failure rather than a write failure: \(text)")
     }
 
     // MARK: - The document entry points

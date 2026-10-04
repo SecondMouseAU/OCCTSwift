@@ -21,6 +21,135 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### A degenerate `CoordinateSystem3D` is refused on WebAssembly, not silently used (#2891)
+
+`CoordinateSystem3D` built with `direction` parallel to `xDirection` has no X direction, and OCCT refuses it. On `wasm32-unknown-wasip1` that refusal did not happen: `mirrored(about:)`, `translated(by:)` and the initialiser itself used the degenerate axis and returned a plausible wrong answer, where every Apple platform reports the documented fallback of all-zero directions and an unmoved point. The bridge now refuses the parallel pair itself, at OCCT's own tolerance, so all platforms agree. No behaviour changes on any Apple platform.
+
+### The BRepGraph construction-axis, history readback, recipe-resolver and absorb tests pin derived values instead of "it resolved" (#2983, #766, #3037, #3038)
+
+Four suites the #766 certification recorded Red and never rewrote, `ConstructionAxisTests`, `BRepGraphHistoryReadbackTests`, `TopologyRefResolverTests` and `GraphHistoryAbsorbTests`, are rewritten against `main`'s own kernel. All 48 of their tests now assert exact values derived from the geometry or from OCCT's own header and source, 9 tests are added, and the weak-assertion census reads 0 SEVERE and 0 ESCAPABLE where it read 4 and 44. Against 125 injected defects the old tests left 56 unnoticed and the new ones leave none. Four fixtures that had stopped meaning their name are replaced: the cylinder and torus origin tests asked at a vertex whose height equals the surface's own origin, the "helical edge" was one piece of a face the builder had shredded into 622 edges, so the fixture never contained a helix, and the tolerance test could not see the line that passes the edge's tolerance in. No library code changes.
+
+Two defects found on the way are filed, not fixed. `ConstructionAxis.intersectionOfPlanes` anchors its axis at the midpoint of the two plane origins, which is off the line the planes share unless both origins already lie on it (#3037); its test records the correct expectation in a `withKnownIssue`. `BRepGraph.add(_:absorbing:...)` writes its records in a different order in every process, because OCCT's `Absorb` walks a hash map keyed on shape addresses, so `TopologyRef.createdBy`'s documented ordering is not deterministic over absorbed history (#3038); the absorb tests pin sets and areas and do not depend on the order.
+
+### `Shape.CommonPart` keeps the kernel's ranges and gains OCCT's vertex parameters (#3012), and two CHANGELOG entries that never landed are recovered (#3004)
+
+**Changed.** `CommonPart.param1Range` and `param2Range` are now `IntTools_CommonPrt::Range1()` and `Ranges2()(1)` exactly as the kernel computed them, for either part type. The bridge used to overwrite both with `VertexParameter1/2` on a `.vertex` part, so they reported `(t, t)` whatever the kernel held: a transversal crossing lost the tolerance window OCCT puts round it, and a tangential overlap that `IntTools_EdgeEdge::MergeSolutions` typed `.vertex` (#2994) lost the overlap itself, so two arcs of one circle sharing a quarter of it reported a single point. OCCT does neither. `BOPAlgo_PaveFiller::PerformEE` and `PerformEF` read both facts off a `.vertex` part and never one in place of the other, the vertex parameters to place the new vertex and the ranges as the part's extent, and `IntTools_EdgeFace.cxx` carries the collapse commented out at four places. The window is not small: 3e-7 across for two lines at right angles, 3.4e-5 at one degree, 3.4e-3 at one hundredth of a degree. **To migrate**, a caller that read `param1Range.first` as the crossing parameter of a `.vertex` part reads `vertexParameter1`.
+
+**Added.** `CommonPart.vertexParameter1` and `vertexParameter2`, the parameters on each edge at which OCCT places the new vertex of a `.vertex` part, resolved the way `PerformEE` and `PerformEF` resolve them: the raw `VertexParameter1()` unless it lies outside the range, when OCCT takes the middle of the range. They are `nil` for an `.edge` part, which OCCT never gives one, and always `nil` for the second edge of an edge-face part. `point` follows them, and moves by 8.7e-4 along the curve for one measured corner, a tangent contact at a closed edge's seam.
+
+**Corrected.** The entry above for #2994 says `param1Range` is the true overlap under either answer. That held for the kernel and not for the bridge, which returned a point for the `.vertex` answer; it holds now.
+
+**Recovered.** Two entries that merged by hand and never reached this file are transcribed verbatim from their PR bodies: #2950's sixty-eight `OCCTFoundationTests` assertions that stop accepting any answer, and #3009's WebAssembly build fix (#3007). `check-changelog-transcription.py --verify-transcribed` reports 0 missing for the first time (#3004).
+
+### Kernel patches 0047 and 0048 carried for the mesh deflection NaN hole and the by-plane offset sign (#2879, #2900, #2873)
+
+- Carried OCCT source patch `0047`: `BRepMesh_IncrementalMesh::initParameters` refuses a NaN
+  meshing parameter. All five of its bounds tests were spelled `value < bound`, which NaN defeats,
+  so the two that throw did not throw and the three that substitute a usable value did not
+  substitute. A NaN linear deflection started a tessellation that did not return in 600 s on a
+  curved solid; a NaN angle returned the coarsest mesh the linear rule alone accepts with
+  `IsDone()` true, 18 nodes where a valid angle gives 54 to 254. Each test is now
+  `!(value >= bound)`, which is the same test for every ordered value. The bridge guards
+  `occtValidMeshDeflection` and `occtValidMeshAngle` are unchanged and stay. (#2879, #2900)
+- Carried OCCT source patch `0048`: the by-plane `BRepGProp_Vinert` and `BRepGProp_VinertGK`
+  overloads measure about the plane the caller passed rather than its mirror through the origin.
+  The stored fourth plane coefficient carried the wrong sign, which also made the location point
+  cancel out instead of re-basing the offset. Aggregates were never affected, so
+  `BRepGProp::VolumePropertiesGK` reports the same volume; a per-face reading was against the
+  wrong plane. Five sites across the two classes. No Swift behaviour changes until the patch is
+  pinned, at which point `OCCTBRepGPropVinertPlane`'s compensating mirror has to be deleted in the
+  same change. (#2873)
+
+### Two `gp_Cone` kernel defects fixed and a third header corrected: carried patches `0050`, `0051`, `0052` (#2992, #2991)
+
+- **`gp_Cone` lateral area and volume are now the closed forms** (#2992). Carried patch `0050`
+  removes a spurious `cos(semiAngle)` from `GProp_SelGProps::Perform(gp_Cone)`, and `0051` replaces
+  `GProp_VelGProps::Perform(gp_Cone)`'s volume with the frustum integral, which previously carried a
+  spurious `sin(semiAngle)` and so collapsed to zero as the cone became a cylinder rather than to
+  that cylinder's volume. `GeometryProperties.coneSurfaceArea(semiAngle:refRadius:height:)` returned
+  `408.10485695269909` where the area is `471.23889803846896`, and
+  `GeometryProperties.coneVolume(semiAngle:refRadius:height:)` returned `2040.524284763495` where
+  the frustum is `1587.0744437049404`. Neither class has a caller anywhere in OCCT, so the arbiters
+  were the closed form and the cylinder limit; both are measured before and after in
+  `Scripts/repro/2992/`. **The values change**: a caller that pinned either number is reading a
+  different one after the kernel repin.
+- **`Geom_BezierSurface.hxx`'s `IsURational`/`IsVRational` prose corrected** (#2991). Carried patch
+  `0052`. The prose contradicted the header's own example matrix and the implementation, which sets
+  `Urational` by walking the column index; `Geom_BSplineSurface.hxx` already stated the rule
+  correctly, so the two headers now agree. Documentation only, no behaviour change.
+- `Tests/OCCTAnalysisTests/GPropCylConeTests.swift`' two cone tests now assert the closed forms
+  plainly, in place of the three `withKnownIssue` blocks and two wrong-answer regression pins that
+  held them.
+
+### The kernel is rebuilt on all thirty-nine carried patches, and two bridge compensations go with it (#2873, #2875, #2860, #2879, #2900, #2991, #2992)
+
+The pinned OCCT asset moves to `v4.0.0-kernel.4`, which carries every patch this repository has written, eight more than its predecessor. `Face.volumeInertia(planeNormal:planeDistance:)` now measures about the plane you name without a bridge-side mirror, `Curve2D.bezierInsertPoleAfter` accepts the same pole count as the 3D class, an overdetermined `MathSolver.uzawa` no longer crashes, a NaN mesh deflection is refused rather than hanging, and a cone's area and volume are correct.
+
+### A stepped sheet-metal seam stops rounding away the flange's free edge, and #501's sampler tests stop missing their own path (#2972, #2054, #2977)
+
+- **#2972.** `SheetMetal.Builder.build()` filleted the whole seam *line* rather than the bend.
+  Both of `findSeamEdges`'s plane tests hold along the full line, so on a stepped seam the free
+  edge of the wider flange's outer split piece was filleted too; that edge is convex, so the fillet
+  removed material from a corner the builder documents as staying flat. All four stepped fixtures
+  in the suite came out **below their flange volumes**, by exactly `r^2 (1 - pi/4)` times the
+  surplus length, and a point 0.2 inside the free corner classified as outside in all four. The
+  selection is now bounded by the bend's own intersection range, read off the bend rather than off
+  the matched pieces, because a flange split by one bend names its first piece after the whole
+  flange and a second bend covering that flange's full width resolves to the sliver (#3019). The
+  four convex-bend fixtures were never wrong: the arithmetic that called them unexplained left out
+  the flange-body overlap and, in each part, the concave bend beside the convex one, and all four
+  derive to the last digit once both are counted. Eight regression pins become derivations, with
+  the measurement in `Scripts/repro/2972-sheetmetal-volumes/` and a harness,
+  `swift run Harnesses 2972-sheetmetal-volumes`, that predicts every fixture's volume term by term.
+- **#2977.** `Curve2DTests.uniformDrawRespectsCount` and
+  `Tests/OCCTCurveTests/GCPntsSamplerBoundsTests.swift` had stopped reaching #501's surplus-point
+  path, and a distortion of the last-slot rule left them green. Carried patch `0018` is why: it
+  also accepts a sampler step within `theTol` of the end in 3D, which settles #501's 1e6 x 1e-3
+  ellipse. That test is absolute, so it stops helping as the curve grows, and a 1e8 x 0.1 ellipse
+  still returns `count + 1` for eight of the first 59 counts, identically for
+  `GCPnts_UniformAbscissa` and `GCPnts_QuasiUniformAbscissa` and identically in 2D and 3D. Both
+  suites now run on that ellipse with #501's own kept as a control, their end-point tolerances
+  tightened from `1e-6` to `1e-9` against a 1.5e-7 shortfall, and three cases that bound the result
+  with `if let` and asserted nothing on an empty sample now require the count. Transcripts in
+  `Scripts/repro/2977-uniformabscissa-no-overshoot/`, including a behavioural check that `0018` is
+  in the pinned asset, which `check-pinned-asset-patches.py` cannot reach.
+- **#2054.** Measurement only. `IFSelect_WorkSession::GiveFileRoot`/`GiveFileComplete` have zero
+  callers in the whole `V8_0_1` tree and zero in `Sources/`, and of the 57 bridge functions
+  returning a `const char*` 48 copy into fresh storage while the other nine return a string
+  literal, a `Standard_Type` singleton's name, or storage the caller already owns. Nothing hands
+  Swift a pointer into mutable shared OCCT state, so a wrapper would bound the exposure to its own
+  frame. Recorded in `okf/references/known-occt-bugs.md`; the fix stays upstream's call.
+
+### Added: capturing what OCCT itself prints (#3021)
+
+`Messenger.capturingDefaultOutput(_:)` runs a closure with every printer on
+`Message::DefaultMessenger()` detached and replaced by one that accumulates, then restores them and
+returns the text. `Messenger.silencingDefaultOutput(_:)` is the same scope with the text discarded,
+and `Messenger.defaultPrinterCount` / `Messenger.isDefaultOutputCaptured` report the messenger's
+state. Until now `Messenger` wrapped only a messenger the caller created, which is a different
+object from the static OCCT writes through, so a kernel message such as
+`**** ERR StepFile : Undefined Parsing` or a `Statistics on Transfer (Write)` block could not be
+redirected at all and landed on standard output. The captured form is deliberately richer than
+silence: an expected message can be asserted on, so an absent one fails rather than passing
+unnoticed.
+
+The wasm spike (`Scripts/repro/2175/spike`) and `Issue1644IOReturnStatus` adopt it, and the
+transcript each produces now carries a verdict on OCCT's output instead of the output itself.
+
+### Nineteen test assertions that could not fail now measure their subject (#3018)
+
+The test targets built with 22 compiler warnings naming assertions that cannot fail: 19
+`comparing non-optional value of type 'X' to 'nil' always returns true` and 3 redundant
+`#require`s on a non-optional. Each site now asserts the geometry, document content or
+parameter range the test was written to check, rather than the non-optional handle it came back
+in. No public API changed; this is test-side only. The surface-factory suites
+(`ConicalSurfaceTests`, `CylindricalSurfaceTests`, `GceMakeConeTests`, `GceMakeCylinderTests`,
+`PlaneConstructionTests`, `TrimmedConeTests`, `TrimmedCylinderTests`, `JoinBezierPatchesTests`)
+now pin the semi-angle, radius, axis, apex, plane equation and trim bounds of what they build;
+`BSplineApproxInterpTests` measures the fitted curve against the data it was fitted to;
+`CurveConvertToPeriodicTests` and `CurveSplitTests` pin periodicity and the split partition; and
+`VrmlWriterTests` checks that the OBJ and STEP round trips carry the geometry.
+
 ### Probe evidence that could not be re-derived, and the screens that could not see it (#2987, #2967, #2965)
 
 - **`census-766-unlifted-tests.py` screens the merged population instead of assuming it (#2987).**
@@ -143,6 +272,10 @@ because the branch's own versions carry the multi-line `guard` too.
 corrected figures, and the script gains a `WHAT IT CANNOT SEE` section recording the one shape
 left uncaught on purpose: a threshold a correct answer clears by a whole unit, which no static
 shape can reach without also reaching every tolerance comparison.
+
+### The WebAssembly build is green again (#3007)
+
+`simd_distance_squared` reached the WASI `simd` stand-in, which did not have it, so every WebAssembly build failed to compile two `OCCTAnalysisTests` suites from PR #2998 onwards. The stand-in now defines it as the squared length of the difference, by delegation, so it cannot diverge from Apple's.
 
 ### Read the `booleans` family of #1399's unlaned refman-coverage lane ([#1399](https://github.com/SecondMouseAU/OCCTSwift/issues/1399))
 
@@ -789,6 +922,20 @@ shape of defect in `helpers_in`, which costs it 11 findings and 6 SEVERE, filed 
   `Scripts/repro/766-stress-boundary/` crosses with the tests that cite it and reproduces byte for
   byte against the pinned kernel.
 
+### Changed
+
+- The `OCCTFoundationTests` suite can now fail. Sixty-eight tests across Color, Material,
+  `Quantity_Date`, FontManager, PixMap, UnitsAPI, Messenger, Message_Report, OSD_Timer,
+  OSD_MemInfo, OSD_Environment, OSD_Chronometer, OSD_Process, OSD_File, OSD_SharedLibrary,
+  Message_Msg, UnitsConversion and `XCAFDoc_ColorTool` replace an `if let` with no `else`, a
+  `>= 0` bound or a bare `_ =` with the value the pinned kernel actually returns, lifted from six
+  execution PRs already merged into `v5.0.0-766-execution` (#2319, #2326, #2329, #2334, #2411,
+  #2440). `Tests/OCCTFoundationTests/` goes from 31 SEVERE and 47 ESCAPABLE to 7 and 25 on
+  `Scripts/census-766-weak-assertions.py`, and the file falls from first place in
+  `Scripts/census-766-unlifted-tests.py`'s ranking, at 53 gains, to one. Six
+  `Scripts/repro/766-foundation-*` ground-truth probes cross with them and reproduce against the
+  pinned asset.
+
 ### The TObj_Application singleton stops being freed by a release nobody paid for (#2897)
 
 `OCCTXCAFTests` trapped on wasm inside `OCCTTObjApplicationCreateDocument` with an
@@ -1079,6 +1226,189 @@ evidence tally; the other fifteen are filed as #2959.
   statement about the index and the contract `checkEdge(at:)` shares (#613, #844). A caller that only
   wanted a verdict migrates with `== true`. The bridge function
   `OCCTBRepCheckSubShapeValid` returns the new `OCCTSubShapeValidity` enum instead of `bool`.
+
+### Fixed
+
+- `MathMatrix.invert()` on a non-square matrix no longer faults. A 100x1 was a SIGBUS:
+  `math_Matrix::Invert`'s own squareness check sits in an OCCT `.cxx` and is compiled out of the
+  pinned kernel, so the matrix reached `math_Gauss`, which writes past the row count. It now returns
+  `false` (#2860).
+- `MathMatrix.transpose()` on a non-square matrix no longer aborts the process. Its squareness check
+  is inline, so it was live in the bridge's translation unit and threw into Swift-generated frames as
+  an uncatchable SIGABRT. It now returns `false` (#2860, #345).
+- `MathMatrix.value(row:col:)` and `setValue(row:col:value:)` no longer abort the process on an
+  out-of-range 1-based index, which was an uncatchable SIGABRT by the same route. They now return
+  `nil` and `false` (#2860).
+- `MathMatrix.determinant` no longer returns a confident answer for a matrix that has none. A 3x2
+  returned `-1` and a 100x1 returned `nan` with the heap corrupted behind it;
+  `math_Matrix::Determinant()` has no squareness check of any kind, not even a compiled-out one. It
+  now returns `nil` for a non-square matrix and for a 0x0, whose determinant OCCT reports as 1
+  (#2860).
+- `MathSolver.uzawa(...)` no longer accepts more constraints than variables. `math_Uzawa` sizes its
+  error vector on the constraint matrix's column count and writes it by row, so 100 constraints over
+  2 variables was a deterministic SIGSEGV and 4 over 2 returned a wrong answer with
+  `IsDone() == true`. It now returns `nil` (#2860).
+- `Shape.scaledAboutPoint(_:factor:)` no longer returns a collapsed solid for a null factor.
+  `BRepBuilderAPI_Transform` reported `IsDone() == true` and the result's measured volume was 0. It
+  now returns `nil` for `abs(factor)` below `gp::Resolution()`, the threshold `gp_Trsf::SetScale`
+  itself uses (#2860).
+- `Shape.trsfModification(...)` no longer builds a transform with `nan` in it. A singular 3x3 gave a
+  scale factor of `-0` and `nan` matrix entries, which were then handed to
+  `BRepTools_TrsfModification`. It now returns `nil` when the 3x3's determinant is below
+  `gp::Resolution()`, which is the test `gp_Trsf::SetValues` applies (#2860).
+- `IntfTool.beginParam(segment:)` and `endParam(segment:)` no longer index a raw `double[6]`
+  unchecked. On a clip with one segment, `segment: 7` returned `endOnCurve[0]`, the genuine end
+  parameter of segment 1, as the begin parameter of a segment that does not exist, and a large index
+  was a SIGBUS or SIGSEGV. Both now return `nil` outside `1...segmentCount` (#2857).
+
+### Added
+
+- `IntfTool.segmentCount`, wrapping `Intf_Tool::NbSegments()`, which had no wrapper at all. Without
+  it a caller had no way to learn the valid range for `beginParam(segment:)` other than
+  `clipLineToBox`'s `@discardableResult` return value (#2857).
+- `MathMatrix.isSquare`, the precondition `determinant`, `invert()` and `transpose()` share. A 0x0 is
+  not square by this definition, because `math_Matrix::Determinant()` reports 1 for it (#2860).
+
+### Fixed
+
+- Ten public entry points now apply the bound that OCCT documents and the pinned Release kernel
+  compiles out. `Curve2D`'s six Bezier pole, weight and degree operations, `Surface`'s Bezier pole
+  getter, `Surface.fromCylinder`/`fromCone`, and the four `GCPnts_TangentialDeflection` call sites
+  behind `Edge.tangentialDeflectionPoints` and `drawAdaptive` refuse out-of-range input with the
+  refusal they already gave a wrong-typed handle, rather than reading or writing past an array. Five
+  of these were an uncatchable SIGSEGV, SIGBUS or malloc abort, three returned a fabricated value
+  and reported success, and one returned 1% of the edge it was asked to sample (#2859, #2861).
+
+### Fixed
+
+- `Curve3D.isCN`, `Curve3D.bezierIsCN`, `Curve2D.isCN`, `Curve2D.bsplineIsCN`, `Surface.isCNu`,
+  `Surface.isCNv`, `Surface.bezierIsCNu` and `Surface.bezierIsCNv` now return `false` for a negative
+  continuity order. All eight returned `true`, because the `Standard_RangeError` guard is in a `.cxx`
+  and so absent from the pinned Release kernel, leaving `Geom_BSplineCurve`'s `N <= 0` test to answer
+  (#2862).
+
+### Fixed
+
+- **OCAF integer and real array setters wrote out of bounds and reported success (#2855).**
+  `AssemblyNode.setIntegerArrayValue(at:value:)` and `setRealArrayValue(at:value:)` now refuse an
+  index outside the array's own `lower...upper` range with `false`, the bound their paired getters
+  already tested. Measured before the fix, `setIntegerArrayValue(at: 1_000_000, value:)` on an array
+  created `[1...4]` wrote roughly four megabytes past the buffer and answered `true`: every range
+  check between the bridge and the raw store is compiled out of the pinned kernel, including the
+  inline one in `NCollection_Array1`, which is expanded inside an OCCT `.cxx` built
+  `-DNo_Exception`. `initIntegerArray(lower:upper:)` and `initRealArray(lower:upper:)` now refuse
+  `upper < lower`, which was an uncatchable SIGSEGV inside `TDataStd_IntegerArray::Set` from
+  ordinary `Int32` arguments.
+- **`SewingBuilder.deletedFace(at:)` was an uncatchable SIGSEGV for every index, including 1
+  (#2856).** It now answers `nil` outside `1...nbDeletedFaces`, the bound its sibling
+  `multipleEdge(at:)` already applied. A well-formed sewing deletes no face, so `nbDeletedFaces` is
+  0 and every index is out of range; `BRepBuilderAPI_Sewing::DeletedFace`'s own guard is out-of-line
+  and also permits index 0, which the `NCollection_IndexedMap` beneath it rejects.
+
+### `StressTestFixtures`' `openShell` fixture was never built, and the list that dropped it said nothing (#2830)
+
+`allStandardShapes()` appended `"openShell"` inside an `if let` on
+`standardBox().shelled(thickness: -2.0)`, which returns `nil` for every closed solid, so the matrix
+ran **9** fixtures rather than 10 for as long as the fixture existed. Measured: 9 before, 10 after.
+
+`shelled(thickness:)` wraps `BRepOffsetAPI_MakeThickSolid::MakeThickSolidBySimple`, and the refusal
+is now traced to its mechanism rather than to its `IsDone`:
+`BRepOffset_MakeSimpleOffset::BuildMissingWalls` builds the result solid's side walls from
+`ShapeAnalysis_FreeBounds(input).GetClosedWires()`, a closed input has no free boundary, and the
+quilt of input skin plus offset skin with no walls is two disjoint shells, reported as
+`BRepOffsetSimple_ErrorInvalidNbShells`, "Result contains two or more shells". The precondition is a
+free boundary, and `BRep_Tool::IsClosed` does not report it: it answers `false` for the refused box
+solid and for the accepted open shell alike. Transcript in
+`Scripts/repro/2830-openshell-fixture/`, documented on `docs/reference/Shape.md`.
+
+The fixture is now a genuine open shell, five of the box's six faces sewn, and the whole file's
+silent-degradation shapes are gone: `allStandardShapes()` throws and checks its membership against a
+declared name list, `filletedBox()`, `drilledPlate()` and `standardCompound()` throw instead of
+falling back to the unoperated input and each carries the structural delta that proves the operation
+did something, and `allShapesBREPString` no longer `continue`s past a shape that produced no BREP
+string. Eight further Stress sites calling the same overload on a closed box had dead bodies; each is
+adjudicated and repaired, with the three thickness-boundary tests moved to an input the algorithm
+accepts so the boundary is genuinely probed.
+
+`okf/policies/prove-the-test-fails.md` gains the case its "a matrix proves guards, not fixtures"
+section did not cover: a fixture that is absent rather than wrong, which no source injection can
+reveal.
+
+### Fixed
+- `Surface.extrema(to:uvBounds1:uvBounds2:)` took the process down with an uncatchable SIGSEGV on two
+  parallel surfaces, for example two parallel planes, with or without explicit UV bounds. OCCT reports
+  one extremum for a parallel pair and no point pair behind it, and the `NbExtrema() > 0` test in front
+  of the read counted the distances rather than the points. It now returns `nil`, and the gap it
+  declines to report is #2840 (#2831, #2840).
+- `Shape.halfSpace(face:referencePoint:)` could return a non-nil `Shape` wrapping a null solid, because
+  the bridge read `BRepPrimAPI_MakeHalfSpace::Solid()` with no `IsDone()` test and that accessor's own
+  raise is compiled out in this kernel. No reachable Swift input produces it, so nothing observable
+  changes; the contract is now enforced rather than assumed (#2831).
+- `docs/reference/Surface-Analysis.md`'s `extrema(to:)` example was two parallel planes, the one input
+  that crashed, and its note still described the `(0, 1, 0, 1)` UV fallback #1543 removed. Both
+  corrected (#2831).
+
+### Added
+
+- **`BRepGraph.occurrences(ofNode:from:)` and `BRepGraph.occurrences(of:from:)`**, an
+  occurrence-aware lookup that tells two instances of one part apart (#2835). `findNode(for:)`
+  answers the definition node, shared by every instance; these answer the occurrences, one entry per
+  placement, each carrying the location composed down the traversal and the `BRepGraph_UsagePath`
+  that distinguishes it. A direct wrap of `BRepGraph_ChildExplorer::CurrentUsagePath()` plus
+  `Current().Location` and `Current().Orientation`, which is where `BRepGraph/README.md:398` says
+  occurrence context is resolved. The root is explicit and has no default, because a graph this
+  wrapper builds has no `Product` node to start from. Cost is one traversal of the root's subgraph,
+  0.21 ms over a 200-instance compound.
+- **`BRepGraph.UsagePathStep` and `BRepGraph.Occurrence`**, the two value types those accessors
+  return. `UsagePathStep` wraps `BRepGraph_UsagePath::Step` and carries the node, the reference entry
+  it was reached through (in this bridge's ref-kind ABI, so it feeds the existing ref accessors) and
+  the sibling order. Two occurrences of one part share every node on the path and differ only in the
+  reference and sibling order, so all three fields are load-bearing.
+
+Closes #2835
+
+### Fixed
+- `Face.volumeInertia(planeNormal:planeDistance:)` returned a fabricated `0.0` for every face and every
+  plane, with a `nil` `centerOfMass`, on every kernel this package had pinned:
+  `BRepGProp_Gauss::convert` computed the by-plane mass and then overwrote it, keeping the value only
+  when its `theIsByPoint` flag was set, which no by-plane path sets. Carried patch `0043` drops that
+  condition and is pinned from `v4.0.0-kernel.3`, so the overload now measures the signed volume of the
+  column between the face and the reference plane. Over a closed shape the per-face sum is
+  `Shape.volume` and the mass-weighted sum of the centres is the solid's first moment, for any plane
+  (#2827).
+- `Face.volumeInertia(planeNormal:planeDistance:)`'s documentation said its centre of mass and inertia
+  matrix were measured and correct. Neither was ever true: the kernel zeroed the centre of mass on the
+  same branch that zeroed the mass, and `FaceVolumeInertia` has no inertia matrix at all. Corrected in
+  the doc comment and in `docs/reference/Shape-HLR-Geom.md`, which carried the same sentence (#2827).
+
+### Changed
+- The pinned OCCT xcframework is `v4.0.0-kernel.3`: `V8_0_1` plus the thirty-one carried patches, where
+  `v4.0.0-kernel.2` carried thirty. The only addition is `0043` (#2827).
+- `OCCTBRepGPropVinertPlane`'s declaration and definition record what the by-plane value measures, the
+  two identities that check it, and the inverted offset sign (#2827, #2873).
+
+### Added
+- `Scripts/patches/0043-BRepGProp_Gauss-keeps-the-by-plane-mass-2827.patch`, the one-line kernel fix
+  for the discarded by-plane mass, now built and pinned. `Scripts/repro/2827/probe.mm` measures the
+  defect, the two divergence-theorem identities that say what the value means, and the offset-sign
+  defect #2873; `Scripts/repro/2827/patched-kernel-transcript.txt` is the transcript (#2827).
+
+### Known issues
+- `BRepGProp_Vinert`'s by-plane overloads weight each element by `planeNormal . P + planeDistance`,
+  the opposite sign to a geometric distance, and `SetLocation` does not re-base it. Pass `-d` to
+  measure about the plane at offset `d`. Aggregates are unaffected. Held for the same upstream PR as
+  `0043` (#2873).
+- The wasm kernel remains `v4.0.0-kernel.2` and lacks `0043`, so in the browser the by-plane overload
+  still returns `0.0` until the OCCT 8.0.2 rebuild. Acknowledged in `Scripts/wasm-kernel-pin.txt`.
+
+### Fixed
+
+- `check-doc-snippets.py --self-test` no longer refuses in CI over a module the job's own build never wrote. `ci.yml` clears every `OCCTSwift.swiftmodule` under `.build` between the cache restore and `swift build`, so the module the gate compiles against is one that job produced. Three PRs were blocked by a cache entry holding a module at the llbuild layout's `<bin>/Modules` path while the build wrote the bin root (#2867).
+
+### Changed
+
+- `check-doc-snippets.py --self-test` states how many cases ran out of how many exist, and draws a banner naming the difference and its reason when it could not run them all. A run with the compile cases skipped checks 38 of 67 and used to say so in a parenthetical.
+- Every `check-doc-snippets.py` outcome now names the `OCCTSwift.swiftmodule` it read and when that module was written, in UTC, along with any other module under `.build`.
 
 ### Fixed
 

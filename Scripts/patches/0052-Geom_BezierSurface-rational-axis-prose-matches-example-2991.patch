@@ -1,0 +1,73 @@
+From: OCCTSwift ecosystem <noreply@secondmouse.au>
+Subject: [PATCH] Modeling Data - Geom_BezierSurface IsURational/IsVRational
+ prose contradicts its own example matrix
+
+Geom_BezierSurface.hxx says
+
+  //! Returns False if the weights are identical in the U direction,
+  //! Example :
+  //!               |1.0, 1.0, 1.0|
+  //! if Weights =  |0.5, 0.5, 0.5|   returns False
+  //!               |2.0, 2.0, 2.0|
+  Standard_EXPORT bool IsURational() const;
+
+The weights in that matrix are not identical in the U direction, they run
+1.0, 0.5, 2.0 down a column. They are identical in the V direction. So the
+prose and the example contradict each other, and the example is the one that
+matches the code.
+
+Geom_BezierSurface.cxx's static Rational() sets Urational from
+
+  Urational = (std::abs(Weights(I, J) - Weights(I, J + 1)) > Epsilon(...));
+
+inside a loop over I that walks J, so the comparison is between neighbours in
+the column index, which is V. Urational is therefore false exactly when every
+row of the weight matrix is constant, and Vrational is false exactly when every
+column is. Each flag names the axis opposite the one it compares along.
+
+Geom_BSplineSurface.hxx already states this correctly, with the same two
+example matrices:
+
+  //! Returns False if for each row of weights all the weights
+  //! are identical.
+
+so the two headers currently disagree with one another as well as one of them
+disagreeing with the implementation. This change gives Geom_BezierSurface the
+wording Geom_BSplineSurface already has, leaving the example matrices and the
+tolerance sentence untouched.
+
+Measured on macOS arm64 against V8_0_1 with four explicit weight matrices: rows
+constant gives (IsURational, IsVRational) = (0, 1), columns constant gives
+(1, 0), all weights equal gives (0, 0), and varying along both gives (1, 1).
+A Geom_BSplineSurface converted from a cylinder reports (0, 1) and (1, 0) after
+ExchangeUV(), the same way round.
+
+Documentation only, no behaviour change. Geom_BezierSurface.cxx was compiled
+against the corrected header on all three slices to confirm it still builds.
+
+The probe is Scripts/repro/2976-surface-rational-axes/probe.mm in the OCCTSwift
+repository. OCCTSwift issue #2991.
+
+diff --git a/src/ModelingData/TKG3d/Geom/Geom_BezierSurface.hxx b/src/ModelingData/TKG3d/Geom/Geom_BezierSurface.hxx
+--- a/src/ModelingData/TKG3d/Geom/Geom_BezierSurface.hxx
++++ b/src/ModelingData/TKG3d/Geom/Geom_BezierSurface.hxx
+@@ -561,7 +561,8 @@ public:
+   //! Returns False.
+   Standard_EXPORT bool IsVPeriodic() const final;
+
+-  //! Returns False if the weights are identical in the U direction,
++  //! Returns False if for each row of weights all the weights
++  //! are identical.
+   //! The tolerance criterion is Resolution from package gp.
+   //! Example :
+   //! |1.0, 1.0, 1.0|
+@@ -569,7 +570,8 @@ public:
+   //! |2.0, 2.0, 2.0|
+   Standard_EXPORT bool IsURational() const;
+
+-  //! Returns False if the weights are identical in the V direction,
++  //! Returns False if for each column of weights all the weights
++  //! are identical.
+   //! The tolerance criterion is Resolution from package gp.
+   //! Example :
+   //! |1.0, 2.0, 0.5|

@@ -3643,12 +3643,18 @@ bool OCCTCurve2DBezierInsertPoleAfter(OCCTCurve2DRef curve, int32_t index, doubl
   // signal in 20 of 20 runs; index 1000000 SIGBUSed. The kernel's third condition,
   // Weight <= gp::Resolution(), cannot hold here because this entry point takes no weight and
   // InsertPoleAfter defaults it to 1.
-  // #2875: nbpoles >= MaxDegree() is one pole stricter than the constructors, than Increase(), and
-  // than this function's own header comment, all of which top out at MaxDegree() + 1 poles. It is
-  // kept anyway: Geom_BezierCurve carries the identical predicate as a live literal throw, so
-  // relaxing it here alone would make Curve2D accept what Curve3D refuses.
+  // #2875: nbpoles >= MaxDegree() was one pole stricter than the constructors, than Increase(),
+  // and than this function's own header comment, all of which top out at MaxDegree() + 1 poles.
+  // It was kept while Geom_BezierCurve carried the identical predicate as a live literal throw,
+  // because relaxing it here alone would have made Curve2D accept what Curve3D refuses. Carried
+  // patch 0045 fixes both classes and is pinned from v4.0.0-kernel.4, so the bound moves here in
+  // the same change (#3013) and the two agree again at MaxDegree() + 1.
+  //
+  // The guard stays rather than being retired, which is NOT the usual post-repin disposition: the
+  // 2d site in the kernel is a Standard_ConstructionError_Raise_if that No_Exception empties, so
+  // in a Release build this is the only pole bound the 2d class has, patched or not (#2801).
   const int nbPoles = bz->NbPoles();
-  if (index < 0 || index > nbPoles || nbPoles >= Geom2d_BezierCurve::MaxDegree())
+  if (index < 0 || index > nbPoles || nbPoles > Geom2d_BezierCurve::MaxDegree())
     return false;
   try
   {

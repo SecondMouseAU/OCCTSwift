@@ -67,6 +67,7 @@
 #include <Resource_Manager.hxx>
 #include <UnitsMethods.hxx>
 #include <atomic>
+#include <mutex>
 #include <sstream>
 #include <XCAFDoc_DocumentTool.hxx>
 #include <TDF_LabelSequence.hxx>
@@ -464,6 +465,197 @@ void OCCTMessengerRemoveAllPrinters(OCCTMessengerRef messenger)
   catch (...)
   {
     occtRecordCaughtException(__func__);
+  }
+}
+
+// MARK: - Message::DefaultMessenger() capture (#3021)
+//
+// Everything above acts on a messenger the caller created. OCCT itself prints through a different
+// object, the one static Message::DefaultMessenger(), and nothing here reached it, so OCCT's own
+// output landed in whatever transcript the process was writing. An expected
+// `**** ERR StepFile : Undefined Parsing` from a deliberately malformed file and a genuine kernel
+// complaint are then the same red text on the same stream, which is #3021: a passing run reads as a
+// failing one, and a real error has nothing to distinguish it from an expected one. This swaps the
+// default messenger's printers for one that accumulates, so a scope whose expected OCCT output is
+// known can assert on it rather than merely silencing it.
+
+namespace
+{
+
+// 1 MiB. Past this the capture stops appending and says so once, in the text itself: a capture left
+// running across a large import would otherwise grow without bound, and a silent truncation would
+// be worse than a bounded one.
+const size_t THE_MESSENGER_CAPTURE_LIMIT = 1024 * 1024;
+const char*  THE_MESSENGER_CAPTURE_TRUNCATED =
+  "[OCCTSwift: messenger capture truncated at 1048576 bytes]\n";
+
+// The capture's state.
+//
+// PROCESS-WIDE and not thread-local, unlike the diagnostics ring in OCCTBridge.mm, because
+// Message::DefaultMessenger() is one static object every OCCT translation unit prints through, and
+// because a reader such as Transfer_ProcessForFinder::SetMessenger copies that handle rather than
+// its printers. A thread-local buffer would collect whatever the printing thread happened to be.
+//
+// RECURSIVE, deliberately. occtRecordCaughtException's logging tail sends to this same messenger,
+// so a diagnostic raised while the lock is held re-enters send() on the same thread; a plain
+// std::mutex deadlocks there and a recursive one records both lines.
+struct OCCTMessengerCaptureState
+{
+  std::recursive_mutex                          mutex;
+  bool                                          active    = false;
+  bool                                          truncated = false;
+  std::string                                   text;
+  Handle(Message_Printer)                       printer;
+  NCollection_Sequence<Handle(Message_Printer)> detached;
+};
+
+OCCTMessengerCaptureState& occtMessengerCaptureState()
+{
+  static OCCTMessengerCaptureState THE_STATE;
+  return THE_STATE;
+}
+
+// Accumulates into occtMessengerCaptureState().text instead of into a stream. Message_Printer
+// declares send() const, which is why the buffer is the file static above rather than a member.
+class OCCTMessengerCapturePrinter : public Message_Printer
+{
+  DEFINE_STANDARD_RTTI_INLINE(OCCTMessengerCapturePrinter, Message_Printer)
+
+protected:
+  void send(const TCollection_AsciiString& theString,
+            const Message_Gravity          theGravity) const override
+  {
+    // Message_PrinterOStream::send's own first line, so the capture holds exactly what OCCT's
+    // default printer would have written and no more.
+    if (theGravity < myTraceLevel)
+      return;
+
+    OCCTMessengerCaptureState&            aState = occtMessengerCaptureState();
+    std::lock_guard<std::recursive_mutex> aLock(aState.mutex);
+
+    const size_t aLength = static_cast<size_t>(theString.Length());
+    if (aState.text.size() + aLength + 1 > THE_MESSENGER_CAPTURE_LIMIT)
+    {
+      if (!aState.truncated)
+      {
+        aState.truncated = true;
+        aState.text += THE_MESSENGER_CAPTURE_TRUNCATED;
+      }
+      return;
+    }
+    aState.text.append(theString.ToCString(), aLength);
+    // Message_PrinterOStream terminates each message with a bare '\n' rather than with std::endl.
+    aState.text += '\n';
+  }
+};
+
+} // namespace
+
+bool OCCTDefaultMessengerBeginCapture()
+{
+  OCCTMessengerCaptureState& aState = occtMessengerCaptureState();
+  try
+  {
+    std::lock_guard<std::recursive_mutex> aLock(aState.mutex);
+    if (aState.active)
+      return false;
+
+    const Handle(Message_Messenger)& messenger = Message::DefaultMessenger();
+    if (messenger.IsNull())
+      return false;
+
+    // Assign, not Append: NCollection_Sequence::Append(NCollection_Sequence&) SPLICES and leaves
+    // its argument empty, and the argument here is the messenger's own live printer list.
+    aState.detached.Assign(messenger->Printers());
+    aState.printer = new OCCTMessengerCapturePrinter();
+    messenger->ChangePrinters().Clear();
+    if (!messenger->AddPrinter(aState.printer))
+    {
+      // Nothing is captured and nothing can be, so put back what was taken rather than leaving the
+      // process with no printers at all, which would silence OCCT for the rest of the run.
+      messenger->ChangePrinters().Assign(aState.detached);
+      aState.detached.Clear();
+      aState.printer.Nullify();
+      return false;
+    }
+    aState.text.clear();
+    aState.truncated = false;
+    aState.active    = true;
+    return true;
+  }
+  catch (...)
+  {
+    occtRecordCaughtException(__func__);
+    return false;
+  }
+}
+
+const char* OCCTDefaultMessengerEndCapture()
+{
+  OCCTMessengerCaptureState& aState = occtMessengerCaptureState();
+  try
+  {
+    std::lock_guard<std::recursive_mutex> aLock(aState.mutex);
+    if (!aState.active)
+      return nullptr;
+    // Cleared before the restore rather than after, so a throw out of OCCT's own allocation below
+    // leaves the capture beginnable again rather than wedged on with no way back.
+    aState.active = false;
+
+    const Handle(Message_Messenger)& messenger = Message::DefaultMessenger();
+    if (!messenger.IsNull())
+    {
+      messenger->RemovePrinter(aState.printer);
+      // Re-attached one at a time rather than assigned back, so a printer the host attached DURING
+      // the capture survives; AddPrinter skips one already in the list.
+      for (int index = 1; index <= aState.detached.Size(); ++index)
+        messenger->AddPrinter(aState.detached.Value(index));
+    }
+    aState.detached.Clear();
+    aState.printer.Nullify();
+
+    char* result = static_cast<char*>(malloc(aState.text.size() + 1));
+    if (result != nullptr)
+      memcpy(result, aState.text.c_str(), aState.text.size() + 1);
+    aState.text.clear();
+    aState.truncated = false;
+    return result;
+  }
+  catch (...)
+  {
+    occtRecordCaughtException(__func__);
+    return nullptr;
+  }
+}
+
+bool OCCTDefaultMessengerIsCapturing()
+{
+  OCCTMessengerCaptureState& aState = occtMessengerCaptureState();
+  try
+  {
+    std::lock_guard<std::recursive_mutex> aLock(aState.mutex);
+    return aState.active;
+  }
+  catch (...)
+  {
+    occtRecordCaughtException(__func__);
+    return false;
+  }
+}
+
+int OCCTDefaultMessengerPrinterCount()
+{
+  try
+  {
+    const Handle(Message_Messenger)& messenger = Message::DefaultMessenger();
+    if (messenger.IsNull())
+      return 0;
+    return static_cast<int>(messenger->Printers().Size());
+  }
+  catch (...)
+  {
+    occtRecordCaughtException(__func__);
+    return 0;
   }
 }
 

@@ -12,7 +12,7 @@
 #   Scripts/repro/2175/run.sh        # everything below
 #
 #   ./run.sh build     generate the consumer toolset and build spike/ for wasm, release
-#   ./run.sh run       run the module under wasmkit with a preopened directory. Six cases, of
+#   ./run.sh run       run the module under wasmkit with a preopened directory. Nine cases, of
 #                      which two must FAIL in the kernel's own words rather than trap. ASSERTS.
 #   ./run.sh sjlj      the blocker this issue found and the negative case for its fix: what
 #                      -DOCC_CONVERT_SIGNALS does to one OCCT source file, and what the module
@@ -111,7 +111,7 @@ MODULE="$SPIKE_DIR/.build/out/Products/Release-webassembly-wasm32/OCCTWasmSpike.
 do_run() {
     echo ""
     echo "===================================================================="
-    echo "RUN: five calls through the OCCTSwift public API, six cases, under wasmkit"
+    echo "RUN: five calls through the OCCTSwift public API, nine cases, under wasmkit"
     echo "===================================================================="
     [ -f "$MODULE" ] || { note_failure "no module; run ./run.sh build first"; return 1; }
     local work="$OUT_DIR/work"
@@ -133,11 +133,18 @@ do_run() {
         return 1
     fi
     # Assert on the case lines rather than on the exit status alone: a module that printed nothing
-    # and exited 0 would otherwise pass. Six cases, every one of them PASS.
+    # and exited 0 would otherwise pass. Every case, and every one of them PASS.
+    #
+    # THE COUNT MOVES WITH THE SPIKE AND NOTHING DERIVES IT, so it is named here and updated with
+    # `main.swift`. It was 6 when this was written, 8 after #2894 added the two unwind-depth cases
+    # (and was not updated, so this assertion was failing for the wrong reason), and 9 after #3021
+    # added `occt-output-capture`. The spelling it counts is a `report(...)` call whose verdict line
+    # begins `case `; `grep -c '^case .* \(PASS\|FAIL\) '` over a run's own log is the derivation.
+    local expected_cases=9
     local passes
     passes="$(grep -c '^case .* PASS ' "$log" || true)"
-    if [ "$passes" -ne 6 ]; then
-        note_failure "expected 6 PASS lines, saw $passes"
+    if [ "$passes" -ne "$expected_cases" ]; then
+        note_failure "expected $expected_cases PASS lines, saw $passes"
         return 1
     fi
     grep -q '^failures: 0$' "$log" || { note_failure "the module did not report 'failures: 0'"; return 1; }

@@ -55,6 +55,21 @@ from `refactor/381-pass1b`, the integration branch, now merged.
   `push:` keeps its `main` / `refactor/**` filter. A branch with an open PR is covered by
   `pull_request`, so filtering pushes only avoids running everything twice.
 
+- **Never give `ci.yml` a workflow-level `paths-ignore`.** It carries the required job, and a
+  workflow a path filter skips produces no check run at all, which is the permanent
+  "Expected, waiting for status to be reported" stall above arriving by a different door. To spare
+  a prose-only PR the expensive jobs, gate **the jobs** instead: `ci.yml`'s `changes` job
+  classifies the diff and `build-and-test` and `ios-simulator-build` take a `needs` plus an `if`
+  on it, so `gate-scripts` still runs and still reports on every PR. `code-style.yml` and
+  `code-structure.yml` are *not* required and may carry `paths-ignore` safely, which is the whole
+  difference between them.
+
+  **`docs/**` is not prose for this purpose.** It holds 5,381 fenced Swift snippets and
+  `check-doc-snippets.py --require-typecheck` compiles them inside `build-and-test`, so a
+  docs-only change is precisely when that job earns its half hour. The skippable set is `okf/**`
+  and the root Markdown, measured: that gate's own population is `DOC_GLOBS = ('docs/**/*.md',)`,
+  and the two `swift` fences under `okf/` are compiled by nothing.
+
 - **`build-and-test` is required nowhere, and that is still the right call.** It was 0-for-21 on
   the integration branch under #585 (see [Pinned kernel patch check](pinned-kernel-patch-check.md)),
   and it failed on `main` at the v2.0.0 release commit for an unrelated reason (the manifest

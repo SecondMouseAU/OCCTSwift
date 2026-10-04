@@ -8,112 +8,113 @@ import simd
 
 @Suite("v0.141 BRepGraph history record readback")
 struct BRepGraphHistoryReadbackTests {
-    @Test("Recorded 1-to-1 modification survives roundtrip through the API")
-    func oneToOneReadback() {
-        guard let box = Shape.box(width: 10, height: 10, depth: 10),
-            let graph = BRepGraph(shape: box)
-        else {
-            Issue.record("graph nil")
-            return
-        }
+    private func node(_ kind: BRepGraph.NodeKind, _ index: Int) -> BRepGraph.NodeRef {
+        BRepGraph.NodeRef(kind: kind, index: index)
+    }
+
+    /// A box graph with history enabled and the log empty.
+    ///
+    /// The recorded nodes are inventions on purpose: the log stores whatever it is given and never
+    /// checks it against the topology.
+    private func makeGraph() throws -> BRepGraph {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10), "box")
+        let graph = try #require(BRepGraph(shape: box), "graph of a box")
         graph.isHistoryEnabled = true
         graph.clearHistory()
+        try #require(graph.historyRecordCount == 0, "the log must start empty")
+        return graph
+    }
 
-        let orig = BRepGraph.NodeRef(kind: .face, index: 0)
-        let repl = BRepGraph.NodeRef(kind: .face, index: 42)
+    @Test("Recorded 1-to-1 modification survives roundtrip through the API")
+    func oneToOneReadback() throws {
+        let graph = try makeGraph()
+        let orig = node(.face, 0)
+        let repl = node(.face, 42)
         graph.recordHistory(operationName: "TestFillet", original: orig, replacements: [repl])
 
         #expect(graph.historyRecordCount == 1)
-        guard let rec = graph.historyRecord(at: 0) else {
-            Issue.record("record nil")
-            return
-        }
+        let rec = try #require(graph.historyRecord(at: 0), "record 0")
         #expect(rec.operationName == "TestFillet")
-        #expect(rec.mapping.count == 1)
-        #expect(rec.mapping[orig] == [repl])
+        // OCCT numbers a record by its position in the log: `SequenceNumber = myRecords.Size()`
+        // in BRepGraph_LayerHistory::Record, taken before the append.
+        #expect(rec.sequenceNumber == 0)
+        #expect(rec.mapping == [orig: [repl]])
+
+        // A second record is numbered 1 and the first keeps 0, and the log has no record 1 yet
+        // to read before it is written, nor a record -1 at all.
+        #expect(graph.historyRecord(at: 1) == nil)
+        graph.recordHistory(
+            operationName: "Second", original: node(.face, 1), replacements: [node(.face, 43)])
+        let second = try #require(graph.historyRecord(at: 1), "record 1")
+        #expect(second.operationName == "Second")
+        #expect(second.sequenceNumber == 1)
+        let firstAgain = try #require(graph.historyRecord(at: 0), "record 0 after a second record")
+        #expect(firstAgain.sequenceNumber == 0)
+        #expect(graph.historyRecord(at: 2) == nil)
+        #expect(graph.historyRecord(at: -1) == nil)
     }
 
     @Test("Split (1-to-N) mapping round-trips")
-    func splitMapping() {
-        guard let box = Shape.box(width: 10, height: 10, depth: 10),
-            let graph = BRepGraph(shape: box)
-        else {
-            Issue.record("graph nil")
-            return
-        }
-        graph.isHistoryEnabled = true
-        graph.clearHistory()
-
-        let orig = BRepGraph.NodeRef(kind: .edge, index: 3)
-        let a = BRepGraph.NodeRef(kind: .edge, index: 100)
-        let b = BRepGraph.NodeRef(kind: .edge, index: 101)
-        let c = BRepGraph.NodeRef(kind: .edge, index: 102)
+    func splitMapping() throws {
+        let graph = try makeGraph()
+        // Deliberately not in ascending index order, so a readback that sorts, or reverses, or
+        // de-duplicates its replacements is not mistaken for one that preserves them.
+        let orig = node(.edge, 3)
+        let a = node(.edge, 102)
+        let b = node(.edge, 100)
+        let c = node(.edge, 101)
         graph.recordHistory(operationName: "SplitEdge", original: orig, replacements: [a, b, c])
 
-        let rec = graph.historyRecord(at: 0)
-        #expect(rec?.mapping[orig] == [a, b, c])
+        let rec = try #require(graph.historyRecord(at: 0), "record 0")
+        #expect(rec.mapping.count == 1)
+        #expect(rec.mapping[orig] == [a, b, c])
     }
 
     @Test("Deletion (1-to-0) round-trips")
-    func deletionMapping() {
-        guard let box = Shape.box(width: 10, height: 10, depth: 10),
-            let graph = BRepGraph(shape: box)
-        else {
-            Issue.record("graph nil")
-            return
-        }
-        graph.isHistoryEnabled = true
-        graph.clearHistory()
-
-        let orig = BRepGraph.NodeRef(kind: .face, index: 5)
+    func deletionMapping() throws {
+        let graph = try makeGraph()
+        let orig = node(.face, 5)
+        let bystander = node(.face, 6)
         graph.recordHistory(operationName: "RemoveFace", original: orig, replacements: [])
 
-        let rec = graph.historyRecord(at: 0)
-        #expect(rec?.mapping[orig] == [])
+        let rec = try #require(graph.historyRecord(at: 0), "record 0")
+        #expect(rec.mapping == [orig: []])
+        // OCCT turns a record with no replacements into a deletion and adds the original to the
+        // deleted set (BRepGraph_LayerHistory::Record), so the readback of the deletion and the
+        // deleted-set queries agree, and a node nobody consumed is not in either.
+        #expect(graph.historyIsDeleted(orig))
+        #expect(graph.historyDeletedNodes == [orig])
+        #expect(!graph.historyIsDeleted(bystander))
     }
 
     @Test("FindDerived walks forward through chained records")
-    func findDerivedWalksForward() {
-        guard let box = Shape.box(width: 10, height: 10, depth: 10),
-            let graph = BRepGraph(shape: box)
-        else {
-            Issue.record("graph nil")
-            return
-        }
-        graph.isHistoryEnabled = true
-        graph.clearHistory()
-
-        // orig → [a] → [b, c]
-        let orig = BRepGraph.NodeRef(kind: .edge, index: 1)
-        let a = BRepGraph.NodeRef(kind: .edge, index: 10)
-        let b = BRepGraph.NodeRef(kind: .edge, index: 20)
-        let c = BRepGraph.NodeRef(kind: .edge, index: 21)
+    func findDerivedWalksForward() throws {
+        let graph = try makeGraph()
+        // orig -> [a] -> [b, c]
+        let orig = node(.edge, 1)
+        let a = node(.edge, 10)
+        let b = node(.edge, 20)
+        let c = node(.edge, 21)
         graph.recordHistory(operationName: "Op1", original: orig, replacements: [a])
         graph.recordHistory(operationName: "Op2", original: a, replacements: [b, c])
 
-        let derived = Set(graph.findDerived(of: orig))
-        // Transitively, orig should reach b and c (and possibly a depending on OCCT's
-        // definition of "leaves", we accept either but require at least b, c).
-        #expect(derived.isSuperset(of: [b, c]))
+        // OCCT's contract for FindDerived: every transitively reachable descendant, intermediate
+        // nodes and leaves alike, not the original itself, in breadth-first order.
+        #expect(graph.findDerived(of: orig) == [a, b, c])
+        #expect(graph.findDerived(of: a) == [b, c])
+        #expect(graph.findDerived(of: b) == [])
+        #expect(graph.findDerived(of: node(.edge, 2)) == [], "a node no record names")
     }
 
     // MARK: - #167: untouched-vs-deleted disambiguation
 
     @Test("hasHistoryRecord: true for nodes named in any record's mapping; false otherwise")
-    func hasHistoryRecordDistinguishesNamedFromUntouched() {
-        guard let box = Shape.box(width: 10, height: 10, depth: 10),
-            let graph = BRepGraph(shape: box)
-        else {
-            Issue.record("graph nil")
-            return
-        }
-        graph.isHistoryEnabled = true
-        graph.clearHistory()
-
-        let modified = BRepGraph.NodeRef(kind: .face, index: 0)
-        let replaced = BRepGraph.NodeRef(kind: .face, index: 100)
-        let deleted = BRepGraph.NodeRef(kind: .face, index: 1)
-        let untouched = BRepGraph.NodeRef(kind: .face, index: 2)
+    func hasHistoryRecordDistinguishesNamedFromUntouched() throws {
+        let graph = try makeGraph()
+        let modified = node(.face, 0)
+        let replaced = node(.face, 100)
+        let deleted = node(.face, 1)
+        let untouched = node(.face, 2)
 
         graph.recordHistory(
             operationName: "ModifyFace", original: modified, replacements: [replaced])
@@ -124,104 +125,175 @@ struct BRepGraphHistoryReadbackTests {
             graph.hasHistoryRecord(for: deleted),
             "explicitly-deleted node should be named in a record")
         #expect(!graph.hasHistoryRecord(for: untouched), "untouched node has no record entry")
+        // Named means named as an ORIGINAL: the node a record produced is not named by it, and
+        // the kind is part of the name (edge 0 is not face 0).
+        #expect(!graph.hasHistoryRecord(for: replaced), "a replacement is not an original")
+        #expect(!graph.hasHistoryRecord(for: node(.edge, 0)), "same index, different kind")
     }
 
     @Test("findDerivedOrSelf: returns derivatives, [] for deleted, [original] for untouched")
-    func findDerivedOrSelfDisambiguates() {
-        guard let box = Shape.box(width: 10, height: 10, depth: 10),
-            let graph = BRepGraph(shape: box)
-        else {
-            Issue.record("graph nil")
-            return
-        }
-        graph.isHistoryEnabled = true
-        graph.clearHistory()
-
-        let modified = BRepGraph.NodeRef(kind: .face, index: 0)
-        let replaced = BRepGraph.NodeRef(kind: .face, index: 100)
-        let deleted = BRepGraph.NodeRef(kind: .face, index: 1)
-        let untouched = BRepGraph.NodeRef(kind: .face, index: 2)
+    func findDerivedOrSelfDisambiguates() throws {
+        let graph = try makeGraph()
+        let modified = node(.face, 0)
+        let replaced = node(.face, 100)
+        let deleted = node(.face, 1)
+        let untouched = node(.face, 2)
 
         graph.recordHistory(
             operationName: "ModifyFace", original: modified, replacements: [replaced])
         graph.recordHistory(operationName: "DeleteFace", original: deleted, replacements: [])
 
-        // Modified → derivatives via the existing forward walk
-        let modifiedResult = graph.findDerivedOrSelf(of: modified)
-        #expect(
-            modifiedResult.contains(replaced),
-            "modified node should resolve to its replacement(s)")
-
-        // Deleted → empty (record is present but mapping is empty)
-        let deletedResult = graph.findDerivedOrSelf(of: deleted)
-        #expect(deletedResult.isEmpty, "explicitly-deleted node resolves to []")
-
-        // Untouched → [original] (no record names this node)
-        let untouchedResult = graph.findDerivedOrSelf(of: untouched)
-        #expect(
-            untouchedResult == [untouched],
-            "untouched node should resolve to itself at the same index")
+        // Modified: exactly its derivatives, without the node itself.
+        #expect(graph.findDerivedOrSelf(of: modified) == [replaced])
+        // Deleted: empty (the record is present and its mapping is empty).
+        #expect(graph.findDerivedOrSelf(of: deleted) == [])
+        // Untouched: itself, at the same index (no record names this node).
+        #expect(graph.findDerivedOrSelf(of: untouched) == [untouched])
     }
 
     @Test("findDerivedOrSelf preserves findDerived semantics for chained records")
-    func findDerivedOrSelfMatchesFindDerivedWhenNonEmpty() {
-        guard let box = Shape.box(width: 10, height: 10, depth: 10),
-            let graph = BRepGraph(shape: box)
-        else {
-            Issue.record("graph nil")
-            return
-        }
-        graph.isHistoryEnabled = true
-        graph.clearHistory()
-
-        // orig → [a] → [b, c]
-        let orig = BRepGraph.NodeRef(kind: .edge, index: 1)
-        let a = BRepGraph.NodeRef(kind: .edge, index: 10)
-        let b = BRepGraph.NodeRef(kind: .edge, index: 20)
-        let c = BRepGraph.NodeRef(kind: .edge, index: 21)
+    func findDerivedOrSelfMatchesFindDerivedWhenNonEmpty() throws {
+        let graph = try makeGraph()
+        // orig -> [a] -> [b, c]
+        let orig = node(.edge, 1)
+        let a = node(.edge, 10)
+        let b = node(.edge, 20)
+        let c = node(.edge, 21)
         graph.recordHistory(operationName: "Op1", original: orig, replacements: [a])
         graph.recordHistory(operationName: "Op2", original: a, replacements: [b, c])
 
-        let derived = Set(graph.findDerived(of: orig))
-        let derivedOrSelf = Set(graph.findDerivedOrSelf(of: orig))
-        // When findDerived is non-empty, findDerivedOrSelf must return the same set.
-        #expect(
-            derived == derivedOrSelf,
-            "findDerivedOrSelf must equal findDerived when derivatives exist")
+        // When findDerived is non-empty, findDerivedOrSelf returns the same sequence, which is
+        // pinned absolutely so two functions that are wrong the same way cannot agree.
+        #expect(graph.findDerived(of: orig) == [a, b, c])
+        #expect(graph.findDerivedOrSelf(of: orig) == [a, b, c])
+        #expect(graph.findDerivedOrSelf(of: a) == [b, c])
     }
 
     @Test("FindOriginal walks backwards")
-    func findOriginalWalksBackward() {
-        guard let box = Shape.box(width: 10, height: 10, depth: 10),
-            let graph = BRepGraph(shape: box)
-        else {
-            Issue.record("graph nil")
-            return
-        }
-        graph.isHistoryEnabled = true
-        graph.clearHistory()
-
-        let orig = BRepGraph.NodeRef(kind: .face, index: 7)
-        let mid = BRepGraph.NodeRef(kind: .face, index: 70)
-        let leaf = BRepGraph.NodeRef(kind: .face, index: 700)
+    func findOriginalWalksBackward() throws {
+        let graph = try makeGraph()
+        let orig = node(.face, 7)
+        let mid = node(.face, 70)
+        let leaf = node(.face, 700)
         graph.recordHistory(operationName: "A", original: orig, replacements: [mid])
         graph.recordHistory(operationName: "B", original: mid, replacements: [leaf])
 
+        // The root, not the immediate parent: two hops from the leaf.
         #expect(graph.findOriginal(of: leaf) == orig)
+        #expect(graph.findOriginal(of: mid) == orig)
+        // The root has no original of its own.
+        #expect(graph.findOriginal(of: orig) == orig)
     }
 
     @Test("Unrecorded node findOriginal returns itself")
-    func findOriginalPassthrough() {
-        guard let box = Shape.box(width: 10, height: 10, depth: 10),
-            let graph = BRepGraph(shape: box)
-        else {
-            Issue.record("graph nil")
-            return
-        }
-        graph.isHistoryEnabled = true
-        graph.clearHistory()
+    func findOriginalPassthrough() throws {
+        let graph = try makeGraph()
+        let node3 = node(.face, 3)
+        #expect(graph.findOriginal(of: node3) == node3, "an empty log")
 
-        let node = BRepGraph.NodeRef(kind: .face, index: 3)
-        #expect(graph.findOriginal(of: node) == node)
+        // With records present, a node they do not mention still comes back as itself and is not
+        // confused with any original or replacement they do mention. The last two share an index
+        // with the original and with the replacement of the record below and differ in kind, so
+        // a reverse lookup that ignored the kind would answer face 7 for the second of them.
+        graph.recordHistory(
+            operationName: "A", original: node(.face, 7), replacements: [node(.face, 70)])
+        #expect(graph.findOriginal(of: node3) == node3, "a log that does not mention it")
+        #expect(graph.findOriginal(of: node(.edge, 7)) == node(.edge, 7), "original's index")
+        #expect(graph.findOriginal(of: node(.edge, 70)) == node(.edge, 70), "replacement's index")
+        // And the replacement itself does lead back, so the lookups above are not all a refusal.
+        #expect(graph.findOriginal(of: node(.face, 70)) == node(.face, 7))
+    }
+
+    // MARK: - The setup every test above leans on
+
+    @Test("clearHistory discards everything recorded, and recording follows the enabled flag")
+    func clearAndEnabledFlag() throws {
+        // Not `makeGraph()`: its two setup calls are what this test is about. On a fresh graph
+        // they have nothing to undo, so no other test here can tell a working one from a no-op.
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10), "box")
+        let graph = try #require(BRepGraph(shape: box), "graph of a box")
+        let orig = node(.face, 0)
+        let mid = node(.face, 1)
+        let gone = node(.face, 2)
+        graph.isHistoryEnabled = true
+        #expect(graph.isHistoryEnabled)
+        graph.recordHistory(operationName: "A", original: orig, replacements: [mid])
+        graph.recordHistory(operationName: "B", original: gone, replacements: [])
+        #expect(graph.historyRecordCount == 2)
+        #expect(graph.historyIsDeleted(gone))
+
+        // OCCT's Clear drops the records and every lookup built from them, the deleted set
+        // included, and leaves recording switched on.
+        graph.clearHistory()
+        #expect(graph.historyRecordCount == 0)
+        #expect(graph.historyRecord(at: 0) == nil)
+        #expect(graph.historyDeletedNodes.isEmpty)
+        #expect(!graph.historyIsDeleted(gone))
+        #expect(!graph.hasHistoryRecord(for: orig))
+        #expect(graph.findDerived(of: orig) == [])
+        #expect(graph.findOriginal(of: mid) == mid)
+        #expect(graph.isHistoryEnabled)
+
+        // Recording starts over from sequence 0.
+        graph.recordHistory(operationName: "C", original: orig, replacements: [mid])
+        let rec = try #require(graph.historyRecord(at: 0), "record 0 after the clear")
+        #expect(rec.operationName == "C")
+        #expect(rec.sequenceNumber == 0)
+
+        // Switched off, a record is dropped (BRepGraph_LayerHistory::Record returns at once when
+        // disabled); switched back on, it is kept.
+        graph.isHistoryEnabled = false
+        #expect(!graph.isHistoryEnabled)
+        graph.recordHistory(
+            operationName: "D", original: node(.face, 3), replacements: [node(.face, 4)])
+        #expect(graph.historyRecordCount == 1, "a record written while disabled is dropped")
+        graph.isHistoryEnabled = true
+        #expect(graph.isHistoryEnabled)
+        graph.recordHistory(
+            operationName: "E", original: node(.face, 3), replacements: [node(.face, 4)])
+        #expect(graph.historyRecordCount == 2)
+    }
+
+    // MARK: - Readback shapes the original tests did not reach
+
+    @Test("A record's replacements keep their own kinds, not the original's or the first one's")
+    func mixedKindReplacements() throws {
+        let graph = try makeGraph()
+        // A face that modifies into a face while generating an edge and a vertex, the shape a
+        // boolean's Generated records take.
+        let orig = node(.face, 4)
+        let replacements = [node(.face, 40), node(.edge, 41), node(.vertex, 42)]
+        graph.recordHistory(
+            operationName: "Mixed", original: orig, replacements: replacements)
+        let rec = try #require(graph.historyRecord(at: 0), "record 0")
+        #expect(rec.mapping[orig] == replacements)
+    }
+
+    @Test("A mapping longer than the readback's first buffer round-trips whole")
+    func mappingBeyondInitialBuffer() throws {
+        let graph = try makeGraph()
+        // The readback asks for 8 replacements first and asks again when the bridge reports more.
+        let orig = node(.edge, 2)
+        var replacements: [BRepGraph.NodeRef] = []
+        for i in 0..<12 {
+            replacements.append(node(.edge, 200 - 7 * i))
+        }
+        graph.recordHistory(operationName: "Shatter", original: orig, replacements: replacements)
+        let rec = try #require(graph.historyRecord(at: 0), "record 0")
+        #expect(rec.mapping[orig]?.count == 12)
+        #expect(rec.mapping[orig] == replacements)
+    }
+
+    @Test("findDerived with more descendants than its first buffer returns all of them")
+    func findDerivedBeyondInitialBuffer() throws {
+        let graph = try makeGraph()
+        // The query asks for 16 first and asks again when the bridge reports more.
+        let orig = node(.edge, 1)
+        var replacements: [BRepGraph.NodeRef] = []
+        for i in 0..<20 {
+            replacements.append(node(.edge, 300 + i))
+        }
+        graph.recordHistory(operationName: "Shatter", original: orig, replacements: replacements)
+        #expect(graph.findDerived(of: orig) == replacements)
     }
 }

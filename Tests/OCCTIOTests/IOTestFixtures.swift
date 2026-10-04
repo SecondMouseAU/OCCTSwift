@@ -15,6 +15,51 @@ extension SIMD3 where Scalar == Double {
     }
 }
 
+// MARK: - #3021: OCCT's own output, captured and serialized across this module's suites
+
+/// Serializes ``Messenger/capturingDefaultOutput(_:)`` across every suite in `OCCTIOTests`.
+///
+/// `Message::DefaultMessenger()` is one process-wide static, so a second capture while one is in
+/// force is refused and reports `nil`. Swift Testing runs SUITES in parallel, and `.serialized`
+/// orders a suite's own tests while saying nothing about another suite's, so two capturing suites
+/// would make one another's captured text a coin flip. This lock is the smallest thing that turns a
+/// captured text into an assertion rather than a race, and it belongs here rather than in the
+/// library because the contention is this runner's and not a consumer's.
+///
+/// `NSLock` is already the reason this whole target is excluded from the wasm run (`Package.swift`'s
+/// `wasmUnportableTestTargets`), so it costs nothing new here. The wasm side of #3021 is measured by
+/// `Scripts/repro/2175/spike`, which is single-threaded and asserts on OCCT's output directly.
+private let occtOutputCaptureLock = NSLock()
+
+/// Run `body` with OCCT's own default-messenger output captured, waiting first for any other suite
+/// in this module to finish its own capture.
+///
+/// NOT reentrant, because `NSLock` is not: a test that wants to exercise the library's own refusal to
+/// nest calls ``Messenger/capturingDefaultOutput(_:)`` directly for the inner scope.
+///
+/// - Parameter body: the work whose OCCT output to collect.
+/// - Returns: `body`'s value and the captured text. The text stays optional on purpose: `nil` means
+///   no capture ran and `""` means one ran and OCCT said nothing, and a test that cannot tell those
+///   apart would read silence it never observed.
+func capturingOCCTOutput<T>(_ body: () throws -> T) rethrows -> (value: T, output: String?) {
+    occtOutputCaptureLock.lock()
+    defer { occtOutputCaptureLock.unlock() }
+    return try Messenger.capturingDefaultOutput(body)
+}
+
+/// Run `body` holding this module's capture lock without starting a capture.
+///
+/// For a test that drives the bridge's begin/end pair itself: ending a capture it did not start
+/// would otherwise tear down another suite's.
+///
+/// - Parameter body: the work to run with no other suite capturing.
+/// - Returns: `body`'s value.
+func withoutConcurrentOCCTCapture<T>(_ body: () throws -> T) rethrows -> T {
+    occtOutputCaptureLock.lock()
+    defer { occtOutputCaptureLock.unlock() }
+    return try body()
+}
+
 /// A deterministically invalid `Shape`: a bowtie (self-intersecting) polygon face.
 ///
 /// Same construction as `BREPTests.writeBREPAllowInvalid`, reused here for the export-guard
@@ -60,7 +105,7 @@ func ngonPrism(sides: Int, radius: Double, height: Double) -> Shape? {
 
 // MARK: - #1282: shared ImportProgress recorder
 
-/// Records every `ImportProgress` callback and lets a test drive `shouldCancel()`'s answer.
+/// Records every `ImportProgress` callback, and lets a test control what `shouldCancel()` answers.
 ///
 /// `MeshAndExportProgressTests.Recorder` and `ImportProgressTests.ProgressRecorder` reimplemented
 /// this identically under two names, differing only in that `Recorder` exposed just
