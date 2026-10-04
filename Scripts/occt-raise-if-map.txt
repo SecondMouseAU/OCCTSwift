@@ -99,7 +99,7 @@
 # patch: 0050-GProp_SelGProps-cone-lateral-area-drops-cos-semiangle-2992 faba6d52df0b
 # patch: 0051-GProp_VelGProps-cone-volume-is-the-frustum-2992 e6459f8745f2
 # patch: 0052-Geom_BezierSurface-rational-axis-prose-matches-example-2991 760bc76effae
-# patch: 0053-BRepOffset_MakeOffset-arc-join-roots-in-binding-order-3003 dee7a1c5c86b
+# patch: 0053-BRepOffset_MakeOffset-arc-join-roots-in-binding-order-3003 fe6209d98f3a
 #
 # totals: inline-raise       462 site(s) in  104 class(es)
 # totals: outofline-raise    828 site(s) in  284 class(es)

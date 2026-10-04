@@ -12,8 +12,8 @@ import Testing
 /// entries in the order they were bound.
 ///
 /// `Scripts/repro/3003-offset-roots-hash-order/` holds the measurement. Against the pinned
-/// `v4.0.0-kernel.3` asset, 32 builds in one process with a different amount of heap held before
-/// each gave 32 face orders; with `0053` they give one.
+/// `v4.0.0-kernel.4` asset, 32 builds in one process with a different amount of heap held before
+/// each gave 11 to 32 face orders over 20 processes; with `0053` they give one, in every process.
 @Suite("Issue 3003: arc-join offsets do not depend on allocation addresses")
 struct Issue3003OffsetOrderTests {
 

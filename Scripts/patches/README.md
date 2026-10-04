@@ -2940,23 +2940,23 @@ and `BiTgte_Blend` holds a member of the same type.
 
 ### Measured, macOS arm64, before and after
 
-`Scripts/repro/3003-offset-roots-hash-order/`, against the pinned `v4.0.0-kernel.3` macOS slice,
+`Scripts/repro/3003-offset-roots-hash-order/`, against the pinned `v4.0.0-kernel.4` macOS slice,
 the unmodified file recompiled with the kernel's own flags as the control, and the patched file
 override-linked. Sixty fresh processes per row; "dumps" is the number of distinct hashes of the
 bit-exact `BinTools` dump of the result.
 
 | request | volumes before / after | dumps before / after |
 |---|---|---|
-| 10-box, offset +1, `GeomAbs_Arc` | 6 / **1** | 60 / **1** |
+| 10-box, offset +1, `GeomAbs_Arc` | 7 / **1** | 60 / **1** |
 | 20-box, thick solid 2.0, top face open | 3 / **1** | 60 / **1** |
-| 20-box, thick solid 2.0, nothing open | 5 / **1** | 60 / **1** |
-| 10-box, offset -1, `GeomAbs_Arc` | 1 / 1 | 57 / **1** |
-| cylinder, offset +1, `GeomAbs_Arc` | 1 / 1 | 28 / **1** |
+| 20-box, thick solid 2.0, nothing open | 6 / **1** | 60 / **1** |
+| 10-box, offset -1, `GeomAbs_Arc` | 1 / 1 | 55 / **1** |
+| cylinder, offset +1, `GeomAbs_Arc` | 1 / 1 | 24 / **1** |
 | 10-box, offset +1, `GeomAbs_Intersection` | 1 / 1 | 1 / 1 |
 
-The control reproduces the drift (8, 1, 1, 1, 3, 5 volumes), so the override toolchain is not the
+The control reproduces the drift (7, 1, 1, 1, 3, 5 volumes), so the override toolchain is not the
 variable. In one process, 32 builds of the first row with a different amount of heap held before
-each give **32** distinct face orders unpatched and **1** patched. Over a 72-request battery (nine
+each give **11 to 32** distinct face orders per process unpatched (20 processes) and **1** patched in every one. Over a 72-request battery (nine
 shapes, eight requests each, twenty processes) 29 requests returned more than one distinct result
 unpatched, 26 of them only in sub-shape order, and none patched; 69 of the 72 return the same
 outcome unpatched and patched.
@@ -2965,13 +2965,14 @@ outcome unpatched and patched.
 
 For an input whose success depends on the order the roots arrive in, the patched kernel gives the
 same answer every time, which may be the failing one. The fuse of two boxes (`BRepAlgoAPI_Fuse`,
-coplanar faces left split) returns a solid from arc-join `offset(+1)` in 8 of 20 processes and
-reports `IsDone()` with a **null shape** in the other 12; over 300 shuffled root orders 125 succeed.
-Binding order, the order chosen, is one of the failing ones, so patched it fails in all 20. No single
-pairwise precedence decides it, so it is a property of the intersection stage and its own defect.
-Taking this patch turns that input from "about four runs in ten" into "never", and the reverse of
-binding order would turn it into "always"; neither was chosen for that reason, because binding order
-is what an insertion-ordered map gives and so what upstream would choose.
+coplanar faces left split) returns a solid from arc-join `offset(+1)` in 11 of 20 processes
+(7 and 8 of 20 in two earlier censuses) and reports `IsDone()` with a **null shape** in the rest.
+Binding order, the order chosen, is one of the failing ones, so patched it fails in all 20. The
+outcome flipping with nothing but the heap different shows it is a property of the intersection
+stage that follows, and its own defect. Taking this patch turns that input from "about two runs in
+five" into "never". Binding order is what an insertion-ordered map gives and so what upstream would
+choose; nothing was tuned to this input, and a different fixed order could favour it at the price of
+an arbitrary choice that another input might fail.
 
 ### Compiled, three slices
 
@@ -2984,10 +2985,11 @@ the host. Four compiles, no warnings in the changed ranges and no errors. The lo
 ### The GTest
 
 `ArcJoin_FaceOrderDoesNotDependOnAddresses` in `BRepOffset_MakeOffset_Test.cxx`: 32 builds of the
-same offset with a different amount of heap held before each, comparing every face's centre and the
+offset of a freshly made box (one box offset repeatedly does not show the defect, the map is also
+keyed on the input's own sub-shapes) with a different amount of heap held before each, comparing every face's centre and the
 volume's bits with build 0. Against the override-linked unmodified file it **fails**, 15 of 15 runs
-(650 failed expectations in one, the first from build 1); against the patched file it passes, 15 of
-15 (810 ms), and the other 19 tests in the file pass on both.
+(812 failed expectations in one, the first from build 1); against the patched file it passes, 15 of
+15 (462 ms), and the other 19 tests in the file pass on both.
 
 ### CI coverage, and the pin
 

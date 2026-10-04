@@ -12,9 +12,11 @@ of a hash of pointer values.
 
 ## What was measured
 
-All of it against the pinned `v4.0.0-kernel.3` asset, macOS slice, `libOCCT-macos.a` sha256
-`6d51d59022d2cef98152a8f3c5a6b640a5bac2a5968678e80e40cd5dac6ebc18`, 157,575,280 bytes (the asset
-whose zip hashes to `27810c46...`, `Package.swift`'s checksum), by `run.sh`.
+All of it against the pinned `v4.0.0-kernel.4` asset, macOS slice, `libOCCT-macos.a` sha256
+`aa8fca8dececc454f3c012b6637487dc634947a0067a87dbee72917af130ad92`, 157,581,864 bytes (the asset
+whose zip hashes to `4ebd78b6...`, `Package.swift`'s checksum), by `run.sh`. The first measurement was
+made on `v4.0.0-kernel.3` and every finding below held there too: the battery and its comparison
+came out identical, the per-row counts moved within their run-to-run spread.
 
 **The six lines of the two #766 probes, 60 fresh processes** (`transcript-lines-asset.txt`).
 "Dumps" is the number of distinct hashes of the bit-exact `BinTools` dump of the result, which
@@ -22,12 +24,12 @@ moves when the sub-shapes come back in another order even if the volume does not
 
 | line | distinct volumes | distinct dumps | relative spread |
 |---|---|---|---|
-| `offsetArc` (box 10, +1, `GeomAbs_Arc`) | 6 | 60 | 6.7e-16 |
-| `offsetInward` (-1) | 1 | 57 | 0 |
+| `offsetArc` (box 10, +1, `GeomAbs_Arc`) | 7 | 60 | 8.0e-16 |
+| `offsetInward` (-1) | 1 | 55 | 0 |
 | `offsetIntersection` (+1, `GeomAbs_Intersection`) | 1 | 1 | 0 |
-| `offsetCylinder` (+1) | 1 | 28 | 0 |
+| `offsetCylinder` (+1) | 1 | 24 | 0 |
 | `shellOwnFaces` (20-cube, thickness 2, top open) | 3 | 60 | 4.0e-16 |
-| `shellNoOpenFace` (nothing open) | 5 | 60 | 5.4e-16 |
+| `shellNoOpenFace` (nothing open) | 6 | 60 | 6.7e-16 |
 
 Two things in that table correct the issue. The drift is not confined to "these shapes": four of
 the six results come back reordered on nearly every run, and the two whose volume stays put
@@ -54,14 +56,14 @@ self-intersection checks. **So there is nothing to turn off, and the bridge shou
 the parallelism the brief asks about does not exist for this operation, so no switch can change a
 result, and the one global switch is already at the value that would be written.
 
-**It is the allocator** (`transcript-perturb.txt`). One process, 32 builds of `offsetArc`:
+**It is the allocator** (`transcript-perturb.txt`). 32 builds of `offsetArc` in one process, repeated in 20 processes; one process is a draw and the range is the measurement:
 
-| heap held before each build | distinct face orders in 32 builds |
+| heap held before each build | distinct face orders in 32 builds, per process |
 |---|---|
-| a different amount each time | **32** (every build different) |
-| untouched | 10 |
-| a different amount each time, patched | 1 |
-| untouched, patched | 1 |
+| a different amount each time | **11 to 32** (median 32) |
+| untouched | 11 to 32 (median 32) |
+| a different amount each time, patched | **1** in all 20 |
+| untouched, patched | **1** in all 20 |
 
 and `transcript-order-asset.txt`: an `NCollection_DataMap<TopoDS_Shape, int, TopTools_ShapeMapHasher>`
 holding the same 26 faces iterates them in a different order in **20 of 20 processes**.
@@ -91,7 +93,7 @@ per-face offset. They were read, not tested, and the patched census is what says
 the order for these requests.
 
 The causal test is the override-link below, not the reading: the unmodified file recompiled with the
-kernel's own flags reproduces the spread (`transcript-lines-control.txt`: 8, 1, 1, 1, 3, 5 volumes),
+kernel's own flags reproduces the spread (`transcript-lines-control.txt`: 7, 1, 1, 1, 3, 5 volumes),
 and the same file with only that loop changed removes it.
 
 ## The fix: `Scripts/patches/0053-BRepOffset_MakeOffset-arc-join-roots-in-binding-order-3003.patch`
@@ -111,22 +113,22 @@ own use. The patch keeps the type.
 
 | | asset | control (unmodified, recompiled) | patched |
 |---|---|---|---|
-| six lines, 60 processes | 6, 1, 1, 1, 3, 5 volumes; 60, 57, 1, 28, 60, 60 dumps | 8, 1, 1, 1, 3, 5; 60, 57, 1, 25, 60, 60 | **1, 1, 1, 1, 1, 1; 1, 1, 1, 1, 1, 1** |
+| six lines, 60 processes | 7, 1, 1, 1, 3, 6 volumes; 60, 55, 1, 24, 60, 60 dumps | 7, 1, 1, 1, 3, 5; 60, 58, 1, 26, 60, 60 | **1, 1, 1, 1, 1, 1; 1, 1, 1, 1, 1, 1** |
 | 72-request battery, 20 processes | 29 requests moved: 26 only in order, 3 in outcome | | **0 moved** |
-| 32 builds in one process, heap perturbed | 32 face orders | | **1** |
+| 32 builds in one process, heap perturbed, 20 processes | 11 to 32 face orders | | **1** in every process |
 
 `transcript-lines-patched.txt`, `transcript-battery-asset.txt`, `transcript-battery-patched.txt`,
 `transcript-perturb.txt`.
 
 The GTest the patch adds to `BRepOffset_MakeOffset_Test.cxx`
-(`ArcJoin_FaceOrderDoesNotDependOnAddresses`: 32 builds with a different amount of heap held before
+(`ArcJoin_FaceOrderDoesNotDependOnAddresses`: 32 builds of a freshly made box, since one box offset repeatedly does not show the defect, with a different amount of heap held before
 each, compares every face's centre and the volume's bits against build 0) was run against the
 override-linked unmodified file and against the patched one:
 
 | | result |
 |---|---|
-| unmodified file | **fails**, 15 of 15 runs; 650 failed expectations in one run, the first from build 1 |
-| patched file | passes, 15 of 15 runs (810 ms) |
+| unmodified file | **fails**, 15 of 15 runs; 812 failed expectations in one run, the first from build 1 |
+| patched file | passes, 15 of 15 runs (462 ms) |
 | the other 19 tests in the file | pass on both |
 
 ### Prove-the-test-fails, for `census.py`'s `--self-test`
@@ -144,14 +146,16 @@ the first version of `compare`, where the read inserted the very key the list ex
 same answer every time, and that answer may be the failing one.** The one found is the fuse of two
 boxes (`BRepAlgoAPI_Fuse`, which keeps coplanar faces split, 14 faces):
 
-- unmodified, arc-join `offset(+1)` returns a solid in **8 of 20** processes and, in the other 12,
-  reports `IsDone() == true` with a **null shape**;
-- over 300 shuffled root orders, 125 succeed (42%);
-- visiting in binding order, the order chosen here, fails in 20 of 20; the reverse of it succeeds.
+- unmodified, arc-join `offset(+1)` returns a solid in **11 of 20** processes (7 and 8 of 20 in two
+  earlier censuses) and, in the rest, reports `IsDone() == true` with a **null shape**
+  (`transcript-battery-asset.txt`);
+- patched, in binding order, the order chosen here, it fails in 20 of 20
+  (`transcript-battery-patched.txt`).
 
-No single pairwise precedence decides it (the strongest, face 4 before face 9, moves the success
-rate from 0.67 to 0.15), so it is a property of the intersection stage that follows, and it is its
-own defect. It is not addressed here and it should be reported as one. Of the 72 requests in the
+The same input changing outcome with nothing but the heap different shows it is a property of the
+intersection stage that follows, and it is its own defect. A scratch experiment (an override that
+permutes the root order, not committed) found about 42% of random orders succeed and the reverse of
+binding order succeeds, so a different fixed order would favour this input; no order was tuned to it. It is not addressed here and it should be reported as one. Of the 72 requests in the
 battery, **69 return an identical outcome unpatched and patched** (`transcript-battery-compare.txt`);
 the 3 that differ are this input at +1, +0.3 and as a thick solid with nothing open.
 

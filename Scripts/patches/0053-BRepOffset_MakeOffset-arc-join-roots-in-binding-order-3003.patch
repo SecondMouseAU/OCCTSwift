@@ -23,15 +23,15 @@ Nothing is parallel (the process has one thread and BOPAlgo_Options::GetParallel
 and nothing is read uninitialised: with the roots visited in a fixed order the same inputs give the
 same bits, in every process and every build.
 
-Measured on macOS arm64 against the V8_0_1 asset with its carried patches, 60 fresh processes per
+Measured on macOS arm64 against the V8_0_1 asset with its carried patches (v4.0.0-kernel.4), 60 fresh processes per
 row (Scripts/repro/3003-offset-roots-hash-order, run.sh):
 
   request                                       volumes   BinTools dumps
-  box 10, offset +1, GeomAbs_Arc                      6               60
+  box 10, offset +1, GeomAbs_Arc                      7               60
   box 20, thick solid 2.0, top face open              3               60
-  box 20, thick solid 2.0, nothing open               5               60
-  box 10, offset -1, GeomAbs_Arc                      1               57
-  cylinder, offset +1, GeomAbs_Arc                    1               28
+  box 20, thick solid 2.0, nothing open               6               60
+  box 10, offset -1, GeomAbs_Arc                      1               55
+  cylinder, offset +1, GeomAbs_Arc                    1               24
   box 10, offset +1, GeomAbs_Intersection             1                1
 
 "Volumes" and "BinTools dumps" count the distinct volumes, and the distinct hashes of the bit-exact
@@ -40,8 +40,8 @@ its faces in another order, and sum to the same volume because their faces are s
 add exactly in any order. The last row does not go through BuildOffsetByArc and is already
 reproducible. Recompiling the unmodified file with the kernel's own flags and linking it ahead of
 the archive reproduces the drift, which rules out the build; with this change every row is 1 and 1.
-In one process, 32 builds of the first row with a different amount of heap held before each give 32
-different face orders without the change and 1 with it.
+In one process, 32 builds of the first row with a different amount of heap held before each give
+between 11 and 32 different face orders without the change (20 processes) and 1 with it, in every one.
 
 Over a battery of 72 requests (nine shapes, eight requests each) run in 20 processes, 29 returned
 more than one distinct result before the change and none after. In 26 of them only the order of the
@@ -56,14 +56,16 @@ may have removed it. Which offset faces are built, and how, does not change.
 For an input whose success depends on the order the roots arrive in, the result is now the same
 every time instead of depending on the heap. The one found is the fuse of two boxes, which keeps
 its coplanar faces split: BRepOffsetAPI_MakeOffsetShape with GeomAbs_Arc and +1 returns a solid in
-8 of 20 processes and, in the others, reports IsDone() with a null shape; over 300 shuffled root
-orders 125 succeed. The order chosen here is one of the failing ones for that input, so it now
-fails every time. That order dependence belongs to the intersection stage that follows and is not
+11 of 20 processes (7 and 8 of 20 in two earlier censuses) and, in the others, reports IsDone()
+with a null shape. The order chosen here is one of the failing ones for that input, so it now fails
+every time (20 of 20). That order dependence belongs to the intersection stage that follows and is not
 addressed here.
 
-A GTest builds the same offset 32 times with a different amount of heap held before each and
-compares the order of the faces and the volume with the first build. It fails without the change
-(15 of 15 runs) and passes with it (15 of 15); the other 19 tests in the file pass either way.
+A GTest offsets a freshly made box 32 times with a different amount of heap held before each and
+compares the order of the faces and the volume with the first build. A fresh box matters: offsetting
+one box repeatedly does not show the defect, because the map is also keyed on the input's own
+sub-shapes, whose addresses then do not change. It fails without the change (15 of 15 runs) and
+passes with it (15 of 15); the other 19 tests in the file pass either way.
 
 Reported as SecondMouseAU/OCCTSwift#3003.
 

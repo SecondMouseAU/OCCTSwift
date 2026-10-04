@@ -403,8 +403,8 @@ let occtTarget: Target =
         //         sum, which three lines of two #766 probes show and carry a `tolerance`
         //         declaration for until this is pinned. It also fixes one outcome per input where
         //         the outcome depends on the root order: the fuse of two boxes with its coplanar
-        //         faces left split returns IsDone() with a null shape in about six processes in
-        //         ten and, patched, in all of them. Measured before and after by override-link in
+        //         faces left split returns IsDone() with a null shape in about half of the processes
+        //         (9 to 13 of 20 over three censuses) and, patched, in all of them. Measured before and after by override-link in
         //         Scripts/repro/3003-offset-roots-hash-order/.
         //
         // 0043 (#2827, BRepGProp_Gauss keeps the by-plane mass) was the one outstanding before it,
