@@ -479,12 +479,44 @@ struct OCCTCellsBuilder
 // MARK: - BOPTools NormalOnEdge / PointInFace / IsEmptyShape / IsOpenShell (v0.70)
 static void fillCommonPart(const IntTools_CommonPrt& cp, OCCTCommonPart& out)
 {
-  out.type          = (cp.Type() == TopAbs_VERTEX) ? 0 : 1;
+  const bool isVertex = (cp.Type() == TopAbs_VERTEX);
+  // IntTools_EdgeEdge appends a range on the second edge to every part it makes and
+  // IntTools_EdgeFace never does (it has no AppendRange2), so an empty Ranges2() is how an
+  // edge-face part is told from an edge-edge one.
+  const bool hasEdge2 = cp.Ranges2().Length() > 0;
+  out.type            = isVertex ? 0 : 1;
+
+  // #3012: both ranges are the kernel's own, for either type. This used to overwrite all four ends
+  // with VertexParameter1/2 on a VERTEX part, which turns a tangential overlap that
+  // IntTools_EdgeEdge::MergeSolutions typed VERTEX (#2994) into a point, and a transversal
+  // crossing's tolerance window into its centre.
+  //
+  // OCCT never does that. It reads both facts off a VERTEX part and keeps them apart, the vertex
+  // parameters to place the new vertex and Range1() / Ranges2()(1) as the part's extent:
+  //  - PerformEE: IntTools_Tools::VertexParameters (BOPAlgo_PaveFiller_3.cxx:381), then
+  //    Range1() and Ranges2()(1) (:383-384) for its pave tests (:387-394) and for the tolerance
+  //    it gives a line/circle vertex (:460);
+  //  - PerformEF: IntTools_Tools::VertexParameter and Range1() (BOPAlgo_PaveFiller_5.cxx:412,
+  //    :415-419, :518);
+  //  - a stored VERTEX part is read for its extent, never for a collapsed one
+  //    (BOPAlgo_PaveFiller_5.cxx:750, BOPAlgo_PaveFiller_6.cxx:2588);
+  //  - IntTools_EdgeFace.cxx:633, :642, :668 and :677 each carry `// aCP.SetRange1 (aTx, aTx);`
+  //    commented out, which is the collapse this function used to perform.
+  // An EDGE part is read by neither call (BOPAlgo_PaveFiller_3.cxx:529-545, _5.cxx:545-560), and
+  // OCCT gives it no vertex parameter at all (IntTools_EdgeEdge.cxx:804): the field holds the
+  // constructor's 0.0 (IntTools_CommonPrt.cxx:33-34), which is a default and not a measurement, so
+  // it is reported as absent rather than as zero (#726).
+  //
+  // The vertex parameter is the RESOLVED one, the call PerformEE and PerformEF make: the raw
+  // VertexParameter1() unless it lies outside Range1(), when OCCT uses the middle of Range1()
+  // instead (IntTools_Tools.cxx:593-623). The two differ for a circle tangent to a face at its seam
+  // parameter, where the raw 2pi sits one ulp past Range1().Last()
+  // (Scripts/repro/3012-commonpart-range1/probe-transcript.txt), and the resolved one is what OCCT
+  // builds its vertex from.
   IntTools_Range r1 = cp.Range1();
   out.param1First   = r1.First();
   out.param1Last    = r1.Last();
-  // Range2 is a sequence; use first element if available
-  if (cp.Ranges2().Length() > 0)
+  if (hasEdge2)
   {
     out.param2First = cp.Ranges2()(1).First();
     out.param2Last  = cp.Ranges2()(1).Last();
@@ -494,12 +526,26 @@ static void fillCommonPart(const IntTools_CommonPrt& cp, OCCTCommonPart& out)
     out.param2First = cp.VertexParameter2();
     out.param2Last  = cp.VertexParameter2();
   }
-  if (cp.Type() == TopAbs_VERTEX)
+  out.vertexParam1    = 0.0;
+  out.vertexParam2    = 0.0;
+  out.hasVertexParam1 = false;
+  out.hasVertexParam2 = false;
+  if (isVertex)
   {
-    out.param1First = cp.VertexParameter1();
-    out.param1Last  = cp.VertexParameter1();
-    out.param2First = cp.VertexParameter2();
-    out.param2Last  = cp.VertexParameter2();
+    double t1 = 0.0;
+    double t2 = 0.0;
+    if (hasEdge2)
+    {
+      IntTools_Tools::VertexParameters(cp, t1, t2);
+      out.vertexParam2    = t2;
+      out.hasVertexParam2 = true;
+    }
+    else
+    {
+      IntTools_Tools::VertexParameter(cp, t1);
+    }
+    out.vertexParam1    = t1;
+    out.hasVertexParam1 = true;
   }
 
   // #2251: this used to average IntTools_CommonPrt::BoundingPoints, which are the (0, 0, 0) its own
@@ -515,9 +561,10 @@ static void fillCommonPart(const IntTools_CommonPrt& cp, OCCTCommonPart& out)
   // 798 and 953, IntTools_EdgeFace.cxx:509), the swapped case included, where Edge1() is the second
   // input and Range1() is its range, so the pair is self-consistent whichever edge it names.
   //
-  // The parameter used is the representative parameter of the range THIS struct reports, so point
-  // and param1Range cannot disagree: for a vertex part both ends are VertexParameter1 and the point
-  // sits on it, for an edge part it is OCCT's own interior parameter of Range1.
+  // The parameter used is OCCT's own representative parameter for the part, so point and the
+  // range THIS struct reports cannot disagree: the resolved vertex parameter for a vertex part,
+  // which lies inside Range1 by construction of IntTools_Tools::VertexParameter(s), and OCCT's
+  // interior parameter of Range1 for an edge part.
   out.hasPoint          = false;
   out.pointX            = 0.0;
   out.pointY            = 0.0;
@@ -528,7 +575,9 @@ static void fillCommonPart(const IntTools_CommonPrt& cp, OCCTCommonPart& out)
   try
   {
     BRepAdaptor_Curve curve(e1);
-    const double      t = IntTools_Tools::IntermediatePoint(out.param1First, out.param1Last);
+    const double      t = out.hasVertexParam1
+                            ? out.vertexParam1
+                            : IntTools_Tools::IntermediatePoint(out.param1First, out.param1Last);
     // A parameter outside the curve is not evaluated: Value() would extrapolate, and an
     // extrapolated point reads as a measurement of an intersection that is not there.
     if (t < curve.FirstParameter() - Precision::PConfusion()

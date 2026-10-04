@@ -1,0 +1,20 @@
+=== UNPATCHED (pinned kernel source) ===
+ld: warning: ignoring duplicate libraries: '-lc++'
+cone area    = 408.10485695269909   closed form = 471.23889803846896   delta = 63.1
+cone volume  = 2040.524284763495   frustum     = 1587.0744437049404   delta = 453
+cone area centroid = (-3.46504162891e-16, 0, 4.81125224325)
+cylinder r=5 h=10: area = 314.15926535897933  volume = 785.39816339744823
+cone semiAngle=0.001  area = 314.47326733528  volume = 3.14473214923
+cone semiAngle=1e-06  area = 314.15957951809  volume = 0.00314159580
+cone semiAngle=1e-09  area = 314.15926567314  volume = 0.00000314159
+
+=== PATCHED (0050 + 0051) ===
+ld: warning: ignoring duplicate libraries: '-lc++'
+cone area    = 471.23889803846896   closed form = 471.23889803846896   delta = 0
+cone volume  = 1587.0744437049409   frustum     = 1587.0744437049404   delta = 4.55e-13
+cone area centroid = (-3.46504162891e-16, 0, 4.81125224325)
+cylinder r=5 h=10: area = 314.15926535897933  volume = 785.39816339744823
+cone semiAngle=0.001  area = 314.47342457198  volume = 786.96961317468
+cone semiAngle=1e-06  area = 314.15957951824  volume = 785.39973419443
+cone semiAngle=1e-09  area = 314.15926567314  volume = 785.39816496824
+

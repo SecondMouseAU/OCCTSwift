@@ -1,0 +1,32 @@
+--- macos / GProp_SelGProps.cxx
+    exit=0
+--- macos / GProp_VelGProps.cxx
+    exit=0
+--- macos / Geom_BezierSurface.cxx
+    exit=0
+--- ios / GProp_SelGProps.cxx
+    exit=0
+--- ios / GProp_VelGProps.cxx
+    exit=0
+--- ios / Geom_BezierSurface.cxx
+    exit=0
+--- sim / GProp_SelGProps.cxx
+    exit=0
+--- sim / GProp_VelGProps.cxx
+    exit=0
+--- sim / Geom_BezierSurface.cxx
+    exit=0
+=== objects produced ===
+total 1584
+-rw-r--r--  1 elb  wheel  142816  2 Oct 14:41 ios-Geom_BezierSurface.o
+-rw-r--r--  1 elb  wheel   34208  2 Oct 14:41 ios-GProp_SelGProps.o
+-rw-r--r--  1 elb  wheel   34264  2 Oct 14:41 ios-GProp_VelGProps.o
+-rw-r--r--  1 elb  wheel  142016  2 Oct 14:41 macos-Geom_BezierSurface.o
+-rw-r--r--  1 elb  wheel   34384  2 Oct 14:40 macos-GProp_SelGProps.o
+-rw-r--r--  1 elb  wheel   34440  2 Oct 14:41 macos-GProp_VelGProps.o
+-rw-r--r--  1 elb  wheel  142016  2 Oct 14:41 sim-Geom_BezierSurface.o
+-rw-r--r--  1 elb  wheel   34384  2 Oct 14:41 sim-GProp_SelGProps.o
+-rw-r--r--  1 elb  wheel   34440  2 Oct 14:41 sim-GProp_VelGProps.o
+=== symbols (macos slice) ===
+4
+4

@@ -47,7 +47,7 @@ let useLocalXCFramework: Bool = {
         atPath: occtPackageDir + "/Libraries/OCCT.xcframework/Info.plist")
 }()
 
-// OCCT V8.0.1 plus the thirty-four carried patches are documented in Scripts/patches/README.md
+// OCCT V8.0.1 plus the thirty-nine carried patches are documented in Scripts/patches/README.md
 // (patch list, verification status, and CI coverage gaps for maintainers).
 let occtTarget: Target =
     isWASI
@@ -86,10 +86,10 @@ let occtTarget: Target =
             name: "OCCT",
             path: "Libraries/OCCT.xcframework"
         )
-        // OCCT V8_0_1 + the thirty-one carried patches listed below.
+        // OCCT V8_0_1 + the thirty-nine carried patches listed below.
         //
         // Scripts/build-occt.sh builds V8_0_1, which absorbed ten of the previously carried patches (0001-0009 and 0013; their files are deleted,
-        // their writeups kept in Scripts/patches/README.md under "Retired patches"). The thirty-one that
+        // their writeups kept in Scripts/patches/README.md under "Retired patches"). The thirty-nine that
         // survive, all present in Scripts/patches/, are:
         //
         //   0010  Intf_Interference O(1) tangent-zone lookup + checkpointed breaker            #319
@@ -132,6 +132,29 @@ let occtTarget: Target =
         //   0043  BRepGProp_Gauss::convert keeps the by-plane mass instead of zeroing it      #2827
         //         (the by-plane BRepGProp_Vinert overloads returned a fabricated 0.0; pinned by
         //         v4.0.0-kernel.3, and Face.volumeInertia(planeNormal:) now returns a measurement)
+        //   0044  Extrema_ExtSS::Points / Extrema_ExtCS::Points bound against the point       #2840
+        //         sequence rather than against NbExt(). Carried 2026-09-30, pinned by
+        //         v4.0.0-kernel.4, which is the first asset to hold it
+        //   0045  Geom2d_BezierCurve and Geom_BezierCurve InsertPoleAfter accept MaxDegree()    #2875
+        //         + 1 poles, the bound the constructors and Increase() already use. Half is
+        //         inert in a Release kernel: the 2d site is a _Raise_if that No_Exception
+        //         empties, so OCCTCurve2DBezierInsertPoleAfter's guard is still the only 2d
+        //         bound and is KEPT, with its bound moved to match (#3013)
+        //   0046  math_Uzawa sizes Errinit by RowNumber(), not ColNumber(): 100 constraints    #2860
+        //         in 2 unknowns was a deterministic SIGSEGV
+        //   0047  BRepMesh_IncrementalMesh::initParameters refuses NaN. All five bounds        #2879
+        //         tests were spelled value < bound, which NaN defeats. Both bridge guards     #2900
+        //         are KEPT, the ordinary 0042 and 0044 exception
+        //   0048  BRepGProp's by-plane overloads measure about the plane the caller named,     #2873
+        //         not its mirror through the origin, at five sites across two classes.
+        //         OCCTBRepGPropVinertPlane's compensating mirror was DELETED in the same
+        //         change that pinned this, because the two together are wrong again (#3015)
+        //   0050  GProp_SelGProps::Perform(gp_Cone) drops the spurious cos(semiAngle) from     #2992
+        //         the lateral area
+        //   0051  GProp_VelGProps::Perform(gp_Cone) computes the frustum volume instead of     #2992
+        //         one carrying a spurious sin a that collapsed to zero at the cylinder limit
+        //   0052  Geom_BezierSurface.hxx's rational-axis prose matches its own example         #2991
+        //         matrix and its implementation
         //
         // This list said "fifteen" above a list of eleven until the release check ran, which is the
         // #585 failure shape in miniature: `ls Scripts/patches/*.patch | wc -l` agreed with the count
@@ -193,13 +216,13 @@ let occtTarget: Target =
         //     They are the only two patches in the tree with no CI coverage of any kind, which is
         //     worth knowing before trusting "the fix is in the kernel" about either.
         //
-        // Pinned to the v4.0.0-kernel.3 pre-release asset: upstream V8_0_1 plus the thirty-one patches listed above,
+        // Pinned to the v4.0.0-kernel.4 pre-release asset: upstream V8_0_1 plus the thirty-nine patches listed above,
         // and nothing else. That was NOT true of v4.0.0-kernel.1, which carried two patches that are
         // not in Scripts/patches/ at all, so read the next paragraph before treating any older asset's
         // enumeration as its contents.
         //
         // ===================================================================================
-        // THE ASSET CARRIES THIRTY-ONE PATCHES. THE TREE CARRIES TWENTY-NINE. (#2190)
+        // THE v4.0.0-kernel.1 ASSET CARRIED THIRTY-ONE PATCHES. THE TREE CARRIED TWENTY-NINE. (#2190)
         // ===================================================================================
         //
         // The two extras are retired patches that were deleted from Scripts/patches/ but never
@@ -211,27 +234,25 @@ let occtTarget: Target =
         // build-occt.sh's patch loop ONLY APPLIES; it never reverts, and it refuses to reset a dirty
         // occt-src on purpose, so that an investigation's probe is not destroyed silently. A retired
         // patch's edits therefore survive in a working tree until somebody reverts them by hand. Nobody
-        // did, and the 2026-09-22 build picked them up. Verified by symbol, not inferred: the asset
-        // holds `TrimInfinite(...)` in LocOpe_SplitDrafts.cxx.o and `thread-local wrapper routine for
+        // did, and the 2026-09-22 build picked them up. Verified by symbol, not inferred: the kernel.1
+        // asset held `TrimInfinite(...)` in LocOpe_SplitDrafts.cxx.o and `thread-local wrapper routine for
         // GLOBAL_*` in the three TopOpeBRepBuild objects, in all three slices.
         //
-        // BOTH ARE INERT, which is why this is documented rather than rebuilt out. LocOpe_SplitDrafts
+        // BOTH WERE INERT, which is why this was documented rather than rebuilt out. LocOpe_SplitDrafts
         // has no caller anywhere: Shape.splitDrafts was removed in v4.0.0 and upstream deleted the
         // class in OCCT#1442. thread_local versus static is identical single-threaded, and the twelve
         // globals 0032 touches are unreachable from this bridge's call surface, measured by #1371's own
         // probe. Nothing a consumer can call behaves differently.
         //
         // THAT DIVERGENCE IS CLOSED. The two strays above belonged to the v4.0.0-kernel.1 asset. The
-        // pin below is now v4.0.0-kernel.3, built from a tree whose only modifications are the carried
+        // pin below is now v4.0.0-kernel.4, built from a tree whose only modifications are the carried
         // patches, so neither is present: step 1 of "Shipping a rebuild" computes zero modified files
-        // that no carried patch explains, over 79 (v4.0.0-kernel.2 computed the same over 78, before
-        // 0043 added its one). The two ACKNOWLEDGED rows in
+        // that no carried patch explains, over 92 as of 2026-10-03 (v4.0.0-kernel.3 computed the same
+        // over 79, and v4.0.0-kernel.2 over 78, before 0043 added its one). The two ACKNOWLEDGED rows in
         // check-pinned-asset-patches.py stay keyed on v4.0.0-kernel.1 and so expire on their own here,
         // which is what they were built to do; if a later asset repeats either stray the finding comes
         // back rather than staying suppressed.
         //
-        // The asset holds thirty-one and Scripts/patches/ holds thirty-four, so 0044, 0045 and 0046
-        // are the untested set of three, written up where the counts are, above.
         // If you rebuild and the checksum does not match the value below, that is a real difference to
         // investigate rather than an expected one, which is the opposite of what this paragraph said
         // while kernel.1 was pinned.
@@ -275,23 +296,26 @@ let occtTarget: Target =
         // wrong: InitializeMissingParameters is also the REPAIR that re-sets DirectFaces on an actor a
         // STEPCAFControl_Reader has left with empty OperationsFlags, which is #280's exact mechanism.
         // kernel-integration.yml caught it on main. See Scripts/patches/README.md's retired 0035 entry.
-        // Scripts/patches/ holds thirty-four patches and the pinned asset holds thirty-one of them,
-        // enumerated above. `ls Scripts/patches/*.patch | wc -l` answers 34 against a list of 31.
-        // The pinned asset lacks three of them, and this is the written divergence:
+        // Scripts/patches/ holds thirty-nine patches and the pinned asset holds thirty-nine of them,
+        // enumerated above. `ls Scripts/patches/*.patch | wc -l` answers 39 against a list of 39.
+        // The pinned asset lacks zero of them: the v4.0.0-kernel.4 rebuild closed the divergence
+        // that 0044 had opened and that 0045 through 0052 widened, so there is no written
+        // divergence below. The rows that follow are kept as the record of what each patch does
+        // and which bridge mitigation it does or does not retire:
         //
         //   0044  Extrema_ExtSS::Points / Extrema_ExtCS::Points bound against the point       #2840
         //         sequence rather than against NbExt(), which counts mySqDist and so counts
-        //         the parallel branch's distance-with-no-point. Carried 2026-09-30 and NOT
-        //         built, deliberately: the 8.0.2 repin (due 2026-10-02, and already owed a
-        //         wasm rebuild) absorbs it, and unlike 0043 it leaves NOTHING exposed to a
-        //         Swift caller. OCCTSurfaceExtrema gained an IsParallel() gate with #2831, and
+        //         the parallel branch's distance-with-no-point. Carried 2026-09-30 and built
+        //         into v4.0.0-kernel.4. Until then it was NOT built, deliberately, because
+        //         unlike 0043 it left NOTHING exposed to a Swift caller. OCCTSurfaceExtrema gained an IsParallel() gate with #2831, and
         //         OCCTExtremaExtSSPoint, OCCTExtremaExtCSPoint and OCCTCurve3DDistanceToSurface
         //         were already gated, so no bridge entry point can reach the faulting read.
-        //         So it is in NO required check: build-and-test resolves this asset.
-        //         kernel-integration.yml builds it from source on the PR that adds it, which
-        //         proves it applies, compiles and regresses nothing, and nothing more.
+        //         Until it was pinned it was in NO required check: build-and-test resolved the
+        //         asset without it. kernel-integration.yml built it from source on the PR that
+        //         added it, which proved it applied, compiled and regressed nothing, and nothing
+        //         more.
         //         Measured before and after by override-link in Scripts/repro/2840/.
-        //         DO NOT RETIRE THOSE BRIDGE GATES WHEN THIS IS PINNED. The rule in
+        //         DO NOT RETIRE THOSE BRIDGE GATES NOW THAT THIS IS PINNED. The rule in
         //         okf/policies/pinned-kernel-patch-check.md retires a mitigation its patch
         //         supersedes, and this is the 0042-shaped exception: patched, the kernel raises
         //         Standard_OutOfRange for the same input the gate refuses, so both answer nil
@@ -301,25 +325,73 @@ let occtTarget: Target =
         //
         //   0045  Geom2d_BezierCurve::InsertPoleAfter and Geom_BezierCurve::InsertPoleAfter      #2875
         //         refuse at MaxDegree() poles, where both constructors and Increase() allow
-        //         MaxDegree() + 1. Carried 2026-10-02 and NOT built. Half of it is inert in a
+        //         MaxDegree() + 1. Carried 2026-10-02 and built into v4.0.0-kernel.4. Half of it is inert in a
         //         Release kernel anyway: the 2d site is a Standard_ConstructionError_Raise_if,
         //         which No_Exception empties, so the shipped 2d class has no bound at all and
         //         the bridge's own guard is what enforces one. The 3d site is a literal throw
         //         and does move, from 25 poles to 26, measured in
         //         Scripts/repro/2875-bezier-insertpole-bound/.
-        //         DO NOT RETIRE OCCTCurve2DBezierInsertPoleAfter'S GUARD WHEN THIS IS PINNED:
-        //         it is the only check the 2d class has in this build, patched or not.
+        //         DO NOT RETIRE OCCTCurve2DBezierInsertPoleAfter'S GUARD NOW THAT THIS IS PINNED:
+        //         it is the only check the 2d class has in this build, patched or not. Its bound
+        //         moved from >= to > at the repin, to match the 3d class (#3013).
         //
         //   0046  math_Uzawa sizes Errinit by Cont.ColNumber() and writes it by row, so any     #2860
         //         overdetermined system overruns it: 4 constraints in 2 unknowns returns a
-        //         wrong answer, 100 in 2 is a deterministic SIGSEGV. Carried 2026-10-02 and NOT
-        //         built, so the fault is still in the pinned kernel and OCCTMathUzawa's
-        //         nConstraints > nVars guard is the only thing between a Swift caller and it.
-        //         DO NOT RETIRE THAT GUARD WHEN THIS IS PINNED: patched, the kernel answers a
+        //         wrong answer, 100 in 2 is a deterministic SIGSEGV. Carried 2026-10-02 and built
+        //         into v4.0.0-kernel.4; until then the fault was in the pinned kernel and
+        //         OCCTMathUzawa's nConstraints > nVars guard was the only thing between a Swift
+        //         caller and it.
+        //         DO NOT RETIRE THAT GUARD NOW THAT THIS IS PINNED: patched, the kernel answers a
         //         correctly sized initial error for an overdetermined system, which is a
         //         behaviour change the Swift surface has not decided to expose, and the guard
         //         still covers anyone pinning an older asset. Measured before and after in
         //         Scripts/repro/2860-uzawa-errinit-dimension/.
+        //
+        //   0047  BRepMesh_IncrementalMesh::initParameters refuses a NaN parameter: all five    #2879
+        //         of its tests are spelled `value < bound`, which NaN defeats, so the two that  #2900
+        //         throw do not throw and the three that substitute do not substitute. Carried
+        //         2026-10-02 for the OCCT 8.0.2 rebuild. It leaves nothing exposed to a Swift
+        //         caller: occtValidMeshDeflection and occtValidMeshAngle already refuse the same
+        //         input at every bridge site, so the kernel never sees it from here.
+        //         KEEP BOTH BRIDGE GUARDS NOW THAT THIS IS PINNED. Same shape as 0042 and 0044: with
+        //         the patch the kernel throws Standard_NumericError for the same input the guards
+        //         refuse, so both answer the site's refusal and the guards are redundant rather
+        //         than wrong, and they still cover anyone pinning an older asset or the wasm one.
+        //
+        //   0048  The by-plane BRepGProp_Vinert and BRepGProp_VinertGK overloads measure about    #2873
+        //         the plane the caller passed rather than its mirror through the origin: the
+        //         stored fourth coefficient carried the wrong sign, which also made loc cancel
+        //         out instead of re-basing. Carried 2026-10-02 for the OCCT 8.0.2 rebuild.
+        //         THIS ONE WAS THE OPPOSITE CASE AND THE v4.0.0-kernel.4 REPIN ACTED ON IT (#3015).
+        //         OCCTBRepGPropVinertPlane did not guard an input, it COMPENSATED: it built the
+        //         gp_Pln mirrored through the origin so that the unpatched kernel answered about
+        //         the plane the Swift caller asked for. A kernel carrying 0048 with that mirror
+        //         still in place measures about the mirrored plane again, and
+        //         BRepGPropVinertTests' two sign assertions failed on #3014 for that reason. The
+        //         repin deleted the mirror and dropped the "pass -d" note from
+        //         Face.volumeInertia(planeNormal:planeDistance:) and
+        //         docs/reference/Shape-HLR-Geom.md, in the same change. Until then the mirror was
+        //         correct and had to stay, because CI resolves the pinned asset.
+        //
+        //   0050  GProp_SelGProps::Perform(gp_Cone) drops the spurious cos(semiAngle) from the      #2992
+        //         lateral area, and
+        //   0051  GProp_VelGProps::Perform(gp_Cone) returns the frustum volume instead of a         #2992
+        //         quantity carrying a spurious sin(a), which collapsed to zero at the cylinder
+        //         limit the same class answers exactly. Carried 2026-10-02 and built
+        //         into v4.0.0-kernel.4, the rebuild that took them the same night. UNLIKE 0044,
+        //         both left a value a CALLER READS wrong on the asset pinned before it, through
+        //         GeometryProperties.coneSurfaceArea and .coneVolume, which is 0043's situation
+        //         rather than 0044's, and is why neither was held for 8.0.2. No bridge-side
+        //         mitigation was added, deliberately: correcting the factor in the bridge would
+        //         have to be retired at the repin and would double-correct a patched kernel in
+        //         the window between. Both derivations were re-checked against the closed form
+        //         and the cylinder limit and measured by override-link in Scripts/repro/2992/.
+        //         The two classes have NO caller anywhere in Libraries/occt-src, which is why
+        //         those two arbiters are the ones used; see okf/policies/follow-occt-callers.md.
+        //   0052  Geom_BezierSurface.hxx's IsURational/IsVRational prose corrected to match its    #2991
+        //         own example matrix and the implementation. A header comment, so it changes no
+        //         binary and leaves nothing exposed; it is listed here only because it is carried,
+        //         like the rows above.
         //
         // 0043 (#2827, BRepGProp_Gauss keeps the by-plane mass) was the one outstanding before it,
         // and it went the other way, which is the comparison worth keeping beside 0044: carried
@@ -425,8 +497,8 @@ let occtTarget: Target =
         : .binaryTarget(
             name: "OCCT",
             url:
-                "https://github.com/SecondMouseAU/OCCTSwift/releases/download/v4.0.0-kernel.3/OCCT.xcframework.zip",
-            checksum: "27810c46220a77303c322bc24119e3aa1fe983707e9f88ce8455e7e9b9db82bc"
+                "https://github.com/SecondMouseAU/OCCTSwift/releases/download/v4.0.0-kernel.4/OCCT.xcframework.zip",
+            checksum: "4ebd78b698f834b34f178af36d7c1abd28d47752d38d659f59580a243b56f555"
         )
 
 // OCCTBridge is 16 Objective-C++ files / ~62K lines wrapping the OCCT header tree; SwiftPM recompiles

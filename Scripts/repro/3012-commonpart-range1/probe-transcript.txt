@@ -1,0 +1,174 @@
+=== IntTools_EdgeEdge: transversal crossings ===
+perpendicular lines through the origin                 done=1 parts=1
+    part 1: type=VERTEX Range1=(0.99999985, 1.00000015) width=3e-07
+            Ranges2(1)=(0.99999985, 1.00000015) width=3e-07
+            VertexParameter1=1 VertexParameter2=1
+            resolved by IntTools_Tools: 1  raw in Range1: 1
+            resolved on edge 2: 1
+            bridge before #3012 reported param1Range=(1, 1)
+lines crossing at 1 degree                             done=1 parts=1
+    part 1: type=VERTEX Range1=(0.999982811702, 1.0000171883) width=3.44e-05
+            Ranges2(1)=(0.999982811702, 1.0000171883) width=3.44e-05
+            VertexParameter1=1 VertexParameter2=1
+            resolved by IntTools_Tools: 1  raw in Range1: 1
+            resolved on edge 2: 1
+            bridge before #3012 reported param1Range=(1, 1)
+lines crossing at 0.01 degree                          done=1 parts=1
+    part 1: type=VERTEX Range1=(0.998281126619, 1.00171887338) width=0.00344
+            Ranges2(1)=(0.998281126619, 1.00171887338) width=0.00344
+            VertexParameter1=1 VertexParameter2=1
+            resolved by IntTools_Tools: 1  raw in Range1: 1
+            resolved on edge 2: 1
+            bridge before #3012 reported param1Range=(1, 1)
+line x = 0 through a radius-10 circle (two crossings)  done=1 parts=2
+    part 1: type=VERTEX Range1=(29.9999997, 30.0000003) width=6e-07
+            Ranges2(1)=(1.5707962968, 1.57079635679) width=6e-08
+            VertexParameter1=30 VertexParameter2=1.57079632679
+            resolved by IntTools_Tools: 30  raw in Range1: 1
+            resolved on edge 2: 1.57079632679
+            bridge before #3012 reported param1Range=(30, 30)
+    part 2: type=VERTEX Range1=(9.9999997, 10.0000003) width=6e-07
+            Ranges2(1)=(4.71238895038, 4.71238901038) width=6e-08
+            VertexParameter1=10 VertexParameter2=4.71238898038
+            resolved by IntTools_Tools: 10  raw in Range1: 1
+            resolved on edge 2: 4.71238898038
+            bridge before #3012 reported param1Range=(10, 10)
+line y = 10 tangent to the radius-10 circle            done=1 parts=1
+    part 1: type=VERTEX Range1=(4.99755021027, 5.00244978972) width=0.0049
+            Ranges2(1)=(1.57055137782, 1.57104127577) width=0.00049
+            VertexParameter1=5 VertexParameter2=1.5707963268
+            resolved by IntTools_Tools: 5  raw in Range1: 1
+            resolved on edge 2: 1.5707963268
+            bridge before #3012 reported param1Range=(5, 5)
+two radius-10 circles, centres 10 apart                done=1 parts=2
+    part 1: type=VERTEX Range1=(1.04719751136, 1.04719758941) width=7.81e-08
+            Ranges2(1)=(2.09439504287, 2.09439515703) width=1.14e-07
+            VertexParameter1=1.0471975512 VertexParameter2=2.09439510239
+            resolved by IntTools_Tools: 1.0471975512  raw in Range1: 1
+            resolved on edge 2: 2.09439510239
+            bridge before #3012 reported param1Range=(1.0471975512, 1.0471975512)
+    part 2: type=VERTEX Range1=(5.23598771777, 5.23598779582) width=7.81e-08
+            Ranges2(1)=(4.18879015015, 4.18879026431) width=1.14e-07
+            VertexParameter1=5.23598775598 VertexParameter2=4.18879020479
+            resolved by IntTools_Tools: 5.23598775598  raw in Range1: 1
+            resolved on edge 2: 4.18879020479
+            bridge before #3012 reported param1Range=(5.23598775598, 5.23598775598)
+
+=== IntTools_EdgeEdge: tangential overlaps of arcs of one circle (#2994 rows) ===
+A  a=[0,pi]       b=[pi/2,3pi/2]                       done=1 parts=1
+    part 1: type=VERTEX Range1=(1.5707962968, 3.14159265359) width=1.57
+            Ranges2(1)=(1.57079632679, 3.14159268359) width=1.57
+            VertexParameter1=2.35619447519 VertexParameter2=2.35619447519
+            resolved by IntTools_Tools: 2.35619447519  raw in Range1: 1
+            resolved on edge 2: 2.35619447519
+            bridge before #3012 reported param1Range=(2.35619447519, 2.35619447519)
+B  a=[0,pi]       b=[pi/4,3pi/4]                       done=1 parts=1
+    part 1: type=EDGE   Range1=(0.785398120972, 2.35619453262) width=1.57
+            Ranges2(1)=(0.785398163397, 2.35619449019) width=1.57
+            VertexParameter1=0 VertexParameter2=0
+            EDGE part: VertexParameter1 is the constructor's 0.0, never set
+C  a=[0,pi]       b=[pi/2,pi]                          done=1 parts=1
+    part 1: type=EDGE   Range1=(1.5707962968, 3.14159265359) width=1.57
+            Ranges2(1)=(1.57079632679, 3.14159265359) width=1.57
+            VertexParameter1=0 VertexParameter2=0
+            EDGE part: VertexParameter1 is the constructor's 0.0, never set
+E  a=[0,pi]       b=[0,pi]                             done=1 parts=1
+    part 1: type=EDGE   Range1=(0, 3.14159265359) width=3.14
+            Ranges2(1)=(0, 3.14159265359) width=3.14
+            VertexParameter1=0 VertexParameter2=0
+            EDGE part: VertexParameter1 is the constructor's 0.0, never set
+F  a=[0,pi/2]     b=[pi/4,3pi/4]                       done=1 parts=1
+    part 1: type=VERTEX Range1=(0.785398120972, 1.57079632679) width=0.785
+            Ranges2(1)=(0.785398163397, 1.57079635679) width=0.785
+            VertexParameter1=1.17809722388 VertexParameter2=1.17809722388
+            resolved by IntTools_Tools: 1.17809722388  raw in Range1: 1
+            resolved on edge 2: 1.17809722388
+            bridge before #3012 reported param1Range=(1.17809722388, 1.17809722388)
+G  a=[0,pi/2]     b=[pi/4,pi/2]                        done=1 parts=1
+    part 1: type=EDGE   Range1=(0.785398120972, 1.57079632679) width=0.785
+            Ranges2(1)=(0.785398163397, 1.57079632679) width=0.785
+            VertexParameter1=0 VertexParameter2=0
+            EDGE part: VertexParameter1 is the constructor's 0.0, never set
+
+=== IntTools_EdgeEdge: straight overlaps, which take ComputeLineLine ===
+H  a=[0,2] b=[1,3]                                     done=1 parts=1
+    part 1: type=EDGE   Range1=(1, 2) width=1
+            Ranges2(1)=(0, 1) width=1
+            VertexParameter1=0 VertexParameter2=0
+            EDGE part: VertexParameter1 is the constructor's 0.0, never set
+
+=== IntTools_EdgeFace on a centred 10 x 10 x 10 box ===
+edge (0,0,-10)-(0,0,10) up the middle, face 4          done=1 parts=1
+    part 1: type=VERTEX Range1=(4.99999985, 5.00000015) width=3e-07
+            VertexParameter1=5 VertexParameter2=0
+            resolved by IntTools_Tools: 5 (edge 1 only)  raw in Range1: 1
+            bridge before #3012 reported param1Range=(5, 5)
+edge (0,0,-10)-(0,0,10) up the middle, face 5          done=1 parts=1
+    part 1: type=VERTEX Range1=(14.99999985, 15.00000015) width=3e-07
+            VertexParameter1=15 VertexParameter2=0
+            resolved by IntTools_Tools: 15 (edge 1 only)  raw in Range1: 1
+            bridge before #3012 reported param1Range=(15, 15)
+edge (5,5,-1)-(5,5,11) in the x = 5 plane, face 1      done=1 parts=1
+    part 1: type=EDGE   Range1=(0, 12) width=12
+            VertexParameter1=0 VertexParameter2=0
+            EDGE part: VertexParameter1 is the constructor's 0.0, never set
+edge (5,5,-1)-(5,5,11) in the x = 5 plane, face 3      done=1 parts=1
+    part 1: type=EDGE   Range1=(0, 12) width=12
+            VertexParameter1=0 VertexParameter2=0
+            EDGE part: VertexParameter1 is the constructor's 0.0, never set
+edge (5,5,-1)-(5,5,11) in the x = 5 plane, face 5      done=1 parts=1
+    part 1: type=VERTEX Range1=(5.99999985, 6.00000015) width=3e-07
+            VertexParameter1=6 VertexParameter2=0
+            resolved by IntTools_Tools: 6 (edge 1 only)  raw in Range1: 1
+            bridge before #3012 reported param1Range=(6, 6)
+
+=== IntTools_EdgeFace on a 200 x 200 x 10 slab, shallow crossings of z = 5 ===
+edge (-10,0,4.99)-(10,0,5.01), slope 0.001, face 5     done=1 parts=1
+    part 1: type=VERTEX Range1=(9.99970499992, 10.0003050001) width=0.0006
+            VertexParameter1=10.000005 VertexParameter2=0
+            resolved by IntTools_Tools: 10.000005 (edge 1 only)  raw in Range1: 1
+            bridge before #3012 reported param1Range=(10.000005, 10.000005)
+edge (-10,0,4.9999)-(10,0,5.0001), slope 1e-5, face 5  done=1 parts=1
+    part 1: type=VERTEX Range1=(9.9700000005, 10.0300000005) width=0.06
+            VertexParameter1=10.0000000005 VertexParameter2=0
+            resolved by IntTools_Tools: 10.0000000005 (edge 1 only)  raw in Range1: 1
+            bridge before #3012 reported param1Range=(10.0000000005, 10.0000000005)
+
+=== IntTools_EdgeFace: a circle touching and an arc lying in a face ===
+circle r=5 in the XZ plane, touching z = 5, face 0     done=1 parts=1
+    part 1: type=VERTEX Range1=(4.71204257038, 4.71273539038) width=0.000693
+            VertexParameter1=4.71238898038 VertexParameter2=0
+            resolved by IntTools_Tools: 4.71238898038 (edge 1 only)  raw in Range1: 1
+            bridge before #3012 reported param1Range=(4.71238898038, 4.71238898038)
+circle r=5 in the XZ plane, touching z = 5, face 1     done=1 parts=1
+    part 1: type=VERTEX Range1=(1.57044991679, 1.57114273679) width=0.000693
+            VertexParameter1=1.57079632679 VertexParameter2=0
+            resolved by IntTools_Tools: 1.57079632679 (edge 1 only)  raw in Range1: 1
+            bridge before #3012 reported param1Range=(1.57079632679, 1.57079632679)
+circle r=5 in the XZ plane, touching z = 5, face 4     done=1 parts=1
+    part 1: type=VERTEX Range1=(3.14124624359, 3.14193906359) width=0.000693
+            VertexParameter1=3.14159265359 VertexParameter2=0
+            resolved by IntTools_Tools: 3.14159265359 (edge 1 only)  raw in Range1: 1
+            bridge before #3012 reported param1Range=(3.14159265359, 3.14159265359)
+circle r=5 in the XZ plane, touching z = 5, face 5     done=1 parts=2
+    part 1: type=VERTEX Range1=(0, 0.00034641) width=0.000346
+            VertexParameter1=0 VertexParameter2=0
+            resolved by IntTools_Tools: 0 (edge 1 only)  raw in Range1: 1
+            bridge before #3012 reported param1Range=(0, 0)
+    part 2: type=VERTEX Range1=(6.28283889718, 6.28318530718) width=0.000346
+            VertexParameter1=6.28318530718 VertexParameter2=0
+            raw VertexParameter1 is OUTSIDE Range1 by 8.88e-16 (raw 6.2831853071795871, Range1 last 6.2831853071795862)
+            resolved by IntTools_Tools: 6.28301210218 (edge 1 only)  raw in Range1: 0
+            bridge before #3012 reported param1Range=(6.28318530718, 6.28318530718)
+arc [0,pi] r=10 in the z = 0 face of a plate, face 4   done=1 parts=1
+    part 1: type=EDGE   Range1=(0, 3.14159265359) width=3.14
+            VertexParameter1=0 VertexParameter2=0
+            EDGE part: VertexParameter1 is the constructor's 0.0, never set
+
+=== tallies ===
+VERTEX parts                                   20
+  raw VertexParameter1 outside Range1           1  (resolved would differ from raw)
+  Range1 wider than 1e-6 (bridge's (t,t) lost)  12
+  edge-edge VERTEX parts with a Ranges2(1)      10 of 10
+EDGE parts                                     8
+  with a VertexParameter1 other than 0.0        0

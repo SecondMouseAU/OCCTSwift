@@ -1899,10 +1899,10 @@ OCCTFaceVolumeInertia OCCTBRepGPropVinertPlane(OCCTFaceRef _Nonnull face,
     const TopoDS_Face& f = TopoDS::Face(face->face);
     BRepGProp_Face     gpropFace(f);
     gp_Dir             normal(planeNX, planeNY, planeNZ);
-    // #2873: MIRRORED THROUGH THE ORIGIN ON PURPOSE, so that what comes back is measured about the
-    // plane at planeDist. The long comment below is the derivation and the measurement; do not
-    // "correct" this minus without reading it.
-    gp_Pln           plane(gp_Pnt(normal.XYZ() * -planeDist), normal);
+    // #2873: no mirror here since #3015. Carried patch 0048 corrects the kernel's offset sign, so
+    // this hands the kernel the plane at planeDist. The comment below is the derivation and the
+    // measurement, and the history of the minus this line used to carry.
+    gp_Pln           plane(gp_Pnt(normal.XYZ() * planeDist), normal);
     BRepGProp_Domain domain;
     BRepGProp_Vinert vinert;
     vinert.SetLocation(gp_Pnt(0, 0, 0));
@@ -1921,8 +1921,8 @@ OCCTFaceVolumeInertia OCCTBRepGPropVinertPlane(OCCTFaceRef _Nonnull face,
     // the centre of mass to (0, 0, 0) for every by-plane call. Carried patch
     // Scripts/patches/0043-BRepGProp_Gauss-keeps-the-by-plane-mass-2827.patch drops the condition
     // and is PINNED from v4.0.0-kernel.3, so what this function returns is now a measurement. A
-    // consumer resolving an older asset still gets the zero, and so does the wasm kernel until its
-    // next rebuild (Scripts/wasm-kernel-pin.txt).
+    // consumer resolving an older asset still gets the zero. The wasm kernel carries the patch too
+    // since its v4.0.0-kernel.4 rebuild (Scripts/wasm-kernel-pin.txt).
     //
     // What it measures, which had to be derived because OCCT has no caller of this path to copy
     // (BRepGProp.cxx:311 is its only BRepGProp_Vinert call site and passes a point): the integrand
@@ -1933,7 +1933,9 @@ OCCTFaceVolumeInertia OCCTBRepGPropVinertPlane(OCCTFaceRef _Nonnull face,
     // the enclosed volume, and the mass-weighted sum of the per-face centres is the solid's first
     // moment. Scripts/repro/2827/patched-kernel-transcript.txt is the measurement.
     //
-    // #2873, and why the gp_Pln built above is mirrored through the origin. The kernel's by-plane
+    // #2873, and why the gp_Pln built above used to be mirrored through the origin. The next three
+    // paragraphs describe the kernel without 0048, which is what this function was written against.
+    // The kernel's by-plane
     // integrand consumes theCoeff[0..3] as the plane n_hat . X = theCoeff[3] and subtracts that
     // fourth entry, in both of OCCT's by-plane implementations: BRepGProp_Gauss.cxx:343 for
     // BRepGProp_Vinert, BRepGProp_UFunction.cxx:99 for BRepGProp_VinertGK. What is wrong is the one
@@ -1951,16 +1953,17 @@ OCCTFaceVolumeInertia OCCTBRepGPropVinertPlane(OCCTFaceRef _Nonnull face,
     // the P - loc the integrand works in, exactly, which is what a distance to a plane has to do.
     // So there is ONE defect here, the offset's sign, and not the two #2873 was filed with.
     //
-    // This function is handed (planeNormal, planeDistance) and picks the gp_Pln that represents
-    // them, so the mirror is part of that conversion rather than a correction applied to an object
-    // a caller owns. With it, d1 is the signed distance to the plane at planeDistance for all four
-    // offsets and all three locations above, the centroid is the column's own, and both of #2827's
-    // aggregate identities stay exact.
+    // This function is handed (planeNormal, planeDistance) and picked the gp_Pln that represents
+    // them, so the mirror was part of that conversion rather than a correction applied to an object
+    // a caller owns. With it, d1 was the signed distance to the plane at planeDistance for all four
+    // offsets and all three locations above, the centroid was the column's own, and both of #2827's
+    // aggregate identities stayed exact.
     //
-    // WHEN THE KERNEL IS FIXED, DELETE THE MINUS. The upstream submission carries the one-line
-    // kernel hunk alongside 0043 (Scripts/patches/README.md), and a kernel carrying it plus this
-    // mirror would measure about the mirrored plane again. BRepGPropVinertTests' two sign
-    // assertions fail in exactly that case, which is what they are for.
+    // THE KERNEL IS FIXED AND THE MINUS IS GONE (#3015). Carried patch 0048 corrects the
+    // conversion at all five sites, and this function now hands the kernel the plane the caller
+    // named. The mirror had to go in the same change that pinned 0048: a kernel carrying the
+    // patch plus the mirror measures about the mirrored plane again, which is what
+    // BRepGPropVinertTests' two sign assertions caught on PR #3014 before the repin.
     result.mass    = vinert.Mass();
     gp_Pnt cm      = vinert.CentreOfMass();
     result.centerX = cm.X();

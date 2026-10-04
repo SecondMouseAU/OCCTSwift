@@ -55,7 +55,6 @@ Tests/OCCTAnalysisTests/AdaptorCurvatureDefinednessTests.swift
 Tests/OCCTAnalysisTests/AdaptorLocalPropsParityTests.swift
 Tests/OCCTAnalysisTests/AdaptorNormalDecisionTests.swift
 Tests/OCCTAnalysisTests/BRepExtremaExtPCTests.swift
-Tests/OCCTAnalysisTests/BRepGPropVinertTests.swift
 Tests/OCCTAnalysisTests/BndBoundSortBoxTests.swift
 Tests/OCCTAnalysisTests/CenterOfMassTests.swift
 Tests/OCCTAnalysisTests/ExtremaElSSPlanePlaneTests.swift
@@ -72,14 +71,12 @@ Tests/OCCTAnalysisTests/LocalPropsParityTests.swift
 Tests/OCCTAnalysisTests/ZeroMassResultsTests.swift
 Tests/OCCTBRepGraphTests/BRepGraphExplorerTests.swift
 Tests/OCCTBRepGraphTests/BRepGraphRootNodeTests.swift
-Tests/OCCTBRepGraphTests/ConstructionAxisTests.swift
 Tests/OCCTBRepGraphTests/ConstructionPlaneTests.swift
 Tests/OCCTBRepGraphTests/Issue2650LocatedInstanceFindNodeTests.swift
 Tests/OCCTBRepGraphTests/Issue336ChainedHistoryTests.swift
 Tests/OCCTBRepGraphTests/Issue617FaceGridLayoutTests.swift
 Tests/OCCTCurveTests/BSplineCurve3DCompletionsV121Tests.swift
 Tests/OCCTCurveTests/CurveTestFixtures.swift
-Tests/OCCTCurveTests/GCPntsSamplerBoundsTests.swift
 Tests/OCCTCurveTests/Issue1399LawKnotSplitFactoryReachTests.swift
 Tests/OCCTCurveTests/Issue1476CurveTypeOtherCurveFallbackTests.swift
 Tests/OCCTCurveTests/Issue2861TangentialDeflectionTests.swift
@@ -125,7 +122,6 @@ Tests/OCCTGeom2dTests/Issue840ClassifyPoint2dToleranceTests.swift
 Tests/OCCTGeom2dTests/Issue965Curve2DPropertyLifetimeTests.swift
 Tests/OCCTIOTests/CancellationReportingTests.swift
 Tests/OCCTIOTests/ExporterDrawingCollectionGoldenTests.swift
-Tests/OCCTIOTests/IOTestFixtures.swift
 Tests/OCCTIOTests/Issue1504IGESFormatDefectsTests.swift
 Tests/OCCTIOTests/Issue375STLWindingTests.swift
 Tests/OCCTIOTests/MultibodyRobustImportTests.swift

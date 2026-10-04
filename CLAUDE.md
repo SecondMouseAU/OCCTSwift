@@ -13,7 +13,7 @@ that stood until 2026-09-07 grew to 159 KB, 70% of it Known OCCT Bugs narrative 
 OCCTSwift is a comprehensive Swift wrapper for OpenCASCADE Technology (OCCT) 8.0.1. It exposes B-Rep solid modeling capabilities to Swift for macOS (arm64, v12+) and iOS (arm64, v15+) via a three-layer architecture: Swift public API → Objective-C++ bridge (C functions) → OCCT C++ library. Uses Swift 6 language mode (strict concurrency).
 
 **One OCCT version is in play.** `Scripts/build-occt.sh` builds `V8_0_1` and `Package.swift` pins
-the `v4.0.0-kernel.3` pre-release asset, which is that same `V8_0_1` plus the carried patches that
+the pre-release asset its `url:` names, which is that same `V8_0_1` plus the carried patches that
 existed when it was built. Any patch the asset lacks is exercised by **no required check**, because
 `build-and-test` resolves the asset rather than building from source; `kernel-integration.yml` is
 the one job that builds an unpinned patch, and it proves the patch applies, compiles and regresses
@@ -36,8 +36,9 @@ applies patches idempotently and never reverts. Both are inert, and the divergen
 `Package.swift`'s pin block and in
 [`okf/references/carried-occt-patches.md`](okf/references/carried-occt-patches.md) (#2190). Two
 consequences before you act on either number. The tree has since been cleaned, so a **local rebuild
-now yields a different checksum from the pinned asset**, which is expected and not a corrupt
-download. And `python3 Scripts/check-pinned-asset-patches.py --require-asset` is the check that
+yielded a different checksum from that asset**, which was expected and not a corrupt download. The
+asset pinned since `v4.0.0-kernel.4` was built from the cleaned tree, and `Package.swift` says what a
+mismatch against it means. And `python3 Scripts/check-pinned-asset-patches.py --require-asset` is the check that
 reads the binary rather than the prose: about seven seconds over all three slices, deliberately
 **not** a `gate-scripts` script (it reads a 1.3 GB xcframework CI does not check out), and part of
 the repin step in the Release Process below.
@@ -51,10 +52,10 @@ xcframework would notice. `Scripts/check-wasm-kernel-parity.py` is the gate, and
 `gate-scripts` on every PR precisely because the PR that has to be caught is a native repin, which
 touches no wasm path. It takes a dated acknowledgement for the 69-minute rebuild, keyed to the native
 patch count so it expires at the next repin. It fired on its first real occasion **29 seconds** after
-the asset was published; that gap (`0042`) was rebuilt and closed the next day. **They are apart
-again right now, deliberately:** native is on `v4.0.0-kernel.3` and wasm on `v4.0.0-kernel.2`, and
-the acknowledgement in `Scripts/wasm-kernel-pin.txt` is keyed to the native patch count so it
-expires at the OCCT 8.0.2 rebuild that closes it. The rule and that story are in
+the asset was published; that gap (`0042`) was rebuilt and closed the next day. **Whether they are
+apart right now is not stated here**, because a statement of it goes stale at the next repin: an
+`ACKNOWLEDGED_*` key in `Scripts/wasm-kernel-pin.txt` is a written divergence, and none is none. The
+rule and that story are in
 [`okf/policies/pinned-kernel-patch-check.md`](okf/policies/pinned-kernel-patch-check.md); the current
 divergence is in
 [`okf/references/carried-occt-patches.md`](okf/references/carried-occt-patches.md).
@@ -591,7 +592,8 @@ the reproducer). What a bridge author needs without opening it:
   coarsest mesh the linear rule alone accepts, returned with `IsDone()` true (18 nodes for a
   cylinder where a valid angle gives 54 to 254). Call `occtValidMeshAngle` at every site that
   takes a caller angle. `AngleInterior` and `Prs3d_Drawer::DeviationAngle()` need no guard, both
-  measured.
+  measured. Both holes are fixed in the kernel by carried patch `0047`, which respells all five of
+  `initParameters`' tests; **both bridge guards stay when it is pinned**, the `0042` exception.
 - `GeomAbs_G2` is never a valid order for `BRepFill_Filling`: curvature continuity is
   `GeomAbs_C1` (ordinal 2), whatever `BRepOffsetAPI_MakeFilling.hxx` says. Test any filling change
   on both a planar and a periodic support surface, since #430 was catchable on one and an
@@ -611,14 +613,17 @@ the reproducer). What a bridge author needs without opening it:
   mass was always exactly 0** whatever you passed, because `BRepGProp_Gauss::convert` discarded it
   (#2827); carried patch `0043` keeps it and is pinned from `v4.0.0-kernel.3`, so the by-plane
   overload now measures the signed volume between the face and the reference plane, summing to the
-  solid's volume over a closed shell for any plane. **The kernel then measures it about the plane
+  solid's volume over a closed shell for any plane. **The kernel then measured it about the plane
   mirrored through the origin** (#2873): its integrand reads `theCoeff[3]` as the right-hand side of
   `n . X = theCoeff[3]` and subtracts it, while the `gp_Pln` conversion at
-  `BRepGProp_Vinert.cxx:279` (and `BRepGProp_VinertGK.cxx:219`, `:244`) fills it from
-  `gp_Pln::Coefficients`' `d`, which belongs to `n . X + d = 0`. `OCCTBRepGPropVinertPlane` builds
-  the `gp_Pln` itself, so it builds the mirrored one and `planeDistance` is an ordinary geometric
-  offset; delete that mirror when the kernel hunk lands with `0043`'s upstream PR. `loc` is a red
-  herring: it cancels, which is what a distance to a plane has to do.
+  `BRepGProp_Vinert.cxx:279` (and `BRepGProp_VinertGK.cxx:219`, `:244`) filled it from
+  `gp_Pln::Coefficients`' `d`, which belongs to `n . X + d = 0`. Carried patch `0048` negates the
+  stored offset at all five by-plane sites and is pinned from `v4.0.0-kernel.4`, so `planeDistance`
+  is an ordinary geometric offset. Until then `OCCTBRepGPropVinertPlane` built the mirrored `gp_Pln`
+  itself to compensate; **that mirror was a compensation and not a guard, so the repin that pinned
+  `0048` deleted it in the same change (#3015)**, or the sign flips back, which is what
+  `BRepGPropVinertTests` caught on #3014. `loc` is a red herring: it cancels, which is what a
+  distance to a plane has to do.
 - **Retired at the `v4.0.0-kernel.1` repin**, all three, because the pinned asset now carries every
   carried patch: the datum lookup guard in `occtDocumentDatumObjectAt` (#1030, it was refusing a
   datum `0029` makes readable), the `Scripts/tsan.supp` lines for `TopoDS_TShape::myState`

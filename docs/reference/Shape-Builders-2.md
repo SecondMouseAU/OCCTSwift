@@ -1460,6 +1460,8 @@ public struct CommonPart: Sendable {
     public let type: CommonPartType
     public let param1Range: (first: Double, last: Double)
     public let param2Range: (first: Double, last: Double)
+    public let vertexParameter1: Double?
+    public let vertexParameter2: Double?
     public let point: SIMD3<Double>?
 }
 ```
@@ -1467,9 +1469,40 @@ public struct CommonPart: Sendable {
 | field | meaning |
 |---|---|
 | `type` | `.vertex` or `.edge`: what OCCT means a boolean operation to make of this part, **not** what the intersection geometrically is. See below. |
-| `param1Range` | Parameter range `(first, last)` on the first edge; equal endpoints for a vertex intersection. |
-| `param2Range` | Parameter range `(first, last)` on the second edge; equal endpoints for a vertex intersection. **Only `edgeEdgeIntersection(with:)` has a second edge**, see below. |
-| `point` | A point on the intersection, the first edge's curve evaluated at the representative parameter of `param1Range`. `nil` only if the part carries no first edge, which no current entry point produces. |
+| `param1Range` | `IntTools_CommonPrt::Range1()` on the first edge, exactly as the kernel computed it, for either type (#3012). The overlap for an `.edge` part. For a `.vertex` part the extent OCCT attaches to the vertex: the tolerance window round a transversal crossing, or the whole overlap of a tangential `.vertex` part. **Not a point**, see below. |
+| `param2Range` | `Ranges2()(1)`, the same on the second edge (#3012). **Only `edgeEdgeIntersection(with:)` has a second edge**, see below. |
+| `vertexParameter1` | The parameter on the first edge at which OCCT places the new vertex of a `.vertex` part: where a transversal crossing is, and a representative parameter inside the overlap of a tangential one. Always inside `param1Range`. `nil` for an `.edge` part (#3012). |
+| `vertexParameter2` | The same on the second edge. `nil` for an `.edge` part, and **always `nil` from `edgeFaceIntersection(with:)`**, which has no second edge (#3012). |
+| `point` | A point on the intersection, the first edge's curve at `vertexParameter1` for a `.vertex` part and at the representative parameter of `param1Range` for an `.edge` part. `nil` only if the part carries no first edge, which no current entry point produces. |
+
+**`param1Range` and `param2Range` used to be a point for every `.vertex` part** (#3012). The bridge
+overwrote `IntTools_CommonPrt::Range1()` and `Ranges2()(1)` with `VertexParameter1()` and
+`VertexParameter2()` on a `.vertex` part, so `(t, t)` came back whatever the kernel had computed. A
+transversal crossing lost the tolerance window OCCT puts round it, and a tangential overlap that
+`MergeSolutions` typed `.vertex` lost the overlap itself: two arcs of one radius-10 circle, `[0, pi]`
+against `[pi/2, 3pi/2]`, reported `(3pi/4, 3pi/4)` for a quarter circle of coincidence while the kernel
+held `(pi/2, pi)`, so the one question the call exists to answer, do these overlap and over what, got
+"at one point". OCCT does not do that anywhere. `BOPAlgo_PaveFiller::PerformEE` reads both facts off
+a `.vertex` part and keeps them apart: the vertex parameters, through `IntTools_Tools::VertexParameters`,
+to place the new vertex (`BOPAlgo_PaveFiller_3.cxx:381`), and `Range1()` and `Ranges2()(1)` as the
+part's extent (`:383-384`). `PerformEF` does the same with `IntTools_Tools::VertexParameter` and
+`Range1()` (`BOPAlgo_PaveFiller_5.cxx:412`, `:415`), and `IntTools_EdgeFace.cxx` carries
+`// aCP.SetRange1 (aTx, aTx);` commented out at four places, which is the collapse the bridge
+performed. An `.edge` part is read by neither, and OCCT never gives it a vertex parameter
+(`IntTools_EdgeEdge.cxx:804`).
+
+So the ranges are now the kernel's own, and the vertex parameters are their own optional fields, the
+pair OCCT resolves: the raw `VertexParameter1()` unless it lies outside `Range1()`, when OCCT takes
+the middle of the range (`IntTools_Tools.cxx:593-623`). That differs from the raw field for one part in
+the probe, a circle tangent to a face at its seam, where the raw `2pi` sits an ulp past
+`Range1().Last()`. **The window is not small.** For a transversal crossing it is `(t - dt, t + dt)`
+with `dt` from `IntTools_Tools::ComputeIntRange`: 3e-7 across for two lines at right angles, 3.4e-5
+at one degree, 3.4e-3 at one hundredth of a degree, and for an edge approaching a face it is the
+stretch of the edge within tolerance of it, 6e-4 across at a slope of 1e-3. **To migrate:** a caller
+that read `param1Range.first` as the crossing parameter of a `.vertex` part reads `vertexParameter1`
+now, and one that read the overlap off a vertex-typed part gets it from `param1Range` for the first
+time. `point` is unchanged. Measured on the pinned kernel in
+`Scripts/repro/3012-commonpart-range1/`, with the injection sweep that pins each half.
 
 **`point` used to be `(0, 0, 0)` from `edgeEdgeIntersection(with:)` and the chord midpoint from
 `edgeFaceIntersection(with:)`** (#2251). It was the midpoint of `IntTools_CommonPrt::BoundingPoints`,
@@ -1492,8 +1525,8 @@ types every coincident overlap `.edge`, so the same relation answers differently
 arcs, which is an inconsistency inside OCCT rather than a bridge choice. `Type()` is a directive to
 `BOPAlgo_PaveFiller::PerformEE`, which discards both of those parts and still splits both fixtures
 correctly because vertex/edge interference ran first. To ask whether two edges overlap and over
-what, read `param1Range`. Seven fixtures and the General Fuse comparison are in
-`Scripts/repro/2994-edgeedge-overlap-type/`.
+what, read `param1Range`, which holds the overlap under either type. Seven fixtures and the General
+Fuse comparison are in `Scripts/repro/2994-edgeedge-overlap-type/`.
 
 **`param2Range` is always `(0, 0)` from `edgeFaceIntersection(with:)`.** A face is not an edge, and
 `IntTools_EdgeFace` reflects that: `IntTools_EdgeFace.cxx` never calls `AppendRange2` or
@@ -1526,9 +1559,34 @@ public func edgeEdgeIntersection(with other: Shape) -> [CommonPart]?
   let a = Shape.edgeFromPoints(SIMD3(0, 0, 0), SIMD3(2, 0, 0))!
   let b = Shape.edgeFromPoints(SIMD3(1, 0, 0), SIMD3(3, 0, 0))!
   if let parts = a.edgeEdgeIntersection(with: b), let p = parts.first {
-      p.type         // .edge, the two are collinear and overlap
-      p.param1Range  // (1, 2) on a
-      p.point        // a point inside the overlap, on a
+      p.type              // .edge, the two are collinear and overlap
+      p.param1Range       // (1, 2) on a
+      p.vertexParameter1  // nil, OCCT gives an .edge part no vertex parameter
+      p.point             // a point inside the overlap, on a
+  }
+  ```
+- **Example, a crossing:** `vertexParameter1` is where the edges cross, `param1Range` the tolerance
+  window round it (#3012).
+  ```swift
+  let x = Shape.edgeFromPoints(SIMD3(-1, 0, 0), SIMD3(1, 0, 0))!
+  let y = Shape.edgeFromPoints(SIMD3(0, -1, 0), SIMD3(0, 1, 0))!
+  if let p = x.edgeEdgeIntersection(with: y)?.first {
+      p.type              // .vertex
+      p.vertexParameter1  // 1, the crossing, on x
+      p.param1Range       // about (1 - 1.5e-7, 1 + 1.5e-7), the window round it
+      p.point             // (0, 0, 0)
+  }
+  ```
+- **Example, a tangential overlap:** also `.vertex`, and `param1Range` still holds the whole overlap
+  (#3012).
+  ```swift
+  let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 10)!
+  let first = Shape.edgeFromCurve(circle, u1: 0, u2: .pi)!
+  let second = Shape.edgeFromCurve(circle, u1: .pi / 2, u2: 3 * .pi / 2)!
+  if let p = first.edgeEdgeIntersection(with: second)?.first {
+      p.type              // .vertex, neither arc is wholly covered
+      p.param1Range       // about (pi/2, pi), the quarter circle the arcs share
+      p.vertexParameter1  // about 3pi/4, OCCT's representative parameter inside it
   }
   ```
 
