@@ -47,17 +47,25 @@ A major bump is reserved for two events, either of which alone is sufficient:
 The cohort moved to v1.0.0 on 2026-05-07 alongside [OCCT 8.0.0 GA](https://github.com/Open-Cascade-SAS/OCCT/releases/tag/V8_0_0),
 and to v2.0.0 under Rule 2, on the accumulated breaks recorded below. v3.0.0 is a further
 Rule 2 major on a much smaller set: the kernel does not move, and the breaks are listed
-below. v4.0.0 is a third Rule 2 major, on fifteen breaks across 196 merged pull requests,
-and is in pre-release as `v4.0.0-beta.4`.
+below. v4.0.0 is a third Rule 2 major, on the breaks tabulated under it below, and is in
+pre-release as `v4.0.0-beta.5`.
 
 #### v4.0.0
 
 **A major by Rule 2, on a much larger set than v3.0.0.** OCCT does not move: the kernel stays at
-`V8_0_1`, rebuilt as `v4.0.0-kernel.2` to carry all thirty patches where the v3.0.0 asset
-carried seventeen. A kernel rebuild is a MINOR trigger at most and forces nothing on its own. What
-forces the major is Rule 2, carried by **fifteen** breaking changes across 196 merged pull requests.
+`V8_0_1`, rebuilt as `v4.0.0-kernel.4` to carry every patch in `Scripts/patches/` where the v3.0.0
+asset carried seventeen. A kernel rebuild is a MINOR trigger at most and forces nothing on its own.
+What forces the major is Rule 2, carried by the breaking changes tabulated below.
 
-Many of the fifteen share one shape, and it is worth naming because it explains the release:
+**The kernel pin of `v4.0.0-beta.5`, a frozen measurement of 2026-10-03.** `Package.swift` pins
+`v4.0.0-kernel.4` (#3031). That release carries thirty-nine patches in the native asset and the same
+thirty-nine in the wasm asset, with the eleven WASI-only source changes on top of the wasm one, and
+`Scripts/check-wasm-kernel-parity.py` reports the two clean with no acknowledgement standing.
+`ls Scripts/patches/*.patch | wc -l` and that script re-derive it, and
+[`okf/references/carried-occt-patches.md`](../okf/references/carried-occt-patches.md) is where the
+inventory is kept.
+
+Many of these breaks share one shape, and it is worth naming because it explains the release:
 **a function that could not fail, and did, gains the ability to say so.**
 `SAWireAnalysis.checkOuterBound` returns `Bool?` where it returned `Bool`, because a refused check
 and a clean verdict were the same answer. `BoundSortBox.compare` returned indices that were off by
@@ -65,8 +73,15 @@ one against its own documented contract. `featFuse` and `featCut` silently retur
 for every call ever made, and `dividedByNumber` always returned `nil`. None of these had a correct
 behaviour to preserve, which is why several have no migration beyond reading the new answer.
 
-**Two of the fifteen were not declared by the PR that made them**, and were re-derived from the
-diff while assembling this section, which is the failure mode
+`v4.0.0-beta.5` adds more of the same shape, from the hunt for values that read as measurements and
+were never computed (#726). A witness point that was a zero where the kernel produced none becomes
+`nil` (`Shape.FaceFaceExtrema`, `Shape.CommonPart`, `ExtremaResult`), a `Double` read from outside an
+array's range becomes `Double?` (`MathMatrix`, `IntfTool`), and a `Bool` that could not say "not
+checked" becomes `Bool?` (`Shape.isSubShapeValid`). Each was a wrong answer a caller could not tell
+from a right one, which is the case for making the type say so.
+
+**Two of the breaks recorded through beta.4 were not declared by the PR that made them**, and were
+re-derived from the diff while assembling this section, which is the failure mode
 [`semver-at-release.md`](../okf/policies/semver-at-release.md) names and accepts. They are marked
 below. One of them, `PaperSize`, had also gone undetected in the documentation for months; the gate
 that now catches that class is #2145.
@@ -78,10 +93,9 @@ it touches no header and no Swift file, and `checkOrder` and its thirteen siblin
 `Bool` today exactly as they did before. Only `checkOuterBound` returns `Bool?`, from #1096.
 
 Checking the claim against the diff is the reviewer's job under that policy and it did not happen
-here, so the release assembly is where it surfaced. Every other MAJOR in this section was then
-verified against the current source rather than taken from its PR body: fourteen of fifteen held,
-and this was the one that did not. Documenting it would have told consumers to change working
-code.
+here, so the release assembly is where it surfaced. Every other MAJOR recorded through beta.4 was
+then verified against the current source rather than taken from its PR body: all but this one held.
+Documenting it would have told consumers to change working code.
 
 **One MINOR is not internal, and is the largest addition in the line: a new platform.** As of
 `v4.0.0-beta.4` the package builds and runs on **`wasm32-unknown-wasip1`** (#1689, #2762).
@@ -100,12 +114,12 @@ a bound there uses `isSelfIntersecting(timeout:)`, which exists on every platfor
 cooperative. That difference is the one thing a cross-platform consumer discovers at compile time,
 and the decision about it is open (#2760).
 
-Two things a consumer should know before pinning this beta for wasm. The kernel is a **separate
+Two things a consumer should know before pinning beta.4 or later for wasm. The kernel is a **separate
 release asset**, `libOCCT-wasm.tar.gz`, fetched by `Scripts/fetch-occt-wasm.sh` rather than resolved
 by SwiftPM, because there is no `binaryTarget` for a bare static library; and the build needs a
 consumer-side toolset, which `Scripts/make-wasi-toolset.py` writes. The recipe is
-[`guides/wasm-consumer-setup.md`](guides/wasm-consumer-setup.md). **Module size is unaddressed**, at
-about 27 MB brotli with none of #2761's levers tried.
+[`guides/wasm-consumer-setup.md`](guides/wasm-consumer-setup.md). **Module size was unaddressed at
+beta.4**, at about 27 MB brotli; see the beta.5 paragraph below for what #2839 changed.
 
 **A second MINOR, on Apple platforms**, from retiring three mitigations the kernel repin made
 obsolete (#2186): `Document.datum(at:)` and the datum mutators now succeed on a datum carrying an
@@ -114,9 +128,157 @@ returns the real count where it returned `0`, and `rescaleGeometry` no longer re
 document. Each is a wrong or withheld answer becoming a correct one, so nothing that worked stops
 working, but a caller asserting on the old refusal will see the new value.
 
+**What `v4.0.0-beta.5` adds to the picture.** Its breaks are in
+[their own table](#new-in-v400-beta5-every-break-and-what-a-caller-does) below, each with a
+migration, and nothing was removed. The other kinds of change are not compile errors and are listed
+here, because a consumer upgrading from beta.4 should read them.
+
+**Additive API, MINOR.**
+
+- `BRepGraph.occurrences(of:from:)` and `occurrences(ofNode:from:)`, with `BRepGraph.Occurrence` and
+  `BRepGraph.UsagePathStep`: an occurrence-aware lookup that wraps usage paths (#2835).
+- `Surface.minDistance(to:uvBounds1:uvBounds2:)`, the distance between parallel surfaces, which
+  `Surface.extrema(to:)` still declines to report (#2876).
+- `Surface.bezierFill(_:_:_:style:)` and a `Surface.bsplineFill(curves:style:)` taking a triple, the
+  three-curve `GeomFill` constructors (#2841, #2842).
+- `Messenger.capturingDefaultOutput(_:)`, `Messenger.silencingDefaultOutput(_:)`,
+  `Messenger.defaultPrinterCount` and `Messenger.isDefaultOutputCaptured` (#3021).
+- `Shape.CommonPart.vertexParameter1` and `vertexParameter2`, the parameters at which OCCT places the
+  new vertex of a `.vertex` part (#3012).
+- `IntfTool.segmentCount` and `MathMatrix.isSquare`, and a `@discardableResult Bool` return on
+  `MathMatrix.setValue(row:col:value:)`, `MathMatrix.transpose()` and
+  `GeomDirection.setCoordinates(x:y:z:)` (#2857, #2860, #2331).
+- In the C bridge, `OCCTBridgeRefusedReleaseCount` (#2952) and `OCCTTObjApplicationRefCount` (#2897),
+  diagnostics for a release the bridge refused, beside the functions behind the Swift additions
+  above. A new internal target, `OCCTPlatform`, is neither a product nor re-exported (#2839).
+
+**Values, MINOR: a wrong or fabricated answer becomes a measurement.** No signature moves in any of
+these, so nothing stops compiling, and a caller that compensated for the old number will see the
+change.
+
+- `Mesh.normals` returns real surface normals where it returned `(0, 0, 1)` at every vertex (#2337).
+  The mesh Booleans, `union(with:deflection:)`, `subtracting(_:deflection:)` and
+  `intersection(with:deflection:)`, are documented for what they always did, Booleans on the sewn
+  surfaces rather than on volumes (#2301); `Shape.solid(from:)` is the route to the volume answer.
+- `Face.surfaceInertia(epsilon:)` returns a real area and centre of mass where it returned `0` and
+  `nil`, and `Face.surfaceInertia` returns the trimmed area where it returned the untrimmed patch's:
+  a 20 x 20 face with a radius-3 hole moves from 400 to 371.7256661176920 (#2204).
+- `Face.volumeInertia` and `Shape.vinertGK(location:tolerance:computeCG:)` integrate the trimmed
+  face, so the per-face contributions of a holed plate sum to `Shape.volume` where they overshot it
+  by 6 pi (#2806).
+- `Face.volumeInertia(planeNormal:planeDistance:)` returns the signed column volume about the plane
+  at `planeDistance`, where it returned a fabricated `0.0` with a `nil` centre of mass on both
+  platforms at beta.4 (#2827, #2873; carried patches `0043` and `0048`).
+- `GeometryProperties.coneSurfaceArea(semiAngle:refRadius:height:)` and `coneVolume(...)` return the
+  closed forms. The area was low by a factor of `cos(semiAngle)`, and the volume carried a spurious
+  `sin(semiAngle)` and collapsed to zero as the cone approached a cylinder (#2992; carried patches
+  `0050` and `0051`).
+- `SheetMetal.Builder.build()` returns the correct solid for a stepped seam. It filleted the free
+  edge of the wider flange and came out below the flange volume by `r^2 (1 - pi/4)` times the
+  surplus length (#2972).
+- `BRepGraph.findNode(for:)` and `hasNode(for:)` resolve the sub-shapes of a placed instance to the
+  definition node it instantiates, where they returned `nil` and `false` (#2650).
+
+**Refusals, MINOR: input that was answered with garbage is refused.** The return type already
+allowed the refusal in each case, so nothing stops compiling.
+
+- The `isCN` wrappers, `Curve3D.isCN(_:)`, `Curve3D.bezierIsCN(_:)`, `Curve2D.isCN(_:)`,
+  `Curve2D.bsplineIsCN(_:)`, `Surface.isCNu(_:)`, `Surface.isCNv(_:)`, `Surface.bezierIsCNu(_:)` and
+  `Surface.bezierIsCNv(_:)`, return `false` for a negative order where they returned `true` (#2862).
+- `bezierInsertPoleAfter`, `bezierRemovePole`, `bezierIncreaseDegree`, `setPole(at:point:)` and
+  `setWeight(at:weight:)` return `false` where they returned `true` after corrupting the heap.
+  `Surface.fromCylinder` and `fromCone` return `nil` for `u2 < u1` or a span past a full turn, where
+  they returned a fabricated surface or crashed. `Edge.tangentialDeflectionPoints`,
+  `Curve3D.drawAdaptive` and `Curve2D.drawAdaptive` return an empty array for a deflection below the
+  kernel's floor, where they returned a fraction of the curve labelled as the whole (#2859, #2861).
+- `Document.setBooleanArray(tag:values:)`, `setByteArray`, `setExtStringArray` and
+  `setReferenceArray` return `false` for an empty array where they returned `true` and created an
+  attribute that could not be reloaded. The PR that did this invited a MAJOR; it is recorded MINOR
+  because no input that produced a working result changed (#2866).
+- `AssemblyNode.setIntegerArrayValue(at:value:)` and `setRealArrayValue(at:value:)` return `false`
+  outside the array's own range, where they wrote out of bounds and returned `true`, and
+  `initIntegerArray(lower:upper:)` and `initRealArray(lower:upper:)` refuse `upper < lower` (#2855).
+- Every mesh, tessellating-export, proximity, self-intersection, poly-HLR and coherent-triangulation
+  entry point refuses a NaN linear deflection, and the meshing entry points refuse a NaN angular
+  deflection, each with that call's own documented refusal: `nil`, an empty result, or a thrown
+  `ExportError`. A NaN linear deflection started a tessellation that did not return, and a NaN angle
+  returned the coarsest mesh with `IsDone()` true. A value below the floor (`1e-7` linear, `1e-12`
+  angular) or negative was already refused by the kernel's own throw, so only NaN changes what a
+  consumer sees (#2879, #2900).
+- `Shape.edgePolyline(at:deflection:maxPoints:)` returns `nil`, and `Shape.allEdgePolylines` and
+  `allEdgePolylinesIndexed` return `[]`, for a deflection below `Precision::Confusion()`, where they
+  returned a truncated leading sliver of each edge labelled as the whole (#2872).
+- `Curve2D.fromEllipseArc` returns `nil` for a sweep of zero or less, past a full turn or with a
+  non-finite bound, `CurveProfiler.perform()` returns `false` on an empty profiler where it did not
+  return at all, and `CurveProfiler.poles(curveIndex:)` returns `[]` outside `1...n` (#2884).
+- `BRepGraph.translated(dx:dy:dz:copyGeometry:)` with `copyGeometry: false` and a non-zero
+  translation returns `nil`, where it returned a graph that had not moved (#2913).
+- `MathMatrix.invert()` and `transpose()` on a non-square matrix return `false`,
+  `MathSolver.uzawa(...)` returns `nil` for more constraints than variables,
+  `Shape.scaledAboutPoint(_:factor:)` returns `nil` for a zero factor where it returned a zero-volume
+  solid, and `Shape.trsfModification(...)` returns `nil` for a singular 3x3 where it applied a `nan`
+  transform (#2860).
+- `Curve2D.bezierInsertPoleAfter(_:point:)` and the 3D `insertPoleAfter(index:point:)` accept one
+  pole more before refusing, `MaxDegree() + 1`, the count the constructors already allow. That
+  arrives with the kernel, as carried patch `0045` (#2875, #3013).
+
+**Crash to refusal, PATCH.** Calls that killed the process on malformed input now return their
+documented refusal: the `ShapeCustom` converters on a face with no surface (#2790), the `BRep_Tool`
+wrappers `Shape.evalAndUpdateTolerance(edge:face:)`, `curveOnSurface(edge:face:)`,
+`isDegenerated(edge:)` and `rangeOnFace(edge:face:)` on a null shape (#2812),
+`Surface.bsplineFill(curves:style:)` and `bezierFill(_:_:_:_:style:)` on four boundary curves that
+do not close a loop (#2829), `Surface.extrema(to:)` on two parallel surfaces (#2831),
+`SewingBuilder.deletedFace(at:)` (#2856), and the `Document` naming lookups `sameShapeCount`,
+`sameShapeLabels`, `namingFindLabel` and `namingValidUntil` on a document that never recorded
+naming (#766). A crash is not a contract a caller can have depended on.
+
+**WebAssembly.** `Exporter.writeDXF` and `Exporter.writeSVG` work on `wasm32-unknown-wasip1`, where
+every export threw (#2793). The module is about 37 percent smaller: #2839 moved the Swift layer to
+`FoundationEssentials` and took it from 26.98 MB to about 16.9 MB brotli, a frozen measurement of
+2026-09-29 with byte-identical geometry output. The saving is all or nothing per linked module, so a
+consumer keeps it only by making the same import change in its own sources, and the checklist is in
+[`guides/wasm-consumer-setup.md`](guides/wasm-consumer-setup.md). The consumer-visible API is
+unchanged on every platform, which was checked rather than assumed.
+
+**How the beta.5 set was checked.** Every stated impact was read, and every MAJOR and MINOR was read
+against its diff. The public Swift declarations (`Sources/OCCTSwift`) and the C declarations
+(`Sources/OCCTBridge/include`) were also parsed at `v4.0.0-beta.4` and at the release commit and
+compared, keyed by container, name and argument labels, so that a break nobody declared would show
+as a changed declaration with no MAJOR attached. No declaration was removed and no enum case was
+added or removed, `SheetMetal.BuildError` included, and every changed Swift declaration traces to a
+MAJOR below, apart from the second `bsplineFill` overload (#2888), which is additive. That
+comparison is a screen over declarations and not a `swift-api-digester` run, and
+it cannot see a changed value behind an unchanged signature: those are the PRs' own statements, read
+against their diffs.
+
+**What the C comparison found that the PR bodies did not say.** Several bridge functions changed
+signature in PRs that state only their Swift half, and the C structs behind those results gained
+fields. They are tabulated at the end of the beta.5 breaks. `OCCTBridge` is a target and not a
+product, and it is reachable anyway (#967), so they are breaks for a direct caller and not for one
+that goes through `OCCTSwift`.
+
+**Where the assembly disagreed with a PR's own grade.** PRs #2836 (per-face volume integrals),
+#2834 (`findNode` on a placed instance), #2868 (the OCAF array setters), #3017 (cone area and
+volume), #3022 (a stepped sheet-metal seam) and #3031 (the repin, whose effects are the by-plane,
+cone and Bezier bullets above) stated PATCH for a change a caller can observe in a returned value.
+They are recorded above as MINOR, because the same shape (#2845, #2808, #2870, #2877) was stated
+MINOR by its own authors and one shape should not carry two grades; #2836 said so itself ("MINOR
+would be defensible"). A PR that states PATCH for an additive public C function (#2953) is recorded
+with #2969, which states MINOR for the same thing. None of this moves the version, since v4.0.0 is a
+major already.
+
+**Pull requests with no `## SemVer impact` section.** #2883, #2886, #2922, #2942, #2955, #2973,
+#2980, #3001, #3016 and #3023 carry none, and no statement was written for their authors. Each was
+read against its diff instead. All but #2886 change no public declaration and nothing a consumer can
+reach: a bridge-internal deletion (#2883), documentation, policy and CI only (#2922, #2955, #2973,
+#2980, #3001, #3023), tests only (#2942), and the kernel patches `0045` and `0046` (#3016) that
+#3031 has since pinned, whose effect reaches a consumer through the repin and is recorded there.
+#2886 changes behaviour: its body grades the change MINOR under a "Behaviour change" heading and
+not under the required one, and it is recorded above as the `edgePolyline` refusal (issue #2872).
+
 Everything else in this release is internal: the bridge and Swift correctness sweeps (#1413,
-#1551), the data-exchange thread-safety series (#1403), and the gate work. Read the entries in
-[`CHANGELOG.md`](CHANGELOG.md) marked "Internal only" as exactly that.
+#1551), the data-exchange thread-safety series (#1403), the #766 test-quality lift, and the gate
+work. Read the entries in [`CHANGELOG.md`](CHANGELOG.md) marked "Internal only" as exactly that.
 
 ##### Every break, and what a caller does
 
@@ -299,6 +461,246 @@ No signature changes, so nothing stops compiling. Each returns a different value
 
 These are listed as breaks because a caller's output changes, not because their code stops
 compiling. There was no correct behaviour to depend on in any of the four.
+
+##### New in v4.0.0-beta.5: every break, and what a caller does
+
+Breaks recorded after beta.4. The table above is unchanged. Each row links to its section.
+
+| Break | Kind | Detail |
+|---|---|---|
+| `Shape.FaceFaceExtrema`: `face1UV`, `face2UV`, `pointOnFace1` and `pointOnFace2` become Optional, and `isParallel` is added | compile error | [#2249](#v400-three-results-stop-reporting-zeros-as-witness-points-2249-2251-2993) |
+| `Shape.CommonPart.point` becomes Optional, and its value changes | compile error, and a different value | [#2251](#v400-three-results-stop-reporting-zeros-as-witness-points-2249-2251-2993) |
+| `ExtremaResult.point1` and `.point2` become Optional, and `isParallel` is added | compile error | [#2993](#v400-three-results-stop-reporting-zeros-as-witness-points-2249-2251-2993) |
+| `Shape.CommonPart.param1Range` and `param2Range` change value for a `.vertex` part | silent value change | [#3012](#v400-commonpartparam1range-and-param2range-keep-the-kernels-ranges-for-a-vertex-part-3012) |
+| `Shape.isSubShapeValid(type:at:)` returns `Bool?` | compile error | [#2755](#v400-shapeissubshapevalidtypeat-can-say-it-did-not-check-2755) |
+| `Shape.computeNormals()` returns `Int?` | compile error where the result is a condition | [#2905](#v400-shapecomputenormals-reports-what-it-computed-2905) |
+| `GeomDirection.init(x:y:z:)` and `init(simd:)` are failable | compile error | [#2331](#v400-geomdirection-refuses-a-vector-it-cannot-normalise-2331) |
+| `MathMatrix.value(row:col:)`, `MathMatrix.determinant`, `IntfTool.beginParam(segment:)` and `endParam(segment:)` become Optional | compile error | [#2857, #2860](#v400-four-accessors-gain-a-refusal-channel-2857-2860) |
+| `EdgeAnalysis.checkSameParameter` and `checkVertexTolerance` rename a tuple element | compile error for a caller reading the label | [#2901](#v400-two-tuple-labels-were-the-opposite-of-what-they-said-2901) |
+| `Shape.BeanFaceIntersection.minSquareDistance` becomes Optional, and the ranges change | compile error, and a different result | [#2943](#v400-beanfaceintersectionminsquaredistance-is-nil-when-nothing-was-measured-2943) |
+| `Document.layerCount` and `layerNames` read the real layer table | silent value change | [#2413](#v400-documentlayercount-and-layernames-read-the-real-layer-table-2413) |
+| Bridge functions change signature or nullability | compile error, direct callers of `OCCTBridge` only | [#2331, #2755, #2857, #2860, #2905, #2943](#v400-the-bridge-signatures-that-moved-with-them-2331-2755-2857-2860-2905-2943) |
+
+##### v4.0.0: three results stop reporting zeros as witness points (#2249, #2251, #2993)
+
+Three result types carried values that read as measurements and were never computed. The fields are
+now `Optional`, and `nil` is the kernel saying it computed none. The changes are PR #2805
+(`FaceFaceExtrema` and `CommonPart`) and PR #3020 (`ExtremaResult`).
+
+- **`Shape.FaceFaceExtrema`** (#2249): `face1UV`, `face2UV`, `pointOnFace1` and `pointOnFace2` become
+  optional and the struct gains `isParallel`. `BRepExtrema_ExtFF` appends a square distance and no
+  points when the two surfaces are parallel, and the bridge handed the half-written struct over, so
+  the four fields arrived as zeros beside a real `distance`. `distance` is kept, because OCCT's own
+  callers read it, and on that branch it is the distance between the underlying surfaces rather than
+  between the trimmed faces; `minDistance(to:)` answers for the trimmed region.
+- **`Shape.CommonPart.point`** (#2251) becomes `SIMD3<Double>?`, **and its value changes.** It was the
+  midpoint of `IntTools_CommonPrt::BoundingPoints`, which only `IntTools_EdgeFace` ever sets, so every
+  part from `edgeEdgeIntersection(with:)` reported `(0, 0, 0)` and an edge part from
+  `edgeFaceIntersection(with:)` reported the chord midpoint, which for a semicircular overlap is the
+  circle's centre. It is now the first edge's curve at the representative parameter of `param1Range`,
+  a point on the intersection. The `nil` case is a part with no first edge, which neither entry point
+  produces today.
+- **`ExtremaResult`** (#2993): `point1` and `point2` become `SIMD3<Double>?` and the struct gains
+  `isParallel`, on every entry point of `ExtremaElC`, `ExtremaElCS`, `ExtremaPointCurve` and
+  `ExtremaPointSurface` that returns it. `Extrema_ExtElC`'s parallel branches set a distance and no
+  points, and the zeros that stood in for them were, for a line along a circle's own axis, the
+  circle's centre, a point a radius away from every point of the circle. `squareDistance` is real on
+  every branch.
+
+**Migration.** Bind the optionals. `nil` means "no witness point for this pair", which the old zeros
+were standing in for, and `isParallel` says why:
+
+```swift
+// before
+let p = result.point1
+
+// after, where the pair cannot be parallel and a nil should stop the program
+let p = result.point1!
+
+// after, where it can
+if let p = result.point1 { … } else if result.isParallel { /* the gap is result.squareDistance */ }
+```
+
+A caller that worked around the zeros must remove the workaround. The C structs behind these gain
+matching fields, listed under the bridge signatures below.
+
+##### v4.0.0: `CommonPart.param1Range` and `param2Range` keep the kernel's ranges for a vertex part (#3012)
+
+PR #3043. On a `.vertex` part the bridge overwrote `IntTools_CommonPrt::Range1()` and `Ranges2()(1)` with
+`VertexParameter1()` and `VertexParameter2()`, so `param1Range` and `param2Range` reported `(t, t)`
+whatever the kernel held. A transversal crossing lost the tolerance window OCCT puts round it, and a
+tangential overlap that `IntTools_EdgeEdge::MergeSolutions` types `.vertex` (#2994) lost the overlap
+itself: two arcs of one circle sharing a quarter of it reported a single point, `(3pi/4, 3pi/4)`, where
+the kernel held `(pi/2, pi)`. **No signature changes and the values do.** Both ranges are now the
+kernel's own, for either part type, and the window is not small: 3e-7 across for two lines at right
+angles, 3.4e-5 at one degree, 3.4e-3 at one hundredth of a degree.
+
+`CommonPart` also gains `vertexParameter1` and `vertexParameter2`, the parameters at which OCCT places
+the new vertex of a `.vertex` part, resolved the way `BOPAlgo_PaveFiller::PerformEE` and `PerformEF`
+resolve them. They are `nil` for an `.edge` part, which OCCT never gives one, and always `nil` for the
+second edge of an edge-face part, where `param2Range` stays the documented `(0, 0)` (#1399). `point`
+follows them, and moves by 8.7e-4 along the curve in one measured corner, a tangent contact at a
+closed edge's seam.
+
+**Migration.** A caller that read `param1Range.first` as the crossing parameter of a `.vertex` part
+reads `vertexParameter1` instead:
+
+```swift
+// before
+let t = part.param1Range.first
+
+// after
+if part.type == .vertex, let t = part.vertexParameter1 { … }
+```
+
+`param1Range` is now the true overlap, or the crossing window, under either part type, which is what
+#2994's documentation already claimed.
+
+##### v4.0.0: `Shape.isSubShapeValid(type:at:)` can say it did not check (#2755)
+
+The return type changes from `Bool` to `Bool?` (PR #2837). `BRepCheck_Analyzer::Perform()` walks the
+whole parent shape whichever sub-shape the caller asks after, so a parent carrying a shape the
+analyzer cannot survive, a face edge with no valid 3D curve and a pcurve (#2746) or a face with no
+surface that carries a wire (#2789), has to be refused before the analyzer is built. The old
+`false` for that refusal claimed the sub-shape was invalid, which nothing had measured. `nil` is that
+case and only that case; an index that names no sub-shape of that type still answers `false`.
+
+**Migration.** `if shape.isSubShapeValid(type: .edge, at: 0)` stops compiling. For a caller that wanted
+a verdict and does not care about the distinction it is one comparison, `== true`, which is what the
+call sites in this repository's own tests became.
+
+##### v4.0.0: `Shape.computeNormals()` reports what it computed (#2905)
+
+The return type changes from `Bool` to `Int?` (PR #2920) and `@discardableResult` stays. The `Bool`
+was `true` whenever any face carried a triangulation, whether or not the call computed anything, and
+since #2337 every face the package meshes already carries normals, so it was unconditionally `true` on
+any shape a caller could reach it with. The `Int` is the number of faces whose triangulation gained
+normals in this call: `0` is a success that found nothing to do, and `nil` is an empty shape or an OCCT
+failure.
+
+**Migration.** A call whose result is discarded compiles unchanged. A caller using the result as a
+condition stops compiling: `if shape.computeNormals()` becomes `if let n = shape.computeNormals(), n > 0`
+to ask "did it write anything", or `shape.computeNormals() != nil` to ask "did it run". The old `true`
+answered neither.
+
+##### v4.0.0: `GeomDirection` refuses a vector it cannot normalise (#2331)
+
+`GeomDirection.init(x:y:z:)` and `init(simd:)` become failable (PR #2799). A zero vector used to
+succeed and hand back `(nan, nan, nan)`, because `Geom_Direction`'s zero-length check is an
+out-of-line kernel member that the Release kernel compiles away. The refusal and both thresholds are
+OCCT's own, from its STEP importer (`StepToGeom::MakeDirection`): a component at or beyond `1e100`,
+which takes in `NaN` and infinity, or a squared magnitude at or below `gp::Resolution()` squared.
+`setCoordinates(x:y:z:)` now returns a `@discardableResult Bool` and leaves the direction untouched
+when it refuses, so existing calls compile unchanged, and `crossed(with:)` on a parallel pair returns
+the `nil` it has always been documented to return.
+
+**Migration.** Every construction site unwraps:
+
+```swift
+// before
+let d = GeomDirection(x: 1, y: 0, z: 0)
+
+// after
+guard let d = GeomDirection(x: 1, y: 0, z: 0) else { return }
+```
+
+No correct behaviour is removed: the value it used to return for a zero vector was `NaN`. One input
+that used to give a usable direction is refused as well, a component at or beyond `1e100`, because
+OCCT's own importer refuses it.
+
+##### v4.0.0: four accessors gain a refusal channel (#2857, #2860)
+
+PR #2871. Each returned a bare `Double` that could not say "out of range" or "no answer", and every
+`Double` in range is a legitimate value, so no sentinel could have been added without lying.
+
+- `MathMatrix.value(row:col:)` returns `Double?`. An out-of-range 1-based index was an uncatchable
+  SIGABRT.
+- `MathMatrix.determinant` returns `Double?`. A non-square matrix has no determinant, and the old
+  answers were a confident `-1` for a 3x2 and `nan` with the heap corrupted behind it for a 100x1. A
+  0x0 is refused too, because OCCT reports its determinant as 1.
+- `IntfTool.beginParam(segment:)` and `endParam(segment:)` return `Double?`, `nil` outside
+  `1...segmentCount`. On a one-segment clip, `segment: 7` returned segment 1's end parameter as the
+  begin parameter of a segment that does not exist, and a large index was a SIGBUS or SIGSEGV.
+
+**Migration.** `m.value(row: r, col: c)` becomes `m.value(row: r, col: c) ?? <your fallback>`, or an
+`if let`, and the others take the same shape. There is no non-breaking form: `0`, the bridge's
+old refusal for a null handle, is also a legitimate curve parameter, which was the defect, and #640
+settled the same argument for `MathGauss.determinant`.
+
+##### v4.0.0: two tuple labels were the opposite of what they said (#2901)
+
+`EdgeAnalysis.checkSameParameter(_:)` returned `(ok:, maxDeviation:)` and
+`EdgeAnalysis.checkVertexTolerance(_:face:)` returned `(ok:, toler1:, toler2:)` (PR #2925). In both,
+`true` meant a problem was found, which is `ShapeAnalysis_Edge`'s own convention (its methods end in
+`return Status(ShapeExtend_DONE)`, and `DONE` on a `ShapeAnalysis_*` class means a defect was
+detected), so `ok` read as the reverse of the truth. The elements are now `problemFound` and
+`needsIncrease`. **No value changes.**
+
+**Migration.** Positional destructuring compiles unchanged. A caller reading the label stops
+compiling, and was reading it backwards, so the corrected condition is the same expression under the
+new name:
+
+```swift
+// before
+let result = EdgeAnalysis.checkSameParameter(edge)
+if result.ok { … }              // meant "a problem was found"
+
+// after
+let result = EdgeAnalysis.checkSameParameter(edge)
+if result.problemFound { … }    // and checkVertexTolerance's element is `needsIncrease`
+```
+
+##### v4.0.0: `BeanFaceIntersection.minSquareDistance` is `nil` when nothing was measured (#2943)
+
+`Shape.BeanFaceIntersection.minSquareDistance` becomes `Double?` (PR #2971).
+`IntTools_BeanFaceIntersector` initialises its minimum to `RealLast()` and leaves it there on every
+path that never evaluates a distance, which on the pinned kernel is every path, so callers were handed
+`1.797e308` as a measurement. **The ranges `Shape.beanFaceIntersect(edge:face:)` returns also change,
+for every input:** the search covered an empty interval, and now covers the edge's own parameter range,
+which both of OCCT's own callers pass.
+
+**Migration.** Bind the distance; `nil` is what `1.797e308` already meant. The ranges have nothing to
+migrate to, because the old ones came from searching nothing.
+
+##### v4.0.0: `Document.layerCount` and `layerNames` read the real layer table (#2413)
+
+No signature moves, and the answer changes for every document (PR #2799). Both read a layer tool
+attached to the document's `Main()` label, which enumerates the XCAF tool labels as though they were
+layers, while the write-side functions use the layer table at `0:1:3`. So both were wrong for every
+document: a fresh one reported `9` layers named after tool labels, a layer that had been set
+never appeared, and the count depended on which tool labels happened to exist. They now read the table
+the write side writes: `0` and `[]` for a fresh document, and the real layers for one that has them.
+
+**Migration.** There is none, because the old list held no layers and code reading it was reading
+something else. A caller that branched on `layerCount > 0` or displayed `layerNames` sees different
+behaviour with no compiler warning, which is why this is listed as a break.
+
+##### v4.0.0: the bridge signatures that moved with them (#2331, #2755, #2857, #2860, #2905, #2943)
+
+`OCCTBridge` is a target and not a product, and it is reachable all the same (`import OCCTBridge`
+compiles in a consumer, #967), so a C or Swift caller of the bridge directly sees these. **None of the
+PRs that made them said so**: each states its Swift half only, and #2837 mentions
+`OCCTBRepCheckSubShapeValid` alone. They were found by comparing the C headers at `v4.0.0-beta.4` and
+at the release commit.
+
+| Function | Was | Is |
+|---|---|---|
+| `OCCTGeomDirectionCreate` | returns a non-null `OCCTGeomDirectionRef` | returns `_Nullable`, null for a vector it cannot normalise |
+| `OCCTGeomDirectionSetCoord` | `void` | `bool`, `false` when it refused |
+| `OCCTBRepCheckSubShapeValid` | `bool` | `int32_t`, an `OCCTSubShapeValidity`: `1` valid, `0` invalid, `-1` not checked |
+| `OCCTBRepLibComputeNormals` | `bool` | `int32_t`, the faces that gained normals, `-1` on failure; **a C caller testing it as a condition now reads `-1` as true** |
+| `OCCTIntToolsBeanFaceIntersect` | five parameters | gains a sixth, `bool* outHasMinSquareDist` |
+| `OCCTMathMatrixGetValue`, `OCCTMathMatrixDeterminant` | return `double` | return `bool`, the value through a trailing `double*` |
+| `OCCTMathMatrixSetValue`, `OCCTMathMatrixTranspose` | `void` | `bool` |
+| `OCCTIntfToolBeginParam`, `OCCTIntfToolEndParam` | return `double` | return `bool`, the value through a trailing `double*` |
+
+`OCCTCommonPart` gains `hasPoint`, `vertexParam1`, `vertexParam2`, `hasVertexParam1` and
+`hasVertexParam2`, and `OCCTFaceFaceExtremaResult` and `OCCTExtremaElResult` gain `hasWitnessPoints`
+and `isParallel`. That is additive for a reader of the struct, and a Swift caller that builds one
+with its imported memberwise initialiser gains parameters.
+
+**Migration.** Read the new return and the out-parameter. The Swift wrappers in `Sources/OCCTSwift` are
+the worked examples.
 
 #### v3.0.0
 
@@ -884,7 +1286,7 @@ later entry in the same request silently overwrote (#633).
 This does **not** move the "thirteen recorded exceptions" count above, checked and confirmed
 unchanged by this entry, for the same reason #639's did not: no existing method's signature or
 behaviour changed. `blendedEdges(_:)` still returns exactly what it always did, for exactly the
-same inputs -- last-wins, silently, on a duplicated edge index -- and a caller who never calls
+same inputs (last-wins, silently, on a duplicated edge index), and a caller who never calls
 `blendedEdgesWithReport(_:)` sees no difference at all. This is the **MINOR**, additive Swift API
 case the quick reference table already names.
 
@@ -893,14 +1295,14 @@ result type, follows #639's own recommendation for this issue and the standing l
 drew from a family of near-identical continuity mappers: one struct, extended, not a parallel
 encoding of the same idea started fresh. It is a purely additive struct change: a `let` property
 with a default is not exposed on Swift's synthesized memberwise init (only a `var` with a default
-is), so `FilletResult` now carries an explicit `public init` with the new field defaulted to `[]`
--- every existing call site (`filletedWithReport(edges:radius:)`,
+is), so `FilletResult` now carries an explicit `public init` with the new field defaulted to `[]`,
+and every existing call site (`filletedWithReport(edges:radius:)`,
 `filletedWithReport(edges:startRadius:endRadius:)`, `filletEvolvingWithReport(_:)`) compiles
 unchanged and reads an empty array for a field none of the three has a duplicate axis to populate.
 
 **The fillet/chamfer first-wins/last-wins asymmetry itself is unchanged and not addressed here.**
 `Scripts/repro/cluster-b-fillet-edge-contract/` measured the wider family as internally consistent
-but split in *opposite* directions (fillet last-wins, chamfer first-wins) -- converging the two onto
+but split in *opposite* directions (fillet last-wins, chamfer first-wins). Converging the two onto
 one direction was considered and rejected for the same reason #639 rejected reject-over-skip:
 it would change what an existing call returns for every input that currently succeeds, which is a
 bigger and more disruptive decision than this issue's own defect (a silent discard with no
@@ -966,7 +1368,7 @@ Drawn from the v1.0 cohort's actual history:
 | OCCTSwift v1.0.1 | PATCH | `NodeKind.product` raw-value fix, `rootNodes` had been silently returning `[]` for assembly graphs. No API change. |
 | OCCTSwift v1.0.2 | (would have been MINOR going forward) | Added `unionWithFullHistory` / `subtractedWithFullHistory` / `intersectionWithFullHistory` / `splitWithFullHistory` + `ShapeHistoryRef` class + `ShapeHistoryRecord` struct. **Additive, should have bumped minor under this policy.** Tagged as patch before this policy was formalized. |
 | OCCTSwift v1.0.3 | (would have been MINOR going forward) | Tier 2 modification ops + `BuildResult.histories` field. **Additive, should have bumped minor.** |
-| OCCTSwift v1.0.4 | (borderline; PATCH was acceptable) | Wired `applyFillet` / `applyChamfer` through `*WithFullHistory`; `BuildResult.histories[id]` now populates for fillet / chamfer specs. The public surface didn't change, only the *behavior* of an existing field changed (more ids show up in the map than before). PATCH was defensible; under a strict reading, MINOR would have been more honest. |
+| OCCTSwift v1.0.4 | (borderline; PATCH was acceptable) | Wired `applyFillet` / `applyChamfer` through `*WithFullHistory`; `BuildResult.histories[id]` now populates for fillet / chamfer specs. The public surface didn't change, only the *behavior* of an existing field changed (more ids show up in the map than before). PATCH was defensible; under a strict reading, MINOR would have been more accurate. |
 | OCCTSwiftTools v1.0.1 | (would have been MINOR going forward) | Added `PointConverter.pointsToBody`, a new public type and method. Tagged as patch. |
 | OCCTSwiftTools v1.0.2 | PATCH | Bumped `OCCTSwiftViewport` floor `0.55.0` → `1.0.1` and `OCCTSwift` floor `1.0.1` → `1.0.3`. Pure dep-floor bump. |
 | OCCTMCP v1.1.1 | PATCH | Fixed a hard-stale Viewport pin (`from: "0.55.2"` couldn't resolve to 1.0.x). |
