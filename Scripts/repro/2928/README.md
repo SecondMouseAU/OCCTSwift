@@ -93,7 +93,7 @@ was running the thing.
   and written the reason at both call sites; the same change lands in `OCCTIOTests` now that those
   files run.
 
-And one that is a property of the harness rather than of the platform: **seven `OCCTStressTests`
+And one that is a property of the harness rather than of the platform: **six `OCCTStressTests`
 files read a `.brep` out of `Fixtures/` by `#filePath`**, which is an absolute host path baked in at
 compile time, and the module's filesystem is in memory with `/tmp` and `/work` as its only preopens.
 56 recorded issues, every one `.importFailed`, no second cause. #3026 owns it.
