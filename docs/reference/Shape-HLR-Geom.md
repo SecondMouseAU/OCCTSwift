@@ -1518,21 +1518,21 @@ public func volumeInertia(planeNormal: SIMD3<Double>, planeDistance: Double = 0)
   the measurement and `Scripts/repro/2827/patched-kernel-transcript.txt` the transcript, and the
   patch is recorded in
   [`okf/references/carried-occt-patches.md`](../../okf/references/carried-occt-patches.md).
-- **And once it was a measurement, it was about the wrong plane (#2873).** The kernel's by-plane
-  integrand consumes `theCoeff[0..3]` as the plane `planeNormal . X = theCoeff[3]` and **subtracts**
-  that fourth entry (`BRepGProp_Gauss.cxx:343`, and `BRepGProp_UFunction.cxx:99` for the Kronrod
-  path). The conversion that fills it from a `gp_Pln` feeds in `gp_Pln::Coefficients`' `d`, which
-  belongs to the `planeNormal . X + d = 0` form (`BRepGProp_Vinert.cxx:279`,
-  `BRepGProp_VinertGK.cxx:219` and `:244`), so the offset arrives inverted and the value is measured
-  about the plane mirrored through the origin. **This bridge function is not handed a `gp_Pln`**, it
-  builds one from `planeNormal` and `planeDistance`, so it builds the mirrored plane and the result
-  is about the plane the caller named. Measured before it was written, in
+- **And once it was a measurement, it was about the wrong plane (#2873), until `v4.0.0-kernel.4`.**
+  The kernel's by-plane integrand consumes `theCoeff[0..3]` as the plane
+  `planeNormal . X = theCoeff[3]` and **subtracts** that fourth entry (`BRepGProp_Gauss.cxx:343`, and
+  `BRepGProp_UFunction.cxx:99` for the Kronrod path). The conversion that fills it from a `gp_Pln`
+  fed in `gp_Pln::Coefficients`' `d`, which belongs to the `planeNormal . X + d = 0` form
+  (`BRepGProp_Vinert.cxx:279`, `BRepGProp_VinertGK.cxx:219` and `:244`), so the offset arrived
+  inverted and the value was measured about the plane mirrored through the origin. Carried patch
+  `0048` corrects the conversion at all five sites and is pinned from `v4.0.0-kernel.4`. This bridge
+  function used to build the mirrored plane to compensate, and no longer does (#3015), so
+  `planeDistance` is an ordinary geometric offset. Measured before the bridge was changed, in
   `Scripts/repro/2873/probe.mm` and `Scripts/repro/2873/transcript.txt`: on a cap at z = 2 the
-  as-passed weights are 2, 3, -98, 7 for planes at z = 0, 1, -100, 5 where the geometric distances
-  are 2, 1, 102, -3, both of OCCT's by-plane implementations print the same numbers, and
-  `SetLocation` moves none of them. The one-line kernel fix rides with `0043`'s upstream submission;
-  when it lands, the bridge's mirror comes out, and `BRepGPropVinertTests`' two sign assertions are
-  what fail if it does not.
+  as-passed weights were 2, 3, -98, 7 for planes at z = 0, 1, -100, 5 where the geometric distances
+  are 2, 1, 102, -3, both of OCCT's by-plane implementations printed the same numbers, and
+  `SetLocation` moved none of them. `BRepGPropVinertTests`' two sign assertions fail if the mirror is
+  ever put back.
 - **Example:**
   ```swift
   let holed = Shape.box(width: 20, height: 20, depth: 2)!
