@@ -27,6 +27,10 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 - **#3033.** A seam diagonal to a flange's own axes had no run at all. An upright narrower than the chamfer edge it stood on threw `BuildError.filletFailed` when the bend was concave, and when it was convex the builder cut the prism to the *from* flange's whole edge whatever the other flange covered, so the two declaration orders disagreed (+22.976693 and +18.849556 over the closed form). The run is now read from the two flanges' profile edges that lie on the seam line, which needs no flange split because the fused solid already holds the seam as separate edges at the contact boundary, and both cases build to their closed forms. This is the "support it" option in the issue, chosen over refusing by name because refusing needs the same quantity and would have fixed less; it adds no `BuildError` case.
 - Eight harness fixtures with a declared defect model (`swift run Harnesses 2972-sheetmetal-volumes`) and nine tests; the measurement, the before and after and the injection sweep are in `Scripts/repro/3019-3033-sheetmetal-seam-extent/`. A separate limitation found on the way, a stepped concave bend returning `isValid == false`, is #3045 and is not changed here.
 
+### Geom2d lines and conics tests pin derived values instead of a type or a count (#766)
+
+Eight Geom2d test files (`Geom2dLineTests`, `GccAnaCirc2d3TanTests`, `WireFromCurve2DOnPlaneTests`, `Geom2dEllipseTests`, `Geom2dParabolaTests`, `GccAnaBisectorTests`, `Issue1050BisectorDomainTests`, `MakeEdge2dExtensionsTests`) now assert the values the kernel returns, derived from the geometry where it can be, with controls on the refusal tests. Against the versions they replace, 159 of 198 injected defects went unnoticed and 24 of 61 tests caught nothing; now 190 are caught and no test catches nothing. Kernel defects found on the way are filed as #3039, #3042 and #3044.
+
 ### Every per-domain test suite now runs for wasm, and the five whole-target exclusions are gone (#2928)
 
 `Scripts/run-wasm-tests.sh` runs all 18 per-domain targets for `wasm32-unknown-wasip1`, up from 13,
