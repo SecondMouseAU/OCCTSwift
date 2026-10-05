@@ -82,6 +82,7 @@ jobs:
     timeout-minutes: 5
     outputs:
       build: ${{ steps.classify.outputs.build }}
+      code: ${{ steps.classify.outputs.code }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -99,7 +100,8 @@ jobs:
           if [ -z "$base" ] || [ "$base" = "0000000000000000000000000000000000000000" ] \
              || ! git cat-file -e "$base^{commit}" 2>/dev/null; then
             echo "no usable base ref, running the full set"
-            echo "build=true" >> "$GITHUB_OUTPUT"; exit 0
+            echo "build=true" >> "$GITHUB_OUTPUT"
+            echo "code=true" >> "$GITHUB_OUTPUT"; exit 0
           fi
           changed=$(git diff --name-only "$base" "${{ github.sha }}")
           echo "$changed" | sed 's/^/  /'
@@ -110,6 +112,24 @@ jobs:
             echo "build=false" >> "$GITHUB_OUTPUT"
           else
             echo "build=true" >> "$GITHUB_OUTPUT"
+          fi
+          # `code` is the wider skip: code-structure, code-style and wasm also ignore docs/**, which
+          # holds Swift snippets only build-and-test compiles. Their old workflow-level `paths-ignore`
+          # was exactly this list (docs/**, okf/**, root *.md, plus the issue and PR templates wasm
+          # named), and a `paths-ignore` cannot be kept now that they are called from here.
+          #
+          # The filter is "prose only" and NOT "run only when something wasm or style related changed",
+          # and that is deliberate. These jobs compile or lint Sources/ and Tests/, so a change to
+          # either can break them without touching a file named for them. On 2026-10-02 two tests added
+          # to main broke the wasm build with `cannot find 'simd_distance_squared' in scope`, because the
+          # WASI `simd` stand-in covers what the package measurably uses and a new test reached past it.
+          # Under a narrower filter those PRs would have been green and main red for wasm after merge.
+          code=$(echo "$changed" | grep -vE '^okf/|^docs/|^[^/]+\.md$|^\.github/ISSUE_TEMPLATE/|^\.github/PULL_REQUEST_TEMPLATE\.md$' || true)
+          if [ -z "$code" ]; then
+            echo "nothing compiled or linted changes, skipping code-structure, code-style and wasm"
+            echo "code=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "code=true" >> "$GITHUB_OUTPUT"
           fi
 
   gate-scripts:
@@ -641,3 +661,42 @@ jobs:
           xcodebuild build \
             -scheme OCCTSwift \
             -destination 'generic/platform=iOS Simulator'
+
+  # ---- The order the rest of the checks run in -------------------------------------------------
+  #
+  #   gate-scripts           the one required check; no `needs`, so it still reports in about a minute
+  #   changes                a few seconds, decides which of the below are worth their time
+  #   code-structure         ubuntu, cheap
+  #   code-style             macOS; after code-structure
+  #   build-and-test, ios    macOS builds; as before, they wait only for `changes`
+  #   wasm                   LAST: after code-style and both macOS builds
+  #
+  # Why this file and not three workflows: GitHub orders jobs only within one workflow, and
+  # code-structure.yml, code-style.yml and wasm.yml used to be separate workflows that all started at
+  # once. They are reusable workflows now (`on: workflow_call`) called from here, so `needs` can order
+  # them. Their file names and every step in them are unchanged.
+  #
+  # What the order is for: the cheap, fast-failing checks go first so a style or structure failure is
+  # reported in minutes, and the runner-expensive jobs (the 25-minute wasm build in particular) are
+  # last. Each of these runs even when an earlier one failed (`!cancelled()`), because a PR with a
+  # style failure should still learn whether it builds; only a cancelled run (a newer push) stops them.
+  # The cost is real and was chosen: wasm now runs after the macOS builds instead of beside them, so a
+  # PR's last check lands later by roughly wasm's own runtime.
+  #
+  # Check names changed. A called workflow's jobs are published as "<caller job> / <called job>", so
+  # `code-style` is now "code-style / code-style" and the wasm job "wasm / wasm build + spike". None of
+  # them is a required check (only `gate-scripts` is, and it is unchanged), so no rule needed editing.
+  code-structure:
+    needs: changes
+    if: ${{ !cancelled() && needs.changes.outputs.code == 'true' }}
+    uses: ./.github/workflows/code-structure.yml
+
+  code-style:
+    needs: [changes, code-structure]
+    if: ${{ !cancelled() && needs.changes.outputs.code == 'true' }}
+    uses: ./.github/workflows/code-style.yml
+
+  wasm:
+    needs: [changes, code-style, build-and-test, ios-simulator-build]
+    if: ${{ !cancelled() && needs.changes.outputs.code == 'true' }}
+    uses: ./.github/workflows/wasm.yml
