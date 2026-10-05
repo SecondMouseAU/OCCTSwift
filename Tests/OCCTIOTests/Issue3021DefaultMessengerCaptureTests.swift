@@ -205,29 +205,36 @@ struct Issue3021DefaultMessengerCaptureTests {
         }
     }
 
-    @Test(
-        "an unlocked read of the capture state sees a sibling's capture and a locked one does not")
-    func captureStateIsOnlyExactUnderTheLock() {
-        let started = DispatchSemaphore(value: 0)
-        let finished = DispatchSemaphore(value: 0)
-        DispatchQueue.global().async {
-            _ = capturingOCCTOutput {
-                started.signal()
-                Thread.sleep(forTimeInterval: 0.4)
+    // Not built for WASI: it needs a second thread to be mid-capture while this one reads, and the
+    // WASI toolchain has neither `DispatchQueue` nor `DispatchSemaphore`. It is also moot there, since
+    // a single-threaded process has no sibling capture to see. #3030 began building every domain's
+    // tests for wasm and this was the first file that failed to compile.
+    #if !os(WASI)
+        @Test(
+            "an unlocked read of the capture state sees a sibling's capture and a locked one does not"
+        )
+        func captureStateIsOnlyExactUnderTheLock() {
+            let started = DispatchSemaphore(value: 0)
+            let finished = DispatchSemaphore(value: 0)
+            DispatchQueue.global().async {
+                _ = capturingOCCTOutput {
+                    started.signal()
+                    Thread.sleep(forTimeInterval: 0.4)
+                }
+                finished.signal()
             }
-            finished.signal()
+            started.wait()
+
+            // The sibling is now mid-capture. A raw read is what the other tests in this suite used to
+            // do, and it sees the sibling's capture as though it were this test's own state.
+            let raw = Messenger.isDefaultOutputCaptured
+            // A locked read waits for the sibling to finish, so it sees the messenger at rest.
+            let locked = defaultMessengerState()
+            finished.wait()
+
+            #expect(raw, "an unlocked read must see the sibling's capture, or the lock is unneeded")
+            #expect(!locked.captured, "a locked read must wait out the sibling and see no capture")
+            #expect(locked.printers >= 1, "the messenger at rest carries its own printer")
         }
-        started.wait()
-
-        // The sibling is now mid-capture. A raw read is what the other tests in this suite used to
-        // do, and it sees the sibling's capture as though it were this test's own state.
-        let raw = Messenger.isDefaultOutputCaptured
-        // A locked read waits for the sibling to finish, so it sees the messenger at rest.
-        let locked = defaultMessengerState()
-        finished.wait()
-
-        #expect(raw, "an unlocked read must see the sibling's capture, or the lock is unneeded")
-        #expect(!locked.captured, "a locked read must wait out the sibling and see no capture")
-        #expect(locked.printers >= 1, "the messenger at rest carries its own printer")
-    }
+    #endif
 }

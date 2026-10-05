@@ -25,6 +25,35 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 Eight Geom2d test files (`Geom2dLineTests`, `GccAnaCirc2d3TanTests`, `WireFromCurve2DOnPlaneTests`, `Geom2dEllipseTests`, `Geom2dParabolaTests`, `GccAnaBisectorTests`, `Issue1050BisectorDomainTests`, `MakeEdge2dExtensionsTests`) now assert the values the kernel returns, derived from the geometry where it can be, with controls on the refusal tests. Against the versions they replace, 159 of 198 injected defects went unnoticed and 24 of 61 tests caught nothing; now 190 are caught and no test catches nothing. Kernel defects found on the way are filed as #3039, #3042 and #3044.
 
+### Every per-domain test suite now runs for wasm, and the five whole-target exclusions are gone (#2928)
+
+`Scripts/run-wasm-tests.sh` runs all 18 per-domain targets for `wasm32-unknown-wasip1`, up from 13,
+and `Package.swift`'s whole-target exclusion list is empty. Two of the five reasons #2793 recorded
+were not true of the platform, measured in `Scripts/repro/2928/`: `NSLock` and `ProcessInfo` compile
+for the triple, so `OCCTIOTests` was 46 files out for a type that was there; and `OCCTThreadTests` is
+a suite about screw threads, of which six files of 28 are about CPU threads.
+
+Eighteen individual files remain excluded, each for a property of the platform or of the harness: two
+are about `isSelfIntersecting(hardTimeout:)`, which cannot exist without a second thread (#2760); nine
+are concurrency detectors that would pass having measured nothing on a single-threaded target; six
+read a `.brep` fixture out of the source tree, which the module cannot see (#3026); one compares an
+OCCT reading against host-OS facilities wasi-libc does not have. Four of those were lifted into files
+of their own so that the unrelated tests around them could run.
+
+Six files that could not express an input past `Int32.max` are back, each deriving the case from
+`Int.bitWidth` rather than naming it unconditionally. The sixth was on no list, because the target
+holding it had never run. No Apple behaviour changes.
+
+`Scripts/wasm-test-known-failures.txt` grows by nine, under #3025 and the existing libm-baseline
+block. `Scripts/repro/2928/trait-measurement.md` records the measurement the issue asked for first: a
+disabling `.enabled(if:)` trait does suppress evaluation of a `@Test(arguments:)` list, of a
+`static let` and of a body, and an enabled argument list is evaluated during test discovery, so an
+overflow there ends the module before any test reports.
+
+### A degenerate `CoordinateSystem3D` is refused on WebAssembly, not silently used (#2891)
+
+`CoordinateSystem3D` built with `direction` parallel to `xDirection` has no X direction, and OCCT refuses it. On `wasm32-unknown-wasip1` that refusal did not happen: `mirrored(about:)`, `translated(by:)` and the initialiser itself used the degenerate axis and returned a plausible wrong answer, where every Apple platform reports the documented fallback of all-zero directions and an unmoved point. The bridge now refuses the parallel pair itself, at OCCT's own tolerance, so all platforms agree. No behaviour changes on any Apple platform.
+
 ### The BRepGraph construction-axis, history readback, recipe-resolver and absorb tests pin derived values instead of "it resolved" (#2983, #766, #3037, #3038)
 
 Four suites the #766 certification recorded Red and never rewrote, `ConstructionAxisTests`, `BRepGraphHistoryReadbackTests`, `TopologyRefResolverTests` and `GraphHistoryAbsorbTests`, are rewritten against `main`'s own kernel. All 48 of their tests now assert exact values derived from the geometry or from OCCT's own header and source, 9 tests are added, and the weak-assertion census reads 0 SEVERE and 0 ESCAPABLE where it read 4 and 44. Against 125 injected defects the old tests left 56 unnoticed and the new ones leave none. Four fixtures that had stopped meaning their name are replaced: the cylinder and torus origin tests asked at a vertex whose height equals the surface's own origin, the "helical edge" was one piece of a face the builder had shredded into 622 edges, so the fixture never contained a helix, and the tolerance test could not see the line that passes the edge's tolerance in. No library code changes.
