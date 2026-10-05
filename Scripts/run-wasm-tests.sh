@@ -3,9 +3,9 @@
 # Build and run the per-domain test suites for wasm32-unknown-wasip1 (#2793).
 #
 # Phase 0's GO carried four conditions and this closes the third: before this script the only thing
-# that ran for wasm was #2052's six spike calls, which is a smoke test and not coverage. 13 of the
-# 18 domain targets run here; `Package.swift` documents which five cannot exist on the platform and
-# why, and which individual files are excluded from the 13.
+# that ran for wasm was #2052's six spike calls, which is a smoke test and not coverage. EVERY
+# per-domain target runs here, since #2928 took `Package.swift`'s whole-target exclusion list to
+# empty; that file documents the individual files still excluded and why each one is.
 #
 #   ./Scripts/run-wasm-tests.sh                  build, then run every suite
 #   ./Scripts/run-wasm-tests.sh list             print the suites that would run
@@ -176,7 +176,15 @@ bin_path() {
 #
 # `timeout` is coreutils and is not on a stock macOS; `gtimeout` is there with Homebrew coreutils.
 # Neither is required: the fallback is a watchdog subshell, and a suite killed that way exits 137.
-WASM_TEST_TIMEOUT="${WASM_TEST_TIMEOUT:-900}"
+#
+# RAISED FROM 900 BY #2928, which brought the remaining five targets in, and the raise is necessary
+# rather than cautious. `OCCTThreadTests` is now the slowest suite by a wide margin: measured 8
+# minutes 34 seconds on an idle machine and 16 MINUTES 52 SECONDS on the same machine under load,
+# against 224 seconds for the whole 13-suite run before it. The loaded figure is past 900 s, so the
+# old cap would have failed that run on the clock rather than on a result. Screw-thread geometry is
+# helical sweeps and booleans, and single tests take 32 and 41 seconds. The whole 18-suite run
+# measured 17 minutes idle and 29 loaded, 6,548 tests either way.
+WASM_TEST_TIMEOUT="${WASM_TEST_TIMEOUT:-1800}"
 
 if command -v timeout >/dev/null 2>&1; then
     with_timeout() { timeout -s KILL "$WASM_TEST_TIMEOUT" "$@"; }

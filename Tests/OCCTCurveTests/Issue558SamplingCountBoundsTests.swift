@@ -40,8 +40,26 @@ struct Issue558SamplingCountBounds {
 
     // `Int32.max + 1`, the first count provably past the bridge's own count type. Not the
     // interesting threshold, anything above ~1e8 is unallocatable, just the cheapest to prove.
-    private static let pastInt32 = Int(Int32.max) + 1
+    //
+    // `nil` WHERE `Int` IS 32 BITS, which is `wasm32-unknown-wasip1`: no `Int` is past `Int32.max`
+    // there, since `Int.max` IS `Int32.max`, so the case cannot be spelled rather than being
+    // skipped. Spelling it anyway is an overflow trap, and a trap ends the whole test module rather
+    // than failing one test, which is why this file used to be excluded from the wasm suites
+    // outright (#2928). Every list below therefore adds it as `pastInt32List` instead of naming it
+    // inline, and nothing about the 64-bit cases changes.
+    private static let pastInt32: Int? = Int.bitWidth > 32 ? Int(Int32.max) + 1 : nil
+    private static let pastInt32List: [Int] = [pastInt32].compactMap { $0 }
     private static let pastCeiling = Sampling.maximumSampleCount + 1
+
+    /// A capacity no platform can serve: `Int32.max + 1` where `Int` is 64 bits, `Int.max` where it
+    /// is 32.
+    ///
+    /// The CAPACITY sites clamp rather than reject, so what they need is a number the ceiling cannot
+    /// honour and not specifically the one past the bridge's `int32_t`. That lets them assert the
+    /// same thing on both platforms, where a ``pastInt32`` they had to skip would leave them
+    /// asserting nothing at all on wasm32. The `Sampling` contract tests above do need the
+    /// `int32_t` boundary itself, and use ``pastInt32``.
+    private static let unservableCapacity: Int = pastInt32 ?? Int.max
 
     private func box() -> Shape { Shape.box(width: 10, height: 10, depth: 10)! }
     private func segment3D() -> Curve3D { Curve3D.segment(from: .zero, to: SIMD3(10, 0, 0))! }
@@ -68,8 +86,8 @@ struct Issue558SamplingCountBounds {
         #expect(Sampling.requested(0) == nil)
         #expect(Sampling.requested(-1) == nil)
         #expect(Sampling.requested(Self.pastCeiling) == nil)  // no clamping: rejected
-        #expect(Sampling.requested(Self.pastInt32) == nil)
         #expect(Sampling.requested(Int.max) == nil)
+        if let pastInt32 = Self.pastInt32 { #expect(Sampling.requested(pastInt32) == nil) }
     }
 
     @Test("a capacity is clamped into 0...ceiling rather than rejected")
@@ -77,8 +95,10 @@ struct Issue558SamplingCountBounds {
         #expect(Sampling.capacity(4096) == 4096)
         #expect(Sampling.capacity(Sampling.maximumSampleCount) == Sampling.maximumSampleCount)
         #expect(Sampling.capacity(Self.pastCeiling) == Sampling.maximumSampleCount)
-        #expect(Sampling.capacity(Self.pastInt32) == Sampling.maximumSampleCount)
         #expect(Sampling.capacity(Int.max) == Sampling.maximumSampleCount)
+        if let pastInt32 = Self.pastInt32 {
+            #expect(Sampling.capacity(pastInt32) == Sampling.maximumSampleCount)
+        }
         #expect(Sampling.capacity(0) == 0)
         #expect(Sampling.capacity(-1) == 0)  // no capacity, not a small one
         #expect(Sampling.capacity(Int.min) == 0)
@@ -95,7 +115,9 @@ struct Issue558SamplingCountBounds {
         #expect(Sampling.gridTotal(3, -1) == nil)
         // Overflow is reported, not trapped on.
         #expect(Sampling.gridTotal(Int.max, Int.max) == nil)
-        #expect(Sampling.gridTotal(Self.pastInt32, Self.pastInt32) == nil)
+        if let pastInt32 = Self.pastInt32 {
+            #expect(Sampling.gridTotal(pastInt32, pastInt32) == nil)
+        }
         // `atLeast: 0` admits an empty grid without admitting a negative one.
         #expect(Sampling.gridTotal(0, 50, atLeast: 0) == 0)
         #expect(Sampling.gridTotal(-1, 50, atLeast: 0) == nil)
@@ -108,7 +130,7 @@ struct Issue558SamplingCountBounds {
         let c = segment3D()
         #expect(c.drawUniform(pointCount: 11).count == 11)
         #expect(c.quasiUniformParameters(count: 8).count == 8)
-        for n in [-1, 0, 1, Self.pastCeiling, Self.pastInt32, Int.max] {
+        for n in [-1, 0, 1, Self.pastCeiling, Int.max] + Self.pastInt32List {
             #expect(c.drawUniform(pointCount: n).count == 0, "drawUniform(\(n))")
             #expect(c.quasiUniformParameters(count: n).count == 0, "quasiUniformParameters(\(n))")
         }
@@ -118,7 +140,7 @@ struct Issue558SamplingCountBounds {
     func curve2DRequests() {
         let c = segment2D()
         #expect(c.drawUniform(pointCount: 11).count == 11)
-        for n in [-1, 0, 1, Self.pastCeiling, Self.pastInt32, Int.max] {
+        for n in [-1, 0, 1, Self.pastCeiling, Int.max] + Self.pastInt32List {
             #expect(c.drawUniform(pointCount: n).count == 0, "drawUniform(\(n))")
         }
     }
@@ -131,7 +153,7 @@ struct Issue558SamplingCountBounds {
         }
         #expect(e.points(count: 7).count == 7)
         #expect(e.quasiUniformParameters(count: 9).count == 9)
-        for n in [-1, 0, 1, Self.pastCeiling, Self.pastInt32, Int.max] {
+        for n in [-1, 0, 1, Self.pastCeiling, Int.max] + Self.pastInt32List {
             #expect(e.points(count: n).count == 0, "points(\(n))")
             #expect(e.quasiUniformParameters(count: n).count == 0, "quasiUniformParameters(\(n))")
         }
@@ -146,7 +168,7 @@ struct Issue558SamplingCountBounds {
             return
         }
         #expect(edge.uniformAbscissa(pointCount: 5)?.count == 5)
-        for n in [-1, 0, 1, Self.pastCeiling, Self.pastInt32, Int.max] {
+        for n in [-1, 0, 1, Self.pastCeiling, Int.max] + Self.pastInt32List {
             #expect(edge.uniformAbscissa(pointCount: n) == nil, "uniformAbscissa(\(n))")
             #expect(
                 edge.uniformAbscissa(pointCount: n, u1: 0, u2: 1) == nil,
@@ -162,7 +184,7 @@ struct Issue558SamplingCountBounds {
         }
         #expect(face.uIsoCurvePoints(u: 0.5, count: 12).count == 12)
         #expect(face.vIsoCurvePoints(v: 0.5, count: 12).count == 12)
-        for n in [-1, 0, Self.pastCeiling, Self.pastInt32, Int.max] {
+        for n in [-1, 0, Self.pastCeiling, Int.max] + Self.pastInt32List {
             #expect(face.uIsoCurvePoints(u: 0.5, count: n).count == 0, "uIsoCurvePoints(\(n))")
             #expect(face.vIsoCurvePoints(v: 0.5, count: n).count == 0, "vIsoCurvePoints(\(n))")
         }
@@ -175,7 +197,7 @@ struct Issue558SamplingCountBounds {
             return
         }
         #expect(graph.sampleEdgeCurve(edgeIndex: 0, count: 6).count == 6)
-        for n in [-1, 0, Self.pastCeiling, Self.pastInt32, Int.max] {
+        for n in [-1, 0, Self.pastCeiling, Int.max] + Self.pastInt32List {
             #expect(
                 graph.sampleEdgeCurve(edgeIndex: 0, count: n).count == 0, "sampleEdgeCurve(\(n))")
         }
@@ -185,7 +207,7 @@ struct Issue558SamplingCountBounds {
     func allEdgePolylinesRequest() {
         let b = box()
         #expect(!b.allEdgePolylines(maxPointsPerEdge: 10).isEmpty)
-        for n in [-1, 0, 1, Self.pastCeiling, Self.pastInt32, Int.max] {
+        for n in [-1, 0, 1, Self.pastCeiling, Int.max] + Self.pastInt32List {
             #expect(b.allEdgePolylines(maxPointsPerEdge: n).count == 0, "allEdgePolylines(\(n))")
         }
     }
@@ -202,7 +224,7 @@ struct Issue558SamplingCountBounds {
         // Exactly the requested count, which is what makes clamping the wrong answer here.
         #expect(ma.drawArc(at: 1, maxPoints: 32).count == 32)
         #expect(ma.drawArc(at: 1, maxPoints: 64).count == 64)
-        for n in [-1, 0, 1, Self.pastCeiling, Self.pastInt32, Int.max] {
+        for n in [-1, 0, 1, Self.pastCeiling, Int.max] + Self.pastInt32List {
             #expect(ma.drawArc(at: 1, maxPoints: n).count == 0, "drawArc(\(n))")
             #expect(ma.drawAll(maxPointsPerArc: n).count == 0, "drawAll(\(n))")
         }
@@ -210,7 +232,7 @@ struct Issue558SamplingCountBounds {
 
     @Test("QuadricIntersection.coneSpherePoints rejects a count it cannot serve")
     func coneSphereRequest() {
-        for n in [-1, 0, Self.pastCeiling, Self.pastInt32, Int.max] {
+        for n in [-1, 0, Self.pastCeiling, Int.max] + Self.pastInt32List {
             let pts = QuadricIntersection.coneSpherePoints(
                 semiAngle: 0.5, refRadius: 5, sphereCenter: SIMD3(0, 0, 5), sphereRadius: 3,
                 curveIndex: 0, sampleCount: n)
@@ -227,17 +249,18 @@ struct Issue558SamplingCountBounds {
         // A straight segment is two points however much room it is offered. The point of clamping
         // rather than rejecting: the caller gets the correct sampling, not an empty array.
         let baseline3D = c3.drawAdaptive(maxPoints: 4096).count
-        #expect(baseline3D == c3.drawAdaptive(maxPoints: Self.pastInt32).count)
-        #expect(baseline3D == c3.drawDeflection(maxPoints: Self.pastInt32).count)
+        #expect(baseline3D == c3.drawAdaptive(maxPoints: Self.unservableCapacity).count)
+        #expect(baseline3D == c3.drawDeflection(maxPoints: Self.unservableCapacity).count)
         #expect(
             c3.samplePoints(first: 0, last: 10, maxPoints: 1000).count
-                == c3.samplePoints(first: 0, last: 10, maxPoints: Self.pastInt32).count)
+                == c3.samplePoints(first: 0, last: 10, maxPoints: Self.unservableCapacity).count)
         #expect(
-            !c3.quasiUniformDeflectionPoints(deflection: 0.1, maxPoints: Self.pastInt32).isEmpty)
+            !c3.quasiUniformDeflectionPoints(deflection: 0.1, maxPoints: Self.unservableCapacity)
+                .isEmpty)
 
         let baseline2D = c2.drawAdaptive(maxPoints: 4096).count
-        #expect(baseline2D == c2.drawAdaptive(maxPoints: Self.pastInt32).count)
-        #expect(baseline2D == c2.drawDeflection(maxPoints: Self.pastInt32).count)
+        #expect(baseline2D == c2.drawAdaptive(maxPoints: Self.unservableCapacity).count)
+        #expect(baseline2D == c2.drawDeflection(maxPoints: Self.unservableCapacity).count)
     }
 
     @Test("a capacity of zero or less yields the entry point's own empty value")
@@ -264,14 +287,14 @@ struct Issue558SamplingCountBounds {
     @Test("Shape's own capacity samplers clamp and still answer")
     func shapeCapacitiesAreClamped() {
         let b = box()
-        #expect(b.edgePolyline(at: 0, maxPoints: Self.pastInt32) != nil)
+        #expect(b.edgePolyline(at: 0, maxPoints: Self.unservableCapacity) != nil)
         // Both of these are bounded by the shape, not by the capacity: the bridge caps edgePoints
         // at 20 internally, and contourPoints emits one point per edge.
         #expect(
-            b.edgePoints(at: 0, maxPoints: Self.pastInt32).count
+            b.edgePoints(at: 0, maxPoints: Self.unservableCapacity).count
                 == b.edgePoints(at: 0, maxPoints: 20).count)
         #expect(
-            b.contourPoints(maxPoints: Self.pastInt32).count
+            b.contourPoints(maxPoints: Self.unservableCapacity).count
                 == b.contourPoints(maxPoints: 1000).count)
     }
 
@@ -283,7 +306,7 @@ struct Issue558SamplingCountBounds {
         }
         #expect(w.orderedEdgePoints(at: 0, maxPoints: 5) != nil)
         #expect(w.orderedEdgePoints(at: 0) != nil)  // the derived, no-capacity path
-        for n in [-1, 0, Self.pastCeiling, Self.pastInt32, Int.max] {
+        for n in [-1, 0, Self.pastCeiling, Int.max] + Self.pastInt32List {
             #expect(w.orderedEdgePoints(at: 0, maxPoints: n) == nil, "orderedEdgePoints(\(n))")
         }
     }
@@ -303,8 +326,10 @@ struct Issue558SamplingCountBounds {
         #expect(s.drawMesh(uCount: -1, vCount: 3).uCount == 0)
         #expect(s.drawMesh(uCount: 3, vCount: -1).uCount == 0)
         #expect(s.drawMesh(uCount: 0, vCount: 3).uCount == 0)
-        #expect(s.drawMesh(uCount: Self.pastInt32, vCount: 3).uCount == 0)
         #expect(s.drawMesh(uCount: Int.max, vCount: Int.max).uCount == 0)
+        if let pastInt32 = Self.pastInt32 {
+            #expect(s.drawMesh(uCount: pastInt32, vCount: 3).uCount == 0)
+        }
     }
 
     @Test("Surface.drawGrid bounds the total, and each line count on its own")
@@ -317,7 +342,10 @@ struct Issue558SamplingCountBounds {
         #expect(s.drawGrid(uLineCount: 4, vLineCount: 4, pointsPerLine: -1).count == 0)
         // Both line counts near Int.max used to overflow the addition itself, before any ceiling.
         #expect(s.drawGrid(uLineCount: Int.max, vLineCount: Int.max, pointsPerLine: 10).count == 0)
-        #expect(s.drawGrid(uLineCount: Self.pastInt32, vLineCount: 0, pointsPerLine: 10).count == 0)
+        if let pastInt32 = Self.pastInt32 {
+            #expect(
+                s.drawGrid(uLineCount: pastInt32, vLineCount: 0, pointsPerLine: 10).count == 0)
+        }
     }
 
     @Test("BRepGraph.sampleFaceUVGrid bounds the product, and each factor on its own")
@@ -331,8 +359,11 @@ struct Issue558SamplingCountBounds {
         #expect(graph.sampleFaceUVGrid(faceIndex: 0, uSamples: -1, vSamples: -1) == nil)
         #expect(graph.sampleFaceUVGrid(faceIndex: 0, uSamples: -1, vSamples: 3) == nil)
         #expect(graph.sampleFaceUVGrid(faceIndex: 0, uSamples: 0, vSamples: 3) == nil)
-        #expect(graph.sampleFaceUVGrid(faceIndex: 0, uSamples: Self.pastInt32, vSamples: 3) == nil)
         #expect(graph.sampleFaceUVGrid(faceIndex: 0, uSamples: Int.max, vSamples: Int.max) == nil)
+        if let pastInt32 = Self.pastInt32 {
+            #expect(
+                graph.sampleFaceUVGrid(faceIndex: 0, uSamples: pastInt32, vSamples: 3) == nil)
+        }
     }
 
     @Test("Shape.coonsAlgPatch bounds the product, and each factor on its own")
