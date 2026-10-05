@@ -257,9 +257,10 @@ struct BRepGPropVinertTests {
     /// fourth `gp_Pln` coefficient (`BRepGProp_Gauss.cxx:343` for `BRepGProp_Vinert`,
     /// `BRepGProp_UFunction.cxx:99` for `BRepGProp_VinertGK`), and the conversion that fills that
     /// coefficient takes it from `gp_Pln::Coefficients`, which answers the `n . X + d = 0` form. So
-    /// the offset arrives inverted. `OCCTBRepGPropVinertPlane` builds the `gp_Pln` itself, from
-    /// `planeNormal` and `planeDistance`, so it builds the mirrored one and `planeDistance` behaves
-    /// as a geometric offset. Measured first, in `Scripts/repro/2873/`.
+    /// the offset arrived inverted. `OCCTBRepGPropVinertPlane` used to build the `gp_Pln` itself, from
+    /// `planeNormal` and `planeDistance`, mirrored to undo that; since #3015 it builds the plane the
+    /// caller named, and `planeDistance` behaves as a geometric offset. Measured first, in
+    /// `Scripts/repro/2873/`.
     ///
     /// **A test that passes under both conventions is worthless here**, which is why the fixture is
     /// translated: with the plate as built, the caps sit at z = +-1 and every assertion below has a
