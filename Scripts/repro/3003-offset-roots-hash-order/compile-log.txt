@@ -1,0 +1,9 @@
+clang: Apple clang version 21.0.0 (clang-2100.3.34.2)
+--- macos (arm64-apple-macos12), SDK MacOSX27.0.sdk
+exit: 0, object 433448 bytes
+--- ios (arm64-apple-ios15), SDK iPhoneOS27.0.sdk
+exit: 0, object 449880 bytes
+--- sim (arm64-apple-ios15-simulator), SDK iPhoneSimulator27.0.sdk
+exit: 0, object 433328 bytes
+--- GTest file, host, -I googletest
+exit: 0

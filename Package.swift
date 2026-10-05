@@ -47,7 +47,7 @@ let useLocalXCFramework: Bool = {
         atPath: occtPackageDir + "/Libraries/OCCT.xcframework/Info.plist")
 }()
 
-// OCCT V8.0.1 plus the thirty-nine carried patches are documented in Scripts/patches/README.md
+// OCCT V8.0.1 plus the forty carried patches are documented in Scripts/patches/README.md
 // (patch list, verification status, and CI coverage gaps for maintainers).
 let occtTarget: Target =
     isWASI
@@ -253,6 +253,8 @@ let occtTarget: Target =
         // which is what they were built to do; if a later asset repeats either stray the finding comes
         // back rather than staying suppressed.
         //
+        // The asset holds thirty-nine and Scripts/patches/ holds forty, so 0053 is the one untested
+        // patch, written up where the counts are, above.
         // If you rebuild and the checksum does not match the value below, that is a real difference to
         // investigate rather than an expected one, which is the opposite of what this paragraph said
         // while kernel.1 was pinned.
@@ -296,12 +298,13 @@ let occtTarget: Target =
         // wrong: InitializeMissingParameters is also the REPAIR that re-sets DirectFaces on an actor a
         // STEPCAFControl_Reader has left with empty OperationsFlags, which is #280's exact mechanism.
         // kernel-integration.yml caught it on main. See Scripts/patches/README.md's retired 0035 entry.
-        // Scripts/patches/ holds thirty-nine patches and the pinned asset holds thirty-nine of them,
-        // enumerated above. `ls Scripts/patches/*.patch | wc -l` answers 39 against a list of 39.
-        // The pinned asset lacks zero of them: the v4.0.0-kernel.4 rebuild closed the divergence
-        // that 0044 had opened and that 0045 through 0052 widened, so there is no written
-        // divergence below. The rows that follow are kept as the record of what each patch does
-        // and which bridge mitigation it does or does not retire:
+        // Scripts/patches/ holds forty patches and the pinned asset holds thirty-nine of them,
+        // enumerated above. `ls Scripts/patches/*.patch | wc -l` answers 40 against a list of 39.
+        // The pinned asset lacks one of them, and this is the written divergence. The
+        // v4.0.0-kernel.4 rebuild closed the divergence that 0044 had opened and that 0045
+        // through 0052 widened, so the rows for 0044 through 0052 below are kept as the record
+        // of what each patch does and which bridge mitigation it does or does not retire, and
+        // 0053 is the one row about a patch the asset does not carry:
         //
         //   0044  Extrema_ExtSS::Points / Extrema_ExtCS::Points bound against the point       #2840
         //         sequence rather than against NbExt(), which counts mySqDist and so counts
@@ -392,6 +395,19 @@ let occtTarget: Target =
         //         own example matrix and the implementation. A header comment, so it changes no
         //         binary and leaves nothing exposed; it is listed here only because it is carried,
         //         like the rows above.
+        //
+        //   0053  BRepOffset_MakeOffset::BuildOffsetByArc registers the offset faces as roots   #3003
+        //         by walking a DataMap hashed on TShape addresses, so every arc-join offset
+        //         (MakeOffsetShape, MakeThickSolid) returns its faces in an order that changes
+        //         between processes and between builds in one, and the volume summed over them
+        //         moves in its last digits. Carried 2026-10-03 and NOT built. No crash and nothing
+        //         a bridge guard could cover: the effect is a face order and the last place of a
+        //         sum, which three lines of two #766 probes show and carry a `tolerance`
+        //         declaration for until this is pinned. It also fixes one outcome per input where
+        //         the outcome depends on the root order: the fuse of two boxes with its coplanar
+        //         faces left split returns IsDone() with a null shape in about half of the processes
+        //         (9 to 13 of 20 over three censuses) and, patched, in all of them. Measured before and after by override-link in
+        //         Scripts/repro/3003-offset-roots-hash-order/.
         //
         // 0043 (#2827, BRepGProp_Gauss keeps the by-plane mass) was the one outstanding before it,
         // and it went the other way, which is the comparison worth keeping beside 0044: carried

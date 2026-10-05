@@ -72,7 +72,7 @@ the `S*` ones.
 
 **The refusal the function already gives a wrong-typed input, never a value that reads as a
 measurement** (#726). All forty-two of #1026's sites and all seventy-two of #1035's had one, so
-none needed inventing. `Shape.isEmptyShape` is what a caller uses to tell a null shape from a real
+none needed inventing. `Shape.isNull` is what a caller uses to tell a null shape from a real
 negative.
 
 ## The checker's blind spots

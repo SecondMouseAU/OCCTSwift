@@ -19,7 +19,7 @@ which is what nothing did while `0042` sat in the kernel and not in the map for 
 2026-08-03 retired ten patches, `0032`
 retired 2026-09-02 (superseded by upstream's own fix, not shipped in our pin), and `0035` retired
 2026-09-20 (it reintroduced #280; see its [Retired patches](#retired-patches) entry).
-The carried sequence now reads 0010–0012, 0014–0031, 0033–0034, 0036–0048, 0050–0052.
+The carried sequence now reads 0010–0012, 0014–0031, 0033–0034, 0036–0048, 0050–0053.
 The gaps are the retirements, not missing files:
 the numbers are cited across `CLAUDE.md`, `docs/`, closed issues and `Scripts/repro/`, and
 renumbering would have silently repointed every one of those citations at a different fix.
@@ -2337,7 +2337,6 @@ GTest is owed before it goes, per section 2 of the process policy.
 
 **Retire** once the bundled OCCT includes this fix, keeping the bridge guard.
 
-
 ## 0047-BRepMesh_IncrementalMesh-initParameters-refuses-NaN-2879-2900.patch
 
 **`initParameters` validates five meshing parameters with five tests NaN defeats**
@@ -2908,6 +2907,117 @@ cylinder as the worked example and a test pinning both directions.
 Not filed upstream yet. It joins the OCCT 8.0.2 documentation batch with #2875's and #2860's
 one-character fixes rather than going alone, per the standing decision to batch upstream
 submissions.
+
+**Retire** once the bundled OCCT includes this fix.
+
+## 0053-BRepOffset_MakeOffset-arc-join-roots-in-binding-order-3003.patch
+
+**An arc-join offset returns its faces in an order set by allocation addresses**
+([#3003](https://github.com/SecondMouseAU/OCCTSwift/issues/3003)). `BRepOffset_MakeOffset::BuildOffsetByArc`
+keeps one `BRepOffset_Offset` per face, per convex edge (a tube) and per vertex (a sphere) in
+
+```cpp
+NCollection_DataMap<TopoDS_Shape, BRepOffset_Offset, TopTools_ShapeMapHasher> MapSF;   // :1911
+```
+
+and walks it (`:2092`) to register each offset face as a root of `myInitOffsetFace` and of
+`myImageOffset`. `MakeShells` (`:3691`) passes `myImageOffset.Roots()` to `BRepTools_Quilt`, which
+keeps the faces in the order it is given them. `std::hash<TopoDS_Shape>` is the address of the
+`TShape` (`TopoDS_Shape.hxx:332-341`), so the faces of every arc-join result come out in an order
+the allocator decided. `BRepGProp` sums a volume over the faces in the order the shape holds them,
+so the last digits of the volume move with it: the 4e-16 to 9e-16 on three lines of two #766 probes
+that #2965 allowed for with a `tolerance` key.
+
+**It is none of the three things the issue named.** One thread, `BOPAlgo_Options::GetParallelMode()`
+false, no shared state, no uninitialised read: with the walk fixed the same inputs give the same
+bits in every process and every build. The fourth cause is a traversal in the order of a hash of
+pointer values.
+
+The fix records the order the entries are bound in (the faces as `MakeOffsetFaces` binds them, which
+is `BRepLib::SortFaces` over `myFaceComp` and then the faces `BRepOffset_Analyse` added; then the
+tubes; then the spheres) in an `NCollection_IndexedMap` and walks that, looking each entry up in
+`MapSF`, from which `ToContext` may have removed it. About thirty-five changed lines in one
+function, no signature change. `NCollection_OrderedDataMap`, which 8.0.0 added for exactly this, is
+the idiomatic spelling and is not used because `MapSF`'s type is a parameter of
+`BRepOffset_Inter3d::ConnexIntByInt` and `ContextIntByInt`, in another header and translation unit,
+and `BiTgte_Blend` holds a member of the same type.
+
+### Measured, macOS arm64, before and after
+
+`Scripts/repro/3003-offset-roots-hash-order/`, against the pinned `v4.0.0-kernel.4` macOS slice,
+the unmodified file recompiled with the kernel's own flags as the control, and the patched file
+override-linked. Sixty fresh processes per row; "dumps" is the number of distinct hashes of the
+bit-exact `BinTools` dump of the result.
+
+| request | volumes before / after | dumps before / after |
+|---|---|---|
+| 10-box, offset +1, `GeomAbs_Arc` | 7 / **1** | 60 / **1** |
+| 20-box, thick solid 2.0, top face open | 3 / **1** | 60 / **1** |
+| 20-box, thick solid 2.0, nothing open | 6 / **1** | 60 / **1** |
+| 10-box, offset -1, `GeomAbs_Arc` | 1 / 1 | 55 / **1** |
+| cylinder, offset +1, `GeomAbs_Arc` | 1 / 1 | 24 / **1** |
+| 10-box, offset +1, `GeomAbs_Intersection` | 1 / 1 | 1 / 1 |
+
+The control reproduces the drift (7, 1, 1, 1, 3, 5 volumes), so the override toolchain is not the
+variable. In one process, 32 builds of the first row with a different amount of heap held before
+each give **11 to 32** distinct face orders per process unpatched (20 processes) and **1** patched in every one. Over a 72-request battery (nine
+shapes, eight requests each, twenty processes) 29 requests returned more than one distinct result
+unpatched, 26 of them only in sub-shape order, and none patched; 69 of the 72 return the same
+outcome unpatched and patched.
+
+### What the fix does for one kind of input
+
+For an input whose success depends on the order the roots arrive in, the patched kernel gives the
+same answer every time, which may be the failing one. The fuse of two boxes (`BRepAlgoAPI_Fuse`,
+coplanar faces left split) returns a solid from arc-join `offset(+1)` in 11 of 20 processes
+(7 and 8 of 20 in two earlier censuses) and reports `IsDone()` with a **null shape** in the rest.
+Binding order, the order chosen, is one of the failing ones, so patched it fails in all 20. The
+outcome flipping with nothing but the heap different shows it is a property of the intersection
+stage that follows, and its own defect. Taking this patch turns that input from "about two runs in
+five" into "never". Binding order is what an insertion-ordered map gives and so what upstream would
+choose; nothing was tuned to this input, and a different fixed order could favour it at the price of
+an arbitrary choice that another input might fail.
+
+### Compiled, three slices
+
+`BRepOffset_MakeOffset.cxx` compiled for all three xcframework slices, `-std=c++17 -O3 -DNDEBUG
+-DNo_Exception -arch arm64` against each slice's own SDK and the pinned headers
+(`arm64-apple-macos12`, `arm64-apple-ios15`, `arm64-apple-ios15-simulator`), and the GTest file for
+the host. Four compiles, no warnings in the changed ranges and no errors. The log is
+`Scripts/repro/3003-offset-roots-hash-order/compile-log.txt`.
+
+### The GTest
+
+`ArcJoin_FaceOrderDoesNotDependOnAddresses` in `BRepOffset_MakeOffset_Test.cxx`: 32 builds of the
+offset of a freshly made box (one box offset repeatedly does not show the defect, the map is also
+keyed on the input's own sub-shapes) with a different amount of heap held before each, comparing every face's centre and the
+volume's bits with build 0. Against the override-linked unmodified file it **fails**, 15 of 15 runs
+(812 failed expectations in one, the first from build 1); against the patched file it passes, 15 of
+15 (462 ms), and the other 19 tests in the file pass on both.
+
+### CI coverage, and the pin
+
+**Carried, not pinned.** No required check exercises it, because `build-and-test` resolves the
+pinned asset. `Issue3003OffsetOrderTests` is gated on `OCCTSWIFT_LOCAL=1` for that reason and runs in
+`kernel-integration.yml`, which builds the patch from source. **The two `tolerance` declarations in
+`766-modeling-evidence-fix/reproduce.json` and `766-modeling-issue568-index-skip/reproduce-evidence-fix.json`
+stay until this is pinned**, because against the pinned asset those three lines still drift; they
+come out, and the three transcripts are recaptured, at the repin that pins it. The patched
+`offsetArc` value is `1698.436569847848`, one value out of the unpatched distribution and not the
+transcript's `...475`.
+
+Nothing is exposed to a Swift caller that a bridge guard could cover. The consequence is a face
+order and the last digits of a sum, and `OCCTShapeOffsetByJoin` hands back whatever the builder
+returns.
+
+**Retargeting risk at 8.0.2.** `IR` and `master` carry the same `MapSF` walk, at `:2061` on `IR`; the
+`BuildOffsetByArc` hunks apply to both with `git apply --check`, and `IR` differs from `V8_0_1` in
+this file by removed debug code and one `Image(E).First()` to `FirstImage(E)` change. Re-run the
+apply check at the repin rather than assuming it.
+
+Not filed upstream: the standing hold holds every upstream PR until 8.0.2 ships. Upstream was
+checked on 2026-10-03 and has no report and no PR about the order of an offset's faces; the draft is
+this patch's own message.
 
 **Retire** once the bundled OCCT includes this fix.
 

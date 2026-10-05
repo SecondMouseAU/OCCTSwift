@@ -582,6 +582,32 @@ bool OCCTDefaultMessengerIsCapturing(void);
 /// not, so it is what a test of the capture asserts on either side of the scope.
 int OCCTDefaultMessengerPrinterCount(void);
 
+/// The lowest trace level among the printers that print to the host's stream on
+/// `Message::DefaultMessenger()`, as a `Message_Gravity` ordinal (0 trace, 1 info, 2 warning,
+/// 3 alarm, 4 fail), or -1 when there are none or the read failed (#3029).
+///
+/// The lowest because that is the answer to the question a caller asks: a message of gravity G
+/// reaches some printer exactly when this is at most G. OCCT's own default printer has trace level
+/// `Message_Info`, so a process that has not touched it reads 1.
+///
+/// While a capture is in force the printers read are the ones the capture set aside, not the
+/// capture's own accumulating one, because the host's level is the subject and the capture's is an
+/// implementation detail of the scope.
+int OCCTDefaultMessengerTraceLevel(void);
+
+/// Set the trace level of every printer `OCCTDefaultMessengerTraceLevel` reads, which is what
+/// OCCT's own DRAW command `dtracelevel` does to the same messenger
+/// (`src/Draw/TKDraw/Draw/Draw_BasicCommands.cxx`).
+///
+/// A printer drops a message whose gravity is below its trace level (`Message_Printer.hxx`), so
+/// raising it to 2 (`Message_Warning`) silences the `Message_Info` statistics block every STEP
+/// write prints and keeps every warning, alarm and failure. Returns how many printers were changed:
+/// 0 when there are none, and -1 for a level outside 0...4 or on a failure.
+///
+/// PROCESS-WIDE, like the messenger. It is an unsynchronised write to a field another thread's
+/// printing reads, exactly as in DRAW, so set it once before OCCT work starts on other threads.
+int OCCTDefaultMessengerSetTraceLevel(int level);
+
 /// Create a new empty report
 OCCTReportRef _Nullable OCCTReportCreate(void);
 

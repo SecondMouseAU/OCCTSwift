@@ -74,6 +74,7 @@ without silently closing it, see
 | `0050-GProp_SelGProps-cone-lateral-area-drops-cos-semiangle-2992` | `GProp_SelGProps::Perform(gp_Cone)` returns `cos(semiAngle)` times the lateral area. `gp_Cone`'s `v` runs along the generatrix, so the area element is `R + v sin a` and the closed form is `(A2 - A1)(Z2 - Z1)(R + (Z2 + Z1) sin a / 2)`; the `Cnt` factor at `GProp_SelGProps.cxx:125` has no term to come from. Neither this class nor `GProp_VelGProps` has a caller anywhere in `Libraries/occt-src`, so per [follow the OCCT callers](../policies/follow-occt-callers.md) the arbiters are the closed form and the cylinder limit: the `gp_Cylinder` overload beside it is exact, and a cone of vanishing semi-angle is that cylinder ([#2992](https://github.com/SecondMouseAU/OCCTSwift/issues/2992)) | **authored and held, not filed**, under the same standing decision as `0042` and `0043`: the upstream PR waits for OCCT 8.0.2 so the hunk is tested against the tree it will be filed against. The inertia terms below `dim` carry a separate discrepancy of their own, measured, deliberately out of scope here and filed as [#3010](https://github.com/SecondMouseAU/OCCTSwift/issues/3010) | bundled OCCT includes the fix |
 | `0051-GProp_VelGProps-cone-volume-is-the-frustum-2992` | `GProp_VelGProps::Perform(gp_Cone)` returns a quantity carrying a spurious `sin a`, so the reported volume goes to **zero** as the cone becomes the cylinder whose volume the same class answers exactly. The volume of revolution is the frustum, `(A2 - A1) cos a (Z2 - Z1)(R1^2 + R1 R2 + R2^2) / 6`, which reduces to the cylinder overload's `(A2 - A1) R^2 (Z2 - Z1) / 2` at `a = 0`. Same no-caller situation and same two arbiters as `0050` ([#2992](https://github.com/SecondMouseAU/OCCTSwift/issues/2992)) | **authored and held, not filed**, with `0050`, which it should be filed alongside: the old `dim` is exactly `0050`'s old `dim` times `(Z2 - Z1) sin a`, so one was derived from the other | bundled OCCT includes the fix |
 | `0052-Geom_BezierSurface-rational-axis-prose-matches-example-2991` | `Geom_BezierSurface.hxx`'s prose for `IsURational`/`IsVRational` contradicts its own example matrix, and the example is the one that matches the code: the static `Rational()` sets `Urational` from `Weights(I, J) != Weights(I, J + 1)`, walking the **column** index, which is V. Each flag therefore names the axis opposite the one it compares along. `Geom_BSplineSurface.hxx` already states the row rule correctly, so the two headers disagree with each other as well. Documentation only ([#2991](https://github.com/SecondMouseAU/OCCTSwift/issues/2991)) | **authored and held, not filed.** It joins the OCCT 8.0.2 documentation batch with `#2875`'s and `#2860`'s one-character fixes rather than going alone | bundled OCCT includes the fix |
+| `0053-BRepOffset_MakeOffset-arc-join-roots-in-binding-order-3003` | `BRepOffset_MakeOffset::BuildOffsetByArc` registers every offset face as a root by walking an `NCollection_DataMap` hashed on `TShape` addresses, and the roots are the order of the faces of the result, so every arc-join offset (`BRepOffsetAPI_MakeOffsetShape`, `MakeThickSolid`) comes back in an order that changes between processes and between builds in one, and the volume `BRepGProp` sums over them moves in its last digits (4e-16 to 9e-16 on three lines of two #766 probes). Not parallel, not a race, not uninitialised: one thread, and with the walk fixed, 0 of 72 measured requests move across 20 processes where 29 did. The fix records the binding order and walks that, about thirty-five lines in one function. For an input whose success depends on the root order (the fuse of two boxes, coplanar faces left split: a solid in 11 of 20 processes, 7 and 8 in two earlier censuses, `IsDone()` with a null shape in the rest) the answer is now the same every time, and with binding order it is the failing one; that order sensitivity is its own defect ([#3003](https://github.com/SecondMouseAU/OCCTSwift/issues/3003)) | **authored and held, not filed**, under the standing hold; upstream checked 2026-10-03, no report and no PR, and `IR` and `master` carry the same walk | bundled OCCT includes the fix; the two `tolerance` declarations in the #766 probes come out at the repin that pins it |
 
 **Retired in OCCT 8.0.1** (re-pinned 2026-08-03): `0001`-`0009` and `0013`, shipped upstream as
 OCCT#1323, #1334, #1374, #1377, #1380, #1382, #1331, #1329, #1318 and #1392 respectively. Their
@@ -109,17 +110,21 @@ mistake the rest of this page is about.
 
 ### The xcframework
 
-`Scripts/patches/` holds thirty-nine patches, of which the pinned asset carries thirty-nine. **These
+`Scripts/patches/` holds forty patches, of which the pinned asset carries thirty-nine. **These
 are the counts `CLAUDE.md` used to restate and no longer does** (#2954); both are derived from
 `Scripts/patches/` and `Package.swift` by `check-inventory-prose.py`, which fails the PR that lets
-this page and the tree disagree. The v4.0.0-kernel.4 asset `Package.swift` pins lacks zero of them,
-per [Pinned kernel patch check](../policies/pinned-kernel-patch-check.md).
+this page and the tree disagree. The v4.0.0-kernel.4 asset `Package.swift` pins lacks one of them,
+per [Pinned kernel patch check](../policies/pinned-kernel-patch-check.md):
 
-**The native divergence is closed.** It stood at one patch (`0044`) and widened to eight as `0045`
-through `0052` were authored, every one of them live nowhere, and the v4.0.0-kernel.4 rebuild
-pinned the lot. The table below is kept as the record of what each of those eight left exposed
-while it was unpinned, and of which bridge mitigation the repin did and did not retire; it is
-history now, not a live gap.
+| Unpinned now | What it leaves exposed |
+|---|---|
+| `0053-BRepOffset_MakeOffset-arc-join-roots-in-binding-order-3003` | Nothing a bridge guard could cover, and no crash. Every arc-join offset still comes back in an allocator-decided face order in the pinned kernel, so the last digits of its volume move between processes, and three lines of two #766 probes keep a `tolerance` declaration until this is pinned (#3003). Taking it fixes the order and fixes one outcome per input, which for the fused two-box L shape is the null shape |
+
+**The divergence that stood before it is closed.** It stood at one patch (`0044`) and widened to
+eight as `0045` through `0052` were authored, every one of them live nowhere, and the
+v4.0.0-kernel.4 rebuild pinned the lot. The table below is kept as the record of what each of
+those eight left exposed while it was unpinned, and of which bridge mitigation the repin did and
+did not retire; it is history now, not a live gap.
 
 | Was unpinned until v4.0.0-kernel.4 | What it left exposed |
 |---|---|

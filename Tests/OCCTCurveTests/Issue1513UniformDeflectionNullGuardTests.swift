@@ -15,7 +15,7 @@ import simd
 /// in the same file (`OCCTGCPntsQuasiUniform`, `OCCTUniformAbscissaByCount`/`ByDistance` and
 /// their `Range` variants) already called `occtShapeIsPresent` first.
 ///
-/// `Shape.nullified` (public, deprecated-but-callable, see `Shape+Topology.swift`) is the issue's
+/// `Shape.nullified` (public, see `Shape+Topology.swift`) is the issue's
 /// own repro path: a real, non-null `OCCTShapeRef` wrapping a null `TopoDS_Shape`, exactly the
 /// shape the pointer-only guard let through. Both `uniformDeflection` overloads share the one
 /// bridge helper (#794), so one test per overload is one test per public entry point, not

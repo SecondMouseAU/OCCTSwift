@@ -1,0 +1,12 @@
+census.py compare, the asset's battery against the patched build's, 20 processes each
+cases compared: 72
+cases whose set of outcomes differs between the two builds: 3
+  off arc +0.3 lshape
+      first : done, NULL shape  |  valid=1 volume=3434.0493970 faces=45 type=3
+      second: done, NULL shape
+  off arc +1 lshape
+      first : done, NULL shape  |  valid=1 volume=4558.8362688 faces=45 type=3
+      second: done, NULL shape
+  thick arc 2 none lshape
+      first : done, NULL shape  |  open=0 valid=1 volume=6450.9556924 faces=45
+      second: done, NULL shape

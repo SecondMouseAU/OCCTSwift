@@ -1,0 +1,7 @@
+kernel: /private/tmp/claude-501/-Users-elb-Projects-OCCTSwift/7ca7a65c-aee4-4ed2-ac7a-0732e49711a4/scratchpad/3003-k4/OCCT.xcframework
+libOCCT-macos.a: sha256 aa8fca8dececc454f3c012b6637487dc634947a0067a87dbee72917af130ad92, 157581864 bytes
+variant: asset, what: order, runs: 20
+distinct hash orders of the same faces over 20 processes: 20
+faces=26 hash order: 21 12 3 19 16 8 14 4 26 2 15 24 23 6 1 20 25 5 18 22 17 13 9 7 10 11
+faces=26 hash order: 3 8 14 7 16 15 9 13 11 21 2 1 17 25 19 20 26 12 18 4 24 22 5 23 6 10
+faces=26 hash order: 25 23 24 7 15 12 3 6 5 2 18 17 16 20 4 13 19 1 26 22 14 10 11 21 9 8

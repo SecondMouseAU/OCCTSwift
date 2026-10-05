@@ -180,6 +180,9 @@ public final class Document: @unchecked Sendable {
 
     /// Write the document to a STEP file (preserves assembly structure, colors, materials).
     ///
+    /// OCCT prints a `Statistics on Transfer (Write)` block to standard output on every STEP write;
+    /// ``Messenger/setDefaultTraceLevel(_:)`` is how a host silences it.
+    ///
     /// - Parameter url: Output file URL.
     /// - Throws: `DocumentError` if writing fails
     public func write(to url: URL) throws {

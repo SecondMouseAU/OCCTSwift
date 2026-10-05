@@ -1,0 +1,10 @@
+kernel: /private/tmp/claude-501/-Users-elb-Projects-OCCTSwift/7ca7a65c-aee4-4ed2-ac7a-0732e49711a4/scratchpad/3003-k4/OCCT.xcframework
+libOCCT-macos.a: sha256 aa8fca8dececc454f3c012b6637487dc634947a0067a87dbee72917af130ad92, 157581864 bytes
+variant: asset, what: lines, runs: 60
+line                  runs   volumes     dumps  relative spread
+offsetArc               60         7        60         8.03e-16
+offsetInward            60         1        55         0.00e+00
+offsetIntersection      60         1         1         0.00e+00
+offsetCylinder          60         1        24         0.00e+00
+shellOwnFaces           60         3        60         4.02e-16
+shellNoOpenFace         60         6        60         6.69e-16

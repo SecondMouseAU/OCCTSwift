@@ -21,6 +21,20 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### Arc-join offsets get a kernel fix carried, STEP write output gets a host control, and `Shape.isEmptyShape` is removed (#3003, #3029, #1034)
+
+`BRepOffsetAPI_MakeOffsetShape` and `MakeThickSolid` with `GeomAbs_Arc` returned their faces in an order set by allocation addresses, so volumes moved in their last digits between runs (#3003). The cause is a traversal of a hash map keyed on `TShape` addresses, not parallelism. Kernel patch `0053` visits the faces in the order they were bound. It is carried and not yet pinned, so the pinned kernel still drifts until the repin that pins it.
+
+`Messenger.defaultTraceLevel` and `Messenger.setDefaultTraceLevel(_:)` let a host raise OCCT's printer trace level, which silences the `Statistics on Transfer (Write)` block of a STEP export while keeping every warning and failure (#3029). The default is unchanged.
+
+`Shape.nullified` is no longer deprecated: it is the only public way to build a null shape, which the null-shape guards' regression tests need (#1034). The deprecated `Shape.isEmptyShape` alias is removed; use `Shape.isNull`, the same predicate (`TopoDS_Shape::IsNull`).
+
+```swift
+Messenger.setDefaultTraceLevel(.warning)  // STEP export statistics stop printing
+let nulled = Shape.box(width: 1, height: 1, depth: 1)!.nullified!
+print(nulled.isNull)  // true
+```
+
 ### CI runs the cheap checks first and wasm last, and the three non-required workflows are now called from `ci.yml`
 
 `code-structure`, `code-style` and `wasm` are reusable workflows called from `ci.yml`, ordered `code-structure`, `code-style`, then the macOS builds, then `wasm` last, so a style or structure failure reports in minutes and the 25-minute wasm build no longer starts beside them. Their path filters became a `code` output on the `changes` job. Their checks are now named `<caller> / <called>` (`code-style / code-style`, `wasm / wasm build + spike`); `gate-scripts`, the required check, is unchanged and still runs first.

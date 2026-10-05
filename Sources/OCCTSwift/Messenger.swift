@@ -91,6 +91,70 @@ extension Messenger {
         Int(OCCTDefaultMessengerPrinterCount())
     }
 
+    /// The trace level of the printers on OCCT's default messenger, or `nil` when it has none.
+    ///
+    /// A printer drops every message whose gravity is below its trace level, and OCCT's own
+    /// `std::cout` printer starts at ``Gravity/info``, so `.info` is what a process that has not
+    /// touched it reads. With more than one printer attached this is the **lowest** level among
+    /// them, because that answers the question a caller asks: a message of gravity `g` reaches some
+    /// printer exactly when this is at most `g`.
+    ///
+    /// Inside ``capturingDefaultOutput(_:)`` this reads the printers the capture set aside, the
+    /// ones that print to the host's stream, and not the capture's own accumulating printer.
+    ///
+    /// ```swift
+    /// // `.info` unless something has raised it; nil only when OCCT has no printer at all
+    /// print(Messenger.defaultTraceLevel as Any)
+    /// ```
+    public static var defaultTraceLevel: Gravity? {
+        Gravity(rawValue: OCCTDefaultMessengerTraceLevel())
+    }
+
+    /// Set the trace level of every printer on OCCT's default messenger, which is where OCCT's
+    /// own diagnostics and statistics go.
+    ///
+    /// This is OCCT's own control for the chatter, and it is what its DRAW harness exposes as
+    /// `dtracelevel`: a printer drops a message whose gravity is below its level. Every STEP write
+    /// prints a statistics block, `Statistics on Transfer (Write)`, through this messenger at
+    /// ``Gravity/info``, and it has no switch of its own, so a host that does not want it on its
+    /// standard output raises the level once, at launch:
+    ///
+    /// ```swift
+    /// let before = Messenger.defaultTraceLevel
+    /// Messenger.setDefaultTraceLevel(.warning)   // the STEP statistics are Info, so they stop
+    /// // ... export as many parts as you like ...
+    /// if let before { Messenger.setDefaultTraceLevel(before) }
+    /// ```
+    ///
+    /// **Nothing else is lost.** Warnings, alarms and failures are above `.warning` and still print:
+    /// `**** ERR StepFile : Undefined Parsing` from a malformed file is a `.fail` message and is
+    /// unchanged by it, which is the difference from ``silencingDefaultOutput(_:)``, whose scope
+    /// discards everything OCCT says, errors included.
+    ///
+    /// ## What it is not
+    ///
+    /// The library does not do this for you, and that is deliberate: OCCT's convention is that the
+    /// host owns the messenger. Its writers print unconditionally and leave the level to whoever
+    /// embeds them, and silencing it inside an export would change the process-wide state of an
+    /// object other threads are printing through. Two of the four messages a STEP write sends are
+    /// `Message::SendInfo()` calls inside OCCT's work session, so no per-export switch could stop
+    /// them either.
+    ///
+    /// It is process-wide and is **not synchronised** with a thread that is printing, exactly as in
+    /// DRAW: set it once, before OCCT work starts on other threads. Inside
+    /// ``capturingDefaultOutput(_:)`` it changes the printers the capture set aside and leaves the
+    /// capture's own alone, so the level takes effect when the scope ends and the captured text is
+    /// the same whatever it is set to.
+    ///
+    /// - Parameter level: the lowest gravity a printer will still print. `.trace` prints everything
+    ///   and `.fail` only failures.
+    /// - Returns: `true` when at least one printer was changed, `false` when OCCT's default
+    ///   messenger has none.
+    @discardableResult
+    public static func setDefaultTraceLevel(_ level: Gravity) -> Bool {
+        OCCTDefaultMessengerSetTraceLevel(level.rawValue) > 0
+    }
+
     /// Run `body` with everything OCCT prints captured, and return both its value and that text.
     ///
     /// For the duration of `body`, every printer attached to `Message::DefaultMessenger()` is
