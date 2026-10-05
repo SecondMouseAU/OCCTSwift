@@ -12,33 +12,15 @@ name: code-structure
 # Pure text analysis (stdlib-only Python), so ubuntu-latest and no toolchain installs,
 # unlike code-style.yml's swift-format/SwiftLint/clang-format job.
 
+# Called from ci.yml, not triggered on its own. It used to be a separate workflow, and
+# GitHub orders jobs only within one workflow, so the three checks that were separate files all
+# started at once. Now ci.yml calls this after the cheaper checks (order and rationale are in
+# ci.yml's comment above `code-structure`). `workflow_dispatch` is kept so it can still be run by
+# hand. The `paths-ignore` this workflow carried is `changes.outputs.code` in ci.yml, and its own
+# `concurrency` is gone because the caller's group already cancels a superseded run.
 on:
-  pull_request:
-    paths-ignore:
-      # Prose. Neither job reads it: code-style lints Swift and bridge C++, code-structure runs
-      # file-size-check.py over Sources/. Safe to skip here in a way it is NOT safe in ci.yml,
-      # because neither of these is a required status check, so a skipped run blocks nothing
-      # (okf/policies/required-status-checks.md).
-      - 'okf/**'
-      - 'docs/**'
-      - '*.md'
-  push:
-    branches:
-      - main
-      - 'refactor/**'
-    paths-ignore:
-      # Prose. Neither job reads it: code-style lints Swift and bridge C++, code-structure runs
-      # file-size-check.py over Sources/. Safe to skip here in a way it is NOT safe in ci.yml,
-      # because neither of these is a required status check, so a skipped run blocks nothing
-      # (okf/policies/required-status-checks.md).
-      - 'okf/**'
-      - 'docs/**'
-      - '*.md'
+  workflow_call:
   workflow_dispatch:
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
 
 jobs:
   code-structure:

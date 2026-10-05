@@ -60,9 +60,29 @@ from `refactor/381-pass1b`, the integration branch, now merged.
   "Expected, waiting for status to be reported" stall above arriving by a different door. To spare
   a prose-only PR the expensive jobs, gate **the jobs** instead: `ci.yml`'s `changes` job
   classifies the diff and `build-and-test` and `ios-simulator-build` take a `needs` plus an `if`
-  on it, so `gate-scripts` still runs and still reports on every PR. `code-style.yml` and
-  `code-structure.yml` are *not* required and may carry `paths-ignore` safely, which is the whole
-  difference between them.
+  on it, so `gate-scripts` still runs and still reports on every PR. `code-style.yml`,
+  `code-structure.yml` and `wasm.yml` are *not* required, so a skipped one blocks nothing. They used
+  to carry a workflow-level `paths-ignore` for that reason. They no longer do: they are reusable
+  workflows called from `ci.yml` (below), where `paths-ignore` does not apply, so the same skip is
+  the `changes` job's `code` output, which is false when only `okf/**`, `docs/**`, root Markdown or
+  the issue and PR templates changed. `docs/**` is skipped here (nothing in those three reads it)
+  and is **not** skipped for `build-and-test`, which compiles its snippets.
+
+- **The non-required checks run in a fixed order, which only exists because they are called from
+  `ci.yml`.** GitHub orders jobs within one workflow and nowhere else, so three separate workflow
+  files all start at once. `ci.yml` is the order: `gate-scripts` (no `needs`, so it still reports in
+  about a minute) and `changes`, then `code-structure`, then `code-style` after it, with
+  `build-and-test` and `ios-simulator-build` waiting only for `changes` as before, and `wasm` **last**,
+  after `code-style` and both macOS builds. The point is that cheap, fast-failing checks report first
+  and the runner-expensive jobs go last. Each runs even if an earlier one failed (`!cancelled()`), so
+  a style failure does not hide whether a PR builds. The price is that `wasm` now follows the macOS
+  builds instead of running beside them.
+
+  **A called workflow's check is named `<caller job> / <called job>`**: `code-style / code-style`,
+  `code-structure / code-structure`, and `wasm / wasm build + spike`. None of the three is required, so
+  no ruleset needed editing, but anything that looks a check up by its bare name (a script, a dashboard,
+  a `gh` query) has to match the new form. `gate-scripts` is a job of `ci.yml` itself and kept its name.
+  Do not add a `needs` from `gate-scripts` to any of them: the required check must never wait.
 
   **`docs/**` is not prose for this purpose.** It holds 5,381 fenced Swift snippets and
   `check-doc-snippets.py --require-typecheck` compiles them inside `build-and-test`, so a
