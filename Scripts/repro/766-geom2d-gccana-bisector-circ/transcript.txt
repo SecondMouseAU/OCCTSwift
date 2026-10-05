@@ -1,0 +1,27 @@
+Pnt2dBisec (0,0)(10,0): loc=(5, 0) dir=(-0, 1)
+Lin2dBisec x-axis/y-axis: n=2
+  loc=(0, 0) dir=(0.707106781187, 0.707106781187)
+  loc=(0, 0) dir=(-0.707106781187, 0.707106781187)
+LinPnt2dBisec x-axis/(5,5):
+   parabola vertex=(5, 2.5) focal=2.5
+Circ2dBisec r5@(0,0) r3@(15,0): n=4
+   hyperbola centre=(7.5, 0) a=1 b=7.43303437366
+   hyperbola centre=(7.5, 0) a=1 b=7.43303437366
+   hyperbola centre=(7.5, 0) a=4 b=6.34428877022
+   hyperbola centre=(7.5, 0) a=4 b=6.34428877022
+CircLin2dBisec r5 / y=10: n=2
+   parabola vertex=(0, 7.5) focal=7.5
+   parabola vertex=(0, 2.5) focal=2.5
+CircPnt2dBisec r5 / (10,0): n=2
+   hyperbola centre=(5, 0) a=2.5 b=4.33012701892
+   hyperbola centre=(5, 0) a=2.5 b=4.33012701892
+Circ2d2TanRad (0,0)(2,0) r2: n=2
+  centre=(1, 1.73205080757) r=2
+  centre=(1, -1.73205080757) r=2
+Circ2d2TanRad x-axis y-axis r5: n=4
+  centre=(-5, 5) r=5
+  centre=(5, 5) r=5
+  centre=(-5, -5) r=5
+  centre=(5, -5) r=5
+Circ2dTanCen point (3,0) centre (0,0): n=1 r=3
+Circ2dTanCen line y=5 centre (0,0): n=1 r=5

@@ -35,6 +35,10 @@ let nulled = Shape.box(width: 1, height: 1, depth: 1)!.nullified!
 print(nulled.isNull)  // true
 ```
 
+### Geom2d lines and conics tests pin derived values instead of a type or a count (#766)
+
+Eight Geom2d test files (`Geom2dLineTests`, `GccAnaCirc2d3TanTests`, `WireFromCurve2DOnPlaneTests`, `Geom2dEllipseTests`, `Geom2dParabolaTests`, `GccAnaBisectorTests`, `Issue1050BisectorDomainTests`, `MakeEdge2dExtensionsTests`) now assert the values the kernel returns, derived from the geometry where it can be, with controls on the refusal tests. Against the versions they replace, 159 of 198 injected defects went unnoticed and 24 of 61 tests caught nothing; now 190 are caught and no test catches nothing. Kernel defects found on the way are filed as #3039, #3042 and #3044.
+
 ### Every per-domain test suite now runs for wasm, and the five whole-target exclusions are gone (#2928)
 
 `Scripts/run-wasm-tests.sh` runs all 18 per-domain targets for `wasm32-unknown-wasip1`, up from 13,
