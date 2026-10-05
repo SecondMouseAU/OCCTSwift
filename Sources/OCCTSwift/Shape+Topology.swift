@@ -3626,10 +3626,10 @@ extension Shape {
     /// ``emptied`` cannot stand in for it. It keeps the type, so it clears every guard that a null
     /// shape trips: it exercises a different kernel branch, not the same one more gently.
     ///
-    /// It was deprecated in favour of ``emptied`` in v4.0.0-beta.1 and is not any more (#1034): the
-    /// advice could not be taken at any of this package's own call sites, each of which wants a
-    /// shape with no type, and a deprecation nobody can satisfy is a standing warning rather than a
-    /// migration.
+    /// It was deprecated in favour of ``emptied`` in v4.0.0-beta.1 and is no longer deprecated
+    /// (#1034): the advice could not be taken at any of this package's own call sites, each of which
+    /// wants a shape with no type, and a deprecation nobody can satisfy is a standing warning rather
+    /// than a migration.
     public var nullified: Shape? {
         guard let h = OCCTShapeNullified(handle) else { return nil }
         return Shape(handle: h)
