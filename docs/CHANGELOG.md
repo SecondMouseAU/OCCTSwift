@@ -27,6 +27,25 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 - **#3033.** A seam diagonal to a flange's own axes had no run at all. An upright narrower than the chamfer edge it stood on threw `BuildError.filletFailed` when the bend was concave, and when it was convex the builder cut the prism to the *from* flange's whole edge whatever the other flange covered, so the two declaration orders disagreed (+22.976693 and +18.849556 over the closed form). The run is now read from the two flanges' profile edges that lie on the seam line, which needs no flange split because the fused solid already holds the seam as separate edges at the contact boundary, and both cases build to their closed forms. This is the "support it" option in the issue, chosen over refusing by name because refusing needs the same quantity and would have fixed less; it adds no `BuildError` case.
 - Eight harness fixtures with a declared defect model (`swift run Harnesses 2972-sheetmetal-volumes`) and nine tests; the measurement, the before and after and the injection sweep are in `Scripts/repro/3019-3033-sheetmetal-seam-extent/`. A separate limitation found on the way, a stepped concave bend returning `isValid == false`, is #3045 and is not changed here.
 
+### Geom2d Curve2D tests: eight files lifted off the v5 branch and strengthened, catching 68 injection switches their predecessors missed (#766, #3034, #3035, #3036)
+
+Eight `Tests/OCCTGeom2dTests/` files lifted off `v5.0.0-766-execution` by content, from the merged
+execution PRs #2472, #2520, #2516, #2617, #2513, #2471 and #2561: `Curve2DBezierTests`,
+`Curve2DBezierCompletionsTests`, `Curve2DParameterAtLengthTests`, `Curve2DLocalPropertiesTests`,
+`Point2DTransformTests`, `Curve2DInteriorTangentTests`, `Curve2DApproximatedOverloadParityTests` and
+`Curve2DTransformTests`. They asserted `!= nil`, `count >= 2`, `r > 0` or only the `Bool` a transform
+returned, mostly inside an `if let`. Each now requires its curve and pins a value worked out from
+closed forms or a second construction: the Bezier resolution from `BSplCLib::Resolution`, the
+ellipse's quarter symmetry and a Simpson integral for `parameterAtLength`, the tangent direction with
+its sign where a constraint was asked for, and rigid motions about a centre and an axis that are not
+the origin. Where a constraint or a centre could be ignored without any assertion noticing, a control
+was added. Each of 137 injection switches over 51 bridge functions now turns at least one of the 57
+tests red, where `main`'s 47 caught 69 of them and 15 of the 47 caught none. Eight
+`Scripts/repro/766-geom2d-*` probes cross with them and reproduce against the pinned kernel, one of
+them new. Three defects found on the way are
+filed: `parameterAtLength`'s contract (#3034), the `minCurvature` label (#3035), and a silently
+dropped tangent index (#3036). No production code changes.
+
 ### Geom2d lines and conics tests pin derived values instead of a type or a count (#766)
 
 Eight Geom2d test files (`Geom2dLineTests`, `GccAnaCirc2d3TanTests`, `WireFromCurve2DOnPlaneTests`, `Geom2dEllipseTests`, `Geom2dParabolaTests`, `GccAnaBisectorTests`, `Issue1050BisectorDomainTests`, `MakeEdge2dExtensionsTests`) now assert the values the kernel returns, derived from the geometry where it can be, with controls on the refusal tests. Against the versions they replace, 159 of 198 injected defects went unnoticed and 24 of 61 tests caught nothing; now 190 are caught and no test catches nothing. Kernel defects found on the way are filed as #3039, #3042 and #3044.
