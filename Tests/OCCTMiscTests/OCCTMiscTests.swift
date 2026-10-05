@@ -1577,7 +1577,11 @@ struct SheetMetalTests {
         // 6219.3141848384885, was 19.314 (= 40 * 1.5^2 * (1 - pi/4)) low, the surplus 30 of the
         // mid's free top edge filleted away against the 50 + 20 added.
         let v = shape.volume ?? -1
-        #expect(abs(v - 6233.76158899466) < 1e-6 * 6233.76158899466, "volume \(v)")
+        // 1e-5, not the 1e-6 this carried, for the reason the L-bracket pin above gives. The wasm
+        // build measures 6233.7447728045445 here against this pin's 6233.76158899466, 2.7e-6 relative,
+        // a different compiler and libm on identical kernel source. The closed form below is what
+        // guards correctness and wasm is inside it (0.055 under against a 0.06 window).
+        #expect(abs(v - 6233.76158899466) < 1e-5 * 6233.76158899466, "volume \(v)")
         let derived = 6200.0 + 70.0 * 1.5 * 1.5 * (1.0 - Double.pi / 4.0)
         #expect(abs(v - derived) < 0.06, "volume \(v) against the closed form \(derived)")
         // The mid riser's free top corner left of the tab is sharp. The seam plane on the mid is
