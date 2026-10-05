@@ -21,6 +21,10 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### ShapeHealing multi-body, orientation, history and demotion tests rewritten to pin which body came back, not only how many (#2983, #766)
+
+The three suites `Issue443FirstOfN`, `Issue442FixSolidMultiBody` and `Issue702SolidDemotion`, whose tests the #766 certification recorded Red and never rewrote, are rewritten against `main`'s kernel. Every result is now read body by body (type, faces, a positive volume read two ways, exact bounds, order against the input), every setup step is required rather than escaped, fixtures assert what makes them the fixture they claim to be, and nine tests are added: five that hand each operation bodies that arrive inside out and read every one afterwards, a history test whose fixture has a replacement to record, a hollow-body history test, and two `analyze` / `analyzeShell` tests. Against 116 injected defects the old tests missed 24 of 96 plausible wrong answers and the new ones miss 1, the order of `upgraded()`'s bodies, which that call does not promise. Two defects found on the way are filed: `Shape.analyze` reports 24 gaps and `isHealthy == false` for a flawless box (#3040), and `solidWithFullHistory(from:)` returns the unrepaired face of a body `ShapeFix_Solid` cannot close while its history reports the repair (#3041, carried as a known issue). No source changes.
+
 ### Geom2d Curve2D tests: eight files lifted off the v5 branch and strengthened, catching 68 injection switches their predecessors missed (#766, #3034, #3035, #3036)
 
 Eight `Tests/OCCTGeom2dTests/` files lifted off `v5.0.0-766-execution` by content, from the merged
