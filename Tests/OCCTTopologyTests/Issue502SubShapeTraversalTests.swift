@@ -18,6 +18,7 @@ struct Issue502SubShapeTraversalTests {
     // MARK: - The two spellings agree on ordinary geometry
 
     /// Nothing here shares a sub-shape between two parents, so this passed before #502 too.
+    ///
     /// It is the control: it says the fix did not move the answer for shapes anyone actually has.
     @Test("Typed and generic spellings agree on primitives")
     func typedAndGenericAgreeOnPrimitives() {
@@ -52,7 +53,9 @@ struct Issue502SubShapeTraversalTests {
 
     // MARK: - The same sub-shape reachable twice
 
-    /// The plainest form: one `Shape` handed to `compound` twice. The explorer walk reported two
+    /// The plainest form: one `Shape` handed to `compound` twice.
+    ///
+    /// The explorer walk reported two
     /// solids for one body at one location; the map walk reported one. Now both report one.
     @Test("A body compounded with itself counts once")
     func bodyCompoundedWithItselfCountsOnce() {
@@ -68,7 +71,9 @@ struct Issue502SubShapeTraversalTests {
         #expect(doubled.wireCount == doubled.subShapeCount(ofType: .wire))
     }
 
-    /// #502's own example: one shell handle reused across two `solidFromShells` calls. The two
+    /// #502's own example: one shell handle reused across two `solidFromShells` calls.
+    ///
+    /// The two
     /// solids are distinct objects, so the solid count stays 2; it is the shell that is one
     /// shell, seen from two parents.
     @Test("A shell reused by two solids counts once, and the solids still count twice")
@@ -111,7 +116,9 @@ struct Issue502SubShapeTraversalTests {
     // MARK: - What deduplication must NOT collapse
 
     /// Deduplication is by `IsSame`, which compares the location as well as the underlying
-    /// geometry. Two placements of one body are therefore two solids, not one; without this,
+    /// geometry.
+    ///
+    /// Two placements of one body are therefore two solids, not one; without this,
     /// the fix would silently break every assembly that instances a part.
     @Test("Two placements of one body count twice")
     func twoPlacementsOfOneBodyCountTwice() {
@@ -147,7 +154,9 @@ struct Issue502SubShapeTraversalTests {
     // MARK: - One enumeration, so one order
 
     /// `TopExp::MapShapes` is an explorer walk piped into an indexed map, so the deduplicated
-    /// sequence is the explorer's sequence with later repeats removed. Both spellings must
+    /// sequence is the explorer's sequence with later repeats removed.
+    ///
+    /// Both spellings must
     /// therefore hand back the same sub-shapes in the same order, element by element.
     @Test("Both spellings enumerate in the same order")
     func bothSpellingsEnumerateInTheSameOrder() {
@@ -192,7 +201,9 @@ struct Issue502SubShapeTraversalTests {
 
     // MARK: - The rest of the API already deduplicated, and still does
 
-    /// `edgeCount` / `vertexCount` / `faceCount` were already map-backed. Stated here because it
+    /// `edgeCount` / `vertexCount` / `faceCount` were already map-backed.
+    ///
+    /// Stated here because it
     /// is the reason #502 resolves toward deduplication rather than away from it: a box has 12
     /// edges, not the 24 edge *occurrences* an explorer walk yields.
     @Test("A box has 12 edges and 8 vertices under every spelling")

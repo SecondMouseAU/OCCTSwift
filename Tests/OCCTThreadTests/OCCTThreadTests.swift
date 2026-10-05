@@ -14,6 +14,7 @@ extension SIMD3 where Scalar == Double {
 
 /// Maximum XY-planar radial distance (`sqrt(x² + y²)`) across a shape's meshed vertices, the
 /// measured "crest radius" of a threaded solid used by every thread-form test in this target.
+///
 /// Shared by `ThreadFormsTests`, `Issue257MultiStartTests` and `Issue222Envelope`, which each used
 /// to reimplement this loop independently (#1266).
 ///
@@ -23,12 +24,16 @@ extension SIMD3 where Scalar == Double {
 /// positive nominal radius (e.g. `<= 5.0 * 1.005`). `-1 <= 5.025` is trivially true, so a genuine
 /// measurement failure silently reported success instead of being caught.
 ///
-/// - Parameter mesher: seam for tests only. Production callers never pass this and get the real
-///   `Shape.mesh(linearDeflection:)`. `Issue1266CrestRadiusSentinelTests` substitutes a provider
-///   that always fails, to prove a caller's nil-handling actually catches the failure: a genuine
-///   `Shape.mesh` failure can't safely be forced from the public API (confirmed empirically -- a
-///   `nullified` shape still meshes to a valid, empty `Mesh` rather than failing, and a
-///   non-positive or NaN deflection risks hanging rather than failing cleanly).
+/// - Parameters:
+///   - shape: the shape to mesh.
+///   - deflection: the linear deflection handed to the mesher.
+///   - mesher: seam for tests only. Production callers never pass this and get the real
+///      `Shape.mesh(linearDeflection:)`. `Issue1266CrestRadiusSentinelTests` substitutes a provider
+///      that always fails, to prove a caller's nil-handling actually catches the failure: a genuine
+///      `Shape.mesh` failure can't safely be forced from the public API (confirmed empirically -- a
+///      `nullified` shape still meshes to a valid, empty `Mesh` rather than failing, and a
+///      non-positive or NaN deflection risks hanging rather than failing cleanly).
+/// - Returns: the largest distance of any mesh vertex from the Z axis, or `nil` when meshing fails.
 func meshMaxRadialExtent(
     _ shape: Shape, deflection: Double = 0.05,
     mesher: (Shape, Double) -> Mesh? = { $0.mesh(linearDeflection: $1) }
@@ -42,7 +47,9 @@ func meshMaxRadialExtent(
 /// Maximum XY-planar radial distance among mesh vertices whose radius is BELOW `ceiling`, used
 /// by `Issue1578ThreadedHoleMinorDiameterTests` to measure how far an internal thread's cut
 /// actually reaches (its root) while excluding a deliberately larger stock outer surface, which
-/// would otherwise dominate a plain `meshMaxRadialExtent` measurement. Returns `nil` on a mesh
+/// would otherwise dominate a plain `meshMaxRadialExtent` measurement.
+///
+/// Returns `nil` on a mesh
 /// failure, same rationale as `meshMaxRadialExtent` (#1266): never a sentinel a `<` comparison
 /// could silently satisfy.
 func meshMaxRadialExtentBelow(

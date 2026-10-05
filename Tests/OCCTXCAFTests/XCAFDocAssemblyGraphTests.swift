@@ -21,8 +21,8 @@ struct XCAFDocAssemblyGraphTests {
         }
     }
 
-    /// #1568 regression: `AssemblyGraph.NodeType`'s raw values must match
-    /// `XCAFDoc_AssemblyGraph::NodeType`'s own raw values exactly (`NodeType_UNDEFINED=0,
+    /// #1568 regression: AssemblyGraph.NodeType's raw values must match
+    /// XCAFDoc_AssemblyGraph::NodeType's own raw values exactly (`NodeType_UNDEFINED=0,
     /// AssemblyRoot=1, Subassembly=2, Occurrence=3, Part=4, Subshape=5`), and `nodeType(at:)` is a
     /// bare passthrough of OCCT's own ordinal (`OCCTAssemblyGraphGetNodeType`), so this builds a
     /// document exercising all four node categories reachable from Swift (`.assemblyRoot`,

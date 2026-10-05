@@ -7,7 +7,9 @@ import simd
 /// `Curve2D.approximated(tolerance:continuity:maxSegments:maxDegree:)` (`OCCTCurve2DApproximate`)
 /// gates its result on `Geom2dConvert_ApproxCurve::HasResult()` alone, and OCCT documents that
 /// accessor as true even for a fit that is **not** within the requested `tolerance` -- "a result
-/// that is not NECESSARILY within the required tolerance". Before #1474, `MaxError()` was never
+/// that is not NECESSARILY within the required tolerance".
+///
+/// Before #1474, `MaxError()` was never
 /// read at all, so a caller had no way to tell a good fit from a starved one; `approximated` could
 /// only ever return a curve or `nil`, never how far off that curve actually was.
 ///

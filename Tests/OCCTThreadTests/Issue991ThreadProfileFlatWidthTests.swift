@@ -59,7 +59,9 @@ struct Issue991ThreadProfileFlatWidthTests {
     }
 
     /// The cutter reads these two numbers to size the groove, so a wrong answer here shows up as a
-    /// wrong groove rather than as a compile error. This is the end-to-end half: an internal
+    /// wrong groove rather than as a compile error.
+    ///
+    /// This is the end-to-end half: an internal
     /// thread whose groove is sized from the profile's own flats still cuts material out of a
     /// bore wall and leaves the outer diameter alone.
     @Test("the cut path still sizes its groove from the profile")

@@ -8,7 +8,9 @@ import simd
 
 /// `Shape.faceLProp*` / `Shape.edge*LP` read a face or an edge through a `BRepAdaptor_Surface` /
 /// `BRepAdaptor_Curve`; `Face.meanCurvature(atU:v:)` / `Edge.curvature(at:)` and their siblings read
-/// the surface or curve underneath directly. In OCCT 8.0 both go through the *same* header-only
+/// the surface or curve underneath directly.
+///
+/// In OCCT 8.0 both go through the *same* header-only
 /// templates, `BRepLProp_SLProps` is a nine-line `using` alias for the template
 /// `GeomLProp_SLProps` also aliases, so the `Resolution` they pass means the same thing, and two
 /// entry points passing different values disagree about whether a quantity exists at all.
@@ -24,7 +26,9 @@ import simd
 struct AdaptorLocalPropsParityTests {
 
     /// A cone with `radius: 0`, the apex sits at `v = 0`, and |dS/du| falls off linearly with `v`,
-    /// so sweeping `v` walks smoothly through both resolutions' thresholds. The face keeps the apex
+    /// so sweeping `v` walks smoothly through both resolutions' thresholds.
+    ///
+    /// The face keeps the apex
     /// out of its own `v` range so the sampled points are all interior.
     private static func apexConeFace() -> (Shape, Face)? {
         guard
@@ -50,7 +54,9 @@ struct AdaptorLocalPropsParityTests {
         return (shape, edge)
     }
 
-    /// Relative comparison. The two families are not required to agree bit for bit: a
+    /// Relative comparison.
+    ///
+    /// The two families are not required to agree bit for bit: a
     /// `BRepAdaptor_Curve` evaluates a Bezier or BSpline through an evaluation cache the raw
     /// `Geom_Curve` handle does not use, which moves the last ULP (measured: 0.67461923686773151 vs
     /// 0.6746192368677314 for the same curvature). Definedness, the thing #529 is about, is asserted
@@ -60,7 +66,9 @@ struct AdaptorLocalPropsParityTests {
         #expect(abs(lhs - rhs) <= 1e-9 * scale, label)
     }
 
-    /// Definedness first, then the value. Since #583 both families can say "no value here", so the
+    /// Definedness first, then the value.
+    ///
+    /// Since #583 both families can say "no value here", so the
     /// two halves of the parity claim are separable: the suite used to be able to assert only the
     /// second, and only where the `Geom_` side happened to report one.
     private func expectAgree(_ adaptor: Double?, _ geom: Double?, _ label: Comment) {
@@ -70,7 +78,9 @@ struct AdaptorLocalPropsParityTests {
 
     // MARK: Face
 
-    /// The regression proper, on the surface side. Every `v` from 3e-7 up to 1e-6 lands between
+    /// The regression proper, on the surface side.
+    ///
+    /// Every `v` from 3e-7 up to 1e-6 lands between
     /// `Precision::Confusion()` and the old `1e-6`, so pre-fix `faceLPropMeanCurvature` returned 0
     /// for a point where `Face.meanCurvature` returned a large negative number.
     @Test("Inside the old 1e-6 window the two face families agree")
@@ -96,7 +106,9 @@ struct AdaptorLocalPropsParityTests {
     }
 
     /// Both directions now, at every `v`, including the ones past the gate, where the claim is
-    /// that *neither* family reports a value. The `continue` this used to take when the `Geom_`
+    /// that *neither* family reports a value.
+    ///
+    /// The `continue` this used to take when the `Geom_`
     /// side returned nil was the workaround: it skipped exactly the rows the fix is about.
     @Test("Principal curvatures agree, including about where they stop existing")
     func facePrincipalCurvaturesAgree() {
@@ -151,7 +163,9 @@ struct AdaptorLocalPropsParityTests {
 
     // MARK: Edge
 
-    /// The curve-side regression. At a pole spacing of 3e-7 the first derivative at `u = 0` is
+    /// The curve-side regression.
+    ///
+    /// At a pole spacing of 3e-7 the first derivative at `u = 0` is
     /// 9e-7: significant at `Precision::Confusion()`, null at `1e-6`. Pre-fix the adaptor family
     /// answered `RealLast()` (infinite curvature, the cusp sentinel) where the Geom_ family answered
     /// 7.4e12.

@@ -47,6 +47,7 @@ struct DrawingStyleTests {
 
     @Test("ArrowStyle length scales with line width")
     func arrowStyleLength() {
+        // swift-format-ignore: AlwaysUseLowerCamelCase
         let L = DrawingArrowStyle.filledClosed.length(forLineWidth: .w025)
         #expect(abs(L - 1.5) < 1e-9)
     }

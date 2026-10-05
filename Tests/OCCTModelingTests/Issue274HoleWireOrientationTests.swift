@@ -4,7 +4,9 @@ import simd
 @testable import OCCTSwift
 
 /// Issue #274: `Shape.face(outer:holes:)` (bridge `OCCTShapeCreateFaceWithHoles`) used to reverse
-/// EVERY hole wire unconditionally. That is only correct when the caller passes a hole wound the
+/// EVERY hole wire unconditionally.
+///
+/// That is only correct when the caller passes a hole wound the
 /// SAME way as the outer; a hole passed already wound OPPOSITE (the geometrically correct sense for
 /// a hole) was flipped back to WRONG, producing an invalid face / an un-subtracted hole.
 ///
@@ -45,7 +47,9 @@ struct Issue274HoleWireOrientationTests {
     private let expectedArea = 100.0 - 16.0  // outer 100 − hole 16 = 84
 
     /// Hole passed ALREADY OPPOSITE the outer (CW vs CCW), the correct winding a caller may already
-    /// have. This is the case the old unconditional reverse BROKE. Must produce a valid, subtracted face.
+    /// have.
+    ///
+    /// This is the case the old unconditional reverse BROKE. Must produce a valid, subtracted face.
     @Test("hole wound opposite the outer (CW) → valid face, hole subtracted")
     func holeAlreadyOppositeIsKept() {
         guard let outer = outerCCW(), let hole = holeCW() else {
@@ -65,7 +69,9 @@ struct Issue274HoleWireOrientationTests {
         #expect(abs(area - expectedArea) < 1e-6)
     }
 
-    /// Hole passed the SAME way as the outer (CCW), the function must still correct it. Must produce
+    /// Hole passed the SAME way as the outer (CCW), the function must still correct it.
+    ///
+    /// Must produce
     /// the identical valid, subtracted face.
     @Test("hole wound same as the outer (CCW) → still corrected, hole subtracted")
     func holeSameSenseIsReversed() {

@@ -26,7 +26,9 @@ struct BndBoundSortBoxTests {
 
     // MARK: - Finding 1: 0-based indices
 
-    /// The issue's own fixture: boxes 0 and 2 overlap the query box, box 1 does not. Before the
+    /// The issue's own fixture: boxes 0 and 2 overlap the query box, box 1 does not.
+    ///
+    /// Before the
     /// fix this returned OCCT's raw 1-based positions `[1, 3]` — `3` is out of bounds for a
     /// 3-element Swift array, and `1` reads the wrong (non-overlapping) box. After the fix it
     /// must return exactly `{0, 2}`.
@@ -41,7 +43,8 @@ struct BndBoundSortBoxTests {
 
         // Every returned index must be a valid, in-bounds index into the caller's own array.
         for h in hits {
-            #expect(h >= 0 && h < boxes.count, "index \(h) is out of bounds for \(boxes.count) boxes")
+            #expect(
+                h >= 0 && h < boxes.count, "index \(h) is out of bounds for \(boxes.count) boxes")
         }
 
         // Exactly boxes 0 and 2 overlap the query box; box 1 is far away.
@@ -95,7 +98,9 @@ struct BndBoundSortBoxTests {
         #expect(total == 5)
     }
 
-    /// The headline for finding 2. A fixture where 5 boxes all overlap the query box, but the
+    /// The headline for finding 2.
+    ///
+    /// A fixture where 5 boxes all overlap the query box, but the
     /// caller only provides room for 2. Before the fix, the function returned `2` (the number
     /// written), indistinguishable from "there were exactly 2 hits" — a silent truncation. After
     /// the fix it returns the TRUE count (5), which is greater than the buffer size the caller
@@ -127,8 +132,10 @@ struct BndBoundSortBoxTests {
         }
     }
 
-    /// End-to-end: `BoundSortBox.compare(...)`'s own count-then-fill must never truncate, however
-    /// many boxes overlap, since it sizes its buffer from a first sizing-query call. Exercises
+    /// End-to-end: BoundSortBox.compare(...)'s own count-then-fill must never truncate, however
+    /// many boxes overlap, since it sizes its buffer from a first sizing-query call.
+    ///
+    /// Exercises
     /// well past the Swift wrapper's old fixed 1000-element buffer would have silently held up to.
     @Test func swiftWrapperNeverTruncates() {
         let n = 1200

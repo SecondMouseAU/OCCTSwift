@@ -6,7 +6,9 @@ import simd
 
 /// Regression cover for #965: every `*Properties` accessor handed back a value that stored the
 /// parent's native handle without retaining it, so a view outliving its parent read memory
-/// `deinit` had already released. Against the unfixed tree `chainedAccessOnATemporaryParent`
+/// `deinit` had already released.
+///
+/// Against the unfixed tree `chainedAccessOnATemporaryParent`
 /// ends the whole test process with SIGSEGV, and `everyAccessorKeepsItsParentAlive` fails
 /// deterministically without touching freed memory at all, which is why both are here: the
 /// second one is the assertion that still reports when the first one cannot.
@@ -103,7 +105,9 @@ struct Issue965Curve3DPropertyLifetimeTests {
 
     // MARK: - Mutation through a view still reaches the parent
 
-    /// The fix reads the handle through the owner rather than storing a copy of it. A setter
+    /// The fix reads the handle through the owner rather than storing a copy of it.
+    ///
+    /// A setter
     /// proves the two still name the same OCCT object.
     @Test("a setter called through a view is visible on the parent")
     func setterThroughAViewReachesTheParent() throws {

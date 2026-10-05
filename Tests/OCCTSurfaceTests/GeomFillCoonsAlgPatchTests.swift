@@ -29,12 +29,15 @@ struct GeomFillCoonsAlgPatchTests {
     /// #1499: `OCCTGeomFillCoonsAlgPatchEval` never called `GeomFill_SimpleBound::Reparametrize()`
     /// before evaluating the resulting `GeomFill_CoonsAlgPatch` at `u,v` normalized to `[0,1]`, so
     /// it silently sampled only a tiny sliver of the patch near each edge's own raw parameter
-    /// origin. This is the issue's own fixture: a non-unit-scale (10x10) planar square, edges
+    /// origin.
+    ///
+    /// This is the issue's own fixture: a non-unit-scale (10x10) planar square, edges
     /// wound loop-order (bottom -> right -> top -> left, each edge authored continuing the
     /// previous one's endpoint, matching how a real wire's edges are typically handed to this
     /// API). Before the fix, `patch.Value(0.5, 0.5)` landed near `(0.5, 0.5, 0)` (half a raw
     /// curve-parameter unit from the first corner) instead of the square's real center.
-    @Test("Center of a non-unit-scale square patch is the real center, not a raw-parameter artifact")
+    @Test(
+        "Center of a non-unit-scale square patch is the real center, not a raw-parameter artifact")
     func centerLandsAtRealCenterNotRawParameterSliver() {
         let c0 = SIMD3<Double>(0, 0, 0)
         let c1 = SIMD3<Double>(10, 0, 0)

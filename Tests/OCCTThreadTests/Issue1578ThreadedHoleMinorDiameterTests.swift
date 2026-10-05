@@ -4,7 +4,9 @@ import simd
 @testable import OCCTSwift
 
 /// #1578: `Shape.threadedHole` passed the MAJOR radius (`spec.nominalDiameter / 2`) as the internal
-/// cutter's `helixRadius`. For an internal thread (`apexSign: +1`, a boolean subtraction),
+/// cutter's `helixRadius`.
+///
+/// For an internal thread (`apexSign: +1`, a boolean subtraction),
 /// `applyThreadCut`'s cutter (both the analytic helicoid, `OCCTShapeBuildThreadCutter`, and the
 /// screw-swept fallback) places its untouched "mouth" edge at `helixRadius` and its cutting "apex"
 /// edge at `helixRadius + cutDepth` (the bridge's own documented contract:
@@ -109,7 +111,9 @@ struct Issue1578ThreadedHoleMinorDiameterTests {
 
     /// Complements the mate check above with a direct measurement of the symptom described in the
     /// issue: the internal thread's ROOT (the cutter's apex, the deepest the cut reaches) must land
-    /// at the major/nominal diameter, not beyond it. Measured on a plain solid rod (no pre-existing
+    /// at the major/nominal diameter, not beyond it.
+    ///
+    /// Measured on a plain solid rod (no pre-existing
     /// bore at all) so the result is independent of any bore-radius choice: wherever the cutter's
     /// mouth sits, the embedded groove it carves reaches out to the SAME `mouth + cutDepth`, and
     /// `meshMaxRadialExtentBelow` isolates that reach from the rod's own (deliberately larger) outer

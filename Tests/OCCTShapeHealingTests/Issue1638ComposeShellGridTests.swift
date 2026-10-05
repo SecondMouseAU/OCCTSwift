@@ -4,7 +4,9 @@ import Testing
 @testable import OCCTSwift
 
 /// #1638: `OCCTShapeFixComposeShell` built a 1 x 1 `ShapeExtend_CompositeSurface` and handed it to
-/// `ShapeFix_ComposeShell`, which splits a face along the joints **between** patches. A one-patch
+/// `ShapeFix_ComposeShell`, which splits a face along the joints **between** patches.
+///
+/// A one-patch
 /// grid has no joints, so one face went in and one came out, whatever precision was passed, and
 /// `Perform()` returned true every time.
 ///

@@ -11,7 +11,9 @@ import Testing
 /// calls (`NbPoles`/`NbKnots`/`Degree`/`Pole`/`Weight`/`Knot`/`Multiplicity`) is declared on that
 /// base class, confirmed by reading the bundled
 /// `Convert_CircleToBSplineCurve.hxx`/`Convert_ConicToBSplineCurve.hxx` headers directly, not
-/// assumed from the issue body. The `occt-refman` package states the same relationship in prose,
+/// assumed from the issue body.
+///
+/// The `occt-refman` package states the same relationship in prose,
 /// `Convert_ConicToBSplineCurve` describing itself as the "Root class for algorithms which convert
 /// a conic curve into a BSpline curve (CircleToBSplineCurve, ...)", and it was unreachable only
 /// because this session's `context` connection had dropped, not because the package is missing.

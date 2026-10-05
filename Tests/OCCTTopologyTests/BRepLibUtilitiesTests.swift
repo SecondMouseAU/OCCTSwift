@@ -24,7 +24,9 @@ struct BRepLibUtilitiesTests {
     }
 
     /// A box's edges all have 3D curves already, so this is the early-return path: OCCT returns
-    /// true without computing anything, and the tolerance is never read. Asserting that (rather
+    /// true without computing anything, and the tolerance is never read.
+    ///
+    /// Asserting that (rather
     /// than just `ok`) is the difference between testing the contract and testing nothing, the
     /// absurd tolerance below used to be `1e-7` and passed for the same reason 42 does. #498.
     @Test("Building 3D curves on a shape that already has them changes nothing")

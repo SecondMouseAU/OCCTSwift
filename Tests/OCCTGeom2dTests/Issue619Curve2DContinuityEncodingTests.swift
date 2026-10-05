@@ -5,7 +5,9 @@ import simd
 
 /// #619, the 2D half. `Curve2D.continuityOrder` changed from the hand-invented
 /// `{C0=0, C1=1, C2=2, C3=3, CN=99, G1=-2, G2=-3}` encoding to the real `GeomAbs_Shape` ordinal
-/// under an unchanged `Int` signature, and is retired as of #619. These pin the encoding the
+/// under an unchanged `Int` signature, and is retired as of #619.
+///
+/// These pin the encoding the
 /// surviving spellings report, and the threshold that changed answer.
 @Suite("Curve2D measured continuity encoding after the retirement (#619)")
 struct Issue619Curve2DContinuityEncodingTests {

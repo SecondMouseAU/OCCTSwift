@@ -5,7 +5,9 @@ import simd
 
 /// #481: `LawFunction.knotSplitting` read into a fixed 100-entry buffer and returned however
 /// many the bridge had written, so a law with more than 100 splits silently reported exactly
-/// 100. Its sibling `knotSplitParameters` (same `Law_BSplineKnotSplitting` analyzer, same
+/// 100.
+///
+/// Its sibling `knotSplitParameters` (same `Law_BSplineKnotSplitting` analyzer, same
 /// law, added alongside it in #403) reads the true count and retries at that size, so the
 /// two disagreed on how many splits the law has. Same defect and same fix as
 /// `Curve3D.continuityBreaks` (#398) and `Surface.knotSplitting` (#403).

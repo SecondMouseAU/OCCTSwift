@@ -9,7 +9,9 @@ import simd
 /// The three remaining `Curve2D` conic types exist twice over, exactly as the circle did before
 /// #411 and as the four 3D conics did before #399: a direct family building a `Geom2d_*` object
 /// from a `gp_Ax22d`, and a `*FromCenterDir` family routing through OCCT's `gce_Make*2d`
-/// algorithms. The two are geometrically identical, but only the direct family carried a dimension
+/// algorithms.
+///
+/// The two are geometrically identical, but only the direct family carried a dimension
 /// precondition, so the gce family returned live degenerate curves for input its sibling rejected.
 ///
 /// The preconditions have to live in the bridge rather than be left to OCCT. Measured against the

@@ -90,7 +90,9 @@ func drilledPlate() throws -> Shape {
     return drilled
 }
 
-/// Box fused with an offset cylinder. A `TopAbs_COMPOUND` on the pinned kernel, which is why the
+/// Box fused with an offset cylinder.
+///
+/// A `TopAbs_COMPOUND` on the pinned kernel, which is why the
 /// matrix calls it "compound".
 ///
 /// Throws rather than returning the bare box, for the reason on ``filletedBox()``.

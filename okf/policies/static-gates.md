@@ -75,11 +75,10 @@ snippets, which is why a label-matching regex over the whole corpus was the wron
 
 **The swift-format population**, a frozen measurement of **2026-09-30** (PR for #2852, `de18a98f`):
 the four lines of shell it replaced walked `find Sources/OCCTSwift` and reached **230** of the
-repo's **1,730** tracked Swift files. The population is now `git ls-files '*.swift'` minus the two
-exemption manifests; `git ls-files '*.swift' | wc -l` is today's denominator and
-`python3 Scripts/check-swift-format.py --list` is the accounting. How many files remain on
-`Scripts/style-manifest-swift-wave2.txt` is deliberately written down nowhere, for the reason
-`CLAUDE.md`'s "Swift Format Lint" section gives.
+repo's **1,730** tracked Swift files. The population is now `git ls-files '*.swift'`, all of it:
+the two exemption manifests that used to be subtracted from it are retired, so
+`git ls-files '*.swift' | wc -l` is today's denominator and
+`python3 Scripts/check-swift-format.py --list` prints the population.
 
 ## Gates versus censuses
 
@@ -687,9 +686,8 @@ hook and CI is exactly what makes a passing hook misleading.
 
 It also runs `Scripts/format-bridge.sh --self-test` and `--check`, which belong to the `code-style`
 CI job rather than `gate-scripts`. CI and the hook invoke the same script, so there is one copy of
-the file selection to drift. The rest of `code-style` (swift-format, SwiftLint,
-`check-style-manifest.py`) is push-and-find-out, because clang-format is the only one whose findings
-are wholly mechanical. A clang-format violation blocks the commit; a missing clang-format, or one on
+the file selection to drift. The rest of `code-style` (swift-format, SwiftLint) is
+push-and-find-out, because clang-format is the only one whose findings are wholly mechanical. A clang-format violation blocks the commit; a missing clang-format, or one on
 a major the pin (`Scripts/clang-format-version.txt`) disagrees with, only warns, the same way a
 missing `python3` does. A wrong major does not fail the `--self-test` either, since what that
 proves is that the detector is not blind, which holds at any version.

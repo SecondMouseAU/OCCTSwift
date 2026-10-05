@@ -57,7 +57,9 @@ struct ExtremaElSSPlanePlaneTests {
         if let sq = r.squareDistance { #expect(abs(sq - 16) < 1e-9) }
     }
 
-    /// Coincident planes are parallel at distance zero. Here `0` IS the measurement, and it is
+    /// Coincident planes are parallel at distance zero.
+    ///
+    /// Here `0` IS the measurement, and it is
     /// reported as `.some(0)` rather than as `nil`, which is the distinction #1632 is about.
     @Test func coincidentPlanesReportZeroRatherThanNil() {
         let r = ExtremaElSS.planeToPlane(
@@ -69,7 +71,9 @@ struct ExtremaElSSPlanePlaneTests {
         if let sq = r.squareDistance { #expect(abs(sq) < 1e-9) }
     }
 
-    /// A zero-length normal cannot make a `gp_Dir`. The constructor throws inside the bridge and
+    /// A zero-length normal cannot make a `gp_Dir`.
+    ///
+    /// The constructor throws inside the bridge and
     /// the refusal comes back as `(false, nil)`.
     @Test func degenerateNormalIsRefused() {
         let r = ExtremaElSS.planeToPlane(

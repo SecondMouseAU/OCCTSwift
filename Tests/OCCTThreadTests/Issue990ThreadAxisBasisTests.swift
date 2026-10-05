@@ -86,7 +86,9 @@ struct Issue990ThreadAxisBasisTests {
         return abs(d)
     }
 
-    /// One assertion, two failure modes. Taking the *other* element of `perpendicularBasis(to:)`
+    /// One assertion, two failure modes.
+    ///
+    /// Taking the *other* element of `perpendicularBasis(to:)`
     /// puts every axis 90 degrees off its datum; keeping the pre-#990 `orthonormalRadial` puts the
     /// three negative axes 180 degrees off theirs. Both are far outside the 15-degree band, and
     /// the band itself is wide enough to absorb the half-bin quantisation of a 72-point ring (the

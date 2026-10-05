@@ -7,7 +7,9 @@ import simd
 
 /// #1492: seven functions in `OCCTBridge_Topology_Adjacency.mm` dereferenced the `OCCTShapeRef`
 /// wrapper pointer (`shape->shape`) with no null guard, unlike dozens of sibling functions in the
-/// same file which all open with `if (!shape) return ...;`. Dereferencing a null C++ pointer's
+/// same file which all open with `if (!shape) return ...;`.
+///
+/// Dereferencing a null C++ pointer's
 /// member is undefined behavior -- an uncatchable OS signal, not a thrown exception -- so the
 /// enclosing `catch (...)` cannot intercept it, the same class of defect this project has fixed
 /// repeatedly (#478, #556, #618, #1026, #1035, #1424).

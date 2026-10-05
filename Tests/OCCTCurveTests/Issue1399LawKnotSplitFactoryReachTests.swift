@@ -22,7 +22,9 @@ struct Issue1399LawKnotSplitFactoryReachTests {
 
     /// One list walked by a single test rather than `@Test(arguments:)`: a `(String, ...)` tuple
     /// element pairing a reference-counted member with a builtin vector corrupts the Swift task
-    /// allocator in debug builds (#1057, swiftlang/swift#91639). Keeping the cases in a local
+    /// allocator in debug builds (#1057, swiftlang/swift#91639).
+    ///
+    /// Keeping the cases in a local
     /// array sidesteps the shape entirely and is not a style choice.
     private func readableLaws() -> [(String, LawFunction)] {
         var cases: [(String, LawFunction)] = []

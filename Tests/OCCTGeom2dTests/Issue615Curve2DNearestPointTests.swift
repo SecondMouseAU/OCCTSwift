@@ -8,7 +8,9 @@ import Testing
 /// #539 established that `GeomAPI_ProjectPointOnCurve::LowerDistance()` reports an extremum, which
 /// on a bounded curve is neither necessarily the nearest point nor necessarily present at all, and
 /// converted the 3D entry points onto a helper that takes the minimum over `ShapeAnalysis_Curve`,
-/// every extremum in range, and both ends. The 2D twin was never touched at all, so every 2D
+/// every extremum in range, and both ends.
+///
+/// The 2D twin was never touched at all, so every 2D
 /// spelling, `Curve2D.project(point:)`, `Curve2D.project(_ point: Point2D)`,
 /// `Point2D.distance(to:)` and `Curve2D.nearestParameter(to:)`, was wrong in both of the ways the
 /// 3D side used to be. They agreed with each other, and with nothing else.
@@ -68,7 +70,9 @@ struct Issue615Curve2DNearestPointTests {
         #expect(abs(Self.distance(arc.point(at: scalar), query) - truth) < 1e-9)
     }
 
-    /// A point on the full circle but not on this half of it. The extremum is the mirrored point at
+    /// A point on the full circle but not on this half of it.
+    ///
+    /// The extremum is the mirrored point at
     /// distance 10; the truth is the arc's start at 4.4721.
     @Test("A point on the circle but off the arc answers with the arc's end")
     func pointOnTheCircleButOffTheArc() throws {
@@ -151,7 +155,9 @@ struct Issue615Curve2DNearestPointTests {
         }
     }
 
-    /// The 2D answer must be the 3D answer for the same geometry in the z = 0 plane. This is the
+    /// The 2D answer must be the 3D answer for the same geometry in the z = 0 plane.
+    ///
+    /// This is the
     /// cross-check the two sides never had, and the reason the 2D defect survived #539: nothing
     /// compared them.
     @Test("The 2D and 3D answers match for the same geometry")

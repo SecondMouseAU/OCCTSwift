@@ -9,11 +9,13 @@ struct DivideByNumberTests {
     /// Was `if let r = result { #expect(...) }`, which passes trivially whether or not `result`
     /// is ever non-nil -- and until #1491 it never was: `OCCTShapeDivideByNumber` was missing
     /// `MaxArea() = -1`, the sentinel `ShapeUpgrade_FaceDivideArea::Perform()` requires to derive
-    /// its max-area-per-part from `NbParts()` at all; without it `Perform()`'s very next line
+    /// its max-area-per-part from `NbParts()` at all; without it Perform()'s very next line
     /// (`(anArea - myMaxArea) < Precision::Confusion()`, comparing against the untouched default
     /// `Precision::Infinite()`) is unconditionally true, so `Perform()` -- and this whole
     /// function -- failed for every input, every time, confirmed directly with a ground-truth
-    /// probe against a plain box through this exact call sequence before the fix. Each of a
+    /// probe against a plain box through this exact call sequence before the fix.
+    ///
+    /// Each of a
     /// box's 6 square faces splits into `parts` (4) sub-faces, all landing on one parametric axis
     /// since `dividedByNumber` always passes `nbV: 1` -- 6 * 4 = 24.
     @Test("Divide box into parts")
@@ -35,7 +37,9 @@ struct DivideByNumberTests {
     }
 
     /// A cylinder's two planar end caps decline to split by area (no area-splittable geometry
-    /// change) and are kept as-is; the one lateral (curved) face splits into `parts` (4). Net:
+    /// change) and are kept as-is; the one lateral (curved) face splits into `parts` (4).
+    ///
+    /// Net:
     /// 3 original faces -> 2 unchanged + 4 split = 6, confirmed with a ground-truth probe.
     @Test("Divide cylinder into parts")
     func divideCylinder() {

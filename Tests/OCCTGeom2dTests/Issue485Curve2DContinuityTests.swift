@@ -23,7 +23,9 @@ struct Issue485Curve2DContinuityTests {
             degree: 3)
     }
 
-    /// A genuinely G1 2D curve: offset of a C0-but-tangent-continuous basis. See the 3D
+    /// A genuinely G1 2D curve: offset of a C0-but-tangent-continuous basis.
+    ///
+    /// See the 3D
     /// sibling's `offsetOfG1Basis()` for why this is the only route to a G1 measurement.
     static func offsetOfG1Basis() -> Curve2D? {
         let poles: [SIMD2<Double>] = [

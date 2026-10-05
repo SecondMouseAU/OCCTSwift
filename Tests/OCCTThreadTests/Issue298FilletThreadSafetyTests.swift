@@ -55,7 +55,9 @@ struct Issue298FilletThreadSafetyTests {
         )
     }
 
-    /// The reference volume from a single, uncontended build. Any concurrent build
+    /// The reference volume from a single, uncontended build.
+    ///
+    /// Any concurrent build
     /// that disagrees by more than a rounding tolerance got corrupted geometry.
     private static func referenceVolume() throws -> Double {
         let (flanges, bends) = uChannel()

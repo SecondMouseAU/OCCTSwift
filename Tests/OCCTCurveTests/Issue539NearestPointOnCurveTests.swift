@@ -88,7 +88,9 @@ struct Issue539NearestPointOnCurveTests {
     // MARK: The in-range maximum, which no clamp would have fixed
 
     /// On a parabola or hyperbola the one extremum inside the domain can be a *maximum*, so both
-    /// old implementations answered with the worst point in range rather than the best. Nothing
+    /// old implementations answered with the worst point in range rather than the best.
+    ///
+    /// Nothing
     /// about the parameter is out of range here, this is why the fix takes a minimum over
     /// candidates rather than clamping the parameter into the domain.
     @Test("An in-range extremum that is a maximum does not win")
@@ -150,6 +152,7 @@ struct Issue539NearestPointOnCurveTests {
     }
 
     /// An unbounded curve has no ends to fall back on, and OCCT reports its domain as +/-2e100.
+    ///
     /// Those sentinels must not be evaluated as candidate parameters.
     @Test("An unbounded curve projects as it always did")
     func unboundedCurveUnchanged() throws {
@@ -161,7 +164,9 @@ struct Issue539NearestPointOnCurveTests {
     }
 
     /// `distance(to:)` is a one-liner over `projectPoint`, so it inherits the fix rather than
-    /// needing one of its own. Pinned because it is the spelling a proximity test reaches for.
+    /// needing one of its own.
+    ///
+    /// Pinned because it is the spelling a proximity test reaches for.
     @Test("Curve3D.distance inherits the corrected projection")
     func curveDistanceInheritsTheFix() throws {
         let curve = try #require(trimmedSegment())
@@ -183,7 +188,9 @@ struct Issue539NearestPointOnCurveTests {
     }
 
     /// `Edge.project(point:)` used to return `nil` here, `isValid` false, because there is no
-    /// perpendicular foot. Its own documentation reserves `nil` for an edge with no 3D curve.
+    /// perpendicular foot.
+    ///
+    /// Its own documentation reserves `nil` for an edge with no 3D curve.
     @Test("A point past the end of an edge gets the end, not nil")
     func edgePastTheEndIsNotNil() throws {
         let edge = try Self.straightEdge()
@@ -218,7 +225,9 @@ struct Issue539NearestPointOnCurveTests {
     }
 
     /// The two entry points promise the same thing about the same geometry, so they answer the same
-    /// number. Before #539 they disagreed on every case above, in opposite directions.
+    /// number.
+    ///
+    /// Before #539 they disagreed on every case above, in opposite directions.
     @Test("Curve3D and Edge agree on the same geometry")
     func curveAndEdgeAgree() throws {
         let edge = try Self.arcEdge()
@@ -235,7 +244,9 @@ struct Issue539NearestPointOnCurveTests {
         }
     }
 
-    /// An edge with no 3D curve is the one case `nil` is still for. Nothing in this suite's
+    /// An edge with no 3D curve is the one case `nil` is still for.
+    ///
+    /// Nothing in this suite's
     /// geometry produces one, so the contract is stated rather than exercised here; the closest
     /// available check is that every edge that does have a curve now answers.
     @Test("Every edge with a 3D curve answers")

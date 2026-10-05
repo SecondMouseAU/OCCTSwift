@@ -21,7 +21,9 @@ struct Issue553GccZeroRadiusTests {
 
     // MARK: - GccAna bisectors
 
-    /// Measured: 4 solutions where the point overload gives 2, each one duplicated. With both
+    /// Measured: 4 solutions where the point overload gives 2, each one duplicated.
+    ///
+    /// With both
     /// radii 0, two of the three solutions are hyperbolas of major radius 0, which is exactly the
     /// degenerate conic `occtValidHyperbolaRadii` refuses to construct.
     @Test func circleBisectorRejectsZeroRadius() {
@@ -123,7 +125,7 @@ struct Issue553GccZeroRadiusTests {
             ).count == 2)
     }
 
-    /// Measured: the line through the centre, returned twice, where `linesTangentToPoint`'s own
+    /// Measured: the line through the centre, returned twice, where linesTangentToPoint's own
     /// entry point returns it once.
     @Test func tangentLineThroughPointRejectsZeroRadius() {
         #expect(
@@ -174,6 +176,7 @@ struct Issue553GccZeroRadiusTests {
 
     /// The sharpest case measured: with a zero-radius circle the solver finds nothing at all,
     /// while the all-points entry point finds the circle circumscribing the same three positions.
+    ///
     /// Reading the degenerate circle as a point would have to produce that circle; it produces
     /// an empty set instead.
     ///
@@ -246,6 +249,7 @@ struct Issue553GccZeroRadiusTests {
     }
 
     /// Measured: no extremum at all, so the distance the point reading asks for is lost outright.
+    ///
     /// The other of the two non-discriminating tests, for the same reason as
     /// ``circleTangentToCircleAndTwoPointsRejectsZeroRadius()``: OCCT already returns nothing here,
     /// so only the valid-radius half of this test can fail.
@@ -267,7 +271,9 @@ struct Issue553GccZeroRadiusTests {
     // MARK: - The requested solution radius
 
     /// A radius of 0 here does not describe an argument, it asks the solver to find a circle that
-    /// is a point. Measured, `GccAna_Circ2d2TanRad` and `GccAna_Circ2dTanOnRad` oblige and hand
+    /// is a point.
+    ///
+    /// Measured, `GccAna_Circ2d2TanRad` and `GccAna_Circ2dTanOnRad` oblige and hand
     /// back solution circles of radius 0. Three sibling entry points already rejected it inline;
     /// these four were the ones that did not.
     @Test func requestedRadiusOfZeroIsRejected() {
@@ -342,7 +348,9 @@ struct Issue553GccZeroRadiusTests {
                 radius: 3) != nil)
     }
 
-    /// The parallel factory needs the offset checked as well as the radius. Measured, radius 5
+    /// The parallel factory needs the offset checked as well as the radius.
+    ///
+    /// Measured, radius 5
     /// offset by -5 gives radius 0 and by -6 gives radius 1: `GC_MakeCircle2d` takes the absolute
     /// value rather than refusing an offset that reaches or passes the centre, so a caller asking
     /// for a circle 6 units inside a radius-5 one silently gets a radius-1 circle.
@@ -371,9 +379,11 @@ struct Issue553GccZeroRadiusTests {
 
     // MARK: - Negative radius was never the gap
 
-    /// `gp_Circ2d`'s constructor is `constexpr` in the header, so its
+    /// gp_Circ2d's constructor is `constexpr` in the header, so its
     /// `Standard_ConstructionError_Raise_if` runs in a bridge translation unit and the existing
-    /// catch already turned a negative radius into an empty result. These pin that the new guards
+    /// catch already turned a negative radius into an empty result.
+    ///
+    /// These pin that the new guards
     /// did not change what a negative radius does, only what zero does.
     @Test func negativeRadiusWasAlreadyRejected() {
         #expect(

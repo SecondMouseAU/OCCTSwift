@@ -5,7 +5,9 @@ import Testing
 
 /// OCCT 8.0.1 (OCCT#1408, the merged form of OCCT#1331) makes
 /// `ShapeAnalysis_FreeBounds::ConnectEdgesToWires` skip edges whose orientation is `.internal` or
-/// `.external`. That C++ entry point appears exactly once in this bridge, inside
+/// `.external`.
+///
+/// That C++ entry point appears exactly once in this bridge, inside
 /// `OCCTShapeSectionWiresAtZ` (`OCCTBridge_Modeling.mm`), which backs
 /// `Shape.sectionWiresAtZ(_:tolerance:)` -- a CAM sectioning API. The `freeBounds*` family
 /// (`Shape.freeBounds`, `freeBoundsAnalysis`, `freeBoundsClosedCount`, `freeBoundsClosedWires`,

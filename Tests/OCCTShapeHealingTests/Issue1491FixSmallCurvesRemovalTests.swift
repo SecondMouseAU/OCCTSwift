@@ -38,11 +38,13 @@ import simd
 /// (the identical no-op shape the two removed functions used) makes `smallEdgeIsActuallyMerged()`
 /// fail, since the fixture's edge count would stay at 6 instead of dropping; restoring the real
 /// implementation makes it pass.
-@Suite("Issue #1491: fixSmallCurves/fixSmallBezierCurves removed, fixSmallEdges is the real replacement")
+@Suite(
+    "Issue #1491: fixSmallCurves/fixSmallBezierCurves removed, fixSmallEdges is the real replacement"
+)
 struct Issue1491FixSmallCurvesRemovalTests {
 
     /// A planar face whose boundary wire has one side split in two by a tiny edge of the given
-    /// length -- the same recipe as `Issue839SmallEdgeToleranceAlignmentTests`' fixture (defined
+    /// length -- the same recipe as the fixture of `Issue839SmallEdgeToleranceAlignmentTests` (defined
     /// separately here per this project's Test Layout convention: each domain target owns its own
     /// copy rather than sharing one across suites).
     private func faceWithTinyEdge(length: Double) throws -> Shape {
@@ -62,7 +64,9 @@ struct Issue1491FixSmallCurvesRemovalTests {
     }
 
     /// The real, kept replacement genuinely merges/removes a small edge -- it is not the same
-    /// silent no-op the two removed functions were. A comfortably-small edge (well above either
+    /// silent no-op the two removed functions were.
+    ///
+    /// A comfortably-small edge (well above either
     /// historical `fixSmallEdges` default, see #839) at a generous explicit tolerance should
     /// reliably drop the boundary edge count from 6 to 5.
     @Test("fixSmallEdges actually removes a small edge (not a no-op)")

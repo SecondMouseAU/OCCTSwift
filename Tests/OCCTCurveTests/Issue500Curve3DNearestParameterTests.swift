@@ -6,7 +6,9 @@ import Testing
 // MARK: - #500: the 3D side of the point-to-curve projection family
 
 /// #413 gave the 2D side one `Geom2dAPI_ProjectPointOnCurve` construction behind every entry point
-/// that wants the nearest solution. The 3D side never got the equivalent: `Curve3D.parameterAtPoint`
+/// that wants the nearest solution.
+///
+/// The 3D side never got the equivalent: `Curve3D.parameterAtPoint`
 /// and `Curve3D.closestParameter(to:)` each built their own `GeomAPI_ProjectPointOnCurve`, ran the
 /// identical computation, and then disagreed about how to report that there wasn't one, the first
 /// answering with the curve's `firstParameter`, the second with `0`.
@@ -43,7 +45,9 @@ struct Issue500Curve3DNearestParameterTests {
     }
 
     /// A circle's centre is equidistant from every point on it, so there is no local minimum to
-    /// find, but every point on it is a nearest point, all at the radius. Since #615 that is what
+    /// find, but every point on it is a nearest point, all at the radius.
+    ///
+    /// Since #615 that is what
     /// comes back, matching `projectPoint(_:precision:)`, which has reported it since #539.
     @Test("A circle's centre answers with a tied nearest point at the radius")
     func circleCentreAnswersAtTheRadius() throws {
@@ -56,7 +60,9 @@ struct Issue500Curve3DNearestParameterTests {
     }
 
     /// `projectPoint(_:precision:)` reaches the answer by a different route, `ShapeAnalysis_Curve`
-    /// is in its candidate set and not in this one, but since #615 it is the same answer. The two
+    /// is in its candidate set and not in this one, but since #615 it is the same answer.
+    ///
+    /// The two
     /// used to differ on both questions a projection asks: #539 converted `projectPoint` and left
     /// this spelling reporting an extremum, so on a point past the end one said 8 and the other said
     /// there was no such point at all.

@@ -80,6 +80,7 @@ struct Issue2331GeomDirectionZeroVectorTests {
     /// OCCT's "infinite" is `Precision::Infinite() / 2`, which is `1e100`, not IEEE infinity, and
     /// `StepToGeom::MakeDirection` refuses a component at or beyond it before squaring anything:
     /// "5.08.2021. Unstable test bugs xde bug24759: Y is very large value - FPE in SquareModulus".
+    ///
     /// The guard is that test rather than `isFinite`, so the boundary is OCCT's, not IEEE's.
     @Test("A component at or beyond OCCT's infinite threshold is refused, just below it is not")
     func occtInfiniteThresholdIsTheBoundary() throws {
@@ -99,7 +100,9 @@ struct Issue2331GeomDirectionZeroVectorTests {
         #expect(abs(c.x - 1.0) < 1e-10)
     }
 
-    /// Every accepted direction has finite coordinates of unit length. This is the assertion the
+    /// Every accepted direction has finite coordinates of unit length.
+    ///
+    /// This is the assertion the
     /// old suite lacked: it built directions and read one component, never checking for NaN.
     @Test("Every accepted direction is a finite unit vector")
     func acceptedDirectionsAreFiniteUnitVectors() throws {
@@ -132,7 +135,9 @@ struct Issue2331GeomDirectionZeroVectorTests {
         #expect(abs(d.coordinates.z - 1.0) < 1e-10)
     }
 
-    /// `crossed(with:)` is documented to return `nil` for a parallel pair. It used to return a
+    /// `crossed(with:)` is documented to return `nil` for a parallel pair.
+    ///
+    /// It used to return a
     /// non-nil direction whose coordinates were all NaN, because `Geom_Direction::Crossed` runs
     /// gp_Dir's zero-norm check inside libOCCT, where `No_Exception` has removed it.
     @Test("A parallel pair crosses to nil, not to a NaN direction")

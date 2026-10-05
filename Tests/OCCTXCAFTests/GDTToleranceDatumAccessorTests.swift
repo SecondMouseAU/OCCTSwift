@@ -69,7 +69,9 @@ struct GDTToleranceDatumAccessorTests {
     }
 
     /// OCCT stores a zone value and a max value only when positive, so a zero is what an unstored
-    /// one reads back as. Reporting either as 0.0 would be the defect #996 existed to fix.
+    /// one reads back as.
+    ///
+    /// Reporting either as 0.0 would be the defect #996 existed to fix.
     @Test("A zero zone value and a zero max value read back as nil, not as a measured zero")
     func toleranceZeroValuesAreAbsence() {
         guard let (doc, index) = documentWithTolerance() else {
@@ -112,7 +114,9 @@ struct GDTToleranceDatumAccessorTests {
 
     // MARK: - Datum
 
-    /// A datum's position is what makes A|B|C an ordered frame rather than a set. It is 1-based,
+    /// A datum's position is what makes A|B|C an ordered frame rather than a set.
+    ///
+    /// It is 1-based,
     /// so 0 is absence rather than a first place.
     @Test("A datum position round-trips, and reads nil when it has no place in a frame")
     func datumPositionRoundTrips() {
@@ -168,7 +172,9 @@ struct GDTToleranceDatumAccessorTests {
     }
 
     /// A rectangle target keeps both dimensions, a line keeps only the length, and a point keeps
-    /// neither, matching OCCT's own nesting. Reporting length and width unconditionally would
+    /// neither, matching OCCT's own nesting.
+    ///
+    /// Reporting length and width unconditionally would
     /// surface the object's unassigned members as measurements.
     @Test("A datum target's length and width follow the target type, not the write")
     func datumTargetDimensionsFollowTheType() {
@@ -224,7 +230,9 @@ struct GDTToleranceDatumAccessorTests {
     }
 
     /// The placement is one call because each of OCCT's three setters raises the same
-    /// HasDatumTargetParams flag. A degenerate axis is refused rather than crossing into OCCT.
+    /// HasDatumTargetParams flag.
+    ///
+    /// A degenerate axis is refused rather than crossing into OCCT.
     @Test("A degenerate datum target placement axis is refused")
     func degenerateDatumTargetAxisIsRefused() {
         guard let (doc, index) = documentWithDatum(name: "C") else {

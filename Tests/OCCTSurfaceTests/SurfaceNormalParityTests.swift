@@ -7,7 +7,9 @@ import simd
 
 /// `Surface` exposes the same normal twice: `normal(atU:v:)` returns an optional and reports an
 /// undefined normal as `nil`, `normal(u:v:)` returns a plain vector and reports it as
-/// `SIMD3(0, 0, 0)`. That difference in *reporting* is intentional. What was not intentional is
+/// `SIMD3(0, 0, 0)`.
+///
+/// That difference in *reporting* is intentional. What was not intentional is
 /// that they used to disagree about *where* the normal is undefined: `normal(u:v:)` hand-rolled
 /// `D1` + a cross product against a literal `1e-15` magnitude epsilon instead of asking
 /// `GeomLProp_SLProps::IsNormalDefined()`, so near a singularity each could call the point
@@ -49,7 +51,9 @@ struct SurfaceNormalParityTests {
         #expect(simd_length(cone.normal(u: 0, v: 0)) < 1e-12)
     }
 
-    /// Regression for the divergence window the hand-rolled epsilon created. Arbitrarily close to
+    /// Regression for the divergence window the hand-rolled epsilon created.
+    ///
+    /// Arbitrarily close to
     /// (but not at) the apex the cross product `d1u × d1v` underflows the old literal `1e-15`
     /// magnitude test, so `normal(u:v:)` returned a spurious zero vector, while OCCT's own
     /// `IsNormalDefined()` resolves a perfectly good normal there, the same one every other point
@@ -74,7 +78,9 @@ struct SurfaceNormalParityTests {
     }
 
     /// A sphere pole is a parameterisation singularity but not a normal singularity: OCCT still
-    /// resolves the tangent plane there. Pinned because the finding assumed otherwise.
+    /// resolves the tangent plane there.
+    ///
+    /// Pinned because the finding assumed otherwise.
     @Test("Sphere pole is not a normal singularity")
     func spherePoleStillHasANormal() {
         let sphere = Surface.sphere(center: .zero, radius: 5)!

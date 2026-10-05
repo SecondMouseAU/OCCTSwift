@@ -6,7 +6,9 @@ import simd
 
 /// `Curve3D` wraps `GeomConvert_ApproxCurve` twice: ``Curve3D/approximated(tolerance:continuity:maxSegments:maxDegree:)``
 /// returns the fitted BSpline, and ``Curve3D/approxWithDetails(tolerance:continuity:maxSegments:maxDegree:)``
-/// returns the same fit alongside the diagnostics OCCT already computed for it. Both go through
+/// returns the same fit alongside the diagnostics OCCT already computed for it.
+///
+/// Both go through
 /// one shared bridge helper as of #491, so for identical inputs they must agree on whether the
 /// approximation succeeded and hand back the same curve, the second differing from the first
 /// only by carrying `maxError`/`isDone`/`hasResult`.
@@ -95,7 +97,9 @@ struct Issue491Curve3DApproxParityTests {
     }
 
     /// `maxSegments` and `maxDegree` are two adjacent `int32_t` both entry points forward to the one
-    /// shared helper. Unlike the surface pair they are declared in the same order on both sides, so
+    /// shared helper.
+    ///
+    /// Unlike the surface pair they are declared in the same order on both sides, so
     /// no re-ordering happens here, but a request whose two values are interchangeable could not
     /// catch a swap either way, so this pins that they are order-sensitive and that both entry points
     /// read them the same way.

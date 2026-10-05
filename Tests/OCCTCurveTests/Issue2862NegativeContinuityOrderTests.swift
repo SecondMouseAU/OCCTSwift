@@ -5,8 +5,10 @@ import simd
 
 /// #2862: `Standard_RangeError_Raise_if(N < 0, ...)` sits in a `.cxx` for all eight classes that
 /// implement `IsCN` behind our wrappers, so the pinned Release kernel compiles it out of every one of
-/// them and `isCN(-1)` returned `true`, answered by `Geom_BSplineCurve_1.cxx`'s own `N <= 0` test
-/// rather than by the class agreeing. No fault, no fabricated number, just a `true` that is not a
+/// them and `isCN(-1)` returned `true`, answered by Geom_BSplineCurve_1.cxx's own `N <= 0` test
+/// rather than by the class agreeing.
+///
+/// No fault, no fabricated number, just a `true` that is not a
 /// statement about the geometry.
 ///
 /// The refusal is `false`, which is what these wrappers already return for a null handle. The

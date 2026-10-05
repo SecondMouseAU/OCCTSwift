@@ -5,7 +5,9 @@ import simd
 @testable import OCCTSwift
 
 /// Regression coverage for #605: `centerOfMass` / `properties()` returned the bounding-box centre
-/// instead of `BRepGProp::VolumeProperties`. Every pre-existing test used a box centred at the
+/// instead of `BRepGProp::VolumeProperties`.
+///
+/// Every pre-existing test used a box centred at the
 /// origin, where the two answers coincide, so the suite agreed with both implementations and
 /// distinguished neither. Each test here is chosen so the bbox centre is a *different* point.
 @Suite("Centre of mass (#605)")
@@ -13,6 +15,7 @@ struct CenterOfMassTests {
 
     /// 10-cube at the origin plus a 2-cube 20 units out on X.
     /// Analytic centre of mass x = (1000*0 + 8*20) / 1008 = 0.158730159.
+    ///
     /// The bounding box runs x = -5 to 21, so its centre is 8.0: off by a factor of 50.
     private func twoCubes() -> Shape? {
         guard let big = Shape.box(width: 10, height: 10, depth: 10),
@@ -65,7 +68,9 @@ struct CenterOfMassTests {
     }
 
     /// The inertia tensor is referenced to the centre of mass, so it must stay put when the shape
-    /// is translated. This is what proves the tensor was never part of the #605 defect, and it
+    /// is translated.
+    ///
+    /// This is what proves the tensor was never part of the #605 defect, and it
     /// guards the tensor against a future "fix" that re-references it to the origin.
     @Test("the inertia tensor is referenced to the centre of mass, not the origin")
     func inertiaIsAboutTheCentreOfMass() throws {
@@ -87,6 +92,7 @@ struct CenterOfMassTests {
 
     /// `BRepGProp::VolumeProperties` has nothing to report for these, and its zero-mass
     /// `CentreOfMass()` is the shape's *location origin*, not a recognisable (0,0,0) sentinel.
+    ///
     /// Returning nil is the only sound answer.
     @Test("sub-shapes that enclose no volume have no centre of mass")
     func subShapesWithoutVolume() throws {
@@ -115,7 +121,9 @@ struct CenterOfMassTests {
         #expect(abs((edge.linearProperties()?.length ?? 0) - 30.0) < 1e-6)
     }
 
-    /// The case that decides the whole design. An open shell makes OCCT's divergence integral
+    /// The case that decides the whole design.
+    ///
+    /// An open shell makes OCCT's divergence integral
     /// return a number (4800 for five faces of this box) that is not a volume, with a centroid
     /// 2.6 units adrift. `OnlyClosed = true` refuses instead, matching OCCT's own XDE property
     /// writer, and leaves closing the shape to the caller.
@@ -172,7 +180,9 @@ struct CenterOfMassTests {
         }
     }
 
-    /// The same measure reached through the inertia APIs, which were already correct. Guards
+    /// The same measure reached through the inertia APIs, which were already correct.
+    ///
+    /// Guards
     /// against the fix landing on one entry point and not the other.
     @Test("centerOfMass agrees with volumeInertia and inertiaProperties")
     func agreesWithInertiaSurfaces() throws {

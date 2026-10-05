@@ -5,6 +5,7 @@ import simd
 
 /// #562: `GeomConvert_BSplineSurfaceKnotSplitting` was wrapped twice, by `Surface.knotSplitting`
 /// and by the v0.105.0 `bsplineKnotSplitsU`/`bsplineKnotSplitsV`/`bsplineKnotSplitValues` trio.
+///
 /// The trio carried one thing the canonical call did not: the raw knot-table indices, where the
 /// canonical call reported only the parameters it had converted them into. So the canonical result
 /// now carries the indices too, and the trio forwards to it, one analyzer construction per query
@@ -35,7 +36,9 @@ struct Issue562SurfaceKnotSplitDuplicateTests {
     }
 
     /// Indices are 1-based into the surface's own knot table, and the first and last knots are
-    /// always split points, so the set always brackets the whole table. Absolute bounds, checked
+    /// always split points, so the set always brackets the whole table.
+    ///
+    /// Absolute bounds, checked
     /// against the knot table rather than against the other spelling.
     @Test("Indices are 1-based and bracket the surface's own knot table")
     func indicesAreOneBasedAndBracketing() throws {
@@ -53,7 +56,9 @@ struct Issue562SurfaceKnotSplitDuplicateTests {
     }
 
     /// The question the deprecated trio structurally could not ask: one continuity per parametric
-    /// direction. Each direction's answer must depend on its own continuity and not the other's.
+    /// direction.
+    ///
+    /// Each direction's answer must depend on its own continuity and not the other's.
     @Test("U and V answer their own continuity independently")
     func directionsAreIndependent() throws {
         let surface = try #require(bsplineSphere())

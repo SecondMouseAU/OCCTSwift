@@ -4,7 +4,9 @@ import Testing
 
 /// #975: `OCCTChFi2dFilletAlgo` and `OCCTChFi2dAnaFillet` each carried a byte-identical copy of a
 /// 24-line "first edge of this shape" block, and so did `OCCTBRepExtremaExtCCEdges`
-/// (`OCCTBridge_Topology.mm`) and `OCCTWireMakeWireFromEdges` (`OCCTBridge_Modeling.mm`). All four
+/// (`OCCTBridge_Topology.mm`) and `OCCTWireMakeWireFromEdges` (`OCCTBridge_Modeling.mm`).
+///
+/// All four
 /// now call `occtEdgeAt(shape, 0)`, the helper `OCCTBRepExtremaExtCC` (forty lines above one of
 /// those copies, in the same file) had already been converted to by #613.
 ///
@@ -20,7 +22,7 @@ import Testing
 struct Issue975EdgeExtraction {
 
     /// An open polyline of three segments with three distinct lengths, so which pair of segments a
-    /// fillet was handed is readable off the trimmed lengths alone:
+    /// fillet was handed is readable off the trimmed lengths alone.
     ///
     ///   A (0,0) -> (10,0)      10 long
     ///   B (10,0) -> (10,20)    20 long
@@ -119,7 +121,9 @@ struct Issue975EdgeExtraction {
     // MARK: - A multi-edge container yields its FIRST edge, not some other one
 
     /// `edge1` is the whole three-segment wire (first edge A, 10 long) and `edge2` is a two-edge
-    /// wire holding B then C (first edge B, 20 long). Reading index 0 from each gives A+B and the
+    /// wire holding B then C (first edge B, 20 long).
+    ///
+    /// Reading index 0 from each gives A+B and the
     /// trimmed lengths (8, 18); reading index 1 would give B+C, a corner that fillets perfectly
     /// well and reports (18, 38), so this fixture separates the two answers rather than merely
     /// failing on one of them.

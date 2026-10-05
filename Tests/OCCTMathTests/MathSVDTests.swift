@@ -9,6 +9,7 @@ struct MathSVDTests {
 
     @Test func leastSquares() {
         // Overdetermined 3x2 system
+        // swift-format-ignore: AlwaysUseLowerCamelCase
         let A = [1.0, 0.0, 0.0, 1.0, 1.0, 1.0]
         let b = [1.0, 2.0, 4.0]
         if let x = MathSVD.solve(matrix: A, rows: 3, cols: 2, rhs: b) {
@@ -17,4 +18,3 @@ struct MathSVDTests {
         }
     }
 }
-

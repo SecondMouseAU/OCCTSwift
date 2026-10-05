@@ -1,6 +1,0 @@
-# Exemption manifest for the code-style rollout (#876).
-# Seeded 2026-08-12 with every Sources/OCCTBridge/*.h and *.mm file that
-# existed at that point. A file is removed from this list once it's brought into
-# full clang-format compliance (Sources/OCCTBridge/.clang-format); touching a
-# listed file without removing it fails Scripts/check-style-manifest.py. See
-# okf/policies/code-style.md.

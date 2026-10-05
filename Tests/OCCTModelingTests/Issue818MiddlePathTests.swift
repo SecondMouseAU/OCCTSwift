@@ -27,7 +27,7 @@ import Testing
 struct Issue818MiddlePathTests {
 
     /// Build a coaxial tube: an outer cylinder minus a smaller coaxial inner cylinder, both
-    /// `height` tall, bottom at Z=0. `BRepOffsetAPI_MiddlePath`'s own header calls this shape
+    /// `height` tall, bottom at Z=0. BRepOffsetAPI_MiddlePath's own header calls this shape
     /// "pipe-like."
     private func coaxialTube(outerRadius: Double, innerRadius: Double, height: Double) -> Shape? {
         guard let outer = Shape.cylinder(radius: outerRadius, height: height),
@@ -57,7 +57,8 @@ struct Issue818MiddlePathTests {
         let topCap = try #require(Shape.fromFace(topFaces[0]))
 
         let spine = tube.middlePath(start: bottomCap, end: topCap)
-        let unwrapped = try #require(spine, "middlePath should succeed on a genuine pipe-like shape")
+        let unwrapped = try #require(
+            spine, "middlePath should succeed on a genuine pipe-like shape")
 
         let bounds = try #require(unwrapped.bounds)
         // The spine is the shared cylinder axis: X and Y collapse to ~0, Z spans the tube's height.

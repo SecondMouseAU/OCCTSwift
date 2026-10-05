@@ -12,7 +12,9 @@ import Testing
 
 // MARK: - Element types
 
-/// A plain final class: reference-counted, pointer-sized, 8-byte aligned. Lets the grid ask
+/// A plain final class: reference-counted, pointer-sized, 8-byte aligned.
+///
+/// Lets the grid ask
 /// whether it is `String` specifically or any reference-counted element.
 final class Ref: Sendable, CustomStringConvertible {
     let n: Int
@@ -20,18 +22,25 @@ final class Ref: Sendable, CustomStringConvertible {
     var description: String { "Ref(\(n))" }
 }
 
-/// Size 32, alignment 16, built from two 16-byte vectors. Byte-for-byte the same layout as
+/// Size 32, alignment 16, built from two 16-byte vectors.
+///
+/// Byte-for-byte the same layout as
 /// `SIMD3<Double>`, which is how the grid separates "carries a 32-byte vector" from "is 32 bytes".
 /// The name predates the layout being measured; `SIMD3<Double>` turns out to be alignment 16 too,
 /// so nothing in this file is over-aligned and the interesting axis is the vector's own width.
 struct Size32Align16: Sendable {
     var a: SIMD2<Double>
     var b: SIMD2<Double>
-    init(_ x: Double) { a = SIMD2(x, x); b = SIMD2(x, x) }
+    init(_ x: Double) {
+        a = SIMD2(x, x)
+        b = SIMD2(x, x)
+    }
 }
 
 /// A nominal struct whose only member is a `SIMD3<Double>`, so it carries a 32-byte builtin vector
-/// without itself being one of the stdlib SIMD types. Separates "carries a wide vector" from "is a
+/// without itself being one of the stdlib SIMD types.
+///
+/// Separates "carries a wide vector" from "is a
 /// SIMD type".
 ///
 /// Over-alignment is not the axis, though it is what #1057 first proposed: `@_alignment(32)` is
@@ -59,7 +68,9 @@ struct NamedPair: Sendable {
     @Test("print the layout of every element type in the grid")
     func layout() {
         func row<T>(_ label: String, _ t: T.Type) {
-            print("\(label): size=\(MemoryLayout<T>.size) stride=\(MemoryLayout<T>.stride) align=\(MemoryLayout<T>.alignment)")
+            print(
+                "\(label): size=\(MemoryLayout<T>.size) stride=\(MemoryLayout<T>.stride) align=\(MemoryLayout<T>.alignment)"
+            )
         }
         row("String", String.self)
         row("Ref", Ref.self)
@@ -83,7 +94,9 @@ struct NamedPair: Sendable {
         // crashing. So what matters is whether the compiler can fold the argument, and this
         // property is not inlinable. Printed rather than assumed, which is how the difference
         // between V39 and V49 was found in the first place.
-        print("__defaultSynchronousIsolationContext: \(String(describing: __defaultSynchronousIsolationContext))")
+        print(
+            "__defaultSynchronousIsolationContext: \(String(describing: __defaultSynchronousIsolationContext))"
+        )
         #expect(MemoryLayout<SIMD3<Double>>.alignment > 0)
     }
 }
@@ -262,7 +275,9 @@ struct NamedPair: Sendable {
 }
 
 @Suite("S: two-sequence arguments:, String x SIMD3<Double>") struct S1TwoSequence {
-    @Test("trivial body", arguments: ["+X", "-X", "+Y"], [SIMD3<Double>(1, 0, 0), SIMD3<Double>(0, 1, 0)])
+    @Test(
+        "trivial body", arguments: ["+X", "-X", "+Y"],
+        [SIMD3<Double>(1, 0, 0), SIMD3<Double>(0, 1, 0)])
     func run(_ s: String, _ v: SIMD3<Double>) { #expect(!s.isEmpty && v != SIMD3(0, 0, 0)) }
 }
 
@@ -279,7 +294,9 @@ struct NamedPair: Sendable {
 // MARK: - The workaround the repo uses
 
 /// The claim "it crashes whatever the body does" was made throughout this directory while every
-/// cell and variant still had a `precondition` or an `#expect` in it. This cell has neither: the
+/// cell and variant still had a `precondition` or an `#expect` in it.
+///
+/// This cell has neither: the
 /// body is empty and the argument is never read. A pre-PR review is what noticed the claim was
 /// unevidenced where it was made.
 @Suite("V: (String, SIMD3<Double>) with a completely empty body") struct V1EmptyBody {

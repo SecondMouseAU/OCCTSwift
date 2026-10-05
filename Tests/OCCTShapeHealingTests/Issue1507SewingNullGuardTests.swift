@@ -8,7 +8,7 @@ import Testing
 /// (`Sources/OCCTBridge/src/OCCTBridge_Modeling_HealingSewing.mm`) dereferenced `sewing->sewing`
 /// with no `if (!sewing)` guard, unlike every other one of that file's 20 non-`Release` functions
 /// taking an `OCCTSewingRef`. `OCCTBridge_Modeling.h` declares `sewing` `_Nonnull` on both, so
-/// `SewingBuilder`'s own `ref` is never nil, but a genuinely-null `OCCTSewingRef` still
+/// SewingBuilder's own `ref` is never nil, but a genuinely-null `OCCTSewingRef` still
 /// type-checks as non-optional Swift, matching Issue #1424's `unsafeBitCast` precedent (and
 /// Issue #900's) for constructing one at the ABI level. `SewingBuilder` always holds a non-null
 /// `ref` for its whole lifetime (only ever built from a successful `OCCTSewingCreate`), so this

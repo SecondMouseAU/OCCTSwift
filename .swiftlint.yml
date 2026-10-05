@@ -32,11 +32,6 @@ only_rules:
 excluded:
   - .build
   - Libraries
-  # Two known, named, tracked orphaned-doc-comment findings (#877), not fixed
-  # in the rollout PR that added this rule: fixing either one obligates a full
-  # swift-format sweep of the file under the manifest's own "touch it, fix it"
-  # rule (Scripts/check-style-manifest.py), and a ~1900-diagnostic reformat of
-  # two large files is out of scope for a CI-infrastructure PR. Remove these
-  # two lines once #877 lands.
-  - Sources/OCCTSwift/Surface.swift
-  - Sources/OCCTSwift/Shape+Modeling.swift
+  # `Sources/OCCTSwift/Surface.swift` and `Shape+Modeling.swift` were excluded here for two named
+  # orphaned-doc-comment findings (#877). #877 closed and the exclusion stayed; both files lint
+  # clean without it, and it is gone. Nothing under Sources/ or Tests/ is excluded now.

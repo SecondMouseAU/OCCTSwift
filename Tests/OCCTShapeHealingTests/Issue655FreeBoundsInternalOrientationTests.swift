@@ -112,7 +112,9 @@ struct Issue655FreeBoundsInternalOrientationTests {
     }
 
     /// The "prove the test fails" injection for the test above: the same fixture with the embedded
-    /// loop's orientation changed from `.internal` to `.forward`. A FORWARD loop entirely inside
+    /// loop's orientation changed from `.internal` to `.forward`.
+    ///
+    /// A FORWARD loop entirely inside
     /// face1, sharing no vertex with face1's outer boundary, is a genuine second free-bound
     /// candidate on that face, so it must now be counted, as its own closed wire, alongside the two
     /// outer boundaries. Run as a live contrast fixture (not a disabled test) so a future change
@@ -132,7 +134,9 @@ struct Issue655FreeBoundsInternalOrientationTests {
     /// `tolerance <= 0` as a documented request for a different OCCT constructor with no sewing
     /// stage at all: `ShapeAnalysis_FreeBoundsProperties::DispatchBounds()` picks
     /// `ShapeAnalysis_FreeBounds(shape, splitClosed, splitOpen)` instead of the
-    /// `(shape, toler, splitClosed, splitOpen)` sewing overload the tests above exercise. Both
+    /// `(shape, toler, splitClosed, splitOpen)` sewing overload the tests above exercise.
+    ///
+    /// Both
     /// overloads end in the same `ConnectEdgesToWires` call the OCCT 8.0.1 INTERNAL/EXTERNAL skip
     /// lives in, but this one reaches it via `ShapeAnalysis_Shell::CheckOrientedShells`/
     /// `FreeEdges()`, never via `BRepBuilderAPI_Sewing`. Round 2's tests never exercised this

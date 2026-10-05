@@ -25,6 +25,7 @@ struct Issue1477Geom2dCurvesTests {
 
     /// Lines and arcs joined into one B-spline, the exact shape
     /// `Geom2dConvert_ApproxArcsSegments` is built to recover as several arc/line pieces.
+    ///
     /// Ground-truthed standalone (`clang++` against the pinned kernel, bypassing the bridge):
     /// 11 pieces at tolerance 0.1 / angleTolerance 0.1, reliably more than a small buffer.
     private func manySegmentCurve() -> Curve2D {
@@ -80,7 +81,9 @@ struct Issue1477Geom2dCurvesTests {
         #expect(returned <= maxCurves, "must never report more than the buffer's own capacity")
         if returned > 0 {
             for i in 0..<Int(returned) {
-                #expect(smallBuffer[i] != nil, "every slot up to the returned count must actually be written")
+                #expect(
+                    smallBuffer[i] != nil,
+                    "every slot up to the returned count must actually be written")
             }
         }
     }
@@ -106,7 +109,9 @@ struct Issue1477Geom2dCurvesTests {
         let c = Curve2D.segment(from: SIMD2(1, 1), to: SIMD2(0, 1))!
 
         let joined = Curve2D.join([a, c, b], tolerance: 1e-6)
-        #expect(joined == nil, "curves supplied out of order must fail the join, not silently skip the mismatched one")
+        #expect(
+            joined == nil,
+            "curves supplied out of order must fail the join, not silently skip the mismatched one")
     }
 
     @Test("join still succeeds for genuinely continuous curves")

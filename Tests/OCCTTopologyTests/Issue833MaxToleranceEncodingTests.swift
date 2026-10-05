@@ -7,7 +7,9 @@ import simd
 /// `ShapeAnalysis_ShapeTolerance`) used a compressed `Int` encoding (`0`=vertex, `1`=edge,
 /// `2`=face, anything else = all sub-shapes) that silently disagreed with the unrelated
 /// `maxTolerance(subShapeType:)` (backed by `BRep_Tool::MaxTolerance`), whose `Int` is the real
-/// `TopAbs_ShapeEnum` ordinal (`2`=SOLID, `4`=FACE, `6`=EDGE, `7`=VERTEX). A caller who learned one
+/// `TopAbs_ShapeEnum` ordinal (`2`=SOLID, `4`=FACE, `6`=EDGE, `7`=VERTEX).
+///
+/// A caller who learned one
 /// convention and called the other with the same `Int` silently measured the wrong sub-shape kind.
 ///
 /// Fix: additive `ShapeType`-typed overloads on the `type:`-based trio, which pass the caller's
@@ -17,9 +19,9 @@ import simd
 struct Issue833MaxToleranceEncodingTests {
 
     /// Documents the actual, historical divergence this issue reports: the same literal `2`
-    /// means FACE under `maxTolerance(type:)`'s convention and `TopAbs_SOLID` (which
+    /// means FACE under maxTolerance(type:)'s convention and `TopAbs_SOLID` (which
     /// `BRep_Tool::MaxTolerance` never measures, so it silently reports 0) under
-    /// `maxTolerance(subShapeType:)`'s convention.
+    /// maxTolerance(subShapeType:)'s convention.
     @Test("legacy Int(type:) and Int(subShapeType:) disagree on the same literal 2")
     func legacyIntConventionsDisagreeOnTheSameLiteral() {
         let box = Shape.box(width: 10, height: 10, depth: 10)!
@@ -63,7 +65,9 @@ struct Issue833MaxToleranceEncodingTests {
     /// The new `ShapeType`-typed overload must agree with `maxTolerance(subShapeType:)` (a
     /// DIFFERENT OCCT entry point, `BRep_Tool::MaxTolerance`) for the ordinals that name the
     /// same sub-shape kind under both conventions: proves the typed overload's convention is the
-    /// real `TopAbs_ShapeEnum` ordinal, not the legacy compressed one. Both algorithms compute the
+    /// real `TopAbs_ShapeEnum` ordinal, not the legacy compressed one.
+    ///
+    /// Both algorithms compute the
     /// same quantity the same way -- the max of each matching sub-shape's own `BRep_Tool::
     /// Tolerance()` -- so they must agree at any tolerance value, not only the default.
     @Test("ShapeType overload agrees with maxTolerance(subShapeType:)'s ordinal convention")
@@ -71,7 +75,8 @@ struct Issue833MaxToleranceEncodingTests {
         let box = Shape.box(width: 10, height: 10, depth: 10)!
 
         // At the box's default (fresh construction) tolerances:
-        #expect(box.maxTolerance(type: .vertex) == box.maxTolerance(subShapeType: 7))  // TopAbs_VERTEX
+        // TopAbs_VERTEX
+        #expect(box.maxTolerance(type: .vertex) == box.maxTolerance(subShapeType: 7))
         #expect(box.maxTolerance(type: .edge) == box.maxTolerance(subShapeType: 6))  // TopAbs_EDGE
         #expect(box.maxTolerance(type: .face) == box.maxTolerance(subShapeType: 4))  // TopAbs_FACE
 

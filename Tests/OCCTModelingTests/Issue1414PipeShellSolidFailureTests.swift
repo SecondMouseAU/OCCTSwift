@@ -17,7 +17,9 @@ import simd
 struct Issue1414PipeShellSolidFailureTests {
 
     /// An open, 3-edge "C" profile: not a closed loop, so BRepFill_PipeShell::MakeSolid()
-    /// has no end wire it could ever cap. Swept along a straight (non-periodic) spine, the
+    /// has no end wire it could ever cap.
+    ///
+    /// Swept along a straight (non-periodic) spine, the
     /// resulting shell is open, and the only way to close it (matching the profile's own
     /// closed-ness at each end) is unreachable by construction.
     static func openProfile() -> Wire? {

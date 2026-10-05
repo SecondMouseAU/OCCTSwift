@@ -20,7 +20,9 @@ import simd
 /// Both public entry points are covered because both reach the same OCCT class (#491 unified them).
 @Suite("Approximation at C0 does not collapse or misreport (#522)")
 struct Issue522ApproxC0Collapse {
-    /// Sampled deviation of `fit` from `surface` over the source domain. A lower bound on the true
+    /// Sampled deviation of `fit` from `surface` over the source domain.
+    ///
+    /// A lower bound on the true
     /// maximum, which is all a regression check needs.
     private func deviation(of fit: Surface, from surface: Surface, steps: Int = 20) -> Double {
         let d = surface.domain
@@ -36,7 +38,9 @@ struct Issue522ApproxC0Collapse {
         return worst
     }
 
-    /// The headline case. A radius-10 sphere at C0 came back as 2 poles at degree 1 across the full
+    /// The headline case.
+    ///
+    /// A radius-10 sphere at C0 came back as 2 poles at degree 1 across the full
     /// `[0, 2*pi]` of longitude, a straight line through the sphere, deviating by its own diameter
     /// of 19.9999, while reporting `maxError` 1.07e-4.
     @Test("A full sphere at C0 is not collapsed to a line across its longitude")
@@ -62,7 +66,9 @@ struct Issue522ApproxC0Collapse {
             "sampled deviation \(dev) exceeds reported maxError \(detailed.maxError)")
     }
 
-    /// The same request through the other entry point. Before the fix this returned `uDegree == 1`,
+    /// The same request through the other entry point.
+    ///
+    /// Before the fix this returned `uDegree == 1`,
     /// `uPoleCount == 2`; the two entry points agreed, on garbage.
     @Test("The same C0 request through approximated() is not collapsed either")
     func approximatedAtC0IsNotCollapsed() {
@@ -110,7 +116,9 @@ struct Issue522ApproxC0Collapse {
 
     /// At C0/C0 the requested tolerance used to stop mattering: a bicubic Bezier returned the same
     /// 2x2 bilinear patch with the same 4.08e-15 reported error at every tolerance from 1e-1 down to
-    /// 1e-7, because the number the tolerance was compared against was always zero. A bicubic is
+    /// 1e-7, because the number the tolerance was compared against was always zero.
+    ///
+    /// A bicubic is
     /// exactly representable, so the fit should reproduce it at degree 3 and the deviation should be
     /// at rounding level whatever the tolerance.
     @Test(
@@ -145,7 +153,9 @@ struct Issue522ApproxC0Collapse {
     }
 
     /// A cylinder trimmed in V legitimately fits at degree 1 in V, it *is* linear there, and
-    /// always reported correctly. Degree collapse per se was never the defect, so the fix must not
+    /// always reported correctly.
+    ///
+    /// Degree collapse per se was never the defect, so the fix must not
     /// push this one up.
     @Test("A V-linear cylinder still fits at degree 1 in V")
     func linearDirectionStillCollapsesLegitimately() {

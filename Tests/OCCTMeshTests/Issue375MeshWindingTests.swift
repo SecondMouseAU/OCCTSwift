@@ -15,7 +15,7 @@ import simd
     "Issue #375, mesh() winding reflects true topological orientation, not a naive transform read")
 struct Issue375MeshWindingTests {
 
-    /// Returns the fraction of `mesh`'s triangles whose (v1,v2,v3) winding faces away from
+    /// Returns the fraction of mesh's triangles whose (v1,v2,v3) winding faces away from
     /// `center`, i.e. cross(v2-v1, v3-v1) points away from the center, the expected convention
     /// for a convex solid's outward-facing mesh.
     private func outwardFraction(of mesh: Mesh, center: SIMD3<Float>) -> Double {

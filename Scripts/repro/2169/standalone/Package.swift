@@ -55,9 +55,10 @@ func pin(_ key: String) -> String {
 /// `/share/wasi-sysroot/...` from the filesystem root, which exists nowhere and surfaces as a pile
 /// of undefined `__cxa_*` symbols rather than as the one missing variable.
 guard let wasiSDKPrefix = ProcessInfo.processInfo.environment["WASI_SDK_PREFIX"],
-      !wasiSDKPrefix.isEmpty
+    !wasiSDKPrefix.isEmpty
 else {
-    fatalError("""
+    fatalError(
+        """
         WASI_SDK_PREFIX is not set, and this package builds only for wasm.
         Build it through Scripts/install-wasm-toolchain.sh --verify, which sets it, or export it \
         to a wasi-sdk install of the pinned version.
@@ -71,18 +72,22 @@ let package = Package(
         .target(
             name: "WasmProbeCxx",
             cxxSettings: [
-                .unsafeFlags(pin("WASM_CXX_EH_FLAGS").split(separator: " ").map(String.init),
-                             .when(platforms: [.wasi]))
+                .unsafeFlags(
+                    pin("WASM_CXX_EH_FLAGS").split(separator: " ").map(String.init),
+                    .when(platforms: [.wasi]))
             ]
         ),
         .executableTarget(
             name: "wasmprobe",
             dependencies: ["WasmProbeCxx"],
             linkerSettings: [
-                .unsafeFlags(["-L\(exceptionLibraries)",
-                              "-Xlinker", "-lc++abi",
-                              "-Xlinker", "-lunwind"],
-                             .when(platforms: [.wasi]))
+                .unsafeFlags(
+                    [
+                        "-L\(exceptionLibraries)",
+                        "-Xlinker", "-lc++abi",
+                        "-Xlinker", "-lunwind",
+                    ],
+                    .when(platforms: [.wasi]))
             ]
         ),
     ]

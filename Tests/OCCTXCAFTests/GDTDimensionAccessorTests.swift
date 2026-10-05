@@ -73,7 +73,9 @@ struct GDTDimensionAccessorTests {
     }
 
     /// OCCT answers a flat (0, 0) from GetNbOfDecimalPlaces for a dimension that never had a pair,
-    /// which is indistinguishable from a real (0, 0) request. The stored/not-stored condition is
+    /// which is indistinguishable from a real (0, 0) request.
+    ///
+    /// The stored/not-stored condition is
     /// the only thing that separates them, so `decimalPlaces` is nil rather than a fabricated zero.
     @Test("Decimal places read back as written, and as nil when never written")
     func decimalPlacesDistinguishAbsenceFromZero() {
@@ -127,7 +129,9 @@ struct GDTDimensionAccessorTests {
     }
 
     /// The two static classifiers partition most of DimensionType, and neither holds for the two
-    /// presentation types. Asked of OCCT rather than of a hand-written case list.
+    /// presentation types.
+    ///
+    /// Asked of OCCT rather than of a hand-written case list.
     @Test("The dimension type classifiers agree with OCCT for a location, a size and neither")
     func typeClassifiersMatchOCCT() {
         #expect(Document.DimensionType.locationLinearDistance.isDimensionalLocation)

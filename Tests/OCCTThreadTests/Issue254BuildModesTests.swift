@@ -4,7 +4,9 @@ import simd
 @testable import OCCTSwift
 
 /// Issue #254: single-start coaxial-cylinder threads build as a smooth, low-face-count helix
-/// under both surviving build modes, `.auto` and `.direct`. The old faceted screw-loft cut path
+/// under both surviving build modes, `.auto` and `.direct`.
+///
+/// The old faceted screw-loft cut path
 /// produced a helical scatter of disconnected rectangular notches (roughly 893 faces) rather than
 /// a continuous thread, even though the solid was `isValid` with roughly the right volume; #232
 /// established the only reason a caller would have chosen that path (a supposed `Bnd_Box` crest

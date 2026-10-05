@@ -17,12 +17,12 @@ import simd
 @Suite("Issue #988: square and buttress come from the trapezoid factory unchanged")
 struct Issue988ThreadProfileFactoryTests {
 
-    /// `ThreadProfile.square`'s literal vertex list as it stood before #988.
+    /// ThreadProfile.square's literal vertex list as it stood before #988.
     static let squareVertices: [(Double, Double)] = [
         (0, 1), (0.25, 1), (0.25, 0), (0.75, 0), (0.75, 1), (1, 1),
     ]
 
-    /// `ThreadProfile.buttress`'s literal vertex list as it stood before #988 (DIN 513).
+    /// ThreadProfile.buttress's literal vertex list as it stood before #988 (DIN 513).
     static let buttressVertices: [(Double, Double)] = [
         (0, 1), (0.0968, 1), (0.1422, 0), (0.4022, 0), (0.9032, 1), (1, 1),
     ]

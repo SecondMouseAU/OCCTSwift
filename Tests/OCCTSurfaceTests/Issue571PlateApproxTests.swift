@@ -18,7 +18,9 @@ import Testing
 struct Issue571PlateApproxTests {
 
     /// A surface no single Bezier patch can fit: two full periods of a product of sines across a
-    /// 16x16 span. A gentler fixture is reproduced exactly by one patch, which hides the defect,
+    /// 16x16 span.
+    ///
+    /// A gentler fixture is reproduced exactly by one patch, which hides the defect,
     /// the previously-shipped plate tests all used 4-to-9-point near-planar sets for that reason.
     static var wavyPoints: [SIMD3<Double>] {
         var points: [SIMD3<Double>] = []

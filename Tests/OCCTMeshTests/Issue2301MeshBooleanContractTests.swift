@@ -27,7 +27,9 @@ import Testing
 @Suite("Issue 2301: mesh Booleans are surface Booleans, and the documented solid route works")
 struct Issue2301MeshBooleanContractTests {
 
-    /// Signed volume enclosed by a closed triangle soup, by the divergence theorem. Independent of
+    /// Signed volume enclosed by a closed triangle soup, by the divergence theorem.
+    ///
+    /// Independent of
     /// every OCCT measurement: it reads only `Mesh.vertices` and `Mesh.indices`.
     static func enclosedVolume(_ mesh: Mesh) -> Double {
         let v = mesh.vertices
@@ -35,12 +37,21 @@ struct Issue2301MeshBooleanContractTests {
         var volume = 0.0
         var i = 0
         while i + 2 < idx.count {
-            let a = v[Int(idx[i])], b = v[Int(idx[i + 1])], c = v[Int(idx[i + 2])]
-            let ax = Double(a.x), ay = Double(a.y), az = Double(a.z)
-            let bx = Double(b.x), by = Double(b.y), bz = Double(b.z)
-            let cx = Double(c.x), cy = Double(c.y), cz = Double(c.z)
+            let a = v[Int(idx[i])]
+            let b = v[Int(idx[i + 1])]
+            let c = v[Int(idx[i + 2])]
+            let ax = Double(a.x)
+            let ay = Double(a.y)
+            let az = Double(a.z)
+            let bx = Double(b.x)
+            let by = Double(b.y)
+            let bz = Double(b.z)
+            let cx = Double(c.x)
+            let cy = Double(c.y)
+            let cz = Double(c.z)
             volume +=
-                (ax * (by * cz - bz * cy) - ay * (bx * cz - bz * cx) + az * (bx * cy - by * cx)) / 6.0
+                (ax * (by * cz - bz * cy) - ay * (bx * cz - bz * cx) + az * (bx * cy - by * cx))
+                / 6.0
             i += 3
         }
         return volume

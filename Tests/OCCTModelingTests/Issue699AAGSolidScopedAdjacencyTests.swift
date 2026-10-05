@@ -95,7 +95,9 @@ struct Issue699AAGSolidScopedAdjacencyTests {
     }
 
     /// `buildAAG().nodes.count` is unaffected: #699 restricts EDGES, not the node set #642 already
-    /// fixed. Both orders keep 12 occurrence nodes (6 per solid) for this fixture.
+    /// fixed.
+    ///
+    /// Both orders keep 12 occurrence nodes (6 per solid) for this fixture.
     @Test("buildAAG().nodes.count is unaffected by the adjacency fix")
     func nodeCountUnaffected() {
         guard let orderA = Self.verticalSplitBoxCompound(order: .asSplit),
@@ -110,7 +112,9 @@ struct Issue699AAGSolidScopedAdjacencyTests {
     }
 
     /// Each solid, in isolation, is a plain 6-face box (12 face-adjacency edges: every face touches
-    /// 4 others, 6*4/2 = 12). With adjacency correctly scoped to one solid, the compound's graph is
+    /// 4 others, 6*4/2 = 12).
+    ///
+    /// With adjacency correctly scoped to one solid, the compound's graph is
     /// exactly two such box graphs and nothing more: 24 edges, none of them crossing the solid
     /// boundary. Before #699 this was higher, and order-dependent, because cross-solid pairs were
     /// included too.
@@ -128,7 +132,9 @@ struct Issue699AAGSolidScopedAdjacencyTests {
     }
 
     /// The shared wall's two occurrences (same `distinctFaceIndex`, opposite orientation) are each
-    /// adjacent only to faces on their OWN solid's side. Neither wall occurrence is adjacent to the
+    /// adjacent only to faces on their OWN solid's side.
+    ///
+    /// Neither wall occurrence is adjacent to the
     /// other (that guard predates #699, see `Issue642AAGNodeIdentityTests`). The #699 part is
     /// that neither is adjacent to the OTHER solid's half of the split top face either, even
     /// though that half shares the wall's own top boundary edge.
@@ -173,7 +179,9 @@ struct Issue699AAGSolidScopedAdjacencyTests {
 
     /// A single solid has no cross-solid pair to restrict: `AAG.solidGroups(of:in:)` returns `nil`
     /// for `Shape.solids.count <= 1`, so `buildGraph()` falls back to comparing every pair exactly
-    /// as it did before #699. A plain box's graph is unchanged.
+    /// as it did before #699.
+    ///
+    /// A plain box's graph is unchanged.
     @Test("a plain box's AAG is unaffected")
     func plainBoxUnaffected() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10) else {
@@ -189,6 +197,7 @@ struct Issue699AAGSolidScopedAdjacencyTests {
     // MARK: - No regression on #642's own fixture (order-agreement survives, though the count moved)
 
     /// #642's own horizontal-cut fixture must still agree across compound member order after #699.
+    ///
     /// The exact count moved from `2` to `1` (see the suite's own doc comment and
     /// `Scripts/repro/cluster-a-subshape-enumeration/README.md`'s "Update following #699's fix"),
     /// and #703 later moved it again, from `1` to `0`: two plain boxes glued face to face have no
@@ -219,7 +228,9 @@ struct Issue699AAGSolidScopedAdjacencyTests {
     // MARK: - The two fallback branches (review follow-up)
 
     /// `solidGroups` returns `nil` when the per-solid occurrence counts do not sum to the total, and
-    /// `buildGraph()` then compares every pair as it did before #699. A compound of two solids plus
+    /// `buildGraph()` then compares every pair as it did before #699.
+    ///
+    /// A compound of two solids plus
     /// a free face is that case: 6 + 6 occurrences against 13 in the shape.
     ///
     /// **This case is not proven by removing the guard, and saying so is the point.** I expected it
@@ -274,7 +285,9 @@ struct Issue699AAGSolidScopedAdjacencyTests {
     }
 
     /// Both other fixtures are exactly two solids, so the partition loop is only ever exercised
-    /// pairwise. Three disjoint boxes walk it past that, and permuting them must not move anything.
+    /// pairwise.
+    ///
+    /// Three disjoint boxes walk it past that, and permuting them must not move anything.
     @Test("The partition generalises past two solids")
     func threeSolidCompoundPartitions() {
         func compound(_ order: [Int]) -> Shape? {

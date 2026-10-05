@@ -9,7 +9,8 @@ import simd
 /// returned `7` (`GeomAbs_OffsetCurve`) on a null/invalid handle, labeled `// OtherCurve` in the
 /// comment. `GeomAbs_CurveType` is a 9-value enum (`Line=0` ... `OffsetCurve=7`, `OtherCurve=8`),
 /// so the fallback silently reported a specific, real, wrong curve type instead of "other/unknown".
-/// `Edge.swift`'s `CurveType` enum already had the correct mapping (`offsetCurve = 7`, `other = 8`),
+///
+/// Edge.swift's `CurveType` enum already had the correct mapping (`offsetCurve = 7`, `other = 8`),
 /// so the wrong constant reached a real, differently-labeled Swift case, not just a comment
 /// mismatch.
 ///

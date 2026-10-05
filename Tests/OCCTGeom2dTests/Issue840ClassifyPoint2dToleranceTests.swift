@@ -7,7 +7,9 @@ import simd
 /// boundary" question with inconsistent default tolerances -- `Shape.classifyPoint2d(u:v:)`
 /// (`IntTools_FClass2d`) defaulted to `1e-7`, while `Face.classify(u:v:)` and
 /// `Shape.classifyPoint2D(faceIndex:u:v:)` (both `BRepClass_FaceClassifier`/`BRepClass_FClassifier`)
-/// default to `1e-6`. A point between the two tolerances of the boundary classified differently
+/// default to `1e-6`.
+///
+/// A point between the two tolerances of the boundary classified differently
 /// depending which of the three interchangeable-looking APIs was called. Fixed by aligning
 /// `classifyPoint2d`'s default to `1e-6`.
 @Suite("Issue #840: classifyPoint2d default tolerance alignment")
@@ -22,7 +24,7 @@ struct Issue840ClassifyPoint2dToleranceTests {
 
     /// The exact scenario #840 reports: a UV point 5e-7 outside the u=0 boundary -- farther than
     /// the OLD `classifyPoint2d` default (`1e-7`, would classify `.outside`) but within the
-    /// aligned default (`1e-6`) and within `Face.classify`/`classifyPoint2D`'s own long-standing
+    /// aligned default (`1e-6`) and within `Face.classify`/classifyPoint2D's own long-standing
     /// `1e-6` default, both of which classify it `.onBoundary`.
     @Test("classifyPoint2d agrees with Face.classify and classifyPoint2D on a borderline point")
     func defaultsAgreeOnBorderlinePoint() throws {

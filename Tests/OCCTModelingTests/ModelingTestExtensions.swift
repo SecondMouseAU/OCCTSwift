@@ -2,8 +2,8 @@
 // Shared extensions for OCCTModelingTests.
 // No @Suite or @Test: only shared helpers.
 
-import simd
 import OCCTSwift
+import simd
 
 extension SIMD3 where Scalar == Double {
     /// Returns a unit vector in the same direction, or `self` if the length is zero.
@@ -18,7 +18,9 @@ extension SIMD3 where Scalar == Double {
 }
 
 /// Shared glue test helper: tries all face pairs between two shapes using the given
-/// glue function, returning the first successful result. Avoids duplicating the
+/// glue function, returning the first successful result.
+///
+/// Avoids duplicating the
 /// byte-identical face-pair search loop across BRepFeat_Gluer and LocOpe_Gluer tests.
 func tryGlueAllFacePairs<Result>(
     _ shape1: Shape, _ shape2: Shape,

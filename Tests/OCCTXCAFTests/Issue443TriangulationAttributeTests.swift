@@ -5,7 +5,9 @@ import simd
 @testable import OCCTSwift
 
 /// #443: `setTriangulationFromShape` meshed the whole shape and then stored only the
-/// **first face's** triangulation. Measured before the fix: a 6-face box and a 12-face
+/// **first face's** triangulation.
+///
+/// Measured before the fix: a 6-face box and a 12-face
 /// two-box compound both stored 4 nodes and 2 triangles, one planar face's corners, for
 /// a doc comment that reads "by meshing a shape". The attribute is what later readers
 /// trust as the label's geometry, so a silently truncated one is the worst of the three
@@ -30,7 +32,9 @@ struct Issue443TriangulationAttributeTests {
         #expect(label.triangulationTriangleCount == 12)
     }
 
-    /// Two disjoint boxes: 12 faces, so twice the box's mesh. The pre-fix answer did not
+    /// Two disjoint boxes: 12 faces, so twice the box's mesh.
+    ///
+    /// The pre-fix answer did not
     /// change at all between these two inputs, which is what made it hard to notice.
     @Test("a two-body compound stores both bodies")
     func compoundStoresEveryBody() {
@@ -48,7 +52,9 @@ struct Issue443TriangulationAttributeTests {
         #expect(label.triangulationTriangleCount == 24)
     }
 
-    /// Finer deflection must produce a finer mesh. On a curved shape this is the check
+    /// Finer deflection must produce a finer mesh.
+    ///
+    /// On a curved shape this is the check
     /// that the merge actually walks every face rather than pinning one of them.
     @Test("deflection still controls mesh density on a curved shape")
     func deflectionControlsDensity() {
@@ -72,6 +78,7 @@ struct Issue443TriangulationAttributeTests {
     }
 
     /// The merged deflection is the worst of the contributing faces, not the first face's.
+    ///
     /// A box's six planar faces all mesh exactly, so this pins the flat case at 0 while the
     /// curved case above pins a real value.
     @Test("a planar shape reports its faces' own deflection")
@@ -88,7 +95,9 @@ struct Issue443TriangulationAttributeTests {
 
     /// The second behaviour change in this fix, and the one no node count would reveal: the
     /// old code fetched each face's `TopLoc_Location` and **discarded** it, so a located
-    /// shape's nodes were stored in the face's own local frame. A box moved to
+    /// shape's nodes were stored in the face's own local frame.
+    ///
+    /// A box moved to
     /// (100, 200, 300) stored a node at the origin; it now stores it at (100, 200, 300).
     @Test("a located shape stores nodes in the shape's frame, not the face's")
     func locatedShapeStoresShapeFrame() {
@@ -183,7 +192,9 @@ struct Issue443TriangulationAttributeTests {
 
     /// The `hasNormals` branch of the merge is dead on the ordinary path:
     /// `BRepMesh_IncrementalMesh` produces no node normals at all (measured, 0 of 6 box faces
-    /// and 0 of 1 sphere face). It fires only for a face that arrived carrying a
+    /// and 0 of 1 sphere face).
+    ///
+    /// It fires only for a face that arrived carrying a
     /// normal-bearing triangulation, which glTF import does produce, so that is the only way
     /// to exercise it.
     @Test("a glTF-imported mesh carries its node normals through the merge")

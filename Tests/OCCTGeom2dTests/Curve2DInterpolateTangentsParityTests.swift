@@ -9,7 +9,9 @@ import simd
 /// `Curve2D.interpolate(points:startTangent:endTangent:)` and
 /// `Curve2D.interpolate(through:startTangent:endTangent:tolerance:)` wrap the same
 /// `Geom2dAPI_Interpolate` constructor with the same `Load()`/`Perform()`/`IsDone()`/`Curve()`
-/// sequence. As two independent implementations, the `points:` spelling had drifted: it hardcoded
+/// sequence.
+///
+/// As two independent implementations, the `points:` spelling had drifted: it hardcoded
 /// tolerance at `1e-6` with no parameter to change it. It now delegates.
 @Suite("Curve2D tangent interpolation entry points agree (#410)")
 struct Curve2DInterpolateTangentsParityTests {

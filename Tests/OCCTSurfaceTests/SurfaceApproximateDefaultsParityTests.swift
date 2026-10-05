@@ -6,9 +6,11 @@ import simd
 
 // MARK: - #406: Surface.approximated defaults now match Curve3D/Curve2D.approximated
 
-/// Before #406, `Surface.approximated`'s defaults (`tolerance: 0.01`, `maxDegree: 10`) silently
+/// Before #406, Surface.approximated's defaults (`tolerance: 0.01`, `maxDegree: 10`) silently
 /// diverged from `Curve3D.approximated`/`Curve2D.approximated` (`tolerance: 1e-3`, `maxDegree: 8`)
-/// with no documented rationale. Manual measurement against analytic primitives and a 40x40-point
+/// with no documented rationale.
+///
+/// Manual measurement against analytic primitives and a 40x40-point
 /// BSpline fit found no case where the tighter shared values fail or cost meaningfully more, so
 /// the divergence was drift rather than a deliberate accuracy/cost tradeoff, `Surface.approximated`
 /// now shares the same defaults.
@@ -68,7 +70,9 @@ struct SurfaceApproximateDefaultsParityTests {
 
     /// Review follow-up on #406/PR #460: the suite above only exercises primitives (sphere,
     /// torus, trimmed cylinder/cone) that have an *exact* BSpline conversion, easy cases for
-    /// `GeomConvert_ApproxSurface`. This test targets a genuinely non-analytic surface instead:
+    /// `GeomConvert_ApproxSurface`.
+    ///
+    /// This test targets a genuinely non-analytic surface instead:
     /// the offset of a free-form (point-grid-fit) BSpline surface, which has no closed-form
     /// equivalent.
     ///

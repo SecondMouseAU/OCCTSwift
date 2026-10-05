@@ -6,7 +6,9 @@ import Testing
 /// #2855. `TDataStd_IntegerArray::SetValue` and `TDataStd_RealArray::SetValue` check nothing
 /// themselves and forward to `NCollection_Array1::SetValue`, whose inline
 /// `Standard_OutOfRange_Raise_if` is expanded inside `TDataStd_IntegerArray.cxx`, an OCCT
-/// translation unit compiled `-DNo_Exception`, so it is compiled out at that depth. Before the
+/// translation unit compiled `-DNo_Exception`, so it is compiled out at that depth.
+///
+/// Before the
 /// bridge-side bound test, `setIntegerArrayValue(at: 1_000_000, value:)` wrote roughly four
 /// megabytes past a four-element buffer and answered `true`.
 ///

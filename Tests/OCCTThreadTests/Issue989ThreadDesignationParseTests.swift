@@ -78,7 +78,9 @@ struct Issue989ThreadDesignationParseTests {
     }
 
     /// The property that makes one shared parse legitimate: ACME and Unified differ only in the
-    /// suffix each method strips and the form it stamps on the result. A fix applied to one and
+    /// suffix each method strips and the form it stamps on the result.
+    ///
+    /// A fix applied to one and
     /// not the other would show up here.
     @Test("the same imperial body parses identically as ACME and as Unified")
     func acmeAndUnifiedAgreeOnTheSameBody() {
