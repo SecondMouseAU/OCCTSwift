@@ -21,9 +21,17 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### CI runs the cheap checks first and wasm last, and the three non-required workflows are now called from `ci.yml`
+
+`code-structure`, `code-style` and `wasm` are reusable workflows called from `ci.yml`, ordered `code-structure`, `code-style`, then the macOS builds, then `wasm` last, so a style or structure failure reports in minutes and the 25-minute wasm build no longer starts beside them. Their path filters became a `code` output on the `changes` job. Their checks are now named `<caller> / <called>` (`code-style / code-style`, `wasm / wasm build + spike`); `gate-scripts`, the required check, is unchanged and still runs first.
+
 ### Stress suites pin what the kernel answers where #766's Red rows left them accepting any answer (#2983, #766)
 
 Ninety-six tests in `StressExhaustiveAPITests`, `StressBuilderLifecycleTests` and `StressConcurrencyTests` now assert values worked out in closed form or reproduced by `Scripts/repro/2983-stress/probe.mm`, each beside a control that needs the opposite answer. Concurrency tests name the invariant a race would break (counts, sums, per-task values) instead of agreement between answers. Two ThruSections regression tests that the repin had left skipped on every default run now run. Under 63 injected defects the old versions of these tests catch 14; the new ones catch all 63. `HatchBuilder.nbIntervals(lineIndex: 0)` crashing the process is filed as #3057. Tests only.
+
+### The style exemption manifests are retired: all 244 listed Swift files comply, and `check-style-manifest.py` is gone
+
+`Scripts/style-manifest-*.txt` and `Scripts/check-style-manifest.py` are removed, along with their CI steps. Every tracked Swift file now passes `swift-format lint --strict` and SwiftLint `--strict` with nothing exempt, and `.swiftlint.yml` no longer excludes `Surface.swift` or `Shape+Modeling.swift`. A deliberate exception is written where it occurs, as `// swift-format-ignore: <Rule>`; `git grep swift-format-ignore` lists them all. No behaviour changes: the edits to the 244 files are formatting and comments.
 
 ### A SheetMetal bend takes its run of the seam from the flanges it joins, so a convex bend on a split flange and a stepped seam diagonal to the flange's axes build correctly (#3019, #3033)
 
