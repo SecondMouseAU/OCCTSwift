@@ -32,7 +32,9 @@ import simd
 struct Issue2769PerformStatusTests {
 
     /// A cubic BSpline face with a multiplicity-3 interior knot in U and V, so it is genuinely C0
-    /// rather than C1 at that knot. Same recipe as
+    /// rather than C1 at that knot.
+    ///
+    /// Same recipe as
     /// `Issue438DivideContinuityUnificationTests.kinkedSurfaceFace()`, kept local because it is the
     /// only fixture `divided(at:)` visibly splits: measured, a box, a cylinder, a sphere, a cone
     /// and a torus all come back unchanged at every continuity level.

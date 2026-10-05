@@ -43,7 +43,9 @@ struct Issue570HealingApproxTests {
     }
 
     /// Worst distance between the first face's surface of `result` and `source`, sampled on a grid
-    /// of `source`'s domain. Both carry the same parameterisation here (measured), so comparing at
+    /// of source's domain.
+    ///
+    /// Both carry the same parameterisation here (measured), so comparing at
     /// equal (u, v) is meaningful.
     static func maxDeviation(of result: Shape, from source: Surface, samples: Int = 24) throws
         -> Double

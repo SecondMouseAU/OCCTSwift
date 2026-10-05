@@ -37,7 +37,9 @@ struct Issue761SharedEdgeCountCapTests {
     // MARK: - Fixture
 
     /// A 100mm box with 11 small notches cut across the top/front edge, so the remaining top face
-    /// and front face share more than 10 separate boundary-edge segments. Each notch is a small
+    /// and front face share more than 10 separate boundary-edge segments.
+    ///
+    /// Each notch is a small
     /// box straddling both the z=50 (top) and y=-50 (front) planes near x=x0, removing a bite from
     /// both faces and splitting their shared edge there. Matches
     /// `Scripts/repro/761-aag-brepgraph-adjacency/`'s own `manySharedEdgesFixture()`, kept as a
@@ -56,7 +58,9 @@ struct Issue761SharedEdgeCountCapTests {
         return shape
     }
 
-    /// Finds the largest occurrence matching a predicate on its `AAGNode`, by area. Used to locate
+    /// Finds the largest occurrence matching a predicate on its `AAGNode`, by area.
+    ///
+    /// Used to locate
     /// the top and front faces without depending on their (unpredictable, since the notches add
     /// several small new faces) index position.
     private static func largestFace(_ aag: AAG, occ: [Face], where predicate: (AAGNode) -> Bool)
@@ -106,10 +110,12 @@ struct Issue761SharedEdgeCountCapTests {
             edge.sharedEdgeCount > 10, "the whole point of this fixture is to exceed the old cap")
     }
 
-    /// The second, independent construction the measurement policy asks for: `BRepGraph`'s own
+    /// The second, independent construction the measurement policy asks for: BRepGraph's own
     /// `sharedEdges(between:and:)`, mapped to the same two occurrences via `findNode(for:)`, has
     /// no such cap (an unbounded `std::vector` on the bridge side, `bgSharedEdges` in
-    /// `OCCTBridge_BRepGraph.mm`). It must agree with AAG's own count exactly now that AAG is no
+    /// `OCCTBridge_BRepGraph.mm`).
+    ///
+    /// It must agree with AAG's own count exactly now that AAG is no
     /// longer capped, this is precisely the disagreement this issue's census found before the fix.
     @Test("agrees with BRepGraph's own uncapped sharedEdges count")
     func agreesWithBRepGraphsUncappedCount() {
@@ -144,6 +150,7 @@ struct Issue761SharedEdgeCountCapTests {
     /// (`countOrCollectSharedEdges`, `OCCTBridge_BRepGraph.mm`) instead of two independently
     /// written copies, so they must disagree on a count ONLY because of the `maxEdges` buffer the
     /// collecting call was given, never because the comparison itself differs between the two.
+    ///
     /// Calls the bridge functions directly, not through `AAG`: since #783 `buildGraph()` makes
     /// one `OCCTFaceGetSharedEdgeSummary` call and sizes no buffer at all, so this particular
     /// disagreement is not observable through it. A deliberately small `maxEdges: 10` on the
@@ -191,7 +198,9 @@ struct Issue761SharedEdgeCountCapTests {
 
     // MARK: - No regression on the ordinary case
 
-    /// A plain box shares no more than one edge between any two adjacent faces. The fix must not
+    /// A plain box shares no more than one edge between any two adjacent faces.
+    ///
+    /// The fix must not
     /// change this, it only changes how the buffer is SIZED, not the comparison itself.
     @Test("a plain box's adjacent faces still share exactly one edge")
     func plainBoxUnaffected() {
@@ -210,7 +219,9 @@ struct Issue761SharedEdgeCountCapTests {
     }
 
     /// Convexity classification (which reads only the FIRST shared edge, unaffected by how the
-    /// count is sized) still resolves. This fixture's top/front pair should classify convex like
+    /// count is sized) still resolves.
+    ///
+    /// This fixture's top/front pair should classify convex like
     /// any ordinary box corner, the notches remove material, they do not add a concave junction
     /// at the corner itself.
     @Test("convexity still resolves for the many-shared-edges pair")

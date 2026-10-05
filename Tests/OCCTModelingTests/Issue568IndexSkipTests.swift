@@ -28,7 +28,9 @@ struct Issue568IndexSkipTests {
     // MARK: - Fixtures
 
     /// A shape with strictly more faces and edges than a plain box, so its last face/edge index is
-    /// out of range for the box. This is how an out-of-range index reaches the entry points that
+    /// out of range for the box.
+    ///
+    /// This is how an out-of-range index reaches the entry points that
     /// take `Face` values rather than raw integers.
     private func cutBox() -> Shape? {
         let box = Shape.box(width: 20, height: 20, depth: 20)!
@@ -39,7 +41,9 @@ struct Issue568IndexSkipTests {
 
     // MARK: - Draft (OCCTShapeDraft)
 
-    /// The headline case. A draft naming faces the shape does not have used to report success and
+    /// The headline case.
+    ///
+    /// A draft naming faces the shape does not have used to report success and
     /// return the shape unchanged, because `BRepOffsetAPI_DraftAngle` treats an empty request as a
     /// finished one.
     @Test("A draft naming no face of this shape is refused, not answered with the input")
@@ -85,7 +89,9 @@ struct Issue568IndexSkipTests {
     }
 
     /// The positive control: rejecting an unresolvable index must not start rejecting resolvable
-    /// ones. This is the pre-existing "Draft vertical faces" case restated as a volume comparison.
+    /// ones.
+    ///
+    /// This is the pre-existing "Draft vertical faces" case restated as a volume comparison.
     @Test("A draft naming only this shape's faces still drafts them")
     func draftAcceptsOwnFaces() {
         let box = Shape.box(width: 20, height: 20, depth: 30)!
@@ -151,7 +157,9 @@ struct Issue568IndexSkipTests {
     }
 
     /// The partial batch built a chamfer on whatever resolved, so the result had a smaller chamfer
-    /// count than asked for and nothing said so. Two resolvable indices must still chamfer two.
+    /// count than asked for and nothing said so.
+    ///
+    /// Two resolvable indices must still chamfer two.
     @Test("History chamfer with resolvable indices chamfers all of them")
     func historyChamferAcceptsResolvableIndices() {
         let box = Shape.box(width: 20, height: 20, depth: 20)!
@@ -213,7 +221,9 @@ struct Issue568IndexSkipTests {
     // MARK: - 2D chamfer duplicate pair (#705)
 
     /// #705: the same edge pair named twice used to SIGSEGV the process, uncatchably, inside the
-    /// second `BRepFilletAPI_MakeFillet2d::AddChamfer` call. Confirmed in a separate process
+    /// second `BRepFilletAPI_MakeFillet2d::AddChamfer` call.
+    ///
+    /// Confirmed in a separate process
     /// before this fix landed (raw exit code 139); this test only exercises the fixed, in-process
     /// behaviour, matching the "ordinary, safe" half of that instruction. The pair is order
     /// independent: `(0, 1)` and `(1, 0)` name the same two edges and both are refused.
@@ -228,7 +238,9 @@ struct Issue568IndexSkipTests {
 
     /// The duplicate-pair guard has to key on the PAIR, not on either index alone: chamfering
     /// every corner of a rectangle legitimately reuses each edge across two DIFFERENT pairs
-    /// (edge 1 closes both the (0,1) and the (1,2) corner). Measured safe before this fix and
+    /// (edge 1 closes both the (0,1) and the (1,2) corner).
+    ///
+    /// Measured safe before this fix and
     /// must stay safe after it.
     @Test("A 2D chamfer still cuts every corner when adjacent pairs share an edge")
     func chamfer2DAcceptsSharedEdgeAcrossDifferentPairs() {

@@ -32,7 +32,9 @@ struct Issue532CylindricalHolePartSelectionTests {
     /// One r=5 bore through 20mm of stock.
     private static let bore = Double.pi * 25 * 20
 
-    /// Plates 50 x 50 x 20 stacked on the drill axis with a gap. From origin (0,0,15) along -Z the
+    /// Plates 50 x 50 x 20 stacked on the drill axis with a gap.
+    ///
+    /// From origin (0,0,15) along -Z the
     /// first sits at axis parameters 5...25, the second at 45...65, the third at 85...105.
     private func stack(_ count: Int) -> Shape? {
         var plates: [Shape] = []
@@ -48,7 +50,9 @@ struct Issue532CylindricalHolePartSelectionTests {
 
     // MARK: - The defect
 
-    /// The two extents #532 named. Both bound the hole by the stock's own faces, so both must drill
+    /// The two extents #532 named.
+    ///
+    /// Both bound the hole by the stock's own faces, so both must drill
     /// every body between the entry and exit face, which is what the boolean drill and
     /// `.throughAll` always did.
     @Test("untilEnd and a stack-spanning range drill every body on the axis")
@@ -78,7 +82,9 @@ struct Issue532CylindricalHolePartSelectionTests {
     }
 
     /// `PerformBlind` shares the same broken selection and was not named in #532, it was reported
-    /// against the two extents #496 had newly wrapped. On the stack it removed nothing; a blind
+    /// against the two extents #496 had newly wrapped.
+    ///
+    /// On the stack it removed nothing; a blind
     /// depth of 20 from the origin reaches 15mm into the first plate (which starts at parameter 5).
     @Test("blind drills its depth into the first body of a stack")
     func blindDrillsIntoAStack() {
@@ -135,7 +141,9 @@ struct Issue532CylindricalHolePartSelectionTests {
     }
 
     /// #532 read as a multi-body defect, but the trigger is "the cut result has two solids", and a
-    /// **single** solid reaches it. An 8mm-wide bar drilled at r=5 is severed by its own bore, so
+    /// **single** solid reaches it.
+    ///
+    /// An 8mm-wide bar drilled at r=5 is severed by its own bore, so
     /// the cut result is two pieces of one workpiece, no compound in sight.
     ///
     /// Removed volume is the r=5 disc clipped to |x| <= 4, extruded 20mm: two circular segments come
@@ -184,7 +192,8 @@ struct Issue532CylindricalHolePartSelectionTests {
             (.untilEnd, Self.bore),
             (.thruNext, Self.bore),
             (.range(from: 0, to: 30), Self.bore),
-            (.range(from: 10, to: 20), Self.bore),  // a window inside one body still bores all of it
+            // a window inside one body still bores all of it
+            (.range(from: 10, to: 20), Self.bore),
             (.blind(depth: 20), Double.pi * 25 * 15),
         ]
         for (extent, want) in expected {
@@ -203,7 +212,9 @@ struct Issue532CylindricalHolePartSelectionTests {
     }
 
     /// A hollow box: one solid, four axis crossings, drilled from above so both walls lie at
-    /// positive axis parameters. Before the fix the selection branch never ran here (the cut result
+    /// positive axis parameters.
+    ///
+    /// Before the fix the selection branch never ran here (the cut result
     /// was one solid); after it, the branch selects two real tool parts and keeps both. Same answer,
     /// reached by the machinery that is supposed to produce it.
     @Test("A hollow box drills both walls, before and after the fix")

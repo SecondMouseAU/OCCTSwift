@@ -8,7 +8,9 @@ import Testing
 @Suite("GD&T unified read surface (#996)")
 struct GDTUnifiedReadTests {
     /// Author a box with a dimension, a tolerance and a datum, then read the SAME populated
-    /// document through every accessor of the one read family. Before #996 there were two families
+    /// document through every accessor of the one read family.
+    ///
+    /// Before #996 there were two families
     /// whose coverage was exactly complementary: `GDTDocumentTests` tested the untyped one only
     /// where it returned nothing, `DocumentGDTTests` the typed one only where it returned
     /// something, so nothing would have caught them diverging.
@@ -63,7 +65,9 @@ struct GDTUnifiedReadTests {
 
     /// A range dimension (`IsDimWithRange()`, values array of length 2) used to read back as its
     /// lower bound mislabelled as the value, with both tolerances a fabricated 0, so it was
-    /// indistinguishable from a plain 10 with no tolerance. Measured against the pinned kernel in
+    /// indistinguishable from a plain 10 with no tolerance.
+    ///
+    /// Measured against the pinned kernel in
     /// `Scripts/repro/996-gdt-read-surface/`.
     @Test("A 10..12 range dimension reads back as a range, not as a plain 10")
     func rangeDimensionKeepsItsBounds() {
@@ -98,7 +102,9 @@ struct GDTUnifiedReadTests {
         #expect(dim.upperTolerance == nil)
     }
 
-    /// The tolerance pair is asymmetric on purpose. A symmetric -0.1/+0.1 cannot tell a correct
+    /// The tolerance pair is asymmetric on purpose.
+    ///
+    /// A symmetric -0.1/+0.1 cannot tell a correct
     /// accessor from a swapped one, and the pinned header's doc comments on
     /// `GetLowerTolValue`/`GetUpperTolValue` are swapped upstream. The functions are not; measured
     /// two ways in `Scripts/repro/996-gdt-read-surface/`.
@@ -202,6 +208,7 @@ struct GDTUnifiedReadTests {
     }
 
     /// A class of tolerance is orthogonal to the values array, so a range dimension can carry one.
+    ///
     /// This is the second construction for `classOfToleranceIsReadBack`: same class, different
     /// bounds, which is what proves the two are independent rather than the class implying
     /// `.simple`.
@@ -236,7 +243,9 @@ struct GDTUnifiedReadTests {
     }
 
     /// OCCT refuses to convert a range dimension to a plus/minus one, returning false from both
-    /// setters and leaving the dimension untouched. The bridge used to discard those returns and
+    /// setters and leaving the dimension untouched.
+    ///
+    /// The bridge used to discard those returns and
     /// report success for a call that changed nothing.
     @Test("Setting a tolerance on a range dimension is refused, not silently ignored")
     func toleranceOnARangeDimensionIsRefused() {

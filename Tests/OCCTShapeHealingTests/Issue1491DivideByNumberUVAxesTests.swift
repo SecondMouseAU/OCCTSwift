@@ -31,7 +31,9 @@ import simd
 struct Issue1491DivideByNumberUVAxesTests {
 
     /// A single planar face, deliberately elongated (100 long in U, 1 in V) so the two candidate
-    /// behaviors give very different, unambiguous answers. Measured directly with a ground-truth
+    /// behaviors give very different, unambiguous answers.
+    ///
+    /// Measured directly with a ground-truth
     /// probe (not hand-derived): the buggy "roughly square" auto-derivation gives 44 faces for
     /// nbU=5 regardless of orientation (`aSquareSize = sqrt(100/5) ≈ 4.47` floors to 22 splits in
     /// the long direction, clamps the near-zero short-direction floor up to 1, then the class's
@@ -45,7 +47,9 @@ struct Issue1491DivideByNumberUVAxesTests {
     }
 
     /// Proves the exact requested split count is honored, not silently overridden by the
-    /// aspect-ratio-derived "roughly square" fallback. Reverting the fix (dropping the
+    /// aspect-ratio-derived "roughly square" fallback.
+    ///
+    /// Reverting the fix (dropping the
     /// `SetNumbersUVSplits` call this issue adds) makes this fail: the elongated fixture above
     /// makes the two paths diverge sharply (5 vs. 44), so this is not a coincidental pass.
     @Test("nbU=5, nbV=1 produces exactly 5 faces, not an aspect-ratio-derived count")
@@ -59,7 +63,9 @@ struct Issue1491DivideByNumberUVAxesTests {
         )
     }
 
-    /// The axis-swapped counterpart: nbU/nbV transposed, same product. Before the fix, both
+    /// The axis-swapped counterpart: nbU/nbV transposed, same product.
+    ///
+    /// Before the fix, both
     /// (5, 1) and (1, 5) fall into the same aspect-ratio-derived branch and produce the SAME
     /// (wrong) face count regardless of which axis got which value -- the issue's own
     /// verification ("nbU=5,nbV=1 and nbU=1,nbV=5 both produce 24 faces") is exactly this
@@ -75,7 +81,9 @@ struct Issue1491DivideByNumberUVAxesTests {
         )
     }
 
-    /// A genuinely asymmetric split (nbU != nbV, product not a perfect square) on a face whose
+    /// A genuinely asymmetric split (nbU !
+    ///
+    /// = nbV, product not a perfect square) on a face whose
     /// own aspect ratio doesn't match 6:1 at all -- if SetNumbersUVSplits were only *sometimes*
     /// wired up (e.g. only for the square case), this would still catch it.
     @Test("nbU=6, nbV=1 produces exactly 6 faces")

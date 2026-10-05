@@ -53,7 +53,9 @@ struct GeomFillCoonsTests {
 
     /// #2795: the same four rows in the arrangement `GeomFill_Coons::Init` actually wants, which is
     /// (bottom, left, top, right): the two boundaries indexed along U in slots 1 and 3, the two
-    /// indexed along V in slots 2 and 4. A flat square then gives its own uniform 5 x 5 grid, every
+    /// indexed along V in slots 2 and 4.
+    ///
+    /// A flat square then gives its own uniform 5 x 5 grid, every
     /// pole on the square, which is a claim the fixture above cannot make. Any reordering of the
     /// four arguments breaks at least one pole here.
     @Test("the arrangement Init wants gives the flat square's own uniform grid")
@@ -77,7 +79,8 @@ struct GeomFillCoonsTests {
     }
 
     /// #2795: the corner disagreement is silent, and this pins which boundary wins.
-    /// `Init`'s second loop runs after the first over the full V range, so `boundary2` overwrites
+    ///
+    /// Init's second loop runs after the first over the full V range, so `boundary2` overwrites
     /// the corner `boundary1` wrote. Moving `boundary2[0]` off the square lands that point at pole
     /// (0, 0) even though `boundary1[0]` is the square's corner.
     @Test("a disagreeing corner is overwritten by boundary2, not rejected")

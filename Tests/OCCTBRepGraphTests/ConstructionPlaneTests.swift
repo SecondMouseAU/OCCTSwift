@@ -9,7 +9,9 @@ import simd
 @Suite("v0.142 ConstructionPlane resolution")
 struct ConstructionPlaneTests {
     /// Finds the index of the first vertex in `graph` within `tolerance` of the origin, or nil
-    /// if none exists. Shared by the two fallback fixtures below (cone-apex, sphere-center),
+    /// if none exists.
+    ///
+    /// Shared by the two fallback fixtures below (cone-apex, sphere-center),
     /// which each searched for their target placeholder vertex with an identical inline loop
     /// that had drifted to two different tolerances (1e-6 vs 1e-9) despite every surrounding
     /// assertion at both call sites checking against 1e-6 -- 1e-6 is what's kept here (#1251).

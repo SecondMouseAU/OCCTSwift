@@ -5,7 +5,9 @@ import Testing
 
 /// #995: `OCCTBridge_Curve3D.mm` and `OCCTBridge_Surface.mm` each defined `buildTrsf3D`, the
 /// discriminated `gp_Trsf` builder behind both of their transform families, with byte-identical
-/// bodies. Both now call `occtBuildTrsf3D` in `OCCTBridge_Internal.h`.
+/// bodies.
+///
+/// Both now call `occtBuildTrsf3D` in `OCCTBridge_Internal.h`.
 ///
 /// Each file's copy served seven call sites: the in-place dispatcher, which takes the type code
 /// straight from Swift, and the six immutable translate/rotate/scale/mirror entry points. Nothing
@@ -18,7 +20,9 @@ import Testing
 @Suite("3D transforms: one discriminated gp_Trsf builder (#995)")
 struct Issue995BuildTrsf3D {
 
-    /// The probe point. A `Geom_Line` through it reports it at parameter 0, and a `Geom_Plane`
+    /// The probe point.
+    ///
+    /// A `Geom_Line` through it reports it at parameter 0, and a `Geom_Plane`
     /// with it as origin reports it at (u, v) = (0, 0), so one point is observable through both
     /// families.
     private static let probe = SIMD3<Double>(3, 4, 5)

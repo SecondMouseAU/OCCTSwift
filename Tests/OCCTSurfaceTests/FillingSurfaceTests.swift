@@ -7,7 +7,7 @@ import simd
 
 @Suite("Filling Surface Tests")
 struct FillingSurfaceTests {
-    /// Helper to get 4 coplanar edges from a box face
+    /// Helper to get 4 coplanar edges from a box face.
     private func getFaceEdges() -> [Edge] {
         let box = Shape.box(width: 10, height: 10, depth: 10)!
         let face = box.faces()[0]

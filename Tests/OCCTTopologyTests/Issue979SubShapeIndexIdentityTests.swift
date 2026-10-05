@@ -20,7 +20,9 @@ struct Issue979SubShapeIndexIdentity {
 
     /// A box cut into two solids that share the cut face: 12 face occurrences over 11 distinct
     /// faces, and the duplicate is not last, where a shifted array and a correct one are actually
-    /// distinguishable. Named `planeSplitBoxCompound` (not `splitBoxCompound`) because
+    /// distinguishable.
+    ///
+    /// Named `planeSplitBoxCompound` (not `splitBoxCompound`) because
     /// `Issue614FaceOrientationTests.splitBoxCompound()` is a different fixture under the name
     /// this file used to share with it (#1255): that one is a 20×10×10 box split by a rotated
     /// knife *face* via `split(by:)`, this one a 10×10×10 box split by the z=4 *plane* via

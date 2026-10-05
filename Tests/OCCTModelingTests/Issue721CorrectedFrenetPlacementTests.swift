@@ -50,7 +50,9 @@ struct Issue721CorrectedFrenetPlacementTests {
     }
 
     /// The discriminator the issue asked for: does the divergence require an internal wire
-    /// boundary (`turns` > 1, hence >1 edge), scaling with boundary count? Swept densely,
+    /// boundary (`turns` > 1, hence >1 edge), scaling with boundary count?
+    ///
+    /// Swept densely,
     /// including half-turns so odd boundary counts are covered, at every pitch the issue itself
     /// measured. With a correctly-placed profile the answer is no at every single point: both
     /// modes match the textbook tube volume and each other to ~1e-6 relative, regardless of edge
@@ -104,10 +106,12 @@ struct Issue721CorrectedFrenetPlacementTests {
     }
 
     /// A direct instrument on the mechanism the prior investigation branch flagged: does
-    /// `GeomFill_CorrectedFrenet`'s per-edge reset actually perturb `Shape.pipeShell`'s frame
-    /// evolution across an internal wire boundary? `Shape.correctedFrenet(at:)`
+    /// GeomFill_CorrectedFrenet's per-edge reset actually perturb Shape.pipeShell's frame
+    /// evolution across an internal wire boundary?
+    ///
+    /// `Shape.correctedFrenet(at:)`
     /// (`Shape+Surface.swift`, `OCCTGeomFillCorrectedFrenet`) works per-*edge*, exactly matching
-    /// `BRepFill_Edge3DLaw`'s own construction (an independent `GeomFill_CorrectedFrenet` built
+    /// BRepFill_Edge3DLaw's own construction (an independent `GeomFill_CorrectedFrenet` built
     /// fresh on each edge's own `BRepAdaptor_Curve`), so this samples edge 1 at its own last
     /// parameter and edge 2 at its own first parameter -- the two sides of the internal boundary
     /// `Wire.helix(turns: 2)` introduces. Included as evidence, not as the volume claim: the frame
@@ -151,7 +155,9 @@ struct Issue721CorrectedFrenetPlacementTests {
     }
 }
 
-/// Compiles and runs `Wire.helix`'s own doc snippet verbatim. The first version of that snippet
+/// Compiles and runs Wire.helix's own doc snippet verbatim.
+///
+/// The first version of that snippet
 /// referenced an undefined `domain` and would not have compiled if anyone pasted it, which is the
 /// same class of defect as the unverified placement formula that produced #721 in the first place.
 /// A snippet shipped alongside a warning about unverified formulas should itself be verified.

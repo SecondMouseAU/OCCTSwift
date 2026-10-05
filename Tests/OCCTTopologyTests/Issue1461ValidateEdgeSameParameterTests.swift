@@ -5,9 +5,11 @@ import simd
 
 @testable import OCCTSwift
 
-/// #1461: `OCCTValidateEdge` used to hardcode `Standard_True` for `BRepLib_ValidateEdge`'s
+/// #1461: `OCCTValidateEdge` used to hardcode `Standard_True` for BRepLib_ValidateEdge's
 /// `theSameParameter` constructor argument instead of reading the edge's real
-/// `BRep_Tool::SameParameter` flag. That argument is not a mode switch: when true (and the
+/// `BRep_Tool::SameParameter` flag.
+///
+/// That argument is not a mode switch: when true (and the
 /// pcurve/3D-curve parameter ranges match), `BRepLib_ValidateEdge::processApprox()` takes a
 /// cheap same-t point comparison that assumes the two curves correspond point-for-point at equal
 /// parameter values; when false, it falls back to a projection/extrema search instead.
@@ -23,7 +25,9 @@ struct Issue1461ValidateEdgeSameParameterTests {
 
     /// Builds an edge whose 3D curve and pcurve trace the identical physical line
     /// `(0,0,0)-(length,0,0)` but at different (linear vs. quadratic) speeds, on a plane face
-    /// covering both. Returns `(edge, face)`, or `nil` if any construction step failed.
+    /// covering both.
+    ///
+    /// Returns `(edge, face)`, or `nil` if any construction step failed.
     private func buildMismatchedEdge(length: Double) -> (OCCTEdgeRef, OCCTFaceRef)? {
         // 3D curve: degree-1 Bezier (0,0,0) -> (length,0,0), domain [0,1], LINEAR speed.
         guard let curve3d = Curve3D.bezier(poles: [SIMD3(0, 0, 0), SIMD3(length, 0, 0)]) else {

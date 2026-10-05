@@ -4,6 +4,7 @@ import simd
 @testable import OCCTSwift
 
 /// Shared test fixtures for void shapes and zero-size shapes.
+///
 /// These are internal so they can be used across test files in the OCCTAnalysisTests module.
 internal func makeVoidShape() -> Shape? {
     guard let b1 = Shape.box(width: 10, height: 10, depth: 10),
@@ -21,7 +22,9 @@ internal func isNearZero(_ v: SIMD3<Double>, _ tol: Double = 1e-6) -> Bool {
 }
 
 /// #943: `bounds`, `size` and `center` became Optional so a shape with no bounding box stops
-/// reporting a fabricated `(0,0,0)-(0,0,0)`. The contract these tests pin is that "no box" and
+/// reporting a fabricated `(0,0,0)-(0,0,0)`.
+///
+/// The contract these tests pin is that "no box" and
 /// "a box that measures zero" are different answers, and that the difference comes from OCCT's own
 /// `Bnd_Box::IsVoid()` (reported across the bridge as a `Bool`) rather than from a Swift-side
 /// comparison of the six returned doubles against zero.
@@ -35,7 +38,8 @@ internal func isNearZero(_ v: SIMD3<Double>, _ tol: Double = 1e-6) -> Bool {
 struct Issue943BoundsVoid {
 
     @Test func voidShapeHasNoBoundsSizeOrCenter() throws {
-        let shape = try #require(makeVoidShape(), "a disjoint intersection should still build a shape")
+        let shape = try #require(
+            makeVoidShape(), "a disjoint intersection should still build a shape")
         #expect(shape.bounds == nil)
         #expect(shape.size == nil)
         #expect(shape.center == nil)
@@ -46,7 +50,9 @@ struct Issue943BoundsVoid {
     }
 
     /// A point-vertex at the world origin is a real shape whose box measures to zero, or to
-    /// within `Precision::Confusion()` of it on the paths that add the shape tolerance. Every
+    /// within `Precision::Confusion()` of it on the paths that add the shape tolerance.
+    ///
+    /// Every
     /// accessor must report that measurement, not `nil`.
     @Test func pointVertexAtOriginReportsAMeasuredBox() throws {
         let origin = try #require(makePointVertexAtOrigin())
@@ -76,7 +82,9 @@ struct Issue943BoundsVoid {
     }
 
     /// A zero-length edge at the world origin. `Edge.bounds` had the same defect as
-    /// `Shape.bounds` and its own bridge function had no `IsVoid()` check at all. A sphere's polar
+    /// `Shape.bounds` and its own bridge function had no `IsVoid()` check at all.
+    ///
+    /// A sphere's polar
     /// degenerate edge is the reachable fixture: it is a genuine edge of a genuine solid whose 3D
     /// extent is a single point, placed at the origin here by translating the sphere.
     @Test func zeroLengthEdgeAtOriginReportsAMeasuredBox() throws {

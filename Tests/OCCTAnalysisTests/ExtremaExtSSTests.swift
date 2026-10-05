@@ -33,7 +33,9 @@ struct ExtremaExtSSTests {
 
     /// #1502 finding 2: `OCCTExtremaExtSSPoint` called `Extrema_POnSurf::Parameter(u, v)` for
     /// both points but only stored `u` (into the shared `OCCTExtremaPointPair.param1`/`param2`,
-    /// designed for a curve's single parameter), silently discarding both points' V. Fixed with a
+    /// designed for a curve's single parameter), silently discarding both points' V.
+    ///
+    /// Fixed with a
     /// dedicated `ExtremaSurfacePointPair` result carrying `(u, v)` for each point.
     ///
     /// The two sphere centres here are offset in Z as well as X, so the closest points do NOT sit

@@ -6,7 +6,9 @@ import simd
 /// #485: `Curve3D.continuity` and `Curve3D.continuityOrder` wrapped the same
 /// `Geom_Curve::Continuity()` call through two incompatible numeric encodings, the real
 /// `GeomAbs_Shape` ordinal, and a hand-written switch producing `{C0=0, C1=1, C2=2, C3=3,
-/// CN=99, G1=-2, G2=-3}`. C0 was the only class the two agreed on.
+/// CN=99, G1=-2, G2=-3}`.
+///
+/// C0 was the only class the two agreed on.
 ///
 /// No pre-existing test caught it: every one asserted `>= 0` against a line or a plain BSpline,
 /// which is satisfied by both encodings. These pin the real ordinals, prove the two properties

@@ -27,7 +27,9 @@ import Testing
 struct Issue703EdgeConvexityOrderTests {
 
     /// The strongest test available (per the issue): no compound, no split, no shared face, and
-    /// the correct answer is unarguably 0. A convex solid has zero concave edges by definition, so
+    /// the correct answer is unarguably 0.
+    ///
+    /// A convex solid has zero concave edges by definition, so
     /// every dihedral of a plain box must classify convex and `detectPocketsAAG()` must report no
     /// pockets at all.
     @Test("a plain box has no concave edges and therefore no pockets")
@@ -46,7 +48,9 @@ struct Issue703EdgeConvexityOrderTests {
     /// Two plain boxes glued face to face (the exact construction `Issue642AAGNodeIdentityTests`
     /// and `Issue699AAGSolidScopedAdjacencyTests` pin) have no concave edge anywhere, in EITHER
     /// compound member order: neither piece is anything but a plain box, and the shared wall's two
-    /// occurrences are never compared to each other (see `AAG`'s own identity guard). This checks
+    /// occurrences are never compared to each other (see AAG's own identity guard).
+    ///
+    /// This checks
     /// every edge's classification directly, which is a stronger statement than the aggregate
     /// pocket count those two suites pin -- two wrongly-classified edges could in principle cancel
     /// out in the count without this per-edge check catching it.
@@ -97,7 +101,9 @@ struct Issue703EdgeConvexityOrderTests {
         #expect(result.detectPocketsAAG().count == 1)
     }
 
-    /// GROUND TRUTH TEST (#723). A round through-hole has **zero** concave edges, independent of
+    /// GROUND TRUTH TEST (#723).
+    ///
+    /// A round through-hole has **zero** concave edges, independent of
     /// plate thickness. A hole rim is convex: at the rim the solid occupies the quarter-space
     /// below the top face and outside the cylinder, so the material angle is 90 degrees, not the
     /// 270 that makes an edge concave. The concave edge of a hole is the one where a wall meets a
@@ -149,7 +155,9 @@ struct Issue703EdgeConvexityOrderTests {
 
     /// The curved-geometry counterpart above covers a hole; this covers a genuine blind pocket
     /// with a curved answer that IS pinned exactly, unlike the through-hole's height-dependent
-    /// residual. A blind square pocket's floor meets its four walls, and its four walls meet the
+    /// residual.
+    ///
+    /// A blind square pocket's floor meets its four walls, and its four walls meet the
     /// surrounding top face, at eight distinct concave dihedrals (material recedes at each); no
     /// other edge in the fixture is concave. This is exactly what #723's own measurement recorded
     /// for a square pocket ("concave set exact") at multiple depths, so pinning it here locks in

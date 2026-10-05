@@ -13,7 +13,8 @@ struct BRepGraphRootNodeTests {
             if let graph {
                 // OCCT 8.0 reshaped root iteration to Products only, wrap the
                 // box's solid root in a Product to expose it as a graph root.
-                _ = graph.linkProductToTopology(shapeRootKind: 0 /* Solid */, shapeRootIndex: 0)
+                // shapeRootKind 0 is Solid.
+                _ = graph.linkProductToTopology(shapeRootKind: 0, shapeRootIndex: 0)
                 let roots = graph.rootNodes
                 #expect(roots.count > 0)
                 #expect(roots.first?.kind == .product)

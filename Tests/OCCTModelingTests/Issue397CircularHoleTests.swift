@@ -6,7 +6,9 @@ import simd
 /// Issue #397: `Shape.faceAddHole(face:wire:)` returned nil for *every* hole wire built from
 /// circular geometry, `Wire.circle(origin:normal:radius:)` (one closed circular edge, one vertex)
 /// and a hand-joined two-arc circle (two vertices) alike, while a polygonal hole on the same face
-/// worked. The cause was the #234 degenerate-wire guard, which counted the wire's *vertices*: a
+/// worked.
+///
+/// The cause was the #234 degenerate-wire guard, which counted the wire's *vertices*: a
 /// circle has 1 or 2 of them, so it tripped the "fewer than 3 distinct vertices" rejection meant
 /// for zero-area wires. The guard now samples points along the wire's curves, so curved holes pass
 /// while genuinely zero-area wires (the #234 crash chain) are still rejected.
@@ -95,7 +97,9 @@ struct Issue397CircularHoleTests {
 
     /// The other half of the fix: `MakeFace::Add` does no reorienting, so a hole wire wound the same
     /// way as the face's outer boundary used to be added as a second OUTER loop, the face's area
-    /// grew by the hole's and the prism was not a valid solid. Either winding must now cut.
+    /// grew by the hole's and the prism was not a valid solid.
+    ///
+    /// Either winding must now cut.
     @Test("A same-winding polygon hole cuts instead of adding area")
     func polygonHoleWindingIndependent() {
         let ccw: [SIMD3<Double>] = [
@@ -117,7 +121,9 @@ struct Issue397CircularHoleTests {
 
     /// The winding retry arbitrates between two orientations by validity, so when NEITHER validates
     /// the wire is not a usable hole for this face at all, no winding makes a boundary-crossing loop
-    /// into a hole. That is declined rather than returned as an invalid face, which is the same call
+    /// into a hole.
+    ///
+    /// That is declined rather than returned as an invalid face, which is the same call
     /// the degenerate guard makes and what #234 established.
     @Test("A hole wire crossing the face boundary is declined, not returned invalid")
     func boundaryCrossingHoleDeclined() {

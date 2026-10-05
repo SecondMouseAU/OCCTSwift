@@ -77,7 +77,9 @@ struct Issue965Curve2DPropertyLifetimeTests {
         withExtendedLifetime(ballast) {}
     }
 
-    /// The fix reads the handle through the owner rather than storing a copy of it. A setter
+    /// The fix reads the handle through the owner rather than storing a copy of it.
+    ///
+    /// A setter
     /// proves the two still name the same OCCT object.
     @Test("a setter called through a view is visible on the parent")
     func setterThroughAViewReachesTheParent() throws {

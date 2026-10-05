@@ -42,8 +42,8 @@
 #
 # All three resolve the same way: CI is what decides, and it runs on every push regardless. #625.
 #
-# It does NOT cover the rest of the `code-style` job: swift-format, SwiftLint and
-# check-style-manifest.py are still push-and-find-out. clang-format is here because it is the only
+# It does NOT cover the rest of the `code-style` job: swift-format and SwiftLint are still
+# push-and-find-out. clang-format is here because it is the only
 # one of them whose findings are wholly mechanical, so the hook can point at a one-command fix
 # (`Scripts/format-bridge.sh`) rather than at prose that needs rewriting.
 

@@ -44,38 +44,40 @@ import OCCTSwift
 
 /// Wall-clock elapsed seconds for `body`, via the monotonic Dispatch clock (available on the
 /// package's macOS 12 / iOS 15 minimum deployment target; `ContinuousClock` needs macOS 13+).
-fileprivate func measureSeconds(_ body: () -> Void) -> Double {
+private func measureSeconds(_ body: () -> Void) -> Double {
     let start = DispatchTime.now().uptimeNanoseconds
     body()
     let end = DispatchTime.now().uptimeNanoseconds
     return Double(end - start) / 1_000_000_000
 }
 
-fileprivate func fmt(_ seconds: Double) -> String {
+private func fmt(_ seconds: Double) -> String {
     if seconds >= 1 {
         return String(format: "%.3f s", seconds)
     }
     return String(format: "%.6f s", seconds)
 }
 
-fileprivate func describe(_ outcome: Bool?) -> String {
+private func describe(_ outcome: Bool?) -> String {
     switch outcome {
-    case .some(true):  return "self-intersects"
+    case .some(true): return "self-intersects"
     case .some(false): return "clean"
-    case nil:          return "indeterminate (timed out)"
+    case nil: return "indeterminate (timed out)"
     }
 }
 
 // MARK: - Fixture shapes
 
-fileprivate func simpleBox() -> Shape {
+private func simpleBox() -> Shape {
     Shape.box(width: 10, height: 10, depth: 10)!
 }
 
 /// A moderately complex fused solid: a plate, a boss fused on, four through-holes cut, all
-/// edges filleted. Dozens of faces, several boolean ops and a fillet: representative of an
+/// edges filleted.
+///
+/// Dozens of faces, several boolean ops and a fillet: representative of an
 /// ordinary mechanical part, not a primitive and not a pathological artifact.
-fileprivate func moderatelyComplexFusedSolid() -> Shape {
+private func moderatelyComplexFusedSolid() -> Shape {
     let base = Shape.box(width: 100, height: 60, depth: 20)!
     let boss = Shape.cylinder(radius: 15, height: 40)!.translated(by: SIMD3(50, 30, 0))!
     var result = base.union(boss) ?? base
@@ -88,9 +90,11 @@ fileprivate func moderatelyComplexFusedSolid() -> Shape {
 }
 
 /// A real mesh-sewn imported solid: the #348 fixture (`unify-crash-mmd-kiha10-body5.brep`),
-/// a body extracted from a real reconstruction pipeline (OCCTReconstruct#194). Loose faces
+/// a body extracted from a real reconstruction pipeline (OCCTReconstruct#194).
+///
+/// Loose faces
 /// sewn from mesh data, not authored B-Rep: the shape of a real "imported" input.
-fileprivate func meshSewnImportedSolid() throws -> Shape {
+private func meshSewnImportedSolid() throws -> Shape {
     // #filePath -> .../Scripts/repro/harnesses/AnalyzeSelfIntersectionTiming.swift; one
     // deletingLastPathComponent() lands IN the directory containing the file (not its parent),
     // so reaching the repo root (parent of Scripts/) takes three from here (harnesses/, repro/,
@@ -106,12 +110,14 @@ fileprivate func meshSewnImportedSolid() throws -> Shape {
 }
 
 /// The #319 pathological artifact: a single-face shell whose B-spline surface folds
-/// enormously (bounding box ~1.6e6 x 3.8e6 mm for a ~260 mm part). Measured pre-fix at 619s
+/// enormously (bounding box ~1.6e6 x 3.8e6 mm for a ~260 mm part).
+///
+/// Measured pre-fix at 619s
 /// CPU against a 30s cooperative deadline that never fired. This branch's pinned kernel
 /// carries the #319 fix (patch 0010: O(1) tangent-zone lookup + a checkpointed breaker), so
 /// this is also the regression check that the fix still holds on the exact artifact it was
 /// filed against.
-fileprivate func pathologicalArtifact() throws -> Shape {
+private func pathologicalArtifact() throws -> Shape {
     let fixtureURL = URL(fileURLWithPath: #filePath)
         .deletingLastPathComponent()  // .../harnesses
         .deletingLastPathComponent()  // .../repro
@@ -121,7 +127,7 @@ fileprivate func pathologicalArtifact() throws -> Shape {
 
 // MARK: - Report
 
-fileprivate struct SelfIntersectionTimingRow {
+private struct SelfIntersectionTimingRow {
     let name: String
     let faces: Int
     let edges: Int
@@ -132,8 +138,10 @@ fileprivate struct SelfIntersectionTimingRow {
     let hardTimeoutSeconds: Double
     let hardTimeoutOutcome: String
 
-    /// Computed once here so `report()`'s per-row print and `run()`'s summary table read the same
-    /// number rather than each deriving it (#773 review). A formula with two call sites is a
+    /// Computed once here so report()'s per-row print and run()'s summary table read the same
+    /// number rather than each deriving it (#773 review).
+    ///
+    /// A formula with two call sites is a
     /// formula that gets changed in one of them.
     var overheadTimeout: Double {
         analyzeSeconds > 0 ? timeoutSeconds / analyzeSeconds : Double.infinity
@@ -145,8 +153,10 @@ fileprivate struct SelfIntersectionTimingRow {
 /// `analyze(tolerance:selfIntersectionTimeout:)` forwards to `isSelfIntersecting(timeout:)`; the
 /// `hardTimeout:` figure is kept alongside it so the gap between the two mechanisms, and the
 /// reasoning for picking one over the other, stays visible rather than replaced.
-fileprivate func report(name: String, shape: Shape, deadline: Double,
-                        into rows: inout [SelfIntersectionTimingRow]) {
+private func report(
+    name: String, shape: Shape, deadline: Double,
+    into rows: inout [SelfIntersectionTimingRow]
+) {
     let faces = shape.subShapeCount(ofType: .face)
     let edges = shape.subShapeCount(ofType: .edge)
 
@@ -179,10 +189,17 @@ fileprivate func report(name: String, shape: Shape, deadline: Double,
     print("  faces=\(faces) edges=\(edges)")
     print("  analyze(tolerance:):                          \(fmt(analyzeSeconds))")
     print("  deepCopy() alone:                             \(fmt(deepCopySeconds))")
-    print("  isSelfIntersecting(timeout: \(Int(deadline))):             \(fmt(timeoutSeconds))  [\(describe(timeoutOutcome))]  <- what analyze(selfIntersectionTimeout:) calls")
-    print("  isSelfIntersecting(hardTimeout: \(Int(deadline))):         \(fmt(hardTimeoutSeconds))  [\(describe(hardTimeoutOutcome))]  (measured for comparison, not used by analyze())")
-    print("  overhead vs analyze(), timeout (shipped):     \(String(format: "%.1f", row.overheadTimeout))x")
-    print("  overhead vs analyze(), hardTimeout (rejected):\(String(format: "%.1f", overheadHard))x")
+    print(
+        "  isSelfIntersecting(timeout: \(Int(deadline))):             \(fmt(timeoutSeconds))  [\(describe(timeoutOutcome))]  <- what analyze(selfIntersectionTimeout:) calls"
+    )
+    print(
+        "  isSelfIntersecting(hardTimeout: \(Int(deadline))):         \(fmt(hardTimeoutSeconds))  [\(describe(hardTimeoutOutcome))]  (measured for comparison, not used by analyze())"
+    )
+    print(
+        "  overhead vs analyze(), timeout (shipped):     \(String(format: "%.1f", row.overheadTimeout))x"
+    )
+    print(
+        "  overhead vs analyze(), hardTimeout (rejected):\(String(format: "%.1f", overheadHard))x")
     print()
 }
 
@@ -195,21 +212,24 @@ enum AnalyzeSelfIntersectionTiming {
         print()
 
         report(name: "1. Simple box", shape: simpleBox(), deadline: 30, into: &rows)
-        report(name: "2. Moderately complex fused/filleted solid",
-               shape: moderatelyComplexFusedSolid(), deadline: 30, into: &rows)
+        report(
+            name: "2. Moderately complex fused/filleted solid",
+            shape: moderatelyComplexFusedSolid(), deadline: 30, into: &rows)
 
         do {
             let mesh = try meshSewnImportedSolid()
-            report(name: "3. Mesh-sewn imported solid (kiha10 body5, #348 fixture)",
-                   shape: mesh, deadline: 30, into: &rows)
+            report(
+                name: "3. Mesh-sewn imported solid (kiha10 body5, #348 fixture)",
+                shape: mesh, deadline: 30, into: &rows)
         } catch {
             print("3. Mesh-sewn imported solid: FAILED TO LOAD (\(error))")
         }
 
         do {
             let pathological = try pathologicalArtifact()
-            report(name: "4. #319 pathological artifact (dualskin_lateral.15)",
-                   shape: pathological, deadline: 30, into: &rows)
+            report(
+                name: "4. #319 pathological artifact (dualskin_lateral.15)",
+                shape: pathological, deadline: 30, into: &rows)
 
             // The true hard wall-clock bound (#319's own follow-up API) at a SHORT deadline,
             // since the cooperative timeout above can only ask OCCT to stop at its next
@@ -219,7 +239,9 @@ enum AnalyzeSelfIntersectionTiming {
             // proves the guarantee holds regardless of what the background computation does.
             print("4b. Same artifact, isSelfIntersecting(hardTimeout: 5): true wall-clock bound")
             let hardSeconds = measureSeconds { _ = pathological.isSelfIntersecting(hardTimeout: 5) }
-            print("  actual wall-clock: \(fmt(hardSeconds)) (background check left running past the deadline is abandoned, not cancelled, and unbounded internally: see Shape.swift:2158)")
+            print(
+                "  actual wall-clock: \(fmt(hardSeconds)) (background check left running past the deadline is abandoned, not cancelled, and unbounded internally: see Shape.swift:2158)"
+            )
             print()
         } catch {
             print("4. #319 pathological artifact: FAILED TO LOAD (\(error))")
@@ -228,11 +250,16 @@ enum AnalyzeSelfIntersectionTiming {
         print("=================================================================")
         print("Summary (markdown table):")
         print()
-        print("| Shape | Faces | Edges | analyze(tolerance:) | deepCopy() | timeout: 30 (shipped path) | hardTimeout: 30 (rejected) | Overhead (shipped) |")
+        print(
+            "| Shape | Faces | Edges | analyze(tolerance:) | deepCopy() | timeout: 30 (shipped path) | hardTimeout: 30 (rejected) | Overhead (shipped) |"
+        )
         print("|---|---|---|---|---|---|---|---|")
         for row in rows {
-            let overheadStr = row.overheadTimeout.isFinite ? String(format: "%.1fx", row.overheadTimeout) : "n/a"
-            print("| \(row.name) | \(row.faces) | \(row.edges) | \(fmt(row.analyzeSeconds)) | \(fmt(row.deepCopySeconds)) | \(fmt(row.timeoutSeconds)) [\(row.timeoutOutcome)] | \(fmt(row.hardTimeoutSeconds)) [\(row.hardTimeoutOutcome)] | \(overheadStr) |")
+            let overheadStr =
+                row.overheadTimeout.isFinite ? String(format: "%.1fx", row.overheadTimeout) : "n/a"
+            print(
+                "| \(row.name) | \(row.faces) | \(row.edges) | \(fmt(row.analyzeSeconds)) | \(fmt(row.deepCopySeconds)) | \(fmt(row.timeoutSeconds)) [\(row.timeoutOutcome)] | \(fmt(row.hardTimeoutSeconds)) [\(row.hardTimeoutOutcome)] | \(overheadStr) |"
+            )
         }
     }
 }

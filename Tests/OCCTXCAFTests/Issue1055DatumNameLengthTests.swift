@@ -39,7 +39,9 @@ struct Issue1055DatumNameLengthTests {
         #expect(datum.name == name)
     }
 
-    /// The old bound was `sizeof(name) - 1`, so 63 survived and 64 did not. Both are checked, and
+    /// The old bound was `sizeof(name) - 1`, so 63 survived and 64 did not.
+    ///
+    /// Both are checked, and
     /// the 63 case is the control that says the failure above is about length and not about the
     /// accessor having stopped working.
     @Test("Names either side of the old 63-byte bound both round-trip", arguments: [63, 64, 65])
@@ -57,7 +59,9 @@ struct Issue1055DatumNameLengthTests {
     }
 
     /// The reportability the fix is for: a caller whose buffer is too small gets a prefix and the
-    /// length it would have needed, so it can tell the two apart. The old struct could not say
+    /// length it would have needed, so it can tell the two apart.
+    ///
+    /// The old struct could not say
     /// this, which is why the truncation was silent.
     @Test("A short buffer yields a prefix and the length the whole name needs")
     func shortBufferReportsTheFullLength() throws {

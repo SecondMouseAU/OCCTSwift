@@ -27,7 +27,9 @@ struct Curve2DApproximatedOverloadParityTests {
     /// A curve complex enough that `Geom2dConvert_ApproxCurve`/`Approx_Curve2d` can't trivially
     /// satisfy an arbitrarily tight tolerance with a handful of low-degree spans — so the actual
     /// requested tolerance genuinely constrains the fit, rather than every tolerance in the
-    /// 1e-2...1e-8 band converging to the same near-machine-precision result. Found empirically:
+    /// 1e-2...1e-8 band converging to the same near-machine-precision result.
+    ///
+    /// Found empirically:
     /// a two-frequency sine zigzag through 60 points. Below ~1e-5 the fit saturates at ~1e-14
     /// (the algorithm can just reproduce the input almost exactly); at 1e-3 it measurably can't,
     /// giving a real, tolerance-sized deviation. That gap is what makes the two real defaults
@@ -42,7 +44,7 @@ struct Curve2DApproximatedOverloadParityTests {
         return Curve2D.interpolate(through: pts)!
     }
 
-    /// Largest sampled distance between `original` and `approx` over `original`'s domain.
+    /// Largest sampled distance between `original` and `approx` over original's domain.
     private static func maxSampledDeviation(
         _ original: Curve2D, _ approx: Curve2D,
         samples: Int = 300

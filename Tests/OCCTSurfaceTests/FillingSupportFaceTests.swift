@@ -17,6 +17,7 @@ import simd
 struct FillingSupportFaceTests {
 
     /// Truncated sphere: an open circular rim whose only adjacent face is the curved wall.
+    ///
     /// The rim sits at z = 10·sin(50°) ≈ 7.66; a flat cap spans no z at all, a tangent cap
     /// leaves the rim along the sphere and so must.
     private func bowl() -> Shape? {

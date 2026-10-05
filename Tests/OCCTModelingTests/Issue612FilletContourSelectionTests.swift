@@ -3,7 +3,9 @@ import Testing
 
 @testable import OCCTSwift
 
-/// The fillet radius-law entry points wrote every law to `SetRadius(law, NbContours(), 1)`. Both
+/// The fillet radius-law entry points wrote every law to `SetRadius(law, NbContours(), 1)`.
+///
+/// Both
 /// coordinates were wrong.
 ///
 /// `NbContours()` is "the contour that exists after the most recent `Add`", which is the edge's own

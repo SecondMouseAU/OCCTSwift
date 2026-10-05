@@ -51,7 +51,9 @@ struct ExporterDrawingCollectionGoldenTests {
     }
 
     /// Direct-API path (not via `Drawing`): `addDimension`/`addLine`/etc. staged by hand,
-    /// exercising `primitiveOps()` without `collectFromDrawing` in the loop. Not a golden-byte
+    /// exercising `primitiveOps()` without `collectFromDrawing` in the loop.
+    ///
+    /// Not a golden-byte
     /// comparison -- a lightweight structural check that every writer's direct entity-staging
     /// API still produces the same entity counts after the consolidation.
     @Test(

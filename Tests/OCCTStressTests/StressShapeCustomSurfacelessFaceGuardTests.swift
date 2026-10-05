@@ -42,7 +42,9 @@ import Testing
 @Suite("Stress: ShapeCustom converter surface-less face guard (#2790)")
 struct StressShapeCustomSurfacelessFaceGuardTests {
 
-    /// A compound holding one face with no surface that DOES carry a wire. The fixture that decides
+    /// A compound holding one face with no surface that DOES carry a wire.
+    ///
+    /// The fixture that decides
     /// the predicate: `occtShapeHasSurfacelessEdgelessFace` answers false for this shape and all
     /// three converters fault on it anyway.
     static func withWireFixture() throws -> Shape {
@@ -71,7 +73,9 @@ struct StressShapeCustomSurfacelessFaceGuardTests {
         return try Shape.loadBREP(from: url)
     }
 
-    /// A box, whose six planar faces all carry a surface. Every guarded entry point must still
+    /// A box, whose six planar faces all carry a surface.
+    ///
+    /// Every guarded entry point must still
     /// answer for it, which is what makes a guard that refuses everything fail this suite.
     static func control() throws -> Shape {
         try #require(Shape.box(width: 10, height: 20, depth: 30))
@@ -85,7 +89,9 @@ struct StressShapeCustomSurfacelessFaceGuardTests {
 
     /// The surface index each face carries in BREP's own face record: a `Fa` line followed by
     /// `<naturalRestriction> <tolerance> <surfaceIndex> <location>`, where `0` means the face has no
-    /// surface at all. This is how "the face has no surface" is observable from Swift without asking
+    /// surface at all.
+    ///
+    /// This is how "the face has no surface" is observable from Swift without asking
     /// any accessor to dereference the handle that is missing. Lifted from #2777's suite, which
     /// explains why the whole-file `Surfaces 0` shortcut #2773 used does not work for the with-wire
     /// fixture.

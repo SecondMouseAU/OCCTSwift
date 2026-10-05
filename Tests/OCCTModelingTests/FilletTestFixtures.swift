@@ -20,6 +20,7 @@ enum FilletTestFixtures {
     }
 
     /// Edge indices on the open shell that `BRepFilletAPI_MakeFillet::Add` declines.
+    ///
     /// Measured by the Cluster B census on this exact fixture.
     static let declinedIndices = [6, 9, 10, 11]
 }

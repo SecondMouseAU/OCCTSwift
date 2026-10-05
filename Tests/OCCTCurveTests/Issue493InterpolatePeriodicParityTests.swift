@@ -7,7 +7,9 @@ import Testing
 
 /// The same `GeomAPI_Interpolate` computation is reachable two ways:
 /// `Curve3D.interpolatePeriodic(points:tolerance:)` and
-/// `Curve3D.interpolate(points:closed:tolerance:)` with `closed: true`. They used to be two
+/// `Curve3D.interpolate(points:closed:tolerance:)` with `closed: true`.
+///
+/// They used to be two
 /// independent bridge call sites that had drifted apart in two ways. The periodic one rejected
 /// `count < 3` where the general one rejects only `count < 2`, and it hardcoded tolerance `1e-6`
 /// with no parameter path to reach any other value. This is the 3D counterpart of the 2D parity
@@ -60,7 +62,9 @@ struct Curve3DInterpolatePeriodicParityTests {
         }
     }
 
-    /// The point-count floor the two had drifted apart on. OCCT accepts a 2-point periodic
+    /// The point-count floor the two had drifted apart on.
+    ///
+    /// OCCT accepts a 2-point periodic
     /// interpolation (it produces a valid out-and-back loop), and the general entry point always
     /// let it through; only the periodic wrapper rejected it at the bridge boundary.
     @Test("A 2-point periodic interpolation is accepted by both entry points")
@@ -83,7 +87,9 @@ struct Curve3DInterpolatePeriodicParityTests {
 
     /// The tolerance is not merely accepted, it reaches `GeomAPI_Interpolate` and changes the
     /// outcome: OCCT treats points closer together than the tolerance as coincident and refuses to
-    /// interpolate. With two points 1e-3 apart, the default 1e-6 interpolates and 1e-2 does not:
+    /// interpolate.
+    ///
+    /// With two points 1e-3 apart, the default 1e-6 interpolates and 1e-2 does not:
     /// a distinction no caller could make before `interpolatePeriodic` gained the parameter.
     @Test("The tolerance actually reaches OCCT, it is not just accepted and dropped")
     func toleranceChangesTheOutcome() {

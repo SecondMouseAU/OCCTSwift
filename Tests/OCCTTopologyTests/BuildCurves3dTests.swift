@@ -63,6 +63,7 @@ struct BuildCurves3dTests {
     }
 
     /// A tighter tolerance buys a closer curve, which is the whole reason the parameter exists.
+    ///
     /// Measured in the repro: 1e-5 deviates by 2.6e-6 from the exact helix, 1e-7 by 9.0e-8.
     @Test("A tighter tolerance produces a curve closer to the exact helix")
     func tighterToleranceIsMoreAccurate() {
@@ -99,7 +100,9 @@ struct BuildCurves3dTests {
         #expect(fine < coarse)
     }
 
-    /// The oldest of the three C entry points returned `void`, discarding this signal. It backed
+    /// The oldest of the three C entry points returned `void`, discarding this signal.
+    ///
+    /// It backed
     /// `allEdgePolylinesIndexed`, which now goes through the bool-returning one.
     @Test("An edge stripped of every representation cannot get a 3D curve, and says so")
     func unbuildableEdgeReportsFailure() {

@@ -7,7 +7,9 @@ import simd
 
 /// #1424: `OCCTBndLibFace` (`Sources/OCCTBridge/src/OCCTBridge_Spatial_Bounding.mm`) had no
 /// `occtShapeIsPresent(shape)` guard and no raw-pointer null check at all, unlike its sibling
-/// `OCCTBndLibEdge` immediately above it. A genuinely-null `OCCTShapeRef` dereferenced
+/// `OCCTBndLibEdge` immediately above it.
+///
+/// A genuinely-null `OCCTShapeRef` dereferenced
 /// `shape->shape` directly, an unguarded C-struct-pointer access -- a crash unconditionally, with
 /// no OCCT call involved yet. `Shape.handle` is non-optional, so this path isn't reachable
 /// through the public Swift API. `OCCTBridge_Spatial.h` declares `shape` `_Nonnull`, so Swift
@@ -36,7 +38,12 @@ struct Issue1424BndLibFaceNullGuardTests {
     @Test("a null OCCTShapeRef returns the zeroed fallback, not a crash")
     func nullRawPointerReturnsZeroedFallback() {
         let nullShape: OCCTShapeRef = unsafeBitCast(UInt(0), to: OCCTShapeRef.self)
-        var x0 = -1.0, y0 = -1.0, z0 = -1.0, x1 = -1.0, y1 = -1.0, z1 = -1.0
+        var x0 = -1.0
+        var y0 = -1.0
+        var z0 = -1.0
+        var x1 = -1.0
+        var y1 = -1.0
+        var z1 = -1.0
         OCCTBndLibFace(nullShape, 1e-4, &x0, &y0, &z0, &x1, &y1, &z1)
         #expect(x0 == 0)
         #expect(y0 == 0)
@@ -46,7 +53,9 @@ struct Issue1424BndLibFaceNullGuardTests {
         #expect(z1 == 0)
     }
 
-    @Test("a nullified Shape (null TopoDS_Shape, non-null wrapper) is already safe -- not this PR's fix")
+    @Test(
+        "a nullified Shape (null TopoDS_Shape, non-null wrapper) is already safe -- not this PR's fix"
+    )
     func nullifiedShapeIsSafe() throws {
         let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let nullShape = try #require(box.nullified)

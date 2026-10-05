@@ -96,7 +96,9 @@ struct Issue613MeshIndexContractTests {
     // MARK: - Site 5: the index
 
     /// A triangle's `faceIndex` must be an index into `faces()`, one a caller can hand to
-    /// `face(at:)`. Before the fix it was the explorer's occurrence counter, so it ran to 11 on an
+    /// `face(at:)`.
+    ///
+    /// Before the fix it was the explorer's occurrence counter, so it ran to 11 on an
     /// 11-face shape and, from index 5 on, named a different face than `faces()` did.
     @Test("no triangle claims a face index faces() cannot address")
     func meshFaceIndicesAddressTheFaceEnumeration() throws {
@@ -185,7 +187,9 @@ struct Issue613MeshIndexContractTests {
     // MARK: - Site 5: the winding
 
     /// A **control**, not a detector, stated plainly because the inject-the-bug pass showed it
-    /// does not fail under either mesh injection. Losing the shared wall's second occurrence
+    /// does not fail under either mesh injection.
+    ///
+    /// Losing the shared wall's second occurrence
     /// removes a facet rather than inverting one, and the copy that survives on this fixture is
     /// stored FORWARD, which is outward for its own owner. So this guards against a future change
     /// that inverts winding globally; the shared-wall tests above are what catch #613 and #614.
@@ -291,7 +295,9 @@ struct Issue613MeshIndexContractTests {
 
     /// `OCCTPolyMergeNodes` emits no index, so there was nothing to converge, but it derives a
     /// `reversed` flag per occurrence and hands it to `Poly_MergeNodesTool::AddTriangulation`, which
-    /// winds that face's triangles by it. Deduplicating the walk would add the shared wall once, in
+    /// winds that face's triangles by it.
+    ///
+    /// Deduplicating the walk would add the shared wall once, in
     /// whichever orientation was seen first, and the other solid would lose its wall.
     ///
     /// This is the "do not convert" pin: it fails if a later sweep moves this walk onto the map.

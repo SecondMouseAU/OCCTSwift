@@ -3,9 +3,11 @@ import simd
 
 @testable import OCCTSwift
 
-/// #2859: `Geom_BezierSurface`'s *setters* state their index bounds as literal `throw`s, which
+/// #2859: Geom_BezierSurface's *setters* state their index bounds as literal `throw`s, which
 /// survive this build, but its `Pole(UIndex, VIndex)` getter states the same bound as a
-/// `Standard_OutOfRange_Raise_if`, which the pinned Release kernel compiles to nothing. Nothing in
+/// `Standard_OutOfRange_Raise_if`, which the pinned Release kernel compiles to nothing.
+///
+/// Nothing in
 /// either signature or header comment distinguishes them.
 ///
 /// The assertion is on the refusal value, not on the absence of a crash.

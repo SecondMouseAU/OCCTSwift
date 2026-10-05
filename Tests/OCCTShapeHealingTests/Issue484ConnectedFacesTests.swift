@@ -5,7 +5,9 @@ import simd
 
 /// Issue #484: `Shape.connectedFaces(tolerance:)` (`ShapeFix_FaceConnect`, via
 /// `OCCTShapeFixFaceConnect`) had **zero** test coverage anywhere in `Tests/`, grepping
-/// `connectedFaces` repo-wide returned only its own declaration. The stale cross-reference index
+/// `connectedFaces` repo-wide returned only its own declaration.
+///
+/// The stale cross-reference index
 /// entry (`ShapeFix_FaceConnect → OCCTShapeFixConnect*`, a symbol family that does not exist) would
 /// not have led anyone to it either.
 ///
@@ -51,7 +53,9 @@ struct Issue484ConnectedFacesTests {
     }
 
     /// The first-of-N fix: two disjoint solids in one compound carry two shells, and both must
-    /// survive. Before the fix the second shell was silently dropped.
+    /// survive.
+    ///
+    /// Before the fix the second shell was silently dropped.
     @Test("connectedFaces keeps every shell of a multi-shell compound")
     func multiShellCompoundKeepsEveryShell() {
         guard let a = Shape.box(width: 10, height: 10, depth: 10),

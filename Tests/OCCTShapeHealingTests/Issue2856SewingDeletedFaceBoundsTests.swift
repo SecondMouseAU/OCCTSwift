@@ -4,9 +4,11 @@ import Testing
 
 @testable import OCCTSwift
 
-/// #2856. `BRepBuilderAPI_Sewing::DeletedFace`'s `Standard_OutOfRange_Raise_if` is out-of-line
+/// #2856.
+///
+/// BRepBuilderAPI_Sewing::DeletedFace's `Standard_OutOfRange_Raise_if` is out-of-line
 /// (`BRepBuilderAPI_Sewing.cxx:2443`), so it is absent from the kernel this package links, and
-/// `myLittleFace`'s own inline `FindKey` check is expanded inside that same `.cxx`, an OCCT unit
+/// myLittleFace's own inline `FindKey` check is expanded inside that same `.cxx`, an OCCT unit
 /// compiled `-DNo_Exception`, so it is compiled out at that depth too. `deletedFace(at: 1)` was
 /// therefore an uncatchable SIGSEGV on any sewing that deleted no face, which is the normal outcome
 /// for a well-formed input.
@@ -25,7 +27,9 @@ import Testing
 @Suite("Issue 2856: sewing deletedFace bounds")
 struct Issue2856SewingDeletedFaceBoundsTests {
 
-    /// A box sewn from its own six faces. Nothing is deleted, so `nbDeletedFaces` is 0 and every
+    /// A box sewn from its own six faces.
+    ///
+    /// Nothing is deleted, so `nbDeletedFaces` is 0 and every
     /// index is out of range.
     private func cleanBoxSewing() throws -> SewingBuilder {
         let sewing = try #require(SewingBuilder(tolerance: 1e-6))

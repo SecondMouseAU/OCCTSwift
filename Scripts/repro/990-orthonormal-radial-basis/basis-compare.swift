@@ -40,7 +40,7 @@ func perpendicularBasis(to direction: SIMD3<Double>) -> (SIMD3<Double>, SIMD3<Do
     return (right, up)
 }
 
-/// `gp_ax2_truth.mm`'s output: axis, then gp_Ax2's XDirection and YDirection.
+/// gp_ax2_truth.mm's output: axis, then gp_Ax2's XDirection and YDirection.
 let truth: [(String, SIMD3<Double>, SIMD3<Double>, SIMD3<Double>)] = [
     ("+X", SIMD3(1, 0, 0), SIMD3(0, 0, 1), SIMD3(0, -1, 0)),
     ("-X", SIMD3(-1, 0, 0), SIMD3(0, 0, -1), SIMD3(0, -1, 0)),

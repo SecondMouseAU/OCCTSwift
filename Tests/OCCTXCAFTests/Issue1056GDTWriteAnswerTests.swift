@@ -27,7 +27,9 @@ struct Issue1056GDTWriteAnswerTests {
     // MARK: - Site 1, createDimension's discarded tolerance result
 
     /// NaN is the cheapest trigger: the bridge's readback is an exact `==` against both stored
-    /// values, and NaN never equals itself. The dimension count is the load-bearing assertion, since
+    /// values, and NaN never equals itself.
+    ///
+    /// The dimension count is the load-bearing assertion, since
     /// `nil` alone would also be satisfied by a fix that created the dimension and then reported
     /// failure.
     @Test(
@@ -132,7 +134,9 @@ struct Issue1056GDTWriteAnswerTests {
         }
     }
 
-    /// The same defect reached the other way: a real projected zone, then cleared. The first clear
+    /// The same defect reached the other way: a real projected zone, then cleared.
+    ///
+    /// The first clear
     /// carries a value, which is what the old `value > 0.0` gate let through; the second carries
     /// none, which the old code already cleared correctly and which is kept here as a regression
     /// guard rather than as a probe of the defect.

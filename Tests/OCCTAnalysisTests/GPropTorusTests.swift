@@ -8,6 +8,7 @@ import simd
 struct GPropTorusTests {
 
     @Test func torusSurfaceArea() {
+        // swift-format-ignore: AlwaysUseLowerCamelCase
         let R = 10.0  // major
         let r = 3.0  // minor
         let area = GeometryProperties.torusSurfaceArea(majorRadius: R, minorRadius: r)
@@ -16,6 +17,7 @@ struct GPropTorusTests {
     }
 
     @Test func torusVolume() {
+        // swift-format-ignore: AlwaysUseLowerCamelCase
         let R = 10.0
         let r = 3.0
         let vol = GeometryProperties.torusVolume(majorRadius: R, minorRadius: r)

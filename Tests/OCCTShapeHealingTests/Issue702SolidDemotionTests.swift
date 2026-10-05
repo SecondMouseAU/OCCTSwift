@@ -39,7 +39,9 @@ import simd
 struct Issue702SolidDemotion {
 
     /// A box with one face dropped, sewn into an open shell: the smallest input that reaches
-    /// `ShapeFix_Solid`'s "cannot close" branch. 4 free edges ring the missing face. Delegates to
+    /// `ShapeFix_Solid`'s "cannot close" branch. 4 free edges ring the missing face.
+    ///
+    /// Delegates to
     /// `sewnBoxMissingOneFace(_:tolerance:)` (`ShapeHealingTestFixtures.swift`), shared with
     /// `Issue442FixSolidMultiBody` (#717 review, the duplicated open-shell fixture).
     private func openShellMissingOneFace() -> Shape? {
@@ -49,7 +51,9 @@ struct Issue702SolidDemotion {
 
     /// Wraps an open shell as a `TopoDS_Solid` with no fixing at all: `Shape.solidFromShells`
     /// on a single non-closed shell does exactly this (`BRepBuilderAPI_MakeSolid`, which does not
-    /// require or check closure). This is the issue's "raw loft (isSolid: true): ... valid=false"
+    /// require or check closure).
+    ///
+    /// This is the issue's "raw loft (isSolid: true): ... valid=false"
     /// row, reached without any loft.
     private func fakeSolid() -> Shape? {
         guard let shell = openShellMissingOneFace() else { return nil }
@@ -235,9 +239,11 @@ struct Issue702SolidDemotion {
             "adding freeFaceCount again would double-count both shells' open boundaries")
     }
 
-    /// `totalProblems`'s own contract (see ``ShapeAnalysisResult/totalProblems``): every field
+    /// totalProblems's own contract (see ``ShapeAnalysisResult/totalProblems``): every field
     /// summed once, except `freeFaceCount`, which is a derived summary of the same free-edge scan
-    /// rather than an independent defect. Recomputed here instead of assumed, so the tests above
+    /// rather than an independent defect.
+    ///
+    /// Recomputed here instead of assumed, so the tests above
     /// measure the real fields (including this fixture's own nonzero `gapCount`) rather than a
     /// guessed total.
     ///
@@ -258,6 +264,7 @@ struct Issue702SolidDemotion {
 
     /// Two boxes offset so their faces genuinely interfere, in one compound: the same fast,
     /// deterministic fixture `Issue772SelfIntersectionAnalysisTests.overlappingCompound()` uses.
+    ///
     /// Rebuilt locally rather than shared, since this file's #1287 sharing pass is specifically
     /// the `expectVolume`/`twoBoxes`/`hollowBox`/`multiconnexSolid` cluster with
     /// `Issue442FixSolidMultiBody`/`Issue443FirstOfN`, a different pair of files.
@@ -270,7 +277,9 @@ struct Issue702SolidDemotion {
 
     /// #1288: `totalProblemsExcludingFreeFace` omitted the `hasSelfIntersection` term
     /// `ShapeAnalysisResult.totalProblems` itself includes, so it silently under-asserted whenever
-    /// self-intersection was actually checked and found. No test in this file exercised that
+    /// self-intersection was actually checked and found.
+    ///
+    /// No test in this file exercised that
     /// before this one: every other call site passes no `selfIntersectionTimeout`, so the missing
     /// term never showed up as a discrepancy. This fixture genuinely self-intersects (two
     /// overlapping boxes, not just a wide bounding box), so `hasSelfIntersection` resolves `true`

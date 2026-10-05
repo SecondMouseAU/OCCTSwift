@@ -132,7 +132,9 @@ struct CancellationReportingTests {
         }
     }
 
-    /// One `true` has to be enough. The indicator used to re-ask at every checkpoint and believe
+    /// One `true` has to be enough.
+    ///
+    /// The indicator used to re-ask at every checkpoint and believe
     /// the last answer, so this caller's single `true` aborted the repair and was then forgotten:
     /// the import returned the partially-repaired shape as a success.
     @Test("A caller that cancels once is not re-asked into an uncancelled result (#525)")

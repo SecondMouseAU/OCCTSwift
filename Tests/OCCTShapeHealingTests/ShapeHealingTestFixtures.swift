@@ -22,7 +22,9 @@ extension SIMD3 where Scalar == Double {
 
 /// Drops one face from `box` and sews the remaining five: the smallest recipe that reaches an
 /// open shell with exactly 4 free edges ringing the missing face, whatever the box's own size or
-/// origin. Shared by `Issue442FixSolidMultiBody` and `Issue702SolidDemotion`, both of
+/// origin.
+///
+/// Shared by `Issue442FixSolidMultiBody` and `Issue702SolidDemotion`, both of
 /// which built this same "drop one face, sew the rest" logic independently before the #717 review
 /// pointed out the duplication.
 ///
@@ -42,7 +44,9 @@ func sewnBoxMissingOneFace(_ box: Shape, tolerance: Double = 1e-6) -> Shape? {
 
 /// Volume, asserted rather than optionally-bound: a `nil` here means the solid came back
 /// inverted, which must fail the test rather than skip it. `Shape.volume` is `v >= 0 ? v : nil`,
-/// so it returns `nil` precisely when a solid comes back inverted. Shared by
+/// so it returns `nil` precisely when a solid comes back inverted.
+///
+/// Shared by
 /// `Issue442FixSolidMultiBody` and `Issue443FirstOfN`, byte-identical (including this doc comment)
 /// between the two files before the #1287 review pointed out the duplication, bypassing this
 /// fixtures file the same way `sewnBoxMissingOneFace` above was bypassed before #717.
@@ -61,7 +65,9 @@ func expectVolume(
         sourceLocation: sourceLocation)
 }
 
-/// Two disjoint 10mm boxes, 2000mm³ total: the #442/#443 issues' own reproducer. Shared by
+/// Two disjoint 10mm boxes, 2000mm³ total: the #442/#443 issues' own reproducer.
+///
+/// Shared by
 /// `Issue442FixSolidMultiBody` and `Issue443FirstOfN`, same #1287 duplication as `expectVolume`
 /// above.
 func twoBoxes() -> Shape? {
@@ -71,7 +77,9 @@ func twoBoxes() -> Shape? {
     return Shape.compound([a, b])
 }
 
-/// A 20mm cube with a 10mm cavity fully inside it: one solid, two shells. Shared by
+/// A 20mm cube with a 10mm cavity fully inside it: one solid, two shells.
+///
+/// Shared by
 /// `Issue442FixSolidMultiBody` and `Issue443FirstOfN`, same #1287 duplication as `expectVolume`
 /// above.
 func hollowBox() -> Shape? {
@@ -81,7 +89,9 @@ func hollowBox() -> Shape? {
     return outer.subtracting(cavity)
 }
 
-/// One solid holding two disjoint closed shells. Pathological but real, and the case that rules
+/// One solid holding two disjoint closed shells.
+///
+/// Pathological but real, and the case that rules
 /// out the naive "outer shell per solid" selection rule, so it is the one most likely to regress
 /// unnoticed. `Issue442FixSolidMultiBody` named this helper `multiconnexSolid()`;
 /// `Issue443FirstOfN` inlined the identical construction directly inside a test body
@@ -96,7 +106,9 @@ func multiconnexSolid() -> Shape? {
 }
 
 /// A 10x10 planar panel with a 4x4 centred window, so the face carries two wires: one that is its
-/// outer bound and one that is not. Shared by `Issue999OuterBoundTests` and
+/// outer bound and one that is not.
+///
+/// Shared by `Issue999OuterBoundTests` and
 /// `Issue1058OuterBoundRefusalTests`, which built it independently before the #1058 review pointed
 /// out the duplication, the same way #717 did for `sewnBoxMissingOneFace` above.
 func panelWithCentredWindow() -> Shape? {

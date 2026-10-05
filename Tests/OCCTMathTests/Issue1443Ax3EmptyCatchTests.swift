@@ -7,7 +7,7 @@ import simd
 
 /// #1443: five `gp_Ax3` bridge functions in `OCCTBridge_Spatial_GeometryUtils.mm`
 /// (`OCCTAx3Create`, `OCCTAx3CreateFromNormal`, `OCCTAx3MirrorPoint`, `OCCTAx3Rotate`,
-/// `OCCTAx3Translate`) swallowed OCCT's `Standard_ConstructionError` -- raised by `gp_Dir`'s
+/// `OCCTAx3Translate`) swallowed OCCT's `Standard_ConstructionError` -- raised by gp_Dir's
 /// zero-length-vector check and, for the three-argument `gp_Ax3` constructor, its
 /// parallel-direction/xDirection check -- with an empty `catch (...)`, leaving every
 /// out-parameter at whatever the caller happened to pre-initialize it to.
@@ -34,7 +34,9 @@ import simd
 @Suite("Issue #1443: gp_Ax3 bridge functions' empty catch")
 struct Issue1443Ax3EmptyCatchTests {
 
-    @Test("OCCTAx3Create: parallel direction/xDirection overwrites sentinel outputs, not left untouched")
+    @Test(
+        "OCCTAx3Create: parallel direction/xDirection overwrites sentinel outputs, not left untouched"
+    )
     func createParallelDirectionOverwritesSentinel() {
         var isDirect = true
         var xDx = -1.0
@@ -55,7 +57,9 @@ struct Issue1443Ax3EmptyCatchTests {
         #expect(yDx == 0 && yDy == 0 && yDz == 0)
     }
 
-    @Test("OCCTAx3CreateFromNormal: zero-length normal overwrites sentinel outputs, not left untouched")
+    @Test(
+        "OCCTAx3CreateFromNormal: zero-length normal overwrites sentinel outputs, not left untouched"
+    )
     func createFromNormalZeroNormalOverwritesSentinel() {
         var isDirect = true
         var xDx = -1.0
@@ -73,7 +77,9 @@ struct Issue1443Ax3EmptyCatchTests {
         #expect(yDx == 0 && yDy == 0 && yDz == 0)
     }
 
-    @Test("OCCTAx3MirrorPoint: degenerate input axis overwrites sentinel outputs with the input point unmoved")
+    @Test(
+        "OCCTAx3MirrorPoint: degenerate input axis overwrites sentinel outputs with the input point unmoved"
+    )
     func mirrorPointDegenerateSourceOverwritesSentinel() {
         var rpx = -99.0
         var rpy = -99.0
@@ -97,7 +103,9 @@ struct Issue1443Ax3EmptyCatchTests {
         #expect(rxDx == 0 && rxDy == 0 && rxDz == 0)
     }
 
-    @Test("OCCTAx3Rotate: zero-length rotation axis overwrites sentinel outputs with the input point unmoved")
+    @Test(
+        "OCCTAx3Rotate: zero-length rotation axis overwrites sentinel outputs with the input point unmoved"
+    )
     func rotateZeroAxisDirectionOverwritesSentinel() {
         var rpx = -99.0
         var rpy = -99.0
@@ -123,7 +131,9 @@ struct Issue1443Ax3EmptyCatchTests {
         #expect(rxDx == 0 && rxDy == 0 && rxDz == 0)
     }
 
-    @Test("OCCTAx3Translate: degenerate input axis overwrites sentinel outputs with the input point unmoved")
+    @Test(
+        "OCCTAx3Translate: degenerate input axis overwrites sentinel outputs with the input point unmoved"
+    )
     func translateDegenerateSourceOverwritesSentinel() {
         var rpx = -99.0
         var rpy = -99.0

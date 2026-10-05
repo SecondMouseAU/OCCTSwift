@@ -8,7 +8,9 @@ import simd
 /// `curvatures(u:v:)` computes exactly what `gaussianCurvature(atU:v:)` and
 /// `meanCurvature(atU:v:)` compute, from the same `GeomLProp_SLProps`, but it used to construct
 /// that with a hardcoded `1e-6` resolution while the other two used `Precision::Confusion()`
-/// (`1e-7`). Since that argument is what `IsCurvatureDefined()` tests tangent vectors against for
+/// (`1e-7`).
+///
+/// Since that argument is what `IsCurvatureDefined()` tests tangent vectors against for
 /// nullity, the two APIs could disagree about whether curvature is defined at all for the same
 /// surface at the same (u, v). They now share one construction.
 @Suite("Surface curvature entry points agree (#405)")
@@ -48,7 +50,9 @@ struct SurfaceCurvatureParityTests {
         }
     }
 
-    /// The regression proper. On this cone the two resolutions put the "curvature is defined"
+    /// The regression proper.
+    ///
+    /// On this cone the two resolutions put the "curvature is defined"
     /// threshold a decade apart: `Precision::Confusion()` gives up below v ≈ 2e-7, the old
     /// hardcoded `1e-6` gave up below v ≈ 2e-6. At v = 1e-6, inside that window,
     /// `curvatures(u:v:)` returned (0, 0) for a point where `meanCurvature(atU:v:)` returned

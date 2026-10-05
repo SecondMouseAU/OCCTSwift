@@ -6,7 +6,9 @@ import Testing
 /// `BRepFilletAPI_MakeFillet::Add` silently does nothing for an edge it cannot fillet (most
 /// commonly a free-boundary edge of an open shell, which has only one adjacent face where a
 /// fillet needs two), so `filleted(edges:radius:)` and its siblings build successfully and skip
-/// the edge with no way for a caller to learn which one, or how many. #639.
+/// the edge with no way for a caller to learn which one, or how many.
+///
+/// #639.
 ///
 /// The Cluster B census (`Scripts/repro/cluster-b-fillet-edge-contract/`) measured the declined
 /// set on this exact fixture: 4 of 12 edges declined (`[6, 9, 10, 11]`), the rest (`[0, 1, 2, 3,
@@ -207,7 +209,10 @@ struct Issue639FilletDeclinedEdgeReport {
         // An accepted edge has to be in the list too. Requesting only declined edges leaves
         // nothing to fillet, so Build() fails and the call returns nil with no report to read,
         // which is a different behaviour and not the one under test here.
-        guard let accepted = (0..<edges.count).first(where: { !FilletTestFixtures.declinedIndices.contains($0) })
+        guard
+            let accepted = (0..<edges.count).first(where: {
+                !FilletTestFixtures.declinedIndices.contains($0)
+            })
         else {
             Issue.record("fixture has no accepted edge")
             return

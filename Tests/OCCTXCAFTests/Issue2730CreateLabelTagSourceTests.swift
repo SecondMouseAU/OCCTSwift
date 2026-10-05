@@ -3,7 +3,7 @@ import Testing
 
 @testable import OCCTSwift
 
-/// #2730: on a fresh XCAF document, `createLabel()`'s first two calls used to return the
+/// #2730: on a fresh XCAF document, createLabel()'s first two calls used to return the
 /// existing `XCAFDoc_ShapeTool`/`XCAFDoc_ColorTool` labels (each already holding two attributes),
 /// and the next two returned the tags `XCAFDoc_DocumentTool` later uses for its Layers and DGTs
 /// labels. `TDF_Label::NewChild()` draws its tag from a `TDF_TagSource` attribute Main() does not
@@ -19,7 +19,9 @@ import Testing
 @Suite("Issue 2730: createLabel() on an XCAF document")
 struct Issue2730CreateLabelTagSourceTests {
 
-    /// The tags XCAFDoc_DocumentTool reserves under Main(), measured in the probe above. Tag 6
+    /// The tags XCAFDoc_DocumentTool reserves under Main(), measured in the probe above.
+    ///
+    /// Tag 6
     /// (between MaterialsLabel and ViewsLabel) is genuinely unused by the pinned OCCT 8.0.1.
     private static let reservedTags: Set<Int32> = [1, 2, 3, 4, 5, 7, 8, 9, 10]
 

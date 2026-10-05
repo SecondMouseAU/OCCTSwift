@@ -4,14 +4,18 @@ import simd
 @testable import OCCTSwift
 
 /// #2739: `shelled(thickness:)` wraps `MakeThickSolidBySimple`, whose domain is a non-closed shell
-/// or face. Before this suite nothing pinned either half of that contract: not the refusal on a
+/// or face.
+///
+/// Before this suite nothing pinned either half of that contract: not the refusal on a
 /// closed solid, and not the acceptance of the input the algorithm is for. The routing decision
 /// itself is argued in the bridge comment on `OCCTShapeShell` and measured in
 /// `Scripts/repro/2739-shelled-single-argument-routing/`.
 @Suite("Issue 2739 shelled(thickness:) domain")
 struct Issue2739ShelledSingleArgumentTests {
 
-    /// The refused half. Written as one test walking a list rather than `@Test(arguments:)`
+    /// The refused half.
+    ///
+    /// Written as one test walking a list rather than `@Test(arguments:)`
     /// because a `(String, ...)` element tuple trips the toolchain defect in #1057.
     @Test("a closed solid is refused at either sign, at every magnitude")
     func closedSolidIsRefused() throws {
@@ -60,7 +64,9 @@ struct Issue2739ShelledSingleArgumentTests {
     /// observation was. `BRepGProp::VolumeProperties` reports a signed mass and
     /// `MakeThickSolidBySimple` does not normalise the result's orientation, so an outward offset
     /// comes back reversed. `volume` refuses a negative signed mass, `signedVolume` reports it, and
-    /// `orientedForward()` fixes it. OCCT's own `ThickSolidLargerVolume` test reads the same figure
+    /// `orientedForward()` fixes it.
+    ///
+    /// OCCT's own `ThickSolidLargerVolume` test reads the same figure
     /// through `std::abs`.
     @Test("a positive thickness returns a reversed solid, a negative one a forward solid")
     func signOfTheResultOrientation() throws {
@@ -80,7 +86,9 @@ struct Issue2739ShelledSingleArgumentTests {
     }
 
     /// The overload a closed solid should use instead, pinned here so the two halves of #2739's
-    /// answer sit together. A 20-box hollowed inward by 1 with one face left open holds
+    /// answer sit together.
+    ///
+    /// A 20-box hollowed inward by 1 with one face left open holds
     /// 8000 - (18 * 18 * 19) = 1844 of material, which is the kernel's own figure for this input.
     @Test("shelled(thickness:openFaces:) is what does hollow a closed solid")
     func openFacesOverloadHollows() throws {

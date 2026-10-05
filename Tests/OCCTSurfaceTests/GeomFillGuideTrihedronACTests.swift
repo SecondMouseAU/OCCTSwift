@@ -37,11 +37,13 @@ struct GeomFillGuideTrihedronACTests {
         }
     }
 
-    /// `evaluate(at:)`'s three components are only distinguished by the labels
+    /// evaluate(at:)'s three components are only distinguished by the labels
     /// `evaluateGuideTrihedronD0` (`SweepGuideTypes.swift`) attaches at the call site, not by any
     /// difference the type system enforces (#908, following #903/#904). `d0Evaluation()` above
     /// only asserts `tangent.x`, which never reads `normal`/`binormal` at all, so a pairwise swap
-    /// among the three would not necessarily fail it. Orthonormality alone is symmetric under a
+    /// among the three would not necessarily fail it.
+    ///
+    /// Orthonormality alone is symmetric under a
     /// normal/binormal swap too, so this checks the frame is right-handed
     /// (`binormal == tangent x normal`), which a swap of any two of the three breaks.
     @Test("D0 evaluation returns an orthonormal, right-handed frame (#908)")

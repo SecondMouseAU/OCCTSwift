@@ -64,9 +64,10 @@ struct ShapeAnalysisTests {
     // to find regardless of how they got there topologically.
     @Test("gapCount counts each gap, not each wire with a gap")
     func gapCountCountsEachGap() {
+        // w2 starts 1.0 from w1's end, and w3 starts 0.5 from w2's end.
         guard let w1 = Wire.line(from: SIMD3(0, 0, 0), to: SIMD3(10, 0, 0)),
-            let w2 = Wire.line(from: SIMD3(10, 1, 0), to: SIMD3(5, 10, 0)),  // 1.0 gap from w1's end
-            let w3 = Wire.line(from: SIMD3(5.5, 10, 0), to: SIMD3(0, 0, 0))  // 0.5 gap from w2's end
+            let w2 = Wire.line(from: SIMD3(10, 1, 0), to: SIMD3(5, 10, 0)),
+            let w3 = Wire.line(from: SIMD3(5.5, 10, 0), to: SIMD3(0, 0, 0))
         else {
             Issue.record("failed to build the 3 line wires")
             return

@@ -5,7 +5,9 @@ import simd
 
 /// #562: `Geom2dConvert_BSplineCurveKnotSplitting` was wrapped twice, by
 /// `Curve2D.splitIndicesAtDiscontinuities` and by the v0.105.0
-/// `bsplineKnotSplits`/`bsplineKnotSplitValues` pair. The issue called the second pair strictly
+/// `bsplineKnotSplits`/`bsplineKnotSplitValues` pair.
+///
+/// The issue called the second pair strictly
 /// weaker; it was not. It sized its buffer from the analyzer's own count, where the canonical
 /// call read a fixed 256 entries and took whatever came back, so on a curve with more splits than
 /// that the *duplicate* was the only one telling the truth. Collapsing onto the canonical spelling

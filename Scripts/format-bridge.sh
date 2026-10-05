@@ -10,7 +10,7 @@
 #
 #   Scripts/format-bridge.sh                  # fix: rewrite every enforced bridge file in place
 #   Scripts/format-bridge.sh --check          # report only, exit 1 on a violation (CI, the hook)
-#   Scripts/format-bridge.sh path/to/One.mm   # fix just these files, manifest or not
+#   Scripts/format-bridge.sh path/to/One.mm   # fix just these files
 #   Scripts/format-bridge.sh --check One.mm   # check just these files
 #   Scripts/format-bridge.sh --self-test      # prove the checker still catches a violation
 #   Scripts/format-bridge.sh --print-version  # resolved clang-format version, for CI's assertion
@@ -35,7 +35,6 @@ cd "$(git rev-parse --show-toplevel)" || {
 }
 
 VERSION_FILE="Scripts/clang-format-version.txt"
-MANIFEST="Scripts/style-manifest-bridge.txt"
 CONFIG="Sources/OCCTBridge/.clang-format"
 
 CF="${CLANG_FORMAT:-clang-format}"
@@ -125,13 +124,11 @@ EOF
     return 0
 }
 
-# CI used to inline this `comm`. It lives here now so the enforced set cannot differ between CI,
-# the hook and a local run. A file leaves the manifest when it is brought into compliance, so the
-# enforced set only ever grows.
+# CI used to inline this. It lives here now so the enforced set cannot differ between CI, the hook
+# and a local run. Every bridge header and `.mm` is enforced: the exemption manifest that once
+# subtracted from this set was empty for months and has been retired.
 enforced_files() {
-    comm -23 \
-        <(find Sources/OCCTBridge \( -name '*.h' -o -name '*.mm' \) | sort) \
-        <(grep -v '^#' "$MANIFEST" | sort)
+    find Sources/OCCTBridge \( -name '*.h' -o -name '*.mm' \) | sort
 }
 
 # --- self-test --------------------------------------------------------------------------------
@@ -271,7 +268,7 @@ if [ ${#FILES[@]} -eq 0 ]; then
 fi
 
 if [ ${#FILES[@]} -eq 0 ]; then
-    echo "format-bridge: nothing to do, every bridge file is on $MANIFEST." >&2
+    echo "format-bridge: nothing to do, there are no bridge files to format." >&2
     exit 0
 fi
 

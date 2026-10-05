@@ -104,7 +104,9 @@ struct Issue1646EvaluatorContractTests {
 
     /// `Geom2dEval_LogarithmicSpiralCurve(ax, 1, 1).EvalD0(1000)` is `(nan, nan)`: nothing threw
     /// and every argument is finite, so a flag taken from the constructor alone would call this a
-    /// measurement. It is the row that forces the check onto the outputs.
+    /// measurement.
+    ///
+    /// It is the row that forces the check onto the outputs.
     @Test("A finite argument whose evaluation overflows is refused")
     func overflowRefused() throws {
         #expect(Geom2dEval.logarithmicSpiralD0(scale: 1, growthExponent: 1, u: 1000) == nil)

@@ -7,7 +7,7 @@ import simd
 /// the canonical `ShapeType` (`Sources/OCCTSwift/ShapeType.swift`), a local `Shape.TopAbs_ShapeEnum`
 /// used only by `isSubShapeValid(type:at:)`, `Shape.ShapeFilterType` (`sortedCompound(type:)` /
 /// `predominantShapeType()`), and `Selector.SubShapeType` (pick results) -- and the non-canonical
-/// three had already drifted on case-name casing (`compsolid` vs `ShapeType`'s `compSolid`).
+/// three had already drifted on case-name casing (`compsolid` vs ShapeType's `compSolid`).
 ///
 /// Fixed: `isSubShapeValid(type:at:)` now takes `ShapeType` directly, the local
 /// `Shape.TopAbs_ShapeEnum` is deleted; `Shape.ShapeFilterType` is now a typealias for `ShapeType`

@@ -4,27 +4,25 @@ name: code-style
 # docs/code-style-policy-proposal-2026-08.md in the `ecosystem` repo for the
 # full rationale, and okf/policies/code-style.md for this repo's own policy.
 #
-# Unlike the OCCTSwiftScripts pilot (small enough to fully sweep in one PR),
-# this repo is large (222 Swift files, 33 OCCTBridge C++ files, ~11,700
-# pre-existing swift-format diagnostics and a multi-thousand-line-per-file
-# clang-format gap measured on rollout day) so this uses gradual adoption: a
-# checked-in exemption manifest (Scripts/style-manifest-*.txt) grandfathers
-# every file that existed at rollout, and Scripts/check-style-manifest.py
-# enforces that touching a manifest file means fixing it and removing it from
-# the manifest in the same PR, not leaving it exempt while edited.
+# This repo rolled the policy out gradually: a checked-in exemption manifest
+# (Scripts/style-manifest-*.txt) grandfathered every file that existed at
+# rollout (222 Swift files, 33 OCCTBridge files, ~11,700 swift-format
+# diagnostics), and Scripts/check-style-manifest.py enforced that touching a
+# manifest file meant fixing it and removing it from the manifest in the same
+# PR. **That rollout is finished and the manifests are gone.** The last listed
+# file was brought into compliance and the manifests and their checker were
+# deleted, so there is no exemption list and nothing to grow back.
 #
-# swift-format, SwiftLint, and clang-format are blocking for everything NOT on
-# a manifest: formatting has no judgment call in it once a file complies.
-#
-# The bridge half of that rollout is finished: Scripts/style-manifest-bridge.txt
-# is now empty, so all 33 OCCTBridge files are enforced. That is why the
-# pre-commit hook gained the clang-format check (Scripts/format-bridge.sh) and
-# why the version is pinned below: with nothing grandfathered, OCCT's
-# consecutive-alignment rules put almost every hand-written bridge addition in
-# violation, and finding that out from a red PR costs a push per attempt.
-# check-style-manifest.py is blocking (its whole job is catching a specific,
-# unambiguous rule violation). The comment-ratio check is report-only by
-# design (see its own header) and never fails.
+# swift-format, SwiftLint, and clang-format are blocking for every tracked
+# file: formatting has no judgment call in it once a file complies. A violation
+# that is deliberate is suppressed where it occurs, with swift-format's own
+# `// swift-format-ignore: <Rule>`, so `git grep swift-format-ignore` is the
+# complete list of exceptions. The version of clang-format is pinned below
+# because OCCT's consecutive-alignment rules put almost every hand-written
+# bridge addition in violation, and finding that out from a red PR costs a push
+# per attempt, which is also why the pre-commit hook runs
+# Scripts/format-bridge.sh. The comment-ratio check is report-only by design
+# (see its own header) and never fails.
 #
 # Pure text analysis, no OCCT build needed: still a macOS runner, for the same
 # reason build-and-test needs one (swift-format/swiftlint/clang-format are all
@@ -64,11 +62,7 @@ jobs:
     runs-on: macos-15
     timeout-minutes: 15
     steps:
-      # fetch-depth: 0, not the default shallow clone: check-style-manifest.py
-      # diffs against origin/main's merge-base, which needs real history.
       - uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
 
       - name: Install swift-format, SwiftLint
         run: brew install swift-format swiftlint
@@ -109,7 +103,7 @@ jobs:
       - name: check-swift-format.py --self-test
         run: python3 Scripts/check-swift-format.py --self-test --require-swift-format
 
-      - name: swift-format lint --strict (files not on an exemption manifest)
+      - name: swift-format lint --strict
         if: '!cancelled()'
         run: python3 Scripts/check-swift-format.py --require-swift-format
 
@@ -126,17 +120,9 @@ jobs:
         if: '!cancelled()'
         run: Scripts/format-bridge.sh --self-test
 
-      - name: clang-format check (OCCTBridge files not on the exemption manifest)
+      - name: clang-format check (OCCTBridge)
         if: '!cancelled()'
         run: Scripts/format-bridge.sh --check
-
-      - name: check-style-manifest.py --self-test
-        if: '!cancelled()'
-        run: python3 Scripts/check-style-manifest.py --self-test
-
-      - name: check-style-manifest.py
-        if: '!cancelled()'
-        run: python3 Scripts/check-style-manifest.py --base origin/main
 
       - name: comment-ratio-check.py --self-test
         if: '!cancelled()'

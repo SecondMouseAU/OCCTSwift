@@ -8,7 +8,9 @@ import simd
 
 /// The same `Geom2dAPI_ProjectPointOnCurve` computation is reachable five ways:
 /// `Curve2D.project(point:)`, `Curve2D.allProjections(of:)`, `Curve2D.project(_ point: Point2D)`,
-/// `Point2D.distance(to:)` and `Curve2D.nearestParameter(to:)`. They were five independent
+/// `Point2D.distance(to:)` and `Curve2D.nearestParameter(to:)`.
+///
+/// They were five independent
 /// constructions with five different failure conventions bolted on separately, including one
 /// (`Point2D.distance(to:)`) that leaked the bridge's raw `-1` sentinel to callers as though it
 /// were a distance, and one (`Curve2D.parameterAtPoint(_:)`, now deprecated) that #413 missed
@@ -96,7 +98,9 @@ struct Curve2DProjectionParityTests {
     }
 
     /// Parameter 0 is a legitimate success value, which is why no entry point may signal failure
-    /// through the parameter alone. Projecting a segment's own start point onto it returns
+    /// through the parameter alone.
+    ///
+    /// Projecting a segment's own start point onto it returns
     /// exactly 0 at distance 0.
     @Test("Parameter zero is a success, not a failure signal")
     func parameterZeroIsASuccess() {

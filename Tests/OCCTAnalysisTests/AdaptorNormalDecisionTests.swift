@@ -44,7 +44,9 @@ struct AdaptorNormalDecisionTests {
     }
 
     /// A face whose two parametric directions are *nearly parallel* is the one shape the sine
-    /// tolerance actually rejects. Skewing a linear extrusion by 5e-7 radians puts it between the
+    /// tolerance actually rejects.
+    ///
+    /// Skewing a linear extrusion by 5e-7 radians puts it between the
     /// two values: the normal is undefined at `1e-6` and defined at `Precision::Confusion()`.
     @Test("A nearly-degenerate parameterisation now reports its normal")
     func skewedExtrusionHasANormal() {

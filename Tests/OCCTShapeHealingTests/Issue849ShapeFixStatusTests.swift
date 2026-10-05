@@ -6,10 +6,12 @@ import simd
 
 // MARK: - #849: ShapeFixStatus, the real ShapeExtend_Status ordinals, shared by ShapeFixer/FaceFixer
 
-/// `ShapeFixer.status(Int)` used to expose only 3 of `ShapeExtend_Status`'s 19 ordinals, and
-/// `FaceFixer`'s own local `Status` enum (independently) shifted everything from `.fail1` through
+/// `ShapeFixer.status(Int)` used to expose only 3 of ShapeExtend_Status's 19 ordinals, and
+/// FaceFixer's own local `Status` enum (independently) shifted everything from `.fail1` through
 /// `.done` by one ordinal, because it never accounted for the combined `ShapeExtend_DONE` flag
-/// OCCT places between `DONE8` and `FAIL1` (`.done` actually queried `ShapeExtend_FAIL8`). Both
+/// OCCT places between `DONE8` and `FAIL1` (`.done` actually queried `ShapeExtend_FAIL8`).
+///
+/// Both
 /// now share one corrected type, `ShapeFixStatus`. This suite pins the real ordinals directly
 /// (verified against `ShapeExtend_Status.hxx`, pinned V8_0_1) so a regression to either the old
 /// 1/2/3 remap or the old off-by-one shift is caught immediately, without needing a shape that
@@ -18,7 +20,9 @@ import simd
 struct Issue849ShapeFixStatusTests {
 
     /// The real `ShapeExtend_Status` ordinals, exactly as declared in `ShapeExtend_Status.hxx`:
-    /// OK=0, DONE1...DONE8=1...8, the combined DONE=9, FAIL1...FAIL8=10...17, the combined FAIL=18.
+    /// OK=0, DONE1.
+    ///
+    /// ..DONE8=1...8, the combined DONE=9, FAIL1...FAIL8=10...17, the combined FAIL=18.
     @Test func rawValuesMatchTheRealOCCTEnum() {
         #expect(ShapeFixStatus.ok.rawValue == 0)
         #expect(ShapeFixStatus.done1.rawValue == 1)
@@ -29,7 +33,8 @@ struct Issue849ShapeFixStatusTests {
         #expect(ShapeFixStatus.done6.rawValue == 6)
         #expect(ShapeFixStatus.done7.rawValue == 7)
         #expect(ShapeFixStatus.done8.rawValue == 8)
-        #expect(ShapeFixStatus.done.rawValue == 9)  // combined DONE, sits BEFORE fail1, not after fail8
+        // combined DONE, sits BEFORE fail1, not after fail8
+        #expect(ShapeFixStatus.done.rawValue == 9)
         #expect(ShapeFixStatus.fail1.rawValue == 10)
         #expect(ShapeFixStatus.fail2.rawValue == 11)
         #expect(ShapeFixStatus.fail3.rawValue == 12)
@@ -50,11 +55,12 @@ struct Issue849ShapeFixStatusTests {
         #expect(FaceFixer.Status.fail8.rawValue == 17)
     }
 
-    /// `ShapeFixer`'s legacy `status(Int)` overload already mapped its 3 supported values to the
+    /// ShapeFixer's legacy `status(Int)` overload already mapped its 3 supported values to the
     /// CORRECT OCCT constants (`ShapeExtend_OK`/`DONE`/`FAIL`), only its exposed granularity was
     /// the bug, not those three answers, so it doubles as a live oracle for the new
     /// `status(ShapeFixStatus)` overload on the same three cases, end to end through the real,
     /// new `OCCTShapeFixerStatusFlag` bridge call (wiring, not just the Swift-side constant).
+    ///
     /// Measured, not assumed: `ShapeFix_Shape::Perform()` on a plain box already sets the combined
     /// `DONE` flag (there is always some tolerance-level bookkeeping to do), so this genuinely
     /// discriminates the old off-by-one `.done` (which read `ShapeExtend_FAIL8`, false here) from
@@ -75,6 +81,7 @@ struct Issue849ShapeFixStatusTests {
     }
 
     /// The legacy overload's own documented, narrow contract: silently `false` outside `1...3`.
+    ///
     /// Pinned so nobody "fixes" it into forwarding raw ordinals directly, which would be a real
     /// behavior change to already-shipped public API (the type-safe overload above is the
     /// additive replacement for that).

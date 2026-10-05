@@ -4,7 +4,9 @@ import simd
 
 @testable import OCCTSwift
 
-/// #443: the first-of-N `TopExp_Explorer` audit. Three call sites took the first shell or
+/// #443: the first-of-N `TopExp_Explorer` audit.
+///
+/// Three call sites took the first shell or
 /// face an explorer yielded and dropped the rest, each returning a well-formed result that
 /// nothing downstream could tell was missing most of the part.
 ///
@@ -64,7 +66,9 @@ struct Issue443FirstOfN {
     }
 
     /// The disagreement the issue was filed on: after #442 the two entry points gave
-    /// different answers for one input. They must now agree.
+    /// different answers for one input.
+    ///
+    /// They must now agree.
     @Test("solid(from:) and solidFromShellFixed() agree on sewing output")
     func solidFromAgreesWithSibling() {
         guard let compound = twoBoxes(), let sewn = compound.sewn(tolerance: 1e-6) else {
@@ -125,7 +129,9 @@ struct Issue443FirstOfN {
         #expect(solid.subShapeCount(ofType: .face) == 11)
     }
 
-    /// A cavity is a hole, not a body. Emitting one as a positive solid would give a
+    /// A cavity is a hole, not a body.
+    ///
+    /// Emitting one as a positive solid would give a
     /// compound whose volume double-counts the part (8000 + 1000 for a 7000 part).
     @Test("solid(from:) skips a hollow solid's cavity shell")
     func solidFromSkipsCavity() {
@@ -145,7 +151,9 @@ struct Issue443FirstOfN {
     }
 
     /// One solid holding two disjoint closed shells: the case that rules out the naive
-    /// "outer shell per solid" rule, so the one most likely to regress unnoticed. Uses the shared
+    /// "outer shell per solid" rule, so the one most likely to regress unnoticed.
+    ///
+    /// Uses the shared
     /// `multiconnexSolid()` fixture (`ShapeHealingTestFixtures.swift`); this test used to inline
     /// the identical construction directly (#1287 review).
     @Test("solid(from:) keeps both shells of a multiconnex solid")
@@ -179,7 +187,9 @@ struct Issue443FirstOfN {
 
     /// Sewing dissolves the solid that declared a cavity, so both shells arrive free. #442
     /// emitted every free shell as a body unconditionally, which made the cavity a positive
-    /// solid: the same two shells answered 1 body inside a solid and 2 once sewn. They are
+    /// solid: the same two shells answered 1 body inside a solid and 2 once sewn.
+    ///
+    /// They are
     /// now one group under the same parity rule, so both readings agree.
     ///
     /// Covers ``Shape/solidFromShellFixed()`` directly, since #443's change to the shared
@@ -225,7 +235,9 @@ struct Issue443FirstOfN {
 
     /// Free shells are the one parity group with no natural bound on its size: sewing a raw
     /// imported mesh can yield hundreds of disjoint shells, where a solid's own shells are
-    /// 1-3. Every other test here uses two or three bodies, so nothing else exercises the
+    /// 1-3.
+    ///
+    /// Every other test here uses two or three bodies, so nothing else exercises the
     /// bounding-box pre-filter that keeps the pass from going quadratic (measured at 200
     /// disjoint shells: 160 ms without it, 0.7 ms with, same verdicts).
     ///
@@ -254,7 +266,9 @@ struct Issue443FirstOfN {
         expectVolume(solids, Double(count) * 1000.0, "solid(from: \(count) free shells)")
     }
 
-    /// The pre-filter must not prune a pair whose boxes overlap without enclosure. Two boxes
+    /// The pre-filter must not prune a pair whose boxes overlap without enclosure.
+    ///
+    /// Two boxes
     /// sharing a face have overlapping bounds, so the cheap test cannot decide them and the
     /// ray cast still has to run.
     @Test("touching bodies are still two bodies")
@@ -297,7 +311,9 @@ struct Issue443FirstOfN {
     /// `solidWithHistoryMultiBody` above discards the returned history entirely
     /// (`let (result, _) =`), so nothing confirms that the ONE shared `ShapeBuild_ReShape`
     /// context stays queryable for a body other than the last one `ShapeFix_Solid` ran
-    /// against. That is the "flip side of sharing" the bridge comment on
+    /// against.
+    ///
+    /// That is the "flip side of sharing" the bridge comment on
     /// `OCCTShapeCreateSolidFromShellWithHistory` documents: each body's `Perform()` runs
     /// against a context that already holds the earlier bodies' replacements, stated to be
     /// harmless for the disjoint bodies sewing produces. Genuinely sharing a sub-shape between
@@ -456,7 +472,9 @@ struct Issue443FirstOfN {
     }
 
     /// A body sitting inside another body's cavity is enclosed twice, so parity reads it as
-    /// a body, even once sewing has left all three shells free. Emitting free shells
+    /// a body, even once sewing has left all three shells free.
+    ///
+    /// Emitting free shells
     /// unconditionally instead gives 3 solids for a 2-body part.
     @Test("upgraded() reads a body nested in a cavity as a body")
     func upgradedNestedBody() {
@@ -479,10 +497,12 @@ struct Issue443FirstOfN {
         expectVolume(upgraded, 8512.0, "upgraded(body nested in a cavity)")
     }
 
-    /// Same review finding as `solidFromKeepsOpenBody`, on `OCCTShapeUpgrade`'s own
+    /// Same review finding as `solidFromKeepsOpenBody`, on OCCTShapeUpgrade's own
     /// `BRepBuilderAPI_MakeSolid` loop: it dropped the shell outright on `IsDone() == false`
     /// instead of keeping it unfixed, unlike every sibling per-body solid-construction loop
-    /// this diff touches. Dead code today for the same reason (`BRepLib_MakeSolid`'s
+    /// this diff touches.
+    ///
+    /// Dead code today for the same reason (BRepLib_MakeSolid's
     /// single-shell constructor always succeeds), fixed for symmetry/defense in depth.
     ///
     /// Unlike `solidFromKeepsOpenBody`, this cannot assert `solids.count == 2`: `upgraded()`

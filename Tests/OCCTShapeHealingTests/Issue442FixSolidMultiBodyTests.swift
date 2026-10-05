@@ -158,7 +158,8 @@ struct Issue442FixSolidMultiBody {
         }
         #expect(solid.shapeType == .solid)
         #expect(solid.solids.count == 1)
-        expectVolume(solid, 8000.0, "solidFromShellFixed(hollow solid)")  // outer shell, cavity filled
+        // outer shell, cavity filled
+        expectVolume(solid, 8000.0, "solidFromShellFixed(hollow solid)")
     }
 
     /// The case the "outer shell per solid" rule would silently drop a body on.
@@ -180,6 +181,7 @@ struct Issue442FixSolidMultiBody {
     }
 
     /// One solid holding a hollow body's two shells *and* a second, wider body's shell.
+    ///
     /// This is what rules out picking any single reference shell and calling everything
     /// outside it a body: with the wider body as the reference, the first body's cavity
     /// also classifies as outside, and gets emitted as a positive solid that double-counts
@@ -272,7 +274,9 @@ struct Issue442FixSolidMultiBody {
     }
 
     /// The docs tell callers to spot an unclosed body by walking the result's **direct
-    /// children**, and explicitly not with `subShapes(ofType: .shell)`. This pins both
+    /// children**, and explicitly not with `subShapes(ofType: .shell)`.
+    ///
+    /// This pins both
     /// halves of that claim: the recommended walk reports no shell on healthy output, and
     /// the rejected one reports a shell per solid whether or not anything went wrong.
     @Test("the documented unclosed-body check works on healthy output")
@@ -312,6 +316,7 @@ struct Issue442FixSolidMultiBody {
     }
 
     /// An open shell reaching the parity pass must not perturb the other shells' verdicts.
+    ///
     /// Every shell is a reference under parity, and an open one cannot enclose anything;
     /// without that guard, measured, a hollow body's outer shell is dropped outright
     /// (enclosed count 1, odd) and its cavity emitted as a positive body.

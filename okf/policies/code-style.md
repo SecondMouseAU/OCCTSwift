@@ -59,9 +59,9 @@ two real bugs on rollout day: two doc comments separated from their declarations
 `// MARK:`, one of them documenting a function (`Surface.toBezierPatches()`) that currently has no
 doc comment of its own. Tracked as [#877](https://github.com/SecondMouseAU/OCCTSwift/issues/877)
 rather than fixed inline, since fixing either one would have obligated a full-file
-`swift-format` sweep under this policy's own manifest rule (below), disproportionate for a
-CI-infrastructure PR. Both files are named in `.swiftlint.yml`'s `excluded:` list until #877
-lands.
+`swift-format` sweep under the manifest rule the policy had then, disproportionate for a
+CI-infrastructure PR. #877 has since closed and both files were brought into line, so neither is
+excluded.
 
 **Doc comments stay terse.** A `///` comment is a single-sentence summary plus only the
 `Parameter`/`Returns`/`Throws` tags that add something the summary doesn't already say. Design
@@ -86,42 +86,50 @@ restate once, on the function itself. Established by
 [#903](https://github.com/SecondMouseAU/OCCTSwift/issues/903)/[#904](https://github.com/SecondMouseAU/OCCTSwift/pull/904)
 on `ShapeAxis.swift`'s `unwrapAxisComponents(_:)`.
 
-## Gradual rollout: the exemption manifest, not a big-bang sweep
+## Rollout: finished, and the exemption manifests are retired
 
-Unlike the ecosystem's pilot repo (`OCCTSwiftScripts`, small enough to sweep into full compliance
-in one PR), this repo measured ~11,700 pre-existing `swift-format` diagnostics across
-`Sources/OCCTSwift` and multi-thousand-line-per-file `clang-format` diffs across every one of
-`Sources/OCCTBridge`'s 33 files on rollout day, a whole-tree gate would fail every PR against
-work nobody has touched. Instead:
+This repo did not sweep into compliance in one PR. It measured ~11,700 pre-existing `swift-format`
+diagnostics across `Sources/OCCTSwift` and multi-thousand-line-per-file `clang-format` diffs across
+every file of `Sources/OCCTBridge` on rollout day, and a whole-tree gate would have failed every PR
+against work nobody had touched. So it adopted the policy gradually: checked-in manifests listed
+every file that existed at rollout, a listed file was exempt until touched, and
+`Scripts/check-style-manifest.py` made touching one mean fixing it and deleting its line.
 
-- `Scripts/style-manifest-swift.txt` and `Scripts/style-manifest-bridge.txt` list every file that
-  existed at rollout. A listed file is exempt from `swift-format`/`clang-format` until touched.
-- **If you touch a listed file, you fix it and remove it from the manifest in the same PR.**
-  `Scripts/check-style-manifest.py` enforces this mechanically: a manifest file appearing in a
-  PR's diff while still listed at `HEAD` fails the build. This is the CI-enforceable version of
-  the rollout's own stated principle: fix what you touch, not the whole tree at once.
-- The manifest only shrinks. A new file is never grandfathered onto it; new code complies from
-  creation, checked by the same `swift-format`/`clang-format`/SwiftLint steps running unconditionally
-  against anything not already listed.
-- **The bridge half is finished.** `Scripts/style-manifest-bridge.txt` is empty: all 93
-  `Sources/OCCTBridge` files are enforced. Nothing is grandfathered there any more, which is what
-  made a local fix command and a pre-commit check worth adding rather than optional convenience.
-  `Scripts/style-manifest-swift.txt` is empty too, so `Sources/OCCTSwift` is finished as well.
-  That 93 is the live population, derived from the tree by `check-inventory-prose.py` and held to
-  this sentence on every PR; `CLAUDE.md` used to carry a second copy of it, said 33 for as long as
-  the #1378/#1380 split had been in the tree, and no longer states it at all (#2910, #2954).
+**That is over.** The manifests drained to nothing, and then were deleted with the checker and its
+two CI steps:
 
-Why: the ecosystem-wide proposal and evidence (comment:code ratios, a live doc-drift bug found in
-`docs/reference/CurveAdaptors.md`) live in
+- `Sources/OCCTBridge` finished first: all 93
+  `Sources/OCCTBridge` files are enforced by `clang-format`, and the version is pinned for the
+  reason `code-style.yml` gives. That 93 is the live population, derived from the tree by
+  `check-inventory-prose.py` and held to this sentence on every PR; `CLAUDE.md` used to carry a
+  second copy of it, said 33 for as long as the #1378/#1380 split had been in the tree, and no
+  longer states it at all (#2910, #2954).
+- `Sources/OCCTSwift` finished next, and the widening of #2852 then added a second manifest of the
+  files the wider population newly reached (`Tests/`, `Scripts/`, `Sources/OCCTPlatform` and the
+  rest). That one was the last to go: the final 244 files were run through `swift-format format -i`,
+  which cleared about 750 of 1,340 findings, and the rest were `BeginDocumentationCommentWithOneLineSummary`
+  (562, which wants a sentence boundary written down, not a line rewrapped) and a few dozen
+  one-offs, fixed by hand or by a script that refused to guess.
+- **Nothing is exempt now.** Every tracked `.swift` file passes `swift-format lint --strict` and
+  SwiftLint `--strict`, with no list to consult and none to grow back.
+
+**A deliberate exception is written where it occurs**, with swift-format's own
+`// swift-format-ignore: <Rule>` on the declaration, and the reason beside it. It is used for
+single-letter mathematical constants in tests (`let A = ...` for a matrix, `R` for a major radius),
+which `AlwaysUseLowerCamelCase` would have renamed away from the notation the test is about.
+`git grep swift-format-ignore` is the complete list. Do not add a manifest to hold exceptions: a
+list beside the code is how this repo ended up with 418 files exempt and nothing in the files saying so.
+
+Why the gradual route was taken, and what it taught: the ecosystem-wide proposal and evidence
+(comment:code ratios, a live doc-drift bug found in `docs/reference/CurveAdaptors.md`) live in
 [`ecosystem` docs/code-style-policy-proposal-2026-08.md](https://github.com/SecondMouseAU/ecosystem/blob/main/docs/code-style-policy-proposal-2026-08.md).
-Rollout sequencing (`OCCTSwift` first, timed to land after `refactor/382-pass2a`, riding the
-refactor rather than a separate sweep) is in that document's §4. Filed and tracked as
+Rollout sequencing is in that document's §4. Filed and tracked as
 [OCCTSwift#876](https://github.com/SecondMouseAU/OCCTSwift/issues/876).
 
-## What the gate reads, which is not the same question as what is exempt
+## What the gate reads
 
-**A manifest can only exempt a file the gate's population already reaches, and until #2852 the
-population was one directory.** `code-style.yml`'s `swift-format` step ran
+**An exemption list can only exempt a file the gate's population already reaches, and until #2852
+the population was one directory.** `code-style.yml`'s `swift-format` step ran
 `find Sources/OCCTSwift -name '*.swift'`: 230 of the repo's 1,730 tracked Swift files. `Tests/`
 (1,459), `Scripts/` (35), `Sources/OCCTPlatform`, `Sources/OCCTTest`, `Sources/WASICompat` and
 `Package.swift` were outside it, the step was green, and nothing in the manifest said so, because
@@ -130,44 +138,26 @@ an exemption list reads as a complete statement of what is unchecked and this on
 the package, arrived unlinted for no reason anyone chose.
 
 `Scripts/check-swift-format.py` owns the population now, and the population is
-`git ls-files '*.swift'` minus the manifests. A new target, directory or top-level file is linted
-from creation, with no path for anyone to remember to widen. Its `--list` prints the population
-and the accounting; its real run asserts that **selected + listed accounts for every tracked
-`.swift` file**, so a future narrowing is a red gate rather than a quieter one, and it plants a
-canary violation in every `swift-format` invocation so a tool that reports nothing aborts the run
-instead of passing it. Both devices are [static-gates](static-gates.md)'s, for its reason: a
-`--self-test` proves the detector catches what its author thought of, and cannot prove it looked
-at the real input.
+`git ls-files '*.swift'`, all of it. A new target, directory or top-level file is linted from
+creation, with no path for anyone to remember to widen. Its `--list` prints the population; its
+real run asserts that **the selection equals every tracked `.swift` file**, so a future narrowing
+is a red gate rather than a quieter one, and it plants a canary violation in every `swift-format`
+invocation so a tool that reports nothing aborts the run instead of passing it. Both devices are
+[static-gates](static-gates.md)'s, for its reason: a `--self-test` proves the detector catches what
+its author thought of, and cannot prove it looked at the real input.
 
 **SwiftLint had the same gap and it was cheaper.** `.swiftlint.yml`'s `excluded:` held `Tests` and
-`Scripts`, so `swiftlint --strict` read 234 files, not the repository, and #2852's own premise that
-it "does cover the repository" is wrong as measured. Widening it cost exactly one fix:
-`orphaned_doc_comment` found a single finding across the 1,494 files it newly reached, a `///`
-block detached from its declaration by an inserted `// MARK:`, which is the shape of both of #877's.
-1,728 files are linted now.
+`Scripts`, so `swiftlint --strict` read 234 files, not the repository. Widening it cost exactly one
+fix: `orphaned_doc_comment` found a single finding across the 1,494 files it newly reached, a `///`
+block detached from its declaration by an inserted `// MARK:`. Two more files stayed excluded after
+that, `Sources/OCCTSwift/Surface.swift` and `Shape+Modeling.swift`, behind a note saying to remove
+them once [#877](https://github.com/SecondMouseAU/OCCTSwift/issues/877) landed. #877 closed and the
+note stayed; both files linted clean when the exclusion was lifted, and it is gone. `excluded:` now
+holds only build output (`.build`, `Libraries`), which is not source.
 
-Widening it newly reached 1,500 files and `swift-format lint --strict` rejected 418 of them, so
-#2852 seeded a **second** manifest, `Scripts/style-manifest-swift-wave2.txt`, with those 418, and
-then formatted and delisted the 146 that needed nothing but `swift-format format -i`. It is a
-separate file because the shrink rule above forbids growing an existing manifest while allowing
-the seeding of one that did not exist at the base ref, and the split keeps the two seedings
-separately auditable: `style-manifest-swift.txt` reaching zero says `Sources/OCCTSwift` is
-finished, and 418 new entries would have muddled that. The 272 left on seeding day needed prose edited rather than lines rewrapped, 607 of their
-diagnostics being `BeginDocumentationCommentWithOneLineSummary`.
-
-That 272 is a frozen measurement of 2026-09-30 and is deliberately written as one, because the
-manifest drains: every PR that touches a listed file fixes it and deletes its line.
-
-**The live count is written down nowhere, and that is the decision rather than an omission**
-(#2954). It was stated in `CLAUDE.md` with `check-inventory-prose.py` deriving it from the
-manifest, which worked exactly as designed and was the problem: the claim is shared by every open
-PR and invalidated by every merged one, so on 2026-10-02 it moved 267 to 262 in a day and took
-three unrelated PRs red at merge time, one of them into a three-way conflict in which all three
-sides held a different number and none was right. Moving the sentence to another file would move
-the conflict with it, since what collides is the number and not its address. So there is no
-sentence: `python3 Scripts/check-inventory-prose.py` prints the figure on a clean run, and
-`grep -cvE '^[[:space:]]*(#|$)' Scripts/style-manifest-swift-wave2.txt` derives it in one command.
-Do not write it into prose anywhere; the manifest is the record, and its length is a `grep` away.
+**The count that used to be kept nowhere is gone, not hidden** (#2954). The manifest's length was
+stated in `CLAUDE.md`, shared by every open PR and invalidated by every merged one, and went 267 to
+262 in a day and took three unrelated PRs red at merge time. With no manifest there is no figure.
 
 Ecosystem standard: see
 [OKF-STANDARD.md](https://github.com/SecondMouseAU/ecosystem/blob/main/OKF-STANDARD.md).

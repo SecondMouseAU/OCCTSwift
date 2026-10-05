@@ -217,7 +217,9 @@ struct Issue614FaceOrientationTests {
     }
 
     /// The same wall, enumerated from each solid on its own, already pointed outward, which is
-    /// why this went unnoticed. Pins that so the compound-level fix cannot regress it.
+    /// why this went unnoticed.
+    ///
+    /// Pins that so the compound-level fix cannot regress it.
     @Test("enumerated per solid, every face already points outward")
     func perSolidEnumerationIsOutward() {
         guard let compound = Self.splitBoxCompound() else {
@@ -293,8 +295,8 @@ struct Issue614FaceOrientationTests {
 
     // MARK: - #614's stated failure scenario, through the public CAM helpers
 
-    /// The failure the issue actually describes: "any per-face area or normal accumulation
-    /// silently loses a facet."
+    /// The failure the issue actually describes: any per-face area or normal accumulation
+    /// silently loses a facet.
     ///
     /// `horizontalFaces()` selects on the face normal, so it is a geometry consumer. Filtering
     /// `faces()` found the shared wall only from the side that happened to be stored, so the upper
