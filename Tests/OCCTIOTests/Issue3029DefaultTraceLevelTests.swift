@@ -103,26 +103,30 @@ struct Issue3029DefaultTraceLevelTests {
     @Test("a raised level does not change what a capture collects")
     func captureCollectsTheSameWhateverTheLevelIs() throws {
         let box = try #require(Shape.box(width: 10, height: 20, depth: 30))
+        let id = UUID().uuidString
         let path = FileManager.default.temporaryDirectory
-            .appendingPathComponent("issue3029-\(UUID().uuidString).step")
+            .appendingPathComponent("issue3029-\(id).step")
         defer { try? FileManager.default.removeItem(at: path) }
 
-        func statisticsLines(at level: Messenger.Gravity) throws -> Int {
+        // Only lines that name this export's own file are counted. The capture is process-wide and
+        // `capturingOCCTOutput` serialises captures, not the other writers: 28 files in this module
+        // export STEP and four take that lock, so a count of every "statistics" line also counted
+        // whatever a concurrent suite printed into the open capture, and the three exports then
+        // disagreed (#3062's kernel job). The file name is the one thing in the text that only this
+        // test can have written.
+        func ownLines(at level: Messenger.Gravity) throws -> Int {
             try withTraceLevel(level) {
                 let (_, output) = capturingOCCTOutput {
                     _ = try? Exporter.writeSTEP(shape: box, to: path)
                 }
-                let text = output ?? ""
-                return text.components(separatedBy: "\n").filter {
-                    $0.contains("Statistics on Transfer (Write)") || $0.contains("Step File Name")
-                }.count
+                return (output ?? "").components(separatedBy: "\n").filter { $0.contains(id) }.count
             }
         }
-        // Nonzero first: a capture that saw no statistics at all would make the comparison pass
-        // for the wrong reason.
-        let atInfo = try statisticsLines(at: .info)
-        #expect(atInfo > 0, "a STEP export must print its statistics at the default level")
-        #expect(try statisticsLines(at: .warning) == atInfo)
-        #expect(try statisticsLines(at: .fail) == atInfo)
+        // Nonzero first: a capture that saw nothing of its own export would make the comparison
+        // pass for the wrong reason.
+        let atInfo = try ownLines(at: .info)
+        #expect(atInfo > 0, "a STEP export must print the name of its file at the default level")
+        #expect(try ownLines(at: .warning) == atInfo)
+        #expect(try ownLines(at: .fail) == atInfo)
     }
 }
