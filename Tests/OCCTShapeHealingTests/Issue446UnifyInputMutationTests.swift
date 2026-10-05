@@ -36,6 +36,26 @@ struct Issue446UnifyInputMutationTests {
         try? Exporter.brepData(shape: shape, withTriangles: false)
     }
 
+    /// The self-intersection verdict, read through whichever bound this platform can offer.
+    ///
+    /// `isSelfIntersecting(hardTimeout:)` is `#if !os(WASI)` because its contract needs a second
+    /// thread to run the check on while the caller waits, and the non-threads wasm target has one
+    /// thread by construction (#2760). Its own inner call passes `0` to the same bridge function, so
+    /// `isSelfIntersecting(timeout: 0)` reaches the same analysis with the same freedom from #1054's
+    /// aborted-analysis hazard; what it gives up is the wall-clock escape, which is the part that
+    /// needs the thread.
+    ///
+    /// This test reads the verdict twice and compares, so the deadline is not what it measures, and
+    /// the whole file used to be excluded from the wasm suites over this one call (#2928). A
+    /// three-line platform helper is what that cost.
+    private func selfIntersects(_ shape: Shape) -> Bool? {
+        #if os(WASI)
+            return shape.isSelfIntersecting(timeout: 0)
+        #else
+            return shape.isSelfIntersecting(hardTimeout: 5)
+        #endif
+    }
+
     @Test("Shape.unified() leaves its input byte-identical")
     func unifiedDoesNotMutateInput() {
         guard let body = stackedCylinders(), let before = serialized(body) else {
@@ -106,7 +126,7 @@ struct Issue446UnifyInputMutationTests {
             Issue.record("setup")
             return
         }
-        let selfIntersectingBefore = body.isSelfIntersecting(hardTimeout: 5)
+        let selfIntersectingBefore = selfIntersects(body)
         let validBefore = body.isValid
         let volumeBefore = body.volume
         let builder = UnifySameDomainBuilder(shape: body, unifyEdges: true, unifyFaces: true)
@@ -118,7 +138,7 @@ struct Issue446UnifyInputMutationTests {
         // (Scripts/repro/766-healing-446-484), and the caller's body keeps its 4.
         #expect(builder.shape?.subShapeCount(ofType: .face) == 3)
         #expect(body.subShapeCount(ofType: .face) == 4)
-        #expect(body.isSelfIntersecting(hardTimeout: 5) == selfIntersectingBefore)
+        #expect(selfIntersects(body) == selfIntersectingBefore)
         #expect(body.isValid == validBefore)
         if let v0 = volumeBefore, let v1 = body.volume { #expect(abs(v1 - v0) < 1e-9) }
     }

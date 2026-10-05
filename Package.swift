@@ -222,7 +222,7 @@ let occtTarget: Target =
         // enumeration as its contents.
         //
         // ===================================================================================
-        // THE ASSET CARRIES THIRTY-ONE PATCHES. THE TREE CARRIES TWENTY-NINE. (#2190)
+        // THE v4.0.0-kernel.1 ASSET CARRIED THIRTY-ONE PATCHES. THE TREE CARRIED TWENTY-NINE. (#2190)
         // ===================================================================================
         //
         // The two extras are retired patches that were deleted from Scripts/patches/ but never
@@ -234,27 +234,25 @@ let occtTarget: Target =
         // build-occt.sh's patch loop ONLY APPLIES; it never reverts, and it refuses to reset a dirty
         // occt-src on purpose, so that an investigation's probe is not destroyed silently. A retired
         // patch's edits therefore survive in a working tree until somebody reverts them by hand. Nobody
-        // did, and the 2026-09-22 build picked them up. Verified by symbol, not inferred: the asset
-        // holds `TrimInfinite(...)` in LocOpe_SplitDrafts.cxx.o and `thread-local wrapper routine for
+        // did, and the 2026-09-22 build picked them up. Verified by symbol, not inferred: the kernel.1
+        // asset held `TrimInfinite(...)` in LocOpe_SplitDrafts.cxx.o and `thread-local wrapper routine for
         // GLOBAL_*` in the three TopOpeBRepBuild objects, in all three slices.
         //
-        // BOTH ARE INERT, which is why this is documented rather than rebuilt out. LocOpe_SplitDrafts
+        // BOTH WERE INERT, which is why this was documented rather than rebuilt out. LocOpe_SplitDrafts
         // has no caller anywhere: Shape.splitDrafts was removed in v4.0.0 and upstream deleted the
         // class in OCCT#1442. thread_local versus static is identical single-threaded, and the twelve
         // globals 0032 touches are unreachable from this bridge's call surface, measured by #1371's own
         // probe. Nothing a consumer can call behaves differently.
         //
         // THAT DIVERGENCE IS CLOSED. The two strays above belonged to the v4.0.0-kernel.1 asset. The
-        // pin below is now v4.0.0-kernel.3, built from a tree whose only modifications are the carried
+        // pin below is now v4.0.0-kernel.4, built from a tree whose only modifications are the carried
         // patches, so neither is present: step 1 of "Shipping a rebuild" computes zero modified files
-        // that no carried patch explains, over 79 (v4.0.0-kernel.2 computed the same over 78, before
-        // 0043 added its one). The two ACKNOWLEDGED rows in
+        // that no carried patch explains, over 92 as of 2026-10-03 (v4.0.0-kernel.3 computed the same
+        // over 79, and v4.0.0-kernel.2 over 78, before 0043 added its one). The two ACKNOWLEDGED rows in
         // check-pinned-asset-patches.py stay keyed on v4.0.0-kernel.1 and so expire on their own here,
         // which is what they were built to do; if a later asset repeats either stray the finding comes
         // back rather than staying suppressed.
         //
-        // The asset holds thirty-one and Scripts/patches/ holds thirty-four, so 0044, 0045 and 0046
-        // are the untested set of three, written up where the counts are, above.
         // If you rebuild and the checksum does not match the value below, that is a real difference to
         // investigate rather than an expected one, which is the opposite of what this paragraph said
         // while kernel.1 was pinned.
@@ -307,17 +305,17 @@ let occtTarget: Target =
         //
         //   0044  Extrema_ExtSS::Points / Extrema_ExtCS::Points bound against the point       #2840
         //         sequence rather than against NbExt(), which counts mySqDist and so counts
-        //         the parallel branch's distance-with-no-point. Carried 2026-09-30 and NOT
-        //         built, deliberately: the 8.0.2 repin (due 2026-10-02, and already owed a
-        //         wasm rebuild) absorbs it, and unlike 0043 it leaves NOTHING exposed to a
-        //         Swift caller. OCCTSurfaceExtrema gained an IsParallel() gate with #2831, and
+        //         the parallel branch's distance-with-no-point. Carried 2026-09-30 and built
+        //         into v4.0.0-kernel.4. Until then it was NOT built, deliberately, because
+        //         unlike 0043 it left NOTHING exposed to a Swift caller. OCCTSurfaceExtrema gained an IsParallel() gate with #2831, and
         //         OCCTExtremaExtSSPoint, OCCTExtremaExtCSPoint and OCCTCurve3DDistanceToSurface
         //         were already gated, so no bridge entry point can reach the faulting read.
-        //         So it is in NO required check: build-and-test resolves this asset.
-        //         kernel-integration.yml builds it from source on the PR that adds it, which
-        //         proves it applies, compiles and regresses nothing, and nothing more.
+        //         Until it was pinned it was in NO required check: build-and-test resolved the
+        //         asset without it. kernel-integration.yml built it from source on the PR that
+        //         added it, which proved it applied, compiled and regressed nothing, and nothing
+        //         more.
         //         Measured before and after by override-link in Scripts/repro/2840/.
-        //         DO NOT RETIRE THOSE BRIDGE GATES WHEN THIS IS PINNED. The rule in
+        //         DO NOT RETIRE THOSE BRIDGE GATES NOW THAT THIS IS PINNED. The rule in
         //         okf/policies/pinned-kernel-patch-check.md retires a mitigation its patch
         //         supersedes, and this is the 0042-shaped exception: patched, the kernel raises
         //         Standard_OutOfRange for the same input the gate refuses, so both answer nil
@@ -327,21 +325,23 @@ let occtTarget: Target =
         //
         //   0045  Geom2d_BezierCurve::InsertPoleAfter and Geom_BezierCurve::InsertPoleAfter      #2875
         //         refuse at MaxDegree() poles, where both constructors and Increase() allow
-        //         MaxDegree() + 1. Carried 2026-10-02 and NOT built. Half of it is inert in a
+        //         MaxDegree() + 1. Carried 2026-10-02 and built into v4.0.0-kernel.4. Half of it is inert in a
         //         Release kernel anyway: the 2d site is a Standard_ConstructionError_Raise_if,
         //         which No_Exception empties, so the shipped 2d class has no bound at all and
         //         the bridge's own guard is what enforces one. The 3d site is a literal throw
         //         and does move, from 25 poles to 26, measured in
         //         Scripts/repro/2875-bezier-insertpole-bound/.
-        //         DO NOT RETIRE OCCTCurve2DBezierInsertPoleAfter'S GUARD WHEN THIS IS PINNED:
-        //         it is the only check the 2d class has in this build, patched or not.
+        //         DO NOT RETIRE OCCTCurve2DBezierInsertPoleAfter'S GUARD NOW THAT THIS IS PINNED:
+        //         it is the only check the 2d class has in this build, patched or not. Its bound
+        //         moved from >= to > at the repin, to match the 3d class (#3013).
         //
         //   0046  math_Uzawa sizes Errinit by Cont.ColNumber() and writes it by row, so any     #2860
         //         overdetermined system overruns it: 4 constraints in 2 unknowns returns a
-        //         wrong answer, 100 in 2 is a deterministic SIGSEGV. Carried 2026-10-02 and NOT
-        //         built, so the fault is still in the pinned kernel and OCCTMathUzawa's
-        //         nConstraints > nVars guard is the only thing between a Swift caller and it.
-        //         DO NOT RETIRE THAT GUARD WHEN THIS IS PINNED: patched, the kernel answers a
+        //         wrong answer, 100 in 2 is a deterministic SIGSEGV. Carried 2026-10-02 and built
+        //         into v4.0.0-kernel.4; until then the fault was in the pinned kernel and
+        //         OCCTMathUzawa's nConstraints > nVars guard was the only thing between a Swift
+        //         caller and it.
+        //         DO NOT RETIRE THAT GUARD NOW THAT THIS IS PINNED: patched, the kernel answers a
         //         correctly sized initial error for an overdetermined system, which is a
         //         behaviour change the Swift surface has not decided to expose, and the guard
         //         still covers anyone pinning an older asset. Measured before and after in
@@ -353,7 +353,7 @@ let occtTarget: Target =
         //         2026-10-02 for the OCCT 8.0.2 rebuild. It leaves nothing exposed to a Swift
         //         caller: occtValidMeshDeflection and occtValidMeshAngle already refuse the same
         //         input at every bridge site, so the kernel never sees it from here.
-        //         KEEP BOTH BRIDGE GUARDS WHEN THIS IS PINNED. Same shape as 0042 and 0044: with
+        //         KEEP BOTH BRIDGE GUARDS NOW THAT THIS IS PINNED. Same shape as 0042 and 0044: with
         //         the patch the kernel throws Standard_NumericError for the same input the guards
         //         refuse, so both answer the site's refusal and the guards are redundant rather
         //         than wrong, and they still cover anyone pinning an older asset or the wasm one.
@@ -362,26 +362,26 @@ let occtTarget: Target =
         //         the plane the caller passed rather than its mirror through the origin: the
         //         stored fourth coefficient carried the wrong sign, which also made loc cancel
         //         out instead of re-basing. Carried 2026-10-02 for the OCCT 8.0.2 rebuild.
-        //         THIS ONE IS THE OPPOSITE CASE AND THE REPIN MUST ACT ON IT.
-        //         OCCTBRepGPropVinertPlane does not guard an input, it COMPENSATES: it builds the
-        //         gp_Pln mirrored through the origin so that the unpatched kernel answers about
+        //         THIS ONE WAS THE OPPOSITE CASE AND THE v4.0.0-kernel.4 REPIN ACTED ON IT (#3015).
+        //         OCCTBRepGPropVinertPlane did not guard an input, it COMPENSATED: it built the
+        //         gp_Pln mirrored through the origin so that the unpatched kernel answered about
         //         the plane the Swift caller asked for. A kernel carrying 0048 with that mirror
         //         still in place measures about the mirrored plane again, and
-        //         BRepGPropVinertTests' two sign assertions fail. Delete the mirror, flip those
-        //         assertions to n . C - d, and drop the "pass -d" note from
+        //         BRepGPropVinertTests' two sign assertions failed on #3014 for that reason. The
+        //         repin deleted the mirror and dropped the "pass -d" note from
         //         Face.volumeInertia(planeNormal:planeDistance:) and
-        //         docs/reference/Shape-HLR-Geom.md, IN THE SAME CHANGE THAT REPINS. Until then
-        //         the mirror is correct and must stay, because CI resolves the unpatched asset.
+        //         docs/reference/Shape-HLR-Geom.md, in the same change. Until then the mirror was
+        //         correct and had to stay, because CI resolves the pinned asset.
         //
         //   0050  GProp_SelGProps::Perform(gp_Cone) drops the spurious cos(semiAngle) from the      #2992
         //         lateral area, and
         //   0051  GProp_VelGProps::Perform(gp_Cone) returns the frustum volume instead of a         #2992
         //         quantity carrying a spurious sin(a), which collapsed to zero at the cylinder
-        //         limit the same class answers exactly. Carried 2026-10-02 and NOT built here:
-        //         the user's own rebuild takes them the same night. UNLIKE 0044, both leave a
-        //         value a CALLER READS wrong on the pinned asset, through
+        //         limit the same class answers exactly. Carried 2026-10-02 and built
+        //         into v4.0.0-kernel.4, the rebuild that took them the same night. UNLIKE 0044,
+        //         both left a value a CALLER READS wrong on the asset pinned before it, through
         //         GeometryProperties.coneSurfaceArea and .coneVolume, which is 0043's situation
-        //         rather than 0044's, and is why neither is held for 8.0.2. No bridge-side
+        //         rather than 0044's, and is why neither was held for 8.0.2. No bridge-side
         //         mitigation was added, deliberately: correcting the factor in the bridge would
         //         have to be retired at the repin and would double-correct a patched kernel in
         //         the window between. Both derivations were re-checked against the closed form
@@ -390,8 +390,8 @@ let occtTarget: Target =
         //         those two arbiters are the ones used; see okf/policies/follow-occt-callers.md.
         //   0052  Geom_BezierSurface.hxx's IsURational/IsVRational prose corrected to match its    #2991
         //         own example matrix and the implementation. A header comment, so it changes no
-        //         binary and leaves nothing exposed; it is listed here only because it is carried
-        //         and unpinned like the three above.
+        //         binary and leaves nothing exposed; it is listed here only because it is carried,
+        //         like the rows above.
         //
         // 0043 (#2827, BRepGProp_Gauss keeps the by-plane mass) was the one outstanding before it,
         // and it went the other way, which is the comparison worth keeping beside 0044: carried
@@ -727,56 +727,40 @@ let swiftLayerDependencies: [Target.Dependency] =
     ? ["OCCTBridge", "OCCT", "OCCTPlatform", "simd"]
     : ["OCCTBridge", "OCCT", "OCCTPlatform"]
 
-// Which per-domain test targets can exist on wasm32-unknown-wasip1, and why the rest cannot (#2793).
+// Per-domain test targets that cannot exist on wasm32-unknown-wasip1 at all (#2793, emptied by
+// #2928).
 //
-// Phase 0's GO carried four conditions and this is the third: six spike calls are not a test suite.
-// 13 of the 18 domain targets compile and run for wasm unchanged. The five below cannot, and each
-// is a property of the platform rather than of the test:
+// EVERY DOMAIN TARGET RUNS FOR WASM. #2793 excluded five of the eighteen whole, deliberately coarse
+// for a first increment, and #2928 measured what each exclusion was actually avoiding. The
+// measurements are in `Scripts/repro/2928/`, and two of the five reasons recorded here were not true
+// of the platform at all:
 //
-//   OCCTThreadTests       28 files whose subject is concurrency. wasip1 non-threads has one thread
-//                         by construction (#2169), so these do not fail here, they have no meaning
-//                         here. Excluded rather than subsetted; #2793 holds the question of whether
-//                         a single-threaded subset is worth asserting.
-//   OCCTStressTests       `withTaskGroup` across cores, and `ProcessInfo.processorCount`.
-//   OCCTMiscTests         `autoreleasepool` (no Objective-C runtime), `DispatchQueue`,
-//                         `DispatchGroup`, `NSLock`, `withTaskGroup`.
-//   OCCTFoundationTests   `DispatchQueue`, `DispatchGroup`, `NSLock`, `ProcessInfo`.
-//   OCCTIOTests           `NSLock` around a shared fixture directory.
+//   `NSLock` and `ProcessInfo` COMPILE for this triple. The wasm SDK ships the whole
+//   swift-corelibs-foundation, not only FoundationEssentials; `Sources/OCCTPlatform/PlatformLock.swift`
+//   avoids `NSLock` because the shipped LIBRARY cannot afford full Foundation's 10 MB of
+//   internationalisation data (#2761), which is a module-size constraint and not an availability
+//   one, and a test target has no size budget. `OCCTIOTests` went out over `NSLock`, 46 files for a
+//   type that was there, and needed no edit of any kind to come back.
 //
-// Excluding a whole target is the coarse answer and it is deliberate for a first increment: the
-// alternative is `#if !os(WASI)` inside 1,428 files, and wrapping a file in `#if` makes
-// swift-format reindent the entire body, which is the 1,400-line reformat the Harnesses target
-// below records. Narrowing these five to the files that genuinely cannot build is follow-up work,
-// and it is worth doing in the order the numbers suggest: OCCTIOTests is one lock.
-let wasmUnportableTestTargets: Set<String> = [
-    "OCCTThreadTests",
-    "OCCTStressTests",
-    "OCCTMiscTests",
-    "OCCTFoundationTests",
-    "OCCTIOTests",
-]
+//   `OCCTThreadTests` IS NOT A SUITE ABOUT CONCURRENCY. The note here read "28 files whose subject
+//   is concurrency" and the target's subject is SCREW THREADS: M8 fasteners, thread forms,
+//   designation parsing, helical sweeps, V-profiles. Six of its 28 files are about CPU threads, and
+//   those six are excluded below. The name is right for the contents and was wrong for the reason.
+//
+// What genuinely does not exist on this target is `DispatchQueue`, `DispatchGroup` and
+// `DispatchSemaphore`, `autoreleasepool`, and the host-OS facilities `getrusage`, `statvfs`,
+// `getpwuid`, `gethostname` and `uname`. Those are handled file by file below, and `autoreleasepool`
+// by a shim. A sixth reason surfaced only on the build and was on no list: a bare `import Darwin` in
+// `OCCTFoundationTests/Issue1442DiskUnicodeOSDUtilitiesTests.swift`, for two `free` calls, now the
+// same per-platform conditional `Sources/OCCTPlatform/Platform.swift` uses. It is not a concurrency
+// primitive, so the survey that found the others could not have found it; the build did.
+//
+// The empty set is kept rather than deleted because it is the mechanism for a target that someday
+// cannot build at all, and because an empty one is the measurement.
+let wasmUnportableTestTargets: Set<String> = []
 
-// Individual test files the remaining 13 targets cannot build for wasm, and why (#2793).
+// Individual test files no wasm suite builds or runs, and why (#2793, narrowed by #2928).
 //
-// All four call `Shape.isSelfIntersecting(hardTimeout:)`, which is `#if !os(WASI)` because its
-// contract needs a second thread the non-threads target does not have (#2760). 19 call sites.
-//
-// Excluded rather than guarded, for the reason the Harnesses target below records at length:
-// wrapping a file or a function body in `#if` makes swift-format reindent the whole body, which
-// turned a 28-line change into a 1,400-line reformat when it was tried.
-//
-// Two of these four lose nothing and two lose real coverage, which is worth saying rather
-// than leaving for a reviewer to notice:
-//
-//   Issue208SelfIntersectionTests.swift and Issue772SelfIntersectionAnalysisTests.swift are ABOUT
-//   self-intersection analysis. On a platform where the hard-timeout form cannot exist, excluding
-//   them loses nothing that could have run.
-//
-//   Issue446UnifyInputMutationTests.swift and Issue598PipeShellFrenetModeTests.swift call it
-//   INCIDENTALLY, as one assertion inside a test about input mutation and about Frenet mode. Those
-//   two lose real wasm coverage of subjects that have nothing to do with threads, and narrowing
-//   them to the statement is follow-up work on #2793 rather than something this first increment
-//   settles.
 // NOTHING HERE IS EXCLUDED FOR A TRAP, and that is #2894's result rather than an accident. Four
 // files and one whole target used to be, because the suites ran under wasmkit 0.3.1, which does not
 // unwind a C++ exception through several frames: measured on one module file byte for byte, a throw
@@ -784,34 +768,102 @@ let wasmUnportableTestTargets: Set<String> = [
 // WASI shim, and `OCCTIntegrationTests`, the two evolved files, the two TObj files and the
 // variable-fillet file all pass. #2894, #2895 and #2897 were that interpreter, not this port.
 //
-// What is left is five files for two reasons, neither of them a trap: `Int` is 32 bits on wasm32 so
-// five files cannot express an input past `Int32.max`, and four call
-// `Shape.isSelfIntersecting(hardTimeout:)`, which is `#if !os(WASI)` because its contract needs a
-// second thread (#2760). Narrowing both is #2928.
+// NOTHING HERE IS EXCLUDED FOR `Int32` EITHER, which is #2928's result. Five files spelled an input
+// past `Int32.max`, which `Int` cannot hold where it is 32 bits. That input is a run-time OVERFLOW
+// TRAP and not a compile error, measured (`Scripts/repro/2928/run-overflow.sh`), and a trap ends the
+// module, so excluding the file was the only way to keep the suite reporting. All five now build the
+// case rather than naming it: a `pastInt32` that is `nil` where `Int` is 32 bits, so the one
+// assertion that cannot exist is absent and the rest of the file runs. `.enabled(if:)` was the
+// alternative and `Scripts/repro/2928/trait-measurement.md` records why it is the weaker one here.
+//
+// What is left is the eighteen files below, for four reasons, and all four are properties of the
+// platform or of the harness rather than of the code under test:
+//
+//   TWO CALL `Shape.isSelfIntersecting(hardTimeout:)`, which is `#if !os(WASI)` because its
+//   contract is a hard wall-clock deadline and needs a second thread to run the check on while the
+//   caller waits (#2760). #2928 narrowed this from four files to two. `Issue446Unify...` and
+//   `Issue598PipeShell...` called it INCIDENTALLY, inside tests about input mutation and about
+//   Frenet mode, and each now reads the verdict through a three-line platform helper that uses
+//   `isSelfIntersecting(timeout: 0)` on wasm: the same bridge call with the same `0`, so the
+//   no-watchdog property #1054 needs is kept and only the wall-clock escape is lost.
+//   `Issue208SelfIntersectionTests` and `Issue772SelfIntersectionAnalysisTests` are ABOUT
+//   self-intersection analysis and stay out. The old note here said excluding them "loses nothing
+//   that could have run", and that is not quite true: three of `Issue208`'s eight tests use the
+//   portable `isSelfIntersecting()`, and one of the other five is about the 0.001 s deadline itself,
+//   which no wasm spelling has. Splitting those three out is the remaining narrowing and is worth
+//   less than the file split it costs.
+//
+//   NINE ARE ABOUT CONCURRENCY ITSELF, and have no meaning on a target with one thread rather than
+//   failing on it (#2169). They are what is left of four whole-target exclusions:
+//   `StressConcurrencyTests` is the one file in `OCCTStressTests` that runs work across
+//   cores; `SerialLockThreadSafetyTests` and `ConstructionContextConcurrencyTests` were lifted out of
+//   `OCCTFoundationTests.swift` and `OCCTMiscTests.swift` by #2928 for this purpose, because those
+//   two files' other 157 and 79 tests had nothing to do with locks or with races. Each of the three
+//   states at the top of the file why it is not portable and should not be made portable, and in
+//   every case it is that a detector which cannot fail is worse than one that does not run.
+//   `OCCTThreadTests` contributes six of its 28 files, listed by name below.
+//
+//   SIX READ A `.brep` FIXTURE OUT OF THE SOURCE TREE, which the module cannot see. That one is a
+//   harness limitation and not a platform one, it is #3026, and the per-target note below says why
+//   those six are excluded rather than listed as known failures.
+//
+//   ONE COMPARES AN OCCT READING AGAINST THE HOST OS, which wasi-libc cannot be asked.
+//   `HostOSCrossCheckTests` holds the six suites that bracket an OCCT reading with `getrusage`,
+//   `statvfs`, `getpwuid`, `gethostname`, `uname` or `inet_pton`, five lifted out of
+//   `OCCTFoundationTests.swift` and one out of `Issue1442DiskUnicodeOSDUtilitiesTests.swift`, whose
+//   other four tests need no host oracle and run. These are not weakened to `>= 0` so that they build
+//   here: `>= 0` is the assertion #1987 removed from five of them, because a bridge returning 0
+//   passes it.
+//
+// `autoreleasepool` genuinely does not exist here and is NOT in this list, which is the one place a
+// shim was the right answer: its single call site makes a `Document` die at the end of a loop
+// iteration, which plain ARC already does on a target with no Objective-C runtime to pool anything
+// in, so `Tests/OCCTMiscTests/WASIAutoreleasepoolShim.swift` declares the no-op and says why at
+// length.
 //
 // `GCPntsSamplerBoundsTests` also used to be excluded, because one of its two tests PASSED after
 // 422 seconds under wasmkit. Under Node it takes 27.8 s and its sibling 24.6 s, where before only
 // one of the two finished inside the window at all, so that exclusion went with the runtime too. It
 // is still the slowest thing in the suites by a wide margin, and for a real reason: an ellipse with
-// a 1e9 aspect ratio walked for arc length against 16 measured overshoot counts. The whole 13-suite
-// run is 224 s, so it is affordable.
+// a 1e9 aspect ratio walked for arc length against 16 measured overshoot counts.
 let wasmExcludedTestFiles: [String: [String]] = [
-    "OCCTAnalysisTests": ["Issue2857IntfToolIndexGuardTests.swift"],
-    "OCCTCurveTests": [
-        "Issue479SampleCountBoundTests.swift",
-        "Issue558SamplingCountBoundsTests.swift",
+    "OCCTFoundationTests": [
+        "HostOSCrossCheckTests.swift",
+        "SerialLockThreadSafetyTests.swift",
     ],
-    "OCCTMathTests": [
-        "Issue640MathDimensionBoundsTests.swift",
-        "Issue2860MathGuardTests.swift",
+    "OCCTMiscTests": ["ConstructionContextConcurrencyTests.swift"],
+    "OCCTModelingTests": ["Issue208SelfIntersectionTests.swift"],
+    "OCCTShapeHealingTests": ["Issue772SelfIntersectionAnalysisTests.swift"],
+    // One concurrency file, plus the six that read a `.brep` out of `Fixtures/` by `#filePath`.
+    // `#filePath` is an absolute HOST path baked in at compile time, and the suites run against an
+    // in-memory filesystem whose only preopens are `/tmp` and `/work`, so every one of those tests
+    // fails with `.importFailed`, 56 recorded issues with no second cause among them. Excluded
+    // rather than listed, for two reasons: the tests never reach the kernel guard they are named
+    // for (#2746, #2773, #2777, #2789, #2790), so a known-failure line would record a property of
+    // the harness under the name of a guard; and the five guard suites reuse test names
+    // deliberately, which the known-failure list cannot tell apart. Teaching
+    // `wasm-test-node-runner.mjs` to preopen the fixture directories is the fix, and is #3026.
+    // `StressUnifySameDomainNullPCurveTests` is the one of the six that was lifted into a file of
+    // its own, because its fixture test was one of 60 in `StressNullInvalidTests.swift`.
+    "OCCTStressTests": [
+        "StressAnalyzerSurfacelessFaceGuardTests.swift",
+        "StressBRepCheckInContextGuardTests.swift",
+        "StressConcurrencyTests.swift",
+        "StressIgesExportSurfacelessFaceGuardTests.swift",
+        "StressShapeCustomSurfacelessFaceGuardTests.swift",
+        "StressShapeDivideSurfacelessFaceGuardTests.swift",
+        "StressUnifySameDomainNullPCurveTests.swift",
     ],
-    "OCCTModelingTests": [
-        "Issue208SelfIntersectionTests.swift",
-        "Issue598PipeShellFrenetModeTests.swift",
-    ],
-    "OCCTShapeHealingTests": [
-        "Issue446UnifyInputMutationTests.swift",
-        "Issue772SelfIntersectionAnalysisTests.swift",
+    // The six files of 28 whose subject is CPU threads rather than screw threads. Measured:
+    // `grep -ln 'Dispatch\|NSLock\|withTaskGroup\|Thread\.' Tests/OCCTThreadTests/*.swift` returns
+    // exactly these, and the other 22 are fastener geometry.
+    "OCCTThreadTests": [
+        "Issue1404TObjApplicationThreadSafetyTests.swift",
+        "Issue298FilletThreadSafetyTests.swift",
+        "Issue341MeshCafThreadSafetyTests.swift",
+        "Issue359STEPThreadSafetyTests.swift",
+        "Issue361SharedSingletonThreadSafetyTests.swift",
+        "Issue367FuseMultiThreadSafetyTests.swift",
     ],
 ]
 

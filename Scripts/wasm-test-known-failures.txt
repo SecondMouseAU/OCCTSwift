@@ -20,37 +20,6 @@
 # The identifier is matched against the text Swift Testing prints after `✘ Test `, up to the first
 # ` recorded an issue` or ` failed after`. Quote-wrapped display names are matched with their quotes.
 
-# --- #2891: OCCT's inline argument validation does not raise on wasm ---------------------------
-# gp_Dir's zero-norm check is inline in gp_Dir.hxx and `No_Exception` is NOT defined when the bridge
-# compiles for wasm (both measured), so the check should fire on both platforms. It does not.
-# Measured with OCCTDiagnostics.capturing around one call, same inputs:
-#   Apple: records=2, "Standard_ConstructionError: gp_Dir() - input vector has zero norm",
-#          translated origin (5, 3, 2), the documented unmoved fallback.
-#   wasm:  records=0, no exception at all, translated origin (6, 5, 5) -- the degenerate axis was
-#          used as though it were valid.
-# Both header trees are byte-identical for gp_Dir.hxx and both are 7,160 files, so this is not a
-# header or macro difference. It is the exception path itself.
-"OCCTAx3Create: parallel direction/xDirection overwrites sentinel outputs, not left untouched"  # 2891
-"OCCTAx3MirrorPoint: degenerate input axis overwrites sentinel outputs with the input point unmoved"  # 2891
-"OCCTAx3Translate: degenerate input axis overwrites sentinel outputs with the input point unmoved"  # 2891
-createWithParallelDirectionAndXDirectionSignalsFailure()  # 2891
-mirrorPointWithDegenerateSourceFallsBackToUnmoved()  # 2891
-translateWithDegenerateSourceFallsBackToUnmoved()  # 2891
-
-# --- the kernel skew: wasm is one patch behind native (#2827, #2873) --------------------------
-# These are NOT a wasm defect. `Scripts/wasm-kernel-pin.txt` acknowledges in prose that the
-# `v4.0.0-kernel.3` repin pinned patch `0043` (the by-plane `BRepGProp_Vinert` mass) on native
-# without taking the 69-minute wasm rebuild, so native carries 31 carried patches and wasm 30, and
-# `Face.volumeInertia(planeNormal:planeDistance:)` still returns the fabricated 0.0 here.
-#
-# Until #2793 that acknowledgement was a sentence in a text file. These four lines are the same claim
-# with a test behind it, which is the point: the next wasm kernel rebuild makes them pass, and the
-# runner then fails until they are deleted from this list.
-"a planar face's by-plane volume is its projected area times its centroid distance (#2827)"  # kernel skew
-"the by-plane column runs to the plane the caller named, not its mirror (#2873)"  # kernel skew
-"the by-plane first moments sum to the solid's (#2827)"  # kernel skew
-"the by-plane per-face sum is the volume, for any plane (#2827)"  # kernel skew
-
 # --- exact-equality baselines do not survive a different libm --------------------------------
 # `Issue791ConvertCircleHelperTests` (Geom2d, 2 tests) and `Issue791ConvertSphereHelperTests`
 # (Surface, 2 tests) each compare a computed pole against a hardcoded baseline with `==`,
@@ -62,6 +31,16 @@ translateWithDegenerateSourceFallsBackToUnmoved()  # 2891
 # use `==` on a value derived through trigonometry, and the fix is a tolerance, which is a change to
 # an Apple-platform test and so belongs in its own PR rather than this one. Listed rather than
 # excluded because they are real failures a reader should see.
+#
+# `Issue196PolyHLRTests` is the same cause with a tolerance rather than an exact comparison, and it
+# reached a wasm run for the first time under #2928. Its subject holds here: a coarser mesh really
+# does draw fewer outline edges and more sharp ones, and both relational assertions pass, as do both
+# FINE baselines (17,041 and 1,873 within 1%). The two COARSE baselines do not: measured 3,532 against
+# 3,578 (-1.3%) and 2,160 against 2,089 (+3.4%). A coarse triangulation has proportionally fewer
+# facets, so the same last-place libm differences move more of them, and 1% is tighter than the
+# mesher's own cross-platform reproducibility at that deflection. The fix is a wider tolerance on the
+# two coarse figures, which is a change to an Apple-platform test and belongs in its own PR.
+"deflection is honoured, a coarser mesh draws fewer outline edges and more sharp ones"  # coarse mesh baseline vs a different libm
 fullCircleOriginMatchesPriorBaseline()  # exact-equality baseline vs a different libm
 offsetArcMatchesPriorBaseline()  # exact-equality baseline vs a different libm
 unitOriginMatchesPriorBaseline()  # exact-equality baseline vs a different libm
@@ -92,3 +71,23 @@ offsetTiltedMatchesPriorBaseline()  # exact-equality baseline vs a different lib
 # make every flag-based validity verdict on wasm suspect, and `Shape.isValid` is on the path every
 # IGES export takes through `Exporter.validateExportInputs`, so it wants a sweep rather than a fix.
 "Same parameter all"  # 2929
+
+# --- #3025: an OCCT wrapper reaching a host facility wasip1 does not have -------------------
+# #2928 brought every per-domain target back, which is the first time OCCTFoundationTests and
+# OCCTMiscTests have run here. Eight tests pass on Apple and fail on wasm, all because the facility
+# the OCCT wrapper reaches does not exist on this target and the wrapper answers rather than
+# refusing. Each is measured, and #3025 holds the open question, which is a decision per row rather
+# than a fix per row: document the limit on the wasm surface, fix the harness, or leave it listed.
+#
+# Listed and not excluded, deliberately. Every one of these is a real property of the wasm surface
+# that a consumer targeting the browser needs to know, and the run asserts this set exactly, so none
+# of them can quietly change. Contrast the six OCCTStressTests files Package.swift EXCLUDES for
+# #3026: those never reach the behaviour they are named for, because the fixture is unreadable.
+heapUsageMiB()  # 3025: OSD_MemInfo has no wasip1 implementation, so every figure reads 0
+infoString()  # 3025: the same, one level up: no "Heap memory" line
+openLibrary()  # 3025: wasm32-wasip1 has no dynamic linking, so OSD_SharedLibrary::DlOpen cannot succeed
+tempDirectory()  # 3025: the shim's in-memory filesystem creates a directory and will not remove one
+createAndRemoveDirectory()  # 3025: the same, on an explicit /tmp path
+readHome()  # 3025: the guest environment carries only TMPDIR, so the test's own getenv oracle is nil
+"A real, accessible path is reported valid"  # 3025: no statvfs, and "/" is not a preopen
+"a stack trace appears only when a depth is asked for"  # 3025: no backtrace facility on this target

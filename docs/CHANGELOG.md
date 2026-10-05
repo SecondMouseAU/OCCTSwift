@@ -25,6 +25,35 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 The three suites `Issue443FirstOfN`, `Issue442FixSolidMultiBody` and `Issue702SolidDemotion`, whose tests the #766 certification recorded Red and never rewrote, are rewritten against `main`'s kernel. Every result is now read body by body (type, faces, a positive volume read two ways, exact bounds, order against the input), every setup step is required rather than escaped, fixtures assert what makes them the fixture they claim to be, and nine tests are added: five that hand each operation bodies that arrive inside out and read every one afterwards, a history test whose fixture has a replacement to record, a hollow-body history test, and two `analyze` / `analyzeShell` tests. Against 116 injected defects the old tests missed 24 of 96 plausible wrong answers and the new ones miss 1, the order of `upgraded()`'s bodies, which that call does not promise. Two defects found on the way are filed: `Shape.analyze` reports 24 gaps and `isHealthy == false` for a flawless box (#3040), and `solidWithFullHistory(from:)` returns the unrepaired face of a body `ShapeFix_Solid` cannot close while its history reports the repair (#3041, carried as a known issue). No source changes.
 
+### Every per-domain test suite now runs for wasm, and the five whole-target exclusions are gone (#2928)
+
+`Scripts/run-wasm-tests.sh` runs all 18 per-domain targets for `wasm32-unknown-wasip1`, up from 13,
+and `Package.swift`'s whole-target exclusion list is empty. Two of the five reasons #2793 recorded
+were not true of the platform, measured in `Scripts/repro/2928/`: `NSLock` and `ProcessInfo` compile
+for the triple, so `OCCTIOTests` was 46 files out for a type that was there; and `OCCTThreadTests` is
+a suite about screw threads, of which six files of 28 are about CPU threads.
+
+Eighteen individual files remain excluded, each for a property of the platform or of the harness: two
+are about `isSelfIntersecting(hardTimeout:)`, which cannot exist without a second thread (#2760); nine
+are concurrency detectors that would pass having measured nothing on a single-threaded target; six
+read a `.brep` fixture out of the source tree, which the module cannot see (#3026); one compares an
+OCCT reading against host-OS facilities wasi-libc does not have. Four of those were lifted into files
+of their own so that the unrelated tests around them could run.
+
+Six files that could not express an input past `Int32.max` are back, each deriving the case from
+`Int.bitWidth` rather than naming it unconditionally. The sixth was on no list, because the target
+holding it had never run. No Apple behaviour changes.
+
+`Scripts/wasm-test-known-failures.txt` grows by nine, under #3025 and the existing libm-baseline
+block. `Scripts/repro/2928/trait-measurement.md` records the measurement the issue asked for first: a
+disabling `.enabled(if:)` trait does suppress evaluation of a `@Test(arguments:)` list, of a
+`static let` and of a body, and an enabled argument list is evaluated during test discovery, so an
+overflow there ends the module before any test reports.
+
+### A degenerate `CoordinateSystem3D` is refused on WebAssembly, not silently used (#2891)
+
+`CoordinateSystem3D` built with `direction` parallel to `xDirection` has no X direction, and OCCT refuses it. On `wasm32-unknown-wasip1` that refusal did not happen: `mirrored(about:)`, `translated(by:)` and the initialiser itself used the degenerate axis and returned a plausible wrong answer, where every Apple platform reports the documented fallback of all-zero directions and an unmoved point. The bridge now refuses the parallel pair itself, at OCCT's own tolerance, so all platforms agree. No behaviour changes on any Apple platform.
+
 ### The BRepGraph construction-axis, history readback, recipe-resolver and absorb tests pin derived values instead of "it resolved" (#2983, #766, #3037, #3038)
 
 Four suites the #766 certification recorded Red and never rewrote, `ConstructionAxisTests`, `BRepGraphHistoryReadbackTests`, `TopologyRefResolverTests` and `GraphHistoryAbsorbTests`, are rewritten against `main`'s own kernel. All 48 of their tests now assert exact values derived from the geometry or from OCCT's own header and source, 9 tests are added, and the weak-assertion census reads 0 SEVERE and 0 ESCAPABLE where it read 4 and 44. Against 125 injected defects the old tests left 56 unnoticed and the new ones leave none. Four fixtures that had stopped meaning their name are replaced: the cylinder and torus origin tests asked at a vertex whose height equals the surface's own origin, the "helical edge" was one piece of a face the builder had shredded into 622 edges, so the fixture never contained a helix, and the tolerance test could not see the line that passes the edge's tolerance in. No library code changes.
