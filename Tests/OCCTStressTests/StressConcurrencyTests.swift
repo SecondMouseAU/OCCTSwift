@@ -8,6 +8,19 @@
 // (independent shape creation, shared-instance read-only queries, concurrent curve/surface eval) ran
 // clean across 25 repeated iterations once re-enabled. Re-enabled permanently. See CLAUDE.md's Known
 // OCCT Bugs entry for what the real (different, now-mitigated) race turned out to be.
+//
+// THIS IS THE ONE FILE OF THIRTEEN THAT THE WASM SUITES DO NOT BUILD, and `Package.swift` excludes
+// it by name (#2928). It is also the reason the whole of `OCCTStressTests` used to be excluded, on
+// an argument about `withTaskGroup` across cores and `ProcessInfo.processorCount` that applied to
+// this file and to no other: the other twelve are boundary conditions, null and invalid inputs,
+// chain depth, format round trips and surfaceless-face guards, and they run.
+//
+// IT IS NOT PORTABLE AND IT SHOULD NOT BE MADE PORTABLE. `withTaskGroup` does compile for
+// `wasm32-unknown-wasip1` (measured, `Scripts/repro/2928/run-prims.sh`), so it is not availability
+// that keeps this file out. What every suite here asserts is that work running at the same time on
+// several cores agrees with work running alone, and the non-threads target has one thread by
+// construction (#2169). A task group on one cooperative executor interleaves rather than overlaps,
+// so these would pass without having measured anything, which is worse than not running.
 
 import Foundation
 import OCCTSwift
