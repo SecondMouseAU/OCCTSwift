@@ -1991,12 +1991,13 @@ for the Kronrod path, whose integrand subtracts it at `BRepGProp_UFunction.cxx:9
 hunk covers `BRepGProp_Vinert.cxx:279` and both of those. The two implementations print identical
 `d1` on every row of the probe, which is what makes this a second construction rather than a re-run.
 
-**The bridge compensates in the meantime.** `OCCTBRepGPropVinertPlane` is handed
-`(planeNormal, planeDistance)` and builds the `gp_Pln` itself, so it builds the mirrored one and
-`Face.volumeInertia(planeNormal:planeDistance:)` measures about the plane the caller named. **A
-kernel carrying the upstream hunk while that mirror is still in place measures about the mirrored
-plane again**, so the mirror comes out in the same change that retires this patch.
-`BRepGPropVinertTests`' two sign assertions fail if it does not.
+**The bridge compensated until the repin that pinned `0048`.** `OCCTBRepGPropVinertPlane` was
+handed `(planeNormal, planeDistance)` and built the `gp_Pln` itself, so it built the mirrored one and
+`Face.volumeInertia(planeNormal:planeDistance:)` measured about the plane the caller named. **A
+kernel carrying the upstream hunk while that mirror was still in place measured about the mirrored
+plane again**, so the mirror came out in the change that pinned `0048` (#3015), not in the one that
+retires this patch. `BRepGPropVinertTests`' two sign assertions are what failed on #3014 when it had
+not.
 
 ### CI coverage, and the pin
 
@@ -2579,28 +2580,31 @@ Both changed translation units, compiled clean with no diagnostics on all three 
 `git apply --check` is clean against the patched `Libraries/occt-src`, `0043` included, which is
 the tree `build-occt.sh` hands to cmake.
 
-### The bridge side is a COMPENSATION, not a guard, and the repin must delete it
+### The bridge side WAS a compensation, not a guard, and the repin deleted it (#3015)
 
-This is the one carried patch whose bridge-side companion has to come out at the repin rather than
-stay. `OCCTBRepGPropVinertPlane` (`OCCTBridge_Properties.mm:1905`) does not refuse an input, it
-builds the `gp_Pln` **mirrored through the origin on purpose**, so that the unpatched kernel
-answers about the plane the Swift caller asked for:
+This was the one carried patch whose bridge-side companion had to come out at the repin rather than
+stay. `OCCTBRepGPropVinertPlane` did not refuse an input, it built the `gp_Pln` **mirrored through
+the origin on purpose**, so that the unpatched kernel answered about the plane the Swift caller asked
+for:
 
 ```cpp
-gp_Pln plane(gp_Pnt(normal.XYZ() * -planeDist), normal);
+gp_Pln plane(gp_Pnt(normal.XYZ() * -planeDist), normal);   // until v4.0.0-kernel.4
 ```
 
 A kernel carrying `0048` with that mirror still in place measures about the mirrored plane again,
-and the two sign assertions in `Tests/OCCTAnalysisTests/BRepGPropVinertTests.swift` fail. So in the
-same change that repins to an asset carrying `0048`:
+and the two sign assertions in `Tests/OCCTAnalysisTests/BRepGPropVinertTests.swift` failed on #3014
+for exactly that reason. The change that repinned to an asset carrying `0048` (#3031) therefore:
 
-- delete the mirror in `OCCTBRepGPropVinertPlane` and the comment block that explains it,
-- flip the per-face closed-form assertion in `BRepGPropVinertTests` to `n . C - d`,
-- drop the "pass `-d`" note from `Face.volumeInertia(planeNormal:planeDistance:)` and from
+- deleted the mirror in `OCCTBRepGPropVinertPlane`, so the line now reads
+  `gp_Pln plane(gp_Pnt(normal.XYZ() * planeDist), normal);`, and rewrote the comment block that
+  explains it as history,
+- left the by-plane assertions in `BRepGPropVinertTests` on the corrected convention, which they
+  pass against the pinned kernel,
+- dropped the "pass `-d`" note from `Face.volumeInertia(planeNormal:planeDistance:)` and from
   `docs/reference/Shape-HLR-Geom.md`.
 
-**Until then the mirror is correct and must stay**, because CI resolves the unpatched asset and
-removing it now turns a correct answer into a sign-flipped one on every consumer.
+Until that change the mirror was correct and had to stay, because CI resolves the pinned asset and
+removing it earlier would have turned a correct answer into a sign-flipped one on every consumer.
 
 ### Retargeting risk at 8.0.2
 

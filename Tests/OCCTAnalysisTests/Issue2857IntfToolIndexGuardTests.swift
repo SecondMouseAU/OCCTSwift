@@ -93,7 +93,7 @@ struct Issue2857IntfToolIndexGuardTests {
         // not invite a String or SIMD3 case later.
         let tool = clippedTool()
         #expect(tool.segmentCount == 1)
-        let badIndices: [Int] = [
+        var badIndices: [Int] = [
             0,  // beginOnCurve[-1]: measured 4.24399e-314
             2,  // past nbSeg, still inside the array
             6,  // last slot of the double[6]: measured 0.0
@@ -103,11 +103,17 @@ struct Issue2857IntfToolIndexGuardTests {
             -1_000_000_000,  // measured SIGSEGV
             Int(Int32.min) + 1,  // SegmentNum - 1 is itself a signed overflow: measured SIGSEGV
             Int(Int32.max),
-            // Beyond int32_t entirely, so the wrapper has to refuse rather than trap converting.
-            Int(Int32.max) + 1,
             Int.min,
             Int.max,
         ]
+        // Beyond int32_t entirely, so the wrapper has to refuse rather than trap converting. The
+        // case is ABSENT rather than skipped where `Int` is 32 bits (wasm32), because there is no
+        // such `Int` there: `Int.max` IS `Int32.max`, two entries above already cover the largest
+        // index the platform can express, and `Int(Int32.max) + 1` would overflow on evaluation
+        // (#2928). Appended rather than written into the literal so nothing about the 64-bit list
+        // changes, and written as a ternary rather than an `if` because the compiler folds
+        // `Int.bitWidth > 32` and warns `will never be executed` on the statement form.
+        badIndices += Int.bitWidth > 32 ? [Int(Int32.max) + 1] : []
         for index in badIndices {
             #expect(
                 tool.beginParam(segment: index) == nil, "beginParam(segment: \(index)) returned")
