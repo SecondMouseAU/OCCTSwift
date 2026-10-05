@@ -103,7 +103,6 @@ Tests/OCCTGeom2dTests/Curve2DInterpolatePeriodicParityTests.swift
 Tests/OCCTGeom2dTests/Curve2DInterpolateTangentsParityTests.swift
 Tests/OCCTGeom2dTests/Curve2DProjectionParityTests.swift
 Tests/OCCTGeom2dTests/Extrema2dTests.swift
-Tests/OCCTGeom2dTests/Issue1050BisectorDomainTests.swift
 Tests/OCCTGeom2dTests/Issue1474Curve2DApproxDetailsTests.swift
 Tests/OCCTGeom2dTests/Issue1477Geom2dCurvesTests.swift
 Tests/OCCTGeom2dTests/Issue1646EvaluatorContractTests.swift
