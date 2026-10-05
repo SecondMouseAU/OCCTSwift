@@ -7,6 +7,13 @@
 // measured by Scripts/repro/766-stress-builder-lifecycle/probe.mm (transcript.txt beside it). The
 // destroy-without-X tests can only fail by crashing when the builder is released, which is their
 // point; they are left as written.
+//
+// #2983: "left as written" was wrong for most of them. A builder released without ever being asked
+// for its result still has state to read before it goes, and that state is what a release test can
+// pin beyond "did not crash": the edge a fillet builder accepted, the lines a hatcher holds, whether
+// a pipe shell is ready. Each now asserts it. Where nothing is observable without calling the
+// getter the test exists to skip, the test says so. The tests that gave a refusal as their only
+// answer, and the booleans that were all one polarity, gained the opposite case.
 
 import Foundation
 import OCCTSwift
@@ -50,12 +57,17 @@ struct StressFilletBuilderLifecycleTests {
     // Epic #766: the release this test is about happened only if the `if let` bound, and nothing
     // said so when it did not. #2432 found exactly that on CellsBuilder, where the builder was
     // always nil and the test could not fail. Requiring the builder makes the release happen.
+    // #2983: and what it holds when it goes is pinned. The edge was accepted and registered as one
+    // contour, and nothing was built, so a builder that dropped its edge, or reported a result it
+    // never computed, fails here and not only in `normalCycle`.
     @Test func destroyWithoutBuild() throws {
         let box = standardBox()
         let edges = box.edges()
         try #require(!edges.isEmpty)
         let builder = try #require(FilletBuilder(shape: box))
-        builder.addEdge(edges[0], radius: 1.0)
+        #expect(builder.addEdge(edges[0], radius: 1.0))
+        #expect(builder.contourCount == 1)
+        #expect(!builder.hasResult)
         // Let builder go out of scope without calling build(): no crash on dealloc.
     }
 
@@ -105,6 +117,14 @@ struct StressFilletBuilderLifecycleTests {
         #expect(abs(builder.length(contour: 2) - 10) < 1e-9)
         #expect(builder.isConstant(contour: 1))
         #expect(builder.isConstant(contour: 2))
+
+        // #2983: the control. `isConstant` was true twice over, which an `isConstant` wired to true
+        // also reports. A contour given two radii, 1 at one end and 2 at the other, is not constant.
+        let ramp = try #require(FilletBuilder(shape: box))
+        #expect(ramp.addEdge(edges[0], radius1: 1.0, radius2: 2.0))
+        try #require(ramp.build() != nil)
+        #expect(ramp.contourCount == 1)
+        #expect(!ramp.isConstant(contour: 1))
     }
 }
 
@@ -129,18 +149,20 @@ struct StressChamferBuilderLifecycleTests {
         builder.addEdge(edges[0], distance: 1.0)
         let result = try #require(builder.build())
         #expect(result.isValid)
-        #expect(builder.contourCount >= 1)
+        #expect(builder.contourCount == 1)
         // A 1 × 1 chamfer along one 10-long edge removes 5.
         #expect(abs((result.volume ?? 0) - 995) < 1e-6)
     }
 
-    // As for FilletBuilder.destroyWithoutBuild: the builder is required so the release runs.
+    // As for FilletBuilder.destroyWithoutBuild: the builder is required so the release runs, and the
+    // edge it holds when it goes is pinned (#2983).
     @Test func destroyWithoutBuild() throws {
         let box = standardBox()
         let builder = try #require(ChamferBuilder(shape: box))
         let edges = box.edges()
         try #require(!edges.isEmpty)
-        builder.addEdge(edges[0], distance: 1.0)
+        #expect(builder.addEdge(edges[0], distance: 1.0))
+        #expect(builder.contourCount == 1)
     }
 
     @Test func invalidInput() throws {
@@ -182,6 +204,26 @@ struct StressChamferBuilderLifecycleTests {
         #expect(builder.isSymmetric(contour: 1))
         #expect(!builder.isDistanceAngle(contour: 1))
         #expect(!builder.isTwoDistances(contour: 1))
+
+        // #2983: the control. Those three flags were each one polarity, which a builder wired to
+        // them reports as well. Two distances on the same edge is not symmetric: it is a two-distance
+        // chamfer of 1 and 2 on the face it was given, removing 0.5·1·2·10 = 10 from the box. The
+        // face is found, not assumed: edge and face indices vary, so the first face that takes the
+        // edge is the one used.
+        let twoSided = try #require(ChamferBuilder(shape: box))
+        var added = false
+        for face in box.faces() where !added {
+            added = twoSided.addEdge(edges[0], face: face, distance1: 1.0, distance2: 2.0)
+        }
+        try #require(added, "no face of the box took edge 0 with two distances")
+        let result = try #require(twoSided.build())
+        #expect(abs(try #require(result.volume) - 990) < 1e-6)
+        #expect(twoSided.isTwoDistances(contour: 1))
+        #expect(!twoSided.isSymmetric(contour: 1))
+        #expect(!twoSided.isDistanceAngle(contour: 1))
+        let distances = twoSided.getDistances(contour: 1)
+        #expect(distances.d1 == 1)
+        #expect(distances.d2 == 2)
     }
 }
 
@@ -190,22 +232,23 @@ struct StressChamferBuilderLifecycleTests {
 @Suite("Stress: PipeShellBuilder Lifecycle")
 struct StressPipeShellBuilderLifecycleTests {
 
-    private func makeSpine() -> Shape? {
-        guard let wire = Wire.circle(origin: .zero, normal: SIMD3(0, 0, 1), radius: 10) else {
-            return nil
-        }
-        return Shape.fromWire(wire)
+    // #2983: these returned nil from a `guard let ... else { return nil }`, which is how the census
+    // read all five tests below as nil-skips. They throw, so a circle that was not built is a
+    // failure that says so.
+    private func makeSpine() throws -> Shape {
+        let wire = try #require(Wire.circle(origin: .zero, normal: SIMD3(0, 0, 1), radius: 10))
+        return try #require(Shape.fromWire(wire))
     }
 
-    private func makeProfile() -> Shape? {
-        guard let wire = Wire.circle(origin: SIMD3(10, 0, 0), normal: SIMD3(0, 1, 0), radius: 2)
-        else { return nil }
-        return Shape.fromWire(wire)
+    private func makeProfile() throws -> Shape {
+        let wire = try #require(
+            Wire.circle(origin: SIMD3(10, 0, 0), normal: SIMD3(0, 1, 0), radius: 2))
+        return try #require(Shape.fromWire(wire))
     }
 
     // Without a profile BRepOffsetAPI_MakePipeShell::Build throws; the bridge reports false.
     @Test func buildEmpty() throws {
-        let spine = try #require(makeSpine())
+        let spine = try makeSpine()
         let builder = try #require(PipeShellBuilder(spine: spine))
         let ok = builder.build()
         #expect(!ok)
@@ -213,8 +256,8 @@ struct StressPipeShellBuilderLifecycleTests {
 
     // A radius-2 circle swept round a radius-10 circle: one toroidal face of area 4·π²·10·2.
     @Test func normalCycle() throws {
-        let spine = try #require(makeSpine())
-        let profile = try #require(makeProfile())
+        let spine = try makeSpine()
+        let profile = try makeProfile()
         let builder = try #require(PipeShellBuilder(spine: spine))
         builder.setFrenet(true)
         builder.add(profile: profile)
@@ -225,17 +268,22 @@ struct StressPipeShellBuilderLifecycleTests {
         #expect(abs((shape.surfaceArea ?? 0) - 789.5683521) < 1e-6)
     }
 
+    // #2983: a spine alone is not enough to sweep, and with the profile added the builder is ready
+    // and has still built nothing, so it holds no shape when it is let go.
     @Test func destroyWithoutBuild() throws {
-        let spine = try #require(makeSpine())
-        let profile = try #require(makeProfile())
+        let spine = try makeSpine()
+        let profile = try makeProfile()
         let builder = try #require(PipeShellBuilder(spine: spine))
+        #expect(!builder.isReady)
         builder.add(profile: profile)
+        #expect(builder.isReady)
+        #expect(builder.shape == nil)
         // Let go without build
     }
 
     @Test func simulateBeforeBuild() throws {
-        let spine = try #require(makeSpine())
-        let profile = try #require(makeProfile())
+        let spine = try makeSpine()
+        let profile = try makeProfile()
         let builder = try #require(PipeShellBuilder(spine: spine))
         builder.setFrenet(true)
         builder.add(profile: profile)
@@ -251,8 +299,8 @@ struct StressPipeShellBuilderLifecycleTests {
     }
 
     @Test func doubleBuild() throws {
-        let spine = try #require(makeSpine())
-        let profile = try #require(makeProfile())
+        let spine = try makeSpine()
+        let profile = try makeProfile()
         let builder = try #require(PipeShellBuilder(spine: spine))
         builder.setFrenet(true)
         builder.add(profile: profile)
@@ -302,9 +350,11 @@ struct StressSewingBuilderLifecycleTests {
         #expect(result.subShapeCount(ofType: .face) == 12)
     }
 
+    // #2983: a shape was added and nothing performed, so there is no result to hand back yet.
     @Test func destroyWithoutPerform() throws {
         let sewing = try #require(SewingBuilder(tolerance: 1e-6))
         sewing.add(standardBox())
+        #expect(sewing.result == nil)
     }
 
     @Test func extendedQueries() throws {
@@ -314,7 +364,10 @@ struct StressSewingBuilderLifecycleTests {
         sewing.perform()
         // No face is deleted sewing a clean box (the count was read into `_` before).
         #expect(sewing.nbDeletedFaces == 0)
-        #expect(sewing.result != nil)
+        // #2983: `result != nil` was the other half, which any shape satisfies. It is the box's six
+        // faces sewn.
+        let result = try #require(sewing.result)
+        #expect(result.subShapeCount(ofType: .face) == 6)
     }
 }
 
@@ -343,12 +396,16 @@ struct StressWireBuilderLifecycleTests {
         #expect(wire.subShapeCount(ofType: .edge) == 4)
     }
 
+    // #2983: an empty builder is not done and one edge makes it so, which is the state it is let go
+    // in. The wire itself is the getter this test exists not to call.
     @Test func destroyWithoutGettingWire() throws {
         let builder = WireBuilder()
         let box = standardBox()
         let edges = box.subShapes(ofType: .edge)
         let edge = try #require(edges.first)
+        #expect(!builder.isDone)
         builder.addEdge(edge)
+        #expect(builder.isDone)
     }
 
     @Test func addWireShape() throws {
@@ -384,10 +441,12 @@ struct StressHatchBuilderLifecycleTests {
         #expect(hatcher.nbLines == 4)
     }
 
+    // #2983: both lines are in the hatcher when it is let go.
     @Test func destroyWithoutQuery() throws {
         let hatcher = try #require(HatchBuilder(tolerance: 1e-6))
         hatcher.addXLine(1)
         hatcher.addYLine(2)
+        #expect(hatcher.nbLines == 2)
     }
 }
 
@@ -420,9 +479,15 @@ struct StressUnifySameDomainBuilderLifecycleTests {
         #expect(abs((result.volume ?? 0) - 1000) < 1e-6)
     }
 
-    @Test func destroyWithoutBuild() {
+    // The builder works on a private copy of its input (#446) from the moment it is made, so before
+    // build() `shape` already is that copy: the box's six faces and its 1000 of volume, which is
+    // what OCCT's own `Shape()` answers before `Build()` too (#2983: this asserted nothing).
+    @Test func destroyWithoutBuild() throws {
         let box = standardBox()
-        _ = UnifySameDomainBuilder(shape: box)
+        let unifier = UnifySameDomainBuilder(shape: box)
+        let held = try #require(unifier.shape)
+        #expect(held.subShapeCount(ofType: .face) == 6)
+        #expect(abs(try #require(held.volume) - 1000) < 1e-9)
     }
 
     @Test func withTolerances() throws {
@@ -481,11 +546,13 @@ struct StressThruSectionsBuilderLifecycleTests {
         #expect(loft.shape == nil)
     }
 
+    // #2983: one section added and no build, so there is no shape to hand back.
     @Test func destroyWithoutBuild() throws {
         let w1 = try #require(Wire.circle(origin: .zero, normal: SIMD3(0, 0, 1), radius: 5))
         let s1 = try #require(Shape.fromWire(w1))
         let loft = ThruSectionsBuilder(isSolid: true, isRuled: false)
         loft.addWire(s1)
+        #expect(loft.shape == nil)
     }
 
     @Test func doubleBuild() throws {
@@ -511,16 +578,13 @@ struct StressThruSectionsBuilderLifecycleTests {
     // a fixed-stride array sized from section 1 alone with no bounds check, overrunning it and
     // SIGSEGVing for a later section with more edges than the first. Must fail cleanly instead.
     //
-    // Gated on OCCTSWIFT_LOCAL (PR #915 review, finding 1): the fix ships as Scripts/patches/0027,
-    // not yet in Package.swift's pinned kernel asset. ci.yml's default `swift test` resolves that
-    // pinned kernel, where this exact scenario still SIGSEGVs for real. SwiftPM runs every test
-    // target in one process, so an unguarded run here would abort the whole suite, not just this
-    // test, indistinguishable from a real regression (the #585 failure shape). kernel-integration.yml
-    // sets OCCTSWIFT_LOCAL=1 when it builds Scripts/patches/ from source and runs against that
-    // binary instead, matching this repo's own convention, see #905/PR #909, which added no Swift
-    // test at all for the identical reason. This test only runs there, not against the pinned kernel.
-    @Test(.enabled(if: ProcessInfo.processInfo.environment["OCCTSWIFT_LOCAL"] == "1"))
-    func mismatchedSectionEdgeCountWithoutCheckFailsCleanly() throws {
+    // This was gated on OCCTSWIFT_LOCAL while the fix, patch 0027, was missing from the pinned
+    // kernel: an unguarded run there SIGSEGVed and took the whole suite with it (the #585 failure
+    // shape). The repin put 0027 in the pinned asset and the gate then left this test skipped on
+    // every default run, which is the one outcome a test cannot recover from (#2983). Measured with
+    // the gate off against v4.0.0-kernel.3 and again against v4.0.0-kernel.4: no crash, and
+    // `build()` answers false.
+    @Test func mismatchedSectionEdgeCountWithoutCheckFailsCleanly() throws {
         let w1 = try #require(
             Wire.circle(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5))
         let w2 = try #require(
@@ -565,7 +629,19 @@ struct StressThruSectionsBuilderLifecycleTests {
         loft.addWire(s1)
         loft.addWire(s2)
         #expect(loft.build())
-        #expect(loft.shape != nil)
+        // #2983: `shape != nil` was the whole check, which any shape satisfies, a failed loft's
+        // leftovers included. The apex is the low end and the last section the high end, so z runs
+        // from 0 to 20 exactly, and the smoothed solid is valid and one solid of 707.387967
+        // (Scripts/repro/2983-stress/probe.mm, case "apex loft", through BRepOffsetAPI_ThruSections
+        // with no bridge). x and y are not pinned: `bounds` is the loose box of the spline's poles,
+        // about -9.4 to 6.4 in x for a radius-4 section, and not the solid's.
+        let shape = try #require(loft.shape)
+        #expect(shape.isValid)
+        #expect(shape.solidCount == 1)
+        let b = try #require(shape.bounds)
+        #expect(abs(b.min.z) < 1e-6)
+        #expect(abs(b.max.z - 20) < 1e-6)
+        #expect(abs(try #require(shape.volume) - 707.387966823) < 1e-3)
     }
 
     // #910: a reused builder's `generatedFace(from:)` must not hand back a first, successful
@@ -716,25 +792,15 @@ struct StressThruSectionsBuilderLifecycleTests {
     // what the bridge fix (confirming face membership via TopExp_Explorer) guarantees regardless
     // of how myEdgeFace's internal reconciliation behaves.
     //
-    // #920/#922 root cause: build B here is exactly #913's crash trigger, `checkCompatibility
-    // (false)` then a 4th section (the triangle, 3 edges) with MORE edges than section 1 (the
-    // first circle, 1 edge), 4 sections total. `CreateSmoothed()`'s fixed-stride array, sized from
-    // section 1 alone, overruns on a kernel without patch 0027 (#913), heap corruption, observed
-    // as an uncatchable SIGSEGV in unrelated, seemingly-random parts of the parallel test suite
-    // (the corruption's effects surface wherever the clobbered memory is next touched, not here).
-    // `Package.swift`'s remote pin (what `swift build + test (macOS)` in CI actually resolves,
-    // and what a fresh checkout with no local `Libraries/` gets by default) is the v2.0.0 release
-    // asset, predating patch 0027, same situation `mismatchedSectionEdgeCountWithoutCheckFailsCle
-    // anly` (this file, `OCCTSWIFT_LOCAL`-gated for exactly this reason since #913/PR #915) already
-    // documents. This test's own `checkCompatibility(false)` + mismatched-section step needed the
-    // identical gate and didn't have it, confirmed directly: run against the real remote v2.0.0
-    // kernel (`OCCTSWIFT_REMOTE=1 swift test --filter
-    // generatedFaceIsMemberOfShapeAfterSuccessFailureSuccessOnReusedBuilder`), build B's `#expect
-    // (!loft.build())` at :648 failed, `build()` returned `true` on the unpatched kernel instead
-    // of failing cleanly, matching #913's own "silently misaligned... reporting build() == true for
-    // an invalid result" description of the un-guarded defect. Gated the same way.
-    @Test(.enabled(if: ProcessInfo.processInfo.environment["OCCTSWIFT_LOCAL"] == "1"))
-    func generatedFaceIsMemberOfShapeAfterSuccessFailureSuccessOnReusedBuilder() throws {
+    // #920/#922: build B is #913's crash trigger, `checkCompatibility(false)` then a fourth section
+    // (the triangle, 3 edges) with more edges than section 1 (the first circle, 1 edge). On a kernel
+    // without patch 0027 that overruns `CreateSmoothed()`'s fixed-stride array and corrupts the
+    // heap, and the SIGSEGV surfaces wherever the clobbered memory is next touched, in unrelated
+    // parts of the parallel suite. The test was gated on OCCTSWIFT_LOCAL for as long as the pinned
+    // kernel predated 0027; the repin put it in, and the gate then left this test skipped on every
+    // default run (#2983). Measured with the gate off against v4.0.0-kernel.3 and again against
+    // v4.0.0-kernel.4: no crash, build B answers false, build C answers true.
+    @Test func generatedFaceIsMemberOfShapeAfterSuccessFailureSuccessOnReusedBuilder() throws {
         let w1 = try #require(
             Wire.circle(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5))
         let w2 = try #require(
@@ -750,7 +816,11 @@ struct StressThruSectionsBuilderLifecycleTests {
         loft.addWire(s3)
         #expect(loft.build())
         let edge = try #require(s1.subShapes(ofType: .edge).first)
-        #expect(loft.generatedFace(from: edge) != nil)
+        // #2983: the first build's binding is a face of the first build's own shape, so this is
+        // the positive control for the nil answers below: the lookup does answer, and a member.
+        let firstFace = try #require(loft.generatedFace(from: edge))
+        let firstShape = try #require(loft.shape)
+        #expect(firstShape.subShapes(ofType: .face).contains { $0.isSame(as: firstFace) })
 
         // Build B: a mismatched triangle under checkCompatibility(false) fails cleanly (no
         // reconciliation attempted).
@@ -769,10 +839,18 @@ struct StressThruSectionsBuilderLifecycleTests {
         // BRepFill_CompatibleWires rebuilt, not necessarily the original section edges.
         loft.checkCompatibility(true)
         #expect(loft.build())
-        if let face = loft.generatedFace(from: edge), let shape = loft.shape {
-            let isMember = shape.subShapes(ofType: .face).contains { $0.isSame(as: face) }
-            #expect(isMember)
-        }
+        // #2983: this was `if let face = loft.generatedFace(from: edge), let shape = loft.shape`,
+        // and measured nothing: build C answers nil for this edge, so no assertion ever ran. Nil is
+        // the right answer. The first build bound `edge` to a face of its own shape, then
+        // CheckCompatibility(true) rebuilt every section's edges for build C, so that face is not in
+        // build C's shape, and the bridge refuses a binding it cannot confirm by membership. The
+        // unguarded kernel answers the stale face here (Scripts/repro/2983-stress/probe.mm, case
+        // "stale binding"). Build C is the circles reconciled against the triangle: every section
+        // has 3 edges, so three lateral faces and two caps.
+        let shape = try #require(loft.shape)
+        #expect(shape.isValid)
+        #expect(shape.subShapeCount(ofType: .face) == 5)
+        #expect(loft.generatedFace(from: edge) == nil)
     }
 
     // #910 review round 2 finding 2: `addWire`/`addVertex` invalidate `built` on a successful
@@ -849,10 +927,13 @@ struct StressCellsBuilderLifecycleTests {
     // errors for a single argument), so the `guard ... else { return }` returned before any builder
     // existed and nothing was ever released: the test could not fail. It now builds from two
     // shapes and requires the builder, so the release it is about actually happens.
+    // #2983: what the builder holds when it goes is the two cells the sphere splits the box into.
     @Test func destroyWithoutResult() throws {
         let box = standardBox()
         let builder = try #require(CellsBuilder(shapes: [box, standardSphere()]))
         builder.addAllToResult()
+        let parts = try #require(builder.allParts())
+        #expect(parts.solidCount == 2)
         // Don't call result()
     }
 }
@@ -897,21 +978,25 @@ struct StressSectionBuilderLifecycleTests {
         #expect(result.subShapeCount(ofType: .edge) == 4)
     }
 
+    // Nothing of the builder is observable before build() that tells a built builder from an
+    // unbuilt one: an ancestor lookup answers nil either way for an edge that is not in a result.
+    // `ancestorFaceNilAfterReinitWithoutRebuild` below is where the unbuilt state is pinned.
     @Test func destroyWithoutBuild() throws {
         let builder = try #require(SectionBuilder(shape1: standardBox(), shape2: standardSphere()))
         _ = builder
     }
 
-    @Test func doubleBuild() {
-        guard let builder = SectionBuilder(shape1: standardBox(), shape2: standardSphere()) else {
-            return
-        }
-        let r1 = builder.build()
-        let r2 = builder.build()
-        if let r1 { #expect(r1.isValid) }
-        if let r2 { #expect(r2.isValid) }
-        #expect(r1 != nil)
-        #expect(r2?.subShapeCount(ofType: .vertex) == 6)
+    // The inscribed sphere touches the box at six points, on either build. #2983: this was behind a
+    // `guard let ... else { return }` and two `if let`, so a builder that was not made, or a build
+    // that returned nil, ran no assertion at all.
+    @Test func doubleBuild() throws {
+        let builder = try #require(SectionBuilder(shape1: standardBox(), shape2: standardSphere()))
+        let r1 = try #require(builder.build())
+        let r2 = try #require(builder.build())
+        #expect(r1.isValid)
+        #expect(r2.isValid)
+        #expect(r1.subShapeCount(ofType: .vertex) == 6)
+        #expect(r2.subShapeCount(ofType: .vertex) == 6)
     }
 
     // #916: OCCTSectionBuilder's `built` flag (gating ancestorFaceOn1/2) is only ever set true on a
@@ -999,7 +1084,12 @@ struct StressWireAnalyzerLifecycleTests {
         let face = try #require(faces.first)
         let wire = try #require(sectionWires.first)
         let analyzer = try #require(WireAnalyzer(wire: wire, face: face))
-        analyzer.perform()
+        // #2983: the Bool `perform()` answers was dropped here and in the two controls below.
+        // Perform ORs eight checks, and CheckEdgeCurves reports DONE for every wire this test builds,
+        // the clean ones and the defective ones alike (Scripts/repro/2983-stress/probe.mm, "Perform"),
+        // so what `true` pins is that the bridge reaches Perform: a stub that answered false fails
+        // here. It does not say a wire is clean, which is what the per-check answers are for.
+        #expect(analyzer.perform())
         // A clean closed loop reports no order, self-intersection, closure or gap problem (all
         // five were read into `_` before).
         #expect(!analyzer.checkOrder())
@@ -1008,15 +1098,45 @@ struct StressWireAnalyzerLifecycleTests {
         #expect(!analyzer.checkGap3d())
         #expect(!analyzer.checkGap2d())
         #expect(analyzer.edgeCount == 4)
+
+        // #2983: the controls. Five `!check...` is also what an analyzer wired to false reports, so
+        // two wires that do have a problem are analysed against a face parallel to them. A bowtie,
+        // a closed loop whose two diagonals cross, is the self-intersection the check exists for.
+        // An open three-sided polygon has a gap at its closure, which the 3D and 2D gap checks see
+        // at edge 1 (measured; the edge numbering is ShapeAnalysis_Wire's), while its edges still
+        // do not cross.
+        let up = try #require(box.faces().first(where: { $0.isUpwardFacing() }))
+        let upFace = try #require(Shape.fromFace(up))
+        let bowtie = try #require(
+            Wire.polygon3D([SIMD3(-5, -5, 0), SIMD3(5, 5, 0), SIMD3(5, -5, 0), SIMD3(-5, 5, 0)]))
+        let crossing = try #require(WireAnalyzer(wire: bowtie, face: upFace))
+        #expect(crossing.perform())
+        #expect(crossing.checkSelfIntersection())
+        #expect(!crossing.checkGap3d(edgeNum: 1))
+
+        let corners: [SIMD3<Double>] = [
+            SIMD3(-5, -5, 0), SIMD3(5, -5, 0), SIMD3(5, 5, 0), SIMD3(-5, 5, 0),
+        ]
+        let openWire = try #require(Wire.polygon3D(corners, closed: false))
+        let gapped = try #require(WireAnalyzer(wire: openWire, face: upFace))
+        #expect(gapped.perform())
+        #expect(gapped.checkGap3d(edgeNum: 1))
+        #expect(gapped.checkGap2d(edgeNum: 1))
+        #expect(!gapped.checkSelfIntersection())
+        #expect(gapped.edgeCount == 3)
     }
 
+    // #2983: before perform() the analyzer already holds the section's four edges and reports itself
+    // loaded.
     @Test func destroyWithoutPerform() throws {
         let box = standardBox()
         let faces = box.subShapes(ofType: .face)
         let sectionWires = box.sectionWiresAtZ(0.0)
         let face = try #require(faces.first)
         let wire = try #require(sectionWires.first)
-        _ = try #require(WireAnalyzer(wire: wire, face: face))
+        let analyzer = try #require(WireAnalyzer(wire: wire, face: face))
+        #expect(analyzer.edgeCount == 4)
+        #expect(analyzer.isLoaded)
     }
 }
 
@@ -1063,6 +1183,9 @@ struct StressWireFixerLifecycleTests {
         #expect(fixed.subShapeCount(ofType: .edge) == 4)
     }
 
+    // Before any fix the only thing a WireFixer holds is the wire it was given, and reading it back
+    // is the getter this test exists not to call, so nothing is observable here beyond the fixer
+    // existing when it is let go (#2983: said, not assumed).
     @Test func destroyWithoutGettingResult() throws {
         let box = standardBox()
         let faces = box.subShapes(ofType: .face)
@@ -1092,11 +1215,14 @@ struct StressFaceFixerLifecycleTests {
         #expect(abs((result.surfaceArea ?? 0) - 100) < 1e-9)
     }
 
+    // #2983: before perform() the fixer holds the face it was given, the box's 100.
     @Test func destroyWithoutPerform() throws {
         let box = standardBox()
         let faces = box.subShapes(ofType: .face)
         let faceShape = try #require(faces.first)
-        _ = try #require(FaceFixer(face: faceShape))
+        let fixer = try #require(FaceFixer(face: faceShape))
+        let held = try #require(fixer.face)
+        #expect(abs(try #require(held.surfaceArea) - 100) < 1e-9)
     }
 }
 
@@ -1121,15 +1247,23 @@ struct StressShapeFixerLifecycleTests {
         fixer.perform()
         let result = try #require(fixer.shape)
         #expect(result.isValid)
-        // Volume should match
-        if let origVol = box.volume, let fixedVol = result.volume {
-            #expect(abs(origVol - fixedVol) / origVol < 0.01)
-        }
-        #expect(abs((result.volume ?? 0) - 1000) < 1e-6)
+        // The box was fine, so fixing it changes nothing: the volume and faces are the box's own.
+        // #2983: the comparison sat behind an `if let` on both volumes, and its window was 1 percent.
+        let original = try #require(box.volume)
+        let fixed = try #require(result.volume)
+        #expect(abs(original - fixed) < 1e-9)
+        #expect(abs(fixed - 1000) < 1e-6)
+        #expect(result.subShapeCount(ofType: .face) == 6)
     }
 
-    @Test func destroyWithoutPerform() {
+    // #2983: before perform() nothing has been fixed, so the status is OK and not DONE, and the
+    // fixer holds the shape it was given: the box's six faces.
+    @Test func destroyWithoutPerform() throws {
         let box = standardBox()
-        _ = ShapeFixer(shape: box)
+        let fixer = ShapeFixer(shape: box)
+        #expect(fixer.status(.ok))
+        #expect(!fixer.status(.done))
+        let held = try #require(fixer.shape)
+        #expect(held.subShapeCount(ofType: .face) == 6)
     }
 }
