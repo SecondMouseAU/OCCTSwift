@@ -32,11 +32,21 @@ import OCCTPlatform
 ///   meeting along less than their full seam-direction extent (e.g. a narrow
 ///   upright on a wider base) now build cleanly. The builder splits the
 ///   wider flange at the seam-intersection endpoints before extruding;
-///   the matched-extent middle piece carries the bend, and the outer
+///   the bend sits over the middle piece's run, and the outer
 ///   pieces stay flat. Issue #86. The outer pieces did *not* stay flat
 ///   until #2972: the fillet was rolled along the whole seam line, which
 ///   rounds away a free edge rather than adding bend material, and took
 ///   all four stepped fixtures below their flange volumes.
+///
+///   A bend is applied from the flanges the caller declared and from the run
+///   of the seam the two share, never from a flange piece, because a piece
+///   names no bend: one covering several pieces, or sitting along the other
+///   axis of a flange another bend split, has no single piece to name, and
+///   a convex bend's prism used to be cut to whichever piece the lookup
+///   fell back to (#3019). A seam diagonal to a flange's own axes cannot
+///   split that flange and needs no split: the run is read from the two
+///   flanges' profile edges instead, and the fused solid already holds the
+///   seam as separate edges at the contact boundary (#3033).
 public enum SheetMetal {
 
     /// A single sheet-metal flange: a closed 2D profile positioned in world
@@ -272,13 +282,14 @@ public enum SheetMetal {
         ///    direction. If a flange's seam edge extends beyond the
         ///    intersection (a *stepped* seam, one flange wider than the
         ///    other along the seam), split that flange's profile at the
-        ///    intersection endpoints, producing a matched-extent middle
-        ///    piece + flat extensions.
+        ///    intersection endpoints, producing a middle piece over the
+        ///    bend + flat extensions.
         /// 3. Extrude each piece along its normal by `thickness`.
         /// 4. Fuse all pieces.
-        /// 5. For each bend, locate the seam edge(s) between the
-        ///    matched-extent pieces of the two flanges and apply a fillet
-        ///    of the given radius.
+        /// 5. For each bend, take the run of the seam the two declared
+        ///    flanges share, then fillet the seam edge(s) inside it
+        ///    (concave) or fuse in a bend-material prism cut to it
+        ///    (convex).
         ///
         /// For matched-extent flanges, the result is identical to v0.151's
         /// behaviour. For stepped flanges, where v0.151 threw
@@ -314,33 +325,21 @@ public enum SheetMetal {
             // bends. A flange whose seam edge extends past a bend's
             // intersection is split at that intersection's endpoints.
             //
-            // The resulting pieces preserve the flange's id (suffixed for
-            // disambiguation) but each is a separate Flange used for
-            // extrusion. The `matchedID` map remembers which piece carries
-            // the bend so the post-union fillet only targets that piece's
-            // seam edges.
+            // The pieces exist to be extruded and for nothing else. A bend is
+            // applied from the flanges the caller declared and from the run of
+            // the seam its own intersection gives (`seamExtent`), never from a
+            // piece: a piece names no bend, and a bend whose run is not exactly
+            // one piece, or runs along the other axis of a flange another bend
+            // split, has no single piece to name. The builder used to pick one
+            // anyway, the first, and a convex bend read its kiss segment off it
+            // (#3019).
             var pieces: [Flange] = []
-            var matchedPieceID: [Int: (a: String, b: String)] = [:]
             for f in flanges {
                 let splits = Self.collectSplitsFor(flange: f, bendInfos: bendInfos)
                 if splits.isEmpty {
                     pieces.append(f)
-                    Self.recordMatched(
-                        for: f.id, asPieceID: f.id,
-                        bendInfos: bendInfos,
-                        matchedPieceID: &matchedPieceID)
-                    continue
-                }
-                let split = try Self.splitFlange(f, splitsAlong: splits, bendInfos: bendInfos)
-                pieces.append(contentsOf: split.pieces)
-                for (bendIdx, pieceID) in split.matchedByBend {
-                    if bendInfos[bendIdx].fromFlangeID == f.id {
-                        let prevB = matchedPieceID[bendIdx]?.b ?? bendInfos[bendIdx].toFlangeID
-                        matchedPieceID[bendIdx] = (a: pieceID, b: prevB)
-                    } else if bendInfos[bendIdx].toFlangeID == f.id {
-                        let prevA = matchedPieceID[bendIdx]?.a ?? bendInfos[bendIdx].fromFlangeID
-                        matchedPieceID[bendIdx] = (a: prevA, b: pieceID)
-                    }
+                } else {
+                    pieces.append(contentsOf: try Self.splitFlange(f, splitsAlong: splits))
                 }
             }
 
@@ -373,22 +372,21 @@ public enum SheetMetal {
             //     of bend material and fuse it in. The outer cylindrical
             //     face of the prism is the bend's rounded outside surface.
             for (i, bend) in bends.enumerated() {
-                let aID = matchedPieceID[i]?.a ?? bend.fromFlangeID
-                let bID = matchedPieceID[i]?.b ?? bend.toFlangeID
-                guard let aPiece = pieces.first(where: { $0.id == aID }),
-                    let bPiece = pieces.first(where: { $0.id == bID })
-                else {
-                    throw BuildError.unknownFlangeID(aID)
-                }
+                let a = flangeByID[bend.fromFlangeID]!
+                let b = flangeByID[bend.toFlangeID]!
 
-                let seamDir = Vector3DMath.cross(aPiece.normal, bPiece.normal)
+                let seamDir = Vector3DMath.cross(a.normal, b.normal)
                 guard let seamUnit = Vector3DMath.normalize(seamDir) else {
                     throw BuildError.parallelFlangesHaveNoSeam(
                         fromID: bend.fromFlangeID, toID: bend.toFlangeID)
                 }
 
                 let direction = Self.resolvedDirection(
-                    bend: bend, a: aPiece, b: bPiece, thickness: thickness)
+                    bend: bend, a: a, b: b, thickness: thickness)
+                // The run of the seam line both flanges share, which each construction below is
+                // bounded by (#2972, #3019, #3033). nil leaves it unbounded.
+                let extent = Self.seamExtent(
+                    of: bendInfos[i], a: a, b: b, seamUnit: seamUnit, thickness: thickness)
 
                 switch direction {
                 case .concave, .auto:
@@ -396,12 +394,9 @@ public enum SheetMetal {
                     // default; resolvedDirection always returns concave or
                     // convex for non-trivial bends.
                     let seamEdges = Self.findSeamEdges(
-                        in: fused, between: aPiece, and: bPiece,
+                        in: fused, between: a, and: b,
                         seamUnit: seamUnit, thickness: thickness,
-                        extent: Self.seamExtent(
-                            of: bendInfos[i],
-                            flange: flangeByID[bend.fromFlangeID]!,
-                            seamUnit: seamUnit))
+                        extent: extent)
                     guard !seamEdges.isEmpty else {
                         throw BuildError.noSeamEdgeFound(
                             fromID: bend.fromFlangeID, toID: bend.toFlangeID)
@@ -420,8 +415,8 @@ public enum SheetMetal {
                     guard
                         let bendMaterial = Self.buildConvexBendMaterial(
                             bend: bend,
-                            a: aPiece, b: bPiece,
-                            bendIntersection: bendInfos[i],
+                            a: a, b: b,
+                            extent: extent,
                             seamUnit: seamUnit,
                             thickness: thickness)
                     else {
@@ -510,25 +505,24 @@ public enum SheetMetal {
         fileprivate static func buildConvexBendMaterial(
             bend: Bend,
             a: Flange, b: Flange,
-            bendIntersection: BendIntersection,
+            extent: ClosedRange<Double>?,
             seamUnit: SIMD3<Double>,
             thickness: Double
         ) -> Shape? {
             // Kiss line: the two flange profile end-edges meet on this
-            // line in 3D. Use the bend intersection's seam range to find
-            // the segment.
+            // line in 3D. Walk a's profile edges and find the one parallel
+            // to seamUnit, then cut it to `extent`, the run of the seam both
+            // flanges share.
             //
-            // For each flange, the seam edge is at a specific u
-            // coordinate (= u=0 or u=max in flange profile coords). The
-            // BendIntersection records this via aSeamAlongU / bSeamAlongU
-            // and the flange's outer wire bounds.
-            //
-            // Simpler approach: walk a's profile edges and find the one
-            // whose lifted points are on the seam line (parallel to
-            // seamUnit).
+            // The cut is what makes the prism the right length. a's own edge
+            // can be longer than the bend: the other flange can be narrower
+            // than a, and a can be a flange another bend split, where no
+            // piece of it is the bend's either (#3019). It used to be taken
+            // as it stood, so the prism came out as long as that edge, or as
+            // a piece of it.
             guard
                 let (kissStart, kissEnd) = seamSegment(
-                    of: a, seamUnit: seamUnit, otherFlange: b, tolerance: 1e-4)
+                    of: a, seamUnit: seamUnit, otherFlange: b, tolerance: 1e-4, within: extent)
             else { return nil }
 
             // Flange-a outer face direction = `+a.normal` displaced by
@@ -619,11 +613,18 @@ public enum SheetMetal {
         /// `seamUnit`). For a rectangular profile there are typically
         /// two candidate edges (one at u=0, one at u=max); we pick the
         /// one closest to flange `b`'s body.
+        ///
+        /// `extent` is the run of the seam line the bend occupies (see
+        /// `seamExtent`), and the segment is cut to it (#3019, #3033). An end
+        /// already inside it is left exactly where it was, so a bend that
+        /// covers the whole edge returns the edge itself. nil leaves the edge
+        /// uncut.
         fileprivate static func seamSegment(
             of a: Flange,
             seamUnit: SIMD3<Double>,
             otherFlange b: Flange,
-            tolerance: Double
+            tolerance: Double,
+            within extent: ClosedRange<Double>?
         ) -> (SIMD3<Double>, SIMD3<Double>)? {
             // Walk a's profile in 2D. Find edges (between consecutive
             // profile points) whose 3D direction is parallel to seamUnit.
@@ -649,55 +650,116 @@ public enum SheetMetal {
                 let m2 = (c2.start + c2.end) * 0.5
                 return Vector3DMath.modulus(m1 - bCentroid) < Vector3DMath.modulus(m2 - bCentroid)
             })!
-            return chosen
+            guard let extent else { return chosen }
+
+            let s0 = Vector3DMath.dot(chosen.start, seamUnit)
+            let s1 = Vector3DMath.dot(chosen.end, seamUnit)
+            let run = s1 - s0
+            guard abs(run) > 1e-12 else { return nil }
+            let cutTolerance = max(1e-7, abs(run) * 1e-9)
+            let c0 = min(max(s0, extent.lowerBound), extent.upperBound)
+            let c1 = min(max(s1, extent.lowerBound), extent.upperBound)
+            guard abs(c1 - c0) > cutTolerance else { return nil }
+            let along = chosen.end - chosen.start
+            var start = chosen.start
+            var end = chosen.end
+            if abs(c0 - s0) > cutTolerance { start = chosen.start + ((c0 - s0) / run) * along }
+            if abs(c1 - s1) > cutTolerance { end = chosen.start + ((c1 - s0) / run) * along }
+            return (start, end)
         }
 
         /// The run of the seam line the bend actually occupies, as a range of
-        /// `dot(point, seamUnit)` (#2972).
+        /// `dot(point, seamUnit)` (#2972, #3033).
         ///
-        /// `intersect` already computed this, as `aIntersection`, in the
-        /// *from*-flange's own profile coordinates along whichever of its axes
-        /// the seam runs along. This maps that back into the world projection
+        /// Where the seam runs along a profile axis of both flanges this is
+        /// `intersect`'s own `aIntersection`, in the *from*-flange's profile
+        /// coordinates along that axis, mapped back into the world projection
         /// the edges are measured in: `dot(origin, seamUnit)` plus the profile
         /// coordinate times the axis's own component along `seamUnit`.
         ///
-        /// It is read off the bend rather than off the matched pieces on
-        /// purpose. A flange split by one bend has its first piece named after
-        /// the whole flange, so a *second* bend covering that flange's full
-        /// width resolves to that first piece and would report its sliver as
-        /// the extent (`zBracket`'s `base` to `mid` bend: 15 of 50). The bend's
-        /// own intersection does not depend on how the pieces were named.
+        /// It is read off the bend rather than off the flange pieces on
+        /// purpose (#3019). A flange split by one bend is cut at that bend's
+        /// endpoints, so a *second* bend covering that flange's full width
+        /// matches no piece, and one covering several of them matches none
+        /// exactly. The bend's own intersection does not depend on how the
+        /// flange was cut.
         ///
-        /// Returns nil where the seam runs along neither of the flange's own
-        /// profile axes, which is `intersect`'s documented "no split" fallback
-        /// and leaves the caller unfiltered rather than selecting nothing.
+        /// Where it does not (`alignedToProfiles` is false, `intersect`'s
+        /// documented "no split" fallback) `aIntersection` is the whole
+        /// profile range, which is not a projection onto the seam at all and
+        /// says nothing about where the bend is. The run is then read from the
+        /// profiles themselves: the part of the seam line that BOTH flanges'
+        /// own profile edges cover (`seamLineRun`). That needs no flange
+        /// split, and the fused solid needs none either: it already holds the
+        /// seam as separate edges at the contact boundary, which is what lets
+        /// the extent test in `findSeamEdges` pick out the bend and not the
+        /// free edge beside it (#3033).
         ///
-        /// That does not re-open #2972 for a diagonal *stepped* seam, which was
-        /// the worry on review: an upright narrower than the chamfer edge it
-        /// stands on builds nothing at all. The fillet fails with
-        /// `BuildError.filletFailed`, identically on `origin/main` before this
-        /// fix and after it, while the same geometry with the upright spanning
-        /// the whole edge builds. So the unfiltered path cannot return a
-        /// silently short volume here, which is what made the axis-aligned case
-        /// worth fixing. `Issue2972DiagonalSteppedSeamTests` pins both halves,
-        /// and its second test fails if that case ever starts building.
+        /// Returns nil where no run can be established, meaning a flange with
+        /// no profile edge on the seam line or two runs that do not overlap.
+        /// The caller is then unbounded, as every diagonal seam used to be.
         fileprivate static func seamExtent(
-            of info: BendIntersection, flange a: Flange, seamUnit: SIMD3<Double>
+            of info: BendIntersection, a: Flange, b: Flange,
+            seamUnit: SIMD3<Double>, thickness: Double
         ) -> ClosedRange<Double>? {
+            guard info.alignedToProfiles else {
+                // The tolerance `findSeamEdges` uses for its own plane tests.
+                let tolerance = max(1e-6, thickness * 1e-4)
+                guard
+                    let aRun = Self.seamLineRun(
+                        of: a, between: a, and: b, seamUnit: seamUnit, tolerance: tolerance),
+                    let bRun = Self.seamLineRun(
+                        of: b, between: a, and: b, seamUnit: seamUnit, tolerance: tolerance)
+                else { return nil }
+                let lo = max(aRun.lowerBound, bRun.lowerBound)
+                let hi = min(aRun.upperBound, bRun.upperBound)
+                guard hi - lo > 1e-9 else { return nil }
+                return lo...hi
+            }
             let axis = info.aSeamAlongU ? a.uAxis : a.vAxis
-            // `aSeamAlongU` means "u" only by elimination, so it is `false` both for a v-aligned
-            // seam and for one aligned with neither axis. In the second case `intersect` returns
-            // its no-split fallback with `aIntersection` set to the whole profile range, which is
-            // not a projection onto the seam at all, and mapping it would select nothing: #1565's
-            // diagonal-seam fixture fails with `noSeamEdgeFound` if this guard tests only that
-            // the axis has some component along the seam.
-            guard Self.axisParallel(seamUnit, to: axis) else { return nil }
             let axisProj = Vector3DMath.dot(axis, seamUnit)
             guard abs(axisProj) > 1e-9 else { return nil }
             let originProj = Vector3DMath.dot(a.origin, seamUnit)
             let p0 = originProj + info.aIntersection.lowerBound * axisProj
             let p1 = originProj + info.aIntersection.upperBound * axisProj
             return min(p0, p1)...max(p0, p1)
+        }
+
+        /// The run of the seam line one flange's own profile covers, as a range
+        /// of `dot(point, seamUnit)`: the extent of the profile edges that lie
+        /// ON the line where the two flanges' planes cross, not merely parallel
+        /// to it (#3033).
+        ///
+        /// An edge counts when both its ends are within `tolerance` of both
+        /// planes. nil when no edge does, which is a flange whose seam passes
+        /// through its interior or misses it.
+        ///
+        /// `a` and `b` are the two flanges the bend joins, and `flange` is one
+        /// of them, so one of the two plane tests holds by construction.
+        private static func seamLineRun(
+            of flange: Flange, between a: Flange, and b: Flange,
+            seamUnit: SIMD3<Double>, tolerance: Double
+        ) -> ClosedRange<Double>? {
+            func onSeamLine(_ p: SIMD3<Double>) -> Bool {
+                // A point lifted from `flange`'s profile is on its own plane already, so for
+                // `flange` equal to `a` or `b` one of these two is trivially true and the other is
+                // the test that matters. Both are written out so either flange takes the same path.
+                abs(Vector3DMath.dot(p - a.origin, a.normal)) < tolerance
+                    && abs(Vector3DMath.dot(p - b.origin, b.normal)) < tolerance
+            }
+            var lo = Double.infinity
+            var hi = -Double.infinity
+            let n = flange.profile.count
+            for i in 0..<n {
+                let p1 = flange.placement.lift(flange.profile[i])
+                let p2 = flange.placement.lift(flange.profile[(i + 1) % n])
+                guard onSeamLine(p1), onSeamLine(p2) else { continue }
+                let s1 = Vector3DMath.dot(p1, seamUnit)
+                let s2 = Vector3DMath.dot(p2, seamUnit)
+                lo = min(lo, s1, s2)
+                hi = max(hi, s1, s2)
+            }
+            return lo < hi ? lo...hi : nil
         }
 
         /// Find the seam edge(s) between two flanges in the fused shape.
@@ -708,18 +770,19 @@ public enum SheetMetal {
         /// instance) lies on the opposite pair of faces, so the toward-plane
         /// test uniquely selects the bend.
         ///
-        /// `extent` is the run of the seam line the bend occupies, and an edge
-        /// reaching outside it is rejected (#2972). Both plane tests are
-        /// satisfied all the way along the seam *line*, not just along the
-        /// bend, so on a stepped seam the free edge of the wider flange's
-        /// outer piece passes them too. That edge is convex, so filleting it
-        /// removes material from a corner the builder's own documentation says
-        /// stays flat: four of the suite's fixtures came out below their flange
-        /// volume by exactly `r^2 (1 - pi/4)` times the surplus length, and a
-        /// point 0.2 inside the free corner classified as `outside`. The fused
-        /// solid holds the seam line as one edge per piece, split at the
-        /// matched piece's own boundary, so the extent test selects the bend
-        /// exactly. Passing nil disables the test.
+        /// `extent` is the run of the seam line the bend occupies (see
+        /// `seamExtent`), and an edge reaching outside it is rejected (#2972).
+        /// Both plane tests are satisfied all the way along the seam *line*,
+        /// not just along the bend, so on a stepped seam the free edge of the
+        /// wider flange's outer piece passes them too. That edge is convex, so
+        /// filleting it removes material from a corner the builder's own
+        /// documentation says stays flat: four of the suite's fixtures came out
+        /// below their flange volume by exactly `r^2 (1 - pi/4)` times the
+        /// surplus length, and a point 0.2 inside the free corner classified as
+        /// `outside`. The fused solid holds the seam line as separate edges
+        /// where the pieces, or the two bodies' faces, meet (a diagonal seam
+        /// splits no flange and the solid does it unaided), so the extent test
+        /// selects the bend exactly. Passing nil disables the test.
         ///
         /// Note: OCCT classifies an L-bracket's bend edge as CONVEX (looking
         /// from outside the solid, you turn outward around it). We do not use
@@ -804,20 +867,22 @@ public enum SheetMetal {
             /// the intersection projects directly onto that axis).
             let aIntersection: ClosedRange<Double>
             let bIntersection: ClosedRange<Double>
-        }
-
-        fileprivate struct SplitResult {
-            let pieces: [Flange]
-            /// For each bend index that touches this flange, which piece id
-            /// is the matched-extent piece (carries the bend).
-            let matchedByBend: [Int: String]
+            /// True when the seam runs along a profile axis of BOTH flanges, the only case where
+            /// `aIntersection` and `bIntersection` are real projections onto the seam.
+            ///
+            /// False in the "no split" fallback, where they are the whole profile ranges and
+            /// `seamExtent` reads the run from the profile edges instead (#3033).
+            let alignedToProfiles: Bool
         }
 
         /// Compute seam direction and intersection range between two
         /// rectangular flanges.
         ///
         /// Falls back to "no split needed" when the seam direction doesn't align with either flange's u or v axis,
-        /// that case continues to use the v0.151 single-fillet path with no flange splitting.
+        /// that case continues to use the v0.151 single-fillet path with no flange splitting. Its
+        /// `aIntersection` and `bIntersection` are then the whole profile ranges and say nothing
+        /// about the seam, so `alignedToProfiles` is false and `seamExtent` takes the run from the
+        /// profile edges instead (#3033).
         fileprivate static func intersect(bend: Bend, a: Flange, b: Flange) throws
             -> BendIntersection
         {
@@ -853,7 +918,8 @@ public enum SheetMetal {
                     aRange: aRange,
                     bRange: bRange,
                     aIntersection: aRange,
-                    bIntersection: bRange)
+                    bIntersection: bRange,
+                    alignedToProfiles: false)
             }
 
             let aProfileAxis = aSeamAlongU ? a.uAxis : a.vAxis
@@ -906,7 +972,8 @@ public enum SheetMetal {
                 aRange: aRange,
                 bRange: bRange,
                 aIntersection: aIntersection,
-                bIntersection: bIntersection)
+                bIntersection: bIntersection,
+                alignedToProfiles: true)
         }
 
         private static func axisParallel(_ a: SIMD3<Double>, to b: SIMD3<Double>) -> Bool {
@@ -959,14 +1026,16 @@ public enum SheetMetal {
 
         fileprivate enum SplitAxis { case u, v }
 
-        /// Split a rectangular flange along the given splits and identify
-        /// which sub-piece carries each bend (the one spanning the bend's
-        /// intersection range).
+        /// Split a rectangular flange along the given splits into one piece
+        /// per cell.
+        ///
+        /// Every piece is named for its cell and none after the whole flange.
+        /// The first used to carry the flange's own id, which let a lookup by
+        /// that id hand back the one sliver as if it were the flange (#3019).
         fileprivate static func splitFlange(
             _ f: Flange,
-            splitsAlong splits: [(axis: SplitAxis, value: Double)],
-            bendInfos: [BendIntersection]
-        ) throws -> SplitResult {
+            splitsAlong splits: [(axis: SplitAxis, value: Double)]
+        ) throws -> [Flange] {
             guard f.profile.count == 4,
                 Self.isAxisAlignedRect(f.profile)
             else {
@@ -989,9 +1058,6 @@ public enum SheetMetal {
                 }
 
             var pieces: [Flange] = []
-            var pieceCells:
-                [(piece: Flange, uRange: ClosedRange<Double>, vRange: ClosedRange<Double>)] = []
-            var first = true
             for i in 0..<(uCuts.count - 1) {
                 for j in 0..<(vCuts.count - 1) {
                     let u0 = uCuts[i]
@@ -1001,60 +1067,17 @@ public enum SheetMetal {
                     let pieceProfile: [SIMD2<Double>] = [
                         SIMD2(u0, v0), SIMD2(u1, v0), SIMD2(u1, v1), SIMD2(u0, v1),
                     ]
-                    let pieceID = first ? f.id : "\(f.id)__split_\(i)_\(j)"
-                    first = false
-                    let piece = Flange(
-                        id: pieceID,
-                        profile: pieceProfile,
-                        origin: f.origin,
-                        normal: f.normal,
-                        uAxis: f.uAxis,
-                        vAxis: f.vAxis)
-                    pieces.append(piece)
-                    pieceCells.append((piece: piece, uRange: u0...u1, vRange: v0...v1))
+                    pieces.append(
+                        Flange(
+                            id: "\(f.id)__split_\(i)_\(j)",
+                            profile: pieceProfile,
+                            origin: f.origin,
+                            normal: f.normal,
+                            uAxis: f.uAxis,
+                            vAxis: f.vAxis))
                 }
             }
-
-            // For each bend touching this flange, find the piece whose
-            // profile range matches the bend's intersection range.
-            var matchedByBend: [Int: String] = [:]
-            for (i, info) in bendInfos.enumerated() {
-                let touchesAsA = info.fromFlangeID == f.id
-                let touchesAsB = info.toFlangeID == f.id
-                guard touchesAsA || touchesAsB else { continue }
-                let alongU = touchesAsA ? info.aSeamAlongU : info.bSeamAlongU
-                let intersection = touchesAsA ? info.aIntersection : info.bIntersection
-                for cell in pieceCells {
-                    let cellRange = alongU ? cell.uRange : cell.vRange
-                    if abs(cellRange.lowerBound - intersection.lowerBound) < 1e-9
-                        && abs(cellRange.upperBound - intersection.upperBound) < 1e-9
-                    {
-                        matchedByBend[i] = cell.piece.id
-                        break
-                    }
-                }
-            }
-            return SplitResult(pieces: pieces, matchedByBend: matchedByBend)
-        }
-
-        /// Find the piece whose u-or-v range contains the bend's
-        /// intersection range; mark it as the matched piece for `bendIdx`.
-        fileprivate static func recordMatched(
-            for flangeID: String,
-            asPieceID pieceID: String,
-            bendInfos: [BendIntersection],
-            matchedPieceID: inout [Int: (a: String, b: String)]
-        ) {
-            for (i, info) in bendInfos.enumerated() {
-                if info.fromFlangeID == flangeID {
-                    let prevB = matchedPieceID[i]?.b ?? info.toFlangeID
-                    matchedPieceID[i] = (a: pieceID, b: prevB)
-                }
-                if info.toFlangeID == flangeID {
-                    let prevA = matchedPieceID[i]?.a ?? info.fromFlangeID
-                    matchedPieceID[i] = (a: prevA, b: pieceID)
-                }
-            }
+            return pieces
         }
 
         private static func isAxisAlignedRect(_ profile: [SIMD2<Double>]) -> Bool {
