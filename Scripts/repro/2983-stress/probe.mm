@@ -32,6 +32,7 @@
 #include <BRepFilletAPI_MakeFillet.hxx>
 #include <BRepGProp.hxx>
 #include <BRepOffsetAPI_MakePipeShell.hxx>
+#include <BRepOffsetAPI_MakeOffsetShape.hxx>
 #include <BRepOffsetAPI_ThruSections.hxx>
 #include <BRepPrimAPI_MakeBox.hxx>
 #include <BRepPrimAPI_MakeCone.hxx>
@@ -834,6 +835,23 @@ int main()
     printf("Bezier patch over the 4x4 grid: sum=(%.12g, %.12g, %.12g) (120, 120, 32/9 = %.12g); points off x = 15 v, y = 15 u, "
            "z = 18 u(1-u) v(1-v) by more than 1e-12: %d\n",
            sx, sy, sz, 32.0 / 9.0, mismatches);
+  }
+
+  // The Kilo WARNING on StressExhaustiveAPITests.offset: the test's comment says "a 12-wide box" and
+  // its assertion says volume 1200. What does the bridge's call, PerformBySimple on a 10 box by 1.0,
+  // actually produce? Shape.box(width:height:depth:) is centred on the origin, so the same here.
+  printf("== OffsetShape::PerformBySimple on the centred 10 box (offset(by:))\n");
+  {
+    TopoDS_Shape centred = BRepPrimAPI_MakeBox(gp_Pnt(-5, -5, -5), 10, 10, 10).Shape();
+    for (double d : {1.0, 2.0, -1.0}) {
+      BRepOffsetAPI_MakeOffsetShape off;
+      off.PerformBySimple(centred, d);
+      if (!off.IsDone()) { printf("offset %+g: not done\n", d); continue; }
+      TopoDS_Shape r = off.Shape();
+      printf("offset %+g: volume=%.10g area=%.10g faces=%d (a cube of side %g would be %.10g)\n",
+             d, vol(r), area(r), count(r, TopAbs_FACE), 10 + 2 * d, std::pow(10 + 2 * d, 3));
+      bbox(d == 1.0 ? "offset +1" : d == 2.0 ? "offset +2" : "offset -1", r);
+    }
   }
   return 0;
 }

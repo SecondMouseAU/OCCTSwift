@@ -292,11 +292,21 @@ struct StressShapeFeatureTests {
         #expect(abs(try #require(r.volume) - (1000 - 40 * .pi)) < 1e-6)
     }
 
-    // PerformBySimple offsets the faces without rounding the edges: a 12-wide box.
+    // PerformBySimple moves each face along its own normal by the distance and extends or trims
+    // nothing, so the result is NOT a larger box: it is still six 10 x 10 faces, area 600, and for a
+    // distance of 1 it is not a 12-wide cube (that would be 1728). Its volume is the divergence-theorem
+    // value (1/3) of the integral of p . n dS, which a shift of d along every face's normal raises by
+    // d * 600 / 3, so V = 1000 + 200 d: 1200, 1400 and 800 for d = 1, 2 and -1.
+    // Scripts/repro/2983-stress/probe.mm, "OffsetShape::PerformBySimple", measures all three.
     @Test func offset() throws {
-        let r = try #require(standardBox().offset(by: 1.0))
-        #expect(r.isValid)
-        #expect(abs(try #require(r.volume) - 1200) < 1e-6)
+        for distance in [1.0, 2.0, -1.0] {
+            let r = try #require(standardBox().offset(by: distance))
+            #expect(r.isValid, "offset \(distance)")
+            #expect(
+                abs(try #require(r.volume) - (1000 + 200 * distance)) < 1e-6, "offset \(distance)")
+            #expect(abs(try #require(r.surfaceArea) - 600) < 1e-6, "offset \(distance) area")
+            #expect(r.faces().count == 6, "offset \(distance) faces")
+        }
     }
 
     // Three translated copies in one compound, 15 apart along x: the centred box's x runs from -5 to
