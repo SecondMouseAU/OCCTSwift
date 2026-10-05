@@ -21,6 +21,10 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### Geom2d lines and conics tests pin derived values instead of a type or a count (#766)
+
+Eight Geom2d test files (`Geom2dLineTests`, `GccAnaCirc2d3TanTests`, `WireFromCurve2DOnPlaneTests`, `Geom2dEllipseTests`, `Geom2dParabolaTests`, `GccAnaBisectorTests`, `Issue1050BisectorDomainTests`, `MakeEdge2dExtensionsTests`) now assert the values the kernel returns, derived from the geometry where it can be, with controls on the refusal tests. Against the versions they replace, 159 of 198 injected defects went unnoticed and 24 of 61 tests caught nothing; now 190 are caught and no test catches nothing. Kernel defects found on the way are filed as #3039, #3042 and #3044.
+
 ### The BRepGraph construction-axis, history readback, recipe-resolver and absorb tests pin derived values instead of "it resolved" (#2983, #766, #3037, #3038)
 
 Four suites the #766 certification recorded Red and never rewrote, `ConstructionAxisTests`, `BRepGraphHistoryReadbackTests`, `TopologyRefResolverTests` and `GraphHistoryAbsorbTests`, are rewritten against `main`'s own kernel. All 48 of their tests now assert exact values derived from the geometry or from OCCT's own header and source, 9 tests are added, and the weak-assertion census reads 0 SEVERE and 0 ESCAPABLE where it read 4 and 44. Against 125 injected defects the old tests left 56 unnoticed and the new ones leave none. Four fixtures that had stopped meaning their name are replaced: the cylinder and torus origin tests asked at a vertex whose height equals the surface's own origin, the "helical edge" was one piece of a face the builder had shredded into 622 edges, so the fixture never contained a helix, and the tolerance test could not see the line that passes the edge's tolerance in. No library code changes.
