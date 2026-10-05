@@ -20,20 +20,6 @@
 # The identifier is matched against the text Swift Testing prints after `✘ Test `, up to the first
 # ` recorded an issue` or ` failed after`. Quote-wrapped display names are matched with their quotes.
 
-# --- the kernel skew: wasm is one patch behind native (#2827, #2873) --------------------------
-# These are NOT a wasm defect. `Scripts/wasm-kernel-pin.txt` acknowledges in prose that the
-# `v4.0.0-kernel.3` repin pinned patch `0043` (the by-plane `BRepGProp_Vinert` mass) on native
-# without taking the 69-minute wasm rebuild, so native carries 31 carried patches and wasm 30, and
-# `Face.volumeInertia(planeNormal:planeDistance:)` still returns the fabricated 0.0 here.
-#
-# Until #2793 that acknowledgement was a sentence in a text file. These four lines are the same claim
-# with a test behind it, which is the point: the next wasm kernel rebuild makes them pass, and the
-# runner then fails until they are deleted from this list.
-"a planar face's by-plane volume is its projected area times its centroid distance (#2827)"  # kernel skew
-"the by-plane column runs to the plane the caller named, not its mirror (#2873)"  # kernel skew
-"the by-plane first moments sum to the solid's (#2827)"  # kernel skew
-"the by-plane per-face sum is the volume, for any plane (#2827)"  # kernel skew
-
 # --- exact-equality baselines do not survive a different libm --------------------------------
 # `Issue791ConvertCircleHelperTests` (Geom2d, 2 tests) and `Issue791ConvertSphereHelperTests`
 # (Surface, 2 tests) each compare a computed pole against a hardcoded baseline with `==`,
