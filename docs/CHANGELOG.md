@@ -21,6 +21,10 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### Stress suites pin what the kernel answers where #766's Red rows left them accepting any answer (#2983, #766)
+
+Ninety-six tests in `StressExhaustiveAPITests`, `StressBuilderLifecycleTests` and `StressConcurrencyTests` now assert values worked out in closed form or reproduced by `Scripts/repro/2983-stress/probe.mm`, each beside a control that needs the opposite answer. Concurrency tests name the invariant a race would break (counts, sums, per-task values) instead of agreement between answers. Two ThruSections regression tests that the repin had left skipped on every default run now run. Under 63 injected defects the old versions of these tests catch 14; the new ones catch all 63. `HatchBuilder.nbIntervals(lineIndex: 0)` crashing the process is filed as #3057. Tests only.
+
 ### Every per-domain test suite now runs for wasm, and the five whole-target exclusions are gone (#2928)
 
 `Scripts/run-wasm-tests.sh` runs all 18 per-domain targets for `wasm32-unknown-wasip1`, up from 13,
