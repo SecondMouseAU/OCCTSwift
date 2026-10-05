@@ -1,0 +1,8 @@
+quarter arc r10: length=15.7079632679 param(L/2)=0.785398163397 point=(7.07106781187, 7.07106781187)
+segment (0,0)-(10,0) param at 0: done=1 param=0
+segment (0,0)-(10,0) param at 10: done=1 param=10
+segment (0,0)-(10,0) param at 1000: done=1 param=1000
+segment (0,0)-(20,0): 5 from u=10 -> 15; 7 from u=0 -> 7; length [0, that]=7
+segment (0,0)-(10,0) point at mid u=5: (5, 0)
+uniform 2 points on (0,0)-(5,5): n=2 first=(0, 0) last=(5, 5)
+project (10,0) on circle r5: nearest=(5, 0) distance=5 param=0
