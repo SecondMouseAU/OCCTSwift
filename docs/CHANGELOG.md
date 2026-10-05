@@ -25,6 +25,10 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 The three suites `Issue443FirstOfN`, `Issue442FixSolidMultiBody` and `Issue702SolidDemotion`, whose tests the #766 certification recorded Red and never rewrote, are rewritten against `main`'s kernel. Every result is now read body by body (type, faces, a positive volume read two ways, exact bounds, order against the input), every setup step is required rather than escaped, fixtures assert what makes them the fixture they claim to be, and nine tests are added: five that hand each operation bodies that arrive inside out and read every one afterwards, a history test whose fixture has a replacement to record, a hollow-body history test, and two `analyze` / `analyzeShell` tests. Against 116 injected defects the old tests missed 24 of 96 plausible wrong answers and the new ones miss 1, the order of `upgraded()`'s bodies, which that call does not promise. Two defects found on the way are filed: `Shape.analyze` reports 24 gaps and `isHealthy == false` for a flawless box (#3040), and `solidWithFullHistory(from:)` returns the unrepaired face of a body `ShapeFix_Solid` cannot close while its history reports the repair (#3041, carried as a known issue). No source changes.
 
+### Geom2d lines and conics tests pin derived values instead of a type or a count (#766)
+
+Eight Geom2d test files (`Geom2dLineTests`, `GccAnaCirc2d3TanTests`, `WireFromCurve2DOnPlaneTests`, `Geom2dEllipseTests`, `Geom2dParabolaTests`, `GccAnaBisectorTests`, `Issue1050BisectorDomainTests`, `MakeEdge2dExtensionsTests`) now assert the values the kernel returns, derived from the geometry where it can be, with controls on the refusal tests. Against the versions they replace, 159 of 198 injected defects went unnoticed and 24 of 61 tests caught nothing; now 190 are caught and no test catches nothing. Kernel defects found on the way are filed as #3039, #3042 and #3044.
+
 ### Every per-domain test suite now runs for wasm, and the five whole-target exclusions are gone (#2928)
 
 `Scripts/run-wasm-tests.sh` runs all 18 per-domain targets for `wasm32-unknown-wasip1`, up from 13,
