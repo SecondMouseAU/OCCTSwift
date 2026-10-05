@@ -4,13 +4,15 @@ import simd
 
 @testable import OCCTSwift
 
-/// #1511 Finding 1: `OCCTLPropAnalyticCurInf`'s `GeomAbs_Ellipse` branch
+/// #1511 Finding 1: OCCTLPropAnalyticCurInf's `GeomAbs_Ellipse` branch
 /// (`Sources/OCCTBridge/src/OCCTBridge_Geom2d_Adaptor.mm`) inverted the `LProp_MinCur`/
 /// `LProp_MaxCur` classification for every ellipse. `LProp_CurAndInf.hxx:53-57` defines
 /// `MinCur`/`MaxCur` by the **radius** of curvature, not curvature itself: for an ellipse
 /// `x=a*cosθ, y=b*sinθ` (a>=b), curvature is maximal (radius minimal -> MinCur) at `θ=0,π`
 /// (major-axis vertices) and minimal (radius maximal -> MaxCur) at `θ=π/2,3π/2` (minor-axis
-/// vertices). The old code had `bool isMin = (k == 1 || k == 3);`, tagging the minor-axis
+/// vertices).
+///
+/// The old code had `bool isMin = (k == 1 || k == 3);`, tagging the minor-axis
 /// vertices `MinCur` and the major-axis vertices `MaxCur` -- backwards.
 ///
 /// Fixture: `Geom2d_Ellipse(major=10, minor=5)`, matching the issue's own ground-truth

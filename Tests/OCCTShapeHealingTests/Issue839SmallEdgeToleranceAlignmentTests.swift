@@ -35,7 +35,9 @@ struct Issue839SmallEdgeToleranceAlignmentTests {
     }
 
     /// The exact scenario #839 reports: an edge sized between the old outlier default (`1e-6`)
-    /// and the shared aligned default (`1e-7`). Before the fix, `droppingSmallEdges()` (old
+    /// and the shared aligned default (`1e-7`).
+    ///
+    /// Before the fix, `droppingSmallEdges()` (old
     /// default `1e-6`) drops it while `fixSmallEdges(dropSmall: true)` (`1e-7`) keeps it -- two
     /// APIs documented as the same operation disagreeing on the same geometry. After the fix, both
     /// share `1e-7` and agree.

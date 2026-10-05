@@ -73,7 +73,9 @@ struct Issue2650LocatedInstanceFindNode {
     }
 
     /// The two occurrences collapse onto one definition node, which is what the kernel's own
-    /// aliasing does. Asserted rather than left implicit, because a downstream table keying a
+    /// aliasing does.
+    ///
+    /// Asserted rather than left implicit, because a downstream table keying a
     /// per-instance identity off this node would be keying off the definition.
     @Test func bothOccurrencesResolveToTheSameDefinitionNode() {
         guard let box = Shape.box(width: 10, height: 8, depth: 6),
@@ -116,7 +118,9 @@ struct Issue2650LocatedInstanceFindNode {
     }
 
     /// Case C from the issue, which already worked and must keep working: the placed solid as
-    /// the graph's own root. Here the definition carries the root's placement, so the direct
+    /// the graph's own root.
+    ///
+    /// Here the definition carries the root's placement, so the direct
     /// key hits and no alias key is needed.
     @Test func placedSolidAsTheGraphRootStillResolves() {
         guard let box = Shape.box(width: 10, height: 8, depth: 6),
@@ -132,6 +136,7 @@ struct Issue2650LocatedInstanceFindNode {
     }
 
     /// A nested placement, so a sub-shape carries two composed locations rather than one.
+    ///
     /// Stripping the whole composed placement is the right key because the kernel stores a
     /// compound child's definition at the identity.
     @Test func nestedPlacementResolves() {
@@ -156,7 +161,7 @@ struct Issue2650LocatedInstanceFindNode {
     /// The second construction, and it does not go through `moved(dx:dy:dz:)`, the call the
     /// fix was measured on. `located(matrix:)` reaches `OCCTShapeLocated` in a different
     /// bridge function and builds the placement from twelve doubles, so a fix that happened
-    /// to work only for `TopoDS_Shape::Moved`'s own translation would fail here.
+    /// to work only for TopoDS_Shape::Moved's own translation would fail here.
     ///
     /// The two constructions are proved to agree on everything except the placement: same
     /// sub-shape counts, same resolved node for the corresponding solid.
@@ -198,7 +203,9 @@ struct Issue2650LocatedInstanceFindNode {
         }
     }
 
-    /// The bound on the fix: a placed shape the graph never ingested stays unresolved. The
+    /// The bound on the fix: a placed shape the graph never ingested stays unresolved.
+    ///
+    /// The
     /// graph holds the unplaced box, the query is the same part somewhere else, and
     /// `hasNode(for:)` still means "was part of construction input".
     @Test func placedShapeTheGraphNeverIngestedStaysUnresolved() {

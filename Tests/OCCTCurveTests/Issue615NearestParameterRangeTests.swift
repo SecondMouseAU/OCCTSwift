@@ -8,7 +8,9 @@ import Testing
 /// #539 established that `GeomAPI_ProjectPointOnCurve::LowerDistance()` reports an extremum, which
 /// on a bounded curve is neither necessarily the nearest point nor necessarily present at all, and
 /// introduced `occtNearestPointOnCurveRange`, the minimum over `ShapeAnalysis_Curve`, every
-/// extremum in range, and both ends. Three entry points were converted. The shared helper behind
+/// extremum in range, and both ends.
+///
+/// Three entry points were converted. The shared helper behind
 /// `Curve3D.nearestParameter(to:)` and `Curve3D.locateNearestPoint`'s full-range fallback was not.
 ///
 /// So the two spellings of the same question disagreed about **which** point is nearest and about
@@ -57,7 +59,9 @@ struct Issue615NearestParameterRangeTests {
     }
 
     /// The second row of #580's table, on the curve rather than the edge: a point that lies on the
-    /// full circle but not on this half of it. The extremum is the mirrored point at distance 10.
+    /// full circle but not on this half of it.
+    ///
+    /// The extremum is the mirrored point at distance 10.
     @Test("A point on the circle but off the arc answers with the arc's end")
     func pointOnTheCircleButOffTheArc() throws {
         let arc = try #require(halfCircle())
@@ -80,7 +84,9 @@ struct Issue615NearestParameterRangeTests {
         #expect(segment.nearestParameter(to: SIMD3(-50, 3, 0)) == 3)
     }
 
-    /// The property the issue is actually about: the two spellings must not disagree. Swept over
+    /// The property the issue is actually about: the two spellings must not disagree.
+    ///
+    /// Swept over
     /// both defect geometries plus an ordinary interior projection, an unbounded line and a full
     /// circle, so a future change that fixes one entry point and not the other fails here.
     @Test("nearestParameter and projectPoint agree on every query")
@@ -118,7 +124,9 @@ struct Issue615NearestParameterRangeTests {
     }
 
     /// `Curve3D.locateNearestPoint(_:initParam:tolerance:)` shares the helper, and its full-range
-    /// fallback inherited both defects. The fallback fires when the ±10% window around the guess
+    /// fallback inherited both defects.
+    ///
+    /// The fallback fires when the ±10% window around the guess
     /// holds no extremum, which is exactly the situation the guess was closest to being right in.
     ///
     /// Before #615, a guess sitting *on* the true nearest point returned the point diametrically

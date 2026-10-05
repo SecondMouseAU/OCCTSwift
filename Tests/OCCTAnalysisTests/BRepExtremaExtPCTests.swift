@@ -6,7 +6,9 @@ import simd
 
 @Suite("BRepExtrema_ExtPC Tests")
 struct BRepExtremaExtPCTests {
-    /// Every edge answers. This used to loop "until we find one that gives a valid extremum", a
+    /// Every edge answers.
+    ///
+    /// This used to loop "until we find one that gives a valid extremum", a
     /// workaround for how often a point with no perpendicular foot came back nil, and asserted
     /// `solutionCount > 0`, which the guard it was testing made unfalsifiable. See #580.
     @Test("Point to edge distance on box")

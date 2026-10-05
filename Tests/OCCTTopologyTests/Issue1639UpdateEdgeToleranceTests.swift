@@ -5,7 +5,7 @@ import Testing
 
 /// #1639: `OCCTBRepLibUpdateEdgeTolerance` hardcoded `MaxToleranceToCheck` as `tolerance * 100`,
 /// a factor that appeared in no header, doc or changelog, and it returned
-/// `BRepLib::UpdateEdgeTol`'s `Bool`, which is `true` on every path that is not a refusal.
+/// BRepLib::UpdateEdgeTol's `Bool`, which is `true` on every path that is not a refusal.
 ///
 /// The issue's own measurement is eight runs that returned `true` and moved nothing. The
 /// assertion that catches that is not "the call returned non-nil": it is the pair of tolerances

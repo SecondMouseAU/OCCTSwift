@@ -5,6 +5,7 @@ import simd
 @testable import OCCTSwift
 
 /// Shared test fixture for creating an open shell (5 of 6 faces) from a box at a given origin.
+///
 /// Internal so it can be used across test files in the OCCTAnalysisTests module.
 internal func makeOpenShellFromBox(origin: SIMD3<Double> = .zero) throws -> Shape {
     let box = try #require(
@@ -38,7 +39,9 @@ struct ZeroMassResultsTests {
         return try #require(Shape.fromEdge(e))
     }
 
-    /// Five of the box's six faces, sewn. Closed everywhere except one opening.
+    /// Five of the box's six faces, sewn.
+    ///
+    /// Closed everywhere except one opening.
     private func openShell() throws -> Shape {
         try makeOpenShellFromBox()
     }
@@ -81,7 +84,9 @@ struct ZeroMassResultsTests {
 
     /// `signedVolume` is deliberately NOT given the strict treatment: it is an orientation signal,
     /// and the flux integral's sign is sound for an open surface even though its magnitude is not a
-    /// volume. Measured: +4800 forward and -4800 reversed for five faces of this box.
+    /// volume.
+    ///
+    /// Measured: +4800 forward and -4800 reversed for five faces of this box.
     ///
     /// This is load-bearing. `Shape.sweep` normalises an inward-facing pipe through
     /// `orientedForward()` (#170), and a pipe sweep produces an *open shell*, so routing this
@@ -129,7 +134,9 @@ struct ZeroMassResultsTests {
     }
 
     /// The behaviour change with downstream teeth. `BRep_Tool::IsClosed` counts topological edge
-    /// sharing, so faces that merely coincide geometrically are not a closed shell. Sewing is what
+    /// sharing, so faces that merely coincide geometrically are not a closed shell.
+    ///
+    /// Sewing is what
     /// makes them one.
     @Test("faces must be sewn before they have a volume")
     func unsewnFacesHaveNoVolume() throws {
@@ -147,7 +154,9 @@ struct ZeroMassResultsTests {
 
     // MARK: - the sentinel
 
-    /// The reason none of this could be papered over downstream with `if com == .zero`. A zero-mass
+    /// The reason none of this could be papered over downstream with `if com == .zero`.
+    ///
+    /// A zero-mass
     /// framework seeds itself with the shape's *location*, so the wrong answer was a plausible
     /// point that followed the part around. `moved(dx:dy:dz:)` sets a real `TopLoc_Location`,
     /// unlike `translated(by:)` which bakes the transform into the geometry.
@@ -224,7 +233,9 @@ struct ZeroMassResultsTests {
         #expect(abs(area.mass - 600.0) < 1e-6)
     }
 
-    /// Three equal moments read as spherical symmetry, and at zero mass all three are equal. Every
+    /// Three equal moments read as spherical symmetry, and at zero mass all three are equal.
+    ///
+    /// Every
     /// shape below a solid used to claim it.
     @Test("symmetryAxes is empty outside the volume domain, and unchanged inside it")
     func symmetryAxesDomain() throws {
@@ -307,7 +318,9 @@ struct ZeroMassResultsTests {
     /// The other half of `perFaceInertiaKeepsMass`, and the case the reproducer names
     /// (`Vinert(coplanar face) : mass=0.000000`). `BRepGProp_Vinert` integrates the volume between
     /// a face and its location point, which the bridge fixes at the origin, so a planar face whose
-    /// own plane contains the origin contributes exactly nothing. The 0 is a real summand and stays;
+    /// own plane contains the origin contributes exactly nothing.
+    ///
+    /// The 0 is a real summand and stays;
     /// the centroid it has no basis for does not.
     @Test("a zero volume contribution keeps its 0 and drops its centroid")
     func perFaceVolumeInertiaRefusesAZeroContribution() throws {
@@ -350,7 +363,9 @@ struct ZeroMassResultsTests {
         #expect(meshed.centerOfMass != nil)
     }
 
-    /// `BRepGProp_MeshCinert` needs at least two points. Below that the bridge returns a zeroed
+    /// `BRepGProp_MeshCinert` needs at least two points.
+    ///
+    /// Below that the bridge returns a zeroed
     /// result, and the (0,0,0) in it was indistinguishable from a polygon centred on the origin.
     @Test("meshCinertCompute has no centroid below two points")
     func meshCinertBelowTwoPointsHasNoCentroid() {
@@ -395,7 +410,9 @@ struct ZeroMassResultsTests {
     }
 
     /// `GProp_PGProps::AddPoint` throws `Standard_DomainError` on the first weight that is not
-    /// strictly positive, discarding the whole set. That used to surface as mass 0 with a centroid
+    /// strictly positive, discarding the whole set.
+    ///
+    /// That used to surface as mass 0 with a centroid
     /// of (0,0,0), which reads as success.
     @Test("a non-positive weight rejects the set rather than reporting the origin")
     func nonPositiveWeightIsRejected() {
@@ -412,7 +429,9 @@ struct ZeroMassResultsTests {
         }
     }
 
-    /// The two zero-mass cases in the analytic helpers, which #609 treats differently. A valid
+    /// The two zero-mass cases in the analytic helpers, which #609 treats differently.
+    ///
+    /// A valid
     /// element measured over an empty range keeps its correct answer; an input OCCT rejects has no
     /// answer at all.
     ///

@@ -20,7 +20,8 @@ three more of its counted claims about the repo's own shape had no derivation at
 swift-format exemption manifest, the bridge file counts and the test-target list. The manifest is
 the sharpest case, because it is the one inventory designed to drain: #2852's rule is that a PR
 touching an exempt file brings it into compliance and deletes its line, so that number falls on its
-own and the prose was stale within days of being written. The bridge counts are the opposite shape
+own and the prose was stale within days of being written. (The manifest drained to nothing and was
+retired, this gate's reader of it with it.) The bridge counts are the opposite shape
 and failed the same way: "All 33 bridge files are enforced" described the tree before the
 #1378/#1380 split multiplied it to 93, and no edit was needed to make the sentence wrong.
 
@@ -200,24 +201,6 @@ def hook_invocations(text=None):
     return len(re.findall(r'^run "[^"]+"\s+Scripts/[A-Za-z0-9_.-]+\.py', text, re.MULTILINE))
 
 
-def style_manifest_entries(rel):
-    """The files listed on a shrink-only style exemption manifest, parsed as its own gate parses it.
-
-    #2910. ``Scripts/style-manifest-swift-wave2.txt`` is the one inventory in this repo designed to
-    drain continuously: #2852's rule is that a PR touching an exempt file brings it into compliance
-    and deletes its line, so the count falls with nearly every such PR. ``CLAUDE.md`` stated that
-    count in prose and nothing read it, which made it the claim most certain to go stale and the
-    only one that would do so silently every time the rule worked as intended.
-
-    The line test is `Scripts/check-style-manifest.py`'s `read_manifest_at`, character for
-    character: non-blank and not starting with `#`. Two readers of one file that disagreed about
-    what an entry is would produce two defensible counts for the same manifest, which is the shape
-    of drift this gate exists to end rather than to introduce.
-    """
-    return [line.strip() for line in read(rel).splitlines()
-            if line.strip() and not line.strip().startswith("#")]
-
-
 def bridge_source_files(*suffixes):
     """Every file under Sources/OCCTBridge/ with one of `suffixes`, recursively.
 
@@ -236,15 +219,14 @@ def bridge_source_files(*suffixes):
 
 
 def bridge_enforced_files():
-    r"""The population `Scripts/format-bridge.sh` clang-formats: the bridge tree minus its manifest.
+    r"""The population `Scripts/format-bridge.sh` clang-formats: every bridge header and `.mm`.
 
-    Mirrors that script's `enforced_files()`, which is `comm -23` of `find Sources/OCCTBridge
-    \( -name '*.h' -o -name '*.mm' \)` against `Scripts/style-manifest-bridge.txt`. The manifest
-    is empty today, so the two numbers coincide; deriving the subtraction anyway means the prose
-    stays true if a file is ever exempted, which is the whole reason the manifest exists.
+    Mirrors that script's `enforced_files()`, which is `find Sources/OCCTBridge \( -name '*.h' -o
+    -name '*.mm' \)`. There is no exemption list to subtract: the bridge manifest was empty for
+    months before it was retired, and the Swift one was retired with it, so every file is enforced
+    by construction.
     """
-    exempt = set(style_manifest_entries("Scripts/style-manifest-bridge.txt"))
-    return [f for f in bridge_source_files(".h", ".mm") if f not in exempt]
+    return bridge_source_files(".h", ".mm")
 
 
 def bridge_domain_headers():
@@ -333,23 +315,8 @@ def facts():
         # scripts, because that is what the sentence counts.
         "job_invocations": gate_job_invocations(),
         "hook_invocations": hook_invocations(),
-        # #2910: the inventory built to drain. Every PR that touches an exempt Swift file deletes
-        # its line, so this number falls on its own and the prose that stated it was stale within
-        # days of being written.
-        #
-        # #2954: and it is the one derived fact here with NO claim in CLAIMS, deliberately. The
-        # gate worked; the claim was the problem. It is shared by every open PR and invalidated by
-        # every merged one, so on 2026-10-02 it went 267 to 262 in a day and failed three unrelated
-        # PRs at merge time, after review and CI had passed. Rehoming the sentence would have moved
-        # the collision with it, because what collides is the number rather than its address, so
-        # the sentence is gone and no file states the figure. The fact stays derived because run()
-        # prints it: that is the cheap answer for anyone who wants it, with nothing to go stale.
-        # Do not register a claim for it without reading #2954 first.
-        "swift_wave2_exempt": len(
-            style_manifest_entries("Scripts/style-manifest-swift-wave2.txt")),
-        # #2910: the three bridge-tree counts CLAUDE.md states and nothing read. Unlike the
-        # manifest these grow, and two of the three were already wrong when the sweep measured
-        # them, left behind by the #1378/#1380 split.
+        # #2910: the three bridge-tree counts CLAUDE.md states and nothing read. Two of the three
+        # were already wrong when the sweep measured them, left behind by the #1378/#1380 split.
         "bridge_enforced_files": len(bridge_enforced_files()),
         "bridge_domain_headers": len(bridge_domain_headers()),
         "bridge_include_headers": len(bridge_domain_headers()) + 1,
@@ -434,7 +401,7 @@ CLAIMS = [
     # #2910, the bridge tree. "All N bridge files are enforced" said 33 against a tree of 93, and
     # CLAUDE.md's architecture block said 16 headers and one .mm per domain against 18 and 74. Both
     # predate the #1378/#1380 split, which is how a sentence goes stale without anybody editing it.
-    # #2954 moved the enforced-population sentence to the policy that owns the manifest, and
+    # #2954 moved the enforced-population sentence to the policy that owns the population, and
     # deleted CLAUDE.md's three architecture numbers outright rather than rehoming them, because
     # README.md and docs/architecture/overview.md already state and gate all three below.
     #
@@ -923,8 +890,6 @@ def run():
           "%d scripts total"
           % (values["gate_scripts"], values["census_scripts"], values["audit_scripts"],
              values["release_check_scripts"], values["job_scripts"]))
-    print("  swift-format exemptions: %d still listed on style-manifest-swift-wave2.txt"
-          % values["swift_wave2_exempt"])
     print("  bridge: %d enforced files, %d headers (umbrella + %d per-domain), "
           "%d Objective-C++ implementations"
           % (values["bridge_enforced_files"], values["bridge_include_headers"],
@@ -1295,45 +1260,7 @@ def self_test():
          patch_number("0010-Intf-319") == 10 and patch_number("wasi-osd-environment") is None
          and patch_number("001-too-short") is None)
 
-    # 13. #2910: the manifest reader, the bridge-tree readers and the test-target list.
-    #
-    #     The manifest parse is held to `check-style-manifest.py`'s, because the count is only
-    #     meaningful if both readers agree what an entry is: a comment line or a blank counted as
-    #     an entry would make the prose and the shrink rule describe different inventories.
-    manifest_sample = (
-        "# a header comment\n"
-        "#\n"
-        "Tests/A.swift\n"
-        "\n"
-        "   Tests/B.swift   \n"
-        "   # an indented comment\n")
-    saved_read_13 = read
-    try:
-        globals()["read"] = lambda rel: manifest_sample
-        entries = style_manifest_entries("whatever")
-    finally:
-        globals()["read"] = saved_read_13
-    case("manifest-reader-counts-entries-not-comments-or-blanks",
-         entries == ["Tests/A.swift", "Tests/B.swift"], str(entries))
-
-    #     #2954: the manifest's size is registered in NO claim, and that is the thing to hold. It
-    #     was a claim, the claim passed, and passing is what cost three PRs a red merge in one day,
-    #     because every open branch shares the number and every merged one moves it. A future
-    #     sweep that re-adds a sentence stating it, in any file, fails here and is sent to read the
-    #     issue before deciding again. The figure is not lost: run() prints it, derived.
-    case("wave2-manifest-count-is-claimed-in-no-prose",
-         not any(fact == "swift_wave2_exempt" for _rel, _pattern, fact in CLAIMS),
-         ", ".join(rel for rel, _p, fact in CLAIMS if fact == "swift_wave2_exempt"))
-    case("wave2-manifest-count-is-still-derived-and-reported",
-         "swift_wave2_exempt" in values,
-         "entries=%s" % values.get("swift_wave2_exempt"))
-
-    #     The view check that outlived the claim. A mistyped manifest path would read as an empty
-    #     file and derive zero, and with nothing to compare against, a zero would simply be
-    #     printed as fact. The live manifest is the only thing that can say the reader found it.
-    case("wave2-manifest-is-read-from-the-real-file",
-         values["swift_wave2_exempt"] > 0,
-         "entries=%d" % values["swift_wave2_exempt"])
+    # 13. #2910: the bridge-tree readers and the test-target list.
 
     for fact in ("bridge_enforced_files", "bridge_domain_headers", "bridge_include_headers",
                  "bridge_impl_files"):

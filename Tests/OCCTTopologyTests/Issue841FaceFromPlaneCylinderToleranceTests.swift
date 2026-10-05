@@ -6,8 +6,10 @@ import simd
 /// #841: `Shape.faceFromPlane`/`faceFromCylinder` were duplicated as two unrelated static-factory
 /// pairs -- one (`uRange`/`vRange`) taking an explicit `tolerance`, driving `BRepLib_MakeFace`
 /// directly; the other (`uBounds`/`vBounds`) with NO tolerance parameter at all, driving
-/// `BRepBuilderAPI_MakeFace`'s tolerance-less constructor, which hardcodes `Precision::Confusion()`
-/// (`1e-7`) internally. Fixed by having the `uBounds`/`vBounds` pair delegate to the
+/// BRepBuilderAPI_MakeFace's tolerance-less constructor, which hardcodes `Precision::Confusion()`
+/// (`1e-7`) internally.
+///
+/// Fixed by having the `uBounds`/`vBounds` pair delegate to the
 /// `uRange`/`vRange` pair with an additive `tolerance` parameter defaulting to that same `1e-7`,
 /// so existing callers see byte-identical geometry and new callers can control the tolerance.
 @Suite("Issue #841: faceFromPlane/faceFromCylinder tolerance consolidation")
@@ -19,7 +21,9 @@ struct Issue841FaceFromPlaneCylinderToleranceTests {
     /// (`tolerance` itself has no observable effect on this geometry -- `BRepLib_MakeFace::Init`
     /// always builds the face at `Precision::Confusion()` regardless of the caller's `TolDegen`;
     /// that parameter only matters for degenerate-curve collapse, which a plain rectangle never
-    /// reaches. What this test actually proves is that the two overloads drive the identical
+    /// reaches.
+    ///
+    /// What this test actually proves is that the two overloads drive the identical
     /// `BRepLib_MakeFace` call with the identical arguments, which is the substance of #841.)
     @Test("faceFromPlane's uBounds overload matches the uRange overload")
     func faceFromPlaneDelegatesWithMatchingDefault() throws {

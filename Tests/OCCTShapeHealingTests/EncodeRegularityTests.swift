@@ -30,7 +30,7 @@ struct EncodeRegularityTests {
     /// exactly one edge, tilted out of plane by `thetaRadians`. `BRepLib::ContinuityOfFaces`
     /// compares the two faces' cross-edge derivative directions against the angular tolerance it is
     /// given, so this edge's "how non-planar is the join" measurement *is* `thetaRadians`, by
-    /// construction: verified directly (a binary search over `Shape.continuityClassOfFaces`'s own
+    /// construction: verified directly (a binary search over Shape.continuityClassOfFaces's own
     /// `tolerance:` parameter, against this exact fixture) to give a continuity flip threshold
     /// matching `thetaRadians` to within float rounding, for values spanning 1e-4 down to 1e-11 rad.
     ///
@@ -45,7 +45,9 @@ struct EncodeRegularityTests {
     /// pairing edges across siblings, so two loose compound faces never see each other. A
     /// `TopoDS_Shell` (`Shape.shellFromFaces`) is the shape this bridge function is meant to run on.
     private func nearTangentShell(thetaRadians: Double) -> Shape? {
+        // swift-format-ignore: AlwaysUseLowerCamelCase
         let W = 10.0
+        // swift-format-ignore: AlwaysUseLowerCamelCase
         let H = 1.0e7  // far corner deviation H*theta must clear any incidental welding tolerance
         let p0 = SIMD3<Double>(0, 0, 0)
         let p1 = SIMD3<Double>(W, 0, 0)
@@ -97,7 +99,7 @@ struct EncodeRegularityTests {
         return Shape.shellFromFaces([face1, face2])
     }
 
-    /// The topological reverse of `edge`'s orientation (`TopoDS_Shape::Reversed()`), still an
+    /// The topological reverse of edge's orientation (`TopoDS_Shape::Reversed()`), still an
     /// `Edge` sharing the same underlying curve — used to force a wire's traversal direction
     /// rather than reordering points, since `Wire.wireFromEdges` connects edges as given.
     private func reversed(_ edge: Edge) -> Edge? {

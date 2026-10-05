@@ -38,7 +38,9 @@ struct Issue735PocketEnclosureTests {
 
     // MARK: - The headline: one wall, fully enclosed
 
-    /// The issue's own construction, byte for byte. A cylindrical bore has exactly one wall
+    /// The issue's own construction, byte for byte.
+    ///
+    /// A cylindrical bore has exactly one wall
     /// (the cylinder's lateral face) and is fully enclosed: the floor's entire boundary (a
     /// single circular edge) is shared with that one wall. `wallIndices.count < 3` reported
     /// this as open; it is not.
@@ -60,7 +62,9 @@ struct Issue735PocketEnclosureTests {
     // MARK: - Non-regression: the square pocket everyone already relies on
 
     /// A square pocket's four walls each cover exactly one of the floor's four boundary
-    /// edges, closing the loop. This was already correct under the old wall-count formula
+    /// edges, closing the loop.
+    ///
+    /// This was already correct under the old wall-count formula
     /// (4 is not < 3); it must stay correct under the enclosure test.
     @Test("a square pocket (four walls) is fully enclosed")
     func squarePocketIsEnclosed() throws {
@@ -81,7 +85,9 @@ struct Issue735PocketEnclosureTests {
     /// A slot cut so it opens through the box's own side face: two side walls and one end
     /// wall (3 walls total), but the floor's fourth boundary edge, where the slot exits
     /// the part, borders no wall at all. `wallIndices.count < 3` reported this as closed
-    /// (3 is not < 3); it is open. Measured: floor has 4 boundary edges, the 3 walls cover
+    /// (3 is not < 3); it is open.
+    ///
+    /// Measured: floor has 4 boundary edges, the 3 walls cover
     /// only 3 of them.
     @Test("a three-walled slot that opens through the parent's side is NOT enclosed")
     func openThreeWalledSlotIsNotEnclosed() throws {
@@ -101,7 +107,9 @@ struct Issue735PocketEnclosureTests {
     }
 
     /// The threshold's counterexample in the other direction: three walls that DO close the
-    /// loop. A triangular pocket's three walls each cover exactly one of the floor's three
+    /// loop.
+    ///
+    /// A triangular pocket's three walls each cover exactly one of the floor's three
     /// boundary edges. Paired with the previous test, this is the pair the old formula could
     /// not tell apart: both have `wallIndices.count == 3`, one open and one closed.
     @Test("a three-walled triangular pocket IS fully enclosed")
@@ -128,7 +136,9 @@ struct Issue735PocketEnclosureTests {
     // MARK: - Non-regression: fewer than three walls, genuinely open
 
     /// A through-slot spanning the box's full width has two side walls and no end wall at
-    /// all; both ends are open. This was already correctly `isOpen == true` under the old
+    /// all; both ends are open.
+    ///
+    /// This was already correctly `isOpen == true` under the old
     /// formula (2 < 3); confirms the new enclosure test agrees for the case the old formula
     /// got right by coincidence of count, not by measuring enclosure.
     @Test("a two-walled through-slot is not enclosed")
@@ -166,7 +176,9 @@ struct Issue735PocketEnclosureTests {
 struct Issue753PocketBossWireScopeTests {
 
     /// The adjudicated worked example, byte for byte: a rectangular pocket open on one side,
-    /// with a cylindrical boss standing on the floor. The boss's wall passes every
+    /// with a cylindrical boss standing on the floor.
+    ///
+    /// The boss's wall passes every
     /// `wallFaceIndices` filter and is counted as a wall (`wallFaceIndices.count == 4`, not 3),
     /// but the pocket is still open on the side with no wall at all: the boss must not be able
     /// to mask that gap.
@@ -204,7 +216,9 @@ struct Issue753PocketBossWireScopeTests {
     }
 
     /// The other direction: a boss on the floor of an otherwise fully enclosed pocket must not
-    /// make the pocket look open either. This is not the bug #753 found (that direction is
+    /// make the pocket look open either.
+    ///
+    /// This is not the bug #753 found (that direction is
     /// already covered above), but it rules out an overcorrection where the fix starts ignoring
     /// real wall coverage whenever any inner wire is present.
     @Test("a fully enclosed pocket with a floor boss is still enclosed")

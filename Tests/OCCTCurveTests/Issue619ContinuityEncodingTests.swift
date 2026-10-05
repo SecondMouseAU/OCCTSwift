@@ -113,7 +113,8 @@ struct Issue619ContinuityEncodingTests {
         #expect(ContinuityClass.c1.rawValue != ParametricContinuity.c1.rawValue)  // 2 vs 1
         #expect(ContinuityClass.c2.rawValue != ParametricContinuity.c2.rawValue)  // 4 vs 2
         #expect(ContinuityClass.c3.rawValue != ParametricContinuity.c3.rawValue)  // 5 vs 3
-        #expect(ContinuityClass.c0.rawValue == ParametricContinuity.c0.rawValue)  // 0, the only match
+        // 0, the only match
+        #expect(ContinuityClass.c0.rawValue == ParametricContinuity.c0.rawValue)
 
         // `satisfies(_:)` is the bridge between them and takes the request vocabulary by type,
         // so the mismatched constant cannot be written at all (#485, #623).

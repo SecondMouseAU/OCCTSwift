@@ -67,7 +67,7 @@ The `normal` is normalised at init time; `vAxis` defaults to `cross(normal, uAxi
   - `normal`: extrusion direction; normalised automatically.
   - `uAxis`: local U axis in world space.
   - `vAxis`: local V axis; computed from `normal × uAxis` if omitted.
-- **Note:** Stepped-seam bends (issue #86, v0.153) require rectangular profiles for split-flange support; non-rectangular profiles still work when no step split is needed.
+- **Note:** Stepped-seam bends (issue #86, v0.153) require rectangular profiles for split-flange support; non-rectangular profiles still work when no step split is needed. A seam diagonal to the flange's own axes needs no split at all, so it works on any profile (#3033).
 - **Example:**
   ```swift
   let base = SheetMetal.Flange(
@@ -123,8 +123,8 @@ public struct Bend: Sendable {
 
 - `angle`: bend angle in radians; `nil` means infer from flange placements. `0` = flat continuation; `±π` = fully closed. Positive = concave; negative = convex. When `direction` is `.auto` (the default), a non-nil, non-zero `angle` decides concave vs. convex by this sign, overriding geometric inference; an explicit `direction` always wins over `angle`.
 - `insideRadius`: concave (inner) bend radius. `0` for a sharp inside corner.
-- `outsideRadius`: convex (outer) bend radius; documented default is `insideRadius + thickness` when `nil`, but **not yet read by `Builder.build()`** — setting it has no effect on the built shape today (#1565).
-- `materialThicknessAtBend`: material thickness through the bend zone; documented default is the builder's global `thickness`, but **not yet read by `Builder.build()`** — setting it has no effect on the built shape today (#1565).
+- `outsideRadius`: convex (outer) bend radius; documented default is `insideRadius + thickness` when `nil`, but **not yet read by `Builder.build()`**, so setting it has no effect on the built shape today (#1565).
+- `materialThicknessAtBend`: material thickness through the bend zone; documented default is the builder's global `thickness`, but **not yet read by `Builder.build()`**, so setting it has no effect on the built shape today (#1565).
 - `direction`: explicit override; defaults to `.auto`.
 
 ---
@@ -147,7 +147,7 @@ Convex (outer) bend radius; documented default is `insideRadius + thickness` whe
 
 ### `Bend.materialThicknessAtBend`
 
-Material thickness through the bend zone; documented default is the builder's global `thickness`. **Not yet read by `Builder.build()`** — same gap as `outsideRadius` above. Set to a fraction for etched/thinned bend lines is the intended, not-yet-implemented, use (#1565).
+Material thickness through the bend zone; documented default is the builder's global `thickness`. **Not yet read by `Builder.build()`**: same gap as `outsideRadius` above. Set to a fraction for etched/thinned bend lines is the intended, not-yet-implemented, use (#1565).
 
 ---
 
@@ -249,7 +249,7 @@ public enum BuildError: Error, CustomStringConvertible {
 | `.flangeExtrusionFailed` | `Shape.extrude` returned `nil` for this flange. |
 | `.unionFailed` | Boolean union of extruded pieces failed. |
 | `.parallelFlangesHaveNoSeam` | The two flanges are parallel: their normals' cross-product is zero, so there is no seam line. |
-| `.noSeamEdgeFound` | Union succeeded but no shared seam edge was found between the two flanges' matched-extent pieces. |
+| `.noSeamEdgeFound` | Union succeeded but no shared seam edge was found between the two flanges, inside the run of the seam both occupy. |
 | `.filletFailed` | `Shape.filleted(edges:radius:)` returned `nil` for the seam edge(s). |
 | `.seamsDoNotOverlap` | The two flanges' seam-direction extents have no overlap: they cannot meet. |
 | `.nonRectangularStepFlange` | A stepped-seam bend targets a non-rectangular flange profile; v0.153 split logic requires rectangles. |
@@ -290,7 +290,7 @@ The two flanges are parallel: their normals' cross-product is zero, so there is 
 
 ### `BuildError.noSeamEdgeFound`
 
-Union succeeded but no shared seam edge was found between the two flanges' matched-extent pieces.
+Union succeeded but no shared seam edge was found between the two flanges, inside the run of the seam both occupy.
 
 ### `BuildError.filletFailed`
 
@@ -360,13 +360,19 @@ public func build(flanges: [Flange], bends: [Bend] = []) throws -> Shape
 **Build sequence:**
 
 1. Validate `thickness > 0` and `flanges` non-empty; check all `Bend` IDs exist.
-2. For each bend, compute the seam direction (`cross(a.normal, b.normal)`) and the overlap range along the seam. If a flange extends past the intersection (a *stepped* seam), split that flange's profile at the intersection endpoints, the matched-extent middle piece carries the bend; outer pieces remain flat.
+2. For each bend, compute the seam direction (`cross(a.normal, b.normal)`) and the overlap range along the seam. If a flange extends past the intersection (a *stepped* seam), split that flange's profile at the intersection endpoints; the pieces outside the bend remain flat.
 3. Extrude every piece via `Wire.polygon3D` + `Shape.extrude(profile:direction:length:)`.
 4. Fuse all pieces with sequential `Shape.union`.
-5. For each **concave** bend: locate seam edges between the matched-extent pieces, **restricted to the run of the seam line the bend itself occupies**, and call `Shape.filleted(edges:radius:)`.
-   For each **convex** bend: build a curved-triangle prism of bend material (three-point arc cross-section extruded along the seam) and fuse it in.
+5. For each **concave** bend: locate seam edges between the two flanges you declared, **restricted to the run of the seam line the two share**, and call `Shape.filleted(edges:radius:)`.
+   For each **convex** bend: build a curved-triangle prism of bend material (three-point arc cross-section extruded along the seam, **cut to that same run**) and fuse it in.
 
 **On a stepped seam, the outer pieces keep their sharp edges.** The two plane tests that find the seam edge hold along the whole seam *line*, not just along the bend, so until #2972 the outer piece's free edge was filleted too. That edge is convex, so the fillet removed material there: all four stepped fixtures in the suite came out below their flange volumes, by exactly `r^2 (1 - pi/4)` times the surplus length. The selection is now bounded by the bend's own intersection range. Measurement and derivations: [`Scripts/repro/2972-sheetmetal-volumes/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/2972-sheetmetal-volumes).
+
+**A bend reads the flanges you declared and its own run of the seam, never a flange piece.** A flange another bend split is cut into pieces, and until #3019 a bend was resolved to the one piece whose range on the seam axis equalled its own, or to the first piece when none did. A concave bend was spared, because its run comes from the bend's own intersection. A convex bend cut its prism to that piece's edge, so the prism came out as long as a sliver of the flange, or in the wrong place, or, for a flange split along its other profile axis, inside the flange body where it added nothing. The volume missed `(pi/4) t^2` times the length not built, to within the fillet run-out (at most 0.08). The run is now read off the bend and the prism is cut to it.
+
+**A seam diagonal to a flange's own axes gets the same run** (#3033). There is no profile axis to project the bend's intersection onto, so the run is the part of the seam line that both flanges' profile edges cover. That needs no flange split, because the fused solid already holds the seam as separate edges at the contact boundary. An upright narrower than the diagonal edge it stood on used to throw `BuildError.filletFailed` for a concave bend, and for a convex one built silently with the prism cut to the *from* flange's whole edge whatever the other flange covered, so the two declaration orders disagreed. Both now build over the shared run. Measurement and derivations: [`Scripts/repro/3019-3033-sheetmetal-seam-extent/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/3019-3033-sheetmetal-seam-extent).
+
+**Known limitation (#3045).** A stepped concave bend can come back with `isValid == false`. It was measured when the radius reaches the thickness, where the two flange bodies interpenetrate, and where the narrower flange butts the wider one. Nothing throws, and once the radius passes the thickness on the shapes where it was measured the volume is wrong as well. The stepped fixtures in the suite all keep the radius below the thickness. The cause is not established.
 
 **A bend's volume is predictable, to about 3e-5.** Flange body volumes, less any volume where two bodies interpenetrate, plus `r^2 (1 - pi/4) * L` for each concave bend over its matched seam length and `(pi/4) * t^2 * L` for each convex one. A seam that runs on into a flat neighbour costs a little more: the fillet closes off over about 0.1 past the step, which is the only reason the stepped fixtures are not exact.
 

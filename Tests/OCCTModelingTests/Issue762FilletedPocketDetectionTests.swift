@@ -5,6 +5,7 @@ import Testing
 
 /// A fillet or chamfer that silently returned an unchanged shape would leave every assertion in
 /// these suites reading the SHARP fixture, which the control tests already prove detects correctly.
+///
 /// The result would be a green test proving nothing, which is #703's exact shape: that fixture's
 /// boolean subtraction returned a perfectly good shape having removed zero volume.
 ///
@@ -50,7 +51,9 @@ private func expectShapeChanged(
 @Suite("A filleted pocket's floor/wall junction is detected through the fillet (#762)")
 struct Issue762FilletedPocketDetectionTests {
 
-    /// The issue's own construction, byte for byte: a 10x10x15 pocket in a 20mm cube. Confirms
+    /// The issue's own construction, byte for byte: a 10x10x15 pocket in a 20mm cube.
+    ///
+    /// Confirms
     /// the sharp version is detected and enclosed. This is the fixture the fillet variants
     /// below are built from, so a negative result there is meaningful only against this
     /// positive control.
@@ -100,7 +103,9 @@ struct Issue762ChamferedPocketDetectionTests {
 
     /// Ground-truthed: a symmetric chamfer's two new edges are both `.concave` (a 270-degree
     /// reentrant corner splits into two 225-degree ones), so `concaveNeighbors(of:)` already
-    /// reaches the chamfer directly. The pre-fix miss was the chamfer face's own
+    /// reaches the chamfer directly.
+    ///
+    /// The pre-fix miss was the chamfer face's own
     /// `isVertical` filter stopping the search one hop too early, not a missing edge.
     @Test("a chamfered floor/wall junction pocket IS detected and enclosed")
     func chamferedJunctionPocketIsDetected() throws {
@@ -171,7 +176,9 @@ struct Issue762ReflexCornerPartialFilletTests {
     /// ground-truthed first (`Scripts/repro/762-filleted-pocket-detection/`, fixture 8): at
     /// the reflex vertex of an L-shaped pocket's own floor boundary, the two walls meeting
     /// there DO share a `.convex` vertical edge (the mirror image of a boss's own corner,
-    /// where two base fillets also meet convexly), confirming the hypothesis. Filleting only
+    /// where two base fillets also meet convexly), confirming the hypothesis.
+    ///
+    /// Filleting only
     /// one of those two walls (WallY0) makes its fillet meet the other, unfilleted wall
     /// (WallX0) via that same `.convex` edge, past the fillet junction.
     ///
@@ -262,6 +269,7 @@ struct Issue762DeadEndRevisitableThroughJunctionTests {
 
     /// Review of this fix found `wallsAndJunctions(fromFloor:floorZ:tolerance:)` marked
     /// `visited` as soon as an edge was crossable, before deciding wall, junction, or dead end.
+    ///
     /// A face that failed the #724 Z-check as a DIRECT neighbor (`reachedThroughJunction ==
     /// false`) was marked visited regardless, so a SEPARATE edge reaching that same face
     /// through an already-absorbed junction (where the Z-check is bypassed) could never run:
@@ -409,7 +417,9 @@ struct Issue762FullyRoundedPocketChainingTests {
     /// producing a torus/corner-fillet ring all the way around the pocket (eight curved
     /// junction faces plus four BSpline surfaces OCCT inserts to reconcile the
     /// mismatched-radius corners; ground-truthed,
-    /// `Scripts/repro/762-filleted-pocket-detection/`, fixture 10). Checks that
+    /// `Scripts/repro/762-filleted-pocket-detection/`, fixture 10).
+    ///
+    /// Checks that
     /// junction-to-junction chaining, confined by `currentBordersFloorDirectly` to producing
     /// only further junctions past the first floor-bordering hop, still finds exactly the
     /// four genuine flat walls without wandering into misclassifying any of the twelve curved
@@ -482,8 +492,8 @@ struct Issue762FullyRoundedPocketChainingTests {
 @Suite("A filleted through-slot stays open, matching its sharp counterpart's own verdict (#762)")
 struct Issue762FilletedThroughSlotStaysOpenTests {
 
-    /// The sharp two-walled through-slot (`Issue735PocketEnclosureTests
-    /// .twoWalledThroughSlotIsNotEnclosed`'s own fixture): both ends open, `isOpen == true`.
+    /// The sharp two-walled through-slot (the fixture of `Issue735PocketEnclosureTests`
+    /// test `twoWalledThroughSlotIsNotEnclosed`): both ends open, `isOpen == true`.
     @Test("the sharp through-slot (control) is not enclosed")
     func sharpThroughSlotIsNotEnclosed() throws {
         let box = try #require(
@@ -533,7 +543,9 @@ struct Issue762FilletedBossFalsePositiveTests {
 
     /// Ground-truthed (`Scripts/repro/762-filleted-pocket-detection/`): a boss's own base
     /// junction is a reentrant (270-degree material) corner, geometrically identical in kind
-    /// to a pocket's own floor/wall corner. Filleting it gives the IDENTICAL
+    /// to a pocket's own floor/wall corner.
+    ///
+    /// Filleting it gives the IDENTICAL
     /// radially-inward signature a pocket's fillet does, so this fix cannot and does not try
     /// to distinguish the two AT the junction. `Issue753PocketBossWireScopeTests` already
     /// established that a floor boss's wall legitimately belongs in `wallFaceIndices`
@@ -556,7 +568,9 @@ struct Issue762FilletedBossFalsePositiveTests {
     }
 
     /// The false-positive guard: filleting the boss's base must not turn this into a false
-    /// ENCLOSED pocket. It is fine (and consistent with the sharp control) for it to still
+    /// ENCLOSED pocket.
+    ///
+    /// It is fine (and consistent with the sharp control) for it to still
     /// appear in the array, as long as it is correctly `isOpen`.
     @Test(
         "a filleted boss reports isOpen == true, matching its sharp counterpart, never falsely enclosed"
@@ -592,7 +606,9 @@ struct Issue762FilletedExternalCornerFalsePositiveTests {
     /// The radial-curvature guard's own reason for existing: a plain box's own top-to-side
     /// edge is genuinely CONVEX (material occupies only 90 degrees there, not a reentrant
     /// 270), so filleting it curves radially OUTWARD, the opposite signature from a pocket's
-    /// or a boss's fillet. Without `isRadiallyInwardFillet(_:)` gating which `.smooth` edges
+    /// or a boss's fillet.
+    ///
+    /// Without `isRadiallyInwardFillet(_:)` gating which `.smooth` edges
     /// are crossable, this fixture is wrongly reported as an ENCLOSED pocket (proven by
     /// actually removing the guard: see the PR body's removal matrix, injection A).
     @Test("the sharp box (control) has no pockets")

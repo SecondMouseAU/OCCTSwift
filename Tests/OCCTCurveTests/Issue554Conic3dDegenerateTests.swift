@@ -3,7 +3,9 @@ import Testing
 
 @testable import OCCTSwift
 
-/// #554: the 3D counterparts of #514. Every bridge site that builds a 3D conic from a
+/// #554: the 3D counterparts of #514.
+///
+/// Every bridge site that builds a 3D conic from a
 /// caller-supplied dimension, or rewrites one on a live curve, and never checked it.
 ///
 /// The gap is the same one #514 measured in 2D, and for the same reason. OCCT does reject the
@@ -198,6 +200,7 @@ struct Issue554Conic3dDegenerateTests {
 
     /// Control for the two three-point forms, which are deliberately *not* guarded: they take no
     /// dimension at all, and OCCT's own `GC_Make*` status already rejects a degenerate triple.
+    ///
     /// If that ever stops being true, this test is where it shows up.
     @Test func gcThreePointFormsRejectDegeneratePointTriplesWithoutABridgeGuard() {
         let origin = SIMD3<Double>(0, 0, 0)
@@ -268,7 +271,9 @@ struct Issue554Conic3dDegenerateTests {
     // MARK: - Extrema_ExtElC / Extrema_ExtPElC
 
     /// These are solver inputs, which #553 excluded from the 2D pass on the grounds that a
-    /// degenerate conic can still be a meaningful question. Measured here, it is not: OCCT does
+    /// degenerate conic can still be a meaningful question.
+    ///
+    /// Measured here, it is not: OCCT does
     /// not answer the degenerate question, it answers a different one.
     @Test func pointToEllipseRejectsZeroRadii() {
         // Measured before the guard: NbExt() == 0 against a (0, 0) ellipse, so the caller was
@@ -405,7 +410,9 @@ struct Issue554Conic3dDegenerateTests {
 
     /// `BndLib` and `ElCLib` take the same dimensions and are deliberately not guarded: both are
     /// pure queries that return the *correct* answer for the degenerate curve, and both are
-    /// `void` bridge functions with nowhere to report a rejection. Pinned so the exclusion is a
+    /// `void` bridge functions with nowhere to report a rejection.
+    ///
+    /// Pinned so the exclusion is a
     /// recorded decision rather than an oversight, and so a later pass that adds a guard here has
     /// to change a test that says why it should not.
     @Test func degenerateEllipseStillEvaluatesAndBoundsCorrectly() {

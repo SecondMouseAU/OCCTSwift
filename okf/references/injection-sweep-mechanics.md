@@ -3,7 +3,7 @@ type: reference
 title: Injection sweep mechanics
 resource: https://github.com/SecondMouseAU/OCCTSwift
 tags: [reference, testing, agents, prove-the-test-fails]
-description: How to run an injection sweep cheaply and without lying to yourself. Run the built .xctest directly rather than `swift test`, inject by shadowing the bridge import rather than editing a .mm, resolve every anchor uniquely before the first build, and assert the switch set against the test set in both directions.
+description: How to run an injection sweep cheaply and without lying to yourself. Run the built .xctest directly rather than `swift test`, inject by shadowing the bridge import rather than editing a .mm, resolve every anchor uniquely before the first build, assert the switch set against the test set in both directions, make a duplicated body a distinct copy, and name a crash as a crash.
 timestamp: 2026-10-03
 ---
 
@@ -110,6 +110,19 @@ does not.
 `tail`, so a gate exiting 66 on a race is indistinguishable from one exiting 0. Redirect to a file
 and read the status separately, or use `set -o pipefail`.
 
+**A known issue passes under a different glyph.** A test carrying a `withKnownIssue` prints
+`━ Test "name" passed ... with 1 known issue`, not `✔`. A scraper counting only `✔` reads that
+suite one test short, and a baseline check that insists every test passed refuses to run at all,
+which is where #2983's runner stopped on its first attempt. Count both glyphs as a pass.
+
+**A crash is a result a runner has to name.** The helper exits with the signal, so `exit < 0` or
+`exit > 1` is the process dying rather than a test failing, and every test after the one that died
+never ran. #2983's first full matrix hid four of these: a test indexed `viaShapeFix.solids[index]`
+before requiring that the result had that many bodies, so four `solidFromShellFixed` switches
+(identity, first only, last only, drop last) ended the run with SIGTRAP (exit -5), and the reds each
+reported were only the tests that had run before the one that died. The runner reports a crash as a crash, and a test requires the
+count before it indexes.
+
 ## A restore is not finished until the bundle is relinked
 
 Measured on #3012's sweep, 2026-10-03, and it fails silently. After the sweep put the injected
@@ -125,6 +138,22 @@ So after the restore: rebuild until the bundle holds no injection marker
 code), then run it once with a switch set and require green. `swift build` exiting 0 says neither.
 `Scripts/repro/3012-commonpart-range1/run-injection-sweep.py` does both and refuses to report a
 matrix for a tree it could not prove clean.
+
+## A switch that duplicates a body has to duplicate a distinct one
+
+"The first body twice" is the switch that separates a test pinning **which** body came back from one
+pinning how many. Built as the same `TopoDS_Shape` repeated it is not that experiment: a repeated
+shape counts once in `subShapes(ofType:)`, so every count caught it and it was `first only` under
+another name, which is what #2983's first version of `*_DUP_FIRST` was. Build the repeats with
+`OCCTShapeCopy`, which makes new TShapes over the same geometry: the count, the faces and the
+volume all stay right and only the position is wrong. Measured on the five entry points
+`Issue443FirstOfN` and `Issue442FixSolidMultiBody` cover, it reddened 1, 1, 2, 1 and 3 tests
+against `main`'s versions and 7, 5, 8, 5 and 5 against the rewrites.
+
+The same applies to orientation. "Every body inside out" is caught by any volume check, and is not
+"the first body fixed and the rest left as they came in", which is the loop a regression would
+actually write and which a healthy fixture cannot show, because a body that needed no fix looks
+the same fixed or not. Both need a fixture that is wrong in the way the operation repairs.
 
 ## Run the switches against the old version too
 
@@ -160,6 +189,13 @@ The same applies to a figure handed to you in a brief. Three batches in one day 
 repo-wide SEVERE number that had already moved; every one of them re-measured and said so, which
 is the behaviour to copy. **Re-measure, do not quote.**
 
+A kernel repin is one of the moves. #2983's sweep was written on `v4.0.0-kernel.3` and `origin/main`
+repinned to `v4.0.0-kernel.4` while it ran, so every pinned value was re-checked and the matrices
+re-run on the new asset before the PR body quoted either. And a gate that compares against
+`origin/main` reads the **local ref**, which another worktree's `git fetch` advances:
+`check-style-manifest.py` reported "grew by 1 entry" about a file the branch had never touched.
+Rebase first, then read the gate.
+
 ## A rebase can leave the module stale, and `swift build` will not fix it
 
 After a rebase, `check-doc-snippets.py` refuses with `module ... OLDER than the newest module
@@ -181,6 +217,11 @@ edits in one injection shared a replacement string, so the reverse-replace match
 `git checkout -- <paths>` is the only safe restore. It is also the only one that cannot leave a
 half-reverted file behind when the sweep is interrupted.
 
+**Commit the new tests before swapping the old ones in.** The "before" column needs `main`'s
+versions of the test files in the tree, and `git checkout HEAD -- <files>` puts back what was
+**committed**, not what the files held when you swapped. #2983's sweep lost a helper rewrite that
+way and found out only because a grep for the helper's call sites came back empty.
+
 ## A green switch can be the finding
 
 A switch that reddens nothing is usually a bad switch, and occasionally it is a measurement.
@@ -189,8 +230,27 @@ on the pinned kernel, so the surplus-point path the switch distorted is **unreac
 test** (#2977). Probe before concluding the switch was wrong: the alternative conclusion is that
 the guard under test is dead.
 
+Two more from #2983, one for each way the green was not a bad switch:
+
+* **The fixture gave the subject nothing to do.** Three history switches (the history of the first
+  body alone, of the last alone, of an unrelated run) reddened nothing against the old suite, and
+  the switches were fine. A healthy box repairs nothing, so `record(of:)` read 0 modified, 0
+  generated, not deleted for every face, and a history covering no body answers exactly like one
+  covering both. Probe the subject's output for the fixture before blaming the switch. The fix was
+  an input with something to record: a one-face shell whose face has its wire out of order, which
+  `ShapeFix_Face` replaces, once per body.
+* **The contract promises nothing there.** `UP_SWAP` (the bodies of `upgraded()` in reverse order)
+  is still green after the rewrite, because sewing chooses the order and the call never says which.
+  The switch models a change nobody is entitled to expect, and the green row is a statement about
+  the contract. Its siblings on `solid(from:)`, `solidFromShellFixed()`, `fixSolid()` and the
+  history variant, which do promise exploration order, are red. Say which kind a green row is, so
+  the next reader does not hunt for a missing assertion.
+
 ## Related
 
 - [Prove the test fails](../policies/prove-the-test-fails.md), the rule these mechanics serve.
 - [Lifting work off `v5.0.0-766-execution`](../policies/v5-lift-and-shift.md), where the sweeps
   that produced these measurements were run.
+- `Scripts/repro/2983-shapehealing-resweep/`, a whole sweep kept as evidence: the Swift shadows, the
+  two gated edits, the switch list under `GROSS`, `SEMANTIC` and `FIXTURE` headers, the runner, and
+  the before and after matrices, for the multi-body, orientation and history shapes above.

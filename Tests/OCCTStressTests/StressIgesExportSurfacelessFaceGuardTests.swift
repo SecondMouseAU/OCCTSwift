@@ -41,7 +41,9 @@ import Testing
 @Suite("Stress: IGES export surface-less face guard (#2777)")
 struct StressIgesExportSurfacelessFaceGuardTests {
 
-    /// A compound holding one face with no surface that DOES carry a wire. The row that decided the
+    /// A compound holding one face with no surface that DOES carry a wire.
+    ///
+    /// The row that decided the
     /// predicate: `occtShapeHasSurfacelessEdgelessFace` answers false for this shape and the IGES
     /// writer faults on it anyway.
     static func withWireFixture() throws -> Shape {

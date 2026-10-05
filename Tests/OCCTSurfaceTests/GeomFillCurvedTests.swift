@@ -63,7 +63,9 @@ struct GeomFillCurvedTests {
     }
 
     /// #2795: a flat square passed in the arrangement `GeomFill_Curved::Init` actually wants,
-    /// (bottom, right, top, left), gives its own uniform 5 x 5 grid. This is the arrangement that
+    /// (bottom, right, top, left), gives its own uniform 5 x 5 grid.
+    ///
+    /// This is the arrangement that
     /// distinguishes `GeomFill_Curved` from `GeomFill_Coons`: feeding this class the
     /// `coonsFilling` order, (bottom, left, top, right), does not produce the square, which the
     /// second half of this test pins.
@@ -97,8 +99,10 @@ struct GeomFillCurvedTests {
         #expect(simd_length(coonsOrder.poles[21] - SIMD3(0, 2.5, 0)) < 1e-9)
     }
 
-    /// #2795: `GeomFill_Curved::Init` never reads `boundary2`'s or `boundary4`'s first and last
-    /// points, because its second loop runs only over `2 ... nbV - 1`. So a corner that disagrees
+    /// #2795: `GeomFill_Curved::Init` never reads boundary2's or boundary4's first and last
+    /// points, because its second loop runs only over `2 ... nbV - 1`.
+    ///
+    /// So a corner that disagrees
     /// is silently **dropped** here, where `GeomFill_Coons` silently lets it **win**. Moving
     /// `boundary4[0]` off the square leaves pole (0, 0) at `boundary1[0]`.
     @Test("a disagreeing corner is dropped, not honoured, unlike GeomFill_Coons")

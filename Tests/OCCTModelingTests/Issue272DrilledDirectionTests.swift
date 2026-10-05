@@ -5,7 +5,9 @@ import simd
 
 /// Issue #272: `Shape.drilled(at:direction:radius:depth:)` ignored its `direction` argument, the
 /// C++ bridge (`OCCTShapeDrillHole`) built the cutting cylinder via `OCCTShapeCreateCylinderAt`,
-/// which hardcodes the cylinder axis to +Z (`gp_Dir(0, 0, 1)`). So drilling along any non-Z
+/// which hardcodes the cylinder axis to +Z (`gp_Dir(0, 0, 1)`).
+///
+/// So drilling along any non-Z
 /// direction repositioned the cylinder's base along the requested direction but still bored up +Z,
 /// cutting the wrong axis (and, for a base point pushed outside the shape, removing nothing at all).
 ///
@@ -58,7 +60,9 @@ struct Issue272DrilledDirectionTests {
     }
 
     /// Direct comparison: drilling the SAME block along +X vs +Z removes very different amounts of
-    /// material (X extent 60 vs Z extent 12). With the old hardcoded-Z bridge both directions bored
+    /// material (X extent 60 vs Z extent 12).
+    ///
+    /// With the old hardcoded-Z bridge both directions bored
     /// up Z, so this discrimination was impossible.
     @Test("Drilling +X vs +Z on the same block removes different material")
     func xAndZBoresDiffer() {

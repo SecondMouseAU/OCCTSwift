@@ -17,7 +17,9 @@ import simd
 struct Issue1635ContapAnalyticGeometryTests {
 
     /// The face of `shape` whose contour along `direction` has `wanted` as its first line type,
-    /// with that contour. Contap reports nothing for a face that is not on the silhouette, so the
+    /// with that contour.
+    ///
+    /// Contap reports nothing for a face that is not on the silhouette, so the
     /// caller cannot know the face index in advance.
     private func contour(
         of shape: Shape, along direction: SIMD3<Double>, firstLineType wanted: ContourLineType
@@ -29,7 +31,9 @@ struct Issue1635ContapAnalyticGeometryTests {
         return nil
     }
 
-    /// The case the issue names. A cylinder of radius 5 along +Z, viewed along +X: two tangent
+    /// The case the issue names.
+    ///
+    /// A cylinder of radius 5 along +Z, viewed along +X: two tangent
     /// rulings at y = +5 and y = -5, each running the height of the face.
     @Test func cylinderRulingsHaveGeometry() {
         guard let cyl = Shape.cylinder(radius: 5, height: 20),
@@ -49,7 +53,7 @@ struct Issue1635ContapAnalyticGeometryTests {
             #expect(contour.pointCount(line: line) == 0)
             #expect(contour.points(line: line).isEmpty)
 
-            guard case let .line(origin, direction)? = contour.geometry(line: line) else {
+            guard case .line(let origin, let direction)? = contour.geometry(line: line) else {
                 Issue.record("line \(line) has no .line geometry")
                 continue
             }
@@ -95,7 +99,10 @@ struct Issue1635ContapAnalyticGeometryTests {
         }
 
         #expect(contour.pointCount(line: 1) == 0)
-        guard case let .circle(center, axis, xDirection, radius)? = contour.geometry(line: 1) else {
+        guard
+            case .circle(let center, let axis, let xDirection, let radius)? = contour.geometry(
+                line: 1)
+        else {
             Issue.record("line 1 has no .circle geometry")
             return
         }
@@ -121,7 +128,7 @@ struct Issue1635ContapAnalyticGeometryTests {
 
         let direct = contour.points(line: 1)
         #expect(direct.count > 2, "a traced contour has real points")
-        guard case let .walking(points)? = contour.geometry(line: 1) else {
+        guard case .walking(let points)? = contour.geometry(line: 1) else {
             Issue.record("line 1 has no .walking geometry")
             return
         }
@@ -133,7 +140,9 @@ struct Issue1635ContapAnalyticGeometryTests {
     }
 
     /// A planar face viewed edge on: the whole boundary is on the silhouette, which is where a
-    /// `.restriction` contour comes from. Its geometry is the boundary arc's parameter range, and
+    /// `.restriction` contour comes from.
+    ///
+    /// Its geometry is the boundary arc's parameter range, and
     /// the arc evaluates to the vertices at its ends.
     @Test func restrictionContourHasAnArc() {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
@@ -144,7 +153,7 @@ struct Issue1635ContapAnalyticGeometryTests {
         }
 
         #expect(contour.pointCount(line: 1) == 0)
-        guard case let .restriction(range)? = contour.geometry(line: 1) else {
+        guard case .restriction(let range)? = contour.geometry(line: 1) else {
             Issue.record("line 1 has no .restriction geometry")
             return
         }
@@ -196,7 +205,8 @@ struct Issue1635ContapAnalyticGeometryTests {
         }
         // A .restriction contour is not a line or a circle, and geometry(line:) says so by
         // returning the case that does apply rather than nil.
-        if case .restriction = restriction.geometry(line: 1) {} else {
+        if case .restriction = restriction.geometry(line: 1) {
+        } else {
             Issue.record("expected .restriction geometry")
         }
     }

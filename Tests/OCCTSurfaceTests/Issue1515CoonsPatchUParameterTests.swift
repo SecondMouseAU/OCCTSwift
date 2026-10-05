@@ -5,7 +5,9 @@ import simd
 @testable import OCCTSwift
 
 /// `GeomFill_CoonsAlgPatch::Value(U, V)` sampled all four boundaries at `V`, where `bound[0]` and
-/// `bound[2]` are the U-direction sides (#1515). For any boundary set whose V-direction sides are
+/// `bound[2]` are the U-direction sides (#1515).
+///
+/// For any boundary set whose V-direction sides are
 /// straight, the result was independent of `U` entirely and the surface collapsed onto the
 /// `u == v` diagonal. Samples with `u == v` were coincidentally correct, which is why it read as a
 /// valid surface rather than as an obvious failure.
@@ -21,7 +23,9 @@ import simd
 @Suite("Issue1515 Coons patch samples the U boundaries at U")
 struct Issue1515CoonsPatchUParameter {
 
-    /// A flat 10 x 10 square, whose four sides are all straight. The correct Coons patch over it is
+    /// A flat 10 x 10 square, whose four sides are all straight.
+    ///
+    /// The correct Coons patch over it is
     /// the bilinear surface, so every sample has a closed form to check against rather than a
     /// reference captured from the same code under test.
     private static let side = 10.0
@@ -83,7 +87,10 @@ struct Issue1515CoonsPatchUParameter {
             return
         }
         // evalU = evalV = 2 puts u and v on {0, 1} exactly, so these are the four corners.
-        let u0v0 = grid[0], u0v1 = grid[1], u1v0 = grid[2], u1v1 = grid[3]
+        let u0v0 = grid[0]
+        let u0v1 = grid[1]
+        let u1v0 = grid[2]
+        let u1v1 = grid[3]
         #expect(simd_distance(u0v0, SIMD3(0, 0, 0)) < 1e-9)
         #expect(simd_distance(u1v1, SIMD3(Self.side, Self.side, 0)) < 1e-9)
         // The two that the collapse folded onto the diagonal.

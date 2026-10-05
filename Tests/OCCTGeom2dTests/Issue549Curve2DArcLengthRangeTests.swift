@@ -27,7 +27,9 @@ import simd
 struct Issue549Curve2DArcLengthRangeTests {
 
     /// Multi-span interpolated BSpline with sharply varying speed: the shape where the two
-    /// adaptor forms diverge, and the shape a line or a single arc cannot detect. The 3D twin
+    /// adaptor forms diverge, and the shape a line or a single arc cannot detect.
+    ///
+    /// The 3D twin
     /// carries the same points in the z = 0 plane so the two dimensions are comparable.
     private static let planarPoints: [SIMD2<Double>] = [
         SIMD2(0, 0), SIMD2(10, 40), SIMD2(20, 0), SIMD2(200, 5), SIMD2(210, 60),

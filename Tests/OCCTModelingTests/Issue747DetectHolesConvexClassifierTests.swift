@@ -39,7 +39,9 @@ struct Issue747DetectHolesConvexClassifierTests {
 
     // MARK: - The headline: the issue's own two fixtures
 
-    /// The issue's own blind-hole construction, byte for byte. Before the fix this reported
+    /// The issue's own blind-hole construction, byte for byte.
+    ///
+    /// Before the fix this reported
     /// zero holes because the wall's two neighbors (floor: concave, rim: convex) never satisfy
     /// "all concave".
     @Test("a blind cylindrical hole reports exactly one hole")
@@ -57,7 +59,9 @@ struct Issue747DetectHolesConvexClassifierTests {
         #expect(abs(hole.depth - 10.0) < 1e-4)
     }
 
-    /// The issue's own through-hole construction. Before the fix this reported zero holes
+    /// The issue's own through-hole construction.
+    ///
+    /// Before the fix this reported zero holes
     /// because the wall's two neighbors are BOTH convex -- "all concave" can never hold for a
     /// through-hole, by construction, independent of geometry.
     @Test("a through cylindrical hole reports exactly one hole")
@@ -79,7 +83,9 @@ struct Issue747DetectHolesConvexClassifierTests {
 
     /// The exact fixture `Issue703EdgeConvexityOrderTests.throughHoleHasNoConcaveEdges` pins as
     /// "zero concave edges" -- the fixture whose own ground truth is the reason "all neighbors
-    /// concave" can never identify this shape as a hole. One physical hole at every thickness.
+    /// concave" can never identify this shape as a hole.
+    ///
+    /// One physical hole at every thickness.
     @Test(
         "a through-hole plate reports one hole at several thicknesses",
         arguments: [20.0, 40.0, 60.0, 120.0])
@@ -104,7 +110,9 @@ struct Issue747DetectHolesConvexClassifierTests {
     /// A round boss (a cylinder fused onto a box, sticking up) has the SAME topological
     /// signature as a blind hole -- its wall's two neighbors are one concave (base rim), one
     /// convex (top cap rim) -- but it is not a hole: the boss's material fills the inside of
-    /// the cylinder. Only the material-side (radial normal direction) check tells them apart.
+    /// the cylinder.
+    ///
+    /// Only the material-side (radial normal direction) check tells them apart.
     @Test("a round boss is not reported as a hole")
     func roundBossIsNotAHole() throws {
         let box = try #require(
@@ -132,7 +140,9 @@ struct Issue747DetectHolesConvexClassifierTests {
     /// pocket) is deliberately the sharper counter-example, not a fillet on an ordinary convex
     /// box edge: measured directly, its material-side sign matches a genuine hole's (material
     /// lies radially outside the fillet's own cylindrical patch, same as a bore), so it clears
-    /// the material-side check on its own. Only the fillet's own U extent -- one quarter turn
+    /// the material-side check on its own.
+    ///
+    /// Only the fillet's own U extent -- one quarter turn
     /// (~pi/2), not a full 2*pi -- is what excludes it. A convex-edge fillet would ALSO be
     /// excluded, but by the material-side check instead, silently proving nothing about "closed
     /// in U" specifically (confirmed by removing that guard in isolation: the convex-edge
@@ -165,7 +175,9 @@ struct Issue747DetectHolesConvexClassifierTests {
     // MARK: - The material-side discriminator, isolated on one shape
 
     /// A pipe: the SAME axis, the SAME closed-in-U cylindrical shape, on both its inner and
-    /// outer wall -- differing only in which side is material. The inner wall is a genuine
+    /// outer wall -- differing only in which side is material.
+    ///
+    /// The inner wall is a genuine
     /// through-hole (material lies radially outside it, the pipe's own wall thickness); the
     /// outer wall is not (material lies radially inside it, same as a solid cylinder's wall).
     /// This isolates the discriminator #747 turns on: everything else about the two faces
@@ -191,7 +203,9 @@ struct Issue747DetectHolesConvexClassifierTests {
     /// "circular" from a Z-implicit bounding-box aspect ratio (X/Y as the circular dimensions,
     /// Z as depth), which is wrong for any non-vertical hole: here the true circular dimensions
     /// are Y/Z (~8 units) and the true depth is along X (~20 units), the opposite of what that
-    /// heuristic assumed. Reading the wall's actual axis (`Face.primaryAxis`) gets this right
+    /// heuristic assumed.
+    ///
+    /// Reading the wall's actual axis (`Face.primaryAxis`) gets this right
     /// regardless of orientation.
     @Test("a through-hole bored on a horizontal (X) axis is detected")
     func horizontalHoleIsDetected() throws {

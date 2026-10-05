@@ -13,7 +13,8 @@ import Testing
 @Suite("PocketFeature.isOpen on a compound where solidGroups cannot partition (#1089)")
 struct Issue1089PocketFeatureIsOpenCompoundTests {
 
-    /// Builds a compound where:
+    /// Builds a compound with the properties listed below.
+    ///
     /// 1. A box with a pocket is split vertically, creating two solids sharing a wall
     /// 2. A free face is added to make per-solid face counts not sum to the total
     /// 3. `AAG.solidGroups` returns `nil`, triggering the cross-solid fallback
@@ -37,8 +38,10 @@ struct Issue1089PocketFeatureIsOpenCompoundTests {
 
         // Add a free face to make solidGroups return nil (counts won't sum)
         // The free face is a square face separate from the two solids
-        let wire = try #require(Wire.polygon3D(
-            [SIMD3(40, 0, 0), SIMD3(50, 0, 0), SIMD3(50, 10, 0), SIMD3(40, 10, 0)], closed: true))
+        let wire = try #require(
+            Wire.polygon3D(
+                [SIMD3(40, 0, 0), SIMD3(50, 0, 0), SIMD3(50, 10, 0), SIMD3(40, 10, 0)], closed: true
+            ))
         let freeFace = try #require(Shape.face(from: wire))
 
         // Compound: two pocketed half-boxes + free face
@@ -49,9 +52,13 @@ struct Issue1089PocketFeatureIsOpenCompoundTests {
         let perSolidCounts = compound.solids.map { $0.orientedFaces().count }
         let perSolidSum = perSolidCounts.reduce(0, +)
 
-        #expect(compound.solids.count > 1, "Need more than one solid to get past the first solidGroups guard")
-        #expect(perSolidSum != totalOccurrences,
-            "Fixture must make counts disagree: perSolid \(perSolidCounts), total \(totalOccurrences)")
+        #expect(
+            compound.solids.count > 1,
+            "Need more than one solid to get past the first solidGroups guard")
+        #expect(
+            perSolidSum != totalOccurrences,
+            "Fixture must make counts disagree: perSolid \(perSolidCounts), total \(totalOccurrences)"
+        )
 
         // Verify AAG builds without crashing and nodes match occurrences
         let aag = compound.buildAAG()
@@ -68,8 +75,10 @@ struct Issue1089PocketFeatureIsOpenCompoundTests {
         // shares the floor's boundary edge but is convex (not concave), so it should NOT become a wall.
         // Therefore, both pockets should still be open. This test measures and documents that.
         for pocket in pockets {
-            #expect(pocket.isOpen,
-                "Pocket with floorFaceIndex \(pocket.floorFaceIndex) should be open even with solidGroups=nil")
+            #expect(
+                pocket.isOpen,
+                "Pocket with floorFaceIndex \(pocket.floorFaceIndex) should be open even with solidGroups=nil"
+            )
         }
 
         // Also verify that multi-face boundary edges exist (the cut face edges are shared by 3 faces)
@@ -81,24 +90,31 @@ struct Issue1089PocketFeatureIsOpenCompoundTests {
             for edge in outer.edges() {
                 guard let wrapped = Shape.fromEdge(edge) else { continue }
                 let count = compound.adjacentFaces(forEdge: wrapped).count
-                if count > 2 { 
+                if count > 2 {
                     multiFaceEdges += 1
-                    print("DEBUG Issue1089: Shape.adjacentFaces count = \(count) for edge \(edge.index)")
+                    print(
+                        "DEBUG Issue1089: Shape.adjacentFaces count = \(count) for edge \(edge.index)"
+                    )
                 }
                 // Also test Edge.adjacentFaces(in:)
                 if let adj = edge.adjacentFaces(in: compound) {
                     edgeAdjFacesCount = max(edgeAdjFacesCount, adj.count)
                     if adj.count > 2 {
-                        print("DEBUG Issue1089: Edge.adjacentFaces count = \(adj.count) for edge \(edge.index)")
+                        print(
+                            "DEBUG Issue1089: Edge.adjacentFaces count = \(adj.count) for edge \(edge.index)"
+                        )
                     }
                 }
             }
         }
-        print("DEBUG Issue1089: multiFaceEdges = \(multiFaceEdges), max Edge.adjacentFaces = \(edgeAdjFacesCount)")
+        print(
+            "DEBUG Issue1089: multiFaceEdges = \(multiFaceEdges), max Edge.adjacentFaces = \(edgeAdjFacesCount)"
+        )
         #expect(multiFaceEdges >= 1, "Fixture must have boundary edges with >2 adjacent faces")
     }
 
     /// A simpler variant: two separate boxes (not sharing topology) + free face, one with a pocket.
+    ///
     /// This tests the fallback branch without multi-face edges, as a control.
     @Test("PocketFeature.isOpen on disjoint solids with count mismatch (control)")
     func pocketIsOpenOnDisjointSolidsWithCountMismatch() throws {
@@ -114,8 +130,10 @@ struct Issue1089PocketFeatureIsOpenCompoundTests {
             Shape.box(origin: SIMD3(20, 0, 0), width: 10, height: 10, depth: 10))
 
         // Free face to trigger count mismatch
-        let wire = try #require(Wire.polygon3D(
-            [SIMD3(40, 0, 0), SIMD3(50, 0, 0), SIMD3(50, 10, 0), SIMD3(40, 10, 0)], closed: true))
+        let wire = try #require(
+            Wire.polygon3D(
+                [SIMD3(40, 0, 0), SIMD3(50, 0, 0), SIMD3(50, 10, 0), SIMD3(40, 10, 0)], closed: true
+            ))
         let freeFace = try #require(Shape.face(from: wire))
 
         let compound = try #require(Shape.compound([pocketedBox, boxB, freeFace]))
@@ -136,10 +154,9 @@ struct Issue1089PocketFeatureIsOpenCompoundTests {
     }
 }
 
-
 @Suite("Non-manifold edge adjacent faces test (#1089 fixture)")
 struct NonManifoldEdgeAdjacentFacesTests {
-    
+
     @Test("Non-manifold edge has more than two adjacent faces using Edge.adjacentFaces")
     func nonManifoldEdgeAdjacentFaces() {
         // Reproduce the Issue1089 fixture exactly: a pocketed box split through the pocket,
@@ -149,12 +166,13 @@ struct NonManifoldEdgeAdjacentFacesTests {
         let cut = box.subtracting(tool)!
         let pieces = cut.split(atPlane: .zero, normal: SIMD3(1, 0, 0))!
         #expect(pieces.count == 2)
-        
+
         // Add a free face to match Issue1089 fixture exactly
-        let wire = Wire.polygon3D([SIMD3(40, 0, 0), SIMD3(50, 0, 0), SIMD3(50, 10, 0), SIMD3(40, 10, 0)], closed: true)!
+        let wire = Wire.polygon3D(
+            [SIMD3(40, 0, 0), SIMD3(50, 0, 0), SIMD3(50, 10, 0), SIMD3(40, 10, 0)], closed: true)!
         let freeFace = Shape.face(from: wire)!
         let compound = Shape.compound(pieces + [freeFace])!
-        
+
         // Check edges of the pocket floor faces (need to call detectPocketsAAG first)
         let pockets = compound.detectPocketsAAG()
         #expect(pockets.count == 2, "Expected exactly 2 pockets, got \(pockets.count)")
@@ -163,12 +181,18 @@ struct NonManifoldEdgeAdjacentFacesTests {
         var maxFaces = 0
 
         for (pi, pocket) in pockets.enumerated() {
-            #expect(occurrences.indices.contains(pocket.floorFaceIndex), "pocket \(pi): floorFaceIndex \(pocket.floorFaceIndex) out of bounds for \(occurrences.count) occurrences")
-            guard let outer = occurrences[pocket.floorFaceIndex].outerWire else { 
-                Issue.record("pocket \(pi): no outer wire for floorFaceIndex \(pocket.floorFaceIndex)")
-                continue 
+            #expect(
+                occurrences.indices.contains(pocket.floorFaceIndex),
+                "pocket \(pi): floorFaceIndex \(pocket.floorFaceIndex) out of bounds for \(occurrences.count) occurrences"
+            )
+            guard let outer = occurrences[pocket.floorFaceIndex].outerWire else {
+                Issue.record(
+                    "pocket \(pi): no outer wire for floorFaceIndex \(pocket.floorFaceIndex)")
+                continue
             }
-            #expect(outer.edges().count == 4, "pocket \(pi): Expected 4 edges on pocket floor, got \(outer.edges().count)")
+            #expect(
+                outer.edges().count == 4,
+                "pocket \(pi): Expected 4 edges on pocket floor, got \(outer.edges().count)")
             for edge in outer.edges() {
                 // Test BOTH methods on the same edge
                 if let adj = edge.adjacentFaces(in: compound) {
@@ -176,16 +200,27 @@ struct NonManifoldEdgeAdjacentFacesTests {
                     if adj.count > 2 {
                         foundNonManifold = true
                     }
-                    #expect(adj.count >= 2, "pocket \(pi) edge \(edge.index): Edge.adjacentFaces should have at least 2, got \(adj.count)")
+                    #expect(
+                        adj.count >= 2,
+                        "pocket \(pi) edge \(edge.index): Edge.adjacentFaces should have at least 2, got \(adj.count)"
+                    )
                 }
                 if let wrapped = Shape.fromEdge(edge) {
                     let count = compound.adjacentFaces(forEdge: wrapped).count
-                    #expect(count >= 2, "pocket \(pi) edge \(edge.index): Shape.adjacentFaces should have at least 2, got \(count)")
+                    #expect(
+                        count >= 2,
+                        "pocket \(pi) edge \(edge.index): Shape.adjacentFaces should have at least 2, got \(count)"
+                    )
                 }
             }
         }
 
-        #expect(foundNonManifold, "Should find at least one non-manifold edge with >2 adjacent faces, maxFaces=\(maxFaces)")
-        #expect(maxFaces >= 3, "Non-manifold edges should have at least 3 adjacent faces, got \(maxFaces)")
+        #expect(
+            foundNonManifold,
+            "Should find at least one non-manifold edge with >2 adjacent faces, maxFaces=\(maxFaces)"
+        )
+        #expect(
+            maxFaces >= 3,
+            "Non-manifold edges should have at least 3 adjacent faces, got \(maxFaces)")
     }
 }

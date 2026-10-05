@@ -4,7 +4,9 @@ import Testing
 @testable import OCCTSwift
 
 /// `.serialized` because each test measures a baseline import and then compares a cancelled one
-/// against it. The comparison is a poll count, not a duration, so it no longer competes for CPU
+/// against it.
+///
+/// The comparison is a poll count, not a duration, so it no longer competes for CPU
 /// the way the wall-clock deadlines these tests used to carry did (#525), but the baseline import
 /// itself is the most expensive thing in the file, and running the two side by side buys nothing.
 @Suite("v1.11.2 Robust import progress (issue #300)", .serialized)
@@ -60,7 +62,9 @@ struct RobustImportProgressTests {
     }
 
     /// The uncancelled baseline: counts polls, and times how long the call kept running after its
-    /// last progress report. That trailing silence is what the #300 defect looked like from
+    /// last progress report.
+    ///
+    /// That trailing silence is what the #300 defect looked like from
     /// outside, the transfer consumed the whole range, reported 1.0, and then the healing ran on
     /// for another 40-50% of the call with nothing left to report and no way to be cancelled.
     /// Measured at 1.3% (STEP) and 3.4% (IGES) of the call with the repair inside the range.
@@ -189,7 +193,7 @@ struct RobustImportProgressTests {
         )
     }
 
-    /// Regression for #300 (STEP side): `loadRobust`'s repair phase must honour the deadline too.
+    /// Regression for #300 (STEP side): loadRobust's repair phase must honour the deadline too.
     ///
     /// `OCCTImportSTEPRobustProgress` had the identical defect but no Swift caller could reach it,
     /// `loadRobust` called the non-progress bridge variant, so it was unreachable and untestable.

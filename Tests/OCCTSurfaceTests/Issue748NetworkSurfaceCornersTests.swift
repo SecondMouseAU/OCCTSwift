@@ -7,7 +7,9 @@ import simd
 // MARK: - #748: networkSurface transposed two corners and reported .done
 
 /// The four corners of a network surface are pinned by the input curves' own endpoints, so the
-/// expected values need no derivation and no tolerance argument. That makes a corner check the
+/// expected values need no derivation and no tolerance argument.
+///
+/// That makes a corner check the
 /// cheapest regression test this API can carry, and it would have caught #748 at any point in the
 /// API's life.
 ///

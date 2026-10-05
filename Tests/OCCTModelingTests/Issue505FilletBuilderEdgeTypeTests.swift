@@ -7,7 +7,9 @@ import Testing
 
 /// `BRepFilletAPI_MakeFillet::GetBounds`, `GetLaw` and `SetLaw` all take a `const TopoDS_Edge&`, but
 /// the bridge used to hand the first two a generic `OCCTShapeRef` and only the third an
-/// `OCCTEdgeRef`. Every caller therefore held the wrong type for two of the three: `addEdge`,
+/// `OCCTEdgeRef`.
+///
+/// Every caller therefore held the wrong type for two of the three: `addEdge`,
 /// `removeEdge`, `setRadius` and `contour(for:)` all speak `Edge`, so reading a law meant converting
 /// that `Edge` to a `Shape` and back again to write one.
 ///
@@ -40,7 +42,9 @@ struct Issue505FilletBuilderEdgeTypeTests {
     }
 
     /// The round trip the type split made impossible to write with one value: read the law's range,
-    /// build a law over it, set it, read it back. All four calls take the same `Edge`.
+    /// build a law over it, set it, read it back.
+    ///
+    /// All four calls take the same `Edge`.
     @Test("One Edge value threads through getBounds, setLaw and getLaw")
     func oneEdgeValueThroughAllThree() throws {
         let (builder, edge, _) = try Self.builtEvolvingContour()
@@ -63,7 +67,9 @@ struct Issue505FilletBuilderEdgeTypeTests {
         #expect(abs(after.value(at: bounds.last) - 4.0) < 1e-9)
     }
 
-    /// The guard, on the read side: contour 1 knows nothing about contour 2's edge. Before #505 both
+    /// The guard, on the read side: contour 1 knows nothing about contour 2's edge.
+    ///
+    /// Before #505 both
     /// calls answered with contour 1's own bounds and law, and reported success while doing it.
     @Test("An edge from another contour is rejected, not answered about")
     func edgeFromAnotherContourIsRejected() throws {
@@ -165,7 +171,9 @@ struct Issue505FilletBuilderEdgeTypeTests {
     }
 
     /// The law exists only once the contour's spine has been split, which `build()` does and
-    /// `simulate(contour:)` also does without building the blend surfaces. Note that the range
+    /// `simulate(contour:)` also does without building the blend surfaces.
+    ///
+    /// Note that the range
     /// differs between the two: after `simulate` it is the spine's own `[0, 10]`, and after `build`
     /// it runs past both ends of the edge.
     @Test("The law is unreachable before build, and reachable after simulate")

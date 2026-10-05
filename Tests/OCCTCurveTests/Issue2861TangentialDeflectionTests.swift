@@ -6,7 +6,9 @@ import simd
 /// #2861 finding 4: `GCPnts_TangentialDeflection::initialize` states its precondition,
 /// `theCurvatureDeflection >= Precision::Confusion() && theAngularDeflection >=
 /// Precision::Angular()`, as a `Standard_ConstructionError_Raise_if` in a template defined in the
-/// `.cxx`, so the pinned Release kernel compiles it to nothing. Without it the sampler subdivides
+/// `.cxx`, so the pinned Release kernel compiles it to nothing.
+///
+/// Without it the sampler subdivides
 /// until an internal million-point cap stops it: measured on a half-circle edge,
 /// `curvatureDeflection: 0` reported `NbPoints() == 1000001` where a valid request gives 33, and the
 /// bridge's 10,000-point truncation then handed Swift 1.00% of the arc with no error signal.

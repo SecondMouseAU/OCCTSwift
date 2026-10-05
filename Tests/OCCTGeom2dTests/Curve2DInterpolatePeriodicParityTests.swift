@@ -8,7 +8,9 @@ import simd
 
 /// `Curve2D.interpolatePeriodic(points:)` and `Curve2D.interpolate(through:closed:tolerance:)`
 /// wrap the same `Geom2dAPI_Interpolate` constructor with the same `Perform()`/`IsDone()`/
-/// `Curve()` sequence. As two independent implementations they had already drifted: the periodic
+/// `Curve()` sequence.
+///
+/// As two independent implementations they had already drifted: the periodic
 /// one pinned the tolerance at `1e-6` with no way to reach it, and rejected `count < 3` where the
 /// general one rejects only `count < 2`. It now delegates.
 @Suite("Curve2D periodic interpolation delegates (#412)")
@@ -37,7 +39,9 @@ struct Curve2DInterpolatePeriodicParityTests {
         }
     }
 
-    /// The point-count floor the two had drifted apart on. OCCT accepts a 2-point periodic
+    /// The point-count floor the two had drifted apart on.
+    ///
+    /// OCCT accepts a 2-point periodic
     /// interpolation — it produces a valid out-and-back loop — and the general entry point always
     /// let it through; only the periodic wrapper rejected it at the bridge boundary.
     @Test("A 2-point periodic interpolation is accepted by both entry points")

@@ -6,7 +6,9 @@ import simd
 
 /// `Surface` wraps `GeomConvert_ApproxSurface` twice: ``Surface/approximated(tolerance:continuity:maxSegments:maxDegree:)``
 /// returns the fitted BSpline surface, and ``Surface/approxWithDetails(tolerance:uContinuity:vContinuity:maxDegree:maxSegments:)``
-/// returns the same fit alongside the diagnostics OCCT already computed for it. Both go through
+/// returns the same fit alongside the diagnostics OCCT already computed for it.
+///
+/// Both go through
 /// one shared bridge helper as of #491, so for identical inputs they must produce the same
 /// surface, the second differing from the first only by carrying `maxError`/`isDone`/`hasResult`.
 ///
@@ -39,7 +41,9 @@ struct Issue491SurfaceApproxParityTests {
         let maxDegree: Int
     }
 
-    /// Bounded in both parameters, so the fit can be sampled over its own domain. An infinite
+    /// Bounded in both parameters, so the fit can be sampled over its own domain.
+    ///
+    /// An infinite
     /// surface has to be trimmed before approximation anyway (both entry points document that).
     private func requests() -> [Request] {
         var result: [Request] = []
@@ -238,7 +242,9 @@ struct Issue491SurfaceApproxParityTests {
     /// `.c0` requests used to be excluded here: `GeomConvert_ApproxSurface` at `GeomAbs_C0` could
     /// collapse a direction to degree 1 and still report a `maxError` five orders of magnitude
     /// below the surface it returned (a full sphere at C0 came back as a straight line across its
-    /// own longitude, deviating by 19.9999, reported as 1.07e-4 with `isDone` true). That was an
+    /// own longitude, deviating by 19.9999, reported as 1.07e-4 with `isDone` true).
+    ///
+    /// That was an
     /// upstream defect, #522, it predated #491, both entry points hit it identically, and unifying
     /// them neither caused nor fixed it. Fixed in kernel patch `0019`: `mma2ce1_` wrote the U
     /// Jacobi maxima to the V workspace slot, leaving the U ones zero, which made every U
@@ -277,7 +283,9 @@ struct Issue491SurfaceApproxParityTests {
     }
 
     /// Both surface entry points have always gated on `HasResult()`, which OCCT documents as true
-    /// even for a fit that is not within the requested tolerance. That leniency is the contract,
+    /// even for a fit that is not within the requested tolerance.
+    ///
+    /// That leniency is the contract,
     /// and it is why `approxWithDetails` exists: `isDone` is how a caller finds out.
     @Test("An over-tolerance fit is returned by both, with isDone false")
     func overToleranceFitIsReturnedNotDropped() {
@@ -306,7 +314,9 @@ struct Issue491SurfaceApproxParityTests {
 
     /// `maxDegree` and `maxSegments` are two adjacent `int32_t` the bridge has to **re-order**: the
     /// two entry points declare them in opposite orders (`maxSegments:maxDegree:` on `.approximated`,
-    /// `maxDegree:maxSegments:` on `.approxWithDetails`) and the shared helper takes one order. A
+    /// `maxDegree:maxSegments:` on `.approxWithDetails`) and the shared helper takes one order.
+    ///
+    /// A
     /// silent swap in either path is the obvious way for this refactor to go wrong.
     ///
     /// `geometryMatches` above covers it for the `degree 4 in 20 segments` request, but only if the

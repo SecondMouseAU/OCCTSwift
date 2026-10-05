@@ -6,7 +6,9 @@ import simd
 @Suite("Loft polar-method SIGSEGV regression (#176)")
 struct LoftPolarMethodCrashTests {
     /// Exact profile set from issue #176 (Kiha 40 body 1068): 8 mismatched convex polygons
-    /// (alternating 5- and 4-vertex, with a 2.5-unit gap near z=0). On an UNPATCHED OCCT this
+    /// (alternating 5- and 4-vertex, with a 2.5-unit gap near z=0).
+    ///
+    /// On an UNPATCHED OCCT this
     /// deterministically SIGSEGVs single-threaded inside
     /// BRepFill_CompatibleWires:SameNumberByPolarMethod, the correspondence-list iterators
     /// over-advance and dereference a null list node ("Address 8"). The bridge's catch(...) cannot

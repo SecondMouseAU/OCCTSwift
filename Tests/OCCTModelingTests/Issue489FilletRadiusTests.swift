@@ -57,7 +57,9 @@ struct Issue489FilletRadiusTests {
     /// #489 left the bounds check itself alone, so an out-of-range index paired with a *valid*
     /// radius was still skipped and the batch still built from whatever edges resolved. #520
     /// settled that question the other way for all five entry points in this family: a partial
-    /// fillet reported as a complete one is the defect, not the convenience. Pinned in
+    /// fillet reported as a complete one is the defect, not the convenience.
+    ///
+    /// Pinned in
     /// `Issue520FilletContractTests`; kept here so the pair of #489 cases still reads as a pair.
     @Test("An out-of-range index rejects the batch whatever its radius")
     func blendOutOfRangeIndexRejected() {
@@ -67,7 +69,9 @@ struct Issue489FilletRadiusTests {
 
     // MARK: - Uniform radius (Shape.filleted(edges:radius:))
 
-    /// The sibling guard the per-edge variant was missing. It existed in source on both sides of
+    /// The sibling guard the per-edge variant was missing.
+    ///
+    /// It existed in source on both sides of
     /// the FFI boundary but had no test, so nothing pinned it.
     @Test("Uniform fillet rejects a non-positive radius")
     func uniformNonPositiveRadiusRejected() {

@@ -133,7 +133,9 @@ private func timingFixtures() -> [Fixture] {
     return built
 }
 
-/// A plate crossed by open-ended slots. Every slot's floor has a boundary edge that borders no
+/// A plate crossed by open-ended slots.
+///
+/// Every slot's floor has a boundary edge that borders no
 /// wall, which is the case the pre-#777 test could answer without ever building a second map: its
 /// `contains { !covered }` short-circuits on the first uncovered edge, while the replacement
 /// always indexes the whole covering set first. Every other fixture here is an enclosed pocket, so
@@ -172,7 +174,9 @@ private func polygonalPocket(sides: Int) -> Shape? {
     return plate.subtracting(tool)
 }
 
-/// A plate with a grid of square pockets. Every pocket is its own `detectPockets()` iteration, and
+/// A plate with a grid of square pockets.
+///
+/// Every pocket is its own `detectPockets()` iteration, and
 /// the whole shape grows with the grid, which is the axis the discarded per-call map is built over.
 private func pocketedPlate(gridSize: Int) -> Shape? {
     let pitch = 20.0
@@ -222,7 +226,9 @@ private func pocketWork(for shape: Shape) -> [PocketWork] {
 }
 
 /// The pre-#777 test: ask the whole shape which faces bound this edge, then match those against
-/// the covering set by `IsSame`. Returns true when the pocket is ENCLOSED.
+/// the covering set by `IsSame`.
+///
+/// Returns true when the pocket is ENCLOSED.
 private func adjacentFacesPredicate(_ work: PocketWork) -> Bool {
     work.floorBoundaryEdges.allSatisfy { edge in
         guard let adj = edge.adjacentFaces(in: work.shape) else { return false }
@@ -239,7 +245,9 @@ private func facesAreSame(_ first: Face, _ second: Face) -> Bool {
 }
 
 /// The replacement: ask each covering face for its own edges, then test the floor's boundary edge
-/// for membership by `IsSame`. The covering set is resolved once per pocket, which is where the
+/// for membership by `IsSame`.
+///
+/// The covering set is resolved once per pocket, which is where the
 /// saving comes from.
 private func coveringEdgesPredicate(_ work: PocketWork) -> Bool {
     let coveringEdges = work.coveringFaces.flatMap { index -> [Shape] in
@@ -256,7 +264,9 @@ private func coveringEdgesPredicate(_ work: PocketWork) -> Bool {
 /// linearly. `OCCTShapeHashCode` is `std::hash<TopoDS_Shape>`, which is exactly the hash
 /// `TopTools_ShapeMapHasher` pairs with `IsSame` (`TopTools_ShapeMapHasher.hxx`, read rather than
 /// assumed), so two `IsSame` shapes always land in the same bucket and a bucket miss is a definite
-/// non-match. Measured against the linear form to decide whether the extra structure earns itself.
+/// non-match.
+///
+/// Measured against the linear form to decide whether the extra structure earns itself.
 ///
 /// **This is a hand copy of `CoveringEdges` (`Sources/OCCTSwift/CoveringEdges.swift`), not a call
 /// into it**: the harness links `OCCTSwift` as an ordinary dependency and cannot see an internal
@@ -279,7 +289,7 @@ private func coveringEdgesHashedPredicate(_ work: PocketWork) -> Bool {
     }
 }
 
-/// #777's own proposal: `BRepGraph`'s indexed edge-to-face incidence, with the graph supplied by
+/// #777's own proposal: BRepGraph's indexed edge-to-face incidence, with the graph supplied by
 /// the caller so its construction is paid once per shape rather than once per pocket.
 private func brepGraphPredicate(_ work: PocketWork, graph: BRepGraph) -> Bool {
     var coveringNodes = Set<Int>()
@@ -355,14 +365,16 @@ enum PocketEnclosureTiming {
             var hashed: [Double] = []
             var graph: [Double] = []
             for _ in 0..<runs {
-                adjacent.append(measureSeconds { work.forEach { _ = adjacentFacesPredicate($0) } })
-                covering.append(measureSeconds { work.forEach { _ = coveringEdgesPredicate($0) } })
+                adjacent.append(
+                    measureSeconds { for item in work { _ = adjacentFacesPredicate(item) } })
+                covering.append(
+                    measureSeconds { for item in work { _ = coveringEdgesPredicate(item) } })
                 hashed.append(
-                    measureSeconds { work.forEach { _ = coveringEdgesHashedPredicate($0) } })
+                    measureSeconds { for item in work { _ = coveringEdgesHashedPredicate(item) } })
                 graph.append(
                     measureSeconds {
                         guard let built = BRepGraph(shape: fixture.shape) else { return }
-                        work.forEach { _ = brepGraphPredicate($0, graph: built) }
+                        for item in work { _ = brepGraphPredicate(item, graph: built) }
                     })
             }
 
@@ -373,7 +385,9 @@ enum PocketEnclosureTiming {
             print("    adjacentFaces(in:), per edge:   \(adjacentSpread.describedMicroseconds)")
             print("    covering edges, linear scan:    \(coveringSpread.describedMicroseconds)")
             print("    covering edges, hash-bucketed:  \(hashedSpread.describedMicroseconds)")
-            print("    BRepGraph, one graph per shape: \(Spread(samples: graph).describedMicroseconds)")
+            print(
+                "    BRepGraph, one graph per shape: \(Spread(samples: graph).describedMicroseconds)"
+            )
             print(
                 String(
                     format:
@@ -401,7 +415,9 @@ enum PocketEnclosureTiming {
                 measureSeconds { _ = fixture.shape.detectPocketsAAG() }
             }
             print("  \(fixture.name)")
-            print("    detectPocketsAAG():             \(Spread(samples: samples).describedMicroseconds)")
+            print(
+                "    detectPocketsAAG():             \(Spread(samples: samples).describedMicroseconds)"
+            )
         }
         print("")
     }
@@ -409,7 +425,9 @@ enum PocketEnclosureTiming {
     // MARK: Part 4
 
     /// Edge-to-face incidence, all three constructions, over EVERY edge of each fixture rather
-    /// than only the ones a pocket happens to reach. This is where the constructions can diverge,
+    /// than only the ones a pocket happens to reach.
+    ///
+    /// This is where the constructions can diverge,
     /// and a pocket verdict is a lossy view of it: an index is not a drop-in for a scan just
     /// because both are correct on a box.
     private static func compareIncidence() {
@@ -431,17 +449,21 @@ enum PocketEnclosureTiming {
             built.append(Fixture(name: "plain box (every edge bounds exactly 2 faces)", shape: box))
         }
         if let cylinder = Shape.cylinder(radius: 5, height: 10) {
-            built.append(Fixture(name: "cylinder (seam edge on a periodic surface)", shape: cylinder))
+            built.append(
+                Fixture(name: "cylinder (seam edge on a periodic surface)", shape: cylinder))
         }
         if let cone = Shape.cone(bottomRadius: 5, topRadius: 0, height: 10) {
-            built.append(Fixture(name: "cone (apex is a degenerate, zero-length edge)", shape: cone))
+            built.append(
+                Fixture(name: "cone (apex is a degenerate, zero-length edge)", shape: cone))
         }
         if let sphere = Shape.sphere(radius: 5) {
-            built.append(Fixture(name: "sphere (a seam and two degenerate pole edges)", shape: sphere))
+            built.append(
+                Fixture(name: "sphere (a seam and two degenerate pole edges)", shape: sphere))
         }
         if let split = horizontalSplitCompound() {
             built.append(
-                Fixture(name: "two solids sharing one cut face (edges bound 4 faces)", shape: split))
+                Fixture(name: "two solids sharing one cut face (edges bound 4 faces)", shape: split)
+            )
         }
         return built
     }
@@ -503,7 +525,9 @@ enum PocketEnclosureTiming {
         histogram.keys.sorted().map { "\($0) faces x\(histogram[$0] ?? 0)" }.joined(separator: ", ")
     }
 
-    /// Two solids sharing one horizontal cut face, compounded. Every edge of that shared face is
+    /// Two solids sharing one horizontal cut face, compounded.
+    ///
+    /// Every edge of that shared face is
     /// bounded by four faces (each solid's own side face and its own occurrence of the cut face),
     /// which is the case `Edge.adjacentFaces(in:)` structurally cannot report.
     private static func horizontalSplitCompound() -> Shape? {
@@ -580,7 +604,9 @@ enum PocketEnclosureTiming {
         return box.subtracting(cone)
     }
 
-    /// A pocketed box cut in half through the pocket, then compounded. Each half's floor keeps a
+    /// A pocketed box cut in half through the pocket, then compounded.
+    ///
+    /// Each half's floor keeps a
     /// boundary edge lying on the cut plane, and that edge is bounded by both halves' cut faces as
     /// well as both halves' floors: four faces on one edge, on a shape that still presents a
     /// pocket to `detectPockets()`.

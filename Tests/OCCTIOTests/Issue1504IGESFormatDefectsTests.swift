@@ -1,15 +1,17 @@
 import Foundation
+import OCCTBridge
 import Testing
 
 @testable import OCCTSwift
-import OCCTBridge
 
 // MARK: - Issue #1504: robust IGES import's dead precision override + multi-shape export
 // silently dropping a shape `AddShape` rejects.
 
 /// `.serialized`: Finding 1's cases poison and read back the shared, process-wide
 /// `read.maxprecision.val` `Interface_Static` parameter (#1157), the same global every other
-/// STEP/IGES bridge call touches under `igesMutex()`. Running the two cases concurrently with
+/// STEP/IGES bridge call touches under `igesMutex()`.
+///
+/// Running the two cases concurrently with
 /// each other would race on that poison/read window the same way concurrent unrelated
 /// STEP/IGES calls could (mitigated for those by isolating this suite's own runs).
 @Suite("Issue #1504: IGES format defects", .serialized)
@@ -66,7 +68,9 @@ struct Issue1504IGESFormatDefectsTests {
     // MARK: - Finding 2: OCCTExportIGESMultiShape silently dropped a shape AddShape rejected
 
     /// A cone with a zero top radius has a degenerate apex edge with no 3D curve (only a
-    /// pcurve on the conical surface). Standalone, it is `BRepCheck_Analyzer`-valid, so it
+    /// pcurve on the conical surface).
+    ///
+    /// Standalone, it is `BRepCheck_Analyzer`-valid, so it
     /// passes #1226's client-side `Shape.isValid` filter, but `IGESControl_Writer::AddShape`
     /// still rejects it (its 3D-curve transfer produces a null IGES entity), the narrower gap
     /// #1504 identifies as still live after #1226.

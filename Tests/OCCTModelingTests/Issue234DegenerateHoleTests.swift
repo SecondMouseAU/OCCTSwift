@@ -5,6 +5,7 @@ import simd
 
 /// Issue #234: `faceAddHole` accepted a degenerate (2-vertex / zero-area) hole wire, producing an
 /// invalid prism that then SIGSEGV'd OCCT's `ShapeFix` (`healed()`), an uncatchable OS signal.
+///
 /// Fix: `faceAddHole` rejects degenerate hole wires (returns nil), breaking the crash chain at the
 /// source. These tests guard that (and that valid holes still work).
 @Suite("Issue #234, faceAddHole rejects degenerate hole wires")

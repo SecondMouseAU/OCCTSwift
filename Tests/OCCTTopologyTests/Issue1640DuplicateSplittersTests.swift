@@ -4,7 +4,9 @@ import Testing
 @testable import OCCTSwift
 
 /// #1640: three bridge functions in the healing family were declared, defined, compiled into every
-/// build and called from nothing. All three turned out to be duplicates of a function that already
+/// build and called from nothing.
+///
+/// All three turned out to be duplicates of a function that already
 /// has a Swift caller, so all three are deleted and no new Swift API replaces them.
 ///
 /// Deleting a duplicate is only safe if the survivor is actually tested, and the survivors were
@@ -87,7 +89,8 @@ struct Issue1640DuplicateSplittersTests {
             let divided = try #require(cylinder.dividedClosedFaces(splitPoints: splitPoints))
             #expect(
                 divided.subShapes(ofType: .face).count == expected,
-                "splitPoints \(splitPoints): the wall becomes \(splitPoints + 1) faces, caps untouched")
+                "splitPoints \(splitPoints): the wall becomes \(splitPoints + 1) faces, caps untouched"
+            )
             #expect(abs(try #require(divided.volume) - #require(cylinder.volume)) < 1e-6)
         }
     }

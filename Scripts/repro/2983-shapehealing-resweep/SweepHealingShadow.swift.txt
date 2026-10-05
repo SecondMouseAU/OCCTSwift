@@ -1,0 +1,455 @@
+import Foundation
+import OCCTBridge
+
+// TEMPORARY injection harness for the #2983 ShapeHealing re-sweep. This `.txt` is the evidence
+// copy: for a sweep it is copied to Sources/OCCTSwift/SweepHealingShadow.swift and removed again,
+// and that file must never be committed (README.md, "Running it").
+// One build serves every switch; SWEEP_HEALING_SWITCH selects one at runtime. With the variable
+// unset every shadow is a pure pass-through, which the sweep asserts (suite green, no switch).
+
+enum SweepHealingGate {
+    static let active: String =
+        Foundation.ProcessInfo.processInfo.environment["SWEEP_HEALING_SWITCH"] ?? ""
+    static func on(_ name: String) -> Bool { active == name }
+
+    // TopAbs_ShapeEnum
+    static let compoundType: Int32 = 0
+    static let solidType: Int32 = 2
+    static let shellType: Int32 = 3
+
+    static func type(of s: OpaquePointer) -> Int32 { Int32(OCCTBridge.OCCTShapeGetType(s)) }
+
+    static func children(of s: OpaquePointer) -> [OpaquePointer] {
+        var out: [OpaquePointer] = []
+        let n = OCCTBridge.OCCTShapeNbChildren(s)
+        var i: Int32 = 0
+        while i < n {
+            if let c = OCCTBridge.OCCTShapeChild(s, i) { out.append(c) }
+            i += 1
+        }
+        return out
+    }
+
+    static func subShapes(of s: OpaquePointer, type t: Int32) -> [OpaquePointer] {
+        let n = OCCTBridge.OCCTShapeGetSubShapeCount(s, t)
+        if n <= 0 { return [] }
+        var buf = [OpaquePointer?](repeating: nil, count: Int(n))
+        let written = buf.withUnsafeMutableBufferPointer {
+            OCCTBridge.OCCTShapeGetSubShapes(s, t, $0.baseAddress, n)
+        }
+        return buf.prefix(Int(written)).compactMap { $0 }
+    }
+
+    static func compound(_ shapes: [OpaquePointer]) -> OpaquePointer? {
+        let hs: [OpaquePointer?] = shapes
+        return hs.withUnsafeBufferPointer {
+            OCCTBridge.OCCTShapeCreateCompound($0.baseAddress, Int32(shapes.count))
+        }
+    }
+
+    /// The bodies of a result: a compound's children, otherwise the result itself.
+    static func bodies(of r: OpaquePointer) -> [OpaquePointer] {
+        type(of: r) == compoundType ? children(of: r) : [r]
+    }
+
+    /// One body is the body itself, several are a compound (occtSolidBodiesToShape's contract).
+    static func assemble(_ bodies: [OpaquePointer]) -> OpaquePointer? {
+        if bodies.isEmpty { return nil }
+        if bodies.count == 1 { return bodies[0] }
+        return compound(bodies)
+    }
+
+    static func copy(_ s: OpaquePointer) -> OpaquePointer? {
+        OCCTBridge.OCCTShapeCopy(s, false, false)
+    }
+
+    /// First body as built (fixed), every later body built straight from its shell with no
+    /// orientation fix: the loop that fixes only its first iteration.
+    static func partialUnfixed(
+        shells: [OpaquePointer], first: OpaquePointer, result: OpaquePointer
+    ) -> OpaquePointer? {
+        // Only where every input shell is a body (a quilt of free shells); a cavity shell would
+        // become a spurious body and the switch would be testing parity, not orientation.
+        guard shells.count == bodies(of: result).count, shells.count > 1 else { return result }
+        var out: [OpaquePointer] = [first]
+        for s in shells.dropFirst() {
+            var h: [OpaquePointer?] = [s]
+            let u = h.withUnsafeMutableBufferPointer {
+                OCCTBridge.OCCTSolidFromShells($0.baseAddress, 1)
+            }
+            if let u { out.append(u) }
+        }
+        return assemble(out)
+    }
+
+    /// Distort a multi-body result according to the active switch. `prefix` selects the family
+    /// (SOLID, SFS, FIX, UP, HIST). Returns the result unchanged when no switch of that family
+    /// is active.
+    static func distort(_ r: OpaquePointer, family: String) -> OpaquePointer? {
+        let b = bodies(of: r)
+        if on("\(family)_FIRST_ONLY") { return b.first }
+        if on("\(family)_LAST_ONLY") { return b.last }
+        if on("\(family)_DUP_FIRST") {
+            // The first body in every position, as DISTINCT copies: a repeated TShape counts once
+            // in sub-shape enumeration, so a bare repeat would be caught by any count.
+            guard let f = b.first, b.count > 1 else { return r }
+            var out: [OpaquePointer] = [f]
+            for _ in 1..<b.count { if let c = copy(f) { out.append(c) } }
+            return assemble(out)
+        }
+        if on("\(family)_SWAP") { return b.count > 1 ? assemble(Array(b.reversed())) : r }
+        if on("\(family)_WRAP_SINGLE") {
+            // One body comes back wrapped in a compound instead of as the solid itself.
+            return (b.count == 1 && type(of: r) != compoundType) ? compound([r]) : r
+        }
+        if on("\(family)_REVERSE_SECOND") {
+            guard b.count > 1, let rev = OCCTBridge.OCCTShapeReversed(b[1]) else { return r }
+            var out = b
+            out[1] = rev
+            return assemble(out)
+        }
+        if on("\(family)_DROP_LAST") { return b.count > 1 ? assemble(Array(b.dropLast())) : r }
+        if on("\(family)_REVERSED") {
+            let rev = b.compactMap { OCCTBridge.OCCTShapeReversed($0) }
+            return assemble(rev)
+        }
+        if on("\(family)_NIL") { return nil }
+        if on("\(family)_IDENTITY_RESULT") { return r }
+        return r
+    }
+}
+
+// MARK: - Shape.solid(from:)
+
+func OCCTShapeCreateSolidFromShell(_ shell: OpaquePointer!) -> OpaquePointer! {
+    if SweepHealingGate.on("SOLID_IDENTITY") { return SweepHealingGate.copy(shell) }
+    if SweepHealingGate.on("SOLID_NO_PARITY") {
+        // Every shell becomes a body, the pre-parity free-shell behaviour.
+        let shells = SweepHealingGate.subShapes(of: shell, type: SweepHealingGate.shellType)
+        let made = shells.compactMap { OCCTBridge.OCCTShapeCreateSolidFromShell($0) }
+        return SweepHealingGate.assemble(made)
+    }
+    if SweepHealingGate.on("SOLID_DROP_OPEN") {
+        guard let r = OCCTBridge.OCCTShapeCreateSolidFromShell(shell) else { return nil }
+        let kept = SweepHealingGate.bodies(of: r).filter { OCCTBridge.OCCTShapeIsValid($0) }
+        return SweepHealingGate.assemble(kept)
+    }
+    if SweepHealingGate.on("SOLID_NONNIL_FOR_NOSHELL") {
+        let r = OCCTBridge.OCCTShapeCreateSolidFromShell(shell)
+        return r ?? SweepHealingGate.copy(shell)
+    }
+    guard let r = OCCTBridge.OCCTShapeCreateSolidFromShell(shell) else { return nil }
+    if SweepHealingGate.on("SOLID_NIL_ON_MULTI"), SweepHealingGate.bodies(of: r).count > 1 {
+        return nil
+    }
+    if SweepHealingGate.on("SOLID_PARTIAL_UNFIXED"), let f = SweepHealingGate.bodies(of: r).first {
+        let shells = SweepHealingGate.subShapes(of: shell, type: SweepHealingGate.shellType)
+        return SweepHealingGate.partialUnfixed(shells: shells, first: f, result: r)
+    }
+    return SweepHealingGate.distort(r, family: "SOLID")
+}
+
+// MARK: - Shape.solidWithFullHistory(from:)
+
+func OCCTShapeCreateSolidFromShellWithHistory(
+    _ shell: OpaquePointer, _ outResult: UnsafeMutablePointer<OpaquePointer?>?
+) -> OpaquePointer? {
+    if SweepHealingGate.on("HIST_IDENTITY") {
+        // Hand back the shell input as the "result".
+        let h = OCCTBridge.OCCTShapeCreateSolidFromShellWithHistory(shell, outResult)
+        outResult?.pointee = SweepHealingGate.copy(shell)
+        return h
+    }
+    if SweepHealingGate.on("HIST_NO_PARITY") {
+        let shells = SweepHealingGate.subShapes(of: shell, type: SweepHealingGate.shellType)
+        var made: [OpaquePointer] = []
+        var lastHist: OpaquePointer?
+        for s in shells {
+            var out: OpaquePointer?
+            if let h = OCCTBridge.OCCTShapeCreateSolidFromShellWithHistory(s, &out), let o = out {
+                made.append(o)
+                lastHist = h
+            }
+        }
+        outResult?.pointee = SweepHealingGate.assemble(made)
+        return lastHist
+    }
+    if SweepHealingGate.on("HIST_DROP_OPEN") {
+        let h = OCCTBridge.OCCTShapeCreateSolidFromShellWithHistory(shell, outResult)
+        if let res = outResult?.pointee {
+            let kept = SweepHealingGate.bodies(of: res).filter { OCCTBridge.OCCTShapeIsValid($0) }
+            outResult?.pointee = SweepHealingGate.assemble(kept)
+        }
+        return h
+    }
+    if SweepHealingGate.on("HIST_FIRST_BODY_HISTORY_ONLY") {
+        // The full result, but a history built from the first body alone (a context that was
+        // not shared across the per-body runs).
+        let full = OCCTBridge.OCCTShapeCreateSolidFromShellWithHistory(shell, outResult)
+        let shells = SweepHealingGate.subShapes(of: shell, type: SweepHealingGate.shellType)
+        if let first = shells.first {
+            var junk: OpaquePointer?
+            return OCCTBridge.OCCTShapeCreateSolidFromShellWithHistory(first, &junk) ?? full
+        }
+        return full
+    }
+    if SweepHealingGate.on("HIST_LAST_BODY_HISTORY_ONLY") {
+        let full = OCCTBridge.OCCTShapeCreateSolidFromShellWithHistory(shell, outResult)
+        let shells = SweepHealingGate.subShapes(of: shell, type: SweepHealingGate.shellType)
+        if let last = shells.last {
+            var junk: OpaquePointer?
+            return OCCTBridge.OCCTShapeCreateSolidFromShellWithHistory(last, &junk) ?? full
+        }
+        return full
+    }
+    if SweepHealingGate.on("HIST_UNRELATED_HISTORY") {
+        // The right result, but the history of a different, trivially valid run.
+        let full = OCCTBridge.OCCTShapeCreateSolidFromShellWithHistory(shell, outResult)
+        if let box = OCCTBridge.OCCTShapeCreateBoxAt(500, 500, 500, 1, 1, 1),
+            let boxShell = SweepHealingGate.subShapes(of: box, type: SweepHealingGate.shellType)
+                .first
+        {
+            var junk: OpaquePointer?
+            return OCCTBridge.OCCTShapeCreateSolidFromShellWithHistory(boxShell, &junk) ?? full
+        }
+        return full
+    }
+    guard let h = OCCTBridge.OCCTShapeCreateSolidFromShellWithHistory(shell, outResult) else {
+        return nil
+    }
+    if SweepHealingGate.on("HIST_PARTIAL_UNFIXED"), let res = outResult?.pointee,
+        let f = SweepHealingGate.bodies(of: res).first
+    {
+        let shells = SweepHealingGate.subShapes(of: shell, type: SweepHealingGate.shellType)
+        outResult?.pointee = SweepHealingGate.partialUnfixed(shells: shells, first: f, result: res)
+        return h
+    }
+    for fam in ["HIST"] {
+        if let res = outResult?.pointee {
+            if let d = SweepHealingGate.distort(res, family: fam) {
+                outResult?.pointee = d
+            } else {
+                outResult?.pointee = nil
+                return nil
+            }
+        }
+    }
+    return h
+}
+
+// MARK: - Shape.solidFromShellFixed()
+
+func OCCTShapeSolidFromShell(_ shellShape: OpaquePointer) -> OpaquePointer? {
+    if SweepHealingGate.on("SFS_IDENTITY") { return SweepHealingGate.copy(shellShape) }
+    if SweepHealingGate.on("SFS_NO_PARITY") {
+        let shells = SweepHealingGate.subShapes(of: shellShape, type: SweepHealingGate.shellType)
+        let made = shells.compactMap { OCCTBridge.OCCTShapeSolidFromShell($0) }
+        return SweepHealingGate.assemble(made)
+    }
+    if SweepHealingGate.on("SFS_DEDUP_LOST") {
+        // Enumerate by occurrence, not by distinct shell: a repeated free shell is built twice.
+        let kids = SweepHealingGate.children(of: shellShape)
+        if kids.count > 1, kids.allSatisfy({ SweepHealingGate.type(of: $0) == SweepHealingGate.shellType })
+        {
+            let made = kids.compactMap { OCCTBridge.OCCTShapeSolidFromShell($0) }
+            return SweepHealingGate.assemble(made)
+        }
+    }
+    guard let r = OCCTBridge.OCCTShapeSolidFromShell(shellShape) else {
+        // The refusal stops refusing: an input with no shell is handed back as the result.
+        return SweepHealingGate.on("SFS_NONNIL_FOR_NOSHELL") ? SweepHealingGate.copy(shellShape) : nil
+    }
+    if SweepHealingGate.on("SFS_PARTIAL_UNFIXED"), let f = SweepHealingGate.bodies(of: r).first {
+        let shells = SweepHealingGate.subShapes(of: shellShape, type: SweepHealingGate.shellType)
+        return SweepHealingGate.partialUnfixed(shells: shells, first: f, result: r)
+    }
+    return SweepHealingGate.distort(r, family: "SFS")
+}
+
+// MARK: - Shape.fixSolid()
+
+func OCCTShapeFixSolid(_ shape: OpaquePointer) -> OpaquePointer? {
+    if SweepHealingGate.on("FIX_IDENTITY") { return SweepHealingGate.copy(shape) }
+    if SweepHealingGate.on("FIX_NIL_ON_COMPOUND"),
+        SweepHealingGate.type(of: shape) == SweepHealingGate.compoundType
+    {
+        return nil
+    }
+    guard let r = OCCTBridge.OCCTShapeFixSolid(shape) else {
+        // The refusal stops refusing: an input with no solid is handed back as the result.
+        return SweepHealingGate.on("FIX_NONNIL_FOR_NOSOLID") ? SweepHealingGate.copy(shape) : nil
+    }
+    if SweepHealingGate.on("FIX_NO_FLATTEN") {
+        let b = SweepHealingGate.bodies(of: r)
+        if b.count > 1 { return SweepHealingGate.compound([r]) }
+        return r
+    }
+    if SweepHealingGate.on("FIX_PARTIAL_UNFIXED"), let f = SweepHealingGate.bodies(of: r).first {
+        // The first solid healed, every later solid handed back exactly as it came in.
+        let inputSolids = SweepHealingGate.subShapes(of: shape, type: SweepHealingGate.solidType)
+        guard inputSolids.count > 1, inputSolids.count == SweepHealingGate.bodies(of: r).count
+        else { return r }
+        var out: [OpaquePointer] = [f]
+        for s in inputSolids.dropFirst() {
+            if let c = SweepHealingGate.copy(s) { out.append(c) }
+        }
+        return SweepHealingGate.assemble(out)
+    }
+    if SweepHealingGate.on("FIX_FILLS_CAVITY"),
+        SweepHealingGate.subShapes(of: shape, type: SweepHealingGate.shellType).count > 1,
+        SweepHealingGate.subShapes(of: shape, type: SweepHealingGate.solidType).count == 1
+    {
+        // A solid that declares a cavity is rebuilt from its outer shell: the cavity vanishes.
+        return OCCTBridge.OCCTShapeSolidFromShell(shape)
+    }
+    if SweepHealingGate.on("FIX_DROP_DEMOTED") {
+        let kept = SweepHealingGate.bodies(of: r).filter {
+            SweepHealingGate.type(of: $0) == SweepHealingGate.solidType
+        }
+        return SweepHealingGate.assemble(kept)
+    }
+    if SweepHealingGate.on("FIX_PER_INPUT_SOLID_ONLY_FIRST_SHELL") {
+        // A multiconnex solid keeps only its first shell's body.
+        let b = SweepHealingGate.bodies(of: r)
+        if SweepHealingGate.type(of: shape) == SweepHealingGate.solidType, b.count > 1 {
+            return b.first
+        }
+        return r
+    }
+    return SweepHealingGate.distort(r, family: "FIX")
+}
+
+// MARK: - Shape.upgraded()
+
+func OCCTShapeUpgrade(_ shape: OpaquePointer!, _ tolerance: Double) -> OpaquePointer! {
+    if SweepHealingGate.on("UP_IDENTITY") { return SweepHealingGate.copy(shape) }
+    if SweepHealingGate.on("UP_NO_PARITY") {
+        guard let sewn = OCCTBridge.OCCTShapeSewSingle(shape, tolerance) else { return nil }
+        let shells = SweepHealingGate.subShapes(of: sewn, type: SweepHealingGate.shellType)
+        let made = shells.compactMap { OCCTBridge.OCCTShapeUpgrade($0, tolerance) }
+        return SweepHealingGate.assemble(made)
+    }
+    if SweepHealingGate.on("UP_SEW_ONLY") {
+        // Skips the solid and healing steps: the sewn shape is the result.
+        return OCCTBridge.OCCTShapeSewSingle(shape, tolerance)
+    }
+    if SweepHealingGate.on("UP_DROP_OPEN") {
+        guard let r = OCCTBridge.OCCTShapeUpgrade(shape, tolerance) else { return nil }
+        let kept = SweepHealingGate.bodies(of: r).filter {
+            SweepHealingGate.type(of: $0) == SweepHealingGate.solidType
+        }
+        return SweepHealingGate.assemble(kept)
+    }
+    if SweepHealingGate.on("UP_SKIP_HEAL") {
+        // Sew then make solids, but never run the ShapeFix_Shape pass.
+        guard let sewn = OCCTBridge.OCCTShapeSewSingle(shape, tolerance) else { return nil }
+        return OCCTBridge.OCCTShapeCreateSolidFromShell(sewn)
+    }
+    guard let r = OCCTBridge.OCCTShapeUpgrade(shape, tolerance) else { return nil }
+    if SweepHealingGate.on("UP_PARTIAL_UNFIXED"), let f = SweepHealingGate.bodies(of: r).first,
+        let sewn = OCCTBridge.OCCTShapeSewSingle(shape, tolerance)
+    {
+        let shells = SweepHealingGate.subShapes(of: sewn, type: SweepHealingGate.shellType)
+        return SweepHealingGate.partialUnfixed(shells: shells, first: f, result: r)
+    }
+    return SweepHealingGate.distort(r, family: "UP")
+}
+
+// MARK: - Shape.healed()
+
+func OCCTShapeHeal(_ shape: OpaquePointer!) -> OpaquePointer! {
+    if SweepHealingGate.on("HEAL_IDENTITY") { return SweepHealingGate.copy(shape) }
+    if SweepHealingGate.on("HEAL_NIL") { return nil }
+    return OCCTBridge.OCCTShapeHeal(shape)
+}
+
+// MARK: - Shape.analyze() and analyzeShell()
+
+func OCCTShapeAnalyze(_ shape: OpaquePointer!, _ tolerance: Double) -> OCCTShapeAnalysisResult {
+    var r = OCCTBridge.OCCTShapeAnalyze(shape, tolerance)
+    if SweepHealingGate.on("AN_FREE_ZERO") {
+        r.freeEdgeCount = 0
+        r.freeFaceCount = 0
+    }
+    if SweepHealingGate.on("AN_FREEFACE_ZERO") { r.freeFaceCount = 0 }
+    if SweepHealingGate.on("AN_FREEFACE_CAP1") { r.freeFaceCount = min(r.freeFaceCount, 1) }
+    if SweepHealingGate.on("AN_FREEFACE_PLUS1") { r.freeFaceCount += 1 }
+    if SweepHealingGate.on("AN_FREEEDGE_PLUS1") && r.freeEdgeCount > 0 { r.freeEdgeCount += 1 }
+    if SweepHealingGate.on("AN_FREEEDGE_MINUS1") && r.freeEdgeCount > 0 { r.freeEdgeCount -= 1 }
+    if SweepHealingGate.on("AN_FREEEDGE_FIRST_SHELL_ONLY") {
+        let shells = SweepHealingGate.subShapes(of: shape, type: SweepHealingGate.shellType)
+        if shells.count > 1, let first = shells.first {
+            let one = OCCTBridge.OCCTShapeAnalyze(first, tolerance)
+            r.freeEdgeCount = one.freeEdgeCount
+            r.freeFaceCount = one.freeFaceCount
+        }
+    }
+    if SweepHealingGate.on("AN_SMALLEDGE_PLUS1") { r.smallEdgeCount += 1 }
+    if SweepHealingGate.on("AN_SMALLFACE_PLUS1") { r.smallFaceCount += 1 }
+    if SweepHealingGate.on("AN_GAP_PLUS1") { r.gapCount += 1 }
+    if SweepHealingGate.on("AN_INVALID_FALSE") { r.hasInvalidTopology = false }
+    if SweepHealingGate.on("AN_INVALID_TRUE") { r.hasInvalidTopology = true }
+    if SweepHealingGate.on("AN_NIL") { r.isValid = false }
+    if SweepHealingGate.on("AN_CHECKINTERNAL_FALSE") && r.freeEdgeCount > 0 {
+        // checkinternaledges=false counts the INTERNAL-oriented duplicate's edge as free again.
+        r.freeEdgeCount += 1
+    }
+    return r
+}
+
+func OCCTShapeAnalyzeShell(_ shape: OpaquePointer) -> OCCTShellAnalysisResult {
+    var r = OCCTBridge.OCCTShapeAnalyzeShell(shape)
+    if SweepHealingGate.on("ASH_FREE_ZERO") {
+        r.freeEdgeCount = 0
+        r.hasFreeEdges = false
+    }
+    if SweepHealingGate.on("ASH_COUNT_PLUS1") && r.freeEdgeCount > 0 { r.freeEdgeCount += 1 }
+    if SweepHealingGate.on("ASH_HASFREE_FALSE") { r.hasFreeEdges = false }
+    if SweepHealingGate.on("ASH_ORIENT_PROBLEMS") { r.hasOrientationProblems = true }
+    return r
+}
+
+// MARK: - Shape.isValidSolid
+
+func OCCTShapeIsValidSolid(_ shape: OpaquePointer!) -> Bool {
+    if SweepHealingGate.on("VS_TRUE") { return true }
+    if SweepHealingGate.on("VS_FALSE") { return false }
+    if SweepHealingGate.on("VS_TYPEBLIND") { return OCCTBridge.OCCTShapeIsValid(shape) }
+    return OCCTBridge.OCCTShapeIsValidSolid(shape)
+}
+
+// MARK: - Fixtures (a switch here changes what a test's fixture means, not the subject)
+
+func OCCTShapeSewSingle(_ shape: OpaquePointer!, _ tolerance: Double) -> OpaquePointer! {
+    if SweepHealingGate.on("FX_SEW_IDENTITY") { return SweepHealingGate.copy(shape) }
+    return OCCTBridge.OCCTShapeSewSingle(shape, tolerance)
+}
+
+func OCCTShapeIsValid(_ shape: OpaquePointer!) -> Bool {
+    if SweepHealingGate.on("ISVALID_TRUE") { return true }
+    if SweepHealingGate.on("ISVALID_FALSE") { return false }
+    return OCCTBridge.OCCTShapeIsValid(shape)
+}
+
+func OCCTSolidFromShells(
+    _ shells: UnsafeMutablePointer<OpaquePointer?>!, _ count: Int32
+) -> OpaquePointer! {
+    if SweepHealingGate.on("FX_SFSH_NIL") { return nil }
+    let r = OCCTBridge.OCCTSolidFromShells(shells, count)
+    if SweepHealingGate.on("FX_SFSH_AUTOHEAL"), let r { return OCCTBridge.OCCTShapeHeal(r) }
+    return r
+}
+
+func OCCTShapeReversed(_ shape: OpaquePointer) -> OpaquePointer? {
+    if SweepHealingGate.on("FX_REVERSE_NOOP") { return SweepHealingGate.copy(shape) }
+    return OCCTBridge.OCCTShapeReversed(shape)
+}
+
+func OCCTShapeSelfIntersectsBounded(_ shape: OpaquePointer!, _ timeoutSeconds: Double) -> Int32 {
+    let real = OCCTBridge.OCCTShapeSelfIntersectsBounded(shape, timeoutSeconds)
+    if SweepHealingGate.on("SI_FALSE") { return 0 }
+    if SweepHealingGate.on("SI_TRUE") { return 1 }
+    if SweepHealingGate.on("SI_NIL") { return -1 }
+    if SweepHealingGate.on("SI_FLIP") { return real == 1 ? 0 : (real == 0 ? 1 : real) }
+    return real
+}

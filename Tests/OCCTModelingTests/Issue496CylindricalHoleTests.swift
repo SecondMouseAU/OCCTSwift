@@ -52,6 +52,7 @@ struct Issue496CylindricalHoleTests {
     }
 
     /// `Perform` cuts an *infinite* cylinder, the axis origin is an anchor, not a starting point.
+    ///
     /// The boolean path's cylinder starts at the position it was given. With the entry point inside
     /// the stock the two disagree by exactly the material behind the origin.
     @Test("Through-all ignores the axis origin; the boolean drill starts there")
@@ -80,7 +81,9 @@ struct Issue496CylindricalHoleTests {
         }
     }
 
-    /// `BRepFeat_MakeCylindricalHole` is a local operation on a solid. The boolean path has no such
+    /// `BRepFeat_MakeCylindricalHole` is a local operation on a solid.
+    ///
+    /// The boolean path has no such
     /// requirement, and drilling a shell is a real thing callers do to sheet stock.
     @Test("A shell can be drilled by the boolean path, not by the thru-next feature")
     func shellInputIsBooleanOnly() {
@@ -151,7 +154,9 @@ struct Issue496CylindricalHoleTests {
 
     /// `BRepFeat_HoleTooLong` is written in exactly two places in the kernel
     /// (`BRepFeat_MakeCylindricalHole.cxx:526` and `:667`), both reachable only through
-    /// `PerformBlind`. The status query wraps `Perform`, so `.holeTooLong` could not be observed
+    /// `PerformBlind`.
+    ///
+    /// The status query wraps `Perform`, so `.holeTooLong` could not be observed
     /// through any public spelling, the case existed in the Swift enum and nothing could produce it.
     @Test("The blind-hole extent is the only way to observe .holeTooLong")
     func holeTooLongIsReachable() {
@@ -179,7 +184,9 @@ struct Issue496CylindricalHoleTests {
                 radius: 5, extent: .blind(depth: 11)) == .noError)
     }
 
-    /// A status that disagrees with the drill it describes is the defect above. Every extent must
+    /// A status that disagrees with the drill it describes is the defect above.
+    ///
+    /// Every extent must
     /// now agree with its own drill on the same request.
     @Test("Every extent's status agrees with that extent's drill")
     func statusAgreesWithItsOwnDrill() {
@@ -214,7 +221,9 @@ struct Issue496CylindricalHoleTests {
     }
 
     /// `statusAgreesWithItsOwnDrill` above only checks "comfortably fits" and "comfortably too
-    /// long" `.blind` depths. The two `HoleTooLong` checks are independent computations,
+    /// long" `.blind` depths.
+    ///
+    /// The two `HoleTooLong` checks are independent computations,
     /// `PerformBlind`'s own a priori check (`BRepFeat_MakeCylindricalHole.cxx:526`) compares
     /// `LocOpe_CurveShapeIntersector`'s parametric intersection distance against the requested
     /// depth, *before* any cut is made; `Validate()`'s post-hoc check (`:667`) inspects whether the
@@ -258,7 +267,9 @@ struct Issue496CylindricalHoleTests {
 
     // MARK: - The shared direction precondition
 
-    /// Both families reject a zero-length direction. The boolean path always did, by an explicit
+    /// Both families reject a zero-length direction.
+    ///
+    /// The boolean path always did, by an explicit
     /// guard; the feature family used to reach `gp_Dir`, throw `Standard_ConstructionError`, and
     /// swallow it in its own `catch (...)`. Same answer, reached by an accident that a future
     /// narrowing of that catch would have removed. Both now share one precondition.
@@ -296,7 +307,9 @@ struct Issue496CylindricalHoleTests {
         }
     }
 
-    /// A radius OCCT cannot build a cylinder from is not a drillable request. The kernel is a
+    /// A radius OCCT cannot build a cylinder from is not a drillable request.
+    ///
+    /// The kernel is a
     /// Release build, so its own `*_Raise_if` preconditions are compiled out (see #487) and nothing
     /// below the bridge rejects this for us.
     ///
@@ -349,7 +362,9 @@ struct Issue496CylindricalHoleTests {
     // MARK: - The two newly wrapped extents
 
     /// `PerformUntilEnd` was the mode the audit assumed `Perform` was, bounded by the stock rather
-    /// than infinite. It was not wrapped, so the family had no forward-bounded through spelling.
+    /// than infinite.
+    ///
+    /// It was not wrapped, so the family had no forward-bounded through spelling.
     @Test("untilEnd drills the stock, bounded by the entry and exit faces")
     func untilEndDrillsTheStock() {
         guard let box = plate(), let v0 = box.volume else {
@@ -370,7 +385,9 @@ struct Issue496CylindricalHoleTests {
         #expect(d.isValid)
     }
 
-    /// Two plates stacked on the drill axis, separated by a gap. Origin (0,0,15) along -Z puts
+    /// Two plates stacked on the drill axis, separated by a gap.
+    ///
+    /// Origin (0,0,15) along -Z puts
     /// plate A at axis parameters 5...25 and plate B at 45...65.
     private func stack() -> Shape? {
         guard let a = Shape.box(width: 50, height: 50, depth: 20),
@@ -380,6 +397,7 @@ struct Issue496CylindricalHoleTests {
     }
 
     /// The ranged `Perform(Radius, PFrom, PTo)` overload does not cut *between* its two parameters.
+    ///
     /// Measured: the window selects which entry/exit **face pair** along the axis bounds the hole,
     /// and the hole then spans that whole pair. A window wholly inside one plate still drills all of
     /// it; a window covering only the gap between two plates is `InvalidPlacement`.
@@ -435,7 +453,9 @@ struct Issue496CylindricalHoleTests {
     }
 
     /// Every spelling that claims to bound the hole by the stock's own faces removes the same
-    /// material from a stack as the boolean drill does. This was #532: `PerformUntilEnd`, the ranged
+    /// material from a stack as the boolean drill does.
+    ///
+    /// This was #532: `PerformUntilEnd`, the ranged
     /// `Perform` and `PerformBlind` selected from the *cut result* rather than the split tool, kept
     /// pieces that were not tool parts at all, and returned the input with the cylinder's faces
     /// imprinted on it while reporting `BRepFeat_NoError`. Fixed by carried patch `0020`; see
@@ -481,6 +501,7 @@ struct Issue496CylindricalHoleTests {
     // MARK: - The convenience spellings still mean what they meant
 
     /// The four v0.71.0 methods are now three-line forwards onto the extent-carrying spelling.
+    ///
     /// Each must still produce exactly the shape it produced before.
     @Test("The v0.71.0 spellings agree with their extents")
     func legacySpellingsAgreeWithTheirExtents() {

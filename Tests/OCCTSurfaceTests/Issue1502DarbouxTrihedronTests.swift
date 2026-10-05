@@ -7,7 +7,9 @@ import simd
 /// hand `GeomFill_Darboux::SetCurve` a plain `BRepAdaptor_Curve` instead of a real
 /// `Adaptor3d_CurveOnSurface` built from the edge's pcurve on `face`. `GeomFill_Darboux::D0`
 /// unconditionally `static_cast`s the handle it was given to `Adaptor3d_CurveOnSurface*`, an
-/// uncatchable bus error against any other `Adaptor3d_Curve` subclass. That crash cannot be
+/// uncatchable bus error against any other `Adaptor3d_Curve` subclass.
+///
+/// That crash cannot be
 /// reproduced inside this process (it would take the whole `swift test` run down with it); it was
 /// validated closed with a standalone reproducer instead -- see
 /// `Scripts/repro/1502-surface-adaptor-defects/` for the before/after transcript. This suite

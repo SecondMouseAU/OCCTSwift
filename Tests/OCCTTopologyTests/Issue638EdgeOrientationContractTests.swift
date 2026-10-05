@@ -76,7 +76,9 @@ struct Issue638EdgeOrientationContractTests {
     // MARK: - 2. Edge's accessors do not depend on the collapsed-away orientation
 
     /// Build the identical edge with both `TopAbs_Orientation`s and compare every geometric
-    /// accessor `Edge` exposes. If any of these ever starts reading orientation (e.g. an
+    /// accessor `Edge` exposes.
+    ///
+    /// If any of these ever starts reading orientation (e.g. an
     /// orientation-aware `BRepAdaptor_Curve` replacing today's `BRep_Tool::Curve`), this is the
     /// test that catches it. The pair below is guaranteed opposite by construction
     /// (`Shape.reversed`), not by hoping a fixture's topology happens to produce two orientations.
@@ -180,7 +182,9 @@ struct Issue638EdgeOrientationContractTests {
     }
 
     /// `adjacentFaces(in:)` is a relationship lookup, not a curve evaluation, but it takes the
-    /// edge's own handle. Pin that it too resolves the same pair of faces regardless of which
+    /// edge's own handle.
+    ///
+    /// Pin that it too resolves the same pair of faces regardless of which
     /// orientation the caller's `Edge` happens to carry.
     @Test("adjacentFaces(in:) does not depend on the edge's own orientation")
     func adjacentFacesIsOrientationIndependent() {

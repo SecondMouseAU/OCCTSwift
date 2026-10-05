@@ -103,6 +103,7 @@ struct Issue520FilletContractTests {
 
     /// A single-point radius law is a constant radius, so filleting edge *i* through the evolving
     /// entry point must produce exactly what filleting edge *i* through the per-edge one does.
+    ///
     /// While `EvolvingFilletEdge` was 1-based this comparison was off by one edge.
     @Test("The evolving entry point fillets the same edge the per-edge one does")
     func evolvingUsesTheSameEdgeIndexAsBlend() {
@@ -124,7 +125,9 @@ struct Issue520FilletContractTests {
         }
     }
 
-    /// Index 0 is a real edge now. Under the 1-based contract it named nothing and the call failed.
+    /// Index 0 is a real edge now.
+    ///
+    /// Under the 1-based contract it named nothing and the call failed.
     @Test("Edge index 0 is accepted by the evolving entry point")
     func evolvingAcceptsIndexZero() {
         let box = Shape.box(width: 20, height: 20, depth: 20)!
@@ -268,7 +271,9 @@ struct Issue520FilletContractTests {
     }
 
     /// OCCT renormalises a 3+ point profile with `(U - Uf) / (Ul - Uf)`, which divides by zero when
-    /// every parameter is equal and silently reverses the law when they descend. Neither is what
+    /// every parameter is equal and silently reverses the law when they descend.
+    ///
+    /// Neither is what
     /// the caller wrote, so both are rejected.
     @Test("Profile parameters must strictly increase")
     func nonIncreasingParametersRejected() {
@@ -293,7 +298,9 @@ struct Issue520FilletContractTests {
 
     // MARK: - Contours that never receive a radius (the SIGSEGV paths)
 
-    /// An empty radius law left the contour without one, and `Build()` then SIGSEGV'd. The crash is
+    /// An empty radius law left the contour without one, and `Build()` then SIGSEGV'd.
+    ///
+    /// The crash is
     /// an OS signal, so the bridge's `catch (...)` never saw it: this test used to take the whole
     /// test process down rather than fail.
     @Test("An empty radius law is rejected rather than crashing the build")
@@ -309,7 +316,9 @@ struct Issue520FilletContractTests {
 
     /// The other route to a radius-less contour: `filletedVariable` mapped its parameters onto the
     /// edge's own curve range and passed them where OCCT wanted a contour index, so every
-    /// `SetRadius` was dropped for any edge whose range does not start at 0. Box edges all start at
+    /// `SetRadius` was dropped for any edge whose range does not start at 0.
+    ///
+    /// Box edges all start at
     /// 0, which is why this went unnoticed; the edges a boolean cut produces do not.
     @Test("A variable fillet on a re-parameterised edge does not crash")
     func variableFilletOnReparameterisedEdge() {

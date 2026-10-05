@@ -8,7 +8,9 @@ import simd
 /// `Surface` exposes every transform twice: an immutable copy-returning family
 /// (`translated`/`rotated`/`scaled`/`mirrored*`, backed by six separate bridge functions) and an
 /// in-place family (`translate`/`rotate`/`scale`/`mirrorPoint`/`mirrorAxis`/`mirrorPlane`, all
-/// backed by the single `OCCTSurfaceTransform` dispatcher). Both now build their `gp_Trsf` through
+/// backed by the single `OCCTSurfaceTransform` dispatcher).
+///
+/// Both now build their `gp_Trsf` through
 /// one shared `buildTrsf3D`, so they must produce identical geometry for identical input. Before
 /// #488 the switch existed seven times over and nothing checked the copies agreed. Mirrors
 /// `Curve3DTransformFamilyParityTests`, added for the same fix on `Curve3D` (#416).
@@ -130,7 +132,9 @@ struct SurfaceTransformFamilyParityTests {
     }
 
     /// The analytic cases above all exercise `Geom_ElementarySurface::Transform`, which just moves an
-    /// axis placement. A Bezier surface takes a different override that transforms every pole, so it
+    /// axis placement.
+    ///
+    /// A Bezier surface takes a different override that transforms every pole, so it
     /// is the case most likely to expose a divergence between the two families' `gp_Trsf` values.
     @Test("Bezier surface: both families agree across all six transform kinds")
     func bezierParityAcrossAllKinds() {

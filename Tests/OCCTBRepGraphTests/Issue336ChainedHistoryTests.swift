@@ -5,7 +5,9 @@ import Testing
 
 /// #336: a reported "second `*WithFullHistory` op chained onto a prior op's
 /// output absorbs zero records" turned out not to be a bug in
-/// `add(_:absorbing:inputRoots:operationName:)` at all. The reporter's repro
+/// `add(_:absorbing:inputRoots:operationName:)` at all.
+///
+/// The reporter's repro
 /// used `Shape.box(width:height:depth:)`, which is documented as **centered
 /// at the origin** (see its doc comment and `OCCTShapeCreateBox`), not
 /// corner-anchored like raw OCCT's `BRepPrimAPI_MakeBox(w,h,d)`. That made the
@@ -98,7 +100,9 @@ struct Issue336ChainedHistoryTests {
 
     /// The issue's exact repro, kept as a permanent regression guard: when the
     /// second tool's bounding box does not overlap the first cut's result at
-    /// all, absorbing zero records is correct, not a bug. If a future change
+    /// all, absorbing zero records is correct, not a bug.
+    ///
+    /// If a future change
     /// to the boolean bridge or the absorb path ever makes this non-zero
     /// (or, worse, silently "recovers" nonexistent history), this test should
     /// catch it.

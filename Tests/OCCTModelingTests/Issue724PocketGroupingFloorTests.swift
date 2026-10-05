@@ -31,7 +31,9 @@ struct Issue724PocketGroupingFloorTests {
 
     // MARK: - The headline
 
-    /// The issue's own construction, byte for byte. A cylinder bored from the box's top face
+    /// The issue's own construction, byte for byte.
+    ///
+    /// A cylinder bored from the box's top face
     /// partway down (tool height 20 against a box that is only 10 above the tool's own base at
     /// z=0) leaves one real floor, at z=0, walled by the cylinder's lateral surface. The box's own
     /// top face, at z=10, is the pocket's OPENING, not a second floor.
@@ -59,7 +61,9 @@ struct Issue724PocketGroupingFloorTests {
     // MARK: - The mechanism generalizes across depth
 
     /// Same shape, three tool heights that all leave the same z=0 floor but change how far the
-    /// tool's own top extends past the box's top face. If the fix were keyed to the specific
+    /// tool's own top extends past the box's top face.
+    ///
+    /// If the fix were keyed to the specific
     /// numbers in the issue rather than the general "floor is the wall's low Z" rule, at least one
     /// of these would still double-count.
     @Test(
@@ -84,10 +88,12 @@ struct Issue724PocketGroupingFloorTests {
 
     // MARK: - Non-regression: a genuine multi-wall pocket keeps every wall
 
-    /// The doc-comment fixture (`Shape.detectPocketsAAG()`'s own example): a square pocket whose
+    /// The doc-comment fixture (Shape.detectPocketsAAG()'s own example): a square pocket whose
     /// four walls all bottom out at the same floor. #724's fix filters a wall OUT of a floor's
     /// `wallFaceIndices` when the wall's own low Z does not match that floor; it must not filter
-    /// a wall out just for being one of several that DO match. All four walls of a real, single-
+    /// a wall out just for being one of several that DO match.
+    ///
+    /// All four walls of a real, single-
     /// level pocket share the same floor Z, so all four must survive.
     @Test("a genuine four-walled pocket keeps all four walls")
     func genuineFourWalledPocketKeepsAllWalls() throws {
@@ -102,7 +108,9 @@ struct Issue724PocketGroupingFloorTests {
     }
 
     /// The suite's own pinned square-pocket fixture (`Issue703EdgeConvexityOrderTests`), at
-    /// several depths, stays at exactly one pocket. This fixture already has 8 concave edges
+    /// several depths, stays at exactly one pocket.
+    ///
+    /// This fixture already has 8 concave edges
     /// (4 floor/wall + 4 wall/wall corners) with none of the rim-misclassification #724's own
     /// headline exercises, confirming the fix changes nothing for a pocket that was already
     /// correctly grouped.

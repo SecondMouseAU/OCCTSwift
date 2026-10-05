@@ -30,6 +30,7 @@ struct LocalPropsParityTests {
     }
 
     /// A cubic Bezier whose first two poles sit `spacing` apart, so `|D1(0)| = 3 * spacing`.
+    ///
     /// At `spacing == 0` the point is a cusp: the first significant derivative has order 2.
     private static func cuspBezier(spacing: Double) -> Curve3D {
         Curve3D.bezier(poles: [
@@ -100,7 +101,9 @@ struct LocalPropsParityTests {
         #expect(cylinder.localCurvatureDirections(u: 0, v: 0.3) != nil)
     }
 
-    /// The Surface regression proper. Every `v` here lands between `1e-10` and
+    /// The Surface regression proper.
+    ///
+    /// Every `v` here lands between `1e-10` and
     /// `Precision::Confusion()`, so pre-fix `localCurvatures` returned a value and every canonical
     /// entry point returned nil/zero for the identical point.
     @Test("Inside the old 1e-10 window the two Surface families agree")
@@ -241,8 +244,8 @@ struct LocalPropsParityTests {
         }
     }
 
-    /// The discriminating half of the previous test: a cusped edge, where `curveLocalProps`'
-    /// `1e-6` resolution put it three decades away from `Edge`'s `Precision::Confusion()`, and
+    /// The discriminating half of the previous test: a cusped edge, where the
+    /// `1e-6` resolution of `curveLocalProps` put it three decades away from Edge's `Precision::Confusion()`, and
     /// where the `RealLast()` sentinel reached `CentreOfCurvature()` through both.
     @Test("Shape.curveLocalProps agrees with Edge on a cusped edge")
     func curveLocalPropsAgreesOnCusp() throws {
@@ -300,8 +303,8 @@ struct LocalPropsParityTests {
     }
 
     /// The discriminating half: a cone's lateral face sampled approaching its apex. `v` values in
-    /// the `(1e-7, 1e-6)` band are exactly where `surfaceLocalProps`' old `1e-6` called curvature
-    /// undefined and `Face`'s `Precision::Confusion()` entry points called it defined.
+    /// the `(1e-7, 1e-6)` band are exactly where the old `1e-6` of `surfaceLocalProps` called curvature
+    /// undefined and Face's `Precision::Confusion()` entry points called it defined.
     @Test("Shape.surfaceLocalProps agrees with Face approaching a cone apex")
     func surfaceLocalPropsAgreesNearConeApex() throws {
         let cone = try #require(Shape.cone(bottomRadius: 5, topRadius: 0, height: 10))
@@ -324,7 +327,9 @@ struct LocalPropsParityTests {
 
     // MARK: The RealLast() sentinel
 
-    /// A cusp makes OCCT's `Curvature()` return `RealLast()`, meaning infinite curvature. Every
+    /// A cusp makes OCCT's `Curvature()` return `RealLast()`, meaning infinite curvature.
+    ///
+    /// Every
     /// bridge gate that inverted a curvature only asked whether it was *big enough*, which the
     /// sentinel trivially passes, and `LProp_CurveUtils::Curvature()` returns it without assigning
     /// the curvature field `CentreOfCurvature()` then divides by, so the caller got

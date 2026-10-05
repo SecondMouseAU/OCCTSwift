@@ -8,7 +8,9 @@ import simd
 /// backing `Polygon3D.parameter(at:)`) called `p->polygon->Parameters()(index + 1)` with no null
 /// check. `Poly_Polygon3D::Parameters()` is `return myParameters->Array1();` -- no guard of its
 /// own (`Poly_Polygon3D.hxx`) -- unlike the sibling `Poly_PolygonOnTriangulation::Parameter()`,
-/// which OCCT itself guards with `Standard_NullObject_Raise_if` (a catchable exception). A
+/// which OCCT itself guards with `Standard_NullObject_Raise_if` (a catchable exception).
+///
+/// A
 /// `Polygon3D` built via the no-params constructor (`Polygon3D.create(points:)`, wrapping
 /// `OCCTPolyPolygon3DCreate`) has a null `myParameters` Handle, so calling `.parameter(at:)` on
 /// one dereferenced a null Handle: an uncatchable SIGSEGV `catch (...)` cannot stop, reachable

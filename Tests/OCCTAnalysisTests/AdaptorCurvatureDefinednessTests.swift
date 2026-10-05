@@ -5,6 +5,7 @@ import simd
 @testable import OCCTSwift
 
 /// #529 made `Shape.faceLProp*` agree with `Face.*` about *whether* a quantity exists at a point.
+///
 /// Six of them still could not say so: they returned the value bare and used `0` (or `(0, 0, 0)`
 /// for the point, or `false` for the umbilic predicate) to mean "undefined here", "the handle was
 /// null" and "this `Shape` is not a face" all at once.
@@ -33,7 +34,9 @@ struct AdaptorCurvatureDefinednessTests {
         return Shape.face(from: cone, uRange: 0...(2 * .pi), vRange: (-1.0)...10.0)
     }
 
-    /// The headline. A cylinder is developable, so its Gaussian curvature is zero everywhere and its
+    /// The headline.
+    ///
+    /// A cylinder is developable, so its Gaussian curvature is zero everywhere and its
     /// maximum principal curvature (the one along the axis) is zero everywhere too. Both are
     /// perfectly well defined, and both used to come back as the "undefined" sentinel.
     @Test("A cylinder's zero curvatures are reported as zero, not as absent")

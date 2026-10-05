@@ -129,7 +129,9 @@ struct Issue541FaceIndexContractTests {
     // MARK: - Face indices are 0-based everywhere
 
     /// `adjacentFaces(forEdge:)` returned 1-based indices into the same map every other face
-    /// accessor reads 0-based. Feeding one straight to `face(at:)` named the wrong face, and the
+    /// accessor reads 0-based.
+    ///
+    /// Feeding one straight to `face(at:)` named the wrong face, and the
     /// face at index 0 could never be returned at all.
     @Test("adjacentFaces(forEdge:) returns indices face(at:) can use")
     func adjacentFaceIndicesAreZeroBased() {
@@ -207,7 +209,9 @@ struct Issue541FaceIndexContractTests {
     }
 
     /// `buildWires(faceIndex:)` used 0 as "all edges of the shape", which collides with the
-    /// 0-based index of the first face. The sentinel is now `-1`, so every face is addressable.
+    /// 0-based index of the first face.
+    ///
+    /// The sentinel is now `-1`, so every face is addressable.
     @Test("buildWires addresses face 0, and -1 still means every edge")
     func buildWiresSentinelDoesNotCollideWithFaceZero() {
         let box = Shape.box(origin: .zero, width: 10, height: 10, depth: 10)!
@@ -232,7 +236,9 @@ struct Issue541FaceIndexContractTests {
 
     // MARK: - The index consumers read the same enumeration
 
-    /// A sample of the entry points that walked their own explorer. Each is asked about the same
+    /// A sample of the entry points that walked their own explorer.
+    ///
+    /// Each is asked about the same
     /// index and must answer about the face `face(at:)` names.
     ///
     /// Edge *counts* cannot discriminate here, every face of a split box is a four-edged planar
@@ -268,7 +274,9 @@ struct Issue541FaceIndexContractTests {
     // MARK: - Shape.contents is a different question, and stays one
 
     /// `Shape.contents` is the third census, and #541 leaves it counting what it counts,
-    /// occurrences, rather than converging it. These pin the contract its docs now state, so
+    /// occurrences, rather than converging it.
+    ///
+    /// These pin the contract its docs now state, so
     /// "a complexity metric, not an index bound" does not quietly become untrue.
     @Test("Shape.contents counts occurrences, not addressable sub-shapes")
     func contentsCountsOccurrences() {

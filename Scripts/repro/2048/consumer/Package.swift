@@ -32,6 +32,6 @@ let package = Package(
         .executableTarget(
             name: "consumer",
             dependencies: [.product(name: "StubOCCT", package: "StubOCCT")]
-        ),
+        )
     ]
 )

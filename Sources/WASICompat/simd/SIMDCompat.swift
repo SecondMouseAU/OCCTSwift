@@ -8,8 +8,8 @@
 // suppressed here by name rather than the whole file being exempted: everything else swift-format
 // checks, including the spacing, the doc comments and the one-variable-per-line rule, still applies.
 //
-// This replaces a blanket entry on `Scripts/style-manifest-swift-wave2.txt`, removed in #2793
-// because `check-style-manifest.py` requires a file this PR touches to come into compliance.
+// This replaced a blanket entry on a style exemption manifest, removed in #2793 when the rule
+// was that a file a PR touches must come into compliance. The manifests are retired since.
 
 // SIMDCompat.swift
 //

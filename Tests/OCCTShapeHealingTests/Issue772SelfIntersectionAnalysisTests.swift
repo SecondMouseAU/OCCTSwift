@@ -100,7 +100,9 @@ struct Issue772SelfIntersectionAnalysis {
     /// Review round 2, finding 3: `analyze(tolerance:checkSelfIntersection:hardTimeout:)` let a
     /// caller pass `hardTimeout: 5` while forgetting `checkSelfIntersection: true`, which compiled
     /// and ran, silently discarding the timeout and returning `hasSelfIntersection == nil`,
-    /// indistinguishable from the ordinary default-off case. There is no longer a separate
+    /// indistinguishable from the ordinary default-off case.
+    ///
+    /// There is no longer a separate
     /// boolean to forget: `selfIntersectionTimeout: Double?` makes "supply a timeout but do not
     /// opt in" a state that cannot be constructed at all, so this test is a compile-time argument
     /// as much as a runtime one. The commented-out line is what the old API allowed; it does not

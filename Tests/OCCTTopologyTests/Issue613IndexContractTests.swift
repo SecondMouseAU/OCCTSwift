@@ -46,7 +46,9 @@ struct Issue613IndexContractTests {
     }
 
     /// An L-bracket with exactly one genuinely concave edge, the inner corner at x = 10, z = 10,
-    /// running the full 40 mm in y. Two fused boxes, the plainest construction that has one.
+    /// running the full 40 mm in y.
+    ///
+    /// Two fused boxes, the plainest construction that has one.
     static func fusedLBracket() -> Shape? {
         guard let a = Shape.box(origin: .zero, width: 40, height: 40, depth: 10),
             let b = Shape.box(origin: .zero, width: 10, height: 40, depth: 40)
@@ -146,7 +148,9 @@ struct Issue613IndexContractTests {
     }
 
     /// The unlisted sibling in the same MARK block: the count walked the explorer too, so it
-    /// reported topology occurrences rather than edges. A 12-edge box answered 24.
+    /// reported topology occurrences rather than edges.
+    ///
+    /// A 12-edge box answered 24.
     @Test("edge concavity counts are counts of edges, not of occurrences")
     func concavityCountsAreEdgeCounts() throws {
         let box = try #require(Self.box())
@@ -304,7 +308,9 @@ struct Issue613IndexContractTests {
         }
     }
 
-    /// The wire and shell spellings go through the same converted helper. A box shares neither, so
+    /// The wire and shell spellings go through the same converted helper.
+    ///
+    /// A box shares neither, so
     /// this pins that the conversion did not narrow their in-range answers.
     @Test("checkWire and checkShell still answer over their own enumerations")
     func checkWireAndShellUnchanged() throws {
@@ -322,7 +328,9 @@ struct Issue613IndexContractTests {
     // MARK: - Site 4: LocOpe_SplitShape by vertex
 
     /// `splitEdge(at:)` sat next to `splitFace(at:with:)`, which #541 had already converted, so the
-    /// two indices into one `LocOpe_SplitShape` meant different things. Measured before the fix on
+    /// two indices into one `LocOpe_SplitShape` meant different things.
+    ///
+    /// Measured before the fix on
     /// this exact box: index 9 split `edges()[4]`, index 11 split `edges()[0]`, and indices 12 and
     /// 13 split successfully although `edge(at:)` refuses both.
     @Test("splitEdge splits the edge edges() calls by that index")
@@ -369,7 +377,9 @@ struct Issue613IndexContractTests {
 
     // MARK: - Site 6: the index the finders hand back
 
-    /// The `faceIndex` argument was already map-backed (#541). What was not is the `Edge.index` on
+    /// The `faceIndex` argument was already map-backed (#541).
+    ///
+    /// What was not is the `Edge.index` on
     /// the way out: it was the position in the RESULT array, so it named a different edge, or no
     /// edge, through `edges()`. Measured before the fix: `edgesInFace(at: 3)` handed back
     /// 0, 1, 2, 3 for edges whose real indices are 2, 6, 10 and 11, all four naming a different
@@ -400,6 +410,7 @@ struct Issue613IndexContractTests {
     }
 
     /// The indices must not merely resolve, they must be the ones that actually name those edges.
+    ///
     /// A result-array position happens to be right for face 0 of a box by coincidence, which is why
     /// the test above is not enough on its own.
     @Test("edgesInFace on a face whose edges are not the first four reports their real indices")
@@ -469,7 +480,9 @@ struct Issue613IndexContractTests {
 
     // MARK: - Site 7: BiTgte_Blend (unlisted by the issue and by its audit)
 
-    /// Found by sweeping for the same idiom rather than from the issue's list. Both
+    /// Found by sweeping for the same idiom rather than from the issue's list.
+    ///
+    /// Both
     /// `OCCTBiTgteBlend` and `OCCTBiTgteBlendInfo_` filled a `std::vector<TopoDS_Edge>` from a bare
     /// explorer and subscripted it with the caller's indices, which come from `edges()` /
     /// `Edge.index`.

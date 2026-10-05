@@ -31,7 +31,9 @@ import Testing
 struct Issue578DefeatureFaceMembershipTests {
 
     /// A 20mm box with exactly one edge filleted, seven faces, one of them the fillet, plus that
-    /// fillet's own face and its position in the face enumeration. The fillet face is found by the
+    /// fillet's own face and its position in the face enumeration.
+    ///
+    /// The fillet face is found by the
     /// removal that restores the plain box, not by its position: which slot it lands in is not a
     /// property worth relying on. This is the probe's fixture.
     private static func filletedBox(size: Double = 20, radius: Double = 2)
@@ -66,7 +68,9 @@ struct Issue578DefeatureFaceMembershipTests {
 
     // MARK: - A face this shape does not have
 
-    /// The headline change. A request mixing a real face with a foreign one used to succeed, remove
+    /// The headline change.
+    ///
+    /// A request mixing a real face with a foreign one used to succeed, remove
     /// the real one and drop the foreign one in silence; it now fails, and the caller can tell.
     @Test("a foreign face in a mixed request fails the call instead of being dropped")
     func foreignFaceInMixedRequestFails() {
@@ -94,7 +98,9 @@ struct Issue578DefeatureFaceMembershipTests {
         #expect(filleted.defeature(faces: [foreign]) == nil)
     }
 
-    /// A carrier can hide a foreign face inside itself. Checking the request element by element
+    /// A carrier can hide a foreign face inside itself.
+    ///
+    /// Checking the request element by element
     /// would accept this one, because it does contain a face that belongs.
     @Test("a compound mixing a real face with a foreign one fails too")
     func mixedCarrierFails() {
@@ -126,7 +132,9 @@ struct Issue578DefeatureFaceMembershipTests {
     }
 
     /// Membership is identity, not geometry: two separately built but identical shapes share no
-    /// faces. This already failed, via the kernel, when it was the whole request; it now fails in a
+    /// faces.
+    ///
+    /// This already failed, via the kernel, when it was the whole request; it now fails in a
     /// mixed request too, which is where the kernel used to let it through.
     @Test("an identically built shape's face is foreign, in any request")
     func membershipIsIdentityNotGeometry() {
@@ -146,7 +154,9 @@ struct Issue578DefeatureFaceMembershipTests {
 
     // MARK: - A request element that names no face at all
 
-    /// An edge carries no face, so it names nothing to remove. Alone it already failed, through the
+    /// An edge carries no face, so it names nothing to remove.
+    ///
+    /// Alone it already failed, through the
     /// kernel; alongside a real face it used to be discarded in the same silence as a foreign face.
     @Test("an element carrying no face fails the call")
     func elementWithNoFaceFails() {
@@ -186,7 +196,9 @@ struct Issue578DefeatureFaceMembershipTests {
     }
 
     /// A shell or the whole solid names every face it contains, all of which belong, so the rule
-    /// accepts it. What the kernel then does with "remove everything" is its own answer: it returns
+    /// accepts it.
+    ///
+    /// What the kernel then does with "remove everything" is its own answer: it returns
     /// the input unchanged. Pinned because a membership rule must not be read as rejecting it.
     @Test("a shell or the whole solid is a valid way to name faces")
     func wholeShapeCarriersAreAccepted() {

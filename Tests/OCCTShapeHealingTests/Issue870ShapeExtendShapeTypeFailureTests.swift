@@ -4,10 +4,12 @@ import Testing
 
 @testable import OCCTSwift
 
-/// PR #870 aggregate review: `OCCTShapeExtendShapeType`'s null-shape/exception fallback used to
+/// PR #870 aggregate review: OCCTShapeExtendShapeType's null-shape/exception fallback used to
 /// return `7` (`TopAbs_VERTEX`, a real, legitimate case) instead of a failure sentinel, so
 /// `Shape.predominantShapeType()` silently decoded a failed classification as `.vertex` with no
-/// way for a caller to tell the two apart. Fixed to return `-1`, matching `ShapeType`'s own
+/// way for a caller to tell the two apart.
+///
+/// Fixed to return `-1`, matching ShapeType's own
 /// `.unknown = -1` decode-failure case.
 ///
 /// `Shape.handle` is non-optional, so the null-shape path isn't reachable through the public

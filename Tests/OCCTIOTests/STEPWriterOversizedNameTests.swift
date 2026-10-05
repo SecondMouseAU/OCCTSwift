@@ -10,7 +10,9 @@ import simd
 struct STEPWriterOversizedNameTests {
 
     /// `StepData_StepWriter::AddString` writes a raw token into a fixed 72-character line
-    /// buffer, flushing and resetting the buffer whenever the pending text won't fit. A single
+    /// buffer, flushing and resetting the buffer whenever the pending text won't fit.
+    ///
+    /// A single
     /// unbroken token longer than 72 characters (e.g. a long, space-free part name) used to hang
     /// this check forever: no amount of flushing ever makes room for text that can't fit in a
     /// full, empty line either. Fixed upstream by splitting the token across as many lines as

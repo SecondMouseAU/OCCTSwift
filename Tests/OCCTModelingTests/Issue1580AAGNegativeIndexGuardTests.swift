@@ -7,7 +7,9 @@ import simd
 struct Issue1580AAGNegativeIndexGuardTests {
     /// `AAG.neighbors(of:)`, `AAG.edge(between:and:)`, `AAG.concaveNeighbors(of:)` and
     /// `AAG.convexNeighbors(of:)` each guarded only the upper bound
-    /// (`guard faceIndex < adjacencyList.count else { return ... }`), never the lower one. A
+    /// (`guard faceIndex < adjacencyList.count else { return ... }`), never the lower one.
+    ///
+    /// A
     /// negative index passes that guard and then reaches the `Array` subscript
     /// (`adjacencyList[faceIndex]`), which bounds-checks unconditionally in both debug and release
     /// and traps the process (`Fatal error: Index out of range`), not a catchable Swift error. On
@@ -36,7 +38,9 @@ struct Issue1580AAGNegativeIndexGuardTests {
 
     /// A negative *second* index never reached the crashing subscript (`adjacencyList[face1]` is
     /// indexed by `face1` only; `face2` is looked up as a dictionary key, and a `Dictionary`
-    /// subscript on a key that isn't present returns `nil` for any key, negative included). Guarded
+    /// subscript on a key that isn't present returns `nil` for any key, negative included).
+    ///
+    /// Guarded
     /// anyway, per the issue, for symmetry with `face1` and so a future change to how `face2` is
     /// resolved doesn't quietly reopen this.
     @Test("edge(between:and:) rejects a negative second index instead of trapping")

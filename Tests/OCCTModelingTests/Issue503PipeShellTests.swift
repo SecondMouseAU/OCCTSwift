@@ -15,6 +15,7 @@ import Testing
 struct Issue503PipeShellTests {
 
     /// Curved enough that Frenet, corrected Frenet and a fixed binormal all disagree.
+    ///
     /// A straight spine will not do: with no torsion the modes coincide, which is how the
     /// silent fall-through survived a test suite that only ever swept straight lines.
     ///
@@ -98,7 +99,9 @@ struct Issue503PipeShellTests {
         }
     }
 
-    /// The regression this issue actually fixes. Asking for a transition mode used to force
+    /// The regression this issue actually fixes.
+    ///
+    /// Asking for a transition mode used to force
     /// the sweep through a bridge function that understood only Frenet and corrected Frenet,
     /// so `.fixed(binormal:)` came back as a Frenet sweep: same call, wrong solid, no nil.
     @Test("asking for a corner transition does not downgrade the sweep mode")

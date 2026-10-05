@@ -85,7 +85,9 @@ struct Issue620DrawMeshCountContractTests {
 
     // MARK: - The row is the right row
 
-    /// Finiteness alone would pass on any arbitrary parameter. This pins *which* iso-row a
+    /// Finiteness alone would pass on any arbitrary parameter.
+    ///
+    /// This pins *which* iso-row a
     /// one-sample direction means on a **bounded** surface, where the sampled range is the domain,
     /// cross-checked against the surface's own point evaluation rather than another grid call.
     @Test("On a bounded surface the single row sits at domain.uMin")
@@ -150,7 +152,9 @@ struct Issue620DrawMeshCountContractTests {
     }
 
     /// The same row, reached the other way: row 0 of a multi-row grid is also the low-end row, and
-    /// its V samples are spaced identically. A one-row grid must agree with it point for point.
+    /// its V samples are spaced identically.
+    ///
+    /// A one-row grid must agree with it point for point.
     @Test("A one-row grid equals row 0 of a many-row grid")
     func oneRowEqualsRowZeroOfAManyRowGrid() {
         guard let s = Surface.sphere(center: .zero, radius: 10) else {
@@ -196,7 +200,9 @@ struct Issue620DrawMeshCountContractTests {
 
     // MARK: - The bound moved to 1, it did not disappear
 
-    /// #558's bounds are still in force. Lowering the minimum to 1 must not readmit 0, a negative,
+    /// #558's bounds are still in force.
+    ///
+    /// Lowering the minimum to 1 must not readmit 0, a negative,
     /// or a product past the ceiling, those stay rejected at the Swift boundary, before any
     /// allocation, and rejection is still the documented empty grid.
     @Test("Counts below 1 and products past the ceiling are still rejected")
