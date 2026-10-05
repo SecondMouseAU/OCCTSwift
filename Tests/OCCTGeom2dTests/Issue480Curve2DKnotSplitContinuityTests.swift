@@ -7,7 +7,9 @@ import simd
 /// `Curve2D.splitIndicesAtDiscontinuities` and the `bsplineKnotSplits`/`bsplineKnotSplitValues`
 /// pair all drive `Geom2dConvert_BSplineCurveKnotSplitting`, which runs the identical algorithm
 /// to its 3D, surface and law counterparts: a knot splits only when
-/// `degree - multiplicity < ContinuityRange`. All three took a raw `Int` documented as starting
+/// `degree - multiplicity < ContinuityRange`.
+///
+/// All three took a raw `Int` documented as starting
 /// at C0 and stopping at C2, the range that does nothing on ordinary cubic geometry.
 @Suite("Curve2D knot-splitting continuity range (#480)")
 struct Issue480Curve2DKnotSplitContinuityTests {

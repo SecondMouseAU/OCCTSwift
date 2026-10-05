@@ -79,7 +79,9 @@ struct MultibodyRobustImportTests {
     }
 
     /// Guards the hazard the fix was designed around: a hollow body owns an **outer shell plus one
-    /// shell per void**. "Solidify every shell" naively, via `TopExp_Explorer(_, TopAbs_SHELL)`,
+    /// shell per void**.
+    ///
+    /// "Solidify every shell" naively, via `TopExp_Explorer(_, TopAbs_SHELL)`,
     /// descends *into* solids and would turn one hollow body into two, trading data loss for
     /// corruption. `occtSolidifyShells` walks a compound's immediate children instead, so a void
     /// stays a void. Asserted on volume, which is what a lost void would change.
@@ -117,7 +119,9 @@ struct MultibodyRobustImportTests {
     }
 
     /// The other half of the contract: a single body must still come back a plain solid, not a
-    /// compound wrapping one. This is what keeps existing single-body callers untouched.
+    /// compound wrapping one.
+    ///
+    /// This is what keeps existing single-body callers untouched.
     @Test("Shape.loadRobust still returns a plain solid for a single body (#302)")
     func singleBodyStillSolid() throws {
         guard let box = Shape.box(width: 10, height: 10, depth: 10) else {

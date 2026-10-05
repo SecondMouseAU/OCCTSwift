@@ -6,7 +6,9 @@ import simd
 
 /// #1440 finding 1: `DiscretizeEdgeInto` (`Sources/OCCTBridge/src/OCCTBridge_Mesh.mm`, feeding
 /// `Shape.edgePolyline(at:deflection:maxPoints:)` and `Shape.allEdgePolylines`) built
-/// `GCPnts_TangentialDeflection` as `discretizer(curve, deflection, 0.1)`. The constructor's real
+/// `GCPnts_TangentialDeflection` as `discretizer(curve, deflection, 0.1)`.
+///
+/// The constructor's real
 /// signature (`GCPnts_TangentialDeflection.hxx:77-82`) is
 /// `(theC, theAngularDeflection /* radians */, theCurvatureDeflection /* linear */, ...)`, so the
 /// caller's `deflection` -- documented everywhere on this API as the LINEAR/chordal tolerance --
@@ -27,12 +29,15 @@ struct Issue1440EdgeDeflectionArgumentOrderTests {
     /// A small chordal tolerance on a circle needs a modest point count (sagitta scales with
     /// `sqrt(tolerance / radius)`); the same number used as an ANGULAR tolerance instead needs a
     /// point roughly every `tolerance` radians, an order of magnitude more points for a full
-    /// 2*pi turn. That asymmetry is what makes "used in the wrong slot" and "used in the right
+    /// 2*pi turn.
+    ///
+    /// That asymmetry is what makes "used in the wrong slot" and "used in the right
     /// slot" produce dramatically different, easily distinguished point counts.
     @Test("edgePolyline's deflection argument lands in the linear slot, not the angular one")
     func deflectionIsLinearNotAngular() throws {
         let radius = 10.0
-        let circle = try #require(Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: radius))
+        let circle = try #require(
+            Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: radius))
         let edge = try #require(Shape.edgeFromCurve(circle))
 
         let nonDefaultDeflection = 0.005
@@ -83,13 +88,16 @@ struct Issue1440EdgeDeflectionArgumentOrderTests {
     }
 
     /// At the API's own default (0.1), both slots receive the same numeric value, so the swap is
-    /// invisible here -- this is exactly why the defect went unnoticed. Not a regression test by
+    /// invisible here -- this is exactly why the defect went unnoticed.
+    ///
+    /// Not a regression test by
     /// itself (passes identically whether the arguments are swapped or not); it documents the
     /// masking the issue described.
     @Test("at the default deflection (0.1) the swap is masked, by construction")
     func defaultDeflectionMasksTheSwap() throws {
         let radius = 10.0
-        let circle = try #require(Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: radius))
+        let circle = try #require(
+            Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: radius))
         let edge = try #require(Shape.edgeFromCurve(circle))
 
         let actual = try #require(edge.edgePolyline(at: 0, deflection: 0.1, maxPoints: 4000))

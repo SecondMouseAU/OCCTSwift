@@ -7,7 +7,7 @@ import simd
 @Suite("BSplineCurve 3D Completions v121")
 struct BSplineCurve3DCompletionsV121Tests {
 
-    /// Helper: create a simple BSpline curve
+    /// Helper: create a simple BSpline curve.
     private func makeBSplineCurve() -> Curve3D? {
         let poles: [SIMD3<Double>] = [
             SIMD3(0, 0, 0), SIMD3(3, 5, 0), SIMD3(7, 5, 0), SIMD3(10, 0, 0),

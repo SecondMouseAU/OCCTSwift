@@ -27,7 +27,9 @@ struct Issue642AAGNodeIdentityTests {
 
     // MARK: - Fixture
 
-    /// An origin-centred 10mm box cut through z=4, recompounded in both member orders. The
+    /// An origin-centred 10mm box cut through z=4, recompounded in both member orders.
+    ///
+    /// The
     /// horizontal cut is required: a vertical cut's shared wall never reaches
     /// `isHorizontal()`/`isUpward()`, so it does not exercise this defect at all (measured by
     /// Cluster A's census, and the correction this issue's own text needed).
@@ -45,10 +47,12 @@ struct Issue642AAGNodeIdentityTests {
     /// A genuinely pocketed single solid (real overlap between the box and the cutting tool, floor
     /// strictly inside the material), split so the pocket survives intact in one piece and the two
     /// pieces still share a face. `horizontalSplitBoxCompound()` no longer produces any pocket
-    /// after #703 (it never contained a real one; see `detectPocketsAgreesAcrossOrder`'s own doc
+    /// after #703 (it never contained a real one; see detectPocketsAgreesAcrossOrder's own doc
     /// comment), so `pocketIndicesResolveAgainstOrientedFaces` needs a fixture that has BOTH a
     /// shared face (to exercise the oriented-vs-distinct index distinction) AND an actual pocket
-    /// (to have an index to check at all). The cut at x=8 stays clear of the pocket's own
+    /// (to have an index to check at all).
+    ///
+    /// The cut at x=8 stays clear of the pocket's own
     /// footprint (x -5...5), so it neither destroys the pocket nor complicates the shared wall.
     /// The pieces are compounded pocket-piece-last: measured directly, that is what pushes at
     /// least one pocket index past `faces().count` (the natural split order does not, because
@@ -98,7 +102,9 @@ struct Issue642AAGNodeIdentityTests {
     }
 
     /// The AAG-level symptom the issue named directly: the upward+horizontal node set's SIZE must
-    /// agree across order. (The node indices themselves are allowed to differ between orders,
+    /// agree across order.
+    ///
+    /// (The node indices themselves are allowed to differ between orders,
     /// since traversal order over the compound also reassigns which array position each distinct
     /// face lands at; it is the count, and each node's own attributes, that must not depend on it.)
     @Test("AAG upward+horizontal node count agrees across compound member order")
@@ -165,7 +171,9 @@ struct Issue642AAGNodeIdentityTests {
     }
 
     /// `AAG` does not link the two nodes of a shared face to each other: they are the same face,
-    /// not neighbors of it. Without the identity guard in `buildGraph()`, the adjacency call
+    /// not neighbors of it.
+    ///
+    /// Without the identity guard in `buildGraph()`, the adjacency call
     /// (`OCCTFacesAreAdjacent` when #642 was written, `OCCTFaceGetSharedEdgeSummary` since #783)
     /// reports every one of a face's own boundary edges as "shared" with itself.
     @Test("the shared wall's two nodes are not adjacent to each other")
@@ -213,7 +221,9 @@ struct Issue642AAGNodeIdentityTests {
     /// #614's own vertical-cut fixture (the exact construction
     /// `Tests/OCCTTopologyTests/Issue614FaceOrientationTests.swift` uses, reproduced locally since
     /// each domain test target is its own module) does not exercise this defect: the shared wall's
-    /// normal is horizontal-axis, so it never touches `isHorizontal()`/`isUpward()`. Its node count
+    /// normal is horizontal-axis, so it never touches `isHorizontal()`/`isUpward()`.
+    ///
+    /// Its node count
     /// and pocket count must still agree across order after this fix, exactly as they did before
     /// it.
     @Test("#614's own vertical-cut fixture is unaffected by member order")
@@ -242,7 +252,9 @@ struct Issue642AAGNodeIdentityTests {
     // MARK: - PocketFeature's own indices (review follow-up)
 
     /// `PocketFeature.floorFaceIndex` and `wallFaceIndices` are built from node array positions, so
-    /// they inherited #642's occurrence semantics without their own code change. That makes them the
+    /// they inherited #642's occurrence semantics without their own code change.
+    ///
+    /// That makes them the
     /// easiest thing to get wrong: `detectPocketsAAG()` is the API this issue is about, and
     /// `PocketFeature` is what it returns, so a caller indexing `faces()` with them on a shared-face
     /// compound reads the wrong face silently.

@@ -3,7 +3,9 @@ import simd
 
 @testable import OCCTSwift
 
-/// #1460: `.g1` on a *point* constraint was a silent no-op, not a diagnostic. Extends #437's fix
+/// #1460: `.g1` on a *point* constraint was a silent no-op, not a diagnostic.
+///
+/// Extends #437's fix
 /// (which rejected `.g2` for a bare point constraint) to also reject `.g1`, in
 /// `SurfaceContinuity.isUnsupportedForPointConstraint`, so `isUnsupportedForPointConstraint`
 /// now reads `self != .g0` instead of `self == .g2`.

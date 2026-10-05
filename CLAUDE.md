@@ -74,7 +74,7 @@ Scripts/format-bridge.sh --check     # ...or just report, which is exactly what 
 ```
 
 **Run `Scripts/format-bridge.sh` after any edit to a bridge `.h`/`.mm`.** Every bridge `.h` and
-`.mm` is enforced with nothing grandfathered, because `Scripts/style-manifest-bridge.txt` is empty;
+`.mm` is enforced with nothing grandfathered, because there is no exemption list;
 [`okf/policies/code-style.md`](okf/policies/code-style.md) holds the file count. OCCT's style
 aligns consecutive declarations and assignments, so two ordinary new locals in a row are a
 violation unless the tool wrote them. Hand-aligning is not a substitute. The version is pinned in
@@ -242,8 +242,8 @@ the `swift build` step ahead of it recompiles the module on every run.
 ### Swift Format Lint
 
 ```bash
-python3 Scripts/check-swift-format.py            # GATE: every tracked .swift file not on a manifest passes swift-format lint --strict (#2852)
-python3 Scripts/check-swift-format.py --list     # the population and the manifest accounting, lint nothing
+python3 Scripts/check-swift-format.py            # GATE: every tracked .swift file passes swift-format lint --strict, nothing exempt (#2852)
+python3 Scripts/check-swift-format.py --list     # the population, lint nothing
 python3 Scripts/check-swift-format.py --self-test
 ```
 
@@ -251,27 +251,21 @@ python3 Scripts/check-swift-format.py --self-test
 have. It runs in `code-style.yml` beside the SwiftLint and clang-format steps, and is counted in no
 total on this page.
 
-**The population is `git ls-files '*.swift'` minus the exemption manifests, not a directory.** Until
-#2852 this was four lines of shell walking `find Sources/OCCTSwift`, which reached about an eighth
-of the repo's tracked Swift files and no more (both figures, as measured on the day, are in
+**The population is `git ls-files '*.swift'`, all of it, not a directory.** Until #2852 this was
+four lines of shell walking `find Sources/OCCTSwift`, which reached about an eighth of the repo's
+tracked Swift files and no more (both figures, as measured on the day, are in
 [`static-gates`](okf/policies/static-gates.md#the-detectors-outside-gate-scripts)): `Tests/`,
-`Scripts/`, `Sources/OCCTPlatform`, `Sources/OCCTTest`,
-`Sources/WASICompat` and `Package.swift` were outside the step and nothing said so, because an
-exemption manifest can only exempt a file the population already reaches. Two manifests now hold the
-exempt list, both shrink-only and both enforced by `check-style-manifest.py`:
-`Scripts/style-manifest-swift.txt` (rollout day, empty) and
-`Scripts/style-manifest-swift-wave2.txt` (what the widening reached).
+`Scripts/`, `Sources/OCCTPlatform`, `Sources/OCCTTest`, `Sources/WASICompat` and `Package.swift`
+were outside the step and nothing said so, because an exemption list can only exempt a file the
+population already reaches.
 
-**How many files are still listed on that second one is stated nowhere, on purpose** (#2954). It
-is the one inventory built to drain: touching a listed file means fixing it and deleting its line,
-so the number falls several times a day, and a copy of it in prose is invalidated by every PR that
-does the intended thing. Measured on 2026-10-02 it moved five times and reddened three unrelated
-PRs at merge time, after review and CI had passed. Nothing in the repo is worse off for not
-knowing it: `python3 Scripts/check-inventory-prose.py` prints the live figure on a clean run, and
-`grep -cvE '^[[:space:]]*(#|$)' Scripts/style-manifest-swift-wave2.txt` answers it directly.
-Do not write it down. The real run asserts **selected + listed == tracked** and plants a canary
-violation in every `swift-format` invocation, so a narrowing and a silent tool are both a red gate
-rather than a quieter one. There is deliberately no `--fix`, for the reason
+**There is no exemption list any more.** The manifests and `check-style-manifest.py` that
+grandfathered the files existing at rollout were retired once the last listed file was brought into
+compliance, so there is nothing to grow back and no count to keep. A deliberate exception is written
+where it occurs, as `// swift-format-ignore: <Rule>` on the declaration with the reason beside it;
+`git grep swift-format-ignore` is the complete list. The real run asserts that **the selection
+equals every tracked file** and plants a canary violation in every `swift-format` invocation, so a
+narrowing and a silent tool are both a red gate rather than a quieter one. There is deliberately no `--fix`, for the reason
 `Scripts/format-bridge.sh`'s header gives.
 
 ### Pinned-Asset Patch Check

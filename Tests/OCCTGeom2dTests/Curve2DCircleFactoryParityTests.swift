@@ -8,6 +8,7 @@ import simd
 
 /// `Curve2D.circle(center:radius:)` builds a `Geom2d_Circle` directly;
 /// `Curve2D.circleFromCenterRadius(center:radius:)` routes through OCCT's `gce_MakeCirc2d`.
+///
 /// Same purpose, same signature, same resulting circle — but `gce_MakeCirc2d` accepts
 /// `Radius >= 0`, so the gce factory used to return a live degenerate zero-radius curve where
 /// the direct factory returned `nil`. Both now share one radius precondition.

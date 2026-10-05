@@ -273,7 +273,9 @@ struct StressCrossFormatConsistencyTests {
 
     /// #2830: the export used to `continue` on nil, so a shape whose BREP string could not be
     /// produced at all left no trace, and the matrix itself was one row short because
-    /// `allStandardShapes()` dropped `"openShell"` in silence. Both halves now fail.
+    /// `allStandardShapes()` dropped `"openShell"` in silence.
+    ///
+    /// Both halves now fail.
     @Test func allShapesBREPString() throws {
         for (name, shape) in try allStandardShapes() {
             let brep = try #require(shape.toBREPString(), "BREP string export failed for \(name)")

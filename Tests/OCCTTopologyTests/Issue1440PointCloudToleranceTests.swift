@@ -43,7 +43,9 @@ import simd
 @Suite("Issue #1440: point-cloud auto-density tolerance default")
 struct Issue1440PointCloudToleranceTests {
 
-    /// Builds the two-face fixture described above. A `BRepBuilderAPI_MakeFace`-style planar
+    /// Builds the two-face fixture described above.
+    ///
+    /// A `BRepBuilderAPI_MakeFace`-style planar
     /// face from an explicit polygon, not a primitive: primitives like `Shape.box` refuse
     /// dimensions this small outright (measured; see the repro notes), while a wire's vertices
     /// can be made arbitrarily close without OCCT rejecting the wire itself.

@@ -53,7 +53,9 @@ struct Issue777PocketEnclosureCoveringEdgesTests {
 
     // MARK: - The membership rule itself
 
-    /// Every one of the floor's own boundary edges is an edge of one of the pocket's walls. This is
+    /// Every one of the floor's own boundary edges is an edge of one of the pocket's walls.
+    ///
+    /// This is
     /// the whole enclosure test, stated over the construction that now evaluates it.
     @Test("every floor boundary edge is a member of the walls' own edge set")
     func floorBoundaryEdgesAreMembersOfTheWallEdgeSet() throws {

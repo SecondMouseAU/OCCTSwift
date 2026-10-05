@@ -41,7 +41,9 @@ struct Issue580PointEdgeExtremaTests {
     // MARK: The four rows the issue was filed on
 
     /// A point below the arc has no perpendicular foot on it, so the nearest point is an end at
-    /// (±5, 0, 0), sqrt(25 + 36) = 7.81025 away. The sole extremum `BRepExtrema_ExtPC` finds is the
+    /// (±5, 0, 0), sqrt(25 + 36) = 7.81025 away.
+    ///
+    /// The sole extremum `BRepExtrema_ExtPC` finds is the
     /// top of the arc, a maximum, and it was reported as the answer.
     @Test("A point below a half arc gets the nearer end, not the far side")
     func belowTheArcGetsTheEnd() throws {
@@ -59,7 +61,9 @@ struct Issue580PointEdgeExtremaTests {
         #expect(simd_distance(result.pointOnEdge, SIMD3(0, 5, 0)) > 1)
     }
 
-    /// (3, -4, 0) is exactly on the radius-5 circle and exactly not on the upper half of it. The
+    /// (3, -4, 0) is exactly on the radius-5 circle and exactly not on the upper half of it.
+    ///
+    /// The
     /// nearest point on the arc is its start at (5, 0, 0), sqrt(4 + 16) = 4.47214 away.
     @Test("A point on the circle but off the arc measures to the arc")
     func onTheCircleButOffTheArc() throws {
@@ -88,7 +92,9 @@ struct Issue580PointEdgeExtremaTests {
 
     // MARK: solutionCount is a count, and nil is a missing edge
 
-    /// A point that does have a perpendicular foot reports one, and the geometry is the foot. This
+    /// A point that does have a perpendicular foot reports one, and the geometry is the foot.
+    ///
+    /// This
     /// is the case the pre-#580 implementation already answered correctly, so it pins that the
     /// field still means what it meant and still comes from `BRepExtrema_ExtPC`.
     @Test("A point with a perpendicular foot reports it, and lands on it")
@@ -107,7 +113,9 @@ struct Issue580PointEdgeExtremaTests {
     }
 
     /// `nil` now means only what the documentation says: no such edge index, or an edge with no 3D
-    /// curve. Under the old guard it also meant "this point has no perpendicular foot", which is
+    /// curve.
+    ///
+    /// Under the old guard it also meant "this point has no perpendicular foot", which is
     /// the case the three tests above cover.
     @Test("nil is reserved for an index that names no edge")
     func nilMeansNoSuchEdge() throws {
@@ -119,7 +127,9 @@ struct Issue580PointEdgeExtremaTests {
 
     // MARK: The index contract, and agreement with the other entry point
 
-    /// The index is a position in the enumeration `Shape.edges()` reads. The bare explorer this
+    /// The index is a position in the enumeration `Shape.edges()` reads.
+    ///
+    /// The bare explorer this
     /// used to walk counts a box's 12 edges as 24 occurrences, so from index 9 the two named
     /// different edges, measured on the pinned kernel, edge 9 was (10, 0, 5) here against
     /// (5, 0, 10) everywhere else.
@@ -144,7 +154,9 @@ struct Issue580PointEdgeExtremaTests {
     }
 
     /// The whole point of routing through `occtNearestPointOnCurveRange`: two entry points asking
-    /// the same question about the same edge and the same point cannot answer differently. Before
+    /// the same question about the same edge and the same point cannot answer differently.
+    ///
+    /// Before
     /// #580 they disagreed on every arc case above.
     @Test("Shape.pointEdgeExtrema and Edge.project agree")
     func agreesWithEdgeProject() throws {
@@ -164,7 +176,9 @@ struct Issue580PointEdgeExtremaTests {
         }
     }
 
-    /// The caller this broke: a proximity test on a shape's edges. Every edge of a box is within
+    /// The caller this broke: a proximity test on a shape's edges.
+    ///
+    /// Every edge of a box is within
     /// 200 of a far probe, and the nearest of them is the one the truth says it is.
     @Test("A proximity scan over a shape's edges reads the real distances")
     func proximityScanOverEdges() throws {

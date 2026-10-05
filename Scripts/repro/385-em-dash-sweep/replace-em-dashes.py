@@ -54,7 +54,11 @@ def fix_line(l):
 
 man = set()
 for _m in ("Scripts/style-manifest-swift.txt", "Scripts/style-manifest-bridge.txt"):
-    man |= {l.strip() for l in open(_m) if l.strip() and not l.startswith("#")}
+    # The manifests were retired once nothing was left on them; absent means nothing is exempt.
+    try:
+        man |= {l.strip() for l in open(_m) if l.strip() and not l.startswith("#")}
+    except FileNotFoundError:
+        pass
 
 # Manifest files are skipped: the ratchet would require bringing each fully lint-clean in the same
 # PR, and 7 of the surviving violations are AlwaysUseLowerCamelCase on public enum cases, so that

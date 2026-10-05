@@ -4,10 +4,12 @@ import simd
 
 @testable import OCCTSwift
 
-/// #837: `Shape.fixed(tolerance:fixSolid:fixShell:fixFace:fixWire:)`'s `fixShell`/`fixFace`/
+/// #837: Shape.fixed(tolerance:fixSolid:fixShell:fixFace:fixWire:)'s `fixShell`/`fixFace`/
 /// `fixWire` parameters were accepted but never passed to the underlying `ShapeFix_Shape` --
-/// only `fixSolid` had any effect (`OCCTShapeFixDetailed`, `OCCTBridge_Healing.mm`). A caller
-/// passing `fixFace: false` silently got `ShapeFix_Shape`'s own always-on default
+/// only `fixSolid` had any effect (`OCCTShapeFixDetailed`, `OCCTBridge_Healing.mm`).
+///
+/// A caller
+/// passing `fixFace: false` silently got ShapeFix_Shape's own always-on default
 /// (`FixFreeFaceMode()`) instead, with no error and nothing in the return value to reveal it.
 ///
 /// This suite proves the fix with a fixture `ShapeFix_Face::FixOrientation` (run as part of
@@ -37,7 +39,9 @@ import simd
 struct Issue837FixDetailedModeFlagsTests {
 
     /// A face with a hole wire wound the *same* rotational sense as the outer wire -- a genuine
-    /// `BRepCheck_Face` wire-orientation defect a correct hole must avoid. Built via the raw
+    /// `BRepCheck_Face` wire-orientation defect a correct hole must avoid.
+    ///
+    /// Built via the raw
     /// `Shape.builderMakeWire()`/`.builderAdd(_:)`/`.setOrientation(_:)` primitives (same as
     /// `Issue655FreeBoundsInternalOrientationTests`) so no automatic orientation correction runs
     /// during construction -- `Shape.face(from:outer:innerWires:)` would fix the hole's

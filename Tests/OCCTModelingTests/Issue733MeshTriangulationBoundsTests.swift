@@ -33,7 +33,9 @@ struct Issue733MeshTriangulationBoundsTests {
 
     /// The reproducer: mesh the shape between building it and calling `detectPocketsAAG()`, the
     /// combined workflow this repo's own MCP tools invite (mesh for preview, then recognize
-    /// features on the same value). Before the fix this dropped the pocket outright at every
+    /// features on the same value).
+    ///
+    /// Before the fix this dropped the pocket outright at every
     /// deflection tried; after the fix it must not drop at any of them.
     @Test(
         "meshing a shape before detecting pockets does not drop a real pocket",
@@ -54,7 +56,9 @@ struct Issue733MeshTriangulationBoundsTests {
         #expect(pocket.wallFaceIndices.count == 1, "deflection=\(deflection)")
     }
 
-    /// Non-regression companion: the same fixture, unmeshed, must still report the pocket. A fix
+    /// Non-regression companion: the same fixture, unmeshed, must still report the pocket.
+    ///
+    /// A fix
     /// that special-cased "meshed" input rather than making the bounds computation itself
     /// tessellation-independent could pass the test above while being wrong for the ordinary path.
     @Test("the same fixture, never meshed, still reports the pocket")
@@ -70,7 +74,9 @@ struct Issue733MeshTriangulationBoundsTests {
 
     /// Direct measurement of the mechanism, not just its downstream effect: a wall's own
     /// `AAGNode.bounds.min.z` must stay within the tolerance the grouping check applies, regardless
-    /// of meshing. Asserts the quantity #724's comparison actually reads, rather than only the
+    /// of meshing.
+    ///
+    /// Asserts the quantity #724's comparison actually reads, rather than only the
     /// count that comparison feeds.
     @Test(
         "a cylindrical wall's AAGNode bounds do not drift after meshing",
@@ -103,6 +109,7 @@ struct Issue733MeshTriangulationBoundsTests {
     /// Direct value-level check of `Face.exactBounds` itself, not through `AAGNode.bounds` (#908).
     /// `wallBoundsDoNotDriftAfterMeshing` above only ever reads `.min.z`, so it cannot tell a
     /// min/max swap from a correct read on the other 5 of 6 min/max values `exactBounds` returns.
+    ///
     /// Every face of an axis-aligned box has exactly two non-degenerate axes (spanning the box's
     /// full extent, `min < max`) and one degenerate axis (the face's own plane, `min == max`), so
     /// checking `min <= max` on all three axes of all six faces directly exercises the ordering a

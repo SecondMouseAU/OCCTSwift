@@ -5,6 +5,7 @@ import simd
 
 /// Issue #572: `Surface.toBSpline()` reaches `GeomConvert::SurfaceToBSplineSurface`, which
 /// approximates through `GeomConvert_ApproxSurface` for any surface it cannot convert exactly.
+///
 /// Before patch `0019` (#522) that approximator's interior truncation error was always zero, so
 /// its degree search stopped at the floor and it reported `IsDone()` on a fit nowhere near the
 /// requested `1e-4`.
@@ -80,7 +81,9 @@ struct Issue572ApproxConsumerTests {
     }
 
     /// The same surface untrimmed takes `GeomConvert_1.cxx:960` instead, whose continuity request
-    /// for it is C0 in U, the continuity #522's collapse lives at. It does not collapse: the
+    /// for it is C0 in U, the continuity #522's collapse lives at.
+    ///
+    /// It does not collapse: the
     /// collapse needs a low `NDMINU`, and that floor is low only where the boundary iso-curves
     /// carry no information (a sphere's poles). Here they do, so this fit is the same either side
     /// of `0019` and only the reported error moves. Continuity was never the axis that predicted
@@ -107,7 +110,9 @@ struct Issue572ApproxConsumerTests {
     }
 
     /// A surface the converter handles analytically never reaches the approximator, so nothing
-    /// about it can move. Present so a future change to the conversion is visible as a failure
+    /// about it can move.
+    ///
+    /// Present so a future change to the conversion is visible as a failure
     /// here rather than only in the two cases above.
     @Test("Analytic surfaces convert exactly, before and after")
     func analyticSurfacesAreUnaffected() {

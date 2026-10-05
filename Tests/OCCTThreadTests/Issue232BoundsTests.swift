@@ -4,6 +4,7 @@ import simd
 @testable import OCCTSwift
 
 /// Issue #232: `threadedShaft` / `threadedHole` were reported to run ~one lead past `length`/`depth`.
+///
 /// Investigation found the threaded **solid is bounded exactly to the requested span**, the overshoot
 /// is `Shape.bounds` (OCCT's default `Bnd_Box`) over-reporting for the B-spline/faceted thread surfaces
 /// (the control-hull artifact, cf. #213), not real geometry. (Originally exercised via the now-deprecated

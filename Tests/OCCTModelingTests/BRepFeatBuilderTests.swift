@@ -8,7 +8,9 @@ import simd
 /// (0,0,0), not corner-at-origin -- using it here would place box1 at `[-5,5]^3`, touching box2 at
 /// `[5,15]^3` only at a single boundary point (zero-volume "overlap"), silently turning every
 /// assertion below into a check of disjoint-shape behavior instead of the real intersection this
-/// suite exists to exercise. (An earlier draft of this suite made exactly that mistake and its
+/// suite exists to exercise.
+///
+/// (An earlier draft of this suite made exactly that mistake and its
 /// volumes came back internally consistent -- 2000/1000 instead of 1875/875 -- which is what made
 /// it easy to miss without ground-truthing the fixture itself.)
 ///

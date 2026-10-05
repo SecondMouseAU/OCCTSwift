@@ -117,7 +117,9 @@ struct Issue1088SelfIntersectsAnswer {
 
     // MARK: - The guard
 
-    /// A shape with no content is not a self-intersecting one. The pre-#1088 body answered `true`
+    /// A shape with no content is not a self-intersecting one.
+    ///
+    /// The pre-#1088 body answered `true`
     /// here, because `BOPAlgo_CheckerSI` reports an error for it and the error was being returned
     /// as the answer.
     ///

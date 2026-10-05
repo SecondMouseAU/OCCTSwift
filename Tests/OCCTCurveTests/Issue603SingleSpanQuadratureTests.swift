@@ -49,7 +49,9 @@ struct Issue603SingleSpanQuadratureTests {
 
     // MARK: - The defect itself
 
-    /// The issue's own table, re-measured through `Curve3D.length`. Every one of these was between
+    /// The issue's own table, re-measured through `Curve3D.length`.
+    ///
+    /// Every one of these was between
     /// 0.34% and 1.74% long before; the tolerance here is 1e-9 relative, six orders inside the
     /// smallest of those errors, so the suite cannot pass on the single quadrature.
     @Test("A whole ellipse measures its own circumference, not 0.3-1.7% more")
@@ -77,7 +79,7 @@ struct Issue603SingleSpanQuadratureTests {
     }
 
     /// The worst case measured anywhere in this family, and the one the issue guessed at but did
-    /// not probe: a parabola gets an order-5 Gauss rule (`CPnts_AbscissaPoint`'s `order()` special
+    /// not probe: a parabola gets an order-5 Gauss rule (CPnts_AbscissaPoint's `order()` special
     /// -cases it), so over a wide range it was 3.09% SHORT, the only fixture whose error had the
     /// opposite sign.
     @Test("A parabola over a wide range measures its arc, not 3% less")
@@ -167,7 +169,9 @@ struct Issue603SingleSpanQuadratureTests {
     // MARK: - What must NOT change
 
     /// A line and a circle are `GCPnts_LengthParametrized`: their length is a closed form, not a
-    /// quadrature, and there is nothing to converge. Subdividing must return the same closed form,
+    /// quadrature, and there is nothing to converge.
+    ///
+    /// Subdividing must return the same closed form,
     /// not a numerically integrated approximation of it.
     @Test("The closed forms stay closed forms")
     func lengthParametrizedCurvesUnchanged() {
@@ -223,7 +227,9 @@ struct Issue603SingleSpanQuadratureTests {
 
     // MARK: - The inverse
 
-    /// The pairing this fix had to keep. OCCT's root finder inverts the very quadrature the length
+    /// The pairing this fix had to keep.
+    ///
+    /// OCCT's root finder inverts the very quadrature the length
     /// no longer uses (`CPnts_MyRootFunction::Value` is one Gauss rule over `[u0, X]`), so before
     /// this both sides were wrong by the same 0.337% and `parameterAtLength(length)` still landed
     /// on the last parameter. Making only the length accurate would have moved that answer to

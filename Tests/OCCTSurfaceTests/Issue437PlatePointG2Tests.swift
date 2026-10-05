@@ -3,9 +3,11 @@ import simd
 
 @testable import OCCTSwift
 
-/// #437: `GeomPlate_PointConstraint`'s point constructor throws above order 1, and a bare point
-/// carries no curvature to match, so `.g2` can never work for a *point* constraint. Cluster D's
-/// census (#513/#667) measured this as a genuine instance of the shared root: `SurfaceContinuity`'s
+/// #437: GeomPlate_PointConstraint's point constructor throws above order 1, and a bare point
+/// carries no curvature to match, so `.g2` can never work for a *point* constraint.
+///
+/// Cluster D's
+/// census (#513/#667) measured this as a genuine instance of the shared root: SurfaceContinuity's
 /// raw value is forwarded as a literal `GeomPlate_PointConstraint`/`CurveConstraint` order with no
 /// `GeomAbs_Shape` decode step at all.
 ///

@@ -27,6 +27,7 @@ struct GlueTests {
     /// #2735: `OCCTShapeGlue` used to put both shapes into `SetArguments` and set no
     /// tools, which `BRepAlgoAPI_Fuse` reports as an error on every input, so the
     /// function always fell back to a plain, un-tolerant `BRepAlgoAPI_Fuse(s1, s2)`.
+    ///
     /// That fallback never calls `SetFuzzyValue`, so two boxes separated by a gap wider
     /// than OCCT's default confusion precision (~1e-7) but inside the caller's own
     /// `tolerance` come back as two separate solids in a compound, not one glued solid.

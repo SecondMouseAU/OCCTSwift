@@ -103,7 +103,9 @@ struct Issue617FaceGridLayoutTests {
     }
 
     /// Every `.at(u:v:)` position must equal a direct `Surface.point(atU:v:)` evaluation at the
-    /// parameters that grid slot stands for. Run on **both** aspect ratios: the pre-#617 buffer
+    /// parameters that grid slot stands for.
+    ///
+    /// Run on **both** aspect ratios: the pre-#617 buffer
     /// was silently transposed at each of them, and a square grid alone would not distinguish a
     /// stride mistake from a correct read.
     private func checkGrid(uSamples: Int, vSamples: Int) {
@@ -148,7 +150,9 @@ struct Issue617FaceGridLayoutTests {
 
     /// The transposition-catching property stated on its own, independent of the fix's index
     /// arithmetic: reading a 3x10 grid with the buffer's *old* V-major formula must land on a
-    /// materially different point of the face. If this fails, the fixture surface is too
+    /// materially different point of the face.
+    ///
+    /// If this fails, the fixture surface is too
     /// symmetric and the two tests above could pass while transposed.
     @Test("The fixture patch actually distinguishes U from V")
     func transposedReadIsMateriallyDifferent() {
@@ -177,7 +181,9 @@ struct Issue617FaceGridLayoutTests {
     }
 
     /// `.at(u:v:)` is the accessor #486 gave `SurfaceGrid`, so it must agree with the flat arrays
-    /// on the documented index, not just with the geometry. Also pins normals and curvatures to
+    /// on the documented index, not just with the geometry.
+    ///
+    /// Also pins normals and curvatures to
     /// the same slot as positions, since all four buffers share one layout.
     @Test("at(u:v:) reads the documented U-major slot of all four buffers")
     func accessorAgreesWithDocumentedIndex() {
@@ -198,7 +204,9 @@ struct Issue617FaceGridLayoutTests {
     }
 
     /// Normals sampled on a curved patch must be the surface's own normal at that (u, v), up to
-    /// sign (OCCT orients against the face). A transposed buffer fails this on a patch whose
+    /// sign (OCCT orients against the face).
+    ///
+    /// A transposed buffer fails this on a patch whose
     /// normal actually turns, which is why the fixture is curved in both directions rather than
     /// planar.
     @Test("Normals land on the same U-major slot as positions")

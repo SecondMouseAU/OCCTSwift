@@ -32,7 +32,9 @@ let useUnsafeFlags = ProcessInfo.processInfo.environment["STUB_UNSAFE_FLAGS"] ==
 /// source, which needs only a `.define` and a `.headerSearchPath`, both safe.
 let shimViaInclude = ProcessInfo.processInfo.environment["STUB_SHIM_VIA_INCLUDE"] == "1"
 
-/// setjmp/longjmp is its own gap with its own flag. Without `-mllvm -wasm-enable-sjlj` the
+/// setjmp/longjmp is its own gap with its own flag.
+///
+/// Without `-mllvm -wasm-enable-sjlj` the
 /// compiler emits a plain call to `setjmp`, which nothing in the sysroot defines, and the build
 /// fails at the LINK with `undefined symbol: setjmp`. That failure is loud and it takes the whole
 /// module with it, so the target is included only in the cases whose subject it is, rather than
@@ -48,8 +50,10 @@ if shimViaInclude {
     bridgeCXX.append(.define("STUB_SHIM_VIA_INCLUDE", .when(platforms: [.wasi])))
 }
 if useUnsafeFlags {
-    bridgeCXX.append(.unsafeFlags(["-include", "../../shims/wasi-std-threading.hpp"],
-                                  .when(platforms: [.wasi])))
+    bridgeCXX.append(
+        .unsafeFlags(
+            ["-include", "../../shims/wasi-std-threading.hpp"],
+            .when(platforms: [.wasi])))
 }
 
 // Order matters: wasm-ld resolves archives in the order it meets them, so the kernel archive
@@ -75,7 +79,7 @@ if useUnsafeFlags {
 let package = Package(
     name: "StubOCCT",
     products: [
-        .library(name: "StubOCCT", targets: ["StubOCCT"]),
+        .library(name: "StubOCCT", targets: ["StubOCCT"])
     ],
     targets: [
         .target(

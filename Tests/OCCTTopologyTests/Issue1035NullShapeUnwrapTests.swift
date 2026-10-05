@@ -87,7 +87,7 @@ struct Issue1035NullShapeUnwrap {
 
     // MARK: - ShapeFix_Shape::Perform
 
-    /// `ShapeFix_Shape`'s constructor accepts a null shape and returns; `Perform()` is where it
+    /// ShapeFix_Shape's constructor accepts a null shape and returns; `Perform()` is where it
     /// dereferences. `OCCTShapeHeal` guards for the same reason and its comment names the
     /// constructor, which the sweep shows is not the dereferencing half.
     @Test("ShapeFixer.perform on a nullified shape returns false, not a crash")
@@ -109,7 +109,9 @@ struct Issue1035NullShapeUnwrap {
 
     // MARK: - Controls: the same queries still answer for a real shape
 
-    /// A guard that refuses everything would pass every test above. These are the same accessors
+    /// A guard that refuses everything would pass every test above.
+    ///
+    /// These are the same accessors
     /// on a real edge, face and vertex, so a guard that over-refuses fails here.
     @Test("Every guarded accessor still answers for a real edge, face and vertex")
     func everyGuardedAccessorStillAnswersForARealShape() throws {

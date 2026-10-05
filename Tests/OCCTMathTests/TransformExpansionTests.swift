@@ -70,7 +70,9 @@ struct TransformExpansionTests {
 
     /// #835 regression: `gTransformed(matrix:)` uses the same INTERLEAVED row-major layout as
     /// `transformed(byMatrix:)` (`[r00,r01,r02,tx, r10,r11,r12,ty, r20,r21,r22,tz]`), NOT the
-    /// GROUPED layout `transformed(matrix:)` uses. Locks in the documented convention against
+    /// GROUPED layout `transformed(matrix:)` uses.
+    ///
+    /// Locks in the documented convention against
     /// real bounding-box geometry.
     @Test func nonUniformScaleInterleavedLayoutScalesAsDocumented() {
         // Deliberately non-cubic (10 x 20 x 30): a cube's symmetric extent lets a wrong-layout
@@ -99,7 +101,9 @@ struct TransformExpansionTests {
     /// #835 PR #864 review finding 1: the three transform methods used to take a plain
     /// `[Double]` distinguished only by which method you called, so a caller could silently
     /// garble a transform by feeding one method's array shape to another. `Matrix12Grouped` /
-    /// `TransformMatrix3D` now make that a compile error. Locks in the *conversion* between the
+    /// `TransformMatrix3D` now make that a compile error.
+    ///
+    /// Locks in the *conversion* between the
     /// two layouts, `Matrix12Grouped.interleaved` / `TransformMatrix3D.grouped`, round-trips a
     /// transform correctly, so a caller who has one layout can still reach the method that wants
     /// the other without hand-shuffling indices.
@@ -171,7 +175,9 @@ struct TransformExpansionTests {
     /// `Matrix12Grouped.init(_:)`/`TransformMatrix3D.init(_:)` used `precondition(values.count
     /// == 12, ...)`, which traps the whole process, debug *and* release, uncatchable
     /// in-process, on a wrong-count array, instead of returning `nil` the way the three
-    /// `Shape` transform methods these types replaced always did for any `[Double]` input. A
+    /// `Shape` transform methods these types replaced always did for any `[Double]` input.
+    ///
+    /// A
     /// caller migrating off the deprecated `[Double]`-taking overloads (`deprecatedArrayOverloadsStillWork`
     /// above) onto these typed constructors directly, exactly what the deprecation message
     /// tells them to do, got a crash instead of the graceful `nil` they'd get either from the
@@ -214,4 +220,3 @@ struct TransformExpansionTests {
         #expect(TransformMatrix3D(twelveElements) != nil)
     }
 }
-

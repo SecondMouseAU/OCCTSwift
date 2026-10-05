@@ -5,7 +5,9 @@ import Testing
 
 /// #784 removed `ThreadBuild.boolean`. `ThreadBuild` is `Codable` with no raw type, so Swift's
 /// synthesized encoding is case-keyed (`{"auto":{}}`, `{"direct":{}}`, and, before this release,
-/// `{"boolean":{}}`). Removing the case is a source-level compile error for any caller naming
+/// `{"boolean":{}}`).
+///
+/// Removing the case is a source-level compile error for any caller naming
 /// `.boolean` in code, which the rest of #784's migration guide covers, but it is a *silent*
 /// decode failure for any already-persisted `ThreadBuild.boolean` value (a saved project file, a
 /// user-defaults entry, anything a host app wrote while the case still existed): nothing here

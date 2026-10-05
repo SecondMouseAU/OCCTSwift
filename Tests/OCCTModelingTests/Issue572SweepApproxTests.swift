@@ -88,7 +88,9 @@ struct Issue572SweepApproxTests {
     }
 
     /// Without the flag the sweep keeps its own surface and never reaches the approximator, so
-    /// this result is identical on both kernels. It is the reference the test above measures
+    /// this result is identical on both kernels.
+    ///
+    /// It is the reference the test above measures
     /// against, so a change to it would silently move that test's baseline.
     @Test("The un-forced sweep is untouched by the approximation fix")
     func unforcedSweepIsUnchanged() {

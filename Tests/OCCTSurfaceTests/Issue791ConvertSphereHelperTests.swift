@@ -14,7 +14,9 @@ import Testing
 /// `Convert_SphereToBSplineSurface.hxx`/`Convert_ElementarySurfaceToBSplineSurface.hxx` headers
 /// directly, not assumed from the issue body. `occt-refman` carries the same fact and was
 /// unreachable only because this session's `context` connection had dropped, not because the
-/// package is missing; `okf/policies/context-first.md` puts refman first and the headers second. So the fix is a
+/// package is missing; `okf/policies/context-first.md` puts refman first and the headers second.
+///
+/// So the fix is a
 /// drop-in call: `return buildSurfaceFromElementary(conv);`.
 ///
 /// These tests prove the consolidation changed nothing observable, two ways:

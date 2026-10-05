@@ -6,7 +6,9 @@ import simd
 /// Issue #838: `Shape.findSurface(tolerance:)`, `Shape.findSurface(tolerance:onlyPlane:)` and
 /// `Shape.findSurfaceEx(tolerance:onlyPlane:)` used to each independently construct and query their
 /// own `BRepLib_FindSurface` in the bridge (`OCCTShapeFindSurface`, `OCCTFindSurface`,
-/// `OCCTShapeFindSurfaceEx`). They now share one internal C++ helper (`occtRunFindSurface` /
+/// `OCCTShapeFindSurfaceEx`).
+///
+/// They now share one internal C++ helper (`occtRunFindSurface` /
 /// `OCCTFindSurfaceResult` in `OCCTBridge_Topology.mm`). These tests lock the observable behavior of
 /// that consolidation: the explicit-`tolerance:` overload shadowing status quo, the `onlyPlane`
 /// forwarding, and cross-entry-point equivalence at matching parameters.
@@ -37,7 +39,9 @@ struct Issue838FindSurfaceConsolidationTests {
     }
 
     /// A closed quadrilateral wire that is *almost* planar: three corners at z=0, the fourth
-    /// raised by `bump`. Built from raw line segments with no attached face/pcurve at all, so
+    /// raised by `bump`.
+    ///
+    /// Built from raw line segments with no attached face/pcurve at all, so
     /// `BRepLib_FindSurface` never finds an "existing surface" (regardless of `onlyPlane`) and
     /// always falls through to its least-squares plane-fit, whose residual grows with `bump`. This
     /// isolates pure tolerance forwarding from the onlyPlane-vs-existing-surface mechanism above.

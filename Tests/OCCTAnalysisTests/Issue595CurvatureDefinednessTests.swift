@@ -7,7 +7,9 @@ import simd
 // MARK: - #595: the curvature getters that spelled "undefined" as zero
 
 /// #583 gave the `Shape.faceLProp*` block a way to say "there is no curvature here" instead of
-/// answering `0`. Six more entry points, on `Curve3D`, `Curve2D`, `Surface` and `Shape`, kept the
+/// answering `0`.
+///
+/// Six more entry points, on `Curve3D`, `Curve2D`, `Surface` and `Shape`, kept the
 /// bare double, and a census found three more that decide the same question with a hand-rolled gate:
 /// `Curve3D.torsion(at:)`, `Wire.curvature(at:)` and `Surface.curvatures(u:v:)`.
 ///
@@ -23,7 +25,9 @@ import simd
 struct Issue595CurvatureDefinednessTests {
 
     /// Four coincident poles: no derivative of any order is significant, so `IsTangentDefined()` is
-    /// false and there is no curvature at all. Two coincident poles is *not* enough, the tangent
+    /// false and there is no curvature at all.
+    ///
+    /// Two coincident poles is *not* enough, the tangent
     /// search falls through to D2 and OCCT answers with the cusp sentinel instead.
     private static func deadCurve() -> Curve3D? {
         Curve3D.bezier(poles: [SIMD3(0, 0, 0), SIMD3(0, 0, 0), SIMD3(0, 0, 0), SIMD3(0, 0, 0)])
@@ -108,7 +112,9 @@ struct Issue595CurvatureDefinednessTests {
 
     // MARK: Surface.gaussianCurvature / meanCurvature / curvatures
 
-    /// The widest collision of the set. A developable surface's Gaussian curvature is exactly `0`
+    /// The widest collision of the set.
+    ///
+    /// A developable surface's Gaussian curvature is exactly `0`
     /// at *every* point, so this used to return the "undefined" value for whole surfaces at a time.
     @Test("A plane, cylinder and cone report a real 0 where a cone apex reports nothing")
     func surfaceCurvatureSeparatesZeroFromAbsent() throws {

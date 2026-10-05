@@ -4,9 +4,11 @@ import simd
 
 @testable import OCCTSwift
 
-/// #486 unified `Curve2D`'s three batch-evaluation spellings (`evaluateGrid`/`evaluateGridD1`,
+/// #486 unified Curve2D's three batch-evaluation spellings (`evaluateGrid`/`evaluateGridD1`,
 /// v0.28.0's `Geom2dGridEval_Curve`; the v0.110.0 `evalBatchD0`/`D1`; and the v0.111.0
-/// `gridEvalD0`/`D1`) onto the first. The two forwarding spellings were removed at v2.0.0 (#784).
+/// `gridEvalD0`/`D1`) onto the first.
+///
+/// The two forwarding spellings were removed at v2.0.0 (#784).
 @Suite("Issue 486: Curve2D batch-eval spellings agree")
 struct Issue486Curve2DBatchTests {
 

@@ -3,9 +3,11 @@ import Testing
 
 @testable import OCCTSwift
 
-/// #994: `OCCTBridge_Topology.mm`'s `trsfFromMatrix12` / `matrix12FromTrsf` and
-/// `OCCTBridge_BRepGraph.mm`'s `locationFromMatrix` each converted the same twelve doubles into
-/// the same `gp_Trsf`, in two files. All three are now
+/// #994: OCCTBridge_Topology.mm's `trsfFromMatrix12` / `matrix12FromTrsf` and
+/// OCCTBridge_BRepGraph.mm's `locationFromMatrix` each converted the same twelve doubles into
+/// the same `gp_Trsf`, in two files.
+///
+/// All three are now
 /// `occtTrsfFromMatrix12Interleaved` / `occtMatrix12InterleavedFromTrsf` /
 /// `occtLocationFromMatrix12Interleaved` in `OCCTBridge_Internal.h`.
 ///

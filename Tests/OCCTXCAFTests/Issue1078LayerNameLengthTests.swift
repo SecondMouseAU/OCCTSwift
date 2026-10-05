@@ -57,7 +57,7 @@ struct Issue1078LayerNameLengthTests {
         #expect(OCCTDocumentGetLayerName(handle, -1, nil, 0) == -1)
     }
 
-    /// Test that a short buffer yields a prefix and the full length
+    /// Test that a short buffer yields a prefix and the full length.
     @Test("A short buffer yields a prefix and the length the whole name needs")
     func shortBufferReportsTheFullLength() throws {
         let doc = try Self.documentWithLongNamedLayer()
@@ -70,7 +70,7 @@ struct Issue1078LayerNameLengthTests {
         #expect(small[7] == 0)
     }
 
-    /// Malformed buffer arguments are refused
+    /// Malformed buffer arguments are refused.
     @Test("A negative length, or a null buffer with a positive one, is refused")
     func malformedBufferArgumentsAreRefused() throws {
         let doc = try Self.documentWithLongNamedLayer()

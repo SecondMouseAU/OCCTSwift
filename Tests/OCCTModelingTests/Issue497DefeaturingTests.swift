@@ -16,6 +16,7 @@ import Testing
 struct Issue497DefeaturingTests {
 
     /// A 20mm box with one edge filleted, plus the fillet's own faces.
+    ///
     /// Fillet faces are the ones the box did not have: a box has 6, `filleted` has more.
     private static func filletedBox() -> (shape: Shape, filletFaceIndices: [Int])? {
         guard let box = Shape.box(width: 20, height: 20, depth: 20),
@@ -174,4 +175,3 @@ struct Issue497DefeaturingTests {
         }
     }
 }
-

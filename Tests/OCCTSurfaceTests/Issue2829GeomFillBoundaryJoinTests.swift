@@ -22,7 +22,9 @@ import simd
 @Suite("Issue 2829: GeomFill boundary joining")
 struct Issue2829GeomFillBoundaryJoinTests {
 
-    /// A straight segment as a 4-pole Bezier. Four poles matter: `.coons` refuses fewer than 4
+    /// A straight segment as a 4-pole Bezier.
+    ///
+    /// Four poles matter: `.coons` refuses fewer than 4
     /// poles per direction after knot alignment (`GeomFill_BSplineCurves.cxx:300`), which is a
     /// different refusal from the joining one under test.
     private func segment(_ a: SIMD3<Double>, _ b: SIMD3<Double>) -> Curve3D? {

@@ -4,7 +4,9 @@ import simd
 @testable import OCCTSwift
 
 /// #398: the continuity vocabularies collapsed from nine enums to two shared ones plus two
-/// retained specials. These pin the raw values (the unification must not move a single one),
+/// retained specials.
+///
+/// These pin the raw values (the unification must not move a single one),
 /// the deprecated spellings, and the one order that OCCT refuses outright.
 @Suite("Continuity vocabulary (#398)")
 struct Issue398ContinuityTests {

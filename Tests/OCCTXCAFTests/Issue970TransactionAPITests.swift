@@ -5,12 +5,15 @@ import Testing
 
 /// #970: `openNamedTransaction(_:)` took a name and dropped it, and `transactionNumber` encoded
 /// `HasOpenCommand()` as 1 or 0 instead of reading OCCT's own counter.
+///
 /// See `Scripts/repro/970-transaction-api/` for the measurements these pin.
 @Suite("Transaction naming and numbering (#970)")
 struct Issue970TransactionAPITests {
 
     /// The name reaches OCCT: it is recorded on the `TDF_Delta` the commit produces, which is
-    /// where OCCT keeps a caller-supplied transaction name. Before #970 the delta came back
+    /// where OCCT keeps a caller-supplied transaction name.
+    ///
+    /// Before #970 the delta came back
     /// unnamed however the transaction was opened.
     @Test func namedTransactionNamesTheCommittedDelta() {
         guard let doc = Document.create() else { return }
@@ -25,7 +28,9 @@ struct Issue970TransactionAPITests {
         }
     }
 
-    /// The name belongs to one transaction. A later unnamed transaction is not given it.
+    /// The name belongs to one transaction.
+    ///
+    /// A later unnamed transaction is not given it.
     @Test func aPendingNameDoesNotReachTheNextTransaction() {
         guard let doc = Document.create() else { return }
         doc.setUndoLimit(10)
@@ -39,7 +44,9 @@ struct Issue970TransactionAPITests {
         if let delta { #expect(delta.name == "") }
     }
 
-    /// An `openTransaction()` with no name of its own supersedes a name still pending. The second
+    /// An `openTransaction()` with no name of its own supersedes a name still pending.
+    ///
+    /// The second
     /// open is refused by OCCT because one is already running, so this is the same transaction
     /// committing without the name it was opened with.
     @Test func anUnnamedOpenSupersedesAPendingName() {
@@ -80,7 +87,9 @@ struct Issue970TransactionAPITests {
         if let delta { #expect(delta.name == "") }
     }
 
-    /// Committing for a delta hands one back and leaves the caller's undo limit alone. Both were
+    /// Committing for a delta hands one back and leaves the caller's undo limit alone.
+    ///
+    /// Both were
     /// lost to a `SetUndoLimit(100)` that committed the transaction before the commit ran.
     @Test func commitWithDeltaReturnsADeltaAndKeepsTheUndoLimit() {
         guard let doc = Document.create() else { return }
@@ -108,7 +117,9 @@ struct Issue970TransactionAPITests {
     }
 
     /// A document holds at most one transaction, so opens do not stack and a single commit
-    /// closes whatever is open. This is why the number is never greater than 1.
+    /// closes whatever is open.
+    ///
+    /// This is why the number is never greater than 1.
     @Test func repeatedOpensDoNotStack() {
         guard let doc = Document.create() else { return }
         doc.setUndoLimit(10)
@@ -129,7 +140,9 @@ struct Issue970TransactionAPITests {
     }
 
     /// `openNamedTransaction` reports the number of the transaction it opened, and 0 when it
-    /// opened none. The name is not retained in that case: there is no transaction to carry it.
+    /// opened none.
+    ///
+    /// The name is not retained in that case: there is no transaction to carry it.
     @Test func openNamedTransactionReportsTheNumberItOpened() {
         guard let doc = Document.create() else { return }
         #expect(doc.openNamedTransaction("no undo limit") == 0)

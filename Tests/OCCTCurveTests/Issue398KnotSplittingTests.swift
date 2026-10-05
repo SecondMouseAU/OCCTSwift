@@ -4,7 +4,9 @@ import simd
 @testable import OCCTSwift
 
 /// #398: `Curve3D.ContinuityOrder` stopped at `c2`, which made every order it could express a
-/// no-op for the query it exists to answer. Sharing `ParametricContinuity` with the other
+/// no-op for the query it exists to answer.
+///
+/// Sharing `ParametricContinuity` with the other
 /// continuity-floor APIs makes `.c3` reachable, and `.c3` is the order that actually finds
 /// interior breaks on an ordinary cubic.
 @Suite("BSpline knot splitting continuity range (#398)")

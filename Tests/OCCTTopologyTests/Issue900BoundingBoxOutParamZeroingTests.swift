@@ -9,7 +9,9 @@ import simd
 /// three failure paths, null shape, void box, and a caught OCCT exception, that all return
 /// `false` before ever calling `Bnd_Box::Get(...)`. `OCCTBridge_Topology.h` still declares all six
 /// out-parameters `_Nonnull`, so a caller that reads them without gating on the `bool` return would
-/// see whatever was already on the stack, not a deterministic value. This suite calls the C bridge
+/// see whatever was already on the stack, not a deterministic value.
+///
+/// This suite calls the C bridge
 /// functions directly, bypassing `Shape.boundingBox`/`boundingBoxOptimal(useShapeTolerance:)`,
 /// which already gate correctly on the `bool` and would never observe this either way, with the
 /// six out-locals pre-poisoned to a value the fix could never produce by chance, and confirms they
@@ -27,7 +29,7 @@ import simd
 struct Issue900BoundingBoxOutParamZeroingTests {
 
     /// A far-disjoint intersection is the reliable way to get a genuinely void `Shape` (matching
-    /// `OCCTAnalysisTests.voidShapeReportsNoBoxFromAnyAccessor`'s fixture) --
+    /// OCCTAnalysisTests.voidShapeReportsNoBoxFromAnyAccessor's fixture) --
     /// `Shape.compound([])` refuses to construct at all.
     private func makeVoidShape() throws -> Shape {
         let b1 = try #require(Shape.box(width: 10, height: 10, depth: 10))

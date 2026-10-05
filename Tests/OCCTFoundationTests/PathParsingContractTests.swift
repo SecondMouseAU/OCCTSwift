@@ -3,7 +3,9 @@ import Testing
 
 @testable import OCCTSwift
 
-/// `OSDPath`'s own contract (#499). This used to also pin a shared contract against `PathParser`,
+/// OSDPath's own contract (#499).
+///
+/// This used to also pin a shared contract against `PathParser`,
 /// a `TDocStd_PathParser`-backed forwarder deprecated in favour of `OSDPath` and removed at
 /// v2.0.0 (#784); the comparison tests went with it.
 @Suite("Path Parsing Contract (#499)")
@@ -31,7 +33,9 @@ struct PathParsingContractTests {
     }
 
     /// `OSD_Path::Trek()` is OCCT's *portable* directory syntax, not a filesystem path:
-    /// `/` becomes `|` and `..` becomes `^`. This is the one accessor whose result must not
+    /// `/` becomes `|` and `..` becomes `^`.
+    ///
+    /// This is the one accessor whose result must not
     /// be handed to `FileManager`.
     @Test func trekIsPortableSyntaxNotAFilesystemPath() {
         #expect(OSDPath.trek("/home/user/model.step") == "|home|user|")
@@ -77,7 +81,9 @@ struct PathParsingContractTests {
     }
 
     /// Measured, not assumed: `OSD_Path::IsValid` accepts every string tried, including the
-    /// empty one. It is a system-type syntax check, not a "can I open this" test.
+    /// empty one.
+    ///
+    /// It is a system-type syntax check, not a "can I open this" test.
     @Test func validityCheckAcceptsAnythingParsable() {
         #expect(OSDPath.isValid("/tmp/test.txt"))
         #expect(OSDPath.isValid(""))

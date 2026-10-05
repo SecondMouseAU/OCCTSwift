@@ -94,7 +94,9 @@ struct BRepGraphAttributeTests {
     }
 
     /// NodeRef indexing is deterministic across rebuilds of the same BREP, the property the
-    /// snapshot round-trip relies on. Verify a node index resolves to the same geometry.
+    /// snapshot round-trip relies on.
+    ///
+    /// Verify a node index resolves to the same geometry.
     @Test func nodeIndexingDeterministicAcrossRebuild() {
         guard let box = Shape.box(width: 10, height: 20, depth: 30),
             let g1 = BRepGraph(shape: box),

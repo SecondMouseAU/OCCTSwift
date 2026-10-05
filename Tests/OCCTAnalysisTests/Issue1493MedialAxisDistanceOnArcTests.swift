@@ -87,8 +87,10 @@ struct Issue1493MedialAxisDistanceOnArcTests {
     /// Reconstructs the closed polygon boundary in whatever local frame `points` are already in,
     /// by finding the permutation whose consecutive distances match `edgeLengths` cyclically (in
     /// either direction). `points` need not be in boundary order and may include a rigid transform
-    /// (rotation/reflection/translation) relative to `edgeLengths`' own source shape: only the
-    /// lengths, which are transform-invariant, are used to recover the order. Returns nil if no
+    /// (rotation/reflection/translation) relative to the source shape of `edgeLengths`: only the
+    /// lengths, which are transform-invariant, are used to recover the order.
+    ///
+    /// Returns nil if no
     /// matching permutation exists (e.g. the point count doesn't match).
     static func reconstructLocalPolygon(from points: [SIMD2<Double>], edgeLengths: [Double])
         -> [SIMD2<Double>]?
@@ -136,7 +138,9 @@ struct Issue1493MedialAxisDistanceOnArcTests {
         return result
     }
 
-    @Test("A curved bisector arc's midpoint distance matches the real curve point, not the linear interpolation of its endpoints")
+    @Test(
+        "A curved bisector arc's midpoint distance matches the real curve point, not the linear interpolation of its endpoints"
+    )
     func curvedArcDistanceMatchesRealCurvePoint() {
         guard let wire = Wire.polygon(Self.lShapePoints, closed: true),
             let face = Shape.face(from: wire),
@@ -158,7 +162,8 @@ struct Issue1493MedialAxisDistanceOnArcTests {
             let localPolygon = Self.reconstructLocalPolygon(
                 from: boundaryPositions, edgeLengths: Self.lShapeEdgeLengths)
         else {
-            Issue.record("Could not reconstruct the local-frame boundary polygon from ma's own nodes")
+            Issue.record(
+                "Could not reconstruct the local-frame boundary polygon from ma's own nodes")
             return
         }
 
@@ -232,8 +237,12 @@ struct Issue1493MedialAxisDistanceOnArcTests {
 
             let d0 = ma.distanceToBoundary(arcIndex: i, parameter: 0)
             let d1 = ma.distanceToBoundary(arcIndex: i, parameter: 1)
-            #expect(abs(d0 - firstNode.distance) < 1e-6, "Arc \(i) t=0 should match its first node's distance")
-            #expect(abs(d1 - secondNode.distance) < 1e-6, "Arc \(i) t=1 should match its second node's distance")
+            #expect(
+                abs(d0 - firstNode.distance) < 1e-6,
+                "Arc \(i) t=0 should match its first node's distance")
+            #expect(
+                abs(d1 - secondNode.distance) < 1e-6,
+                "Arc \(i) t=1 should match its second node's distance")
         }
     }
 }

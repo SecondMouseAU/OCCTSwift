@@ -8,7 +8,9 @@ import simd
 @Suite("BRepClass FClassifier Tests")
 struct BRepClassFClassifierTests {
 
-    /// #1284: this test's own name promised `.inside` coverage and never exercised it. Both
+    /// #1284: this test's own name promised `.inside` coverage and never exercised it.
+    ///
+    /// Both
     /// `classifyPoint2D` tests in this file asserted `.outside` — u:1000/v:1000 here and
     /// u:100/v:100 in `classifyPoint2DOutside` — so a regression that made `classifyPoint2D` always
     /// answer `.outside` would have passed this suite silently.

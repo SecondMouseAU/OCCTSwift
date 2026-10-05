@@ -8,7 +8,9 @@ import Testing
 /// `BRepAdaptor_Curve::GetType()` correctly reports the pcurve's type via the curve-on-surface
 /// override, but `IntegrationOrder` then read the pole count through a completely different,
 /// non-virtual accessor (`BAC.Curve().Curve()`) that is null whenever there is no 3D curve, and
-/// dereferenced the null down-cast. Fixed by using the adaptor's own (correctly-dispatching)
+/// dereferenced the null down-cast.
+///
+/// Fixed by using the adaptor's own (correctly-dispatching)
 /// `NbPoles()` instead. The carried patch `0006` is **retired**: the fix shipped upstream as
 /// Open-Cascade-SAS/OCCT#1382 (repro Open-Cascade-SAS/OCCT#1381) and arrives with the OCCT 8.0.1
 /// re-pin, so this test now guards the kernel's own fix rather than ours.
@@ -47,8 +49,10 @@ struct Issue318DegenerateCurveOnSurfaceEdgeTests {
         #expect(result.freeEdgeCount == 0)
     }
 
-    /// `Shape.sew(shapes: [region10Face, region64Face], tolerance: 0.11477)`'s literal output --
-    /// see the suite doc comment for provenance. Captured via `Shape.writeBREP(to:)` /
+    /// The literal output of `Shape.sew(shapes: [region10Face, region64Face], tolerance: 0.11477)` --
+    /// see the suite doc comment for provenance.
+    ///
+    /// Captured via `Shape.writeBREP(to:)` /
     /// `BRepTools::Write` on the real sewn shape, no hand editing.
     static let fixtureBREP = """
 
