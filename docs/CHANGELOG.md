@@ -21,6 +21,16 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### `parameterAtLength` refuses a non-finite distance or start on every curve type, and the 2D doc states the extrapolation (#3034)
+
+`Curve2D.parameterAtLength(_:from:)` now returns `nil` for `.infinity`, `-.infinity` and `.nan`, as a distance or as the start parameter, on every curve type. `+.infinity` used to return an infinite parameter on segments, circles and infinite lines and `nil` on splines. The same refusal reaches `Curve3D.parameterAtLength`, `Shape.edgeParameterAtArcLength` and `Shape.edgeParameterAtFraction`, which have no optional and now return their failure value `0` for such an input. The `Curve2D` doc comment no longer promises `nil` for a distance past the end of the curve: a finite distance longer than the curve succeeds with a parameter outside `domain`, as it always did and as `Curve3D.parameterAtLength` documents.
+
+```swift
+let seg = Curve2D.segment(from: .zero, to: SIMD2(10, 0))!
+seg.parameterAtLength(1000)       // 1000, outside seg.domain (0...10), unchanged
+seg.parameterAtLength(.infinity)  // nil (was inf)
+```
+
 ### `Curve2D.parabola` and `arcOfParabola` place the focus where asked for a non-unit direction (#3042)
 
 `Curve2D.parabola(focus:direction:focalLength:)` and `Curve2D.arcOfParabola(focus:direction:focalLength:startParam:endParam:)` stepped back to the vertex by the unnormalised direction, so any direction that was not a unit vector returned a parabola whose focus was not `focus` (direction (3, 4), focus (1, 1), focal 5 put it at (-11, -15)). The vertex is now `focalLength` behind the focus along the unit direction, so the focus is exactly `focus` and the length of `direction` does not matter. Unit directions are unchanged, and a zero direction still returns `nil`.
