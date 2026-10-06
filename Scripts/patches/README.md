@@ -19,7 +19,7 @@ which is what nothing did while `0042` sat in the kernel and not in the map for 
 2026-08-03 retired ten patches, `0032`
 retired 2026-09-02 (superseded by upstream's own fix, not shipped in our pin), and `0035` retired
 2026-09-20 (it reintroduced #280; see its [Retired patches](#retired-patches) entry).
-The carried sequence now reads 0010–0012, 0014–0031, 0033–0034, 0036–0048, 0050–0053.
+The carried sequence now reads 0010–0012, 0014–0031, 0033–0034, 0036–0048, 0050–0054.
 The gaps are the retirements, not missing files:
 the numbers are cited across `CLAUDE.md`, `docs/`, closed issues and `Scripts/repro/`, and
 renumbering would have silently repointed every one of those citations at a different fix.
@@ -3021,6 +3021,75 @@ this patch's own message.
 
 **Retire** once the bundled OCCT includes this fix.
 
+
+## 0054-ChFi3d_Builder-StartSol-drops-an-obstacle-with-no-edge-2881.patch
+
+**A fillet blend that reaches an obstacle with no edge to follow evaluates an empty curve**
+([#2881](https://github.com/SecondMouseAU/OCCTSwift/issues/2881), upstream
+[OCCT#1568](https://github.com/Open-Cascade-SAS/OCCT/issues/1568)),
+`src/ModelingAlgorithms/TKFillet/ChFi3d/ChFi3d_Builder_2.cxx:1530-1562` in the pinned tree.
+`ChFi3d_Builder::StartSol`, on reaching an obstacle face, sets `c1obstacle`, replaces `HC` with a
+fresh `BRepAdaptor_Curve2d`, and looks for the arc edge among the obstacle face's edges:
+
+```cpp
+HC = new BRepAdaptor_Curve2d();
+... find newedge among Fv's edges by IsSame(anArcEdge) ...
+if (!newedge.IsNull()) { HC->Initialize(newedge, Fv); ... return true; }
+else                   { prepareDefaultReturn(); return false; }   // HC is still the empty adaptor
+```
+
+When no edge matches, the `else` returns `false` and leaves `HC` as the default-constructed adaptor,
+which holds no curve, with `c1obstacle` still `true`. `PerformSetOfSurfOnElSpine` tests
+`!Ok && HC.IsNull()` for the end of the chain, an empty non-null `HC` passes that test, and
+`obstacleon1`/`obstacleon2` then select the obstacle path, which hands `HC` to
+`ChFi3d_FilBuilder::PerformSurf`. The `SurfRst` walk evaluates it through
+`Adaptor3d_CurveOnSurface::EvalD1` and `Geom2dAdaptor_Curve::D1` falls to its `default:` arm and
+dereferences a null curve. That is a SIGSEGV inside `Build()`, which `OCC_CATCH_SIGNALS` being inert
+in this build means no bridge `catch (...)` can reach, and `BRepFilletAPI_MakeFillet` is named in 96
+bridge sites.
+
+The fix is three lines in that `else`: `HC.Nullify(); c1obstacle = false;` before the existing
+return, which gives the caller the state it already handles for "no obstacle". The sibling failure
+in the same block, returning `false` when `HSref` or `HCref` is null, leaves `HC` null, which the
+caller does handle; it is left alone because no input reaches it.
+
+### How the cause was found, and what was ruled out
+
+`Scripts/repro/occt1568-fillet-opposite-edge/`, against the pinned macOS slice with override-linked
+copies of three kernel files (the unmodified file recompiled with the kernel's flags is the
+control, and each copy differs by a few logging lines):
+
+- **The first hypothesis was wrong.** #2881 guessed an edge with no pcurve on its reference face,
+  which would make `BRepAdaptor_Curve2d::Initialize` leave the adaptor empty. Logging every
+  `Initialize` call (494 calls at radius 1.49, 326 up to the fault at 1.5) shows it never sees a null
+  pcurve on this model.
+- **The faulting adaptor was identified by address.** `Adaptor3d_CurveOnSurface::EvalD1` is called
+  once before the fault, on a `BRepAdaptor_Curve2d` that appears in the log as a default
+  construction and never as an `Initialize`.
+- **The branch fires exactly where the crash is.** Logging it gives two hits at radius 1.5 and none
+  at 1.49 or 1.5000001. What it sees: the blend's face is a plane, the neighbour face found at the
+  vertex is a four-edged B-spline surface, and the arc edge is in the blend's face but in none of the
+  neighbour's edges under any orientation.
+
+### Measured, macOS arm64, before and after
+
+`BRepFilletAPI_MakeFillet` on the model attached to OCCT#1568 (19 faces, 42 edges), one edge at a
+time, `ChFi3d_Rational` with `BRepTest_FilletCommands`' parameters, the patched file override-linked.
+
+| radius | unpatched | patched |
+|---|---|---|
+| 0.3 and 1.0 | 20 done, 22 raise "no suitable edges" | identical |
+| 1.5 | 12 done, **8 SIGSEGV**, 22 raise | 12 done, 8 not done (`NbFaultyContours = 1`), 22 raise |
+
+Across 42 edges and nine radii (0.3, 0.8, 1.0, 1.2, 1.4999999, 1.5, 1.5000001, 1.8, 2.5), 378 cases,
+exactly eight outcomes change, edges 12 to 19 at 1.5, each from SIGSEGV to a normal completion with
+`IsDone() == false`. The other 370 are identical, 170 completed and 200 raising the same exception.
+The eight now behave as radius 1.4999999 already did.
+
+**Not yet filed upstream.** Upstream's GTests are organised per toolkit and every PR is asked for
+one; the reproducer needs the 19-face model, and plain boxes with radii at their face widths (372
+cases) never reach the branch, so a small programmatic input is still to be found. OCCT#1568 carries
+our minimisation and a note that we would report the cause.
 
 # Retired patches
 

@@ -117,10 +117,45 @@ Same symbol, same byte offset as the innermost frame of the fillet crash. The de
 every evaluator falls to the switch's `default:` arm, which is `return myCurve->EvalD1(U);` with no
 `IsNull()` check of any kind. So `ChFi3d` is driving a 2D curve adaptor that holds no curve.
 
-## What is not established
+## Why the adaptor is unloaded: established 2026-10-05
 
-Why the adaptor is unloaded. Adding the missing `IsNull()` to that arm converts the segfault into a
-`Standard_NullObject` and does not answer it. The shape resembles the `CurveOnSurface` results
-dereferenced without `IsNull()` recorded against #348, which upstream fixed for 8.0.1 as
-[OCCT#1392](https://github.com/Open-Cascade-SAS/OCCT/pull/1392), but this is a different site and
-proving the cause needs an instrumented kernel rather than a probe.
+`run.sh` reproduces each step below from the repo root, `transcript.txt` is its output, and
+`instrument/` holds the logging as small diffs against the pristine kernel files, applied and
+override-linked ahead of `libOCCT-macos.a` (no kernel rebuild).
+
+1. **Not the first hypothesis.** #2881 guessed an edge with no pcurve on its reference face, which
+   would make `BRepAdaptor_Curve2d::Initialize` (`BRepAdaptor_Curve2d.cxx:56`) leave the adaptor
+   empty. Logging every call: 326 `Initialize` calls up to the fault at radius 1.5 and 494 at 1.49,
+   none with a null pcurve.
+2. **The faulting adaptor is a default construction that is never initialised.**
+   `Adaptor3d_CurveOnSurface::EvalD1` is called once before the fault, on a `BRepAdaptor_Curve2d`
+   at an address the log shows as default-constructed and never as initialised.
+3. **The code that leaves it empty is in `ChFi3d_Builder::StartSol`.** In the obstacle branch
+   (`ChFi3d_Builder_2.cxx:1507-1566`) `c1obstacle` is set, `HC = new BRepAdaptor_Curve2d()` replaces
+   the handle, and the arc edge is looked for among the neighbour face's edges. When none matches,
+   the `else` returns `false` after `prepareDefaultReturn()` with `HC` still empty and `c1obstacle`
+   still `true`. `PerformSetOfSurfOnElSpine` tests `!Ok && HC.IsNull()` for the end of the chain, an
+   empty non-null `HC` passes it, and `obstacleon1`/`obstacleon2` then send `HC` to
+   `ChFi3d_FilBuilder::PerformSurf`.
+4. **That branch fires exactly where the crash is.** Two hits at radius 1.5, none at 1.49 or
+   1.5000001. It reports: the blend's face is a plane, the neighbour face found at the vertex is a
+   four-edged B-spline surface, and the arc edge is in the blend's face but in none of the
+   neighbour's edges under any orientation.
+5. **The fix is the state the caller already handles.** `HC.Nullify(); c1obstacle = false;` in that
+   `else` is carried patch `0054`. Applied to the pristine file and rebuilt (`run.sh` step 5),
+   radius 1.5 reports `IsDone() == false`, as 1.4999999 does, with one faulty contour, and across 42
+   edges and nine radii (378 cases) exactly eight outcomes change, edges 12 to 19 at 1.5, each from
+   SIGSEGV to a normal completion. The other 370 are identical: 170 complete, and 200 raise the same
+   "There are no suitable edges for chamfer or fillet" `Standard_Failure`, which the probe does not
+   catch and the bridge does.
+
+Two things that remain open. The sibling failure in the same block, returning `false` when `HSref`
+or `HCref` is null, leaves `c1obstacle` true with `HC` null, and the caller does not guard that
+combination at a spine end; no input reaches it, so it is not changed. And an upstream PR needs a
+GTest with an input small enough to write down: 372 plain-box cases (radii at the face widths and
+halves, every edge) never reach the branch, and the reproducer is the 19-face model. `describe.cxx`
+prints that model's faces and edge 13; `boxprobe.cxx` is the box sweep.
+
+Upstream already hardened this function once: OCCT#1407 ("Prevent crashes in
+`ChFi3d_Builder::StartSol`", merged 2026-07-29) is where `prepareDefaultReturn` came from. This is a
+remaining hole in the same function.

@@ -47,7 +47,7 @@ let useLocalXCFramework: Bool = {
         atPath: occtPackageDir + "/Libraries/OCCT.xcframework/Info.plist")
 }()
 
-// OCCT V8.0.1 plus the forty carried patches are documented in Scripts/patches/README.md
+// OCCT V8.0.1 plus the forty-one carried patches are documented in Scripts/patches/README.md
 // (patch list, verification status, and CI coverage gaps for maintainers).
 let occtTarget: Target =
     isWASI
@@ -253,8 +253,8 @@ let occtTarget: Target =
         // which is what they were built to do; if a later asset repeats either stray the finding comes
         // back rather than staying suppressed.
         //
-        // The asset holds thirty-nine and Scripts/patches/ holds forty, so 0053 is the one untested
-        // patch, written up where the counts are, above.
+        // The asset holds thirty-nine and Scripts/patches/ holds forty-one, so 0053 and 0054 are the
+        // two untested patches, written up where the counts are, above.
         // If you rebuild and the checksum does not match the value below, that is a real difference to
         // investigate rather than an expected one, which is the opposite of what this paragraph said
         // while kernel.1 was pinned.
@@ -298,13 +298,13 @@ let occtTarget: Target =
         // wrong: InitializeMissingParameters is also the REPAIR that re-sets DirectFaces on an actor a
         // STEPCAFControl_Reader has left with empty OperationsFlags, which is #280's exact mechanism.
         // kernel-integration.yml caught it on main. See Scripts/patches/README.md's retired 0035 entry.
-        // Scripts/patches/ holds forty patches and the pinned asset holds thirty-nine of them,
-        // enumerated above. `ls Scripts/patches/*.patch | wc -l` answers 40 against a list of 39.
-        // The pinned asset lacks one of them, and this is the written divergence. The
+        // Scripts/patches/ holds forty-one patches and the pinned asset holds thirty-nine of them,
+        // enumerated above. `ls Scripts/patches/*.patch | wc -l` answers 41 against a list of 39.
+        // The pinned asset lacks two of them, and this is the written divergence. The
         // v4.0.0-kernel.4 rebuild closed the divergence that 0044 had opened and that 0045
         // through 0052 widened, so the rows for 0044 through 0052 below are kept as the record
         // of what each patch does and which bridge mitigation it does or does not retire, and
-        // 0053 is the one row about a patch the asset does not carry:
+        // 0053 and 0054 are the two rows about patches the asset does not carry:
         //
         //   0044  Extrema_ExtSS::Points / Extrema_ExtCS::Points bound against the point       #2840
         //         sequence rather than against NbExt(), which counts mySqDist and so counts
@@ -408,6 +408,16 @@ let occtTarget: Target =
         //         faces left split returns IsDone() with a null shape in about half of the processes
         //         (9 to 13 of 20 over three censuses) and, patched, in all of them. Measured before and after by override-link in
         //         Scripts/repro/3003-offset-roots-hash-order/.
+        //
+        //   0054  ChFi3d_Builder::StartSol, on an obstacle whose neighbour face holds no edge     #2881
+        //         to follow, returns false but leaves HC as an empty BRepAdaptor_Curve2d with
+        //         c1obstacle still set, so the caller takes the obstacle path and the SurfRst
+        //         walk dereferences a null curve: a SIGSEGV inside BRepFilletAPI_MakeFillet::Build
+        //         that no bridge catch (...) can reach (upstream OCCT#1568). Carried 2026-10-05
+        //         and NOT built. Eight of the 42 edges of the reporter's model crash at radius 1.5
+        //         and nowhere else; patched they report IsDone() == false, as 1.4999999 does.
+        //         Nothing a bridge guard can cover, which is why it is carried. Measured before
+        //         and after by override-link in Scripts/repro/occt1568-fillet-opposite-edge/.
         //
         // 0043 (#2827, BRepGProp_Gauss keeps the by-plane mass) was the one outstanding before it,
         // and it went the other way, which is the comparison worth keeping beside 0044: carried
