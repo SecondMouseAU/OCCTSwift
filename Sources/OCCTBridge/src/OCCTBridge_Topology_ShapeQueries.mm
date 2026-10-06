@@ -2475,9 +2475,33 @@ double OCCTShapeTotalEdgeLength(OCCTShapeRef shape)
     return 0;
   try
   {
-    GProp_GProps props;
-    BRepGProp::LinearProperties(shape->shape, props);
-    return props.Mass();
+    // Every edge occurrence is measured the way OCCTEdgeGetLength measures one, not with the
+    // single Gauss rule BRepGProp::LinearProperties applies to a one-interval curve (an
+    // elliptical edge read 1.485% long, 10 x 1; #3074, #3044, #603). The walk is the one
+    // BRepGProp::LinearProperties makes with SkipShared = false: a TopExp_Explorer, so an edge
+    // shared by two faces is counted once per face (a 10 x 20 x 30 box reads 480, not 240).
+    // A degenerate edge adds 0, as it did.
+    double          total = 0.0;
+    TopExp_Explorer ex(shape->shape, TopAbs_EDGE);
+    for (; ex.More(); ex.Next())
+    {
+      const TopoDS_Edge& edge = TopoDS::Edge(ex.Current());
+      if (BRep_Tool::Degenerated(edge))
+        continue;
+      if (BRep_Tool::IsGeometric(edge))
+      {
+        BRepAdaptor_Curve adaptor(edge);
+        total += occtAdaptorArcLength(adaptor, adaptor.FirstParameter(), adaptor.LastParameter());
+      }
+      else
+      {
+        // No curve at all, only a polygon: BRepGProp measures that from its nodes, as before.
+        GProp_GProps props;
+        BRepGProp::LinearProperties(edge, props);
+        total += props.Mass();
+      }
+    }
+    return total;
   }
   catch (...)
   {

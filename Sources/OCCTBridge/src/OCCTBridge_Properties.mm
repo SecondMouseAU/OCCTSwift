@@ -28,6 +28,8 @@
 #include <Standard_ErrorHandler.hxx> // OCC_CATCH_SIGNALS (#175)
 #include <BRep_Tool.hxx>
 #include <BRepAdaptor_Curve.hxx>
+#include <BRepBuilderAPI_MakeEdge.hxx>
+#include <Geom_Curve.hxx>
 #include <BRepAdaptor_Surface.hxx>
 #include <BRepAlgoAPI_Section.hxx>
 #include <BRepExtrema_OverlapTool.hxx>
@@ -91,9 +93,65 @@ bool occtSurfaceMassProperties(const TopoDS_Shape& shape, GProp_GProps& props)
   return props.Mass() != 0.0;
 }
 
+// One edge's contribution to a linear framework, measured to the precision occtAdaptorArcLength
+// measures a length to. BRepGProp_Cinert applies one fixed Gauss rule per GeomAbs_CN interval, so
+// a full elliptical edge (one interval) read 1.485% long and its centroid sat 0.165 off the
+// centre of a 10 x 1 ellipse (#3074). OCCT's own integrator stays the quadrature: the edge is cut
+// into N equal parameter spans, each span is measured by BRepGProp::LinearProperties and added
+// to the framework, and N doubles until the summed length agrees with the adaptive arc length.
+// Length converges at the rate the centroid and the inertia do, since the same Gauss points feed
+// all three, so the length is the oracle. Lines and circles agree at N = 1 and are unchanged.
+static void occtAddEdgeLinearProperties(const TopoDS_Edge& edge, GProp_GProps& props)
+{
+  if (BRep_Tool::Degenerated(edge))
+    return;
+
+  double             first = 0.0, last = 0.0;
+  Handle(Geom_Curve) curve =
+    BRep_Tool::IsGeometric(edge) ? BRep_Tool::Curve(edge, first, last) : Handle(Geom_Curve)();
+  if (curve.IsNull() || !(last > first))
+  {
+    // No 3D curve to cut (a polygon, or a curve on a surface only): BRepGProp measures it as
+    // it always did.
+    GProp_GProps whole;
+    BRepGProp::LinearProperties(edge, whole);
+    props.Add(whole);
+    return;
+  }
+
+  BRepAdaptor_Curve adaptor(edge);
+  const double      target =
+    occtAdaptorArcLength(adaptor, adaptor.FirstParameter(), adaptor.LastParameter());
+  constexpr int kMaxPieces = 1024;
+  GProp_GProps  best;
+  for (int pieces = 1; pieces <= kMaxPieces; pieces *= 2)
+  {
+    GProp_GProps summed(gp_Pnt(0, 0, 0));
+    for (int i = 0; i < pieces; ++i)
+    {
+      const double lo = first + (last - first) * i / pieces;
+      const double hi = (i + 1 == pieces) ? last : first + (last - first) * (i + 1) / pieces;
+      GProp_GProps piece;
+      BRepGProp::LinearProperties(BRepBuilderAPI_MakeEdge(curve, lo, hi).Edge(), piece);
+      summed.Add(piece);
+    }
+    best = summed;
+    if (std::abs(summed.Mass() - target) <= 1e-12 * std::max(target, 1.0))
+      break;
+  }
+  props.Add(best);
+}
+
 bool occtLinearMassProperties(const TopoDS_Shape& shape, GProp_GProps& props)
 {
-  BRepGProp::LinearProperties(shape, props);
+  // The framework BRepGProp::LinearProperties makes: referenced at the shape's location origin,
+  // one contribution per edge occurrence (SkipShared = false), so an edge shared by two faces
+  // counts twice, exactly as before.
+  gp_Pnt origin(0, 0, 0);
+  origin.Transform(shape.Location());
+  props = GProp_GProps(origin);
+  for (TopExp_Explorer ex(shape, TopAbs_EDGE); ex.More(); ex.Next())
+    occtAddEdgeLinearProperties(TopoDS::Edge(ex.Current()), props);
   return props.Mass() != 0.0;
 }
 
