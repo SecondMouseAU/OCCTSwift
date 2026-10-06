@@ -1737,7 +1737,7 @@ public func shelled(thickness: Double, openFaces: [Face]) -> Shape?
 ```
 
 - **Parameters:** `thickness`, wall thickness (positive = outward, negative = inward), matching `offset(by:)` ([#2736](https://github.com/SecondMouseAU/OCCTSwift/issues/2736)); `openFaces`, faces to leave open (must have valid `index` values).
-- **Returns:** Shelled shape with specified faces open, or `nil` on failure.
+- **Returns:** Shelled shape with specified faces open, or `nil` on failure. A null result that OCCT reports as done is `nil` too ([#3061](https://github.com/SecondMouseAU/OCCTSwift/issues/3061)); it used to be a non-nil `Shape` with `isNull == true`.
 - **OCCT:** `BRepOffsetAPI_MakeThickSolid::MakeThickSolidByJoin` (via `OCCTShapeShellWithOpenFaces`).
 - **Note:** every face must be one of *this* shape's, by index. A `Face` whose `index` names no face
   here fails the whole call rather than being skipped (#568); previously such a face was dropped and

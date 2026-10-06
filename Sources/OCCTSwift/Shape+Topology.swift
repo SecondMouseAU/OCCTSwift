@@ -3270,6 +3270,8 @@ extension Shape {
 extension Shape {
 
     /// Create a thick solid by removing faces and offsetting.
+    ///
+    /// Returns `nil` on failure, including when OCCT reports done but returns a null shape (#3061).
     public func thickSolid(
         facesToRemove: [Shape], offset: Double,
         tolerance: Double = 1e-3,

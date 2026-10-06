@@ -1063,7 +1063,7 @@ public func offset(by distance: Double) -> Shape?
 ```
 
 - **Parameters:** `distance`, offset distance (positive = outward, negative = inward).
-- **Returns:** Offset shape, or `nil` on failure.
+- **Returns:** Offset shape, or `nil` on failure. A null result that OCCT reports as done is `nil` too ([#3061](https://github.com/SecondMouseAU/OCCTSwift/issues/3061)); it used to be a non-nil `Shape` with `isNull == true`.
 - **OCCT:** `BRepOffsetAPI_MakeOffsetShape` (via `OCCTShapeOffset`).
 - **Example:**
   ```swift
@@ -1089,11 +1089,13 @@ More robust than the simple `offset(by:)` overload; handles gap-filling between 
   - `tolerance`: coincidence tolerance (default `1e-7`).
   - `joinType`: how to fill gaps between offset faces: `.arc` (smooth), `.tangent`, or `.intersection` (sharp).
   - `removeInternalEdges`: whether to clean up internal edges.
-- **Returns:** Offset shape, or `nil` on failure.
+- **Returns:** Offset shape, or `nil` on failure. A null result that OCCT reports as done is `nil` too ([#3061](https://github.com/SecondMouseAU/OCCTSwift/issues/3061)); it used to be a non-nil `Shape` with `isNull == true`. An inward offset deeper than the shape is thick is the deterministic case: a 10 mm cube offset by `-6` with `.arc` collapses.
 - **OCCT:** `BRepOffsetAPI_MakeOffsetShape::PerformByJoin` (via `OCCTShapeOffsetByJoin`).
 - **Example:**
   ```swift
   if let grown = box.offset(by: 1.0, joinType: .intersection) { }
+  let cube = Shape.box(width: 10, height: 10, depth: 10)!
+  print(cube.offset(by: -6.0, joinType: .arc) == nil)  // true: the cube collapses
   ```
 
 ---
