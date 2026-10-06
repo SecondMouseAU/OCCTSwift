@@ -1,0 +1,38 @@
+--- a/ModelingData/TKBRep/BRepAdaptor/BRepAdaptor_Curve2d.cxx
++++ b/ModelingData/TKBRep/BRepAdaptor/BRepAdaptor_Curve2d.cxx
+@@ -16,6 +16,7 @@
+ 
+ #include <BRep_Tool.hxx>
+ #include <BRepAdaptor_Curve2d.hxx>
++#include <cstdio>
+ #include <TopoDS_Edge.hxx>
+ #include <TopoDS_Face.hxx>
+ 
+@@ -23,7 +24,10 @@
+ 
+ //=================================================================================================
+ 
+-BRepAdaptor_Curve2d::BRepAdaptor_Curve2d() = default;
++BRepAdaptor_Curve2d::BRepAdaptor_Curve2d()
++{
++  fprintf(stderr, "[OBJ] default-ctor this=%p\n", (void*)this);
++}
+ 
+ //=================================================================================================
+ 
+@@ -37,6 +41,7 @@
+ occ::handle<Adaptor2d_Curve2d> BRepAdaptor_Curve2d::ShallowCopy() const
+ {
+   occ::handle<BRepAdaptor_Curve2d> aCopy = new BRepAdaptor_Curve2d();
++  fprintf(stderr, "[OBJ] shallowcopy  src=%p copy=%p\n", (void*)this, (void*)aCopy.get());
+ 
+   aCopy->myCurve     = myCurve;
+   aCopy->myTypeCurve = myTypeCurve;
+@@ -57,6 +62,7 @@
+   myFace = F;
+   double                          aFirs, aLast;
+   const occ::handle<Geom2d_Curve> aPCurve = BRep_Tool::CurveOnSurface(E, F, aFirs, aLast);
++  fprintf(stderr, "[OBJ] initialize   this=%p pcurveNull=%d\n", (void*)this, (int)aPCurve.IsNull());
+   if (!aPCurve.IsNull())
+   {
+     Geom2dAdaptor_Curve::Load(aPCurve, aFirs, aLast);
