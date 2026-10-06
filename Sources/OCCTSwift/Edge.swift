@@ -30,6 +30,16 @@ public final class Edge: @unchecked Sendable {
     // MARK: - Properties
 
     /// Get the length of the edge.
+    ///
+    /// Measured with the same adaptive arc-length integration as ``Wire/length``, one subdivided
+    /// `GeomAbs_CN` interval at a time, so an elliptical edge is exact. A single fixed Gauss
+    /// rule read a 10 x 1 ellipse 1.485% long (#3044). A degenerate or null edge has length 0.
+    ///
+    /// ```swift
+    /// let ellipse = Curve2D.ellipse(center: .zero, majorRadius: 10, minorRadius: 1)!
+    /// let wire = Wire.fromCurve2D(ellipse)!
+    /// let edgeLength = wire.edges().first?.length   // 40.6397418010, equal to wire.length
+    /// ```
     public var length: Double {
         OCCTEdgeGetLength(handle)
     }

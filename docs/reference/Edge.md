@@ -67,12 +67,19 @@ public var length: Double { get }
 ```
 
 - **Returns:** Length in model units. Returns `0` for degenerate or null edges.
-- **OCCT:** `BRepGProp::LinearProperties`, computes linear mass (= arc length) of the edge.
+- **OCCT:** `BRepAdaptor_Curve` measured by the bridge's `occtAdaptorArcLength`, which subdivides each `GeomAbs_CN` interval until two successive Gauss levels agree to 1e-9 relative (#603, #3044). It is the same measurement `Wire.length`, `Curve2D.length` and `Curve3D.length` make. `BRepGProp::LinearProperties` applies one fixed rule to a one-interval curve and read an elliptical edge up to 1.485% long (10 x 1).
 - **Example:**
   ```swift
   let box = Shape.box(width: 10, height: 10, depth: 10)!
   let edge = box.edge(at: 0)!
   print(edge.length)  // 10.0
+
+  // An elliptical edge matches the wire built from the same curve
+  let ellipse = Curve2D.ellipse(center: .zero, majorRadius: 10, minorRadius: 1)!
+  let wire = Wire.fromCurve2D(ellipse)!
+  if let edge = wire.edges().first, let wireLength = wire.length {
+      print(edge.length, wireLength)  // 40.6397418010 both, was 41.2431578703 for the edge
+  }
   ```
 
 ---
