@@ -21,6 +21,17 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### `solidWithFullHistory(from:)` and `solid(from:)` return the repaired face of a body that stays open (#3041)
+
+For a body `ShapeFix_Solid` repairs but cannot close, `Shape.solidWithFullHistory(from:)` returned a solid still holding the unrepaired face while its history reported that face as replaced, and `Shape.solid(from:)` ignored the same repair. Both read the body from `ShapeFix_Solid::Solid()`, which the open-shell branch never assigns. They now read it from the fixer's shared context, as `ShapeFix_Shape` does, so the result holds the face the history reports. A body that stays open still comes back as a solid that is not closed; a body that closes is unchanged.
+
+```swift
+let (result, history) = Shape.solidWithFullHistory(from: openShell)!
+if let repaired = history.record(of: face).modified.first {
+    print(result.subShapes(ofType: .face).contains { $0.isSame(as: repaired) })   // true
+}
+```
+
 ### `Shape.analyze(tolerance:)` no longer reports a flawless box as 24 gaps and unhealthy (#3040)
 
 `Shape.analyze(tolerance:)` counted `gapCount` with `ShapeAnalysis_Wire::CheckGap3d` on wires whose edges are stored out of connection order, which is every face of a primitive. A 10 mm box read `gapCount == 24` and `isHealthy == false` at every tolerance, including 1.0, because each junction was compared with the opposite edge (the face diagonal). Each wire is now ordered first, the way `ShapeFix_Wire::Perform` does before its gap fix, so a box, a cylinder and a sphere read `gapCount == 0` and `isHealthy == true`. A wire with a real gap still reports it, ordered or not. `totalProblems` drops by the same amount for every shape that has an unordered wire, and `ShapeAnalysisResult.gapCount`, `totalProblems` and `isHealthy` are documented accordingly.
