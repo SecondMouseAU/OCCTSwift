@@ -4485,8 +4485,11 @@ OCCTCurve2DRef OCCTCurve2DCreateParabola(double fx, double fy, double dx, double
   {
     if (!occtValidParabolaFocal(focal))
       return nullptr;
-    gp_Pnt2d                mirrorP(fx - dx * focal, fy - dy * focal);
+    // #3042: step back by the UNIT direction. gp_Dir2d normalises (and throws on a zero vector,
+    // so a zero direction still returns nullptr), and the vertex has to sit exactly `focal`
+    // behind the focus along it.
     gp_Dir2d                dir(dx, dy);
+    gp_Pnt2d                mirrorP(fx - dir.X() * focal, fy - dir.Y() * focal);
     gp_Ax2d                 axis(mirrorP, dir);
     Handle(Geom2d_Parabola) parab = new Geom2d_Parabola(axis, focal);
     return new OCCTCurve2D(parab);
@@ -4959,8 +4962,9 @@ OCCTCurve2DRef OCCTCurve2DCreateArcOfParabola(double fx,
   {
     if (!occtValidParabolaFocal(focal))
       return nullptr;
-    gp_Pnt2d                    mirrorP(fx - dx * focal, fy - dy * focal);
+    // #3042: as in OCCTCurve2DCreateParabola, step back by the unit direction.
     gp_Dir2d                    dir(dx, dy);
+    gp_Pnt2d                    mirrorP(fx - dir.X() * focal, fy - dir.Y() * focal);
     gp_Ax2d                     axis(mirrorP, dir);
     Handle(Geom2d_Parabola)     parab = new Geom2d_Parabola(axis, focal);
     Handle(Geom2d_TrimmedCurve) arc   = new Geom2d_TrimmedCurve(parab, startParam, endParam);

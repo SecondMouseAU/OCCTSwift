@@ -1359,7 +1359,7 @@ public static func parabolaFromCenterDir(
 - **Parameters:** `center`, vertex of the parabola; `direction`, axis direction; `focal`, focal distance (must be > 0).
 - **Returns:** `Curve2D` (parabola), or `nil` if `focal ≤ 0`.
 - **OCCT:** `gce_MakeParab2d`.
-- **Note:** Places the same curve as [`parabola(focus:direction:focalLength:)`](Curve2D.md) once that factory's `focus` is set to `center + direction * focal`, and since #487 enforces the same focal-length precondition. OCCT itself accepts `focal == 0` through both routes (`gp_Parab2d` documents the result as a line parallel to the axis of symmetry), so the rejection is the bridge's contract, not OCCT's.
+- **Note:** Places the same curve as [`parabola(focus:direction:focalLength:)`](Curve2D.md) once that factory's `focus` is set to `center + normalize(direction) * focal` (the two agree for any non-zero direction since #3042; the factory used to step back by the raw direction), and since #487 enforces the same focal-length precondition. OCCT itself accepts `focal == 0` through both routes (`gp_Parab2d` documents the result as a line parallel to the axis of symmetry), so the rejection is the bridge's contract, not OCCT's.
 - **Example:**
   ```swift
   if let p = Curve2D.parabolaFromCenterDir(
