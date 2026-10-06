@@ -498,10 +498,19 @@ public final class Curve2D: @unchecked Sendable {
     ///   - points: The interpolation points the curve must pass through.
     ///   - tangents: A dictionary mapping point index → unit tangent direction.
     ///               Indices not present in the dictionary are unconstrained (C2 computed).
+    ///               Every key must be an index of a point, `0..<points.count`.
     ///   - closed: Whether the resulting curve should be closed/periodic.
     ///   - tolerance: Point coincidence tolerance (default 1e-6).
-    /// - Returns: A B-spline interpolating curve, or `nil` on failure.
+    /// - Returns: A B-spline interpolating curve, or `nil` on failure. A key of `tangents`
+    ///   outside `0..<points.count` is a constraint on no point, so the call returns `nil`
+    ///   rather than a curve that does not honour it (#3036), as with fewer than two points.
     /// - Note: Resolves GitHub issue #38.
+    ///
+    /// ```swift
+    /// let pts: [SIMD2<Double>] = [SIMD2(0, 0), SIMD2(5, 5), SIMD2(10, 0)]
+    /// let ok = Curve2D.interpolate(through: pts, tangents: [0: SIMD2(1, 0)])  // a curve
+    /// let bad = Curve2D.interpolate(through: pts, tangents: [3: SIMD2(1, 0)])  // nil, 3 is not an index
+    /// ```
     public static func interpolate(
         through points: [SIMD2<Double>],
         tangents: [Int: SIMD2<Double>],
@@ -510,11 +519,14 @@ public final class Curve2D: @unchecked Sendable {
     ) -> Curve2D? {
         guard points.count >= 2 else { return nil }
         let n = points.count
+        // A key that indexes no point is a constraint the curve cannot honour: refuse it before
+        // anything reaches the bridge (#3036).
+        guard tangents.keys.allSatisfy({ $0 >= 0 && $0 < n }) else { return nil }
         let flatPoints = points.flatMap { [$0.x, $0.y] }
         // Build parallel tangent and flag arrays
         var flatTangents = [Double](repeating: 0, count: n * 2)
         var flags = [Bool](repeating: false, count: n)
-        for (idx, tan) in tangents where idx >= 0 && idx < n {
+        for (idx, tan) in tangents {
             flatTangents[idx * 2] = tan.x
             flatTangents[idx * 2 + 1] = tan.y
             flags[idx] = true
@@ -759,7 +771,23 @@ public final class Curve2D: @unchecked Sendable {
         return Array(buffer.prefix(n))
     }
 
-    /// Find curvature extrema (local min/max of curvature magnitude).
+    /// Find the curvature extrema, classified by the radius of curvature.
+    ///
+    /// The classification follows OCCT's `LProp_CurAndInf.hxx`, which names a point by its
+    /// **radius** of curvature, so a ``Curve2DSpecialPointType/minCurvature`` point is where the
+    /// curvature magnitude is a local **maximum** (the minimum radius) and a
+    /// ``Curve2DSpecialPointType/maxCurvature`` point is where it is a local **minimum**. The
+    /// names read the other way round, and the values are the kernel's (#3035). A reversed curve
+    /// reports the same labels at the same parameters, because the magnitude does not change.
+    ///
+    /// ```swift
+    /// // Ellipse a = 10, b = 5: curvature 0.4 at u = 0 and pi, 0.05 at u = pi/2 and 3pi/2.
+    /// if let e = Curve2D.ellipse(center: .zero, majorRadius: 10, minorRadius: 5) {
+    ///     for p in e.curvatureExtrema() where p.type == .minCurvature {
+    ///         print(p.parameter, e.curvature(at: p.parameter) ?? 0)  // 0 0.4, then pi 0.4
+    ///     }
+    /// }
+    /// ```
     public func curvatureExtrema() -> [Curve2DSpecialPoint] {
         var buffer = [OCCTCurve2DCurvePoint](repeating: OCCTCurve2DCurvePoint(), count: 256)
         let n = Int(OCCTCurve2DGetCurvatureExtrema(handle, &buffer, 256))
@@ -1268,9 +1296,22 @@ public struct Curve2DExtremaResult: Sendable {
 }
 
 /// Type of a special point on a curve (inflection or curvature extremum).
+///
+/// The two extremum cases mirror OCCT's `LProp_CIType`, which classifies by the **radius** of
+/// curvature (`LProp_CurAndInf.hxx`), not by the curvature, so each name reads the opposite way
+/// round from the curvature magnitude. See ``Curve2D/curvatureExtrema()`` (#3035).
 public enum Curve2DSpecialPointType: Int32, Sendable {
+    /// The curvature changes sign here.
     case inflection = 0
+    /// A minimum of the **radius** of curvature: the curvature magnitude is a local **maximum**.
+    ///
+    /// On an ellipse with semi-axes `a > b` these are the ends of the major axis, where the
+    /// curvature is `a / b^2`.
     case minCurvature = 1
+    /// A maximum of the **radius** of curvature: the curvature magnitude is a local **minimum**.
+    ///
+    /// On an ellipse with semi-axes `a > b` these are the ends of the minor axis, where the
+    /// curvature is `b / a^2`.
     case maxCurvature = 2
 }
 
@@ -1463,12 +1504,17 @@ extension Curve2D {
 /// Type of curvature feature point.
 ///
 /// A same-cases, different-ordering vocabulary for `Curve2DSpecialPointType`, kept for
-/// callers of `curvatureExtremaDetailed()`/`inflectionPointsDetailed()`. Both are derived
+/// callers of `curvatureExtremaDetailed()`/`inflectionPointsDetailed()`. Like the type it
+/// mirrors, it classifies by the radius of curvature, so `curvatureMinimum` is where the curvature
+/// magnitude is a local maximum (#3035). Both are derived
 /// from a single `GeomLProp_CurAndInf2d` computation (`curvatureExtrema()`/`inflectionPoints()`);
 /// see `CurInfType.init(_:)` for the (test-pinned) mapping between the two.
 public enum CurInfType: Int32, Sendable {
+    /// A minimum of the radius of curvature: the curvature magnitude is a local maximum.
     case curvatureMinimum = 0
+    /// A maximum of the radius of curvature: the curvature magnitude is a local minimum.
     case curvatureMaximum = 1
+    /// The curvature changes sign here.
     case inflection = 2
 }
 
