@@ -4,7 +4,19 @@ import simd
 
 /// Result of shape analysis, containing counts of various problems found.
 public struct ShapeAnalysisResult {
-    /// Number of edges smaller than tolerance.
+    /// Number of edges shorter than the scan's `tolerance`.
+    ///
+    /// Each edge with a 3D curve or a curve on a surface is measured with the same arc-length
+    /// integration as ``Edge/length``, so an elliptical edge within about 1.5% of the tolerance
+    /// is classified by its true length (#3074). A single fixed Gauss rule read a 10 x 1 ellipse
+    /// 1.485% long. Degenerate edges are never counted, and an edge with only a polygon
+    /// representation is measured from its polygon as before.
+    ///
+    /// ```swift
+    /// let ellipse = Curve2D.ellipse(center: .zero, majorRadius: 10, minorRadius: 1)!
+    /// let edge = Shape.fromWire(Wire.fromCurve2D(ellipse)!)!   // true length 40.6397418010
+    /// let count = edge.analyze(tolerance: 41.0)?.smallEdgeCount   // 1: 40.64 < 41.0
+    /// ```
     public let smallEdgeCount: Int
 
     /// Number of faces smaller than tolerance.

@@ -1791,6 +1791,20 @@ let report = box.analyze(tolerance: 1e-6)!
 print(report.gapCount, report.isHealthy)   // 0 true
 ```
 
+- **`smallEdgeCount` measures each edge with the adaptive arc length (#3074).** An edge with a 3D
+  curve or a curve on a surface is integrated by the same routine as `Edge.length`, not by the one
+  fixed Gauss rule `BRepGProp::LinearProperties` applies, which read a 10 x 1 ellipse 1.485% long.
+  The count differs from before only for an elliptical or similarly eccentric edge whose length is
+  within that band of `tolerance`. Degenerate edges are skipped, the comparison is still
+  `length < tolerance`, and an edge with only a polygon representation or no representation keeps
+  the `BRepGProp` measurement it had.
+
+```swift
+let ellipse = Curve2D.ellipse(center: .zero, majorRadius: 10, minorRadius: 1)!
+let edge = Shape.fromWire(Wire.fromCurve2D(ellipse)!)!   // true length 40.6397418010
+print(edge.analyze(tolerance: 41.0)!.smallEdgeCount)     // 1; the single Gauss rule read 41.24 and gave 0
+```
+
 - **This never reports self-intersection unless asked to.** A `selfIntersectionCount` field used
   to sit here (through v1.x) but was always 0, never computed (the bridge's own comment read
   "would require more expensive computation"); it was removed in #763 rather than kept as a
@@ -1834,7 +1848,7 @@ print(report.gapCount, report.isHealthy)   // 0 true
 
 | field | meaning |
 |---|---|
-| `smallEdgeCount` | Number of edges smaller than the scan's `tolerance`. |
+| `smallEdgeCount` | Number of edges shorter than the scan's `tolerance`. Degenerate edges are never counted. An edge with a 3D curve or a curve on a surface is measured with the adaptive arc length `Edge.length` uses, so an elliptical edge within about 1.5% of the tolerance is classified by its true length (#3074); a polygon-only edge is measured from its polygon. |
 | `smallFaceCount` | Number of faces smaller than the scan's `tolerance`. |
 | `gapCount` | Number of edge-to-edge junctions whose 3D distance exceeds the scan's `tolerance`, counted per junction on each wire after the wire's edges are put in connection order, as `ShapeFix_Wire::Perform` does before any gap check (#3040). A primitive box, cylinder or sphere reads 0. |
 | `hasSelfIntersection` | `true`/`false` when `selfIntersectionTimeout` was passed and resolved; `nil` when not asked, or asked but indeterminate. `nil` is never "clean". |
