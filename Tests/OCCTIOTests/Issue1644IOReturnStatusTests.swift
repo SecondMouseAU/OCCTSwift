@@ -35,6 +35,28 @@ struct Issue1644IOReturnStatus {
             .appendingPathComponent("issue1644_\(name)_\(UUID().uuidString).step")
     }
 
+    /// The captured lines that name one file, the only part of a process-wide capture this test can
+    /// attribute to itself (#3069).
+    ///
+    /// `capturingOCCTOutput` serialises captures, not producers: 28 other files in this module
+    /// read or write STEP and IGES, take no lock, and print their statistics and complaints into
+    /// whichever capture is open. An assertion that the capture is EMPTY therefore asserts about
+    /// every concurrent test in the module and failed on `main` in six of six local runs. A file
+    /// name carrying this test's own UUID is the one thing in the text that only this test's
+    /// operation can have produced, the precedent set by `Issue3029DefaultTraceLevelTests.ownLines`.
+    ///
+    /// **What this cannot do.** It binds an assertion to what OCCT said *about this file*, and OCCT
+    /// names the path only when it fails to create one (`Step File could not be created: <path>`).
+    /// A read says nothing by name: the corrupt file's complaint and a good file's silence were both
+    /// measured to carry no path. So "no line names my file" is weaker than "OCCT said nothing at
+    /// all", which is no longer asserted, because the second half cannot be attributed to this test
+    /// from the text. What carries the weight instead is the status and the loaded shape, which are
+    /// this operation's own results and which a parser reaching the wrong branch would change.
+    private static func lines(naming url: URL, in output: String) -> [String] {
+        let marker = url.lastPathComponent
+        return output.components(separatedBy: "\n").filter { $0.contains(marker) }
+    }
+
     /// A syntactically valid STEP file whose DATA section is empty.
     private static let emptyModel = """
         ISO-10303-21;
@@ -95,15 +117,20 @@ struct Issue1644IOReturnStatus {
         #expect(missingStatus != corruptStatus)
 
         // #3021: OCCT's own commentary is a SECOND discriminator for the same pair, independent of
-        // the status, and it says why the two differ rather than only that they do. A file that is
-        // not there is refused before any parser runs, so OCCT says nothing at all; a file that is
-        // there and is not STEP reaches the parser, which complains by name from
-        // `StepFile_Interrupt`. The complaint used to land in the transcript in red, where a reader
+        // the status. A file that is there and is not STEP reaches the parser, which complains from
+        // `StepFile_Interrupt`; the complaint used to land in the transcript in red, where a reader
         // of a green run took it for a defect.
+        //
+        // #3069: and a file that is not there is refused before any parser runs. That used to be
+        // asserted as an EMPTY capture, which other suites' STEP output filled in six of six runs.
+        // Now it is asserted of the lines naming this test's own missing file, and the "parser did
+        // not run" half rests on `missingStatus == .error` above, since a parser that ran reads
+        // `.fail` (the corrupt case).
         let missingText = try #require(missingOutput)
+        let missingOwn = Self.lines(naming: missing, in: missingText)
         #expect(
-            missingText.isEmpty,
-            "a missing file is refused before the parser runs, so OCCT has nothing to say: \(missingText)"
+            missingOwn.isEmpty,
+            "a missing file is refused before OCCT opens it, so OCCT has nothing to say about it: \(missingOwn)"
         )
         let corruptText = try #require(corruptOutput)
         #expect(
@@ -148,9 +175,17 @@ struct Issue1644IOReturnStatus {
         #expect(handle != nil)
         if let handle { OCCTShapeRelease(handle) }
         #expect(IOStatus(status) == .done)
+        // #3069: was `isEmpty` on the whole capture, which another suite's STEP write or read made
+        // false. The lines naming this file are the part attributable to this read; the shape that
+        // came back is the stronger evidence that it parsed as written, so it is loaded and measured.
+        let goodReadOwn = Self.lines(naming: good, in: try #require(goodReadOutput))
         #expect(
-            try #require(goodReadOutput).isEmpty,
-            "a STEP file this suite just wrote must parse without a word from OCCT")
+            goodReadOwn.isEmpty,
+            "a STEP file this suite just wrote must parse without a word about it: \(goodReadOwn)")
+        let reloaded = try Shape.loadSTEP(fromPath: good.path)
+        #expect(
+            abs((reloaded.volume ?? 0) - 125) < 1e-6,
+            "the file written from a 5x5x5 box must read back as one")
 
         // A file that parses but holds nothing is still RetDone: the emptiness is zero
         // transferred roots, not a status. Measured; the issue expected RetVoid here.
