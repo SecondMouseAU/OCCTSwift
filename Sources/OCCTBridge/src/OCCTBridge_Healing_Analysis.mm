@@ -468,11 +468,23 @@ OCCTShapeAnalysisResult OCCTShapeAnalyze(OCCTShapeRef shape, double tolerance)
         // not gaps -- a wire with 2 independent gaps reported 1. CheckGap3d(i), the per-junction
         // check CheckGaps3d() itself loops internally, is public; call it directly once per edge
         // to get a real per-gap count instead.
-        ShapeAnalysis_Wire wireAnalysis(wire, face, tolerance);
-        int                nbWireEdges = wireAnalysis.NbEdges();
+        //
+        // #3040: CheckGap3d(i) compares edge i's end with the start of the edge STORED next, so
+        // it is only a gap measurement on a wire whose edges are stored in connection order, and
+        // a primitive's faces are not (a box read 24 gaps at every tolerance, the face diagonal
+        // each time). OCCT's own caller orders first: ShapeFix_Wire::Perform runs the order
+        // check and FixReorder before any gap check ("FixReorder is first, because as a rule
+        // wire is required to be ordered", ShapeFix_Wire.cxx:312, with FixGaps3d after it).
+        // Do the same on the fixer's private ShapeExtend_WireData (the shape is untouched) and
+        // count gaps on its analyzer, which shares that reordered data. A wire FixReorder
+        // cannot order keeps its stored order, so it is still measured rather than skipped.
+        Handle(ShapeFix_Wire) wireFixer = new ShapeFix_Wire(wire, face, tolerance);
+        wireFixer->FixReorder();
+        Handle(ShapeAnalysis_Wire) wireAnalysis = wireFixer->Analyzer();
+        int                        nbWireEdges  = wireAnalysis->NbEdges();
         for (int i = 1; i <= nbWireEdges; i++)
         {
-          if (wireAnalysis.CheckGap3d(i))
+          if (wireAnalysis->CheckGap3d(i))
           {
             gaps++;
           }

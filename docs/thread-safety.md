@@ -506,7 +506,20 @@ Scripts/tsan-stress.sh build   # one-time: TSan-instrumented OCCT into Libraries
 Scripts/tsan-stress.sh run     # compile + run every gate scenario; fails on unsuppressed races
 Scripts/tsan-stress.sh swift   # swift test --sanitize=thread on the concurrency-focused suites
 Scripts/tsan-stress.sh all     # build if the instrumented kernel does not match, then run + swift
+Scripts/tsan-stress.sh self-test  # prove the per-scenario timeout on stub scenarios; no build needed
 ```
+
+**Every `run` scenario has a time limit**, `TSAN_SCENARIO_TIMEOUT` seconds (default 300, a positive
+integer). A scenario that outlives it has its whole process group killed, prints
+`TIMEOUT (killed after Ns; ran Ms)`, is named again under "TIMED OUT" in the summary, and counts as
+a failure in the "N/M scenarios clean" line, so a hang cannot pass and is never mistaken for a race
+count. The remaining scenarios still run. The limit exists because one scenario wedged in
+ThreadSanitizer's abort path (`iges_read_independent`, the expected-to-fail #1403 baseline) and
+stalled an unattended gate for 49 minutes (#3058). The scenarios finish in seconds to a few minutes,
+so raise the variable only for a scenario you know is slow. macOS has no `timeout(1)`, so the
+limit is a small perl wrapper (perl ships with macOS); `self-test` runs a stub scenario that
+hangs and leaves a grandchild behind, and checks the timeout fires, the group dies and the
+scenarios after it keep their verdicts.
 
 `build` wipes `occt-build-tsan` and `occt-install-tsan` before configuring, and refuses to run at
 all unless `Libraries/occt-src` is at the tag `build-occt.sh` names. `all` decides whether to

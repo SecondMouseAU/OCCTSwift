@@ -1736,12 +1736,20 @@ inline bool occtArcWalkToLength(const TheAdaptor& adaptor,
 /// more length than a curve has, the solver reports a parameter outside the curve's own domain
 /// (12.566 on an ellipse bounded by 2*pi) yet reports IsDone, and turning that into a failure is
 /// a contract change #603 has no measurement to justify.
+///
+/// #3034: a distance or start that is not finite is refused here, before either solver, so every
+/// caller (Curve2D, Curve3D, the shape-edge entry points, the composite curves) answers it the same
+/// way. It used to depend on curve and sign: +infinity came back as an infinite "parameter" on a
+/// segment, a circle and an infinite line and as a failure on a BSpline and a Bezier, while
+/// -infinity and NaN always failed. The Swift 2D doc says the same for `length(from:to:)` (#548).
 template <class TheAdaptor>
 inline bool occtAdaptorParameterAtLength(const TheAdaptor& adaptor,
                                          double            abscissa,
                                          double            u0,
                                          double&           parameter)
 {
+  if (!std::isfinite(abscissa) || !std::isfinite(u0))
+    return false;
   if (occtArcWalkToLength(adaptor, abscissa, u0, parameter))
     return true;
   GCPnts_AbscissaPoint solver(adaptor, abscissa, u0);

@@ -407,7 +407,7 @@ Finds the parameter at a given arc-length distance from a starting parameter.
 public func parameterAtLength(_ arcLength: Double, from startParam: Double? = nil) -> Double
 ```
 
-Positive `arcLength` advances forward; negative reverses. Returns `0` on internal failure.
+Positive `arcLength` advances forward; negative reverses. Returns `0` on internal failure, which includes a distance or start that is not finite (`.nan`, `±.infinity`) on every curve type (#3034; `+infinity` used to answer an infinite parameter on a line, a circle and an ellipse).
 
 The travel is measured with the same subdivided quadratures `length` uses, so this and the length
 it inverts always agree: `curve.parameterAtLength(curve.length!)` lands on `domain.upperBound`.
