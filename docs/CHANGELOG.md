@@ -21,6 +21,17 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### `ConstructionAxis.intersectionOfPlanes` anchors its axis on the line the two planes share (#3037)
+
+`ConstructionAxis.intersectionOfPlanes(_:_:)` returned an origin at the midpoint of the two plane origins, which lies on neither plane unless both origins already sat on their common line, so the axis was parallel to the true intersection and offset from it. The origin is now the point of the intersection line nearest the world origin, on both planes whichever plane is passed first, so `ConstructionPoint.intersectionOfAxisAndPlane` built on it lands on the real line. For `z = 0` and `x = 10` the origin moves from `(5, 0, 0)` to `(10, 0, 0)`; the direction is unchanged. Parallel or opposed planes still fail with `.degenerate("planes are parallel")`. The doc comment, which promised an absolute-origin fallback the code never gave, is corrected.
+
+```swift
+let a = ConstructionPlane.absolute(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1))   // z = 0
+let b = ConstructionPlane.absolute(origin: SIMD3(10, 0, 0), normal: SIMD3(1, 0, 0))  // x = 10
+let axis = try graph.resolve(ConstructionAxis.intersectionOfPlanes(a, b)).get()
+// axis.origin == (10, 0, 0), axis.direction == (0, 1, 0)
+```
+
 ### Edge.length no longer reads an elliptical edge long (#3044)
 
 `Edge.length` integrated each edge with a single Gauss rule, so an elliptical edge measured up to 1.485% long (10 x 1: 41.2431578703 against a true 40.6397418010) while `Wire.length`, `Curve2D.length` and `Curve3D.length` were exact. It now uses the same adaptive arc-length integration as those, and agrees with them to 1e-8 relative. Circles and lines were already exact and are unchanged.
