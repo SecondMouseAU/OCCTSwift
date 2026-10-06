@@ -225,7 +225,7 @@ typedef enum
 //
 // --- BRepGProp ---
 // BRepGProp                           → OCCTShapeGetVolume, OCCTShapeGetSurfaceArea,
-//                                       OCCTEdgeGetLength, OCCTFaceGetArea, OCCTShapeAnalyze
+//                                       OCCTFaceGetArea, OCCTShapeAnalyze
 //                                       (OCCTShapeGetCenterOfMass does NOT use BRepGProp — it
 //                                       returns the bounding-box centre via BRepBndLib; #605)
 // BRepGProp_Face                      → OCCTBRepGPropFace*, OCCTFaceGetNaturalBounds,
@@ -344,7 +344,8 @@ typedef enum
 // --- GCPnts ---
 // GCPnts_AbscissaPoint                → OCCTCurve3DGetLength*, OCCTCurve3DParameterAtLength,
 //                                       OCCTCurve2DGetLength*, OCCTCurve2DParameterAtLength,
-//                                       OCCTEdgeArcLength*, OCCTEdgeParameterAt*, OCCTWireGetLength
+//                                       OCCTEdgeArcLength*, OCCTEdgeGetLength (#3044),
+//                                       OCCTEdgeParameterAt*, OCCTWireGetLength
 //                                       (three further spellings were deleted by #506/#549; their
 //                                       tombstones sit at the old declaration sites. None of the
 //                                       seven names the class any more: since #603 they all reach

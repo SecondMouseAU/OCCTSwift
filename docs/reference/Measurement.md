@@ -450,7 +450,7 @@ public let edgeLengths: [Double]
 
 `edgeLengths[i]` is the arc length of `shape.edge(at: i)`. A missing edge (nil from `Shape.edge(at:)`) contributes `0.0`.
 
-- **OCCT:** `Edge.length`, delegates to `BRepGProp::LinearProperties` + `GProp_GProps::Mass`.
+- **OCCT:** `Edge.length`, delegates to `BRepAdaptor_Curve` measured by `occtAdaptorArcLength` (#3044).
 - **Example:**
   ```swift
   let m = Shape.box(width: 10, height: 10, depth: 5)!.measure()

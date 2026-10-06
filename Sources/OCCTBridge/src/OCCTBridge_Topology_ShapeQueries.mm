@@ -3509,14 +3509,19 @@ void OCCTEdgeRelease(OCCTEdgeRef edge)
 
 double OCCTEdgeGetLength(OCCTEdgeRef edge)
 {
-  if (!edge)
+  if (!edge || edge->edge.IsNull())
     return 0;
 
   try
   {
-    GProp_GProps props;
-    BRepGProp::LinearProperties(edge->edge, props);
-    return props.Mass(); // For curves, Mass() returns length
+    // A degenerate edge has zero extent and no curve to adapt; BRepGProp reported 0 for it.
+    if (BRep_Tool::Degenerated(edge->edge))
+      return 0;
+    // Measured the way OCCTWireGetLength and OCCTEdgeArcLength are, not with the single Gauss
+    // rule BRepGProp::LinearProperties applies to a one-interval curve: an elliptical edge read
+    // 1.485% long (10 x 1). #3044, #603.
+    BRepAdaptor_Curve adaptor(edge->edge);
+    return occtAdaptorArcLength(adaptor, adaptor.FirstParameter(), adaptor.LastParameter());
   }
   catch (...)
   {
