@@ -887,8 +887,8 @@ public enum CurvaturePointType: Int32 {
 | case | meaning |
 |---|---|
 | `.inflection` | Parameter where curvature changes sign. |
-| `.minimumCurvature` | Parameter at a local minimum of curvature. |
-| `.maximumCurvature` | Parameter at a local maximum of curvature. |
+| `.minimumCurvature` | Parameter at a minimum of the **radius** of curvature, so a local maximum of the curvature magnitude (the ends of an ellipse's major axis, #3035). |
+| `.maximumCurvature` | Parameter at a maximum of the radius of curvature, so a local minimum of the curvature magnitude. |
 
 *(Per-case anchors below, for cross-reference; the table above has the actual meaning of each.)*
 

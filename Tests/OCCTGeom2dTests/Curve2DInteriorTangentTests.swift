@@ -14,8 +14,7 @@ import simd
 // `Scripts/repro/766-geom2d-interpolate-tangents-periodic/transcript.txt` and
 // `Scripts/repro/766-geom2d-curve2d-cluster/transcript.txt`.
 //
-// An index outside `0..<points.count` is left unasserted on purpose: it is dropped without a
-// signal today, which #3036 records.
+// An index outside `0..<points.count` is refused with `nil` (#3036), pinned in `outOfRangeKeyIsRefused`.
 @Suite("Curve2D Interior Tangent Interpolation Tests")
 struct Curve2DInteriorTangentTests {
 
@@ -173,5 +172,33 @@ struct Curve2DInteriorTangentTests {
         // y = 10 (2 t^3 - 3 t^2 + t) = 0.9375, so the curve has left the x axis. The kernel keeps
         // the unit derivative the caller gave (`Scripts/repro/766-geom2d-curve2d-cluster/`).
         #expect(simd_distance(c.point(at: 2.5), SIMD2(1.5625, 0.9375)) < 1e-9)
+    }
+
+    @Test("A tangent keyed outside 0..<points.count is refused, not dropped (#3036)")
+    func outOfRangeKeyIsRefused() throws {
+        let pts: [SIMD2<Double>] = [SIMD2(0, 0), SIMD2(5, 5), SIMD2(10, 0)]
+        let east = SIMD2<Double>(1, 0)
+        // One past the last index (the off-by-one the issue names), far past it, and negative.
+        for key in [3, 7, -1, Int.max, Int.min] {
+            #expect(
+                Curve2D.interpolate(through: pts, tangents: [key: east]) == nil,
+                "key \(key) indexes no point")
+            // A valid constraint beside the bad key does not rescue the call.
+            #expect(
+                Curve2D.interpolate(through: pts, tangents: [0: east, key: east]) == nil,
+                "key \(key) beside a valid one")
+            #expect(
+                Curve2D.interpolate(through: pts, tangents: [key: east], closed: true) == nil,
+                "closed, key \(key)")
+        }
+        // The first and last index are still accepted, and honoured: 0 and 2 give the 5-pole
+        // curve with a horizontal start, 2 alone is the last valid key.
+        let both = try #require(Curve2D.interpolate(through: pts, tangents: [0: east, 2: east]))
+        #expect(both.poleCount == 5)
+        let start = try #require(both.tangentDirection(at: both.domain.lowerBound))
+        #expect(simd_distance(start, east) < 1e-9)
+        let last = try #require(Curve2D.interpolate(through: pts, tangents: [2: east]))
+        let end = try #require(last.tangentDirection(at: last.domain.upperBound))
+        #expect(simd_distance(end, east) < 1e-9)
     }
 }

@@ -22,7 +22,7 @@ typedef struct
 {
   int32_t smallEdgeCount; // Number of edges smaller than tolerance
   int32_t smallFaceCount; // Number of faces smaller than tolerance
-  int32_t gapCount;       // Number of gaps between edges/faces
+  int32_t gapCount; // Edge-to-edge junction gaps, counted on each wire after ordering it (#3040)
   // selfIntersectionCount REMOVED (#726/#763): it was always 0, never computed ("would require
   // more expensive computation", the field's own former comment) -- see OCCTShapeSelfIntersects /
   // OCCTShapeSelfIntersectsBounded for the real answer (#702 documented the field as honest about

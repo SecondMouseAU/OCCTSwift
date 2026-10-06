@@ -350,14 +350,16 @@ public static func parabola(focus: SIMD2<Double>, direction: SIMD2<Double>,
                             focalLength: Double) -> Curve2D?
 ```
 
-- **Parameters:** `focus`, focus point; `direction`, axis direction from vertex toward focus; `focalLength`, distance from vertex to focus (must be > 0).
-- **Returns:** Parabola curve, or `nil` if `focalLength ≤ 0`.
+- **Parameters:** `focus`, focus point; `direction`, axis direction from vertex toward focus (normalised, so its length is irrelevant; a zero vector returns `nil`); `focalLength`, distance from vertex to focus (must be > 0).
+- **Returns:** Parabola curve, or `nil` if `focalLength ≤ 0` or `direction` is zero. A non-unit direction used to misplace the focus (#3042); the focus is now exactly `focus`.
 - **OCCT:** `Geom2d_Parabola(gp_Parab2d(...))`.
 - **See also:** [`parabolaFromCenterDir(center:direction:focal:)`](Curve2D-Analysis.md) places the same curve through OCCT's `gce_MakeParab2d` algorithm, taking the vertex rather than the focus, and enforces the same focal-length contract (#487).
 - **Example:**
   ```swift
   let par = Curve2D.parabola(focus: SIMD2(0, 2), direction: SIMD2(0, 1), focalLength: 2)
   Curve2D.parabola(focus: .zero, direction: SIMD2(0, 1), focalLength: 0)  // nil, a line
+  // Direction length does not matter: the vertex is (1, 1) - 5 * (0.6, 0.8) = (-2, -3).
+  let same = Curve2D.parabola(focus: SIMD2(1, 1), direction: SIMD2(3, 4), focalLength: 5)
   ```
 
 ---
@@ -566,13 +568,14 @@ public static func interpolate(through points: [SIMD2<Double>],
 
 Use this when you need tangent continuity at specific interior transition points, for example where a straight section meets a circular arc.
 
-- **Parameters:** `points`, interpolation points (≥ 2); `tangents`, dictionary mapping point index to unit tangent direction (unconstrained indices use C2); `closed`, closed/periodic curve; `tolerance`, coincidence tolerance.
-- **Returns:** Interpolated BSpline, or `nil` on failure.
+- **Parameters:** `points`, interpolation points (≥ 2); `tangents`, dictionary mapping point index to unit tangent direction (unconstrained indices use C2; every key must lie in `0..<points.count`); `closed`, closed/periodic curve; `tolerance`, coincidence tolerance.
+- **Returns:** Interpolated BSpline, or `nil` on failure. A key outside `0..<points.count` returns `nil` (#3036): it constrains no point, and the call used to drop it and return the unconstrained curve.
 - **OCCT:** `OCCTCurve2DInterpolateWithInteriorTangents`.
 - **Example:**
   ```swift
   let pts: [SIMD2<Double>] = [SIMD2(0, 0), SIMD2(5, 5), SIMD2(10, 0)]
   let c = Curve2D.interpolate(through: pts, tangents: [1: SIMD2(1, 0)])
+  let off = Curve2D.interpolate(through: pts, tangents: [3: SIMD2(1, 0)])  // nil: 3 is not an index
   ```
 
 ---
@@ -884,7 +887,8 @@ public func parameterAtLength(_ arcLength: Double, from fromParameter: Double? =
 Use this to trim a curve to a specific arc length, or to place features at measured positions along a composite curve.
 
 - **Parameters:** `arcLength`, desired arc-length distance; may be negative to travel in reverse; `fromParameter`, starting parameter (defaults to `domain.lowerBound`).
-- **Returns:** Parameter value at the given arc-length offset, or `nil` if the computation fails.
+- **Returns:** Parameter value at the given arc-length offset, or `nil` if the computation fails. A distance or start that is not finite (`.nan`, `±.infinity`) is `nil` on every curve type (#3034, as for `length(from:to:)`); before, `+infinity` answered an infinite parameter on analytic curves and `nil` on splines.
+- **Past the end:** a finite distance longer than the curve is **not** `nil`. It reports success with a parameter outside `domain`, extrapolated along the basis curve (`seg.parameterAtLength(1000)` is `1000` on a 10-long segment; a circle winds round again). This matches `Curve3D.parameterAtLength` and is kept on purpose (#603); the old wording "or `nil` if the distance exceeds the curve" was wrong (#3034).
 - **OCCT:** the accumulated `GeomAbs_CN` sub-piece lengths, with the final narrow piece handed
   to `GCPnts_AbscissaPoint` (via `OCCTCurve2DParameterAtLength`).
 - **Note:** Shares the subdivided measurement with `length`, so the two agree:
@@ -896,6 +900,8 @@ Use this to trim a curve to a specific arc length, or to place features at measu
   if let u = seg.parameterAtLength(5) {
       let pt = seg.point(at: u)  // ≈ SIMD2(5, 0)
   }
+  let past = seg.parameterAtLength(1000)      // 1000: outside seg.domain (0...10), not nil
+  let none = seg.parameterAtLength(.infinity)  // nil
   ```
 
 ---
@@ -934,8 +940,8 @@ public static func arcOfParabola(focus: SIMD2<Double>, direction: SIMD2<Double>,
                                  startParam: Double, endParam: Double) -> Curve2D?
 ```
 
-- **Parameters:** `focus`, focus point; `direction`, axis direction; `focalLength`, focal distance (> 0); `startParam`/`endParam`, parameter range of the arc.
-- **Returns:** Parabolic arc, or `nil` on failure.
+- **Parameters:** `focus`, focus point; `direction`, axis direction (normalised, as for `parabola(focus:direction:focalLength:)`, #3042); `focalLength`, focal distance (> 0); `startParam`/`endParam`, parameter range of the arc.
+- **Returns:** Parabolic arc, or `nil` on failure (including a zero `direction`).
 - **OCCT:** `Geom2d_Parabola` + `Geom2d_TrimmedCurve` (direct construction, no `GC_`/`GCE2d_`
   `Make` helper is used; corrected from a stale `GCE2d_MakeArcOfParabola` attribution by #809).
 - **Example:**

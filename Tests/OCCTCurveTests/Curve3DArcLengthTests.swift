@@ -47,4 +47,32 @@ struct Curve3DArcLengthTests {
             #expect(abs(pt.y - 10.0) < 0.1)
         }
     }
+
+    @Test func parameterAtLengthRefusesANonFiniteDistanceOnEveryCurveType() throws {
+        // #3034: +infinity answered an infinite parameter on a line, a circle and an ellipse and
+        // 0 on a spline; every curve type now fails the same way, with this function's failure
+        // value 0 (it has no optional to carry it). 0 is also the start of the line and circle
+        // below, so a finite control with a non-zero answer is checked beside each.
+        let line = try #require(Curve3D.segment(from: SIMD3(0, 0, 0), to: SIMD3(10, 0, 0)))
+        let circle = try #require(
+            Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 10))
+        let ellipse = try #require(
+            Curve3D.ellipse(
+                center: .zero, normal: SIMD3(0, 0, 1), majorRadius: 10, minorRadius: 5))
+        let spline = try #require(
+            Curve3D.interpolate(points: [
+                SIMD3(0, 0, 0), SIMD3(5, 5, 0), SIMD3(10, 0, 0), SIMD3(15, 5, 0),
+            ]))
+        let curves: [(String, Curve3D)] = [
+            ("line", line), ("circle", circle), ("ellipse", ellipse), ("spline", spline),
+        ]
+        for (name, curve) in curves {
+            let finite = curve.parameterAtLength(3)
+            #expect(finite > curve.domain.lowerBound, "\(name) control")
+            for value in [Double.infinity, -.infinity, .nan] {
+                #expect(curve.parameterAtLength(value) == 0, "\(name): distance \(value)")
+                #expect(curve.parameterAtLength(5, from: value) == 0, "\(name): start \(value)")
+            }
+        }
+    }
 }

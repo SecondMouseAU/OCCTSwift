@@ -41,13 +41,12 @@ import simd
 // is somewhere else. So each demotion below also pins the face count, the area, the bounds and the
 // absence of a volume, which is what says "the same open shell, no longer a solid".
 //
-// `gapCount` is deliberately not pinned anywhere in this file, and #3040 is why. `OCCTShapeAnalyze`
-// counts it with `ShapeAnalysis_Wire::CheckGap3d` on every wire without first asking `CheckOrder`,
-// the precondition OCCT's own usage puts in front of it (#2906 for `SAWireAnalysis`), so a
-// flawless primitive box reads 24 gaps and `isHealthy == false`. The totals tests therefore
-// recompute the expected sum from the fields rather than assume one, and the `isHealthy` pins use
-// shapes whose wires are in order, which measure 0. Pinning the 20 an open box shell reads would
-// pin the defect as the answer.
+// `gapCount` is still not pinned in this file, but no longer for the reason #3040 recorded.
+// `OCCTShapeAnalyze` used to count it with `ShapeAnalysis_Wire::CheckGap3d` on wires whose edges
+// were not in connection order, so a flawless box read 24 gaps; it now orders each wire first, as
+// `ShapeFix_Wire::Perform` does, and a box reads 0 (pinned in `Issue3040AnalyzeGapOrderTests`).
+// The totals tests keep recomputing the expected sum from the fields, which is the stronger
+// check of `totalProblems`'s own contract, and the `isHealthy` pins use a polygon face.
 @Suite("Issue 702: solid demotion is reported accurately")
 struct Issue702SolidDemotion {
 
@@ -216,7 +215,9 @@ struct Issue702SolidDemotion {
         // closure requirement of its own, so its topology is valid.
         #expect(analysis.smallEdgeCount == 0)
         #expect(analysis.smallFaceCount == 0)
+        #expect(analysis.gapCount == 0, "box wires are ordered before gaps are counted (#3040)")
         #expect(!analysis.hasInvalidTopology)
+        #expect(analysis.totalProblems == 4, "the four free edges, and nothing else")
         #expect(!analysis.isHealthy, "an open shell is not healthy")
         // The shell scan's own verdict, flag by flag: five faces sewn consistently, edges shared
         // between faces, nothing mis-oriented.
@@ -226,9 +227,8 @@ struct Issue702SolidDemotion {
         // #717 review (the totalProblems double-count): totalProblems must count this shell's free
         // edges once, not once via freeEdgeCount and again as +1 via freeFaceCount for the same
         // open shell. The expected sum is recomputed from the other fields, not hardcoded: this
-        // fixture also measures a nonzero gapCount (see this suite's header), so an assumed magic
-        // total would have been wrong for a reason having nothing to do with the bug this test
-        // exists to catch.
+        // total is recomputed rather than hardcoded so a change to any other counter does not
+        // read as the double-count this test exists to catch.
         let expected = Self.totalProblemsExcludingFreeFace(analysis)
         #expect(analysis.totalProblems == expected)
         #expect(
@@ -309,8 +309,8 @@ struct Issue702SolidDemotion {
     /// That is `totalProblems`'s own contract (see ``ShapeAnalysisResult/totalProblems``): every
     /// field once, except `freeFaceCount`, a derived summary of the same free-edge scan rather
     /// than an independent defect. Recomputed here instead of assumed, so the tests above measure
-    /// the real fields (including this fixture's own nonzero `gapCount`) rather than a guessed
-    /// total.
+    /// the real fields rather than a guessed total. (Before #3040 this fixture's `gapCount` was a
+    /// nonzero artefact of unordered wires, which is why the sum was never hardcoded.)
     ///
     /// #1288 review: this used to omit the `hasSelfIntersection` term the real contract has (see
     /// `ShapeAnalysisTests.analysisResultProperties`'s `expectedTotal`, the sibling mirror of the
@@ -380,7 +380,7 @@ struct Issue702SolidDemotion {
     /// Unlike the box's faces its wire is in order, so it measures no gap at all, and a face that
     /// is not in a shell measures no free edge. Put alone it is healthy; as the only face of a
     /// shell it has four free edges and nothing else wrong. That is what lets `isHealthy` be read
-    /// as a function of the free edges and not of the primitive's bogus gaps (#3040).
+    /// as a function of the free edges alone: nothing else is counted on it.
     private func polygonFace() throws -> Shape {
         let outer = try #require(
             Wire.polygon3D(
