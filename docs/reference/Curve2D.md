@@ -566,13 +566,14 @@ public static func interpolate(through points: [SIMD2<Double>],
 
 Use this when you need tangent continuity at specific interior transition points, for example where a straight section meets a circular arc.
 
-- **Parameters:** `points`, interpolation points (≥ 2); `tangents`, dictionary mapping point index to unit tangent direction (unconstrained indices use C2); `closed`, closed/periodic curve; `tolerance`, coincidence tolerance.
-- **Returns:** Interpolated BSpline, or `nil` on failure.
+- **Parameters:** `points`, interpolation points (≥ 2); `tangents`, dictionary mapping point index to unit tangent direction (unconstrained indices use C2; every key must lie in `0..<points.count`); `closed`, closed/periodic curve; `tolerance`, coincidence tolerance.
+- **Returns:** Interpolated BSpline, or `nil` on failure. A key outside `0..<points.count` returns `nil` (#3036): it constrains no point, and the call used to drop it and return the unconstrained curve.
 - **OCCT:** `OCCTCurve2DInterpolateWithInteriorTangents`.
 - **Example:**
   ```swift
   let pts: [SIMD2<Double>] = [SIMD2(0, 0), SIMD2(5, 5), SIMD2(10, 0)]
   let c = Curve2D.interpolate(through: pts, tangents: [1: SIMD2(1, 0)])
+  let off = Curve2D.interpolate(through: pts, tangents: [3: SIMD2(1, 0)])  // nil: 3 is not an index
   ```
 
 ---
