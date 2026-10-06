@@ -1517,10 +1517,19 @@ extension Shape {
     /// a compound when there is more than one, cavity shells skipped. The single history
     /// covers every body.
     ///
+    /// The result and the history are two views of one repair: a face the history reports as
+    /// replaced is the face the result holds, including for a body that stays open and comes
+    /// back as a solid that is not closed (#3041).
+    ///
     /// ```swift
     /// let sewn = Shape.sew(shapes: [bodyA, bodyB], tolerance: 1e-6)!
     /// guard let (solids, history) = Shape.solidWithFullHistory(from: sewn) else { return }
     /// print(solids.solids.count)   // 2
+    ///
+    /// // The history's replacement is in the result.
+    /// if let repaired = history.record(of: faceOfBodyA).modified.first {
+    ///     print(solids.subShapes(ofType: .face).contains { $0.isSame(as: repaired) })   // true
+    /// }
     /// ```
     public static func solidWithFullHistory(from shell: Shape) -> (
         result: Shape, history: ShapeHistoryRef

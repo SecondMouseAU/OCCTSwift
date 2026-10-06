@@ -1370,11 +1370,10 @@ OCCTShapeRef OCCTShapeCreateSolidFromShell(OCCTShapeRef shell)
       // Optionally fix the solid orientation
       ShapeFix_Solid fixer(solid);
       fixer.Perform();
-      TopoDS_Shape fixedShape = fixer.Solid();
-      // Keep the unfixed solid rather than dropping the body, as before.
-      made.push_back((fixedShape.IsNull() || fixedShape.ShapeType() != TopAbs_SOLID)
-                       ? TopoDS_Shape(solid)
-                       : fixedShape);
+      // #3041: read the body from the context (Shape()), not Solid(), which a shell that cannot
+      // close never updates; see occtSolidBodyFromFixed. Keeps the unfixed solid rather than
+      // dropping the body when nothing usable comes back, as before.
+      made.push_back(occtSolidBodyFromFixed(fixer.Shape(), solid));
     }
 
     TopoDS_Shape result = occtSolidBodiesToShape(made);

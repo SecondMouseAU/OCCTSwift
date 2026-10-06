@@ -78,6 +78,8 @@ One solid is built per **body-bounding** shell, not just the first shell found: 
 
 *Cavity* shells are skipped: a hole is not a body, and building one as a positive solid would return a compound whose volume double-counts the part. A body nested inside another body's cavity is enclosed twice, so it is still read as a body. To rebuild a solid that keeps its cavities, use `Shape.solidFromShells(_:)` with the outer shell first.
 
+A body whose faces `ShapeFix_Solid` repairs carries the repaired faces, including a body that stays open: it comes back as a solid that is not closed, wrapping the repaired shell, not the unrepaired one (#3041). The bridge reads the body from the fixer's context (`Context()->Apply`), as `ShapeFix_Shape::Perform` does.
+
 - **Parameters:** `shell`, a shell shape (from sewing or face assembly).
 - **Returns:** A solid, a compound of solids for multi-body input, or `nil` if the shape holds no shell at all.
 - **OCCT:** `BRepBuilderAPI_MakeSolid(shell)` + `ShapeFix_Solid` (orientation).
