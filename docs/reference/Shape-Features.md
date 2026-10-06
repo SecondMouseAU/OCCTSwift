@@ -1774,6 +1774,21 @@ public struct ShapeAnalysisResult {
 
 `isHealthy` is `true` when `totalProblems == 0 && !hasInvalidTopology`.
 
+- **`gapCount` is measured on an ordered wire (#3040).** `ShapeAnalysis_Wire::CheckGap3d(i)` compares
+  edge `i` with the edge stored next, so on a wire stored out of connection order, which is every
+  face of a primitive, it reads the face diagonal. `analyze` orders each wire first
+  (`ShapeFix_Wire::FixReorder`, the step `ShapeFix_Wire::Perform` runs before its gap fix) on a
+  private copy of the wire data, so the shape is untouched. Before the fix a box reported
+  `gapCount == 24` and `isHealthy == false` at every tolerance; now it reports 0 and `true`, and
+  `totalProblems` drops by the same amount for every shape with an unordered wire. A wire with a
+  real gap still reports it.
+
+```swift
+let box = Shape.box(width: 10, height: 10, depth: 10)!
+let report = box.analyze(tolerance: 1e-6)!
+print(report.gapCount, report.isHealthy)   // 0 true
+```
+
 - **This never reports self-intersection unless asked to.** A `selfIntersectionCount` field used
   to sit here (through v1.x) but was always 0, never computed (the bridge's own comment read
   "would require more expensive computation"); it was removed in #763 rather than kept as a
@@ -1819,7 +1834,7 @@ public struct ShapeAnalysisResult {
 |---|---|
 | `smallEdgeCount` | Number of edges smaller than the scan's `tolerance`. |
 | `smallFaceCount` | Number of faces smaller than the scan's `tolerance`. |
-| `gapCount` | Number of gaps found between edges/faces. |
+| `gapCount` | Number of edge-to-edge junctions whose 3D distance exceeds the scan's `tolerance`, counted per junction on each wire after the wire's edges are put in connection order, as `ShapeFix_Wire::Perform` does before any gap check (#3040). A primitive box, cylinder or sphere reads 0. |
 | `hasSelfIntersection` | `true`/`false` when `selfIntersectionTimeout` was passed and resolved; `nil` when not asked, or asked but indeterminate. `nil` is never "clean". |
 | `freeEdgeCount` | Free (unconnected) edges across every shell, via `ShapeAnalysis_Shell::CheckOrientedShells`. |
 | `freeFaceCount` | Shells found to have at least one free edge; a derived summary of `freeEdgeCount`, not an independent defect. |

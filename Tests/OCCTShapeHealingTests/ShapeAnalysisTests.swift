@@ -10,15 +10,17 @@ import simd
 struct ShapeAnalysisTests {
 
     @Test("Analyze valid box")
-    func analyzeValidBox() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func analyzeValidBox() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
 
-        let analysis = box.analyze(tolerance: 0.001)
+        let analysis = try #require(box.analyze(tolerance: 0.001))
 
-        #expect(analysis != nil)
-        #expect(analysis!.hasInvalidTopology == false)
-        // A valid box may have gap counts due to wire analysis heuristics,
-        // but should have no invalid topology
+        #expect(analysis.hasInvalidTopology == false)
+        // A flawless box measures no problem at all (#3040: it used to read 24 gaps because the
+        // wires were not ordered before the gap check). The primitives are pinned in full in
+        // Issue3040AnalyzeGapOrderTests.
+        #expect(analysis.gapCount == 0)
+        #expect(analysis.isHealthy)
         #expect(box.isValid)
     }
 
