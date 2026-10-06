@@ -476,6 +476,15 @@ def refuse_for_diff(paths):
 # same as passing: the workflows start seconds apart, so a head a few seconds old has only some.
 ALWAYS_PRESENT = ("changes", "gate-scripts", "Kilo Code Review")
 REQUIRED_CHECK = "gate-scripts"  # the one check the ruleset requires (required-status-checks.md)
+# GitHub's check-run `conclusion` values are: success, failure, neutral, cancelled, skipped,
+# timed_out, action_required, stale, startup_failure. Each is classed here, none is left to chance:
+#   green:   success; neutral (the check ran and reports no verdict); skipped (a job its `if`
+#            excluded, as `changes` does for macOS on a prose-only diff).
+#   failing: failure; cancelled and timed_out (it never finished its work); action_required
+#            (a human has to act); startup_failure (the workflow never started); stale (GitHub
+#            gave up on a check that did not complete in time, which is not a pass).
+# check_verdict also refuses a completed check whose conclusion is absent or unknown, so a value
+# GitHub adds later is refused rather than read as green.
 FAILING_CONCLUSIONS = ("failure", "cancelled", "timed_out", "action_required", "startup_failure",
                        "stale")
 GREEN_CONCLUSIONS = ("success", "neutral", "skipped")
@@ -499,8 +508,13 @@ def latest_per_name(runs):
 
 
 def is_wasm(name):
-    """`wasm` runs last and is not part of the readiness gate, so it is excluded by name."""
-    return "wasm" in name.lower()
+    """`wasm` runs last and is not part of the readiness gate, so it is excluded by name.
+
+    The workflow names it `wasm / wasm build + spike` (a called workflow is `<caller job> / <job>`),
+    so the name STARTS with `wasm`. A substring test would also exclude any other check that merely
+    contains the letters inside a word, and an excluded check is one nothing waits for.
+    """
+    return name.lower().startswith("wasm")
 
 
 def check_verdict(runs, head_age_seconds):
@@ -513,8 +527,17 @@ def check_verdict(runs, head_age_seconds):
     conditional and so cannot be listed above.
     """
     runs = [r for r in latest_per_name(runs) if not is_wasm(r["name"])]
-    failed = [r["name"] + "=" + str(r.get("conclusion")) for r in runs
-              if r.get("status") == "completed" and r.get("conclusion") not in GREEN_CONCLUSIONS]
+    failed = []
+    for r in runs:
+        if r.get("status") != "completed":
+            continue
+        conclusion = r.get("conclusion")
+        if conclusion is None:
+            # A completed check with no conclusion is not a pass. GitHub should not return one,
+            # and if it does, the safe answer is to refuse and say why.
+            failed.append(r["name"] + "=no conclusion")
+        elif conclusion not in GREEN_CONCLUSIONS:
+            failed.append(r["name"] + "=" + str(conclusion))
     if failed:
         return (CHECK_FAILED, "failed: " + ", ".join(sorted(failed)))
     pending = sorted(r["name"] for r in runs if r.get("status") != "completed")
@@ -742,7 +765,9 @@ def readiness_gate(args, pr, gh):
     now = datetime.datetime.now(datetime.timezone.utc)
     sha, verdict, detail = judge_content_head(gh, pr["number"], pr["headRefOid"], now,
                                               args.allow_pending_checks)
-    print("  readiness, read from the check runs of %s: %s (%s)" % (sha[:10], verdict, detail))
+    age = int((now - gh.commit(sha)["committer_date"]).total_seconds())
+    print("  judged head %s, %ds old; readiness read from the check runs of %s: %s (%s)"
+          % (pr["headRefOid"][:10], age, sha[:10], verdict, detail))
     if verdict != READY and not args.no_merge:
         sys.stderr.write("error: %s\n" % refusal_text(verdict, detail, pr["number"]))
         return None
@@ -1622,9 +1647,16 @@ def self_test():
     case("a-failure-outranks-a-pending-check",
          check_verdict(with_(with_(green(), "changes", conclusion="failure"),
                              "swift build + test (macOS)", "queued"), 1800)[0] == CHECK_FAILED)
+    case("a-name-containing-wasm-inside-a-word-is-not-excluded",
+         not is_wasm("awesome-wasmer check") and not is_wasm("build awasm")
+         and check_verdict(with_(green(), "awasm build", "in_progress"), 1800)[0] == NOT_READY)
+    case("a-completed-check-with-no-conclusion-is-refused",
+         check_verdict([dict(r, conclusion=None) if r["name"] == "changes" else r
+                        for r in green()], 1800)
+         == (CHECK_FAILED, "failed: changes=no conclusion"))
     case("wasm-is-excluded-in-any-case",
          check_verdict(with_(with_(green(), "wasm / wasm build + spike", "in_progress"),
-                             "Other WASM job", conclusion="failure"), 1800)[0] == READY)
+                             "WASM spike job", conclusion="failure"), 1800)[0] == READY)
     case("a-rerun-supersedes-an-older-failed-attempt",
          check_verdict(green() + [run_("swift build + test (macOS)")], 1800)[0] == READY
          and check_verdict([run_("swift build + test (macOS)", conclusion="failure")] + green(),
