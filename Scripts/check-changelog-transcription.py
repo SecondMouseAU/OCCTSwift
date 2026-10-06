@@ -179,6 +179,70 @@ def body_entry(body):
     return section.strip() or None
 
 
+# A heading that LOOKS like the CHANGELOG heading and is not the one `merge-pr.py` reads (#3050):
+# `## CHANGELOG`, `## Changelog entry`, `### CHANGELOG entry`, `## CHANGELOG (proposed)`. Nine PRs
+# headed their entry `## CHANGELOG`, merge-pr.py could not see it, none reached the file, and this
+# audit filed them under "no entry section at all" with the PRs that really had nothing to say.
+# `##CHANGELOG` with no space after the markers is not a variant: CommonMark requires the space
+# and GitHub does not render it as a heading, so it is body text and not recognising it is correct.
+# The exact heading is excluded: it is recognised, and never a variant. Matched at any level, on
+# the heading's first word only, so `## Changelog and SemVer notes` also counts: a false positive
+# here costs a reviewer one look, a false negative is the loss this exists to name.
+VARIANT_HEADING = re.compile(r"^(#{1,6})[ \t]+change[ \t_-]?log\b.*$", re.I | re.M)
+
+# Fence tracking is a copy of `Scripts/merge-pr.py`'s FENCE_RE and code_block_mask(), restated rather
+# than imported for the reason noted beside that script's CATEGORY_HEADINGS (two standalone scripts,
+# hyphenated filenames). It must agree with the extractor on exactly the shapes #2889/#2890 hit, or
+# this audit and the tool disagree about which headings are real. CommonMark's rules: an opener is
+# indented at most three spaces; a backtick opener whose info string holds a backtick opens nothing;
+# a closer is the same character, at least as long, at most three spaces in, with nothing after the
+# marker; an unclosed opener runs to the end. If merge-pr.py changes, change this.
+FENCE_RE = re.compile(r"^(?P<indent> {0,3})(?P<marker>`{3,}|~{3,})(?P<info>.*)$")
+
+
+def code_block_mask(lines):
+    """One bool per line: True when the line is inside a fenced block, fences included."""
+    mask = [False] * len(lines)
+    marker = None
+    for i, line in enumerate(lines):
+        m = FENCE_RE.match(line)
+        if marker is None:
+            if m and not (m.group("marker")[0] == "`" and "`" in m.group("info")):
+                marker = m.group("marker")
+                mask[i] = True
+            continue
+        mask[i] = True
+        if (m and m.group("marker")[0] == marker[0]
+                and len(m.group("marker")) >= len(marker)
+                and not m.group("info").strip()):
+            marker = None
+    return mask
+
+
+def variant_entry(body):
+    """The section under a CHANGELOG-looking heading that is not `## CHANGELOG entry`, or None.
+
+    Fenced code is masked first (code_block_mask, CommonMark's rules), so a PR body quoting the heading in a snippet is not a variant.
+    The section runs to the next heading of the same or a shallower level. Returns the stripped
+    text, or "" when a variant heading exists with nothing under it (still a finding: the author
+    meant to write an entry and the tool cannot see where).
+    """
+    if not body:
+        return None
+    lines = body.replace("\r\n", "\n").split("\n")
+    masked = ["" if fenced else line for line, fenced in zip(lines, code_block_mask(lines))]
+    text = "\n".join(masked)
+    for m in VARIANT_HEADING.finditer(text):
+        if BODY_HEADING.match(m.group(0)):
+            continue
+        level = len(m.group(1))
+        rest = text[m.end():]
+        nxt = re.search(r"^#{1,%d}[ \t]+\S" % level, rest, re.M)
+        section = rest[:nxt.start()] if nxt else rest
+        return section.strip()
+    return None
+
+
 # A section that says, in words, that no entry is needed. The template asks for this rather than an
 # empty section, so "None, <reason>" is a correct answer and must not read as a missing entry.
 # The `#`-prefix allows for the author writing that answer as a heading, which is what #751 did
@@ -277,11 +341,17 @@ def classify_untranscribed(untranscribed, changelog_text, lookup=gh_pr_body):
               merge. Nothing to do.
       missing the PR body has an entry and the CHANGELOG does not. The real defect.
       absent  the PR body has no entry section at all. A different failure: the PR skipped it.
+      unrecognised_heading
+              the body has no `## CHANGELOG entry` but does have a heading that looks like one
+              (`## CHANGELOG`), and its entry is not in the file. merge-pr.py cannot see it, so
+              it was never transcribed: a probable MISSING entry, not a PR with nothing to say
+              (#3050). If the entry is in the file anyway it is `late`, as for any other shape.
       declared_none
               the section says, in words, that no entry is needed. A correct answer, not a defect.
       unknown the body could not be read. Degrades to the commit-only answer.
     """
-    out = {"late": [], "missing": [], "absent": [], "declared_none": [], "unknown": []}
+    out = {"late": [], "missing": [], "absent": [], "declared_none": [],
+           "unrecognised_heading": [], "unknown": []}
     for sha, subj in untranscribed:
         num = pr_number(subj)
         if num is None:
@@ -293,7 +363,15 @@ def classify_untranscribed(untranscribed, changelog_text, lookup=gh_pr_body):
             continue
         entry = body_entry(body)
         if entry is None:
-            out["absent"].append((sha, subj, num))
+            variant = variant_entry(body)
+            if variant is None:
+                out["absent"].append((sha, subj, num))
+            elif declares_none(variant):
+                out["declared_none"].append((sha, subj, num))
+            elif variant and entry_is_present(variant, changelog_text):
+                out["late"].append((sha, subj, num))
+            else:
+                out["unrecognised_heading"].append((sha, subj, num))
         elif declares_none(entry):
             out["declared_none"].append((sha, subj, num))
         elif entry_is_present(entry, changelog_text):
@@ -507,6 +585,34 @@ def _verify_cases():
         # ...and this one is NOT, over a `### Fixed` the file does hold. Before #2951 the heading
         # alone matched and this read as "transcribed late, nothing to do", nine times over.
         "22": "## CHANGELOG entry\n\n### Fixed\n\n- A category-headed entry that never landed (#22).\n",
+        # #3050. The exact failing shape: an entry headed `## CHANGELOG`, never transcribed.
+        "23": "## What & why\nx\n\n## CHANGELOG\n\n### A variant-headed entry that never landed (#23)\n\nBody.\n\n## SemVer impact\nNONE\n",
+        # ...the same heading over an entry that IS in the file (hand-transcribed): late.
+        "24": "## CHANGELOG\n\n### A variant-headed entry that did land (#24)\n",
+        # Other spellings merge-pr.py does not read: case, level, a suffix.
+        "25": "### Changelog entry\n\n#### A level-three variant that never landed (#25)\n",
+        "26": "## CHANGELOG (proposed)\n\n- A suffixed variant that never landed (#26)\n",
+        # A variant section declaring None is a correct answer, as under the exact heading.
+        "27": "## CHANGELOG\n\nNone, process only.\n",
+        # The variant heading only inside a fence is a quotation, not an entry: still absent.
+        "28": "## What\n\n```\n## CHANGELOG\n### Quoted (#28)\n```\n\n## Checklist\n",
+        # The exact heading wins over a variant elsewhere in the body.
+        "29": "## CHANGELOG entry\n\n### The exact heading entry that never landed (#29)\n\n## Notes\n\n## CHANGELOG\n",
+        # Fence rules (#2889/#2890 shapes). A 4-backtick fence holding a 3-backtick line must not
+        # close early, so the heading after the 3-backtick line is still quoted text.
+        "31": "````\n```\n## CHANGELOG\n### Quoted (#31)\n````\n",
+        # A line with an info string is never a closer: the heading is still inside.
+        "32": "```\n```js\n## CHANGELOG\n### Quoted (#32)\n```\n",
+        # A backtick opener with a backtick in its info string opens nothing, so the heading below
+        # is real and never landed.
+        "33": "``` a`b\n\n## CHANGELOG\n\n### Opener-less fence, entry never landed (#33)\n",
+        # A tilde fence masks, and a backtick line inside it does not close it.
+        "34": "~~~\n```\n## CHANGELOG\n### Quoted (#34)\n~~~\n",
+        # #2889: prose quoting a fence marker at four spaces is indented code and opens nothing;
+        # the heading below must still be seen.
+        "35": "Example, write a fence like:\n\n    ```\n\n## CHANGELOG\n\n### Entry below a quoted marker, never landed (#35)\n",
+        # A heading that merely contains the letters is not a variant.
+        "30": "## What\n\n## Changelogs of other projects are irrelevant\n\n## Checklist\n",
     }
     changelog = ("# Changelog\n\n## Unreleased\n\n"
                  "### Widget rotation is no longer inverted (#10)\n\nBody.\n\n"
@@ -515,7 +621,8 @@ def _verify_cases():
                  "### A real entry sitting under None-shaped boilerplate (#17)\n\n"
                  "### Pass 9: a duplication audit of some breadth (#19)\n\n"
                  "### Pass 10, a heading that is all em-dash clause (#20)\n\n"
-                 "### Fixed\n\n- A category-headed entry that did land (#21).\n")
+                 "### Fixed\n\n- A category-headed entry that did land (#21).\n\n"
+                 "### A variant-headed entry that did land (#24)\n")
     rows = [
         ("aaa1111", "Merge pull request #10 from x/late"),
         ("bbb2222", "Merge pull request #11 from x/missing"),
@@ -532,6 +639,19 @@ def _verify_cases():
         ("mmm6666", "Merge pull request #20 from x/em-dash-only-heading"),
         ("nnn7777", "Merge pull request #21 from x/category-heading-present"),
         ("ooo8888", "Merge pull request #22 from x/category-heading-missing"),
+        ("ppp9999", "Merge pull request #23 from x/variant-missing"),
+        ("qqq0001", "Merge pull request #24 from x/variant-present"),
+        ("rrr0002", "Merge pull request #25 from x/variant-level3"),
+        ("sss0003", "Merge pull request #26 from x/variant-suffix"),
+        ("ttt0004", "Merge pull request #27 from x/variant-none"),
+        ("uuu0005", "Merge pull request #28 from x/variant-in-fence"),
+        ("vvv0006", "Merge pull request #29 from x/exact-wins"),
+        ("www0007", "Merge pull request #30 from x/not-a-variant"),
+        ("xxx0008", "Merge pull request #31 from x/long-fence-short-inner"),
+        ("yyy0009", "Merge pull request #32 from x/short-closer"),
+        ("zzz0010", "Merge pull request #33 from x/backtick-info-opener"),
+        ("aab0011", "Merge pull request #34 from x/tilde-fence"),
+        ("aac0012", "Merge pull request #35 from x/quoted-marker-2889"),
     ]
     b = classify_untranscribed(rows, changelog, lookup=lambda n: bodies.get(str(n)))
     late = {s for s, _, _ in b["late"]}
@@ -539,9 +659,24 @@ def _verify_cases():
     absent = {s for s, _, _ in b["absent"]}
     unknown = {s for s, _, _ in b["unknown"]}
     dnone = {s for s, _, _ in b["declared_none"]}
+    variant = {s for s, _, _ in b["unrecognised_heading"]}
     return [
-        ("#788: an entry present in the CHANGELOG classifies as transcribed late", late == {"aaa1111", "ddd4444", "hhh8888", "jjj0000", "lll5555", "nnn7777"}),
-        ("#788: an entry in the PR body but not the file classifies as MISSING", missing == {"bbb2222", "iii9999", "mmm6666", "ooo8888"}),
+        ("#788: an entry present in the CHANGELOG classifies as transcribed late", late == {"aaa1111", "ddd4444", "hhh8888", "jjj0000", "lll5555", "nnn7777", "qqq0001"}),
+        ("#788: an entry in the PR body but not the file classifies as MISSING", missing == {"bbb2222", "iii9999", "mmm6666", "ooo8888", "vvv0006"}),
+        ("#3050: an entry headed `## CHANGELOG` that never landed is its own bucket, not absent",
+         "ppp9999" in variant and "ppp9999" not in absent),
+        ("#3050: level, case and suffix spellings of the heading are all recognised as variants",
+         {"rrr0002", "sss0003"} <= variant),
+        ("#3050: a variant-headed entry that is in the file is late, not a finding",
+         "qqq0001" in late and "qqq0001" not in variant),
+        ("#3050: a variant section declaring None is a correct answer", "ttt0004" in dnone),
+        ("#3050: a heading quoted inside a fence is not a variant", "uuu0005" in absent),
+        ("#3050: the exact heading is never a variant, whatever else the body holds",
+         "vvv0006" in missing and "vvv0006" not in variant),
+        ("#3050: a heading that only contains the letters 'changelog' is not a variant",
+         "www0007" in absent),
+        ("#3050: the variant bucket is exactly the five that never landed",
+         variant == {"ppp9999", "rrr0002", "sss0003", "zzz0010", "aac0012"}),
         ("#2951: an entry opening with a bare category heading is matched on its bullet, not on "
          "the six words that identify nothing", "nnn7777" in late),
         ("#2951: a category-headed entry that never landed is MISSING, over a `### Fixed` the "
@@ -549,12 +684,20 @@ def _verify_cases():
         ("#1125: a heading repunctuated to drop a banned em-dash is still found", "lll5555" in late),
         ("#1125: a heading with nothing distinctive before the em-dash is still MISSING",
          "mmm6666" in missing),
-        ("#788: a PR body with no entry section classifies as absent", absent == {"ccc3333"}),
+        ("#788: a PR body with no entry section classifies as absent",
+         absent == {"ccc3333", "uuu0005", "www0007", "xxx0008", "yyy0009", "aab0011"}),
+        ("#3050: a 4-backtick fence is not closed by a shorter (3-backtick) line inside it", "xxx0008" in absent),
+        ("#3050: a fence line carrying an info string does not close a fence", "yyy0009" in absent),
+        ("#3050: a backtick opener with a backtick in its info string opens nothing",
+         "zzz0010" in variant),
+        ("#3050: a tilde fence masks, and a backtick line inside does not close it",
+         "aab0011" in absent),
+        ("#2889: a quoted fence marker (indented code) hides nothing below it", "aac0012" in variant),
         ("#788: a subject with no PR number is unverified, not silently clean", "eee5555" in unknown),
         ("#788: an unreadable body is unverified, not silently clean", "fff6666" in unknown),
         ("#788: a bullet-shaped entry is matched, not only a ### heading", "ddd4444" in late),
         ("#788: a section saying None by design is not reported as missing",
-         dnone == {"ggg7777", "kkk1234"}),
+         dnone == {"ggg7777", "kkk1234", "ttt0004"}),
         ("#788: None written as a ### heading is still an opt-out, not a missing entry",
          "kkk1234" in dnone and "kkk1234" not in missing),
         ("#788: a prose entry with no heading is found in the file", "hhh8888" in late),
@@ -562,6 +705,7 @@ def _verify_cases():
         ("#788: None-shaped template boilerplate does not mask a real entry", "jjj0000" in late),
         ("#788: no landing lands in two buckets at once",
          not (late & missing) and not (late & absent) and not (missing & absent)
+         and not (variant & (late | missing | absent | dnone))
          and not (dnone & (late | missing | absent))),
     ]
 
@@ -667,6 +811,7 @@ def main():
         print("\nVerified against each PR body (#788):")
         print(f"  transcribed late, nothing to do:  {len(buckets['late'])}")
         print(f"  entry in the PR body, NOT in the CHANGELOG:  {len(buckets['missing'])}")
+        print(f"  entry under a CHANGELOG-looking heading merge-pr.py cannot read, NOT in the CHANGELOG:  {len(buckets['unrecognised_heading'])}")
         print(f"  PR body has no entry section at all:  {len(buckets['absent'])}")
         print(f"  PR body says None, by design:  {len(buckets['declared_none'])}")
         print(f"  could not verify:  {len(buckets['unknown'])}")
@@ -674,6 +819,12 @@ def main():
         if buckets["missing"]:
             print("\nMISSING. The PR body has an entry and the CHANGELOG does not:")
             for sha, subj, num in buckets["missing"]:
+                print(f"  {sha[:8]}  #{num}  {subj}")
+        if buckets["unrecognised_heading"]:
+            print("\nUNRECOGNISED HEADING. The body heads its entry something other than "
+                  "`## CHANGELOG entry`, so merge-pr.py could not see it and it never landed. "
+                  "These are probable MISSING entries, not PRs with nothing to say (#3050):")
+            for sha, subj, num in buckets["unrecognised_heading"]:
                 print(f"  {sha[:8]}  #{num}  {subj}")
         if buckets["absent"]:
             print("\nNo entry section in the PR body. The PR skipped it, which the template asks "
@@ -688,7 +839,8 @@ def main():
             print(f"\n{len(buckets['late'])} transcribed late. Correct in the file, not written by "
                   "the merge, and not fixable retroactively: the commit-level check asks what the "
                   "merge did.")
-        if args.strict and (buckets["missing"] or buckets["absent"]):
+        if args.strict and (buckets["missing"] or buckets["absent"]
+                            or buckets["unrecognised_heading"]):
             return 1
 
     return 0

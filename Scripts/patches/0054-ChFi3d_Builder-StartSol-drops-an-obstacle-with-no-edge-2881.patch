@@ -1,0 +1,59 @@
+From: OCCTSwift ecosystem <noreply@secondmouse.au>
+Subject: [PATCH] Modeling Algorithms - ChFi3d_Builder::StartSol drops an obstacle
+ it found no edge for
+
+ChFi3d_Builder::StartSol, on reaching an obstacle face, sets c1obstacle and replaces HC with a
+fresh BRepAdaptor_Curve2d, then looks for the arc edge among the obstacle face's edges and
+initialises HC with it:
+
+  c1obstacle = true;
+  ...
+  HC = new BRepAdaptor_Curve2d();
+  ... find newedge among Fv's edges by IsSame(anArcEdge) ...
+  if (!newedge.IsNull()) { HC->Initialize(newedge, Fv); ... return true; }
+  else { prepareDefaultReturn(); return false; }
+
+When no edge matches, the else branch returns false and leaves HC as the default-constructed
+adaptor, which holds no curve, with c1obstacle still true.
+
+The caller, ChFi3d_Builder::PerformSetOfSurfOnElSpine, tests "not Ok and HC null" to detect the
+end of the chain:
+
+  if ((!Ok1 && HC1.IsNull()) || (!Ok2 && HC2.IsNull())) { ... BuildPlane or throw ... }
+
+An empty but non-null HC passes that test, and obstacleon1/obstacleon2, which receive c1obstacle,
+then select the obstacle path, which hands HC to ChFi3d_FilBuilder::PerformSurf. The SurfRst walk
+evaluates it through Adaptor3d_CurveOnSurface::EvalD1, and Geom2dAdaptor_Curve::D1 falls to its
+default arm and dereferences a null curve: a SIGSEGV that no catch (...) in a bridge can reach,
+since OCC_CATCH_SIGNALS is inert in this build.
+
+Setting HC null and c1obstacle false in that branch gives the caller the state it already handles
+for "no obstacle". The sibling failure in the same block, returning false when HSref or HCref is
+null, leaves HC null, which the caller does handle, and is left alone.
+
+Found by instrumenting the pinned kernel with override-linked copies of BRepAdaptor_Curve2d.cxx,
+Adaptor3d_CurveOnSurface.cxx and ChFi3d_Builder_2.cxx (Scripts/repro/occt1568-fillet-opposite-edge/):
+the one Adaptor3d_CurveOnSurface::EvalD1 call before the fault dereferences a default-constructed
+BRepAdaptor_Curve2d that is never initialised, and the branch above fires exactly twice at the
+crashing radius and never at 1.49 or 1.5000001. BRepAdaptor_Curve2d::Initialize leaving an adaptor
+empty for an edge with no pcurve was the first hypothesis and is ruled out: it never fires on this
+model. BRepFilletAPI_MakeFillet on the reporter's model from OCCT#1568, one edge at a time, 42
+edges and nine radii (378 cases): the eight edges that crashed at radius 1.5 now report
+IsDone() == false, as 1.4999999 does, and the other 370 cases are unchanged.
+
+Reported upstream as OCCT#1568. Tracked as SecondMouseAU/OCCTSwift#2881.
+
+diff --git a/src/ModelingAlgorithms/TKFillet/ChFi3d/ChFi3d_Builder_2.cxx b/src/ModelingAlgorithms/TKFillet/ChFi3d/ChFi3d_Builder_2.cxx
+index 9a6c5801a..77728aa97 100644
+--- a/src/ModelingAlgorithms/TKFillet/ChFi3d/ChFi3d_Builder_2.cxx
++++ b/src/ModelingAlgorithms/TKFillet/ChFi3d/ChFi3d_Builder_2.cxx
+@@ -1557,6 +1557,9 @@ bool ChFi3d_Builder::StartSol(
+         }
+         else
+         {
++          // The obstacle face has no edge to follow, so HC holds no curve: this is not an obstacle.
++          HC.Nullify();
++          c1obstacle = false;
+           prepareDefaultReturn();
+           return false;
+         }
