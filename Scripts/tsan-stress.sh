@@ -16,10 +16,17 @@
 #                                   concurrency-focused suites (wrapper-only
 #                                   coverage; see docs/thread-safety.md)
 #   Scripts/tsan-stress.sh all     build (if needed) + run + swift
+#   Scripts/tsan-stress.sh self-test
+#                                   Prove the per-scenario timeout against stub
+#                                   scenarios, one of which hangs. Needs no build.
 #
 # Environment:
 #   JOBS          parallel build jobs (default: hw.ncpu)
 #   SWIFT_FILTER  override the test filter used by the swift mode
+#   TSAN_SCENARIO_TIMEOUT
+#                 seconds one `run` scenario may take before it is killed and counted as a
+#                 failure (default: 300, a positive integer). Scenarios finish in seconds to a
+#                 few minutes; a wedged one stalled the gate for 49 minutes (#3058).
 
 set -euo pipefail
 
@@ -31,6 +38,10 @@ BUILD_DIR="$LIBRARIES_DIR/occt-build-tsan"
 INSTALL_DIR="$LIBRARIES_DIR/occt-install-tsan"
 SUPP_FILE="$SCRIPT_DIR/tsan.supp"
 JOBS="${JOBS:-$(sysctl -n hw.ncpu)}"
+SCENARIO_TIMEOUT="${TSAN_SCENARIO_TIMEOUT:-300}"
+case "$SCENARIO_TIMEOUT" in
+    ''|*[!0-9]*|0) echo "ERROR: TSAN_SCENARIO_TIMEOUT must be a positive integer (seconds), got '$SCENARIO_TIMEOUT'" >&2; exit 2 ;;
+esac
 
 # ---------------------------------------------------------------------------
 # Gate scenario matrix.
@@ -253,6 +264,79 @@ do_build() {
     echo ">>> instrumented kernel stamped: $(cat "$INSTALL_DIR/.tsan-stamp")"
 }
 
+# Run a command under a wall-clock limit, in its own process group, and kill the whole group on
+# expiry (#3058). macOS ships no timeout(1) or gtimeout, so this is perl, which it does ship.
+#
+# Group, not child: ThreadSanitizer's abort path can leave threads running after the process
+# stops making progress, and `alarm` + `exec` signals only the one pid. The child calls setpgrp
+# before exec, so `kill KILL, -pgid` reaches it and anything it spawned.
+#
+#   run_with_timeout <seconds> <flag-file> <command> [args...]
+#
+# Exit status is the command's own (128+signal when it died of one). On expiry the flag file is
+# created and the status is 124, but callers must read the flag file, not 124: a harness can
+# legitimately exit 124. Ctrl-C and SIGTERM kill the group too, so an interrupted gate leaves no
+# orphan hammering the machine.
+run_with_timeout() {
+    perl -e '
+        use POSIX ":sys_wait_h";
+        my ($limit, $flag, @cmd) = @ARGV;
+        my $pid = fork();
+        die "fork: $!" unless defined $pid;
+        if (!$pid) { setpgrp(0, 0); exec @cmd or exit 127; }
+        setpgrp($pid, $pid);
+        $SIG{INT} = $SIG{TERM} = sub { kill "KILL", -$pid; waitpid($pid, 0); exit 130; };
+        my $deadline = time + $limit;
+        my ($timed_out, $st) = (0, 0);
+        while (1) {
+            my $r = waitpid($pid, WNOHANG);
+            if ($r == $pid) { $st = $?; last; }
+            if (time >= $deadline) {
+                kill "KILL", -$pid;
+                waitpid($pid, 0);
+                $timed_out = 1;
+                last;
+            }
+            select(undef, undef, undef, 0.1);
+        }
+        if ($timed_out) { open(my $f, ">", $flag) and close($f); exit 124; }
+        exit(($st & 127) ? 128 + ($st & 127) : ($st >> 8));
+    ' "$@"
+}
+
+# Run one scenario binary and print its verdict. Returns 0 if clean, 1 otherwise.
+#
+# A timeout is its own verdict, `TIMEOUT (killed after Ns)`, never a race count: the log of a
+# wedged scenario can hold any number of warnings and none of them is the finding. It is counted
+# in the "N/M scenarios clean" line like any failure, so it cannot pass.
+#
+#   run_one <binary> <log> <args...>
+run_one() {
+    local bin="$1" log="$2"
+    shift 2
+    local flag="$log.timeout" status=0 started=$SECONDS
+    rm -f "$flag"
+    MMGT_OPT=0 \
+    TSAN_OPTIONS="halt_on_error=0:exitcode=66:suppressions=$SUPP_FILE" \
+        run_with_timeout "$SCENARIO_TIMEOUT" "$flag" "$bin" "$@" > "$log" 2>&1 || status=$?
+
+    if [ -e "$flag" ]; then
+        echo "TIMEOUT: $(basename "$bin") $* killed after $((SECONDS - started))s" \
+             "(limit ${SCENARIO_TIMEOUT}s, whole process group): $log" >> "$log"
+        echo "     TIMEOUT (killed after ${SCENARIO_TIMEOUT}s; ran $((SECONDS - started))s): $log"
+        return 1
+    fi
+
+    local races
+    races=$(grep -c "WARNING: ThreadSanitizer" "$log" || true)
+    if [ "$status" -eq 0 ] && [ "$races" -eq 0 ]; then
+        echo "     PASS (0 races)"
+        return 0
+    fi
+    echo "     FAIL (exit $status, $races race warnings): $log"
+    return 1
+}
+
 do_run() {
     if [ ! -d "$INSTALL_DIR/lib" ]; then
         echo "ERROR: no TSan OCCT install at $INSTALL_DIR. Run: Scripts/tsan-stress.sh build" >&2
@@ -268,7 +352,7 @@ do_run() {
     scratch=$(mktemp -d /tmp/occt-tsan-scratch.XXXXXX)
     echo ">>> TSan gate: logs in $results"
 
-    local failures=0 total=0
+    local failures=0 total=0 timeouts=""
     for entry in "${SCENARIOS[@]}"; do
         local src="${entry%%|*}"
         local args="${entry#*|}"
@@ -290,29 +374,79 @@ do_run() {
         total=$((total + 1))
         local log="$results/$(basename "${src%.cpp}").$(echo "$args" | tr ' /' '__').log"
         echo ">>> RUN  $(basename "$bin") $args"
-        local status=0
-        MMGT_OPT=0 \
-        TSAN_OPTIONS="halt_on_error=0:exitcode=66:suppressions=$SUPP_FILE" \
-            "$bin" $args > "$log" 2>&1 || status=$?
-
-        local races
-        races=$(grep -c "WARNING: ThreadSanitizer" "$log" || true)
-        if [ "$status" -eq 0 ] && [ "$races" -eq 0 ]; then
-            echo "     PASS (0 races)"
-        else
-            echo "     FAIL (exit $status, $races race warnings): $log"
+        # $args is deliberately unquoted: it is a space-separated argument list.
+        # shellcheck disable=SC2086
+        if ! run_one "$bin" "$log" $args; then
             failures=$((failures + 1))
+            if [ -e "$log.timeout" ]; then
+                timeouts="$timeouts
+    $(basename "$bin") $args"
+            fi
         fi
     done
 
     echo ""
     echo ">>> TSan gate: $((total - failures))/$total scenarios clean"
+    if [ -n "$timeouts" ]; then
+        echo ">>> TIMED OUT (killed after ${SCENARIO_TIMEOUT}s each; a hang, not a race count):$timeouts"
+    fi
     if [ "$failures" -gt 0 ]; then
         echo ">>> FAILED. Inspect the logs above. A race that is confirmed benign or is an"
         echo ">>> already-filed open kernel finding may be added to Scripts/tsan.supp, with"
         echo ">>> an issue link and removal condition (see the policy in that file)."
         exit 1
     fi
+}
+
+# Prove the timeout against stub scenarios, with no OCCT build. One stub hangs and leaves a
+# grandchild behind, which is the shape #3058 measured; the others are clean, racing and failing
+# stubs, which must keep their old verdicts and must run AFTER the hang.
+do_self_test() {
+    local dir ok=0 total=0 out
+    dir=$(mktemp -d /tmp/occt-tsan-selftest.XXXXXX)
+    SUPP_FILE=/dev/null
+    SCENARIO_TIMEOUT="${TSAN_SCENARIO_TIMEOUT:-2}"
+
+    printf '#!/bin/sh\nexit 0\n' > "$dir/clean"
+    printf '#!/bin/sh\necho "WARNING: ThreadSanitizer: data race"\nexit 66\n' > "$dir/race"
+    printf '#!/bin/sh\nexit 3\n' > "$dir/crash"
+    # Wedged: a grandchild that outlives the parent's own death, then sleeps past the limit. The
+    # grandchild records its pid so the test can ask whether the group kill reached it.
+    printf '#!/bin/sh\nsleep 300 &\necho $! > "%s/grandchild.pid"\necho "ThreadSanitizer: SEGV"\nsleep 300\n' "$dir" > "$dir/hang"
+    chmod +x "$dir"/clean "$dir"/race "$dir"/crash "$dir"/hang
+
+    check() {
+        total=$((total + 1))
+        if [ "$2" = "yes" ]; then ok=$((ok + 1)); else echo "  FAIL  $1" >&2; fi
+    }
+
+    # Glob match without case/esac, whose `*)` terminator breaks bash 3.2's $(...) parser.
+    has() { if [[ "$1" == $2 ]]; then echo yes; else echo no; fi; }
+
+    local t0=$SECONDS
+    out=$(run_one "$dir/hang" "$dir/hang.log" 8 20; echo "rc=$?")
+    local elapsed=$((SECONDS - t0))
+    echo "$out"
+    check "a hanging scenario is reported as TIMEOUT" "$(has "$out" "*TIMEOUT (killed after ${SCENARIO_TIMEOUT}s*")"
+    check "a timeout is a failure (returns 1)" "$(has "$out" "*rc=1")"
+    check "it returned near the limit, not after the sleep (${elapsed}s)" "$([ "$elapsed" -le $((SCENARIO_TIMEOUT + 4)) ] && echo yes || echo no)"
+    check "the log names the timeout" "$(grep -q '^TIMEOUT: hang ' "$dir/hang.log" && echo yes || echo no)"
+    sleep 0.3
+    local gc
+    gc=$(cat "$dir/grandchild.pid" 2>/dev/null || echo 0)
+    check "the whole process group was killed (grandchild $gc gone)" "$(kill -0 "$gc" 2>/dev/null && echo no || echo yes)"
+    [ "$gc" -gt 0 ] && kill -9 "$gc" 2>/dev/null || true
+
+    out=$(run_one "$dir/clean" "$dir/clean.log"; echo "rc=$?")
+    check "a clean scenario after the hang still passes" "$(has "$out" "*PASS*rc=0")"
+    out=$(run_one "$dir/race" "$dir/race.log"; echo "rc=$?")
+    check "a racing scenario is FAIL with its race count, not TIMEOUT" "$(has "$out" "*FAIL (exit 66, 1 race warnings)*rc=1")"
+    out=$(run_one "$dir/crash" "$dir/crash.log"; echo "rc=$?")
+    check "a nonzero exit keeps its own status" "$(has "$out" "*FAIL (exit 3, 0 race*")"
+
+    rm -rf "$dir"
+    echo "self-test: $ok/$total cases correct"
+    [ "$ok" -eq "$total" ]
 }
 
 do_swift() {
@@ -338,6 +472,7 @@ case "${1:-}" in
     build) do_build ;;
     run)   do_run ;;
     swift) do_swift ;;
+    self-test) do_self_test ;;
     all)
         want_stamp=$(tsan_stamp)
         have_stamp=$(cat "$INSTALL_DIR/.tsan-stamp" 2>/dev/null || echo "(never built)")
@@ -353,7 +488,7 @@ case "${1:-}" in
         do_swift
         ;;
     *)
-        sed -n '2,27p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
+        sed -n '2,29p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
         exit 2
         ;;
 esac
