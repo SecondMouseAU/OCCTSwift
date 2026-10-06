@@ -67,7 +67,7 @@ public var length: Double { get }
 ```
 
 - **Returns:** Length in model units. Returns `0` for degenerate or null edges.
-- **OCCT:** `BRepAdaptor_Curve` measured by the bridge's `occtAdaptorArcLength`, which subdivides each `GeomAbs_CN` interval until two successive Gauss levels agree to 1e-9 relative (#603, #3044). It is the same measurement `Wire.length`, `Curve2D.length` and `Curve3D.length` make. `BRepGProp::LinearProperties` applies one fixed rule to a one-interval curve and read an elliptical edge up to 1.485% long (10 x 1).
+- **OCCT:** `BRepAdaptor_Curve` measured by the bridge's `occtAdaptorArcLength`, one `GeomAbs_CN` interval at a time with `CPnts_AbscissaPoint`, whose adaptive rule is carried kernel patch `0021` (the bridge's own subdivision loop was retired at the kernel.1 repin, #603, #1690). It is the same measurement `Wire.length`, `Curve2D.length` and `Curve3D.length` make. `BRepGProp::LinearProperties` applies one fixed rule to a one-interval curve and read an elliptical edge up to 1.485% long (10 x 1).
 - **Example:**
   ```swift
   let box = Shape.box(width: 10, height: 10, depth: 10)!
