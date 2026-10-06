@@ -284,6 +284,9 @@ run_with_timeout() {
         my $pid = fork();
         die "fork: $!" unless defined $pid;
         if (!$pid) { setpgrp(0, 0); exec @cmd or exit 127; }
+        # Parent calls it too: if the limit fires before the child has run its own call, the group
+        # does not exist yet and the group kill would miss. Both calls is the setpgid(2) idiom
+        # (shells do it); a late EACCES after the child has exec-ed is harmless, it is already leader.
         setpgrp($pid, $pid);
         $SIG{INT} = $SIG{TERM} = sub { kill "KILL", -$pid; waitpid($pid, 0); exit 130; };
         my $deadline = time + $limit;
@@ -299,7 +302,13 @@ run_with_timeout() {
             }
             select(undef, undef, undef, 0.1);
         }
-        if ($timed_out) { open(my $f, ">", $flag) and close($f); exit 124; }
+        if ($timed_out) {
+            # Status 125, not 124, when the flag cannot be written: the scenario WAS killed, and
+            # run_one must still report a timeout rather than a plain failure with a stray status.
+            open(my $f, ">", $flag) or do { print STDERR "run_with_timeout: cannot write flag $flag: $!\n"; exit 125; };
+            close($f);
+            exit 124;
+        }
         exit(($st & 127) ? 128 + ($st & 127) : ($st >> 8));
     ' "$@"
 }
@@ -314,16 +323,24 @@ run_with_timeout() {
 run_one() {
     local bin="$1" log="$2"
     shift 2
-    local flag="$log.timeout" status=0 started=$SECONDS
+    local flag="${TSAN_TIMEOUT_FLAG:-$log.timeout}" status=0 started=$SECONDS
+    TIMED_OUT=0
     rm -f "$flag"
     MMGT_OPT=0 \
     TSAN_OPTIONS="halt_on_error=0:exitcode=66:suppressions=$SUPP_FILE" \
         run_with_timeout "$SCENARIO_TIMEOUT" "$flag" "$bin" "$@" > "$log" 2>&1 || status=$?
 
-    if [ -e "$flag" ]; then
+    # 125 plus the wrapper's own message means it killed the scenario and then could not write the
+    # flag; that is still a timeout and the message stays in the log (see run_with_timeout).
+    local flag_error=""
+    if [ "$status" -eq 125 ] && grep -q "^run_with_timeout: cannot write flag" "$log"; then
+        flag_error=" (flag file unwritable, see log)"
+    fi
+    if [ -e "$flag" ] || [ -n "$flag_error" ]; then
+        TIMED_OUT=1
         echo "TIMEOUT: $(basename "$bin") $* killed after $((SECONDS - started))s" \
-             "(limit ${SCENARIO_TIMEOUT}s, whole process group): $log" >> "$log"
-        echo "     TIMEOUT (killed after ${SCENARIO_TIMEOUT}s; ran $((SECONDS - started))s): $log"
+             "(limit ${SCENARIO_TIMEOUT}s, whole process group)$flag_error: $log" >> "$log"
+        echo "     TIMEOUT (killed after ${SCENARIO_TIMEOUT}s; ran $((SECONDS - started))s)$flag_error: $log"
         return 1
     fi
 
@@ -353,6 +370,7 @@ do_run() {
     echo ">>> TSan gate: logs in $results"
 
     local failures=0 total=0 timeouts=""
+    TIMED_OUT=0
     for entry in "${SCENARIOS[@]}"; do
         local src="${entry%%|*}"
         local args="${entry#*|}"
@@ -378,7 +396,7 @@ do_run() {
         # shellcheck disable=SC2086
         if ! run_one "$bin" "$log" $args; then
             failures=$((failures + 1))
-            if [ -e "$log.timeout" ]; then
+            if [ "$TIMED_OUT" -eq 1 ]; then
                 timeouts="$timeouts
     $(basename "$bin") $args"
             fi
@@ -402,10 +420,9 @@ do_run() {
 # grandchild behind, which is the shape #3058 measured; the others are clean, racing and failing
 # stubs, which must keep their old verdicts and must run AFTER the hang.
 do_self_test() {
-    local dir ok=0 total=0 out
+    # local: run_one reads both by dynamic scope, and the script-level values are left alone.
+    local dir ok=0 total=0 out SUPP_FILE=/dev/null SCENARIO_TIMEOUT="${TSAN_SCENARIO_TIMEOUT:-2}"
     dir=$(mktemp -d /tmp/occt-tsan-selftest.XXXXXX)
-    SUPP_FILE=/dev/null
-    SCENARIO_TIMEOUT="${TSAN_SCENARIO_TIMEOUT:-2}"
 
     printf '#!/bin/sh\nexit 0\n' > "$dir/clean"
     printf '#!/bin/sh\necho "WARNING: ThreadSanitizer: data race"\nexit 66\n' > "$dir/race"
@@ -436,6 +453,14 @@ do_self_test() {
     gc=$(cat "$dir/grandchild.pid" 2>/dev/null || echo 0)
     check "the whole process group was killed (grandchild $gc gone)" "$(kill -0 "$gc" 2>/dev/null && echo no || echo yes)"
     [ "$gc" -gt 0 ] && kill -9 "$gc" 2>/dev/null || true
+
+    # An unwritable flag path: the scenario is still killed and still reported as a timeout, with
+    # the wrapper's message in the log, not a plain FAIL.
+    out=$(TSAN_TIMEOUT_FLAG=/nonexistent-dir/flag run_one "$dir/hang" "$dir/hang2.log" 8 20; echo "rc=$?")
+    echo "$out"
+    check "an unwritable flag path is still a TIMEOUT, not a plain FAIL" "$(has "$out" "*TIMEOUT (killed after*flag file unwritable*rc=1")"
+    check "the wrapper's flag error reaches the scenario log" "$(grep -q 'cannot write flag /nonexistent-dir/flag' "$dir/hang2.log" && echo yes || echo no)"
+    pkill -9 -f "$dir/hang" 2>/dev/null || true
 
     out=$(run_one "$dir/clean" "$dir/clean.log"; echo "rc=$?")
     check "a clean scenario after the hang still passes" "$(has "$out" "*PASS*rc=0")"
