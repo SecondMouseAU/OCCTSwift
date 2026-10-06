@@ -113,21 +113,58 @@ struct Curve2DParameterAtLengthTests {
         #expect(abs(back - 5) < 1e-9)
     }
 
-    @Test("parameterAtLength extrapolates past the end and answers nil for NaN")
+    @Test("parameterAtLength extrapolates past the end, as documented (#3034)")
     func parameterAtLengthFailure() throws {
         let seg = try #require(Curve2D.segment(from: SIMD2(0, 0), to: SIMD2(10, 0)))
         // A trimmed line has no failure past its end: GCPnts_AbscissaPoint extrapolates along the
         // basis line and returns u = 1000 for a distance of 1000, and the bridge keeps that answer
         // on purpose (`occtAdaptorParameterAtLength`, #603), as `Curve3D.parameterAtLength`'s
-        // documentation says. The 2D doc comment promises nil here, which #3034 records, so this
-        // pins what both the bridge and the 3D documentation state.
+        // documentation says. The 2D doc comment used to promise nil here (#3034); it now says
+        // what this pins.
         #expect(seg.parameterAtLength(1000) == 1000)
         // Backwards past the start extrapolates the same way.
         #expect(seg.parameterAtLength(-5) == -5)
-        // A NaN distance or start has no answer. Infinity is left unpinned: it answers differently
-        // by curve type and sign, which is also #3034.
+        // A finite distance that is far past the end is still a parameter outside the domain.
+        let past = try #require(seg.parameterAtLength(1e6))
+        #expect(past > seg.domain.upperBound)
+        #expect(abs(past - 1e6) < 1e-6)
+        // A NaN distance or start has no answer.
         #expect(seg.parameterAtLength(.nan) == nil)
         #expect(seg.parameterAtLength(5, from: .nan) == nil)
+    }
+
+    @Test("A non-finite distance or start is nil on every curve type (#3034)")
+    func nonFiniteIsNilOnEveryCurveType() throws {
+        // The measured table of the issue: +infinity answered an infinite "parameter" on the
+        // analytic curves and nil on the splines, -infinity and NaN were always nil. One answer
+        // now: nil, as `length(from:to:)` gives (#548), whatever the curve and the sign.
+        let segment = try #require(Curve2D.segment(from: SIMD2(0, 0), to: SIMD2(10, 0)))
+        let circle = try #require(Curve2D.circle(center: .zero, radius: 10))
+        let line = try #require(Curve2D.line(through: .zero, direction: SIMD2(1, 0)))
+        let spline = try #require(
+            Curve2D.interpolate(through: [SIMD2(0, 0), SIMD2(5, 5), SIMD2(10, 0), SIMD2(15, 5)]))
+        let bezier = try #require(Curve2D.bezier(poles: [SIMD2(0, 0), SIMD2(1, 2), SIMD2(2, 0)]))
+        let curves: [(String, Curve2D)] = [
+            ("segment", segment), ("circle", circle), ("line", line), ("bspline", spline),
+            ("bezier", bezier),
+        ]
+        let bad: [Double] = [.infinity, -.infinity, .nan]
+        for (name, curve) in curves {
+            for value in bad {
+                #expect(curve.parameterAtLength(value) == nil, "\(name): distance \(value)")
+                #expect(
+                    curve.parameterAtLength(value, from: curve.domain.lowerBound) == nil,
+                    "\(name): explicit start, distance \(value)")
+                #expect(curve.parameterAtLength(0, from: value) == nil, "\(name): start \(value)")
+                #expect(curve.parameterAtLength(5, from: value) == nil, "\(name): start \(value)")
+            }
+        }
+        // The refusal does not leak into finite answers: the same curves still answer a finite
+        // distance, with the closed-form parameters where there is one.
+        #expect(segment.parameterAtLength(5) == 5)
+        let quarter = try #require(circle.parameterAtLength(2 * Double.pi * 10 / 4))
+        #expect(abs(quarter - Double.pi / 2) < 1e-9)
+        #expect(curves.allSatisfy { $0.1.parameterAtLength(0) != nil })
     }
 
     // The composite Simpson integral of |C'(u)| over [a, b], from the curve's own first derivative:

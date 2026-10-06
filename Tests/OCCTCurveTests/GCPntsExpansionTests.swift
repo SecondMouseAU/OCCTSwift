@@ -54,4 +54,18 @@ struct GCPntsExpansionTests {
             }
         }
     }
+
+    @Test func edgeParameterAtArcLengthRefusesANonFiniteDistance() throws {
+        // #3034: the shared walk refuses a non-finite distance or start, so the edge entry points
+        // answer 0 (their failure value) and not an infinite parameter. A finite control shows the
+        // edge itself is fine: 4 along a 10-long edge from its start is 4.
+        let edge = try #require(Shape.edgeFromPoints(SIMD3(0, 0, 0), SIMD3(10, 0, 0)))
+        let lower = edge.edgeAdaptorDomain.lowerBound
+        #expect(abs(edge.edgeParameterAtArcLength(4, from: lower) - (lower + 4)) < 1e-9)
+        for value in [Double.infinity, -.infinity, .nan] {
+            #expect(edge.edgeParameterAtArcLength(value, from: lower) == 0, "distance \(value)")
+            #expect(edge.edgeParameterAtArcLength(4, from: value) == 0, "start \(value)")
+            #expect(edge.edgeParameterAtFraction(value) == 0, "fraction \(value)")
+        }
+    }
 }
