@@ -21,6 +21,16 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### `Shape.analyze(tolerance:)` counts small edges by their true length (#3074)
+
+`ShapeAnalysisResult.smallEdgeCount` measured each edge with `BRepGProp::LinearProperties`, a single fixed Gauss rule that reads an elliptical edge up to 1.485% long, so an edge within about 1.5% of the tolerance could be classified wrongly. Each edge with a 3D curve or a curve on a surface is now measured with the same adaptive arc length as `Edge.length`. A 10 x 1 ellipse edge (true length 40.6397418010) is now counted at `tolerance: 41.0`, where the old rule read 41.2431578703 and did not count it. Degenerate edges are still skipped, and a polygon-only edge is measured from its polygon as before.
+
+```swift
+let ellipse = Curve2D.ellipse(center: .zero, majorRadius: 10, minorRadius: 1)!
+let edge = Shape.fromWire(Wire.fromCurve2D(ellipse)!)!
+print(edge.analyze(tolerance: 41.0)!.smallEdgeCount)   // 1
+```
+
 ### Shape.totalEdgeLength and Shape.linearProperties() no longer read an elliptical edge long, and the centroid is right (#3074)
 
 `Shape.totalEdgeLength` and `Shape.linearProperties()` integrated each edge with a single Gauss rule, so a full elliptical edge measured up to 1.485% long (10 x 1: 41.2431578703 against a true 40.6397418010) and `linearProperties()` put the centre of mass of a full 10 x 1 ellipse 0.165 from its centre. Both now measure to the precision `Edge.length`, `Wire.length` and `Curve3D.length` do, and agree with them to 1e-8 relative; the centre of mass is integrated over the same spans and matches an independent Simpson integral to 1e-8. Lines, circles and boxes read the same as before, and an edge shared by two faces is still counted once per face.
