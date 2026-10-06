@@ -717,7 +717,9 @@ int32_t OCCTHatcherNbLines(OCCTHatcherRef hatcher)
 
 int32_t OCCTHatcherNbIntervals(OCCTHatcherRef hatcher, int32_t lineIndex)
 {
-  if (!hatcher)
+  // Hatch_Hatcher::NbIntervals reads myLines(I) unchecked, so an index outside 1..NbLines()
+  // faults inside OCCT, where no catch (...) reaches it.
+  if (!hatcher || lineIndex < 1 || lineIndex > hatcher->hatcher.NbLines())
     return 0;
   try
   {
