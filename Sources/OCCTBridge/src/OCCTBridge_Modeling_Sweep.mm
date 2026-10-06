@@ -568,12 +568,44 @@ private:
   bool                                  myTripped = false;
 };
 
+// The section wire BRepOffsetAPI_MiddlePath's constructor takes from an end shape: the outer wire
+// of a face (as its constructor does), the wire itself, and a null wire for anything else.
+static TopoDS_Wire occtMiddlePathSection(const TopoDS_Shape& end)
+{
+  if (end.ShapeType() == TopAbs_FACE)
+    return BRepTools::OuterWire(TopoDS::Face(end));
+  if (end.ShapeType() == TopAbs_WIRE)
+    return TopoDS::Wire(end);
+  return TopoDS_Wire();
+}
+
 OCCTShapeRef OCCTShapeMiddlePath(OCCTShapeRef shape, OCCTShapeRef startShape, OCCTShapeRef endShape)
 {
-  if (!shape || !startShape || !endShape)
+  // The constructor reads StartShape.ShapeType() and casts with the unchecked TopoDS::Wire, so a
+  // null end faults and an edge end is read as a wire (#3098). Both are uncatchable signals.
+  if (!occtShapeIsPresent(shape) || !occtShapeIsPresent(startShape)
+      || !occtShapeIsPresent(endShape))
+    return nullptr;
+  if ((startShape->shape.ShapeType() != TopAbs_FACE && startShape->shape.ShapeType() != TopAbs_WIRE)
+      || (endShape->shape.ShapeType() != TopAbs_FACE && endShape->shape.ShapeType() != TopAbs_WIRE))
     return nullptr;
   try
   {
+    // Build() assumes the two sections are disjoint: it starts one path per start vertex along an
+    // edge outside the start wire and stops it at an end vertex. When the sections share a
+    // vertex (the same face twice, adjacent faces, faces touching at a corner) a path is a bare
+    // vertex where Build() casts it to an edge (BRepOffsetAPI_MiddlePath.cxx, the "for the end of
+    // initial shape" block) and faults. BRepTest's middlepath command, the only OCCT caller,
+    // checks nothing but null, so the precondition is read from Build() itself.
+    TopTools_IndexedMapOfShape startVertices;
+    TopExp::MapShapes(occtMiddlePathSection(startShape->shape), TopAbs_VERTEX, startVertices);
+    for (TopExp_Explorer explorer(occtMiddlePathSection(endShape->shape), TopAbs_VERTEX);
+         explorer.More();
+         explorer.Next())
+    {
+      if (startVertices.Contains(explorer.Current()))
+        return nullptr;
+    }
     BRepOffsetAPI_MiddlePath builder(shape->shape, startShape->shape, endShape->shape);
     builder.Build();
     if (!builder.IsDone())
