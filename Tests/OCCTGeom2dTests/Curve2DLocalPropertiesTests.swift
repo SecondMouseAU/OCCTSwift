@@ -203,8 +203,8 @@ struct Curve2DLocalPropertiesTests {
     /// OCCT's `LProp_MinCur` is a minimum of the **radius** of curvature (`LProp_CurAndInf.hxx`),
     /// so it sits where the curvature magnitude is largest: a / b^2 = 0.4 at the ends of the major
     /// axis (u = 0 and pi), and `LProp_MaxCur` where it is smallest, b / a^2 = 0.05 at the minor
-    /// axis. The Swift names and `docs/reference/Curve2D-Analysis.md` say the opposite, which
-    /// #3035 records; this pins what the kernel does so that fixing either side fails here.
+    /// axis. The doc comments and `docs/reference/Curve2D-Analysis.md` say so since #3035, and
+    /// this pins it, so that swapping the labels in the bridge fails here.
     private static func expectEllipseClassification(
         _ ellipse: Curve2D, _ points: [Curve2DSpecialPoint]
     ) {
@@ -220,5 +220,67 @@ struct Curve2DLocalPropertiesTests {
             let want = point.type == .minCurvature ? majorEnd : minorEnd
             #expect(abs(k - want) < 1e-9, "u = \(point.parameter): \(k), expected \(want)")
         }
+    }
+
+    @Test("minCurvature is a local maximum of the curvature magnitude, as documented (#3035)")
+    func minCurvatureIsALocalMaximumOfMagnitude() throws {
+        // The documented meaning, checked against the curvature itself rather than against the
+        // labels: sample |k| a small step either side of every reported point. A `.minCurvature`
+        // point must be at least as curved as both neighbours and a `.maxCurvature` point at most.
+        // A 3 x 2 ellipse, its reverse (the signed curvature flips and the magnitude does not), and an
+        // interpolated arch, whose extrema are not at symmetric parameters.
+        let ellipse = try #require(Curve2D.ellipse(center: .zero, majorRadius: 3, minorRadius: 2))
+        let reversed = try #require(ellipse.reversed())
+        let arch = try #require(
+            Curve2D.interpolate(through: [
+                SIMD2(0, 0), SIMD2(2, 0.1), SIMD2(4, 2), SIMD2(6, 0.1), SIMD2(8, 0),
+            ]))
+        var kinds = Set<Curve2DSpecialPointType>()
+        for (name, curve) in [("ellipse", ellipse), ("reversed", reversed), ("arch", arch)] {
+            let step = 1e-3
+            let points = curve.curvatureExtrema()
+            #expect(!points.isEmpty, "\(name) has extrema")
+            for point in points {
+                kinds.insert(point.type)
+                guard let here = curve.curvature(at: point.parameter),
+                    let before = curve.curvature(at: point.parameter - step),
+                    let after = curve.curvature(at: point.parameter + step)
+                else {
+                    Issue.record("\(name): no curvature around u = \(point.parameter)")
+                    continue
+                }
+                let k = abs(here)
+                switch point.type {
+                case .minCurvature:
+                    #expect(
+                        k >= abs(before) && k >= abs(after),
+                        "\(name) u = \(point.parameter): |k| = \(k) is not a local maximum")
+                case .maxCurvature:
+                    #expect(
+                        k <= abs(before) && k <= abs(after),
+                        "\(name) u = \(point.parameter): |k| = \(k) is not a local minimum")
+                case .inflection:
+                    Issue.record("curvatureExtrema() returned an inflection")
+                }
+            }
+        }
+        // The check above is vacuous if one kind never occurs.
+        #expect(kinds == [.minCurvature, .maxCurvature])
+
+        // The radius of curvature, 1 / |k|, is therefore smallest at a `.minCurvature` point: the
+        // closed form for the 3 x 2 ellipse is b^2 / a = 4/3 at the major vertex u = 0 and
+        // a^2 / b = 4.5 at the minor vertex u = pi/2.
+        let major = try #require(ellipse.curvature(at: 0))
+        let minor = try #require(ellipse.curvature(at: Double.pi / 2))
+        #expect(abs(1 / major - 4.0 / 3.0) < 1e-9)
+        #expect(abs(1 / minor - 4.5) < 1e-9)
+        let labelled = Dictionary(
+            uniqueKeysWithValues: ellipse.curvatureExtrema().map {
+                (Int(($0.parameter / (Double.pi / 2)).rounded()), $0.type)
+            })
+        #expect(labelled[0] == .minCurvature)
+        #expect(labelled[1] == .maxCurvature)
+        // The detailed vocabulary agrees: `curvatureMinimum` is the same feature.
+        #expect(CurInfType(.minCurvature) == .curvatureMinimum)
     }
 }
