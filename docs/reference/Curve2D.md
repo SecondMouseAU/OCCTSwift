@@ -350,14 +350,16 @@ public static func parabola(focus: SIMD2<Double>, direction: SIMD2<Double>,
                             focalLength: Double) -> Curve2D?
 ```
 
-- **Parameters:** `focus`, focus point; `direction`, axis direction from vertex toward focus; `focalLength`, distance from vertex to focus (must be > 0).
-- **Returns:** Parabola curve, or `nil` if `focalLength ≤ 0`.
+- **Parameters:** `focus`, focus point; `direction`, axis direction from vertex toward focus (normalised, so its length is irrelevant; a zero vector returns `nil`); `focalLength`, distance from vertex to focus (must be > 0).
+- **Returns:** Parabola curve, or `nil` if `focalLength ≤ 0` or `direction` is zero. A non-unit direction used to misplace the focus (#3042); the focus is now exactly `focus`.
 - **OCCT:** `Geom2d_Parabola(gp_Parab2d(...))`.
 - **See also:** [`parabolaFromCenterDir(center:direction:focal:)`](Curve2D-Analysis.md) places the same curve through OCCT's `gce_MakeParab2d` algorithm, taking the vertex rather than the focus, and enforces the same focal-length contract (#487).
 - **Example:**
   ```swift
   let par = Curve2D.parabola(focus: SIMD2(0, 2), direction: SIMD2(0, 1), focalLength: 2)
   Curve2D.parabola(focus: .zero, direction: SIMD2(0, 1), focalLength: 0)  // nil, a line
+  // Direction length does not matter: the vertex is (1, 1) - 5 * (0.6, 0.8) = (-2, -3).
+  let same = Curve2D.parabola(focus: SIMD2(1, 1), direction: SIMD2(3, 4), focalLength: 5)
   ```
 
 ---
@@ -566,13 +568,14 @@ public static func interpolate(through points: [SIMD2<Double>],
 
 Use this when you need tangent continuity at specific interior transition points, for example where a straight section meets a circular arc.
 
-- **Parameters:** `points`, interpolation points (≥ 2); `tangents`, dictionary mapping point index to unit tangent direction (unconstrained indices use C2); `closed`, closed/periodic curve; `tolerance`, coincidence tolerance.
-- **Returns:** Interpolated BSpline, or `nil` on failure.
+- **Parameters:** `points`, interpolation points (≥ 2); `tangents`, dictionary mapping point index to unit tangent direction (unconstrained indices use C2; every key must lie in `0..<points.count`); `closed`, closed/periodic curve; `tolerance`, coincidence tolerance.
+- **Returns:** Interpolated BSpline, or `nil` on failure. A key outside `0..<points.count` returns `nil` (#3036): it constrains no point, and the call used to drop it and return the unconstrained curve.
 - **OCCT:** `OCCTCurve2DInterpolateWithInteriorTangents`.
 - **Example:**
   ```swift
   let pts: [SIMD2<Double>] = [SIMD2(0, 0), SIMD2(5, 5), SIMD2(10, 0)]
   let c = Curve2D.interpolate(through: pts, tangents: [1: SIMD2(1, 0)])
+  let off = Curve2D.interpolate(through: pts, tangents: [3: SIMD2(1, 0)])  // nil: 3 is not an index
   ```
 
 ---
@@ -937,8 +940,8 @@ public static func arcOfParabola(focus: SIMD2<Double>, direction: SIMD2<Double>,
                                  startParam: Double, endParam: Double) -> Curve2D?
 ```
 
-- **Parameters:** `focus`, focus point; `direction`, axis direction; `focalLength`, focal distance (> 0); `startParam`/`endParam`, parameter range of the arc.
-- **Returns:** Parabolic arc, or `nil` on failure.
+- **Parameters:** `focus`, focus point; `direction`, axis direction (normalised, as for `parabola(focus:direction:focalLength:)`, #3042); `focalLength`, focal distance (> 0); `startParam`/`endParam`, parameter range of the arc.
+- **Returns:** Parabolic arc, or `nil` on failure (including a zero `direction`).
 - **OCCT:** `Geom2d_Parabola` + `Geom2d_TrimmedCurve` (direct construction, no `GC_`/`GCE2d_`
   `Make` helper is used; corrected from a stale `GCE2d_MakeArcOfParabola` attribution by #809).
 - **Example:**
