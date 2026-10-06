@@ -183,34 +183,54 @@ def body_entry(body):
 # `## CHANGELOG`, `## Changelog entry`, `### CHANGELOG entry`, `## CHANGELOG (proposed)`. Nine PRs
 # headed their entry `## CHANGELOG`, merge-pr.py could not see it, none reached the file, and this
 # audit filed them under "no entry section at all" with the PRs that really had nothing to say.
+# `##CHANGELOG` with no space after the markers is not a variant: CommonMark requires the space
+# and GitHub does not render it as a heading, so it is body text and not recognising it is correct.
 # The exact heading is excluded: it is recognised, and never a variant. Matched at any level, on
 # the heading's first word only, so `## Changelog and SemVer notes` also counts: a false positive
 # here costs a reviewer one look, a false negative is the loss this exists to name.
 VARIANT_HEADING = re.compile(r"^(#{1,6})[ \t]+change[ \t_-]?log\b.*$", re.I | re.M)
 
+# Fence tracking is a copy of `Scripts/merge-pr.py`'s FENCE_RE and code_block_mask(), restated rather
+# than imported for the reason noted beside that script's CATEGORY_HEADINGS (two standalone scripts,
+# hyphenated filenames). It must agree with the extractor on exactly the shapes #2889/#2890 hit, or
+# this audit and the tool disagree about which headings are real. CommonMark's rules: an opener is
+# indented at most three spaces; a backtick opener whose info string holds a backtick opens nothing;
+# a closer is the same character, at least as long, at most three spaces in, with nothing after the
+# marker; an unclosed opener runs to the end. If merge-pr.py changes, change this.
+FENCE_RE = re.compile(r"^(?P<indent> {0,3})(?P<marker>`{3,}|~{3,})(?P<info>.*)$")
+
+
+def code_block_mask(lines):
+    """One bool per line: True when the line is inside a fenced block, fences included."""
+    mask = [False] * len(lines)
+    marker = None
+    for i, line in enumerate(lines):
+        m = FENCE_RE.match(line)
+        if marker is None:
+            if m and not (m.group("marker")[0] == "`" and "`" in m.group("info")):
+                marker = m.group("marker")
+                mask[i] = True
+            continue
+        mask[i] = True
+        if (m and m.group("marker")[0] == marker[0]
+                and len(m.group("marker")) >= len(marker)
+                and not m.group("info").strip()):
+            marker = None
+    return mask
+
 
 def variant_entry(body):
     """The section under a CHANGELOG-looking heading that is not `## CHANGELOG entry`, or None.
 
-    Fenced code is masked first, so a PR body quoting the heading in a snippet is not a variant.
+    Fenced code is masked first (code_block_mask, CommonMark's rules), so a PR body quoting the heading in a snippet is not a variant.
     The section runs to the next heading of the same or a shallower level. Returns the stripped
     text, or "" when a variant heading exists with nothing under it (still a finding: the author
     meant to write an entry and the tool cannot see where).
     """
     if not body:
         return None
-    masked, fence = [], None
-    for line in body.split("\n"):
-        m = re.match(r"^ {0,3}(`{3,}|~{3,})", line)
-        if fence is None and m:
-            fence = m.group(1)[0]
-            masked.append("")
-        elif fence is not None:
-            if m and m.group(1)[0] == fence:
-                fence = None
-            masked.append("")
-        else:
-            masked.append(line)
+    lines = body.replace("\r\n", "\n").split("\n")
+    masked = ["" if fenced else line for line, fenced in zip(lines, code_block_mask(lines))]
     text = "\n".join(masked)
     for m in VARIANT_HEADING.finditer(text):
         if BODY_HEADING.match(m.group(0)):
@@ -578,6 +598,19 @@ def _verify_cases():
         "28": "## What\n\n```\n## CHANGELOG\n### Quoted (#28)\n```\n\n## Checklist\n",
         # The exact heading wins over a variant elsewhere in the body.
         "29": "## CHANGELOG entry\n\n### The exact heading entry that never landed (#29)\n\n## Notes\n\n## CHANGELOG\n",
+        # Fence rules (#2889/#2890 shapes). A 4-backtick fence holding a 3-backtick line must not
+        # close early, so the heading after the 3-backtick line is still quoted text.
+        "31": "````\n```\n## CHANGELOG\n### Quoted (#31)\n````\n",
+        # A line with an info string is never a closer: the heading is still inside.
+        "32": "```\n```js\n## CHANGELOG\n### Quoted (#32)\n```\n",
+        # A backtick opener with a backtick in its info string opens nothing, so the heading below
+        # is real and never landed.
+        "33": "``` a`b\n\n## CHANGELOG\n\n### Opener-less fence, entry never landed (#33)\n",
+        # A tilde fence masks, and a backtick line inside it does not close it.
+        "34": "~~~\n```\n## CHANGELOG\n### Quoted (#34)\n~~~\n",
+        # #2889: prose quoting a fence marker at four spaces is indented code and opens nothing;
+        # the heading below must still be seen.
+        "35": "Example, write a fence like:\n\n    ```\n\n## CHANGELOG\n\n### Entry below a quoted marker, never landed (#35)\n",
         # A heading that merely contains the letters is not a variant.
         "30": "## What\n\n## Changelogs of other projects are irrelevant\n\n## Checklist\n",
     }
@@ -614,6 +647,11 @@ def _verify_cases():
         ("uuu0005", "Merge pull request #28 from x/variant-in-fence"),
         ("vvv0006", "Merge pull request #29 from x/exact-wins"),
         ("www0007", "Merge pull request #30 from x/not-a-variant"),
+        ("xxx0008", "Merge pull request #31 from x/long-fence-short-inner"),
+        ("yyy0009", "Merge pull request #32 from x/short-closer"),
+        ("zzz0010", "Merge pull request #33 from x/backtick-info-opener"),
+        ("aab0011", "Merge pull request #34 from x/tilde-fence"),
+        ("aac0012", "Merge pull request #35 from x/quoted-marker-2889"),
     ]
     b = classify_untranscribed(rows, changelog, lookup=lambda n: bodies.get(str(n)))
     late = {s for s, _, _ in b["late"]}
@@ -637,8 +675,8 @@ def _verify_cases():
          "vvv0006" in missing and "vvv0006" not in variant),
         ("#3050: a heading that only contains the letters 'changelog' is not a variant",
          "www0007" in absent),
-        ("#3050: the variant bucket is exactly the three that never landed",
-         variant == {"ppp9999", "rrr0002", "sss0003"}),
+        ("#3050: the variant bucket is exactly the five that never landed",
+         variant == {"ppp9999", "rrr0002", "sss0003", "zzz0010", "aac0012"}),
         ("#2951: an entry opening with a bare category heading is matched on its bullet, not on "
          "the six words that identify nothing", "nnn7777" in late),
         ("#2951: a category-headed entry that never landed is MISSING, over a `### Fixed` the "
@@ -647,7 +685,14 @@ def _verify_cases():
         ("#1125: a heading with nothing distinctive before the em-dash is still MISSING",
          "mmm6666" in missing),
         ("#788: a PR body with no entry section classifies as absent",
-         absent == {"ccc3333", "uuu0005", "www0007"}),
+         absent == {"ccc3333", "uuu0005", "www0007", "xxx0008", "yyy0009", "aab0011"}),
+        ("#3050: a 4-backtick fence is not closed by a shorter (3-backtick) line inside it", "xxx0008" in absent),
+        ("#3050: a fence line carrying an info string does not close a fence", "yyy0009" in absent),
+        ("#3050: a backtick opener with a backtick in its info string opens nothing",
+         "zzz0010" in variant),
+        ("#3050: a tilde fence masks, and a backtick line inside does not close it",
+         "aab0011" in absent),
+        ("#2889: a quoted fence marker (indented code) hides nothing below it", "aac0012" in variant),
         ("#788: a subject with no PR number is unverified, not silently clean", "eee5555" in unknown),
         ("#788: an unreadable body is unverified, not silently clean", "fff6666" in unknown),
         ("#788: a bullet-shaped entry is matched, not only a ### heading", "ddd4444" in late),
