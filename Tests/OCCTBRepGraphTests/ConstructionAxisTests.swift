@@ -889,15 +889,40 @@ struct ConstructionAxisTests {
         let axis = try graph.resolve(ConstructionAxis.intersectionOfPlanes(a, b)).get()
         // The direction is right whatever the origin is.
         #expect(isClose(axis.direction, SIMD3<Double>(0, 1, 0)), "direction \(axis.direction)")
-        // The origin is the midpoint of the two plane origins, (5, 0, 0): on z = 0 and not on
-        // x = 10, so the axis is parallel to the real intersection and 5 away from it (#3037).
-        // This records the correct expectation and goes red when the defect is fixed, at which
-        // point the wrapper comes off.
-        withKnownIssue("#3037: the origin is the midpoint of the plane origins, off the line") {
-            #expect(abs(axis.origin.z) < 1e-9, "origin \(axis.origin) is off the plane z = 0")
-            #expect(
-                abs(axis.origin.x - 10.0) < 1e-9, "origin \(axis.origin) is off the plane x = 10")
-        }
+        // Before #3037 the origin was the midpoint of the plane origins, (5, 0, 0): on z = 0 and
+        // 5 away from x = 10. It is now the point of the line nearest the world origin.
+        #expect(abs(axis.origin.z) < 1e-9, "origin \(axis.origin) is off the plane z = 0")
+        #expect(abs(axis.origin.x - 10.0) < 1e-9, "origin \(axis.origin) is off the plane x = 10")
+        #expect(isClose(axis.origin, SIMD3<Double>(10, 0, 0)), "origin \(axis.origin)")
+
+        // Planes in general position, checked against their plane equations rather than the
+        // formula: n.(p - o) = 0 for each, and the direction is perpendicular to both normals.
+        let nA = simd_normalize(SIMD3<Double>(1, 2, 3))
+        let nB = simd_normalize(SIMD3<Double>(-2, 1, 0.5))
+        let oA = SIMD3<Double>(3, -4, 7)
+        let oB = SIMD3<Double>(-6, 2, 9)
+        let pa = ConstructionPlane.absolute(origin: oA, normal: nA)
+        let pb = ConstructionPlane.absolute(origin: oB, normal: nB)
+        let skew = try graph.resolve(ConstructionAxis.intersectionOfPlanes(pa, pb)).get()
+        #expect(abs(simd_dot(nA, skew.origin - oA)) < 1e-9, "origin \(skew.origin) off plane A")
+        #expect(abs(simd_dot(nB, skew.origin - oB)) < 1e-9, "origin \(skew.origin) off plane B")
+        #expect(abs(simd_dot(nA, skew.direction)) < 1e-9, "direction \(skew.direction)")
+        #expect(abs(simd_dot(nB, skew.direction)) < 1e-9, "direction \(skew.direction)")
+        // A point a step along the axis stays on both planes.
+        let step = skew.origin + 3.5 * skew.direction
+        #expect(abs(simd_dot(nA, step - oA)) < 1e-9 && abs(simd_dot(nB, step - oB)) < 1e-9)
+        // The plane order flips the direction and leaves the origin alone.
+        let swapped = try graph.resolve(ConstructionAxis.intersectionOfPlanes(pb, pa)).get()
+        #expect(isClose(swapped.origin, skew.origin), "origin \(swapped.origin) vs \(skew.origin)")
+        #expect(isClose(swapped.direction, -skew.direction), "\(swapped.direction)")
+
+        // The consumer the issue named: this axis through the plane y = 3 meets it at (10, 3, 0).
+        let y3 = ConstructionPlane.absolute(origin: SIMD3(0, 3, 0), normal: SIMD3(0, 1, 0))
+        let hit = try graph.resolve(
+            ConstructionPoint.intersectionOfAxisAndPlane(
+                ConstructionAxis.intersectionOfPlanes(a, b), y3)
+        ).get()
+        #expect(isClose(hit, SIMD3<Double>(10, 3, 0)), "point \(hit)")
     }
 
     // MARK: - normalToFace
