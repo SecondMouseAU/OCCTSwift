@@ -21,6 +21,16 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### `Curve2D.interpolate(through:tangents:)` refuses a tangent keyed outside the point indices (#3036)
+
+`Curve2D.interpolate(through:tangents:closed:tolerance:)` used to drop a tangent whose key was outside `0..<points.count` and return the curve built from the remaining constraints, with no signal. It now returns `nil`, so an off-by-one index no longer yields a curve that silently ignores the constraint. In-range keys behave as before.
+
+```swift
+let pts: [SIMD2<Double>] = [SIMD2(0, 0), SIMD2(5, 5), SIMD2(10, 0)]
+Curve2D.interpolate(through: pts, tangents: [3: SIMD2(1, 0)])  // nil (was the unconstrained curve)
+Curve2D.interpolate(through: pts, tangents: [2: SIMD2(1, 0)])  // a curve
+```
+
 ### `Curve2DSpecialPointType.minCurvature` documented as the kernel defines it (#3035)
 
 `Curve2DSpecialPointType.minCurvature` and `CurInfType.curvatureMinimum` were documented as a local minimum of curvature magnitude. OCCT classifies by the radius of curvature, so `.minCurvature` is reported where the curvature magnitude is a local **maximum** (the ends of an ellipse's major axis, curvature `a / b^2`) and `.maxCurvature` where it is a local **minimum**. The doc comments and `docs/reference/` pages now say so. The values returned are unchanged.
