@@ -993,7 +993,7 @@ Given the two end faces or wires of a pipe-like solid, computes the medial spine
 
 - **Parameters:**
   - `startShape`: one end of the pipe, a face or a wire. Any other shape type answers nil.
-  - `endShape`: the other end of the pipe, a face or a wire. It must share no vertex with `startShape`.
+  - `endShape`: the other end of the pipe, a face or a wire. Any other shape type answers nil. It must also share no vertex with `startShape`.
 - **Returns:** Middle path wire, or nil on failure.
 - **Refuses (nil):** a null shape, a start or end that is not a face or a wire, the same face or wire
   twice, and two sections that share a vertex (adjacent faces, faces meeting at a corner).

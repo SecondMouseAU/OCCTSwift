@@ -1033,7 +1033,8 @@ extension Shape {
     ///
     /// - Parameters:
     ///   - startShape: One end of the pipe, a face or a wire. Any other shape type answers `nil`.
-    ///   - endShape: Other end of the pipe, a face or a wire. The same face or wire as
+    ///   - endShape: Other end of the pipe, a face or a wire. Any other shape type answers `nil`.
+    ///     The same face or wire as
     ///     `startShape`, a section sharing a vertex with it (adjacent faces, faces meeting at a
     ///     corner) and a null shape all answer `nil`.
     /// - Returns: The middle path wire, or nil on failure or for an input refused as above.

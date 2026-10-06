@@ -842,7 +842,8 @@ OCCTShapeRef OCCTShapeSimpleOffset(OCCTShapeRef shape, double offsetValue);
 /// Compute the middle path between two sub-shapes using BRepOffsetAPI_MiddlePath.
 /// @param shape The main shape (typically a solid or shell)
 /// @param startShape Start section: a face or a wire. Anything else answers NULL.
-/// @param endShape End section: a face or a wire. It must share no vertex with the start section.
+/// @param endShape End section: a face or a wire. Anything else answers NULL. It must also share no
+///        vertex with the start section.
 /// @return Middle path wire, or NULL on failure or for a null, same, touching or non-face/wire end
 OCCTShapeRef OCCTShapeMiddlePath(OCCTShapeRef shape,
                                  OCCTShapeRef startShape,
