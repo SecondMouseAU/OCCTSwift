@@ -981,6 +981,11 @@ public final class BRepGraph: @unchecked Sendable {
     /// graph.resolve(.splitOf(original: .literal(pinned), occurrence: 0))        // .success(face)
     /// ```
     ///
+    /// The records are written in a fixed order: input by input in `(kind, index)` order, each
+    /// input's Modified record then its Generated record, and the removed inputs last as one
+    /// Deleted record. The same operation therefore gives the same `sequenceNumber` to the same
+    /// record in every process, and `.createdBy` names the same node every time (#3038).
+
     /// - Note: Only vertices, edges, faces and solids are tracked
     ///   (`BRepTools_History` carries no wires, shells or compounds), so nothing
     ///   is recorded for those kinds.
