@@ -21,6 +21,23 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### Shape.totalEdgeLength and Shape.linearProperties() no longer read an elliptical edge long, and the centroid is right (#3074)
+
+`Shape.totalEdgeLength` and `Shape.linearProperties()` integrated each edge with a single Gauss rule, so a full elliptical edge measured up to 1.485% long (10 x 1: 41.2431578703 against a true 40.6397418010) and `linearProperties()` put the centre of mass of a full 10 x 1 ellipse 0.165 from its centre. Both now measure to the precision `Edge.length`, `Wire.length` and `Curve3D.length` do, and agree with them to 1e-8 relative; the centre of mass is integrated over the same spans and matches an independent Simpson integral to 1e-8. Lines, circles and boxes read the same as before, and an edge shared by two faces is still counted once per face.
+
+```swift
+let ellipse = Curve2D.ellipse(center: .zero, majorRadius: 10, minorRadius: 1)!
+let loop = Shape.fromWire(Wire.fromCurve2D(ellipse)!)!
+loop.totalEdgeLength                  // 40.6397418010, was 41.2431578703
+loop.linearProperties()?.centerOfMass // (0, 0, 0), was (-0.165, 0, 0)
+```
+
+### The gp_Cone matrix of inertia of GProp_SelGProps and GProp_VelGProps, and the solid's centre of mass, are now correct, carried as kernel patch 0055 (#3010)
+
+`GProp_SelGProps::Perform(gp_Cone)` and `GProp_VelGProps::Perform(gp_Cone)` returned a matrix of inertia that was wrong in every entry, and `GProp_VelGProps` returned the lateral surface's centre of mass for the solid. For a cone of semi-angle pi/6, base radius 5 and slant length 10 the surface's second moment about the axis read 12753.28 where an independent integral gives 29452.43. The closed forms the code held did not integrate to the moments they were named for, and the matrix was assembled from the Jacobi decomposition as `diag(lambda) V^T` instead of `V diag(lambda) V^T`, with the moment about the cone's location taken as already about the centre of mass. Patch `0055` computes every entry from the integral and assembles the matrix about whatever reference point the object holds. Against that integral, over 16 cone cases (semi-angles of both signs, full and partial turns, tilted and untilted frames) 64 of 64 checks fail before and none after, the largest deviation 7.9e-14.
+
+The patch is carried and not yet pinned. No Swift API reads the cone's centre of mass or matrix of inertia (`GeometryProperties.coneSurfaceArea` and `.coneVolume` read the mass alone, which `0050` and `0051` fixed), so a consumer of the current API sees no difference. The `gp_Cylinder` and `gp_Sphere` overloads of the same two classes fail the same probe (16 of 16, the cylinder's `Dm(3, 3)` drops an `R^2`) and are not changed here. Reproduction and the independent integral are in `Scripts/repro/3010-cone-inertia/`.
+
 ### `solidWithFullHistory(from:)` and `solid(from:)` return the repaired face of a body that stays open (#3041)
 
 For a body `ShapeFix_Solid` repairs but cannot close, `Shape.solidWithFullHistory(from:)` returned a solid still holding the unrepaired face while its history reported that face as replaced, and `Shape.solid(from:)` ignored the same repair. Both read the body from `ShapeFix_Solid::Solid()`, which the open-shell branch never assigns. They now read it from the fixer's shared context, as `ShapeFix_Shape` does, so the result holds the face the history reports. A body that stays open still comes back as a solid that is not closed; a body that closes is unchanged.

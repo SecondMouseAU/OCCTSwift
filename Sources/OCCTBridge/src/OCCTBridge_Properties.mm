@@ -28,6 +28,8 @@
 #include <Standard_ErrorHandler.hxx> // OCC_CATCH_SIGNALS (#175)
 #include <BRep_Tool.hxx>
 #include <BRepAdaptor_Curve.hxx>
+#include <BRepBuilderAPI_MakeEdge.hxx>
+#include <Geom_Curve.hxx>
 #include <BRepAdaptor_Surface.hxx>
 #include <BRepAlgoAPI_Section.hxx>
 #include <BRepExtrema_OverlapTool.hxx>
@@ -91,9 +93,99 @@ bool occtSurfaceMassProperties(const TopoDS_Shape& shape, GProp_GProps& props)
   return props.Mass() != 0.0;
 }
 
+// One edge's contribution to a linear framework, measured to the precision occtAdaptorArcLength
+// measures a length to. BRepGProp_Cinert applies one fixed Gauss rule per GeomAbs_CN interval, so
+// a full elliptical edge (one interval) read 1.485% long and its centroid sat 0.165 off the
+// centre of a 10 x 1 ellipse (#3074). OCCT's own integrator stays the quadrature: the edge is cut
+// into N equal parameter spans, each span is measured by BRepGProp::LinearProperties and added
+// to the framework, and N doubles until the summed length agrees with the adaptive arc length.
+// Length converges at the rate the centroid and the inertia do, since the same Gauss points feed
+// all three, so the length is the oracle. Lines and circles agree at N = 1 and are unchanged.
+static void occtAddEdgeLinearProperties(const TopoDS_Edge& edge, GProp_GProps& props)
+{
+  // TopExp_Explorer never yields a null edge; the guard is for a caller that is not an explorer,
+  // since BRep_Tool::Degenerated dereferences the TShape (okf/policies/null-handle-guards.md).
+  if (edge.IsNull() || BRep_Tool::Degenerated(edge))
+    return;
+
+  double             first = 0.0, last = 0.0;
+  Handle(Geom_Curve) curve =
+    BRep_Tool::IsGeometric(edge) ? BRep_Tool::Curve(edge, first, last) : Handle(Geom_Curve)();
+  if (curve.IsNull() || !(last > first))
+  {
+    // No 3D curve to cut (a polygon, or a curve on a surface only): BRepGProp measures it as
+    // it always did.
+    GProp_GProps whole;
+    BRepGProp::LinearProperties(edge, whole);
+    props.Add(whole);
+    return;
+  }
+
+  BRepAdaptor_Curve adaptor(edge);
+  const double      target =
+    occtAdaptorArcLength(adaptor, adaptor.FirstParameter(), adaptor.LastParameter());
+
+  // THE CAP. N stops at 1024 spans, and the 1024-span sum is used whether or not it met the 1e-12
+  // test. Measured (Scripts/repro/3074/probe_convergence.mm, against a 4M-point Simpson integral):
+  // a full 10 x 1 ellipse needs 32 spans, a 1000 x 1 ellipse 512, a degree-25 BSpline of 60
+  // alternating poles 64, and interpolated BSplines through 50 to 1000 points 1. The cap is only
+  // reached by a degree-25 BSpline with 200 to 800 poles alternating at amplitude 100, which stops
+  // at 1024 spans with the length 1.7e-4 and 8.6e-4 (relative) off the integral, and there the
+  // oracle is the worse number: occtAdaptorArcLength itself reads 2.8e-3 and 8.0e-3 off, which is
+  // what Edge.length returns for the same edge, so the loop never meets a test against it. The span
+  // sum is still the best answer available and is never worse than the target, so it is kept; there
+  // is no exception to record, and the diagnostics channel (occtRecordCaughtException) reclassifies
+  // one in flight.
+  constexpr int kMaxPieces = 1024;
+  GProp_GProps  best;
+  int           bestPieces = 0;
+  for (int pieces = 1; pieces <= kMaxPieces; pieces *= 2)
+  {
+    GProp_GProps summed(gp_Pnt(0, 0, 0));
+    bool         built = true;
+    for (int i = 0; i < pieces && built; ++i)
+    {
+      const double lo = first + (last - first) * i / pieces;
+      const double hi = (i + 1 == pieces) ? last : first + (last - first) * (i + 1) / pieces;
+      // Edge() raises StdFail_NotDone on a builder that is not done (BRepBuilderAPI_MakeEdge.hxx),
+      // which the caller's catch would turn into a refused call. Measured: none of the spans built
+      // here is refused (a 1e-16 span, a span past a trimmed curve's own range and a range of
+      // several periods all build); only a zero-width span on a trimmed curve is refused, which
+      // equal splits of last > first reach only when the range is below the parameter's own ulp. If
+      // it ever happens, keep the last level that built, or the single rule of old when there is
+      // none.
+      BRepBuilderAPI_MakeEdge maker(curve, lo, hi);
+      if (!maker.IsDone())
+      {
+        built = false;
+        break;
+      }
+      GProp_GProps piece;
+      BRepGProp::LinearProperties(maker.Edge(), piece);
+      summed.Add(piece);
+    }
+    if (!built)
+      break;
+    best       = summed;
+    bestPieces = pieces;
+    if (std::abs(summed.Mass() - target) <= 1e-12 * std::max(target, 1.0))
+      break;
+  }
+  if (bestPieces == 0)
+    BRepGProp::LinearProperties(edge, best);
+  props.Add(best);
+}
+
 bool occtLinearMassProperties(const TopoDS_Shape& shape, GProp_GProps& props)
 {
-  BRepGProp::LinearProperties(shape, props);
+  // The framework BRepGProp::LinearProperties makes: referenced at the shape's location origin,
+  // one contribution per edge occurrence (SkipShared = false), so an edge shared by two faces
+  // counts twice, exactly as before.
+  gp_Pnt origin(0, 0, 0);
+  origin.Transform(shape.Location());
+  props = GProp_GProps(origin);
+  for (TopExp_Explorer ex(shape, TopAbs_EDGE); ex.More(); ex.Next())
+    occtAddEdgeLinearProperties(TopoDS::Edge(ex.Current()), props);
   return props.Mass() != 0.0;
 }
 

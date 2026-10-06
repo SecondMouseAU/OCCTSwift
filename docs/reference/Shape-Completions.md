@@ -1577,13 +1577,28 @@ public var centroid: SIMD3<Double>? { get }
 
 ### `totalEdgeLength`
 
-Sum of arc lengths of all edges in this shape.
+Sum of arc lengths of all edges in this shape, one term per edge occurrence: an edge shared by two
+faces is counted once for each, so a box reads twice the sum of its 12 distinct edges. A degenerate
+edge adds 0.
 
 ```swift
 public var totalEdgeLength: Double { get }
 ```
 
-- **OCCT:** `BRepGProp::LinearProperties`, `GProp_GProps::Mass`.
+Each edge is measured as `Edge.length` measures it, so an elliptical edge no longer reads up to
+1.485% long (10 x 1) and the total agrees with `Wire.length` and `Curve3D.length` (#3074).
+
+```swift
+let ellipse = Curve2D.ellipse(center: .zero, majorRadius: 10, minorRadius: 1)!
+let shape = Shape.fromWire(Wire.fromCurve2D(ellipse)!)!
+shape.totalEdgeLength   // 40.6397418010, was 41.2431578703
+
+Shape.box(width: 2, height: 3, depth: 5)!.totalEdgeLength   // 80, each of 12 edges bounds two faces
+```
+
+- **OCCT:** `BRepAdaptor_Curve` per edge, measured by the bridge's `occtAdaptorArcLength` (the same
+  subdivided `CPnts_AbscissaPoint` integration `Edge.length` uses). Edges that carry only a polygon
+  fall back to `BRepGProp::LinearProperties`.
 
 ---
 
