@@ -63,14 +63,15 @@ struct Issue3038AbsorbOrderTests {
         var deletedAt: [Int] = []
         for i in 0..<count {
             let record = try #require(c.graph.historyRecord(at: i), "record \(i)")
-            let key = try #require(
-                record.mapping.keys.sorted {
-                    ($0.kind.rawValue, $0.index) < ($1.kind.rawValue, $1.index)
-                }.first, "record \(i) has an original")
             if record.mapping.values.allSatisfy({ $0.isEmpty }) {
                 deletedAt.append(i)
                 continue
             }
+            // One input per Absorb call, so one original per non-Deleted record. A change that
+            // batched inputs would put several originals in a record and fail here.
+            #expect(
+                record.mapping.count == 1, "record \(i) holds \(record.mapping.count) originals")
+            let key = try #require(record.mapping.keys.first, "record \(i) has an original")
             let current = (Int(key.kind.rawValue), key.index)
             if let p = previous {
                 #expect(p <= current, "record \(i) original \(current) follows \(p)")

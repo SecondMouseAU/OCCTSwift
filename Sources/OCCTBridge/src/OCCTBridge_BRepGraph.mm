@@ -1933,10 +1933,6 @@ bool OCCTBRepGraphAddWithHistory(OCCTBRepGraphRef g,
         BRepGraph_NodeId((BRepGraph_NodeId::Kind)inputRootKinds[i], inputRootIndices[i]));
     }
 
-    // Ensure the history layer exists before the absorb; AddWithHistory writes
-    // into the registered layer and silently records nothing without one.
-    (void)g->graph.LayerRegistry().Ensure<BRepGraph_LayerHistory>();
-
     // Not AddWithHistory(roots, ...): it hands BRepGraph_LayerHistory::Absorb a
     // DataMap keyed on TShape addresses and Absorb records in map-walk order, so the
     // record order, and every SequenceNumber, changed from process to process (#3038).

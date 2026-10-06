@@ -982,7 +982,7 @@ public final class BRepGraph: @unchecked Sendable {
     /// ```
     ///
     /// The records are written in a fixed order: input by input in `(kind, index)` order, each
-    /// input's Modified record then its Generated record, and the removed inputs last as one
+    /// input's Modified record (if any) then its Generated record (if any), and the removed inputs last as one
     /// Deleted record. The same operation therefore gives the same `sequenceNumber` to the same
     /// record in every process, and `.createdBy` names the same node every time (#3038).
 

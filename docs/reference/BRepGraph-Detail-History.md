@@ -481,8 +481,8 @@ that minted it ([#295](https://github.com/SecondMouseAU/OCCTSwift/issues/295)).
   ```
 
 > **The records are written in node-id order, the same in every process.** One absorb writes its
-> records input by input, ordered by the input's `(kind, index)`, an input's Modified record then its
-> Generated record, and the inputs the operation removed last as one Deleted record. So every
+> records input by input, ordered by the input's `(kind, index)`, an input's Modified record (if any)
+> then its Generated record (if any), and the inputs the operation removed last as one Deleted record. So every
 > record's `sequenceNumber`, and with it `.createdBy(operationName:kind:occurrence:)`, names the same
 > node from one run to the next ([#3038](https://github.com/SecondMouseAU/OCCTSwift/issues/3038)).
 > Before that fix the order followed heap addresses and changed in every process.
