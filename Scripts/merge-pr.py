@@ -591,6 +591,16 @@ def is_transcription_commit(commit, number):
             and commit.get("files") == [CHANGELOG] and len(commit.get("parents", [])) == 1)
 
 
+def resolve_content_head(gh, head_sha, number):
+    """(content_sha, that commit's record). One `gh.commit` read per sha, so the caller can take the
+    commit date from the record instead of fetching the same commit a second time."""
+    commit = gh.commit(head_sha)
+    if is_transcription_commit(commit, number):
+        parent = commit["parents"][0]
+        return (parent, gh.commit(parent))
+    return (head_sha, commit)
+
+
 def content_head(gh, head_sha, number):
     """The head the full readiness check applies to: the PR's head BEFORE the transcription commit.
 
@@ -598,19 +608,25 @@ def content_head(gh, head_sha, number):
     hour of those on the transcription head would re-wait after every push, which is the loop the
     standing merge rule rules out. On a re-run the head already IS that commit, so step over it.
     """
-    commit = gh.commit(head_sha)
-    if is_transcription_commit(commit, number):
-        return commit["parents"][0]
-    return head_sha
+    return resolve_content_head(gh, head_sha, number)[0]
 
 
 def judge_content_head(gh, number, head_sha, now, allow_pending=False):
-    """(content_sha, verdict, detail), every read from GitHub's check-runs API for content_sha."""
-    sha = content_head(gh, head_sha, number)
-    age = int((now - gh.commit(sha)["committer_date"]).total_seconds())
+    """(content_sha, verdict, detail, age_seconds), every read from GitHub's check-runs API for
+    content_sha."""
+    sha, commit = resolve_content_head(gh, head_sha, number)
+    age = int((now - commit["committer_date"]).total_seconds())
     verdict, detail = full_verdict(gh.pr_state(number), gh.check_runs(sha), age,
                                    gh.review_comments(number), allow_pending)
-    return (sha, verdict, detail)
+    return (sha, verdict, detail, age)
+
+
+def describe_judgement(head_sha, content_sha, age, verdict, detail):
+    """The line `--dry-run` and `--no-merge` print. It names the head that was JUDGED, which is the
+    content head, and says so when the PR's own head is the transcription commit on top of it."""
+    on_top = "" if head_sha == content_sha else " (PR head %s is the transcription commit)" % head_sha[:10]
+    return ("  judged head %s, %ds old%s; check runs read from it: %s (%s)"
+            % (content_sha[:10], age, on_top, verdict, detail))
 
 
 def wait_for_gate(gh, sha, sleep, clock, timeout=GATE_WAIT_SECONDS, poll=GATE_POLL_SECONDS):
@@ -763,11 +779,9 @@ def readiness_gate(args, pr, gh):
     None when the PR is refused. `--no-merge` prints the verdict and is never refused, since it
     merges nothing and the person merging by hand needs to see it."""
     now = datetime.datetime.now(datetime.timezone.utc)
-    sha, verdict, detail = judge_content_head(gh, pr["number"], pr["headRefOid"], now,
-                                              args.allow_pending_checks)
-    age = int((now - gh.commit(sha)["committer_date"]).total_seconds())
-    print("  judged head %s, %ds old; readiness read from the check runs of %s: %s (%s)"
-          % (pr["headRefOid"][:10], age, sha[:10], verdict, detail))
+    sha, verdict, detail, age = judge_content_head(gh, pr["number"], pr["headRefOid"], now,
+                                                   args.allow_pending_checks)
+    print(describe_judgement(pr["headRefOid"], sha, age, verdict, detail))
     if verdict != READY and not args.no_merge:
         sys.stderr.write("error: %s\n" % refusal_text(verdict, detail, pr["number"]))
         return None
@@ -1598,6 +1612,7 @@ def self_test():
             self.runs_by_sha, self.commits = runs_by_sha, commits
             self.state, self.comments = state, list(comments)
             self.reads = []
+            self.commit_reads = []
 
         def pr_state(self, number):
             return self.state
@@ -1608,6 +1623,7 @@ def self_test():
             return runs() if callable(runs) else runs
 
         def commit(self, sha):
+            self.commit_reads.append(sha)
             return self.commits[sha]
 
         def review_comments(self, number):
@@ -1623,7 +1639,7 @@ def self_test():
                 "committer_date": date, "parents": [parent], "files": [CHANGELOG]}
 
     def judge(gh, head, allow=False):
-        return judge_content_head(gh, 7, head, t0, allow)
+        return judge_content_head(gh, 7, head, t0, allow)[:3]
 
     # The seven verdict paths.
     case("all-green-old-head-is-ready",
@@ -1719,6 +1735,24 @@ def self_test():
     case("entry-pr-with-a-pending-content-head-is-refused-though-gate-scripts-passes-on-T",
          sha == "C" and verdict == NOT_READY
          and wait_for_gate(gh, "T", lambda s: None, lambda: 0)[0] == "success")
+
+    # Each commit is read once (no duplicate API call), and the age comes back with the verdict.
+    gh = StubGh({"C": green()}, {"C": plain(old)})
+    full = judge_content_head(gh, 7, "C", t0)
+    case("a-plain-head-is-read-once-and-returns-its-age",
+         gh.commit_reads == ["C"] and full[3] == 1800, (gh.commit_reads, full))
+    gh = StubGh({"C": green(), "T": t_runs}, {"C": plain(old), "T": transcription(fresh, "C")})
+    full = judge_content_head(gh, 7, "T", t0)
+    case("an-entry-head-reads-each-commit-once-and-ages-the-content-head",
+         gh.commit_reads == ["T", "C"] and full[3] == 1800, (gh.commit_reads, full))
+
+    # The printed line names the head judged, not the PR head above it.
+    line = describe_judgement("TTTTTTTTTTTT", "CCCCCCCCCCCC", 1800, READY, "ok")
+    case("the-printed-judged-head-is-the-content-head",
+         "judged head CCCCCCCCCC, 1800s old" in line and "PR head TTTTTTTTTT is the transcription"
+         in line and "judged head TTTT" not in line, line)
+    case("no-transcription-note-when-the-heads-are-the-same",
+         "transcription" not in describe_judgement("CCCCCCCCCCCC", "CCCCCCCCCCCC", 5, READY, "ok"))
 
     # After the push, only gate-scripts on the new head is required.
     ticks = [0]
