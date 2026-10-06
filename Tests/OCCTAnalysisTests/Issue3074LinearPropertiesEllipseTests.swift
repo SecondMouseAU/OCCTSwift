@@ -29,6 +29,12 @@ private func simpsonArc(a: Double, b: Double, t0: Double, t1: Double) -> (
 @Suite("Shape.linearProperties adaptive length and centroid, Issue #3074")
 struct Issue3074LinearPropertiesEllipseTests {
     // One test walking a list rather than @Test(arguments:), to keep clear of #1057.
+    //
+    // Tolerances: 1e-10 on length (relative) and centroid (absolute). Measured against the Simpson
+    // reference: length 6e-15 to 1.6e-13, centroid 8.1e-13 at worst (the arcs; full ellipses are
+    // 7e-16), so the margin is about 600x on length and 120x on centroid. The reference limits
+    // it: composite Simpson over 400k intervals is good to about 1e-13 in the centroid. The
+    // bridge's own target is 1e-12 relative length. The single rule missed by 1e-2 and 0.165.
     @Test("A full ellipse reads its true length and its centre as the centroid")
     func fullEllipse() {
         let cases: [(a: Double, b: Double)] = [(3, 2), (10, 5), (20, 5), (10, 1)]
@@ -41,11 +47,11 @@ struct Issue3074LinearPropertiesEllipseTests {
                 Issue.record("could not measure \(a) x \(b) ellipse")
                 continue
             }
-            #expect(abs(lp.length - truth) < truth * 1e-8, "\(a) x \(b): \(lp.length) vs \(truth)")
+            #expect(abs(lp.length - truth) < truth * 1e-10, "\(a) x \(b): \(lp.length) vs \(truth)")
             // By symmetry the centroid is the centre; the single Gauss rule put it 0.165 off.
-            #expect(abs(lp.centerOfMass.x) < 1e-8, "\(a) x \(b): cx \(lp.centerOfMass.x)")
-            #expect(abs(lp.centerOfMass.y) < 1e-8, "\(a) x \(b): cy \(lp.centerOfMass.y)")
-            #expect(abs(lp.centerOfMass.z) < 1e-8)
+            #expect(abs(lp.centerOfMass.x) < 1e-10, "\(a) x \(b): cx \(lp.centerOfMass.x)")
+            #expect(abs(lp.centerOfMass.y) < 1e-10, "\(a) x \(b): cy \(lp.centerOfMass.y)")
+            #expect(abs(lp.centerOfMass.z) < 1e-10)
         }
     }
 
@@ -63,9 +69,9 @@ struct Issue3074LinearPropertiesEllipseTests {
                 Issue.record("could not measure arc \(t0)...\(t1)")
                 continue
             }
-            #expect(abs(lp.length - ref.length) < ref.length * 1e-8)
-            #expect(abs(lp.centerOfMass.x - ref.cx) < 1e-8, "cx \(lp.centerOfMass.x) vs \(ref.cx)")
-            #expect(abs(lp.centerOfMass.y - ref.cy) < 1e-8, "cy \(lp.centerOfMass.y) vs \(ref.cy)")
+            #expect(abs(lp.length - ref.length) < ref.length * 1e-10)
+            #expect(abs(lp.centerOfMass.x - ref.cx) < 1e-10, "cx \(lp.centerOfMass.x) vs \(ref.cx)")
+            #expect(abs(lp.centerOfMass.y - ref.cy) < 1e-10, "cy \(lp.centerOfMass.y) vs \(ref.cy)")
         }
     }
 
@@ -109,8 +115,8 @@ struct Issue3074LinearPropertiesEllipseTests {
             let wire = Wire.fromCurve2D(curve), let shape = Shape.fromWire(wire),
             let lp = shape.linearProperties()
         {
-            #expect(abs(lp.centerOfMass.x - 7) < 1e-8)
-            #expect(abs(lp.centerOfMass.y + 3) < 1e-8)
+            #expect(abs(lp.centerOfMass.x - 7) < 1e-10)
+            #expect(abs(lp.centerOfMass.y + 3) < 1e-10)
         } else {
             Issue.record("no translated ellipse")
         }

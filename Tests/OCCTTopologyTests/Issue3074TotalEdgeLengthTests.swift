@@ -34,11 +34,15 @@ struct Issue3074TotalEdgeLengthTests {
                 Issue.record("could not build \(a) x \(b) ellipse")
                 continue
             }
+            // Measured agreement with the Simpson reference is 2e-14 to 1.6e-13 relative (and
+            // exactly 0 against the summed Edge.length, which takes the same path), so 1e-10 leaves
+            // a margin of about 600x. The reference limits it: composite Simpson over 200k
+            // intervals is good to about 1e-14 here. The bridge's own target is 1e-12.
             #expect(
-                abs(shape.totalEdgeLength - truth) < truth * 1e-8,
+                abs(shape.totalEdgeLength - truth) < truth * 1e-10,
                 "shape \(a) x \(b): \(shape.totalEdgeLength) vs \(truth)")
             let summed = shape.edges().reduce(0.0) { $0 + $1.length }
-            #expect(abs(shape.totalEdgeLength - summed) < truth * 1e-8)
+            #expect(abs(shape.totalEdgeLength - summed) < truth * 1e-10)
         }
     }
 
