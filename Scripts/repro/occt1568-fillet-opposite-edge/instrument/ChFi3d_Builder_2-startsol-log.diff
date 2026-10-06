@@ -1,0 +1,32 @@
+--- a/ModelingAlgorithms/TKFillet/ChFi3d/ChFi3d_Builder_2.cxx
++++ b/ModelingAlgorithms/TKFillet/ChFi3d/ChFi3d_Builder_2.cxx
+@@ -24,6 +24,11 @@
+ #include <BRepTopAdaptor_TopolTool.hxx>
+ #include <ChFi3d.hxx>
+ #include <ChFi3d_Builder.hxx>
++#include <cstdio>
++#include <BRepAdaptor_Curve.hxx>
++#include <BRepAdaptor_Surface.hxx>
++#include <TopExp_Explorer.hxx>
++#include <BRep_Tool.hxx>
+ #include <ChFi3d_Builder_0.hxx>
+ #include <ChFiDS_ChamfSpine.hxx>
+ #include <ChFiDS_CommonPoint.hxx>
+@@ -1557,6 +1562,17 @@
+         }
+         else
+         {
++          {
++            static const char* ST[] = {"Plane","Cylinder","Cone","Sphere","Torus","BezierS","BSplineS","Revolution","Extrusion","Offset","Other"};
++            static const char* CT[] = {"Line","Circle","Ellipse","Hyperbola","Parabola","BezierC","BSplineC","Offset","Other"};
++            BRepAdaptor_Surface aSf(Fv), aSF(F);
++            int aNbE = 0; bool aArcInF = false, aArcInFvAny = false;
++            for (TopExp_Explorer e1(Fv, TopAbs_EDGE); e1.More(); e1.Next()) { ++aNbE; if (e1.Current().IsSame(anArcEdge)) aArcInFvAny = true; }
++            for (TopExp_Explorer e2(F, TopAbs_EDGE); e2.More(); e2.Next()) { if (e2.Current().IsSame(anArcEdge)) aArcInF = true; }
++            BRepAdaptor_Curve aCv(anArcEdge);
++            fprintf(stderr, "[STARTSOL] newedge NOT FOUND. F=%s Fv=%s FvEdges=%d arcEdge:%s arcInF=%d arcInFv(any orient)=%d arcDegenerated=%d commonPointIsVertex=%d isfirst=%d decroch=%d\n",
++                    ST[(int)aSF.GetType()], ST[(int)aSf.GetType()], aNbE, CT[(int)aCv.GetType()], (int)aArcInF, (int)aArcInFvAny, (int)BRep_Tool::Degenerated(anArcEdge), (int)aCommonPoint.IsVertex(), (int)isfirst, (int)decroch);
++          }
+           prepareDefaultReturn();
+           return false;
+         }

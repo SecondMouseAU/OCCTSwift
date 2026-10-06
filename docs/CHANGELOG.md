@@ -21,6 +21,12 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### A fillet blend that reaches an obstacle with no edge to follow now declines instead of crashing the process, carried as kernel patch 0054 (#2881)
+
+On the model attached to OCCT#1568, eight of its 42 edges crashed `BRepFilletAPI_MakeFillet::Build` with an uncatchable SIGSEGV at a fillet radius of exactly 1.5, and at no other radius tried (1.4999999 and 1.5000001 are unaffected). `ChFi3d_Builder::StartSol` returned from its obstacle branch with an empty curve adaptor still marked as an obstacle, and the blend walk evaluated it. Patch `0054` clears both, so those fillets report not done, as the neighbouring radii already did. Across the model's 42 edges and nine radii, 378 cases, exactly the eight crashing outcomes change and the other 370 are identical.
+
+The patch is carried and not yet pinned: a consumer sees the change with the repin that pins it, and until then `Shape.filleted(edges:radius:)` can still abort the process on that input. The cause, the instrumentation and a one-command reproduction are in `Scripts/repro/occt1568-fillet-opposite-edge/`. Upstream is OCCT#1568; a PR there needs a GTest with an input small enough to write down, which is tracked separately.
+
 ### `HatchBuilder.nbIntervals(lineIndex:)` answers 0 for an index outside the line table instead of crashing (#3057)
 
 The index is 1-based and the kernel reads its line table unchecked, so index 0, a negative index or an index past `nbLines` read past the table and could abort the process, and an `Int` above `Int32.max` trapped in the Swift conversion. Every index outside `1...nbLines` now answers `0`.
