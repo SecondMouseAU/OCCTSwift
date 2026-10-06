@@ -432,7 +432,8 @@ public enum SheetMetal {
                         guard
                             let rounded = Self.fuseConcaveBendFiller(
                                 into: fused, along: seamEdges, a: a, b: b,
-                                seamUnit: seamUnit, radius: bend.insideRadius)
+                                seamUnit: seamUnit, radius: bend.insideRadius,
+                                thickness: thickness)
                         else {
                             throw BuildError.filletFailed(
                                 fromID: bend.fromFlangeID, toID: bend.toFlangeID,
@@ -827,7 +828,7 @@ public enum SheetMetal {
         /// them, or the fused result is not a valid solid. An invalid solid is never returned.
         private static func fuseConcaveBendFiller(
             into shape: Shape, along seamEdges: [Edge],
-            a: Flange, b: Flange, seamUnit: SIMD3<Double>, radius: Double
+            a: Flange, b: Flange, seamUnit: SIMD3<Double>, radius: Double, thickness: Double
         ) -> Shape? {
             // Group the seam edges into runs of touching edges along the seam line. Each run is
             // one prism, so the filler does not carry a joint at every piece boundary.
@@ -852,8 +853,11 @@ public enum SheetMetal {
             }
             guard !runs.isEmpty else { return nil }
 
-            guard let da = freeFaceDirection(of: a, towards: seamUnit, corner: runs[0].lo),
-                let db = freeFaceDirection(of: b, towards: seamUnit, corner: runs[0].lo)
+            guard
+                let da = freeFaceDirection(
+                    of: a, facing: b, seamUnit: seamUnit, thickness: thickness),
+                let db = freeFaceDirection(
+                    of: b, facing: a, seamUnit: seamUnit, thickness: thickness)
             else { return nil }
             let cosAlpha = max(-1, min(1, Vector3DMath.dot(da, db)))
             let alpha = acos(cosAlpha)
@@ -889,17 +893,34 @@ public enum SheetMetal {
             return result
         }
 
-        /// The unit direction from the seam into a flange's own metal.
+        /// The unit direction along a flange's face towards the other flange, into the free wedge.
         ///
-        /// It lies in the plane of the flange's face towards the other flange, perpendicular to
-        /// the seam.
+        /// It lies in the plane of the face, perpendicular to the seam, and points to the side of
+        /// the other flange's face that is open air. That side is the outward side of the other
+        /// flange's face towards this one, which is its `+normal` when that face is the far one
+        /// (the same test `findSeamEdges` uses to pick the face).
+        ///
+        /// This is read off the two normals and not off where the flange's profile sits, because
+        /// the seam can pass through the middle of a flange: its centroid is then on the seam and
+        /// "towards its own metal" is a direction of rounding noise. The fixture of #1565
+        /// finding 3 is one, and it built or threw depending on the platform's libm.
+        ///
+        /// Returns nil where the other face runs parallel to this one, which leaves no wedge.
         private static func freeFaceDirection(
-            of flange: Flange, towards seamUnit: SIMD3<Double>, corner: SIMD3<Double>
+            of flange: Flange, facing other: Flange,
+            seamUnit: SIMD3<Double>, thickness: Double
         ) -> SIMD3<Double>? {
-            var v = bodyMidpoint(of: flange, thickness: 0) - corner
-            v -= Vector3DMath.dot(v, seamUnit) * seamUnit
-            v -= Vector3DMath.dot(v, flange.normal) * flange.normal
-            return Vector3DMath.normalize(v)
+            let flangeMid = bodyMidpoint(of: flange, thickness: thickness)
+            let otherFaceIsFar =
+                Vector3DMath.dot(flangeMid - other.origin, other.normal) > thickness * 0.5
+            let open = otherFaceIsFar ? other.normal : -1.0 * other.normal
+            guard
+                let along = Vector3DMath.normalize(
+                    Vector3DMath.cross(seamUnit, flange.normal))
+            else { return nil }
+            let side = Vector3DMath.dot(along, open)
+            guard abs(side) > 1e-6 else { return nil }
+            return side > 0 ? along : -1.0 * along
         }
 
         /// How far a flange's profile reaches from `corner` along `direction`.

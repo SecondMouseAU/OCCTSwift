@@ -153,6 +153,15 @@ struct Issue1565SheetMetalBendDefectsTests {
             flanges: [a, b],
             bends: [SheetMetal.Bend(from: "a", to: "b", radius: 1.0)])
         #expect(shape.isValid)
-        if let v = shape.volume { #expect(v > 0) }
+        // The seam, the line x = y, runs through the middle of `a`, so `a`'s centroid is ON it and
+        // the free side of the bend cannot be read off where `a`'s metal is (#3045: the concave
+        // prism took the side from rounding noise, built a degenerate one here, and threw
+        // `filletFailed` on wasm). The bend adds r^2 (1 - pi/4) over the run `b` stands on, from
+        // (3s, 3s) to the chamfer corner (8.5, 8.5), which is 8.5 sqrt(2) - 3 long.
+        let sharp = try SheetMetal.Builder(thickness: 2).build(flanges: [a, b])
+        let run = 8.5 * 2.0.squareRoot() - 3.0
+        let derived = (sharp.volume ?? -1) + run * 1.0 * (1.0 - Double.pi / 4.0)
+        let v = try #require(shape.volume)
+        #expect(abs(v - derived) < 1e-6, "volume \(v) against the closed form \(derived)")
     }
 }
