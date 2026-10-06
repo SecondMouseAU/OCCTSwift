@@ -190,14 +190,42 @@ fi
 # patches against a tree of twenty-nine (#2190). Retiring a patch means deleting the file AND
 # reverting the files it touched, and step 1 of "Shipping a rebuild" in
 # docs/guides/building-occt.md now computes the strays rather than leaving them to be eyeballed.
+# The patches are a stack and a later one may rewrite lines an earlier one added (0055 corrects
+# 0050 and 0051, #3010). On a tree that already carries the stack, the earlier patch then fails
+# BOTH `--reverse --check` (its added lines are gone) and the forward `--check` (it is already
+# applied), which read as "cannot apply cleanly" and made a second run of this script exit 1 where
+# the first had succeeded. A patch failing both is carried when a LATER patch touching one of its
+# files reverse-checks clean, because that later patch can only have applied on top of it; a patch
+# that is genuinely missing still passes the forward check and is applied, and one that conflicts
+# with the tree and has no applied successor still stops the build.
+patch_files() { git -C occt-src apply --numstat "$1" | cut -f3; }
+superseded_by_applied_patch() {
+    local p=$1 q f
+    local -a files
+    mapfile -t files < <(patch_files "$p")
+    for q in "${PATCHES[@]}"; do
+        [[ "$q" > "$p" ]] || continue
+        for f in "${files[@]}"; do
+            if patch_files "$q" | grep -qxF -- "$f" &&
+               git -C occt-src apply --reverse --check "$q" 2>/dev/null; then
+                echo "$(basename "$q")"
+                return 0
+            fi
+        done
+    done
+    return 1
+}
 if compgen -G "$SCRIPT_DIR/patches/*.patch" > /dev/null; then
     echo ">>> Applying local OCCT patches..."
-    for p in "$SCRIPT_DIR"/patches/*.patch; do
+    PATCHES=("$SCRIPT_DIR"/patches/*.patch)
+    for p in "${PATCHES[@]}"; do
         if git -C occt-src apply --reverse --check "$p" 2>/dev/null; then
             echo "    already applied: $(basename "$p")"
         elif git -C occt-src apply --check "$p" 2>/dev/null; then
             git -C occt-src apply "$p"
             echo "    applied: $(basename "$p")"
+        elif by=$(superseded_by_applied_patch "$p"); then
+            echo "    already applied (rewritten by $by): $(basename "$p")"
         else
             echo "    ERROR: cannot apply $(basename "$p") cleanly" >&2
             exit 1
