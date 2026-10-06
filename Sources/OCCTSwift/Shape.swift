@@ -2003,6 +2003,10 @@ public final class Shape: @unchecked Sendable {
     /// To rebuild a solid that keeps its cavities, use ``Shape/solidFromShells(_:)`` with
     /// the outer shell first.
     ///
+    /// A body whose faces `ShapeFix_Solid` repairs carries the repaired faces. That holds for a
+    /// body that stays open too: it comes back as a solid that is not closed, wrapping the
+    /// repaired shell, rather than the unrepaired one (#3041).
+    ///
     /// - Parameter shell: A shell shape (typically from sewing operations)
     /// - Returns: A solid, a compound of solids for multi-body input, or nil if the shape
     ///   holds no shell at all

@@ -625,6 +625,19 @@ std::vector<TopoDS_Shell> occtBodyBoundingShells(const TopoDS_Shape& shape);
 // compound when there are several, a null shape when there are none.
 TopoDS_Shape occtSolidBodiesToShape(const std::vector<TopoDS_Shape>& bodies);
 
+// The body a ShapeFix_Solid left behind, read the way OCCT's own caller reads it (#3041).
+//
+// `applied` is `fixer.Shape()`, which is `Context()->Apply(myShape)`: the one view that holds every
+// replacement the fixer made. `ShapeFix_Shape::Perform` takes a solid's outcome from the context
+// too (ShapeFix_Shape.cxx:165 to 170, `myResult = Context()->Apply(S)` at :257) and never reads
+// `ShapeFix_Solid::Solid()`, which only the closed-shell branches assign. A single shell that
+// cannot be closed takes the "Solid can not be created from open shell" branch, which replaces
+// the solid by its repaired shell in the context and leaves `Solid()` the unrepaired wrapper.
+// Returns `applied` when it is a solid, a solid wrapping it when it is the repaired shell of a
+// body that stays open (the documented contract: an open shell comes back as a solid that is not
+// closed), and `unfixed` for anything else, including a null or compound result.
+TopoDS_Shape occtSolidBodyFromFixed(const TopoDS_Shape& applied, const TopoDS_Solid& unfixed);
+
 // === #490: the three int -> GeomAbs_Shape continuity decoders ===
 //
 // Every bridge function that takes a continuity as an integer decodes it here. There used to be

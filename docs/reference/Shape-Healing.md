@@ -2753,6 +2753,8 @@ Body selection matches `Shape.solid(from:)`: one solid per body-bounding shell, 
 there is more than one, cavity shells skipped. The single returned history covers every body,
 since every per-body `ShapeFix_Solid` fixer shares one `ShapeBuild_ReShape` context.
 
+The result is read from that same context (`Context()->Apply`), the way `ShapeFix_Shape::Perform` reads a solid's outcome, so a face the history reports as replaced is the face the result holds (#3041). That includes a body that stays open: it comes back as a solid that is not closed, wrapping the repaired shell. Before #3041 the bridge read `ShapeFix_Solid::Solid()`, which a single shell that cannot be closed never assigns, so such a result kept the unrepaired face while its history reported the repair.
+
 - **Returns:** `(result, history)` on success; nil on failure.
 - **OCCT:** `ShapeFix_Solid` per body-bounding shell, sharing one `ShapeBuild_ReShape` context
   (via `OCCTShapeCreateSolidFromShellWithHistory`). Unlike `ShapeFix_Shape` above,
@@ -2763,6 +2765,11 @@ since every per-body `ShapeFix_Solid` fixer shares one `ShapeBuild_ReShape` cont
   let sewn = Shape.sew(shapes: [bodyA, bodyB], tolerance: 1e-6)!
   guard let (solids, history) = Shape.solidWithFullHistory(from: sewn) else { return }
   print(solids.solids.count)   // 2
+
+  // The history's replacement is in the result.
+  if let repaired = history.record(of: faceOfBodyA).modified.first {
+      print(solids.subShapes(ofType: .face).contains { $0.isSame(as: repaired) })   // true
+  }
   ```
 
 ---
