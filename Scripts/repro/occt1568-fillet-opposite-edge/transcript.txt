@@ -1,0 +1,25 @@
+== 1. the crash, and the radii either side of it (edge 13, DRAW numbering) ==
+radius 1.49: exit 0
+radius 1.5: exit 139
+radius 1.5000001: exit 0
+== 2. BRepAdaptor_Curve2d::Initialize never sees a null pcurve on this model ==
+Initialize calls: 326, with a null pcurve: 0
+default constructions: 10
+== 3. the one EvalD1 before the fault dereferences a default-constructed adaptor ==
+[ED1] cos=0x16f6bea88 myCurve=0x7828c41c80
+that adaptor was default-constructed: 2 time(s), initialised: 0 time(s)
+== 4. the branch in StartSol fires exactly at the crashing radius ==
+radius 1.49: exit 0, StartSol hits: 0
+radius 1.5: exit 139, StartSol hits: 2
+radius 1.5000001: exit 0, StartSol hits: 0
+[STARTSOL] newedge NOT FOUND. F=Plane Fv=BSplineS FvEdges=4 arcEdge:Line arcInF=1 arcInFv(any orient)=0 arcDegenerated=0 commonPointIsVertex=1 isfirst=0 decroch=0
+== 5. patch 0054 ==
+radius 1.49: exit 0, [6] Build returned. IsDone = true
+radius 1.5: exit 0, [6] Build returned. IsDone = false
+radius 1.5000001: exit 0, [6] Build returned. IsDone = true
+-- 42 edges x 9 radii, unpatched vs patched --
+cases: 378
+    8  DIFFERENT  SIGSEGV -> completed
+  170  identical  completed
+  200  identical  uncaught C++ exception
+SIGSEGV -> completed: [(12, 1.5), (13, 1.5), (14, 1.5), (15, 1.5), (16, 1.5), (17, 1.5), (18, 1.5), (19, 1.5)]

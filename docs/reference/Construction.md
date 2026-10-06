@@ -359,10 +359,17 @@ Fails with `.degenerate("points coincide")` when the two points are within 1e-9 
 
 ### `ConstructionAxis.intersectionOfPlanes(_:_:)`
 
-An axis at the intersection line of two planes.
+An axis on the line two planes share. The direction is `cross(normalA, normalB)`. The origin is the point of that line nearest the world origin, so it lies on both planes (before #3037 it was the midpoint of the two plane origins, which is on neither plane in general). Swapping the planes reverses the direction and keeps the origin.
 
 ```swift
 case intersectionOfPlanes(ConstructionPlane, ConstructionPlane)
+```
+
+```swift
+let a = ConstructionPlane.absolute(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1))   // z = 0
+let b = ConstructionPlane.absolute(origin: SIMD3(10, 0, 0), normal: SIMD3(1, 0, 0))  // x = 10
+let axis = try graph.resolve(ConstructionAxis.intersectionOfPlanes(a, b)).get()
+// axis.origin == (10, 0, 0), axis.direction == (0, 1, 0)
 ```
 
 Fails with `.degenerate("planes are parallel")` when the cross product is near-zero.
