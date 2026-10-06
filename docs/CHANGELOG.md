@@ -21,6 +21,18 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### `Shape.offset(by:joinType:)` and seven sibling offset and thick-solid calls return nil when OCCT reports done with a null result (#3061)
+
+An offset that OCCT reports as done but whose result is a null shape used to reach Swift as a non-nil `Shape` for which `isNull` was `true`. It is now `nil`, the refusal every other failed offset gives. The deterministic case is an inward offset deeper than the shape is thick:
+
+```swift
+let box = Shape.box(width: 10, height: 10, depth: 10)!
+print(box.offset(by: 1.0, joinType: .arc) != nil)   // true
+print(box.offset(by: -6.0, joinType: .arc) == nil)  // true: the cube collapses
+```
+
+The same guard covers `offset(by:)`, `shelled(thickness:)`, `shelled(thickness:openFaces:)`, `thickSolid(facesToRemove:offset:tolerance:joinType:)`, `offsetWireOnPlane(distance:joinType:)`, `offsetFace(distance:joinType:)` and `simpleOffset(by:)`.
+
 ### `ConstructionAxis.intersectionOfPlanes` anchors its axis on the line the two planes share (#3037)
 
 `ConstructionAxis.intersectionOfPlanes(_:_:)` returned an origin at the midpoint of the two plane origins, which lies on neither plane unless both origins already sat on their common line, so the axis was parallel to the true intersection and offset from it. The origin is now the point of the intersection line nearest the world origin, on both planes whichever plane is passed first, so `ConstructionPoint.intersectionOfAxisAndPlane` built on it lands on the real line. For `z = 0` and `x = 10` the origin moves from `(5, 0, 0)` to `(10, 0, 0)`; the direction is unchanged. Parallel or opposed planes still fail with `.degenerate("planes are parallel")`. The doc comment, which promised an absolute-origin fallback the code never gave, is corrected.
