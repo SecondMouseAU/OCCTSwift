@@ -1,0 +1,181 @@
+== 0. 0055 applies on top of 0050 and 0051, and not without them ==
+0055 does not apply to the V8_0_1 files alone
+0055 applies to the files with 0050 and 0051 applied
+0055 reverse-applies to the variant tree
+== 1. the xcframework alone (a local one can lag the pin and lack 0050 and 0051, so this is context only) ==
+== summary ==
+gp_Cone checks failing: 64 of 64
+gp_Cylinder and gp_Sphere checks failing: 16 of 16 (not touched by patch 0055)
+exit 1
+== 2. control: the two files recompiled with 0050 and 0051 only ==
+== the issue's number: Dm(3, 3), the second moment of the lateral surface about the axis ==
+  GProp_SelGProps  Izz = 12753.276779771842   integral = 29452.431127404328   ratio = 0.43301270189221902
+  (cos a sin a = 0.433012701892)
+== gp_Cone ==
+[XOY] a=pi/6 R=5 v 0..10 (issue)
+  GProp_SelGProps (surface)          mass 471.238898038 (exact 471.238898038)  |G err| 1.2e-14  inertia max rel err 2.526e+00  FAIL
+    Sel, loc (2,-1,3), axis (1,2,2)/3 I = 41947.236567 (exact 26061.9073656)  rel err 6.095e-01  FAIL
+  GProp_VelGProps (volume)           mass 1587.0744437 (exact 1587.0744437)  |G err| 0.45  inertia max rel err 2.419e+00  FAIL
+    Vel, loc (2,-1,3), axis (1,2,2)/3 I = 121356.332906 (exact 55410.754624)  rel err 1.190e+00  FAIL
+== summary ==
+gp_Cone checks failing: 64 of 64
+gp_Cylinder and gp_Sphere checks failing: 16 of 16 (not touched by patch 0055)
+exit 1
+== 3. variant: 0055 on top ==
+== the issue's number: Dm(3, 3), the second moment of the lateral surface about the axis ==
+  GProp_SelGProps  Izz = 29452.43112740431   integral = 29452.431127404328   ratio = 0.99999999999999933
+  (cos a sin a = 0.433012701892)
+== summary ==
+gp_Cone checks failing: 0 of 64
+gp_Cylinder and gp_Sphere checks failing: 16 of 16 (not touched by patch 0055)
+exit 0
+== 4. the matrices of the headline case (u full, v 0..10, a = pi/6, R = 5), control then variant ==
+[XOY] a=pi/6 R=5 v 0..10 (issue)
+  GProp_SelGProps (surface)          mass 471.238898038 (exact 471.238898038)  |G err| 1.2e-14  inertia max rel err 2.526e+00  FAIL
+    centre of mass: kernel (-3.46504162891e-16, 0, 4.81125224325)  integral (-1.25541854939e-15, 7.41867164654e-16, 4.81125224325)
+    kernel (about G)                                   exact (about G)
+                   0       74394.1145                0         17562.3756  -1.47344654e-12   1.16682831e-13
+          74394.1145                0   6.46634625e-14    -1.52318456e-12       17562.3756   1.37886437e-12
+      -1.1085165e-14                0       12753.2768     5.78947426e-13   1.36466193e-12       29452.4311
+    Sel, loc (2,-1,3), axis (1,2,2)/3 I = 41947.236567 (exact 26061.9073656)  rel err 6.095e-01  FAIL
+  GProp_VelGProps (volume)           mass 1587.0744437 (exact 1587.0744437)  |G err| 0.45  inertia max rel err 2.419e+00  FAIL
+    centre of mass: kernel (-4.54786713794e-16, 0, 4.81125224325)  integral (2.20881619169e-15, 7.33805318749e-16, 5.25801138012)
+    kernel (about G)                                   exact (about G)
+      1.89174898e-10                0       127532.768         35192.9709   1.57365497e-12   2.91377954e-11
+          123281.676                0  -1.79413978e-10      1.5182544e-12       35192.9709   3.20928911e-12
+                   0       123281.676                0     3.00499475e-11   1.81668108e-12        52713.544
+    Vel, loc (2,-1,3), axis (1,2,2)/3 I = 121356.332906 (exact 55410.754624)  rel err 1.190e+00  FAIL
+[XOY] a=pi/12 R=8 v 0.5..6
+-- variant --
+[XOY] a=pi/6 R=5 v 0..10 (issue)
+  GProp_SelGProps (surface)          mass 471.238898038 (exact 471.238898038)  |G err| 1.2e-14  inertia max rel err 1.235e-15
+    centre of mass: kernel (-3.03191142529e-16, 0, 4.81125224325)  integral (-1.25541854939e-15, 7.41867164654e-16, 4.81125224325)
+    kernel (about G)                                   exact (about G)
+          17562.3756   -1.4060248e-28   6.38309171e-14         17562.3756  -1.47344654e-12   1.16682831e-13
+      -1.4060248e-28       17562.3756                0    -1.52318456e-12       17562.3756   1.37886437e-12
+      6.38309171e-14                0       29452.4311     5.78947426e-13   1.36466193e-12       29452.4311
+    Sel, loc (2,-1,3), axis (1,2,2)/3 I = 26061.9073656 (exact 26061.9073656)  rel err 6.979e-16
+  GProp_VelGProps (volume)           mass 1587.0744437 (exact 1587.0744437)  |G err| 1.9e-14  inertia max rel err 6.349e-15
+    centre of mass: kernel (-2.08830633885e-16, 0, 5.25801138012)  integral (2.20881619169e-15, 7.33805318749e-16, 5.25801138012)
+    kernel (about G)                                   exact (about G)
+          35192.9709  -2.51648326e-28    1.3257895e-13         35192.9709   1.57365497e-12   2.91377954e-11
+     -2.51648326e-28       35192.9709                0      1.5182544e-12       35192.9709   3.20928911e-12
+       1.3257895e-13                0        52713.544     3.00499475e-11   1.81668108e-12        52713.544
+    Vel, loc (2,-1,3), axis (1,2,2)/3 I = 55410.754624 (exact 55410.754624)  rel err 1.313e-16
+[XOY] a=pi/12 R=8 v 0.5..6
+== 5. every case, variant ==
+== the issue's number: Dm(3, 3), the second moment of the lateral surface about the axis ==
+  GProp_SelGProps  Izz = 29452.43112740431   integral = 29452.431127404328   ratio = 0.99999999999999933
+  (cos a sin a = 0.433012701892)
+== gp_Cone ==
+[XOY] a=pi/6 R=5 v 0..10 (issue)
+  GProp_SelGProps (surface)          mass 471.238898038 (exact 471.238898038)  |G err| 1.2e-14  inertia max rel err 1.235e-15
+    Sel, loc (2,-1,3), axis (1,2,2)/3 I = 26061.9073656 (exact 26061.9073656)  rel err 6.979e-16
+  GProp_VelGProps (volume)           mass 1587.0744437 (exact 1587.0744437)  |G err| 1.9e-14  inertia max rel err 6.349e-15
+    Vel, loc (2,-1,3), axis (1,2,2)/3 I = 55410.754624 (exact 55410.754624)  rel err 1.313e-16
+[XOY] a=pi/12 R=8 v 0.5..6
+  GProp_SelGProps (surface)          mass 305.528621899 (exact 305.528621899)  |G err| 5e-15  inertia max rel err 7.568e-16
+    Sel, loc (2,-1,3), axis (1,2,2)/3 I = 19293.414703 (exact 19293.414703)  rel err 3.771e-16
+  GProp_VelGProps (volume)           mass 1307.41128597 (exact 1307.41128597)  |G err| 1.6e-14  inertia max rel err 4.156e-15
+    Vel, loc (2,-1,3), axis (1,2,2)/3 I = 45593.1233932 (exact 45593.1233932)  rel err 1.436e-15
+[XOY] a=pi/3 R=8 v 0.5..6
+  GProp_SelGProps (surface)          mass 373.725144423 (exact 373.725144423)  |G err| 1.5e-15  inertia max rel err 4.763e-16
+    Sel, loc (2,-1,3), axis (1,2,2)/3 I = 35432.9761828 (exact 35432.9761828)  rel err 2.053e-16
+  GProp_VelGProps (volume)           mass 1026.75418492 (exact 1026.75418492)  |G err| 4.8e-15  inertia max rel err 1.346e-15
+    Vel, loc (2,-1,3), axis (1,2,2)/3 I = 53097.6803839 (exact 53097.6803839)  rel err 1.507e-15
+[XOY] a=-pi/6 R=8 v 0.5..6 (negative)
+  GProp_SelGProps (surface)          mass 220.304184833 (exact 220.304184833)  |G err| 1.4e-15  inertia max rel err 7.765e-16
+    Sel, loc (2,-1,3), axis (1,2,2)/3 I = 8111.98261297 (exact 8111.98261297)  rel err 8.969e-16
+  GProp_VelGProps (volume)           mass 617.570342907 (exact 617.570342907)  |G err| 1.4e-14  inertia max rel err 3.365e-15
+    Vel, loc (2,-1,3), axis (1,2,2)/3 I = 13558.3176818 (exact 13558.3176818)  rel err 1.878e-15
+[XOY] a=-pi/12 R=8 v 1..7 (negative)
+  GProp_SelGProps (surface)          mass 262.563902231 (exact 262.563902231)  |G err| 4.1e-15  inertia max rel err 4.937e-16
+    Sel, loc (2,-1,3), axis (1,2,2)/3 I = 11115.5476126 (exact 11115.5476126)  rel err 4.909e-16
+  GProp_VelGProps (volume)           mass 886.846033797 (exact 886.846033797)  |G err| 2.8e-15  inertia max rel err 2.817e-15
+    Vel, loc (2,-1,3), axis (1,2,2)/3 I = 21858.2710184 (exact 21858.2710184)  rel err 1.997e-15
+[XOY] a=pi/6 R=5 v 1..9 u 0.3..2.2
+  GProp_SelGProps (surface)          mass 114 (exact 114)  |G err| 1e-14  inertia max rel err 3.941e-15
+    Sel, loc (2,-1,3), axis (1,2,2)/3 I = 4089.21377094 (exact 4089.21377094)  rel err 1.223e-15
+  GProp_VelGProps (volume)           mass 379.00158421 (exact 379.00158421)  |G err| 2.4e-14  inertia max rel err 3.416e-14
+    Vel, loc (2,-1,3), axis (1,2,2)/3 I = 7878.37832976 (exact 7878.37832976)  rel err 3.001e-15
+[XOY] a=-pi/4 R=9 v 0.5..7 u 0.3..4
+  GProp_SelGProps (surface)          mass 152.677807172 (exact 152.677807172)  |G err| 5.1e-15  inertia max rel err 3.532e-16
+    Sel, loc (2,-1,3), axis (1,2,2)/3 I = 8091.49156379 (exact 8091.49156379)  rel err 4.496e-16
+  GProp_VelGProps (volume)           mass 357.651114138 (exact 357.651114138)  |G err| 1.2e-14  inertia max rel err 2.780e-15
+    Vel, loc (2,-1,3), axis (1,2,2)/3 I = 12151.1633041 (exact 12151.1633041)  rel err 1.647e-15
+[XOY] a=pi/6 R=5 v -3..4 (straddles)
+  GProp_SelGProps (surface)          mass 230.907060039 (exact 230.907060039)  |G err| 7.9e-16  inertia max rel err 2.572e-16
+    Sel, loc (2,-1,3), axis (1,2,2)/3 I = 7278.10901109 (exact 7278.10901109)  rel err 1.250e-16
+  GProp_VelGProps (volume)           mass 544.366534191 (exact 544.366534191)  |G err| 1.9e-15  inertia max rel err 4.414e-15
+    Vel, loc (2,-1,3), axis (1,2,2)/3 I = 11057.387605 (exact 11057.387605)  rel err 9.870e-16
+[tilted] a=pi/6 R=5 v 0..10 (issue)
+  GProp_SelGProps (surface)          mass 471.238898038 (exact 471.238898038)  |G err| 1.3e-14  inertia max rel err 2.887e-15
+    Sel, loc (2,-1,3), axis (1,2,2)/3 I = 30348.5476489 (exact 30348.5476489)  rel err 5.994e-16
+  GProp_VelGProps (volume)           mass 1587.0744437 (exact 1587.0744437)  |G err| 7.9e-14  inertia max rel err 3.665e-14
+    Vel, loc (2,-1,3), axis (1,2,2)/3 I = 57119.2184106 (exact 57119.2184106)  rel err 6.624e-15
+[tilted] a=pi/12 R=8 v 0.5..6
+  GProp_SelGProps (surface)          mass 305.528621899 (exact 305.528621899)  |G err| 1.3e-14  inertia max rel err 2.456e-15
+    Sel, loc (2,-1,3), axis (1,2,2)/3 I = 24174.303517 (exact 24174.303517)  rel err 6.020e-16
+  GProp_VelGProps (volume)           mass 1307.41128597 (exact 1307.41128597)  |G err| 1.3e-14  inertia max rel err 1.170e-14
+    Vel, loc (2,-1,3), axis (1,2,2)/3 I = 53304.2763758 (exact 53304.2763758)  rel err 4.231e-15
+[tilted] a=pi/3 R=8 v 0.5..6
+  GProp_SelGProps (surface)          mass 373.725144423 (exact 373.725144423)  |G err| 4.2e-15  inertia max rel err 2.893e-16
+    Sel, loc (2,-1,3), axis (1,2,2)/3 I = 45372.0599848 (exact 45372.0599848)  rel err 3.207e-16
+  GProp_VelGProps (volume)           mass 1026.75418492 (exact 1026.75418492)  |G err| 1.1e-14  inertia max rel err 2.721e-15
+    Vel, loc (2,-1,3), axis (1,2,2)/3 I = 64845.4597262 (exact 64845.4597262)  rel err 1.795e-15
+[tilted] a=-pi/6 R=8 v 0.5..6 (negative)
+  GProp_SelGProps (surface)          mass 220.304184833 (exact 220.304184833)  |G err| 1.1e-15  inertia max rel err 8.117e-16
+    Sel, loc (2,-1,3), axis (1,2,2)/3 I = 9556.58232657 (exact 9556.58232657)  rel err 1.903e-16
+  GProp_VelGProps (volume)           mass 617.570342907 (exact 617.570342907)  |G err| 1.4e-14  inertia max rel err 9.493e-15
+    Vel, loc (2,-1,3), axis (1,2,2)/3 I = 14236.5402998 (exact 14236.5402998)  rel err 5.366e-15
+[tilted] a=-pi/12 R=8 v 1..7 (negative)
+  GProp_SelGProps (surface)          mass 262.563902231 (exact 262.563902231)  |G err| 8.2e-15  inertia max rel err 2.849e-15
+    Sel, loc (2,-1,3), axis (1,2,2)/3 I = 13253.497324 (exact 13253.497324)  rel err 8.235e-16
+  GProp_VelGProps (volume)           mass 886.846033797 (exact 886.846033797)  |G err| 3.5e-14  inertia max rel err 3.367e-14
+    Vel, loc (2,-1,3), axis (1,2,2)/3 I = 23537.6715296 (exact 23537.6715296)  rel err 1.113e-14
+[tilted] a=pi/6 R=5 v 1..9 u 0.3..2.2
+  GProp_SelGProps (surface)          mass 114 (exact 114)  |G err| 7.6e-15  inertia max rel err 3.878e-15
+    Sel, loc (2,-1,3), axis (1,2,2)/3 I = 4604.85443386 (exact 4604.85443386)  rel err 1.975e-16
+  GProp_VelGProps (volume)           mass 379.00158421 (exact 379.00158421)  |G err| 3e-14  inertia max rel err 3.796e-14
+    Vel, loc (2,-1,3), axis (1,2,2)/3 I = 7133.41951009 (exact 7133.41951009)  rel err 2.040e-15
+[tilted] a=-pi/4 R=9 v 0.5..7 u 0.3..4
+  GProp_SelGProps (surface)          mass 152.677807172 (exact 152.677807172)  |G err| 3.2e-15  inertia max rel err 1.379e-15
+    Sel, loc (2,-1,3), axis (1,2,2)/3 I = 6059.37802243 (exact 6059.37802243)  rel err 1.051e-15
+  GProp_VelGProps (volume)           mass 357.651114138 (exact 357.651114138)  |G err| 1.7e-14  inertia max rel err 3.459e-15
+    Vel, loc (2,-1,3), axis (1,2,2)/3 I = 7514.55073921 (exact 7514.55073921)  rel err 0.000e+00
+[tilted] a=pi/6 R=5 v -3..4 (straddles)
+  GProp_SelGProps (surface)          mass 230.907060039 (exact 230.907060039)  |G err| 1e-15  inertia max rel err 1.202e-15
+    Sel, loc (2,-1,3), axis (1,2,2)/3 I = 7144.73930956 (exact 7144.73930956)  rel err 1.146e-15
+  GProp_VelGProps (volume)           mass 544.366534191 (exact 544.366534191)  |G err| 4.3e-14  inertia max rel err 1.409e-14
+    Vel, loc (2,-1,3), axis (1,2,2)/3 I = 9245.44832932 (exact 9245.44832932)  rel err 2.754e-15
+== gp_Cylinder (the issue's item 1: is the defect cone-specific?) ==
+[XOY] R=5 z 0..10
+  GProp_SelGProps (surface)          mass 314.159265359 (exact 314.159265359)  |G err| 6.4e-15  inertia max rel err 2.667e+00  FAIL
+  GProp_VelGProps (volume)           mass 785.398163397 (exact 785.398163397)  |G err| 8.3e-14  inertia max rel err 7.714e+00  FAIL
+[XOY] R=5 z 1..9 u 0.3..2.2
+  GProp_SelGProps (surface)          mass 76 (exact 76)  |G err| 5.7e-15  inertia max rel err 3.651e+00  FAIL
+  GProp_VelGProps (volume)           mass 190 (exact 190)  |G err| 1.4  inertia max rel err 1.063e+01  FAIL
+[tilted] R=5 z 0..10
+  GProp_SelGProps (surface)          mass 314.159265359 (exact 314.159265359)  |G err| 3.7e-15  inertia max rel err 2.022e+00  FAIL
+  GProp_VelGProps (volume)           mass 785.398163397 (exact 785.398163397)  |G err| 1.4e-13  inertia max rel err 6.992e+00  FAIL
+[tilted] R=5 z 1..9 u 0.3..2.2
+  GProp_SelGProps (surface)          mass 76 (exact 76)  |G err| 5.7e-15  inertia max rel err 3.567e+00  FAIL
+  GProp_VelGProps (volume)           mass 190 (exact 190)  |G err| 1.4  inertia max rel err 1.294e+01  FAIL
+== gp_Sphere ==
+[XOY] R=5 full
+  GProp_SelGProps (surface)          mass 314.159265359 (exact 314.159265359)  |G err| 2.6e-16  inertia max rel err 1.893e+00  FAIL
+  GProp_VelGProps (volume)           mass 523.598775598 (exact 523.598775598)  |G err| 6.4e-15  inertia max rel err 2.488e+00  FAIL
+[XOY] R=5 teta 0.3..2.2 alpha -0.4..1.1
+  GProp_SelGProps (surface)          mass 60.8297208626 (exact 60.8297208626)  |G err| 5.4e-15  inertia max rel err 2.243e+00  FAIL
+  GProp_VelGProps (volume)           mass 101.382868104 (exact 101.382868104)  |G err| 1  inertia max rel err 3.687e+00  FAIL
+[tilted] R=5 full
+  GProp_SelGProps (surface)          mass 314.159265359 (exact 314.159265359)  |G err| 3.2e-15  inertia max rel err 1.497e+00  FAIL
+  GProp_VelGProps (volume)           mass 523.598775598 (exact 523.598775598)  |G err| 1.9e-14  inertia max rel err 1.828e+00  FAIL
+[tilted] R=5 teta 0.3..2.2 alpha -0.4..1.1
+  GProp_SelGProps (surface)          mass 60.8297208626 (exact 60.8297208626)  |G err| 2.9e-15  inertia max rel err 2.621e+00  FAIL
+  GProp_VelGProps (volume)           mass 101.382868104 (exact 101.382868104)  |G err| 1  inertia max rel err 3.492e+00  FAIL
+== summary ==
+gp_Cone checks failing: 0 of 64
+gp_Cylinder and gp_Sphere checks failing: 16 of 16 (not touched by patch 0055)
+== verdict ==
+control exit 1 (must be 1), variant exit 0 (must be 0)

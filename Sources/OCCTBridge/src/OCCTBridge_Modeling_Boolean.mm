@@ -1740,12 +1740,10 @@ OCCTBooleanHistoryRef OCCTShapeCreateSolidFromShellWithHistory(OCCTShapeRef  she
       ShapeFix_Solid fixer(solid);
       fixer.SetContext(context);
       fixer.Perform();
-      TopoDS_Shape result = fixer.Solid();
-      if (result.IsNull() || result.ShapeType() != TopAbs_SOLID)
-      {
-        result = solid; // Fall back to the unfixed solid, same as OCCTShapeCreateSolidFromShell.
-      }
-      made.push_back(result);
+      // #3041: the body comes from the shared context, the view the history is built from, so the
+      // result and the history cannot disagree. See occtSolidBodyFromFixed. Falls back to the
+      // unfixed solid when nothing usable comes back, same as OCCTShapeCreateSolidFromShell.
+      made.push_back(occtSolidBodyFromFixed(fixer.Shape(), solid));
     }
 
     TopoDS_Shape result = occtSolidBodiesToShape(made);

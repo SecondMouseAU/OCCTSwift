@@ -1384,6 +1384,25 @@ TopoDS_Shape occtSolidBodiesToShape(const std::vector<TopoDS_Shape>& bodies)
   return compound;
 }
 
+// Declared in OCCTBridge_Internal.h, where the reason it reads Shape() and not Solid() is
+// written down (#3041). Shared by the two solid-from-shell entry points in OCCTBridge_Modeling*.mm.
+TopoDS_Shape occtSolidBodyFromFixed(const TopoDS_Shape& applied, const TopoDS_Solid& unfixed)
+{
+  if (applied.IsNull())
+    return unfixed;
+  if (applied.ShapeType() == TopAbs_SOLID)
+    return applied;
+  if (applied.ShapeType() == TopAbs_SHELL)
+  {
+    TopoDS_Solid wrapper;
+    BRep_Builder builder;
+    builder.MakeSolid(wrapper);
+    builder.Add(wrapper, applied);
+    return wrapper;
+  }
+  return unfixed;
+}
+
 // Heal EVERY solid, not just the first one an explorer yields (#442). ShapeFix_Solid
 // cannot take a compound. Init/the constructor want a TopoDS_Solid, and TopoDS:Solid
 // throws on anything else, so multi-body input has to be driven one solid at a time.

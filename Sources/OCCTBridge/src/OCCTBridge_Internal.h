@@ -625,6 +625,19 @@ std::vector<TopoDS_Shell> occtBodyBoundingShells(const TopoDS_Shape& shape);
 // compound when there are several, a null shape when there are none.
 TopoDS_Shape occtSolidBodiesToShape(const std::vector<TopoDS_Shape>& bodies);
 
+// The body a ShapeFix_Solid left behind, read the way OCCT's own caller reads it (#3041).
+//
+// `applied` is `fixer.Shape()`, which is `Context()->Apply(myShape)`: the one view that holds every
+// replacement the fixer made. `ShapeFix_Shape::Perform` takes a solid's outcome from the context
+// too (ShapeFix_Shape.cxx:165 to 170, `myResult = Context()->Apply(S)` at :257) and never reads
+// `ShapeFix_Solid::Solid()`, which only the closed-shell branches assign. A single shell that
+// cannot be closed takes the "Solid can not be created from open shell" branch, which replaces
+// the solid by its repaired shell in the context and leaves `Solid()` the unrepaired wrapper.
+// Returns `applied` when it is a solid, a solid wrapping it when it is the repaired shell of a
+// body that stays open (the documented contract: an open shell comes back as a solid that is not
+// closed), and `unfixed` for anything else, including a null or compound result.
+TopoDS_Shape occtSolidBodyFromFixed(const TopoDS_Shape& applied, const TopoDS_Solid& unfixed);
+
 // === #490: the three int -> GeomAbs_Shape continuity decoders ===
 //
 // Every bridge function that takes a continuity as an integer decodes it here. There used to be
@@ -1723,12 +1736,20 @@ inline bool occtArcWalkToLength(const TheAdaptor& adaptor,
 /// more length than a curve has, the solver reports a parameter outside the curve's own domain
 /// (12.566 on an ellipse bounded by 2*pi) yet reports IsDone, and turning that into a failure is
 /// a contract change #603 has no measurement to justify.
+///
+/// #3034: a distance or start that is not finite is refused here, before either solver, so every
+/// caller (Curve2D, Curve3D, the shape-edge entry points, the composite curves) answers it the same
+/// way. It used to depend on curve and sign: +infinity came back as an infinite "parameter" on a
+/// segment, a circle and an infinite line and as a failure on a BSpline and a Bezier, while
+/// -infinity and NaN always failed. The Swift 2D doc says the same for `length(from:to:)` (#548).
 template <class TheAdaptor>
 inline bool occtAdaptorParameterAtLength(const TheAdaptor& adaptor,
                                          double            abscissa,
                                          double            u0,
                                          double&           parameter)
 {
+  if (!std::isfinite(abscissa) || !std::isfinite(u0))
+    return false;
   if (occtArcWalkToLength(adaptor, abscissa, u0, parameter))
     return true;
   GCPnts_AbscissaPoint solver(adaptor, abscissa, u0);

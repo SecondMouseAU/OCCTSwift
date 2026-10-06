@@ -130,13 +130,15 @@ Capped internally at 256 results.
 
 ### `curvatureExtrema()`
 
-Finds local minima and maxima of curvature magnitude.
+Finds the curvature extrema, classified by the **radius** of curvature, which is the reverse of what the case names suggest.
 
 ```swift
 public func curvatureExtrema() -> [Curve2DSpecialPoint]
 ```
 
 Returns `Curve2DSpecialPoint` values with `.minCurvature` or `.maxCurvature` type classification. Capped at 256 results.
+
+`.minCurvature` is a minimum of the **radius** of curvature (OCCT's `LProp_CurAndInf.hxx`), so it is reported where the curvature magnitude is a local **maximum**; `.maxCurvature` is where it is a local **minimum** (#3035). On an ellipse with semi-axes 10 and 5 the curvature is `a / b^2 = 0.4` at u = 0 and pi (`.minCurvature`) and `b / a^2 = 0.05` at u = pi/2 and 3pi/2 (`.maxCurvature`). A reversed curve reports the same labels at the same parameters.
 
 - **Returns:** Array of special points (may be empty).
 - **OCCT:** `GeomLProp_CurAndInf2d::PerformCurExt`.
@@ -145,6 +147,13 @@ Returns `Curve2DSpecialPoint` values with `.minCurvature` or `.maxCurvature` typ
   if let spline = Curve2D.interpolate(points: pts, startTangent: t1, endTangent: t2) {
       for sp in spline.curvatureExtrema() {
           print(sp.parameter, sp.type)
+      }
+  }
+
+  // The label is attached to the larger curvature: a = 10, b = 5.
+  if let e = Curve2D.ellipse(center: .zero, majorRadius: 10, minorRadius: 5) {
+      for p in e.curvatureExtrema() where p.type == .minCurvature {
+          print(p.parameter, e.curvature(at: p.parameter) ?? 0)  // 0 -> 0.4, pi -> 0.4
       }
   }
   ```
@@ -187,12 +196,14 @@ public enum Curve2DSpecialPointType: Int32, Sendable {
 | Case | Value | Meaning |
 |---|---|---|
 | `inflection` | 0 | Curvature changes sign at this parameter (a zero-crossing). |
-| `minCurvature` | 1 | Local minimum of curvature magnitude. |
-| `maxCurvature` | 2 | Local maximum of curvature magnitude. |
+| `minCurvature` | 1 | Minimum of the **radius** of curvature: the curvature magnitude is a local **maximum** (the ends of an ellipse's major axis, `a / b^2`). |
+| `maxCurvature` | 2 | Maximum of the **radius** of curvature: the curvature magnitude is a local **minimum** (the ends of an ellipse's minor axis, `b / a^2`). |
+
+The names follow OCCT's `LProp_CIType` (`LProp_CurAndInf.hxx`), which classifies by the radius of curvature, and the values are the kernel's: `GeomLProp_FuncCurExt2d::IsMinKC` is true where `|KC|` is a local maximum (#3035).
 
 #### `Curve2DSpecialPointType.maxCurvature`
 
-Local maximum of curvature magnitude.
+Maximum of the radius of curvature, which is a local minimum of the curvature magnitude.
 
 ---
 
@@ -694,8 +705,8 @@ public enum CurInfType: Int32, Sendable {
 
 | Case | Meaning |
 |------|---------|
-| `curvatureMinimum` | A local minimum of curvature (same feature `curvatureExtrema()` reports). |
-| `curvatureMaximum` | A local maximum of curvature. |
+| `curvatureMinimum` | A minimum of the radius of curvature, so a local **maximum** of the curvature magnitude (same feature `curvatureExtrema()` reports as `.minCurvature`, #3035). |
+| `curvatureMaximum` | A maximum of the radius of curvature, so a local **minimum** of the curvature magnitude. |
 | `inflection` | An inflection point (curvature crosses zero, same feature `inflectionPoints()` reports). |
 
 *(Per-case anchors below, for cross-reference; the table above has the actual meaning of each.)*
@@ -719,7 +730,7 @@ public struct CurInfPoint: Sendable {
 
 ### `curvatureExtremaDetailed()`
 
-Finds local curvature extrema with min/max type classification.
+Finds local curvature extrema with min/max type classification, by the radius of curvature as in `curvatureExtrema()`.
 
 ```swift
 public func curvatureExtremaDetailed() -> [CurInfPoint]
@@ -1359,7 +1370,7 @@ public static func parabolaFromCenterDir(
 - **Parameters:** `center`, vertex of the parabola; `direction`, axis direction; `focal`, focal distance (must be > 0).
 - **Returns:** `Curve2D` (parabola), or `nil` if `focal ≤ 0`.
 - **OCCT:** `gce_MakeParab2d`.
-- **Note:** Places the same curve as [`parabola(focus:direction:focalLength:)`](Curve2D.md) once that factory's `focus` is set to `center + direction * focal`, and since #487 enforces the same focal-length precondition. OCCT itself accepts `focal == 0` through both routes (`gp_Parab2d` documents the result as a line parallel to the axis of symmetry), so the rejection is the bridge's contract, not OCCT's.
+- **Note:** Places the same curve as [`parabola(focus:direction:focalLength:)`](Curve2D.md) once that factory's `focus` is set to `center + normalize(direction) * focal` (the two agree for any non-zero direction since #3042; the factory used to step back by the raw direction), and since #487 enforces the same focal-length precondition. OCCT itself accepts `focal == 0` through both routes (`gp_Parab2d` documents the result as a line parallel to the axis of symmetry), so the rejection is the bridge's contract, not OCCT's.
 - **Example:**
   ```swift
   if let p = Curve2D.parabolaFromCenterDir(

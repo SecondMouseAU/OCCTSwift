@@ -10,7 +10,20 @@ public struct ShapeAnalysisResult {
     /// Number of faces smaller than tolerance.
     public let smallFaceCount: Int
 
-    /// Number of gaps between edges/faces.
+    /// Number of edge-to-edge junctions, across every wire, whose 3D distance exceeds the
+    /// analysis tolerance.
+    ///
+    /// Counted per junction, after each wire's edges are put in connection order the way
+    /// `ShapeFix_Wire::Perform` does before its own gap fix (#3040). The edges of a primitive's
+    /// faces are stored out of order, and before that step a flawless box read 24 gaps (the face
+    /// diagonal at every junction) and was never ``isHealthy``. A wire with a real gap still
+    /// reports it.
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// let report = box.analyze(tolerance: 1e-6)!
+    /// print(report.gapCount, report.isHealthy)   // 0 true
+    /// ```
     public let gapCount: Int
 
     /// Whether the shape self-intersects, or `nil` if ``Shape/analyze(tolerance:selfIntersectionTimeout:)``
@@ -92,6 +105,9 @@ public struct ShapeAnalysisResult {
     }
 
     /// Whether the shape appears to be healthy (no problems found).
+    ///
+    /// True for a primitive box, cylinder or sphere (#3040): ``gapCount`` no longer counts the
+    /// stored order of a wire as a gap.
     ///
     /// - Important: If the analysis did not pass a non-`nil` `selfIntersectionTimeout`, this says
     ///   nothing about self-intersection either way; see ``hasSelfIntersection``.

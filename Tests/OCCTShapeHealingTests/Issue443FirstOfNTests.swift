@@ -75,10 +75,12 @@ private func closedAndOpenShellCompound() throws -> Shape {
 /// the face with one whose wire is in order, and the shared reshape context records that
 /// replacement. A healthy box repairs nothing, so its history is empty and cannot say whether it
 /// covers a body at all. The face is a 10x10 square with its lower left corner at `x0`.
-private func unorderedWireFaceShell(at x0: Double) throws -> (face: Shape, shell: Shape) {
+private func unorderedWireFaceShell(at x0: Double, z: Double = 0) throws -> (
+    face: Shape, shell: Shape
+) {
     let corners: [SIMD3<Double>] = [
-        SIMD3<Double>(x0, 0, 0), SIMD3<Double>(x0 + 10, 0, 0),
-        SIMD3<Double>(x0 + 10, 10, 0), SIMD3<Double>(x0, 10, 0),
+        SIMD3<Double>(x0, 0, z), SIMD3<Double>(x0 + 10, 0, z),
+        SIMD3<Double>(x0 + 10, 10, z), SIMD3<Double>(x0, 10, z),
     ]
     let ordered = try #require(Wire.polygon3D(corners, closed: true), "could not build the square")
     let edges = ordered.edges().compactMap { Shape.fromEdge($0) }
@@ -439,8 +441,8 @@ struct Issue443FirstOfN {
     /// has no record for one or both of them. Healthy input cannot show this, because it has no
     /// replacement to record (see `solidWithHistoryQueryableForEveryBody`).
     ///
-    /// One half of the obvious expectation does not hold, and is carried as a known issue: the
-    /// result's body keeps the original face while the history says it was replaced (#3041).
+    /// The result's body holds the face the history reports as the replacement (#3041: the body
+    /// used to keep the original face while the history said it was replaced).
     @Test("solidWithFullHistory(from:) records the repair of every body, not only the last")
     func solidWithHistoryRecordsEveryBodysRepair() throws {
         let (faceA, shellA) = try unorderedWireFaceShell(at: 0)
@@ -480,14 +482,98 @@ struct Issue443FirstOfN {
                 "face \(entry.label)'s replacement is still out of order, so it repairs nothing")
 
             // The expectation that goes with a history: the body the call returns holds the face
-            // the history reports as the replacement. It does not today, because the bridge reads
-            // the body from `ShapeFix_Solid::Solid()`, which a shell that cannot close never
-            // updates, where OCCT's own caller reads the shared context (#3041).
-            withKnownIssue("#3041: the result keeps the face the history says was replaced") {
-                let held = bodies[index].subShapes(ofType: .face)
-                #expect(held.contains { $0.isSame(as: repaired) }, "body \(entry.label)")
-            }
+            // the history reports as the replacement, and not the face it replaced. The bridge
+            // reads the body from the fixer's shared context, as OCCT's own caller does (#3041).
+            let held = bodies[index].subShapes(ofType: .face)
+            #expect(held.contains { $0.isSame(as: repaired) }, "body \(entry.label)")
+            #expect(!held.contains { $0.isSame(as: entry.face) }, "body \(entry.label) kept it")
         }
+    }
+
+    /// The single open body of the issue's reproducer: result and history are one story.
+    ///
+    /// A one-face open shell cannot be closed, so `ShapeFix_Solid` takes its "Solid can not be
+    /// created from open shell" branch, which records the repair in the context and never
+    /// assigns `Solid()`. The result must still carry the repaired face, as a solid that is not
+    /// closed (the documented contract for an open shell), and `solid(from:)`, which reads the
+    /// same fixer, must carry it too even though it has no history to contradict.
+    @Test("an open body that gets repaired comes back repaired, and the history says the same")
+    func openBodyResultMatchesHistory() throws {
+        let (face, shell) = try unorderedWireFaceShell(at: 0)
+        let (result, history) = try #require(
+            Shape.solidWithFullHistory(from: shell), "solidWithFullHistory(from:) returned nil")
+        let record = history.record(of: face)
+        #expect(record.modified.count == 1)
+        let repaired = try #require(record.modified.first, "the face was not modified")
+
+        // Still one solid that does not close, wrapping one face, in the input's place.
+        #expect(result.shapeType == .solid)
+        #expect(!result.isValid, "an open shell wrapped as a solid is not valid")
+        #expect(result.subShapeCount(ofType: .face) == 1)
+        try expectBounds(result, from: SIMD3(0, 0, 0), to: SIMD3(10, 10, 0), "the open body")
+
+        let held = try #require(
+            result.subShapes(ofType: .face).first, "the result holds no face")
+        #expect(held.isSame(as: repaired), "the result must hold the face the history reports")
+        #expect(!held.isSame(as: face), "the result kept the face the history says was replaced")
+        let heldWire = try #require(held.subShapes(ofType: .wire).first, "the face has no wire")
+        #expect(
+            SAWireAnalysis.checkOrder(wire: heldWire, face: held) == false,
+            "the result's face is still out of order, so the repair is not in the result")
+
+        // The same body through the entry point with no history.
+        let plain = try #require(Shape.solid(from: shell), "solid(from:) returned nil")
+        #expect(plain.shapeType == .solid)
+        #expect(!plain.isValid)
+        let plainFace = try #require(plain.subShapes(ofType: .face).first, "no face from solid()")
+        #expect(!plainFace.isSame(as: face), "solid(from:) ignored a repair its own call made")
+        let plainWire = try #require(
+            plainFace.subShapes(ofType: .wire).first, "the face has no wire")
+        #expect(
+            SAWireAnalysis.checkOrder(wire: plainWire, face: plainFace) == false,
+            "solid(from:)'s face is still out of order")
+    }
+
+    /// Control: a body that closes carried its repair before the fix and must still.
+    ///
+    /// The five faces of a box plus a top face whose wire is out of order, sewn into a closed
+    /// six-face shell. This is the branch that assigned `Solid()` from the context, so it pins
+    /// that reading the body from the context did not move it.
+    @Test("a closing body keeps its repair in the result, with a history that reports it")
+    func closedBodyResultMatchesHistory() throws {
+        let box = try #require(Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10))
+        let faces = box.subShapes(ofType: .face)
+        try #require(faces.count == 6)
+        let sides = faces.filter { face in
+            guard let b = face.boundingBox else { return true }
+            return !(b.min.z > 9.9)
+        }
+        try #require(sides.count == 5, "the box has \(sides.count) faces off the top")
+        let (_, topShell) = try unorderedWireFaceShell(at: 0, z: 10)
+        let top = try #require(topShell.subShapes(ofType: .face).first)
+        let sewn = try #require(
+            Shape.sew(shapes: sides + [top], tolerance: 1e-6), "could not sew the six faces")
+        let body = try #require(sewn.shells.first, "sewing gave no shell")
+        try #require(body.volume != nil, "the sewn shell is not closed")
+
+        let (result, history) = try #require(
+            Shape.solidWithFullHistory(from: body), "solidWithFullHistory(from:) returned nil")
+        #expect(result.shapeType == .solid)
+        #expect(result.isValid)
+        expectVolume(result, 1000.0, "the closed body")
+
+        // Every face the history reports as modified is held by the result, and its replacement
+        // is in connection order.
+        var modified = 0
+        for original in body.subShapes(ofType: .face) {
+            let record = history.record(of: original)
+            guard let replacement = record.modified.first else { continue }
+            modified += 1
+            #expect(
+                result.subShapes(ofType: .face).contains { $0.isSame(as: replacement) },
+                "the history replaces a face the result does not hold")
+        }
+        #expect(modified >= 1, "nothing was repaired, so the fixture shows nothing")
     }
 
     /// Bodies the history variant builds are turned outward too, every one of them.

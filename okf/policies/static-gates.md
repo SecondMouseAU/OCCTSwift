@@ -208,8 +208,11 @@ The seven censuses today and what each is for:
   properties are worth copying to the next committed derivation:
 
   - **The stamp is measured, not asserted.** `--write-table` verifies every carried patch is
-    really in the tree it is about to derive from, by matching each hunk's post-image against the
-    file, and refuses to write anything when one is not. A stamp that merely copied today's patch
+    really in the tree it is about to derive from, by undoing the patches newest first against the
+    file, each hunk's post-image replaced by its pre-image, and refuses to write anything when one
+    is not present at its turn. Undoing in order, not matching each patch's added lines, is what
+    lets a later patch rewrite an earlier one's lines (0055 over 0051, #3010) without the earlier
+    patch reading as missing. A stamp that merely copied today's patch
     list onto yesterday's rows would put the gate to sleep, which is worse than the gap it closes.
   - **It is keyed on the inputs, not on the pin.** The tree `build-occt.sh` patches is the one
     `Scripts/patches/` describes, so an unpinned patch is in this check's subject and not in

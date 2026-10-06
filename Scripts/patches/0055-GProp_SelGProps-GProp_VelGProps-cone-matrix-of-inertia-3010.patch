@@ -1,0 +1,276 @@
+From: OCCTSwift ecosystem <noreply@secondmouse.au>
+Subject: [PATCH] Modeling Data - GProp_SelGProps and GProp_VelGProps compute
+ the matrix of inertia, and for the volume the centre of mass, of a gp_Cone
+ wrongly
+
+GProp_SelGProps::Perform(const gp_Cone&, ...) and GProp_VelGProps::Perform(const
+gp_Cone&, ...) build Dm, the matrix of inertia about the location of the cone in
+the axes of the cone, from closed forms that do not integrate to anything, and
+then assemble inertia from it in a way that is wrong for any Dm. On gp_Cone,
+P(u, v) = Loc + (R + v sin a)(cos u X + sin u Y) + v cos a Z, so with
+r = R + v sin a and z = v cos a the surface element is r dv du, and the volume
+swept between the axis and the patch (the convention the cylinder and sphere
+overloads of GProp_VelGProps use, and 0051 documents) is dV = rho drho du dz.
+
+Per unit angle the surface moments are
+
+  Dm(3,3) = int r^3 dv           = (Z2 - Z1)(R1^3 + R1^2 R2 + R1 R2^2 + R2^3) / 4
+  int z^2 dA = cos^2 a (Z2 - Z1)(R Auxi2 + sin a (Z2^3 + Z2^2 Z1 + Z2 Z1^2 + Z1^3) / 4)
+  int x z dA = cos a (Z2 - Z1)(R^2 (Z1 + Z2) / 2 + 2 R sin a Auxi2
+               + sin^2 a (Z1 + Z2)(Z1^2 + Z2^2) / 4) (Sn2 - Sn1)
+
+and the volume moments are
+
+  Dm(3,3) = cos a (Z2 - Z1)(R1^4 + R1^3 R2 + R1^2 R2^2 + R1 R2^3 + R2^4) / 20
+  int z^2 dV = cos^3 a / 2 int v^2 r^2 dv
+  int x z dV = cos^2 a / 3 int v r^3 dv (Sn2 - Sn1)
+
+with R1 = R + Z1 sin a, R2 = R + Z2 sin a and Auxi2 = (Z2^2 + Z1 Z2 + Z1^2) / 3.
+Against those the code has these defects, all in the two cone overloads:
+
+  - GProp_SelGProps: IR2 carries an extra cos a sin a, so Dm(3,3) is that
+    fraction of the second moment about the axis. IZ2 carries an extra
+    (Z2 - Z1) cos a and divides both terms by 4, where only the sin a term takes
+    it. ISn2 repeats ICn2, with a plus where the sine integral has a minus.
+    ICnSn is (Cn2^2 - Cn1^2) where the integral is (Sn2^2 - Sn1^2) / 2.
+    ICnz and ISnz are a different polynomial. The x and y coordinate of the
+    centre of mass uses sin a Auxi2 where the quadratic term is sin^2 a Auxi2,
+    which a full turn hides because it multiplies sin u and cos u terms that
+    integrate to zero.
+  - GProp_VelGProps: the centre of mass is the one of the lateral surface, not of
+    the solid, in all three coordinates. IR2 is a four term cubic over 4 with a
+    spurious sin a where the moment is a five term quartic over 20, and ISn2,
+    IZ2, ICnSn, ICnz and ISnz are wrong as above.
+  - Both: inertia is built as gp_Mat(rows of lambda_i * v_i) from the Jacobi
+    decomposition of Dm, which is diag(lambda) V^T and not V diag(lambda) V^T, so
+    the sign Jacobi happens to give an eigenvector changes the matrix, and Dm,
+    which is about the location of the cone, is added to the Huyghens term of the
+    centre of mass as if it were already about the centre of mass.
+
+The patch computes every entry from the integrals above and assembles
+inertia = P Dm P^T - H(g, Location) + H(g, loc), with P the columns of the axes of
+the cone and H the GProp::HOperator term, which is the matrix of inertia about
+loc whatever loc is. The mass is not touched (0050 and 0051). The cylinder,
+sphere and torus overloads are not touched either; see the end.
+
+GProp_VelGProps and GProp_SelGProps have no caller anywhere in the OCCT tree, so
+there is no call site whose use of the result could settle the convention. The
+arbiter is an independent Gauss-Legendre integral over the parameter space of
+the cone, which shares no formula with the code above.
+
+Measured on macOS arm64 against V8_0_1 with 0050 and 0051 applied and the
+translation units override-linked, gp_Cone(gp::XOY(), pi/6, 5) over u in
+[0, 2 pi], v in [0, 10]. Dm(3,3) of the surface: before 12753.276779771842,
+after 29452.431127404328, the integral 29452.431127404328 (the ratio before is
+0.43301270189221902, cos(pi/6) sin(pi/6)). Largest entry of the matrix of
+inertia about the centre of mass, relative to the integral: before 2.5
+(GProp_SelGProps) and 2.4 (GProp_VelGProps), after 1.2e-15 and 6.3e-15. The z
+coordinate of the centre of mass of the solid: before 4.81125224325, after
+5.25801138012, the integral 5.25801138012. Over 64 checks (semi-angles pi/3,
+pi/6, pi/12, -pi/6, -pi/12 and -pi/4, full and partial turns, the frame of the
+cone untilted and tilted, loc at the origin and at (2, -1, 3), mass, centre of
+mass, matrix of inertia and a moment about an oblique axis) 64 fail before and 0
+fail after, the largest deviation 7.9e-14.
+
+The same probe on gp_Cylinder and gp_Sphere (16 checks) fails 16 of 16 too: for
+the full gp_Cylinder surface of radius 5 and height 10 Dm(3,3) reads 314.159,
+which is 2 pi R H, where the second moment about the axis is 2 pi R^3 H, and the
+signs of the matrix come out of the same eigenvector assembly. That is measured
+and not diagnosed or fixed here: the cone is one defect cluster and the other
+overloads are another.
+
+The reproducer is Scripts/repro/3010-cone-inertia/probe.cxx and the transcript is
+Scripts/repro/3010-cone-inertia/transcript.txt in the OCCTSwift repository.
+OCCTSwift issue #3010. It applies on top of 0050 and 0051 and not without them,
+since its hunks take their context from the lines those two change.
+
+diff --git a/src/ModelingData/TKGeomBase/GProp/GProp_SelGProps.cxx b/src/ModelingData/TKGeomBase/GProp/GProp_SelGProps.cxx
+--- a/src/ModelingData/TKGeomBase/GProp/GProp_SelGProps.cxx
++++ b/src/ModelingData/TKGeomBase/GProp/GProp_SelGProps.cxx
+@@ -125,7 +125,7 @@ void GProp_SelGProps::Perform(const gp_Cone& S,
+   // |dP/du ^ dP/dv| is R + v sin(a) on gp_Cone, so the area carries no cos(a) factor.
+   dim = (Alpha2 - Alpha1) * (Z2 - Z1) * Auxi1;
+
+-  double Ix = (R * R + R * (Z2 + Z1) * Snt + Snt * Auxi2) / Auxi1;
++  double Ix = (R * R + R * (Z2 + Z1) * Snt + Snt * Snt * Auxi2) / Auxi1;
+   double Iy = Ix * (Cn1 - Cn2) / (Alpha2 - Alpha1);
+   Ix        = Ix * (Sn2 - Sn1) / (Alpha2 - Alpha1);
+   double Iz = Cnt * (R * (Z2 + Z1) / 2. + Snt * Auxi2) / Auxi1;
+@@ -134,18 +134,21 @@ void GProp_SelGProps::Perform(const gp_Cone& S,
+              Y0 + Ya1 * Ix + Ya2 * Iy + Ya3 * Iz,
+              Z0 + Za1 * Ix + Za2 * Iy + Za3 * Iz);
+
+-  double R1   = R + Z1 * Snt;
+-  double R2   = R + Z2 * Snt;
+-  double ZZ   = (Z2 - Z1) * Cnt;
+-  double IR2  = ZZ * Snt * (R1 * R1 * R1 + R1 * R1 * R2 + R1 * R2 * R2 + R2 * R2 * R2) / 4.;
+-  double ICn2 = IR2 * (Alpha2 - Alpha1 + Cn2 * Sn2 - Cn1 * Sn1) / 2.;
+-  double ISn2 = IR2 * (Alpha2 - Alpha1 + Cn2 * Sn2 - Cn1 * Sn1) / 2.;
+-  double IZ2  = ZZ * Cnt * Cnt * (Z2 - Z1) * (Alpha2 - Alpha1)
+-               * (R * Auxi2 + Snt * (Z2 * Z2 * Z2 + Z2 * Z2 * Z1 + Z2 * Z1 * Z1 + Z1 * Z1 * Z1))
+-               / 4.;
+-  double ICnSn = IR2 * (Cn2 * Cn2 - Cn1 * Cn1);
+-  double ICnz  = Cnt * Snt * ZZ * (R * (Z1 + Z2) / 2. + Auxi2) * (Sn2 - Sn1);
+-  double ISnz  = Cnt * Snt * ZZ * (R * (Z1 + Z2) / 2. + Auxi2) * (Cn1 - Cn2);
++  double R1 = R + Z1 * Snt;
++  double R2 = R + Z2 * Snt;
++  double Z3 = Z2 * Z2 * Z2 + Z2 * Z2 * Z1 + Z2 * Z1 * Z1 + Z1 * Z1 * Z1;
++  double Z4 = (Z1 + Z2) * (Z1 * Z1 + Z2 * Z2);
++  // Per unit angle, over the generatrix with r = R + v sin(a), z = v cos(a), dA = r dv du:
++  // IR2 = int r^3 dv, IZ2 = int z^2 r dv, IRZ = int r z r dv.
++  double IR2 = (Z2 - Z1) * (R1 * R1 * R1 + R1 * R1 * R2 + R1 * R2 * R2 + R2 * R2 * R2) / 4.;
++  double IRZ =
++    Cnt * (Z2 - Z1) * (R * R * (Z1 + Z2) / 2. + 2. * R * Snt * Auxi2 + Snt * Snt * Z4 / 4.);
++  double ICn2  = IR2 * (Alpha2 - Alpha1 + Cn2 * Sn2 - Cn1 * Sn1) / 2.;
++  double ISn2  = IR2 * (Alpha2 - Alpha1 - Cn2 * Sn2 + Cn1 * Sn1) / 2.;
++  double IZ2   = Cnt * Cnt * (Z2 - Z1) * (Alpha2 - Alpha1) * (R * Auxi2 + Snt * Z3 / 4.);
++  double ICnSn = IR2 * (Sn2 * Sn2 - Sn1 * Sn1) / 2.;
++  double ICnz  = IRZ * (Sn2 - Sn1);
++  double ISnz  = IRZ * (Cn1 - Cn2);
+
+   math_Matrix Dm(1, 3, 1, 3);
+   Dm(1, 1) = ISn2 + IZ2;
+@@ -155,32 +158,14 @@ void GProp_SelGProps::Perform(const gp_Cone& S,
+   Dm(1, 3) = Dm(3, 1) = -ICnz;
+   Dm(3, 2) = Dm(2, 3) = -ISnz;
+
+-  math_Matrix Passage(1, 3, 1, 3);
+-  Passage(1, 1) = Xa1;
+-  Passage(1, 2) = Xa2;
+-  Passage(1, 3) = Xa3;
+-  Passage(2, 1) = Ya1;
+-  Passage(2, 2) = Ya2;
+-  Passage(2, 3) = Ya3;
+-  Passage(3, 1) = Za1;
+-  Passage(3, 2) = Za2;
+-  Passage(3, 3) = Za3;
+-
+-  math_Jacobi J(Dm);
+-  math_Vector V1(1, 3), V2(1, 3), V3(1, 3);
+-  J.Vector(1, V1);
+-  V1.Multiply(Passage, V1);
+-  V1.Multiply(J.Value(1));
+-  J.Vector(2, V2);
+-  V2.Multiply(Passage, V2);
+-  V2.Multiply(J.Value(2));
+-  J.Vector(3, V3);
+-  V3.Multiply(Passage, V3);
+-  V3.Multiply(J.Value(3));
+-
+-  inertia =
+-    gp_Mat(gp_XYZ(V1(1), V2(1), V3(1)), gp_XYZ(V1(2), V2(2), V3(2)), gp_XYZ(V1(3), V2(3), V3(3)));
++  // Dm is the matrix of inertia about the location of the cone, in the axes of the cone. Take it to
++  // the global axes, then to the centre of mass and from there to loc.
++  gp_Mat Pm(Xa1, Xa2, Xa3, Ya1, Ya2, Ya3, Za1, Za2, Za3);
++  gp_Mat
++    Dg(Dm(1, 1), Dm(1, 2), Dm(1, 3), Dm(2, 1), Dm(2, 2), Dm(2, 3), Dm(3, 1), Dm(3, 2), Dm(3, 3));
+   gp_Mat Hop;
++  GProp::HOperator(g, S.Location(), dim, Hop);
++  inertia = Pm * Dg * Pm.Transposed() - Hop;
+   GProp::HOperator(g, loc, dim, Hop);
+   inertia = inertia + Hop;
+ }
+diff --git a/src/ModelingData/TKGeomBase/GProp/GProp_VelGProps.cxx b/src/ModelingData/TKGeomBase/GProp/GProp_VelGProps.cxx
+--- a/src/ModelingData/TKGeomBase/GProp/GProp_VelGProps.cxx
++++ b/src/ModelingData/TKGeomBase/GProp/GProp_VelGProps.cxx
+@@ -165,8 +165,7 @@ void GProp_VelGProps::Perform(const gp_Cone& S,
+   double Sn1   = std::sin(Alpha1);
+   double Cn2   = std::cos(Alpha2);
+   double Cn1   = std::cos(Alpha1);
+-  double ZZ    = (Z2 - Z1) * (Z2 - Z1) * Cnt * Snt;
+-  double Auxi1 = 2 * R + (Z2 + Z1) * Snt;
++  double Auxi2 = (Z2 * Z2 + Z1 * Z2 + Z1 * Z1) / 3.;
+
+   // Frustum volume pi/3 H (R1^2 + R1 R2 + R2^2); the old form carried sin(a) and vanished at a = 0.
+   dim = (Alpha2 - Alpha1) * Cnt * (Z2 - Z1)
+@@ -174,24 +173,38 @@ void GProp_VelGProps::Perform(const gp_Cone& S,
+
+   double R1    = R + Z1 * Snt;
+   double R2    = R + Z2 * Snt;
++  double Z4    = (Z1 + Z2) * (Z1 * Z1 + Z2 * Z2);
++  double Z5    = Z2 * Z2 * Z2 * Z2 + Z2 * Z2 * Z2 * Z1 + Z2 * Z2 * Z1 * Z1 + Z2 * Z1 * Z1 * Z1
++                 + Z1 * Z1 * Z1 * Z1;
+   double Coef0 = (R1 * R1 + R1 * R2 + R2 * R2);
+-  double Iz    = Cnt * (R * (Z2 + Z1) + 2 * Snt * (Z1 * Z1 + Z1 * Z2 + Z2 * Z2) / 3.) / Auxi1;
+-  double Ix    = Coef0 * (Sn2 - Sn1) / (Alpha2 - Alpha1) / Auxi1;
+-  double Iy    = Coef0 * (Cn1 - Cn2) / (Alpha2 - Alpha1) / Auxi1;
++  double Coef1 = (R1 * R1 * R1 + R1 * R1 * R2 + R1 * R2 * R2 + R2 * R2 * R2);
++  // int v r^2 dv over (Z2 - Z1), r = R + v sin(a): the z moment of the frustum.
++  double Coef2 = R * R * (Z1 + Z2) / 2. + 2. * R * Snt * Auxi2 + Snt * Snt * Z4 / 4.;
++  double Iz    = 3. * Cnt * Coef2 / Coef0;
++  double Ix    = Coef1 * (Sn2 - Sn1) / (Alpha2 - Alpha1) / (2. * Coef0);
++  double Iy    = Coef1 * (Cn1 - Cn2) / (Alpha2 - Alpha1) / (2. * Coef0);
+
+   g.SetCoord(X0 + Xa1 * Ix + Xa2 * Iy + Xa3 * Iz,
+              Y0 + Ya1 * Ix + Ya2 * Iy + Ya3 * Iz,
+              Z0 + Za1 * Ix + Za2 * Iy + Za3 * Iz);
+
+-  double IR2  = ZZ * (R2 * R2 * R2 + R2 * R2 * R1 + R1 * R1 * R2 + R1 * R1 * R1) / 4.;
+-  double ICn2 = IR2 * (Alpha2 - Alpha1 + Cn2 * Sn2 - Cn1 * Sn1) / 2.;
+-  double ISn2 = IR2 * (Alpha2 - Alpha1 + Cn2 * Sn2 - Cn1 * Sn1) / 2.;
+-  double IZ2  = ZZ * Cnt * Cnt * (Alpha2 - Alpha1)
+-               * (Z1 * Z1 * (R / 3 + Z1 * Snt / 4) + Z2 * Z2 * (R / 3 + Z2 * Snt / 4)
+-                  + Z1 * Z2 * (R / 3 + Z1 * Snt / 4 + Z2 * Snt / 4));
+-  double ICnSn = IR2 * (Cn2 * Cn2 - Cn1 * Cn1);
+-  double ICnz  = (Z1 + Z2) * ZZ * Coef0 * (Sn2 - Sn1) / 3;
+-  double ISnz  = (Z1 + Z2) * ZZ * Coef0 * (Cn1 - Cn2) / 3;
++  // Per unit angle, over the frustum with r = R + v sin(a), z = v cos(a), dV = rho drho du dz:
++  // IR2 = int r^4/4 dz, IZ2 = int z^2 r^2/2 dz, IRZ = int z r^3/3 dz.
++  double IR2   = Cnt * (Z2 - Z1)
++                 * (R2 * R2 * R2 * R2 + R2 * R2 * R2 * R1 + R2 * R2 * R1 * R1 + R2 * R1 * R1 * R1
++                    + R1 * R1 * R1 * R1)
++                 / 20.;
++  double IRZ   = Cnt * Cnt * (Z2 - Z1)
++                 * (R * R * R * (Z1 + Z2) / 2. + 3. * R * R * Snt * Auxi2
++                    + 3. * R * Snt * Snt * Z4 / 4. + Snt * Snt * Snt * Z5 / 5.)
++                 / 3.;
++  double ICn2  = IR2 * (Alpha2 - Alpha1 + Cn2 * Sn2 - Cn1 * Sn1) / 2.;
++  double ISn2  = IR2 * (Alpha2 - Alpha1 - Cn2 * Sn2 + Cn1 * Sn1) / 2.;
++  double IZ2   = Cnt * Cnt * Cnt * (Z2 - Z1) * (Alpha2 - Alpha1)
++                 * (R * R * Auxi2 + R * Snt * Z4 / 2. + Snt * Snt * Z5 / 5.) / 2.;
++  double ICnSn = IR2 * (Sn2 * Sn2 - Sn1 * Sn1) / 2.;
++  double ICnz  = IRZ * (Sn2 - Sn1);
++  double ISnz  = IRZ * (Cn1 - Cn2);
+
+   math_Matrix Dm(1, 3, 1, 3);
+   Dm(1, 1) = ISn2 + IZ2;
+@@ -201,32 +214,14 @@ void GProp_VelGProps::Perform(const gp_Cone& S,
+   Dm(1, 3) = Dm(3, 1) = -ICnz;
+   Dm(3, 2) = Dm(2, 3) = -ISnz;
+
+-  math_Matrix Passage(1, 3, 1, 3);
+-  Passage(1, 1) = Xa1;
+-  Passage(1, 2) = Xa2;
+-  Passage(1, 3) = Xa3;
+-  Passage(2, 1) = Ya1;
+-  Passage(2, 2) = Ya2;
+-  Passage(2, 3) = Ya3;
+-  Passage(3, 1) = Za1;
+-  Passage(3, 2) = Za2;
+-  Passage(3, 3) = Za3;
+-
+-  math_Jacobi J(Dm);
+-  math_Vector V1(1, 3), V2(1, 3), V3(1, 3);
+-  J.Vector(1, V1);
+-  V1.Multiply(Passage, V1);
+-  V1.Multiply(J.Value(1));
+-  J.Vector(2, V2);
+-  V2.Multiply(Passage, V2);
+-  V2.Multiply(J.Value(2));
+-  J.Vector(3, V3);
+-  V3.Multiply(Passage, V3);
+-  V3.Multiply(J.Value(3));
+-
+-  inertia =
+-    gp_Mat(gp_XYZ(V1(1), V2(1), V3(1)), gp_XYZ(V1(2), V2(2), V3(2)), gp_XYZ(V1(3), V2(3), V3(3)));
++  // Dm is the matrix of inertia about the location of the cone, in the axes of the cone. Take it to
++  // the global axes, then to the centre of mass and from there to loc.
++  gp_Mat Pm(Xa1, Xa2, Xa3, Ya1, Ya2, Ya3, Za1, Za2, Za3);
++  gp_Mat
++    Dg(Dm(1, 1), Dm(1, 2), Dm(1, 3), Dm(2, 1), Dm(2, 2), Dm(2, 3), Dm(3, 1), Dm(3, 2), Dm(3, 3));
+   gp_Mat Hop;
++  GProp::HOperator(g, S.Location(), dim, Hop);
++  inertia = Pm * Dg * Pm.Transposed() - Hop;
+   GProp::HOperator(g, loc, dim, Hop);
+   inertia = inertia + Hop;
+ }

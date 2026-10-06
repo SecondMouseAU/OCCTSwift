@@ -21,6 +21,73 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### The gp_Cone matrix of inertia of GProp_SelGProps and GProp_VelGProps, and the solid's centre of mass, are now correct, carried as kernel patch 0055 (#3010)
+
+`GProp_SelGProps::Perform(gp_Cone)` and `GProp_VelGProps::Perform(gp_Cone)` returned a matrix of inertia that was wrong in every entry, and `GProp_VelGProps` returned the lateral surface's centre of mass for the solid. For a cone of semi-angle pi/6, base radius 5 and slant length 10 the surface's second moment about the axis read 12753.28 where an independent integral gives 29452.43. The closed forms the code held did not integrate to the moments they were named for, and the matrix was assembled from the Jacobi decomposition as `diag(lambda) V^T` instead of `V diag(lambda) V^T`, with the moment about the cone's location taken as already about the centre of mass. Patch `0055` computes every entry from the integral and assembles the matrix about whatever reference point the object holds. Against that integral, over 16 cone cases (semi-angles of both signs, full and partial turns, tilted and untilted frames) 64 of 64 checks fail before and none after, the largest deviation 7.9e-14.
+
+The patch is carried and not yet pinned. No Swift API reads the cone's centre of mass or matrix of inertia (`GeometryProperties.coneSurfaceArea` and `.coneVolume` read the mass alone, which `0050` and `0051` fixed), so a consumer of the current API sees no difference. The `gp_Cylinder` and `gp_Sphere` overloads of the same two classes fail the same probe (16 of 16, the cylinder's `Dm(3, 3)` drops an `R^2`) and are not changed here. Reproduction and the independent integral are in `Scripts/repro/3010-cone-inertia/`.
+
+### `solidWithFullHistory(from:)` and `solid(from:)` return the repaired face of a body that stays open (#3041)
+
+For a body `ShapeFix_Solid` repairs but cannot close, `Shape.solidWithFullHistory(from:)` returned a solid still holding the unrepaired face while its history reported that face as replaced, and `Shape.solid(from:)` ignored the same repair. Both read the body from `ShapeFix_Solid::Solid()`, which the open-shell branch never assigns. They now read it from the fixer's shared context, as `ShapeFix_Shape` does, so the result holds the face the history reports. A body that stays open still comes back as a solid that is not closed; a body that closes is unchanged.
+
+```swift
+let (result, history) = Shape.solidWithFullHistory(from: openShell)!
+if let repaired = history.record(of: face).modified.first {
+    print(result.subShapes(ofType: .face).contains { $0.isSame(as: repaired) })   // true
+}
+```
+
+### `Shape.analyze(tolerance:)` no longer reports a flawless box as 24 gaps and unhealthy (#3040)
+
+`Shape.analyze(tolerance:)` counted `gapCount` with `ShapeAnalysis_Wire::CheckGap3d` on wires whose edges are stored out of connection order, which is every face of a primitive. A 10 mm box read `gapCount == 24` and `isHealthy == false` at every tolerance, including 1.0, because each junction was compared with the opposite edge (the face diagonal). Each wire is now ordered first, the way `ShapeFix_Wire::Perform` does before its gap fix, so a box, a cylinder and a sphere read `gapCount == 0` and `isHealthy == true`. A wire with a real gap still reports it, ordered or not. `totalProblems` drops by the same amount for every shape that has an unordered wire, and `ShapeAnalysisResult.gapCount`, `totalProblems` and `isHealthy` are documented accordingly.
+
+```swift
+let box = Shape.box(width: 10, height: 10, depth: 10)!
+let report = box.analyze(tolerance: 1e-6)!
+print(report.gapCount, report.isHealthy)   // 0 true
+```
+
+### `parameterAtLength` refuses a non-finite distance or start on every curve type, and the 2D doc states the extrapolation (#3034)
+
+`Curve2D.parameterAtLength(_:from:)` now returns `nil` for `.infinity`, `-.infinity` and `.nan`, as a distance or as the start parameter, on every curve type. `+.infinity` used to return an infinite parameter on segments, circles and infinite lines and `nil` on splines. The same refusal reaches `Curve3D.parameterAtLength`, `Shape.edgeParameterAtArcLength` and `Shape.edgeParameterAtFraction`, which have no optional and now return their failure value `0` for such an input. The `Curve2D` doc comment no longer promises `nil` for a distance past the end of the curve: a finite distance longer than the curve succeeds with a parameter outside `domain`, as it always did and as `Curve3D.parameterAtLength` documents.
+
+```swift
+let seg = Curve2D.segment(from: .zero, to: SIMD2(10, 0))!
+seg.parameterAtLength(1000)       // 1000, outside seg.domain (0...10), unchanged
+seg.parameterAtLength(.infinity)  // nil (was inf)
+```
+
+### `Curve2D.parabola` and `arcOfParabola` place the focus where asked for a non-unit direction (#3042)
+
+`Curve2D.parabola(focus:direction:focalLength:)` and `Curve2D.arcOfParabola(focus:direction:focalLength:startParam:endParam:)` stepped back to the vertex by the unnormalised direction, so any direction that was not a unit vector returned a parabola whose focus was not `focus` (direction (3, 4), focus (1, 1), focal 5 put it at (-11, -15)). The vertex is now `focalLength` behind the focus along the unit direction, so the focus is exactly `focus` and the length of `direction` does not matter. Unit directions are unchanged, and a zero direction still returns `nil`.
+
+```swift
+let p = Curve2D.parabola(focus: SIMD2(1, 1), direction: SIMD2(3, 4), focalLength: 5)
+// vertex (-2, -3), focus (1, 1): the same parabola as direction (0.6, 0.8)
+```
+
+### `Curve2D.interpolate(through:tangents:)` refuses a tangent keyed outside the point indices (#3036)
+
+`Curve2D.interpolate(through:tangents:closed:tolerance:)` used to drop a tangent whose key was outside `0..<points.count` and return the curve built from the remaining constraints, with no signal. It now returns `nil`, so an off-by-one index no longer yields a curve that silently ignores the constraint. In-range keys behave as before.
+
+```swift
+let pts: [SIMD2<Double>] = [SIMD2(0, 0), SIMD2(5, 5), SIMD2(10, 0)]
+Curve2D.interpolate(through: pts, tangents: [3: SIMD2(1, 0)])  // nil (was the unconstrained curve)
+Curve2D.interpolate(through: pts, tangents: [2: SIMD2(1, 0)])  // a curve
+```
+
+### `Curve2DSpecialPointType.minCurvature` documented as the kernel defines it (#3035)
+
+`Curve2DSpecialPointType.minCurvature` and `CurInfType.curvatureMinimum` were documented as a local minimum of curvature magnitude. OCCT classifies by the radius of curvature, so `.minCurvature` is reported where the curvature magnitude is a local **maximum** (the ends of an ellipse's major axis, curvature `a / b^2`) and `.maxCurvature` where it is a local **minimum**. The doc comments and `docs/reference/` pages now say so. The values returned are unchanged.
+
+```swift
+let e = Curve2D.ellipse(center: .zero, majorRadius: 10, minorRadius: 5)!
+for p in e.curvatureExtrema() where p.type == .minCurvature {
+    print(p.parameter, e.curvature(at: p.parameter) ?? 0)  // 0 0.4, then pi 0.4
+}
+```
+
 ### `Shape.offset(by:joinType:)` and seven sibling offset and thick-solid calls return nil when OCCT reports done with a null result (#3061)
 
 An offset that OCCT reports as done but whose result is a null shape used to reach Swift as a non-nil `Shape` for which `isNull` was `true`. It is now `nil`, the refusal every other failed offset gives. The deterministic case is an inward offset deeper than the shape is thick:
