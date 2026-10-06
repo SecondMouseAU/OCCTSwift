@@ -21,6 +21,16 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### `Shape.analyze(tolerance:)` no longer reports a flawless box as 24 gaps and unhealthy (#3040)
+
+`Shape.analyze(tolerance:)` counted `gapCount` with `ShapeAnalysis_Wire::CheckGap3d` on wires whose edges are stored out of connection order, which is every face of a primitive. A 10 mm box read `gapCount == 24` and `isHealthy == false` at every tolerance, including 1.0, because each junction was compared with the opposite edge (the face diagonal). Each wire is now ordered first, the way `ShapeFix_Wire::Perform` does before its gap fix, so a box, a cylinder and a sphere read `gapCount == 0` and `isHealthy == true`. A wire with a real gap still reports it, ordered or not. `totalProblems` drops by the same amount for every shape that has an unordered wire, and `ShapeAnalysisResult.gapCount`, `totalProblems` and `isHealthy` are documented accordingly.
+
+```swift
+let box = Shape.box(width: 10, height: 10, depth: 10)!
+let report = box.analyze(tolerance: 1e-6)!
+print(report.gapCount, report.isHealthy)   // 0 true
+```
+
 ### `parameterAtLength` refuses a non-finite distance or start on every curve type, and the 2D doc states the extrapolation (#3034)
 
 `Curve2D.parameterAtLength(_:from:)` now returns `nil` for `.infinity`, `-.infinity` and `.nan`, as a distance or as the start parameter, on every curve type. `+.infinity` used to return an infinite parameter on segments, circles and infinite lines and `nil` on splines. The same refusal reaches `Curve3D.parameterAtLength`, `Shape.edgeParameterAtArcLength` and `Shape.edgeParameterAtFraction`, which have no optional and now return their failure value `0` for such an input. The `Curve2D` doc comment no longer promises `nil` for a distance past the end of the curve: a finite distance longer than the curve succeeds with a parameter outside `domain`, as it always did and as `Curve3D.parameterAtLength` documents.
