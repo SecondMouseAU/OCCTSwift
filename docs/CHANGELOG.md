@@ -21,6 +21,16 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### Edge.length no longer reads an elliptical edge long (#3044)
+
+`Edge.length` integrated each edge with a single Gauss rule, so an elliptical edge measured up to 1.485% long (10 x 1: 41.2431578703 against a true 40.6397418010) while `Wire.length`, `Curve2D.length` and `Curve3D.length` were exact. It now uses the same adaptive arc-length integration as those, and agrees with them to 1e-8 relative. Circles and lines were already exact and are unchanged.
+
+```swift
+let ellipse = Curve2D.ellipse(center: .zero, majorRadius: 10, minorRadius: 1)!
+let wire = Wire.fromCurve2D(ellipse)!
+wire.edges().first?.length   // 40.6397418010, equal to wire.length
+```
+
 ### A fillet blend that reaches an obstacle with no edge to follow now declines instead of crashing the process, carried as kernel patch 0054 (#2881)
 
 On the model attached to OCCT#1568, eight of its 42 edges crashed `BRepFilletAPI_MakeFillet::Build` with an uncatchable SIGSEGV at a fillet radius of exactly 1.5, and at no other radius tried (1.4999999 and 1.5000001 are unaffected). `ChFi3d_Builder::StartSol` returned from its obstacle branch with an empty curve adaptor still marked as an obstacle, and the blend walk evaluated it. Patch `0054` clears both, so those fillets report not done, as the neighbouring radii already did. Across the model's 42 edges and nine radii, 378 cases, exactly the eight crashing outcomes change and the other 370 are identical.
