@@ -15,7 +15,7 @@ OCCTShapeConvertToNURBS/box => VALID type=Solid isValid=true
 OCCTShapeConvertToNURBS/sphere => VALID type=Solid isValid=true
 OCCTShapeConvertToNURBS/nullShape => nil
 OCCTShapeConvertToNURBS/emptiedSolid => VALID type=Solid isValid=true
-OCCTShapeConvertToNURBS/emptyCompound => nil
+OCCTShapeConvertToNURBS/emptyCompound => VALID type=Compound isValid=true
 OCCTShapeFuseAndBlend/overlappingBoxes-r1 => VALID type=Compound isValid=true
 OCCTShapeFuseAndBlend/identicalBoxes-r1 => VALID type=Compound isValid=true
 OCCTShapeFuseAndBlend/disjointBoxes-r1 => VALID type=Compound isValid=true
@@ -51,7 +51,7 @@ OCCTShapeGlue/nullFirst => nil
 OCCTShapeGlue/nullSecond => nil
 OCCTShapeGlue/bothNull => nil
 OCCTShapeGlue/emptiedSolid => VALID type=Compound isValid=true
-OCCTShapeGlue/emptyCompounds => CRASH(exit 133)
+OCCTShapeGlue/emptyCompounds => VALID type=Compound isValid=true
 OCCTShapeSubtract/drillHole-zeroDepth => VALID type=Compound isValid=true
 OCCTShapeSubtract/drillHole-hugeRadius => VALID type=Compound isValid=true
 OCCTShapeSubtract/drillHole-missesBox => VALID type=Compound isValid=true
@@ -67,7 +67,7 @@ OCCTShapeUnion/nullFirst => nil
 OCCTShapeUnion/nullSecond => nil
 OCCTShapeUnion/bothNull => nil
 OCCTShapeUnion/emptiedSolid => VALID type=Compound isValid=true
-OCCTShapeUnion/emptyCompounds => CRASH(exit 133)
+OCCTShapeUnion/emptyCompounds => VALID type=Compound isValid=true
 OCCTShapeUnion/faceVsBox => nil
 OCCTShapeSubtract/identical => VALID type=Compound isValid=true
 OCCTShapeSubtract/disjoint => VALID type=Compound isValid=true
@@ -80,7 +80,7 @@ OCCTShapeSubtract/nullFirst => nil
 OCCTShapeSubtract/nullSecond => nil
 OCCTShapeSubtract/bothNull => nil
 OCCTShapeSubtract/emptiedSolid => VALID type=Compound isValid=true
-OCCTShapeSubtract/emptyCompounds => CRASH(exit 133)
+OCCTShapeSubtract/emptyCompounds => VALID type=Compound isValid=true
 OCCTShapeSubtract/faceVsBox => VALID type=Compound isValid=true
 OCCTShapeIntersect/identical => VALID type=Compound isValid=true
 OCCTShapeIntersect/disjoint => VALID type=Compound isValid=true
@@ -93,7 +93,7 @@ OCCTShapeIntersect/nullFirst => nil
 OCCTShapeIntersect/nullSecond => nil
 OCCTShapeIntersect/bothNull => nil
 OCCTShapeIntersect/emptiedSolid => VALID type=Compound isValid=true
-OCCTShapeIntersect/emptyCompounds => CRASH(exit 133)
+OCCTShapeIntersect/emptyCompounds => VALID type=Compound isValid=true
 OCCTShapeIntersect/faceVsBox => VALID type=Compound isValid=true
 OCCTShapeFillet/box-r0.0 => nil
 OCCTShapeChamfer/box-d0.0 => nil
@@ -221,24 +221,24 @@ OCCTShapeFillet/face-r1000000000.0 => nil
 OCCTShapeChamfer/face-d1000000000.0 => nil
 OCCTShapeFillet/face-rnan => nil
 OCCTShapeChamfer/face-dnan => nil
-OCCTShapeFillet/emptyCompound-r0.0 => CRASH(exit 133)
-OCCTShapeChamfer/emptyCompound-d0.0 => CRASH(exit 133)
-OCCTShapeFillet/emptyCompound-r-1.0 => CRASH(exit 133)
-OCCTShapeChamfer/emptyCompound-d-1.0 => CRASH(exit 133)
-OCCTShapeFillet/emptyCompound-r0.001 => CRASH(exit 133)
-OCCTShapeChamfer/emptyCompound-d0.001 => CRASH(exit 133)
-OCCTShapeFillet/emptyCompound-r4.9 => CRASH(exit 133)
-OCCTShapeChamfer/emptyCompound-d4.9 => CRASH(exit 133)
-OCCTShapeFillet/emptyCompound-r5.0 => CRASH(exit 133)
-OCCTShapeChamfer/emptyCompound-d5.0 => CRASH(exit 133)
-OCCTShapeFillet/emptyCompound-r5.1 => CRASH(exit 133)
-OCCTShapeChamfer/emptyCompound-d5.1 => CRASH(exit 133)
-OCCTShapeFillet/emptyCompound-r100.0 => CRASH(exit 133)
-OCCTShapeChamfer/emptyCompound-d100.0 => CRASH(exit 133)
-OCCTShapeFillet/emptyCompound-r1000000000.0 => CRASH(exit 133)
-OCCTShapeChamfer/emptyCompound-d1000000000.0 => CRASH(exit 133)
-OCCTShapeFillet/emptyCompound-rnan => CRASH(exit 133)
-OCCTShapeChamfer/emptyCompound-dnan => CRASH(exit 133)
+OCCTShapeFillet/emptyCompound-r0.0 => nil
+OCCTShapeChamfer/emptyCompound-d0.0 => nil
+OCCTShapeFillet/emptyCompound-r-1.0 => nil
+OCCTShapeChamfer/emptyCompound-d-1.0 => nil
+OCCTShapeFillet/emptyCompound-r0.001 => nil
+OCCTShapeChamfer/emptyCompound-d0.001 => nil
+OCCTShapeFillet/emptyCompound-r4.9 => nil
+OCCTShapeChamfer/emptyCompound-d4.9 => nil
+OCCTShapeFillet/emptyCompound-r5.0 => nil
+OCCTShapeChamfer/emptyCompound-d5.0 => nil
+OCCTShapeFillet/emptyCompound-r5.1 => nil
+OCCTShapeChamfer/emptyCompound-d5.1 => nil
+OCCTShapeFillet/emptyCompound-r100.0 => nil
+OCCTShapeChamfer/emptyCompound-d100.0 => nil
+OCCTShapeFillet/emptyCompound-r1000000000.0 => nil
+OCCTShapeChamfer/emptyCompound-d1000000000.0 => nil
+OCCTShapeFillet/emptyCompound-rnan => nil
+OCCTShapeChamfer/emptyCompound-dnan => nil
 OCCTShapeChamferTwoDistances/tiny => VALID type=Compound isValid=true
 OCCTShapeChamferTwoDistances/allEdges-tiny => VALID type=Compound isValid=true
 OCCTShapeChamferTwoDistances/half => VALID type=Compound isValid=true
@@ -377,9 +377,9 @@ OCCTShapeCreateRevolutionFull/zeroAxis => nil
 OCCTShapeCreateRevolutionFull/box => nil
 OCCTShapeCreateRevolutionFull/boxAcrossAxis => nil
 OCCTShapeCreateRevolutionFull/faceOnAxisLine => VALID type=Solid isValid=false
-OCCTShapeCreateRevolutionFull/emptyCompound => nil
+OCCTShapeCreateRevolutionFull/emptyCompound => VALID type=Compound isValid=true
 OCCTShapeCreateRevolutionPartial/null => nil
-OCCTShapeCreateRevolutionPartial/emptyCompound => nil
+OCCTShapeCreateRevolutionPartial/emptyCompound => VALID type=Compound isValid=true
 OCCTShapeCreateExtrusion/rect-zeroDir => nil
 OCCTShapeCreateExtrusion/collinear-zeroDir => nil
 OCCTShapeCreateExtrusion/rect-len0 => TIMEOUT
@@ -396,7 +396,7 @@ OCCTShapeCreateExtrusion/rect-lenHuge => nil
 OCCTShapeCreateExtrusion/collinear-lenHuge => nil
 OCCTShapeCreateExtrusionShape/face-zero => TIMEOUT
 OCCTShapeCreateExtrusionShape/null-zero => nil
-OCCTShapeCreateExtrusionShape/emptyCompound-zero => nil
+OCCTShapeCreateExtrusionShape/emptyCompound-zero => VALID type=Compound isValid=true
 OCCTShapeCreateExtrusionShape/emptiedSolid-zero => nil
 OCCTShapeCreateExtrusionInfinite/face-zero => nil
 OCCTShapeCreateExtrusionInfinite/faceSemi-zero => nil
@@ -407,7 +407,7 @@ OCCTShapeExtrudeSemiInfinite/null-zero => nil
 OCCTShapeExtrudeSemiInfinite/box-zero => nil
 OCCTShapeCreateExtrusionShape/face-tiny => VALID type=Solid isValid=false
 OCCTShapeCreateExtrusionShape/null-tiny => nil
-OCCTShapeCreateExtrusionShape/emptyCompound-tiny => nil
+OCCTShapeCreateExtrusionShape/emptyCompound-tiny => VALID type=Compound isValid=true
 OCCTShapeCreateExtrusionShape/emptiedSolid-tiny => nil
 OCCTShapeCreateExtrusionInfinite/face-tiny => VALID type=Solid isValid=false
 OCCTShapeCreateExtrusionInfinite/faceSemi-tiny => VALID type=Solid isValid=true
@@ -418,7 +418,7 @@ OCCTShapeExtrudeSemiInfinite/null-tiny => nil
 OCCTShapeExtrudeSemiInfinite/box-tiny => nil
 OCCTShapeCreateExtrusionShape/face-nan => TIMEOUT
 OCCTShapeCreateExtrusionShape/null-nan => nil
-OCCTShapeCreateExtrusionShape/emptyCompound-nan => nil
+OCCTShapeCreateExtrusionShape/emptyCompound-nan => VALID type=Compound isValid=true
 OCCTShapeCreateExtrusionShape/emptiedSolid-nan => nil
 OCCTShapeCreateExtrusionInfinite/face-nan => TIMEOUT
 OCCTShapeCreateExtrusionInfinite/faceSemi-nan => TIMEOUT
@@ -429,7 +429,7 @@ OCCTShapeExtrudeSemiInfinite/null-nan => nil
 OCCTShapeExtrudeSemiInfinite/box-nan => nil
 OCCTShapeCreateExtrusionShape/face-inPlane => VALID type=Solid isValid=true
 OCCTShapeCreateExtrusionShape/null-inPlane => nil
-OCCTShapeCreateExtrusionShape/emptyCompound-inPlane => nil
+OCCTShapeCreateExtrusionShape/emptyCompound-inPlane => VALID type=Compound isValid=true
 OCCTShapeCreateExtrusionShape/emptiedSolid-inPlane => nil
 OCCTShapeCreateExtrusionInfinite/face-inPlane => VALID type=Solid isValid=false
 OCCTShapeCreateExtrusionInfinite/faceSemi-inPlane => VALID type=Solid isValid=true
@@ -440,7 +440,7 @@ OCCTShapeExtrudeSemiInfinite/null-inPlane => nil
 OCCTShapeExtrudeSemiInfinite/box-inPlane => nil
 OCCTShapeCreateExtrusionShape/face-huge => nil
 OCCTShapeCreateExtrusionShape/null-huge => nil
-OCCTShapeCreateExtrusionShape/emptyCompound-huge => nil
+OCCTShapeCreateExtrusionShape/emptyCompound-huge => VALID type=Compound isValid=true
 OCCTShapeCreateExtrusionShape/emptiedSolid-huge => nil
 OCCTShapeCreateExtrusionInfinite/face-huge => TIMEOUT
 OCCTShapeCreateExtrusionInfinite/faceSemi-huge => TIMEOUT
@@ -451,8 +451,8 @@ OCCTShapeExtrudeSemiInfinite/null-huge => nil
 OCCTShapeExtrudeSemiInfinite/box-huge => nil
 OCCTShapeCreateExtrusionShape/solid => nil
 OCCTShapeCreateExtrusionInfinite/solid => nil
-OCCTShapeCreateExtrusionInfinite/emptyCompound => nil
-OCCTShapeExtrudeSemiInfinite/emptyCompound => nil
+OCCTShapeCreateExtrusionInfinite/emptyCompound => VALID type=Compound isValid=true
+OCCTShapeExtrudeSemiInfinite/emptyCompound => VALID type=Compound isValid=true
 OCCTShapeMiddlePath/sameFace => CRASH(exit 139)
 OCCTShapeMiddlePath/oppositeFacesOfBox => VALID type=Wire isValid=true
 OCCTShapeMiddlePath/adjacentFaces => CRASH(exit 139)
@@ -460,8 +460,11 @@ OCCTShapeMiddlePath/nullBase => nil
 OCCTShapeMiddlePath/nullEnds => CRASH(exit 139)
 OCCTShapeMiddlePath/unrelatedFaces => nil
 OCCTShapeMiddlePath/sphere => nil
-OCCTShapeMiddlePath/pipeEnds => CRASH(exit 133)
-OCCTShapeMiddlePath/emptyCompound => CRASH(exit 133)
+OCCTShapeMiddlePath/cylinderFaces0-1 => nil
+OCCTShapeMiddlePath/cylinderFaces1-2 => VALID type=Wire isValid=true
+OCCTShapeMiddlePath/cylinderFaces0-2 => nil
+OCCTShapeMiddlePath/cylinderFaces2-0 => VALID type=Wire isValid=true
+OCCTShapeMiddlePath/emptyCompound => nil
 OCCTShapeCreatePipeSweep/circleAlongLine => VALID type=Shell isValid=true
 OCCTShapeCreatePipeSweep/profileCollinearWithPath => VALID type=Shell isValid=false
 OCCTShapeCreatePipeSweep/profileIsPathItself => VALID type=Shell isValid=false
@@ -591,7 +594,7 @@ OCCTShapeNonUniformScale/box-ok => VALID type=Solid isValid=true
 OCCTShapeNonUniformScale/sphere-ok => VALID type=Solid isValid=true
 OCCTShapeNonUniformScale/face-ok => VALID type=Face isValid=true
 OCCTShapeNonUniformScale/null-ok => nil
-OCCTShapeNonUniformScale/emptyCompound => nil
+OCCTShapeNonUniformScale/emptyCompound => VALID type=Compound isValid=true
 OCCTShapeNonUniformScale/emptiedSolid => VALID type=Solid isValid=true
 OCCTShapeNonUniformScale/cylinderZeroZ => VALID type=Solid isValid=true
 OCCTShapeNonUniformScale/cylinderTinyZ => VALID type=Solid isValid=true
@@ -769,33 +772,33 @@ OCCTFace2DFillet: nil=14 VALID=9
 OCCTGeomFillConstrained: nil=2 VALID=10
 OCCTShapeAddLinearRib: nil=17
 OCCTShapeAddRevolutionForm: nil=13
-OCCTShapeChamfer: nil=54 CRASH=9 VALID=9
+OCCTShapeChamfer: nil=63 VALID=9
 OCCTShapeChamferDistAngle: nil=23 VALID=5
 OCCTShapeChamferTwoDistances: nil=18 VALID=4
-OCCTShapeConvertToNURBS: nil=2 VALID=3
+OCCTShapeConvertToNURBS: nil=1 VALID=4
 OCCTShapeCreateExtrusion: nil=4 TIMEOUT=4 VALID=6
-OCCTShapeCreateExtrusionInfinite: nil=9 TIMEOUT=4 VALID=4
-OCCTShapeCreateExtrusionShape: nil=17 TIMEOUT=2 VALID=2
+OCCTShapeCreateExtrusionInfinite: nil=8 TIMEOUT=4 VALID=5
+OCCTShapeCreateExtrusionShape: nil=12 TIMEOUT=2 VALID=7
 OCCTShapeCreateLoft: nil=10 INPUT-REFUSED=4 VALID=12
 OCCTShapeCreateLoftAdvanced: nil=15 CRASH=2 INPUT-REFUSED=8 VALID=31
 OCCTShapeCreatePipeSweep: nil=3 INPUT-REFUSED=1 VALID=7
 OCCTShapeCreateRevolution: nil=2 INPUT-REFUSED=1 VALID=14
 OCCTShapeCreateRevolutionFromCurve: nil=1 VALID=14
-OCCTShapeCreateRevolutionFull: nil=5 VALID=1
-OCCTShapeCreateRevolutionPartial: nil=2 VALID=6
+OCCTShapeCreateRevolutionFull: nil=4 VALID=2
+OCCTShapeCreateRevolutionPartial: nil=1 VALID=7
 OCCTShapeCutAndBlend: nil=3 VALID=9
 OCCTShapeDraft: nil=10 VALID=3
 OCCTShapeDraftPrism: nil=6 TIMEOUT=2 VALID=25
 OCCTShapeDraftPrismThruAll: nil=11 TIMEOUT=4 VALID=15
-OCCTShapeExtrudeSemiInfinite: nil=13 TIMEOUT=4 VALID=4
-OCCTShapeFillet: nil=57 CRASH=9 VALID=6
+OCCTShapeExtrudeSemiInfinite: nil=12 TIMEOUT=4 VALID=5
+OCCTShapeFillet: nil=66 VALID=6
 OCCTShapeFromMesh: nil=4 TIMEOUT=1 VALID=11
 OCCTShapeFuseAndBlend: nil=3 VALID=9
-OCCTShapeGlue: nil=3 CRASH=1 VALID=8
-OCCTShapeIntersect: nil=3 CRASH=1 VALID=9
-OCCTShapeMiddlePath: nil=3 CRASH=5 VALID=1
-OCCTShapeNonUniformScale: nil=10 VALID=30
+OCCTShapeGlue: nil=3 VALID=9
+OCCTShapeIntersect: nil=3 VALID=10
+OCCTShapeMiddlePath: nil=6 CRASH=3 VALID=3
+OCCTShapeNonUniformScale: nil=9 VALID=31
 OCCTShapeRevolFeature: nil=5 TIMEOUT=2 VALID=23
 OCCTShapeRevolFeatureThruAll: nil=5 VALID=11
-OCCTShapeSubtract: nil=4 CRASH=1 VALID=12
-OCCTShapeUnion: nil=4 CRASH=1 VALID=8
+OCCTShapeSubtract: nil=4 VALID=13
+OCCTShapeUnion: nil=4 VALID=9

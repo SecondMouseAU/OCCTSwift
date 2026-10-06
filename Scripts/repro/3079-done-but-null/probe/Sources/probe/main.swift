@@ -334,6 +334,41 @@ for face in [0, 1, 2, 3, 5, 99, -1] {
 add("OCCTShapeRevolFeature/nullBase") { nullBox.addingRevolvedFeature(profile: revProfile, sketchFaceIndex: 0, axisOrigin: V(0, 0, 10), axisDirection: zAxis, angle: 90) }
 add("OCCTShapeRevolFeatureThruAll/nullBase") { nullBox.addingRevolvedFeatureThruAll(profile: revProfile, sketchFaceIndex: 0, axisOrigin: V(0, 0, 10), axisDirection: zAxis) }
 
+// ---- Valid-path reach for the two rib builders (no input above reached their success path) ----
+let ribBase = box(20, 20, 5)
+let ribPlanes: [(String, () -> Wire)] = [
+    ("closedOnSidePlaneY", { req(Wire.polygon3D([V(-3, 10, 2.5), V(3, 10, 2.5), V(3, 10, 8), V(-3, 10, 8)])) }),
+    ("lineOnSidePlaneY", { req(Wire.line(from: V(-3, 10, 2.5), to: V(3, 10, 8))) }),
+    ("polylineOnMidPlaneY0", { req(Wire.polygon3D([V(-3, 0, 2.5), V(0, 0, 8), V(3, 0, 2.5)], closed: false)) }),
+    ("closedOnMidPlaneY0", { req(Wire.polygon3D([V(-3, 0, 2.5), V(3, 0, 2.5), V(3, 0, 8), V(-3, 0, 8)])) }),
+]
+for (pl, mk) in ribPlanes {
+    for (dl, dir) in [("dirY", V(0, 1, 0)), ("dirNegY", V(0, -1, 0)), ("dirX", V(1, 0, 0)), ("dirZ", V(0, 0, 1))] as [(String, V)] {
+        for (d1l, d1) in [("d1X", V(1, 0, 0)), ("d1Y", V(0, 1, 0)), ("d1Z", V(0, 0, 1))] as [(String, V)] {
+            for fuse in [true, false] {
+                add("OCCTShapeAddLinearRib/reach-\(pl)-\(dl)-\(d1l)-fuse\(fuse)") { ribBase.addingLinearRib(profile: mk(), direction: dir, draftDirection: d1, fuse: fuse) }
+            }
+        }
+    }
+}
+let revBase = Shape.cylinder(radius: 2, height: 5)!.union(Shape.cylinder(at: SIMD2(0, 0), bottomZ: 5, radius: 1, height: 3)!)!
+for (pl, mk) in [("lineAtTopOfBase", { req(Wire.line(from: V(-2, 0, 5), to: V(-1, 0, 8))) }), ("lineOnWall", { req(Wire.line(from: V(-2, 0, 1), to: V(-3, 0, 3))) }), ("polylineOnWall", { req(Wire.polygon3D([V(-2, 0, 1), V(-3, 0, 2), V(-2, 0, 3)], closed: false)) }), ("triangleOnWall", { req(Wire.polygon3D([V(-2, 0, 1), V(-3, 0, 2), V(-2, 0, 3)])) })] as [(String, () -> Wire)] {
+    for (hl, h1, h2) in [("small", 0.2, 0.2), ("one", 1.0, 1.0), ("large", 5.0, 5.0), ("zero", 0.0, 0.0), ("asym", 0.5, 3.0)] as [(String, Double, Double)] {
+        for fuse in [true, false] {
+            add("OCCTShapeAddRevolutionForm/reach-\(pl)-\(hl)-fuse\(fuse)") { revBase.addingRevolutionForm(profile: mk(), axisOrigin: .zero, axisDirection: zAxis, height1: h1, height2: h2, fuse: fuse) }
+        }
+    }
+}
+
+let ribWork: () -> Wire = { req(Wire.polygon3D([V(-3, 0, 2.5), V(3, 0, 2.5), V(3, 0, 8), V(-3, 0, 8)])) }
+add("OCCTShapeAddLinearRib/working-tinyDir") { ribBase.addingLinearRib(profile: ribWork(), direction: V(0, -1e-12, 0), draftDirection: V(0, 1, 0)) }
+add("OCCTShapeAddLinearRib/working-hugeDir") { ribBase.addingLinearRib(profile: ribWork(), direction: V(0, -1e9, 0), draftDirection: V(0, 1, 0)) }
+add("OCCTShapeAddLinearRib/working-cutThroughEverything") { ribBase.addingLinearRib(profile: ribWork(), direction: V(0, -100, 0), draftDirection: V(0, 1, 0), fuse: false) }
+add("OCCTShapeAddLinearRib/working-profileCollapsed") { ribBase.addingLinearRib(profile: req(Wire.polygon3D([V(0, 0, 3), V(1e-9, 0, 3), V(0, 0, 3.000000001)])), direction: V(0, -1, 0), draftDirection: V(0, 1, 0)) }
+for (hl, h1, h2) in [("huge", 1e9, 1e9), ("nan", Double.nan, 1.0), ("negative", -1.0, -1.0), ("tiny", 1e-12, 1e-12), ("swallowsBase", 50.0, 50.0)] as [(String, Double, Double)] {
+    add("OCCTShapeAddRevolutionForm/working-\(hl)") { revBase.addingRevolutionForm(profile: req(Wire.polygon3D([V(-2, 0, 1), V(-3, 0, 2), V(-2, 0, 3)], closed: false)), axisOrigin: .zero, axisDirection: zAxis, height1: h1, height2: h2) }
+}
+
 // ---- FromMesh ----
 let tri: [(Int32, Int32, Int32)] = [(1, 2, 3)]
 add("OCCTShapeFromMesh/empty") { Shape.fromMesh(points: [], triangles: []) }
