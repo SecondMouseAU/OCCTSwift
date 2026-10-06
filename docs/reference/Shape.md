@@ -714,6 +714,7 @@ public static func loft(profiles: [Wire], solid: Bool = true, ruled: Bool,
   - `firstVertex`: optional starting tip point for cone/taper shapes.
   - `lastVertex`: optional ending tip point for cone/taper shapes.
 - **Returns:** Lofted shape, or `nil` on failure.
+- **Refuses:** fewer than two sections return `nil`, where `firstVertex` and `lastVertex` each count as a section. One profile with no vertex used to end the process with SIGSEGV when `ruled` was `false` and to return an invalid shape when it was `true` (#3099); one profile plus a vertex is a cone and still works.
 - **OCCT:** `BRepOffsetAPI_ThruSections` (via `OCCTShapeCreateLoftAdvanced`).
 - **Example:**
   ```swift
@@ -726,6 +727,9 @@ public static func loft(profiles: [Wire], solid: Bool = true, ruled: Bool,
   guard let circle = Wire.circle(radius: 5) else { return }
   let cone = Shape.loft(profiles: [circle], solid: true, ruled: true,
                         lastVertex: SIMD3(0, 0, 10))
+
+  // One section is not a loft
+  let none = Shape.loft(profiles: [circle], solid: true, ruled: false)  // nil
   ```
 
 ---

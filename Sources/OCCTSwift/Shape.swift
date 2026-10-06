@@ -558,7 +558,23 @@ public final class Shape: @unchecked Sendable {
     ///   - ruled: Whether to use ruled surfaces (true) or smooth B-spline (false)
     ///   - firstVertex: Optional starting vertex (for cone/taper tips)
     ///   - lastVertex: Optional ending vertex (for cone/taper tips)
-    /// - Returns: Lofted shape, or nil on failure
+    /// - Returns: Lofted shape, or nil on failure, and nil for fewer than two sections
+    ///
+    /// `BRepOffsetAPI_ThruSections` needs two sections, and each of `firstVertex` and
+    /// `lastVertex` counts as one. A single profile with no vertex, or no profile at all, is
+    /// refused with `nil` before the kernel runs: the smooth form (`ruled: false`) would
+    /// otherwise end the process with SIGSEGV, and the ruled form returned a shape whose
+    /// `isValid` is false. A single profile with one or both vertices is a valid cone or bicone.
+    ///
+    /// ```swift
+    /// guard let circle = Wire.circle(radius: 5) else { return }
+    /// let one = Shape.loft(profiles: [circle], solid: true, ruled: false)
+    /// print(one == nil)  // true, one section is not a loft
+    /// let cone = Shape.loft(
+    ///     profiles: [circle], solid: true, ruled: false,
+    ///     lastVertex: SIMD3(0, 0, 10))
+    /// print(cone?.isValid ?? false)  // true, the vertex is the second section
+    /// ```
     public static func loft(
         profiles: [Wire], solid: Bool = true, ruled: Bool,
         firstVertex: SIMD3<Double>? = nil,
