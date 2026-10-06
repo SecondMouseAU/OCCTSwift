@@ -3338,6 +3338,11 @@ public func linearProperties() -> LinearProperties?
 - **Returns:** Length and length-centroid, or `nil` for a shape with no edges, such as a lone vertex.
   The centre of mass reported there was the shape's location origin, not a recognisable zero (#609).
 - **OCCT:** `GProp_GProps` linear analysis plus a `Mass()` test (via `OCCTShapeLinearProperties`).
+  Each edge is cut into equal parameter spans, each span is integrated by
+  `BRepGProp::LinearProperties` and added to the framework, and the span count doubles until the
+  summed length agrees with the adaptive arc length (`occtAdaptorArcLength`). A single Gauss rule
+  over a whole elliptical edge read it 1.485% long and put the centroid of a 10 x 1 ellipse 0.165
+  from its centre (#3074). An edge shared by two faces still counts once per face.
 - **Example:**
   ```swift
   let wire = Shape.fromWire(Wire.rectangle(width: 10, height: 5)!)!
@@ -3345,6 +3350,11 @@ public func linearProperties() -> LinearProperties?
       print("length:", lp.length)              // 30.0
       print("centroid:", lp.centerOfMass)
   }
+
+  let ellipse = Curve2D.ellipse(center: .zero, majorRadius: 10, minorRadius: 1)!
+  let loop = Shape.fromWire(Wire.fromCurve2D(ellipse)!)!
+  loop.linearProperties()?.length          // 40.6397418010
+  loop.linearProperties()?.centerOfMass    // (0, 0, 0), was (-0.165, 0, 0)
   ```
 
 ---

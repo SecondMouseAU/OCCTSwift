@@ -2136,6 +2136,17 @@ extension Shape {
     }
 
     /// Total length of all edges in this shape.
+    ///
+    /// One term per edge occurrence, so an edge shared by two faces counts once for each (a box
+    /// reads twice the sum of its 12 distinct edges), and a degenerate edge adds 0. Each edge is
+    /// measured as ``Edge/length`` measures it, so the total agrees with ``Wire/length`` and an
+    /// elliptical edge no longer reads up to 1.485% long (#3074).
+    ///
+    /// ```swift
+    /// let ellipse = Curve2D.ellipse(center: .zero, majorRadius: 10, minorRadius: 1)!
+    /// let shape = Shape.fromWire(Wire.fromCurve2D(ellipse)!)!
+    /// shape.totalEdgeLength   // 40.6397418010, was 41.2431578703
+    /// ```
     public var totalEdgeLength: Double {
         OCCTShapeTotalEdgeLength(handle)
     }
@@ -2478,12 +2489,11 @@ extension Shape {
     /// Nil for a shape with no edges, such as a lone vertex. The centre of mass reported there was
     /// the shape's location origin, not a recognisable zero (#609).
     ///
-    /// - Warning: `length` here comes from `BRepGProp::LinearProperties`, which runs its own
-    ///   integrator, one fixed-order Gauss rule per span, the defect #603 fixed everywhere else.
-    ///   On an elliptical edge it reports 41.243158 against a true 40.639742 (+1.485%) and so
-    ///   **disagrees with ``Shape/edgeArcLength``**, which measures 40.639742. Before #603 both
-    ///   were wrong together. Use ``Shape/edgeArcLength`` or ``Wire/length`` when you want the
-    ///   length; this call remains the way to get the centre of mass.
+    /// Each edge is integrated to the precision ``Shape/edgeArcLength`` and ``Wire/length``
+    /// measure to, and its centre of mass with it, so an elliptical edge reads its true length
+    /// and a full ellipse's centre of mass is its centre. A single Gauss rule per edge read a
+    /// 10 x 1 ellipse 1.485% long and put its centre of mass 0.165 off (#3074). An edge shared by
+    /// two faces is counted once for each face.
     ///
     /// ```swift
     /// let wire = Shape.fromWire(Wire.rectangle(width: 10, height: 20)!)!
@@ -2491,6 +2501,10 @@ extension Shape {
     ///
     /// let vertex = Shape.box(width: 10, height: 10, depth: 10)!.subShapes(ofType: .vertex)[0]
     /// vertex.linearProperties()         // nil, a vertex has no length and no centroid
+    ///
+    /// let ellipse = Curve2D.ellipse(center: .zero, majorRadius: 10, minorRadius: 1)!
+    /// let loop = Shape.fromWire(Wire.fromCurve2D(ellipse)!)!
+    /// loop.linearProperties()?.length   // 40.6397418010, was 41.2431578703
     /// ```
     public func linearProperties() -> LinearProperties? {
         var length = 0.0
