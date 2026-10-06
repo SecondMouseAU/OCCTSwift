@@ -686,12 +686,25 @@ public final class Curve2D: @unchecked Sendable {
     ///                May be negative to travel in the reverse direction.
     ///   - fromParameter: The starting parameter. Defaults to `domain.lowerBound`
     ///                    (the start of the curve).
-    /// - Returns: The parameter value at the given arc-length distance,
-    ///            or `nil` if the computation fails (e.g. distance exceeds the curve).
+    /// - Returns: The parameter value at the given arc-length distance, or `nil` if the
+    ///            computation fails: a distance or start that is not finite (`.nan`,
+    ///            `±.infinity`) always returns `nil`, as `length(from:to:)` does (#3034).
+    /// - Important: A finite distance **longer than the curve is not a failure**. It reports
+    ///            success with a parameter outside `domain`, extrapolated along the basis curve:
+    ///            on a 10-long segment `parameterAtLength(1000)` is `1000`, and on a full circle
+    ///            the walk winds round again. `Curve3D.parameterAtLength` documents the same
+    ///            behaviour. Compare against `length` first if the distance must lie on the curve.
     /// - Note: Shares the subdivided measurement with `length`, so the two agree:
     ///         `curve.parameterAtLength(curve.length!)` lands on `domain.upperBound`. OCCT's own
     ///         root finder inverts a single quadrature and would not (#603).
     /// - Note: Resolves GitHub issue #37.
+    ///
+    /// ```swift
+    /// let seg = Curve2D.segment(from: .zero, to: SIMD2(10, 0))!
+    /// let mid = seg.parameterAtLength(5)               // 5
+    /// let past = seg.parameterAtLength(1000)           // 1000, outside seg.domain (0...10)
+    /// let none = seg.parameterAtLength(.infinity)      // nil
+    /// ```
     public func parameterAtLength(_ arcLength: Double, from fromParameter: Double? = nil) -> Double?
     {
         let start = fromParameter ?? domain.lowerBound

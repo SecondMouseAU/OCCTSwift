@@ -2430,10 +2430,15 @@ extension Curve3D {
     /// A distance longer than the curve keeps OCCT's answer, which reports success with a
     /// parameter outside the curve's own domain rather than failing.
     ///
+    /// A distance or start that is not finite (`.nan`, `±.infinity`) fails on every curve type
+    /// (#3034): the answer is `0`, the same sentinel as every other failure of this function.
+    /// `+infinity` used to come back as an infinite parameter on a line, a circle and an
+    /// ellipse.
+    ///
     /// - Parameters:
     ///   - arcLength: Distance along the curve (positive = forward, negative = backward).
     ///   - startParam: Starting parameter (defaults to curve start).
-    /// - Returns: The parameter value at the specified arc length.
+    /// - Returns: The parameter value at the specified arc length, or `0` on failure.
     ///
     /// ```swift
     /// let e = Curve3D.ellipse(center: .zero, normal: SIMD3(0, 0, 1),

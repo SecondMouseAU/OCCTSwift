@@ -884,7 +884,8 @@ public func parameterAtLength(_ arcLength: Double, from fromParameter: Double? =
 Use this to trim a curve to a specific arc length, or to place features at measured positions along a composite curve.
 
 - **Parameters:** `arcLength`, desired arc-length distance; may be negative to travel in reverse; `fromParameter`, starting parameter (defaults to `domain.lowerBound`).
-- **Returns:** Parameter value at the given arc-length offset, or `nil` if the computation fails.
+- **Returns:** Parameter value at the given arc-length offset, or `nil` if the computation fails. A distance or start that is not finite (`.nan`, `±.infinity`) is `nil` on every curve type (#3034, as for `length(from:to:)`); before, `+infinity` answered an infinite parameter on analytic curves and `nil` on splines.
+- **Past the end:** a finite distance longer than the curve is **not** `nil`. It reports success with a parameter outside `domain`, extrapolated along the basis curve (`seg.parameterAtLength(1000)` is `1000` on a 10-long segment; a circle winds round again). This matches `Curve3D.parameterAtLength` and is kept on purpose (#603); the old wording "or `nil` if the distance exceeds the curve" was wrong (#3034).
 - **OCCT:** the accumulated `GeomAbs_CN` sub-piece lengths, with the final narrow piece handed
   to `GCPnts_AbscissaPoint` (via `OCCTCurve2DParameterAtLength`).
 - **Note:** Shares the subdivided measurement with `length`, so the two agree:
@@ -896,6 +897,8 @@ Use this to trim a curve to a specific arc length, or to place features at measu
   if let u = seg.parameterAtLength(5) {
       let pt = seg.point(at: u)  // ≈ SIMD2(5, 0)
   }
+  let past = seg.parameterAtLength(1000)      // 1000: outside seg.domain (0...10), not nil
+  let none = seg.parameterAtLength(.infinity)  // nil
   ```
 
 ---

@@ -297,6 +297,9 @@ extension Shape {
     /// same edge: OCCT's own root finder inverts one Gauss quadrature over `[startParam, u]`,
     /// which on an elliptical edge disagreed with an accurate length by up to 1% in arc (#603).
     ///
+    /// A distance or start that is not finite returns `0`, the failure value of this function
+    /// (#3034). A finite distance past the end of the edge is not a failure and extrapolates.
+    ///
     /// ```swift
     /// let edge = Shape.edgeFromPoints(SIMD3(0, 0, 0), SIMD3(10, 0, 0))!
     /// let mid = edge.edgeParameterAtArcLength(5, from: edge.edgeAdaptorDomain.lowerBound)
