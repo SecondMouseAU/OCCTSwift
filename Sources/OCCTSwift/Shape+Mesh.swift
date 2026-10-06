@@ -44,7 +44,16 @@ extension Shape {
     /// - Parameters:
     ///   - points: Array of 3D points (vertices of the mesh)
     ///   - triangles: Array of triangle index triples (1-based indices into points array)
-    /// - Returns: Shape built from the mesh, or nil on failure
+    /// - Returns: Shape built from the mesh, or nil on failure, including any NaN or infinite
+    ///   coordinate in `points`: a NaN point used to build a compound whose first validity check
+    ///   never returned (#3100).
+    ///
+    /// ```swift
+    /// let points = [SIMD3<Double>(0, 0, 0), SIMD3(1, 0, 0), SIMD3(0, 1, 0)]
+    /// print(Shape.fromMesh(points: points, triangles: [(1, 2, 3)]) != nil)  // true
+    /// let bad = [SIMD3<Double>(.nan, 0, 0), SIMD3(1, 0, 0), SIMD3(0, 1, 0)]
+    /// print(Shape.fromMesh(points: bad, triangles: [(1, 2, 3)]) == nil)  // true
+    /// ```
     public static func fromMesh(points: [SIMD3<Double>], triangles: [(Int32, Int32, Int32)])
         -> Shape?
     {

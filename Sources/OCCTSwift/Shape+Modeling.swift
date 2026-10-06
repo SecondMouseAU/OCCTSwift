@@ -1083,10 +1083,24 @@ extension Shape {
     /// - Parameters:
     ///   - profile: Wire profile to extrude
     ///   - sketchFaceIndex: 0-based index of the face on which the profile sits
-    ///   - draftAngle: Draft angle in degrees
+    ///   - draftAngle: Draft angle in degrees; a NaN or infinite angle is refused
     ///   - height: Extrusion height
     ///   - fuse: true to add material (boss), false to cut (pocket)
-    /// - Returns: Shape with draft prism, or nil on failure
+    /// - Returns: Shape with draft prism, or nil on failure, including a NaN or infinite
+    ///   `draftAngle`, which used to never return (#3100). Any finite angle, `0` included, is
+    ///   passed to OCCT unchanged.
+    ///
+    /// ```swift
+    /// let base = Shape.box(width: 20, height: 20, depth: 20)!
+    /// let top = Wire.polygon3D([
+    ///     SIMD3(-3, -3, 10), SIMD3(3, -3, 10), SIMD3(3, 3, 10), SIMD3(-3, 3, 10),
+    /// ])!
+    /// let boss = base.addingDraftPrism(profile: top, sketchFaceIndex: 4, draftAngle: 5, height: 5)
+    /// print(boss != nil)  // true
+    /// let bad = base.addingDraftPrism(
+    ///     profile: top, sketchFaceIndex: 4, draftAngle: .nan, height: 5)
+    /// print(bad == nil)  // true
+    /// ```
     public func addingDraftPrism(
         profile: Wire, sketchFaceIndex: Int,
         draftAngle: Double, height: Double,
@@ -1106,9 +1120,19 @@ extension Shape {
     /// - Parameters:
     ///   - profile: Wire profile to extrude
     ///   - sketchFaceIndex: 0-based index of the face on which the profile sits
-    ///   - draftAngle: Draft angle in degrees
+    ///   - draftAngle: Draft angle in degrees; a NaN or infinite angle is refused
     ///   - fuse: true to add material, false to cut
-    /// - Returns: Shape with draft prism, or nil on failure
+    /// - Returns: Shape with draft prism, or nil on failure, including a NaN or infinite
+    ///   `draftAngle`, which used to never return (#3100).
+    ///
+    /// ```swift
+    /// let base = Shape.box(width: 20, height: 20, depth: 20)!
+    /// let top = Wire.polygon3D([
+    ///     SIMD3(-3, -3, 10), SIMD3(3, -3, 10), SIMD3(3, 3, 10), SIMD3(-3, 3, 10),
+    /// ])!
+    /// print(base.addingDraftPrismThruAll(profile: top, sketchFaceIndex: 4, draftAngle: 5) != nil)
+    /// print(base.addingDraftPrismThruAll(profile: top, sketchFaceIndex: 4, draftAngle: .nan) == nil)
+    /// ```
     public func addingDraftPrismThruAll(
         profile: Wire, sketchFaceIndex: Int,
         draftAngle: Double,
@@ -1864,7 +1888,16 @@ extension Shape {
     /// - Parameters:
     ///   - direction: Direction of extrusion
     ///   - infinite: If true, extrude in both directions (infinite); if false, one direction (semi-infinite)
-    /// - Returns: Extruded shape, or nil on failure
+    /// - Returns: Extruded shape, or nil on failure, including a zero direction, a NaN or an
+    ///   infinity, and a direction whose squared magnitude underflows to zero (below about
+    ///   `1.5e-162`) or overflows (above about `1.3e154`, so `SIMD3(0, 0, 1e300)` is refused).
+    ///   Those directions used to build a shape whose first validity check never returned (#3100).
+    ///
+    /// ```swift
+    /// let face = Shape.face(from: Wire.rectangle(width: 4, height: 4)!)!
+    /// print(face.extrudedSemiInfinite(direction: SIMD3(0, 0, 1)) != nil)  // true
+    /// print(face.extrudedSemiInfinite(direction: SIMD3(.nan, 0, 1)) == nil)  // true
+    /// ```
     public func extrudedSemiInfinite(direction: SIMD3<Double>, infinite: Bool = false) -> Shape? {
         guard
             let h = OCCTShapeExtrudeSemiInfinite(

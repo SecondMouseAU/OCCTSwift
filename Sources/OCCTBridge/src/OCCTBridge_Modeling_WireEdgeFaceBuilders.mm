@@ -898,7 +898,8 @@ OCCTShapeRef OCCTShapeDraftPrism(OCCTShapeRef shape,
                                  double       height,
                                  bool         fuse)
 {
-  if (!shape || !profile)
+  // #3100: a NaN or infinite draft angle never returns from BRepFill_Evolved::PrepareProfile.
+  if (!shape || !profile || !occtIsUsableAngle(angleDeg))
     return nullptr;
   try
   {
@@ -940,7 +941,8 @@ OCCTShapeRef OCCTShapeDraftPrismThruAll(OCCTShapeRef shape,
                                         double       angleDeg,
                                         bool         fuse)
 {
-  if (!shape || !profile)
+  // #3100: a NaN or infinite draft angle never returns from BRepFill_Evolved::PrepareProfile.
+  if (!shape || !profile || !occtIsUsableAngle(angleDeg))
     return nullptr;
   try
   {
@@ -987,7 +989,8 @@ OCCTShapeRef OCCTShapeRevolFeature(OCCTShapeRef shape,
                                    double       angleDeg,
                                    bool         fuse)
 {
-  if (!shape || !profile)
+  // #3100: a NaN or infinite angle never returns (BRepLib::FindValidRange, BRepSweep_Revol).
+  if (!shape || !profile || !occtIsUsableAngle(angleDeg))
     return nullptr;
   try
   {
@@ -1936,6 +1939,12 @@ OCCTShapeRef OCCTShapeFromMesh(const double*  points,
 {
   if (!points || nodeCount < 3 || !triangles || triCount < 1)
     return nullptr;
+  // #3100: a NaN coordinate builds a compound whose first validity check never returns.
+  for (int64_t i = 0; i < static_cast<int64_t>(nodeCount) * 3; i++)
+  {
+    if (!std::isfinite(points[i]))
+      return nullptr;
+  }
   try
   {
     TColgp_Array1OfPnt nodes(1, nodeCount);
@@ -2805,10 +2814,16 @@ OCCTShapeRef OCCTShapeCreateExtrusion(OCCTWireRef profile,
   {
     OCC_CATCH_SIGNALS
     // Normalize direction and scale by length
+    // #3100: the direction and the scaled vector must both be finite and nonzero; a zero, NaN or
+    // infinite length builds a solid whose first validity check never returns.
+    if (!occtIsUsableVector(dx, dy, dz))
+      return nullptr;
     double mag = std::sqrt(dx * dx + dy * dy + dz * dz);
     if (mag < 1e-10)
       return nullptr;
     gp_Vec direction(dx / mag * length, dy / mag * length, dz / mag * length);
+    if (!occtIsUsableVector(direction.X(), direction.Y(), direction.Z()))
+      return nullptr;
 
     // Create a face from the wire for solid extrusion
     BRepBuilderAPI_MakeFace faceMaker(profile->wire);

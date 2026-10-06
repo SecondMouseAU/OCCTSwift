@@ -515,7 +515,14 @@ extension Shape {
     ///   - axisOrigin: Origin point of the revolution axis
     ///   - axisDirection: Direction of the revolution axis
     ///   - angle: Revolution angle in radians (default: full revolution)
-    /// - Returns: Revolved shape, or nil on failure
+    /// - Returns: Revolved shape, or nil on failure, including a NaN or infinite `angle` (a NaN
+    ///   angle used to answer an invalid solid, #3100)
+    ///
+    /// ```swift
+    /// let line = Curve3D.segment(from: SIMD3(5, 0, 0), to: SIMD3(5, 0, 10))!
+    /// print(Shape.revolution(meridian: line) != nil)  // true
+    /// print(Shape.revolution(meridian: line, angle: .nan) == nil)  // true
+    /// ```
     public static func revolution(
         meridian: Curve3D,
         axisOrigin: SIMD3<Double> = .zero,
@@ -570,9 +577,26 @@ extension Shape {
     ///   - sketchFaceIndex: 0-based index of the face on which the profile sits
     ///   - axisOrigin: Origin of the revolution axis
     ///   - axisDirection: Direction of the revolution axis
-    ///   - angle: Revolution angle in degrees
+    ///   - angle: Revolution angle in degrees; a NaN or infinite angle is refused
     ///   - fuse: true to add material (boss), false to cut (pocket)
-    /// - Returns: Shape with revolved feature, or nil on failure
+    /// - Returns: Shape with revolved feature, or nil on failure, including a NaN or infinite
+    ///   `angle`, which used to never return (#3100). Any finite angle, `0` and `360` included, is
+    ///   passed to OCCT unchanged.
+    ///
+    /// ```swift
+    /// let base = Shape.box(width: 20, height: 20, depth: 20)!
+    /// let rib = Wire.polygon3D([
+    ///     SIMD3(3, 0, 10), SIMD3(6, 0, 10), SIMD3(6, 0, 12), SIMD3(3, 0, 12),
+    /// ])!
+    /// let axis = SIMD3<Double>(0, 0, 1)
+    /// let ok = base.addingRevolvedFeature(
+    ///     profile: rib, sketchFaceIndex: 4, axisOrigin: SIMD3(0, 0, 10), axisDirection: axis)
+    /// print(ok != nil)  // true
+    /// let bad = base.addingRevolvedFeature(
+    ///     profile: rib, sketchFaceIndex: 4, axisOrigin: SIMD3(0, 0, 10), axisDirection: axis,
+    ///     angle: .nan)
+    /// print(bad == nil)  // true
+    /// ```
     public func addingRevolvedFeature(
         profile: Wire, sketchFaceIndex: Int,
         axisOrigin: SIMD3<Double>,

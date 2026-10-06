@@ -514,7 +514,10 @@ Creates a solid that extends infinitely in one direction from the profile. Usefu
 - **Parameters:**
   - `direction`: Direction of extrusion.
   - `infinite`: If `true`, extrude in both directions (fully infinite); if `false`, extrude in one direction (semi-infinite).
-- **Returns:** Extruded shape, or `nil` on failure.
+- **Returns:** Extruded shape, or `nil` on failure. A zero direction, a NaN or infinite component,
+  and a direction whose squared magnitude underflows to zero (below about `1.5e-162`) or overflows
+  (above about `1.3e154`, so `SIMD3(0, 0, 1e300)`) answer `nil`: they built a shape whose first
+  validity check never returned (#3100).
 - **OCCT:** `BRepPrimAPI_MakePrism(profile, dir, Copy = !infinite)` (via
   `OCCTShapeExtrudeSemiInfinite`). Neither `BRepPrimAPI_MakeHalfSpace` nor
   `BRepBuilderAPI_MakeSolid`, which this entry used to name and neither of which the bridge calls
