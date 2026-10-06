@@ -901,13 +901,16 @@ public final class Shape: @unchecked Sendable {
     ///   need the forward solid.
     /// - Parameter thickness: Offset distance passed straight to the underlying OCCT call.
     /// - Returns: The thickened solid, or `nil` on failure, including whenever `self` is closed
-    ///   (#2739).
+    ///   (#2739) and when OCCT reports done but returns a null shape (#3061).
     public func shelled(thickness: Double) -> Shape? {
         guard let handle = OCCTShapeShell(self.handle, thickness) else { return nil }
         return Shape(handle: handle)
     }
 
     /// Offset all faces by a distance (positive = outward).
+    ///
+    /// - Returns: The offset shape, or `nil` on failure, including when OCCT reports the offset as
+    ///   done but returns a null shape (#3061).
     public func offset(by distance: Double) -> Shape? {
         guard let handle = OCCTShapeOffset(self.handle, distance) else { return nil }
         return Shape(handle: handle)
@@ -923,7 +926,15 @@ public final class Shape: @unchecked Sendable {
     ///   - tolerance: Coincidence tolerance (default: 1e-7)
     ///   - joinType: How to fill gaps between offset faces
     ///   - removeInternalEdges: Whether to clean up internal edges
-    /// - Returns: Offset shape, or nil on failure
+    /// - Returns: Offset shape, or `nil` on failure, including when OCCT reports the offset as done
+    ///   but returns a null shape (#3061), which is what an inward offset deeper than the shape is
+    ///   thick does. It used to return a ``Shape`` for which ``isNull`` was `true`.
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// print(box.offset(by: 1.0, joinType: .arc) != nil)   // true
+    /// print(box.offset(by: -6.0, joinType: .arc) == nil)  // true: the cube collapses
+    /// ```
     public func offset(
         by distance: Double, tolerance: Double = 1e-7,
         joinType: OffsetJoinType = .arc,

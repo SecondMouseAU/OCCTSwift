@@ -91,8 +91,17 @@ public indirect enum ConstructionAxis: Sendable, Hashable {
     /// Axis through two points.
     case throughPoints(TopologyRef, TopologyRef)
 
-    /// Intersection of two planes. Falls back to the absolute origin if the
-    /// planes are parallel.
+    /// The line two planes share. The origin is the point of that line nearest the world
+    /// origin, so it lies on both planes, and the direction is `cross(normalA, normalB)`.
+    /// Resolution fails with ``ConstructionResolutionError/degenerate(_:)`` when the planes
+    /// are parallel (or opposed), since they share no single line.
+    ///
+    /// ```swift
+    /// let a = ConstructionPlane.absolute(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1))  // z = 0
+    /// let b = ConstructionPlane.absolute(origin: SIMD3(10, 0, 0), normal: SIMD3(1, 0, 0))  // x = 10
+    /// let axis = try graph.resolve(ConstructionAxis.intersectionOfPlanes(a, b)).get()
+    /// // axis.origin == (10, 0, 0), axis.direction == (0, 1, 0)
+    /// ```
     case intersectionOfPlanes(ConstructionPlane, ConstructionPlane)
 }
 
@@ -227,13 +236,21 @@ extension BRepGraph {
                         (origin: SIMD3<Double>, direction: SIMD3<Double>),
                         ConstructionResolutionError
                     > in
-                    let d = simd_cross(pA.zAxis, pB.zAxis)
-                    // Origin: project pA.origin onto the line of intersection.
-                    // Simple approximation: the midpoint of the two origins
-                    // projected onto the intersection direction.
-                    let mid = (pA.origin + pB.origin) / 2
+                    let nA = pA.zAxis
+                    let nB = pB.zAxis
+                    let d = simd_cross(nA, nB)
+                    // Origin: the point of the line {p : nA.(p - oA) = 0, nB.(p - oB) = 0}
+                    // nearest the world origin, p = (hA (nB x d) + hB (d x nA)) / |d|^2 with
+                    // hA = nA.oA and hB = nB.oB (#3037). It lies on both planes, and it does not
+                    // depend on which plane is passed first. The midpoint of the two plane
+                    // origins this replaces lies on neither plane in general.
+                    let hA = simd_dot(nA, pA.origin)
+                    let hB = simd_dot(nB, pB.origin)
+                    let dd = simd_length_squared(d)
                     return requireNonDegenerate(
-                        simd_length(d), (mid, simd_normalize(d)), "planes are parallel")
+                        simd_length(d),
+                        ((hA * simd_cross(nB, d) + hB * simd_cross(d, nA)) / dd, simd_normalize(d)),
+                        "planes are parallel")
                 }
             }
         }

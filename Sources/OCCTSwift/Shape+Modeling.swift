@@ -655,7 +655,8 @@ extension Shape {
     ///   - thickness: Wall thickness (positive = outward, negative = inward), matching
     ///     ``offset(by:)`` and `BRepOffsetAPI_MakeThickSolid`'s own convention (#2736)
     ///   - openFaces: Faces to leave open (must have valid indices from this shape)
-    /// - Returns: Shelled shape with specified faces open, or nil on failure
+    /// - Returns: Shelled shape with specified faces open, or `nil` on failure, including when OCCT
+    ///   reports done but returns a null shape (#3061)
     ///
     /// ## Example
     ///
@@ -1013,7 +1014,8 @@ extension Shape {
     /// Faster than `offset(by:)` for thin-wall operations.
     ///
     /// - Parameter distance: Offset distance (positive = outward)
-    /// - Returns: The offset shape, or nil on failure
+    /// - Returns: The offset shape, or `nil` on failure, including when OCCT reports done but
+    ///   returns a null shape (#3061)
     public func simpleOffset(by distance: Double) -> Shape? {
         guard let h = OCCTShapeSimpleOffset(handle, distance) else { return nil }
         return Shape(handle: h)
@@ -3459,6 +3461,8 @@ extension Shape {
     }
 
     /// Offset a wire on a plane.
+    ///
+    /// Returns `nil` on failure, including when OCCT reports done but returns a null shape (#3061).
     public func offsetWireOnPlane(distance: Double, joinType: OffsetJoinType = .arc) -> Shape? {
         guard let ref = OCCTOffsetWireOnPlane(handle, distance, joinType.rawValue) else {
             return nil
@@ -3467,6 +3471,8 @@ extension Shape {
     }
 
     /// Offset a face.
+    ///
+    /// Returns `nil` on failure, including when OCCT reports done but returns a null shape (#3061).
     public func offsetFace(distance: Double, joinType: OffsetJoinType = .arc) -> Shape? {
         guard let ref = OCCTOffsetFace(handle, distance, joinType.rawValue) else { return nil }
         return Shape(handle: ref)

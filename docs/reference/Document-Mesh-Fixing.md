@@ -3176,6 +3176,7 @@ public func offsetWireOnPlane(
 ```
 
 - **Parameters:** `distance`, signed offset distance (positive = outward); `joinType`, corner handling.
+- **Returns:** the offset, or `nil` on failure, including when OCCT reports done but returns a null shape ([#3061](https://github.com/SecondMouseAU/OCCTSwift/issues/3061)).
 - **OCCT:** `BRepOffsetAPI_MakeOffset` (via `OCCTOffsetWireOnPlane`).
 - **Example:**
   ```swift
@@ -3198,6 +3199,7 @@ public func offsetFace(
 ) -> Shape?
 ```
 
+- **Returns:** the offset, or `nil` on failure, including a done-but-null result ([#3061](https://github.com/SecondMouseAU/OCCTSwift/issues/3061)).
 - **OCCT:** `BRepOffsetAPI_MakeOffset` on a face (via `OCCTOffsetFace`).
 
 ---
@@ -3220,6 +3222,7 @@ public func thickSolid(
   - `offset`: wall thickness (signed; positive = outward).
   - `tolerance`: Boolean tolerance.
   - `joinType`: corner type.
+- **Returns:** the thick solid, or `nil` on failure, including a done-but-null result ([#3061](https://github.com/SecondMouseAU/OCCTSwift/issues/3061)).
 - **OCCT:** `BRepOffsetAPI_MakeThickSolid` (via `OCCTThickSolidWithOptions`).
 - **Example:**
   ```swift

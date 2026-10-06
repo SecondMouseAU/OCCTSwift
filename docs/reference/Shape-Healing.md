@@ -967,7 +967,7 @@ Create a simple surface-level offset of this shape.
 public func simpleOffset(by distance: Double) -> Shape?
 ```
 
-Moves each face by a constant distance without filleting intersections. Faster than `offset(by:)` for thin-wall shell operations where sharp offset corners are acceptable.
+Moves each face by a constant distance without filleting intersections. Faster than `offset(by:)` for thin-wall shell operations where sharp offset corners are acceptable. Returns `nil` on failure, including a done-but-null result ([#3061](https://github.com/SecondMouseAU/OCCTSwift/issues/3061)).
 
 - **Parameters:** `distance`, offset distance; positive moves outward.
 - **Returns:** Offset shape, or nil on failure.

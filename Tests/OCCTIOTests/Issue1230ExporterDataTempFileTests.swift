@@ -47,50 +47,104 @@ struct Issue1230ExporterDataTempFileTests {
 
     // MARK: Shared temp-file lifecycle (catches a lost `defer` cleanup)
 
-    /// Repeated calls must not accumulate temp files: each call's `defer` removes its own before
-    /// returning. `threshold` stays well below `iterations` so incidental temp-directory activity
-    /// from other tests running concurrently in the same process can't produce a false failure,
-    /// while a genuinely lost cleanup (which leaks all `iterations` of them) still trips it.
-    private func assertNoTempFileLeak(
-        iterations: Int = 30, threshold: Int = 10, _ makeData: () throws -> Data
-    ) throws {
-        let tempDir = FileManager.default.temporaryDirectory
-        let before =
-            (try? FileManager.default.contentsOfDirectory(atPath: tempDir.path).count) ?? 0
-        for _ in 0..<iterations {
-            _ = try makeData()
+    /// The temp file names in the shared temp directory that look like the exporter's own.
+    ///
+    /// A UUID plus the format's extension is the shape `Exporter.dataViaTempFile` creates. Not
+    /// "every entry": #3073 counted those, and every other suite that touches the temp directory
+    /// moved the number.
+    private func exporterTempNames(extension ext: String) -> Set<String> {
+        let names =
+            (try? FileManager.default.contentsOfDirectory(
+                atPath: FileManager.default.temporaryDirectory.path)) ?? []
+        return Set(
+            names.filter {
+                let url = URL(fileURLWithPath: $0)
+                return url.pathExtension == ext
+                    && UUID(uuidString: url.deletingPathExtension().lastPathComponent) != nil
+            })
+    }
+
+    /// Names that `body` left behind in the temp directory under the exporter's naming, for each of
+    /// `extensions`.
+    ///
+    /// The exporter takes no directory and names its file with a fresh UUID the test cannot know,
+    /// so a file cannot be claimed by name in advance. What identifies a leak is lifetime instead:
+    /// a call removes its file before it returns, so a name that appeared during `body` and is
+    /// STILL there once every call has returned is a leak, while one that is gone within a moment
+    /// was another suite's call in flight (the `*Data` exporters are also called from
+    /// `BREPTests`, `IGESTests` and other modules' tests). Each candidate gets `settle` seconds to
+    /// go away, and only a name that outlasts that is reported, so unrelated files and other
+    /// suites' transient ones cannot move the answer and a leak of exactly one file fails. That
+    /// wait is the one timing assumption, bounded by the duration of a single export (about
+    /// 10 ms, 0.3 s for 30 calls) with a 5 s allowance, and it costs nothing when nothing leaked.
+    ///
+    /// A seam in `dataViaTempFile` (a directory parameter threaded through the public `*Data`
+    /// functions) would make this exact, and was declined: it adds non-test API for a test.
+    private func leakedExporterTempNames(
+        extensions: [String], settle: TimeInterval = 5, during body: () throws -> Void
+    ) rethrows -> [String] {
+        let before = Dictionary(
+            uniqueKeysWithValues: extensions.map { ($0, exporterTempNames(extension: $0)) })
+        try body()
+        var candidates = Set<String>()
+        for ext in extensions {
+            candidates.formUnion(exporterTempNames(extension: ext).subtracting(before[ext] ?? []))
         }
-        let after =
-            (try? FileManager.default.contentsOfDirectory(atPath: tempDir.path).count) ?? 0
-        let growth = after - before
+        let dir = FileManager.default.temporaryDirectory
+        let deadline = Date().addingTimeInterval(settle)
+        while Date() < deadline {
+            candidates = candidates.filter {
+                FileManager.default.fileExists(atPath: dir.appendingPathComponent($0).path)
+            }
+            if candidates.isEmpty { break }
+            usleep(20_000)
+        }
+        return candidates.filter {
+            FileManager.default.fileExists(atPath: dir.appendingPathComponent($0).path)
+        }.sorted()
+    }
+
+    /// Repeated calls must not accumulate temp files: each call's `defer` removes its own before
+    /// returning, so after `iterations` calls not one of the exporter's names may remain.
+    ///
+    /// No threshold. #3073: the count of the whole temp directory against a margin of 10 failed
+    /// when other suites wrote 11 entries in the window, and passed a leak of fewer than 10.
+    private func assertNoTempFileLeak(
+        extension ext: String, iterations: Int = 30, _ makeData: () throws -> Data
+    ) throws {
+        let leaked = try leakedExporterTempNames(extensions: [ext]) {
+            for _ in 0..<iterations {
+                _ = try makeData()
+            }
+        }
         #expect(
-            growth < threshold,
-            "temp directory grew by \(growth) entries over \(iterations) calls; expected each call's own temp file to be cleaned up"
+            leaked.isEmpty,
+            "\(leaked.count) temp file(s) outlived \(iterations) calls; each call's own file must be removed: \(leaked)"
         )
     }
 
     @Test("stlData does not leak temp files across repeated calls")
     func stlDataDoesNotLeakTempFiles() throws {
         let box = Shape.box(width: 5, height: 5, depth: 5)!
-        try assertNoTempFileLeak { try Exporter.stlData(shape: box) }
+        try assertNoTempFileLeak(extension: "stl") { try Exporter.stlData(shape: box) }
     }
 
     @Test("stepData does not leak temp files across repeated calls")
     func stepDataDoesNotLeakTempFiles() throws {
         let box = Shape.box(width: 5, height: 5, depth: 5)!
-        try assertNoTempFileLeak { try Exporter.stepData(shape: box) }
+        try assertNoTempFileLeak(extension: "step") { try Exporter.stepData(shape: box) }
     }
 
     @Test("igesData does not leak temp files across repeated calls")
     func igesDataDoesNotLeakTempFiles() throws {
         let box = Shape.box(width: 5, height: 5, depth: 5)!
-        try assertNoTempFileLeak { try Exporter.igesData(shape: box) }
+        try assertNoTempFileLeak(extension: "igs") { try Exporter.igesData(shape: box) }
     }
 
     @Test("brepData does not leak temp files across repeated calls")
     func brepDataDoesNotLeakTempFiles() throws {
         let box = Shape.box(width: 5, height: 5, depth: 5)!
-        try assertNoTempFileLeak { try Exporter.brepData(shape: box) }
+        try assertNoTempFileLeak(extension: "brep") { try Exporter.brepData(shape: box) }
     }
 
     // MARK: Cleanup on a failed write, not just a successful one
@@ -104,17 +158,16 @@ struct Issue1230ExporterDataTempFileTests {
         let invalid = invalidBowtieShape()
         #expect(!invalid.isValid)
 
-        let tempDir = FileManager.default.temporaryDirectory
-        let before =
-            (try? FileManager.default.contentsOfDirectory(atPath: tempDir.path).count) ?? 0
-
-        #expect(throws: Exporter.ExportError.self) { try Exporter.stlData(shape: invalid) }
-        #expect(throws: Exporter.ExportError.self) { try Exporter.stepData(shape: invalid) }
-        #expect(throws: Exporter.ExportError.self) { try Exporter.igesData(shape: invalid) }
-        #expect(throws: Exporter.ExportError.self) { try Exporter.brepData(shape: invalid) }
-
-        let after =
-            (try? FileManager.default.contentsOfDirectory(atPath: tempDir.path).count) ?? 0
-        #expect(after - before < 4, "the 4 failed exports above should not have left temp files")
+        // #3073: the same lifetime rule as the leak checks above. The old check counted the whole
+        // temp directory and required growth under 4, which other suites' files could reach.
+        let leaked = leakedExporterTempNames(extensions: ["stl", "step", "igs", "brep"]) {
+            #expect(throws: Exporter.ExportError.self) { try Exporter.stlData(shape: invalid) }
+            #expect(throws: Exporter.ExportError.self) { try Exporter.stepData(shape: invalid) }
+            #expect(throws: Exporter.ExportError.self) { try Exporter.igesData(shape: invalid) }
+            #expect(throws: Exporter.ExportError.self) { try Exporter.brepData(shape: invalid) }
+        }
+        #expect(
+            leaked.isEmpty,
+            "the 4 failed exports above should not have left temp files: \(leaked)")
     }
 }

@@ -21,6 +21,39 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### `Shape.offset(by:joinType:)` and seven sibling offset and thick-solid calls return nil when OCCT reports done with a null result (#3061)
+
+An offset that OCCT reports as done but whose result is a null shape used to reach Swift as a non-nil `Shape` for which `isNull` was `true`. It is now `nil`, the refusal every other failed offset gives. The deterministic case is an inward offset deeper than the shape is thick:
+
+```swift
+let box = Shape.box(width: 10, height: 10, depth: 10)!
+print(box.offset(by: 1.0, joinType: .arc) != nil)   // true
+print(box.offset(by: -6.0, joinType: .arc) == nil)  // true: the cube collapses
+```
+
+The same guard covers `offset(by:)`, `shelled(thickness:)`, `shelled(thickness:openFaces:)`, `thickSolid(facesToRemove:offset:tolerance:joinType:)`, `offsetWireOnPlane(distance:joinType:)`, `offsetFace(distance:joinType:)` and `simpleOffset(by:)`.
+
+### `ConstructionAxis.intersectionOfPlanes` anchors its axis on the line the two planes share (#3037)
+
+`ConstructionAxis.intersectionOfPlanes(_:_:)` returned an origin at the midpoint of the two plane origins, which lies on neither plane unless both origins already sat on their common line, so the axis was parallel to the true intersection and offset from it. The origin is now the point of the intersection line nearest the world origin, on both planes whichever plane is passed first, so `ConstructionPoint.intersectionOfAxisAndPlane` built on it lands on the real line. For `z = 0` and `x = 10` the origin moves from `(5, 0, 0)` to `(10, 0, 0)`; the direction is unchanged. Parallel or opposed planes still fail with `.degenerate("planes are parallel")`. The doc comment, which promised an absolute-origin fallback the code never gave, is corrected.
+
+```swift
+let a = ConstructionPlane.absolute(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1))   // z = 0
+let b = ConstructionPlane.absolute(origin: SIMD3(10, 0, 0), normal: SIMD3(1, 0, 0))  // x = 10
+let axis = try graph.resolve(ConstructionAxis.intersectionOfPlanes(a, b)).get()
+// axis.origin == (10, 0, 0), axis.direction == (0, 1, 0)
+```
+
+### Edge.length no longer reads an elliptical edge long (#3044)
+
+`Edge.length` integrated each edge with a single Gauss rule, so an elliptical edge measured up to 1.485% long (10 x 1: 41.2431578703 against a true 40.6397418010) while `Wire.length`, `Curve2D.length` and `Curve3D.length` were exact. It now uses the same adaptive arc-length integration as those, and agrees with them to 1e-8 relative. Circles and lines were already exact and are unchanged.
+
+```swift
+let ellipse = Curve2D.ellipse(center: .zero, majorRadius: 10, minorRadius: 1)!
+let wire = Wire.fromCurve2D(ellipse)!
+wire.edges().first?.length   // 40.6397418010, equal to wire.length
+```
+
 ### A fillet blend that reaches an obstacle with no edge to follow now declines instead of crashing the process, carried as kernel patch 0054 (#2881)
 
 On the model attached to OCCT#1568, eight of its 42 edges crashed `BRepFilletAPI_MakeFillet::Build` with an uncatchable SIGSEGV at a fillet radius of exactly 1.5, and at no other radius tried (1.4999999 and 1.5000001 are unaffected). `ChFi3d_Builder::StartSol` returned from its obstacle branch with an empty curve adaptor still marked as an obstacle, and the blend walk evaluated it. Patch `0054` clears both, so those fillets report not done, as the neighbouring radii already did. Across the model's 42 edges and nine radii, 378 cases, exactly the eight crashing outcomes change and the other 370 are identical.

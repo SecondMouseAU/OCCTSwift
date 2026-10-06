@@ -613,7 +613,12 @@ OCCTShapeRef OCCTShapeOffsetByJoin(OCCTShapeRef shape,
                             removeInternalEdges);
     if (!offsetter.IsDone())
       return nullptr;
-    return new OCCTShape(offsetter.Shape());
+    // #3061: IsDone() is true for a null result too; a wrapper around it answers every query
+    // with a meaningless value, so it takes the refusal a failed build gets.
+    TopoDS_Shape result = offsetter.Shape();
+    if (result.IsNull())
+      return nullptr;
+    return new OCCTShape(result);
   }
   catch (...)
   {
@@ -2099,9 +2104,12 @@ OCCTShapeRef OCCTOffsetWireOnPlane(OCCTShapeRef wire, double distance, int32_t j
     offset.Perform(distance);
     if (!offset.IsDone())
       return nullptr;
-    auto ref   = new OCCTShape();
-    ref->shape = offset.Shape();
-    return ref;
+    // #3061: IsDone() is true for a null result too; a wrapper around it answers every query
+    // with a meaningless value, so it takes the refusal a failed build gets.
+    TopoDS_Shape result = offset.Shape();
+    if (result.IsNull())
+      return nullptr;
+    return new OCCTShape(result);
   }
   catch (...)
   {
@@ -2125,9 +2133,12 @@ OCCTShapeRef OCCTOffsetFace(OCCTShapeRef face, double distance, int32_t joinType
     offset.Perform(distance);
     if (!offset.IsDone())
       return nullptr;
-    auto ref   = new OCCTShape();
-    ref->shape = offset.Shape();
-    return ref;
+    // #3061: IsDone() is true for a null result too; a wrapper around it answers every query
+    // with a meaningless value, so it takes the refusal a failed build gets.
+    TopoDS_Shape result = offset.Shape();
+    if (result.IsNull())
+      return nullptr;
+    return new OCCTShape(result);
   }
   catch (...)
   {
@@ -2171,9 +2182,12 @@ OCCTShapeRef OCCTThickSolidWithOptions(OCCTShapeRef        shape,
                                jt);
     if (!maker.IsDone())
       return nullptr;
-    auto ref   = new OCCTShape();
-    ref->shape = maker.Shape();
-    return ref;
+    // #3061: IsDone() is true for a null result too; a wrapper around it answers every query
+    // with a meaningless value, so it takes the refusal a failed build gets.
+    TopoDS_Shape result = maker.Shape();
+    if (result.IsNull())
+      return nullptr;
+    return new OCCTShape(result);
   }
   catch (...)
   {
@@ -2502,7 +2516,12 @@ OCCTShapeRef OCCTShapeShell(OCCTShapeRef shape, double thickness)
     thickSolid.MakeThickSolidBySimple(shape->shape, thickness);
     if (!thickSolid.IsDone())
       return nullptr;
-    return new OCCTShape(thickSolid.Shape());
+    // #3061: IsDone() is true for a null result too; a wrapper around it answers every query
+    // with a meaningless value, so it takes the refusal a failed build gets.
+    TopoDS_Shape result = thickSolid.Shape();
+    if (result.IsNull())
+      return nullptr;
+    return new OCCTShape(result);
   }
   catch (...)
   {
@@ -2521,7 +2540,12 @@ OCCTShapeRef OCCTShapeOffset(OCCTShapeRef shape, double distance)
     offsetter.PerformBySimple(shape->shape, distance);
     if (!offsetter.IsDone())
       return nullptr;
-    return new OCCTShape(offsetter.Shape());
+    // #3061: IsDone() is true for a null result too; a wrapper around it answers every query
+    // with a meaningless value, so it takes the refusal a failed build gets.
+    TopoDS_Shape result = offsetter.Shape();
+    if (result.IsNull())
+      return nullptr;
+    return new OCCTShape(result);
   }
   catch (...)
   {
