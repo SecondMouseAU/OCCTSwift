@@ -287,13 +287,37 @@ public enum SheetMetal {
         /// 3. Extrude each piece along its normal by `thickness`.
         /// 4. Fuse all pieces.
         /// 5. For each bend, take the run of the seam the two declared
-        ///    flanges share, then fillet the seam edge(s) inside it
-        ///    (concave) or fuse in a bend-material prism cut to it
-        ///    (convex).
+        ///    flanges share, then fuse in a prism cut to it: the fillet's
+        ///    material for a concave bend, the bend material for a convex
+        ///    one.
         ///
-        /// For matched-extent flanges, the result is identical to v0.151's
-        /// behaviour. For stepped flanges, where v0.151 threw
-        /// `BuildError.filletFailed`, v0.153 produces a clean bent solid.
+        /// For matched-extent flanges, the result is the fillet v0.151 built.
+        /// For stepped flanges, where v0.151 threw `BuildError.filletFailed`,
+        /// v0.153 produces a bent solid, and since #3045 a valid one at every
+        /// radius: a concave bend adds exactly `r^2 (1 - pi/4)` per unit of
+        /// seam at a right angle, with no fillet run-out at the ends of the
+        /// run.
+        ///
+        /// The result is a valid solid or this throws. A concave bend whose
+        /// radius reaches past either flange's face, or that does not fuse to a
+        /// valid solid, throws `BuildError.filletFailed`.
+        ///
+        /// ```swift
+        /// let foot = SheetMetal.Flange(
+        ///     id: "foot",
+        ///     profile: [SIMD2(10, 0), SIMD2(35, 0), SIMD2(35, 30), SIMD2(10, 30)],
+        ///     origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, -1),
+        ///     uAxis: SIMD3(0, 1, 0), vAxis: SIMD3(1, 0, 0))
+        /// let web = SheetMetal.Flange(
+        ///     id: "web",
+        ///     profile: [SIMD2(0, 0), SIMD2(20, 0), SIMD2(20, 45), SIMD2(0, 45)],
+        ///     origin: SIMD3(30, 0, 0), normal: SIMD3(-1, 0, 0),
+        ///     uAxis: SIMD3(0, 0, 1), vAxis: SIMD3(0, 1, 0))
+        /// let part = try SheetMetal.Builder(thickness: 2).build(
+        ///     flanges: [foot, web],
+        ///     bends: [SheetMetal.Bend(from: "web", to: "foot", radius: 3)])
+        /// // part.isValid, with volume 3300 + 25 * 3^2 * (1 - pi/4)
+        /// ```
         public func build(flanges: [Flange], bends: [Bend] = []) throws -> Shape {
             guard thickness > 0 else { throw BuildError.invalidThickness(thickness) }
             guard !flanges.isEmpty else { throw BuildError.noFlanges }
@@ -364,8 +388,9 @@ public enum SheetMetal {
             // dispatch to the appropriate construction:
             //
             //   concave, flange bodies overlap in volume around the bend
-            //     (an L-bracket's natural shape). Fillet the inside seam
-            //     edge with `bend.insideRadius`.
+            //     (an L-bracket's natural shape). Round the inside seam
+            //     with a prism of fillet material of `bend.insideRadius`
+            //     (#3045).
             //   convex, flange bodies only kiss along a line (a Z-section's
             //     back corner). The seam edge is non-manifold and cannot be
             //     filleted directly; instead, build a curved-triangle prism
@@ -401,15 +426,30 @@ public enum SheetMetal {
                         throw BuildError.noSeamEdgeFound(
                             fromID: bend.fromFlangeID, toID: bend.toFlangeID)
                     }
-                    guard
-                        let filleted = fused.filleted(
-                            edges: seamEdges, radius: bend.insideRadius)
-                    else {
-                        throw BuildError.filletFailed(
-                            fromID: bend.fromFlangeID, toID: bend.toFlangeID,
-                            radius: bend.insideRadius)
+                    // An inside radius of 0 is a sharp corner and has no material to add; the
+                    // fillet call is left to say what it always said about it.
+                    if bend.insideRadius > 0 {
+                        guard
+                            let rounded = Self.fuseConcaveBendFiller(
+                                into: fused, along: seamEdges, a: a, b: b,
+                                seamUnit: seamUnit, radius: bend.insideRadius)
+                        else {
+                            throw BuildError.filletFailed(
+                                fromID: bend.fromFlangeID, toID: bend.toFlangeID,
+                                radius: bend.insideRadius)
+                        }
+                        fused = rounded
+                    } else {
+                        guard
+                            let filleted = fused.filleted(
+                                edges: seamEdges, radius: bend.insideRadius)
+                        else {
+                            throw BuildError.filletFailed(
+                                fromID: bend.fromFlangeID, toID: bend.toFlangeID,
+                                radius: bend.insideRadius)
+                        }
+                        fused = filleted
                     }
-                    fused = filleted
 
                 case .convex:
                     guard
@@ -760,6 +800,115 @@ public enum SheetMetal {
                 hi = max(hi, s1, s2)
             }
             return lo < hi ? lo...hi : nil
+        }
+
+        /// Round a concave bend by fusing in the fillet's material as a prism, instead of
+        /// asking `BRepFilletAPI_MakeFillet` to roll a ball along the seam edge (#3045).
+        ///
+        /// The fillet is exact between the two faces but ends badly where the seam stops short
+        /// of the flanges' own edges, which is every stepped seam: it has to finish on the
+        /// narrower flange's side face, and that face is one thickness tall. Where the radius
+        /// reaches the thickness the run-out passes through it. Measured on a foot under a wider
+        /// web at thickness 2, the result is valid to r = 1.9 and `isValid == false` from
+        /// r = 2.0, and from r = 2.5 the volume is wrong as well (+7.7 at 2.5, +16.2 at 3.0). The
+        /// fused solid the fillet starts from is valid, and so is the same solid with this prism
+        /// fused in, at every radius tried up to 6.
+        ///
+        /// The prism is the corner of the free wedge the fillet would fill: the triangle
+        /// from the inside corner line to the two tangent lines, less the circle the fillet
+        /// rolls. Its cross-section is built at the start of each run of seam edges and extruded
+        /// along it, so it ends flush at the run's ends. For a wedge of opening `alpha` it adds
+        /// `r^2 / tan(alpha / 2) - r^2 (pi - alpha) / 2` per unit of seam, which is
+        /// `r^2 (1 - pi / 4)` at 90 degrees.
+        ///
+        /// Returns nil, which the caller reports as `filletFailed`, where the fillet could not
+        /// be built as asked: the radius reaches past either flange's face (the tangent line
+        /// would leave the metal), the faces are too nearly parallel to have a wedge between
+        /// them, or the fused result is not a valid solid. An invalid solid is never returned.
+        private static func fuseConcaveBendFiller(
+            into shape: Shape, along seamEdges: [Edge],
+            a: Flange, b: Flange, seamUnit: SIMD3<Double>, radius: Double
+        ) -> Shape? {
+            // Group the seam edges into runs of touching edges along the seam line. Each run is
+            // one prism, so the filler does not carry a joint at every piece boundary.
+            var spans: [(lo: SIMD3<Double>, hi: SIMD3<Double>, sLo: Double, sHi: Double)] = []
+            for edge in seamEdges {
+                let (p, q) = edge.endpoints
+                let sp = Vector3DMath.dot(p, seamUnit)
+                let sq = Vector3DMath.dot(q, seamUnit)
+                spans.append(sp <= sq ? (p, q, sp, sq) : (q, p, sq, sp))
+            }
+            spans.sort { $0.sLo < $1.sLo }
+            var runs: [(lo: SIMD3<Double>, hi: SIMD3<Double>, sHi: Double)] = []
+            for span in spans {
+                let joinTolerance = 1e-6 * max(1, abs(span.sHi))
+                if let last = runs.last, span.sLo <= last.sHi + joinTolerance {
+                    if span.sHi > last.sHi {
+                        runs[runs.count - 1] = (last.lo, span.hi, span.sHi)
+                    }
+                } else {
+                    runs.append((span.lo, span.hi, span.sHi))
+                }
+            }
+            guard !runs.isEmpty else { return nil }
+
+            guard let da = freeFaceDirection(of: a, towards: seamUnit, corner: runs[0].lo),
+                let db = freeFaceDirection(of: b, towards: seamUnit, corner: runs[0].lo)
+            else { return nil }
+            let cosAlpha = max(-1, min(1, Vector3DMath.dot(da, db)))
+            let alpha = acos(cosAlpha)
+            // Faces nearly coplanar (alpha near pi) leave no wedge to round, and ones that fold
+            // back on themselves (alpha near 0) have no fillet either.
+            guard alpha > 1e-3, alpha < Double.pi - 1e-3 else { return nil }
+            let tangentLength = radius / tan(alpha / 2)
+            // The tangent point has to lie on each flange's own face.
+            guard
+                faceReach(of: a, from: runs[0].lo, along: da) >= tangentLength - 1e-9,
+                faceReach(of: b, from: runs[0].lo, along: db) >= tangentLength - 1e-9
+            else { return nil }
+            guard let bisector = Vector3DMath.normalize(da + db) else { return nil }
+
+            var result = shape
+            for run in runs {
+                let corner = run.lo
+                let tangentA = corner + tangentLength * da
+                let tangentB = corner + tangentLength * db
+                let center = corner + (radius / sin(alpha / 2)) * bisector
+                let arcMid = center - radius * bisector
+                guard let arc = Wire.arc(start: tangentA, midpoint: arcMid, end: tangentB),
+                    let lineA = Wire.line(from: corner, to: tangentA),
+                    let lineB = Wire.line(from: tangentB, to: corner),
+                    let wire = Wire.join([lineA, arc, lineB]),
+                    let face = Shape.face(from: wire, planar: true),
+                    let prism = face.extruded(by: run.hi - run.lo),
+                    let merged = result.union(prism)
+                else { return nil }
+                result = merged
+            }
+            guard result.isValid else { return nil }
+            return result
+        }
+
+        /// The unit direction from the seam into a flange's own metal.
+        ///
+        /// It lies in the plane of the flange's face towards the other flange, perpendicular to
+        /// the seam.
+        private static func freeFaceDirection(
+            of flange: Flange, towards seamUnit: SIMD3<Double>, corner: SIMD3<Double>
+        ) -> SIMD3<Double>? {
+            var v = bodyMidpoint(of: flange, thickness: 0) - corner
+            v -= Vector3DMath.dot(v, seamUnit) * seamUnit
+            v -= Vector3DMath.dot(v, flange.normal) * flange.normal
+            return Vector3DMath.normalize(v)
+        }
+
+        /// How far a flange's profile reaches from `corner` along `direction`.
+        private static func faceReach(
+            of flange: Flange, from corner: SIMD3<Double>, along direction: SIMD3<Double>
+        ) -> Double {
+            flange.profile.map {
+                Vector3DMath.dot(flange.placement.lift($0) - corner, direction)
+            }.max() ?? 0
         }
 
         /// Find the seam edge(s) between two flanges in the fused shape.

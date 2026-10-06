@@ -1472,16 +1472,15 @@ struct SheetMetalTests {
         // a 90 degree concave bend of radius r adds r^2 (1 - pi/4) per unit of seam over the 28
         // the upright actually covers:
         // 8820 + 28 * 1.5^2 * (1 - pi/4) = 8833.519915705961.
-        // The builder sits 0.0139 under that, which is how OCCT closes the fillet off where the
-        // seam line runs on into the flat outer piece: the cross-section is full to within 0.01 of
-        // the step and the surface stops about 0.1 past it, and the same bend with the base
-        // trimmed to the upright's width, so there is no run-out, lands on its closed form to
-        // 1e-12. The old pin, 8815.654315677795, was BELOW the flange volumes alone, because the
-        // fillet was also rolled along the base's free edge for the surplus 37.
+        // The bend is a prism fused to exactly the upright's run (#3045), so there is no fillet
+        // run-out and the builder lands on that to 1e-9. Until #3045 the builder sat 0.0139 under
+        // it, which was how OCCT closed the fillet off where the seam line runs on into the flat
+        // outer piece, and the pin was the fillet's own 8833.505966569946. The pin before that,
+        // 8815.654315677795, was BELOW the flange volumes alone, because the fillet was also
+        // rolled along the base's free edge for the surplus 37.
         let v = shape.volume ?? -1
-        #expect(abs(v - 8833.505966569946) < 1e-6 * 8833.505966569946, "volume \(v)")
         let derived = 8820.0 + 28.0 * 1.5 * 1.5 * (1.0 - Double.pi / 4.0)
-        #expect(abs(v - derived) < 0.02, "volume \(v) against the closed form \(derived)")
+        #expect(abs(v - derived) < 1e-6, "volume \(v) against the closed form \(derived)")
         // The base's free back corner, 22 clear of the upright, is sharp. 0.2 inside it on both
         // faces: `outside` here is the surplus fillet, and no volume tolerance has to be trusted
         // to read it.
@@ -1513,22 +1512,15 @@ struct SheetMetalTests {
         // #2972: a correctness pin now, not a regression pin. 80 x 40 x 2 = 6400 and
         // 20 x 30 x 2 = 1200 only touch, and the bend covers the tab's 20 of the base's 80:
         // 7600 + 20 * 1.5^2 * (1 - pi/4) = 7609.657082647115.
-        // The builder is 0.0534 under, two fillet run-outs at 0.027 each (see
-        // `narrowUprightStepSucceeds` for the measurement). The old pin, 7580.685854250031, was
+        // The bend is a prism fused to exactly the tab's 20 (#3045), so the volume is that to
+        // 1e-9. It used to sit 0.0366 to 0.0534 under it, two fillet run-outs at 0.027 each (see
+        // `narrowUprightStepSucceeds`), and the pin was the fillet's own value, which two builds of
+        // one kernel disagreed on in the sixth digit. The pin before that, 7580.685854250031, was
         // BELOW the flange volumes alone: the fillet also ran along the base's free edge for the
         // surplus 30 on each side, and -19.314 is exactly 40 * 1.5^2 * (1 - pi/4).
         let v = shape.volume ?? -1
-        // 1e-5, not the 1e-6 this carried. The value is the end of an iterative fillet closure, and
-        // two builds of the SAME kernel source disagree in it by 2.2e-6 relative: the published
-        // `v4.0.0-kernel.4` asset measures 7609.603645881255 here and the kernel that
-        // `kernel-integration.yml` compiles on CI measures 7609.620447958993, a different compiler
-        // on identical source (the 39 carried patches are the same in both; the shipped asset
-        // reproduces the old pin exactly, so the patches are not what moved it). The closed form
-        // below is what guards correctness and the new value is nearer to it, 0.0366 under against
-        // 0.0534. This pin only has to notice the volume moving, not a compiler change.
-        #expect(abs(v - 7609.603645881255) < 1e-5 * 7609.603645881255, "volume \(v)")
         let derived = 7600.0 + 20.0 * 1.5 * 1.5 * (1.0 - Double.pi / 4.0)
-        #expect(abs(v - derived) < 0.07, "volume \(v) against the closed form \(derived)")
+        #expect(abs(v - derived) < 1e-6, "volume \(v) against the closed form \(derived)")
         // The base's free back corner left of the tab (tab spans x in [30, 50]) is sharp.
         #expect(shape.classifyPoint(SIMD3(10, 39.8, 1.8)) == .inside)
     }
@@ -1573,17 +1565,13 @@ struct SheetMetalTests {
         // (50 x 30 x 2 = 3000, 50 x 20 x 2 = 2000, 20 x 30 x 2 = 1200), the base-to-mid bend runs
         // the full 50 and the mid-to-top bend covers the tab's 20:
         // 6200 + (50 + 20) * 1.5^2 * (1 - pi/4) = 6233.799789264902.
-        // The builder is 0.0382 under, two run-outs at the stepped bend. The old pin,
-        // 6219.3141848384885, was 19.314 (= 40 * 1.5^2 * (1 - pi/4)) low, the surplus 30 of the
-        // mid's free top edge filleted away against the 50 + 20 added.
+        // Exact to 1e-9 since #3045: the stepped bend is a prism fused to its run and has no
+        // fillet run-out. It used to sit 0.038 under, and the pin was the fillet's own value. The
+        // pin before that, 6219.3141848384885, was 19.314 (= 40 * 1.5^2 * (1 - pi/4)) low, the
+        // surplus 30 of the mid's free top edge filleted away against the 50 + 20 added.
         let v = shape.volume ?? -1
-        // 1e-5, not the 1e-6 this carried, for the reason the L-bracket pin above gives. The wasm
-        // build measures 6233.7447728045445 here against this pin's 6233.76158899466, 2.7e-6 relative,
-        // a different compiler and libm on identical kernel source. The closed form below is what
-        // guards correctness and wasm is inside it (0.055 under against a 0.06 window).
-        #expect(abs(v - 6233.76158899466) < 1e-5 * 6233.76158899466, "volume \(v)")
         let derived = 6200.0 + 70.0 * 1.5 * 1.5 * (1.0 - Double.pi / 4.0)
-        #expect(abs(v - derived) < 0.06, "volume \(v) against the closed form \(derived)")
+        #expect(abs(v - derived) < 1e-6, "volume \(v) against the closed form \(derived)")
         // The mid riser's free top corner left of the tab is sharp. The seam plane on the mid is
         // its outer face y = 32, the one the tab sits beside, so the corner is (y = 32, z = 20).
         #expect(shape.classifyPoint(SIMD3(5, 31.8, 19.8)) == .inside)
@@ -1630,13 +1618,13 @@ struct SheetMetalTests {
         // footprint and only touch it (40 x 100 x 2 = 8000 and 80 x 15 x 2 = 2400 twice), and each
         // bend covers the wall's 80 of the spine's 100:
         // 12800 + 2 * 80 * 1.5^2 * (1 - pi/4) = 12877.256661176919.
-        // The builder is 0.375 under, four fillet run-outs, the largest residual in the suite at
-        // 2.9e-5 relative. The old pin, 12857.94265223678, filleted the surplus 10 at each of the
-        // four ends as well: 160 - 40 = 120 against the 160 the bends actually cover.
+        // Exact to 1e-9 since #3045. The four fillet run-outs it used to carry put it 0.375
+        // under, the largest residual in the suite at 2.9e-5 relative. The pin before those,
+        // 12857.94265223678, filleted the surplus 10 at each of the four ends as well:
+        // 120 against the 160 the bends actually cover.
         let v = shape.volume ?? -1
-        #expect(abs(v - 12876.881759332367) < 1e-6 * 12876.881759332367, "volume \(v)")
         let derived = 12800.0 + 160.0 * 1.5 * 1.5 * (1.0 - Double.pi / 4.0)
-        #expect(abs(v - derived) < 0.5, "volume \(v) against the closed form \(derived)")
+        #expect(abs(v - derived) < 1e-6, "volume \(v) against the closed form \(derived)")
         // The spine's free edge below the walls (they span y in [10, 90]) is sharp.
         #expect(shape.classifyPoint(SIMD3(0.2, 5, 1.8)) == .inside)
     }

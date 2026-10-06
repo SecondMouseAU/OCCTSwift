@@ -16,7 +16,7 @@ import Testing
 /// Measured on the unfixed builder against the closed form
 /// `flanges + r^2 (1 - pi/4) L per concave bend + (pi/4) t^2 L per convex bend`, each miss is
 /// `(pi/4) t^2` times the length the prism did not get, to within the 0.08 of fillet run-out the
-/// stepped concave bend carries either way:
+/// stepped concave bend then carried either way (gone since #3045):
 ///
 /// | construction | what the prism got | volume miss |
 /// |---|---|---|
@@ -27,11 +27,12 @@ import Testing
 /// Every case reads the bend material with a point probe as well as a volume, because a volume
 /// tolerance can swallow a prism built in the wrong place while a point cannot.
 ///
-/// The concave radius is 1.5 against a thickness of 2, and the bodies only touch, on purpose.
-/// A stepped concave bend came out `isValid == false` once its radius reached the thickness, and
-/// also where the two bodies interpenetrate (#3045). That is a separate limitation, and a fixture
-/// standing on it fails for the wrong reason: the convex bend's union onto an invalid solid ended
-/// 470 to 480 below the closed form before this was understood.
+/// The concave radius is 1.5 against a thickness of 2, and the bodies only touch. A stepped
+/// concave bend used to come out `isValid == false` once its radius reached the thickness, and
+/// also where the two bodies interpenetrate (#3045), and a fixture standing on that failed for
+/// the wrong reason: the convex bend's union onto an invalid solid ended 470 to 480 below the
+/// closed form. #3045 fixed that, and these fixtures keep the smaller radius they were written
+/// with.
 @Suite("Issue #3019: a convex bend on a flange another bend split")
 struct Issue3019ConvexBendOnSplitFlangeTests {
 
@@ -122,17 +123,13 @@ struct Issue3019ConvexBendOnSplitFlangeTests {
         #expect(shape.isValid)
         let v = try #require(shape.volume)
         // Flanges 30 x 25 x 2 + 20 x 45 x 2 + 30 x 45 x 2 = 6000, which only touch, plus the
-        // concave bend over its 25 and the convex bend over the web's full 45. The builder sits
-        // 0.0786 under: the two fillet run-outs of the stepped concave bend, which the fix does
-        // not touch (see `SheetMetalTests.zBracket`).
+        // concave bend over its 25 and the convex bend over the web's full 45. The concave
+        // bend is a prism fused to the run exactly, so there is no fillet run-out and the volume
+        // is the closed form (#3045).
         let concave = Self.concaveFillet(radius: 1.5, length: 25.0)
         let convex = Self.convexPrism(length: 45.0)
         let derived: Double = 6000.0 + concave + convex
-        #expect(abs(v - derived) < 0.12, "volume \(v) against the closed form \(derived)")
-        // 1e-5, not 1e-6: this is the end of an iterative fillet closure, and two builds of the same
-        // kernel source disagree in such a value at the sixth digit (`SheetMetalTests`'s L-bracket
-        // pin needed the same). The closed form above is what guards correctness.
-        #expect(abs(v - 6153.364427799075) < 1e-5 * 6153.364427799075, "volume \(v)")
+        #expect(abs(v - derived) < 1e-6, "volume \(v) against the closed form \(derived)")
         // The prism past the first piece. `outside` here is the defect, and no volume tolerance
         // has to be trusted to read it.
         #expect(shape.classifyPoint(Self.bendMaterial(at: 30)) == .inside)
@@ -174,15 +171,11 @@ struct Issue3019ConvexBendOnSplitFlangeTests {
         #expect(shape.isValid)
         let v = try #require(shape.volume)
         // 30 x 25 x 2 + 20 x 45 x 2 + 30 x 35 x 2 = 5400, plus the concave bend over 25 and the
-        // convex bend over 35. 0.0784 under, the stepped concave bend's two run-outs again.
+        // convex bend over 35, exact now that the concave bend has no run-out (#3045).
         let concave = Self.concaveFillet(radius: 1.5, length: 25.0)
         let convex = Self.convexPrism(length: 35.0)
         let derived: Double = 5400.0 + concave + convex
-        #expect(abs(v - derived) < 0.12, "volume \(v) against the closed form \(derived)")
-        // 1e-5, not 1e-6: this is the end of an iterative fillet closure, and two builds of the same
-        // kernel source disagree in such a value at the sixth digit (`SheetMetalTests`'s L-bracket
-        // pin needed the same). The closed form above is what guards correctness.
-        #expect(abs(v - 5521.948704796732) < 1e-5 * 5521.948704796732, "volume \(v)")
+        #expect(abs(v - derived) < 1e-6, "volume \(v) against the closed form \(derived)")
         #expect(shape.classifyPoint(Self.bendMaterial(at: 20)) == .inside)
         #expect(shape.classifyPoint(Self.bendMaterial(at: 7)) == .inside)
         #expect(shape.classifyPoint(Self.bendMaterial(at: 38)) == .inside)
