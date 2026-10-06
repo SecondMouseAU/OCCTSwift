@@ -34,8 +34,22 @@ public final class HatchBuilder: @unchecked Sendable {
     /// Get the number of hatch lines.
     public var nbLines: Int { Int(OCCTHatcherNbLines(ref)) }
 
-    /// Get the number of intervals on a line (1-based index).
+    /// Get the number of intervals on a line.
+    ///
+    /// - Parameter lineIndex: The 1-based index of a line, `1...nbLines`. An index outside that
+    ///   range, including `0`, answers `0` rather than reading past the line table.
+    /// - Returns: The number of intervals on that line, or `0` for an index outside `1...nbLines`.
+    ///
+    /// ```swift
+    /// let hatcher = HatchBuilder(tolerance: 1e-6)!
+    /// hatcher.addXLine(1)
+    /// hatcher.addXLine(5)
+    /// hatcher.trim(x1: 0, y1: 0, x2: 10, y2: 0)
+    /// hatcher.trim(x1: 0, y1: 4, x2: 10, y2: 4)
+    /// print(hatcher.nbIntervals(lineIndex: 1))  // 1
+    /// print(hatcher.nbIntervals(lineIndex: 0))  // 0, not a crash
+    /// ```
     public func nbIntervals(lineIndex: Int) -> Int {
-        Int(OCCTHatcherNbIntervals(ref, Int32(lineIndex)))
+        Int(OCCTHatcherNbIntervals(ref, Int32(clamping: lineIndex)))
     }
 }

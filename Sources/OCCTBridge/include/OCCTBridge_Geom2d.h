@@ -1974,7 +1974,7 @@ void OCCTHatcherTrim(OCCTHatcherRef _Nonnull hatcher, double x1, double y1, doub
 /// Get the number of hatch lines.
 int32_t OCCTHatcherNbLines(OCCTHatcherRef _Nonnull hatcher);
 
-/// Get the number of intervals on a line (1-based index).
+/// Get the number of intervals on a line (1-based index). An index outside 1...NbLines answers 0.
 int32_t OCCTHatcherNbIntervals(OCCTHatcherRef _Nonnull hatcher, int32_t lineIndex);
 
 // MARK: - Geom2d_Circle Methods (v0.108.0)
