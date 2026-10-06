@@ -681,7 +681,12 @@ OCCTShapeRef OCCTShapeSimpleOffset(OCCTShapeRef shape, double offsetValue)
     builder.Perform();
     if (!builder.IsDone())
       return nullptr;
-    return new OCCTShape(builder.GetResultShape());
+    // #3061: IsDone() is true for a null result too; a wrapper around it answers every query
+    // with a meaningless value, so it takes the refusal a failed build gets.
+    TopoDS_Shape result = builder.GetResultShape();
+    if (result.IsNull())
+      return nullptr;
+    return new OCCTShape(result);
   }
   catch (...)
   {
