@@ -897,15 +897,22 @@ public enum SheetMetal {
         ///
         /// It lies in the plane of the face, perpendicular to the seam, and points to the side of
         /// the other flange's face that is open air. That side is the outward side of the other
-        /// flange's face towards this one, which is its `+normal` when that face is the far one
-        /// (the same test `findSeamEdges` uses to pick the face).
+        /// flange's face towards this one: its `+normal` when that face is the far one, its
+        /// `-normal` when it is the near one (the same test `findSeamEdges` uses to pick the face).
+        /// It is not always `+normal`: where the other flange's origin plane is the face the seam
+        /// sits on, as in the diagonal-seam fixture of #1565 finding 3, the open side is `-normal`.
         ///
-        /// This is read off the two normals and not off where the flange's profile sits, because
-        /// the seam can pass through the middle of a flange: its centroid is then on the seam and
-        /// "towards its own metal" is a direction of rounding noise. The fixture of #1565
-        /// finding 3 is one, and it built or threw depending on the platform's libm.
+        /// The direction itself is read off the seam and the two normals, never off where the
+        /// profile sits. The flange's body midpoint is used for one thing only, to tell which of
+        /// the other flange's two faces is the toward-face, and that is a comparison of the
+        /// midpoint's offset along the other normal with half a thickness, which a seam through
+        /// the middle of a flange does not disturb. The first version took the direction itself
+        /// from the centroid, which is on the seam there and a direction of rounding noise: it built
+        /// or threw depending on the platform's libm.
         ///
-        /// Returns nil where the other face runs parallel to this one, which leaves no wedge.
+        /// Returns nil where the other face runs parallel to this one, which leaves no wedge. The
+        /// tolerance is on the sine of the wedge angle, so it is only reached for a wedge under
+        /// 1e-6 radians, far inside the `alpha > 1e-3` refusal the caller applies first.
         private static func freeFaceDirection(
             of flange: Flange, facing other: Flange,
             seamUnit: SIMD3<Double>, thickness: Double
