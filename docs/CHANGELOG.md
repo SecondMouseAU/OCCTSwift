@@ -21,6 +21,17 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### `Curve2DSpecialPointType.minCurvature` documented as the kernel defines it (#3035)
+
+`Curve2DSpecialPointType.minCurvature` and `CurInfType.curvatureMinimum` were documented as a local minimum of curvature magnitude. OCCT classifies by the radius of curvature, so `.minCurvature` is reported where the curvature magnitude is a local **maximum** (the ends of an ellipse's major axis, curvature `a / b^2`) and `.maxCurvature` where it is a local **minimum**. The doc comments and `docs/reference/` pages now say so. The values returned are unchanged.
+
+```swift
+let e = Curve2D.ellipse(center: .zero, majorRadius: 10, minorRadius: 5)!
+for p in e.curvatureExtrema() where p.type == .minCurvature {
+    print(p.parameter, e.curvature(at: p.parameter) ?? 0)  // 0 0.4, then pi 0.4
+}
+```
+
 ### `Shape.offset(by:joinType:)` and seven sibling offset and thick-solid calls return nil when OCCT reports done with a null result (#3061)
 
 An offset that OCCT reports as done but whose result is a null shape used to reach Swift as a non-nil `Shape` for which `isNull` was `true`. It is now `nil`, the refusal every other failed offset gives. The deterministic case is an inward offset deeper than the shape is thick:

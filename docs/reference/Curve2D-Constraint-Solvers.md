@@ -134,6 +134,8 @@ public enum Curve2DSpecialPointType: Int32, Sendable {
 }
 ```
 
+`minCurvature` is a minimum of the radius of curvature, so the curvature magnitude is a local maximum there; `maxCurvature` is the reverse (#3035). See [Curve2D-Analysis](Curve2D-Analysis.md).
+
 ---
 
 ### `Curve2DSpecialPoint`
