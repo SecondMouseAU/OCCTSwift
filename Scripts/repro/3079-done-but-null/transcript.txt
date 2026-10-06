@@ -1,0 +1,801 @@
+OCCTShapeDraft/angle0 => VALID type=Solid isValid=true
+OCCTShapeDraft/angle89.9deg => nil
+OCCTShapeDraft/angle90deg => nil
+OCCTShapeDraft/angle-89.9deg => nil
+OCCTShapeDraft/angle180deg => VALID type=Solid isValid=true
+OCCTShapeDraft/angleNaN => nil
+OCCTShapeDraft/angle45deg => VALID type=Solid isValid=true
+OCCTShapeDraft/zeroDirection => nil
+OCCTShapeDraft/zeroNeutralNormal => nil
+OCCTShapeDraft/neutralPlaneParallelToDirection => nil
+OCCTShapeDraft/nullBase => nil
+OCCTShapeDraft/twoFaces => nil
+OCCTShapeDraft/sphereFace => nil
+OCCTShapeConvertToNURBS/box => VALID type=Solid isValid=true
+OCCTShapeConvertToNURBS/sphere => VALID type=Solid isValid=true
+OCCTShapeConvertToNURBS/nullShape => nil
+OCCTShapeConvertToNURBS/emptiedSolid => VALID type=Solid isValid=true
+OCCTShapeConvertToNURBS/emptyCompound => nil
+OCCTShapeFuseAndBlend/overlappingBoxes-r1 => VALID type=Compound isValid=true
+OCCTShapeFuseAndBlend/identicalBoxes-r1 => VALID type=Compound isValid=true
+OCCTShapeFuseAndBlend/disjointBoxes-r1 => VALID type=Compound isValid=true
+OCCTShapeFuseAndBlend/containedBox-r1 => VALID type=Compound isValid=true
+OCCTShapeFuseAndBlend/overlapping-hugeRadius => nil
+OCCTShapeFuseAndBlend/overlapping-r0.0001 => VALID type=Compound isValid=true
+OCCTShapeFuseAndBlend/boxSphere-r2 => VALID type=Compound isValid=true
+OCCTShapeFuseAndBlend/coincidentFaces-r1 => VALID type=Compound isValid=true
+OCCTShapeFuseAndBlend/nullFirst => nil
+OCCTShapeFuseAndBlend/nullSecond => nil
+OCCTShapeFuseAndBlend/emptiedSolid => VALID type=Compound isValid=true
+OCCTShapeFuseAndBlend/faceOperands => VALID type=Compound isValid=true
+OCCTShapeCutAndBlend/overlappingBoxes-r1 => VALID type=Compound isValid=true
+OCCTShapeCutAndBlend/identicalBoxes-r1 => VALID type=Compound isValid=true
+OCCTShapeCutAndBlend/disjointBoxes-r1 => VALID type=Compound isValid=true
+OCCTShapeCutAndBlend/containedBox-r1 => VALID type=Compound isValid=true
+OCCTShapeCutAndBlend/overlapping-hugeRadius => nil
+OCCTShapeCutAndBlend/overlapping-r0.0001 => VALID type=Compound isValid=true
+OCCTShapeCutAndBlend/boxSphere-r2 => VALID type=Compound isValid=true
+OCCTShapeCutAndBlend/coincidentFaces-r1 => VALID type=Compound isValid=true
+OCCTShapeCutAndBlend/nullFirst => nil
+OCCTShapeCutAndBlend/nullSecond => nil
+OCCTShapeCutAndBlend/emptiedSolid => VALID type=Compound isValid=true
+OCCTShapeCutAndBlend/faceOperands => VALID type=Compound isValid=true
+OCCTShapeGlue/touchingBoxes => VALID type=Compound isValid=true
+OCCTShapeGlue/identicalBoxes => VALID type=Compound isValid=true
+OCCTShapeGlue/disjointBoxes => VALID type=Compound isValid=true
+OCCTShapeGlue/overlappingBoxes => VALID type=Compound isValid=true
+OCCTShapeGlue/containedBox => VALID type=Compound isValid=true
+OCCTShapeGlue/hugeTolerance => VALID type=Compound isValid=true
+OCCTShapeGlue/negativeTolerance => VALID type=Compound isValid=true
+OCCTShapeGlue/nullFirst => nil
+OCCTShapeGlue/nullSecond => nil
+OCCTShapeGlue/bothNull => nil
+OCCTShapeGlue/emptiedSolid => VALID type=Compound isValid=true
+OCCTShapeGlue/emptyCompounds => CRASH(exit 133)
+OCCTShapeSubtract/drillHole-zeroDepth => VALID type=Compound isValid=true
+OCCTShapeSubtract/drillHole-hugeRadius => VALID type=Compound isValid=true
+OCCTShapeSubtract/drillHole-missesBox => VALID type=Compound isValid=true
+OCCTShapeSubtract/drillHole-nullBase => nil
+OCCTShapeUnion/identical => VALID type=Compound isValid=true
+OCCTShapeUnion/disjoint => VALID type=Compound isValid=true
+OCCTShapeUnion/contained => VALID type=Compound isValid=true
+OCCTShapeUnion/containing => VALID type=Compound isValid=true
+OCCTShapeUnion/touchingFaces => VALID type=Compound isValid=true
+OCCTShapeUnion/touchingEdge => VALID type=Compound isValid=true
+OCCTShapeUnion/touchingVertex => VALID type=Compound isValid=true
+OCCTShapeUnion/nullFirst => nil
+OCCTShapeUnion/nullSecond => nil
+OCCTShapeUnion/bothNull => nil
+OCCTShapeUnion/emptiedSolid => VALID type=Compound isValid=true
+OCCTShapeUnion/emptyCompounds => CRASH(exit 133)
+OCCTShapeUnion/faceVsBox => nil
+OCCTShapeSubtract/identical => VALID type=Compound isValid=true
+OCCTShapeSubtract/disjoint => VALID type=Compound isValid=true
+OCCTShapeSubtract/contained => VALID type=Compound isValid=true
+OCCTShapeSubtract/containing => VALID type=Compound isValid=true
+OCCTShapeSubtract/touchingFaces => VALID type=Compound isValid=true
+OCCTShapeSubtract/touchingEdge => VALID type=Compound isValid=true
+OCCTShapeSubtract/touchingVertex => VALID type=Compound isValid=true
+OCCTShapeSubtract/nullFirst => nil
+OCCTShapeSubtract/nullSecond => nil
+OCCTShapeSubtract/bothNull => nil
+OCCTShapeSubtract/emptiedSolid => VALID type=Compound isValid=true
+OCCTShapeSubtract/emptyCompounds => CRASH(exit 133)
+OCCTShapeSubtract/faceVsBox => VALID type=Compound isValid=true
+OCCTShapeIntersect/identical => VALID type=Compound isValid=true
+OCCTShapeIntersect/disjoint => VALID type=Compound isValid=true
+OCCTShapeIntersect/contained => VALID type=Compound isValid=true
+OCCTShapeIntersect/containing => VALID type=Compound isValid=true
+OCCTShapeIntersect/touchingFaces => VALID type=Compound isValid=true
+OCCTShapeIntersect/touchingEdge => VALID type=Compound isValid=true
+OCCTShapeIntersect/touchingVertex => VALID type=Compound isValid=true
+OCCTShapeIntersect/nullFirst => nil
+OCCTShapeIntersect/nullSecond => nil
+OCCTShapeIntersect/bothNull => nil
+OCCTShapeIntersect/emptiedSolid => VALID type=Compound isValid=true
+OCCTShapeIntersect/emptyCompounds => CRASH(exit 133)
+OCCTShapeIntersect/faceVsBox => VALID type=Compound isValid=true
+OCCTShapeFillet/box-r0.0 => nil
+OCCTShapeChamfer/box-d0.0 => nil
+OCCTShapeFillet/box-r-1.0 => nil
+OCCTShapeChamfer/box-d-1.0 => nil
+OCCTShapeFillet/box-r0.001 => VALID type=Compound isValid=true
+OCCTShapeChamfer/box-d0.001 => VALID type=Compound isValid=true
+OCCTShapeFillet/box-r4.9 => VALID type=Compound isValid=true
+OCCTShapeChamfer/box-d4.9 => VALID type=Compound isValid=true
+OCCTShapeFillet/box-r5.0 => nil
+OCCTShapeChamfer/box-d5.0 => nil
+OCCTShapeFillet/box-r5.1 => VALID type=Compound isValid=false
+OCCTShapeChamfer/box-d5.1 => nil
+OCCTShapeFillet/box-r100.0 => nil
+OCCTShapeChamfer/box-d100.0 => nil
+OCCTShapeFillet/box-r1000000000.0 => nil
+OCCTShapeChamfer/box-d1000000000.0 => nil
+OCCTShapeFillet/box-rnan => nil
+OCCTShapeChamfer/box-dnan => nil
+OCCTShapeFillet/sphere-r0.0 => nil
+OCCTShapeChamfer/sphere-d0.0 => nil
+OCCTShapeFillet/sphere-r-1.0 => nil
+OCCTShapeChamfer/sphere-d-1.0 => nil
+OCCTShapeFillet/sphere-r0.001 => nil
+OCCTShapeChamfer/sphere-d0.001 => nil
+OCCTShapeFillet/sphere-r4.9 => nil
+OCCTShapeChamfer/sphere-d4.9 => nil
+OCCTShapeFillet/sphere-r5.0 => nil
+OCCTShapeChamfer/sphere-d5.0 => nil
+OCCTShapeFillet/sphere-r5.1 => nil
+OCCTShapeChamfer/sphere-d5.1 => nil
+OCCTShapeFillet/sphere-r100.0 => nil
+OCCTShapeChamfer/sphere-d100.0 => nil
+OCCTShapeFillet/sphere-r1000000000.0 => nil
+OCCTShapeChamfer/sphere-d1000000000.0 => nil
+OCCTShapeFillet/sphere-rnan => nil
+OCCTShapeChamfer/sphere-dnan => nil
+OCCTShapeFillet/cylinder-r0.0 => nil
+OCCTShapeChamfer/cylinder-d0.0 => nil
+OCCTShapeFillet/cylinder-r-1.0 => nil
+OCCTShapeChamfer/cylinder-d-1.0 => nil
+OCCTShapeFillet/cylinder-r0.001 => VALID type=Compound isValid=true
+OCCTShapeChamfer/cylinder-d0.001 => VALID type=Compound isValid=true
+OCCTShapeFillet/cylinder-r4.9 => VALID type=Compound isValid=true
+OCCTShapeChamfer/cylinder-d4.9 => VALID type=Compound isValid=true
+OCCTShapeFillet/cylinder-r5.0 => nil
+OCCTShapeChamfer/cylinder-d5.0 => nil
+OCCTShapeFillet/cylinder-r5.1 => nil
+OCCTShapeChamfer/cylinder-d5.1 => VALID type=Compound isValid=false
+OCCTShapeFillet/cylinder-r100.0 => nil
+OCCTShapeChamfer/cylinder-d100.0 => nil
+OCCTShapeFillet/cylinder-r1000000000.0 => nil
+OCCTShapeChamfer/cylinder-d1000000000.0 => nil
+OCCTShapeFillet/cylinder-rnan => nil
+OCCTShapeChamfer/cylinder-dnan => nil
+OCCTShapeFillet/cone-r0.0 => nil
+OCCTShapeChamfer/cone-d0.0 => nil
+OCCTShapeFillet/cone-r-1.0 => nil
+OCCTShapeChamfer/cone-d-1.0 => nil
+OCCTShapeFillet/cone-r0.001 => VALID type=Compound isValid=true
+OCCTShapeChamfer/cone-d0.001 => VALID type=Compound isValid=true
+OCCTShapeFillet/cone-r4.9 => nil
+OCCTShapeChamfer/cone-d4.9 => VALID type=Compound isValid=true
+OCCTShapeFillet/cone-r5.0 => nil
+OCCTShapeChamfer/cone-d5.0 => VALID type=Compound isValid=true
+OCCTShapeFillet/cone-r5.1 => nil
+OCCTShapeChamfer/cone-d5.1 => VALID type=Compound isValid=false
+OCCTShapeFillet/cone-r100.0 => nil
+OCCTShapeChamfer/cone-d100.0 => nil
+OCCTShapeFillet/cone-r1000000000.0 => nil
+OCCTShapeChamfer/cone-d1000000000.0 => nil
+OCCTShapeFillet/cone-rnan => nil
+OCCTShapeChamfer/cone-dnan => nil
+OCCTShapeFillet/null-r0.0 => nil
+OCCTShapeChamfer/null-d0.0 => nil
+OCCTShapeFillet/null-r-1.0 => nil
+OCCTShapeChamfer/null-d-1.0 => nil
+OCCTShapeFillet/null-r0.001 => nil
+OCCTShapeChamfer/null-d0.001 => nil
+OCCTShapeFillet/null-r4.9 => nil
+OCCTShapeChamfer/null-d4.9 => nil
+OCCTShapeFillet/null-r5.0 => nil
+OCCTShapeChamfer/null-d5.0 => nil
+OCCTShapeFillet/null-r5.1 => nil
+OCCTShapeChamfer/null-d5.1 => nil
+OCCTShapeFillet/null-r100.0 => nil
+OCCTShapeChamfer/null-d100.0 => nil
+OCCTShapeFillet/null-r1000000000.0 => nil
+OCCTShapeChamfer/null-d1000000000.0 => nil
+OCCTShapeFillet/null-rnan => nil
+OCCTShapeChamfer/null-dnan => nil
+OCCTShapeFillet/emptiedSolid-r0.0 => nil
+OCCTShapeChamfer/emptiedSolid-d0.0 => nil
+OCCTShapeFillet/emptiedSolid-r-1.0 => nil
+OCCTShapeChamfer/emptiedSolid-d-1.0 => nil
+OCCTShapeFillet/emptiedSolid-r0.001 => nil
+OCCTShapeChamfer/emptiedSolid-d0.001 => nil
+OCCTShapeFillet/emptiedSolid-r4.9 => nil
+OCCTShapeChamfer/emptiedSolid-d4.9 => nil
+OCCTShapeFillet/emptiedSolid-r5.0 => nil
+OCCTShapeChamfer/emptiedSolid-d5.0 => nil
+OCCTShapeFillet/emptiedSolid-r5.1 => nil
+OCCTShapeChamfer/emptiedSolid-d5.1 => nil
+OCCTShapeFillet/emptiedSolid-r100.0 => nil
+OCCTShapeChamfer/emptiedSolid-d100.0 => nil
+OCCTShapeFillet/emptiedSolid-r1000000000.0 => nil
+OCCTShapeChamfer/emptiedSolid-d1000000000.0 => nil
+OCCTShapeFillet/emptiedSolid-rnan => nil
+OCCTShapeChamfer/emptiedSolid-dnan => nil
+OCCTShapeFillet/face-r0.0 => nil
+OCCTShapeChamfer/face-d0.0 => nil
+OCCTShapeFillet/face-r-1.0 => nil
+OCCTShapeChamfer/face-d-1.0 => nil
+OCCTShapeFillet/face-r0.001 => nil
+OCCTShapeChamfer/face-d0.001 => nil
+OCCTShapeFillet/face-r4.9 => nil
+OCCTShapeChamfer/face-d4.9 => nil
+OCCTShapeFillet/face-r5.0 => nil
+OCCTShapeChamfer/face-d5.0 => nil
+OCCTShapeFillet/face-r5.1 => nil
+OCCTShapeChamfer/face-d5.1 => nil
+OCCTShapeFillet/face-r100.0 => nil
+OCCTShapeChamfer/face-d100.0 => nil
+OCCTShapeFillet/face-r1000000000.0 => nil
+OCCTShapeChamfer/face-d1000000000.0 => nil
+OCCTShapeFillet/face-rnan => nil
+OCCTShapeChamfer/face-dnan => nil
+OCCTShapeFillet/emptyCompound-r0.0 => CRASH(exit 133)
+OCCTShapeChamfer/emptyCompound-d0.0 => CRASH(exit 133)
+OCCTShapeFillet/emptyCompound-r-1.0 => CRASH(exit 133)
+OCCTShapeChamfer/emptyCompound-d-1.0 => CRASH(exit 133)
+OCCTShapeFillet/emptyCompound-r0.001 => CRASH(exit 133)
+OCCTShapeChamfer/emptyCompound-d0.001 => CRASH(exit 133)
+OCCTShapeFillet/emptyCompound-r4.9 => CRASH(exit 133)
+OCCTShapeChamfer/emptyCompound-d4.9 => CRASH(exit 133)
+OCCTShapeFillet/emptyCompound-r5.0 => CRASH(exit 133)
+OCCTShapeChamfer/emptyCompound-d5.0 => CRASH(exit 133)
+OCCTShapeFillet/emptyCompound-r5.1 => CRASH(exit 133)
+OCCTShapeChamfer/emptyCompound-d5.1 => CRASH(exit 133)
+OCCTShapeFillet/emptyCompound-r100.0 => CRASH(exit 133)
+OCCTShapeChamfer/emptyCompound-d100.0 => CRASH(exit 133)
+OCCTShapeFillet/emptyCompound-r1000000000.0 => CRASH(exit 133)
+OCCTShapeChamfer/emptyCompound-d1000000000.0 => CRASH(exit 133)
+OCCTShapeFillet/emptyCompound-rnan => CRASH(exit 133)
+OCCTShapeChamfer/emptyCompound-dnan => CRASH(exit 133)
+OCCTShapeChamferTwoDistances/tiny => VALID type=Compound isValid=true
+OCCTShapeChamferTwoDistances/allEdges-tiny => VALID type=Compound isValid=true
+OCCTShapeChamferTwoDistances/half => VALID type=Compound isValid=true
+OCCTShapeChamferTwoDistances/allEdges-half => nil
+OCCTShapeChamferTwoDistances/equalWidth => nil
+OCCTShapeChamferTwoDistances/allEdges-equalWidth => nil
+OCCTShapeChamferTwoDistances/over => nil
+OCCTShapeChamferTwoDistances/allEdges-over => nil
+OCCTShapeChamferTwoDistances/huge => nil
+OCCTShapeChamferTwoDistances/allEdges-huge => nil
+OCCTShapeChamferTwoDistances/zero => nil
+OCCTShapeChamferTwoDistances/allEdges-zero => nil
+OCCTShapeChamferTwoDistances/negative => nil
+OCCTShapeChamferTwoDistances/allEdges-negative => nil
+OCCTShapeChamferTwoDistances/asymmetricOver => nil
+OCCTShapeChamferTwoDistances/allEdges-asymmetricOver => nil
+OCCTShapeChamferTwoDistances/nan => nil
+OCCTShapeChamferTwoDistances/allEdges-nan => nil
+OCCTShapeChamferTwoDistances/edgeOutOfRange => nil
+OCCTShapeChamferTwoDistances/faceNotAdjacent => VALID type=Compound isValid=true
+OCCTShapeChamferTwoDistances/null => nil
+OCCTShapeChamferTwoDistances/sphere => nil
+OCCTShapeChamferDistAngle/tiny => VALID type=Compound isValid=true
+OCCTShapeChamferDistAngle/allEdges-tiny => VALID type=Compound isValid=true
+OCCTShapeChamferDistAngle/half => VALID type=Compound isValid=true
+OCCTShapeChamferDistAngle/allEdges-half => nil
+OCCTShapeChamferDistAngle/over => nil
+OCCTShapeChamferDistAngle/allEdges-over => nil
+OCCTShapeChamferDistAngle/huge => nil
+OCCTShapeChamferDistAngle/allEdges-huge => nil
+OCCTShapeChamferDistAngle/zeroDist => nil
+OCCTShapeChamferDistAngle/allEdges-zeroDist => nil
+OCCTShapeChamferDistAngle/angle0 => nil
+OCCTShapeChamferDistAngle/allEdges-angle0 => nil
+OCCTShapeChamferDistAngle/angle90 => nil
+OCCTShapeChamferDistAngle/allEdges-angle90 => nil
+OCCTShapeChamferDistAngle/angle89.99 => nil
+OCCTShapeChamferDistAngle/allEdges-angle89.99 => nil
+OCCTShapeChamferDistAngle/angle0.001 => VALID type=Compound isValid=true
+OCCTShapeChamferDistAngle/allEdges-angle0.001 => VALID type=Compound isValid=true
+OCCTShapeChamferDistAngle/angleNeg => nil
+OCCTShapeChamferDistAngle/allEdges-angleNeg => nil
+OCCTShapeChamferDistAngle/angle180 => nil
+OCCTShapeChamferDistAngle/allEdges-angle180 => nil
+OCCTShapeChamferDistAngle/nan => nil
+OCCTShapeChamferDistAngle/allEdges-nan => nil
+OCCTShapeChamferDistAngle/steepOver => nil
+OCCTShapeChamferDistAngle/allEdges-steepOver => nil
+OCCTShapeChamferDistAngle/edgeOutOfRange => nil
+OCCTShapeChamferDistAngle/null => nil
+OCCTFace2DFillet/square20-r0.0 => nil
+OCCTFace2DFillet/square20-all4-r0.0 => nil
+OCCTFace2DChamfer/square20-d0.0 => nil
+OCCTFace2DChamfer/square20-all4-d0.0 => nil
+OCCTFace2DFillet/square20-r-1.0 => nil
+OCCTFace2DFillet/square20-all4-r-1.0 => nil
+OCCTFace2DChamfer/square20-d-1.0 => nil
+OCCTFace2DChamfer/square20-all4-d-1.0 => nil
+OCCTFace2DFillet/square20-r0.001 => VALID type=Face isValid=true
+OCCTFace2DFillet/square20-all4-r0.001 => VALID type=Face isValid=true
+OCCTFace2DChamfer/square20-d0.001 => VALID type=Face isValid=true
+OCCTFace2DChamfer/square20-all4-d0.001 => VALID type=Face isValid=true
+OCCTFace2DFillet/square20-r9.9 => VALID type=Face isValid=true
+OCCTFace2DFillet/square20-all4-r9.9 => VALID type=Face isValid=true
+OCCTFace2DChamfer/square20-d9.9 => VALID type=Face isValid=true
+OCCTFace2DChamfer/square20-all4-d9.9 => VALID type=Face isValid=true
+OCCTFace2DFillet/square20-r10.0 => VALID type=Face isValid=true
+OCCTFace2DFillet/square20-all4-r10.0 => VALID type=Face isValid=true
+OCCTFace2DChamfer/square20-d10.0 => VALID type=Face isValid=true
+OCCTFace2DChamfer/square20-all4-d10.0 => VALID type=Face isValid=false
+OCCTFace2DFillet/square20-r10.1 => VALID type=Face isValid=true
+OCCTFace2DFillet/square20-all4-r10.1 => nil
+OCCTFace2DChamfer/square20-d10.1 => VALID type=Face isValid=true
+OCCTFace2DChamfer/square20-all4-d10.1 => VALID type=Face isValid=false
+OCCTFace2DFillet/square20-r1000.0 => nil
+OCCTFace2DFillet/square20-all4-r1000.0 => nil
+OCCTFace2DChamfer/square20-d1000.0 => VALID type=Face isValid=false
+OCCTFace2DChamfer/square20-all4-d1000.0 => VALID type=Face isValid=false
+OCCTFace2DFillet/square20-r1000000000.0 => nil
+OCCTFace2DFillet/square20-all4-r1000000000.0 => nil
+OCCTFace2DChamfer/square20-d1000000000.0 => VALID type=Face isValid=false
+OCCTFace2DChamfer/square20-all4-d1000000000.0 => VALID type=Face isValid=false
+OCCTFace2DFillet/square20-rnan => nil
+OCCTFace2DFillet/square20-all4-rnan => nil
+OCCTFace2DChamfer/square20-dnan => nil
+OCCTFace2DChamfer/square20-all4-dnan => nil
+OCCTFace2DFillet/vertexOutOfRange => nil
+OCCTFace2DFillet/null => nil
+OCCTFace2DFillet/solidNotFace => VALID type=Face isValid=true
+OCCTFace2DFillet/triangleSliver => VALID type=Face isValid=true
+OCCTFace2DFillet/circleFace => nil
+OCCTFace2DChamfer/edgePairNotAdjacent => nil
+OCCTFace2DChamfer/edgeOutOfRange => nil
+OCCTFace2DChamfer/null => nil
+OCCTFace2DChamfer/solidNotFace => VALID type=Face isValid=true
+OCCTShapeCreateRevolutionFromCurve/segmentOnAxis-full => VALID type=Solid isValid=true
+OCCTShapeCreateRevolutionFromCurve/segmentOffAxis-full => VALID type=Solid isValid=true
+OCCTShapeCreateRevolution/wireOnAxis-full => VALID type=Shell isValid=false
+OCCTShapeCreateRevolution/rectOffAxis-full => VALID type=Shell isValid=true
+OCCTShapeCreateRevolutionPartial/faceOffAxis-full => VALID type=Solid isValid=true
+OCCTShapeCreateRevolutionFromCurve/segmentOnAxis-angle0 => VALID type=Solid isValid=false
+OCCTShapeCreateRevolutionFromCurve/segmentOffAxis-angle0 => VALID type=Solid isValid=false
+OCCTShapeCreateRevolution/wireOnAxis-angle0 => VALID type=Shell isValid=false
+OCCTShapeCreateRevolution/rectOffAxis-angle0 => VALID type=Shell isValid=false
+OCCTShapeCreateRevolutionPartial/faceOffAxis-angle0 => VALID type=Solid isValid=false
+OCCTShapeCreateRevolutionFromCurve/segmentOnAxis-angle1e-12 => VALID type=Solid isValid=false
+OCCTShapeCreateRevolutionFromCurve/segmentOffAxis-angle1e-12 => VALID type=Solid isValid=false
+OCCTShapeCreateRevolution/wireOnAxis-angle1e-12 => VALID type=Shell isValid=false
+OCCTShapeCreateRevolution/rectOffAxis-angle1e-12 => VALID type=Shell isValid=false
+OCCTShapeCreateRevolutionPartial/faceOffAxis-angle1e-12 => VALID type=Solid isValid=false
+OCCTShapeCreateRevolutionFromCurve/segmentOnAxis-angleNeg => VALID type=Solid isValid=false
+OCCTShapeCreateRevolutionFromCurve/segmentOffAxis-angleNeg => VALID type=Solid isValid=false
+OCCTShapeCreateRevolution/wireOnAxis-angleNeg => VALID type=Shell isValid=false
+OCCTShapeCreateRevolution/rectOffAxis-angleNeg => VALID type=Shell isValid=true
+OCCTShapeCreateRevolutionPartial/faceOffAxis-angleNeg => VALID type=Solid isValid=true
+OCCTShapeCreateRevolutionFromCurve/segmentOnAxis-angleHuge => VALID type=Solid isValid=true
+OCCTShapeCreateRevolutionFromCurve/segmentOffAxis-angleHuge => VALID type=Solid isValid=false
+OCCTShapeCreateRevolution/wireOnAxis-angleHuge => VALID type=Shell isValid=false
+OCCTShapeCreateRevolution/rectOffAxis-angleHuge => VALID type=Shell isValid=true
+OCCTShapeCreateRevolutionPartial/faceOffAxis-angleHuge => VALID type=Solid isValid=true
+OCCTShapeCreateRevolutionFromCurve/segmentOnAxis-angleNaN => VALID type=Solid isValid=false
+OCCTShapeCreateRevolutionFromCurve/segmentOffAxis-angleNaN => VALID type=Solid isValid=false
+OCCTShapeCreateRevolution/wireOnAxis-angleNaN => VALID type=Shell isValid=false
+OCCTShapeCreateRevolution/rectOffAxis-angleNaN => VALID type=Shell isValid=false
+OCCTShapeCreateRevolutionPartial/faceOffAxis-angleNaN => VALID type=Solid isValid=false
+OCCTShapeCreateRevolutionFromCurve/zeroAxis => nil
+OCCTShapeCreateRevolutionFromCurve/curveIsAxisLine => VALID type=Solid isValid=false
+OCCTShapeCreateRevolutionFromCurve/tinyCircle => VALID type=Solid isValid=true
+OCCTShapeCreateRevolution/zeroAxis => nil
+OCCTShapeCreateRevolution/profileCrossingAxis => nil
+OCCTShapeCreateRevolution/profilePerpendicularThroughAxis => VALID type=Shell isValid=false
+OCCTShapeCreateRevolution/collinearPolygon => VALID type=Shell isValid=true
+OCCTShapeCreateRevolution/nullProfileViaFace => INPUT-REFUSED
+OCCTShapeCreateRevolutionFull/null => nil
+OCCTShapeCreateRevolutionFull/zeroAxis => nil
+OCCTShapeCreateRevolutionFull/box => nil
+OCCTShapeCreateRevolutionFull/boxAcrossAxis => nil
+OCCTShapeCreateRevolutionFull/faceOnAxisLine => VALID type=Solid isValid=false
+OCCTShapeCreateRevolutionFull/emptyCompound => nil
+OCCTShapeCreateRevolutionPartial/null => nil
+OCCTShapeCreateRevolutionPartial/emptyCompound => nil
+OCCTShapeCreateExtrusion/rect-zeroDir => nil
+OCCTShapeCreateExtrusion/collinear-zeroDir => nil
+OCCTShapeCreateExtrusion/rect-len0 => TIMEOUT
+OCCTShapeCreateExtrusion/collinear-len0 => TIMEOUT
+OCCTShapeCreateExtrusion/rect-lenNeg => VALID type=Solid isValid=true
+OCCTShapeCreateExtrusion/collinear-lenNeg => VALID type=Solid isValid=false
+OCCTShapeCreateExtrusion/rect-lenNaN => TIMEOUT
+OCCTShapeCreateExtrusion/collinear-lenNaN => TIMEOUT
+OCCTShapeCreateExtrusion/rect-lenTiny => VALID type=Solid isValid=false
+OCCTShapeCreateExtrusion/collinear-lenTiny => VALID type=Solid isValid=false
+OCCTShapeCreateExtrusion/rect-dirInPlane => VALID type=Solid isValid=true
+OCCTShapeCreateExtrusion/collinear-dirInPlane => VALID type=Solid isValid=false
+OCCTShapeCreateExtrusion/rect-lenHuge => nil
+OCCTShapeCreateExtrusion/collinear-lenHuge => nil
+OCCTShapeCreateExtrusionShape/face-zero => TIMEOUT
+OCCTShapeCreateExtrusionShape/null-zero => nil
+OCCTShapeCreateExtrusionShape/emptyCompound-zero => nil
+OCCTShapeCreateExtrusionShape/emptiedSolid-zero => nil
+OCCTShapeCreateExtrusionInfinite/face-zero => nil
+OCCTShapeCreateExtrusionInfinite/faceSemi-zero => nil
+OCCTShapeCreateExtrusionInfinite/null-zero => nil
+OCCTShapeExtrudeSemiInfinite/face-zero => nil
+OCCTShapeExtrudeSemiInfinite/faceInfinite-zero => nil
+OCCTShapeExtrudeSemiInfinite/null-zero => nil
+OCCTShapeExtrudeSemiInfinite/box-zero => nil
+OCCTShapeCreateExtrusionShape/face-tiny => VALID type=Solid isValid=false
+OCCTShapeCreateExtrusionShape/null-tiny => nil
+OCCTShapeCreateExtrusionShape/emptyCompound-tiny => nil
+OCCTShapeCreateExtrusionShape/emptiedSolid-tiny => nil
+OCCTShapeCreateExtrusionInfinite/face-tiny => VALID type=Solid isValid=false
+OCCTShapeCreateExtrusionInfinite/faceSemi-tiny => VALID type=Solid isValid=true
+OCCTShapeCreateExtrusionInfinite/null-tiny => nil
+OCCTShapeExtrudeSemiInfinite/face-tiny => VALID type=Solid isValid=true
+OCCTShapeExtrudeSemiInfinite/faceInfinite-tiny => VALID type=Solid isValid=false
+OCCTShapeExtrudeSemiInfinite/null-tiny => nil
+OCCTShapeExtrudeSemiInfinite/box-tiny => nil
+OCCTShapeCreateExtrusionShape/face-nan => TIMEOUT
+OCCTShapeCreateExtrusionShape/null-nan => nil
+OCCTShapeCreateExtrusionShape/emptyCompound-nan => nil
+OCCTShapeCreateExtrusionShape/emptiedSolid-nan => nil
+OCCTShapeCreateExtrusionInfinite/face-nan => TIMEOUT
+OCCTShapeCreateExtrusionInfinite/faceSemi-nan => TIMEOUT
+OCCTShapeCreateExtrusionInfinite/null-nan => nil
+OCCTShapeExtrudeSemiInfinite/face-nan => TIMEOUT
+OCCTShapeExtrudeSemiInfinite/faceInfinite-nan => TIMEOUT
+OCCTShapeExtrudeSemiInfinite/null-nan => nil
+OCCTShapeExtrudeSemiInfinite/box-nan => nil
+OCCTShapeCreateExtrusionShape/face-inPlane => VALID type=Solid isValid=true
+OCCTShapeCreateExtrusionShape/null-inPlane => nil
+OCCTShapeCreateExtrusionShape/emptyCompound-inPlane => nil
+OCCTShapeCreateExtrusionShape/emptiedSolid-inPlane => nil
+OCCTShapeCreateExtrusionInfinite/face-inPlane => VALID type=Solid isValid=false
+OCCTShapeCreateExtrusionInfinite/faceSemi-inPlane => VALID type=Solid isValid=true
+OCCTShapeCreateExtrusionInfinite/null-inPlane => nil
+OCCTShapeExtrudeSemiInfinite/face-inPlane => VALID type=Solid isValid=true
+OCCTShapeExtrudeSemiInfinite/faceInfinite-inPlane => VALID type=Solid isValid=false
+OCCTShapeExtrudeSemiInfinite/null-inPlane => nil
+OCCTShapeExtrudeSemiInfinite/box-inPlane => nil
+OCCTShapeCreateExtrusionShape/face-huge => nil
+OCCTShapeCreateExtrusionShape/null-huge => nil
+OCCTShapeCreateExtrusionShape/emptyCompound-huge => nil
+OCCTShapeCreateExtrusionShape/emptiedSolid-huge => nil
+OCCTShapeCreateExtrusionInfinite/face-huge => TIMEOUT
+OCCTShapeCreateExtrusionInfinite/faceSemi-huge => TIMEOUT
+OCCTShapeCreateExtrusionInfinite/null-huge => nil
+OCCTShapeExtrudeSemiInfinite/face-huge => TIMEOUT
+OCCTShapeExtrudeSemiInfinite/faceInfinite-huge => TIMEOUT
+OCCTShapeExtrudeSemiInfinite/null-huge => nil
+OCCTShapeExtrudeSemiInfinite/box-huge => nil
+OCCTShapeCreateExtrusionShape/solid => nil
+OCCTShapeCreateExtrusionInfinite/solid => nil
+OCCTShapeCreateExtrusionInfinite/emptyCompound => nil
+OCCTShapeExtrudeSemiInfinite/emptyCompound => nil
+OCCTShapeMiddlePath/sameFace => CRASH(exit 139)
+OCCTShapeMiddlePath/oppositeFacesOfBox => VALID type=Wire isValid=true
+OCCTShapeMiddlePath/adjacentFaces => CRASH(exit 139)
+OCCTShapeMiddlePath/nullBase => nil
+OCCTShapeMiddlePath/nullEnds => CRASH(exit 139)
+OCCTShapeMiddlePath/unrelatedFaces => nil
+OCCTShapeMiddlePath/sphere => nil
+OCCTShapeMiddlePath/pipeEnds => CRASH(exit 133)
+OCCTShapeMiddlePath/emptyCompound => CRASH(exit 133)
+OCCTShapeCreatePipeSweep/circleAlongLine => VALID type=Shell isValid=true
+OCCTShapeCreatePipeSweep/profileCollinearWithPath => VALID type=Shell isValid=false
+OCCTShapeCreatePipeSweep/profileIsPathItself => VALID type=Shell isValid=false
+OCCTShapeCreatePipeSweep/pathCollapsedToPoint => nil
+OCCTShapeCreatePipeSweep/pathTinyLength => INPUT-REFUSED
+OCCTShapeCreatePipeSweep/profileCollapsedToPoint => nil
+OCCTShapeCreatePipeSweep/profileTinyCircle => nil
+OCCTShapeCreatePipeSweep/radiusExceedsPathBend => VALID type=Shell isValid=true
+OCCTShapeCreatePipeSweep/profileParallelToPath => VALID type=Shell isValid=true
+OCCTShapeCreatePipeSweep/closedPath => VALID type=Shell isValid=true
+OCCTShapeCreatePipeSweep/selfIntersectingPath => VALID type=Shell isValid=true
+OCCTShapeCreateLoft/coincidentProfiles-solidtrue => VALID type=Solid isValid=true
+OCCTShapeCreateLoftAdvanced/coincidentProfiles-solidtrue-smooth => VALID type=Solid isValid=true
+OCCTShapeCreateLoftAdvanced/coincidentProfiles-solidtrue-ruled => VALID type=Solid isValid=true
+OCCTShapeCreateLoft/coincidentThree-solidtrue => nil
+OCCTShapeCreateLoftAdvanced/coincidentThree-solidtrue-smooth => nil
+OCCTShapeCreateLoftAdvanced/coincidentThree-solidtrue-ruled => VALID type=Solid isValid=true
+OCCTShapeCreateLoft/singleProfile-solidtrue => nil
+OCCTShapeCreateLoftAdvanced/singleProfile-solidtrue-smooth => CRASH(exit 139)
+OCCTShapeCreateLoftAdvanced/singleProfile-solidtrue-ruled => VALID type=Solid isValid=false
+OCCTShapeCreateLoft/noProfiles-solidtrue => nil
+OCCTShapeCreateLoftAdvanced/noProfiles-solidtrue-smooth => nil
+OCCTShapeCreateLoftAdvanced/noProfiles-solidtrue-ruled => nil
+OCCTShapeCreateLoft/collapsedToPointsSameZ-solidtrue => INPUT-REFUSED
+OCCTShapeCreateLoftAdvanced/collapsedToPointsSameZ-solidtrue-smooth => INPUT-REFUSED
+OCCTShapeCreateLoftAdvanced/collapsedToPointsSameZ-solidtrue-ruled => INPUT-REFUSED
+OCCTShapeCreateLoft/collinearProfiles-solidtrue => VALID type=Solid isValid=false
+OCCTShapeCreateLoftAdvanced/collinearProfiles-solidtrue-smooth => VALID type=Solid isValid=false
+OCCTShapeCreateLoftAdvanced/collinearProfiles-solidtrue-ruled => VALID type=Solid isValid=false
+OCCTShapeCreateLoft/profileToTinyProfile-solidtrue => INPUT-REFUSED
+OCCTShapeCreateLoftAdvanced/profileToTinyProfile-solidtrue-smooth => INPUT-REFUSED
+OCCTShapeCreateLoftAdvanced/profileToTinyProfile-solidtrue-ruled => INPUT-REFUSED
+OCCTShapeCreateLoft/twistedAndFlipped-solidtrue => VALID type=Solid isValid=true
+OCCTShapeCreateLoftAdvanced/twistedAndFlipped-solidtrue-smooth => VALID type=Solid isValid=true
+OCCTShapeCreateLoftAdvanced/twistedAndFlipped-solidtrue-ruled => VALID type=Solid isValid=true
+OCCTShapeCreateLoft/rectToCircle-solidtrue => VALID type=Solid isValid=true
+OCCTShapeCreateLoftAdvanced/rectToCircle-solidtrue-smooth => VALID type=Solid isValid=true
+OCCTShapeCreateLoftAdvanced/rectToCircle-solidtrue-ruled => VALID type=Solid isValid=true
+OCCTShapeCreateLoft/perpendicularProfiles-solidtrue => VALID type=Solid isValid=true
+OCCTShapeCreateLoftAdvanced/perpendicularProfiles-solidtrue-smooth => VALID type=Solid isValid=true
+OCCTShapeCreateLoftAdvanced/perpendicularProfiles-solidtrue-ruled => VALID type=Solid isValid=true
+OCCTShapeCreateLoft/sameLineSegments-solidtrue => nil
+OCCTShapeCreateLoftAdvanced/sameLineSegments-solidtrue-smooth => nil
+OCCTShapeCreateLoftAdvanced/sameLineSegments-solidtrue-ruled => nil
+OCCTShapeCreateLoft/openThenClosed-solidtrue => nil
+OCCTShapeCreateLoftAdvanced/openThenClosed-solidtrue-smooth => nil
+OCCTShapeCreateLoftAdvanced/openThenClosed-solidtrue-ruled => nil
+OCCTShapeCreateLoft/circlesRadiusHuge-solidtrue => nil
+OCCTShapeCreateLoftAdvanced/circlesRadiusHuge-solidtrue-smooth => nil
+OCCTShapeCreateLoftAdvanced/circlesRadiusHuge-solidtrue-ruled => nil
+OCCTShapeCreateLoft/coincidentProfiles-solidfalse => VALID type=Shell isValid=true
+OCCTShapeCreateLoftAdvanced/coincidentProfiles-solidfalse-smooth => VALID type=Shell isValid=true
+OCCTShapeCreateLoftAdvanced/coincidentProfiles-solidfalse-ruled => VALID type=Shell isValid=true
+OCCTShapeCreateLoft/coincidentThree-solidfalse => VALID type=Shell isValid=true
+OCCTShapeCreateLoftAdvanced/coincidentThree-solidfalse-smooth => VALID type=Shell isValid=true
+OCCTShapeCreateLoftAdvanced/coincidentThree-solidfalse-ruled => VALID type=Shell isValid=true
+OCCTShapeCreateLoft/singleProfile-solidfalse => nil
+OCCTShapeCreateLoftAdvanced/singleProfile-solidfalse-smooth => CRASH(exit 139)
+OCCTShapeCreateLoftAdvanced/singleProfile-solidfalse-ruled => VALID type=Shell isValid=false
+OCCTShapeCreateLoft/noProfiles-solidfalse => nil
+OCCTShapeCreateLoftAdvanced/noProfiles-solidfalse-smooth => nil
+OCCTShapeCreateLoftAdvanced/noProfiles-solidfalse-ruled => nil
+OCCTShapeCreateLoft/collapsedToPointsSameZ-solidfalse => INPUT-REFUSED
+OCCTShapeCreateLoftAdvanced/collapsedToPointsSameZ-solidfalse-smooth => INPUT-REFUSED
+OCCTShapeCreateLoftAdvanced/collapsedToPointsSameZ-solidfalse-ruled => INPUT-REFUSED
+OCCTShapeCreateLoft/collinearProfiles-solidfalse => VALID type=Shell isValid=true
+OCCTShapeCreateLoftAdvanced/collinearProfiles-solidfalse-smooth => VALID type=Shell isValid=true
+OCCTShapeCreateLoftAdvanced/collinearProfiles-solidfalse-ruled => VALID type=Shell isValid=true
+OCCTShapeCreateLoft/profileToTinyProfile-solidfalse => INPUT-REFUSED
+OCCTShapeCreateLoftAdvanced/profileToTinyProfile-solidfalse-smooth => INPUT-REFUSED
+OCCTShapeCreateLoftAdvanced/profileToTinyProfile-solidfalse-ruled => INPUT-REFUSED
+OCCTShapeCreateLoft/twistedAndFlipped-solidfalse => VALID type=Shell isValid=true
+OCCTShapeCreateLoftAdvanced/twistedAndFlipped-solidfalse-smooth => VALID type=Shell isValid=true
+OCCTShapeCreateLoftAdvanced/twistedAndFlipped-solidfalse-ruled => VALID type=Shell isValid=true
+OCCTShapeCreateLoft/rectToCircle-solidfalse => VALID type=Shell isValid=true
+OCCTShapeCreateLoftAdvanced/rectToCircle-solidfalse-smooth => VALID type=Shell isValid=true
+OCCTShapeCreateLoftAdvanced/rectToCircle-solidfalse-ruled => VALID type=Shell isValid=true
+OCCTShapeCreateLoft/perpendicularProfiles-solidfalse => VALID type=Shell isValid=true
+OCCTShapeCreateLoftAdvanced/perpendicularProfiles-solidfalse-smooth => VALID type=Shell isValid=true
+OCCTShapeCreateLoftAdvanced/perpendicularProfiles-solidfalse-ruled => VALID type=Shell isValid=true
+OCCTShapeCreateLoft/sameLineSegments-solidfalse => VALID type=Shell isValid=true
+OCCTShapeCreateLoftAdvanced/sameLineSegments-solidfalse-smooth => VALID type=Shell isValid=true
+OCCTShapeCreateLoftAdvanced/sameLineSegments-solidfalse-ruled => VALID type=Shell isValid=true
+OCCTShapeCreateLoft/openThenClosed-solidfalse => nil
+OCCTShapeCreateLoftAdvanced/openThenClosed-solidfalse-smooth => nil
+OCCTShapeCreateLoftAdvanced/openThenClosed-solidfalse-ruled => nil
+OCCTShapeCreateLoft/circlesRadiusHuge-solidfalse => nil
+OCCTShapeCreateLoftAdvanced/circlesRadiusHuge-solidfalse-smooth => nil
+OCCTShapeCreateLoftAdvanced/circlesRadiusHuge-solidfalse-ruled => nil
+OCCTShapeCreateLoftAdvanced/firstVertexOnFirstProfile => VALID type=Solid isValid=true
+OCCTShapeCreateLoftAdvanced/vertexOnlyNoSecondProfile => VALID type=Solid isValid=true
+OCCTShapeCreateLoftAdvanced/verticesCoincide => VALID type=Solid isValid=true
+OCCTShapeCreateLoftAdvanced/vertexInProfilePlane => VALID type=Solid isValid=true
+OCCTShapeNonUniformScale/box-zeroX => VALID type=Solid isValid=true
+OCCTShapeNonUniformScale/sphere-zeroX => VALID type=Solid isValid=true
+OCCTShapeNonUniformScale/face-zeroX => VALID type=Face isValid=true
+OCCTShapeNonUniformScale/null-zeroX => nil
+OCCTShapeNonUniformScale/box-zeroAll => VALID type=Solid isValid=true
+OCCTShapeNonUniformScale/sphere-zeroAll => VALID type=Solid isValid=false
+OCCTShapeNonUniformScale/face-zeroAll => VALID type=Face isValid=true
+OCCTShapeNonUniformScale/null-zeroAll => nil
+OCCTShapeNonUniformScale/box-negX => VALID type=Solid isValid=true
+OCCTShapeNonUniformScale/sphere-negX => VALID type=Solid isValid=true
+OCCTShapeNonUniformScale/face-negX => VALID type=Face isValid=true
+OCCTShapeNonUniformScale/null-negX => nil
+OCCTShapeNonUniformScale/box-negAll => VALID type=Solid isValid=true
+OCCTShapeNonUniformScale/sphere-negAll => VALID type=Solid isValid=true
+OCCTShapeNonUniformScale/face-negAll => VALID type=Face isValid=true
+OCCTShapeNonUniformScale/null-negAll => nil
+OCCTShapeNonUniformScale/box-nan => VALID type=Solid isValid=false
+OCCTShapeNonUniformScale/sphere-nan => VALID type=Solid isValid=false
+OCCTShapeNonUniformScale/face-nan => VALID type=Face isValid=false
+OCCTShapeNonUniformScale/null-nan => nil
+OCCTShapeNonUniformScale/box-inf => VALID type=Solid isValid=false
+OCCTShapeNonUniformScale/sphere-inf => VALID type=Solid isValid=false
+OCCTShapeNonUniformScale/face-inf => VALID type=Face isValid=false
+OCCTShapeNonUniformScale/null-inf => nil
+OCCTShapeNonUniformScale/box-tiny => VALID type=Solid isValid=true
+OCCTShapeNonUniformScale/sphere-tiny => VALID type=Solid isValid=true
+OCCTShapeNonUniformScale/face-tiny => VALID type=Face isValid=true
+OCCTShapeNonUniformScale/null-tiny => nil
+OCCTShapeNonUniformScale/box-huge => VALID type=Solid isValid=false
+OCCTShapeNonUniformScale/sphere-huge => VALID type=Solid isValid=false
+OCCTShapeNonUniformScale/face-huge => VALID type=Face isValid=false
+OCCTShapeNonUniformScale/null-huge => nil
+OCCTShapeNonUniformScale/box-ok => VALID type=Solid isValid=true
+OCCTShapeNonUniformScale/sphere-ok => VALID type=Solid isValid=true
+OCCTShapeNonUniformScale/face-ok => VALID type=Face isValid=true
+OCCTShapeNonUniformScale/null-ok => nil
+OCCTShapeNonUniformScale/emptyCompound => nil
+OCCTShapeNonUniformScale/emptiedSolid => VALID type=Solid isValid=true
+OCCTShapeNonUniformScale/cylinderZeroZ => VALID type=Solid isValid=true
+OCCTShapeNonUniformScale/cylinderTinyZ => VALID type=Solid isValid=true
+OCCTShapeAddLinearRib/ok-fusetrue => nil
+OCCTShapeAddLinearRib/ok-fusefalse => nil
+OCCTShapeAddLinearRib/zeroDir-fusetrue => nil
+OCCTShapeAddLinearRib/zeroDir-fusefalse => nil
+OCCTShapeAddLinearRib/zeroDraft-fusetrue => nil
+OCCTShapeAddLinearRib/zeroDraft-fusefalse => nil
+OCCTShapeAddLinearRib/dirParallelDraft-fusetrue => nil
+OCCTShapeAddLinearRib/dirParallelDraft-fusefalse => nil
+OCCTShapeAddLinearRib/dirInProfilePlane-fusetrue => nil
+OCCTShapeAddLinearRib/dirInProfilePlane-fusefalse => nil
+OCCTShapeAddLinearRib/opposite-fusetrue => nil
+OCCTShapeAddLinearRib/opposite-fusefalse => nil
+OCCTShapeAddLinearRib/profileFarFromBase => nil
+OCCTShapeAddLinearRib/profileInsideBase => nil
+OCCTShapeAddLinearRib/collinearProfile => nil
+OCCTShapeAddLinearRib/nullBase => nil
+OCCTShapeAddLinearRib/faceBase => nil
+OCCTShapeAddRevolutionForm/ok-fusetrue => nil
+OCCTShapeAddRevolutionForm/ok-fusefalse => nil
+OCCTShapeAddRevolutionForm/zeroHeights-fusetrue => nil
+OCCTShapeAddRevolutionForm/zeroHeights-fusefalse => nil
+OCCTShapeAddRevolutionForm/negative-fusetrue => nil
+OCCTShapeAddRevolutionForm/negative-fusefalse => nil
+OCCTShapeAddRevolutionForm/hugeHeights-fusetrue => nil
+OCCTShapeAddRevolutionForm/hugeHeights-fusefalse => nil
+OCCTShapeAddRevolutionForm/nan-fusetrue => nil
+OCCTShapeAddRevolutionForm/nan-fusefalse => nil
+OCCTShapeAddRevolutionForm/zeroAxis => nil
+OCCTShapeAddRevolutionForm/axisThroughProfile => nil
+OCCTShapeAddRevolutionForm/nullBase => nil
+OCCTShapeDraftPrism/ok-fusetrue => VALID type=Compound isValid=true
+OCCTShapeDraftPrism/ok-fusefalse => VALID type=Compound isValid=true
+OCCTShapeDraftPrism/angle0-fusetrue => VALID type=Compound isValid=true
+OCCTShapeDraftPrism/angle0-fusefalse => VALID type=Compound isValid=true
+OCCTShapeDraftPrism/angle90-fusetrue => VALID type=Compound isValid=true
+OCCTShapeDraftPrism/angle90-fusefalse => VALID type=Compound isValid=true
+OCCTShapeDraftPrism/angle89-fusetrue => VALID type=Compound isValid=true
+OCCTShapeDraftPrism/angle89-fusefalse => VALID type=Compound isValid=true
+OCCTShapeDraftPrism/angle-5-fusetrue => VALID type=Compound isValid=true
+OCCTShapeDraftPrism/angle-5-fusefalse => VALID type=Compound isValid=true
+OCCTShapeDraftPrism/angle45h1000-fusetrue => VALID type=Compound isValid=true
+OCCTShapeDraftPrism/angle45h1000-fusefalse => VALID type=Compound isValid=true
+OCCTShapeDraftPrism/height0-fusetrue => nil
+OCCTShapeDraftPrism/height0-fusefalse => nil
+OCCTShapeDraftPrism/heightNeg-fusetrue => VALID type=Compound isValid=true
+OCCTShapeDraftPrism/heightNeg-fusefalse => VALID type=Compound isValid=true
+OCCTShapeDraftPrism/angle80h100-fusetrue => VALID type=Compound isValid=true
+OCCTShapeDraftPrism/angle80h100-fusefalse => VALID type=Compound isValid=true
+OCCTShapeDraftPrism/nan-fusetrue => TIMEOUT
+OCCTShapeDraftPrism/nan-fusefalse => TIMEOUT
+OCCTShapeDraftPrism/sketchFace0 => VALID type=Compound isValid=true
+OCCTShapeDraftPrism/sketchFace1 => VALID type=Compound isValid=true
+OCCTShapeDraftPrism/sketchFace2 => VALID type=Compound isValid=true
+OCCTShapeDraftPrism/sketchFace3 => VALID type=Compound isValid=true
+OCCTShapeDraftPrism/sketchFace4 => VALID type=Compound isValid=true
+OCCTShapeDraftPrism/sketchFace5 => VALID type=Compound isValid=true
+OCCTShapeDraftPrism/sketchFace99 => nil
+OCCTShapeDraftPrism/sketchFace-1 => nil
+OCCTShapeDraftPrism/profileNotOnFace => VALID type=Compound isValid=true
+OCCTShapeDraftPrism/profileLargerThanFace => VALID type=Compound isValid=true
+OCCTShapeDraftPrism/collinearProfile => nil
+OCCTShapeDraftPrism/nullBase => nil
+OCCTShapeDraftPrism/cylinderBase => VALID type=Compound isValid=true
+OCCTShapeDraftPrismThruAll/ok-fusetrue => nil
+OCCTShapeDraftPrismThruAll/bottomUp-ok-fusetrue => nil
+OCCTShapeDraftPrismThruAll/ok-fusefalse => VALID type=Compound isValid=true
+OCCTShapeDraftPrismThruAll/bottomUp-ok-fusefalse => VALID type=Compound isValid=true
+OCCTShapeDraftPrismThruAll/angle0-fusetrue => nil
+OCCTShapeDraftPrismThruAll/bottomUp-angle0-fusetrue => nil
+OCCTShapeDraftPrismThruAll/angle0-fusefalse => VALID type=Compound isValid=true
+OCCTShapeDraftPrismThruAll/bottomUp-angle0-fusefalse => VALID type=Compound isValid=true
+OCCTShapeDraftPrismThruAll/angle90-fusetrue => VALID type=Compound isValid=true
+OCCTShapeDraftPrismThruAll/bottomUp-angle90-fusetrue => VALID type=Compound isValid=true
+OCCTShapeDraftPrismThruAll/angle90-fusefalse => nil
+OCCTShapeDraftPrismThruAll/bottomUp-angle90-fusefalse => nil
+OCCTShapeDraftPrismThruAll/angle45-fusetrue => VALID type=Compound isValid=true
+OCCTShapeDraftPrismThruAll/bottomUp-angle45-fusetrue => nil
+OCCTShapeDraftPrismThruAll/angle45-fusefalse => VALID type=Compound isValid=true
+OCCTShapeDraftPrismThruAll/bottomUp-angle45-fusefalse => VALID type=Compound isValid=true
+OCCTShapeDraftPrismThruAll/angleNeg-fusetrue => nil
+OCCTShapeDraftPrismThruAll/bottomUp-angleNeg-fusetrue => nil
+OCCTShapeDraftPrismThruAll/angleNeg-fusefalse => VALID type=Compound isValid=true
+OCCTShapeDraftPrismThruAll/bottomUp-angleNeg-fusefalse => VALID type=Compound isValid=true
+OCCTShapeDraftPrismThruAll/angle80-fusetrue => VALID type=Compound isValid=true
+OCCTShapeDraftPrismThruAll/bottomUp-angle80-fusetrue => nil
+OCCTShapeDraftPrismThruAll/angle80-fusefalse => VALID type=Compound isValid=true
+OCCTShapeDraftPrismThruAll/bottomUp-angle80-fusefalse => VALID type=Compound isValid=true
+OCCTShapeDraftPrismThruAll/nan-fusetrue => TIMEOUT
+OCCTShapeDraftPrismThruAll/bottomUp-nan-fusetrue => TIMEOUT
+OCCTShapeDraftPrismThruAll/nan-fusefalse => TIMEOUT
+OCCTShapeDraftPrismThruAll/bottomUp-nan-fusefalse => TIMEOUT
+OCCTShapeDraftPrismThruAll/profileNotOnFace => VALID type=Compound isValid=true
+OCCTShapeDraftPrismThruAll/nullBase => nil
+OCCTShapeRevolFeature/ok-fusetrue => VALID type=Compound isValid=true
+OCCTShapeRevolFeature/ok-fusefalse => VALID type=Compound isValid=true
+OCCTShapeRevolFeature/angle0-fusetrue => VALID type=Compound isValid=false
+OCCTShapeRevolFeature/angle0-fusefalse => VALID type=Compound isValid=false
+OCCTShapeRevolFeature/angle90-fusetrue => VALID type=Compound isValid=true
+OCCTShapeRevolFeature/angle90-fusefalse => VALID type=Compound isValid=true
+OCCTShapeRevolFeature/angleNeg-fusetrue => VALID type=Compound isValid=true
+OCCTShapeRevolFeature/angleNeg-fusefalse => VALID type=Compound isValid=true
+OCCTShapeRevolFeature/angle1e-9-fusetrue => VALID type=Compound isValid=false
+OCCTShapeRevolFeature/angle1e-9-fusefalse => VALID type=Compound isValid=true
+OCCTShapeRevolFeature/angleHuge-fusetrue => VALID type=Compound isValid=true
+OCCTShapeRevolFeature/angleHuge-fusefalse => VALID type=Compound isValid=true
+OCCTShapeRevolFeature/nan-fusetrue => TIMEOUT
+OCCTShapeRevolFeature/nan-fusefalse => TIMEOUT
+OCCTShapeRevolFeature/axisThroughProfile-fusetrue => VALID type=Compound isValid=false
+OCCTShapeRevolFeature/zeroAxis-fusetrue => nil
+OCCTShapeRevolFeature/profileOutsideBase-fusetrue => VALID type=Compound isValid=true
+OCCTShapeRevolFeature/profileInsideBase-fusetrue => VALID type=Compound isValid=true
+OCCTShapeRevolFeatureThruAll/ok-fusetrue => VALID type=Compound isValid=true
+OCCTShapeRevolFeatureThruAll/zeroAxis-fusetrue => nil
+OCCTShapeRevolFeatureThruAll/axisThroughProfile-fusetrue => VALID type=Compound isValid=false
+OCCTShapeRevolFeatureThruAll/profileOutside-fusetrue => VALID type=Compound isValid=true
+OCCTShapeRevolFeature/axisThroughProfile-fusefalse => VALID type=Compound isValid=false
+OCCTShapeRevolFeature/zeroAxis-fusefalse => nil
+OCCTShapeRevolFeature/profileOutsideBase-fusefalse => VALID type=Compound isValid=true
+OCCTShapeRevolFeature/profileInsideBase-fusefalse => VALID type=Compound isValid=true
+OCCTShapeRevolFeatureThruAll/ok-fusefalse => VALID type=Compound isValid=true
+OCCTShapeRevolFeatureThruAll/zeroAxis-fusefalse => nil
+OCCTShapeRevolFeatureThruAll/axisThroughProfile-fusefalse => VALID type=Compound isValid=false
+OCCTShapeRevolFeatureThruAll/profileOutside-fusefalse => VALID type=Compound isValid=true
+OCCTShapeRevolFeature/sketchFace0 => VALID type=Compound isValid=true
+OCCTShapeRevolFeatureThruAll/sketchFace0 => VALID type=Compound isValid=true
+OCCTShapeRevolFeature/sketchFace1 => VALID type=Compound isValid=true
+OCCTShapeRevolFeatureThruAll/sketchFace1 => VALID type=Compound isValid=true
+OCCTShapeRevolFeature/sketchFace2 => VALID type=Compound isValid=true
+OCCTShapeRevolFeatureThruAll/sketchFace2 => VALID type=Compound isValid=true
+OCCTShapeRevolFeature/sketchFace3 => VALID type=Compound isValid=true
+OCCTShapeRevolFeatureThruAll/sketchFace3 => VALID type=Compound isValid=true
+OCCTShapeRevolFeature/sketchFace5 => VALID type=Compound isValid=true
+OCCTShapeRevolFeatureThruAll/sketchFace5 => VALID type=Compound isValid=true
+OCCTShapeRevolFeature/sketchFace99 => nil
+OCCTShapeRevolFeatureThruAll/sketchFace99 => nil
+OCCTShapeRevolFeature/sketchFace-1 => nil
+OCCTShapeRevolFeatureThruAll/sketchFace-1 => nil
+OCCTShapeRevolFeature/nullBase => nil
+OCCTShapeRevolFeatureThruAll/nullBase => nil
+OCCTShapeFromMesh/empty => nil
+OCCTShapeFromMesh/pointsNoTriangles => nil
+OCCTShapeFromMesh/oneTriangle => VALID type=Compound isValid=true
+OCCTShapeFromMesh/coincidentPoints => VALID type=Compound isValid=true
+OCCTShapeFromMesh/collinearPoints => VALID type=Compound isValid=true
+OCCTShapeFromMesh/repeatedIndex => VALID type=Compound isValid=true
+OCCTShapeFromMesh/allSameIndex => VALID type=Compound isValid=true
+OCCTShapeFromMesh/indexZero => VALID type=Compound isValid=true
+OCCTShapeFromMesh/indexOutOfRange => VALID type=Compound isValid=true
+OCCTShapeFromMesh/indexNegative => nil
+OCCTShapeFromMesh/nanPoints => TIMEOUT
+OCCTShapeFromMesh/duplicateTriangles => VALID type=Compound isValid=true
+OCCTShapeFromMesh/tetrahedron => VALID type=Compound isValid=true
+OCCTShapeFromMesh/flatTetrahedron => VALID type=Compound isValid=true
+OCCTShapeFromMesh/allTrianglesDegenerate => VALID type=Compound isValid=true
+OCCTShapeFromMesh/hugeCoordinates => nil
+OCCTGeomFillConstrained/triangle => VALID type=Face isValid=true
+OCCTGeomFillConstrained/square => VALID type=Face isValid=true
+OCCTGeomFillConstrained/sameEdgeThrice => VALID type=Face isValid=true
+OCCTGeomFillConstrained/sameEdgeFour => VALID type=Face isValid=true
+OCCTGeomFillConstrained/collinearTriangle => VALID type=Face isValid=true
+OCCTGeomFillConstrained/disconnectedEdges => VALID type=Face isValid=true
+OCCTGeomFillConstrained/degreeZero => nil
+OCCTGeomFillConstrained/degreeOne => VALID type=Face isValid=true
+OCCTGeomFillConstrained/degreeHuge => VALID type=Face isValid=true
+OCCTGeomFillConstrained/negativeLimits => nil
+OCCTGeomFillConstrained/stackedCircles => VALID type=Face isValid=true
+OCCTGeomFillConstrained/sameCircleFour => VALID type=Face isValid=true
+== summary: result counts per bridge function ==
+== summary: result counts per bridge function ==: =1
+OCCTFace2DChamfer: nil=9 VALID=13
+OCCTFace2DFillet: nil=14 VALID=9
+OCCTGeomFillConstrained: nil=2 VALID=10
+OCCTShapeAddLinearRib: nil=17
+OCCTShapeAddRevolutionForm: nil=13
+OCCTShapeChamfer: nil=54 CRASH=9 VALID=9
+OCCTShapeChamferDistAngle: nil=23 VALID=5
+OCCTShapeChamferTwoDistances: nil=18 VALID=4
+OCCTShapeConvertToNURBS: nil=2 VALID=3
+OCCTShapeCreateExtrusion: nil=4 TIMEOUT=4 VALID=6
+OCCTShapeCreateExtrusionInfinite: nil=9 TIMEOUT=4 VALID=4
+OCCTShapeCreateExtrusionShape: nil=17 TIMEOUT=2 VALID=2
+OCCTShapeCreateLoft: nil=10 INPUT-REFUSED=4 VALID=12
+OCCTShapeCreateLoftAdvanced: nil=15 CRASH=2 INPUT-REFUSED=8 VALID=31
+OCCTShapeCreatePipeSweep: nil=3 INPUT-REFUSED=1 VALID=7
+OCCTShapeCreateRevolution: nil=2 INPUT-REFUSED=1 VALID=14
+OCCTShapeCreateRevolutionFromCurve: nil=1 VALID=14
+OCCTShapeCreateRevolutionFull: nil=5 VALID=1
+OCCTShapeCreateRevolutionPartial: nil=2 VALID=6
+OCCTShapeCutAndBlend: nil=3 VALID=9
+OCCTShapeDraft: nil=10 VALID=3
+OCCTShapeDraftPrism: nil=6 TIMEOUT=2 VALID=25
+OCCTShapeDraftPrismThruAll: nil=11 TIMEOUT=4 VALID=15
+OCCTShapeExtrudeSemiInfinite: nil=13 TIMEOUT=4 VALID=4
+OCCTShapeFillet: nil=57 CRASH=9 VALID=6
+OCCTShapeFromMesh: nil=4 TIMEOUT=1 VALID=11
+OCCTShapeFuseAndBlend: nil=3 VALID=9
+OCCTShapeGlue: nil=3 CRASH=1 VALID=8
+OCCTShapeIntersect: nil=3 CRASH=1 VALID=9
+OCCTShapeMiddlePath: nil=3 CRASH=5 VALID=1
+OCCTShapeNonUniformScale: nil=10 VALID=30
+OCCTShapeRevolFeature: nil=5 TIMEOUT=2 VALID=23
+OCCTShapeRevolFeatureThruAll: nil=5 VALID=11
+OCCTShapeSubtract: nil=4 CRASH=1 VALID=12
+OCCTShapeUnion: nil=4 CRASH=1 VALID=8
