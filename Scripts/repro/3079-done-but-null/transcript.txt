@@ -453,11 +453,11 @@ OCCTShapeCreateExtrusionShape/solid => nil
 OCCTShapeCreateExtrusionInfinite/solid => nil
 OCCTShapeCreateExtrusionInfinite/emptyCompound => VALID type=Compound isValid=true
 OCCTShapeExtrudeSemiInfinite/emptyCompound => VALID type=Compound isValid=true
-OCCTShapeMiddlePath/sameFace => CRASH(exit 139)
+OCCTShapeMiddlePath/sameFace => CRASH(exit 1)
 OCCTShapeMiddlePath/oppositeFacesOfBox => VALID type=Wire isValid=true
-OCCTShapeMiddlePath/adjacentFaces => CRASH(exit 139)
+OCCTShapeMiddlePath/adjacentFaces => CRASH(exit 1)
 OCCTShapeMiddlePath/nullBase => nil
-OCCTShapeMiddlePath/nullEnds => CRASH(exit 139)
+OCCTShapeMiddlePath/nullEnds => CRASH(exit 1)
 OCCTShapeMiddlePath/unrelatedFaces => nil
 OCCTShapeMiddlePath/sphere => nil
 OCCTShapeMiddlePath/cylinderFaces0-1 => nil
@@ -483,7 +483,7 @@ OCCTShapeCreateLoft/coincidentThree-solidtrue => nil
 OCCTShapeCreateLoftAdvanced/coincidentThree-solidtrue-smooth => nil
 OCCTShapeCreateLoftAdvanced/coincidentThree-solidtrue-ruled => VALID type=Solid isValid=true
 OCCTShapeCreateLoft/singleProfile-solidtrue => nil
-OCCTShapeCreateLoftAdvanced/singleProfile-solidtrue-smooth => CRASH(exit 139)
+OCCTShapeCreateLoftAdvanced/singleProfile-solidtrue-smooth => CRASH(exit 1)
 OCCTShapeCreateLoftAdvanced/singleProfile-solidtrue-ruled => VALID type=Solid isValid=false
 OCCTShapeCreateLoft/noProfiles-solidtrue => nil
 OCCTShapeCreateLoftAdvanced/noProfiles-solidtrue-smooth => nil
@@ -522,7 +522,7 @@ OCCTShapeCreateLoft/coincidentThree-solidfalse => VALID type=Shell isValid=true
 OCCTShapeCreateLoftAdvanced/coincidentThree-solidfalse-smooth => VALID type=Shell isValid=true
 OCCTShapeCreateLoftAdvanced/coincidentThree-solidfalse-ruled => VALID type=Shell isValid=true
 OCCTShapeCreateLoft/singleProfile-solidfalse => nil
-OCCTShapeCreateLoftAdvanced/singleProfile-solidfalse-smooth => CRASH(exit 139)
+OCCTShapeCreateLoftAdvanced/singleProfile-solidfalse-smooth => CRASH(exit 1)
 OCCTShapeCreateLoftAdvanced/singleProfile-solidfalse-ruled => VALID type=Shell isValid=false
 OCCTShapeCreateLoft/noProfiles-solidfalse => nil
 OCCTShapeCreateLoftAdvanced/noProfiles-solidfalse-smooth => nil
@@ -737,6 +737,151 @@ OCCTShapeRevolFeature/sketchFace-1 => nil
 OCCTShapeRevolFeatureThruAll/sketchFace-1 => nil
 OCCTShapeRevolFeature/nullBase => nil
 OCCTShapeRevolFeatureThruAll/nullBase => nil
+OCCTShapeAddLinearRib/reach-closedOnSidePlaneY-dirY-d1X-fusetrue => nil
+OCCTShapeAddLinearRib/reach-closedOnSidePlaneY-dirY-d1X-fusefalse => nil
+OCCTShapeAddLinearRib/reach-closedOnSidePlaneY-dirY-d1Y-fusetrue => nil
+OCCTShapeAddLinearRib/reach-closedOnSidePlaneY-dirY-d1Y-fusefalse => nil
+OCCTShapeAddLinearRib/reach-closedOnSidePlaneY-dirY-d1Z-fusetrue => nil
+OCCTShapeAddLinearRib/reach-closedOnSidePlaneY-dirY-d1Z-fusefalse => nil
+OCCTShapeAddLinearRib/reach-closedOnSidePlaneY-dirNegY-d1X-fusetrue => nil
+OCCTShapeAddLinearRib/reach-closedOnSidePlaneY-dirNegY-d1X-fusefalse => nil
+OCCTShapeAddLinearRib/reach-closedOnSidePlaneY-dirNegY-d1Y-fusetrue => VALID type=Compound isValid=true
+OCCTShapeAddLinearRib/reach-closedOnSidePlaneY-dirNegY-d1Y-fusefalse => VALID type=Compound isValid=true
+OCCTShapeAddLinearRib/reach-closedOnSidePlaneY-dirNegY-d1Z-fusetrue => nil
+OCCTShapeAddLinearRib/reach-closedOnSidePlaneY-dirNegY-d1Z-fusefalse => nil
+OCCTShapeAddLinearRib/reach-closedOnSidePlaneY-dirX-d1X-fusetrue => nil
+OCCTShapeAddLinearRib/reach-closedOnSidePlaneY-dirX-d1X-fusefalse => nil
+OCCTShapeAddLinearRib/reach-closedOnSidePlaneY-dirX-d1Y-fusetrue => nil
+OCCTShapeAddLinearRib/reach-closedOnSidePlaneY-dirX-d1Y-fusefalse => nil
+OCCTShapeAddLinearRib/reach-closedOnSidePlaneY-dirX-d1Z-fusetrue => nil
+OCCTShapeAddLinearRib/reach-closedOnSidePlaneY-dirX-d1Z-fusefalse => nil
+OCCTShapeAddLinearRib/reach-closedOnSidePlaneY-dirZ-d1X-fusetrue => nil
+OCCTShapeAddLinearRib/reach-closedOnSidePlaneY-dirZ-d1X-fusefalse => nil
+OCCTShapeAddLinearRib/reach-closedOnSidePlaneY-dirZ-d1Y-fusetrue => nil
+OCCTShapeAddLinearRib/reach-closedOnSidePlaneY-dirZ-d1Y-fusefalse => nil
+OCCTShapeAddLinearRib/reach-closedOnSidePlaneY-dirZ-d1Z-fusetrue => nil
+OCCTShapeAddLinearRib/reach-closedOnSidePlaneY-dirZ-d1Z-fusefalse => nil
+OCCTShapeAddLinearRib/reach-lineOnSidePlaneY-dirY-d1X-fusetrue => nil
+OCCTShapeAddLinearRib/reach-lineOnSidePlaneY-dirY-d1X-fusefalse => nil
+OCCTShapeAddLinearRib/reach-lineOnSidePlaneY-dirY-d1Y-fusetrue => nil
+OCCTShapeAddLinearRib/reach-lineOnSidePlaneY-dirY-d1Y-fusefalse => nil
+OCCTShapeAddLinearRib/reach-lineOnSidePlaneY-dirY-d1Z-fusetrue => nil
+OCCTShapeAddLinearRib/reach-lineOnSidePlaneY-dirY-d1Z-fusefalse => nil
+OCCTShapeAddLinearRib/reach-lineOnSidePlaneY-dirNegY-d1X-fusetrue => nil
+OCCTShapeAddLinearRib/reach-lineOnSidePlaneY-dirNegY-d1X-fusefalse => nil
+OCCTShapeAddLinearRib/reach-lineOnSidePlaneY-dirNegY-d1Y-fusetrue => nil
+OCCTShapeAddLinearRib/reach-lineOnSidePlaneY-dirNegY-d1Y-fusefalse => nil
+OCCTShapeAddLinearRib/reach-lineOnSidePlaneY-dirNegY-d1Z-fusetrue => nil
+OCCTShapeAddLinearRib/reach-lineOnSidePlaneY-dirNegY-d1Z-fusefalse => nil
+OCCTShapeAddLinearRib/reach-lineOnSidePlaneY-dirX-d1X-fusetrue => nil
+OCCTShapeAddLinearRib/reach-lineOnSidePlaneY-dirX-d1X-fusefalse => nil
+OCCTShapeAddLinearRib/reach-lineOnSidePlaneY-dirX-d1Y-fusetrue => nil
+OCCTShapeAddLinearRib/reach-lineOnSidePlaneY-dirX-d1Y-fusefalse => nil
+OCCTShapeAddLinearRib/reach-lineOnSidePlaneY-dirX-d1Z-fusetrue => nil
+OCCTShapeAddLinearRib/reach-lineOnSidePlaneY-dirX-d1Z-fusefalse => nil
+OCCTShapeAddLinearRib/reach-lineOnSidePlaneY-dirZ-d1X-fusetrue => nil
+OCCTShapeAddLinearRib/reach-lineOnSidePlaneY-dirZ-d1X-fusefalse => nil
+OCCTShapeAddLinearRib/reach-lineOnSidePlaneY-dirZ-d1Y-fusetrue => nil
+OCCTShapeAddLinearRib/reach-lineOnSidePlaneY-dirZ-d1Y-fusefalse => nil
+OCCTShapeAddLinearRib/reach-lineOnSidePlaneY-dirZ-d1Z-fusetrue => nil
+OCCTShapeAddLinearRib/reach-lineOnSidePlaneY-dirZ-d1Z-fusefalse => nil
+OCCTShapeAddLinearRib/reach-polylineOnMidPlaneY0-dirY-d1X-fusetrue => nil
+OCCTShapeAddLinearRib/reach-polylineOnMidPlaneY0-dirY-d1X-fusefalse => nil
+OCCTShapeAddLinearRib/reach-polylineOnMidPlaneY0-dirY-d1Y-fusetrue => nil
+OCCTShapeAddLinearRib/reach-polylineOnMidPlaneY0-dirY-d1Y-fusefalse => nil
+OCCTShapeAddLinearRib/reach-polylineOnMidPlaneY0-dirY-d1Z-fusetrue => nil
+OCCTShapeAddLinearRib/reach-polylineOnMidPlaneY0-dirY-d1Z-fusefalse => nil
+OCCTShapeAddLinearRib/reach-polylineOnMidPlaneY0-dirNegY-d1X-fusetrue => nil
+OCCTShapeAddLinearRib/reach-polylineOnMidPlaneY0-dirNegY-d1X-fusefalse => nil
+OCCTShapeAddLinearRib/reach-polylineOnMidPlaneY0-dirNegY-d1Y-fusetrue => VALID type=Compound isValid=true
+OCCTShapeAddLinearRib/reach-polylineOnMidPlaneY0-dirNegY-d1Y-fusefalse => VALID type=Compound isValid=true
+OCCTShapeAddLinearRib/reach-polylineOnMidPlaneY0-dirNegY-d1Z-fusetrue => nil
+OCCTShapeAddLinearRib/reach-polylineOnMidPlaneY0-dirNegY-d1Z-fusefalse => nil
+OCCTShapeAddLinearRib/reach-polylineOnMidPlaneY0-dirX-d1X-fusetrue => nil
+OCCTShapeAddLinearRib/reach-polylineOnMidPlaneY0-dirX-d1X-fusefalse => nil
+OCCTShapeAddLinearRib/reach-polylineOnMidPlaneY0-dirX-d1Y-fusetrue => nil
+OCCTShapeAddLinearRib/reach-polylineOnMidPlaneY0-dirX-d1Y-fusefalse => nil
+OCCTShapeAddLinearRib/reach-polylineOnMidPlaneY0-dirX-d1Z-fusetrue => nil
+OCCTShapeAddLinearRib/reach-polylineOnMidPlaneY0-dirX-d1Z-fusefalse => nil
+OCCTShapeAddLinearRib/reach-polylineOnMidPlaneY0-dirZ-d1X-fusetrue => nil
+OCCTShapeAddLinearRib/reach-polylineOnMidPlaneY0-dirZ-d1X-fusefalse => nil
+OCCTShapeAddLinearRib/reach-polylineOnMidPlaneY0-dirZ-d1Y-fusetrue => nil
+OCCTShapeAddLinearRib/reach-polylineOnMidPlaneY0-dirZ-d1Y-fusefalse => nil
+OCCTShapeAddLinearRib/reach-polylineOnMidPlaneY0-dirZ-d1Z-fusetrue => nil
+OCCTShapeAddLinearRib/reach-polylineOnMidPlaneY0-dirZ-d1Z-fusefalse => nil
+OCCTShapeAddLinearRib/reach-closedOnMidPlaneY0-dirY-d1X-fusetrue => nil
+OCCTShapeAddLinearRib/reach-closedOnMidPlaneY0-dirY-d1X-fusefalse => nil
+OCCTShapeAddLinearRib/reach-closedOnMidPlaneY0-dirY-d1Y-fusetrue => nil
+OCCTShapeAddLinearRib/reach-closedOnMidPlaneY0-dirY-d1Y-fusefalse => nil
+OCCTShapeAddLinearRib/reach-closedOnMidPlaneY0-dirY-d1Z-fusetrue => nil
+OCCTShapeAddLinearRib/reach-closedOnMidPlaneY0-dirY-d1Z-fusefalse => nil
+OCCTShapeAddLinearRib/reach-closedOnMidPlaneY0-dirNegY-d1X-fusetrue => nil
+OCCTShapeAddLinearRib/reach-closedOnMidPlaneY0-dirNegY-d1X-fusefalse => nil
+OCCTShapeAddLinearRib/reach-closedOnMidPlaneY0-dirNegY-d1Y-fusetrue => VALID type=Compound isValid=true
+OCCTShapeAddLinearRib/reach-closedOnMidPlaneY0-dirNegY-d1Y-fusefalse => VALID type=Compound isValid=true
+OCCTShapeAddLinearRib/reach-closedOnMidPlaneY0-dirNegY-d1Z-fusetrue => nil
+OCCTShapeAddLinearRib/reach-closedOnMidPlaneY0-dirNegY-d1Z-fusefalse => nil
+OCCTShapeAddLinearRib/reach-closedOnMidPlaneY0-dirX-d1X-fusetrue => nil
+OCCTShapeAddLinearRib/reach-closedOnMidPlaneY0-dirX-d1X-fusefalse => nil
+OCCTShapeAddLinearRib/reach-closedOnMidPlaneY0-dirX-d1Y-fusetrue => nil
+OCCTShapeAddLinearRib/reach-closedOnMidPlaneY0-dirX-d1Y-fusefalse => nil
+OCCTShapeAddLinearRib/reach-closedOnMidPlaneY0-dirX-d1Z-fusetrue => nil
+OCCTShapeAddLinearRib/reach-closedOnMidPlaneY0-dirX-d1Z-fusefalse => nil
+OCCTShapeAddLinearRib/reach-closedOnMidPlaneY0-dirZ-d1X-fusetrue => nil
+OCCTShapeAddLinearRib/reach-closedOnMidPlaneY0-dirZ-d1X-fusefalse => nil
+OCCTShapeAddLinearRib/reach-closedOnMidPlaneY0-dirZ-d1Y-fusetrue => nil
+OCCTShapeAddLinearRib/reach-closedOnMidPlaneY0-dirZ-d1Y-fusefalse => nil
+OCCTShapeAddLinearRib/reach-closedOnMidPlaneY0-dirZ-d1Z-fusetrue => nil
+OCCTShapeAddLinearRib/reach-closedOnMidPlaneY0-dirZ-d1Z-fusefalse => nil
+OCCTShapeAddRevolutionForm/reach-lineAtTopOfBase-small-fusetrue => nil
+OCCTShapeAddRevolutionForm/reach-lineAtTopOfBase-small-fusefalse => nil
+OCCTShapeAddRevolutionForm/reach-lineAtTopOfBase-one-fusetrue => nil
+OCCTShapeAddRevolutionForm/reach-lineAtTopOfBase-one-fusefalse => nil
+OCCTShapeAddRevolutionForm/reach-lineAtTopOfBase-large-fusetrue => nil
+OCCTShapeAddRevolutionForm/reach-lineAtTopOfBase-large-fusefalse => nil
+OCCTShapeAddRevolutionForm/reach-lineAtTopOfBase-zero-fusetrue => nil
+OCCTShapeAddRevolutionForm/reach-lineAtTopOfBase-zero-fusefalse => nil
+OCCTShapeAddRevolutionForm/reach-lineAtTopOfBase-asym-fusetrue => nil
+OCCTShapeAddRevolutionForm/reach-lineAtTopOfBase-asym-fusefalse => nil
+OCCTShapeAddRevolutionForm/reach-lineOnWall-small-fusetrue => nil
+OCCTShapeAddRevolutionForm/reach-lineOnWall-small-fusefalse => nil
+OCCTShapeAddRevolutionForm/reach-lineOnWall-one-fusetrue => nil
+OCCTShapeAddRevolutionForm/reach-lineOnWall-one-fusefalse => nil
+OCCTShapeAddRevolutionForm/reach-lineOnWall-large-fusetrue => nil
+OCCTShapeAddRevolutionForm/reach-lineOnWall-large-fusefalse => nil
+OCCTShapeAddRevolutionForm/reach-lineOnWall-zero-fusetrue => nil
+OCCTShapeAddRevolutionForm/reach-lineOnWall-zero-fusefalse => nil
+OCCTShapeAddRevolutionForm/reach-lineOnWall-asym-fusetrue => nil
+OCCTShapeAddRevolutionForm/reach-lineOnWall-asym-fusefalse => nil
+OCCTShapeAddRevolutionForm/reach-polylineOnWall-small-fusetrue => VALID type=Solid isValid=true
+OCCTShapeAddRevolutionForm/reach-polylineOnWall-small-fusefalse => VALID type=Compound isValid=true
+OCCTShapeAddRevolutionForm/reach-polylineOnWall-one-fusetrue => VALID type=Solid isValid=true
+OCCTShapeAddRevolutionForm/reach-polylineOnWall-one-fusefalse => VALID type=Compound isValid=true
+OCCTShapeAddRevolutionForm/reach-polylineOnWall-large-fusetrue => VALID type=Solid isValid=true
+OCCTShapeAddRevolutionForm/reach-polylineOnWall-large-fusefalse => VALID type=Compound isValid=true
+OCCTShapeAddRevolutionForm/reach-polylineOnWall-zero-fusetrue => nil
+OCCTShapeAddRevolutionForm/reach-polylineOnWall-zero-fusefalse => nil
+OCCTShapeAddRevolutionForm/reach-polylineOnWall-asym-fusetrue => nil
+OCCTShapeAddRevolutionForm/reach-polylineOnWall-asym-fusefalse => nil
+OCCTShapeAddRevolutionForm/reach-triangleOnWall-small-fusetrue => VALID type=Solid isValid=true
+OCCTShapeAddRevolutionForm/reach-triangleOnWall-small-fusefalse => VALID type=Compound isValid=true
+OCCTShapeAddRevolutionForm/reach-triangleOnWall-one-fusetrue => VALID type=Solid isValid=true
+OCCTShapeAddRevolutionForm/reach-triangleOnWall-one-fusefalse => VALID type=Compound isValid=true
+OCCTShapeAddRevolutionForm/reach-triangleOnWall-large-fusetrue => VALID type=Solid isValid=true
+OCCTShapeAddRevolutionForm/reach-triangleOnWall-large-fusefalse => VALID type=Compound isValid=true
+OCCTShapeAddRevolutionForm/reach-triangleOnWall-zero-fusetrue => nil
+OCCTShapeAddRevolutionForm/reach-triangleOnWall-zero-fusefalse => nil
+OCCTShapeAddRevolutionForm/reach-triangleOnWall-asym-fusetrue => nil
+OCCTShapeAddRevolutionForm/reach-triangleOnWall-asym-fusefalse => nil
+OCCTShapeAddLinearRib/working-tinyDir => VALID type=Compound isValid=true
+OCCTShapeAddLinearRib/working-hugeDir => VALID type=Compound isValid=true
+OCCTShapeAddLinearRib/working-cutThroughEverything => VALID type=Compound isValid=true
+OCCTShapeAddLinearRib/working-profileCollapsed => INPUT-REFUSED
+OCCTShapeAddRevolutionForm/working-huge => VALID type=Solid isValid=true
+OCCTShapeAddRevolutionForm/working-nan => nil
+OCCTShapeAddRevolutionForm/working-negative => VALID type=Solid isValid=true
+OCCTShapeAddRevolutionForm/working-tiny => VALID type=Compound isValid=true
+OCCTShapeAddRevolutionForm/working-swallowsBase => VALID type=Solid isValid=true
 OCCTShapeFromMesh/empty => nil
 OCCTShapeFromMesh/pointsNoTriangles => nil
 OCCTShapeFromMesh/oneTriangle => VALID type=Compound isValid=true
@@ -770,8 +915,8 @@ OCCTGeomFillConstrained/sameCircleFour => VALID type=Face isValid=true
 OCCTFace2DChamfer: nil=9 VALID=13
 OCCTFace2DFillet: nil=14 VALID=9
 OCCTGeomFillConstrained: nil=2 VALID=10
-OCCTShapeAddLinearRib: nil=17
-OCCTShapeAddRevolutionForm: nil=13
+OCCTShapeAddLinearRib: nil=107 INPUT-REFUSED=1 VALID=9
+OCCTShapeAddRevolutionForm: nil=42 VALID=16
 OCCTShapeChamfer: nil=63 VALID=9
 OCCTShapeChamferDistAngle: nil=23 VALID=5
 OCCTShapeChamferTwoDistances: nil=18 VALID=4
