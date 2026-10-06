@@ -21,6 +21,15 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### `Curve2D.parabola` and `arcOfParabola` place the focus where asked for a non-unit direction (#3042)
+
+`Curve2D.parabola(focus:direction:focalLength:)` and `Curve2D.arcOfParabola(focus:direction:focalLength:startParam:endParam:)` stepped back to the vertex by the unnormalised direction, so any direction that was not a unit vector returned a parabola whose focus was not `focus` (direction (3, 4), focus (1, 1), focal 5 put it at (-11, -15)). The vertex is now `focalLength` behind the focus along the unit direction, so the focus is exactly `focus` and the length of `direction` does not matter. Unit directions are unchanged, and a zero direction still returns `nil`.
+
+```swift
+let p = Curve2D.parabola(focus: SIMD2(1, 1), direction: SIMD2(3, 4), focalLength: 5)
+// vertex (-2, -3), focus (1, 1): the same parabola as direction (0.6, 0.8)
+```
+
 ### `Curve2D.interpolate(through:tangents:)` refuses a tangent keyed outside the point indices (#3036)
 
 `Curve2D.interpolate(through:tangents:closed:tolerance:)` used to drop a tangent whose key was outside `0..<points.count` and return the curve built from the remaining constraints, with no signal. It now returns `nil`, so an off-by-one index no longer yields a curve that silently ignores the constraint. In-range keys behave as before.

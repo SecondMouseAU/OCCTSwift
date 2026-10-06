@@ -252,7 +252,10 @@ public final class Curve2D: @unchecked Sendable {
     ///
     /// - Parameters:
     ///   - focus: Focus point of the parabola
-    ///   - direction: Axis direction (from vertex toward focus)
+    ///   - direction: Axis direction (from vertex toward focus). Any non-zero length: it is
+    ///     normalised, so `(3, 4)` and `(0.6, 0.8)` give the same parabola with the focus
+    ///     where `focus` says (before #3042 a non-unit direction moved the focus). A zero
+    ///     direction returns `nil`.
     ///   - focalLength: Distance from vertex to focus. Must be `> 0`; at zero the parabola
     ///     degenerates into a line parallel to its own axis.
     /// - Returns: The parabola, or `nil` if `focalLength <= 0`.
@@ -836,6 +839,16 @@ public final class Curve2D: @unchecked Sendable {
     }
 
     /// Create a trimmed arc of a parabola.
+    ///
+    /// `focus`, `direction` and `focalLength` mean what they do for
+    /// ``parabola(focus:direction:focalLength:)``: `direction` is normalised, so its length does
+    /// not move the focus (#3042), and a zero direction or a `focalLength <= 0` returns `nil`.
+    ///
+    /// ```swift
+    /// // Vertex (1, 1) - 5 * (0.6, 0.8) = (-2, -3); the focus stays at (1, 1).
+    /// let arc = Curve2D.arcOfParabola(
+    ///     focus: SIMD2(1, 1), direction: SIMD2(3, 4), focalLength: 5, startParam: -4, endParam: 4)
+    /// ```
     public static func arcOfParabola(
         focus: SIMD2<Double>, direction: SIMD2<Double>,
         focalLength: Double,
