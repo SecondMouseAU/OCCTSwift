@@ -21,6 +21,20 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### `HatchBuilder.nbIntervals(lineIndex:)` answers 0 for an index outside the line table instead of crashing (#3057)
+
+The index is 1-based and the kernel reads its line table unchecked, so index 0, a negative index or an index past `nbLines` read past the table and could abort the process, and an `Int` above `Int32.max` trapped in the Swift conversion. Every index outside `1...nbLines` now answers `0`.
+
+```swift
+let hatcher = HatchBuilder(tolerance: 1e-6)!
+hatcher.addXLine(1)
+hatcher.addXLine(5)
+hatcher.trim(x1: 0, y1: 0, x2: 10, y2: 0)
+hatcher.trim(x1: 0, y1: 4, x2: 10, y2: 4)
+print(hatcher.nbIntervals(lineIndex: 1))  // 1
+print(hatcher.nbIntervals(lineIndex: 0))  // 0, not a crash
+```
+
 ### Arc-join offsets get a kernel fix carried, STEP write output gets a host control, and `Shape.isEmptyShape` is removed (#3003, #3029, #1034)
 
 `BRepOffsetAPI_MakeOffsetShape` and `MakeThickSolid` with `GeomAbs_Arc` returned their faces in an order set by allocation addresses, so volumes moved in their last digits between runs (#3003). The cause is a traversal of a hash map keyed on `TShape` addresses, not parallelism. Kernel patch `0053` visits the faces in the order they were bound. It is carried and not yet pinned, so the pinned kernel still drifts until the repin that pins it.

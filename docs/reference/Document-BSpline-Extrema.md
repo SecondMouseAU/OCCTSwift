@@ -1625,8 +1625,21 @@ Number of trimmed intervals on a given hatch line (1-based).
 public func nbIntervals(lineIndex: Int) -> Int
 ```
 
-- **Parameters:** `lineIndex`, 1-based line index.
+- **Parameters:** `lineIndex`, 1-based line index, `1...nbLines`.
+- **Returns:** The interval count, or `0` for an index outside `1...nbLines`. `Hatch_Hatcher::NbIntervals`
+  reads its line table unchecked, so the bridge refuses a bad index (including `0`) before the call.
 - **OCCT:** `Hatch_Hatcher::NbIntervals`.
+- **Example:**
+  ```swift
+  if let h = HatchBuilder(tolerance: 1e-6) {
+      h.addXLine(1)
+      h.addXLine(5)
+      h.trim(x1: 0, y1: 0, x2: 10, y2: 0)
+      h.trim(x1: 0, y1: 4, x2: 10, y2: 4)
+      print(h.nbIntervals(lineIndex: 1))  // 1
+      print(h.nbIntervals(lineIndex: 0))  // 0, not a crash
+  }
+  ```
 
 ---
 
