@@ -18,6 +18,28 @@ the transcription as part of merging rather than before it:
 
 What it does, in order:
 
+  0. **Refuses unless the PR is ready (#3055).** Every non-wasm check run on the PR's CONTENT head
+     must be completed and green, Kilo included, `changes`, `gate-scripts` and `Kilo Code Review`
+     must have registered, the head must be at least 180 seconds old, and no top-level review
+     comment may be unanswered. Read from `repos/.../commits/<sha>/check-runs`, never from
+     `statusCheckRollup`, which lags a push by seconds and shows the previous head's results.
+     This used to be absent: a None PR merged on `gate-scripts` alone, the one required check,
+     while macOS and Kilo were still running (#3052). The verdicts are `ready`, `check-failed`,
+     `pending-or-unregistered`, `unanswered-review-comments` and `already-merged`.
+     `--allow-pending-checks` accepts a pending or unregistered check on purpose; it never accepts
+     a failed check or an unanswered review comment. `--no-merge` and `--dry-run` print the
+     verdict; `--no-merge` is never refused because it merges nothing.
+
+     **Which head each check is read from.** The content head is the PR's head BEFORE this tool's
+     own transcription commit (a None PR has none, so it is its current head). After the
+     transcription push the new head is required to pass `gate-scripts` and nothing else: that is
+     the one check the ruleset requires, it takes about a minute, and a CHANGELOG-only commit
+     cannot change what the macOS and kernel jobs tested, so re-waiting an hour for them after
+     every transcription push is the loop the standing merge rule rules out. The tool waits for
+     it (up to 15 minutes), then merges pinned with `--match-head-commit`. Before #3055 it merged
+     straight after the push and `gh pr merge` failed with "Head branch is out of date" because
+     that check was still pending. A re-run after the transcription commit is already on the
+     branch steps over it to the content head.
   1. Reads the PR body and extracts the `## CHANGELOG entry` block VERBATIM. It never drafts and
      never retypes: `feedback-changelog-transcription-repunctuation` records a hand transcription
      silently repunctuating an entry against the em-dash ban, which is what extraction is for.
@@ -31,7 +53,8 @@ What it does, in order:
   3. If the block says "None", merges with a `No-Changelog: <reason>` trailer built from the block's
      own text. #2770 is the gap that closes: a merge that legitimately carries no entry needs the
      trailer, and cannot gain one afterwards.
-  4. Merges with `gh pr merge --merge`, which is the method this repo uses.
+  4. Merges with `gh pr merge --merge --match-head-commit <sha>`, which is the method this repo
+     uses, pinned to the head that was judged so a branch that moved is refused.
 
 It refuses rather than guesses. An unfilled template placeholder, an empty section, a missing
 heading, an entry opening with a bare `### Fixed` / `### Added` / `### Changed`, an entry wrapped
@@ -67,8 +90,8 @@ is loud and nothing has been written at that point, but it is the one failure wo
 
 `--self-test` proves the detector is not blind, per `okf/policies/prove-the-test-fails.md`. It
 exercises the pure half, which is all of the deciding: extraction, classification, splicing,
-trailer construction and the refusals. The impure half is four `gh`/`git` invocations printed by
-`--dry-run` before any of them runs.
+trailer construction, the refusals and every readiness verdict against a stubbed GitHub. The
+impure half is the `gh`/`git` invocations printed by `--dry-run` before any of them runs.
 
 Deliberately NOT in `ci.yml`'s `gate-scripts`: this is an operator tool, not a detector over the
 tree, and `check-inventory-prose.py` classifies any script that job runs only as `--self-test` as a
@@ -79,11 +102,13 @@ Exits 2 if run from anywhere but the repository root, matching its siblings (#62
 """
 
 import argparse
+import datetime
 import json
 import os
 import re
 import subprocess
 import sys
+import time
 
 CHANGELOG = "docs/CHANGELOG.md"
 HEADING = "## CHANGELOG entry"
@@ -439,8 +464,200 @@ def refuse_for_diff(paths):
 
 
 # ------------------------------------------------------------------------------------------------
-# The impure half: four gh/git calls, all printed before they run.
+# Readiness (#3055): what must be true of the checks before anything is merged.
+#
+# Pure functions over check-run records, so the self-test can drive every verdict against a
+# stubbed GitHub. Every record is the shape `repos/.../commits/<sha>/check-runs` returns:
+# {"id", "name", "status", "conclusion"}.
 # ------------------------------------------------------------------------------------------------
+
+# The three checks every PR gets whatever it touches (`changes` and `gate-scripts` are jobs of
+# ci.yml itself, Kilo is the review bot). A missing one has not REGISTERED yet, which is not the
+# same as passing: the workflows start seconds apart, so a head a few seconds old has only some.
+ALWAYS_PRESENT = ("changes", "gate-scripts", "Kilo Code Review")
+REQUIRED_CHECK = "gate-scripts"  # the one check the ruleset requires (required-status-checks.md)
+FAILING_CONCLUSIONS = ("failure", "cancelled", "timed_out", "action_required", "startup_failure",
+                       "stale")
+GREEN_CONCLUSIONS = ("success", "neutral", "skipped")
+MIN_HEAD_AGE_SECONDS = 180
+GATE_WAIT_SECONDS = 900  # how long the entry path waits for gate-scripts on the transcription head
+GATE_POLL_SECONDS = 15
+
+READY, CHECK_FAILED, NOT_READY, UNANSWERED, ALREADY_MERGED = (
+    "ready", "check-failed", "pending-or-unregistered", "unanswered-review-comments",
+    "already-merged")
+
+
+def latest_per_name(runs):
+    """One record per check name, the newest by id, since a re-run adds a record rather than
+    replacing one and the older failed attempt must not outvote the newer green one."""
+    best = {}
+    for r in runs:
+        if r["name"] not in best or r["id"] > best[r["name"]]["id"]:
+            best[r["name"]] = r
+    return list(best.values())
+
+
+def is_wasm(name):
+    """`wasm` runs last and is not part of the readiness gate, so it is excluded by name."""
+    return "wasm" in name.lower()
+
+
+def check_verdict(runs, head_age_seconds):
+    """(verdict, detail) for one head's check runs, `wasm` excluded.
+
+    A failure outranks anything pending, because a head that has already failed will not become
+    ready by waiting. Pending covers three different causes, all reported: a registered check not
+    yet `completed`, an always-present check not registered at all, and a head younger than
+    `MIN_HEAD_AGE_SECONDS`, which is the same "not registered yet" risk for the checks that are
+    conditional and so cannot be listed above.
+    """
+    runs = [r for r in latest_per_name(runs) if not is_wasm(r["name"])]
+    failed = [r["name"] + "=" + str(r.get("conclusion")) for r in runs
+              if r.get("status") == "completed" and r.get("conclusion") not in GREEN_CONCLUSIONS]
+    if failed:
+        return (CHECK_FAILED, "failed: " + ", ".join(sorted(failed)))
+    pending = sorted(r["name"] for r in runs if r.get("status") != "completed")
+    names = {r["name"] for r in runs}
+    missing = [n for n in ALWAYS_PRESENT if n not in names]
+    reasons = []
+    if pending:
+        reasons.append("not completed: " + ", ".join(pending))
+    if missing:
+        reasons.append("not registered: " + ", ".join(missing))
+    if head_age_seconds < MIN_HEAD_AGE_SECONDS:
+        reasons.append("head is %ds old, under the %ds every workflow needs to register"
+                       % (head_age_seconds, MIN_HEAD_AGE_SECONDS))
+    if reasons:
+        return (NOT_READY, "; ".join(reasons))
+    return (READY, "%d check(s), all completed and green" % len(runs))
+
+
+def unanswered_comments(comments):
+    """The ids of top-level review comments nobody replied to. `comments` are the records of
+    `repos/.../pulls/<n>/comments`; a reply carries `in_reply_to_id`."""
+    replied = {c["in_reply_to_id"] for c in comments if c.get("in_reply_to_id")}
+    return sorted(c["id"] for c in comments if not c.get("in_reply_to_id") and c["id"] not in replied)
+
+
+def full_verdict(state, runs, head_age_seconds, comments, allow_pending=False):
+    """The one verdict a caller acts on: merged, then checks, then unanswered review comments.
+
+    `allow_pending` accepts a pending or unregistered check on purpose and goes on to the review
+    comments. It never accepts a failed check.
+    """
+    if state == "MERGED":
+        return (ALREADY_MERGED, "the PR is already merged")
+    verdict, detail = check_verdict(runs, head_age_seconds)
+    if verdict == NOT_READY and allow_pending:
+        verdict, detail = (READY, "ACCEPTED ON PURPOSE (--allow-pending-checks): " + detail)
+    if verdict != READY:
+        return (verdict, detail)
+    open_threads = unanswered_comments(comments)
+    if open_threads:
+        return (UNANSWERED, "%d top-level review comment(s) with no reply: %s"
+                % (len(open_threads), ", ".join(str(i) for i in open_threads)))
+    return (READY, detail)
+
+
+def is_transcription_commit(commit, number):
+    """Whether `commit` is this tool's own transcription commit for PR `number`: its subject, and
+    a diff of `docs/CHANGELOG.md` alone. Both, because the subject is only text."""
+    subject = commit["message"].split("\n")[0]
+    return (subject == "docs: transcribe PR #%s's CHANGELOG entry (#%s)" % (number, number)
+            and commit.get("files") == [CHANGELOG] and len(commit.get("parents", [])) == 1)
+
+
+def content_head(gh, head_sha, number):
+    """The head the full readiness check applies to: the PR's head BEFORE the transcription commit.
+
+    A CHANGELOG-only commit cannot change what the macOS and kernel jobs tested, so requiring an
+    hour of those on the transcription head would re-wait after every push, which is the loop the
+    standing merge rule rules out. On a re-run the head already IS that commit, so step over it.
+    """
+    commit = gh.commit(head_sha)
+    if is_transcription_commit(commit, number):
+        return commit["parents"][0]
+    return head_sha
+
+
+def judge_content_head(gh, number, head_sha, now, allow_pending=False):
+    """(content_sha, verdict, detail), every read from GitHub's check-runs API for content_sha."""
+    sha = content_head(gh, head_sha, number)
+    age = int((now - gh.commit(sha)["committer_date"]).total_seconds())
+    verdict, detail = full_verdict(gh.pr_state(number), gh.check_runs(sha), age,
+                                   gh.review_comments(number), allow_pending)
+    return (sha, verdict, detail)
+
+
+def wait_for_gate(gh, sha, sleep, clock, timeout=GATE_WAIT_SECONDS, poll=GATE_POLL_SECONDS):
+    """Wait for `gate-scripts` on `sha`: ('success'|'failed'|'timeout', detail).
+
+    The only thing required of a transcription head. It is the one check the ruleset requires, so
+    GitHub will not merge before it passes anyway, and it takes about a minute.
+    """
+    deadline = clock() + timeout
+    while True:
+        gate = [r for r in latest_per_name(gh.check_runs(sha)) if r["name"] == REQUIRED_CHECK]
+        if gate and gate[0].get("status") == "completed":
+            if gate[0].get("conclusion") in GREEN_CONCLUSIONS:
+                return ("success", "%s passed on %s" % (REQUIRED_CHECK, sha[:10]))
+            return ("failed", "%s=%s on %s" % (REQUIRED_CHECK, gate[0].get("conclusion"), sha[:10]))
+        if clock() >= deadline:
+            return ("timeout", "%s not completed on %s after %ds" % (REQUIRED_CHECK, sha[:10], timeout))
+        sleep(poll)
+
+
+def refusal_text(verdict, detail, number):
+    return ("PR #%s is not ready to merge: %s (%s).\n"
+            "Nothing has been pushed and nothing is merged. Wait and re-run; `--allow-pending-checks` "
+            "is for the exceptional case where a pending or unregistered check is accepted on "
+            "purpose, and never overrides a failed check." % (number, verdict, detail))
+
+
+# ------------------------------------------------------------------------------------------------
+# The impure half: gh/git calls, all printed before they run.
+# ------------------------------------------------------------------------------------------------
+
+
+class Gh:
+    """The read-only GitHub calls readiness needs. The self-test substitutes a stub with the same
+    five methods, which is why nothing in the readiness functions calls `gh` itself."""
+
+    def _api(self, path, jq=None):
+        cmd = ["gh", "api", "--paginate", path]
+        if jq:
+            cmd += ["--jq", jq]
+        p = subprocess.run(cmd, capture_output=True, text=True)
+        if p.returncode != 0:
+            sys.stderr.write(p.stderr)
+            raise SystemExit("error: gh api failed: %s" % path)
+        return p.stdout
+
+    def _lines(self, path, jq):
+        return [json.loads(l) for l in self._api(path, jq).split("\n") if l.strip()]
+
+    def pr_state(self, number):
+        return gh_json(number, ["state"])["state"]
+
+    def check_runs(self, sha):
+        return self._lines("repos/{owner}/{repo}/commits/%s/check-runs?per_page=100" % sha,
+                           ".check_runs[] | {id, name, status, conclusion}")
+
+    def commit(self, sha):
+        c = json.loads(subprocess.run(
+            ["gh", "api", "repos/{owner}/{repo}/commits/%s" % sha],
+            capture_output=True, text=True, check=True).stdout)
+        return {"message": c["commit"]["message"],
+                "committer_date": datetime.datetime.strptime(
+                    c["commit"]["committer"]["date"], "%Y-%m-%dT%H:%M:%SZ").replace(
+                        tzinfo=datetime.timezone.utc),
+                "parents": [p["sha"] for p in c["parents"]],
+                "files": [f["filename"] for f in c.get("files", [])]}
+
+    def review_comments(self, number):
+        return self._lines("repos/{owner}/{repo}/pulls/%s/comments?per_page=100" % number,
+                           ".[] | {id, in_reply_to_id}")
 
 
 def run(cmd, dry=False, capture=False):
@@ -473,11 +690,63 @@ def changed_paths(number):
     return [l.strip() for l in (names.stdout or "").split("\n") if l.strip()]
 
 
-def merge_pr(number, dry, body_lines):
-    cmd = ["gh", "pr", "merge", str(number), "--merge"]
+def _merge_cmd_for_test():
+    """The `gh pr merge` argv `merge_pr` would run, captured instead of run."""
+    seen = []
+    global run
+    real = run
+    run = lambda cmd, dry=False, capture=False: seen.append(cmd)
+    try:
+        merge_pr(7, True, ["No-Changelog: x"], "abc")
+    finally:
+        run = real
+    return seen[0]
+
+
+def merge_pr(number, dry, body_lines, head_sha):
+    """Merge, pinned to `head_sha` so GitHub refuses if the branch moved after it was judged."""
+    cmd = ["gh", "pr", "merge", str(number), "--merge", "--match-head-commit", head_sha]
     if body_lines:
         cmd += ["--body", "\n".join(body_lines)]
     run(cmd, dry=dry)
+
+
+def gate_on_head(gh, head, content, number):
+    """When the head to merge is not the head readiness was judged on, wait for `gate-scripts`
+    on it. Returns whether to go on.
+
+    The head differs after the transcription commit (or on a re-run that finds it already there).
+    A CHANGELOG-only commit cannot change what the macOS and kernel jobs tested, and those were
+    judged on `content`, so re-waiting for them after every transcription push is the loop the
+    standing merge rule rules out. The one thing required of the new head is the check the ruleset
+    requires. Merging straight after the push used to fail with "Head branch is out of date"
+    because that check was still pending (#3055).
+    """
+    if head == content:
+        return True
+    print("  waiting for `%s` on the transcription head %s ..." % (REQUIRED_CHECK, head[:10]))
+    outcome, detail = wait_for_gate(gh, head, time.sleep, time.monotonic)
+    print("  %s: %s" % (outcome, detail))
+    if outcome != "success":
+        sys.stderr.write("error: not merging. Re-run once `%s` is green on %s; the entry is "
+                         "already pushed, so the re-run transcribes nothing and does not re-wait "
+                         "for the slow checks.\n" % (REQUIRED_CHECK, head[:10]))
+        return False
+    return True
+
+
+def readiness_gate(args, pr, gh):
+    """Judge the PR's content head and print the verdict. Returns (head_sha, content_sha), or
+    None when the PR is refused. `--no-merge` prints the verdict and is never refused, since it
+    merges nothing and the person merging by hand needs to see it."""
+    now = datetime.datetime.now(datetime.timezone.utc)
+    sha, verdict, detail = judge_content_head(gh, pr["number"], pr["headRefOid"], now,
+                                              args.allow_pending_checks)
+    print("  readiness, read from the check runs of %s: %s (%s)" % (sha[:10], verdict, detail))
+    if verdict != READY and not args.no_merge:
+        sys.stderr.write("error: %s\n" % refusal_text(verdict, detail, pr["number"]))
+        return None
+    return (pr["headRefOid"], sha)
 
 
 def main(argv=None):
@@ -488,6 +757,10 @@ def main(argv=None):
                     help="print every action and change nothing")
     ap.add_argument("--no-merge", action="store_true",
                     help="transcribe and push, but stop before merging")
+    ap.add_argument("--allow-pending-checks", action="store_true",
+                    help="accept a pending or not-yet-registered check (or a head under %d seconds "
+                         "old) on purpose. Never accepts a failed check; the default refuses"
+                         % MIN_HEAD_AGE_SECONDS)
     ap.add_argument("--allow-changelog-in-diff", action="store_true",
                     help="for the policy's two exceptions: a release commit, or a PR fixing the "
                          "CHANGELOG itself")
@@ -498,6 +771,7 @@ def main(argv=None):
     if args.self_test:
         return self_test()
 
+    gh = Gh()
     if not (os.path.isfile("Package.swift") and os.path.isfile(CHANGELOG)):
         sys.stderr.write("error: run from the repository root (#625)\n")
         return 2
@@ -505,9 +779,12 @@ def main(argv=None):
         ap.error("a PR number is required")
 
     pr = gh_json(args.number, ["number", "title", "body", "state", "headRefName",
-                               "baseRefName", "isCrossRepository", "url"])
+                               "baseRefName", "isCrossRepository", "url", "headRefOid"])
     print("PR #%s: %s" % (pr["number"], pr["title"]))
     print("  %s -> %s" % (pr["headRefName"], pr["baseRefName"]))
+    if pr["state"] == "MERGED":
+        sys.stderr.write("error: %s: PR #%s is already merged\n" % (ALREADY_MERGED, args.number))
+        return 1
     if pr["state"] != "OPEN":
         sys.stderr.write("error: PR #%s is %s, not OPEN\n" % (args.number, pr["state"]))
         return 1
@@ -540,10 +817,16 @@ def main(argv=None):
         trailer = no_changelog_trailer(payload)
         print("  section says None, so nothing is transcribed.")
         print("  merge trailer: %s" % trailer)
+        judged = readiness_gate(args, pr, gh)
+        if judged is None:
+            return 1
         if args.no_merge:
             print("  --no-merge: stopping before the merge.")
             return 0
-        merge_pr(args.number, args.dry_run, [trailer])
+        # Nothing is pushed on this path, so the head merged is the head judged.
+        if not args.dry_run and not gate_on_head(gh, judged[0], judged[1], args.number):
+            return 1
+        merge_pr(args.number, args.dry_run, [trailer], judged[0])
         return 0
 
     entry = payload
@@ -608,6 +891,10 @@ def main(argv=None):
             sys.stderr.write("error: %s\n" % refusal)
             return 1
 
+    judged = readiness_gate(args, pr, gh)
+    if judged is None:
+        return 1
+
     print("  entry extracted, %d line(s), verbatim:" % len(entry.split("\n")))
     for line in entry.split("\n"):
         print("    | %s" % line)
@@ -615,6 +902,13 @@ def main(argv=None):
     run(["git", "fetch", "origin", pr["headRefName"]], dry=args.dry_run)
     run(["git", "checkout", pr["headRefName"]], dry=args.dry_run)
     run(["git", "pull", "--ff-only", "origin", pr["headRefName"]], dry=args.dry_run)
+    if not args.dry_run:
+        local = run(["git", "rev-parse", "HEAD"], capture=True).strip()
+        if local != judged[0]:
+            sys.stderr.write("error: the branch moved after readiness was judged (judged head %s, "
+                             "branch now %s). Nothing is pushed; re-run.\n"
+                             % (judged[0][:10], local[:10]))
+            return 1
 
     with open(CHANGELOG, encoding="utf-8") as fh:
         text = fh.read()
@@ -655,7 +949,15 @@ def main(argv=None):
     if args.no_merge:
         print("  --no-merge: stopping before the merge.")
         return 0
-    merge_pr(args.number, args.dry_run, [])
+    if args.dry_run:
+        print("  would wait for `%s` to pass on the transcription head, the only check required "
+              "there, then merge pinned to that head." % REQUIRED_CHECK)
+        merge_pr(args.number, True, [], "<transcription head>")
+        return 0
+    head = run(["git", "rev-parse", "HEAD"], capture=True).strip()
+    if not gate_on_head(gh, head, judged[1], args.number):
+        return 1
+    merge_pr(args.number, False, [], head)
     return 0
 
 
@@ -1245,6 +1547,175 @@ def self_test():
     case("diff-carrying-the-changelog-is-refused",
          refuse_for_diff(["docs/CHANGELOG.md", "a.swift"]) is not None)
     case("ordinary-diff-is-allowed", refuse_for_diff(["a.swift"]) is None)
+
+    # Readiness (#3055), against a stubbed GitHub: no network in --self-test.
+    t0 = datetime.datetime(2026, 10, 7, 12, 0, 0, tzinfo=datetime.timezone.utc)
+    old = t0 - datetime.timedelta(minutes=30)   # a head old enough for every workflow to register
+    fresh = t0 - datetime.timedelta(seconds=5)  # a head pushed seconds ago
+    counter = [0]
+
+    def run_(name, status="completed", conclusion="success"):
+        counter[0] += 1
+        return {"id": counter[0], "name": name, "status": status,
+                "conclusion": conclusion if status == "completed" else None}
+
+    def green():
+        return [run_("changes"), run_("gate-scripts"), run_("Kilo Code Review"),
+                run_("swift build + test (macOS)"), run_("wasm / wasm build + spike")]
+
+    def with_(runs, name, status="completed", conclusion="success"):
+        return [r for r in runs if r["name"] != name] + [run_(name, status, conclusion)]
+
+    class StubGh:
+        """Scripted answers per commit sha, so a test says exactly which head is read."""
+
+        def __init__(self, runs_by_sha, commits, state="OPEN", comments=()):
+            self.runs_by_sha, self.commits = runs_by_sha, commits
+            self.state, self.comments = state, list(comments)
+            self.reads = []
+
+        def pr_state(self, number):
+            return self.state
+
+        def check_runs(self, sha):
+            self.reads.append(sha)
+            runs = self.runs_by_sha[sha]
+            return runs() if callable(runs) else runs
+
+        def commit(self, sha):
+            return self.commits[sha]
+
+        def review_comments(self, number):
+            return self.comments
+
+    def plain(date, parent="0" * 7):
+        return {"message": "feat: a change", "committer_date": date, "parents": [parent],
+                "files": ["Sources/x.swift"]}
+
+    def transcription(date, parent, number=7):
+        return {"message": "docs: transcribe PR #%d's CHANGELOG entry (#%d)\n\nbody\n"
+                           % (number, number),
+                "committer_date": date, "parents": [parent], "files": [CHANGELOG]}
+
+    def judge(gh, head, allow=False):
+        return judge_content_head(gh, 7, head, t0, allow)
+
+    # The seven verdict paths.
+    case("all-green-old-head-is-ready",
+         check_verdict(green(), 1800)[0] == READY, check_verdict(green(), 1800))
+    case("a-failed-check-is-refused",
+         check_verdict(with_(green(), "swift build + test (macOS)", conclusion="failure"), 1800)[0]
+         == CHECK_FAILED)
+    case("every-failing-conclusion-counts",
+         all(check_verdict(with_(green(), "changes", conclusion=c), 1800)[0] == CHECK_FAILED
+             for c in FAILING_CONCLUSIONS))
+    case("a-pending-macos-check-is-refused",
+         check_verdict(with_(green(), "swift build + test (macOS)", "in_progress"), 1800)[0]
+         == NOT_READY)
+    case("pending-kilo-is-refused",
+         check_verdict(with_(green(), "Kilo Code Review", "in_progress"), 1800)[0] == NOT_READY)
+    case("an-unregistered-always-present-check-is-not-ready",
+         check_verdict([r for r in green() if r["name"] != "Kilo Code Review"], 1800)[0]
+         == NOT_READY)
+    case("a-head-under-three-minutes-old-is-not-ready",
+         check_verdict(green(), 179)[0] == NOT_READY and check_verdict(green(), 180)[0] == READY)
+    case("a-failure-outranks-a-pending-check",
+         check_verdict(with_(with_(green(), "changes", conclusion="failure"),
+                             "swift build + test (macOS)", "queued"), 1800)[0] == CHECK_FAILED)
+    case("wasm-is-excluded-in-any-case",
+         check_verdict(with_(with_(green(), "wasm / wasm build + spike", "in_progress"),
+                             "Other WASM job", conclusion="failure"), 1800)[0] == READY)
+    case("a-rerun-supersedes-an-older-failed-attempt",
+         check_verdict(green() + [run_("swift build + test (macOS)")], 1800)[0] == READY
+         and check_verdict([run_("swift build + test (macOS)", conclusion="failure")] + green(),
+                           1800)[0] == READY)
+    case("unanswered-review-comment-blocks",
+         full_verdict("OPEN", green(), 1800, [{"id": 1}])[0] == UNANSWERED)
+    case("an-answered-thread-does-not-block",
+         full_verdict("OPEN", green(), 1800, [{"id": 1}, {"id": 2, "in_reply_to_id": 1}])[0]
+         == READY)
+    case("an-already-merged-pr-has-its-own-verdict",
+         full_verdict("MERGED", green(), 1800, [])[0] == ALREADY_MERGED)
+
+    # The flag accepts pending and unregistered, never failed, never unanswered comments.
+    pending_macos = with_(green(), "swift build + test (macOS)", "in_progress")
+    case("the-flag-accepts-a-pending-check",
+         full_verdict("OPEN", pending_macos, 1800, [], allow_pending=True)[0] == READY)
+    case("the-flag-never-accepts-a-failed-check",
+         full_verdict("OPEN", with_(green(), "changes", conclusion="failure"), 1800, [],
+                      allow_pending=True)[0] == CHECK_FAILED)
+    case("the-flag-never-accepts-unanswered-comments",
+         full_verdict("OPEN", pending_macos, 1800, [{"id": 1}], allow_pending=True)[0] == UNANSWERED)
+
+    # A None PR has no transcription commit, so it is judged on its current head.
+    gh = StubGh({"C": with_(green(), "swift build + test (macOS)", "in_progress")},
+                {"C": plain(old)})
+    sha, verdict, _ = judge(gh, "C")
+    case("none-pr-with-a-pending-macos-check-is-refused", sha == "C" and verdict == NOT_READY)
+    gh = StubGh({"C": with_(green(), "swift build + test (macOS)", conclusion="failure")},
+                {"C": plain(old)})
+    case("none-pr-with-a-failed-check-is-refused", judge(gh, "C")[1] == CHECK_FAILED)
+    gh = StubGh({"C": green()}, {"C": plain(old)})
+    case("all-green-none-pr-merges", judge(gh, "C")[1] == READY and gh.reads == ["C"])
+
+    # A freshly pushed head: the PR rollup still shows the PREVIOUS head's green results, but the
+    # check runs are read per sha, and the new sha has registered nothing.
+    gh = StubGh({"OLD": green(), "NEW": []}, {"OLD": plain(old), "NEW": plain(fresh, "OLD")})
+    sha, verdict, detail = judge(gh, "NEW")
+    case("a-fresh-head-with-a-stale-rollup-is-not-green",
+         sha == "NEW" and verdict == NOT_READY and gh.reads == ["NEW"], (verdict, detail))
+    case("a-fresh-head-with-only-some-checks-registered-is-not-green",
+         judge(StubGh({"NEW": [run_("changes")]}, {"NEW": plain(fresh)}), "NEW")[1] == NOT_READY)
+
+    # The entry path. T is the transcription commit on top of the content head C. Every check on T
+    # is pending and T is seconds old, which is exactly the state right after the push.
+    t_runs = [run_("changes", "in_progress"), run_("gate-scripts", "in_progress"),
+              run_("Kilo Code Review", "queued")]
+    gh = StubGh({"C": green(), "T": t_runs}, {"C": plain(old), "T": transcription(fresh, "C")})
+    sha, verdict, _ = judge(gh, "T")
+    case("entry-pr-is-judged-on-the-head-before-the-transcription-commit",
+         sha == "C" and verdict == READY and gh.reads == ["C"], (sha, verdict, gh.reads))
+    case("a-re-run-over-an-existing-transcription-commit-steps-over-it",
+         content_head(gh, "T", 7) == "C" and content_head(gh, "C", 7) == "C")
+    case("a-transcription-commit-for-another-pr-is-not-stepped-over",
+         content_head(StubGh({}, {"T": transcription(fresh, "C", number=8)}), "T", 7) == "T")
+    case("a-commit-with-the-subject-but-other-files-is-not-a-transcription-commit",
+         not is_transcription_commit(dict(transcription(fresh, "C"), files=[CHANGELOG, "a.swift"]), 7))
+    gh = StubGh({"C": pending_macos, "T": [run_("gate-scripts"), run_("changes")]},
+                {"C": plain(old), "T": transcription(fresh, "C")})
+    sha, verdict, _ = judge(gh, "T")
+    case("entry-pr-with-a-pending-content-head-is-refused-though-gate-scripts-passes-on-T",
+         sha == "C" and verdict == NOT_READY
+         and wait_for_gate(gh, "T", lambda s: None, lambda: 0)[0] == "success")
+
+    # After the push, only gate-scripts on the new head is required.
+    ticks = [0]
+
+    def clock():
+        return ticks[0]
+
+    def sleep(n):
+        ticks[0] += n
+
+    gate_only = [run_("changes", "in_progress"), run_("gate-scripts"),
+                 run_("swift build + test (macOS)", "queued")]
+    case("only-gate-scripts-is-required-on-the-new-head",
+         wait_for_gate(StubGh({"T": gate_only}, {}), "T", sleep, clock)[0] == "success")
+    case("a-failed-gate-scripts-on-the-new-head-refuses",
+         wait_for_gate(StubGh({"T": [run_("gate-scripts", conclusion="failure")]}, {}), "T",
+                       sleep, clock)[0] == "failed")
+    ticks[0] = 0
+    case("a-never-registered-gate-scripts-times-out-rather-than-merging",
+         wait_for_gate(StubGh({"T": []}, {}), "T", sleep, clock, timeout=60, poll=15)[0]
+         == "timeout" and ticks[0] == 60)
+    ticks[0] = 0
+    states = iter([[run_("gate-scripts", "in_progress")], [run_("gate-scripts", "in_progress")],
+                   [run_("gate-scripts")]])
+    case("gate-scripts-is-polled-until-it-completes",
+         wait_for_gate(StubGh({"T": lambda: next(states)}, {}), "T", sleep, clock)[0] == "success"
+         and ticks[0] == 2 * GATE_POLL_SECONDS)
+    case("the-merge-command-is-pinned-to-the-judged-head",
+         "--match-head-commit" in _merge_cmd_for_test())
 
     bad = [n for n, ok in results if not ok]
     print("self-test: %d/%d cases correct" % (len(results) - len(bad), len(results)))
