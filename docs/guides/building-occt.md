@@ -304,7 +304,10 @@ xcframework is rebuilt from source, so "patch merged" and "patch shipped" are tw
 
 **1. Confirm the patch set the build actually used.** The script prints one line per patch
 (`applied` / `already applied` / `ERROR`); an `ERROR` aborts the build, and `already applied` is
-normal whenever `occt-src` was patched by an earlier run or an override-link probe. Before trusting
+normal whenever `occt-src` was patched by an earlier run or an override-link probe. The patches are a
+stack, so a patch that a later one rewrites (0050 and 0051, rewritten by 0055) is reported as
+`already applied (rewritten by <later patch>)`: the script accepts it because that later patch
+reverse-checks clean on a file it shares. Before trusting
 it, check `occt-src` is *only* the pinned tag plus the carried patches, since a leftover diagnostic probe
 from an investigation would otherwise be compiled into a release binary:
 

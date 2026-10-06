@@ -80,7 +80,9 @@ counts, each checked rather than assumed:
   worktree has no `Libraries/` at all until something builds one. The checkout would be re-cloned per
   worktree, which is the thing #803 asked to avoid.
 - **Its working tree is permanently dirty by design.** `build-occt.sh` applies every carried patch to
-  the working tree, not to HEAD, and re-runs rely on `git apply --reverse --check` to detect that.
+  the working tree, not to HEAD, and re-runs rely on `git apply --reverse --check` to detect that, and on the rule that a patch
+  failing both that check and the forward one is carried when a later patch on one of its files
+  reverse-checks clean (a stacked pair such as 0051 then 0055).
   Branch commits interleaved with that are a second thing mutating the same files.
 - **The next kernel build refuses to run, and its own remedy destroys the branch work.**
   `build-occt.sh:110-123` reuses the tree only when `git describe --tags --exact-match HEAD` equals

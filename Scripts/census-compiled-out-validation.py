@@ -2101,6 +2101,48 @@ def self_test():
         reported = patches_not_applied(fixture, [patch_path])
         case("patch-targeting-a-file-the-tree-lacks-is-reported",
              len(reported) == 1 and "is not in the tree" in reported[0], str(reported))
+
+        # --- a stack: a later patch rewrites the lines an earlier one added (#3010) ------------
+        #
+        # 0055 corrects lines 0050 and 0051 added, so the final tree holds none of 0051's own added
+        # text. The three cases below are the three things the stack-aware check must tell apart.
+        stack_target = os.path.join(fixture, "src", "Pkg", "Pkg_Stack.cxx")
+        stack_a = os.path.join(fixture, "0100-first.patch")
+        stack_b = os.path.join(fixture, "0101-rewrites-first.patch")
+        open(stack_a, "w", encoding="utf-8").write(
+            "--- a/src/Pkg/Pkg_Stack.cxx\n+++ b/src/Pkg/Pkg_Stack.cxx\n"
+            "@@ -1,3 +1,4 @@\n void Pkg_Stack::Do()\n {\n+  guard(a);\n   use(a);\n }\n")
+        open(stack_b, "w", encoding="utf-8").write(
+            "--- a/src/Pkg/Pkg_Stack.cxx\n+++ b/src/Pkg/Pkg_Stack.cxx\n"
+            "@@ -1,5 +1,5 @@\n void Pkg_Stack::Do()\n {\n-  guard(a);\n+  guard(a, b);\n"
+            "   use(a);\n }\n")
+        after_a = "void Pkg_Stack::Do()\n{\n  guard(a);\n  use(a);\n}\n"
+        after_ab = "void Pkg_Stack::Do()\n{\n  guard(a, b);\n  use(a);\n}\n"
+        stack = [stack_a, stack_b]
+
+        open(stack_target, "w", encoding="utf-8").write(after_ab)
+        reported = patches_not_applied(fixture, stack)
+        case("stacked-patch-rewritten-by-a-later-one-is-not-reported", reported == [],
+             str(reported))
+
+        open(stack_target, "w", encoding="utf-8").write("void Pkg_Stack::Do()\n{\n  use(a);\n}\n")
+        reported = patches_not_applied(fixture, stack)
+        case("stack-with-no-patch-applied-reports-both",
+             len(reported) == 2 and "0100-first" in reported[0]
+             and "0101-rewrites-first" in reported[1], str(reported))
+
+        open(stack_target, "w", encoding="utf-8").write(after_a)
+        reported = patches_not_applied(fixture, stack)
+        case("stack-missing-only-its-later-patch-reports-that-patch",
+             len(reported) == 1 and "0101-rewrites-first" in reported[0], str(reported))
+
+        # Present, but altered by something that is not a carried patch: the lines are no longer
+        # the ones either patch leaves behind, so the tree is not the stack's result.
+        open(stack_target, "w", encoding="utf-8").write(
+            after_ab.replace("guard(a, b)", "guard(a, c)"))
+        reported = patches_not_applied(fixture, stack)
+        case("stack-altered-by-something-that-is-not-a-patch-is-reported",
+             any("0101-rewrites-first" in line for line in reported), str(reported))
     finally:
         shutil.rmtree(fixture, ignore_errors=True)
 
@@ -2218,6 +2260,46 @@ def tree_occt_version(occt_src):
     return version + "." + dev.group(1) if dev else version
 
 
+def patch_hunks(text):
+    """[(path, pre, post, new_start)] for every hunk in a unified diff.
+
+    `pre` is the context and removed lines, `post` the context and added lines, both in order.
+    `new_start` is the 1-based line the hunk's post-image starts at in the patched file, used only
+    to choose between two places a block could sit.
+    """
+    out, path, cur = [], None, None
+    for line in text.split("\n"):
+        if line.startswith("+++ "):
+            target = line[4:].split("\t")[0].strip()
+            path = None if target == "/dev/null" else (
+                target[2:] if target[:2] in ("a/", "b/") else target)
+            continue
+        if line.startswith("@@"):
+            if cur is not None and path:
+                out.append((path,) + cur)
+            match = re.match(r"@@ -\d+(?:,\d+)? \+(\d+)", line)
+            cur = ([], [], int(match.group(1)) if match else 1)
+            continue
+        if cur is None:
+            continue
+        if line[:1] == " ":
+            cur[0].append(line[1:])
+            cur[1].append(line[1:])
+        elif line[:1] == "+":
+            cur[1].append(line[1:])
+        elif line[:1] == "-":
+            cur[0].append(line[1:])
+        elif line[:1] == "\\":
+            continue
+        else:
+            if path:
+                out.append((path,) + cur)
+            cur = None
+    if cur is not None and path:
+        out.append((path,) + cur)
+    return out
+
+
 def patch_postimages(text):
     """[(path, [lines])] for every hunk in a unified diff: the lines the patch leaves behind.
 
@@ -2226,75 +2308,70 @@ def patch_postimages(text):
     `git`, no index and no clean tree. `git apply --reverse --check` is the authority
     `build-occt.sh` and docs/guides/building-occt.md use; this is the same question asked of text,
     so that `--write-table` can refuse a stale tree on a machine where the tree is not a checkout.
+    On its own it is right for one patch and wrong for a stack: see `patches_not_applied`.
     """
-    out, path, post = [], None, None
-    for line in text.split("\n"):
-        if line.startswith("+++ "):
-            target = line[4:].split("\t")[0].strip()
-            path = None if target == "/dev/null" else (
-                target[2:] if target[:2] in ("a/", "b/") else target)
-            continue
-        if line.startswith("@@"):
-            if post is not None and path:
-                out.append((path, post))
-            post = []
-            continue
-        if post is None:
-            continue
-        if line[:1] in ("+", " "):
-            post.append(line[1:])
-        elif line[:1] in ("-", "\\"):
-            continue
-        else:
-            if path:
-                out.append((path, post))
-            post = None
-    if post is not None and path:
-        out.append((path, post))
-    return out
+    return [(path, post) for path, _pre, post, _start in patch_hunks(text)]
 
 
-def _contains_block(haystack, needle):
+def _find_block(haystack, needle, near):
+    """Index of the occurrence of `needle` in `haystack` closest to `near`, or None."""
     if not needle:
-        return True
+        return min(max(near, 0), len(haystack))
+    best = None
     for i in range(len(haystack) - len(needle) + 1):
-        if haystack[i:i + len(needle)] == needle:
-            return True
-    return False
+        if haystack[i:i + len(needle)] == needle and (
+                best is None or abs(i - near) < abs(best - near)):
+            best = i
+    return best
 
 
 def patches_not_applied(occt_src, paths=None):
     """["<stem>: <why>"] for every carried patch this tree does not carry.
 
-    `paths` is for the self-test; the real run reads `Scripts/patches/*.patch`. Trailing whitespace
-    is ignored on both sides, because a patch file that survived an editor is still the patch.
+    `paths` is for the self-test; the real run reads `Scripts/patches/*.patch`.
+
+    The patches are a stack: a later one may rewrite lines an earlier one added (0055 corrects
+    0050's and 0051's, #3010), so "the tree still holds each patch's added lines" is false for the
+    earlier patch of a correct tree. The question asked instead is the one `git apply --reverse`
+    asks of a stack: starting from the tree, undo the patches newest first, each hunk by replacing
+    its post-image with its pre-image. A patch is carried exactly when its post-image is present at
+    the moment its turn comes, so a later patch's rewrite is undone before the earlier patch is
+    looked at, and a patch the tree lacks, or whose lines something else altered, still fails.
+    Trailing whitespace is ignored on both sides, because a patch file that survived an editor is
+    still the patch. A patch that fails is skipped and the walk continues, so a tree lacking
+    several patches names all of them; where the failure is a later patch's rewrite left in place,
+    the older patch it rewrote is named too, which is true: the tree is not that stack's result.
     """
     if paths is None:
         paths = sorted(glob.glob(os.path.join(SCRIPTS, "patches", "*.patch")))
     problems = []
-    for path in paths:
+    files = {}      # rel -> [lines] | None, undone as the walk proceeds
+    # errors="replace" on both sides, and on both sides for the same reason: OCCT carries a
+    # handful of Latin-1 bytes in comments, and a decode error here would be a traceback
+    # blaming the tool where the two texts still agree byte for byte.
+    for path in sorted(paths, key=os.path.basename, reverse=True):
         stem = os.path.basename(path)[: -len(".patch")]
-        cache = {}
-        # errors="replace" on both sides, and on both sides for the same reason: OCCT carries a
-        # handful of Latin-1 bytes in comments, and a decode error here would be a traceback
-        # blaming the tool where the two texts still agree byte for byte.
         patch_text = open(path, encoding="utf-8", errors="replace").read()
-        for rel, post in patch_postimages(patch_text):
-            target = os.path.join(occt_src, rel)
-            if rel not in cache:
+        failed = None
+        for rel, pre, post, start in reversed(patch_hunks(patch_text)):
+            if rel not in files:
                 try:
-                    cache[rel] = [line.rstrip() for line
-                                  in open(target, encoding="utf-8", errors="replace").read()
-                                  .split("\n")]
+                    files[rel] = [line.rstrip() for line
+                                  in open(os.path.join(occt_src, rel), encoding="utf-8",
+                                          errors="replace").read().split("\n")]
                 except OSError:
-                    cache[rel] = None
-            if cache[rel] is None:
-                problems.append("%s: %s is not in the tree" % (stem, rel))
+                    files[rel] = None
+            if files[rel] is None:
+                failed = (rel, "%s: %s is not in the tree" % (stem, rel))
                 break
-            if not _contains_block(cache[rel], [line.rstrip() for line in post]):
-                problems.append("%s: %s does not hold this patch's lines" % (stem, rel))
+            at = _find_block(files[rel], [line.rstrip() for line in post], start - 1)
+            if at is None:
+                failed = (rel, "%s: %s does not hold this patch's lines" % (stem, rel))
                 break
-    return problems
+            files[rel][at:at + len(post)] = [line.rstrip() for line in pre]
+        if failed:
+            problems.append(failed[1])
+    return sorted(problems)
 
 
 def provenance_or_exit(occt_src):
