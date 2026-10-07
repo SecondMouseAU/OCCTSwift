@@ -42,10 +42,11 @@ A multi-edge `Wire` treated as a single continuously-parameterized curve (`BRepA
 public final class WireCurve: ArcLengthCurveAdaptor
 ```
 
-Not `Sendable` (issue #1162): the bridge struct behind it holds a persistent `BRepAdaptor_CompCurve`
-reused by every call, so every accessor mutates its BSpline evaluation cache with no
-synchronization. Construct one per thread/task rather than sharing an instance, or serialize access
-with `OCCTSerial.withLock { }`. See `docs/thread-safety.md`.
+Not `Sendable` (issue #1162), and one per task (#3065): the bridge struct behind it holds a
+persistent `BRepAdaptor_CompCurve` reused by every call, and OCCT designs an adaptor to be owned by one worker,
+since its BSpline evaluation cache is rebuilt in place by `const` evaluators. Share the underlying
+shape, construct a `WireCurve` inside each thread/task, or serialize access with
+`OCCTSerial.withLock { }`. See `docs/thread-safety.md`.
 
 ---
 
@@ -289,10 +290,11 @@ A single `Edge` as an arc-length-parameterized curve (`BRepAdaptor_Curve`). Mirr
 public final class EdgeCurve: ArcLengthCurveAdaptor
 ```
 
-Not `Sendable` (issue #1162): the bridge struct behind it holds a persistent `BRepAdaptor_Curve`
-reused by every call, so every accessor mutates its BSpline evaluation cache with no
-synchronization. Construct one per thread/task rather than sharing an instance, or serialize access
-with `OCCTSerial.withLock { }`. See `docs/thread-safety.md`.
+Not `Sendable` (issue #1162), and one per task (#3065): the bridge struct behind it holds a
+persistent `BRepAdaptor_Curve` reused by every call, and OCCT designs an adaptor to be owned by one worker,
+since its BSpline evaluation cache is rebuilt in place by `const` evaluators. Share the underlying
+shape, construct a `EdgeCurve` inside each thread/task, or serialize access with
+`OCCTSerial.withLock { }`. See `docs/thread-safety.md`.
 
 ---
 
