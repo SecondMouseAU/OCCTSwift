@@ -20,33 +20,29 @@ struct PipeShellExtensionTests {
         return (sw, pw)
     }
 
-    @Test func pipeShellMaxDegreeAndSegments() {
-        guard let p = parts() else { return }
-        let psb = PipeShellBuilder(spine: p.spine)
-        #expect(psb != nil)
-        if let psb {
-            psb.setMaxDegree(6)
-            psb.setMaxSegments(100)
-            psb.setForceApproxC1(true)
-            psb.setFrenet()
-            psb.add(profile: p.profile)
-            #expect(psb.isReady)
-        }
+    @Test func pipeShellMaxDegreeAndSegments() throws {
+        let p = try #require(parts())
+        let psbOpt = PipeShellBuilder(spine: p.spine)
+        let psb = try #require(psbOpt)
+        psb.setMaxDegree(6)
+        psb.setMaxSegments(100)
+        psb.setForceApproxC1(true)
+        psb.setFrenet()
+        psb.add(profile: p.profile)
+        #expect(psb.isReady)
     }
 
-    @Test func pipeShellErrorAndShapes() {
-        guard let p = parts() else { return }
-        let psb = PipeShellBuilder(spine: p.spine)
-        #expect(psb != nil)
-        if let psb {
-            psb.setFrenet()
-            psb.add(profile: p.profile)
-            psb.setMaxDegree(8)
-            #expect(psb.build())
-            #expect(psb.errorOnSurface == 0)
-            #expect(psb.firstShape != nil)
-            #expect(psb.lastShape != nil)
-            #expect(abs((psb.shape?.surfaceArea ?? 0) - 254.09525268599498) < 1e-6)
-        }
+    @Test func pipeShellErrorAndShapes() throws {
+        let p = try #require(parts())
+        let psbOpt = PipeShellBuilder(spine: p.spine)
+        let psb = try #require(psbOpt)
+        psb.setFrenet()
+        psb.add(profile: p.profile)
+        psb.setMaxDegree(8)
+        #expect(psb.build())
+        #expect(psb.errorOnSurface == 0)
+        #expect(psb.firstShape != nil)
+        #expect(psb.lastShape != nil)
+        #expect(abs((psb.shape?.surfaceArea ?? 0) - 254.09525268599498) < 1e-6)
     }
 }

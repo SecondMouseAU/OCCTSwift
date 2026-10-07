@@ -7,16 +7,13 @@ import simd
 struct SurfaceFillingTests {
 
     @Test("Fill from closed wire boundary")
-    func fillClosedWireBoundary() {
+    func fillClosedWireBoundary() throws {
         // Create a closed rectangular wire as boundary
-        guard let boundary = Wire.rectangle(width: 10, height: 10) else {
-            Issue.record("Failed to create boundary wire")
-            return
-        }
+        let boundary = try #require(Wire.rectangle(width: 10, height: 10), "Failed to create boundary wire")
 
         // Note: Surface filling is a complex OCCT operation that may not
         // succeed with all boundary configurations. This tests the API.
-        let surface = Shape.fill(
+        let surfaceOpt = Shape.fill(
             boundaries: [boundary],
             parameters: FillingParameters(continuity: .g0)
         )
@@ -24,15 +21,13 @@ struct SurfaceFillingTests {
         // #766: this was `if let surface { #expect(surface.isValid) }`, so a nil fill passed.
         // BRepOffsetAPI_MakeFilling builds the flat 10 x 10 square here, valid, area 100
         // (Scripts/repro/766-surface-fill-freeform-grid/).
-        #expect(surface != nil)
-        if let surface = surface {
-            #expect(surface.isValid)
-            #expect(abs((surface.surfaceArea ?? 0) - 100) < 1e-9)
-        }
+        let surface = try #require(surfaceOpt)
+        #expect(surface.isValid)
+        #expect(abs((surface.surfaceArea ?? 0) - 100) < 1e-9)
     }
 
     @Test("Fill with polygon boundary")
-    func fillPolygonBoundary() {
+    func fillPolygonBoundary() throws {
         guard
             let boundary = Wire.polygon(
                 [
@@ -53,14 +48,12 @@ struct SurfaceFillingTests {
             maxSegments: 9
         )
 
-        let surface = Shape.fill(boundaries: [boundary], parameters: params)
+        let surfaceOpt = Shape.fill(boundaries: [boundary], parameters: params)
 
         // #766: likewise a nil fill passed; the kernel builds it, area 100.
-        #expect(surface != nil)
-        if let surface = surface {
-            #expect(surface.isValid)
-            #expect(abs((surface.surfaceArea ?? 0) - 100) < 1e-9)
-        }
+        let surface = try #require(surfaceOpt)
+        #expect(surface.isValid)
+        #expect(abs((surface.surfaceArea ?? 0) - 100) < 1e-9)
     }
 
     @Test("Fill empty boundaries returns nil")

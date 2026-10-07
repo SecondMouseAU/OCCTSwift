@@ -45,7 +45,7 @@ struct FillingSupportFaceTests {
     }
 
     @Test("Default parameters on a curved boundary return a surface instead of crashing")
-    func defaultParametersOnCurvedBoundarySurvive() {
+    func defaultParametersOnCurvedBoundarySurvive() throws {
         guard let bowl = bowl(), let rim = rimWire(of: bowl) else {
             Issue.record("Failed to build the truncated-sphere fixture")
             return
@@ -53,15 +53,13 @@ struct FillingSupportFaceTests {
 
         // FillingParameters() defaults to .g1, so this is the ordinary call that used to
         // take the whole process down. Reaching the #expect is the regression check.
-        let capped = Shape.fill(boundaries: [rim])
+        let cappedOpt = Shape.fill(boundaries: [rim])
 
-        #expect(capped != nil)
         // #766: and it is really tangent, not a degraded flat disc: with no support shape the rim's
         // own pcurve supplies the wall, and the kernel's tangent cap rises 7.5 above the rim plane
         // (Scripts/repro/766-filling-support-face/).
-        if let capped {
-            #expect((capped.size?.z ?? .nan) > 0.5)
-        }
+        let capped = try #require(cappedOpt)
+        #expect((capped.size?.z ?? .nan) > 0.5)
     }
 
     @Test("Tangent fill against a support shape is not flat")
@@ -389,7 +387,7 @@ struct FillingSupportFaceTests {
     }
 
     @Test("FillingSurface survives a curved boundary above positional continuity (#432)")
-    func fillingSurfaceCurvedBoundarySurvives() {
+    func fillingSurfaceCurvedBoundarySurvives() throws {
         guard let bowl = bowl(), let rim = rimEdge(of: bowl) else {
             Issue.record("Failed to build the truncated-sphere fixture")
             return
@@ -402,12 +400,10 @@ struct FillingSupportFaceTests {
         let added = filling.add(edge: rim, continuity: .g1)
         #expect(added)
 
-        let face = filling.build()
-        #expect(face != nil)
+        let faceOpt = filling.build()
         // #766: surviving is not enough; the .g1 fill must also leave the rim plane (kernel: 7.5).
-        if let face {
-            #expect((face.size?.z ?? .nan) > 0.5)
-        }
+        let face = try #require(faceOpt)
+        #expect((face.size?.z ?? .nan) > 0.5)
     }
 
     @Test("FillingSurface maps .g1 to tangency and .g2 to curvature, not the reverse (#433)")

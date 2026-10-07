@@ -24,18 +24,16 @@ struct AdvancedPlateSurfaceTests {
     }
 
     @Test("Plate surface with G0 constraint orders")
-    func platePointsAdvancedG0() {
+    func platePointsAdvancedG0() throws {
         let points: [SIMD3<Double>] = [
             SIMD3(0, 0, 0), SIMD3(10, 0, 1), SIMD3(10, 10, 2),
             SIMD3(0, 10, 1), SIMD3(5, 5, 3),
         ]
         let orders: [SurfaceContinuity] = [.g0, .g0, .g0, .g0, .g0]
         let shape = Shape.plateSurface(through: points, orders: orders)
-        #expect(shape != nil)
-        if let s = shape {
-            #expect(abs((s.surfaceArea ?? 0) - 272.86803196188612) < 1e-6)
-            #expect(maxDistance(from: points, to: s) < 1e-6)
-        }
+        let s = try #require(shape)
+        #expect(abs((s.surfaceArea ?? 0) - 272.86803196188612) < 1e-6)
+        #expect(maxDistance(from: points, to: s) < 1e-6)
     }
 
     // #1460: this used to assert only `shape != nil`, exercising the exact silent-no-op path
@@ -54,7 +52,7 @@ struct AdvancedPlateSurfaceTests {
     }
 
     @Test("Plate surface with custom degree and iterations")
-    func platePointsCustomParams() {
+    func platePointsCustomParams() throws {
         let points: [SIMD3<Double>] = [
             SIMD3(0, 0, 0), SIMD3(5, 0, 1), SIMD3(10, 0, 0),
             SIMD3(0, 5, 1), SIMD3(5, 5, 3), SIMD3(10, 5, 1),
@@ -65,11 +63,9 @@ struct AdvancedPlateSurfaceTests {
             through: points, orders: orders,
             degree: 4, pointsOnCurves: 20, iterations: 3, tolerance: 0.001
         )
-        #expect(shape != nil)
-        if let s = shape {
-            #expect(abs((s.surfaceArea ?? 0) - 137.30983411355206) < 1e-6)
-            #expect(maxDistance(from: points, to: s) < 1e-3)
-        }
+        let s = try #require(shape)
+        #expect(abs((s.surfaceArea ?? 0) - 137.30983411355206) < 1e-6)
+        #expect(maxDistance(from: points, to: s) < 1e-3)
     }
 
     @Test("Plate surface rejects mismatched point/order counts")
@@ -89,7 +85,7 @@ struct AdvancedPlateSurfaceTests {
     }
 
     @Test("Mixed plate surface with points and curves")
-    func plateMixedPointsAndCurves() {
+    func plateMixedPointsAndCurves() throws {
         let pointConstraints: [(point: SIMD3<Double>, order: SurfaceContinuity)] = [
             (point: SIMD3(5, 5, 3), order: .g0),
             (point: SIMD3(2, 8, 1), order: .g0),
@@ -100,10 +96,7 @@ struct AdvancedPlateSurfaceTests {
             [
                 SIMD3(0, 0, 0), SIMD3(10, 0, 0), SIMD3(10, 10, 0), SIMD3(0, 10, 0),
             ], closed: true)
-        guard let w = wire else {
-            #expect(Bool(false), "Failed to create boundary wire")
-            return
-        }
+        let w = try #require(wire, "Failed to create boundary wire")
 
         let curveConstraints: [(wire: Wire, order: SurfaceContinuity)] = [
             (wire: w, order: .g0)
@@ -113,20 +106,18 @@ struct AdvancedPlateSurfaceTests {
             pointConstraints: pointConstraints,
             curveConstraints: curveConstraints
         )
-        #expect(shape != nil)
-        if let s = shape {
-            #expect(abs((s.surfaceArea ?? 0) - 266.0526366309989) < 1e-6)
-            // Both points and the boundary (its corners and an edge midpoint) lie on the surface.
-            let onSurface: [SIMD3<Double>] = [
-                SIMD3(5, 5, 3), SIMD3(2, 8, 1), SIMD3(0, 0, 0), SIMD3(10, 0, 0),
-                SIMD3(10, 10, 0), SIMD3(0, 10, 0), SIMD3(5, 0, 0),
-            ]
-            #expect(maxDistance(from: onSurface, to: s) < 2e-3)
-        }
+        let s = try #require(shape)
+        #expect(abs((s.surfaceArea ?? 0) - 266.0526366309989) < 1e-6)
+        // Both points and the boundary (its corners and an edge midpoint) lie on the surface.
+        let onSurface: [SIMD3<Double>] = [
+            SIMD3(5, 5, 3), SIMD3(2, 8, 1), SIMD3(0, 0, 0), SIMD3(10, 0, 0),
+            SIMD3(10, 10, 0), SIMD3(0, 10, 0), SIMD3(5, 0, 0),
+        ]
+        #expect(maxDistance(from: onSurface, to: s) < 2e-3)
     }
 
     @Test("Mixed plate surface with points only")
-    func plateMixedPointsOnly() {
+    func plateMixedPointsOnly() throws {
         let pointConstraints: [(point: SIMD3<Double>, order: SurfaceContinuity)] = [
             (point: SIMD3(0, 0, 0), order: .g0),
             (point: SIMD3(10, 0, 1), order: .g0),
@@ -139,25 +130,21 @@ struct AdvancedPlateSurfaceTests {
             pointConstraints: pointConstraints,
             curveConstraints: curveConstraints
         )
-        #expect(shape != nil)
-        if let s = shape {
-            #expect(abs((s.surfaceArea ?? 0) - 244.4080195083624) < 1e-6)
-            #expect(maxDistance(from: pointConstraints.map(\.point), to: s) < 1e-6)
-        }
+        let s = try #require(shape)
+        #expect(abs((s.surfaceArea ?? 0) - 244.4080195083624) < 1e-6)
+        #expect(maxDistance(from: pointConstraints.map(\.point), to: s) < 1e-6)
     }
 
     @Test("Advanced plate produces face with nonzero area")
-    func plateAdvancedArea() {
+    func plateAdvancedArea() throws {
         let points: [SIMD3<Double>] = [
             SIMD3(0, 0, 0), SIMD3(10, 0, 0), SIMD3(10, 10, 0),
             SIMD3(0, 10, 0), SIMD3(5, 5, 5),
         ]
         let orders: [SurfaceContinuity] = Array(repeating: .g0, count: 5)
         let shape = Shape.plateSurface(through: points, orders: orders)
-        #expect(shape != nil)
-        if let s = shape {
-            // 100 would be the flat square; the (5, 5, 5) bump raises it to the kernel's 161.03.
-            #expect(abs((s.surfaceArea ?? 0) - 161.0299905620775) < 1e-6)
-        }
+        let s = try #require(shape)
+        // 100 would be the flat square; the (5, 5, 5) bump raises it to the kernel's 161.03.
+        #expect(abs((s.surfaceArea ?? 0) - 161.0299905620775) < 1e-6)
     }
 }

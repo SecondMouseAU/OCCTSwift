@@ -34,12 +34,10 @@ struct FillingSurfaceTests {
             #expect(filling.add(edge: edge, continuity: .g0))
         }
 
-        let result = filling.build()
-        #expect(result != nil)
+        let resultOpt = filling.build()
         #expect(filling.isDone)
-        if let result {
-            #expect(abs((result.surfaceArea ?? 0) - 100) < 1e-9)
-        }
+        let result = try #require(resultOpt)
+        #expect(abs((result.surfaceArea ?? 0) - 100) < 1e-9)
     }
 
     @Test("G0 error is small for planar fill")
@@ -52,13 +50,11 @@ struct FillingSurfaceTests {
         }
         let _ = filling.build()
 
-        let g0 = filling.g0Error
-        #expect(g0 != nil)
-        if let g0 {
-            #expect(g0 < 0.01)
-            // The kernel reports 1.33e-15 for this exactly planar fill.
-            #expect(g0 < 1e-12)
-        }
+        let g0Opt = filling.g0Error
+        let g0 = try #require(g0Opt)
+        #expect(g0 < 0.01)
+        // The kernel reports 1.33e-15 for this exactly planar fill.
+        #expect(g0 < 1e-12)
     }
 
     @Test("Filling with point constraint")
@@ -71,15 +67,13 @@ struct FillingSurfaceTests {
         }
         // Add interior point above the plane
         filling.add(point: SIMD3(5, 5, 3))
-        let result = filling.build()
-        #expect(result != nil)
+        let resultOpt = filling.build()
         #expect(filling.isDone)
         // The boundary square sits at x = -5, so (5, 5, 3) is 10 off its plane: the constraint
         // pulls the surface out to an area of 1038.99, against 100 without it. (It does not reach
         // the point: the kernel's face stays 10 from it.)
-        if let result {
-            #expect(abs((result.surfaceArea ?? 0) - 1038.9910066176521) < 1e-6)
-        }
+        let result = try #require(resultOpt)
+        #expect(abs((result.surfaceArea ?? 0) - 1038.9910066176521) < 1e-6)
     }
 
     @Test("G1 and G2 errors are available after build")
@@ -109,13 +103,11 @@ struct FillingSurfaceTests {
             filling.add(edge: edges[i], continuity: .g0)
         }
         filling.add(freeEdge: edges[3], continuity: .g0)
-        let result = filling.build()
-        #expect(result != nil)
+        let resultOpt = filling.build()
         // A free edge only attracts the surface, it does not bound it: 125.0 against the 100 of
         // the four-bound fill.
-        if let result {
-            #expect(abs((result.surfaceArea ?? 0) - 124.99804710385433) < 1e-6)
-        }
+        let result = try #require(resultOpt)
+        #expect(abs((result.surfaceArea ?? 0) - 124.99804710385433) < 1e-6)
     }
 
     @Test("Unfilled filling is not done")
