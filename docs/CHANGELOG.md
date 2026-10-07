@@ -21,6 +21,16 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### `Shape.middlePath(start:end:)` answers `nil` for a null end, an edge end, the same face twice and touching faces instead of crashing (#3098)
+
+`BRepOffsetAPI_MiddlePath` reads the type of its start shape unchecked and, when the two sections share a vertex, casts a bare vertex of a path to an edge, so a null end, the same face or wire twice and two adjacent faces aborted the process with a signal no `catch` can absorb. The bridge now refuses a null shape, an end that is not a face or a wire, and two sections that share a vertex, before the kernel is called. Opposite faces of a box, the caps of a cylinder or a tube and wire ends still return the spine.
+
+```swift
+let box = Shape.box(width: 10, height: 10, depth: 10)!
+let faces = box.subShapes(ofType: .face)
+print(box.middlePath(start: faces[0], end: faces[0]) == nil)  // true, not a crash
+```
+
 ### `BRepGraph.add(_:absorbing:)` records absorbed history in a stable order (#3038)
 
 `BRepGraph.add(_:absorbing:inputRoots:operationName:)` used to write its history records in an order that followed heap addresses and changed from one process to the next, so every record's `sequenceNumber`, and the node `TopologyRef.createdBy(operationName:kind:occurrence:)` named, differed between runs. It now records input by input in `(kind, index)` order, each input's Modified record then its Generated record, with the removed inputs last as one Deleted record. The set of records is unchanged. The fix is in the bridge; no kernel patch is involved.
