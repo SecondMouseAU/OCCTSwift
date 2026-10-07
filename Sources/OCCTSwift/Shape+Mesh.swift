@@ -45,8 +45,8 @@ extension Shape {
     ///   - points: Array of 3D points (vertices of the mesh)
     ///   - triangles: Array of triangle index triples (1-based indices into points array)
     /// - Returns: Shape built from the mesh, or nil on failure, including any NaN or infinite
-    ///   coordinate in `points`: a NaN point used to build a compound whose first validity check
-    ///   never returned (#3100).
+    ///   component of any point in `points`: a NaN coordinate used to build a compound whose first
+    ///   validity check never returned (#3100).
     ///
     /// ```swift
     /// let points = [SIMD3<Double>(0, 0, 0), SIMD3(1, 0, 0), SIMD3(0, 1, 0)]

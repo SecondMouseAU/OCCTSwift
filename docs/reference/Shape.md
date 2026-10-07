@@ -581,9 +581,10 @@ public static func revolve(
   - `axisOrigin`: a point on the revolution axis.
   - `axisDirection`: axis direction vector.
   - `angle`: sweep angle in radians (default full 2π).
-- **Returns:** Revolution solid, or `nil` on failure. A NaN or infinite `angle` answers `nil`: an
-  infinite one never returned from `BRepSweep_Revol` and a NaN one built an invalid shell (#3100).
-  Any finite angle, `0` and `2 * .pi` included, is passed to OCCT as before.
+- **Returns:** Revolution solid, or `nil` on failure. A NaN or infinite `angle`, a NaN or infinite component of the axis origin, or an axis direction that is NaN, infinite, zero or overflowing, answers `nil`: an
+  infinite angle never returned from `BRepSweep_Revol`, a NaN one built an invalid shell (#3100),
+  and an unusable axis answered a shape (#3113). Any finite angle, `0` and `2 * .pi` included, and
+  any axis of length `1e-6` to `1e6`, is passed to OCCT as before.
 - **OCCT:** `BRepPrimAPI_MakeRevol`.
 - **Example:**
   ```swift
@@ -664,7 +665,7 @@ public func revolved(
 ```
 
 - **Parameters:** `axisOrigin`, point on revolution axis; `axisDirection`, axis direction.
-- **Returns:** Revolution solid, or `nil` on failure.
+- **Returns:** Revolution solid, or `nil` on failure. A NaN or infinite component of the axis origin, or an axis direction that is NaN, infinite, zero or overflowing, answers `nil` (such an axis answered a shape, #3113).
 - **OCCT:** `BRepPrimAPI_MakeRevol` (via `OCCTShapeCreateRevolutionFull`).
 
 ---
@@ -682,9 +683,9 @@ public func revolved(
 ```
 
 - **Parameters:** `axisOrigin`, `axisDirection`; `angle`, sweep angle in radians.
-- **Returns:** Partial revolution solid, or `nil` on failure. A NaN or infinite `angle`, and a NaN
-  or infinite component of `axisDirection`, answer `nil` (an infinite angle or a NaN axis never
-  returned, #3100); any finite angle is passed to OCCT as before.
+- **Returns:** Partial revolution solid, or `nil` on failure. A NaN or infinite `angle`, a NaN or infinite component of the axis origin, or an axis direction that is NaN, infinite, zero or overflowing,
+  answer `nil` (an infinite angle or a NaN axis never returned, #3100, #3113); any finite angle is
+  passed to OCCT as before.
 - **OCCT:** `BRepPrimAPI_MakeRevol` (via `OCCTShapeCreateRevolutionPartial`).
 
 ---

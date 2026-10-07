@@ -382,38 +382,89 @@ struct Issue3100BuilderHangTests {
         #expect(boss.isValid)
     }
 
-    /// The thru-all revolved feature takes an axis and no angle, and answers a bad axis.
+    /// Every revolve builder refuses an axis it cannot revolve about (#3113).
     ///
-    /// A review asked for an angle guard on `OCCTShapeRevolFeatureThruAll` and for this test to
-    /// expect `nil`. The function has no angle, and on the released kernel a NaN, infinite or
-    /// overflowing axis does not hang it and does not make it fail: measured one process per input,
-    /// each answers a non-nil compound that `isValid` accepts (the cut is simply not applied). That
-    /// is a quirk of the kernel, not a refusal this PR makes, so the test pins what happens: it
-    /// returns, answers a shape, and the shape is valid. `isValid` is the call that spun for the
-    /// extrusions, and it is safe here only because the probe showed these shapes valid; the
-    /// `hangLimit` trait bounds it on native.
-    @Test(
-        "addingRevolvedFeatureThruAll answers a valid shape for a NaN, infinite or overflowing axis",
-        hangLimit)
-    func revolvedFeatureThruAllAxisAnswers() throws {
+    /// The thru-all feature used to hand back the original shape for a NaN axis, a silent no-op
+    /// reported as success, and `Shape.revolve` documented a refusal it did not make. The guarded
+    /// siblings refused the axis while these answered a shape; none now accepts what another
+    /// refuses. The controls are the axes a caller means (a unit axis, a tilted axis, axes of
+    /// length `1e-6` and `1e6`), measured to build before and after, so a guard that refused
+    /// everything fails them.
+    @Test("Every revolve builder refuses a NaN, infinite, zero or overflowing axis", hangLimit)
+    func revolveBuildersRefuseUnusableAxis() throws {
         let base = try #require(Shape.box(width: 20, height: 20, depth: 20))
         let rib = try #require(
             Wire.polygon3D([
                 SIMD3(3, 0, 10), SIMD3(6, 0, 10), SIMD3(6, 0, 12), SIMD3(3, 0, 12),
             ]))
-        for axis in [SIMD3<Double>(.nan, 0, 1), SIMD3(0, 0, .infinity), SIMD3(0, 0, 1e155)] {
-            let result = try #require(
-                base.addingRevolvedFeatureThruAll(
-                    profile: rib, sketchFaceIndex: 4, axisOrigin: SIMD3(0, 0, 10),
-                    axisDirection: axis, fuse: false),
-                "axis \(axis)")
-            #expect(result.isValid, "axis \(axis)")
+        let ring = try revolveProfile()
+        let face = try squareFace()
+        let meridian = try #require(Curve3D.segment(from: SIMD3(5, 0, 0), to: SIMD3(5, 0, 10)))
+        let featureOrigin = SIMD3<Double>(0, 0, 10)
+        // Each entry is a name, a valid origin for it and a closure building one revolve.
+        let faceOrigin = SIMD3<Double>(30, 0, 0)
+        let builders: [(String, SIMD3<Double>, (SIMD3<Double>, SIMD3<Double>) -> Shape?)] = [
+            (
+                "Shape.revolve", .zero,
+                { Shape.revolve(profile: ring, axisOrigin: $0, axisDirection: $1, angle: 1) }
+            ),
+            (
+                "Shape.revolve full turn", .zero,
+                { Shape.revolve(profile: ring, axisOrigin: $0, axisDirection: $1) }
+            ),
+            ("revolved full", faceOrigin, { face.revolved(axisOrigin: $0, axisDirection: $1) }),
+            (
+                "revolved partial", faceOrigin,
+                { face.revolved(axisOrigin: $0, axisDirection: $1, angle: 1) }
+            ),
+            (
+                "Shape.revolution", .zero,
+                { Shape.revolution(meridian: meridian, axisOrigin: $0, axisDirection: $1) }
+            ),
+            (
+                "addingRevolvedFeature", featureOrigin,
+                {
+                    base.addingRevolvedFeature(
+                        profile: rib, sketchFaceIndex: 4, axisOrigin: $0, axisDirection: $1,
+                        angle: 90, fuse: true)
+                }
+            ),
+            (
+                "addingRevolvedFeatureThruAll", featureOrigin,
+                {
+                    base.addingRevolvedFeatureThruAll(
+                        profile: rib, sketchFaceIndex: 4, axisOrigin: $0, axisDirection: $1,
+                        fuse: false)
+                }
+            ),
+            (
+                "localRevolution", faceOrigin,
+                { face.localRevolution(axisOrigin: $0, axisDirection: $1, angle: 1) }
+            ),
+            (
+                "localRevolutionForm", faceOrigin,
+                { face.localRevolutionForm(axisOrigin: $0, axisDirection: $1, angle: 1) }
+            ),
+        ]
+
+        let badDirections: [SIMD3<Double>] = [
+            SIMD3(.nan, 0, 1), SIMD3(0, 0, .infinity), SIMD3(0, 0, 0), SIMD3(0, 0, 1e155),
+        ]
+        let badOrigins: [SIMD3<Double>] = [SIMD3(.nan, 0, 0), SIMD3(0, .infinity, 0)]
+        let goodDirections: [SIMD3<Double>] = [
+            SIMD3(0, 1, 0), SIMD3(0, 0, 1), SIMD3(1, 1, 1), SIMD3(0, 0, 1e-6), SIMD3(0, 0, 1e6),
+        ]
+        for (name, origin, build) in builders {
+            for direction in badDirections {
+                #expect(build(origin, direction) == nil, "\(name) direction \(direction)")
+            }
+            for badOrigin in badOrigins {
+                #expect(build(badOrigin, SIMD3(0, 0, 1)) == nil, "\(name) origin \(badOrigin)")
+            }
+            for direction in goodDirections {
+                #expect(build(origin, direction) != nil, "\(name) control \(direction)")
+            }
         }
-        let ok = try #require(
-            base.addingRevolvedFeatureThruAll(
-                profile: rib, sketchFaceIndex: 4, axisOrigin: SIMD3(0, 0, 10),
-                axisDirection: z, fuse: false))
-        #expect(ok.isValid)
     }
 
     // MARK: - Mesh

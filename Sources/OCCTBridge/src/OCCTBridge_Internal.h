@@ -1426,6 +1426,20 @@ inline bool occtIsUsableAngle(double angle)
   return std::isfinite(angle);
 }
 
+/// The axis precondition for a revolution (#3100, #3113): a finite origin and a usable direction.
+///
+/// A NaN, infinite, zero or overflowing direction made `BRepPrimAPI_MakeRevol` (shape overload),
+/// `LocOpe_Revol` and `LocOpe_RevolutionForm` never return, and made the other revolve builders
+/// answer a shape as if the revolution had been made: `BRepFeat_MakeRevol::PerformThruAll` handed
+/// back the original shape, a silent no-op reported as success. Measured one process per input:
+/// unit axes, a tilted axis and axes of length 1e-6 and 1e6 pass and build exactly what they did
+/// before.
+inline bool occtIsUsableAxis(double ox, double oy, double oz, double dx, double dy, double dz)
+{
+  return std::isfinite(ox) && std::isfinite(oy) && std::isfinite(oz)
+         && occtIsUsableVector(dx, dy, dz);
+}
+
 /// The deflection precondition every `GCPnts_TangentialDeflection` entry point has to apply itself.
 /// `GCPnts_TangentialDeflection::initialize` opens with
 /// `Standard_ConstructionError_Raise_if(theCurvatureDeflection < Precision::Confusion() ||

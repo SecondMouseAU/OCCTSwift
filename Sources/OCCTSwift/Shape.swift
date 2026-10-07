@@ -498,9 +498,11 @@ public final class Shape: @unchecked Sendable {
     ///   - axisOrigin: A point on the axis.
     ///   - axisDirection: The direction of the axis.
     ///   - angle: The sweep in radians; the default is a full turn.
-    /// - Returns: The revolved shape, or `nil` when `angle` is NaN or infinite or the axis is
-    ///   unusable. A NaN angle used to answer an invalid shell and an infinite one never returned
-    ///   (#3100). Any finite angle, `0` and `2 * .pi` included, is passed to OCCT unchanged.
+    /// - Returns: The revolved shape, or `nil` when `angle` is NaN or infinite, when a NaN or infinite component of `axisOrigin`, or an `axisDirection` that is NaN, infinite, zero or overflowing, or
+    ///   when the profile cannot be revolved. A NaN angle used to answer an invalid shell, an
+    ///   infinite one never returned (#3100), and an unusable axis answered a shape (#3113). Any
+    ///   finite angle, `0` and `2 * .pi` included, and any axis of length `1e-6` to `1e6`, is
+    ///   passed to OCCT unchanged.
     ///
     /// ```swift
     /// let profile = Wire.polygon3D([
@@ -574,6 +576,18 @@ public final class Shape: @unchecked Sendable {
     }
 
     /// Revolve any shape around an axis (full 360 degrees).
+    ///
+    /// - Parameters:
+    ///   - axisOrigin: A point on the axis.
+    ///   - axisDirection: The direction of the axis.
+    /// - Returns: The revolved shape, or `nil` when a NaN or infinite component of `axisOrigin`, or an `axisDirection` that is NaN, infinite, zero or overflowing (such an axis used to answer a shape,
+    ///   #3113), or the shape cannot be revolved.
+    ///
+    /// ```swift
+    /// let face = Shape.face(from: Wire.rectangle(width: 2, height: 2)!)!
+    /// print(face.revolved(axisOrigin: SIMD3(30, 0, 0), axisDirection: SIMD3(0, 1, 0)) != nil)  // true
+    /// print(face.revolved(axisOrigin: SIMD3(30, 0, 0), axisDirection: SIMD3(.nan, 0, 1)) == nil)  // true
+    /// ```
     public func revolved(
         axisOrigin: SIMD3<Double>,
         axisDirection: SIMD3<Double>
@@ -593,9 +607,9 @@ public final class Shape: @unchecked Sendable {
     ///   - axisOrigin: A point on the axis.
     ///   - axisDirection: The direction of the axis.
     ///   - angle: The sweep in radians.
-    /// - Returns: The revolved shape, or `nil` when `angle` is NaN or infinite or a component of
-    ///   `axisDirection` is (an infinite angle or a NaN axis never returned, #3100), or the shape
-    ///   or axis is unusable. Any finite angle is passed to OCCT unchanged.
+    /// - Returns: The revolved shape, or `nil` when `angle` is NaN or infinite, when a NaN or infinite component of `axisOrigin`, or an `axisDirection` that is NaN, infinite, zero or overflowing (an
+    ///   infinite angle or a NaN axis never returned, #3100, #3113), or the shape cannot be
+    ///   revolved. Any finite angle is passed to OCCT unchanged.
     ///
     /// ```swift
     /// let face = Shape.face(from: Wire.rectangle(width: 2, height: 2)!)!
@@ -2184,7 +2198,7 @@ public final class Shape: @unchecked Sendable {
     ///   - fuse: If true, adds material (boss); if false, removes material (pocket)
     ///
     /// - Returns: Modified shape, or nil on failure, including a NaN, infinite, zero or overflowing
-    ///   `direction` and a NaN, infinite or zero `height`, which used to never return (#3100).
+    ///   `direction` and a NaN, infinite, zero or overflowing `height`, which used to never return (#3100).
     ///
     /// ## Example
     ///

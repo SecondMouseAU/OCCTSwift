@@ -1962,8 +1962,8 @@ extension Shape {
     /// providing more detailed operation history than standard extrusion.
     ///
     /// - Parameter direction: Direction and distance of extrusion
-    /// - Returns: Extruded shape, or nil on failure, including a zero, NaN or infinite
-    ///   `direction`, which used to never return (#3100).
+    /// - Returns: Extruded shape, or nil on failure, including a NaN, infinite, zero or
+    ///   overflowing `direction`, which used to never return (#3100).
     ///
     /// ```swift
     /// let face = Shape.face(from: Wire.rectangle(width: 4, height: 4)!)!
@@ -1982,8 +1982,8 @@ extension Shape {
     /// - Parameters:
     ///   - direction: Primary direction and distance of extrusion
     ///   - translation: Secondary translation vector
-    /// - Returns: Extruded shape, or nil on failure, including a zero, NaN or infinite
-    ///   `direction`, which used to never return (#3100).
+    /// - Returns: Extruded shape, or nil on failure, including a NaN, infinite, zero or
+    ///   overflowing `direction`, which used to never return (#3100).
     ///
     /// ```swift
     /// let face = Shape.face(from: Wire.rectangle(width: 4, height: 4)!)!
@@ -2068,8 +2068,8 @@ extension Shape {
     ///   - direction: Direction vector of the sweep
     ///   - start: Start point of the sweep (passed as `from:`)
     ///   - end: End point of the sweep (passed as `to:`)
-    /// - Returns: The swept shape, or nil on failure, including a zero, NaN or infinite
-    ///   `direction`, which used to never return (#3100).
+    /// - Returns: The swept shape, or nil on failure, including a NaN, infinite, zero or
+    ///   overflowing `direction`, which used to never return (#3100).
     ///
     /// ```swift
     /// let face = Shape.face(from: Wire.rectangle(width: 4, height: 4)!)!

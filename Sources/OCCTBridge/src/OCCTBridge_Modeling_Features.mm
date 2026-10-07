@@ -897,8 +897,7 @@ OCCTShapeRef OCCTShapeDrillHole(OCCTShapeRef shape,
 // MARK: - LocOpe_Prism (v0.46)
 OCCTShapeRef OCCTLocOpePrism(OCCTShapeRef face, double dx, double dy, double dz)
 {
-  // #3100 (occtIsUsableVector, occtIsUsableAngle): a NaN or zero
-  // vector never returns.
+  // #3100, #3113: a NaN, infinite, zero or overflowing vector never returns.
   if (!face || !occtIsUsableVector(dx, dy, dz))
     return nullptr;
   try
@@ -924,8 +923,7 @@ OCCTShapeRef OCCTLocOpePrismWithTranslation(OCCTShapeRef face,
                                             double       ty,
                                             double       tz)
 {
-  // #3100 (occtIsUsableVector, occtIsUsableAngle): a NaN or zero
-  // prism vector never returns.
+  // #3100, #3113: a NaN, infinite, zero or overflowing vector never returns.
   if (!face || !occtIsUsableVector(dx, dy, dz))
     return nullptr;
   try
@@ -952,9 +950,10 @@ OCCTShapeRef OCCTLocOpeRevol(OCCTShapeRef profile,
                              double       axisDirZ,
                              double       angle)
 {
-  // #3100 (occtIsUsableVector, occtIsUsableAngle): an infinite angle
-  // or a NaN axis never returns.
-  if (!profile || !occtIsUsableAngle(angle) || !occtIsUsableVector(axisDirX, axisDirY, axisDirZ))
+  // #3100, #3113: a NaN or infinite angle, a non-finite origin or a NaN, infinite, zero or
+  // overflowing direction is refused.
+  if (!profile || !occtIsUsableAngle(angle)
+      || !occtIsUsableAxis(axisOriginX, axisOriginY, axisOriginZ, axisDirX, axisDirY, axisDirZ))
     return nullptr;
   try
   {
@@ -984,10 +983,10 @@ OCCTShapeRef OCCTLocOpeRevolWithOffset(OCCTShapeRef profile,
                                        double       angle,
                                        double       angledec)
 {
-  // #3100 (occtIsUsableVector, occtIsUsableAngle): an infinite angle
-  // or a NaN axis never returns.
+  // #3100, #3113: a NaN or infinite angle, a non-finite origin or a NaN, infinite, zero or
+  // overflowing direction is refused.
   if (!profile || !occtIsUsableAngle(angle) || !std::isfinite(angledec)
-      || !occtIsUsableVector(axisDirX, axisDirY, axisDirZ))
+      || !occtIsUsableAxis(axisOriginX, axisOriginY, axisOriginZ, axisDirX, axisDirY, axisDirZ))
     return nullptr;
   try
   {
@@ -1009,8 +1008,7 @@ OCCTShapeRef OCCTLocOpeRevolWithOffset(OCCTShapeRef profile,
 
 OCCTShapeRef OCCTLocOpeDPrism(OCCTFaceRef spineFace, double height1, double height2, double angle)
 {
-  // #3100 (occtIsUsableVector, occtIsUsableAngle): a NaN or infinite
-  // angle or a NaN height never returns.
+  // #3100, #3113: a NaN or infinite angle or height never returns.
   if (!spineFace || !occtIsUsableAngle(angle) || !std::isfinite(height1) || !std::isfinite(height2))
     return nullptr;
   try
@@ -1032,8 +1030,7 @@ OCCTShapeRef OCCTLocOpeDPrism(OCCTFaceRef spineFace, double height1, double heig
 
 OCCTShapeRef OCCTLocOpeDPrismSingleHeight(OCCTFaceRef spineFace, double height, double angle)
 {
-  // #3100 (occtIsUsableVector, occtIsUsableAngle): a NaN or infinite
-  // angle or a NaN height never returns.
+  // #3100, #3113: a NaN or infinite angle or height never returns.
   if (!spineFace || !occtIsUsableAngle(angle) || !std::isfinite(height))
     return nullptr;
   try
@@ -1103,8 +1100,7 @@ OCCTShapeRef OCCTLocOpeLinearForm(OCCTShapeRef shape,
                                   double       p2y,
                                   double       p2z)
 {
-  // #3100 (occtIsUsableVector, occtIsUsableAngle): a NaN or zero
-  // direction never returns.
+  // #3100, #3113: a NaN, infinite, zero or overflowing vector never returns.
   if (!shape || !occtIsUsableVector(dx, dy, dz))
     return nullptr;
   try
@@ -1137,9 +1133,10 @@ OCCTShapeRef OCCTLocOpeRevolutionForm(OCCTShapeRef shape,
                                       double       axisDirZ,
                                       double       angle)
 {
-  // #3100 (occtIsUsableVector, occtIsUsableAngle): an infinite angle
-  // or a NaN axis never returns.
-  if (!shape || !occtIsUsableAngle(angle) || !occtIsUsableVector(axisDirX, axisDirY, axisDirZ))
+  // #3100, #3113: a NaN or infinite angle, a non-finite origin or a NaN, infinite, zero or
+  // overflowing direction is refused.
+  if (!shape || !occtIsUsableAngle(angle)
+      || !occtIsUsableAxis(axisOriginX, axisOriginY, axisOriginZ, axisDirX, axisDirY, axisDirZ))
     return nullptr;
   try
   {

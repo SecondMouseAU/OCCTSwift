@@ -1019,7 +1019,7 @@ public static func fromMesh(points: [SIMD3<Double>], triangles: [(Int32, Int32, 
 ```
 
 - **Parameters:** `points`, mesh vertices; `triangles`, index triples using 1-based indices into `points`.
-- **Returns:** Shape from the mesh, or `nil` on failure. A NaN or infinite coordinate anywhere in
+- **Returns:** Shape from the mesh, or `nil` on failure. A NaN or infinite component of any point in
   `points` answers `nil`: it built a compound whose first validity check never returned (#3100).
 - **OCCT:** `BRepBuilderAPI_MakeShapeOnMesh` via `OCCTShapeFromMesh`.
 - **Example:**

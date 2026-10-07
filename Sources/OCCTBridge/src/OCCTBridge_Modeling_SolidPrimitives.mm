@@ -864,8 +864,10 @@ OCCTShapeRef OCCTShapeCreateRevolutionFromCurve(OCCTCurve3DRef meridian,
                                                 double         axDZ,
                                                 double         angle)
 {
-  // #3100: a NaN or infinite angle is not a revolution.
-  if (!meridian || meridian->curve.IsNull() || !occtIsUsableAngle(angle))
+  // #3100, #3113: a NaN or infinite angle, a non-finite origin or a NaN, infinite, zero or
+  // overflowing direction is not a revolution.
+  if (!meridian || meridian->curve.IsNull() || !occtIsUsableAngle(angle)
+      || !occtIsUsableAxis(axOX, axOY, axOZ, axDX, axDY, axDZ))
     return nullptr;
   try
   {
@@ -1485,8 +1487,10 @@ OCCTShapeRef OCCTShapeCreateRevolution(OCCTWireRef profile,
                                        double      dirZ,
                                        double      angle)
 {
-  // #3100: an infinite angle never returns from BRepSweep_Revol; a NaN one builds an invalid shell.
-  if (!occtShapeIsPresent(profile) || !occtIsUsableAngle(angle))
+  // #3100, #3113: a NaN or infinite angle, a non-finite origin or a NaN, infinite, zero or
+  // overflowing direction is refused (an infinite angle never returned from BRepSweep_Revol).
+  if (!occtShapeIsPresent(profile) || !occtIsUsableAngle(angle)
+      || !occtIsUsableAxis(axisX, axisY, axisZ, dirX, dirY, dirZ))
     return nullptr;
   occtEnsureSignals();
   try
@@ -1570,7 +1574,8 @@ OCCTShapeRef OCCTShapeCreateRevolutionFull(OCCTShapeRef shape,
                                            double       dirY,
                                            double       dirZ)
 {
-  if (!occtShapeIsPresent(shape))
+  // #3113: a NaN, infinite, zero or overflowing axis is not a revolution axis.
+  if (!occtShapeIsPresent(shape) || !occtIsUsableAxis(axisX, axisY, axisZ, dirX, dirY, dirZ))
     return nullptr;
   try
   {
@@ -1597,10 +1602,10 @@ OCCTShapeRef OCCTShapeCreateRevolutionPartial(OCCTShapeRef shape,
                                               double       dirZ,
                                               double       angle)
 {
-  // #3100: see OCCTShapeCreateRevolution.
-  // #3100: a NaN or infinite axis direction never returns either.
+  // #3100, #3113: a NaN or infinite angle, a non-finite origin or a NaN, infinite, zero or
+  // overflowing direction is refused.
   if (!occtShapeIsPresent(shape) || !occtIsUsableAngle(angle)
-      || !occtIsUsableVector(dirX, dirY, dirZ))
+      || !occtIsUsableAxis(axisX, axisY, axisZ, dirX, dirY, dirZ))
     return nullptr;
   try
   {

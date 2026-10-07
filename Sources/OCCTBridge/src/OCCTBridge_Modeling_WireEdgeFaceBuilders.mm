@@ -898,8 +898,8 @@ OCCTShapeRef OCCTShapeDraftPrism(OCCTShapeRef shape,
                                  double       height,
                                  bool         fuse)
 {
-  // #3100: a NaN or infinite draft angle never returns from BRepFill_Evolved::PrepareProfile.
-  // #3100: a NaN height never returns either.
+  // #3100: a NaN or infinite draft angle or height never returns from
+  // BRepFill_Evolved::PrepareProfile.
   if (!shape || !profile || !occtIsUsableAngle(angleDeg) || !std::isfinite(height))
     return nullptr;
   try
@@ -990,8 +990,10 @@ OCCTShapeRef OCCTShapeRevolFeature(OCCTShapeRef shape,
                                    double       angleDeg,
                                    bool         fuse)
 {
-  // #3100: a NaN or infinite angle never returns (BRepLib::FindValidRange, BRepSweep_Revol).
-  if (!shape || !profile || !occtIsUsableAngle(angleDeg))
+  // #3100, #3113: a NaN or infinite angle, a non-finite origin or a NaN, infinite, zero or
+  // overflowing direction is refused (BRepLib::FindValidRange, BRepSweep_Revol never returned).
+  if (!shape || !profile || !occtIsUsableAngle(angleDeg)
+      || !occtIsUsableAxis(axOX, axOY, axOZ, axDX, axDY, axDZ))
     return nullptr;
   try
   {
@@ -1034,7 +1036,9 @@ OCCTShapeRef OCCTShapeRevolFeatureThruAll(OCCTShapeRef shape,
                                           double       axDZ,
                                           bool         fuse)
 {
-  if (!shape || !profile)
+  // #3113: a NaN, infinite, zero or overflowing axis made PerformThruAll hand back the original
+  // shape, a silent no-op reported as success.
+  if (!shape || !profile || !occtIsUsableAxis(axOX, axOY, axOZ, axDX, axDY, axDZ))
     return nullptr;
   try
   {
@@ -1940,7 +1944,8 @@ OCCTShapeRef OCCTShapeFromMesh(const double*  points,
 {
   if (!points || nodeCount < 3 || !triangles || triCount < 1)
     return nullptr;
-  // #3100: a NaN coordinate builds a compound whose first validity check never returns.
+  // #3100: a NaN or infinite coordinate builds a compound whose first validity check never
+  // returns.
   for (int64_t i = 0; i < static_cast<int64_t>(nodeCount) * 3; i++)
   {
     if (!std::isfinite(points[i]))
