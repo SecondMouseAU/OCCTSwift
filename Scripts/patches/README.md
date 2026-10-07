@@ -2838,7 +2838,8 @@ as [#3010](https://github.com/SecondMouseAU/OCCTSwift/issues/3010) with `0050`'s
 
 Identical to `0050`'s, and for the same reason: `GeometryProperties.coneVolume(semiAngle:refRadius:height:)`
 returned the wrong value on the asset pinned before the repin, so this was `0043`'s situation and
-not `0044`'s. To be filed upstream with `0050` as one PR.
+not `0044`'s. Filed upstream with `0050` as one PR,
+[OCCT#1599](https://github.com/Open-Cascade-SAS/OCCT/pull/1599) against `IR`.
 
 **Retire** once the bundled OCCT includes this fix.
 

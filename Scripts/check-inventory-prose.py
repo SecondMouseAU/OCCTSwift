@@ -1054,7 +1054,7 @@ def stale_pin_claims(path, text, pinned, known):
 
 # Promotion rule, per okf/policies/static-gates.md: the check is a report until the tree it reads
 # is clean, because a gate that is red on its first merge blocks every open PR. The false-positive
-# count was already zero; what held it back was true findings in files #3112 did not own. #3114
+# count was already zero; what held it back was true findings in files the change that added the check did not own. #3114
 # corrected them and flipped this, so a bare run now exits 1 on a stale pinned-state sentence.
 PIN_PROSE_IS_GATE = True
 
