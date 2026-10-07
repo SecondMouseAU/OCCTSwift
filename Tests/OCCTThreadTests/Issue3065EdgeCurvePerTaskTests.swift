@@ -1,4 +1,3 @@
-import Dispatch
 import Foundation
 import Testing
 import simd
@@ -17,15 +16,15 @@ import simd
 /// so against a kernel that carries it, even a shared `EdgeCurve` returns correct points (more
 /// slowly), and this test passes either way. It fails if the bridge ever hands one adaptor to two
 /// `EdgeCurve` instances on a kernel WITHOUT that lock, which is the situation after `0031` is
-/// retired: `Scripts/repro/3065-bspline-adaptor-cache/` measured eight threads on one shared adaptor
-/// reading wrong points in 97 of 97 completed runs without the lock, and none with one adaptor per
-/// thread. The test therefore holds the property the lock currently masks.
+/// retired: #3065's investigation measured eight threads on one shared adaptor reading wrong points
+/// in 97 of 97 completed runs without the lock, and none with one adaptor per thread. The test
+/// therefore holds the property the lock currently masks.
 ///
 /// Measured 2026-10-07 for #3065 by linking the stock (lock-free) `BSplCLib_Cache`, `BSplSLib_Cache`,
 /// `GeomAdaptor_Curve` and `GeomAdaptor_Surface` objects, built against the patched headers so the
 /// class layout is unchanged, ahead of the pinned archive: a probe identical to the second test but
-/// with ONE `EdgeCurve` shared by all eight tasks read 203, 1172 and 1930 of 3200 points wrong in
-/// three runs, while this suite passed 30 of 30 runs on the same lock-free kernel.
+/// with ONE `EdgeCurve` shared by all eight tasks read hundreds to thousands of the 3200 points
+/// wrong in every run, while this suite passed on the same lock-free kernel.
 @Suite("Issue 3065: one EdgeCurve per task over a shared BSpline edge")
 struct Issue3065EdgeCurvePerTaskTests {
 
@@ -52,24 +51,6 @@ struct Issue3065EdgeCurvePerTaskTests {
         return range.first + width * (Double(span) + 0.5)
     }
 
-    private final class Results: @unchecked Sendable {
-        private let lock = NSLock()
-        private var mismatches: [String] = []
-        private var evaluated = 0
-
-        func record(evaluated count: Int, mismatches found: [String]) {
-            lock.lock()
-            evaluated += count
-            mismatches.append(contentsOf: found)
-            lock.unlock()
-        }
-        var snapshot: (evaluated: Int, mismatches: [String]) {
-            lock.lock()
-            defer { lock.unlock() }
-            return (evaluated, mismatches)
-        }
-    }
-
     @Test("the edge has several spans, so the test can see a wrong one")
     func edgeIsNotASingleSpan() throws {
         let edge = try #require(Self.makeEdge())
@@ -78,7 +59,7 @@ struct Issue3065EdgeCurvePerTaskTests {
     }
 
     @Test("tasks that each own an EdgeCurve read the same points a serial run reads")
-    func onePerTaskMatchesSerial() throws {
+    func onePerTaskMatchesSerial() async throws {
         let edge = try #require(Self.makeEdge())
         let serial = try #require(EdgeCurve(edge))
         let range = serial.parameterRange
@@ -94,62 +75,74 @@ struct Issue3065EdgeCurvePerTaskTests {
             expected.append(row)
         }
 
-        let results = Results()
         let expectedRows = expected
-        DispatchQueue.concurrentPerform(iterations: Self.tasks) { task in
-            // One EdgeCurve per task: EdgeCurve is not Sendable, so it cannot be captured from
-            // outside, and building it here is the supported pattern.
-            guard let own = EdgeCurve(edge) else {
-                results.record(evaluated: 0, mismatches: ["task \(task): EdgeCurve(edge) was nil"])
-                return
-            }
-            var found: [String] = []
-            for step in 0..<Self.samplesPerTask {
-                let u = Self.parameter(task: task, step: step, range: range)
-                guard let p = own.point(atParameter: u) else {
-                    found.append("task \(task) step \(step): nil point")
-                    continue
+        let tasks = Self.tasks
+        let samples = Self.samplesPerTask
+        // One EdgeCurve per task: EdgeCurve is not Sendable, so it cannot be captured from outside,
+        // and building it inside the task is the supported pattern.
+        let outcomes = await withTaskGroup(of: [String].self) { group -> [[String]] in
+            for task in 0..<tasks {
+                group.addTask {
+                    guard let own = EdgeCurve(edge) else {
+                        return ["task \(task): EdgeCurve(edge) was nil"]
+                    }
+                    var found: [String] = []
+                    for step in 0..<samples {
+                        let u = Self.parameter(task: task, step: step, range: range)
+                        guard let p = own.point(atParameter: u) else {
+                            found.append("task \(task) step \(step): nil point")
+                            continue
+                        }
+                        let want = expectedRows[task][step]
+                        if simd_distance(p, want) > 1e-9 {
+                            found.append("task \(task) step \(step): got \(p), want \(want)")
+                        }
+                    }
+                    return found
                 }
-                let want = expectedRows[task][step]
-                if simd_distance(p, want) > 1e-9 {
-                    found.append("task \(task) step \(step): got \(p), want \(want)")
-                }
             }
-            results.record(evaluated: Self.samplesPerTask, mismatches: found)
+            var all: [[String]] = []
+            for await found in group { all.append(found) }
+            return all
         }
 
-        let outcome = results.snapshot
-        #expect(outcome.evaluated == Self.tasks * Self.samplesPerTask)
-        #expect(outcome.mismatches.isEmpty, "\(outcome.mismatches.prefix(5))")
+        #expect(outcomes.count == tasks)
+        #expect(outcomes.flatMap { $0 }.isEmpty, "\(outcomes.flatMap { $0 }.prefix(5))")
     }
 
     @Test("EdgeCurve per task agrees with Edge.point(at:), which builds a fresh adaptor per call")
-    func onePerTaskMatchesTheEdgeItself() throws {
+    func onePerTaskMatchesTheEdgeItself() async throws {
         let edge = try #require(Self.makeEdge())
         let range = try #require(EdgeCurve(edge)).parameterRange
+        let tasks = Self.tasks
+        let samples = Self.samplesPerTask
 
-        let results = Results()
-        DispatchQueue.concurrentPerform(iterations: Self.tasks) { task in
-            guard let own = EdgeCurve(edge) else {
-                results.record(evaluated: 0, mismatches: ["task \(task): EdgeCurve(edge) was nil"])
-                return
-            }
-            var found: [String] = []
-            for step in 0..<Self.samplesPerTask {
-                let u = Self.parameter(task: task, step: step, range: range)
-                guard let p = own.point(atParameter: u), let q = edge.point(at: u) else {
-                    found.append("task \(task) step \(step): nil point")
-                    continue
+        let outcomes = await withTaskGroup(of: [String].self) { group -> [[String]] in
+            for task in 0..<tasks {
+                group.addTask {
+                    guard let own = EdgeCurve(edge) else {
+                        return ["task \(task): EdgeCurve(edge) was nil"]
+                    }
+                    var found: [String] = []
+                    for step in 0..<samples {
+                        let u = Self.parameter(task: task, step: step, range: range)
+                        guard let p = own.point(atParameter: u), let q = edge.point(at: u) else {
+                            found.append("task \(task) step \(step): nil point")
+                            continue
+                        }
+                        if simd_distance(p, q) > 1e-9 {
+                            found.append("task \(task) step \(step): EdgeCurve \(p), Edge \(q)")
+                        }
+                    }
+                    return found
                 }
-                if simd_distance(p, q) > 1e-9 {
-                    found.append("task \(task) step \(step): EdgeCurve \(p), Edge \(q)")
-                }
             }
-            results.record(evaluated: Self.samplesPerTask, mismatches: found)
+            var all: [[String]] = []
+            for await found in group { all.append(found) }
+            return all
         }
 
-        let outcome = results.snapshot
-        #expect(outcome.evaluated == Self.tasks * Self.samplesPerTask)
-        #expect(outcome.mismatches.isEmpty, "\(outcome.mismatches.prefix(5))")
+        #expect(outcomes.count == tasks)
+        #expect(outcomes.flatMap { $0 }.isEmpty, "\(outcomes.flatMap { $0 }.prefix(5))")
     }
 }
