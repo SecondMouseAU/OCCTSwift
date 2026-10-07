@@ -21,6 +21,17 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### Extrusion, draft, revolve and mesh builders refuse zero, NaN and overflowing input instead of never returning (#3100)
+
+`Shape.extrude(profile:direction:length:)`, `extruded(by:)`, `extrudedInfinite(direction:infinite:)`, `extrudedSemiInfinite(direction:infinite:)` and `Shape.fromMesh(points:triangles:)` built a shape from a zero or NaN length or vector, a vector whose square overflows (`SIMD3(0, 0, 1e300)`) or a NaN coordinate, and the first `isValid` on it never returned. `addingDraftPrism`, `addingDraftPrismThruAll` and `addingRevolvedFeature` never returned for a NaN angle, and `Shape.revolve`, `revolved(angle:)` and the revolved feature never returned for an infinite one. The same holds for `localPrism`, `localLinearForm`, `withPrism`, `localRevolution`, `localRevolutionForm`, `Face.draftPrism` and a NaN axis on `revolved(angle:)`. They all return `nil` now. The revolve and revolved-feature builders (`Shape.revolve`, `revolved(axisOrigin:axisDirection:)` with and without an angle, `Shape.revolution(meridian:)`, `addingRevolvedFeature`, `addingRevolvedFeatureThruAll`, `localRevolution`, `localRevolutionForm`) also return `nil` for an axis with a NaN or infinite origin component or a direction that is NaN, infinite, zero or overflowing; the thru-all feature used to hand back the original shape for such an axis, a silent no-op reported as success (#3113). Finite nonzero input, `1e-12` lengths, a zero angle and a full turn included, is passed to OCCT as before.
+
+```swift
+let profile = Wire.rectangle(width: 4, height: 4)!
+print(Shape.extrude(profile: profile, direction: SIMD3(0, 0, 1), length: 5) != nil)  // true
+print(Shape.extrude(profile: profile, direction: SIMD3(0, 0, 1), length: 0) == nil)  // true, was a hang on isValid
+print(Shape.extrude(profile: profile, direction: SIMD3(0, 0, 1), length: .nan) == nil)  // true
+```
+
 ### SheetMetal: a stepped concave bend is a valid solid on its closed form at every radius (#3045)
 
 `SheetMetal.Builder.build()` returned `isValid == false` for some stepped concave bends, and once the radius passed the thickness the volume was wrong as well (+7.7 at r = 2.5 and +16.2 at r = 3.0 on a foot under a wider web at thickness 2). The solid the fillet started from was valid; `BRepFilletAPI_MakeFillet` could not close the fillet off where the seam stops short of a flange's own edge. A concave bend is now the fillet's material fused in as a prism cut to the bend's run, for any wedge angle, so the result is valid and adds exactly `r^2 (1 - pi/4)` per unit of seam at a right angle, at every radius. A radius whose tangent line would leave a flange's face, or a bend that does not fuse to a valid solid, throws `BuildError.filletFailed`; an invalid solid is no longer returned. The volumes of stepped concave bends that were valid move to their closed forms (up to 0.375 on the four-fillet U-channel), and the two diagonal-seam fixtures move down by 0.32.
