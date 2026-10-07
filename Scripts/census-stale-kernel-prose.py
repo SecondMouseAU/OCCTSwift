@@ -39,7 +39,9 @@ Strong anchors say the tag IS the current pin and flag even in a sentence that a
 `will publish <tag>`, `<tag>, the asset Package.swift pins`. Weak anchors, `the pinned <tag>` and
 `now <tag>`, flag only when the sentence carries no past-tense or measurement word, because
 "Measured on the pinned kernel.2 asset" is a frozen measurement whose "pinned" was true the day it
-was written. `--measure` reproduces the three counts after a repin.
+was written. "against" is one of those record words, so "run the probe against the pinned
+kernel.3 asset" is a miss; that is the price of silencing "probe against the pinned kernel.3
+asset" in a frozen measurement, and a census prefers a miss to a false alarm. `--measure` reproduces the three counts after a repin.
 
 A sentence that is deliberate history takes `kernel-prose-exempt: <reason>` beside it, the same
 escape `check-inventory-prose.py` gives the patch-state check (`pin-state-exempt:`).
@@ -193,7 +195,7 @@ def k1_anchor(sentence, match):
     # Every "before" pattern ends in `$`, so only the words directly in front of the tag count and
     # no clause or sentence boundary needs cutting.
     before = sentence[max(0, start - 60):start]
-    after = sentence[end + 1:end + 60] if end < len(sentence) and sentence[end] == "`" \
+    after = sentence[end + 1:end + 61] if end < len(sentence) and sentence[end] == "`" \
         else sentence[end:end + 60]
     for pattern, why in STRONG_BEFORE:
         if re.search(pattern, before, re.IGNORECASE):
@@ -324,8 +326,9 @@ def census(root, show_measure=False):
     helpers = load_prose_helpers(root)
     native, wasm = pinned_tags(root)
     if native is None:
-        print("census-stale-kernel-prose: no OCCT.xcframework.zip pin found in Package.swift; "
-              "nothing to compare against")
+        print("census-stale-kernel-prose: NOTE: no OCCT.xcframework.zip pin found in Package.swift, "
+              "so NOTHING WAS CHECKED (this is not a clean result). The `--self-test` case that "
+              "reads the real manifest fails when the url shape changes.")
         return 0
     pinned_count = len(helpers.pinned_patch_numbers())
     tree_count = len(helpers.numbered_patch_files())
@@ -486,6 +489,11 @@ def self_test():
          k3_findings("f.md", 'counts ("thirty-one", "beta.4 not cut") with', tags) == [])
     case("K3: no tags readable means nothing is judged",
          k3_findings("f.md", "| `v4.0.0-beta.4` | not cut | | x |", set()) == [])
+
+    # The real manifest: a url reshaped so the pin cannot be read would otherwise make the bare run
+    # a silent no-op, and CI only ever runs this self-test (Kilo, PR #3128).
+    case("pin: this checkout's own Package.swift yields a pin tag",
+         (pinned_tags(DEFAULT_ROOT)[0] or "").startswith("v"))
 
     # Parsing the pin out of a manifest's real shape.
     import tempfile
