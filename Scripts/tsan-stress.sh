@@ -163,14 +163,43 @@ CXX=$(xcrun --find clang++)
 apply_patches() {
     # Same idempotent loop as build-occt.sh: carried patches must be in the
     # instrumented kernel too, otherwise the gate re-reports every fixed race.
+    #
+    # The patches are a stack and a later one may rewrite lines an earlier one added (0055
+    # corrects 0050 and 0051, #3010), so on a tree that carries the stack the earlier patch fails
+    # BOTH checks below. build-occt.sh carries it when a LATER patch touching one of its files
+    # reverse-checks clean; this loop did not, and stopped at 0050 on a fully patched tree.
+    local -a patches
+    patches=("$SCRIPT_DIR"/patches/*.patch)
+    patch_files() { git -C "$SRC_DIR" apply --numstat "$1" | cut -f3; }
+    superseded_by_applied_patch() {
+        local p=$1 q f
+        local -a files
+        # A read loop and not `mapfile`: this script runs under macOS's /bin/bash 3.2, which has no
+        # mapfile, and `set -u` there treats an empty array as unbound.
+        files=()
+        while IFS= read -r f; do files+=("$f"); done < <(patch_files "$p")
+        for q in "${patches[@]}"; do
+            [[ "$q" > "$p" ]] || continue
+            for f in ${files[@]+"${files[@]}"}; do
+                if patch_files "$q" | grep -qxF -- "$f" &&
+                   git -C "$SRC_DIR" apply --reverse --check "$q" 2>/dev/null; then
+                    echo "$(basename "$q")"
+                    return 0
+                fi
+            done
+        done
+        return 1
+    }
     if compgen -G "$SCRIPT_DIR/patches/*.patch" > /dev/null; then
         echo ">>> Applying carried OCCT patches to occt-src..."
-        for p in "$SCRIPT_DIR"/patches/*.patch; do
+        for p in "${patches[@]}"; do
             if git -C "$SRC_DIR" apply --reverse --check "$p" 2>/dev/null; then
                 echo "    already applied: $(basename "$p")"
             elif git -C "$SRC_DIR" apply --check "$p" 2>/dev/null; then
                 git -C "$SRC_DIR" apply "$p"
                 echo "    applied: $(basename "$p")"
+            elif by=$(superseded_by_applied_patch "$p"); then
+                echo "    already applied (rewritten by $by): $(basename "$p")"
             else
                 echo "    ERROR: cannot apply $(basename "$p") cleanly" >&2
                 exit 1
