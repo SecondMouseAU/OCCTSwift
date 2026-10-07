@@ -111,18 +111,15 @@ struct Issue3039BRepLibPlaneFirstUseTests {
 
     /// Fresh processes never see a wrong vertex or die.
     ///
-    /// Gated on `OCCTSWIFT_LOCAL=1`, the way `Issue3003OffsetOrderTests` is: the fix is carried patch
-    /// `0056`, which the pinned asset does not carry, and `ci.yml`'s `build-and-test` resolves that
-    /// asset. `kernel-integration.yml` builds the patches from source with `OCCTSWIFT_LOCAL=1`, which
-    /// is where this runs. A skipped test and a passing one both report green, so the per-test line
-    /// in the log is the only signal: read `started`, not `skipped`.
+    /// This was gated on `OCCTSWIFT_LOCAL=1` while the fix, carried patch `0056`, was missing from
+    /// the pinned asset, so `ci.yml`'s `build-and-test` skipped it on every default run. The repin
+    /// to `v4.0.0-kernel.5` put `0056` in the pinned asset, and a gate that outlives its fix leaves
+    /// the test skipped, which is the one outcome a test cannot recover from (#2983, and the same
+    /// disposition `StressBuilderLifecycleTests`' `0027` test got at the `kernel.4` repin).
     ///
     /// Unpatched, 7, 6 and 12 of 64 children failed in three runs (one by SIGSEGV), and patched 0 of
     /// 256, so a run of this test misses the defect with probability well under 1%.
-    @Test(
-        .enabled(
-            if: ProcessInfo.processInfo.environment["OCCTSWIFT_LOCAL"] == "1"
-                && !Issue3039BRepLibPlaneFirstUseTests.isChild))
+    @Test(.enabled(if: !Issue3039BRepLibPlaneFirstUseTests.isChild))
     func freshProcessesNeverSeeAWrongVertex() throws {
         var arguments = Array(CommandLine.arguments.dropFirst())
         var kept: [String] = []
