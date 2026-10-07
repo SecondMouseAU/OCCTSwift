@@ -16,7 +16,7 @@ every number about the list is written down.
 
 ## How many there are
 
-Eighteen gates, seven censuses and one merge-history audit run in `ci.yml`'s `gate-scripts` job,
+Eighteen gates, eight censuses and one merge-history audit run in `ci.yml`'s `gate-scripts` job,
 beside the release check that "The fourth kind" below counts apart from them. Every one of those
 numbers is derived from the job rather than kept by hand:
 `Scripts/check-inventory-prose.py` reads this sentence against `ci.yml` on every PR and fails when
@@ -88,7 +88,7 @@ human to adjudicate, not a verdict on the tree; CI runs only its `--self-test`, 
 could never fail and so could never signal. A census that earns a better false-positive number is
 promoted by renaming it `check-` and making it exit 1; the decision is separate from the script.
 
-The seven censuses today and what each is for:
+The eight censuses today and what each is for:
 
 - `census-unmeasured-values.py` (#726): values returned as measurements that were never computed.
   A bare run is the slowest of the five, because sub-kind 4 walks a taint fixpoint per bridge
@@ -264,6 +264,39 @@ and flags a sentence calling a pinned patch not-yet-pinned. Three properties are
   patch must rewrite what called it unpinned in the same PR. A sentence kept as history is written
   in the past tense or carries `pin-state-exempt: <reason>`. It is part of
   `check-inventory-prose.py`, not a new script, so the gate and census counts above did not move.
+
+**The half that names a kernel, and not a patch, is a census: `census-stale-kernel-prose.py`
+(#3056).** A repin also leaves "the pin below is now `v4.0.0-kernel.3`", "the asset holds
+thirty-one" beside a derived thirty-nine, and "`v4.0.0-beta.4` | not cut" for a tag that exists. None
+of those names a patch, so the tense check cannot resolve them. The census derives the pin from
+`Package.swift`'s `url:`, the counts from the pin enumeration and `Scripts/patches/`, and the cut
+betas from `git tag -l`, and reports three shapes (K1 older tag as current, K2 a count the tree
+contradicts, K3 a beta called not cut). Three things are worth copying:
+
+- **The anchor was chosen by measuring the false-positive rate, not by argument.** The issue
+  expected about 25 legitimate "measured on kernel.2" sentences; there are 126 sentences naming an
+  older tag across 2,051 prose files, 124 of them correct history (main at `b4db0bf50`,
+  2026-10-07). Flagging every older tag is 98% false. Requiring "pinned" or "now" anywhere in the
+  sentence is 64 false of 66, because "pinned from `kernel.3`, so it is now a measurement" and a
+  parenthesised history beside the current tag both qualify. An explicit historical marker is 124
+  annotations before it is quiet. The shipped rule needs words ADJACENT to the tag (`Package.swift
+  pins <tag>`, `is now <tag>`, `native is on <tag>`, `will publish <tag>`, `the pinned <tag>`) and
+  lets a record word ("measured", "from", "was") silence only the weak ones: 5 findings, 2 stale
+  and 3 history. `--measure` reprints the three counts, so the choice can be re-checked after a
+  repin. `kernel-prose-exempt:` is the escape for a sentence that is deliberate history.
+- **It was replayed against the answer key.** #3054's diff is the list of what was wrong. On the
+  tree just before it (`git show 3054^`, and `0a814de19`, which reads the same), the census reports
+  17 findings, and 11 of them are exactly the places #3054 rewrote: 11 of the 15 kernel-tag and
+  count hunks. The 4 it misses name no tag and no beta ("now yields a different checksum from the
+  pinned asset", "the asset holds `TrimInfinite(...)`" about a tag it never names, "over 79"
+  modified files) or are a bare "Survey the 30 carried patches", a K2 shape that hits 6 sentences on
+  the live tree, none stale, and was rejected on that measurement. The other 6 findings were left
+  standing by #3054 and are still there after it: 3 rows that are stale (in 2 sentences) and 3 that
+  are history. On the tree after #3054 it is quiet except for those 6.
+- **It is a census, so the residue is the output.** The 3 history sentences are patch README
+  "Pin consequence" lines written when `v2.0.0-kernel.1` WAS the pin, and one `v2.0.0` plan
+  sentence. Rewriting them erases a record and leaving them misleads, which is the reading a gate
+  cannot make. Per the rule above only its `--self-test` runs in `ci.yml`.
 
 **One gate holds the bridge to the kernel's protocol rather than to a convention of this repo.**
 `check-transient-release-idiom.py` (#2974) reads every function in `Sources/OCCTBridge/src/*.mm`
@@ -621,7 +654,7 @@ build was on disk.
 
 ## Every detector proves it is not blind
 
-Seventeen of the eighteen gates, all seven censuses, the merge-history audit and the release check
+Seventeen of the eighteen gates, all eight censuses, the merge-history audit and the release check
 take `--self-test`, a fixture battery proving the *detector* catches each failure mode. Run it
 whenever you change one of these scripts. Three gate scripts were confidently wrong while
 reporting all clear (#618, #624/#630, #626), and a detector reporting "all clear" because it is
@@ -731,7 +764,7 @@ change to the ruleset.
 
 ## The pre-commit hook
 
-`Scripts/git-hooks/pre-commit` runs forty-four of `gate-scripts`' forty-five invocations, flag for
+`Scripts/git-hooks/pre-commit` runs forty-four of `gate-scripts`' forty-six invocations, flag for
 flag. The one it omits is `check-changelog-transcription.py`'s real run, which answers a question
 about the branch rather than about the commit being made; its `--self-test` does run. That is the
 only deliberate divergence, and it is written here because an undocumented difference between the

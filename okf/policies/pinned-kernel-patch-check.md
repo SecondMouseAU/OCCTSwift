@@ -235,10 +235,31 @@ It also retires whatever bridge-side mitigation was covering for a patch the new
 into a refusal, and its own tests cannot signal it, because they assert the refusal.
 
 **It then rewrites the prose that described the kernel before it** (#3056). #3031 pinned eight
-patches, and about thirty sentences across ten files went on saying "NOT built", "not pinned" or "to
-be deleted when this is pinned" until #3054 found them by hand; a checklist written in a patch's own
-README entry missed two of its four items. Run `python3 Scripts/check-inventory-prose.py` after the
-`Package.swift` pin and read its "REPORT" section: it lists every sentence that resolves to a patch
-now pinned and still calls it not-yet-pinned. It cannot see a sentence that names no patch, so also
-search for the old kernel tag and the old patch count, and for any comment explaining a bridge
-mitigation the repin retired.
+patches, and about thirty sentences across ten files went on saying "NOT built", "not pinned", "to
+be deleted when this is pinned", "the pin below is now `v4.0.0-kernel.3`" or "`v4.0.0-beta.4` | not
+cut" until #3054 found them by hand; a checklist written in a patch's own README entry missed two
+of its four items, and review found one more after #3054. Three steps, in this order, in the repin
+PR itself:
+
+1. **Read the tense check.** `python3 Scripts/check-inventory-prose.py`: it lists every sentence
+   that resolves to a patch now pinned and still calls it not-yet-pinned. It cannot see a sentence
+   that names no patch.
+2. **Read the kernel-tag census.** `python3 Scripts/census-stale-kernel-prose.py`: K1 is a
+   `v4.0.0-kernel.N` older than the new pin written as the current one, K2 a patch count for the
+   pinned asset or `Scripts/patches/` that the tree contradicts, K3 a beta called "not cut" (or
+   "Cut `v4.0.0-beta.N`") whose tag exists. It is a census with a known residue of sentences that are
+   stale but historical, so each finding is read, and a sentence that is deliberate history takes
+   `kernel-prose-exempt: <reason>`. It cannot see a sentence that names no tag, count or beta.
+3. **Grep for what neither can see**, with the old tag and the old counts as words and numerals:
+
+   ```bash
+   git grep -nE "NOT built|not (yet )?pinned|until (it|this) is pinned|when (it|this) is pinned|still in the pinned (kernel|asset)" -- . ':!docs/CHANGELOG.md' ':!Scripts/repro'
+   git grep -nE "kernel\.<old K>\b|<old count in words>|<old count as a number> patches" -- . ':!docs/CHANGELOG.md' ':!Scripts/repro'
+   ```
+
+   Then read every comment that explains a bridge mitigation the repin retired (the list above), and
+   `docs/v4.0.0-plan.md`'s release table, which names the next tag and the next beta.
+
+A sentence that is history stays, and says so in its tense ("was unpinned until `v4.0.0-kernel.4`",
+"measured on `kernel.2`"); the checks read that tense, so writing it correctly is also what silences
+them.
