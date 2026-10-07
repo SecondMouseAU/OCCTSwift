@@ -864,7 +864,10 @@ OCCTShapeRef OCCTShapeCreateRevolutionFromCurve(OCCTCurve3DRef meridian,
                                                 double         axDZ,
                                                 double         angle)
 {
-  if (!meridian || meridian->curve.IsNull())
+  // #3100, #3113: a NaN or infinite angle, a non-finite origin or a NaN, infinite, zero or
+  // overflowing direction is not a revolution.
+  if (!meridian || meridian->curve.IsNull() || !occtIsUsableAngle(angle)
+      || !occtIsUsableAxis(axOX, axOY, axOZ, axDX, axDY, axDZ))
     return nullptr;
   try
   {
@@ -994,7 +997,9 @@ OCCTShapeRef OCCTShapeExtrudeSemiInfinite(OCCTShapeRef profile,
                                           double       dirZ,
                                           bool         semiInfinite)
 {
-  if (!occtShapeIsPresent(profile))
+  // #3100: a NaN, infinite, zero or overflowing direction builds a shape whose first validity
+  // check never returns.
+  if (!occtShapeIsPresent(profile) || !occtIsUsableVector(dirX, dirY, dirZ))
     return nullptr;
   try
   {
@@ -1482,7 +1487,10 @@ OCCTShapeRef OCCTShapeCreateRevolution(OCCTWireRef profile,
                                        double      dirZ,
                                        double      angle)
 {
-  if (!occtShapeIsPresent(profile))
+  // #3100, #3113: a NaN or infinite angle, a non-finite origin or a NaN, infinite, zero or
+  // overflowing direction is refused (an infinite angle never returned from BRepSweep_Revol).
+  if (!occtShapeIsPresent(profile) || !occtIsUsableAngle(angle)
+      || !occtIsUsableAxis(axisX, axisY, axisZ, dirX, dirY, dirZ))
     return nullptr;
   occtEnsureSignals();
   try
@@ -1511,7 +1519,8 @@ OCCTShapeRef OCCTShapeCreateExtrusionInfinite(OCCTShapeRef shape,
                                               double       dirZ,
                                               bool         infinite)
 {
-  if (!occtShapeIsPresent(shape))
+  // #3100: see OCCTShapeExtrudeSemiInfinite.
+  if (!occtShapeIsPresent(shape) || !occtIsUsableVector(dirX, dirY, dirZ))
     return nullptr;
   try
   {
@@ -1531,7 +1540,9 @@ OCCTShapeRef OCCTShapeCreateExtrusionInfinite(OCCTShapeRef shape,
 
 OCCTShapeRef OCCTShapeCreateExtrusionShape(OCCTShapeRef shape, double dx, double dy, double dz)
 {
-  if (!occtShapeIsPresent(shape))
+  // #3100: a zero, NaN, infinite or under/overflowing vector builds a shape whose first validity
+  // check never returns.
+  if (!occtShapeIsPresent(shape) || !occtIsUsableVector(dx, dy, dz))
     return nullptr;
   occtEnsureSignals();
   try
@@ -1563,7 +1574,8 @@ OCCTShapeRef OCCTShapeCreateRevolutionFull(OCCTShapeRef shape,
                                            double       dirY,
                                            double       dirZ)
 {
-  if (!occtShapeIsPresent(shape))
+  // #3113: a NaN, infinite, zero or overflowing axis is not a revolution axis.
+  if (!occtShapeIsPresent(shape) || !occtIsUsableAxis(axisX, axisY, axisZ, dirX, dirY, dirZ))
     return nullptr;
   try
   {
@@ -1590,7 +1602,10 @@ OCCTShapeRef OCCTShapeCreateRevolutionPartial(OCCTShapeRef shape,
                                               double       dirZ,
                                               double       angle)
 {
-  if (!occtShapeIsPresent(shape))
+  // #3100, #3113: a NaN or infinite angle, a non-finite origin or a NaN, infinite, zero or
+  // overflowing direction is refused.
+  if (!occtShapeIsPresent(shape) || !occtIsUsableAngle(angle)
+      || !occtIsUsableAxis(axisX, axisY, axisZ, dirX, dirY, dirZ))
     return nullptr;
   try
   {

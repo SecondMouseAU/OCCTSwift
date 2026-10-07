@@ -515,7 +515,14 @@ extension Shape {
     ///   - axisOrigin: Origin point of the revolution axis
     ///   - axisDirection: Direction of the revolution axis
     ///   - angle: Revolution angle in radians (default: full revolution)
-    /// - Returns: Revolved shape, or nil on failure
+    /// - Returns: Revolved shape, or nil on failure, including a NaN or infinite `angle` (a NaN
+    ///   angle used to answer an invalid solid, #3100) and a NaN or infinite component of `axisOrigin`, or an `axisDirection` that is NaN, infinite, zero or overflowing (#3113).
+    ///
+    /// ```swift
+    /// let line = Curve3D.segment(from: SIMD3(5, 0, 0), to: SIMD3(5, 0, 10))!
+    /// print(Shape.revolution(meridian: line) != nil)  // true
+    /// print(Shape.revolution(meridian: line, angle: .nan) == nil)  // true
+    /// ```
     public static func revolution(
         meridian: Curve3D,
         axisOrigin: SIMD3<Double> = .zero,
@@ -570,9 +577,26 @@ extension Shape {
     ///   - sketchFaceIndex: 0-based index of the face on which the profile sits
     ///   - axisOrigin: Origin of the revolution axis
     ///   - axisDirection: Direction of the revolution axis
-    ///   - angle: Revolution angle in degrees
+    ///   - angle: Revolution angle in degrees; a NaN or infinite angle is refused
     ///   - fuse: true to add material (boss), false to cut (pocket)
-    /// - Returns: Shape with revolved feature, or nil on failure
+    /// - Returns: Shape with revolved feature, or nil on failure, including a NaN or infinite
+    ///   `angle`, which used to never return (#3100), and a NaN or infinite component of `axisOrigin`, or an `axisDirection` that is NaN, infinite, zero or overflowing (#3113). Any finite angle,
+    ///   `0` and `360` included, is passed to OCCT unchanged.
+    ///
+    /// ```swift
+    /// let base = Shape.box(width: 20, height: 20, depth: 20)!
+    /// let rib = Wire.polygon3D([
+    ///     SIMD3(3, 0, 10), SIMD3(6, 0, 10), SIMD3(6, 0, 12), SIMD3(3, 0, 12),
+    /// ])!
+    /// let axis = SIMD3<Double>(0, 0, 1)
+    /// let ok = base.addingRevolvedFeature(
+    ///     profile: rib, sketchFaceIndex: 4, axisOrigin: SIMD3(0, 0, 10), axisDirection: axis)
+    /// print(ok != nil)  // true
+    /// let bad = base.addingRevolvedFeature(
+    ///     profile: rib, sketchFaceIndex: 4, axisOrigin: SIMD3(0, 0, 10), axisDirection: axis,
+    ///     angle: .nan)
+    /// print(bad == nil)  // true
+    /// ```
     public func addingRevolvedFeature(
         profile: Wire, sketchFaceIndex: Int,
         axisOrigin: SIMD3<Double>,
@@ -599,7 +623,23 @@ extension Shape {
     ///   - axisOrigin: Origin of the revolution axis
     ///   - axisDirection: Direction of the revolution axis
     ///   - fuse: true to add material, false to cut
-    /// - Returns: Shape with revolved feature, or nil on failure
+    /// - Returns: Shape with revolved feature, or nil on failure, including a NaN or infinite component of `axisOrigin`, or an `axisDirection` that is NaN, infinite, zero or overflowing. Such an axis
+    ///   used to hand back the original shape, a silent no-op reported as success (#3113).
+    ///
+    /// ```swift
+    /// let base = Shape.box(width: 20, height: 20, depth: 20)!
+    /// let rib = Wire.polygon3D([
+    ///     SIMD3(3, 0, 10), SIMD3(6, 0, 10), SIMD3(6, 0, 12), SIMD3(3, 0, 12),
+    /// ])!
+    /// let cut = base.addingRevolvedFeatureThruAll(
+    ///     profile: rib, sketchFaceIndex: 4, axisOrigin: SIMD3(0, 0, 10),
+    ///     axisDirection: SIMD3(0, 0, 1), fuse: false)
+    /// print(cut != nil)  // true
+    /// let bad = base.addingRevolvedFeatureThruAll(
+    ///     profile: rib, sketchFaceIndex: 4, axisOrigin: SIMD3(0, 0, 10),
+    ///     axisDirection: SIMD3(.nan, 0, 1), fuse: false)
+    /// print(bad == nil)  // true
+    /// ```
     public func addingRevolvedFeatureThruAll(
         profile: Wire, sketchFaceIndex: Int,
         axisOrigin: SIMD3<Double>,
@@ -688,7 +728,14 @@ extension Shape {
     ///   - axisOrigin: Origin point of the rotation axis
     ///   - axisDirection: Direction of the rotation axis
     ///   - angle: Rotation angle in radians
-    /// - Returns: Revolved shape, or nil on failure
+    /// - Returns: Revolved shape, or nil on failure, including a NaN or infinite `angle` and a NaN or infinite component of `axisOrigin`, or an `axisDirection` that is NaN, infinite, zero or overflowing; an infinite angle or a NaN axis never returned (#3100, #3113).
+    ///
+    /// ```swift
+    /// let face = Shape.face(from: Wire.rectangle(width: 2, height: 2)!)!
+    /// let bad = face.localRevolution(
+    ///     axisOrigin: SIMD3(30, 0, 0), axisDirection: SIMD3(0, 0, 1), angle: .infinity)
+    /// print(bad == nil)  // true
+    /// ```
     public func localRevolution(
         axisOrigin: SIMD3<Double>,
         axisDirection: SIMD3<Double>,
@@ -713,7 +760,16 @@ extension Shape {
     ///   - axisDirection: Direction of the rotation axis
     ///   - angle: Rotation angle in radians
     ///   - angularOffset: Angular offset for positioning in radians
-    /// - Returns: Revolved shape, or nil on failure
+    /// - Returns: Revolved shape, or nil on failure, including a NaN or infinite `angle` or
+    ///   `angularOffset` and a NaN or infinite component of `axisOrigin`, or an `axisDirection` that is NaN, infinite, zero or overflowing (#3100, #3113).
+    ///
+    /// ```swift
+    /// let face = Shape.face(from: Wire.rectangle(width: 2, height: 2)!)!
+    /// let bad = face.localRevolution(
+    ///     axisOrigin: SIMD3(30, 0, 0), axisDirection: SIMD3(0, 0, 1), angle: .infinity,
+    ///     angularOffset: 0.1)
+    /// print(bad == nil)  // true
+    /// ```
     public func localRevolution(
         axisOrigin: SIMD3<Double>,
         axisDirection: SIMD3<Double>,
@@ -818,7 +874,15 @@ extension Shape {
     ///   - axisOrigin: Origin point of the rotation axis
     ///   - axisDirection: Direction of the rotation axis
     ///   - angle: Rotation angle in radians
-    /// - Returns: The revolved shape, or nil on failure
+    /// - Returns: The revolved shape, or nil on failure, including a NaN or infinite `angle` and
+    ///   a NaN or infinite component of `axisOrigin`, or an `axisDirection` that is NaN, infinite, zero or overflowing (#3100, #3113).
+    ///
+    /// ```swift
+    /// let face = Shape.face(from: Wire.rectangle(width: 2, height: 2)!)!
+    /// let bad = face.localRevolutionForm(
+    ///     axisOrigin: SIMD3(30, 0, 0), axisDirection: SIMD3(0, 0, 1), angle: .infinity)
+    /// print(bad == nil)  // true
+    /// ```
     public func localRevolutionForm(
         axisOrigin: SIMD3<Double>,
         axisDirection: SIMD3<Double>,
