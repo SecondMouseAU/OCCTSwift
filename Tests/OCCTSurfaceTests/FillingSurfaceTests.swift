@@ -71,9 +71,11 @@ struct FillingSurfaceTests {
         #expect(filling.isDone)
         // The boundary square sits at x = -5, so (5, 5, 3) is 10 off its plane: the constraint
         // pulls the surface out to an area of 1038.99, against 100 without it. (It does not reach
-        // the point: the kernel's face stays 10 from it.)
+        // the point: the kernel's face stays 10 from it.) The fill is an iterative optimisation and
+        // wasm32 lands 1.4e-5 off the macOS area, so the window is 1e-3 (1e-6 relative): far under
+        // the 939 the dropped constraint costs, far over the platform noise (the wasm job, PR #3144).
         let result = try #require(resultOpt)
-        #expect(abs((result.surfaceArea ?? 0) - 1038.9910066176521) < 1e-6)
+        #expect(abs((result.surfaceArea ?? 0) - 1038.9910066176521) < 1e-3)
     }
 
     @Test("G1 and G2 errors are available after build")
