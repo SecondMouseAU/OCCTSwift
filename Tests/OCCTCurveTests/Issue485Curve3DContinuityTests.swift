@@ -51,43 +51,36 @@ struct Issue485Curve3DContinuityTests {
 
     // MARK: - The real ordinals
 
-    @Test("Knot multiplicity drives the measured class, at GeomAbs_Shape's own ordinals")
-    func knotMultiplicityDrivesMeasuredClass() {
+    @Test("Knot multiplicity drives the measured class, at GeomAbs_Shape's own ordinal")
+    func knotMultiplicityDrivesMeasuredClass() throws {
         // The ordinals are the point: C1 is 2 and C2 is 4, not 1 and 2. The old hand-mapped
         // encoding reported 1 and 2 here, which is what made a threshold check misfire.
-        if let c2 = bspline(interiorMultiplicity: 1) {
-            #expect(c2.continuityClass == .c2)
-            #expect(c2.continuity == 4)
-        }
-        if let c1 = bspline(interiorMultiplicity: 2) {
-            #expect(c1.continuityClass == .c1)
-            #expect(c1.continuity == 2)
-        }
-        if let c0 = bspline(interiorMultiplicity: 3) {
-            #expect(c0.continuityClass == .c0)
-            #expect(c0.continuity == 0)
-        }
+        let c2 = try #require(bspline(interiorMultiplicity: 1), "the C2 fixture")
+        #expect(c2.continuityClass == .c2)
+        #expect(c2.continuity == 4)
+        let c1 = try #require(bspline(interiorMultiplicity: 2), "the C1 fixture")
+        #expect(c1.continuityClass == .c1)
+        #expect(c1.continuity == 2)
+        let c0 = try #require(bspline(interiorMultiplicity: 3), "the C0 fixture")
+        #expect(c0.continuityClass == .c0)
+        #expect(c0.continuity == 0)
     }
 
     @Test("Analytic curves report CN as ordinal 6, not 99")
-    func analyticCurvesReportCN() {
+    func analyticCurvesReportCN() throws {
         // 99 was the old encoding's CN. Nothing should produce it now.
-        if let line = Curve3D.line(through: .zero, direction: SIMD3(1, 0, 0)) {
-            #expect(line.continuityClass == .cN)
-            #expect(line.continuity == 6)
-        }
-        if let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 10) {
-            #expect(circle.continuityClass == .cN)
-            #expect(circle.continuity == 6)
-        }
+        let line = try #require(Curve3D.line(through: .zero, direction: SIMD3(1, 0, 0)))
+        #expect(line.continuityClass == .cN)
+        #expect(line.continuity == 6)
+        let circle = try #require(
+            Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 10))
+        #expect(circle.continuityClass == .cN)
+        #expect(circle.continuity == 6)
     }
 
     @Test("A G1-only curve is reachable and reports ordinal 1")
-    func g1CurveReportsOrdinalOne() {
-        guard let g1 = Self.offsetOfG1Basis() else {
-            Issue.record("could not build the G1 offset-curve fixture")
-            return
-        }
+    func g1CurveReportsOrdinalOne() throws {
+        let g1 = try #require(Self.offsetOfG1Basis(), "could not build the G1 offset-curve fixture")
         // The class the old encoding reported as -2.
         #expect(g1.continuityClass == .g1)
         #expect(g1.continuity == 1)
@@ -122,12 +115,20 @@ struct Issue485Curve3DContinuityTests {
 
     @Test("The retired encoding's sentinel values never appear")
     func retiredSentinelValuesAreGone() {
-        for curve in [
-            bspline(interiorMultiplicity: 1),
-            bspline(interiorMultiplicity: 2),
-            Curve3D.line(through: .zero, direction: SIMD3(1, 0, 0)),
-            Self.offsetOfG1Basis(),
-        ].compactMap({ $0 }) {
+        // Each fixture beside the ordinal it measures, so a fixture that failed to build is a
+        // missing row rather than a shorter loop.
+        let fixtures: [(String, Curve3D?, Int)] = [
+            ("C2 BSpline", bspline(interiorMultiplicity: 1), 4),
+            ("C1 BSpline", bspline(interiorMultiplicity: 2), 2),
+            ("line", Curve3D.line(through: .zero, direction: SIMD3(1, 0, 0)), 6),
+            ("G1 offset", Self.offsetOfG1Basis(), 1),
+        ]
+        for (name, curve, ordinal) in fixtures {
+            guard let curve else {
+                Issue.record("\(name) fixture did not build")
+                continue
+            }
+            #expect(curve.continuity == ordinal, "\(name)")
             #expect(curve.continuity != 99)  // was CN
             #expect(curve.continuity != -2)  // was G1
             #expect(curve.continuity != -3)  // was G2

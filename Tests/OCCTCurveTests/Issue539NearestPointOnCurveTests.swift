@@ -253,10 +253,19 @@ struct Issue539NearestPointOnCurveTests {
     func everyEdgeWithACurveAnswers() throws {
         let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let probe = SIMD3<Double>(100, 100, 100)
-        for edge in box.edges() {
-            let projected = edge.project(point: probe)
-            #expect(projected != nil)
-            if let projected { #expect(projected.distance > 0) }
+        let edges = box.edges()
+        #expect(edges.count == 12, "a box has twelve edges")
+        for edge in edges {
+            let ends = edge.endpoints
+            // The second route: the closest point of the segment between the edge's own end
+            // points, clamped to it, which is the whole edge for a straight one. All three
+            // coordinates of the probe are past every edge, so the answer is an end point.
+            let axis = ends.end - ends.start
+            let t = max(0, min(1, simd_dot(probe - ends.start, axis) / simd_dot(axis, axis)))
+            let closest = ends.start + t * axis
+            let projected = try #require(edge.project(point: probe), "edge \(ends)")
+            #expect(abs(projected.distance - simd_distance(probe, closest)) < 1e-9, "\(ends)")
+            #expect(simd_distance(projected.point, closest) < 1e-9, "\(ends)")
         }
     }
 }
