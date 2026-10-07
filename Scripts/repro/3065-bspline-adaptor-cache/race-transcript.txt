@@ -1,0 +1,8 @@
+stock    shared  runs=100 abnormal(crash/hang)=3 [-5, -6, -6] runs_with_wrong_points=97/97 wrong_per_run min/median/max=76761/155575/159979 of 160000
+stock    copy    runs=100 abnormal(crash/hang)=0  runs_with_wrong_points=0/100 wrong_per_run min/median/max=0/0.0/0 of 160000
+patched  shared  runs=100 abnormal(crash/hang)=0  runs_with_wrong_points=0/100 wrong_per_run min/median/max=0/0.0/0 of 160000
+patched  copy    runs=100 abnormal(crash/hang)=0  runs_with_wrong_points=0/100 wrong_per_run min/median/max=0/0.0/0 of 160000
+
+real	0m21.082s
+user	0m39.230s
+sys	0m42.732s

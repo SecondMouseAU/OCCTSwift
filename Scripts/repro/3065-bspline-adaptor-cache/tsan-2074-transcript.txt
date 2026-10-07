@@ -1,0 +1,14 @@
+./run.sh tsan, then each mode run as: TSAN_OPTIONS=halt_on_error=0 <variant>/tsan/stress <mode> 8 40
+stock = vanilla V8_0_1 sources of the four adaptor TUs, compiled with their own headers (no 0031)
+patched = the same with Scripts/patches/0031 applied
+stock    curve_independent          rc=0 races=0
+stock    curve_shared_geometry      rc=0 races=0
+stock    curve_shared_adaptor       rc=-6 races=15 (BSplCLib_Cache::BuildCache, D0Local, BSplCLib_CacheParams::IsCacheValid, BSplCLib::Hunt)
+stock    surface_shared_geometry    rc=0 races=0
+stock    surface_shared_adaptor     rc=-6 races=25 (BSplSLib::BuildCache, BSplCLib_CacheParams::*)
+patched  curve_independent          rc=0 races=0
+patched  curve_shared_geometry      rc=0 races=0
+patched  curve_shared_adaptor       rc=0 races=0
+patched  surface_shared_geometry    rc=0 races=0
+patched  surface_shared_adaptor     rc=0 races=0
+stock, 5 further runs each of curve_independent, curve_shared_geometry, surface_independent, surface_shared_geometry: 20/20 rc=0 races=0

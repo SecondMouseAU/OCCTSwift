@@ -1,0 +1,5 @@
+     FAIL (exit 134, 3 race warnings): occt_1157_stress.step_write_independent_8_20__tmp_occt-tsan-scratch.wHThnC.log
+     FAIL (exit 134, 3 race warnings): occt_1157_stress.step_read_independent_8_20__tmp_occt-tsan-scratch.wHThnC.log
+     FAIL (exit 134, 43 race warnings): occt_1157_stress.iges_read_independent_8_20__tmp_occt-tsan-scratch.wHThnC.log
+     FAIL (exit 134, 27 race warnings): occt_1157_stress.mixed_step_iges_independent_8_20__tmp_occt-tsan-scratch.wHThnC.log
+>>> TSan gate: 27/31 scenarios clean
