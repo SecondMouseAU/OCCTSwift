@@ -19,8 +19,8 @@
 // thread index. A harness whose threads all evaluate the same span would find nothing here however
 // many threads it ran, because the cache would never need rebuilding.
 //
-// GATE MEMBERSHIP. Only the *_independent and *_shared_geometry modes belong in
-// Scripts/tsan-stress.sh's SCENARIOS. The *_shared_adaptor modes are adversarial by construction,
+// GATE MEMBERSHIP. Only the *_independent, *_shared_geometry and *_shallow_copy_per_thread modes
+// belong in Scripts/tsan-stress.sh's SCENARIOS. The *_shared_adaptor modes are adversarial by construction,
 // the same shape as #341's shared_adaptor_cache and the cross_talk_schema_* modes that the POLICY
 // block in that script excludes: one GeomAdaptor_Curve handed to eight threads races by design,
 // and gating on it would be gating on a usage the API does not offer.
@@ -35,6 +35,10 @@
 #include <vector>
 
 #include <BSplCLib.hxx>
+#include <Adaptor3d_Curve.hxx>
+#include <Adaptor3d_Surface.hxx>
+#include <BRepAdaptor_Curve.hxx>
+#include <BRepBuilderAPI_MakeEdge.hxx>
 #include <Geom_BSplineCurve.hxx>
 #include <Geom_BSplineSurface.hxx>
 #include <GeomAdaptor_Curve.hxx>
@@ -160,6 +164,51 @@ static void runSurfaceSharedGeometry(int tid, int iterations) {
     }
 }
 
+// #3065, the pattern the kernel's maintainer says an adaptor is designed for: ONE adaptor is built,
+// and every worker takes its own ShallowCopy() of it, which drops the evaluation cache so each copy
+// builds and owns a private one (Open-Cascade-SAS/OCCT#1554's review; GeomLib_CheckCurveOnSurface
+// does exactly this per worker). Unlike the modes above, the source adaptor here is SHARED between
+// threads, and each thread both copies from it and evaluates its copy, so a copy that leaked the
+// source's cache would show up as a TSan report and as a wrong point.
+//
+// Every mode checks the value against the geometry's own evaluator (Geom_BSplineCurve::Value and
+// Geom_BSplineSurface::Value read poles and knots directly and own no cache), because a harness
+// that only looks for NaN cannot see the failure 0031 exists for, which is a plausible point from
+// the wrong span. gErrors counts every mismatch.
+static GeomAdaptor_Curve* gCopySourceCurve = nullptr;
+static BRepAdaptor_Curve* gCopySourceEdge = nullptr;
+static GeomAdaptor_Surface* gCopySourceSurface = nullptr;
+
+static bool samePoint(const gp_Pnt& a, const gp_Pnt& b) { return a.Distance(b) <= 1.0e-9; }
+
+static void runCurveShallowCopyPerThread(int tid, int iterations) {
+    Handle(Adaptor3d_Curve) own = gCopySourceCurve->ShallowCopy();
+    for (int k = 0; k < iterations; ++k) {
+        const double u = spanParam(tid, k, own->FirstParameter(), own->LastParameter(), 9);
+        if (!samePoint(own->Value(u), gSharedCurve->Value(u))) ++gErrors;
+        ++gOps;
+    }
+}
+
+static void runEdgeShallowCopyPerThread(int tid, int iterations) {
+    Handle(Adaptor3d_Curve) own = gCopySourceEdge->ShallowCopy();
+    for (int k = 0; k < iterations; ++k) {
+        const double u = spanParam(tid, k, own->FirstParameter(), own->LastParameter(), 9);
+        if (!samePoint(own->Value(u), gSharedCurve->Value(u))) ++gErrors;
+        ++gOps;
+    }
+}
+
+static void runSurfaceShallowCopyPerThread(int tid, int iterations) {
+    Handle(Adaptor3d_Surface) own = gCopySourceSurface->ShallowCopy();
+    for (int k = 0; k < iterations; ++k) {
+        const double u = spanParam(tid, k, own->FirstUParameter(), own->LastUParameter(), 7);
+        const double v = spanParam(tid, k + 1, own->FirstVParameter(), own->LastVParameter(), 7);
+        if (!samePoint(own->Value(u, v), gSharedSurface->Value(u, v))) ++gErrors;
+        ++gOps;
+    }
+}
+
 // ADVERSARIAL, excluded from the gate. One adaptor, and therefore one cache, for every thread.
 // This is 0031's own reproduction shape and races by construction.
 static GeomAdaptor_Curve* gSharedCurveAdaptor = nullptr;
@@ -205,11 +254,28 @@ static void setupSharedSurfaceAdaptor() {
     gSharedSurfaceAdaptor = new GeomAdaptor_Surface(gSharedSurface);
 }
 
+static void setupCopySourceCurve() {
+    gSharedCurve = makeMultiSpanCurve();
+    gCopySourceCurve = new GeomAdaptor_Curve(gSharedCurve);
+}
+static void setupCopySourceEdge() {
+    gSharedCurve = makeMultiSpanCurve();
+    gCopySourceEdge = new BRepAdaptor_Curve(BRepBuilderAPI_MakeEdge(gSharedCurve).Edge());
+}
+static void setupCopySourceSurface() {
+    gSharedSurface = makeMultiSpanSurface();
+    gCopySourceSurface = new GeomAdaptor_Surface(gSharedSurface);
+}
+
 static Scenario SCENARIOS[] = {
     {"curve_independent", runCurveIndependent, nullptr},
     {"surface_independent", runSurfaceIndependent, nullptr},
     {"curve_shared_geometry", runCurveSharedGeometry, setupSharedCurve},
     {"surface_shared_geometry", runSurfaceSharedGeometry, setupSharedSurface},
+    // #3065: one shared adaptor, a ShallowCopy() per thread. In the gate.
+    {"curve_shallow_copy_per_thread", runCurveShallowCopyPerThread, setupCopySourceCurve},
+    {"edge_shallow_copy_per_thread", runEdgeShallowCopyPerThread, setupCopySourceEdge},
+    {"surface_shallow_copy_per_thread", runSurfaceShallowCopyPerThread, setupCopySourceSurface},
     // Adversarial, not for the gate.
     {"curve_shared_adaptor", runCurveSharedAdaptor, setupSharedCurveAdaptor},
     {"surface_shared_adaptor", runSurfaceSharedAdaptor, setupSharedSurfaceAdaptor},

@@ -137,6 +137,14 @@ SCENARIOS=(
   "2074-adaptor-evaluation/occt_2074_stress.cpp|surface_independent 8 40"
   "2074-adaptor-evaluation/occt_2074_stress.cpp|curve_shared_geometry 8 40"
   "2074-adaptor-evaluation/occt_2074_stress.cpp|surface_shared_geometry 8 40"
+  # #3065: the pattern the kernel's maintainer says an adaptor is designed for, ONE adaptor with a
+  # ShallowCopy() per thread, which is also what carried patch 0031 lets us stop depending on. Each
+  # thread copies from the shared source and checks every point against the geometry's own
+  # evaluator, so a copy that leaked the source's cache fails as a wrong point and not only as a
+  # race. The *_shared_adaptor modes stay out: sharing the adaptor itself is the unsupported shape.
+  "2074-adaptor-evaluation/occt_2074_stress.cpp|curve_shallow_copy_per_thread 8 40"
+  "2074-adaptor-evaluation/occt_2074_stress.cpp|edge_shallow_copy_per_thread 8 40"
+  "2074-adaptor-evaluation/occt_2074_stress.cpp|surface_shallow_copy_per_thread 8 40"
 
   # #2075, BRepGraph. Exploratory: no known defect, ranked second for that reason. The structural
   # read agreed with the measurement before it ran, which is worth recording because it rarely
