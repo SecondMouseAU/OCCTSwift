@@ -36,7 +36,9 @@ public final class SharedLibrary: @unchecked Sendable {
         OCCTSharedLibRelease(ref)
     }
 
-    /// Open (load) the shared library. Always `false` on WASI.
+    /// Open (load) the shared library.
+    ///
+    /// Always `false` on WASI.
     @discardableResult
     public func open() -> Bool {
         OCCTSharedLibOpen(ref)

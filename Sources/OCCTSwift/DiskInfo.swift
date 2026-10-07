@@ -29,7 +29,9 @@ public enum DiskInfo {
         OCCTDiskFree(path)
     }
 
-    /// Check if a disk path is valid/accessible. Always `false` on WASI.
+    /// Check if a disk path is valid/accessible.
+    ///
+    /// Always `false` on WASI.
     public static func isValid(path: String) -> Bool {
         OCCTDiskIsValid(path)
     }
