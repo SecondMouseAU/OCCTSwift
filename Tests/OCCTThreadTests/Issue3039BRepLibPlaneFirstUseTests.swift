@@ -119,7 +119,15 @@ struct Issue3039BRepLibPlaneFirstUseTests {
     ///
     /// Unpatched, 7, 6 and 12 of 64 children failed in three runs (one by SIGSEGV), and patched 0 of
     /// 256, so a run of this test misses the defect with probability well under 1%.
-    @Test(.enabled(if: !Issue3039BRepLibPlaneFirstUseTests.isChild))
+    ///
+    /// Not under `Scripts/tsan-stress.sh swift`, which sets `TSAN_OPTIONS`: a ThreadSanitizer
+    /// build re-executed without `DYLD_INSERT_LIBRARIES` aborts in every child ("Interceptors are
+    /// not working", signal 6), so all 64 fail for a reason that is not the kernel. The test was
+    /// invisible to that gate while it was gated on `OCCTSWIFT_LOCAL=1`, and ungating it exposed it.
+    @Test(
+        .enabled(
+            if: !Issue3039BRepLibPlaneFirstUseTests.isChild
+                && ProcessInfo.processInfo.environment["TSAN_OPTIONS"] == nil))
     func freshProcessesNeverSeeAWrongVertex() throws {
         var arguments = Array(CommandLine.arguments.dropFirst())
         var kept: [String] = []
