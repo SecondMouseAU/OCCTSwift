@@ -842,7 +842,12 @@ public enum SheetMetal {
             spans.sort { $0.sLo < $1.sLo }
             var runs: [(lo: SIMD3<Double>, hi: SIMD3<Double>, sHi: Double)] = []
             for span in spans {
-                let joinTolerance = 1e-6 * max(1, abs(span.sHi))
+                // Two edges join when the next starts where the last ended, up to roundoff. The
+                // roundoff of `dot(p, seamUnit)` is a few ulps of the coordinate (about 2e-11 at
+                // 1e5), so the tolerance is a fixed 1e-9 plus 64 ulps of it. A tolerance relative
+                // to the coordinate by 1e-6 (the first version) was 1e-1 at 1e5 and merged runs a
+                // real gap apart, filling a notch that both flanges share (#3045).
+                let joinTolerance = 1e-9 + 64 * Double.ulpOfOne * abs(span.sHi)
                 if let last = runs.last, span.sLo <= last.sHi + joinTolerance {
                     if span.sHi > last.sHi {
                         runs[runs.count - 1] = (last.lo, span.hi, span.sHi)

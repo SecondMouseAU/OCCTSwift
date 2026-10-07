@@ -254,4 +254,131 @@ struct Issue3045SteppedConcaveBendTests {
             }
         }
     }
+
+    // MARK: - Runs of seam edges, and the tolerance that joins them
+
+    /// The foot under the web, both shifted by `offset`, optionally with a notch of width `gap`
+    /// cut across the seam in BOTH flanges at y in [20, 20 + gap].
+    ///
+    /// Either flange alone leaves an edge across the notch (the web's own bottom edge, or the
+    /// foot's), so the seam is interrupted only where both are cut, which is what this does. The
+    /// notch splits the seam into two runs `gap` apart. Both profiles span y in [10, 35], the
+    /// same as the seam, so nothing is split and the polygons need not be rectangles.
+    private static func notchedPair(
+        offset: SIMD3<Double>, gap: Double
+    ) -> (foot: SheetMetal.Flange, web: SheetMetal.Flange) {
+        let footProfile: [SIMD2<Double>] =
+            gap > 0
+            ? [
+                SIMD2(10, 0), SIMD2(35, 0), SIMD2(35, 30), SIMD2(20 + gap, 30),
+                SIMD2(20 + gap, 20), SIMD2(20, 20), SIMD2(20, 30), SIMD2(10, 30),
+            ]
+            : [SIMD2(10, 0), SIMD2(35, 0), SIMD2(35, 30), SIMD2(10, 30)]
+        let webProfile: [SIMD2<Double>] =
+            gap > 0
+            ? [
+                SIMD2(0, 10), SIMD2(0, 20), SIMD2(5, 20), SIMD2(5, 20 + gap),
+                SIMD2(0, 20 + gap), SIMD2(0, 35), SIMD2(20, 35), SIMD2(20, 10),
+            ]
+            : [SIMD2(0, 10), SIMD2(0, 35), SIMD2(20, 35), SIMD2(20, 10)]
+        let foot = SheetMetal.Flange(
+            id: "foot", profile: footProfile, origin: SIMD3(0, 0, 0) + offset,
+            normal: SIMD3(0, 0, -1), uAxis: SIMD3(0, 1, 0), vAxis: SIMD3(1, 0, 0))
+        let web = SheetMetal.Flange(
+            id: "web", profile: webProfile, origin: SIMD3(30, 0, 0) + offset,
+            normal: SIMD3(-1, 0, 0), uAxis: SIMD3(0, 0, 1), vAxis: SIMD3(0, 1, 0))
+        return (foot, web)
+    }
+
+    /// Two runs a real gap apart stay two, at any distance from the origin.
+    ///
+    /// The join tolerance used to be 1e-6 of the seam coordinate, so a part modelled 1e5 from the
+    /// origin merged runs up to 0.1 apart and the prism bridged the notch: +gap times the
+    /// fillet's area (0.483 at r = 1.5) per unit, 2.4e-3 for a gap of 0.005. The gaps here are
+    /// chosen just past the roundoff and well under that old tolerance.
+    @Test("two runs of seam edges a small real gap apart stay separate far from the origin")
+    func smallGapStaysSeparateFarFromTheOrigin() throws {
+        let r = 1.5
+        for (offset, gap) in [
+            (SIMD3<Double>(0, 0, 0), 0.5),
+            (SIMD3<Double>(0, 0, 0), 1e-4),
+            (SIMD3<Double>(1e4, 1e4, 0), 0.005),
+            (SIMD3<Double>(1e4, 1e4, 0), 1e-4),
+            (SIMD3<Double>(0, 1e5, 0), 0.005),
+            (SIMD3<Double>(0, 1e5, 0), 1e-4),
+        ] {
+            let (foot, web) = Self.notchedPair(offset: offset, gap: gap)
+            let builder = SheetMetal.Builder(thickness: 2)
+            let sharp = try builder.build(flanges: [foot, web])
+            let shape = try builder.build(
+                flanges: [foot, web],
+                bends: [SheetMetal.Bend(from: "web", to: "foot", radius: r)])
+            let label = "offset \(offset), gap \(gap)"
+            #expect(shape.isValid, "\(label): not a valid solid")
+            // The bend covers the foot's 25 less the notch.
+            let derived = (sharp.volume ?? -1) + (25.0 - gap) * r * r * Self.quarter
+            let v = shape.volume ?? -1
+            #expect(abs(v - derived) < 1e-6, "\(label): volume \(v) against \(derived)")
+        }
+    }
+
+    /// The fixtures of the issue, far from the origin, are the same solid.
+    @Test("a stepped concave bend is valid and exact 1e4 and 1e5 from the origin")
+    func exactFarFromTheOrigin() throws {
+        for offset in [
+            SIMD3<Double>(1e4, 1e4, 0), SIMD3<Double>(1e5, 0, 0), SIMD3<Double>(0, 1e5, 0),
+        ] {
+            let (foot, web) = Self.notchedPair(offset: offset, gap: 0)
+            let shape = try SheetMetal.Builder(thickness: 2).build(
+                flanges: [foot, web],
+                bends: [SheetMetal.Bend(from: "web", to: "foot", radius: 3)])
+            #expect(shape.isValid, "offset \(offset): not a valid solid")
+            // foot 25 x 30 x 2 and web 20 x 25 x 2, both over the seam's y in [10, 35].
+            let derived = 1500.0 + 1000.0 + 25.0 * 9.0 * Self.quarter
+            let v = shape.volume ?? -1
+            #expect(abs(v - derived) < 1e-6, "offset \(offset): volume \(v) against \(derived)")
+        }
+    }
+
+    /// Edges that touch end to end still join into one run when their coordinates carry roundoff.
+    ///
+    /// A convex lip over y in [15, 30] splits the web at 15 and 30, inside the foot's run of
+    /// [10, 35], so the concave bend's seam is three edges end to end. Far from the origin their
+    /// shared ends differ by roundoff, and they must still be one prism: the same volume as at
+    /// the origin, which is the closed form.
+    @Test("edges that touch end to end still join far from the origin")
+    func touchingEdgesJoinFarFromTheOrigin() throws {
+        let r = 1.5
+        for offset in [
+            SIMD3<Double>(0, 0, 0), SIMD3<Double>(1e4, 1e4, 0), SIMD3<Double>(0, 1e5, 0),
+        ] {
+            let foot = SheetMetal.Flange(
+                id: "foot",
+                profile: [SIMD2(10, 0), SIMD2(35, 0), SIMD2(35, 30), SIMD2(10, 30)],
+                origin: SIMD3(0, 0, 0) + offset, normal: SIMD3(0, 0, -1),
+                uAxis: SIMD3(0, 1, 0), vAxis: SIMD3(1, 0, 0))
+            let web = SheetMetal.Flange(
+                id: "web",
+                profile: [SIMD2(0, 0), SIMD2(20, 0), SIMD2(20, 45), SIMD2(0, 45)],
+                origin: SIMD3(30, 0, 0) + offset, normal: SIMD3(-1, 0, 0),
+                uAxis: SIMD3(0, 0, 1), vAxis: SIMD3(0, 1, 0))
+            let lip = SheetMetal.Flange(
+                id: "lip",
+                profile: [SIMD2(0, 15), SIMD2(30, 15), SIMD2(30, 30), SIMD2(0, 30)],
+                origin: SIMD3(30, 0, 20) + offset, normal: SIMD3(0, 0, 1),
+                uAxis: SIMD3(1, 0, 0), vAxis: SIMD3(0, 1, 0))
+            let shape = try SheetMetal.Builder(thickness: 2).build(
+                flanges: [foot, web, lip],
+                bends: [
+                    SheetMetal.Bend(from: "web", to: "foot", radius: r),
+                    SheetMetal.Bend(from: "web", to: "lip", radius: r),
+                ])
+            #expect(shape.isValid, "offset \(offset): not a valid solid")
+            // 1500 + 1800 + 30 x 15 x 2, the concave bend over the foot's 25 and the convex
+            // quarter-disc prism over the lip's 15.
+            let derived = 4200.0 + 25.0 * r * r * Self.quarter + Double.pi * 15.0
+            let v = shape.volume ?? -1
+            #expect(abs(v - derived) < 1e-6, "offset \(offset): volume \(v) against \(derived)")
+        }
+    }
 }
