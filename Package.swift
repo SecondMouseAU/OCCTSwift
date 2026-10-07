@@ -578,8 +578,8 @@ let occtTarget: Target =
         : .binaryTarget(
             name: "OCCT",
             url:
-                "https://github.com/SecondMouseAU/OCCTSwift/releases/download/v4.0.0-kernel.4/OCCT.xcframework.zip",
-            checksum: "4ebd78b698f834b34f178af36d7c1abd28d47752d38d659f59580a243b56f555"
+                "https://github.com/SecondMouseAU/OCCTSwift/releases/download/v4.0.0-kernel.5/OCCT.xcframework.zip",
+            checksum: "91688c08d55f8f7f05f4965e32679b045dfead119ceeff766bd3bd68cb5a9ca8"
         )
 
 // OCCTBridge is 16 Objective-C++ files / ~62K lines wrapping the OCCT header tree; SwiftPM recompiles
