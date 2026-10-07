@@ -1168,7 +1168,7 @@ patched header and the modified test file reports zero violations. See
 [`Scripts/repro/1154-topology-flag-race/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/1154-topology-flag-race)
 for the full writeup, transcripts and reproducer.
 
-Not yet filed upstream (override-link validated, not yet in a rebuilt xcframework).
+Filed upstream as [OCCT#1548](https://github.com/Open-Cascade-SAS/OCCT/pull/1548) against `master`, a fix PR (override-link validated, not yet in a rebuilt xcframework when written).
 
 **Retire** once the bundled OCCT includes this fix.
 
@@ -1314,7 +1314,7 @@ whole-file reformat would have swept in as noise.
 See [`Scripts/repro/1153-bspline-adaptor-cache/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/1153-bspline-adaptor-cache)
 for the full writeup, transcripts and reproducer.
 
-Not yet filed upstream (override-link validated, not yet in a rebuilt xcframework).
+Filed upstream as [OCCT#1554](https://github.com/Open-Cascade-SAS/OCCT/pull/1554) against `master`, **closed and withdrawn 2026-10-05**: the maintainer (gkv311) said the per-thread `ShallowCopy` adaptor is the intended design. Carried until the retire-or-keep decision, [#3065](https://github.com/SecondMouseAU/OCCTSwift/issues/3065).
 
 **Retire** once the bundled OCCT includes this fix.
 
@@ -1439,7 +1439,7 @@ issue's named scope.
 See [`Scripts/repro/1157-interface-static-thread-safety/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/1157-interface-static-thread-safety)
 for the reproducer, full TSan transcripts and the complete writeup.
 
-Not yet filed upstream (override-link validated, not yet in a rebuilt xcframework).
+Filed upstream as [OCCT#1553](https://github.com/Open-Cascade-SAS/OCCT/pull/1553) against `master`, a fix PR (override-link validated, not yet in a rebuilt xcframework when written).
 
 **Retire** once the bundled OCCT includes this fix.
 
@@ -1488,7 +1488,7 @@ affected. The one consumer that calls `Value()` directly is OCCTSwift's own
 `OCCTGeomFillCoonsAlgPatchEval`, backing `Shape.coonsAlgPatch`, which samples it across an eval
 grid.
 
-**Upstream-bound.** Not yet filed; see the note in `okf/references/carried-occt-patches.md` about
+**Upstream-bound.** Filed as [OCCT#1550](https://github.com/Open-Cascade-SAS/OCCT/pull/1550) against `master`; see the note in `okf/references/carried-occt-patches.md` about
 the seven OCCTSwift thread-safety PRs still open on Release 8.1.
 
 
@@ -1528,7 +1528,7 @@ distinction is kept deliberately. Full method, including two fixture traps and w
 thread pool measured worse, in
 [`Scripts/repro/2061-nm-detected/`](../repro/2061-nm-detected/README.md).
 
-Not yet filed upstream (override-link validated, not yet in a rebuilt xcframework).
+Filed upstream as [OCCT#1552](https://github.com/Open-Cascade-SAS/OCCT/pull/1552) against `master`, a fix PR (override-link validated, not yet in a rebuilt xcframework when written).
 
 **Retire** once the bundled OCCT includes this fix.
 
@@ -1661,7 +1661,7 @@ Carries a GTest (`XSControl_ControllerInit_Test`). It is a smoke guard rather th
 the previous check-then-act usually also produced a working registration, because a second
 `Record()` of the same controller kind returns early. The race is what TSan measures.
 
-Not yet filed upstream.
+Not filed upstream: **held**, as there is no honest GTest. A second call of a one-time init in a shared GTest binary is unobservable. Revisit if a way to observe it appears.
 
 **Retire** once the bundled OCCT includes this fix.
 
@@ -1687,7 +1687,7 @@ reaches it through `Interface_Static`, whose seventeen entry points `0033` alrea
 stopped being reported once `0033` was in the build. A second lock on the same data through a
 different path invites lock-order inversion for no gain.
 
-Not yet filed upstream.
+Filed upstream as [OCCT#1603](https://github.com/Open-Cascade-SAS/OCCT/pull/1603) against `IR`, with stress GTests, one of them probabilistic with a measured failure rate.
 
 **Retire** once the bundled OCCT includes this fix.
 
@@ -1848,7 +1848,7 @@ uploaded as a new pre-release, **both** `url:` and `checksum:` bumped, `0042` mo
 back to zero), and the two stale ACKNOWLEDGED rows retired. Recorded here rather than left to be
 discovered.
 
-Filed upstream as **[OCCT#PENDING](https://github.com/Open-Cascade-SAS/OCCT/pulls)**, with the
+Filed upstream as **[OCCT#1583](https://github.com/Open-Cascade-SAS/OCCT/pull/1583)** against `master`, with the
 GTest, no companion issue. Prior art re-checked 2026-09-27: zero upstream issues and zero PRs
 mention `GetFaceUVBounds`, `dpasukhi`'s open series is Unicode strings, math robustness and
 `ApplicationFramework`, and OCCT#1514 `Data Exchange - Harden malformed input handling` (merged
@@ -2032,9 +2032,8 @@ upstream `master` was byte-identical on this line as of 2026-09-29 with no issue
 `BRepGProp_Gauss`, so the hunk is expected to apply to `V8_0_2` unchanged. Re-run
 `git -C occt-src apply --check` at the repin rather than assuming it.
 
-Not filed upstream yet: #2827 holds the upstream PR, per
-[`okf/policies/upstream-occt-patch-process.md`](../../okf/policies/upstream-occt-patch-process.md)
-and the standing hold on kernel-patch findings until 8.0.2 lands. **The submission carries a second
+Filed upstream as [OCCT#1587](https://github.com/Open-Cascade-SAS/OCCT/pull/1587) against `master`; the hold on upstream PRs until 8.0.2 was cancelled on 2026-10-07
+(see [`okf/policies/upstream-occt-patch-process.md`](../../okf/policies/upstream-occt-patch-process.md)). **The submission carries a second
 hunk**, for [#2873](https://github.com/SecondMouseAU/OCCTSwift/issues/2873): `aCoeff[3] = d - n . loc`
 at `BRepGProp_Vinert.cxx:279`, and the same two lines at `BRepGProp_VinertGK.cxx:219` and `:244`, are
 subtracted by the integrand, so the offset reaches it with the opposite sign to a geometric distance
@@ -2142,9 +2141,7 @@ bodies are three lines that have not changed since the class was written, so the
 to apply to `V8_0_2` unchanged. Re-run `git -C occt-src apply --check` at the repin rather than
 assuming it.
 
-Not filed upstream yet: the standing hold in
-[`okf/policies/upstream-occt-patch-process.md`](../../okf/policies/upstream-occt-patch-process.md)
-holds every upstream PR until 8.0.2 ships. The submission is staged in
+Filed upstream as [OCCT#1596](https://github.com/Open-Cascade-SAS/OCCT/pull/1596) against `IR` (the hold on upstream PRs until 8.0.2 was cancelled on 2026-10-07). The submission was staged in
 `Scripts/repro/2840/upstream/`: two GTests, `Extrema_ExtSS_Test.cxx` and `Extrema_ExtCS_Test.cxx`,
 compiled and run both ways (each parallel case exits 139 unpatched and passes patched, both controls
 pass on both sides), plus the two `FILES.cmake` lines they need. `0024` is still unfiled too, so one
@@ -2239,9 +2236,7 @@ nothing.
 `InsertPoleAfter` has changed shape in years, so the hunks are expected to apply to `V8_0_2`
 unchanged. Re-run the apply check at the repin rather than assuming it.
 
-Not filed upstream yet: the standing hold in
-[`okf/policies/upstream-occt-patch-process.md`](../../okf/policies/upstream-occt-patch-process.md)
-holds every upstream PR until 8.0.2 ships. A GTest is still owed before it goes, per section 2.
+Filed upstream as [OCCT#1593](https://github.com/Open-Cascade-SAS/OCCT/pull/1593) against `IR` ([#1589](https://github.com/Open-Cascade-SAS/OCCT/pull/1589) closed); the hold on upstream PRs until 8.0.2 was cancelled on 2026-10-07.
 
 **Retire** once the bundled OCCT includes this fix, **but keep the bridge guard**: it is the only
 bound the 2d class has in a `No_Exception` build.
@@ -2333,9 +2328,8 @@ also still covers anyone pinning an older asset.
 constructors have not changed shape, so the hunks are expected to apply to `V8_0_2` unchanged.
 Re-run the apply check at the repin rather than assuming it.
 
-Not filed upstream yet: the standing hold holds every upstream PR until 8.0.2 ships. #2860 already
-names this as the upstream-worthy item of its cluster, and the reading above is the report. A
-GTest is owed before it goes, per section 2 of the process policy.
+Filed upstream as [OCCT#1588](https://github.com/Open-Cascade-SAS/OCCT/pull/1588) against `master`; the hold on upstream PRs until 8.0.2 was cancelled on 2026-10-07. #2860 already
+names this as the upstream-worthy item of its cluster, and the reading above is the report.
 
 **Retire** once the bundled OCCT includes this fix, keeping the bridge guard.
 
@@ -2476,10 +2470,7 @@ No other carried patch touches `BRepMesh_IncrementalMesh.hxx`, and `initParamete
 twenty-line body that has not moved since `MinSize` was added to it. Re-run
 `git -C occt-src apply --check` at the repin rather than assuming it.
 
-Not filed upstream yet: the standing hold in
-[`okf/policies/upstream-occt-patch-process.md`](../../okf/policies/upstream-occt-patch-process.md)
-holds every upstream PR until 8.0.2 ships. A GTest is owed before it is filed, per that policy's
-section 2, in `src/ModelingAlgorithms/TKMesh/GTests/`.
+Filed upstream as [OCCT#1598](https://github.com/Open-Cascade-SAS/OCCT/pull/1598) against `IR`; the hold on upstream PRs until 8.0.2 was cancelled on 2026-10-07.
 
 **Retire** once the bundled OCCT includes this fix.
 
@@ -2616,8 +2607,7 @@ removing it earlier would have turned a correct answer into a sign-flipped one o
 that has not changed since the classes were written. Re-run `git -C occt-src apply --check` at the
 repin rather than assuming it.
 
-Not filed upstream yet, for the same hold as `0043`, and it goes in `0043`'s PR rather than its
-own. A GTest is owed with it.
+Filed upstream as [OCCT#1601](https://github.com/Open-Cascade-SAS/OCCT/pull/1601) against `IR`, on its own: it is independent of [OCCT#1587](https://github.com/Open-Cascade-SAS/OCCT/pull/1587) (`0043`), whose diff only removes `&& theIsByPoint` in `BRepGProp_Gauss.cxx`.
 
 **Retire** once the bundled OCCT includes this fix, and delete the bridge mirror in the same change.
 
@@ -2743,11 +2733,9 @@ hours.
 changed since the class was written, so the hunk is expected to apply to `V8_0_2` unchanged. Re-run
 `git -C occt-src apply --check` at the repin rather than assuming it.
 
-Not filed upstream yet: the standing hold in
-[`okf/policies/upstream-occt-patch-process.md`](../../okf/policies/upstream-occt-patch-process.md)
-holds every upstream PR until 8.0.2 ships. File it with `0051`, one PR for both, since they are one
+Filed upstream with `0051` and `0055` as one PR, [OCCT#1599](https://github.com/Open-Cascade-SAS/OCCT/pull/1599) against `IR` (the hold on upstream PRs until 8.0.2 was cancelled on 2026-10-07). `0055`'s hunks need `0050`'s and `0051`'s context. They are one
 defect in two files and the old `GProp_VelGProps` `dim` is exactly this one's old `dim` times
-`(Z2 - Z1) sin a`. A GTest is owed before submission, per section 2 of that policy.
+`(Z2 - Z1) sin a`.
 
 **Retire** once the bundled OCCT includes this fix.
 
@@ -2912,9 +2900,8 @@ Pinned with `0050` and `0051`, and unlike them it left nothing for a caller to
 read wrong: PR #2990 already documents the real behaviour on all four Swift properties with the
 cylinder as the worked example and a test pinning both directions.
 
-Not filed upstream yet. It joins the OCCT 8.0.2 documentation batch with #2875's and #2860's
-one-character fixes rather than going alone, per the standing decision to batch upstream
-submissions.
+Filed upstream alone as [OCCT#1602](https://github.com/Open-Cascade-SAS/OCCT/pull/1602) against `IR`, documentation only, so no GTest. The plan to batch it with #2875's and #2860's
+one-character fixes went with the hold on upstream PRs until 8.0.2, cancelled on 2026-10-07.
 
 **Retire** once the bundled OCCT includes this fix.
 
@@ -3023,7 +3010,7 @@ returns.
 this file by removed debug code and one `Image(E).First()` to `FirstImage(E)` change. Re-run the
 apply check at the repin rather than assuming it.
 
-Not filed upstream: the standing hold holds every upstream PR until 8.0.2 ships. Upstream was
+Filed upstream as [OCCT#1600](https://github.com/Open-Cascade-SAS/OCCT/pull/1600) against `IR` (the hold on upstream PRs until 8.0.2 was cancelled on 2026-10-07). The PR discloses that it makes the two-box-fuse arc offset fail deterministically, 20 of 20, instead of intermittently, an intersection-stage order dependence it does not address. Upstream was
 checked on 2026-10-03 and has no report and no PR about the order of an offset's faces; the draft is
 this patch's own message.
 
@@ -3094,7 +3081,7 @@ exactly eight outcomes change, edges 12 to 19 at 1.5, each from SIGSEGV to a nor
 `IsDone() == false`. The other 370 are identical, 170 completed and 200 raising the same exception.
 The eight now behave as radius 1.4999999 already did.
 
-**Not yet filed upstream.** Upstream's GTests are organised per toolkit and every PR is asked for
+**Filed upstream as [OCCT#1591](https://github.com/Open-Cascade-SAS/OCCT/pull/1591) against `master`**; the report is [OCCT#1568](https://github.com/Open-Cascade-SAS/OCCT/issues/1568). Upstream's GTests are organised per toolkit and every PR is asked for
 one; the reproducer needs the 19-face model, and plain boxes with radii at their face widths (372
 cases) never reach the branch, so a small programmatic input is still to be found. OCCT#1568 carries
 our minimisation and a note that we would report the cause.
@@ -3212,8 +3199,7 @@ read `Mass()` alone, so no Swift test reaches these values and there is no `OCCT
 test for this patch; `probe.cxx` and `run.sh` are the regression, and `run.sh` exits 1 unless the
 control fails and the variant passes.
 
-**Not yet filed upstream.** It goes up with `0050` and `0051`, with a GTest of its own then, since
-upstream's reviewers ask for one on every PR.
+**Filed upstream** with `0050` and `0051` as one PR, [OCCT#1599](https://github.com/Open-Cascade-SAS/OCCT/pull/1599) against `IR`, because its hunks need their context lines.
 
 **Retire** once the bundled OCCT includes this fix.
 
@@ -3298,8 +3284,7 @@ copy of the archive, 0 of 64 failed in each of four runs.
 
 **Upstream checked 2026-10-07:** no PR or issue; `IR` and `master` carry the same lines at
 `BRepLib.cxx` lines 83-85 and 138-145, and dpasukhi's "Eliminate mutable static state" series
-(OCCT#1519, #1180) did not touch this file. **Not yet filed upstream**; it needs a GTest of its own
-first.
+(OCCT#1519, #1180) did not touch this file. **Filed upstream as [OCCT#1597](https://github.com/Open-Cascade-SAS/OCCT/pull/1597) against `IR`**, with the GTest `BRepLib_Test.Plane_ConcurrentFirstUse` and a death-test child; the failure rates are in the PR.
 
 **Retire** once the bundled OCCT includes this fix.
 
