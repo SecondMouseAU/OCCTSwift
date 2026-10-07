@@ -766,10 +766,23 @@ func OCCTEdgeProjectPoint(_ edge: OpaquePointer, _ px: Double, _ py: Double, _ p
     return r
 }
 
+func OCCTCurve3DProjectPoint(_ curve: OpaquePointer, _ px: Double, _ py: Double, _ pz: Double, _ precision: Double)
+    -> OCCTCurveProjectResult
+{
+    var r = OCCTBridge.OCCTCurve3DProjectPoint(curve, px, py, pz, precision)
+    if G.on("PRJ_DIST_X2") { r.distance *= 2 }
+    if G.on("PRJ_DIST_PLUS1") { r.distance += 1 }
+    if G.on("PRJ_DIST_ZERO") { r.distance = 0 }
+    if G.on("PRJ_POINT_SHIFT") { r.projX += 1 }
+    if G.on("PRJ_POINT_IS_QUERY") { r.projX = px; r.projY = py; r.projZ = pz }
+    if G.on("PRJ_PARAM_SHIFT") { r.parameter += 0.5 }
+    return r
+}
+
 // MARK: - Point fitting and the curve continuity analysis (Issue490ContinuityDecoderTests)
 
 func OCCTCurve3DFitPoints(
-    _ pts: UnsafePointer<Double>, _ count: Int32, _ minDeg: Int32, _ maxDeg: Int32, _ tol: Double
+    _ pts: UnsafePointer<Double>?, _ count: Int32, _ minDeg: Int32, _ maxDeg: Int32, _ tol: Double
 ) -> OpaquePointer? {
     // The fixture factory: a fit that stops building makes every test that does `guard let` on
     // it return having executed nothing.
