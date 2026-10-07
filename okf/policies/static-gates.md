@@ -16,7 +16,7 @@ every number about the list is written down.
 
 ## How many there are
 
-Seventeen gates, seven censuses and one merge-history audit run in `ci.yml`'s `gate-scripts` job,
+Eighteen gates, seven censuses and one merge-history audit run in `ci.yml`'s `gate-scripts` job,
 beside the release check that "The fourth kind" below counts apart from them. Every one of those
 numbers is derived from the job rather than kept by hand:
 `Scripts/check-inventory-prose.py` reads this sentence against `ci.yml` on every PR and fails when
@@ -287,6 +287,22 @@ correctness (PR #2969). Three things about it are the general shape rather than 
   (`OCCTTObjApplicationRelease`, whose singleton must never destroy on a zero count) carries
   `transient-release-exempt: <reason>` in the comment beside it, with the reason required on
   `check-doc-snippets.py`'s precedent.
+
+**One gate holds the bridge to an upstream design rather than to a convention of this repo, and it
+is an allowlist.** `check-bridge-adaptor-members.py` (#3065) fails on any stored OCCT adaptor in
+`Sources/OCCTBridge` that is not on its two-entry allowlist. OCCT's adaptors own a BSpline
+evaluation cache that a `const` evaluator rebuilds in place, and upstream's stated design is that
+each worker owns its adaptor, taking `ShallowCopy()` of a shared one. An adaptor built per call is
+private by construction, so the bridge's hundreds of those are not the subject; one that outlives a
+call (a struct member, a namespace-scope variable, a function-local `static`) is reachable from
+every caller of its holder, which is the shared-adaptor shape that read a wrong point in 97 of 97
+completed runs once carried patch `0031`'s locks were removed. Two are stored today, `OCCTEdgeCurve`
+and `OCCTCompCurve`, behind the Swift `EdgeCurve` and `WireCurve`, and the gate holds the other half
+of why that is acceptable: neither class may declare `Sendable`. It gates on its first day, on the
+rule below, since the backlog was zero. It refuses on a population of zero and fails on an
+allowlist entry that matches nothing, the two ways an allowlist goes silently stale. It is
+independent of whether `0031` is carried: it holds a property that is right with or without the
+locks.
 
 Three gates read `Scripts/patches/` and `Scripts/patches-wasi/` rather than `Sources/`, and all
 three for the same reason: `check-patch-deletes-guarded-symbol.py` (#2058), which fails when a
@@ -605,7 +621,7 @@ build was on disk.
 
 ## Every detector proves it is not blind
 
-Sixteen of the seventeen gates, all seven censuses, the merge-history audit and the release check
+Seventeen of the eighteen gates, all seven censuses, the merge-history audit and the release check
 take `--self-test`, a fixture battery proving the *detector* catches each failure mode. Run it
 whenever you change one of these scripts. Three gate scripts were confidently wrong while
 reporting all clear (#618, #624/#630, #626), and a detector reporting "all clear" because it is
@@ -715,7 +731,7 @@ change to the ruleset.
 
 ## The pre-commit hook
 
-`Scripts/git-hooks/pre-commit` runs forty-two of `gate-scripts`' forty-three invocations, flag for
+`Scripts/git-hooks/pre-commit` runs forty-four of `gate-scripts`' forty-five invocations, flag for
 flag. The one it omits is `check-changelog-transcription.py`'s real run, which answers a question
 about the branch rather than about the commit being made; its `--self-test` does run. That is the
 only deliberate divergence, and it is written here because an undocumented difference between the

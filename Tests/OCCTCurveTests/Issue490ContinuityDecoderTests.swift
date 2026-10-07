@@ -1,4 +1,5 @@
 import Testing
+import simd
 
 @testable import OCCTSwift
 
@@ -43,7 +44,7 @@ struct Issue490CurveContinuityTests {
     }
 
     @Test("the points-to-BSpline family takes the whole ladder without failing")
-    func pointFittingDomain() {
+    func pointFittingDomain() throws {
         let points = [
             SIMD3<Double>(0, 0, 0), SIMD3(1, 2, 0), SIMD3(3, 1, 1),
             SIMD3(5, 3, 0), SIMD3(7, 0, 2), SIMD3(9, 2, 1),
@@ -53,9 +54,20 @@ struct Issue490CurveContinuityTests {
         // try to meet, so every value succeeds. Worth pinning: it is the reason one decoder can
         // serve both families without either needing a private fallback.
         for continuity in 0...3 {
-            #expect(
-                Curve3D.approximate(points: points, continuity: continuity) != nil,
+            let curve = try #require(
+                Curve3D.approximate(points: points, continuity: continuity),
                 "continuity \(continuity) should still fit a curve")
+            // And it is a fit of these points, not merely some curve: it starts and ends on the
+            // first and last of them and passes within the 1e-3 tolerance of every one, so a fit
+            // of a shifted, reversed or truncated list is not the same answer.
+            let startGap = simd_distance(curve.startPoint, points[0])
+            let endGap = simd_distance(curve.endPoint, points[points.count - 1])
+            #expect(startGap < 1e-3, "continuity \(continuity): start gap \(startGap)")
+            #expect(endGap < 1e-3, "continuity \(continuity): end gap \(endGap)")
+            for p in points {
+                #expect(
+                    curve.distance(to: p) < 2e-3, "continuity \(continuity): \(p) is off the fit")
+            }
         }
     }
 
@@ -82,7 +94,7 @@ struct Issue490CurveContinuityTests {
     func analysisOrderSaturates() throws {
         // Sharp-corner fixture shared via CurveTestFixtures.swift (#1263): this was reimplemented
         // inline here (and at four other sites across three files) before that review.
-        guard let (c1, c2) = sharpCornerCurves() else { return }
+        let (c1, c2) = try #require(sharpCornerCurves(), "the sharp-corner fixture did not build")
 
         let atC2 = try #require(
             c1.continuityWith(
@@ -98,6 +110,14 @@ struct Issue490CurveContinuityTests {
         #expect(atC2.order == beyond.order)
         #expect(atC2.measured == beyond.measured)
         #expect(atC2.flags == beyond.flags)
+        // The value, not just the agreement: the sharp-corner fixture meets end to start, so C0
+        // holds and C1 and C2 do not, which is bit 0 alone. Two analyses that both read zero
+        // agree with each other (measured: flags 1 at every order).
+        #expect(atC2.flags == 1)
+        #expect(beyond.flags == 1)
+        #expect(atC2.isC0 == true)
+        #expect(atC2.isC1 == false)
+        #expect(atC2.holds(.c2) == false)
 
         // The effective order comes back in the same ordinal vocabulary the request went in as.
         #expect(atC2.order == .c2)
@@ -105,7 +125,7 @@ struct Issue490CurveContinuityTests {
 
     @Test("each analysis order below the ceiling asks a different question")
     func analysisOrderIsObservable() throws {
-        guard let (c1, c2) = sharpCornerCurves() else { return }
+        let (c1, c2) = try #require(sharpCornerCurves(), "the sharp-corner fixture did not build")
 
         // The order is echoed back verbatim, so what makes each one a *different question* is the
         // set of classes it measures, see Issue495CurveAnalysisOrderTests for that half.

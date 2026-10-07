@@ -1,0 +1,846 @@
+import Foundation
+import OCCTBridge
+
+// TEMPORARY injection harness for the #2983 Curve re-sweep. This `.txt` is the evidence copy: for
+// a sweep it is copied to Sources/OCCTSwift/SweepCurveShadow.swift and removed again, and that
+// file must never be committed (README.md, "Running it").
+// One build serves every switch; SWEEP_CURVE_SWITCH selects one at runtime. With the variable
+// unset every shadow is a pure pass-through, which the sweep asserts (suite green, no switch).
+
+enum SweepCurveGate {
+    static let active: String =
+        Foundation.ProcessInfo.processInfo.environment["SWEEP_CURVE_SWITCH"] ?? ""
+    static func on(_ name: String) -> Bool { active == name }
+    static func hasPrefix(_ p: String) -> Bool { active.hasPrefix(p) }
+}
+
+private typealias G = SweepCurveGate
+
+// MARK: - Ellipse constructors (centre, normal, radii) and the angle / point variants
+
+/// The distortion every ellipse construction site shares. `nil` means the site must return nil.
+private func ellipseRadii(_ a: Double, _ b: Double) -> (Double, Double)? {
+    if G.on("ELL_NIL") { return nil }
+    var (a, b) = (a, b)
+    if G.on("ELL_SWAP_RADII") { (a, b) = (b, a) }
+    if G.on("ELL_MINOR_EQ_MAJOR") { b = a }
+    if G.on("ELL_MAJOR_EQ_MINOR") { a = b }
+    if G.on("ELL_RADII_X2") { a *= 2; b *= 2 }
+    if G.on("ELL_ZERO_ACCEPTED") && (a <= 0 || b <= 0) { a = max(a, 1); b = a }
+    if G.on("ELL_NEGATIVE_ACCEPTED") { a = abs(a); b = abs(b) }
+    if G.on("ELL_INVERTED_ACCEPTED") && b > a { (a, b) = (b, a) }
+    return (a, b)
+}
+
+private func vec(_ x: Double, _ y: Double, _ z: Double, flip: Bool, drop: Bool)
+    -> (Double, Double, Double)
+{
+    if drop { return (0, 0, 0) }
+    return flip ? (-x, -y, -z) : (x, y, z)
+}
+
+func OCCTCurve3DArcOfEllipse(
+    _ cx: Double, _ cy: Double, _ cz: Double, _ nx: Double, _ ny: Double, _ nz: Double,
+    _ major: Double, _ minor: Double, _ a1: Double, _ a2: Double, _ sense: Bool
+) -> OpaquePointer? {
+    guard let (a, b) = ellipseRadii(major, minor) else { return nil }
+    let c = vec(cx, cy, cz, flip: false, drop: G.on("ELL_CENTER_DROPPED"))
+    let n = vec(nx, ny, nz, flip: G.on("ELL_NORMAL_FLIPPED"), drop: false)
+    var (s, e) = (a1, a2)
+    if G.on("ARC_ANGLE2_HALVED") { e = a2 / 2 }
+    if G.on("ARC_ANGLE1_SHIFTED") { s = a1 + 0.1 }
+    if G.on("ARC_ANGLES_SWAPPED") { (s, e) = (a2, a1) }
+    let sense2 = G.on("ARC_SENSE_FLIPPED") ? !sense : sense
+    return OCCTBridge.OCCTCurve3DArcOfEllipse(
+        c.0, c.1, c.2, n.0, n.1, n.2, a, b, s, e, sense2)
+}
+
+func OCCTCurve3DArcOfEllipsePoints(
+    _ cx: Double, _ cy: Double, _ cz: Double, _ nx: Double, _ ny: Double, _ nz: Double,
+    _ major: Double, _ minor: Double,
+    _ p1x: Double, _ p1y: Double, _ p1z: Double,
+    _ p2x: Double, _ p2y: Double, _ p2z: Double, _ sense: Bool
+) -> OpaquePointer? {
+    guard let (a, b) = ellipseRadii(major, minor) else { return nil }
+    let c = vec(cx, cy, cz, flip: false, drop: G.on("ELL_CENTER_DROPPED"))
+    let n = vec(nx, ny, nz, flip: G.on("ELL_NORMAL_FLIPPED"), drop: false)
+    var p1 = (p1x, p1y, p1z)
+    var p2 = (p2x, p2y, p2z)
+    if G.on("ARCP_ENDPOINTS_SWAPPED") { swap(&p1, &p2) }
+    let sense2 = G.on("ARC_SENSE_FLIPPED") ? !sense : sense
+    return OCCTBridge.OCCTCurve3DArcOfEllipsePoints(
+        c.0, c.1, c.2, n.0, n.1, n.2, a, b, p1.0, p1.1, p1.2, p2.0, p2.1, p2.2, sense2)
+}
+
+func OCCTGCMakeEllipse(
+    _ cx: Double, _ cy: Double, _ cz: Double, _ nx: Double, _ ny: Double, _ nz: Double,
+    _ major: Double, _ minor: Double
+) -> OpaquePointer? {
+    guard let (a, b) = ellipseRadii(major, minor) else { return nil }
+    let c = vec(cx, cy, cz, flip: false, drop: G.on("ELL_CENTER_DROPPED"))
+    let n = vec(nx, ny, nz, flip: G.on("ELL_NORMAL_FLIPPED"), drop: false)
+    return OCCTBridge.OCCTGCMakeEllipse(c.0, c.1, c.2, n.0, n.1, n.2, a, b)
+}
+
+func OCCTGCMakeEllipseFromElips(
+    _ cx: Double, _ cy: Double, _ cz: Double, _ nx: Double, _ ny: Double, _ nz: Double,
+    _ xdx: Double, _ xdy: Double, _ xdz: Double, _ major: Double, _ minor: Double
+) -> OpaquePointer? {
+    guard let (a, b) = ellipseRadii(major, minor) else { return nil }
+    let c = vec(cx, cy, cz, flip: false, drop: G.on("ELL_CENTER_DROPPED"))
+    let n = vec(nx, ny, nz, flip: G.on("ELL_NORMAL_FLIPPED"), drop: false)
+    // The X direction is the whole point of this overload: ignoring it is its own defect.
+    let x = G.on("ELL_XDIR_IGNORED") ? (0.0, 1.0, 0.0) : (xdx, xdy, xdz)
+    return OCCTBridge.OCCTGCMakeEllipseFromElips(
+        c.0, c.1, c.2, n.0, n.1, n.2, x.0, x.1, x.2, a, b)
+}
+
+func OCCTMakeEdgeFromEllipse(
+    _ cx: Double, _ cy: Double, _ cz: Double, _ nx: Double, _ ny: Double, _ nz: Double,
+    _ major: Double, _ minor: Double
+) -> OpaquePointer? {
+    guard let (a, b) = ellipseRadii(major, minor) else { return nil }
+    let c = vec(cx, cy, cz, flip: false, drop: G.on("ELL_CENTER_DROPPED"))
+    let n = vec(nx, ny, nz, flip: G.on("ELL_NORMAL_FLIPPED"), drop: false)
+    return OCCTBridge.OCCTMakeEdgeFromEllipse(c.0, c.1, c.2, n.0, n.1, n.2, a, b)
+}
+
+func OCCTMakeEdgeFromEllipseArc(
+    _ cx: Double, _ cy: Double, _ cz: Double, _ nx: Double, _ ny: Double, _ nz: Double,
+    _ major: Double, _ minor: Double, _ u1: Double, _ u2: Double
+) -> OpaquePointer? {
+    guard let (a, b) = ellipseRadii(major, minor) else { return nil }
+    let c = vec(cx, cy, cz, flip: false, drop: G.on("ELL_CENTER_DROPPED"))
+    let n = vec(nx, ny, nz, flip: G.on("ELL_NORMAL_FLIPPED"), drop: false)
+    var (s, e) = (u1, u2)
+    if G.on("ARC_ANGLE2_HALVED") { e = u2 / 2 }
+    if G.on("ARC_ANGLE1_SHIFTED") { s = u1 + 0.1 }
+    if G.on("ARC_ANGLES_SWAPPED") { (s, e) = (u2, u1) }
+    return OCCTBridge.OCCTMakeEdgeFromEllipseArc(c.0, c.1, c.2, n.0, n.1, n.2, a, b, s, e)
+}
+
+// MARK: - Hyperbola
+
+private func hyperbolaRadii(_ a: Double, _ b: Double) -> (Double, Double)? {
+    if G.on("HYP_NIL") { return nil }
+    var (a, b) = (a, b)
+    if G.on("HYP_SWAP_RADII") { (a, b) = (b, a) }
+    if G.on("HYP_RADII_X2") { a *= 2; b *= 2 }
+    if G.on("HYP_ZERO_ACCEPTED") {
+        if a <= 0 { a = 1 }
+        if b <= 0 { b = 1 }
+    }
+    // The ellipse rule copied onto a hyperbola, which puts no ordering on its radii.
+    if G.on("HYP_ORDER_ENFORCED") && b > a { return nil }
+    return (a, b)
+}
+
+func OCCTCurve3DArcOfHyperbola(
+    _ major: Double, _ minor: Double, _ ax: Double, _ ay: Double, _ az: Double,
+    _ dx: Double, _ dy: Double, _ dz: Double, _ a1: Double, _ a2: Double, _ sense: Bool
+) -> OpaquePointer? {
+    guard let (a, b) = hyperbolaRadii(major, minor) else { return nil }
+    let c = vec(ax, ay, az, flip: false, drop: G.on("HYP_CENTER_DROPPED"))
+    let d = vec(dx, dy, dz, flip: G.on("HYP_NORMAL_FLIPPED"), drop: false)
+    var (s, e) = (a1, a2)
+    if G.on("HYP_ALPHA2_HALVED") { e = a2 / 2 }
+    if G.on("HYP_ALPHA1_SHIFTED") { s = a1 + 0.1 }
+    if G.on("HYP_ALPHAS_SWAPPED") { (s, e) = (a2, a1) }
+    let sense2 = G.on("HYP_SENSE_FLIPPED") ? !sense : sense
+    return OCCTBridge.OCCTCurve3DArcOfHyperbola(a, b, c.0, c.1, c.2, d.0, d.1, d.2, s, e, sense2)
+}
+
+func OCCTGCMakeHyperbola(
+    _ cx: Double, _ cy: Double, _ cz: Double, _ nx: Double, _ ny: Double, _ nz: Double,
+    _ major: Double, _ minor: Double
+) -> OpaquePointer? {
+    guard let (a, b) = hyperbolaRadii(major, minor) else { return nil }
+    let c = vec(cx, cy, cz, flip: false, drop: G.on("HYP_CENTER_DROPPED"))
+    let n = vec(nx, ny, nz, flip: G.on("HYP_NORMAL_FLIPPED"), drop: false)
+    return OCCTBridge.OCCTGCMakeHyperbola(c.0, c.1, c.2, n.0, n.1, n.2, a, b)
+}
+
+func OCCTMakeEdgeFromHyperbolaArc(
+    _ cx: Double, _ cy: Double, _ cz: Double, _ nx: Double, _ ny: Double, _ nz: Double,
+    _ major: Double, _ minor: Double, _ u1: Double, _ u2: Double
+) -> OpaquePointer? {
+    guard let (a, b) = hyperbolaRadii(major, minor) else { return nil }
+    let c = vec(cx, cy, cz, flip: false, drop: G.on("HYP_CENTER_DROPPED"))
+    let n = vec(nx, ny, nz, flip: G.on("HYP_NORMAL_FLIPPED"), drop: false)
+    var (s, e) = (u1, u2)
+    if G.on("HYP_ALPHA2_HALVED") { e = u2 / 2 }
+    if G.on("HYP_ALPHA1_SHIFTED") { s = u1 + 0.1 }
+    if G.on("HYP_ALPHAS_SWAPPED") { (s, e) = (u2, u1) }
+    return OCCTBridge.OCCTMakeEdgeFromHyperbolaArc(c.0, c.1, c.2, n.0, n.1, n.2, a, b, s, e)
+}
+
+// MARK: - Parabola
+
+private func parabolaFocal(_ f: Double) -> Double? {
+    if G.on("PAR_NIL") { return nil }
+    var f = f
+    if G.on("PAR_FOCAL_X2") { f *= 2 }
+    if G.on("PAR_FOCAL_HALF") { f /= 2 }
+    if G.on("PAR_ZERO_ACCEPTED") && f <= 0 { f = 1 }
+    return f
+}
+
+func OCCTCurve3DArcOfParabola(
+    _ focal: Double, _ ax: Double, _ ay: Double, _ az: Double,
+    _ dx: Double, _ dy: Double, _ dz: Double, _ a1: Double, _ a2: Double, _ sense: Bool
+) -> OpaquePointer? {
+    guard let f = parabolaFocal(focal) else { return nil }
+    let c = vec(ax, ay, az, flip: false, drop: G.on("PAR_CENTER_DROPPED"))
+    let d = vec(dx, dy, dz, flip: G.on("PAR_NORMAL_FLIPPED"), drop: false)
+    var (s, e) = (a1, a2)
+    if G.on("PAR_ALPHA2_HALVED") { e = a2 / 2 }
+    if G.on("PAR_ALPHA1_SHIFTED") { s = a1 + 0.1 }
+    if G.on("PAR_ALPHAS_SWAPPED") { (s, e) = (a2, a1) }
+    let sense2 = G.on("PAR_SENSE_FLIPPED") ? !sense : sense
+    return OCCTBridge.OCCTCurve3DArcOfParabola(f, c.0, c.1, c.2, d.0, d.1, d.2, s, e, sense2)
+}
+
+func OCCTMakeEdgeFromParabolaArc(
+    _ cx: Double, _ cy: Double, _ cz: Double, _ nx: Double, _ ny: Double, _ nz: Double,
+    _ focal: Double, _ u1: Double, _ u2: Double
+) -> OpaquePointer? {
+    guard let f = parabolaFocal(focal) else { return nil }
+    let c = vec(cx, cy, cz, flip: false, drop: G.on("PAR_CENTER_DROPPED"))
+    let n = vec(nx, ny, nz, flip: G.on("PAR_NORMAL_FLIPPED"), drop: false)
+    var (s, e) = (u1, u2)
+    if G.on("PAR_ALPHA2_HALVED") { e = u2 / 2 }
+    if G.on("PAR_ALPHA1_SHIFTED") { s = u1 + 0.1 }
+    if G.on("PAR_ALPHAS_SWAPPED") { (s, e) = (u2, u1) }
+    return OCCTBridge.OCCTMakeEdgeFromParabolaArc(c.0, c.1, c.2, n.0, n.1, n.2, f, s, e)
+}
+
+// MARK: - The in-place setters and their getters
+
+/// One setter site. `family` is the switch prefix (ELLM, ELLJ, HYPM, HYPJ, PARF, CIRR).
+private func setter(
+    _ family: String, _ r: Double, real: (Double) -> Bool, sibling: ((Double) -> Bool)? = nil,
+    currentOther: Double? = nil
+) -> Bool {
+    if G.on("\(family)_NOOP_TRUE") { return true }
+    if G.on("\(family)_FALSE") { return false }
+    if G.on("\(family)_ZERO_ACCEPTED") && r == 0 { return real(1e-9) }
+    if G.on("\(family)_WRONG_VALUE") { return real(r * 2) }
+    if G.on("\(family)_SETS_SIBLING"), let sibling { return sibling(r) }
+    if G.on("\(family)_BELOW_OTHER_ACCEPTED"), let o = currentOther, r > 0, r < o { return true }
+    return real(r)
+}
+
+func OCCTCurve3DEllipseSetMinorRadius(_ curve: OpaquePointer, _ r: Double) -> Bool {
+    setter(
+        "ELLM", r, real: { OCCTBridge.OCCTCurve3DEllipseSetMinorRadius(curve, $0) },
+        sibling: { OCCTBridge.OCCTCurve3DEllipseSetMajorRadius(curve, $0) })
+}
+
+func OCCTCurve3DEllipseSetMajorRadius(_ curve: OpaquePointer, _ r: Double) -> Bool {
+    setter(
+        "ELLJ", r, real: { OCCTBridge.OCCTCurve3DEllipseSetMajorRadius(curve, $0) },
+        sibling: { OCCTBridge.OCCTCurve3DEllipseSetMinorRadius(curve, $0) },
+        currentOther: OCCTBridge.OCCTCurve3DEllipseMinorRadius(curve))
+}
+
+func OCCTCurve3DHyperbolaSetMinorRadius(_ curve: OpaquePointer, _ r: Double) -> Bool {
+    setter(
+        "HYPM", r, real: { OCCTBridge.OCCTCurve3DHyperbolaSetMinorRadius(curve, $0) },
+        sibling: { OCCTBridge.OCCTCurve3DHyperbolaSetMajorRadius(curve, $0) })
+}
+
+func OCCTCurve3DHyperbolaSetMajorRadius(_ curve: OpaquePointer, _ r: Double) -> Bool {
+    setter(
+        "HYPJ", r, real: { OCCTBridge.OCCTCurve3DHyperbolaSetMajorRadius(curve, $0) },
+        sibling: { OCCTBridge.OCCTCurve3DHyperbolaSetMinorRadius(curve, $0) })
+}
+
+func OCCTCurve3DParabolaSetFocal(_ curve: OpaquePointer, _ f: Double) -> Bool {
+    setter("PARF", f, real: { OCCTBridge.OCCTCurve3DParabolaSetFocal(curve, $0) })
+}
+
+func OCCTCurve3DCircleSetRadius(_ curve: OpaquePointer, _ r: Double) -> Bool {
+    setter("CIRR", r, real: { OCCTBridge.OCCTCurve3DCircleSetRadius(curve, $0) })
+}
+
+func OCCTCurve3DEllipseMajorRadius(_ curve: OpaquePointer) -> Double {
+    if G.on("GET_ELL_MAJOR_IS_MINOR") { return OCCTBridge.OCCTCurve3DEllipseMinorRadius(curve) }
+    return OCCTBridge.OCCTCurve3DEllipseMajorRadius(curve)
+}
+
+func OCCTCurve3DEllipseMinorRadius(_ curve: OpaquePointer) -> Double {
+    if G.on("GET_ELL_MINOR_IS_MAJOR") { return OCCTBridge.OCCTCurve3DEllipseMajorRadius(curve) }
+    return OCCTBridge.OCCTCurve3DEllipseMinorRadius(curve)
+}
+
+func OCCTCurve3DHyperbolaMajorRadius(_ curve: OpaquePointer) -> Double {
+    if G.on("GET_HYP_MAJOR_IS_MINOR") { return OCCTBridge.OCCTCurve3DHyperbolaMinorRadius(curve) }
+    return OCCTBridge.OCCTCurve3DHyperbolaMajorRadius(curve)
+}
+
+func OCCTCurve3DHyperbolaMinorRadius(_ curve: OpaquePointer) -> Double {
+    if G.on("GET_HYP_MINOR_IS_MAJOR") { return OCCTBridge.OCCTCurve3DHyperbolaMajorRadius(curve) }
+    return OCCTBridge.OCCTCurve3DHyperbolaMinorRadius(curve)
+}
+
+func OCCTCurve3DParabolaFocal(_ curve: OpaquePointer) -> Double {
+    let f = OCCTBridge.OCCTCurve3DParabolaFocal(curve)
+    return G.on("GET_PAR_FOCAL_X2") ? f * 2 : f
+}
+
+func OCCTCurve3DCircleRadius(_ curve: OpaquePointer) -> Double {
+    let r = OCCTBridge.OCCTCurve3DCircleRadius(curve)
+    return G.on("GET_CIR_RADIUS_PLUS1") ? r + 1 : r
+}
+
+// MARK: - Extrema (point/ellipse, point/parabola, line/ellipse)
+
+/// Distort the packed result array of one extrema entry point. `family` is XE, XP or XL.
+private func distortExtrema(
+    _ family: String, _ n: Int32, _ out: UnsafeMutablePointer<OCCTExtremaElResult>, _ max: Int32
+) -> Int32 {
+    var n = n
+    if n <= 0 { return n }
+    if G.on("\(family)_NIL") { return 0 }
+    if G.on("\(family)_ONE") { n = 1 }
+    if G.on("\(family)_DROP_LAST") { n -= 1 }
+    if G.on("\(family)_DROP_FIRST") {
+        for i in 0..<Int(n - 1) { out[i] = out[i + 1] }
+        n -= 1
+    }
+    if G.on("\(family)_DUP_FIRST") && n < max {
+        out[Int(n)] = out[0]
+        n += 1
+    }
+    for i in 0..<Int(n) {
+        if G.on("\(family)_SQDIST_X2") { out[i].squareDistance *= 2 }
+        if G.on("\(family)_SQDIST_PLUS1") { out[i].squareDistance += 1 }
+        if G.on("\(family)_SWAP_WITNESS") {
+            let r = out[i]
+            out[i].x1 = r.x2; out[i].y1 = r.y2; out[i].z1 = r.z2
+            out[i].x2 = r.x1; out[i].y2 = r.y1; out[i].z2 = r.z1
+        }
+        if G.on("\(family)_POINT1_SHIFTED") { out[i].x1 += 1 }
+        if G.on("\(family)_POINT2_SHIFTED") { out[i].x2 += 1 }
+        if G.on("\(family)_PARALLEL_TRUE") { out[i].isParallel = true }
+        if G.on("\(family)_NO_WITNESS") { out[i].hasWitnessPoints = false }
+    }
+    return n
+}
+
+func OCCTExtremaExtPElCElips(
+    _ px: Double, _ py: Double, _ pz: Double, _ cx: Double, _ cy: Double, _ cz: Double,
+    _ nx: Double, _ ny: Double, _ nz: Double, _ xdx: Double, _ xdy: Double, _ xdz: Double,
+    _ major: Double, _ minor: Double, _ tol: Double,
+    _ out: UnsafeMutablePointer<OCCTExtremaElResult>, _ max: Int32
+) -> Int32 {
+    var (a, b) = (major, minor)
+    if G.on("XE_ZERO_ACCEPTED") && (a <= 0 || b <= 0) { a = Swift.max(a, 1); b = a }
+    let n = OCCTBridge.OCCTExtremaExtPElCElips(
+        px, py, pz, cx, cy, cz, nx, ny, nz, xdx, xdy, xdz, a, b, tol, out, max)
+    return distortExtrema("XE", n, out, max)
+}
+
+func OCCTExtremaExtPElCParab(
+    _ px: Double, _ py: Double, _ pz: Double, _ cx: Double, _ cy: Double, _ cz: Double,
+    _ nx: Double, _ ny: Double, _ nz: Double, _ xdx: Double, _ xdy: Double, _ xdz: Double,
+    _ focal: Double, _ tol: Double,
+    _ out: UnsafeMutablePointer<OCCTExtremaElResult>, _ max: Int32
+) -> Int32 {
+    var f = focal
+    if G.on("XP_ZERO_ACCEPTED") && f <= 0 { f = 1 }
+    let n = OCCTBridge.OCCTExtremaExtPElCParab(
+        px, py, pz, cx, cy, cz, nx, ny, nz, xdx, xdy, xdz, f, tol, out, max)
+    return distortExtrema("XP", n, out, max)
+}
+
+func OCCTExtremaElCLinElips(
+    _ lpx: Double, _ lpy: Double, _ lpz: Double, _ ldx: Double, _ ldy: Double, _ ldz: Double,
+    _ cx: Double, _ cy: Double, _ cz: Double, _ nx: Double, _ ny: Double, _ nz: Double,
+    _ xdx: Double, _ xdy: Double, _ xdz: Double, _ major: Double, _ minor: Double,
+    _ out: UnsafeMutablePointer<OCCTExtremaElResult>, _ max: Int32
+) -> Int32 {
+    var (a, b) = (major, minor)
+    if G.on("XL_ZERO_ACCEPTED") && (a <= 0 || b <= 0) { a = Swift.max(a, 1); b = a }
+    let n = OCCTBridge.OCCTExtremaElCLinElips(
+        lpx, lpy, lpz, ldx, ldy, ldz, cx, cy, cz, nx, ny, nz, xdx, xdy, xdz, a, b, out, max)
+    return distortExtrema("XL", n, out, max)
+}
+
+// MARK: - The arc-length adaptors (WireCurve over CompCurve, EdgeCurve), prefixes W_ and E_
+
+private func adaptorLength(_ p: String, _ real: Double) -> Double {
+    if G.on("\(p)_LEN_PLUS") { return real + 1e-3 }
+    if G.on("\(p)_LEN_HALF") { return real / 2 }
+    if G.on("\(p)_LEN_NEG") { return -real }
+    return real
+}
+
+private func adaptorRange(_ p: String, _ f: inout Double, _ l: inout Double) {
+    if G.on("\(p)_PR_SWAP") { swap(&f, &l) }
+    if G.on("\(p)_PR_FIRST_SHIFT") { f += 0.25 }
+    if G.on("\(p)_PR_LAST_SHIFT") { l -= 0.25 }
+}
+
+private func adaptorPoint(
+    _ p: String, _ u: Double, _ x: UnsafeMutablePointer<Double>, _ y: UnsafeMutablePointer<Double>,
+    _ z: UnsafeMutablePointer<Double>, real: (Double) -> Bool
+) -> Bool {
+    if G.on("\(p)_PT_FALSE") { return false }
+    let ok = G.on("\(p)_PT_PARAM_SHIFT") ? real(u + 0.05) : real(u)
+    if ok && G.on("\(p)_PT_XY_SWAPPED") { swap(&x.pointee, &y.pointee) }
+    if ok && G.on("\(p)_PT_Z_SHIFT") { z.pointee += 1e-3 }
+    return ok
+}
+
+private func adaptorTangent(
+    _ p: String, _ x: UnsafeMutablePointer<Double>, _ y: UnsafeMutablePointer<Double>,
+    _ z: UnsafeMutablePointer<Double>, real: () -> Bool
+) -> Bool {
+    if G.on("\(p)_TG_FALSE") { return false }
+    let ok = real()
+    if ok && G.on("\(p)_TG_NEGATED") { x.pointee = -x.pointee; y.pointee = -y.pointee; z.pointee = -z.pointee }
+    if ok && G.on("\(p)_TG_X2") { x.pointee *= 2; y.pointee *= 2; z.pointee *= 2 }
+    if ok && G.on("\(p)_TG_XY_SWAPPED") { swap(&x.pointee, &y.pointee) }
+    return ok
+}
+
+private func adaptorAbscissa(
+    _ p: String, _ s: Double, _ out: UnsafeMutablePointer<Double>, range: (Double, Double),
+    real: (Double) -> Bool
+) -> Bool {
+    if G.on("\(p)_PA_FALSE") { return false }
+    if G.on("\(p)_PA_IDENTITY") { out.pointee = s; return true }
+    if G.on("\(p)_PA_REVERSED") {
+        let ok = real(s)
+        if ok { out.pointee = range.1 - (out.pointee - range.0) }
+        return ok
+    }
+    let ok = real(s)
+    if ok && G.on("\(p)_PA_SHIFT") { out.pointee += 0.05 }
+    return ok
+}
+
+private func adaptorSample(
+    _ p: String, _ count: Int32, _ out: UnsafeMutablePointer<Double>, real: () -> Int32
+) -> Int32 {
+    var n = real()
+    if G.on("\(p)_SU_WRITE_NONE") { return 0 }
+    if G.on("\(p)_SU_DROP_LAST") { n -= 1 }
+    let c = Int(n)
+    if c >= 2 {
+        if G.on("\(p)_SU_REVERSED") {
+            var i = 0
+            var j = c - 1
+            while i < j {
+                for k in 0..<3 { swap(&out[i * 3 + k], &out[j * 3 + k]) }
+                i += 1; j -= 1
+            }
+        }
+        if G.on("\(p)_SU_DUP_FIRST") { for k in 0..<3 { out[3 + k] = out[k] } }
+        if G.on("\(p)_SU_LAST_IS_FIRST") { for k in 0..<3 { out[(c - 1) * 3 + k] = out[k] } }
+        if G.on("\(p)_SU_FIRST_MOVED") { out[0] += 0.01 }
+        if G.on("\(p)_SU_MIDPOINTS") {
+            // each sample replaced by the midpoint of itself and its successor: evenly spaced
+            // along the wire but at the wrong abscissae
+            for i in 0..<(c - 1) { for k in 0..<3 { out[i * 3 + k] = (out[i * 3 + k] + out[(i + 1) * 3 + k]) / 2 } }
+        }
+    }
+    return n
+}
+
+func OCCTCompCurveCreate(_ wire: OpaquePointer) -> OpaquePointer? {
+    if G.on("W_CREATE_NIL") { return nil }
+    return OCCTBridge.OCCTCompCurveCreate(wire)
+}
+
+func OCCTCompCurveLength(_ ref: OpaquePointer) -> Double {
+    adaptorLength("W", OCCTBridge.OCCTCompCurveLength(ref))
+}
+
+func OCCTCompCurveParamRange(
+    _ ref: OpaquePointer, _ first: UnsafeMutablePointer<Double>, _ last: UnsafeMutablePointer<Double>
+) {
+    OCCTBridge.OCCTCompCurveParamRange(ref, first, last)
+    adaptorRange("W", &first.pointee, &last.pointee)
+}
+
+func OCCTCompCurvePointAtParam(
+    _ ref: OpaquePointer, _ u: Double, _ x: UnsafeMutablePointer<Double>,
+    _ y: UnsafeMutablePointer<Double>, _ z: UnsafeMutablePointer<Double>
+) -> Bool {
+    adaptorPoint("W", u, x, y, z) { OCCTBridge.OCCTCompCurvePointAtParam(ref, $0, x, y, z) }
+}
+
+func OCCTCompCurveTangentAtParam(
+    _ ref: OpaquePointer, _ u: Double, _ x: UnsafeMutablePointer<Double>,
+    _ y: UnsafeMutablePointer<Double>, _ z: UnsafeMutablePointer<Double>
+) -> Bool {
+    adaptorTangent("W", x, y, z) { OCCTBridge.OCCTCompCurveTangentAtParam(ref, u, x, y, z) }
+}
+
+func OCCTCompCurveParamAtAbscissa(
+    _ ref: OpaquePointer, _ s: Double, _ out: UnsafeMutablePointer<Double>
+) -> Bool {
+    var f = 0.0, l = 0.0
+    OCCTBridge.OCCTCompCurveParamRange(ref, &f, &l)
+    return adaptorAbscissa("W", s, out, range: (f, l)) {
+        OCCTBridge.OCCTCompCurveParamAtAbscissa(ref, $0, out)
+    }
+}
+
+func OCCTCompCurveSampleUniform(
+    _ ref: OpaquePointer, _ count: Int32, _ out: UnsafeMutablePointer<Double>
+) -> Int32 {
+    adaptorSample("W", count, out) { OCCTBridge.OCCTCompCurveSampleUniform(ref, count, out) }
+}
+
+func OCCTEdgeCurveCreate(_ edge: OpaquePointer) -> OpaquePointer? {
+    if G.on("E_CREATE_NIL") { return nil }
+    return OCCTBridge.OCCTEdgeCurveCreate(edge)
+}
+
+func OCCTEdgeCurveLength(_ ref: OpaquePointer) -> Double {
+    adaptorLength("E", OCCTBridge.OCCTEdgeCurveLength(ref))
+}
+
+func OCCTEdgeCurveParamRange(
+    _ ref: OpaquePointer, _ first: UnsafeMutablePointer<Double>, _ last: UnsafeMutablePointer<Double>
+) {
+    OCCTBridge.OCCTEdgeCurveParamRange(ref, first, last)
+    adaptorRange("E", &first.pointee, &last.pointee)
+}
+
+func OCCTEdgeCurvePointAtParam(
+    _ ref: OpaquePointer, _ u: Double, _ x: UnsafeMutablePointer<Double>,
+    _ y: UnsafeMutablePointer<Double>, _ z: UnsafeMutablePointer<Double>
+) -> Bool {
+    adaptorPoint("E", u, x, y, z) { OCCTBridge.OCCTEdgeCurvePointAtParam(ref, $0, x, y, z) }
+}
+
+func OCCTEdgeCurveTangentAtParam(
+    _ ref: OpaquePointer, _ u: Double, _ x: UnsafeMutablePointer<Double>,
+    _ y: UnsafeMutablePointer<Double>, _ z: UnsafeMutablePointer<Double>
+) -> Bool {
+    adaptorTangent("E", x, y, z) { OCCTBridge.OCCTEdgeCurveTangentAtParam(ref, u, x, y, z) }
+}
+
+func OCCTEdgeCurveParamAtAbscissa(
+    _ ref: OpaquePointer, _ s: Double, _ out: UnsafeMutablePointer<Double>
+) -> Bool {
+    var f = 0.0, l = 0.0
+    OCCTBridge.OCCTEdgeCurveParamRange(ref, &f, &l)
+    return adaptorAbscissa("E", s, out, range: (f, l)) {
+        OCCTBridge.OCCTEdgeCurveParamAtAbscissa(ref, $0, out)
+    }
+}
+
+func OCCTEdgeCurveSampleUniform(
+    _ ref: OpaquePointer, _ count: Int32, _ out: UnsafeMutablePointer<Double>
+) -> Int32 {
+    adaptorSample("E", count, out) { OCCTBridge.OCCTEdgeCurveSampleUniform(ref, count, out) }
+}
+
+// MARK: - Law knot splitting (bridge side; the Swift retry loop is edited by inject.py)
+
+func OCCTLawBSplineKnotSplitting(
+    _ law: OpaquePointer, _ order: Int32, _ out: UnsafeMutablePointer<Int32>, _ maxIdx: Int32
+) -> Int32 {
+    var n = OCCTBridge.OCCTLawBSplineKnotSplitting(law, order, out, maxIdx)
+    if n < 0 && G.on("LAW_IDX_READS_UNREADABLE") && maxIdx >= 2 {
+        out[0] = 1; out[1] = 2
+        return 2
+    }
+    if n < 0 { return n }
+    if G.on("LAW_IDX_NIL") { return -1 }
+    let w = Int(Swift.min(n, maxIdx))
+    if G.on("LAW_IDX_CAP100") { n = Swift.min(n, 100) }
+    if G.on("LAW_IDX_COUNT_PLUS1") { n += 1 }
+    if G.on("LAW_IDX_COUNT_MINUS1") { n -= 1 }
+    for i in 0..<w {
+        if G.on("LAW_IDX_SHIFT_UP") { out[i] += 1 }
+        if G.on("LAW_IDX_ZERO_BASED") { out[i] -= 1 }
+    }
+    if G.on("LAW_IDX_REVERSED") && w > 1 {
+        var i = 0, j = w - 1
+        while i < j { swap(&out[i], &out[j]); i += 1; j -= 1 }
+    }
+    if G.on("LAW_IDX_FIRST_REPEATED") && w > 1 { out[1] = out[0] }
+    return n
+}
+
+func OCCTLawBSplineKnotSplitParams(
+    _ law: OpaquePointer, _ order: Int32, _ out: UnsafeMutablePointer<Double>, _ maxP: Int32
+) -> Int32 {
+    var n = OCCTBridge.OCCTLawBSplineKnotSplitParams(law, order, out, maxP)
+    if n < 0 && G.on("LAW_PAR_READS_UNREADABLE") && maxP >= 2 {
+        out[0] = 0; out[1] = 1
+        return 2
+    }
+    if n < 0 { return n }
+    if G.on("LAW_PAR_NIL") { return -1 }
+    let w = Int(Swift.min(n, maxP))
+    if G.on("LAW_PAR_CAP100") { n = Swift.min(n, 100) }
+    if G.on("LAW_PAR_COUNT_PLUS1") { n += 1 }
+    if G.on("LAW_PAR_COUNT_MINUS1") { n -= 1 }
+    for i in 0..<w {
+        if G.on("LAW_PAR_SHIFT") { out[i] += 0.5 }
+        if G.on("LAW_PAR_AS_INDEX") { out[i] = Double(i + 1) * 1.0000001 }
+    }
+    if G.on("LAW_PAR_REVERSED") && w > 1 {
+        var i = 0, j = w - 1
+        while i < j { swap(&out[i], &out[j]); i += 1; j -= 1 }
+    }
+    if G.on("LAW_PAR_FIRST_REPEATED") && w > 1 { out[1] = out[0] }
+    return n
+}
+
+// MARK: - The two three-point conic forms (Issue554's deliberately unguarded sites)
+
+func OCCTGCMakeEllipse3Points(
+    _ x1: Double, _ y1: Double, _ z1: Double, _ x2: Double, _ y2: Double, _ z2: Double,
+    _ cx: Double, _ cy: Double, _ cz: Double
+) -> OpaquePointer? {
+    if G.on("GC3E_NIL") { return nil }
+    if G.on("GC3E_DEGENERATE_ACCEPTED") {
+        let degenerate = (x1 == x2 && y1 == y2 && z1 == z2) || (y1 == 0 && z1 == 0 && y2 == 0 && z2 == 0)
+        if degenerate {
+            return OCCTBridge.OCCTGCMakeEllipse3Points(5, 0, 0, 0, 3, 0, cx, cy, cz)
+        }
+    }
+    if G.on("GC3E_SWAP_S1_S2") {
+        return OCCTBridge.OCCTGCMakeEllipse3Points(x2, y2, z2, x1, y1, z1, cx, cy, cz)
+    }
+    if G.on("GC3E_CENTER_DROPPED") {
+        return OCCTBridge.OCCTGCMakeEllipse3Points(x1, y1, z1, x2, y2, z2, 0, 0, 0)
+    }
+    return OCCTBridge.OCCTGCMakeEllipse3Points(x1, y1, z1, x2, y2, z2, cx, cy, cz)
+}
+
+func OCCTGCMakeHyperbola3Points(
+    _ x1: Double, _ y1: Double, _ z1: Double, _ x2: Double, _ y2: Double, _ z2: Double,
+    _ cx: Double, _ cy: Double, _ cz: Double
+) -> OpaquePointer? {
+    if G.on("GC3H_NIL") { return nil }
+    let r = OCCTBridge.OCCTGCMakeHyperbola3Points(x1, y1, z1, x2, y2, z2, cx, cy, cz)
+    if r == nil && G.on("GC3H_DEGENERATE_ACCEPTED") {
+        return OCCTBridge.OCCTGCMakeHyperbola3Points(5, 0, 0, 5, 3, 0, 0, 0, 0)
+    }
+    return r
+}
+
+// MARK: - BSpline reads (BSplineMutationsTests)
+
+func OCCTCurve3DBSplineGetKnotSequence(
+    _ curve: OpaquePointer, _ seq: UnsafeMutablePointer<Double>, _ maxCount: Int32
+) -> Int32 {
+    var n = OCCTBridge.OCCTCurve3DBSplineGetKnotSequence(curve, seq, maxCount)
+    if G.on("BS_SEQ_EMPTY") { return 0 }
+    if G.on("BS_SEQ_DROP_LAST") { n -= 1 }
+    let c = Int(n)
+    if G.on("BS_SEQ_UNEXPANDED") && c > 0 {
+        // distinct knots only: the multiplicities are lost
+        var out = [Double]()
+        for i in 0..<c where out.last != seq[i] { out.append(seq[i]) }
+        for (i, v) in out.enumerated() { seq[i] = v }
+        return Int32(out.count)
+    }
+    if G.on("BS_SEQ_REVERSED") && c > 1 {
+        var i = 0, j = c - 1
+        while i < j { swap(&seq[i], &seq[j]); i += 1; j -= 1 }
+    }
+    if G.on("BS_SEQ_SHIFT") { for i in 0..<c { seq[i] += 0.5 } }
+    if G.on("BS_SEQ_ZEROED") { for i in 0..<c { seq[i] = 0 } }
+    return n
+}
+
+func OCCTCurve3DBSplineGetWeights(_ curve: OpaquePointer, _ w: UnsafeMutablePointer<Double>) {
+    OCCTBridge.OCCTCurve3DBSplineGetWeights(curve, w)
+    let n = Int(OCCTBridge.OCCTCurve3DBSplinePoleCount(curve))
+    if G.on("BS_W_ZEROED") { for i in 0..<n { w[i] = 0 } }
+    if G.on("BS_W_X2") { for i in 0..<n { w[i] *= 2 } }
+    if G.on("BS_W_LAST_WRONG") && n > 0 { w[n - 1] = 2 }
+}
+
+func OCCTCurve3DBSplineMaxDegree() -> Int32 {
+    let d = OCCTBridge.OCCTCurve3DBSplineMaxDegree()
+    if G.on("BS_MAXDEG_PLUS1") { return d + 1 }
+    if G.on("BS_MAXDEG_MINUS1") { return d - 1 }
+    if G.on("BS_MAXDEG_ZERO") { return 0 }
+    return d
+}
+
+func OCCTCurve3DBSplineLocateU(_ curve: OpaquePointer, _ u: Double, _ tol: Double) -> Int32 {
+    let i = OCCTBridge.OCCTCurve3DBSplineLocateU(curve, u, tol)
+    if G.on("BS_LOC_PLUS1") { return i + 1 }
+    if G.on("BS_LOC_MINUS1") { return i - 1 }
+    if G.on("BS_LOC_ZERO") { return 0 }
+    if G.on("BS_LOC_FIRST_SPAN") { return 1 }
+    return i
+}
+
+func OCCTCurve3DBSplineSetPeriodic(_ curve: OpaquePointer, _ periodic: Bool) -> Bool {
+    if G.on("BS_PERIODIC_FALSE") { return false }
+    if G.on("BS_PERIODIC_NOOP_TRUE") { return true }
+    return OCCTBridge.OCCTCurve3DBSplineSetPeriodic(curve, periodic)
+}
+
+func OCCTSurfaceBSplineNbUKnots(_ s: OpaquePointer) -> Int32 {
+    let n = OCCTBridge.OCCTSurfaceBSplineNbUKnots(s)
+    return G.on("BS_SURF_NBU_PLUS1") ? n + 1 : n
+}
+
+func OCCTSurfaceBSplineNbVKnots(_ s: OpaquePointer) -> Int32 {
+    let n = OCCTBridge.OCCTSurfaceBSplineNbVKnots(s)
+    return G.on("BS_SURF_NBV_MINUS1") ? n - 1 : n
+}
+
+func OCCTSurfaceBSplineGetUKnots(_ s: OpaquePointer, _ k: UnsafeMutablePointer<Double>) {
+    if G.on("BS_SURF_U_IS_V") {
+        OCCTBridge.OCCTSurfaceBSplineGetVKnots(s, k)
+        return
+    }
+    OCCTBridge.OCCTSurfaceBSplineGetUKnots(s, k)
+    let n = Int(OCCTBridge.OCCTSurfaceBSplineNbUKnots(s))
+    if G.on("BS_SURF_U_REVERSED") && n > 1 {
+        var i = 0, j = n - 1
+        while i < j { swap(&k[i], &k[j]); i += 1; j -= 1 }
+    }
+    if G.on("BS_SURF_U_SHIFT") { for i in 0..<n { k[i] += 0.5 } }
+}
+
+func OCCTSurfaceBSplineGetVKnots(_ s: OpaquePointer, _ k: UnsafeMutablePointer<Double>) {
+    if G.on("BS_SURF_V_IS_U") {
+        OCCTBridge.OCCTSurfaceBSplineGetUKnots(s, k)
+        return
+    }
+    OCCTBridge.OCCTSurfaceBSplineGetVKnots(s, k)
+    let n = Int(OCCTBridge.OCCTSurfaceBSplineNbVKnots(s))
+    if G.on("BS_SURF_V_SHIFT") { for i in 0..<n { k[i] += 0.5 } }
+}
+
+func OCCTSurfaceBSplineGetWeights(
+    _ s: OpaquePointer, _ w: UnsafeMutablePointer<Double>, _ rows: UnsafeMutablePointer<Int32>,
+    _ cols: UnsafeMutablePointer<Int32>
+) {
+    OCCTBridge.OCCTSurfaceBSplineGetWeights(s, w, rows, cols)
+    if G.on("BS_SURF_W_ROWS_COLS_SWAPPED") { swap(&rows.pointee, &cols.pointee) }
+    let n = Int(rows.pointee) * Int(cols.pointee)
+    if G.on("BS_SURF_W_ZEROED") { for i in 0..<n { w[i] = 0 } }
+    if G.on("BS_SURF_W_DROP_ROW") { rows.pointee -= 1 }
+}
+
+// MARK: - Offset basis, continuity and edge projection
+
+func OCCTCurve3DOffsetBasis(_ curve: OpaquePointer) -> OpaquePointer? {
+    if G.on("OFS_NIL") { return nil }
+    let r = OCCTBridge.OCCTCurve3DOffsetBasis(curve)
+    if r == nil && G.on("OFS_NONNIL_FOR_PLAIN") { return OCCTBridge.OCCTCurve3DCreateLine(0, 0, 0, 1, 0, 0) }
+    if r != nil && G.on("OFS_WRONG_BASIS") { return OCCTBridge.OCCTCurve3DCreateLine(0, 0, 0, 0, 1, 0) }
+    return r
+}
+
+func OCCTCurve3DGetContinuity(_ curve: OpaquePointer) -> Int32 {
+    let c = OCCTBridge.OCCTCurve3DGetContinuity(curve)
+    if G.on("CONT_PLUS1") { return c + 1 }
+    if G.on("CONT_C0") { return 0 }
+    if G.on("CONT_CN_AS_99") && c == 6 { return 99 }
+    if G.on("CONT_G1_AS_NEG2") && c == 1 { return -2 }
+    if G.on("CONT_C1_AS_1") && c == 2 { return 1 }
+    if G.on("CONT_C2_AS_2") && c == 4 { return 2 }
+    if G.on("CONT_CLAMPED_TO_C2") && c > 4 { return 4 }
+    return c
+}
+
+func OCCTEdgeProjectPoint(_ edge: OpaquePointer, _ px: Double, _ py: Double, _ pz: Double)
+    -> OCCTCurveProjectionResult
+{
+    var r = OCCTBridge.OCCTEdgeProjectPoint(edge, px, py, pz)
+    if G.on("PRJ_INVALID") { r.isValid = false }
+    if G.on("PRJ_DIST_X2") { r.distance *= 2 }
+    if G.on("PRJ_DIST_PLUS1") { r.distance += 1 }
+    if G.on("PRJ_DIST_ZERO") { r.distance = 0 }
+    if G.on("PRJ_POINT_SHIFT") { r.px += 1 }
+    if G.on("PRJ_POINT_IS_QUERY") { r.px = px; r.py = py; r.pz = pz }
+    if G.on("PRJ_PARAM_SHIFT") { r.parameter += 0.5 }
+    return r
+}
+
+func OCCTCurve3DProjectPoint(_ curve: OpaquePointer, _ px: Double, _ py: Double, _ pz: Double, _ precision: Double)
+    -> OCCTCurveProjectResult
+{
+    var r = OCCTBridge.OCCTCurve3DProjectPoint(curve, px, py, pz, precision)
+    if G.on("PRJ_DIST_X2") { r.distance *= 2 }
+    if G.on("PRJ_DIST_PLUS1") { r.distance += 1 }
+    if G.on("PRJ_DIST_ZERO") { r.distance = 0 }
+    if G.on("PRJ_POINT_SHIFT") { r.projX += 1 }
+    if G.on("PRJ_POINT_IS_QUERY") { r.projX = px; r.projY = py; r.projZ = pz }
+    if G.on("PRJ_PARAM_SHIFT") { r.parameter += 0.5 }
+    return r
+}
+
+// MARK: - Point fitting and the curve continuity analysis (Issue490ContinuityDecoderTests)
+
+func OCCTCurve3DFitPoints(
+    _ pts: UnsafePointer<Double>?, _ count: Int32, _ minDeg: Int32, _ maxDeg: Int32, _ tol: Double
+) -> OpaquePointer? {
+    // The fixture factory: a fit that stops building makes every test that does `guard let` on
+    // it return having executed nothing.
+    if G.on("FIT_NIL") { return nil }
+    return OCCTBridge.OCCTCurve3DFitPoints(pts, count, minDeg, maxDeg, tol)
+}
+
+func OCCTPointsToBSplineWithParams(
+    _ pts: UnsafePointer<Double>, _ count: Int32, _ degMin: Int32, _ degMax: Int32,
+    _ continuity: Int32, _ tol: Double
+) -> OpaquePointer? {
+    if G.on("P2B_NIL") { return nil }
+    if G.on("P2B_FAILS_ABOVE_C2") && continuity > 2 { return nil }
+    if G.on("P2B_DROP_LAST_POINT") && count > 2 {
+        return OCCTBridge.OCCTPointsToBSplineWithParams(pts, count - 1, degMin, degMax, continuity, tol)
+    }
+    if G.on("P2B_REVERSED") {
+        var r = [Double]()
+        for i in stride(from: Int(count) - 1, through: 0, by: -1) {
+            r += [pts[i * 3], pts[i * 3 + 1], pts[i * 3 + 2]]
+        }
+        return r.withUnsafeBufferPointer {
+            OCCTBridge.OCCTPointsToBSplineWithParams($0.baseAddress!, count, degMin, degMax, continuity, tol)
+        }
+    }
+    if G.on("P2B_SHIFTED") {
+        var r = [Double]()
+        for i in 0..<Int(count) { r += [pts[i * 3] + 0.1, pts[i * 3 + 1], pts[i * 3 + 2]] }
+        return r.withUnsafeBufferPointer {
+            OCCTBridge.OCCTPointsToBSplineWithParams($0.baseAddress!, count, degMin, degMax, continuity, tol)
+        }
+    }
+    return OCCTBridge.OCCTPointsToBSplineWithParams(pts, count, degMin, degMax, continuity, tol)
+}
+
+func OCCTLocalAnalysisCurveContinuity(
+    _ c1: OpaquePointer, _ u1: Double, _ c2: OpaquePointer, _ u2: Double, _ order: Int32,
+    _ outStatus: UnsafeMutablePointer<Int32>, _ c0: UnsafeMutablePointer<Double>,
+    _ g1: UnsafeMutablePointer<Double>, _ c1a: UnsafeMutablePointer<Double>,
+    _ c1r: UnsafeMutablePointer<Double>, _ c2a: UnsafeMutablePointer<Double>,
+    _ c2r: UnsafeMutablePointer<Double>, _ g2a: UnsafeMutablePointer<Double>,
+    _ g2cv: UnsafeMutablePointer<Double>
+) -> Bool {
+    if G.on("LA_FALSE") { return false }
+    let ok = OCCTBridge.OCCTLocalAnalysisCurveContinuity(
+        c1, u1, c2, u2, order, outStatus, c0, g1, c1a, c1r, c2a, c2r, g2a, g2cv)
+    if G.on("LA_ORDER_ECHO") { outStatus.pointee = order }
+    if G.on("LA_ORDER_C2") { outStatus.pointee = 4 }
+    if G.on("LA_ORDER_C0") { outStatus.pointee = 0 }
+    return ok
+}
+
+func OCCTLocalAnalysisCurveContinuityFlags(
+    _ c1: OpaquePointer, _ u1: Double, _ c2: OpaquePointer, _ u2: Double, _ order: Int32,
+    _ outMeasured: UnsafeMutablePointer<Int32>
+) -> Int32 {
+    let flags = OCCTBridge.OCCTLocalAnalysisCurveContinuityFlags(c1, u1, c2, u2, order, outMeasured)
+    if G.on("LA_MEASURED_ZERO") { outMeasured.pointee = 0 }
+    if G.on("LA_FLAGS_ZERO") { return 0 }
+    return flags
+}

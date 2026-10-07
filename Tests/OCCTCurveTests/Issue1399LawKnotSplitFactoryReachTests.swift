@@ -26,22 +26,51 @@ struct Issue1399LawKnotSplitFactoryReachTests {
     ///
     /// Keeping the cases in a local
     /// array sidesteps the shape entirely and is not a style choice.
-    private func readableLaws() -> [(String, LawFunction)] {
-        var cases: [(String, LawFunction)] = []
+    ///
+    /// Each case carries what the law reports, measured on the pinned kernel and derived
+    /// independently: below C3 only the two end knots split (a cubic with simple interior knots is
+    /// C2 there), and at C3 every knot of the cubic's own table does. `Law_Interpol` takes its knots
+    /// from the running sum of the absolute differences of the values, so `[0, 2, 1, 3]` has
+    /// knots 0, 2, 3, 5.
+    private struct ReadableCase {
+        let name: String
+        let law: LawFunction
+        /// Split parameters below C3 (the two end knots) and at C3.
+        let endKnots: [Double]
+        let allKnots: [Double]
+        /// The 1-based positions of those knots in the law's own table.
+        let endIndices: [Int]
+        let allIndices: [Int]
+    }
+
+    private func readableLaws() throws -> [ReadableCase] {
+        var cases: [ReadableCase] = []
         if let l = LawFunction.sCurve(from: 0, to: 1, parameterRange: 0...1) {
-            cases.append(("sCurve", l))
+            cases.append(
+                ReadableCase(
+                    name: "sCurve", law: l, endKnots: [0, 1], allKnots: [0, 1],
+                    endIndices: [1, 2], allIndices: [1, 2]))
         }
         if let l = LawFunction.interpolate(points: [(0, 0), (0.5, 2), (1, 1)]) {
-            cases.append(("interpolate(points:)", l))
+            cases.append(
+                ReadableCase(
+                    name: "interpolate(points:)", law: l, endKnots: [0, 1], allKnots: [0, 1],
+                    endIndices: [1, 2], allIndices: [1, 2]))
         }
         if let l = LawFunction.interpolated(values: [0, 2, 1, 3]) {
-            cases.append(("interpolated(values:)", l))
+            cases.append(
+                ReadableCase(
+                    name: "interpolated(values:)", law: l, endKnots: [0, 5],
+                    allKnots: [0, 2, 3, 5], endIndices: [1, 4], allIndices: [1, 2, 3, 4]))
         }
         if let l = LawFunction.bspline(
             poles: [0, 1, 2, 1, 0, 1], knots: [0, 1, 2, 3], multiplicities: [4, 1, 1, 4],
             degree: 3)
         {
-            cases.append(("bspline", l))
+            cases.append(
+                ReadableCase(
+                    name: "bspline", law: l, endKnots: [0, 3], allKnots: [0, 1, 2, 3],
+                    endIndices: [1, 4], allIndices: [1, 2, 3, 4]))
         }
         return cases
     }
@@ -63,14 +92,19 @@ struct Issue1399LawKnotSplitFactoryReachTests {
 
     @Test("Every Law_BSpFunc-derived factory reports its end knots at every continuity order")
     func bsplineBackedLawsAreReadable() throws {
-        let cases = readableLaws()
+        let cases = try readableLaws()
         #expect(cases.count == 4, "all four factories built")
-        for (name, law) in cases {
+        for c in cases {
             for order: ParametricContinuity in [.c0, .c1, .c2, .c3] {
-                let indices = law.knotSplitting(continuityOrder: order)
-                let params = law.knotSplitParameters(continuityOrder: order)
-                #expect(indices.count >= 2, "\(name) indices at \(order)")
-                #expect(params.count == indices.count, "\(name) pair agrees at \(order)")
+                let indices = c.law.knotSplitting(continuityOrder: order)
+                let params = c.law.knotSplitParameters(continuityOrder: order)
+                let want = order == .c3 ? c.allKnots : c.endKnots
+                let wantIndices = order == .c3 ? c.allIndices : c.endIndices
+                // The splits themselves, not only that there are at least two: the parameters are
+                // the knots, and the indices are their 1-based positions in the knot table.
+                #expect(params == want, "\(c.name) parameters at \(order)")
+                #expect(indices == wantIndices, "\(c.name) indices at \(order)")
+                #expect(params.count == indices.count, "\(c.name) pair agrees at \(order)")
             }
         }
     }
@@ -86,5 +120,9 @@ struct Issue1399LawKnotSplitFactoryReachTests {
                     law.knotSplitParameters(continuityOrder: order).isEmpty, "\(name) at \(order)")
             }
         }
+        // The control that makes empty mean "unreadable": a readable law answers at C0, the
+        // order at which an unreadable one is asked above.
+        let readable = try readableLaws()
+        #expect(readable.allSatisfy { !$0.law.knotSplitting(continuityOrder: .c0).isEmpty })
     }
 }

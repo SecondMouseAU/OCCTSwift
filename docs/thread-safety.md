@@ -13,7 +13,7 @@ OCCT is **not thread-safe** for concurrent access to shared geometry. Use `OCCTS
 
 OCCT has several thread-unsafe patterns:
 
-1. **BSpline evaluation caches**: `GeomAdaptor_Curve` and `GeomAdaptor_Surface` have mutable `BSplCLib_Cache`/`BSplSLib_Cache` that are written during `const` evaluation methods without synchronization. Two threads evaluating the same adaptor will race.
+1. **BSpline evaluation caches**: `GeomAdaptor_Curve` and `GeomAdaptor_Surface` (and `BRepAdaptor_Curve` over them) own a `BSplCLib_Cache`/`BSplSLib_Cache` that a `const` evaluator rebuilds in place when the parameter leaves the cached span. This is OCCT's documented design rather than a defect: an adaptor is meant to be owned by one worker, which takes `ShallowCopy()` of a shared adaptor (it drops the cache, so the copy builds a private one), and OCCT's own parallel code does exactly that (`GeomLib_CheckCurveOnSurface` per worker). Upstream's maintainer restated this in Open-Cascade-SAS/OCCT#1554. **The rule: never share one adaptor between threads; give each thread its own, by constructing one or by `ShallowCopy()`.** Sharing one reads a wrong point, not merely a sanitiser report: measured on 2026-10-07 for #3065, without carried patch `0031` eight threads on one shared adaptor read wrong points in 97 of 97 completed runs. `0031` currently serializes the cache, which makes a shared adaptor return correct points, at a single-thread cost measured the same day (under load, so only the ratio means anything) of about 24 ns versus 171 ns per cached `D0`; do not build on it, since the supported patterns are correct with or without it. The bridge builds its adaptors per call, so each is private to its caller, except the two persistent ones behind `EdgeCurve` and `WireCurve` (see the `Sendable` audit below), and `Scripts/check-bridge-adaptor-members.py` holds it to those two.
 
 2. **Topology flag mutations**: `TopoDS_TShape::myState` uses non-atomic `uint16_t` with bitwise operations. Concurrent flag modification on shared TShapes is a data race.
 
@@ -396,8 +396,8 @@ clean runs after (8×30, 8×50, 10×60, 8×40).
 Issue #1162 flagged 27+ Swift classes marked `@unchecked Sendable` without thread-safety
 verification, citing #1153/#1154/#1155/#1156/#1158/#1159 (all now closed) as evidence. Re-verifying
 those citations against what's actually shipped, rather than trusting them, found several stale or
-outright wrong: #1153/#1154's kernel fixes are override-link-validated but not in the pinned
-kernel (so their races are still live), #1155's survey answered a different question (independent
+outright wrong: #1153/#1154's kernel fixes were override-link-validated but not yet in the pinned
+kernel when the audit was written (they have since been pinned), #1155's survey answered a different question (independent
 instances per thread, not concurrent calls on one shared instance), and #1156/#1158/#1159 are
 duplicates with no independent evidence of their own. Full audit table, per-class mechanism, and
 disposition: [`Scripts/repro/1162-sendable-audit/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/1162-sendable-audit).

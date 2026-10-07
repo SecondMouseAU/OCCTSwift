@@ -19,13 +19,14 @@ import OCCTPlatform
 /// }   // n+1 points spaced equally along the wire
 /// ```
 ///
-/// **Not `Sendable`.** Same reason as ``EdgeCurve`` (issue #1162's audit found the identical
-/// defect here too, even though only ``EdgeCurve`` was in #1162's own table): the bridge struct
-/// behind `ref` holds a persistent `BRepAdaptor_CompCurve` built once at `init` and reused by
-/// every subsequent call, so `point`/`tangent`/`length`/every other accessor mutates the
-/// adaptor's BSpline evaluation cache with zero synchronization (issue #1153, kernel fix
-/// override-link-validated but not yet in the pinned `OCCT.xcframework`). Give each thread/task
-/// its own `WireCurve` rather than sharing one, or serialize access with `OCCTSerial.withLock { }`.
+/// **Not `Sendable`, and one per task.** Same reason as ``EdgeCurve``: the bridge struct behind
+/// `ref` holds a persistent `BRepAdaptor_CompCurve` built once at `init` and reused by every
+/// subsequent call, and OCCT designs an adaptor to be owned by one worker, because its BSpline
+/// evaluation cache is rebuilt in place by `const` evaluators. Sharing one `WireCurve` between
+/// threads is unsupported: without carried patch `0031` (#1153), which currently serializes that
+/// cache, it reads wrong points (#3065). Swift 6 enforces the supported pattern, since a
+/// non-`Sendable` instance cannot cross a task boundary: share the ``Wire`` and construct a
+/// `WireCurve` inside each task, or serialize access with `OCCTSerial.withLock { }`.
 public final class WireCurve: ArcLengthCurveAdaptor {
     internal let ref: OCCTCompCurveRef
 
