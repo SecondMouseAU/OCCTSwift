@@ -98,7 +98,18 @@ struct BRepLibExtendedTests {
         let b = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let edges = b.edges()
         try #require(edges.count == 12)
-        OCCTEdgeSetSameParameter(edges[0].handle, false)
+        // `edges[0].handle` is a raw pointer that the `Edge` owns and releases in `deinit`, and Swift
+        // may release `edges` as soon as its last use is the `.handle` load, which in an optimised
+        // build is BEFORE the C call runs. The setter then writes through a freed `OCCTEdge`, the
+        // flag never changes on the shared TShape, and `isValid` correctly reports a valid box
+        // (#2929: measured on release wasm, where a fresh edge walk read all 12 flags still true;
+        // debug builds extend lifetimes to scope end, which is why Apple's debug run passed).
+        withExtendedLifetime(edges) {
+            OCCTEdgeSetSameParameter(edges[0].handle, false)
+        }
+        let cleared = b.edges().first.flatMap { OCCTShapeFromEdge($0.handle) }
+            .map { Shape(handle: $0).edgeSameParameter }
+        #expect(cleared == false, "the setter must reach the TShape the box shares")
         #expect(b.isValid == false, "a cleared SameParameter flag should fail BRepCheck")
         b.sameParameterAll(tolerance: 1e-5)
         #expect(b.isValid)
