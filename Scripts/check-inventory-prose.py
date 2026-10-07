@@ -92,6 +92,7 @@ WORDS = {
     "thirty-one": 31, "thirty-two": 32, "thirty-three": 33, "thirty-four": 34, "thirty-five": 35,
     "thirty-six": 36, "thirty-seven": 37, "thirty-eight": 38, "thirty-nine": 39, "forty": 40,
     "forty-one": 41, "forty-two": 42, "forty-three": 43, "forty-four": 44, "forty-five": 45,
+    "forty-six": 46, "forty-seven": 47, "forty-eight": 48, "forty-nine": 49, "fifty": 50,
 }
 
 
@@ -1179,6 +1180,10 @@ def self_test():
     # 4. Number words and digits both read, and a non-number is reported rather than crashing.
     case("number-words-read", to_int("seventeen") == 17 and to_int("22") == 22
          and to_int("TWENTY-TWO") == 22 and to_int("umpteen") is None)
+    # The table once stopped at forty-five, so the day the job's invocation count reached 46 the
+    # claim "forty-six" was unreadable and the gate failed a correct sentence.
+    case("number-words-reach-fifty", to_int("forty-six") == 46 and to_int("fifty") == 50
+         and to_int("fifty-one") is None)
 
     # 5. The ci.yml parser stops at the next job rather than counting the whole file.
     sample = (

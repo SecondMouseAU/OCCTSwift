@@ -35,7 +35,7 @@ jobs:
   #     job would be red for a reason that has nothing to do with it, which is the same as not
   #     having it. That state is fixable by bumping the pin, and is fixed today, but the
   #     separation is what makes the gate survive the next time it happens.
-  #   - ubuntu-latest, because all twenty-seven are pure Python over the repo's own text: no Xcode, no
+  #   - ubuntu-latest, because all twenty-eight are pure Python over the repo's own text: no Xcode, no
   #     OCCT, no swift build. A macOS runner would cost 10x the minutes to run the identical checks.
   #     check-pinned-asset-patches.py is here as its `--self-test` alone for exactly that reason:
   #     its real run reads the pinned xcframework, which is not text (#2196). An ordinal stood here
@@ -46,7 +46,7 @@ jobs:
   #     shipped three gate scripts that were confidently wrong (#618, #624/#630, #626), so the
   #     detector's own fixtures are part of what CI checks, not a developer-only convenience.
   #   - `if: '!cancelled()'` on every step after the first, so one failing gate does not hide the
-  #     other twenty-six. Without it a contributor fixes them one CI round trip at a time. It is
+  #     other twenty-seven. Without it a contributor fixes them one CI round trip at a time. It is
   #     `!cancelled()` rather than `always()` so the concurrency group's cancel-in-progress still
   #     takes effect.
   #
