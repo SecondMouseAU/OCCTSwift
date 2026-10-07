@@ -480,6 +480,20 @@ that minted it ([#295](https://github.com/SecondMouseAU/OCCTSwift/issues/295)).
   graph.resolve(.createdBy(operationName: "channel-cut", kind: .face))      // .success(face)
   ```
 
+> **The records are written in node-id order, the same in every process.** One absorb writes its
+> records input by input, ordered by the input's `(kind, index)`, an input's Modified record (if any)
+> then its Generated record (if any), and the inputs the operation removed last as one Deleted record. So every
+> record's `sequenceNumber`, and with it `.createdBy(operationName:kind:occurrence:)`, names the same
+> node from one run to the next ([#3038](https://github.com/SecondMouseAU/OCCTSwift/issues/3038)).
+> Before that fix the order followed heap addresses and changed in every process.
+>
+> ```swift
+> // Two identical absorbs, whatever the heap looked like, log the same records in the same order.
+> graph.add(result, absorbing: history, inputRoots: [root], operationName: "channel-cut")
+> let log = (0..<graph.historyRecordCount).compactMap { graph.historyRecord(at: $0) }
+> let originals = log.compactMap { $0.mapping.keys.first }   // (kind, index) never goes backwards
+> ```
+
 > **Filter `currentForms(of:)` by kind.** It returns the cut's new section *edges* alongside the split
 > faces, because `FindDerived` unions Modified and Generated descendants transitively. When you want
 > the faces a face became, filter on `.kind == .face`.

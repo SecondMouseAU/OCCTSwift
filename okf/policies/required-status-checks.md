@@ -95,3 +95,20 @@ from `refactor/381-pass1b`, the integration branch, now merged.
   and it failed on `main` at the v2.0.0 release commit for an unrelated reason (the manifest
   pointed at a release asset still uploading, so SwiftPM got a 404). Measure a run of green results
   before requiring it, rather than requiring it on one.
+
+## Required is not sufficient, and what enforces that
+
+One required check lets GitHub merge a PR the moment `gate-scripts` is green, whatever the
+unrequired checks are doing. #2998 went through that gap, and #3052 merged on 2026-10-02 with
+`swift build + test (macOS)` and `Kilo Code Review` both still running (#3055). **The tool that
+enforces the rest is `Scripts/merge-pr.py`**, and it is the only one: the ruleset cannot, by the
+rules above, and no CI job can gate a merge it is itself part of.
+
+`merge-pr.py` refuses unless every non-wasm check run on the PR's content head is completed and
+green, with `changes`, `gate-scripts` and `Kilo Code Review` registered, the head at least 180
+seconds old, and no unanswered review comment. It reads the check-runs API for a SHA, never the
+rollup, which lags a push. After its own CHANGELOG transcription commit the new head needs only
+`gate-scripts`, since a CHANGELOG-only commit cannot change what the slow jobs tested; see
+[changelog-on-merge](changelog-on-merge.md). `--allow-pending-checks` is the explicit exception and
+never overrides a failure. **A merge made any other way, by `gh pr merge` or the web button, is not
+covered**, which is the same boundary the transcription backstop has.

@@ -1026,10 +1026,30 @@ extension Shape {
     /// spine wire running through the middle. Useful for reverse-engineering
     /// sweep operations from imported geometry.
     ///
+    /// The kernel builds one path per vertex of the start section and stops it at a vertex of the
+    /// end section, so the two ends must be distinct sections that share no vertex. Input that
+    /// breaks that used to abort the process, which no `catch` can absorb, so it answers `nil`
+    /// instead.
+    ///
     /// - Parameters:
-    ///   - startShape: One end of the pipe (face or wire)
-    ///   - endShape: Other end of the pipe (face or wire)
-    /// - Returns: The middle path wire, or nil on failure
+    ///   - startShape: One end of the pipe, a face or a wire. Any other shape type answers `nil`.
+    ///   - endShape: Other end of the pipe, a face or a wire. Any other shape type answers `nil`.
+    ///     The same face or wire as
+    ///     `startShape`, a section sharing a vertex with it (adjacent faces, faces meeting at a
+    ///     corner) and a null shape all answer `nil`.
+    /// - Returns: The middle path wire, or nil on failure or for an input refused as above.
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// let faces = box.subShapes(ofType: .face)
+    /// // Two faces of a box share an edge unless they are opposite, and only the opposite pair
+    /// // is a pipe cross-section.
+    /// let spines = faces.indices.flatMap { i in
+    ///     faces.indices.filter { $0 > i }.compactMap { box.middlePath(start: faces[i], end: faces[$0]) }
+    /// }
+    /// print(spines.count)  // 3, one per opposite pair
+    /// print(box.middlePath(start: faces[0], end: faces[0]) == nil)  // true, not a crash
+    /// ```
     public func middlePath(start startShape: Shape, end endShape: Shape) -> Shape? {
         guard let h = OCCTShapeMiddlePath(handle, startShape.handle, endShape.handle) else {
             return nil

@@ -814,6 +814,24 @@ OCCTShapeRef OCCTShapeCreateLoftAdvanced(const OCCTWireRef* profiles,
 {
   if (!profiles || profileCount < 1)
     return nullptr;
+  // ThruSections needs at least two sections, and a vertex end cap counts as one. The
+  // `thrusections` DRAW command (BRepTest_SweepCommands.cxx) refuses `n < 6`, i.e. fewer than two
+  // shapes after `result issolid isruled`, and takes a vertex only as the first or last shape. One
+  // wire and no vertex kills the process with SIGSEGV when smooth (#3099) and returns an invalid
+  // shape when ruled, and OCC_CATCH_SIGNALS is inert in this build, so refuse it before OCCT is
+  // called.
+  int32_t sectionCount = 0;
+  for (int32_t i = 0; i < profileCount; i++)
+  {
+    if (profiles[i])
+      sectionCount++;
+  }
+  if (firstVertexX == firstVertexX)
+    sectionCount++;
+  if (lastVertexX == lastVertexX)
+    sectionCount++;
+  if (sectionCount < 2)
+    return nullptr;
   try
   {
     BRepOffsetAPI_ThruSections maker(solid, ruled);

@@ -88,9 +88,14 @@ struct Issue2972DiagonalSteppedSeamTests {
         let shape = try build(start: 0, width: 8 * 2.0.squareRoot())
         #expect(shape.isValid)
         let volume = try #require(shape.volume)
-        // Measured on origin/main and on the #2972 branch alike. A change here means the diagonal
-        // path moved, not that this number was wrong.
-        #expect(abs(volume - 968.0606173278654) < 1e-6, "measured \(volume)")
+        // The base is 368 x 2 = 736 and the upright 8 sqrt(2) x 10 x 2, which only touch, plus
+        // the bend over the chamfer edge's 8 sqrt(2): 967.7370408806979. The pin was 968.0606,
+        // 0.3236 above that, measured on origin/main: the fillet closed off past the chamfer's
+        // corners, along the base's side faces. The prism ends flush with the run (#3045).
+        let derived: Double =
+            736.0 + 8.0 * 2.0.squareRoot() * 20.0
+            + 8.0 * 2.0.squareRoot() * 1.5 * 1.5 * Self.quarter
+        #expect(abs(volume - derived) < 1e-6, "measured \(volume) against \(derived)")
     }
 
     /// The case that threw.
@@ -107,9 +112,9 @@ struct Issue2972DiagonalSteppedSeamTests {
         let fillet: Double = 1.5 * 1.5 * Self.quarter * 4.0
         let derived: Double = 816.0 + fillet
         // Measured on the fixed builder: 817.931416529423, which is the closed form to the last
-        // digit printed. The axis-aligned stepped fixtures sit 0.01 to 0.4 under theirs, where
-        // OCCT closes the fillet off past the step; this one shows no run-out, and a surplus fillet
-        // along the free chamfer edge would move it by about 3.5.
+        // digit printed. A surplus fillet along the free chamfer edge would move it by about 3.5.
+        // The axis-aligned stepped fixtures are on their closed forms too since #3045, where they
+        // used to sit 0.01 to 0.4 under, OCCT closing the fillet off past the step.
         #expect(abs(volume - derived) < 1e-3, "volume \(volume) against the closed form \(derived)")
         // 1e-5 relative, as for the other fillet closures: two builds of one kernel can differ at
         // the sixth digit.
@@ -127,13 +132,17 @@ struct Issue2972DiagonalSteppedSeamTests {
     /// run the bend occupies is the whole chamfer edge, which is what the unfiltered selection
     /// took.
     ///
-    /// Measured on origin/main.
-    @Test("the upright wider than the chamfer edge builds exactly as it did")
+    /// The volume is the closed form since #3045 (it was 1088.0606 on origin/main, 0.3236 over it,
+    /// the fillet closing off past the chamfer's corners): 736 + the upright's
+    /// (edge + 6) x 10 x 2, plus the bend over the chamfer edge.
+    @Test("the upright wider than the chamfer edge bends the whole chamfer edge")
     func wideUprightIsUnchanged() throws {
         let shape = try build(start: -3, width: Self.edge + 6.0)
         #expect(shape.isValid)
         let volume = try #require(shape.volume)
-        #expect(abs(volume - 1088.060616237176) < 1e-5 * 1088.060616237176, "measured \(volume)")
+        let derived: Double =
+            736.0 + (Self.edge + 6.0) * 20.0 + Self.edge * 1.5 * 1.5 * Self.quarter
+        #expect(abs(volume - derived) < 1e-6, "measured \(volume) against \(derived)")
     }
 
     /// A convex bend's prism was cut to the length of the FROM flange's own edge.

@@ -5,7 +5,7 @@ parent: API Reference
 
 # Sheet Metal
 
-`SheetMetal` is a declarative namespace for composing bent sheet-metal parts from planar flanges and bend specifications. `StandardLayout` (in `SheetLayout.swift`) is a companion `Sheet` extension that auto-arranges front/top/side/iso engineering views on a drawing sheet. Neither type wraps OCCT sheet-metal primitives directly; both build on `Shape.extrude`, `Shape.union`, `Shape.filleted`, and `Drawing` view factories.
+`SheetMetal` is a declarative namespace for composing bent sheet-metal parts from planar flanges and bend specifications. `StandardLayout` (in `SheetLayout.swift`) is a companion `Sheet` extension that auto-arranges front/top/side/iso engineering views on a drawing sheet. Neither type wraps OCCT sheet-metal primitives directly; both build on `Shape.extrude`, `Shape.union`, and `Drawing` view factories.
 
 ## Topics
 
@@ -250,7 +250,7 @@ public enum BuildError: Error, CustomStringConvertible {
 | `.unionFailed` | Boolean union of extruded pieces failed. |
 | `.parallelFlangesHaveNoSeam` | The two flanges are parallel: their normals' cross-product is zero, so there is no seam line. |
 | `.noSeamEdgeFound` | Union succeeded but no shared seam edge was found between the two flanges, inside the run of the seam both occupy. |
-| `.filletFailed` | `Shape.filleted(edges:radius:)` returned `nil` for the seam edge(s). |
+| `.filletFailed` | The concave bend's rounding could not be built as asked: the radius reaches past either flange's face, the two faces are too nearly parallel to leave a wedge to round, or the fused result was not a valid solid. Also a convex bend whose material could not be built, and a zero-radius concave bend whose `Shape.filleted(edges:radius:)` returned `nil`. |
 | `.seamsDoNotOverlap` | The two flanges' seam-direction extents have no overlap: they cannot meet. |
 | `.nonRectangularStepFlange` | A stepped-seam bend targets a non-rectangular flange profile; v0.153 split logic requires rectangles. |
 
@@ -294,7 +294,7 @@ Union succeeded but no shared seam edge was found between the two flanges, insid
 
 ### `BuildError.filletFailed`
 
-`Shape.filleted(edges:radius:)` returned `nil` for the seam edge(s).
+The bend's rounding could not be built as asked, and nothing is returned in its place. For a concave bend of positive radius that is a radius reaching past either flange's face (the tangent line would leave the metal), faces too nearly parallel to leave a wedge between them, or a fused result that is not a valid solid (#3045). A convex bend raises it when its material cannot be built. A concave bend of radius `0` reaches it when `Shape.filleted(edges:radius:)` returns `nil`.
 
 ### `BuildError.seamsDoNotOverlap`
 
@@ -316,7 +316,7 @@ public struct Builder: Sendable {
 }
 ```
 
-The builder validates inputs, optionally splits flanges at stepped-seam intersections, extrudes each piece along its `normal`, fuses all pieces with `Shape.union`, then fillets each bend seam with `Shape.filleted(edges:radius:)`.
+The builder validates inputs, optionally splits flanges at stepped-seam intersections, extrudes each piece along its `normal`, fuses all pieces with `Shape.union`, then rounds each concave bend by fusing in the fillet's material as a prism, and each convex bend by fusing in its bend material.
 
 - **OCCT:** Internally delegates to `BRepPrimAPI_MakePrism` (via `Shape.extrude`), `BRepAlgoAPI_Fuse` (via `Shape.union`), and `BRepFilletAPI_MakeFillet` (via `Shape.filleted`).
 
@@ -363,7 +363,7 @@ public func build(flanges: [Flange], bends: [Bend] = []) throws -> Shape
 2. For each bend, compute the seam direction (`cross(a.normal, b.normal)`) and the overlap range along the seam. If a flange extends past the intersection (a *stepped* seam), split that flange's profile at the intersection endpoints; the pieces outside the bend remain flat.
 3. Extrude every piece via `Wire.polygon3D` + `Shape.extrude(profile:direction:length:)`.
 4. Fuse all pieces with sequential `Shape.union`.
-5. For each **concave** bend: locate seam edges between the two flanges you declared, **restricted to the run of the seam line the two share**, and call `Shape.filleted(edges:radius:)`.
+5. For each **concave** bend: locate seam edges between the two flanges you declared, **restricted to the run of the seam line the two share**, and fuse in a prism of the fillet's material over that run: the corner of the free wedge between the two faces, less the circle a ball of `insideRadius` rolls, built from the tangent points and extruded along the seam (#3045). It adds `r^2 (1 - pi/4)` per unit of seam at a right angle. An `insideRadius` of `0` has no material to add and still goes through `Shape.filleted(edges:radius:)`.
    For each **convex** bend: build a curved-triangle prism of bend material (three-point arc cross-section extruded along the seam, **cut to that same run**) and fuse it in.
 
 **On a stepped seam, the outer pieces keep their sharp edges.** The two plane tests that find the seam edge hold along the whole seam *line*, not just along the bend, so until #2972 the outer piece's free edge was filleted too. That edge is convex, so the fillet removed material there: all four stepped fixtures in the suite came out below their flange volumes, by exactly `r^2 (1 - pi/4)` times the surplus length. The selection is now bounded by the bend's own intersection range. Measurement and derivations: [`Scripts/repro/2972-sheetmetal-volumes/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/2972-sheetmetal-volumes).
@@ -372,16 +372,34 @@ public func build(flanges: [Flange], bends: [Bend] = []) throws -> Shape
 
 **A seam diagonal to a flange's own axes gets the same run** (#3033). There is no profile axis to project the bend's intersection onto, so the run is the part of the seam line that both flanges' profile edges cover. That needs no flange split, because the fused solid already holds the seam as separate edges at the contact boundary. An upright narrower than the diagonal edge it stood on used to throw `BuildError.filletFailed` for a concave bend, and for a convex one built silently with the prism cut to the *from* flange's whole edge whatever the other flange covered, so the two declaration orders disagreed. Both now build over the shared run. Measurement and derivations: [`Scripts/repro/3019-3033-sheetmetal-seam-extent/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/3019-3033-sheetmetal-seam-extent).
 
-**Known limitation (#3045).** A stepped concave bend can come back with `isValid == false`. It was measured when the radius reaches the thickness, where the two flange bodies interpenetrate, and where the narrower flange butts the wider one. Nothing throws, and once the radius passes the thickness on the shapes where it was measured the volume is wrong as well. The stepped fixtures in the suite all keep the radius below the thickness. The cause is not established.
+**A stepped concave bend is exact at every radius (#3045).** It used to come back with `isValid == false` once the radius reached the thickness, where the two flange bodies interpenetrate, and where the narrower flange butts the wider one, and from a radius past the thickness the volume was wrong as well (+7.7 at r = 2.5 and +16.2 at r = 3.0 on a foot under a wider web at thickness 2). The solid the fillet started from was valid. `BRepFilletAPI_MakeFillet` has to close the fillet off where the seam stops short of a flange's own edge, on a side face one thickness tall, and once the radius passes that it runs through it. The bend is now the prism described in step 5 and ends flush with its run. A bend whose tangent line would leave a flange's face, or that does not give a valid solid, throws `BuildError.filletFailed` and is never returned.
 
-**A bend's volume is predictable, to about 3e-5.** Flange body volumes, less any volume where two bodies interpenetrate, plus `r^2 (1 - pi/4) * L` for each concave bend over its matched seam length and `(pi/4) * t^2 * L` for each convex one. A seam that runs on into a flat neighbour costs a little more: the fillet closes off over about 0.1 past the step, which is the only reason the stepped fixtures are not exact.
+```swift
+// A foot (y in [10, 35]) under a wider web (y in [0, 45]), at a radius past the thickness.
+let foot = SheetMetal.Flange(
+    id: "foot",
+    profile: [SIMD2(10, 0), SIMD2(35, 0), SIMD2(35, 30), SIMD2(10, 30)],
+    origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, -1),
+    uAxis: SIMD3(0, 1, 0), vAxis: SIMD3(1, 0, 0))
+let web = SheetMetal.Flange(
+    id: "web",
+    profile: [SIMD2(0, 0), SIMD2(20, 0), SIMD2(20, 45), SIMD2(0, 45)],
+    origin: SIMD3(30, 0, 0), normal: SIMD3(-1, 0, 0),
+    uAxis: SIMD3(0, 0, 1), vAxis: SIMD3(0, 1, 0))
+let part = try SheetMetal.Builder(thickness: 2).build(
+    flanges: [foot, web],
+    bends: [SheetMetal.Bend(from: "web", to: "foot", radius: 3)])
+// part.isValid is true, and part.volume is 3300 + 25 * 3^2 * (1 - pi/4) = 3348.285...
+```
+
+**A bend's volume is predictable, to 1e-9.** Flange body volumes, less any volume where two bodies interpenetrate, plus `r^2 (1 - pi/4) * L` for each concave bend over its matched seam length and `(pi/4) * t^2 * L` for each convex one, for a right angle. Before #3045 a seam that ran on into a flat neighbour cost a little more, the fillet closing off over about 0.1 past the step, which was why the stepped fixtures were not exact.
 
 - **Parameters:**
   - `flanges`: ordered list of flanges; IDs must be unique; each profile needs ≥ 3 points.
   - `bends`: list of bend connections; defaults to `[]` (no bends = simple multi-flange union).
-- **Returns:** Fused and filleted `Shape`.
-- **Throws:** `BuildError` on validation failure, extrusion failure, union failure, or fillet failure.
-- **OCCT:** `BRepPrimAPI_MakePrism` (extrude) · `BRepAlgoAPI_Fuse` (union) · `BRepFilletAPI_MakeFillet` (fillet) · `GC_MakeArcOfCircle` / `BRepBuilderAPI_MakeWire` (convex bend arc) · `GC_MakeSegment` (convex bend lines).
+- **Returns:** The fused, bent `Shape`, a valid solid: a result that is not one is refused as `filletFailed`, never returned.
+- **Throws:** `BuildError` on validation failure, extrusion failure, union failure, or a bend that could not be built.
+- **OCCT:** `BRepPrimAPI_MakePrism` (extrude) · `BRepAlgoAPI_Fuse` (union) · `GC_MakeArcOfCircle` / `BRepBuilderAPI_MakeWire` (the concave and convex bend arcs) · `GC_MakeSegment` (the bend lines) · `BRepFilletAPI_MakeFillet` (a concave bend of radius `0` only).
 - **Example:**
   ```swift
   let base = SheetMetal.Flange(

@@ -10,10 +10,8 @@ import Testing
 /// face into two 10×4 strips. Assertions are geometric rather than count-only,
 /// "two nodes came back" is not evidence they are the right two.
 ///
-/// **Nothing here may depend on the order of the records `add(_:absorbing:...)` writes.** OCCT's
-/// `BRepGraph_LayerHistory::Absorb` walks a hash map keyed on shape addresses, so the same cut
-/// writes the same eleven records in a different order every process (#3038). The tests pin sets,
-/// areas and positions, and a record's own contents, which are stable.
+/// The order of the records is pinned by `Issue3038AbsorbOrderTests`; the tests here pin sets,
+/// areas and positions, and a record's own contents, so they hold whatever that order is.
 @Suite("Graph history absorb (#290)")
 struct GraphHistoryAbsorbTests {
 

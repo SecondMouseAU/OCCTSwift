@@ -21,6 +21,42 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### SheetMetal: a stepped concave bend is a valid solid on its closed form at every radius (#3045)
+
+`SheetMetal.Builder.build()` returned `isValid == false` for some stepped concave bends, and once the radius passed the thickness the volume was wrong as well (+7.7 at r = 2.5 and +16.2 at r = 3.0 on a foot under a wider web at thickness 2). The solid the fillet started from was valid; `BRepFilletAPI_MakeFillet` could not close the fillet off where the seam stops short of a flange's own edge. A concave bend is now the fillet's material fused in as a prism cut to the bend's run, for any wedge angle, so the result is valid and adds exactly `r^2 (1 - pi/4)` per unit of seam at a right angle, at every radius. A radius whose tangent line would leave a flange's face, or a bend that does not fuse to a valid solid, throws `BuildError.filletFailed`; an invalid solid is no longer returned. The volumes of stepped concave bends that were valid move to their closed forms (up to 0.375 on the four-fillet U-channel), and the two diagonal-seam fixtures move down by 0.32.
+
+```swift
+let part = try SheetMetal.Builder(thickness: 2).build(
+    flanges: [foot, web],
+    bends: [SheetMetal.Bend(from: "web", to: "foot", radius: 3)])
+// part.isValid is true; part.volume is 3300 + 25 * 3^2 * (1 - pi/4)
+```
+
+### `Shape.middlePath(start:end:)` answers `nil` for a null end, an edge end, the same face twice and touching faces instead of crashing (#3098)
+
+`BRepOffsetAPI_MiddlePath` reads the type of its start shape unchecked and, when the two sections share a vertex, casts a bare vertex of a path to an edge, so a null end, the same face or wire twice and two adjacent faces aborted the process with a signal no `catch` can absorb. The bridge now refuses a null shape, an end that is not a face or a wire, and two sections that share a vertex, before the kernel is called. Opposite faces of a box, the caps of a cylinder or a tube and wire ends still return the spine.
+
+```swift
+let box = Shape.box(width: 10, height: 10, depth: 10)!
+let faces = box.subShapes(ofType: .face)
+print(box.middlePath(start: faces[0], end: faces[0]) == nil)  // true, not a crash
+```
+
+### `BRepGraph.add(_:absorbing:)` records absorbed history in a stable order (#3038)
+
+`BRepGraph.add(_:absorbing:inputRoots:operationName:)` used to write its history records in an order that followed heap addresses and changed from one process to the next, so every record's `sequenceNumber`, and the node `TopologyRef.createdBy(operationName:kind:occurrence:)` named, differed between runs. It now records input by input in `(kind, index)` order, each input's Modified record then its Generated record, with the removed inputs last as one Deleted record. The set of records is unchanged. The fix is in the bridge; no kernel patch is involved.
+
+### `Shape.loft(profiles:solid:ruled:)` returns nil for fewer than two sections instead of crashing or returning an invalid shape (#3099)
+
+A loft needs two sections, and `firstVertex` and `lastVertex` each count as one. A single profile with no vertex ended the process with SIGSEGV when `ruled` was `false`, and returned a shape whose `isValid` was false when `ruled` was `true`. Both now return `nil`; one profile plus a vertex still lofts a cone.
+
+```swift
+guard let circle = Wire.circle(radius: 5) else { return }
+print(Shape.loft(profiles: [circle], solid: true, ruled: false) == nil)  // true, not a crash
+let cone = Shape.loft(profiles: [circle], solid: true, ruled: false, lastVertex: SIMD3(0, 0, 10))
+print(cone?.isValid ?? false)  // true
+```
+
 ### `Shape.analyze(tolerance:)` counts small edges by their true length (#3074)
 
 `ShapeAnalysisResult.smallEdgeCount` measured each edge with `BRepGProp::LinearProperties`, a single fixed Gauss rule that reads an elliptical edge up to 1.485% long, so an edge within about 1.5% of the tolerance could be classified wrongly. Each edge with a 3D curve or a curve on a surface is now measured with the same adaptive arc length as `Edge.length`. A 10 x 1 ellipse edge (true length 40.6397418010) is now counted at `tolerance: 41.0`, where the old rule read 41.2431578703 and did not count it. Degenerate edges are still skipped, and a polygon-only edge is measured from its polygon as before.
