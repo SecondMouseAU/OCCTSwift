@@ -21,6 +21,34 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### Concurrent first use of Shape.edge2d* no longer returns garbage vertices or kills the process, carried as kernel patch 0056 (#3039)
+
+`BRepLib::Plane()` created its process-global plane on first use with no lock, and every vertex that `BRepLib_MakeEdge2d` builds goes through it. When two threads made their first 2D edge in a process at the same moment (`Shape.edge2d(from:to:)`, `edge2dFromCircle`, `edge2dFromLine`, `edge2dFullCircle`, `edge2dEllipse`, `edge2dEllipseArc`, `edge2dFromCurve`), one of them could read the plane the other had already released: a vertex of zeros or denormal garbage, or SIGSEGV, SIGBUS or SIGTRAP with no diagnostic. Across 3000 fresh processes at 16 threads the shipped kernel failed 129 times and failed none once the plane was created before the threads started. Patch `0056` creates the plane in a function-local static, which C++11 initialises under a lock, the way `Message::DefaultMessenger()` does. Serial use, and any process that has already made one 2D edge, was never affected.
+
+The patch is carried and not yet pinned, so the pinned kernel still has the race until the next kernel rebuild. Reproduction is in `Scripts/repro/3039-brep-lib-plane/`.
+
+### Extrusion, draft, revolve and mesh builders refuse zero, NaN and overflowing input instead of never returning (#3100)
+
+`Shape.extrude(profile:direction:length:)`, `extruded(by:)`, `extrudedInfinite(direction:infinite:)`, `extrudedSemiInfinite(direction:infinite:)` and `Shape.fromMesh(points:triangles:)` built a shape from a zero or NaN length or vector, a vector whose square overflows (`SIMD3(0, 0, 1e300)`) or a NaN coordinate, and the first `isValid` on it never returned. `addingDraftPrism`, `addingDraftPrismThruAll` and `addingRevolvedFeature` never returned for a NaN angle, and `Shape.revolve`, `revolved(angle:)` and the revolved feature never returned for an infinite one. The same holds for `localPrism`, `localLinearForm`, `withPrism`, `localRevolution`, `localRevolutionForm`, `Face.draftPrism` and a NaN axis on `revolved(angle:)`. They all return `nil` now. The revolve and revolved-feature builders (`Shape.revolve`, `revolved(axisOrigin:axisDirection:)` with and without an angle, `Shape.revolution(meridian:)`, `addingRevolvedFeature`, `addingRevolvedFeatureThruAll`, `localRevolution`, `localRevolutionForm`) also return `nil` for an axis with a NaN or infinite origin component or a direction that is NaN, infinite, zero or overflowing; the thru-all feature used to hand back the original shape for such an axis, a silent no-op reported as success (#3113). Finite nonzero input, `1e-12` lengths, a zero angle and a full turn included, is passed to OCCT as before.
+
+```swift
+let profile = Wire.rectangle(width: 4, height: 4)!
+print(Shape.extrude(profile: profile, direction: SIMD3(0, 0, 1), length: 5) != nil)  // true
+print(Shape.extrude(profile: profile, direction: SIMD3(0, 0, 1), length: 0) == nil)  // true, was a hang on isValid
+print(Shape.extrude(profile: profile, direction: SIMD3(0, 0, 1), length: .nan) == nil)  // true
+```
+
+### SheetMetal: a stepped concave bend is a valid solid on its closed form at every radius (#3045)
+
+`SheetMetal.Builder.build()` returned `isValid == false` for some stepped concave bends, and once the radius passed the thickness the volume was wrong as well (+7.7 at r = 2.5 and +16.2 at r = 3.0 on a foot under a wider web at thickness 2). The solid the fillet started from was valid; `BRepFilletAPI_MakeFillet` could not close the fillet off where the seam stops short of a flange's own edge. A concave bend is now the fillet's material fused in as a prism cut to the bend's run, for any wedge angle, so the result is valid and adds exactly `r^2 (1 - pi/4)` per unit of seam at a right angle, at every radius. A radius whose tangent line would leave a flange's face, or a bend that does not fuse to a valid solid, throws `BuildError.filletFailed`; an invalid solid is no longer returned. The volumes of stepped concave bends that were valid move to their closed forms (up to 0.375 on the four-fillet U-channel), and the two diagonal-seam fixtures move down by 0.32.
+
+```swift
+let part = try SheetMetal.Builder(thickness: 2).build(
+    flanges: [foot, web],
+    bends: [SheetMetal.Bend(from: "web", to: "foot", radius: 3)])
+// part.isValid is true; part.volume is 3300 + 25 * 3^2 * (1 - pi/4)
+```
+
 ### `Shape.middlePath(start:end:)` answers `nil` for a null end, an edge end, the same face twice and touching faces instead of crashing (#3098)
 
 `BRepOffsetAPI_MiddlePath` reads the type of its start shape unchecked and, when the two sections share a vertex, casts a bare vertex of a path to an edge, so a null end, the same face or wire twice and two adjacent faces aborted the process with a signal no `catch` can absorb. The bridge now refuses a null shape, an end that is not a face or a wire, and two sections that share a vertex, before the kernel is called. Opposite faces of a box, the caps of a cylinder or a tube and wire ends still return the spine.

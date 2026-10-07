@@ -47,7 +47,7 @@ let useLocalXCFramework: Bool = {
         atPath: occtPackageDir + "/Libraries/OCCT.xcframework/Info.plist")
 }()
 
-// OCCT V8.0.1 plus the forty-two carried patches are documented in Scripts/patches/README.md
+// OCCT V8.0.1 plus the forty-three carried patches are documented in Scripts/patches/README.md
 // (patch list, verification status, and CI coverage gaps for maintainers).
 let occtTarget: Target =
     isWASI
@@ -253,8 +253,8 @@ let occtTarget: Target =
         // which is what they were built to do; if a later asset repeats either stray the finding comes
         // back rather than staying suppressed.
         //
-        // The asset holds thirty-nine and Scripts/patches/ holds forty-two, so 0053, 0054 and 0055 are
-        // the three untested patches, written up where the counts are, above.
+        // The asset holds thirty-nine and Scripts/patches/ holds forty-three, so 0053, 0054, 0055 and
+        // 0056 are the four untested patches, written up where the counts are, above.
         // If you rebuild and the checksum does not match the value below, that is a real difference to
         // investigate rather than an expected one, which is the opposite of what this paragraph said
         // while kernel.1 was pinned.
@@ -298,13 +298,13 @@ let occtTarget: Target =
         // wrong: InitializeMissingParameters is also the REPAIR that re-sets DirectFaces on an actor a
         // STEPCAFControl_Reader has left with empty OperationsFlags, which is #280's exact mechanism.
         // kernel-integration.yml caught it on main. See Scripts/patches/README.md's retired 0035 entry.
-        // Scripts/patches/ holds forty-two patches and the pinned asset holds thirty-nine of them,
-        // enumerated above. `ls Scripts/patches/*.patch | wc -l` answers 42 against a list of 39.
-        // The pinned asset lacks three of them, and this is the written divergence. The
+        // Scripts/patches/ holds forty-three patches and the pinned asset holds thirty-nine of them,
+        // enumerated above. `ls Scripts/patches/*.patch | wc -l` answers 43 against a list of 39.
+        // The pinned asset lacks four of them, and this is the written divergence. The
         // v4.0.0-kernel.4 rebuild closed the divergence that 0044 had opened and that 0045
         // through 0052 widened, so the rows for 0044 through 0052 below are kept as the record
         // of what each patch does and which bridge mitigation it does or does not retire, and
-        // 0053, 0054 and 0055 are the three rows about patches the asset does not carry:
+        // 0053, 0054, 0055 and 0056 are the four rows about patches the asset does not carry:
         //
         //   0044  Extrema_ExtSS::Points / Extrema_ExtCS::Points bound against the point       #2840
         //         sequence rather than against NbExt(), which counts mySqDist and so counts
@@ -429,6 +429,18 @@ let occtTarget: Target =
         //         these values today; it is carried so the kernel is right where it is next read.
         //         Measured against an independent Gauss-Legendre integral, 64 checks fail before
         //         and none after, by override-link in Scripts/repro/3010-cone-inertia/.
+        //
+        //   0056  BRepLib::Plane() creates its process-global plane on first use with no lock,    #3039
+        //         and every vertex BRepLib_MakeEdge2d builds goes through it, so two threads
+        //         making their first 2D edge together can read a freed plane: a wrong vertex or
+        //         a SIGSEGV, SIGBUS or SIGTRAP from the Shape.edge2d* wrappers. Carried 2026-10-07
+        //         and NOT built. On the shipped archive 129 of 3000 fresh processes at 16 threads
+        //         fail, none when the plane is created before the threads start and none
+        //         patched, by override-link in Scripts/repro/3039-brep-lib-plane/. Issue3039
+        //         BRepLibPlaneFirstUseTests runs it in kernel-integration.yml, gated on
+        //         OCCTSWIFT_LOCAL=1. A bridge call to BRepLib::Plane() behind a function-local
+        //         static would protect the Swift API without a kernel change; it was not taken
+        //         because the patch is the smaller fix and goes upstream as it is.
         //
         // 0043 (#2827, BRepGProp_Gauss keeps the by-plane mass) was the one outstanding before it,
         // and it went the other way, which is the comparison worth keeping beside 0044: carried
@@ -894,9 +906,11 @@ let wasmExcludedTestFiles: [String: [String]] = [
         "StressShapeDivideSurfacelessFaceGuardTests.swift",
         "StressUnifySameDomainNullPCurveTests.swift",
     ],
-    // The six files of 28 whose subject is CPU threads rather than screw threads. Measured:
+    // The seven files of 29 whose subject is CPU threads rather than screw threads. Measured:
     // `grep -ln 'Dispatch\|NSLock\|withTaskGroup\|Thread\.' Tests/OCCTThreadTests/*.swift` returns
-    // exactly these, and the other 22 are fastener geometry.
+    // exactly these, and the other 22 are fastener geometry. `Issue3039BRepLibPlaneFirstUseTests`
+    // is the seventh: it uses `DispatchGroup` and spawns child processes with `Process`, and
+    // neither exists on wasm, so the file does not compile there.
     "OCCTThreadTests": [
         "Issue1404TObjApplicationThreadSafetyTests.swift",
         "Issue298FilletThreadSafetyTests.swift",
@@ -904,6 +918,7 @@ let wasmExcludedTestFiles: [String: [String]] = [
         "Issue359STEPThreadSafetyTests.swift",
         "Issue361SharedSingletonThreadSafetyTests.swift",
         "Issue367FuseMultiThreadSafetyTests.swift",
+        "Issue3039BRepLibPlaneFirstUseTests.swift",
     ],
 ]
 

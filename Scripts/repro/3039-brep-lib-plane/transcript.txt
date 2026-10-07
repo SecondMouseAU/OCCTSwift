@@ -1,0 +1,14 @@
+== kernel: /Users/elb/Projects/worktrees/fix-3039-brep-lib-plane-lock/Libraries/OCCT.xcframework/macos-arm64/libOCCT-macos.a
+e2254f345921635c18774a1aa21ed2424b08a943b7a0e46c04c4fd1b699cb8b5  /Users/elb/Projects/worktrees/fix-3039-brep-lib-plane-lock/Libraries/OCCT.xcframework/macos-arm64/libOCCT-macos.a
+patched copy carries 0056
+== 4 threads
+asset    threads=4 cold runs=3000: clean=2921 wrong-vertex=12 SIGSEGV=13 SIGBUS=53 SIGTRAP=1
+control  threads=4 cold runs=3000: clean=2251 wrong-vertex=743 SIGSEGV=4 SIGBUS=2
+patched  threads=4 cold runs=3000: clean=3000 wrong-vertex=0
+warm     threads=4 warm runs=3000: clean=3000 wrong-vertex=0
+== 16 threads
+asset    threads=16 cold runs=3000: clean=2871 wrong-vertex=13 SIGSEGV=54 SIGBUS=52 SIGKILL=5 SIGABRT=1 SIGTRAP=4
+control  threads=16 cold runs=3000: clean=2632 wrong-vertex=339 SIGSEGV=14 SIGBUS=13 SIGKILL=1 exit -4=1
+patched  threads=16 cold runs=3000: clean=3000 wrong-vertex=0
+warm     threads=16 warm runs=3000: clean=3000 wrong-vertex=0
+== verdict: control fails, patched and warm are clean

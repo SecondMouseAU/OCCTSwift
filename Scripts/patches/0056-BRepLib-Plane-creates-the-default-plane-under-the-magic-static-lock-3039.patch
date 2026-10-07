@@ -1,0 +1,67 @@
+From: OCCTSwift ecosystem <noreply@secondmouse.au>
+Subject: [PATCH] Modeling Algorithms - BRepLib::Plane creates the default
+ plane under a lock, so concurrent first use of BRepLib_MakeEdge2d is safe
+
+BRepLib::Plane() returns the plane BRepLib_MakeEdge2d puts every 2D edge on and every vertex it
+builds through (BRepLib_MakeEdge2d.cxx: Point, Project, UpdateEdge). The plane is a file-scope
+handle that the getter creates on first use:
+
+  static occ::handle<Geom_Plane> thePlane;
+  ...
+  if (thePlane.IsNull()) { thePlane = new Geom_Plane(gp::XOY()); }
+  return thePlane;
+
+Two threads making their first 2D edge together both see a null handle and both assign. The
+losing assignment releases the plane the other thread has already read through, so a vertex is
+read from freed memory: zeros or denormal garbage coordinates, or a SIGSEGV, SIGBUS or SIGTRAP
+with no diagnostic. Measured on the pure OCCT probe in Scripts/repro/3039-brep-lib-plane, one
+process per run, 3000 runs, 16 threads: 129 runs return a wrong vertex or die on the shipped
+archive and 368 on BRepLib.cxx recompiled unmodified, none when BRepLib::Plane() has been called
+once before the threads start and none with this patch.
+
+The plane is now created by a function-local static, which C++11 initialises under a lock,
+exactly as Message::DefaultMessenger() creates its messenger. The setter keeps its behaviour,
+including that a null argument restores the default plane, which the old getter did by
+re-creating it. The setter itself is still unsynchronised, like BRepLib::Precision's.
+
+diff --git a/src/ModelingAlgorithms/TKTopAlgo/BRepLib/BRepLib.cxx b/src/ModelingAlgorithms/TKTopAlgo/BRepLib/BRepLib.cxx
+--- a/src/ModelingAlgorithms/TKTopAlgo/BRepLib/BRepLib.cxx
++++ b/src/ModelingAlgorithms/TKTopAlgo/BRepLib/BRepLib.cxx
+@@ -81,8 +81,14 @@
+ #include <algorithm>
+ 
+ // TODO - not thread-safe static variables
+-static double                  thePrecision = Precision::Confusion();
+-static occ::handle<Geom_Plane> thePlane;
++static double thePrecision = Precision::Confusion();
++
++// Created under the magic-static lock, as in Message::DefaultMessenger().
++static occ::handle<Geom_Plane>& thePlane()
++{
++  static occ::handle<Geom_Plane> aPlane = new Geom_Plane(gp::XOY());
++  return aPlane;
++}
+ 
+ static void InternalUpdateTolerances(const TopoDS_Shape& theOldShape,
+                                      const bool          IsVerifyTolerance,
+@@ -130,18 +136,14 @@ double BRepLib::Precision()
+ 
+ void BRepLib::Plane(const occ::handle<Geom_Plane>& P)
+ {
+-  thePlane = P;
++  thePlane() = P.IsNull() ? occ::handle<Geom_Plane>(new Geom_Plane(gp::XOY())) : P;
+ }
+ 
+ //=================================================================================================
+ 
+ const occ::handle<Geom_Plane>& BRepLib::Plane()
+ {
+-  if (thePlane.IsNull())
+-  {
+-    thePlane = new Geom_Plane(gp::XOY());
+-  }
+-  return thePlane;
++  return thePlane();
+ }
+ 
+ //=================================================================================================
