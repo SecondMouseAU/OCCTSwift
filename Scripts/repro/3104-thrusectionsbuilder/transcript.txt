@@ -1,0 +1,288 @@
+order=-     solid=1 ruled=1 opts=-                    rc=0 first build=false shape=nil
+order=-     solid=1 ruled=1 opts=smooth1              rc=0 first build=false shape=nil
+order=-     solid=1 ruled=1 opts=smooth0,deg,cont     rc=0 first build=false shape=nil
+order=-     solid=1 ruled=1 opts=compat0,par,weight   rc=0 first build=false shape=nil
+order=-     solid=1 ruled=1 opts=build0               rc=0 shape-before-build=nil | first build=false shape=nil
+order=-     solid=1 ruled=1 opts=twice                rc=0 first build=false shape=nil | second build=false shape=nil
+order=-     solid=1 ruled=0 opts=-                    rc=0 first build=false shape=nil
+order=-     solid=1 ruled=0 opts=smooth1              rc=0 first build=false shape=nil
+order=-     solid=1 ruled=0 opts=smooth0,deg,cont     rc=0 first build=false shape=nil
+order=-     solid=1 ruled=0 opts=compat0,par,weight   rc=0 first build=false shape=nil
+order=-     solid=1 ruled=0 opts=build0               rc=0 shape-before-build=nil | first build=false shape=nil
+order=-     solid=1 ruled=0 opts=twice                rc=0 first build=false shape=nil | second build=false shape=nil
+order=-     solid=0 ruled=1 opts=-                    rc=0 first build=false shape=nil
+order=-     solid=0 ruled=1 opts=smooth1              rc=0 first build=false shape=nil
+order=-     solid=0 ruled=1 opts=smooth0,deg,cont     rc=0 first build=false shape=nil
+order=-     solid=0 ruled=1 opts=compat0,par,weight   rc=0 first build=false shape=nil
+order=-     solid=0 ruled=1 opts=build0               rc=0 shape-before-build=nil | first build=false shape=nil
+order=-     solid=0 ruled=1 opts=twice                rc=0 first build=false shape=nil | second build=false shape=nil
+order=-     solid=0 ruled=0 opts=-                    rc=0 first build=false shape=nil
+order=-     solid=0 ruled=0 opts=smooth1              rc=0 first build=false shape=nil
+order=-     solid=0 ruled=0 opts=smooth0,deg,cont     rc=0 first build=false shape=nil
+order=-     solid=0 ruled=0 opts=compat0,par,weight   rc=0 first build=false shape=nil
+order=-     solid=0 ruled=0 opts=build0               rc=0 shape-before-build=nil | first build=false shape=nil
+order=-     solid=0 ruled=0 opts=twice                rc=0 first build=false shape=nil | second build=false shape=nil
+order=W     solid=1 ruled=1 opts=-                    rc=0 first build=false shape=nil
+order=W     solid=1 ruled=1 opts=smooth1              rc=0 first build=false shape=nil
+order=W     solid=1 ruled=1 opts=smooth0,deg,cont     rc=0 first build=false shape=nil
+order=W     solid=1 ruled=1 opts=compat0,par,weight   rc=0 first build=false shape=nil
+order=W     solid=1 ruled=1 opts=build0               rc=0 shape-before-build=nil | first build=false shape=nil
+order=W     solid=1 ruled=1 opts=twice                rc=0 first build=false shape=nil | second build=false shape=nil
+order=W     solid=1 ruled=0 opts=-                    rc=0 first build=false shape=nil
+order=W     solid=1 ruled=0 opts=smooth1              rc=0 first build=false shape=nil
+order=W     solid=1 ruled=0 opts=smooth0,deg,cont     rc=0 first build=false shape=nil
+order=W     solid=1 ruled=0 opts=compat0,par,weight   rc=0 first build=false shape=nil
+order=W     solid=1 ruled=0 opts=build0               rc=0 shape-before-build=nil | first build=false shape=nil
+order=W     solid=1 ruled=0 opts=twice                rc=0 first build=false shape=nil | second build=false shape=nil
+order=W     solid=0 ruled=1 opts=-                    rc=0 first build=false shape=nil
+order=W     solid=0 ruled=1 opts=smooth1              rc=0 first build=false shape=nil
+order=W     solid=0 ruled=1 opts=smooth0,deg,cont     rc=0 first build=false shape=nil
+order=W     solid=0 ruled=1 opts=compat0,par,weight   rc=0 first build=false shape=nil
+order=W     solid=0 ruled=1 opts=build0               rc=0 shape-before-build=nil | first build=false shape=nil
+order=W     solid=0 ruled=1 opts=twice                rc=0 first build=false shape=nil | second build=false shape=nil
+order=W     solid=0 ruled=0 opts=-                    rc=0 first build=false shape=nil
+order=W     solid=0 ruled=0 opts=smooth1              rc=0 first build=false shape=nil
+order=W     solid=0 ruled=0 opts=smooth0,deg,cont     rc=0 first build=false shape=nil
+order=W     solid=0 ruled=0 opts=compat0,par,weight   rc=0 first build=false shape=nil
+order=W     solid=0 ruled=0 opts=build0               rc=0 shape-before-build=nil | first build=false shape=nil
+order=W     solid=0 ruled=0 opts=twice                rc=0 first build=false shape=nil | second build=false shape=nil
+order=V     solid=1 ruled=1 opts=-                    rc=0 first build=false shape=nil
+order=V     solid=1 ruled=1 opts=smooth1              rc=0 first build=false shape=nil
+order=V     solid=1 ruled=1 opts=smooth0,deg,cont     rc=0 first build=false shape=nil
+order=V     solid=1 ruled=1 opts=compat0,par,weight   rc=0 first build=false shape=nil
+order=V     solid=1 ruled=1 opts=build0               rc=0 shape-before-build=nil | first build=false shape=nil
+order=V     solid=1 ruled=1 opts=twice                rc=0 first build=false shape=nil | second build=false shape=nil
+order=V     solid=1 ruled=0 opts=-                    rc=0 first build=false shape=nil
+order=V     solid=1 ruled=0 opts=smooth1              rc=0 first build=false shape=nil
+order=V     solid=1 ruled=0 opts=smooth0,deg,cont     rc=0 first build=false shape=nil
+order=V     solid=1 ruled=0 opts=compat0,par,weight   rc=0 first build=false shape=nil
+order=V     solid=1 ruled=0 opts=build0               rc=0 shape-before-build=nil | first build=false shape=nil
+order=V     solid=1 ruled=0 opts=twice                rc=0 first build=false shape=nil | second build=false shape=nil
+order=V     solid=0 ruled=1 opts=-                    rc=0 first build=false shape=nil
+order=V     solid=0 ruled=1 opts=smooth1              rc=0 first build=false shape=nil
+order=V     solid=0 ruled=1 opts=smooth0,deg,cont     rc=0 first build=false shape=nil
+order=V     solid=0 ruled=1 opts=compat0,par,weight   rc=0 first build=false shape=nil
+order=V     solid=0 ruled=1 opts=build0               rc=0 shape-before-build=nil | first build=false shape=nil
+order=V     solid=0 ruled=1 opts=twice                rc=0 first build=false shape=nil | second build=false shape=nil
+order=V     solid=0 ruled=0 opts=-                    rc=0 first build=false shape=nil
+order=V     solid=0 ruled=0 opts=smooth1              rc=0 first build=false shape=nil
+order=V     solid=0 ruled=0 opts=smooth0,deg,cont     rc=0 first build=false shape=nil
+order=V     solid=0 ruled=0 opts=compat0,par,weight   rc=0 first build=false shape=nil
+order=V     solid=0 ruled=0 opts=build0               rc=0 shape-before-build=nil | first build=false shape=nil
+order=V     solid=0 ruled=0 opts=twice                rc=0 first build=false shape=nil | second build=false shape=nil
+order=WV    solid=1 ruled=1 opts=-                    rc=0 first build=true shape valid=true
+order=WV    solid=1 ruled=1 opts=smooth1              rc=0 first build=true shape valid=true
+order=WV    solid=1 ruled=1 opts=smooth0,deg,cont     rc=0 first build=true shape valid=true
+order=WV    solid=1 ruled=1 opts=compat0,par,weight   rc=0 first build=true shape valid=true
+order=WV    solid=1 ruled=1 opts=build0               rc=0 shape-before-build=nil | first build=true shape valid=true
+order=WV    solid=1 ruled=1 opts=twice                rc=0 first build=true shape valid=true | second build=true shape valid=true
+order=WV    solid=1 ruled=0 opts=-                    rc=0 first build=true shape valid=true
+order=WV    solid=1 ruled=0 opts=smooth1              rc=0 first build=true shape valid=true
+order=WV    solid=1 ruled=0 opts=smooth0,deg,cont     rc=0 first build=true shape valid=true
+order=WV    solid=1 ruled=0 opts=compat0,par,weight   rc=0 first build=true shape valid=true
+order=WV    solid=1 ruled=0 opts=build0               rc=0 shape-before-build=nil | first build=true shape valid=true
+order=WV    solid=1 ruled=0 opts=twice                rc=0 first build=true shape valid=true | second build=true shape valid=true
+order=WV    solid=0 ruled=1 opts=-                    rc=0 first build=true shape valid=true
+order=WV    solid=0 ruled=1 opts=smooth1              rc=0 first build=true shape valid=true
+order=WV    solid=0 ruled=1 opts=smooth0,deg,cont     rc=0 first build=true shape valid=true
+order=WV    solid=0 ruled=1 opts=compat0,par,weight   rc=0 first build=true shape valid=true
+order=WV    solid=0 ruled=1 opts=build0               rc=0 shape-before-build=nil | first build=true shape valid=true
+order=WV    solid=0 ruled=1 opts=twice                rc=0 first build=true shape valid=true | second build=true shape valid=true
+order=WV    solid=0 ruled=0 opts=-                    rc=0 first build=true shape valid=true
+order=WV    solid=0 ruled=0 opts=smooth1              rc=0 first build=true shape valid=true
+order=WV    solid=0 ruled=0 opts=smooth0,deg,cont     rc=0 first build=true shape valid=true
+order=WV    solid=0 ruled=0 opts=compat0,par,weight   rc=0 first build=true shape valid=true
+order=WV    solid=0 ruled=0 opts=build0               rc=0 shape-before-build=nil | first build=true shape valid=true
+order=WV    solid=0 ruled=0 opts=twice                rc=0 first build=true shape valid=true | second build=true shape valid=true
+order=VW    solid=1 ruled=1 opts=-                    rc=0 first build=true shape valid=true
+order=VW    solid=1 ruled=1 opts=smooth1              rc=0 first build=true shape valid=true
+order=VW    solid=1 ruled=1 opts=smooth0,deg,cont     rc=0 first build=true shape valid=true
+order=VW    solid=1 ruled=1 opts=compat0,par,weight   rc=0 first build=true shape valid=true
+order=VW    solid=1 ruled=1 opts=build0               rc=0 shape-before-build=nil | first build=true shape valid=true
+order=VW    solid=1 ruled=1 opts=twice                rc=0 first build=true shape valid=true | second build=true shape valid=true
+order=VW    solid=1 ruled=0 opts=-                    rc=0 first build=true shape valid=true
+order=VW    solid=1 ruled=0 opts=smooth1              rc=0 first build=true shape valid=true
+order=VW    solid=1 ruled=0 opts=smooth0,deg,cont     rc=0 first build=true shape valid=true
+order=VW    solid=1 ruled=0 opts=compat0,par,weight   rc=0 first build=true shape valid=true
+order=VW    solid=1 ruled=0 opts=build0               rc=0 shape-before-build=nil | first build=true shape valid=true
+order=VW    solid=1 ruled=0 opts=twice                rc=0 first build=true shape valid=true | second build=true shape valid=true
+order=VW    solid=0 ruled=1 opts=-                    rc=0 first build=true shape valid=true
+order=VW    solid=0 ruled=1 opts=smooth1              rc=0 first build=true shape valid=true
+order=VW    solid=0 ruled=1 opts=smooth0,deg,cont     rc=0 first build=true shape valid=true
+order=VW    solid=0 ruled=1 opts=compat0,par,weight   rc=0 first build=true shape valid=true
+order=VW    solid=0 ruled=1 opts=build0               rc=0 shape-before-build=nil | first build=true shape valid=true
+order=VW    solid=0 ruled=1 opts=twice                rc=0 first build=true shape valid=true | second build=true shape valid=true
+order=VW    solid=0 ruled=0 opts=-                    rc=0 first build=true shape valid=true
+order=VW    solid=0 ruled=0 opts=smooth1              rc=0 first build=true shape valid=true
+order=VW    solid=0 ruled=0 opts=smooth0,deg,cont     rc=0 first build=true shape valid=true
+order=VW    solid=0 ruled=0 opts=compat0,par,weight   rc=0 first build=true shape valid=true
+order=VW    solid=0 ruled=0 opts=build0               rc=0 shape-before-build=nil | first build=true shape valid=true
+order=VW    solid=0 ruled=0 opts=twice                rc=0 first build=true shape valid=true | second build=true shape valid=true
+order=WW    solid=1 ruled=1 opts=-                    rc=0 first build=true shape valid=true
+order=WW    solid=1 ruled=1 opts=smooth1              rc=0 first build=true shape valid=true
+order=WW    solid=1 ruled=1 opts=smooth0,deg,cont     rc=0 first build=true shape valid=true
+order=WW    solid=1 ruled=1 opts=compat0,par,weight   rc=0 first build=true shape valid=true
+order=WW    solid=1 ruled=1 opts=build0               rc=0 shape-before-build=nil | first build=true shape valid=true
+order=WW    solid=1 ruled=1 opts=twice                rc=0 first build=true shape valid=true | second build=true shape valid=true
+order=WW    solid=1 ruled=0 opts=-                    rc=0 first build=true shape valid=true
+order=WW    solid=1 ruled=0 opts=smooth1              rc=0 first build=true shape valid=true
+order=WW    solid=1 ruled=0 opts=smooth0,deg,cont     rc=0 first build=true shape valid=true
+order=WW    solid=1 ruled=0 opts=compat0,par,weight   rc=0 first build=true shape valid=true
+order=WW    solid=1 ruled=0 opts=build0               rc=0 shape-before-build=nil | first build=true shape valid=true
+order=WW    solid=1 ruled=0 opts=twice                rc=0 first build=true shape valid=true | second build=true shape valid=true
+order=WW    solid=0 ruled=1 opts=-                    rc=0 first build=true shape valid=true
+order=WW    solid=0 ruled=1 opts=smooth1              rc=0 first build=true shape valid=true
+order=WW    solid=0 ruled=1 opts=smooth0,deg,cont     rc=0 first build=true shape valid=true
+order=WW    solid=0 ruled=1 opts=compat0,par,weight   rc=0 first build=true shape valid=true
+order=WW    solid=0 ruled=1 opts=build0               rc=0 shape-before-build=nil | first build=true shape valid=true
+order=WW    solid=0 ruled=1 opts=twice                rc=0 first build=true shape valid=true | second build=true shape valid=true
+order=WW    solid=0 ruled=0 opts=-                    rc=0 first build=true shape valid=true
+order=WW    solid=0 ruled=0 opts=smooth1              rc=0 first build=true shape valid=true
+order=WW    solid=0 ruled=0 opts=smooth0,deg,cont     rc=0 first build=true shape valid=true
+order=WW    solid=0 ruled=0 opts=compat0,par,weight   rc=0 first build=true shape valid=true
+order=WW    solid=0 ruled=0 opts=build0               rc=0 shape-before-build=nil | first build=true shape valid=true
+order=WW    solid=0 ruled=0 opts=twice                rc=0 first build=true shape valid=true | second build=true shape valid=true
+order=VV    solid=1 ruled=1 opts=-                    rc=0 first build=false shape=nil
+order=VV    solid=1 ruled=1 opts=smooth1              rc=0 first build=false shape=nil
+order=VV    solid=1 ruled=1 opts=smooth0,deg,cont     rc=0 first build=false shape=nil
+order=VV    solid=1 ruled=1 opts=compat0,par,weight   rc=0 first build=false shape=nil
+order=VV    solid=1 ruled=1 opts=build0               rc=0 shape-before-build=nil | first build=false shape=nil
+order=VV    solid=1 ruled=1 opts=twice                rc=0 first build=false shape=nil | second build=false shape=nil
+order=VV    solid=1 ruled=0 opts=-                    rc=0 first build=false shape=nil
+order=VV    solid=1 ruled=0 opts=smooth1              rc=0 first build=false shape=nil
+order=VV    solid=1 ruled=0 opts=smooth0,deg,cont     rc=0 first build=false shape=nil
+order=VV    solid=1 ruled=0 opts=compat0,par,weight   rc=0 first build=false shape=nil
+order=VV    solid=1 ruled=0 opts=build0               rc=0 shape-before-build=nil | first build=false shape=nil
+order=VV    solid=1 ruled=0 opts=twice                rc=0 first build=false shape=nil | second build=false shape=nil
+order=VV    solid=0 ruled=1 opts=-                    rc=0 first build=false shape=nil
+order=VV    solid=0 ruled=1 opts=smooth1              rc=0 first build=false shape=nil
+order=VV    solid=0 ruled=1 opts=smooth0,deg,cont     rc=0 first build=false shape=nil
+order=VV    solid=0 ruled=1 opts=compat0,par,weight   rc=0 first build=false shape=nil
+order=VV    solid=0 ruled=1 opts=build0               rc=0 shape-before-build=nil | first build=false shape=nil
+order=VV    solid=0 ruled=1 opts=twice                rc=0 first build=false shape=nil | second build=false shape=nil
+order=VV    solid=0 ruled=0 opts=-                    rc=0 first build=false shape=nil
+order=VV    solid=0 ruled=0 opts=smooth1              rc=0 first build=false shape=nil
+order=VV    solid=0 ruled=0 opts=smooth0,deg,cont     rc=0 first build=false shape=nil
+order=VV    solid=0 ruled=0 opts=compat0,par,weight   rc=0 first build=false shape=nil
+order=VV    solid=0 ruled=0 opts=build0               rc=0 shape-before-build=nil | first build=false shape=nil
+order=VV    solid=0 ruled=0 opts=twice                rc=0 first build=false shape=nil | second build=false shape=nil
+order=WWW   solid=1 ruled=1 opts=-                    rc=0 first build=true shape valid=true
+order=WWW   solid=1 ruled=1 opts=smooth1              rc=0 first build=true shape valid=true
+order=WWW   solid=1 ruled=1 opts=smooth0,deg,cont     rc=0 first build=true shape valid=true
+order=WWW   solid=1 ruled=1 opts=compat0,par,weight   rc=0 first build=true shape valid=true
+order=WWW   solid=1 ruled=1 opts=build0               rc=0 shape-before-build=nil | first build=true shape valid=true
+order=WWW   solid=1 ruled=1 opts=twice                rc=0 first build=true shape valid=true | second build=true shape valid=true
+order=WWW   solid=1 ruled=0 opts=-                    rc=0 first build=true shape valid=true
+order=WWW   solid=1 ruled=0 opts=smooth1              rc=0 first build=true shape valid=true
+order=WWW   solid=1 ruled=0 opts=smooth0,deg,cont     rc=0 first build=true shape valid=true
+order=WWW   solid=1 ruled=0 opts=compat0,par,weight   rc=0 first build=true shape valid=true
+order=WWW   solid=1 ruled=0 opts=build0               rc=0 shape-before-build=nil | first build=true shape valid=true
+order=WWW   solid=1 ruled=0 opts=twice                rc=0 first build=true shape valid=true | second build=true shape valid=true
+order=WWW   solid=0 ruled=1 opts=-                    rc=0 first build=true shape valid=true
+order=WWW   solid=0 ruled=1 opts=smooth1              rc=0 first build=true shape valid=true
+order=WWW   solid=0 ruled=1 opts=smooth0,deg,cont     rc=0 first build=true shape valid=true
+order=WWW   solid=0 ruled=1 opts=compat0,par,weight   rc=0 first build=true shape valid=true
+order=WWW   solid=0 ruled=1 opts=build0               rc=0 shape-before-build=nil | first build=true shape valid=true
+order=WWW   solid=0 ruled=1 opts=twice                rc=0 first build=true shape valid=true | second build=true shape valid=true
+order=WWW   solid=0 ruled=0 opts=-                    rc=0 first build=true shape valid=true
+order=WWW   solid=0 ruled=0 opts=smooth1              rc=0 first build=true shape valid=true
+order=WWW   solid=0 ruled=0 opts=smooth0,deg,cont     rc=0 first build=true shape valid=true
+order=WWW   solid=0 ruled=0 opts=compat0,par,weight   rc=0 first build=true shape valid=true
+order=WWW   solid=0 ruled=0 opts=build0               rc=0 shape-before-build=nil | first build=true shape valid=true
+order=WWW   solid=0 ruled=0 opts=twice                rc=0 first build=true shape valid=true | second build=true shape valid=true
+order=VWW   solid=1 ruled=1 opts=-                    rc=0 first build=true shape valid=true
+order=VWW   solid=1 ruled=1 opts=smooth1              rc=0 first build=true shape valid=true
+order=VWW   solid=1 ruled=1 opts=smooth0,deg,cont     rc=0 first build=true shape valid=true
+order=VWW   solid=1 ruled=1 opts=compat0,par,weight   rc=0 first build=true shape valid=true
+order=VWW   solid=1 ruled=1 opts=build0               rc=0 shape-before-build=nil | first build=true shape valid=true
+order=VWW   solid=1 ruled=1 opts=twice                rc=0 first build=true shape valid=true | second build=true shape valid=true
+order=VWW   solid=1 ruled=0 opts=-                    rc=0 first build=true shape valid=true
+order=VWW   solid=1 ruled=0 opts=smooth1              rc=0 first build=true shape valid=true
+order=VWW   solid=1 ruled=0 opts=smooth0,deg,cont     rc=0 first build=true shape valid=true
+order=VWW   solid=1 ruled=0 opts=compat0,par,weight   rc=0 first build=true shape valid=true
+order=VWW   solid=1 ruled=0 opts=build0               rc=0 shape-before-build=nil | first build=true shape valid=true
+order=VWW   solid=1 ruled=0 opts=twice                rc=0 first build=true shape valid=true | second build=true shape valid=true
+order=VWW   solid=0 ruled=1 opts=-                    rc=0 first build=true shape valid=true
+order=VWW   solid=0 ruled=1 opts=smooth1              rc=0 first build=true shape valid=true
+order=VWW   solid=0 ruled=1 opts=smooth0,deg,cont     rc=0 first build=true shape valid=true
+order=VWW   solid=0 ruled=1 opts=compat0,par,weight   rc=0 first build=true shape valid=true
+order=VWW   solid=0 ruled=1 opts=build0               rc=0 shape-before-build=nil | first build=true shape valid=true
+order=VWW   solid=0 ruled=1 opts=twice                rc=0 first build=true shape valid=true | second build=true shape valid=true
+order=VWW   solid=0 ruled=0 opts=-                    rc=0 first build=true shape valid=true
+order=VWW   solid=0 ruled=0 opts=smooth1              rc=0 first build=true shape valid=true
+order=VWW   solid=0 ruled=0 opts=smooth0,deg,cont     rc=0 first build=true shape valid=true
+order=VWW   solid=0 ruled=0 opts=compat0,par,weight   rc=0 first build=true shape valid=true
+order=VWW   solid=0 ruled=0 opts=build0               rc=0 shape-before-build=nil | first build=true shape valid=true
+order=VWW   solid=0 ruled=0 opts=twice                rc=0 first build=true shape valid=true | second build=true shape valid=true
+order=WWV   solid=1 ruled=1 opts=-                    rc=0 first build=true shape valid=true
+order=WWV   solid=1 ruled=1 opts=smooth1              rc=0 first build=true shape valid=true
+order=WWV   solid=1 ruled=1 opts=smooth0,deg,cont     rc=0 first build=true shape valid=true
+order=WWV   solid=1 ruled=1 opts=compat0,par,weight   rc=0 first build=true shape valid=true
+order=WWV   solid=1 ruled=1 opts=build0               rc=0 shape-before-build=nil | first build=true shape valid=true
+order=WWV   solid=1 ruled=1 opts=twice                rc=0 first build=true shape valid=true | second build=true shape valid=true
+order=WWV   solid=1 ruled=0 opts=-                    rc=0 first build=true shape valid=true
+order=WWV   solid=1 ruled=0 opts=smooth1              rc=0 first build=true shape valid=true
+order=WWV   solid=1 ruled=0 opts=smooth0,deg,cont     rc=0 first build=true shape valid=true
+order=WWV   solid=1 ruled=0 opts=compat0,par,weight   rc=0 first build=true shape valid=true
+order=WWV   solid=1 ruled=0 opts=build0               rc=0 shape-before-build=nil | first build=true shape valid=true
+order=WWV   solid=1 ruled=0 opts=twice                rc=0 first build=true shape valid=true | second build=true shape valid=true
+order=WWV   solid=0 ruled=1 opts=-                    rc=0 first build=true shape valid=true
+order=WWV   solid=0 ruled=1 opts=smooth1              rc=0 first build=true shape valid=true
+order=WWV   solid=0 ruled=1 opts=smooth0,deg,cont     rc=0 first build=true shape valid=true
+order=WWV   solid=0 ruled=1 opts=compat0,par,weight   rc=0 first build=true shape valid=true
+order=WWV   solid=0 ruled=1 opts=build0               rc=0 shape-before-build=nil | first build=true shape valid=true
+order=WWV   solid=0 ruled=1 opts=twice                rc=0 first build=true shape valid=true | second build=true shape valid=true
+order=WWV   solid=0 ruled=0 opts=-                    rc=0 first build=true shape valid=true
+order=WWV   solid=0 ruled=0 opts=smooth1              rc=0 first build=true shape valid=true
+order=WWV   solid=0 ruled=0 opts=smooth0,deg,cont     rc=0 first build=true shape valid=true
+order=WWV   solid=0 ruled=0 opts=compat0,par,weight   rc=0 first build=true shape valid=true
+order=WWV   solid=0 ruled=0 opts=build0               rc=0 shape-before-build=nil | first build=true shape valid=true
+order=WWV   solid=0 ruled=0 opts=twice                rc=0 first build=true shape valid=true | second build=true shape valid=true
+order=VWV   solid=1 ruled=1 opts=-                    rc=0 first build=true shape valid=true
+order=VWV   solid=1 ruled=1 opts=smooth1              rc=0 first build=true shape valid=true
+order=VWV   solid=1 ruled=1 opts=smooth0,deg,cont     rc=0 first build=true shape valid=true
+order=VWV   solid=1 ruled=1 opts=compat0,par,weight   rc=0 first build=true shape valid=true
+order=VWV   solid=1 ruled=1 opts=build0               rc=0 shape-before-build=nil | first build=true shape valid=true
+order=VWV   solid=1 ruled=1 opts=twice                rc=0 first build=true shape valid=true | second build=true shape valid=true
+order=VWV   solid=1 ruled=0 opts=-                    rc=0 first build=true shape valid=true
+order=VWV   solid=1 ruled=0 opts=smooth1              rc=0 first build=true shape valid=true
+order=VWV   solid=1 ruled=0 opts=smooth0,deg,cont     rc=0 first build=true shape valid=true
+order=VWV   solid=1 ruled=0 opts=compat0,par,weight   rc=0 first build=true shape valid=true
+order=VWV   solid=1 ruled=0 opts=build0               rc=0 shape-before-build=nil | first build=true shape valid=true
+order=VWV   solid=1 ruled=0 opts=twice                rc=0 first build=true shape valid=true | second build=true shape valid=true
+order=VWV   solid=0 ruled=1 opts=-                    rc=0 first build=true shape valid=true
+order=VWV   solid=0 ruled=1 opts=smooth1              rc=0 first build=true shape valid=true
+order=VWV   solid=0 ruled=1 opts=smooth0,deg,cont     rc=0 first build=true shape valid=true
+order=VWV   solid=0 ruled=1 opts=compat0,par,weight   rc=0 first build=true shape valid=true
+order=VWV   solid=0 ruled=1 opts=build0               rc=0 shape-before-build=nil | first build=true shape valid=true
+order=VWV   solid=0 ruled=1 opts=twice                rc=0 first build=true shape valid=true | second build=true shape valid=true
+order=VWV   solid=0 ruled=0 opts=-                    rc=0 first build=true shape valid=true
+order=VWV   solid=0 ruled=0 opts=smooth1              rc=0 first build=true shape valid=true
+order=VWV   solid=0 ruled=0 opts=smooth0,deg,cont     rc=0 first build=true shape valid=true
+order=VWV   solid=0 ruled=0 opts=compat0,par,weight   rc=0 first build=true shape valid=true
+order=VWV   solid=0 ruled=0 opts=build0               rc=0 shape-before-build=nil | first build=true shape valid=true
+order=VWV   solid=0 ruled=0 opts=twice                rc=0 first build=true shape valid=true | second build=true shape valid=true
+order=VWWV  solid=1 ruled=1 opts=-                    rc=0 first build=true shape valid=true
+order=VWWV  solid=1 ruled=1 opts=smooth1              rc=0 first build=true shape valid=true
+order=VWWV  solid=1 ruled=1 opts=smooth0,deg,cont     rc=0 first build=true shape valid=true
+order=VWWV  solid=1 ruled=1 opts=compat0,par,weight   rc=0 first build=true shape valid=true
+order=VWWV  solid=1 ruled=1 opts=build0               rc=0 shape-before-build=nil | first build=true shape valid=true
+order=VWWV  solid=1 ruled=1 opts=twice                rc=0 first build=true shape valid=true | second build=true shape valid=true
+order=VWWV  solid=1 ruled=0 opts=-                    rc=0 first build=true shape valid=true
+order=VWWV  solid=1 ruled=0 opts=smooth1              rc=0 first build=true shape valid=true
+order=VWWV  solid=1 ruled=0 opts=smooth0,deg,cont     rc=0 first build=true shape valid=true
+order=VWWV  solid=1 ruled=0 opts=compat0,par,weight   rc=0 first build=true shape valid=true
+order=VWWV  solid=1 ruled=0 opts=build0               rc=0 shape-before-build=nil | first build=true shape valid=true
+order=VWWV  solid=1 ruled=0 opts=twice                rc=0 first build=true shape valid=true | second build=true shape valid=true
+order=VWWV  solid=0 ruled=1 opts=-                    rc=0 first build=true shape valid=true
+order=VWWV  solid=0 ruled=1 opts=smooth1              rc=0 first build=true shape valid=true
+order=VWWV  solid=0 ruled=1 opts=smooth0,deg,cont     rc=0 first build=true shape valid=true
+order=VWWV  solid=0 ruled=1 opts=compat0,par,weight   rc=0 first build=true shape valid=true
+order=VWWV  solid=0 ruled=1 opts=build0               rc=0 shape-before-build=nil | first build=true shape valid=true
+order=VWWV  solid=0 ruled=1 opts=twice                rc=0 first build=true shape valid=true | second build=true shape valid=true
+order=VWWV  solid=0 ruled=0 opts=-                    rc=0 first build=true shape valid=true
+order=VWWV  solid=0 ruled=0 opts=smooth1              rc=0 first build=true shape valid=true
+order=VWWV  solid=0 ruled=0 opts=smooth0,deg,cont     rc=0 first build=true shape valid=true
+order=VWWV  solid=0 ruled=0 opts=compat0,par,weight   rc=0 first build=true shape valid=true
+order=VWWV  solid=0 ruled=0 opts=build0               rc=0 shape-before-build=nil | first build=true shape valid=true
+order=VWWV  solid=0 ruled=0 opts=twice                rc=0 first build=true shape valid=true | second build=true shape valid=true
