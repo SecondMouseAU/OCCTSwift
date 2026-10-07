@@ -455,7 +455,8 @@ struct Issue554Conic3dDegenerateTests {
         expectPoint(hyp.point(at: 1), hyperbolaPoint(5, 3, 1, at: c), "hyperbola: interior")
         let slid = try #require(
             Curve3D.gcHyperbola(s1: SIMD3(6, 2, 3), s2: SIMD3(3, 5, 3), center: c))
-        expectPoint(slid.point(at: 1), hyperbolaPoint(5, 3, 1, at: c), "hyperbola: S2 slid along the axis")
+        expectPoint(
+            slid.point(at: 1), hyperbolaPoint(5, 3, 1, at: c), "hyperbola: S2 slid along the axis")
     }
 
     // MARK: - BRepBuilderAPI_MakeEdge (Shape.edgeFrom*)
