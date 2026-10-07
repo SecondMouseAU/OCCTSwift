@@ -20,6 +20,12 @@ import simd
 /// retired: `Scripts/repro/3065-bspline-adaptor-cache/` measured eight threads on one shared adaptor
 /// reading wrong points in 97 of 97 completed runs without the lock, and none with one adaptor per
 /// thread. The test therefore holds the property the lock currently masks.
+///
+/// Measured 2026-10-07 for #3065 by linking the stock (lock-free) `BSplCLib_Cache`, `BSplSLib_Cache`,
+/// `GeomAdaptor_Curve` and `GeomAdaptor_Surface` objects, built against the patched headers so the
+/// class layout is unchanged, ahead of the pinned archive: a probe identical to the second test but
+/// with ONE `EdgeCurve` shared by all eight tasks read 203, 1172 and 1930 of 3200 points wrong in
+/// three runs, while this suite passed 30 of 30 runs on the same lock-free kernel.
 @Suite("Issue 3065: one EdgeCurve per task over a shared BSpline edge")
 struct Issue3065EdgeCurvePerTaskTests {
 
