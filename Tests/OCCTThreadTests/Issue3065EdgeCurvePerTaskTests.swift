@@ -43,7 +43,9 @@ struct Issue3065EdgeCurvePerTaskTests {
 
     /// The parameter task `task` samples at step `step`: it walks the span ring from its own offset,
     /// so at any instant different tasks are in different spans.
-    private static func parameter(task: Int, step: Int, range: (first: Double, last: Double)) -> Double {
+    private static func parameter(task: Int, step: Int, range: (first: Double, last: Double))
+        -> Double
+    {
         let spans = 13
         let span = (task * 3 + step) % spans
         let width = (range.last - range.first) / Double(spans)
