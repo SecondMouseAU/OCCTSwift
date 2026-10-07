@@ -8,6 +8,21 @@ import simd
 @Suite("Advanced Plate Surface Tests")
 struct AdvancedPlateSurfaceTests {
 
+    // #766: the pinned areas and distances below are what the same GeomPlate_BuildPlateSurface ->
+    // GeomPlate_MakeApprox -> BRepBuilderAPI_MakeFace chain reports when called directly, see
+    // Scripts/repro/766-advanced-plate-surface/. A surface that exists but ignores its
+    // constraints passed the earlier `!= nil` and `area > 0` checks.
+
+    /// Largest distance from any of `points` to `shape`, or infinity if one cannot be measured.
+    private func maxDistance(from points: [SIMD3<Double>], to shape: Shape) -> Double {
+        var worst = 0.0
+        for p in points {
+            guard let v = Shape.vertex(at: p), let d = shape.minDistance(to: v) else { return .infinity }
+            worst = max(worst, d)
+        }
+        return worst
+    }
+
     @Test("Plate surface with G0 constraint orders")
     func platePointsAdvancedG0() {
         let points: [SIMD3<Double>] = [
@@ -18,7 +33,8 @@ struct AdvancedPlateSurfaceTests {
         let shape = Shape.plateSurface(through: points, orders: orders)
         #expect(shape != nil)
         if let s = shape {
-            #expect((s.surfaceArea ?? 0) > 0)
+            #expect(abs((s.surfaceArea ?? 0) - 272.86803196188612) < 1e-6)
+            #expect(maxDistance(from: points, to: s) < 1e-6)
         }
     }
 
@@ -50,6 +66,10 @@ struct AdvancedPlateSurfaceTests {
             degree: 4, pointsOnCurves: 20, iterations: 3, tolerance: 0.001
         )
         #expect(shape != nil)
+        if let s = shape {
+            #expect(abs((s.surfaceArea ?? 0) - 137.30983411355206) < 1e-6)
+            #expect(maxDistance(from: points, to: s) < 1e-3)
+        }
     }
 
     @Test("Plate surface rejects mismatched point/order counts")
@@ -94,6 +114,15 @@ struct AdvancedPlateSurfaceTests {
             curveConstraints: curveConstraints
         )
         #expect(shape != nil)
+        if let s = shape {
+            #expect(abs((s.surfaceArea ?? 0) - 266.0526366309989) < 1e-6)
+            // Both points and the boundary (its corners and an edge midpoint) lie on the surface.
+            let onSurface: [SIMD3<Double>] = [
+                SIMD3(5, 5, 3), SIMD3(2, 8, 1), SIMD3(0, 0, 0), SIMD3(10, 0, 0),
+                SIMD3(10, 10, 0), SIMD3(0, 10, 0), SIMD3(5, 0, 0),
+            ]
+            #expect(maxDistance(from: onSurface, to: s) < 2e-3)
+        }
     }
 
     @Test("Mixed plate surface with points only")
@@ -111,6 +140,10 @@ struct AdvancedPlateSurfaceTests {
             curveConstraints: curveConstraints
         )
         #expect(shape != nil)
+        if let s = shape {
+            #expect(abs((s.surfaceArea ?? 0) - 244.4080195083624) < 1e-6)
+            #expect(maxDistance(from: pointConstraints.map(\.point), to: s) < 1e-6)
+        }
     }
 
     @Test("Advanced plate produces face with nonzero area")
@@ -123,7 +156,8 @@ struct AdvancedPlateSurfaceTests {
         let shape = Shape.plateSurface(through: points, orders: orders)
         #expect(shape != nil)
         if let s = shape {
-            #expect((s.surfaceArea ?? 0) > 50)
+            // 100 would be the flat square; the (5, 5, 5) bump raises it to the kernel's 161.03.
+            #expect(abs((s.surfaceArea ?? 0) - 161.0299905620775) < 1e-6)
         }
     }
 }

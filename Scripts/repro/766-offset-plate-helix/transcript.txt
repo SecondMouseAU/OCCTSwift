@@ -1,0 +1,13 @@
+offsetValueRoundTrip: Offset()=5
+setOffsetValue: Offset() after SetOffsetValue(7.5)=7.5
+offsetBasisIsNotNil: basis Geom_Plane S(1,2)=(1, 2, 0) offset S(1,2)=(1, 2, 2)
+nonOffsetSurface: Geom_Plane is not a Geom_OffsetSurface (bridge returns 0 / nil for it)
+averagePlane planarPoints: IsPlane=1 IsLine=0 normal=(-0.099503719021, 0, 0.99503719021) origin=(0.5, 0.5, 0.05) uv=[-0.502493781056, 0.502493781056]x[-0.5, 0.5]
+averagePlane collinearPoints: IsPlane=1 IsLine=0 normal=(-0.408248290464, 0.816496580928, -0.408248290464) origin=(1, 1, 1) uv=[-1.3416407865, 1.3416407865]x[-1.09544511501, 1.09544511501]
+plateSurfaceThroughPoints tol 1e-3: IsDone=1 area=230.283551308 maxPointDistance=2.39e-09
+plateSurfaceMorePoints tol 1e-2: IsDone=1 area=281.864731907 maxPointDistance=3.68e-15
+surfaceSet: Add(plane)=1 Add(cyl)=2 written=70 bytes read back=2 surfaces; duplicate: Add(plane)=1 Add(plane)=1
+helix eval(0)=(10, -0, 0) D1(0) point=(10, -0, 0) d1=(0, -10, 0.795774715459)
+helix D2(pi) point=(-10, -1.22464679915e-15, 2.5) d1=(-1.22464679915e-15, 10, 0.795774715459) d2=(10, 1.22464679915e-15, 0)
+helix ApprHelix(1e-3): status=0 maxError=0.000676011
+cylinder r25: Bounds u=[0, 6.28318530718] v=[-2e+100, 2e+100] max|r-25| over the 8x4 grid=3.55e-15 polyline(100) length=157.053795391 (2 pi r = 157.079632679)

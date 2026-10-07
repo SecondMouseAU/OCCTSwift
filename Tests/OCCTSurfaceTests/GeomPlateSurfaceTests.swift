@@ -14,8 +14,18 @@ struct GeomPlateSurfaceTests {
             SIMD3(10, 10, 0.5),
         ]
         let face = Shape.plateSurface(points: points)
+        // #766: `if let` let a nil face pass and `isValid` passed a face that ignores a point.
+        // The same GeomPlate chain gives area 230.283551308 with every point on the face, see
+        // Scripts/repro/766-offset-plate-helix/.
+        #expect(face != nil)
         if let face = face {
             #expect(face.isValid)
+            #expect(abs((face.surfaceArea ?? 0) - 230.283551308) < 1e-6)
+            for p in points {
+                if let v = Shape.vertex(at: p) {
+                    #expect((face.minDistance(to: v) ?? 1) < 1e-6)
+                }
+            }
         }
     }
 
@@ -30,8 +40,16 @@ struct GeomPlateSurfaceTests {
             SIMD3(20, 10, -0.5),
         ]
         let face = Shape.plateSurface(points: points, tolerance: 1e-2)
+        // #766: as above; kernel area 281.864731907, see Scripts/repro/766-offset-plate-helix/.
+        #expect(face != nil)
         if let face = face {
             #expect(face.isValid)
+            #expect(abs((face.surfaceArea ?? 0) - 281.864731907) < 1e-6)
+            for p in points {
+                if let v = Shape.vertex(at: p) {
+                    #expect((face.minDistance(to: v) ?? 1) < 1e-6)
+                }
+            }
         }
     }
 }
