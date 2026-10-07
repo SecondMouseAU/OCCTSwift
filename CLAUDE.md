@@ -118,6 +118,7 @@ python3 Scripts/check-wasm-kernel-parity.py      # the wasm kernel asset carries
 python3 Scripts/check-preprocessor-balance.py     # no patch unbalances a source file's #if/#else/#endif (#2167)
 python3 Scripts/check-wasi-patch-base.py         # every patches-wasi patch was cut from the carried-patch tree (#2168)
 python3 Scripts/check-bridge-type-odr.py         # every type defined in more than one bridge .mm is defined identically (#2820)
+python3 Scripts/check-bridge-adaptor-members.py # no bridge struct stores an OCCT adaptor beyond the two allowlisted ones (#3065)
 python3 Scripts/check-transient-release-idiom.py  # every bridge release of a raw Standard_Transient is opencascade::handle::EndScope (#2974)
 python3 Scripts/census-unmeasured-values.py      # CENSUS, not a gate: values returned as measurements that were never computed (#726)
 python3 Scripts/census-doc-occt-attribution.py   # CENSUS, not a gate: docs attributing a method to an OCCT class its bridge fn never reaches (#928)
