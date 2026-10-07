@@ -2726,8 +2726,9 @@ public final class Shape: @unchecked Sendable {
     ///   hard bound is isolation you can kill: run the check in a Web Worker or separate process
     ///   and terminate it at your own deadline. The paragraphs below about a background thread, an
     ///   abandoned computation, the probe copy and ThreadSanitizer describe Apple only. A
-    ///   non-positive `hardTimeout` returns `nil` at once on every platform, without running the
-    ///   check, unlike `timeout:` where non-positive means unbounded.
+    ///   non-positive `hardTimeout` returns `nil` at once on every platform, unlike `timeout:`
+    ///   where non-positive means unbounded. On wasm the check is not run; on Apple the
+    ///   background thread is still started and the abandoned computation finishes on its own.
     ///
     /// Runs the check on a detached background thread against a geometry-independent copy of
     /// this shape and waits on the calling thread with a real deadline. If the deadline passes
