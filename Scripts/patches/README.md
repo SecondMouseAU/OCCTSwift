@@ -3393,7 +3393,14 @@ and frame with a Gauss-Legendre integral written in the test, and is gated on `O
 `Issue3003OffsetOrderTests` is, because the pinned asset does not carry the patch and `ci.yml`'s
 `build-and-test` resolves that asset; `kernel-integration.yml` builds the patches from source with
 `OCCTSWIFT_LOCAL=1` and runs it there. Three more gated tests pin the issue's number, the solid's
-centres for a partial turn and the principal properties; the rest run on the asset. TESTRESULTS
+centres for a partial turn and the principal properties; the rest run on the asset. Measured by swapping the two members of a copy of the pinned archive (the `ar r` shortcut, not a
+rebuild), on macOS arm64, with `OCCTSWIFT_LOCAL=1`: on the archive as shipped 4 of the suite's 10 tests
+fail (the four gated ones) and 6 pass; with the members built from `0050`, `0051` and `0055` only,
+the same 4 fail, on 112 cylinder, sphere and torus findings and none for the cone; with `0057` on top
+all 10 pass, the 48-combination test in 9 s (its tolerance is 1e-9; the probe's largest deviation is 1.1e-13). The six that run on
+the asset were each broken with their subject (a range order left unchecked, the frame origin
+ignored, the kind inverted, `add` reporting success without composing, a non-finite axis let through)
+and each failed.
 
 **Upstream checked 2026-10-07:** no PR or issue about either class; both files last changed upstream
 on 2026-03-10 (OCCT#1156, an LProp unification already in the pinned tree). **Not yet filed
