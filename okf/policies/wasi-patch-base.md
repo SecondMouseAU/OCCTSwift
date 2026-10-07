@@ -39,7 +39,7 @@ a WASI patch cut before that happened is verified against a tree nobody builds.
 
 ```bash
 cd Libraries/occt-src
-git checkout .                                   # a clean V8_0_1
+git checkout . && git clean -fd                  # a clean V8_0_1 (checkout alone keeps new files)
 for p in ../../Scripts/patches/*.patch; do git apply "$p"; done
 # ... make the WASI change ...
 git diff -- src/path/to/File.cxx > ../../Scripts/patches-wasi/wasi-<thing>.patch
@@ -87,10 +87,17 @@ one whose hunk offsets have drifted. Those need a checkout.
 
 `--tree DIR` (default `Libraries/occt-src`) is that mode and it is the real check: it requires
 every carried patch to be applied in `DIR`, verifies each WASI patch's `index` pre-image blob
-against `git hash-object` of the target in that state, and runs `git apply --check`. It is
-**not** part of `gate-scripts`, and per #2098 a mode that examined nothing must fail rather than
-pass, so `--require-tree` turns a missing or unpatched tree from a printed note into an error. The
-wasm build job is where it belongs, alongside
+against `git hash-object` of the target in that state, and runs `git apply --check`. A WASI patch
+already applied in `DIR`, which is the state `Scripts/build-occt-wasm.sh` leaves, cannot be
+re-checked that way, so it is verified against its `index` post-image blob instead (#2272); one with
+no `index` line stays unverifiable. It is **not** part of `gate-scripts`, and per #2098 a mode that
+examined nothing must fail rather than pass, so `--require-tree` turns a missing or unpatched tree
+from a printed note into an error.
+
+**No CI job runs it.** `wasm.yml` fetches the prebuilt kernel and never has a
+`Libraries/occt-src`, so it cannot; a job that built OCCT would cost about an hour. It runs by hand,
+where the tree exists: after `Scripts/build-occt-wasm.sh` (or `Scripts/build-occt.sh`, for a
+carried-only tree), and whenever a WASI patch is authored or the kernel is repinned, alongside
 `check-preprocessor-balance.py --tree --require-tree`.
 
 ## The patch that motivated the rule is not a patch-base defect
