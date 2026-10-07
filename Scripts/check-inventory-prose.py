@@ -921,7 +921,8 @@ PROSE_SKIP_PREFIXES = ("Scripts/repro/", "Tests/Fixtures/")
 PROSE_SKIP_FILES = {"docs/CHANGELOG.md", "CHANGELOG.md", "Scripts/check-inventory-prose.py"}
 
 # Only a leading comment marker is stripped, but every line of every file is read, so prose inside
-# a `/* */` block is checked like any other (its `/*` and `*/` stay as inert punctuation).
+# a `/* */` block is checked like any other. The opener stays as `/*`, and a closing ` */` loses
+# its `*` to the same strip and is left as a lone `/`; both are inert punctuation.
 _COMMENT_PREFIX_RE = re.compile(r"^\s*(?:///?|#|\*)\s?")
 _ROW_HEADER_RE = re.compile(r"^(0\d{3})\s{2,}\S")
 _BULLET_RE = re.compile(r"^(?:[-*]|\d+\.)\s+")
@@ -979,6 +980,8 @@ def prose_units(text):
 
         def line_of(piece, cursor):
             """The file line holding `piece`, found at or after offset `cursor` in `body`."""
+            # Every piece is an exact substring of `body`, so the find cannot miss; the fallback
+            # keeps a report script from crashing the run if that ever stops being true.
             at = body.find(piece, cursor)
             at = cursor if at < 0 else at
             index = max(i for i, begin in enumerate(starts) if begin <= at)
