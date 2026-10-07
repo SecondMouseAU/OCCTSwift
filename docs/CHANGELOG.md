@@ -21,6 +21,13 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### `Shape.fromMesh` returns nil for an out-of-range triangle index (#3110)
+- `Shape.fromMesh` returns nil for a triangle index below 1 or above the point count. A huge or `Int32.min` index crashed the process, and 0 or `points.count + 1` built an empty shape that read as a result (#3110).
+
+### PresentationStyle.isEmpty is false for a hidden style with no colour (#3116)
+
+`PresentationStyle.isEmpty` returned `true` for a style with `isVisible = false` and no colours, although its documentation and OCCT's `XCAFPrs_Style::IsEmpty()` both say a hidden style is not empty. The property read a flag the bridge had computed from a default visible style before visibility was assigned. It is now computed from the stored properties.
+
 ### Concurrent first use of Shape.edge2d* no longer returns garbage vertices or kills the process, carried as kernel patch 0056 (#3039)
 
 `BRepLib::Plane()` created its process-global plane on first use with no lock, and every vertex that `BRepLib_MakeEdge2d` builds goes through it. When two threads made their first 2D edge in a process at the same moment (`Shape.edge2d(from:to:)`, `edge2dFromCircle`, `edge2dFromLine`, `edge2dFullCircle`, `edge2dEllipse`, `edge2dEllipseArc`, `edge2dFromCurve`), one of them could read the plane the other had already released: a vertex of zeros or denormal garbage, or SIGSEGV, SIGBUS or SIGTRAP with no diagnostic. Across 3000 fresh processes at 16 threads the shipped kernel failed 129 times and failed none once the plane was created before the threads started. Patch `0056` creates the plane in a function-local static, which C++11 initialises under a lock, the way `Message::DefaultMessenger()` does. Serial use, and any process that has already made one 2D edge, was never affected.

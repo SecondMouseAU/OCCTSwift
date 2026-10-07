@@ -1970,6 +1970,13 @@ OCCTShapeRef OCCTShapeFromMesh(const double*  points,
     if (!std::isfinite(points[i]))
       return nullptr;
   }
+  // #3110: indices are 1-based. 0 and nodeCount + 1 build an empty shape that reads as a result,
+  // a negative one raises inside the builder, and a huge or INT32_MIN one faults (SIGSEGV, SIGBUS).
+  for (int64_t i = 0; i < static_cast<int64_t>(triCount) * 3; i++)
+  {
+    if (triangles[i] < 1 || triangles[i] > nodeCount)
+      return nullptr;
+  }
   try
   {
     TColgp_Array1OfPnt nodes(1, nodeCount);

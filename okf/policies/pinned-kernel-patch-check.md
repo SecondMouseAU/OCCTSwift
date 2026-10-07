@@ -233,3 +233,12 @@ It also retires whatever bridge-side mitigation was covering for a patch the new
 [Known OCCT bugs](../references/known-occt-bugs.md) rows marked "retire when repinned" and in
 `CLAUDE.md`'s Known OCCT Bugs section. A guard that outlives its kernel fix turns a working call
 into a refusal, and its own tests cannot signal it, because they assert the refusal.
+
+**It then rewrites the prose that described the kernel before it** (#3056). #3031 pinned eight
+patches, and about thirty sentences across ten files went on saying "NOT built", "not pinned" or "to
+be deleted when this is pinned" until #3054 found them by hand; a checklist written in a patch's own
+README entry missed two of its four items. Run `python3 Scripts/check-inventory-prose.py` after the
+`Package.swift` pin and read its "REPORT" section: it lists every sentence that resolves to a patch
+now pinned and still calls it not-yet-pinned. It cannot see a sentence that names no patch, so also
+search for the old kernel tag and the old patch count, and for any comment explaining a bridge
+mitigation the repin retired.
