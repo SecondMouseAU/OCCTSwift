@@ -21,6 +21,10 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### Revolve builders return nil past 1e4 radians instead of running for a time proportional to the angle (#3109)
+
+- `Shape.revolve`, `revolved(angle:)`, `Shape.revolution(meridian:)`, `addingRevolvedFeature`, `localRevolution` (with and without an offset) and `localRevolutionForm` returned nothing, or were killed by the OS, for a finite but absurd angle, because each runs for a time proportional to the angle. They now return `nil` past 1e4 radians (572958 degrees for the revolved feature), a bound taken from measurement: the slowest builder returns in 0.04 s there. Every angle a caller means, `0`, `1e-12`, a full turn and multiples of it, is passed to OCCT as before (#3109).
+
 ### `Shape.fromMesh` returns nil for an out-of-range triangle index (#3110)
 - `Shape.fromMesh` returns nil for a triangle index below 1 or above the point count. A huge or `Int32.min` index crashed the process, and 0 or `points.count + 1` built an empty shape that read as a result (#3110).
 
