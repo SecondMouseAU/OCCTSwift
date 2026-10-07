@@ -3,7 +3,9 @@
 //  - NLPlate_NLPlate on the z = 0 Geom_Plane with the tests' constraints, solved as
 //    OCCTSurfaceNLPlateG2/G3 (Solve2(2, 1)), OCCTSurfaceNLPlateIncrementalG0
 //    (IncrementalSolve(2, 1, 4, false)) and OCCTSurfaceNLPlateEvaluateDerivative (Solve2(2, 1),
-//    then EvaluateDerivative); printed as base point + displacement at each constraint's (u, v).
+//    then EvaluateDerivative); printed as NLPlate_NLPlate::Evaluate at each constraint's (u, v), which is
+//    the absolute deformed point and not a displacement (#1049; the first version of this probe
+//    added the base surface a second time).
 //  - GeomPlate_BuildPlateSurface(degree, 15, 2) + GeomPlate_MakeApprox(tol, 20, 8, tol * 0.1, 0,
 //    C1) as OCCTSurfacePlateThrough / occtPlateApproxSurface build it, with the largest distance
 //    from an input point to the approximated surface.
@@ -32,7 +34,7 @@ static Handle(Geom_Plane) plane()
 
 static void at(const char* name, NLPlate_NLPlate& s, const Handle(Geom_Plane)& p, double u, double v)
 {
-  gp_XYZ q = p->Value(u, v).XYZ() + s.Evaluate(gp_XY(u, v));
+  gp_XYZ q = s.Evaluate(gp_XY(u, v));
   printf("%s: IsDone=%d S(%g,%g)=(%.9g, %.9g, %.9g)\n", name, s.IsDone(), u, v, q.X(), q.Y(), q.Z());
 }
 

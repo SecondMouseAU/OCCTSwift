@@ -1,7 +1,9 @@
 // Epic #766, NLPlateDeformationTests.swift: kernel parity for the seven tests. The same
 // NLPlate_NLPlate solve the bridge runs (OCCTSurfaceNLPlateG0 / G1: one NLPlate_HPG0Constraint or
 // NLPlate_HPG0G1Constraint per input, Solve2(order, 1)) on the z = 0 Geom_Plane, then
-// NLPlate_NLPlate::Evaluate at each constraint's (u, v): base point + solved displacement.
+// NLPlate_NLPlate::Evaluate at each constraint's (u, v). Evaluate is the absolute deformed point
+// and not a displacement (#1049: the bridge once added the base surface a second time, and so did
+// the first version of this probe, which printed S(-5,-5) as (-10, -10, ...)).
 // This is the solver's own answer, before the bridge's working-domain trim and BSpline fit.
 #include <Geom_Plane.hxx>
 #include <NLPlate_HPG0Constraint.hxx>
@@ -37,7 +39,7 @@ static void run(const char* name, const std::vector<C>& cs, int order, bool g1)
     if (solver.IsDone())
       for (const C& c : cs)
       {
-        gp_XYZ p = plane->Value(c.u, c.v).XYZ() + solver.Evaluate(gp_XY(c.u, c.v));
+        gp_XYZ p = solver.Evaluate(gp_XY(c.u, c.v));
         printf(" S(%g,%g)=(%.9g, %.9g, %.9g)", c.u, c.v, p.X(), p.Y(), p.Z());
       }
     printf("\n");

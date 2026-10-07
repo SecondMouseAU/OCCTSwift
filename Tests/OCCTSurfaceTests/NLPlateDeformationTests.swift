@@ -13,11 +13,12 @@ struct NLPlateDeformationTests {
     // targets are what NLPlate_NLPlate::Evaluate returns at those (u, v) after the same
     // Solve2(order, 1), see Scripts/repro/766-nlplate-deformation/.
     //
-    // Three cases do NOT hold today and are pinned as known issues rather than loosened: with
-    // several G0 targets, or with a G1 target, the kernel's solve meets every target but the
-    // surface the bridge fits to it misses them (by up to 4.5 on the three-target G0 case), and
-    // the two-target G1 case comes back nil although the kernel solves it. `withKnownIssue` fails
-    // the moment the targets start being met, so these cannot silently stay wrong once fixed.
+    // Three cases do NOT hold today and are pinned as known issues rather than loosened (#3133,
+    // #3135): with several G0 targets, or with a G1 target, the kernel's solve meets every target
+    // but the surface the bridge fits to it misses them (by up to 5.4, the 3D distance at (-5, -5)
+    // on the three-target G0 case), and the two-target G1 case comes back nil although the kernel
+    // solves it. `withKnownIssue` fails the moment the targets start being met, so these cannot
+    // silently stay wrong once fixed.
     private func near(_ s: Surface, _ uv: SIMD2<Double>, _ target: SIMD3<Double>, _ tol: Double) -> Bool {
         let p = s.point(atU: uv.x, v: uv.y)
         let d = p - target
@@ -65,7 +66,7 @@ struct NLPlateDeformationTests {
         )
         #expect(deformed != nil)
         if let d = deformed {
-            withKnownIssue("#766 parity MISMATCH: NLPlate_NLPlate solves these targets exactly (probe), but the bridge's fitted surface misses them; see Scripts/repro/766-nlplate-deformation/") {
+            withKnownIssue("#3133: NLPlate_NLPlate solves these targets exactly (probe), but the bridge's fitted surface misses them; see Scripts/repro/766-nlplate-deformation/") {
                 #expect(near(d, SIMD2(-5, -5), SIMD3(-5, -5, 1), 0.1))
                 #expect(near(d, SIMD2(5, 5), SIMD3(5, 5, 2), 0.1))
                 #expect(near(d, SIMD2(0, 0), SIMD3(0, 0, 5), 0.1))
@@ -123,7 +124,7 @@ struct NLPlateDeformationTests {
         if let d = deformed {
             let dom = d.domain
             #expect(dom.uMax > dom.uMin)
-            withKnownIssue("#766 parity MISMATCH: NLPlate_NLPlate solves these targets exactly (probe), but the bridge's fitted surface misses them; see Scripts/repro/766-nlplate-deformation/") {
+            withKnownIssue("#3133: NLPlate_NLPlate solves these targets exactly (probe), but the bridge's fitted surface misses them; see Scripts/repro/766-nlplate-deformation/") {
                 #expect(near(d, SIMD2(0, 0), SIMD3(0, 0, 5), 0.1))
             }
         }
@@ -150,7 +151,7 @@ struct NLPlateDeformationTests {
             tolerance: 1.0
         )
         // The kernel's solve converges on this input (probe), so the result should exist.
-        withKnownIssue("#766 parity MISMATCH: NLPlate_NLPlate solves these targets exactly (probe), but the bridge's fitted surface misses them; see Scripts/repro/766-nlplate-deformation/") {
+        withKnownIssue("#3135: NLPlate_NLPlate solves these targets exactly (probe), but the bridge returns nil; see Scripts/repro/766-nlplate-deformation/") {
             #expect(deformed != nil)
         }
         if let d = deformed {
