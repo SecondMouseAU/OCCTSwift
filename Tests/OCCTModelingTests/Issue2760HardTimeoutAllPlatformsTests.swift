@@ -39,6 +39,19 @@ struct Issue2760HardTimeoutAllPlatforms {
         #expect(nulled.isSelfIntersecting(hardTimeout: 5) == nil)
     }
 
+    // Measured on Apple: a deadline already in the past returns nil with no conclusive answer, for
+    // a conclusive shape of either kind. The wasm body guards `<= 0` to match; without that guard
+    // it would inherit `timeout:`'s "non-positive means unbounded" and answer true/false here.
+    @Test("a non-positive bound returns nil on every platform, not an unbounded answer")
+    func nonPositiveBoundIsNil() throws {
+        let compound = try #require(overlappingCompound())
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        for t in [0.0, -1.0, -Double.infinity] {
+            #expect(compound.isSelfIntersecting(hardTimeout: t) == nil)
+            #expect(box.isSelfIntersecting(hardTimeout: t) == nil)
+        }
+    }
+
     // The expiry path cannot be forced deterministically: OCCT may find the fault before its first
     // checkpoint, so the outcome is `true` or `nil`. What must hold on both platforms is that an
     // expired bound never reads as a clean answer for a shape that does self-intersect.

@@ -2726,7 +2726,8 @@ public final class Shape: @unchecked Sendable {
     ///   hard bound is isolation you can kill: run the check in a Web Worker or separate process
     ///   and terminate it at your own deadline. The paragraphs below about a background thread, an
     ///   abandoned computation, the probe copy and ThreadSanitizer describe Apple only. A
-    ///   non-positive `hardTimeout` on wasm means unbounded, as for `timeout:`.
+    ///   non-positive `hardTimeout` returns `nil` at once on every platform, without running the
+    ///   check, unlike `timeout:` where non-positive means unbounded.
     ///
     /// Runs the check on a detached background thread against a geometry-independent copy of
     /// this shape and waits on the calling thread with a real deadline. If the deadline passes
@@ -2782,7 +2783,12 @@ public final class Shape: @unchecked Sendable {
     public func isSelfIntersecting(hardTimeout: Double) -> Bool? {
         #if os(WASI)
             // Single-threaded: no background thread, so no shared-cache race and no probe copy is
-            // needed. Cooperative bound only, documented above (#2760).
+            // needed. Cooperative bound only, documented above (#2760). Apple's semaphore wait on
+            // a deadline already in the past returns nil without a conclusive answer (measured for
+            // 0, negative and -infinity); match that rather than inheriting `timeout:`'s
+            // "non-positive means unbounded". NaN is not `<= 0`, so it falls through, as on Apple,
+            // where a NaN deadline never expires and the check answers (measured).
+            if hardTimeout <= 0 { return nil }
             return isSelfIntersecting(timeout: hardTimeout)
         #else
             final class SelfIntersectResultBox: @unchecked Sendable {
