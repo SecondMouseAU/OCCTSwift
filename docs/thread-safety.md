@@ -114,8 +114,8 @@ defer { OCCTSerial.unlock() }
 
 Fillet and chamfer are **safe to call concurrently on independent shapes**, with no
 lock on your side and no `deepCopy()` required, `Shape.filleted`, `Shape.chamfered`,
-the fillet/chamfer builders, and `SheetMetal.Builder.build` (which fillets internally)
-are all reentrant.
+the fillet/chamfer builders, and `SheetMetal.Builder.build` (which fuses and, for a
+zero-radius concave bend only, fillets) are all reentrant.
 
 This required a kernel fix, not just caller discipline: the racing state (item 5)
 lived in OCCT's own file-scope statics, not in any shape the caller could copy. The
