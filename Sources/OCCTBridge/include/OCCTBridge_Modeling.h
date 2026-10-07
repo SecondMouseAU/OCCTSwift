@@ -957,7 +957,8 @@ OCCTShapeRef OCCTShapeChamferDistAngle(OCCTShapeRef   shape,
 /// @param ruled Whether to use ruled surfaces (true) or smooth B-spline (false)
 /// @param firstVertexX,Y,Z If not NaN, use as starting vertex (cone tip)
 /// @param lastVertexX,Y,Z If not NaN, use as ending vertex (cone tip)
-/// @return Lofted shape, or NULL on failure
+/// @return Lofted shape, or NULL on failure, and NULL when profiles plus vertices number fewer than
+///         two (ThruSections needs two sections; one smooth section crashes the process, #3099)
 OCCTShapeRef OCCTShapeCreateLoftAdvanced(const OCCTWireRef* profiles,
                                          int32_t            profileCount,
                                          bool               solid,
