@@ -906,9 +906,11 @@ let wasmExcludedTestFiles: [String: [String]] = [
         "StressShapeDivideSurfacelessFaceGuardTests.swift",
         "StressUnifySameDomainNullPCurveTests.swift",
     ],
-    // The six files of 28 whose subject is CPU threads rather than screw threads. Measured:
+    // The seven files of 29 whose subject is CPU threads rather than screw threads. Measured:
     // `grep -ln 'Dispatch\|NSLock\|withTaskGroup\|Thread\.' Tests/OCCTThreadTests/*.swift` returns
-    // exactly these, and the other 22 are fastener geometry.
+    // exactly these, and the other 22 are fastener geometry. `Issue3039BRepLibPlaneFirstUseTests`
+    // is the seventh: it uses `DispatchGroup` and spawns child processes with `Process`, and
+    // neither exists on wasm, so the file does not compile there.
     "OCCTThreadTests": [
         "Issue1404TObjApplicationThreadSafetyTests.swift",
         "Issue298FilletThreadSafetyTests.swift",
@@ -916,6 +918,7 @@ let wasmExcludedTestFiles: [String: [String]] = [
         "Issue359STEPThreadSafetyTests.swift",
         "Issue361SharedSingletonThreadSafetyTests.swift",
         "Issue367FuseMultiThreadSafetyTests.swift",
+        "Issue3039BRepLibPlaneFirstUseTests.swift",
     ],
 ]
 
