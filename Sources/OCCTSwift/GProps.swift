@@ -274,12 +274,12 @@ public final class GProps {
     public var matrixOfInertia: simd_double3x3 {
         var v = [Double](repeating: 0, count: 9)
         _ = OCCTGPropsMatrixOfInertia(handle, &v)
+        // Column initialiser, not `rows:`: the WASI simd stand-in has no `init(rows:)`. `v` is
+        // row-major, so column j is (v[j], v[3 + j], v[6 + j]) and the matrix is unchanged.
         return simd_double3x3(
-            rows: [
-                SIMD3(v[0], v[1], v[2]),
-                SIMD3(v[3], v[4], v[5]),
-                SIMD3(v[6], v[7], v[8]),
-            ])
+            SIMD3(v[0], v[3], v[6]),
+            SIMD3(v[1], v[4], v[7]),
+            SIMD3(v[2], v[5], v[8]))
     }
 
     /// The static moments, the centre of mass times the mass. `GProp_GProps::StaticMoments`.
