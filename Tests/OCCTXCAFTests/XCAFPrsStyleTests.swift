@@ -71,22 +71,19 @@ struct XCAFPrsStyleTests {
 
     /// A hidden style is not empty.
     ///
-    /// `XCAFPrs_Style::IsEmpty()` includes visibility, and so does
-    /// this type's doc comment ("no colors set, visible"). Today `isEmpty` answers `true` for
-    /// it, because the bridge snapshots `isEmpty` before visibility is applied (#3116), so the
-    /// expectation is carried as a known issue and goes red the moment that is fixed.
+    /// `XCAFPrs_Style::IsEmpty()` includes visibility, and so does this type's doc comment
+    /// ("no colors set, visible"). #3116 made `isEmpty` compute from the stored properties, so
+    /// the expectation that was carried as a known issue is now a plain one.
     @Test func hiddenStyleIsNotEmpty() {
         var hidden = PresentationStyle()
         hidden.isVisible = false
-        // The control that makes the known issue about visibility and nothing else: the same
-        // style, visible, is empty, and a hidden coloured one is not.
+        // The control that makes this about visibility and nothing else: the same style,
+        // visible, is empty, and a hidden coloured one is not.
         #expect(PresentationStyle().isEmpty)
         var hiddenBlue = PresentationStyle(surfaceRed: 0, surfaceGreen: 0, surfaceBlue: 1)
         hiddenBlue.isVisible = false
         #expect(!hiddenBlue.isEmpty)
-        withKnownIssue("#3116: PresentationStyle.isEmpty ignores visibility") {
-            #expect(!hidden.isEmpty)
-        }
+        #expect(!hidden.isEmpty)
     }
 
     @Test func equality() {

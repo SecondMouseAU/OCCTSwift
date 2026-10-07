@@ -254,13 +254,16 @@ and flags a sentence calling a pinned patch not-yet-pinned. Three properties are
   no patch to anchor to, and 14 are the by-plane mirror's own comments and a present-tense row, which
   name no pinned state at all. The self-test replays six excerpts of that text, kept short but taken from
   those revisions.
-- **It is a report, not a gate, until the tree is clean.** Its false-positive count on the live
-  tree is zero, but it also finds sentences that really are stale and sit in files the change that
-  added it did not own, and a gate red on its first merge blocks every open PR. `run()` prints them
-  under "REPORT, not a gate yet" and exits 0; `--strict-pin-prose` exits 1; flipping
-  `PIN_PROSE_IS_GATE` makes the bare run exit 1 and is the promotion, to be made once
-  `--strict-pin-prose` exits 0 on `main`. It is part of `check-inventory-prose.py`, not a new
-  script, so the gate and census counts above do not move.
+- **It was a report until the tree was clean, and is a gate now (#3114).** Its false-positive count
+  on the live tree was zero from the first day, but it also found sentences that really were stale
+  and sat in files the change that added it did not own, and a gate red on its first merge blocks
+  every open PR. #3112 therefore printed them under "REPORT, not a gate yet" and exited 0, and #3114
+  corrected the twelve it reported (plus two neighbours it could not resolve, "like `0051` and
+  `0052`" and "unpinned with `0050` and `0051`", found by reading the sections around them) and
+  flipped `PIN_PROSE_IS_GATE`. A bare run now exits 1 on a stale sentence, and a repin that pins a
+  patch must rewrite what called it unpinned in the same PR. A sentence kept as history is written
+  in the past tense or carries `pin-state-exempt: <reason>`. It is part of
+  `check-inventory-prose.py`, not a new script, so the gate and census counts above did not move.
 
 **The half that names a kernel, and not a patch, is a census: `census-stale-kernel-prose.py`
 (#3056).** A repin also leaves "the pin below is now `v4.0.0-kernel.3`", "the asset holds

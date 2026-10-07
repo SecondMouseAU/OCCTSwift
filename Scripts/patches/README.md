@@ -2122,20 +2122,20 @@ own here.
 
 ### CI coverage, and the pin
 
-**Carried, not pinned.** `Scripts/patches/` holds thirty-four and the pinned `v4.0.0-kernel.3` asset
-holds thirty-one, so this patch is in **no** required check:
-`ci.yml`'s `build-and-test` resolves the asset. `kernel-integration.yml` triggers on
-`Scripts/patches/**` and builds `V8_0_1` plus every carried patch from source, so the PR that adds
-this one gets it compiled, and that proves it applies, compiles and regresses nothing. It cannot
-prove the fix reaches a consumer, and here it could not even if it ran on every PR, because **the
-bridge already refuses the input before the kernel sees it**.
+**Pinned by `v4.0.0-kernel.4`, the first asset to hold it.** It was carried without a rebuild on
+2026-09-30, when the pinned `v4.0.0-kernel.3` asset lacked it, and until the repin it was in **no**
+required check: `ci.yml`'s `build-and-test` resolves the asset. Now that the asset holds it,
+`build-and-test` exercises it. `kernel-integration.yml` triggers on `Scripts/patches/**` and builds
+`V8_0_1` plus every carried patch from source, so the PR that added it got it compiled, which proved
+it applied, compiled and regressed nothing.
 
-That is the argument for not rebuilding now. `0043` was rebuilt the day it was carried because what
-it left exposed was a value a caller reads. This one leaves nothing exposed: `OCCTSurfaceExtrema`
-gained an `IsParallel()` gate with #2831, and every other bridge entry point that reaches either
-class through a point read already had one (`OCCTExtremaExtSSPoint`, `OCCTExtremaExtCSPoint`,
-`OCCTCurve3DDistanceToSurface`, which reads `LowerDistance()` alone). The standing hold on repinning
-until OCCT 8.0.2 lands therefore wins, and the 8.0.2 rebuild absorbs this patch for free.
+It was not rebuilt the day it was carried, because **the bridge already refused the input before the
+kernel saw it**. `0043` was rebuilt the day it was carried because what it left exposed was a value
+a caller reads. This one left nothing exposed: `OCCTSurfaceExtrema` gained an `IsParallel()` gate
+with #2831, and every other bridge entry point that reaches either class through a point read
+already had one (`OCCTExtremaExtSSPoint`, `OCCTExtremaExtCSPoint`, `OCCTCurve3DDistanceToSurface`,
+which reads `LowerDistance()` alone). The standing hold on repinning until OCCT 8.0.2 landed
+therefore won, until `v4.0.0-kernel.4` was cut for other patches and absorbed this one.
 
 **Retargeting risk at 8.0.2.** No other carried patch touches either file, and both `Points()`
 bodies are three lines that have not changed since the class was written, so the hunks are expected
@@ -2229,9 +2229,11 @@ compile line adds their package directories from `Libraries/occt-src`.
 
 ### CI coverage, and the pin
 
-**Carried, not pinned.** `ci.yml`'s `build-and-test` resolves the pinned asset, so this patch is in
-no required check. `kernel-integration.yml` triggers on `Scripts/patches/**` and builds `V8_0_1`
-plus every carried patch from source, which proves it applies, compiles and regresses nothing.
+**Pinned.** It was carried before it was pinned, and `ci.yml`'s `build-and-test` resolves the
+pinned asset, so until the repin the patch was in no required check. Now that the asset holds it,
+`build-and-test` exercises it. `kernel-integration.yml` triggers on `Scripts/patches/**` and builds
+`V8_0_1` plus every carried patch from source, which proves it applies, compiles and regresses
+nothing.
 
 **Retargeting risk at 8.0.2.** No other carried patch touches either file, and neither
 `InsertPoleAfter` has changed shape in years, so the hunks are expected to apply to `V8_0_2`
@@ -2314,12 +2316,12 @@ translation units of both patches in one run.
 
 ### CI coverage, and the pin
 
-**Carried, not pinned**, and unlike `0044` this one does leave something exposed: the fault is in
-the pinned kernel and `OCCTMathUzawa`'s `nConstraints > nVars` guard is the only thing between a
-Swift caller and it. That guard was added for exactly this, so nothing is exposed in practice, but
-the exposure is to a future bridge author rather than nil.
+**Pinned.** Unlike `0044`, this one left something exposed before the repin: the fault was in the
+kernel and `OCCTMathUzawa`'s `nConstraints > nVars` guard was the only thing between a Swift caller
+and it. That guard was added for exactly this, so nothing was exposed in practice, but the exposure
+was to a future bridge author rather than nil.
 
-**The bridge guard stays when this is pinned**, a deliberate exception to the rule in
+**The bridge guard stays now that this is pinned**, a deliberate exception to the rule in
 [`okf/policies/pinned-kernel-patch-check.md`](../../okf/policies/pinned-kernel-patch-check.md) that
 a repin retires the mitigation its patch supersedes. Patched, the kernel returns a correctly sized
 initial error for an overdetermined system instead of faulting, which is a behaviour the Swift
@@ -2451,16 +2453,17 @@ rather than assumed. Compiled clean, no diagnostics, on all three slices:
 
 ### CI coverage, and the pin
 
-**Carried, not pinned.** `ci.yml`'s `build-and-test` resolves the pinned asset, so this patch is in
-**no** required check. `kernel-integration.yml` triggers on `Scripts/patches/**` and builds `V8_0_1`
-plus every carried patch from source, so the PR that adds this one gets it compiled, and that proves
-it applies, compiles and regresses nothing. It cannot prove the fix reaches a consumer, and here it
-could not even if it ran on every PR, because the bridge already refuses the input first.
+**Pinned.** It was carried before it was pinned, and `ci.yml`'s `build-and-test` resolves the pinned
+asset, so until the repin the patch was in **no** required check. Now that the asset holds it,
+`build-and-test` exercises it. `kernel-integration.yml` triggers on `Scripts/patches/**` and builds
+`V8_0_1` plus every carried patch from source, so the PR that added it got it compiled, and that
+proved it applies, compiles and regresses nothing. It could not prove the fix reaches a consumer,
+and could not even if it ran on every PR, because the bridge already refuses the input first.
 
 ### The bridge guards stay
 
 `occtValidMeshDeflection` and `occtValidMeshAngle` in `OCCTBridge_Internal.h` are **not** retired
-when this is pinned. This is the `0042` and `0044` shape, the deliberate exception to the rule in
+now that this is pinned. This is the `0042` and `0044` shape, the deliberate exception to the rule in
 [`okf/policies/pinned-kernel-patch-check.md`](../../okf/policies/pinned-kernel-patch-check.md) that
 a repin retires the mitigation its patch supersedes: with the patch the kernel throws
 `Standard_NumericError` for the same input the guards refuse, so both answer the site's documented
@@ -2722,17 +2725,19 @@ separately as [#3010](https://github.com/SecondMouseAU/OCCTSwift/issues/3010).
 
 ### CI coverage, and the pin
 
-**Carried and not yet pinned**, like `0051` and `0052`. `ci.yml`'s `build-and-test` resolves the
-pinned asset, so `Tests/OCCTAnalysisTests/GPropCylConeTests.swift` will be **red there** until the
-repin; `kernel-integration.yml` triggers on `Scripts/patches/**`, builds `V8_0_1` plus every
-carried patch from source, and is where those tests pass. That split is #585 and it is the expected
-state of a PR carrying a kernel fix and its regression together.
+**Pinned, like `0051` and `0052`.** It was carried before it was pinned, and `ci.yml`'s
+`build-and-test` resolves the pinned asset, so `Tests/OCCTAnalysisTests/GPropCylConeTests.swift`
+was **red there** until the repin; `kernel-integration.yml` triggers on `Scripts/patches/**`, builds
+`V8_0_1` plus every carried patch from source, and is where those tests passed in the meantime. That
+split is #585 and it was the expected state of a PR carrying a kernel fix and its regression
+together. The repin closed it.
 
-**Unlike `0044`, this one leaves a value a caller reads wrong**, through
+**Unlike `0044`, this one left a value a caller reads wrong**, through
 `GeometryProperties.coneSurfaceArea(semiAngle:refRadius:height:)`, which is `0043`'s situation
 rather than `0044`'s. No bridge-side mitigation was added anyway: dividing the factor back out in
-the bridge would have to be retired at the repin, and would double-correct a kernel that already
-carries the patch in the window between. The rebuild is same-night, so the window is hours.
+the bridge would have had to be retired at the repin, and would have double-corrected a kernel that
+already carried the patch in the window between. The rebuild was same-night, so the window was
+hours.
 
 **Retargeting risk at 8.0.2.** No other carried patch touches this file and the expression has not
 changed since the class was written, so the hunk is expected to apply to `V8_0_2` unchanged. Re-run
@@ -2832,8 +2837,9 @@ as [#3010](https://github.com/SecondMouseAU/OCCTSwift/issues/3010) with `0050`'s
 ### CI coverage, and the pin
 
 Identical to `0050`'s, and for the same reason: `GeometryProperties.coneVolume(semiAngle:refRadius:height:)`
-returns the wrong value on the pinned asset, so this is `0043`'s situation and not `0044`'s. Filed
-upstream with `0050` as one PR.
+returned the wrong value on the asset pinned before the repin, so this was `0043`'s situation and
+not `0044`'s. Filed upstream with `0050` as one PR,
+[OCCT#1599](https://github.com/Open-Cascade-SAS/OCCT/pull/1599) against `IR`.
 
 **Retire** once the bundled OCCT includes this fix.
 
@@ -2902,7 +2908,7 @@ the header still builds, which is the only compile a documentation patch can off
 
 ### CI coverage, and the pin
 
-Carried and unpinned with `0050` and `0051`, and unlike them it leaves nothing for a caller to
+Pinned with `0050` and `0051`, and unlike them it left nothing for a caller to
 read wrong: PR #2990 already documents the real behaviour on all four Swift properties with the
 cylinder as the worked example and a test pinning both directions.
 
