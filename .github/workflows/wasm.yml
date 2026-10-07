@@ -142,7 +142,7 @@ jobs:
 
       # #2757: a lowered setjmp plus wasm exceptions can emit an invalid module that only dies at the
       # first OCCT call. The kernel is built with -UOCC_CONVERT_SIGNALS so none is present; a few
-      # seconds against the archive just fetched says it stays that way.
+      # seconds against the archive fetched above says it stays that way.
       - name: Check the kernel holds no lowered setjmp
         run: Scripts/check-wasm-archive-no-setjmp.sh
 

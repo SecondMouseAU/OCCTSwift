@@ -110,7 +110,7 @@ echo ""
 echo "== without -wasm-enable-sjlj the setjmp is not lowered at all"
 "$CXX" --target="$TRIPLE" --sysroot="$SYSROOT" -O2 $EH -c "$BAD" -o "$WORK/nolower.o" \
     || fail "compile without -wasm-enable-sjlj"
-if "$NM" --undefined-only "$WORK/nolower.o" | grep -qE '^ +U setjmp$'; then
+if "$NM" --undefined-only "$WORK/nolower.o" | grep -qE '^ *U setjmp$'; then
     echo "    undefined reference to plain 'setjmp' (a link error on wasip1)"
 else
     fail "expected a plain undefined setjmp"
