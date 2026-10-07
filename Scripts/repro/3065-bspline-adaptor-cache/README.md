@@ -16,6 +16,7 @@ so the timings below are comparable to each other (interleaved in one run) and n
 | `measure.py` | driver: one process per run |
 | `race-transcript.txt`, `perf-transcript.txt` | the numbers quoted in the issue comment |
 | `tsan-2074-transcript.txt` | TSan A/B of the existing #2074 harness |
+| `mesh_probe.cpp`, `mesh-transcript.txt` | macro cost: mesh and integrate one BSpline face, locked kernel vs lock-free adaptor objects (9 interleaved pairs; difference is inside the noise) |
 | `gate-without-0031-transcript.txt` | the whole `tsan-stress.sh` gate with the locking removed |
 
 ## Variants

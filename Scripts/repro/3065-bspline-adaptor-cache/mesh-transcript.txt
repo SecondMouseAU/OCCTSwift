@@ -1,0 +1,20 @@
+mesh_locked mesh_s=1.2298 gprop_s=0.0895 tris=57394 area=1956.520571
+mesh_free mesh_s=2.1683 gprop_s=0.1737 tris=57394 area=1956.520571
+mesh_locked mesh_s=2.0133 gprop_s=0.1538 tris=57394 area=1956.520571
+mesh_free mesh_s=1.8288 gprop_s=0.1380 tris=57394 area=1956.520571
+mesh_locked mesh_s=1.9148 gprop_s=0.1462 tris=57394 area=1956.520571
+mesh_free mesh_s=1.8339 gprop_s=0.1397 tris=57394 area=1956.520571
+mesh_locked mesh_s=1.7589 gprop_s=0.1220 tris=57394 area=1956.520571
+mesh_free mesh_s=1.5463 gprop_s=0.0919 tris=57394 area=1956.520571
+mesh_locked mesh_s=1.4710 gprop_s=0.1359 tris=57394 area=1956.520571
+mesh_free mesh_s=1.6731 gprop_s=0.0972 tris=57394 area=1956.520571
+mesh_locked mesh_s=1.3985 gprop_s=0.0942 tris=57394 area=1956.520571
+mesh_free mesh_s=0.9463 gprop_s=0.0830 tris=57394 area=1956.520571
+mesh_locked mesh_s=1.3125 gprop_s=0.0874 tris=57394 area=1956.520571
+mesh_free mesh_s=1.8209 gprop_s=0.1596 tris=57394 area=1956.520571
+mesh_locked mesh_s=2.1420 gprop_s=0.1233 tris=57394 area=1956.520571
+mesh_free mesh_s=1.3261 gprop_s=0.0967 tris=57394 area=1956.520571
+mesh_locked mesh_s=2.0690 gprop_s=0.1434 tris=57394 area=1956.520571
+mesh_free mesh_s=2.1873 gprop_s=0.1758 tris=57394 area=1956.520571
+SUMMARY mesh_locked: mesh median=1.7589s gprop median=0.1233s (n=9)
+SUMMARY mesh_free: mesh median=1.8209s gprop median=0.1380s (n=9)
