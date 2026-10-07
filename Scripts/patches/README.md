@@ -1661,7 +1661,7 @@ Carries a GTest (`XSControl_ControllerInit_Test`). It is a smoke guard rather th
 the previous check-then-act usually also produced a working registration, because a second
 `Record()` of the same controller kind returns early. The race is what TSan measures.
 
-Not filed upstream: **held**, as there is no honest GTest. A second call of a one-time init in a shared GTest binary is unobservable. Revisit if a way to observe it appears.
+Not filed upstream: **held**, since no GTest can observe it. A second call of a one-time init in a shared GTest binary is unobservable. Revisit if a way to observe it appears.
 
 **Retire** once the bundled OCCT includes this fix.
 
