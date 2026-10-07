@@ -920,6 +920,8 @@ PROSE_SKIP_DIRS = {".git", ".build", "Libraries", "node_modules"}
 PROSE_SKIP_PREFIXES = ("Scripts/repro/", "Tests/Fixtures/")
 PROSE_SKIP_FILES = {"docs/CHANGELOG.md", "CHANGELOG.md", "Scripts/check-inventory-prose.py"}
 
+# Only a leading comment marker is stripped, but every line of every file is read, so prose inside
+# a `/* */` block is checked like any other (its `/*` and `*/` stay as inert punctuation).
 _COMMENT_PREFIX_RE = re.compile(r"^\s*(?:///?|#|\*)\s?")
 _ROW_HEADER_RE = re.compile(r"^(0\d{3})\s{2,}\S")
 _BULLET_RE = re.compile(r"^(?:[-*]|\d+\.)\s+")
@@ -969,12 +971,28 @@ def prose_units(text):
         current[2].append(line)
     for first, anchor, lines, is_table in blocks:
         body = " ".join(lines)
+        starts = []  # offset in `body` where each of the block's lines begins
+        offset = 0
+        for text_line in lines:
+            starts.append(offset)
+            offset += len(text_line) + 1
+
+        def line_of(piece, cursor):
+            """The file line holding `piece`, found at or after offset `cursor` in `body`."""
+            at = body.find(piece, cursor)
+            at = cursor if at < 0 else at
+            index = max(i for i, begin in enumerate(starts) if begin <= at)
+            return first + index, at + len(piece)
+
+        cursor = 0
         if is_table:
             for cell in body.strip("|").split("|"):
-                yield first, cell.strip(), anchor
+                line, cursor = line_of(cell.strip(), cursor)
+                yield line, cell.strip(), anchor
             continue
         for sentence in re.split(r"(?<=[.!?])\s+(?=[A-Z`*(\"'])", body):
-            yield first, sentence, anchor
+            line, cursor = line_of(sentence, cursor)
+            yield line, sentence, anchor
 
 
 def resolve_patch(sentence, start, pronoun, anchor, known):
@@ -1011,6 +1029,7 @@ def stale_pin_claims(path, text, pinned, known):
     for line, sentence, anchor in prose_units(text):
         if EXEMPT_MARKER in sentence:
             continue
+        reported = set()  # one finding per patch per sentence, but every patch the sentence names
         for match in NOT_PINNED_RE.finditer(sentence):
             before = sentence[:match.start()]
             after = sentence[match.end():]
@@ -1018,14 +1037,14 @@ def stale_pin_claims(path, text, pinned, known):
                 continue
             pronoun = bool(PRONOUN_PHRASE_RE.search(match.group(0)))
             patch = resolve_patch(sentence, match.start(), pronoun, anchor, known)
-            if patch is None or patch not in pinned:
+            if patch is None or patch not in pinned or patch in reported:
                 continue
+            reported.add(patch)
             problems.append(
                 "%s:%d: says %s is not pinned (\"%s\"), but Package.swift's pinned-asset list "
                 "includes it. A repin that pins a patch has to rewrite the prose that described "
                 "the kernel before it; if the sentence is history, say so in its tense (#3056)."
                 % (path, line, patch, match.group(0)))
-            break
     return problems
 
 
@@ -1074,6 +1093,7 @@ def check_stale_pin_prose():
 
 
 def run(strict_pin_prose=False):
+    stale = check_stale_pin_prose()  # read before the early return: it is a separate report
     problems = (check_claims() + check_patch_rows() + check_carried_sequence()
                 + check_tsan_suppressions() + check_patch_naming() + check_wasi_patch_rows()
                 + check_release_checks() + check_raise_map_provenance()
@@ -1084,9 +1104,12 @@ def run(strict_pin_prose=False):
             print("  " + problem)
         print("\nEach is a number in prose that no longer matches what the repo holds, or a row "
               "that names nothing. Fix the prose, or the inventory, whichever is wrong.")
+        if stale:
+            print("\nAlso, %d stale pinned-state sentence(s) (#3056, a report):" % len(stale))
+            for problem in stale:
+                print("  " + problem)
         return 1
     values = facts()
-    stale = check_stale_pin_prose()
     if stale and (strict_pin_prose or PIN_PROSE_IS_GATE):
         print("check-inventory-prose: %d stale pinned-state sentence(s)\n" % len(stale))
         for problem in stale:
@@ -1643,11 +1666,38 @@ def self_test():
     case("package-swift-rows-resolve-to-anchors", len(set(anchors)) > 30,
          "%d distinct anchors" % len(set(anchors)))
 
+    # Review of #3112. The line a finding names is the line of its own sentence, not the block's
+    # first; every patch a sentence makes a claim about is reported, not just the first phrase's;
+    # and the report is printed even when another inventory check fails the run.
+    wrapped = "\n".join(["//   0048  BRepX does a thing", "//         and carries filler text.",
+                          "//         More filler here.", "//         Not pinned yet, wait."])
+    wrapped_hits = stale(wrapped)
+    case("finding-names-its-own-sentence-line", len(wrapped_hits) == 1
+         and wrapped_hits[0].startswith("fixture.md:4:"), "; ".join(wrapped_hits)[:60])
+    two_clauses = stale("`0044` waits, when it is pinned we flip; `0048` waits, when it is pinned "
+                        "we flip.")
+    case("two-patches-in-one-sentence-both-reported",
+         sorted(re.findall(r"says (\d{4})", " ".join(two_clauses))) == ["0044", "0048"],
+         "; ".join(two_clauses)[:80])
+    case("same-patch-twice-in-one-sentence-reported-once",
+         len(stale("`0044` is not pinned and stays out until it is pinned.")) == 1)
+    import contextlib
+    import io
+    real_scan, real_claims = globals()["check_stale_pin_prose"], globals()["check_claims"]
+    try:
+        globals()["check_stale_pin_prose"] = lambda: ["fixture stale finding"]
+        globals()["check_claims"] = lambda values=None: ["fixture other problem"]
+        sink = io.StringIO()
+        with contextlib.redirect_stdout(sink):
+            other_code = run(False)
+    finally:
+        globals()["check_stale_pin_prose"], globals()["check_claims"] = real_scan, real_claims
+    case("stale-report-printed-when-another-check-fails",
+         other_code == 1 and "fixture stale finding" in sink.getvalue(), sink.getvalue()[-60:])
+
     # The report stays a report until PIN_PROSE_IS_GATE flips: findings alone do not fail a bare
     # run, and --strict-pin-prose does fail it. The scan is stubbed so the case is deterministic
     # and the tree is read once, and run() is captured since it prints the whole summary.
-    import contextlib
-    import io
     real_scan = globals()["check_stale_pin_prose"]
     try:
         codes = {}
