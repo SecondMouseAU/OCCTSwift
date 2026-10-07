@@ -9,7 +9,8 @@ struct SurfaceFillingTests {
     @Test("Fill from closed wire boundary")
     func fillClosedWireBoundary() throws {
         // Create a closed rectangular wire as boundary
-        let boundary = try #require(Wire.rectangle(width: 10, height: 10), "Failed to create boundary wire")
+        let boundary = try #require(
+            Wire.rectangle(width: 10, height: 10), "Failed to create boundary wire")
 
         // Note: Surface filling is a complex OCCT operation that may not
         // succeed with all boundary configurations. This tests the API.

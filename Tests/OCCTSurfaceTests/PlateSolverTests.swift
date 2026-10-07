@@ -68,7 +68,9 @@ struct PlateSolverTests {
             u: 0.5, v: 0.5,
             derivativeOrderU: 1, derivativeOrderV: 0)
         // Was `deriv.x.isFinite`.
-        #expect(simd_length(deriv - SIMD3(1.4761904524850298, 0.66666673383464681, 2.0000000928637642)) < 1e-9)
+        #expect(
+            simd_length(deriv - SIMD3(1.4761904524850298, 0.66666673383464681, 2.0000000928637642))
+                < 1e-9)
     }
 
     @Test func gtoCConstraint() {

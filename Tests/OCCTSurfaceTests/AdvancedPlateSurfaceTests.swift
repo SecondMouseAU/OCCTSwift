@@ -17,7 +17,9 @@ struct AdvancedPlateSurfaceTests {
     private func maxDistance(from points: [SIMD3<Double>], to shape: Shape) -> Double {
         var worst = 0.0
         for p in points {
-            guard let v = Shape.vertex(at: p), let d = shape.minDistance(to: v) else { return .infinity }
+            guard let v = Shape.vertex(at: p), let d = shape.minDistance(to: v) else {
+                return .infinity
+            }
             worst = max(worst, d)
         }
         return worst

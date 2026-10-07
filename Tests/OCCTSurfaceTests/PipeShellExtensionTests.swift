@@ -12,7 +12,9 @@ struct PipeShellExtensionTests {
     // a shell of area 254.095 (the profile plane contains the spine tangent, so the shell encloses
     // no volume). See Scripts/repro/766-pipe-shell/.
     private func parts() -> (spine: Shape, profile: Shape)? {
-        let sw = Wire.circle(origin: .zero, normal: SIMD3(0, 0, 1), radius: 10).flatMap { Shape.fromWire($0) }
+        let sw = Wire.circle(origin: .zero, normal: SIMD3(0, 0, 1), radius: 10).flatMap {
+            Shape.fromWire($0)
+        }
         let pw = Wire.circle(origin: SIMD3(10, 0, 0), normal: SIMD3(1, 0, 0), radius: 1)
             .flatMap { Shape.fromWire($0) }
         #expect(sw != nil && pw != nil)

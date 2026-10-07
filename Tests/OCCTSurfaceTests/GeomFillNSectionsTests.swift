@@ -7,9 +7,12 @@ import simd
 struct GeomFillNSectionsTests {
     @Test func surfaceFromCircleSections() throws {
         // Create circles at different heights
-        let c1 = try #require(Curve3D.circle(center: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5.0))
-        let c2 = try #require(Curve3D.circle(center: SIMD3(0, 0, 3), normal: SIMD3(0, 0, 1), radius: 4.0))
-        let c3 = try #require(Curve3D.circle(center: SIMD3(0, 0, 6), normal: SIMD3(0, 0, 1), radius: 3.0))
+        let c1 = try #require(
+            Curve3D.circle(center: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5.0))
+        let c2 = try #require(
+            Curve3D.circle(center: SIMD3(0, 0, 3), normal: SIMD3(0, 0, 1), radius: 4.0))
+        let c3 = try #require(
+            Curve3D.circle(center: SIMD3(0, 0, 6), normal: SIMD3(0, 0, 1), radius: 3.0))
         // #766: the surface was bound and discarded, so this asserted nothing. GeomFill_NSections
         // on the three circles gives a surface over [0, 1] x [0, 1] passing through the middle
         // circle at v = 0.5 and the last at v = 1, see Scripts/repro/766-geomfill-c/.
@@ -20,8 +23,10 @@ struct GeomFillNSectionsTests {
     }
 
     @Test func sectionInfo() throws {
-        let c1 = try #require(Curve3D.circle(center: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5.0))
-        let c2 = try #require(Curve3D.circle(center: SIMD3(0, 0, 3), normal: SIMD3(0, 0, 1), radius: 4.0))
+        let c1 = try #require(
+            Curve3D.circle(center: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5.0))
+        let c2 = try #require(
+            Curve3D.circle(center: SIMD3(0, 0, 3), normal: SIMD3(0, 0, 1), radius: 4.0))
         // #766: `> 0` inside `if let`; pinned to GeomFill_NSections::SectionShape, 6 poles,
         // 2 knots, degree 6, see Scripts/repro/766-geomfill-c/.
         let infoOpt = Surface.nSectionsInfo(curves: [c1, c2], params: [0.0, 1.0])
