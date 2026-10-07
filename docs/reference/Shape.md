@@ -548,7 +548,9 @@ public static func extrude(profile: Wire, direction: SIMD3<Double>, length: Doub
 ```
 
 - **Parameters:** `profile`, closed profile wire; `direction`, extrusion direction (need not be unit length); `length`, extrusion distance.
-- **Returns:** Solid prism, or `nil` on failure.
+- **Returns:** Solid prism, or `nil` on failure. A zero, NaN or infinite `length` and a zero, NaN,
+  infinite or overflowing `direction` answer `nil`: they built a solid whose first validity check
+  never returned (#3100). A finite nonzero `length` such as `1e-6` or `1e-12` is passed to OCCT as before.
 - **OCCT:** `BRepPrimAPI_MakePrism`.
 - **Example:**
   ```swift
@@ -556,6 +558,7 @@ public static func extrude(profile: Wire, direction: SIMD3<Double>, length: Doub
         let prism = Shape.extrude(profile: profile,
                                   direction: SIMD3(0, 0, 1), length: 8) else { return }
   // prism.volume == 20 * 12 * 8 == 1920
+  // Shape.extrude(profile: profile, direction: SIMD3(0, 0, 1), length: 0) == nil
   ```
 
 ---
@@ -578,7 +581,10 @@ public static func revolve(
   - `axisOrigin`: a point on the revolution axis.
   - `axisDirection`: axis direction vector.
   - `angle`: sweep angle in radians (default full 2π).
-- **Returns:** Revolution solid, or `nil` on failure.
+- **Returns:** Revolution solid, or `nil` on failure. A NaN or infinite `angle`, a NaN or infinite component of the axis origin, or an axis direction that is NaN, infinite, zero or overflowing, answers `nil`: an
+  infinite angle never returned from `BRepSweep_Revol`, a NaN one built an invalid shell (#3100),
+  and an unusable axis answered a shape (#3113). Any finite angle, `0` and `2 * .pi` included, and
+  any axis of length `1e-6` to `1e6`, is passed to OCCT as before.
 - **OCCT:** `BRepPrimAPI_MakeRevol`.
 - **Example:**
   ```swift
@@ -602,7 +608,10 @@ public func extruded(by vector: SIMD3<Double>) -> Shape?
 ```
 
 - **Parameters:** `vector`, translation vector; its magnitude determines the extrusion distance.
-- **Returns:** Extruded shape, or `nil` on failure.
+- **Returns:** Extruded shape, or `nil` on failure. A zero vector, a NaN or infinite component, and a
+  vector whose squared magnitude underflows to zero (below about `1.5e-162`) or overflows (above
+  about `1.3e154`) answer `nil`: they built a shape whose first validity check never returned
+  (#3100). Every vector between, `1e-6` and `1e-12` included, is passed to OCCT as before.
 - **OCCT:** `BRepPrimAPI_MakePrism` (via `OCCTShapeCreateExtrusionShape`).
 - **Example:**
   ```swift
@@ -626,7 +635,10 @@ public func extrudedInfinite(direction: SIMD3<Double>, infinite: Bool = true) ->
 Useful for half-space cutters in booleans (e.g. slice a solid).
 
 - **Parameters:** `direction`, extrusion direction; `infinite`, if `true`, both directions; if `false`, semi-infinite.
-- **Returns:** Infinite-extent shape (shell), or `nil` on failure.
+- **Returns:** Infinite-extent shape (shell), or `nil` on failure. A zero direction, a NaN or
+  infinite component, and a direction whose squared magnitude underflows to zero or overflows (so
+  `SIMD3(0, 0, 1e300)`) answer `nil`: they built a shape whose first validity check never returned
+  (#3100). The direction's length is otherwise irrelevant, so `1e-6` and `1e150` still extrude.
 - **OCCT:** `BRepPrimAPI_MakePrism` (via `OCCTShapeCreateExtrusionInfinite`).
 - **Example:**
   ```swift
@@ -653,7 +665,7 @@ public func revolved(
 ```
 
 - **Parameters:** `axisOrigin`, point on revolution axis; `axisDirection`, axis direction.
-- **Returns:** Revolution solid, or `nil` on failure.
+- **Returns:** Revolution solid, or `nil` on failure. A NaN or infinite component of the axis origin, or an axis direction that is NaN, infinite, zero or overflowing, answers `nil` (such an axis answered a shape, #3113).
 - **OCCT:** `BRepPrimAPI_MakeRevol` (via `OCCTShapeCreateRevolutionFull`).
 
 ---
@@ -671,7 +683,9 @@ public func revolved(
 ```
 
 - **Parameters:** `axisOrigin`, `axisDirection`; `angle`, sweep angle in radians.
-- **Returns:** Partial revolution solid, or `nil` on failure.
+- **Returns:** Partial revolution solid, or `nil` on failure. A NaN or infinite `angle`, a NaN or infinite component of the axis origin, or an axis direction that is NaN, infinite, zero or overflowing,
+  answer `nil` (an infinite angle or a NaN axis never returned, #3100, #3113); any finite angle is
+  passed to OCCT as before.
 - **OCCT:** `BRepPrimAPI_MakeRevol` (via `OCCTShapeCreateRevolutionPartial`).
 
 ---
@@ -714,6 +728,7 @@ public static func loft(profiles: [Wire], solid: Bool = true, ruled: Bool,
   - `firstVertex`: optional starting tip point for cone/taper shapes.
   - `lastVertex`: optional ending tip point for cone/taper shapes.
 - **Returns:** Lofted shape, or `nil` on failure.
+- **Refuses:** fewer than two sections return `nil`, where `firstVertex` and `lastVertex` each count as a section. One profile with no vertex used to end the process with SIGSEGV when `ruled` was `false` and to return an invalid shape when it was `true` (#3099); one profile plus a vertex is a cone and still works.
 - **OCCT:** `BRepOffsetAPI_ThruSections` (via `OCCTShapeCreateLoftAdvanced`).
 - **Example:**
   ```swift
@@ -726,6 +741,9 @@ public static func loft(profiles: [Wire], solid: Bool = true, ruled: Bool,
   guard let circle = Wire.circle(radius: 5) else { return }
   let cone = Shape.loft(profiles: [circle], solid: true, ruled: true,
                         lastVertex: SIMD3(0, 0, 10))
+
+  // One section is not a loft
+  let none = Shape.loft(profiles: [circle], solid: true, ruled: false)  // nil
   ```
 
 ---

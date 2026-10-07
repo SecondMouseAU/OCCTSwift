@@ -814,6 +814,24 @@ OCCTShapeRef OCCTShapeCreateLoftAdvanced(const OCCTWireRef* profiles,
 {
   if (!profiles || profileCount < 1)
     return nullptr;
+  // ThruSections needs at least two sections, and a vertex end cap counts as one. The
+  // `thrusections` DRAW command (BRepTest_SweepCommands.cxx) refuses `n < 6`, i.e. fewer than two
+  // shapes after `result issolid isruled`, and takes a vertex only as the first or last shape. One
+  // wire and no vertex kills the process with SIGSEGV when smooth (#3099) and returns an invalid
+  // shape when ruled, and OCC_CATCH_SIGNALS is inert in this build, so refuse it before OCCT is
+  // called.
+  int32_t sectionCount = 0;
+  for (int32_t i = 0; i < profileCount; i++)
+  {
+    if (profiles[i])
+      sectionCount++;
+  }
+  if (firstVertexX == firstVertexX)
+    sectionCount++;
+  if (lastVertexX == lastVertexX)
+    sectionCount++;
+  if (sectionCount < 2)
+    return nullptr;
   try
   {
     BRepOffsetAPI_ThruSections maker(solid, ruled);
@@ -898,7 +916,9 @@ OCCTShapeRef OCCTShapeDraftPrism(OCCTShapeRef shape,
                                  double       height,
                                  bool         fuse)
 {
-  if (!shape || !profile)
+  // #3100: a NaN or infinite draft angle or height never returns from
+  // BRepFill_Evolved::PrepareProfile.
+  if (!shape || !profile || !occtIsUsableAngle(angleDeg) || !std::isfinite(height))
     return nullptr;
   try
   {
@@ -940,7 +960,8 @@ OCCTShapeRef OCCTShapeDraftPrismThruAll(OCCTShapeRef shape,
                                         double       angleDeg,
                                         bool         fuse)
 {
-  if (!shape || !profile)
+  // #3100: a NaN or infinite draft angle never returns from BRepFill_Evolved::PrepareProfile.
+  if (!shape || !profile || !occtIsUsableAngle(angleDeg))
     return nullptr;
   try
   {
@@ -987,7 +1008,10 @@ OCCTShapeRef OCCTShapeRevolFeature(OCCTShapeRef shape,
                                    double       angleDeg,
                                    bool         fuse)
 {
-  if (!shape || !profile)
+  // #3100, #3113: a NaN or infinite angle, a non-finite origin or a NaN, infinite, zero or
+  // overflowing direction is refused (BRepLib::FindValidRange, BRepSweep_Revol never returned).
+  if (!shape || !profile || !occtIsUsableAngle(angleDeg)
+      || !occtIsUsableAxis(axOX, axOY, axOZ, axDX, axDY, axDZ))
     return nullptr;
   try
   {
@@ -1030,7 +1054,9 @@ OCCTShapeRef OCCTShapeRevolFeatureThruAll(OCCTShapeRef shape,
                                           double       axDZ,
                                           bool         fuse)
 {
-  if (!shape || !profile)
+  // #3113: a NaN, infinite, zero or overflowing axis made PerformThruAll hand back the original
+  // shape, a silent no-op reported as success.
+  if (!shape || !profile || !occtIsUsableAxis(axOX, axOY, axOZ, axDX, axDY, axDZ))
     return nullptr;
   try
   {
@@ -1936,6 +1962,13 @@ OCCTShapeRef OCCTShapeFromMesh(const double*  points,
 {
   if (!points || nodeCount < 3 || !triangles || triCount < 1)
     return nullptr;
+  // #3100: a NaN or infinite coordinate builds a compound whose first validity check never
+  // returns.
+  for (int64_t i = 0; i < static_cast<int64_t>(nodeCount) * 3; i++)
+  {
+    if (!std::isfinite(points[i]))
+      return nullptr;
+  }
   try
   {
     TColgp_Array1OfPnt nodes(1, nodeCount);
@@ -2805,10 +2838,16 @@ OCCTShapeRef OCCTShapeCreateExtrusion(OCCTWireRef profile,
   {
     OCC_CATCH_SIGNALS
     // Normalize direction and scale by length
+    // #3100: the direction and the scaled vector must both be finite and nonzero; a zero, NaN or
+    // infinite length builds a solid whose first validity check never returns.
+    if (!occtIsUsableVector(dx, dy, dz))
+      return nullptr;
     double mag = std::sqrt(dx * dx + dy * dy + dz * dz);
     if (mag < 1e-10)
       return nullptr;
     gp_Vec direction(dx / mag * length, dy / mag * length, dz / mag * length);
+    if (!occtIsUsableVector(direction.X(), direction.Y(), direction.Z()))
+      return nullptr;
 
     // Create a face from the wire for solid extrusion
     BRepBuilderAPI_MakeFace faceMaker(profile->wire);

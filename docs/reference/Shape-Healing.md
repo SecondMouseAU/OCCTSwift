@@ -992,13 +992,20 @@ public func middlePath(start startShape: Shape, end endShape: Shape) -> Shape?
 Given the two end faces or wires of a pipe-like solid, computes the medial spine wire running through the centre. Useful for reverse-engineering sweep parameters from imported geometry.
 
 - **Parameters:**
-  - `startShape`: one end of the pipe (face or wire shape).
-  - `endShape`: the other end of the pipe (face or wire shape).
+  - `startShape`: one end of the pipe, a face or a wire. Any other shape type answers nil.
+  - `endShape`: the other end of the pipe, a face or a wire. Any other shape type answers nil. It must also share no vertex with `startShape`.
 - **Returns:** Middle path wire, or nil on failure.
+- **Refuses (nil):** a null shape, a start or end that is not a face or a wire, the same face or wire
+  twice, and two sections that share a vertex (adjacent faces, faces meeting at a corner).
+  `BRepOffsetAPI_MiddlePath::Build` casts a bare vertex of a path to an edge when the sections touch
+  and faults, and a null or edge end faults in its constructor, so the bridge refuses these before
+  the call (#3098).
 - **OCCT:** `BRepOffsetAPI_MiddlePath` (via `OCCTShapeMiddlePath`).
 - **Example:**
   ```swift
   if let spine = pipeSolid.middlePath(start: capA, end: capB) { }
+  let faces = box.subShapes(ofType: .face)
+  print(box.middlePath(start: faces[0], end: faces[0]) == nil)  // true, not a crash
   ```
 
 ---
@@ -1385,7 +1392,7 @@ Unlike `Shape.revolution(profile:...)` which takes a wire, this revolves a `Geom
   - `axisOrigin`: origin of the revolution axis (default `.zero`).
   - `axisDirection`: direction of the revolution axis (default Z+).
   - `angle`: revolution angle in radians (default full revolution, 2π).
-- **Returns:** Revolved shape, or nil on failure.
+- **Returns:** Revolved shape, or nil on failure. A NaN or infinite `angle`, a NaN or infinite component of the axis origin, or an axis direction that is NaN, infinite, zero or overflowing, answers `nil` (a NaN angle built an invalid solid, #3100; an unusable axis answered a shape, #3113).
 - **OCCT:** `BRepPrimAPI_MakeRevolution(gp_Ax2, meridian, angle)` (via
   `OCCTShapeCreateRevolutionFromCurve`). Not `BRepPrimAPI_MakeRevol`, which this entry used to name:
   that is the separate class revolving an existing **shape**, and it backs
@@ -1485,7 +1492,9 @@ Creates a boss or pocket with draft angle (taper), commonly used in injection mo
   - `draftAngle`: draft angle in degrees.
   - `height`: extrusion height.
   - `fuse`: `true` to add material (boss); `false` to cut (pocket).
-- **Returns:** Shape with draft prism, or nil on failure.
+- **Returns:** Shape with draft prism, or nil on failure. A NaN or infinite `height`, and a NaN or infinite `draftAngle`, answer
+  `nil`: it never returned from `BRepFill_Evolved::PrepareProfile` (#3100). A zero or small finite
+  angle is passed to OCCT as before.
 - **OCCT:** `BRepFeat_MakeDPrism` (via `OCCTShapeDraftPrism`).
 - **Example:**
   ```swift
@@ -1512,7 +1521,8 @@ Like `addingDraftPrism` but the extrusion continues until it exits the opposite 
   - `sketchFaceIndex`: 0-based index of the sketch face.
   - `draftAngle`: draft angle in degrees.
   - `fuse`: `true` to add material; `false` to cut.
-- **Returns:** Shape with through-all draft prism, or nil on failure.
+- **Returns:** Shape with through-all draft prism, or nil on failure. A NaN or infinite `draftAngle`
+  answers `nil` (it never returned, #3100).
 - **OCCT:** `BRepFeat_MakeDPrism` (via `OCCTShapeDraftPrismThruAll`).
 - **Example:**
   ```swift
@@ -1546,7 +1556,10 @@ Revolves a profile around an axis to add or remove material, the parametric soli
   - `axisDirection`: direction of the revolution axis.
   - `angle`: revolution angle in degrees (default 360).
   - `fuse`: `true` to add material (boss); `false` to cut (pocket).
-- **Returns:** Shape with revolved feature, or nil on failure.
+- **Returns:** Shape with revolved feature, or nil on failure. A NaN or infinite `angle`, a NaN or infinite component of the axis origin, or an axis direction that is NaN, infinite, zero or overflowing, answers `nil`:
+  the angle never returned from `BRepLib::FindValidRange` or `BRepSweep_Revol` (#3100) and an
+  unusable axis answered a shape (#3113). Any finite angle, `0` and `360` included, is passed to
+  OCCT as before.
 - **OCCT:** `BRepFeat_MakeRevol` (via `OCCTShapeRevolFeature`).
 - **Example:**
   ```swift
@@ -1574,7 +1587,7 @@ Convenience overload that always performs a full 360° revolution.
 - **Parameters:**
   - `profile`, `sketchFaceIndex`, `axisOrigin`, `axisDirection`, same as above.
   - `fuse`: `true` to add; `false` to cut.
-- **Returns:** Shape with through-all revolved feature, or nil on failure.
+- **Returns:** Shape with through-all revolved feature, or nil on failure. A NaN or infinite component of the axis origin, or an axis direction that is NaN, infinite, zero or overflowing, answers `nil`: such an axis handed back the original shape, a silent no-op reported as success (#3113).
 - **OCCT:** `BRepFeat_MakeRevol` (via `OCCTShapeRevolFeatureThruAll`).
 - **Example:**
   ```swift

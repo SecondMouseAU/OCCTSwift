@@ -1026,10 +1026,30 @@ extension Shape {
     /// spine wire running through the middle. Useful for reverse-engineering
     /// sweep operations from imported geometry.
     ///
+    /// The kernel builds one path per vertex of the start section and stops it at a vertex of the
+    /// end section, so the two ends must be distinct sections that share no vertex. Input that
+    /// breaks that used to abort the process, which no `catch` can absorb, so it answers `nil`
+    /// instead.
+    ///
     /// - Parameters:
-    ///   - startShape: One end of the pipe (face or wire)
-    ///   - endShape: Other end of the pipe (face or wire)
-    /// - Returns: The middle path wire, or nil on failure
+    ///   - startShape: One end of the pipe, a face or a wire. Any other shape type answers `nil`.
+    ///   - endShape: Other end of the pipe, a face or a wire. Any other shape type answers `nil`.
+    ///     The same face or wire as
+    ///     `startShape`, a section sharing a vertex with it (adjacent faces, faces meeting at a
+    ///     corner) and a null shape all answer `nil`.
+    /// - Returns: The middle path wire, or nil on failure or for an input refused as above.
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// let faces = box.subShapes(ofType: .face)
+    /// // Two faces of a box share an edge unless they are opposite, and only the opposite pair
+    /// // is a pipe cross-section.
+    /// let spines = faces.indices.flatMap { i in
+    ///     faces.indices.filter { $0 > i }.compactMap { box.middlePath(start: faces[i], end: faces[$0]) }
+    /// }
+    /// print(spines.count)  // 3, one per opposite pair
+    /// print(box.middlePath(start: faces[0], end: faces[0]) == nil)  // true, not a crash
+    /// ```
     public func middlePath(start startShape: Shape, end endShape: Shape) -> Shape? {
         guard let h = OCCTShapeMiddlePath(handle, startShape.handle, endShape.handle) else {
             return nil
@@ -1083,10 +1103,24 @@ extension Shape {
     /// - Parameters:
     ///   - profile: Wire profile to extrude
     ///   - sketchFaceIndex: 0-based index of the face on which the profile sits
-    ///   - draftAngle: Draft angle in degrees
-    ///   - height: Extrusion height
+    ///   - draftAngle: Draft angle in degrees; a NaN or infinite angle is refused
+    ///   - height: Extrusion height; a NaN or infinite height is refused
     ///   - fuse: true to add material (boss), false to cut (pocket)
-    /// - Returns: Shape with draft prism, or nil on failure
+    /// - Returns: Shape with draft prism, or nil on failure, including a NaN or infinite
+    ///   `draftAngle` or `height`, which used to never return (#3100). Any finite angle, `0` included, is
+    ///   passed to OCCT unchanged.
+    ///
+    /// ```swift
+    /// let base = Shape.box(width: 20, height: 20, depth: 20)!
+    /// let top = Wire.polygon3D([
+    ///     SIMD3(-3, -3, 10), SIMD3(3, -3, 10), SIMD3(3, 3, 10), SIMD3(-3, 3, 10),
+    /// ])!
+    /// let boss = base.addingDraftPrism(profile: top, sketchFaceIndex: 4, draftAngle: 5, height: 5)
+    /// print(boss != nil)  // true
+    /// let bad = base.addingDraftPrism(
+    ///     profile: top, sketchFaceIndex: 4, draftAngle: .nan, height: 5)
+    /// print(bad == nil)  // true
+    /// ```
     public func addingDraftPrism(
         profile: Wire, sketchFaceIndex: Int,
         draftAngle: Double, height: Double,
@@ -1106,9 +1140,19 @@ extension Shape {
     /// - Parameters:
     ///   - profile: Wire profile to extrude
     ///   - sketchFaceIndex: 0-based index of the face on which the profile sits
-    ///   - draftAngle: Draft angle in degrees
+    ///   - draftAngle: Draft angle in degrees; a NaN or infinite angle is refused
     ///   - fuse: true to add material, false to cut
-    /// - Returns: Shape with draft prism, or nil on failure
+    /// - Returns: Shape with draft prism, or nil on failure, including a NaN or infinite
+    ///   `draftAngle`, which used to never return (#3100).
+    ///
+    /// ```swift
+    /// let base = Shape.box(width: 20, height: 20, depth: 20)!
+    /// let top = Wire.polygon3D([
+    ///     SIMD3(-3, -3, 10), SIMD3(3, -3, 10), SIMD3(3, 3, 10), SIMD3(-3, 3, 10),
+    /// ])!
+    /// print(base.addingDraftPrismThruAll(profile: top, sketchFaceIndex: 4, draftAngle: 5) != nil)
+    /// print(base.addingDraftPrismThruAll(profile: top, sketchFaceIndex: 4, draftAngle: .nan) == nil)
+    /// ```
     public func addingDraftPrismThruAll(
         profile: Wire, sketchFaceIndex: Int,
         draftAngle: Double,
@@ -1864,7 +1908,16 @@ extension Shape {
     /// - Parameters:
     ///   - direction: Direction of extrusion
     ///   - infinite: If true, extrude in both directions (infinite); if false, one direction (semi-infinite)
-    /// - Returns: Extruded shape, or nil on failure
+    /// - Returns: Extruded shape, or nil on failure, including a zero direction, a NaN or an
+    ///   infinity, and a direction whose squared magnitude underflows to zero (below about
+    ///   `1.5e-162`) or overflows (above about `1.3e154`, so `SIMD3(0, 0, 1e300)` is refused).
+    ///   Those directions used to build a shape whose first validity check never returned (#3100).
+    ///
+    /// ```swift
+    /// let face = Shape.face(from: Wire.rectangle(width: 4, height: 4)!)!
+    /// print(face.extrudedSemiInfinite(direction: SIMD3(0, 0, 1)) != nil)  // true
+    /// print(face.extrudedSemiInfinite(direction: SIMD3(.nan, 0, 1)) == nil)  // true
+    /// ```
     public func extrudedSemiInfinite(direction: SIMD3<Double>, infinite: Bool = false) -> Shape? {
         guard
             let h = OCCTShapeExtrudeSemiInfinite(
@@ -1929,7 +1982,14 @@ extension Shape {
     /// providing more detailed operation history than standard extrusion.
     ///
     /// - Parameter direction: Direction and distance of extrusion
-    /// - Returns: Extruded shape, or nil on failure
+    /// - Returns: Extruded shape, or nil on failure, including a NaN, infinite, zero or
+    ///   overflowing `direction`, which used to never return (#3100).
+    ///
+    /// ```swift
+    /// let face = Shape.face(from: Wire.rectangle(width: 4, height: 4)!)!
+    /// print(face.localPrism(direction: SIMD3(0, 0, 5)) != nil)  // true
+    /// print(face.localPrism(direction: SIMD3(.nan, 0, 0)) == nil)  // true
+    /// ```
     public func localPrism(direction: SIMD3<Double>) -> Shape? {
         guard let ref = OCCTLocOpePrism(handle, direction.x, direction.y, direction.z) else {
             return nil
@@ -1942,7 +2002,15 @@ extension Shape {
     /// - Parameters:
     ///   - direction: Primary direction and distance of extrusion
     ///   - translation: Secondary translation vector
-    /// - Returns: Extruded shape, or nil on failure
+    /// - Returns: Extruded shape, or nil on failure, including a NaN, infinite, zero or
+    ///   overflowing `direction`, which used to never return (#3100).
+    ///
+    /// ```swift
+    /// let face = Shape.face(from: Wire.rectangle(width: 4, height: 4)!)!
+    /// let ok = face.localPrism(direction: SIMD3(0, 0, 5), translation: SIMD3(0, 0, 0.1))
+    /// print(ok != nil)  // true
+    /// print(face.localPrism(direction: .zero, translation: SIMD3(0, 0, 0.1)) == nil)  // true
+    /// ```
     public func localPrism(direction: SIMD3<Double>, translation: SIMD3<Double>) -> Shape? {
         guard
             let ref = OCCTLocOpePrismWithTranslation(
@@ -2020,7 +2088,13 @@ extension Shape {
     ///   - direction: Direction vector of the sweep
     ///   - start: Start point of the sweep (passed as `from:`)
     ///   - end: End point of the sweep (passed as `to:`)
-    /// - Returns: The swept shape, or nil on failure
+    /// - Returns: The swept shape, or nil on failure, including a NaN, infinite, zero or
+    ///   overflowing `direction`, which used to never return (#3100).
+    ///
+    /// ```swift
+    /// let face = Shape.face(from: Wire.rectangle(width: 4, height: 4)!)!
+    /// print(face.localLinearForm(direction: .zero, from: .zero, to: SIMD3(1, 0, 0)) == nil)  // true
+    /// ```
     public func localLinearForm(
         direction: SIMD3<Double>,
         from start: SIMD3<Double>,

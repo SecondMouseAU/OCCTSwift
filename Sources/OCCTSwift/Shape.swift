@@ -463,6 +463,23 @@ public final class Shape: @unchecked Sendable {
     }
 
     /// Extrude a 2D profile in a direction.
+    ///
+    /// - Parameters:
+    ///   - profile: The wire to extrude into a solid.
+    ///   - direction: The direction of the extrusion; its length is irrelevant.
+    ///   - length: The distance to extrude.
+    /// - Returns: The solid, or `nil` when the direction is a zero vector or holds a NaN or an
+    ///   infinity, when `length` is zero, NaN or infinite, or when the profile cannot be extruded.
+    ///   Those inputs used to build a solid whose first validity check never returned (#3100).
+    ///   Any finite nonzero length, `1e-12` included, is still passed to OCCT.
+    ///
+    /// ```swift
+    /// let profile = Wire.rectangle(width: 4, height: 4)!
+    /// let solid = Shape.extrude(profile: profile, direction: SIMD3(0, 0, 1), length: 5)
+    /// print(solid != nil)  // true
+    /// print(Shape.extrude(profile: profile, direction: SIMD3(0, 0, 1), length: 0) == nil)  // true
+    /// print(Shape.extrude(profile: profile, direction: SIMD3(0, 0, 1), length: .nan) == nil)  // true
+    /// ```
     public static func extrude(profile: Wire, direction: SIMD3<Double>, length: Double) -> Shape? {
         guard
             let handle = OCCTShapeCreateExtrusion(
@@ -475,6 +492,28 @@ public final class Shape: @unchecked Sendable {
     }
 
     /// Revolve a 2D profile around an axis.
+    ///
+    /// - Parameters:
+    ///   - profile: The wire to revolve.
+    ///   - axisOrigin: A point on the axis.
+    ///   - axisDirection: The direction of the axis.
+    ///   - angle: The sweep in radians; the default is a full turn.
+    /// - Returns: The revolved shape, or `nil` when `angle` is NaN or infinite, when a NaN or infinite component of `axisOrigin`, or an `axisDirection` that is NaN, infinite, zero or overflowing, or
+    ///   when the profile cannot be revolved. A NaN angle used to answer an invalid shell, an
+    ///   infinite one never returned (#3100), and an unusable axis answered a shape (#3113). Any
+    ///   finite angle, `0` and `2 * .pi` included, and any axis of length `1e-6` to `1e6`, is
+    ///   passed to OCCT unchanged.
+    ///
+    /// ```swift
+    /// let profile = Wire.polygon3D([
+    ///     SIMD3(2, 0, 0), SIMD3(4, 0, 0), SIMD3(4, 0, 5), SIMD3(2, 0, 5),
+    /// ])!
+    /// let ring = Shape.revolve(profile: profile, axisOrigin: .zero, axisDirection: SIMD3(0, 0, 1))
+    /// print(ring != nil)  // true
+    /// let bad = Shape.revolve(
+    ///     profile: profile, axisOrigin: .zero, axisDirection: SIMD3(0, 0, 1), angle: .nan)
+    /// print(bad == nil)  // true
+    /// ```
     public static func revolve(
         profile: Wire,
         axisOrigin: SIMD3<Double>,
@@ -493,6 +532,19 @@ public final class Shape: @unchecked Sendable {
     }
 
     /// Extrude any shape along a vector.
+    ///
+    /// - Parameter vector: The displacement; its length is the extrusion distance.
+    /// - Returns: The extruded shape, or `nil` when `vector` is zero, holds a NaN or an infinity,
+    ///   or has a squared magnitude that underflows to zero (below about `1.5e-162`) or overflows
+    ///   (above about `1.3e154`). Those inputs used to build a shape whose first validity check
+    ///   never returned (#3100). Any vector in between, `1e-12` included, is passed to OCCT.
+    ///
+    /// ```swift
+    /// let face = Shape.face(from: Wire.rectangle(width: 4, height: 4)!)!
+    /// print(face.extruded(by: SIMD3(0, 0, 5)) != nil)  // true
+    /// print(face.extruded(by: SIMD3(0, 0, 0)) == nil)  // true
+    /// print(face.extruded(by: SIMD3(.nan, 0, 0)) == nil)  // true
+    /// ```
     public func extruded(by vector: SIMD3<Double>) -> Shape? {
         guard let h = OCCTShapeCreateExtrusionShape(handle, vector.x, vector.y, vector.z) else {
             return nil
@@ -501,6 +553,20 @@ public final class Shape: @unchecked Sendable {
     }
 
     /// Extrude any shape to infinity (or semi-infinity) along a direction.
+    ///
+    /// - Parameters:
+    ///   - direction: The direction; its length is irrelevant.
+    ///   - infinite: `true` to extend both ways, `false` for one way.
+    /// - Returns: The extruded shape, or `nil` when `direction` is zero, holds a NaN or an
+    ///   infinity, or has a squared magnitude that underflows to zero (below about `1.5e-162`) or
+    ///   overflows (above about `1.3e154`, so `SIMD3(0, 0, 1e300)` is refused). Those inputs used
+    ///   to build a shape whose first validity check never returned (#3100).
+    ///
+    /// ```swift
+    /// let face = Shape.face(from: Wire.rectangle(width: 4, height: 4)!)!
+    /// print(face.extrudedInfinite(direction: SIMD3(0, 0, 1)) != nil)  // true
+    /// print(face.extrudedInfinite(direction: SIMD3(0, 0, 1e300)) == nil)  // true
+    /// ```
     public func extrudedInfinite(direction: SIMD3<Double>, infinite: Bool = true) -> Shape? {
         guard
             let h = OCCTShapeCreateExtrusionInfinite(
@@ -510,6 +576,18 @@ public final class Shape: @unchecked Sendable {
     }
 
     /// Revolve any shape around an axis (full 360 degrees).
+    ///
+    /// - Parameters:
+    ///   - axisOrigin: A point on the axis.
+    ///   - axisDirection: The direction of the axis.
+    /// - Returns: The revolved shape, or `nil` when a NaN or infinite component of `axisOrigin`, or an `axisDirection` that is NaN, infinite, zero or overflowing (such an axis used to answer a shape,
+    ///   #3113), or the shape cannot be revolved.
+    ///
+    /// ```swift
+    /// let face = Shape.face(from: Wire.rectangle(width: 2, height: 2)!)!
+    /// print(face.revolved(axisOrigin: SIMD3(30, 0, 0), axisDirection: SIMD3(0, 1, 0)) != nil)  // true
+    /// print(face.revolved(axisOrigin: SIMD3(30, 0, 0), axisDirection: SIMD3(.nan, 0, 1)) == nil)  // true
+    /// ```
     public func revolved(
         axisOrigin: SIMD3<Double>,
         axisDirection: SIMD3<Double>
@@ -524,6 +602,23 @@ public final class Shape: @unchecked Sendable {
     }
 
     /// Revolve any shape around an axis by a partial angle.
+    ///
+    /// - Parameters:
+    ///   - axisOrigin: A point on the axis.
+    ///   - axisDirection: The direction of the axis.
+    ///   - angle: The sweep in radians.
+    /// - Returns: The revolved shape, or `nil` when `angle` is NaN or infinite, when a NaN or infinite component of `axisOrigin`, or an `axisDirection` that is NaN, infinite, zero or overflowing (an
+    ///   infinite angle or a NaN axis never returned, #3100, #3113), or the shape cannot be
+    ///   revolved. Any finite angle is passed to OCCT unchanged.
+    ///
+    /// ```swift
+    /// let face = Shape.face(from: Wire.rectangle(width: 2, height: 2)!)!
+    /// let part = face.revolved(axisOrigin: SIMD3(30, 0, 0), axisDirection: SIMD3(0, 0, 1), angle: .pi)
+    /// print(part != nil)  // true
+    /// let bad = face.revolved(
+    ///     axisOrigin: SIMD3(30, 0, 0), axisDirection: SIMD3(0, 0, 1), angle: .infinity)
+    /// print(bad == nil)  // true
+    /// ```
     public func revolved(
         axisOrigin: SIMD3<Double>,
         axisDirection: SIMD3<Double>,
@@ -558,7 +653,23 @@ public final class Shape: @unchecked Sendable {
     ///   - ruled: Whether to use ruled surfaces (true) or smooth B-spline (false)
     ///   - firstVertex: Optional starting vertex (for cone/taper tips)
     ///   - lastVertex: Optional ending vertex (for cone/taper tips)
-    /// - Returns: Lofted shape, or nil on failure
+    /// - Returns: Lofted shape, or nil on failure, and nil for fewer than two sections
+    ///
+    /// `BRepOffsetAPI_ThruSections` needs two sections, and each of `firstVertex` and
+    /// `lastVertex` counts as one. A single profile with no vertex, or no profile at all, is
+    /// refused with `nil` before the kernel runs: the smooth form (`ruled: false`) would
+    /// otherwise end the process with SIGSEGV, and the ruled form returned a shape whose
+    /// `isValid` is false. A single profile with one or both vertices is a valid cone or bicone.
+    ///
+    /// ```swift
+    /// guard let circle = Wire.circle(radius: 5) else { return }
+    /// let one = Shape.loft(profiles: [circle], solid: true, ruled: false)
+    /// print(one == nil)  // true, one section is not a loft
+    /// let cone = Shape.loft(
+    ///     profiles: [circle], solid: true, ruled: false,
+    ///     lastVertex: SIMD3(0, 0, 10))
+    /// print(cone?.isValid ?? false)  // true, the vertex is the second section
+    /// ```
     public static func loft(
         profiles: [Wire], solid: Bool = true, ruled: Bool,
         firstVertex: SIMD3<Double>? = nil,
@@ -2102,7 +2213,8 @@ public final class Shape: @unchecked Sendable {
     ///   - height: Extrusion height
     ///   - fuse: If true, adds material (boss); if false, removes material (pocket)
     ///
-    /// - Returns: Modified shape, or nil on failure
+    /// - Returns: Modified shape, or nil on failure, including a NaN, infinite, zero or overflowing
+    ///   `direction` and a NaN, infinite, zero or overflowing `height`, which used to never return (#3100).
     ///
     /// ## Example
     ///

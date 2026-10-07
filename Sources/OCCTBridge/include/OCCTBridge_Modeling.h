@@ -841,9 +841,10 @@ OCCTShapeRef OCCTShapeSimpleOffset(OCCTShapeRef shape, double offsetValue);
 
 /// Compute the middle path between two sub-shapes using BRepOffsetAPI_MiddlePath.
 /// @param shape The main shape (typically a solid or shell)
-/// @param startShape Start sub-shape (wire or edge on the shape)
-/// @param endShape End sub-shape (wire or edge on the shape)
-/// @return Middle path wire, or NULL on failure
+/// @param startShape Start section: a face or a wire. Anything else answers NULL.
+/// @param endShape End section: a face or a wire. Anything else answers NULL. It must also share no
+///        vertex with the start section.
+/// @return Middle path wire, or NULL on failure or for a null, same, touching or non-face/wire end
 OCCTShapeRef OCCTShapeMiddlePath(OCCTShapeRef shape,
                                  OCCTShapeRef startShape,
                                  OCCTShapeRef endShape);
@@ -956,7 +957,8 @@ OCCTShapeRef OCCTShapeChamferDistAngle(OCCTShapeRef   shape,
 /// @param ruled Whether to use ruled surfaces (true) or smooth B-spline (false)
 /// @param firstVertexX,Y,Z If not NaN, use as starting vertex (cone tip)
 /// @param lastVertexX,Y,Z If not NaN, use as ending vertex (cone tip)
-/// @return Lofted shape, or NULL on failure
+/// @return Lofted shape, or NULL on failure, and NULL when profiles plus vertices number fewer than
+///         two (ThruSections needs two sections; one smooth section crashes the process, #3099)
 OCCTShapeRef OCCTShapeCreateLoftAdvanced(const OCCTWireRef* profiles,
                                          int32_t            profileCount,
                                          bool               solid,

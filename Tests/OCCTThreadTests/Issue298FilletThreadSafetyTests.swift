@@ -15,12 +15,16 @@ import simd
 // SheetMetal.Builder.build chains extrude → fuse → fillet, so a multi-flange part
 // hits exactly this path. Before the fix, ~60% of concurrent U-channel builds came
 // back invalid with volumes scattered across a dozen distinct wrong values; the
-// correct part is a single volume. The bridge now serialises 3D fillet/chamfer
-// builds (occtFilletMutex), so every concurrent build must match the single value
-// a lone build produces.
+// correct part is a single volume. Every concurrent build must match the single
+// value a lone build produces.
 //
-// This suite is deliberately concurrency-heavy; if the lock regresses it fails
-// loudly rather than flaking, because the corruption rate at this width is high.
+// Coverage note (#3097): after #3096 a concave bend of positive radius no longer
+// calls Shape.filleted, and both bends of this fixture are concave, so this suite
+// no longer reaches the fillet path. It still covers the extrude, fuse and prism
+// path of SheetMetal.Builder.build under concurrency. The fillet race itself is
+// covered directly by Issue3097FilletDirectThreadSafetyTests. The guard is no
+// longer a bridge lock (occtFilletMutex was removed in v1.12.3); it is the
+// thread_local fillet-path statics in the kernel.
 @Suite("Issue #298, fillet-of-boolean is thread-safe (SheetMetal build)")
 struct Issue298FilletThreadSafetyTests {
 

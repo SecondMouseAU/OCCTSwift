@@ -164,7 +164,7 @@ This method creates a prism by extruding the profile wire, then fuses it with (o
 When `fuse` is `true`, material is added (boss); when `false`, material is removed (pocket). The profile should already be positioned on a face of the receiver.
 
 - **Parameters:** `profile`, wire profile to extrude; `direction`, extrusion direction; `height`, feature height; `fuse`, `true` = add material, `false` = remove material.
-- **Returns:** Modified shape, or `nil` on failure.
+- **Returns:** Modified shape, or `nil` on failure. A NaN, infinite, zero or overflowing `direction`, and a NaN, infinite or zero `height`, answer `nil` (they never returned, #3100).
 - **OCCT:** `BRepPrimAPI_MakePrism` + `BRepAlgoAPI_Fuse` or `BRepAlgoAPI_Cut`.
 - **Example:**
   ```swift
