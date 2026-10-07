@@ -1933,16 +1933,70 @@ bool OCCTBRepGraphAddWithHistory(OCCTBRepGraphRef g,
         BRepGraph_NodeId((BRepGraph_NodeId::Kind)inputRootKinds[i], inputRootIndices[i]));
     }
 
-    // Ensure the history layer exists before the absorb; AddWithHistory writes
-    // into the registered layer and silently records nothing without one.
-    (void)g->graph.LayerRegistry().Ensure<BRepGraph_LayerHistory>();
+    // Not AddWithHistory(roots, ...): it hands BRepGraph_LayerHistory::Absorb a
+    // DataMap keyed on TShape addresses and Absorb records in map-walk order, so the
+    // record order, and every SequenceNumber, changed from process to process (#3038).
+    // Do exactly what AddWithHistory does (collect inputs, Add with TrackAddedNodes,
+    // Absorb), but drive Absorb one input at a time in node-id order. A one-entry map
+    // makes Absorb's own Modified-then-Generated logic and image resolution run
+    // unchanged; the only thing taken over is the order. Absorb batches every removed
+    // input into one trailing Deleted record, so removed inputs are skipped here and
+    // recorded the same way, as one sorted batch.
+    auto& graph = g->graph;
+    auto  hist  = graph.LayerRegistry().Ensure<BRepGraph_LayerHistory>();
+    if (hist.IsNull())
+      return false;
 
-    auto result = g->graph.Shapes().AddWithHistory(resultShape->shape,
-                                                   roots,
-                                                   hs->history,
-                                                   TCollection_AsciiString(opName));
+    const bool                     absorb = hist->IsEnabled();
+    BRepGraph::ShapesView::Options options;
+    options.CreateAutoProduct = false;
+    options.TrackAddedNodes   = absorb;
+
+    NCollection_DataMap<TopoDS_Shape, BRepGraph_NodeId, TopTools_ShapeMapHasher> inputs;
+    graph.Shapes().CollectHistoryInputs(roots, inputs);
+
+    auto result = graph.Shapes().Add(resultShape->shape, options);
     if (!result.IsOk())
       return false;
+
+    if (absorb && !inputs.IsEmpty())
+    {
+      std::vector<std::pair<BRepGraph_NodeId, TopoDS_Shape>> ordered;
+      ordered.reserve((size_t)inputs.Size());
+      for (NCollection_DataMap<TopoDS_Shape, BRepGraph_NodeId, TopTools_ShapeMapHasher>::Iterator
+             it(inputs);
+           it.More();
+           it.Next())
+      {
+        ordered.emplace_back(it.Value(), it.Key());
+      }
+      std::stable_sort(ordered.begin(), ordered.end(), [](const auto& a, const auto& b) {
+        if (a.first.NodeKind != b.first.NodeKind)
+          return (int)a.first.NodeKind < (int)b.first.NodeKind;
+        return a.first.Index < b.first.Index;
+      });
+
+      const TCollection_AsciiString label(opName);
+      std::vector<BRepGraph_NodeId> removed;
+      for (const auto& entry : ordered)
+      {
+        if (hs->history->IsRemoved(entry.second))
+        {
+          removed.push_back(entry.first);
+          continue;
+        }
+        NCollection_DataMap<TopoDS_Shape, BRepGraph_NodeId, TopTools_ShapeMapHasher> one;
+        one.Bind(entry.second, entry.first);
+        hist->Absorb(one, result.AddedNodes, hs->history, label);
+      }
+      if (!removed.empty())
+      {
+        NCollection_Array1<BRepGraph_NodeId> deleted(0, (int)removed.size() - 1);
+        for (size_t i = 0; i < removed.size(); i++)
+          deleted.SetValue((int)i, removed[i]);
+        hist->RecordDeleted(label, deleted);
+      }
+    }
     if (outRootKind)
       *outRootKind = (int32_t)result.TopologyRoot.NodeKind;
     if (outRootIndex)

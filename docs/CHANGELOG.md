@@ -21,6 +21,10 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### `BRepGraph.add(_:absorbing:)` records absorbed history in a stable order (#3038)
+
+`BRepGraph.add(_:absorbing:inputRoots:operationName:)` used to write its history records in an order that followed heap addresses and changed from one process to the next, so every record's `sequenceNumber`, and the node `TopologyRef.createdBy(operationName:kind:occurrence:)` named, differed between runs. It now records input by input in `(kind, index)` order, each input's Modified record then its Generated record, with the removed inputs last as one Deleted record. The set of records is unchanged. The fix is in the bridge; no kernel patch is involved.
+
 ### `Shape.loft(profiles:solid:ruled:)` returns nil for fewer than two sections instead of crashing or returning an invalid shape (#3099)
 
 A loft needs two sections, and `firstVertex` and `lastVertex` each count as one. A single profile with no vertex ended the process with SIGSEGV when `ruled` was `false`, and returned a shape whose `isValid` was false when `ruled` was `true`. Both now return `nil`; one profile plus a vertex still lofts a cone.
