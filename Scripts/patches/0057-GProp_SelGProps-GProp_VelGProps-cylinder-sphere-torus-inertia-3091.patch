@@ -1,7 +1,99 @@
 From: OCCTSwift ecosystem <noreply@secondmouse.au>
-Subject: [PATCH] PLACEHOLDER
+Subject: [PATCH] Modeling Data - GProp_SelGProps and GProp_VelGProps compute
+ the matrix of inertia of a gp_Cylinder, gp_Sphere and gp_Torus wrongly, and the
+ centre of mass of the solid, and the area and volume of a torus over part of the
+ tube
 
-PLACEHOLDER
+GProp_SelGProps::Perform and GProp_VelGProps::Perform for gp_Cylinder, gp_Sphere and
+gp_Torus build Dm, the matrix of inertia about the location of the surface in its own
+axes, from expressions that do not integrate to anything, then assemble inertia from it
+the way the gp_Cone overloads did before 0055: as gp_Mat(rows of lambda_i * v_i) from
+the Jacobi decomposition of Dm, which is diag(lambda) V^T and not V diag(lambda) V^T, so
+the sign Jacobi happens to give an eigenvector changes the matrix, with Dm, which is about
+the location, added to the Huyghens term of the centre of mass as if it were already
+about the centre of mass. The patch computes every entry of Dm as an integral and
+assembles inertia = P Dm P^T - H(g, Location) + H(g, loc), with P the columns of the axes
+of the surface and H the GProp::HOperator term, exactly as 0055 does for gp_Cone.
+
+With the angular integrals over u in [a1, a2] (Cc = int cos^2 u, Ss = int sin^2 u,
+Cs = int sin u cos u, C1 = int cos u, S1 = int sin u) the entries, per overload, are:
+
+  gp_Cylinder, surface (x = R cos u, y = R sin u, dA = R du dz)
+    xx = R^3 (Z2 - Z1) Cc   yy = R^3 (Z2 - Z1) Ss   xy = R^3 (Z2 - Z1) Cs
+    zz = R (a2 - a1) (Z2^3 - Z1^3) / 3
+    xz = R^2 (Z2^2 - Z1^2) / 2 C1   yz = R^2 (Z2^2 - Z1^2) / 2 S1
+  gp_Cylinder, volume (the solid between the axis and the patch, dV = rho drho du dz)
+    the same with R^4 / 4 and R^2 / 2 and R^3 / 3 in place of R^3, R and R^2, and the
+    centre of mass at 2 R / 3 times the mean unit vector, not R times it
+  gp_Sphere, surface (P = R (cos v cos u, cos v sin u, sin v), dA = R^2 cos v dv du)
+    xx = R^4 Cc int cos^3 v   yy = R^4 Ss int cos^3 v   xy = R^4 Cs int cos^3 v
+    zz = R^4 (a2 - a1)(sin^3 v2 - sin^3 v1) / 3
+    xz = R^4 C1 (cos^3 v1 - cos^3 v2) / 3   yz = the same with S1
+  gp_Sphere, volume (dV = t^2 R^3 cos v dt dv du): the same with R^5 / 5 and the centre
+    of mass at 3 R / 4 times the mean unit vector in x and y and 3 R (sin v2 + sin v1) / 8
+    in z, where the code had R and R (sin v2 + sin v1) / 2
+  gp_Torus, surface (rho = R + r cos v, dA = rho r dv du)
+    the area is r (R (v2 - v1) + r (sin v2 - sin v1)) (u2 - u1), which a part of the tube
+    exposes, where the code read R r (u2 - u1) (v2 - v1)
+    xx, yy, xy = r Cc, Ss, Cs int rho^3 dv   xz, yz = r^2 C1, S1 int rho^2 sin v dv
+    zz = r^3 (u2 - u1) int sin^2 v rho dv
+    the centre of mass is int rho^2 / int rho in x and y, not the mean of rho
+  gp_Torus, volume (the solid swept by the segment from the circle through the centres of
+  the tube to the patch, P = ((R + t r cos v) cos u, (R + t r cos v) sin u, t r sin v),
+  dV = (R + t r cos v) t r^2 dt dv du)
+    the volume is r^2 (R (v2 - v1) / 2 + r (sin v2 - sin v1) / 3) (u2 - u1), which is
+    R r^2 (u2 - u1)(v2 - v1) / 2 over a full turn about the tube, the one the code reads
+
+Against those the code has these defects, all in the six overloads:
+
+  - The inertia assembly above, in all six, and Dm itself: the cylinder's Dm(3, 3) is
+    Alpha2 - Alpha1 where the second moment about the axis is R^3 (Z2 - Z1) (Alpha2 -
+    Alpha1), so for the full gp_Cylinder surface of radius 5 and height 10 it reads
+    314.159 where the integral gives 7853.98, and its xz and yz entries drop a factor R.
+  - GProp_VelGProps, gp_Cylinder: the centre of mass of a partial turn uses R times the
+    mean unit vector, where the sector of a disc has 2 R / 3 times it.
+  - GProp_VelGProps, gp_Sphere: x and y use R, not 3 R / 4, and z uses R (sin v2 +
+    sin v1) / 2, not 3 R (sin v2 + sin v1) / 8, so even a full turn reads wrong in z for
+    a part of the latitude.
+  - GProp_VelGProps, gp_Torus: Cnt2 is cos(Alpha2) where cos(Teta2) is meant, so the
+    angular integrals of the second sine and cosine are wrong whenever Teta2 differs from
+    Alpha2.
+  - gp_Torus, both: the mass over part of the tube, and the centre of mass, as above.
+
+The mass and the centre of mass of the gp_Cylinder surface and of the gp_Sphere surface,
+and the mass of the gp_Cylinder and gp_Sphere volumes, were already right and are not
+touched.
+
+The convention for the gp_Torus volume is the one that makes its full-range value the
+volume of the solid torus, 2 pi^2 R r^2, which the code already reads, and that matches
+the gp_Cylinder, gp_Sphere and gp_Cone overloads, which sweep the solid from the axis or
+the centre to the patch: here from the circle through the centres of the tube. OCCT does
+not say what a part of the tube means for this class. GProp_SelGProps and
+GProp_VelGProps have no caller anywhere in the OCCT tree, so there is no call site to
+copy, and the arbiter is an independent Gauss-Legendre integral over the parameter space,
+written in the probe, which shares no formula with the code above.
+
+Not touched: Perform stores g in global coordinates, where CentreOfMass() and
+MatrixOfInertia() read it relative to loc (and GProp_GProps::Add reads it as loc + g), so
+both are right only when loc is the origin. That inconsistency is older than 0055, is the
+same in every Perform of both classes and the cone's, and is a separate change.
+
+Measured on macOS arm64 against V8_0_1 with 0050, 0051 and 0055 applied and the two
+translation units override-linked: 96 checks (the cylinder, sphere and torus; the surface
+and the volume; four ranges each, full and partial in u and v; the frame of the surface
+untilted and tilted and translated; mass, centre of mass, matrix of inertia about it, and
+the moment about an oblique axis through a point away from the origin). 96 fail before and
+0 after. Largest entry of the matrix of inertia relative to the integral, before and
+after: cylinder surface 4.4 and 2.6e-14, volume 13 and 1.1e-13; sphere surface 3.4 and
+4.4e-14, volume 5.2 and 5.2e-14; torus surface 2.5 and 8e-15, volume 2.3 and 2.2e-14. The
+largest centre-of-mass distance after the patch is 1.4e-13, and before it 2.1 (cylinder
+volume), 1.0 (sphere volume), 1.2 and 2.8 (torus). Torus mass over part of the tube, before:
+off by 81% (surface) and 43% (volume); after, exact.
+
+The reproducer is Scripts/repro/3091/probe.cxx, run by Scripts/repro/3091/run.sh, with the
+transcript in Scripts/repro/3091/transcript.txt, in the OCCTSwift repository. OCCTSwift
+issue #3091. It applies on top of 0050, 0051 and 0055 and not without them, since the two
+files it changes are the ones they change.
 
 diff --git a/src/ModelingData/TKGeomBase/GProp/GProp_SelGProps.cxx b/src/ModelingData/TKGeomBase/GProp/GProp_SelGProps.cxx
 index 82049b6..48bc32a 100644
