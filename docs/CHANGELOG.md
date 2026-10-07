@@ -21,6 +21,17 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### SheetMetal: a stepped concave bend is a valid solid on its closed form at every radius (#3045)
+
+`SheetMetal.Builder.build()` returned `isValid == false` for some stepped concave bends, and once the radius passed the thickness the volume was wrong as well (+7.7 at r = 2.5 and +16.2 at r = 3.0 on a foot under a wider web at thickness 2). The solid the fillet started from was valid; `BRepFilletAPI_MakeFillet` could not close the fillet off where the seam stops short of a flange's own edge. A concave bend is now the fillet's material fused in as a prism cut to the bend's run, for any wedge angle, so the result is valid and adds exactly `r^2 (1 - pi/4)` per unit of seam at a right angle, at every radius. A radius whose tangent line would leave a flange's face, or a bend that does not fuse to a valid solid, throws `BuildError.filletFailed`; an invalid solid is no longer returned. The volumes of stepped concave bends that were valid move to their closed forms (up to 0.375 on the four-fillet U-channel), and the two diagonal-seam fixtures move down by 0.32.
+
+```swift
+let part = try SheetMetal.Builder(thickness: 2).build(
+    flanges: [foot, web],
+    bends: [SheetMetal.Bend(from: "web", to: "foot", radius: 3)])
+// part.isValid is true; part.volume is 3300 + 25 * 3^2 * (1 - pi/4)
+```
+
 ### `solidWithFullHistory(from:)` and `solid(from:)` return the repaired face of a body that stays open (#3041)
 
 For a body `ShapeFix_Solid` repairs but cannot close, `Shape.solidWithFullHistory(from:)` returned a solid still holding the unrepaired face while its history reported that face as replaced, and `Shape.solid(from:)` ignored the same repair. Both read the body from `ShapeFix_Solid::Solid()`, which the open-shell branch never assigns. They now read it from the fixer's shared context, as `ShapeFix_Shape` does, so the result holds the face the history reports. A body that stays open still comes back as a solid that is not closed; a body that closes is unchanged.
