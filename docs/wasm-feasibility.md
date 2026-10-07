@@ -668,7 +668,7 @@ equivalent and there does not need to be.
 
 | # | Blocker | State |
 |---|---|---|
-| [#2757](https://github.com/SecondMouseAU/OCCTSwift/issues/2757) | a function carrying both a lowered `setjmp` and wasm exceptions emits an **invalid** `br_table`, and the module dies at the first OCCT call | **fixed here**, with `-UOCC_CONVERT_SIGNALS`; the upstream LLVM report still needs a reduction |
+| [#2757](https://github.com/SecondMouseAU/OCCTSwift/issues/2757) | a function carrying both a lowered `setjmp` and wasm exceptions emits an **invalid** `br_table`, and the module dies at the first OCCT call | **fixed here**, with `-UOCC_CONVERT_SIGNALS`; reduced to a 12-line standalone file and an LLVM report drafted in `Scripts/repro/2757/` (filing it is open) |
 | [#2758](https://github.com/SecondMouseAU/OCCTSwift/issues/2758) | `-mllvm -wasm-enable-sjlj` and `-lsetjmp` are now inert, and four places still call them load-bearing | open, cosmetic |
 | [#2759](https://github.com/SecondMouseAU/OCCTSwift/issues/2759) | 196 of 230 Swift files `import simd`, which does not exist on wasm | **worked around here** with a WASI-only `simd` target; the shape of the real answer is open |
 | [#2760](https://github.com/SecondMouseAU/OCCTSwift/issues/2760) | `Shape.isSelfIntersecting(hardTimeout:)` needs a second thread, so it cannot exist on wasip1 non-threads | **removed here** under `#if !os(WASI)`; the API decision is open |
