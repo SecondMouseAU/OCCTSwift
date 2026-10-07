@@ -58,7 +58,7 @@
 # the stray check in docs/guides/building-occt.md's "Shipping a rebuild" answers it.
 #
 # occt-version: 8.0.1
-# derived against: 42 carried patch(es) in Scripts/patches/, every one of them verified
+# derived against: 43 carried patch(es) in Scripts/patches/, every one of them verified
 # derived against: applied in the tree the rows below were derived from.
 # patch: 0010-Intf_Interference-O1-tangent-zone-checkpoint-breaker-319 79fe529c26ef
 # patch: 0011-XCAFDoc_ShapeTool-AutoNamingScope-341 76898e2438a2
@@ -102,6 +102,7 @@
 # patch: 0053-BRepOffset_MakeOffset-arc-join-roots-in-binding-order-3003 fe6209d98f3a
 # patch: 0054-ChFi3d_Builder-StartSol-drops-an-obstacle-with-no-edge-2881 8299cab4767b
 # patch: 0055-GProp_SelGProps-GProp_VelGProps-cone-matrix-of-inertia-3010 81390e4d295e
+# patch: 0056-BRepLib-Plane-creates-the-default-plane-under-the-magic-static-lock-3039 35b5684c9513
 #
 # totals: inline-raise       462 site(s) in  104 class(es)
 # totals: outofline-raise    828 site(s) in  284 class(es)

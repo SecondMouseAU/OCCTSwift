@@ -19,7 +19,7 @@ which is what nothing did while `0042` sat in the kernel and not in the map for 
 2026-08-03 retired ten patches, `0032`
 retired 2026-09-02 (superseded by upstream's own fix, not shipped in our pin), and `0035` retired
 2026-09-20 (it reintroduced #280; see its [Retired patches](#retired-patches) entry).
-The carried sequence now reads 0010–0012, 0014–0031, 0033–0034, 0036–0048, 0050–0055.
+The carried sequence now reads 0010–0012, 0014–0031, 0033–0034, 0036–0048, 0050–0056.
 The gaps are the retirements, not missing files:
 the numbers are cited across `CLAUDE.md`, `docs/`, closed issues and `Scripts/repro/`, and
 renumbering would have silently repointed every one of those citations at a different fix.
@@ -3208,6 +3208,92 @@ control fails and the variant passes.
 
 **Not yet filed upstream.** It goes up with `0050` and `0051`, with a GTest of its own then, since
 upstream's reviewers ask for one on every PR.
+
+**Retire** once the bundled OCCT includes this fix.
+
+## 0056-BRepLib-Plane-creates-the-default-plane-under-the-magic-static-lock-3039.patch
+
+**`BRepLib::Plane()` creates its process-global plane on first use with no lock, so concurrent
+first use of `BRepLib_MakeEdge2d` reads a plane the losing thread has released**
+([#3039](https://github.com/SecondMouseAU/OCCTSwift/issues/3039)). `Scripts/repro/3039-brep-lib-plane/`
+holds the probe, `run.sh`, the harness and the transcript.
+
+`BRepLib_MakeEdge2d` builds every vertex through `BRepLib::Plane()->Value(x, y)` (`Point`, line 52),
+projects through it (`Project`, line 64) and attaches it to the edge (`UpdateEdge`, line 621). The
+plane is a file-scope handle the getter creates when it finds it null:
+
+```cpp
+static occ::handle<Geom_Plane> thePlane;
+...
+if (thePlane.IsNull()) { thePlane = new Geom_Plane(gp::XOY()); }
+return thePlane;
+```
+
+Two threads making their first 2D edge together both see a null handle and both assign. The losing
+assignment releases the plane the other thread has already read through, so a vertex is read from
+freed memory: coordinates of zero or denormal garbage, or a SIGSEGV, SIGBUS or SIGTRAP, with no
+diagnostic. `Scripts/repro/342-boolean-ops/README.md` looked at these statics and concluded that
+nothing calls the setters "so there is no write to race against"; the getter itself writes.
+
+### The fix
+
+The plane is held by a function-local static, which C++11 initialises under a lock:
+
+```cpp
+static occ::handle<Geom_Plane>& thePlane()
+{
+  static occ::handle<Geom_Plane> aPlane = new Geom_Plane(gp::XOY());
+  return aPlane;
+}
+```
+
+`Message::DefaultMessenger()` creates its messenger the same way, which is the call site this follows
+([`okf/policies/follow-occt-callers.md`](../../okf/policies/follow-occt-callers.md)). The setter keeps
+its behaviour, including that a null argument restores the default plane, which the old getter did by
+re-creating it on the next read. The setter is still unsynchronised, as `BRepLib::Precision`'s is, and
+`BRepLib::Precision`'s static, one line above, is untouched. `BRepBuilderAPI::Plane()` forwards to the
+same function and is covered with it.
+
+**No other patch touches `BRepLib.cxx`, so it applies to the bare `V8_0_1` file.** It adds no raise or
+throw, and `Scripts/occt-raise-if-map.txt` changes only in its stamp.
+
+### Measured, macOS arm64, before and after
+
+`run.sh`, 3000 fresh processes per row, N threads released together from a spin barrier, each
+building a half circle and reading both vertices (the race can only happen on the first call in a
+process). `asset` is the archive as shipped; `control` is the unmodified `BRepLib.cxx` recompiled and
+linked ahead of it (same defect, higher rate: the flags are not the build's own); `warm` is `control`
+with `BRepLib::Plane()` called once before the threads start.
+
+| threads | row | clean | wrong vertex | SIGSEGV | SIGBUS | other signal |
+|---|---|---|---|---|---|---|
+| 4 | asset | 2921 | 12 | 13 | 53 | 1 |
+| 4 | control | 2251 | 743 | 4 | 2 | 0 |
+| 4 | **patched** | **3000** | 0 | 0 | 0 | 0 |
+| 4 | warm | 3000 | 0 | 0 | 0 | 0 |
+| 16 | asset | 2871 | 13 | 54 | 52 | 10 |
+| 16 | control | 2632 | 339 | 14 | 13 | 2 |
+| 16 | **patched** | **3000** | 0 | 0 | 0 | 0 |
+| 16 | warm | 3000 | 0 | 0 | 0 | 0 |
+
+The warm row is the control for the cause: initialising the plane first removes every failure, so
+the lazy initialisation is what fails and not the thread count or the edge construction.
+
+### The Swift test
+
+`Issue3039BRepLibPlaneFirstUseTests` (`OCCTThreadTests`) runs the same race through
+`Shape.edge2dFromCircle` and `Shape.edge2d(from:to:)`. One process can only test it once, so the
+parent test re-runs the test runner as 64 fresh child processes (same executable and arguments minus
+`--filter` and `--skip`, plus a filter for the suite and `OCCTSWIFT_3039_CHILD=1`), each of which
+builds its first `edge2d*` edges on 16 threads. Gated on `OCCTSWIFT_LOCAL=1`, since the pinned asset
+does not carry the patch. Against the unpatched archive 7, 6 and 12 of 64 children failed in three
+runs, one of them by SIGSEGV; with `BRepLib.cxx` recompiled at `-O0 -g` with this patch swapped into a
+copy of the archive, 0 of 64 failed in each of four runs.
+
+**Upstream checked 2026-10-07:** no PR or issue; `IR` and `master` carry the same lines at
+`BRepLib.cxx` lines 83-85 and 138-145, and dpasukhi's "Eliminate mutable static state" series
+(OCCT#1519, #1180) did not touch this file. **Not yet filed upstream**; it needs a GTest of its own
+first.
 
 **Retire** once the bundled OCCT includes this fix.
 
