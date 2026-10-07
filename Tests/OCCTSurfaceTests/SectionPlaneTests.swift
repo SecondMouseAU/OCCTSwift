@@ -34,6 +34,11 @@ struct SectionPlaneTests {
             if let section {
                 // The cylinder at the box's corner cuts 4 edges (kernel count).
                 #expect(section.subShapes(ofType: .edge).count == 4)
+                // The radius-3 quarter circle about the corner (5, 5) reaches back to x = y = 2
+                // (the kernel's box carries its 1e-7 tolerance), so a wrong radius moves it.
+                if let box = section.bounds {
+                    #expect(abs(box.min.x - 2) < 1e-6 && abs(box.min.y - 2) < 1e-6)
+                }
             }
         }
     }

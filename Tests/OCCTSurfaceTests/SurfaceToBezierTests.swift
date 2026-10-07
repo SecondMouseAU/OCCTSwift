@@ -19,6 +19,15 @@ struct SurfaceToBezierTests {
             let patches = bs.toBezierPatches()
             #expect(patches.count > 0)
             #expect(patches.count == 3)
+            // Each patch's corners lie on the radius-5 cylinder (measured: (5, 0, 0) to
+            // (-2.5, 4.33, 10) for the first), so a rebuilt radius is caught, not only the count.
+            for patch in patches {
+                let d = patch.domain
+                let a = patch.point(atU: d.uMin, v: d.vMin)
+                let b = patch.point(atU: d.uMax, v: d.vMax)
+                #expect(abs(simd_length(SIMD2(a.x, a.y)) - 5) < 1e-9)
+                #expect(abs(simd_length(SIMD2(b.x, b.y)) - 5) < 1e-9)
+            }
         }
     }
 
@@ -35,6 +44,13 @@ struct SurfaceToBezierTests {
             // A plane BSpline should produce 1 Bezier patch
             #expect(patches.count >= 1)
             #expect(patches.count == 1)
+            // The one patch spans the trim: its corners are (-5, -5, 0) and (5, 5, 0).
+            if let patch = patches.first {
+                let d = patch.domain
+                #expect(
+                    simd_length(patch.point(atU: d.uMin, v: d.vMin) - SIMD3(-5, -5, 0)) < 1e-9)
+                #expect(simd_length(patch.point(atU: d.uMax, v: d.vMax) - SIMD3(5, 5, 0)) < 1e-9)
+            }
         }
     }
 }
