@@ -1741,7 +1741,7 @@ Uses `LocOpe_Revol` for local revolution operations with shape tracking.
   - `axisOrigin`: Origin point of the rotation axis.
   - `axisDirection`: Direction of the rotation axis.
   - `angle`: Rotation angle in radians.
-- **Returns:** Revolved shape, or `nil` on failure. A NaN or infinite `angle`, a NaN or infinite component of the axis origin, or an axis direction that is NaN, infinite, zero or overflowing, answers `nil` (an infinite angle or a NaN axis never returned, #3100, #3113).
+- **Returns:** Revolved shape, or `nil` on failure. A NaN, infinite or absurd `angle` (past `1e4` radians, about 1591 turns; the builders ran for a time proportional to the angle, #3109), a NaN or infinite component of the axis origin, or an axis direction that is NaN, infinite, zero or overflowing, answers `nil` (an infinite angle or a NaN axis never returned, #3100, #3113).
 - **OCCT:** `LocOpe_Revol` (via `OCCTLocOpeRevol`).
 
 ---
@@ -1762,7 +1762,7 @@ public func localRevolution(axisOrigin: SIMD3<Double>,
   - `axisDirection`: Direction of the rotation axis.
   - `angle`: Rotation angle in radians.
   - `angularOffset`: Angular offset for positioning in radians.
-- **Returns:** Revolved shape, or `nil` on failure. A NaN or infinite `angle` or `angularOffset`, a NaN or infinite component of the axis origin, or an axis direction that is NaN, infinite, zero or overflowing, answers `nil` (#3100, #3113).
+- **Returns:** Revolved shape, or `nil` on failure. A NaN, infinite or absurd `angle` (past `1e4` radians, about 1591 turns; the builders ran for a time proportional to the angle, #3109) or `angularOffset`, a NaN or infinite component of the axis origin, or an axis direction that is NaN, infinite, zero or overflowing, answers `nil` (#3100, #3113).
 - **OCCT:** `LocOpe_Revol` (via `OCCTLocOpeRevolWithOffset`).
 
 ---
@@ -2189,7 +2189,7 @@ public func localRevolutionForm(axisOrigin: SIMD3<Double>,
   - `axisOrigin`: Origin point of the rotation axis.
   - `axisDirection`: Direction of the rotation axis.
   - `angle`: Rotation angle in radians.
-- **Returns:** Revolved shape, or `nil` on failure. A NaN or infinite `angle`, a NaN or infinite component of the axis origin, or an axis direction that is NaN, infinite, zero or overflowing, answers `nil` (#3100, #3113).
+- **Returns:** Revolved shape, or `nil` on failure. A NaN, infinite or absurd `angle` (past `1e4` radians, about 1591 turns; the builders ran for a time proportional to the angle, #3109), a NaN or infinite component of the axis origin, or an axis direction that is NaN, infinite, zero or overflowing, answers `nil` (#3100, #3113).
 - **OCCT:** `LocOpe_RevolutionForm` (via `OCCTLocOpeRevolutionForm`).
 
 ---

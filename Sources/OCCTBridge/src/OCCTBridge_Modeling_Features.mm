@@ -950,9 +950,9 @@ OCCTShapeRef OCCTLocOpeRevol(OCCTShapeRef profile,
                              double       axisDirZ,
                              double       angle)
 {
-  // #3100, #3113: a NaN or infinite angle, a non-finite origin or a NaN, infinite, zero or
-  // overflowing direction is refused.
-  if (!profile || !occtIsUsableAngle(angle)
+  // #3100, #3113, #3109: a NaN, infinite or absurd angle, a non-finite origin or a NaN, infinite,
+  // zero or overflowing direction is refused.
+  if (!profile || !occtIsUsableRevolveAngle(angle)
       || !occtIsUsableAxis(axisOriginX, axisOriginY, axisOriginZ, axisDirX, axisDirY, axisDirZ))
     return nullptr;
   try
@@ -983,9 +983,9 @@ OCCTShapeRef OCCTLocOpeRevolWithOffset(OCCTShapeRef profile,
                                        double       angle,
                                        double       angledec)
 {
-  // #3100, #3113: a NaN or infinite angle, a non-finite origin or a NaN, infinite, zero or
-  // overflowing direction is refused.
-  if (!profile || !occtIsUsableAngle(angle) || !std::isfinite(angledec)
+  // #3100, #3113, #3109: a NaN, infinite or absurd angle, a non-finite origin or a NaN, infinite,
+  // zero or overflowing direction is refused.
+  if (!profile || !occtIsUsableRevolveAngle(angle) || !std::isfinite(angledec)
       || !occtIsUsableAxis(axisOriginX, axisOriginY, axisOriginZ, axisDirX, axisDirY, axisDirZ))
     return nullptr;
   try
@@ -1133,9 +1133,9 @@ OCCTShapeRef OCCTLocOpeRevolutionForm(OCCTShapeRef shape,
                                       double       axisDirZ,
                                       double       angle)
 {
-  // #3100, #3113: a NaN or infinite angle, a non-finite origin or a NaN, infinite, zero or
-  // overflowing direction is refused.
-  if (!shape || !occtIsUsableAngle(angle)
+  // #3100, #3113, #3109: a NaN, infinite or absurd angle, a non-finite origin or a NaN, infinite,
+  // zero or overflowing direction is refused.
+  if (!shape || !occtIsUsableRevolveAngle(angle)
       || !occtIsUsableAxis(axisOriginX, axisOriginY, axisOriginZ, axisDirX, axisDirY, axisDirZ))
     return nullptr;
   try

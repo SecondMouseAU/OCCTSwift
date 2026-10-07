@@ -1,0 +1,107 @@
+[8 / 8] OCCTTest-product
+Build complete! (27.25 sec.)
+revolve angle=6.283185307179586 -> shape valid=true volume=188.49555921538757 in 0.002s
+revolve angle=1e3 -> shape valid=true volume=-1.0 in 0.001s
+revolve angle=1e6 -> shape valid=true volume=-1.0 in 0.001s
+revolve angle=1e8 -> shape valid=true volume=-1.0 in 0.134s
+revolve angle=1e9 -> shape valid=true volume=-1.0 in 1.622s
+revolve angle=1e10 -> NO RETURN / CRASH in 8s (status 137)
+revolve angle=1e11 -> NO RETURN / CRASH in 8s (status 137)
+revolve angle=1e12 -> NO RETURN / CRASH in 8s (status 137)
+revolve angle=1e13 -> NO RETURN / CRASH in 8s (status 137)
+revolve angle=1e14 -> NO RETURN / CRASH in 8s (status 137)
+revolve angle=1e15 -> NO RETURN / CRASH in 8s (status 137)
+revolve angle=1e16 -> NO RETURN / CRASH in 8s (status 137)
+revolve angle=1e18 -> NO RETURN / CRASH in 8s (status 137)
+revolve angle=1e100 -> NO RETURN / CRASH in 8s (status 137)
+revolve angle=1e300 -> NO RETURN / CRASH in 8s (status 137)
+revolved angle=6.283185307179586 -> shape valid=false volume=-1.0 in 0.001s
+revolved angle=1e3 -> shape valid=false volume=-1.0 in 0.002s
+revolved angle=1e6 -> shape valid=false volume=-1.0 in 0.002s
+revolved angle=1e8 -> shape valid=false volume=-1.0 in 0.155s
+revolved angle=1e9 -> shape valid=false volume=-1.0 in 2.220s
+revolved angle=1e10 -> NO RETURN / CRASH in 8s (status 137)
+revolved angle=1e11 -> NO RETURN / CRASH in 8s (status 137)
+revolved angle=1e12 -> NO RETURN / CRASH in 8s (status 137)
+revolved angle=1e13 -> NO RETURN / CRASH in 8s (status 137)
+revolved angle=1e14 -> NO RETURN / CRASH in 8s (status 137)
+revolved angle=1e15 -> NO RETURN / CRASH in 8s (status 137)
+revolved angle=1e16 -> NO RETURN / CRASH in 8s (status 137)
+revolved angle=1e18 -> NO RETURN / CRASH in 8s (status 137)
+revolved angle=1e100 -> NO RETURN / CRASH in 8s (status 137)
+revolved angle=1e300 -> NO RETURN / CRASH in 8s (status 137)
+revolution angle=6.283185307179586 -> shape valid=true volume=785.3981633974482 in 0.001s
+revolution angle=1e3 -> shape valid=false volume=130705.61785052679 in 0.004s
+revolution angle=1e6 -> NO RETURN / CRASH in 8s (status 137)
+revolution angle=1e8 -> NO RETURN / CRASH in 8s (status 137)
+revolution angle=1e9 -> NO RETURN / CRASH in 8s (status 139)
+revolution angle=1e10 -> NO RETURN / CRASH in 8s (status 139)
+revolution angle=1e11 -> NO RETURN / CRASH in 8s (status 139)
+revolution angle=1e12 -> NO RETURN / CRASH in 8s (status 139)
+revolution angle=1e13 -> NO RETURN / CRASH in 8s (status 139)
+revolution angle=1e14 -> NO RETURN / CRASH in 8s (status 139)
+revolution angle=1e15 -> NO RETURN / CRASH in 8s (status 139)
+revolution angle=1e16 -> NO RETURN / CRASH in 8s (status 139)
+revolution angle=1e18 -> NO RETURN / CRASH in 8s (status 139)
+revolution angle=1e100 -> shape valid=false volume=2e+100 in 0.001s
+revolution angle=1e300 -> shape valid=false volume=2e+100 in 0.001s
+feature angle=6.283185307179586 -> shape valid=true volume=8002.960881320328 in 0.009s
+feature angle=1e3 -> shape valid=true volume=8131.946891450772 in 0.049s
+feature angle=1e6 -> shape valid=true volume=8131.946891427182 in 0.006s
+feature angle=1e8 -> shape valid=true volume=8131.946961709439 in 0.005s
+feature angle=1e9 -> shape valid=true volume=8131.958821444446 in 0.148s
+feature angle=1e10 -> shape valid=true volume=8133.305426492031 in 0.765s
+feature angle=1e11 -> shape valid=true volume=8024.951171208951 in 6.041s
+feature angle=1e12 -> NO RETURN / CRASH in 8s (status 137)
+feature angle=1e13 -> NO RETURN / CRASH in 8s (status 137)
+feature angle=1e14 -> NO RETURN / CRASH in 8s (status 137)
+feature angle=1e15 -> NO RETURN / CRASH in 8s (status 137)
+feature angle=1e16 -> NO RETURN / CRASH in 8s (status 137)
+feature angle=1e18 -> NO RETURN / CRASH in 8s (status 137)
+feature angle=1e100 -> NO RETURN / CRASH in 8s (status 137)
+feature angle=1e300 -> NO RETURN / CRASH in 8s (status 137)
+localRevolution angle=6.283185307179586 -> shape valid=false volume=-1.0 in 0.001s
+localRevolution angle=1e3 -> shape valid=false volume=-1.0 in 0.001s
+localRevolution angle=1e6 -> shape valid=false volume=-1.0 in 0.002s
+localRevolution angle=1e8 -> shape valid=false volume=-1.0 in 0.070s
+localRevolution angle=1e9 -> shape valid=false volume=-1.0 in 1.681s
+localRevolution angle=1e10 -> NO RETURN / CRASH in 8s (status 137)
+localRevolution angle=1e11 -> NO RETURN / CRASH in 8s (status 137)
+localRevolution angle=1e12 -> NO RETURN / CRASH in 8s (status 137)
+localRevolution angle=1e13 -> NO RETURN / CRASH in 8s (status 137)
+localRevolution angle=1e14 -> NO RETURN / CRASH in 8s (status 137)
+localRevolution angle=1e15 -> NO RETURN / CRASH in 8s (status 137)
+localRevolution angle=1e16 -> NO RETURN / CRASH in 8s (status 137)
+localRevolution angle=1e18 -> NO RETURN / CRASH in 8s (status 137)
+localRevolution angle=1e100 -> NO RETURN / CRASH in 8s (status 137)
+localRevolution angle=1e300 -> NO RETURN / CRASH in 8s (status 137)
+localRevolutionOffset angle=6.283185307179586 -> shape valid=false volume=-1.0 in 0.001s
+localRevolutionOffset angle=1e3 -> shape valid=false volume=-1.0 in 0.004s
+localRevolutionOffset angle=1e6 -> shape valid=false volume=-1.0 in 0.002s
+localRevolutionOffset angle=1e8 -> shape valid=false volume=-1.0 in 0.046s
+localRevolutionOffset angle=1e9 -> shape valid=false volume=-1.0 in 1.627s
+localRevolutionOffset angle=1e10 -> NO RETURN / CRASH in 8s (status 137)
+localRevolutionOffset angle=1e11 -> NO RETURN / CRASH in 8s (status 137)
+localRevolutionOffset angle=1e12 -> NO RETURN / CRASH in 8s (status 137)
+localRevolutionOffset angle=1e13 -> NO RETURN / CRASH in 8s (status 137)
+localRevolutionOffset angle=1e14 -> NO RETURN / CRASH in 8s (status 137)
+localRevolutionOffset angle=1e15 -> NO RETURN / CRASH in 8s (status 137)
+localRevolutionOffset angle=1e16 -> NO RETURN / CRASH in 8s (status 137)
+localRevolutionOffset angle=1e18 -> NO RETURN / CRASH in 8s (status 137)
+localRevolutionOffset angle=1e100 -> NO RETURN / CRASH in 8s (status 137)
+localRevolutionOffset angle=1e300 -> NO RETURN / CRASH in 8s (status 137)
+localRevolutionForm angle=6.283185307179586 -> shape valid=false volume=-1.0 in 0.001s
+localRevolutionForm angle=1e3 -> shape valid=false volume=-1.0 in 0.002s
+localRevolutionForm angle=1e6 -> shape valid=false volume=-1.0 in 0.002s
+localRevolutionForm angle=1e8 -> shape valid=false volume=-1.0 in 0.573s
+localRevolutionForm angle=1e9 -> shape valid=false volume=-1.0 in 2.387s
+localRevolutionForm angle=1e10 -> NO RETURN / CRASH in 8s (status 137)
+localRevolutionForm angle=1e11 -> NO RETURN / CRASH in 8s (status 137)
+localRevolutionForm angle=1e12 -> NO RETURN / CRASH in 8s (status 137)
+localRevolutionForm angle=1e13 -> NO RETURN / CRASH in 8s (status 137)
+localRevolutionForm angle=1e14 -> NO RETURN / CRASH in 8s (status 137)
+localRevolutionForm angle=1e15 -> NO RETURN / CRASH in 8s (status 137)
+localRevolutionForm angle=1e16 -> NO RETURN / CRASH in 8s (status 137)
+localRevolutionForm angle=1e18 -> NO RETURN / CRASH in 8s (status 137)
+localRevolutionForm angle=1e100 -> NO RETURN / CRASH in 8s (status 137)
+localRevolutionForm angle=1e300 -> NO RETURN / CRASH in 8s (status 137)
