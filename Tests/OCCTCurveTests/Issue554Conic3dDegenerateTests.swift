@@ -432,6 +432,30 @@ struct Issue554Conic3dDegenerateTests {
             Curve3D.gcEllipse(s1: SIMD3(5, 0, 0), s2: SIMD3(0, 3, 0), center: origin))
         expectPoint(e.point(at: 0), SIMD3(5, 0, 0), "S1 is the major vertex")
         expectPoint(e.point(at: .pi / 2), SIMD3(0, 3, 0), "S2 is the minor vertex")
+
+        // Off the origin, so a centre the bridge dropped is not the answer: S1 is the major vertex,
+        // the minor radius is S2's distance from the major axis (measured 5 and 3), and the third
+        // argument is where the curve is centred.
+        let c = SIMD3<Double>(1, 2, 3)
+        let shifted = try #require(
+            Curve3D.gcEllipse(s1: SIMD3(6, 2, 3), s2: SIMD3(1, 5, 3), center: c))
+        #expect(abs(shifted.ellipseProperties.majorRadius - 5) < 1e-9)
+        #expect(abs(shifted.ellipseProperties.minorRadius - 3) < 1e-9)
+        expectPoint(shifted.point(at: 0), SIMD3(6, 2, 3), "shifted: S1 is the major vertex")
+        expectPoint(shifted.point(at: .pi / 2), SIMD3(1, 5, 3), "shifted: S2 is the minor vertex")
+        expectPoint(shifted.point(at: .pi), SIMD3(-4, 2, 3), "shifted: the far major vertex")
+
+        // The hyperbola takes the same three points the same way. S2 only sets the minor radius,
+        // through its distance from the axis, so moving it along the axis changes nothing.
+        let hyp = try #require(
+            Curve3D.gcHyperbola(s1: SIMD3(6, 2, 3), s2: SIMD3(1, 5, 3), center: c))
+        #expect(abs(hyp.hyperbolaProperties.majorRadius - 5) < 1e-9)
+        #expect(abs(hyp.hyperbolaProperties.minorRadius - 3) < 1e-9)
+        expectPoint(hyp.point(at: 0), SIMD3(6, 2, 3), "hyperbola: S1 is the vertex")
+        expectPoint(hyp.point(at: 1), hyperbolaPoint(5, 3, 1, at: c), "hyperbola: interior")
+        let slid = try #require(
+            Curve3D.gcHyperbola(s1: SIMD3(6, 2, 3), s2: SIMD3(3, 5, 3), center: c))
+        expectPoint(slid.point(at: 1), hyperbolaPoint(5, 3, 1, at: c), "hyperbola: S2 slid along the axis")
     }
 
     // MARK: - BRepBuilderAPI_MakeEdge (Shape.edgeFrom*)

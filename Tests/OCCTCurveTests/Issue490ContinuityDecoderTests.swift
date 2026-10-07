@@ -110,6 +110,14 @@ struct Issue490CurveContinuityTests {
         #expect(atC2.order == beyond.order)
         #expect(atC2.measured == beyond.measured)
         #expect(atC2.flags == beyond.flags)
+        // The value, not just the agreement: the sharp-corner fixture meets end to start, so C0
+        // holds and C1 and C2 do not, which is bit 0 alone. Two analyses that both read zero
+        // agree with each other (measured: flags 1 at every order).
+        #expect(atC2.flags == 1)
+        #expect(beyond.flags == 1)
+        #expect(atC2.isC0 == true)
+        #expect(atC2.isC1 == false)
+        #expect(atC2.holds(.c2) == false)
 
         // The effective order comes back in the same ordinal vocabulary the request went in as.
         #expect(atC2.order == .c2)
