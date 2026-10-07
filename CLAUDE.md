@@ -587,7 +587,7 @@ the reproducer). What a bridge author needs without opening it:
   cylinder where a valid angle gives 54 to 254). Call `occtValidMeshAngle` at every site that
   takes a caller angle. `AngleInterior` and `Prs3d_Drawer::DeviationAngle()` need no guard, both
   measured. Both holes are fixed in the kernel by carried patch `0047`, which respells all five of
-  `initParameters`' tests; **both bridge guards stay when it is pinned**, the `0042` exception.
+  `initParameters`' tests; **both bridge guards stay now that it is pinned**, the `0042` exception.
 - `GeomAbs_G2` is never a valid order for `BRepFill_Filling`: curvature continuity is
   `GeomAbs_C1` (ordinal 2), whatever `BRepOffsetAPI_MakeFilling.hxx` says. Test any filling change
   on both a planar and a periodic support surface, since #430 was catchable on one and an

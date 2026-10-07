@@ -469,9 +469,9 @@ judgement still describes this tree:
     the citation is what makes the next repin re-read it rather than inherit it. A missing citation
     is a FINDING, because whether it matters is a reading.
   - for a defect whose only reader was deleted, has a reader come back? #1018 is the live case:
-    `GeomPlate_BuildPlateSurface::G0Error` is uninitialised memory after a point-only `Perform()`,
-    patch `0028` is NOT pinned, and the only thing keeping that value out of the API is that #999
-    deleted its reader.
+    `GeomPlate_BuildPlateSurface::G0Error` is uninitialised memory after a point-only `Perform()`
+    in vanilla OCCT, patch `0028` initialises it and is pinned, and the bridge still has no reader
+    of it since #999 deleted the last one, so a reader coming back is what this watches for.
 
 Usage (from the repo root):
 
@@ -2455,8 +2455,8 @@ def self_test():
               any(site[3] == 'the site does not cite the issue' for site in sites), str(sites))
 
     # And the reverse direction, which is the one #1018 needs: its only reader was deleted by
-    # #999, patch 0028 is not pinned, and nothing but that deletion keeps the uninitialised value
-    # out of the API. A reader coming back is the finding.
+    # #999. Patch 0028 is pinned, so the kernel we ship initialises the value, but the deletion
+    # is what this entry records and a reader coming back is the finding.
     _, sites = sub5(bridge=fixture_bridge + [('back.mm',
                                               'double OCCTNew() { return plate.G0Error(); }\n')])
     sub5_case('a reader that came back is reported',
@@ -2551,8 +2551,9 @@ KERNEL_FABRICATED = (
         'issue': '#1018',
         'occt': 'GeomPlate_BuildPlateSurface::G0Error / G1Error / G2Error',
         'what': 'uninitialised memory after a point-only Perform(), proved with a 0x5A-filled '
-                'placement-new. Patch 0028 is NOT pinned, so this one is live in the kernel we '
-                'ship and the only thing keeping it out of the API is that nobody reads it',
+                'placement-new in vanilla OCCT. Patch 0028 initialises them and is pinned, so the '
+                'kernel we ship returns measured deviations; the bridge still has no reader, and a reader '
+                'coming back is what this entry watches for',
         'state': 'no-reader',
         'forbidden': r'\b(?:plateBuilder|plate|builder)\s*\.\s*G[012]Error\s*\(',
         'row': r'^\|\s*#1018\s*\|.*GeomPlate_BuildPlateSurface',
