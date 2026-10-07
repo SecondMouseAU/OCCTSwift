@@ -22,6 +22,23 @@ struct GeomFillNSectionsTests {
         #expect(simd_length(surf.point(atU: 0, v: 1) - SIMD3(3, 0, 6)) < 1e-9)
     }
 
+    // The radii 5, 4, 3 at z = 0, 3, 6 above are collinear, so a surface built from the first two
+    // circles alone and extrapolated to v = 1 meets the same three points (the NSEC_DROP_LAST
+    // injection left the test above green). A middle circle off that line, radius 4.5, is a section
+    // the surface can only meet by interpolating it. The expected points are the sections' own.
+    @Test func surfaceInterpolatesAMiddleSectionOffTheChord() throws {
+        let c1 = try #require(
+            Curve3D.circle(center: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5.0))
+        let c2 = try #require(
+            Curve3D.circle(center: SIMD3(0, 0, 3), normal: SIMD3(0, 0, 1), radius: 4.5))
+        let c3 = try #require(
+            Curve3D.circle(center: SIMD3(0, 0, 6), normal: SIMD3(0, 0, 1), radius: 3.0))
+        let surf = try #require(Surface.nSections(curves: [c1, c2, c3], params: [0.0, 0.5, 1.0]))
+        #expect(simd_length(surf.point(atU: 0, v: 0) - SIMD3(5, 0, 0)) < 1e-9)
+        #expect(simd_length(surf.point(atU: 0, v: 0.5) - SIMD3(4.5, 0, 3)) < 1e-9)
+        #expect(simd_length(surf.point(atU: 0, v: 1) - SIMD3(3, 0, 6)) < 1e-9)
+    }
+
     @Test func sectionInfo() throws {
         let c1 = try #require(
             Curve3D.circle(center: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5.0))
