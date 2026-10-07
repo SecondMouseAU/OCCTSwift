@@ -58,8 +58,10 @@ offsetTiltedMatchesPriorBaseline()  # exact-equality baseline vs a different lib
 #
 # Listed and not excluded, deliberately. Every one of these is a real property of the wasm surface
 # that a consumer targeting the browser needs to know, and the run asserts this set exactly, so none
-# of them can quietly change. Contrast the seven OCCTStressTests files Package.swift EXCLUDES for
-# #3026: those never reach the behaviour they are named for, because the fixture is unreadable.
+# of them can quietly change. Contrast a test that never reaches the behaviour it is named for: the
+# seven OCCTStressTests files that read a `#filePath` fixture were excluded for that reason until
+# #3026 made the fixture readable, because listing them would have recorded a property of the
+# harness under the name of a guard.
 heapUsageMiB()  # 3025: OSD_MemInfo has no wasip1 implementation, so every figure reads 0
 infoString()  # 3025: the same, one level up: no "Heap memory" line
 openLibrary()  # 3025: wasm32-wasip1 has no dynamic linking, so OSD_SharedLibrary::DlOpen cannot succeed

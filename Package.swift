@@ -852,9 +852,9 @@ let wasmUnportableTestTargets: Set<String> = []
 //   every case it is that a detector which cannot fail is worse than one that does not run.
 //   `OCCTThreadTests` contributes six of its 28 files, listed by name below.
 //
-//   SEVEN READ A `.brep` FIXTURE OUT OF THE SOURCE TREE, which the module cannot see. That one is a
-//   harness limitation and not a platform one, it is #3026, and the per-target note below says why
-//   those seven are excluded rather than listed as known failures.
+//   SEVEN READ A `.brep` FIXTURE OUT OF THE SOURCE TREE by `#filePath`, and are no longer excluded:
+//   that was a harness limitation and not a platform one, and #3026 taught
+//   `wasm-test-node-runner.mjs` to preopen `<repo>/Tests` (Fixtures only) so the path resolves.
 //
 //   ONE COMPARES AN OCCT READING AGAINST THE HOST OS, which wasi-libc cannot be asked.
 //   `HostOSCrossCheckTests` holds the six suites that bracket an OCCT reading with `getrusage`,
@@ -883,28 +883,12 @@ let wasmExcludedTestFiles: [String: [String]] = [
     "OCCTMiscTests": ["ConstructionContextConcurrencyTests.swift"],
     "OCCTModelingTests": ["Issue208SelfIntersectionTests.swift"],
     "OCCTShapeHealingTests": ["Issue772SelfIntersectionAnalysisTests.swift"],
-    // One concurrency file, plus the seven that read a `.brep` out of `Fixtures/` by `#filePath`.
-    // `#filePath` is an absolute HOST path baked in at compile time, and the suites run against an
-    // in-memory filesystem whose only preopens are `/tmp` and `/work`, so every one of those tests
-    // fails with `.importFailed`, 56 recorded issues with no second cause among them. Excluded
-    // rather than listed, for two reasons: the tests never reach the kernel guard they are named
-    // for (#2746, #2773, #2777, #2789, #2790, #2881), so a known-failure line would record a property of
-    // the harness under the name of a guard; and the five guard suites reuse test names
-    // deliberately, which the known-failure list cannot tell apart. Teaching
-    // `wasm-test-node-runner.mjs` to preopen the fixture directories is the fix, and is #3026.
-    // `StressUnifySameDomainNullPCurveTests` is the one of the original six that was lifted into a
-    // file of its own, because its fixture test was one of 60 in `StressNullInvalidTests.swift`.
-    // `Issue2881FilletObstacleTests` is the seventh: its control test loads the reporter's model, so
-    // on wasm it would fail with `.importFailed` and prove nothing about the fillet.
+    // One concurrency file. The seven that read a `.brep` out of `Fixtures/` by `#filePath` ran
+    // here once, and failed with `.importFailed` because `#filePath` is an absolute HOST path and
+    // the in-memory filesystem had no such directory (#3026). `wasm-test-node-runner.mjs` now
+    // preopens `<repo>/Tests`, Fixtures only, at that same absolute name.
     "OCCTStressTests": [
-        "Issue2881FilletObstacleTests.swift",
-        "StressAnalyzerSurfacelessFaceGuardTests.swift",
-        "StressBRepCheckInContextGuardTests.swift",
-        "StressConcurrencyTests.swift",
-        "StressIgesExportSurfacelessFaceGuardTests.swift",
-        "StressShapeCustomSurfacelessFaceGuardTests.swift",
-        "StressShapeDivideSurfacelessFaceGuardTests.swift",
-        "StressUnifySameDomainNullPCurveTests.swift",
+        "StressConcurrencyTests.swift"
     ],
     // The seven files of 29 whose subject is CPU threads rather than screw threads. Measured:
     // `grep -ln 'Dispatch\|NSLock\|withTaskGroup\|Thread\.' Tests/OCCTThreadTests/*.swift` returns
