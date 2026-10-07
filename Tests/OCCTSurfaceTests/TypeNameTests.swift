@@ -20,14 +20,17 @@ struct TypeNameTests {
     }
 
     @Test func line2dTypeName() {
-        #expect(Curve2D.line(through: SIMD2(0, 0), direction: SIMD2(1, 0))?.typeName == "Geom2d_Line")
+        #expect(
+            Curve2D.line(through: SIMD2(0, 0), direction: SIMD2(1, 0))?.typeName == "Geom2d_Line")
     }
 
     @Test func sphereTypeName() {
-        #expect(Surface.sphere(center: SIMD3(0, 0, 0), radius: 5)?.typeName == "Geom_SphericalSurface")
+        #expect(
+            Surface.sphere(center: SIMD3(0, 0, 0), radius: 5)?.typeName == "Geom_SphericalSurface")
     }
 
     @Test func planeTypeName() {
-        #expect(Surface.plane(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1))?.typeName == "Geom_Plane")
+        #expect(
+            Surface.plane(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1))?.typeName == "Geom_Plane")
     }
 }

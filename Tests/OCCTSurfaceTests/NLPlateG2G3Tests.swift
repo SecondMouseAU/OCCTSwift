@@ -15,7 +15,9 @@ struct NLPlateG2G3Tests {
     // surface the bridge fits to it evaluates to z of about -2e12 (G2) and -1e21 (G3) there. That
     // is pinned with `withKnownIssue` (#3134), which fails once the target starts being met.
     // Kernel values: Scripts/repro/766-nlplate-g2g3-platethrough/.
-    private func near(_ s: Surface, _ uv: SIMD2<Double>, _ target: SIMD3<Double>, _ tol: Double) -> Bool {
+    private func near(_ s: Surface, _ uv: SIMD2<Double>, _ target: SIMD3<Double>, _ tol: Double)
+        -> Bool
+    {
         simd_length(s.point(atU: uv.x, v: uv.y) - target) < tol
     }
     @Test func nlPlateG2Deformation() {
@@ -35,7 +37,9 @@ struct NLPlateG2G3Tests {
                 ])
             #expect(result != nil)
             if let result {
-                withKnownIssue("#3134: NLPlate_NLPlate's G2 solve is well behaved at the constraint (probe) but the bridge's fitted surface is not: z is about -2e12 there. See Scripts/repro/766-nlplate-g2g3-platethrough/") {
+                withKnownIssue(
+                    "#3134: NLPlate_NLPlate's G2 solve is well behaved at the constraint (probe) but the bridge's fitted surface is not: z is about -2e12 there. See Scripts/repro/766-nlplate-g2g3-platethrough/"
+                ) {
                     #expect(near(result, SIMD2(0.5, 0.5), SIMD3(0.5, 0.5, 1.0), 0.01))
                 }
             }
@@ -65,7 +69,9 @@ struct NLPlateG2G3Tests {
                 ])
             #expect(result != nil)
             if let result {
-                withKnownIssue("#3134: NLPlate_NLPlate's G3 solve is well behaved at the constraint (probe) but the bridge's fitted surface is not: z is about -1e21 there. See Scripts/repro/766-nlplate-g2g3-platethrough/") {
+                withKnownIssue(
+                    "#3134: NLPlate_NLPlate's G3 solve is well behaved at the constraint (probe) but the bridge's fitted surface is not: z is about -1e21 there. See Scripts/repro/766-nlplate-g2g3-platethrough/"
+                ) {
                     #expect(near(result, SIMD2(0.3, 0.3), SIMD3(0.3, 0.3, 0.5), 0.01))
                 }
             }

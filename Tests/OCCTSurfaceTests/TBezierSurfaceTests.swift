@@ -20,7 +20,9 @@ struct TBezierSurfaceTests {
         // `!= nil` passed a transposed pole grid.
         if let surf {
             let p = surf.point(atU: 0.3 * .pi, v: 0.7 * .pi)
-            #expect(simd_length(p - SIMD3(2.4236412486698917, -0.87855627679515391, 0.5061610958661189)) < 1e-12)
+            #expect(
+                simd_length(p - SIMD3(2.4236412486698917, -0.87855627679515391, 0.5061610958661189))
+                    < 1e-12)
         }
     }
 
