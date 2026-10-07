@@ -90,7 +90,15 @@ struct Issue1442DiskUnicodeOSDUtilitiesTests {
 
     @Test("A real, accessible path is reported valid")
     func diskIsValidAcceptsRealPath() throws {
-        #expect(DiskInfo.isValid(path: "/") == true)
+        #if os(WASI)
+            // #3025: wasi-libc has no statvfs and "/" is not a preopen, so DiskInfo documents
+            // every path as invalid on WASI.
+            #expect(DiskInfo.isValid(path: "/") == false)
+            #expect(DiskInfo.size() == 0)
+            #expect(DiskInfo.freeSpace() == 0)
+        #else
+            #expect(DiskInfo.isValid(path: "/") == true)
+        #endif
     }
 
     @Test("A nonexistent path is reported invalid")

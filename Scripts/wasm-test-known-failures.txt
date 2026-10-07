@@ -45,23 +45,3 @@ fullCircleOriginMatchesPriorBaseline()  # exact-equality baseline vs a different
 offsetArcMatchesPriorBaseline()  # exact-equality baseline vs a different libm
 unitOriginMatchesPriorBaseline()  # exact-equality baseline vs a different libm
 offsetTiltedMatchesPriorBaseline()  # exact-equality baseline vs a different libm
-
-# --- #3025: an OCCT wrapper reaching a host facility wasip1 does not have -------------------
-# #2928 brought every per-domain target back, which is the first time OCCTFoundationTests and
-# OCCTMiscTests have run here. Eight tests passed on Apple and failed on wasm. Three were the test
-# harness and are fixed in `Scripts/wasm-test-node-runner.mjs`: `readHome()` (the guest had no HOME)
-# and `tempDirectory()` / `createAndRemoveDirectory()` (the shim reports 0 rights on a directory, so
-# wasi-libc's `access(W_OK)` was EACCES and `OSD_FileNode::Remove` never reached `rmdir`; the shim
-# itself implements `path_remove_directory`). Five remain, each because the facility the OCCT wrapper
-# reaches does not exist on this target and the wrapper answers rather than refusing. Each is measured, and #3025 holds the open question, which is a decision per row rather
-# than a fix per row: document the limit on the wasm surface, fix the harness, or leave it listed.
-#
-# Listed and not excluded, deliberately. Every one of these is a real property of the wasm surface
-# that a consumer targeting the browser needs to know, and the run asserts this set exactly, so none
-# of them can quietly change. Contrast the seven OCCTStressTests files Package.swift EXCLUDES for
-# #3026: those never reach the behaviour they are named for, because the fixture is unreadable.
-heapUsageMiB()  # 3025: OSD_MemInfo has no wasip1 implementation, so every figure reads 0
-infoString()  # 3025: the same, one level up: no "Heap memory" line
-openLibrary()  # 3025: wasm32-wasip1 has no dynamic linking, so OSD_SharedLibrary::DlOpen cannot succeed
-"A real, accessible path is reported valid"  # 3025: no statvfs, and "/" is not a preopen
-"a stack trace appears only when a depth is asked for"  # 3025: no backtrace facility on this target

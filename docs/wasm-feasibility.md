@@ -480,6 +480,11 @@ same three commands with the sharp edges attached, and it is verified against a 
 package rather than against this repository's own build
 ([`Scripts/repro/1689/`](../Scripts/repro/1689/README.md)).
 
+The APIs whose host facility does not exist on wasm32-wasip1 (`MemInfo`, `SharedLibrary`,
+`DiskInfo`, `OCCTDiagnostics` stack traces) stay present and return a documented answer; that list
+lives in one place, [Present but unavailable on wasm](guides/wasm-consumer-setup.md#present-but-unavailable-on-wasm)
+(#3025).
+
 ### The three commands
 
 ```bash
