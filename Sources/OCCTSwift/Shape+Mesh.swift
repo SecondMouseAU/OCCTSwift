@@ -46,13 +46,16 @@ extension Shape {
     ///   - triangles: Array of triangle index triples (1-based indices into points array)
     /// - Returns: Shape built from the mesh, or nil on failure, including any NaN or infinite
     ///   component of any point in `points`: a NaN coordinate used to build a compound whose first
-    ///   validity check never returned (#3100).
+    ///   validity check never returned (#3100). An index below 1 or above `points.count` also
+    ///   answers nil (#3110): 0 and `points.count + 1` built an empty shape, a negative one raised
+    ///   inside OCCT, and a huge one crashed the process.
     ///
     /// ```swift
     /// let points = [SIMD3<Double>(0, 0, 0), SIMD3(1, 0, 0), SIMD3(0, 1, 0)]
     /// print(Shape.fromMesh(points: points, triangles: [(1, 2, 3)]) != nil)  // true
     /// let bad = [SIMD3<Double>(.nan, 0, 0), SIMD3(1, 0, 0), SIMD3(0, 1, 0)]
     /// print(Shape.fromMesh(points: bad, triangles: [(1, 2, 3)]) == nil)  // true
+    /// print(Shape.fromMesh(points: points, triangles: [(0, 1, 2)]) == nil)  // true, indices are 1-based
     /// ```
     public static func fromMesh(points: [SIMD3<Double>], triangles: [(Int32, Int32, Int32)])
         -> Shape?
