@@ -382,23 +382,32 @@ struct Issue3100BuilderHangTests {
         #expect(boss.isValid)
     }
 
-    /// The thru-all revolved feature takes an axis and no angle, and returns for a bad axis.
+    /// The thru-all revolved feature takes an axis and no angle, and answers a bad axis.
     ///
-    /// A review asked for an angle guard on `OCCTShapeRevolFeatureThruAll`. A NaN, infinite or
-    /// overflowing axis returns promptly on the released kernel (measured, one process per input),
-    /// so no guard was added; this pins that the call returns for those axes, which a hang would
-    /// break. The trait is not what catches a regression, the surrounding run's wall-clock cap is.
-    @Test("addingRevolvedFeatureThruAll returns for a NaN, infinite or overflowing axis", hangLimit)
-    func revolvedFeatureThruAllAxisReturns() throws {
+    /// A review asked for an angle guard on `OCCTShapeRevolFeatureThruAll` and for this test to
+    /// expect `nil`. The function has no angle, and on the released kernel a NaN, infinite or
+    /// overflowing axis does not hang it and does not make it fail: measured one process per input,
+    /// each answers a non-nil compound that `isValid` accepts (the cut is simply not applied). That
+    /// is a quirk of the kernel, not a refusal this PR makes, so the test pins what happens: it
+    /// returns, answers a shape, and the shape is valid. `isValid` is the call that spun for the
+    /// extrusions, and it is safe here only because the probe showed these shapes valid; the
+    /// `hangLimit` trait bounds it on native.
+    @Test(
+        "addingRevolvedFeatureThruAll answers a valid shape for a NaN, infinite or overflowing axis",
+        hangLimit)
+    func revolvedFeatureThruAllAxisAnswers() throws {
         let base = try #require(Shape.box(width: 20, height: 20, depth: 20))
         let rib = try #require(
             Wire.polygon3D([
                 SIMD3(3, 0, 10), SIMD3(6, 0, 10), SIMD3(6, 0, 12), SIMD3(3, 0, 12),
             ]))
         for axis in [SIMD3<Double>(.nan, 0, 1), SIMD3(0, 0, .infinity), SIMD3(0, 0, 1e155)] {
-            _ = base.addingRevolvedFeatureThruAll(
-                profile: rib, sketchFaceIndex: 4, axisOrigin: SIMD3(0, 0, 10),
-                axisDirection: axis, fuse: false)
+            let result = try #require(
+                base.addingRevolvedFeatureThruAll(
+                    profile: rib, sketchFaceIndex: 4, axisOrigin: SIMD3(0, 0, 10),
+                    axisDirection: axis, fuse: false),
+                "axis \(axis)")
+            #expect(result.isValid, "axis \(axis)")
         }
         let ok = try #require(
             base.addingRevolvedFeatureThruAll(
