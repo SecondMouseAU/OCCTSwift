@@ -50,10 +50,13 @@ public final class GProps {
     public struct Frame: Sendable, Equatable {
         /// The location of the surface: a point on its axis.
         public var origin: SIMD3<Double>
-        /// The main direction, the axis of the surface. Need not be a unit vector.
+        /// The main direction, the axis of the surface.
+        ///
+        /// Need not be a unit vector.
         public var axis: SIMD3<Double>
-        /// The X direction, from which the angle `alpha` (`teta` for a sphere or torus) is
-        /// measured, or nil to let OCCT choose one. Made orthogonal to `axis` by OCCT.
+        /// The X direction the angle is measured from.
+        ///
+        /// Nil lets OCCT choose one. OCCT makes it orthogonal to `axis`.
         public var xDirection: SIMD3<Double>?
 
         /// A frame at `origin` with the main direction `axis`.
@@ -89,8 +92,9 @@ public final class GProps {
         public var secondAxis: SIMD3<Double>
         /// The third axis of inertia.
         public var thirdAxis: SIMD3<Double>
-        /// Whether two of the moments are equal, to OCCT's relative tolerance of 1e-10. With a
-        /// symmetry axis the two matching axes of inertia are any pair in their plane.
+        /// Whether two of the moments are equal, to OCCT's relative tolerance of 1e-10.
+        ///
+        /// With a symmetry axis the two matching axes of inertia are any pair in their plane.
         public var hasSymmetryAxis: Bool
         /// Whether all three moments are equal, to the same tolerance.
         public var hasSymmetryPoint: Bool
@@ -349,8 +353,10 @@ public final class GProps {
 
     // MARK: - Composition
 
-    /// Composes another system into this one with a density: `GProp_GProps::Add`. Both keep the
-    /// origin as their reference point, so Huygens' theorem is not needed to bring them together.
+    /// Composes another system into this one with a density.
+    ///
+    /// This is `GProp_GProps::Add`. Both keep the origin as their reference point, so Huygens'
+    /// theorem is not needed to bring them together.
     ///
     /// The mass becomes this mass plus `item.mass * density`, and the centre of mass and the matrix
     /// of inertia follow.

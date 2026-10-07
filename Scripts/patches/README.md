@@ -3199,12 +3199,14 @@ about the axis is 7853.98, which is the `R^2` the cylinder's `Dm(3, 3) = Alpha2 
 the same Jacobi assembly flips signs in its matrix. `GProp_VelGProps`'s cylinder and sphere centre
 of mass is wrong for a partial turn too (1.4 and 1.0 in the probe). Measured and not diagnosed: it
 is another cluster, the first question #3010 asked and left open, and a fix belongs in its own
-patch.
+patch. That patch is [`0057`](#0057-gprop_selgprops-gprop_velgprops-cylinder-sphere-torus-inertia-3091patch).
 
 **Nothing in the bridge reads any of it.** `GeometryProperties.coneSurfaceArea` and `.coneVolume`
 read `Mass()` alone, so no Swift test reaches these values and there is no `OCCTSWIFT_LOCAL`-gated
 test for this patch; `probe.cxx` and `run.sh` are the regression, and `run.sh` exits 1 unless the
 control fails and the variant passes.
+*Since #3091:* `GProps.cone` reads them, and `Issue3091GPropsTests` compares the cone overloads with
+the same independent integral, gated on `OCCTSWIFT_LOCAL=1`.
 
 **Not yet filed upstream.** It goes up with `0050` and `0051`, with a GTest of its own then, since
 upstream's reviewers ask for one on every PR.
@@ -3297,6 +3299,108 @@ first.
 
 **Retire** once the bundled OCCT includes this fix.
 
+
+## 0057-GProp_SelGProps-GProp_VelGProps-cylinder-sphere-torus-inertia-3091.patch
+
+**`GProp_SelGProps::Perform` and `GProp_VelGProps::Perform` compute the matrix of inertia of a
+`gp_Cylinder`, `gp_Sphere` and `gp_Torus` wrongly, the centre of mass of the solid for a partial turn,
+and the area and volume of a torus over part of the tube**
+([#3091](https://github.com/SecondMouseAU/OCCTSwift/issues/3091)), the cluster
+[`0055`](#0055-gprop_selgprops-gprop_velgprops-cone-matrix-of-inertia-3010patch) left open beside the
+`gp_Cone` overloads. `Scripts/repro/3091/` holds the probe, `run.sh` and the transcript.
+
+The issue measured the cylinder and the sphere (16 of 16 failing); measuring the torus the same way
+found it fails too, so it is in the patch. Six overloads, one defect pattern:
+
+- **The assembly.** Each builds `Dm`, the matrix of inertia about the location of the surface in its own
+  axes, then `gp_Mat(rows of lambda_i * v_i)` from the Jacobi decomposition of `Dm`. That is
+  `diag(lambda) V^T` and not `V diag(lambda) V^T`, so the sign Jacobi happens to give an eigenvector
+  changes the matrix, and `Dm`, which is about the location, is added to the Huyghens term of the
+  centre of mass as if it were already about the centre of mass. The patch assembles
+  `inertia = P Dm P^T - H(g, Location) + H(g, loc)` as `0055` does.
+- **`Dm` itself.** The cylinder surface has `Dm(3, 3) = Alpha2 - Alpha1` where the second moment about
+  the axis is `R^3 (Z2 - Z1) (Alpha2 - Alpha1)` (the issue's 314.159 against 7853.98: the `R^2` and the
+  height), and its `xz` and `yz` entries drop a factor `R`. The volume overloads carry polynomials
+  that match no integral. Every entry is now the closed form of the integral, per the table in the
+  patch header.
+- **The solid's centre of mass.** `GProp_VelGProps`, `gp_Cylinder`, partial turn: `R` times the mean unit
+  vector where the sector of a disc has `2 R / 3` times it. `gp_Sphere`: `R` where the wedge of a ball
+  has `3 R / 4`, and `R (sin v2 + sin v1) / 2` in `z` where it is `3 R (sin v2 + sin v1) / 8`, so a
+  part of the latitude reads wrong even over a full turn. A full cylinder turn hides the first, a
+  whole sphere hides both.
+- **`gp_Torus`.** Both classes read the area (`R r (u2 - u1)(v2 - v1)`) and the volume
+  (`R r^2 (u2 - u1)(v2 - v1) / 2`) as if the tube were a full turn: over part of the tube the area
+  is `r (R (v2 - v1) + r (sin v2 - sin v1))(u2 - u1)`, and the solid below is
+  `r^2 (R (v2 - v1) / 2 + r (sin v2 - sin v1) / 3)(u2 - u1)`. The centre of mass of both reads the plain mean of
+  `rho = R + r cos v` in `x` and `y` and of `r sin v` in `z`, where the element weights them: the
+  surface by `int rho^2 dv / int rho dv`, the solid by the matching ratios of `t`-weighted integrals.
+  And `GProp_VelGProps::Perform(gp_Torus)` reads `cos(Alpha2)` where `cos(Teta2)` is meant, in
+  the one line that sets `Cnt2`.
+
+**The torus volume of a part of the tube is a convention OCCT does not state, and this patch chooses
+one.** The patch takes the solid swept by the segment from the circle through the centres of the tube
+to the patch, `P = ((R + t r cos v) cos u, (R + t r cos v) sin u, t r sin v)` with `t` in [0, 1] and
+`dV = (R + t r cos v) t r^2 dt dv du`. A full range gives `2 pi^2 R r^2` as the code already read, and
+the other volume overloads sweep the solid from the axis or the centre to the patch in the same
+way. A different choice (the solid between the patch and the torus's axis, say) would change only
+the partial-tube torus volume.
+
+**Not fixed, and not scoped here:** `Perform` stores `g` in global coordinates, where `CentreOfMass()` and
+`MatrixOfInertia()` read it relative to `loc` (and `GProp_GProps::Add` reads it as `loc + g`), so
+both are right only when `loc` is the origin. It is the same in every `Perform` of both classes,
+including the cone's, and older than `0055`. `GProps` (Swift) therefore leaves the reference point
+out and fixes it at the origin.
+
+`GProp_SelGProps` and `GProp_VelGProps` still have no caller in `Libraries/occt-src`, so
+[`okf/policies/follow-occt-callers.md`](../../okf/policies/follow-occt-callers.md) has no call site to
+copy. The arbiter is an independent Gauss-Legendre integral over the surface's parameter space,
+written in `Scripts/repro/3091/probe.cxx` and in `Issue3091GPropsTests`, which shares no formula
+with the kernel's.
+
+### Measured, macOS arm64, before and after
+
+`run.sh`: the two translation units recompiled from source at `-O3`, once with `0050`, `0051` and
+`0055` (the control) and once with `0057` on top (the variant), linked ahead of `libOCCT-macos.a`.
+96 checks: three shapes, the surface and the solid, four ranges each (a full turn and three partial
+ranges in `u` and `v`), the frame untilted and tilted and translated, each checking mass, centre of
+mass, the matrix of inertia about it, and `MomentOfInertia` about an oblique axis through (2, -1, 3).
+**96 fail before and 0 after**, the largest deviation 1.1e-13.
+
+| shape, class | largest matrix entry error, control | variant | largest centre-of-mass error, control | variant |
+|---|---|---|---|---|
+| cylinder, surface | 4.4 | 2.6e-14 | 1.2e-14 | 1.2e-14 |
+| cylinder, volume | 13 | 1.1e-13 | 2.1 | 1.4e-13 |
+| sphere, surface | 3.4 | 4.4e-14 | 9.0e-15 | 9.0e-15 |
+| sphere, volume | 5.2 | 5.2e-14 | 1.0 | 1.9e-14 |
+| torus, surface | 2.5 | 8.0e-15 | 1.2 | 1.2e-14 |
+| torus, volume | 2.3 | 2.2e-14 | 2.8 | 5.5e-14 |
+
+Matrix errors are relative to the largest entry of the exact matrix. The torus mass over part of
+the tube is off by up to 81% (surface) and 43% (volume) in the control and exact in the variant. The
+issue's number reproduces: the full cylinder surface, `R` = 5, height 10, reads 314.15926535897933
+about its axis in the control against 7853.981633974483 in the variant and in the integral.
+
+The patch was authored against the patched tree (`0050`, `0051` and `0055` applied) and applies only
+on top of them. It adds no raise or throw, so `Scripts/occt-raise-if-map.txt` changes only in its
+stamp.
+
+### The Swift test
+
+`GProps` (#3091), the wrapper of both classes, is the first Swift API that reads these values, so the
+regression test goes through it: `Issue3091GPropsTests` (`OCCTAnalysisTests`).
+`everyOverloadAgreesWithTheIndependentIntegral` compares all 48 combinations of shape, class, range
+and frame with a Gauss-Legendre integral written in the test, and is gated on `OCCTSWIFT_LOCAL=1` as
+`Issue3003OffsetOrderTests` is, because the pinned asset does not carry the patch and `ci.yml`'s
+`build-and-test` resolves that asset; `kernel-integration.yml` builds the patches from source with
+`OCCTSWIFT_LOCAL=1` and runs it there. Three more gated tests pin the issue's number, the solid's
+centres for a partial turn and the principal properties; the rest run on the asset. TESTRESULTS
+
+**Upstream checked 2026-10-07:** no PR or issue about either class; both files last changed upstream
+on 2026-03-10 (OCCT#1156, an LProp unification already in the pinned tree). **Not yet filed
+upstream**; it goes up with `0050`, `0051` and `0055` as one report on the cone, cylinder, sphere
+and torus, with a GTest of its own then, since upstream's reviewers ask for one on every PR.
+
+**Retire** once the bundled OCCT includes this fix.
 
 # Retired patches
 

@@ -112,7 +112,8 @@ struct Issue3091GPropsTests {
         }
         let yy = trS - 2 * simd_dot(q, m.first) + m.mass * simd_dot(q, q)
         let ydd =
-            dSd - 2 * simd_dot(q, d) * simd_dot(d, m.first) + m.mass * simd_dot(q, d) * simd_dot(q, d)
+            dSd - 2 * simd_dot(q, d) * simd_dot(d, m.first) + m.mass * simd_dot(q, d)
+            * simd_dot(q, d)
         return yy - ydd
     }
 
@@ -199,7 +200,8 @@ struct Issue3091GPropsTests {
                             let s = kind == .volume ? t * c.r : c.r
                             return (
                                 p.global(s * cos(v) * cos(u), s * cos(v) * sin(u), s * sin(v)),
-                                kind == .volume ? t * t * c.r * c.r * c.r * cos(v) : c.r * c.r * cos(v)
+                                kind == .volume
+                                    ? t * t * c.r * c.r * c.r * cos(v) : c.r * c.r * cos(v)
                             )
                         }
                     }))
@@ -381,16 +383,22 @@ struct Issue3091GPropsTests {
             GProps.cylinder(.volume, radius: 5, alpha1: 0.3, alpha2: 2.2, z1: 1, z2: 9))
         #expect(abs(cylV.mass - 25 * 8 * 1.9 / 2) < 1e-12)
         let sphS = try #require(
-            GProps.sphere(.surface, radius: 3, teta1: 0, teta2: 2 * pi, alpha1: -pi / 2, alpha2: pi / 2))
+            GProps.sphere(
+                .surface, radius: 3, teta1: 0, teta2: 2 * pi, alpha1: -pi / 2, alpha2: pi / 2))
         #expect(abs(sphS.mass - 4 * pi * 9) < 1e-12)
         let sphV = try #require(
-            GProps.sphere(.volume, radius: 3, teta1: 0, teta2: 2 * pi, alpha1: -pi / 2, alpha2: pi / 2))
+            GProps.sphere(
+                .volume, radius: 3, teta1: 0, teta2: 2 * pi, alpha1: -pi / 2, alpha2: pi / 2))
         #expect(abs(sphV.mass - 4.0 / 3.0 * pi * 27) < 1e-12)
         let torS = try #require(
-            GProps.torus(.surface, majorRadius: 8, minorRadius: 2, teta1: 0, teta2: 2 * pi, alpha1: 0, alpha2: 2 * pi))
+            GProps.torus(
+                .surface, majorRadius: 8, minorRadius: 2, teta1: 0, teta2: 2 * pi, alpha1: 0,
+                alpha2: 2 * pi))
         #expect(abs(torS.mass - 4 * pi * pi * 16) < 1e-9)
         let torV = try #require(
-            GProps.torus(.volume, majorRadius: 8, minorRadius: 2, teta1: 0, teta2: 2 * pi, alpha1: 0, alpha2: 2 * pi))
+            GProps.torus(
+                .volume, majorRadius: 8, minorRadius: 2, teta1: 0, teta2: 2 * pi, alpha1: 0,
+                alpha2: 2 * pi))
         #expect(abs(torV.mass - 2 * pi * pi * 8 * 4) < 1e-9)
     }
 
@@ -404,7 +412,8 @@ struct Issue3091GPropsTests {
         let c = 2.0 * 5.0 / .pi
         #expect(simd_length(cyl.centreOfMass - V3(c, c, 5)) < 1e-12)
         let sph = try #require(
-            GProps.sphere(.surface, radius: 5, teta1: 0, teta2: 2 * .pi, alpha1: 0, alpha2: .pi / 2))
+            GProps.sphere(.surface, radius: 5, teta1: 0, teta2: 2 * .pi, alpha1: 0, alpha2: .pi / 2)
+        )
         // The cap of a sphere: the centre of mass of the hemisphere's surface is R / 2 up the axis.
         #expect(simd_length(sph.centreOfMass - V3(0, 0, 2.5)) < 1e-12)
     }
@@ -414,7 +423,8 @@ struct Issue3091GPropsTests {
     func frameMovesTheCentre() throws {
         let frame = GProps.Frame(origin: V3(10, 20, 30), axis: V3(1, 0, 0), xDirection: V3(0, 1, 0))
         let g = try #require(
-            GProps.cylinder(.surface, frame: frame, radius: 2, alpha1: 0, alpha2: 2 * .pi, z1: 0, z2: 6))
+            GProps.cylinder(
+                .surface, frame: frame, radius: 2, alpha1: 0, alpha2: 2 * .pi, z1: 0, z2: 6))
         // The cylinder runs along +X from x = 10 to 16, so its centre is (13, 20, 30).
         #expect(simd_length(g.centreOfMass - V3(13, 20, 30)) < 1e-12)
         #expect(abs(g.mass - 2 * 2 * .pi * 6) < 1e-12)
@@ -459,20 +469,25 @@ struct Issue3091GPropsTests {
         let pi = Double.pi
         // OCCT: a negative radius is a construction error.
         #expect(GProps.cylinder(.surface, radius: -1, alpha1: 0, alpha2: pi, z1: 0, z2: 1) == nil)
-        #expect(GProps.sphere(.volume, radius: -1, teta1: 0, teta2: pi, alpha1: 0, alpha2: 1) == nil)
         #expect(
-            GProps.torus(.surface, majorRadius: -1, minorRadius: 1, teta1: 0, teta2: pi, alpha1: 0, alpha2: 1)
+            GProps.sphere(.volume, radius: -1, teta1: 0, teta2: pi, alpha1: 0, alpha2: 1) == nil)
+        #expect(
+            GProps.torus(
+                .surface, majorRadius: -1, minorRadius: 1, teta1: 0, teta2: pi, alpha1: 0, alpha2: 1
+            )
                 == nil)
         // A cone with a right-angle half angle is a construction error.
         #expect(
-            GProps.cone(.surface, semiAngle: pi / 2, refRadius: 1, alpha1: 0, alpha2: pi, z1: 0, z2: 1)
+            GProps.cone(
+                .surface, semiAngle: pi / 2, refRadius: 1, alpha1: 0, alpha2: pi, z1: 0, z2: 1)
                 == nil)
         // An empty or reversed range is not a patch.
         #expect(GProps.cylinder(.surface, radius: 1, alpha1: 1, alpha2: 1, z1: 0, z2: 1) == nil)
         #expect(GProps.cylinder(.surface, radius: 1, alpha1: 0, alpha2: pi, z1: 1, z2: 0) == nil)
         #expect(GProps.cylinder(.surface, radius: 1, alpha1: 0, alpha2: .nan, z1: 0, z2: 1) == nil)
         #expect(
-            GProps.cylinder(.surface, radius: .infinity, alpha1: 0, alpha2: pi, z1: 0, z2: 1) == nil)
+            GProps.cylinder(.surface, radius: .infinity, alpha1: 0, alpha2: pi, z1: 0, z2: 1) == nil
+        )
         // A zero axis, and an X direction along the axis.
         #expect(
             GProps.cylinder(
@@ -480,10 +495,12 @@ struct Issue3091GPropsTests {
                 z2: 1) == nil)
         #expect(
             GProps.cylinder(
-                .surface, frame: GProps.Frame(axis: V3(0, 0, 1), xDirection: V3(0, 0, 2)), radius: 1,
+                .surface, frame: GProps.Frame(axis: V3(0, 0, 1), xDirection: V3(0, 0, 2)),
+                radius: 1,
                 alpha1: 0, alpha2: pi, z1: 0, z2: 1) == nil)
         // A radius whose cube overflows gives a matrix of inertia that is not a number.
-        #expect(GProps.cylinder(.surface, radius: 1e200, alpha1: 0, alpha2: pi, z1: 0, z2: 1) == nil)
+        #expect(
+            GProps.cylinder(.surface, radius: 1e200, alpha1: 0, alpha2: pi, z1: 0, z2: 1) == nil)
     }
 
     /// The accessors that take caller data refuse what OCCT would throw on or answer with NaN.
