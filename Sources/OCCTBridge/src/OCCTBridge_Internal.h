@@ -1396,6 +1396,50 @@ inline bool occtValidParameterRange(double u1, double u2)
   return std::isfinite(u1) && std::isfinite(u2);
 }
 
+/// The vector precondition for a prism or extrusion (#3100): all three components finite, and a
+/// squared magnitude that is finite and nonzero.
+///
+/// `BRepPrimAPI_MakePrism` and the `gp_Dir` it builds from a direction answer a NaN, an infinity, a
+/// zero vector or a vector whose squared magnitude over- or underflows with a shape instead of a
+/// refusal, and the first call that walks that shape never returns: `BRepCheck_Edge::InContext`
+/// spins in `Geom_TrimmedCurve::SetTrim`. Measured on the released kernel, one process per input:
+/// the squared magnitude underflows to zero at about 1.5e-162 (1e-160 builds, 1e-162 spins) and
+/// overflows to infinity at about 1.34e154 (1e154 builds, 1e155 spins). Everything between, which
+/// is every vector a caller means, passes. The test is on the squared magnitude and not on a chosen
+/// length because the squared magnitude is the quantity OCCT computes first.
+inline bool occtIsUsableVector(double x, double y, double z)
+{
+  if (!std::isfinite(x) || !std::isfinite(y) || !std::isfinite(z))
+    return false;
+  const double squared = x * x + y * y + z * z;
+  return std::isfinite(squared) && squared > 0.0;
+}
+
+/// The angle precondition for a revolution or a draft (#3100): finite.
+///
+/// `BRepSweep_Revol`'s constructor never returns for an infinite angle, `BRepFeat_MakeDPrism` and
+/// `BRepFeat_MakeRevol` never return for a NaN one (`BRepFill_Evolved::PrepareProfile` and
+/// `BRepLib::FindValidRange` spin), and `BRepPrimAPI_MakeRevol` answers a NaN with an invalid
+/// shape. Any finite angle, a zero one and a full turn included, is left to OCCT.
+inline bool occtIsUsableAngle(double angle)
+{
+  return std::isfinite(angle);
+}
+
+/// The axis precondition for a revolution (#3100, #3113): a finite origin and a usable direction.
+///
+/// A NaN, infinite, zero or overflowing direction made `BRepPrimAPI_MakeRevol` (shape overload),
+/// `LocOpe_Revol` and `LocOpe_RevolutionForm` never return, and made the other revolve builders
+/// answer a shape as if the revolution had been made: `BRepFeat_MakeRevol::PerformThruAll` handed
+/// back the original shape, a silent no-op reported as success. Measured one process per input:
+/// unit axes, a tilted axis and axes of length 1e-6 and 1e6 pass and build exactly what they did
+/// before.
+inline bool occtIsUsableAxis(double ox, double oy, double oz, double dx, double dy, double dz)
+{
+  return std::isfinite(ox) && std::isfinite(oy) && std::isfinite(oz)
+         && occtIsUsableVector(dx, dy, dz);
+}
+
 /// The deflection precondition every `GCPnts_TangentialDeflection` entry point has to apply itself.
 /// `GCPnts_TangentialDeflection::initialize` opens with
 /// `Standard_ConstructionError_Raise_if(theCurvatureDeflection < Precision::Confusion() ||
