@@ -37,7 +37,7 @@ applies patches idempotently and never reverts. Both are inert, and the divergen
 [`okf/references/carried-occt-patches.md`](okf/references/carried-occt-patches.md) (#2190). Two
 consequences before you act on either number. The tree has since been cleaned, so a **local rebuild
 yielded a different checksum from that asset**, which was expected and not a corrupt download. The
-asset pinned since `v4.0.0-kernel.4` was built from the cleaned tree, and `Package.swift` says what a
+asset pinned since `v4.0.0-kernel.4` (now `v4.0.0-kernel.5`) was built from the cleaned tree, and `Package.swift` says what a
 mismatch against it means. And `python3 Scripts/check-pinned-asset-patches.py --require-asset` is the check that
 reads the binary rather than the prose: about seven seconds over all three slices, deliberately
 **not** a `gate-scripts` script (it reads a 1.3 GB xcframework CI does not check out), and part of

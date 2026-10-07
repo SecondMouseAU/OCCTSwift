@@ -2122,11 +2122,11 @@ own here.
 
 ### CI coverage, and the pin
 
-**Carried, not pinned.** `Scripts/patches/` holds thirty-four and the pinned `v4.0.0-kernel.3` asset
-holds thirty-one, so this patch is in **no** required check:
+**Carried, and pinned from `v4.0.0-kernel.4`.** Until that repin `Scripts/patches/` held thirty-four
+and the pinned `v4.0.0-kernel.3` asset thirty-one, so this patch was in **no** required check:
 `ci.yml`'s `build-and-test` resolves the asset. `kernel-integration.yml` triggers on
-`Scripts/patches/**` and builds `V8_0_1` plus every carried patch from source, so the PR that adds
-this one gets it compiled, and that proves it applies, compiles and regresses nothing. It cannot
+`Scripts/patches/**` and builds `V8_0_1` plus every carried patch from source, so the PR that added
+this one got it compiled, which proves it applies, compiles and regresses nothing. It could not
 prove the fix reaches a consumer, and here it could not even if it ran on every PR, because **the
 bridge already refuses the input before the kernel sees it**.
 
@@ -2229,9 +2229,10 @@ compile line adds their package directories from `Libraries/occt-src`.
 
 ### CI coverage, and the pin
 
-**Carried, not pinned.** `ci.yml`'s `build-and-test` resolves the pinned asset, so this patch is in
-no required check. `kernel-integration.yml` triggers on `Scripts/patches/**` and builds `V8_0_1`
-plus every carried patch from source, which proves it applies, compiles and regresses nothing.
+**Carried, and pinned from `v4.0.0-kernel.4`.** Until that repin `ci.yml`'s `build-and-test`
+resolved an asset without it, so this patch was in no required check. `kernel-integration.yml`
+triggers on `Scripts/patches/**` and builds `V8_0_1` plus every carried patch from source, which
+proves it applies, compiles and regresses nothing.
 
 **Retargeting risk at 8.0.2.** No other carried patch touches either file, and neither
 `InsertPoleAfter` has changed shape in years, so the hunks are expected to apply to `V8_0_2`
@@ -2314,12 +2315,12 @@ translation units of both patches in one run.
 
 ### CI coverage, and the pin
 
-**Carried, not pinned**, and unlike `0044` this one does leave something exposed: the fault is in
-the pinned kernel and `OCCTMathUzawa`'s `nConstraints > nVars` guard is the only thing between a
-Swift caller and it. That guard was added for exactly this, so nothing is exposed in practice, but
-the exposure is to a future bridge author rather than nil.
+**Carried, and pinned from `v4.0.0-kernel.4`**, and unlike `0044` this one left something exposed
+until then: the fault was in the pinned kernel and `OCCTMathUzawa`'s `nConstraints > nVars` guard
+was the only thing between a Swift caller and it. That guard was added for exactly this, so nothing
+was exposed in practice, but the exposure was to a future bridge author rather than nil.
 
-**The bridge guard stays when this is pinned**, a deliberate exception to the rule in
+**The bridge guard stayed when this was pinned**, a deliberate exception to the rule in
 [`okf/policies/pinned-kernel-patch-check.md`](../../okf/policies/pinned-kernel-patch-check.md) that
 a repin retires the mitigation its patch supersedes. Patched, the kernel returns a correctly sized
 initial error for an overdetermined system instead of faulting, which is a behaviour the Swift
@@ -2451,16 +2452,17 @@ rather than assumed. Compiled clean, no diagnostics, on all three slices:
 
 ### CI coverage, and the pin
 
-**Carried, not pinned.** `ci.yml`'s `build-and-test` resolves the pinned asset, so this patch is in
-**no** required check. `kernel-integration.yml` triggers on `Scripts/patches/**` and builds `V8_0_1`
-plus every carried patch from source, so the PR that adds this one gets it compiled, and that proves
-it applies, compiles and regresses nothing. It cannot prove the fix reaches a consumer, and here it
-could not even if it ran on every PR, because the bridge already refuses the input first.
+**Carried, and pinned from `v4.0.0-kernel.4`.** Until that repin `ci.yml`'s `build-and-test`
+resolved an asset without it, so this patch was in **no** required check. `kernel-integration.yml`
+triggers on `Scripts/patches/**` and builds `V8_0_1` plus every carried patch from source, so the PR
+that added this one got it compiled, which proves it applies, compiles and regresses nothing. It
+could not prove the fix reaches a consumer, and here it could not even if it ran on every PR,
+because the bridge already refuses the input first.
 
 ### The bridge guards stay
 
-`occtValidMeshDeflection` and `occtValidMeshAngle` in `OCCTBridge_Internal.h` are **not** retired
-when this is pinned. This is the `0042` and `0044` shape, the deliberate exception to the rule in
+`occtValidMeshDeflection` and `occtValidMeshAngle` in `OCCTBridge_Internal.h` were **not** retired
+when this was pinned. This is the `0042` and `0044` shape, the deliberate exception to the rule in
 [`okf/policies/pinned-kernel-patch-check.md`](../../okf/policies/pinned-kernel-patch-check.md) that
 a repin retires the mitigation its patch supersedes: with the patch the kernel throws
 `Standard_NumericError` for the same input the guards refuse, so both answer the site's documented
@@ -2722,11 +2724,11 @@ separately as [#3010](https://github.com/SecondMouseAU/OCCTSwift/issues/3010).
 
 ### CI coverage, and the pin
 
-**Carried and not yet pinned**, like `0051` and `0052`. `ci.yml`'s `build-and-test` resolves the
-pinned asset, so `Tests/OCCTAnalysisTests/GPropCylConeTests.swift` will be **red there** until the
-repin; `kernel-integration.yml` triggers on `Scripts/patches/**`, builds `V8_0_1` plus every
-carried patch from source, and is where those tests pass. That split is #585 and it is the expected
-state of a PR carrying a kernel fix and its regression together.
+**Carried, and pinned from `v4.0.0-kernel.4`**, like `0051` and `0052`. Until that repin `ci.yml`'s
+`build-and-test` resolved an asset without it, so `Tests/OCCTAnalysisTests/GPropCylConeTests.swift`
+was **red there**; `kernel-integration.yml` triggers on `Scripts/patches/**`, builds `V8_0_1` plus
+every carried patch from source, and is where those tests passed. That split is #585 and it was the
+expected state of a PR carrying a kernel fix and its regression together.
 
 **Unlike `0044`, this one leaves a value a caller reads wrong**, through
 `GeometryProperties.coneSurfaceArea(semiAngle:refRadius:height:)`, which is `0043`'s situation
@@ -2999,11 +3001,12 @@ volume's bits with build 0. Against the override-linked unmodified file it **fai
 
 ### CI coverage, and the pin
 
-**Carried, not pinned.** No required check exercises it, because `build-and-test` resolves the
-pinned asset. `Issue3003OffsetOrderTests` is gated on `OCCTSWIFT_LOCAL=1` for that reason and runs in
-`kernel-integration.yml`, which builds the patch from source. **The two `tolerance` declarations in
+**Carried, and pinned from `v4.0.0-kernel.5`.** Until that repin no required check exercised it,
+because `build-and-test` resolved an asset without it. `Issue3003OffsetOrderTests` was gated on
+`OCCTSWIFT_LOCAL=1` for that reason and ran in `kernel-integration.yml`, which builds the patch from
+source. **The two `tolerance` declarations in
 `766-modeling-evidence-fix/reproduce.json` and `766-modeling-issue568-index-skip/reproduce-evidence-fix.json`
-stay until this is pinned**, because against the pinned asset those three lines still drift; they
+stayed until it was pinned**, because against the earlier asset those three lines still drifted; they
 come out, and the three transcripts are recaptured, at the repin that pins it. The patched
 `offsetArc` value is `1698.436569847848`, one value out of the unpatched distribution and not the
 transcript's `...475`.
