@@ -86,11 +86,14 @@ def name_map(root):
     return names, order
 
 
-def changed_tests(root):
-    """Tests whose body differs between origin/main and the working tree."""
+def changed_tests(root, from_head=False):
+    """Tests whose body differs between origin/main and the working tree (or HEAD, for `before`,
+    whose tree holds origin/main's files)."""
     out = set()
     for f in FILES:
-        new = {fn: body for _, fn, body in tests_in((root / f).read_text(encoding="utf-8"))}
+        new_txt = (subprocess.run(["git", "show", f"HEAD:{f}"], capture_output=True, text=True,
+                                  cwd=root).stdout if from_head else (root / f).read_text(encoding="utf-8"))
+        new = {fn: body for _, fn, body in tests_in(new_txt)}
         old_txt = subprocess.run(["git", "show", f"origin/main:{f}"], capture_output=True, text=True,
                                  cwd=root).stdout
         old = {fn: body for _, fn, body in tests_in(old_txt)}
@@ -167,7 +170,7 @@ def main():
     data = {"label": label, "tests": [f"{a}.{b}" for a, b in order], "rows": rows}
     (HERE / f"matrix-{label}.json").write_text(dump_matrix(data))
 
-    changed = changed_tests(root)
+    changed = changed_tests(root, from_head=(label == "before"))
     reddened = set()
     for r in rows.values():
         reddened |= set(r["red"])
