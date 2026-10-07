@@ -144,11 +144,11 @@ struct Issue3091GPropsTests {
 
     // MARK: - Cases
 
-    private struct Case {
+    private struct Case: Sendable {
         let name: String
-        let build: (GProps.Kind, GProps.Frame) -> GProps?
+        let build: @Sendable (GProps.Kind, GProps.Frame) -> GProps?
         /// The integral of the same patch, the surface or the solid swept between its axis and it.
-        let moments: (GProps.Kind, Placed) -> Moments
+        let moments: @Sendable (GProps.Kind, Placed) -> Moments
     }
 
     private static let cases: [Case] = {

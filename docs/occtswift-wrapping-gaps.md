@@ -50,6 +50,18 @@ Every OCCT toolkit used for modeling, analysis, and data exchange:
 | NCollection containers | ~900 | Template-only C++ (no exported symbols); used internally in bridge |
 | Abstract base classes | ~200 | Cannot be instantiated; only concrete subclasses are wrapped |
 
+### GProp_SelGProps and GProp_VelGProps: wrapped, with one deliberate omission (#3091)
+
+`GProps` wraps both classes over `gp_Cylinder`, `gp_Cone`, `gp_Sphere` and `gp_Torus`, with every
+interrogation of `GProp_GProps` and `GProp_PrincipalProps` and `GProp_GProps::Add`. Left out on
+purpose: **`SetLocation` and the `SLocation` constructor argument**, the reference point of the
+system. `Perform` stores the centre of mass in global coordinates where `CentreOfMass()` and
+`MatrixOfInertia()` read it relative to that point (and `Add` reads it as `loc + g`), so both are
+right only when the point is the origin; exposing it would return a wrong centre of mass for any
+other value. The empty `GProp_SelGProps()` and `GProp_VelGProps()` constructors build a system with no
+mass, which holds no measurement to read, and are not wrapped; `GProp_GProps(SystemLocation)` is
+the same omission as `SetLocation`.
+
 ### Classes Not Wrapped (require abstract subclass implementations)
 
 These require implementing C++ abstract classes, which the bridge architecture doesn't support:

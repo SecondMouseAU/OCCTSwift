@@ -3354,13 +3354,22 @@ bool occtGPropsRangeOk(double a1, double a2)
   return std::isfinite(a1) && std::isfinite(a2) && a2 > a1;
 }
 
-gp_Ax3 occtGPropsAx3(const OCCTGPropsFrame& f)
+// False, recording the failure, when OCCT rejects the frame: a zero direction, or an X direction
+// along the main one.
+bool occtGPropsMakeAx3(const OCCTGPropsFrame& f, gp_Ax3& outAx)
 {
-  const gp_Pnt o(f.ox, f.oy, f.oz);
-  const gp_Dir z(f.zx, f.zy, f.zz);
-  if (f.hasXDirection)
-    return gp_Ax3(o, z, gp_Dir(f.xx, f.xy, f.xz));
-  return gp_Ax3(o, z);
+  try
+  {
+    const gp_Pnt o(f.ox, f.oy, f.oz);
+    const gp_Dir z(f.zx, f.zy, f.zz);
+    outAx = f.hasXDirection ? gp_Ax3(o, z, gp_Dir(f.xx, f.xy, f.xz)) : gp_Ax3(o, z);
+    return true;
+  }
+  catch (...)
+  {
+    occtRecordCaughtException(__func__);
+    return false;
+  }
 }
 
 OCCTGPropsRef occtGPropsWrap(const GProp_GProps& p)
@@ -3390,7 +3399,10 @@ OCCTGPropsRef OCCTGPropsCylinder(bool            volume,
     return nullptr;
   try
   {
-    const gp_Cylinder cyl(occtGPropsAx3(frame), radius);
+    gp_Ax3 ax;
+    if (!occtGPropsMakeAx3(frame, ax))
+      return nullptr;
+    const gp_Cylinder cyl(ax, radius);
     if (volume)
       return occtGPropsWrap(GProp_VelGProps(cyl, alpha1, alpha2, z1, z2, gp::Origin()));
     return occtGPropsWrap(GProp_SelGProps(cyl, alpha1, alpha2, z1, z2, gp::Origin()));
@@ -3416,7 +3428,10 @@ OCCTGPropsRef OCCTGPropsCone(bool            volume,
     return nullptr;
   try
   {
-    const gp_Cone cone(occtGPropsAx3(frame), semiAngle, refRadius);
+    gp_Ax3 ax;
+    if (!occtGPropsMakeAx3(frame, ax))
+      return nullptr;
+    const gp_Cone cone(ax, semiAngle, refRadius);
     if (volume)
       return occtGPropsWrap(GProp_VelGProps(cone, alpha1, alpha2, z1, z2, gp::Origin()));
     return occtGPropsWrap(GProp_SelGProps(cone, alpha1, alpha2, z1, z2, gp::Origin()));
@@ -3441,7 +3456,10 @@ OCCTGPropsRef OCCTGPropsSphere(bool            volume,
     return nullptr;
   try
   {
-    const gp_Sphere sph(occtGPropsAx3(frame), radius);
+    gp_Ax3 ax;
+    if (!occtGPropsMakeAx3(frame, ax))
+      return nullptr;
+    const gp_Sphere sph(ax, radius);
     if (volume)
       return occtGPropsWrap(GProp_VelGProps(sph, teta1, teta2, alpha1, alpha2, gp::Origin()));
     return occtGPropsWrap(GProp_SelGProps(sph, teta1, teta2, alpha1, alpha2, gp::Origin()));
@@ -3467,7 +3485,10 @@ OCCTGPropsRef OCCTGPropsTorus(bool            volume,
     return nullptr;
   try
   {
-    const gp_Torus tor(occtGPropsAx3(frame), majorRadius, minorRadius);
+    gp_Ax3 ax;
+    if (!occtGPropsMakeAx3(frame, ax))
+      return nullptr;
+    const gp_Torus tor(ax, majorRadius, minorRadius);
     if (volume)
       return occtGPropsWrap(GProp_VelGProps(tor, teta1, teta2, alpha1, alpha2, gp::Origin()));
     return occtGPropsWrap(GProp_SelGProps(tor, teta1, teta2, alpha1, alpha2, gp::Origin()));
