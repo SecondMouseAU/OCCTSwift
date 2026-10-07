@@ -61,9 +61,12 @@ offsetTiltedMatchesPriorBaseline()  # exact-equality baseline vs a different lib
 
 # --- #3025: an OCCT wrapper reaching a host facility wasip1 does not have -------------------
 # #2928 brought every per-domain target back, which is the first time OCCTFoundationTests and
-# OCCTMiscTests have run here. Eight tests pass on Apple and fail on wasm, all because the facility
-# the OCCT wrapper reaches does not exist on this target and the wrapper answers rather than
-# refusing. Each is measured, and #3025 holds the open question, which is a decision per row rather
+# OCCTMiscTests have run here. Eight tests passed on Apple and failed on wasm. Three were the test
+# harness and are fixed in `Scripts/wasm-test-node-runner.mjs`: `readHome()` (the guest had no HOME)
+# and `tempDirectory()` / `createAndRemoveDirectory()` (the shim reports 0 rights on a directory, so
+# wasi-libc's `access(W_OK)` was EACCES and `OSD_FileNode::Remove` never reached `rmdir`; the shim
+# itself implements `path_remove_directory`). Five remain, each because the facility the OCCT wrapper
+# reaches does not exist on this target and the wrapper answers rather than refusing. Each is measured, and #3025 holds the open question, which is a decision per row rather
 # than a fix per row: document the limit on the wasm surface, fix the harness, or leave it listed.
 #
 # Listed and not excluded, deliberately. Every one of these is a real property of the wasm surface
@@ -73,8 +76,5 @@ offsetTiltedMatchesPriorBaseline()  # exact-equality baseline vs a different lib
 heapUsageMiB()  # 3025: OSD_MemInfo has no wasip1 implementation, so every figure reads 0
 infoString()  # 3025: the same, one level up: no "Heap memory" line
 openLibrary()  # 3025: wasm32-wasip1 has no dynamic linking, so OSD_SharedLibrary::DlOpen cannot succeed
-tempDirectory()  # 3025: the shim's in-memory filesystem creates a directory and will not remove one
-createAndRemoveDirectory()  # 3025: the same, on an explicit /tmp path
-readHome()  # 3025: the guest environment carries only TMPDIR, so the test's own getenv oracle is nil
 "A real, accessible path is reported valid"  # 3025: no statvfs, and "/" is not a preopen
 "a stack trace appears only when a depth is asked for"  # 3025: no backtrace facility on this target
