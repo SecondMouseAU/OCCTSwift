@@ -160,6 +160,8 @@ struct GDTDimensionAccessorTests {
         // size is Size_CurveLength through Size_Thickness (14...27). The four types in neither are
         // Location_Angular (11), Location_WithPath (13), Size_Angular (28) and Size_WithPath (29),
         // plus CommonLabel (30) and DimensionPresentation (31). The 32 cases are all the enum has.
+        // That the Swift raw values are those ordinals is not assumed here: `derive-gdt-enums.py
+        // --verify` (a required static gate) checks every member against the pinned header.
         #expect(Document.DimensionType.allCases.count == 32)
         for type in Document.DimensionType.allCases {
             let ordinal = Int(type.rawValue)

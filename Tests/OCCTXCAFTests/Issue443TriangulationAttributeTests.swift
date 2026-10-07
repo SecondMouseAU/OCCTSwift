@@ -355,9 +355,12 @@ struct Issue443TriangulationAttributeTests {
                 "node \(i + 1) stored no normal, so the branch did not run")
             #expect(abs(simd_length(n) - 1.0) < 1e-6, "normal \(n) is not unit length")
             // The sphere's outward normal at p is p / |p|. A dropped reversal flips a face's
-            // worth (dot near -1) and a normal read from the wrong node points elsewhere.
+            // worth (dot near -1) and a normal read from the wrong node points elsewhere. The
+            // glTF carries the sphere's analytic normals, so the stored one is radial to double
+            // precision (measured: the smallest dot over all 168 nodes is 1 - 1.2e-15); 1 - 1e-6
+            // leaves six orders of margin and still rejects a normal turned by even 0.1 degree.
             #expect(
-                simd_dot(n, p / simd_length(p)) > 0.99,
+                simd_dot(n, p / simd_length(p)) > 1 - 1e-6,
                 "node \(i + 1) normal \(n) does not point outward from \(p)")
             checked += 1
         }

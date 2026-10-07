@@ -47,6 +47,7 @@ struct GDTToleranceDatumAccessorTests {
         // Three members with three different raw values (1, 2 and 3): `.diameter`, `.m` and
         // `.projected` are all raw 1, and a trio of equal raw values cannot tell one member read
         // for another from the right one.
+        // (`derive-gdt-enums.py --verify` pins those raw values to the OCCT headers.)
         #expect(doc.setGeomToleranceValueType(at: index, .diameter))
         #expect(doc.setGeomToleranceMaterialRequirement(at: index, .l))
         #expect(doc.setGeomToleranceZoneModifier(at: index, .nonUniform, value: 15.0))
