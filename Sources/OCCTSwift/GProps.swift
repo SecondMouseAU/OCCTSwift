@@ -52,11 +52,12 @@ public final class GProps {
         public var origin: SIMD3<Double>
         /// The main direction, the axis of the surface.
         ///
-        /// Need not be a unit vector.
+        /// Need not be a unit vector, and must not be zero: the factories return nil for a zero axis.
         public var axis: SIMD3<Double>
         /// The X direction the angle is measured from.
         ///
-        /// Nil lets OCCT choose one. OCCT makes it orthogonal to `axis`.
+        /// Nil lets OCCT choose one. OCCT makes it orthogonal to `axis`, so it must not be parallel to
+        /// it: the factories return nil then.
         public var xDirection: SIMD3<Double>?
 
         /// A frame at `origin` with the main direction `axis`.

@@ -105,7 +105,7 @@ public func symmetry(tolerance: Double) -> (hasAxis: Bool, hasPoint: Bool)?
 - **OCCT:** `GProp_GProps::Mass`, `CentreOfMass`, `MatrixOfInertia`, `StaticMoments`,
   `MomentOfInertia(gp_Ax1)`, `RadiusOfGyration(gp_Ax1)`, `PrincipalProperties`, and
   `GProp_PrincipalProps::HasSymmetryAxis(double)` and `HasSymmetryPoint(double)`.
-- `matrixOfInertia` is about the centre of mass, in axes parallel to the global ones.
+- `matrixOfInertia` is about the centre of mass, in axes parallel to the global ones. It is a `simd_double3x3`, so index it as `matrix[column][row]`; the matrix is symmetric.
 - `momentOfInertia` and `radiusOfGyration` return nil for a zero or non-finite direction, which
   OCCT rejects when it builds the `gp_Dir`. `radiusOfGyration` also returns nil where OCCT's answer
   is not a number, which is a system of no mass.
