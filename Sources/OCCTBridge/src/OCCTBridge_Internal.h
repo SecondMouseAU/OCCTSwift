@@ -1426,6 +1426,28 @@ inline bool occtIsUsableAngle(double angle)
   return std::isfinite(angle);
 }
 
+/// The largest sweep angle, in radians, a revolve builder is handed (#3109): `1e4`, about 1591
+/// turns.
+///
+/// A finite angle is not a safe one. Every revolve builder runs for a time proportional to the
+/// angle, because the sweep walks the turns, and none of them stops itself. Measured on the
+/// released kernel, one process per input, killed at 8 s (`Scripts/repro/3109/`): `Shape.revolve`,
+/// `revolved(angle:)` and the three `localRevolution` forms return in 1.6 s at 1e9 and never
+/// return from 1e10; `Shape.revolution(meridian:)` costs about 8 microseconds a radian, 4 s at
+/// 5e5, and from 1e6 is killed by the OS (status 137, then SIGSEGV from 1e9); the revolved
+/// feature, which takes degrees, never returns from 1e12 degrees. A negative angle costs the same.
+/// At the bound the slowest builder returns in 0.04 s. A sweep past one turn only repeats
+/// the first, so no angle a caller means is refused: 0, 1e-12, -1, pi, 2 pi and multiples of 2 pi
+/// up to this bound reach OCCT unchanged.
+inline constexpr double occtMaxRevolveAngle = 1e4;
+
+/// The angle precondition for a revolve builder (#3109): finite and no larger than
+/// `occtMaxRevolveAngle` in magnitude, in radians. A builder taking degrees converts first.
+inline bool occtIsUsableRevolveAngle(double angleRadians)
+{
+  return std::isfinite(angleRadians) && std::fabs(angleRadians) <= occtMaxRevolveAngle;
+}
+
 /// The axis precondition for a revolution (#3100, #3113): a finite origin and a usable direction.
 ///
 /// A NaN, infinite, zero or overflowing direction made `BRepPrimAPI_MakeRevol` (shape overload),

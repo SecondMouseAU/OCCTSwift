@@ -1008,9 +1008,10 @@ OCCTShapeRef OCCTShapeRevolFeature(OCCTShapeRef shape,
                                    double       angleDeg,
                                    bool         fuse)
 {
-  // #3100, #3113: a NaN or infinite angle, a non-finite origin or a NaN, infinite, zero or
-  // overflowing direction is refused (BRepLib::FindValidRange, BRepSweep_Revol never returned).
-  if (!shape || !profile || !occtIsUsableAngle(angleDeg)
+  // #3100, #3113, #3109: a NaN, infinite or absurd angle (degrees here, so converted first), a
+  // non-finite origin or a NaN, infinite, zero or overflowing direction is refused
+  // (BRepLib::FindValidRange, BRepSweep_Revol never returned).
+  if (!shape || !profile || !occtIsUsableRevolveAngle(angleDeg * M_PI / 180.0)
       || !occtIsUsableAxis(axOX, axOY, axOZ, axDX, axDY, axDZ))
     return nullptr;
   try

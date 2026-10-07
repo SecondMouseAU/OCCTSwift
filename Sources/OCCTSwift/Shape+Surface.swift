@@ -515,7 +515,7 @@ extension Shape {
     ///   - axisOrigin: Origin point of the revolution axis
     ///   - axisDirection: Direction of the revolution axis
     ///   - angle: Revolution angle in radians (default: full revolution)
-    /// - Returns: Revolved shape, or nil on failure, including a NaN or infinite `angle` (a NaN
+    /// - Returns: Revolved shape, or nil on failure, including a NaN, infinite or absurd `angle` (past `1e4` radians, about 1591 turns, #3109; a NaN
     ///   angle used to answer an invalid solid, #3100) and a NaN or infinite component of `axisOrigin`, or an `axisDirection` that is NaN, infinite, zero or overflowing (#3113).
     ///
     /// ```swift
@@ -577,10 +577,10 @@ extension Shape {
     ///   - sketchFaceIndex: 0-based index of the face on which the profile sits
     ///   - axisOrigin: Origin of the revolution axis
     ///   - axisDirection: Direction of the revolution axis
-    ///   - angle: Revolution angle in degrees; a NaN or infinite angle is refused
+    ///   - angle: Revolution angle in degrees; a NaN, infinite or absurd angle (past `1e4` radians, about 572958 degrees) is refused
     ///   - fuse: true to add material (boss), false to cut (pocket)
-    /// - Returns: Shape with revolved feature, or nil on failure, including a NaN or infinite
-    ///   `angle`, which used to never return (#3100), and a NaN or infinite component of `axisOrigin`, or an `axisDirection` that is NaN, infinite, zero or overflowing (#3113). Any finite angle,
+    /// - Returns: Shape with revolved feature, or nil on failure, including a NaN, infinite or
+    ///   absurd `angle` (past `1e4` radians, #3109), which used to never return (#3100), and a NaN or infinite component of `axisOrigin`, or an `axisDirection` that is NaN, infinite, zero or overflowing (#3113). Any angle within that bound,
     ///   `0` and `360` included, is passed to OCCT unchanged.
     ///
     /// ```swift
@@ -728,7 +728,7 @@ extension Shape {
     ///   - axisOrigin: Origin point of the rotation axis
     ///   - axisDirection: Direction of the rotation axis
     ///   - angle: Rotation angle in radians
-    /// - Returns: Revolved shape, or nil on failure, including a NaN or infinite `angle` and a NaN or infinite component of `axisOrigin`, or an `axisDirection` that is NaN, infinite, zero or overflowing; an infinite angle or a NaN axis never returned (#3100, #3113).
+    /// - Returns: Revolved shape, or nil on failure, including a NaN, infinite or absurd `angle` (past `1e4` radians, about 1591 turns, #3109) and a NaN or infinite component of `axisOrigin`, or an `axisDirection` that is NaN, infinite, zero or overflowing; an infinite angle or a NaN axis never returned (#3100, #3113).
     ///
     /// ```swift
     /// let face = Shape.face(from: Wire.rectangle(width: 2, height: 2)!)!
@@ -760,7 +760,7 @@ extension Shape {
     ///   - axisDirection: Direction of the rotation axis
     ///   - angle: Rotation angle in radians
     ///   - angularOffset: Angular offset for positioning in radians
-    /// - Returns: Revolved shape, or nil on failure, including a NaN or infinite `angle` or
+    /// - Returns: Revolved shape, or nil on failure, including a NaN, infinite or absurd `angle` (past `1e4` radians, #3109) or a NaN or infinite
     ///   `angularOffset` and a NaN or infinite component of `axisOrigin`, or an `axisDirection` that is NaN, infinite, zero or overflowing (#3100, #3113).
     ///
     /// ```swift
@@ -874,7 +874,7 @@ extension Shape {
     ///   - axisOrigin: Origin point of the rotation axis
     ///   - axisDirection: Direction of the rotation axis
     ///   - angle: Rotation angle in radians
-    /// - Returns: The revolved shape, or nil on failure, including a NaN or infinite `angle` and
+    /// - Returns: The revolved shape, or nil on failure, including a NaN, infinite or absurd `angle` (past `1e4` radians, about 1591 turns, #3109) and
     ///   a NaN or infinite component of `axisOrigin`, or an `axisDirection` that is NaN, infinite, zero or overflowing (#3100, #3113).
     ///
     /// ```swift

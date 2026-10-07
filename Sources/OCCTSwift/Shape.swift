@@ -498,10 +498,10 @@ public final class Shape: @unchecked Sendable {
     ///   - axisOrigin: A point on the axis.
     ///   - axisDirection: The direction of the axis.
     ///   - angle: The sweep in radians; the default is a full turn.
-    /// - Returns: The revolved shape, or `nil` when `angle` is NaN or infinite, when a NaN or infinite component of `axisOrigin`, or an `axisDirection` that is NaN, infinite, zero or overflowing, or
+    /// - Returns: The revolved shape, or `nil` when `angle` is NaN, infinite or absurd (past `1e4` radians (about 1591 turns), which never returned (#3109)), when a NaN or infinite component of `axisOrigin`, or an `axisDirection` that is NaN, infinite, zero or overflowing, or
     ///   when the profile cannot be revolved. A NaN angle used to answer an invalid shell, an
     ///   infinite one never returned (#3100), and an unusable axis answered a shape (#3113). Any
-    ///   finite angle, `0` and `2 * .pi` included, and any axis of length `1e-6` to `1e6`, is
+    ///   angle within that bound, `0` and `2 * .pi` included, and any axis of length `1e-6` to `1e6`, is
     ///   passed to OCCT unchanged.
     ///
     /// ```swift
@@ -607,9 +607,9 @@ public final class Shape: @unchecked Sendable {
     ///   - axisOrigin: A point on the axis.
     ///   - axisDirection: The direction of the axis.
     ///   - angle: The sweep in radians.
-    /// - Returns: The revolved shape, or `nil` when `angle` is NaN or infinite, when a NaN or infinite component of `axisOrigin`, or an `axisDirection` that is NaN, infinite, zero or overflowing (an
+    /// - Returns: The revolved shape, or `nil` when `angle` is NaN, infinite or absurd (past `1e4` radians (about 1591 turns), which never returned (#3109)), when a NaN or infinite component of `axisOrigin`, or an `axisDirection` that is NaN, infinite, zero or overflowing (an
     ///   infinite angle or a NaN axis never returned, #3100, #3113), or the shape cannot be
-    ///   revolved. Any finite angle is passed to OCCT unchanged.
+    ///   revolved. Any angle within that bound is passed to OCCT unchanged.
     ///
     /// ```swift
     /// let face = Shape.face(from: Wire.rectangle(width: 2, height: 2)!)!
