@@ -54,6 +54,21 @@ this script DERIVES from the repo. A claim fails if the number disagrees with th
 it also fails if the regex matches nothing at all, since a reworded sentence that no longer matches
 is a claim nobody is checking any more, which is the state this gate exists to end.
 
+**#3056 added the first check here that reads tense rather than a number.** A repin that pins a
+carried patch leaves behind prose saying that patch is "NOT built", "not pinned" or "must be
+deleted when this is pinned", true the day before and false the day after. #3031 pinned eight
+patches and #3054 had to correct about thirty such statements in ten files; review found one.
+``check_stale_pin_prose`` derives each patch's real state from ``Package.swift``'s pinned-asset
+list (``pinned_patch_numbers``) and flags a sentence that calls a PINNED patch not-yet-pinned. It
+judges only a sentence it can resolve to one patch, by a patch number in the sentence, a
+``Package.swift`` row, a table row keyed by a number, or a ``## NNNN-`` section; it is silent
+about a past-tense sentence, about a patch named for comparison, and about every sentence that
+resolves to nothing. The same words about a patch the list does not hold are correct, which is why
+an unpinned patch's prose needs no edit. It is a REPORT until ``PIN_PROSE_IS_GATE`` flips (see
+okf/policies/static-gates.md); ``--strict-pin-prose`` makes it exit 1 today. It cannot see the
+by-plane mirror's own comments, which name no pinned state, or a count and a kernel tag that went
+stale: those are counted claims above, or have no anchor to resolve against.
+
 Run from anywhere; paths resolve from __file__.
 """
 
@@ -867,7 +882,198 @@ def check_test_target_list(claude=None, package=None):
     return problems
 
 
-def run():
+# --- prose that states a patch's pinned state (#3056) -----------------------------------------
+
+# A sentence that says a patch is NOT in the pinned kernel yet, or that something must happen
+# when it is. Each one is true until a repin pins the patch and false the day after, which is the
+# whole failure: #3031 pinned eight patches and about thirty such statements outlived it (#3054).
+NOT_PINNED_PHRASES = [
+    r"\bNOT built\b",
+    r"\bnot (?:yet )?pinned\b",
+    r"\bunpinned\b",
+    r"\buntil (?:it|this|that|they) (?:is|are) pinned\b",
+    r"\bwhen (?:it|this|that|they) (?:is|are) pinned\b",
+    r"\bstill\b[^.|]{0,80}\b(?:in|on) the pinned (?:kernel|asset)\b",
+    r"\bthe repin (?:must|that pins|which pins)\b",
+    r"\bin the same change that repins\b",
+]
+NOT_PINNED_RE = re.compile("|".join(NOT_PINNED_PHRASES), re.IGNORECASE)
+
+# A past-tense word just before the phrase makes it history ("was unpinned until
+# v4.0.0-kernel.4"), and a version tag after "until" does too. Both are legitimate and stay
+# unflagged. A sentence this misreads as history is silenced, never flagged: the rule is that the
+# check does not guess.
+HISTORICAL_BEFORE_RE = re.compile(
+    r"\b(?:was|were|had been|had|used to|stayed|remained|spent|until)\b[^.]{0,50}$", re.IGNORECASE)
+HISTORICAL_AFTER_RE = re.compile(r"^[^.]{0,20}\buntil `?v?\d+\.\d+\.\d+-kernel", re.IGNORECASE)
+# "unlike `0044`", "same shape as 0042 and 0044": every patch named after a comparison word is
+# there for comparison, so none of them is the subject.
+COMPARISON_RE = re.compile(
+    r"\b(?:unlike|than|versus|vs\.?|(?:same|shape|story|case|exception)(?: \w+)? as|like)\b",
+    re.IGNORECASE)
+PREFILTER_RE = re.compile(r"not\W{0,20}built|pinned|repin", re.IGNORECASE)
+PRONOUN_PHRASE_RE = re.compile(r"\b(?:it|this|that|they)\b", re.IGNORECASE)
+EXEMPT_MARKER = "pin-state-exempt:"
+
+PROSE_SUFFIXES = (".md", ".swift", ".mm", ".h", ".py", ".sh", ".yml")
+PROSE_SKIP_DIRS = {".git", ".build", "Libraries", "node_modules"}
+PROSE_SKIP_PREFIXES = ("Scripts/repro/", "Tests/Fixtures/")
+PROSE_SKIP_FILES = {"docs/CHANGELOG.md", "CHANGELOG.md", "Scripts/check-inventory-prose.py"}
+
+_COMMENT_PREFIX_RE = re.compile(r"^\s*(?:///?|#|\*)\s?")
+_ROW_HEADER_RE = re.compile(r"^(0\d{3})\s{2,}\S")
+_BULLET_RE = re.compile(r"^(?:[-*]|\d+\.)\s+")
+_PATCH_REF_RE = re.compile(r"(?<![\w#/.])(0\d{3})(?!\d)")
+
+
+def prose_units(text):
+    """Yield (line, sentence, anchor) for every sentence in `text`.
+
+    `anchor` is the patch number a structured heading gives the sentence, else None: a
+    Package.swift enumeration row (`//   0048  BRepGProp...` and the indented lines under it), or
+    the first cell of a markdown table row when that cell is keyed by a patch number. A table row
+    is split into its cells, so one cell's phrase is never read against a number in another.
+    """
+    blocks = []  # [first_line, anchor, [stripped lines], is_table]
+    current = None
+    section = None  # the patch a `## NNNN-...` heading opens, until the next heading
+    for number, raw in enumerate(text.split("\n"), 1):
+        line = raw.strip()
+        if line.startswith("//"):
+            line = line[2:]
+            line = line[1:] if line.startswith("/") else line
+            line = line.strip()
+        else:
+            line = _COMMENT_PREFIX_RE.sub("", raw).strip()
+        if not line:
+            current = None
+            continue
+        is_table = line.startswith("|")
+        row = _ROW_HEADER_RE.match(line)
+        raw_line = raw.strip()
+        if raw_line.startswith("#"):
+            heading = re.match(r"^(#+)\s*(0\d{3})-", raw_line)
+            if heading:
+                section = heading.group(2)
+            elif raw_line.startswith("##") and not raw_line.startswith("###"):
+                section = None  # a new top-level section; a deeper heading stays inside the patch's
+        if row or is_table or _BULLET_RE.match(line) or line.startswith("#") or current is None:
+            anchor = section
+            if row:
+                anchor = row.group(1)
+            elif is_table:
+                cell = re.match(r"^\|\s*`?(0\d{3})\b", line)
+                anchor = cell.group(1) if cell else None
+            current = [number, anchor, [], is_table]
+            blocks.append(current)
+        current[2].append(line)
+    for first, anchor, lines, is_table in blocks:
+        body = " ".join(lines)
+        if is_table:
+            for cell in body.strip("|").split("|"):
+                yield first, cell.strip(), anchor
+            continue
+        for sentence in re.split(r"(?<=[.!?])\s+(?=[A-Z`*(\"'])", body):
+            yield first, sentence, anchor
+
+
+def resolve_patch(sentence, start, pronoun, anchor, known):
+    """The one patch the phrase at `start` is about, or None when that is not certain.
+
+    A pronoun phrase ("until it is pinned") is about the nearest patch number BEFORE it in the
+    sentence. Any other phrase is about the sentence's only patch number, or, when the sentence
+    names none, about the structured anchor. Two numbers and no pronoun resolves to None: a
+    sentence comparing `0042` to `0044` is not a claim about either.
+    """
+    comparison = COMPARISON_RE.search(sentence)
+    cut = comparison.start() if comparison else len(sentence)
+
+    def refs(part):
+        return [m.group(1) for m in _PATCH_REF_RE.finditer(part)
+                if m.group(1) in known and m.start() < cut]
+
+    named = refs(sentence)
+    if pronoun:
+        before = refs(sentence[:start])
+        if before:
+            return before[-1]
+        return anchor if not named else None
+    if len(set(named)) == 1:
+        return named[0]
+    return anchor if not named else None
+
+
+def stale_pin_claims(path, text, pinned, known):
+    """Sentences in `text` that call a pinned patch not-yet-pinned. `pinned` and `known` are sets."""
+    if not PREFILTER_RE.search(text):
+        return []  # cheap: a phrase can wrap across lines and comment markers, so test loosely
+    problems = []
+    for line, sentence, anchor in prose_units(text):
+        if EXEMPT_MARKER in sentence:
+            continue
+        for match in NOT_PINNED_RE.finditer(sentence):
+            before = sentence[:match.start()]
+            after = sentence[match.end():]
+            if HISTORICAL_BEFORE_RE.search(before) or HISTORICAL_AFTER_RE.search(after):
+                continue
+            pronoun = bool(PRONOUN_PHRASE_RE.search(match.group(0)))
+            patch = resolve_patch(sentence, match.start(), pronoun, anchor, known)
+            if patch is None or patch not in pinned:
+                continue
+            problems.append(
+                "%s:%d: says %s is not pinned (\"%s\"), but Package.swift's pinned-asset list "
+                "includes it. A repin that pins a patch has to rewrite the prose that described "
+                "the kernel before it; if the sentence is history, say so in its tense (#3056)."
+                % (path, line, patch, match.group(0)))
+            break
+    return problems
+
+
+# Promotion rule, per okf/policies/static-gates.md: the check is a report until the tree it reads
+# is clean, because a gate that is red on its first merge blocks every open PR. The false-positive
+# count is already zero; what held it back was true findings in files this change did not own.
+# Flip this when `--strict-pin-prose` exits 0 on main.
+PIN_PROSE_IS_GATE = False
+
+
+def prose_files():
+    """Repo-relative paths of every text file whose prose can state a patch's pinned state."""
+    found = []
+    for root, dirs, files in os.walk(REPO):
+        dirs[:] = [d for d in dirs if d not in PROSE_SKIP_DIRS]
+        for name in files:
+            if not name.endswith(PROSE_SUFFIXES):
+                continue
+            rel = os.path.relpath(os.path.join(root, name), REPO)
+            if rel in PROSE_SKIP_FILES or rel.startswith(PROSE_SKIP_PREFIXES):
+                continue
+            found.append(rel)
+    return sorted(found)
+
+
+def check_stale_pin_prose():
+    """No prose calls a patch not-yet-pinned when Package.swift's pinned-asset list holds it.
+
+    #3056. The patch's real state is derived, from the enumeration `pinned_patch_numbers` reads.
+    The check only judges a sentence it can resolve to one patch (see `prose_units`) and only in
+    the direction the repin makes false; the same sentence about a patch the list does not hold is
+    correct and passes. A repin that pins a patch must therefore also rewrite what said it was
+    not pinned. Nothing else reads tense: `census-comment-staleness.py` reads names that no longer
+    resolve, and these named patches that resolve perfectly.
+    """
+    pinned = set(pinned_patch_numbers())
+    known = {"%04d" % patch_number(stem) for stem in numbered_patch_files()}
+    problems = []
+    for rel in prose_files():
+        try:
+            text = read(rel)
+        except (UnicodeDecodeError, OSError):
+            continue
+        problems += stale_pin_claims(rel, text, pinned, known)
+    return problems
+
+
+def run(strict_pin_prose=False):
     problems = (check_claims() + check_patch_rows() + check_carried_sequence()
                 + check_tsan_suppressions() + check_patch_naming() + check_wasi_patch_rows()
                 + check_release_checks() + check_raise_map_provenance()
@@ -880,6 +1086,12 @@ def run():
               "that names nothing. Fix the prose, or the inventory, whichever is wrong.")
         return 1
     values = facts()
+    stale = check_stale_pin_prose()
+    if stale and (strict_pin_prose or PIN_PROSE_IS_GATE):
+        print("check-inventory-prose: %d stale pinned-state sentence(s)\n" % len(stale))
+        for problem in stale:
+            print("  " + problem)
+        return 1
     print("check-inventory-prose: clean")
     print("  patches: %d on disk, %d pinned" % (values["patches_on_disk"], values["patches_pinned"]))
     print("  patches-wasi: %d on disk, each with a README row" % values["wasi_patches_on_disk"])
@@ -897,6 +1109,12 @@ def run():
     print("  test targets: %d, each named in CLAUDE.md's Test Layout" % values["test_targets"])
     print("  %d claims checked across %d files"
           % (len(CLAIMS), len({c[0] for c in CLAIMS})))
+    if stale:
+        print("\nREPORT, not a gate yet (#3056): %d sentence(s) call a pinned patch not-yet-pinned"
+              % len(stale))
+        for problem in stale:
+            print("  " + problem)
+        print("  Pass --strict-pin-prose to exit 1 on these; PIN_PROSE_IS_GATE promotes it.")
     return 0
 
 
@@ -1325,6 +1543,124 @@ def self_test():
     case("test-target-list-clean-on-the-live-tree", not check_test_target_list(),
          "; ".join(check_test_target_list()[:2]))
 
+    # 15. #3056: prose that states a patch's pinned state. Fixtures are fed to
+    #     `stale_pin_claims` directly, with an explicit pinned set, so no case reads or edits a real
+    #     file. `known` carries a synthetic 0056, an unpinned patch no real file mentions yet.
+    pins = {"0044", "0045", "0048"}
+    known_pins = pins | {"0043", "0056"}
+
+    def stale(text, pinned=pins):
+        return stale_pin_claims("fixture.md", text, pinned, known_pins)
+
+    case("stale-not-pinned-about-a-pinned-patch-flagged",
+         len(stale("Carried, not pinned: `0044` leaves nothing exposed.\n")) == 1,
+         "; ".join(stale("Carried, not pinned: `0044` leaves nothing exposed.\n")))
+    case("same-sentence-about-an-unpinned-patch-is-not-flagged",
+         not stale("Carried, not pinned: `0056` leaves nothing exposed.\n"))
+    # The synthetic 0056 in the two anchored shapes the real tree uses, so the check needs no
+    # edit when #3111 lands its real rows: a Package.swift enumeration row and a README section.
+    case("unpinned-patch-row-and-section-are-not-flagged",
+         not stale("//   0056  BRepLib::Plane creates its plane under the lock          #3039\n"
+                   "//         Carried 2026-10-07 and NOT built. DO NOT RETIRE THE GUARD WHEN\n"
+                   "//         THIS IS PINNED.\n")
+         and not stale("## 0056-BRepLib-Plane-lock-3039.patch\n\n"
+                       "**Carried, not pinned.** The bridge guard stays when this is pinned.\n"))
+    case("same-row-about-a-pinned-patch-is-flagged-by-its-anchor",
+         len(stale("//   0044  Extrema_ExtSS::Points bound against the point sequence   #2840\n"
+                   "//         Carried 2026-09-30 and NOT built, deliberately.\n")) == 1)
+    case("historical-sentences-are-not-flagged",
+         not stale("`0044` was not pinned until v4.0.0-kernel.4.\n")
+         and not stale("| `0044-Extrema` | Was unpinned until v4.0.0-kernel.4 |\n")
+         and not stale("`0045` was NOT built for two days, then pinned.\n"))
+    case("a-sentence-naming-no-patch-is-ignored",
+         not stale("A bucket that is not pinned would absorb that silently.\n"
+                   "Visionos slices are NOT built by default.\n"))
+    case("two-patches-and-no-anchor-resolve-to-nothing",
+         not stale("`0044` and `0045` are not pinned.\n"))
+    case("a-patch-named-for-comparison-is-not-the-subject",
+         not stale("## 0056-x.patch\n\n**Carried, not pinned**, and unlike `0044` this one "
+                   "leaves something exposed.\n"))
+    case("a-pronoun-phrase-reads-the-nearest-preceding-patch",
+         len(stale("Both are fixed by carried patch `0048`; the guards stay when it is pinned, "
+                   "the `0056` exception.\n")) == 1
+         and not stale("Both are fixed by carried patch `0056`; the guards stay when it is "
+                       "pinned, the `0044` exception.\n"))
+    case("a-deeper-heading-keeps-the-patch-section-and-a-new-section-drops-it",
+         len(stale("## 0044-x.patch\n\n### CI coverage\n\nCarried, not pinned.\n")) == 1
+         and not stale("## 0044-x.patch\n\n## Something else\n\nCarried, not pinned.\n"))
+    case("a-table-row-is-read-cell-by-cell",
+         len(stale("| #2840 | the defect, see `0045` | patch `0044`, **not pinned**; not yet filed |\n"))
+         == 1
+         and not stale("| #9 | the defect | patch `0044` is carried; `0056` **not pinned** |\n"))
+    case("an-exempt-sentence-is-skipped",
+         not stale("`0044` is not pinned. pin-state-exempt: quoted from the old release notes\n"))
+
+    # The pre-#3054 text, verbatim from `git show 3054^:<file>`, against the post-#3031 pin
+    # state (0044 to 0051 pinned). Each of these was a current-tense claim for ten days after
+    # it stopped being true.
+    replay = [
+        ("Package.swift, 0044 row",
+         "//   0044  Extrema_ExtSS::Points / Extrema_ExtCS::Points bound against the point       #2840\n"
+         "//         sequence rather than against NbExt(), which counts mySqDist and so counts\n"
+         "//         the parallel branch's distance-with-no-point. Carried 2026-09-30 and NOT\n"
+         "//         built, deliberately: the 8.0.2 repin (due 2026-10-02, and already owed a\n"),
+        ("Package.swift, 0048 row",
+         "//   0048  The by-plane BRepGProp_Vinert overloads measure about the plane      #2873\n"
+         "//         out instead of re-basing. Carried 2026-10-02 for the OCCT 8.0.2 rebuild.\n"
+         "//         THIS ONE IS THE OPPOSITE CASE AND THE REPIN MUST ACT ON IT.\n"),
+        ("CLAUDE.md, by-plane mirror",
+         "  offset. The kernel hunk is now carried as `0048`, which negates the stored offset at all five\n"
+         "  by-plane sites; **that mirror is a compensation and not a guard, so the repin that pins `0048`\n"
+         "  deletes it in the same change**, or the sign flips back.\n"),
+        ("known-occt-bugs.md, #2873 row",
+         "| #2873 | the conversion | **carried patch `0048`, and the bridge fix #2873 until it is "
+         "pinned.** `OCCTBRepGPropVinertPlane` builds the mirrored plane | `Scripts/repro/2873/` |\n"),
+        ("carried-occt-patches.md, 0044 row",
+         "| `0044-Extrema-ExtSS-ExtCS-Points-bound-against-point-sequence-2840` | Nothing reachable "
+         "from Swift. `Extrema_ExtSS::Points` and `Extrema_ExtCS::Points` still fault on a parallel "
+         "pair in the pinned kernel, and every bridge entry point reads a point |\n"),
+        ("Scripts/patches/README.md, 0048 heading",
+         "### The bridge side is a COMPENSATION, not a guard, and the repin must delete it\n"),
+    ]
+    for label, text in replay:
+        # The README heading names no patch, so it needs the section the real file puts it under.
+        wrapped = "## 0048-BRepGProp-by-plane-offset-sign-2873.patch\n\n" + text if "README" in label else text
+        found = stale_pin_claims(label, wrapped, {"0044", "0045", "0046", "0047", "0048", "0050",
+                                                  "0051"},
+                                 {"0043", "0044", "0045", "0046", "0047", "0048", "0050", "0051"})
+        case("pre-3054-replay-flagged: " + label, len(found) >= 1, "; ".join(found[:1])[:80])
+
+    # The view checks, not the verdict: a prose reader that stopped finding rows or files would
+    # report clean forever, which is the failure `no sentence matches` exists for.
+    reachable = set(prose_files())
+    case("prose-files-reach-the-places-the-stale-text-lived",
+         {"Package.swift", "CLAUDE.md", "Scripts/patches/README.md",
+          "okf/references/known-occt-bugs.md", "docs/reference/Shape-HLR-Geom.md"} <= reachable
+         and not any(name.endswith(".patch") or name.startswith("Libraries/")
+                     for name in reachable),
+         "%d files" % len(reachable))
+    anchors = [a for _l, _s, a in prose_units(read("Package.swift")) if a]
+    case("package-swift-rows-resolve-to-anchors", len(set(anchors)) > 30,
+         "%d distinct anchors" % len(set(anchors)))
+
+    # The report stays a report until PIN_PROSE_IS_GATE flips: findings alone do not fail a bare
+    # run, and --strict-pin-prose does fail it. The scan is stubbed so the case is deterministic
+    # and the tree is read once, and run() is captured since it prints the whole summary.
+    import contextlib
+    import io
+    real_scan = globals()["check_stale_pin_prose"]
+    try:
+        codes = {}
+        for label, findings in (("findings", ["fixture finding"]), ("clean", [])):
+            globals()["check_stale_pin_prose"] = lambda found=findings: found
+            with contextlib.redirect_stdout(io.StringIO()):
+                codes[label] = (run(False), run(True))
+    finally:
+        globals()["check_stale_pin_prose"] = real_scan
+    case("report-mode-passes-bare-and-fails-strict",
+         codes["findings"] == ((1 if PIN_PROSE_IS_GATE else 0), 1) and codes["clean"] == (0, 0),
+         str(codes))
+
     failed = [c for c in cases if not c[1]]
     for name, ok, detail in cases:
         print("[%s] %s%s" % ("PASS" if ok else "FAIL", name, (" -- " + detail) if detail else ""))
@@ -1337,5 +1673,7 @@ if __name__ == "__main__":
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--self-test", action="store_true",
                         help="run the detector's own fixtures instead of the repo")
+    parser.add_argument("--strict-pin-prose", action="store_true",
+                        help="exit 1 when prose calls a pinned patch not-yet-pinned (#3056)")
     args = parser.parse_args()
-    sys.exit(self_test() if args.self_test else run())
+    sys.exit(self_test() if args.self_test else run(args.strict_pin_prose))
