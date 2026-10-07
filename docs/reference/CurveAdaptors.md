@@ -293,7 +293,7 @@ public final class EdgeCurve: ArcLengthCurveAdaptor
 Not `Sendable` (issue #1162), and one per task (#3065): the bridge struct behind it holds a
 persistent `BRepAdaptor_Curve` reused by every call, and OCCT designs an adaptor to be owned by one worker,
 since its BSpline evaluation cache is rebuilt in place by `const` evaluators. Share the underlying
-shape, construct a `EdgeCurve` inside each thread/task, or serialize access with
+shape, construct an `EdgeCurve` inside each thread/task, or serialize access with
 `OCCTSerial.withLock { }`. See `docs/thread-safety.md`.
 
 ---
