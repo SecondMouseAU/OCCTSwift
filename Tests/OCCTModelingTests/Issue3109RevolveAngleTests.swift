@@ -134,7 +134,9 @@ struct Issue3109RevolveAngleTests {
         }
     }
 
-    @Test("localRevolution, with and without an offset, and localRevolutionForm refuse an absurd angle", hangLimit)
+    @Test(
+        "localRevolution, with and without an offset, and localRevolutionForm refuse an absurd angle",
+        hangLimit)
     func localRevolutionsRefuseAbsurdAngle() throws {
         let f = try face()
         for angle in absurd {
