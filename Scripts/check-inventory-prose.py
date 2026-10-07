@@ -64,8 +64,9 @@ judges only a sentence it can resolve to one patch, by a patch number in the sen
 ``Package.swift`` row, a table row keyed by a number, or a ``## NNNN-`` section; it is silent
 about a past-tense sentence, about a patch named for comparison, and about every sentence that
 resolves to nothing. The same words about a patch the list does not hold are correct, which is why
-an unpinned patch's prose needs no edit. It is a REPORT until ``PIN_PROSE_IS_GATE`` flips (see
-okf/policies/static-gates.md); ``--strict-pin-prose`` makes it exit 1 today. It cannot see the
+an unpinned patch's prose needs no edit. It is a GATE since ``PIN_PROSE_IS_GATE`` flipped (#3114, see
+okf/policies/static-gates.md): a bare run exits 1 on it, and ``--strict-pin-prose`` is the same
+verdict spelled out. It cannot see the
 by-plane mirror's own comments, which name no pinned state, or a count and a kernel tag that went
 stale: those are counted claims above, or have no anchor to resolve against.
 
@@ -1053,9 +1054,9 @@ def stale_pin_claims(path, text, pinned, known):
 
 # Promotion rule, per okf/policies/static-gates.md: the check is a report until the tree it reads
 # is clean, because a gate that is red on its first merge blocks every open PR. The false-positive
-# count is already zero; what held it back was true findings in files this change did not own.
-# Flip this when `--strict-pin-prose` exits 0 on main.
-PIN_PROSE_IS_GATE = False
+# count was already zero; what held it back was true findings in files the change that added the check did not own. #3114
+# corrected them and flipped this, so a bare run now exits 1 on a stale pinned-state sentence.
+PIN_PROSE_IS_GATE = True
 
 
 def prose_files():
@@ -1108,7 +1109,7 @@ def run(strict_pin_prose=False):
         print("\nEach is a number in prose that no longer matches what the repo holds, or a row "
               "that names nothing. Fix the prose, or the inventory, whichever is wrong.")
         if stale:
-            print("\nAlso, %d stale pinned-state sentence(s) (#3056, a report):" % len(stale))
+            print("\nAlso, %d stale pinned-state sentence(s) (#3056):" % len(stale))
             for problem in stale:
                 print("  " + problem)
         return 1
@@ -1136,7 +1137,9 @@ def run(strict_pin_prose=False):
     print("  %d claims checked across %d files"
           % (len(CLAIMS), len({c[0] for c in CLAIMS})))
     if stale:
-        print("\nREPORT, not a gate yet (#3056): %d sentence(s) call a pinned patch not-yet-pinned"
+        # Unreachable while PIN_PROSE_IS_GATE is True (the branch above returns 1 first); kept so
+        # that demoting the gate back to a report is the one-line change it was written as.
+        print("\nREPORT, not a gate (#3056): %d sentence(s) call a pinned patch not-yet-pinned"
               % len(stale))
         for problem in stale:
             print("  " + problem)
@@ -1698,8 +1701,9 @@ def self_test():
     case("stale-report-printed-when-another-check-fails",
          other_code == 1 and "fixture stale finding" in sink.getvalue(), sink.getvalue()[-60:])
 
-    # The report stays a report until PIN_PROSE_IS_GATE flips: findings alone do not fail a bare
-    # run, and --strict-pin-prose does fail it. The scan is stubbed so the case is deterministic
+    # PIN_PROSE_IS_GATE is True (#3114): findings fail a bare run as well as --strict-pin-prose, and
+    # a clean tree passes both. The expectation is written as a literal, not derived from the flag,
+    # so flipping the flag back cannot leave the case passing. The scan is stubbed so the case is deterministic
     # and the tree is read once, and run() is captured since it prints the whole summary.
     real_scan = globals()["check_stale_pin_prose"]
     try:
@@ -1710,8 +1714,8 @@ def self_test():
                 codes[label] = (run(False), run(True))
     finally:
         globals()["check_stale_pin_prose"] = real_scan
-    case("report-mode-passes-bare-and-fails-strict",
-         codes["findings"] == ((1 if PIN_PROSE_IS_GATE else 0), 1) and codes["clean"] == (0, 0),
+    case("gate-mode-fails-bare-and-strict",
+         codes["findings"] == (1, 1) and codes["clean"] == (0, 0),
          str(codes))
 
     failed = [c for c in cases if not c[1]]
