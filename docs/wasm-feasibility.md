@@ -243,7 +243,9 @@ its siblings write to.
     properly is #2759.
   - **`Shape.isSelfIntersecting(hardTimeout:)`**, the only Dispatch user in the
     package. Its contract is a hard deadline enforced by a second thread, and
-    wasip1 non-threads has one, so it is `#if !os(WASI)`. The API decision is #2760.
+    wasip1 non-threads has one. Decided in #2760: the name exists on wasm with the
+    cooperative behaviour (`isSelfIntersecting(timeout:)`), documented as not a hard
+    bound, so Apple source compiles unchanged and Dispatch is never imported on WASI.
 - **4 GB single-heap ceiling** (wasm32; Swift does not target wasm64) caps model size.
 - **Size is the real API-surface problem, and it is Foundation's rather than OCCT's.**
   A SwiftWasm module that does nothing but print a path is 13.11 MB brotli, 37.6 MB of
@@ -671,7 +673,7 @@ equivalent and there does not need to be.
 | [#2757](https://github.com/SecondMouseAU/OCCTSwift/issues/2757) | a function carrying both a lowered `setjmp` and wasm exceptions emits an **invalid** `br_table`, and the module dies at the first OCCT call | **fixed here**, with `-UOCC_CONVERT_SIGNALS`; the upstream LLVM report still needs a reduction |
 | [#2758](https://github.com/SecondMouseAU/OCCTSwift/issues/2758) | `-mllvm -wasm-enable-sjlj` and `-lsetjmp` are now inert, and four places still call them load-bearing | open, cosmetic |
 | [#2759](https://github.com/SecondMouseAU/OCCTSwift/issues/2759) | 196 of 230 Swift files `import simd`, which does not exist on wasm | **worked around here** with a WASI-only `simd` target; the shape of the real answer is open |
-| [#2760](https://github.com/SecondMouseAU/OCCTSwift/issues/2760) | `Shape.isSelfIntersecting(hardTimeout:)` needs a second thread, so it cannot exist on wasip1 non-threads | **removed here** under `#if !os(WASI)`; the API decision is open |
+| [#2760](https://github.com/SecondMouseAU/OCCTSwift/issues/2760) | `Shape.isSelfIntersecting(hardTimeout:)` needs a second thread, so it cannot exist on wasip1 non-threads | **fixed**: same name on wasm with the cooperative behaviour, documented as not a hard bound (additive on wasm) |
 | [#2761](https://github.com/SecondMouseAU/OCCTSwift/issues/2761) | module size, and 13.11 MB of the 26.98 MB being Foundation on its own | open, and not a gate: there is no target to gate against |
 
 Two more were fixed in place and need no issue: `OCCTBridge.h` needed `<stdbool.h>` as well as the

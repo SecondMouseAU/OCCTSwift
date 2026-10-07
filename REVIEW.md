@@ -136,10 +136,9 @@ Each of these has already been decided, and raising it costs a round trip.
 **Settled by the WebAssembly port (#1689), each with an issue that owns it.** Prune an entry when its
 issue closes.
 
-- **`Shape.isSelfIntersecting(hardTimeout:)` being unavailable on WASI.** Its contract needs a second
-  thread and wasip1 non-threads has none, so no implementation of that signature can honour it. The
-  cooperative `isSelfIntersecting(timeout:)` is available on every platform and the comment beside
-  the guard names it. #2760.
+- **`Shape.isSelfIntersecting(hardTimeout:)` being cooperative, not hard, on WASI.** wasip1
+  non-threads has no second thread, so the wasm body forwards to `isSelfIntersecting(timeout:)` under
+  the same name and its doc comment says the bound is cooperative. #2760.
 - **The WASI-only stand-in `simd` module being a subset.** It covers what `Sources/OCCTSwift`
   measurably uses, because Apple's `simd` has no wasm build. #2759. What IS reviewable there is any
   divergence from Apple's semantics, per the rule above.
