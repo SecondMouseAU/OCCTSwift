@@ -8,145 +8,270 @@ import Testing
 @Suite("TDF Label Properties")
 struct TDFLabelPropertyTests {
 
+    // The document's own labels, as OCCT numbers them: the root is 0: (tag 0, depth 0), the main
+    // label is 0:1 (tag 1, depth 1), and `createLabel()` on the main label hands out tags from 11,
+    // above the ten XCAFDoc_DocumentTool reserves (#2730, `occtSeedTagSourcePastXCAFReservedTags`).
+    // A label created under a label that has no children yet starts again at tag 1.
+
     @Test("Label tag")
-    func labelTag() {
-        let doc = Document.create()!
-        let main = doc.mainLabel
-        #expect(main != nil, "Should get main label")
-        if let main = main {
-            #expect(main.tag == 1, "Main label tag should be 1")
-        }
+    func labelTag() throws {
+        let doc = try #require(Document.create())
+        let main = try #require(doc.mainLabel)
+        let root = try #require(main.root)
+        let first = try #require(doc.createLabel())
+        let second = try #require(doc.createLabel())
+        let nested = try #require(doc.createLabel(parent: first))
+
+        #expect(main.tag == 1, "Main label tag should be 1")
+        #expect(root.tag == 0, "The root label's tag is 0")
+        #expect(first.tag == 11)
+        #expect(second.tag == 12)
+        // A tag numbers a label among its siblings, so the first child of any label is 1.
+        #expect(nested.tag == 1)
+        // Not the label id: the id is this document's handle for the label, the tag is OCCT's.
+        #expect(Int64(first.tag) != first.labelId)
     }
 
     @Test("Label depth")
-    func labelDepth() {
-        let doc = Document.create()!
-        if let main = doc.mainLabel {
-            #expect(main.depth == 1, "Main label depth should be 1")
-            if let child = doc.createLabel() {
-                #expect(child.depth == 2, "Child of main should have depth 2")
-            }
-        }
+    func labelDepth() throws {
+        let doc = try #require(Document.create())
+        let main = try #require(doc.mainLabel)
+        let root = try #require(main.root)
+        let child = try #require(doc.createLabel())
+        let grandchild = try #require(doc.createLabel(parent: child))
+        let great = try #require(doc.createLabel(parent: grandchild))
+
+        #expect(root.depth == 0, "The root is at depth 0")
+        #expect(main.depth == 1, "Main label depth should be 1")
+        #expect(child.depth == 2, "Child of main should have depth 2")
+        #expect(grandchild.depth == 3)
+        #expect(great.depth == 4)
     }
 
     @Test("Label isNull")
-    func labelIsNull() {
-        let doc = Document.create()!
-        if let main = doc.mainLabel {
-            #expect(!main.isNull, "Main label should not be null")
-        }
+    func labelIsNull() throws {
+        let doc = try #require(Document.create())
+        let main = try #require(doc.mainLabel)
+        let child = try #require(doc.createLabel())
+        #expect(!main.isNull, "Main label should not be null")
+        #expect(!child.isNull)
+        #expect(try #require(main.root).isNull == false)
+
+        // The positive control: an id the document never handed out resolves to a null label,
+        // and every other answer for it is the "no such label" one, so `isNull` is a reading
+        // and not a constant.
+        let missing = AssemblyNode(document: doc, labelId: 987_654)
+        #expect(missing.isNull)
+        #expect(missing.tag == -1)
+        #expect(missing.depth == -1)
+        #expect(!missing.isRoot)
+        #expect(missing.father == nil)
     }
 
     @Test("Label isRoot")
-    func labelIsRoot() {
-        let doc = Document.create()!
-        if let main = doc.mainLabel {
-            #expect(!main.isRoot, "Main label (0:1) is not the root")
-            if let root = main.root {
-                #expect(root.isRoot, "Root() of main should be root")
-            }
-        }
+    func labelIsRoot() throws {
+        let doc = try #require(Document.create())
+        let main = try #require(doc.mainLabel)
+        let child = try #require(doc.createLabel())
+        let root = try #require(main.root)
+        #expect(!main.isRoot, "Main label (0:1) is not the root")
+        #expect(!child.isRoot)
+        #expect(root.isRoot, "Root() of main should be root")
+        // The root is the label with nothing above it: depth 0 and tag 0, so a stand-in that
+        // calls any shallow label the root (depth <= 1) reads main as the root and fails above.
+        #expect(root.depth == 0)
+        #expect(root.father == nil)
     }
 
     @Test("Label father")
-    func labelFather() {
-        let doc = Document.create()!
-        let child = doc.createLabel()!
-        if let main = doc.mainLabel, let father = child.father {
-            #expect(father.labelId == main.labelId, "Child's father should be main label")
-        }
+    func labelFather() throws {
+        let doc = try #require(Document.create())
+        let main = try #require(doc.mainLabel)
+        let root = try #require(main.root)
+        let child = try #require(doc.createLabel())
+        let grandchild = try #require(doc.createLabel(parent: child))
+
+        let father = try #require(child.father)
+        #expect(father.labelId == main.labelId, "Child's father should be main label")
+        #expect(father.tag == 1)
+        #expect(father.depth == 1)
+
+        // Two levels down, so a father that skips a level or answers the root or the main label
+        // for everything is not the label above.
+        let grandfather = try #require(grandchild.father)
+        #expect(grandfather.labelId == child.labelId)
+        #expect(grandfather.labelId != main.labelId)
+        #expect(grandfather.depth == 2)
+
+        // Main's father is the root, and the root has none.
+        #expect(main.father?.labelId == root.labelId)
+        #expect(root.father == nil)
     }
 
     @Test("Label root")
-    func labelRoot() {
-        let doc = Document.create()!
-        let child = doc.createLabel()!
-        if let root = child.root {
-            #expect(root.isRoot, "Root of any label should be the document root")
-        }
+    func labelRoot() throws {
+        let doc = try #require(Document.create())
+        let main = try #require(doc.mainLabel)
+        let child = try #require(doc.createLabel())
+        let grandchild = try #require(doc.createLabel(parent: child))
+
+        let root = try #require(child.root)
+        #expect(root.isRoot, "Root of any label should be the document root")
+        #expect(root.depth == 0)
+        #expect(root.tag == 0)
+        // One root for the whole document, whichever label asks, and it is not the main label
+        // or the label that asked.
+        #expect(try #require(grandchild.root).labelId == root.labelId)
+        #expect(try #require(main.root).labelId == root.labelId)
+        #expect(try #require(root.root).labelId == root.labelId)
+        #expect(root.labelId != main.labelId)
+        #expect(root.labelId != child.labelId)
+        #expect(root.labelId != grandchild.labelId)
     }
 
     @Test("Label hasAttribute and attributeCount")
-    func labelAttributes() {
-        let doc = Document.create()!
-        let parent = doc.createLabel()!
-        let label = doc.createLabel(parent: parent)!
+    func labelAttributes() throws {
+        let doc = try #require(Document.create())
+        let parent = try #require(doc.createLabel())
+        let label = try #require(doc.createLabel(parent: parent))
+        let sibling = try #require(doc.createLabel(parent: parent))
         #expect(!label.hasAttribute, "Fresh label should have no attributes")
         #expect(label.attributeCount == 0, "Fresh label should have 0 attributes")
 
-        label.setName("TestPart")
+        #expect(label.setName("TestPart"))
         #expect(label.hasAttribute, "Label with name should have attributes")
-        #expect(label.attributeCount >= 1, "Label with name should have at least 1 attribute")
+        // A name is one attribute (TDataStd_Name), so exactly one, not "at least one".
+        #expect(label.attributeCount == 1)
+        // Attributes belong to the label that carries them: not its sibling, and the name is not
+        // on its father. The father does carry one attribute of its own, the TDF_TagSource that
+        // `NewChild` attaches to number its children, so it reads 1 and a name written to it by
+        // mistake would read 2.
+        #expect(!sibling.hasAttribute)
+        #expect(sibling.attributeCount == 0)
+        #expect(parent.attributeCount == 1)
     }
 
     @Test("Label hasChild and childCount")
-    func labelChildren() {
-        let doc = Document.create()!
-        let parent = doc.createLabel()!
+    func labelChildren() throws {
+        let doc = try #require(Document.create())
+        let parent = try #require(doc.createLabel())
         #expect(!parent.hasChild, "New label has no children")
         #expect(parent.childCount == 0, "New label has 0 children")
 
-        let _ = doc.createLabel(parent: parent)
-        let _ = doc.createLabel(parent: parent)
+        let first = try #require(doc.createLabel(parent: parent))
+        #expect(parent.hasChild)
+        #expect(parent.childCount == 1)
+        _ = try #require(doc.createLabel(parent: parent))
         #expect(parent.hasChild, "Label with children should report hasChild")
         #expect(parent.childCount == 2, "Should have 2 children")
+
+        // A third, so a count capped below the real one is seen.
+        _ = try #require(doc.createLabel(parent: parent))
+        #expect(parent.childCount == 3)
+
+        // Direct children only: a grandchild counts for its own father and not for the grandfather.
+        _ = try #require(doc.createLabel(parent: first))
+        #expect(parent.childCount == 3)
+        #expect(first.childCount == 1)
+        #expect(first.hasChild)
     }
 
     @Test("Label findChild by tag")
-    func labelFindChild() {
-        let doc = Document.create()!
-        let parent = doc.createLabel()!
-        let child = doc.createLabel(parent: parent)!
+    func labelFindChild() throws {
+        let doc = try #require(Document.create())
+        let parent = try #require(doc.createLabel())
+        let child = try #require(doc.createLabel(parent: parent))
 
-        // Find existing child
-        let found = parent.findChild(tag: child.tag)
-        #expect(found != nil, "Should find existing child by tag")
+        // Find existing child: the same label, not merely some label.
+        let found = try #require(
+            parent.findChild(tag: child.tag), "Should find existing child by tag")
+        #expect(found.labelId == child.labelId)
+        #expect(found.tag == child.tag)
 
-        // Find non-existing without create
-        let notFound = parent.findChild(tag: 999, create: false)
-        #expect(notFound == nil, "Should not find non-existing child")
+        // Find non-existing without create, and nothing was created by asking.
+        #expect(
+            parent.findChild(tag: 999, create: false) == nil, "Should not find non-existing child")
+        #expect(parent.findChild(tag: 999) == nil)
+        #expect(parent.childCount == 1)
 
-        // Find non-existing with create
-        let created = parent.findChild(tag: 999, create: true)
-        #expect(created != nil, "Should create child when requested")
+        // Find non-existing with create: a child of this parent at the asked tag.
+        let created = try #require(
+            parent.findChild(tag: 999, create: true), "Should create child when requested")
+        #expect(created.tag == 999)
+        #expect(created.labelId != child.labelId)
+        #expect(created.father?.labelId == parent.labelId)
+        #expect(created.depth == parent.depth + 1)
         #expect(parent.childCount == 2, "Should now have 2 children (1 original + 1 created)")
+
+        // Found again by tag, and asking again creates nothing more.
+        let again = try #require(parent.findChild(tag: 999, create: true))
+        #expect(again.labelId == created.labelId)
+        #expect(parent.childCount == 2)
+        // The original is still the one at its own tag.
+        #expect(try #require(parent.findChild(tag: child.tag)).labelId == child.labelId)
     }
 
     @Test("Label forgetAllAttributes")
-    func labelForgetAllAttributes() {
-        let doc = Document.create()!
-        let parent = doc.createLabel()!
-        let label = doc.createLabel(parent: parent)!
-        label.setName("Temporary")
+    func labelForgetAllAttributes() throws {
+        let doc = try #require(Document.create())
+        let parent = try #require(doc.createLabel())
+        let label = try #require(doc.createLabel(parent: parent))
+        let child = try #require(doc.createLabel(parent: label))
+        let bystander = try #require(doc.createLabel(parent: parent))
+        #expect(label.setName("Temporary"))
+        #expect(child.setName("Child"))
+        #expect(bystander.setName("Bystander"))
         #expect(label.hasAttribute)
 
-        label.forgetAllAttributes()
+        // Not clearing children: the label's own attribute goes, its child's stays.
+        label.forgetAllAttributes(clearChildren: false)
         #expect(!label.hasAttribute, "After forget, label should have no attributes")
+        #expect(label.attributeCount == 0)
+        #expect(child.hasAttribute)
+        #expect(child.attributeCount == 1)
+
+        // Clearing children (the default): the child's goes too, and a sibling is untouched.
+        #expect(label.setName("Temporary again"))
+        label.forgetAllAttributes()
+        #expect(!label.hasAttribute)
+        #expect(!child.hasAttribute)
+        #expect(child.attributeCount == 0)
+        #expect(bystander.hasAttribute)
+        #expect(bystander.attributeCount == 1)
     }
 
     @Test("Label descendants")
-    func labelDescendants() {
-        let doc = Document.create()!
-        let parent = doc.createLabel()!
-        let c1 = doc.createLabel(parent: parent)!
-        let _ = doc.createLabel(parent: parent)!
-        let _ = doc.createLabel(parent: c1)!
-        let _ = doc.createLabel(parent: c1)!
+    func labelDescendants() throws {
+        let doc = try #require(Document.create())
+        let parent = try #require(doc.createLabel())
+        let c1 = try #require(doc.createLabel(parent: parent))
+        let c2 = try #require(doc.createLabel(parent: parent))
+        let g1 = try #require(doc.createLabel(parent: c1))
+        let g2 = try #require(doc.createLabel(parent: c1))
 
+        // Direct children, in tag order (c1 was made first), and the grandchildren are not here.
         let direct = parent.descendants(allLevels: false)
-        #expect(direct.count == 2, "Should have 2 direct children")
+        #expect(direct.map(\.labelId) == [c1.labelId, c2.labelId], "Should have 2 direct children")
 
+        // All levels: exactly the four, once each. Their order is not asserted, since the
+        // traversal order is OCCT's and this API does not promise one.
         let all = parent.descendants(allLevels: true)
         #expect(all.count == 4, "Should have 4 total descendants")
+        #expect(Set(all.map(\.labelId)) == [c1.labelId, c2.labelId, g1.labelId, g2.labelId])
+
+        // A leaf has none, at either depth.
+        #expect(c2.descendants(allLevels: true).isEmpty)
+        #expect(c2.descendants(allLevels: false).isEmpty)
+        #expect(c1.descendants(allLevels: false).map(\.labelId) == [g1.labelId, g2.labelId])
     }
 
     @Test("Label descendants past the 1024 buffer cap reports the true count (#1563)")
-    func labelDescendantsBeyondBufferCap() {
-        let doc = Document.create()!
-        let parent = doc.createLabel()!
+    func labelDescendantsBeyondBufferCap() throws {
+        let doc = try #require(Document.create())
+        let parent = try #require(doc.createLabel())
         let extraCount = 1024 + 5
         for _ in 0..<extraCount {
-            _ = doc.createLabel(parent: parent)!
+            _ = try #require(doc.createLabel(parent: parent))
         }
 
         let direct = parent.descendants(allLevels: false)

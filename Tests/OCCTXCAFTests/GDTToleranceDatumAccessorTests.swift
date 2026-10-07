@@ -28,11 +28,8 @@ struct GDTToleranceDatumAccessorTests {
     /// The value type is what makes 0.1 a zone width or a zone diameter, so a tolerance read
     /// without it is read at half or twice its meaning.
     @Test("A tolerance's value type, material requirement and zone modifier round-trip")
-    func toleranceSemanticsRoundTrip() {
-        guard let (doc, index) = documentWithTolerance() else {
-            Issue.record("document nil")
-            return
-        }
+    func toleranceSemanticsRoundTrip() throws {
+        let (doc, index) = try #require(documentWithTolerance(), "document nil")
 
         // A tolerance nobody qualified. This also holds OCCTDocumentCreateGeomTolerance to handing
         // OCCT neutral values rather than whatever its uninitialised members happened to hold.
@@ -47,17 +44,20 @@ struct GDTToleranceDatumAccessorTests {
             Issue.record("tolerance nil before writes")
         }
 
+        // Three members with three different raw values (1, 2 and 3): `.diameter`, `.m` and
+        // `.projected` are all raw 1, and a trio of equal raw values cannot tell one member read
+        // for another from the right one.
         #expect(doc.setGeomToleranceValueType(at: index, .diameter))
-        #expect(doc.setGeomToleranceMaterialRequirement(at: index, .m))
-        #expect(doc.setGeomToleranceZoneModifier(at: index, .projected, value: 15.0))
+        #expect(doc.setGeomToleranceMaterialRequirement(at: index, .l))
+        #expect(doc.setGeomToleranceZoneModifier(at: index, .nonUniform, value: 15.0))
         #expect(doc.setGeomToleranceMaxValueModifier(at: index, 0.25))
 
         if let tol = doc.geomTolerance(at: index) {
             // Three separate OCCT members, all read in one call, so the trio proves none of the
             // three accessors is reading another's storage.
             #expect(tol.valueType == .diameter)
-            #expect(tol.materialRequirement == .m)
-            #expect(tol.zoneModifier == .projected)
+            #expect(tol.materialRequirement == .l)
+            #expect(tol.zoneModifier == .nonUniform)
             #expect(tol.zoneModifierValue == 15.0)
             #expect(tol.maxValueModifier == 0.25)
             // The tolerance's own value is untouched by any of them.
@@ -73,11 +73,8 @@ struct GDTToleranceDatumAccessorTests {
     ///
     /// Reporting either as 0.0 would be the defect #996 existed to fix.
     @Test("A zero zone value and a zero max value read back as nil, not as a measured zero")
-    func toleranceZeroValuesAreAbsence() {
-        guard let (doc, index) = documentWithTolerance() else {
-            Issue.record("document nil")
-            return
-        }
+    func toleranceZeroValuesAreAbsence() throws {
+        let (doc, index) = try #require(documentWithTolerance(), "document nil")
         #expect(doc.setGeomToleranceZoneModifier(at: index, .projected, value: 15.0))
         #expect(doc.setGeomToleranceMaxValueModifier(at: index, 0.25))
         #expect(doc.geomTolerance(at: index)?.zoneModifierValue == 15.0)
@@ -95,11 +92,8 @@ struct GDTToleranceDatumAccessorTests {
     }
 
     @Test("A tolerance modifier sequence round-trips in order, and clears")
-    func toleranceModifiersRoundTripInOrder() {
-        guard let (doc, index) = documentWithTolerance() else {
-            Issue.record("document nil")
-            return
-        }
+    func toleranceModifiersRoundTripInOrder() throws {
+        let (doc, index) = try #require(documentWithTolerance(), "document nil")
         #expect(doc.geomTolerance(at: index)?.modifiers.isEmpty == true)
 
         // Deliberately not in the enum's own order, so a sequence rebuilt by sorting reads back
@@ -119,11 +113,8 @@ struct GDTToleranceDatumAccessorTests {
     /// It is 1-based,
     /// so 0 is absence rather than a first place.
     @Test("A datum position round-trips, and reads nil when it has no place in a frame")
-    func datumPositionRoundTrips() {
-        guard let (doc, index) = documentWithDatum() else {
-            Issue.record("document nil")
-            return
-        }
+    func datumPositionRoundTrips() throws {
+        let (doc, index) = try #require(documentWithDatum(), "document nil")
         #expect(doc.datum(at: index)?.position == nil)
 
         #expect(doc.setDatumPosition(at: index, 2))
@@ -134,11 +125,8 @@ struct GDTToleranceDatumAccessorTests {
     }
 
     @Test("A datum modifier sequence round-trips in order, and the valued modifier is separate")
-    func datumModifiersRoundTrip() {
-        guard let (doc, index) = documentWithDatum() else {
-            Issue.record("document nil")
-            return
-        }
+    func datumModifiersRoundTrip() throws {
+        let (doc, index) = try #require(documentWithDatum(), "document nil")
         if let fresh = doc.datum(at: index) {
             #expect(fresh.modifiers.isEmpty)
             #expect(fresh.modifierWithValue == nil)
@@ -177,11 +165,8 @@ struct GDTToleranceDatumAccessorTests {
     /// Reporting length and width unconditionally would
     /// surface the object's unassigned members as measurements.
     @Test("A datum target's length and width follow the target type, not the write")
-    func datumTargetDimensionsFollowTheType() {
-        guard let (doc, index) = documentWithDatum(name: "B") else {
-            Issue.record("document nil")
-            return
-        }
+    func datumTargetDimensionsFollowTheType() throws {
+        let (doc, index) = try #require(documentWithDatum(name: "B"), "document nil")
         #expect(doc.datum(at: index)?.target == nil)
 
         // Asymmetric length and width on purpose, so one reported as the other is visible.
@@ -234,11 +219,8 @@ struct GDTToleranceDatumAccessorTests {
     ///
     /// A degenerate axis is refused rather than crossing into OCCT.
     @Test("A degenerate datum target placement axis is refused")
-    func degenerateDatumTargetAxisIsRefused() {
-        guard let (doc, index) = documentWithDatum(name: "C") else {
-            Issue.record("document nil")
-            return
-        }
+    func degenerateDatumTargetAxisIsRefused() throws {
+        let (doc, index) = try #require(documentWithDatum(name: "C"), "document nil")
         #expect(doc.setDatumTarget(at: index, type: .line, number: 1))
         #expect(
             !doc.setDatumTargetPlacement(
@@ -255,54 +237,46 @@ struct GDTToleranceDatumAccessorTests {
     // MARK: - Isolation and bounds
 
     @Test("Two tolerances and two datums on one document keep their own accessor values")
-    func accessorsAreNotSharedBetweenEntries() {
-        guard let doc = Document.create(), let box = Shape.box(width: 10, height: 10, depth: 10)
-        else {
-            Issue.record("document nil")
-            return
-        }
+    func accessorsAreNotSharedBetweenEntries() throws {
+        let doc = try #require(Document.create(), "document nil")
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let shapeId = doc.addShape(box, makeAssembly: false)
-        guard let tolA = doc.createGeomTolerance(on: shapeId, type: .position, value: 0.1),
-            let tolB = doc.createGeomTolerance(on: shapeId, type: .flatness, value: 0.05),
-            let datumA = doc.createDatum(name: "A"),
-            let datumB = doc.createDatum(name: "B")
-        else {
-            Issue.record("create nil")
-            return
-        }
+        let tolA = try #require(doc.createGeomTolerance(on: shapeId, type: .position, value: 0.1))
+        let tolB = try #require(doc.createGeomTolerance(on: shapeId, type: .flatness, value: 0.05))
+        let datumA = try #require(doc.createDatum(name: "A"))
+        let datumB = try #require(doc.createDatum(name: "B"))
 
         #expect(doc.setGeomToleranceValueType(at: tolA, .diameter))
         #expect(doc.setGeomToleranceModifiers(at: tolB, [.allOver]))
         #expect(doc.setDatumPosition(at: datumA, 1))
         #expect(doc.setDatumTarget(at: datumB, type: .circle, number: 7))
 
-        if let a = doc.geomTolerance(at: tolA), let b = doc.geomTolerance(at: tolB) {
-            #expect(a.valueType == .diameter)
-            #expect(a.modifiers.isEmpty)
-            #expect(b.valueType == Document.GeomToleranceValueType.none)
-            #expect(b.modifiers == [.allOver])
-        } else {
-            Issue.record("tolerance nil")
-        }
-        if let a = doc.datum(at: datumA), let b = doc.datum(at: datumB) {
-            #expect(a.name == "A")
-            #expect(a.position == 1)
-            #expect(a.target == nil)
-            #expect(b.name == "B")
-            #expect(b.position == nil)
-            #expect(b.target?.type == .circle)
-            #expect(b.target?.number == 7)
-        } else {
-            Issue.record("datum nil")
-        }
+        let ta = try #require(doc.geomTolerance(at: tolA))
+        let tb = try #require(doc.geomTolerance(at: tolB))
+        // Each is what it was created as, so one read for the other shows in the type and value.
+        #expect(ta.type == .position)
+        #expect(ta.value == 0.1)
+        #expect(ta.valueType == .diameter)
+        #expect(ta.modifiers.isEmpty)
+        #expect(tb.type == .flatness)
+        #expect(tb.value == 0.05)
+        #expect(tb.valueType == Document.GeomToleranceValueType.none)
+        #expect(tb.modifiers == [.allOver])
+
+        let da = try #require(doc.datum(at: datumA))
+        let db = try #require(doc.datum(at: datumB))
+        #expect(da.name == "A")
+        #expect(da.position == 1)
+        #expect(da.target == nil)
+        #expect(db.name == "B")
+        #expect(db.position == nil)
+        #expect(db.target?.type == .circle)
+        #expect(db.target?.number == 7)
     }
 
     @Test("Out-of-range tolerance and datum indices are refused")
-    func outOfRangeIndicesAreRefused() {
-        guard let (doc, _) = documentWithTolerance() else {
-            Issue.record("document nil")
-            return
-        }
+    func outOfRangeIndicesAreRefused() throws {
+        let (doc, _) = try #require(documentWithTolerance(), "document nil")
         #expect(doc.geomTolerance(at: 5) == nil)
         #expect(!doc.setGeomToleranceValueType(at: 5, .diameter))
         #expect(!doc.setGeomToleranceMaterialRequirement(at: 5, .m))
