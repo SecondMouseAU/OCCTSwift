@@ -231,6 +231,37 @@ The seven censuses today and what each is for:
   stamp is a CLAIMS row like every other counted claim; the per-patch digests are what catch a
   patch revised in place, which no count can see.
 
+**Tense is the other thing a repin leaves stale, and `check-inventory-prose.py` reads it too
+(#3056).** #3031 pinned eight patches and #3054 then corrected about thirty sentences in ten files
+that still called them "NOT built", "not pinned" or "to be deleted when this is pinned". The
+counted-claim checks passed throughout, and `census-comment-staleness.py` reads names that no longer
+resolve, whereas these named patches that resolve perfectly and were wrong only in tense.
+`check_stale_pin_prose()` derives each patch's state from the enumeration `Package.swift` states,
+and flags a sentence calling a pinned patch not-yet-pinned. Three properties are worth copying:
+
+- **It does not guess.** It judges a sentence only when it resolves to one patch: a patch number in
+  the sentence, a `Package.swift` enumeration row, a table row keyed by a number, or a
+  `## NNNN-` section. A past-tense sentence ("was unpinned until v4.0.0-kernel.4"), a patch named
+  for comparison ("unlike `0044`") and a sentence naming two patches are silent, so a misread is
+  a miss and never a false alarm. A pronoun phrase ("until it is pinned") reads the nearest patch
+  before it. The same words about a patch the list does not hold are correct, so an unpinned
+  patch's rows need no edit; a self-test case uses a synthetic `0056` for exactly that.
+- **It was proved against the defect it was written for.** Replaying `git show 3054^:<file>`
+  against the post-#3031 pin state, it flags 18 of #3054's 47 hunks directly: every Package.swift
+  row the repin left reading "NOT built" or "WHEN THIS IS PINNED", the by-plane mirror's
+  repin instructions in `CLAUDE.md` and `Scripts/patches/README.md`, and the two okf rows. It cannot
+  see the 29 others: 15 are kernel tags and counts (`kernel.3`, "thirty-one", "beta.4 not cut") with
+  no patch to anchor to, and 14 are the by-plane mirror's own comments and a present-tense row, which
+  name no pinned state at all. The self-test replays six excerpts of that text, kept short but taken from
+  those revisions.
+- **It is a report, not a gate, until the tree is clean.** Its false-positive count on the live
+  tree is zero, but it also finds sentences that really are stale and sit in files the change that
+  added it did not own, and a gate red on its first merge blocks every open PR. `run()` prints them
+  under "REPORT, not a gate yet" and exits 0; `--strict-pin-prose` exits 1; flipping
+  `PIN_PROSE_IS_GATE` makes the bare run exit 1 and is the promotion, to be made once
+  `--strict-pin-prose` exits 0 on `main`. It is part of `check-inventory-prose.py`, not a new
+  script, so the gate and census counts above do not move.
+
 **One gate holds the bridge to the kernel's protocol rather than to a convention of this repo.**
 `check-transient-release-idiom.py` (#2974) reads every function in `Sources/OCCTBridge/src/*.mm`
 that calls `DecrementRefCounter`, three today, and requires each to be
