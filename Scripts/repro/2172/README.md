@@ -134,7 +134,8 @@ That is true of the bridge's own compile. It is not true of OCCT's: `adm/cmake/o
 adds `-DOCC_CONVERT_SIGNALS` for every non-Windows target, and the generated `flags.make` for this
 build carries it, as does the macOS build's. So `OCC_CATCH_SIGNALS` expands to a real `setjmp`
 inside OCCT on every platform, `-mllvm -wasm-enable-sjlj` is required rather than precautionary, and
-`-lsetjmp` will be required at link.
+`-lsetjmp` will be required at link. (Both were true when measured and stopped being true at
+#2175, `-UOCC_CONVERT_SIGNALS`; see #2758.)
 
 Both negative cases were run, because both failures are silent:
 
