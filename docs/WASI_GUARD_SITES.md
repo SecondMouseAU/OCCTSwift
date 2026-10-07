@@ -255,6 +255,8 @@ body: the emitted `br_table` has targets whose label types differ, `[i32, exnref
 nothing for the others, which the WebAssembly specification forbids. wasmkit refuses the module and
 is right to. The whole Swift-over-OCCT module died at its first OCCT call until this define was
 switched off. `Scripts/repro/2175/run.sh sjlj` reproduces both directions.
+The defect reduces to a 12-line file with no OCCT (`Scripts/repro/2757/`), and
+`Scripts/check-wasm-archive-no-setjmp.sh` asserts the fetched kernel archive holds no lowered `setjmp`.
 
 It is also the semantically correct setting rather than only the convenient one:
 `OCC_CONVERT_SIGNALS` exists to turn an OS signal into a C++ exception, and a wasm module receives
