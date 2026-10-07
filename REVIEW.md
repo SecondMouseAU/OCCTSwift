@@ -143,9 +143,10 @@ issue closes.
 - **The WASI-only stand-in `simd` module being a subset.** It covers what `Sources/OCCTSwift`
   measurably uses, because Apple's `simd` has no wasm build. #2759. What IS reviewable there is any
   divergence from Apple's semantics, per the rule above.
-- **`-lsetjmp` and `-mllvm -wasm-enable-sjlj` being inert.** They are, since `-UOCC_CONVERT_SIGNALS`
-  removed every `setjmp` from the OCCT build. Retiring them touches three other measured things.
-  #2758.
+- **`-mllvm -wasm-enable-sjlj` being kept although inert.** It is, since `-UOCC_CONVERT_SIGNALS`
+  removed every `setjmp` from the OCCT build. It stays in the build script because that line
+  describes how the pinned kernel asset was built, and in the toolset for a consumer's own
+  dependencies; `-lsetjmp` is gone from `Package.swift`. Do not flag the first two as stale. #2758.
 - **The threading shim adding names to namespace `std`.** Formally undefined behaviour, stated on
   line 14 of the shim, scoped to one pinned libc++, and guarded by a compile-time check that fails
   with a named error if that libc++ ever gains threads. #2170.

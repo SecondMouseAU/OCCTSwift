@@ -679,10 +679,13 @@ let occtBridgeTarget: Target =
                     .linkedLibrary("c++"),
                     .linkedLibrary("c++abi"),
                     .linkedLibrary("unwind"),
-                    // -fwasm-exceptions does nothing for setjmp. OCCT's own CMake defines
-                    // OCC_CONVERT_SIGNALS, so OCC_CATCH_SIGNALS expands to a real setjmp inside OCCT
-                    // and six TKernel objects reference __wasm_setjmp (#2172, #2188).
-                    .linkedLibrary("setjmp"),
+                    // No setjmp here, deliberately (#2758). The kernel is built with
+                    // -UOCC_CONVERT_SIGNALS (#2175), so OCC_CATCH_SIGNALS expands to nothing and the
+                    // archive holds zero references to __wasm_setjmp, __wasm_longjmp or __c_longjmp;
+                    // and a link of this package with and without the library, against the pinned
+                    // kernel, succeeds both ways. A dependency that really calls setjmp would need
+                    // -lsetjmp from its own manifest, and the toolset's -mllvm -wasm-enable-sjlj
+                    // (Scripts/make-wasi-toolset.py) is kept for exactly that dependency.
                     // OSD_Directory::BuildTemporary() and OSD_Process::ProcessId() both call getpid(),
                     // which wasi-libc declares and does not define (docs/WASI_GUARD_SITES.md). The
                     // define is deliberately absent above; the library is what the link needs.

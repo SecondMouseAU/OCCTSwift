@@ -166,8 +166,9 @@ Searched `Libraries/occt-src/src` (OCCT `V8_0_1` plus the carried patches) and t
   removes all of them (`adm/cmake/occt_defs_flags.cmake:48` is the only place that defines it).
 * **Bundled dependencies: none.** The wasm build sets `USE_FREETYPE`, `USE_FREEIMAGE`, `USE_TBB`
   and `USE_VTK` to OFF; the only third-party code is rapidjson, header-only, with no `setjmp`.
-* **This repo's `Sources/`: none.** The only `setjmp` text in `Package.swift` is the
-  `.linkedLibrary("setjmp")` line and its comment, both now inert (#2758).
+* **This repo's `Sources/`: none.** The only `setjmp` text in `Package.swift` is a
+  comment saying why `.linkedLibrary("setjmp")` was removed (#2758); the link was measured with and
+  without it and succeeds both ways.
 * **Measured on the shipped kernel.** The pinned asset (`v4.0.0-kernel.4`, 5,488 members) has zero
   references to `__wasm_setjmp`, `__wasm_setjmp_test`, `__wasm_longjmp` or `__c_longjmp`.
 
