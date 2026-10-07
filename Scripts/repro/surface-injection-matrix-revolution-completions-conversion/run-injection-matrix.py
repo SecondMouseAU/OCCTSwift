@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Run the #766 Surface batch (batch 13) injection matrix against the built OCCTSurfaceTests bundle.
 
-usage: python3 Scripts/repro/766-surface-batch13-injection/run-injection-matrix.py LABEL [--root DIR]
+usage: python3 Scripts/repro/surface-injection-matrix-revolution-completions-conversion/run-injection-matrix.py LABEL [--root DIR]
 
 Reads `switches.txt` beside this file, runs the twenty-two suites once with NO switch (and requires
 every test green, so an inert or already-red harness cannot read as a clean sweep), then once per
