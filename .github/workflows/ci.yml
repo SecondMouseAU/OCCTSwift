@@ -266,7 +266,8 @@ jobs:
       # reading "all 14 patches apply cleanly". Applying cleanly and preprocessing are different
       # properties. This reads the patch text for directive deltas, so like its #2058 sibling it
       # needs no Libraries/occt-src and belongs here. Its deeper --tree mode does need a checkout
-      # and is deliberately NOT run in this job; the wasm build job is where that belongs.
+      # and is deliberately NOT run in this job, nor in wasm.yml, which fetches the prebuilt
+      # kernel and has no tree; it is run by hand (okf/policies/wasi-patch-base.md).
       - name: check-preprocessor-balance.py --self-test
         if: '!cancelled()'
         run: python3 Scripts/check-preprocessor-balance.py --self-test
@@ -281,7 +282,7 @@ jobs:
       # threading-dependent files are files we patch ourselves, and none of that is visible from
       # vanilla. This reads both patch sets as text, so like its two siblings above it needs no
       # Libraries/occt-src. The --tree mode runs the real `git apply --check` with the carried set
-      # applied and is deliberately NOT here; the wasm build job is where that belongs.
+      # applied and is deliberately NOT here, nor in wasm.yml (no tree there); it is run by hand.
       - name: check-wasi-patch-base.py --self-test
         if: '!cancelled()'
         run: python3 Scripts/check-wasi-patch-base.py --self-test
