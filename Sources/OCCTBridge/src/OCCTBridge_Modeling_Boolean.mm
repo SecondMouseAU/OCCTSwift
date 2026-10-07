@@ -1975,7 +1975,10 @@ OCCTShapeRef OCCTShapePrism(OCCTShapeRef shape,
                             double       height,
                             bool         fuse)
 {
-  if (!shape || !profile)
+  // #3100 (occtIsUsableVector, occtIsUsableAngle): a NaN, infinite,
+  // zero or overflowing direction or height never returns.
+  if (!shape || !profile || !occtIsUsableVector(dirX, dirY, dirZ)
+      || !occtIsUsableVector(height, 0, 0))
     return nullptr;
 
   try

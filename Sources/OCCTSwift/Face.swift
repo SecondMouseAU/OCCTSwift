@@ -701,7 +701,13 @@ extension Face {
     ///   - height1: First height
     ///   - height2: Second height
     ///   - angle: Draft angle in radians
-    /// - Returns: Draft prism shape, or nil on failure
+    /// - Returns: Draft prism shape, or nil on failure, including a NaN or infinite `angle` and a
+    ///   NaN or infinite height, which used to never return (#3100).
+    ///
+    /// ```swift
+    /// let face = Shape.face(from: Wire.rectangle(width: 4, height: 4)!)!.faces()[0]
+    /// print(face.draftPrism(height1: 1, height2: 1, angle: .nan) == nil)  // true
+    /// ```
     public func draftPrism(height1: Double, height2: Double, angle: Double) -> Shape? {
         guard let ref = OCCTLocOpeDPrism(handle, height1, height2, angle) else {
             return nil
@@ -714,7 +720,13 @@ extension Face {
     /// - Parameters:
     ///   - height: Extrusion height
     ///   - angle: Draft angle in radians
-    /// - Returns: Draft prism shape, or nil on failure
+    /// - Returns: Draft prism shape, or nil on failure, including a NaN or infinite `angle` and a
+    ///   NaN or infinite `height`, which used to never return (#3100).
+    ///
+    /// ```swift
+    /// let face = Shape.face(from: Wire.rectangle(width: 4, height: 4)!)!.faces()[0]
+    /// print(face.draftPrism(height: 1, angle: .infinity) == nil)  // true
+    /// ```
     public func draftPrism(height: Double, angle: Double) -> Shape? {
         guard let ref = OCCTLocOpeDPrismSingleHeight(handle, height, angle) else {
             return nil

@@ -899,7 +899,8 @@ OCCTShapeRef OCCTShapeDraftPrism(OCCTShapeRef shape,
                                  bool         fuse)
 {
   // #3100: a NaN or infinite draft angle never returns from BRepFill_Evolved::PrepareProfile.
-  if (!shape || !profile || !occtIsUsableAngle(angleDeg))
+  // #3100: a NaN height never returns either.
+  if (!shape || !profile || !occtIsUsableAngle(angleDeg) || !std::isfinite(height))
     return nullptr;
   try
   {

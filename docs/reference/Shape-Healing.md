@@ -1486,7 +1486,7 @@ Creates a boss or pocket with draft angle (taper), commonly used in injection mo
   - `draftAngle`: draft angle in degrees.
   - `height`: extrusion height.
   - `fuse`: `true` to add material (boss); `false` to cut (pocket).
-- **Returns:** Shape with draft prism, or nil on failure. A NaN or infinite `draftAngle` answers
+- **Returns:** Shape with draft prism, or nil on failure. A NaN or infinite `height`, and a NaN or infinite `draftAngle`, answer
   `nil`: it never returned from `BRepFill_Evolved::PrepareProfile` (#3100). A zero or small finite
   angle is passed to OCCT as before.
 - **OCCT:** `BRepFeat_MakeDPrism` (via `OCCTShapeDraftPrism`).

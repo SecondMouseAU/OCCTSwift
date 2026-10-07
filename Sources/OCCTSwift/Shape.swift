@@ -593,9 +593,9 @@ public final class Shape: @unchecked Sendable {
     ///   - axisOrigin: A point on the axis.
     ///   - axisDirection: The direction of the axis.
     ///   - angle: The sweep in radians.
-    /// - Returns: The revolved shape, or `nil` when `angle` is NaN or infinite (an infinite angle
-    ///   never returned, #3100) or the shape or axis is unusable. Any finite angle is passed to
-    ///   OCCT unchanged.
+    /// - Returns: The revolved shape, or `nil` when `angle` is NaN or infinite or a component of
+    ///   `axisDirection` is (an infinite angle or a NaN axis never returned, #3100), or the shape
+    ///   or axis is unusable. Any finite angle is passed to OCCT unchanged.
     ///
     /// ```swift
     /// let face = Shape.face(from: Wire.rectangle(width: 2, height: 2)!)!
@@ -2183,7 +2183,8 @@ public final class Shape: @unchecked Sendable {
     ///   - height: Extrusion height
     ///   - fuse: If true, adds material (boss); if false, removes material (pocket)
     ///
-    /// - Returns: Modified shape, or nil on failure
+    /// - Returns: Modified shape, or nil on failure, including a NaN, infinite, zero or overflowing
+    ///   `direction` and a NaN, infinite or zero `height`, which used to never return (#3100).
     ///
     /// ## Example
     ///

@@ -1598,7 +1598,9 @@ OCCTShapeRef OCCTShapeCreateRevolutionPartial(OCCTShapeRef shape,
                                               double       angle)
 {
   // #3100: see OCCTShapeCreateRevolution.
-  if (!occtShapeIsPresent(shape) || !occtIsUsableAngle(angle))
+  // #3100: a NaN or infinite axis direction never returns either.
+  if (!occtShapeIsPresent(shape) || !occtIsUsableAngle(angle)
+      || !occtIsUsableVector(dirX, dirY, dirZ))
     return nullptr;
   try
   {

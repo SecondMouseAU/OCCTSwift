@@ -1587,7 +1587,7 @@ public func localPrism(direction: SIMD3<Double>) -> Shape?
 Uses `LocOpe_Prism` which tracks generated shapes for each input sub-shape.
 
 - **Parameters:** `direction`, Direction and distance of extrusion.
-- **Returns:** Extruded shape, or `nil` on failure.
+- **Returns:** Extruded shape, or `nil` on failure. A NaN, infinite or zero vector answers `nil` (it never returned, #3100).
 - **OCCT:** `LocOpe_Prism` (via `OCCTLocOpePrism`).
 
 ---
@@ -1603,7 +1603,7 @@ public func localPrism(direction: SIMD3<Double>, translation: SIMD3<Double>) -> 
 - **Parameters:**
   - `direction`: Primary direction and distance of extrusion.
   - `translation`: Secondary translation vector.
-- **Returns:** Extruded shape, or `nil` on failure.
+- **Returns:** Extruded shape, or `nil` on failure. A NaN, infinite or zero `direction` answers `nil` (it never returned, #3100).
 - **OCCT:** `LocOpe_Prism` (via `OCCTLocOpePrismWithTranslation`).
 
 ---
@@ -1741,7 +1741,7 @@ Uses `LocOpe_Revol` for local revolution operations with shape tracking.
   - `axisOrigin`: Origin point of the rotation axis.
   - `axisDirection`: Direction of the rotation axis.
   - `angle`: Rotation angle in radians.
-- **Returns:** Revolved shape, or `nil` on failure.
+- **Returns:** Revolved shape, or `nil` on failure. A NaN or infinite `angle` or axis direction answers `nil` (an infinite angle or a NaN axis never returned, #3100).
 - **OCCT:** `LocOpe_Revol` (via `OCCTLocOpeRevol`).
 
 ---
@@ -1762,7 +1762,7 @@ public func localRevolution(axisOrigin: SIMD3<Double>,
   - `axisDirection`: Direction of the rotation axis.
   - `angle`: Rotation angle in radians.
   - `angularOffset`: Angular offset for positioning in radians.
-- **Returns:** Revolved shape, or `nil` on failure.
+- **Returns:** Revolved shape, or `nil` on failure. A NaN or infinite `angle` or `angularOffset`, or a NaN axis direction, answers `nil` (#3100).
 - **OCCT:** `LocOpe_Revol` (via `OCCTLocOpeRevolWithOffset`).
 
 ---
@@ -1783,7 +1783,7 @@ public func draftPrism(height1: Double, height2: Double, angle: Double) -> Shape
   - `height1`: First height.
   - `height2`: Second height.
   - `angle`: Draft angle in radians.
-- **Returns:** Draft prism shape, or `nil` on failure.
+- **Returns:** Draft prism shape, or `nil` on failure. A NaN or infinite `angle` and a NaN or infinite height answer `nil` (they never returned, #3100).
 - **OCCT:** `LocOpe_DPrism` (via `OCCTLocOpeDPrism`).
 
 ---
@@ -1799,7 +1799,7 @@ public func draftPrism(height: Double, angle: Double) -> Shape?
 - **Parameters:**
   - `height`: Extrusion height.
   - `angle`: Draft angle in radians.
-- **Returns:** Draft prism shape, or `nil` on failure.
+- **Returns:** Draft prism shape, or `nil` on failure. A NaN or infinite `angle` or height answers `nil` (they never returned, #3100).
 - **OCCT:** `LocOpe_DPrism` (via `OCCTLocOpeDPrismSingleHeight`).
 
 ---
@@ -2170,7 +2170,7 @@ public func localLinearForm(direction: SIMD3<Double>,
   - `direction`: Direction vector of the sweep.
   - `start`: Start point of the sweep.
   - `end`: End point of the sweep.
-- **Returns:** Swept shape, or `nil` on failure.
+- **Returns:** Swept shape, or `nil` on failure. A NaN or zero `direction` answers `nil` (it never returned, #3100).
 - **OCCT:** `LocOpe_LinearForm` (via `OCCTLocOpeLinearForm`).
 
 ---
@@ -2189,7 +2189,7 @@ public func localRevolutionForm(axisOrigin: SIMD3<Double>,
   - `axisOrigin`: Origin point of the rotation axis.
   - `axisDirection`: Direction of the rotation axis.
   - `angle`: Rotation angle in radians.
-- **Returns:** Revolved shape, or `nil` on failure.
+- **Returns:** Revolved shape, or `nil` on failure. A NaN or infinite `angle` or axis direction answers `nil` (#3100).
 - **OCCT:** `LocOpe_RevolutionForm` (via `OCCTLocOpeRevolutionForm`).
 
 ---

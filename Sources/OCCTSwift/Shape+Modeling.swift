@@ -1084,10 +1084,10 @@ extension Shape {
     ///   - profile: Wire profile to extrude
     ///   - sketchFaceIndex: 0-based index of the face on which the profile sits
     ///   - draftAngle: Draft angle in degrees; a NaN or infinite angle is refused
-    ///   - height: Extrusion height
+    ///   - height: Extrusion height; a NaN or infinite height is refused
     ///   - fuse: true to add material (boss), false to cut (pocket)
     /// - Returns: Shape with draft prism, or nil on failure, including a NaN or infinite
-    ///   `draftAngle`, which used to never return (#3100). Any finite angle, `0` included, is
+    ///   `draftAngle` or `height`, which used to never return (#3100). Any finite angle, `0` included, is
     ///   passed to OCCT unchanged.
     ///
     /// ```swift
@@ -1962,7 +1962,14 @@ extension Shape {
     /// providing more detailed operation history than standard extrusion.
     ///
     /// - Parameter direction: Direction and distance of extrusion
-    /// - Returns: Extruded shape, or nil on failure
+    /// - Returns: Extruded shape, or nil on failure, including a zero, NaN or infinite
+    ///   `direction`, which used to never return (#3100).
+    ///
+    /// ```swift
+    /// let face = Shape.face(from: Wire.rectangle(width: 4, height: 4)!)!
+    /// print(face.localPrism(direction: SIMD3(0, 0, 5)) != nil)  // true
+    /// print(face.localPrism(direction: SIMD3(.nan, 0, 0)) == nil)  // true
+    /// ```
     public func localPrism(direction: SIMD3<Double>) -> Shape? {
         guard let ref = OCCTLocOpePrism(handle, direction.x, direction.y, direction.z) else {
             return nil
@@ -1975,7 +1982,15 @@ extension Shape {
     /// - Parameters:
     ///   - direction: Primary direction and distance of extrusion
     ///   - translation: Secondary translation vector
-    /// - Returns: Extruded shape, or nil on failure
+    /// - Returns: Extruded shape, or nil on failure, including a zero, NaN or infinite
+    ///   `direction`, which used to never return (#3100).
+    ///
+    /// ```swift
+    /// let face = Shape.face(from: Wire.rectangle(width: 4, height: 4)!)!
+    /// let ok = face.localPrism(direction: SIMD3(0, 0, 5), translation: SIMD3(0, 0, 0.1))
+    /// print(ok != nil)  // true
+    /// print(face.localPrism(direction: .zero, translation: SIMD3(0, 0, 0.1)) == nil)  // true
+    /// ```
     public func localPrism(direction: SIMD3<Double>, translation: SIMD3<Double>) -> Shape? {
         guard
             let ref = OCCTLocOpePrismWithTranslation(
@@ -2053,7 +2068,13 @@ extension Shape {
     ///   - direction: Direction vector of the sweep
     ///   - start: Start point of the sweep (passed as `from:`)
     ///   - end: End point of the sweep (passed as `to:`)
-    /// - Returns: The swept shape, or nil on failure
+    /// - Returns: The swept shape, or nil on failure, including a zero, NaN or infinite
+    ///   `direction`, which used to never return (#3100).
+    ///
+    /// ```swift
+    /// let face = Shape.face(from: Wire.rectangle(width: 4, height: 4)!)!
+    /// print(face.localLinearForm(direction: .zero, from: .zero, to: SIMD3(1, 0, 0)) == nil)  // true
+    /// ```
     public func localLinearForm(
         direction: SIMD3<Double>,
         from start: SIMD3<Double>,

@@ -682,8 +682,9 @@ public func revolved(
 ```
 
 - **Parameters:** `axisOrigin`, `axisDirection`; `angle`, sweep angle in radians.
-- **Returns:** Partial revolution solid, or `nil` on failure. A NaN or infinite `angle` answers
-  `nil` (an infinite one never returned, #3100); any finite angle is passed to OCCT as before.
+- **Returns:** Partial revolution solid, or `nil` on failure. A NaN or infinite `angle`, and a NaN
+  or infinite component of `axisDirection`, answer `nil` (an infinite angle or a NaN axis never
+  returned, #3100); any finite angle is passed to OCCT as before.
 - **OCCT:** `BRepPrimAPI_MakeRevol` (via `OCCTShapeCreateRevolutionPartial`).
 
 ---
