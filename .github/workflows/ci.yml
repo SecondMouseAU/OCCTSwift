@@ -336,6 +336,19 @@ jobs:
         if: '!cancelled()'
         run: python3 Scripts/check-bridge-type-odr.py
 
+      # #3065: an OCCT adaptor carries a BSpline evaluation cache a const evaluator rebuilds in
+      # place, and upstream's design is one adaptor per worker. Sharing one is unsupported (wrong
+      # points in 97 of 97 runs without carried patch 0031). The per-call adaptors the bridge builds
+      # are private by construction; this holds the two stored ones (EdgeCurve, WireCurve) to an
+      # allowlist, and holds those two Swift classes to not being Sendable.
+      - name: check-bridge-adaptor-members.py --self-test
+        if: '!cancelled()'
+        run: python3 Scripts/check-bridge-adaptor-members.py --self-test
+
+      - name: check-bridge-adaptor-members.py
+        if: '!cancelled()'
+        run: python3 Scripts/check-bridge-adaptor-members.py
+
       # #2974. opencascade::handle::EndScope (Standard_Handle.hxx:389-394) is the kernel's only
       # caller of DecrementRefCounter and the whole of its protocol for giving a reference back:
       # destroy on the value the decrement RETURNED, and call the virtual Delete(). Two bridge

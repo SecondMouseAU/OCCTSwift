@@ -1,0 +1,11 @@
+Tests/OCCTCurveTests/Issue554Conic3dDegenerateTests.swift
+Tests/OCCTCurveTests/Issue211WireCurveTests.swift
+Tests/OCCTCurveTests/Issue479SampleCountBoundTests.swift
+Tests/OCCTCurveTests/Issue481LawKnotSplittingTruncationTests.swift
+Tests/OCCTCurveTests/Issue403LawKnotSplitParamsTests.swift
+Tests/OCCTCurveTests/Issue1399LawKnotSplitFactoryReachTests.swift
+Tests/OCCTCurveTests/BSplineMutationsTests.swift
+Tests/OCCTCurveTests/Issue485Curve3DContinuityTests.swift
+Tests/OCCTCurveTests/OffsetCurveBasisTests.swift
+Tests/OCCTCurveTests/Issue539NearestPointOnCurveTests.swift
+Tests/OCCTCurveTests/Issue490ContinuityDecoderTests.swift
