@@ -109,6 +109,13 @@ it asks for it: extracts the `## CHANGELOG entry` block from the PR body verbati
 "None" becomes a `No-Changelog:` trailer on the merge commit instead, which is the other half nobody
 remembers. `--dry-run` prints every action first and changes nothing.
 
+**It also refuses to merge a PR that is not ready (#3055).** Every non-wasm check on the PR's
+content head must be completed and green, Kilo included, and no review comment may be unanswered.
+The content head is the head before the transcription commit; after the push only `gate-scripts`
+is required on the new head, because a CHANGELOG-only commit cannot change what the hour-long jobs
+tested and re-waiting for them is not asked of anyone. The details and the one exception flag are in
+[required-status-checks](required-status-checks.md).
+
 Merging is not complete until the entry is in the file. **Add it to the PR's own branch as the last
 commit before merging**, once no other PR is between you and the base. It has to be last, or the
 conflict this policy exists to avoid comes back.

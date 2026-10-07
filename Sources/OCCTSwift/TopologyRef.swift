@@ -23,7 +23,10 @@ public indirect enum TopologyRef: Sendable, Hashable {
 
     /// The Nth node of `kind` that appears as a replacement in a history record
     /// tagged with `operationName`. Deterministic order: (sequenceNumber,
-    /// original (kind, index), position within replacements vector).
+    /// original (kind, index), position within replacements vector). The order is the same in
+    /// every process, including over history absorbed by
+    /// ``BRepGraph/add(_:absorbing:inputRoots:operationName:)``, which records its inputs in
+    /// node-id order (#3038).
     ///
     /// When a single creation splits into multiple live descendants over
     /// subsequent mutations, `leafOccurrence` picks among them; defaults to 0

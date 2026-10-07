@@ -411,10 +411,24 @@ OCCTShapeAnalysisResult OCCTShapeAnalyze(OCCTShapeRef shape, double tolerance)
         continue;
       }
 
-      // Get edge length
-      GProp_GProps props;
-      BRepGProp::LinearProperties(edge, props);
-      double length = props.Mass();
+      // Get edge length. An edge with a 3D curve or a curve on a surface is measured with
+      // occtAdaptorArcLength, as Edge.length is (#3044, #3074): the single Gauss rule
+      // BRepGProp::LinearProperties applies to a one-interval curve read a 10 x 1 ellipse
+      // 1.485% long, enough to flip this comparison for an edge within that band of the
+      // tolerance. An edge with neither (polygon-only, or no representation) keeps the
+      // BRepGProp call, which is what read its polygon nodes before and returned 0 for none.
+      double length = 0.0;
+      if (BRep_Tool::IsGeometric(edge))
+      {
+        BRepAdaptor_Curve adaptor(edge);
+        length = occtAdaptorArcLength(adaptor, adaptor.FirstParameter(), adaptor.LastParameter());
+      }
+      else
+      {
+        GProp_GProps props;
+        BRepGProp::LinearProperties(edge, props);
+        length = props.Mass();
+      }
 
       if (length < tolerance)
       {

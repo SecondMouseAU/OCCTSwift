@@ -992,13 +992,20 @@ public func middlePath(start startShape: Shape, end endShape: Shape) -> Shape?
 Given the two end faces or wires of a pipe-like solid, computes the medial spine wire running through the centre. Useful for reverse-engineering sweep parameters from imported geometry.
 
 - **Parameters:**
-  - `startShape`: one end of the pipe (face or wire shape).
-  - `endShape`: the other end of the pipe (face or wire shape).
+  - `startShape`: one end of the pipe, a face or a wire. Any other shape type answers nil.
+  - `endShape`: the other end of the pipe, a face or a wire. Any other shape type answers nil. It must also share no vertex with `startShape`.
 - **Returns:** Middle path wire, or nil on failure.
+- **Refuses (nil):** a null shape, a start or end that is not a face or a wire, the same face or wire
+  twice, and two sections that share a vertex (adjacent faces, faces meeting at a corner).
+  `BRepOffsetAPI_MiddlePath::Build` casts a bare vertex of a path to an edge when the sections touch
+  and faults, and a null or edge end faults in its constructor, so the bridge refuses these before
+  the call (#3098).
 - **OCCT:** `BRepOffsetAPI_MiddlePath` (via `OCCTShapeMiddlePath`).
 - **Example:**
   ```swift
   if let spine = pipeSolid.middlePath(start: capA, end: capB) { }
+  let faces = box.subShapes(ofType: .face)
+  print(box.middlePath(start: faces[0], end: faces[0]) == nil)  // true, not a crash
   ```
 
 ---

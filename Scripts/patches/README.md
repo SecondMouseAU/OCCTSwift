@@ -19,7 +19,7 @@ which is what nothing did while `0042` sat in the kernel and not in the map for 
 2026-08-03 retired ten patches, `0032`
 retired 2026-09-02 (superseded by upstream's own fix, not shipped in our pin), and `0035` retired
 2026-09-20 (it reintroduced #280; see its [Retired patches](#retired-patches) entry).
-The carried sequence now reads 0010–0012, 0014–0031, 0033–0034, 0036–0048, 0050–0054.
+The carried sequence now reads 0010–0012, 0014–0031, 0033–0034, 0036–0048, 0050–0055.
 The gaps are the retirements, not missing files:
 the numbers are cited across `CLAUDE.md`, `docs/`, closed issues and `Scripts/repro/`, and
 renumbering would have silently repointed every one of those citations at a different fix.
@@ -2648,10 +2648,12 @@ fix is to delete it and nothing else.
 would be a *division* by `cos(a)`. And the factor goes to 1 as `a` does, which is why the
 `gp_Cylinder` overload beside it (`dim = R (Z2 - Z1) (Alpha2 - Alpha1)`, exact) never showed this.
 
-**The centre of mass in the same function is already correct and is untouched.**
+**The centre of mass in the same function is untouched by this patch, and is correct for `z`.**
 `Iz = Cnt (R (Z2 + Z1) / 2 + Snt * Auxi2) / Auxi1` is the first moment of the same area element
 divided by `Auxi1`, so it is independent of how `dim` is scaled. The override-link run below
-confirms it does not move.
+confirms it does not move. (This entry once called the whole centre correct. `x` and `y` are only
+correct over a full turn; [`0055`](#0055-gprop_selgprops-gprop_velgprops-cone-matrix-of-inertia-3010patch)
+fixes the `sin^2 a` term that a partial turn exposes.)
 
 ### Why the closed form is the arbiter, and not a call site
 
@@ -3090,6 +3092,125 @@ The eight now behave as radius 1.4999999 already did.
 one; the reproducer needs the 19-face model, and plain boxes with radii at their face widths (372
 cases) never reach the branch, so a small programmatic input is still to be found. OCCT#1568 carries
 our minimisation and a note that we would report the cause.
+
+## 0055-GProp_SelGProps-GProp_VelGProps-cone-matrix-of-inertia-3010.patch
+
+**`GProp_SelGProps::Perform(gp_Cone)` and `GProp_VelGProps::Perform(gp_Cone)` compute the matrix of
+inertia wrongly, and `GProp_VelGProps` the centre of mass of the solid**
+([#3010](https://github.com/SecondMouseAU/OCCTSwift/issues/3010)), separately from the `dim`
+defect [#2992](https://github.com/SecondMouseAU/OCCTSwift/issues/2992) that `0050` and `0051` fix.
+`Scripts/repro/3010-cone-inertia/` holds the probe, `run.sh` and the transcript.
+
+The issue named two lines, `Dm(3, 3)` of each class. Measuring the whole matrix against an
+independent integral found more, and the extra part is necessary: with the two lines fixed alone the
+matrix a caller reads is still wrong, so the patch fixes what makes the result right and no more.
+`Dm` is the matrix of inertia about the cone's location in the cone's axes. With
+`r = R + v sin a`, `z = v cos a`, the surface element `r dv du` and, for the volume, the solid swept
+between the axis and the patch, `dV = rho drho du dz` (the convention `0051` documents), the entries
+per unit angle are:
+
+| quantity | surface | volume |
+|---|---|---|
+| `Dm(3, 3)` | `int r^3 dv` = `(Z2 - Z1)(R1^3 + R1^2 R2 + R1 R2^2 + R2^3) / 4` | `cos a (Z2 - Z1)(R1^4 + R1^3 R2 + R1^2 R2^2 + R1 R2^3 + R2^4) / 20` |
+| `z^2` moment | `cos^2 a (Z2 - Z1)(R Auxi2 + sin a (Z2^3 + Z2^2 Z1 + Z2 Z1^2 + Z1^3) / 4)` | `cos^3 a / 2 int v^2 r^2 dv` |
+| `x z` moment | `cos a int r^2 v dv`, times `(Sn2 - Sn1)` | `cos^2 a / 3 int v r^3 dv`, times `(Sn2 - Sn1)` |
+
+with `R1 = R + Z1 sin a`, `R2 = R + Z2 sin a`, `Auxi2 = (Z2^2 + Z1 Z2 + Z1^2) / 3`, and the angular
+factors `(Delta + Cn2 Sn2 - Cn1 Sn1) / 2` for `cos^2 u`, the same with the sign flipped for `sin^2 u`,
+`(Sn2^2 - Sn1^2) / 2` for `sin u cos u`.
+
+### What was wrong
+
+The issue's two lines hold: `GProp_SelGProps` `IR2` carries a spurious `cos a sin a` (the issue's
+`Dm(3, 3)` of 12753.28 against 29452.43), and `GProp_VelGProps` `IR2` is a four-term cubic over 4
+where the moment is a five-term quartic over 20, with the `sin a` that `0051` took out of `dim`. The
+rest, all in the two cone overloads:
+
+- **`GProp_SelGProps`.** `IZ2` carries an extra `(Z2 - Z1) cos a` and divides both of its terms by 4
+  where only the `sin a` term takes it. `ISn2` is a copy of `ICn2`, with a plus where the sine
+  integral has a minus. `ICnSn` is `(Cn2^2 - Cn1^2)` where the integral is `(Sn2^2 - Sn1^2) / 2`.
+  `ICnz` and `ISnz` are a different polynomial. The `x` and `y` of the centre of mass use `sin a`
+  where the quadratic term is `sin^2 a`, which a full turn hides because it multiplies terms in
+  `sin u` and `cos u` that integrate to zero. `0050` said the centre was already right; for `z`, and
+  for a full turn, it is.
+- **`GProp_VelGProps`.** The centre of mass is the one of the lateral surface in all three
+  coordinates (`Iz` is `GProp_SelGProps`'s expression), not of the solid: 4.81125224325 against
+  5.25801138012 at the issue's `gp_Cone`. `ISn2`, `IZ2`, `ICnSn`, `ICnz` and `ISnz` are wrong as above.
+- **Both: the assembly.** `inertia` is built as `gp_Mat` of the rows `lambda_i * v_i` from
+  `math_Jacobi(Dm)`, which is `diag(lambda) V^T` and not `V diag(lambda) V^T`: the order and sign Jacobi gives
+  the eigenvectors change the matrix, and the kernel's matrix for the issue's own cone has its
+  74394 off the diagonal. And `Dm`, which is about the cone's location, is added to the Huyghens term of the
+  centre of mass as if it were already about the centre of mass.
+
+The patch computes every entry from the integrals above and assembles
+`inertia = P Dm P^T - H(g, Location) + H(g, loc)`, `P` being the columns of the cone's axes and `H`
+the `GProp::HOperator` term. That is the matrix of inertia about `loc` whatever `loc` is. The mass is
+not touched, and neither is the Jacobi assembly of the cylinder, sphere and torus overloads.
+
+**It applies on top of `0050` and `0051` and not without them:** its hunks take their context from
+the lines those two change (`git apply --check` on the bare `V8_0_1` files fails; on the files with
+`0050` and `0051` applied it passes, and the reverse applies too).
+
+### Why an independent integral is the arbiter
+
+As for `0050` and `0051`, neither class has a caller in OCCT, so there is no call site to copy
+([`okf/policies/follow-occt-callers.md`](../../okf/policies/follow-occt-callers.md)). The arbiter is a
+Gauss-Legendre integral over the cone's own parameter space (24 nodes, a triple integral for the
+solid) written in `probe.cxx`; it shares no formula with the kernel's code or this patch. It
+reproduces the issue's closed form: `29452.431127404328` for `Dm(3, 3)` at `a` = pi/6, `R` = 5,
+`v` in [0, 10].
+
+### Measured, macOS arm64, before and after
+
+`run.sh`: the control is `GProp_SelGProps.cxx` and `GProp_VelGProps.cxx` recompiled from source with
+`0050` and `0051` applied and linked ahead of `libOCCT-macos.a`; the variant is the same with `0055`.
+Compared with the integral: mass, centre of mass, the matrix of inertia about the centre of mass, and
+the moment about an oblique axis through (2, -1, 3) from a `loc` there. Sixteen cases (semi-angles
+pi/6, pi/12, pi/3, -pi/6, -pi/12 and -pi/4; full and partial turns; one straddling `v` = 0) in a
+frame untilted at the origin and a frame tilted and translated, 64 checks:
+
+| case (untilted frame) | class | largest matrix entry error, before | after | centre of mass error, before | after |
+|---|---|---|---|---|---|
+| pi/6, R 5, v 0..10 (the issue) | surface | 2.5 | 1.2e-15 | 1.2e-14 | 1.2e-14 |
+| | volume | 2.4 | 6.3e-15 | 0.45 | 1.9e-14 |
+| pi/12, R 8, v 0.5..6 | surface | 0.75 | 7.6e-16 | 5.0e-15 | 5.0e-15 |
+| | volume | 1.0 | 4.2e-15 | 0.071 | 1.6e-14 |
+| pi/3, R 8, v 0.5..6 | surface | 1.0 | 4.8e-16 | 1.6e-15 | 1.5e-15 |
+| | volume | 1.7 | 1.3e-15 | 0.098 | 4.8e-15 |
+| -pi/6, R 8, v 0.5..6 | surface | 1.4 | 7.8e-16 | 1.4e-15 | 1.4e-15 |
+| | volume | 2.7 | 3.4e-15 | 0.17 | 1.4e-14 |
+| -pi/12, R 8, v 1..7 | surface | 1.2 | 4.9e-16 | 4.1e-15 | 4.1e-15 |
+| | volume | 1.9 | 2.8e-15 | 0.11 | 2.8e-15 |
+| pi/6, R 5, v 1..9, u 0.3..2.2 | surface | 4.9 | 3.9e-15 | 0.87 | 1.0e-14 |
+| | volume | 8.2 | 3.4e-14 | 5.4 | 2.4e-14 |
+| -pi/4, R 9, v 0.5..7, u 0.3..4 | surface | 0.83 | 3.5e-16 | 1.7 | 5.1e-15 |
+| | volume | 4.9 | 2.8e-15 | 2.8 | 1.2e-14 |
+| pi/6, R 5, v -3..4 | surface | 0.60 | 2.6e-16 | 7.9e-16 | 7.9e-16 |
+| | volume | 2.4 | 4.4e-15 | 0.31 | 1.9e-15 |
+
+Matrix entry errors are relative to the largest entry of the exact matrix. 64 of 64 checks fail
+before and 0 of 64 after, with the largest matrix deviation 3.8e-14 and the largest centre-of-mass
+deviation 7.9e-14. The negative semi-angles are `gp_Cone`'s own: its `v` then runs toward the apex,
+and the cases keep `r` positive.
+
+**The same probe on `gp_Cylinder` and `gp_Sphere` fails 16 of 16 and is not fixed here.** For the
+full `gp_Cylinder` surface of radius 5 and height 10 `Dm(3, 3)` is 314.159 where the second moment
+about the axis is 7853.98, which is the `R^2` the cylinder's `Dm(3, 3) = Alpha2 - Alpha1` drops, and
+the same Jacobi assembly flips signs in its matrix. `GProp_VelGProps`'s cylinder and sphere centre
+of mass is wrong for a partial turn too (1.4 and 1.0 in the probe). Measured and not diagnosed: it
+is another cluster, the first question #3010 asked and left open, and a fix belongs in its own
+patch.
+
+**Nothing in the bridge reads any of it.** `GeometryProperties.coneSurfaceArea` and `.coneVolume`
+read `Mass()` alone, so no Swift test reaches these values and there is no `OCCTSWIFT_LOCAL`-gated
+test for this patch; `probe.cxx` and `run.sh` are the regression, and `run.sh` exits 1 unless the
+control fails and the variant passes.
+
+**Not yet filed upstream.** It goes up with `0050` and `0051`, with a GTest of its own then, since
+upstream's reviewers ask for one on every PR.
+
+**Retire** once the bundled OCCT includes this fix.
+
 
 # Retired patches
 

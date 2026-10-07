@@ -87,6 +87,14 @@ in that state, and runs the real `git apply --check`. It is NOT part of `gate-sc
 no checkout, and per #2098 a mode that examined nothing must fail rather than pass: `--require-tree`
 turns a missing tree from a printed note into an error.
 
+HOW `--tree` DECIDES THE CARRIED SET IS APPLIED (#3093). Not by reverse-applying each carried patch
+against the final tree: the patches are a stack, and 0055 rewrites lines 0050 and 0051 added, so a
+correctly patched tree fails the per-patch reverse check for both. It undoes the patches newest
+first, each hunk's post-image replaced by its pre-image and required to be present at that patch's
+turn, which is `census-compiled-out-validation.py`'s `patches_not_applied` (#3010), loaded rather
+than copied so the two cannot disagree about a tree. A missing patch, or lines altered by something
+that is not a carried patch, still read as not applied.
+
 Usage:
   Scripts/check-wasi-patch-base.py                    # the gate: patch text only
   Scripts/check-wasi-patch-base.py --list             # targets, trailers and member vocabulary
@@ -96,10 +104,13 @@ Usage:
 """
 import argparse
 import glob
+import importlib.util
 import os
 import re
+import shutil
 import subprocess
 import sys
+import tempfile
 
 CARRIED_GLOB = 'Scripts/patches/*.patch'
 WASI_GLOB = 'Scripts/patches-wasi/*.patch'
@@ -383,16 +394,45 @@ def git(tree, *args):
     return result.returncode, result.stdout.strip()
 
 
-def carried_state(tree, carried):
-    """Which carried patches are already applied in `tree`, by reverse-apply.
+_CENSUS = None
 
-    `git apply --check --reverse` succeeds exactly when the patch's post-image is present, which
-    is the question, and it writes nothing.
+
+def census():
+    """`census-compiled-out-validation.py`, loaded once and only when `--tree` needs it.
+
+    That script owns `patches_not_applied`, the stack-aware answer to "which carried patches does
+    this tree hold" (#3010). It is borrowed rather than copied, the way the census borrows
+    `check-throwing-calls.py` and `check-inventory-prose.py`: one copy of a rule that decides
+    whether a tree is the carried stack's result, so the two cannot disagree about a tree again
+    (#3093). Loaded lazily so the text-only gate, which is what `gate-scripts` runs, never pays for
+    the census's own imports.
     """
+    global _CENSUS
+    if _CENSUS is None:
+        path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                            'census-compiled-out-validation.py')
+        spec = importlib.util.spec_from_file_location('census_compiled_out_validation', path)
+        _CENSUS = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(_CENSUS)
+    return _CENSUS
+
+
+def carried_state(tree, carried):
+    """Which carried patches are applied in `tree`: (applied, missing), both lists of paths.
+
+    The patches are a stack, and a later one may rewrite lines an earlier one added (0055 over
+    0050 and 0051, #3010). Reverse-applying each patch on its own against the final tree reads the
+    earlier one as missing on a correctly patched tree, which is #3093. The census's
+    `patches_not_applied` undoes the stack newest first instead, each hunk's post-image replaced
+    by its pre-image and required to be present at that patch's turn. It reads text and needs no
+    git, so it does not mutate the tree either.
+    """
+    problems = census().patches_not_applied(tree, sorted(carried))
+    named = {problem.split(':', 1)[0] for problem in problems}
     applied, missing = [], []
     for name in sorted(carried):
-        code, _ = git(tree, 'apply', '--check', '--reverse', os.path.abspath(name))
-        (applied if code == 0 else missing).append(name)
+        stem = os.path.basename(name)[:-len('.patch')]
+        (missing if stem in named else applied).append(name)
     return applied, missing
 
 
@@ -855,7 +895,58 @@ def self_test():
         failed += not ok
         print('  %s %s' % ('ok  ' if ok else 'MISS', name))
 
-    total = len(cases) + len(parser_cases)
+    # #3093: the carried-state decision on a real directory, because it reads files. Two carried
+    # patches stack on one file, the second rewriting the line the first added (0055 over 0050 and
+    # 0051). No git is needed: carried_state works on text.
+    print('tree cases')
+    stack_a = ('--- a/src/Pkg/Pkg_Stack.cxx\n+++ b/src/Pkg/Pkg_Stack.cxx\n'
+               '@@ -1,3 +1,4 @@\n void Pkg_Stack::Do()\n {\n+  guard(a);\n   use(a);\n }\n')
+    stack_b = ('--- a/src/Pkg/Pkg_Stack.cxx\n+++ b/src/Pkg/Pkg_Stack.cxx\n'
+               '@@ -1,5 +1,5 @@\n void Pkg_Stack::Do()\n {\n-  guard(a);\n+  guard(a, b);\n'
+               '   use(a);\n }\n')
+    body = 'void Pkg_Stack::Do()\n{\n%s  use(a);\n}\n'
+    stack_names = ['0100-first.patch', '0101-rewrites-first.patch']
+    tree_cases = [
+        ('a stacked pair where the later patch rewrites the earlier one\'s lines reads as applied',
+         body % '  guard(a, b);\n', ([], []), 'both applied'),
+        ('a tree with neither patch reads both as missing',
+         body % '', None, 'both missing'),
+        ('a tree missing only the later patch names only that patch',
+         body % '  guard(a);\n', None, 'later missing'),
+        ('a patch\'s lines altered by something that is not a carried patch read as missing',
+         body % '  guard(a, c);\n', None, 'altered'),
+    ]
+    scratch = tempfile.mkdtemp(prefix='check-wasi-patch-base-')
+    try:
+        os.makedirs(os.path.join(scratch, 'tree', 'src', 'Pkg'))
+        carried_paths = []
+        for name, text in zip(stack_names, (stack_a, stack_b)):
+            path = os.path.join(scratch, name)
+            with open(path, 'w', encoding='utf-8') as handle:
+                handle.write(text)
+            carried_paths.append(path)
+        target = os.path.join(scratch, 'tree', 'src', 'Pkg', 'Pkg_Stack.cxx')
+        expected_missing = {'both applied': [], 'both missing': stack_names,
+                            'later missing': [stack_names[1]],
+                            # the later patch's altered line is left in place when its turn
+                            # fails, so the earlier patch is named too (see patches_not_applied)
+                            'altered': stack_names}
+        for name, content, _unused, key in tree_cases:
+            with open(target, 'w', encoding='utf-8') as handle:
+                handle.write(content)
+            applied, missing = carried_state(os.path.join(scratch, 'tree'),
+                                             {path: [] for path in carried_paths})
+            got = [os.path.basename(path) for path in missing]
+            ok = (got == expected_missing[key]
+                  and len(applied) + len(missing) == len(carried_paths))
+            failed += not ok
+            print('  %s %s' % ('ok  ' if ok else 'MISS', name))
+            if not ok:
+                print('       expected missing %s, got %s' % (expected_missing[key], got))
+    finally:
+        shutil.rmtree(scratch, ignore_errors=True)
+
+    total = len(cases) + len(parser_cases) + len(tree_cases)
     print('%d/%d cases correct' % (total - failed, total))
     return 1 if failed else 0
 
