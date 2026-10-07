@@ -21,6 +21,16 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### `Shape.middlePath(start:end:)` answers `nil` for a null end, an edge end, the same face twice and touching faces instead of crashing (#3098)
+
+`BRepOffsetAPI_MiddlePath` reads the type of its start shape unchecked and, when the two sections share a vertex, casts a bare vertex of a path to an edge, so a null end, the same face or wire twice and two adjacent faces aborted the process with a signal no `catch` can absorb. The bridge now refuses a null shape, an end that is not a face or a wire, and two sections that share a vertex, before the kernel is called. Opposite faces of a box, the caps of a cylinder or a tube and wire ends still return the spine.
+
+```swift
+let box = Shape.box(width: 10, height: 10, depth: 10)!
+let faces = box.subShapes(ofType: .face)
+print(box.middlePath(start: faces[0], end: faces[0]) == nil)  // true, not a crash
+```
+
 ### `Shape.analyze(tolerance:)` counts small edges by their true length (#3074)
 
 `ShapeAnalysisResult.smallEdgeCount` measured each edge with `BRepGProp::LinearProperties`, a single fixed Gauss rule that reads an elliptical edge up to 1.485% long, so an edge within about 1.5% of the tolerance could be classified wrongly. Each edge with a 3D curve or a curve on a surface is now measured with the same adaptive arc length as `Edge.length`. A 10 x 1 ellipse edge (true length 40.6397418010) is now counted at `tolerance: 41.0`, where the old rule read 41.2431578703 and did not count it. Degenerate edges are still skipped, and a polygon-only edge is measured from its polygon as before.
