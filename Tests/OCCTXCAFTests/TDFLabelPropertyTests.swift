@@ -8,10 +8,12 @@ import Testing
 @Suite("TDF Label Properties")
 struct TDFLabelPropertyTests {
 
-    // The document's own labels, as OCCT numbers them: the root is 0: (tag 0, depth 0), the main
-    // label is 0:1 (tag 1, depth 1), and `createLabel()` on the main label hands out tags from 11,
-    // above the ten XCAFDoc_DocumentTool reserves (#2730, `occtSeedTagSourcePastXCAFReservedTags`).
-    // A label created under a label that has no children yet starts again at tag 1.
+    // The document's own labels. The root being 0: (tag 0, depth 0) and the main label 0:1 (tag 1,
+    // depth 1) is TDF's documented numbering, and a first child under a label with none takes
+    // tag 1 (TDF_TagSource counts up from 1). Tags 11 and 12 for `createLabel()` on the main label
+    // are not OCCT's numbering: they are this package's own seeding past the ten tags
+    // XCAFDoc_DocumentTool reserves (#2730, `occtSeedTagSourcePastXCAFReservedTags`), so that test
+    // is the gate for the seed and fails if it changes.
 
     @Test("Label tag")
     func labelTag() throws {
@@ -48,6 +50,9 @@ struct TDFLabelPropertyTests {
         #expect(great.depth == 4)
     }
 
+    /// A label id no document in these tests ever hands out (they create a handful of labels).
+    private static let nonExistentLabelId: Int64 = 987_654
+
     @Test("Label isNull")
     func labelIsNull() throws {
         let doc = try #require(Document.create())
@@ -60,7 +65,7 @@ struct TDFLabelPropertyTests {
         // The positive control: an id the document never handed out resolves to a null label,
         // and every other answer for it is the "no such label" one, so `isNull` is a reading
         // and not a constant.
-        let missing = AssemblyNode(document: doc, labelId: 987_654)
+        let missing = AssemblyNode(document: doc, labelId: Self.nonExistentLabelId)
         #expect(missing.isNull)
         #expect(missing.tag == -1)
         #expect(missing.depth == -1)
