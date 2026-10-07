@@ -31,10 +31,18 @@ public struct PresentationStyle: Sendable {
         self.isVisible = true
     }
 
-    /// Whether the style is empty (no colors set, visible).
+    /// Whether the style is empty: no colors set and visible, so it overrides no properties.
+    ///
+    /// Matches `XCAFPrs_Style::IsEmpty()`, which is false for a hidden style even with no
+    /// colour (#3116).
+    ///
+    /// ```swift
+    /// var style = PresentationStyle()
+    /// style.isVisible = false
+    /// print(style.isEmpty)  // false
+    /// ```
     public var isEmpty: Bool {
-        let s = toOCCT()
-        return s.isEmpty
+        surfaceColor == nil && curveColor == nil && isVisible
     }
 
     /// Check equality with another style.

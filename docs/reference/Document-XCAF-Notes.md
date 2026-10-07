@@ -1127,10 +1127,16 @@ public var isVisible: Bool
 
 ### `isEmpty`
 
-Whether the style carries no color attributes and is fully visible (default state).
+Whether the style carries no color attributes and is visible (default state). A hidden style is never empty, even with no colour, matching `XCAFPrs_Style::IsEmpty()` (#3116).
 
 ```swift
 public var isEmpty: Bool { get }
+```
+
+```swift
+var style = PresentationStyle()
+style.isVisible = false
+print(style.isEmpty)  // false
 ```
 
 - **OCCT:** `XCAFPrs_Style::IsEmpty`
