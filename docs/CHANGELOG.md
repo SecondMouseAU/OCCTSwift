@@ -25,6 +25,17 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 `BRepGraph.add(_:absorbing:inputRoots:operationName:)` used to write its history records in an order that followed heap addresses and changed from one process to the next, so every record's `sequenceNumber`, and the node `TopologyRef.createdBy(operationName:kind:occurrence:)` named, differed between runs. It now records input by input in `(kind, index)` order, each input's Modified record then its Generated record, with the removed inputs last as one Deleted record. The set of records is unchanged. The fix is in the bridge; no kernel patch is involved.
 
+### `Shape.loft(profiles:solid:ruled:)` returns nil for fewer than two sections instead of crashing or returning an invalid shape (#3099)
+
+A loft needs two sections, and `firstVertex` and `lastVertex` each count as one. A single profile with no vertex ended the process with SIGSEGV when `ruled` was `false`, and returned a shape whose `isValid` was false when `ruled` was `true`. Both now return `nil`; one profile plus a vertex still lofts a cone.
+
+```swift
+guard let circle = Wire.circle(radius: 5) else { return }
+print(Shape.loft(profiles: [circle], solid: true, ruled: false) == nil)  // true, not a crash
+let cone = Shape.loft(profiles: [circle], solid: true, ruled: false, lastVertex: SIMD3(0, 0, 10))
+print(cone?.isValid ?? false)  // true
+```
+
 ### `Shape.analyze(tolerance:)` counts small edges by their true length (#3074)
 
 `ShapeAnalysisResult.smallEdgeCount` measured each edge with `BRepGProp::LinearProperties`, a single fixed Gauss rule that reads an elliptical edge up to 1.485% long, so an edge within about 1.5% of the tolerance could be classified wrongly. Each edge with a 3D curve or a curve on a surface is now measured with the same adaptive arc length as `Edge.length`. A 10 x 1 ellipse edge (true length 40.6397418010) is now counted at `tolerance: 41.0`, where the old rule read 41.2431578703 and did not count it. Degenerate edges are still skipped, and a polygon-only edge is measured from its polygon as before.
