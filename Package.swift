@@ -86,10 +86,10 @@ let occtTarget: Target =
             name: "OCCT",
             path: "Libraries/OCCT.xcframework"
         )
-        // OCCT V8_0_1 + the thirty-nine carried patches listed below.
+        // OCCT V8_0_1 + the forty-four carried patches listed below.
         //
         // Scripts/build-occt.sh builds V8_0_1, which absorbed ten of the previously carried patches (0001-0009 and 0013; their files are deleted,
-        // their writeups kept in Scripts/patches/README.md under "Retired patches"). The thirty-nine that
+        // their writeups kept in Scripts/patches/README.md under "Retired patches"). The forty-four that
         // survive, all present in Scripts/patches/, are:
         //
         //   0010  Intf_Interference O(1) tangent-zone lookup + checkpointed breaker            #319
@@ -155,6 +155,23 @@ let occtTarget: Target =
         //         one carrying a spurious sin a that collapsed to zero at the cylinder limit
         //   0052  Geom_BezierSurface.hxx's rational-axis prose matches its own example         #2991
         //         matrix and its implementation
+        //   0053  BRepOffset_MakeOffset::BuildOffsetByArc registers the offset faces as roots    #3003
+        //         in the order it bound them, not in the order of a DataMap hashed on TShape
+        //         addresses, so an arc-join offset is one result per input. Pinned by
+        //         v4.0.0-kernel.5. Issue3003OffsetOrderTests is ungated by the same change
+        //   0054  ChFi3d_Builder::StartSol drops an obstacle whose neighbour face holds no     #2881
+        //         edge to follow instead of leaving an empty curve for the SurfRst walk to
+        //         dereference: the SIGSEGV inside BRepFilletAPI_MakeFillet::Build at a radius
+        //         of exactly 1.5 on the reporter's model. Pinned by v4.0.0-kernel.5
+        //   0055  GProp_SelGProps / GProp_VelGProps Perform(gp_Cone) compute the matrix of     #3010
+        //         inertia from the integral and the solid's centre of mass from the solid
+        //   0056  BRepLib::Plane() creates its process-global plane as a function-local        #3039
+        //         static, under the magic-static lock, so two threads making their first 2D
+        //         edge together cannot read a freed plane
+        //   0057  GProp_SelGProps / GProp_VelGProps Perform(gp_Cylinder), (gp_Sphere) and      #3091
+        //         (gp_Torus) compute the matrix of inertia, the solid's centre of mass over a
+        //         partial turn and a torus's area and volume over part of the tube from the
+        //         integral. GProps (#3091) is the wrapper that reads them
         //
         // This list said "fifteen" above a list of eleven until the release check ran, which is the
         // #585 failure shape in miniature: `ls Scripts/patches/*.patch | wc -l` agreed with the count
@@ -216,7 +233,7 @@ let occtTarget: Target =
         //     They are the only two patches in the tree with no CI coverage of any kind, which is
         //     worth knowing before trusting "the fix is in the kernel" about either.
         //
-        // Pinned to the v4.0.0-kernel.4 pre-release asset: upstream V8_0_1 plus the thirty-nine patches listed above,
+        // Pinned to the v4.0.0-kernel.5 pre-release asset: upstream V8_0_1 plus the forty-four patches listed above,
         // and nothing else. That was NOT true of v4.0.0-kernel.1, which carried two patches that are
         // not in Scripts/patches/ at all, so read the next paragraph before treating any older asset's
         // enumeration as its contents.
@@ -245,16 +262,18 @@ let occtTarget: Target =
         // probe. Nothing a consumer can call behaves differently.
         //
         // THAT DIVERGENCE IS CLOSED. The two strays above belonged to the v4.0.0-kernel.1 asset. The
-        // pin below is now v4.0.0-kernel.4, built from a tree whose only modifications are the carried
+        // pin below is now v4.0.0-kernel.5, built from a tree whose only modifications are the carried
         // patches, so neither is present: step 1 of "Shipping a rebuild" computes zero modified files
-        // that no carried patch explains, over 92 as of 2026-10-03 (v4.0.0-kernel.3 computed the same
-        // over 79, and v4.0.0-kernel.2 over 78, before 0043 added its one). The two ACKNOWLEDGED rows in
+        // that no carried patch explains, over 96 as of 2026-10-07 (v4.0.0-kernel.4 computed the same
+        // over 92, v4.0.0-kernel.3 over 79 and v4.0.0-kernel.2 over 78, before 0043 added its one).
+        // The two ACKNOWLEDGED rows in
         // check-pinned-asset-patches.py stay keyed on v4.0.0-kernel.1 and so expire on their own here,
         // which is what they were built to do; if a later asset repeats either stray the finding comes
         // back rather than staying suppressed.
         //
-        // The asset holds thirty-nine and Scripts/patches/ holds forty-four, so 0053, 0054, 0055, 0056
-        // and 0057 are the five untested patches, written up where the counts are, above.
+        // The asset holds forty-four and Scripts/patches/ holds forty-four, so no patch is untested
+        // for want of a build, and the rows for 0053 through 0057 below are history in the way the
+        // rows for 0044 through 0052 became at v4.0.0-kernel.4.
         // If you rebuild and the checksum does not match the value below, that is a real difference to
         // investigate rather than an expected one, which is the opposite of what this paragraph said
         // while kernel.1 was pinned.
@@ -298,13 +317,13 @@ let occtTarget: Target =
         // wrong: InitializeMissingParameters is also the REPAIR that re-sets DirectFaces on an actor a
         // STEPCAFControl_Reader has left with empty OperationsFlags, which is #280's exact mechanism.
         // kernel-integration.yml caught it on main. See Scripts/patches/README.md's retired 0035 entry.
-        // Scripts/patches/ holds forty-four patches and the pinned asset holds thirty-nine of them,
-        // enumerated above. `ls Scripts/patches/*.patch | wc -l` answers 44 against a list of 39.
-        // The pinned asset lacks five of them, and this is the written divergence. The
-        // v4.0.0-kernel.4 rebuild closed the divergence that 0044 had opened and that 0045
-        // through 0052 widened, so the rows for 0044 through 0052 below are kept as the record
-        // of what each patch does and which bridge mitigation it does or does not retire, and
-        // 0053, 0054, 0055, 0056 and 0057 are the five rows about patches the asset does not carry:
+        // Scripts/patches/ holds forty-four patches and the pinned asset holds forty-four of them,
+        // enumerated above. `ls Scripts/patches/*.patch | wc -l` answers 44 against a list of 44.
+        // The pinned asset lacks zero of them: the v4.0.0-kernel.4 rebuild closed the divergence
+        // that 0044 had opened and that 0045 through 0052 widened, and the v4.0.0-kernel.5 rebuild
+        // closed the one that 0053 through 0057 opened, so there is no written divergence below.
+        // The rows that follow are kept as the record of what each patch does and which bridge
+        // mitigation it does or does not retire:
         //
         //   0044  Extrema_ExtSS::Points / Extrema_ExtCS::Points bound against the point       #2840
         //         sequence rather than against NbExt(), which counts mySqDist and so counts
@@ -400,10 +419,10 @@ let occtTarget: Target =
         //         by walking a DataMap hashed on TShape addresses, so every arc-join offset
         //         (MakeOffsetShape, MakeThickSolid) returns its faces in an order that changes
         //         between processes and between builds in one, and the volume summed over them
-        //         moves in its last digits. Carried 2026-10-03 and NOT built. No crash and nothing
+        //         moves in its last digits. Carried 2026-10-03 and built into v4.0.0-kernel.5. No crash and nothing
         //         a bridge guard could cover: the effect is a face order and the last place of a
-        //         sum, which three lines of two #766 probes show and carry a `tolerance`
-        //         declaration for until this is pinned. It also fixes one outcome per input where
+        //         sum, which three lines of two #766 probes showed and carried a `tolerance`
+        //         declaration for until this was pinned. It also fixes one outcome per input where
         //         the outcome depends on the root order: the fuse of two boxes with its coplanar
         //         faces left split returns IsDone() with a null shape in about half of the processes
         //         (9 to 13 of 20 over three censuses) and, patched, in all of them. Measured before and after by override-link in
@@ -414,7 +433,7 @@ let occtTarget: Target =
         //         c1obstacle still set, so the caller takes the obstacle path and the SurfRst
         //         walk dereferences a null curve: a SIGSEGV inside BRepFilletAPI_MakeFillet::Build
         //         that no bridge catch (...) can reach (upstream OCCT#1568). Carried 2026-10-05
-        //         and NOT built. Eight of the 42 edges of the reporter's model crash at radius 1.5
+        //         and built into v4.0.0-kernel.5. Eight of the 42 edges of the reporter's model crash at radius 1.5
         //         and nowhere else; patched they report IsDone() == false, as 1.4999999 does.
         //         Nothing a bridge guard can cover, which is why it is carried. Measured before
         //         and after by override-link in Scripts/repro/occt1568-fillet-opposite-edge/.
@@ -423,8 +442,8 @@ let occtTarget: Target =
         //         the matrix of inertia from closed forms that integrate to nothing (Dm(3,3) of
         //         the surface at pi/6, R 5, v 0..10 reads 12753.28 against 29452.43), take the
         //         volume centre of mass from the surface and assemble inertia in a way that is
-        //         wrong for any Dm. Carried 2026-10-06 and NOT built. No bridge function reads the
-        //         cone's centre of mass or inertia (GeometryProperties.coneSurfaceArea and
+        //         wrong for any Dm. Carried 2026-10-06 and built into v4.0.0-kernel.5. No bridge function
+        //         read the cone's centre of mass or inertia (GeometryProperties.coneSurfaceArea and
         //         .coneVolume read Mass() alone, which 0050 and 0051 fixed), so no caller received
         //         these values until GProps.cone (#3091, with 0057) began to read them.
         //         Measured against an independent Gauss-Legendre integral, 64 checks fail before
@@ -434,25 +453,26 @@ let occtTarget: Target =
         //         and every vertex BRepLib_MakeEdge2d builds goes through it, so two threads
         //         making their first 2D edge together can read a freed plane: a wrong vertex or
         //         a SIGSEGV, SIGBUS or SIGTRAP from the Shape.edge2d* wrappers. Carried 2026-10-07
-        //         and NOT built. On the shipped archive 129 of 3000 fresh processes at 16 threads
+        //         and built into v4.0.0-kernel.5. On the shipped archive 129 of 3000 fresh processes at 16 threads
         //         fail, none when the plane is created before the threads start and none
         //         patched, by override-link in Scripts/repro/3039-brep-lib-plane/. Issue3039
-        //         BRepLibPlaneFirstUseTests runs it in kernel-integration.yml, gated on
-        //         OCCTSWIFT_LOCAL=1. A bridge call to BRepLib::Plane() behind a function-local
-        //         static would protect the Swift API without a kernel change; it was not taken
-        //         because the patch is the smaller fix and goes upstream as it is.
+        //         BRepLibPlaneFirstUseTests ran it in kernel-integration.yml, gated on
+        //         OCCTSWIFT_LOCAL=1, until the repin that pinned this. A bridge call to
+        //         BRepLib::Plane() behind a function-local static would have protected the Swift
+        //         API without a kernel change; it was not taken because the patch is the smaller
+        //         fix and goes upstream as it is.
         //
         //   0057  GProp_SelGProps and GProp_VelGProps Perform(gp_Cylinder), Perform(gp_Sphere)     #3091
         //         and Perform(gp_Torus) build the matrix of inertia from expressions that
         //         integrate to nothing (the full cylinder surface of radius 5 and height 10 reads
         //         314.159 about its axis against 7853.98), take the volume centre of mass of a
         //         partial turn at R and not 2 R / 3 or 3 R / 4, and give a torus the wrong area
-        //         and volume over part of the tube. Carried 2026-10-07 and NOT built. GProps, the
-        //         wrapper of both classes, is what first lets Swift read these values, and its
-        //         tests for them (Issue3091GPropsTests) run in kernel-integration.yml, gated on
-        //         OCCTSWIFT_LOCAL=1, so on the pinned asset they are skipped and the matrix of
-        //         inertia and the solid centre it returns are wrong. 96 of 96 probe checks fail
-        //         before and none after, by override-link in Scripts/repro/3091/.
+        //         and volume over part of the tube. Carried 2026-10-07 and built into
+        //         v4.0.0-kernel.5. GProps, the wrapper of both classes, is what first lets Swift
+        //         read these values, and its tests for them (Issue3091GPropsTests) ran in
+        //         kernel-integration.yml, gated on OCCTSWIFT_LOCAL=1, until the repin that pinned
+        //         this. 96 of 96 probe checks fail before and none after, by override-link in
+        //         Scripts/repro/3091/.
         //
         // 0043 (#2827, BRepGProp_Gauss keeps the by-plane mass) was the one outstanding before it,
         // and it went the other way, which is the comparison worth keeping beside 0044: carried
@@ -558,8 +578,8 @@ let occtTarget: Target =
         : .binaryTarget(
             name: "OCCT",
             url:
-                "https://github.com/SecondMouseAU/OCCTSwift/releases/download/v4.0.0-kernel.4/OCCT.xcframework.zip",
-            checksum: "4ebd78b698f834b34f178af36d7c1abd28d47752d38d659f59580a243b56f555"
+                "https://github.com/SecondMouseAU/OCCTSwift/releases/download/v4.0.0-kernel.5/OCCT.xcframework.zip",
+            checksum: "91688c08d55f8f7f05f4965e32679b045dfead119ceeff766bd3bd68cb5a9ca8"
         )
 
 // OCCTBridge is 16 Objective-C++ files / ~62K lines wrapping the OCCT header tree; SwiftPM recompiles

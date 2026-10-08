@@ -107,8 +107,9 @@ pinned asset, by whichever of these applies:
    against all three slice archives (`0026`'s throw message was confirmed this way).
 3. **Anything else** needs either a green `build-and-test` (which resolves the asset) or a
    reproducer run against it. `0027` signals through `myStatus` and adds no literal, so nothing in
-   the binary can be grepped for it; it is held by an `OCCTSWIFT_LOCAL=1`-gated test that does not
-   run in CI, so a green `build-and-test` is not evidence for it and never was.
+   the binary can be grepped for it; until the `v4.0.0-kernel.4` repin it was held by an
+   `OCCTSWIFT_LOCAL=1`-gated test that did not run in CI, so a green `build-and-test` was not
+   evidence for it, and that gate was removed when the repin made the test runnable there.
 4. **Some patches are reachable by none of these**, because the bridge stops the defect before OCCT
    sees it. `0018` and `0023` are the two today, and `Package.swift` says so beside them.
 

@@ -245,7 +245,7 @@ and flags a sentence calling a pinned patch not-yet-pinned. Three properties are
   for comparison ("unlike `0044`") and a sentence naming two patches are silent, so a misread is
   a miss and never a false alarm. A pronoun phrase ("until it is pinned") reads the nearest patch
   before it. The same words about a patch the list does not hold are correct, so an unpinned
-  patch's rows need no edit; a self-test case uses a synthetic `0056` for exactly that.
+  patch's rows need no edit; a self-test case uses a synthetic number the pin list does not hold for exactly that.
 - **It was proved against the defect it was written for.** Replaying `git show 3054^:<file>`
   against the post-#3031 pin state, it flags 18 of #3054's 47 hunks directly: every Package.swift
   row the repin left reading "NOT built" or "WHEN THIS IS PINNED", the by-plane mirror's

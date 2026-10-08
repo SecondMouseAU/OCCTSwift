@@ -2,7 +2,7 @@ draftAcceptsOwnFaces: vertical=4 done=1 volume=12024.71917796442
 draftRejectsWhollyForeignFaceList [foreign] -> no face: done=1 volume=12000
 draftRejectsPartiallyForeignFaceList [own, foreign] -> [own]: done=1 volume=12000
 shellAcceptsOwnFaces / shellRejectsPartiallyForeignFaceList [own, foreign] -> [own]: upward=1 done=1 valid=1 volume=4519.4099853010057
-shellRejectsPartiallyForeignFaceList [foreign] -> no open face: done=1 valid=1 volume=-13587.492558290329
+shellRejectsPartiallyForeignFaceList [foreign] -> no open face: done=1 valid=1 volume=-13587.492558290332
 historyChamferAcceptsResolvableIndices [0, 1]: done=1 volume=7980.3333333333339
 historyChamferAcceptsResolvableIndices [0]: done=1 volume=7990
 historyChamferRejectsOutOfRangeIndex [0, 99999] -> [0]: done=1 volume=7990

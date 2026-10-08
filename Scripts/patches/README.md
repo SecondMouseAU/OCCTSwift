@@ -2992,12 +2992,13 @@ volume's bits with build 0. Against the override-linked unmodified file it **fai
 
 ### CI coverage, and the pin
 
-**Carried, not pinned.** No required check exercises it, because `build-and-test` resolves the
-pinned asset. `Issue3003OffsetOrderTests` is gated on `OCCTSWIFT_LOCAL=1` for that reason and runs in
-`kernel-integration.yml`, which builds the patch from source. **The two `tolerance` declarations in
+**Carried, and pinned from `v4.0.0-kernel.5`.** Until that repin no required check exercised it,
+because `build-and-test` resolved an asset without it. `Issue3003OffsetOrderTests` was gated on
+`OCCTSWIFT_LOCAL=1` for that reason and ran in `kernel-integration.yml`, which builds the patch from
+source. **The two `tolerance` declarations in
 `766-modeling-evidence-fix/reproduce.json` and `766-modeling-issue568-index-skip/reproduce-evidence-fix.json`
-stay until this is pinned**, because against the pinned asset those three lines still drift; they
-come out, and the three transcripts are recaptured, at the repin that pins it. The patched
+stayed until it was pinned**, because against the earlier asset those three lines still drifted; they
+came out, and the three transcripts were recaptured, with that repin. The patched
 `offsetArc` value is `1698.436569847848`, one value out of the unpatched distribution and not the
 transcript's `...475`.
 
@@ -3199,7 +3200,7 @@ read `Mass()` alone, so no Swift test reaches these values and there is no `OCCT
 test for this patch; `probe.cxx` and `run.sh` are the regression, and `run.sh` exits 1 unless the
 control fails and the variant passes.
 *Since #3091:* `GProps.cone` reads them, and `Issue3091GPropsTests` compares the cone overloads with
-the same independent integral, gated on `OCCTSWIFT_LOCAL=1`.
+the same independent integral (gated on `OCCTSWIFT_LOCAL=1` until `v4.0.0-kernel.5`).
 
 **Filed upstream** with `0050` and `0051` as one PR, [OCCT#1599](https://github.com/Open-Cascade-SAS/OCCT/pull/1599) against `IR`, because its hunks need their context lines.
 
@@ -3279,8 +3280,9 @@ the lazy initialisation is what fails and not the thread count or the edge const
 `Shape.edge2dFromCircle` and `Shape.edge2d(from:to:)`. One process can only test it once, so the
 parent test re-runs the test runner as 64 fresh child processes (same executable and arguments minus
 `--filter` and `--skip`, plus a filter for the suite and `OCCTSWIFT_3039_CHILD=1`), each of which
-builds its first `edge2d*` edges on 16 threads. Gated on `OCCTSWIFT_LOCAL=1`, since the pinned asset
-does not carry the patch. Against the unpatched archive 7, 6 and 12 of 64 children failed in three
+builds its first `edge2d*` edges on 16 threads. It was gated on `OCCTSWIFT_LOCAL=1` while the pinned
+asset lacked the patch, and is ungated since `v4.0.0-kernel.5` pinned it (passed in 135 s against that
+asset, 2026-10-07). Against the unpatched archive 7, 6 and 12 of 64 children failed in three
 runs, one of them by SIGSEGV; with `BRepLib.cxx` recompiled at `-O0 -g` with this patch swapped into a
 copy of the archive, 0 of 64 failed in each of four runs.
 
@@ -3380,11 +3382,11 @@ stamp.
 `GProps` (#3091), the wrapper of both classes, is the first Swift API that reads these values, so the
 regression test goes through it: `Issue3091GPropsTests` (`OCCTAnalysisTests`).
 `everyOverloadAgreesWithTheIndependentIntegral` compares all 48 combinations of shape, class, range
-and frame with a Gauss-Legendre integral written in the test, and is gated on `OCCTSWIFT_LOCAL=1` as
-`Issue3003OffsetOrderTests` is, because the pinned asset does not carry the patch and `ci.yml`'s
-`build-and-test` resolves that asset; `kernel-integration.yml` builds the patches from source with
-`OCCTSWIFT_LOCAL=1` and runs it there. Three more gated tests pin the issue's number, the solid's
-centres for a partial turn and the principal properties; the rest run on the asset. Measured by swapping the two members of a copy of the pinned archive (the `ar r` shortcut, not a
+and frame with a Gauss-Legendre integral written in the test. It and three more tests (the issue's
+number, the solid's centres for a partial turn and the principal properties) were gated on
+`OCCTSWIFT_LOCAL=1` while the pinned asset lacked the patch, and are ungated since
+`v4.0.0-kernel.5` pinned it; they pass against that asset. The counterfactual below was measured
+before the repin and is the record that they fail without the patch. Measured by swapping the two members of a copy of the pinned archive (the `ar r` shortcut, not a
 rebuild), on macOS arm64, with `OCCTSWIFT_LOCAL=1`: on the archive as shipped 4 of the suite's 10 tests
 fail (the four gated ones) and 6 pass; with the members built from `0050`, `0051` and `0055` only,
 the same 4 fail, on 112 cylinder, sphere and torus findings and none for the cone; with `0057` on top

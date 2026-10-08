@@ -269,12 +269,10 @@ struct Issue3091GPropsTests {
     /// away from the origin agree with the integral, for every shape, as a surface and as a solid,
     /// full and partial ranges, in an untilted and a tilted frame.
     ///
-    /// Gated on `OCCTSWIFT_LOCAL=1`, the way `Issue3003OffsetOrderTests` is: the fix is carried patch
-    /// `0057` (with `0050`, `0051` and `0055` for the cone), which the pinned asset does not carry,
-    /// and `ci.yml`'s `build-and-test` resolves that asset. `kernel-integration.yml` builds the
-    /// patches from source with `OCCTSWIFT_LOCAL=1`, which is where this runs. A skipped test and a
-    /// passing one both report green, so the per-test line in the log is the only signal: read
-    /// `started`, not `skipped`.
+    /// This was gated on `OCCTSWIFT_LOCAL=1` while the fix, carried patch `0057` (with `0050`,
+    /// `0051` and `0055` for the cone), was missing from the pinned asset, so `ci.yml`'s
+    /// `build-and-test` skipped it on every default run. The repin to `v4.0.0-kernel.5` put all four
+    /// in the pinned asset, and a gate that outlives its fix leaves the test skipped (#2983).
     ///
     /// One test walking a list rather than `@Test(arguments:)`: an argument element pairing a
     /// reference-counted member with a vector of 32 bytes or more corrupts the Swift task allocator
@@ -282,7 +280,7 @@ struct Issue3091GPropsTests {
     ///
     /// Unpatched, every one of the 48 combinations fails on its matrix of inertia, by 0.2 to 1.7
     /// of the largest entry; patched, the largest deviation is below 2e-13.
-    @Test(.enabled(if: ProcessInfo.processInfo.environment["OCCTSWIFT_LOCAL"] == "1"))
+    @Test
     func everyOverloadAgreesWithTheIndependentIntegral() throws {
         let d = simd_normalize(V3(1, 2, 2))
         let q = V3(2, -1, 3)
@@ -335,8 +333,8 @@ struct Issue3091GPropsTests {
     /// The issue's own number: the full cylinder surface, radius 5 and height 10, about its axis.
     ///
     /// `Dm(3, 3)` read 314.159, which is `2 pi R H`, because the `R^2` of the moment was dropped.
-    /// Gated on `OCCTSWIFT_LOCAL=1` for the reason above.
-    @Test(.enabled(if: ProcessInfo.processInfo.environment["OCCTSWIFT_LOCAL"] == "1"))
+    /// Ungated at the `v4.0.0-kernel.5` repin, for the reason above.
+    @Test
     func fullCylinderSurfaceMomentAboutItsAxis() throws {
         let g = try #require(
             GProps.cylinder(.surface, radius: 5, alpha1: 0, alpha2: 2 * .pi, z1: 0, z2: 10))
@@ -351,9 +349,9 @@ struct Issue3091GPropsTests {
     /// `2 R / 3` times the mean unit vector, not at `R` times it, and a quarter of a ball
     /// (a wedge of the whole sphere) at `3 R / 8` on each of x and y.
     ///
-    /// Gated on `OCCTSWIFT_LOCAL=1` for the reason above: unpatched the cylinder reads 1.5 times
+    /// Ungated at the `v4.0.0-kernel.5` repin, for the reason above: unpatched the cylinder reads 1.5 times
     /// the centre and the sphere 1.33 times it.
-    @Test(.enabled(if: ProcessInfo.processInfo.environment["OCCTSWIFT_LOCAL"] == "1"))
+    @Test
     func solidCentreOfMassOfAPartialTurn() throws {
         let cyl = try #require(
             GProps.cylinder(.volume, radius: 5, alpha1: 0, alpha2: .pi / 2, z1: 0, z2: 10))
@@ -436,9 +434,9 @@ struct Issue3091GPropsTests {
     /// are the ones of the closed form, and the radius of gyration is the square root of the moment
     /// over the mass.
     ///
-    /// Gated for the principal moments, which come from the matrix of inertia; the symmetry flags
-    /// need the matrix too, so the whole test is gated.
-    @Test(.enabled(if: ProcessInfo.processInfo.environment["OCCTSWIFT_LOCAL"] == "1"))
+    /// The principal moments come from the matrix of inertia, and so do the symmetry flags, so this
+    /// needed the patched kernel too and was gated with the rest until the `v4.0.0-kernel.5` repin.
+    @Test
     func principalPropertiesOfAFullCylinder() throws {
         let r = 5.0
         let h = 10.0

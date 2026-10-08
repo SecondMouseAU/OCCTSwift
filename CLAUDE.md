@@ -37,7 +37,7 @@ applies patches idempotently and never reverts. Both are inert, and the divergen
 [`okf/references/carried-occt-patches.md`](okf/references/carried-occt-patches.md) (#2190). Two
 consequences before you act on either number. The tree has since been cleaned, so a **local rebuild
 yielded a different checksum from that asset**, which was expected and not a corrupt download. The
-asset pinned since `v4.0.0-kernel.4` was built from the cleaned tree, and `Package.swift` says what a
+asset pinned since `v4.0.0-kernel.4` (now `v4.0.0-kernel.5`) was built from the cleaned tree, and `Package.swift` says what a
 mismatch against it means. And `python3 Scripts/check-pinned-asset-patches.py --require-asset` is the check that
 reads the binary rather than the prose: about seven seconds over all three slices, deliberately
 **not** a `gate-scripts` script (it reads a 1.3 GB xcframework CI does not check out), and part of
@@ -627,6 +627,14 @@ the reproducer). What a bridge author needs without opening it:
   (`0030`), and the bridge-side arc-length subdivision (`occtAdaptorArcLength`, #603, redundant
   against `0021`). None of their tests could signal that they had outlived their fix, which is why
   this list existed; each now has a regression test that fails if the mitigation comes back.
+- **Retired at the `v4.0.0-kernel.5` repin**: the three `OCCTSWIFT_LOCAL=1` gates on
+  `Issue3003OffsetOrderTests` (`0053`), `Issue2881FilletObstacleTests` (`0054`) and
+  `Issue3039BRepLibPlaneFirstUseTests` (`0056`), which left each test skipped on every default run
+  once the asset carried its fix, and the two `tolerance` declarations in the #766 probes
+  `766-modeling-evidence-fix` and `766-modeling-issue568-index-skip` that allowed for `0053`'s
+  hash-order drift. None of them signalled that it had outlived its fix; each test now runs on
+  `build-and-test`. No bridge guard mitigates any of `0053` to `0057`: the SIGSEGV and race are
+  past a catch, and the GProp patches fix values nothing in the older bridge read.
 - `OCCTShapeFuseMulti` runs with `SetRunParallel(false)`; re-enabling it is very likely safe (#369)
   and is a separate, open decision.
 

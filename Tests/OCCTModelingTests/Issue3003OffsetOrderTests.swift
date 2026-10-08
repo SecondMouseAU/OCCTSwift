@@ -12,7 +12,7 @@ import Testing
 /// entries in the order they were bound.
 ///
 /// `Scripts/repro/3003-offset-roots-hash-order/` holds the measurement. Against the pinned
-/// `v4.0.0-kernel.4` asset, 32 builds in one process with a different amount of heap held before
+/// `v4.0.0-kernel.4` asset (the last without `0053`), 32 builds in one process with a different amount of heap held before
 /// each gave 11 to 32 face orders over 20 processes; with `0053` they give one, in every process.
 @Suite("Issue 3003: arc-join offsets do not depend on allocation addresses")
 struct Issue3003OffsetOrderTests {
@@ -35,13 +35,12 @@ struct Issue3003OffsetOrderTests {
 
     /// The faces and the volume of an arc-join offset do not depend on where the heap put things.
     ///
-    /// Gated on `OCCTSWIFT_LOCAL=1`, the way `StressBuilderLifecycleTests`' `0027` test is: the fix
-    /// is carried patch `0053`, which the pinned asset does not carry, and `ci.yml`'s
-    /// `build-and-test` resolves that asset. `kernel-integration.yml` builds the patches from source
-    /// with `OCCTSWIFT_LOCAL=1`, which is where this runs. A skipped test and a passing one both
-    /// report green, so the per-test line in the log is the only signal: read `started`, not
-    /// `skipped`.
-    @Test(.enabled(if: ProcessInfo.processInfo.environment["OCCTSWIFT_LOCAL"] == "1"))
+    /// This was gated on `OCCTSWIFT_LOCAL=1` while the fix, carried patch `0053`, was missing from
+    /// the pinned asset, so `ci.yml`'s `build-and-test` skipped it on every default run. The repin
+    /// to `v4.0.0-kernel.5` put `0053` in the pinned asset, and a gate that outlives its fix leaves
+    /// the test skipped, which is the one outcome a test cannot recover from (#2983, and the same
+    /// disposition `StressBuilderLifecycleTests`' `0027` test got at the `kernel.4` repin).
+    @Test
     func arcJoinFaceOrderAndVolumeDoNotDependOnTheHeap() throws {
         let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
 

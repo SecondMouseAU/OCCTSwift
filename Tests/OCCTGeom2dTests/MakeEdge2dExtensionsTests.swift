@@ -14,9 +14,9 @@ import simd
 // ellipse cannot pin its length: `Edge.length` integrates a whole ellipse with one fixed rule and
 // reads 48.5059 for the 10 x 5 ellipse whose perimeter is 48.4422 (#3044), so no test here pins it.
 //
-// Every one of these builders reaches `BRepLib::Plane()`, whose first call is not thread-safe
-// (#3039). A vertex that is wrong on a fresh process, or a signal in one of these tests, is that
-// race and not the test.
+// Every one of these builders reaches `BRepLib::Plane()`, whose first call was not thread-safe
+// (#3039) until carried patch `0056`, which `v4.0.0-kernel.5` pins. On an older kernel a vertex that
+// is wrong on a fresh process, or a signal in one of these tests, is that race and not the test.
 @Suite("BRepLib_MakeEdge2d Extensions Tests")
 struct MakeEdge2dExtensionsTests {
 

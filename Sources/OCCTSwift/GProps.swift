@@ -31,8 +31,8 @@ import simd
 ///
 /// - Note: the matrix of inertia and the centre of mass of the cylinder, sphere and torus overloads
 ///   and of the cone's are right only on a kernel carrying patches `0050`, `0051`, `0055` and
-///   `0057` (#2992, #3010, #3091). The pinned release asset predates them, so against it a
-///   measurement that depends on them is wrong; see `docs/reference/GProps.md`.
+///   `0057` (#2992, #3010, #3091). The release asset pinned since `v4.0.0-kernel.5` carries all of
+///   them; before it, a measurement that depends on them was wrong. See `docs/reference/GProps.md`.
 ///
 /// Not `Sendable`: ``add(_:density:)`` mutates the handle.
 public final class GProps {

@@ -1,4 +1,4 @@
-offsetArc (+1): done=1 valid=1 volume=1698.4365698478475 input=999.99999999999977
+offsetArc (+1): done=1 valid=1 volume=1698.436569847848 input=999.99999999999977
 offsetInward (-1): done=1 valid=1 volume=511.99999999999989 input=999.99999999999977
 offsetIntersection (+1): done=1 valid=1 volume=1728 input=999.99999999999977
 offsetCylinder (+1): done=1 valid=1 volume=1341.5898001820481 input=785.39816339744823
