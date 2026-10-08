@@ -876,4 +876,133 @@ bool OCCTShapeRadiusOfGyration(OCCTShapeRef _Nonnull shape,
                                double dz,
                                double* _Nonnull outRadius);
 
+// MARK: - GProp_SelGProps / GProp_VelGProps on the analytic surfaces (#3091)
+
+/// The placement of an analytic surface, as `gp_Ax3`: a location, the main direction, and
+/// optionally the X direction. Without `hasXDirection`, OCCT picks the X direction itself.
+typedef struct
+{
+  double ox, oy, oz; // Location
+  double zx, zy, zz; // Main direction
+  double xx, xy, xz; // X direction, read only when hasXDirection
+  bool   hasXDirection;
+} OCCTGPropsFrame;
+
+/// The principal properties of a `GProp_GProps`, as `GProp_GProps::PrincipalProperties` computes
+/// them. The two symmetry flags use `GProp_PrincipalProps`'s own default relative tolerance of
+/// 1e-10.
+typedef struct
+{
+  double moments[3]; // Ixx, Iyy, Izz: the principal moments of inertia
+  double radii[3];   // Rxx, Ryy, Rzz: the principal radii of gyration
+  double axes[9];    // first, second and third axis of inertia, three components each
+  bool   hasSymmetryAxis;
+  bool   hasSymmetryPoint;
+} OCCTGPropsPrincipal;
+
+/// `GProp_SelGProps` (`volume` false) or `GProp_VelGProps` (`volume` true) over a patch of a
+/// `gp_Cylinder`: `alpha` is the angle about the axis and `z` the height, both as OCCT takes them.
+///
+/// The reference point of the system (`SLocation`) is the origin and is not exposed. `Perform`
+/// stores the centre of mass in global coordinates where `CentreOfMass` and `MatrixOfInertia` read
+/// it relative to that point, so both are right only when it is the origin (#3091).
+///
+/// Returns NULL, recording the failure, when OCCT rejects the input (a negative radius, a zero
+/// direction or an X direction parallel to the main direction), when a range is empty, reversed or
+/// not finite, or when the result is not finite: the measurement is refused rather than reported
+/// as NaN. The caller releases the result with `OCCTGPropsRelease`.
+OCCTGPropsRef _Nullable OCCTGPropsCylinder(bool            volume,
+                                           OCCTGPropsFrame frame,
+                                           double          radius,
+                                           double          alpha1,
+                                           double          alpha2,
+                                           double          z1,
+                                           double          z2);
+
+/// The same over a patch of a `gp_Cone`: `alpha` is the angle about the axis and `z` the distance
+/// along the generatrix from the reference circle, as `gp_Cone`'s `v`. See `OCCTGPropsCylinder`.
+OCCTGPropsRef _Nullable OCCTGPropsCone(bool            volume,
+                                       OCCTGPropsFrame frame,
+                                       double          semiAngle,
+                                       double          refRadius,
+                                       double          alpha1,
+                                       double          alpha2,
+                                       double          z1,
+                                       double          z2);
+
+/// The same over a patch of a `gp_Sphere`: `teta` is the longitude and `alpha` the latitude, as
+/// OCCT names them. See `OCCTGPropsCylinder`.
+OCCTGPropsRef _Nullable OCCTGPropsSphere(bool            volume,
+                                         OCCTGPropsFrame frame,
+                                         double          radius,
+                                         double          teta1,
+                                         double          teta2,
+                                         double          alpha1,
+                                         double          alpha2);
+
+/// The same over a patch of a `gp_Torus`: `teta` is the angle about the axis and `alpha` the angle
+/// about the tube. See `OCCTGPropsCylinder`.
+OCCTGPropsRef _Nullable OCCTGPropsTorus(bool            volume,
+                                        OCCTGPropsFrame frame,
+                                        double          majorRadius,
+                                        double          minorRadius,
+                                        double          teta1,
+                                        double          teta2,
+                                        double          alpha1,
+                                        double          alpha2);
+
+/// Releases a handle from `OCCTGPropsCylinder` and its siblings. NULL is a no-op.
+void OCCTGPropsRelease(OCCTGPropsRef _Nullable props);
+
+/// `GProp_GProps::Add`: composes `item` into `target` with `density`.
+/// @return false when either handle is NULL or `density` is not above `gp::Resolution()`, where
+///         OCCT throws `Standard_DomainError`; `target` is untouched then.
+bool OCCTGPropsAdd(OCCTGPropsRef _Nullable target, OCCTGPropsRef _Nullable item, double density);
+
+/// `GProp_GProps::Mass`: the area for a surface, the volume for a volume, times the density.
+bool OCCTGPropsMass(OCCTGPropsRef _Nullable props, double* _Nonnull outMass);
+
+/// `GProp_GProps::CentreOfMass` (3 doubles).
+bool OCCTGPropsCentreOfMass(OCCTGPropsRef _Nullable props, double* _Nonnull outXYZ);
+
+/// `GProp_GProps::MatrixOfInertia` (9 doubles, row-major), about the centre of mass in axes
+/// parallel to the global ones.
+bool OCCTGPropsMatrixOfInertia(OCCTGPropsRef _Nullable props, double* _Nonnull outRowMajor9);
+
+/// `GProp_GProps::StaticMoments` (3 doubles).
+bool OCCTGPropsStaticMoments(OCCTGPropsRef _Nullable props, double* _Nonnull outXYZ);
+
+/// `GProp_GProps::MomentOfInertia` about the axis through (ox, oy, oz) along (dx, dy, dz).
+/// @return false for a zero direction, which OCCT rejects when it builds the `gp_Dir`.
+bool OCCTGPropsMomentOfInertia(OCCTGPropsRef _Nullable props,
+                               double ox,
+                               double oy,
+                               double oz,
+                               double dx,
+                               double dy,
+                               double dz,
+                               double* _Nonnull outMoment);
+
+/// `GProp_GProps::RadiusOfGyration` about the same kind of axis. OCCT divides by the mass, so a
+/// system of no mass has no radius: this returns false there rather than the NaN or infinity.
+bool OCCTGPropsRadiusOfGyration(OCCTGPropsRef _Nullable props,
+                                double ox,
+                                double oy,
+                                double oz,
+                                double dx,
+                                double dy,
+                                double dz,
+                                double* _Nonnull outRadius);
+
+/// `GProp_GProps::PrincipalProperties`.
+bool OCCTGPropsPrincipalProperties(OCCTGPropsRef _Nullable props,
+                                   OCCTGPropsPrincipal* _Nonnull outPrincipal);
+
+/// `GProp_PrincipalProps::HasSymmetryAxis(tolerance)` and `HasSymmetryPoint(tolerance)` for the
+/// principal properties of `props`. A negative or non-finite tolerance returns false.
+bool OCCTGPropsPrincipalSymmetry(OCCTGPropsRef _Nullable props,
+                                 double tolerance,
+                                 bool* _Nonnull outHasAxis,
+                                 bool* _Nonnull outHasPoint);
+
 #endif /* OCCTBridge_Properties_h */

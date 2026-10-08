@@ -47,7 +47,7 @@ let useLocalXCFramework: Bool = {
         atPath: occtPackageDir + "/Libraries/OCCT.xcframework/Info.plist")
 }()
 
-// OCCT V8.0.1 plus the forty-three carried patches are documented in Scripts/patches/README.md
+// OCCT V8.0.1 plus the forty-four carried patches are documented in Scripts/patches/README.md
 // (patch list, verification status, and CI coverage gaps for maintainers).
 let occtTarget: Target =
     isWASI
@@ -253,8 +253,8 @@ let occtTarget: Target =
         // which is what they were built to do; if a later asset repeats either stray the finding comes
         // back rather than staying suppressed.
         //
-        // The asset holds thirty-nine and Scripts/patches/ holds forty-three, so 0053, 0054, 0055 and
-        // 0056 are the four untested patches, written up where the counts are, above.
+        // The asset holds thirty-nine and Scripts/patches/ holds forty-four, so 0053, 0054, 0055, 0056
+        // and 0057 are the five untested patches, written up where the counts are, above.
         // If you rebuild and the checksum does not match the value below, that is a real difference to
         // investigate rather than an expected one, which is the opposite of what this paragraph said
         // while kernel.1 was pinned.
@@ -298,13 +298,13 @@ let occtTarget: Target =
         // wrong: InitializeMissingParameters is also the REPAIR that re-sets DirectFaces on an actor a
         // STEPCAFControl_Reader has left with empty OperationsFlags, which is #280's exact mechanism.
         // kernel-integration.yml caught it on main. See Scripts/patches/README.md's retired 0035 entry.
-        // Scripts/patches/ holds forty-three patches and the pinned asset holds thirty-nine of them,
-        // enumerated above. `ls Scripts/patches/*.patch | wc -l` answers 43 against a list of 39.
-        // The pinned asset lacks four of them, and this is the written divergence. The
+        // Scripts/patches/ holds forty-four patches and the pinned asset holds thirty-nine of them,
+        // enumerated above. `ls Scripts/patches/*.patch | wc -l` answers 44 against a list of 39.
+        // The pinned asset lacks five of them, and this is the written divergence. The
         // v4.0.0-kernel.4 rebuild closed the divergence that 0044 had opened and that 0045
         // through 0052 widened, so the rows for 0044 through 0052 below are kept as the record
         // of what each patch does and which bridge mitigation it does or does not retire, and
-        // 0053, 0054, 0055 and 0056 are the four rows about patches the asset does not carry:
+        // 0053, 0054, 0055, 0056 and 0057 are the five rows about patches the asset does not carry:
         //
         //   0044  Extrema_ExtSS::Points / Extrema_ExtCS::Points bound against the point       #2840
         //         sequence rather than against NbExt(), which counts mySqDist and so counts
@@ -425,8 +425,8 @@ let occtTarget: Target =
         //         volume centre of mass from the surface and assemble inertia in a way that is
         //         wrong for any Dm. Carried 2026-10-06 and NOT built. No bridge function reads the
         //         cone's centre of mass or inertia (GeometryProperties.coneSurfaceArea and
-        //         .coneVolume read Mass() alone, which 0050 and 0051 fixed), so no caller receives
-        //         these values today; it is carried so the kernel is right where it is next read.
+        //         .coneVolume read Mass() alone, which 0050 and 0051 fixed), so no caller received
+        //         these values until GProps.cone (#3091, with 0057) began to read them.
         //         Measured against an independent Gauss-Legendre integral, 64 checks fail before
         //         and none after, by override-link in Scripts/repro/3010-cone-inertia/.
         //
@@ -441,6 +441,18 @@ let occtTarget: Target =
         //         OCCTSWIFT_LOCAL=1. A bridge call to BRepLib::Plane() behind a function-local
         //         static would protect the Swift API without a kernel change; it was not taken
         //         because the patch is the smaller fix and goes upstream as it is.
+        //
+        //   0057  GProp_SelGProps and GProp_VelGProps Perform(gp_Cylinder), Perform(gp_Sphere)     #3091
+        //         and Perform(gp_Torus) build the matrix of inertia from expressions that
+        //         integrate to nothing (the full cylinder surface of radius 5 and height 10 reads
+        //         314.159 about its axis against 7853.98), take the volume centre of mass of a
+        //         partial turn at R and not 2 R / 3 or 3 R / 4, and give a torus the wrong area
+        //         and volume over part of the tube. Carried 2026-10-07 and NOT built. GProps, the
+        //         wrapper of both classes, is what first lets Swift read these values, and its
+        //         tests for them (Issue3091GPropsTests) run in kernel-integration.yml, gated on
+        //         OCCTSWIFT_LOCAL=1, so on the pinned asset they are skipped and the matrix of
+        //         inertia and the solid centre it returns are wrong. 96 of 96 probe checks fail
+        //         before and none after, by override-link in Scripts/repro/3091/.
         //
         // 0043 (#2827, BRepGProp_Gauss keeps the by-plane mass) was the one outstanding before it,
         // and it went the other way, which is the comparison worth keeping beside 0044: carried

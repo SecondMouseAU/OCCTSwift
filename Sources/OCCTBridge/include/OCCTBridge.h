@@ -231,6 +231,9 @@ typedef enum
 // BRepGProp_Face                      → OCCTBRepGPropFace*, OCCTFaceGetNaturalBounds,
 // OCCTFaceEvaluateNormalAtUV BRepGProp_MeshCinert                → OCCTMeshCinert*
 // BRepGProp_MeshProps                 → OCCTMeshProps*
+// GProp_GProps, GProp_PrincipalProps  → OCCTGProps*
+// GProp_SelGProps, GProp_VelGProps    → OCCTGPropsCylinder, OCCTGPropsCone,
+//                                       OCCTGPropsSphere, OCCTGPropsTorus
 //
 // --- BRepIntCurveSurface ---
 // BRepIntCurveSurface_Inter           → OCCTCurveSurfaceInter*
@@ -993,6 +996,11 @@ extern "C"
 
   /// An immutable set of discretised edge polylines, computed in one pass.
   typedef struct OCCTEdgePolylines* OCCTEdgePolylinesRef;
+
+  // --- GProp_SelGProps / GProp_VelGProps results (handle-based) — issue #3091 ---
+
+  /// A `GProp_GProps` computed over a patch of an analytic surface, owned by the handle.
+  typedef struct OCCTGProps* OCCTGPropsRef;
 
   // MARK: - Edge Access (Issue #14)
 
