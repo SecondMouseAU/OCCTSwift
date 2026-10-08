@@ -224,6 +224,12 @@ read the per-file lines it prints, not lift unseen: containment is strict, so tw
 dropped are enough for DIFFERENT. Run it over the whole batch before any reading. It is a blob
 comparison and the script's docstring says what it cannot answer.
 
+**When `main` has moved a test file into an area subdirectory (#3147)**, the v5 branch still keeps
+it at the old path, and by-path pairing sees an ABSENT file and a deleted one. Pass
+`--path-map Scripts/test-areas/<target>.tsv` to `check-766-already-landed.py` and
+`census-766-unlifted-tests.py`: the first two columns are `old<TAB>new`, applied to the `main` side
+only.
+
 **DIFFERENT does not say which side moved, and that is the question.** Resolve it before reading
 the branch's version at all:
 

@@ -31,10 +31,14 @@ captured output of probes (`transcript*.txt`, `swift-side.txt`, saved `*.swift.t
 evidence of that time, so its paths stay as they were, and `check-test-path-citations.py` exempts
 the same files, from the same table, so the two cannot disagree. Everything else is rewritten,
 including prose in `Scripts/repro/*/README.md`, because a reader following that citation wants the
-file as it is now. The measurement behind the rule, at the time of writing: of the 345 citations in
-209 files, 19 name a Surface test file, and none of the 19 is in a transcript or the CHANGELOG
-except two CHANGELOG lines; the 766 probe transcripts, 0 of whose lines cite a test path, are what
-would have been at risk. The dry run prints how many citations of moved paths it left alone, so a
+file as it is now. The measurement behind the rule, taken on main on 2026-10-08: 345 citations in
+209 files, of which 24 name a Surface test file. Two of those 24 are CHANGELOG lines (one a dead
+monolith path already), none is in captured output, and none of the 174 `Scripts/repro/766-*`
+transcripts cites a test path at all; one transcript repo-wide does (`Scripts/repro/2905`). The three
+open Surface lifts (#3141, #3143, #3144) add no such citation either. The rule therefore costs
+almost nothing today and protects the case that matters: a lift that adds a transcript printing a
+test path would otherwise have it rewritten into a lie about what ran. The dry run prints how many
+citations of moved paths it left alone, so a
 rule that starts swallowing live citations is visible.
 
     python3 Scripts/move-test-files.py --map Scripts/test-areas/surface.tsv            # dry run
