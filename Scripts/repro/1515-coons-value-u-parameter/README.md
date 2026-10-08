@@ -45,7 +45,7 @@ function of `V` alone: `(1.00, 0.00)` read `(0.000, 0.000)` and `(0.25, 0.75)` r
 
 ## The Swift assertion this unblocked
 
-`Tests/OCCTSurfaceTests/Issue1515CoonsPatchUParameterTests.swift` asserts the bilinear surface over
+`Tests/OCCTSurfaceTests/GeomFill/Issue1515CoonsPatchUParameterTests.swift` asserts the bilinear surface over
 a flat 10 x 10 square, which is the closed form for a Coons patch with four straight sides.
 
 That test **could not be written before the repin**, and `Package.swift` said so in as many words:

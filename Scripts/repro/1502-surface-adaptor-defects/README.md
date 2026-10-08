@@ -45,7 +45,7 @@ there is no override-link step: both lanes compile the exact call sequence
   (pointing to the circle's centre) `(-cos 0.1, -sin 0.1, 0)` = `(-0.9950, -0.0998, 0)`, binormal
   `(0, 0, 1)` matching the disc's own normal -- all three match the transcript exactly.
 
-`Tests/OCCTSurfaceTests/Issue1502DarbouxTrihedronTests.swift` exercises the fixed code path through
+`Tests/OCCTSurfaceTests/GeomFill/Issue1502DarbouxTrihedronTests.swift` exercises the fixed code path through
 the public Swift API (`Shape.darbouxTrihedron(onFace:at:)`) as an ordinary regression test; it asserts
 the same geometry this reproducer measured. It cannot exercise the *unfixed* path (that would crash
 the whole `swift test` process), which is why this standalone reproducer exists and is kept in the

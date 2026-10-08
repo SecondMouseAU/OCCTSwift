@@ -146,7 +146,7 @@ MANUAL_OVERRIDES: dict[str, tuple[set[str], str]] = {
         {"OCCTSurfaceTests"},
         "derive_lane.py DID find the right decl (`PlateSolver.loadFreeG1Constraint`), but no test "
         "in the six targets calls it -- OCCTSurfaceTests (outside the six) does. Real test: "
-        "Tests/OCCTSurfaceTests/PlateConstraintExtTests.swift.",
+        "Tests/OCCTSurfaceTests/Plate/PlateConstraintExtTests.swift.",
     ),
     "RWMesh_CoordinateSystemConverter": (
         {"OCCTMathTests"},

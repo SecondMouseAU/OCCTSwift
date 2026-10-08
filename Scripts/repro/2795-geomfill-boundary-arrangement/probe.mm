@@ -36,7 +36,7 @@ typedef NCollection_Array1<gp_Pnt> Row;
 static const int N = 5;
 
 // The four rows of a flat 10 x 10 square in the z = 0 plane, exactly as
-// Tests/OCCTSurfaceTests/GeomFillCoonsTests.swift builds them.
+// Tests/OCCTSurfaceTests/GeomFill/GeomFillCoonsTests.swift builds them.
 static Row bottomRow() // y = 0, indexed along x
 {
   Row r(1, N);
