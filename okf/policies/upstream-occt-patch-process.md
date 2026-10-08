@@ -1,9 +1,9 @@
 ---
 type: policy
 title: Upstream OCCT patch process, start to finish
-description: The full lifecycle for a carried OCCT patch. Where the work happens (one persistent branch checkout of our fork, not a clone per task), GTest by default (measured 5/5 on our own open PRs), prove it fails the OCCT way, the clang-format version-skew footgun and the format.patch fix, the two shallow-clone footguns that silently close or fake-conflict a live PR, and how to respond to review.
+description: The full lifecycle for a carried OCCT patch. Where the work happens (one persistent tree at `upstream/occt`, PRs against `IR`, not a clone per task), GTest by default (measured 5/5 on our own open PRs), prove it fails the OCCT way, the clang-format version-skew footgun and the format.patch fix, the two shallow-clone footguns that silently close or fake-conflict a live PR, the scoped token's missing `workflow` scope, upstream CI facts, and how to respond to review.
 tags: [policy, occt, upstream, contributing, testing, git, workflow, gtest]
-timestamp: 2026-08-16
+timestamp: 2026-10-08
 ---
 
 # Upstream OCCT patch process, start to finish
@@ -18,43 +18,42 @@ one resubmission, and hit both git footguns below for real; §4 was added after 
 (2026-08-12) fixing one of those same PRs' "Check code formatting" CI job, and §0 after #803 replaced
 the clone-per-task pattern both footguns came from.
 
-## 0. Where the work happens: one persistent checkout of the fork
+## 0. Where the work happens: `<repo>/upstream/occt`
 
-**Upstream work is done in a branch checkout of the org's fork, `SecondMouseAU/OCCT`, not in a
-clone made for the task and thrown away afterwards.** One tree, outside every OCCTSwift checkout,
-shared by every worktree:
+**Upstream work is done in one persistent tree, not in a clone made for the task and thrown away
+afterwards.** It is `upstream/occt` inside the OCCTSwift checkout (the `upstream/` directory is its
+own working area, with its own `README.md` and `.envrc`), and it has three remotes:
+
+| Remote | Repo | Use |
+|---|---|---|
+| `upstream` | `Open-Cascade-SAS/OCCT` | what PRs target; fetch `master` and `IR` from it |
+| `smau` | `SecondMouseAU/OCCT` | the org fork, where PR branches are pushed |
+| `origin` | `gsdali/OCCT` | the old personal fork, kept for branches pushed before 2026-09-07 |
+
+**The scoped token is in `<repo>/upstream/.envrc`** (Keychain item `gh-token-occt-upstream`). Load it
+with `eval "$(direnv export bash)"` from inside `upstream/`, or export it into your own shell; never
+print it. With it, **`gh pr create` works against `Open-Cascade-SAS/OCCT`**, so there is no
+browser compare-URL fallback to fall back on. The ecosystem credential in `~/Projects` is
+deliberately not loaded in this tree and cannot create a cross-repo PR (it returns 403).
+
+**The base is `IR`, not `master`.** OCCT's maintainer (dpasukhi, 2026-10-07) said `IR` is always the
+integration branch and `master` is never merged into directly. A PR filed against `master` is
+tolerated for older PRs, since he changes the base himself, but a new PR targets `IR`. Several PRs in
+flight at once get **one `git worktree` per patch**, not one branch checked out in turn.
 
 ```bash
-# Once per machine. Skip if the directory already exists.
-git clone --filter=blob:none https://github.com/SecondMouseAU/OCCT.git ~/Projects/occt-upstream
-cd ~/Projects/occt-upstream
-git remote add upstream https://github.com/Open-Cascade-SAS/OCCT.git
-git config remote.upstream.partialclonefilter blob:none
-git config remote.upstream.promisor true
-git fetch upstream master
+cd <repo>/upstream/occt
+eval "$(direnv export bash)"                 # the scoped token, never echoed
+git fetch upstream IR master && git fetch smau
+git worktree add ../wt-<patch> -b fix/<issue>-<slug> upstream/IR
 ```
 
 **The fork moved from `gsdali/OCCT` to `SecondMouseAU/OCCT` on 2026-09-07**, for the same reason
-every other repo moved: the work belongs to the org, not to a personal account. It also removed a
-live blocker rather than a theoretical one. Two finished patches sat unpushable that day because
-`git push` to the personal fork answered `403 Permission to gsdali/OCCT.git denied to gsdali`
-while `gh` reported ADMIN on the same repo, an org-scoped credential meeting a personal remote.
-The same branches pushed to the org fork first try.
-
-An existing checkout is repointed rather than recloned:
-
-```bash
-git remote set-url origin https://github.com/SecondMouseAU/OCCT.git
-```
-
-then push each live branch once. Branches already pushed to the old fork keep their open upstream
-PRs, since a PR tracks the head repo it was opened from; move them only when a PR needs a new push.
-
-**Opening the PR against `Open-Cascade-SAS/OCCT` may not be possible from this machine.** A
-fine-grained token scoped to the org gets `Resource not accessible by personal access token
-(createPullRequest)` from `gh pr create` against a repo outside it. Push the branch, then open the
-PR from the compare URL in a browser:
-`https://github.com/Open-Cascade-SAS/OCCT/compare/master...SecondMouseAU:OCCT:<branch>?expand=1`.
+every other repo moved: the work belongs to the org, not to a personal account. Two finished patches
+had sat unpushable that day because `git push` to the personal fork answered
+`403 Permission to gsdali/OCCT.git denied to gsdali`, an org-scoped credential meeting a personal
+remote. Branches already pushed to the old fork keep their open upstream PRs, since a PR tracks the
+head repo it was opened from; move them only when a PR needs a new push.
 
 Measured on 2026-08-16 when this was set up: 367 MB total, 80 MB of it `.git`, and
 `git rev-parse --is-shallow-repository` answers `false` with 7136 commits reachable on
@@ -64,10 +63,10 @@ merge-base always resolves, with file contents fetched on demand.
 Working a PR is then ordinary git. Every open PR's branch is already there:
 
 ```bash
-cd ~/Projects/occt-upstream
-git fetch origin && git fetch upstream master
+cd <repo>/upstream/occt
+git fetch smau && git fetch upstream IR master
 git checkout fix/555-gcpnts-point-count     # the branch behind OCCT#1457
-git merge-base HEAD upstream/master         # resolves; §6's footgun B cannot happen
+git merge-base HEAD upstream/IR             # resolves; §6's footgun B cannot happen
 ```
 
 **Why not `Libraries/occt-src`.** It looks like the cheap answer and is the wrong tree, on four
@@ -141,6 +140,13 @@ already open.
 
 ## 3. Prove the test fails, the OCCT way
 
+**Override-link does not apply to a PR against `IR`.** The test has to compile against `IR`'s own
+headers, which have drifted from the pinned `V8_0_1`, so build `IR` itself: a full cmake build,
+about 50 minutes, then run the GTest binary it produces before and after the fix. A patch that is
+also carried on 8.0.1 must be **re-derived on `IR`**, not copied: test files drift (patch `0053`'s
+test hunk did not apply to `IR`). The override-link recipe below remains the quick route for a patch
+that is only being checked against the pinned kernel.
+
 [Prove the test fails](prove-the-test-fails.md) applies as written: inject the defect, confirm the
 test fails, restore, confirm it passes, report both. For an OCCT kernel patch specifically, "inject
 the defect" means override-linking the **unpatched** `.cxx` (from `upstream/master` before your
@@ -194,6 +200,12 @@ don't set `$LASTEXITCODE`, so the script's
 command instead, and the check is a silent no-op regardless of what's installed. The job in question
 was observed actually running clang-format 20.1.8, not the 18.1.8 the script claims to require.
 
+**Re-check on 2026-10-07/08, a different observation.** A local clang-format 18.1.8 matched CI's
+format check on all five PRs filed that day. That is one more data point, not a retraction: it does
+not show the version check works, only that 18.1.8 agreed with whatever binary CI ran on those five
+files. Whether the check is still a no-op is not settled here; if a format job disagrees with a local
+18.1.8 run, the `format-patch` artifact below is still the authority.
+
 Don't chase this by pinning a local clang-format version to whatever you guess CI runs. **Once the
 "Check code formatting" job has run at least once (pass or fail), pull its own output instead of
 reformatting locally a second time**, since it always uploads a `format-patch` artifact (an empty
@@ -241,11 +253,11 @@ the shallow window, so `git rebase upstream/master` treats it as merging two unr
 **Prevention, both: work in §0's checkout, and confirm it before you push.**
 
 ```bash
-cd ~/Projects/occt-upstream
+cd <repo>/upstream/occt
 git rev-parse --is-shallow-repository   # must be false
-git fetch origin && git fetch upstream master
+git fetch smau && git fetch upstream IR master
 git checkout <pr-branch>
-git merge-base HEAD upstream/master     # must resolve to the PR's real base, not empty/unrelated
+git merge-base HEAD upstream/IR         # must resolve to the PR's real base, not empty/unrelated
 ```
 
 The merge-base line is the check that matters, and it is worth running against the PR's own
@@ -304,84 +316,70 @@ under "Retired patches" with a note on whether the merged form matched what we c
 hunks; review can change a patch between submission and merge). The kernel pin catches up at the next
 `Scripts/build-occt.sh` rebuild, see `docs/guides/building-occt.md`.
 
-## Hold rebasing until after OCCT 8.0.2 absorbs (decided 2026-09-21)
+## The hold on filing until OCCT 8.0.2 was cancelled (2026-10-07)
 
-**Do not rebase the open upstream PR branches. Revisit once 8.0.2 has shipped and `master` has
-absorbed `IR`.** Ten branches are affected; eight are filed as OCCT#1547 through #1554.
+Record, not a rule. On 2026-09-21 the policy was to hold every upstream PR, and any rebase of the
+open branches, until OCCT 8.0.2 shipped and `master` absorbed `IR`. The user **cancelled that hold on
+2026-10-07** and directed filing against `IR`. The reason is the one the hold missed: filing and
+rebasing are against `IR`, whose churn is daily, and `master` only absorbs it in batches, so there
+was never a settled tree to wait for and the milestone had already slipped (due 2026-10-02, no
+release branch on 2026-10-03). A repin onto 8.0.2 is a separate matter, covered in
+`docs/v4.0.0-plan.md`.
 
-### What the measurement showed
+The one lesson from that period that still holds: OCCT#1548 and #1549 both failed CI on 2026-09-21
+and neither failure was staleness. Both patches were authored against the pinned `V8_0_1` and
+forward-ported, and `V8_0_1` had diverged. #1549's `IFSelect_WorkSession.cxx:2656` had been
+refactored so a textual replacement missed it; #1548's `TopoDS_TShape_Test.cxx` exists on the target
+but not in `V8_0_1`, so the branch **replaced** it, deleting 295 lines of upstream tests. So: **when
+forward-porting a patch authored on a pinned tree, diff every file you touch against the target
+branch (`IR`) first.** A rebase does not perform that check.
 
-| Branch | Last commit | State |
-|---|---|---|
-| `upstream/master` | 2026-08-24 | Untouched for four weeks |
-| `upstream/IR` | 2026-09-05 | 15 commits ahead of master |
+## 9. Footgun: the scoped token cannot push a commit that touches workflows
 
-**`master` is frozen and our branches are already `behind=0` against it, so a rebase today is a
-no-op.** There is no pre-release churn on either branch to race.
+**The scoped PAT lacks the `workflow` scope.** Any push whose new commits touch `.github/workflows`
+is refused, and the `merge-upstream` API returns 422 for the same reason. This bit on 2026-10-07/08
+because the fork's `smau/IR` had fallen five commits behind `upstream/IR`, two of them touching
+workflows, so the fork's `IR` could not be brought up to date and a branch cut from it carried the
+gap.
 
-`IR` is OCCT's integration branch: merged PRs land there and `master` absorbs them in batches, which
-is why `master` looks static while PRs merge. So the drift that matters is against `IR`, not
-`master`, and it is small and precisely located. `IR` changes 536 files; **three** of ours overlap,
-and all three are test *registration* rather than a fix:
+The workaround four filing agents used, which leaves the fork's `IR` alone:
 
-- `TKBool/GTests/FILES.cmake` (OCCT#1547)
-- `TKDESTEP/GTests/FILES.cmake` (OCCT#1552)
-- `TKMath/GTests/BSplCLib_Cache_Test.cxx` (OCCT#1554)
+1. Author and test on current `upstream/IR`.
+2. Cherry-pick the commits onto the fork's (stale) `IR` for the push, so the push contains none of
+   the workflow commits.
+3. Open the PR against upstream `IR`.
+4. Prove the merge result equals the tested tree: `git merge-tree --write-tree upstream/IR HEAD`
+   must print a tree identical to the one you tested.
+5. Put new tests **mid-file, not at the end**, so the cherry-pick onto the older base does not
+   conflict with whatever upstream appended at the tail.
 
-Seven of ten overlap nothing. **No fix file conflicts at all.**
+**The clean fix is a token with the `workflow` scope**, so the fork's `IR` can be synced and none of
+the above is needed. That is the user's to issue.
 
-### OCCT#1554 checked in detail, since it shares a test file with `IR`
+**One agent took a different route and it is not the sanctioned one.** It pushed the fork's `IR`
+using the ecosystem credential from `~/Projects`, which the `upstream/` tree deliberately does not
+load. Whether that route is acceptable needs the user's decision; this page does not bless it, and an
+agent should not use it unprompted.
 
-A dry-run `git merge-tree upstream/IR fix/bsplclib-cache-thread-safety` gives **exactly one
-conflict**, and it is benign:
+## 10. Upstream CI facts
 
-```
-CONFLICT (content): src/FoundationClasses/TKMath/GTests/BSplCLib_Cache_Test.cxx
-```
+Observed on the five PRs filed 2026-10-07/08:
 
-- **No source conflict.** Ours touches `BSplCLib_Cache`, `BSplSLib_Cache` and both `GeomAdaptor`
-  pairs; `IR` touches `BSplCLib.cxx`, `BSplCLib_2.cxx`, `BSplCLib_CacheParams.hxx` and
-  `BSplCLib_CurveComputation.pxx`. Disjoint.
-- **The test conflict is a tail collision, not a replacement.** `IR` appends
-  `NearRepeatedKnotUsesActualSpan` after the same seven tests we append
-  `ConcurrentEvaluationAcrossSpans` after. No name collision, nothing deleted, both survive.
-- **Not superseded.** `IR`'s `BSplCLib_CacheParams::IsCacheValid` change drops the next-knot epsilon
-  check, which is span-selection correctness. Ours adds synchronisation around the rebuild. Their
-  change makes rebuilds rarer, not safe, so it does not remove the race. This check exists because
-  patch `0032` was once carried for a defect upstream had already fixed better.
-
-Resolution when it is time: keep both tests.
-
-### When revisiting
-
-1. Confirm `master` has absorbed `IR` (`git rev-list --count upstream/master..upstream/IR` is 0).
-2. For each branch, `git merge-tree --write-tree upstream/master <branch>` to enumerate real
-   conflicts before touching anything.
-3. For every file the patch touches, diff it against `master` first, per the lesson below.
-4. Rebase, re-run the per-file check, force-push with `--force-with-lease`.
-
-### Why waiting is the right call
-
-Rebasing onto a settled tree once, after `master` absorbs `IR` in one batch, is cheaper and safer
-than rebasing repeatedly against a target we are guessing at. Three `FILES.cmake`-class conflicts
-are trivial to resolve then, and a maintainer rebasing at merge time handles them anyway.
-
-### What rebasing would NOT have fixed, which is the part worth remembering
-
-OCCT#1548 and #1549 both failed CI on 2026-09-21, and **neither failure was staleness against
-`master`**. Both patches were authored against the **pinned `V8_0_1`** and forward-ported to
-`master`, which has diverged from `V8_0_1` by far more than `master` has moved recently:
-
-- #1549: `IFSelect_WorkSession.cxx:2656` had been refactored to hoist the flag into a local, so it
-  did not match the shape of the other eight sites and a textual replacement missed it.
-- #1548: `TopoDS_TShape_Test.cxx` exists on `master` but not in `V8_0_1`, so the branch **replaced**
-  it, deleting 295 lines of upstream tests and double-registering it in `FILES.cmake`. The CMake
-  error was the lesser half of that.
-
-So the lesson is not "rebase more often". It is: **when forward-porting a pinned-source patch onto
-`master`, diff every file you touch against `master` first**, because `master` may have refactored a
-site or gained a file that the patch then silently replaces. That check is per-file and cheap; a
-rebase does not perform it.
+- **Two more checks than the format job.** CI also runs the license check
+  (`.github/actions/scripts/validate-license.py`) and include cleanup (`cleanup-includes.py`). Both run
+  locally with plain `python3`, so run them before pushing.
+- **Missing includes are caught by one job.** The GCC Debug no-PCH `-Werror` job is what finds an
+  include a PCH build hides. Run a no-PCH `-fsyntax-only` pass over the touched files locally.
+- **`cmake .` after any `FILES.cmake` change**, or ninja does not register the new test files and the
+  new test silently does not build.
+- **A PR template exists**: `.github/pull_request_template.md` has Pre-Submission, Problem, Solution,
+  Validation and CLA sections. The CLA claim is the user's to make; an agent leaves it for them.
+- **Release builds disable exceptions.** Upstream Release builds set
+  `BUILD_RELEASE_DISABLE_EXCEPTIONS=ON`, so a crash test against unpatched code dies with SIGSEGV
+  rather than throwing. Run such a case in a death-test child or a fresh process, never in the main
+  test process.
+- **A reusable pattern for a lazy-global race** (patch `0056`): clear the global, then make the first
+  use, inside a death-test child, so each iteration starts from the uninitialised state.
 
 ## Related
 

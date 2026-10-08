@@ -3,7 +3,7 @@ type: policy
 title: Upstream OCCT PRs, style and submission workflow
 description: PRs offered to OpenCASCADE must be clang-formatted with OCCT's own .clang-format, use OCCT's concise comment style not OCCTSwift's, and include a GTest by default; when a fix is ready, go straight to a PR, don't file a separate issue first. Formatting and GTest mechanics live in the patch-process doc, not here.
 tags: [policy, occt, upstream, contributing, formatting, workflow, gtest]
-timestamp: 2026-08-12
+timestamp: 2026-10-08
 ---
 
 # Upstream OCCT PRs, style and submission workflow
@@ -49,6 +49,12 @@ asked to receive it. Four requirements before opening (or attaching a patch to) 
    So: if we're submitting a fix, open the PR directly, the PR description carries the repro and
    root cause, same as an issue would have. Only open a standalone issue when we don't yet have a
    fix ready to attach (a report without a PR), matching what the maintainer actually asked for.
+
+   **Target `IR`, not `master`** (maintainer dpasukhi, 2026-10-07: `IR` is always the integration
+   branch and `master` is never merged into directly; a PR against `master` is tolerated for older PRs,
+   since he changes the base himself). Upstream CI also runs a license check and include cleanup, and
+   an observed clang-format 18.1.8 matched its format check on all five PRs of 2026-10-07/08; see
+   [§10](upstream-occt-patch-process.md#10-upstream-ci-facts) for the CI facts.
 
 This is a **context switch from the Swift API**, not from the bridge: the Swift public API keeps
 its own conventions, including the verbose doc comments the [docs-current](docs-current.md) policy
