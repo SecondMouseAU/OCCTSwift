@@ -15,8 +15,10 @@ PRs, reason) and, with `--apply`, does three things in one pass:
 
 DEFAULT IS A DRY RUN. It prints the plan and changes nothing. `--apply` is required to write.
 
-IT REFUSES a dirty tree (`git status --porcelain` not empty), in dry-run too, so the diff of an
-apply is exactly the move and nothing a person was in the middle of.
+IT REFUSES a dirty tree (`git status --porcelain --untracked-files=no` not empty), in dry-run too,
+so the diff of an apply is exactly the move and nothing a person was in the middle of. Untracked
+files do not count: the tool only rewrites tracked ones, and an untracked Swift file under a mapped
+target is refused separately as a file no row names.
 
 IDEMPOTENT. Each row is in one of five states: `move` (current exists, proposed does not), `done`
 (proposed exists, current does not), `same` (the row keeps its path), `conflict` (both exist) or
@@ -67,7 +69,17 @@ def _load_gate():
 
 GATE = _load_gate()
 # An area names what the tests cover. It never names a project, batch, release or issue.
-FORBIDDEN_AREA = re.compile(r"(?i)batch|issue|release|wave|sprint|lift|\bpr\d|\d{3,}|v\d{2,}")
+FORBIDDEN_WORDS = {"batch", "issue", "release", "wave", "sprint", "lift", "pr", "phase"}
+FORBIDDEN_SHAPE = re.compile(r"\d{3,}|[Vv]\d{2,}")
+WORD = re.compile(r"[A-Z]+(?![a-z])|[A-Z][a-z]*|[a-z]+|\d+")
+
+
+def bad_area_name(name):
+    """True when a directory name names a project, batch, release or issue. Judged word by word, so
+    `Waveform` and `Tissue` pass and `Batch12`, `Issue766` and `BezierV121` do not (a substring test
+    refused the first two, which PR #3149's review found)."""
+    return (any(w.lower() in FORBIDDEN_WORDS for w in WORD.findall(name))
+            or bool(FORBIDDEN_SHAPE.search(name)))
 AREA_SHAPE = re.compile(r"^[A-Z][A-Za-z0-9]*$")
 TARGET_PATH = re.compile(r"^Tests/(OCCT[A-Za-z0-9]+Tests)/(.+\.swift)$")
 
@@ -119,7 +131,7 @@ def validate_map(rows):
             if len(segs) != 1:
                 problems.append("want exactly one area directory: %s" % r["new"])
             for s in segs:
-                if not AREA_SHAPE.match(s) or FORBIDDEN_AREA.search(s):
+                if not AREA_SHAPE.match(s) or bad_area_name(s):
                     problems.append("area '%s' names a project, batch, release or issue, or is not "
                                     "CamelCase: %s" % (s, r["new"]))
     return problems
@@ -210,16 +222,29 @@ EXCLUDE_BLOCK = re.compile(r'(?P<head>"(?P<target>OCCT[A-Za-z0-9]+Tests)"\s*:\s*
 LITERAL = re.compile(r'"([^"\n]+\.swift)"')
 
 
+def exclude_region(text):
+    """(start, end) of the `wasmExcludedTestFiles` dictionary: from its `let` to its closing `]` at
+    the start of a line. None when the file declares no such dictionary; a Refusal when it does and
+    never closes it, rather than reading to the end of the file."""
+    start = text.find("let wasmExcludedTestFiles")
+    if start < 0:
+        return None
+    close = re.compile(r"^\]", re.M).search(text, start)
+    if close is None:
+        raise Refusal("Package.swift: wasmExcludedTestFiles has no closing ']' at the start of a line")
+    return start, close.start()
+
+
 def rewrite_excludes(root, rows, write):
     """Rewrite the bare names in wasmExcludedTestFiles for moved files. Returns the changes made
     as [(target, old, new)]. Only the dictionary's own region of Package.swift is touched."""
     path = os.path.join(root, "Package.swift")
     with open(path, encoding="utf-8") as fh:
         text = fh.read()
-    start = text.find("let wasmExcludedTestFiles")
-    if start < 0:
+    span = exclude_region(text)
+    if span is None:
         return []
-    end = text.find("\n]\n", start)
+    start, end = span
     region = text[start:end]
     # target -> {path relative to the target: proposed relative path}
     relmap = {}
@@ -255,10 +280,10 @@ def verify_excludes(root):
     drops it without effect. Returns the entries that do not."""
     with open(os.path.join(root, "Package.swift"), encoding="utf-8") as fh:
         text = fh.read()
-    start = text.find("let wasmExcludedTestFiles")
-    if start < 0:
+    span = exclude_region(text)
+    if span is None:
         return []
-    region = text[start:text.find("\n]\n", start)]
+    region = text[span[0]:span[1]]
     # Drop // comments so a quoted file name in prose is not read as an entry.
     region = "\n".join(l.split("//")[0] for l in region.split("\n"))
     bad = []
@@ -270,8 +295,8 @@ def verify_excludes(root):
 
 
 def run(root, map_path, apply):
-    if git(root, "status", "--porcelain").strip():
-        raise Refusal("the working tree is dirty; commit or stash first (this tool's diff must be "
+    if git(root, "status", "--porcelain", "--untracked-files=no").strip():
+        raise Refusal("tracked files have uncommitted changes; commit or stash first (this tool's diff must be "
                       "the move and nothing else)")
     rows = load_map(map_path)
     states, problems = plan(root, rows)
@@ -416,7 +441,17 @@ def self_test():
     with open(os.path.join(d, "docs/guide.md"), "a", encoding="utf-8") as fh:
         fh.write("x")
     rc, err = attempt(d, False)
-    check("a dirty tree is refused, even for a dry run", err is not None and "dirty" in err, str(err))
+    check("a dirty tree is refused, even for a dry run", err is not None and "uncommitted" in err, str(err))
+    subprocess.run(["git", "-C", d, "checkout", "--", "docs/guide.md"], check=True)
+    with open(os.path.join(d, "stray-notes.txt"), "w", encoding="utf-8") as fh:
+        fh.write("untracked")
+    rc, err = attempt(d, False)
+    check("an untracked file does not make the tree dirty", rc == 0 and err is None, str(err))
+    d7 = _repo(_fixture())
+    with open(os.path.join(d7, "Tests/OCCTDemoTests/Untracked.swift"), "w", encoding="utf-8") as fh:
+        fh.write("u")
+    rc, err = attempt(d7, False)
+    check("an untracked Swift file under a mapped target is still refused", err is not None and "Untracked.swift" in err, str(err))
     # a stale exclude is caught
     d2 = _repo(_fixture())
     p = os.path.join(d2, "Package.swift")
@@ -424,6 +459,19 @@ def self_test():
         t = fh.read().replace('"Gamma.swift"', '"Missing.swift"')
     with open(p, "w", encoding="utf-8") as fh:
         fh.write(t)
+    eof = _repo({"Package.swift": 'let wasmExcludedTestFiles: [String: [String]] = [\n    "OCCTDemoTests": ["Alpha.swift"],\n]',
+                 "@@DemoTests/Alpha.swift": "a"})
+    rows = [dict(cur="Tests/OCCTDemoTests/Alpha.swift", new="Tests/OCCTDemoTests/Shapes/Alpha.swift", area="", prs="-", reason="r")]
+    rewrite_excludes(eof, rows, True)
+    check("a dictionary closing at the very end of the file is rewritten without losing a byte",
+          read(eof, "Package.swift") == 'let wasmExcludedTestFiles: [String: [String]] = [\n    "OCCTDemoTests": ["Shapes/Alpha.swift"],\n]',
+          read(eof, "Package.swift"))
+    open_ended = _repo({"Package.swift": 'let wasmExcludedTestFiles = [\n "OCCTDemoTests": ["Alpha.swift"],\n', "@@DemoTests/Alpha.swift": "a"})
+    try:
+        rewrite_excludes(open_ended, rows, True)
+        check("a dictionary that never closes is refused, not read to the end of the file", False)
+    except Refusal:
+        check("a dictionary that never closes is refused, not read to the end of the file", True)
     check("an exclude naming no file is reported", verify_excludes(d2) == ["OCCTDemoTests: Missing.swift"],
           str(verify_excludes(d2)))
     # conflict, missing, unmapped
@@ -464,6 +512,10 @@ def self_test():
     check("a nested area is refused", probs((T + "A.swift", T + "Shapes/Deep/A.swift")) != [])
     check("two rows onto one path are refused", probs((T + "A.swift", T + "S/C.swift"), (T + "B.swift", T + "S/C.swift")) != [])
     check("same basename in two areas is refused", probs((T + "A.swift", T + "S/C.swift"), (T + "B.swift", T + "R/C.swift")) != [])
+    check("a word inside a longer word is not a project name", probs((T + "A.swift", T + "Waveform/A.swift")) == []
+          and probs((T + "A.swift", T + "Tissue/A.swift")) == [])
+    check("a name with a batch or issue word is still refused",
+          probs((T + "A.swift", T + "SurfaceBatch/A.swift")) != [] and probs((T + "A.swift", T + "Phase2/A.swift")) != [])
     check("a good row is accepted", probs((T + "A.swift", T + "Geom2d/A.swift")) == [])
     check("a cross-target move is refused", probs((T + "A.swift", "Tests/OCCTOtherTests/S/A.swift")) != [])
     bad = [r for r in results if not r[1]]

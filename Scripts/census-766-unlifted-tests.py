@@ -1093,6 +1093,8 @@ def self_test():
         cases.append(("with a path map the gain is measured against the moved file's tiers",
                       "FTests.pinned" in paired["Tests/OCCTFooTests/FTests.swift"]["strengthened"]
                       and paired["Tests/OCCTFooTests/FTests.swift"]["tiered"]))
+        # `by_path` was surveyed before the move on purpose: the file's content is unchanged, so the
+        # count `main` drops from it must be the same number once the pair is found at the new name.
         cases.append(("with a path map the dropped-line count is read at the new path",
                       paired["Tests/OCCTFooTests/FTests.swift"]["dropped"] == by_path["Tests/OCCTFooTests/FTests.swift"]["dropped"]
                       and by_path["Tests/OCCTFooTests/FTests.swift"]["dropped"]))

@@ -188,6 +188,10 @@ def self_test():
          {"Package.swift": "// @@AATests/Shim.swift"}, 1)
     case("a file outside the scanned directories is not read",
          {"README.md": "@@AATests/A.swift"}, 0)
+    case("a file name containing a plus sign is a citation, as Shape+Curve.swift style names are",
+         {"docs/a.md": "@@SurfaceTests/Shape+Curve.swift"}, 1)
+    case("a plus-sign file name that exists resolves",
+         {"@@SurfaceTests/Shape+Curve.swift": "x", "docs/a.md": "@@SurfaceTests/Shape+Curve.swift"}, 0)
     case("a glob citation is not a citation",
          {"docs/a.md": "@@ThreadTests/*.swift"}, 0)
     case("the mapping directory is not scanned",
