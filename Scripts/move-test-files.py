@@ -70,14 +70,14 @@ def _load_gate():
 GATE = _load_gate()
 # An area names what the tests cover. It never names a project, batch, release or issue.
 FORBIDDEN_WORDS = {"batch", "issue", "release", "wave", "sprint", "lift", "pr", "phase"}
-FORBIDDEN_SHAPE = re.compile(r"\d{3,}|[Vv]\d{2,}")
+FORBIDDEN_SHAPE = re.compile(r"\d{3,}|[Vv]\d")
 WORD = re.compile(r"[A-Z]+(?![a-z])|[A-Z][a-z]*|[a-z]+|\d+")
 
 
 def bad_area_name(name):
     """True when a directory name names a project, batch, release or issue. Judged word by word, so
     `Waveform` and `Tissue` pass and `Batch12`, `Issue766` and `BezierV121` do not (a substring test
-    refused the first two, which PR #3149's review found)."""
+    refused the first two, which the review of the PR that added this tool, #3149, found). A `V` followed by a digit is a version suffix whatever its length."""
     return (any(w.lower() in FORBIDDEN_WORDS for w in WORD.findall(name))
             or bool(FORBIDDEN_SHAPE.search(name)))
 AREA_SHAPE = re.compile(r"^[A-Z][A-Za-z0-9]*$")
@@ -222,6 +222,11 @@ EXCLUDE_BLOCK = re.compile(r'(?P<head>"(?P<target>OCCT[A-Za-z0-9]+Tests)"\s*:\s*
 LITERAL = re.compile(r'"([^"\n]+\.swift)"')
 
 
+# Column 0 only, on purpose: each target's list closes with an indented `    ],` inside the
+# dictionary, and a pattern allowing leading whitespace would end the region at the first of those.
+CLOSE_AT_COLUMN_ZERO = re.compile(r"^\]", re.M)
+
+
 def exclude_region(text):
     """(start, end) of the `wasmExcludedTestFiles` dictionary: from its `let` to its closing `]` at
     the start of a line. None when the file declares no such dictionary; a Refusal when it does and
@@ -229,7 +234,7 @@ def exclude_region(text):
     start = text.find("let wasmExcludedTestFiles")
     if start < 0:
         return None
-    close = re.compile(r"^\]", re.M).search(text, start)
+    close = CLOSE_AT_COLUMN_ZERO.search(text, start)
     if close is None:
         raise Refusal("Package.swift: wasmExcludedTestFiles has no closing ']' at the start of a line")
     return start, close.start()
@@ -516,6 +521,10 @@ def self_test():
           and probs((T + "A.swift", T + "Tissue/A.swift")) == [])
     check("a name with a batch or issue word is still refused",
           probs((T + "A.swift", T + "SurfaceBatch/A.swift")) != [] and probs((T + "A.swift", T + "Phase2/A.swift")) != [])
+    check("a one-digit version suffix is refused too", probs((T + "A.swift", T + "BezierV2/A.swift")) != [])
+    check("a dictionary whose lists close with an indented bracket still ends at its own close",
+          exclude_region('let wasmExcludedTestFiles = [\n    "OCCTDemoTests": [\n        "A.swift",\n    ],\n]\nlet x = 1\n')
+          == (0, len('let wasmExcludedTestFiles = [\n    "OCCTDemoTests": [\n        "A.swift",\n    ],\n')))
     check("a good row is accepted", probs((T + "A.swift", T + "Geom2d/A.swift")) == [])
     check("a cross-target move is refused", probs((T + "A.swift", "Tests/OCCTOtherTests/S/A.swift")) != [])
     bad = [r for r in results if not r[1]]
