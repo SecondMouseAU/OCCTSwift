@@ -16,7 +16,7 @@ every number about the list is written down.
 
 ## How many there are
 
-Eighteen gates, eight censuses and one merge-history audit run in `ci.yml`'s `gate-scripts` job,
+Nineteen gates, eight censuses and one merge-history audit run in `ci.yml`'s `gate-scripts` job,
 beside the release check that "The fourth kind" below counts apart from them. Every one of those
 numbers is derived from the job rather than kept by hand:
 `Scripts/check-inventory-prose.py` reads this sentence against `ci.yml` on every PR and fails when
@@ -337,6 +337,28 @@ allowlist entry that matches nothing, the two ways an allowlist goes silently st
 independent of whether `0031` is carried: it holds a property that is right with or without the
 locks.
 
+**One gate checks a citation rather than code.** `check-test-path-citations.py` (#3148) fails when
+a `Tests/OCCT<Domain>Tests/...swift` path cited in `Scripts/`, `docs/`, `okf/`, `Sources/`, `Tests/`
+or `Package.swift` names no file. It exists because #3147 sorts each test target into area
+subdirectories, which moves a file under hundreds of citations at once. The first measurement on
+`main` (2026-10-08) found 54 dangling citations of 29 distinct paths in 345, none of them a live
+mistake except one comment in `Sources/OCCTSwift/DrawingDispatch.swift`, which the PR fixed. The
+rest are historical and are listed with a reason in `Scripts/test-areas/citation-exemptions.tsv`: a
+citing file that records a time (the CHANGELOG, captured probe transcripts, which a rewrite would
+falsify), and cited paths that never were merged tests (scratch `ZZ*` probes, self-test
+placeholders, the pre-split per-domain monolith files). A `path` or `regex` exemption that matches
+no dangling citation fails the gate, so the list cannot become an allowlist nobody rereads.
+`Scripts/test-areas/` is not scanned, because its mapping tables name destinations that do not
+exist until the move.
+
+`Scripts/move-test-files.py` is the other half and is not a gate: it reads a mapping table, does the
+`git mv`, rewrites the `wasmExcludedTestFiles` entries in `Package.swift` (SwiftPM resolves
+`exclude:` relative to the target, so a bare name silently stops excluding a file that moved into a
+subdirectory) and rewrites every citation the gate reads, except in the files the exemption table
+marks as historical records. It is a dry run unless given `--apply`, refuses a dirty tree, and is
+idempotent. Its `--self-test` is run by hand, as the 766 lift tools' are, because a script CI runs
+only as a `--self-test` is classified as a release check.
+
 Three gates read `Scripts/patches/` and `Scripts/patches-wasi/` rather than `Sources/`, and all
 three for the same reason: `check-patch-deletes-guarded-symbol.py` (#2058), which fails when a
 carried patch deletes a line naming an OCCT symbol a `Tests/` comment says its invariant depends
@@ -654,7 +676,7 @@ build was on disk.
 
 ## Every detector proves it is not blind
 
-Seventeen of the eighteen gates, all eight censuses, the merge-history audit and the release check
+Eighteen of the nineteen gates, all eight censuses, the merge-history audit and the release check
 take `--self-test`, a fixture battery proving the *detector* catches each failure mode. Run it
 whenever you change one of these scripts. Three gate scripts were confidently wrong while
 reporting all clear (#618, #624/#630, #626), and a detector reporting "all clear" because it is
@@ -764,7 +786,7 @@ change to the ruleset.
 
 ## The pre-commit hook
 
-`Scripts/git-hooks/pre-commit` runs forty-four of `gate-scripts`' forty-six invocations, flag for
+`Scripts/git-hooks/pre-commit` runs forty-six of `gate-scripts`' forty-eight invocations, flag for
 flag. The one it omits is `check-changelog-transcription.py`'s real run, which answers a question
 about the branch rather than about the commit being made; its `--self-test` does run. That is the
 only deliberate divergence, and it is written here because an undocumented difference between the

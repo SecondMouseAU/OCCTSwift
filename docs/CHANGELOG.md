@@ -21,6 +21,10 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### GProps: global properties of a partial cylinder, cone, sphere or torus, and patch 0057 for the wrong inertia behind it (#3091)
+
+New `GProps` wraps `GProp_SelGProps` and `GProp_VelGProps` over `gp_Cylinder`, `gp_Cone`, `gp_Sphere` and `gp_Torus` for any parameter range, as a surface or as the solid it sweeps, with `mass`, `centreOfMass`, `matrixOfInertia`, `staticMoments`, `momentOfInertia(about:direction:)`, `radiusOfGyration(about:direction:)`, `principalProperties`, `symmetry(tolerance:)` and `add(_:density:)`. Carried kernel patch `0057` fixes what it exposed: the matrix of inertia of the cylinder, sphere and torus overloads, the solid's centre of mass over a partial turn, and the torus area and volume over part of the tube (the full cylinder surface of radius 5 and height 10 read 314.159 about its axis where the integral gives 7853.98). The matrix of inertia and the solid centres are right only on a kernel carrying `0050`, `0051`, `0055` and `0057`, so they need the next kernel repin.
+
 ### Revolve builders return nil past 1e4 radians instead of running for a time proportional to the angle (#3109)
 
 - `Shape.revolve`, `revolved(angle:)`, `Shape.revolution(meridian:)`, `addingRevolvedFeature`, `localRevolution` (with and without an offset) and `localRevolutionForm` returned nothing, or were killed by the OS, for a finite but absurd angle, because each runs for a time proportional to the angle. They now return `nil` past 1e4 radians (572958 degrees for the revolved feature), a bound taken from measurement: the slowest builder returns in 0.04 s there. Every angle a caller means, `0`, `1e-12`, a full turn and multiples of it, is passed to OCCT as before (#3109).

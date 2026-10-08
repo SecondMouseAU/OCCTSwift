@@ -6,6 +6,14 @@ import simd
 @Suite("Parametric Plate Surface Tests")
 struct ParametricPlateSurfaceTests {
 
+    // #766: these asserted non-nil, `uMax > uMin` or finite coordinates, so a plate that missed
+    // its points passed. Each now requires the points on the surface; the domains and distances
+    // are GeomPlate_BuildPlateSurface + GeomPlate_MakeApprox's own on the same points, see
+    // Scripts/repro/766-nlplate-g2g3-platethrough/.
+    private func maxDistance(_ s: Surface, _ points: [SIMD3<Double>]) -> Double {
+        points.map { s.projectPoint($0)?.distance ?? .infinity }.max() ?? .infinity
+    }
+
     @Test("Plate through points returns parametric surface")
     func plateThroughPoints() {
         let points: [SIMD3<Double>] = [
@@ -17,6 +25,10 @@ struct ParametricPlateSurfaceTests {
         if let s = surface {
             let d = s.domain
             #expect(d.uMax > d.uMin)
+            #expect(abs(d.uMin - -7.91905785) < 1e-6 && abs(d.uMax - 7.79192669) < 1e-6)
+            #expect(abs(d.vMin - -7.77817459) < 1e-6)
+            #expect(abs(d.vMax - 7.77817459) < 1e-6)
+            #expect(maxDistance(s, points) < 1e-6)
         }
     }
 
@@ -35,6 +47,9 @@ struct ParametricPlateSurfaceTests {
             #expect(pt.x.isFinite)
             #expect(pt.y.isFinite)
             #expect(pt.z.isFinite)
+            // Four coplanar points: the plate is the z = 0 plane through them.
+            #expect(abs(pt.z) < 1e-9)
+            #expect(maxDistance(s, points) < 1e-9)
         }
     }
 
@@ -54,5 +69,8 @@ struct ParametricPlateSurfaceTests {
         ]
         let surface = Surface.plateThrough(points, degree: 4, tolerance: 0.001)
         #expect(surface != nil)
+        if let s = surface {
+            #expect(maxDistance(s, points) < 1e-3)
+        }
     }
 }

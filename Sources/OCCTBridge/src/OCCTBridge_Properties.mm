@@ -3313,3 +3313,380 @@ bool OCCTShapeGetBounds(OCCTShapeRef shape,
                                 *maxY,
                                 *maxZ);
 }
+
+// MARK: - GProp_SelGProps / GProp_VelGProps on the analytic surfaces (#3091)
+
+#include <gp_Ax3.hxx>
+#include <gp_Cone.hxx>
+#include <gp_Cylinder.hxx>
+#include <gp_Mat.hxx>
+#include <gp_Torus.hxx>
+
+#include <cmath>
+
+struct OCCTGProps
+{
+  GProp_GProps props;
+};
+
+namespace
+{
+bool occtGPropsMatrixIsFinite(const gp_Mat& m)
+{
+  for (int i = 1; i <= 3; ++i)
+    for (int j = 1; j <= 3; ++j)
+      if (!std::isfinite(m.Value(i, j)))
+        return false;
+  return true;
+}
+
+// A measurement is refused rather than reported as NaN: an empty range divides by zero in the
+// centre of mass, and none of the values of such a system is a measurement of anything.
+bool occtGPropsIsMeasurement(const GProp_GProps& p)
+{
+  const gp_Pnt cm = p.CentreOfMass();
+  return std::isfinite(p.Mass()) && std::isfinite(cm.X()) && std::isfinite(cm.Y())
+         && std::isfinite(cm.Z()) && occtGPropsMatrixIsFinite(p.MatrixOfInertia());
+}
+
+bool occtGPropsRangeOk(double a1, double a2)
+{
+  return std::isfinite(a1) && std::isfinite(a2) && a2 > a1;
+}
+
+// False, recording the failure, when OCCT rejects the frame: a zero direction, or an X direction
+// along the main one.
+bool occtGPropsMakeAx3(const OCCTGPropsFrame& f, gp_Ax3& outAx)
+{
+  try
+  {
+    const gp_Pnt o(f.ox, f.oy, f.oz);
+    const gp_Dir z(f.zx, f.zy, f.zz);
+    outAx = f.hasXDirection ? gp_Ax3(o, z, gp_Dir(f.xx, f.xy, f.xz)) : gp_Ax3(o, z);
+    return true;
+  }
+  catch (...)
+  {
+    occtRecordCaughtException(__func__);
+    return false;
+  }
+}
+
+OCCTGPropsRef occtGPropsWrap(const GProp_GProps& p)
+{
+  if (!occtGPropsIsMeasurement(p))
+    return nullptr;
+  OCCTGProps* h = new OCCTGProps();
+  h->props      = p;
+  return h;
+}
+
+bool occtGPropsAxisOk(double dx, double dy, double dz)
+{
+  return std::isfinite(dx) && std::isfinite(dy) && std::isfinite(dz);
+}
+} // namespace
+
+OCCTGPropsRef OCCTGPropsCylinder(bool            volume,
+                                 OCCTGPropsFrame frame,
+                                 double          radius,
+                                 double          alpha1,
+                                 double          alpha2,
+                                 double          z1,
+                                 double          z2)
+{
+  if (!std::isfinite(radius) || !occtGPropsRangeOk(alpha1, alpha2) || !occtGPropsRangeOk(z1, z2))
+    return nullptr;
+  try
+  {
+    gp_Ax3 ax;
+    if (!occtGPropsMakeAx3(frame, ax))
+      return nullptr;
+    const gp_Cylinder cyl(ax, radius);
+    if (volume)
+      return occtGPropsWrap(GProp_VelGProps(cyl, alpha1, alpha2, z1, z2, gp::Origin()));
+    return occtGPropsWrap(GProp_SelGProps(cyl, alpha1, alpha2, z1, z2, gp::Origin()));
+  }
+  catch (...)
+  {
+    occtRecordCaughtException(__func__);
+    return nullptr;
+  }
+}
+
+OCCTGPropsRef OCCTGPropsCone(bool            volume,
+                             OCCTGPropsFrame frame,
+                             double          semiAngle,
+                             double          refRadius,
+                             double          alpha1,
+                             double          alpha2,
+                             double          z1,
+                             double          z2)
+{
+  if (!std::isfinite(semiAngle) || !std::isfinite(refRadius) || !occtGPropsRangeOk(alpha1, alpha2)
+      || !occtGPropsRangeOk(z1, z2))
+    return nullptr;
+  try
+  {
+    gp_Ax3 ax;
+    if (!occtGPropsMakeAx3(frame, ax))
+      return nullptr;
+    const gp_Cone cone(ax, semiAngle, refRadius);
+    if (volume)
+      return occtGPropsWrap(GProp_VelGProps(cone, alpha1, alpha2, z1, z2, gp::Origin()));
+    return occtGPropsWrap(GProp_SelGProps(cone, alpha1, alpha2, z1, z2, gp::Origin()));
+  }
+  catch (...)
+  {
+    occtRecordCaughtException(__func__);
+    return nullptr;
+  }
+}
+
+OCCTGPropsRef OCCTGPropsSphere(bool            volume,
+                               OCCTGPropsFrame frame,
+                               double          radius,
+                               double          teta1,
+                               double          teta2,
+                               double          alpha1,
+                               double          alpha2)
+{
+  if (!std::isfinite(radius) || !occtGPropsRangeOk(teta1, teta2)
+      || !occtGPropsRangeOk(alpha1, alpha2))
+    return nullptr;
+  try
+  {
+    gp_Ax3 ax;
+    if (!occtGPropsMakeAx3(frame, ax))
+      return nullptr;
+    const gp_Sphere sph(ax, radius);
+    if (volume)
+      return occtGPropsWrap(GProp_VelGProps(sph, teta1, teta2, alpha1, alpha2, gp::Origin()));
+    return occtGPropsWrap(GProp_SelGProps(sph, teta1, teta2, alpha1, alpha2, gp::Origin()));
+  }
+  catch (...)
+  {
+    occtRecordCaughtException(__func__);
+    return nullptr;
+  }
+}
+
+OCCTGPropsRef OCCTGPropsTorus(bool            volume,
+                              OCCTGPropsFrame frame,
+                              double          majorRadius,
+                              double          minorRadius,
+                              double          teta1,
+                              double          teta2,
+                              double          alpha1,
+                              double          alpha2)
+{
+  if (!std::isfinite(majorRadius) || !std::isfinite(minorRadius) || !occtGPropsRangeOk(teta1, teta2)
+      || !occtGPropsRangeOk(alpha1, alpha2))
+    return nullptr;
+  try
+  {
+    gp_Ax3 ax;
+    if (!occtGPropsMakeAx3(frame, ax))
+      return nullptr;
+    const gp_Torus tor(ax, majorRadius, minorRadius);
+    if (volume)
+      return occtGPropsWrap(GProp_VelGProps(tor, teta1, teta2, alpha1, alpha2, gp::Origin()));
+    return occtGPropsWrap(GProp_SelGProps(tor, teta1, teta2, alpha1, alpha2, gp::Origin()));
+  }
+  catch (...)
+  {
+    occtRecordCaughtException(__func__);
+    return nullptr;
+  }
+}
+
+void OCCTGPropsRelease(OCCTGPropsRef props)
+{
+  delete props;
+}
+
+bool OCCTGPropsAdd(OCCTGPropsRef target, OCCTGPropsRef item, double density)
+{
+  if (!target || !item || !std::isfinite(density))
+    return false;
+  try
+  {
+    // Compose into a copy first: a result that is not a measurement leaves the target as it was.
+    GProp_GProps sum = target->props;
+    sum.Add(item->props, density);
+    if (!occtGPropsIsMeasurement(sum))
+      return false;
+    target->props = sum;
+    return true;
+  }
+  catch (...)
+  {
+    occtRecordCaughtException(__func__);
+    return false;
+  }
+}
+
+bool OCCTGPropsMass(OCCTGPropsRef props, double* outMass)
+{
+  if (!outMass)
+    return false;
+  *outMass = 0;
+  if (!props)
+    return false;
+  *outMass = props->props.Mass();
+  return true;
+}
+
+bool OCCTGPropsCentreOfMass(OCCTGPropsRef props, double* outXYZ)
+{
+  if (!outXYZ)
+    return false;
+  outXYZ[0] = outXYZ[1] = outXYZ[2] = 0;
+  if (!props)
+    return false;
+  const gp_Pnt cm = props->props.CentreOfMass();
+  outXYZ[0]       = cm.X();
+  outXYZ[1]       = cm.Y();
+  outXYZ[2]       = cm.Z();
+  return true;
+}
+
+bool OCCTGPropsMatrixOfInertia(OCCTGPropsRef props, double* outRowMajor9)
+{
+  if (!outRowMajor9)
+    return false;
+  for (int k = 0; k < 9; ++k)
+    outRowMajor9[k] = 0;
+  if (!props)
+    return false;
+  const gp_Mat m = props->props.MatrixOfInertia();
+  for (int i = 1; i <= 3; ++i)
+    for (int j = 1; j <= 3; ++j)
+      outRowMajor9[(i - 1) * 3 + (j - 1)] = m.Value(i, j);
+  return true;
+}
+
+bool OCCTGPropsStaticMoments(OCCTGPropsRef props, double* outXYZ)
+{
+  if (!outXYZ)
+    return false;
+  outXYZ[0] = outXYZ[1] = outXYZ[2] = 0;
+  if (!props)
+    return false;
+  props->props.StaticMoments(outXYZ[0], outXYZ[1], outXYZ[2]);
+  return true;
+}
+
+bool OCCTGPropsMomentOfInertia(OCCTGPropsRef props,
+                               double        ox,
+                               double        oy,
+                               double        oz,
+                               double        dx,
+                               double        dy,
+                               double        dz,
+                               double*       outMoment)
+{
+  if (!outMoment)
+    return false;
+  *outMoment = 0;
+  if (!props || !occtGPropsAxisOk(ox, oy, oz) || !occtGPropsAxisOk(dx, dy, dz))
+    return false;
+  try
+  {
+    const gp_Ax1 axis(gp_Pnt(ox, oy, oz), gp_Dir(dx, dy, dz));
+    *outMoment = props->props.MomentOfInertia(axis);
+    return true;
+  }
+  catch (...)
+  {
+    occtRecordCaughtException(__func__);
+    return false;
+  }
+}
+
+bool OCCTGPropsRadiusOfGyration(OCCTGPropsRef props,
+                                double        ox,
+                                double        oy,
+                                double        oz,
+                                double        dx,
+                                double        dy,
+                                double        dz,
+                                double*       outRadius)
+{
+  if (!outRadius)
+    return false;
+  *outRadius = 0;
+  if (!props || !occtGPropsAxisOk(ox, oy, oz) || !occtGPropsAxisOk(dx, dy, dz))
+    return false;
+  try
+  {
+    const gp_Ax1 axis(gp_Pnt(ox, oy, oz), gp_Dir(dx, dy, dz));
+    const double r = props->props.RadiusOfGyration(axis);
+    if (!std::isfinite(r))
+      return false;
+    *outRadius = r;
+    return true;
+  }
+  catch (...)
+  {
+    occtRecordCaughtException(__func__);
+    return false;
+  }
+}
+
+bool OCCTGPropsPrincipalProperties(OCCTGPropsRef props, OCCTGPropsPrincipal* outPrincipal)
+{
+  if (!outPrincipal)
+    return false;
+  *outPrincipal = OCCTGPropsPrincipal{};
+  if (!props)
+    return false;
+  try
+  {
+    const GProp_PrincipalProps pp = props->props.PrincipalProperties();
+    pp.Moments(outPrincipal->moments[0], outPrincipal->moments[1], outPrincipal->moments[2]);
+    pp.RadiusOfGyration(outPrincipal->radii[0], outPrincipal->radii[1], outPrincipal->radii[2]);
+    const gp_Vec* axes[3] = {&pp.FirstAxisOfInertia(),
+                             &pp.SecondAxisOfInertia(),
+                             &pp.ThirdAxisOfInertia()};
+    for (int a = 0; a < 3; ++a)
+    {
+      outPrincipal->axes[a * 3 + 0] = axes[a]->X();
+      outPrincipal->axes[a * 3 + 1] = axes[a]->Y();
+      outPrincipal->axes[a * 3 + 2] = axes[a]->Z();
+    }
+    outPrincipal->hasSymmetryAxis  = pp.HasSymmetryAxis();
+    outPrincipal->hasSymmetryPoint = pp.HasSymmetryPoint();
+    return true;
+  }
+  catch (...)
+  {
+    occtRecordCaughtException(__func__);
+    return false;
+  }
+}
+
+bool OCCTGPropsPrincipalSymmetry(OCCTGPropsRef props,
+                                 double        tolerance,
+                                 bool*         outHasAxis,
+                                 bool*         outHasPoint)
+{
+  if (!outHasAxis || !outHasPoint)
+    return false;
+  *outHasAxis  = false;
+  *outHasPoint = false;
+  if (!props || !std::isfinite(tolerance) || tolerance < 0)
+    return false;
+  try
+  {
+    const GProp_PrincipalProps pp = props->props.PrincipalProperties();
+    *outHasAxis                   = pp.HasSymmetryAxis(tolerance);
+    *outHasPoint                  = pp.HasSymmetryPoint(tolerance);
+    return true;
+  }
+  catch (...)
+  {
+    occtRecordCaughtException(__func__);
+    return false;
+  }
+}

@@ -1,0 +1,6 @@
+isCNu: 1 1 1  isCNv: 1 1 1
+uReversed: S'(3,4)=(-3,4,0)  vReversed: S'(3,4)=(3,-4,0)
+uReversedParameter(0.5)=-0.5 vReversedParameter(0.5)=-0.5
+bezierMaxDegree=25 bsplineMaxDegree=25
+continuity: plane=6 sphere=6 (GeomAbs_CN=6)
+surfaceNBounds: plane bounds=[-2e+100, 2e+100]x[-2e+100, 2e+100]
