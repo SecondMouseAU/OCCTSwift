@@ -194,6 +194,8 @@ def self_test():
          {"Scripts/test-areas/x.tsv": "@@AATests/New/A.swift"}, 0)
     case("a citation followed by a line number resolves",
          {live: "x", "docs/a.md": "%s:123" % live}, 0)
+    case("a citation of a missing file followed by a line number dangles",
+         {"docs/a.md": "@@SurfaceTests/GoneTests.swift:123"}, 1)
     case("a file exemption covers a historical record",
          {EXEMPTIONS: "file\tdocs/CHANGELOG.md\thistory\n",
           "docs/CHANGELOG.md": "@@AATests/Old.swift"}, 0)
