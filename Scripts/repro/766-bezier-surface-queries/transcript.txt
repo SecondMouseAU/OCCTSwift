@@ -1,0 +1,16 @@
+isoCurves: UIso(0.5)(0.3)=(1, 0.60000000000000009, 0.5) S(0.5,0.3)=(1, 0.60000000000000009, 0.5) VIso(0.5)(0.3)=(0.60000000000000009, 1, 0.42000000000000004) S(0.3,0.5)=(0.60000000000000009, 1, 0.42000000000000004)
+closedQueries: open IsUClosed=0 IsVClosed=0; first row == last row IsUClosed=1 IsVClosed=0; first col == last col IsUClosed=0 IsVClosed=1
+periodicQueries: IsUPeriodic=0 IsVPeriodic=0
+continuity: Continuity=6 (GeomAbs_CN=6)
+isCN: IsCNu(0)=1 IsCNu(10)=1 IsCNv(0)=1 IsCNv(10)=1
+poles: 2x2 row-major=(0,0,0)(0,1,0)(1,0,1)(1,1,1)
+weightsNonRational: Weights()=null
+bounds: [0, 1]x[0, 1]
+resolution: Geom_BezierSurface::MaxDegree()=25
+fill4Curves stretch: surface 3x3 S(0.3,0.6)=(2.8080000000000003, 6.4199999999999999, 0) S(0,0)=(0, 0, 0) S(0.5,0)=(5, 0.5, 0)
+fill4Curves coons: surface 4x4 S(0.3,0.6)=(2.7273600000000005, 6.4199999999999999, 0) S(0,0)=(0, 0, 0) S(0.5,0)=(5, 0.5, 0)
+fill4Curves curved: surface 3x3 S(0.3,0.6)=(2.8080000000000003, 6.3192000000000004, 0) S(0,0)=(0, 0, 0) S(0.5,0)=(5, 0.5, 0)
+fill2Curves stretch: surface 3x2 S(0.3,0.6)=(3.0000000000000004, 5.831999999999999, 0) S(0.5,0)=(5, 1, 0) S(0.5,1)=(5, 9, 0)
+fill2Curves coons: surface 3x2 S(0.3,0.6)=(3.0000000000000004, 5.831999999999999, 0) S(0.5,0)=(5, 1, 0) S(0.5,1)=(5, 9, 0)
+fill2Curves curved: threw GeomFill_BezierCurves: Courbes non jointives
+nonBezierFails: segment is Geom_TrimmedCurve, DownCast to Geom_BezierCurve is null

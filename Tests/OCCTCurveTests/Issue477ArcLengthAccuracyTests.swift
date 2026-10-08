@@ -19,7 +19,7 @@ import simd
 /// Carried patch `0021` subdivides inside `CPnts` too, so on the pinned asset the whole-domain
 /// quadrature #477 replaced agrees with the reference to 3.3e-10 on the zigzag below and 1.0e-10
 /// on the helix, and passes every accuracy bound here. Re-measured 2026-10-01 against
-/// `v4.0.0-kernel.3`, the asset `Package.swift` pins:
+/// `v4.0.0-kernel.3`, the asset `Package.swift` pinned that day:
 /// `Scripts/repro/766-curve-arclength-accuracy/`. Every figure quoted below cites that transcript
 /// and none of them claims the old quadrature would now fail.
 ///
