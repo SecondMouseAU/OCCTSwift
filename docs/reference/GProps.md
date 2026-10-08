@@ -155,6 +155,7 @@ The matrix of inertia, `principalProperties`, the moments and radii about an axi
 mass of a volume over a partial turn are right only on a kernel carrying the carried patches
 `0050`, `0051` and `0055` (for the cone) and `0057` (for the cylinder, sphere and torus),
 [`Scripts/patches/README.md`](https://github.com/SecondMouseAU/OCCTSwift/blob/main/Scripts/patches/README.md).
-The release asset `Package.swift` pins predates them, so against it those values are wrong while
-`mass` of a cylinder or sphere and the centre of a cylinder or sphere surface are right. The
-tests that prove the values run in `kernel-integration.yml`, which builds the patches from source.
+The release asset `Package.swift` pins carries all of them since `v4.0.0-kernel.5`. Before it, those
+values were wrong while `mass` of a cylinder or sphere and the centre of a cylinder or sphere
+surface were right. The tests that prove the values run in `build-and-test` against the pinned
+asset; they were gated on `OCCTSWIFT_LOCAL=1` and ran only in `kernel-integration.yml` until then.

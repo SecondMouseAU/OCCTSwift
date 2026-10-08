@@ -3200,7 +3200,7 @@ read `Mass()` alone, so no Swift test reaches these values and there is no `OCCT
 test for this patch; `probe.cxx` and `run.sh` are the regression, and `run.sh` exits 1 unless the
 control fails and the variant passes.
 *Since #3091:* `GProps.cone` reads them, and `Issue3091GPropsTests` compares the cone overloads with
-the same independent integral, gated on `OCCTSWIFT_LOCAL=1`.
+the same independent integral (gated on `OCCTSWIFT_LOCAL=1` until `v4.0.0-kernel.5`).
 
 **Filed upstream** with `0050` and `0051` as one PR, [OCCT#1599](https://github.com/Open-Cascade-SAS/OCCT/pull/1599) against `IR`, because its hunks need their context lines.
 
@@ -3382,11 +3382,11 @@ stamp.
 `GProps` (#3091), the wrapper of both classes, is the first Swift API that reads these values, so the
 regression test goes through it: `Issue3091GPropsTests` (`OCCTAnalysisTests`).
 `everyOverloadAgreesWithTheIndependentIntegral` compares all 48 combinations of shape, class, range
-and frame with a Gauss-Legendre integral written in the test, and is gated on `OCCTSWIFT_LOCAL=1` as
-`Issue3003OffsetOrderTests` is, because the pinned asset does not carry the patch and `ci.yml`'s
-`build-and-test` resolves that asset; `kernel-integration.yml` builds the patches from source with
-`OCCTSWIFT_LOCAL=1` and runs it there. Three more gated tests pin the issue's number, the solid's
-centres for a partial turn and the principal properties; the rest run on the asset. Measured by swapping the two members of a copy of the pinned archive (the `ar r` shortcut, not a
+and frame with a Gauss-Legendre integral written in the test. It and three more tests (the issue's
+number, the solid's centres for a partial turn and the principal properties) were gated on
+`OCCTSWIFT_LOCAL=1` while the pinned asset lacked the patch, and are ungated since
+`v4.0.0-kernel.5` pinned it; they pass against that asset. The counterfactual below was measured
+before the repin and is the record that they fail without the patch. Measured by swapping the two members of a copy of the pinned archive (the `ar r` shortcut, not a
 rebuild), on macOS arm64, with `OCCTSWIFT_LOCAL=1`: on the archive as shipped 4 of the suite's 10 tests
 fail (the four gated ones) and 6 pass; with the members built from `0050`, `0051` and `0055` only,
 the same 4 fail, on 112 cylinder, sphere and torus findings and none for the cone; with `0057` on top
