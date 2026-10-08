@@ -20,95 +20,79 @@ struct NLPlateG2G3Tests {
     {
         simd_length(s.point(atU: uv.x, v: uv.y) - target) < tol
     }
-    @Test func nlPlateG2Deformation() {
-        let plane = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1))
-        if let plane = plane {
-            let result = plane.nlPlateDeformedG2(
-                constraints: [
-                    (
-                        uv: SIMD2(0.5, 0.5),
-                        target: SIMD3(0.5, 0.5, 1.0),
-                        tangentU: SIMD3(1, 0, 0),
-                        tangentV: SIMD3(0, 1, 0),
-                        curvatureUU: SIMD3(0, 0, 0.1),
-                        curvatureUV: SIMD3(0, 0, 0),
-                        curvatureVV: SIMD3(0, 0, 0.1)
-                    )
-                ])
-            #expect(result != nil)
-            if let result {
-                withKnownIssue(
-                    "#3134: NLPlate_NLPlate's G2 solve is well behaved at the constraint (probe) but the bridge's fitted surface is not: z is about -2e12 there. See Scripts/repro/766-nlplate-g2g3-platethrough/"
-                ) {
-                    #expect(near(result, SIMD2(0.5, 0.5), SIMD3(0.5, 0.5, 1.0), 0.01))
-                }
+    @Test func nlPlateG2Deformation() throws {
+        let plane = try #require(Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1)))
+        let result = plane.nlPlateDeformedG2(
+            constraints: [
+                (
+                    uv: SIMD2(0.5, 0.5),
+                    target: SIMD3(0.5, 0.5, 1.0),
+                    tangentU: SIMD3(1, 0, 0),
+                    tangentV: SIMD3(0, 1, 0),
+                    curvatureUU: SIMD3(0, 0, 0.1),
+                    curvatureUV: SIMD3(0, 0, 0),
+                    curvatureVV: SIMD3(0, 0, 0.1)
+                )
+            ])
+        #expect(result != nil)
+        if let result {
+            withKnownIssue(
+                "#3134: NLPlate_NLPlate's G2 solve is well behaved at the constraint (probe) but the bridge's fitted surface is not: z is about -2e12 there. See Scripts/repro/766-nlplate-g2g3-platethrough/"
+            ) {
+                #expect(near(result, SIMD2(0.5, 0.5), SIMD3(0.5, 0.5, 1.0), 0.01))
             }
-        } else {
-            Issue.record("plane")
         }
     }
 
-    @Test func nlPlateG3Deformation() {
-        let plane = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1))
-        if let plane = plane {
-            let result = plane.nlPlateDeformedG3(
-                constraints: [
-                    (
-                        uv: SIMD2(0.3, 0.3),
-                        target: SIMD3(0.3, 0.3, 0.5),
-                        tangentU: SIMD3(1, 0, 0),
-                        tangentV: SIMD3(0, 1, 0),
-                        curvatureUU: SIMD3(0, 0, 0),
-                        curvatureUV: SIMD3(0, 0, 0),
-                        curvatureVV: SIMD3(0, 0, 0),
-                        d3UUU: SIMD3(0, 0, 0),
-                        d3UUV: SIMD3(0, 0, 0),
-                        d3UVV: SIMD3(0, 0, 0),
-                        d3VVV: SIMD3(0, 0, 0)
-                    )
-                ])
-            #expect(result != nil)
-            if let result {
-                withKnownIssue(
-                    "#3134: NLPlate_NLPlate's G3 solve is well behaved at the constraint (probe) but the bridge's fitted surface is not: z is about -1e21 there. See Scripts/repro/766-nlplate-g2g3-platethrough/"
-                ) {
-                    #expect(near(result, SIMD2(0.3, 0.3), SIMD3(0.3, 0.3, 0.5), 0.01))
-                }
+    @Test func nlPlateG3Deformation() throws {
+        let plane = try #require(Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1)))
+        let result = plane.nlPlateDeformedG3(
+            constraints: [
+                (
+                    uv: SIMD2(0.3, 0.3),
+                    target: SIMD3(0.3, 0.3, 0.5),
+                    tangentU: SIMD3(1, 0, 0),
+                    tangentV: SIMD3(0, 1, 0),
+                    curvatureUU: SIMD3(0, 0, 0),
+                    curvatureUV: SIMD3(0, 0, 0),
+                    curvatureVV: SIMD3(0, 0, 0),
+                    d3UUU: SIMD3(0, 0, 0),
+                    d3UUV: SIMD3(0, 0, 0),
+                    d3UVV: SIMD3(0, 0, 0),
+                    d3VVV: SIMD3(0, 0, 0)
+                )
+            ])
+        #expect(result != nil)
+        if let result {
+            withKnownIssue(
+                "#3134: NLPlate_NLPlate's G3 solve is well behaved at the constraint (probe) but the bridge's fitted surface is not: z is about -1e21 there. See Scripts/repro/766-nlplate-g2g3-platethrough/"
+            ) {
+                #expect(near(result, SIMD2(0.3, 0.3), SIMD3(0.3, 0.3, 0.5), 0.01))
             }
-        } else {
-            Issue.record("plane")
         }
     }
 
-    @Test func nlPlateIncrementalSolve() {
-        let plane = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1))
-        if let plane = plane {
-            let result = plane.nlPlateDeformedIncremental(
-                constraints: [
-                    (uv: SIMD2(0.5, 0.5), target: SIMD3(0.5, 0.5, 1.0))
-                ])
-            #expect(result != nil)
-            // The fitted surface meets the target to about 5e-5 (measured 4.97e-5); asserted to 1e-3.
-            if let result { #expect(near(result, SIMD2(0.5, 0.5), SIMD3(0.5, 0.5, 1.0), 1e-3)) }
-        } else {
-            Issue.record("plane")
-        }
+    @Test func nlPlateIncrementalSolve() throws {
+        let plane = try #require(Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1)))
+        let result = plane.nlPlateDeformedIncremental(
+            constraints: [
+                (uv: SIMD2(0.5, 0.5), target: SIMD3(0.5, 0.5, 1.0))
+            ])
+        #expect(result != nil)
+        // The fitted surface meets the target to about 5e-5 (measured 4.97e-5); asserted to 1e-3.
+        if let result { #expect(near(result, SIMD2(0.5, 0.5), SIMD3(0.5, 0.5, 1.0), 1e-3)) }
     }
 
-    @Test func nlPlateDerivative() {
-        let plane = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1))
-        if let plane = plane {
-            let deriv = plane.nlPlateDerivative(
-                constraints: [
-                    (uv: SIMD2(0.5, 0.5), target: SIMD3(0.5, 0.5, 1.0))
-                ],
-                u: 0.5, v: 0.5, iu: 1, iv: 0)
-            #expect(deriv != nil)
-            if let deriv {
-                #expect(simd_length(deriv - SIMD3(1, 0, 0.99999950000024984)) < 1e-12)
-            }
-        } else {
-            Issue.record("plane")
+    @Test func nlPlateDerivative() throws {
+        let plane = try #require(Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1)))
+        let deriv = plane.nlPlateDerivative(
+            constraints: [
+                (uv: SIMD2(0.5, 0.5), target: SIMD3(0.5, 0.5, 1.0))
+            ],
+            u: 0.5, v: 0.5, iu: 1, iv: 0)
+        #expect(deriv != nil)
+        if let deriv {
+            #expect(simd_length(deriv - SIMD3(1, 0, 0.99999950000024984)) < 1e-12)
         }
     }
 }
