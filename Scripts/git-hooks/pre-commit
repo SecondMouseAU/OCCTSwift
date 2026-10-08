@@ -140,6 +140,11 @@ run "check-bridge-type-odr.py"                Scripts/check-bridge-type-odr.py
 # #3065. A stored OCCT adaptor is a shared adaptor, which OCCT does not support.
 run "check-bridge-adaptor-members.py --self-test" Scripts/check-bridge-adaptor-members.py --self-test
 run "check-bridge-adaptor-members.py"         Scripts/check-bridge-adaptor-members.py
+# #3148. Every `Tests/OCCT<Domain>Tests/...swift` path cited in Scripts/, docs/, okf/, Sources/ or
+# Tests/ names a file that exists. Pure text and fast, and the commit that moves or deletes a test
+# file is exactly the one that leaves a citation behind.
+run "check-test-path-citations.py --self-test" Scripts/check-test-path-citations.py --self-test
+run "check-test-path-citations.py"            Scripts/check-test-path-citations.py
 
 # #2974. A bridge release of a raw Standard_Transient writes opencascade::handle::EndScope by hand,
 # and two of them wrote a discarded decrement plus a GetRefCount() re-read plus a bare `delete`

@@ -1,0 +1,22 @@
+# kind	pattern	reason
+# kind is one of:
+#   file   a citing-file glob. Citations INSIDE a matching file are not required to resolve, and the move tool leaves the file alone.
+#   path   a cited-path glob (fnmatch, "*" crosses "/"). A citation of a matching path may dangle.
+#   regex  a cited-path regex (re.fullmatch). Same effect as path.
+# A path or regex row that matches no dangling citation is itself a failure, so this file cannot rot into an allowlist nobody rereads.
+# A file row is not checked that way: it is a rule about a class of files, and the class may be empty today.
+file	docs/CHANGELOG.md	release history: each entry describes the tree as it stood at that release, and it already carries dangling citations that nobody rewrote
+file	Scripts/repro/*transcript*.txt	captured probe output: what ran at the time, so the path it printed is the evidence and rewriting it would falsify the record
+file	Scripts/repro/*swift-side.txt	captured output of a scratch Swift probe, same reasoning as a transcript
+file	Scripts/repro/*bridge-*.txt	captured bridge output of a scratch probe, same reasoning as a transcript
+file	Scripts/repro/*.swift.txt	saved source of a scratch Swift probe that was never merged, kept as evidence of what ran
+file	Scripts/repro/*matrix-*.json	injection-matrix result files: machine output of a past run
+path	Tests/OCCT*Tests/ZZ*.swift	scratch probe files that were run once and never merged, named by the evidence that used them
+path	Tests/OCCT*Tests/Tmp*.swift	scratch probe files that were run once and never merged, named by the evidence that used them
+path	Tests/OCCTFooTests/*.swift	placeholder target in the 766 census scripts self-test fixtures
+path	Tests/OCCTCurveTests/FooTests.swift	placeholder file in census-766-weak-assertions.py self-test fixtures
+regex	Tests/(OCCT[A-Za-z0-9]+Tests)/\1\.swift	the pre-split monolith test file of a domain, deleted when the per-domain targets were split into many files; cited by repro READMEs and triage records as it stood
+path	Tests/OCCTModelingTests/ChamferTests.swift	docs/guides/adding-features.md names it as the file a reader is about to create in a worked example
+path	Tests/OCCTModelingTests/Issue1393SplitDraftsTests.swift	the test was deleted with Shape.splitDrafts (#1393); the repro README records that it existed
+path	Tests/OCCTDemoTests/*.swift	placeholder target in move-test-files.py self-test fixtures
+path	Tests/OCCTOtherTests/*.swift	placeholder target in move-test-files.py self-test fixtures
