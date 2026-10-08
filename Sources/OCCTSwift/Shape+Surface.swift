@@ -1116,7 +1116,7 @@ extension Shape {
     ///   Bezier flavour. Evidence in `Scripts/repro/2829-geomfill-arrange-guard/`.
     /// - Note: `Poles` come back row-major in U with V varying fastest, so the pole at `(u, v)`,
     ///   both zero-based, is `poles[u * nbV + v]`.
-    /// - Note: The tests in `Tests/OCCTSurfaceTests/GeomFillCoonsTests.swift` pin both a correct
+    /// - Note: The tests in `Tests/OCCTSurfaceTests/GeomFill/GeomFillCoonsTests.swift` pin both a correct
     ///   arrangement and the mis-ordered one, and `Scripts/repro/2795-geomfill-boundary-arrangement/`
     ///   prints every arrangement of a flat square side by side for both classes (#2795).
     /// - Parameters:
@@ -1212,7 +1212,7 @@ extension Shape {
     /// with `u == v` were coincidentally correct, which is why it read as a valid surface.
     ///
     /// Carried patch `0034` fixes it, and the pinned asset carries it from `v4.0.0-kernel.1`
-    /// onward. `Tests/OCCTSurfaceTests/Issue1515CoonsPatchUParameterTests.swift` asserts the
+    /// onward. `Tests/OCCTSurfaceTests/GeomFill/Issue1515CoonsPatchUParameterTests.swift` asserts the
     /// bilinear surface over a flat square, which is the assertion the unpatched asset made
     /// impossible. Measurement and probe in `Scripts/repro/1515-coons-value-u-parameter/`.
     ///
