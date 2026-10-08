@@ -1,0 +1,781 @@
+import Foundation
+import OCCTBridge
+
+// TEMPORARY injection harness for the #766 Surface batch 13 (revolution, BSpline/Bezier
+// completion, conversion and projection tests). This `.txt` is the evidence copy: for a sweep it is
+// copied to Sources/OCCTSwift/SweepSurfaceShadow.swift and removed again, and that file must never
+// be committed (README.md, "Running it"). Every function below has the same name and C signature as
+// an OCCTBridge entry point, so the module-local declaration wins over the imported one at every
+// call site with no edit to any call site or any .mm. One build serves every switch; SF_SWITCH
+// selects one at runtime. With the variable unset every shadow is a pure pass-through, which the
+// sweep asserts (suites green, no switch).
+
+enum SF {
+    static let active: String = Foundation.ProcessInfo.processInfo.environment["SF_SWITCH"] ?? ""
+    static func on(_ name: String) -> Bool { active == name }
+
+    /// A heap copy of a double array (leaked on purpose, the harness is temporary).
+    static func copy(_ p: UnsafePointer<Double>, _ n: Int, _ f: (Int, Double) -> Double)
+        -> UnsafePointer<Double>
+    {
+        let q = UnsafeMutablePointer<Double>.allocate(capacity: max(n, 1))
+        for i in 0..<n { q[i] = f(i, p[i]) }
+        return UnsafePointer(q)
+    }
+}
+
+// MARK: - Revolution (LocalRevolution, RevolutionFromCurve, ExtendedRevolution, RevolutionFeature)
+
+func OCCTLocOpeRevol(
+    _ profile: OCCTShapeRef?, _ ox: Double, _ oy: Double, _ oz: Double, _ dx: Double, _ dy: Double,
+    _ dz: Double, _ angle: Double
+) -> OCCTShapeRef? {
+    if SF.on("LOCREV_ANGLE_HALF") {
+        return OCCTBridge.OCCTLocOpeRevol(profile, ox, oy, oz, dx, dy, dz, angle * 0.5)
+    }
+    if SF.on("LOCREV_AXIS_X") {
+        return OCCTBridge.OCCTLocOpeRevol(profile, ox, oy, oz, 1, 0, 0, angle)
+    }
+    return OCCTBridge.OCCTLocOpeRevol(profile, ox, oy, oz, dx, dy, dz, angle)
+}
+
+func OCCTLocOpeRevolWithOffset(
+    _ profile: OCCTShapeRef?, _ ox: Double, _ oy: Double, _ oz: Double, _ dx: Double, _ dy: Double,
+    _ dz: Double, _ angle: Double, _ dec: Double
+) -> OCCTShapeRef? {
+    if SF.on("LOCREVOFF_OFFSET_IGNORED") {
+        return OCCTBridge.OCCTLocOpeRevolWithOffset(profile, ox, oy, oz, dx, dy, dz, angle, 0)
+    }
+    if SF.on("LOCREVOFF_OFFSET_NEGATED") {
+        return OCCTBridge.OCCTLocOpeRevolWithOffset(profile, ox, oy, oz, dx, dy, dz, angle, -dec)
+    }
+    return OCCTBridge.OCCTLocOpeRevolWithOffset(profile, ox, oy, oz, dx, dy, dz, angle, dec)
+}
+
+func OCCTShapeCreateRevolutionFromCurve(
+    _ meridian: OCCTCurve3DRef?, _ ox: Double, _ oy: Double, _ oz: Double, _ dx: Double,
+    _ dy: Double, _ dz: Double, _ angle: Double
+) -> OCCTShapeRef? {
+    if SF.on("REVCURVE_ANGLE_HALF") {
+        return OCCTBridge.OCCTShapeCreateRevolutionFromCurve(
+            meridian, ox, oy, oz, dx, dy, dz, angle * 0.5)
+    }
+    if SF.on("REVCURVE_AXIS_X") {
+        return OCCTBridge.OCCTShapeCreateRevolutionFromCurve(meridian, ox, oy, oz, 1, 0, 0, angle)
+    }
+    return OCCTBridge.OCCTShapeCreateRevolutionFromCurve(meridian, ox, oy, oz, dx, dy, dz, angle)
+}
+
+func OCCTShapeCreateRevolutionFull(
+    _ shape: OCCTShapeRef, _ ax: Double, _ ay: Double, _ az: Double, _ dx: Double, _ dy: Double,
+    _ dz: Double
+) -> OCCTShapeRef? {
+    if SF.on("REVFULL_AXIS_X") {
+        return OCCTBridge.OCCTShapeCreateRevolutionFull(shape, ax, ay, az, 1, 0, 0)
+    }
+    return OCCTBridge.OCCTShapeCreateRevolutionFull(shape, ax, ay, az, dx, dy, dz)
+}
+
+func OCCTShapeCreateRevolutionPartial(
+    _ shape: OCCTShapeRef, _ ax: Double, _ ay: Double, _ az: Double, _ dx: Double, _ dy: Double,
+    _ dz: Double, _ angle: Double
+) -> OCCTShapeRef? {
+    if SF.on("REVPART_ANGLE_HALF") {
+        return OCCTBridge.OCCTShapeCreateRevolutionPartial(shape, ax, ay, az, dx, dy, dz, angle * 0.5)
+    }
+    return OCCTBridge.OCCTShapeCreateRevolutionPartial(shape, ax, ay, az, dx, dy, dz, angle)
+}
+
+func OCCTShapeRevolFeature(
+    _ shape: OCCTShapeRef?, _ face: Int32, _ profile: OCCTWireRef?, _ ox: Double, _ oy: Double,
+    _ oz: Double, _ dx: Double, _ dy: Double, _ dz: Double, _ angleDeg: Double, _ fuse: Bool
+) -> OCCTShapeRef? {
+    if SF.on("REVFEAT_ANGLE_HALF") {
+        return OCCTBridge.OCCTShapeRevolFeature(
+            shape, face, profile, ox, oy, oz, dx, dy, dz, angleDeg * 0.5, fuse)
+    }
+    if SF.on("REVFEAT_FUSE_INVERTED") {
+        return OCCTBridge.OCCTShapeRevolFeature(
+            shape, face, profile, ox, oy, oz, dx, dy, dz, angleDeg, !fuse)
+    }
+    if SF.on("REVFEAT_AXIS_ORIGIN_X_PLUS25") {
+        return OCCTBridge.OCCTShapeRevolFeature(
+            shape, face, profile, ox + 25, oy, oz, dx, dy, dz, angleDeg, fuse)
+    }
+    return OCCTBridge.OCCTShapeRevolFeature(
+        shape, face, profile, ox, oy, oz, dx, dy, dz, angleDeg, fuse)
+}
+
+func OCCTShapeRevolFeatureThruAll(
+    _ shape: OCCTShapeRef?, _ face: Int32, _ profile: OCCTWireRef?, _ ox: Double, _ oy: Double,
+    _ oz: Double, _ dx: Double, _ dy: Double, _ dz: Double, _ fuse: Bool
+) -> OCCTShapeRef? {
+    if SF.on("REVFEATALL_FUSE_INVERTED") {
+        return OCCTBridge.OCCTShapeRevolFeatureThruAll(
+            shape, face, profile, ox, oy, oz, dx, dy, dz, !fuse)
+    }
+    if SF.on("REVFEATALL_AXIS_ORIGIN_X_PLUS25") {
+        return OCCTBridge.OCCTShapeRevolFeatureThruAll(
+            shape, face, profile, ox + 25, oy, oz, dx, dy, dz, fuse)
+    }
+    return OCCTBridge.OCCTShapeRevolFeatureThruAll(shape, face, profile, ox, oy, oz, dx, dy, dz, fuse)
+}
+
+// MARK: - Shape measurements the revolution tests read
+
+func OCCTShapeGetVolume(_ shape: OCCTShapeRef?, _ out: UnsafeMutablePointer<Double>?) -> Bool {
+    let r = OCCTBridge.OCCTShapeGetVolume(shape, out)
+    if SF.on("VOLUME_X1_001"), r, let out { out.pointee *= 1.001 }
+    return r
+}
+
+func OCCTShapeGetSurfaceArea(_ shape: OCCTShapeRef?) -> Double {
+    let a = OCCTBridge.OCCTShapeGetSurfaceArea(shape)
+    if SF.on("AREA_X1_001") { return a * 1.001 }
+    return a
+}
+
+func OCCTShapeSignedVolumeFlux(_ shape: OCCTShapeRef?, _ out: UnsafeMutablePointer<Double>?)
+    -> Bool
+{
+    let r = OCCTBridge.OCCTShapeSignedVolumeFlux(shape, out)
+    if SF.on("SIGNEDVOL_NEGATED"), r, let out { out.pointee = -out.pointee }
+    return r
+}
+
+func OCCTShapeIsValid(_ shape: OCCTShapeRef?) -> Bool {
+    if SF.on("ISVALID_FALSE") { return false }
+    return OCCTBridge.OCCTShapeIsValid(shape)
+}
+
+func OCCTShapeGetFaceCount(_ shape: OCCTShapeRef?) -> Int32 {
+    if SF.on("FACECOUNT_PLUS1") { return OCCTBridge.OCCTShapeGetFaceCount(shape) + 1 }
+    return OCCTBridge.OCCTShapeGetFaceCount(shape)
+}
+
+func OCCTShapeGetBounds(
+    _ shape: OCCTShapeRef?, _ minX: UnsafeMutablePointer<Double>?,
+    _ minY: UnsafeMutablePointer<Double>?, _ minZ: UnsafeMutablePointer<Double>?,
+    _ maxX: UnsafeMutablePointer<Double>?, _ maxY: UnsafeMutablePointer<Double>?,
+    _ maxZ: UnsafeMutablePointer<Double>?
+) -> Bool {
+    let r = OCCTBridge.OCCTShapeGetBounds(shape, minX, minY, minZ, maxX, maxY, maxZ)
+    if SF.on("BOUNDS_MINY_MINUS10"), r, let minY { minY.pointee -= 10 }
+    if SF.on("BOUNDS_MINX_PLUS10"), r, let minX { minX.pointee += 10 }
+    return r
+}
+
+// MARK: - Section, FindSurface
+
+func OCCTShapeSectionWithPlane(
+    _ shape: OCCTShapeRef, _ nx: Double, _ ny: Double, _ nz: Double, _ ox: Double, _ oy: Double,
+    _ oz: Double
+) -> OCCTShapeRef? {
+    if SF.on("SECTIONPLANE_TILTED") {
+        return OCCTBridge.OCCTShapeSectionWithPlane(shape, 1, 1, 1, 0, 0, 0)
+    }
+    return OCCTBridge.OCCTShapeSectionWithPlane(shape, nx, ny, nz, ox, oy, oz)
+}
+
+func OCCTShapeSectionWithSurface(_ shape: OCCTShapeRef, _ surface: OCCTSurfaceRef) -> OCCTShapeRef? {
+    if SF.on("SECTIONSURF_AS_TILTED_PLANE") {
+        return OCCTBridge.OCCTShapeSectionWithPlane(shape, 1, 1, 1, 0, 0, 0)
+    }
+    return OCCTBridge.OCCTShapeSectionWithSurface(shape, surface)
+}
+
+func OCCTFindSurfaceTolerance(_ shape: OCCTShapeRef, _ tol: Double, _ onlyPlane: Bool) -> Double {
+    let r = OCCTBridge.OCCTFindSurfaceTolerance(shape, tol, onlyPlane)
+    if SF.on("FINDSURFTOL_PLUS") { return r + 1e-6 }
+    return r
+}
+
+func OCCTFindSurfaceExisted(_ shape: OCCTShapeRef, _ tol: Double, _ onlyPlane: Bool) -> Bool {
+    let r = OCCTBridge.OCCTFindSurfaceExisted(shape, tol, onlyPlane)
+    if SF.on("FINDSURFEXISTED_INVERTED") { return !r }
+    return r
+}
+
+func OCCTSurfaceProjectPoint(
+    _ surface: OCCTSurfaceRef?, _ px: Double, _ py: Double, _ pz: Double,
+    _ u: UnsafeMutablePointer<Double>?, _ v: UnsafeMutablePointer<Double>?,
+    _ distance: UnsafeMutablePointer<Double>?
+) -> Bool {
+    let r = OCCTBridge.OCCTSurfaceProjectPoint(surface, px, py, pz, u, v, distance)
+    if SF.on("PROJPOINT_DIST_PLUS"), r, let distance { distance.pointee += 1e-6 }
+    if SF.on("PROJPOINT_U_PLUS"), r, let u { u.pointee += 1e-6 }
+    if SF.on("PROJPOINT_V_PLUS"), r, let v { v.pointee += 1e-6 }
+    return r
+}
+
+// MARK: - Surface point, domain, continuity, creation
+
+func OCCTSurfaceGetPoint(
+    _ surface: OCCTSurfaceRef?, _ u: Double, _ v: Double, _ x: UnsafeMutablePointer<Double>?,
+    _ y: UnsafeMutablePointer<Double>?, _ z: UnsafeMutablePointer<Double>?
+) {
+    OCCTBridge.OCCTSurfaceGetPoint(surface, u, v, x, y, z)
+    if SF.on("SURFPOINT_Z_PLUS"), let z { z.pointee += 1e-6 }
+}
+
+func OCCTSurfaceGetDomain(
+    _ surface: OCCTSurfaceRef?, _ uMin: UnsafeMutablePointer<Double>?,
+    _ uMax: UnsafeMutablePointer<Double>?, _ vMin: UnsafeMutablePointer<Double>?,
+    _ vMax: UnsafeMutablePointer<Double>?
+) {
+    OCCTBridge.OCCTSurfaceGetDomain(surface, uMin, uMax, vMin, vMax)
+    if SF.on("SURFDOMAIN_UMAX_PLUS1"), let uMax { uMax.pointee += 1 }
+    if SF.on("SURFDOMAIN_VMIN_PLUS1"), let vMin { vMin.pointee += 1 }
+}
+
+func OCCTSurfaceGetContinuity(_ surface: OCCTSurfaceRef) -> Int32 {
+    if SF.on("CONT_MINUS1") { return OCCTBridge.OCCTSurfaceGetContinuity(surface) - 1 }
+    if SF.on("CONT_PLUS1") { return OCCTBridge.OCCTSurfaceGetContinuity(surface) + 1 }
+    return OCCTBridge.OCCTSurfaceGetContinuity(surface)
+}
+
+func OCCTSurfaceCreateSphere(_ cx: Double, _ cy: Double, _ cz: Double, _ radius: Double)
+    -> OCCTSurfaceRef?
+{
+    if SF.on("SPHERE_RADIUS_X1_1") { return OCCTBridge.OCCTSurfaceCreateSphere(cx, cy, cz, radius * 1.1) }
+    return OCCTBridge.OCCTSurfaceCreateSphere(cx, cy, cz, radius)
+}
+
+func OCCTSurfaceCylindricalFromAxis(
+    _ ax: Double, _ ay: Double, _ az: Double, _ dx: Double, _ dy: Double, _ dz: Double,
+    _ radius: Double
+) -> OCCTSurfaceRef? {
+    if SF.on("CYLFROMAXIS_RADIUS_X1_1") {
+        return OCCTBridge.OCCTSurfaceCylindricalFromAxis(ax, ay, az, dx, dy, dz, radius * 1.1)
+    }
+    return OCCTBridge.OCCTSurfaceCylindricalFromAxis(ax, ay, az, dx, dy, dz, radius)
+}
+
+// MARK: - Trim, conversion, Bezier patches
+
+func OCCTSurfaceCreateRectangularTrimmed(
+    _ basis: OCCTSurfaceRef, _ u1: Double, _ u2: Double, _ v1: Double, _ v2: Double
+) -> OCCTSurfaceRef? {
+    if SF.on("RECTTRIM_U2_PLUS1") {
+        return OCCTBridge.OCCTSurfaceCreateRectangularTrimmed(basis, u1, u2 + 1, v1, v2)
+    }
+    if SF.on("RECTTRIM_V1_PLUS1") {
+        return OCCTBridge.OCCTSurfaceCreateRectangularTrimmed(basis, u1, u2, v1 + 1, v2)
+    }
+    return OCCTBridge.OCCTSurfaceCreateRectangularTrimmed(basis, u1, u2, v1, v2)
+}
+
+func OCCTSurfaceCreateTrimmedInU(_ basis: OCCTSurfaceRef, _ p1: Double, _ p2: Double)
+    -> OCCTSurfaceRef?
+{
+    if SF.on("TRIMINU_P2_PLUS1") { return OCCTBridge.OCCTSurfaceCreateTrimmedInU(basis, p1, p2 + 1) }
+    return OCCTBridge.OCCTSurfaceCreateTrimmedInU(basis, p1, p2)
+}
+
+func OCCTSurfaceCreateTrimmedInV(_ basis: OCCTSurfaceRef, _ p1: Double, _ p2: Double)
+    -> OCCTSurfaceRef?
+{
+    if SF.on("TRIMINV_P1_PLUS1") { return OCCTBridge.OCCTSurfaceCreateTrimmedInV(basis, p1 + 1, p2) }
+    return OCCTBridge.OCCTSurfaceCreateTrimmedInV(basis, p1, p2)
+}
+
+func OCCTSurfaceTrim(_ surface: OCCTSurfaceRef?, _ u1: Double, _ u2: Double, _ v1: Double, _ v2: Double)
+    -> OCCTSurfaceRef?
+{
+    if SF.on("TRIM_U2_PLUS1") { return OCCTBridge.OCCTSurfaceTrim(surface, u1, u2 + 1, v1, v2) }
+    return OCCTBridge.OCCTSurfaceTrim(surface, u1, u2, v1, v2)
+}
+
+func OCCTSurfaceTrimmedCylinder(
+    _ ax: Double, _ ay: Double, _ az: Double, _ dx: Double, _ dy: Double, _ dz: Double,
+    _ radius: Double, _ height: Double
+) -> OCCTSurfaceRef? {
+    if SF.on("TRIMCYL_RADIUS_X1_1") {
+        return OCCTBridge.OCCTSurfaceTrimmedCylinder(ax, ay, az, dx, dy, dz, radius * 1.1, height)
+    }
+    return OCCTBridge.OCCTSurfaceTrimmedCylinder(ax, ay, az, dx, dy, dz, radius, height)
+}
+
+func OCCTSurfaceToBezierPatches(
+    _ surface: OCCTSurfaceRef?, _ out: UnsafeMutablePointer<OCCTSurfaceRef?>?, _ maxPatches: Int32
+) -> Int32 {
+    let n = OCCTBridge.OCCTSurfaceToBezierPatches(surface, out, maxPatches)
+    if SF.on("PATCHES_COUNT_MINUS1") { return max(n - 1, 0) }
+    return n
+}
+
+func OCCTConvertCylinderToBSplineSurface(
+    _ ox: Double, _ oy: Double, _ oz: Double, _ nx: Double, _ ny: Double, _ nz: Double,
+    _ radius: Double, _ u1: Double, _ u2: Double, _ v1: Double, _ v2: Double
+) -> OCCTSurfaceRef? {
+    if SF.on("CONVCYL_RADIUS_X1_1") {
+        return OCCTBridge.OCCTConvertCylinderToBSplineSurface(
+            ox, oy, oz, nx, ny, nz, radius * 1.1, u1, u2, v1, v2)
+    }
+    return OCCTBridge.OCCTConvertCylinderToBSplineSurface(
+        ox, oy, oz, nx, ny, nz, radius, u1, u2, v1, v2)
+}
+
+func OCCTConvertConeToBSplineSurface(
+    _ ox: Double, _ oy: Double, _ oz: Double, _ nx: Double, _ ny: Double, _ nz: Double,
+    _ semiAngle: Double, _ refRadius: Double, _ u1: Double, _ u2: Double, _ v1: Double,
+    _ v2: Double
+) -> OCCTSurfaceRef? {
+    if SF.on("CONVCONE_ANGLE_X1_1") {
+        return OCCTBridge.OCCTConvertConeToBSplineSurface(
+            ox, oy, oz, nx, ny, nz, semiAngle * 1.1, refRadius, u1, u2, v1, v2)
+    }
+    return OCCTBridge.OCCTConvertConeToBSplineSurface(
+        ox, oy, oz, nx, ny, nz, semiAngle, refRadius, u1, u2, v1, v2)
+}
+
+func OCCTConvertTorusToBSplineSurface(
+    _ ox: Double, _ oy: Double, _ oz: Double, _ nx: Double, _ ny: Double, _ nz: Double,
+    _ major: Double, _ minor: Double
+) -> OCCTSurfaceRef? {
+    if SF.on("CONVTORUS_MINOR_X1_1") {
+        return OCCTBridge.OCCTConvertTorusToBSplineSurface(ox, oy, oz, nx, ny, nz, major, minor * 1.1)
+    }
+    return OCCTBridge.OCCTConvertTorusToBSplineSurface(ox, oy, oz, nx, ny, nz, major, minor)
+}
+
+// MARK: - Projection and Curve2D / Curve3D readers
+
+func OCCTSurfaceProjectCurveSegments(
+    _ surface: OCCTSurfaceRef?, _ curve: OCCTCurve3DRef?, _ tol: Double,
+    _ out: UnsafeMutablePointer<OCCTCurve2DRef?>?, _ maxCurves: Int32
+) -> Int32 {
+    let n = OCCTBridge.OCCTSurfaceProjectCurveSegments(surface, curve, tol, out, maxCurves)
+    if SF.on("PROJSEGS_COUNT_MINUS1") { return max(n - 1, 0) }
+    return n
+}
+
+func OCCTCurve2DGetPoint(
+    _ curve: OCCTCurve2DRef?, _ u: Double, _ x: UnsafeMutablePointer<Double>?,
+    _ y: UnsafeMutablePointer<Double>?
+) {
+    OCCTBridge.OCCTCurve2DGetPoint(curve, u, x, y)
+    if SF.on("C2D_POINT_Y_PLUS"), let y { y.pointee += 1e-6 }
+}
+
+func OCCTCurve2DGetDomain(
+    _ curve: OCCTCurve2DRef?, _ first: UnsafeMutablePointer<Double>?,
+    _ last: UnsafeMutablePointer<Double>?
+) {
+    OCCTBridge.OCCTCurve2DGetDomain(curve, first, last)
+    if SF.on("C2D_DOMAIN_LAST_PLUS"), let last { last.pointee += 1e-6 }
+}
+
+func OCCTCurve3DGetPoint(
+    _ curve: OCCTCurve3DRef?, _ u: Double, _ x: UnsafeMutablePointer<Double>?,
+    _ y: UnsafeMutablePointer<Double>?, _ z: UnsafeMutablePointer<Double>?
+) {
+    OCCTBridge.OCCTCurve3DGetPoint(curve, u, x, y, z)
+    if SF.on("C3D_POINT_X_PLUS"), let x { x.pointee += 1e-6 }
+}
+
+func OCCTCurve3DGetDomain(
+    _ curve: OCCTCurve3DRef?, _ first: UnsafeMutablePointer<Double>?,
+    _ last: UnsafeMutablePointer<Double>?
+) {
+    OCCTBridge.OCCTCurve3DGetDomain(curve, first, last)
+    if SF.on("C3D_DOMAIN_LAST_PLUS"), let last { last.pointee += 1e-6 }
+}
+
+func OCCTCurve3DCreateSegment(
+    _ p1x: Double, _ p1y: Double, _ p1z: Double, _ p2x: Double, _ p2y: Double, _ p2z: Double
+) -> OCCTCurve3DRef? {
+    if SF.on("SEGMENT_DEGENERATE_ACCEPTED"), p1x == p2x, p1y == p2y, p1z == p2z {
+        return OCCTBridge.OCCTCurve3DCreateSegment(p1x, p1y, p1z, p2x + 1e-3, p2y, p2z)
+    }
+    return OCCTBridge.OCCTCurve3DCreateSegment(p1x, p1y, p1z, p2x, p2y, p2z)
+}
+
+// MARK: - BSpline surface edits and queries
+
+func OCCTSurfaceBSplineSetUNotPeriodic(_ s: OCCTSurfaceRef) -> Bool {
+    if SF.on("SETUNOTPERIODIC_FALSE") { return false }
+    return OCCTBridge.OCCTSurfaceBSplineSetUNotPeriodic(s)
+}
+
+func OCCTSurfaceIsUPeriodic(_ s: OCCTSurfaceRef?) -> Bool {
+    if SF.on("ISUPERIODIC_TRUE") { return true }
+    return OCCTBridge.OCCTSurfaceIsUPeriodic(s)
+}
+
+func OCCTSurfaceBSplineSetUPeriodic(_ s: OCCTSurfaceRef, _ p: Bool) -> Bool {
+    if SF.on("SETUPERIODIC_RESULT_FALSE") { return false }
+    return OCCTBridge.OCCTSurfaceBSplineSetUPeriodic(s, p)
+}
+
+func OCCTSurfaceBSplineSetVPeriodic(_ s: OCCTSurfaceRef, _ p: Bool) -> Bool {
+    if SF.on("SETVPERIODIC_RESULT_FALSE") { return false }
+    return OCCTBridge.OCCTSurfaceBSplineSetVPeriodic(s, p)
+}
+
+func OCCTSurfaceBSplineSetUOrigin(_ s: OCCTSurfaceRef, _ i: Int32) -> Bool {
+    if SF.on("SETUORIGIN_TRUE") { return true }
+    return OCCTBridge.OCCTSurfaceBSplineSetUOrigin(s, i)
+}
+
+func OCCTSurfaceBSplineIncreaseUMultiplicity(_ s: OCCTSurfaceRef, _ i: Int32, _ m: Int32) -> Bool {
+    if SF.on("INCREASEU_NOOP") { return true }
+    return OCCTBridge.OCCTSurfaceBSplineIncreaseUMultiplicity(s, i, m)
+}
+
+func OCCTSurfaceBSplineIncreaseVMultiplicity(_ s: OCCTSurfaceRef, _ i: Int32, _ m: Int32) -> Bool {
+    if SF.on("INCREASEV_MULT_MINUS1") {
+        return OCCTBridge.OCCTSurfaceBSplineIncreaseVMultiplicity(s, i, m - 1)
+    }
+    return OCCTBridge.OCCTSurfaceBSplineIncreaseVMultiplicity(s, i, m)
+}
+
+func OCCTSurfaceBSplineIncrementUMultiplicity(
+    _ s: OCCTSurfaceRef, _ from: Int32, _ to: Int32, _ step: Int32
+) -> Bool {
+    if SF.on("INCREMENTU_NOOP") { return true }
+    return OCCTBridge.OCCTSurfaceBSplineIncrementUMultiplicity(s, from, to, step)
+}
+
+func OCCTSurfaceBSplineIncrementVMultiplicity(
+    _ s: OCCTSurfaceRef, _ from: Int32, _ to: Int32, _ step: Int32
+) -> Bool {
+    if SF.on("INCREMENTV_NOOP") { return true }
+    return OCCTBridge.OCCTSurfaceBSplineIncrementVMultiplicity(s, from, to, step)
+}
+
+func OCCTSurfaceBSplineInsertUKnots(
+    _ s: OCCTSurfaceRef, _ knots: UnsafePointer<Double>, _ mults: UnsafePointer<Int32>,
+    _ count: Int32, _ tol: Double
+) -> Bool {
+    if SF.on("INSERTU_KNOT_SHIFT") {
+        return OCCTBridge.OCCTSurfaceBSplineInsertUKnots(
+            s, SF.copy(knots, Int(count)) { _, k in k + 0.01 }, mults, count, tol)
+    }
+    return OCCTBridge.OCCTSurfaceBSplineInsertUKnots(s, knots, mults, count, tol)
+}
+
+func OCCTSurfaceBSplineInsertVKnots(
+    _ s: OCCTSurfaceRef, _ knots: UnsafePointer<Double>, _ mults: UnsafePointer<Int32>,
+    _ count: Int32, _ tol: Double
+) -> Bool {
+    if SF.on("INSERTV_KNOT_SHIFT") {
+        return OCCTBridge.OCCTSurfaceBSplineInsertVKnots(
+            s, SF.copy(knots, Int(count)) { _, k in k + 0.01 }, mults, count, tol)
+    }
+    return OCCTBridge.OCCTSurfaceBSplineInsertVKnots(s, knots, mults, count, tol)
+}
+
+func OCCTSurfaceBSplineSetPoleRow(
+    _ s: OCCTSurfaceRef, _ i: Int32, _ coords: UnsafePointer<Double>, _ count: Int32
+) -> Bool {
+    if SF.on("BS_SETPOLEROW_Z_PLUS1") {
+        return OCCTBridge.OCCTSurfaceBSplineSetPoleRow(
+            s, i, SF.copy(coords, Int(count) * 3) { k, v in k % 3 == 2 ? v + 1 : v }, count)
+    }
+    return OCCTBridge.OCCTSurfaceBSplineSetPoleRow(s, i, coords, count)
+}
+
+func OCCTSurfaceBSplineSetPoleCol(
+    _ s: OCCTSurfaceRef, _ i: Int32, _ coords: UnsafePointer<Double>, _ count: Int32
+) -> Bool {
+    if SF.on("BS_SETPOLECOL_NOOP") { return true }
+    return OCCTBridge.OCCTSurfaceBSplineSetPoleCol(s, i, coords, count)
+}
+
+func OCCTSurfaceBSplineSetWeightCol(
+    _ s: OCCTSurfaceRef, _ i: Int32, _ w: UnsafePointer<Double>, _ count: Int32
+) -> Bool {
+    if SF.on("BS_SETWEIGHTCOL_NOOP") { return true }
+    return OCCTBridge.OCCTSurfaceBSplineSetWeightCol(s, i, w, count)
+}
+
+func OCCTSurfaceBSplineSetWeightRow(
+    _ s: OCCTSurfaceRef, _ i: Int32, _ w: UnsafePointer<Double>, _ count: Int32
+) -> Bool {
+    if SF.on("BS_SETWEIGHTROW_WEIGHT_X2") {
+        return OCCTBridge.OCCTSurfaceBSplineSetWeightRow(
+            s, i, SF.copy(w, Int(count)) { _, v in v * 2 }, count)
+    }
+    return OCCTBridge.OCCTSurfaceBSplineSetWeightRow(s, i, w, count)
+}
+
+func OCCTSurfaceBSplineMovePoint(
+    _ s: OCCTSurfaceRef, _ u: Double, _ v: Double, _ px: Double, _ py: Double, _ pz: Double,
+    _ u1: Int32, _ u2: Int32, _ v1: Int32, _ v2: Int32
+) -> Bool {
+    if SF.on("MOVEPOINT_Z_PLUS1") {
+        return OCCTBridge.OCCTSurfaceBSplineMovePoint(s, u, v, px, py, pz + 1, u1, u2, v1, v2)
+    }
+    return OCCTBridge.OCCTSurfaceBSplineMovePoint(s, u, v, px, py, pz, u1, u2, v1, v2)
+}
+
+func OCCTSurfaceBSplineFirstUKnotIndex(_ s: OCCTSurfaceRef) -> Int32 {
+    if SF.on("FIRSTUKNOT_PLUS1") { return OCCTBridge.OCCTSurfaceBSplineFirstUKnotIndex(s) + 1 }
+    return OCCTBridge.OCCTSurfaceBSplineFirstUKnotIndex(s)
+}
+
+func OCCTSurfaceBSplineLastUKnotIndex(_ s: OCCTSurfaceRef) -> Int32 {
+    if SF.on("LASTUKNOT_PLUS1") { return OCCTBridge.OCCTSurfaceBSplineLastUKnotIndex(s) + 1 }
+    return OCCTBridge.OCCTSurfaceBSplineLastUKnotIndex(s)
+}
+
+func OCCTSurfaceBSplineFirstVKnotIndex(_ s: OCCTSurfaceRef) -> Int32 {
+    if SF.on("FIRSTVKNOT_PLUS1") { return OCCTBridge.OCCTSurfaceBSplineFirstVKnotIndex(s) + 1 }
+    return OCCTBridge.OCCTSurfaceBSplineFirstVKnotIndex(s)
+}
+
+func OCCTSurfaceBSplineLastVKnotIndex(_ s: OCCTSurfaceRef) -> Int32 {
+    if SF.on("LASTVKNOT_PLUS1") { return OCCTBridge.OCCTSurfaceBSplineLastVKnotIndex(s) + 1 }
+    return OCCTBridge.OCCTSurfaceBSplineLastVKnotIndex(s)
+}
+
+func OCCTSurfaceBSplineCheckAndSegment(
+    _ s: OCCTSurfaceRef, _ u1: Double, _ u2: Double, _ v1: Double, _ v2: Double, _ ut: Double,
+    _ vt: Double
+) -> Bool {
+    if SF.on("CHECKSEGMENT_NOOP") { return true }
+    return OCCTBridge.OCCTSurfaceBSplineCheckAndSegment(s, u1, u2, v1, v2, ut, vt)
+}
+
+func OCCTSurfaceBSplineBounds(
+    _ s: OCCTSurfaceRef, _ u1: UnsafeMutablePointer<Double>, _ u2: UnsafeMutablePointer<Double>,
+    _ v1: UnsafeMutablePointer<Double>, _ v2: UnsafeMutablePointer<Double>
+) {
+    OCCTBridge.OCCTSurfaceBSplineBounds(s, u1, u2, v1, v2)
+    if SF.on("BSPLINEBOUNDS_U2_PLUS1") { u2.pointee += 1 }
+}
+
+func OCCTSurfaceBSplineResolution(
+    _ s: OCCTSurfaceRef, _ tol: Double, _ ur: UnsafeMutablePointer<Double>,
+    _ vr: UnsafeMutablePointer<Double>
+) {
+    if SF.on("RESOLUTION_SWAPPED") {
+        OCCTBridge.OCCTSurfaceBSplineResolution(s, tol, vr, ur)
+        return
+    }
+    OCCTBridge.OCCTSurfaceBSplineResolution(s, tol, ur, vr)
+    if SF.on("RESOLUTION_V_X2") { vr.pointee *= 2 }
+}
+
+func OCCTSurfaceBSplineUIso(_ s: OCCTSurfaceRef, _ u: Double) -> OCCTCurve3DRef? {
+    if SF.on("UISO_IS_VISO") { return OCCTBridge.OCCTSurfaceBSplineVIso(s, u) }
+    return OCCTBridge.OCCTSurfaceBSplineUIso(s, u)
+}
+
+func OCCTSurfaceBSplineVIso(_ s: OCCTSurfaceRef, _ v: Double) -> OCCTCurve3DRef? {
+    if SF.on("VISO_IS_UISO") { return OCCTBridge.OCCTSurfaceBSplineUIso(s, v) }
+    return OCCTBridge.OCCTSurfaceBSplineVIso(s, v)
+}
+
+func OCCTSurfaceBSplineGetUMultiplicities(_ s: OCCTSurfaceRef, _ m: UnsafeMutablePointer<Int32>) {
+    OCCTBridge.OCCTSurfaceBSplineGetUMultiplicities(s, m)
+    if SF.on("GETUMULT_FIRST_PLUS1") { m[0] += 1 }
+}
+
+func OCCTSurfaceBSplineGetVMultiplicities(_ s: OCCTSurfaceRef, _ m: UnsafeMutablePointer<Int32>) {
+    OCCTBridge.OCCTSurfaceBSplineGetVMultiplicities(s, m)
+    if SF.on("GETVMULT_FIRST_PLUS1") { m[0] += 1 }
+}
+
+func OCCTSurfaceBSplineGetUKnots(_ s: OCCTSurfaceRef, _ k: UnsafeMutablePointer<Double>) {
+    OCCTBridge.OCCTSurfaceBSplineGetUKnots(s, k)
+    if SF.on("GETUKNOTS_LAST_MINUS") {
+        let n = Int(OCCTBridge.OCCTSurfaceBSplineNbUKnots(s))
+        if n > 0 { k[n - 1] -= 0.01 }
+    }
+}
+
+func OCCTSurfaceBSplineUReverse(_ s: OCCTSurfaceRef) -> Bool {
+    if SF.on("UREVERSE_NOOP") { return true }
+    return OCCTBridge.OCCTSurfaceBSplineUReverse(s)
+}
+
+func OCCTSurfaceBSplineVReverse(_ s: OCCTSurfaceRef) -> Bool {
+    if SF.on("VREVERSE_NOOP") { return true }
+    return OCCTBridge.OCCTSurfaceBSplineVReverse(s)
+}
+
+// MARK: - Bezier surface edits and readers
+
+func OCCTSurfaceBezierInsertPoleColBefore(
+    _ s: OCCTSurfaceRef, _ i: Int32, _ poles: UnsafePointer<Double>, _ n: Int32
+) -> Bool {
+    if SF.on("BEZ_INSERTCOL_NOOP") { return true }
+    if SF.on("BEZ_INSERTCOL_INDEX_MINUS1") {
+        return OCCTBridge.OCCTSurfaceBezierInsertPoleColBefore(s, i - 1, poles, n)
+    }
+    return OCCTBridge.OCCTSurfaceBezierInsertPoleColBefore(s, i, poles, n)
+}
+
+func OCCTSurfaceBezierInsertPoleRowBefore(
+    _ s: OCCTSurfaceRef, _ i: Int32, _ poles: UnsafePointer<Double>, _ n: Int32
+) -> Bool {
+    if SF.on("BEZ_INSERTROW_NOOP") { return true }
+    return OCCTBridge.OCCTSurfaceBezierInsertPoleRowBefore(s, i, poles, n)
+}
+
+func OCCTSurfaceBezierSetPoleCol(
+    _ s: OCCTSurfaceRef, _ i: Int32, _ poles: UnsafePointer<Double>, _ n: Int32
+) -> Bool {
+    if SF.on("BEZ_SETPOLECOL_NOOP") { return true }
+    return OCCTBridge.OCCTSurfaceBezierSetPoleCol(s, i, poles, n)
+}
+
+func OCCTSurfaceBezierSetPoleRow(
+    _ s: OCCTSurfaceRef, _ i: Int32, _ poles: UnsafePointer<Double>, _ n: Int32
+) -> Bool {
+    if SF.on("BEZ_SETPOLEROW_X_PLUS1") {
+        return OCCTBridge.OCCTSurfaceBezierSetPoleRow(
+            s, i, SF.copy(poles, Int(n) * 3) { k, v in k % 3 == 0 ? v + 1 : v }, n)
+    }
+    return OCCTBridge.OCCTSurfaceBezierSetPoleRow(s, i, poles, n)
+}
+
+func OCCTSurfaceBezierSetWeightCol(
+    _ s: OCCTSurfaceRef, _ i: Int32, _ w: UnsafePointer<Double>, _ n: Int32
+) -> Bool {
+    if SF.on("BEZ_SETWEIGHTCOL_NOOP") { return true }
+    return OCCTBridge.OCCTSurfaceBezierSetWeightCol(s, i, w, n)
+}
+
+func OCCTSurfaceBezierSetWeightRow(
+    _ s: OCCTSurfaceRef, _ i: Int32, _ w: UnsafePointer<Double>, _ n: Int32
+) -> Bool {
+    if SF.on("BEZ_SETWEIGHTROW_X2") {
+        return OCCTBridge.OCCTSurfaceBezierSetWeightRow(
+            s, i, SF.copy(w, Int(n)) { _, v in v * 2 }, n)
+    }
+    return OCCTBridge.OCCTSurfaceBezierSetWeightRow(s, i, w, n)
+}
+
+func OCCTSurfaceBezierSetPoleColWeights(
+    _ s: OCCTSurfaceRef, _ i: Int32, _ poles: UnsafePointer<Double>,
+    _ weights: UnsafePointer<Double>, _ n: Int32
+) -> Bool {
+    if SF.on("BEZ_COLWEIGHTS_WEIGHTS_DROPPED") {
+        return OCCTBridge.OCCTSurfaceBezierSetPoleColWeights(
+            s, i, poles, SF.copy(weights, Int(n)) { _, _ in 1 }, n)
+    }
+    return OCCTBridge.OCCTSurfaceBezierSetPoleColWeights(s, i, poles, weights, n)
+}
+
+func OCCTSurfaceBezierSetPoleRowWeights(
+    _ s: OCCTSurfaceRef, _ i: Int32, _ poles: UnsafePointer<Double>,
+    _ weights: UnsafePointer<Double>, _ n: Int32
+) -> Bool {
+    if SF.on("BEZ_ROWWEIGHTS_POLES_DROPPED") {
+        return OCCTBridge.OCCTSurfaceBezierSetPoleRowWeights(
+            s, i, SF.copy(poles, Int(n) * 3) { _, _ in 0 }, weights, n)
+    }
+    return OCCTBridge.OCCTSurfaceBezierSetPoleRowWeights(s, i, poles, weights, n)
+}
+
+func OCCTSurfaceBezierGetPoles(_ s: OCCTSurfaceRef, _ poles: UnsafeMutablePointer<Double>) {
+    OCCTBridge.OCCTSurfaceBezierGetPoles(s, poles)
+    if SF.on("BEZ_GETPOLES_X0_PLUS") { poles[0] += 1e-6 }
+}
+
+func OCCTSurfaceBezierGetWeights(_ s: OCCTSurfaceRef, _ w: UnsafeMutablePointer<Double>) -> Bool {
+    let r = OCCTBridge.OCCTSurfaceBezierGetWeights(s, w)
+    if SF.on("BEZ_GETWEIGHTS_LAST_PLUS"), r { w[Int(OCCTBridge.OCCTSurfaceBezierNbUPoles(s) * OCCTBridge.OCCTSurfaceBezierNbVPoles(s)) - 1] += 0.5 }
+    return r
+}
+
+// MARK: - GeomEval, helix, AHT Bezier, extrema
+
+func OCCTGeomEvalHyperboloidCreate(_ r1: Double, _ r2: Double, _ mode: Int32) -> OCCTSurfaceRef? {
+    if SF.on("HYPERCREATE_MODE_FLIPPED") {
+        return OCCTBridge.OCCTGeomEvalHyperboloidCreate(r1, r2, 1 - mode)
+    }
+    if SF.on("HYPERCREATE_R1_X1_1") { return OCCTBridge.OCCTGeomEvalHyperboloidCreate(r1 * 1.1, r2, mode) }
+    return OCCTBridge.OCCTGeomEvalHyperboloidCreate(r1, r2, mode)
+}
+
+func OCCTGeomEvalHyperboloidD0(
+    _ r1: Double, _ r2: Double, _ mode: Int32, _ u: Double, _ v: Double,
+    _ px: UnsafeMutablePointer<Double>, _ py: UnsafeMutablePointer<Double>,
+    _ pz: UnsafeMutablePointer<Double>
+) -> Bool {
+    if SF.on("HYPERD0_MODE_ONE_SHEET") {
+        return OCCTBridge.OCCTGeomEvalHyperboloidD0(r1, r2, 0, u, v, px, py, pz)
+    }
+    return OCCTBridge.OCCTGeomEvalHyperboloidD0(r1, r2, mode, u, v, px, py, pz)
+}
+
+func OCCTGeomEvalCircularHelixCurveCreate(_ radius: Double, _ pitch: Double) -> OCCTCurve3DRef? {
+    if SF.on("CHELIX_PITCH_X2") { return OCCTBridge.OCCTGeomEvalCircularHelixCurveCreate(radius, pitch * 2) }
+    return OCCTBridge.OCCTGeomEvalCircularHelixCurveCreate(radius, pitch)
+}
+
+func OCCTExtremaPCMinDistance(_ c: OCCTCurve3DRef, _ x: Double, _ y: Double, _ z: Double) -> Double {
+    let d = OCCTBridge.OCCTExtremaPCMinDistance(c, x, y, z)
+    if SF.on("EXTREMAPC_SQUARED") { return d * d }
+    if SF.on("EXTREMAPC_PLUS_001") { return d + 0.001 }
+    return d
+}
+
+func OCCTGeomEvalAHTBezierCurveCreate(
+    _ poles: UnsafePointer<Double>, _ n: Int32, _ alg: Int32, _ alpha: Double, _ beta: Double
+) -> OCCTCurve3DRef? {
+    if SF.on("AHT_ALPHA_X2") { return OCCTBridge.OCCTGeomEvalAHTBezierCurveCreate(poles, n, alg, alpha * 2, beta) }
+    if SF.on("AHT_ALGDEGREE_PLUS1") { return OCCTBridge.OCCTGeomEvalAHTBezierCurveCreate(poles, n, alg + 1, alpha, beta) }
+    return OCCTBridge.OCCTGeomEvalAHTBezierCurveCreate(poles, n, alg, alpha, beta)
+}
+
+func OCCTGeomEvalAHTBezierCurveCreateRational(
+    _ poles: UnsafePointer<Double>, _ weights: UnsafePointer<Double>, _ n: Int32, _ alg: Int32,
+    _ alpha: Double, _ beta: Double
+) -> OCCTCurve3DRef? {
+    if SF.on("AHTRAT_WEIGHTS_UNIT") {
+        return OCCTBridge.OCCTGeomEvalAHTBezierCurveCreateRational(
+            poles, SF.copy(weights, Int(n)) { _, _ in 1 }, n, alg, alpha, beta)
+    }
+    return OCCTBridge.OCCTGeomEvalAHTBezierCurveCreateRational(poles, weights, n, alg, alpha, beta)
+}
+
+func OCCTHelixCurveEval(
+    _ t1: Double, _ t2: Double, _ pitch: Double, _ r: Double, _ taper: Double, _ cw: Bool,
+    _ u: Double, _ px: UnsafeMutablePointer<Double>, _ py: UnsafeMutablePointer<Double>,
+    _ pz: UnsafeMutablePointer<Double>
+) {
+    if SF.on("HELIXEVAL_RADIUS_X1_05") {
+        OCCTBridge.OCCTHelixCurveEval(t1, t2, pitch, r * 1.05, taper, cw, u, px, py, pz)
+        return
+    }
+    OCCTBridge.OCCTHelixCurveEval(t1, t2, pitch, r, taper, cw, u, px, py, pz)
+}
+
+func OCCTHelixCurveD1(
+    _ t1: Double, _ t2: Double, _ pitch: Double, _ r: Double, _ taper: Double, _ cw: Bool,
+    _ u: Double, _ px: UnsafeMutablePointer<Double>, _ py: UnsafeMutablePointer<Double>,
+    _ pz: UnsafeMutablePointer<Double>, _ vx: UnsafeMutablePointer<Double>,
+    _ vy: UnsafeMutablePointer<Double>, _ vz: UnsafeMutablePointer<Double>
+) {
+    OCCTBridge.OCCTHelixCurveD1(t1, t2, pitch, r, taper, cw, u, px, py, pz, vx, vy, vz)
+    if SF.on("HELIXD1_TANGENT_Z_X2") { vz.pointee *= 2 }
+    if SF.on("HELIXD1_POINT_X_PLUS") { px.pointee += 1e-3 }
+}
+
+func OCCTHelixCurveD2(
+    _ t1: Double, _ t2: Double, _ pitch: Double, _ r: Double, _ taper: Double, _ cw: Bool,
+    _ u: Double, _ px: UnsafeMutablePointer<Double>, _ py: UnsafeMutablePointer<Double>,
+    _ pz: UnsafeMutablePointer<Double>, _ v1x: UnsafeMutablePointer<Double>,
+    _ v1y: UnsafeMutablePointer<Double>, _ v1z: UnsafeMutablePointer<Double>,
+    _ v2x: UnsafeMutablePointer<Double>, _ v2y: UnsafeMutablePointer<Double>,
+    _ v2z: UnsafeMutablePointer<Double>
+) {
+    OCCTBridge.OCCTHelixCurveD2(t1, t2, pitch, r, taper, cw, u, px, py, pz, v1x, v1y, v1z, v2x, v2y, v2z)
+    if SF.on("HELIXD2_D2_X_X2") { v2x.pointee *= 2 }
+    if SF.on("HELIXD2_D1_Y_X2") { v1y.pointee *= 2 }
+    if SF.on("HELIXD2_POINT_Z_PLUS") { pz.pointee += 1e-3 }
+}
+
+func OCCTHelixApproxToBSpline(
+    _ t1: Double, _ t2: Double, _ pitch: Double, _ r: Double, _ taper: Double, _ cw: Bool,
+    _ tol: Double, _ maxError: UnsafeMutablePointer<Double>
+) -> OCCTCurve3DRef? {
+    let c = OCCTBridge.OCCTHelixApproxToBSpline(t1, t2, pitch, r, taper, cw, tol, maxError)
+    if SF.on("HELIXAPPROX_MAXERR_X2") { maxError.pointee *= 2 }
+    return c
+}

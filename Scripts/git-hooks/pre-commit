@@ -137,6 +137,9 @@ run "check-bridge-diagnostics.py"             Scripts/check-bridge-diagnostics.p
 # Swift caller creates in one .mm and releases in another.
 run "check-bridge-type-odr.py --self-test"    Scripts/check-bridge-type-odr.py --self-test
 run "check-bridge-type-odr.py"                Scripts/check-bridge-type-odr.py
+# #3065. A stored OCCT adaptor is a shared adaptor, which OCCT does not support.
+run "check-bridge-adaptor-members.py --self-test" Scripts/check-bridge-adaptor-members.py --self-test
+run "check-bridge-adaptor-members.py"         Scripts/check-bridge-adaptor-members.py
 
 # #2974. A bridge release of a raw Standard_Transient writes opencascade::handle::EndScope by hand,
 # and two of them wrote a discarded decrement plus a GetRefCount() re-read plus a bare `delete`

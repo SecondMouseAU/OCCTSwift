@@ -1,0 +1,7 @@
+profiler circles r5 z0 + r3 z10: Degree=14 NbPoles=15 NbKnots=2 Poles(1)[1]=(5, 4.32335569424e-15, 0) Poles(1)[2]=(5, 2.24399475257, 0) knots=0 6.28318530718 mults=15 15 
+profiler circles r5 z0 + r4 z5: Degree=14 NbPoles=15 NbKnots=2 Poles(1)[1]=(5, 4.32335569424e-15, 0) Poles(1)[2]=(5, 2.24399475257, 0) knots=0 6.28318530718 mults=15 15 
+sectionPlacement: IsDone=1 ParameterOnPath=0 ParameterOnSection=0 Distance=2 Angle=1.57079632679
+stretchFill: nbU=3 nbV=3 isRational=0 poles=(0,0,0)(0,5,2)(10,10,0)(5,0,1)(7.5,7.5,3)(5,10,1)(10,0,0)(10,5,2)(0,10,0)
+isRational: nbU=2 nbV=2 isRational=0 poles=(0,0,0)(1,1,0)(1,0,0)(0,1,0)
+sweepCircleAlongLine: IsDone=1 ErrorOnSurface=0 faceArea=376.991118431
+sweepRejectsOutOfToleranceFit (oscillating spine, circle r1): IsDone=1 ErrorOnSurface=13.0281 faceArea=701.751841602

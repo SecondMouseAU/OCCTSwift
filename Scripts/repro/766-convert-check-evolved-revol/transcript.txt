@@ -1,0 +1,21 @@
+cylinderPatch: 5x2 poles bounds=[0, 3.1415926535897931]x[0, 10] S(0.3, 0.6 of domain)=(2.9055429055745949, 4.0691301802553754, 6)
+conePatch: 5x2 poles bounds=[0, 3.1415926535897931]x[0, 10] S(0.3, 0.6 of domain)=(4.6488686489193523, 6.5106082884085996, 5.196152422706632)
+fullTorus: 6x6 poles bounds=[0, 6.2831853071795862]x[0, 6.2831853071795862] S(0.3, 0.6 of domain)=(-5.3865777080062784, 15.141849190972033, -3.0929478706587101)
+boxConsistency: pairs checked=24 maxDistance=0
+sphereConsistency: pairs checked=2 maxDistance=3.4638242249419733e-15
+cylinderConsistency: pairs checked=6 maxDistance=1.2246467991473533e-15
+fusedConsistency: pairs checked=44 maxDistance=9.5267920493270872e-08
+simpleEvolved: threw Geom_TrimmedCurve::U1 == U2
+evolved square/segment: IsDone=1
+evolved square/segment: type=0 valid=1 volume=-533.33333333333337 area=160
+revolveFaceFull: type=2 valid=0 volume=0 area=251.32741228718311
+revolveFacePartial: type=2 valid=0 volume=0 area=145.66370614359187
+revolveFaceFull (XZ profile): type=2 valid=1 volume=628.31853071795877 area=879.64594300514204
+revolveFacePartial (XZ profile): type=2 valid=1 volume=314.15926535897944 area=459.82297150257114
+faceFromPlane: area=99.999999999999986
+faceFromCylinder: area=157.07963267948966 (pi r h = 157.07963267948966)
+surfaceToFace: area=113.09733552923255 (4 pi r^2 = 113.09733552923255)
+surfaceToFaceTrimmed: area=56.548667764616276 (2 pi r^2 = 56.548667764616276)
+wireOnPlane: Found=1 plane z=0 normal=(0,0,1)
+planeOnlyMode: Found=1 plane z=0 normal=(0,0,1)
+findPlaneFromWire: Found=1 plane z=0 normal=(0,0,1)

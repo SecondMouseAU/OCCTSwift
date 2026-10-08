@@ -118,6 +118,7 @@ python3 Scripts/check-wasm-kernel-parity.py      # the wasm kernel asset carries
 python3 Scripts/check-preprocessor-balance.py     # no patch unbalances a source file's #if/#else/#endif (#2167)
 python3 Scripts/check-wasi-patch-base.py         # every patches-wasi patch was cut from the carried-patch tree (#2168)
 python3 Scripts/check-bridge-type-odr.py         # every type defined in more than one bridge .mm is defined identically (#2820)
+python3 Scripts/check-bridge-adaptor-members.py # no bridge struct stores an OCCT adaptor beyond the two allowlisted ones (#3065)
 python3 Scripts/check-transient-release-idiom.py  # every bridge release of a raw Standard_Transient is opencascade::handle::EndScope (#2974)
 python3 Scripts/census-unmeasured-values.py      # CENSUS, not a gate: values returned as measurements that were never computed (#726)
 python3 Scripts/census-doc-occt-attribution.py   # CENSUS, not a gate: docs attributing a method to an OCCT class its bridge fn never reaches (#928)
@@ -126,7 +127,8 @@ python3 Scripts/census-comment-staleness.py      # CENSUS, not a gate: comments 
 python3 Scripts/census-api-reference-rows.py     # CENSUS, not a gate: API_REFERENCE category-row entries resolving to no declaration (#1679)
 python3 Scripts/census-dead-file-statics.py      # CENSUS, not a gate: bridge `static` definitions with no use in their own file (#1628)
 python3 Scripts/census-compiled-out-validation.py # CENSUS, not a gate: bridge protection resting on an OCCT check No_Exception removed (#2801)
-python3 Scripts/check-inventory-prose.py        # every counted claim about the patch, gate, swift-format-exemption, bridge-file and test-target inventories matches them (#1408, #2910), and occt-raise-if-map.txt's stamp names the patch set on disk (#2885)
+python3 Scripts/census-stale-kernel-prose.py     # CENSUS, not a gate: prose naming an older kernel tag as current, a stale patch count, a cut beta called not cut (#3056)
+python3 Scripts/check-inventory-prose.py        # every counted claim about the patch, gate, swift-format-exemption, bridge-file and test-target inventories matches them (#1408, #2910), and occt-raise-if-map.txt's stamp names the patch set on disk (#2885); no prose calls a pinned patch not-yet-pinned (#3114)
 python3 Scripts/check-changelog-transcription.py # REPORT, never a gate: merges that landed with no CHANGELOG entry (#742, #2779)
 python3 Scripts/check-pinned-asset-patches.py --self-test  # RELEASE CHECK: only the self-test runs here; the real run reads the pinned asset (#2190)
 ```

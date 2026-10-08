@@ -1,0 +1,8 @@
+{
+  "transcript_only": [
+    {
+      "pattern": "^\\(probe process terminated here by SIGSEGV",
+      "reason": "an author's note recording where the process died, not a line the probe prints. The crash still happens: the rerun exits on signal 11 after the same sixteen measurement lines, which reproduce byte for byte against v4.0.0-kernel.2 (PR #2823)."
+    }
+  ]
+}

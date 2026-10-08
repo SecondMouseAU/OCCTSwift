@@ -17,7 +17,7 @@ evaluators.
 
 ## The harness
 
-`occt_2074_stress.cpp`, pure C++ so it isolates OCCT rather than the bridge. Six modes:
+`occt_2074_stress.cpp`, pure C++ so it isolates OCCT rather than the bridge. Nine modes:
 
 | Mode | Shape | In the gate |
 |---|---|---|
@@ -25,6 +25,9 @@ evaluators.
 | `surface_independent` | own geometry, own adaptor | yes |
 | `curve_shared_geometry` | shared curve, own adaptor per thread | yes |
 | `surface_shared_geometry` | shared surface, own adaptor per thread | yes |
+| `curve_shallow_copy_per_thread` | one shared `GeomAdaptor_Curve`, a `ShallowCopy()` per thread (#3065) | yes |
+| `edge_shallow_copy_per_thread` | one shared `BRepAdaptor_Curve`, a `ShallowCopy()` per thread (#3065) | yes |
+| `surface_shallow_copy_per_thread` | one shared `GeomAdaptor_Surface`, a `ShallowCopy()` per thread (#3065) | yes |
 | `curve_shared_adaptor` | one adaptor, therefore one cache, for all threads | **no** |
 | `surface_shared_adaptor` | one adaptor, therefore one cache, for all threads | **no** |
 
@@ -51,9 +54,20 @@ curve_shared_adaptor       exit=0 races=0
 surface_shared_adaptor     exit=0 races=0
 ```
 
+(That block is the six original modes, measured on the pinned kernel. The three `*_shallow_copy_per_thread`
+modes were added for #3065 and are measured in that PR.)
+
 Named racing globals: **none**. Per the DE segment's lesson, that is the claim, not a report count:
 counts are run-unstable, and the same binary and arguments gave `iges_write` 129 reports in one run
 and 38 in another. Presence or absence of a named global is binary.
+
+The `*_shallow_copy_per_thread` modes (#3065) are the pattern the kernel's maintainer says an
+adaptor is designed for and the one `GeomLib_CheckCurveOnSurface` follows per worker: build one
+adaptor, and each worker takes `ShallowCopy()` of it, which drops the evaluation cache. They differ
+from the modes above in two ways. The source adaptor is shared between threads, so a copy that leaked
+the source's cache would race. And each point is compared with the geometry's own evaluator
+(`Geom_BSplineCurve::Value` owns no cache), because a NaN test cannot see a plausible point from the
+wrong span, which is the defect `0031` exists for.
 
 ## The harness is clean, not blind, and here is the proof
 
@@ -85,10 +99,16 @@ should know it does not apply.
 `0031` upstream, the layout question resolves and a genuine A/B becomes possible; that is worth
 checking during the 8.0.2 repatch survey.
 
+**#3065 later closed this by a different route**: it compiled the probe against each variant's own
+headers rather than override-linking, which is a true A/B (see the issue's investigation result).
+Without `0031` the three `*_independent`/`*_shared_geometry` pairs stay at 0 races and the two
+`*_shared_adaptor` modes report races, so these gate modes would not have caught `0031`'s absence by
+design: they hold the supported patterns. What they do catch is a regression in a supported pattern.
+
 ## Reproducing
 
 ```bash
-Scripts/tsan-stress.sh run          # the four gate modes, with everything else
+Scripts/tsan-stress.sh run          # the seven gate modes, with everything else
 ```
 
 Or one mode directly, against the TSan-instrumented kernel:
