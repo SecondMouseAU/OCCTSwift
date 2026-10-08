@@ -166,11 +166,35 @@ def delta_paths(root, merge_base, head):
     return [p for p in out.split("\0") if p]
 
 
-def blob_ids(root, rev, paths):
-    """One `git cat-file --batch-check` for every path: blob oid, or None when absent."""
+def load_path_map(path):
+    """{old: new} from a file of `old<TAB>new` lines, for a lift whose `main` side moved a file the
+    v5 branch still keeps at the old path (#3148). Further columns and `#` lines are ignored, so a
+    `Scripts/test-areas/<target>.tsv` mapping table is a valid map as it stands."""
+    try:
+        with open(path, encoding="utf-8") as fh:
+            lines = fh.read().split("\n")
+    except OSError as exc:
+        raise Refusal("cannot read --path-map %s: %s" % (path, exc))
+    out = {}
+    for n, line in enumerate(lines, 1):
+        if not line or line.startswith("#"):
+            continue
+        cols = line.split("\t")
+        if len(cols) < 2 or not cols[0] or not cols[1]:
+            raise Refusal("--path-map %s:%d: want 'old<TAB>new'" % (path, n))
+        if out.get(cols[0], cols[1]) != cols[1]:
+            raise Refusal("--path-map %s:%d: %s is mapped to two different paths" % (path, n, cols[0]))
+        out[cols[0]] = cols[1]
+    return out
+
+
+def blob_ids(root, rev, paths, path_map=None):
+    """One `git cat-file --batch-check` for every path: blob oid, or None when absent. With
+    `path_map`, `rev` is read at the mapped path while the result stays keyed by the original."""
     if not paths:
         return {}
-    stdin = "".join("%s:%s\n" % (rev, p) for p in paths)
+    pm = path_map or {}
+    stdin = "".join("%s:%s\n" % (rev, pm.get(p, p)) for p in paths)
     p = subprocess.run(["git", "-C", root, "cat-file", "--batch-check"],
                        input=stdin, capture_output=True, text=True)
     if p.returncode != 0:
@@ -185,17 +209,31 @@ def blob_ids(root, rev, paths):
     return out
 
 
-def numstat_paths(root, head, onto, paths):
+def numstat_paths(root, head, onto, paths, path_map=None):
     """One diff for the whole set, head to onto. Returns {path: (added, deleted)}, None for a
     binary pair where lines mean nothing. `deleted` is what `main` drops: zero is containment, and
     the count itself is what makes a DIFFERENT readable without opening the file."""
     if not paths:
         return {}
+    pm = path_map or {}
+    moved = [p for p in paths if pm.get(p, p) != p]
+    verdict = {}
+    for p in moved:
+        # Two different paths cannot share one pathspec, so a moved file is diffed blob to blob.
+        # The record is "<added>\t<deleted>\t" then the two names, and only the counts are read.
+        rec = git(root, "diff", "--numstat", "--no-renames", "-z",
+                  "%s:%s" % (head, p), "%s:%s" % (onto, pm[p])).split("\0")[0]
+        parts = rec.split("\t")
+        if len(parts) < 2 or not parts[0]:
+            raise Refusal("unexpected numstat record %r for moved path %s" % (rec, p))
+        verdict[p] = None if "-" in parts[:2] else (int(parts[0]), int(parts[1]))
+    paths = [p for p in paths if p not in moved]
+    if not paths:
+        return verdict
     out = git(root, "diff", "--numstat", "--no-renames", "-z", head, onto, "--", *paths)
     # `--numstat -z` emits "<added>\t<deleted>\t<path>\0". `--no-renames` keeps it to that one
     # shape; the rename shape, which puts an empty path there and two more fields after it, is
     # rejected rather than guessed at, because misreading it would silently drop a path.
-    verdict = {}
     for field in out.split("\0"):
         if not field:
             continue
@@ -225,7 +263,7 @@ def classify(head_blobs, onto_blobs, supersets):
     return verdicts
 
 
-def screen(root, cand, onto, path_prefixes, exclude=NEVER_CROSSES):
+def screen(root, cand, onto, path_prefixes, exclude=NEVER_CROSSES, path_map=None):
     base = cand["base"]
     base_ref = base if resolve(root, base) else "origin/" + base
     if not resolve(root, base_ref):
@@ -256,10 +294,10 @@ def screen(root, cand, onto, path_prefixes, exclude=NEVER_CROSSES):
     skipped = len(paths) - len(scoped)
 
     head_blobs = blob_ids(root, head_ref, scoped)
-    onto_blobs = blob_ids(root, onto, scoped)
+    onto_blobs = blob_ids(root, onto, scoped, path_map)
     differing = [p for p in scoped
                  if head_blobs[p] and onto_blobs[p] and head_blobs[p] != onto_blobs[p]]
-    numstat = numstat_paths(root, head_ref, onto, differing)
+    numstat = numstat_paths(root, head_ref, onto, differing, path_map)
     supersets = {p: (None if n is None else n[1] == 0) for p, n in numstat.items()}
     verdicts = classify(head_blobs, onto_blobs, supersets)
 
@@ -320,7 +358,9 @@ def run(args):
     if not cands:
         raise Refusal("no candidates: give PR numbers, --branch or --ref")
     exclude = () if args.all_paths else NEVER_CROSSES
-    return report([screen(root, c, args.onto, args.paths, exclude) for c in cands], args.onto)
+    path_map = load_path_map(args.path_map) if args.path_map else None
+    return report([screen(root, c, args.onto, args.paths, exclude, path_map) for c in cands],
+                  args.onto)
 
 
 # ---------------------------------------------------------------------------- self-test
@@ -512,6 +552,53 @@ def self_test():
             cases.append(("an unresolvable --onto is a refusal, not a verdict", False))
         except Refusal:
             cases.append(("an unresolvable --onto is a refusal, not a verdict", True))
+
+        # --path-map (#3148): `main` moved two files the branch still keeps at their old paths.
+        _sh(tmp, "git", "checkout", "-q", "headbranch")
+        _write(tmp, "f/old-eq.txt", "alpha\n")
+        _write(tmp, "f/old-diff.txt", "alpha\nbeta\n")
+        _write(tmp, "f/old-nowhere.txt", "alpha\n")
+        _sh(tmp, "git", "add", "-A")
+        _sh(tmp, "git", "commit", "-qm", "head, files main later moves")
+        _sh(tmp, "git", "checkout", "-q", "mainbranch")
+        _write(tmp, "g/new-eq.txt", "alpha\n")
+        _write(tmp, "g/new-diff.txt", "alpha\n")
+        _sh(tmp, "git", "add", "-A")
+        _sh(tmp, "git", "commit", "-qm", "main, the moved files")
+        pm = {"f/old-eq.txt": "g/new-eq.txt", "f/old-diff.txt": "g/new-diff.txt",
+              "f/old-nowhere.txt": "g/never-created.txt"}
+        plain = screen(root, cands[0], "mainbranch", [])
+        mapped = screen(root, cands[0], "mainbranch", [], NEVER_CROSSES, pm)
+        cases.append(("without a path map a moved file reads ABSENT on main",
+                      plain["verdicts"].get("f/old-eq.txt") == ABSENT))
+        cases.append(("with a path map a moved file identical at its new path is EQUAL",
+                      mapped["verdicts"].get("f/old-eq.txt") == EQUAL))
+        cases.append(("with a path map a moved file that differs is DIFFERENT, not ABSENT",
+                      mapped["verdicts"].get("f/old-diff.txt") == DIFFERENT))
+        cases.append(("a moved file reports how many lines main drops at the new path",
+                      mapped["dropped"].get("f/old-diff.txt") == 1))
+        cases.append(("a map entry whose new path does not exist is still ABSENT",
+                      mapped["verdicts"].get("f/old-nowhere.txt") == ABSENT))
+        cases.append(("a path the map does not name is judged as before",
+                      mapped["verdicts"].get("f/equal.txt") == EQUAL
+                      and mapped["verdicts"].get("f/different.txt") == DIFFERENT))
+        mapfile = os.path.join(tmp, "map.tsv")
+        _write(tmp, "map.tsv", "# current\tproposed\tarea\nf/old-eq.txt\tg/new-eq.txt\tArea\tx\n")
+        cases.append(("load_path_map reads the first two columns and skips comments",
+                      load_path_map(mapfile) == {"f/old-eq.txt": "g/new-eq.txt"}))
+        for label, body in (("a one-column line", "f/only.txt\n"),
+                            ("one path mapped to two", "a\tb\na\tc\n")):
+            _write(tmp, "bad.tsv", body)
+            try:
+                load_path_map(os.path.join(tmp, "bad.tsv"))
+                cases.append(("load_path_map refuses " + label, False))
+            except Refusal:
+                cases.append(("load_path_map refuses " + label, True))
+        try:
+            load_path_map(os.path.join(tmp, "absent.tsv"))
+            cases.append(("load_path_map refuses a map that cannot be read", False))
+        except Refusal:
+            cases.append(("load_path_map refuses a map that cannot be read", True))
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
 
@@ -537,6 +624,9 @@ def main():
                     help="only screen paths under this prefix; repeatable")
     ap.add_argument("--all-paths", action="store_true",
                     help="screen the okf/references/766-* records too, which never cross (#2854)")
+    ap.add_argument("--path-map", metavar="FILE",
+                    help="old<TAB>new lines: a path the branch keeps at its old name is read on "
+                         "--onto at the new one (#3148)")
     ap.add_argument("--self-test", action="store_true")
     args = ap.parse_args()
     if args.self_test:

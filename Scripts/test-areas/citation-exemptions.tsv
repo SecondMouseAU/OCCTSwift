@@ -18,3 +18,5 @@ path	Tests/OCCTCurveTests/FooTests.swift	placeholder file in census-766-weak-ass
 regex	Tests/(OCCT[A-Za-z0-9]+Tests)/\1\.swift	the pre-split monolith test file of a domain, deleted when the per-domain targets were split into many files; cited by repro READMEs and triage records as it stood
 path	Tests/OCCTModelingTests/ChamferTests.swift	docs/guides/adding-features.md names it as the file a reader is about to create in a worked example
 path	Tests/OCCTModelingTests/Issue1393SplitDraftsTests.swift	the test was deleted with Shape.splitDrafts (#1393); the repro README records that it existed
+path	Tests/OCCTDemoTests/*.swift	placeholder target in move-test-files.py self-test fixtures
+path	Tests/OCCTOtherTests/*.swift	placeholder target in move-test-files.py self-test fixtures
