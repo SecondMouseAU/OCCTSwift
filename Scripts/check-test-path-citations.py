@@ -42,7 +42,8 @@ SCAN_FILES = ("Package.swift",)
 SKIP_PREFIXES = ("Scripts/test-areas/",)
 EXEMPTIONS = "Scripts/test-areas/citation-exemptions.tsv"
 # The class holds "/" because a citation may name an area subdirectory (`Area/FooTests.swift`), and
-# "+" because Swift file names use it (`Shape+Curve.swift`); a class without either goes blind to those.
+# "+" because Swift file names use it (`Shape+Curve.swift`), and "-" for hyphenated names; a class
+# without any of them goes blind to the citations that use them.
 CITATION = re.compile(r"Tests/OCCT[A-Za-z0-9]+Tests/[A-Za-z0-9_.+/-]*?\.swift")
 
 
