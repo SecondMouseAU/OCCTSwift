@@ -1,0 +1,4 @@
+pipeSweep: shapeType=3 area=1570.7963267948967 (2 pi r h = 1570.7963267948965) ErrorOnSurface=0
+findSurface: Found=1 surface=Geom_Plane ToleranceReached=0 Existed=1 plane location=(-5,-5,-5) normal=(1,0,-0) location identity=1
+multiplicities: face1 surface=Geom_BSplineSurface U knots=2 mults=2 2 V knots=2 mults=2 2 bounds=[0, 10]x[-10, 0]
+reverse: S(2, -3.0000000000000004)=(-5,-1.9999999999999996,-3) after UReverse S(u1+u2-u, v)=(-5,-1.9999999999999996,-3) after VReverse S(u1+u2-u, v1+v2-v)=(-5,-1.9999999999999998,-3) S(u, v) after both=(-5,1.9999999999999996,3) bounds after=[0,10]x[-10,0]

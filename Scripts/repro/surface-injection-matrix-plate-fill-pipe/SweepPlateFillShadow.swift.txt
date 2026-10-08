@@ -1,0 +1,439 @@
+import Foundation
+import OCCTBridge
+
+// TEMPORARY injection harness for the #766 Surface plate/fill/pipe batch (batch 13). This `.txt` is
+// the evidence copy: for a sweep it is copied to Sources/OCCTSwift/SweepPlateFillShadow.swift and
+// removed again, and that file must never be committed (README.md, "Running it"). Every function
+// below has the name and C signature of an OCCTBridge entry point, so the module-local declaration
+// wins over the imported one at every call site with no edit to any call site or any .mm.
+// One build serves every switch; PF_SWITCH selects one at runtime. With the variable unset every
+// shadow is a pure pass-through, which the sweep asserts (suites green, no switch).
+
+enum PF {
+    static let active: String = Foundation.ProcessInfo.processInfo.environment["PF_SWITCH"] ?? ""
+    static func on(_ name: String) -> Bool { active == name }
+}
+
+// MARK: - Plate_Plate solver (PlateSolver, PlateConstraintExt)
+
+func OCCTPlateContinuity(_ plate: OCCTPlateRef) -> Int32 {
+    if PF.on("PLATE_CONT_PLUS1") { return OCCTBridge.OCCTPlateContinuity(plate) + 1 }
+    return OCCTBridge.OCCTPlateContinuity(plate)
+}
+
+func OCCTPlateSolve(_ plate: OCCTPlateRef, _ order: Int32, _ anisotropy: Double) -> Bool {
+    if PF.on("PLATE_SOLVE_ORDER_MINUS1") { return OCCTBridge.OCCTPlateSolve(plate, order - 1, anisotropy) }
+    return OCCTBridge.OCCTPlateSolve(plate, order, anisotropy)
+}
+
+func OCCTPlateEvaluate(
+    _ plate: OCCTPlateRef, _ u: Double, _ v: Double,
+    _ outX: UnsafeMutablePointer<Double>, _ outY: UnsafeMutablePointer<Double>,
+    _ outZ: UnsafeMutablePointer<Double>
+) {
+    OCCTBridge.OCCTPlateEvaluate(plate, u, v, outX, outY, outZ)
+    if PF.on("PLATE_EVAL_Z_PLUS") { outZ.pointee += 1e-6 }
+    if PF.on("PLATE_EVAL_XY_SWAP") { let t = outX.pointee; outX.pointee = outY.pointee; outY.pointee = t }
+}
+
+func OCCTPlateEvaluateDerivative(
+    _ plate: OCCTPlateRef, _ u: Double, _ v: Double, _ iu: Int32, _ iv: Int32,
+    _ outX: UnsafeMutablePointer<Double>, _ outY: UnsafeMutablePointer<Double>,
+    _ outZ: UnsafeMutablePointer<Double>
+) {
+    if PF.on("PLATE_DERIV_SWAP_UV") {
+        OCCTBridge.OCCTPlateEvaluateDerivative(plate, u, v, iv, iu, outX, outY, outZ)
+        return
+    }
+    OCCTBridge.OCCTPlateEvaluateDerivative(plate, u, v, iu, iv, outX, outY, outZ)
+    if PF.on("PLATE_DERIV_Z_PLUS") { outZ.pointee += 1e-6 }
+}
+
+func OCCTPlateUVBox(
+    _ plate: OCCTPlateRef, _ umin: UnsafeMutablePointer<Double>, _ umax: UnsafeMutablePointer<Double>,
+    _ vmin: UnsafeMutablePointer<Double>, _ vmax: UnsafeMutablePointer<Double>
+) {
+    OCCTBridge.OCCTPlateUVBox(plate, umin, umax, vmin, vmax)
+    if PF.on("PLATE_UVBOX_WIDEN") { umin.pointee -= 1 }
+    if PF.on("PLATE_UVBOX_VMAX_PLUS") { vmax.pointee += 1 }
+}
+
+func OCCTPlateLoadPinpoint(
+    _ plate: OCCTPlateRef, _ u: Double, _ v: Double, _ x: Double, _ y: Double, _ z: Double,
+    _ iu: Int32, _ iv: Int32
+) {
+    if PF.on("PLATE_PIN_ORDER_IGNORED") {
+        OCCTBridge.OCCTPlateLoadPinpoint(plate, u, v, x, y, z, 0, 0)
+        return
+    }
+    OCCTBridge.OCCTPlateLoadPinpoint(plate, u, v, x, y, z, iu, iv)
+}
+
+func OCCTPlateLoadPlaneConstraint(
+    _ plate: OCCTPlateRef, _ u: Double, _ v: Double, _ px: Double, _ py: Double, _ pz: Double,
+    _ nx: Double, _ ny: Double, _ nz: Double
+) -> Bool {
+    if PF.on("PLATE_PLANE_DROPPED") { return true }
+    if PF.on("PLATE_PLANE_Z0") { return OCCTBridge.OCCTPlateLoadPlaneConstraint(plate, u, v, px, py, 0, nx, ny, nz) }
+    return OCCTBridge.OCCTPlateLoadPlaneConstraint(plate, u, v, px, py, pz, nx, ny, nz)
+}
+
+func OCCTPlateLoadLineConstraint(
+    _ plate: OCCTPlateRef, _ u: Double, _ v: Double, _ px: Double, _ py: Double, _ pz: Double,
+    _ dx: Double, _ dy: Double, _ dz: Double
+) -> Bool {
+    if PF.on("PLATE_LINE_DROPPED") { return true }
+    if PF.on("PLATE_LINE_Z0") { return OCCTBridge.OCCTPlateLoadLineConstraint(plate, u, v, px, py, 0, dx, dy, dz) }
+    return OCCTBridge.OCCTPlateLoadLineConstraint(plate, u, v, px, py, pz, dx, dy, dz)
+}
+
+func OCCTPlateLoadGtoC(
+    _ plate: OCCTPlateRef, _ u: Double, _ v: Double, _ d1s: UnsafePointer<Double>,
+    _ d1t: UnsafePointer<Double>
+) {
+    if PF.on("PLATE_GTOC_DROPPED") { return }
+    if PF.on("PLATE_GTOC_SWAP") {
+        OCCTBridge.OCCTPlateLoadGtoC(plate, u, v, d1t, d1s)
+        return
+    }
+    OCCTBridge.OCCTPlateLoadGtoC(plate, u, v, d1s, d1t)
+}
+
+// MARK: - Plate surfaces through points and curves (PlateSurface, AdvancedPlateSurface, GeomPlateSurface)
+
+func OCCTShapePlatePoints(_ points: UnsafePointer<Double>, _ count: Int32, _ tol: Double) -> OCCTShapeRef? {
+    if PF.on("PLATEPTS_DROP_LAST") { return OCCTBridge.OCCTShapePlatePoints(points, count - 1, tol) }
+    if PF.on("PLATEPTS_Z_SHIFT") {
+        var p = Array(UnsafeBufferPointer(start: points, count: Int(count) * 3))
+        for i in 0..<Int(count) { p[i * 3 + 2] += 0.5 }
+        return p.withUnsafeBufferPointer { OCCTBridge.OCCTShapePlatePoints($0.baseAddress!, count, tol) }
+    }
+    if PF.on("PLATEPTS_DROP_FIRST") { return OCCTBridge.OCCTShapePlatePoints(points + 3, count - 1, tol) }
+    return OCCTBridge.OCCTShapePlatePoints(points, count, tol)
+}
+
+func OCCTShapePlatePointsAdvanced(
+    _ points: UnsafePointer<Double>, _ count: Int32, _ orders: UnsafePointer<Int32>, _ degree: Int32,
+    _ nbPtsOnCur: Int32, _ nbIter: Int32, _ tol: Double
+) -> OCCTShapeRef? {
+    if PF.on("PLATEADV_DROP_LAST") {
+        return OCCTBridge.OCCTShapePlatePointsAdvanced(points, count - 1, orders, degree, nbPtsOnCur, nbIter, tol)
+    }
+    if PF.on("PLATEADV_DROP_FIRST") {
+        return OCCTBridge.OCCTShapePlatePointsAdvanced(
+            points + 3, count - 1, orders + 1, degree, nbPtsOnCur, nbIter, tol)
+    }
+    if PF.on("PLATEADV_Z_SHIFT") {
+        var p = Array(UnsafeBufferPointer(start: points, count: Int(count) * 3))
+        for i in 0..<Int(count) { p[i * 3 + 2] += 0.5 }
+        return p.withUnsafeBufferPointer {
+            OCCTBridge.OCCTShapePlatePointsAdvanced($0.baseAddress!, count, orders, degree, nbPtsOnCur, nbIter, tol)
+        }
+    }
+    if PF.on("PLATEADV_DEGREE_PLUS1") {
+        return OCCTBridge.OCCTShapePlatePointsAdvanced(points, count, orders, degree + 1, nbPtsOnCur, nbIter, tol)
+    }
+    return OCCTBridge.OCCTShapePlatePointsAdvanced(points, count, orders, degree, nbPtsOnCur, nbIter, tol)
+}
+
+func OCCTShapePlateMixed(
+    _ points: UnsafePointer<Double>?, _ pointOrders: UnsafePointer<Int32>?, _ pointCount: Int32,
+    _ curves: UnsafePointer<OCCTWireRef?>?, _ curveOrders: UnsafePointer<Int32>?, _ curveCount: Int32,
+    _ degree: Int32, _ tol: Double
+) -> OCCTShapeRef? {
+    if PF.on("PLATEMIX_NO_CURVES") {
+        return OCCTBridge.OCCTShapePlateMixed(points, pointOrders, pointCount, curves, curveOrders, 0, degree, tol)
+    }
+    if PF.on("PLATEMIX_NO_POINTS") {
+        return OCCTBridge.OCCTShapePlateMixed(points, pointOrders, 0, curves, curveOrders, curveCount, degree, tol)
+    }
+    if PF.on("PLATEMIX_DROP_LAST_POINT") {
+        return OCCTBridge.OCCTShapePlateMixed(
+            points, pointOrders, pointCount - 1, curves, curveOrders, curveCount, degree, tol)
+    }
+    return OCCTBridge.OCCTShapePlateMixed(points, pointOrders, pointCount, curves, curveOrders, curveCount, degree, tol)
+}
+
+func OCCTShapePlateCurves(
+    _ curves: UnsafePointer<OCCTWireRef?>?, _ count: Int32, _ continuity: Int32, _ tol: Double
+) -> OCCTShapeRef? {
+    if PF.on("PLATECURVES_DROP_LAST") { return OCCTBridge.OCCTShapePlateCurves(curves, count - 1, continuity, tol) }
+    return OCCTBridge.OCCTShapePlateCurves(curves, count, continuity, tol)
+}
+
+func OCCTGeomPlateSurface(
+    _ points: UnsafePointer<Double>, _ count: Int32, _ tol: Double, _ maxDegree: Int32, _ maxSegments: Int32
+) -> OCCTShapeRef? {
+    if PF.on("GEOMPLATE_DROP_LAST") { return OCCTBridge.OCCTGeomPlateSurface(points, count - 1, tol, maxDegree, maxSegments) }
+    if PF.on("GEOMPLATE_DROP_FIRST") {
+        return OCCTBridge.OCCTGeomPlateSurface(points + 3, count - 1, tol, maxDegree, maxSegments)
+    }
+    if PF.on("GEOMPLATE_Z_SHIFT") {
+        var p = Array(UnsafeBufferPointer(start: points, count: Int(count) * 3))
+        for i in 0..<Int(count) { p[i * 3 + 2] += 0.5 }
+        return p.withUnsafeBufferPointer {
+            OCCTBridge.OCCTGeomPlateSurface($0.baseAddress!, count, tol, maxDegree, maxSegments)
+        }
+    }
+    return OCCTBridge.OCCTGeomPlateSurface(points, count, tol, maxDegree, maxSegments)
+}
+
+// MARK: - BRepOffsetAPI_MakeFilling (FillingSurface, FillingSupportFace, SurfaceFilling)
+
+func OCCTShapeFill(_ boundaries: UnsafePointer<OCCTWireRef?>?, _ count: Int32, _ params: OCCTFillingParams) -> OCCTShapeRef? {
+    var p = params
+    if PF.on("FILL_CONT_G0") { p.continuity = 0 }
+    if PF.on("FILL_COUNT_MINUS1") { return OCCTBridge.OCCTShapeFill(boundaries, count - 1, p) }
+    return OCCTBridge.OCCTShapeFill(boundaries, count, p)
+}
+
+func OCCTShapeFillWithSupport(
+    _ boundaries: UnsafePointer<OCCTWireRef?>?, _ count: Int32, _ support: OCCTShapeRef?,
+    _ params: OCCTFillingParams
+) -> OCCTShapeRef? {
+    var p = params
+    if PF.on("FILLSUP_SUPPORT_IGNORED") { return OCCTBridge.OCCTShapeFill(boundaries, count, p) }
+    if PF.on("FILLSUP_CONT_G0") { p.continuity = 0 }
+    if PF.on("FILLSUP_CONT_CAP_G1") { p.continuity = min(p.continuity, 1) }
+    if PF.on("FILLSUP_MAXDEG_IGNORED") { p.maxDegree = 8 }
+    return OCCTBridge.OCCTShapeFillWithSupport(boundaries, count, support, p)
+}
+
+func OCCTShapeFillConstraints(
+    _ constraints: UnsafePointer<OCCTFillConstraint>?, _ count: Int32, _ params: OCCTFillingParams
+) -> OCCTShapeRef? {
+    if PF.on("FILLCON_CONT_G0"), let constraints, count > 0 {
+        var c = Array(UnsafeBufferPointer(start: constraints, count: Int(count)))
+        for i in 0..<c.count { c[i].continuity = 0 }
+        return c.withUnsafeBufferPointer { OCCTBridge.OCCTShapeFillConstraints($0.baseAddress, count, params) }
+    }
+    if PF.on("FILLCON_DROP_LAST") { return OCCTBridge.OCCTShapeFillConstraints(constraints, count - 1, params) }
+    return OCCTBridge.OCCTShapeFillConstraints(constraints, count, params)
+}
+
+func OCCTFillingAddEdge(_ filling: OCCTFillingRef, _ edge: OCCTEdgeRef, _ continuity: Int32) -> Bool {
+    if PF.on("FILLING_EDGE_NOT_LOADED") { return true }
+    if PF.on("FILLING_EDGE_CONT_G0") { return OCCTBridge.OCCTFillingAddEdge(filling, edge, 0) }
+    return OCCTBridge.OCCTFillingAddEdge(filling, edge, continuity)
+}
+
+func OCCTFillingAddFreeEdge(_ filling: OCCTFillingRef, _ edge: OCCTEdgeRef, _ continuity: Int32) -> Bool {
+    if PF.on("FILLING_FREEEDGE_AS_BOUND") { return OCCTBridge.OCCTFillingAddEdge(filling, edge, continuity) }
+    if PF.on("FILLING_FREEEDGE_DROPPED") { return true }
+    return OCCTBridge.OCCTFillingAddFreeEdge(filling, edge, continuity)
+}
+
+func OCCTFillingAddPoint(_ filling: OCCTFillingRef, _ x: Double, _ y: Double, _ z: Double) -> Bool {
+    if PF.on("FILLING_POINT_DROPPED") { return true }
+    if PF.on("FILLING_POINT_Z0") { return OCCTBridge.OCCTFillingAddPoint(filling, x, y, 0) }
+    return OCCTBridge.OCCTFillingAddPoint(filling, x, y, z)
+}
+
+func OCCTFillingAddEdgeWithSupport(
+    _ filling: OCCTFillingRef, _ edge: OCCTEdgeRef, _ support: OCCTFaceRef?, _ continuity: Int32
+) -> Bool {
+    if PF.on("FILLING_SUPPORT_CONT_G0") { return OCCTBridge.OCCTFillingAddEdgeWithSupport(filling, edge, support, 0) }
+    if PF.on("FILLING_SUPPORT_G2_AS_G1") {
+        return OCCTBridge.OCCTFillingAddEdgeWithSupport(filling, edge, support, min(continuity, 1))
+    }
+    return OCCTBridge.OCCTFillingAddEdgeWithSupport(filling, edge, support, continuity)
+}
+
+func OCCTFillingG0Error(_ filling: OCCTFillingRef) -> Double {
+    if PF.on("FILLING_G0_PLUS") { return OCCTBridge.OCCTFillingG0Error(filling) + 1e-9 }
+    return OCCTBridge.OCCTFillingG0Error(filling)
+}
+
+func OCCTFillingG1Error(_ filling: OCCTFillingRef) -> Double {
+    if PF.on("FILLING_G1_PLUS") { return OCCTBridge.OCCTFillingG1Error(filling) + 1e-3 }
+    return OCCTBridge.OCCTFillingG1Error(filling)
+}
+
+func OCCTFillingG2Error(_ filling: OCCTFillingRef) -> Double {
+    if PF.on("FILLING_G2_PLUS") { return OCCTBridge.OCCTFillingG2Error(filling) + 1e-3 }
+    return OCCTBridge.OCCTFillingG2Error(filling)
+}
+
+// MARK: - GeomFill_BezierCurves, GeomFill_BSplineCurves
+
+func OCCTSurfaceBezierFill2(_ c1: OCCTCurve3DRef, _ c2: OCCTCurve3DRef, _ style: Int32) -> OCCTSurfaceRef? {
+    if PF.on("BEZFILL_SWAP_CURVES") { return OCCTBridge.OCCTSurfaceBezierFill2(c2, c1, style) }
+    if PF.on("BEZFILL_STYLE_COONS") { return OCCTBridge.OCCTSurfaceBezierFill2(c1, c2, style == 0 ? 1 : style) }
+    if PF.on("BEZFILL_STYLE_CURVED_AS_STRETCH") { return OCCTBridge.OCCTSurfaceBezierFill2(c1, c2, style == 2 ? 0 : style) }
+    return OCCTBridge.OCCTSurfaceBezierFill2(c1, c2, style)
+}
+
+func OCCTSurfaceBezierFill4(
+    _ c1: OCCTCurve3DRef, _ c2: OCCTCurve3DRef, _ c3: OCCTCurve3DRef, _ c4: OCCTCurve3DRef, _ style: Int32
+) -> OCCTSurfaceRef? {
+    if PF.on("BEZFILL4_ROTATE") { return OCCTBridge.OCCTSurfaceBezierFill4(c2, c3, c4, c1, style) }
+    if PF.on("BEZFILL4_STYLE_COONS") { return OCCTBridge.OCCTSurfaceBezierFill4(c1, c2, c3, c4, 1) }
+    return OCCTBridge.OCCTSurfaceBezierFill4(c1, c2, c3, c4, style)
+}
+
+func OCCTSurfaceFillBSpline2Curves(_ c1: OCCTCurve3DRef, _ c2: OCCTCurve3DRef, _ style: Int32) -> OCCTSurfaceRef? {
+    if PF.on("BSFILL_SWAP_CURVES") { return OCCTBridge.OCCTSurfaceFillBSpline2Curves(c2, c1, style) }
+    if PF.on("BSFILL_STYLE_COONS") { return OCCTBridge.OCCTSurfaceFillBSpline2Curves(c1, c2, 1) }
+    if PF.on("BSFILL_CURVED_AS_STRETCH") { return OCCTBridge.OCCTSurfaceFillBSpline2Curves(c1, c2, style == 2 ? 0 : style) }
+    return OCCTBridge.OCCTSurfaceFillBSpline2Curves(c1, c2, style)
+}
+
+func OCCTSurfaceFillBSpline4Curves(
+    _ c1: OCCTCurve3DRef, _ c2: OCCTCurve3DRef, _ c3: OCCTCurve3DRef, _ c4: OCCTCurve3DRef, _ style: Int32
+) -> OCCTSurfaceRef? {
+    if PF.on("BSFILL4_ROTATE") { return OCCTBridge.OCCTSurfaceFillBSpline4Curves(c2, c3, c4, c1, style) }
+    if PF.on("BSFILL4_STYLE_STRETCH") { return OCCTBridge.OCCTSurfaceFillBSpline4Curves(c1, c2, c3, c4, 0) }
+    return OCCTBridge.OCCTSurfaceFillBSpline4Curves(c1, c2, c3, c4, style)
+}
+
+// MARK: - GeomFill generator, NSections, profiler, section placement
+
+func OCCTGeomFillGenerator(
+    _ curves: UnsafePointer<OCCTCurve3DRef>, _ count: Int32, _ tol: Double
+) -> OCCTSurfaceRef? {
+    if PF.on("GEN_DROP_LAST") { return OCCTBridge.OCCTGeomFillGenerator(curves, count - 1, tol) }
+    if PF.on("GEN_REVERSED") {
+        let r = Array(UnsafeBufferPointer(start: curves, count: Int(count)).reversed())
+        return r.withUnsafeBufferPointer { OCCTBridge.OCCTGeomFillGenerator($0.baseAddress!, count, tol) }
+    }
+    return OCCTBridge.OCCTGeomFillGenerator(curves, count, tol)
+}
+
+func OCCTGeomFillNSections(
+    _ curves: UnsafePointer<OCCTCurve3DRef>, _ params: UnsafePointer<Double>, _ count: Int32
+) -> OCCTSurfaceRef? {
+    if PF.on("NSEC_DROP_LAST") { return OCCTBridge.OCCTGeomFillNSections(curves, params, count - 1) }
+    if PF.on("NSEC_REVERSED") {
+        let r = Array(UnsafeBufferPointer(start: curves, count: Int(count)).reversed())
+        return r.withUnsafeBufferPointer { OCCTBridge.OCCTGeomFillNSections($0.baseAddress!, params, count) }
+    }
+    return OCCTBridge.OCCTGeomFillNSections(curves, params, count)
+}
+
+func OCCTGeomFillNSectionsInfo(
+    _ curves: UnsafePointer<OCCTCurve3DRef>, _ params: UnsafePointer<Double>, _ count: Int32,
+    _ outNbPoles: UnsafeMutablePointer<Int32>, _ outNbKnots: UnsafeMutablePointer<Int32>,
+    _ outDegree: UnsafeMutablePointer<Int32>
+) {
+    OCCTBridge.OCCTGeomFillNSectionsInfo(curves, params, count, outNbPoles, outNbKnots, outDegree)
+    if PF.on("INFO_POLES_PLUS1") { outNbPoles.pointee += 1 }
+    if PF.on("INFO_KNOTS_PLUS1") { outNbKnots.pointee += 1 }
+    if PF.on("INFO_DEGREE_PLUS1") { outDegree.pointee += 1 }
+}
+
+func OCCTGeomFillProfilerDegree(_ ref: OCCTGeomFillProfilerRef) -> Int32 {
+    if PF.on("PROF_DEGREE_PLUS1") { return OCCTBridge.OCCTGeomFillProfilerDegree(ref) + 1 }
+    return OCCTBridge.OCCTGeomFillProfilerDegree(ref)
+}
+
+func OCCTGeomFillProfilerNbPoles(_ ref: OCCTGeomFillProfilerRef) -> Int32 {
+    if PF.on("PROF_NBPOLES_PLUS1") { return OCCTBridge.OCCTGeomFillProfilerNbPoles(ref) + 1 }
+    if PF.on("PROF_NBPOLES_AS_KNOTS") { return OCCTBridge.OCCTGeomFillProfilerNbKnots(ref) }
+    return OCCTBridge.OCCTGeomFillProfilerNbPoles(ref)
+}
+
+func OCCTGeomFillProfilerNbKnots(_ ref: OCCTGeomFillProfilerRef) -> Int32 {
+    if PF.on("PROF_NBKNOTS_PLUS1") { return OCCTBridge.OCCTGeomFillProfilerNbKnots(ref) + 1 }
+    return OCCTBridge.OCCTGeomFillProfilerNbKnots(ref)
+}
+
+func OCCTGeomFillProfilerPoles(
+    _ ref: OCCTGeomFillProfilerRef, _ curveIndex: Int32, _ x: UnsafeMutablePointer<Double>,
+    _ y: UnsafeMutablePointer<Double>, _ z: UnsafeMutablePointer<Double>, _ maxPoles: Int32
+) -> Bool {
+    if PF.on("PROF_POLES_OTHER_CURVE") {
+        return OCCTBridge.OCCTGeomFillProfilerPoles(ref, curveIndex == 1 ? 2 : 1, x, y, z, maxPoles)
+    }
+    let ok = OCCTBridge.OCCTGeomFillProfilerPoles(ref, curveIndex, x, y, z, maxPoles)
+    if PF.on("PROF_POLES_Y_PLUS") { y.pointee += 1e-6 }
+    return ok
+}
+
+func OCCTGeomFillProfilerKnotsAndMults(
+    _ ref: OCCTGeomFillProfilerRef, _ knots: UnsafeMutablePointer<Double>,
+    _ mults: UnsafeMutablePointer<Int32>, _ maxKnots: Int32
+) -> Bool {
+    let ok = OCCTBridge.OCCTGeomFillProfilerKnotsAndMults(ref, knots, mults, maxKnots)
+    if PF.on("PROF_MULT_MINUS1") { mults.pointee -= 1 }
+    if PF.on("PROF_KNOT_SCALE") { knots.pointee += 0.01 }
+    return ok
+}
+
+func OCCTGeomFillSectionPlacement(
+    _ path: OCCTCurve3DRef, _ section: OCCTCurve3DRef, _ dx: Double, _ dy: Double, _ dz: Double,
+    _ draft: Double, _ tol: Double
+) -> OCCTSectionPlacementResult {
+    var r = OCCTBridge.OCCTGeomFillSectionPlacement(path, section, dx, dy, dz, draft, tol)
+    if PF.on("PLACE_DIST_PLUS") { r.distance += 0.1 }
+    if PF.on("PLACE_ANGLE_ZERO") { r.angle = 0 }
+    if PF.on("PLACE_PATHPARAM_PLUS") { r.parameterOnPath += 0.5 }
+    if PF.on("PLACE_SECTIONPARAM_PLUS") { r.parameterOnSection += 0.5 }
+    if PF.on("PLACE_NOT_DONE") { r.isDone = false }
+    return r
+}
+
+// MARK: - Surface pipe, BRepOffsetAPI_MakePipeShell, BRepFeat_MakePipe
+
+func OCCTSurfaceCreatePipe(_ path: OCCTCurve3DRef, _ radius: Double) -> OCCTSurfaceRef? {
+    if PF.on("PIPE_RADIUS_X1_1") { return OCCTBridge.OCCTSurfaceCreatePipe(path, radius * 1.1) }
+    return OCCTBridge.OCCTSurfaceCreatePipe(path, radius)
+}
+
+func OCCTSurfaceCreatePipeWithSection(_ path: OCCTCurve3DRef, _ section: OCCTCurve3DRef) -> OCCTSurfaceRef? {
+    if PF.on("PIPE_SECTION_IGNORED") { return OCCTBridge.OCCTSurfaceCreatePipe(path, 1.0) }
+    return OCCTBridge.OCCTSurfaceCreatePipeWithSection(path, section)
+}
+
+func OCCTShapeCreatePipeShellMultiSection(
+    _ spine: OCCTWireRef, _ profiles: UnsafePointer<OCCTWireRef?>?, _ count: Int32, _ mode: OCCTPipeMode,
+    _ bnX: Double, _ bnY: Double, _ bnZ: Double, _ aux: OCCTWireRef?, _ transition: Int32,
+    _ contact: Bool, _ correction: Bool, _ solid: Bool
+) -> OCCTShapeRef? {
+    if PF.on("PS_TRANSITION_NEXT") {
+        return OCCTBridge.OCCTShapeCreatePipeShellMultiSection(
+            spine, profiles, count, mode, bnX, bnY, bnZ, aux, (transition + 1) % 3, contact, correction, solid)
+    }
+    if PF.on("PS_NOT_SOLID") {
+        return OCCTBridge.OCCTShapeCreatePipeShellMultiSection(
+            spine, profiles, count, mode, bnX, bnY, bnZ, aux, transition, contact, correction, false)
+    }
+    return OCCTBridge.OCCTShapeCreatePipeShellMultiSection(
+        spine, profiles, count, mode, bnX, bnY, bnZ, aux, transition, contact, correction, solid)
+}
+
+func OCCTPipeShellBuild(_ ps: OCCTPipeShellRef) -> Bool {
+    if PF.on("PSB_BUILD_FALSE") { return false }
+    return OCCTBridge.OCCTPipeShellBuild(ps)
+}
+
+func OCCTPipeShellIsReady(_ ps: OCCTPipeShellRef) -> Bool {
+    if PF.on("PSB_READY_FALSE") { return false }
+    return OCCTBridge.OCCTPipeShellIsReady(ps)
+}
+
+func OCCTPipeShellErrorOnSurface(_ ps: OCCTPipeShellRef) -> Double {
+    if PF.on("PSB_ERR_PLUS") { return OCCTBridge.OCCTPipeShellErrorOnSurface(ps) + 1e-3 }
+    return OCCTBridge.OCCTPipeShellErrorOnSurface(ps)
+}
+
+func OCCTPipeShellFirstShape(_ ps: OCCTPipeShellRef) -> OCCTShapeRef? {
+    if PF.on("PSB_FIRST_IS_LAST") { return OCCTBridge.OCCTPipeShellLastShape(ps) }
+    return OCCTBridge.OCCTPipeShellFirstShape(ps)
+}
+
+func OCCTPipeShellLastShape(_ ps: OCCTPipeShellRef) -> OCCTShapeRef? {
+    if PF.on("PSB_LAST_NIL") { return nil }
+    return OCCTBridge.OCCTPipeShellLastShape(ps)
+}
+
+func OCCTPipeShellShape(_ ps: OCCTPipeShellRef) -> OCCTShapeRef? {
+    if PF.on("PSB_SHAPE_IS_FIRST") { return OCCTBridge.OCCTPipeShellFirstShape(ps) }
+    return OCCTBridge.OCCTPipeShellShape(ps)
+}
+
+func OCCTShapePipeFeatureFromProfile(
+    _ base: OCCTShapeRef, _ profile: OCCTShapeRef, _ faceIndex: Int32, _ spine: OCCTWireRef, _ fuse: Int32
+) -> OCCTShapeRef? {
+    if PF.on("PF_FUSE_FLIPPED") { return OCCTBridge.OCCTShapePipeFeatureFromProfile(base, profile, faceIndex, spine, fuse == 0 ? 1 : 0) }
+    return OCCTBridge.OCCTShapePipeFeatureFromProfile(base, profile, faceIndex, spine, fuse)
+}

@@ -16,7 +16,7 @@ every number about the list is written down.
 
 ## How many there are
 
-Eighteen gates, seven censuses and one merge-history audit run in `ci.yml`'s `gate-scripts` job,
+Eighteen gates, eight censuses and one merge-history audit run in `ci.yml`'s `gate-scripts` job,
 beside the release check that "The fourth kind" below counts apart from them. Every one of those
 numbers is derived from the job rather than kept by hand:
 `Scripts/check-inventory-prose.py` reads this sentence against `ci.yml` on every PR and fails when
@@ -88,7 +88,7 @@ human to adjudicate, not a verdict on the tree; CI runs only its `--self-test`, 
 could never fail and so could never signal. A census that earns a better false-positive number is
 promoted by renaming it `check-` and making it exit 1; the decision is separate from the script.
 
-The seven censuses today and what each is for:
+The eight censuses today and what each is for:
 
 - `census-unmeasured-values.py` (#726): values returned as measurements that were never computed.
   A bare run is the slowest of the five, because sub-kind 4 walks a taint fixpoint per bridge
@@ -245,7 +245,7 @@ and flags a sentence calling a pinned patch not-yet-pinned. Three properties are
   for comparison ("unlike `0044`") and a sentence naming two patches are silent, so a misread is
   a miss and never a false alarm. A pronoun phrase ("until it is pinned") reads the nearest patch
   before it. The same words about a patch the list does not hold are correct, so an unpinned
-  patch's rows need no edit; a self-test case uses a synthetic `0056` for exactly that.
+  patch's rows need no edit; a self-test case uses a synthetic number the pin list does not hold for exactly that.
 - **It was proved against the defect it was written for.** Replaying `git show 3054^:<file>`
   against the post-#3031 pin state, it flags 18 of #3054's 47 hunks directly: every Package.swift
   row the repin left reading "NOT built" or "WHEN THIS IS PINNED", the by-plane mirror's
@@ -254,13 +254,49 @@ and flags a sentence calling a pinned patch not-yet-pinned. Three properties are
   no patch to anchor to, and 14 are the by-plane mirror's own comments and a present-tense row, which
   name no pinned state at all. The self-test replays six excerpts of that text, kept short but taken from
   those revisions.
-- **It is a report, not a gate, until the tree is clean.** Its false-positive count on the live
-  tree is zero, but it also finds sentences that really are stale and sit in files the change that
-  added it did not own, and a gate red on its first merge blocks every open PR. `run()` prints them
-  under "REPORT, not a gate yet" and exits 0; `--strict-pin-prose` exits 1; flipping
-  `PIN_PROSE_IS_GATE` makes the bare run exit 1 and is the promotion, to be made once
-  `--strict-pin-prose` exits 0 on `main`. It is part of `check-inventory-prose.py`, not a new
-  script, so the gate and census counts above do not move.
+- **It was a report until the tree was clean, and is a gate now (#3114).** Its false-positive count
+  on the live tree was zero from the first day, but it also found sentences that really were stale
+  and sat in files the change that added it did not own, and a gate red on its first merge blocks
+  every open PR. #3112 therefore printed them under "REPORT, not a gate yet" and exited 0, and #3114
+  corrected the twelve it reported (plus two neighbours it could not resolve, "like `0051` and
+  `0052`" and "unpinned with `0050` and `0051`", found by reading the sections around them) and
+  flipped `PIN_PROSE_IS_GATE`. A bare run now exits 1 on a stale sentence, and a repin that pins a
+  patch must rewrite what called it unpinned in the same PR. A sentence kept as history is written
+  in the past tense or carries `pin-state-exempt: <reason>`. It is part of
+  `check-inventory-prose.py`, not a new script, so the gate and census counts above did not move.
+
+**The half that names a kernel, and not a patch, is a census: `census-stale-kernel-prose.py`
+(#3056).** A repin also leaves "the pin below is now `v4.0.0-kernel.3`", "the asset holds
+thirty-one" beside a derived thirty-nine, and "`v4.0.0-beta.4` | not cut" for a tag that exists. None
+of those names a patch, so the tense check cannot resolve them. The census derives the pin from
+`Package.swift`'s `url:`, the counts from the pin enumeration and `Scripts/patches/`, and the cut
+betas from `git tag -l`, and reports three shapes (K1 older tag as current, K2 a count the tree
+contradicts, K3 a beta called not cut). Three things are worth copying:
+
+- **The anchor was chosen by measuring the false-positive rate, not by argument.** The issue
+  expected about 25 legitimate "measured on kernel.2" sentences; there are 126 sentences naming an
+  older tag across 2,051 prose files, 124 of them correct history (main at `b4db0bf50`,
+  2026-10-07). Flagging every older tag is 98% false. Requiring "pinned" or "now" anywhere in the
+  sentence is 64 false of 66, because "pinned from `kernel.3`, so it is now a measurement" and a
+  parenthesised history beside the current tag both qualify. An explicit historical marker is 124
+  annotations before it is quiet. The shipped rule needs words ADJACENT to the tag (`Package.swift
+  pins <tag>`, `is now <tag>`, `native is on <tag>`, `will publish <tag>`, `the pinned <tag>`) and
+  lets a record word ("measured", "from", "was") silence only the weak ones: 5 findings, 2 stale
+  and 3 history. `--measure` reprints the three counts, so the choice can be re-checked after a
+  repin. `kernel-prose-exempt:` is the escape for a sentence that is deliberate history.
+- **It was replayed against the answer key.** #3054's diff is the list of what was wrong. On the
+  tree just before it (`git show 3054^`, and `0a814de19`, which reads the same), the census reports
+  17 findings, and 11 of them are exactly the places #3054 rewrote: 11 of the 15 kernel-tag and
+  count hunks. The 4 it misses name no tag and no beta ("now yields a different checksum from the
+  pinned asset", "the asset holds `TrimInfinite(...)`" about a tag it never names, "over 79"
+  modified files) or are a bare "Survey the 30 carried patches", a K2 shape that hits 6 sentences on
+  the live tree, none stale, and was rejected on that measurement. The other 6 findings were left
+  standing by #3054 and are still there after it: 3 rows that are stale (in 2 sentences) and 3 that
+  are history. On the tree after #3054 it is quiet except for those 6.
+- **It is a census, so the residue is the output.** The 3 history sentences are patch README
+  "Pin consequence" lines written when `v2.0.0-kernel.1` WAS the pin, and one `v2.0.0` plan
+  sentence. Rewriting them erases a record and leaving them misleads, which is the reading a gate
+  cannot make. Per the rule above only its `--self-test` runs in `ci.yml`.
 
 **One gate holds the bridge to the kernel's protocol rather than to a convention of this repo.**
 `check-transient-release-idiom.py` (#2974) reads every function in `Sources/OCCTBridge/src/*.mm`
@@ -618,7 +654,7 @@ build was on disk.
 
 ## Every detector proves it is not blind
 
-Seventeen of the eighteen gates, all seven censuses, the merge-history audit and the release check
+Seventeen of the eighteen gates, all eight censuses, the merge-history audit and the release check
 take `--self-test`, a fixture battery proving the *detector* catches each failure mode. Run it
 whenever you change one of these scripts. Three gate scripts were confidently wrong while
 reporting all clear (#618, #624/#630, #626), and a detector reporting "all clear" because it is
@@ -728,7 +764,7 @@ change to the ruleset.
 
 ## The pre-commit hook
 
-`Scripts/git-hooks/pre-commit` runs forty-four of `gate-scripts`' forty-five invocations, flag for
+`Scripts/git-hooks/pre-commit` runs forty-four of `gate-scripts`' forty-six invocations, flag for
 flag. The one it omits is `check-changelog-transcription.py`'s real run, which answers a question
 about the branch rather than about the commit being made; its `--self-test` does run. That is the
 only deliberate divergence, and it is written here because an undocumented difference between the
