@@ -32,6 +32,12 @@ struct SurfaceConversionTests {
         let sphere = Surface.sphere(center: .zero, radius: 5)!
         let approx = sphere.approximated(tolerance: 0.001)
         #expect(approx != nil)
+        // #766: was non-nil only. GeomConvert_ApproxSurface at 1e-3 / degree 8 gives degree
+        // 8 x 8 with 15 x 9 poles on this sphere (Scripts/repro/766-surface-conversion/).
+        if let approx {
+            #expect(approx.uDegree == 8 && approx.vDegree == 8)
+            #expect(approx.uPoleCount == 15 && approx.vPoleCount == 9)
+        }
     }
 
     @Test("U-iso curve from sphere")
@@ -44,6 +50,10 @@ struct SurfaceConversionTests {
             let p = iso.startPoint
             let dist = simd_length(p)
             #expect(abs(dist - 5.0) < 1e-6)
+            // #766: any point at radius 5 passed. The meridian at u = 0 starts at the south pole
+            // and passes (5, 0, 0) at v = 0.
+            #expect(simd_length(p - SIMD3(0, 0, -5)) < 1e-12)
+            #expect(simd_length(iso.point(at: 0) - SIMD3(5, 0, 0)) < 1e-12)
         }
     }
 
@@ -55,6 +65,8 @@ struct SurfaceConversionTests {
         if let iso = iso {
             // V-iso at v=0 is the equator (circle)
             #expect(iso.isClosed == true)
+            // #766: any closed curve passed; the equator passes (0, 5, 0) at u = pi/2.
+            #expect(simd_length(iso.point(at: .pi / 2) - SIMD3(0, 5, 0)) < 1e-12)
         }
     }
 }
