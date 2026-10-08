@@ -21,6 +21,10 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### The kernel is rebuilt on all forty-four carried patches, and the tests that waited for it run everywhere (#3003, #2881, #3039, #3010, #3091)
+
+The pinned OCCT asset moves to `v4.0.0-kernel.5`, five patches past its predecessor. An arc-join offset now returns the same faces in the same order every time, a fillet at an exact tangent radius reports failure instead of crashing the process, two threads making their first 2D edge together can no longer read a freed plane, and the matrix of inertia and centres of mass of cylinders, spheres, tori and cones are computed from the integral. Seven regression tests that only ran against a locally built kernel now run on every build.
+
 ### GProps: global properties of a partial cylinder, cone, sphere or torus, and patch 0057 for the wrong inertia behind it (#3091)
 
 New `GProps` wraps `GProp_SelGProps` and `GProp_VelGProps` over `gp_Cylinder`, `gp_Cone`, `gp_Sphere` and `gp_Torus` for any parameter range, as a surface or as the solid it sweeps, with `mass`, `centreOfMass`, `matrixOfInertia`, `staticMoments`, `momentOfInertia(about:direction:)`, `radiusOfGyration(about:direction:)`, `principalProperties`, `symmetry(tolerance:)` and `add(_:density:)`. Carried kernel patch `0057` fixes what it exposed: the matrix of inertia of the cylinder, sphere and torus overloads, the solid's centre of mass over a partial turn, and the torus area and volume over part of the tube (the full cylinder surface of radius 5 and height 10 read 314.159 about its axis where the integral gives 7853.98). The matrix of inertia and the solid centres are right only on a kernel carrying `0050`, `0051`, `0055` and `0057`, so they need the next kernel repin.
