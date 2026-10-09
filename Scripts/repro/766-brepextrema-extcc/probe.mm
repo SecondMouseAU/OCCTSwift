@@ -1,4 +1,4 @@
-// Kernel-parity probe for Tests/OCCTAnalysisTests/BRepExtremaExtCCTests.swift (#1920, #1921).
+// Kernel-parity probe for Tests/OCCTAnalysisTests/ElementPairExtrema/BRepExtremaExtCCTests.swift (#1920, #1921).
 // Box 1 is OCCTShapeCreateBox(10,10,10), centred on the origin; box 2 is
 // OCCTShapeCreateBoxAt(20,0,0, 10,10,10). Edges are enumerated the way occtEdgeAt does
 // (TopExp::MapShapes into an indexed map, 0-based index + 1), and each pair runs the

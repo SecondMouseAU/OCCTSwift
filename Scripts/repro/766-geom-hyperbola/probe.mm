@@ -1,4 +1,4 @@
-// Epic #766, Tests/OCCTAnalysisTests/GeomHyperbola3DTests.swift: kernel parity probe.
+// Epic #766, Tests/OCCTAnalysisTests/GeomProperties/GeomHyperbola3DTests.swift: kernel parity probe.
 // OCCTCurve3DCreateHyperbola builds Geom_Hyperbola(gp_Ax2(center, normal), major, minor); the
 // OCCTCurve3DHyperbola* accessors read the Geom_Hyperbola methods printed here.
 #include <Geom_Hyperbola.hxx>

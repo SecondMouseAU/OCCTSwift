@@ -1,4 +1,4 @@
-// Kernel-parity probe for Tests/OCCTAnalysisTests/SelfIntersectionPairTests.swift (#766
+// Kernel-parity probe for Tests/OCCTAnalysisTests/BRepExtrema/SelfIntersectionPairTests.swift (#766
 // execution, issues #1757, #1758). Mirrors OCCTShapeSelfIntersectionPairs:
 // BRepMesh_IncrementalMesh(shape, deflection) then BRepExtrema_SelfIntersection(shape, tol),
 // reporting each overlap pair once (faceIdx2 > faceIdx1).

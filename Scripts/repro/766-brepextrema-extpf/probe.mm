@@ -1,4 +1,4 @@
-// Epic #766, Tests/OCCTAnalysisTests/BRepExtremaExtPFTests.swift: kernel parity probe.
+// Epic #766, Tests/OCCTAnalysisTests/ElementPairExtrema/BRepExtremaExtPFTests.swift: kernel parity probe.
 // OCCTBRepExtremaExtPF runs BRepExtrema_ExtPF(vertex, face) on the face at occtFaceAt(shape, i)
 // and reports NbExt, sqrt(SquareDistance(1)), Point(1) and Parameter(1). Same calls here, over
 // every face of Shape.box(width: 10, height: 10, depth: 10), which OCCTShapeCreateBox centres.

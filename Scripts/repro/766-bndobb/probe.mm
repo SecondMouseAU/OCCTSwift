@@ -1,4 +1,4 @@
-// #766 kernel parity for Tests/OCCTAnalysisTests/BndOBBTests.swift.
+// #766 kernel parity for Tests/OCCTAnalysisTests/Bounding/BndOBBTests.swift.
 // Each block builds the Bnd_OBB the matching OCCTOBB* bridge function builds and queries it the
 // same way (OCCTBridge_Topology_BoundingBox.mm).
 #include <BRepBndLib.hxx>

@@ -1,4 +1,4 @@
-// Kernel-parity probe for Tests/OCCTAnalysisTests/ExtremaExtPSTests.swift (#1888, #1889).
+// Kernel-parity probe for Tests/OCCTAnalysisTests/Extrema/ExtremaExtPSTests.swift (#1888, #1889).
 // Same Geom_SphericalSurface OCCTSurfaceCreateSphere builds (gp_Ax3(center, gp::DZ()), r 5), and
 // the same Extrema_ExtPS(point, GeomAdaptor_Surface, 1e-6, 1e-6) OCCTExtremaExtPS and
 // OCCTExtremaExtPSPoint run, from the point (0, 0, 10).

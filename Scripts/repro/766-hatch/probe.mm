@@ -1,4 +1,4 @@
-// Kernel-parity probe for Tests/OCCTAnalysisTests/HatchTests.swift (#1702 Triangle boundary,
+// Kernel-parity probe for Tests/OCCTAnalysisTests/PlanarGeometry/HatchTests.swift (#1702 Triangle boundary,
 // #1703 island hole). Drives Hatch_Hatcher(1e-7, false) through the same AddLine/Trim sequence
 // OCCTHatchLines issues: lines along the normalised direction at distances
 // floor((min - offset) / spacing) * spacing + offset ... max, measured along the perpendicular

@@ -1,4 +1,4 @@
-// Kernel parity probe for Tests/OCCTAnalysisTests/IntAnaConeSphereTests.swift (#1918, #1919).
+// Kernel parity probe for Tests/OCCTAnalysisTests/AnalyticIntersection/IntAnaConeSphereTests.swift (#1918, #1919).
 // Mirrors OCCTIntAnaConeSphere / OCCTIntAnaConeSpherePoints: a gp_Cone at the origin along +Z and
 // an IntAna_Quadric sphere, intersected by IntAna_IntQuadQuad; samples are IntAna_Curve::Value over
 // the curve's Domain at first + (last - first) * i / (n - 1).

@@ -1,4 +1,4 @@
-// Kernel-parity probe for Tests/OCCTAnalysisTests/ShapeDistanceOverloadTests.swift (#766
+// Kernel-parity probe for Tests/OCCTAnalysisTests/BRepExtrema/ShapeDistanceOverloadTests.swift (#766
 // execution, issues #1891-#1894). Every overload lifts its Wire/Edge/Face to a Shape and calls
 // OCCTShapeDistance / OCCTShapeIntersects, i.e. BRepExtrema_DistShapeShape. See transcript.txt.
 

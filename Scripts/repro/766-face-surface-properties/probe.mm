@@ -1,4 +1,4 @@
-// Kernel parity probe for Tests/OCCTAnalysisTests/FaceSurfacePropertiesTests.swift (#766).
+// Kernel parity probe for Tests/OCCTAnalysisTests/LocalProperties/FaceSurfacePropertiesTests.swift (#766).
 //
 // Replays each test's inputs against the pinned kernel through the same OCCT calls the bridge
 // makes: BRepPrimAPI_MakeBox from the centred corner (OCCTShapeCreateBox), TopExp::MapShapes for

@@ -1,4 +1,4 @@
-// Kernel parity probe for Tests/OCCTAnalysisTests/ExtremaLocateExtCCTests.swift (#766).
+// Kernel parity probe for Tests/OCCTAnalysisTests/Extrema/ExtremaLocateExtCCTests.swift (#766).
 //
 // Same calls as OCCTExtremaLocateExtCC (OCCTBridge_Curve3D_Adaptor.mm): GeomAdaptor_Curve over
 // each curve's caller range, Extrema_LocateExtCC(ac1, ac2, seedU, seedV), IsDone, SquareDistance,

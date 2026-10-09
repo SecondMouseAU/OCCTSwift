@@ -1,4 +1,4 @@
-// #766 kernel parity for Tests/OCCTAnalysisTests/IntToolsEdgeFaceTests.swift
+// #766 kernel parity for Tests/OCCTAnalysisTests/Intersection/IntToolsEdgeFaceTests.swift
 // (edgeFaceIntersection). Same construction as OCCTIntToolsEdgeFace
 // (OCCTBridge_Modeling_Boolean.mm), including the SetRange #1631 added. Shape.subShapes(ofType:
 // .face) enumerates faces in TopExp::MapShapes order (occtMapSubShapes).

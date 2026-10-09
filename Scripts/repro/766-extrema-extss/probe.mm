@@ -1,4 +1,4 @@
-// Kernel parity probe for Tests/OCCTAnalysisTests/ExtremaExtSSTests.swift (#766), covering the
+// Kernel parity probe for Tests/OCCTAnalysisTests/ExtSS/ExtremaExtSSTests.swift (#766), covering the
 // two tests #766 filed (parallelPlanes, sphereDistance).
 //
 // The same Extrema_ExtSS(GeomAdaptor_Surface, GeomAdaptor_Surface, 1e-6, 1e-6) that

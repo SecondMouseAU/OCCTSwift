@@ -1,4 +1,4 @@
-// Epic #766, Tests/OCCTAnalysisTests/HatchBuilderTests.swift: kernel parity probe.
+// Epic #766, Tests/OCCTAnalysisTests/PlanarGeometry/HatchBuilderTests.swift: kernel parity probe.
 // OCCTHatcher* wraps Hatch_Hatcher(tol, /*Oriented=*/false); this probe builds the same.
 #include <Hatch_Hatcher.hxx>
 #include <gp_Pnt2d.hxx>

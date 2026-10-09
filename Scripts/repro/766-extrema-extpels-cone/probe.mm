@@ -1,4 +1,4 @@
-// Kernel parity probe for Tests/OCCTAnalysisTests/ExtremaExtPElSConeTests.swift (#766).
+// Kernel parity probe for Tests/OCCTAnalysisTests/ExtPElS/ExtremaExtPElSConeTests.swift (#766).
 //
 // Same calls as OCCTExtremaExtPElSCone (OCCTBridge_Surface_Extrema.mm):
 // gp_Cone(gp_Ax3(apex, axis), semiAngle, refRadius), Extrema_ExtPElS(p, cone, tolerance = 1e-6),

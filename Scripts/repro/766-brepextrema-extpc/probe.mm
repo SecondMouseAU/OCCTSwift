@@ -1,4 +1,4 @@
-// Epic #766, Tests/OCCTAnalysisTests/BRepExtremaExtPCTests.swift: kernel parity probe.
+// Epic #766, Tests/OCCTAnalysisTests/ElementPairExtrema/BRepExtremaExtPCTests.swift: kernel parity probe.
 //
 // OCCTBRepExtremaExtPC does not take its distance from BRepExtrema_ExtPC (#580). It reads the
 // edge's curve with BRep_Tool::Curve and answers with occtNearestPointOnCurveRange: the minimum

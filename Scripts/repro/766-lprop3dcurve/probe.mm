@@ -1,4 +1,4 @@
-// #766 kernel parity for Tests/OCCTAnalysisTests/LProp3dCurveTests.swift.
+// #766 kernel parity for Tests/OCCTAnalysisTests/LocalProperties/LProp3dCurveTests.swift.
 // OCCTCurve3DCreateCircle builds a Geom_Circle on gp_Ax2(center, normal); OCCTCurve3DLocalTangent,
 // LocalNormal and LocalCentreOfCurvature read GeomLProp_CLProps(curve, u, order,
 // Precision::Confusion()) (occtCurveLocalProps in OCCTBridge_Internal.h).

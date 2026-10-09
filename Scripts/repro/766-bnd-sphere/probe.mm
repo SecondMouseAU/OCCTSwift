@@ -1,4 +1,4 @@
-// Kernel parity probe for Tests/OCCTAnalysisTests/BndSphereTests.swift (#766).
+// Kernel parity probe for Tests/OCCTAnalysisTests/Bounding/BndSphereTests.swift (#766).
 //
 // Same Bnd_Sphere calls the bridge makes (OCCTBridge_Spatial_Bounding.mm OCCTBndSphereCreate,
 // OCCTBridge_Spatial_MathSolvers.mm for the rest): construct with (center, radius, 0, 0) then

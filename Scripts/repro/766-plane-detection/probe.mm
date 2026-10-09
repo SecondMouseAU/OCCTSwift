@@ -1,4 +1,4 @@
-// Kernel parity probe for Tests/OCCTAnalysisTests/PlaneDetectionTests.swift (#766).
+// Kernel parity probe for Tests/OCCTAnalysisTests/ShapeAnalysis/PlaneDetectionTests.swift (#766).
 //
 // Builds the same shapes the tests build (the centred 10x10 rectangle wire of
 // OCCTWireCreateRectangle, the four-segment skew wire joined by BRepBuilderAPI_MakeWire as

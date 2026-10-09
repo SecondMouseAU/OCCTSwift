@@ -1,4 +1,4 @@
-// Kernel-parity probe for Tests/OCCTAnalysisTests/ExtremaElCSLinSphereTests.swift (#766
+// Kernel-parity probe for Tests/OCCTAnalysisTests/ExtElCS/ExtremaElCSLinSphereTests.swift (#766
 // execution, issue #1810). Mirrors OCCTExtremaElCSLinSphere: Extrema_ExtElCS(gp_Lin, gp_Sphere)
 // with the sphere built on gp_Ax3(center, +Z).
 

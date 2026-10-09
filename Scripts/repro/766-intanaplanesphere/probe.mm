@@ -1,4 +1,4 @@
-// #766 kernel parity for Tests/OCCTAnalysisTests/IntAnaPlaneSphereTests.swift
+// #766 kernel parity for Tests/OCCTAnalysisTests/AnalyticIntersection/IntAnaPlaneSphereTests.swift
 // (planeSphereIntersection). Same construction as OCCTIntAnaPlaneSphere
 // (OCCTBridge_Spatial_Intersection.mm).
 #include <IntAna_QuadQuadGeo.hxx>

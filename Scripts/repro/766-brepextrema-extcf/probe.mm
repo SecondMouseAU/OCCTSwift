@@ -1,4 +1,4 @@
-// Kernel parity probe for Tests/OCCTAnalysisTests/BRepExtremaExtCFTests.swift (#766).
+// Kernel parity probe for Tests/OCCTAnalysisTests/ElementPairExtrema/BRepExtremaExtCFTests.swift (#766).
 //
 // Builds the tests' shapes the way the bridge does (OCCTShapeCreateBox centres the box on the
 // origin; OCCTShapeCreateBoxAt puts its corner at the given origin; OCCTShapeCreateSphere is

@@ -1,4 +1,4 @@
-// Kernel-parity probe for Tests/OCCTAnalysisTests/MeasurementTests.swift (#766 execution,
+// Kernel-parity probe for Tests/OCCTAnalysisTests/MassProperties/MeasurementTests.swift (#766 execution,
 // issues #1768-#1785). Each block calls the OCCT API the bridge function it names reaches, with
 // the inputs the Swift test uses, and prints what the kernel returns. See transcript.txt.
 //

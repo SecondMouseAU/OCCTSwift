@@ -1,4 +1,4 @@
-// Kernel-parity probe for Tests/OCCTAnalysisTests/ExtremaExtCSTests.swift (#766 execution,
+// Kernel-parity probe for Tests/OCCTAnalysisTests/Extrema/ExtremaExtCSTests.swift (#766 execution,
 // issues #1816, #1817). Mirrors OCCTExtremaExtCS / OCCTExtremaExtCSPoint: a GeomAdaptor_Curve
 // over [uFirst, uLast] and a GeomAdaptor_Surface into Extrema_ExtCS(C, S, 1e-6, 1e-6).
 

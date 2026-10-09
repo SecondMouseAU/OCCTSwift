@@ -1,4 +1,4 @@
-// Kernel-parity probe for Tests/OCCTAnalysisTests/ExtremaExtPElCCircTests.swift (#1704).
+// Kernel-parity probe for Tests/OCCTAnalysisTests/ExtPElC/ExtremaExtPElCCircTests.swift (#1704).
 // The same Extrema_ExtPElC(p, gp_Circ(gp_Ax2(center, normal), r), tol, 0, 2*pi) that
 // OCCTExtremaExtPElCCirc runs, for pointToCircle's inputs and for pointOnCircle's.
 #include <Extrema_ExtPElC.hxx>
