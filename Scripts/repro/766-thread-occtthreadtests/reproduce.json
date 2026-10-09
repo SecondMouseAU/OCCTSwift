@@ -1,0 +1,6 @@
+{
+  "transcript_tail_from": {
+    "pattern": "^== Part B: kernel re-measure of the shapes the Swift run exported ==$",
+    "reason": "the same as 766-thread-forms: Part B's input shapes were exported by an uncommitted diagnostic test, so its sixteen measurements cannot be re-derived and nothing may cite them as verified (#2824). Part A's twenty lines reproduce byte for byte against v4.0.0-kernel.2."
+  }
+}

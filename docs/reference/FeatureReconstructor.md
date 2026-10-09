@@ -101,6 +101,8 @@ public struct Revolve: Sendable, Hashable, Codable {
 
 The 2D profile is interpreted in the XZ half-plane: each `SIMD2<Double>` point `(x, y)` maps to 3D `(x, 0, y)`. The profile must have at least 3 points.
 
+The closed profile is turned into a planar face and that face is revolved, so the feature is a `Solid` (a full turn of `[[0,0],[12,0],[12,60],[0,60]]` about z is one solid of volume `pi * 12^2 * 60`). It was a bare `Shell` before #3139, which a following hole could not cut. `Shape.revolve(profile:...)` on a bare wire is unchanged: an open or closed wire sweeps into a surface of revolution (a `Shell`), and that is what it is for.
+
 ---
 
 #### `FeatureSpec.Revolve.profilePoints2D`
@@ -228,6 +230,8 @@ public struct Hole: Sendable, Hashable, Codable {
 ```
 
 When `depth` is `nil`, a through-hole cutter of depth `100.0` is used (sufficient for most models). Supply an explicit `depth` to limit the cutter.
+
+A hole needs a solid to cut. When the current body holds no solid (an `inputBody` that is a bare shell, say), the hole is recorded in `BuildResult.skipped` as `underDetermined` and is not listed in `fulfilled`; it used to answer a solid-less compound and report success (#3139).
 
 ---
 
