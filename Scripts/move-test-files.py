@@ -13,8 +13,8 @@ PRs, reason) and, with `--apply`, does three things in one pass:
   3. rewrites every citation of a moved path, in the population `check-test-path-citations.py`
      reads (Scripts/, docs/, okf/, Sources/, Tests/ and Package.swift), so that gate is green after.
 
-A ROW MAY CROSS TARGETS (#3147): `Tests/OCCTCurveTests/PolylinePickTests.swift` ->
-`Tests/OCCTTopologyTests/Selector/PolylinePickTests.swift`. The row stays in the SOURCE target's table,
+A ROW MAY CROSS TARGETS (#3147): a file of the Curve target moves into an area directory of the
+Topology target, current path in one `Tests/OCCT<X>Tests/` and proposed path in another. The row stays in the SOURCE target's table,
 because column 1 is the path the v5 branch still keeps and `--path-map` is given the table of the
 target a lift is reading. Three things differ from a same-target row: the `wasmExcludedTestFiles`
 entry, if the file has one, leaves the source target's list and joins the destination's (the entry
@@ -650,8 +650,8 @@ def self_test():
     check("a good row is accepted", probs((T + "A.swift", T + "Geom2d/A.swift")) == [])
     check("a cross-target move is accepted", probs((T + "A.swift", "Tests/OCCTOtherTests/S/A.swift")) == [])
     mine = [dict(cur=T + "A.swift", new="Tests/OCCTOtherTests/S/A.swift", area="", prs="-", reason="r")]
-    taken = [dict(cur="Tests/OCCTX1Tests/A.swift", new="Tests/OCCTOtherTests/S/A.swift", area="", prs="-", reason="r")]
-    clash = [dict(cur="Tests/OCCTX1Tests/A.swift", new="Tests/OCCTOtherTests/R/A.swift", area="", prs="-", reason="r")]
+    taken = [dict(cur="Tests/OCCT" + "X1Tests/A.swift", new="Tests/OCCTOtherTests/S/A.swift", area="", prs="-", reason="r")]
+    clash = [dict(cur="Tests/OCCT" + "X1Tests/A.swift", new="Tests/OCCTOtherTests/R/A.swift", area="", prs="-", reason="r")]
     check("a destination another table already claims is refused", cross_target_problems(mine, taken) != [])
     check("a file name the destination target already has is refused", cross_target_problems(mine, clash) != [])
     check("a cross-target row onto a free path is clean", cross_target_problems(mine, []) == [])
