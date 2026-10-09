@@ -271,8 +271,8 @@ let occtTarget: Target =
         // which is what they were built to do; if a later asset repeats either stray the finding comes
         // back rather than staying suppressed.
         //
-        // The asset holds forty-four and Scripts/patches/ holds forty-five, so 0058 is the one
-        // untested patch, and the rows for 0053 through 0057 below are history in the way the
+        // The asset holds forty-four and Scripts/patches/ holds forty-six, so 0058 (MiddlePath,
+        // #3105) and 0059 (fillets that meet exactly, #3207) are the two untested patches, and the rows for 0053 through 0057 below are history in the way the
         // rows for 0044 through 0052 became at v4.0.0-kernel.4.
         // If you rebuild and the checksum does not match the value below, that is a real difference to
         // investigate rather than an expected one, which is the opposite of what this paragraph said
@@ -319,9 +319,9 @@ let occtTarget: Target =
         // kernel-integration.yml caught it on main. See Scripts/patches/README.md's retired 0035 entry.
         // Scripts/patches/ holds forty-six patches and the pinned asset holds forty-four of them,
         // enumerated above. `ls Scripts/patches/*.patch | wc -l` answers 46 against a list of 44.
-        // The pinned asset lacks two of them, and this is the written divergence: 0058 and 0059
-        // (the candidate that builds two fillets that meet exactly, #3207), which no CI job
-        // exercises until a rebuild pins them. The v4.0.0-kernel.4 rebuild closed the divergence
+        // The pinned asset lacks two of them, and this is the written divergence: 0058, the
+        // BRepOffsetAPI_MiddlePath patch (#3105), and 0059, the ChFi3d fillet candidate that builds
+        // two fillets that meet exactly (#3207). No CI job exercises either until a rebuild pins them. The v4.0.0-kernel.4 rebuild closed the divergence
         // that 0044 had opened and that 0045 through 0052 widened, and the v4.0.0-kernel.5
         // rebuild closed the one that 0053 through 0057 opened, so 0058 and 0059 are the rows
         // about patches the asset does not carry. The other
@@ -488,6 +488,13 @@ let occtTarget: Target =
         //         by override-link in Scripts/repro/3105-middlepath-patch/ (#3105).
         //         Issue3105MiddlePathKernelTests runs it in kernel-integration.yml, gated on
         //         OCCTSWIFT_LOCAL=1.
+        //
+        //   0059  ChFi3d_Builder lets two fillets that meet exactly through: radii that sum to the
+        //         width of the face between them (r = 2 and 2 on a 4 mm face) answered
+        //         IsDone() == false from the OCC119 guards in PerformOneCorner and
+        //         ChFi3d_StripeEdgeInter. Carried and NOT built; a radius above half the width
+        //         still declines. Issue3207FilletMeetingTests runs it in kernel-integration.yml,
+        //         gated on OCCTSWIFT_LOCAL=1 (#3207, OCCT#1177).
         //
         // 0043 (#2827, BRepGProp_Gauss keeps the by-plane mass) was the one outstanding before it,
         // and it went the other way, which is the comparison worth keeping beside 0044: carried
