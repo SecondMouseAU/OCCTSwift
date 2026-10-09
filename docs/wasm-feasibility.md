@@ -845,8 +845,9 @@ API surface should be, rather than making it build.
   and `FileManager` all work.
 - **`import simd`, in 196 of 230 files** (#2759). A WASI-only target named `simd`
   stands in today; the real answer is probably removing the gratuitous imports.
-- **`Shape.isSelfIntersecting(hardTimeout:)`** is `#if !os(WASI)` (#2760), and it is
-  the first case of a class: any API whose contract needs a second thread.
+- **`Shape.isSelfIntersecting(hardTimeout:)`** (#2760) is the first case of a class: any API
+  whose contract needs a second thread. Decided: the name exists on wasm with the cooperative
+  behaviour, documented as not a hard bound, so a future API of this class has a precedent.
 - **`FoundationEssentials` instead of `Foundation`** wherever a file only uses `Data`,
   `URL`, `Date` or `JSONEncoder`, which is the biggest single lever on module size
   (#2761). 219 of 230 files `import Foundation` today.

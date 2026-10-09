@@ -95,7 +95,9 @@ async function loadFixtureTree() {
     } catch (error) {
       // Only a missing directory means "this target has no Fixtures"; a permission or I/O error
       // must not quietly turn a fixture test back into an `.importFailed` (Kilo, #3138).
-      if (error.code !== "ENOENT") throw error;
+      if (error.code !== "ENOENT") {
+        throw new Error(`Failed to load fixtures for ${target.name}: ${error.message}`, { cause: error });
+      }
     }
   }
   return targets;
