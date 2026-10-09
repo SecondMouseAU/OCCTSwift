@@ -29,7 +29,7 @@ import glob
 import re
 import sys
 
-FUNCS = open(__file__.rsplit("/", 1)[0] + "/funcs.txt").read().split()
+FUNCS = None  # read in main() from --funcs (default funcs.txt beside this script)
 
 SWIFT_BASE = {
     "double": "Double", "float": "Float", "int32_t": "Int32", "int": "Int32", "uint32_t": "UInt32",
@@ -227,9 +227,10 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", required=True)
     ap.add_argument("--switches", required=True)
+    ap.add_argument("--funcs", default=__file__.rsplit("/", 1)[0] + "/funcs.txt")
     a = ap.parse_args()
     decls, structs, enums = load_headers()
-    names = list(FUNCS)
+    names = open(a.funcs).read().split()
     switches, body, skipped = [], [], []
     for n in dict.fromkeys(names):
         if n not in decls:

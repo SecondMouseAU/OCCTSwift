@@ -119,8 +119,9 @@ def scrape(out, names):
 
 def main():
     label = sys.argv[1]
+    sw_file = pathlib.Path(sys.argv[2]) if len(sys.argv) > 2 else HERE / "switches.txt"
     root = ROOT
-    switches = [l.strip() for l in (HERE / "switches.txt").read_text().splitlines()
+    switches = [l.strip() for l in sw_file.read_text().splitlines()
                 if l.strip() and not l.startswith("#")]
     result = {"label": label, "targets": {}}
     for target, files in sorted(targets().items()):
