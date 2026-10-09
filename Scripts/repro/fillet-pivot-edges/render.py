@@ -198,7 +198,7 @@ class Geo:
     """A case in section: the path (for the reference extrusion), the outline (for the SVG), marks, circles, notes."""
 
     def __init__(self):
-        self.path, self.pts, self.marks, self.circles, self.notes, self.area, self.recipe = [], [], [], [], [], 0.0, []
+        self.path, self.pts, self.marks, self.circles, self.notes, self.area, self.recipe, self.arcs = [], [], [], [], [], 0.0, [], {}
 
 
 def outline(path, arcs):
@@ -262,6 +262,7 @@ def build_add(w, h, rl, rr):
             g.angle = 180.0
     path.append(("L", (w, 0.0)))
     g.path = path
+    g.arcs = arcs
     g.pts = outline(path, arcs)
     g.circles = [(L["c"], rl), (R["c"], rr)]
     xs2 = (np.arange(2000000) + .5) / 2000000 * w
@@ -279,7 +280,8 @@ def build_single(w, h, r):
         path.append(("L", (w, h)))
     path += [("L", (w, 0.0))]
     g.path = path
-    g.pts = outline(path, arcs) if abs(K["q1"][0] - w) > 1e-9 else outline(path, arcs) + []
+    g.arcs = arcs
+    g.pts = outline(path, arcs)
     g.circles = [(K["c"], r)]
     g.marks = corner_marks(K, "left", True)
     g.area = K["area"]
@@ -312,6 +314,7 @@ def build_seq(w, h, r1, r2):
         path.append(("L", B["q1"]))
     path += [("A", arc_mid(B["c"], r2, B["q1"], B["q2"]), B["q2"]), ("L", (w, 0.0))]
     g.path = path
+    g.arcs = arcs
     g.pts = outline(path, arcs)
     g.circles = [(A["c"], r1), (B["c"], r2)]
     g.marks = [("C", A["c"], "centre (%.4f, %.4f), r = %g" % (A["c"][0], A["c"][1], r1)),
@@ -365,6 +368,33 @@ CASES.append(Case("D3-seq-3-3", "D3: radius 3, THEN radius 3, on the top edges o
                   note="both at once (case B, r = 3) gives volume 202.502076; one after the other gives this, the order matters"))
 CASES.append(Case("D4-pair-7_5", "D4: radii 7.5 on both edges of the 10 mm wide top face of a 10 x 4 x 6 box (7.5 > the 6 mm wall)", (10.0, 4.0, 6.0), "add",
                   [(7.5, (0, 2, 6)), (7.5, (10, 2, 6))], build_add(10.0, 6.0, 7.5, 7.5), "D", length=4.0))
+
+
+INDEX_HEAD = """# Pivot-edge fillets: what to look at, and the Shapr3D recipe for every case
+
+Nothing here is submitted. These renders are for you to confirm the behaviour before anything goes upstream.
+
+Every image has three panels. Left: the end view looking along Y, the ANALYTIC profile dashed blue with its circles
+dotted, the tangent points (green discs), the pivots (red diamonds), the junction or crossing (blue disc), the circle
+centres (blue crosses), every number listed under the panel, and the patched kernel's end face drawn over it in green.
+Middle: the patched kernel's 3D result with edges drawn, or the input box with the filleted edges red if the kernel
+declines. Right: the reference, the analytic section extruded (a sketch and an extrude, independent of the fillet code).
+Chips: valid / declined, the volume, and the difference from the analytic volume, for this branch (patch 0060), for main
+(patch 0059, kernel.5 plus the exact-meeting patch) and for the pinned kernel.5.
+
+The rule being drawn: wherever a fillet meets a face it is filleting it is tangent to that face; where the face runs out
+and there is an edge instead, the edge is the pivot and the arc passes through it. Two fillets on opposite edges at once
+give the INTERSECTION of the two rounded profiles. One fillet after another differs (case D3): the first fillet's
+tangent edge is the second one's pivot, so the result depends on the order.
+
+Decisions waiting for you, all visible in the images: (1) D3 against B at r = 3: 213.81 in sequence, 202.50 at once;
+(2) radii above the face width in case B (D4, and r >= 4 on the 4 mm face, which the intersection still builds, each
+fillet taking its own pivot arc); (3) D2: a radius so large it is a near-flat cut through both far edges (r = 100 on a 10
+cube builds, a flat-ish cut, where it used to be refused).
+
+Coordinates: X across the top face, Y along the filleted edges, Z up; the sketch plane is XZ.
+
+"""
 
 
 # ---------------------------------------------------------------- figure
@@ -477,6 +507,38 @@ def figure(case):
     return ov, k5, main, new, ref
 
 
+def recipe(case, ov, k5, main, new, ref):
+    g = case.geo
+    w, L, h = case.box
+    edges = "; ".join("radius %g on the edge whose middle is (%g, %g, %g)" % (r, *m) for r, m in case.edges)
+    out = [f"### {case.title}", "",
+           f"File `{case.stem}.png`. Box {w:g} x {L:g} x {h:g} (X x Y x Z), one corner at the origin, top face Z = {h:g}. Fillets: {edges}"
+           + (", one after the other in that order." if case.mode == "seq" else ", all in one operation."), "",
+           "Shapr3D, construction: sketch on the XZ plane (the front plane, looking along Y) with the origin at the box's lower-left corner, one closed profile, extrude "
+           f"{case.length:g} along +Y:", ""]
+    cur, step = None, 0
+    for seg in g.path:
+        if seg[0] == "S":
+            cur = seg[1]
+            out.append(f"1. Start at ({cur[0]:.4f}, {cur[1]:.4f}).")
+            step = 1
+            continue
+        step += 1
+        if seg[0] == "L":
+            out.append(f"{step}. Line to ({seg[1][0]:.4f}, {seg[1][1]:.4f}).")
+            cur = seg[1]
+        else:
+            c, r = g.arcs[(round(cur[0], 6), round(cur[1], 6), round(seg[2][0], 6), round(seg[2][1], 6))]
+            out.append(f"{step}. Arc, centre ({c[0]:.4f}, {c[1]:.4f}), radius {r:g}, from ({cur[0]:.4f}, {cur[1]:.4f}) to ({seg[2][0]:.4f}, {seg[2][1]:.4f}), the short way round (it bulges towards the corner it rounds).")
+            cur = seg[2]
+    out.append(f"{step + 1}. Close the profile back to the start with a line, then extrude {case.length:g}.")
+    out += ["", "Expected: " + "; ".join(n for n in g.notes) + "." if g.notes else "", "",
+            "Check against the fillet tool: apply the same radii to the same edges of a plain box and compare the profile with the sketch above; they should coincide. "
+            f"Volume {ov:.6f} (the profile area is {w * h - g.area:.6f}).", "",
+            f"Kernel results: pinned kernel.5 {fmt(k5, ov)}; main (0059) {fmt(main, ov)}; this branch (0060) {fmt(new, ov)}; reference extrusion {fmt(ref, ov)}.", ""]
+    return "\n".join(out)
+
+
 def fmt(x, ov):
     if x is None:
         return "declined"
@@ -492,6 +554,14 @@ if __name__ == "__main__":
         ov, k5, main, new, ref = figure(case)
         rows.append((case, ov, k5, main, new, ref))
         print(case.stem, fmt(k5, ov), "|", fmt(main, ov), "|", fmt(new, ov), "|", fmt(ref, ov), flush=True)
+    if not only:
+        with open(os.path.join(OUT, "index.md"), "w") as f:
+            f.write(INDEX_HEAD)
+            for grp, name in (("A", "A: r1 + r2 = w"), ("B", "B: r1 + r2 > w"), ("C", "C: one fillet wider than its face"), ("D", "D: other configurations the same rule covers")):
+                f.write(f"## {name}\n\n")
+                for case, ov, k5, main, new, ref in rows:
+                    if case.group == grp:
+                        f.write(recipe(case, ov, k5, main, new, ref) + "\n")
     with open(os.path.join(OUT, "table.tsv"), "w") as f:
         f.write("file\tcase\tkernel5\tmain_0059\tbranch_0060\treference\tanalytic\n")
         for case, ov, k5, main, new, ref in rows:

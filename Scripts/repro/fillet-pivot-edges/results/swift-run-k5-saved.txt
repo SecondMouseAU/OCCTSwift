@@ -1,0 +1,19 @@
+✘ Test aFilletNextToAFinishedFilletPivotsAtItsTangentEdge() failed  with 1 issue.
+✘ Test aFilletNextToAFinishedFilletPivotsAtItsTangentEdge() recorded an issue at Issue3208FilletPivotTests.swift:278:26: Expectation failed: try filleted(first, [(3, [4, 5, 6])])
+✔ Test aFilletThatFitsItsFaceIsTheControl() passed .
+✘ Test aFilletWiderThanBothFacesPassesThroughBothFarEdges() failed  with 1 issue.
+✘ Test aFilletWiderThanBothFacesPassesThroughBothFarEdges() recorded an issue at Issue3208FilletPivotTests.swift:264:26: Expectation failed: try filleted(b, [(4.5, [0, 5, 3])])
+✘ Test aFilletWiderThanItsFaceEndsAtTheFarEdge() failed  with 1 issue.
+✘ Test aFilletWiderThanItsFaceEndsAtTheFarEdge() recorded an issue at Issue3208FilletPivotTests.swift:237:30: Expectation failed: try filleted(b, [(r, [0, 5, 6])])
+✔ Test aRadiusAboveHalfTheWidthStillDeclines() passed .
+✘ Test crossingArcsAreTangentToTheirWallsAndMeetAtTheIncludedAngle() failed  with 1 issue.
+✘ Test crossingArcsAreTangentToTheirWallsAndMeetAtTheIncludedAngle() recorded an issue at Issue3208FilletPivotTests.swift:211:26: Expectation failed: try filleted(b, [(3, [0, 5, 6]), (3, [4, 5, 6])])
+✔ Test filletsAtACornerAreNeverReturnedInvalid() passed .
+✘ Test filletsWhoseArcsCrossGiveTheIntersectionOfTheRoundedProfiles() failed  with 1 issue.
+✘ Test filletsWhoseArcsCrossGiveTheIntersectionOfTheRoundedProfiles() recorded an issue at Issue3208FilletPivotTests.swift:191:34: Expectation failed: try filleted(b, [(r1, [0, 5, 6]), (r2, [4, 5, 6])])
+✔ Test justUnderHalfTheWidthFilletsToTheOracleVolume() passed .
+✘ Test radiusOfHalfTheWidthGivesASemicircle() failed  with 1 issue.
+✘ Test radiusOfHalfTheWidthGivesASemicircle() recorded an issue at Issue3207FilletMeetingTests.swift:98:30: Expectation failed: box.filleted(edges: edges, radius: 2)
+✘ Test run with 11 tests in 2 suites failed  with 7 issues.
+✘ Test tenCubeWithTwoFilletsOfFiveMeets() failed  with 1 issue.
+✘ Test tenCubeWithTwoFilletsOfFiveMeets() recorded an issue at Issue3207FilletMeetingTests.swift:119:26: Expectation failed: cube.filleted(edges: edges, radius: 5)

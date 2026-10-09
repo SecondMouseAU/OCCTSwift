@@ -1,0 +1,11 @@
+✔ Test aFilletNextToAFinishedFilletPivotsAtItsTangentEdge() passed .
+✔ Test aFilletThatFitsItsFaceIsTheControl() passed .
+✔ Test aFilletWiderThanBothFacesPassesThroughBothFarEdges() passed .
+✔ Test aFilletWiderThanItsFaceEndsAtTheFarEdge() passed .
+✔ Test aRadiusAboveHalfTheWidthStillDeclines() passed .
+✔ Test crossingArcsAreTangentToTheirWallsAndMeetAtTheIncludedAngle() passed .
+✔ Test filletsAtACornerAreNeverReturnedInvalid() passed .
+✔ Test filletsWhoseArcsCrossGiveTheIntersectionOfTheRoundedProfiles() passed .
+✔ Test justUnderHalfTheWidthFilletsToTheOracleVolume() passed .
+✔ Test radiusOfHalfTheWidthGivesASemicircle() passed .
+✔ Test tenCubeWithTwoFilletsOfFiveMeets() passed .

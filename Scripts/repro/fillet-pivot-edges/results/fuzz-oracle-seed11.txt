@@ -1,0 +1,1 @@
+checked 119 add-mode newly valid cases against the grid union, worst difference 5.81e-04 of the box volume, 0 over 0.4 %

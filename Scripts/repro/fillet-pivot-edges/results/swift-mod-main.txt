@@ -1,0 +1,21 @@
+✔ Test "A hole wire crossing the face boundary is declined, not returned invalid" passed .
+✔ Test "anaFillet and filletAlgo trim the same containers to the same lengths" passed .
+✔ Test "anaFillet: a multi-edge wire passed whole reads its first edge" passed .
+✔ Test "anaFillet: a one-edge wire fillets exactly as that bare edge does" passed .
+✘ Test aFilletNextToAFinishedFilletPivotsAtItsTangentEdge() failed  with 1 issue.
+✘ Test aFilletNextToAFinishedFilletPivotsAtItsTangentEdge() recorded an issue at Issue3208FilletPivotTests.swift:278:26: Expectation failed: try filleted(first, [(3, [4, 5, 6])])
+✔ Test aFilletThatFitsItsFaceIsTheControl() passed .
+✘ Test aFilletWiderThanBothFacesPassesThroughBothFarEdges() failed  with 1 issue.
+✘ Test aFilletWiderThanBothFacesPassesThroughBothFarEdges() recorded an issue at Issue3208FilletPivotTests.swift:264:26: Expectation failed: try filleted(b, [(4.5, [0, 5, 3])])
+✘ Test aFilletWiderThanItsFaceEndsAtTheFarEdge() failed  with 1 issue.
+✘ Test aFilletWiderThanItsFaceEndsAtTheFarEdge() recorded an issue at Issue3208FilletPivotTests.swift:237:30: Expectation failed: try filleted(b, [(r, [0, 5, 6])])
+✔ Test aRadiusAboveHalfTheWidthStillDeclines() passed .
+✘ Test crossingArcsAreTangentToTheirWallsAndMeetAtTheIncludedAngle() failed  with 1 issue.
+✘ Test crossingArcsAreTangentToTheirWallsAndMeetAtTheIncludedAngle() recorded an issue at Issue3208FilletPivotTests.swift:211:26: Expectation failed: try filleted(b, [(3, [0, 5, 6]), (3, [4, 5, 6])])
+✔ Test filletsAtACornerAreNeverReturnedInvalid() passed .
+✘ Test filletsWhoseArcsCrossGiveTheIntersectionOfTheRoundedProfiles() failed  with 1 issue.
+✘ Test filletsWhoseArcsCrossGiveTheIntersectionOfTheRoundedProfiles() recorded an issue at Issue3208FilletPivotTests.swift:191:34: Expectation failed: try filleted(b, [(r1, [0, 5, 6]), (r2, [4, 5, 6])])
+✔ Test justUnderHalfTheWidthFilletsToTheOracleVolume() passed .
+✔ Test radiusOfHalfTheWidthGivesASemicircle() passed .
+✘ Test run with 794 tests in 208 suites failed  with 5 issues.
+✔ Test tenCubeWithTwoFilletsOfFiveMeets() passed .

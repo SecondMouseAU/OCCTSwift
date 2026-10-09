@@ -1,0 +1,18 @@
+A r1=1.5 r2=2.5              add done=0 faulty=1 valid=0 vol=-1.000000000 faces=0
+A r1=1 r2=3                  add done=0 faulty=1 valid=0 vol=-1.000000000 faces=0
+A r1=0.5 r2=3.5              add done=0 faulty=1 valid=0 vol=-1.000000000 faces=0
+A r1=2 r2=2                  add done=0 faulty=0 valid=0 vol=-1.000000000 faces=0
+B r=2.2                      add done=0 faulty=0 valid=0 vol=-1.000000000 faces=0
+B r=2.5                      add done=0 faulty=0 valid=0 vol=-1.000000000 faces=0
+B r=3.0                      add done=0 faulty=0 valid=0 vol=-1.000000000 faces=0
+B r=3.5                      add done=0 faulty=0 valid=0 vol=-1.000000000 faces=0
+B r=3.9                      add done=0 faulty=0 valid=0 vol=-1.000000000 faces=0
+B r1=2 r2=2.5                add done=0 faulty=0 valid=0 vol=-1.000000000 faces=0
+B r1=1 r2=3.5                add done=0 faulty=0 valid=0 vol=-1.000000000 faces=0
+B r1=2.5 r2=3                add done=0 faulty=0 valid=0 vol=-1.000000000 faces=0
+B r1=0.5 r2=3.9              add done=0 faulty=0 valid=0 vol=-1.000000000 faces=0
+C single r=3.9               add done=1 faulty=0 valid=1 vol=207.359060653 faces=7
+C single r=4.0               add done=0 faulty=1 valid=0 vol=-1.000000000 faces=0
+C single r=4.5               add done=0 faulty=1 valid=0 vol=-1.000000000 faces=0
+C single r=5.0               add done=0 faulty=1 valid=0 vol=-1.000000000 faces=0
+C single r=6.0               add done=0 faulty=1 valid=0 vol=-1.000000000 faces=0

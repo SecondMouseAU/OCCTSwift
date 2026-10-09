@@ -1,0 +1,18 @@
+A r1=1.5 r2=2.5              add done=1 faulty=0 valid=1 vol=221.758843888783 faces=7
+A r1=1 r2=3                  add done=1 faulty=0 valid=1 vol=218.539816339745 faces=7
+A r1=0.5 r2=3.5              add done=1 faulty=0 valid=1 vol=213.174770424681 faces=7
+A r1=2 r2=2                  add done=1 faulty=0 valid=1 vol=222.831853071796 faces=7
+B r=2.2                      add done=1 faulty=0 valid=1 vol=219.238678499821 faces=7
+B r=2.5                      add done=1 faulty=0 valid=1 vol=213.34245166137 faces=7
+B r=3.0                      add done=1 faulty=0 valid=1 vol=202.502076313208 faces=7
+B r=3.5                      add done=1 faulty=0 valid=1 vol=190.731782230828 faces=7
+B r=3.9                      add done=1 faulty=0 valid=1 vol=180.809284963617 faces=7
+B r1=2 r2=2.5                add done=1 faulty=0 valid=1 vol=218.026575382741 faces=7
+B r1=1 r2=3.5                add done=1 faulty=0 valid=1 vol=211.590596593522 faces=7
+B r1=2.5 r2=3                add done=1 faulty=0 valid=1 vol=207.791557090596 faces=7
+B r1=0.5 r2=3.9              add done=1 faulty=0 valid=1 vol=206.837421273548 faces=7
+C single r=3.9               add done=1 faulty=0 valid=1 vol=207.359060652752 faces=7
+C single r=4.0               add done=1 faulty=0 valid=1 vol=205.663706143592 faces=6
+C single r=4.5               add done=1 faulty=0 valid=1 vol=197.704072298479 faces=6
+C single r=5.0               add done=1 faulty=0 valid=1 vol=190.725723900085 faces=6
+C single r=6.0               add done=1 faulty=0 valid=1 vol=178.729982646721 faces=6

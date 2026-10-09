@@ -1,0 +1,19 @@
+file	case	kernel5	main_0059	branch_0060	reference	analytic
+A-1_5-2_5.png	A: r1 + r2 = w, radii 1.5 and 2.5 on the top edges of a 4 x 10 x 6 box	declined	valid 221.758844	valid 221.758844	valid 221.758844	221.758844
+A-1-3.png	A: r1 + r2 = w, radii 1 and 3 on the top edges of a 4 x 10 x 6 box	declined	valid 218.539816	valid 218.539816	valid 218.539816	218.539816
+A-2-2.png	A: r1 + r2 = w, radii 2 and 2 on the top edges of a 4 x 10 x 6 box	declined	valid 222.831853	valid 222.831853	valid 222.831853	222.831853
+B-equal-2_2.png	B: r1 + r2 > w, equal radii 2.2 on the top edges of a 4 x 10 x 6 box	declined	declined	valid 219.238678	valid 219.238678	219.238679
+B-equal-2_5.png	B: r1 + r2 > w, equal radii 2.5 on the top edges of a 4 x 10 x 6 box	declined	declined	valid 213.342452	valid 213.342452	213.342452
+B-equal-3.png	B: r1 + r2 > w, equal radii 3 on the top edges of a 4 x 10 x 6 box	declined	declined	valid 202.502076	valid 202.502076	202.502076
+B-equal-3_5.png	B: r1 + r2 > w, equal radii 3.5 on the top edges of a 4 x 10 x 6 box	declined	declined	valid 190.731782	valid 190.731782	190.731782
+B-unequal-2-2_5.png	B: r1 + r2 > w, radii 2 and 2.5 on the top edges of a 4 x 10 x 6 box	declined	declined	valid 218.026575	valid 218.026575	218.026575
+B-unequal-1-3_5.png	B: r1 + r2 > w, radii 1 and 3.5 on the top edges of a 4 x 10 x 6 box	declined	declined	valid 211.590597	valid 211.590597	211.590597
+B-unequal-2_5-3.png	B: r1 + r2 > w, radii 2.5 and 3 on the top edges of a 4 x 10 x 6 box	declined	declined	valid 207.791557	valid 207.791557	207.791557
+C-single-4.png	C: ONE fillet of radius 4 on the 4 mm wide top face of a 4 x 10 x 6 box	declined	declined	valid 205.663706	valid 205.663706	205.663706
+C-single-4_5.png	C: ONE fillet of radius 4.5 on the 4 mm wide top face of a 4 x 10 x 6 box	declined	declined	valid 197.704072	valid 197.704072	197.704072
+C-single-5.png	C: ONE fillet of radius 5 on the 4 mm wide top face of a 4 x 10 x 6 box	declined	declined	valid 190.725724	valid 190.725724	190.725724
+C-single-6.png	C: ONE fillet of radius 6 on the 4 mm wide top face of a 4 x 10 x 6 box	declined	declined	valid 178.729983	valid 178.729983	178.729983
+D1-plate-4.png	D1: radius 4 on the edge of a 3 mm thick plate (10 x 10 x 3): the bottom edge is the pivot	declined	declined	valid 269.894869	valid 269.894869	269.894869
+D2-both-4_5.png	D2: radius 4.5 on a 4 x 10 x 3 box: both far edges are pivots	declined	declined	valid 85.737337	valid 85.737337	85.737337
+D3-seq-3-3.png	D3: radius 3, THEN radius 3, on the top edges of a 4 x 10 x 6 box (one after the other)	declined	declined	valid 213.812565	valid 213.812565	213.812565
+D4-pair-7_5.png	D4: radii 7.5 on both edges of the 10 mm wide top face of a 10 x 4 x 6 box (7.5 > the 6 mm wall)	declined	declined	valid 153.644087	valid 153.644087	153.644087
