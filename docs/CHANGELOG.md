@@ -21,6 +21,10 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### FeatureReconstructor boolean features skip operands that hold no solid (#3174)
+
+A union, subtract or intersect between named features used to report success when an operand was a bare shell or an empty compound, leaving a result with no solid. Such a boolean is now recorded in `skipped` as `underDetermined` and is not listed in `fulfilled`. A solid fused into a shell-only input body continues to be skipped as `boolean union failed`, now with a test.
+
 ### A `.handle` read off a collection element or a temporary no longer loses its owner before the bridge call runs in optimised builds (#3130)
 
 `Edge`, `Wire`, `Face` and `Shape` expose their native pointer as an internal `handle` that the compiler does not tie to the owning wrapper. When the wrapper was a collection element or a call result (`edges[0].handle`, `shape.edges().first!.handle`) an optimised build could release it after the load and before the C call, so a setter wrote through a freed `OCCTEdge` and a reader returned 0.0 or crashed. Debug builds extend every lifetime to scope end, which is why debug `swift test` passed. An internal `withHandle { }` now holds the owner across the call, `BRepLibExtendedTests."Same parameter all"` uses it, and `Scripts/check-borrowed-handle-temporaries.py` fails the build on the unfenced form. No library code was affected: the audit found one site, the test.
