@@ -1,0 +1,9 @@
+common r=2 RESULT common done=1 faulty=0 valid=1 vol=222.831853072 faces=7  oracle=222.831853072
+common r=2.0001 RESULT common done=1 faulty=0 valid=1 vol=222.830136214 faces=8  oracle=222.830136214
+common r=2.2 RESULT common done=1 faulty=0 valid=1 vol=219.238678500 faces=7  oracle=219.238678500
+common r=2.5 RESULT common done=1 faulty=0 valid=1 vol=213.342451661 faces=7  oracle=213.342451661
+common r=3 RESULT common done=1 faulty=0 valid=1 vol=202.502076313 faces=7  oracle=202.502076313
+common r=3.5 RESULT common done=1 faulty=0 valid=1 vol=190.731782231 faces=7  oracle=190.731782231
+common r=3.9 RESULT common done=1 faulty=0 valid=1 vol=180.809284964 faces=7  oracle=180.809284964
+common r=3.99999 RESULT common done=1 faulty=0 valid=1 vol=178.269830951 faces=7  oracle=178.269830951
+common r=4 RESULT common done=0 faulty=0 valid=0 vol=-1.000000000 faces=0  oracle=178.269575889
