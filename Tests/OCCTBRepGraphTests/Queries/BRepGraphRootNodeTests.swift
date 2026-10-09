@@ -6,19 +6,18 @@ import simd
 
 @Suite("BRepGraph Root Nodes")
 struct BRepGraphRootNodeTests {
-    @Test func hasRoots() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)
-        if let box {
-            let graph = BRepGraph(shape: box)
-            if let graph {
-                // OCCT 8.0 reshaped root iteration to Products only, wrap the
-                // box's solid root in a Product to expose it as a graph root.
-                // shapeRootKind 0 is Solid.
-                _ = graph.linkProductToTopology(shapeRootKind: 0, shapeRootIndex: 0)
-                let roots = graph.rootNodes
-                #expect(roots.count > 0)
-                #expect(roots.first?.kind == .product)
-            }
-        }
+    @Test func hasRoots() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let graph = try #require(BRepGraph(shape: box))
+        // OCCT 8.0 reshaped root iteration to Products only, wrap the
+        // box's solid root in a Product to expose it as a graph root.
+        #expect(graph.rootNodes.isEmpty)
+        // shapeRootKind 0 is Solid.
+        _ = graph.linkProductToTopology(shapeRootKind: 0, shapeRootIndex: 0)
+        let roots = graph.rootNodes
+        // `roots.count > 0` accepted duplicates (#1986): exactly the one product.
+        #expect(roots.count == 1)
+        #expect(roots.first?.kind == .product)
+        #expect(roots.first?.index == 0)
     }
 }

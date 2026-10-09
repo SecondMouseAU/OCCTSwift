@@ -1,4 +1,4 @@
-// #766 kernel parity for Tests/OCCTAnalysisTests/Fast3DPolygonTests.swift.
+// #766 kernel parity for Tests/OCCTTopologyTests/Wires/Fast3DPolygonTests.swift.
 // Same OCCT calls as OCCTWireCreateFastPolygon (BRepBuilderAPI_MakePolygon, Add per point, Close
 // when closed) and OCCTWireExplorerEdgeCount (BRepTools_WireExplorer).
 #include <BRepBuilderAPI_MakePolygon.hxx>

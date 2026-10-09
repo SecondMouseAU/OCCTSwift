@@ -3,7 +3,7 @@ Tests/OCCTAnalysisTests/AdaptorCurvatureDefinednessTests.swift	Tests/OCCTAnalysi
 Tests/OCCTAnalysisTests/AdaptorLocalPropsParityTests.swift	Tests/OCCTAnalysisTests/LocalProperties/AdaptorLocalPropsParityTests.swift	LocalProperties	-	curvature, tangent and normal queries on curves, edges and faces
 Tests/OCCTAnalysisTests/AdaptorNormalDecisionTests.swift	Tests/OCCTAnalysisTests/LocalProperties/AdaptorNormalDecisionTests.swift	LocalProperties	-	curvature, tangent and normal queries on curves, edges and faces
 Tests/OCCTAnalysisTests/AnalysisTestFixtures.swift	Tests/OCCTAnalysisTests/AnalysisTestFixtures.swift	(stays)	-	shared fixtures; stays at the target root so every area sees it
-Tests/OCCTAnalysisTests/AsymmetricChamferTests.swift	Tests/OCCTAnalysisTests/AsymmetricChamferTests.swift	(stays)	#2660	tests BRepFilletAPI chamfers, a Modeling subject; cross-target, stays (issue filed)
+Tests/OCCTAnalysisTests/AsymmetricChamferTests.swift	Tests/OCCTModelingTests/Blends/AsymmetricChamferTests.swift	Blends	#2660	BRepFilletAPI two-distance chamfer
 Tests/OCCTAnalysisTests/BRepBndLibTests.swift	Tests/OCCTAnalysisTests/Bounding/BRepBndLibTests.swift	Bounding	-	Bnd and BndLib bounding volumes, ranges and sort boxes
 Tests/OCCTAnalysisTests/BRepCheckAnalyzerTests.swift	Tests/OCCTAnalysisTests/ShapeAnalysis/BRepCheckAnalyzerTests.swift	ShapeAnalysis	-	shape validity, free bounds, plane and canonical-form recognition, point classification and KD-tree queries
 Tests/OCCTAnalysisTests/BRepExtremaDistanceSSTests.swift	Tests/OCCTAnalysisTests/BRepExtrema/BRepExtremaDistanceSSTests.swift	BRepExtrema	-	BRepExtrema_* distance and extrema between topological shapes
@@ -36,7 +36,7 @@ Tests/OCCTAnalysisTests/ContapContourTests.swift	Tests/OCCTAnalysisTests/Contap/
 Tests/OCCTAnalysisTests/Curve3DLocalPropertiesTests.swift	Tests/OCCTAnalysisTests/LocalProperties/Curve3DLocalPropertiesTests.swift	LocalProperties	-	curvature, tangent and normal queries on curves, edges and faces
 Tests/OCCTAnalysisTests/CurveCurveDistanceTests.swift	Tests/OCCTAnalysisTests/Extrema/CurveCurveDistanceTests.swift	Extrema	#2669	curve-curve and curve-surface distance, all via Extrema_Ext*
 Tests/OCCTAnalysisTests/CurveSurfaceIntersectionTests.swift	Tests/OCCTAnalysisTests/Intersection/CurveSurfaceIntersectionTests.swift	Intersection	#2661	curve-surface, surface-surface, ray and polygon intersection through the Swift API
-Tests/OCCTAnalysisTests/DistAngleChamferTests.swift	Tests/OCCTAnalysisTests/DistAngleChamferTests.swift	(stays)	-	tests BRepFilletAPI chamfers, a Modeling subject; cross-target, stays (issue filed)
+Tests/OCCTAnalysisTests/DistAngleChamferTests.swift	Tests/OCCTModelingTests/Blends/DistAngleChamferTests.swift	Blends	-	BRepFilletAPI distance-angle chamfer
 Tests/OCCTAnalysisTests/DistanceSolutionDetailTests.swift	Tests/OCCTAnalysisTests/BRepExtrema/DistanceSolutionDetailTests.swift	BRepExtrema	-	shape-to-shape and point-to-edge distance solutions (BRepExtrema_DistShapeShape)
 Tests/OCCTAnalysisTests/EdgeCurvePropertiesTests.swift	Tests/OCCTAnalysisTests/LocalProperties/EdgeCurvePropertiesTests.swift	LocalProperties	-	curvature, tangent and normal queries on curves, edges and faces
 Tests/OCCTAnalysisTests/EdgePropertyTests.swift	Tests/OCCTAnalysisTests/LocalProperties/EdgePropertyTests.swift	LocalProperties	#2670	curvature, tangent and normal queries on curves, edges and faces
@@ -66,7 +66,7 @@ Tests/OCCTAnalysisTests/ExtremaExtrasV112Tests.swift	Tests/OCCTAnalysisTests/Ext
 Tests/OCCTAnalysisTests/ExtremaLocateExtCCTests.swift	Tests/OCCTAnalysisTests/Extrema/ExtremaLocateExtCCTests.swift	Extrema	-	Extrema_ExtCC/ExtCS/ExtPS/ExtPC/LocateExtCC extrema on general curves, surfaces and points
 Tests/OCCTAnalysisTests/ExtremaPCTests.swift	Tests/OCCTAnalysisTests/Extrema/ExtremaPCTests.swift	Extrema	#2683	Extrema_ExtCC/ExtCS/ExtPS/ExtPC/LocateExtCC extrema on general curves, surfaces and points
 Tests/OCCTAnalysisTests/FaceSurfacePropertiesTests.swift	Tests/OCCTAnalysisTests/LocalProperties/FaceSurfacePropertiesTests.swift	LocalProperties	-	curvature, tangent and normal queries on curves, edges and faces
-Tests/OCCTAnalysisTests/Fast3DPolygonTests.swift	Tests/OCCTAnalysisTests/Fast3DPolygonTests.swift	(stays)	-	tests Wire.polygon3D, wire construction (Topology); cross-target, stays (issue filed)
+Tests/OCCTAnalysisTests/Fast3DPolygonTests.swift	Tests/OCCTTopologyTests/Wires/Fast3DPolygonTests.swift	Wires	-	Wire.polygon3D construction
 Tests/OCCTAnalysisTests/FreeBoundsPropsTests.swift	Tests/OCCTAnalysisTests/ShapeAnalysis/FreeBoundsPropsTests.swift	ShapeAnalysis	#2689	shape validity, free bounds, plane and canonical-form recognition, point classification and KD-tree queries
 Tests/OCCTAnalysisTests/GPropCylConeTests.swift	Tests/OCCTAnalysisTests/MassProperties/GPropCylConeTests.swift	MassProperties	-	GProp mass, centroid and inertia of shapes and elements
 Tests/OCCTAnalysisTests/GPropElementTests.swift	Tests/OCCTAnalysisTests/MassProperties/GPropElementTests.swift	MassProperties	#2668	GProp mass, centroid and inertia of shapes and elements
@@ -105,9 +105,9 @@ Tests/OCCTAnalysisTests/IntToolsEdgeEdgeTests.swift	Tests/OCCTAnalysisTests/Inte
 Tests/OCCTAnalysisTests/IntToolsEdgeFaceTests.swift	Tests/OCCTAnalysisTests/Intersection/IntToolsEdgeFaceTests.swift	Intersection	-	IntCS, IntCurvesFace, IntTools, Intf_Tool and GeomInt_IntSS intersections
 Tests/OCCTAnalysisTests/IntToolsFaceFaceTests.swift	Tests/OCCTAnalysisTests/Intersection/IntToolsFaceFaceTests.swift	Intersection	#2681	IntCS, IntCurvesFace, IntTools, Intf_Tool and GeomInt_IntSS intersections
 Tests/OCCTAnalysisTests/IntToolsTests.swift	Tests/OCCTAnalysisTests/Intersection/IntToolsTests.swift	Intersection	#2684	IntCS, IntCurvesFace, IntTools, Intf_Tool and GeomInt_IntSS intersections
-Tests/OCCTAnalysisTests/IntegrationAssemblyInterferenceTests.swift	Tests/OCCTAnalysisTests/IntegrationAssemblyInterferenceTests.swift	(stays)	-	an integration scenario (booleans plus distance); belongs to OCCTIntegrationTests, cross-target, stays (issue filed)
-Tests/OCCTAnalysisTests/IntegrationProfileContouringTests.swift	Tests/OCCTAnalysisTests/IntegrationProfileContouringTests.swift	(stays)	-	an integration scenario (union plus section wires); belongs to OCCTIntegrationTests, cross-target, stays (issue filed)
-Tests/OCCTAnalysisTests/IntegrationSurfaceCurvatureAnalysisTests.swift	Tests/OCCTAnalysisTests/IntegrationSurfaceCurvatureAnalysisTests.swift	(stays)	-	an integration scenario; belongs to OCCTIntegrationTests, cross-target, stays (issue filed)
+Tests/OCCTAnalysisTests/IntegrationAssemblyInterferenceTests.swift	Tests/OCCTIntegrationTests/Workflows/IntegrationAssemblyInterferenceTests.swift	Workflows	-	booleans plus distance as an assembly interference scenario
+Tests/OCCTAnalysisTests/IntegrationProfileContouringTests.swift	Tests/OCCTIntegrationTests/Workflows/IntegrationProfileContouringTests.swift	Workflows	-	union plus section wires as a profile contouring scenario
+Tests/OCCTAnalysisTests/IntegrationSurfaceCurvatureAnalysisTests.swift	Tests/OCCTIntegrationTests/Measurements/IntegrationSurfaceCurvatureAnalysisTests.swift	Measurements	-	sphere curvature measured through the public API
 Tests/OCCTAnalysisTests/IntfToolTests.swift	Tests/OCCTAnalysisTests/Intersection/IntfToolTests.swift	Intersection	#2684	IntCS, IntCurvesFace, IntTools, Intf_Tool and GeomInt_IntSS intersections
 Tests/OCCTAnalysisTests/Issue1424BndLibFaceNullGuardTests.swift	Tests/OCCTAnalysisTests/Bounding/Issue1424BndLibFaceNullGuardTests.swift	Bounding	-	Bnd and BndLib bounding volumes, ranges and sort boxes
 Tests/OCCTAnalysisTests/Issue1493MedialAxisDistanceOnArcTests.swift	Tests/OCCTAnalysisTests/PlanarGeometry/Issue1493MedialAxisDistanceOnArcTests.swift	PlanarGeometry	-	Hatch_Hatcher and medial axis of planar faces
@@ -128,7 +128,7 @@ Tests/OCCTAnalysisTests/LProp3dCurveTests.swift	Tests/OCCTAnalysisTests/LocalPro
 Tests/OCCTAnalysisTests/LProp3dSurfaceTests.swift	Tests/OCCTAnalysisTests/LocalProperties/LProp3dSurfaceTests.swift	LocalProperties	#2655	LProp, BRepLProp and GeomLProp local differential properties
 Tests/OCCTAnalysisTests/LPropAnalyticCurInfTests.swift	Tests/OCCTAnalysisTests/LocalProperties/LPropAnalyticCurInfTests.swift	LocalProperties	#2655	LProp, BRepLProp and GeomLProp local differential properties
 Tests/OCCTAnalysisTests/LocalPropsParityTests.swift	Tests/OCCTAnalysisTests/LocalProperties/LocalPropsParityTests.swift	LocalProperties	#2659	curvature, tangent and normal queries on curves, edges and faces
-Tests/OCCTAnalysisTests/MakeVolumeTests.swift	Tests/OCCTAnalysisTests/MakeVolumeTests.swift	(stays)	-	tests Shape.makeVolume (BOPAlgo_MakerVolume), a Modeling subject; cross-target, stays (issue filed)
+Tests/OCCTAnalysisTests/MakeVolumeTests.swift	Tests/OCCTModelingTests/BOPAlgo/MakeVolumeTests.swift	BOPAlgo	-	Shape.makeVolume (BOPAlgo_MakerVolume)
 Tests/OCCTAnalysisTests/MassPropertiesTests.swift	Tests/OCCTAnalysisTests/MassProperties/MassPropertiesTests.swift	MassProperties	-	GProp mass, centroid and inertia of shapes and elements
 Tests/OCCTAnalysisTests/MeasurementTests.swift	Tests/OCCTAnalysisTests/MassProperties/MeasurementTests.swift	MassProperties	-	GProp mass, centroid and inertia of shapes and elements
 Tests/OCCTAnalysisTests/MedialAxisRectangleTests.swift	Tests/OCCTAnalysisTests/PlanarGeometry/MedialAxisRectangleTests.swift	PlanarGeometry	#2682	Hatch_Hatcher and medial axis of planar faces

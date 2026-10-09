@@ -1,0 +1,12 @@
+line [0,10] -> BSpline: degree=1 poles=2 start=(0, 0, 0) end=(10, 0, 0)
+AdjustCurve(line, (0,0,0), (10,0,0))=1
+circle [0,pi] -> BSpline: degree=7 start=(5, 0, 0) end=(-5, 8.88178e-16, 0) mid=(0.000000, 4.999934, 0) domain=[0, 3.14159]
+2D line [0,5] -> BSpline: degree=1 start=(0, 0) end=(5, 0)
+triangulation from 4 points: done=1 type=4 faces=1 area=100.000000000
+triangulation from triangle wire: done=1 type=4 faces=1 area=50.000000000
+BSplineRestriction(box, defaults 0.01/0.01/8/100/C1/C1): valid=1 faces=6 planes=6 volume=1000.000000000
+BSplineRestriction(box, 0.001/0.001/4/50/C2/C2): valid=1 faces=6 planes=6 volume=1000.000000000
+DirectModification(box): valid=1 faces=6 planes=6 volume=1000.000000000
+TrsfModification(box, scale 2): valid=1 faces=6 planes=6 volume=8000.000000000
+ConvertToPeriodic(cylindrical surface) null=1
+SortedCompound: solids=2 faces=12 edges(one box)=12; ShapeType(two boxes)=2

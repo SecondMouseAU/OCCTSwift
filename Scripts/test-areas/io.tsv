@@ -1,7 +1,7 @@
 # current_path	proposed_path	area	pending_prs	reason
 Tests/OCCTIOTests/BREPStringSerializationTests.swift	Tests/OCCTIOTests/BREP/BREPStringSerializationTests.swift	BREP	-	OCCT native BREP text format, file and string; BinTools lands here from OCCTTopologyTests (#3159)
 Tests/OCCTIOTests/BREPTests.swift	Tests/OCCTIOTests/BREP/BREPTests.swift	BREP	-	OCCT native BREP text format, file and string; BinTools lands here from OCCTTopologyTests (#3159)
-Tests/OCCTIOTests/CameraAspectTests.swift	Tests/OCCTIOTests/CameraAspectTests.swift	(stays)	-	tests Graphic3d Camera aspect and scale, a Drawing subject next to OCCTDrawingTests/CameraTests.swift; cross-target, stays (#3186)
+Tests/OCCTIOTests/CameraAspectTests.swift	Tests/OCCTDrawingTests/Visualization/CameraAspectTests.swift	Visualization	-	Graphic3d Camera aspect and scale, beside CameraTests
 Tests/OCCTIOTests/CancellationReportingTests.swift	Tests/OCCTIOTests/CrossFormat/CancellationReportingTests.swift	CrossFormat	-	behaviour shared by several formats: import and export progress, cancellation, return status and exporter temp files
 Tests/OCCTIOTests/DXFExportTests.swift	Tests/OCCTIOTests/DrawingFormats/DXFExportTests.swift	DrawingFormats	-	DXF, PDF and SVG drawing writers: entity staging, golden output, numeric tokens, hatch and error enums
 Tests/OCCTIOTests/DoubleMinusRegressionTests.swift	Tests/OCCTIOTests/DrawingFormats/DoubleMinusRegressionTests.swift	DrawingFormats	-	DXF, PDF and SVG drawing writers: entity staging, golden output, numeric tokens, hatch and error enums

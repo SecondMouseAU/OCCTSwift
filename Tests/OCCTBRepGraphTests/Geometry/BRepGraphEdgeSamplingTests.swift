@@ -4,86 +4,61 @@ import simd
 
 @testable import OCCTSwift
 
+// Endpoints pinned to the kernel probe (Scripts/repro/766-brepgraph-edge-query-sampling):
+// `dist(first, last) > 0.001` and `|r - 5| < 0.1` accepted a sampler that stopped short of the
+// end of the range (#1986).
 @Suite("BRepGraph Edge Sampling")
 struct BRepGraphEdgeSamplingTests {
-    @Test func sampleBoxEdge() {
-        if let box = Shape.box(width: 10, height: 10, depth: 10) {
-            if let graph = BRepGraph(shape: box) {
-                // Find an edge with a curve
-                var sampledEdge = -1
-                for i in 0..<graph.edgeCount {
-                    if graph.edgeHasCurve(i) {
-                        sampledEdge = i
-                        break
-                    }
-                }
-                if sampledEdge >= 0 {
-                    let points = graph.sampleEdgeCurve(edgeIndex: sampledEdge, count: 10)
-                    #expect(points.count == 10)
-                    // Points should be distinct (not all the same)
-                    if points.count >= 2 {
-                        let first = points[0]
-                        let last = points[points.count - 1]
-                        let dist =
-                            ((first.x - last.x) * (first.x - last.x) + (first.y - last.y)
-                            * (first.y - last.y) + (first.z - last.z) * (first.z - last.z))
-                            .squareRoot()
-                        #expect(dist > 0.001)
-                    }
-                }
-            }
-        }
+    @Test func sampleBoxEdge() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let graph = try #require(BRepGraph(shape: box))
+        #expect(graph.edgeHasCurve(0))
+        let points = graph.sampleEdgeCurve(edgeIndex: 0, count: 10)
+        try #require(points.count == 10)
+        // Edge 0 runs from (-5, -5, -5) to (-5, -5, 5) over its range.
+        #expect(points[0] == SIMD3(-5, -5, -5))
+        #expect(points[9] == SIMD3(-5, -5, 5))
+        // Evenly spaced: consecutive samples 10/9 apart.
+        #expect(abs(simd_distance(points[0], points[1]) - 10.0 / 9.0) < 1e-12)
     }
 
-    @Test func sampleSinglePoint() {
-        if let box = Shape.box(width: 10, height: 10, depth: 10) {
-            if let graph = BRepGraph(shape: box) {
-                for i in 0..<graph.edgeCount {
-                    if graph.edgeHasCurve(i) {
-                        let points = graph.sampleEdgeCurve(edgeIndex: i, count: 1)
-                        #expect(points.count == 1)
-                        break
-                    }
-                }
-            }
-        }
+    @Test func sampleSinglePoint() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let graph = try #require(BRepGraph(shape: box))
+        #expect(graph.edgeHasCurve(0))
+        let points = graph.sampleEdgeCurve(edgeIndex: 0, count: 1)
+        #expect(points == [SIMD3(-5, -5, -5)])
     }
 
-    @Test func sampleEdgeWithoutCurve() {
-        if let box = Shape.box(width: 10, height: 10, depth: 10) {
-            if let graph = BRepGraph(shape: box) {
-                // Test with invalid index
-                let points = graph.sampleEdgeCurve(edgeIndex: 999, count: 10)
-                #expect(points.isEmpty)
-            }
-        }
+    @Test func sampleEdgeWithoutCurve() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let graph = try #require(BRepGraph(shape: box))
+        // Test with invalid index
+        let points = graph.sampleEdgeCurve(edgeIndex: 999, count: 10)
+        #expect(points.isEmpty)
     }
 
-    @Test func sampleZeroCount() {
-        if let box = Shape.box(width: 10, height: 10, depth: 10) {
-            if let graph = BRepGraph(shape: box) {
-                let points = graph.sampleEdgeCurve(edgeIndex: 0, count: 0)
-                #expect(points.isEmpty)
-            }
-        }
+    @Test func sampleZeroCount() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let graph = try #require(BRepGraph(shape: box))
+        let points = graph.sampleEdgeCurve(edgeIndex: 0, count: 0)
+        #expect(points.isEmpty)
     }
 
-    @Test func sampleSphereEdge() {
-        if let sphere = Shape.sphere(radius: 5) {
-            if let graph = BRepGraph(shape: sphere) {
-                for i in 0..<graph.edgeCount {
-                    if graph.edgeHasCurve(i) {
-                        let points = graph.sampleEdgeCurve(edgeIndex: i, count: 20)
-                        #expect(points.count == 20)
-                        // All points should be on the sphere surface (distance from origin ~= 5)
-                        for p in points {
-                            let r = (p.x * p.x + p.y * p.y + p.z * p.z).squareRoot()
-                            #expect(abs(r - 5.0) < 0.1)
-                        }
-                        break
-                    }
-                }
-            }
+    @Test func sampleSphereEdge() throws {
+        let sphere = try #require(Shape.sphere(radius: 5))
+        let graph = try #require(BRepGraph(shape: sphere))
+        // Only the seam (edge 1) has a curve; the degenerate pole edges sample to nothing.
+        #expect(graph.sampleEdgeCurve(edgeIndex: 0, count: 20).isEmpty)
+        #expect(graph.sampleEdgeCurve(edgeIndex: 2, count: 20).isEmpty)
+        let points = graph.sampleEdgeCurve(edgeIndex: 1, count: 20)
+        try #require(points.count == 20)
+        // All points should be on the sphere surface (distance from origin ~= 5)
+        for p in points {
+            #expect(abs(simd_length(p) - 5.0) < 1e-9)
         }
+        // The seam runs pole to pole.
+        #expect(abs(points[0].z + 5) < 1e-12)
+        #expect(abs(points[19].z - 5) < 1e-12)
     }
 }
