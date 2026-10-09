@@ -1,0 +1,25 @@
+# every pair that answers not done with 0058, grouped by the return that fires (line numbers are in the instrumented copy MiddlePath_ret.cxx made by mkret.py)
+
+line 622: 321 pairs (38 share no vertex)
+  code: for (;;) | { | // a path holds each edge of the solid at most once: past that the end section is not reached | if (i > NbSolidEdges) | {
+  by solid: {'box': 18, 'cyl': 2, 'cone': 1, 'octa': 31, 'tube': 4, 'hex': 26, 'lshape': 22, 'tri': 5, 'pent': 11, 'oct8': 34, 'star': 42, 'ushape': 34, 'sqtube': 50, 'frustum': 2, 'bend': 18, 'elbow': 20, 'capsule': 1}
+
+line 746: 28 pairs (6 share no vertex)
+  code: TopoDS_Vertex PrevCurVer  = (E2.IsNull()) ? CurVertex : TopExp::FirstVertex(E2, true); | if (ProperEdge.IsNull()) // no connection between these two vertices | { | if (theFace.IsNull()) | {
+  by solid: {'octa': 5, 'lshape': 4, 'pent': 8, 'elbow': 11}
+
+line None: 19 pairs (2 share no vertex)
+  code: no return of 0058 fired: the kernel answers not done, as before
+  by solid: {'cyl': 3, 'cone': 2, 'tube': 5, 'frustum': 3, 'torus': 1, 'capsule': 5}
+
+line 759: 13 pairs (6 share no vertex)
+  code: { | gp_Pnt2d FirstPnt2d, LastPnt2d; | if (!EndPoint2d(E1, PrevVertex, theFace, FirstPnt2d) | || !EndPoint2d(E2, CurVertex, theFace, LastPnt2d)) | {
+  by solid: {'elbow': 13}
+
+line 767: 7 pairs (0 share no vertex)
+  code: occ::handle<Geom2d_Line>  theLine = GC_MakeLine2d(FirstPnt2d, LastPnt2d); | double                    len_ne  = FirstPnt2d.Distance(LastPnt2d); | TopoDS_Edge NewEdge = MakeSectionEdge(theLine, theSurf, PrevVertex, CurVertex, len_ne); | if (NewEdge.IsNull()) | {
+  by solid: {'tri': 6, 'pent': 1}
+
+line 871: 5 pairs (0 share no vertex)
+  code: } | for (k = 1; k <= j - 1; k++) | { | if (myPaths(k).Length() < i || myPaths(k)(i).ShapeType() != TopAbs_EDGE) | {
+  by solid: {'pent': 2, 'elbow': 3}

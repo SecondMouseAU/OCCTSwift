@@ -1,0 +1,32 @@
+member = patched 0058
+◇ Test run started.
+◇ Suite "Issue3105 middlePath answers a valid path or nil where the kernel read past a path" started.
+◇ Test lShapedPrismAnswersAPathThroughTheCorner() started.
+◇ Test noPairOfFacesOfAnySolidAbortsOrAnswersAnInvalidShape() started.
+◇ Test octahedronOppositeTrianglesAnswerNil() started.
+◇ Test uShapedPrismAnswersAPathForEveryPair() started.
+◇ Test hexagonalPrismSidesThatAreNotOppositeAnswerAPath() started.
+◇ Test tubeCapAgainstTheBoreAnswersNil() started.
+✔ Test tubeCapAgainstTheBoreAnswersNil() passed after 0.006 seconds.
+✔ Test octahedronOppositeTrianglesAnswerNil() passed after 0.007 seconds.
+✔ Test lShapedPrismAnswersAPathThroughTheCorner() passed after 0.012 seconds.
+✔ Test hexagonalPrismSidesThatAreNotOppositeAnswerAPath() passed after 0.012 seconds.
+✔ Test uShapedPrismAnswersAPathForEveryPair() passed after 0.023 seconds.
+✔ Test noPairOfFacesOfAnySolidAbortsOrAnswersAnInvalidShape() passed after 0.209 seconds.
+✔ Suite "Issue3105 middlePath answers a valid path or nil where the kernel read past a path" passed after 0.209 seconds.
+✔ Test run with 6 tests in 1 suite passed after 0.209 seconds.
+exit status: 0
+
+# Issue3098MiddlePathGuardTests, same archive
+◇ Test run started.
+✔ Test nullShapesAnswerNil() passed after 0.001 seconds.
+✔ Test anEdgeEndAnswersNil() passed after 0.001 seconds.
+✔ Test sameFaceTwiceAnswersNil() passed after 0.001 seconds.
+✔ Test sameWireTwiceAnswersNil() passed after 0.001 seconds.
+✔ Test adjacentFacesAnswerNil() passed after 0.001 seconds.
+✔ Test cylinderCapsStillGiveASpine() passed after 0.001 seconds.
+✔ Test oppositeWiresOfABoxStillGiveASpine() passed after 0.001 seconds.
+✔ Test oppositeFacesOfABoxStillGiveASpine() passed after 0.001 seconds.
+✔ Test aTubeStillGivesItsAxis() passed after 0.001 seconds.
+✔ Suite "Issue3098 middlePath refuses the inputs that crash the kernel" passed after 0.001 seconds.
+✔ Test run with 9 tests in 1 suite passed after 0.001 seconds.
