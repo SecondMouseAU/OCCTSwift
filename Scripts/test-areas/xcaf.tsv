@@ -131,6 +131,6 @@ Tests/OCCTXCAFTests/TFunctionGraphNodeTests.swift	Tests/OCCTXCAFTests/TFunction/
 Tests/OCCTXCAFTests/TFunctionIFunctionTests.swift	Tests/OCCTXCAFTests/TFunction/TFunctionIFunctionTests.swift	TFunction	-	TFunction_IFunction
 Tests/OCCTXCAFTests/TFunctionLogbookTests.swift	Tests/OCCTXCAFTests/TFunction/TFunctionLogbookTests.swift	TFunction	-	TFunction_Logbook
 Tests/OCCTXCAFTests/TFunctionScopeTests.swift	Tests/OCCTXCAFTests/TFunction/TFunctionScopeTests.swift	TFunction	-	TFunction_Scope
-Tests/OCCTXCAFTests/BRepGraphAttributeTests.swift	Tests/OCCTXCAFTests/BRepGraphAttributeTests.swift	(stays)	-	BRepGraph attribute store and Codable snapshot, no XCAF Document involved: belongs in OCCTBRepGraphTests, cross-target so not moved here
-Tests/OCCTXCAFTests/TextLabelAndPointCloudTests.swift	Tests/OCCTXCAFTests/TextLabelAndPointCloudTests.swift	(stays)	-	TextLabel and PointCloud scene annotations (Annotation.swift), no XCAF Document involved: cross-target so not moved here
+Tests/OCCTXCAFTests/BRepGraphAttributeTests.swift	Tests/OCCTBRepGraphTests/Attributes/BRepGraphAttributeTests.swift	Attributes	-	BRepGraph attribute store and Codable snapshot
+Tests/OCCTXCAFTests/TextLabelAndPointCloudTests.swift	Tests/OCCTDrawingTests/Visualization/TextLabelAndPointCloudTests.swift	Visualization	-	TextLabel and PointCloud scene annotations
 Tests/OCCTXCAFTests/XCAFTestFixtures.swift	Tests/OCCTXCAFTests/XCAFTestFixtures.swift	(stays)	-	shared helpers used across areas; fixtures stay at the root
