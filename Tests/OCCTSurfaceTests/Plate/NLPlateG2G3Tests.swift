@@ -11,9 +11,9 @@ struct NLPlateG2G3Tests {
     // #766: all four sat inside `if let plane` and asserted only non-nil. Each now checks the
     // value. The incremental solve and the derivative match the kernel: the surface passes
     // through its target at (0.5, 0.5), and the derivative is NLPlate_NLPlate::EvaluateDerivative's
-    // own. The G2 and G3 deformations do NOT: the kernel's solve is fine at the constraint, but the
-    // surface the bridge fits to it evaluates to z of about -2e12 (G2) and -1e21 (G3) there. That
-    // is pinned with `withKnownIssue` (#3134), which fails once the target starts being met.
+    // own. The G2 and G3 deformations used to miss it by about 2e12 and 1e21 (#3134): the bridge's
+    // refit was dragged by the plate's extreme values away from its constraint. They now pass
+    // through the target too.
     // Kernel values: Scripts/repro/766-nlplate-g2g3-platethrough/.
     private func near(_ s: Surface, _ uv: SIMD2<Double>, _ target: SIMD3<Double>, _ tol: Double)
         -> Bool
@@ -36,11 +36,7 @@ struct NLPlateG2G3Tests {
             ])
         #expect(result != nil)
         if let result {
-            withKnownIssue(
-                "#3134: NLPlate_NLPlate's G2 solve is well behaved at the constraint (probe) but the bridge's fitted surface is not: z is about -2e12 there. See Scripts/repro/766-nlplate-g2g3-platethrough/"
-            ) {
-                #expect(near(result, SIMD2(0.5, 0.5), SIMD3(0.5, 0.5, 1.0), 0.01))
-            }
+            #expect(near(result, SIMD2(0.5, 0.5), SIMD3(0.5, 0.5, 1.0), 0.01))
         }
     }
 
@@ -64,11 +60,7 @@ struct NLPlateG2G3Tests {
             ])
         #expect(result != nil)
         if let result {
-            withKnownIssue(
-                "#3134: NLPlate_NLPlate's G3 solve is well behaved at the constraint (probe) but the bridge's fitted surface is not: z is about -1e21 there. See Scripts/repro/766-nlplate-g2g3-platethrough/"
-            ) {
-                #expect(near(result, SIMD2(0.3, 0.3), SIMD3(0.3, 0.3, 0.5), 0.01))
-            }
+            #expect(near(result, SIMD2(0.3, 0.3), SIMD3(0.3, 0.3, 0.5), 0.01))
         }
     }
 

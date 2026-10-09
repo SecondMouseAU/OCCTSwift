@@ -100,8 +100,10 @@ struct Issue1017NLPlateResolutionOrderTests {
             #expect(Bool(false), "Both orders should build")
             return
         }
-        let lowZ = low.point(atU: 0, v: 0).z
-        let highZ = high.point(atU: 0, v: 0).z
+        // Away from every constraint: both orders meet (0, 0, 5) there now (#3133), so the
+        // order shows only where the plate is free.
+        let lowZ = low.point(atU: 2.5, v: -2.5).z
+        let highZ = high.point(atU: 2.5, v: -2.5).z
         #expect(lowZ.isFinite)
         #expect(highZ.isFinite)
         #expect(abs(lowZ - highZ) > 1.0)
