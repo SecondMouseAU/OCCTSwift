@@ -135,7 +135,7 @@ extension Shape {
     /// ```swift
     /// let slab = Shape.box(width: 4, height: 10, depth: 6)!
     /// let zTop = slab.bounds!.max.z
-    /// let topEdges = slab.edges().filter { abs(($0.bounds?.min.z ?? 0) - zTop) < 1e-9 }
+    /// let topEdges = slab.edges().filter { abs(($0.bounds?.min.z ?? 0) - zTop) < 1e-3 }
     ///
     /// // Radii that fit the 4 mm wide top face: a valid, rounded solid.
     /// let rounded = slab.filleted(edges: topEdges, radius: 1)
