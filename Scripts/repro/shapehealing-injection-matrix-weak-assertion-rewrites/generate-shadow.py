@@ -13,6 +13,8 @@ variable SHW_SWITCH names one of its switches, distorts the answer:
 
     F_RET_FLIP        a Bool verdict inverted
     F_RET_NIL         a reference result dropped
+    F_RET_SPURIOUS    a surface result that was nil replaced by a fresh cylinder (the inverse of RET_NIL, for
+                      a test that pins a refusal)
     F_RET_PLUS / _NEG a scalar result offset by 1e-3 / negated
     F_RET_PLUS1       an Int32 result (a count) off by one
     F_RET_MINUS1      a count with the last element dropped (arrays: nothing past the new count is read)
@@ -32,12 +34,14 @@ import sys
 FUNCS = """
 OCCTBRepCheckFaceClassifyWires OCCTBRepCheckFaceIntersectWires OCCTBRepCheckFaceOrientationOfWires
 OCCTBRepToolsModifierNurbsConvert OCCTBSplineRestrictionParameters OCCTCurve2DBSplineSetNotPeriodic
-OCCTCurve3DBSplineSetNotPeriodic OCCTCurve3DConvertToPeriodic OCCTDocumentSetTriangulationFromShape
-OCCTFaceFixerCreate OCCTFaceFixerFace OCCTFaceFixerFixAddNaturalBound
-OCCTFaceFixerFixIntersectingWires OCCTFaceFixerFixLoopWire OCCTFaceFixerFixMissingSeam
-OCCTFaceFixerFixOrientation OCCTFaceFixerFixPeriodicDegenerated OCCTFaceFixerFixSmallAreaWire
-OCCTFaceFixerFixWiresTwoCoincEdges OCCTFaceFixerPerform OCCTFaceFixerRelease OCCTFaceFixerResult
-OCCTFaceFixerSetMaxTolerance OCCTFaceFixerSetMinTolerance OCCTFaceFixerSetMode OCCTFaceFixerStatus
+OCCTCurve3DBSplineSetNotPeriodic OCCTCurve3DConvertToPeriodic OCCTCurve3DIsClosedWithPreci
+OCCTCurve3DIsPeriodicSA OCCTCurve3DIsPlanar OCCTDocumentSetTriangulationFromShape
+OCCTEdgeHasCurve3dSA OCCTFaceFix OCCTFaceFixerCreate OCCTFaceFixerFace
+OCCTFaceFixerFixAddNaturalBound OCCTFaceFixerFixIntersectingWires OCCTFaceFixerFixLoopWire
+OCCTFaceFixerFixMissingSeam OCCTFaceFixerFixOrientation OCCTFaceFixerFixPeriodicDegenerated
+OCCTFaceFixerFixSmallAreaWire OCCTFaceFixerFixWiresTwoCoincEdges OCCTFaceFixerPerform
+OCCTFaceFixerRelease OCCTFaceFixerResult OCCTFaceFixerSetMaxTolerance OCCTFaceFixerSetMinTolerance
+OCCTFaceFixerSetMode OCCTFaceFixerStatus OCCTFreeBoundsPropsPerform OCCTFreeFaceArrayOnly
 OCCTSewingAdd OCCTSewingCreate OCCTSewingDeletedFace OCCTSewingIsDegenerated OCCTSewingIsModified
 OCCTSewingIsMultipleEdge OCCTSewingIsSectionBound OCCTSewingLoad OCCTSewingModified
 OCCTSewingNbContigousEdges OCCTSewingNbDegeneratedShapes OCCTSewingNbDeletedFaces
@@ -60,26 +64,28 @@ OCCTShapeEncodeRegularity OCCTShapeExtendShapeType OCCTShapeExtendSortedCompound
 OCCTShapeFixComposeShell OCCTShapeFixDetailed OCCTShapeFixEdgeAddCurve3d OCCTShapeFixEdgeAddPCurve
 OCCTShapeFixEdgeConnect OCCTShapeFixEdgeFixReversed2d OCCTShapeFixEdgeProjAux
 OCCTShapeFixEdgeRemoveCurve3d OCCTShapeFixEdgeRemovePCurve OCCTShapeFixEdgeSameParameter
-OCCTShapeFixEdgeVertexTolerance OCCTShapeFixerCreate OCCTShapeFixerPerform OCCTShapeFixerRelease
-OCCTShapeFixerSetMaxTolerance OCCTShapeFixerSetMinTolerance OCCTShapeFixerSetPrecision
-OCCTShapeFixerShape OCCTShapeFixerStatus OCCTShapeFixerStatusFlag OCCTShapeFixFaceConnect
-OCCTShapeFixFreeBounds OCCTShapeFixIntersectingWires OCCTShapeFixLimitTolerance
-OCCTShapeFixMergeSmallSolids OCCTShapeFixRemoveSmallSolids OCCTShapeFixSetTolerance
-OCCTShapeFixSmallEdges OCCTShapeFixSmallFaces OCCTShapeFixSolid OCCTShapeFixSplitCommonVertex
-OCCTShapeFixSplitEdge OCCTShapeFixTolerance OCCTShapeFixWireframe OCCTShapeFixWireGaps
-OCCTShapeFixWireVertex OCCTShapeFreeBounds OCCTShapeFreeBoundsClosed OCCTShapeFreeBoundsClosedCount
-OCCTShapeFreeBoundsOpen OCCTShapeGTrsfModification OCCTShapeHeal OCCTShapeHealWithHistory
-OCCTShapeNearestPlane OCCTShapePurgeLocations OCCTShapeRemoveInternalWires OCCTShapeRemoveLocations
-OCCTShapeSameParameter OCCTShapeScaleGeometry OCCTShapeSew OCCTShapeSewSingle
-OCCTShapeSewSingleWithHistory OCCTShapeSewTwo OCCTShapeSewWithHistory OCCTShapeSimplify
-OCCTShapeSolidFromShell OCCTShapeSweptToElementary OCCTShapeToleranceInRangeCount
-OCCTShapeToleranceOverCount OCCTShapeToleranceValue OCCTShapeTrsfModification
-OCCTShapeUnifySameDomain OCCTShapeUpdateTolerances OCCTShapeUpgrade
+OCCTShapeFixEdgeVertexTolerance OCCTShapeFixFaceConnect OCCTShapeFixFreeBounds
+OCCTShapeFixIntersectingWires OCCTShapeFixLimitTolerance OCCTShapeFixMergeSmallSolids
+OCCTShapeFixRemoveSmallSolids OCCTShapeFixSetTolerance OCCTShapeFixSmallEdges OCCTShapeFixSmallFaces
+OCCTShapeFixSolid OCCTShapeFixSplitCommonVertex OCCTShapeFixSplitEdge OCCTShapeFixTolerance
+OCCTShapeFixWireGaps OCCTShapeFixWireVertex OCCTShapeFixWireframe OCCTShapeFixerCreate
+OCCTShapeFixerPerform OCCTShapeFixerRelease OCCTShapeFixerSetMaxTolerance
+OCCTShapeFixerSetMinTolerance OCCTShapeFixerSetPrecision OCCTShapeFixerShape OCCTShapeFixerStatus
+OCCTShapeFixerStatusFlag OCCTShapeFreeBounds OCCTShapeFreeBoundsClosed
+OCCTShapeFreeBoundsClosedCount OCCTShapeFreeBoundsOpen OCCTShapeGTrsfModification OCCTShapeHeal
+OCCTShapeHealWithHistory OCCTShapeNearestPlane OCCTShapePurgeLocations
+OCCTShapeRemoveInternalWires OCCTShapeRemoveLocations OCCTShapeSameParameter OCCTShapeScaleGeometry
+OCCTShapeSew OCCTShapeSewSingle OCCTShapeSewSingleWithHistory OCCTShapeSewTwo
+OCCTShapeSewWithHistory OCCTShapeSimplify OCCTShapeSolidFromShell OCCTShapeSweptToElementary
+OCCTShapeToleranceInRangeCount OCCTShapeToleranceOverCount OCCTShapeToleranceValue
+OCCTShapeTrsfModification OCCTShapeUnifySameDomain OCCTShapeUpdateTolerances OCCTShapeUpgrade
 OCCTShapeUpgradeClosedEdgeDivideCompute OCCTShapeUpgradeConvertCurves3dToBezier
 OCCTShapeUpgradeConvertSurfaceToBezier OCCTShapeUpgradeDivideClosed
 OCCTShapeUpgradeEdgeDivideCompute OCCTShapeUpgradeFaceDivide OCCTShapeUpgradeShellSewing
 OCCTShapeUpgradeWireDivideOnFace OCCTShapeWireVertexAnalysis OCCTShapeWireVertexStatus
 OCCTSurfaceBSplineSetUNotPeriodic OCCTSurfaceBSplineSetVNotPeriodic OCCTSurfaceConvertToPeriodic
+OCCTSurfaceHasSingularities OCCTSurfaceIsDegenerated OCCTSurfaceIsUClosedSA OCCTSurfaceIsVClosedSA
+OCCTSurfaceNbSingularities OCCTSurfaceProjectPointUV OCCTWireAnalyzerPerform OCCTWireFix
 OCCTWireFixerCreate OCCTWireFixerFixClosed OCCTWireFixerFixConnected OCCTWireFixerFixDegenerated
 OCCTWireFixerFixEdgeCurves OCCTWireFixerFixGaps2d OCCTWireFixerFixGaps3d OCCTWireFixerFixLacking
 OCCTWireFixerFixNotchedEdges OCCTWireFixerFixReorder OCCTWireFixerFixSeam
@@ -205,6 +211,8 @@ def gen(name, ret, params, structs, enums, switches):
         post.append(f'    if SHW.on("{sw("RET_ZERO")}") {{ rr = 0 }}')
     elif returns_value and is_ref(rb) and not nn_r:
         post.append(f'    if SHW.on("{sw("RET_NIL")}") {{ return nil }}')
+        if rb == "OCCTSurfaceRef":
+            post.append(f'    if rr == nil && SHW.on("{sw("RET_SPURIOUS")}") {{ rr = OCCTBridge.OCCTSurfaceCreateCylinder(0, 0, 0, 0, 0, 1, 1) }}')
     elif returns_value and rb in structs:
         for ft, fn in structs[rb]:
             post += field_switch(name, f"RET_{fn}", "rr", fn, ft, enums, sw, "")
