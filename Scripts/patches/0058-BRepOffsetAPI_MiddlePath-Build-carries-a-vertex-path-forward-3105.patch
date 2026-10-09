@@ -1,0 +1,307 @@
+From: OCCTSwift ecosystem <noreply@secondmouse.au>
+Subject: [PATCH] Modeling Algorithms - BRepOffsetAPI_MiddlePath::Build carries a
+ path that has reached a vertex forward instead of casting it to an edge, and
+ stops where the sweep cannot reach the end section
+
+BRepOffsetAPI_MiddlePath::Build starts one path per vertex of the start section along
+the edges of the solid and builds one section per level from level i of two neighbouring
+paths. A path that reaches the end section before the others is padded with its last
+vertex, and a section at which both ends are vertices is already handled (the section
+edge of the previous level, or the edge of the solid between the two vertices). What is
+missing is the same handling for a vertex that is already a vertex, and a bound on a
+sweep that never reaches the end section:
+
+  - The pad casts the element at level i - 1 with the unchecked TopoDS::Edge. A path that
+    was padded at the previous level ends in a vertex, so the pad casts a vertex, appends
+    a null shape and the next myPaths(k)(i).ShapeType() dereferences it. The pad now
+    appends the vertex again.
+  - Where one end of a section is a vertex and the other an edge, with no connecting edge
+    of the solid, the new edge needs the 2d point of both ends on the face. For a vertex
+    the code took it from the edge before it in the path, cast unchecked, which is not
+    there at level 1 or is itself a vertex. The point is now BRep_Tool::Parameters of the
+    vertex on the face, the point the edge before it would have given.
+  - No face holds the edge of a path and the edge of the section, so theFace is null. The
+    search for a connecting edge of the solid no longer requires the edge to be on that
+    face when there is none, and with no connecting edge Build returns.
+  - GeomAPI_Interpolate::Load is given a tangent at every point, a zero vector where every
+    path is a vertex. The flag array exists for this: the point has no tangent imposed.
+  - BRepLib_MakeEdge on a null 2d line, or on vertices that are not on the line, faulted or
+    threw. A null edge is now a refusal, and a candidate that is null is not "good".
+  - The insertion of a vertex before level i (ChooseEdge == 1) casts the element at level
+    i with the same unchecked cast; it now returns if the element is not an edge.
+  - The level loop ends only when the section equals the end section, so a sweep that
+    cannot reach it never ended: it ran until it faulted or, with a path carried forward,
+    without end. A path holds each edge of the solid at most once, so the loop stops after
+    as many levels as the solid has edges (the most any pair of the measurement below
+    needed was a third of that). Build then returns with the builder not done, as it does
+    when a start vertex has no edge outside the start wire.
+
+Measured over 573 pairs of faces of 16 solids (Scripts/repro/3105-middlepath-patch), one
+process per pair: 423 aborted on the shipped kernel and none with the patch, and none
+runs on. Of the 196 pairs that share no vertex and are not the same face, 116 aborted; 81
+of them now return a path and 35 return not done because the sweep does not reach the end
+section. Every returned path was checked: a valid wire, connected, from the centre of the
+start section to the centre of the end section, in the plane of each section, no shorter
+than the chord between them and no longer than the longest guide path, and the same on
+three runs; 14 of the 81 are marked doubtful because a spline leaves the bounding box of
+the solid or loops. The 42 pairs that returned a path return the same one.
+
+diff --git a/src/ModelingAlgorithms/TKOffset/BRepOffsetAPI/BRepOffsetAPI_MiddlePath.cxx b/src/ModelingAlgorithms/TKOffset/BRepOffsetAPI/BRepOffsetAPI_MiddlePath.cxx
+index 5debda94..c9651941 100644
+--- a/src/ModelingAlgorithms/TKOffset/BRepOffsetAPI/BRepOffsetAPI_MiddlePath.cxx
++++ b/src/ModelingAlgorithms/TKOffset/BRepOffsetAPI/BRepOffsetAPI_MiddlePath.cxx
+@@ -110,6 +110,69 @@ static GeomAbs_CurveType TypeOfEdge(const TopoDS_Edge& anEdge)
+   return BAcurve.GetType();
+ }
+ 
++//! Appends the point the path has reached: the last vertex of its last edge, or the vertex
++//! itself if the path already ended in one.
++static void PadPath(NCollection_Sequence<TopoDS_Shape>& thePath)
++{
++  TopoDS_Shape aVer = thePath.Last();
++  if (aVer.ShapeType() == TopAbs_EDGE)
++  {
++    aVer = TopExp::LastVertex(TopoDS::Edge(aVer), true);
++  }
++  thePath.Append(aVer);
++}
++
++//! Returns the 2d point of the end of the path element on the face: the end of the edge, or the
++//! parameters of the vertex if the element is a vertex.
++static bool EndPoint2d(const TopoDS_Edge&   theEdge,
++                       const TopoDS_Vertex& theVertex,
++                       const TopoDS_Face&   theFace,
++                       gp_Pnt2d&            thePnt)
++{
++  if (theEdge.IsNull())
++  {
++    for (TopExp_Explorer anExp(theFace, TopAbs_VERTEX); anExp.More(); anExp.Next())
++    {
++      if (anExp.Current().IsSame(theVertex))
++      {
++        thePnt = BRep_Tool::Parameters(theVertex, theFace);
++        return true;
++      }
++    }
++    return false;
++  }
++  double                    aFirst, aLast;
++  occ::handle<Geom2d_Curve> aPCurve = BRep_Tool::CurveOnSurface(theEdge, theFace, aFirst, aLast);
++  if (aPCurve.IsNull())
++  {
++    return false;
++  }
++  thePnt = aPCurve->Value((theEdge.Orientation() == TopAbs_FORWARD) ? aLast : aFirst);
++  return true;
++}
++
++//! Returns the edge of the 2d line on the surface between two vertices, or a null edge if the line
++//! does not exist or the vertices are not on it.
++static TopoDS_Edge MakeSectionEdge(const occ::handle<Geom2d_Line>&  theLine,
++                                   const occ::handle<Geom_Surface>& theSurf,
++                                   const TopoDS_Vertex&             theV1,
++                                   const TopoDS_Vertex&             theV2,
++                                   const double                     theLength)
++{
++  if (theLine.IsNull())
++  {
++    return TopoDS_Edge();
++  }
++  BRepLib_MakeEdge aMaker(theLine, theSurf, theV1, theV2, 0., theLength);
++  if (!aMaker.IsDone())
++  {
++    return TopoDS_Edge();
++  }
++  TopoDS_Edge anEdge = aMaker.Edge();
++  BRepLib::BuildCurve3d(anEdge);
++  return anEdge;
++}
++
+ static gp_Vec TangentOfEdge(const TopoDS_Shape& aShape, const bool OnFirst)
+ {
+   TopoDS_Edge        anEdge = TopoDS::Edge(aShape);
+@@ -527,9 +590,16 @@ void BRepOffsetAPI_MiddlePath::Build(const Message_ProgressRange& /*theRange*/)
+   {
+     NbVer++;
+   }
+-  i = 1;
++  const int NbSolidEdges = EFmap.Extent();
++  i                      = 1;
+   for (;;)
+   {
++    // a path holds each edge of the solid at most once: past that the end section is not reached
++    if (i > NbSolidEdges)
++    {
++      return;
++    }
++
+     for (j = 1; j <= EdgeSeq.Length(); j++)
+     {
+       EdgeSeq(j).Nullify();
+@@ -547,15 +617,11 @@ void BRepOffsetAPI_MiddlePath::Build(const Message_ProgressRange& /*theRange*/)
+       // for the end of initial shape
+       if (myPaths(j - 1).Length() < i)
+       {
+-        TopoDS_Edge  aE1     = TopoDS::Edge(myPaths(j - 1)(i - 1));
+-        TopoDS_Shape LastVer = TopExp::LastVertex(aE1, true);
+-        myPaths(j - 1).Append(LastVer);
++        PadPath(myPaths(j - 1));
+       }
+       if (myPaths((j <= NbPaths) ? j : 1).Length() < i)
+       {
+-        TopoDS_Edge  aE2     = TopoDS::Edge(myPaths((j <= NbPaths) ? j : 1)(i - 1));
+-        TopoDS_Shape LastVer = TopExp::LastVertex(aE2, true);
+-        myPaths((j <= NbPaths) ? j : 1).Append(LastVer);
++        PadPath(myPaths((j <= NbPaths) ? j : 1));
+       }
+       //////////////////////////////
+ 
+@@ -633,8 +699,8 @@ void BRepOffsetAPI_MiddlePath::Build(const Message_ProgressRange& /*theRange*/)
+         TopExp::Vertices(anEdge, V1, V2);
+         if (((V1.IsSame(PrevVertex) && V2.IsSame(CurVertex))
+              || (V1.IsSame(CurVertex) && V2.IsSame(PrevVertex)))
+-            && EdgesOfTheFace.Contains(anEdge) && // this condition is for a section of two edges
+-            !anEdge.IsSame(E1))                   // the last condition is for torus-like shape
++            && (theFace.IsNull() || EdgesOfTheFace.Contains(anEdge)) // for a section of two edges
++            && !anEdge.IsSame(E1))                                   // for torus-like shape
+         {
+           ProperEdge = anEdge;
+           break;
+@@ -652,6 +718,10 @@ void BRepOffsetAPI_MiddlePath::Build(const Message_ProgressRange& /*theRange*/)
+       TopoDS_Vertex PrevCurVer  = (E2.IsNull()) ? CurVertex : TopExp::FirstVertex(E2, true);
+       if (ProperEdge.IsNull()) // no connection between these two vertices
+       {
++        if (theFace.IsNull())
++        {
++          return;
++        }
+         // Find the face on which E1, E2 and E12 lie
+         // ToInsertVertex = false;
+         NCollection_List<TopoDS_Shape> ListOneFace;
+@@ -659,42 +729,20 @@ void BRepOffsetAPI_MiddlePath::Build(const Message_ProgressRange& /*theRange*/)
+ 
+         if (E1.IsNull() || E2.IsNull())
+         {
+-          if (E1.IsNull())
+-          {
+-            E1 = TopoDS::Edge(myPaths(j - 1)(i - 1));
+-          }
+-          if (E2.IsNull())
+-          {
+-            E2 = TopoDS::Edge(myPaths((j <= NbPaths) ? j : 1)(i - 1));
+-          }
+-          double                    fpar1, lpar1, fpar2, lpar2;
+-          double                    LastPar1, LastPar2;
+-          occ::handle<Geom2d_Curve> PCurve1 = BRep_Tool::CurveOnSurface(E1, theFace, fpar1, lpar1);
+-          occ::handle<Geom2d_Curve> PCurve2 = BRep_Tool::CurveOnSurface(E2, theFace, fpar2, lpar2);
+-          if (E1.Orientation() == TopAbs_FORWARD)
+-          {
+-            LastPar1 = lpar1;
+-          }
+-          else
+-          {
+-            LastPar1 = fpar1;
+-          }
+-          if (E2.Orientation() == TopAbs_FORWARD)
++          gp_Pnt2d FirstPnt2d, LastPnt2d;
++          if (!EndPoint2d(E1, PrevVertex, theFace, FirstPnt2d)
++              || !EndPoint2d(E2, CurVertex, theFace, LastPnt2d))
+           {
+-            LastPar2 = lpar2;
++            return;
+           }
+-          else
++          occ::handle<Geom_Surface> theSurf = BRep_Tool::Surface(theFace);
++          occ::handle<Geom2d_Line>  theLine = GC_MakeLine2d(FirstPnt2d, LastPnt2d);
++          double                    len_ne  = FirstPnt2d.Distance(LastPnt2d);
++          TopoDS_Edge NewEdge = MakeSectionEdge(theLine, theSurf, PrevVertex, CurVertex, len_ne);
++          if (NewEdge.IsNull())
+           {
+-            LastPar2 = fpar2;
++            return;
+           }
+-          gp_Pnt2d                  FirstPnt2d = PCurve1->Value(LastPar1);
+-          gp_Pnt2d                  LastPnt2d  = PCurve2->Value(LastPar2);
+-          occ::handle<Geom_Surface> theSurf    = BRep_Tool::Surface(theFace);
+-          occ::handle<Geom2d_Line>  theLine    = GC_MakeLine2d(FirstPnt2d, LastPnt2d);
+-          double                    len_ne     = FirstPnt2d.Distance(LastPnt2d);
+-          TopoDS_Edge               NewEdge =
+-            BRepLib_MakeEdge(theLine, theSurf, PrevVertex, CurVertex, 0., len_ne);
+-          BRepLib::BuildCurve3d(NewEdge);
+           EdgeSeq(j - 1) = NewEdge;
+           EFmap.Add(NewEdge, ListOneFace);
+         }
+@@ -730,23 +778,17 @@ void BRepOffsetAPI_MiddlePath::Build(const Message_ProgressRange& /*theRange*/)
+           occ::handle<Geom_Surface> theSurf    = BRep_Tool::Surface(theFace);
+           occ::handle<Geom2d_Line>  theLine    = GC_MakeLine2d(FirstPnt2d, LastPnt2d);
+           double                    len_ne     = FirstPnt2d.Distance(LastPnt2d);
+-          TopoDS_Edge               NewEdge =
+-            BRepLib_MakeEdge(theLine, theSurf, PrevVertex, CurVertex, 0., len_ne);
+-          BRepLib::BuildCurve3d(NewEdge);
+-          gp_Pnt2d                 PrevFirstPnt2d = PCurve1->Value(FirstPar1);
+-          gp_Pnt2d                 PrevLastPnt2d  = PCurve2->Value(FirstPar2);
+-          occ::handle<Geom2d_Line> Line1          = GC_MakeLine2d(PrevFirstPnt2d, LastPnt2d);
+-          occ::handle<Geom2d_Line> Line2          = GC_MakeLine2d(FirstPnt2d, PrevLastPnt2d);
+-          double                   len_ne1        = PrevFirstPnt2d.Distance(LastPnt2d);
+-          TopoDS_Edge              NewEdge1 =
+-            BRepLib_MakeEdge(Line1, theSurf, PrevPrevVer, CurVertex, 0., len_ne1);
+-          BRepLib::BuildCurve3d(NewEdge1);
+-          double      len_ne2 = FirstPnt2d.Distance(PrevLastPnt2d);
+-          TopoDS_Edge NewEdge2 =
+-            BRepLib_MakeEdge(Line2, theSurf, PrevVertex, PrevCurVer, 0., len_ne2);
+-          BRepLib::BuildCurve3d(NewEdge2);
+-          bool good_ne  = IsValidEdge(NewEdge, theFace);
+-          bool good_ne1 = IsValidEdge(NewEdge1, theFace);
++          TopoDS_Edge NewEdge = MakeSectionEdge(theLine, theSurf, PrevVertex, CurVertex, len_ne);
++          gp_Pnt2d    PrevFirstPnt2d       = PCurve1->Value(FirstPar1);
++          gp_Pnt2d    PrevLastPnt2d        = PCurve2->Value(FirstPar2);
++          occ::handle<Geom2d_Line> Line1   = GC_MakeLine2d(PrevFirstPnt2d, LastPnt2d);
++          occ::handle<Geom2d_Line> Line2   = GC_MakeLine2d(FirstPnt2d, PrevLastPnt2d);
++          double                   len_ne1 = PrevFirstPnt2d.Distance(LastPnt2d);
++          TopoDS_Edge NewEdge1 = MakeSectionEdge(Line1, theSurf, PrevPrevVer, CurVertex, len_ne1);
++          double      len_ne2  = FirstPnt2d.Distance(PrevLastPnt2d);
++          TopoDS_Edge NewEdge2 = MakeSectionEdge(Line2, theSurf, PrevVertex, PrevCurVer, len_ne2);
++          bool        good_ne  = !NewEdge.IsNull() && IsValidEdge(NewEdge, theFace);
++          bool        good_ne1 = !NewEdge1.IsNull() && IsValidEdge(NewEdge1, theFace);
+ 
+           GeomAbs_CurveType type_E1 = TypeOfEdge(E1);
+           GeomAbs_CurveType type_E2 = TypeOfEdge(E2);
+@@ -797,6 +839,10 @@ void BRepOffsetAPI_MiddlePath::Build(const Message_ProgressRange& /*theRange*/)
+             }
+             for (k = 1; k <= j - 1; k++)
+             {
++              if (myPaths(k).Length() < i || myPaths(k)(i).ShapeType() != TopAbs_EDGE)
++              {
++                return;
++              }
+               TopoDS_Edge  aLastEdge    = TopoDS::Edge(myPaths(k)(i));
+               TopoDS_Shape VertexAsEdge = TopExp::FirstVertex(aLastEdge, true);
+               myPaths(k).InsertBefore(i, VertexAsEdge);
+@@ -1034,6 +1080,7 @@ void BRepOffsetAPI_MiddlePath::Build(const Message_ProgressRange& /*theRange*/)
+         new NCollection_HArray1<gp_Pnt>(1, j - i + 1);
+       NCollection_Array1<gp_Vec>             theTangents(1, j - i + 1);
+       occ::handle<NCollection_HArray1<bool>> theFlags = new NCollection_HArray1<bool>(1, j - i + 1);
++      theFlags->Init(true);
+       for (k = i; k <= j; k++)
+       {
+         thePoints->SetValue(k - i + 1, Centers(k));
+@@ -1075,6 +1122,11 @@ void BRepOffsetAPI_MiddlePath::Build(const Message_ProgressRange& /*theRange*/)
+           gp_Pnt aPnt(aTangent.XYZ());
+           PntSeq.Append(aPnt);
+         }
++        if (PntSeq.IsEmpty()) // every path is a point here: no tangent to impose
++        {
++          theFlags->SetValue(k - i + 1, false);
++          continue;
++        }
+         NCollection_Array1<gp_Pnt> PntArray(1, PntSeq.Length());
+         for (int ip = 1; ip <= PntSeq.Length(); ip++)
+         {
+@@ -1087,7 +1139,6 @@ void BRepOffsetAPI_MiddlePath::Build(const Message_ProgressRange& /*theRange*/)
+         gp_Vec theTangent(theBary.XYZ());
+         theTangents(k - i + 1) = theTangent;
+       }
+-      theFlags->Init(true);
+ 
+       GeomAPI_Interpolate Interpol(thePoints, false, LinTol);
+       Interpol.Load(theTangents, theFlags);
