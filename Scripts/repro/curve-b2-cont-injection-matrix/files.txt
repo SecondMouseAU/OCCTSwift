@@ -1,0 +1,5 @@
+Tests/OCCTCurveTests/ArcLength/CurveLengthTests.swift
+Tests/OCCTCurveTests/Continuity/Curve3DContinuityQueriesTests.swift
+Tests/OCCTCurveTests/Continuity/Curve3DContinuityTests.swift
+Tests/OCCTCurveTests/Conversion/CurveSplitConcatTests.swift
+Tests/OCCTCurveTests/Curve3DCore/CurvePlanarityTests.swift

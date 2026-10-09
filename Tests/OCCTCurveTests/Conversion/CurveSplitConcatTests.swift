@@ -9,21 +9,30 @@ struct CurveSplitConcatTests {
 
     @Test func splitAtContinuity3D() {
         let points = [SIMD3(0.0, 0.0, 0.0), SIMD3(5.0, 5.0, 0.0), SIMD3(10.0, 0.0, 0.0)]
-        if let curve = Curve3D.fit(points: points) {
-            let segs = curve.splitAtContinuity()
-            #expect(segs.count >= 1)
+        guard let curve = Curve3D.fit(points: points) else {
+            Issue.record("fitted curve not built")
+            return
         }
+        // A single C2 span has no C1 break: one piece, the curve itself
+        // (GeomConvert::C0BSplineToArrayOfC1BSplineCurve, Scripts/repro/766-curve-join-length-split/).
+        let segs = curve.splitAtContinuity()
+        #expect(segs.count == 1)
+        #expect(simd_distance(segs.first?.endPoint ?? .zero, SIMD3(10, 0, 0)) < 1e-9)
     }
 
     @Test func concatenateCurvesG1() {
         let pts1 = [SIMD3(0.0, 0.0, 0.0), SIMD3(5.0, 5.0, 0.0), SIMD3(10.0, 0.0, 0.0)]
         let pts2 = [SIMD3(10.0, 0.0, 0.0), SIMD3(15.0, -5.0, 0.0), SIMD3(20.0, 0.0, 0.0)]
-        if let c1 = Curve3D.fit(points: pts1),
-            let c2 = Curve3D.fit(points: pts2)
-        {
-            let joined = Curve3D.concatenateG1(curves: [c1, c2])
-            #expect(joined != nil)
+        guard let c1 = Curve3D.fit(points: pts1), let c2 = Curve3D.fit(points: pts2) else {
+            Issue.record("fitted curves not built")
+            return
         }
+        guard let joined = Curve3D.concatenateG1(curves: [c1, c2]) else {
+            Issue.record("concatenateG1 returned nil")
+            return
+        }
+        #expect(simd_distance(joined.startPoint, SIMD3(0, 0, 0)) < 1e-9)
+        #expect(simd_distance(joined.endPoint, SIMD3(20, 0, 0)) < 1e-9)
     }
 
     @Test func concatenateG1RejectsDisconnectedCurve() {
@@ -39,9 +48,11 @@ struct CurveSplitConcatTests {
 
     @Test func splitCurve2DAtContinuity() {
         let points = [SIMD2(0.0, 0.0), SIMD2(5.0, 5.0), SIMD2(10.0, 0.0)]
-        if let curve = Curve2D.fit(through: points) {
-            let segs = curve.splitAtContinuity()
-            #expect(segs.count >= 1)
+        guard let curve = Curve2D.fit(through: points) else {
+            Issue.record("fitted 2D curve not built")
+            return
         }
+        let segs = curve.splitAtContinuity()
+        #expect(segs.count == 1)
     }
 }
