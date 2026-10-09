@@ -16,7 +16,7 @@ struct ExtremaExtPElSConeTests {
     ///
     /// Before #766 this asserted `results.count > 0`, which a bridge returning any extremum at
     /// all, anywhere, passed.
-    @Test func pointToCone() {
+    @Test func pointToCone() throws {
         let results = ExtremaPointSurface.pointToCone(
             point: SIMD3(20, 0, 0),
             apex: SIMD3(0, 0, 0), axis: SIMD3(0, 0, 1),
@@ -26,14 +26,14 @@ struct ExtremaExtPElSConeTests {
         guard results.count == 2 else { return }
 
         #expect(abs(results[0].squareDistance - 112.5) < 1e-9, "got \(results[0].squareDistance)")
-        #expect(simd_distance(results[0].point1, SIMD3(20, 0, 0)) < 1e-12, "point1 is the query point")
+        #expect(simd_distance(try #require(results[0].point1), SIMD3(20, 0, 0)) < 1e-12, "point1 is the query point")
         #expect(
-            simd_distance(results[0].point2, SIMD3(12.5, 0, 7.5)) < 1e-9,
-            "nearest foot expected (12.5, 0, 7.5), got \(results[0].point2)")
+            simd_distance(try #require(results[0].point2), SIMD3(12.5, 0, 7.5)) < 1e-9,
+            "nearest foot expected (12.5, 0, 7.5), got \(String(describing: results[0].point2))")
 
         #expect(abs(results[1].squareDistance - 312.5) < 1e-9, "got \(results[1].squareDistance)")
         #expect(
-            simd_distance(results[1].point2, SIMD3(7.5, 0, -12.5)) < 1e-9,
-            "lower-nappe foot expected (7.5, 0, -12.5), got \(results[1].point2)")
+            simd_distance(try #require(results[1].point2), SIMD3(7.5, 0, -12.5)) < 1e-9,
+            "lower-nappe foot expected (7.5, 0, -12.5), got \(String(describing: results[1].point2))")
     }
 }

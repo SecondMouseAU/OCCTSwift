@@ -13,7 +13,7 @@ struct ExtremaElCSLinSphereTests {
     /// to the kernel's two extrema, in its order: the near pole (0, 0, 5) at distance 15 and the
     /// far pole (0, 0, -5) at distance 25, both from the line point (0, 0, 20)
     /// (Scripts/repro/766-extrema-elcs-lin-sphere-tests/transcript.txt).
-    @Test func lineSphereDistance() {
+    @Test func lineSphereDistance() throws {
         let results = ExtremaElCS.lineToSphere(
             linePoint: SIMD3(0, 0, 20), lineDir: SIMD3(1, 0, 0),
             sphereCenter: SIMD3(0, 0, 0), sphereRadius: 5
@@ -26,13 +26,13 @@ struct ExtremaElCSLinSphereTests {
         #expect(
             abs(results[0].squareDistance - 225) < 1e-9,
             "near: distance 15, got \(results[0].squareDistance.squareRoot())")
-        #expect(simd_distance(results[0].point1, SIMD3(0, 0, 20)) < 1e-9)
-        #expect(simd_distance(results[0].point2, SIMD3(0, 0, 5)) < 1e-9)
+        #expect(simd_distance(try #require(results[0].point1), SIMD3(0, 0, 20)) < 1e-9)
+        #expect(simd_distance(try #require(results[0].point2), SIMD3(0, 0, 5)) < 1e-9)
 
         #expect(
             abs(results[1].squareDistance - 625) < 1e-9,
             "far: distance 25, got \(results[1].squareDistance.squareRoot())")
-        #expect(simd_distance(results[1].point1, SIMD3(0, 0, 20)) < 1e-9)
-        #expect(simd_distance(results[1].point2, SIMD3(0, 0, -5)) < 1e-9)
+        #expect(simd_distance(try #require(results[1].point1), SIMD3(0, 0, 20)) < 1e-9)
+        #expect(simd_distance(try #require(results[1].point2), SIMD3(0, 0, -5)) < 1e-9)
     }
 }

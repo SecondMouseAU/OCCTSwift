@@ -6,7 +6,7 @@ import simd
 
 @Suite("Extrema_ExtPElC Point-Circle")
 struct ExtremaExtPElCCircTests {
-    @Test func pointToCircle() {
+    @Test func pointToCircle() throws {
         let results = ExtremaPointCurve.pointToCircle(
             point: SIMD3(10, 0, 0),
             center: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5
@@ -21,11 +21,11 @@ struct ExtremaExtPElCCircTests {
         #expect(near != nil)
         #expect(far != nil)
         if let near {
-            #expect(simd_distance(near.point1, SIMD3(10, 0, 0)) < 1e-9)
-            #expect(simd_distance(near.point2, SIMD3(5, 0, 0)) < 1e-9)
+            #expect(simd_distance(try #require(near.point1), SIMD3(10, 0, 0)) < 1e-9)
+            #expect(simd_distance(try #require(near.point2), SIMD3(5, 0, 0)) < 1e-9)
         }
         if let far {
-            #expect(simd_distance(far.point2, SIMD3(-5, 0, 0)) < 1e-9)
+            #expect(simd_distance(try #require(far.point2), SIMD3(-5, 0, 0)) < 1e-9)
         }
     }
 
