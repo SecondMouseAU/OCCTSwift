@@ -38,6 +38,12 @@ BIG_FILES = ["Curve3D", "Curve2D", "Surface", "Shape", "Shape+Analysis", "Shape+
              "Drawing", "Drawing+Views", "Shape+Drawing", "Shape+Surface", "Shape+Curve"]
 
 
+# Declarations whose parameter or field types the generator cannot shadow without a compile error
+# (found by building the shadow and reading the diagnostics): a const pointer to a nullable ref, and
+# structs holding a fixed-size array of non-double elements. None is reached by a lifted Math test.
+SKIP = {"OCCTBOPAlgoSection", "OCCTBooleanSplitMulti", "OCCTShapeSurfaceInertia", "OCCTShapeVolumeInertia"}
+
+
 def reached_functions(test_files):
     """Bridge functions reached by the lifted tests: every OCCT* call in WHOLE_FILES, plus, for the big
     shared files, the calls inside each Swift func/init/var whose name a lifted test mentions."""
@@ -53,11 +59,14 @@ def reached_functions(test_files):
         if not os.path.exists(p):
             continue
         text = open(p).read()
-        heads = list(re.finditer(r"^\s*(?:public |internal |static |@discardableResult |convenience |mutating )*"
-                                 r"(?:func|var|init)\s*([A-Za-z_]\w*)?", text, re.M))
+        # type members only: func/init at indent 0 to 8, computed var at indent 4 (a local `var` in a body
+        # must not end the slice of the member it sits in)
+        heads = list(re.finditer(
+            r"^(?: {0,8})(?:public |internal |static |@discardableResult |convenience |mutating )*"
+            r"(?:(?:func|init)\s*([A-Za-z_]\w*)?|var\s+([A-Za-z_]\w*)\s*:[^=\n]*\{\s*$)", text, re.M))
         for k, m in enumerate(heads):
             end = heads[k + 1].start() if k + 1 < len(heads) else len(text)
-            nm = m.group(1) or "init"
+            nm = m.group(1) or m.group(2) or "init"
             if nm == "init" or re.search(r"\b" + re.escape(nm) + r"\b", tests):
                 names |= set(re.findall(r"\b(OCCT\w+)\(", text[m.start():end]))
     return sorted(names)
@@ -67,6 +76,32 @@ SWIFT_BASE = {
     "double": "Double", "float": "Float", "int32_t": "Int32", "int": "Int32", "uint32_t": "UInt32",
     "int64_t": "Int64", "size_t": "Int", "bool": "Bool", "char": "CChar", "void": "Void",
 }
+
+# Hand-written shadow for the one reached function the generator cannot type (double** out parameters).
+HAND = """func OCCTConvertPolynomialToPoles(
+    _ dimension: Int32, _ maxDegree: Int32, _ degree: Int32, _ coefficients: UnsafePointer<Double>,
+    _ coeffCount: Int32, _ polyStart: Double, _ polyEnd: Double, _ trueStart: Double, _ trueEnd: Double,
+    _ outPoles: UnsafeMutablePointer<UnsafeMutablePointer<Double>?>, _ outPoleCount: UnsafeMutablePointer<Int32>,
+    _ outKnots: UnsafeMutablePointer<UnsafeMutablePointer<Double>?>, _ outKnotCount: UnsafeMutablePointer<Int32>,
+    _ outDegree: UnsafeMutablePointer<Int32>
+) -> Bool {
+    let ok = OCCTBridge.OCCTConvertPolynomialToPoles(
+        dimension, maxDegree, degree, coefficients, coeffCount, polyStart, polyEnd, trueStart, trueEnd,
+        outPoles, outPoleCount, outKnots, outKnotCount, outDegree)
+    guard ok else { return ok }
+    let np = Int(outPoleCount.pointee) * Int(dimension)
+    let nk = Int(outKnotCount.pointee)
+    if GD.on("OCCTConvertPolynomialToPoles_poles_PLUS"), let p = outPoles.pointee { for i in 0..<np { p[i] += 1e-3 } }
+    if GD.on("OCCTConvertPolynomialToPoles_poles_NEG"), let p = outPoles.pointee { for i in 0..<np { p[i] = -p[i] } }
+    if GD.on("OCCTConvertPolynomialToPoles_knots_PLUS"), let k = outKnots.pointee { for i in 0..<nk { k[i] += 1e-3 } }
+    if GD.on("OCCTConvertPolynomialToPoles_knots_NEG"), let k = outKnots.pointee { for i in 0..<nk { k[i] = -k[i] } }
+    if GD.on("OCCTConvertPolynomialToPoles_poleCount_PLUS1") { outPoleCount.pointee += 1 }
+    if GD.on("OCCTConvertPolynomialToPoles_knotCount_PLUS1") { outKnotCount.pointee += 1 }
+    if GD.on("OCCTConvertPolynomialToPoles_degree_PLUS1") { outDegree.pointee += 1 }
+    return ok
+}"""
+HAND_SWITCHES = ["OCCTConvertPolynomialToPoles_" + x for x in (
+    "poles_PLUS poles_NEG knots_PLUS knots_NEG poleCount_PLUS1 knotCount_PLUS1 degree_PLUS1".split())]
 
 
 def strip_comments(t):
@@ -224,6 +259,17 @@ def field_switch(fn_name, label, lhs, field, ftype, enums, sw, length):
         pre = f"for i in 0..<{length} {{ "
         post = " }"
     acc = lhs if length != "" else lhs
+    arr = re.match(r"(\w+)\[(\d+)\]$", field)
+    if arr and ftype == "double" and length == "":
+        # a fixed-size C array field imports as a tuple: distort every element through its raw bytes
+        f, n = arr.group(1), arr.group(2)
+        w = f"withUnsafeMutableBytes(of: &{lhs}.{f}) {{ b in let e = b.bindMemory(to: Double.self); for i in 0..<{n} {{ e[i] %s }} }}"
+        return [
+            f'    if GD.on("{sw(label.replace(field, f) + "_PLUS")}") {{ ' + (w % "+= 1e-3") + " }",
+            f'    if GD.on("{sw(label.replace(field, f) + "_NEG")}") {{ ' + (w % "= -e[i]") + " }",
+        ]
+    if arr:
+        return []
     if ftype == "double":
         return [
             f'    if GD.on("{sw(label + "_PLUS")}") {{ {pre}{acc}.{field} += 1e-3{post} }}',
@@ -256,7 +302,7 @@ def main():
     tfiles = [f for f in subprocess.run(
         ["git", "diff", "--name-only", "--diff-filter=AM", "origin/main", "HEAD", "--", "Tests"],
         capture_output=True, text=True).stdout.split() if f.endswith(".swift")]
-    names = reached_functions(tfiles)
+    names = [n for n in reached_functions(tfiles) if n not in SKIP]
     switches, body, skipped = [], [], []
     for n in dict.fromkeys(names):
         if n not in decls:
@@ -276,6 +322,9 @@ def main():
         "    static func on(_ name: String) -> Bool { active == name }\n"
         "}\n\n"
     )
+    if "OCCTConvertPolynomialToPoles" in names:
+        body.append(HAND)
+        switches += HAND_SWITCHES
     open(a.out, "w").write(head + "\n\n".join(body) + "\n")
     open(a.switches, "w").write(
         "# MATH_SWITCH values, one per line, derived by generate-shadow.py from the bridge declarations.\n"
