@@ -4,6 +4,25 @@ protocol NativeHandleOwner: AnyObject {
     var handle: NativeHandle { get }
 }
 
+extension NativeHandleOwner {
+    /// Runs `body` with this owner's native handle, keeping the owner alive until `body` returns.
+    ///
+    /// Reading `handle` yields a raw pointer that the compiler does not connect to its owner, so an
+    /// optimised build is free to release the owner once the load is its last use, which is before
+    /// the C call that receives the pointer runs (#3130). Measured on macOS `-c release`: an owner
+    /// that is a collection element or a temporary (`edges[0].handle`, `makeEdges().first!.handle`)
+    /// is released early and the call reads or writes freed memory, while an owner bound to its own
+    /// `let` or `for` variable is not. Use this for the first kind. The call to this method is what
+    /// holds the owner, because a method call keeps its receiver alive for the whole call.
+    ///
+    /// `Scripts/check-borrowed-handle-temporaries.py` fails the build on a `.handle` read straight
+    /// off a subscript or call result.
+    @inline(__always)
+    func withHandle<Result>(_ body: (NativeHandle) throws -> Result) rethrows -> Result {
+        try withExtendedLifetime(self) { try body(handle) }
+    }
+}
+
 /// A value type that reads the handle owned by a ``NativeHandleOwner``, without owning it.
 ///
 /// A conformer stores the owner, not the raw handle, and reads the handle through it. That is
@@ -37,3 +56,10 @@ extension NativeHandleView {
 extension Curve2D: NativeHandleOwner {}
 extension Curve3D: NativeHandleOwner {}
 extension Surface: NativeHandleOwner {}
+
+// The four topology wrappers #3130 was measured on. `Edge`, `Wire` and `Face` hand out
+// subscript-held elements (`shape.edges()[i]`), which is the shape that lost its owner early.
+extension Shape: NativeHandleOwner {}
+extension Edge: NativeHandleOwner {}
+extension Wire: NativeHandleOwner {}
+extension Face: NativeHandleOwner {}
