@@ -1,17 +1,17 @@
-# swift test --filter Issue3105MiddlePathKernelTests, OCCTSWIFT_LOCAL=1, pinned v4.0.0-kernel.5 macOS archive as shipped (copy; member verified equal to the original)
+# swift test --filter Issue3105MiddlePathKernelTests, OCCTSWIFT_LOCAL=1, pinned v4.0.0-kernel.5 macOS archive as shipped (copy; member verified equal to the original), final test file
 member = pinned original
 ◇ Test run started.
-◇ Test hexagonalPrismSidesThatAreNotOppositeAnswerAPath() started.
-◇ Test octahedronOppositeTrianglesAnswerNil() started.
-◇ Test uShapedPrismAnswersAPathForEveryPair() started.
-◇ Test lShapedPrismAnswersAPathThroughTheCorner() started.
 ◇ Test tubeCapAgainstTheBoreAnswersNil() started.
+◇ Test uShapedPrismAnswersAPathForEveryPair() started.
+◇ Test noPairOfFacesOfAnySolidAbortsOrAnswersAnInvalidShape() started.
+◇ Test octahedronOppositeTrianglesAnswerNil() started.
+◇ Test hexagonalPrismSidesThatAreNotOppositeAnswerAPath() started.
+◇ Test lShapedPrismAnswersAPathThroughTheCorner() started.
 *** Abort *** an exception was raised, but no catch was found.
 	... The exception is: SIGSEGV 'segmentation violation' detected. Address 10.
 *** Abort *** an exception was raised, but no catch was found.
-	... The exception is: SIGSEGV 'segmentation violation' detected. Address 18.
+	... The exception is: SIGSEGV 'segmentation violation' detected. Address 20.
 *** Abort *** an exception was raised, but no catch was found.
-	... The exception is: SIGSEGV 'segmentation violation' detected. Address 10.
+	... The exception is: SIGSEGV 'segmentation violation' detected. Address 20.
 Note: Some test targets reported failures:
 exit status of swift test: 1
-(the test file changed afterwards only in the length bound of its last assertion)

@@ -162,8 +162,8 @@ struct Issue3105MiddlePathKernelTests {
             })
         let cube = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let hole = try #require(Shape.box(width: 4, height: 4, depth: 12))
-        let holed = try #require(
-            cube.subtracting(try #require(hole.translated(by: SIMD3(3, 3, -1)))))
+        let moved = try #require(hole.translated(by: SIMD3(3, 3, -1)))
+        let holed = try #require(cube.subtracting(moved))
         let bar = try #require(Shape.box(width: 20, height: 4, depth: 4))
         let arm = try #require(Shape.box(width: 4, height: 20, depth: 4))
         let elbow = try #require(bar.union(arm))
