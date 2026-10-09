@@ -129,7 +129,8 @@ extension Shape {
     /// `w` or more, and so is a pair whose gap to `w` is below `PConfusion` (1e-9): OCCT#1177
     /// rejects a width gap under that threshold, which is why a 4 mm face takes `1.9999` where
     /// it refuses `2`. Whether `r == w / 2` itself builds depends on the pinned kernel (patch 0059, #3207).
-    /// Radii past `w / 2` are not built (#3208). `nil` carries no reason; ``FilletBuilder``
+    /// Radii past `w / 2` are refused by the kernel, or built into an invalid solid that is now
+    /// nil (#3208). `nil` carries no reason; ``FilletBuilder``
     /// exposes the builder's diagnostics (``FilletBuilder/faultyContourCount`` and friends).
     ///
     /// ```swift
@@ -178,7 +179,8 @@ extension Shape {
     /// An edge OCCT cannot fillet is still skipped, not rejected: this changes only what a caller
     /// can learn about it, not the shape returned. See ``FilletResult`` for why the report is a
     /// list of indices rather than a count or a reason. A result `BRepCheck_Analyzer` reports invalid
-    /// answers nil, as for ``filleted(edges:radius:)`` (#3200).
+    /// answers nil, as for ``filleted(edges:radius:)``; see its "When the answer is nil" section
+    /// (#3200).
     ///
     /// ```swift
     /// let box = Shape.box(width: 10, height: 10, depth: 10)!
