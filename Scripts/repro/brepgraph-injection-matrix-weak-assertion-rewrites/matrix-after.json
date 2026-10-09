@@ -1,0 +1,4080 @@
+{
+ "label": "after",
+ "targets": {
+  "OCCTBRepGraphTests": {
+   "changed": [
+    "BRepGraphBuildTests.buildFromBox",
+    "BRepGraphBuildTests.buildFromComplex",
+    "BRepGraphBuildTests.buildFromSphere",
+    "BRepGraphBuildTests.buildParallel",
+    "BRepGraphBuilderValidateMutationTests.validateAfterAddVertex",
+    "BRepGraphBuilderValidateMutationTests.validateCleanGraph",
+    "BRepGraphCoEdgeQueryTests.coedgeEdge",
+    "BRepGraphCoEdgeQueryTests.coedgeFace",
+    "BRepGraphCoEdgeQueryTests.coedgeHasPCurve",
+    "BRepGraphCoEdgeQueryTests.coedgeRange",
+    "BRepGraphCoEdgeQueryTests.coedgeSeamPairForSphere",
+    "BRepGraphCoEdgeQueryTests.coedgeSeamPairNilForBox",
+    "BRepGraphEdgeQueryTests.allManifoldEdges",
+    "BRepGraphEdgeQueryTests.edgeAdjacency",
+    "BRepGraphEdgeQueryTests.edgeFaceCount",
+    "BRepGraphEdgeQueryTests.edgeFaces",
+    "BRepGraphEdgeQueryTests.noBoundaryEdges",
+    "BRepGraphEdgeSamplingTests.sampleBoxEdge",
+    "BRepGraphEdgeSamplingTests.sampleEdgeWithoutCurve",
+    "BRepGraphEdgeSamplingTests.sampleSinglePoint",
+    "BRepGraphEdgeSamplingTests.sampleSphereEdge",
+    "BRepGraphEdgeSamplingTests.sampleZeroCount",
+    "BRepGraphEdgeWiresCoEdgesTests.edgeCoEdges",
+    "BRepGraphEdgeWiresCoEdgesTests.edgeFindCoEdge",
+    "BRepGraphEdgeWiresCoEdgesTests.edgeWires",
+    "BRepGraphExplorerTests.childExplorer",
+    "BRepGraphExplorerTests.parentExplorer",
+    "BRepGraphFaceDefTests.faceVertexRefCount",
+    "BRepGraphFaceDefTests.faceWireCount",
+    "BRepGraphFaceGeometryTests.faceHasSurface",
+    "BRepGraphFaceGeometryTests.faceHasTriangulation",
+    "BRepGraphFaceGeometryTests.faceNaturalRestriction",
+    "BRepGraphFaceGeometryTests.faceTolerance",
+    "BRepGraphFaceQueryTests.faceAdjacency",
+    "BRepGraphFaceQueryTests.outerWire",
+    "BRepGraphFaceQueryTests.sharedEdges",
+    "BRepGraphFaceShellTests.faceCompoundCount",
+    "BRepGraphFaceShellTests.faceShells",
+    "BRepGraphHistoryTests.historyClear",
+    "BRepGraphHistoryTests.historyDefaults",
+    "BRepGraphHistoryTests.historyToggle",
+    "BRepGraphNodeStatusTests.noRemovedNodes",
+    "BRepGraphOccurrenceTests.occurrenceCountForPrimitive",
+    "BRepGraphPolyCountTests.polyCounts",
+    "BRepGraphProductTests.productCountForPrimitive",
+    "BRepGraphProductTests.productQueriesOnSphere",
+    "BRepGraphProductTests.rootProductIndices",
+    "BRepGraphRefCountTests.refCountsConsistency",
+    "BRepGraphRefCountTests.refCountsForBox",
+    "BRepGraphRefEntryTests.refChildNode",
+    "BRepGraphRefEntryTests.refNotRemoved",
+    "BRepGraphRefEntryTests.refOrientation",
+    "BRepGraphRootNodeTests.hasRoots",
+    "BRepGraphSameDomainTests.boxNoSameDomain",
+    "BRepGraphShapeReconstructionTests.findNode",
+    "BRepGraphShapeReconstructionTests.hasNodeFalseForUnrelated",
+    "BRepGraphShapeReconstructionTests.reconstructFace",
+    "BRepGraphShapeReconstructionTests.reconstructOccurrenceWithPlacement",
+    "BRepGraphShapeReconstructionTests.reconstructSolid",
+    "BRepGraphShellExtendedTests.shellCompoundCount",
+    "BRepGraphShellExtendedTests.shellIsClosed",
+    "BRepGraphShellQueryTests.shellSolids",
+    "BRepGraphSolidExtendedTests.solidCompoundCount",
+    "BRepGraphSolidQueryTests.solidCompSolidCount"
+   ],
+   "crashes": [
+    "OCCTBRepGraphNbEdges_RET_PLUS1",
+    "OCCTBRepGraphSampleEdgeCurve_RET_PLUS1",
+    "OCCTBRepGraphShellSolidCount_RET_MINUS1",
+    "OCCTBRepGraphShellSolidCount_RET_ZERO"
+   ],
+   "live_switches": 188,
+   "rows": {
+    "OCCTBRepGraphAddWithHistory_RET_FLIP": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphAddWithHistory_outRootIndex_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphAddWithHistory_outRootKind_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphBuilderAddCompSolid_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphBuilderAddCompSolid_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphBuilderAddCompSolid_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphBuilderAddCompound_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphBuilderAddCompound_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphBuilderAddCompound_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphBuilderAddFaceToShell_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphBuilderAddFaceToShell_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphBuilderAddFaceToShell_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphBuilderAddShellToSolid_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphBuilderAddShellToSolid_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphBuilderAddShellToSolid_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphBuilderAddShell_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphBuilderAddShell_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphBuilderAddShell_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphBuilderAddSolid_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphBuilderAddSolid_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphBuilderAddSolid_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphBuilderAddVertex_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphBuilderAddVertex_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphBuilderAddVertex_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphBuilderAddVertex_IN4_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphBuilderAddVertex_RET_MINUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphBuilderValidateMutationTests.validateAfterAddVertex"
+     ]
+    },
+    "OCCTBRepGraphBuilderAddVertex_RET_PLUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphBuilderValidateMutationTests.validateAfterAddVertex"
+     ]
+    },
+    "OCCTBRepGraphBuilderAddVertex_RET_ZERO": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphBuilderValidateMutationTests.validateAfterAddVertex"
+     ]
+    },
+    "OCCTBRepGraphBuilderAppendFlattenedShape_IN_parallel_FLIP": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphBuilderAppendFullShape_IN_parallel_FLIP": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphBuilderIsDeferredMode_RET_FLIP": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphBuilderRemoveRef_RET_FLIP": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphRefEntryTests.refNotRemoved"
+     ]
+    },
+    "OCCTBRepGraphBuilderReplaceEdgeInWire_IN_reversed_FLIP": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphBuilderSplitEdge_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphBuilderSplitEdge_outSubA_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphBuilderSplitEdge_outSubB_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphBuilderValidateMutation_RET_FLIP": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphBuilderValidateMutationTests.validateAfterAddVertex",
+      "BRepGraphBuilderValidateMutationTests.validateCleanGraph"
+     ]
+    },
+    "OCCTBRepGraphCachedCoEdgeMeshIsPresent_RET_FLIP": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphCachedCoEdgeMeshPolygon2DRepId_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphCachedCoEdgeMeshPolygon2DRepId_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphCachedCoEdgeMeshPolygon2DRepId_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphCachedCoEdgeMeshPolygonOnTriRepCount_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphCachedCoEdgeMeshPolygonOnTriRepCount_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphCachedCoEdgeMeshPolygonOnTriRepCount_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphCachedCoEdgeMeshPolygonOnTriRepId_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphCachedCoEdgeMeshPolygonOnTriRepId_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphCachedCoEdgeMeshPolygonOnTriRepId_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphCachedEdgeMeshIsPresent_RET_FLIP": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphCachedEdgeMeshPolygon3DRepId_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphCachedEdgeMeshPolygon3DRepId_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphCachedEdgeMeshPolygon3DRepId_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphCachedFaceMeshActiveIndex_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphCachedFaceMeshActiveIndex_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphCachedFaceMeshActiveIndex_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphCachedFaceMeshIsPresent_RET_FLIP": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphCachedFaceMeshTriRepCount_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphCachedFaceMeshTriRepCount_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphCachedFaceMeshTriRepCount_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphCachedFaceMeshTriRepId_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphCachedFaceMeshTriRepId_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphCachedFaceMeshTriRepId_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphChildCount_RET_MINUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphExplorerTests.childExplorer"
+     ]
+    },
+    "OCCTBRepGraphChildCount_RET_PLUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphExplorerTests.childExplorer"
+     ]
+    },
+    "OCCTBRepGraphChildCount_RET_ZERO": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphExplorerTests.childExplorer"
+     ]
+    },
+    "OCCTBRepGraphCoEdgeAddPCurve_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphCoEdgeAddPCurve_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphCoEdgeCreateCurve2DRep_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphCoEdgeCreateCurve2DRep_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphCoEdgeCreateCurve2DRep_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphCoEdgeEdge_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphCoEdgeEdge_RET_PLUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphCoEdgeQueryTests.coedgeEdge"
+     ]
+    },
+    "OCCTBRepGraphCoEdgeEdge_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphCoEdgeFace_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphCoEdgeFace_RET_PLUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphCoEdgeQueryTests.coedgeFace"
+     ]
+    },
+    "OCCTBRepGraphCoEdgeFace_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphCoEdgeHasPCurve_RET_FLIP": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphCoEdgeQueryTests.coedgeHasPCurve",
+      "BRepGraphCoEdgeQueryTests.coedgeRange"
+     ]
+    },
+    "OCCTBRepGraphCoEdgeRange_outFirst_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphCoEdgeRange_outFirst_PLUS": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphCoEdgeQueryTests.coedgeRange"
+     ]
+    },
+    "OCCTBRepGraphCoEdgeRange_outLast_NEG": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphCoEdgeQueryTests.coedgeRange"
+     ]
+    },
+    "OCCTBRepGraphCoEdgeRange_outLast_PLUS": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphCoEdgeQueryTests.coedgeRange"
+     ]
+    },
+    "OCCTBRepGraphCoEdgeSeamPair_RET_MINUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphCoEdgeQueryTests.coedgeSeamPairForSphere"
+     ]
+    },
+    "OCCTBRepGraphCoEdgeSeamPair_RET_PLUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphCoEdgeQueryTests.coedgeSeamPairForSphere",
+      "BRepGraphCoEdgeQueryTests.coedgeSeamPairNilForBox"
+     ]
+    },
+    "OCCTBRepGraphCoEdgeSeamPair_RET_ZERO": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphCoEdgeQueryTests.coedgeSeamPairForSphere",
+      "BRepGraphCoEdgeQueryTests.coedgeSeamPairNilForBox"
+     ]
+    },
+    "OCCTBRepGraphCompSolidAddSolid_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphCompSolidAddSolid_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphCompSolidAddSolid_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphCompSolidCompoundCount_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphCompSolidCompoundCount_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphCompSolidCompoundCount_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphCompSolidRemoveSolid_RET_FLIP": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphCompSolidSolidCount_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphCompSolidSolidCount_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphCompSolidSolidCount_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphCompact_RET_nodesAfter_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphCompact_RET_removedEdges_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphCompact_RET_removedFaces_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphCompact_RET_removedVertices_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphCompoundAddChild_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphCompoundAddChild_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphCompoundAddChild_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphCompoundChildCount_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphCompoundChildCount_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphCompoundChildCount_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphCompoundParentCount_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphCompoundParentCount_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphCompoundParentCount_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphCompoundRemoveChild_RET_FLIP": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphCopyFace_IN_copyGeom_FLIP": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphCopyFace_RET_NIL": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphEdgeQueryTests.allManifoldEdges",
+      "BRepGraphEdgeQueryTests.noBoundaryEdges"
+     ]
+    },
+    "OCCTBRepGraphCopy_IN_copyGeom_FLIP": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphCopy_RET_NIL": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphCreateEmptyProduct_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphCreateEmptyProduct_RET_PLUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphShapeReconstructionTests.reconstructOccurrenceWithPlacement"
+     ]
+    },
+    "OCCTBRepGraphCreateEmptyProduct_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphCreate_IN_parallel_FLIP": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphCreate_RET_NIL": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphBuildTests.buildFromBox",
+      "BRepGraphBuildTests.buildFromComplex",
+      "BRepGraphBuildTests.buildFromSphere",
+      "BRepGraphBuildTests.buildParallel",
+      "BRepGraphBuilderValidateMutationTests.validateAfterAddVertex",
+      "BRepGraphBuilderValidateMutationTests.validateCleanGraph",
+      "BRepGraphCoEdgeQueryTests.coedgeEdge",
+      "BRepGraphCoEdgeQueryTests.coedgeFace",
+      "BRepGraphCoEdgeQueryTests.coedgeHasPCurve",
+      "BRepGraphCoEdgeQueryTests.coedgeRange",
+      "BRepGraphCoEdgeQueryTests.coedgeSeamPairForSphere",
+      "BRepGraphCoEdgeQueryTests.coedgeSeamPairNilForBox",
+      "BRepGraphEdgeQueryTests.allManifoldEdges",
+      "BRepGraphEdgeQueryTests.edgeAdjacency",
+      "BRepGraphEdgeQueryTests.edgeFaceCount",
+      "BRepGraphEdgeQueryTests.edgeFaces",
+      "BRepGraphEdgeQueryTests.noBoundaryEdges",
+      "BRepGraphEdgeSamplingTests.sampleBoxEdge",
+      "BRepGraphEdgeSamplingTests.sampleEdgeWithoutCurve",
+      "BRepGraphEdgeSamplingTests.sampleSinglePoint",
+      "BRepGraphEdgeSamplingTests.sampleSphereEdge",
+      "BRepGraphEdgeSamplingTests.sampleZeroCount",
+      "BRepGraphEdgeWiresCoEdgesTests.edgeCoEdges",
+      "BRepGraphEdgeWiresCoEdgesTests.edgeFindCoEdge",
+      "BRepGraphEdgeWiresCoEdgesTests.edgeWires",
+      "BRepGraphExplorerTests.childExplorer",
+      "BRepGraphExplorerTests.parentExplorer",
+      "BRepGraphFaceDefTests.faceVertexRefCount",
+      "BRepGraphFaceDefTests.faceWireCount",
+      "BRepGraphFaceGeometryTests.faceHasSurface",
+      "BRepGraphFaceGeometryTests.faceHasTriangulation",
+      "BRepGraphFaceGeometryTests.faceNaturalRestriction",
+      "BRepGraphFaceGeometryTests.faceTolerance",
+      "BRepGraphFaceQueryTests.faceAdjacency",
+      "BRepGraphFaceQueryTests.outerWire",
+      "BRepGraphFaceQueryTests.sharedEdges",
+      "BRepGraphFaceShellTests.faceCompoundCount",
+      "BRepGraphFaceShellTests.faceShells",
+      "BRepGraphHistoryTests.historyClear",
+      "BRepGraphHistoryTests.historyDefaults",
+      "BRepGraphHistoryTests.historyToggle",
+      "BRepGraphNodeStatusTests.noRemovedNodes",
+      "BRepGraphOccurrenceTests.occurrenceCountForPrimitive",
+      "BRepGraphPolyCountTests.polyCounts",
+      "BRepGraphProductTests.productCountForPrimitive",
+      "BRepGraphProductTests.productQueriesOnSphere",
+      "BRepGraphProductTests.rootProductIndices",
+      "BRepGraphRefCountTests.refCountsConsistency",
+      "BRepGraphRefCountTests.refCountsForBox",
+      "BRepGraphRefEntryTests.refChildNode",
+      "BRepGraphRefEntryTests.refNotRemoved",
+      "BRepGraphRefEntryTests.refOrientation",
+      "BRepGraphRootNodeTests.hasRoots",
+      "BRepGraphSameDomainTests.boxNoSameDomain",
+      "BRepGraphShapeReconstructionTests.findNode",
+      "BRepGraphShapeReconstructionTests.hasNodeFalseForUnrelated",
+      "BRepGraphShapeReconstructionTests.reconstructFace",
+      "BRepGraphShapeReconstructionTests.reconstructOccurrenceWithPlacement",
+      "BRepGraphShapeReconstructionTests.reconstructSolid",
+      "BRepGraphShellExtendedTests.shellCompoundCount",
+      "BRepGraphShellExtendedTests.shellIsClosed",
+      "BRepGraphShellQueryTests.shellSolids",
+      "BRepGraphSolidExtendedTests.solidCompoundCount",
+      "BRepGraphSolidQueryTests.solidCompSolidCount"
+     ]
+    },
+    "OCCTBRepGraphDeduplicate_RET_canonicalCurves_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphDeduplicate_RET_canonicalSurfaces_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphDeduplicate_RET_curveRewrites_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphDeduplicate_RET_surfaceRewrites_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphEdgeAdjacentCount_RET_MINUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphEdgeQueryTests.edgeAdjacency"
+     ]
+    },
+    "OCCTBRepGraphEdgeAdjacentCount_RET_PLUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphEdgeQueryTests.edgeAdjacency"
+     ]
+    },
+    "OCCTBRepGraphEdgeAdjacentCount_RET_ZERO": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphEdgeQueryTests.edgeAdjacency"
+     ]
+    },
+    "OCCTBRepGraphEdgeAdjacentIndices_outIndices_PLUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphEdgeQueryTests.edgeAdjacency"
+     ]
+    },
+    "OCCTBRepGraphEdgeCoEdgeCount_RET_MINUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphEdgeWiresCoEdgesTests.edgeCoEdges"
+     ]
+    },
+    "OCCTBRepGraphEdgeCoEdgeCount_RET_PLUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphEdgeWiresCoEdgesTests.edgeCoEdges"
+     ]
+    },
+    "OCCTBRepGraphEdgeCoEdgeCount_RET_ZERO": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphEdgeWiresCoEdgesTests.edgeCoEdges"
+     ]
+    },
+    "OCCTBRepGraphEdgeCoEdgeIndices_outIndices_PLUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphEdgeWiresCoEdgesTests.edgeCoEdges"
+     ]
+    },
+    "OCCTBRepGraphEdgeEndVertex_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphEdgeEndVertex_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphEdgeEndVertex_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphEdgeFaceIndices_outIndices_PLUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphEdgeQueryTests.edgeFaces"
+     ]
+    },
+    "OCCTBRepGraphEdgeFindCoEdge_RET_MINUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphEdgeWiresCoEdgesTests.edgeFindCoEdge"
+     ]
+    },
+    "OCCTBRepGraphEdgeFindCoEdge_RET_PLUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphEdgeWiresCoEdgesTests.edgeFindCoEdge"
+     ]
+    },
+    "OCCTBRepGraphEdgeFindCoEdge_RET_ZERO": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphEdgeWiresCoEdgesTests.edgeFindCoEdge"
+     ]
+    },
+    "OCCTBRepGraphEdgeHasCurve_RET_FLIP": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphEdgeSamplingTests.sampleBoxEdge",
+      "BRepGraphEdgeSamplingTests.sampleSinglePoint"
+     ]
+    },
+    "OCCTBRepGraphEdgeHasPolygon3D_RET_FLIP": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphEdgeIsBoundary_RET_FLIP": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphEdgeQueryTests.noBoundaryEdges"
+     ]
+    },
+    "OCCTBRepGraphEdgeIsClosedOnFace_RET_FLIP": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphEdgeIsClosed_RET_FLIP": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphEdgeIsDegenerated_RET_FLIP": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphEdgeIsManifold_RET_FLIP": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphEdgeQueryTests.allManifoldEdges"
+     ]
+    },
+    "OCCTBRepGraphEdgeIsSameParameter_RET_FLIP": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphEdgeIsSameRange_RET_FLIP": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphEdgeMaxContinuity_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphEdgeMaxContinuity_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphEdgeMaxContinuity_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphEdgeNbFaces_RET_MINUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphEdgeQueryTests.edgeFaceCount",
+      "BRepGraphEdgeQueryTests.edgeFaces"
+     ]
+    },
+    "OCCTBRepGraphEdgeNbFaces_RET_PLUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphEdgeQueryTests.edgeFaceCount",
+      "BRepGraphEdgeQueryTests.edgeFaces"
+     ]
+    },
+    "OCCTBRepGraphEdgeNbFaces_RET_ZERO": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphEdgeQueryTests.edgeFaceCount",
+      "BRepGraphEdgeQueryTests.edgeFaces"
+     ]
+    },
+    "OCCTBRepGraphEdgeRange_outFirst_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphEdgeRange_outFirst_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphEdgeRange_outLast_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphEdgeRange_outLast_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphEdgeRemoveVertex_RET_FLIP": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphEdgeReplaceVertex_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphEdgeReplaceVertex_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphEdgeReplaceVertex_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphEdgeStartVertex_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphEdgeStartVertex_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphEdgeStartVertex_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphEdgeTolerance_RET_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphEdgeTolerance_RET_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphEdgeWireCount_RET_MINUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphEdgeWiresCoEdgesTests.edgeWires"
+     ]
+    },
+    "OCCTBRepGraphEdgeWireCount_RET_PLUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphEdgeWiresCoEdgesTests.edgeWires"
+     ]
+    },
+    "OCCTBRepGraphEdgeWireCount_RET_ZERO": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphEdgeWiresCoEdgesTests.edgeWires"
+     ]
+    },
+    "OCCTBRepGraphEdgeWireIndices_outIndices_PLUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphEdgeWiresCoEdgesTests.edgeWires"
+     ]
+    },
+    "OCCTBRepGraphFaceAdjacentCount_RET_MINUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphFaceQueryTests.faceAdjacency"
+     ]
+    },
+    "OCCTBRepGraphFaceAdjacentCount_RET_PLUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphFaceQueryTests.faceAdjacency"
+     ]
+    },
+    "OCCTBRepGraphFaceAdjacentCount_RET_ZERO": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphFaceQueryTests.faceAdjacency",
+      "BRepGraphFaceQueryTests.sharedEdges"
+     ]
+    },
+    "OCCTBRepGraphFaceAdjacentIndices_outIndices_PLUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphFaceQueryTests.faceAdjacency",
+      "BRepGraphFaceQueryTests.sharedEdges"
+     ]
+    },
+    "OCCTBRepGraphFaceCompoundCount_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphFaceCompoundCount_RET_PLUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphFaceShellTests.faceCompoundCount"
+     ]
+    },
+    "OCCTBRepGraphFaceCompoundCount_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphFaceHasSurface_RET_FLIP": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphFaceGeometryTests.faceHasSurface"
+     ]
+    },
+    "OCCTBRepGraphFaceHasTriangulation_RET_FLIP": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphFaceGeometryTests.faceHasTriangulation"
+     ]
+    },
+    "OCCTBRepGraphFaceIsNaturalRestriction_RET_FLIP": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphFaceGeometryTests.faceNaturalRestriction"
+     ]
+    },
+    "OCCTBRepGraphFaceNbVertexRefs_RET_MINUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphFaceDefTests.faceVertexRefCount"
+     ]
+    },
+    "OCCTBRepGraphFaceNbVertexRefs_RET_PLUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphFaceDefTests.faceVertexRefCount"
+     ]
+    },
+    "OCCTBRepGraphFaceNbVertexRefs_RET_ZERO": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphFaceDefTests.faceVertexRefCount"
+     ]
+    },
+    "OCCTBRepGraphFaceNbWires_RET_MINUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphFaceDefTests.faceWireCount"
+     ]
+    },
+    "OCCTBRepGraphFaceNbWires_RET_PLUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphFaceDefTests.faceWireCount"
+     ]
+    },
+    "OCCTBRepGraphFaceNbWires_RET_ZERO": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphFaceDefTests.faceWireCount"
+     ]
+    },
+    "OCCTBRepGraphFaceOuterWire_RET_MINUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphFaceQueryTests.outerWire"
+     ]
+    },
+    "OCCTBRepGraphFaceOuterWire_RET_PLUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphFaceQueryTests.outerWire"
+     ]
+    },
+    "OCCTBRepGraphFaceOuterWire_RET_ZERO": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphFaceQueryTests.outerWire"
+     ]
+    },
+    "OCCTBRepGraphFaceRemoveVertex_RET_FLIP": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphFaceRemoveWire_RET_FLIP": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphFaceSameDomainCount_RET_MINUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphSameDomainTests.boxNoSameDomain"
+     ]
+    },
+    "OCCTBRepGraphFaceSameDomainCount_RET_PLUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphSameDomainTests.boxNoSameDomain"
+     ]
+    },
+    "OCCTBRepGraphFaceSameDomainCount_RET_ZERO": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphSameDomainTests.boxNoSameDomain"
+     ]
+    },
+    "OCCTBRepGraphFaceSameDomainIndices_outIndices_PLUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphSameDomainTests.boxNoSameDomain"
+     ]
+    },
+    "OCCTBRepGraphFaceSharedEdgeCount_RET_MINUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphFaceQueryTests.sharedEdges"
+     ]
+    },
+    "OCCTBRepGraphFaceSharedEdgeCount_RET_PLUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphFaceQueryTests.sharedEdges"
+     ]
+    },
+    "OCCTBRepGraphFaceSharedEdgeCount_RET_ZERO": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphFaceQueryTests.sharedEdges"
+     ]
+    },
+    "OCCTBRepGraphFaceSharedEdgeIndices_outIndices_PLUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphFaceQueryTests.sharedEdges"
+     ]
+    },
+    "OCCTBRepGraphFaceShellCount_RET_MINUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphFaceShellTests.faceShells"
+     ]
+    },
+    "OCCTBRepGraphFaceShellCount_RET_PLUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphFaceShellTests.faceShells"
+     ]
+    },
+    "OCCTBRepGraphFaceShellCount_RET_ZERO": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphFaceShellTests.faceShells"
+     ]
+    },
+    "OCCTBRepGraphFaceShellIndices_outIndices_PLUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphFaceShellTests.faceShells"
+     ]
+    },
+    "OCCTBRepGraphFaceTolerance_RET_NEG": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphFaceGeometryTests.faceTolerance"
+     ]
+    },
+    "OCCTBRepGraphFaceTolerance_RET_PLUS": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphFaceGeometryTests.faceTolerance"
+     ]
+    },
+    "OCCTBRepGraphFindNode_outIndex_PLUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphShapeReconstructionTests.findNode"
+     ]
+    },
+    "OCCTBRepGraphFindNode_outKind_PLUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphShapeReconstructionTests.findNode"
+     ]
+    },
+    "OCCTBRepGraphFindOccurrenceRefIndex_RET_MINUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphShapeReconstructionTests.reconstructOccurrenceWithPlacement"
+     ]
+    },
+    "OCCTBRepGraphFindOccurrenceRefIndex_RET_PLUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphShapeReconstructionTests.reconstructOccurrenceWithPlacement"
+     ]
+    },
+    "OCCTBRepGraphFindOccurrenceRefIndex_RET_ZERO": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphShapeReconstructionTests.reconstructOccurrenceWithPlacement"
+     ]
+    },
+    "OCCTBRepGraphGetChildRefLocalLocation_RET_FLIP": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphGetChildRefLocalLocation_outMatrix_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphGetChildRefLocalLocation_outMatrix_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphGetOccurrenceRefLocalLocation_RET_FLIP": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphGetOccurrenceRefLocalLocation_outMatrix_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphGetOccurrenceRefLocalLocation_outMatrix_PLUS": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphShapeReconstructionTests.reconstructOccurrenceWithPlacement"
+     ]
+    },
+    "OCCTBRepGraphGetStats_RET_coedges_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphGetStats_RET_compounds_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphGetStats_RET_curves2d_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphGetStats_RET_curves3d_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphGetStats_RET_edges_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphGetStats_RET_faces_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphGetStats_RET_shells_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphGetStats_RET_solids_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphGetStats_RET_surfaces_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphGetStats_RET_totalNodes_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphGetStats_RET_vertices_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphGetStats_RET_wires_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphHasItemUID_RET_FLIP": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphHasNodeUID_RET_FLIP": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphHasNode_RET_FLIP": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphShapeReconstructionTests.findNode",
+      "BRepGraphShapeReconstructionTests.hasNodeFalseForUnrelated"
+     ]
+    },
+    "OCCTBRepGraphHasRefUID_RET_FLIP": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphHistoryDeletedNodes_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphHistoryDeletedNodes_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphHistoryDeletedNodes_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphHistoryDeletedNodes_outIndices_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphHistoryDeletedNodes_outKinds_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphHistoryFindDerived_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphHistoryFindDerived_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphHistoryFindDerived_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphHistoryFindDerived_outIndices_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphHistoryFindDerived_outKinds_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphHistoryFindOriginal_RET_FLIP": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphHistoryFindOriginal_outIndex_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphHistoryFindOriginal_outKind_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphHistoryGetRecordMapping_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphHistoryGetRecordMapping_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphHistoryGetRecordMapping_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphHistoryGetRecordMapping_outIndices_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphHistoryGetRecordMapping_outKinds_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphHistoryGetRecordOriginalsCount_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphHistoryGetRecordOriginalsCount_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphHistoryGetRecordOriginalsCount_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphHistoryGetRecordOriginals_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphHistoryGetRecordOriginals_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphHistoryGetRecordOriginals_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphHistoryGetRecordOriginals_outIndices_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphHistoryGetRecordOriginals_outKinds_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphHistoryIsDeleted_RET_FLIP": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphHistoryIsEnabled_RET_FLIP": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphHistoryTests.historyDefaults",
+      "BRepGraphHistoryTests.historyToggle"
+     ]
+    },
+    "OCCTBRepGraphHistoryNbRecords_RET_MINUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphHistoryTests.historyClear"
+     ]
+    },
+    "OCCTBRepGraphHistoryNbRecords_RET_PLUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphHistoryTests.historyClear",
+      "BRepGraphHistoryTests.historyDefaults"
+     ]
+    },
+    "OCCTBRepGraphHistoryNbRecords_RET_ZERO": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphHistoryTests.historyClear"
+     ]
+    },
+    "OCCTBRepGraphHistorySetEnabled_IN_enabled_FLIP": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphHistoryTests.historyToggle"
+     ]
+    },
+    "OCCTBRepGraphIsRemoved_RET_FLIP": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphNodeStatusTests.noRemovedNodes"
+     ]
+    },
+    "OCCTBRepGraphItemFromUID_RET_FLIP": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphItemFromUID_outDomain_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphItemFromUID_outIndex_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphItemFromUID_outKind_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphItemUIDOfNode_RET_FLIP": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphItemUIDOfNode_outDomain_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphItemUIDOfNode_outKind_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphLinkProductToTopology_RET_MINUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphShapeReconstructionTests.reconstructOccurrenceWithPlacement"
+     ]
+    },
+    "OCCTBRepGraphLinkProductToTopology_RET_PLUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphProductTests.productCountForPrimitive",
+      "BRepGraphShapeReconstructionTests.reconstructOccurrenceWithPlacement"
+     ]
+    },
+    "OCCTBRepGraphLinkProductToTopology_RET_ZERO": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphShapeReconstructionTests.reconstructOccurrenceWithPlacement"
+     ]
+    },
+    "OCCTBRepGraphLinkProducts_RET_MINUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphShapeReconstructionTests.reconstructOccurrenceWithPlacement"
+     ]
+    },
+    "OCCTBRepGraphLinkProducts_RET_PLUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphShapeReconstructionTests.reconstructOccurrenceWithPlacement"
+     ]
+    },
+    "OCCTBRepGraphLinkProducts_RET_ZERO": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphShapeReconstructionTests.reconstructOccurrenceWithPlacement"
+     ]
+    },
+    "OCCTBRepGraphLinkProducts_outOccurrenceRefId_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphMeshCoEdgeHasMesh_RET_FLIP": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphMeshCreatePolygon3DRep_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphMeshCreatePolygon3DRep_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphMeshCreatePolygon3DRep_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphMeshCreatePolygonOnTriRep_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphMeshCreatePolygonOnTriRep_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphMeshCreatePolygonOnTriRep_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphMeshCreateTriangulationRep_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphMeshCreateTriangulationRep_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphMeshCreateTriangulationRep_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphMeshEdgePolygon3DRepId_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphMeshEdgePolygon3DRepId_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphMeshEdgePolygon3DRepId_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphMeshFaceActiveTriangulationRepId_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphMeshFaceActiveTriangulationRepId_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphMeshFaceActiveTriangulationRepId_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphMeshNbActivePolygons2D_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphMeshNbActivePolygons2D_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphMeshNbActivePolygons2D_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphMeshNbActivePolygons3D_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphMeshNbActivePolygons3D_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphMeshNbActivePolygons3D_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphMeshNbActivePolygonsOnTri_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphMeshNbActivePolygonsOnTri_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphMeshNbActivePolygonsOnTri_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphMeshNbActiveTriangulations_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphMeshNbActiveTriangulations_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphMeshNbActiveTriangulations_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphMeshNbPolygons2D_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphMeshNbPolygons2D_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphMeshNbPolygons2D_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphMeshNbPolygonsOnTri_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphMeshNbPolygonsOnTri_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphMeshNbPolygonsOnTri_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphNbActiveCurves2D_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphNbActiveCurves2D_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphNbActiveCurves2D_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphNbActiveCurves3D_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphNbActiveCurves3D_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphNbActiveCurves3D_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphNbActiveEdges_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphNbActiveEdges_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphNbActiveEdges_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphNbActiveFaces_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphNbActiveFaces_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphNbActiveFaces_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphNbActiveSurfaces_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphNbActiveSurfaces_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphNbActiveSurfaces_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphNbActiveVertices_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphNbActiveVertices_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphNbActiveVertices_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphNbChildRefs_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphNbChildRefs_RET_PLUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphRefCountTests.refCountsForBox"
+     ]
+    },
+    "OCCTBRepGraphNbChildRefs_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphNbCoEdgeRefs_RET_MINUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphRefCountTests.refCountsForBox"
+     ]
+    },
+    "OCCTBRepGraphNbCoEdgeRefs_RET_PLUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphRefCountTests.refCountsForBox"
+     ]
+    },
+    "OCCTBRepGraphNbCoEdgeRefs_RET_ZERO": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphRefCountTests.refCountsForBox"
+     ]
+    },
+    "OCCTBRepGraphNbCoEdges_RET_MINUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphBuildTests.buildFromBox",
+      "BRepGraphCoEdgeQueryTests.coedgeHasPCurve",
+      "BRepGraphCoEdgeQueryTests.coedgeSeamPairForSphere",
+      "BRepGraphCoEdgeQueryTests.coedgeSeamPairNilForBox"
+     ]
+    },
+    "OCCTBRepGraphNbCoEdges_RET_PLUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphBuildTests.buildFromBox",
+      "BRepGraphCoEdgeQueryTests.coedgeHasPCurve",
+      "BRepGraphCoEdgeQueryTests.coedgeSeamPairForSphere",
+      "BRepGraphCoEdgeQueryTests.coedgeSeamPairNilForBox"
+     ]
+    },
+    "OCCTBRepGraphNbCoEdges_RET_ZERO": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphBuildTests.buildFromBox",
+      "BRepGraphCoEdgeQueryTests.coedgeHasPCurve",
+      "BRepGraphCoEdgeQueryTests.coedgeSeamPairForSphere",
+      "BRepGraphCoEdgeQueryTests.coedgeSeamPairNilForBox"
+     ]
+    },
+    "OCCTBRepGraphNbCompSolids_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphNbCompSolids_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphNbCompSolids_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphNbCompounds_RET_MINUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphBuildTests.buildFromComplex"
+     ]
+    },
+    "OCCTBRepGraphNbCompounds_RET_PLUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphBuildTests.buildFromBox",
+      "BRepGraphBuildTests.buildFromComplex"
+     ]
+    },
+    "OCCTBRepGraphNbCompounds_RET_ZERO": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphBuildTests.buildFromComplex"
+     ]
+    },
+    "OCCTBRepGraphNbCurves2D_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphNbCurves2D_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphNbCurves2D_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphNbCurves3D_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphNbCurves3D_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphNbCurves3D_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphNbEdges_RET_MINUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphBuildTests.buildFromBox",
+      "BRepGraphBuildTests.buildFromComplex",
+      "BRepGraphBuildTests.buildFromSphere",
+      "BRepGraphBuildTests.buildParallel",
+      "BRepGraphEdgeQueryTests.allManifoldEdges",
+      "BRepGraphEdgeQueryTests.noBoundaryEdges",
+      "BRepGraphEdgeWiresCoEdgesTests.edgeCoEdges",
+      "BRepGraphEdgeWiresCoEdgesTests.edgeFindCoEdge",
+      "BRepGraphEdgeWiresCoEdgesTests.edgeWires"
+     ]
+    },
+    "OCCTBRepGraphNbEdges_RET_PLUS1": {
+     "crash": true,
+     "exit": -5,
+     "ran": 8,
+     "red": [
+      "BRepGraphBuildTests.buildFromBox",
+      "BRepGraphBuildTests.buildFromComplex",
+      "BRepGraphBuildTests.buildFromSphere",
+      "BRepGraphEdgeQueryTests.allManifoldEdges",
+      "BRepGraphEdgeQueryTests.noBoundaryEdges",
+      "BRepGraphEdgeWiresCoEdgesTests.edgeCoEdges",
+      "BRepGraphEdgeWiresCoEdgesTests.edgeFindCoEdge",
+      "BRepGraphEdgeWiresCoEdgesTests.edgeWires"
+     ]
+    },
+    "OCCTBRepGraphNbEdges_RET_ZERO": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphBuildTests.buildFromBox",
+      "BRepGraphBuildTests.buildFromComplex",
+      "BRepGraphBuildTests.buildFromSphere",
+      "BRepGraphBuildTests.buildParallel",
+      "BRepGraphEdgeQueryTests.allManifoldEdges",
+      "BRepGraphEdgeQueryTests.noBoundaryEdges",
+      "BRepGraphEdgeWiresCoEdgesTests.edgeCoEdges",
+      "BRepGraphEdgeWiresCoEdgesTests.edgeFindCoEdge",
+      "BRepGraphEdgeWiresCoEdgesTests.edgeWires"
+     ]
+    },
+    "OCCTBRepGraphNbFaceRefs_RET_MINUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphRefCountTests.refCountsConsistency",
+      "BRepGraphRefCountTests.refCountsForBox",
+      "BRepGraphRefEntryTests.refOrientation"
+     ]
+    },
+    "OCCTBRepGraphNbFaceRefs_RET_PLUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphRefCountTests.refCountsConsistency",
+      "BRepGraphRefCountTests.refCountsForBox",
+      "BRepGraphRefEntryTests.refOrientation"
+     ]
+    },
+    "OCCTBRepGraphNbFaceRefs_RET_ZERO": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphRefCountTests.refCountsConsistency",
+      "BRepGraphRefCountTests.refCountsForBox",
+      "BRepGraphRefEntryTests.refOrientation"
+     ]
+    },
+    "OCCTBRepGraphNbFaces_RET_MINUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphBuildTests.buildFromBox",
+      "BRepGraphBuildTests.buildFromComplex",
+      "BRepGraphBuildTests.buildFromSphere",
+      "BRepGraphBuildTests.buildParallel",
+      "BRepGraphFaceDefTests.faceVertexRefCount",
+      "BRepGraphFaceDefTests.faceWireCount",
+      "BRepGraphFaceGeometryTests.faceHasSurface",
+      "BRepGraphFaceQueryTests.outerWire",
+      "BRepGraphFaceShellTests.faceCompoundCount",
+      "BRepGraphFaceShellTests.faceShells",
+      "BRepGraphNodeStatusTests.noRemovedNodes",
+      "BRepGraphRefCountTests.refCountsConsistency",
+      "BRepGraphSameDomainTests.boxNoSameDomain"
+     ]
+    },
+    "OCCTBRepGraphNbFaces_RET_PLUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphBuildTests.buildFromBox",
+      "BRepGraphBuildTests.buildFromComplex",
+      "BRepGraphBuildTests.buildFromSphere",
+      "BRepGraphBuildTests.buildParallel",
+      "BRepGraphFaceDefTests.faceVertexRefCount",
+      "BRepGraphFaceDefTests.faceWireCount",
+      "BRepGraphFaceGeometryTests.faceHasSurface",
+      "BRepGraphFaceQueryTests.outerWire",
+      "BRepGraphFaceShellTests.faceCompoundCount",
+      "BRepGraphFaceShellTests.faceShells",
+      "BRepGraphNodeStatusTests.noRemovedNodes",
+      "BRepGraphRefCountTests.refCountsConsistency",
+      "BRepGraphSameDomainTests.boxNoSameDomain"
+     ]
+    },
+    "OCCTBRepGraphNbFaces_RET_ZERO": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphBuildTests.buildFromBox",
+      "BRepGraphBuildTests.buildFromComplex",
+      "BRepGraphBuildTests.buildFromSphere",
+      "BRepGraphBuildTests.buildParallel",
+      "BRepGraphFaceDefTests.faceVertexRefCount",
+      "BRepGraphFaceDefTests.faceWireCount",
+      "BRepGraphFaceGeometryTests.faceHasSurface",
+      "BRepGraphFaceQueryTests.outerWire",
+      "BRepGraphFaceShellTests.faceCompoundCount",
+      "BRepGraphFaceShellTests.faceShells",
+      "BRepGraphNodeStatusTests.noRemovedNodes",
+      "BRepGraphRefCountTests.refCountsConsistency",
+      "BRepGraphSameDomainTests.boxNoSameDomain"
+     ]
+    },
+    "OCCTBRepGraphNbNodes_RET_MINUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphBuildTests.buildFromBox",
+      "BRepGraphBuildTests.buildFromSphere",
+      "BRepGraphBuildTests.buildParallel"
+     ]
+    },
+    "OCCTBRepGraphNbNodes_RET_PLUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphBuildTests.buildFromBox",
+      "BRepGraphBuildTests.buildFromSphere",
+      "BRepGraphBuildTests.buildParallel"
+     ]
+    },
+    "OCCTBRepGraphNbNodes_RET_ZERO": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphBuildTests.buildFromBox",
+      "BRepGraphBuildTests.buildFromSphere",
+      "BRepGraphBuildTests.buildParallel"
+     ]
+    },
+    "OCCTBRepGraphNbOccurrenceRefs_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphNbOccurrenceRefs_RET_PLUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphRefCountTests.refCountsForBox"
+     ]
+    },
+    "OCCTBRepGraphNbOccurrenceRefs_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphNbOccurrences_RET_MINUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphOccurrenceTests.occurrenceCountForPrimitive"
+     ]
+    },
+    "OCCTBRepGraphNbOccurrences_RET_PLUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphOccurrenceTests.occurrenceCountForPrimitive",
+      "BRepGraphProductTests.productCountForPrimitive",
+      "BRepGraphProductTests.productQueriesOnSphere"
+     ]
+    },
+    "OCCTBRepGraphNbOccurrences_RET_ZERO": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphOccurrenceTests.occurrenceCountForPrimitive"
+     ]
+    },
+    "OCCTBRepGraphNbPolygons3D_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphNbPolygons3D_RET_PLUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphPolyCountTests.polyCounts"
+     ]
+    },
+    "OCCTBRepGraphNbPolygons3D_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphNbProducts_RET_MINUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphProductTests.productCountForPrimitive",
+      "BRepGraphProductTests.productQueriesOnSphere"
+     ]
+    },
+    "OCCTBRepGraphNbProducts_RET_PLUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphProductTests.productCountForPrimitive",
+      "BRepGraphProductTests.productQueriesOnSphere"
+     ]
+    },
+    "OCCTBRepGraphNbProducts_RET_ZERO": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphProductTests.productCountForPrimitive",
+      "BRepGraphProductTests.productQueriesOnSphere"
+     ]
+    },
+    "OCCTBRepGraphNbShellRefs_RET_MINUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphRefCountTests.refCountsForBox"
+     ]
+    },
+    "OCCTBRepGraphNbShellRefs_RET_PLUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphRefCountTests.refCountsForBox"
+     ]
+    },
+    "OCCTBRepGraphNbShellRefs_RET_ZERO": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphRefCountTests.refCountsForBox"
+     ]
+    },
+    "OCCTBRepGraphNbShells_RET_MINUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphBuildTests.buildFromBox",
+      "BRepGraphShellExtendedTests.shellCompoundCount",
+      "BRepGraphShellExtendedTests.shellIsClosed"
+     ]
+    },
+    "OCCTBRepGraphNbShells_RET_PLUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphBuildTests.buildFromBox",
+      "BRepGraphShellExtendedTests.shellCompoundCount",
+      "BRepGraphShellExtendedTests.shellIsClosed"
+     ]
+    },
+    "OCCTBRepGraphNbShells_RET_ZERO": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphBuildTests.buildFromBox",
+      "BRepGraphShellExtendedTests.shellCompoundCount",
+      "BRepGraphShellExtendedTests.shellIsClosed"
+     ]
+    },
+    "OCCTBRepGraphNbSolidRefs_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphNbSolidRefs_RET_PLUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphRefCountTests.refCountsForBox"
+     ]
+    },
+    "OCCTBRepGraphNbSolidRefs_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphNbSolids_RET_MINUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphBuildTests.buildFromBox",
+      "BRepGraphSolidExtendedTests.solidCompoundCount"
+     ]
+    },
+    "OCCTBRepGraphNbSolids_RET_PLUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphBuildTests.buildFromBox",
+      "BRepGraphSolidExtendedTests.solidCompoundCount"
+     ]
+    },
+    "OCCTBRepGraphNbSolids_RET_ZERO": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphBuildTests.buildFromBox",
+      "BRepGraphSolidExtendedTests.solidCompoundCount"
+     ]
+    },
+    "OCCTBRepGraphNbSurfaces_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphNbSurfaces_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphNbSurfaces_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphNbTriangulations_RET_MINUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphPolyCountTests.polyCounts"
+     ]
+    },
+    "OCCTBRepGraphNbTriangulations_RET_PLUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphPolyCountTests.polyCounts"
+     ]
+    },
+    "OCCTBRepGraphNbTriangulations_RET_ZERO": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphPolyCountTests.polyCounts"
+     ]
+    },
+    "OCCTBRepGraphNbVertexRefs_RET_MINUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphRefCountTests.refCountsForBox"
+     ]
+    },
+    "OCCTBRepGraphNbVertexRefs_RET_PLUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphRefCountTests.refCountsForBox"
+     ]
+    },
+    "OCCTBRepGraphNbVertexRefs_RET_ZERO": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphRefCountTests.refCountsForBox"
+     ]
+    },
+    "OCCTBRepGraphNbVertices_RET_MINUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphBuildTests.buildFromBox",
+      "BRepGraphBuildTests.buildFromSphere"
+     ]
+    },
+    "OCCTBRepGraphNbVertices_RET_PLUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphBuildTests.buildFromBox",
+      "BRepGraphBuildTests.buildFromSphere"
+     ]
+    },
+    "OCCTBRepGraphNbVertices_RET_ZERO": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphBuildTests.buildFromBox",
+      "BRepGraphBuildTests.buildFromSphere"
+     ]
+    },
+    "OCCTBRepGraphNbWireRefs_RET_MINUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphRefCountTests.refCountsConsistency",
+      "BRepGraphRefCountTests.refCountsForBox"
+     ]
+    },
+    "OCCTBRepGraphNbWireRefs_RET_PLUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphRefCountTests.refCountsConsistency",
+      "BRepGraphRefCountTests.refCountsForBox"
+     ]
+    },
+    "OCCTBRepGraphNbWireRefs_RET_ZERO": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphRefCountTests.refCountsConsistency",
+      "BRepGraphRefCountTests.refCountsForBox"
+     ]
+    },
+    "OCCTBRepGraphNbWires_RET_MINUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphBuildTests.buildFromBox",
+      "BRepGraphRefCountTests.refCountsConsistency"
+     ]
+    },
+    "OCCTBRepGraphNbWires_RET_PLUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphBuildTests.buildFromBox",
+      "BRepGraphRefCountTests.refCountsConsistency"
+     ]
+    },
+    "OCCTBRepGraphNbWires_RET_ZERO": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphBuildTests.buildFromBox",
+      "BRepGraphRefCountTests.refCountsConsistency"
+     ]
+    },
+    "OCCTBRepGraphNodeFromUID_RET_FLIP": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphNodeFromUID_outNodeIndex_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphNodeFromUID_outNodeKind_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphNodeUID_RET_FLIP": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphNodeUID_outUIDKind_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphOccurrenceAt_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphOccurrenceAt_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphOccurrenceAt_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphOccurrenceAt_outMatrix_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphOccurrenceAt_outMatrix_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphOccurrenceAt_outOrientation_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphOccurrenceAt_outSteps_nodeIndex_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphOccurrenceAt_outSteps_nodeKind_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphOccurrenceAt_outSteps_refIndex_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphOccurrenceAt_outSteps_refKind_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphOccurrenceAt_outSteps_stepIndex_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphOccurrenceCount_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphOccurrenceCount_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphOccurrenceCount_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphOccurrenceParentProduct_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphOccurrenceParentProduct_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphOccurrenceParentProduct_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphOccurrenceProduct_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphOccurrenceProduct_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphOccurrenceProduct_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphParentCount_RET_MINUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphExplorerTests.parentExplorer"
+     ]
+    },
+    "OCCTBRepGraphParentCount_RET_PLUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphExplorerTests.parentExplorer"
+     ]
+    },
+    "OCCTBRepGraphParentCount_RET_ZERO": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphExplorerTests.parentExplorer"
+     ]
+    },
+    "OCCTBRepGraphProductIsAssembly_RET_FLIP": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphProductTests.productCountForPrimitive"
+     ]
+    },
+    "OCCTBRepGraphProductIsPart_RET_FLIP": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphProductTests.productCountForPrimitive",
+      "BRepGraphProductTests.productQueriesOnSphere"
+     ]
+    },
+    "OCCTBRepGraphProductNbComponents_RET_MINUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphProductTests.productQueriesOnSphere"
+     ]
+    },
+    "OCCTBRepGraphProductNbComponents_RET_PLUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphProductTests.productQueriesOnSphere"
+     ]
+    },
+    "OCCTBRepGraphProductNbComponents_RET_ZERO": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphProductTests.productQueriesOnSphere"
+     ]
+    },
+    "OCCTBRepGraphProductRemoveOccurrence_RET_FLIP": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphProductRemoveShapeRoot_RET_FLIP": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphProductShapeRootIndex_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphProductShapeRootIndex_RET_PLUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphProductTests.productCountForPrimitive"
+     ]
+    },
+    "OCCTBRepGraphProductShapeRootIndex_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphProductShapeRootKind_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphProductShapeRootKind_RET_PLUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphProductTests.productCountForPrimitive"
+     ]
+    },
+    "OCCTBRepGraphProductShapeRootKind_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphRefChildNodeIndex_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphRefChildNodeIndex_RET_PLUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphRefEntryTests.refChildNode"
+     ]
+    },
+    "OCCTBRepGraphRefChildNodeIndex_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphRefChildNodeKind_RET_MINUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphRefEntryTests.refChildNode"
+     ]
+    },
+    "OCCTBRepGraphRefChildNodeKind_RET_PLUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphRefEntryTests.refChildNode"
+     ]
+    },
+    "OCCTBRepGraphRefChildNodeKind_RET_ZERO": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphRefEntryTests.refChildNode"
+     ]
+    },
+    "OCCTBRepGraphRefFromUID_RET_FLIP": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphRefFromUID_outRefIndex_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphRefFromUID_outRefKind_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphRefIsRemoved_RET_FLIP": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphRefEntryTests.refNotRemoved"
+     ]
+    },
+    "OCCTBRepGraphRefOrientation_RET_MINUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphRefEntryTests.refOrientation"
+     ]
+    },
+    "OCCTBRepGraphRefOrientation_RET_PLUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphRefEntryTests.refOrientation"
+     ]
+    },
+    "OCCTBRepGraphRefOrientation_RET_ZERO": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphRefEntryTests.refOrientation"
+     ]
+    },
+    "OCCTBRepGraphRefUID_RET_FLIP": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphRefUID_outUIDKind_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphRootCount_RET_MINUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphExplorerTests.childExplorer",
+      "BRepGraphRootNodeTests.hasRoots"
+     ]
+    },
+    "OCCTBRepGraphRootCount_RET_PLUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphExplorerTests.childExplorer",
+      "BRepGraphRootNodeTests.hasRoots"
+     ]
+    },
+    "OCCTBRepGraphRootCount_RET_ZERO": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphExplorerTests.childExplorer",
+      "BRepGraphRootNodeTests.hasRoots"
+     ]
+    },
+    "OCCTBRepGraphRootNodes_outIndices_PLUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphExplorerTests.childExplorer",
+      "BRepGraphRootNodeTests.hasRoots"
+     ]
+    },
+    "OCCTBRepGraphRootNodes_outKinds_PLUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphRootNodeTests.hasRoots"
+     ]
+    },
+    "OCCTBRepGraphRootProductCount_RET_MINUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphProductTests.productCountForPrimitive",
+      "BRepGraphProductTests.rootProductIndices"
+     ]
+    },
+    "OCCTBRepGraphRootProductCount_RET_PLUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphProductTests.productCountForPrimitive",
+      "BRepGraphProductTests.rootProductIndices"
+     ]
+    },
+    "OCCTBRepGraphRootProductCount_RET_ZERO": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphProductTests.productCountForPrimitive",
+      "BRepGraphProductTests.rootProductIndices"
+     ]
+    },
+    "OCCTBRepGraphRootProductIndices_outIndices_PLUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphProductTests.rootProductIndices"
+     ]
+    },
+    "OCCTBRepGraphSampleEdgeCurve_RET_MINUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphEdgeSamplingTests.sampleBoxEdge",
+      "BRepGraphEdgeSamplingTests.sampleSinglePoint",
+      "BRepGraphEdgeSamplingTests.sampleSphereEdge"
+     ]
+    },
+    "OCCTBRepGraphSampleEdgeCurve_RET_PLUS1": {
+     "crash": true,
+     "exit": -5,
+     "ran": 0,
+     "red": []
+    },
+    "OCCTBRepGraphSampleEdgeCurve_RET_ZERO": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphEdgeSamplingTests.sampleBoxEdge",
+      "BRepGraphEdgeSamplingTests.sampleSinglePoint",
+      "BRepGraphEdgeSamplingTests.sampleSphereEdge"
+     ]
+    },
+    "OCCTBRepGraphSampleEdgeCurve_outPoints_NEG": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphEdgeSamplingTests.sampleBoxEdge",
+      "BRepGraphEdgeSamplingTests.sampleSinglePoint",
+      "BRepGraphEdgeSamplingTests.sampleSphereEdge"
+     ]
+    },
+    "OCCTBRepGraphSampleEdgeCurve_outPoints_PLUS": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphEdgeSamplingTests.sampleBoxEdge",
+      "BRepGraphEdgeSamplingTests.sampleSinglePoint",
+      "BRepGraphEdgeSamplingTests.sampleSphereEdge"
+     ]
+    },
+    "OCCTBRepGraphSampleFaceUVGrid_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphSampleFaceUVGrid_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphSampleFaceUVGrid_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphSampleFaceUVGrid_outGaussianCurvatures_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphSampleFaceUVGrid_outGaussianCurvatures_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphSampleFaceUVGrid_outMeanCurvatures_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphSampleFaceUVGrid_outMeanCurvatures_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphSampleFaceUVGrid_outNormals_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphSampleFaceUVGrid_outNormals_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphSampleFaceUVGrid_outPositions_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphSampleFaceUVGrid_outPositions_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphSetCoEdgeParamRange_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphSetCoEdgeParamRange_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphSetEdgeDegenerate_IN_degenerate_FLIP": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphSetEdgeIsClosed_IN_isClosed_FLIP": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphSetEdgeParamRange_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphSetEdgeParamRange_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphSetEdgeRegularity_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphSetEdgeRegularity_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphSetEdgeRegularity_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphSetEdgeSameParameter_IN_sameParameter_FLIP": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphSetEdgeSameRange_IN_sameRange_FLIP": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphSetEdgeTolerance_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphSetFaceNaturalRestriction_IN_naturalRestriction_FLIP": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphSetFaceTolerance_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphSetShellIsClosed_IN_isClosed_FLIP": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphSetVertexPoint_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphSetVertexPoint_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphSetVertexPoint_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphSetVertexTolerance_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphSetWireIsClosed_IN_isClosed_FLIP": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphSetWireRefIsOuter_IN_isOuter_FLIP": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphShapeFromNode_RET_NIL": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphShapeReconstructionTests.reconstructFace",
+      "BRepGraphShapeReconstructionTests.reconstructOccurrenceWithPlacement",
+      "BRepGraphShapeReconstructionTests.reconstructSolid"
+     ]
+    },
+    "OCCTBRepGraphShellAddChild_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphShellAddChild_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphShellAddChild_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphShellCompoundCount_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphShellCompoundCount_RET_PLUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphShellExtendedTests.shellCompoundCount"
+     ]
+    },
+    "OCCTBRepGraphShellCompoundCount_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphShellIsClosed_RET_FLIP": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphShellExtendedTests.shellIsClosed"
+     ]
+    },
+    "OCCTBRepGraphShellRemoveChild_RET_FLIP": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphShellRemoveFace_RET_FLIP": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphShellSolidCount_RET_MINUS1": {
+     "crash": true,
+     "exit": -5,
+     "ran": 57,
+     "red": [
+      "BRepGraphShellQueryTests.shellSolids"
+     ]
+    },
+    "OCCTBRepGraphShellSolidCount_RET_PLUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphShellQueryTests.shellSolids"
+     ]
+    },
+    "OCCTBRepGraphShellSolidCount_RET_ZERO": {
+     "crash": true,
+     "exit": -5,
+     "ran": 64,
+     "red": [
+      "BRepGraphShellQueryTests.shellSolids"
+     ]
+    },
+    "OCCTBRepGraphShellSolidIndices_outIndices_PLUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphShellQueryTests.shellSolids"
+     ]
+    },
+    "OCCTBRepGraphSolidAddChild_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphSolidAddChild_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphSolidAddChild_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphSolidCompSolidCount_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphSolidCompSolidCount_RET_PLUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphSolidQueryTests.solidCompSolidCount"
+     ]
+    },
+    "OCCTBRepGraphSolidCompSolidCount_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphSolidCompoundCount_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphSolidCompoundCount_RET_PLUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphSolidExtendedTests.solidCompoundCount"
+     ]
+    },
+    "OCCTBRepGraphSolidCompoundCount_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphSolidRemoveChild_RET_FLIP": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphSolidRemoveShell_RET_FLIP": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphTransformTranslation_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphTransformTranslation_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphTransformTranslation_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphTransformTranslation_IN_copyGeom_FLIP": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphTransformTranslation_RET_NIL": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphValidateDetailed_RET_errorCount_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphValidateDetailed_RET_warningCount_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphValidate_RET_FLIP": {
+     "crash": false,
+     "exit": 1,
+     "ran": 64,
+     "red": [
+      "BRepGraphBuildTests.buildFromComplex"
+     ]
+    },
+    "OCCTBRepGraphVertexEdgeCount_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphVertexEdgeCount_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphVertexEdgeCount_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphVertexEdgeIndices_outIndices_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphVertexPoint_outX_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphVertexPoint_outX_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphVertexPoint_outY_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphVertexPoint_outY_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphVertexPoint_outZ_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphVertexPoint_outZ_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphVertexTolerance_RET_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphVertexTolerance_RET_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphWireFaceCount_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphWireFaceCount_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphWireFaceCount_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphWireFaceIndices_outIndices_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphWireIsClosed_RET_FLIP": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphWireNbCoEdges_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphWireNbCoEdges_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphWireNbCoEdges_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    },
+    "OCCTBRepGraphWireRemoveCoEdge_RET_FLIP": {
+     "crash": false,
+     "exit": 0,
+     "ran": 64,
+     "red": []
+    }
+   },
+   "switches": 559,
+   "tests": [
+    "BRepGraphOccurrenceTests.occurrenceCountForPrimitive",
+    "BRepGraphProductTests.productCountForPrimitive",
+    "BRepGraphProductTests.productQueriesOnSphere",
+    "BRepGraphProductTests.rootProductIndices",
+    "BRepGraphPolyCountTests.polyCounts",
+    "BRepGraphRefCountTests.refCountsForBox",
+    "BRepGraphRefCountTests.refCountsConsistency",
+    "BRepGraphFaceDefTests.faceWireCount",
+    "BRepGraphFaceDefTests.faceVertexRefCount",
+    "BRepGraphShellExtendedTests.shellCompoundCount",
+    "BRepGraphShellExtendedTests.shellIsClosed",
+    "BRepGraphSolidExtendedTests.solidCompoundCount",
+    "BRepGraphEdgeSamplingTests.sampleBoxEdge",
+    "BRepGraphEdgeSamplingTests.sampleSinglePoint",
+    "BRepGraphEdgeSamplingTests.sampleEdgeWithoutCurve",
+    "BRepGraphEdgeSamplingTests.sampleZeroCount",
+    "BRepGraphEdgeSamplingTests.sampleSphereEdge",
+    "BRepGraphFaceGeometryTests.faceTolerance",
+    "BRepGraphFaceGeometryTests.faceHasSurface",
+    "BRepGraphFaceGeometryTests.faceNaturalRestriction",
+    "BRepGraphFaceGeometryTests.faceHasTriangulation",
+    "BRepGraphHistoryTests.historyDefaults",
+    "BRepGraphHistoryTests.historyToggle",
+    "BRepGraphHistoryTests.historyClear",
+    "BRepGraphBuilderValidateMutationTests.validateCleanGraph",
+    "BRepGraphBuilderValidateMutationTests.validateAfterAddVertex",
+    "BRepGraphCoEdgeQueryTests.coedgeEdge",
+    "BRepGraphCoEdgeQueryTests.coedgeFace",
+    "BRepGraphCoEdgeQueryTests.coedgeSeamPairNilForBox",
+    "BRepGraphCoEdgeQueryTests.coedgeSeamPairForSphere",
+    "BRepGraphCoEdgeQueryTests.coedgeHasPCurve",
+    "BRepGraphCoEdgeQueryTests.coedgeRange",
+    "BRepGraphEdgeQueryTests.edgeFaceCount",
+    "BRepGraphEdgeQueryTests.edgeFaces",
+    "BRepGraphEdgeQueryTests.noBoundaryEdges",
+    "BRepGraphEdgeQueryTests.allManifoldEdges",
+    "BRepGraphEdgeQueryTests.edgeAdjacency",
+    "BRepGraphEdgeWiresCoEdgesTests.edgeWires",
+    "BRepGraphEdgeWiresCoEdgesTests.edgeCoEdges",
+    "BRepGraphEdgeWiresCoEdgesTests.edgeFindCoEdge",
+    "BRepGraphExplorerTests.childExplorer",
+    "BRepGraphExplorerTests.parentExplorer",
+    "BRepGraphFaceQueryTests.faceAdjacency",
+    "BRepGraphFaceQueryTests.sharedEdges",
+    "BRepGraphFaceQueryTests.outerWire",
+    "BRepGraphFaceShellTests.faceShells",
+    "BRepGraphFaceShellTests.faceCompoundCount",
+    "BRepGraphNodeStatusTests.noRemovedNodes",
+    "BRepGraphRefEntryTests.refChildNode",
+    "BRepGraphRefEntryTests.refNotRemoved",
+    "BRepGraphRefEntryTests.refOrientation",
+    "BRepGraphRootNodeTests.hasRoots",
+    "BRepGraphSameDomainTests.boxNoSameDomain",
+    "BRepGraphShellQueryTests.shellSolids",
+    "BRepGraphSolidQueryTests.solidCompSolidCount",
+    "BRepGraphBuildTests.buildFromBox",
+    "BRepGraphBuildTests.buildParallel",
+    "BRepGraphBuildTests.buildFromSphere",
+    "BRepGraphBuildTests.buildFromComplex",
+    "BRepGraphShapeReconstructionTests.reconstructFace",
+    "BRepGraphShapeReconstructionTests.reconstructSolid",
+    "BRepGraphShapeReconstructionTests.findNode",
+    "BRepGraphShapeReconstructionTests.hasNodeFalseForUnrelated",
+    "BRepGraphShapeReconstructionTests.reconstructOccurrenceWithPlacement"
+   ],
+   "unreddened": []
+  }
+ }
+}
