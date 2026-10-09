@@ -54,16 +54,28 @@ struct Issue197MeshDeflectionTests {
         #expect(s.writeSTLBinary(to: url.path))  // default deflection
         let size =
             (try? FileManager.default.attributesOfItem(atPath: url.path))?[.size] as? Int ?? 0
-        #expect(size > 84)
+        // Pinned, not `> 84`: a writer that emitted any triangles at all, at any deflection,
+        // passed that. StlAPI_Writer on this sphere at 0.1 writes 976 triangles, 84 + 50 * 976
+        // bytes (Scripts/repro/766-mesh-issue197/transcript.txt); 1.0 would write 306. Within 1
+        // percent and not exact: the wasm build's libm meshes the same sphere to 978 triangles.
+        let expected = 84 + 50 * 976
+        #expect(abs(size - expected) <= expected / 100, "STL size \(size), expected ~\(expected)")
     }
 
+    // This asserted only `tri != nil`, so a bridge that ignored `deflection` passed it. Two fresh
+    // spheres at two deflections now pin the first face's triangle count to what
+    // Poly_CoherentTriangulation reports for the same inputs
+    // (Scripts/repro/766-mesh-issue197/transcript.txt).
     @Test("coherent triangulation builds at the requested deflection")
-    func coherentTriangulationDeflection() {
-        guard let s = sphere() else {
-            Issue.record("no sphere")
-            return
-        }
-        let tri = CoherentTriangulation.createFromMesh(s, deflection: 0.2)
-        #expect(tri != nil)
+    func coherentTriangulationDeflection() throws {
+        let coarseShape = try #require(sphere())
+        let fineShape = try #require(sphere())
+        let coarse = try #require(
+            CoherentTriangulation.createFromMesh(coarseShape, deflection: 0.2))
+        let fine = try #require(CoherentTriangulation.createFromMesh(fineShape, deflection: 0.1))
+        // Within 1 percent and not exact: the wasm build's libm gives 978 for the fine mesh.
+        #expect(
+            abs(coarse.triangleCount - 516) <= 5, "coarse \(coarse.triangleCount), expected ~516")
+        #expect(abs(fine.triangleCount - 976) <= 10, "fine \(fine.triangleCount), expected ~976")
     }
 }
