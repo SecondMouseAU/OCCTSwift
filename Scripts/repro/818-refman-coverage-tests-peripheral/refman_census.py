@@ -94,14 +94,14 @@ MANUAL_OVERRIDES: dict[str, tuple[set[str], str]] = {
         "used only as a struct FIELD type (`struct OCCTZLayerSettings { Graphic3d_ZLayerSettings "
         "settings; };`, OCCTBridge_Visualization_Assets.mm), never inside a function body "
         "derive_lane.py's bridge-side extractor scans. Real test: "
-        "Tests/OCCTDrawingTests/ZLayerSettingsTests.swift.",
+        "Tests/OCCTDrawingTests/Visualization/ZLayerSettingsTests.swift.",
     ),
     "StdSelect_BRepSelectionTool": (
         {"OCCTDrawingTests", "OCCTMiscTests"},
         "used inside `OCCTBRepSelectable::ComputeSelection`, a C++ method override nested inside "
         "an internal support class (OCCTBridge_Visualization_Assets.mm), not a standalone "
         "OCCTXxx(...)-shaped function derive_lane.py's bridge-side regex matches. Reached whenever "
-        "Selector.pick() runs; real test: Tests/OCCTDrawingTests/SelectorTests.swift (constructs "
+        "Selector.pick() runs; real test: Tests/OCCTDrawingTests/Visualization/SelectorTests.swift (constructs "
         "and exercises `Selector()` directly, confirmed at line 21 and throughout).",
     ),
     "BRepFeat_MakeCylindricalHole": (
@@ -154,7 +154,7 @@ MANUAL_OVERRIDES: dict[str, tuple[set[str], str]] = {
         "correct, but its coarser class-target-hit pass conflated it with a DIFFERENT call "
         "(`CoordinateSystem(...)`, a plain struct init) that OCCTMeshTests does make -- confirmed "
         "by grep: OCCTMeshTests calls zero of `convertCoordinateSystem`/"
-        "`coordinateSystemUpDirection`. Real test: Tests/OCCTMathTests/CoordinateSystemTests.swift.",
+        "`coordinateSystemUpDirection`. Real test: Tests/OCCTMathTests/CoordinateSystems/CoordinateSystemTests.swift.",
     ),
     # --- false POSITIVE: derive_lane.py said "tested," the match is a same-file name collision ---
     "Plate_Plate": (

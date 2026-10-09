@@ -178,13 +178,13 @@ struct FillingSupportFaceTests {
     /// the analytic second construction: pi (10 cos 50 degrees)^2.
     @Test("The support shape, not the rim's own wall, supplies the tangent reference (#766)")
     func supportShapeOverridesTheRimsOwnWall() throws {
-        let bowl = try #require(bowl(), "Failed to build the truncated-sphere fixture")
-        let rimEdgeOfBowl = try #require(rimEdge(of: bowl))
+        let bowlShape = try #require(bowl(), "Failed to build the truncated-sphere fixture")
+        let rimEdgeOfBowl = try #require(rimEdge(of: bowlShape))
         let rim = try #require(Wire.wireFromEdges([rimEdgeOfBowl]))
         let tangent = FillingParameters(continuity: .g1)
 
         let onWall = try #require(
-            Shape.fill(boundaries: [rim], supportedBy: bowl, parameters: tangent))
+            Shape.fill(boundaries: [rim], supportedBy: bowlShape, parameters: tangent))
         let unsupported = try #require(Shape.fill(boundaries: [rim], parameters: tangent))
 
         // The fixture must mean its name: a one-face shape that holds the rim edge, whose face is
