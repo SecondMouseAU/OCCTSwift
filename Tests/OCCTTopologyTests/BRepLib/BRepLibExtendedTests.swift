@@ -98,7 +98,9 @@ struct BRepLibExtendedTests {
         let b = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let edges = b.edges()
         try #require(edges.count == 12)
-        OCCTEdgeSetSameParameter(edges[0].handle, false)
+        // `withHandle`, not `edges[0].handle`: the bare form lets an optimised build free the
+        // array's `Edge` before the setter runs, so the flag is never cleared (#3130, #2929).
+        edges[0].withHandle { OCCTEdgeSetSameParameter($0, false) }
         #expect(b.isValid == false, "a cleared SameParameter flag should fail BRepCheck")
         b.sameParameterAll(tolerance: 1e-5)
         #expect(b.isValid)
