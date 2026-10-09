@@ -21,6 +21,10 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### NLPlate deformations now pass through their constraint targets (#3133, #3134, #3135)
+
+`nlPlateDeformed` with several constraints, `nlPlateDeformedG1`, `nlPlateDeformedG2` and `nlPlateDeformedG3` returned surfaces that missed their targets (by up to 5.4 for G0, 0.7 for G1, and about 2e12 / 1e21 for G2 / G3), and `nlPlateDeformedG1` returned nil for two position+tangent constraints. The result now interpolates a sample lattice that holds every constraint (u, v) as a node. `tolerance` sets the sampling density rather than a fit bound. G1/G2/G3 tangent and curvature targets are met by the solver but not guaranteed on the returned surface.
+
 ### FeatureReconstructor `revolve` now builds a Solid, and a hole on a solid-less body is skipped (#3139)
 
 A `revolve` feature used to return a bare `Shell`, so a following `hole` silently cut nothing while every feature was reported `fulfilled`. The profile is now revolved as a planar face and the feature is a `Solid`. A hole whose target holds no solid is recorded in `skipped` rather than `fulfilled`, and a revolve profile with no area is skipped. `Shape.revolve(profile:)` on a wire is unchanged and still answers a surface of revolution.
