@@ -1,0 +1,10 @@
+circle: IsClosed=1 IsPeriodic=1 IsPlanar=1 normal=(0, 0, 1)
+line: IsClosed=0 IsPeriodic=0 IsPlanar=1 normal=(0, 0, 1)
+plane ValueOfUV(5,3,0)=(5, 3) gap=0.000e+00
+plane ValueOfUV(0,0,10)=(0, 0) gap=10.000000000
+plane HasSingularities=0 NbSingularities=0 IsUClosed=0 IsVClosed=0
+box (tol 0.001): smallEdges=0 smallFaces=0 gaps=24 BRepCheck valid=1
+box (tol 1e-06): smallEdges=0 smallFaces=0 gaps=24 BRepCheck valid=1
+gappy face built=1
+gappy face (tol 0.01): smallEdges=0 smallFaces=0 gaps=2 BRepCheck valid=0
+TransferParametersProj(cyl edge1, face1): toFace(1.0)=1.000000000 fromFace(1.0)=1.000000000
