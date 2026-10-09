@@ -92,8 +92,10 @@ async function loadFixtureTree() {
     try {
       const fixtures = await loadDirectory(join(TESTS_DIR, target.name, "Fixtures"));
       targets.set(target.name, new Directory(new Map([["Fixtures", fixtures]])));
-    } catch {
-      // This target has no Fixtures directory.
+    } catch (error) {
+      // Only a missing directory means "this target has no Fixtures"; a permission or I/O error
+      // must not quietly turn a fixture test back into an `.importFailed` (Kilo, #3138).
+      if (error.code !== "ENOENT") throw error;
     }
   }
   return targets;
