@@ -10,7 +10,7 @@ Tests/OCCTMathTests/CoordinateSystem3DTests.swift	Tests/OCCTMathTests/Coordinate
 Tests/OCCTMathTests/CoordinateSystemTests.swift	Tests/OCCTMathTests/CoordinateSystems/CoordinateSystemTests.swift	CoordinateSystems	-	gp_Ax1/Ax2/Ax3 placements, 3D coordinate systems and Z-up/Y-up conversion
 Tests/OCCTMathTests/Curve3DTransformTests.swift	Tests/OCCTMathTests/Transforms/Curve3DTransformTests.swift	Transforms	-	gp_Trsf/gp_GTrsf, Geom_Transformation, shape/curve/surface mirror, scale, translate and quaternion rotation
 Tests/OCCTMathTests/CylindricalSurfaceTests.swift	Tests/OCCTMathTests/GCMake/CylindricalSurfaceTests.swift	GCMake	-	GC_Make* constructors for circles, conics, trimmed cones and cylinders, and planes
-Tests/OCCTMathTests/DrawingCompositionTests.swift	Tests/OCCTMathTests/DrawingCompositionTests.swift	(stays)	-	tests Drawing views, bounds and DXF output, a Drawing subject, belongs to OCCTDrawingTests, tracked in #3190
+Tests/OCCTMathTests/DrawingCompositionTests.swift	Tests/OCCTDrawingTests/Projection/DrawingCompositionTests.swift	Projection	-	Drawing bounds, transformed drawings and their DXF output
 Tests/OCCTMathTests/EigenValuesTests.swift	Tests/OCCTMathTests/LinearAlgebra/EigenValuesTests.swift	LinearAlgebra	-	math_Matrix and its decompositions (Gauss, Crout, SVD, Jacobi, Householder), eigenvalues, least squares and their argument guards
 Tests/OCCTMathTests/ElCLibTests.swift	Tests/OCCTMathTests/GpPrimitives/ElCLibTests.swift	GpPrimitives	-	gp_Dir, gp_Vec and 2D/3D vector math, ElCLib/ElSLib evaluation, line and plane analytics
 Tests/OCCTMathTests/ElSLibTests.swift	Tests/OCCTMathTests/GpPrimitives/ElSLibTests.swift	GpPrimitives	-	gp_Dir, gp_Vec and 2D/3D vector math, ElCLib/ElSLib evaluation, line and plane analytics
@@ -43,11 +43,11 @@ Tests/OCCTMathTests/GeomLibToolTests.swift	Tests/OCCTMathTests/GeomLib/GeomLibTo
 Tests/OCCTMathTests/GeomPoint3DTests.swift	Tests/OCCTMathTests/GeomPrimitives/GeomPoint3DTests.swift	GeomPrimitives	-	Geom_Direction, Geom_CartesianPoint and Geom_Vector handles
 Tests/OCCTMathTests/GeomTransformationTests.swift	Tests/OCCTMathTests/Transforms/GeomTransformationTests.swift	Transforms	-	gp_Trsf/gp_GTrsf, Geom_Transformation, shape/curve/surface mirror, scale, translate and quaternion rotation
 Tests/OCCTMathTests/GeomVector3DTests.swift	Tests/OCCTMathTests/GeomPrimitives/GeomVector3DTests.swift	GeomPrimitives	-	Geom_Direction, Geom_CartesianPoint and Geom_Vector handles
-Tests/OCCTMathTests/GeometryConstructionTests.swift	Tests/OCCTMathTests/GeometryConstructionTests.swift	(stays)	-	tests Shape.face/extrude from wires, a Modeling subject; belongs to OCCTModelingTests, tracked in #3189
+Tests/OCCTMathTests/GeometryConstructionTests.swift	Tests/OCCTModelingTests/Construction/GeometryConstructionTests.swift	Construction	-	Shape.face and extrude from wires
 Tests/OCCTMathTests/GpDirExtrasTests.swift	Tests/OCCTMathTests/GpPrimitives/GpDirExtrasTests.swift	GpPrimitives	-	gp_Dir, gp_Vec and 2D/3D vector math, ElCLib/ElSLib evaluation, line and plane analytics
 Tests/OCCTMathTests/GpVecExtrasTests.swift	Tests/OCCTMathTests/GpPrimitives/GpVecExtrasTests.swift	GpPrimitives	-	gp_Dir, gp_Vec and 2D/3D vector math, ElCLib/ElSLib evaluation, line and plane analytics
 Tests/OCCTMathTests/HyperbolaThreePointsTests.swift	Tests/OCCTMathTests/GCMake/HyperbolaThreePointsTests.swift	GCMake	-	GC_Make* constructors for circles, conics, trimmed cones and cylinders, and planes
-Tests/OCCTMathTests/IntegrationPrecisionExtremesTests.swift	Tests/OCCTMathTests/IntegrationPrecisionExtremesTests.swift	(stays)	-	shape booleans at micro and macro scale, an Integration subject, belongs to OCCTIntegrationTests, tracked in #3191
+Tests/OCCTMathTests/IntegrationPrecisionExtremesTests.swift	Tests/OCCTIntegrationTests/Measurements/IntegrationPrecisionExtremesTests.swift	Measurements	-	booleans at micro and macro scale
 Tests/OCCTMathTests/IntrvIntervalTests.swift	Tests/OCCTMathTests/Utilities/IntrvIntervalTests.swift	Utilities	-	Precision, Quantity_Period, Intrv intervals and GeomLib_LogSample
 Tests/OCCTMathTests/IntrvIntervalsTests.swift	Tests/OCCTMathTests/Utilities/IntrvIntervalsTests.swift	Utilities	-	Precision, Quantity_Period, Intrv intervals and GeomLib_LogSample
 Tests/OCCTMathTests/Issue1443Ax3EmptyCatchTests.swift	Tests/OCCTMathTests/CoordinateSystems/Issue1443Ax3EmptyCatchTests.swift	CoordinateSystems	-	gp_Ax1/Ax2/Ax3 placements, 3D coordinate systems and Z-up/Y-up conversion
