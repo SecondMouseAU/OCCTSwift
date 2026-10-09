@@ -77,7 +77,7 @@ calculation): with the pre-fix tolerance, the fixture's poisoned auto-density re
 fast; with the fixed tolerance, it correctly excludes the sliver and generates 5002 points, fast
 (not the billions the `theDensity`/`0.0` combination would produce -- this reproducer
 deliberately uses a small non-zero density, `2e-8`, for exactly the reason
-`Tests/OCCTTopologyTests/Issue1440PointCloudToleranceTests.swift` documents).
+`Tests/OCCTTopologyTests/BRepLib/Issue1440PointCloudToleranceTests.swift` documents).
 
 A companion probe (`(int)std::ceil(1.0/0.0)` in isolation) confirmed the `INT_MAX`-saturation
 behavior on this platform before this file was written; not kept here since it's a two-line

@@ -85,7 +85,7 @@ a box, not 24), so that is the answer all of it gives now. `occtMapSubShapes` in
 `OCCTBridge_Internal.h` is the one enumeration; the six `TopExp_Explorer` entry points behind
 `solids`/`shells`/`wires` are gone, as is `OCCTShapeGetEdgeCount`, an explorer count with no caller
 that disagreed with `OCCTShapeGetTotalEdgeCount`. Cross-checks live in
-`Tests/OCCTTopologyTests/Issue502SubShapeTraversalTests.swift`.
+`Tests/OCCTTopologyTests/SubShapes/Issue502SubShapeTraversalTests.swift`.
 
 Not an upstream defect (both OCCT primitives behave as documented), so nothing to file or patch.
 `Shape.faces()` is still an explorer walk and is filed separately as #541.

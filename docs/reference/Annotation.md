@@ -1676,7 +1676,7 @@ Carried patch `0029` fixes the kernel read, and the pinned asset carries it from
 wrong answer that was never guarded because it never crashed: a datum written with plane
 location `(6,6,6)` and point `(7,7,7)` read back with point `(6,7,7)`.
 
-`Tests/OCCTXCAFTests/Issue1030DatumLookupGuardTests.swift` holds the regression. It kept its name
+`Tests/OCCTXCAFTests/GDT/Issue1030DatumLookupGuardTests.swift` holds the regression. It kept its name
 and its fixtures from when it asserted the refusal and flipped its assertions, which is the only way
 a guard's retirement can be regression tested: a test that merely stops existing proves nothing.
 Re-introduce the guard and that suite goes red.

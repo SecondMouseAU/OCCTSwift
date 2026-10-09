@@ -48,7 +48,7 @@ ordinary caller would see:
   is #502's own box measurement (24 edge occurrences over 12 distinct, 48 vertex occurrences over
   8 distinct) and it needs no compound at all.
 - **`splitBoxCompound(order:)`** ("vertical-cut fixture", `compoundA`/`compoundB` below), the
-  *exact* construction `Tests/OCCTTopologyTests/Issue614FaceOrientationTests.swift` already uses
+  *exact* construction `Tests/OCCTTopologyTests/Faces/Issue614FaceOrientationTests.swift` already uses
   and has coverage for: a 20×10×10 block cut by an upright plane, recompounded in two member
   orders. Measured here at 11 distinct faces / 12 occurrences, matching that test file exactly.
 - **`horizontalSplitBoxCompound(order:)`** ("horizontal-cut fixture", `hCompoundA`/`hCompoundB`
