@@ -1,4 +1,4 @@
-// Kernel parity probe for Tests/OCCTAnalysisTests/MassPropertiesTests.swift (#1729-#1732).
+// Kernel parity probe for Tests/OCCTAnalysisTests/MassProperties/MassPropertiesTests.swift (#1729-#1732).
 // Same inputs as the tests: Wire.rectangle(10, 10) is four BRepBuilderAPI_MakeEdge segments around
 // (+-5, +-5, 0) (OCCTWireCreateRectangle); Shape.box(10,10,10) is BRepPrimAPI_MakeBox from
 // (-5,-5,-5). The bridge reads BRepGProp::LinearProperties for the wire and

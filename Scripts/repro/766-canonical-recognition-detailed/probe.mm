@@ -1,4 +1,4 @@
-// Kernel parity probe for Tests/OCCTAnalysisTests/CanonicalRecognitionDetailedTests.swift
+// Kernel parity probe for Tests/OCCTAnalysisTests/ShapeAnalysis/CanonicalRecognitionDetailedTests.swift
 // (#1859-#1862). Mirrors OCCTShapeRecognizeCanonicalSurface (IsPlane -> IsCylinder -> IsCone ->
 // IsSphere, ClearStatus() between) and OCCTShapeRecognizeCanonicalCurve (IsLine -> ...), both at
 // the Swift default tolerance 0.01, on the sub-shapes the tests pick: subShapes(ofType:) is

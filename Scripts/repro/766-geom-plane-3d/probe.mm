@@ -1,4 +1,4 @@
-// Kernel parity probe for Tests/OCCTAnalysisTests/GeomPlane3DTests.swift (#1863-#1866).
+// Kernel parity probe for Tests/OCCTAnalysisTests/GeomProperties/GeomPlane3DTests.swift (#1863-#1866).
 // Surface.plane(origin: (0,0,2), normal: +Z) is GC_MakePlane(gp_Pnt, gp_Dir) in
 // OCCTSurfacePlaneFromPointNormal; the four getters are Geom_Plane::Coefficients, UIso, VIso, Pln.
 #include <GC_MakePlane.hxx>

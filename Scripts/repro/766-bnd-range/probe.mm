@@ -1,4 +1,4 @@
-// Kernel-parity probe for Tests/OCCTAnalysisTests/BndRangeTests.swift (#1837-#1842).
+// Kernel-parity probe for Tests/OCCTAnalysisTests/Bounding/BndRangeTests.swift (#1837-#1842).
 // Drives Bnd_Range through the same calls, with the same inputs, that the OCCTRange* bridge
 // functions make for each test, and prints every value the tests read.
 #include <Bnd_Range.hxx>

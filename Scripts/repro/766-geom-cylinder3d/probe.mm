@@ -1,4 +1,4 @@
-// Kernel-parity probe for Tests/OCCTAnalysisTests/GeomCylinder3DTests.swift (#1855-#1858).
+// Kernel-parity probe for Tests/OCCTAnalysisTests/GeomProperties/GeomCylinder3DTests.swift (#1855-#1858).
 // Builds the same Geom_CylindricalSurface OCCTSurfaceCreateCylinder builds
 // (gp_Ax3(origin, dir), radius) and prints every value the tests read.
 #include <Geom_CylindricalSurface.hxx>
