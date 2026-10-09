@@ -22,7 +22,9 @@ import Testing
 struct Issue3207FilletMeetingTests {
 
     /// The two edges of the box that run along Y on its top face, found by where they are.
-    private func topEdgesAlongY(_ box: Shape, width: Double, height: Double, length: Double) -> [Edge] {
+    private func topEdgesAlongY(_ box: Shape, width: Double, height: Double, length: Double)
+        -> [Edge]
+    {
         box.edges().filter { edge in
             let (a, b) = edge.endpoints
             let onTop = abs(a.z - height) < 1e-9 && abs(b.z - height) < 1e-9
@@ -87,17 +89,20 @@ struct Issue3207FilletMeetingTests {
         let edges = topEdgesAlongY(box, width: 4, height: 6, length: 10)
         #expect(edges.count == 2)
 
-        let oracle = volumeOfRoundedTop(width: 4, height: 6, length: 10, radius: 2)  // 222.8318530718
+        // 222.8318530718
+        let oracle = volumeOfRoundedTop(width: 4, height: 6, length: 10, radius: 2)
         var faceCounts = Set<Int>()
         var volumes = [Double]()
-        for _ in 0..<3 {  // deterministic across runs
+        // Three runs: the result must be deterministic.
+        for _ in 0..<3 {
             let result = try #require(box.filleted(edges: edges, radius: 2))
             #expect(result.isValid, "BRepCheck must accept the exactly-meeting result")
             #expect(result.solidCount == 1)
             #expect(result.shellCount == 1)
             faceCounts.insert(result.faces().count)
             volumes.append(try #require(result.volume))
-            let mesh = try #require(result.mesh(linearDeflection: 0.01), "the result must tessellate")
+            let mesh = try #require(
+                result.mesh(linearDeflection: 0.01), "the result must tessellate")
             #expect(mesh.triangleCount > 0)
         }
         #expect(faceCounts == [7])
