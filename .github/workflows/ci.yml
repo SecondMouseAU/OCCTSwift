@@ -595,6 +595,53 @@ jobs:
             echo "no .build restored, nothing to clear"
           fi
 
+      # The same argument applied to the per-target objects, which #2867's step does not reach.
+      # `restore-keys` above falls back to the newest cache entry of ANY branch, so a branch that
+      # lags `main` can restore a `.build` written against a newer tree. `swift build` recompiles
+      # what changed but never deletes an object whose source is gone, and the doc-snippet runner
+      # below links every `*.build/**/*.o` it finds (`check-doc-snippets.py`, `d.rglob('*.o')`).
+      # PR #3138, based on a branch 183 commits behind `main`, failed twice at that link with
+      # `_OCCTGPropsRelease` and the rest of GProps undefined: `GProps.swift.o` came from a
+      # `main` build and `GProps.swift` did not exist in the PR's tree.
+      #
+      # An object is an orphan when no file of that name (`Foo.swift.o` -> `Foo.swift`, and
+      # `Foo.mm.o` -> `Foo.mm` for the Clang targets) exists anywhere under that target's
+      # `Sources/<Target>` or `Tests/<Target>`. Deleting an object that was in fact wanted costs a
+      # recompile and nothing else, because llbuild rebuilds a command whose output is missing, so
+      # this can only be wrong in the safe direction. A target with neither directory (a
+      # dependency, a generated one) is left alone.
+      - name: Drop objects whose source file no longer exists (restored from another branch's cache)
+        run: |
+          python3 - <<'PY'
+          import os, pathlib
+          build = pathlib.Path('.build')
+          if not build.is_dir():
+              print('no .build restored, nothing to clear')
+              raise SystemExit(0)
+          removed = 0
+          for here, dirs, _files in os.walk(build):
+              depth = len(pathlib.Path(here).relative_to(build).parts)
+              if depth >= 6:
+                  dirs[:] = []
+                  continue
+              for name in list(dirs):
+                  if not name.endswith('.build'):
+                      continue
+                  dirs.remove(name)
+                  target = name[:-len('.build')]
+                  roots = [pathlib.Path(r) / target for r in ('Sources', 'Tests')]
+                  roots = [r for r in roots if r.is_dir()]
+                  if not roots:
+                      continue
+                  have = {f.name for r in roots for f in r.rglob('*') if f.is_file()}
+                  for obj in (pathlib.Path(here) / name).rglob('*.o'):
+                      if obj.name[:-2] not in have:
+                          print('orphan object, source gone:', obj)
+                          obj.unlink()
+                          removed += 1
+          print(f'dropped {removed} orphan object(s)')
+          PY
+
       - name: swift build
         run: swift build
 
