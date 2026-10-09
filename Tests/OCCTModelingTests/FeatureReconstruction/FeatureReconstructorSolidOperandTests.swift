@@ -67,7 +67,8 @@ struct Issue3174ReconstructorSolidOperandTests {
                     #expect(why.contains("left operand"), "\(op)")
                     #expect(why.contains("no solid"), "\(op)")
                 } else {
-                    Issue.record("\(op): expected underDetermined, got \(String(describing: skip?.reason))")
+                    let got = String(describing: skip?.reason)
+                    Issue.record("\(op): expected underDetermined, got \(got)")
                 }
             }
         }
