@@ -98,7 +98,7 @@ preserves the original shape except where pulled by the constraints. Not a displ
 summing the plates, so it returns the deformed point rather than an offset from the input, which
 is what the `nlPlateDerivative` entry below spells out. (#811)
 
-- **Parameters:** `constraints`, array of `(uv, target)` pairs (non-empty); `resolutionOrder`, the plate's resolution order, 2 through 9; `tolerance`, the sampling density between the constraints (a tighter value samples more finely, at most 80 nodes per direction); it does not bound the error between samples.
+- **Parameters:** `constraints`, array of `(uv, target)` pairs (non-empty); `resolutionOrder`, the plate's resolution order, 2 through 9; `tolerance`, the sampling density between the constraints (a tighter value samples more finely: 20 nodes per direction at 0.1, 63 at 1e-3, at most 80); it does not bound the error between samples.
 - **Returns:** New deformed surface, or `nil` if the array is empty, `resolutionOrder` is outside `2...9`, or the solver fails.
 - **OCCT:** `NLPlate_NLPlate` + `NLPlate_HPG0Constraint` + `Geom_RectangularTrimmedSurface` + `BSplCLib::Interpolate`.
 - **Example:**
@@ -141,7 +141,7 @@ Extends `nlPlateDeformed` by also constraining the partial derivatives (tangent 
 the U and V directions at each constraint point. Use to enforce tangency continuity at the
 constrained locations.
 
-- **Parameters:** `constraints`, array of `(uv, target, tangentU, tangentV)` tuples (non-empty); `resolutionOrder`, the plate's resolution order, 2 through 9; `tolerance`, the sampling density between the constraints (a tighter value samples more finely, at most 80 nodes per direction); it does not bound the error between samples.
+- **Parameters:** `constraints`, array of `(uv, target, tangentU, tangentV)` tuples (non-empty); `resolutionOrder`, the plate's resolution order, 2 through 9; `tolerance`, the sampling density between the constraints (a tighter value samples more finely: 20 nodes per direction at 0.1, 63 at 1e-3, at most 80); it does not bound the error between samples.
 - **Returns:** New deformed surface, or `nil` if the array is empty, `resolutionOrder` is outside `2...9`, or the solver fails.
 - **OCCT:** `NLPlate_NLPlate` + `NLPlate_HPG0G1Constraint` + `Plate_D1` + `Geom_RectangularTrimmedSurface` + `BSplCLib::Interpolate`.
 - **Note:** The returned parametrisation and working domain are as described for
@@ -1111,7 +1111,7 @@ neither does `Solve()`. `IncrementalSolve` does, but it is a different solver ra
 on this one, and it is wrapped separately as
 [`nlPlateDeformedIncremental(constraints:maxOrder:initConstraintOrder:nbIncrements:)`](#nlplatedeformedincrementalconstraintsmaxorderinitconstraintordernbincrements).
 
-- **Parameters:** `constraints`, array of constraint tuples (non-empty); `tolerance`, the sampling density between the constraints (a tighter value samples more finely, at most 80 nodes per direction); it does not bound the error between samples.
+- **Parameters:** `constraints`, array of constraint tuples (non-empty); `tolerance`, the sampling density between the constraints (a tighter value samples more finely: 20 nodes per direction at 0.1, 63 at 1e-3, at most 80); it does not bound the error between samples.
 - **Returns:** New deformed surface, or `nil` on failure.
 - **OCCT:** `NLPlate_NLPlate` + `NLPlate_HPG0G2Constraint` + `Plate_D1` + `Plate_D2` + `Geom_RectangularTrimmedSurface` + `BSplCLib::Interpolate`.
 - **Note:** The returned parametrisation and working domain are as described for
@@ -1148,7 +1148,7 @@ derivatives + 3 second derivatives + 4 third derivatives). Achieves G3-continuou
 
 There is no iteration count, for the same reason as `nlPlateDeformedG2(constraints:tolerance:)`.
 
-- **Parameters:** `constraints`, G0+G1+G2+G3 constraint tuples (non-empty); `tolerance`, the sampling density between the constraints (a tighter value samples more finely, at most 80 nodes per direction); it does not bound the error between samples.
+- **Parameters:** `constraints`, G0+G1+G2+G3 constraint tuples (non-empty); `tolerance`, the sampling density between the constraints (a tighter value samples more finely: 20 nodes per direction at 0.1, 63 at 1e-3, at most 80); it does not bound the error between samples.
 - **Returns:** New deformed surface, or `nil` on failure.
 - **OCCT:** `NLPlate_NLPlate` + `NLPlate_HPG0G3Constraint` + `Plate_D1` + `Plate_D2` + `Plate_D3` + `Geom_RectangularTrimmedSurface` + `BSplCLib::Interpolate`.
 - **Note:** The returned parametrisation and working domain are as described for

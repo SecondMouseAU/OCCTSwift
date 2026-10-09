@@ -703,7 +703,8 @@ static OCCTSurfaceRef occtNLPlateFitSolved(const NLPlate_NLPlate&          solve
   contactV.Init(0);
 
   // The largest displacement from the undeformed surface the samples may carry: a thousand times
-  // the largest displacement the caller asked for (at least 1 unit). Reached only where the plate
+  // the largest displacement the caller asked for (at least 1000 units, since the floor of 1 is
+  // scaled too). Reached only where the plate
   // is numerically meaningless; see the second finding above.
   double limit = 1.0;
   for (int32_t i = 0; i < constraintCount; i++)
