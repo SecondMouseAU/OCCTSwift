@@ -38,6 +38,9 @@
 #include <gp_Trsf.hxx>
 #include <gp_Ax1.hxx>
 #include <gp_Dir.hxx>
+#include <BRepLProp_SLProps.hxx>
+#include <Geom2d_Curve.hxx>
+#include <cmath>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -82,6 +85,35 @@ static void dumpFaces(const TopoDS_Shape& res)
       }
   }
 }
+// TANGENT=1: for every edge shared by two faces, the angle between the two faces' outward normals along the edge
+// (0 = tangent). Prints surface types (0 plane, 1 cylinder), min and max over 21 samples, and the edge length.
+static gp_Vec faceNormalAt(const TopoDS_Face& f, const TopoDS_Edge& e, double t)
+{
+  double a, b; Handle(Geom2d_Curve) pc = BRep_Tool::CurveOnSurface(e, f, a, b);
+  gp_Pnt2d uv = pc->Value(a + t * (b - a));
+  BRepLProp_SLProps pr(BRepAdaptor_Surface(f), uv.X(), uv.Y(), 1, 1e-9);
+  gp_Vec n(pr.Normal());
+  if (f.Orientation() == TopAbs_REVERSED) n.Reverse();
+  return n;
+}
+static void tangencyReport(const TopoDS_Shape& res)
+{
+  TopTools_IndexedDataMapOfShapeListOfShape em; TopExp::MapShapesAndAncestors(res, TopAbs_EDGE, TopAbs_FACE, em);
+  for (int i = 1; i <= em.Extent(); ++i)
+  {
+    const TopoDS_Edge& e = TopoDS::Edge(em.FindKey(i));
+    if (BRep_Tool::Degenerated(e) || em.FindFromIndex(i).Extent() != 2) continue;
+    TopoDS_Face f1 = TopoDS::Face(em.FindFromIndex(i).First()), f2 = TopoDS::Face(em.FindFromIndex(i).Last());
+    double mn = 1e9, mx = -1;
+    for (int k = 0; k <= 20; ++k)
+    {
+      gp_Vec n1 = faceNormalAt(f1, e, k / 20.), n2 = faceNormalAt(f2, e, k / 20.);
+      double ang = n1.Angle(n2) * 180. / M_PI; mn = std::min(mn, ang); mx = std::max(mx, ang);
+    }
+    GProp_GProps p; BRepGProp::LinearProperties(e, p);
+    printf("  EDGE types=(%d,%d) normal_angle_deg min=%.9f max=%.9f length=%.6f\n", (int)BRepAdaptor_Surface(f1).GetType(), (int)BRepAdaptor_Surface(f2).GetType(), mn, mx, p.Mass());
+  }
+}
 static void report(const char* tag, bool done, int nfaulty, const TopoDS_Shape& res)
 {
   bool valid = false; double vol = -1; int nf = 0;
@@ -91,8 +123,9 @@ static void report(const char* tag, bool done, int nfaulty, const TopoDS_Shape& 
     GProp_GProps p; BRepGProp::VolumeProperties(res, p); vol = p.Mass();
     for (TopExp_Explorer e(res, TopAbs_FACE); e.More(); e.Next()) ++nf;
   }
-  printf("RESULT %s done=%d faulty=%d valid=%d vol=%.9f faces=%d\n", tag, (int)done, nfaulty, (int)valid, vol, nf);
+  printf("RESULT %s done=%d faulty=%d valid=%d vol=%.15g faces=%d\n", tag, (int)done, nfaulty, (int)valid, vol, nf);
   if (!res.IsNull() && getenv("DUMP")) dumpFaces(res);
+  if (!res.IsNull() && getenv("TANGENT")) tangencyReport(res);
   if (!res.IsNull() && getenv("CHECKS"))
   {
     // closedness: every non-degenerate edge borders exactly two faces (counting a seam twice via orientation)
