@@ -7,7 +7,9 @@ import simd
 // MARK: - Face Surface Properties Tests (v0.18.0)
 
 /// Every expected value below is the pinned kernel's own answer for the same input, measured by
-/// `Scripts/repro/766-face-surface-properties/probe.mm` (transcript alongside it). Before #766 these
+/// `Scripts/repro/766-face-surface-properties/probe.mm` (transcript alongside it).
+///
+/// Before #766 these
 /// tests asserted only `!= nil`, `uMax > uMin`, a largest normal component above 0.99, or curvature
 /// magnitudes, so a bridge that swapped u for v, dropped the face-orientation reversal, negated a
 /// curvature or returned `kMax` as `kMin` passed all of them.

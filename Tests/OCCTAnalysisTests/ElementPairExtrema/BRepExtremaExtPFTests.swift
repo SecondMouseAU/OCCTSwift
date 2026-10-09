@@ -7,6 +7,7 @@ import simd
 @Suite("BRepExtrema ExtPF Tests")
 struct BRepExtremaExtPFTests {
     /// The box is centred on the origin, so (5, 5, 15) sits 10 above the top face's corner.
+    ///
     /// `BRepExtrema_ExtPF` finds a perpendicular foot only on the two faces normal to z: the top
     /// at distance 10 and the bottom at 20, both at that same (x, y). The four side faces are
     /// parallel to the line of sight and report no extremum. Probed per face in

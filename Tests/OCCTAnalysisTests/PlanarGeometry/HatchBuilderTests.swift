@@ -33,7 +33,9 @@ struct HatchBuilderTests {
         #expect(hatcher.nbLines == 2)
     }
 
-    /// The hatcher is unoriented, so an interval needs a pair of crossings. A closed square
+    /// The hatcher is unoriented, so an interval needs a pair of crossings.
+    ///
+    /// A closed square
     /// from (-1, -1) to (11, 11) crosses each of the three vertical lines twice and leaves one
     /// interval on each; an untrimmed line has none. The earlier form trimmed with a single
     /// diagonal segment, one crossing per line and so zero intervals, and asserted `nInt >= 0`,

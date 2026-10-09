@@ -110,7 +110,8 @@ struct PointProjectionTests {
             #expect(proj != nil)
             if let p = proj {
                 #expect(p.distance > 0)
-                #expect(abs(p.distance - 2.0.squareRoot()) < 1e-9)  // the offset's component across the edge
+                // the offset's component across the edge
+                #expect(abs(p.distance - 2.0.squareRoot()) < 1e-9)
             }
         }
     }

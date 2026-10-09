@@ -86,7 +86,9 @@ struct BRepExtremaExtCFTests {
         }
         #expect(result.solutionCount == 1)
         #expect(abs(result.distance - (250.0).squareRoot()) < 1e-9, "got \(result.distance)")
-        #expect(simd_length(result.pointOnEdge - SIMD3(-5, 0, 5)) < 1e-6, "got \(result.pointOnEdge)")
-        #expect(simd_length(result.pointOnFace - SIMD3(0, 0, 20)) < 1e-9, "got \(result.pointOnFace)")
+        #expect(
+            simd_length(result.pointOnEdge - SIMD3(-5, 0, 5)) < 1e-6, "got \(result.pointOnEdge)")
+        #expect(
+            simd_length(result.pointOnFace - SIMD3(0, 0, 20)) < 1e-9, "got \(result.pointOnFace)")
     }
 }

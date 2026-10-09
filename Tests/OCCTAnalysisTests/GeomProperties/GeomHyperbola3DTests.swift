@@ -6,7 +6,9 @@ import simd
 
 /// Every expectation is pinned to the value `Geom_Hyperbola` itself reports for A = 5, B = 3 in
 /// the XY plane (`Scripts/repro/766-geom-hyperbola/transcript.txt`), where c = sqrt(A^2 + B^2) =
-/// sqrt(34). The earlier eccentricity, focal and focus tests asserted only a sign (`> 1`, `> 0`,
+/// sqrt(34).
+///
+/// The earlier eccentricity, focal and focus tests asserted only a sign (`> 1`, `> 0`,
 /// `x > 0`), which a wrong formula such as `Focal = 2A` satisfies, and every test sat inside
 /// `if let`, so a factory returning nil passed them all (#766).
 @Suite("Geom_Hyperbola Properties")

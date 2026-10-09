@@ -18,7 +18,9 @@ struct BndSphereTests {
     }
 
     /// `Bnd_Sphere::Distance` measures from the centre, not from the surface: the point 10 units
-    /// from the centre of a radius-5 sphere is at distance 10, not 5 (probed). The second point
+    /// from the centre of a radius-5 sphere is at distance 10, not 5 (probed).
+    ///
+    /// The second point
     /// is off-axis so that a bridge dropping a coordinate is caught too.
     @Test func distanceToPoint() {
         let s = BoundingSphere(center: .zero, radius: 5)
@@ -49,7 +51,9 @@ struct BndSphereTests {
     }
 
     /// Two radius-5 spheres centred 10 apart merge into the radius-10 sphere centred between
-    /// them (probed). Before #766 this asserted `radius >= 5`, which the unmerged sphere already
+    /// them (probed).
+    ///
+    /// Before #766 this asserted `radius >= 5`, which the unmerged sphere already
     /// satisfies, so an `add` that did nothing passed.
     @Test func addMerge() {
         let s1 = BoundingSphere(center: SIMD3(0, 0, 0), radius: 5)

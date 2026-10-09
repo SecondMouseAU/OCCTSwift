@@ -34,7 +34,9 @@ struct BRepExtremaExtPCTests {
     }
 
     /// The earlier form sat inside `if let result`, so an entry point that returned nil for this
-    /// edge passed it (#766). Values probed in `Scripts/repro/766-brepextrema-extpc/transcript.txt`.
+    /// edge passed it (#766).
+    ///
+    /// Values probed in `Scripts/repro/766-brepextrema-extpc/transcript.txt`.
     @Test("Point to wire edge, known distance")
     func pointToWireEdge() throws {
         // Use a wire from (0,0,0) to (10,0,0), single edge

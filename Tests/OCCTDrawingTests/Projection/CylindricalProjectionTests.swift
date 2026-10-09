@@ -41,7 +41,9 @@ struct CylindricalProjectionTests {
             Issue.record("projection has no bounding box")
             return
         }
-        expectBox(bb, min: SIMD3(1.9999999, 1.9999999, -2.5000001), max: SIMD3(5.0000001, 5.0000001, 2.5000001))
+        expectBox(
+            bb, min: SIMD3(1.9999999, 1.9999999, -2.5000001),
+            max: SIMD3(5.0000001, 5.0000001, 2.5000001))
     }
 
     @Test("Project edge onto sphere")
@@ -65,6 +67,8 @@ struct CylindricalProjectionTests {
             Issue.record("projection has no bounding box")
             return
         }
-        expectBox(bb, min: SIMD3(-3.0000001, -1.00000001e-7, -10.0000001), max: SIMD3(3.0000001, 1.00000001e-7, 10.0000001))
+        expectBox(
+            bb, min: SIMD3(-3.0000001, -1.00000001e-7, -10.0000001),
+            max: SIMD3(3.0000001, 1.00000001e-7, 10.0000001))
     }
 }
