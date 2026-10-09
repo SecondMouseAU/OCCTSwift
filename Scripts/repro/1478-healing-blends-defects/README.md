@@ -48,7 +48,7 @@ pentagonA-r1.0 (NEW bridge logic): originalEdges=5 resultEdges=5 anyFailed=1    
 The OLD logic hands back a 9-edge partial result (4 of 5 corners filleted) instead of the documented
 "original wire if some failed" fallback. The NEW logic (`bool anyFailed`, checked per iteration)
 correctly falls back to the unmodified 5-edge wire. Transcribed into
-`Tests/OCCTGeom2dTests/Wire2DFilletTests.swift`'s `filletAllFallsBackOnMidLoopFailure`.
+`Tests/OCCTGeom2dTests/Fillets/Wire2DFilletTests.swift`'s `filletAllFallsBackOnMidLoopFailure`.
 
 The same `Status()`-read-once shape existed in `OCCTWireChamferAll2D` and got the identical
 `anyFailed` fix; `find_chamfer_fixture.mm`'s fixture happens not to exercise a mid-loop chamfer
@@ -87,4 +87,4 @@ NEW chamfer logic: anyFailed=0 resultEdgeCount=8 (origEdges=4)                  
 
 Pairing by `BRepTools_WireExplorer` order instead finds all 4 real adjacent pairs
 (`BC,CD`/`CD,DA`/`DA,AB`/`AB,BC`) and chamfers every corner. Transcribed into
-`Tests/OCCTGeom2dTests/Wire2DChamferTests.swift`'s `chamferAllUsesWireConnectionOrderNotMapOrder`.
+`Tests/OCCTGeom2dTests/Fillets/Wire2DChamferTests.swift`'s `chamferAllUsesWireConnectionOrderNotMapOrder`.

@@ -96,7 +96,7 @@ naming the surviving function, matching the idiom #500 established and #506 used
 last pre-bounded arc-length call site in the bridge. `Curve2D.arcLength(from:to:)` now delegates to
 `length(from:to:)`, the shape `Curve3D.arcLength(from:to:)` has had since #408.
 
-`Tests/OCCTGeom2dTests/Issue549Curve2DArcLengthRangeTests.swift` pins the divergent ranges, checks
+`Tests/OCCTGeom2dTests/CurveProperties/Issue549Curve2DArcLengthRangeTests.swift` pins the divergent ranges, checks
 the clamping against a chord-sum reference rather than against the implementation's own answer for
 the whole domain, and compares the 2D answers against the 3D ones on the same points in the z = 0
 plane. Verified by injection: restoring the pre-bounded call reproduces this probe's figures
