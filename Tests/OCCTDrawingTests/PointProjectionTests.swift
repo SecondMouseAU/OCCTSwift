@@ -6,6 +6,10 @@ import simd
 
 // MARK: - Point Projection Tests (v0.18.0)
 
+// #766: tolerances tightened from 0.01 / 0.1 / 0.5 (and `distance < 3`) to 1e-9, since
+// GeomAPI_ProjectPointOnSurf / GeomAPI_ProjectPointOnCurve return these values exactly on the
+// pinned kernel (Scripts/repro/766-drawing-pointproj-polyhlr/transcript.txt); a projection off by
+// a few hundredths used to pass. `allProjections` of the box face now pins its single result.
 @Suite("Point Projection Tests")
 struct PointProjectionTests {
 
@@ -29,8 +33,8 @@ struct PointProjectionTests {
             let proj = face.project(point: SIMD3(0, 0, 15))
             #expect(proj != nil)
             if let p = proj {
-                #expect(abs(p.point.z - 5.0) < 0.01)
-                #expect(abs(p.distance - 10.0) < 0.01)
+                #expect(abs(p.point.z - 5.0) < 1e-9)
+                #expect(abs(p.distance - 10.0) < 1e-9)
             }
         }
     }
@@ -47,11 +51,11 @@ struct PointProjectionTests {
         let proj = face.project(point: SIMD3(10, 0, 0))
         #expect(proj != nil)
         if let p = proj {
-            #expect(abs(p.distance - 5.0) < 0.1)
+            #expect(abs(p.distance - 5.0) < 1e-9)
             // Closest point should be on the sphere at (5,0,0)
-            #expect(abs(p.point.x - 5.0) < 0.1)
-            #expect(abs(p.point.y) < 0.1)
-            #expect(abs(p.point.z) < 0.1)
+            #expect(abs(p.point.x - 5.0) < 1e-9)
+            #expect(abs(p.point.y) < 1e-9)
+            #expect(abs(p.point.z) < 1e-9)
         }
     }
 
@@ -74,9 +78,9 @@ struct PointProjectionTests {
         if let face = topFace {
             // Project a point above the face - should get at least one result
             let projs = face.allProjections(of: SIMD3(0, 0, 15))
-            #expect(!projs.isEmpty)
+            #expect(projs.count == 1)
             if let first = projs.first {
-                #expect(abs(first.distance - 10.0) < 0.1)
+                #expect(abs(first.distance - 10.0) < 1e-9)
             }
         }
     }
@@ -106,7 +110,7 @@ struct PointProjectionTests {
             #expect(proj != nil)
             if let p = proj {
                 #expect(p.distance > 0)
-                #expect(p.distance < 3.0)  // should be reasonably close
+                #expect(abs(p.distance - 2.0.squareRoot()) < 1e-9)  // the offset's component across the edge
             }
         }
     }
@@ -147,7 +151,7 @@ struct PointProjectionTests {
             let proj = edge.project(point: offset)
             #expect(proj != nil)
             if let p = proj {
-                #expect(abs(p.distance - 3.0) < 0.5)
+                #expect(abs(p.distance - 3.0) < 1e-9)
             }
         }
     }
