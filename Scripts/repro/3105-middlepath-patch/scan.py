@@ -15,7 +15,7 @@ if len(sys.argv) > 2:
 for shape, n in shapes.items():
     for i, j in itertools.combinations_with_replacement(range(n), 2):
         try:
-            r = subprocess.run([probe, "pair", shape, str(i), str(j)], capture_output=True, text=True, timeout=60)
+            r = subprocess.run([probe, "pair", shape, str(i), str(j)], capture_output=True, text=True, timeout=int(__import__("os").environ.get("PAIR_TIMEOUT","60")))
         except subprocess.TimeoutExpired:
             print(f"{shape} {i} {j} exit=124 (timeout)", flush=True)
             continue

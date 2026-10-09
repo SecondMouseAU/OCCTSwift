@@ -36,6 +36,11 @@
 #include <Poly_Triangulation.hxx>
 #include <TopoDS_Face.hxx>
 #include <TopLoc_Location.hxx>
+#include <BRepCheck_Analyzer.hxx>
+#include <Geom_Plane.hxx>
+#include <TopoDS_Wire.hxx>
+#include <BRepClass_FaceClassifier.hxx>
+#include <BRepClass3d_SolidClassifier.hxx>
 #include <cstdio>
 #include <vector>
 #include <string>
@@ -43,6 +48,20 @@
 #include <csignal>
 #include <execinfo.h>
 #include <unistd.h>
+
+// THROWTRACE=1: print the stack of every C++ throw (dyld interpose of __cxa_throw), to find where a
+// pair's exception comes from.
+#include <dlfcn.h>
+#include <typeinfo>
+extern "C" void __cxa_throw(void*, std::type_info*, void (*)(void*));
+static void tracedThrow(void* e, std::type_info* t, void (*d)(void*))
+{
+  if (getenv("THROWTRACE")) { void* fr[30]; int n = backtrace(fr, 30); fprintf(stderr, "THROW %s\n", t->name()); backtrace_symbols_fd(fr, n, 2); }
+  typedef void (*Fn)(void*, std::type_info*, void (*)(void*));
+  ((Fn)dlsym(RTLD_NEXT, "__cxa_throw"))(e, t, d);
+  __builtin_unreachable();
+}
+__attribute__((used)) static struct { const void* r; const void* o; } interposeThrow[] __attribute__((section("__DATA,__interpose"))) = {{(const void*)tracedThrow, (const void*)__cxa_throw}};
 
 static void onSegv(int sig)
 {
@@ -237,6 +256,52 @@ static PathReplay replayPaths(const TopoDS_Shape& shape, const TopoDS_Shape& a, 
   return R;
 }
 
+
+// #3105 validation of a returned path: valid, connected, ends at the centroids of the two sections
+// (the plane of each section when it has one), length against the straight chord between them.
+static void sectionCentroid(const TopoDS_Shape& face, gp_Pnt& c, occ::handle<Geom_Plane>& pl, bool& inFaceOut, const gp_Pnt* probe)
+{
+  TopoDS_Wire w = BRepTools::OuterWire(TopoDS::Face(face));
+  BRepBuilderAPI_MakeFace mf(w, true);
+  GProp_GProps p;
+  pl.Nullify();
+  if (mf.IsDone()) { BRepGProp::SurfaceProperties(mf.Face(), p); pl = occ::down_cast<Geom_Plane>(BRep_Tool::Surface(mf.Face())); }
+  else BRepGProp::LinearProperties(w, p);
+  c = p.CentreOfMass();
+  inFaceOut = false;
+  if (mf.IsDone() && probe) {
+    BRepClass_FaceClassifier fc(mf.Face(), *probe, 1e-6);
+    inFaceOut = fc.State() == TopAbs_IN || fc.State() == TopAbs_ON;
+  }
+}
+static void checkResult(const TopoDS_Shape& solid, const TopoDS_Shape& a, const TopoDS_Shape& b, const TopoDS_Shape& res)
+{
+  BRepCheck_Analyzer ana(res);
+  int ne = 0, walked = 0;
+  for (TopExp_Explorer e(res, TopAbs_EDGE); e.More(); e.Next()) ne++;
+  if (res.ShapeType() == TopAbs_WIRE) for (BRepTools_WireExplorer we(TopoDS::Wire(res)); we.More(); we.Next()) walked++;
+  TopoDS_Vertex v0, v1; TopExp::Vertices(TopoDS::Wire(res), v0, v1);
+  gp_Pnt p0 = BRep_Tool::Pnt(v0), p1 = BRep_Tool::Pnt(v1), ca, cb;
+  occ::handle<Geom_Plane> pa, pb; bool ina, inb;
+  sectionCentroid(a, ca, pa, ina, &p0); sectionCentroid(b, cb, pb, inb, &p1);
+  GProp_GProps lp; BRepGProp::LinearProperties(res, lp);
+  // 25 samples per edge of the path, classified against the solid: a middle path lies inside it
+  int nSamples = 0, nOut = 0;
+  for (TopExp_Explorer e(res, TopAbs_EDGE); e.More(); e.Next())
+  {
+    BRepAdaptor_Curve c(TopoDS::Edge(e.Current()));
+    for (int k = 0; k <= 24; k++, nSamples++)
+    {
+      gp_Pnt p = c.Value(c.FirstParameter() + (c.LastParameter() - c.FirstParameter()) * k / 24.0);
+      BRepClass3d_SolidClassifier sc(solid, p, 1e-6);
+      if (sc.State() == TopAbs_OUT) nOut++;
+    }
+  }
+  printf("   CHECK out=%d/%d type=%d valid=%d connected=%d edges=%d p0=%.6f,%.6f,%.6f p1=%.6f,%.6f,%.6f d0=%.2e d1=%.2e plane0=%.2e plane1=%.2e in0=%d in1=%d chord=%.6f length=%.6f",
+    nOut, nSamples, (int)res.ShapeType(), (int)ana.IsValid(), (int)(ne == walked), ne, p0.X(), p0.Y(), p0.Z(), p1.X(), p1.Y(), p1.Z(),
+    p0.Distance(ca), p1.Distance(cb), pa.IsNull() ? -1.0 : pa->Pln().Distance(p0), pb.IsNull() ? -1.0 : pb->Pln().Distance(p1), (int)ina, (int)inb, ca.Distance(cb), lp.Mass());
+}
+
 // pair mode: probe pair <shape> <i> <j> : reports vertices/edges shared by the OUTER WIRES, then runs
 static int pairMode(const char* n, int i, int j)
 {
@@ -271,6 +336,7 @@ static int pairMode(const char* n, int i, int j)
     int ne = 0; for (TopExp_Explorer e(builder.Shape(), TopAbs_EDGE); e.More(); e.Next()) ne++;
     gp_Pnt c = lp.CentreOfMass();
     printf(" edges=%d length=%.6f centre=%.6f,%.6f,%.6f", ne, lp.Mass(), c.X(), c.Y(), c.Z());
+    if (getenv("CHECK")) checkResult(s, a, b, builder.Shape());
     if (const char* d = getenv("DUMPDIR")) {
       char f[512];
       snprintf(f, sizeof f, "%s/%s_%d_%d_path.brep", d, n, i, j); BRepTools::Write(builder.Shape(), f);

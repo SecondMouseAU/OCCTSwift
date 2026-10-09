@@ -3402,106 +3402,141 @@ and torus, with a GTest of its own then, since upstream's reviewers ask for one 
 
 **Retire** once the bundled OCCT includes this fix.
 
-## 0058-BRepOffsetAPI_MiddlePath-Build-refuses-a-path-it-cannot-sweep-3105.patch
+## 0058-BRepOffsetAPI_MiddlePath-Build-carries-a-vertex-path-forward-3105.patch
 
-**`BRepOffsetAPI_MiddlePath::Build` reads past the end of a path, casts a bare vertex of a path to an
-edge and hands a null face to `BRep_Tool::CurveOnSurface` for a pair of faces that are not the two ends
-of a pipe, and aborts the process**
+**`BRepOffsetAPI_MiddlePath::Build` casts a path that has already reached a vertex to an edge, reads
+past the end of a path, hands a null face to `BRep_Tool::CurveOnSurface` and, for a sweep that never
+reaches the end section, never ends; it aborts the process or runs on**
 ([#3105](https://github.com/SecondMouseAU/OCCTSwift/issues/3105)). `Scripts/repro/3105-middlepath-patch/`
-holds the probe, the scan, both transcripts and the review images.
+holds the probe, the scan, the validation, the transcripts and the review images.
 
-`Build()` starts one path per vertex of the start section and marches it along the edges of the solid,
-away from the start wire, until it reaches a vertex of the end section. It then builds one section per
-level by reading level `i` of two neighbouring paths, joining them by an edge of the solid or by a new
-edge on the face that holds both. That is a pipe: every path reaches the end section after the same
-walk. For two faces that are not the ends of a pipe the paths run round a ring of other faces, stop at a
-vertex with several ways on, or never meet the end faces, and nothing in the section loop checks. #3098
-refused the pairs that share a vertex in the bridge; the 196 pairs of 16 solids that share none and are
-not the same face (`scan.py`, one process per pair, against `v4.0.0-kernel.5`) give 116 aborts, 37
-exceptions the bridge already catches and 43 that return normally. The faulting line of each of the 116
-(`fault-sites.py`, `dwarfdump` on the `-g` object that the probe links ahead of the archive) falls in
-three places:
+`Build()` starts one path per vertex of the start section along the edges of the solid, away from the
+start wire, and builds one section per level from level `i` of two neighbouring paths, joining them by
+an edge of the solid or by a new edge on the face that holds both. A path that reaches the end section
+before the others is padded with its last vertex, so its section is a point, and a section whose two
+ends are points is already handled (`EdgeSeq(j - 1) = E12` or `ProperEdge`). The faults are the places
+where that handling stops:
 
 | Lines (V8_0_1) | Pairs | What is read |
 |---|---|---|
-| 580, 584 | 91 | `myPaths(k)(i).ShapeType()` where the path holds no element `i`, or holds a null one |
+| 580, 584 | 91 | `myPaths(k)(i).ShapeType()` where the pad at level `i` cast the vertex a pad at level `i - 1` left, and appended the null shape that `TopExp::LastVertex` returns for it |
 | 664, 668 | 21 | `TopoDS::Edge(myPaths(k)(i - 1))` of a vertex, or of level 0 |
 | 672, 706 | 4 | `BRep_Tool::CurveOnSurface(E1, theFace, ...)` with `theFace` null |
 
-The 91 are one defect. At the top of level `i` a path shorter than `i` is padded with the last vertex of
-the previous edge, but only by one element, and the previous element is cast with the unchecked
-`TopoDS::Edge`. A path that stopped short of the end section is padded once at level `i` and its last
-element is then a vertex, so the pad at level `i + 1` casts a vertex, appends the null shape that
-`TopExp::LastVertex` returns for it and the read after it dereferences that. The loop is also unbounded
-for such a pair: the exit is "every section edge is an end edge", which a path that never reaches the end
-section never lets fire, so it ends only by faulting. The guards below catch the second pad.
+(116 of the 196 pairs of 16 solids that share no vertex and are not the same face, one process per pair,
+against `v4.0.0-kernel.5`; the 4 and 21 are one pair different from the faulting line because `ushape 4 7`
+reaches the cast before it reaches the null face.)
 
-**Per group, what the geometry is** (the images are in the review directory):
+### What the algorithm intends, and the change
 
-- **G1, a path stops short (91 pairs).** The four side faces of a hexagonal prism that are neither
-  neighbours nor opposite (faces 0 and 2): the two start vertices on one side of the start face walk the
-  ring one way and the two on the other side walk it the other way, so the paths never reach the end
-  face together. A cap of a tube against the bore (faces 1 and 3): the one start vertex of the cap's
-  circle walks the seam down to the bottom circle and has nothing further, and the bore is never reached.
-- **G2, a path is a vertex with no edge before it (21 pairs).** L- and U-shaped prisms: a path arrives at
-  a concave corner where more than one edge continues, so it records a bare vertex (a punctual segment),
-  and the section that has to be interpolated across it wants the edge before the vertex, which at the
-  first level does not exist.
-- **G3, no common face (4 pairs).** Opposite triangles of an octahedron: every path is one edge long and
-  ends on a vertex of the other triangle's side, and no face of the solid holds both that path edge and
-  the section edge it is to be joined to.
+The user's reading of the images was that the paths `Build()` traces are valid guides (one per start
+vertex, along the edges of the solid to the end face), so a path that has arrived is a point and the
+sections that follow are sections of points. That is what the first pad already does; the code simply
+cannot do it twice. The change is the same handling in the places that cast, and a bound where the
+sweep does not terminate:
 
-### The fix
+- **The pad appends the vertex again** (`PadPath`, 8 lines). Carrying a point forward is what the
+  first pad does; refusing at the second one instead computes 72 pairs fewer (ablation B1 below).
+- **A vertex end of a new section edge is read as `BRep_Tool::Parameters(vertex, face)`** (`EndPoint2d`,
+  replacing about 25 lines that cast the path's previous edge). A vertex has no pcurve; the previous
+  edge ended at it, so its end on the face is the vertex's own parameter, which is what the previous
+  edge would have given. Refusing instead computes 81 fewer.
+- **No face holds both edges** (`theFace` null): the connecting edge of the solid is searched without
+  the face condition (the condition disambiguates parallel edges and has no meaning without a face);
+  if there is none, return. Without both lines 46 pairs abort.
+- **`BRepLib_MakeEdge` of a null 2d line, or of vertices not on the line** (`MakeSectionEdge`): a null
+  edge instead of a fault or a thrown `StdFail_NotDone`; a null candidate is not "good" in the choice
+  that follows. Without it 55 more pairs throw.
+- **`GeomAPI_Interpolate::Load` with a zero tangent**: the flag array the interpolation already takes
+  says the point has no tangent imposed; set it where every path is a point. Without it 12 pairs
+  throw `Standard_ConstructionError`.
+- **The insertion before level `i` (`ChooseEdge == 1`)** casts the element at level `i`: return if it is
+  not an edge. Without it 5 pairs abort.
+- **A bound on the levels**: a path holds each edge of the solid at most once, so the loop ends after
+  `EFmap.Extent()` levels. Without it every sweep that does not reach the end section runs on, one
+  process 5 s and 1 GB in, and 6 of the first 7 pairs of the scan ran past its limit.
 
-Three checks, each ending in a `return` that leaves the builder not done, the way the start of `Build()`
-already does when a start vertex has no edge outside the start wire (`return;` where `Edges.IsEmpty()`).
-One helper, `IsEdgeAt(path, level)`, answers whether the path holds an edge at a level that exists:
+Seven changes, each measured against the scan by removing it (ablations B1 to B7, `abl2/` in the
+scratch tree, numbers in `ablation-summary.txt`). Four checks that looked reasonable were removed
+because removing them changed nothing in 573 pairs: a null `PCurve` in the second branch, a null
+chosen edge, `Interpol.IsDone()`, and the length of the path in `PadPath`.
 
-- before each of the two pads, the element to be read is an edge, else the path has ended before the end
-  section (G1);
-- before the two casts at level `i - 1`, the same test (G2);
-- after the face lookup, `theFace` is not null (G3).
+**What could go wrong, and what upstream would ask.**
+- This is a behaviour change and not a guard. Every pair that returned a path returns the same path
+  (the 42, to six places), but a pair that aborted now returns one, and nothing in OCCT's own tests
+  covers `BRepOffsetAPI_MiddlePath` with a path that is a point at the first level or a concave
+  corner. Upstream will ask for a GTest with those solids and an independent check of the result.
+- The new results are as good as the interpolation that builds them. For the U- and L-shaped prisms
+  the section centroids zigzag and the spline imposed through them with tangents from the paths can
+  loop or overshoot: 14 of the 81 new paths do (listed in `review/index.md`). They are valid wires, they
+  end at the centroids, and they are not what a person would draw. Upstream may prefer to refuse
+  them, or to interpolate without the imposed tangents, which is a separate change to the final
+  phase.
+- `EFmap.Extent()` as the bound is an argument, not a theorem: the insertion at `ChooseEdge == 1` can
+  lengthen a path, and a sweep over a solid whose paths need more levels than it has edges would be
+  refused. The most any of the 124 pairs that answer needed was a third of the bound.
+- `BRep_Tool::Parameters` of a vertex on a periodic face can pick the other side of the seam than the
+  pcurve of the previous edge would have; the pairs of the scan with curved faces (cylinder, cone,
+  frustum, tube, bend, capsule) came out unchanged where they answered before; whether any of the new
+  ones reads a vertex on a seam was not measured.
+- A refusal returns with the builder not done and does not say why, which is what the start of
+  `Build()` already does.
 
-No behaviour changes for a pair that works: every test only fails where the old code cast a vertex,
-indexed past a sequence or passed a null face, which is undefined behaviour.
-
-**A refusal, not a result.** `Build()` is a state machine over sections and the three conditions are
-the ones in which its own precondition (each path reaches the end section through the faces of the
-solid) does not hold, so there is no answer for it to compute; the only OCCT caller
-(`BRepTest_SweepCommands.cxx`, `middlepath`) checks nothing but null, so there is no calling
-convention to follow either. The 21 G2 pairs and the 4 G3 pairs are the ones where a different reader
-might want a path, and the review images show them.
+**Where it refuses.** Every pair that answers not done is one of these, measured in
+`guards-final.txt`:
+- the end section is not reached within `EFmap.Extent()` levels: 38 pairs that share no vertex, 35 of them among the 116 (a cap of a tube against
+  its bore, 2; the outer wall of a cube with a square hole against the wall of the hole, 24; eight of
+  the fused L-shaped bar, five of them among the 116; the four opposite triangle pairs of an octahedron, where two of three paths
+  end on the same vertex of the opposite triangle and none reaches the third). The sections
+  themselves are never the end section, so there is no sweep to compute;
+- no connecting edge of the solid and no common face (28 pairs of all 573, 22 of them touching sections);
+- a vertex end is not on the face that holds the new edge (13, all of the fused bar, 7 of them touching);
+- the 2d line between the two ends is null (7, six of the triangle prism, all touching);
+- the insertion at `ChooseEdge == 1` meets a vertex, not an edge (5, all touching);
+- the kernel already answered not done, before any of this (19, as before).
 
 ### Measured
 
-Over all 573 pairs of faces of 16 solids (the #3098 scan and #3105's additions), one process per pair
-with a 60 s limit, the probe built in the release macros (`-DNo_Exception -DNDEBUG`) against the pinned
-archive with `BRepOffsetAPI_MiddlePath.cxx` compiled from the 44-patch tree linked ahead of it (control)
-and the same file with `0058` (variant):
+All 573 pairs of the 16 solids, one process per pair with a limit, the probe built in the release
+macros (`-DNo_Exception -DNDEBUG`) against the pinned archive with `BRepOffsetAPI_MiddlePath.cxx`
+compiled from the 44-patch tree linked ahead of it (control) and the same file with `0058` (variant):
 
-| 573 pairs | abort | throw (caught) | normal |
-|---|---|---|---|
-| control (`scan-before.txt`) | 423 | 89 | 61 |
-| `0058` (`scan-after.txt`) | 14 | 89 | 470 |
+| 573 pairs | abort | run past the limit | throw (caught) | answer a path | answer not done |
+|---|---|---|---|---|---|
+| control (`scan-before.txt`) | 423 | 0 | 89 | 42 | 19 |
+| `0058` (`scan-after.txt`) | 0 | 0 | 56 | 124 | 393 |
 
-Of the 196 pairs that share no vertex and are not the same face: control 116 / 37 / 43, patched 0 / 37 /
-159. The 14 that still abort all share a vertex with the start section, so #3098's bridge guard refuses
-them; they fault at later lines this patch does not touch (a `BRepLib_MakeEdge` given the null `Geom2d_Line` that `GC_MakeLine2d` returns for coincident points, line 762 of the patched file, and in one pair another read of a path, line 595). The 42 pairs that
-return a path (`done=1`) return the same one before and after: edge count, length and centre of mass
-agree to six places (`cmp.py`); the 19 that answer not done are unchanged.
+Of the 196 pairs that share no vertex and are not the same face: control 116 abort / 37 throw / 41 path
+/ 2 not done; patched 0 / 22 / 122 / 52. Of the 116 aborts: 60 of the 91 in G1 and all 21 in G2 answer a
+path (81 in all, all valid; 14 doubtful), the other 35 answer not done. The 42 pairs that returned a
+path return the same one, edge count, length and centre of mass to six places (`cmp.py`).
+
+**Geometric validation of every answered path** (`validate.py`, `validate-out.txt`): a valid wire by
+`BRepCheck_Analyzer`, connected, from the centre of the start section to the centre of the end section
+(within 1e-6), in the plane of each section, no shorter than the chord between them, no longer than the
+longest traced guide, inside the solid for the convex solids and inside its bounding box for the
+others, no crossing of itself where the path lies in a plane, and identical on three runs. The 81 new
+paths pass all of it except: 4 (`star 0/4, 1/4, 2/4, ushape 4/6`) leave the bounding box, and in G2 10
+(`lshape 3/5`, `ushape 0/4, 0/5, 0/6, 1/3, 3/5, 3/6, 3/7, 4/7, 5/7`) leave it, cross themselves or run longer
+than the longest guide. Those 14 are the doubtful ones. The 42 older paths pass everything.
+`tri 0/0` (the same face twice) answers a wire with an edge that has no curve and fails
+`BRepCheck`; the bridge refuses it and the kernel is not changed for it.
 
 ### The Swift test
 
-`Issue3105MiddlePathKernelTests` (`OCCTModelingTests`) walks every pair of faces of four of the solids,
-one per way a pair fails: a hexagonal prism, an L-shaped prism, a tube and an octahedron. It is gated on
-`OCCTSWIFT_LOCAL=1`, the way the other unpinned patches' tests were, and runs in `kernel-integration.yml`.
-Measured with the `ar r` swap into a copy of the pinned xcframework, macOS arm64: on the archive as
-shipped it aborts the process with SIGSEGV (`swift-test-unpatched.txt`); with the member built from
-`0058` all four tests pass (`swift-test-patched.txt`).
+`Issue3105MiddlePathKernelTests` (`OCCTModelingTests`) walks every pair of faces of a hexagonal prism, an
+L-shaped prism, a U-shaped prism, a tube and an octahedron and checks each path it gets: valid, from
+the centroid of the start face to the centroid of the end face, between the chord and one and a half
+times it; the counts per solid are the scan's (10, 10, 21, 1, 0). It is gated on `OCCTSWIFT_LOCAL=1`,
+the way the other unpinned patches' tests were, and runs in `kernel-integration.yml`. Measured with the
+`ar r` swap into a copy of the pinned xcframework, macOS arm64: on the archive as shipped it aborts the
+process with SIGSEGV (`swift-test-unpatched.txt`); with the member built from `0058` all five tests pass
+(`swift-test-patched.txt`), and the nine #3098 guard tests still pass. The bridge guard stays: it
+protects every kernel without `0058`, and is retired at the repin that pins it.
 
 **Upstream checked 2026-10-09:** no PR or issue mentions `MiddlePath`, and `IR` carries the same file as
 `V8_0_1`. **Not yet filed upstream**; it needs a GTest of its own in `TKOffset/GTests/` (a hexagonal
-prism, faces 0 and 2) and the human check of the three refusals recorded in the review directory.
+prism, faces 0 and 2) and the user's decision on the 14 doubtful paths recorded in the review directory.
 
 **Retire** once the bundled OCCT includes this fix.
 

@@ -1031,11 +1031,16 @@ extension Shape {
     /// breaks that used to abort the process, which no `catch` can absorb, so it answers `nil`
     /// instead.
     ///
-    /// Valid for the two end faces of a pipe-like solid. A pair of faces that share no vertex and
-    /// are not a pipe's two ends (the non-opposite sides of a hexagonal prism, a cap of a tube
-    /// against its bore, opposite triangles of an octahedron) still aborts the process on a kernel
-    /// without carried patch `0058`, which includes the one currently pinned, because no check on
-    /// the input predicts it (#3105). A kernel carrying `0058` answers `nil` for them.
+    /// Answers the path through the centres of the sections the kernel sweeps from the start
+    /// section to the end section along the edges of the solid.
+    ///
+    /// Besides the two end faces of a pipe, a pair of faces that share no vertex answers a path
+    /// when every path from a start vertex reaches the end section (the non-opposite sides of a
+    /// hexagonal prism, the sides of an L or a U), and `nil` when the sweep does not reach it (a
+    /// cap of a tube against its bore, opposite triangles of an octahedron). On a kernel without
+    /// carried patch `0058`, which includes the one currently pinned, such a pair can abort the
+    /// process instead (#3105). A path through a concave corner is a valid wire with the right
+    /// ends but can loop or overshoot the solid.
     ///
     /// - Parameters:
     ///   - startShape: One end of the pipe, a face or a wire. Any other shape type answers `nil`.

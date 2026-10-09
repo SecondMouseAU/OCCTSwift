@@ -104,7 +104,7 @@
 # patch: 0055-GProp_SelGProps-GProp_VelGProps-cone-matrix-of-inertia-3010 81390e4d295e
 # patch: 0056-BRepLib-Plane-creates-the-default-plane-under-the-magic-static-lock-3039 35b5684c9513
 # patch: 0057-GProp_SelGProps-GProp_VelGProps-cylinder-sphere-torus-inertia-3091 04a543f518b6
-# patch: 0058-BRepOffsetAPI_MiddlePath-Build-refuses-a-path-it-cannot-sweep-3105 ade3cf0bf9ca
+# patch: 0058-BRepOffsetAPI_MiddlePath-Build-carries-a-vertex-path-forward-3105 3aa5e4f75495
 #
 # totals: inline-raise       462 site(s) in  104 class(es)
 # totals: outofline-raise    828 site(s) in  284 class(es)

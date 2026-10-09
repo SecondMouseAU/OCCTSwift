@@ -26,5 +26,5 @@ done
 (cd "$HERE" && FEAT=1 python3 scan.py "$WORK/probe_mpr"         > "$WORK/scan-before.txt"
                FEAT=1 python3 scan.py "$WORK/probe_mpr_patched" > "$WORK/scan-after.txt"
                python3 fault-sites.py "$WORK/probe_mpr" "$WORK/scan-before.txt" "$WORK/mpr.o" > "$WORK/sites-before.txt"
-               python3 cmp.py "$WORK/scan-before.txt" "$WORK/scan-after.txt" > "$WORK/cmp.txt")
+               python3 cmp.py "$WORK/scan-before.txt" "$WORK/scan-after.txt" > "$WORK/cmp.txt"; python3 summ.py "$WORK/scan-after.txt" >> "$WORK/cmp.txt")
 cat "$WORK/sites-before.txt" "$WORK/cmp.txt"

@@ -475,15 +475,17 @@ let occtTarget: Target =
         //         this. 96 of 96 probe checks fail before and none after, by override-link in
         //         Scripts/repro/3091/.
         //
-        //   0058  BRepOffsetAPI_MiddlePath::Build reads past the end of a path that stops short
-        //         of the end section, casts a bare vertex of a path to an edge, and passes a
-        //         null face to BRep_Tool::CurveOnSurface, for a pair of faces that are not the two
-        //         ends of a pipe. Carried and NOT built: it leaves the builder not done in those
-        //         three places. 116 of the 196 pairs that share no vertex, over 16 solids, abort
-        //         the process on the shipped archive and none patched, and the 42 that return a
-        //         path return the same one, by override-link in Scripts/repro/3105-middlepath-patch/
-        //         (#3105). Issue3105MiddlePathKernelTests runs it in kernel-integration.yml, gated
-        //         on OCCTSWIFT_LOCAL=1.
+        //   0058  BRepOffsetAPI_MiddlePath::Build casts a path that has already reached a
+        //         vertex to an edge, reads past a path, hands a null face to
+        //         BRep_Tool::CurveOnSurface and never ends for a sweep that cannot reach the end
+        //         section, for a pair of faces that are not the ends of a pipe. Carried and NOT
+        //         built: it carries the vertex forward, as the first pad does, and bounds the
+        //         levels. 423 of 573 pairs over 16 solids abort the process on the shipped archive
+        //         and none patched; 81 of the 116 that share no vertex and aborted answer a
+        //         validated path, 35 answer not done, and the 42 that answered answer the same,
+        //         by override-link in Scripts/repro/3105-middlepath-patch/ (#3105).
+        //         Issue3105MiddlePathKernelTests runs it in kernel-integration.yml, gated on
+        //         OCCTSWIFT_LOCAL=1.
         //
         // 0043 (#2827, BRepGProp_Gauss keeps the by-plane mass) was the one outstanding before it,
         // and it went the other way, which is the comparison worth keeping beside 0044: carried
