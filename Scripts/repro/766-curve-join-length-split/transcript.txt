@@ -1,0 +1,11 @@
+join 2: start=(0, 0, 0) end=(2, 1, 0) domain=[0, 2.4142135623730949]
+join 3: start=(0, 0, 0) end=(3, 1, 1) domain=[0, 3.8284271247461898]
+join 1: start=(0, 0, 0) end=(5, 0, 0) domain=[0, 5]
+3D interpolant with tangents (1,0,0): length=10
+projection of (5,3,0) on X axis: parameter=5
+2D interpolant with tangents: length=14.355489462097665
+circle IsPlanar=1 normal=(0, 0, 1)
+segment IsPlanar=1 normal=(0, 0, 1)
+split fit (0,0)(5,5)(10,0): 1 pieces
+concatenate two fits: add=1 start=(0, 0, 0) end=(20, 0, 0)
+split 2D fit: 1 pieces
