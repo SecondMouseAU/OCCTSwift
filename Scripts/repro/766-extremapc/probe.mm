@@ -1,4 +1,4 @@
-// #766 kernel parity for Tests/OCCTAnalysisTests/ExtremaPCTests.swift (suites "ExtremaPC, Point
+// #766 kernel parity for Tests/OCCTAnalysisTests/Extrema/ExtremaPCTests.swift (suites "ExtremaPC, Point
 // to Curve Distance" and "Issue 1633: point-curve extrema include the domain's ends").
 // Same OCCT calls as occtExtremaPCCurveImpl (OCCTBridge_Curve3D_Curves.mm) and
 // OCCTExtremaPCMinDistance: ExtremaPC_Curve(curve) or ExtremaPC_Curve(curve, uMin, uMax),

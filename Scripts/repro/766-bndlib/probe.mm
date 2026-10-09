@@ -1,4 +1,4 @@
-// Epic #766, Tests/OCCTAnalysisTests/BndLibTests.swift: kernel parity probe.
+// Epic #766, Tests/OCCTAnalysisTests/Bounding/BndLibTests.swift: kernel parity probe.
 // Calls the same OCCT API as each OCCTBndLib* bridge function, with the test's inputs.
 #include <BndLib.hxx>
 #include <BndLib_Add3dCurve.hxx>

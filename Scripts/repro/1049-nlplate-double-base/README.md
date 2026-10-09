@@ -100,7 +100,7 @@ counted the base surface twice. G2, G3 and Incremental never did, and their 14.1
 
 ## The injection matrix
 
-`Tests/OCCTSurfaceTests/Issue1049NLPlateBaseSurfaceTests.swift` was run against three broken
+`Tests/OCCTSurfaceTests/Plate/Issue1049NLPlateBaseSurfaceTests.swift` was run against three broken
 versions of the bridge file, restoring between each. Ten tests in the suite.
 
 | row | injection | mechanism it isolates | tests failing |

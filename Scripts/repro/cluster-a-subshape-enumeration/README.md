@@ -48,7 +48,7 @@ ordinary caller would see:
   is #502's own box measurement (24 edge occurrences over 12 distinct, 48 vertex occurrences over
   8 distinct) and it needs no compound at all.
 - **`splitBoxCompound(order:)`** ("vertical-cut fixture", `compoundA`/`compoundB` below), the
-  *exact* construction `Tests/OCCTTopologyTests/Issue614FaceOrientationTests.swift` already uses
+  *exact* construction `Tests/OCCTTopologyTests/Faces/Issue614FaceOrientationTests.swift` already uses
   and has coverage for: a 20×10×10 block cut by an upright plane, recompounded in two member
   orders. Measured here at 11 distinct faces / 12 occurrences, matching that test file exactly.
 - **`horizontalSplitBoxCompound(order:)`** ("horizontal-cut fixture", `hCompoundA`/`hCompoundB`
@@ -462,7 +462,7 @@ first. `0/0/0` is what a same-solid-only walk of two ordinary boxes should alway
 **No further defect surfaced closing this one out.** Every `detectPocketsAAG()` row this census
 measures across all three fixtures (plain box, and both split compounds in both member orders) now
 reads `0`, and a fixture built specifically to have a real pocket (a genuine cavity cut into a box,
-see `Tests/OCCTModelingTests/Issue703EdgeConvexityOrderTests.swift`) reads `1` with real concave
+see `Tests/OCCTModelingTests/FeatureRecognition/Issue703EdgeConvexityOrderTests.swift`) reads `1` with real concave
 edges at the floor/wall junction, not `0` -- the fix corrects the sign convention, it does not
 flatten every edge to convex.
 

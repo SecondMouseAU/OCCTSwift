@@ -111,18 +111,23 @@ struct Issue3039BRepLibPlaneFirstUseTests {
 
     /// Fresh processes never see a wrong vertex or die.
     ///
-    /// Gated on `OCCTSWIFT_LOCAL=1`, the way `Issue3003OffsetOrderTests` is: the fix is carried patch
-    /// `0056`, which the pinned asset does not carry, and `ci.yml`'s `build-and-test` resolves that
-    /// asset. `kernel-integration.yml` builds the patches from source with `OCCTSWIFT_LOCAL=1`, which
-    /// is where this runs. A skipped test and a passing one both report green, so the per-test line
-    /// in the log is the only signal: read `started`, not `skipped`.
+    /// This was gated on `OCCTSWIFT_LOCAL=1` while the fix, carried patch `0056`, was missing from
+    /// the pinned asset, so `ci.yml`'s `build-and-test` skipped it on every default run. The repin
+    /// to `v4.0.0-kernel.5` put `0056` in the pinned asset, and a gate that outlives its fix leaves
+    /// the test skipped, which is the one outcome a test cannot recover from (#2983, and the same
+    /// disposition `StressBuilderLifecycleTests`' `0027` test got at the `kernel.4` repin).
     ///
     /// Unpatched, 7, 6 and 12 of 64 children failed in three runs (one by SIGSEGV), and patched 0 of
     /// 256, so a run of this test misses the defect with probability well under 1%.
+    ///
+    /// Not under `Scripts/tsan-stress.sh swift`, which sets `TSAN_OPTIONS`: a ThreadSanitizer
+    /// build re-executed without `DYLD_INSERT_LIBRARIES` aborts in every child ("Interceptors are
+    /// not working", signal 6), so all 64 fail for a reason that is not the kernel. The test was
+    /// invisible to that gate while it was gated on `OCCTSWIFT_LOCAL=1`, and ungating it exposed it.
     @Test(
         .enabled(
-            if: ProcessInfo.processInfo.environment["OCCTSWIFT_LOCAL"] == "1"
-                && !Issue3039BRepLibPlaneFirstUseTests.isChild))
+            if: !Issue3039BRepLibPlaneFirstUseTests.isChild
+                && ProcessInfo.processInfo.environment["TSAN_OPTIONS"] == nil))
     func freshProcessesNeverSeeAWrongVertex() throws {
         var arguments = Array(CommandLine.arguments.dropFirst())
         var kept: [String] = []

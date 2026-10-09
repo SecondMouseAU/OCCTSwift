@@ -19,7 +19,7 @@ which is what nothing did while `0042` sat in the kernel and not in the map for 
 2026-08-03 retired ten patches, `0032`
 retired 2026-09-02 (superseded by upstream's own fix, not shipped in our pin), and `0035` retired
 2026-09-20 (it reintroduced #280; see its [Retired patches](#retired-patches) entry).
-The carried sequence now reads 0010–0012, 0014–0031, 0033–0034, 0036–0048, 0050–0056.
+The carried sequence now reads 0010–0012, 0014–0031, 0033–0034, 0036–0048, 0050–0057.
 The gaps are the retirements, not missing files:
 the numbers are cited across `CLAUDE.md`, `docs/`, closed issues and `Scripts/repro/`, and
 renumbering would have silently repointed every one of those citations at a different fix.
@@ -628,7 +628,7 @@ documented API, hands every caller a number describing the request, not the resu
 `IsCNv(1)`, and `BRepFill_Sweep` splits its sweep at every spine **vertex**, so a polyline spine
 never reaches it: the discontinuity has to sit inside one unsplit edge. The fixture (borrowed from
 [#572](https://github.com/SecondMouseAU/OCCTSwift/issues/572), pinned by
-`Tests/OCCTModelingTests/Issue572SweepApproxTests.swift`) is a single-edge spine built as one
+`Tests/OCCTModelingTests/Sweeps/Issue572SweepApproxTests.swift`) is a single-edge spine built as one
 degree-2 B-spline curve with an interior knot of multiplicity 2, a C0 corner inside what
 `BRepFill_Sweep` treats as one edge, swept with a unit circle profile and Frenet trihedron via
 `BRepFill_PipeShell`, matching the bridge's own construction exactly.
@@ -1168,7 +1168,7 @@ patched header and the modified test file reports zero violations. See
 [`Scripts/repro/1154-topology-flag-race/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/1154-topology-flag-race)
 for the full writeup, transcripts and reproducer.
 
-Not yet filed upstream (override-link validated, not yet in a rebuilt xcframework).
+Filed upstream as [OCCT#1548](https://github.com/Open-Cascade-SAS/OCCT/pull/1548) against `master`, a fix PR (override-link validated, not yet in a rebuilt xcframework when written).
 
 **Retire** once the bundled OCCT includes this fix.
 
@@ -1314,7 +1314,7 @@ whole-file reformat would have swept in as noise.
 See [`Scripts/repro/1153-bspline-adaptor-cache/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/1153-bspline-adaptor-cache)
 for the full writeup, transcripts and reproducer.
 
-Not yet filed upstream (override-link validated, not yet in a rebuilt xcframework).
+Filed upstream as [OCCT#1554](https://github.com/Open-Cascade-SAS/OCCT/pull/1554) against `master`, **closed and withdrawn 2026-10-05**: the maintainer (gkv311) said the per-thread `ShallowCopy` adaptor is the intended design. Carried until the retire-or-keep decision, [#3065](https://github.com/SecondMouseAU/OCCTSwift/issues/3065).
 
 **Retire** once the bundled OCCT includes this fix.
 
@@ -1439,7 +1439,7 @@ issue's named scope.
 See [`Scripts/repro/1157-interface-static-thread-safety/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/1157-interface-static-thread-safety)
 for the reproducer, full TSan transcripts and the complete writeup.
 
-Not yet filed upstream (override-link validated, not yet in a rebuilt xcframework).
+Filed upstream as [OCCT#1553](https://github.com/Open-Cascade-SAS/OCCT/pull/1553) against `master`, a fix PR (override-link validated, not yet in a rebuilt xcframework when written).
 
 **Retire** once the bundled OCCT includes this fix.
 
@@ -1488,7 +1488,7 @@ affected. The one consumer that calls `Value()` directly is OCCTSwift's own
 `OCCTGeomFillCoonsAlgPatchEval`, backing `Shape.coonsAlgPatch`, which samples it across an eval
 grid.
 
-**Upstream-bound.** Not yet filed; see the note in `okf/references/carried-occt-patches.md` about
+**Upstream-bound.** Filed as [OCCT#1550](https://github.com/Open-Cascade-SAS/OCCT/pull/1550) against `master`; see the note in `okf/references/carried-occt-patches.md` about
 the seven OCCTSwift thread-safety PRs still open on Release 8.1.
 
 
@@ -1528,7 +1528,7 @@ distinction is kept deliberately. Full method, including two fixture traps and w
 thread pool measured worse, in
 [`Scripts/repro/2061-nm-detected/`](../repro/2061-nm-detected/README.md).
 
-Not yet filed upstream (override-link validated, not yet in a rebuilt xcframework).
+Filed upstream as [OCCT#1552](https://github.com/Open-Cascade-SAS/OCCT/pull/1552) against `master`, a fix PR (override-link validated, not yet in a rebuilt xcframework when written).
 
 **Retire** once the bundled OCCT includes this fix.
 
@@ -1661,7 +1661,7 @@ Carries a GTest (`XSControl_ControllerInit_Test`). It is a smoke guard rather th
 the previous check-then-act usually also produced a working registration, because a second
 `Record()` of the same controller kind returns early. The race is what TSan measures.
 
-Not yet filed upstream.
+Not filed upstream: **held**, since no GTest can observe it. A second call of a one-time init in a shared GTest binary is unobservable. Revisit if a way to observe it appears.
 
 **Retire** once the bundled OCCT includes this fix.
 
@@ -1687,7 +1687,7 @@ reaches it through `Interface_Static`, whose seventeen entry points `0033` alrea
 stopped being reported once `0033` was in the build. A second lock on the same data through a
 different path invites lock-order inversion for no gain.
 
-Not yet filed upstream.
+Filed upstream as [OCCT#1603](https://github.com/Open-Cascade-SAS/OCCT/pull/1603) against `IR`, with stress GTests, one of them probabilistic with a measured failure rate.
 
 **Retire** once the bundled OCCT includes this fix.
 
@@ -1848,7 +1848,7 @@ uploaded as a new pre-release, **both** `url:` and `checksum:` bumped, `0042` mo
 back to zero), and the two stale ACKNOWLEDGED rows retired. Recorded here rather than left to be
 discovered.
 
-Filed upstream as **[OCCT#PENDING](https://github.com/Open-Cascade-SAS/OCCT/pulls)**, with the
+Filed upstream as **[OCCT#1583](https://github.com/Open-Cascade-SAS/OCCT/pull/1583)** against `master`, with the
 GTest, no companion issue. Prior art re-checked 2026-09-27: zero upstream issues and zero PRs
 mention `GetFaceUVBounds`, `dpasukhi`'s open series is Unicode strings, math robustness and
 `ApplicationFramework`, and OCCT#1514 `Data Exchange - Harden malformed input handling` (merged
@@ -2024,7 +2024,7 @@ modified files against 79 patch-touched files, zero unexplained, all thirty-one 
 `python3 Scripts/check-pinned-asset-patches.py --require-asset` against the published asset, the zip
 uploaded as the `v4.0.0-kernel.3` pre-release, **both** `url:` and `checksum:` bumped, `0043` moved
 into `Package.swift`'s enumerated list (taking `patches_pinned` to thirty-one and `patches_unpinned`
-to none), and `Tests/OCCTAnalysisTests/BRepGPropVinertTests.swift`'s pinned-zero regression replaced
+to none), and `Tests/OCCTAnalysisTests/BRepGProp/BRepGPropVinertTests.swift`'s pinned-zero regression replaced
 by the three identities above rather than by the numbers that were observed.
 
 **Retargeting risk at 8.0.2.** `BRepGProp_Gauss.cxx` is unmodified by every other carried patch, and
@@ -2032,9 +2032,8 @@ upstream `master` was byte-identical on this line as of 2026-09-29 with no issue
 `BRepGProp_Gauss`, so the hunk is expected to apply to `V8_0_2` unchanged. Re-run
 `git -C occt-src apply --check` at the repin rather than assuming it.
 
-Not filed upstream yet: #2827 holds the upstream PR, per
-[`okf/policies/upstream-occt-patch-process.md`](../../okf/policies/upstream-occt-patch-process.md)
-and the standing hold on kernel-patch findings until 8.0.2 lands. **The submission carries a second
+Filed upstream as [OCCT#1587](https://github.com/Open-Cascade-SAS/OCCT/pull/1587) against `master`; the hold on upstream PRs until 8.0.2 was cancelled on 2026-10-07
+(see [`okf/policies/upstream-occt-patch-process.md`](../../okf/policies/upstream-occt-patch-process.md)). **The submission carries a second
 hunk**, for [#2873](https://github.com/SecondMouseAU/OCCTSwift/issues/2873): `aCoeff[3] = d - n . loc`
 at `BRepGProp_Vinert.cxx:279`, and the same two lines at `BRepGProp_VinertGK.cxx:219` and `:244`, are
 subtracted by the integrand, so the offset reaches it with the opposite sign to a geometric distance
@@ -2122,29 +2121,27 @@ own here.
 
 ### CI coverage, and the pin
 
-**Carried, not pinned.** `Scripts/patches/` holds thirty-four and the pinned `v4.0.0-kernel.3` asset
-holds thirty-one, so this patch is in **no** required check:
-`ci.yml`'s `build-and-test` resolves the asset. `kernel-integration.yml` triggers on
-`Scripts/patches/**` and builds `V8_0_1` plus every carried patch from source, so the PR that adds
-this one gets it compiled, and that proves it applies, compiles and regresses nothing. It cannot
-prove the fix reaches a consumer, and here it could not even if it ran on every PR, because **the
-bridge already refuses the input before the kernel sees it**.
+**Pinned by `v4.0.0-kernel.4`, the first asset to hold it.** It was carried without a rebuild on
+2026-09-30, when the pinned `v4.0.0-kernel.3` asset lacked it, and until the repin it was in **no**
+required check: `ci.yml`'s `build-and-test` resolves the asset. Now that the asset holds it,
+`build-and-test` exercises it. `kernel-integration.yml` triggers on `Scripts/patches/**` and builds
+`V8_0_1` plus every carried patch from source, so the PR that added it got it compiled, which proved
+it applied, compiled and regressed nothing.
 
-That is the argument for not rebuilding now. `0043` was rebuilt the day it was carried because what
-it left exposed was a value a caller reads. This one leaves nothing exposed: `OCCTSurfaceExtrema`
-gained an `IsParallel()` gate with #2831, and every other bridge entry point that reaches either
-class through a point read already had one (`OCCTExtremaExtSSPoint`, `OCCTExtremaExtCSPoint`,
-`OCCTCurve3DDistanceToSurface`, which reads `LowerDistance()` alone). The standing hold on repinning
-until OCCT 8.0.2 lands therefore wins, and the 8.0.2 rebuild absorbs this patch for free.
+It was not rebuilt the day it was carried, because **the bridge already refused the input before the
+kernel saw it**. `0043` was rebuilt the day it was carried because what it left exposed was a value
+a caller reads. This one left nothing exposed: `OCCTSurfaceExtrema` gained an `IsParallel()` gate
+with #2831, and every other bridge entry point that reaches either class through a point read
+already had one (`OCCTExtremaExtSSPoint`, `OCCTExtremaExtCSPoint`, `OCCTCurve3DDistanceToSurface`,
+which reads `LowerDistance()` alone). The standing hold on repinning until OCCT 8.0.2 landed
+therefore won, until `v4.0.0-kernel.4` was cut for other patches and absorbed this one.
 
 **Retargeting risk at 8.0.2.** No other carried patch touches either file, and both `Points()`
 bodies are three lines that have not changed since the class was written, so the hunks are expected
 to apply to `V8_0_2` unchanged. Re-run `git -C occt-src apply --check` at the repin rather than
 assuming it.
 
-Not filed upstream yet: the standing hold in
-[`okf/policies/upstream-occt-patch-process.md`](../../okf/policies/upstream-occt-patch-process.md)
-holds every upstream PR until 8.0.2 ships. The submission is staged in
+Filed upstream as [OCCT#1596](https://github.com/Open-Cascade-SAS/OCCT/pull/1596) against `IR` (the hold on upstream PRs until 8.0.2 was cancelled on 2026-10-07). The submission was staged in
 `Scripts/repro/2840/upstream/`: two GTests, `Extrema_ExtSS_Test.cxx` and `Extrema_ExtCS_Test.cxx`,
 compiled and run both ways (each parallel case exits 139 unpatched and passes patched, both controls
 pass on both sides), plus the two `FILES.cmake` lines they need. `0024` is still unfiled too, so one
@@ -2229,17 +2226,17 @@ compile line adds their package directories from `Libraries/occt-src`.
 
 ### CI coverage, and the pin
 
-**Carried, not pinned.** `ci.yml`'s `build-and-test` resolves the pinned asset, so this patch is in
-no required check. `kernel-integration.yml` triggers on `Scripts/patches/**` and builds `V8_0_1`
-plus every carried patch from source, which proves it applies, compiles and regresses nothing.
+**Pinned.** It was carried before it was pinned, and `ci.yml`'s `build-and-test` resolves the
+pinned asset, so until the repin the patch was in no required check. Now that the asset holds it,
+`build-and-test` exercises it. `kernel-integration.yml` triggers on `Scripts/patches/**` and builds
+`V8_0_1` plus every carried patch from source, which proves it applies, compiles and regresses
+nothing.
 
 **Retargeting risk at 8.0.2.** No other carried patch touches either file, and neither
 `InsertPoleAfter` has changed shape in years, so the hunks are expected to apply to `V8_0_2`
 unchanged. Re-run the apply check at the repin rather than assuming it.
 
-Not filed upstream yet: the standing hold in
-[`okf/policies/upstream-occt-patch-process.md`](../../okf/policies/upstream-occt-patch-process.md)
-holds every upstream PR until 8.0.2 ships. A GTest is still owed before it goes, per section 2.
+Filed upstream as [OCCT#1593](https://github.com/Open-Cascade-SAS/OCCT/pull/1593) against `IR` ([#1589](https://github.com/Open-Cascade-SAS/OCCT/pull/1589) closed); the hold on upstream PRs until 8.0.2 was cancelled on 2026-10-07.
 
 **Retire** once the bundled OCCT includes this fix, **but keep the bridge guard**: it is the only
 bound the 2d class has in a `No_Exception` build.
@@ -2314,12 +2311,12 @@ translation units of both patches in one run.
 
 ### CI coverage, and the pin
 
-**Carried, not pinned**, and unlike `0044` this one does leave something exposed: the fault is in
-the pinned kernel and `OCCTMathUzawa`'s `nConstraints > nVars` guard is the only thing between a
-Swift caller and it. That guard was added for exactly this, so nothing is exposed in practice, but
-the exposure is to a future bridge author rather than nil.
+**Pinned.** Unlike `0044`, this one left something exposed before the repin: the fault was in the
+kernel and `OCCTMathUzawa`'s `nConstraints > nVars` guard was the only thing between a Swift caller
+and it. That guard was added for exactly this, so nothing was exposed in practice, but the exposure
+was to a future bridge author rather than nil.
 
-**The bridge guard stays when this is pinned**, a deliberate exception to the rule in
+**The bridge guard stays now that this is pinned**, a deliberate exception to the rule in
 [`okf/policies/pinned-kernel-patch-check.md`](../../okf/policies/pinned-kernel-patch-check.md) that
 a repin retires the mitigation its patch supersedes. Patched, the kernel returns a correctly sized
 initial error for an overdetermined system instead of faulting, which is a behaviour the Swift
@@ -2331,9 +2328,8 @@ also still covers anyone pinning an older asset.
 constructors have not changed shape, so the hunks are expected to apply to `V8_0_2` unchanged.
 Re-run the apply check at the repin rather than assuming it.
 
-Not filed upstream yet: the standing hold holds every upstream PR until 8.0.2 ships. #2860 already
-names this as the upstream-worthy item of its cluster, and the reading above is the report. A
-GTest is owed before it goes, per section 2 of the process policy.
+Filed upstream as [OCCT#1588](https://github.com/Open-Cascade-SAS/OCCT/pull/1588) against `master`; the hold on upstream PRs until 8.0.2 was cancelled on 2026-10-07. #2860 already
+names this as the upstream-worthy item of its cluster, and the reading above is the report.
 
 **Retire** once the bundled OCCT includes this fix, keeping the bridge guard.
 
@@ -2451,16 +2447,17 @@ rather than assumed. Compiled clean, no diagnostics, on all three slices:
 
 ### CI coverage, and the pin
 
-**Carried, not pinned.** `ci.yml`'s `build-and-test` resolves the pinned asset, so this patch is in
-**no** required check. `kernel-integration.yml` triggers on `Scripts/patches/**` and builds `V8_0_1`
-plus every carried patch from source, so the PR that adds this one gets it compiled, and that proves
-it applies, compiles and regresses nothing. It cannot prove the fix reaches a consumer, and here it
-could not even if it ran on every PR, because the bridge already refuses the input first.
+**Pinned.** It was carried before it was pinned, and `ci.yml`'s `build-and-test` resolves the pinned
+asset, so until the repin the patch was in **no** required check. Now that the asset holds it,
+`build-and-test` exercises it. `kernel-integration.yml` triggers on `Scripts/patches/**` and builds
+`V8_0_1` plus every carried patch from source, so the PR that added it got it compiled, and that
+proved it applies, compiles and regresses nothing. It could not prove the fix reaches a consumer,
+and could not even if it ran on every PR, because the bridge already refuses the input first.
 
 ### The bridge guards stay
 
 `occtValidMeshDeflection` and `occtValidMeshAngle` in `OCCTBridge_Internal.h` are **not** retired
-when this is pinned. This is the `0042` and `0044` shape, the deliberate exception to the rule in
+now that this is pinned. This is the `0042` and `0044` shape, the deliberate exception to the rule in
 [`okf/policies/pinned-kernel-patch-check.md`](../../okf/policies/pinned-kernel-patch-check.md) that
 a repin retires the mitigation its patch supersedes: with the patch the kernel throws
 `Standard_NumericError` for the same input the guards refuse, so both answer the site's documented
@@ -2473,10 +2470,7 @@ No other carried patch touches `BRepMesh_IncrementalMesh.hxx`, and `initParamete
 twenty-line body that has not moved since `MinSize` was added to it. Re-run
 `git -C occt-src apply --check` at the repin rather than assuming it.
 
-Not filed upstream yet: the standing hold in
-[`okf/policies/upstream-occt-patch-process.md`](../../okf/policies/upstream-occt-patch-process.md)
-holds every upstream PR until 8.0.2 ships. A GTest is owed before it is filed, per that policy's
-section 2, in `src/ModelingAlgorithms/TKMesh/GTests/`.
+Filed upstream as [OCCT#1598](https://github.com/Open-Cascade-SAS/OCCT/pull/1598) against `IR`; the hold on upstream PRs until 8.0.2 was cancelled on 2026-10-07.
 
 **Retire** once the bundled OCCT includes this fix.
 
@@ -2592,7 +2586,7 @@ gp_Pln plane(gp_Pnt(normal.XYZ() * -planeDist), normal);   // until v4.0.0-kerne
 ```
 
 A kernel carrying `0048` with that mirror still in place measures about the mirrored plane again,
-and the two sign assertions in `Tests/OCCTAnalysisTests/BRepGPropVinertTests.swift` failed on #3014
+and the two sign assertions in `Tests/OCCTAnalysisTests/BRepGProp/BRepGPropVinertTests.swift` failed on #3014
 for exactly that reason. The change that repinned to an asset carrying `0048` (#3031) therefore:
 
 - deleted the mirror in `OCCTBRepGPropVinertPlane`, so the line now reads
@@ -2613,8 +2607,7 @@ removing it earlier would have turned a correct answer into a sign-flipped one o
 that has not changed since the classes were written. Re-run `git -C occt-src apply --check` at the
 repin rather than assuming it.
 
-Not filed upstream yet, for the same hold as `0043`, and it goes in `0043`'s PR rather than its
-own. A GTest is owed with it.
+Filed upstream as [OCCT#1601](https://github.com/Open-Cascade-SAS/OCCT/pull/1601) against `IR`, on its own: it is independent of [OCCT#1587](https://github.com/Open-Cascade-SAS/OCCT/pull/1587) (`0043`), whose diff only removes `&& theIsByPoint` in `BRepGProp_Gauss.cxx`.
 
 **Retire** once the bundled OCCT includes this fix, and delete the bridge mirror in the same change.
 
@@ -2722,27 +2715,27 @@ separately as [#3010](https://github.com/SecondMouseAU/OCCTSwift/issues/3010).
 
 ### CI coverage, and the pin
 
-**Carried and not yet pinned**, like `0051` and `0052`. `ci.yml`'s `build-and-test` resolves the
-pinned asset, so `Tests/OCCTAnalysisTests/GPropCylConeTests.swift` will be **red there** until the
-repin; `kernel-integration.yml` triggers on `Scripts/patches/**`, builds `V8_0_1` plus every
-carried patch from source, and is where those tests pass. That split is #585 and it is the expected
-state of a PR carrying a kernel fix and its regression together.
+**Pinned, like `0051` and `0052`.** It was carried before it was pinned, and `ci.yml`'s
+`build-and-test` resolves the pinned asset, so `Tests/OCCTAnalysisTests/MassProperties/GPropCylConeTests.swift`
+was **red there** until the repin; `kernel-integration.yml` triggers on `Scripts/patches/**`, builds
+`V8_0_1` plus every carried patch from source, and is where those tests passed in the meantime. That
+split is #585 and it was the expected state of a PR carrying a kernel fix and its regression
+together. The repin closed it.
 
-**Unlike `0044`, this one leaves a value a caller reads wrong**, through
+**Unlike `0044`, this one left a value a caller reads wrong**, through
 `GeometryProperties.coneSurfaceArea(semiAngle:refRadius:height:)`, which is `0043`'s situation
 rather than `0044`'s. No bridge-side mitigation was added anyway: dividing the factor back out in
-the bridge would have to be retired at the repin, and would double-correct a kernel that already
-carries the patch in the window between. The rebuild is same-night, so the window is hours.
+the bridge would have had to be retired at the repin, and would have double-corrected a kernel that
+already carried the patch in the window between. The rebuild was same-night, so the window was
+hours.
 
 **Retargeting risk at 8.0.2.** No other carried patch touches this file and the expression has not
 changed since the class was written, so the hunk is expected to apply to `V8_0_2` unchanged. Re-run
 `git -C occt-src apply --check` at the repin rather than assuming it.
 
-Not filed upstream yet: the standing hold in
-[`okf/policies/upstream-occt-patch-process.md`](../../okf/policies/upstream-occt-patch-process.md)
-holds every upstream PR until 8.0.2 ships. File it with `0051`, one PR for both, since they are one
+Filed upstream with `0051` and `0055` as one PR, [OCCT#1599](https://github.com/Open-Cascade-SAS/OCCT/pull/1599) against `IR` (the hold on upstream PRs until 8.0.2 was cancelled on 2026-10-07). `0055`'s hunks need `0050`'s and `0051`'s context. They are one
 defect in two files and the old `GProp_VelGProps` `dim` is exactly this one's old `dim` times
-`(Z2 - Z1) sin a`. A GTest is owed before submission, per section 2 of that policy.
+`(Z2 - Z1) sin a`.
 
 **Retire** once the bundled OCCT includes this fix.
 
@@ -2832,8 +2825,9 @@ as [#3010](https://github.com/SecondMouseAU/OCCTSwift/issues/3010) with `0050`'s
 ### CI coverage, and the pin
 
 Identical to `0050`'s, and for the same reason: `GeometryProperties.coneVolume(semiAngle:refRadius:height:)`
-returns the wrong value on the pinned asset, so this is `0043`'s situation and not `0044`'s. Filed
-upstream with `0050` as one PR.
+returned the wrong value on the asset pinned before the repin, so this was `0043`'s situation and
+not `0044`'s. Filed upstream with `0050` as one PR,
+[OCCT#1599](https://github.com/Open-Cascade-SAS/OCCT/pull/1599) against `IR`.
 
 **Retire** once the bundled OCCT includes this fix.
 
@@ -2902,13 +2896,12 @@ the header still builds, which is the only compile a documentation patch can off
 
 ### CI coverage, and the pin
 
-Carried and unpinned with `0050` and `0051`, and unlike them it leaves nothing for a caller to
+Pinned with `0050` and `0051`, and unlike them it left nothing for a caller to
 read wrong: PR #2990 already documents the real behaviour on all four Swift properties with the
 cylinder as the worked example and a test pinning both directions.
 
-Not filed upstream yet. It joins the OCCT 8.0.2 documentation batch with #2875's and #2860's
-one-character fixes rather than going alone, per the standing decision to batch upstream
-submissions.
+Filed upstream alone as [OCCT#1602](https://github.com/Open-Cascade-SAS/OCCT/pull/1602) against `IR`, documentation only, so no GTest. The plan to batch it with #2875's and #2860's
+one-character fixes went with the hold on upstream PRs until 8.0.2, cancelled on 2026-10-07.
 
 **Retire** once the bundled OCCT includes this fix.
 
@@ -2999,12 +2992,13 @@ volume's bits with build 0. Against the override-linked unmodified file it **fai
 
 ### CI coverage, and the pin
 
-**Carried, not pinned.** No required check exercises it, because `build-and-test` resolves the
-pinned asset. `Issue3003OffsetOrderTests` is gated on `OCCTSWIFT_LOCAL=1` for that reason and runs in
-`kernel-integration.yml`, which builds the patch from source. **The two `tolerance` declarations in
+**Carried, and pinned from `v4.0.0-kernel.5`.** Until that repin no required check exercised it,
+because `build-and-test` resolved an asset without it. `Issue3003OffsetOrderTests` was gated on
+`OCCTSWIFT_LOCAL=1` for that reason and ran in `kernel-integration.yml`, which builds the patch from
+source. **The two `tolerance` declarations in
 `766-modeling-evidence-fix/reproduce.json` and `766-modeling-issue568-index-skip/reproduce-evidence-fix.json`
-stay until this is pinned**, because against the pinned asset those three lines still drift; they
-come out, and the three transcripts are recaptured, at the repin that pins it. The patched
+stayed until it was pinned**, because against the earlier asset those three lines still drifted; they
+came out, and the three transcripts were recaptured, with that repin. The patched
 `offsetArc` value is `1698.436569847848`, one value out of the unpatched distribution and not the
 transcript's `...475`.
 
@@ -3017,7 +3011,7 @@ returns.
 this file by removed debug code and one `Image(E).First()` to `FirstImage(E)` change. Re-run the
 apply check at the repin rather than assuming it.
 
-Not filed upstream: the standing hold holds every upstream PR until 8.0.2 ships. Upstream was
+Filed upstream as [OCCT#1600](https://github.com/Open-Cascade-SAS/OCCT/pull/1600) against `IR` (the hold on upstream PRs until 8.0.2 was cancelled on 2026-10-07). The PR discloses that it makes the two-box-fuse arc offset fail deterministically, 20 of 20, instead of intermittently, an intersection-stage order dependence it does not address. Upstream was
 checked on 2026-10-03 and has no report and no PR about the order of an offset's faces; the draft is
 this patch's own message.
 
@@ -3088,7 +3082,7 @@ exactly eight outcomes change, edges 12 to 19 at 1.5, each from SIGSEGV to a nor
 `IsDone() == false`. The other 370 are identical, 170 completed and 200 raising the same exception.
 The eight now behave as radius 1.4999999 already did.
 
-**Not yet filed upstream.** Upstream's GTests are organised per toolkit and every PR is asked for
+**Filed upstream as [OCCT#1591](https://github.com/Open-Cascade-SAS/OCCT/pull/1591) against `master`**; the report is [OCCT#1568](https://github.com/Open-Cascade-SAS/OCCT/issues/1568). Upstream's GTests are organised per toolkit and every PR is asked for
 one; the reproducer needs the 19-face model, and plain boxes with radii at their face widths (372
 cases) never reach the branch, so a small programmatic input is still to be found. OCCT#1568 carries
 our minimisation and a note that we would report the cause.
@@ -3199,15 +3193,16 @@ about the axis is 7853.98, which is the `R^2` the cylinder's `Dm(3, 3) = Alpha2 
 the same Jacobi assembly flips signs in its matrix. `GProp_VelGProps`'s cylinder and sphere centre
 of mass is wrong for a partial turn too (1.4 and 1.0 in the probe). Measured and not diagnosed: it
 is another cluster, the first question #3010 asked and left open, and a fix belongs in its own
-patch.
+patch. That patch is [`0057`](#0057-gprop_selgprops-gprop_velgprops-cylinder-sphere-torus-inertia-3091patch).
 
 **Nothing in the bridge reads any of it.** `GeometryProperties.coneSurfaceArea` and `.coneVolume`
 read `Mass()` alone, so no Swift test reaches these values and there is no `OCCTSWIFT_LOCAL`-gated
 test for this patch; `probe.cxx` and `run.sh` are the regression, and `run.sh` exits 1 unless the
 control fails and the variant passes.
+*Since #3091:* `GProps.cone` reads them, and `Issue3091GPropsTests` compares the cone overloads with
+the same independent integral (gated on `OCCTSWIFT_LOCAL=1` until `v4.0.0-kernel.5`).
 
-**Not yet filed upstream.** It goes up with `0050` and `0051`, with a GTest of its own then, since
-upstream's reviewers ask for one on every PR.
+**Filed upstream** with `0050` and `0051` as one PR, [OCCT#1599](https://github.com/Open-Cascade-SAS/OCCT/pull/1599) against `IR`, because its hunks need their context lines.
 
 **Retire** once the bundled OCCT includes this fix.
 
@@ -3285,18 +3280,127 @@ the lazy initialisation is what fails and not the thread count or the edge const
 `Shape.edge2dFromCircle` and `Shape.edge2d(from:to:)`. One process can only test it once, so the
 parent test re-runs the test runner as 64 fresh child processes (same executable and arguments minus
 `--filter` and `--skip`, plus a filter for the suite and `OCCTSWIFT_3039_CHILD=1`), each of which
-builds its first `edge2d*` edges on 16 threads. Gated on `OCCTSWIFT_LOCAL=1`, since the pinned asset
-does not carry the patch. Against the unpatched archive 7, 6 and 12 of 64 children failed in three
+builds its first `edge2d*` edges on 16 threads. It was gated on `OCCTSWIFT_LOCAL=1` while the pinned
+asset lacked the patch, and is ungated since `v4.0.0-kernel.5` pinned it (passed in 135 s against that
+asset, 2026-10-07). Against the unpatched archive 7, 6 and 12 of 64 children failed in three
 runs, one of them by SIGSEGV; with `BRepLib.cxx` recompiled at `-O0 -g` with this patch swapped into a
 copy of the archive, 0 of 64 failed in each of four runs.
 
 **Upstream checked 2026-10-07:** no PR or issue; `IR` and `master` carry the same lines at
 `BRepLib.cxx` lines 83-85 and 138-145, and dpasukhi's "Eliminate mutable static state" series
-(OCCT#1519, #1180) did not touch this file. **Not yet filed upstream**; it needs a GTest of its own
-first.
+(OCCT#1519, #1180) did not touch this file. **Filed upstream as [OCCT#1597](https://github.com/Open-Cascade-SAS/OCCT/pull/1597) against `IR`**, with the GTest `BRepLib_Test.Plane_ConcurrentFirstUse` and a death-test child; the failure rates are in the PR.
 
 **Retire** once the bundled OCCT includes this fix.
 
+
+## 0057-GProp_SelGProps-GProp_VelGProps-cylinder-sphere-torus-inertia-3091.patch
+
+**`GProp_SelGProps::Perform` and `GProp_VelGProps::Perform` compute the matrix of inertia of a
+`gp_Cylinder`, `gp_Sphere` and `gp_Torus` wrongly, the centre of mass of the solid for a partial turn,
+and the area and volume of a torus over part of the tube**
+([#3091](https://github.com/SecondMouseAU/OCCTSwift/issues/3091)), the cluster
+[`0055`](#0055-gprop_selgprops-gprop_velgprops-cone-matrix-of-inertia-3010patch) left open beside the
+`gp_Cone` overloads. `Scripts/repro/3091/` holds the probe, `run.sh` and the transcript.
+
+The issue measured the cylinder and the sphere (16 of 16 failing); measuring the torus the same way
+found it fails too, so it is in the patch. Six overloads, one defect pattern:
+
+- **The assembly.** Each builds `Dm`, the matrix of inertia about the location of the surface in its own
+  axes, then `gp_Mat(rows of lambda_i * v_i)` from the Jacobi decomposition of `Dm`. That is
+  `diag(lambda) V^T` and not `V diag(lambda) V^T`, so the sign Jacobi happens to give an eigenvector
+  changes the matrix, and `Dm`, which is about the location, is added to the Huyghens term of the
+  centre of mass as if it were already about the centre of mass. The patch assembles
+  `inertia = P Dm P^T - H(g, Location) + H(g, loc)` as `0055` does.
+- **`Dm` itself.** The cylinder surface has `Dm(3, 3) = Alpha2 - Alpha1` where the second moment about
+  the axis is `R^3 (Z2 - Z1) (Alpha2 - Alpha1)` (the issue's 314.159 against 7853.98: the `R^2` and the
+  height), and its `xz` and `yz` entries drop a factor `R`. The volume overloads carry polynomials
+  that match no integral. Every entry is now the closed form of the integral, per the table in the
+  patch header.
+- **The solid's centre of mass.** `GProp_VelGProps`, `gp_Cylinder`, partial turn: `R` times the mean unit
+  vector where the sector of a disc has `2 R / 3` times it. `gp_Sphere`: `R` where the wedge of a ball
+  has `3 R / 4`, and `R (sin v2 + sin v1) / 2` in `z` where it is `3 R (sin v2 + sin v1) / 8`, so a
+  part of the latitude reads wrong even over a full turn. A full cylinder turn hides the first, a
+  whole sphere hides both.
+- **`gp_Torus`.** Both classes read the area (`R r (u2 - u1)(v2 - v1)`) and the volume
+  (`R r^2 (u2 - u1)(v2 - v1) / 2`) as if the tube were a full turn: over part of the tube the area
+  is `r (R (v2 - v1) + r (sin v2 - sin v1))(u2 - u1)`, and the solid below is
+  `r^2 (R (v2 - v1) / 2 + r (sin v2 - sin v1) / 3)(u2 - u1)`. The centre of mass of both reads the plain mean of
+  `rho = R + r cos v` in `x` and `y` and of `r sin v` in `z`, where the element weights them: the
+  surface by `int rho^2 dv / int rho dv`, the solid by the matching ratios of `t`-weighted integrals.
+  And `GProp_VelGProps::Perform(gp_Torus)` reads `cos(Alpha2)` where `cos(Teta2)` is meant, in
+  the one line that sets `Cnt2`.
+
+**The torus volume of a part of the tube is a convention OCCT does not state, and this patch chooses
+one.** The patch takes the solid swept by the segment from the circle through the centres of the tube
+to the patch, `P = ((R + t r cos v) cos u, (R + t r cos v) sin u, t r sin v)` with `t` in [0, 1] and
+`dV = (R + t r cos v) t r^2 dt dv du`. A full range gives `2 pi^2 R r^2` as the code already read, and
+the other volume overloads sweep the solid from the axis or the centre to the patch in the same
+way. A different choice (the solid between the patch and the torus's axis, say) would change only
+the partial-tube torus volume.
+
+**Not fixed, and not scoped here:** `Perform` stores `g` in global coordinates, where `CentreOfMass()` and
+`MatrixOfInertia()` read it relative to `loc` (and `GProp_GProps::Add` reads it as `loc + g`), so
+both are right only when `loc` is the origin. It is the same in every `Perform` of both classes,
+including the cone's, and older than `0055`. `GProps` (Swift) therefore leaves the reference point
+out and fixes it at the origin.
+
+`GProp_SelGProps` and `GProp_VelGProps` still have no caller in `Libraries/occt-src`, so
+[`okf/policies/follow-occt-callers.md`](../../okf/policies/follow-occt-callers.md) has no call site to
+copy. The arbiter is an independent Gauss-Legendre integral over the surface's parameter space,
+written in `Scripts/repro/3091/probe.cxx` and in `Issue3091GPropsTests`, which shares no formula
+with the kernel's.
+
+### Measured, macOS arm64, before and after
+
+`run.sh`: the two translation units recompiled from source at `-O3`, once with `0050`, `0051` and
+`0055` (the control) and once with `0057` on top (the variant), linked ahead of `libOCCT-macos.a`.
+96 checks: three shapes, the surface and the solid, four ranges each (a full turn and three partial
+ranges in `u` and `v`), the frame untilted and tilted and translated, each checking mass, centre of
+mass, the matrix of inertia about it, and `MomentOfInertia` about an oblique axis through (2, -1, 3).
+**96 fail before and 0 after**, the largest deviation 1.1e-13.
+
+| shape, class | largest matrix entry error, control | variant | largest centre-of-mass error, control | variant |
+|---|---|---|---|---|
+| cylinder, surface | 4.4 | 2.6e-14 | 1.2e-14 | 1.2e-14 |
+| cylinder, volume | 13 | 1.1e-13 | 2.1 | 1.4e-13 |
+| sphere, surface | 3.4 | 4.4e-14 | 9.0e-15 | 9.0e-15 |
+| sphere, volume | 5.2 | 5.2e-14 | 1.0 | 1.9e-14 |
+| torus, surface | 2.5 | 8.0e-15 | 1.2 | 1.2e-14 |
+| torus, volume | 2.3 | 2.2e-14 | 2.8 | 5.5e-14 |
+
+Matrix errors are relative to the largest entry of the exact matrix. The torus mass over part of
+the tube is off by up to 81% (surface) and 43% (volume) in the control and exact in the variant. The
+issue's number reproduces: the full cylinder surface, `R` = 5, height 10, reads 314.15926535897933
+about its axis in the control against 7853.981633974483 in the variant and in the integral.
+
+The patch was authored against the patched tree (`0050`, `0051` and `0055` applied) and applies only
+on top of them. It adds no raise or throw, so `Scripts/occt-raise-if-map.txt` changes only in its
+stamp.
+
+### The Swift test
+
+`GProps` (#3091), the wrapper of both classes, is the first Swift API that reads these values, so the
+regression test goes through it: `Issue3091GPropsTests` (`OCCTAnalysisTests`).
+`everyOverloadAgreesWithTheIndependentIntegral` compares all 48 combinations of shape, class, range
+and frame with a Gauss-Legendre integral written in the test. It and three more tests (the issue's
+number, the solid's centres for a partial turn and the principal properties) were gated on
+`OCCTSWIFT_LOCAL=1` while the pinned asset lacked the patch, and are ungated since
+`v4.0.0-kernel.5` pinned it; they pass against that asset. The counterfactual below was measured
+before the repin and is the record that they fail without the patch. Measured by swapping the two members of a copy of the pinned archive (the `ar r` shortcut, not a
+rebuild), on macOS arm64, with `OCCTSWIFT_LOCAL=1`: on the archive as shipped 4 of the suite's 10 tests
+fail (the four gated ones) and 6 pass; with the members built from `0050`, `0051` and `0055` only,
+the same 4 fail, on 112 cylinder, sphere and torus findings and none for the cone; with `0057` on top
+all 10 pass, the 48-combination test in 9 s (its tolerance is 1e-9; the probe's largest deviation is 1.1e-13). The six that run on
+the asset were each broken with their subject (a range order left unchecked, the frame origin
+ignored, the kind inverted, `add` reporting success without composing, a non-finite axis let through)
+and each failed.
+
+**Upstream checked 2026-10-07:** no PR or issue about either class; both files last changed upstream
+on 2026-03-10 (OCCT#1156, an LProp unification already in the pinned tree). **Not yet filed
+upstream**; it goes up with `0050`, `0051` and `0055` as one report on the cone, cylinder, sphere
+and torus, with a GTest of its own then, since upstream's reviewers ask for one on every PR.
+
+**Retire** once the bundled OCCT includes this fix.
 
 # Retired patches
 

@@ -314,7 +314,7 @@ func cafReadDoesNotPoisonShapeWriter() throws {
 
 
 def self_test():
-    test_path = 'Tests/OCCTIOTests/STEPWriterCAFCorruptionTests.swift'
+    test_path = 'Tests/OCCTIOTests/STEP/STEPWriterCAFCorruptionTests.swift'
 
     unrelated_removal = '''\
 --- a/src/DataExchange/TKDESTEP/STEPControl/STEPControl_Writer.cxx

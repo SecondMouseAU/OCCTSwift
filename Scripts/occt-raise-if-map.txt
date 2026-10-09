@@ -58,7 +58,7 @@
 # the stray check in docs/guides/building-occt.md's "Shipping a rebuild" answers it.
 #
 # occt-version: 8.0.1
-# derived against: 43 carried patch(es) in Scripts/patches/, every one of them verified
+# derived against: 44 carried patch(es) in Scripts/patches/, every one of them verified
 # derived against: applied in the tree the rows below were derived from.
 # patch: 0010-Intf_Interference-O1-tangent-zone-checkpoint-breaker-319 79fe529c26ef
 # patch: 0011-XCAFDoc_ShapeTool-AutoNamingScope-341 76898e2438a2
@@ -103,16 +103,17 @@
 # patch: 0054-ChFi3d_Builder-StartSol-drops-an-obstacle-with-no-edge-2881 8299cab4767b
 # patch: 0055-GProp_SelGProps-GProp_VelGProps-cone-matrix-of-inertia-3010 81390e4d295e
 # patch: 0056-BRepLib-Plane-creates-the-default-plane-under-the-magic-static-lock-3039 35b5684c9513
+# patch: 0057-GProp_SelGProps-GProp_VelGProps-cylinder-sphere-torus-inertia-3091 04a543f518b6
 #
 # totals: inline-raise       462 site(s) in  104 class(es)
 # totals: outofline-raise    828 site(s) in  284 class(es)
 # totals: inline-throw       501 site(s) in  212 class(es)
 # totals: outofline-throw   3764 site(s) in  830 class(es)
-# totals: outofline-delegated  5970 site(s) in  926 class(es)
+# totals: outofline-delegated  5946 site(s) in  924 class(es)
 # totals: inherited-live    2587 site(s) in 2587 class(es)
-# totals: inline-dead-at-depth  9913 site(s) in  100 class(es)
+# totals: inline-dead-at-depth  9911 site(s) in  100 class(es)
 #
-# member attribution: 332 of 5043 row(s) carry at least one <file-scope> site, 265 name no member at all
+# member attribution: 332 of 5041 row(s) carry at least one <file-scope> site, 265 name no member at all
 #
 # packages examined: 404
 # packages: AIS,APIHeaderSection,Adaptor2d,Adaptor3d,AdvApp2Var,AdvApprox,AppBlend,AppCont,AppDef,AppParCurves,AppStd,AppStdL
@@ -1376,10 +1377,8 @@ GProp_PEquation outofline-throw 4 Standard_NoSuchObject Box,Line,Plane,Point
 GProp_PEquation outofline-delegated 7 Standard_ConstructionError,Standard_OutOfRange,gp_VectorWithNullMagnitude gp_Dir,gp_Vec
 GProp_PGProps outofline-throw 5 Standard_DimensionError,Standard_DomainError AddPoint,Barycentre,GProp_PGProps
 GProp_PGProps outofline-delegated 7 Standard_ConstructionError,Standard_OutOfRange gp_Mat,gp_XYZ
-GProp_SelGProps outofline-delegated 12 Standard_ConstructionError,Standard_OutOfRange gp_Mat,gp_XYZ
 GProp_SelGProps inherited-live 1 Standard_DomainError GProp_GProps
 GProp_UndefinedAxis inline-throw 1 GProp_UndefinedAxis <file-scope>
-GProp_VelGProps outofline-delegated 12 Standard_ConstructionError,Standard_OutOfRange gp_Mat,gp_XYZ
 GProp_VelGProps inherited-live 1 Standard_DomainError GProp_GProps
 GccAna_Circ2d2TanOn outofline-throw 15 GccEnt_BadQualifier,Standard_OutOfRange,StdFail_NotDone CenterOn3,GccAna_Circ2d2TanOn,IsTheSame1,IsTheSame2,Tangency1,Tangency2,WhichQualifier
 GccAna_Circ2d2TanOn outofline-delegated 9 Standard_ConstructionError,Standard_OutOfRange,Standard_OutOfRange_Always Standard_OutOfRange,gp_Circ2d,gp_Dir2d
@@ -5109,7 +5108,7 @@ gp_Vec2d inline-dead-at-depth 376 Standard_ConstructionError +97-more,BRepBlend,
 gp_XY inline-raise 5 Standard_ConstructionError,Standard_OutOfRange <file-scope>,Normalize
 gp_XY inline-dead-at-depth 205 Standard_ConstructionError,Standard_OutOfRange +56-more,BRepMesh,GccAna,Geom2dGcc,IGESDimen,IGESGeom,NLPlate,Plate,gp
 gp_XYZ inline-raise 5 Standard_ConstructionError,Standard_OutOfRange <file-scope>,Normalize
-gp_XYZ inline-dead-at-depth 428 Standard_ConstructionError,Standard_OutOfRange +115-more,Geom,GeomFill,IGESDimen,IGESDraw,IGESGeom,IGESSolid,Plate,gp
+gp_XYZ inline-dead-at-depth 426 Standard_ConstructionError,Standard_OutOfRange +115-more,Geom,GeomFill,IGESDimen,IGESDraw,IGESGeom,IGESSolid,Plate,gp
 instance inherited-live 1 Standard_ProgramError Standard_Transient
 integer inherited-live 1 Standard_ProgramError Standard_Transient
 listBase inherited-live 1 Standard_ProgramError Standard_Transient

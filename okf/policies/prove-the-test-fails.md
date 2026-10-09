@@ -122,7 +122,7 @@ thing it names and unfalsifiable against everything upstream of it.
 also what `CLAUDE.md`'s "never force-unwrap in `#expect`" asks for: that rule is against `result!`
 reaching a non-short-circuiting `#expect`, not against requiring the value.
 
-Measured, in `Tests/OCCTXCAFTests/ShapeToolCompletionsTests.swift` (#2794, fixed in PR #2800). All
+Measured, in `Tests/OCCTXCAFTests/ShapeTool/ShapeToolCompletionsTests.swift` (#2794, fixed in PR #2800). All
 nine tests in the suite opened with the same three-deep chain:
 
 ```swift

@@ -210,11 +210,11 @@ and #572 (the C1/C2 consumers).
 
 ## Interaction with #491
 
-`Tests/OCCTSurfaceTests/Issue491SurfaceApproxParityTests.swift` always kept `.c0` in its request set:
+`Tests/OCCTSurfaceTests/Conversion/Issue491SurfaceApproxParityTests.swift` always kept `.c0` in its request set:
 both entry points must return the *same* surface for the same request, and after #491 they did,
 garbage included. Its `maxErrorDescribesTheSharedFit` test used to exclude `.c0`, because asserting
 "sampled deviation <= reported `maxError`" failed on OCCT's own numbers there. That exclusion is gone;
-the test now checks every request. `Tests/OCCTSurfaceTests/Issue522ApproxC0CollapseTests.swift`
+the test now checks every request. `Tests/OCCTSurfaceTests/Conversion/Issue522ApproxC0CollapseTests.swift`
 carries the regression tests for this issue, all four of which fail against an unpatched kernel with
 exactly the numbers tabulated above.
 

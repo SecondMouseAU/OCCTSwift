@@ -76,7 +76,7 @@ after a build. That is the guard `occtFilletContourHoldsEdge` applies.
 unguarded call sometimes returns another contour's law and sometimes throws
 `no law on constant edges`, because `IsConstant(0)` compares whatever `abscissa->Value(-1)` happens
 to read against the contour's radii. Measured on the Swift suite with the guard removed: every run
-of `Tests/OCCTModelingTests/Issue505FilletBuilderEdgeTypeTests.swift` failed, but with 11 to 18
+of `Tests/OCCTModelingTests/Blends/Issue505FilletBuilderEdgeTypeTests.swift` failed, but with 11 to 18
 recorded issues across five runs.
 
 ### Two more things the same probe pins about `SetLaw`

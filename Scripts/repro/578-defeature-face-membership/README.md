@@ -141,4 +141,4 @@ The strictness is the bridge's own contract, matching the one `withoutFeatures(f
 
 `occtDefeaturingFacesFromShapes` (`Sources/OCCTBridge/src/OCCTBridge_Modeling.mm`), the #497 skeleton,
 which now takes the input shape so it can build that face map. The contract is written out in
-`OCCTBridge_Internal.h` beside it, and pinned by `Tests/OCCTModelingTests/Issue578DefeatureFaceMembershipTests.swift`.
+`OCCTBridge_Internal.h` beside it, and pinned by `Tests/OCCTModelingTests/Features/Issue578DefeatureFaceMembershipTests.swift`.

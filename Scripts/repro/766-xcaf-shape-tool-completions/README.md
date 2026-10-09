@@ -1,7 +1,7 @@
 # `XCAFDoc_ShapeTool` completion methods, ground truth
 
 What the nine `XCAFDoc_ShapeTool` entry points behind `Document.shapeTool*` return for the input
-`Tests/OCCTXCAFTests/ShapeToolCompletionsTests.swift` uses: a 10x10x10 box centred on the origin,
+`Tests/OCCTXCAFTests/ShapeTool/ShapeToolCompletionsTests.swift` uses: a 10x10x10 box centred on the origin,
 added to a fresh `MDTV-XCAF` document with `AddShape(shape, makeAssembly = true)`, which is what
 `Document.addShape` does by default.
 

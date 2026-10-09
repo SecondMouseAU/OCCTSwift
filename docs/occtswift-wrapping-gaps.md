@@ -50,6 +50,18 @@ Every OCCT toolkit used for modeling, analysis, and data exchange:
 | NCollection containers | ~900 | Template-only C++ (no exported symbols); used internally in bridge |
 | Abstract base classes | ~200 | Cannot be instantiated; only concrete subclasses are wrapped |
 
+### GProp_SelGProps and GProp_VelGProps: wrapped, with one deliberate omission (#3091)
+
+`GProps` wraps both classes over `gp_Cylinder`, `gp_Cone`, `gp_Sphere` and `gp_Torus`, with every
+interrogation of `GProp_GProps` and `GProp_PrincipalProps` and `GProp_GProps::Add`. Left out on
+purpose: **`SetLocation` and the `SLocation` constructor argument**, the reference point of the
+system. `Perform` stores the centre of mass in global coordinates where `CentreOfMass()` and
+`MatrixOfInertia()` read it relative to that point (and `Add` reads it as `loc + g`), so both are
+right only when the point is the origin; exposing it would return a wrong centre of mass for any
+other value. The empty `GProp_SelGProps()` and `GProp_VelGProps()` constructors build a system with no
+mass, which holds no measurement to read, and are not wrapped; `GProp_GProps(SystemLocation)` is
+the same omission as `SetLocation`.
+
 ### Classes Not Wrapped (require abstract subclass implementations)
 
 These require implementing C++ abstract classes, which the bridge architecture doesn't support:
@@ -1778,7 +1790,7 @@ omission** (by design, documented reason) or **unexamined gap** (not yet wrapped
 | `XCAFDoc_DimTolTool` | 23% (9/39) | **Partial gap / deliberate** | Split three ways (see detailed section above): (1) **Real gap**: linkage methods (`GetRefDimensionLabels`, `GetRefGeomToleranceLabels`, `GetRefDatumLabel`, `GetRefShapeLabel`, `GetDatumOfTolerLabels`, `GetDatumWithObjectOfTolerLabels`, `GetTolerOfDatumLabels`, `SetDatumToGeomTol`, `SetDatum` overloads, `FindDatum`) — largest missing piece of GD&T surface. (2) **Deliberate**: legacy `XCAFDoc_DimTol` API (`IsDimTol`, `GetDimTolLabels`, `FindDimTol`, `AddDimTol`, `SetDimTol`, `GetDimTol`) — second spelling of `XCAFDoc_DimTol` wrapped directly. (3) **Not a gap**: classifiers/plumbing (`IsDimension`, `IsGeomTolerance`, `IsDatum`, `IsLocked`/`Lock`/`Unlock`, `GetGDTPresentations`/`SetGDTPresentations`, `BaseLabel`, `ShapeTool`, `GetID`, `ID`, `DumpJson`). |
 | `GeomPlate_MakeApprox` | 33% (1/3) | **Deliberate omission** | Only `Perform()` is called. The 2 unreached methods are `GetMaxDegree()` and `GetNbPatches()`. Both are read-only getters for post-approximation metadata the Swift API does not surface (the approximator's internal patch count/degree). Not a capability gap. |
 | `BRepMAT2d_BisectingLocus` | 45% (5/11) | **Deliberate omission** | Only `Compute()` is called (via `MedialAxis(of:)`). The 6 unreached methods are `LineIndex()`, `ASide()`, `BJoinType()`, `GetResult()`, `GetResult1()`, `GetResult2()`. `Compute()` is the single entry point the Swift API exposes (`bisector2D`); the rest are internal state getters. Not a capability gap. |
-| `NLPlate_NLPlate` | 50% (6/12) | **Partial gap / deliberate** | (1) **Deliberate**: `Evaluate()`, `EvaluateDerivative()`, `GetDeformedPoint()`, `GetDeformedTangent()`, `GetDeformedNormal()`, `GetDeformedPosition()` are evaluator methods the Swift API does not expose directly — the bridge samples `Evaluate` on a grid and refits with `GeomAPI_PointsToBSplineSurface` (`Surface.nlPlateDeformed`), which is the intended API. (2) **Real gap**: `SetTolerance()`, `SetMaxDegree()`, `SetMaxSegments()`, `SetContinuity()`, `SetDegree()`, `GetDegree()`, `GetContinuity()`, `GetTolerance()`, `GetNbPatches()`, `GetMaxDegree()`, `GetMaxSegments()` — solver configuration methods the Swift API hardcodes. Exposing them would mean a `NLPlateBuilder` type, which is a separate API design issue. |
+| `NLPlate_NLPlate` | 50% (6/12) | **Partial gap / deliberate** | (1) **Deliberate**: `Evaluate()`, `EvaluateDerivative()`, `GetDeformedPoint()`, `GetDeformedTangent()`, `GetDeformedNormal()`, `GetDeformedPosition()` are evaluator methods the Swift API does not expose directly: the bridge samples `Evaluate` on a lattice and interpolates it with `BSplCLib::Interpolate` (`Surface.nlPlateDeformed`), which is the intended API. (2) **Real gap**: `SetTolerance()`, `SetMaxDegree()`, `SetMaxSegments()`, `SetContinuity()`, `SetDegree()`, `GetDegree()`, `GetContinuity()`, `GetTolerance()`, `GetNbPatches()`, `GetMaxDegree()`, `GetMaxSegments()`: solver configuration methods the Swift API hardcodes. Exposing them would mean a `NLPlateBuilder` type, which is a separate API design issue. |
 
 **On the metric.** #1021's caveat holds across all rows: the denominator counts `Set*` and
 `DumpJson`, inflating the gap. The linkage methods in `XCAFDoc_DimTolTool` are the only actionable
@@ -1789,19 +1801,22 @@ gap; all other rows are deliberate omissions documented here.
 `Surface.nlPlateDeformed` and its four siblings (`nlPlateDeformedG1`, `nlPlateDeformedG2`,
 `nlPlateDeformedG3`, `nlPlateDeformedIncremental`) do not hand back the deformed surface itself.
 `NLPlate_NLPlate` has no surface to hand back: it is an evaluator, and the only way out of it is
-`Evaluate(uv)` a point at a time. The bridge samples that on a grid and fits the samples with
-`GeomAPI_PointsToBSplineSurface`, so the result is a fresh approximation of the deformation, not
-the input surface with a displacement applied to it.
+`Evaluate(uv)` a point at a time. The bridge samples that on a lattice and interpolates the samples
+with `BSplCLib::Interpolate`, so the result is a fresh cubic BSpline through the plate's samples,
+not the input surface with a displacement applied to it. It used to be a
+`GeomAPI_PointsToBSplineSurface` least-squares fit of a uniform 20x20 grid, which is what #3133,
+#3134 and #3135 were about (see the last bullet).
 
 Three consequences, all measured in
 [`Scripts/repro/1049-nlplate-double-base/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/1049-nlplate-double-base)
-rather than reasoned about. The first is fixed; the second and third are not, and are recorded here
-so the question is not re-asked from scratch.
+rather than reasoned about (the third, in
+[`Scripts/repro/3133-nlplate-fit/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/3133-nlplate-fit)).
+The first and third are fixed; the second is not, and is recorded here so the question is not
+re-asked from scratch.
 
-- **The parametrisation is restored, by a linear knot map.** The fit lands on `[0, 1] x [0, 1]`,
-  and the returned surface's knots are then mapped linearly onto the working domain the samples
-  were taken over. Poles are untouched, so this changes the parametrisation and nothing about the
-  geometry, and the `(u, v)` a constraint was written at addresses the same place on the result as
+- **The parametrisation is the working domain's own.** The interpolation is done at the lattice's
+  true (u, v), so no rescale is needed (it used to be a linear knot map after a fit that landed on
+  `[0, 1] x [0, 1]`, which is what let chord length move points in #3133). The `(u, v)` a constraint was written at addresses the same place on the result as
   it did on the input. Before this, a cylinder deformed at `u = pi/2` came back with that same
   `u = pi/2` outside the returned surface's own domain.
 - **Periodicity is not restored.** A deformed cylinder comes back as a plain BSpline that does not
@@ -1811,12 +1826,26 @@ so the question is not re-asked from scratch.
   claim already happened, and it was never implementable as written: `GeomPlate_MakeApprox` takes
   a `Handle(GeomPlate_Surface)`, which comes from `GeomPlate_BuildPlateSurface`, not from
   `NLPlate_NLPlate`.
-- **The 20x20 sample grid is fixed, so `tolerance` describes a fit the caller cannot resolve.**
-  Same family as #479 and #558. It shows on a cylinder: `NLPlate_NLPlate` hits the constraint
-  target exactly, the fitted surface misses it by 13.5, and the worst deviation between the fit and
-  the solver anywhere on the domain is 52.3. Twenty samples across a full turn of a radius-10
-  cylinder cannot carry a plate whose own excursions reach 128.8. Exposing the grid size is a public
-  API addition, so it waits for its own issue rather than riding this fix.
+- **The sampling lattice is the interpolation's only resolution, and `tolerance` sets its density.**
+  The lattice is 20 nodes per direction at `tolerance` 0.1, 36 at 1e-2, 63 at 1e-3, at most 80,
+  plus one node per constraint parameter (a lattice node within a quarter step of a constraint
+  parameter is dropped in its favour). A cubic interpolant is exact at its nodes, so the result
+  passes through every constraint target, which `NLPlate_NLPlate::Evaluate` meets, and between
+  nodes it carries an error `tolerance` does not bound. Two defects of the earlier fit are gone:
+  its chord-length parametrisation, which made the linear knot map above move a point in x and y
+  (a target at (-5, -5) came back at (-7.6, -6.7, -3.3), #3133), and the drag a least-squares
+  fit takes from samples where the plate is extreme. For G1 and above `NLPlate_NLPlate` is exact at
+  its constraints and nowhere else is promised: `Plate_Plate::SolveTI1` regularises an
+  underdetermined polynomial block with 1e-8 and returns values of order 1e6 to 1e20 a few units
+  out (a single G1 constraint at resolution order 4 is 302 at distance 0.14 and 4e7 at 1.4), the
+  source of the -2e12 and -1e21 of #3134 and of the `nil` of #3135. The bridge keeps a sample within
+  a thousand times the largest displacement the caller asked for (at least 1000 units) of the
+  undeformed surface, so the interpolation is not lost to cancellation; a non-finite sample returns
+  `nil`. **Limits that remain:** the G1/G2/G3 derivative targets are met by the solver but not
+  reproduced by the interpolant, whose derivative at a node depends on the extreme neighbouring
+  samples, and the result between nodes is the interpolation of a plate that is itself
+  meaningless far from its constraints. Exposing the lattice size is a public API addition, so it
+  waits for its own issue.
 
 **The working domain itself is derived, not the input's own domain, whenever the input is
 unbounded.** Each direction is taken from the input surface where the input bounds it, and from

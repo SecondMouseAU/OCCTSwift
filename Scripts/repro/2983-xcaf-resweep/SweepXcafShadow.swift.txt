@@ -1,0 +1,871 @@
+import Foundation
+import OCCTBridge
+
+// TEMPORARY injection harness for the #2983 XCAF re-sweep. This `.txt` is the evidence copy: for a
+// sweep it is copied to Sources/OCCTSwift/SweepXcafShadow.swift and removed again, and that file
+// must never be committed (README.md, "Running it").
+// Module-local functions shadow the imported bridge functions of the same name, so no call site
+// and no .mm is edited. One build serves every switch; SWEEP_XCAF_SWITCH selects one at runtime.
+// With the variable unset every shadow is a pure pass-through, which the sweep asserts.
+
+enum SX {
+    static let active: String =
+        Foundation.ProcessInfo.processInfo.environment["SWEEP_XCAF_SWITCH"] ?? ""
+    static func on(_ name: String) -> Bool { active == name }
+    static func has(_ prefix: String) -> Bool { active.hasPrefix(prefix) }
+}
+
+typealias SXDoc = OpaquePointer
+
+// MARK: - TDF label properties (L_*)
+
+func OCCTDocumentLabelTag(_ doc: SXDoc?, _ labelId: Int64) -> Int32 {
+    let r = OCCTBridge.OCCTDocumentLabelTag(doc!, labelId)
+    if SX.on("L_TAG_PLUS1") { return r + 1 }
+    if SX.on("L_TAG_ZERO") { return 0 }
+    if SX.on("L_TAG_CONST1") { return 1 }
+    if SX.on("L_TAG_IS_LABELID") { return Int32(truncatingIfNeeded: labelId) }
+    if SX.on("L_TAG_FATHERS") {
+        let f = OCCTBridge.OCCTDocumentLabelFather(doc!, labelId)
+        if f >= 0 { return OCCTBridge.OCCTDocumentLabelTag(doc!, f) }
+    }
+    return r
+}
+
+func OCCTDocumentLabelDepth(_ doc: SXDoc?, _ labelId: Int64) -> Int32 {
+    let r = OCCTBridge.OCCTDocumentLabelDepth(doc!, labelId)
+    if SX.on("L_DEPTH_PLUS1") { return r + 1 }
+    if SX.on("L_DEPTH_MINUS1") { return r - 1 }
+    if SX.on("L_DEPTH_ZERO") { return 0 }
+    if SX.on("L_DEPTH_CONST1") { return 1 }
+    if SX.on("L_DEPTH_CONST2") { return 2 }
+    if SX.on("L_DEPTH_CAP2") { return min(r, 2) }
+    return r
+}
+
+func OCCTDocumentLabelIsNull(_ doc: SXDoc?, _ labelId: Int64) -> Bool {
+    let r = OCCTBridge.OCCTDocumentLabelIsNull(doc!, labelId)
+    if SX.on("L_ISNULL_FALSE") { return false }
+    if SX.on("L_ISNULL_TRUE") { return true }
+    if SX.on("L_ISNULL_INVERT") { return !r }
+    return r
+}
+
+func OCCTDocumentLabelIsRoot(_ doc: SXDoc?, _ labelId: Int64) -> Bool {
+    let r = OCCTBridge.OCCTDocumentLabelIsRoot(doc!, labelId)
+    if SX.on("L_ISROOT_FALSE") { return false }
+    if SX.on("L_ISROOT_TRUE") { return true }
+    if SX.on("L_ISROOT_INVERT") { return !r }
+    if SX.on("L_ISROOT_DEPTH_LE1") { return OCCTBridge.OCCTDocumentLabelDepth(doc!, labelId) <= 1 }
+    if SX.on("L_ISROOT_TAG0_OR_1") { return OCCTBridge.OCCTDocumentLabelTag(doc!, labelId) <= 1 }
+    return r
+}
+
+func OCCTDocumentLabelFather(_ doc: SXDoc?, _ labelId: Int64) -> Int64 {
+    let r = OCCTBridge.OCCTDocumentLabelFather(doc!, labelId)
+    if SX.on("L_FATHER_SELF") { return labelId }
+    if SX.on("L_FATHER_NONE") { return -1 }
+    if SX.on("L_FATHER_ROOT") { return OCCTBridge.OCCTDocumentLabelRoot(doc!, labelId) }
+    if SX.on("L_FATHER_MAIN") { return OCCTBridge.OCCTDocumentGetMainLabel(doc!) }
+    if SX.on("L_FATHER_GRANDFATHER") && r >= 0 {
+        let g = OCCTBridge.OCCTDocumentLabelFather(doc!, r)
+        if g >= 0 { return g }
+    }
+    return r
+}
+
+func OCCTDocumentLabelRoot(_ doc: SXDoc?, _ labelId: Int64) -> Int64 {
+    let r = OCCTBridge.OCCTDocumentLabelRoot(doc!, labelId)
+    if SX.on("L_ROOT_SELF") { return labelId }
+    if SX.on("L_ROOT_NONE") { return -1 }
+    if SX.on("L_ROOT_FATHER") {
+        let f = OCCTBridge.OCCTDocumentLabelFather(doc!, labelId)
+        if f >= 0 { return f }
+    }
+    if SX.on("L_ROOT_MAIN") { return OCCTBridge.OCCTDocumentGetMainLabel(doc!) }
+    return r
+}
+
+func OCCTDocumentLabelHasAttribute(_ doc: SXDoc?, _ labelId: Int64) -> Bool {
+    let r = OCCTBridge.OCCTDocumentLabelHasAttribute(doc!, labelId)
+    if SX.on("L_HASATTR_FALSE") { return false }
+    if SX.on("L_HASATTR_TRUE") { return true }
+    if SX.on("L_HASATTR_INVERT") { return !r }
+    return r
+}
+
+func OCCTDocumentLabelNbAttributes(_ doc: SXDoc?, _ labelId: Int64) -> Int32 {
+    let r = OCCTBridge.OCCTDocumentLabelNbAttributes(doc!, labelId)
+    if SX.on("L_NBATTR_PLUS1") { return r + 1 }
+    if SX.on("L_NBATTR_ZERO") { return 0 }
+    if SX.on("L_NBATTR_CONST1") { return 1 }
+    if SX.on("L_NBATTR_MINUS1") { return max(r - 1, 0) }
+    if SX.on("L_NBATTR_DOUBLE") { return r * 2 }
+    return r
+}
+
+func OCCTDocumentLabelHasChild(_ doc: SXDoc?, _ labelId: Int64) -> Bool {
+    let r = OCCTBridge.OCCTDocumentLabelHasChild(doc!, labelId)
+    if SX.on("L_HASCHILD_FALSE") { return false }
+    if SX.on("L_HASCHILD_TRUE") { return true }
+    if SX.on("L_HASCHILD_INVERT") { return !r }
+    return r
+}
+
+func OCCTDocumentLabelNbChildren(_ doc: SXDoc?, _ labelId: Int64) -> Int32 {
+    let r = OCCTBridge.OCCTDocumentLabelNbChildren(doc!, labelId)
+    if SX.on("L_NBCHILD_PLUS1") { return r + 1 }
+    if SX.on("L_NBCHILD_MINUS1") { return max(r - 1, 0) }
+    if SX.on("L_NBCHILD_ZERO") { return 0 }
+    if SX.on("L_NBCHILD_CAP2") { return min(r, 2) }
+    if SX.on("L_NBCHILD_ALL_LEVELS") {
+        var buf = [Int64](repeating: -1, count: 4096)
+        return OCCTBridge.OCCTDocumentGetDescendantLabels(doc!, labelId, true, &buf, 4096)
+    }
+    return r
+}
+
+func OCCTDocumentLabelFindChild(
+    _ doc: SXDoc?, _ labelId: Int64, _ tag: Int32, _ create: Bool
+) -> Int64 {
+    if SX.on("L_FIND_IGNORE_CREATE") { return OCCTBridge.OCCTDocumentLabelFindChild(doc!, labelId, tag, false) }
+    if SX.on("L_FIND_ALWAYS_CREATE") { return OCCTBridge.OCCTDocumentLabelFindChild(doc!, labelId, tag, true) }
+    if SX.on("L_FIND_SELF") { return labelId }
+    if SX.on("L_FIND_IGNORE_TAG") {
+        var buf = [Int64](repeating: -1, count: 4096)
+        let n = OCCTBridge.OCCTDocumentGetDescendantLabels(doc!, labelId, false, &buf, 4096)
+        if n > 0 { return buf[0] }
+    }
+    if SX.on("L_FIND_TAG_PLUS1") { return OCCTBridge.OCCTDocumentLabelFindChild(doc!, labelId, tag + 1, create) }
+    return OCCTBridge.OCCTDocumentLabelFindChild(doc!, labelId, tag, create)
+}
+
+func OCCTDocumentLabelForgetAllAttributes(_ doc: SXDoc?, _ labelId: Int64, _ clearChildren: Bool) {
+    if SX.on("L_FORGET_NOOP") { return }
+    if SX.on("L_FORGET_IGNORE_CLEARCHILDREN") {
+        OCCTBridge.OCCTDocumentLabelForgetAllAttributes(doc!, labelId, !clearChildren)
+        return
+    }
+    OCCTBridge.OCCTDocumentLabelForgetAllAttributes(doc!, labelId, clearChildren)
+}
+
+func OCCTDocumentGetDescendantLabels(
+    _ doc: SXDoc?, _ labelId: Int64, _ allLevels: Bool,
+    _ out: UnsafeMutablePointer<Int64>?, _ maxCount: Int32
+) -> Int32 {
+    var levels = allLevels
+    if SX.on("L_DESC_SWAP_LEVELS") { levels = !allLevels }
+    if SX.on("L_DESC_ALWAYS_ALL") { levels = true }
+    if SX.on("L_DESC_ALWAYS_DIRECT") { levels = false }
+    let n = OCCTBridge.OCCTDocumentGetDescendantLabels(doc!, labelId, levels, out, maxCount)
+    let w = Int(min(n, maxCount))
+    if let out, w > 0 {
+        if SX.on("L_DESC_REVERSE") {
+            let a = Array(UnsafeBufferPointer(start: out, count: w)).reversed()
+            for (i, v) in a.enumerated() { out[i] = v }
+        }
+        if SX.on("L_DESC_DUP_FIRST") && w > 1 { out[w - 1] = out[0] }
+    }
+    if SX.on("L_DESC_DROP_LAST") && n > 0 { return n - 1 }
+    if SX.on("L_DESC_PLUS1") { return n + 1 }
+    return n
+}
+
+// MARK: - Triangulation attribute (T_*)
+
+func OCCTDocumentSetTriangulationFromShape(
+    _ doc: SXDoc?, _ labelId: Int64, _ shape: OpaquePointer?, _ deflection: Double
+) -> Bool {
+    if SX.on("T_SET_FALSE") { return false }
+    if SX.on("T_SET_TRUE_NOOP") { return true }
+    if SX.on("T_SET_FIRST_FACE_ONLY") || SX.on("T_SET_LAST_FACE_ONLY") {
+        let n = OCCTBridge.OCCTShapeGetSubShapeCount(shape!, 4)
+        if n > 0 {
+            var buf = [OpaquePointer?](repeating: nil, count: Int(n))
+            let w = buf.withUnsafeMutableBufferPointer {
+                OCCTBridge.OCCTShapeGetSubShapes(shape!, 4, $0.baseAddress, n)
+            }
+            if w > 0 {
+                let f = SX.on("T_SET_FIRST_FACE_ONLY") ? buf[0] : buf[Int(w) - 1]
+                return OCCTBridge.OCCTDocumentSetTriangulationFromShape(doc!, labelId, f!, deflection)
+            }
+        }
+    }
+    if SX.on("T_SET_DEFLECTION_x10") {
+        return OCCTBridge.OCCTDocumentSetTriangulationFromShape(doc!, labelId, shape!, deflection * 10)
+    }
+    return OCCTBridge.OCCTDocumentSetTriangulationFromShape(doc!, labelId, shape!, deflection)
+}
+
+func OCCTDocumentTriangulationNbNodes(_ doc: SXDoc?, _ labelId: Int64) -> Int32 {
+    let r = OCCTBridge.OCCTDocumentTriangulationNbNodes(doc!, labelId)
+    if SX.on("T_NODES_PLUS1") { return r + 1 }
+    if SX.on("T_NODES_MINUS1") { return max(r - 1, 0) }
+    if SX.on("T_NODES_ZERO") { return 0 }
+    if SX.on("T_NODES_HALF") { return r / 2 }
+    if SX.on("T_NODES_DOUBLE") { return r * 2 }
+    if SX.on("T_NODES_CAP4") { return min(r, 4) }
+    return r
+}
+
+func OCCTDocumentTriangulationNbTriangles(_ doc: SXDoc?, _ labelId: Int64) -> Int32 {
+    let r = OCCTBridge.OCCTDocumentTriangulationNbTriangles(doc!, labelId)
+    if SX.on("T_TRIS_PLUS1") { return r + 1 }
+    if SX.on("T_TRIS_MINUS1") { return max(r - 1, 0) }
+    if SX.on("T_TRIS_ZERO") { return 0 }
+    if SX.on("T_TRIS_HALF") { return r / 2 }
+    if SX.on("T_TRIS_CAP2") { return min(r, 2) }
+    return r
+}
+
+func OCCTDocumentTriangulationDeflection(_ doc: SXDoc?, _ labelId: Int64) -> Double {
+    let r = OCCTBridge.OCCTDocumentTriangulationDeflection(doc!, labelId)
+    if SX.on("T_DEFL_ZERO") { return 0 }
+    if SX.on("T_DEFL_CONST1") { return 1 }
+    if SX.on("T_DEFL_x2") { return r * 2 }
+    if SX.on("T_DEFL_HALF") { return r / 2 }
+    if SX.on("T_DEFL_NEG") { return -r }
+    if SX.on("T_DEFL_PLUS_EPS") { return r + 1e-3 }
+    return r
+}
+
+func OCCTDocumentTriangulationNode(
+    _ doc: SXDoc?, _ labelId: Int64, _ index: Int32, _ out: UnsafeMutablePointer<Double>?
+) -> Bool {
+    var i = index
+    if SX.on("T_NODE_INDEX_PLUS1") { i = i &+ 1 }
+    if SX.on("T_NODE_INDEX_MINUS1") { i = i &- 1 }
+    if SX.on("T_NODE_FIRST") { i = 1 }
+    if SX.on("T_NODE_ACCEPT_ZERO") && index == 0 { i = 1 }
+    if SX.on("T_NODE_ACCEPT_COUNT_PLUS1")
+        && index == OCCTBridge.OCCTDocumentTriangulationNbNodes(doc!, labelId) &+ 1 { i = 1 }
+    if SX.on("T_NODE_NEVER_NIL") {
+        let ok = OCCTBridge.OCCTDocumentTriangulationNode(doc!, labelId, i, out!)
+        if !ok { out![0] = 0; out![1] = 0; out![2] = 0 }
+        return true
+    }
+    let ok = OCCTBridge.OCCTDocumentTriangulationNode(doc!, labelId, i, out!)
+    if ok, let out {
+        if SX.on("T_NODE_ZERO_Z") { out[2] = 0 }
+        if SX.on("T_NODE_SWAP_XY") { let t = out[0]; out[0] = out[1]; out[1] = t }
+        if SX.on("T_NODE_NEG_X") { out[0] = -out[0] }
+        if SX.on("T_NODE_TRUNC") { out[0] = out[0].rounded(.towardZero); out[1] = out[1].rounded(.towardZero); out[2] = out[2].rounded(.towardZero) }
+        if SX.on("T_NODE_X_PLUS_EPS") { out[0] += 1e-3 }
+        if SX.on("T_NODE_LOCAL_FRAME") {
+            // the located shape's nodes reported in the face's own frame: shifted back
+            out[0] -= 100; out[1] -= 200; out[2] -= 300
+        }
+        if SX.on("T_NODE_ABS") { out[0] = abs(out[0]); out[1] = abs(out[1]); out[2] = abs(out[2]) }
+    }
+    return ok
+}
+
+func OCCTDocumentTriangulationNormal(
+    _ doc: SXDoc?, _ labelId: Int64, _ index: Int32, _ out: UnsafeMutablePointer<Double>?
+) -> Bool {
+    if SX.on("T_NORMAL_NIL") { return false }
+    var i = index
+    if SX.on("T_NORMAL_INDEX_MINUS1") { i = i &- 1 }
+    if SX.on("T_NORMAL_INDEX_PLUS1") { i = i &+ 1 }
+    let ok = OCCTBridge.OCCTDocumentTriangulationNormal(doc!, labelId, i, out!)
+    if SX.on("T_NORMAL_BREP_PRESENT") && !ok {
+        out![0] = 0; out![1] = 0; out![2] = 1
+        return true
+    }
+    if ok, let out {
+        if SX.on("T_NORMAL_NEGATE") { out[0] = -out[0]; out[1] = -out[1]; out[2] = -out[2] }
+        if SX.on("T_NORMAL_x2") { out[0] *= 2; out[1] *= 2; out[2] *= 2 }
+        if SX.on("T_NORMAL_ZERO_Z") { out[2] = 0 }
+    }
+    return ok
+}
+
+// MARK: - Components and assembly operations (C_*)
+
+func OCCTDocumentAddComponent(
+    _ doc: SXDoc?, _ asm: Int64, _ shape: Int64, _ tx: Double, _ ty: Double, _ tz: Double
+) -> Int64 {
+    if SX.on("C_ADD_NEG1") { return -1 }
+    if SX.on("C_ADD_NOOP_RETURN_ASSEMBLY") { return asm }
+    if SX.on("C_ADD_IGNORE_TRANSLATION") { return OCCTBridge.OCCTDocumentAddComponent(doc!, asm, shape, 0, 0, 0) }
+    if SX.on("C_ADD_SWAP_XY") { return OCCTBridge.OCCTDocumentAddComponent(doc!, asm, shape, ty, tx, tz) }
+    if SX.on("C_ADD_NEGATE_TX") { return OCCTBridge.OCCTDocumentAddComponent(doc!, asm, shape, -tx, ty, tz) }
+    if SX.on("C_ADD_DROP_TZ") { return OCCTBridge.OCCTDocumentAddComponent(doc!, asm, shape, tx, ty, 0) }
+    if SX.on("C_ADD_TX_ONLY_FIRST") && OCCTBridge.OCCTDocumentGetComponentCount(doc!, asm) > 0 {
+        return OCCTBridge.OCCTDocumentAddComponent(doc!, asm, shape, 0, 0, 0)
+    }
+    if SX.on("C_ADD_SECOND_NOOP") && OCCTBridge.OCCTDocumentGetComponentCount(doc!, asm) > 0 {
+        return OCCTBridge.OCCTDocumentGetComponentLabelId(doc!, asm, 0)
+    }
+    if SX.on("C_ADD_WRONG_SHAPE") && OCCTBridge.OCCTDocumentGetComponentCount(doc!, asm) > 0 {
+        let first = OCCTBridge.OCCTDocumentGetComponentLabelId(doc!, asm, 0)
+        let ref = OCCTBridge.OCCTDocumentGetComponentReferredLabelId(doc!, first)
+        if ref >= 0 { return OCCTBridge.OCCTDocumentAddComponent(doc!, asm, ref, tx, ty, tz) }
+    }
+    return OCCTBridge.OCCTDocumentAddComponent(doc!, asm, shape, tx, ty, tz)
+}
+
+func OCCTDocumentAddComponentMatrix(
+    _ doc: SXDoc?, _ asm: Int64, _ shape: Int64, _ m: UnsafePointer<Double>
+) -> Int64 {
+    var v = Array(UnsafeBufferPointer(start: m, count: 12))
+    if SX.on("C_MAT_NEG1") { return -1 }
+    if SX.on("C_MAT_IDENTITY") { v = [1, 0, 0, 0, 1, 0, 0, 0, 1, v[9], v[10], v[11]] }
+    if SX.on("C_MAT_DROP_TRANSLATION") { v[9] = 0; v[10] = 0; v[11] = 0 }
+    if SX.on("C_MAT_TRANSPOSED") {
+        let r = v
+        v[1] = r[3]; v[3] = r[1]; v[2] = r[6]; v[6] = r[2]; v[5] = r[7]; v[7] = r[5]
+    }
+    if SX.on("C_MAT_TRANSLATION_ROTATED") { let t = v[9]; v[9] = v[10]; v[10] = t }
+    if SX.on("C_MAT_ABS_ROTATION") { for i in 0..<9 { v[i] = abs(v[i]) } }
+    if SX.on("C_MAT_GROUPED_AS_ROWS34") {
+        // reads the grouped layout as a row-major 3x4 (translations in column 3)
+        let r = v
+        v = [r[0], r[1], r[2], r[4], r[5], r[6], r[8], r[9], r[10], r[3], r[7], r[11]]
+    }
+    return v.withUnsafeBufferPointer {
+        OCCTBridge.OCCTDocumentAddComponentMatrix(doc!, asm, shape, $0.baseAddress!)
+    }
+}
+
+func OCCTDocumentRemoveComponent(_ doc: SXDoc?, _ comp: Int64) {
+    if SX.on("C_REMOVE_NOOP") { return }
+    if SX.on("C_REMOVE_FIRST_OF_ASSEMBLY") {
+        let f = OCCTBridge.OCCTDocumentLabelFather(doc!, comp)
+        if f >= 0, OCCTBridge.OCCTDocumentGetComponentCount(doc!, f) > 0 {
+            OCCTBridge.OCCTDocumentRemoveComponent(doc!, OCCTBridge.OCCTDocumentGetComponentLabelId(doc!, f, 0))
+            return
+        }
+    }
+    if SX.on("C_REMOVE_ALL_OF_ASSEMBLY") {
+        let f = OCCTBridge.OCCTDocumentLabelFather(doc!, comp)
+        if f >= 0 {
+            var n = OCCTBridge.OCCTDocumentGetComponentCount(doc!, f)
+            while n > 0 {
+                OCCTBridge.OCCTDocumentRemoveComponent(doc!, OCCTBridge.OCCTDocumentGetComponentLabelId(doc!, f, 0))
+                n -= 1
+            }
+            return
+        }
+    }
+    OCCTBridge.OCCTDocumentRemoveComponent(doc!, comp)
+}
+
+func OCCTDocumentGetComponentCount(_ doc: SXDoc?, _ asm: Int64) -> Int32 {
+    let r = OCCTBridge.OCCTDocumentGetComponentCount(doc!, asm)
+    if SX.on("C_COUNT_PLUS1") { return r + 1 }
+    if SX.on("C_COUNT_MINUS1") { return max(r - 1, 0) }
+    if SX.on("C_COUNT_ZERO") { return 0 }
+    if SX.on("C_COUNT_CAP1") { return min(r, 1) }
+    if SX.on("C_COUNT_CONST2") { return 2 }
+    return r
+}
+
+func OCCTDocumentGetComponentLabelId(_ doc: SXDoc?, _ asm: Int64, _ index: Int32) -> Int64 {
+    if SX.on("C_LABELID_FIRST") { return OCCTBridge.OCCTDocumentGetComponentLabelId(doc!, asm, 0) }
+    if SX.on("C_LABELID_LAST") {
+        let n = OCCTBridge.OCCTDocumentGetComponentCount(doc!, asm)
+        return OCCTBridge.OCCTDocumentGetComponentLabelId(doc!, asm, max(n - 1, 0))
+    }
+    if SX.on("C_LABELID_REVERSE") {
+        let n = OCCTBridge.OCCTDocumentGetComponentCount(doc!, asm)
+        return OCCTBridge.OCCTDocumentGetComponentLabelId(doc!, asm, n - 1 - index)
+    }
+    if SX.on("C_LABELID_PLUS1") { return OCCTBridge.OCCTDocumentGetComponentLabelId(doc!, asm, index &+ 1) }
+    if SX.on("C_LABELID_ASSEMBLY") { return asm }
+    if SX.on("C_LABELID_NEVER_NEG") {
+        let r = OCCTBridge.OCCTDocumentGetComponentLabelId(doc!, asm, index)
+        return r < 0 ? asm : r
+    }
+    return OCCTBridge.OCCTDocumentGetComponentLabelId(doc!, asm, index)
+}
+
+func OCCTDocumentGetComponentReferredLabelId(_ doc: SXDoc?, _ comp: Int64) -> Int64 {
+    let r = OCCTBridge.OCCTDocumentGetComponentReferredLabelId(doc!, comp)
+    if SX.on("C_REF_SELF") { return comp }
+    if SX.on("C_REF_NEG1") { return -1 }
+    if SX.on("C_REF_FATHER") { return OCCTBridge.OCCTDocumentLabelFather(doc!, comp) }
+    if SX.on("C_REF_PLUS1") && r >= 0 { return r + 1 }
+    if SX.on("C_REF_NEVER_NEG") && r < 0 { return comp }
+    return r
+}
+
+func OCCTDocumentGetShapeUserCount(_ doc: SXDoc?, _ shape: Int64) -> Int32 {
+    let r = OCCTBridge.OCCTDocumentGetShapeUserCount(doc!, shape)
+    if SX.on("C_USER_CONST1") { return 1 }
+    if SX.on("C_USER_ZERO") { return 0 }
+    if SX.on("C_USER_PLUS1") { return r + 1 }
+    if SX.on("C_USER_MINUS1") { return max(r - 1, 0) }
+    if SX.on("C_USER_CAP1") { return min(r, 1) }
+    if SX.on("C_USER_DOUBLE") { return r * 2 }
+    return r
+}
+
+func OCCTDocumentUpdateAssemblies(_ doc: SXDoc?) {
+    if SX.on("C_UPDATE_NOOP") { return }
+    OCCTBridge.OCCTDocumentUpdateAssemblies(doc!)
+}
+
+// MARK: - Document explorer (E_*)
+
+func OCCTDocumentExplorerCount(_ doc: SXDoc) -> Int32 {
+    let r = OCCTBridge.OCCTDocumentExplorerCount(doc)
+    if SX.on("E_COUNT_PLUS1") { return r + 1 }
+    if SX.on("E_COUNT_MINUS1") { return max(r - 1, 0) }
+    if SX.on("E_COUNT_ZERO") { return 0 }
+    if SX.on("E_COUNT_CAP1") { return min(r, 1) }
+    return r
+}
+
+func OCCTDocumentExplorerDepth(_ doc: SXDoc, _ index: Int32) -> Int32 {
+    let r = OCCTBridge.OCCTDocumentExplorerDepth(doc, index)
+    if SX.on("E_DEPTH_ZERO") { return 0 }
+    if SX.on("E_DEPTH_PLUS1") { return r + 1 }
+    if SX.on("E_DEPTH_CONST1") { return 1 }
+    return r
+}
+
+func OCCTDocumentExplorerIsAssembly(_ doc: SXDoc, _ index: Int32) -> Bool {
+    let r = OCCTBridge.OCCTDocumentExplorerIsAssembly(doc, index)
+    if SX.on("E_ISASM_TRUE") { return true }
+    if SX.on("E_ISASM_INVERT") { return !r }
+    if SX.on("E_ISASM_DEPTH_GT0") { return OCCTBridge.OCCTDocumentExplorerDepth(doc, index) > 0 }
+    if SX.on("E_ISASM_IN_RANGE") { return index < OCCTBridge.OCCTDocumentExplorerCount(doc) }
+    return r
+}
+
+func OCCTDocumentExplorerLocation(_ doc: SXDoc, _ index: Int32, _ m: UnsafeMutablePointer<Double>) {
+    OCCTBridge.OCCTDocumentExplorerLocation(doc, index, m)
+    let ident: [Double] = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0]
+    if SX.on("E_LOC_ZERO") { for i in 0..<12 { m[i] = 0 } }
+    if SX.on("E_LOC_IDENTITY") { for i in 0..<12 { m[i] = ident[i] } }
+    if SX.on("E_LOC_DROP_TRANSLATION") { m[3] = 0; m[7] = 0; m[11] = 0 }
+    if SX.on("E_LOC_NEGATE_TRANSLATION") { m[3] = -m[3]; m[7] = -m[7]; m[11] = -m[11] }
+    if SX.on("E_LOC_TRANSPOSED") {
+        let r = Array(UnsafeBufferPointer(start: m, count: 12))
+        m[1] = r[4]; m[4] = r[1]; m[2] = r[8]; m[8] = r[2]; m[6] = r[9]; m[9] = r[6]
+    }
+    if SX.on("E_LOC_COLUMN_MAJOR") {
+        // the 3x4 read column-wise
+        let r = Array(UnsafeBufferPointer(start: m, count: 12))
+        for row in 0..<3 { for col in 0..<4 { m[row * 4 + col] = r[col * 3 + row] } }
+    }
+    if SX.on("E_LOC_TRANSLATION_XY_SWAP") { let t = m[3]; m[3] = m[7]; m[7] = t }
+    if SX.on("E_LOC_BAD_FALLBACK") && index >= OCCTBridge.OCCTDocumentExplorerCount(doc) {
+        // #1480's old formula, 1.0 at 0, 5, 6, 11
+        for i in 0..<12 { m[i] = (i % 4 == i / 3) ? 1.0 : 0.0 }
+    }
+    if SX.on("E_LOC_FALLBACK_ZERO") && index >= OCCTBridge.OCCTDocumentExplorerCount(doc) {
+        for i in 0..<12 { m[i] = 0 }
+    }
+    if SX.on("E_LOC_PREV_INDEX") && index > 0 {
+        OCCTBridge.OCCTDocumentExplorerLocation(doc, index - 1, m)
+    }
+}
+
+// MARK: - XCAFPrs_Style (P_*)
+
+func OCCTXCAFPrsStyleCreate() -> OCCTXCAFPrsStyle {
+    var s = OCCTBridge.OCCTXCAFPrsStyleCreate()
+    if SX.on("P_CREATE_NOT_EMPTY") { s.isEmpty = false }
+    if SX.on("P_CREATE_INVISIBLE") { s.isVisible = false }
+    return s
+}
+
+func OCCTXCAFPrsStyleCreateWithSurfColor(_ r: Double, _ g: Double, _ b: Double, _ a: Float)
+    -> OCCTXCAFPrsStyle
+{
+    var rr = r, gg = g, bb = b, aa = a
+    if SX.on("P_SURF_SWAP_RB") { rr = b; bb = r }
+    if SX.on("P_SURF_SWAP_RG") { rr = g; gg = r }
+    if SX.on("P_SURF_ALPHA_IGNORED") { aa = 1 }
+    if SX.on("P_SURF_ALPHA_ZERO") { aa = 0 }
+    var s = OCCTBridge.OCCTXCAFPrsStyleCreateWithSurfColor(rr, gg, bb, aa)
+    if SX.on("P_SURF_DROP_COLOR") { s.hasSurfColor = false }
+    if SX.on("P_SURF_AS_CURVE") { s.hasSurfColor = false; s.hasCurvColor = true; s.curvR = r; s.curvG = g; s.curvB = b }
+    if SX.on("P_SURF_EMPTY_TRUE") { s.isEmpty = true }
+    return s
+}
+
+func OCCTXCAFPrsStyleCreateWithCurvColor(_ r: Double, _ g: Double, _ b: Double) -> OCCTXCAFPrsStyle {
+    var s = OCCTBridge.OCCTXCAFPrsStyleCreateWithCurvColor(r, g, b)
+    if SX.on("P_CURV_DROP_COLOR") { s.hasCurvColor = false }
+    if SX.on("P_CURV_AS_SURF") { s.hasCurvColor = false; s.hasSurfColor = true; s.surfR = r; s.surfG = g; s.surfB = b }
+    if SX.on("P_CURV_SWAP_RG") { s.curvR = g; s.curvG = r }
+    if SX.on("P_CURV_EMPTY_TRUE") { s.isEmpty = true }
+    return s
+}
+
+func OCCTXCAFPrsStyleCreateFull(
+    _ sr: Double, _ sg: Double, _ sb: Double, _ sa: Float,
+    _ cr: Double, _ cg: Double, _ cb: Double, _ vis: Bool
+) -> OCCTXCAFPrsStyle {
+    var s = OCCTBridge.OCCTXCAFPrsStyleCreateFull(sr, sg, sb, sa, cr, cg, cb, vis)
+    if SX.on("P_FULL_DROP_CURVE") { s.hasCurvColor = false }
+    if SX.on("P_FULL_DROP_SURF") { s.hasSurfColor = false }
+    if SX.on("P_FULL_CURVE_FROM_SURF") { s.curvR = sr; s.curvG = sg; s.curvB = sb }
+    if SX.on("P_FULL_VISIBLE_TRUE") { s.isVisible = true }
+    return s
+}
+
+func OCCTXCAFPrsStyleIsEqual(
+    _ a: UnsafePointer<OCCTXCAFPrsStyle>, _ b: UnsafePointer<OCCTXCAFPrsStyle>
+) -> Bool {
+    let r = OCCTBridge.OCCTXCAFPrsStyleIsEqual(a, b)
+    if SX.on("P_EQ_TRUE") { return true }
+    if SX.on("P_EQ_FALSE") { return false }
+    if SX.on("P_EQ_INVERT") { return !r }
+    var x = a.pointee, y = b.pointee
+    func eq(_ fix: (inout OCCTXCAFPrsStyle) -> Void) -> Bool {
+        fix(&x); fix(&y)
+        return withUnsafePointer(to: &x) { px in
+            withUnsafePointer(to: &y) { py in OCCTBridge.OCCTXCAFPrsStyleIsEqual(px, py) }
+        }
+    }
+    if SX.on("P_EQ_IGNORE_ALPHA") { return eq { $0.surfAlpha = 1 } }
+    if SX.on("P_EQ_IGNORE_VISIBLE") { return eq { $0.isVisible = true } }
+    if SX.on("P_EQ_IGNORE_CURVE") { return eq { $0.hasCurvColor = false } }
+    if SX.on("P_EQ_IGNORE_SURF") { return eq { $0.hasSurfColor = false } }
+    if SX.on("P_EQ_IGNORE_R") { return eq { $0.surfR = 0 } }
+    if SX.on("P_EQ_IGNORE_G") { return eq { $0.surfG = 0 } }
+    if SX.on("P_EQ_IGNORE_B") { return eq { $0.surfB = 0 } }
+    if SX.on("P_EQ_IGNORE_CURV_R") { return eq { $0.curvR = 0 } }
+    return r
+}
+
+// MARK: - GD&T accessors (G_*)
+
+func OCCTDocumentGetDimensionInfo(_ doc: SXDoc?, _ index: Int32) -> OCCTDimensionInfo {
+    var i = OCCTBridge.OCCTDocumentGetDimensionInfo(doc!, index)
+    guard i.isValid else { return i }
+    if SX.on("G_DIM_QUAL_NONE") { i.qualifier = 0 }
+    if SX.on("G_DIM_ANGQUAL_NONE") { i.angularQualifier = 0 }
+    if SX.on("G_DIM_QUAL_IS_ANG") { i.qualifier = i.angularQualifier }
+    if SX.on("G_DIM_ANG_IS_QUAL") { i.angularQualifier = i.qualifier }
+    if SX.on("G_DIM_SWAP_QUALS") { let t = i.qualifier; i.qualifier = i.angularQualifier; i.angularQualifier = t }
+    if SX.on("G_DIM_QUAL_PLUS1") { i.qualifier += 1 }
+    if SX.on("G_DIM_HASDEC_TRUE") { i.hasDecimalPlaces = true }
+    if SX.on("G_DIM_HASDEC_FALSE") { i.hasDecimalPlaces = false }
+    if SX.on("G_DIM_HASDEC_BOTH_POS") { i.hasDecimalPlaces = i.decimalPlacesLeft > 0 && i.decimalPlacesRight > 0 }
+    if SX.on("G_DIM_HASDEC_LEFT_POS") { i.hasDecimalPlaces = i.decimalPlacesLeft > 0 }
+    if SX.on("G_DIM_HASDEC_RIGHT_POS") { i.hasDecimalPlaces = i.decimalPlacesRight > 0 }
+    if SX.on("G_DIM_DEC_SWAP") { let t = i.decimalPlacesLeft; i.decimalPlacesLeft = i.decimalPlacesRight; i.decimalPlacesRight = t }
+    if SX.on("G_DIM_DEC_BOTH_LEFT") { i.decimalPlacesRight = i.decimalPlacesLeft }
+    if SX.on("G_DIM_DEC_BOTH_RIGHT") { i.decimalPlacesLeft = i.decimalPlacesRight }
+    if SX.on("G_DIM_MODCOUNT_MINUS1") { i.modifierCount = max(i.modifierCount - 1, 0) }
+    if SX.on("G_DIM_MODCOUNT_PLUS1") { i.modifierCount += 1 }
+    if SX.on("G_DIM_MODCOUNT_CAP1") { i.modifierCount = min(i.modifierCount, 1) }
+    if SX.on("G_DIM_VALUE_ZERO") { i.value = 0 }
+    if SX.on("G_DIM_VALUE_x2") { i.value *= 2 }
+    if SX.on("G_DIM_VALUE_PLUS_EPS") { i.value += 1e-3 }
+    if SX.on("G_DIM_BOUNDS_UNSET") { i.boundsKind = 0 }
+    if SX.on("G_DIM_TYPE_PLUS1") { i.type += 1 }
+    return i
+}
+
+func OCCTDocumentGetDimensionModifier(_ doc: SXDoc, _ dim: Int32, _ mod: Int32) -> Int32 {
+    let n = OCCTBridge.OCCTDocumentGetDimensionInfo(doc, dim).modifierCount
+    if SX.on("G_DIMMOD_REVERSE") { return OCCTBridge.OCCTDocumentGetDimensionModifier(doc, dim, n - 1 - mod) }
+    if SX.on("G_DIMMOD_FIRST") { return OCCTBridge.OCCTDocumentGetDimensionModifier(doc, dim, 0) }
+    if SX.on("G_DIMMOD_PLUS1") { return OCCTBridge.OCCTDocumentGetDimensionModifier(doc, dim, mod + 1) }
+    if SX.on("G_DIMMOD_ROTATE") { return OCCTBridge.OCCTDocumentGetDimensionModifier(doc, dim, (mod + 1) % max(n, 1)) }
+    if SX.on("G_DIMMOD_SORTED") {
+        let all = (0..<n).map { OCCTBridge.OCCTDocumentGetDimensionModifier(doc, dim, $0) }.sorted()
+        return mod < all.count ? all[Int(mod)] : -1
+    }
+    let r = OCCTBridge.OCCTDocumentGetDimensionModifier(doc, dim, mod)
+    if SX.on("G_DIMMOD_RAW_PLUS1") && r >= 0 { return r + 1 }
+    return r
+}
+
+func OCCTDocumentGetGeomToleranceInfo(_ doc: SXDoc?, _ index: Int32) -> OCCTGeomToleranceInfo {
+    var i = OCCTBridge.OCCTDocumentGetGeomToleranceInfo(doc!, index)
+    guard i.isValid else { return i }
+    if SX.on("G_TOL_VALUETYPE_NONE") { i.typeOfValue = 0 }
+    if SX.on("G_TOL_MAT_NONE") { i.materialRequirement = 0 }
+    if SX.on("G_TOL_ZONE_NONE") { i.zoneModifier = 0 }
+    if SX.on("G_TOL_VALUETYPE_IS_MAT") { i.typeOfValue = i.materialRequirement }
+    if SX.on("G_TOL_MAT_IS_ZONE") { i.materialRequirement = i.zoneModifier }
+    if SX.on("G_TOL_ZONE_IS_VALUETYPE") { i.zoneModifier = i.typeOfValue }
+    if SX.on("G_TOL_ROTATE_TRIO") {
+        let a = i.typeOfValue, b = i.materialRequirement, c = i.zoneModifier
+        i.typeOfValue = b; i.materialRequirement = c; i.zoneModifier = a
+    }
+    if SX.on("G_TOL_HASZONEVALUE_TRUE") { i.hasZoneModifierValue = true }
+    if SX.on("G_TOL_HASZONEVALUE_FALSE") { i.hasZoneModifierValue = false }
+    if SX.on("G_TOL_HASMAX_TRUE") { i.hasMaxValueModifier = true }
+    if SX.on("G_TOL_HASMAX_FALSE") { i.hasMaxValueModifier = false }
+    if SX.on("G_TOL_ZONEVALUE_IS_MAX") { i.zoneModifierValue = i.maxValueModifier }
+    if SX.on("G_TOL_MAX_IS_ZONEVALUE") { i.maxValueModifier = i.zoneModifierValue }
+    if SX.on("G_TOL_SWAP_VALUES") { let t = i.zoneModifierValue; i.zoneModifierValue = i.maxValueModifier; i.maxValueModifier = t }
+    if SX.on("G_TOL_ZONEVALUE_x2") { i.zoneModifierValue *= 2 }
+    if SX.on("G_TOL_MAXVALUE_x2") { i.maxValueModifier *= 2 }
+    if SX.on("G_TOL_VALUE_ZERO") { i.value = 0 }
+    if SX.on("G_TOL_VALUE_x2") { i.value *= 2 }
+    if SX.on("G_TOL_VALUE_IS_MAX") { i.value = i.maxValueModifier }
+    if SX.on("G_TOL_MODCOUNT_MINUS1") { i.modifierCount = max(i.modifierCount - 1, 0) }
+    if SX.on("G_TOL_MODCOUNT_PLUS1") { i.modifierCount += 1 }
+    if SX.on("G_TOL_MODCOUNT_CAP1") { i.modifierCount = min(i.modifierCount, 1) }
+    return i
+}
+
+func OCCTDocumentGetGeomToleranceModifier(_ doc: SXDoc, _ tol: Int32, _ mod: Int32) -> Int32 {
+    let n = OCCTBridge.OCCTDocumentGetGeomToleranceInfo(doc, tol).modifierCount
+    if SX.on("G_TOLMOD_REVERSE") { return OCCTBridge.OCCTDocumentGetGeomToleranceModifier(doc, tol, n - 1 - mod) }
+    if SX.on("G_TOLMOD_FIRST") { return OCCTBridge.OCCTDocumentGetGeomToleranceModifier(doc, tol, 0) }
+    if SX.on("G_TOLMOD_PLUS1") { return OCCTBridge.OCCTDocumentGetGeomToleranceModifier(doc, tol, mod + 1) }
+    if SX.on("G_TOLMOD_ROTATE") { return OCCTBridge.OCCTDocumentGetGeomToleranceModifier(doc, tol, (mod + 1) % max(n, 1)) }
+    if SX.on("G_TOLMOD_SORTED") {
+        let all = (0..<n).map { OCCTBridge.OCCTDocumentGetGeomToleranceModifier(doc, tol, $0) }.sorted()
+        return mod < all.count ? all[Int(mod)] : -1
+    }
+    return OCCTBridge.OCCTDocumentGetGeomToleranceModifier(doc, tol, mod)
+}
+
+func OCCTDocumentGetDatumInfo(_ doc: SXDoc?, _ index: Int32) -> OCCTDatumInfo {
+    var i = OCCTBridge.OCCTDocumentGetDatumInfo(doc!, index)
+    guard i.isValid else { return i }
+    if SX.on("G_DAT_HASPOS_TRUE") { i.hasPosition = true }
+    if SX.on("G_DAT_HASPOS_FALSE") { i.hasPosition = false }
+    if SX.on("G_DAT_HASPOS_GE0") { i.hasPosition = i.position >= 0 }
+    if SX.on("G_DAT_POS_PLUS1") { i.position += 1 }
+    if SX.on("G_DAT_POS_MINUS1") { i.position -= 1 }
+    if SX.on("G_DAT_POS_ZERO_BASED") { i.position = max(i.position - 1, 0) }
+    if SX.on("G_DAT_MODWV_NONE") { i.modifierWithValue = 0 }
+    if SX.on("G_DAT_MODVALUE_ZERO") { i.modifierValue = 0 }
+    if SX.on("G_DAT_MODVALUE_x2") { i.modifierValue *= 2 }
+    if SX.on("G_DAT_MODCOUNT_MINUS1") { i.modifierCount = max(i.modifierCount - 1, 0) }
+    if SX.on("G_DAT_MODCOUNT_PLUS1") { i.modifierCount += 1 }
+    if SX.on("G_DAT_MODCOUNT_CAP1") { i.modifierCount = min(i.modifierCount, 1) }
+    if SX.on("G_DAT_ISTARGET_TRUE") { i.isDatumTarget = true }
+    if SX.on("G_DAT_ISTARGET_FALSE") { i.isDatumTarget = false }
+    if SX.on("G_DAT_TARGETTYPE_PLUS1") { i.targetType += 1 }
+    if SX.on("G_DAT_TARGETNUMBER_PLUS1") { i.targetNumber += 1 }
+    if SX.on("G_DAT_TARGETNUMBER_ZERO") { i.targetNumber = 0 }
+    if SX.on("G_DAT_HASLEN_TRUE") { i.hasTargetLength = true }
+    if SX.on("G_DAT_HASLEN_FALSE") { i.hasTargetLength = false }
+    if SX.on("G_DAT_HASWID_TRUE") { i.hasTargetWidth = true }
+    if SX.on("G_DAT_HASWID_FALSE") { i.hasTargetWidth = false }
+    if SX.on("G_DAT_HASWID_IS_HASPARAMS") { i.hasTargetWidth = i.hasTargetParams }
+    if SX.on("G_DAT_HASLEN_IS_HASPARAMS") { i.hasTargetLength = i.hasTargetParams }
+    if SX.on("G_DAT_SWAP_LEN_WID") { let t = i.targetLength; i.targetLength = i.targetWidth; i.targetWidth = t }
+    if SX.on("G_DAT_LEN_IS_WID") { i.targetLength = i.targetWidth }
+    if SX.on("G_DAT_WID_IS_LEN") { i.targetWidth = i.targetLength }
+    return i
+}
+
+func OCCTDocumentGetDatumModifier(_ doc: SXDoc, _ dat: Int32, _ mod: Int32) -> Int32 {
+    let n = OCCTBridge.OCCTDocumentGetDatumInfo(doc, dat).modifierCount
+    if SX.on("G_DATMOD_REVERSE") { return OCCTBridge.OCCTDocumentGetDatumModifier(doc, dat, n - 1 - mod) }
+    if SX.on("G_DATMOD_FIRST") { return OCCTBridge.OCCTDocumentGetDatumModifier(doc, dat, 0) }
+    if SX.on("G_DATMOD_PLUS1") { return OCCTBridge.OCCTDocumentGetDatumModifier(doc, dat, mod + 1) }
+    if SX.on("G_DATMOD_ROTATE") { return OCCTBridge.OCCTDocumentGetDatumModifier(doc, dat, (mod + 1) % max(n, 1)) }
+    if SX.on("G_DATMOD_SORTED") {
+        let all = (0..<n).map { OCCTBridge.OCCTDocumentGetDatumModifier(doc, dat, $0) }.sorted()
+        return mod < all.count ? all[Int(mod)] : -1
+    }
+    return OCCTBridge.OCCTDocumentGetDatumModifier(doc, dat, mod)
+}
+
+// The three modifier-sequence writers are named SXW... and spliced into GDTWrite.swift by
+// inject.py, because Issue1037GDTEnumRangeTests calls the C symbols directly and a module-local
+// function of the same name would make those calls ambiguous.
+
+func OCCTDimensionTypeIsDimensionalLocation(_ t: Int32) -> Bool {
+    let r = OCCTBridge.OCCTDimensionTypeIsDimensionalLocation(t)
+    if SX.on("G_CLASS_LOC_TRUE") { return true }
+    if SX.on("G_CLASS_LOC_FALSE") { return false }
+    if SX.on("G_CLASS_LOC_INVERT") { return !r }
+    if SX.on("G_CLASS_LOC_RANGE_0_13") { return t >= 0 && t <= 13 }
+    if SX.on("G_CLASS_LOC_NO_ORIENTED") { return t != 12 && r }
+    if SX.on("G_CLASS_LOC_AS_SIZE") { return OCCTBridge.OCCTDimensionTypeIsDimensionalSize(t) }
+    return r
+}
+
+func OCCTDimensionTypeIsDimensionalSize(_ t: Int32) -> Bool {
+    let r = OCCTBridge.OCCTDimensionTypeIsDimensionalSize(t)
+    if SX.on("G_CLASS_SIZE_TRUE") { return true }
+    if SX.on("G_CLASS_SIZE_FALSE") { return false }
+    if SX.on("G_CLASS_SIZE_INVERT") { return !r }
+    if SX.on("G_CLASS_SIZE_RANGE_14_29") { return t >= 14 && t <= 29 }
+    if SX.on("G_CLASS_SIZE_NO_THICKNESS") { return t != 27 && r }
+    if SX.on("G_CLASS_SIZE_AS_LOC") { return OCCTBridge.OCCTDimensionTypeIsDimensionalLocation(t) }
+    return r
+}
+
+// Writers: a write that is refused, reported but not made, made on the neighbour, or made on the
+// wrong member.
+
+func OCCTDocumentSetDimensionQualifier(_ doc: SXDoc, _ i: Int32, _ q: Int32) -> Bool {
+    if SX.on("W_DIMQUAL_REPORT_ONLY") { return OCCTBridge.OCCTDocumentGetDimensionInfo(doc, i).isValid }
+    if SX.on("W_DIMQUAL_TO_ANGULAR") { return OCCTBridge.OCCTDocumentSetDimensionAngularQualifier(doc, i, q) }
+    if SX.on("W_DIMQUAL_REFUSE") { return false }
+    if SX.on("W_DIMQUAL_NEIGHBOUR") { return OCCTBridge.OCCTDocumentSetDimensionQualifier(doc, i + 1, q) }
+    return OCCTBridge.OCCTDocumentSetDimensionQualifier(doc, i, q)
+}
+
+func OCCTDocumentSetDimensionAngularQualifier(_ doc: SXDoc, _ i: Int32, _ q: Int32) -> Bool {
+    if SX.on("W_DIMANG_REPORT_ONLY") { return OCCTBridge.OCCTDocumentGetDimensionInfo(doc, i).isValid }
+    if SX.on("W_DIMANG_TO_QUALIFIER") { return OCCTBridge.OCCTDocumentSetDimensionQualifier(doc, i, q) }
+    if SX.on("W_DIMANG_REFUSE") { return false }
+    return OCCTBridge.OCCTDocumentSetDimensionAngularQualifier(doc, i, q)
+}
+
+func OCCTDocumentSetDimensionDecimalPlaces(_ doc: SXDoc, _ i: Int32, _ l: Int32, _ r: Int32) -> Bool {
+    if SX.on("W_DIMDEC_SWAP") { return OCCTBridge.OCCTDocumentSetDimensionDecimalPlaces(doc, i, r, l) }
+    if SX.on("W_DIMDEC_REPORT_ONLY") { return OCCTBridge.OCCTDocumentGetDimensionInfo(doc, i).isValid }
+    if SX.on("W_DIMDEC_ACCEPT_NEGATIVE") {
+        return OCCTBridge.OCCTDocumentSetDimensionDecimalPlaces(doc, i, max(l, 0), max(r, 0)) || true
+    }
+    if SX.on("W_DIMDEC_LEFT_ONLY") { return OCCTBridge.OCCTDocumentSetDimensionDecimalPlaces(doc, i, l, 0) }
+    return OCCTBridge.OCCTDocumentSetDimensionDecimalPlaces(doc, i, l, r)
+}
+
+func SXWSetDimensionModifiers(
+    _ doc: SXDoc, _ i: Int32, _ m: UnsafePointer<Int32>?, _ n: Int32
+) -> Bool {
+    var v = m == nil ? [] : Array(UnsafeBufferPointer(start: m!, count: Int(n)))
+    if SX.on("W_DIMMOD_REPORT_ONLY") { return OCCTBridge.OCCTDocumentGetDimensionInfo(doc, i).isValid }
+    if SX.on("W_DIMMOD_SORTED") { v.sort() }
+    if SX.on("W_DIMMOD_REVERSED") { v.reverse() }
+    if SX.on("W_DIMMOD_DROP_LAST") && !v.isEmpty { v.removeLast() }
+    if SX.on("W_DIMMOD_APPEND") { v += v.prefix(1) }
+    if SX.on("W_DIMMOD_NO_CLEAR") && v.isEmpty { return true }
+    return v.withUnsafeBufferPointer {
+        OCCTBridge.OCCTDocumentSetDimensionModifiers(doc, i, $0.baseAddress, Int32(v.count))
+    }
+}
+
+func OCCTDocumentSetGeomToleranceTypeOfValue(_ doc: SXDoc, _ i: Int32, _ v: Int32) -> Bool {
+    if SX.on("W_TOLVT_REPORT_ONLY") { return OCCTBridge.OCCTDocumentGetGeomToleranceInfo(doc, i).isValid }
+    if SX.on("W_TOLVT_TO_MAT") { return OCCTBridge.OCCTDocumentSetGeomToleranceMaterialRequirement(doc, i, v) }
+    if SX.on("W_TOLVT_REFUSE") { return false }
+    return OCCTBridge.OCCTDocumentSetGeomToleranceTypeOfValue(doc, i, v)
+}
+
+func OCCTDocumentSetGeomToleranceMaterialRequirement(_ doc: SXDoc, _ i: Int32, _ v: Int32) -> Bool {
+    if SX.on("W_TOLMAT_REPORT_ONLY") { return OCCTBridge.OCCTDocumentGetGeomToleranceInfo(doc, i).isValid }
+    if SX.on("W_TOLMAT_TO_VT") { return OCCTBridge.OCCTDocumentSetGeomToleranceTypeOfValue(doc, i, v) }
+    if SX.on("W_TOLMAT_REFUSE") { return false }
+    return OCCTBridge.OCCTDocumentSetGeomToleranceMaterialRequirement(doc, i, v)
+}
+
+func OCCTDocumentSetGeomToleranceZoneModifier(_ doc: SXDoc, _ i: Int32, _ z: Int32, _ v: Double) -> Bool {
+    if SX.on("W_TOLZONE_REPORT_ONLY") { return OCCTBridge.OCCTDocumentGetGeomToleranceInfo(doc, i).isValid }
+    if SX.on("W_TOLZONE_VALUE_DROPPED") { return OCCTBridge.OCCTDocumentSetGeomToleranceZoneModifier(doc, i, z, 0) }
+    if SX.on("W_TOLZONE_VALUE_TO_MAX") {
+        _ = OCCTBridge.OCCTDocumentSetGeomToleranceMaxValueModifier(doc, i, v)
+        return OCCTBridge.OCCTDocumentSetGeomToleranceZoneModifier(doc, i, z, 0)
+    }
+    if SX.on("W_TOLZONE_MODIFIER_DROPPED") { return OCCTBridge.OCCTDocumentSetGeomToleranceZoneModifier(doc, i, 0, v) }
+    return OCCTBridge.OCCTDocumentSetGeomToleranceZoneModifier(doc, i, z, v)
+}
+
+func OCCTDocumentSetGeomToleranceMaxValueModifier(_ doc: SXDoc, _ i: Int32, _ v: Double) -> Bool {
+    if SX.on("W_TOLMAX_REPORT_ONLY") { return OCCTBridge.OCCTDocumentGetGeomToleranceInfo(doc, i).isValid }
+    if SX.on("W_TOLMAX_TO_ZONE") { return OCCTBridge.OCCTDocumentSetGeomToleranceZoneModifier(doc, i, 0, v) }
+    if SX.on("W_TOLMAX_ABS_FLOOR") { return OCCTBridge.OCCTDocumentSetGeomToleranceMaxValueModifier(doc, i, v.rounded(.down)) }
+    return OCCTBridge.OCCTDocumentSetGeomToleranceMaxValueModifier(doc, i, v)
+}
+
+func SXWSetGeomToleranceModifiers(
+    _ doc: SXDoc, _ i: Int32, _ m: UnsafePointer<Int32>?, _ n: Int32
+) -> Bool {
+    var v = m == nil ? [] : Array(UnsafeBufferPointer(start: m!, count: Int(n)))
+    if SX.on("W_TOLMOD_REPORT_ONLY") { return OCCTBridge.OCCTDocumentGetGeomToleranceInfo(doc, i).isValid }
+    if SX.on("W_TOLMOD_SORTED") { v.sort() }
+    if SX.on("W_TOLMOD_REVERSED") { v.reverse() }
+    if SX.on("W_TOLMOD_DROP_LAST") && !v.isEmpty { v.removeLast() }
+    if SX.on("W_TOLMOD_NO_CLEAR") && v.isEmpty { return true }
+    return v.withUnsafeBufferPointer {
+        OCCTBridge.OCCTDocumentSetGeomToleranceModifiers(doc, i, $0.baseAddress, Int32(v.count))
+    }
+}
+
+func OCCTDocumentSetDatumPosition(_ doc: SXDoc, _ i: Int32, _ p: Int32) -> Bool {
+    if SX.on("W_DATPOS_REPORT_ONLY") { return OCCTBridge.OCCTDocumentGetDatumInfo(doc, i).isValid }
+    if SX.on("W_DATPOS_PLUS1") { return OCCTBridge.OCCTDocumentSetDatumPosition(doc, i, p + 1) }
+    if SX.on("W_DATPOS_ZERO_STORED_AS1") { return OCCTBridge.OCCTDocumentSetDatumPosition(doc, i, max(p, 1)) }
+    if SX.on("W_DATPOS_REFUSE") { return false }
+    return OCCTBridge.OCCTDocumentSetDatumPosition(doc, i, p)
+}
+
+func SXWSetDatumModifiers(
+    _ doc: SXDoc, _ i: Int32, _ m: UnsafePointer<Int32>?, _ n: Int32
+) -> Bool {
+    var v = m == nil ? [] : Array(UnsafeBufferPointer(start: m!, count: Int(n)))
+    if SX.on("W_DATMOD_REPORT_ONLY") { return OCCTBridge.OCCTDocumentGetDatumInfo(doc, i).isValid }
+    if SX.on("W_DATMOD_SORTED") { v.sort() }
+    if SX.on("W_DATMOD_REVERSED") { v.reverse() }
+    if SX.on("W_DATMOD_DROP_LAST") && !v.isEmpty { v.removeLast() }
+    if SX.on("W_DATMOD_NO_CLEAR") && v.isEmpty { return true }
+    return v.withUnsafeBufferPointer {
+        OCCTBridge.OCCTDocumentSetDatumModifiers(doc, i, $0.baseAddress, Int32(v.count))
+    }
+}
+
+func OCCTDocumentSetDatumModifierWithValue(_ doc: SXDoc, _ i: Int32, _ m: Int32, _ v: Double) -> Bool {
+    if SX.on("W_DATMWV_REPORT_ONLY") { return OCCTBridge.OCCTDocumentGetDatumInfo(doc, i).isValid }
+    if SX.on("W_DATMWV_VALUE_DROPPED") { return OCCTBridge.OCCTDocumentSetDatumModifierWithValue(doc, i, m, 0) }
+    if SX.on("W_DATMWV_CLEAR_NOOP") && m == 0 { return true }
+    if SX.on("W_DATMWV_ALSO_CLEARS_MODIFIERS") && m == 0 {
+        _ = OCCTBridge.OCCTDocumentSetDatumModifiers(doc, i, nil, 0)
+    }
+    return OCCTBridge.OCCTDocumentSetDatumModifierWithValue(doc, i, m, v)
+}
+
+func OCCTDocumentSetDatumTarget(
+    _ doc: SXDoc, _ i: Int32, _ isTarget: Bool, _ type: Int32, _ number: Int32
+) -> Bool {
+    if SX.on("W_DATTGT_REPORT_ONLY") { return OCCTBridge.OCCTDocumentGetDatumInfo(doc, i).isValid }
+    if SX.on("W_DATTGT_NUMBER_DROPPED") { return OCCTBridge.OCCTDocumentSetDatumTarget(doc, i, isTarget, type, 0) }
+    if SX.on("W_DATTGT_TYPE_DROPPED") { return OCCTBridge.OCCTDocumentSetDatumTarget(doc, i, isTarget, 0, number) }
+    if SX.on("W_DATTGT_CLEAR_NOOP") && !isTarget { return true }
+    return OCCTBridge.OCCTDocumentSetDatumTarget(doc, i, isTarget, type, number)
+}
+
+func OCCTDocumentSetDatumTargetPlacement(
+    _ doc: SXDoc, _ i: Int32, _ loc: UnsafePointer<Double>, _ nrm: UnsafePointer<Double>,
+    _ ref: UnsafePointer<Double>, _ length: Double, _ width: Double
+) -> Bool {
+    if SX.on("W_DATPLACE_REPORT_ONLY") { return OCCTBridge.OCCTDocumentGetDatumInfo(doc, i).isValid }
+    if SX.on("W_DATPLACE_SWAP_LEN_WID") { return OCCTBridge.OCCTDocumentSetDatumTargetPlacement(doc, i, loc, nrm, ref, width, length) }
+    if SX.on("W_DATPLACE_LEN_ONLY") { return OCCTBridge.OCCTDocumentSetDatumTargetPlacement(doc, i, loc, nrm, ref, length, length) }
+    if SX.on("W_DATPLACE_ACCEPT_DEGENERATE") {
+        let ok = OCCTBridge.OCCTDocumentSetDatumTargetPlacement(doc, i, loc, nrm, ref, length, width)
+        return ok || true
+    }
+    return OCCTBridge.OCCTDocumentSetDatumTargetPlacement(doc, i, loc, nrm, ref, length, width)
+}
+
+// MARK: - BRepGraph read-backs (B_*), the bridge entry points the attribute tests lean on
+
+func OCCTBRepGraphNbFaces(_ g: OpaquePointer) -> Int32 {
+    let r = OCCTBridge.OCCTBRepGraphNbFaces(g)
+    if SX.on("B_NBFACES_PLUS1") { return r + 1 }
+    if SX.on("B_NBFACES_MINUS1") { return r - 1 }
+    return r
+}
+
+func OCCTBRepGraphNbVertices(_ g: OpaquePointer) -> Int32 {
+    let r = OCCTBridge.OCCTBRepGraphNbVertices(g)
+    if SX.on("B_NBVERT_PLUS1") { return r + 1 }
+    if SX.on("B_NBVERT_MINUS1") { return r - 1 }
+    return r
+}
+
+func OCCTBRepGraphVertexPoint(
+    _ g: OpaquePointer, _ i: Int32, _ x: UnsafeMutablePointer<Double>,
+    _ y: UnsafeMutablePointer<Double>, _ z: UnsafeMutablePointer<Double>
+) {
+    var idx = i
+    if SX.on("B_VP_INDEX_PLUS1") { idx = (i + 1) % max(OCCTBridge.OCCTBRepGraphNbVertices(g), 1) }
+    if SX.on("B_VP_INDEX_REVERSE") { idx = OCCTBridge.OCCTBRepGraphNbVertices(g) - 1 - i }
+    if SX.on("B_VP_INDEX_FIRST") { idx = 0 }
+    OCCTBridge.OCCTBRepGraphVertexPoint(g, idx, x, y, z)
+    if SX.on("B_VP_ZERO") { x.pointee = 0; y.pointee = 0; z.pointee = 0 }
+    if SX.on("B_VP_SWAP_XY") { let t = x.pointee; x.pointee = y.pointee; y.pointee = t }
+    if SX.on("B_VP_DROP_Z") { z.pointee = 0 }
+    if SX.on("B_VP_TRUNC") { x.pointee = x.pointee.rounded(.towardZero) }
+    if SX.on("B_VP_PLUS_EPS") { x.pointee += 1e-3 }
+}

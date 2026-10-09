@@ -64,7 +64,7 @@ from a PR list: both read as merged and their issues read as done.
 
 | PR | its real subject | merge commit | where the work is |
 |---|---|---|---|
-| **#2232** | `Tests/OCCTAnalysisTests/BRepGPropVinertGKTests.swift` and `Scripts/repro/766-brepgprop-vinertgk/` | `0c58b5c9`, resolves, not an ancestor | `origin/exec/766-geomsphere3d`, which was cut from its head; its own `exec/766-brepgprop-vinertgk` is deleted |
+| **#2232** | `Tests/OCCTAnalysisTests/BRepGProp/BRepGPropVinertGKTests.swift` and `Scripts/repro/766-brepgprop-vinertgk/` | `0c58b5c9`, resolves, not an ancestor | `origin/exec/766-geomsphere3d`, which was cut from its head; its own `exec/766-brepgprop-vinertgk` is deleted |
 | **#2003** | `OCCTMiscTests`, the whole domain | `faf7ac4f`, **does not resolve in a fresh clone at all** | `origin/feat/766-misc-tests`, alive at `8f7bba46`, and nowhere else |
 
 Two corrections to earlier records of this, both measured on 2026-10-02 and both worth keeping
@@ -223,6 +223,12 @@ already holds the branch's post-image. LANDED means stop and close the source. N
 read the per-file lines it prints, not lift unseen: containment is strict, so two comments `main`
 dropped are enough for DIFFERENT. Run it over the whole batch before any reading. It is a blob
 comparison and the script's docstring says what it cannot answer.
+
+**When `main` has moved a test file into an area subdirectory (#3147)**, the v5 branch still keeps
+it at the old path, and by-path pairing sees an ABSENT file and a deleted one. Pass
+`--path-map Scripts/test-areas/<target>.tsv` to `check-766-already-landed.py` and
+`census-766-unlifted-tests.py`: the first two columns are `old<TAB>new`, applied to the `main` side
+only.
 
 **DIFFERENT does not say which side moved, and that is the question.** Resolve it before reading
 the branch's version at all:

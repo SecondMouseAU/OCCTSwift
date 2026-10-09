@@ -1,0 +1,55 @@
+import Testing
+import simd
+
+@testable import OCCTSwift
+
+@Suite("GeomFill NSections Tests")
+struct GeomFillNSectionsTests {
+    @Test func surfaceFromCircleSections() throws {
+        // Create circles at different heights
+        let c1 = try #require(
+            Curve3D.circle(center: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5.0))
+        let c2 = try #require(
+            Curve3D.circle(center: SIMD3(0, 0, 3), normal: SIMD3(0, 0, 1), radius: 4.0))
+        let c3 = try #require(
+            Curve3D.circle(center: SIMD3(0, 0, 6), normal: SIMD3(0, 0, 1), radius: 3.0))
+        // #766: the surface was bound and discarded, so this asserted nothing. GeomFill_NSections
+        // on the three circles gives a surface over [0, 1] x [0, 1] passing through the middle
+        // circle at v = 0.5 and the last at v = 1, see Scripts/repro/766-geomfill-c/.
+        let surfOpt = Surface.nSections(curves: [c1, c2, c3], params: [0.0, 0.5, 1.0])
+        let surf = try #require(surfOpt)
+        #expect(simd_length(surf.point(atU: 0, v: 0.5) - SIMD3(4, 0, 3)) < 1e-9)
+        #expect(simd_length(surf.point(atU: 0, v: 1) - SIMD3(3, 0, 6)) < 1e-9)
+    }
+
+    // The radii 5, 4, 3 at z = 0, 3, 6 above are collinear, so a surface built from the first two
+    // circles alone and extrapolated to v = 1 meets the same three points (the NSEC_DROP_LAST
+    // injection left the test above green). A middle circle off that line, radius 4.5, is a section
+    // the surface can only meet by interpolating it. The expected points are the sections' own.
+    @Test func surfaceInterpolatesAMiddleSectionOffTheChord() throws {
+        let c1 = try #require(
+            Curve3D.circle(center: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5.0))
+        let c2 = try #require(
+            Curve3D.circle(center: SIMD3(0, 0, 3), normal: SIMD3(0, 0, 1), radius: 4.5))
+        let c3 = try #require(
+            Curve3D.circle(center: SIMD3(0, 0, 6), normal: SIMD3(0, 0, 1), radius: 3.0))
+        let surf = try #require(Surface.nSections(curves: [c1, c2, c3], params: [0.0, 0.5, 1.0]))
+        #expect(simd_length(surf.point(atU: 0, v: 0) - SIMD3(5, 0, 0)) < 1e-9)
+        #expect(simd_length(surf.point(atU: 0, v: 0.5) - SIMD3(4.5, 0, 3)) < 1e-9)
+        #expect(simd_length(surf.point(atU: 0, v: 1) - SIMD3(3, 0, 6)) < 1e-9)
+    }
+
+    @Test func sectionInfo() throws {
+        let c1 = try #require(
+            Curve3D.circle(center: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5.0))
+        let c2 = try #require(
+            Curve3D.circle(center: SIMD3(0, 0, 3), normal: SIMD3(0, 0, 1), radius: 4.0))
+        // #766: `> 0` inside `if let`; pinned to GeomFill_NSections::SectionShape, 6 poles,
+        // 2 knots, degree 6, see Scripts/repro/766-geomfill-c/.
+        let infoOpt = Surface.nSectionsInfo(curves: [c1, c2], params: [0.0, 1.0])
+        let info = try #require(infoOpt)
+        #expect(info.poleCount == 6)
+        #expect(info.knotCount == 2)
+        #expect(info.degree == 6)
+    }
+}

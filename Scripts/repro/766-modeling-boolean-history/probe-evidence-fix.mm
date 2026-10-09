@@ -1,4 +1,4 @@
-// Epic #766 evidence correction for PR #2687 (Tests/OCCTModelingTests/BooleanHistoryTests.swift).
+// Epic #766 evidence correction for PR #2687 (Tests/OCCTModelingTests/History/BooleanHistoryTests.swift).
 // probe.mm printed the volume at %.10g and the modified-face count under a key the bridge side did
 // not share. This probe repeats the same fuse and prints every double at %.17g and every flag as
 // true/false, one `label: key=value ...` line per test.

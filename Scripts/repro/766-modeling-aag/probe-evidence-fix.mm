@@ -1,4 +1,4 @@
-// Epic #766 evidence correction for PR #2653 (Tests/OCCTModelingTests/AAGTests.swift).
+// Epic #766 evidence correction for PR #2653 (Tests/OCCTModelingTests/FeatureRecognition/AAGTests.swift).
 // probe.mm measured the kernel side under names that differed from what the Swift tests observe.
 // This probe repeats the same OCCT calls and prints exactly the quantities the parity records
 // now carry on BOTH sides, at %.17g where a value is a double:

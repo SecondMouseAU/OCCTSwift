@@ -46,16 +46,16 @@ struct Issue2881FilletObstacleTests {
 
     /// The exact-tangent radius returns for every edge instead of killing the process.
     ///
-    /// Gated on `OCCTSWIFT_LOCAL=1`, the way `Issue3003OffsetOrderTests` is: the fix is carried patch
-    /// `0054`, which the pinned asset does not carry, and `ci.yml`'s `build-and-test` resolves that
-    /// asset. `kernel-integration.yml` builds the patches from source with `OCCTSWIFT_LOCAL=1`, which
-    /// is where this runs. A skipped test and a passing one both report green, so the per-test line
-    /// in the log is the only signal: read `started`, not `skipped`.
+    /// This was gated on `OCCTSWIFT_LOCAL=1` while the fix, carried patch `0054`, was missing from
+    /// the pinned asset, so `ci.yml`'s `build-and-test` skipped it on every default run. The repin
+    /// to `v4.0.0-kernel.5` put `0054` in the pinned asset, and a gate that outlives its fix leaves
+    /// the test skipped, which is the one outcome a test cannot recover from (#2983, and the same
+    /// disposition `StressBuilderLifecycleTests`' `0027` test got at the `kernel.4` repin).
     ///
     /// Without the patch the process dies at the first of eight edges, so reaching the assertions is
     /// the regression check. The count then pins what the patched kernel does with them: 12 of the 42
     /// edges still fillet at 1.5, 8 decline, and 22 raise the same "no suitable edges" error as at 1.0.
-    @Test(.enabled(if: ProcessInfo.processInfo.environment["OCCTSWIFT_LOCAL"] == "1"))
+    @Test
     func exactTangentRadiusDeclinesInsteadOfCrashing() throws {
         let model = try loadModel()
         let (done, total) = edgesThatFillet(model, radius: 1.5)

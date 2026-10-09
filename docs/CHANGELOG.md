@@ -21,6 +21,41 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### FeatureReconstructor boolean features skip operands that hold no solid (#3174)
+
+A union, subtract or intersect between named features used to report success when an operand was a bare shell or an empty compound, leaving a result with no solid. Such a boolean is now recorded in `skipped` as `underDetermined` and is not listed in `fulfilled`. A solid fused into a shell-only input body continues to be skipped as `boolean union failed`, now with a test.
+
+### A `.handle` read off a collection element or a temporary no longer loses its owner before the bridge call runs in optimised builds (#3130)
+
+`Edge`, `Wire`, `Face` and `Shape` expose their native pointer as an internal `handle` that the compiler does not tie to the owning wrapper. When the wrapper was a collection element or a call result (`edges[0].handle`, `shape.edges().first!.handle`) an optimised build could release it after the load and before the C call, so a setter wrote through a freed `OCCTEdge` and a reader returned 0.0 or crashed. Debug builds extend every lifetime to scope end, which is why debug `swift test` passed. An internal `withHandle { }` now holds the owner across the call, `BRepLibExtendedTests."Same parameter all"` uses it, and `Scripts/check-borrowed-handle-temporaries.py` fails the build on the unfenced form. No library code was affected: the audit found one site, the test.
+
+### NLPlate deformations now pass through their constraint targets (#3133, #3134, #3135)
+
+`nlPlateDeformed` with several constraints, `nlPlateDeformedG1`, `nlPlateDeformedG2` and `nlPlateDeformedG3` returned surfaces that missed their targets (by up to 5.4 for G0, 0.7 for G1, and about 2e12 / 1e21 for G2 / G3), and `nlPlateDeformedG1` returned nil for two position+tangent constraints. The result now interpolates a sample lattice that holds every constraint (u, v) as a node. `tolerance` sets the sampling density rather than a fit bound. G1/G2/G3 tangent and curvature targets are met by the solver but not guaranteed on the returned surface.
+
+### FeatureReconstructor `revolve` now builds a Solid, and a hole on a solid-less body is skipped (#3139)
+
+A `revolve` feature used to return a bare `Shell`, so a following `hole` silently cut nothing while every feature was reported `fulfilled`. The profile is now revolved as a planar face and the feature is a `Solid`. A hole whose target holds no solid is recorded in `skipped` rather than `fulfilled`, and a revolve profile with no area is skipped. `Shape.revolve(profile:)` on a wire is unchanged and still answers a surface of revolution.
+
+### The kernel is rebuilt on all forty-four carried patches, and the tests that waited for it run everywhere (#3003, #2881, #3039, #3010, #3091)
+
+The pinned OCCT asset moves to `v4.0.0-kernel.5`, five patches past its predecessor. An arc-join offset now returns the same faces in the same order every time, a fillet at an exact tangent radius reports failure instead of crashing the process, two threads making their first 2D edge together can no longer read a freed plane, and the matrix of inertia and centres of mass of cylinders, spheres, tori and cones are computed from the integral. Seven regression tests that only ran against a locally built kernel now run on every build.
+
+### GProps: global properties of a partial cylinder, cone, sphere or torus, and patch 0057 for the wrong inertia behind it (#3091)
+
+New `GProps` wraps `GProp_SelGProps` and `GProp_VelGProps` over `gp_Cylinder`, `gp_Cone`, `gp_Sphere` and `gp_Torus` for any parameter range, as a surface or as the solid it sweeps, with `mass`, `centreOfMass`, `matrixOfInertia`, `staticMoments`, `momentOfInertia(about:direction:)`, `radiusOfGyration(about:direction:)`, `principalProperties`, `symmetry(tolerance:)` and `add(_:density:)`. Carried kernel patch `0057` fixes what it exposed: the matrix of inertia of the cylinder, sphere and torus overloads, the solid's centre of mass over a partial turn, and the torus area and volume over part of the tube (the full cylinder surface of radius 5 and height 10 read 314.159 about its axis where the integral gives 7853.98). The matrix of inertia and the solid centres are right only on a kernel carrying `0050`, `0051`, `0055` and `0057`, so they need the next kernel repin.
+
+### Revolve builders return nil past 1e4 radians instead of running for a time proportional to the angle (#3109)
+
+- `Shape.revolve`, `revolved(angle:)`, `Shape.revolution(meridian:)`, `addingRevolvedFeature`, `localRevolution` (with and without an offset) and `localRevolutionForm` returned nothing, or were killed by the OS, for a finite but absurd angle, because each runs for a time proportional to the angle. They now return `nil` past 1e4 radians (572958 degrees for the revolved feature), a bound taken from measurement: the slowest builder returns in 0.04 s there. Every angle a caller means, `0`, `1e-12`, a full turn and multiples of it, is passed to OCCT as before (#3109).
+
+### `Shape.fromMesh` returns nil for an out-of-range triangle index (#3110)
+- `Shape.fromMesh` returns nil for a triangle index below 1 or above the point count. A huge or `Int32.min` index crashed the process, and 0 or `points.count + 1` built an empty shape that read as a result (#3110).
+
+### PresentationStyle.isEmpty is false for a hidden style with no colour (#3116)
+
+`PresentationStyle.isEmpty` returned `true` for a style with `isVisible = false` and no colours, although its documentation and OCCT's `XCAFPrs_Style::IsEmpty()` both say a hidden style is not empty. The property read a flag the bridge had computed from a default visible style before visibility was assigned. It is now computed from the stored properties.
+
 ### Concurrent first use of Shape.edge2d* no longer returns garbage vertices or kills the process, carried as kernel patch 0056 (#3039)
 
 `BRepLib::Plane()` created its process-global plane on first use with no lock, and every vertex that `BRepLib_MakeEdge2d` builds goes through it. When two threads made their first 2D edge in a process at the same moment (`Shape.edge2d(from:to:)`, `edge2dFromCircle`, `edge2dFromLine`, `edge2dFullCircle`, `edge2dEllipse`, `edge2dEllipseArc`, `edge2dFromCurve`), one of them could read the plane the other had already released: a vertex of zeros or denormal garbage, or SIGSEGV, SIGBUS or SIGTRAP with no diagnostic. Across 3000 fresh processes at 16 threads the shipped kernel failed 129 times and failed none once the plane was created before the threads started. Patch `0056` creates the plane in a function-local static, which C++11 initialises under a lock, the way `Message::DefaultMessenger()` does. Serial use, and any process that has already made one 2D edge, was never affected.

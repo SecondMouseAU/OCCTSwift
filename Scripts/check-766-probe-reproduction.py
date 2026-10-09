@@ -108,8 +108,12 @@ worst drift actually observed printed on every run. The policy is decided once, 
 rule that non-numeric text must match exactly, and the rule that the count of numbers must match.
 What is per pair is only which lines drift and why, which is what a `reason` is for.
 
-The cause is a separate and better fix, and declaring these does not close it: a kernel that
-returned the same bits twice would need no allowance. That is #3003, not this file's question.
+The cause is a separate and better fix, and declaring these did not close it: a kernel that
+returned the same bits twice would need no allowance. That is #3003, not this file's question, and
+carried patch `0053` fixes it. The `v4.0.0-kernel.5` repin pinned `0053`, forty runs of each probe
+against that asset printed one value per line, and the two declarations were removed with their
+transcripts recaptured (`1698.436569847848` and `-13587.492558290332`). The key stays, for the
+next measurement that drifts for a reason this file cannot fix.
 
 IT SAYS WHICH KERNEL IT MEASURED, AND WHETHER THAT IS THE PINNED ONE
 --------------------------------------------------------------------

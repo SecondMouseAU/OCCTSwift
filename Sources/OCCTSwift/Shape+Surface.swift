@@ -515,7 +515,7 @@ extension Shape {
     ///   - axisOrigin: Origin point of the revolution axis
     ///   - axisDirection: Direction of the revolution axis
     ///   - angle: Revolution angle in radians (default: full revolution)
-    /// - Returns: Revolved shape, or nil on failure, including a NaN or infinite `angle` (a NaN
+    /// - Returns: Revolved shape, or nil on failure, including a NaN, infinite or absurd `angle` (past `1e4` radians, about 1591 turns, #3109; a NaN
     ///   angle used to answer an invalid solid, #3100) and a NaN or infinite component of `axisOrigin`, or an `axisDirection` that is NaN, infinite, zero or overflowing (#3113).
     ///
     /// ```swift
@@ -577,10 +577,10 @@ extension Shape {
     ///   - sketchFaceIndex: 0-based index of the face on which the profile sits
     ///   - axisOrigin: Origin of the revolution axis
     ///   - axisDirection: Direction of the revolution axis
-    ///   - angle: Revolution angle in degrees; a NaN or infinite angle is refused
+    ///   - angle: Revolution angle in degrees; a NaN, infinite or absurd angle (past `1e4` radians, about 572958 degrees) is refused
     ///   - fuse: true to add material (boss), false to cut (pocket)
-    /// - Returns: Shape with revolved feature, or nil on failure, including a NaN or infinite
-    ///   `angle`, which used to never return (#3100), and a NaN or infinite component of `axisOrigin`, or an `axisDirection` that is NaN, infinite, zero or overflowing (#3113). Any finite angle,
+    /// - Returns: Shape with revolved feature, or nil on failure, including a NaN, infinite or
+    ///   absurd `angle` (past `1e4` radians, #3109), which used to never return (#3100), and a NaN or infinite component of `axisOrigin`, or an `axisDirection` that is NaN, infinite, zero or overflowing (#3113). Any angle within that bound,
     ///   `0` and `360` included, is passed to OCCT unchanged.
     ///
     /// ```swift
@@ -728,7 +728,7 @@ extension Shape {
     ///   - axisOrigin: Origin point of the rotation axis
     ///   - axisDirection: Direction of the rotation axis
     ///   - angle: Rotation angle in radians
-    /// - Returns: Revolved shape, or nil on failure, including a NaN or infinite `angle` and a NaN or infinite component of `axisOrigin`, or an `axisDirection` that is NaN, infinite, zero or overflowing; an infinite angle or a NaN axis never returned (#3100, #3113).
+    /// - Returns: Revolved shape, or nil on failure, including a NaN, infinite or absurd `angle` (past `1e4` radians, about 1591 turns, #3109) and a NaN or infinite component of `axisOrigin`, or an `axisDirection` that is NaN, infinite, zero or overflowing; an infinite angle or a NaN axis never returned (#3100, #3113).
     ///
     /// ```swift
     /// let face = Shape.face(from: Wire.rectangle(width: 2, height: 2)!)!
@@ -760,7 +760,7 @@ extension Shape {
     ///   - axisDirection: Direction of the rotation axis
     ///   - angle: Rotation angle in radians
     ///   - angularOffset: Angular offset for positioning in radians
-    /// - Returns: Revolved shape, or nil on failure, including a NaN or infinite `angle` or
+    /// - Returns: Revolved shape, or nil on failure, including a NaN, infinite or absurd `angle` (past `1e4` radians, #3109) or a NaN or infinite
     ///   `angularOffset` and a NaN or infinite component of `axisOrigin`, or an `axisDirection` that is NaN, infinite, zero or overflowing (#3100, #3113).
     ///
     /// ```swift
@@ -874,7 +874,7 @@ extension Shape {
     ///   - axisOrigin: Origin point of the rotation axis
     ///   - axisDirection: Direction of the rotation axis
     ///   - angle: Rotation angle in radians
-    /// - Returns: The revolved shape, or nil on failure, including a NaN or infinite `angle` and
+    /// - Returns: The revolved shape, or nil on failure, including a NaN, infinite or absurd `angle` (past `1e4` radians, about 1591 turns, #3109) and
     ///   a NaN or infinite component of `axisOrigin`, or an `axisDirection` that is NaN, infinite, zero or overflowing (#3100, #3113).
     ///
     /// ```swift
@@ -1116,7 +1116,7 @@ extension Shape {
     ///   Bezier flavour. Evidence in `Scripts/repro/2829-geomfill-arrange-guard/`.
     /// - Note: `Poles` come back row-major in U with V varying fastest, so the pole at `(u, v)`,
     ///   both zero-based, is `poles[u * nbV + v]`.
-    /// - Note: The tests in `Tests/OCCTSurfaceTests/GeomFillCoonsTests.swift` pin both a correct
+    /// - Note: The tests in `Tests/OCCTSurfaceTests/GeomFill/GeomFillCoonsTests.swift` pin both a correct
     ///   arrangement and the mis-ordered one, and `Scripts/repro/2795-geomfill-boundary-arrangement/`
     ///   prints every arrangement of a flat square side by side for both classes (#2795).
     /// - Parameters:
@@ -1212,7 +1212,7 @@ extension Shape {
     /// with `u == v` were coincidentally correct, which is why it read as a valid surface.
     ///
     /// Carried patch `0034` fixes it, and the pinned asset carries it from `v4.0.0-kernel.1`
-    /// onward. `Tests/OCCTSurfaceTests/Issue1515CoonsPatchUParameterTests.swift` asserts the
+    /// onward. `Tests/OCCTSurfaceTests/GeomFill/Issue1515CoonsPatchUParameterTests.swift` asserts the
     /// bilinear surface over a flat square, which is the assertion the unpatched asset made
     /// impossible. Measurement and probe in `Scripts/repro/1515-coons-value-u-parameter/`.
     ///

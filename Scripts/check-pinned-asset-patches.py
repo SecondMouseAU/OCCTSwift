@@ -294,6 +294,11 @@ def derive(patch_name, text):
         added = lines['added']
         if not added:
             continue
+        if '/GTests/' in target:
+            # A patch may carry the GTest for its fix (0053 does). OCCT's GTests are not built into
+            # the shipped archive, so a literal from one reads as ABSENT from an asset that holds
+            # the fix perfectly well, a finding against a binary that cannot contain it.
+            continue
         member = object_member(target)
         if member is None:
             # A header's doc comments ship verbatim in the xcframework, so they are evidence here
@@ -1033,6 +1038,9 @@ def self_test():
         ('a git trailer after the last hunk contributes no added lines',
          'TrailerOnly' not in str(new_names(parse_patch(NEWNAME_PATCH)
                                             ['src/Foo/Foo_Split.cxx']))),
+        ('a literal added to a GTests/ file is not derived: GTests are not in the archive',
+         derive('x', LITERAL_PATCH.replace('src/Foo/Foo_Thing.cxx',
+                                           'src/Foo/GTests/Foo_Thing_Test.cxx')) == []),
         ('object_member maps a .cxx target to its archive member',
          object_member('src/Foo/Foo_Thing.cxx') == 'Foo_Thing.cxx.o'),
         ('object_member returns None for a header, which has no member',

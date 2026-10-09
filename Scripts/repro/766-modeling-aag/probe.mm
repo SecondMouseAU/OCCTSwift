@@ -1,4 +1,4 @@
-// Epic #766, Tests/OCCTModelingTests/AAGTests.swift: kernel parity for all six tests.
+// Epic #766, Tests/OCCTModelingTests/FeatureRecognition/AAGTests.swift: kernel parity for all six tests.
 // Same inputs as the Swift tests, straight to OCCT. Adjacency is TopExp face-pair edge sharing
 // (what OCCTFaceGetSharedEdgeSummary counts); convexity is ChFi3d::DefineConnectType with
 // SinTol 0.01 and CorrectPoint=true (what OCCTEdgeGetConvexity calls); the fillet is

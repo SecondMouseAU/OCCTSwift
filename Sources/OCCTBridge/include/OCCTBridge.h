@@ -231,6 +231,9 @@ typedef enum
 // BRepGProp_Face                      → OCCTBRepGPropFace*, OCCTFaceGetNaturalBounds,
 // OCCTFaceEvaluateNormalAtUV BRepGProp_MeshCinert                → OCCTMeshCinert*
 // BRepGProp_MeshProps                 → OCCTMeshProps*
+// GProp_GProps, GProp_PrincipalProps  → OCCTGProps*
+// GProp_SelGProps, GProp_VelGProps    → OCCTGPropsCylinder, OCCTGPropsCone,
+//                                       OCCTGPropsSphere, OCCTGPropsTorus
 //
 // --- BRepIntCurveSurface ---
 // BRepIntCurveSurface_Inter           → OCCTCurveSurfaceInter*
@@ -455,10 +458,9 @@ typedef enum
 //                                        OCCTBSplineApproxInterp* (that family keeps the C ABI of
 //                                        Approx_BSplineApproxInterp, removed in OCCT 8.0.0p1, and
 //                                        is backed by this class; see its section for the no-ops)
-// GeomAPI_PointsToBSplineSurface      → OCCTPointsToSurfaceBSpline, OCCTSurfaceNLPlateG0,
-//                                        OCCTSurfaceNLPlateG1, OCCTSurfaceNLPlateG2,
-//                                        OCCTSurfaceNLPlateG3, OCCTSurfaceNLPlateIncrementalG0
-//                                        (NOT OCCTSurfacePlateThrough; see GeomPlate)
+// GeomAPI_PointsToBSplineSurface      → OCCTPointsToSurfaceBSpline
+//                                        (NOT OCCTSurfacePlateThrough; see GeomPlate; the NLPlate
+//                                        entry points interpolate with BSplCLib instead, #3133)
 // GeomAPI_ProjectPointOnCurve         → OCCTCurve3DNearestParameter, OCCTExtremaLocateOnCurve,
 //                                       OCCTExtremaPointCurve, OCCTProjOnCurve*,
 //                                       OCCTEdgeProjectPoint, OCCTCurve3DProjectPoint,
@@ -993,6 +995,11 @@ extern "C"
 
   /// An immutable set of discretised edge polylines, computed in one pass.
   typedef struct OCCTEdgePolylines* OCCTEdgePolylinesRef;
+
+  // --- GProp_SelGProps / GProp_VelGProps results (handle-based) — issue #3091 ---
+
+  /// A `GProp_GProps` computed over a patch of an analytic surface, owned by the handle.
+  typedef struct OCCTGProps* OCCTGPropsRef;
 
   // MARK: - Edge Access (Issue #14)
 

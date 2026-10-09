@@ -1008,9 +1008,10 @@ OCCTShapeRef OCCTShapeRevolFeature(OCCTShapeRef shape,
                                    double       angleDeg,
                                    bool         fuse)
 {
-  // #3100, #3113: a NaN or infinite angle, a non-finite origin or a NaN, infinite, zero or
-  // overflowing direction is refused (BRepLib::FindValidRange, BRepSweep_Revol never returned).
-  if (!shape || !profile || !occtIsUsableAngle(angleDeg)
+  // #3100, #3113, #3109: a NaN, infinite or absurd angle (degrees here, so converted first), a
+  // non-finite origin or a NaN, infinite, zero or overflowing direction is refused
+  // (BRepLib::FindValidRange, BRepSweep_Revol never returned).
+  if (!shape || !profile || !occtIsUsableRevolveAngle(angleDeg * M_PI / 180.0)
       || !occtIsUsableAxis(axOX, axOY, axOZ, axDX, axDY, axDZ))
     return nullptr;
   try
@@ -1967,6 +1968,13 @@ OCCTShapeRef OCCTShapeFromMesh(const double*  points,
   for (int64_t i = 0; i < static_cast<int64_t>(nodeCount) * 3; i++)
   {
     if (!std::isfinite(points[i]))
+      return nullptr;
+  }
+  // #3110: indices are 1-based. 0 and nodeCount + 1 build an empty shape that reads as a result,
+  // a negative one raises inside the builder, and a huge or INT32_MIN one faults (SIGSEGV, SIGBUS).
+  for (int64_t i = 0; i < static_cast<int64_t>(triCount) * 3; i++)
+  {
+    if (triangles[i] < 1 || triangles[i] > nodeCount)
       return nullptr;
   }
   try

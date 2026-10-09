@@ -89,6 +89,9 @@ run "check-docs-existence.py"                 Scripts/check-docs-existence.py
 # from being written.
 run "check-borrowed-handles.py --self-test"   Scripts/check-borrowed-handles.py --self-test
 run "check-borrowed-handles.py"               Scripts/check-borrowed-handles.py
+# #3130. A `.handle` read off a subscript or a call result loses its owner in an optimised build.
+run "check-borrowed-handle-temporaries.py --self-test" Scripts/check-borrowed-handle-temporaries.py --self-test
+run "check-borrowed-handle-temporaries.py"             Scripts/check-borrowed-handle-temporaries.py
 run "derive-bridge-header-split.py --self-test" Scripts/derive-bridge-header-split.py --self-test
 run "derive-bridge-header-split.py --verify"    Scripts/derive-bridge-header-split.py --verify
 # #996. Only --verify, matching CI: --reverify-headers needs Libraries/OCCT.xcframework and reports
@@ -137,6 +140,14 @@ run "check-bridge-diagnostics.py"             Scripts/check-bridge-diagnostics.p
 # Swift caller creates in one .mm and releases in another.
 run "check-bridge-type-odr.py --self-test"    Scripts/check-bridge-type-odr.py --self-test
 run "check-bridge-type-odr.py"                Scripts/check-bridge-type-odr.py
+# #3065. A stored OCCT adaptor is a shared adaptor, which OCCT does not support.
+run "check-bridge-adaptor-members.py --self-test" Scripts/check-bridge-adaptor-members.py --self-test
+run "check-bridge-adaptor-members.py"         Scripts/check-bridge-adaptor-members.py
+# #3148. Every `Tests/OCCT<Domain>Tests/...swift` path cited in Scripts/, docs/, okf/, Sources/ or
+# Tests/ names a file that exists. Pure text and fast, and the commit that moves or deletes a test
+# file is exactly the one that leaves a citation behind.
+run "check-test-path-citations.py --self-test" Scripts/check-test-path-citations.py --self-test
+run "check-test-path-citations.py"            Scripts/check-test-path-citations.py
 
 # #2974. A bridge release of a raw Standard_Transient writes opencascade::handle::EndScope by hand,
 # and two of them wrote a discarded decrement plus a GetRefCount() re-read plus a bare `delete`

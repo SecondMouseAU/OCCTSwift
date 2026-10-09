@@ -1,4 +1,4 @@
-// Epic #766, Tests/OCCTModelingTests/BooleanFullHistoryTests.swift: kernel parity for all five tests.
+// Epic #766, Tests/OCCTModelingTests/History/BooleanFullHistoryTests.swift: kernel parity for all five tests.
 // Same inputs as the Swift tests, straight to the builders the bridge retains for history:
 // BRepAlgoAPI_Fuse (OCCTBooleanUnionWithHistory), BRepAlgoAPI_Cut (OCCTBooleanSubtractWithHistory),
 // BRepAlgoAPI_Common (OCCTBooleanIntersectWithHistory), BRepAlgoAPI_Splitter
