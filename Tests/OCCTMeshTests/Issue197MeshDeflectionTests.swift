@@ -68,7 +68,8 @@ struct Issue197MeshDeflectionTests {
     func coherentTriangulationDeflection() throws {
         let coarseShape = try #require(sphere())
         let fineShape = try #require(sphere())
-        let coarse = try #require(CoherentTriangulation.createFromMesh(coarseShape, deflection: 0.2))
+        let coarse = try #require(
+            CoherentTriangulation.createFromMesh(coarseShape, deflection: 0.2))
         let fine = try #require(CoherentTriangulation.createFromMesh(fineShape, deflection: 0.1))
         #expect(coarse.triangleCount == 516)
         #expect(fine.triangleCount == 976)
