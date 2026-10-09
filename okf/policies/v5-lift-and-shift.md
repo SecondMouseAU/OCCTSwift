@@ -64,7 +64,7 @@ from a PR list: both read as merged and their issues read as done.
 
 | PR | its real subject | merge commit | where the work is |
 |---|---|---|---|
-| **#2232** | `Tests/OCCTAnalysisTests/BRepGPropVinertGKTests.swift` and `Scripts/repro/766-brepgprop-vinertgk/` | `0c58b5c9`, resolves, not an ancestor | `origin/exec/766-geomsphere3d`, which was cut from its head; its own `exec/766-brepgprop-vinertgk` is deleted |
+| **#2232** | `Tests/OCCTAnalysisTests/BRepGProp/BRepGPropVinertGKTests.swift` and `Scripts/repro/766-brepgprop-vinertgk/` | `0c58b5c9`, resolves, not an ancestor | `origin/exec/766-geomsphere3d`, which was cut from its head; its own `exec/766-brepgprop-vinertgk` is deleted |
 | **#2003** | `OCCTMiscTests`, the whole domain | `faf7ac4f`, **does not resolve in a fresh clone at all** | `origin/feat/766-misc-tests`, alive at `8f7bba46`, and nowhere else |
 
 Two corrections to earlier records of this, both measured on 2026-10-02 and both worth keeping

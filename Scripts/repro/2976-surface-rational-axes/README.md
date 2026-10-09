@@ -69,7 +69,7 @@ around U and constant weights along the axis V, so it reports `isURational == fa
 form. This was already pinned in `Tests/OCCTSurfaceTests/BSplineAndBezier/BSplineSurfaceManipulationTests.swift`
 with a paragraph in the test explaining why the pair is not inverted; #2976 moved that explanation
 to the `///` comments where a caller reads it, and
-`Tests/OCCTAnalysisTests/BezierSurfaceTests.swift` gained
+`Tests/OCCTAnalysisTests/GeomProperties/BezierSurfaceTests.swift` gained
 `rationalFlagsReportTheOppositeAxis` so the Bezier half has a test under its sentence too.
 
 ## Running it

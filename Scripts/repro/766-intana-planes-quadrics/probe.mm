@@ -1,4 +1,4 @@
-// #766 kernel parity for Tests/OCCTAnalysisTests/IntAnaLinePlaneTests.swift,
+// #766 kernel parity for Tests/OCCTAnalysisTests/AnalyticIntersection/IntAnaLinePlaneTests.swift,
 // IntAnaPlanePlaneTests.swift, IntAnaQuadQuadTests.swift and IntAnaThreePlanesTests.swift.
 // Mirrors OCCTIntAnaLineQuad, OCCTIntAnaPlanePlane, OCCTIntAnaCylinderSphere(+Identical) and
 // OCCTIntAna3Planes in OCCTBridge_Spatial_Intersection.mm, same constructors and tolerances.

@@ -130,7 +130,7 @@ MANUAL_OVERRIDES: dict[str, tuple[set[str], str]] = {
     "BRepMAT2d_Explorer": (
         {"OCCTAnalysisTests"},
         "backs hatching (OCCTBridge_Geom2d_Hatching.mm). Real test: "
-        "Tests/OCCTAnalysisTests/HatchTests.swift.",
+        "Tests/OCCTAnalysisTests/PlanarGeometry/HatchTests.swift.",
     ),
     "RWMesh_FaceIterator": (
         {"OCCTIOTests"},
