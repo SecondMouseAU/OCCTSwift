@@ -27,6 +27,6 @@ Measured on macOS arm64, `-c release`, 8 runs per variant under `MallocScribble`
 
 Not reproduced here: the wasm builds (not this repo's job to touch), and any claim about iOS.
 
-The regression test is `Tests/OCCTTopologyTests/Issue3130BorrowedHandleTests.swift`; it cannot fail in
+The regression test is `Tests/OCCTTopologyTests/TopoDS/Issue3130BorrowedHandleTests.swift`; it cannot fail in
 a debug build, so the optimised run is
 `swift test -c release -Xswiftc -enable-testing --filter Issue3130BorrowedHandle`.
