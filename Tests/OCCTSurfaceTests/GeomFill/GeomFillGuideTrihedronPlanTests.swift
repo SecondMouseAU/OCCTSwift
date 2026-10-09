@@ -17,6 +17,13 @@ struct GeomFillGuideTrihedronPlanTests {
                 triPlan.setCurve(pathTrimmed)
                 let frame = triPlan.evaluate(at: 5.0)
                 #expect(frame != nil)
+                // #766: `!= nil` only. GeomFill_GuideTrihedronPlan at 5 gives T (1, 0, 0),
+                // N (0, 1, 0), B (0, 0, 1), see Scripts/repro/766-geomfill-c/.
+                if let frame {
+                    #expect(simd_length(frame.tangent - SIMD3(1, 0, 0)) < 1e-9)
+                    #expect(simd_length(frame.normal - SIMD3(0, 1, 0)) < 1e-9)
+                    #expect(simd_length(frame.binormal - SIMD3(0, 0, 1)) < 1e-9)
+                }
             }
         }
     }
