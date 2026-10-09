@@ -54,7 +54,7 @@ verdict is carried as a `bool` from `Bnd_Box::IsVoid()` instead.
 
 ## The injection matrix this fed
 
-`Tests/OCCTAnalysisTests/Issue943BoundsVoidTests.swift` is pinned by six injections, recorded in
+`Tests/OCCTAnalysisTests/Bounding/Issue943BoundsVoidTests.swift` is pinned by six injections, recorded in
 PR #944's body. Two results worth keeping here:
 
 - Removing `if (box.IsVoid()) return false;` from the shared helper on its own **fails nothing**:

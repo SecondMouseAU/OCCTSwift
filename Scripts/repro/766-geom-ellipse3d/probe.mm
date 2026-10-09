@@ -1,4 +1,4 @@
-// Kernel-parity probe for Tests/OCCTAnalysisTests/GeomEllipse3DTests.swift (#1722-#1728).
+// Kernel-parity probe for Tests/OCCTAnalysisTests/GeomProperties/GeomEllipse3DTests.swift (#1722-#1728).
 // Builds the same Geom_Ellipse the tests build through OCCTCurve3DCreateEllipse
 // (gp_Ax2(origin, +Z), major 10, minor 5) and prints every value the tests read.
 #include <Geom_Ellipse.hxx>
