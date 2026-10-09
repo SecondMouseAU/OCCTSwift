@@ -1,0 +1,144 @@
+# current_path	proposed_path	area	pending_prs	reason
+Tests/OCCTTopologyTests/BRepAdaptorTests.swift	Tests/OCCTTopologyTests/BRepTool/BRepAdaptorTests.swift	BRepTool	-	BRepAdaptor edge and face domain, value, curve and surface type
+Tests/OCCTTopologyTests/BRepCheckExtendedTests.swift	Tests/OCCTTopologyTests/Validity/BRepCheckExtendedTests.swift	Validity	-	BRepCheck face, edge and vertex status, max tolerance, mixed tolerance compound
+Tests/OCCTTopologyTests/BRepCheckSubShapeTests.swift	Tests/OCCTTopologyTests/Validity/BRepCheckSubShapeTests.swift	Validity	-	BRepCheck on edge, wire and shell sub-shapes
+Tests/OCCTTopologyTests/BRepClass3dTests.swift	Tests/OCCTTopologyTests/Validity/BRepClass3dTests.swift	Validity	-	BRepClass3d point-in-solid classification
+Tests/OCCTTopologyTests/BRepClassFClassifierTests.swift	Tests/OCCTTopologyTests/Validity/BRepClassFClassifierTests.swift	Validity	-	BRepClass_FaceClassifier 2D point classification
+Tests/OCCTTopologyTests/BRepLibExtendedTests.swift	Tests/OCCTTopologyTests/BRepLib/BRepLibExtendedTests.swift	BRepLib	-	BRepLib statics: normal consistency, updateDeflection, continuity, sameParameter
+Tests/OCCTTopologyTests/BRepLibMakeEdgeTests.swift	Tests/OCCTTopologyTests/BRepLib/BRepLibMakeEdgeTests.swift	BRepLib	-	BRepLib_MakeEdge from line, points, circle
+Tests/OCCTTopologyTests/BRepLibMakeFaceTests.swift	Tests/OCCTTopologyTests/BRepLib/BRepLibMakeFaceTests.swift	BRepLib	-	BRepLib_MakeFace from plane and cylinder
+Tests/OCCTTopologyTests/BRepLibMakeShellTests.swift	Tests/OCCTTopologyTests/BRepLib/BRepLibMakeShellTests.swift	BRepLib	-	BRepLib_MakeShell from a plane
+Tests/OCCTTopologyTests/BRepLibPointCloudShapeTests.swift	Tests/OCCTTopologyTests/BRepLib/BRepLibPointCloudShapeTests.swift	BRepLib	-	BRepLib_PointCloudShape by triangulation and by density
+Tests/OCCTTopologyTests/BRepLibToolTriangulatedShapeTests.swift	Tests/OCCTTopologyTests/BRepLib/BRepLibToolTriangulatedShapeTests.swift	BRepLib	-	BRepLib_ToolTriangulatedShape normals
+Tests/OCCTTopologyTests/BRepLibUtilitiesTests.swift	Tests/OCCTTopologyTests/BRepLib/BRepLibUtilitiesTests.swift	BRepLib	-	BRepLib orientClosedSolid, buildCurves3d no-op, sortFaces
+Tests/OCCTTopologyTests/BRepToolCompletionsTests.swift	Tests/OCCTTopologyTests/BRepTool/BRepToolCompletionsTests.swift	BRepTool	-	BRep_Tool curveOnSurface, continuity, degenerated, naturalRestriction
+Tests/OCCTTopologyTests/BRepToolExtrasTests.swift	Tests/OCCTTopologyTests/BRepTool/BRepToolExtrasTests.swift	BRepTool	-	BRep_Tool sameParameter, sameRange, naturalRestriction, isGeometric
+Tests/OCCTTopologyTests/BRepToolExtrasV128Tests.swift	Tests/OCCTTopologyTests/BRepTool/BRepToolExtrasV128Tests.swift	BRepTool	-	BRep_Tool isClosedOnFace, polygonOnSurface, UV points
+Tests/OCCTTopologyTests/BRepToolPolygonTests.swift	Tests/OCCTTopologyTests/BRepTool/BRepToolPolygonTests.swift	BRepTool	-	BRep_Tool polygon3D, polygon on triangulation, curve on plane
+Tests/OCCTTopologyTests/BRepToolQueryTests.swift	Tests/OCCTTopologyTests/BRepTool/BRepToolQueryTests.swift	BRepTool	-	BRep_Tool edge curve, face surface, isClosed from a box
+Tests/OCCTTopologyTests/BRepToolsModifierTests.swift	Tests/OCCTTopologyTests/Modification/BRepToolsModifierTests.swift	Modification	-	BRepTools_Modifier NURBS conversion
+Tests/OCCTTopologyTests/BRepToolsStaticsTests.swift	Tests/OCCTTopologyTests/BRepTool/BRepToolsStaticsTests.swift	BRepTool	-	BRepTools statics: cleanTriangulation, removeInternals, detectClosedness
+Tests/OCCTTopologyTests/BRepToolsSubstitutionTests.swift	Tests/OCCTTopologyTests/Modification/BRepToolsSubstitutionTests.swift	Modification	-	BRepTools_Substitution callable
+Tests/OCCTTopologyTests/BRepToolsUtilitiesTests.swift	Tests/OCCTTopologyTests/BRepTool/BRepToolsUtilitiesTests.swift	BRepTool	-	BRepTools and BRepLib clean, cleanGeometry, removeUnusedPCurves, updateTolerances
+Tests/OCCTTopologyTests/BinToolsTests.swift	Tests/OCCTTopologyTests/BinToolsTests.swift	(stays)	-	BinTools binary shape I/O belongs to OCCTIOTests; cross-target, reported in an issue
+Tests/OCCTTopologyTests/BuildCurves3dTests.swift	Tests/OCCTTopologyTests/BRepLib/BuildCurves3dTests.swift	BRepLib	-	BRepLib::BuildCurves3d on a pcurve-only edge and its tolerance
+Tests/OCCTTopologyTests/ContiguousEdgesTests.swift	Tests/OCCTTopologyTests/ShapeFix/ContiguousEdgesTests.swift	ShapeFix	-	contiguousEdgeCount
+Tests/OCCTTopologyTests/CopyModificationTests.swift	Tests/OCCTTopologyTests/Modification/CopyModificationTests.swift	Modification	-	BRepTools_CopyModification deep copy and copy without mesh
+Tests/OCCTTopologyTests/DeepShapeCopyTests.swift	Tests/OCCTTopologyTests/Modification/DeepShapeCopyTests.swift	Modification	-	deep shape copy preserves geometry and is independent
+Tests/OCCTTopologyTests/DropSmallEdgesTests.swift	Tests/OCCTTopologyTests/ShapeFix/DropSmallEdgesTests.swift	ShapeFix	-	drop small edges at a tolerance
+Tests/OCCTTopologyTests/EdgeAdjacencyTests.swift	Tests/OCCTTopologyTests/Edges/EdgeAdjacencyTests.swift	Edges	-	edge adjacent faces and dihedral angle
+Tests/OCCTTopologyTests/EdgeAnalysisTests.swift	Tests/OCCTTopologyTests/Edges/EdgeAnalysisTests.swift	Edges	-	edge curves, closedness, seam edges
+Tests/OCCTTopologyTests/EdgeConcavityTests.swift	Tests/OCCTTopologyTests/Edges/EdgeConcavityTests.swift	Edges	-	convex and concave edge counts
+Tests/OCCTTopologyTests/EdgeConnectTests.swift	Tests/OCCTTopologyTests/Edges/EdgeConnectTests.swift	Edges	-	edge connectivity on box, fused and cylinder
+Tests/OCCTTopologyTests/EdgeDiscretizationTests.swift	Tests/OCCTTopologyTests/Edges/EdgeDiscretizationTests.swift	Edges	-	edge polylines and bulk polylines
+Tests/OCCTTopologyTests/EdgeFaceExtractionTests.swift	Tests/OCCTTopologyTests/Edges/EdgeFaceExtractionTests.swift	Edges	-	extract edge curve, tolerance, degenerated, face surface
+Tests/OCCTTopologyTests/EdgesToFacesTests.swift	Tests/OCCTTopologyTests/BRepLib/EdgesToFacesTests.swift	BRepLib	-	facesFromEdges from a wire, compound and disjoint loops
+Tests/OCCTTopologyTests/FaceFixerTests.swift	Tests/OCCTTopologyTests/ShapeFix/FaceFixerTests.swift	ShapeFix	-	ShapeFix_Face on a box face
+Tests/OCCTTopologyTests/FaceFixingTests.swift	Tests/OCCTTopologyTests/ShapeFix/FaceFixingTests.swift	ShapeFix	-	fix a face built from a wire
+Tests/OCCTTopologyTests/FacePrimaryAxisTests.swift	Tests/OCCTTopologyTests/Faces/FacePrimaryAxisTests.swift	Faces	-	Face.primaryAxis
+Tests/OCCTTopologyTests/FacePropertyTests.swift	Tests/OCCTTopologyTests/Faces/FacePropertyTests.swift	Faces	-	outer wire, Face/Edge/Wire from a shape, zLevel
+Tests/OCCTTopologyTests/FaceRestrictionTests.swift	Tests/OCCTTopologyTests/ShapeFix/FaceRestrictionTests.swift	ShapeFix	-	restrict a face with an outer wire and hole
+Tests/OCCTTopologyTests/FaceSubdivisionTests.swift	Tests/OCCTTopologyTests/Faces/FaceSubdivisionTests.swift	Faces	-	divide a face by area or into parts
+Tests/OCCTTopologyTests/FindContigousEdgesTests.swift	Tests/OCCTTopologyTests/ShapeFix/FindContigousEdgesTests.swift	ShapeFix	-	find contiguous edges on a box with a tolerance
+Tests/OCCTTopologyTests/FixSmallFacesTests.swift	Tests/OCCTTopologyTests/ShapeFix/FixSmallFacesTests.swift	ShapeFix	-	ShapeFix small faces on a clean shape
+Tests/OCCTTopologyTests/FixWireframeTests.swift	Tests/OCCTTopologyTests/ShapeFix/FixWireframeTests.swift	ShapeFix	-	ShapeFix_Wireframe on a valid shape
+Tests/OCCTTopologyTests/FuseEdgesTests.swift	Tests/OCCTTopologyTests/ShapeFix/FuseEdgesTests.swift	ShapeFix	-	fuse edges after a boolean
+Tests/OCCTTopologyTests/GenericSubShapeExtractionTests.swift	Tests/OCCTTopologyTests/SubShapes/GenericSubShapeExtractionTests.swift	SubShapes	-	extract sub-shapes by type and index
+Tests/OCCTTopologyTests/GeometricEdgeSelectionTests.swift	Tests/OCCTTopologyTests/Edges/GeometricEdgeSelectionTests.swift	Edges	-	select edges by predicate, concavity, direction
+Tests/OCCTTopologyTests/HLRExtendedEdgeCategoryTests.swift	Tests/OCCTTopologyTests/HLRExtendedEdgeCategoryTests.swift	(stays)	-	HLR edge categories belong to OCCTDrawingTests; cross-target, reported in an issue
+Tests/OCCTTopologyTests/IntegrationConcurrentShapeOperationsTests.swift	Tests/OCCTTopologyTests/IntegrationConcurrentShapeOperationsTests.swift	(stays)	-	concurrent shape operations belong to OCCTThreadTests or OCCTIntegrationTests; cross-target, reported in an issue
+Tests/OCCTTopologyTests/Issue1008WireFromEdgesTypeGuardTests.swift	Tests/OCCTTopologyTests/NullGuards/Issue1008WireFromEdgesTypeGuardTests.swift	NullGuards	-	wireFromEdges and shellFromFaces refuse a wrong-typed shape
+Tests/OCCTTopologyTests/Issue1026NullShapeTypeGuardTests.swift	Tests/OCCTTopologyTests/NullGuards/Issue1026NullShapeTypeGuardTests.swift	NullGuards	-	a nullified shape answers every type query without crashing
+Tests/OCCTTopologyTests/Issue1034NullAndEmptyTests.swift	Tests/OCCTTopologyTests/NullGuards/Issue1034NullAndEmptyTests.swift	NullGuards	-	null and empty shapes are different answers
+Tests/OCCTTopologyTests/Issue1035NullShapeUnwrapTests.swift	Tests/OCCTTopologyTests/NullGuards/Issue1035NullShapeUnwrapTests.swift	NullGuards	-	a nullified shape refuses the edge and face accessors
+Tests/OCCTTopologyTests/Issue1088SelfIntersectsAnswerTests.swift	Tests/OCCTTopologyTests/Validity/Issue1088SelfIntersectsAnswerTests.swift	Validity	-	selfIntersects reports the check result on overlapping and disjoint shapes
+Tests/OCCTTopologyTests/Issue1392CheckSolidTests.swift	Tests/OCCTTopologyTests/Validity/Issue1392CheckSolidTests.swift	Validity	-	BRepCheck_Solid reachable from Swift
+Tests/OCCTTopologyTests/Issue1434DihedralAngleRangeTests.swift	Tests/OCCTTopologyTests/Edges/Issue1434DihedralAngleRangeTests.swift	Edges	-	Edge.dihedralAngle range 0 to 2 PI
+Tests/OCCTTopologyTests/Issue1440EdgeDeflectionArgumentOrderTests.swift	Tests/OCCTTopologyTests/Edges/Issue1440EdgeDeflectionArgumentOrderTests.swift	Edges	-	edgePolyline angular and linear deflection argument order
+Tests/OCCTTopologyTests/Issue1440PointCloudToleranceTests.swift	Tests/OCCTTopologyTests/BRepLib/Issue1440PointCloudToleranceTests.swift	BRepLib	-	point-cloud auto-density tolerance default
+Tests/OCCTTopologyTests/Issue1452PointCloudAutoDensityTests.swift	Tests/OCCTTopologyTests/BRepLib/Issue1452PointCloudAutoDensityTests.swift	BRepLib	-	auto-density point clouds return instead of hanging
+Tests/OCCTTopologyTests/Issue1461ValidateEdgeSameParameterTests.swift	Tests/OCCTTopologyTests/Validity/Issue1461ValidateEdgeSameParameterTests.swift	Validity	-	ValidateEdge reports the real SameParameter flag
+Tests/OCCTTopologyTests/Issue1492TopologyAdjacencyNullGuardTests.swift	Tests/OCCTTopologyTests/NullGuards/Issue1492TopologyAdjacencyNullGuardTests.swift	NullGuards	-	null-handle guards on the topology adjacency functions
+Tests/OCCTTopologyTests/Issue1639UpdateEdgeToleranceTests.swift	Tests/OCCTTopologyTests/BRepLib/Issue1639UpdateEdgeToleranceTests.swift	BRepLib	-	updateEdgeTolerance reports what it measured
+Tests/OCCTTopologyTests/Issue1640DuplicateSplittersTests.swift	Tests/OCCTTopologyTests/Faces/Issue1640DuplicateSplittersTests.swift	Faces	-	dividedByParts and closed-face splitting
+Tests/OCCTTopologyTests/Issue211OuterShellTests.swift	Tests/OCCTTopologyTests/Faces/Issue211OuterShellTests.swift	Faces	-	outerShell of a hollow solid
+Tests/OCCTTopologyTests/Issue2734CheckSubShapeErrorCountTests.swift	Tests/OCCTTopologyTests/Validity/Issue2734CheckSubShapeErrorCountTests.swift	Validity	-	checkSubShape errorCount and firstError on an invalid sub-shape
+Tests/OCCTTopologyTests/Issue2769DivideAreaTests.swift	Tests/OCCTTopologyTests/Faces/Issue2769DivideAreaTests.swift	Faces	-	nothing to split returns the input
+Tests/OCCTTopologyTests/Issue2812CastReferenceSpellingGuardTests.swift	Tests/OCCTTopologyTests/NullGuards/Issue2812CastReferenceSpellingGuardTests.swift	NullGuards	-	a nullified shape refuses the four reference-cast BRep_Tool wrappers
+Tests/OCCTTopologyTests/Issue2872EdgePolylineDeflectionBoundsTests.swift	Tests/OCCTTopologyTests/Edges/Issue2872EdgePolylineDeflectionBoundsTests.swift	Edges	-	edge polyline deflection bounds
+Tests/OCCTTopologyTests/Issue3044EdgeLengthEllipseTests.swift	Tests/OCCTTopologyTests/Edges/Issue3044EdgeLengthEllipseTests.swift	Edges	-	Edge.length adaptive arc length on ellipses
+Tests/OCCTTopologyTests/Issue3074TotalEdgeLengthTests.swift	Tests/OCCTTopologyTests/TopoDS/Issue3074TotalEdgeLengthTests.swift	TopoDS	-	Shape.totalEdgeLength adaptive arc length on ellipses
+Tests/OCCTTopologyTests/Issue439OuterShellMultiSolidTests.swift	Tests/OCCTTopologyTests/Faces/Issue439OuterShellMultiSolidTests.swift	Faces	-	outerShell on a multi-solid compound
+Tests/OCCTTopologyTests/Issue495FaceContinuityTests.swift	Tests/OCCTTopologyTests/Edges/Issue495FaceContinuityTests.swift	Edges	-	continuity across a shared edge as a GeomAbs_Shape class
+Tests/OCCTTopologyTests/Issue502SubShapeTraversalTests.swift	Tests/OCCTTopologyTests/SubShapes/Issue502SubShapeTraversalTests.swift	SubShapes	-	sub-shape traversal is one enumeration
+Tests/OCCTTopologyTests/Issue541FaceIndexContractTests.swift	Tests/OCCTTopologyTests/Faces/Issue541FaceIndexContractTests.swift	Faces	-	a face index names one face
+Tests/OCCTTopologyTests/Issue613IndexContractTests.swift	Tests/OCCTTopologyTests/SubShapes/Issue613IndexContractTests.swift	SubShapes	-	sub-shape indices agree across entry points
+Tests/OCCTTopologyTests/Issue614FaceOrientationTests.swift	Tests/OCCTTopologyTests/Faces/Issue614FaceOrientationTests.swift	Faces	-	faces() keeps the index, orientedFaces() keeps the normal
+Tests/OCCTTopologyTests/Issue638EdgeOrientationContractTests.swift	Tests/OCCTTopologyTests/Edges/Issue638EdgeOrientationContractTests.swift	Edges	-	edges() orientation collapse and orientation-independent accessors
+Tests/OCCTTopologyTests/Issue833MaxToleranceEncodingTests.swift	Tests/OCCTTopologyTests/TopoDS/Issue833MaxToleranceEncodingTests.swift	TopoDS	-	maxTolerance/minTolerance/avgTolerance shape type encoding
+Tests/OCCTTopologyTests/Issue841FaceFromPlaneCylinderToleranceTests.swift	Tests/OCCTTopologyTests/BRepLib/Issue841FaceFromPlaneCylinderToleranceTests.swift	BRepLib	-	faceFromPlane and faceFromCylinder tolerance defaults
+Tests/OCCTTopologyTests/Issue844ShapeTypeConsolidationTests.swift	Tests/OCCTTopologyTests/TopoDS/Issue844ShapeTypeConsolidationTests.swift	TopoDS	-	ShapeType and ShapeFilterType consolidation
+Tests/OCCTTopologyTests/Issue859IsHorizontalSingleFetchTests.swift	Tests/OCCTTopologyTests/Faces/Issue859IsHorizontalSingleFetchTests.swift	Faces	-	isHorizontal agrees with upward or downward facing
+Tests/OCCTTopologyTests/Issue900BoundingBoxOutParamZeroingTests.swift	Tests/OCCTTopologyTests/NullGuards/Issue900BoundingBoxOutParamZeroingTests.swift	NullGuards	-	bounding box out-params zeroed on a null or void shape
+Tests/OCCTTopologyTests/Issue979SubShapeIndexIdentityTests.swift	Tests/OCCTTopologyTests/SubShapes/Issue979SubShapeIndexIdentityTests.swift	SubShapes	-	sub-shape enumeration position as identity
+Tests/OCCTTopologyTests/Issue994Matrix12Tests.swift	Tests/OCCTTopologyTests/TopoDS/Issue994Matrix12Tests.swift	TopoDS	-	located(matrix:) and locationMatrix interleaved 12-slot layout
+Tests/OCCTTopologyTests/MakeEdgeCompletionsTests.swift	Tests/OCCTTopologyTests/BRepLib/MakeEdgeCompletionsTests.swift	BRepLib	-	MakeEdge from ellipse, arcs of conics, curve
+Tests/OCCTTopologyTests/MakeFaceCompletionsTests.swift	Tests/OCCTTopologyTests/BRepLib/MakeFaceCompletionsTests.swift	BRepLib	-	MakeFace from surface UV, gp_Pln, gp_Cylinder
+Tests/OCCTTopologyTests/MakeFaceExtrasTests.swift	Tests/OCCTTopologyTests/BRepLib/MakeFaceExtrasTests.swift	BRepLib	-	MakeFace from sphere, torus, cone, surface and wire, copy
+Tests/OCCTTopologyTests/MakeSolidFromShellTests.swift	Tests/OCCTTopologyTests/BRepLib/MakeSolidFromShellTests.swift	BRepLib	-	BRepLib_MakeSolid from a box shell
+Tests/OCCTTopologyTests/MakeVertexTests.swift	Tests/OCCTTopologyTests/BRepLib/MakeVertexTests.swift	BRepLib	-	BRepLib_MakeVertex
+Tests/OCCTTopologyTests/OrderedEdgePointsTests.swift	Tests/OCCTTopologyTests/Edges/OrderedEdgePointsTests.swift	Edges	-	orderedEdgePoints without truncation
+Tests/OCCTTopologyTests/PeriodicTests.swift	Tests/OCCTTopologyTests/TopoDS/PeriodicTests.swift	TopoDS	-	periodic shape and repeat in X
+Tests/OCCTTopologyTests/ProjectWireWithWireTests.swift	Tests/OCCTTopologyTests/Wires/ProjectWireWithWireTests.swift	Wires	-	projectWire with a Wire argument
+Tests/OCCTTopologyTests/QuiltFacesTests.swift	Tests/OCCTTopologyTests/Modification/QuiltFacesTests.swift	Modification	-	BRepTools_Quilt of box faces
+Tests/OCCTTopologyTests/ReShapeContextTests.swift	Tests/OCCTTopologyTests/Modification/ReShapeContextTests.swift	Modification	-	BRepTools_ReShape remove, replace, clear
+Tests/OCCTTopologyTests/ReShapeTests.swift	Tests/OCCTTopologyTests/Modification/ReShapeTests.swift	Modification	-	sub-shape replacement through ReShape
+Tests/OCCTTopologyTests/SelectorSubShapeTests.swift	Tests/OCCTTopologyTests/SelectorSubShapeTests.swift	(stays)	-	AIS selector sub-shape modes are not topology; cross-target, reported in an issue
+Tests/OCCTTopologyTests/ShapeCSIntersectorTestsV52.swift	Tests/OCCTTopologyTests/Interference/ShapeCSIntersectorTestsV52.swift	Interference	-	curve-shape intersector line against a box
+Tests/OCCTTopologyTests/ShapeCheckTests.swift	Tests/OCCTTopologyTests/Validity/ShapeCheckTests.swift	Validity	-	Shape check results on valid primitives and detailed check
+Tests/OCCTTopologyTests/ShapeContentsExtendedTests.swift	Tests/OCCTTopologyTests/TopoDS/ShapeContentsExtendedTests.swift	TopoDS	-	extended shape contents counts and parity with the core map
+Tests/OCCTTopologyTests/ShapeContentsTests.swift	Tests/OCCTTopologyTests/TopoDS/ShapeContentsTests.swift	TopoDS	-	shape contents counts of a box and cylinder
+Tests/OCCTTopologyTests/ShapeEmptyCopyTests.swift	Tests/OCCTTopologyTests/TopoDS/ShapeEmptyCopyTests.swift	TopoDS	-	empty copy of a compound
+Tests/OCCTTopologyTests/ShapeExtrasV112Tests.swift	Tests/OCCTTopologyTests/TopoDS/ShapeExtrasV112Tests.swift	TopoDS	-	child access, locked state, location matrix, located, oriented, empty
+Tests/OCCTTopologyTests/ShapeFromEdgeTests.swift	Tests/OCCTTopologyTests/TopoDS/ShapeFromEdgeTests.swift	TopoDS	-	Shape.fromEdge and fillets taking edge or wire parameters
+Tests/OCCTTopologyTests/ShapeFromFaceTests.swift	Tests/OCCTTopologyTests/TopoDS/ShapeFromFaceTests.swift	TopoDS	-	Shape.fromFace conversion
+Tests/OCCTTopologyTests/ShapeFromWireTests.swift	Tests/OCCTTopologyTests/TopoDS/ShapeFromWireTests.swift	TopoDS	-	Shape from Wire: edges and shape type
+Tests/OCCTTopologyTests/ShapeHistoryTests.swift	Tests/OCCTTopologyTests/Modification/ShapeHistoryTests.swift	Modification	-	BRepTools_History tracks modifications and removals
+Tests/OCCTTopologyTests/ShapeProximityTests.swift	Tests/OCCTTopologyTests/Interference/ShapeProximityTests.swift	Interference	-	proximity faces and distance between shapes
+Tests/OCCTTopologyTests/ShapeQueriesV123Tests.swift	Tests/OCCTTopologyTests/TopoDS/ShapeQueriesV123Tests.swift	TopoDS	-	typeName, isNotEqual, nullified, emptied, moved, orientationValue
+Tests/OCCTTopologyTests/ShapeQueryTests.swift	Tests/OCCTTopologyTests/TopoDS/ShapeQueryTests.swift	TopoDS	-	OBB volume, max tolerances, free edges, bounding diagonal, centroid, total edge length
+Tests/OCCTTopologyTests/ShapeSectionTests.swift	Tests/OCCTTopologyTests/Interference/ShapeSectionTests.swift	Interference	-	shape-to-shape section
+Tests/OCCTTopologyTests/ShapeSurgeryTests.swift	Tests/OCCTTopologyTests/Modification/ShapeSurgeryTests.swift	Modification	-	remove and replace in a compound
+Tests/OCCTTopologyTests/ShapeSymmetryAxesTests.swift	Tests/OCCTTopologyTests/TopoDS/ShapeSymmetryAxesTests.swift	TopoDS	-	Shape.symmetryAxes of primitives
+Tests/OCCTTopologyTests/ShapeTests.swift	Tests/OCCTTopologyTests/TopoDS/ShapeTests.swift	TopoDS	-	Shape basics: primitives, booleans, transforms, fillet smoke
+Tests/OCCTTopologyTests/ShapeTopologyExtensionTests.swift	Tests/OCCTTopologyTests/TopoDS/ShapeTopologyExtensionTests.swift	TopoDS	-	orientation, reversed, complemented, flags, hash code on TopoDS_Shape
+Tests/OCCTTopologyTests/ShapeTopologyExtrasTests.swift	Tests/OCCTTopologyTests/TopoDS/ShapeTopologyExtrasTests.swift	TopoDS	-	shape type of a box, wire and vertex
+Tests/OCCTTopologyTests/ShapeUnificationTests.swift	Tests/OCCTTopologyTests/ShapeFix/ShapeUnificationTests.swift	ShapeFix	-	unify same-domain faces and edges, simplify
+Tests/OCCTTopologyTests/ShellVertexTests.swift	Tests/OCCTTopologyTests/BRepLib/ShellVertexTests.swift	BRepLib	-	shell from a surface and vertex at a point
+Tests/OCCTTopologyTests/SmallFaceDetectionTests.swift	Tests/OCCTTopologyTests/ShapeFix/SmallFaceDetectionTests.swift	ShapeFix	-	checkSmallFaces on primitives
+Tests/OCCTTopologyTests/SolidConstructionTests.swift	Tests/OCCTTopologyTests/BRepLib/SolidConstructionTests.swift	BRepLib	-	solid from one shell, two shells, empty
+Tests/OCCTTopologyTests/SolidFromShellTests.swift	Tests/OCCTTopologyTests/BRepLib/SolidFromShellTests.swift	BRepLib	-	solid from a shell and from a compound
+Tests/OCCTTopologyTests/SubShapeExtractionTests.swift	Tests/OCCTTopologyTests/SubShapes/SubShapeExtractionTests.swift	SubShapes	-	solids, shells, wires of primitives
+Tests/OCCTTopologyTests/SubstitutionTests.swift	Tests/OCCTTopologyTests/Modification/SubstitutionTests.swift	Modification	-	BRepTools_Substitution remove
+Tests/OCCTTopologyTests/ThickSolidOptionsTests.swift	Tests/OCCTTopologyTests/ThickSolidOptionsTests.swift	(stays)	-	thick solid is a BRepOffset modeling operation; belongs to OCCTModelingTests; cross-target, reported in an issue
+Tests/OCCTTopologyTests/TopCnxEdgeFaceTransitionTests.swift	Tests/OCCTTopologyTests/Edges/TopCnxEdgeFaceTransitionTests.swift	Edges	-	TopCnx edge-face transition
+Tests/OCCTTopologyTests/TopExpAdjacencyTests.swift	Tests/OCCTTopologyTests/Edges/TopExpAdjacencyTests.swift	Edges	-	TopExp edge vertices and wire vertices
+Tests/OCCTTopologyTests/TopExpCommonVertexTests.swift	Tests/OCCTTopologyTests/Edges/TopExpCommonVertexTests.swift	Edges	-	TopExp_CommonVertex
+Tests/OCCTTopologyTests/TopoDSBuilderTests.swift	Tests/OCCTTopologyTests/TopoDS/TopoDSBuilderTests.swift	TopoDS	-	TopoDS_Builder: make compound, wire, shell, solid, compsolid
+Tests/OCCTTopologyTests/TopologyTestFixtures.swift	Tests/OCCTTopologyTests/TopologyTestFixtures.swift	(stays)	-	shared fixture (SIMD3.normalized helper); no suites
+Tests/OCCTTopologyTests/UniqueSubShapeCountTests.swift	Tests/OCCTTopologyTests/SubShapes/UniqueSubShapeCountTests.swift	SubShapes	-	unique sub-shape counts
+Tests/OCCTTopologyTests/ValidateEdgeTests.swift	Tests/OCCTTopologyTests/Validity/ValidateEdgeTests.swift	Validity	-	BRepLib ValidateEdge and tolerance check
+Tests/OCCTTopologyTests/WireAllEdgePolylinesTests.swift	Tests/OCCTTopologyTests/Wires/WireAllEdgePolylinesTests.swift	Wires	-	Wire.allEdgePolylines
+Tests/OCCTTopologyTests/WireAnalysisTests.swift	Tests/OCCTTopologyTests/Wires/WireAnalysisTests.swift	Wires	-	wire topology analysis: rectangle, open, circle, bowtie
+Tests/OCCTTopologyTests/WireAnalyzerV124Tests.swift	Tests/OCCTTopologyTests/Wires/WireAnalyzerV124Tests.swift	Wires	-	ShapeAnalysis_Wire checks
+Tests/OCCTTopologyTests/WireBoundsTests.swift	Tests/OCCTTopologyTests/Wires/WireBoundsTests.swift	Wires	-	Wire.bounds
+Tests/OCCTTopologyTests/WireBuilderTests.swift	Tests/OCCTTopologyTests/BRepLib/WireBuilderTests.swift	BRepLib	-	wire builder from edges and from a wire
+Tests/OCCTTopologyTests/WireEdgesTests.swift	Tests/OCCTTopologyTests/Wires/WireEdgesTests.swift	Wires	-	Wire.edges()
+Tests/OCCTTopologyTests/WireExplorerExtensionTests.swift	Tests/OCCTTopologyTests/Wires/WireExplorerExtensionTests.swift	Wires	-	wire explorer edge orientations and vertex positions
+Tests/OCCTTopologyTests/WireExplorerTests.swift	Tests/OCCTTopologyTests/Wires/WireExplorerTests.swift	Wires	-	wire explorer edges, edge points, out of range
+Tests/OCCTTopologyTests/WireFixerExtendedTests.swift	Tests/OCCTTopologyTests/ShapeFix/WireFixerExtendedTests.swift	ShapeFix	-	ShapeFix_Wire gaps, seam, shifted, notched edges
+Tests/OCCTTopologyTests/WireFixerTests.swift	Tests/OCCTTopologyTests/ShapeFix/WireFixerTests.swift	ShapeFix	-	ShapeFix_Wire on a box wire
+Tests/OCCTTopologyTests/WireFixingTests.swift	Tests/OCCTTopologyTests/ShapeFix/WireFixingTests.swift	ShapeFix	-	fix a healthy wire and a circle wire
+Tests/OCCTTopologyTests/WireFromEdgesTests.swift	Tests/OCCTTopologyTests/BRepLib/WireFromEdgesTests.swift	BRepLib	-	BRepLib_MakeWire wire from edges
+Tests/OCCTTopologyTests/WireOrderTests.swift	Tests/OCCTTopologyTests/Wires/WireOrderTests.swift	Wires	-	wire order status and gaps
+Tests/OCCTTopologyTests/WireTests.swift	Tests/OCCTTopologyTests/Wires/WireTests.swift	Wires	-	Wire factories: rectangle, polygon, arc, line, BSpline

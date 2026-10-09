@@ -1,4 +1,4 @@
-// #766 kernel parity for Tests/OCCTAnalysisTests/BRepBndLibTests.swift.
+// #766 kernel parity for Tests/OCCTAnalysisTests/Bounding/BRepBndLibTests.swift.
 // Calls the OCCT API each bridge function wraps, with the fixtures each test builds.
 #include <BRepAlgoAPI_Common.hxx>
 #include <BRepBndLib.hxx>

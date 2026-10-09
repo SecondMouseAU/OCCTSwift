@@ -1492,7 +1492,7 @@ public func volumeInertia(planeNormal: SIMD3<Double>, planeDistance: Double = 0)
   - the mass-weighted sum of `centerOfMass` is the solid's first moment, so dividing by `Shape.volume`
     gives `Shape.centerOfMass`.
 
-  Both are asserted in `Tests/OCCTAnalysisTests/BRepGPropVinertTests.swift` against
+  Both are asserted in `Tests/OCCTAnalysisTests/BRepGProp/BRepGPropVinertTests.swift` against
   `BRepGProp::VolumeProperties`, which shares no code with this path, on a fixture translated off the
   origin so the second is not a comparison against `(0, 0, 0)`. For a **planar** face there is also a
   closed form, `(planeNormal . faceNormal) * area * (planeNormal . areaCentroid - planeDistance)`, so

@@ -1,4 +1,4 @@
-// Epic #766 evidence fix, Tests/OCCTModelingTests/HalfSpaceTests.swift.
+// Epic #766 evidence fix, Tests/OCCTModelingTests/Construction/HalfSpaceTests.swift.
 // probe.mm printed the classifier states as integers. This probe repeats OCCTShapeCreateHalfSpace
 // (BRepPrimAPI_MakeHalfSpace(first face, refPoint).Solid(), returned without a null check) on the planar
 // face of the 20 x 20 rectangle Wire.rectangle builds (centred at the origin, z = 0) with reference

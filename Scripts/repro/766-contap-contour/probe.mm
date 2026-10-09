@@ -1,4 +1,4 @@
-// #766 kernel parity for Tests/OCCTAnalysisTests/ContapContourTests.swift and
+// #766 kernel parity for Tests/OCCTAnalysisTests/Contap/ContapContourTests.swift and
 // ContapContourFullTests.swift.
 //   Contap_ContAna::Perform(gp_Sphere, gp_Dir) / (gp_Cylinder, gp_Dir) / (gp_Sphere, gp_Pnt)
 //     -> OCCTContapSphereDir / OCCTContapCylinderDir / OCCTContapSphereEye

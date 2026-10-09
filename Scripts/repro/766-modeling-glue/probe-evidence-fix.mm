@@ -1,4 +1,4 @@
-// Epic #766 evidence fix, Tests/OCCTModelingTests/GlueTests.swift.
+// Epic #766 evidence fix, Tests/OCCTModelingTests/Booleans/GlueTests.swift.
 // probe.mm reported that the glue fuse is not done and printed the fallback's volume at %.10g. This probe
 // repeats OCCTShapeGlue exactly as the bridge runs it: BRepAlgoAPI_Fuse with SetGlue(BOPAlgo_GlueShift),
 // SetFuzzyValue(1e-6), both boxes as arguments and no tools, Build(); when that is not done, a plain

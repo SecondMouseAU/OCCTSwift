@@ -1,4 +1,4 @@
-// #766 kernel parity for Tests/OCCTAnalysisTests/AdaptorCurvatureDefinednessTests.swift.
+// #766 kernel parity for Tests/OCCTAnalysisTests/LocalProperties/AdaptorCurvatureDefinednessTests.swift.
 // Reads BRepLProp_SLProps(face, u, v, 2, Precision::Confusion()) on the suite's fixtures, the
 // construction occtFaceLocalProps makes for every OCCTFaceLProp* getter.
 #include <BRepAdaptor_Surface.hxx>

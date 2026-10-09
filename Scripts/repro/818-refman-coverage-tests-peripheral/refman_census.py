@@ -37,7 +37,7 @@ OCCTModelingTests/OCCTSurfaceTests, which #818's own body predicted: "it will no
 reported because #818 asks for it explicitly, not folded into `under`.
 
 `BRepOffsetAPI_MiddlePath`, the OTHER real `under` this pass found, is fixed in this same branch
-(`Tests/OCCTModelingTests/Issue818MiddlePathTests.swift`) rather than filed, so it does not appear
+(`Tests/OCCTModelingTests/Sweeps/Issue818MiddlePathTests.swift`) rather than filed, so it does not appear
 in the table above as `under` any more. `derive_lane.py`'s own automated pass, run fresh against a
 tree that already has that test file committed, now correctly reports it `tested-elsewhere` (via
 `OCCTModelingTests`) on the raw signal alone -- `FIXED_UNDER` below is consulted BEFORE the raw
@@ -130,7 +130,7 @@ MANUAL_OVERRIDES: dict[str, tuple[set[str], str]] = {
     "BRepMAT2d_Explorer": (
         {"OCCTAnalysisTests"},
         "backs hatching (OCCTBridge_Geom2d_Hatching.mm). Real test: "
-        "Tests/OCCTAnalysisTests/HatchTests.swift.",
+        "Tests/OCCTAnalysisTests/PlanarGeometry/HatchTests.swift.",
     ),
     "RWMesh_FaceIterator": (
         {"OCCTIOTests"},
@@ -177,7 +177,7 @@ MANUAL_OVERRIDES: dict[str, tuple[set[str], str]] = {
 
 FIXED_UNDER = {
     "BRepOffsetAPI_MiddlePath": {
-        "test_file": "Tests/OCCTModelingTests/Issue818MiddlePathTests.swift",
+        "test_file": "Tests/OCCTModelingTests/Sweeps/Issue818MiddlePathTests.swift",
         "note": "fixed in this branch: a coaxial-tube ground-truth regression test, proved to fail "
                 "when OCCTShapeMiddlePath is broken (see the PR/commit description for the "
                 "red/green transcript).",

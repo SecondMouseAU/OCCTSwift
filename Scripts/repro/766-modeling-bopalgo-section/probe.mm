@@ -1,4 +1,4 @@
-// Epic #766, Tests/OCCTModelingTests/BOPAlgoSectionTests.swift: kernel parity for all three tests.
+// Epic #766, Tests/OCCTModelingTests/BOPAlgo/BOPAlgoSectionTests.swift: kernel parity for all three tests.
 // OCCTBOPAlgoSection: BOPAlgo_Section with every object and tool as an argument, Perform, Shape().
 #include <BOPAlgo_Section.hxx>
 #include <BRepPrimAPI_MakeBox.hxx>

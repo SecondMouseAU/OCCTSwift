@@ -157,7 +157,7 @@ where it currently cannot. Measured before choosing:
   caller-supplied count (9 direct construction sites across `OCCTBridge_Curve3D.mm` and
   `OCCTBridge_Geom2d.mm`, one of them a shared `static` helper with 2 further callers) is already
   inside `try { ... } catch (...) { return 0/nullptr/false; }`.
-- `Tests/OCCTCurveTests/Issue558SamplingCountBoundsTests.swift` asserts the not-done/empty-result
+- `Tests/OCCTCurveTests/Sampling/Issue558SamplingCountBoundsTests.swift` asserts the not-done/empty-result
   contract for a count of 1 (and 0, -1, past-ceiling) across every one of those entry points.
 - Nothing in the kernel itself calls the count-based `initialize()` with an unvalidated count either:
   grepped `Libraries/occt-src/src` for both classes outside their own `GCPnts` package. 5 production

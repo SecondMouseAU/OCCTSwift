@@ -885,7 +885,7 @@ not: `Law_Constant`, `Law_Linear` and `Law_Composite` derive from `Law_Function`
 bridge's `Handle(Law_BSpFunc)::DownCast` returns null, and the result is an empty array. A
 readable law always reports at least its two end knots at every continuity order, so **an empty
 array means "not a `Law_BSpFunc`-derived law"**, never "no discontinuities"
-(`Tests/OCCTCurveTests/Issue1399LawKnotSplitFactoryReachTests.swift`).
+(`Tests/OCCTCurveTests/Laws/Issue1399LawKnotSplitFactoryReachTests.swift`).
 
 Returns raw indices into the law's own knot table, not directly usable against `value(at:)` or
 `bounds`; see `knotSplitParameters(continuityOrder:)` for the parameter-value form.

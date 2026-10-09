@@ -1,0 +1,185 @@
+# current_path	proposed_path	area	pending_prs	reason
+Tests/OCCTModelingTests/AAGTests.swift	Tests/OCCTModelingTests/FeatureRecognition/AAGTests.swift	FeatureRecognition	#2653	attributed adjacency graph: node normals, neighbours, edge between, pocket detection
+Tests/OCCTModelingTests/AdvancedModelingTests.swift	Tests/OCCTModelingTests/AdvancedModelingTests.swift	(stays)	#2654	fillet, draft, shell, pipe shell, wire curve and surface-construction grab bag; spans five areas
+Tests/OCCTModelingTests/BiTgteBlendTests.swift	Tests/OCCTModelingTests/Blends/BiTgteBlendTests.swift	Blends	#2666	BiTgte_Blend on box edges
+Tests/OCCTModelingTests/BooleanCheckTests.swift	Tests/OCCTModelingTests/Booleans/BooleanCheckTests.swift	Booleans	#2666	pre-validation of boolean operands against the booleans
+Tests/OCCTModelingTests/BooleanExpansionTests.swift	Tests/OCCTModelingTests/Booleans/BooleanExpansionTests.swift	Booleans	#2687	section with tolerance, multi split, cut with history, defeature on boolean entry points
+Tests/OCCTModelingTests/BooleanFullHistoryTests.swift	Tests/OCCTModelingTests/History/BooleanFullHistoryTests.swift	History	#2697	union, subtract, intersect and split with per-input full history
+Tests/OCCTModelingTests/BooleanHistoryTests.swift	Tests/OCCTModelingTests/History/BooleanHistoryTests.swift	History	#2687	fuse with history and the history handle
+Tests/OCCTModelingTests/BooleanRegistryTests.swift	Tests/OCCTModelingTests/FeatureReconstruction/BooleanRegistryTests.swift	FeatureReconstruction	-	FeatureSpec.Boolean named-shape registry in the reconstructor
+Tests/OCCTModelingTests/BooleanTestFixtures.swift	Tests/OCCTModelingTests/BooleanTestFixtures.swift	(stays)	-	shared boolean fixtures with no suite; stays at the root
+Tests/OCCTModelingTests/BooleanToleranceTests.swift	Tests/OCCTModelingTests/Booleans/BooleanToleranceTests.swift	Booleans	#2688	fuse, cut and common with tolerance and glue options
+Tests/OCCTModelingTests/BOPAlgoArgumentAnalyzerTests.swift	Tests/OCCTModelingTests/BOPAlgo/BOPAlgoArgumentAnalyzerTests.swift	BOPAlgo	-	BOPAlgo_ArgumentAnalyzer on valid shapes
+Tests/OCCTModelingTests/BOPAlgoBuilderFaceTests.swift	Tests/OCCTModelingTests/BOPAlgo/BOPAlgoBuilderFaceTests.swift	BOPAlgo	#2708	BOPAlgo_BuilderFace from edges
+Tests/OCCTModelingTests/BOPAlgoBuilderSolidTests.swift	Tests/OCCTModelingTests/BOPAlgo/BOPAlgoBuilderSolidTests.swift	BOPAlgo	#2708	BOPAlgo_BuilderSolid from faces
+Tests/OCCTModelingTests/BOPAlgoCellsBuilderTests.swift	Tests/OCCTModelingTests/BOPAlgo/BOPAlgoCellsBuilderTests.swift	BOPAlgo	#2708	BOPAlgo_CellsBuilder add, remove and internal boundaries
+Tests/OCCTModelingTests/BOPAlgoSectionTests.swift	Tests/OCCTModelingTests/BOPAlgo/BOPAlgoSectionTests.swift	BOPAlgo	#2708	BOPAlgo_Section of boxes and a sphere
+Tests/OCCTModelingTests/BOPAlgoShellSplitterTests.swift	Tests/OCCTModelingTests/BOPAlgo/BOPAlgoShellSplitterTests.swift	BOPAlgo	#2708	BOPAlgo_ShellSplitter on a single shell
+Tests/OCCTModelingTests/BOPAlgoSplitterTests.swift	Tests/OCCTModelingTests/BOPAlgo/BOPAlgoSplitterTests.swift	BOPAlgo	#2708	BOPAlgo_Splitter on boxes
+Tests/OCCTModelingTests/BOPAlgoToolsTests.swift	Tests/OCCTModelingTests/BOPAlgo/BOPAlgoToolsTests.swift	BOPAlgo	#2708	BOPAlgo_Tools edges to wires and wires to faces
+Tests/OCCTModelingTests/BOPAlgoWireSplitterMakeWireTests.swift	Tests/OCCTModelingTests/BOPAlgo/BOPAlgoWireSplitterMakeWireTests.swift	BOPAlgo	-	BOPAlgo_WireSplitter MakeWire
+Tests/OCCTModelingTests/BOPToolsAlgoTools3DTests.swift	Tests/OCCTModelingTests/BOPAlgo/BOPToolsAlgoTools3DTests.swift	BOPAlgo	-	BOPTools_AlgoTools3D normal on edge and point in face
+Tests/OCCTModelingTests/BOPToolsAlgoToolsTests.swift	Tests/OCCTModelingTests/BOPAlgo/BOPToolsAlgoToolsTests.swift	BOPAlgo	-	BOPTools_AlgoTools closed shell
+Tests/OCCTModelingTests/BRepAlgoAsDesTests.swift	Tests/OCCTModelingTests/BOPAlgo/BRepAlgoAsDesTests.swift	BOPAlgo	-	BRepAlgo_AsDes descendant tracker, the BRepAlgo utility used by the boolean algorithms
+Tests/OCCTModelingTests/BRepAlgoFaceRestrictorTests.swift	Tests/OCCTModelingTests/BOPAlgo/BRepAlgoFaceRestrictorTests.swift	BOPAlgo	-	BRepAlgo_FaceRestrictor
+Tests/OCCTModelingTests/BRepAlgoImageTests.swift	Tests/OCCTModelingTests/BOPAlgo/BRepAlgoImageTests.swift	BOPAlgo	-	BRepAlgo_Image bind and query
+Tests/OCCTModelingTests/BRepAlgoLoopTests.swift	Tests/OCCTModelingTests/BOPAlgo/BRepAlgoLoopTests.swift	BOPAlgo	-	BRepAlgo_Loop build loops
+Tests/OCCTModelingTests/BRepAlgoNormalProjectionTests.swift	Tests/OCCTModelingTests/BOPAlgo/BRepAlgoNormalProjectionTests.swift	BOPAlgo	-	BRepAlgo_NormalProjection of an edge or wire on a shape
+Tests/OCCTModelingTests/BRepFeatBuilderTests.swift	Tests/OCCTModelingTests/Features/BRepFeatBuilderTests.swift	Features	-	BRepFeat_Builder fuse and cut
+Tests/OCCTModelingTests/BRepFeatGluerTests.swift	Tests/OCCTModelingTests/Features/BRepFeatGluerTests.swift	Features	-	BRepFeat_Gluer on two boxes
+Tests/OCCTModelingTests/BRepFeatMakeCylindricalHoleTests.swift	Tests/OCCTModelingTests/Features/BRepFeatMakeCylindricalHoleTests.swift	Features	-	BRepFeat_MakeCylindricalHole through, blind and thru-next holes
+Tests/OCCTModelingTests/BRepFeatSplitShapeTests.swift	Tests/OCCTModelingTests/Features/BRepFeatSplitShapeTests.swift	Features	-	BRepFeat_SplitShape by edge or wire; one OCCT package with its siblings
+Tests/OCCTModelingTests/BRepFillAdvancedEvolvedTests.swift	Tests/OCCTModelingTests/Sweeps/BRepFillAdvancedEvolvedTests.swift	Sweeps	-	BRepFill_AdvancedEvolved circle spine with a rectangle profile
+Tests/OCCTModelingTests/BRepFillCompatibleWiresTests.swift	Tests/OCCTModelingTests/Lofts/BRepFillCompatibleWiresTests.swift	Lofts	-	BRepFill_CompatibleWires normalising wires for a loft
+Tests/OCCTModelingTests/BRepFillDraftTests.swift	Tests/OCCTModelingTests/Offsets/BRepFillDraftTests.swift	Offsets	-	BRepFill_Draft from a rectangle
+Tests/OCCTModelingTests/BRepFillEvolvedTests.swift	Tests/OCCTModelingTests/Sweeps/BRepFillEvolvedTests.swift	Sweeps	-	BRepFill_Evolved shape
+Tests/OCCTModelingTests/BRepFillGeneratorTests.swift	Tests/OCCTModelingTests/Lofts/BRepFillGeneratorTests.swift	Lofts	-	BRepFill_Generator through wires
+Tests/OCCTModelingTests/BRepFillNSectionsTests.swift	Tests/OCCTModelingTests/Lofts/BRepFillNSectionsTests.swift	Lofts	-	BRepFill_NSections from wires
+Tests/OCCTModelingTests/BRepFillOffsetAncestorsTests.swift	Tests/OCCTModelingTests/Offsets/BRepFillOffsetAncestorsTests.swift	Offsets	-	BRepFill_OffsetAncestors
+Tests/OCCTModelingTests/BRepFillOffsetWireTests.swift	Tests/OCCTModelingTests/Offsets/BRepFillOffsetWireTests.swift	Offsets	-	BRepFill_OffsetWire outward and inward
+Tests/OCCTModelingTests/BRepOffsetAnalyseTests.swift	Tests/OCCTModelingTests/Offsets/BRepOffsetAnalyseTests.swift	Offsets	-	BRepOffset_Analyse convexity of box edges
+Tests/OCCTModelingTests/BRepOffsetOffsetFaceTests.swift	Tests/OCCTModelingTests/Offsets/BRepOffsetOffsetFaceTests.swift	Offsets	-	BRepOffset offset face
+Tests/OCCTModelingTests/BRepOffsetSimpleOffsetTests.swift	Tests/OCCTModelingTests/Offsets/BRepOffsetSimpleOffsetTests.swift	Offsets	-	BRepOffset_SimpleOffset on a box
+Tests/OCCTModelingTests/BRepPreviewAPIMakeBoxTests.swift	Tests/OCCTModelingTests/Construction/BRepPreviewAPIMakeBoxTests.swift	Construction	-	BRepPreviewAPI_MakeBox normal and sub-shape previews
+Tests/OCCTModelingTests/CellsBuilderExtensionsTests.swift	Tests/OCCTModelingTests/BOPAlgo/CellsBuilderExtensionsTests.swift	BOPAlgo	-	selective add and remove, parts and containers on the cells builder
+Tests/OCCTModelingTests/CellsBuilderGuardTests.swift	Tests/OCCTModelingTests/BOPAlgo/CellsBuilderGuardTests.swift	BOPAlgo	-	cells builder guards against empty inputs
+Tests/OCCTModelingTests/ChamferBuilderCompletionsV124Tests.swift	Tests/OCCTModelingTests/Blends/ChamferBuilderCompletionsV124Tests.swift	Blends	-	chamfer builder edge count, distances, remove and contour queries
+Tests/OCCTModelingTests/ChamferBuilderHistoryTests.swift	Tests/OCCTModelingTests/Blends/ChamferBuilderHistoryTests.swift	Blends	-	chamfer builder history, set mode and simulate
+Tests/OCCTModelingTests/ChamferBuilderV121Tests.swift	Tests/OCCTModelingTests/Blends/ChamferBuilderV121Tests.swift	Blends	-	chamfer builder symmetric, two distances, distance and angle
+Tests/OCCTModelingTests/ClosedEdgeSplittingTests.swift	Tests/OCCTModelingTests/Splitting/ClosedEdgeSplittingTests.swift	Splitting	-	splitting the closed edges of a cylinder
+Tests/OCCTModelingTests/ConstrainedFillTests.swift	Tests/OCCTModelingTests/Construction/ConstrainedFillTests.swift	Construction	-	constrained fill of a surface from box edges
+Tests/OCCTModelingTests/ConvertSphereTests.swift	Tests/OCCTModelingTests/Construction/ConvertSphereTests.swift	Construction	-	a sphere converted to a BSpline shape
+Tests/OCCTModelingTests/DefeaturingTests.swift	Tests/OCCTModelingTests/Features/DefeaturingTests.swift	Features	-	BRepAlgoAPI_Defeaturing of a box
+Tests/OCCTModelingTests/DraftModificationTests.swift	Tests/OCCTModelingTests/Offsets/DraftModificationTests.swift	Offsets	-	BRepOffsetAPI_DraftAngle on a face
+Tests/OCCTModelingTests/DraftPrismTests.swift	Tests/OCCTModelingTests/Features/DraftPrismTests.swift	Features	-	draft prism boss and through-all feature
+Tests/OCCTModelingTests/DraftTests.swift	Tests/OCCTModelingTests/Offsets/DraftTests.swift	Offsets	-	draft from a shape profile
+Tests/OCCTModelingTests/DrillingTests.swift	Tests/OCCTModelingTests/Features/DrillingTests.swift	Features	-	drilling holes into a box
+Tests/OCCTModelingTests/EdgePolylineTests.swift	Tests/OCCTModelingTests/EdgePolylineTests.swift	(stays)	-	edge polylines of boxes, lofted and extruded shapes; no sibling to group with
+Tests/OCCTModelingTests/EdgeSelectorWiredTests.swift	Tests/OCCTModelingTests/FeatureReconstruction/EdgeSelectorWiredTests.swift	FeatureReconstruction	-	EdgeSelector nearPoint and onFeature wired through the reconstructor
+Tests/OCCTModelingTests/EdgeSplitTests.swift	Tests/OCCTModelingTests/Splitting/EdgeSplitTests.swift	Splitting	-	edge split at a midpoint
+Tests/OCCTModelingTests/EvolvedAdvancedTests.swift	Tests/OCCTModelingTests/Sweeps/EvolvedAdvancedTests.swift	Sweeps	-	evolved advanced with arc and intersection joins
+Tests/OCCTModelingTests/EvolvingFilletTests.swift	Tests/OCCTModelingTests/Blends/EvolvingFilletTests.swift	Blends	-	evolving-radius fillet on single and multiple edges
+Tests/OCCTModelingTests/ExtendedExtrusionTests.swift	Tests/OCCTModelingTests/Sweeps/ExtendedExtrusionTests.swift	Sweeps	-	extrude a face or edge by a vector
+Tests/OCCTModelingTests/FeatureReconstructorInputBodyTests.swift	Tests/OCCTModelingTests/FeatureReconstruction/FeatureReconstructorInputBodyTests.swift	FeatureReconstruction	-	FeatureReconstructor with an input body
+Tests/OCCTModelingTests/FeatureReconstructorJSONBooleanTests.swift	Tests/OCCTModelingTests/FeatureReconstruction/FeatureReconstructorJSONBooleanTests.swift	FeatureReconstruction	-	FeatureReconstructor JSON boolean specs
+Tests/OCCTModelingTests/FeatureReconstructorTests.swift	Tests/OCCTModelingTests/FeatureReconstruction/FeatureReconstructorTests.swift	FeatureReconstruction	-	FeatureReconstructor revolve, hole and thread specs
+Tests/OCCTModelingTests/FeatureSpecCodableTests.swift	Tests/OCCTModelingTests/FeatureReconstruction/FeatureSpecCodableTests.swift	FeatureReconstruction	-	FeatureSpec Codable round trips
+Tests/OCCTModelingTests/FilletBuilderCompletionsTests.swift	Tests/OCCTModelingTests/Blends/FilletBuilderCompletionsTests.swift	Blends	-	fillet builder parameters, continuity, reset and simulate
+Tests/OCCTModelingTests/FilletBuilderCompletionsV124Tests.swift	Tests/OCCTModelingTests/Blends/FilletBuilderCompletionsV124Tests.swift	Blends	#2691	fillet builder contour, vertex and surface queries
+Tests/OCCTModelingTests/FilletBuilderHistoryTests.swift	Tests/OCCTModelingTests/Blends/FilletBuilderHistoryTests.swift	Blends	#2692	fillet builder bounds, law, generated and modified queries
+Tests/OCCTModelingTests/FilletBuilderV121Tests.swift	Tests/OCCTModelingTests/Blends/FilletBuilderV121Tests.swift	Blends	#2694	fillet builder constant and evolving radius, diagnostics
+Tests/OCCTModelingTests/FilletSurfBuilderTests.swift	Tests/OCCTModelingTests/Blends/FilletSurfBuilderTests.swift	Blends	#2691	FilletSurf_Builder surface
+Tests/OCCTModelingTests/FilletTestFixtures.swift	Tests/OCCTModelingTests/FilletTestFixtures.swift	(stays)	-	shared fillet fixtures with no suite; stays at the root
+Tests/OCCTModelingTests/FuseAndBlendTests.swift	Tests/OCCTModelingTests/Blends/FuseAndBlendTests.swift	Blends	-	fuse-and-blend and cut-and-blend
+Tests/OCCTModelingTests/GlueTests.swift	Tests/OCCTModelingTests/Booleans/GlueTests.swift	Booleans	-	Shape.glue of two boxes and its tolerance
+Tests/OCCTModelingTests/HalfSpaceTests.swift	Tests/OCCTModelingTests/Construction/HalfSpaceTests.swift	Construction	#2702	half-space solid from a face
+Tests/OCCTModelingTests/HistoryExtendedTests.swift	Tests/OCCTModelingTests/History/HistoryExtendedTests.swift	History	#2709	merge histories and replace generated and modified
+Tests/OCCTModelingTests/IntegrationBooleanChainStressTests.swift	Tests/OCCTModelingTests/Booleans/IntegrationBooleanChainStressTests.swift	Booleans	#2709	twenty chained subtractions
+Tests/OCCTModelingTests/IntegrationDraftAnalysisTests.swift	Tests/OCCTModelingTests/Offsets/IntegrationDraftAnalysisTests.swift	Offsets	-	box face normal classification for draft analysis
+Tests/OCCTModelingTests/IntegrationThicknessAnalysisTests.swift	Tests/OCCTModelingTests/Offsets/IntegrationThicknessAnalysisTests.swift	Offsets	-	wall thickness of a shelled box
+Tests/OCCTModelingTests/Issue1020SplitEdgeRangeTests.swift	Tests/OCCTModelingTests/Splitting/Issue1020SplitEdgeRangeTests.swift	Splitting	-	Edge.split bounded by the edge's own range
+Tests/OCCTModelingTests/Issue1054SelfIntersectFaultKindTests.swift	Tests/OCCTModelingTests/BOPAlgo/Issue1054SelfIntersectFaultKindTests.swift	BOPAlgo	-	self-intersection check fault kinds
+Tests/OCCTModelingTests/Issue1067BooleanOutcomeTests.swift	Tests/OCCTModelingTests/Booleans/Issue1067BooleanOutcomeTests.swift	Booleans	-	boolean timeout versus failure outcome
+Tests/OCCTModelingTests/Issue1068SelfIntersectionDetailedTests.swift	Tests/OCCTModelingTests/BOPAlgo/Issue1068SelfIntersectionDetailedTests.swift	BOPAlgo	-	detailed self-intersection API, timeouts and cost estimate
+Tests/OCCTModelingTests/Issue1089PocketFeatureIsOpenCompoundTests.swift	Tests/OCCTModelingTests/FeatureRecognition/Issue1089PocketFeatureIsOpenCompoundTests.swift	FeatureRecognition	-	PocketFeature.isOpen on a compound
+Tests/OCCTModelingTests/Issue1414PipeShellSolidFailureTests.swift	Tests/OCCTModelingTests/Sweeps/Issue1414PipeShellSolidFailureTests.swift	Sweeps	-	pipe shell MakeSolid return value
+Tests/OCCTModelingTests/Issue1439FilletSurfErrorFallbackTests.swift	Tests/OCCTModelingTests/Blends/Issue1439FilletSurfErrorFallbackTests.swift	Blends	-	FilletSurf error fallback reporting
+Tests/OCCTModelingTests/Issue1580AAGNegativeIndexGuardTests.swift	Tests/OCCTModelingTests/FeatureRecognition/Issue1580AAGNegativeIndexGuardTests.swift	FeatureRecognition	-	AAG negative face-index guards
+Tests/OCCTModelingTests/Issue202BooleanOptionsTests.swift	Tests/OCCTModelingTests/Booleans/Issue202BooleanOptionsTests.swift	Booleans	-	boolean fuzzy value and glue options
+Tests/OCCTModelingTests/Issue206BooleanTimeoutTests.swift	Tests/OCCTModelingTests/Booleans/Issue206BooleanTimeoutTests.swift	Booleans	-	boolean timeout watchdog
+Tests/OCCTModelingTests/Issue208SelfIntersectionTests.swift	Tests/OCCTModelingTests/BOPAlgo/Issue208SelfIntersectionTests.swift	BOPAlgo	-	self-intersection check and its hard-bounded variant; wasm-excluded
+Tests/OCCTModelingTests/Issue234DegenerateHoleTests.swift	Tests/OCCTModelingTests/Construction/Issue234DegenerateHoleTests.swift	Construction	-	faceAddHole rejects degenerate hole wires
+Tests/OCCTModelingTests/Issue272DrilledDirectionTests.swift	Tests/OCCTModelingTests/Features/Issue272DrilledDirectionTests.swift	Features	-	drilled honours a non-Z direction
+Tests/OCCTModelingTests/Issue2736ShelledThicknessSignTests.swift	Tests/OCCTModelingTests/Offsets/Issue2736ShelledThicknessSignTests.swift	Offsets	-	shelled and hollowed thickness sign convention
+Tests/OCCTModelingTests/Issue2739ShelledSingleArgumentTests.swift	Tests/OCCTModelingTests/Offsets/Issue2739ShelledSingleArgumentTests.swift	Offsets	-	shelled(thickness:) domain and open-face overload
+Tests/OCCTModelingTests/Issue274HoleWireOrientationTests.swift	Tests/OCCTModelingTests/Construction/Issue274HoleWireOrientationTests.swift	Construction	-	faceAddHole hole-wire orientation correction
+Tests/OCCTModelingTests/Issue2769SplitAndClosedEdgeTests.swift	Tests/OCCTModelingTests/Splitting/Issue2769SplitAndClosedEdgeTests.swift	Splitting	-	split by angle and closed-edge split with nothing to split
+Tests/OCCTModelingTests/Issue3003OffsetOrderTests.swift	Tests/OCCTModelingTests/Offsets/Issue3003OffsetOrderTests.swift	Offsets	-	arc-join offsets independent of allocation addresses
+Tests/OCCTModelingTests/Issue3061OffsetNullResultTests.swift	Tests/OCCTModelingTests/Offsets/Issue3061OffsetNullResultTests.swift	Offsets	-	collapsing arc offset returns nil
+Tests/OCCTModelingTests/Issue3098MiddlePathGuardTests.swift	Tests/OCCTModelingTests/Sweeps/Issue3098MiddlePathGuardTests.swift	Sweeps	-	middlePath refuses crashing inputs
+Tests/OCCTModelingTests/Issue3100BuilderHangTests.swift	Tests/OCCTModelingTests/Sweeps/Issue3100BuilderHangTests.swift	Sweeps	-	extrude builders on zero, NaN and overflowing input
+Tests/OCCTModelingTests/Issue3109RevolveAngleTests.swift	Tests/OCCTModelingTests/Sweeps/Issue3109RevolveAngleTests.swift	Sweeps	-	revolve builders on absurd angles
+Tests/OCCTModelingTests/Issue3110FromMeshIndexRangeTests.swift	Tests/OCCTModelingTests/Construction/Issue3110FromMeshIndexRangeTests.swift	Construction	-	Shape.fromMesh triangle index range
+Tests/OCCTModelingTests/Issue397CircularHoleTests.swift	Tests/OCCTModelingTests/Construction/Issue397CircularHoleTests.swift	Construction	-	faceAddHole accepts circular hole wires
+Tests/OCCTModelingTests/Issue489FilletRadiusTests.swift	Tests/OCCTModelingTests/Blends/Issue489FilletRadiusTests.swift	Blends	-	fillet edge-list radius validation
+Tests/OCCTModelingTests/Issue490BuilderContinuityTests.swift	Tests/OCCTModelingTests/Blends/Issue490BuilderContinuityTests.swift	Blends	-	fillet internal continuity decoding; its second suite covers loft continuity
+Tests/OCCTModelingTests/Issue496CylindricalHoleTests.swift	Tests/OCCTModelingTests/Features/Issue496CylindricalHoleTests.swift	Features	-	cylindrical hole contracts
+Tests/OCCTModelingTests/Issue497DefeaturingTests.swift	Tests/OCCTModelingTests/Features/Issue497DefeaturingTests.swift	Features	-	BRepAlgoAPI_Defeaturing family addressing and failures
+Tests/OCCTModelingTests/Issue503PipeShellTests.swift	Tests/OCCTModelingTests/Sweeps/Issue503PipeShellTests.swift	Sweeps	-	pipe shell unification
+Tests/OCCTModelingTests/Issue505FilletBuilderEdgeTypeTests.swift	Tests/OCCTModelingTests/Blends/Issue505FilletBuilderEdgeTypeTests.swift	Blends	-	fillet builder radius laws keyed by an edge
+Tests/OCCTModelingTests/Issue520FilletContractTests.swift	Tests/OCCTModelingTests/Blends/Issue520FilletContractTests.swift	Blends	-	fillet edge-index and radius-law contracts
+Tests/OCCTModelingTests/Issue532CylindricalHolePartSelectionTests.swift	Tests/OCCTModelingTests/Features/Issue532CylindricalHolePartSelectionTests.swift	Features	-	cylindrical hole part selection in stacks
+Tests/OCCTModelingTests/Issue568IndexSkipTests.swift	Tests/OCCTModelingTests/Offsets/Issue568IndexSkipTests.swift	Offsets	-	draft and shell reject foreign sub-shape indices
+Tests/OCCTModelingTests/Issue572SweepApproxTests.swift	Tests/OCCTModelingTests/Sweeps/Issue572SweepApproxTests.swift	Sweeps	-	forced-C1 sweep approximation
+Tests/OCCTModelingTests/Issue578DefeatureFaceMembershipTests.swift	Tests/OCCTModelingTests/Features/Issue578DefeatureFaceMembershipTests.swift	Features	-	which faces defeaturing accepts
+Tests/OCCTModelingTests/Issue598PipeShellFrenetModeTests.swift	Tests/OCCTModelingTests/Sweeps/Issue598PipeShellFrenetModeTests.swift	Sweeps	-	pipe sweep Frenet and corrected Frenet modes
+Tests/OCCTModelingTests/Issue612FilletContourSelectionTests.swift	Tests/OCCTModelingTests/Blends/Issue612FilletContourSelectionTests.swift	Blends	-	fillet radius laws on the edge's own contour
+Tests/OCCTModelingTests/Issue633BlendedEdgesDuplicateReportTests.swift	Tests/OCCTModelingTests/Blends/Issue633BlendedEdgesDuplicateReportTests.swift	Blends	-	blendedEdges overwritten duplicate report
+Tests/OCCTModelingTests/Issue639FilletDeclinedEdgeReportTests.swift	Tests/OCCTModelingTests/Blends/Issue639FilletDeclinedEdgeReportTests.swift	Blends	-	fillet family declined-edge reports
+Tests/OCCTModelingTests/Issue642AAGNodeIdentityTests.swift	Tests/OCCTModelingTests/FeatureRecognition/Issue642AAGNodeIdentityTests.swift	FeatureRecognition	-	AAG nodes from oriented faces
+Tests/OCCTModelingTests/Issue655SectionWiresOrientationTests.swift	Tests/OCCTModelingTests/Booleans/Issue655SectionWiresOrientationTests.swift	Booleans	-	sectionWiresAtZ drops a coincident internal or external edge
+Tests/OCCTModelingTests/Issue699AAGSolidScopedAdjacencyTests.swift	Tests/OCCTModelingTests/FeatureRecognition/Issue699AAGSolidScopedAdjacencyTests.swift	FeatureRecognition	-	AAG adjacency scoped to one solid
+Tests/OCCTModelingTests/Issue703EdgeConvexityOrderTests.swift	Tests/OCCTModelingTests/FeatureRecognition/Issue703EdgeConvexityOrderTests.swift	FeatureRecognition	-	edge convexity symmetric in face order
+Tests/OCCTModelingTests/Issue721CorrectedFrenetPlacementTests.swift	Tests/OCCTModelingTests/Sweeps/Issue721CorrectedFrenetPlacementTests.swift	Sweeps	-	corrected Frenet divergence is a profile placement artifact; plus a helix snippet suite
+Tests/OCCTModelingTests/Issue724PocketGroupingFloorTests.swift	Tests/OCCTModelingTests/FeatureRecognition/Issue724PocketGroupingFloorTests.swift	FeatureRecognition	-	pocket floor not double-counted
+Tests/OCCTModelingTests/Issue733MeshTriangulationBoundsTests.swift	Tests/OCCTModelingTests/FeatureRecognition/Issue733MeshTriangulationBoundsTests.swift	FeatureRecognition	-	AAG bounds after meshing and configurable tolerance
+Tests/OCCTModelingTests/Issue735PocketEnclosureTests.swift	Tests/OCCTModelingTests/FeatureRecognition/Issue735PocketEnclosureTests.swift	FeatureRecognition	-	PocketFeature.isOpen tests enclosure
+Tests/OCCTModelingTests/Issue747DetectHolesConvexClassifierTests.swift	Tests/OCCTModelingTests/FeatureRecognition/Issue747DetectHolesConvexClassifierTests.swift	FeatureRecognition	-	AAG.detectHoles convexity classifier
+Tests/OCCTModelingTests/Issue761SharedEdgeCountCapTests.swift	Tests/OCCTModelingTests/FeatureRecognition/Issue761SharedEdgeCountCapTests.swift	FeatureRecognition	-	AAG sharedEdgeCount not capped
+Tests/OCCTModelingTests/Issue762FilletedPocketDetectionTests.swift	Tests/OCCTModelingTests/FeatureRecognition/Issue762FilletedPocketDetectionTests.swift	FeatureRecognition	-	filleted and chamfered pocket detection
+Tests/OCCTModelingTests/Issue777PocketEnclosureCoveringEdgesTests.swift	Tests/OCCTModelingTests/FeatureRecognition/Issue777PocketEnclosureCoveringEdgesTests.swift	FeatureRecognition	-	pocket enclosure reads covering faces' edges
+Tests/OCCTModelingTests/Issue818MiddlePathTests.swift	Tests/OCCTModelingTests/Sweeps/Issue818MiddlePathTests.swift	Sweeps	-	BRepOffsetAPI_MiddlePath of a coaxial tube
+Tests/OCCTModelingTests/Issue832BooleanDelegationTests.swift	Tests/OCCTModelingTests/Booleans/Issue832BooleanDelegationTests.swift	Booleans	-	Shape boolean delegation to fuzzy value and glue mode
+Tests/OCCTModelingTests/Issue974QuiltSharedPathTests.swift	Tests/OCCTModelingTests/History/Issue974QuiltSharedPathTests.swift	History	-	one BRepTools_Quilt path behind both quilt entry points
+Tests/OCCTModelingTests/Issue975EdgeExtractionTests.swift	Tests/OCCTModelingTests/Blends/Issue975EdgeExtractionTests.swift	Blends	-	ChFi2d AnaFillet and FilletAlgo edge extraction
+Tests/OCCTModelingTests/LinearRibTests.swift	Tests/OCCTModelingTests/Features/LinearRibTests.swift	Features	-	linear rib on a box
+Tests/OCCTModelingTests/LocalPrismTests.swift	Tests/OCCTModelingTests/Features/LocalPrismTests.swift	Features	-	local prism
+Tests/OCCTModelingTests/LocOpeBuildShapeTests.swift	Tests/OCCTModelingTests/LocOpe/LocOpeBuildShapeTests.swift	LocOpe	-	LocOpe_BuildShape
+Tests/OCCTModelingTests/LocOpeBuildWiresTests.swift	Tests/OCCTModelingTests/LocOpe/LocOpeBuildWiresTests.swift	LocOpe	-	LocOpe_BuildWires
+Tests/OCCTModelingTests/LocOpeCSIntersectorTests.swift	Tests/OCCTModelingTests/LocOpe/LocOpeCSIntersectorTests.swift	LocOpe	-	LocOpe_CSIntersector
+Tests/OCCTModelingTests/LocOpeDPrismTests.swift	Tests/OCCTModelingTests/LocOpe/LocOpeDPrismTests.swift	LocOpe	#2696	LocOpe_DPrism
+Tests/OCCTModelingTests/LocOpeFindEdgesTests.swift	Tests/OCCTModelingTests/LocOpe/LocOpeFindEdgesTests.swift	LocOpe	#2696	LocOpe_FindEdges
+Tests/OCCTModelingTests/LocOpeGluerTests.swift	Tests/OCCTModelingTests/LocOpe/LocOpeGluerTests.swift	LocOpe	#2696	LocOpe_Gluer
+Tests/OCCTModelingTests/LocOpeLinearFormTests.swift	Tests/OCCTModelingTests/LocOpe/LocOpeLinearFormTests.swift	LocOpe	#2696	LocOpe_LinearForm
+Tests/OCCTModelingTests/LocOpeSpliterTests.swift	Tests/OCCTModelingTests/LocOpe/LocOpeSpliterTests.swift	LocOpe	#2696	LocOpe_Spliter
+Tests/OCCTModelingTests/LocOpeSpliterV71Tests.swift	Tests/OCCTModelingTests/LocOpe/LocOpeSpliterV71Tests.swift	LocOpe	#2696	LocOpe_Spliter splitByWireOnFace and auto split
+Tests/OCCTModelingTests/LocOpeSplitShapeTests.swift	Tests/OCCTModelingTests/LocOpe/LocOpeSplitShapeTests.swift	LocOpe	#2696	LocOpe_SplitShape
+Tests/OCCTModelingTests/LoftPolarMethodCrashTests.swift	Tests/OCCTModelingTests/Lofts/LoftPolarMethodCrashTests.swift	Lofts	#2705	loft polar-method crash regression
+Tests/OCCTModelingTests/LoftTooFewSectionsTests.swift	Tests/OCCTModelingTests/Lofts/LoftTooFewSectionsTests.swift	Lofts	-	loft refuses too few sections
+Tests/OCCTModelingTests/LoftVertexEndpointTests.swift	Tests/OCCTModelingTests/Lofts/LoftVertexEndpointTests.swift	Lofts	#2705	loft with vertex endpoints
+Tests/OCCTModelingTests/MakeConnectedTests.swift	Tests/OCCTModelingTests/BOPAlgo/MakeConnectedTests.swift	BOPAlgo	#2705	BOPAlgo_MakeConnected on boxes
+Tests/OCCTModelingTests/MissingShapeOpsTests.swift	Tests/OCCTModelingTests/MissingShapeOpsTests.swift	(stays)	#2705	torus, chamfer, offset, scale, mirror, slice and section wires grab bag; spans several areas
+Tests/OCCTModelingTests/ModelingTestExtensions.swift	Tests/OCCTModelingTests/ModelingTestExtensions.swift	(stays)	-	shared helpers with no suite; stays at the root
+Tests/OCCTModelingTests/MultiCommonTests.swift	Tests/OCCTModelingTests/Booleans/MultiCommonTests.swift	Booleans	-	multi-tool common
+Tests/OCCTModelingTests/MultiEdgeBlendTests.swift	Tests/OCCTModelingTests/Blends/MultiEdgeBlendTests.swift	Blends	-	multi-edge blend
+Tests/OCCTModelingTests/MultiFuseTests.swift	Tests/OCCTModelingTests/Booleans/MultiFuseTests.swift	Booleans	-	multi-tool fuse
+Tests/OCCTModelingTests/MultiOffsetWireTests.swift	Tests/OCCTModelingTests/Offsets/MultiOffsetWireTests.swift	Offsets	-	multiple offsets of a wire
+Tests/OCCTModelingTests/OffsetByJoinTests.swift	Tests/OCCTModelingTests/Offsets/OffsetByJoinTests.swift	Offsets	-	offset by join
+Tests/OCCTModelingTests/OffsetWireFaceTests.swift	Tests/OCCTModelingTests/Offsets/OffsetWireFaceTests.swift	Offsets	-	offset of a wire and a face
+Tests/OCCTModelingTests/OrientedCylinderTests.swift	Tests/OCCTModelingTests/Construction/OrientedCylinderTests.swift	Construction	-	oriented cylinder along an axis
+Tests/OCCTModelingTests/OrientedPrimitivesTests.swift	Tests/OCCTModelingTests/Construction/OrientedPrimitivesTests.swift	Construction	-	oriented sphere and cone
+Tests/OCCTModelingTests/PartialOrientedPrimitivesTests.swift	Tests/OCCTModelingTests/Construction/PartialOrientedPrimitivesTests.swift	Construction	-	oriented partial cylinder, cone, torus and sphere
+Tests/OCCTModelingTests/PatternTests.swift	Tests/OCCTModelingTests/Features/PatternTests.swift	Features	-	linear and circular patterns of features
+Tests/OCCTModelingTests/PerFaceVariableOffsetTests.swift	Tests/OCCTModelingTests/Offsets/PerFaceVariableOffsetTests.swift	Offsets	-	per-face variable offset
+Tests/OCCTModelingTests/PrismaticFeatureTests.swift	Tests/OCCTModelingTests/Features/PrismaticFeatureTests.swift	Features	-	add boss and create pocket on a box
+Tests/OCCTModelingTests/PrismUntilFaceTests.swift	Tests/OCCTModelingTests/Features/PrismUntilFaceTests.swift	Features	-	prism through all and until a face
+Tests/OCCTModelingTests/ReconstructorHistoryTests.swift	Tests/OCCTModelingTests/FeatureReconstruction/ReconstructorHistoryTests.swift	FeatureReconstruction	-	FeatureReconstructor BuildResult.histories
+Tests/OCCTModelingTests/SectionBuilderTests.swift	Tests/OCCTModelingTests/Booleans/SectionBuilderTests.swift	Booleans	-	SectionBuilder two shapes and surface
+Tests/OCCTModelingTests/SectionExtendedTests.swift	Tests/OCCTModelingTests/Booleans/SectionExtendedTests.swift	Booleans	-	BRepAlgoAPI_Section approximation, pcurves and ancestors
+Tests/OCCTModelingTests/SemiInfiniteExtrusionTests.swift	Tests/OCCTModelingTests/Sweeps/SemiInfiniteExtrusionTests.swift	Sweeps	-	semi-infinite and infinite extrusion
+Tests/OCCTModelingTests/SewQuiltHealFullHistoryTests.swift	Tests/OCCTModelingTests/History/SewQuiltHealFullHistoryTests.swift	History	-	sewing, quilting and healing with full history
+Tests/OCCTModelingTests/ShapeSplittingTests.swift	Tests/OCCTModelingTests/Splitting/ShapeSplittingTests.swift	Splitting	-	split a shape by a plane or tool shape
+Tests/OCCTModelingTests/SimpleOffsetTests.swift	Tests/OCCTModelingTests/Offsets/SimpleOffsetTests.swift	Offsets	-	simple offset of a face
+Tests/OCCTModelingTests/SplitByAngleTests.swift	Tests/OCCTModelingTests/Splitting/SplitByAngleTests.swift	Splitting	-	split a shape by angle
+Tests/OCCTModelingTests/SplitByWireTests.swift	Tests/OCCTModelingTests/Splitting/SplitByWireTests.swift	Splitting	-	split a face by a wire
+Tests/OCCTModelingTests/SweepTests.swift	Tests/OCCTModelingTests/Sweeps/SweepTests.swift	Sweeps	-	extrude, pipe sweep and revolution
+Tests/OCCTModelingTests/ThickSolidTests.swift	Tests/OCCTModelingTests/Offsets/ThickSolidTests.swift	Offsets	-	hollowing a solid into a thick solid
+Tests/OCCTModelingTests/ThruSectionsBuilderTests.swift	Tests/OCCTModelingTests/Lofts/ThruSectionsBuilderTests.swift	Lofts	-	ThruSections builder basic, ruled and settings
+Tests/OCCTModelingTests/ThruSectionsExtensionsTests.swift	Tests/OCCTModelingTests/Lofts/ThruSectionsExtensionsTests.swift	Lofts	-	ThruSections compatibility, parameter type and criterium weight
+Tests/OCCTModelingTests/ThruSectionsGuardTests.swift	Tests/OCCTModelingTests/Lofts/ThruSectionsGuardTests.swift	Lofts	-	ThruSections guards for empty and single sections
+Tests/OCCTModelingTests/Tier2HistoryTests.swift	Tests/OCCTModelingTests/History/Tier2HistoryTests.swift	History	-	filleted, chamfered, shelled and defeatured with history
+Tests/OCCTModelingTests/TransformPatternFullHistoryTests.swift	Tests/OCCTModelingTests/History/TransformPatternFullHistoryTests.swift	History	-	transform and pattern with full history
+Tests/OCCTModelingTests/VariableRadiusFilletTests.swift	Tests/OCCTModelingTests/Blends/VariableRadiusFilletTests.swift	Blends	-	variable-radius fillet
+Tests/OCCTModelingTests/VariableSectionSweepTests.swift	Tests/OCCTModelingTests/Sweeps/VariableSectionSweepTests.swift	Sweeps	-	pipe shell with constant and linear laws
+Tests/OCCTModelingTests/WedgeTests.swift	Tests/OCCTModelingTests/Construction/WedgeTests.swift	Construction	-	wedge primitive
+Tests/OCCTModelingTests/WireJoinOffsetTests.swift	Tests/OCCTModelingTests/Offsets/WireJoinOffsetTests.swift	Offsets	-	join wires and offset a wire
