@@ -1,0 +1,16 @@
+interpolate: isDone=1 degree=3 poles=7 domain=[0, 1]
+  C(0) = (0, 0, 0)
+  C(0.25) = (1, 1, 0)
+  C(0.5) = (2, -5.551115123e-17, 0)
+  C(0.75) = (3, -1, 0)
+  C(1) = (4, 0, 0)
+endpoints: isDone=1 degree=3 poles=5 domain=[0, 1]
+  C(0) = (0, 0, 0)
+  C(0.5) = (2, 2, 0)
+  C(1) = (4, 0, 0)
+planeIsPlanar: IsPlanar=1
+getPlane: origin=(1, 2, 3) normal=(0, 0, 1) x=(1, 0, -0)
+cylinderNotPlanar: IsPlanar=0
+parameterOn3DLine: ok=1 param=5
+parametersOnSurface: ok=1 u=3 v=4
+parameterOn2DLine: ok=1 param=7

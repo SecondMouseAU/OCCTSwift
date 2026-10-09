@@ -6,6 +6,6 @@ Tests/OCCTCurveTests/Laws/Issue403LawKnotSplitParamsTests.swift
 Tests/OCCTCurveTests/Laws/Issue1399LawKnotSplitFactoryReachTests.swift
 Tests/OCCTCurveTests/BSplineAndBezier/BSplineMutationsTests.swift
 Tests/OCCTCurveTests/Continuity/Issue485Curve3DContinuityTests.swift
-Tests/OCCTCurveTests/CurveGeometry/OffsetCurveBasisTests.swift
+Tests/OCCTCurveTests/Curve3DCore/OffsetCurveBasisTests.swift
 Tests/OCCTCurveTests/Projection/Issue539NearestPointOnCurveTests.swift
 Tests/OCCTCurveTests/Continuity/Issue490ContinuityDecoderTests.swift

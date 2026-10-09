@@ -6,34 +6,25 @@ import simd
 
 @Suite("BRepGraph Face Shells")
 struct BRepGraphFaceShellTests {
-    @Test func faceShells() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)
-        if let box {
-            let graph = BRepGraph(shape: box)
-            if let graph {
-                for i in 0..<graph.faceCount {
-                    let count = graph.faceShellCount(i)
-                    #expect(count >= 1)
-                    let shells = graph.faceShells(i)
-                    #expect(shells.count == count)
-                    for s in shells {
-                        #expect(s >= 0 && s < graph.shellCount)
-                    }
-                }
-            }
+    @Test func faceShells() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let graph = try #require(BRepGraph(shape: box))
+        // Every face sits in the box's one shell, 0 (kernel probe); `count >= 1` and a range
+        // check accepted a wrong shell or a second one (#1986).
+        #expect(graph.faceCount == 6)
+        for i in 0..<graph.faceCount {
+            #expect(graph.faceShellCount(i) == 1)
+            #expect(graph.faceShells(i) == [0])
         }
     }
 
-    @Test func faceCompoundCount() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)
-        if let box {
-            let graph = BRepGraph(shape: box)
-            if let graph {
-                // Box faces are not in compounds
-                for i in 0..<graph.faceCount {
-                    #expect(graph.faceCompoundCount(i) == 0)
-                }
-            }
+    @Test func faceCompoundCount() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let graph = try #require(BRepGraph(shape: box))
+        // Box faces are not in compounds
+        #expect(graph.faceCount == 6)
+        for i in 0..<graph.faceCount {
+            #expect(graph.faceCompoundCount(i) == 0)
         }
     }
 }

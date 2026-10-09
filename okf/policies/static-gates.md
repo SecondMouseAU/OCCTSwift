@@ -375,6 +375,12 @@ marks as historical records. It is a dry run unless given `--apply`, refuses a d
 idempotent. Its `--self-test` is run by hand, as the 766 lift tools' are, because a script CI runs
 only as a `--self-test` is classified as a release check.
 
+A row may name a destination in another target (#3147). It stays in the SOURCE target's table, since
+column 1 is the path the v5 branch keeps and `--path-map` is given the source table of the lift. The
+`wasmExcludedTestFiles` entry of such a file leaves the source target's list for the destination's,
+the destination target's own run counts the file as named because it reads every table under
+`Scripts/test-areas/`, and a destination path or file name another table already holds is refused.
+
 Three gates read `Scripts/patches/` and `Scripts/patches-wasi/` rather than `Sources/`, and all
 three for the same reason: `check-patch-deletes-guarded-symbol.py` (#2058), which fails when a
 carried patch deletes a line naming an OCCT symbol a `Tests/` comment says its invariant depends

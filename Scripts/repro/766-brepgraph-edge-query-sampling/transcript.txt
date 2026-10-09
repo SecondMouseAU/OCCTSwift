@@ -1,0 +1,12 @@
+edgeFaceCount/edgeFaces (box 10x20x30): nbFaces=2 faces=[ 0 2 ]
+box: edges=12 boundary=0 manifold=12
+copyFace(0): edges=4 boundary=[ 1 1 1 1 ] manifold=[ 0 0 0 0 ]
+edgeAdjacency(0): [ 1 3 8 9 ]
+sampling box:
+  edge 0 count 10: p[0]=(-5, -5, -5) p[9]=(-5, -5, 5) max|r-5|=3.66
+  edge 0 count 1: p[0]=(-5, -5, -5) max|r-5|=3.66
+  edge 999: hasCurve=0
+sampling sphere:
+  edge 0 count 20: no curve -> 0 points
+  edge 1 count 20: p[0]=(-9.1848509936051479e-16, 2.2496396739927862e-31, -5) p[19]=(1.5308084989341915e-15, -3.7493994566546442e-31, 5) max|r-5|=8.88e-16
+  edge 2 count 20: no curve -> 0 points
