@@ -28,6 +28,14 @@
 #include <TopoDS_Iterator.hxx>
 #include <gp_Ax1.hxx>
 #include <gp_Ax2.hxx>
+#include <BRepGProp.hxx>
+#include <GProp_GProps.hxx>
+#include <BRepMesh_IncrementalMesh.hxx>
+#include <BRep_Tool.hxx>
+#include <BRepAdaptor_Curve.hxx>
+#include <Poly_Triangulation.hxx>
+#include <TopoDS_Face.hxx>
+#include <TopLoc_Location.hxx>
 #include <cstdio>
 #include <vector>
 #include <string>
@@ -256,8 +264,75 @@ static int pairMode(const char* n, int i, int j)
   fflush(stdout);
   BRepOffsetAPI_MiddlePath builder(s, a, b);
   builder.Build();
-  printf("-> done=%d\n", (int)builder.IsDone());
+  printf("-> done=%d", (int)builder.IsDone());
+  if (builder.IsDone() && !builder.Shape().IsNull()) {
+    // signature of the answer, so a before/after run can show that a working pair did not change
+    GProp_GProps lp; BRepGProp::LinearProperties(builder.Shape(), lp);
+    int ne = 0; for (TopExp_Explorer e(builder.Shape(), TopAbs_EDGE); e.More(); e.Next()) ne++;
+    gp_Pnt c = lp.CentreOfMass();
+    printf(" edges=%d length=%.6f centre=%.6f,%.6f,%.6f", ne, lp.Mass(), c.X(), c.Y(), c.Z());
+    if (const char* d = getenv("DUMPDIR")) {
+      char f[512];
+      snprintf(f, sizeof f, "%s/%s_%d_%d_path.brep", d, n, i, j); BRepTools::Write(builder.Shape(), f);
+    }
+  }
+  printf("\n");
+  if (const char* d = getenv("DUMPDIR")) {
+    char f[512];
+    snprintf(f, sizeof f, "%s/%s_%d_%d_solid.brep", d, n, i, j); BRepTools::Write(s, f);
+    snprintf(f, sizeof f, "%s/%s_%d_%d_start.brep", d, n, i, j); BRepTools::Write(a, f);
+    snprintf(f, sizeof f, "%s/%s_%d_%d_end.brep", d, n, i, j); BRepTools::Write(b, f);
+  }
   } catch (Standard_Failure const& f) { printf("-> exception %s\n", f.GetMessageString()); return 4; }
+  return 0;
+}
+
+// review-image modes (#3105). mesh: every face of the solid as triangles, in the explorer order the
+// pair indices use. pathpoly: the middle path Build() answers, as polylines (nothing when not done).
+static int meshMode(const char* n, const char* file)
+{
+  TopoDS_Shape s = named(n);
+  BRepMesh_IncrementalMesh(s, 0.05, false, 0.3, false);
+  FILE* f = fopen(file, "w");
+  int k = 0;
+  for (TopExp_Explorer e(s, TopAbs_FACE); e.More(); e.Next(), k++)
+  {
+    TopLoc_Location loc;
+    occ::handle<Poly_Triangulation> t = BRep_Tool::Triangulation(TopoDS::Face(e.Current()), loc);
+    if (t.IsNull()) { fprintf(f, "F %d 0\n", k); continue; }
+    fprintf(f, "F %d %d\n", k, (int)t->NbTriangles());
+    for (int i = 1; i <= t->NbTriangles(); i++)
+    {
+      int a, b, c; t->Triangle(i).Get(a, b, c);
+      gp_Pnt p[3] = {t->Node(a).Transformed(loc.Transformation()), t->Node(b).Transformed(loc.Transformation()), t->Node(c).Transformed(loc.Transformation())};
+      fprintf(f, "T %.5f %.5f %.5f %.5f %.5f %.5f %.5f %.5f %.5f\n", p[0].X(), p[0].Y(), p[0].Z(), p[1].X(), p[1].Y(), p[1].Z(), p[2].X(), p[2].Y(), p[2].Z());
+    }
+  }
+  fclose(f);
+  return 0;
+}
+
+static int pathPolyMode(const char* n, int i, int j, const char* file)
+{
+  TopoDS_Shape s = named(n);
+  TopoDS_Shape a = face(s, i), b = face(s, j);
+  BRepOffsetAPI_MiddlePath builder(s, a, b);
+  builder.Build();
+  FILE* f = fopen(file, "w");
+  fprintf(f, "DONE %d\n", (int)builder.IsDone());
+  if (builder.IsDone())
+    for (TopExp_Explorer e(builder.Shape(), TopAbs_EDGE); e.More(); e.Next())
+    {
+      BRepAdaptor_Curve c(TopoDS::Edge(e.Current()));
+      fprintf(f, "L");
+      for (int k = 0; k <= 24; k++)
+      {
+        gp_Pnt p = c.Value(c.FirstParameter() + (c.LastParameter() - c.FirstParameter()) * k / 24.0);
+        fprintf(f, " %.5f %.5f %.5f", p.X(), p.Y(), p.Z());
+      }
+      fprintf(f, "\n");
+    }
+  fclose(f);
   return 0;
 }
 
@@ -271,6 +346,8 @@ int main(int argc, char** argv)
     printf("%d\n", k);
     return 0;
   }
+  if (argc == 4 && !strcmp(argv[1], "mesh")) return meshMode(argv[2], argv[3]);
+  if (argc == 6 && !strcmp(argv[1], "pathpoly")) return pathPolyMode(argv[2], atoi(argv[3]), atoi(argv[4]), argv[5]);
   if (argc == 5 && !strcmp(argv[1], "pair"))
   {
     signal(SIGSEGV, onSegv);

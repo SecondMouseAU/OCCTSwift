@@ -1,0 +1,16 @@
+# swift test --filter Issue3105MiddlePathKernelTests, OCCTSWIFT_LOCAL=1, the pinned v4.0.0-kernel.5 macOS archive as shipped (copy of the xcframework)
+◇ Test run started.
+◇ Suite "Issue3105 middlePath answers nil where the kernel read past a path" started.
+◇ Test tubeCapAgainstTheBoreAnswersNil() started.
+◇ Test octahedronFacesAnswerNil() started.
+◇ Test lShapedPrismAnswersNilWhereAPathIsAVertexAtTheFirstLevel() started.
+◇ Test hexagonalPrismSidesThatAreNotOppositeAnswerNil() started.
+*** Abort *** an exception was raised, but no catch was found.
+	... The exception is: SIGSEGV 'segmentation violation' detected. Address 78.
+*** Abort *** an exception was raised, but no catch was found.
+	... The exception is: SIGSEGV 'segmentation violation' detected. Address 20.
+*** Abort *** an exception was raised, but no catch was found.
+	... The exception is: SIGSEGV 'segmentation violation' detected. Address 10.
+Note: Some test targets reported failures:
+  - OCCTModelingTests (Swift Testing)
+exit status of swift test: 1

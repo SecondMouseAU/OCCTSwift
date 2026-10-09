@@ -1031,6 +1031,12 @@ extension Shape {
     /// breaks that used to abort the process, which no `catch` can absorb, so it answers `nil`
     /// instead.
     ///
+    /// Valid for the two end faces of a pipe-like solid. A pair of faces that share no vertex and
+    /// are not a pipe's two ends (the non-opposite sides of a hexagonal prism, a cap of a tube
+    /// against its bore, opposite triangles of an octahedron) still aborts the process on a kernel
+    /// without carried patch `0058`, which includes the one currently pinned, because no check on
+    /// the input predicts it (#3105). A kernel carrying `0058` answers `nil` for them.
+    ///
     /// - Parameters:
     ///   - startShape: One end of the pipe, a face or a wire. Any other shape type answers `nil`.
     ///   - endShape: Other end of the pipe, a face or a wire. Any other shape type answers `nil`.

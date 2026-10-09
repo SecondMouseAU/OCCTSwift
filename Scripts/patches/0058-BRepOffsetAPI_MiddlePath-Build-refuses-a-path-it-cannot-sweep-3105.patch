@@ -1,0 +1,104 @@
+From: OCCTSwift ecosystem <noreply@secondmouse.au>
+Subject: [PATCH] Modeling Algorithms - BRepOffsetAPI_MiddlePath::Build leaves the
+ builder not done where a path stops short of the end section, instead of reading
+ past it
+
+BRepOffsetAPI_MiddlePath::Build starts one path per vertex of the start section and
+marches each along the edges of the solid until it reaches a vertex of the end section.
+It then builds one section per level by reading level i of two neighbouring paths. That
+assumes every path reaches the end section, and for a pair of faces that are not the two
+ends of a pipe it does not, and nothing checks:
+
+  - Paths are padded to the current level with the last vertex of the previous edge, but
+    only by one element, and the element read is cast with the unchecked TopoDS::Edge. A
+    path that has already been padded once ends in a vertex, so the second pad casts a
+    vertex, appends a null shape, and the next myPaths(k)(i).ShapeType() dereferences it.
+    A path that stops short of the end section also never lets the "all end edges
+    reached" exit fire, so the level loop has no other way to stop. Reads at lines 580
+    and 584 of the V8_0_1 file, 91 of the 116 pairs measured.
+  - A path that is a bare vertex at level i takes the edge at level i - 1 as E1 or E2
+    with an unchecked cast. At level 1 there is no level 0, and elsewhere the element
+    can be a vertex too. Lines 664 and 668, 21 pairs.
+  - No face holds both the edge of a path and the edge of the section it is joined to,
+    so theFace stays null and BRep_Tool::CurveOnSurface is called with it. Lines 672 and
+    706, 4 pairs.
+
+Each of the three is now checked and Build returns, leaving the builder not done, as it
+already does when a start vertex has no edge outside the start wire.
+
+Measured over 573 pairs of faces of 16 solids with Scripts/repro/3105-middlepath-patch,
+one pair per process: the 116 pairs that share no vertex and are not the same face and
+abort the process on the shipped kernel answer not done with the patch; the 42 pairs that
+return a path return the same one (edge count, length and centre of mass agree to six
+places); the 37 that throw and the 19 that answer not done are unchanged.
+
+diff --git a/src/ModelingAlgorithms/TKOffset/BRepOffsetAPI/BRepOffsetAPI_MiddlePath.cxx b/src/ModelingAlgorithms/TKOffset/BRepOffsetAPI/BRepOffsetAPI_MiddlePath.cxx
+index 5debda94..402ab2ed 100644
+--- a/src/ModelingAlgorithms/TKOffset/BRepOffsetAPI/BRepOffsetAPI_MiddlePath.cxx
++++ b/src/ModelingAlgorithms/TKOffset/BRepOffsetAPI/BRepOffsetAPI_MiddlePath.cxx
+@@ -110,6 +110,13 @@ static GeomAbs_CurveType TypeOfEdge(const TopoDS_Edge& anEdge)
+   return BAcurve.GetType();
+ }
+ 
++//! Returns true if the path holds an edge, and not a vertex, at the given level.
++static bool IsEdgeAt(const NCollection_Sequence<TopoDS_Shape>& thePath, const int theLevel)
++{
++  return theLevel >= 1 && theLevel <= thePath.Length()
++         && thePath(theLevel).ShapeType() == TopAbs_EDGE;
++}
++
+ static gp_Vec TangentOfEdge(const TopoDS_Shape& aShape, const bool OnFirst)
+ {
+   TopoDS_Edge        anEdge = TopoDS::Edge(aShape);
+@@ -547,12 +554,20 @@ void BRepOffsetAPI_MiddlePath::Build(const Message_ProgressRange& /*theRange*/)
+       // for the end of initial shape
+       if (myPaths(j - 1).Length() < i)
+       {
++        if (!IsEdgeAt(myPaths(j - 1), i - 1))
++        {
++          return; // the path ended before the end section
++        }
+         TopoDS_Edge  aE1     = TopoDS::Edge(myPaths(j - 1)(i - 1));
+         TopoDS_Shape LastVer = TopExp::LastVertex(aE1, true);
+         myPaths(j - 1).Append(LastVer);
+       }
+       if (myPaths((j <= NbPaths) ? j : 1).Length() < i)
+       {
++        if (!IsEdgeAt(myPaths((j <= NbPaths) ? j : 1), i - 1))
++        {
++          return; // the path ended before the end section
++        }
+         TopoDS_Edge  aE2     = TopoDS::Edge(myPaths((j <= NbPaths) ? j : 1)(i - 1));
+         TopoDS_Shape LastVer = TopExp::LastVertex(aE2, true);
+         myPaths((j <= NbPaths) ? j : 1).Append(LastVer);
+@@ -615,6 +630,11 @@ void BRepOffsetAPI_MiddlePath::Build(const Message_ProgressRange& /*theRange*/)
+         }
+       }
+ 
++      if (theFace.IsNull()) // no face holds both the path edge and the section edge
++      {
++        return;
++      }
++
+       TopoDS_Vertex PrevVertex =
+         (E1.IsNull()) ? TopoDS::Vertex(myPaths(j - 1)(i)) : TopExp::LastVertex(E1, true);
+       TopoDS_Vertex CurVertex = (E2.IsNull()) ? TopoDS::Vertex(myPaths((j <= NbPaths) ? j : 1)(i))
+@@ -661,10 +681,18 @@ void BRepOffsetAPI_MiddlePath::Build(const Message_ProgressRange& /*theRange*/)
+         {
+           if (E1.IsNull())
+           {
++            if (!IsEdgeAt(myPaths(j - 1), i - 1))
++            {
++              return;
++            }
+             E1 = TopoDS::Edge(myPaths(j - 1)(i - 1));
+           }
+           if (E2.IsNull())
+           {
++            if (!IsEdgeAt(myPaths((j <= NbPaths) ? j : 1), i - 1))
++            {
++              return;
++            }
+             E2 = TopoDS::Edge(myPaths((j <= NbPaths) ? j : 1)(i - 1));
+           }
+           double                    fpar1, lpar1, fpar2, lpar2;

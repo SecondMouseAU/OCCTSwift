@@ -1,0 +1,573 @@
+box 0 0 sharedVerts=4 sharedEdges=4 same=1 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=0000 -> done=0  exit=0
+box 0 1 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=1111 -> done=1 edges=1 length=10.000000 centre=5.000000,5.000000,5.000000  exit=0
+box 0 2 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=1100 -> done=0  exit=0
+box 0 3 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=0011 -> done=0  exit=0
+box 0 4 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=1001 -> done=0  exit=0
+box 0 5 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=0110 -> done=0  exit=0
+box 1 1 sharedVerts=4 sharedEdges=4 same=1 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=0000 -> done=0  exit=0
+box 1 2 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=1100 -> done=0  exit=0
+box 1 3 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=0011 -> done=0  exit=0
+box 1 4 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=0110 -> done=0  exit=0
+box 1 5 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=1001 -> done=0  exit=0
+box 2 2 sharedVerts=4 sharedEdges=4 same=1 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=0000 -> done=0  exit=0
+box 2 3 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=1111 -> done=1 edges=1 length=10.000000 centre=5.000000,5.000000,5.000000  exit=0
+box 2 4 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=1100 -> done=0  exit=0
+box 2 5 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=0011 -> done=0  exit=0
+box 3 3 sharedVerts=4 sharedEdges=4 same=1 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=0000 -> done=0  exit=0
+box 3 4 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=1100 -> done=0  exit=0
+box 3 5 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=0011 -> done=0  exit=0
+box 4 4 sharedVerts=4 sharedEdges=4 same=1 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=0000 -> done=0  exit=0
+box 4 5 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=1111 -> done=1 edges=1 length=10.000000 centre=5.000000,5.000000,5.000000  exit=0
+box 5 5 sharedVerts=4 sharedEdges=4 same=1 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=0000 -> done=0  exit=0
+cyl 0 0 sharedVerts=2 sharedEdges=3 same=1 replay=noOutgoingEdge starts=4 ends=2 lens= endHit= -> done=0  exit=0
+cyl 0 1 sharedVerts=1 sharedEdges=1 same=0 replay=noOutgoingEdge starts=4 ends=1 lens= endHit= -> done=0  exit=0
+cyl 0 2 sharedVerts=1 sharedEdges=1 same=0 replay=noOutgoingEdge starts=4 ends=1 lens= endHit= -> done=0  exit=0
+cyl 1 1 sharedVerts=1 sharedEdges=1 same=1 replay=ok starts=1 ends=1 lens=1 endHit=0 -> done=0  exit=0
+cyl 1 2 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=1 ends=1 lens=1 endHit=1 -> done=1 edges=1 length=10.000000 centre=0.000000,0.000000,5.000000  exit=0
+cyl 2 2 sharedVerts=1 sharedEdges=1 same=1 replay=ok starts=1 ends=1 lens=1 endHit=0 -> done=0  exit=0
+cone 0 0 sharedVerts=2 sharedEdges=3 same=1 replay=noOutgoingEdge starts=4 ends=2 lens= endHit= -> done=0  exit=0
+cone 0 1 sharedVerts=1 sharedEdges=1 same=0 replay=noOutgoingEdge starts=4 ends=1 lens= endHit= -> done=0  exit=0
+cone 1 1 sharedVerts=1 sharedEdges=1 same=1 replay=ok starts=1 ends=1 lens=1 endHit=0 -> done=0  exit=0
+octa 0 0 sharedVerts=3 sharedEdges=3 same=1 replay=ok starts=3 ends=3 lens=2,2,2 endHit=000 -> done=0  exit=0
+octa 0 1 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=3 ends=3 lens=2,1,1 endHit=011 -> done=0  exit=0
+octa 0 2 sharedVerts=1 sharedEdges=0 same=0 replay=ok starts=3 ends=3 lens=1,1,1 endHit=111 -> done=0  exit=0
+octa 0 3 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=3 ends=3 lens=1,2,2 endHit=100 -> done=0  exit=0
+octa 0 4 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=3 ends=3 lens=2,2,2 endHit=000 -> done=0  exit=0
+octa 0 5 sharedVerts=1 sharedEdges=0 same=0 replay=ok starts=3 ends=3 lens=2,1,1 endHit=011 -> done=0  exit=0
+octa 0 6 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=3 ends=3 lens=1,1,1 endHit=111 -> done=0  exit=0
+octa 0 7 sharedVerts=1 sharedEdges=0 same=0 replay=ok starts=3 ends=3 lens=1,2,2 endHit=100 -> done=0  exit=0
+octa 1 1 sharedVerts=3 sharedEdges=3 same=1 replay=ok starts=3 ends=3 lens=2,2,2 endHit=000 -> done=0  exit=0
+octa 1 2 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=3 ends=3 lens=2,1,2 endHit=010 -> done=0  exit=0
+octa 1 3 sharedVerts=1 sharedEdges=0 same=0 replay=ok starts=3 ends=3 lens=1,1,1 endHit=111 -> done=0  exit=0
+octa 1 4 sharedVerts=1 sharedEdges=0 same=0 replay=ok starts=3 ends=3 lens=1,2,1 endHit=101 -> done=0  exit=0
+octa 1 5 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=3 ends=3 lens=2,2,2 endHit=000 -> done=0  exit=0
+octa 1 6 sharedVerts=1 sharedEdges=0 same=0 replay=ok starts=3 ends=3 lens=2,1,2 endHit=010 -> done=0  exit=0
+octa 1 7 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=3 ends=3 lens=1,1,1 endHit=111 -> done=0  exit=0
+octa 2 2 sharedVerts=3 sharedEdges=3 same=1 replay=ok starts=3 ends=3 lens=2,2,2 endHit=000 -> done=0  exit=0
+octa 2 3 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=3 ends=3 lens=2,1,2 endHit=010 -> done=0  exit=0
+octa 2 4 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=3 ends=3 lens=1,1,1 endHit=111 -> done=0  exit=0
+octa 2 5 sharedVerts=1 sharedEdges=0 same=0 replay=ok starts=3 ends=3 lens=1,2,1 endHit=101 -> done=0  exit=0
+octa 2 6 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=3 ends=3 lens=2,2,2 endHit=000 -> done=0  exit=0
+octa 2 7 sharedVerts=1 sharedEdges=0 same=0 replay=ok starts=3 ends=3 lens=2,1,2 endHit=010 -> done=0  exit=0
+octa 3 3 sharedVerts=3 sharedEdges=3 same=1 replay=ok starts=3 ends=3 lens=2,2,2 endHit=000 -> done=0  exit=0
+octa 3 4 sharedVerts=1 sharedEdges=0 same=0 replay=ok starts=3 ends=3 lens=2,1,1 endHit=011 -> done=0  exit=0
+octa 3 5 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=3 ends=3 lens=1,1,1 endHit=111 -> done=0  exit=0
+octa 3 6 sharedVerts=1 sharedEdges=0 same=0 replay=ok starts=3 ends=3 lens=1,2,2 endHit=100 -> done=0  exit=0
+octa 3 7 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=3 ends=3 lens=2,2,2 endHit=000 -> done=0  exit=0
+octa 4 4 sharedVerts=3 sharedEdges=3 same=1 replay=ok starts=3 ends=3 lens=2,2,2 endHit=000 -> done=0  exit=0
+octa 4 5 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=3 ends=3 lens=2,2,1 endHit=001 -> done=0  exit=0
+octa 4 6 sharedVerts=1 sharedEdges=0 same=0 replay=ok starts=3 ends=3 lens=2,2,1 endHit=001 -> done=0  exit=0
+octa 4 7 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=3 ends=3 lens=2,2,2 endHit=000 -> done=0  exit=0
+octa 5 5 sharedVerts=3 sharedEdges=3 same=1 replay=ok starts=3 ends=3 lens=2,2,2 endHit=000 -> exception BRep_API: command not done  exit=4
+octa 5 6 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=3 ends=3 lens=2,2,2 endHit=000 -> exception BRep_API: command not done  exit=4
+octa 5 7 sharedVerts=1 sharedEdges=0 same=0 replay=ok starts=3 ends=3 lens=2,1,1 endHit=011 -> exception BRep_API: command not done  exit=4
+octa 6 6 sharedVerts=3 sharedEdges=3 same=1 replay=ok starts=3 ends=3 lens=2,2,2 endHit=111 -> exception BRep_API: command not done  exit=4
+octa 6 7 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=3 ends=3 lens=3,2,1 endHit=111 -> exception BRep_API: command not done  exit=4
+octa 7 7 sharedVerts=3 sharedEdges=3 same=1 replay=ok starts=3 ends=3 lens=2,2,2 endHit=000 -> done=0  exit=0
+tube 0 0 sharedVerts=2 sharedEdges=3 same=1 replay=noOutgoingEdge starts=4 ends=2 lens= endHit= -> done=0  exit=0
+tube 0 1 sharedVerts=1 sharedEdges=1 same=0 replay=noOutgoingEdge starts=4 ends=1 lens= endHit= -> done=0  exit=0
+tube 0 2 sharedVerts=1 sharedEdges=1 same=0 replay=noOutgoingEdge starts=4 ends=1 lens= endHit= -> done=0  exit=0
+tube 0 3 sharedVerts=0 sharedEdges=0 same=0 replay=noOutgoingEdge starts=4 ends=2 lens= endHit= -> done=0  exit=0
+tube 1 1 sharedVerts=1 sharedEdges=1 same=1 replay=ok starts=1 ends=1 lens=1 endHit=0 -> done=0  exit=0
+tube 1 2 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=1 ends=1 lens=1 endHit=1 -> done=1 edges=1 length=10.000000 centre=0.000000,0.000000,5.000000  exit=0
+tube 1 3 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=1 ends=2 lens=1 endHit=0 -> done=0  exit=0
+tube 2 2 sharedVerts=1 sharedEdges=1 same=1 replay=ok starts=1 ends=1 lens=1 endHit=0 -> done=0  exit=0
+tube 2 3 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=1 ends=2 lens=1 endHit=0 -> done=0  exit=0
+tube 3 3 sharedVerts=2 sharedEdges=3 same=1 replay=noOutgoingEdge starts=4 ends=2 lens= endHit= -> done=0  exit=0
+hex 0 0 sharedVerts=4 sharedEdges=4 same=1 replay=ok starts=4 ends=4 lens=2,2,2,2 endHit=0000 -> done=0  exit=0
+hex 0 1 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=4 lens=3,3,1,1 endHit=0011 -> done=0  exit=0
+hex 0 2 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=3,3,1,1 endHit=1111 -> done=0  exit=0
+hex 0 3 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=2,2,2,2 endHit=1111 -> done=1 edges=2 length=8.660254 centre=-0.000000,0.000000,5.000000  exit=0
+hex 0 4 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=1,1,3,3 endHit=1111 -> done=0  exit=0
+hex 0 5 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=4 lens=1,1,3,3 endHit=1100 -> done=0  exit=0
+hex 0 6 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=6 lens=3,1,1,3 endHit=1111 -> done=0  exit=0
+hex 0 7 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=6 lens=1,3,3,1 endHit=1111 -> done=0  exit=0
+hex 1 1 sharedVerts=4 sharedEdges=4 same=1 replay=ok starts=4 ends=4 lens=2,2,2,2 endHit=0000 -> done=0  exit=0
+hex 1 2 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=4 lens=3,3,1,1 endHit=0011 -> done=0  exit=0
+hex 1 3 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=3,3,1,1 endHit=1111 -> done=0  exit=0
+hex 1 4 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=2,2,2,2 endHit=1111 -> done=1 edges=2 length=8.660254 centre=-0.000000,0.000000,5.000000  exit=0
+hex 1 5 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=1,1,3,3 endHit=1111 -> done=0  exit=0
+hex 1 6 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=6 lens=3,1,1,3 endHit=1111 -> done=0  exit=0
+hex 1 7 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=6 lens=1,3,3,1 endHit=1111 -> done=0  exit=0
+hex 2 2 sharedVerts=4 sharedEdges=4 same=1 replay=ok starts=4 ends=4 lens=2,2,2,2 endHit=0000 -> done=0  exit=0
+hex 2 3 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=4 lens=3,3,1,1 endHit=0011 -> done=0  exit=0
+hex 2 4 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=3,3,1,1 endHit=1111 -> done=0  exit=0
+hex 2 5 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=2,2,2,2 endHit=1111 -> done=1 edges=2 length=8.660254 centre=0.000000,0.000000,5.000000  exit=0
+hex 2 6 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=6 lens=3,1,1,3 endHit=1111 -> done=0  exit=0
+hex 2 7 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=6 lens=1,3,3,1 endHit=1111 -> done=0  exit=0
+hex 3 3 sharedVerts=4 sharedEdges=4 same=1 replay=ok starts=4 ends=4 lens=2,2,2,2 endHit=0000 -> done=0  exit=0
+hex 3 4 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=4 lens=3,3,1,1 endHit=0011 -> done=0  exit=0
+hex 3 5 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=3,3,1,1 endHit=1111 -> done=0  exit=0
+hex 3 6 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=6 lens=3,1,1,3 endHit=1111 -> done=0  exit=0
+hex 3 7 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=6 lens=1,3,3,1 endHit=1111 -> done=0  exit=0
+hex 4 4 sharedVerts=4 sharedEdges=4 same=1 replay=ok starts=4 ends=4 lens=2,2,2,2 endHit=0000 -> done=0  exit=0
+hex 4 5 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=4 lens=3,3,1,1 endHit=0011 -> done=0  exit=0
+hex 4 6 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=6 lens=3,1,1,3 endHit=1111 -> done=0  exit=0
+hex 4 7 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=6 lens=1,3,3,1 endHit=1111 -> done=0  exit=0
+hex 5 5 sharedVerts=4 sharedEdges=4 same=1 replay=ok starts=4 ends=4 lens=2,2,2,2 endHit=0000 -> done=0  exit=0
+hex 5 6 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=6 lens=3,1,1,3 endHit=1111 -> done=0  exit=0
+hex 5 7 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=6 lens=1,3,3,1 endHit=1111 -> done=0  exit=0
+hex 6 6 sharedVerts=6 sharedEdges=6 same=1 replay=ok starts=6 ends=6 lens=1,1,1,1,1,1 endHit=000000 -> done=0  exit=0
+hex 6 7 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=6 ends=6 lens=1,1,1,1,1,1 endHit=111111 -> done=1 edges=1 length=10.000000 centre=0.000000,0.000000,5.000000  exit=0
+hex 7 7 sharedVerts=6 sharedEdges=6 same=1 replay=ok starts=6 ends=6 lens=1,1,1,1,1,1 endHit=000000 -> done=0  exit=0
+lshape 0 0 sharedVerts=4 sharedEdges=4 same=1 replay=ok starts=4 ends=4 lens=2,2,2,2 endHit=0000 -> done=0  exit=0
+lshape 0 1 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=4 lens=3,3,1,1 endHit=0011 -> done=0  exit=0
+lshape 0 2 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=3,3,1,1 endHit=1111 -> done=0  exit=0
+lshape 0 3 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=2,2,2,2 endHit=1111 -> done=0  exit=0
+lshape 0 4 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=1,1,3,3 endHit=1111 -> done=0  exit=0
+lshape 0 5 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=4 lens=1,1,3,3 endHit=1100 -> done=0  exit=0
+lshape 0 6 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=6 lens=3,1,1,3 endHit=1111 -> done=0  exit=0
+lshape 0 7 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=6 lens=1,3,3,1 endHit=1111 -> done=0  exit=0
+lshape 1 1 sharedVerts=4 sharedEdges=4 same=1 replay=ok starts=4 ends=4 lens=2,2,2,2 endHit=0000 -> done=0  exit=0
+lshape 1 2 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=4 lens=3,3,1,1 endHit=0011 -> done=0  exit=0
+lshape 1 3 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=3,3,1,1 endHit=1111 -> done=0  exit=0
+lshape 1 4 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=2,2,2,2 endHit=1111 -> done=1 edges=2 length=15.000000 centre=4.375000,4.375000,5.000000  exit=0
+lshape 1 5 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=1,1,3,3 endHit=1111 -> done=0  exit=0
+lshape 1 6 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=6 lens=3,1,1,3 endHit=1111 -> done=0  exit=0
+lshape 1 7 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=6 lens=1,3,3,1 endHit=1111 -> done=0  exit=0
+lshape 2 2 sharedVerts=4 sharedEdges=4 same=1 replay=ok starts=4 ends=4 lens=2,2,2,2 endHit=0000 -> done=0  exit=0
+lshape 2 3 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=4 lens=3,3,1,1 endHit=0011 -> done=0  exit=0
+lshape 2 4 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=3,3,1,1 endHit=1111 -> done=0  exit=0
+lshape 2 5 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=2,2,2,2 endHit=1111 -> done=0  exit=0
+lshape 2 6 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=6 lens=3,1,1,3 endHit=1111 -> done=0  exit=0
+lshape 2 7 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=6 lens=1,3,3,1 endHit=1111 -> done=0  exit=0
+lshape 3 3 sharedVerts=4 sharedEdges=4 same=1 replay=ok starts=4 ends=4 lens=2,2,2,2 endHit=0000 -> done=0  exit=0
+lshape 3 4 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=4 lens=3,3,1,1 endHit=0011 -> done=0  exit=0
+lshape 3 5 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=3,3,1,1 endHit=1111 -> done=0  exit=0
+lshape 3 6 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=6 lens=3,1,1,3 endHit=1111 -> done=0  exit=0
+lshape 3 7 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=6 lens=1,3,3,1 endHit=1111 -> done=0  exit=0
+lshape 4 4 sharedVerts=4 sharedEdges=4 same=1 replay=ok starts=4 ends=4 lens=2,2,2,2 endHit=0000 -> done=0  exit=0
+lshape 4 5 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=4 lens=3,3,1,1 endHit=0011 -> done=0  exit=0
+lshape 4 6 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=6 lens=3,1,1,3 endHit=1111 -> done=0  exit=0
+lshape 4 7 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=6 lens=1,3,3,1 endHit=1111 -> done=0  exit=0
+lshape 5 5 sharedVerts=4 sharedEdges=4 same=1 replay=ok starts=4 ends=4 lens=2,2,2,2 endHit=0000 -> done=0  exit=0
+lshape 5 6 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=6 lens=3,1,1,3 endHit=1111 -> done=0  exit=0
+lshape 5 7 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=6 lens=1,3,3,1 endHit=1111 -> done=0  exit=0
+lshape 6 6 sharedVerts=6 sharedEdges=6 same=1 replay=ok starts=6 ends=6 lens=1,1,1,1,1,1 endHit=000000 -> done=0  exit=0
+lshape 6 7 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=6 ends=6 lens=1,1,1,1,1,1 endHit=111111 -> done=1 edges=1 length=10.000000 centre=4.166667,4.166667,5.000000  exit=0
+lshape 7 7 sharedVerts=6 sharedEdges=6 same=1 replay=ok starts=6 ends=6 lens=1,1,1,1,1,1 endHit=000000 -> done=0  exit=0
+tri 0 0 sharedVerts=4 sharedEdges=4 same=1 replay=ok starts=4 ends=4 lens=2,2,2,2 endHit=1111  exit=139
+tri 0 1 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=1111  exit=139
+tri 0 2 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=1111  exit=139
+tri 0 3 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=3 lens=3,1,1,3 endHit=1111  exit=139
+tri 0 4 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=3 lens=1,3,3,1 endHit=1111  exit=139
+tri 1 1 sharedVerts=4 sharedEdges=4 same=1 replay=ok starts=4 ends=4 lens=2,2,2,2 endHit=1111 -> done=1 edges=2 length=15.000000 centre=1.250000,0.000000,5.000000  exit=0
+tri 1 2 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=1111 -> done=0  exit=0
+tri 1 3 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=3 lens=3,1,1,3 endHit=1111 -> done=0  exit=0
+tri 1 4 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=3 lens=1,3,3,1 endHit=1111 -> done=0  exit=0
+tri 2 2 sharedVerts=4 sharedEdges=4 same=1 replay=ok starts=4 ends=4 lens=2,2,2,2 endHit=1111  exit=139
+tri 2 3 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=3 lens=3,1,1,3 endHit=1111  exit=139
+tri 2 4 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=3 lens=1,3,3,1 endHit=1111  exit=139
+tri 3 3 sharedVerts=3 sharedEdges=3 same=1 replay=ok starts=3 ends=3 lens=1,1,1 endHit=000 -> done=0  exit=0
+tri 3 4 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=3 ends=3 lens=1,1,1 endHit=111 -> done=1 edges=1 length=10.000000 centre=-0.000000,0.000000,5.000000  exit=0
+tri 4 4 sharedVerts=3 sharedEdges=3 same=1 replay=ok starts=3 ends=3 lens=1,1,1 endHit=000 -> done=0  exit=0
+pent 0 0 sharedVerts=4 sharedEdges=4 same=1 replay=ok starts=4 ends=4 lens=2,2,2,2 endHit=0000 -> done=0  exit=0
+pent 0 1 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=4 lens=2,2,1,1 endHit=0011 -> done=0  exit=0
+pent 0 2 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=2,2,1,1 endHit=1111 -> done=1 edges=2 length=8.529096 centre=-0.249470,0.325092,5.000000  exit=0
+pent 0 3 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=1,1,2,2 endHit=1111 -> done=1 edges=2 length=8.529096 centre=0.232090,-0.337719,5.000000  exit=0
+pent 0 4 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=4 lens=1,1,2,2 endHit=1100 -> done=0  exit=0
+pent 0 5 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=5 lens=3,1,1,3 endHit=1111 -> done=0  exit=0
+pent 0 6 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=5 lens=1,3,3,1 endHit=1111 -> done=0  exit=0
+pent 1 1 sharedVerts=4 sharedEdges=4 same=1 replay=ok starts=4 ends=4 lens=2,2,2,2 endHit=0000 -> done=0  exit=0
+pent 1 2 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=4 lens=2,2,1,1 endHit=0011 -> done=0  exit=0
+pent 1 3 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=2,2,1,1 endHit=1111 -> done=1 edges=2 length=8.529096 centre=-0.386271,-0.136801,5.000000  exit=0
+pent 1 4 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=1,1,2,2 endHit=1111 -> done=1 edges=2 length=8.529096 centre=0.392910,0.116370,5.000000  exit=0
+pent 1 5 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=5 lens=3,1,1,3 endHit=1111 -> done=0  exit=0
+pent 1 6 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=5 lens=1,3,3,1 endHit=1111 -> done=0  exit=0
+pent 2 2 sharedVerts=4 sharedEdges=4 same=1 replay=ok starts=4 ends=4 lens=2,2,2,2 endHit=0000 -> done=0  exit=0
+pent 2 3 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=4 lens=2,2,1,1 endHit=0011 -> done=0  exit=0
+pent 2 4 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=2,2,1,1 endHit=1111 -> done=1 edges=2 length=8.529096 centre=0.010741,-0.409640,5.000000  exit=0
+pent 2 5 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=5 lens=3,1,1,3 endHit=1111 -> done=0  exit=0
+pent 2 6 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=5 lens=1,3,3,1 endHit=1111 -> done=0  exit=0
+pent 3 3 sharedVerts=4 sharedEdges=4 same=1 replay=ok starts=4 ends=4 lens=2,2,2,2 endHit=0000 -> done=0  exit=0
+pent 3 4 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=4 lens=2,2,1,1 endHit=0011 -> done=0  exit=0
+pent 3 5 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=5 lens=3,1,1,3 endHit=1111 -> done=0  exit=0
+pent 3 6 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=5 lens=1,3,3,1 endHit=1111 -> done=0  exit=0
+pent 4 4 sharedVerts=4 sharedEdges=4 same=1 replay=ok starts=4 ends=4 lens=2,2,2,2 endHit=0000  exit=139
+pent 4 5 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=5 lens=3,1,1,3 endHit=1111  exit=139
+pent 4 6 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=5 lens=1,3,3,1 endHit=1111  exit=139
+pent 5 5 sharedVerts=5 sharedEdges=5 same=1 replay=ok starts=5 ends=5 lens=1,1,1,1,1 endHit=00000 -> done=0  exit=0
+pent 5 6 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=5 ends=5 lens=1,1,1,1,1 endHit=11111 -> done=1 edges=1 length=10.000000 centre=-0.000000,-0.000000,5.000000  exit=0
+pent 6 6 sharedVerts=5 sharedEdges=5 same=1 replay=ok starts=5 ends=5 lens=1,1,1,1,1 endHit=00000 -> done=0  exit=0
+oct8 0 0 sharedVerts=4 sharedEdges=4 same=1 replay=ok starts=4 ends=4 lens=3,3,3,3 endHit=0000 -> done=0  exit=0
+oct8 0 1 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=4 lens=5,5,1,1 endHit=0011 -> done=0  exit=0
+oct8 0 2 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=5,5,1,1 endHit=1111 -> done=0  exit=0
+oct8 0 3 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=4,4,2,2 endHit=1111 -> done=0  exit=0
+oct8 0 4 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=3,3,3,3 endHit=1111 -> done=1 edges=3 length=9.238795 centre=-0.000000,-0.000000,5.000000  exit=0
+oct8 0 5 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=2,2,4,4 endHit=1111 -> done=0  exit=0
+oct8 0 6 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=1,1,5,5 endHit=1111 -> done=0  exit=0
+oct8 0 7 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=4 lens=1,1,5,5 endHit=1100 -> done=0  exit=0
+oct8 0 8 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=8 lens=3,1,1,3 endHit=0110 -> done=0  exit=0
+oct8 0 9 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=8 lens=1,3,3,1 endHit=1001 -> done=0  exit=0
+oct8 1 1 sharedVerts=4 sharedEdges=4 same=1 replay=ok starts=4 ends=4 lens=3,3,3,3 endHit=0000 -> done=0  exit=0
+oct8 1 2 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=4 lens=5,5,1,1 endHit=0011 -> done=0  exit=0
+oct8 1 3 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=5,5,1,1 endHit=1111 -> done=0  exit=0
+oct8 1 4 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=4,4,2,2 endHit=1111 -> done=0  exit=0
+oct8 1 5 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=3,3,3,3 endHit=1111 -> done=1 edges=3 length=9.238795 centre=-0.000000,-0.000000,5.000000  exit=0
+oct8 1 6 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=2,2,4,4 endHit=1111 -> done=0  exit=0
+oct8 1 7 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=1,1,5,5 endHit=1111 -> done=0  exit=0
+oct8 1 8 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=8 lens=3,1,1,3 endHit=0110 -> done=0  exit=0
+oct8 1 9 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=8 lens=1,3,3,1 endHit=1001 -> done=0  exit=0
+oct8 2 2 sharedVerts=4 sharedEdges=4 same=1 replay=ok starts=4 ends=4 lens=3,3,3,3 endHit=0000 -> done=0  exit=0
+oct8 2 3 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=4 lens=5,5,1,1 endHit=0011 -> done=0  exit=0
+oct8 2 4 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=5,5,1,1 endHit=1111 -> done=0  exit=0
+oct8 2 5 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=4,4,2,2 endHit=1111 -> done=0  exit=0
+oct8 2 6 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=3,3,3,3 endHit=1111 -> done=1 edges=3 length=9.238795 centre=0.000000,-0.000000,5.000000  exit=0
+oct8 2 7 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=2,2,4,4 endHit=1111 -> done=0  exit=0
+oct8 2 8 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=8 lens=3,1,1,3 endHit=0110 -> done=0  exit=0
+oct8 2 9 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=8 lens=1,3,3,1 endHit=1001 -> done=0  exit=0
+oct8 3 3 sharedVerts=4 sharedEdges=4 same=1 replay=ok starts=4 ends=4 lens=3,3,3,3 endHit=0000 -> done=0  exit=0
+oct8 3 4 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=4 lens=5,5,1,1 endHit=0011 -> done=0  exit=0
+oct8 3 5 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=5,5,1,1 endHit=1111 -> done=0  exit=0
+oct8 3 6 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=4,4,2,2 endHit=1111 -> done=0  exit=0
+oct8 3 7 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=3,3,3,3 endHit=1111 -> done=1 edges=3 length=9.238795 centre=0.000000,-0.000000,5.000000  exit=0
+oct8 3 8 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=8 lens=3,1,1,3 endHit=0110 -> done=0  exit=0
+oct8 3 9 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=8 lens=1,3,3,1 endHit=1001 -> done=0  exit=0
+oct8 4 4 sharedVerts=4 sharedEdges=4 same=1 replay=ok starts=4 ends=4 lens=3,3,3,3 endHit=0000 -> done=0  exit=0
+oct8 4 5 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=4 lens=5,5,1,1 endHit=0011 -> done=0  exit=0
+oct8 4 6 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=5,5,1,1 endHit=1111 -> done=0  exit=0
+oct8 4 7 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=4,4,2,2 endHit=1111 -> done=0  exit=0
+oct8 4 8 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=8 lens=3,1,1,3 endHit=0110 -> done=0  exit=0
+oct8 4 9 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=8 lens=1,3,3,1 endHit=1001 -> done=0  exit=0
+oct8 5 5 sharedVerts=4 sharedEdges=4 same=1 replay=ok starts=4 ends=4 lens=3,3,3,3 endHit=0000 -> done=0  exit=0
+oct8 5 6 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=4 lens=5,5,1,1 endHit=0011 -> done=0  exit=0
+oct8 5 7 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=5,5,1,1 endHit=1111 -> done=0  exit=0
+oct8 5 8 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=8 lens=3,1,1,3 endHit=0110 -> done=0  exit=0
+oct8 5 9 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=8 lens=1,3,3,1 endHit=1001 -> done=0  exit=0
+oct8 6 6 sharedVerts=4 sharedEdges=4 same=1 replay=ok starts=4 ends=4 lens=3,3,3,3 endHit=0000 -> done=0  exit=0
+oct8 6 7 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=4 lens=5,5,1,1 endHit=0011 -> done=0  exit=0
+oct8 6 8 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=8 lens=3,1,1,3 endHit=0110 -> done=0  exit=0
+oct8 6 9 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=8 lens=1,3,3,1 endHit=1001 -> done=0  exit=0
+oct8 7 7 sharedVerts=4 sharedEdges=4 same=1 replay=ok starts=4 ends=4 lens=3,3,3,3 endHit=0000 -> done=0  exit=0
+oct8 7 8 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=8 lens=3,1,1,3 endHit=0110 -> done=0  exit=0
+oct8 7 9 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=8 lens=1,3,3,1 endHit=1001 -> done=0  exit=0
+oct8 8 8 sharedVerts=8 sharedEdges=8 same=1 replay=ok starts=8 ends=8 lens=1,1,1,1,1,1,1,1 endHit=00000000 -> done=0  exit=0
+oct8 8 9 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=8 ends=8 lens=1,1,1,1,1,1,1,1 endHit=11111111 -> done=1 edges=1 length=10.000000 centre=-0.000000,0.000000,5.000000  exit=0
+oct8 9 9 sharedVerts=8 sharedEdges=8 same=1 replay=ok starts=8 ends=8 lens=1,1,1,1,1,1,1,1 endHit=00000000 -> done=0  exit=0
+star 0 0 sharedVerts=4 sharedEdges=4 same=1 replay=ok starts=4 ends=4 lens=4,4,4,4 endHit=0000 -> done=0  exit=0
+star 0 1 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=4 lens=7,7,1,1 endHit=0011 -> done=0  exit=0
+star 0 2 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=7,7,1,1 endHit=1111 -> done=0  exit=0
+star 0 3 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=6,6,2,2 endHit=1111 -> done=0  exit=0
+star 0 4 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=5,5,3,3 endHit=1111 -> done=0  exit=0
+star 0 5 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=4,4,4,4 endHit=1111 -> done=1 edges=4 length=10.218917 centre=-0.014089,0.043362,5.000000  exit=0
+star 0 6 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=3,3,5,5 endHit=1111 -> done=0  exit=0
+star 0 7 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=2,2,6,6 endHit=1111 -> done=0  exit=0
+star 0 8 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=1,1,7,7 endHit=1111 -> done=0  exit=0
+star 0 9 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=4 lens=1,1,7,7 endHit=1100 -> done=0  exit=0
+star 0 10 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=10 lens=3,1,1,3 endHit=0110 -> done=0  exit=0
+star 0 11 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=10 lens=1,3,3,1 endHit=1001 -> done=0  exit=0
+star 1 1 sharedVerts=4 sharedEdges=4 same=1 replay=ok starts=4 ends=4 lens=4,4,4,4 endHit=0000 -> done=0  exit=0
+star 1 2 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=4 lens=7,7,1,1 endHit=0011 -> done=0  exit=0
+star 1 3 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=7,7,1,1 endHit=1111 -> done=0  exit=0
+star 1 4 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=6,6,2,2 endHit=1111 -> done=0  exit=0
+star 1 5 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=5,5,3,3 endHit=1111 -> done=0  exit=0
+star 1 6 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=4,4,4,4 endHit=1111 -> done=1 edges=4 length=10.218917 centre=0.036886,-0.026799,5.000000  exit=0
+star 1 7 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=3,3,5,5 endHit=1111 -> done=0  exit=0
+star 1 8 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=2,2,6,6 endHit=1111 -> done=0  exit=0
+star 1 9 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=1,1,7,7 endHit=1111 -> done=0  exit=0
+star 1 10 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=10 lens=3,1,1,3 endHit=0110 -> done=0  exit=0
+star 1 11 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=10 lens=1,3,3,1 endHit=1001 -> done=0  exit=0
+star 2 2 sharedVerts=4 sharedEdges=4 same=1 replay=ok starts=4 ends=4 lens=4,4,4,4 endHit=0000 -> done=0  exit=0
+star 2 3 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=4 lens=7,7,1,1 endHit=0011 -> done=0  exit=0
+star 2 4 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=7,7,1,1 endHit=1111 -> done=0  exit=0
+star 2 5 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=6,6,2,2 endHit=1111 -> done=0  exit=0
+star 2 6 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=5,5,3,3 endHit=1111 -> done=0  exit=0
+star 2 7 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=4,4,4,4 endHit=1111 -> done=1 edges=4 length=10.218917 centre=-0.045593,0.000000,5.000000  exit=0
+star 2 8 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=3,3,5,5 endHit=1111 -> done=0  exit=0
+star 2 9 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=2,2,6,6 endHit=1111 -> done=0  exit=0
+star 2 10 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=10 lens=3,1,1,3 endHit=0110 -> done=0  exit=0
+star 2 11 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=10 lens=1,3,3,1 endHit=1001 -> done=0  exit=0
+star 3 3 sharedVerts=4 sharedEdges=4 same=1 replay=ok starts=4 ends=4 lens=4,4,4,4 endHit=0000 -> done=0  exit=0
+star 3 4 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=4 lens=7,7,1,1 endHit=0011 -> done=0  exit=0
+star 3 5 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=7,7,1,1 endHit=1111 -> done=0  exit=0
+star 3 6 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=6,6,2,2 endHit=1111 -> done=0  exit=0
+star 3 7 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=5,5,3,3 endHit=1111 -> done=0  exit=0
+star 3 8 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=4,4,4,4 endHit=1111 -> done=1 edges=4 length=10.218917 centre=0.036886,0.026799,5.000000  exit=0
+star 3 9 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=3,3,5,5 endHit=1111 -> done=0  exit=0
+star 3 10 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=10 lens=3,1,1,3 endHit=0110 -> done=0  exit=0
+star 3 11 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=10 lens=1,3,3,1 endHit=1001 -> done=0  exit=0
+star 4 4 sharedVerts=4 sharedEdges=4 same=1 replay=ok starts=4 ends=4 lens=4,4,4,4 endHit=0000 -> done=0  exit=0
+star 4 5 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=4 lens=7,7,1,1 endHit=0011 -> done=0  exit=0
+star 4 6 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=7,7,1,1 endHit=1111 -> done=0  exit=0
+star 4 7 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=6,6,2,2 endHit=1111 -> done=0  exit=0
+star 4 8 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=5,5,3,3 endHit=1111 -> done=0  exit=0
+star 4 9 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=4,4,4,4 endHit=1111 -> done=1 edges=4 length=10.218917 centre=-0.014089,-0.043362,5.000000  exit=0
+star 4 10 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=10 lens=3,1,1,3 endHit=0110 -> done=0  exit=0
+star 4 11 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=10 lens=1,3,3,1 endHit=1001 -> done=0  exit=0
+star 5 5 sharedVerts=4 sharedEdges=4 same=1 replay=ok starts=4 ends=4 lens=4,4,4,4 endHit=0000 -> done=0  exit=0
+star 5 6 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=4 lens=7,7,1,1 endHit=0011 -> done=0  exit=0
+star 5 7 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=7,7,1,1 endHit=1111 -> done=0  exit=0
+star 5 8 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=6,6,2,2 endHit=1111 -> done=0  exit=0
+star 5 9 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=5,5,3,3 endHit=1111 -> done=0  exit=0
+star 5 10 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=10 lens=3,1,1,3 endHit=0110 -> done=0  exit=0
+star 5 11 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=10 lens=1,3,3,1 endHit=1001 -> done=0  exit=0
+star 6 6 sharedVerts=4 sharedEdges=4 same=1 replay=ok starts=4 ends=4 lens=4,4,4,4 endHit=0000 -> done=0  exit=0
+star 6 7 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=4 lens=7,7,1,1 endHit=0011 -> done=0  exit=0
+star 6 8 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=7,7,1,1 endHit=1111 -> done=0  exit=0
+star 6 9 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=6,6,2,2 endHit=1111 -> done=0  exit=0
+star 6 10 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=10 lens=3,1,1,3 endHit=0110 -> done=0  exit=0
+star 6 11 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=10 lens=1,3,3,1 endHit=1001 -> done=0  exit=0
+star 7 7 sharedVerts=4 sharedEdges=4 same=1 replay=ok starts=4 ends=4 lens=4,4,4,4 endHit=0000 -> done=0  exit=0
+star 7 8 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=4 lens=7,7,1,1 endHit=0011 -> done=0  exit=0
+star 7 9 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=7,7,1,1 endHit=1111 -> done=0  exit=0
+star 7 10 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=10 lens=3,1,1,3 endHit=0110 -> done=0  exit=0
+star 7 11 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=10 lens=1,3,3,1 endHit=1001 -> done=0  exit=0
+star 8 8 sharedVerts=4 sharedEdges=4 same=1 replay=ok starts=4 ends=4 lens=4,4,4,4 endHit=0000 -> done=0  exit=0
+star 8 9 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=4 lens=7,7,1,1 endHit=0011 -> done=0  exit=0
+star 8 10 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=10 lens=3,1,1,3 endHit=0110 -> done=0  exit=0
+star 8 11 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=10 lens=1,3,3,1 endHit=1001 -> done=0  exit=0
+star 9 9 sharedVerts=4 sharedEdges=4 same=1 replay=ok starts=4 ends=4 lens=4,4,4,4 endHit=0000 -> done=0  exit=0
+star 9 10 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=10 lens=3,1,1,3 endHit=0110 -> done=0  exit=0
+star 9 11 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=10 lens=1,3,3,1 endHit=1001 -> done=0  exit=0
+star 10 10 sharedVerts=10 sharedEdges=10 same=1 replay=ok starts=10 ends=10 lens=1,1,1,1,1,1,1,1,1,1 endHit=0000000000 -> done=0  exit=0
+star 10 11 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=10 ends=10 lens=1,1,1,1,1,1,1,1,1,1 endHit=1111111111 -> done=1 edges=1 length=10.000000 centre=0.000000,0.000000,5.000000  exit=0
+star 11 11 sharedVerts=10 sharedEdges=10 same=1 replay=ok starts=10 ends=10 lens=1,1,1,1,1,1,1,1,1,1 endHit=0000000000 -> done=0  exit=0
+ushape 0 0 sharedVerts=4 sharedEdges=4 same=1 replay=ok starts=4 ends=4 lens=3,3,3,3 endHit=0000 -> done=0  exit=0
+ushape 0 1 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=4 lens=5,5,1,1 endHit=0011 -> done=0  exit=0
+ushape 0 2 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=5,5,1,1 endHit=1111 -> done=0  exit=0
+ushape 0 3 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=4,4,2,2 endHit=1111 -> done=0  exit=0
+ushape 0 4 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=3,3,3,3 endHit=1111 -> done=0  exit=0
+ushape 0 5 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=2,2,4,4 endHit=1111 -> done=0  exit=0
+ushape 0 6 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=1,1,5,5 endHit=1111 -> done=0  exit=0
+ushape 0 7 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=4 lens=1,1,5,5 endHit=1100 -> done=0  exit=0
+ushape 0 8 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=8 lens=3,1,1,3 endHit=0110 -> done=0  exit=0
+ushape 0 9 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=8 lens=1,3,3,1 endHit=1001 -> done=0  exit=0
+ushape 1 1 sharedVerts=4 sharedEdges=4 same=1 replay=ok starts=4 ends=4 lens=3,3,3,3 endHit=0000 -> done=0  exit=0
+ushape 1 2 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=4 lens=5,5,1,1 endHit=0011 -> done=0  exit=0
+ushape 1 3 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=5,5,1,1 endHit=1111 -> done=0  exit=0
+ushape 1 4 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=4,4,2,2 endHit=1111 -> done=0  exit=0
+ushape 1 5 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=3,3,3,3 endHit=1111 -> done=0  exit=0
+ushape 1 6 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=2,2,4,4 endHit=1111 -> done=0  exit=0
+ushape 1 7 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=1,1,5,5 endHit=1111 -> done=0  exit=0
+ushape 1 8 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=8 lens=3,1,1,3 endHit=0110 -> done=0  exit=0
+ushape 1 9 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=8 lens=1,3,3,1 endHit=1001 -> done=0  exit=0
+ushape 2 2 sharedVerts=4 sharedEdges=4 same=1 replay=ok starts=4 ends=4 lens=3,3,3,3 endHit=0000 -> done=0  exit=0
+ushape 2 3 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=4 lens=5,5,1,1 endHit=0011 -> done=0  exit=0
+ushape 2 4 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=5,5,1,1 endHit=1111 -> done=0  exit=0
+ushape 2 5 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=4,4,2,2 endHit=1111 -> done=0  exit=0
+ushape 2 6 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=3,3,3,3 endHit=1111 -> done=1 edges=3 length=24.000000 centre=5.000000,4.510417,5.000000  exit=0
+ushape 2 7 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=2,2,4,4 endHit=1111 -> done=0  exit=0
+ushape 2 8 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=8 lens=3,1,1,3 endHit=0110 -> done=0  exit=0
+ushape 2 9 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=8 lens=1,3,3,1 endHit=1001 -> done=0  exit=0
+ushape 3 3 sharedVerts=4 sharedEdges=4 same=1 replay=ok starts=4 ends=4 lens=3,3,3,3 endHit=0000 -> done=0  exit=0
+ushape 3 4 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=4 lens=5,5,1,1 endHit=0011 -> done=0  exit=0
+ushape 3 5 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=5,5,1,1 endHit=1111 -> done=0  exit=0
+ushape 3 6 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=4,4,2,2 endHit=1111 -> done=0  exit=0
+ushape 3 7 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=3,3,3,3 endHit=1111 -> done=0  exit=0
+ushape 3 8 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=8 lens=3,1,1,3 endHit=0110 -> done=0  exit=0
+ushape 3 9 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=8 lens=1,3,3,1 endHit=1001 -> done=0  exit=0
+ushape 4 4 sharedVerts=4 sharedEdges=4 same=1 replay=ok starts=4 ends=4 lens=3,3,3,3 endHit=0000 -> done=0  exit=0
+ushape 4 5 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=4 lens=5,5,1,1 endHit=0011 -> done=0  exit=0
+ushape 4 6 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=5,5,1,1 endHit=1111 -> done=0  exit=0
+ushape 4 7 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=4,4,2,2 endHit=1111 -> done=0  exit=0
+ushape 4 8 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=8 lens=3,1,1,3 endHit=0110 -> done=0  exit=0
+ushape 4 9 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=8 lens=1,3,3,1 endHit=1001 -> done=0  exit=0
+ushape 5 5 sharedVerts=4 sharedEdges=4 same=1 replay=ok starts=4 ends=4 lens=3,3,3,3 endHit=0000 -> done=0  exit=0
+ushape 5 6 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=4 lens=5,5,1,1 endHit=0011 -> done=0  exit=0
+ushape 5 7 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=5,5,1,1 endHit=1111 -> done=0  exit=0
+ushape 5 8 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=8 lens=3,1,1,3 endHit=0110 -> done=0  exit=0
+ushape 5 9 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=8 lens=1,3,3,1 endHit=1001 -> done=0  exit=0
+ushape 6 6 sharedVerts=4 sharedEdges=4 same=1 replay=ok starts=4 ends=4 lens=3,3,3,3 endHit=0000 -> done=0  exit=0
+ushape 6 7 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=4 lens=5,5,1,1 endHit=0011 -> done=0  exit=0
+ushape 6 8 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=8 lens=3,1,1,3 endHit=0110 -> done=0  exit=0
+ushape 6 9 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=8 lens=1,3,3,1 endHit=1001 -> done=0  exit=0
+ushape 7 7 sharedVerts=4 sharedEdges=4 same=1 replay=ok starts=4 ends=4 lens=3,3,3,3 endHit=0000 -> done=0  exit=0
+ushape 7 8 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=8 lens=3,1,1,3 endHit=0110 -> done=0  exit=0
+ushape 7 9 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=8 lens=1,3,3,1 endHit=1001 -> done=0  exit=0
+ushape 8 8 sharedVerts=8 sharedEdges=8 same=1 replay=ok starts=8 ends=8 lens=1,1,1,1,1,1,1,1 endHit=00000000 -> done=0  exit=0
+ushape 8 9 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=8 ends=8 lens=1,1,1,1,1,1,1,1 endHit=11111111 -> done=1 edges=1 length=10.000000 centre=5.000000,4.416667,5.000000  exit=0
+ushape 9 9 sharedVerts=8 sharedEdges=8 same=1 replay=ok starts=8 ends=8 lens=1,1,1,1,1,1,1,1 endHit=00000000 -> done=0  exit=0
+sqtube 0 0 sharedVerts=4 sharedEdges=4 same=1 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=0000 -> done=0  exit=0
+sqtube 0 1 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=1100 -> done=0  exit=0
+sqtube 0 2 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=0110 -> done=0  exit=0
+sqtube 0 3 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=0011 -> done=0  exit=0
+sqtube 0 4 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=1001 -> done=0  exit=0
+sqtube 0 5 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=1111 -> done=1 edges=1 length=10.000000 centre=5.000000,5.000000,5.000000  exit=0
+sqtube 0 6 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=0000 -> done=0  exit=0
+sqtube 0 7 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=0000 -> done=0  exit=0
+sqtube 0 8 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=0000 -> done=0  exit=0
+sqtube 0 9 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=0000 -> done=0  exit=0
+sqtube 1 1 sharedVerts=4 sharedEdges=4 same=1 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=0000 -> done=0  exit=0
+sqtube 1 2 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=0011 -> done=0  exit=0
+sqtube 1 3 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=1111 -> done=1 edges=1 length=10.000000 centre=5.000000,5.000000,5.000000  exit=0
+sqtube 1 4 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=1100 -> done=0  exit=0
+sqtube 1 5 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=0110 -> done=0  exit=0
+sqtube 1 6 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=0000 -> done=0  exit=0
+sqtube 1 7 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=0000 -> done=0  exit=0
+sqtube 1 8 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=0000 -> done=0  exit=0
+sqtube 1 9 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=0000 -> done=0  exit=0
+sqtube 2 2 sharedVerts=4 sharedEdges=4 same=1 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=0000 -> done=0  exit=0
+sqtube 2 3 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=1001 -> done=0  exit=0
+sqtube 2 4 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=1111 -> done=1 edges=1 length=10.000000 centre=5.000000,5.000000,5.000000  exit=0
+sqtube 2 5 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=0011 -> done=0  exit=0
+sqtube 2 6 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=0000 -> done=0  exit=0
+sqtube 2 7 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=0000 -> done=0  exit=0
+sqtube 2 8 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=0000 -> done=0  exit=0
+sqtube 2 9 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=0000 -> done=0  exit=0
+sqtube 3 3 sharedVerts=4 sharedEdges=4 same=1 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=0000 -> done=0  exit=0
+sqtube 3 4 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=1100 -> done=0  exit=0
+sqtube 3 5 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=1001 -> done=0  exit=0
+sqtube 3 6 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=0000 -> done=0  exit=0
+sqtube 3 7 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=0000 -> done=0  exit=0
+sqtube 3 8 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=0000 -> done=0  exit=0
+sqtube 3 9 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=0000 -> done=0  exit=0
+sqtube 4 4 sharedVerts=4 sharedEdges=4 same=1 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=0000 -> done=0  exit=0
+sqtube 4 5 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=0011 -> done=0  exit=0
+sqtube 4 6 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=0000 -> done=0  exit=0
+sqtube 4 7 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=0000 -> done=0  exit=0
+sqtube 4 8 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=0000 -> done=0  exit=0
+sqtube 4 9 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=0000 -> done=0  exit=0
+sqtube 5 5 sharedVerts=4 sharedEdges=4 same=1 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=0000 -> done=0  exit=0
+sqtube 5 6 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=0000 -> done=0  exit=0
+sqtube 5 7 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=0000 -> done=0  exit=0
+sqtube 5 8 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=0000 -> done=0  exit=0
+sqtube 5 9 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=0000 -> done=0  exit=0
+sqtube 6 6 sharedVerts=4 sharedEdges=4 same=1 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=0000 -> done=0  exit=0
+sqtube 6 7 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=1100 -> done=0  exit=0
+sqtube 6 8 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=1111 -> done=1 edges=1 length=4.000000 centre=5.000000,5.000000,5.000000  exit=0
+sqtube 6 9 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=0011 -> done=0  exit=0
+sqtube 7 7 sharedVerts=4 sharedEdges=4 same=1 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=0000 -> done=0  exit=0
+sqtube 7 8 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=0011 -> done=0  exit=0
+sqtube 7 9 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=1111 -> done=1 edges=1 length=4.000000 centre=5.000000,5.000000,5.000000  exit=0
+sqtube 8 8 sharedVerts=4 sharedEdges=4 same=1 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=0000 -> done=0  exit=0
+sqtube 8 9 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=0011 -> done=0  exit=0
+sqtube 9 9 sharedVerts=4 sharedEdges=4 same=1 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=0000 -> done=0  exit=0
+frustum 0 0 sharedVerts=2 sharedEdges=3 same=1 replay=noOutgoingEdge starts=4 ends=2 lens= endHit= -> done=0  exit=0
+frustum 0 1 sharedVerts=1 sharedEdges=1 same=0 replay=noOutgoingEdge starts=4 ends=1 lens= endHit= -> done=0  exit=0
+frustum 0 2 sharedVerts=1 sharedEdges=1 same=0 replay=noOutgoingEdge starts=4 ends=1 lens= endHit= -> done=0  exit=0
+frustum 1 1 sharedVerts=1 sharedEdges=1 same=1 replay=ok starts=1 ends=1 lens=1 endHit=0 -> done=0  exit=0
+frustum 1 2 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=1 ends=1 lens=1 endHit=1 -> done=1 edges=1 length=10.000000 centre=0.000000,0.000000,5.000000  exit=0
+frustum 2 2 sharedVerts=1 sharedEdges=1 same=1 replay=ok starts=1 ends=1 lens=1 endHit=0 -> done=0  exit=0
+torus 0 0 sharedVerts=1 sharedEdges=2 same=1 replay=noOutgoingEdge starts=4 ends=1 lens= endHit= -> done=0  exit=0
+bend 0 0 sharedVerts=4 sharedEdges=4 same=1 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=0000 -> done=0  exit=0
+bend 0 1 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=0011 -> done=0  exit=0
+bend 0 2 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=1111 -> done=1 edges=1 length=4.000000 centre=7.710173,7.710173,2.000000  exit=0
+bend 0 3 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=1100 -> done=0  exit=0
+bend 0 4 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=1001 -> done=0  exit=0
+bend 0 5 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=0110 -> done=0  exit=0
+bend 1 1 sharedVerts=4 sharedEdges=4 same=1 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=0000 -> done=0  exit=0
+bend 1 2 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=0011 -> done=0  exit=0
+bend 1 3 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=1111 -> done=1 edges=1 length=3.577125 centre=7.353614,7.353614,2.000000  exit=0
+bend 1 4 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=1001 -> done=0  exit=0
+bend 1 5 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=0110 -> done=0  exit=0
+bend 2 2 sharedVerts=4 sharedEdges=4 same=1 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=0000 -> done=0  exit=0
+bend 2 3 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=0011 -> done=0  exit=0
+bend 2 4 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=1001 -> done=0  exit=0
+bend 2 5 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=0110 -> done=0  exit=0
+bend 3 3 sharedVerts=4 sharedEdges=4 same=1 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=0000 -> done=0  exit=0
+bend 3 4 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=1001 -> done=0  exit=0
+bend 3 5 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=0110 -> done=0  exit=0
+bend 4 4 sharedVerts=4 sharedEdges=4 same=1 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=0000 -> done=0  exit=0
+bend 4 5 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=1111 -> done=1 edges=1 length=18.849556 centre=7.639437,7.639437,2.000000  exit=0
+bend 5 5 sharedVerts=4 sharedEdges=4 same=1 replay=ok starts=4 ends=4 lens=1,1,1,1 endHit=0000 -> done=0  exit=0
+elbow 0 0 sharedVerts=4 sharedEdges=4 same=1 replay=ok starts=4 ends=4 lens=1,4,4,1 endHit=1001 -> exception BRep_API: command not done  exit=4
+elbow 0 1 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=3 lens=3,1,3,3 endHit=0100 -> exception BRep_API: command not done  exit=4
+elbow 0 2 sharedVerts=2 sharedEdges=1 same=0 -> exception BRep_API: command not done  exit=4
+elbow 0 3 sharedVerts=2 sharedEdges=1 same=0 -> exception BRep_API: command not done  exit=4
+elbow 0 4 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=3 lens=3,1,3,1 endHit=0101 -> exception BRep_API: command not done  exit=4
+elbow 0 5 sharedVerts=0 sharedEdges=0 same=0 -> exception BRep_API: command not done  exit=4
+elbow 0 6 sharedVerts=1 sharedEdges=0 same=0 replay=ok starts=4 ends=3 lens=1,4,4,6 endHit=1011 -> exception BRep_API: command not done  exit=4
+elbow 0 7 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=3 lens=4,4,2,4 endHit=0010 -> exception BRep_API: command not done  exit=4
+elbow 0 8 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=1,4,4,1 endHit=1111 -> exception BRep_API: command not done  exit=4
+elbow 0 9 sharedVerts=1 sharedEdges=0 same=0 replay=ok starts=4 ends=5 lens=6,3,5,1 endHit=1111 -> exception BRep_API: command not done  exit=4
+elbow 0 10 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=5 lens=3,1,3,3 endHit=0100 -> exception BRep_API: command not done  exit=4
+elbow 0 11 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=2,1,1,2 endHit=0110 -> exception BRep_API: command not done  exit=4
+elbow 0 12 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=4,3,3,4 endHit=0110 -> exception BRep_API: command not done  exit=4
+elbow 0 13 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=3,2,2,3 endHit=0110 -> exception BRep_API: command not done  exit=4
+elbow 1 1 sharedVerts=4 sharedEdges=4 same=1 replay=ok starts=3 ends=3 lens=4,5,6 endHit=011 -> exception BRep_API: command not done  exit=4
+elbow 1 2 sharedVerts=2 sharedEdges=1 same=0 -> exception BRep_API: command not done  exit=4
+elbow 1 3 sharedVerts=0 sharedEdges=0 same=0 -> exception BRep_API: command not done  exit=4
+elbow 1 4 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=3 ends=3 lens=3,1,3 endHit=010 -> exception BRep_API: command not done  exit=4
+elbow 1 5 sharedVerts=2 sharedEdges=1 same=0 -> exception BRep_API: command not done  exit=4
+elbow 1 6 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=3 ends=3 lens=1,3,3 endHit=100 -> exception BRep_API: command not done  exit=4
+elbow 1 7 sharedVerts=1 sharedEdges=0 same=0 replay=ok starts=3 ends=3 lens=3,5,5 endHit=100 -> exception BRep_API: command not done  exit=4
+elbow 1 8 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=3 ends=4 lens=1,1,2 endHit=110 -> exception BRep_API: command not done  exit=4
+elbow 1 9 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=3 ends=5 lens=3,1,3 endHit=010 -> exception BRep_API: command not done  exit=4
+elbow 1 10 sharedVerts=1 sharedEdges=0 same=0 replay=ok starts=3 ends=5 lens=5,3,6 endHit=110 -> exception BRep_API: command not done  exit=4
+elbow 1 11 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=3 ends=4 lens=4,4,1 endHit=111 -> exception BRep_API: command not done  exit=4
+elbow 1 12 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=3 ends=4 lens=2,2,3 endHit=110 -> exception BRep_API: command not done  exit=4
+elbow 1 13 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=3 ends=4 lens=3,3,4 endHit=110 -> exception BRep_API: command not done  exit=4
+elbow 2 2 sharedVerts=4 sharedEdges=4 same=1 -> exception BRep_API: command not done  exit=4
+elbow 2 3 sharedVerts=1 sharedEdges=0 same=0 -> exception BRep_API: command not done  exit=4
+elbow 2 4 sharedVerts=0 sharedEdges=0 same=0 -> exception BRep_API: command not done  exit=4
+elbow 2 5 sharedVerts=1 sharedEdges=0 same=0 -> exception BRep_API: command not done  exit=4
+elbow 2 6 sharedVerts=2 sharedEdges=1 same=0 -> exception BRep_API: command not done  exit=4
+elbow 2 7 sharedVerts=2 sharedEdges=1 same=0 -> exception BRep_API: command not done  exit=4
+elbow 2 8 sharedVerts=0 sharedEdges=0 same=0 -> exception BRep_API: command not done  exit=4
+elbow 2 9 sharedVerts=0 sharedEdges=0 same=0 -> exception BRep_API: command not done  exit=4
+elbow 2 10 sharedVerts=0 sharedEdges=0 same=0 -> exception BRep_API: command not done  exit=4
+elbow 2 11 sharedVerts=0 sharedEdges=0 same=0 -> exception BRep_API: command not done  exit=4
+elbow 2 12 sharedVerts=1 sharedEdges=0 same=0 -> exception BRep_API: command not done  exit=4
+elbow 2 13 sharedVerts=1 sharedEdges=0 same=0 -> exception BRep_API: command not done  exit=4
+elbow 3 3 sharedVerts=4 sharedEdges=4 same=1 -> exception BRep_API: command not done  exit=4
+elbow 3 4 sharedVerts=1 sharedEdges=0 same=0 -> exception BRep_API: command not done  exit=4
+elbow 3 5 sharedVerts=0 sharedEdges=0 same=0 -> exception BRep_API: command not done  exit=4
+elbow 3 6 sharedVerts=2 sharedEdges=1 same=0 -> exception BRep_API: command not done  exit=4
+elbow 3 7 sharedVerts=0 sharedEdges=0 same=0 -> exception BRep_API: command not done  exit=4
+elbow 3 8 sharedVerts=2 sharedEdges=1 same=0 -> exception BRep_API: command not done  exit=4
+elbow 3 9 sharedVerts=2 sharedEdges=1 same=0 -> exception BRep_API: command not done  exit=4
+elbow 3 10 sharedVerts=0 sharedEdges=0 same=0 -> exception BRep_API: command not done  exit=4
+elbow 3 11 sharedVerts=0 sharedEdges=0 same=0 -> exception BRep_API: command not done  exit=4
+elbow 3 12 sharedVerts=0 sharedEdges=0 same=0 -> exception BRep_API: command not done  exit=4
+elbow 3 13 sharedVerts=0 sharedEdges=0 same=0 -> exception BRep_API: command not done  exit=4
+elbow 4 4 sharedVerts=4 sharedEdges=4 same=1 replay=ok starts=3 ends=3 lens=3,1,3 endHit=000 -> done=0  exit=0
+elbow 4 5 sharedVerts=1 sharedEdges=0 same=0 -> exception BRep_API: command not done  exit=4
+elbow 4 6 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=3 ends=3 lens=3,1,1 endHit=011 -> done=0  exit=0
+elbow 4 7 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=3 ends=3 lens=2,1,3 endHit=100 -> done=0  exit=0
+elbow 4 8 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=3 ends=4 lens=3,1,1 endHit=001 -> done=0  exit=0
+elbow 4 9 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=3 ends=5 lens=3,1,3 endHit=000 -> done=0  exit=0
+elbow 4 10 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=3 ends=5 lens=3,1,3 endHit=000 -> done=0  exit=0
+elbow 4 11 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=3 ends=4 lens=1,1,3 endHit=100 -> done=0  exit=0
+elbow 4 12 sharedVerts=1 sharedEdges=0 same=0 replay=ok starts=3 ends=4 lens=3,1,2 endHit=001 -> done=0  exit=0
+elbow 4 13 sharedVerts=1 sharedEdges=0 same=0 replay=ok starts=3 ends=4 lens=2,1,3 endHit=100 -> done=0  exit=0
+elbow 5 5 sharedVerts=4 sharedEdges=4 same=1 -> exception BRep_API: command not done  exit=4
+elbow 5 6 sharedVerts=0 sharedEdges=0 same=0 -> exception BRep_API: command not done  exit=4
+elbow 5 7 sharedVerts=2 sharedEdges=1 same=0 -> exception BRep_API: command not done  exit=4
+elbow 5 8 sharedVerts=0 sharedEdges=0 same=0 -> exception BRep_API: command not done  exit=4
+elbow 5 9 sharedVerts=0 sharedEdges=0 same=0 -> exception BRep_API: command not done  exit=4
+elbow 5 10 sharedVerts=2 sharedEdges=1 same=0 -> exception BRep_API: command not done  exit=4
+elbow 5 11 sharedVerts=2 sharedEdges=1 same=0 -> exception BRep_API: command not done  exit=4
+elbow 5 12 sharedVerts=0 sharedEdges=0 same=0 -> exception BRep_API: command not done  exit=4
+elbow 5 13 sharedVerts=0 sharedEdges=0 same=0 -> exception BRep_API: command not done  exit=4
+elbow 6 6 sharedVerts=4 sharedEdges=4 same=1 replay=ok starts=3 ends=3 lens=3,3,3 endHit=000 -> exception BRep_API: command not done  exit=4
+elbow 6 7 sharedVerts=1 sharedEdges=0 same=0 replay=ok starts=3 ends=3 lens=3,3,1 endHit=001 -> exception BRep_API: command not done  exit=4
+elbow 6 8 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=3 ends=4 lens=3,1,3 endHit=010 -> exception BRep_API: command not done  exit=4
+elbow 6 9 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=3 ends=5 lens=1,1,2 endHit=110 -> exception BRep_API: command not done  exit=4
+elbow 6 10 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=3 ends=5 lens=1,3,3 endHit=100 -> exception BRep_API: command not done  exit=4
+elbow 6 11 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=3 ends=4 lens=2,3,3 endHit=100 -> exception BRep_API: command not done  exit=4
+elbow 6 12 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=3 ends=4 lens=3,2,1 endHit=011 -> exception BRep_API: command not done  exit=4
+elbow 6 13 sharedVerts=1 sharedEdges=0 same=0 replay=ok starts=3 ends=4 lens=3,3,1 endHit=001 -> exception BRep_API: command not done  exit=4
+elbow 7 7 sharedVerts=4 sharedEdges=4 same=1 replay=startVertexNotInUnified starts=3 ends=3 lens= endHit= -> exception NCollection_IndexedDataMap::FindFromKey  exit=4
+elbow 7 8 sharedVerts=0 sharedEdges=0 same=0 replay=startVertexNotInUnified starts=3 ends=4 lens= endHit= -> exception NCollection_IndexedDataMap::FindFromKey  exit=4
+elbow 7 9 sharedVerts=0 sharedEdges=0 same=0 replay=startVertexNotInUnified starts=3 ends=5 lens= endHit= -> exception NCollection_IndexedDataMap::FindFromKey  exit=4
+elbow 7 10 sharedVerts=0 sharedEdges=0 same=0 replay=startVertexNotInUnified starts=3 ends=5 lens= endHit= -> exception NCollection_IndexedDataMap::FindFromKey  exit=4
+elbow 7 11 sharedVerts=2 sharedEdges=1 same=0 replay=startVertexNotInUnified starts=3 ends=4 lens= endHit= -> exception NCollection_IndexedDataMap::FindFromKey  exit=4
+elbow 7 12 sharedVerts=1 sharedEdges=0 same=0 replay=startVertexNotInUnified starts=3 ends=4 lens= endHit= -> exception NCollection_IndexedDataMap::FindFromKey  exit=4
+elbow 7 13 sharedVerts=2 sharedEdges=1 same=0 replay=startVertexNotInUnified starts=3 ends=4 lens= endHit= -> exception NCollection_IndexedDataMap::FindFromKey  exit=4
+elbow 8 8 sharedVerts=4 sharedEdges=4 same=1 replay=ok starts=4 ends=4 lens=2,2,2,2 endHit=0000 -> done=0  exit=0
+elbow 8 9 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=4 lens=1,1,3,3 endHit=1100 -> done=0  exit=0
+elbow 8 10 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=2,1,3,2 endHit=1110 -> done=0  exit=0
+elbow 8 11 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=2,2,2,2 endHit=1111 -> done=1 edges=2 length=36.000000 centre=6.500000,6.500000,2.000000  exit=0
+elbow 8 12 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=4 lens=3,1,1,3 endHit=0110 -> done=0  exit=0
+elbow 8 13 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=3,1,1,3 endHit=1111 -> done=0  exit=0
+elbow 9 9 sharedVerts=4 sharedEdges=4 same=1 replay=startVertexNotInUnified starts=5 ends=5 lens= endHit= -> exception NCollection_IndexedDataMap::FindFromKey  exit=4
+elbow 9 10 sharedVerts=1 sharedEdges=0 same=0 replay=startVertexNotInUnified starts=5 ends=5 lens= endHit= -> exception NCollection_IndexedDataMap::FindFromKey  exit=4
+elbow 9 11 sharedVerts=0 sharedEdges=0 same=0 replay=startVertexNotInUnified starts=5 ends=4 lens= endHit= -> exception NCollection_IndexedDataMap::FindFromKey  exit=4
+elbow 9 12 sharedVerts=2 sharedEdges=1 same=0 replay=startVertexNotInUnified starts=5 ends=4 lens= endHit= -> exception NCollection_IndexedDataMap::FindFromKey  exit=4
+elbow 9 13 sharedVerts=1 sharedEdges=0 same=0 replay=startVertexNotInUnified starts=5 ends=4 lens= endHit= -> exception NCollection_IndexedDataMap::FindFromKey  exit=4
+elbow 10 10 sharedVerts=4 sharedEdges=4 same=1 replay=startVertexNotInUnified starts=5 ends=5 lens= endHit= -> exception NCollection_IndexedDataMap::FindFromKey  exit=4
+elbow 10 11 sharedVerts=2 sharedEdges=1 same=0 replay=startVertexNotInUnified starts=5 ends=4 lens= endHit= -> exception NCollection_IndexedDataMap::FindFromKey  exit=4
+elbow 10 12 sharedVerts=1 sharedEdges=0 same=0 replay=startVertexNotInUnified starts=5 ends=4 lens= endHit= -> exception NCollection_IndexedDataMap::FindFromKey  exit=4
+elbow 10 13 sharedVerts=2 sharedEdges=1 same=0 replay=startVertexNotInUnified starts=5 ends=4 lens= endHit= -> exception NCollection_IndexedDataMap::FindFromKey  exit=4
+elbow 11 11 sharedVerts=4 sharedEdges=4 same=1 replay=ok starts=4 ends=4 lens=2,2,2,2 endHit=0000 -> done=0  exit=0
+elbow 11 12 sharedVerts=0 sharedEdges=0 same=0 replay=ok starts=4 ends=4 lens=3,3,1,1 endHit=1111 -> done=0  exit=0
+elbow 11 13 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=4 lens=3,3,1,1 endHit=0011 -> done=0  exit=0
+elbow 12 12 sharedVerts=4 sharedEdges=4 same=1 replay=ok starts=4 ends=4 lens=2,2,2,2 endHit=0000  exit=139
+elbow 12 13 sharedVerts=2 sharedEdges=1 same=0 replay=ok starts=4 ends=4 lens=3,1,1,3 endHit=0110  exit=139
+elbow 13 13 sharedVerts=4 sharedEdges=4 same=1 replay=ok starts=4 ends=4 lens=2,2,2,2 endHit=0000  exit=139
+capsule 0 0 sharedVerts=2 sharedEdges=3 same=1 replay=noOutgoingEdge starts=4 ends=2 lens= endHit= -> done=0  exit=0
+capsule 0 1 sharedVerts=1 sharedEdges=1 same=0 replay=noOutgoingEdge starts=4 ends=2 lens= endHit= -> done=0  exit=0
+capsule 0 2 sharedVerts=1 sharedEdges=1 same=0 replay=noOutgoingEdge starts=4 ends=1 lens= endHit= -> done=0  exit=0
+capsule 1 1 sharedVerts=2 sharedEdges=3 same=1 replay=noOutgoingEdge starts=4 ends=2 lens= endHit= -> done=0  exit=0
+capsule 1 2 sharedVerts=0 sharedEdges=0 same=0 replay=noOutgoingEdge starts=4 ends=1 lens= endHit= -> done=0  exit=0
+capsule 2 2 sharedVerts=1 sharedEdges=1 same=1 replay=ok starts=1 ends=1 lens=2 endHit=0 -> done=0  exit=0

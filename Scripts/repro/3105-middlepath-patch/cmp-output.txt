@@ -1,0 +1,5 @@
+Counter({('139', '0'): 409, ('4', '4'): 89, ('0', '0'): 61, ('139', '139'): 14})
+pairs that returned a path before and a different answer after: 0 []
+pairs whose answer is a path, before / after: 42 / 42
+no shared vertex, not the same face (196): before {'0': 43, '139': 116, '4': 37}, after {'0': 159, '4': 37}
+still aborting after (all share a vertex or are the same face, which the bridge refuses): 14 of which share no vertex: 0
