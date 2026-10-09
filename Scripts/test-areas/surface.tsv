@@ -26,7 +26,7 @@ Tests/OCCTSurfaceTests/BezierSurfaceResolutionTests.swift	Tests/OCCTSurfaceTests
 Tests/OCCTSurfaceTests/BezierSurfaceWeightTests.swift	Tests/OCCTSurfaceTests/BSplineAndBezier/BezierSurfaceWeightTests.swift	BSplineAndBezier	-	setPoleCol and setPoleRow with weights on a rational Bezier surface
 Tests/OCCTSurfaceTests/ConvertElementarySurfacesTests.swift	Tests/OCCTSurfaceTests/Conversion/ConvertElementarySurfacesTests.swift	Conversion	-	Convert_*ToBSplineSurface for cylinder patch, cone patch and full torus
 Tests/OCCTSurfaceTests/CurveOnSurfaceCheckTests.swift	Tests/OCCTSurfaceTests/FacesAndProjection/CurveOnSurfaceCheckTests.swift	FacesAndProjection	-	curve-on-surface consistency of box, sphere, cylinder and fused shapes
-Tests/OCCTSurfaceTests/DrawingSymbolsTests.swift	Tests/OCCTSurfaceTests/DrawingSymbolsTests.swift	(stays)	-	surface-finish and GD&T drawing symbols: tests DrawingAnnotation, no Geom surface involved; fits no area
+Tests/OCCTSurfaceTests/DrawingSymbolsTests.swift	Tests/OCCTDrawingTests/Symbols/DrawingSymbolsTests.swift	Symbols	-	surface-finish and GD&T symbols of DrawingAnnotation
 Tests/OCCTSurfaceTests/EvolvedSurfaceTests.swift	Tests/OCCTSurfaceTests/SweepsAndLofts/EvolvedSurfaceTests.swift	SweepsAndLofts	-	BRepFill evolved surface from a spine and a profile
 Tests/OCCTSurfaceTests/ExtendedRevolutionTests.swift	Tests/OCCTSurfaceTests/SweepsAndLofts/ExtendedRevolutionTests.swift	SweepsAndLofts	-	revolve a face fully or partially into a solid
 Tests/OCCTSurfaceTests/FaceFromSurfaceTests.swift	Tests/OCCTSurfaceTests/FacesAndProjection/FaceFromSurfaceTests.swift	FacesAndProjection	-	face from a plane or cylinder, trimmed or bounded
