@@ -212,7 +212,7 @@ the test's own comment, since the wrong intuition is an easy one to have again.
 
 ## One over-coverage finding, fixed
 
-`Tests/OCCTSurfaceTests/SurfaceGeometry/SurfaceAnalyticTests.swift`'s `sphereProperties()` comment said "Sphere is
+`Tests/OCCTSurfaceTests/Core/SurfaceAnalyticTests.swift`'s `sphereProperties()` comment said "Sphere is
 U-periodic (wraps around) and V-closed (pole to pole)". The pinned kernel's own header comment
 (`Geom_SphericalSurface.hxx`, via the cached `OCCT.xcframework` this build resolved) is explicit:
 

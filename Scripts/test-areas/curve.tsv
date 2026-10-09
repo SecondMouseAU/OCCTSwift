@@ -1,18 +1,18 @@
 # current_path	proposed_path	area	pending_prs	reason
 Tests/OCCTCurveTests/Adaptor3dIsoCurveTests.swift	Tests/OCCTCurveTests/Adaptors/Adaptor3dIsoCurveTests.swift	Adaptors	-	Adaptor3d_IsoCurve: u-iso and v-iso points and edges of a cylinder face
 Tests/OCCTCurveTests/AnalyticalConversionContractTests.swift	Tests/OCCTCurveTests/Conversion/AnalyticalConversionContractTests.swift	Conversion	-	analytical-to-BSpline conversion results do not alias their input (curves and surfaces)
-Tests/OCCTCurveTests/ApproxCurvilinearParameterTests.swift	Tests/OCCTCurveTests/CurveFitting/ApproxCurvilinearParameterTests.swift	CurveFitting	-	Approx_CurvilinearParameter arc-length reparameterisation of a circle edge
-Tests/OCCTCurveTests/ApproxSameParameterTests.swift	Tests/OCCTCurveTests/CurveFitting/ApproxSameParameterTests.swift	CurveFitting	-	Approx_SameParameter on a line and plane
+Tests/OCCTCurveTests/ApproxCurvilinearParameterTests.swift	Tests/OCCTCurveTests/Fitting/ApproxCurvilinearParameterTests.swift	Fitting	-	Approx_CurvilinearParameter arc-length reparameterisation of a circle edge
+Tests/OCCTCurveTests/ApproxSameParameterTests.swift	Tests/OCCTCurveTests/Fitting/ApproxSameParameterTests.swift	Fitting	-	Approx_SameParameter on a line and plane
 Tests/OCCTCurveTests/BRepAdaptorPCurveTests.swift	Tests/OCCTCurveTests/Adaptors/BRepAdaptorPCurveTests.swift	Adaptors	-	BRepAdaptor_Curve2d pcurve parameters and values on a box face
-Tests/OCCTCurveTests/BSplineApproxInterpContractTests.swift	Tests/OCCTCurveTests/CurveFitting/BSplineApproxInterpContractTests.swift	CurveFitting	-	BSplineApproxInterp documented no-op and advisory contracts
-Tests/OCCTCurveTests/BSplineApproxInterpTests.swift	Tests/OCCTCurveTests/CurveFitting/BSplineApproxInterpTests.swift	CurveFitting	-	BSplineApproxInterp constrained least-squares fitting
+Tests/OCCTCurveTests/BSplineApproxInterpContractTests.swift	Tests/OCCTCurveTests/Fitting/BSplineApproxInterpContractTests.swift	Fitting	-	BSplineApproxInterp documented no-op and advisory contracts
+Tests/OCCTCurveTests/BSplineApproxInterpTests.swift	Tests/OCCTCurveTests/Fitting/BSplineApproxInterpTests.swift	Fitting	-	BSplineApproxInterp constrained least-squares fitting
 Tests/OCCTCurveTests/BSplineCurve3DCompletionsV121Tests.swift	Tests/OCCTCurveTests/BSplineAndBezier/BSplineCurve3DCompletionsV121Tests.swift	BSplineAndBezier	-	setNotPeriodic, increaseMultiplicity, incrementMultiplicity on a BSpline curve
 Tests/OCCTCurveTests/BSplineCurve3DLocalDTests.swift	Tests/OCCTCurveTests/BSplineAndBezier/BSplineCurve3DLocalDTests.swift	BSplineAndBezier	-	localD0 to localDN evaluation on a span of a BSpline curve
 Tests/OCCTCurveTests/BSplineCurve3DManipulationTests.swift	Tests/OCCTCurveTests/BSplineAndBezier/BSplineCurve3DManipulationTests.swift	BSplineAndBezier	-	BSpline curve poles, knots, weights and degree queries and edits
 Tests/OCCTCurveTests/BSplineCurveCompletionsTests.swift	Tests/OCCTCurveTests/BSplineAndBezier/BSplineCurveCompletionsTests.swift	BSplineAndBezier	-	periodic normalisation and isG1 on a BSpline curve
 Tests/OCCTCurveTests/BSplineKnotSplittingTests.swift	Tests/OCCTCurveTests/BSplineAndBezier/BSplineKnotSplittingTests.swift	BSplineAndBezier	-	BSpline curve continuity breaks
 Tests/OCCTCurveTests/BSplineMutationsTests.swift	Tests/OCCTCurveTests/BSplineAndBezier/BSplineMutationsTests.swift	BSplineAndBezier	-	knot sequence, weights and maximum degree of curves, plus a surface
-Tests/OCCTCurveTests/BatchCurve3DTests.swift	Tests/OCCTCurveTests/CurveGeometry/BatchCurve3DTests.swift	CurveGeometry	-	evaluate a grid of parameters on a Curve3D and compare with single evaluation
+Tests/OCCTCurveTests/BatchCurve3DTests.swift	Tests/OCCTCurveTests/Curve3DCore/BatchCurve3DTests.swift	Curve3DCore	-	evaluate a grid of parameters on a Curve3D and compare with single evaluation
 Tests/OCCTCurveTests/BezierConversionTests.swift	Tests/OCCTCurveTests/Conversion/BezierConversionTests.swift	Conversion	-	convertedToBezier on cylinder, sphere and box shapes
 Tests/OCCTCurveTests/BezierCurve3DCompletionTests.swift	Tests/OCCTCurveTests/BSplineAndBezier/BezierCurve3DCompletionTests.swift	BSplineAndBezier	-	Bezier curve start and end points, bulk poles, weights
 Tests/OCCTCurveTests/BezierCurveManipulationTests.swift	Tests/OCCTCurveTests/BSplineAndBezier/BezierCurveManipulationTests.swift	BSplineAndBezier	-	Bezier curve degree, pole count, rational flag, getPole and setPole
@@ -35,49 +35,49 @@ Tests/OCCTCurveTests/Curve3DContinuityQueriesTests.swift	Tests/OCCTCurveTests/Co
 Tests/OCCTCurveTests/Curve3DContinuityTests.swift	Tests/OCCTCurveTests/Continuity/Curve3DContinuityTests.swift	Continuity	-	Curve3D.continuity of lines and BSplines
 Tests/OCCTCurveTests/Curve3DConversionTests.swift	Tests/OCCTCurveTests/Conversion/Curve3DConversionTests.swift	Conversion	-	Curve3D to BSpline, BSpline to Bezier segments, join segments
 Tests/OCCTCurveTests/Curve3DDrawTests.swift	Tests/OCCTCurveTests/Sampling/Curve3DDrawTests.swift	Sampling	-	drawAdaptive, uniform and deflection drawing of a Curve3D
-Tests/OCCTCurveTests/Curve3DEvalTests.swift	Tests/OCCTCurveTests/CurveGeometry/Curve3DEvalTests.swift	CurveGeometry	-	evalD0 to evalD3 on an interpolated BSpline curve
-Tests/OCCTCurveTests/Curve3DExtrasTests.swift	Tests/OCCTCurveTests/CurveGeometry/Curve3DExtrasTests.swift	CurveGeometry	-	reverse, copy and independence of a copied Curve3D
-Tests/OCCTCurveTests/Curve3DExtrasV112Tests.swift	Tests/OCCTCurveTests/CurveGeometry/Curve3DExtrasV112Tests.swift	CurveGeometry	-	curveType and nearestParameter on a line and a circle
-Tests/OCCTCurveTests/Curve3DInterpolateTangentToleranceParityTests.swift	Tests/OCCTCurveTests/CurveFitting/Curve3DInterpolateTangentToleranceParityTests.swift	CurveFitting	-	Curve3D.interpolate tangent tolerance is reachable and governs spacing
-Tests/OCCTCurveTests/Curve3DOperationsTests.swift	Tests/OCCTCurveTests/CurveGeometry/Curve3DOperationsTests.swift	CurveGeometry	-	trim, reverse, translate and other whole-curve operations
+Tests/OCCTCurveTests/Curve3DEvalTests.swift	Tests/OCCTCurveTests/Curve3DCore/Curve3DEvalTests.swift	Curve3DCore	-	evalD0 to evalD3 on an interpolated BSpline curve
+Tests/OCCTCurveTests/Curve3DExtrasTests.swift	Tests/OCCTCurveTests/Curve3DCore/Curve3DExtrasTests.swift	Curve3DCore	-	reverse, copy and independence of a copied Curve3D
+Tests/OCCTCurveTests/Curve3DExtrasV112Tests.swift	Tests/OCCTCurveTests/Curve3DCore/Curve3DExtrasV112Tests.swift	Curve3DCore	-	curveType and nearestParameter on a line and a circle
+Tests/OCCTCurveTests/Curve3DInterpolateTangentToleranceParityTests.swift	Tests/OCCTCurveTests/Fitting/Curve3DInterpolateTangentToleranceParityTests.swift	Fitting	-	Curve3D.interpolate tangent tolerance is reachable and governs spacing
+Tests/OCCTCurveTests/Curve3DOperationsTests.swift	Tests/OCCTCurveTests/Curve3DCore/Curve3DOperationsTests.swift	Curve3DCore	-	trim, reverse, translate and other whole-curve operations
 Tests/OCCTCurveTests/Curve3DPlaneProjectionTests.swift	Tests/OCCTCurveTests/Projection/Curve3DPlaneProjectionTests.swift	Projection	-	project a Curve3D onto a plane along a direction
-Tests/OCCTCurveTests/Curve3DPrimitiveTests.swift	Tests/OCCTCurveTests/CurveGeometry/Curve3DPrimitiveTests.swift	CurveGeometry	-	Curve3D line, segment and circle creation, degenerate input, queries
-Tests/OCCTCurveTests/Curve3DQueriesV123Tests.swift	Tests/OCCTCurveTests/CurveGeometry/Curve3DQueriesV123Tests.swift	CurveGeometry	-	period, first and last parameter of a Curve3D
-Tests/OCCTCurveTests/Curve3DTransformFamilyParityTests.swift	Tests/OCCTCurveTests/CurveGeometry/Curve3DTransformFamilyParityTests.swift	CurveGeometry	-	translate vs translated and the rest of the transform family agree
-Tests/OCCTCurveTests/CurveApproximationTests.swift	Tests/OCCTCurveTests/CurveFitting/CurveApproximationTests.swift	CurveFitting	-	approximate an edge as a BSpline and read the approximation info
-Tests/OCCTCurveTests/CurveDNTests.swift	Tests/OCCTCurveTests/CurveGeometry/CurveDNTests.swift	CurveGeometry	-	Nth derivative of Curve3D, Curve2D and a sphere surface (weak fit: the surface case)
-Tests/OCCTCurveTests/CurveInterpolationTests.swift	Tests/OCCTCurveTests/CurveFitting/CurveInterpolationTests.swift	CurveFitting	-	interpolate through 2 or more points, closed curves
-Tests/OCCTCurveTests/CurveIsBoundedTests.swift	Tests/OCCTCurveTests/CurveGeometry/CurveIsBoundedTests.swift	CurveGeometry	-	isBounded on lines and BSplines
+Tests/OCCTCurveTests/Curve3DPrimitiveTests.swift	Tests/OCCTCurveTests/Curve3DCore/Curve3DPrimitiveTests.swift	Curve3DCore	-	Curve3D line, segment and circle creation, degenerate input, queries
+Tests/OCCTCurveTests/Curve3DQueriesV123Tests.swift	Tests/OCCTCurveTests/Curve3DCore/Curve3DQueriesV123Tests.swift	Curve3DCore	-	period, first and last parameter of a Curve3D
+Tests/OCCTCurveTests/Curve3DTransformFamilyParityTests.swift	Tests/OCCTCurveTests/Curve3DCore/Curve3DTransformFamilyParityTests.swift	Curve3DCore	-	translate vs translated and the rest of the transform family agree
+Tests/OCCTCurveTests/CurveApproximationTests.swift	Tests/OCCTCurveTests/Fitting/CurveApproximationTests.swift	Fitting	-	approximate an edge as a BSpline and read the approximation info
+Tests/OCCTCurveTests/CurveDNTests.swift	Tests/OCCTCurveTests/Curve3DCore/CurveDNTests.swift	Curve3DCore	-	Nth derivative of Curve3D, Curve2D and a sphere surface (weak fit: the surface case)
+Tests/OCCTCurveTests/CurveInterpolationTests.swift	Tests/OCCTCurveTests/Fitting/CurveInterpolationTests.swift	Fitting	-	interpolate through 2 or more points, closed curves
+Tests/OCCTCurveTests/CurveIsBoundedTests.swift	Tests/OCCTCurveTests/Curve3DCore/CurveIsBoundedTests.swift	Curve3DCore	-	isBounded on lines and BSplines
 Tests/OCCTCurveTests/CurveJoinTests.swift	Tests/OCCTCurveTests/Conversion/CurveJoinTests.swift	Conversion	-	GeomConvert_CompCurveToBSplineCurve joins segments
 Tests/OCCTCurveTests/CurveLengthTests.swift	Tests/OCCTCurveTests/ArcLength/CurveLengthTests.swift	ArcLength	-	Curve3D and Curve2D arc length and closest parameter
-Tests/OCCTCurveTests/CurvePlanarityTests.swift	Tests/OCCTCurveTests/CurveGeometry/CurvePlanarityTests.swift	CurveGeometry	-	planarity check of a Curve3D
+Tests/OCCTCurveTests/CurvePlanarityTests.swift	Tests/OCCTCurveTests/Curve3DCore/CurvePlanarityTests.swift	Curve3DCore	-	planarity check of a Curve3D
 Tests/OCCTCurveTests/CurveSplitConcatTests.swift	Tests/OCCTCurveTests/Conversion/CurveSplitConcatTests.swift	Conversion	-	splitAtContinuity and concatenateG1
 Tests/OCCTCurveTests/CurveTestFixtures.swift	Tests/OCCTCurveTests/CurveTestFixtures.swift	(stays)	-	shared helpers (trimmedSegment, bspline, referenceLength, ...) used by several areas; no tests
 Tests/OCCTCurveTests/CurveToAnaCurveTests.swift	Tests/OCCTCurveTests/Conversion/CurveToAnaCurveTests.swift	Conversion	-	GeomConvert_CurveToAnaCurve recognises a line and a circle from a BSpline
 Tests/OCCTCurveTests/CuttingPlaneLineTests.swift	Tests/OCCTCurveTests/CuttingPlaneLineTests.swift	(stays)	-	DrawingAnnotation.cuttingPlaneLine; no curve involved, belongs in OCCTDrawingTests
-Tests/OCCTCurveTests/EdgeCurve3DTests.swift	Tests/OCCTCurveTests/CurveGeometry/EdgeCurve3DTests.swift	CurveGeometry	-	Edge.curve3D accessor and its circleProperties
+Tests/OCCTCurveTests/EdgeCurve3DTests.swift	Tests/OCCTCurveTests/Curve3DCore/EdgeCurve3DTests.swift	Curve3DCore	-	Edge.curve3D accessor and its circleProperties
 Tests/OCCTCurveTests/EdgePolylineConsistencyTests.swift	Tests/OCCTCurveTests/Sampling/EdgePolylineConsistencyTests.swift	Sampling	-	edge polylines of lofted and extruded shapes match the edges (weak fit)
 Tests/OCCTCurveTests/EditorViewV162Tests.swift	Tests/OCCTCurveTests/EditorViewV162Tests.swift	(stays)	-	EditorView regularity, PCurve and triangulation setters; belongs in OCCTDrawingTests with the other EditorView suites
 Tests/OCCTCurveTests/EllipseArcTests.swift	Tests/OCCTCurveTests/Conics/EllipseArcTests.swift	Conics	-	arc of an ellipse from angles or points
-Tests/OCCTCurveTests/FairCurveBattenTests.swift	Tests/OCCTCurveTests/CurveFitting/FairCurveBattenTests.swift	CurveFitting	-	FairCurve_Batten
-Tests/OCCTCurveTests/FairCurveMinimalVariationTests.swift	Tests/OCCTCurveTests/CurveFitting/FairCurveMinimalVariationTests.swift	CurveFitting	-	FairCurve_MinimalVariation
+Tests/OCCTCurveTests/FairCurveBattenTests.swift	Tests/OCCTCurveTests/Fitting/FairCurveBattenTests.swift	Fitting	-	FairCurve_Batten
+Tests/OCCTCurveTests/FairCurveMinimalVariationTests.swift	Tests/OCCTCurveTests/Fitting/FairCurveMinimalVariationTests.swift	Fitting	-	FairCurve_MinimalVariation
 Tests/OCCTCurveTests/GCPntsExpansionTests.swift	Tests/OCCTCurveTests/Sampling/GCPntsExpansionTests.swift	Sampling	-	GCPnts expansion of curves into points
 Tests/OCCTCurveTests/GCPntsQuasiUniformTests.swift	Tests/OCCTCurveTests/Sampling/GCPntsQuasiUniformTests.swift	Sampling	-	GCPnts_QuasiUniformAbscissa on an edge
 Tests/OCCTCurveTests/GCPntsSamplerBoundsTests.swift	Tests/OCCTCurveTests/Sampling/GCPntsSamplerBoundsTests.swift	Sampling	-	GCPnts sampler counts are bounded and ordered
 Tests/OCCTCurveTests/GCPntsTangentialDeflectionTests.swift	Tests/OCCTCurveTests/Sampling/GCPntsTangentialDeflectionTests.swift	Sampling	-	GCPnts_TangentialDeflection on an edge
 Tests/OCCTCurveTests/GeomConvertApproxCurveTests.swift	Tests/OCCTCurveTests/Conversion/GeomConvertApproxCurveTests.swift	Conversion	-	GeomConvert_ApproxCurve of a circle and a line
 Tests/OCCTCurveTests/GeomConvertUtilTests.swift	Tests/OCCTCurveTests/Conversion/GeomConvertUtilTests.swift	Conversion	-	GeomConvert split at continuity and rejoin
-Tests/OCCTCurveTests/GeomOffsetCurveTests.swift	Tests/OCCTCurveTests/CurveGeometry/GeomOffsetCurveTests.swift	CurveGeometry	-	Geom_OffsetCurve
-Tests/OCCTCurveTests/GeomToolsCurveSetTests.swift	Tests/OCCTCurveTests/CurveGeometry/GeomToolsCurveSetTests.swift	CurveGeometry	-	GeomTools_CurveSet serialisation of curves
-Tests/OCCTCurveTests/GeomTrimmedCurveTests.swift	Tests/OCCTCurveTests/CurveGeometry/GeomTrimmedCurveTests.swift	CurveGeometry	-	Geom_TrimmedCurve
-Tests/OCCTCurveTests/HelixGeomBuildTests.swift	Tests/OCCTCurveTests/CurveGeometry/HelixGeomBuildTests.swift	CurveGeometry	-	HelixGeom build
-Tests/OCCTCurveTests/HelixTests.swift	Tests/OCCTCurveTests/CurveGeometry/HelixTests.swift	CurveGeometry	-	Curve3D helix creation, origin, axis and handedness
+Tests/OCCTCurveTests/GeomOffsetCurveTests.swift	Tests/OCCTCurveTests/Curve3DCore/GeomOffsetCurveTests.swift	Curve3DCore	-	Geom_OffsetCurve
+Tests/OCCTCurveTests/GeomToolsCurveSetTests.swift	Tests/OCCTCurveTests/Curve3DCore/GeomToolsCurveSetTests.swift	Curve3DCore	-	GeomTools_CurveSet serialisation of curves
+Tests/OCCTCurveTests/GeomTrimmedCurveTests.swift	Tests/OCCTCurveTests/Curve3DCore/GeomTrimmedCurveTests.swift	Curve3DCore	-	Geom_TrimmedCurve
+Tests/OCCTCurveTests/HelixGeomBuildTests.swift	Tests/OCCTCurveTests/Curve3DCore/HelixGeomBuildTests.swift	Curve3DCore	-	HelixGeom build
+Tests/OCCTCurveTests/HelixTests.swift	Tests/OCCTCurveTests/Curve3DCore/HelixTests.swift	Curve3DCore	-	Curve3D helix creation, origin, axis and handedness
 Tests/OCCTCurveTests/IntegrationGeodesicPathApproximationTests.swift	Tests/OCCTCurveTests/IntegrationGeodesicPathApproximationTests.swift	(stays)	-	Integration suite measuring a path on a sphere; belongs in OCCTIntegrationTests
 Tests/OCCTCurveTests/IntegrationGoldenShapeBaselineTests.swift	Tests/OCCTCurveTests/IntegrationGoldenShapeBaselineTests.swift	(stays)	-	Integration suite on box measurements; belongs in OCCTIntegrationTests
 Tests/OCCTCurveTests/IntegrationInvoluteGearApproximationTests.swift	Tests/OCCTCurveTests/IntegrationInvoluteGearApproximationTests.swift	(stays)	-	Integration suite on a gear built from a cylinder and box; belongs in OCCTIntegrationTests
 Tests/OCCTCurveTests/Issue1020ExtremaBoundsTests.swift	Tests/OCCTCurveTests/Projection/Issue1020ExtremaBoundsTests.swift	Projection	-	unbounded elementary curves are not clipped when finding extrema
 Tests/OCCTCurveTests/Issue1399LawKnotSplitFactoryReachTests.swift	Tests/OCCTCurveTests/Laws/Issue1399LawKnotSplitFactoryReachTests.swift	Laws	-	every Law_BSpFunc-derived factory reports its end knots
-Tests/OCCTCurveTests/Issue1476CurveTypeOtherCurveFallbackTests.swift	Tests/OCCTCurveTests/CurveGeometry/Issue1476CurveTypeOtherCurveFallbackTests.swift	CurveGeometry	-	Curve3D curve type for a null handle and for a line
+Tests/OCCTCurveTests/Issue1476CurveTypeOtherCurveFallbackTests.swift	Tests/OCCTCurveTests/Curve3DCore/Issue1476CurveTypeOtherCurveFallbackTests.swift	Curve3DCore	-	Curve3D curve type for a null handle and for a line
 Tests/OCCTCurveTests/Issue1513UniformDeflectionNullGuardTests.swift	Tests/OCCTCurveTests/Sampling/Issue1513UniformDeflectionNullGuardTests.swift	Sampling	-	CPnts_UniformDeflection on a nullified shape returns nil
 Tests/OCCTCurveTests/Issue1675DocSnippetArcTests.swift	Tests/OCCTCurveTests/Conics/Issue1675DocSnippetArcTests.swift	Conics	-	the arc the doc snippets construct, its curvature and centre of curvature
 Tests/OCCTCurveTests/Issue211WireCurveTests.swift	Tests/OCCTCurveTests/ArcLength/Issue211WireCurveTests.swift	ArcLength	-	WireCurve arc-length adaptor across edges
@@ -91,10 +91,10 @@ Tests/OCCTCurveTests/Issue479SampleCountBoundTests.swift	Tests/OCCTCurveTests/Sa
 Tests/OCCTCurveTests/Issue480LawKnotSplitContinuityTests.swift	Tests/OCCTCurveTests/Laws/Issue480LawKnotSplitContinuityTests.swift	Laws	-	Law knot-splitting continuity range
 Tests/OCCTCurveTests/Issue481LawKnotSplittingTruncationTests.swift	Tests/OCCTCurveTests/Laws/Issue481LawKnotSplittingTruncationTests.swift	Laws	-	LawFunction knot splitting past the old 100-entry buffer
 Tests/OCCTCurveTests/Issue485Curve3DContinuityTests.swift	Tests/OCCTCurveTests/Continuity/Issue485Curve3DContinuityTests.swift	Continuity	-	measured continuity class from knot multiplicity
-Tests/OCCTCurveTests/Issue486Curve3DBatchTests.swift	Tests/OCCTCurveTests/CurveGeometry/Issue486Curve3DBatchTests.swift	CurveGeometry	-	Curve3D batch-evaluation spellings agree on empty input
+Tests/OCCTCurveTests/Issue486Curve3DBatchTests.swift	Tests/OCCTCurveTests/Curve3DCore/Issue486Curve3DBatchTests.swift	Curve3DCore	-	Curve3D batch-evaluation spellings agree on empty input
 Tests/OCCTCurveTests/Issue490ContinuityDecoderTests.swift	Tests/OCCTCurveTests/Continuity/Issue490ContinuityDecoderTests.swift	Continuity	-	continuity vocabulary domains across the curve families
 Tests/OCCTCurveTests/Issue491Curve3DApproxParityTests.swift	Tests/OCCTCurveTests/Conversion/Issue491Curve3DApproxParityTests.swift	Conversion	-	Curve3D.approximated vs approxWithDetails over GeomConvert_ApproxCurve
-Tests/OCCTCurveTests/Issue493InterpolatePeriodicParityTests.swift	Tests/OCCTCurveTests/CurveFitting/Issue493InterpolatePeriodicParityTests.swift	CurveFitting	-	the two periodic interpolation entry points agree
+Tests/OCCTCurveTests/Issue493InterpolatePeriodicParityTests.swift	Tests/OCCTCurveTests/Fitting/Issue493InterpolatePeriodicParityTests.swift	Fitting	-	the two periodic interpolation entry points agree
 Tests/OCCTCurveTests/Issue495AnalysisOrderTests.swift	Tests/OCCTCurveTests/Continuity/Issue495AnalysisOrderTests.swift	Continuity	-	analysis order selects which continuity branch is measured
 Tests/OCCTCurveTests/Issue500Curve3DNearestParameterTests.swift	Tests/OCCTCurveTests/Projection/Issue500Curve3DNearestParameterTests.swift	Projection	-	nearest-parameter entry points agree
 Tests/OCCTCurveTests/Issue506ArcLengthBridgeContractTests.swift	Tests/OCCTCurveTests/ArcLength/Issue506ArcLengthBridgeContractTests.swift	ArcLength	-	ranged arc-length contract: reversed, clamped and outside ranges
@@ -108,21 +108,21 @@ Tests/OCCTCurveTests/Issue615NearestParameterRangeTests.swift	Tests/OCCTCurveTes
 Tests/OCCTCurveTests/Issue619ContinuityEncodingTests.swift	Tests/OCCTCurveTests/Continuity/Issue619ContinuityEncodingTests.swift	Continuity	-	measured continuity encoding (CN as ordinal 6)
 Tests/OCCTCurveTests/Issue636ExtremaParallelCurvesTests.swift	Tests/OCCTCurveTests/Projection/Issue636ExtremaParallelCurvesTests.swift	Projection	-	Curve3D.extrema on parallel curves returns empty
 Tests/OCCTCurveTests/Issue853UniformAbscissaDistanceCeilingTests.swift	Tests/OCCTCurveTests/Sampling/Issue853UniformAbscissaDistanceCeilingTests.swift	Sampling	-	uniformAbscissa(distance:) point-count ceiling
-Tests/OCCTCurveTests/Issue965Curve3DPropertyLifetimeTests.swift	Tests/OCCTCurveTests/CurveGeometry/Issue965Curve3DPropertyLifetimeTests.swift	CurveGeometry	-	Curve3D *Properties views keep their parent alive
-Tests/OCCTCurveTests/Issue995BuildTrsf3DTests.swift	Tests/OCCTCurveTests/CurveGeometry/Issue995BuildTrsf3DTests.swift	CurveGeometry	-	one gp_Trsf builder behind Curve3D and Surface transforms (weak fit: Surface is the secondary case)
+Tests/OCCTCurveTests/Issue965Curve3DPropertyLifetimeTests.swift	Tests/OCCTCurveTests/Curve3DCore/Issue965Curve3DPropertyLifetimeTests.swift	Curve3DCore	-	Curve3D *Properties views keep their parent alive
+Tests/OCCTCurveTests/Issue995BuildTrsf3DTests.swift	Tests/OCCTCurveTests/Curve3DCore/Issue995BuildTrsf3DTests.swift	Curve3DCore	-	one gp_Trsf builder behind Curve3D and Surface transforms (weak fit: Surface is the secondary case)
 Tests/OCCTCurveTests/LawCompositeTests.swift	Tests/OCCTCurveTests/Laws/LawCompositeTests.swift	Laws	-	Law_Composite
 Tests/OCCTCurveTests/LawFunctionTests.swift	Tests/OCCTCurveTests/Laws/LawFunctionTests.swift	Laws	-	constant, linear and other Law_Function laws
 Tests/OCCTCurveTests/LawInterpolateTests.swift	Tests/OCCTCurveTests/Laws/LawInterpolateTests.swift	Laws	-	Law_Interpolate
 Tests/OCCTCurveTests/LocOpeCurveShapeIntersectorTests.swift	Tests/OCCTCurveTests/Projection/LocOpeCurveShapeIntersectorTests.swift	Projection	-	LocOpe_CurveShapeIntersector, a line against a box (weak fit)
 Tests/OCCTCurveTests/LocalAnalysisCurveContinuityTests.swift	Tests/OCCTCurveTests/Continuity/LocalAnalysisCurveContinuityTests.swift	Continuity	-	LocalAnalysis_CurveContinuity
-Tests/OCCTCurveTests/OffsetCurveBasisTests.swift	Tests/OCCTCurveTests/CurveGeometry/OffsetCurveBasisTests.swift	CurveGeometry	-	Geom_OffsetCurve basis curve
-Tests/OCCTCurveTests/PointsToBSplineExpansionTests.swift	Tests/OCCTCurveTests/CurveFitting/PointsToBSplineExpansionTests.swift	CurveFitting	-	GeomAPI_PointsToBSpline expansion
+Tests/OCCTCurveTests/OffsetCurveBasisTests.swift	Tests/OCCTCurveTests/Curve3DCore/OffsetCurveBasisTests.swift	Curve3DCore	-	Geom_OffsetCurve basis curve
+Tests/OCCTCurveTests/PointsToBSplineExpansionTests.swift	Tests/OCCTCurveTests/Fitting/PointsToBSplineExpansionTests.swift	Fitting	-	GeomAPI_PointsToBSpline expansion
 Tests/OCCTCurveTests/PolylinePickTests.swift	Tests/OCCTCurveTests/PolylinePickTests.swift	(stays)	-	polygon picking through a Selector and Camera; belongs with the Selector tests in OCCTTopologyTests
 Tests/OCCTCurveTests/ProjectionOnCurveTests.swift	Tests/OCCTCurveTests/Projection/ProjectionOnCurveTests.swift	Projection	-	GeomAPI_ProjectPointOnCurve multi-result and parameter access
 Tests/OCCTCurveTests/QuasiUniformAbscissaTests.swift	Tests/OCCTCurveTests/Sampling/QuasiUniformAbscissaTests.swift	Sampling	-	quasi-uniform abscissa sampling
 Tests/OCCTCurveTests/QuasiUniformDeflectionTests.swift	Tests/OCCTCurveTests/Sampling/QuasiUniformDeflectionTests.swift	Sampling	-	quasi-uniform deflection sampling
 Tests/OCCTCurveTests/SketchArcCircleTests.swift	Tests/OCCTCurveTests/SketchArcCircleTests.swift	(stays)	-	SketchElement arc and circle tessellation; belongs with the Sketch tests in OCCTMiscTests
 Tests/OCCTCurveTests/SurfToAnaSurfTests.swift	Tests/OCCTCurveTests/SurfToAnaSurfTests.swift	(stays)	-	GeomConvert_SurfToAnaSurf recognises a plane from a BSpline surface; no curve involved, belongs in OCCTSurfaceTests
-Tests/OCCTCurveTests/TopTransCurveTransitionTests.swift	Tests/OCCTCurveTests/CurveGeometry/TopTransCurveTransitionTests.swift	CurveGeometry	-	TopTrans_CurveTransition via Shape.curveTransition (weak fit)
+Tests/OCCTCurveTests/TopTransCurveTransitionTests.swift	Tests/OCCTCurveTests/Curve3DCore/TopTransCurveTransitionTests.swift	Curve3DCore	-	TopTrans_CurveTransition via Shape.curveTransition (weak fit)
 Tests/OCCTCurveTests/UniformAbscissaTests.swift	Tests/OCCTCurveTests/Sampling/UniformAbscissaTests.swift	Sampling	-	GCPnts_UniformAbscissa
 Tests/OCCTCurveTests/WireEdgePolylineTests.swift	Tests/OCCTCurveTests/Sampling/WireEdgePolylineTests.swift	Sampling	-	Wire.edgePolyline returns the points of each edge (weak fit)
