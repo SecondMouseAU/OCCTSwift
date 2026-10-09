@@ -183,3 +183,4 @@ Tests/OCCTModelingTests/VariableRadiusFilletTests.swift	Tests/OCCTModelingTests/
 Tests/OCCTModelingTests/VariableSectionSweepTests.swift	Tests/OCCTModelingTests/Sweeps/VariableSectionSweepTests.swift	Sweeps	-	pipe shell with constant and linear laws
 Tests/OCCTModelingTests/WedgeTests.swift	Tests/OCCTModelingTests/Construction/WedgeTests.swift	Construction	-	wedge primitive
 Tests/OCCTModelingTests/WireJoinOffsetTests.swift	Tests/OCCTModelingTests/Offsets/WireJoinOffsetTests.swift	Offsets	-	join wires and offset a wire
+Tests/OCCTModelingTests/FeatureReconstructorRevolveSolidTests.swift	Tests/OCCTModelingTests/FeatureReconstruction/FeatureReconstructorRevolveSolidTests.swift	FeatureReconstruction	-	FeatureReconstructor revolve builds a Solid and a hole cuts it (#3139)

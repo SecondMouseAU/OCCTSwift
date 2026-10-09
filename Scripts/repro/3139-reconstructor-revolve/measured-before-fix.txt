@@ -1,0 +1,23 @@
+◇ Suite "Issue3139 FeatureReconstructor revolve is a solid" started.
+◇ Test "Revolve then hole cuts the bore: pi (R^2 - r^2) h" started.
+◇ Test "A partial revolve of a closed profile is a Solid too" started.
+◇ Test "Control: extrude then hole gives the same bore volume on a square block" started.
+◇ Test "A 360 degree revolve is a single Solid with the cylinder's volume" started.
+◇ Test "A hole on a body with no solid is skipped, not reported fulfilled" started.
+✘ Test "A partial revolve of a closed profile is a Solid too" recorded an issue at FeatureReconstructorRevolveSolidTests.swift:89:9: Expectation failed: shape.subShapeCount(ofType: .solid) == 1
+✘ Test "A 360 degree revolve is a single Solid with the cylinder's volume" recorded an issue at FeatureReconstructorRevolveSolidTests.swift:36:9: Expectation failed: shape.shapeType == .solid
+✘ Test "A 360 degree revolve is a single Solid with the cylinder's volume" recorded an issue at FeatureReconstructorRevolveSolidTests.swift:37:9: Expectation failed: shape.subShapeCount(ofType: .solid) == 1
+✘ Test "A partial revolve of a closed profile is a Solid too" recorded an issue at FeatureReconstructorRevolveSolidTests.swift:94:25: Issue recorded
+✘ Test "A partial revolve of a closed profile is a Solid too" failed after 0.016 seconds with 2 issues.
+✘ Test "A 360 degree revolve is a single Solid with the cylinder's volume" failed after 0.017 seconds with 2 issues.
+✘ Test "Revolve then hole cuts the bore: pi (R^2 - r^2) h" recorded an issue at FeatureReconstructorRevolveSolidTests.swift:53:9: Expectation failed: shape.shapeType == .solid
+✘ Test "Revolve then hole cuts the bore: pi (R^2 - r^2) h" recorded an issue at FeatureReconstructorRevolveSolidTests.swift:54:9: Expectation failed: shape.subShapeCount(ofType: .solid) == 1
+✘ Test "Revolve then hole cuts the bore: pi (R^2 - r^2) h" recorded an issue at FeatureReconstructorRevolveSolidTests.swift:56:9: Expectation failed: shape.subShapeCount(ofType: .face) == 4
+✘ Test "Control: extrude then hole gives the same bore volume on a square block" recorded an issue at FeatureReconstructorRevolveSolidTests.swift:71:9: Expectation failed: shape.shapeType == .solid
+✘ Test "Revolve then hole cuts the bore: pi (R^2 - r^2) h" recorded an issue at FeatureReconstructorRevolveSolidTests.swift:63:25: Issue recorded
+✘ Test "Revolve then hole cuts the bore: pi (R^2 - r^2) h" failed after 0.030 seconds with 4 issues.
+✘ Test "Control: extrude then hole gives the same bore volume on a square block" failed after 0.030 seconds with 1 issue.
+✘ Test "A hole on a body with no solid is skipped, not reported fulfilled" recorded an issue at FeatureReconstructorRevolveSolidTests.swift:111:9: Expectation failed: !result.fulfilled.contains("bore")
+✘ Test "A hole on a body with no solid is skipped, not reported fulfilled" recorded an issue at FeatureReconstructorRevolveSolidTests.swift:112:9: Expectation failed: result.skipped.contains { $0.featureID == "bore" }
+✘ Test "A hole on a body with no solid is skipped, not reported fulfilled" failed after 0.030 seconds with 2 issues.
+✘ Suite "Issue3139 FeatureReconstructor revolve is a solid" failed after 0.031 seconds with 11 issues.
