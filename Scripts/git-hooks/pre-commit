@@ -89,6 +89,9 @@ run "check-docs-existence.py"                 Scripts/check-docs-existence.py
 # from being written.
 run "check-borrowed-handles.py --self-test"   Scripts/check-borrowed-handles.py --self-test
 run "check-borrowed-handles.py"               Scripts/check-borrowed-handles.py
+# #3130. A `.handle` read off a subscript or a call result loses its owner in an optimised build.
+run "check-borrowed-handle-temporaries.py --self-test" Scripts/check-borrowed-handle-temporaries.py --self-test
+run "check-borrowed-handle-temporaries.py"             Scripts/check-borrowed-handle-temporaries.py
 run "derive-bridge-header-split.py --self-test" Scripts/derive-bridge-header-split.py --self-test
 run "derive-bridge-header-split.py --verify"    Scripts/derive-bridge-header-split.py --verify
 # #996. Only --verify, matching CI: --reverify-headers needs Libraries/OCCT.xcframework and reports
