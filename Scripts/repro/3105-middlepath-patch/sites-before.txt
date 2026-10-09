@@ -1,0 +1,6 @@
+line 580: 45 pairs, e.g. ['tube 1 3', 'tube 2 3', 'hex 0 4', 'hex 1 5']
+line 584: 46 pairs, e.g. ['hex 0 2', 'hex 1 3', 'hex 2 4', 'hex 3 5']
+line 664: 5 pairs, e.g. ['ushape 0 2', 'ushape 0 3', 'ushape 0 4', 'ushape 0 5']
+line 668: 15 pairs, e.g. ['lshape 0 2', 'lshape 0 3', 'lshape 0 4', 'lshape 2 4']
+line 672: 1 pairs, e.g. ['ushape 4 7']
+line 706: 4 pairs, e.g. ['octa 0 6', 'octa 1 7', 'octa 2 4', 'octa 3 5']

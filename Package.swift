@@ -47,7 +47,7 @@ let useLocalXCFramework: Bool = {
         atPath: occtPackageDir + "/Libraries/OCCT.xcframework/Info.plist")
 }()
 
-// OCCT V8.0.1 plus the forty-four carried patches are documented in Scripts/patches/README.md
+// OCCT V8.0.1 plus the forty-five carried patches are documented in Scripts/patches/README.md
 // (patch list, verification status, and CI coverage gaps for maintainers).
 let occtTarget: Target =
     isWASI
@@ -271,8 +271,8 @@ let occtTarget: Target =
         // which is what they were built to do; if a later asset repeats either stray the finding comes
         // back rather than staying suppressed.
         //
-        // The asset holds forty-four and Scripts/patches/ holds forty-four, so no patch is untested
-        // for want of a build, and the rows for 0053 through 0057 below are history in the way the
+        // The asset holds forty-four and Scripts/patches/ holds forty-five, so 0058 is the one
+        // untested patch, and the rows for 0053 through 0057 below are history in the way the
         // rows for 0044 through 0052 became at v4.0.0-kernel.4.
         // If you rebuild and the checksum does not match the value below, that is a real difference to
         // investigate rather than an expected one, which is the opposite of what this paragraph said
@@ -317,13 +317,15 @@ let occtTarget: Target =
         // wrong: InitializeMissingParameters is also the REPAIR that re-sets DirectFaces on an actor a
         // STEPCAFControl_Reader has left with empty OperationsFlags, which is #280's exact mechanism.
         // kernel-integration.yml caught it on main. See Scripts/patches/README.md's retired 0035 entry.
-        // Scripts/patches/ holds forty-five patches and the pinned asset holds forty-four of them,
-        // enumerated above. `ls Scripts/patches/*.patch | wc -l` answers 45 against a list of 44.
-        // The pinned asset lacks one of them: 0059 (the candidate that builds two fillets that meet
-        // exactly, #3207), which no CI job exercises until a rebuild pins it. The v4.0.0-kernel.4
-        // rebuild closed the divergence that 0044 had opened and that 0045 through 0052 widened,
-        // and the v4.0.0-kernel.5 rebuild closed the one that 0053 through 0057 opened.
-        // The rows that follow are kept as the record of what each patch does and which bridge
+        // Scripts/patches/ holds forty-six patches and the pinned asset holds forty-four of them,
+        // enumerated above. `ls Scripts/patches/*.patch | wc -l` answers 46 against a list of 44.
+        // The pinned asset lacks two of them, and this is the written divergence: 0058 and 0059
+        // (the candidate that builds two fillets that meet exactly, #3207), which no CI job
+        // exercises until a rebuild pins them. The v4.0.0-kernel.4 rebuild closed the divergence
+        // that 0044 had opened and that 0045 through 0052 widened, and the v4.0.0-kernel.5
+        // rebuild closed the one that 0053 through 0057 opened, so 0058 and 0059 are the rows
+        // about patches the asset does not carry. The other
+        // rows that follow are kept as the record of what each patch does and which bridge
         // mitigation it does or does not retire:
         //
         //   0044  Extrema_ExtSS::Points / Extrema_ExtCS::Points bound against the point       #2840
@@ -474,6 +476,18 @@ let occtTarget: Target =
         //         kernel-integration.yml, gated on OCCTSWIFT_LOCAL=1, until the repin that pinned
         //         this. 96 of 96 probe checks fail before and none after, by override-link in
         //         Scripts/repro/3091/.
+        //
+        //   0058  BRepOffsetAPI_MiddlePath::Build casts a path that has already reached a
+        //         vertex to an edge, reads past a path, hands a null face to
+        //         BRep_Tool::CurveOnSurface and never ends for a sweep that cannot reach the end
+        //         section, for a pair of faces that are not the ends of a pipe. Carried and NOT
+        //         built: it carries the vertex forward, as the first pad does, and bounds the
+        //         levels. 423 of 573 pairs over 16 solids abort the process on the shipped archive
+        //         and none patched; 81 of the 116 that share no vertex and aborted answer a
+        //         validated path, 35 answer not done, and the 42 that answered answer the same,
+        //         by override-link in Scripts/repro/3105-middlepath-patch/ (#3105).
+        //         Issue3105MiddlePathKernelTests runs it in kernel-integration.yml, gated on
+        //         OCCTSWIFT_LOCAL=1.
         //
         // 0043 (#2827, BRepGProp_Gauss keeps the by-plane mass) was the one outstanding before it,
         // and it went the other way, which is the comparison worth keeping beside 0044: carried
