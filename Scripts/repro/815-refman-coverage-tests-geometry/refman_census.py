@@ -65,7 +65,7 @@ fails.md`) by breaking the Swift wrapper, confirming the new test alone failed, 
 See the README for the full evidence per finding. `KNOWN_FIXED_MEMBERS` below pins them: the
 regression check fails if any reverts to `tested_anywhere=False`.
 
-ONE OVER-COVERAGE FINDING: `Tests/OCCTSurfaceTests/SurfaceGeometry/SurfaceAnalyticTests.swift`'s `sphereProperties()`
+ONE OVER-COVERAGE FINDING: `Tests/OCCTSurfaceTests/Core/SurfaceAnalyticTests.swift`'s `sphereProperties()`
 said "Sphere is U-periodic (wraps around) and V-closed (pole to pole)". The pinned kernel's own
 header comment on `Geom_SphericalSurface::IsVClosed()` says "Returns False.": the poles are
 DEGENERATE points, not a matching pair of points at the two ends of the V range, which is what
@@ -125,7 +125,7 @@ KNOWN_FIXED_MEMBERS: list[tuple[str, str]] = [
 # The one over-coverage finding: the WRONG text `sphereProperties()` used to carry. Checked for
 # absence in the working tree, same idiom as #808/#810/#811's `KNOWN_OVER_FINDINGS`.
 OVER_FINDINGS: list[tuple[str, str]] = [
-    ("Tests/OCCTSurfaceTests/SurfaceGeometry/SurfaceAnalyticTests.swift",
+    ("Tests/OCCTSurfaceTests/Core/SurfaceAnalyticTests.swift",
      "Sphere is U-periodic (wraps around) and V-closed (pole to pole)"),
 ]
 
@@ -320,7 +320,7 @@ def run_self_test() -> int:
     import tempfile
     global ROOT
     with tempfile.TemporaryDirectory() as td:
-        rel = "Tests/OCCTSurfaceTests/SurfaceGeometry/SurfaceAnalyticTests.swift"
+        rel = "Tests/OCCTSurfaceTests/Core/SurfaceAnalyticTests.swift"
         full = os.path.join(td, rel)
         os.makedirs(os.path.dirname(full), exist_ok=True)
         with open(full, "w") as fh:
