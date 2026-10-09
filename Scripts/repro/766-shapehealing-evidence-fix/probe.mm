@@ -503,7 +503,7 @@ int main()
 
   // ---- KEYS: Issue 318, the sewn shape with degenerate BSpline-pcurve edges ----
   {
-    std::ifstream in("Tests/OCCTShapeHealingTests/Issue318DegenerateCurveOnSurfaceEdgeTests.swift");
+    std::ifstream in("Tests/OCCTShapeHealingTests/ShapeAnalysis/Issue318DegenerateCurveOnSurfaceEdgeTests.swift");
     std::string   all((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
     size_t        a = all.find("static let fixtureBREP = \"\"\"\n");
     size_t        z = all.find("\"\"\"", a + 30);

@@ -51,7 +51,7 @@ This is #726's own named seed instance. Verified independently before acting:
   (`Shape+Analysis.swift`'s `analyze(tolerance:)` construction, and
   `ShapeAnalysisResult.totalProblems`'s sum), and by two test files
   (`Tests/OCCTShapeHealingTests/OCCTShapeHealingTests.swift`,
-  `Tests/OCCTShapeHealingTests/Issue702SolidDemotionTests.swift`), both of which only re-derive
+  `Tests/OCCTShapeHealingTests/ShapeFix/Issue702SolidDemotionTests.swift`), both of which only re-derive
   `totalProblems` from the same fields `analyze()` returns, no test asserted a *specific*
   self-intersection count, because there was never a real one to assert.
 - Confirmed `Shape.isSelfIntersecting(timeout:)` / `isSelfIntersecting(hardTimeout:)`

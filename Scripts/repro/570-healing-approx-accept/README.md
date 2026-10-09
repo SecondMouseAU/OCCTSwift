@@ -15,7 +15,7 @@ own diameter, and from `ShapeCustom::BSplineRestriction` as a **single-pole** pe
 deviating by **23.9999 against a 0.01 tolerance**. Both were accepted as meeting tolerance. Both are
 reachable from six public Swift entry points. No kernel or bridge change is needed: `0019` already
 fixes all of it, and this issue's deliverable is the measurement plus the regression tests that pin
-it (`Tests/OCCTShapeHealingTests/Issue570HealingApproxTests.swift`).
+it (`Tests/OCCTShapeHealingTests/ShapeCustom/Issue570HealingApproxTests.swift`).
 
 ## The three sites
 
