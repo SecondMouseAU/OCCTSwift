@@ -1119,8 +1119,8 @@ public final class Surface: @unchecked Sendable {
     ///   - resolutionOrder: The plate's resolution order, 2 through 9 (default 4). Outside that
     ///     range the result is nil.
     ///   - tolerance: Sets the sampling density between the constraints (a tighter value
-    ///     samples more finely, 20 nodes per direction at 0.1 up to 80), default 1e-3. It does
-    ///     not bound the error between samples.
+    ///     samples more finely: 20 nodes per direction at 0.1, 63 at 1e-3, at most 80), default
+    ///     1e-3. It does not bound the error between samples.
     /// - Returns: A new deformed surface, or nil on failure
     public func nlPlateDeformed(
         constraints: [(uv: SIMD2<Double>, target: SIMD3<Double>)],
@@ -1169,8 +1169,8 @@ public final class Surface: @unchecked Sendable {
     ///   - resolutionOrder: The plate's resolution order, 2 through 9 (default 4). Outside that
     ///     range the result is nil.
     ///   - tolerance: Sets the sampling density between the constraints (a tighter value
-    ///     samples more finely, 20 nodes per direction at 0.1 up to 80), default 1e-3. It does
-    ///     not bound the error between samples.
+    ///     samples more finely: 20 nodes per direction at 0.1, 63 at 1e-3, at most 80), default
+    ///     1e-3. It does not bound the error between samples.
     /// - Returns: A new deformed surface, or nil on failure
     public func nlPlateDeformedG1(
         constraints: [(
@@ -2669,8 +2669,8 @@ extension Surface {
     /// - Parameters:
     ///   - constraints: Array of constraint tuples
     ///   - tolerance: Sets the sampling density between the constraints (a tighter value
-    ///     samples more finely, 20 nodes per direction at 0.1 up to 80), default 1e-3. It does
-    ///     not bound the error between samples.
+    ///     samples more finely: 20 nodes per direction at 0.1, 63 at 1e-3, at most 80), default
+    ///     1e-3. It does not bound the error between samples.
     /// - Returns: A new deformed surface, or nil on failure
     ///
     /// There is no iteration count: `NLPlate_NLPlate::Solve2` takes none. For the incremental
@@ -2728,8 +2728,8 @@ extension Surface {
     /// - Parameters:
     ///   - constraints: Array of constraint tuples
     ///   - tolerance: Sets the sampling density between the constraints (a tighter value
-    ///     samples more finely, 20 nodes per direction at 0.1 up to 80), default 1e-3. It does
-    ///     not bound the error between samples.
+    ///     samples more finely: 20 nodes per direction at 0.1, 63 at 1e-3, at most 80), default
+    ///     1e-3. It does not bound the error between samples.
     /// - Returns: A new deformed surface, or nil on failure
     ///
     /// There is no iteration count, for the same reason as
