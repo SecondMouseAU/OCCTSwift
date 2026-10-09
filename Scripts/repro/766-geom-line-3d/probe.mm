@@ -1,4 +1,4 @@
-// #766 kernel parity for Tests/OCCTAnalysisTests/GeomLine3DTests.swift.
+// #766 kernel parity for Tests/OCCTAnalysisTests/GeomProperties/GeomLine3DTests.swift.
 // Builds the line the way OCCTCurve3DCreateLine does (Geom_Line(gp_Pnt, gp_Dir)) and reads the
 // same accessors the OCCTCurve3DLine* bridge functions read.
 #include <Geom_Line.hxx>

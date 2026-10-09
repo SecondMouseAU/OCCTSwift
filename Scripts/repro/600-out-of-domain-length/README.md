@@ -85,7 +85,7 @@ identically. Winding is whole turns × one period's length, plus the remainder w
 domain, one period's length, not the whole domain's, so that a curve trimmed to more than a period
 does not multiply the wrong number.
 
-Pinned by `Tests/OCCTCurveTests/Issue600OutOfDomainRangeTests.swift`, verified by injection:
+Pinned by `Tests/OCCTCurveTests/ArcLength/Issue600OutOfDomainRangeTests.swift`, verified by injection:
 restoring the raw `GCPnts_AbscissaPoint::Length(adaptor, u1, u2)` call at all four sites fails 7 of
 the 10 tests. The 3 that keep passing are the ones asserting *preserved* behaviour, the circle
 still winds, the multi-span BSpline is unchanged, in-domain ranges are untouched, which is what

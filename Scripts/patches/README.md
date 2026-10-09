@@ -628,7 +628,7 @@ documented API, hands every caller a number describing the request, not the resu
 `IsCNv(1)`, and `BRepFill_Sweep` splits its sweep at every spine **vertex**, so a polyline spine
 never reaches it: the discontinuity has to sit inside one unsplit edge. The fixture (borrowed from
 [#572](https://github.com/SecondMouseAU/OCCTSwift/issues/572), pinned by
-`Tests/OCCTModelingTests/Issue572SweepApproxTests.swift`) is a single-edge spine built as one
+`Tests/OCCTModelingTests/Sweeps/Issue572SweepApproxTests.swift`) is a single-edge spine built as one
 degree-2 B-spline curve with an interior knot of multiplicity 2, a C0 corner inside what
 `BRepFill_Sweep` treats as one edge, swept with a unit circle profile and Frenet trihedron via
 `BRepFill_PipeShell`, matching the bridge's own construction exactly.
@@ -2024,7 +2024,7 @@ modified files against 79 patch-touched files, zero unexplained, all thirty-one 
 `python3 Scripts/check-pinned-asset-patches.py --require-asset` against the published asset, the zip
 uploaded as the `v4.0.0-kernel.3` pre-release, **both** `url:` and `checksum:` bumped, `0043` moved
 into `Package.swift`'s enumerated list (taking `patches_pinned` to thirty-one and `patches_unpinned`
-to none), and `Tests/OCCTAnalysisTests/BRepGPropVinertTests.swift`'s pinned-zero regression replaced
+to none), and `Tests/OCCTAnalysisTests/BRepGProp/BRepGPropVinertTests.swift`'s pinned-zero regression replaced
 by the three identities above rather than by the numbers that were observed.
 
 **Retargeting risk at 8.0.2.** `BRepGProp_Gauss.cxx` is unmodified by every other carried patch, and
@@ -2586,7 +2586,7 @@ gp_Pln plane(gp_Pnt(normal.XYZ() * -planeDist), normal);   // until v4.0.0-kerne
 ```
 
 A kernel carrying `0048` with that mirror still in place measures about the mirrored plane again,
-and the two sign assertions in `Tests/OCCTAnalysisTests/BRepGPropVinertTests.swift` failed on #3014
+and the two sign assertions in `Tests/OCCTAnalysisTests/BRepGProp/BRepGPropVinertTests.swift` failed on #3014
 for exactly that reason. The change that repinned to an asset carrying `0048` (#3031) therefore:
 
 - deleted the mirror in `OCCTBRepGPropVinertPlane`, so the line now reads
@@ -2716,7 +2716,7 @@ separately as [#3010](https://github.com/SecondMouseAU/OCCTSwift/issues/3010).
 ### CI coverage, and the pin
 
 **Pinned, like `0051` and `0052`.** It was carried before it was pinned, and `ci.yml`'s
-`build-and-test` resolves the pinned asset, so `Tests/OCCTAnalysisTests/GPropCylConeTests.swift`
+`build-and-test` resolves the pinned asset, so `Tests/OCCTAnalysisTests/MassProperties/GPropCylConeTests.swift`
 was **red there** until the repin; `kernel-integration.yml` triggers on `Scripts/patches/**`, builds
 `V8_0_1` plus every carried patch from source, and is where those tests passed in the meantime. That
 split is #585 and it was the expected state of a PR carrying a kernel fix and its regression

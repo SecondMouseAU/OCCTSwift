@@ -26,7 +26,7 @@ enum SharedFixture {
     }
 
     /// Two solids sharing one cut face, from one BRepAlgoAPI_Splitter run -- the exact
-    /// construction Tests/OCCTTopologyTests/Issue614FaceOrientationTests.swift uses (measured
+    /// construction Tests/OCCTTopologyTests/Faces/Issue614FaceOrientationTests.swift uses (measured
     /// there: 11 distinct faces, 12 face occurrences). `order` controls which half is compounded
     /// first, which is #642's whole claim: AAG answers differently depending on this order alone.
     static func splitBoxCompound(order: CompoundOrder) -> Shape {

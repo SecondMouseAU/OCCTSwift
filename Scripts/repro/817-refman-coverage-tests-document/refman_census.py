@@ -181,13 +181,13 @@ REVIEWED_HITS: dict[str, bool] = {
     # generic "init" member (derive_lane.py's HOP-1 fix for exactly this shape). Each hand-checked
     # against the real test body, not accepted on the mechanical hit alone:
     "XCAFDoc_AssemblyGraph": True,
-    # Tests/OCCTXCAFTests/XCAFDocAssemblyGraphTests.swift:14, `AssemblyGraph(document: doc)`,
+    # Tests/OCCTXCAFTests/Assembly/XCAFDocAssemblyGraphTests.swift:14, `AssemblyGraph(document: doc)`,
     # followed by real assertions on `nodeCount`/`linkCount`/`rootCount`.
     "XCAFNoteObjects_NoteObject": True,
-    # Tests/OCCTXCAFTests/XCAFNoteObjectsTests.swift: six `NoteObject()` constructions across
+    # Tests/OCCTXCAFTests/Annotations/XCAFNoteObjectsTests.swift: six `NoteObject()` constructions across
     # its six test functions, each followed by real property assertions.
     "XCAFView_Object": True,
-    # Tests/OCCTXCAFTests/XCAFViewObjectTests.swift: seven `ViewObject()` constructions, each
+    # Tests/OCCTXCAFTests/Annotations/XCAFViewObjectTests.swift: seven `ViewObject()` constructions, each
     # followed by real property assertions (projection type, camera fields, ...).
 }
 

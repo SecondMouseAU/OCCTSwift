@@ -1,4 +1,4 @@
-// Epic #766, Tests/OCCTModelingTests/Issue568IndexSkipTests.swift: kernel parity for all 13 tests.
+// Epic #766, Tests/OCCTModelingTests/Offsets/Issue568IndexSkipTests.swift: kernel parity for all 13 tests.
 // The five entry points resolve indices through TopExp::MapShapes (occtUseSubShapesByIndex /
 // occtMappedSubShapeAt) and then drive BRepOffsetAPI_DraftAngle (OCCTShapeDraft),
 // BRepOffsetAPI_MakeThickSolid (OCCTShapeShellWithOpenFaces), BRepFilletAPI_MakeChamfer

@@ -18,7 +18,7 @@ import simd
 /// bridge conventions require, so it's reachable, not idle code -- but `Curve3D`'s public API
 /// gives no way to construct a wrapper around a null handle. `Curve3DExtrasV112Tests.curveType()`
 /// only checked `line`/`circle`, and no test exercised the fallback at all. This test follows the
-/// #1424 `unsafeBitCast` precedent (`Tests/OCCTAnalysisTests/Issue1424BndLibFaceNullGuardTests.swift`)
+/// #1424 `unsafeBitCast` precedent (`Tests/OCCTAnalysisTests/Bounding/Issue1424BndLibFaceNullGuardTests.swift`)
 /// to synthesize a genuinely-null `OCCTCurve3DRef` and call the bridge function directly, since the
 /// parameter is `_Nonnull` and Swift refuses to pass `nil` literally.
 @Suite("Issue #1476: OCCTCurve3DCurveType OtherCurve fallback")

@@ -1,4 +1,4 @@
-// #766 kernel parity for Tests/OCCTAnalysisTests/GeomCone3DTests.swift, GeomIntIntSSTests.swift,
+// #766 kernel parity for Tests/OCCTAnalysisTests/GeomProperties/GeomCone3DTests.swift, GeomIntIntSSTests.swift,
 // GeomLPropCLPropsTests.swift and GeomLPropSLPropsTests.swift. Each block mirrors the bridge
 // function the test reaches: OCCTSurfaceCone*, OCCTGeomIntSSCreate/LineCount/Line,
 // OCCTGeomLPropCLProps and OCCTFaceLPropMaxCurvature. Shapes are built as OCCTShapeCreateBox

@@ -80,7 +80,7 @@ same class #1020 is about, a bound that should follow from the input and does no
 refuses a parameter outside `[first, last]`. `tol2d` stays at `1e-6`: with the range recovered by
 projection it is doing real work, refusing the two vertex cases above.
 
-Pinned by `Tests/OCCTModelingTests/Issue1020SplitEdgeRangeTests.swift`. With the guard removed, the
+Pinned by `Tests/OCCTModelingTests/Splitting/Issue1020SplitEdgeRangeTests.swift`. With the guard removed, the
 four out-of-range rows fail and the three control rows still pass.
 
 ## `Extrema_ExtPElC`, `OCCTBridge_Curve3D.mm`
@@ -109,7 +109,7 @@ the hyperbola and parabola cases. (`BRepClass3d_BndBoxTree.cxx:134` uses
 than `RealLast()`, and there is no reason to admit fewer representable roots than exist.) The closed
 conics keep `0, 2 * M_PI`, which is a full period rather than a fabricated bound.
 
-Pinned by `Tests/OCCTCurveTests/Issue1020ExtremaBoundsTests.swift`: a point projecting to parameter
+Pinned by `Tests/OCCTCurveTests/Projection/Issue1020ExtremaBoundsTests.swift`: a point projecting to parameter
 2e10 on a line, and a parabola with `focal = 1e6` whose real root lands near 4.3e6. Both returned an
 empty array before and a correct extremum after; the two in-range control rows pass either way.
 

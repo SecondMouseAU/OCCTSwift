@@ -1,4 +1,4 @@
-// #766 kernel parity for Tests/OCCTAnalysisTests/GeomSwept3DTests.swift and
+// #766 kernel parity for Tests/OCCTAnalysisTests/GeomProperties/GeomSwept3DTests.swift and
 // GeomTorus3DTests.swift. Builds the surfaces the way OCCTSurfaceCreateExtrusion and
 // OCCTSurfaceCreateTorus do and reads the accessors OCCTSurfaceSwept* / OCCTSurfaceTorus* read.
 #include <Geom_Line.hxx>

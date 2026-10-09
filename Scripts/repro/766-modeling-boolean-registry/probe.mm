@@ -1,4 +1,4 @@
-// Epic #766, Tests/OCCTModelingTests/BooleanRegistryTests.swift: kernel parity.
+// Epic #766, Tests/OCCTModelingTests/FeatureReconstruction/BooleanRegistryTests.swift: kernel parity.
 // unionNamedRevolves: FeatureReconstructor lifts each 2D profile to (x, 0, y), revolves it 360
 // degrees about Z (OCCTShapeCreateRevolution, BRepPrimAPI_MakeRevol on the planar face) and the
 // named union runs BRepAlgoAPI_Fuse (OCCTBooleanUnionWithHistory). missingLeftRef never reaches

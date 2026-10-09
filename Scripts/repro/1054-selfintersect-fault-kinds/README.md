@@ -231,7 +231,7 @@ filler (`BOPAlgo_AlertIntersectionFailed`) with no user break anywhere in it. On
 interference map is whatever the failed run left behind, which is the same untrustworthy thing an
 interrupted run leaves.
 
-`Tests/OCCTModelingTests/Issue1054SelfIntersectFaultKindTests.swift` covers both, one test each,
+`Tests/OCCTModelingTests/BOPAlgo/Issue1054SelfIntersectFaultKindTests.swift` covers both, one test each,
 and the injection matrix in the PR shows each test failing for exactly one of them.
 
 ## #1068, measured, and why it is a report rather than a fix

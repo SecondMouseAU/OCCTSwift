@@ -251,7 +251,7 @@ static void probeEdgeFace()
 {
   banner("IntTools_CommonPrt from IntTools_EdgeFace, the struct behind Shape.CommonPart");
 
-  // The fixture Tests/OCCTAnalysisTests/IntToolsEdgeFaceTests.swift uses: a 10-cube's first face
+  // The fixture Tests/OCCTAnalysisTests/Intersection/IntToolsEdgeFaceTests.swift uses: a 10-cube's first face
   // and an edge running through it.
   TopoDS_Shape box  = BRepPrimAPI_MakeBox(10.0, 10.0, 10.0).Shape();
   TopoDS_Edge  edge = BRepBuilderAPI_MakeEdge(gp_Pnt(5, 5, -1), gp_Pnt(5, 5, 11)).Edge();
