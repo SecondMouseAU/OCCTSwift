@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="300" viewBox="0 0 1500 300"><rect width="1500" height="300" fill="#ffffff"/>
+<text x="24.0" y="32.0" font-family="Helvetica, Arial, sans-serif" font-size="17" font-weight="bold" fill="#1d2430" text-anchor="start">Outcome against radius, edge 13 (draw parameters), pinned kernel (v4.0.0-kernel.5)</text>
+<rect x="198.0" y="90" width="27.6" height="90" fill="#2f9e5f"/>
+<rect x="225.6" y="90" width="27.6" height="90" fill="#2f9e5f"/>
+<rect x="253.2" y="90" width="27.6" height="90" fill="#2f9e5f"/>
+<rect x="280.8" y="90" width="27.6" height="90" fill="#e08a1e"/>
+<rect x="308.4" y="90" width="27.6" height="90" fill="#e08a1e"/>
+<rect x="336.0" y="90" width="8.3" height="90" fill="#e08a1e"/>
+<rect x="344.3" y="90" width="19.3" height="90" fill="#e08a1e"/>
+<rect x="363.6" y="90" width="27.6" height="90" fill="#d64545"/>
+<rect x="391.2" y="90" width="27.6" height="90" fill="#d64545"/>
+<rect x="418.8" y="90" width="27.6" height="90" fill="#d64545"/>
+<rect x="446.4" y="90" width="27.6" height="90" fill="#d64545"/>
+<rect x="474.0" y="90" width="27.6" height="90" fill="#d64545"/>
+<rect x="501.6" y="90" width="27.6" height="90" fill="#d64545"/>
+<rect x="529.2" y="90" width="27.6" height="90" fill="#d64545"/>
+<rect x="556.8" y="90" width="27.6" height="90" fill="#d64545"/>
+<rect x="584.4" y="90" width="27.6" height="90" fill="#d64545"/>
+<rect x="612.0" y="90" width="27.6" height="90" fill="#d64545"/>
+<rect x="639.6" y="90" width="27.6" height="90" fill="#d64545"/>
+<rect x="667.2" y="90" width="27.6" height="90" fill="#d64545"/>
+<rect x="694.8" y="90" width="27.6" height="90" fill="#d64545"/>
+<rect x="722.4" y="90" width="27.3" height="90" fill="#d64545"/>
+<rect x="749.7" y="90" width="2.0" height="90" fill="#d64545"/>
+<rect x="750.0" y="90" width="2.0" height="90" fill="#d64545"/>
+<rect x="750.0" y="90" width="2.0" height="90" fill="#d64545"/>
+<rect x="750.0" y="90" width="2.0" height="90" fill="#d64545"/>
+<rect x="750.0" y="90" width="2.0" height="90" fill="#d64545"/>
+<rect x="750.0" y="90" width="2.0" height="90" fill="#d64545"/>
+<rect x="750.0" y="90" width="2.0" height="90" fill="#e08a1e"/>
+<rect x="750.0" y="90" width="2.0" height="90" fill="#e08a1e"/>
+<rect x="750.0" y="90" width="2.0" height="90" fill="#e08a1e"/>
+<rect x="750.3" y="90" width="2.5" height="90" fill="#e08a1e"/>
+<rect x="752.8" y="90" width="24.8" height="90" fill="#e08a1e"/>
+<rect x="777.6" y="90" width="27.6" height="90" fill="#e08a1e"/>
+<rect x="805.2" y="90" width="27.6" height="90" fill="#e08a1e"/>
+<rect x="832.8" y="90" width="27.6" height="90" fill="#e08a1e"/>
+<rect x="860.4" y="90" width="27.6" height="90" fill="#e08a1e"/>
+<rect x="888.0" y="90" width="27.6" height="90" fill="#e08a1e"/>
+<rect x="915.6" y="90" width="27.6" height="90" fill="#e08a1e"/>
+<rect x="943.2" y="90" width="27.6" height="90" fill="#e08a1e"/>
+<rect x="970.8" y="90" width="27.6" height="90" fill="#e08a1e"/>
+<rect x="998.4" y="90" width="27.6" height="90" fill="#e08a1e"/>
+<rect x="1026.0" y="90" width="27.6" height="90" fill="#e08a1e"/>
+<rect x="1053.6" y="90" width="27.6" height="90" fill="#e08a1e"/>
+<rect x="1081.2" y="90" width="27.6" height="90" fill="#e08a1e"/>
+<rect x="1108.8" y="90" width="27.6" height="90" fill="#e08a1e"/>
+<rect x="1136.4" y="90" width="27.6" height="90" fill="#e08a1e"/>
+<rect x="1164.0" y="90" width="27.6" height="90" fill="#e08a1e"/>
+<rect x="1191.6" y="90" width="27.6" height="90" fill="#e08a1e"/>
+<rect x="1219.2" y="90" width="27.6" height="90" fill="#e08a1e"/>
+<rect x="1246.8" y="90" width="27.6" height="90" fill="#e08a1e"/>
+<rect x="1274.4" y="90" width="27.6" height="90" fill="#2f9e5f"/>
+<rect x="1302.0" y="90" width="6.0" height="90" fill="#2f9e5f"/>
+<line x1="60.0" y1="180" x2="60.0" y2="188" stroke="#1d2430"/><text x="60.0" y="206.0" font-family="Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#1d2430" text-anchor="middle">1.4975</text>
+<line x1="198.0" y1="180" x2="198.0" y2="188" stroke="#1d2430"/><text x="198.0" y="206.0" font-family="Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#1d2430" text-anchor="middle">1.4980</text>
+<line x1="336.0" y1="180" x2="336.0" y2="188" stroke="#1d2430"/><text x="336.0" y="206.0" font-family="Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#1d2430" text-anchor="middle">1.4985</text>
+<line x1="474.0" y1="180" x2="474.0" y2="188" stroke="#1d2430"/><text x="474.0" y="206.0" font-family="Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#1d2430" text-anchor="middle">1.4990</text>
+<line x1="612.0" y1="180" x2="612.0" y2="188" stroke="#1d2430"/><text x="612.0" y="206.0" font-family="Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#1d2430" text-anchor="middle">1.4995</text>
+<line x1="750.0" y1="180" x2="750.0" y2="188" stroke="#1d2430"/><text x="750.0" y="206.0" font-family="Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#1d2430" text-anchor="middle">1.5000</text>
+<line x1="888.0" y1="180" x2="888.0" y2="188" stroke="#1d2430"/><text x="888.0" y="206.0" font-family="Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#1d2430" text-anchor="middle">1.5005</text>
+<line x1="1026.0" y1="180" x2="1026.0" y2="188" stroke="#1d2430"/><text x="1026.0" y="206.0" font-family="Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#1d2430" text-anchor="middle">1.5010</text>
+<line x1="1164.0" y1="180" x2="1164.0" y2="188" stroke="#1d2430"/><text x="1164.0" y="206.0" font-family="Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#1d2430" text-anchor="middle">1.5015</text>
+<line x1="1302.0" y1="180" x2="1302.0" y2="188" stroke="#1d2430"/><text x="1302.0" y="206.0" font-family="Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#1d2430" text-anchor="middle">1.5020</text>
+<line x1="1440.0" y1="180" x2="1440.0" y2="188" stroke="#1d2430"/><text x="1440.0" y="206.0" font-family="Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#1d2430" text-anchor="middle">1.5025</text>
+<rect x="60" y="240" width="16" height="16" fill="#2f9e5f"/><text x="84.0" y="253.0" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="normal" fill="#1d2430" text-anchor="start">valid</text>
+<rect x="360" y="240" width="16" height="16" fill="#e08a1e"/><text x="384.0" y="253.0" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="normal" fill="#1d2430" text-anchor="start">done but BRepCheck invalid</text>
+<rect x="660" y="240" width="16" height="16" fill="#d64545"/><text x="684.0" y="253.0" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="normal" fill="#1d2430" text-anchor="start">IsDone() false</text>
+<rect x="960" y="240" width="16" height="16" fill="#7a1f1f"/><text x="984.0" y="253.0" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="normal" fill="#1d2430" text-anchor="start">SIGSEGV (kernel.4 only)</text></svg>
