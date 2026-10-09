@@ -1,0 +1,16 @@
+OCCTDimensionCreateAngleFromEdges  # Annotation.swift: reached by name only through the dimension types
+OCCTDimensionCreateAngleFromFaces  # Annotation.swift: reached by name only through the dimension types
+OCCTDimensionCreateAngleFromPoints  # Annotation.swift: reached by name only through the dimension types
+OCCTDimensionCreateDiameterFromShape  # Annotation.swift: reached by name only through the dimension types
+OCCTDimensionCreateLengthFromEdge  # Annotation.swift: reached by name only through the dimension types
+OCCTDimensionCreateLengthFromFaces  # Annotation.swift: reached by name only through the dimension types
+OCCTDimensionCreateLengthFromPoints  # Annotation.swift: reached by name only through the dimension types
+OCCTDimensionCreateRadiusFromShape  # Annotation.swift: reached by name only through the dimension types
+OCCTDimensionGetGeometry  # Annotation.swift: reached by name only through the dimension types
+OCCTDimensionGetKind  # Annotation.swift: reached by name only through the dimension types
+OCCTDimensionGetValue  # Annotation.swift: reached by name only through the dimension types
+OCCTDimensionIsValid  # Annotation.swift: reached by name only through the dimension types
+OCCTDimensionRelease  # Annotation.swift: reached by name only through the dimension types
+OCCTDimensionSetCustomValue  # Annotation.swift: reached by name only through the dimension types
+OCCTDimensionTypeIsDimensionalLocation  # Annotation.swift: reached by name only through the dimension types
+OCCTDimensionTypeIsDimensionalSize  # Annotation.swift: reached by name only through the dimension types
