@@ -112,7 +112,7 @@ _ = Shape.rangeOnFace(edge: box.nullified!, face: aFace)            // signal 11
 _ = Shape.evalAndUpdateTolerance(edge: box.nullified!, face: aFace) // signal 11
 ```
 
-`Tests/OCCTTopologyTests/Issue2812CastReferenceSpellingGuardTests.swift` holds the regression, with
+`Tests/OCCTTopologyTests/NullGuards/Issue2812CastReferenceSpellingGuardTests.swift` holds the regression, with
 a control beside each refusal: an unconditional refusal passes every "returns nil" assertion, so
 the real answers have to be asserted too. Proved in both directions. With the four guards reverted
 to their pointer-only test the suite does not fail, it dies: `exited with unexpected signal code 11`

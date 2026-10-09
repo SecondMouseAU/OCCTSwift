@@ -864,9 +864,9 @@ OCCTShapeRef OCCTShapeCreateRevolutionFromCurve(OCCTCurve3DRef meridian,
                                                 double         axDZ,
                                                 double         angle)
 {
-  // #3100, #3113: a NaN or infinite angle, a non-finite origin or a NaN, infinite, zero or
-  // overflowing direction is not a revolution.
-  if (!meridian || meridian->curve.IsNull() || !occtIsUsableAngle(angle)
+  // #3100, #3113, #3109: a NaN, infinite or absurd angle, a non-finite origin or a NaN, infinite,
+  // zero or overflowing direction is not a revolution.
+  if (!meridian || meridian->curve.IsNull() || !occtIsUsableRevolveAngle(angle)
       || !occtIsUsableAxis(axOX, axOY, axOZ, axDX, axDY, axDZ))
     return nullptr;
   try
@@ -1487,9 +1487,9 @@ OCCTShapeRef OCCTShapeCreateRevolution(OCCTWireRef profile,
                                        double      dirZ,
                                        double      angle)
 {
-  // #3100, #3113: a NaN or infinite angle, a non-finite origin or a NaN, infinite, zero or
-  // overflowing direction is refused (an infinite angle never returned from BRepSweep_Revol).
-  if (!occtShapeIsPresent(profile) || !occtIsUsableAngle(angle)
+  // #3100, #3113, #3109: a NaN, infinite or absurd angle, a non-finite origin or a NaN, infinite,
+  // zero or overflowing direction is refused (BRepSweep_Revol never returned).
+  if (!occtShapeIsPresent(profile) || !occtIsUsableRevolveAngle(angle)
       || !occtIsUsableAxis(axisX, axisY, axisZ, dirX, dirY, dirZ))
     return nullptr;
   occtEnsureSignals();
@@ -1602,9 +1602,9 @@ OCCTShapeRef OCCTShapeCreateRevolutionPartial(OCCTShapeRef shape,
                                               double       dirZ,
                                               double       angle)
 {
-  // #3100, #3113: a NaN or infinite angle, a non-finite origin or a NaN, infinite, zero or
-  // overflowing direction is refused.
-  if (!occtShapeIsPresent(shape) || !occtIsUsableAngle(angle)
+  // #3100, #3113, #3109: a NaN, infinite or absurd angle, a non-finite origin or a NaN, infinite,
+  // zero or overflowing direction is refused.
+  if (!occtShapeIsPresent(shape) || !occtIsUsableRevolveAngle(angle)
       || !occtIsUsableAxis(axisX, axisY, axisZ, dirX, dirY, dirZ))
     return nullptr;
   try

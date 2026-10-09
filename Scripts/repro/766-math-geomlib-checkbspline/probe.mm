@@ -1,4 +1,4 @@
-// Epic #766 kernel-parity probe for Tests/OCCTMathTests/GeomLibCheckBSplineTests.swift.
+// Epic #766 kernel-parity probe for Tests/OCCTMathTests/GeomLib/GeomLibCheckBSplineTests.swift.
 // Same curves as the tests, same calls as OCCTGeomLibCheckBSpline3D/2D (NeedTangentFix, no
 // IsDone gate) and OCCTGeomLibFixBSpline3D/2D (FixedTangent), default tolerances 0.01 / 0.1.
 #include <Geom2d_BSplineCurve.hxx>

@@ -1,4 +1,4 @@
-// #766 kernel parity for Tests/OCCTAnalysisTests/GPropCylConeTests.swift.
+// #766 kernel parity for Tests/OCCTAnalysisTests/MassProperties/GPropCylConeTests.swift.
 // Same construction as OCCTGPropCylinderSurface / CylinderVolume / ConeSurface / ConeVolume
 // (OCCTBridge_Properties.mm).
 //

@@ -37,7 +37,7 @@ applies patches idempotently and never reverts. Both are inert, and the divergen
 [`okf/references/carried-occt-patches.md`](okf/references/carried-occt-patches.md) (#2190). Two
 consequences before you act on either number. The tree has since been cleaned, so a **local rebuild
 yielded a different checksum from that asset**, which was expected and not a corrupt download. The
-asset pinned since `v4.0.0-kernel.4` was built from the cleaned tree, and `Package.swift` says what a
+asset pinned since `v4.0.0-kernel.4` (now `v4.0.0-kernel.5`) was built from the cleaned tree, and `Package.swift` says what a
 mismatch against it means. And `python3 Scripts/check-pinned-asset-patches.py --require-asset` is the check that
 reads the binary rather than the prose: about seven seconds over all three slices, deliberately
 **not** a `gate-scripts` script (it reads a 1.3 GB xcframework CI does not check out), and part of
@@ -108,6 +108,7 @@ python3 Scripts/check-null-handle-guards.py      # every bridge fn guards the Ha
 python3 Scripts/check-docs-defaults.py           # every default AND enum case list docs/reference/ restates matches its declaration (#2145)
 python3 Scripts/check-docs-existence.py          # every symbol docs/ documents as current still exists in Sources (#802)
 python3 Scripts/check-borrowed-handles.py        # no struct/enum stores an OCCT*Ref it has no deinit to release (#965)
+python3 Scripts/check-borrowed-handle-temporaries.py  # no .handle read off a subscript or call result; use withHandle (#3130)
 python3 Scripts/derive-bridge-header-split.py --verify  # every declaration sits in the header its .mm owns (#673)
 python3 Scripts/derive-gdt-enums.py --verify      # the GD&T enums still match the pinned XCAFDimTolObjects headers (#996)
 python3 Scripts/count-operations.py              # README + API_REFERENCE + docs/index.md totals match the derived count
@@ -118,6 +119,8 @@ python3 Scripts/check-wasm-kernel-parity.py      # the wasm kernel asset carries
 python3 Scripts/check-preprocessor-balance.py     # no patch unbalances a source file's #if/#else/#endif (#2167)
 python3 Scripts/check-wasi-patch-base.py         # every patches-wasi patch was cut from the carried-patch tree (#2168)
 python3 Scripts/check-bridge-type-odr.py         # every type defined in more than one bridge .mm is defined identically (#2820)
+python3 Scripts/check-bridge-adaptor-members.py # no bridge struct stores an OCCT adaptor beyond the two allowlisted ones (#3065)
+python3 Scripts/check-test-path-citations.py   # every Tests/OCCT<Domain>Tests/...swift path cited in Scripts/, docs/, okf/, Sources/, Tests/ resolves to a file (#3148)
 python3 Scripts/check-transient-release-idiom.py  # every bridge release of a raw Standard_Transient is opencascade::handle::EndScope (#2974)
 python3 Scripts/census-unmeasured-values.py      # CENSUS, not a gate: values returned as measurements that were never computed (#726)
 python3 Scripts/census-doc-occt-attribution.py   # CENSUS, not a gate: docs attributing a method to an OCCT class its bridge fn never reaches (#928)
@@ -126,7 +129,8 @@ python3 Scripts/census-comment-staleness.py      # CENSUS, not a gate: comments 
 python3 Scripts/census-api-reference-rows.py     # CENSUS, not a gate: API_REFERENCE category-row entries resolving to no declaration (#1679)
 python3 Scripts/census-dead-file-statics.py      # CENSUS, not a gate: bridge `static` definitions with no use in their own file (#1628)
 python3 Scripts/census-compiled-out-validation.py # CENSUS, not a gate: bridge protection resting on an OCCT check No_Exception removed (#2801)
-python3 Scripts/check-inventory-prose.py        # every counted claim about the patch, gate, swift-format-exemption, bridge-file and test-target inventories matches them (#1408, #2910), and occt-raise-if-map.txt's stamp names the patch set on disk (#2885)
+python3 Scripts/census-stale-kernel-prose.py     # CENSUS, not a gate: prose naming an older kernel tag as current, a stale patch count, a cut beta called not cut (#3056)
+python3 Scripts/check-inventory-prose.py        # every counted claim about the patch, gate, swift-format-exemption, bridge-file and test-target inventories matches them (#1408, #2910), and occt-raise-if-map.txt's stamp names the patch set on disk (#2885); no prose calls a pinned patch not-yet-pinned (#3114)
 python3 Scripts/check-changelog-transcription.py # REPORT, never a gate: merges that landed with no CHANGELOG entry (#742, #2779)
 python3 Scripts/check-pinned-asset-patches.py --self-test  # RELEASE CHECK: only the self-test runs here; the real run reads the pinned asset (#2190)
 ```
@@ -587,7 +591,7 @@ the reproducer). What a bridge author needs without opening it:
   cylinder where a valid angle gives 54 to 254). Call `occtValidMeshAngle` at every site that
   takes a caller angle. `AngleInterior` and `Prs3d_Drawer::DeviationAngle()` need no guard, both
   measured. Both holes are fixed in the kernel by carried patch `0047`, which respells all five of
-  `initParameters`' tests; **both bridge guards stay when it is pinned**, the `0042` exception.
+  `initParameters`' tests; **both bridge guards stay now that it is pinned**, the `0042` exception.
 - `GeomAbs_G2` is never a valid order for `BRepFill_Filling`: curvature continuity is
   `GeomAbs_C1` (ordinal 2), whatever `BRepOffsetAPI_MakeFilling.hxx` says. Test any filling change
   on both a planar and a periodic support surface, since #430 was catchable on one and an
@@ -624,6 +628,14 @@ the reproducer). What a bridge author needs without opening it:
   (`0030`), and the bridge-side arc-length subdivision (`occtAdaptorArcLength`, #603, redundant
   against `0021`). None of their tests could signal that they had outlived their fix, which is why
   this list existed; each now has a regression test that fails if the mitigation comes back.
+- **Retired at the `v4.0.0-kernel.5` repin**: the three `OCCTSWIFT_LOCAL=1` gates on
+  `Issue3003OffsetOrderTests` (`0053`), `Issue2881FilletObstacleTests` (`0054`) and
+  `Issue3039BRepLibPlaneFirstUseTests` (`0056`), which left each test skipped on every default run
+  once the asset carried its fix, and the two `tolerance` declarations in the #766 probes
+  `766-modeling-evidence-fix` and `766-modeling-issue568-index-skip` that allowed for `0053`'s
+  hash-order drift. None of them signalled that it had outlived its fix; each test now runs on
+  `build-and-test`. No bridge guard mitigates any of `0053` to `0057`: the SIGSEGV and race are
+  past a catch, and the GProp patches fix values nothing in the older bridge read.
 - `OCCTShapeFuseMulti` runs with `SetRunParallel(false)`; re-enabling it is very likely safe (#369)
   and is a separate, open decision.
 

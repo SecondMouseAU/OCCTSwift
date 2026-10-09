@@ -1,0 +1,40 @@
+== 1 2 3
+constructed
+built IsDone=1
+vertices=6
+valid=1
+exit=0
+== 0 1 2
+constructed
+built IsDone=1
+vertices=0
+valid=1
+exit=0
+== 1 2 4
+constructed
+built IsDone=1
+vertices=0
+valid=1
+exit=0
+== -1 2 3
+constructed
+exception: NCollection_IndexedDataMap::FindFromKey
+exit=0
+== 1 2 2147483647
+constructed
+exit=139
+== -2147483648 2 3
+constructed
+exit=138
+== 2 2 2
+constructed
+built IsDone=1
+vertices=0
+valid=1
+exit=0
+== 1 1 2
+constructed
+built IsDone=1
+vertices=0
+valid=1
+exit=0

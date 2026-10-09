@@ -1021,6 +1021,9 @@ public static func fromMesh(points: [SIMD3<Double>], triangles: [(Int32, Int32, 
 - **Parameters:** `points`, mesh vertices; `triangles`, index triples using 1-based indices into `points`.
 - **Returns:** Shape from the mesh, or `nil` on failure. A NaN or infinite component of any point in
   `points` answers `nil`: it built a compound whose first validity check never returned (#3100).
+  A triangle index below 1 or above `points.count` also answers `nil` (#3110): 0 and
+  `points.count + 1` built an empty shape, a negative one raised inside OCCT, and a huge one
+  crashed the process.
 - **OCCT:** `BRepBuilderAPI_MakeShapeOnMesh` via `OCCTShapeFromMesh`.
 - **Example:**
   ```swift

@@ -1,7 +1,7 @@
 // #2943: IntTools_BeanFaceIntersector reports a zero-length [0, 0] range for an edge lying in the
 // face, with MinimalSquareDistance() left at RealLast().
 //
-// The two fixtures are the ones Tests/OCCTAnalysisTests/IntToolsBeanFaceIntersectorTests.swift
+// The two fixtures are the ones Tests/OCCTAnalysisTests/Intersection/IntToolsBeanFaceIntersectorTests.swift
 // builds: a plane face trimmed to u,v in [-10, 10] with normal +Z, and (a) an edge from
 // (-3, 0, 0) to (3, 0, 0) lying in that face, (b) an edge from (0, 0, -5) to (0, 0, 5) crossing
 // it.

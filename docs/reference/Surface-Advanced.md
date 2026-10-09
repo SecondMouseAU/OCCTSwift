@@ -98,9 +98,9 @@ preserves the original shape except where pulled by the constraints. Not a displ
 summing the plates, so it returns the deformed point rather than an offset from the input, which
 is what the `nlPlateDerivative` entry below spells out. (#811)
 
-- **Parameters:** `constraints`, array of `(uv, target)` pairs (non-empty); `resolutionOrder`, the plate's resolution order, 2 through 9; `tolerance`, approximation tolerance.
+- **Parameters:** `constraints`, array of `(uv, target)` pairs (non-empty); `resolutionOrder`, the plate's resolution order, 2 through 9; `tolerance`, the sampling density between the constraints (a tighter value samples more finely: 20 nodes per direction at 0.1, 63 at 1e-3, at most 80); it does not bound the error between samples.
 - **Returns:** New deformed surface, or `nil` if the array is empty, `resolutionOrder` is outside `2...9`, or the solver fails.
-- **OCCT:** `NLPlate_NLPlate` + `NLPlate_HPG0Constraint` + `Geom_RectangularTrimmedSurface` + `GeomAPI_PointsToBSplineSurface`.
+- **OCCT:** `NLPlate_NLPlate` + `NLPlate_HPG0Constraint` + `Geom_RectangularTrimmedSurface` + `BSplCLib::Interpolate`.
 - **Example:**
   ```swift
   let plane = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1))!
@@ -111,8 +111,10 @@ is what the `nlPlateDerivative` entry below spells out. (#811)
       let face = bumped.toFace()
   }
   ```
-- **Note:** The result is a fresh BSpline fitted to a 20x20 sample grid of the solved plate. It
-  carries the parametrisation of the working domain the samples were taken over, so the `(u, v)` a
+- **Note:** The result is a fresh cubic BSpline that interpolates a sample lattice of the solved
+  plate. Every constraint's `(u, v)` is a node of the lattice, so the result passes through each
+  target (to the kernel's own residual, about 5e-6 for several G0 targets), which the earlier
+  least-squares refit did not (#3133). It carries the parametrisation of the working domain the samples were taken over, so the `(u, v)` a
   constraint was written at addresses the same place on the result as it did on the input. For a
   direction the input surface already bounds, the working domain is the input's own range; for one
   it leaves unbounded, it is the span of the constraint parameters padded by 10 in each direction.
@@ -139,11 +141,14 @@ Extends `nlPlateDeformed` by also constraining the partial derivatives (tangent 
 the U and V directions at each constraint point. Use to enforce tangency continuity at the
 constrained locations.
 
-- **Parameters:** `constraints`, array of `(uv, target, tangentU, tangentV)` tuples (non-empty); `resolutionOrder`, the plate's resolution order, 2 through 9; `tolerance`, approximation tolerance.
+- **Parameters:** `constraints`, array of `(uv, target, tangentU, tangentV)` tuples (non-empty); `resolutionOrder`, the plate's resolution order, 2 through 9; `tolerance`, the sampling density between the constraints (a tighter value samples more finely: 20 nodes per direction at 0.1, 63 at 1e-3, at most 80); it does not bound the error between samples.
 - **Returns:** New deformed surface, or `nil` if the array is empty, `resolutionOrder` is outside `2...9`, or the solver fails.
-- **OCCT:** `NLPlate_NLPlate` + `NLPlate_HPG0G1Constraint` + `Plate_D1` + `Geom_RectangularTrimmedSurface` + `GeomAPI_PointsToBSplineSurface`.
+- **OCCT:** `NLPlate_NLPlate` + `NLPlate_HPG0G1Constraint` + `Plate_D1` + `Geom_RectangularTrimmedSurface` + `BSplCLib::Interpolate`.
 - **Note:** The returned parametrisation and working domain are as described for
   [`nlPlateDeformed(constraints:resolutionOrder:tolerance:)`](#nlplatedeformedconstraintsresolutionordertolerance).
+  The result passes through each target position (#3135: two position+tangent constraints used to
+  return `nil`, and one used to miss by 0.7), but the tangent targets are met by the solver and not
+  reproduced by the interpolant: see the wrapping-gaps entry.
 - **Example:**
   ```swift
   if let shaped = plane.nlPlateDeformedG1(
@@ -1106,9 +1111,9 @@ neither does `Solve()`. `IncrementalSolve` does, but it is a different solver ra
 on this one, and it is wrapped separately as
 [`nlPlateDeformedIncremental(constraints:maxOrder:initConstraintOrder:nbIncrements:)`](#nlplatedeformedincrementalconstraintsmaxorderinitconstraintordernbincrements).
 
-- **Parameters:** `constraints`, array of constraint tuples (non-empty); `tolerance`, approximation tolerance.
+- **Parameters:** `constraints`, array of constraint tuples (non-empty); `tolerance`, the sampling density between the constraints (a tighter value samples more finely: 20 nodes per direction at 0.1, 63 at 1e-3, at most 80); it does not bound the error between samples.
 - **Returns:** New deformed surface, or `nil` on failure.
-- **OCCT:** `NLPlate_NLPlate` + `NLPlate_HPG0G2Constraint` + `Plate_D1` + `Plate_D2` + `Geom_RectangularTrimmedSurface` + `GeomAPI_PointsToBSplineSurface`.
+- **OCCT:** `NLPlate_NLPlate` + `NLPlate_HPG0G2Constraint` + `Plate_D1` + `Plate_D2` + `Geom_RectangularTrimmedSurface` + `BSplCLib::Interpolate`.
 - **Note:** The returned parametrisation and working domain are as described for
   [`nlPlateDeformed(constraints:resolutionOrder:tolerance:)`](#nlplatedeformedconstraintsresolutionordertolerance).
 - **Example:**
@@ -1143,9 +1148,9 @@ derivatives + 3 second derivatives + 4 third derivatives). Achieves G3-continuou
 
 There is no iteration count, for the same reason as `nlPlateDeformedG2(constraints:tolerance:)`.
 
-- **Parameters:** `constraints`, G0+G1+G2+G3 constraint tuples (non-empty); `tolerance`, approximation tolerance.
+- **Parameters:** `constraints`, G0+G1+G2+G3 constraint tuples (non-empty); `tolerance`, the sampling density between the constraints (a tighter value samples more finely: 20 nodes per direction at 0.1, 63 at 1e-3, at most 80); it does not bound the error between samples.
 - **Returns:** New deformed surface, or `nil` on failure.
-- **OCCT:** `NLPlate_NLPlate` + `NLPlate_HPG0G3Constraint` + `Plate_D1` + `Plate_D2` + `Plate_D3` + `Geom_RectangularTrimmedSurface` + `GeomAPI_PointsToBSplineSurface`.
+- **OCCT:** `NLPlate_NLPlate` + `NLPlate_HPG0G3Constraint` + `Plate_D1` + `Plate_D2` + `Plate_D3` + `Geom_RectangularTrimmedSurface` + `BSplCLib::Interpolate`.
 - **Note:** The returned parametrisation and working domain are as described for
   [`nlPlateDeformed(constraints:resolutionOrder:tolerance:)`](#nlplatedeformedconstraintsresolutionordertolerance).
 - **Example:**
@@ -1181,7 +1186,7 @@ standard `nlPlateDeformed` may not converge well.
 
 - **Parameters:** `constraints`, G0 constraint pairs (non-empty); `maxOrder`, maximum polynomial order; `initConstraintOrder`, initial constraint order; `nbIncrements`, number of increments.
 - **Returns:** New deformed surface, or `nil` on failure.
-- **OCCT:** `NLPlate_NLPlate::IncrementalSolve` + `NLPlate_HPG0Constraint` + `Geom_RectangularTrimmedSurface` + `GeomAPI_PointsToBSplineSurface`.
+- **OCCT:** `NLPlate_NLPlate::IncrementalSolve` + `NLPlate_HPG0Constraint` + `Geom_RectangularTrimmedSurface` + `BSplCLib::Interpolate`.
 - **Note:** The returned parametrisation and working domain are as described for
   [`nlPlateDeformed(constraints:resolutionOrder:tolerance:)`](#nlplatedeformedconstraintsresolutionordertolerance).
 - **Example:**

@@ -308,7 +308,7 @@ The crossing point itself stays closed-form.
 
 ## Test coverage and the removal matrix
 
-`Tests/OCCTGeom2dTests/Issue1050BisectorDomainTests.swift`, seven tests, plus the three in the
+`Tests/OCCTGeom2dTests/Bisector/Issue1050BisectorDomainTests.swift`, seven tests, plus the three in the
 pre-existing `BisectorIntersectionTests` this PR gave real assertions to. Ten in total, against six
 injections, each compiled and run against the real bridge.
 

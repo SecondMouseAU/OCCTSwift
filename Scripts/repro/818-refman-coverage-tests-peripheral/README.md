@@ -232,7 +232,7 @@ describes, and its two flat annular end faces are valid `StartShape`/`EndShape` 
 ground truth's own bbox for the resulting spine, `X[-1e-07,1e-07] Y[-1e-07,1e-07] Z[-1e-07,10]` for
 a radius-5/radius-2/height-10 tube, is the checkable assertion the new test makes: the spine
 collapses onto the shared cylinder axis and runs the tube's full height. New test:
-`Tests/OCCTModelingTests/Issue818MiddlePathTests.swift`. **Proved to fail**: forced
+`Tests/OCCTModelingTests/Sweeps/Issue818MiddlePathTests.swift`. **Proved to fail**: forced
 `OCCTShapeMiddlePath` to `return nullptr;` unconditionally, ran `swift test --filter
 Issue818MiddlePathTests`, confirmed red (`Expectation failed: spine → nil`), reverted, confirmed
 green. `git diff` on the bridge file is clean after the revert. Placed in `OCCTModelingTests` rather

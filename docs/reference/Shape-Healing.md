@@ -1392,7 +1392,7 @@ Unlike `Shape.revolution(profile:...)` which takes a wire, this revolves a `Geom
   - `axisOrigin`: origin of the revolution axis (default `.zero`).
   - `axisDirection`: direction of the revolution axis (default Z+).
   - `angle`: revolution angle in radians (default full revolution, 2π).
-- **Returns:** Revolved shape, or nil on failure. A NaN or infinite `angle`, a NaN or infinite component of the axis origin, or an axis direction that is NaN, infinite, zero or overflowing, answers `nil` (a NaN angle built an invalid solid, #3100; an unusable axis answered a shape, #3113).
+- **Returns:** Revolved shape, or nil on failure. A NaN, infinite or absurd `angle` (past `1e4` radians, about 1591 turns; the builders ran for a time proportional to the angle, #3109), a NaN or infinite component of the axis origin, or an axis direction that is NaN, infinite, zero or overflowing, answers `nil` (a NaN angle built an invalid solid, #3100; an unusable axis answered a shape, #3113).
 - **OCCT:** `BRepPrimAPI_MakeRevolution(gp_Ax2, meridian, angle)` (via
   `OCCTShapeCreateRevolutionFromCurve`). Not `BRepPrimAPI_MakeRevol`, which this entry used to name:
   that is the separate class revolving an existing **shape**, and it backs
@@ -1556,9 +1556,9 @@ Revolves a profile around an axis to add or remove material, the parametric soli
   - `axisDirection`: direction of the revolution axis.
   - `angle`: revolution angle in degrees (default 360).
   - `fuse`: `true` to add material (boss); `false` to cut (pocket).
-- **Returns:** Shape with revolved feature, or nil on failure. A NaN or infinite `angle`, a NaN or infinite component of the axis origin, or an axis direction that is NaN, infinite, zero or overflowing, answers `nil`:
+- **Returns:** Shape with revolved feature, or nil on failure. A NaN, infinite or absurd `angle` (past `1e4` radians, about 1591 turns; the builders ran for a time proportional to the angle, #3109), a NaN or infinite component of the axis origin, or an axis direction that is NaN, infinite, zero or overflowing, answers `nil`:
   the angle never returned from `BRepLib::FindValidRange` or `BRepSweep_Revol` (#3100) and an
-  unusable axis answered a shape (#3113). Any finite angle, `0` and `360` included, is passed to
+  unusable axis answered a shape (#3113). Any angle within that bound (`1e4` radians is about 572958 degrees here), `0` and `360` included, is passed to
   OCCT as before.
 - **OCCT:** `BRepFeat_MakeRevol` (via `OCCTShapeRevolFeature`).
 - **Example:**

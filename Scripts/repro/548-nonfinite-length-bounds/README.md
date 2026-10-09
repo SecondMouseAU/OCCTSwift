@@ -115,7 +115,7 @@ it holds for every curve type rather than for the ones the tests happened to use
 `OCCTEdgeArcLength` / `OCCTEdgeArcLengthBetween` also move from `0` to `-1.0` as their failure
 value, matching every other arc-length function in the bridge.
 
-Pinned by `Tests/OCCTCurveTests/Issue548NonFiniteLengthBoundTests.swift`, verified by injection:
+Pinned by `Tests/OCCTCurveTests/ArcLength/Issue548NonFiniteLengthBoundTests.swift`, verified by injection:
 removing the precondition reproduces this probe's figures through the public Swift API (8 of the 9
 tests fail, with `0`, `528.75`, `+inf` and `nan` all reported as measurements; the ninth is the
 regression guard asserting finite ranges are unaffected, which must keep passing).

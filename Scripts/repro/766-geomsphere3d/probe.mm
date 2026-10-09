@@ -1,4 +1,4 @@
-// Kernel parity probe for Tests/OCCTAnalysisTests/GeomSphere3DTests.swift (#1829-#1836).
+// Kernel parity probe for Tests/OCCTAnalysisTests/GeomProperties/GeomSphere3DTests.swift (#1829-#1836).
 //
 // Builds the same Geom_SphericalSurface that OCCTSurfaceCreateSphere builds (gp_Ax3 at the
 // centre with gp::DZ(), radius r) and calls the Geom_SphericalSurface members the

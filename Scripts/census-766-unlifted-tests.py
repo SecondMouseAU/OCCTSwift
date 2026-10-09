@@ -536,8 +536,12 @@ def attribute(root, head, onto, paths, pr_map):
 # ------------------------------------------------------------------ the survey
 
 
-def survey(root, head, onto, al, wa, scratch, path_filter=None):
-    """Every scoped path differing between `onto` and `head`, with its verdict and its gain."""
+def survey(root, head, onto, al, wa, scratch, path_filter=None, path_map=None):
+    """Every scoped path differing between `onto` and `head`, with its verdict and its gain.
+
+    `path_map` ({head path: onto path}) pairs a file `main` has moved with the path the branch still
+    keeps it at (#3148); the new name is then read as the old one's counterpart, not listed again as
+    a file the branch deleted."""
     if resolve(root, head) is None:
         raise Refusal("cannot resolve head %r; git fetch origin?" % head)
     if resolve(root, onto) is None:
@@ -548,10 +552,14 @@ def survey(root, head, onto, al, wa, scratch, path_filter=None):
                    if p and in_scope(p) and (path_filter is None or path_filter(p)))
 
     head_blobs = al.blob_ids(root, head, paths)
-    onto_blobs = al.blob_ids(root, onto, paths)
+    if path_map:
+        moved_to = set(path_map.values())
+        paths = [p for p in paths if not (p in moved_to and head_blobs[p] is None)]
+        head_blobs = {p: head_blobs[p] for p in paths}
+    onto_blobs = al.blob_ids(root, onto, paths, path_map)
     differing = [p for p in paths
                  if head_blobs[p] and onto_blobs[p] and head_blobs[p] != onto_blobs[p]]
-    numstat = al.numstat_paths(root, head, onto, differing)
+    numstat = al.numstat_paths(root, head, onto, differing, path_map)
     supersets = {p: (None if n is None else n[1] == 0) for p, n in numstat.items()}
     verdicts = al.classify(head_blobs, onto_blobs, supersets)
 
@@ -565,7 +573,7 @@ def survey(root, head, onto, al, wa, scratch, path_filter=None):
         if path.startswith("Tests/") and path.endswith(".swift") \
                 and verdicts[path] in (al.DIFFERENT, al.SUPERSET, al.ABSENT):
             head_text = blob_text(root, head, path)
-            onto_text = blob_text(root, onto, path) or ""
+            onto_text = blob_text(root, onto, (path_map or {}).get(path, path)) or ""
             if head_text is not None:
                 ht = tier_map(wa, head_text, scratch, "head")
                 ot = tier_map(wa, onto_text, scratch, "onto")
@@ -669,10 +677,11 @@ def run(args):
     al = _load("already_landed", "check-766-already-landed.py")
     wa = _load("weak_assertions", "census-766-weak-assertions.py")
     pr_map = load_pr_map(args.prs_from) if args.prs_from else None
+    path_map = al.load_path_map(args.path_map) if args.path_map else None
     scratch = tempfile.mkdtemp(prefix="census-766-unlifted-")
     try:
         for head in heads_for(args, pr_map):
-            rows = survey(root, head, args.onto, al, wa, scratch)
+            rows = survey(root, head, args.onto, al, wa, scratch, path_map=path_map)
             attribution = attribute(root, head, args.onto,
                                     {r["path"] for r in rows}, pr_map)
             if head != args.head and pr_map:
@@ -1065,6 +1074,30 @@ def self_test():
                 cases.append((label, False))
             except Refusal:
                 cases.append((label, True))
+
+        # --path-map (#3148): `main` moved FTests into a subdirectory; the head keeps the old path.
+        _sh(tmp, "git", "checkout", "-q", "mainbranch")
+        os.makedirs(os.path.join(tmp, "Tests/OCCTFooTests/Area"), exist_ok=True)
+        _sh(tmp, "git", "mv", "Tests/OCCTFooTests/FTests.swift", "Tests/OCCTFooTests/Area/FTests.swift")
+        _sh(tmp, "git", "commit", "-qm", "main moves FTests into an area")
+        moved = {"Tests/OCCTFooTests/FTests.swift": "Tests/OCCTFooTests/Area/FTests.swift"}
+        plain = {r["path"]: r for r in survey(root, "headbranch", "mainbranch", al, wa, scratch)}
+        paired = {r["path"]: r for r in survey(root, "headbranch", "mainbranch", al, wa, scratch,
+                                               path_map=moved)}
+        cases.append(("without a path map the moved file is ABSENT and its new name is UNDELETED",
+                      plain["Tests/OCCTFooTests/FTests.swift"]["verdict"] == al.ABSENT
+                      and plain["Tests/OCCTFooTests/Area/FTests.swift"]["verdict"] == al.UNDELETED))
+        cases.append(("with a path map the pair is one row, not an ABSENT plus an UNDELETED",
+                      "Tests/OCCTFooTests/Area/FTests.swift" not in paired
+                      and paired["Tests/OCCTFooTests/FTests.swift"]["verdict"] == al.DIFFERENT))
+        cases.append(("with a path map the gain is measured against the moved file's tiers",
+                      "FTests.pinned" in paired["Tests/OCCTFooTests/FTests.swift"]["strengthened"]
+                      and paired["Tests/OCCTFooTests/FTests.swift"]["tiered"]))
+        # `by_path` was surveyed before the move on purpose: the file's content is unchanged, so the
+        # count `main` drops from it must be the same number once the pair is found at the new name.
+        cases.append(("with a path map the dropped-line count is read at the new path",
+                      paired["Tests/OCCTFooTests/FTests.swift"]["dropped"] == by_path["Tests/OCCTFooTests/FTests.swift"]["dropped"]
+                      and by_path["Tests/OCCTFooTests/FTests.swift"]["dropped"]))
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
         shutil.rmtree(scratch, ignore_errors=True)
@@ -1092,6 +1125,9 @@ def main():
     ap.add_argument("--top", type=int, default=25, help="how many ranked paths to print")
     ap.add_argument("--show-absent", action="store_true",
                     help="list the paths --onto does not have at all")
+    ap.add_argument("--path-map", metavar="FILE",
+                    help="old<TAB>new lines: a path the head keeps at its old name is read on "
+                         "--onto at the new one (#3148)")
     ap.add_argument("--self-test", action="store_true")
     args = ap.parse_args()
     if args.self_test:

@@ -16,17 +16,16 @@ import OCCTPlatform
 /// let half = ec.point(atAbscissa: ec.length / 2)
 /// ```
 ///
-/// **Not `Sendable`.** Unlike most bridge wrappers in this package, this is not just "no internal
-/// lock, use `OCCTSerial.withLock { }`": the bridge struct behind `ref` holds a **persistent**
-/// `BRepAdaptor_Curve` built once at `init` and reused by every subsequent call, so `point`/
-/// `tangent`/`length`/every other accessor here mutates the adaptor's BSpline evaluation cache
-/// with zero synchronization (issue #1153; the kernel fix, `Scripts/patches/0031`, is
-/// override-link-validated but **not in the pinned `OCCT.xcframework`** as of this writing). Every
-/// method here reads as a pure query, which is exactly what makes it dangerous: sampling a shared
-/// `EdgeCurve` from multiple threads (the natural "let me parallelize point sampling" pattern) is
-/// a live data race today, not a hypothetical one. Give each thread/task its own `EdgeCurve`
-/// (construct one per `Edge` per thread, cheap) rather than sharing one, or serialize access with
-/// `OCCTSerial.withLock { }`.
+/// **Not `Sendable`, and one per task.** The bridge struct behind `ref` holds a **persistent**
+/// `BRepAdaptor_Curve` built once at `init` and reused by every subsequent call. OCCT designs an
+/// adaptor to be owned by one worker (each worker takes its own, or a `ShallowCopy()` of a shared
+/// one), because its BSpline evaluation cache is rebuilt in place by `const` evaluators. So
+/// `point`/`tangent`/`length`/every other accessor here is not a pure query on a BSpline edge, even
+/// though each one reads as one. Sharing one `EdgeCurve` between threads is unsupported: without
+/// carried patch `0031` (#1153), which currently serializes that cache, it reads wrong points
+/// (#3065). Swift 6 enforces the supported pattern, since a non-`Sendable` instance cannot cross a
+/// task boundary: share the ``Edge``, which is `Sendable`, and construct an `EdgeCurve` inside each
+/// task (cheap), or serialize access with `OCCTSerial.withLock { }`.
 public final class EdgeCurve: ArcLengthCurveAdaptor {
     internal let ref: OCCTEdgeCurveRef
 

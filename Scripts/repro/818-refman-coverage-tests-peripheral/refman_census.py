@@ -37,7 +37,7 @@ OCCTModelingTests/OCCTSurfaceTests, which #818's own body predicted: "it will no
 reported because #818 asks for it explicitly, not folded into `under`.
 
 `BRepOffsetAPI_MiddlePath`, the OTHER real `under` this pass found, is fixed in this same branch
-(`Tests/OCCTModelingTests/Issue818MiddlePathTests.swift`) rather than filed, so it does not appear
+(`Tests/OCCTModelingTests/Sweeps/Issue818MiddlePathTests.swift`) rather than filed, so it does not appear
 in the table above as `under` any more. `derive_lane.py`'s own automated pass, run fresh against a
 tree that already has that test file committed, now correctly reports it `tested-elsewhere` (via
 `OCCTModelingTests`) on the raw signal alone -- `FIXED_UNDER` below is consulted BEFORE the raw
@@ -94,14 +94,14 @@ MANUAL_OVERRIDES: dict[str, tuple[set[str], str]] = {
         "used only as a struct FIELD type (`struct OCCTZLayerSettings { Graphic3d_ZLayerSettings "
         "settings; };`, OCCTBridge_Visualization_Assets.mm), never inside a function body "
         "derive_lane.py's bridge-side extractor scans. Real test: "
-        "Tests/OCCTDrawingTests/ZLayerSettingsTests.swift.",
+        "Tests/OCCTDrawingTests/Visualization/ZLayerSettingsTests.swift.",
     ),
     "StdSelect_BRepSelectionTool": (
         {"OCCTDrawingTests", "OCCTMiscTests"},
         "used inside `OCCTBRepSelectable::ComputeSelection`, a C++ method override nested inside "
         "an internal support class (OCCTBridge_Visualization_Assets.mm), not a standalone "
         "OCCTXxx(...)-shaped function derive_lane.py's bridge-side regex matches. Reached whenever "
-        "Selector.pick() runs; real test: Tests/OCCTDrawingTests/SelectorTests.swift (constructs "
+        "Selector.pick() runs; real test: Tests/OCCTDrawingTests/Visualization/SelectorTests.swift (constructs "
         "and exercises `Selector()` directly, confirmed at line 21 and throughout).",
     ),
     "BRepFeat_MakeCylindricalHole": (
@@ -130,23 +130,23 @@ MANUAL_OVERRIDES: dict[str, tuple[set[str], str]] = {
     "BRepMAT2d_Explorer": (
         {"OCCTAnalysisTests"},
         "backs hatching (OCCTBridge_Geom2d_Hatching.mm). Real test: "
-        "Tests/OCCTAnalysisTests/HatchTests.swift.",
+        "Tests/OCCTAnalysisTests/PlanarGeometry/HatchTests.swift.",
     ),
     "RWMesh_FaceIterator": (
         {"OCCTIOTests"},
         "used as a struct field (`struct OCCTMeshFaceIter { RWMesh_FaceIterator iter; };`), the "
         "same struct-field shape as Graphic3d_ZLayerSettings above. Real test: "
-        "Tests/OCCTIOTests/RWMeshFaceIteratorTests.swift.",
+        "Tests/OCCTIOTests/MeshFormats/RWMeshFaceIteratorTests.swift.",
     ),
     "RWMesh_VertexIterator": (
         {"OCCTIOTests"},
-        "same struct-field shape. Real test: Tests/OCCTIOTests/RWMeshVertexIteratorTests.swift.",
+        "same struct-field shape. Real test: Tests/OCCTIOTests/MeshFormats/RWMeshVertexIteratorTests.swift.",
     ),
     "Plate_FreeGtoCConstraint": (
         {"OCCTSurfaceTests"},
         "derive_lane.py DID find the right decl (`PlateSolver.loadFreeG1Constraint`), but no test "
         "in the six targets calls it -- OCCTSurfaceTests (outside the six) does. Real test: "
-        "Tests/OCCTSurfaceTests/PlateConstraintExtTests.swift.",
+        "Tests/OCCTSurfaceTests/Plate/PlateConstraintExtTests.swift.",
     ),
     "RWMesh_CoordinateSystemConverter": (
         {"OCCTMathTests"},
@@ -154,7 +154,7 @@ MANUAL_OVERRIDES: dict[str, tuple[set[str], str]] = {
         "correct, but its coarser class-target-hit pass conflated it with a DIFFERENT call "
         "(`CoordinateSystem(...)`, a plain struct init) that OCCTMeshTests does make -- confirmed "
         "by grep: OCCTMeshTests calls zero of `convertCoordinateSystem`/"
-        "`coordinateSystemUpDirection`. Real test: Tests/OCCTMathTests/CoordinateSystemTests.swift.",
+        "`coordinateSystemUpDirection`. Real test: Tests/OCCTMathTests/CoordinateSystems/CoordinateSystemTests.swift.",
     ),
     # --- false POSITIVE: derive_lane.py said "tested," the match is a same-file name collision ---
     "Plate_Plate": (
@@ -177,7 +177,7 @@ MANUAL_OVERRIDES: dict[str, tuple[set[str], str]] = {
 
 FIXED_UNDER = {
     "BRepOffsetAPI_MiddlePath": {
-        "test_file": "Tests/OCCTModelingTests/Issue818MiddlePathTests.swift",
+        "test_file": "Tests/OCCTModelingTests/Sweeps/Issue818MiddlePathTests.swift",
         "note": "fixed in this branch: a coaxial-tube ground-truth regression test, proved to fail "
                 "when OCCTShapeMiddlePath is broken (see the PR/commit description for the "
                 "red/green transcript).",

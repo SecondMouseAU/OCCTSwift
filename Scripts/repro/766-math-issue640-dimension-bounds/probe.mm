@@ -1,4 +1,4 @@
-// Epic #766 kernel-parity probe for Tests/OCCTMathTests/Issue640MathDimensionBoundsTests.swift.
+// Epic #766 kernel-parity probe for Tests/OCCTMathTests/LinearAlgebra/Issue640MathDimensionBoundsTests.swift.
 // Almost every expectation in that file is a Swift-side argument guard with no kernel
 // counterpart (recorded N/A). This probe covers the control computations the guards let
 // through: the determinants via math_Gauss / math_Crout (as OCCTMathGaussDeterminant and

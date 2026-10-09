@@ -1,0 +1,50 @@
+import Testing
+import simd
+
+@testable import OCCTSwift
+
+@Suite("GeomFill_GuideTrihedronPlan")
+struct GeomFillGuideTrihedronPlanTests {
+    @Test("create and evaluate")
+    func createAndEvaluate() throws {
+        let guide = try #require(Curve3D.line(through: SIMD3(0, 5, 0), direction: SIMD3(1, 0, 0)))
+        let guideTrimmed = try #require(guide.trimmed(from: 0, to: 10))
+        let path = try #require(Curve3D.line(through: SIMD3(0, 0, 0), direction: SIMD3(1, 0, 0)))
+        let pathTrimmed = try #require(path.trimmed(from: 0, to: 10))
+        let triPlan = GuideTrihedronPlan.create(guideCurve: guideTrimmed)
+        // #766: the verdict of `setCurve` was discarded, so a law that refused its path still
+        // passed through the `evaluate` below only when the kernel happened to answer.
+        #expect(triPlan.setCurve(pathTrimmed))
+        // #766: `!= nil` only. GeomFill_GuideTrihedronPlan at 5 gives T (1, 0, 0),
+        // N (0, 1, 0), B (0, 0, 1), see Scripts/repro/766-geomfill-c/.
+        let frame = try #require(triPlan.evaluate(at: 5.0))
+        #expect(simd_length(frame.tangent - SIMD3(1, 0, 0)) < 1e-9)
+        #expect(simd_length(frame.normal - SIMD3(0, 1, 0)) < 1e-9)
+        #expect(simd_length(frame.binormal - SIMD3(0, 0, 1)) < 1e-9)
+    }
+
+    /// `createAndEvaluate()` above only checks non-nil, so it could not catch a pairwise swap
+    /// among `tangent`/`normal`/`binormal` at all (#908, following #903/#904). Same reasoning and
+    /// same right-handedness check as `GeomFillGuideTrihedronACTests`'s sibling test.
+    @Test("evaluate(at:) returns an orthonormal, right-handed frame (#908)")
+    func evaluateIsOrthonormalRightHanded() throws {
+        let guide = try #require(Curve3D.line(through: SIMD3(0, 5, 0), direction: SIMD3(1, 0, 0)))
+        let guideTrimmed = try #require(guide.trimmed(from: 0, to: 10))
+        let path = try #require(Curve3D.line(through: SIMD3(0, 0, 0), direction: SIMD3(1, 0, 0)))
+        let pathTrimmed = try #require(path.trimmed(from: 0, to: 10))
+        let triPlan = GuideTrihedronPlan.create(guideCurve: guideTrimmed)
+        triPlan.setCurve(pathTrimmed)
+        let frame = try #require(triPlan.evaluate(at: 5.0))
+
+        let t = frame.tangent
+        let n = frame.normal
+        let b = frame.binormal
+        #expect(abs(simd_length(t) - 1) < 1e-6)
+        #expect(abs(simd_length(n) - 1) < 1e-6)
+        #expect(abs(simd_length(b) - 1) < 1e-6)
+        #expect(abs(simd_dot(t, n)) < 1e-6)
+        #expect(abs(simd_dot(t, b)) < 1e-6)
+        #expect(abs(simd_dot(n, b)) < 1e-6)
+        #expect(simd_length(simd_cross(t, n) - b) < 1e-6)
+    }
+}

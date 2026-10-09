@@ -184,7 +184,7 @@ this PR generalised. Every row drops at least one case.
 ## The tests, run one process each
 
 The failure mode is an uncatchable signal, so one crash in a shared process hides every test after
-it. `Tests/OCCTTopologyTests/Issue1035NullShapeUnwrapTests.swift`, each `@Test` run on its own:
+it. `Tests/OCCTTopologyTests/NullGuards/Issue1035NullShapeUnwrapTests.swift`, each `@Test` run on its own:
 
 | test | before | after |
 |---|---|---|

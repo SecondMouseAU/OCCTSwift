@@ -338,7 +338,7 @@ public func simd_cross<Scalar: FloatingPoint>(_ a: SIMD3<Scalar>, _ b: SIMD3<Sca
 /// Determinant of a 4x4 matrix.
 ///
 /// The only matrix operation the package needs on this target, and it is needed by a test rather
-/// than by `Sources/OCCTSwift`: `Tests/OCCTDrawingTests/CameraTests.swift` asserts that
+/// than by `Sources/OCCTSwift`: `Tests/OCCTDrawingTests/Visualization/CameraTests.swift` asserts that
 /// `Camera.projectionMatrix` is invertible. The measured census of `simd_*` names across all 1,428
 /// test files is `simd_length` 187, `simd_distance` 102, `simd_dot` 39, `simd_normalize` 36,
 /// `simd_cross` 12, `simd_double3x3` 1 and this, once (#2793). Everything else was already here.

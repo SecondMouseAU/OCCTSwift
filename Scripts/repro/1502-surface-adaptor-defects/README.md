@@ -45,7 +45,7 @@ there is no override-link step: both lanes compile the exact call sequence
   (pointing to the circle's centre) `(-cos 0.1, -sin 0.1, 0)` = `(-0.9950, -0.0998, 0)`, binormal
   `(0, 0, 1)` matching the disc's own normal -- all three match the transcript exactly.
 
-`Tests/OCCTSurfaceTests/Issue1502DarbouxTrihedronTests.swift` exercises the fixed code path through
+`Tests/OCCTSurfaceTests/GeomFill/Issue1502DarbouxTrihedronTests.swift` exercises the fixed code path through
 the public Swift API (`Shape.darbouxTrihedron(onFace:at:)`) as an ordinary regression test; it asserts
 the same geometry this reproducer measured. It cannot exercise the *unfixed* path (that would crash
 the whole `swift test` process), which is why this standalone reproducer exists and is kept in the
@@ -78,7 +78,7 @@ the PR body / issue tracker), since it needs no kernel patch either but is a dis
 different file.
 
 No standalone reproducer needed for this one: it isn't a crash, and
-`Tests/OCCTAnalysisTests/ExtremaExtSSTests.swift` (`bothPointsCarryTheirOwnUV`) asserts the fix
+`Tests/OCCTAnalysisTests/ExtSS/ExtremaExtSSTests.swift` (`bothPointsCarryTheirOwnUV`) asserts the fix
 directly against a real surface-surface extremum with known, non-trivial U and V on both sides.
 `probe_extrema_ss.cxx` is the scratch tool used to pick that fixture (two spheres offset in both X
 and Z, so the closest points land away from either equator, where V is 0 and a dropped V would pass

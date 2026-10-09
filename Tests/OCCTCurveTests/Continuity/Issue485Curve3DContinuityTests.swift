@@ -1,0 +1,138 @@
+import Testing
+import simd
+
+@testable import OCCTSwift
+
+/// #485: `Curve3D.continuity` and `Curve3D.continuityOrder` wrapped the same
+/// `Geom_Curve::Continuity()` call through two incompatible numeric encodings, the real
+/// `GeomAbs_Shape` ordinal, and a hand-written switch producing `{C0=0, C1=1, C2=2, C3=3,
+/// CN=99, G1=-2, G2=-3}`.
+///
+/// C0 was the only class the two agreed on.
+///
+/// No pre-existing test caught it: every one asserted `>= 0` against a line or a plain BSpline,
+/// which is satisfied by both encodings. These pin the real ordinals, prove the two properties
+/// now agree, and cover the G1 class no earlier test could reach.
+@Suite("Curve3D measured continuity (#485)")
+struct Issue485Curve3DContinuityTests {
+
+    // MARK: - Fixtures
+
+    // `bspline(interiorMultiplicity:)` moved to CurveTestFixtures.swift (#1262), shared with
+    // Issue619ContinuityEncodingTests.
+
+    /// A curve that genuinely measures G1, the class the issue noted was untested anywhere.
+    ///
+    /// Recipe: a cubic BSpline with its interior knot at full multiplicity is only C0, but if
+    /// the three poles around that knot are collinear with unequal spacing, the tangent
+    /// *direction* is continuous while its magnitude jumps, so `Geom_BSplineCurve::IsG1` is
+    /// true. `Geom_OffsetCurve` checks exactly that when its basis is C0 and latches
+    /// `GeomAbs_G1`, which is the only route to a G1 result in the Geom hierarchy: BSplines
+    /// themselves only ever report C0...C3 or CN.
+    static func offsetOfG1Basis() -> Curve3D? {
+        let poles: [SIMD3<Double>] = [
+            SIMD3(0, 0, 0),
+            SIMD3(1, 1, 0),
+            SIMD3(2, 0, 0),
+            SIMD3(3, 0, 0),  // knot pole; poles 3-4-5 collinear along +x ...
+            SIMD3(5, 0, 0),  // ... but unequally spaced, so C1 fails and only G1 holds
+            SIMD3(6, 1, 0),
+            SIMD3(7, 0, 0),
+        ]
+        guard
+            let basis = Curve3D.bspline(
+                poles: poles,
+                knots: [0.0, 0.5, 1.0],
+                multiplicities: [4, 3, 4],
+                degree: 3)
+        else { return nil }
+        return Curve3D.offset(basis: basis, offset: 1.0, dirX: 0, dirY: 0, dirZ: 1)
+    }
+
+    // MARK: - The real ordinals
+
+    @Test("Knot multiplicity drives the measured class, at GeomAbs_Shape's own ordinal")
+    func knotMultiplicityDrivesMeasuredClass() throws {
+        // The ordinals are the point: C1 is 2 and C2 is 4, not 1 and 2. The old hand-mapped
+        // encoding reported 1 and 2 here, which is what made a threshold check misfire.
+        let c2 = try #require(bspline(interiorMultiplicity: 1), "the C2 fixture")
+        #expect(c2.continuityClass == .c2)
+        #expect(c2.continuity == 4)
+        let c1 = try #require(bspline(interiorMultiplicity: 2), "the C1 fixture")
+        #expect(c1.continuityClass == .c1)
+        #expect(c1.continuity == 2)
+        let c0 = try #require(bspline(interiorMultiplicity: 3), "the C0 fixture")
+        #expect(c0.continuityClass == .c0)
+        #expect(c0.continuity == 0)
+    }
+
+    @Test("Analytic curves report CN as ordinal 6, not 99")
+    func analyticCurvesReportCN() throws {
+        // 99 was the old encoding's CN. Nothing should produce it now.
+        let line = try #require(Curve3D.line(through: .zero, direction: SIMD3(1, 0, 0)))
+        #expect(line.continuityClass == .cN)
+        #expect(line.continuity == 6)
+        let circle = try #require(
+            Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 10))
+        #expect(circle.continuityClass == .cN)
+        #expect(circle.continuity == 6)
+    }
+
+    @Test("A G1-only curve is reachable and reports ordinal 1")
+    func g1CurveReportsOrdinalOne() throws {
+        let g1 = try #require(Self.offsetOfG1Basis(), "could not build the G1 offset-curve fixture")
+        // The class the old encoding reported as -2.
+        #expect(g1.continuityClass == .g1)
+        #expect(g1.continuity == 1)
+        #expect(g1.continuity > 0)
+    }
+
+    // MARK: - The divergence itself
+
+    // These two originally compared `continuity` against `continuityOrder`, silencing the
+    // deprecation warning with `@available(*, deprecated)` on the test function, which is
+    // exactly what a real caller does, and exactly why a warning was not enough of a signal.
+    // `continuityOrder` is unavailable as of #619, so the substance moved onto the two
+    // properties that survive.
+
+    @Test("continuity and continuityClass agree on the same curve, in every class")
+    func bothPropertiesAgree() {
+        // This is the comparison no pre-#485 test made. Before that fix the two spellings of
+        // the measured value disagreed for every fixture below except the C0 one.
+        var checked = 0
+        for curve in [
+            bspline(interiorMultiplicity: 1),
+            bspline(interiorMultiplicity: 2),
+            bspline(interiorMultiplicity: 3),
+            Curve3D.line(through: .zero, direction: SIMD3(1, 0, 0)),
+            Self.offsetOfG1Basis(),
+        ].compactMap({ $0 }) {
+            #expect(curve.continuity == Int(curve.continuityClass.rawValue))
+            checked += 1
+        }
+        #expect(checked == 5, "every fixture should build; the G1 one is the fragile member")
+    }
+
+    @Test("The retired encoding's sentinel values never appear")
+    func retiredSentinelValuesAreGone() {
+        // Each fixture beside the ordinal it measures, so a fixture that failed to build is a
+        // missing row rather than a shorter loop.
+        let fixtures: [(String, Curve3D?, Int)] = [
+            ("C2 BSpline", bspline(interiorMultiplicity: 1), 4),
+            ("C1 BSpline", bspline(interiorMultiplicity: 2), 2),
+            ("line", Curve3D.line(through: .zero, direction: SIMD3(1, 0, 0)), 6),
+            ("G1 offset", Self.offsetOfG1Basis(), 1),
+        ]
+        for (name, curve, ordinal) in fixtures {
+            guard let curve else {
+                Issue.record("\(name) fixture did not build")
+                continue
+            }
+            #expect(curve.continuity == ordinal, "\(name)")
+            #expect(curve.continuity != 99)  // was CN
+            #expect(curve.continuity != -2)  // was G1
+            #expect(curve.continuity != -3)  // was G2
+            #expect(curve.continuity >= 0 && curve.continuity <= 6)
+        }
+    }
+}

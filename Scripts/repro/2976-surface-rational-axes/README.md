@@ -66,10 +66,10 @@ rely on, and because the pinned binary is what ships.
 A cylinder converted with `GeomConvert::SurfaceToBSplineSurface` carries the circle's weights
 around U and constant weights along the axis V, so it reports `isURational == false` and
 `isVRational == true`. The same holds for every cone, sphere and surface of revolution in BSpline
-form. This was already pinned in `Tests/OCCTSurfaceTests/BSplineSurfaceManipulationTests.swift`
+form. This was already pinned in `Tests/OCCTSurfaceTests/BSplineAndBezier/BSplineSurfaceManipulationTests.swift`
 with a paragraph in the test explaining why the pair is not inverted; #2976 moved that explanation
 to the `///` comments where a caller reads it, and
-`Tests/OCCTAnalysisTests/BezierSurfaceTests.swift` gained
+`Tests/OCCTAnalysisTests/GeomProperties/BezierSurfaceTests.swift` gained
 `rationalFlagsReportTheOppositeAxis` so the Bezier half has a test under its sentence too.
 
 ## Running it

@@ -1,4 +1,4 @@
-// Epic #766 evidence correction for PR #2692 (Tests/OCCTModelingTests/FilletBuilderHistoryTests.swift).
+// Epic #766 evidence correction for PR #2692 (Tests/OCCTModelingTests/Blends/FilletBuilderHistoryTests.swift).
 // probe.mm printed the kernel side under the OCCT member names (GetBounds, Generated(edge).Size,
 // IsDeleted(edge), ...) while the bridge side used the Swift names. The parity records now carry the
 // same keys and types on both sides, so this probe repeats the same calls under those keys, every

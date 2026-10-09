@@ -1,0 +1,306 @@
+import Foundation
+import OCCTBridge
+
+// TEMPORARY injection harness for the #766 Surface GeomFill / PipeShell / Plate_Plate lift. This
+// `.txt` is the evidence copy: for a sweep it is copied to Sources/OCCTSwift/SweepGeomFillShadow.swift
+// and removed again, and that file must never be committed (README.md, "Running it"). Every function
+// below has the name and C signature of an OCCTBridge entry point, so the module-local declaration
+// wins over the imported one at every call site with no edit to any call site or any .mm.
+// One build serves every switch; GFPS_SWITCH selects one at runtime. With the variable unset every
+// shadow is a pure pass-through, which the sweep asserts (suites green, no switch).
+
+enum GF {
+    static let active: String = Foundation.ProcessInfo.processInfo.environment["GFPS_SWITCH"] ?? ""
+    static func on(_ name: String) -> Bool { active == name }
+}
+
+// MARK: - GeomFill_GuideTrihedronAC / GuideTrihedronPlan
+
+func OCCTGeomFillGuideTrihedronACSetCurve(_ ref: OCCTGuideTrihedronACRef, _ path: OCCTCurve3DRef) -> Bool {
+    // The curve IS set (a law left without one traps inside OCCT, uncatchably); only the verdict lies.
+    let ok = OCCTBridge.OCCTGeomFillGuideTrihedronACSetCurve(ref, path)
+    if GF.on("GAC_SETCURVE_FALSE") { return false }
+    return ok
+}
+
+func OCCTGeomFillGuideTrihedronACD0(
+    _ ref: OCCTGuideTrihedronACRef, _ param: Double,
+    _ tX: UnsafeMutablePointer<Double>, _ tY: UnsafeMutablePointer<Double>, _ tZ: UnsafeMutablePointer<Double>,
+    _ nX: UnsafeMutablePointer<Double>, _ nY: UnsafeMutablePointer<Double>, _ nZ: UnsafeMutablePointer<Double>,
+    _ bX: UnsafeMutablePointer<Double>, _ bY: UnsafeMutablePointer<Double>, _ bZ: UnsafeMutablePointer<Double>
+) -> Bool {
+    if GF.on("GAC_D0_FALSE") { return false }
+    let ok = OCCTBridge.OCCTGeomFillGuideTrihedronACD0(ref, param, tX, tY, tZ, nX, nY, nZ, bX, bY, bZ)
+    if GF.on("GAC_TN_SWAP") { swap3(tX, tY, tZ, nX, nY, nZ) }
+    if GF.on("GAC_NB_SWAP") { swap3(nX, nY, nZ, bX, bY, bZ) }
+    if GF.on("GAC_N_NEG") { nX.pointee = -nX.pointee; nY.pointee = -nY.pointee; nZ.pointee = -nZ.pointee }
+    if GF.on("GAC_T_PLUS") { tX.pointee += 1e-6 }
+    return ok
+}
+
+func OCCTGeomFillGuideTrihedronPlanSetCurve(_ ref: OCCTGuideTrihedronPlanRef, _ path: OCCTCurve3DRef) -> Bool {
+    // The curve IS set (a law left without one traps inside OCCT, uncatchably); only the verdict lies.
+    let ok = OCCTBridge.OCCTGeomFillGuideTrihedronPlanSetCurve(ref, path)
+    if GF.on("GPL_SETCURVE_FALSE") { return false }
+    return ok
+}
+
+func OCCTGeomFillGuideTrihedronPlanD0(
+    _ ref: OCCTGuideTrihedronPlanRef, _ param: Double,
+    _ tX: UnsafeMutablePointer<Double>, _ tY: UnsafeMutablePointer<Double>, _ tZ: UnsafeMutablePointer<Double>,
+    _ nX: UnsafeMutablePointer<Double>, _ nY: UnsafeMutablePointer<Double>, _ nZ: UnsafeMutablePointer<Double>,
+    _ bX: UnsafeMutablePointer<Double>, _ bY: UnsafeMutablePointer<Double>, _ bZ: UnsafeMutablePointer<Double>
+) -> Bool {
+    if GF.on("GPL_D0_FALSE") { return false }
+    let ok = OCCTBridge.OCCTGeomFillGuideTrihedronPlanD0(ref, param, tX, tY, tZ, nX, nY, nZ, bX, bY, bZ)
+    if GF.on("GPL_TN_SWAP") { swap3(tX, tY, tZ, nX, nY, nZ) }
+    if GF.on("GPL_NB_SWAP") { swap3(nX, nY, nZ, bX, bY, bZ) }
+    if GF.on("GPL_B_NEG") { bX.pointee = -bX.pointee; bY.pointee = -bY.pointee; bZ.pointee = -bZ.pointee }
+    return ok
+}
+
+private func swap3(
+    _ aX: UnsafeMutablePointer<Double>, _ aY: UnsafeMutablePointer<Double>, _ aZ: UnsafeMutablePointer<Double>,
+    _ bX: UnsafeMutablePointer<Double>, _ bY: UnsafeMutablePointer<Double>, _ bZ: UnsafeMutablePointer<Double>
+) {
+    let x = aX.pointee, y = aY.pointee, z = aZ.pointee
+    aX.pointee = bX.pointee; aY.pointee = bY.pointee; aZ.pointee = bZ.pointee
+    bX.pointee = x; bY.pointee = y; bZ.pointee = z
+}
+
+// MARK: - GeomFill_LocationDraft
+
+func OCCTGeomFillLocationDraftSetCurve(_ ref: OCCTLocationDraftRef, _ curve: OCCTCurve3DRef) -> Bool {
+    // The curve IS set (a law left without one traps inside OCCT, uncatchably); only the verdict lies.
+    let ok = OCCTBridge.OCCTGeomFillLocationDraftSetCurve(ref, curve)
+    if GF.on("LD_SETCURVE_FALSE") { return false }
+    return ok
+}
+
+func OCCTGeomFillLocationDraftD0(
+    _ ref: OCCTLocationDraftRef, _ param: Double, _ mat: UnsafeMutablePointer<Double>,
+    _ vecX: UnsafeMutablePointer<Double>, _ vecY: UnsafeMutablePointer<Double>, _ vecZ: UnsafeMutablePointer<Double>
+) -> Bool {
+    if GF.on("LD_D0_FALSE") { return false }
+    let ok = OCCTBridge.OCCTGeomFillLocationDraftD0(ref, param, mat, vecX, vecY, vecZ)
+    if GF.on("LD_MAT_TRANSPOSE") {
+        var t = Array(UnsafeBufferPointer(start: mat, count: 9))
+        for r in 0..<3 { for c in 0..<3 { t[r * 3 + c] = mat[c * 3 + r] } }
+        for i in 0..<9 { mat[i] = t[i] }
+    }
+    if GF.on("LD_MAT_ROW1_NEG") { for i in 3..<6 { mat[i] = -mat[i] } }
+    if GF.on("LD_MAT_IDENTITY") { for i in 0..<9 { mat[i] = (i % 4 == 0) ? 1 : 0 } }
+    if GF.on("LD_TRANS_X_PLUS") { vecX.pointee += 1e-6 }
+    if GF.on("LD_TRANS_ZERO") { vecX.pointee = 0; vecY.pointee = 0; vecZ.pointee = 0 }
+    return ok
+}
+
+func OCCTGeomFillLocationDraftSetAngle(_ ref: OCCTLocationDraftRef, _ angle: Double) {
+    if GF.on("LD_ANGLE_IGNORED") { return }
+    if GF.on("LD_ANGLE_HALF") { OCCTBridge.OCCTGeomFillLocationDraftSetAngle(ref, angle / 2); return }
+    OCCTBridge.OCCTGeomFillLocationDraftSetAngle(ref, angle)
+}
+
+func OCCTGeomFillLocationDraftCreate(_ dx: Double, _ dy: Double, _ dz: Double, _ angle: Double) -> OCCTLocationDraftRef? {
+    if GF.on("LD_CREATE_ANGLE_ZERO") { return OCCTBridge.OCCTGeomFillLocationDraftCreate(dx, dy, dz, 0) }
+    if GF.on("LD_CREATE_DIR_X") { return OCCTBridge.OCCTGeomFillLocationDraftCreate(1, 0, 0, angle) }
+    return OCCTBridge.OCCTGeomFillLocationDraftCreate(dx, dy, dz, angle)
+}
+
+// MARK: - GeomFill_Stretch, GeomFill_Sweep, Frenet and ConstantBiNormal trihedra
+
+func OCCTGeomFillStretch(
+    _ p1: UnsafePointer<Double>, _ p2: UnsafePointer<Double>, _ p3: UnsafePointer<Double>,
+    _ p4: UnsafePointer<Double>, _ count: Int32, _ outPoles: UnsafeMutablePointer<Double>?, _ maxPoles: Int32
+) -> OCCTStretchFillResult {
+    if GF.on("STRETCH_ROWS_P1_P3") {
+        return OCCTBridge.OCCTGeomFillStretch(p3, p2, p1, p4, count, outPoles, maxPoles)
+    }
+    var r = OCCTBridge.OCCTGeomFillStretch(p1, p2, p3, p4, count, outPoles, maxPoles)
+    if let o = outPoles {
+        let n = Int(r.nbUPoles) * Int(r.nbVPoles)
+        if GF.on("STRETCH_CENTRE_Z_PLUS") && n == 9 { o[4 * 3 + 2] += 0.5 }
+        if GF.on("STRETCH_POLES_1_3_SWAP") && n == 9 {
+            for k in 0..<3 { let t = o[1 * 3 + k]; o[1 * 3 + k] = o[3 * 3 + k]; o[3 * 3 + k] = t }
+        }
+    }
+    if GF.on("STRETCH_NU_PLUS1") { r.nbUPoles += 1 }
+    if GF.on("STRETCH_RATIONAL") { r.isRational = true }
+    return r
+}
+
+func OCCTGeomFillSweep(_ path: OCCTShapeRef, _ section: OCCTShapeRef) -> OCCTShapeRef? {
+    if GF.on("GFS_NIL") { return nil }
+    if GF.on("GFS_SWAPPED") { return OCCTBridge.OCCTGeomFillSweep(section, path) }
+    guard let r = OCCTBridge.OCCTGeomFillSweep(path, section) else { return nil }
+    if GF.on("GFS_SCALED_1P01") { return OCCTBridge.OCCTShapeScale(r, 1.01) }
+    return r
+}
+
+func OCCTGeomFillFrenetTrihedron(_ edge: OCCTShapeRef, _ param: Double) -> OCCTTrihedronFrame {
+    var f = OCCTBridge.OCCTGeomFillFrenetTrihedron(edge, GF.on("FR_PARAM_PLUS") ? param + 0.5 : param)
+    if GF.on("FR_TN_SWAP") { swapFrame(&f.tx, &f.ty, &f.tz, &f.nx, &f.ny, &f.nz) }
+    if GF.on("FR_NB_SWAP") { swapFrame(&f.nx, &f.ny, &f.nz, &f.bx, &f.by, &f.bz) }
+    if GF.on("FR_N_NEG") { f.nx = -f.nx; f.ny = -f.ny; f.nz = -f.nz }
+    if GF.on("FR_B_NEG") { f.bx = -f.bx; f.by = -f.by; f.bz = -f.bz }
+    return f
+}
+
+func OCCTGeomFillConstantBiNormalTrihedron(
+    _ edge: OCCTShapeRef, _ param: Double, _ bx: Double, _ by: Double, _ bz: Double
+) -> OCCTTrihedronFrame {
+    var f: OCCTTrihedronFrame
+    if GF.on("CB_BINORMAL_NEG") {
+        f = OCCTBridge.OCCTGeomFillConstantBiNormalTrihedron(edge, param, -bx, -by, -bz)
+    } else if GF.on("CB_BINORMAL_X") {
+        f = OCCTBridge.OCCTGeomFillConstantBiNormalTrihedron(edge, param, 1, 0, 0)
+    } else {
+        f = OCCTBridge.OCCTGeomFillConstantBiNormalTrihedron(edge, param, bx, by, bz)
+    }
+    if GF.on("CB_TN_SWAP") { swapFrame(&f.tx, &f.ty, &f.tz, &f.nx, &f.ny, &f.nz) }
+    if GF.on("CB_N_NEG") { f.nx = -f.nx; f.ny = -f.ny; f.nz = -f.nz }
+    return f
+}
+
+private func swapFrame(
+    _ aX: inout Double, _ aY: inout Double, _ aZ: inout Double,
+    _ bX: inout Double, _ bY: inout Double, _ bZ: inout Double
+) {
+    let x = aX, y = aY, z = aZ
+    aX = bX; aY = bY; aZ = bZ
+    bX = x; bY = y; bZ = z
+}
+
+// MARK: - BRepFill_PipeShell, BRepOffsetAPI_MakePipe (Shape.sweep)
+
+func OCCTShapeCreatePipeSweep(_ profile: OCCTWireRef, _ path: OCCTWireRef) -> OCCTShapeRef? {
+    if GF.on("SWEEP_NIL") { return nil }
+    if GF.on("SWEEP_SWAPPED") { return OCCTBridge.OCCTShapeCreatePipeSweep(path, profile) }
+    guard let r = OCCTBridge.OCCTShapeCreatePipeSweep(profile, path) else { return nil }
+    if GF.on("SWEEP_SCALED_1P01") { return OCCTBridge.OCCTShapeScale(r, 1.01) }
+    return r
+}
+
+func OCCTPipeShellSetFrenet(_ ps: OCCTPipeShellRef, _ frenet: Bool) {
+    if GF.on("PSB_FRENET_FLIPPED") { OCCTBridge.OCCTPipeShellSetFrenet(ps, !frenet); return }
+    OCCTBridge.OCCTPipeShellSetFrenet(ps, frenet)
+}
+
+func OCCTPipeShellAdd(_ ps: OCCTPipeShellRef, _ profile: OCCTShapeRef) {
+    if GF.on("PSB_ADD_IGNORED") { return }
+    OCCTBridge.OCCTPipeShellAdd(ps, profile)
+}
+
+func OCCTPipeShellBuild(_ ps: OCCTPipeShellRef) -> Bool {
+    if GF.on("PSB_BUILD_FALSE") { return false }
+    return OCCTBridge.OCCTPipeShellBuild(ps)
+}
+
+func OCCTPipeShellIsReady(_ ps: OCCTPipeShellRef) -> Bool {
+    if GF.on("PSB_READY_TRUE") { return true }
+    return OCCTBridge.OCCTPipeShellIsReady(ps)
+}
+
+func OCCTPipeShellShape(_ ps: OCCTPipeShellRef) -> OCCTShapeRef? {
+    if GF.on("PSB_SHAPE_NIL") { return nil }
+    guard let r = OCCTBridge.OCCTPipeShellShape(ps) else { return nil }
+    if GF.on("PSB_SHAPE_SCALED_1P01") { return OCCTBridge.OCCTShapeScale(r, 1.01) }
+    return r
+}
+
+func OCCTPipeShellGetStatus(_ ps: OCCTPipeShellRef) -> Int32 {
+    if GF.on("PSB_STATUS_NOT_OK") { return 1 }
+    return OCCTBridge.OCCTPipeShellGetStatus(ps)
+}
+
+func OCCTPipeShellSimulate(
+    _ ps: OCCTPipeShellRef, _ numSections: Int32, _ outCount: UnsafeMutablePointer<Int32>
+) -> UnsafeMutablePointer<OCCTShapeRef?>? {
+    if GF.on("PSB_SIM_DROP_LAST") {
+        let r = OCCTBridge.OCCTPipeShellSimulate(ps, numSections, outCount)
+        if outCount.pointee > 0 { outCount.pointee -= 1 }
+        return r
+    }
+    if GF.on("PSB_SIM_FEWER_REQUEST") { return OCCTBridge.OCCTPipeShellSimulate(ps, max(1, numSections - 1), outCount) }
+    return OCCTBridge.OCCTPipeShellSimulate(ps, numSections, outCount)
+}
+
+// MARK: - Plate_Plate constraints (PlateSolver)
+
+func OCCTPlateLoadGlobalTranslation(_ plate: OCCTPlateRef, _ uvs: UnsafePointer<Double>, _ count: Int32) -> Bool {
+    if GF.on("PLATE_GT_NOT_LOADED") { return true }
+    if GF.on("PLATE_GT_DROP_LAST") { return OCCTBridge.OCCTPlateLoadGlobalTranslation(plate, uvs, count - 1) }
+    return OCCTBridge.OCCTPlateLoadGlobalTranslation(plate, uvs, count)
+}
+
+func OCCTPlateLoadLinearXYZ(
+    _ plate: OCCTPlateRef, _ uvs: UnsafePointer<Double>, _ targets: UnsafePointer<Double>,
+    _ coeffs: UnsafePointer<Double>, _ count: Int32
+) -> Bool {
+    if GF.on("PLATE_LXYZ_NOT_LOADED") { return true }
+    if GF.on("PLATE_LXYZ_COEFF_SECOND_PLUS") {
+        // F(0,0) - F(1,0) = 0 becomes F(0,0) + F(1,0) = 0: (1, 0) is pulled to -z instead of +z.
+        var c = (0..<Int(count)).map { coeffs[$0] }
+        if c.count > 1 { c[1] = -c[1] }
+        return c.withUnsafeBufferPointer {
+            OCCTBridge.OCCTPlateLoadLinearXYZ(plate, uvs, targets, $0.baseAddress!, count)
+        }
+    }
+    if GF.on("PLATE_LXYZ_COEFF_SECOND_ZERO") {
+        var c = (0..<Int(count)).map { coeffs[$0] }
+        if c.count > 1 { c[1] = 0 }
+        return c.withUnsafeBufferPointer {
+            OCCTBridge.OCCTPlateLoadLinearXYZ(plate, uvs, targets, $0.baseAddress!, count)
+        }
+    }
+    return OCCTBridge.OCCTPlateLoadLinearXYZ(plate, uvs, targets, coeffs, count)
+}
+
+func OCCTPlateSolve(_ plate: OCCTPlateRef, _ order: Int32, _ anisotropy: Double) -> Bool {
+    if GF.on("PLATE_SOLVE_FALSE") { return false }
+    return OCCTBridge.OCCTPlateSolve(plate, order, anisotropy)
+}
+
+func OCCTPlateEvaluate(
+    _ plate: OCCTPlateRef, _ u: Double, _ v: Double,
+    _ outX: UnsafeMutablePointer<Double>, _ outY: UnsafeMutablePointer<Double>, _ outZ: UnsafeMutablePointer<Double>
+) {
+    OCCTBridge.OCCTPlateEvaluate(plate, u, v, outX, outY, outZ)
+    if GF.on("PLATE_EVAL_Z_PLUS") { outZ.pointee += 1e-6 }
+    if GF.on("PLATE_EVAL_ZX_SWAP") { let t = outX.pointee; outX.pointee = outZ.pointee; outZ.pointee = t }
+}
+
+func OCCTPlateLoadPinpoint(
+    _ plate: OCCTPlateRef, _ u: Double, _ v: Double, _ x: Double, _ y: Double, _ z: Double,
+    _ iu: Int32, _ iv: Int32
+) {
+    if GF.on("PLATE_PIN_Z_HALF") { OCCTBridge.OCCTPlateLoadPinpoint(plate, u, v, x, y, z / 2, iu, iv); return }
+    OCCTBridge.OCCTPlateLoadPinpoint(plate, u, v, x, y, z, iu, iv)
+}
+
+// MARK: - GeomPlate_BuildAveragePlane
+
+func OCCTGeomPlateBuildAveragePlane(
+    _ points: UnsafePointer<Double>, _ pointCount: Int32, _ nbBound: Int32, _ tol: Double
+) -> OCCTAveragePlaneResult {
+    var r = OCCTBridge.OCCTGeomPlateBuildAveragePlane(points, pointCount, nbBound, tol)
+    if GF.on("AVG_NORMAL_NEG") { r.normalX = -r.normalX; r.normalY = -r.normalY; r.normalZ = -r.normalZ }
+    if GF.on("AVG_NORMAL_XZ_SWAP") { let t = r.normalX; r.normalX = r.normalZ; r.normalZ = t }
+    if GF.on("AVG_ORIGIN_X_PLUS") { r.originX += 1e-6 }
+    if GF.on("AVG_UV_U_SWAP") { let t = r.umin; r.umin = r.umax; r.umax = t }
+    if GF.on("AVG_UV_V_NARROW") { r.vmax -= 1e-6 }
+    if GF.on("AVG_IS_LINE") { r.isLine = true; r.isPlane = false }
+    if GF.on("AVG_NOT_PLANE") { r.isPlane = false }
+    return r
+}
+
+// MARK: - BRepFill_Filling (Shape.fill with a support shape)
+
+func OCCTShapeFillWithSupport(
+    _ boundaries: UnsafePointer<OCCTWireRef?>?, _ count: Int32, _ support: OCCTShapeRef?,
+    _ params: OCCTFillingParams
+) -> OCCTShapeRef? {
+    if GF.on("FILLSUP_SUPPORT_IGNORED") { return OCCTBridge.OCCTShapeFill(boundaries, count, params) }
+    if GF.on("FILLSUP_SUPPORT_NIL") { return OCCTBridge.OCCTShapeFillWithSupport(boundaries, count, nil, params) }
+    return OCCTBridge.OCCTShapeFillWithSupport(boundaries, count, support, params)
+}

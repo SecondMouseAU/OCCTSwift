@@ -49,8 +49,8 @@ import sys
 
 MM = "Sources/OCCTBridge/src/OCCTBridge_Modeling_Boolean.mm"
 FILES = [
-    "Tests/OCCTAnalysisTests/IntToolsEdgeEdgeTests.swift",
-    "Tests/OCCTAnalysisTests/IntToolsEdgeFaceTests.swift",
+    "Tests/OCCTAnalysisTests/Intersection/IntToolsEdgeEdgeTests.swift",
+    "Tests/OCCTAnalysisTests/Intersection/IntToolsEdgeFaceTests.swift",
 ]
 BUNDLE = "OCCTAnalysisTests"
 MARKER = b"OCCT3012_INJECT"  # a string that exists only in the injected code

@@ -35,7 +35,7 @@ struct Issue1440Polygon3DParameterGuardTests {
         // guard's fallback. See the PR notes for the "prove the test fails" transcript: this
         // exact case was run against the reverted fix and observed to crash the test process
         // with signal 11 (SIGSEGV), matching the precedent in
-        // Tests/OCCTAnalysisTests/Issue1424BndLibFaceNullGuardTests.swift.
+        // Tests/OCCTAnalysisTests/Bounding/Issue1424BndLibFaceNullGuardTests.swift.
         #expect(polygon.parameter(at: 0) == 0)
         #expect(polygon.parameter(at: 1) == 0)
         #expect(polygon.parameter(at: 2) == 0)

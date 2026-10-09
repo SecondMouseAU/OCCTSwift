@@ -1,4 +1,4 @@
-// #766 kernel parity for Tests/OCCTAnalysisTests/BndBoundSortBoxTests.swift: Bnd_BoundSortBox
+// #766 kernel parity for Tests/OCCTAnalysisTests/Bounding/BndBoundSortBoxTests.swift: Bnd_BoundSortBox
 // initialised as OCCTBoundSortBoxCreate does (box i at array position i + 1, enclosing box of all)
 // and queried with Compare(Bnd_Box), the list OCCTBoundSortBoxCompare translates to 0-based.
 #include <Bnd_BoundSortBox.hxx>

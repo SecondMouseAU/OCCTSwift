@@ -137,6 +137,14 @@ SCENARIOS=(
   "2074-adaptor-evaluation/occt_2074_stress.cpp|surface_independent 8 40"
   "2074-adaptor-evaluation/occt_2074_stress.cpp|curve_shared_geometry 8 40"
   "2074-adaptor-evaluation/occt_2074_stress.cpp|surface_shared_geometry 8 40"
+  # #3065: the pattern the kernel's maintainer says an adaptor is designed for, ONE adaptor with a
+  # ShallowCopy() per thread, which is also what carried patch 0031 lets us stop depending on. Each
+  # thread copies from the shared source and checks every point against the geometry's own
+  # evaluator, so a copy that leaked the source's cache fails as a wrong point and not only as a
+  # race. The *_shared_adaptor modes stay out: sharing the adaptor itself is the unsupported shape.
+  "2074-adaptor-evaluation/occt_2074_stress.cpp|curve_shallow_copy_per_thread 8 40"
+  "2074-adaptor-evaluation/occt_2074_stress.cpp|edge_shallow_copy_per_thread 8 40"
+  "2074-adaptor-evaluation/occt_2074_stress.cpp|surface_shallow_copy_per_thread 8 40"
 
   # #2075, BRepGraph. Exploratory: no known defect, ranked second for that reason. The structural
   # read agreed with the measurement before it ran, which is worth recording because it rarely
@@ -155,14 +163,43 @@ CXX=$(xcrun --find clang++)
 apply_patches() {
     # Same idempotent loop as build-occt.sh: carried patches must be in the
     # instrumented kernel too, otherwise the gate re-reports every fixed race.
+    #
+    # The patches are a stack and a later one may rewrite lines an earlier one added (0055
+    # corrects 0050 and 0051, #3010), so on a tree that carries the stack the earlier patch fails
+    # BOTH checks below. build-occt.sh carries it when a LATER patch touching one of its files
+    # reverse-checks clean; this loop did not, and stopped at 0050 on a fully patched tree.
+    local -a patches
+    patches=("$SCRIPT_DIR"/patches/*.patch)
+    patch_files() { git -C "$SRC_DIR" apply --numstat "$1" | cut -f3; }
+    superseded_by_applied_patch() {
+        local p=$1 q f
+        local -a files
+        # A read loop and not `mapfile`: this script runs under macOS's /bin/bash 3.2, which has no
+        # mapfile, and `set -u` there treats an empty array as unbound.
+        files=()
+        while IFS= read -r f; do files+=("$f"); done < <(patch_files "$p")
+        for q in "${patches[@]}"; do
+            [[ "$q" > "$p" ]] || continue
+            for f in ${files[@]+"${files[@]}"}; do
+                if patch_files "$q" | grep -qxF -- "$f" &&
+                   git -C "$SRC_DIR" apply --reverse --check "$q" 2>/dev/null; then
+                    echo "$(basename "$q")"
+                    return 0
+                fi
+            done
+        done
+        return 1
+    }
     if compgen -G "$SCRIPT_DIR/patches/*.patch" > /dev/null; then
         echo ">>> Applying carried OCCT patches to occt-src..."
-        for p in "$SCRIPT_DIR"/patches/*.patch; do
+        for p in "${patches[@]}"; do
             if git -C "$SRC_DIR" apply --reverse --check "$p" 2>/dev/null; then
                 echo "    already applied: $(basename "$p")"
             elif git -C "$SRC_DIR" apply --check "$p" 2>/dev/null; then
                 git -C "$SRC_DIR" apply "$p"
                 echo "    applied: $(basename "$p")"
+            elif by=$(superseded_by_applied_patch "$p"); then
+                echo "    already applied (rewritten by $by): $(basename "$p")"
             else
                 echo "    ERROR: cannot apply $(basename "$p") cleanly" >&2
                 exit 1

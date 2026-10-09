@@ -1,4 +1,4 @@
-// Epic #766, Tests/OCCTModelingTests/FilletSurfBuilderTests.swift: kernel parity for its one test.
+// Epic #766, Tests/OCCTModelingTests/Blends/FilletSurfBuilderTests.swift: kernel parity for its one test.
 // OCCTFilletSurfBuild is FilletSurf_Builder(shape, {edge}, radius).Perform(), then IsDone,
 // NbSurface, TolApp3d(i), FirstParameter, LastParameter. Same input: 10 mm box centred at the
 // origin, each TopExp::MapShapes edge on its own (Shape.subShapes(ofType: .edge) order), radius 1.

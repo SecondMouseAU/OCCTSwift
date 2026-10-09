@@ -1,5 +1,5 @@
 // #766 kernel parity for the four face/edge tests in
-// Tests/OCCTAnalysisTests/CanonicalRecognitionTests.swift (the two whole-solid tests are #2234's).
+// Tests/OCCTAnalysisTests/ShapeAnalysis/CanonicalRecognitionTests.swift (the two whole-solid tests are #2234's).
 // Runs OCCTShapeRecognizeCanonical's own sequence, IsPlane -> IsCylinder -> IsCone -> IsSphere ->
 // IsLine -> IsCircle -> IsEllipse on one ShapeAnalysis_CanonicalRecognition at tolerance 1e-4,
 // with ClearStatus() between checks (the bridge) and without it (the #1509 defect).
