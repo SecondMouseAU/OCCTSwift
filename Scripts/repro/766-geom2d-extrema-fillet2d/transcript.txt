@@ -1,0 +1,10 @@
+lin-lin (0,0)+x vs (0,10)+x: parallel=1 dist=10
+lin-lin (0,0)+x vs (5,3)+x: parallel=1 dist=3
+lin-circ: n=2 d1=15 d2=25
+pt-circ: n=2 d1=15 d2=5
+pt-lin: n=1 d1=5 foot=(5, 0)
+circ-circ: n=4 d1=20 d2=10 d3=30 d4=20
+LocateExtCC2d seed (0,0): done=1 dist=5 p1=(5, 0) p2=(10, 0)
+fillet vertex 0 r3 edges=5 area=398.068583471
+fillet all 4 r2 edges=8 area=396.566370614
+chamfer edges 0,1 d2 edges=5 area=398

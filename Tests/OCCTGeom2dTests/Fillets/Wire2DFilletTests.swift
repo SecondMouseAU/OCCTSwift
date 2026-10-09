@@ -8,31 +8,33 @@ import simd
 struct Wire2DFilletTests {
 
     @Test("Fillet single vertex of rectangle")
-    func filletSingleVertex() {
+    func filletSingleVertex() throws {
         guard let rect = Wire.rectangle(width: 10, height: 5) else {
             Issue.record("Failed to create rectangle wire")
             return
         }
 
-        let filleted = rect.filleted2D(vertexIndex: 0, radius: 1.0)
-
-        #expect(filleted != nil)
+        // #1979: `!= nil` only. One r = 1 fillet: 5 edges, perimeter 30 - 2 + pi / 2.
+        let filleted = try #require(rect.filleted2D(vertexIndex: 0, radius: 1.0))
+        #expect(filleted.edges().count == 5)
+        #expect(abs((filleted.length ?? 0) - (28 + .pi / 2)) < 1e-9)
     }
 
     @Test("Fillet all vertices of rectangle")
-    func filletAllVertices() {
+    func filletAllVertices() throws {
         guard let rect = Wire.rectangle(width: 10, height: 5) else {
             Issue.record("Failed to create rectangle wire")
             return
         }
 
-        let filleted = rect.filletedAll2D(radius: 1.0)
-
-        #expect(filleted != nil)
+        // #1979: `!= nil` only. Four r = 1 fillets: 8 edges, perimeter 30 - 8 + 2 pi.
+        let filleted = try #require(rect.filletedAll2D(radius: 1.0))
+        #expect(filleted.edges().count == 8)
+        #expect(abs((filleted.length ?? 0) - (22 + 2 * .pi)) < 1e-9)
     }
 
     @Test("Fillet polygon wire")
-    func filletPolygonWire() {
+    func filletPolygonWire() throws {
         guard
             let polygon = Wire.polygon(
                 [
@@ -47,9 +49,11 @@ struct Wire2DFilletTests {
             return
         }
 
-        let filleted = polygon.filleted2D(vertexIndex: 2, radius: 1.5)
-
-        #expect(filleted != nil)
+        // #1979: `!= nil` only. One fillet on the pentagon: 6 edges, and shorter than the
+        // original 44.1421356237 (measured 44.0775921817).
+        let filleted = try #require(polygon.filleted2D(vertexIndex: 2, radius: 1.5))
+        #expect(filleted.edges().count == 6)
+        #expect(abs((filleted.length ?? 0) - 44.0775921817) < 1e-6)
     }
 
     // MARK: - #1478 Finding 1: mid-loop AddFillet failure must not be masked

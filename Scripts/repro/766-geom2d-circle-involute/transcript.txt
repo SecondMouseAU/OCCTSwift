@@ -1,0 +1,7 @@
+standard domain=[0, 2e+100] periodic=0 closed=0 value(0)=(2, 0) value(1)=(2.76354658135, 0.60233735788)
+translated (10,20) domain=[0, 2e+100] periodic=0 closed=0 value(0)=(12, 20) value(1)=(12.7635465814, 20.6023373579)
+rotated pi/2 domain=[0, 2e+100] periodic=0 closed=0 value(0)=(1.22464679915e-16, 2) value(1)=(-0.60233735788, 2.76354658135)
+mirrored (-1,0) domain=[0, 2e+100] periodic=0 closed=0 value(0)=(-2, 0) value(1)=(-2.76354658135, -0.60233735788)
+radius 0: constructor raised
+radius -1: constructor raised
+edge [0, 2]: done=1 length=4 (R u^2 / 2 = 4)

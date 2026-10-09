@@ -24,8 +24,12 @@ struct Curve2DHatchingTests {
             spacing: 2.0,
             tolerance: 1e-6
         )
-        // Should produce horizontal hatch lines across the rectangle
-        #expect(segments.count >= 1)
+        // Should produce horizontal hatch lines across the rectangle. #1979: `count >= 1` passed a
+        // hatch missing lines; Geom2dHatch_Hatcher gives the four interior lines y = 2, 4, 6, 8,
+        // each spanning x = 0 to 10 (Scripts/repro/766-geom2d-gcc-hatching/).
+        #expect(segments.count == 4)
+        let ys = segments.map { $0.start.y }.sorted()
+        #expect(ys == [2, 4, 6, 8])
         for seg in segments {
             // Each segment should have valid start/end
             let dx = seg.end.x - seg.start.x
@@ -71,6 +75,9 @@ struct Curve2DHatchingTests {
         // scenario is a genuine "more than half, no more than the whole buffer" case rather than
         // one that would pass even under the old halved cap.
         #expect(segments.count <= 4096)
+        // #1979: the bounds were the whole assertion; the kernel's own count for this boundary is
+        // 2999 (lines y = 1 ... 2999; y = 0 and y = 3000 lie on the boundary).
+        #expect(segments.count == 2999)
     }
 
     @Test("Hatch result is independent of boundary winding direction (#1496)")

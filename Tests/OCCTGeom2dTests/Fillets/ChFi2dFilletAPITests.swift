@@ -7,18 +7,24 @@ import simd
 @Suite("ChFi2d_FilletAPI Tests")
 struct ChFi2dFilletAPITests {
     @Test("fillet between two edges")
-    func filletEdges() {
-        let e1 = Shape.edgeFromPoints(SIMD3(0, 0, 0), SIMD3(10, 0, 0))
-        let e2 = Shape.edgeFromPoints(SIMD3(10, 0, 0), SIMD3(10, 10, 0))
-        if let e1, let e2 {
-            let result = Shape.fillet2dEdges(
+    func filletEdges() throws {
+        // #1979: the only assertion sat inside `if let r`, so a nil result passed. ChFi2d_FilletAPI
+        // gives one solution, a radius-2 quarter circle (length pi) from (8,0) to (10,2), and
+        // trims both edges to length 8 (Scripts/repro/766-geom2d-chfi2d-compbezier/).
+        let e1 = try #require(Shape.edgeFromPoints(SIMD3(0, 0, 0), SIMD3(10, 0, 0)))
+        let e2 = try #require(Shape.edgeFromPoints(SIMD3(10, 0, 0), SIMD3(10, 10, 0)))
+        let r = try #require(
+            Shape.fillet2dEdges(
                 edge1: e1, edge2: e2,
                 planeNormal: SIMD3(0, 0, 1), radius: 2.0,
-                nearPoint: SIMD3(10, 0, 0))
-            if let r = result {
-                #expect(r.solutionCount >= 1)
-            }
-        }
+                nearPoint: SIMD3(10, 0, 0)))
+        #expect(r.solutionCount == 1)
+        let fillet = try #require(Edge(r.filletEdge))
+        #expect(abs(fillet.length - Double.pi) < 1e-9)
+        let m1 = try #require(Edge(r.modifiedEdge1))
+        let m2 = try #require(Edge(r.modifiedEdge2))
+        #expect(abs(m1.length - 8) < 1e-9)
+        #expect(abs(m2.length - 8) < 1e-9)
     }
 
     // #1459: OCCTChFi2dFilletEdges used to hardcode the fillet plane's origin to world (0,0,0),
@@ -44,7 +50,10 @@ struct ChFi2dFilletAPITests {
             radius: 1.0,
             nearPoint: SIMD3(0, 0, 10))
         let r = try #require(result)
-        #expect(r.solutionCount >= 1)
+        #expect(r.solutionCount == 1)
+        // A radius-1 quarter circle, as ChFi2d_FilletAPI gives for the same input (#1979).
+        let fillet = try #require(Edge(r.filletEdge))
+        #expect(abs(fillet.length - Double.pi / 2) < 1e-9)
 
         // Every vertex of every returned edge must stay on the z=10 plane the input edges are
         // actually in, not drift to z=0 (the plane the old hardcoded-origin bug would have used).
