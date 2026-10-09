@@ -287,7 +287,7 @@ composite:            0/0 0/0 0/0 0/0
 
 A readable law always reports at least its two end knots, so an empty array means "not a
 `Law_BSpFunc`-derived law", never "no discontinuities". That is now the documented contract and is
-held by `Tests/OCCTCurveTests/Issue1399LawKnotSplitFactoryReachTests.swift`.
+held by `Tests/OCCTCurveTests/Laws/Issue1399LawKnotSplitFactoryReachTests.swift`.
 
 **Prove-the-test-fails** (`okf/policies/prove-the-test-fails.md`), both halves, injected at the
 bridge rather than in Swift, with `OCCTSWIFT_BRIDGE_PREBUILT` unset so the edits took effect:

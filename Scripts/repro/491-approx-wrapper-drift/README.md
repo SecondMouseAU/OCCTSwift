@@ -67,7 +67,7 @@ surface entry points already used, and the only gate under which `approxWithDeta
 diagnostic means anything.
 
 Re-run this if that upstream line is ever re-enabled: the parity tests
-(`Tests/OCCTCurveTests/Issue491Curve3DApproxParityTests.swift`) are the guard for that day.
+(`Tests/OCCTCurveTests/Conversion/Issue491Curve3DApproxParityTests.swift`) are the guard for that day.
 
 ## 2. `occt_491_precis_code_sweep.mm`, choosing the shared `PrecisCode`
 

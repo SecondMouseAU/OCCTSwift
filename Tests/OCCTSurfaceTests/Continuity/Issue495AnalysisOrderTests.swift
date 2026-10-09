@@ -3,7 +3,7 @@ import Testing
 @testable import OCCTSwift
 
 // #495, surface side. Same defect and same fix as the curve analyser, see
-// Tests/OCCTCurveTests/Issue495AnalysisOrderTests.swift for the mechanism.
+// Tests/OCCTCurveTests/Continuity/Issue495AnalysisOrderTests.swift for the mechanism.
 //
 // Two wrinkles specific to LocalAnalysis_SurfaceContinuity, both measured against the pinned
 // kernel and pinned here so they are not rediscovered:

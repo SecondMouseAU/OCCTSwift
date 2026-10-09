@@ -16,7 +16,7 @@ import simd
 /// with no "nullified" concept, so this fallback is close to unreachable dead code through the
 /// public Swift API today. Follows the #1424/#1476 `unsafeBitCast` precedent
 /// (`Tests/OCCTAnalysisTests/Issue1424BndLibFaceNullGuardTests.swift`,
-/// `Tests/OCCTCurveTests/Issue1476CurveTypeOtherCurveFallbackTests.swift`) to synthesize a
+/// `Tests/OCCTCurveTests/CurveGeometry/Issue1476CurveTypeOtherCurveFallbackTests.swift`) to synthesize a
 /// genuinely-null `OCCTCurve2DRef` and call the bridge function directly, since the parameter is
 /// `_Nonnull` and Swift refuses to pass `nil` literally.
 @Suite("Issue #1511 Finding 2: OCCTCurve2DCurveType OtherCurve fallback")
