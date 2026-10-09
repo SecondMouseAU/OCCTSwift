@@ -48,6 +48,19 @@ public enum FeatureSpec: Sendable, Hashable, Codable {
         }
     }
 
+    /// A profile revolved about an axis.
+    ///
+    /// The closed profile is revolved as a planar face, so the feature is a `Solid` that later
+    /// features can cut (#3139). Revolving a bare wire is `Shape.revolve(profile:...)`, which
+    /// answers a `Shell`.
+    ///
+    /// ```swift
+    /// let spec = FeatureSpec.Revolve(
+    ///     profilePoints2D: [SIMD2(0, 0), SIMD2(12, 0), SIMD2(12, 60), SIMD2(0, 60)],
+    ///     axisOrigin: .zero, axisDirection: SIMD3(0, 0, 1), id: "body")
+    /// let result = FeatureReconstructor.build(from: [.revolve(spec)])
+    /// print(result.shape?.subShapeCount(ofType: .solid) ?? 0)  // 1
+    /// ```
     public struct Revolve: Sendable, Hashable, Codable {
         public var profilePoints2D: [SIMD2<Double>]
         public var axisOrigin: SIMD3<Double>
@@ -92,6 +105,16 @@ public enum FeatureSpec: Sendable, Hashable, Codable {
         }
     }
 
+    /// A cylindrical hole cut from the current body.
+    ///
+    /// The body must hold a solid: a hole on a bare shell is recorded in
+    /// ``FeatureReconstructor/BuildResult/skipped`` rather than reported fulfilled (#3139).
+    ///
+    /// ```swift
+    /// let hole = FeatureSpec.Hole(
+    ///     axisPoint: .zero, axisDirection: SIMD3(0, 0, 1), diameter: 8, depth: 60, id: "bore")
+    /// print(hole.diameter)  // 8.0
+    /// ```
     public struct Hole: Sendable, Hashable, Codable {
         public var axisPoint: SIMD3<Double>
         public var axisDirection: SIMD3<Double>
@@ -326,14 +349,27 @@ public struct FeatureReconstructor: Sendable {
                 stage: .additive)
             return
         }
+        // Revolve the planar face the wire bounds, not the wire: BRepPrimAPI_MakeRevol on a wire
+        // sweeps edges into faces and answers a Shell, while on a face it answers a Solid (#3139).
+        // `applyExtrude` reaches a Solid the same way (the extrusion bridge builds the face).
+        guard let face = Shape.face(from: wire) else {
+            recordSkip(
+                ctx: &ctx, id: r.id,
+                reason: .occtFailure("revolve profile is not a planar face"),
+                stage: .additive)
+            return
+        }
         let angle = r.angleDeg * .pi / 180
         guard
-            let body = Shape.revolve(
-                profile: wire,
+            let body = face.revolved(
                 axisOrigin: r.axisOrigin,
                 axisDirection: r.axisDirection,
-                angle: angle)
+                angle: angle),
+            body.subShapeCount(ofType: .solid) > 0,
+            let volume = body.volume, abs(volume) > 0
         else {
+            // No solid, or one with no measurable volume (a zero-area profile revolves into a
+            // Solid that cannot be measured): not a body the next feature can act on.
             recordSkip(
                 ctx: &ctx, id: r.id,
                 reason: .occtFailure("revolve failed"),
@@ -380,6 +416,15 @@ public struct FeatureReconstructor: Sendable {
             recordSkip(
                 ctx: &ctx, id: h.id,
                 reason: .underDetermined("no target shape"),
+                stage: .subtractive)
+            return
+        }
+        // A hole removes material, so the target needs a solid. Cutting a bare shell answers a
+        // compound with no solid in it and used to be reported as fulfilled (#3139).
+        guard target.subShapeCount(ofType: .solid) > 0 else {
+            recordSkip(
+                ctx: &ctx, id: h.id,
+                reason: .underDetermined("hole target has no solid to cut"),
                 stage: .subtractive)
             return
         }
