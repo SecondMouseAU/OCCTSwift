@@ -1,4 +1,4 @@
-// Kernel parity probe for Tests/OCCTAnalysisTests/DistAngleChamferTests.swift (#766).
+// Kernel parity probe for Tests/OCCTModelingTests/Blends/DistAngleChamferTests.swift (#766).
 //
 // Same calls as OCCTShapeChamferDistAngle (OCCTBridge_Modeling_Fillet.mm): BRepFilletAPI_MakeChamfer
 // on the centred 10-unit box (OCCTShapeCreateBox), edge and face taken from TopExp::MapShapes at
