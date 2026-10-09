@@ -1,0 +1,3 @@
+offset basis at 3: (3, 0, 0); offset at 3: (3, -2, 0)
+5-point fit: start (0, 0) end (10, 0)
+3-point fit with parameters: at 0.3 (3, 5)
