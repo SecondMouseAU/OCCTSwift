@@ -1022,33 +1022,27 @@ extension Shape {
     }
     /// Extract the middle (spine) path from a pipe-like shape.
     ///
-    /// Given two end faces/wires of a pipe-like shape, computes the
-    /// spine wire running through the middle. Useful for reverse-engineering
-    /// sweep operations from imported geometry.
+    /// The intended input is the two end caps, faces or wires, of an extruded, lofted or swept
+    /// body, and the result is the sweep path through the centres of its sections. The use case
+    /// is recovering the parameters of a sweep from imported geometry.
     ///
-    /// The kernel builds one path per vertex of the start section and stops it at a vertex of the
-    /// end section, so the two ends must be distinct sections that share no vertex. Input that
-    /// breaks that used to abort the process, which no `catch` can absorb, so it answers `nil`
-    /// instead.
+    /// For any other pair the function is best-effort. It never crashes: it returns the path the
+    /// kernel traces through the centroids of the sections between the two ends, which the caller
+    /// must judge (it can zigzag, loop or leave the solid), or `nil` when no path exists. `nil`
+    /// never means that the shape is not a pipe, only that no path could be built: the sweep from
+    /// the start section does not reach the end section, the two ends are the same face or share
+    /// a vertex, or an end is null or neither a face nor a wire.
     ///
-    /// Answers the path through the centres of the sections the kernel sweeps from the start
-    /// section to the end section along the edges of the solid.
-    ///
-    /// Besides the two end faces of a pipe, a pair of faces that share no vertex answers a path
-    /// when every path from a start vertex reaches the end section (the non-opposite sides of a
-    /// hexagonal prism, the sides of an L or a U), and `nil` when the sweep does not reach it (a
-    /// cap of a tube against its bore, opposite triangles of an octahedron). On a kernel without
-    /// carried patch `0058`, which includes the one currently pinned, such a pair can abort the
-    /// process instead (#3105). A path through a concave corner is a valid wire with the right
-    /// ends but can loop or overshoot the solid.
+    /// On a kernel without carried patch `0058`, which includes the one currently pinned, a pair
+    /// of faces that share no vertex and are not the ends of a pipe can still abort the process
+    /// (#3105); the bridge refuses the pairs that share a vertex (#3098).
     ///
     /// - Parameters:
     ///   - startShape: One end of the pipe, a face or a wire. Any other shape type answers `nil`.
     ///   - endShape: Other end of the pipe, a face or a wire. Any other shape type answers `nil`.
-    ///     The same face or wire as
-    ///     `startShape`, a section sharing a vertex with it (adjacent faces, faces meeting at a
-    ///     corner) and a null shape all answer `nil`.
-    /// - Returns: The middle path wire, or nil on failure or for an input refused as above.
+    ///     The same face or wire as `startShape`, a section sharing a vertex with it (adjacent
+    ///     faces, faces meeting at a corner) and a null shape all answer `nil`.
+    /// - Returns: The middle path wire, or nil when no path could be built.
     ///
     /// ```swift
     /// let box = Shape.box(width: 10, height: 10, depth: 10)!

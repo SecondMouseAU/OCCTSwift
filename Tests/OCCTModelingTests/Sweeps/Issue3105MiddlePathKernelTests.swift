@@ -145,4 +145,40 @@ struct Issue3105MiddlePathKernelTests {
     func octahedronOppositeTrianglesAnswerNil() throws {
         #expect(try pathsAnswered(by: try octahedron(), faces: 8, planar: true) == 0)
     }
+
+    /// The invariant: no pair of faces of any of these solids aborts, runs on or answers an
+    /// invalid shape.
+    ///
+    /// A pair either answers a valid wire or `nil`, whichever the kernel can build. The solids add
+    /// a star prism (concave, 12 faces), a cube with a square hole and two fused boxes to the five
+    /// above, and every pair of faces of each is tried, including a face with itself and pairs
+    /// that share a vertex.
+    @Test(.enabled(if: Issue3105MiddlePathKernelTests.gated))
+    func noPairOfFacesOfAnySolidAbortsOrAnswersAnInvalidShape() throws {
+        let star = try prism(
+            (0..<10).map { k in
+                let r = k % 2 == 0 ? 5.0 : 2.5
+                return SIMD2(r * cos(Double(k) * .pi / 5), r * sin(Double(k) * .pi / 5))
+            })
+        let cube = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let hole = try #require(Shape.box(width: 4, height: 4, depth: 12))
+        let holed = try #require(
+            cube.subtracting(try #require(hole.translated(by: SIMD3(3, 3, -1)))))
+        let bar = try #require(Shape.box(width: 20, height: 4, depth: 4))
+        let arm = try #require(Shape.box(width: 4, height: 20, depth: 4))
+        let elbow = try #require(bar.union(arm))
+        var tried = 0
+        for solid in [star, cube, holed, elbow, try octahedron()] {
+            let faces = solid.subShapes(ofType: .face)
+            for i in faces.indices {
+                for j in faces.indices {
+                    tried += 1
+                    if let path = solid.middlePath(start: faces[i], end: faces[j]) {
+                        #expect(path.isValid, "faces \(i) and \(j): invalid shape")
+                    }
+                }
+            }
+        }
+        #expect(tried > 400)
+    }
 }

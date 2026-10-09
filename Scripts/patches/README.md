@@ -3427,6 +3427,18 @@ where that handling stops:
 against `v4.0.0-kernel.5`; the 4 and 21 are one pair different from the faulting line because `ushape 4 7`
 reaches the cast before it reaches the null face.)
 
+### The contract (settled by the user, 2026-10-09)
+
+The intended input is the two end caps, faces or wires, of an extruded, lofted or swept body, and the
+result is the sweep path; the use case is recovering sweep parameters from imported geometry. For any
+other pair the function is best-effort. It never crashes, aborts or runs on, for any face or wire pair.
+Where the algorithm yields a valid connected wire it is returned even if the path is odd (loops,
+zigzags, leaves the bounding box): the caller judges it. Where no result exists (the end section is not
+reached within the level bound, no connecting edge, a null edge from `BRepLib_MakeEdge`) the builder is
+left not done and the bridge answers nil. nil never means "the shape is not a pipe", only "no path could
+be built". The 14 doubtful paths are therefore kept, and the level bound is the number of edges of the
+solid.
+
 ### What the algorithm intends, and the change
 
 The user's reading of the images was that the paths `Build()` traces are valid guides (one per start
@@ -3469,7 +3481,7 @@ chosen edge, `Interpol.IsDone()`, and the length of the path in `PadPath`.
 - The new results are as good as the interpolation that builds them. For the U- and L-shaped prisms
   the section centroids zigzag and the spline imposed through them with tangents from the paths can
   loop or overshoot: 14 of the 81 new paths do (listed in `review/index.md`). They are valid wires, they
-  end at the centroids, and they are not what a person would draw. Upstream may prefer to refuse
+  end at the centroids, and they are not what a person would draw. Under the contract they are returned; upstream may prefer to refuse
   them, or to interpolate without the imposed tangents, which is a separate change to the final
   phase.
 - `EFmap.Extent()` as the bound is an argument, not a theorem: the insertion at `ChooseEdge == 1` can
@@ -3536,7 +3548,7 @@ protects every kernel without `0058`, and is retired at the repin that pins it.
 
 **Upstream checked 2026-10-09:** no PR or issue mentions `MiddlePath`, and `IR` carries the same file as
 `V8_0_1`. **Not yet filed upstream**; it needs a GTest of its own in `TKOffset/GTests/` (a hexagonal
-prism, faces 0 and 2) and the user's decision on the 14 doubtful paths recorded in the review directory.
+prism, faces 0 and 2) and the contract above stated in its description.
 
 **Retire** once the bundled OCCT includes this fix.
 
