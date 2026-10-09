@@ -16,7 +16,7 @@ Tests/OCCTCurveTests/BatchCurve3DTests.swift	Tests/OCCTCurveTests/Curve3DCore/Ba
 Tests/OCCTCurveTests/BezierConversionTests.swift	Tests/OCCTCurveTests/Conversion/BezierConversionTests.swift	Conversion	-	convertedToBezier on cylinder, sphere and box shapes
 Tests/OCCTCurveTests/BezierCurve3DCompletionTests.swift	Tests/OCCTCurveTests/BSplineAndBezier/BezierCurve3DCompletionTests.swift	BSplineAndBezier	-	Bezier curve start and end points, bulk poles, weights
 Tests/OCCTCurveTests/BezierCurveManipulationTests.swift	Tests/OCCTCurveTests/BSplineAndBezier/BezierCurveManipulationTests.swift	BSplineAndBezier	-	Bezier curve degree, pole count, rational flag, getPole and setPole
-Tests/OCCTCurveTests/BezierPatchGridTests.swift	Tests/OCCTCurveTests/BezierPatchGridTests.swift	(stays)	-	decomposes a BSpline surface into Bezier patches; no Curve3D involved, belongs in OCCTSurfaceTests
+Tests/OCCTCurveTests/BezierPatchGridTests.swift	Tests/OCCTSurfaceTests/Conversion/BezierPatchGridTests.swift	Conversion	-	decomposition of a BSpline surface into Bezier patches
 Tests/OCCTCurveTests/BiTgteCurveOnEdgeTests.swift	Tests/OCCTCurveTests/Adaptors/BiTgteCurveOnEdgeTests.swift	Adaptors	-	BiTgte_CurveOnEdge curve adaptor over edges
 Tests/OCCTCurveTests/CPntsUniformDeflectionTests.swift	Tests/OCCTCurveTests/Sampling/CPntsUniformDeflectionTests.swift	Sampling	-	CPnts_UniformDeflection on a circle edge, with and without a range
 Tests/OCCTCurveTests/CirclePropertyTests.swift	Tests/OCCTCurveTests/Conics/CirclePropertyTests.swift	Conics	-	circle properties from a cylinder face, three points and an edge
@@ -54,10 +54,10 @@ Tests/OCCTCurveTests/CurvePlanarityTests.swift	Tests/OCCTCurveTests/Curve3DCore/
 Tests/OCCTCurveTests/CurveSplitConcatTests.swift	Tests/OCCTCurveTests/Conversion/CurveSplitConcatTests.swift	Conversion	-	splitAtContinuity and concatenateG1
 Tests/OCCTCurveTests/CurveTestFixtures.swift	Tests/OCCTCurveTests/CurveTestFixtures.swift	(stays)	-	shared helpers (trimmedSegment, bspline, referenceLength, ...) used by several areas; no tests
 Tests/OCCTCurveTests/CurveToAnaCurveTests.swift	Tests/OCCTCurveTests/Conversion/CurveToAnaCurveTests.swift	Conversion	-	GeomConvert_CurveToAnaCurve recognises a line and a circle from a BSpline
-Tests/OCCTCurveTests/CuttingPlaneLineTests.swift	Tests/OCCTCurveTests/CuttingPlaneLineTests.swift	(stays)	-	DrawingAnnotation.cuttingPlaneLine; no curve involved, belongs in OCCTDrawingTests
+Tests/OCCTCurveTests/CuttingPlaneLineTests.swift	Tests/OCCTDrawingTests/Symbols/CuttingPlaneLineTests.swift	Symbols	-	DrawingAnnotation.cuttingPlaneLine, beside the cutting-plane direction tests
 Tests/OCCTCurveTests/EdgeCurve3DTests.swift	Tests/OCCTCurveTests/Curve3DCore/EdgeCurve3DTests.swift	Curve3DCore	-	Edge.curve3D accessor and its circleProperties
 Tests/OCCTCurveTests/EdgePolylineConsistencyTests.swift	Tests/OCCTCurveTests/Sampling/EdgePolylineConsistencyTests.swift	Sampling	-	edge polylines of lofted and extruded shapes match the edges (weak fit)
-Tests/OCCTCurveTests/EditorViewV162Tests.swift	Tests/OCCTCurveTests/EditorViewV162Tests.swift	(stays)	-	EditorView regularity, PCurve and triangulation setters; belongs in OCCTDrawingTests with the other EditorView suites
+Tests/OCCTCurveTests/EditorViewV162Tests.swift	Tests/OCCTBRepGraphTests/Mutation/EditorViewV162Tests.swift	Mutation	-	BRepGraph editor regularity, PCurve and triangulation setters
 Tests/OCCTCurveTests/EllipseArcTests.swift	Tests/OCCTCurveTests/Conics/EllipseArcTests.swift	Conics	-	arc of an ellipse from angles or points
 Tests/OCCTCurveTests/FairCurveBattenTests.swift	Tests/OCCTCurveTests/Fitting/FairCurveBattenTests.swift	Fitting	-	FairCurve_Batten
 Tests/OCCTCurveTests/FairCurveMinimalVariationTests.swift	Tests/OCCTCurveTests/Fitting/FairCurveMinimalVariationTests.swift	Fitting	-	FairCurve_MinimalVariation
@@ -72,9 +72,9 @@ Tests/OCCTCurveTests/GeomToolsCurveSetTests.swift	Tests/OCCTCurveTests/Curve3DCo
 Tests/OCCTCurveTests/GeomTrimmedCurveTests.swift	Tests/OCCTCurveTests/Curve3DCore/GeomTrimmedCurveTests.swift	Curve3DCore	-	Geom_TrimmedCurve
 Tests/OCCTCurveTests/HelixGeomBuildTests.swift	Tests/OCCTCurveTests/Curve3DCore/HelixGeomBuildTests.swift	Curve3DCore	-	HelixGeom build
 Tests/OCCTCurveTests/HelixTests.swift	Tests/OCCTCurveTests/Curve3DCore/HelixTests.swift	Curve3DCore	-	Curve3D helix creation, origin, axis and handedness
-Tests/OCCTCurveTests/IntegrationGeodesicPathApproximationTests.swift	Tests/OCCTCurveTests/IntegrationGeodesicPathApproximationTests.swift	(stays)	-	Integration suite measuring a path on a sphere; belongs in OCCTIntegrationTests
-Tests/OCCTCurveTests/IntegrationGoldenShapeBaselineTests.swift	Tests/OCCTCurveTests/IntegrationGoldenShapeBaselineTests.swift	(stays)	-	Integration suite on box measurements; belongs in OCCTIntegrationTests
-Tests/OCCTCurveTests/IntegrationInvoluteGearApproximationTests.swift	Tests/OCCTCurveTests/IntegrationInvoluteGearApproximationTests.swift	(stays)	-	Integration suite on a gear built from a cylinder and box; belongs in OCCTIntegrationTests
+Tests/OCCTCurveTests/IntegrationGeodesicPathApproximationTests.swift	Tests/OCCTIntegrationTests/Measurements/IntegrationGeodesicPathApproximationTests.swift	Measurements	-	path length on a sphere through the public API
+Tests/OCCTCurveTests/IntegrationGoldenShapeBaselineTests.swift	Tests/OCCTIntegrationTests/Measurements/IntegrationGoldenShapeBaselineTests.swift	Measurements	-	known measurements of a box
+Tests/OCCTCurveTests/IntegrationInvoluteGearApproximationTests.swift	Tests/OCCTIntegrationTests/Workflows/IntegrationInvoluteGearApproximationTests.swift	Workflows	-	a gear with slots and a bore built from primitives
 Tests/OCCTCurveTests/Issue1020ExtremaBoundsTests.swift	Tests/OCCTCurveTests/Projection/Issue1020ExtremaBoundsTests.swift	Projection	-	unbounded elementary curves are not clipped when finding extrema
 Tests/OCCTCurveTests/Issue1399LawKnotSplitFactoryReachTests.swift	Tests/OCCTCurveTests/Laws/Issue1399LawKnotSplitFactoryReachTests.swift	Laws	-	every Law_BSpFunc-derived factory reports its end knots
 Tests/OCCTCurveTests/Issue1476CurveTypeOtherCurveFallbackTests.swift	Tests/OCCTCurveTests/Curve3DCore/Issue1476CurveTypeOtherCurveFallbackTests.swift	Curve3DCore	-	Curve3D curve type for a null handle and for a line
@@ -117,12 +117,12 @@ Tests/OCCTCurveTests/LocOpeCurveShapeIntersectorTests.swift	Tests/OCCTCurveTests
 Tests/OCCTCurveTests/LocalAnalysisCurveContinuityTests.swift	Tests/OCCTCurveTests/Continuity/LocalAnalysisCurveContinuityTests.swift	Continuity	-	LocalAnalysis_CurveContinuity
 Tests/OCCTCurveTests/OffsetCurveBasisTests.swift	Tests/OCCTCurveTests/Curve3DCore/OffsetCurveBasisTests.swift	Curve3DCore	-	Geom_OffsetCurve basis curve
 Tests/OCCTCurveTests/PointsToBSplineExpansionTests.swift	Tests/OCCTCurveTests/Fitting/PointsToBSplineExpansionTests.swift	Fitting	-	GeomAPI_PointsToBSpline expansion
-Tests/OCCTCurveTests/PolylinePickTests.swift	Tests/OCCTCurveTests/PolylinePickTests.swift	(stays)	-	polygon picking through a Selector and Camera; belongs with the Selector tests in OCCTTopologyTests
+Tests/OCCTCurveTests/PolylinePickTests.swift	Tests/OCCTDrawingTests/Visualization/PolylinePickTests.swift	Visualization	-	polygon picking through a Selector and Camera, beside SelectorTests
 Tests/OCCTCurveTests/ProjectionOnCurveTests.swift	Tests/OCCTCurveTests/Projection/ProjectionOnCurveTests.swift	Projection	-	GeomAPI_ProjectPointOnCurve multi-result and parameter access
 Tests/OCCTCurveTests/QuasiUniformAbscissaTests.swift	Tests/OCCTCurveTests/Sampling/QuasiUniformAbscissaTests.swift	Sampling	-	quasi-uniform abscissa sampling
 Tests/OCCTCurveTests/QuasiUniformDeflectionTests.swift	Tests/OCCTCurveTests/Sampling/QuasiUniformDeflectionTests.swift	Sampling	-	quasi-uniform deflection sampling
-Tests/OCCTCurveTests/SketchArcCircleTests.swift	Tests/OCCTCurveTests/SketchArcCircleTests.swift	(stays)	-	SketchElement arc and circle tessellation; belongs with the Sketch tests in OCCTMiscTests
-Tests/OCCTCurveTests/SurfToAnaSurfTests.swift	Tests/OCCTCurveTests/SurfToAnaSurfTests.swift	(stays)	-	GeomConvert_SurfToAnaSurf recognises a plane from a BSpline surface; no curve involved, belongs in OCCTSurfaceTests
+Tests/OCCTCurveTests/SketchArcCircleTests.swift	Tests/OCCTMiscTests/Sketch/SketchArcCircleTests.swift	Sketch	-	SketchElement arc and circle tessellation
+Tests/OCCTCurveTests/SurfToAnaSurfTests.swift	Tests/OCCTSurfaceTests/Conversion/SurfToAnaSurfTests.swift	Conversion	-	GeomConvert_SurfToAnaSurf recognising a plane from a BSpline surface
 Tests/OCCTCurveTests/TopTransCurveTransitionTests.swift	Tests/OCCTCurveTests/Curve3DCore/TopTransCurveTransitionTests.swift	Curve3DCore	-	TopTrans_CurveTransition via Shape.curveTransition (weak fit)
 Tests/OCCTCurveTests/UniformAbscissaTests.swift	Tests/OCCTCurveTests/Sampling/UniformAbscissaTests.swift	Sampling	-	GCPnts_UniformAbscissa
 Tests/OCCTCurveTests/WireEdgePolylineTests.swift	Tests/OCCTCurveTests/Sampling/WireEdgePolylineTests.swift	Sampling	-	Wire.edgePolyline returns the points of each edge (weak fit)
