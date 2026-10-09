@@ -1,20 +1,20 @@
 # current_path	proposed_path	area	pending_prs	reason
 Tests/OCCTXCAFTests/AssemblyNodeIdentityTests.swift	Tests/OCCTXCAFTests/Assembly/AssemblyNodeIdentityTests.swift	Assembly	-	AssemblyNode labelId and Document.node(at:) round-trip
-Tests/OCCTXCAFTests/XCAFComponentMatrixTests.swift	Tests/OCCTXCAFTests/Assembly/XCAFComponentMatrixTests.swift	Assembly	-	full-matrix component placement in an assembly
+Tests/OCCTXCAFTests/XCAFComponentMatrixTests.swift	Tests/OCCTXCAFTests/ShapeTool/XCAFComponentMatrixTests.swift	ShapeTool	-	full-matrix component placement in an assembly
 Tests/OCCTXCAFTests/XCAFDocAssemblyGraphTests.swift	Tests/OCCTXCAFTests/Assembly/XCAFDocAssemblyGraphTests.swift	Assembly	-	XCAFDoc_AssemblyGraph
 Tests/OCCTXCAFTests/XCAFDocAssemblyItemIdTests.swift	Tests/OCCTXCAFTests/Assembly/XCAFDocAssemblyItemIdTests.swift	Assembly	-	XCAFDoc_AssemblyItemId
 Tests/OCCTXCAFTests/XCAFDocAssemblyItemRefTests.swift	Tests/OCCTXCAFTests/Assembly/XCAFDocAssemblyItemRefTests.swift	Assembly	-	XCAFDoc_AssemblyItemRef
 Tests/OCCTXCAFTests/XCAFDocAssemblyIteratorTests.swift	Tests/OCCTXCAFTests/Assembly/XCAFDocAssemblyIteratorTests.swift	Assembly	-	XCAFDoc_AssemblyIterator
 Tests/OCCTXCAFTests/XCAFDocGraphNodeTests.swift	Tests/OCCTXCAFTests/Assembly/XCAFDocGraphNodeTests.swift	Assembly	-	XCAFDoc_GraphNode father/child relations
-Tests/OCCTXCAFTests/XDEAssemblyOperationTests.swift	Tests/OCCTXCAFTests/Assembly/XDEAssemblyOperationTests.swift	Assembly	-	assembly add, remove and update operations through the XDE shape tool
+Tests/OCCTXCAFTests/XDEAssemblyOperationTests.swift	Tests/OCCTXCAFTests/ShapeTool/XDEAssemblyOperationTests.swift	ShapeTool	-	assembly add, remove and update operations through the XDE shape tool
 Tests/OCCTXCAFTests/DocumentExplorerTests.swift	Tests/OCCTXCAFTests/Assembly/DocumentExplorerTests.swift	Assembly	-	XCAFPrs_DocumentExplorer traversal and path ids
 Tests/OCCTXCAFTests/DocumentExplorerExtensionTests.swift	Tests/OCCTXCAFTests/Assembly/DocumentExplorerExtensionTests.swift	Assembly	-	explorer depth, isAssembly and location
 Tests/OCCTXCAFTests/Issue173AssemblySTEPTests.swift	Tests/OCCTXCAFTests/Assembly/Issue173AssemblySTEPTests.swift	Assembly	-	instanced assembly STEP writer, product structure of an XCAF assembly
 Tests/OCCTXCAFTests/XDEEditorTests.swift	Tests/OCCTXCAFTests/Assembly/XDEEditorTests.swift	Assembly	-	XCAFDoc_Editor expand and rescale of assembly labels
-Tests/OCCTXCAFTests/ShapeToolCompletionsTests.swift	Tests/OCCTXCAFTests/Assembly/ShapeToolCompletionsTests.swift	Assembly	-	XCAFDoc_ShapeTool predicates and counters
-Tests/OCCTXCAFTests/XDEShapeToolQueryTests.swift	Tests/OCCTXCAFTests/Assembly/XDEShapeToolQueryTests.swift	Assembly	-	XCAFDoc_ShapeTool queries
-Tests/OCCTXCAFTests/XDEAreaVolumeCentroidTests.swift	Tests/OCCTXCAFTests/Assembly/XDEAreaVolumeCentroidTests.swift	Assembly	-	XCAFDoc_AreaTool, VolumeTool, CentroidTool on stored shapes
-Tests/OCCTXCAFTests/XCAFDocShapeMapToolTests.swift	Tests/OCCTXCAFTests/Assembly/XCAFDocShapeMapToolTests.swift	Assembly	-	XCAFDoc_ShapeMapTool
+Tests/OCCTXCAFTests/ShapeToolCompletionsTests.swift	Tests/OCCTXCAFTests/ShapeTool/ShapeToolCompletionsTests.swift	ShapeTool	-	XCAFDoc_ShapeTool predicates and counters
+Tests/OCCTXCAFTests/XDEShapeToolQueryTests.swift	Tests/OCCTXCAFTests/ShapeTool/XDEShapeToolQueryTests.swift	ShapeTool	-	XCAFDoc_ShapeTool queries
+Tests/OCCTXCAFTests/XDEAreaVolumeCentroidTests.swift	Tests/OCCTXCAFTests/ShapeTool/XDEAreaVolumeCentroidTests.swift	ShapeTool	-	XCAFDoc_AreaTool, VolumeTool, CentroidTool on stored shapes
+Tests/OCCTXCAFTests/XCAFDocShapeMapToolTests.swift	Tests/OCCTXCAFTests/ShapeTool/XCAFDocShapeMapToolTests.swift	ShapeTool	-	XCAFDoc_ShapeMapTool
 Tests/OCCTXCAFTests/XCAFDocLocationTests.swift	Tests/OCCTXCAFTests/Assembly/XCAFDocLocationTests.swift	Assembly	-	XCAFDoc_Location attribute
 Tests/OCCTXCAFTests/ColorToolCompletionsTests.swift	Tests/OCCTXCAFTests/Appearance/ColorToolCompletionsTests.swift	Appearance	-	XCAFDoc_ColorTool completions
 Tests/OCCTXCAFTests/DocumentColorMaterialTests.swift	Tests/OCCTXCAFTests/Appearance/DocumentColorMaterialTests.swift	Appearance	-	Document colour and material setters and attribute round-trips
