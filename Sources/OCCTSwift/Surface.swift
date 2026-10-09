@@ -1098,10 +1098,12 @@ public final class Surface: @unchecked Sendable {
     /// Deform this surface to pass through target positions (NLPlate G0).
     ///
     /// Each constraint pins a (u, v) parameter of this surface to a target 3D position. The result
-    /// is a BSpline fitted to a sample grid of the solved plate, carrying the parametrisation of
-    /// the working domain the samples were taken over, so a constrained (u, v) addresses the same
-    /// place on the result. See `docs/reference/Surface-Advanced.md` for what that domain is and
-    /// `docs/occtswift-wrapping-gaps.md` for what the refit does not preserve.
+    /// is a cubic BSpline interpolating a sample lattice of the solved plate. Every constraint's
+    /// (u, v) is a node of that lattice, so the result passes through each target to rounding
+    /// (to the kernel's own residual, about 5e-6 for several G0 targets), and it carries the
+    /// parametrisation of the working domain the samples were taken over, so a constrained (u, v)
+    /// addresses the same place on the result. See `docs/reference/Surface-Advanced.md` for what
+    /// that domain is and `docs/occtswift-wrapping-gaps.md` for what the refit does not preserve.
     ///
     /// ```swift
     /// let plane = Surface.plane(origin: SIMD3(100, 0, 0), normal: SIMD3(0, 0, 1))!
@@ -1116,7 +1118,9 @@ public final class Surface: @unchecked Sendable {
     ///   - constraints: Array of (uv parameter, target 3D position) pairs
     ///   - resolutionOrder: The plate's resolution order, 2 through 9 (default 4). Outside that
     ///     range the result is nil.
-    ///   - tolerance: Approximation tolerance (default 1e-3)
+    ///   - tolerance: Sets the sampling density between the constraints (a tighter value
+    ///     samples more finely, 20 nodes per direction at 0.1 up to 80), default 1e-3. It does
+    ///     not bound the error between samples.
     /// - Returns: A new deformed surface, or nil on failure
     public func nlPlateDeformed(
         constraints: [(uv: SIMD2<Double>, target: SIMD3<Double>)],
@@ -1164,7 +1168,9 @@ public final class Surface: @unchecked Sendable {
     ///   - constraints: Array of (uv, target, tangentU, tangentV) tuples
     ///   - resolutionOrder: The plate's resolution order, 2 through 9 (default 4). Outside that
     ///     range the result is nil.
-    ///   - tolerance: Approximation tolerance (default 1e-3)
+    ///   - tolerance: Sets the sampling density between the constraints (a tighter value
+    ///     samples more finely, 20 nodes per direction at 0.1 up to 80), default 1e-3. It does
+    ///     not bound the error between samples.
     /// - Returns: A new deformed surface, or nil on failure
     public func nlPlateDeformedG1(
         constraints: [(
@@ -2662,7 +2668,9 @@ extension Surface {
     ///
     /// - Parameters:
     ///   - constraints: Array of constraint tuples
-    ///   - tolerance: Approximation tolerance (default 1e-3)
+    ///   - tolerance: Sets the sampling density between the constraints (a tighter value
+    ///     samples more finely, 20 nodes per direction at 0.1 up to 80), default 1e-3. It does
+    ///     not bound the error between samples.
     /// - Returns: A new deformed surface, or nil on failure
     ///
     /// There is no iteration count: `NLPlate_NLPlate::Solve2` takes none. For the incremental
@@ -2719,7 +2727,9 @@ extension Surface {
     ///
     /// - Parameters:
     ///   - constraints: Array of constraint tuples
-    ///   - tolerance: Approximation tolerance (default 1e-3)
+    ///   - tolerance: Sets the sampling density between the constraints (a tighter value
+    ///     samples more finely, 20 nodes per direction at 0.1 up to 80), default 1e-3. It does
+    ///     not bound the error between samples.
     /// - Returns: A new deformed surface, or nil on failure
     ///
     /// There is no iteration count, for the same reason as
