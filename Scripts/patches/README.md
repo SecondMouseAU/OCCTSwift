@@ -628,7 +628,7 @@ documented API, hands every caller a number describing the request, not the resu
 `IsCNv(1)`, and `BRepFill_Sweep` splits its sweep at every spine **vertex**, so a polyline spine
 never reaches it: the discontinuity has to sit inside one unsplit edge. The fixture (borrowed from
 [#572](https://github.com/SecondMouseAU/OCCTSwift/issues/572), pinned by
-`Tests/OCCTModelingTests/Issue572SweepApproxTests.swift`) is a single-edge spine built as one
+`Tests/OCCTModelingTests/Sweeps/Issue572SweepApproxTests.swift`) is a single-edge spine built as one
 degree-2 B-spline curve with an interior knot of multiplicity 2, a C0 corner inside what
 `BRepFill_Sweep` treats as one edge, swept with a unit circle profile and Frenet trihedron via
 `BRepFill_PipeShell`, matching the bridge's own construction exactly.

@@ -1,4 +1,4 @@
-// Epic #766, Tests/OCCTModelingTests/BOPAlgoBuilderFaceTests.swift: kernel parity.
+// Epic #766, Tests/OCCTModelingTests/BOPAlgo/BOPAlgoBuilderFaceTests.swift: kernel parity.
 // The face is BRepBuilderAPI_MakeFace(Geom_Plane z=0, -5..5, -5..5, 1e-6)
 // (OCCTShapeCreateFaceFromSurface); OCCTBOPAlgoBuilderFace runs BOPAlgo_BuilderFace with SetFace,
 // SetShapes(the face's own edges), Perform, and returns Areas().

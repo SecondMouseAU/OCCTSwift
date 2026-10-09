@@ -1,4 +1,4 @@
-// Epic #766, Tests/OCCTModelingTests/FilletBuilderHistoryTests.swift: kernel parity for all five
+// Epic #766, Tests/OCCTModelingTests/Blends/FilletBuilderHistoryTests.swift: kernel parity for all five
 // tests. FilletBuilder is one BRepFilletAPI_MakeFillet; GetBounds / GetLaw / Generated / Modified /
 // IsDeleted are that class's members (OCCTFilletBuilderGetBounds, ...GetLaw, ...Generated,
 // ...Modified, ...IsDeleted). 10 mm box centred at the origin, first TopExp::MapShapes edge.
