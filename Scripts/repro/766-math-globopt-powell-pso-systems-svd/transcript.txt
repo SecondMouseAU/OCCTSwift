@@ -1,0 +1,12 @@
+globalMinBowl: done=1 nbExtrema=1 point= 3 3.9999999999999964 F=1.2621774483536189e-29
+globalMin1D: done=1 nbExtrema=1 point= 1.9999999976047156 F=1
+solveCircleLine (original start 4, 3) FunctionSetRoot: done=1 x=4 3
+solveCircleLine (original start 4, 3) NewtonFunctionSetRoot: done=1 x=4 3
+solveCircleLine (rewritten start 4.5, 3.5) FunctionSetRoot: done=1 x=4 3
+solveCircleLine (rewritten start 4.5, 3.5) NewtonFunctionSetRoot: done=1 x=4 3
+solveLinearSystem FunctionSetRoot: done=1 x=2 1
+solveLinearSystem NewtonFunctionSetRoot: done=1 x=2 1
+Powell minimizeBowl: done=1 x=3.0000000000000004 4 min=1.9721522630525295e-31
+PSO minimizeBowl: point= 3.0003586992980869 4.0000816844022422 minimum=1.353375280176667e-07
+PSO minimizeRosenbrock: point= 1.000023919963603 1.000029117788175 minimum=3.5626156109880741e-08
+SVD leastSquares: done=1 x=1.3333333333333324 2.3333333333333339
