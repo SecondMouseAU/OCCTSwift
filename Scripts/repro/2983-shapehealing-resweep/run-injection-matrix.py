@@ -32,9 +32,9 @@ HELPER = (
     "/usr/libexec/swift/pm/swiftpm-testing-helper"
 )
 FILES = [
-    "Tests/OCCTShapeHealingTests/Issue443FirstOfNTests.swift",
-    "Tests/OCCTShapeHealingTests/Issue442FixSolidMultiBodyTests.swift",
-    "Tests/OCCTShapeHealingTests/Issue702SolidDemotionTests.swift",
+    "Tests/OCCTShapeHealingTests/ShapeFix/Issue443FirstOfNTests.swift",
+    "Tests/OCCTShapeHealingTests/ShapeFix/Issue442FixSolidMultiBodyTests.swift",
+    "Tests/OCCTShapeHealingTests/ShapeFix/Issue702SolidDemotionTests.swift",
 ]
 FILTER = "Issue443FirstOfN|Issue442FixSolidMultiBody|Issue702SolidDemotion"
 
