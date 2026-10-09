@@ -89,7 +89,7 @@ Explanation 3, precisely characterized: the setter does exactly what its name sa
 bridge or wrapper defect: `OCCTShapeUpgradeConvertCurves3dToBezier` passes each flag to the
 correctly-named OCCT setter. Documented on `Shape.convertCurves3dToBezier`'s doc comment,
 `docs/reference/Shape-Builders-2.md`, and `okf/references/known-occt-bugs.md`'s "Not a bug" table,
-with regression tests in `Tests/OCCTShapeHealingTests/ShapeUpgradeConvertCurves3dToBezierTests.swift`
+with regression tests in `Tests/OCCTShapeHealingTests/ShapeUpgrade/ShapeUpgradeConvertCurves3dToBezierTests.swift`
 proving both the no-op and the two-flags-together conversion.
 
 ## Compile and run
