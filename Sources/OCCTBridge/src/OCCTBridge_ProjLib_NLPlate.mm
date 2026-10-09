@@ -56,7 +56,11 @@
 #include <GeomAbs_Shape.hxx>
 #include <GeomAdaptor_Curve.hxx>
 #include <GeomAdaptor_Surface.hxx>
-#include <GeomAPI_PointsToBSplineSurface.hxx>
+#include <BSplCLib.hxx>
+#include <NCollection_Array1.hxx>
+#include <algorithm>
+#include <cmath>
+#include <vector>
 #include <GeomAPI_ProjectPointOnSurf.hxx>
 #include <GeomPlate_BuildAveragePlane.hxx>
 #include <GeomPlate_BuildPlateSurface.hxx>
@@ -542,41 +546,84 @@ static bool occtNLPlateWorkingDomain(const Handle(Geom_Surface)& initialSurface,
   return true;
 }
 
-// Map a fitted surface's knots linearly onto the working domain. The poles are untouched, so the
-// geometry is unchanged and only the parametrisation moves: the caller's own (u, v), the one the
-// constraints were written in, addresses the same place on the output as it did on the input.
-// The fit itself always lands on [0, 1] x [0, 1] (#1046).
+// The sample nodes along one parameter direction of the working domain: a uniform lattice of
+// `base` nodes, plus every constraint parameter that lies inside [lo, hi]. A lattice node closer
+// than a quarter of the lattice step to a constraint parameter is dropped in favour of the
+// constraint node, because two nodes that close with very different plate values make the
+// interpolation system ill conditioned for no gain.
 //
-// Periodicity is not restored by this. A periodic input still comes back as a plain BSpline that
-// does not close on itself; see docs/occtswift-wrapping-gaps.md.
-static void occtNLPlateReparametrise(const Handle(Geom_BSplineSurface)& surface,
-                                     const OCCTNLPlateWorkingDomain&    domain)
+// Putting the constraint parameters on the lattice is the point (#3133, #3134, #3135): the plate
+// is exact at its own constraints (NLPlate_NLPlate::Evaluate meets every G0Target), and a surface
+// that interpolates the samples is therefore exact there too. A lattice that merely happens to
+// straddle a constraint is not, however close the fit tolerance is asked to be.
+static std::vector<double> occtNLPlateSampleNodes(double        lo,
+                                                  double        hi,
+                                                  int           base,
+                                                  const double* constraints,
+                                                  int32_t       constraintCount,
+                                                  int32_t       stride,
+                                                  int32_t       component)
 {
-  Standard_Real fu1, fu2, fv1, fv2;
-  surface->Bounds(fu1, fu2, fv1, fv2);
+  const double step = (hi - lo) / (base - 1);
+  const double span = hi - lo;
 
-  if (fu2 > fu1)
+  std::vector<double> fixed;
+  for (int32_t i = 0; i < constraintCount; i++)
   {
-    const double                      scale = (domain.u2 - domain.u1) / (fu2 - fu1);
-    const NCollection_Array1<double>& src   = surface->UKnots();
-    NCollection_Array1<double>        knots(src.Lower(), src.Upper());
-    for (int i = src.Lower(); i <= src.Upper(); i++)
-      knots(i) = domain.u1 + (src(i) - fu1) * scale;
-    surface->SetUKnots(knots);
+    const double c = constraints[i * stride + component];
+    if (c > lo + 1e-9 * span && c < hi - 1e-9 * span)
+      fixed.push_back(c);
   }
+  std::sort(fixed.begin(), fixed.end());
 
-  if (fv2 > fv1)
+  std::vector<double> nodes;
+  for (int i = 0; i < base; i++)
   {
-    const double                      scale = (domain.v2 - domain.v1) / (fv2 - fv1);
-    const NCollection_Array1<double>& src   = surface->VKnots();
-    NCollection_Array1<double>        knots(src.Lower(), src.Upper());
-    for (int i = src.Lower(); i <= src.Upper(); i++)
-      knots(i) = domain.v1 + (src(i) - fv1) * scale;
-    surface->SetVKnots(knots);
+    const double t    = (i == base - 1) ? hi : lo + step * i;
+    bool         near = false;
+    for (const double c : fixed)
+      if (std::fabs(t - c) < 0.25 * step)
+        near = true;
+    if (!near || i == 0 || i == base - 1)
+      nodes.push_back(t);
+  }
+  for (const double c : fixed)
+    nodes.push_back(c);
+  std::sort(nodes.begin(), nodes.end());
+
+  // Drop any remaining pair closer than 1e-9 of the span (duplicate constraint parameters, or a
+  // constraint within that of an end of the domain).
+  std::vector<double> unique;
+  for (const double t : nodes)
+    if (unique.empty() || t - unique.back() > 1e-9 * span)
+      unique.push_back(t);
+  return unique;
+}
+
+// Interpolate one row of poles at the given parameters with a clamped knot vector built by
+// averaging (the standard choice that keeps the collocation matrix totally positive, which is
+// what BSplCLib::Interpolate's elimination without pivoting needs). Returns the flat knots.
+static void occtNLPlateInterpolate(const std::vector<double>&  params,
+                                   int                         degree,
+                                   NCollection_Array1<double>& flat)
+{
+  const int n = static_cast<int>(params.size());
+  flat        = NCollection_Array1<double>(1, n + degree + 1);
+  for (int i = 0; i <= degree; i++)
+  {
+    flat(1 + i)              = params.front();
+    flat(n + degree + 1 - i) = params.back();
+  }
+  for (int j = 1; j <= n - degree - 1; j++)
+  {
+    double sum = 0.0;
+    for (int k = j; k < j + degree; k++)
+      sum += params[k];
+    flat(degree + 1 + j) = sum / degree;
   }
 }
 
-// Sample the solved plate over the working domain and refit it as a BSpline.
+// Sample the solved plate over the working domain and interpolate it as a cubic BSpline.
 //
 // NLPlate_NLPlate::Evaluate returns the absolute deformed point, not a displacement.
 // EvaluateDerivative seeds its accumulator with myInitialSurface->Value(uv) before summing the
@@ -585,33 +632,132 @@ static void occtNLPlateReparametrise(const Handle(Geom_BSplineSurface)& surface,
 // target. Adding the base surface to it a second time put every result at twice its distance from
 // the origin, invisible only because every shipped fixture was a plane through the origin (#1049).
 // See Scripts/repro/1049-nlplate-double-base.
+//
+// Why interpolate on a lattice that holds the constraint parameters (#3133, #3134, #3135). The
+// surface used to be GeomAPI_PointsToBSplineSurface's approximation of a uniform 20 x 20 lattice,
+// which failed in two separate ways, both measured in Scripts/repro/3133-nlplate-fit:
+//
+//  1. Its default parametrisation is chord length, so the fitted surface's parameter u was not the
+//     lattice's u. The bridge then rescaled the knots linearly onto the working domain, which
+//     only undoes that when the samples are evenly spaced in 3D, and a deformation makes them
+//     not. (-5, -5) came back at (-7.6, -6.7, -3.3). Interpolating at the true lattice parameters
+//     removes the rescale altogether.
+//  2. Away from its constraints a plate is unconstrained, and for G1 and above the kernel's
+//     regularised solve (Plate_Plate::SolveTI1, 1e-8 on the polynomial block) returns values of
+//     order 1e6 to 1e20 a few units out. NLPlate_NLPlate::Evaluate is exact at each constraint
+//     and nowhere else is promised. A least-squares fit over a lattice that contains such values
+//     is dragged by them everywhere, including at the constraint; an interpolant that holds the
+//     constraint parameters as nodes is exact there whatever the neighbours do.
+//
+// The derivative targets of G1/G2/G3 constraints are met by the solver but are not reproduced by
+// the interpolant, whose derivative at a node depends on the (possibly extreme) neighbouring
+// samples. A non-finite sample refuses (returns nullptr) rather than building a surface from it.
 static OCCTSurfaceRef occtNLPlateFitSolved(const NLPlate_NLPlate&          solver,
                                            const OCCTNLPlateWorkingDomain& domain,
-                                           double                          tolerance)
+                                           const double*                   constraints,
+                                           int32_t                         constraintCount,
+                                           int32_t                         stride)
 {
-  const int          nuPts = 20, nvPts = 20;
-  TColgp_Array2OfPnt poles(1, nuPts, 1, nvPts);
-  for (int iu = 1; iu <= nuPts; iu++)
+  const int base = 20;
+
+  const std::vector<double> us =
+    occtNLPlateSampleNodes(domain.u1, domain.u2, base, constraints, constraintCount, stride, 0);
+  const std::vector<double> vs =
+    occtNLPlateSampleNodes(domain.v1, domain.v2, base, constraints, constraintCount, stride, 1);
+  const int nu = static_cast<int>(us.size());
+  const int nv = static_cast<int>(vs.size());
+  if (nu < 4 || nv < 4)
+    return nullptr;
+
+  const int degree = 3;
+
+  NCollection_Array1<double> flatU, flatV;
+  occtNLPlateInterpolate(us, degree, flatU);
+  occtNLPlateInterpolate(vs, degree, flatV);
+
+  NCollection_Array1<double> paramsU(1, nu), paramsV(1, nv);
+  for (int i = 0; i < nu; i++)
+    paramsU(i + 1) = us[i];
+  for (int j = 0; j < nv; j++)
+    paramsV(j + 1) = vs[j];
+  NCollection_Array1<int> contactU(1, nu), contactV(1, nv);
+  contactU.Init(0);
+  contactV.Init(0);
+
+  TColgp_Array2OfPnt poles(1, nu, 1, nv);
+  for (int iu = 1; iu <= nu; iu++)
   {
-    const double pu = domain.u1 + (domain.u2 - domain.u1) * (iu - 1) / (nuPts - 1);
-    for (int iv = 1; iv <= nvPts; iv++)
+    for (int iv = 1; iv <= nv; iv++)
     {
-      const double pv  = domain.v1 + (domain.v2 - domain.v1) * (iv - 1) / (nvPts - 1);
-      const gp_XYZ val = solver.Evaluate(gp_XY(pu, pv));
-      poles(iu, iv)    = gp_Pnt(val.X(), val.Y(), val.Z());
+      const gp_XYZ val = solver.Evaluate(gp_XY(us[iu - 1], vs[iv - 1]));
+      if (!std::isfinite(val.X()) || !std::isfinite(val.Y()) || !std::isfinite(val.Z()))
+        return nullptr;
+      poles(iu, iv) = gp_Pnt(val.X(), val.Y(), val.Z());
     }
   }
 
-  GeomAPI_PointsToBSplineSurface approx;
-  approx.Init(poles, 3, 8, GeomAbs_C2, tolerance);
-  if (!approx.IsDone())
-    return nullptr;
+  // Tensor-product interpolation: solve along u for each column, then along v for each row.
+  for (int iv = 1; iv <= nv; iv++)
+  {
+    NCollection_Array1<gp_Pnt> col(1, nu);
+    for (int iu = 1; iu <= nu; iu++)
+      col(iu) = poles(iu, iv);
+    int problem = 0;
+    BSplCLib::Interpolate(degree, flatU, paramsU, contactU, col, problem);
+    if (problem != 0)
+      return nullptr;
+    for (int iu = 1; iu <= nu; iu++)
+      poles(iu, iv) = col(iu);
+  }
+  for (int iu = 1; iu <= nu; iu++)
+  {
+    NCollection_Array1<gp_Pnt> row(1, nv);
+    for (int iv = 1; iv <= nv; iv++)
+      row(iv) = poles(iu, iv);
+    int problem = 0;
+    BSplCLib::Interpolate(degree, flatV, paramsV, contactV, row, problem);
+    if (problem != 0)
+      return nullptr;
+    for (int iv = 1; iv <= nv; iv++)
+      poles(iu, iv) = row(iv);
+  }
+  for (int iu = 1; iu <= nu; iu++)
+    for (int iv = 1; iv <= nv; iv++)
+      if (!std::isfinite(poles(iu, iv).X()) || !std::isfinite(poles(iu, iv).Y())
+          || !std::isfinite(poles(iu, iv).Z()))
+        return nullptr;
 
-  Handle(Geom_BSplineSurface) result = approx.Surface();
-  if (result.IsNull())
-    return nullptr;
+  // Unique knots and multiplicities from the clamped flat sequences.
+  auto uniqueKnots = [](const NCollection_Array1<double>& flat,
+                        NCollection_Array1<double>&       knots,
+                        NCollection_Array1<int>&          mults) {
+    std::vector<double> k;
+    std::vector<int>    m;
+    for (int i = flat.Lower(); i <= flat.Upper(); i++)
+    {
+      if (!k.empty() && flat(i) == k.back())
+        m.back()++;
+      else
+      {
+        k.push_back(flat(i));
+        m.push_back(1);
+      }
+    }
+    knots = NCollection_Array1<double>(1, static_cast<int>(k.size()));
+    mults = NCollection_Array1<int>(1, static_cast<int>(k.size()));
+    for (size_t i = 0; i < k.size(); i++)
+    {
+      knots(static_cast<int>(i) + 1) = k[i];
+      mults(static_cast<int>(i) + 1) = m[i];
+    }
+  };
+  NCollection_Array1<double> knotsU, knotsV;
+  NCollection_Array1<int>    multsU, multsV;
+  uniqueKnots(flatU, knotsU, multsU);
+  uniqueKnots(flatV, knotsV, multsV);
 
-  occtNLPlateReparametrise(result, domain);
+  Handle(Geom_BSplineSurface) result =
+    new Geom_BSplineSurface(poles, knotsU, knotsV, multsU, multsV, degree, degree);
   return new OCCTSurface(result);
 }
 
@@ -666,7 +812,8 @@ OCCTSurfaceRef OCCTSurfaceNLPlateG0(OCCTSurfaceRef initialSurface,
     if (!solver.IsDone())
       return nullptr;
 
-    return occtNLPlateFitSolved(solver, domain, tolerance);
+    (void)tolerance;
+    return occtNLPlateFitSolved(solver, domain, constraints, constraintCount, 5);
   }
   catch (...)
   {
@@ -715,7 +862,8 @@ OCCTSurfaceRef OCCTSurfaceNLPlateG1(OCCTSurfaceRef initialSurface,
     if (!solver.IsDone())
       return nullptr;
 
-    return occtNLPlateFitSolved(solver, domain, tolerance);
+    (void)tolerance;
+    return occtNLPlateFitSolved(solver, domain, constraints, constraintCount, 11);
   }
   catch (...)
   {
@@ -946,7 +1094,8 @@ OCCTSurfaceRef OCCTSurfaceNLPlateG2(OCCTSurfaceRef initialSurface,
     if (!solver.IsDone())
       return nullptr;
 
-    return occtNLPlateFitSolved(solver, domain, tolerance > 0 ? tolerance : 1e-3);
+    (void)tolerance;
+    return occtNLPlateFitSolved(solver, domain, constraints, constraintCount, 20);
   }
   catch (...)
   {
@@ -1000,7 +1149,8 @@ OCCTSurfaceRef OCCTSurfaceNLPlateG3(OCCTSurfaceRef initialSurface,
     if (!solver.IsDone())
       return nullptr;
 
-    return occtNLPlateFitSolved(solver, domain, tolerance > 0 ? tolerance : 1e-3);
+    (void)tolerance;
+    return occtNLPlateFitSolved(solver, domain, constraints, constraintCount, 32);
   }
   catch (...)
   {
@@ -1041,7 +1191,7 @@ OCCTSurfaceRef OCCTSurfaceNLPlateIncrementalG0(OCCTSurfaceRef initialSurface,
     if (!solver.IsDone())
       return nullptr;
 
-    return occtNLPlateFitSolved(solver, domain, 1e-3);
+    return occtNLPlateFitSolved(solver, domain, constraints, constraintCount, 5);
   }
   catch (...)
   {
