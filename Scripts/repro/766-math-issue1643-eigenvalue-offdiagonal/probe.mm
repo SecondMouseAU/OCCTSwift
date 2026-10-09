@@ -1,4 +1,4 @@
-// Epic #766 kernel-parity probe for Tests/OCCTMathTests/Issue1643EigenvalueOffDiagonalTests.swift.
+// Epic #766 kernel-parity probe for Tests/OCCTMathTests/LinearAlgebra/Issue1643EigenvalueOffDiagonalTests.swift.
 // Same math_EigenValuesSearcher call as OCCTMathEigenValues / OCCTMathEigenValuesAndVectors:
 // subdiag(1) is the dead slot (set to 0), the caller's n - 1 entries go in 2..n. Also prints the
 // pre-#1643 convention (entries in 1..n-1, so the first is discarded) for the record.
