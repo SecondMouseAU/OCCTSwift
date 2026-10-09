@@ -43,7 +43,8 @@ struct MakeEdge2dTests {
     }
 }
 
-/// #1979: the vertices BRepLib_MakeEdge2d gives each fixture, count and position
+/// #1979: the vertices BRepLib_MakeEdge2d gives each fixture, count and position.
+///
 /// (Scripts/repro/766-geom2d-makeedge2d/). Order-insensitive: each wanted point must be a vertex.
 func expectEdge2dVertices(_ edge: Shape, _ want: [SIMD3<Double>], _ label: String) {
     let got = edge.vertices()

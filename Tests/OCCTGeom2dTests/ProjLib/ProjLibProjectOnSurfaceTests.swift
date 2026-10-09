@@ -15,7 +15,8 @@ import simd
 struct ProjLibProjectOnSurfaceTests {
     @Test func projectLineOnCylinder() throws {
         let line = try #require(Curve3D.line(through: SIMD3(5, 0, 0), direction: SIMD3(0, 1, 1)))
-        let cyl = try #require(Surface.cylinder(origin: SIMD3(0, 0, 0), axis: SIMD3(0, 0, 1), radius: 5.0))
+        let cyl = try #require(
+            Surface.cylinder(origin: SIMD3(0, 0, 0), axis: SIMD3(0, 0, 1), radius: 5.0))
         let projected = try #require(line.projectOnSurface(cyl, range: 0...10))
         let domain = projected.domain
         #expect(abs(domain.lowerBound) < 1e-12 && abs(domain.upperBound - 10) < 1e-12)

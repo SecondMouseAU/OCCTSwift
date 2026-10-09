@@ -12,8 +12,10 @@ struct ChFi2dFilletAlgoTests {
         // gives one solution, a radius-2 quarter circle (length pi), and trims both edges back
         // to length 8 (Scripts/repro/766-geom2d-chfi2d-compbezier/).
         // Two edges meeting at origin
-        let e1 = try #require(Wire.line(from: .zero, to: SIMD3(10, 0, 0)).flatMap { Shape.fromWire($0) })
-        let e2 = try #require(Wire.line(from: .zero, to: SIMD3(0, 10, 0)).flatMap { Shape.fromWire($0) })
+        let e1 = try #require(
+            Wire.line(from: .zero, to: SIMD3(10, 0, 0)).flatMap { Shape.fromWire($0) })
+        let e2 = try #require(
+            Wire.line(from: .zero, to: SIMD3(0, 10, 0)).flatMap { Shape.fromWire($0) })
         let r = try #require(Shape.filletAlgo(edge1: e1, edge2: e2, radius: 2.0))
         #expect(r.fillet.isValid)
         #expect(r.resultCount == 1)
