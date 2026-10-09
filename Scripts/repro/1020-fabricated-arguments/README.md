@@ -109,7 +109,7 @@ the hyperbola and parabola cases. (`BRepClass3d_BndBoxTree.cxx:134` uses
 than `RealLast()`, and there is no reason to admit fewer representable roots than exist.) The closed
 conics keep `0, 2 * M_PI`, which is a full period rather than a fabricated bound.
 
-Pinned by `Tests/OCCTCurveTests/Issue1020ExtremaBoundsTests.swift`: a point projecting to parameter
+Pinned by `Tests/OCCTCurveTests/Projection/Issue1020ExtremaBoundsTests.swift`: a point projecting to parameter
 2e10 on a line, and a parabola with `focal = 1e6` whose real root lands near 4.3e6. Both returned an
 empty array before and a correct extremum after; the two in-range control rows pass either way.
 

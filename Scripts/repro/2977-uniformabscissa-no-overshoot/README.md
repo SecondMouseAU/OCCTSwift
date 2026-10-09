@@ -117,7 +117,7 @@ rows have changed, and the process surviving the last one is the clearest of the
 ## What changed in the tests
 
 `Curve2DTests.uniformDrawRespectsCount` and the whole of
-`Tests/OCCTCurveTests/GCPntsSamplerBoundsTests.swift` now run on the 1e8 x 0.1 ellipse at six of
+`Tests/OCCTCurveTests/Sampling/GCPntsSamplerBoundsTests.swift` now run on the 1e8 x 0.1 ellipse at six of
 the eight overshooting counts, with #501's own ellipse kept as a control at the same counts. Two
 other things were wrong with them and are fixed in the same change:
 
