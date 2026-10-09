@@ -813,7 +813,7 @@ public struct FeatureReconstructor: Sendable {
     }
 
     private static func impossibleVolume(_ op: String) -> String {
-        "boolean \(op) result volume is outside what its operands allow (operands too large to fuse reliably)"
+        "boolean \(op) result volume is outside what its operands allow (operands too large for a reliable boolean)"
     }
 
     private static func recordSkip(
@@ -853,7 +853,7 @@ public struct FeatureReconstructor: Sendable {
                 guard volumeIsConsistent(.union, left: prior, right: body, result: fused) else {
                     recordSkip(
                         ctx: &ctx, id: id,
-                        reason: .occtFailure(Self.impossibleVolume("union")),
+                        reason: .occtFailure(impossibleVolume("union")),
                         stage: .additive)
                     return
                 }

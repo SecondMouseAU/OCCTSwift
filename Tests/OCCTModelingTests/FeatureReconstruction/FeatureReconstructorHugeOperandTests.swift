@@ -31,7 +31,8 @@ struct Issue3196ReconstructorHugeOperandTests {
                 #expect(why.contains("union"), "s=\(s)")
                 #expect(why.contains("volume"), "s=\(s)")
             } else {
-                Issue.record("s=\(s): expected an occtFailure skip, got \(String(describing: skip?.reason))")
+                let got = String(describing: skip?.reason)
+                Issue.record("s=\(s): expected an occtFailure skip, got \(got)")
             }
             #expect(skip?.stage == .additive, "s=\(s)")
             // The accumulated body is the small box, untouched.
@@ -83,5 +84,22 @@ struct Issue3196ReconstructorHugeOperandTests {
             from: [.extrude(Self.small), .boolean(spec)], inputBody: base)
         #expect(result.fulfilled.contains("op"))
         #expect(result.skipped.isEmpty)
+    }
+
+    @Test("Control: a hole into a 1e12 target is a consistent cut and stays fulfilled")
+    func hugeHoleProbe() throws {
+        let s = 1e12
+        let wire = try #require(
+            Wire.polygon3D(
+                [SIMD3(0, 0, 0), SIMD3(s, 0, 0), SIMD3(s, s, 0), SIMD3(0, s, 0)], closed: true))
+        let huge = try #require(Shape.extrude(profile: wire, direction: SIMD3(0, 0, 1), length: s))
+        let hole = FeatureSpec.Hole(
+            axisPoint: SIMD3(5e11, 5e11, 0), axisDirection: SIMD3(0, 0, 1), diameter: 8, depth: 100,
+            id: "h")
+        let result = FeatureReconstructor.build(from: [.hole(hole)], inputBody: huge)
+        #expect(result.fulfilled == ["h"])
+        #expect(result.skipped.isEmpty)
+        let volume = try #require(result.shape?.volume)
+        #expect(abs(volume - 1e36) < 1e30)
     }
 }
