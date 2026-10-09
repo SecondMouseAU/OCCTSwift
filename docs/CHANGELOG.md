@@ -21,6 +21,30 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### Fixed: the wasm test suites read their fixtures and no longer fail for test-side reasons (#2926, #2929, #3025, #3026, #3137)
+
+The wasm32-wasip1 test run now reads `#filePath` fixtures, so seven `OCCTStressTests` files that always failed with `.importFailed` run and pass (#3026). Test-side faults that looked like wasm defects are fixed: the NLPlate G3 tolerance pair now separates on both platforms (#2926), and `BRepLibExtendedTests."Same parameter all"` no longer writes its flag through a freed handle (#2929). The harness provides `HOME` and reports writable rights on its `/work` and `/tmp` preopens (#3025). `FilletBuilder.hasResult` is now `false` until `build()` runs on every platform: OCCT's `ChFi3d_Builder` constructor leaves the member uninitialised, and the bridge now zeroes the storage (#3137).
+
+### Changed: `Shape.isSelfIntersecting(hardTimeout:)` exists on wasm, with a cooperative bound (#2760)
+
+Previously absent under `#if !os(WASI)`, so Apple code using it did not compile for `wasm32-unknown-wasip1`. It now exists everywhere with the same signature. On Apple it is unchanged. On wasm there is no second thread, so the bound is cooperative and can overrun if OCCT does not reach a checkpoint; a worker or process you can terminate is the real hard bound. A non-positive `hardTimeout` returns `nil` at once on both platforms, unlike `timeout:` where non-positive means unbounded.
+
+### Changed: facilities wasm32-wasip1 does not have are documented as unavailable, and `MemInfo` no longer reads a 4 GiB heap there (#3025)
+
+`MemInfo`, `SharedLibrary.open()`, `DiskInfo` and `OCCTDiagnostics.Record.stackTrace` stay present and source compatible; their `///` comments and one table in `docs/guides/wasm-consumer-setup.md` state the answer on WASI (`-1`, `""`, `false`, `0`, empty). `MemInfo.heapUsage` and `workingSet` widened OCCT's `size_t(-1)` "unavailable" value to `Int64`, which is `4294967295` on wasm32 and read as a 4 GiB heap; the bridge now maps the sentinel to `-1` on every target.
+
+### Changed: the WASI package no longer links `setjmp`, and every claim that it was load-bearing is corrected (#2758, #2757)
+
+`Package.swift` drops `.linkedLibrary("setjmp")` from the WASI `OCCTBridge` target: since `-UOCC_CONVERT_SIGNALS` the kernel archive holds zero references to `__wasm_setjmp`, `__wasm_longjmp` and `__c_longjmp`. A consumer whose own dependency calls `setjmp` supplies `-lsetjmp` from its own manifest. `-mllvm -wasm-enable-sjlj` stays in the generated toolset for exactly that case. #2757's invalid `br_table` now has a 12-statement standalone reduction under `Scripts/repro/2757/` with a drafted LLVM report (not filed), and `wasm.yml` checks the fetched kernel archive for setjmp references.
+
+### Fixed: `check-wasi-patch-base.py --tree` no longer reports WRONG_BASE for an applied WASI patch (#2272)
+
+The mode compared each patch's pre-image blob against a tree where the patch was already applied, so the tree `build-occt-wasm.sh` leaves produced nine false defects. An applied patch is now verified against its post-image blob. The policy no longer names a wasm CI job as the place `--tree` runs, since `wasm.yml` has no `Libraries/occt-src`.
+
+### Changed: CI drops objects whose source no longer exists after the SwiftPM cache restore (#3214)
+
+CI configuration only: a branch lagging `main` restored a `.build` with a `GProps.swift.o` its tree could not link, and the doc-snippet runner links every object it finds.
+
 ### Two fillets whose radii sum to the face width are built, carried patch 0059 (#3207)
 
 Two fillets on opposite edges of a face, with radii that sum to the width of the face between them (a 4 mm face with r = 2 and r = 2), used to answer `IsDone() == false`, and `Shape.filleted` answered nil, while 1.99999999 worked (OCCT#1177). Carried kernel patch `0059` builds them: the top is a semicircle of two quarter cylinders sharing one edge, and the result is a valid closed solid whose volume matches the analytic one to 1e-9. A radius above half the width still declines (the fillets would cross, and the stripe builder cannot trim them), and a meeting that is exact only up to rounding noise, such as a rotated box, can still decline. For results built this way `Modified()` and `Generated()` name the faces from before the zero-width face was removed. The patch is carried and not yet pinned, so the new tests, `Issue3207FilletMeetingTests`, run under `OCCTSWIFT_LOCAL=1` in `kernel-integration.yml` until the asset is rebuilt.
