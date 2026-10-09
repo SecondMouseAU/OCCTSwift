@@ -1,0 +1,4 @@
+localExtremum isDone=1
+localExtremum squareDistance=34 distance=5.8309518948453007
+localExtremum p1=(5, 0, 0) param1=0
+localExtremum p2=(10, 0, 3) param2=0
