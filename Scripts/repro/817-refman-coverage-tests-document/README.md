@@ -226,12 +226,12 @@ three cases — a bare-type-name constructor call is common enough that requirin
 before trusting it is the right default). Each was individually confirmed against the real test
 body, recorded in `REVIEWED_HITS`:
 
-- `XCAFDoc_AssemblyGraph`: `Tests/OCCTXCAFTests/XCAFDocAssemblyGraphTests.swift:14`,
+- `XCAFDoc_AssemblyGraph`: `Tests/OCCTXCAFTests/Assembly/XCAFDocAssemblyGraphTests.swift:14`,
   `AssemblyGraph(document: doc)` followed by real assertions on `nodeCount`/`linkCount`/`rootCount`.
-- `XCAFNoteObjects_NoteObject`: `Tests/OCCTXCAFTests/XCAFNoteObjectsTests.swift`, six
+- `XCAFNoteObjects_NoteObject`: `Tests/OCCTXCAFTests/Annotations/XCAFNoteObjectsTests.swift`, six
   `NoteObject()` constructions across its six test functions, each followed by real property
   assertions.
-- `XCAFView_Object`: `Tests/OCCTXCAFTests/XCAFViewObjectTests.swift`, seven `ViewObject()`
+- `XCAFView_Object`: `Tests/OCCTXCAFTests/Annotations/XCAFViewObjectTests.swift`, seven `ViewObject()`
   constructions, each followed by real property assertions.
 
 ## The one real under-coverage finding: fixed in this branch
@@ -244,7 +244,7 @@ bridge classes; OCCT's own `XCAFDoc_LengthUnit::Set` is never called), so the on
 a document carrying one is a real STEP round-trip: STEP's header carries an explicit unit, and
 `STEPCAFControl_Reader` records it via `XCAFDoc_LengthUnit::Set` on import.
 
-Small enough to fix here: two tests added to `Tests/OCCTXCAFTests/DocumentTests.swift`
+Small enough to fix here: two tests added to `Tests/OCCTXCAFTests/Document/DocumentTests.swift`
 (`lengthUnitReadsBackFromSTEP`, `lengthUnitNilOnFreshDocument`). Proved per
 `okf/policies/prove-the-test-fails.md`: `lengthUnit`'s getter was temporarily forced to
 `return nil` — `lengthUnitReadsBackFromSTEP` failed (`Expectation failed: ... lengthUnit → nil →

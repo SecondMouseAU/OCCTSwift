@@ -47,7 +47,7 @@ so it measures whatever `swift build` last produced. Run `OCCTSWIFT_LOCAL=1 swif
 
 ## Why this is not a Swift test
 
-`Tests/OCCTXCAFTests/Issue1030DatumLookupGuardTests.swift` covers the shared lookup, because the
+`Tests/OCCTXCAFTests/GDT/Issue1030DatumLookupGuardTests.swift` covers the shared lookup, because the
 crashing shape is authorable there through `AssemblyNode.findChild(tag:create:)` plus
 `initRealArray(lower:upper:)`. It cannot cover these two: putting a datum in the `XCAFDoc_DocumentTool`
 table needs an `XCAFDoc_Datum` attribute, and attaching one is not on the bridge's label surface.

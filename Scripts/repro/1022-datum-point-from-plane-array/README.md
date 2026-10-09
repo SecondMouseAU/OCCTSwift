@@ -83,7 +83,7 @@ required by `SetObject` and why the datum-target setters are deliberately left a
 this package writes take neither branch, which is the only reason the existing suite did not crash.
 **The label API can author it, which #1030 established and this sentence originally denied**:
 `AssemblyNode.findChild(tag:create:)` plus `initRealArray(lower:upper:)` puts a `TDataStd_RealArray`
-straight on the datum label's own point child, and `Tests/OCCTXCAFTests/Issue1030DatumLookupGuardTests.swift`
+straight on the datum label's own point child, and `Tests/OCCTXCAFTests/GDT/Issue1030DatumLookupGuardTests.swift`
 builds the crashing shape that way with no file and no importer involved.
 
 **The STEP writer is a second reader of the same accessor, on a branch nothing here can take.**

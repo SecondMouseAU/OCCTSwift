@@ -176,8 +176,8 @@ source-breaking changes to the public C header.
 | File | What it is |
 |---|---|
 | `run.sh` | The injection matrix. `./run.sh` for all six, `./run.sh B` for one. |
-| `Tests/OCCTXCAFTests/Issue1055DatumNameLengthTests.swift` | The #1055 suite, in the test tree rather than here because it is permanent coverage. |
-| `Tests/OCCTXCAFTests/Issue1056GDTWriteAnswerTests.swift` | The #1056 suite, same. |
+| `Tests/OCCTXCAFTests/GDT/Issue1055DatumNameLengthTests.swift` | The #1055 suite, in the test tree rather than here because it is permanent coverage. |
+| `Tests/OCCTXCAFTests/GDT/Issue1056GDTWriteAnswerTests.swift` | The #1056 suite, same. |
 
 Requires a local `Libraries/OCCT.xcframework`; `run.sh` builds with `OCCTSWIFT_LOCAL=1` and with
 `OCCTSWIFT_BRIDGE_PREBUILT` unset, since it edits `.mm` sources a prebuilt bridge would mask.
