@@ -65,7 +65,7 @@ Bridge-only, no kernel patch, no xcframework rebuild. `occtShapeFilletEdgeList` 
 `Sources/OCCTBridge/src/OCCTBridge_Internal.h` is now the one skeleton behind
 `OCCTShapeFilletEdges`, `OCCTShapeFilletEdgesLinear` and `OCCTShapeBlendEdges`, and
 `occtValidFilletRadius` / `occtValidFilletRadii` are the one precondition all three apply.
-Regression tests: `Tests/OCCTModelingTests/Issue489FilletRadiusTests.swift`.
+Regression tests: `Tests/OCCTModelingTests/Blends/Issue489FilletRadiusTests.swift`.
 
 Nothing filed upstream: `Add()` reporting failure through `IsDone()` is OCCT's documented
 `BRepBuilderAPI_MakeShape` contract, not a defect.

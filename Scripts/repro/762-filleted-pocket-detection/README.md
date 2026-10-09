@@ -109,7 +109,7 @@ enclosure state regardless. Measured directly (`Sources/OCCTTest/main.swift` scr
 boss on a bare plate already reports `1 pocket, isOpen: true` before this fix; a filleted boss on
 the same plate reports the identical `1 pocket, isOpen: true` after it. Neither is a false
 *enclosed* pocket, which is the property that actually matters to a consumer. See
-`Tests/OCCTModelingTests/Issue762FilletedPocketDetectionTests.swift`'s
+`Tests/OCCTModelingTests/FeatureRecognition/Issue762FilletedPocketDetectionTests.swift`'s
 `Issue762FilletedBossFalsePositiveTests` for the codified version of this measurement.
 
 ## `detectHoles()`: checked, not assumed, and found unaffected

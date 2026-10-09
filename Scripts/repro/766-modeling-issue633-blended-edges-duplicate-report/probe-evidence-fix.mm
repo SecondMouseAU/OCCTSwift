@@ -1,4 +1,4 @@
-// Epic #766 evidence fix, Tests/OCCTModelingTests/Issue633BlendedEdgesDuplicateReportTests.swift.
+// Epic #766 evidence fix, Tests/OCCTModelingTests/Blends/Issue633BlendedEdgesDuplicateReportTests.swift.
 // probe.mm printed volumes at %.9f, gave the declined edges of the distinct and closed-box requests as a count
 // and did not compute the declined list of the duplicated-edge request. This probe repeats OCCTShapeBlendEdges
 // for every request the tests make (BRepFilletAPI_MakeFillet::Add(R, E) per entry in request order, declined

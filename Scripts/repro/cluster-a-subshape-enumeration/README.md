@@ -462,7 +462,7 @@ first. `0/0/0` is what a same-solid-only walk of two ordinary boxes should alway
 **No further defect surfaced closing this one out.** Every `detectPocketsAAG()` row this census
 measures across all three fixtures (plain box, and both split compounds in both member orders) now
 reads `0`, and a fixture built specifically to have a real pocket (a genuine cavity cut into a box,
-see `Tests/OCCTModelingTests/Issue703EdgeConvexityOrderTests.swift`) reads `1` with real concave
+see `Tests/OCCTModelingTests/FeatureRecognition/Issue703EdgeConvexityOrderTests.swift`) reads `1` with real concave
 edges at the floor/wall junction, not `0` -- the fix corrects the sign convention, it does not
 flatten every edge to convex.
 

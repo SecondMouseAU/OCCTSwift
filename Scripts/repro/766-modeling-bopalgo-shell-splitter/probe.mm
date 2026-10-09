@@ -1,4 +1,4 @@
-// Epic #766, Tests/OCCTModelingTests/BOPAlgoShellSplitterTests.swift: kernel parity.
+// Epic #766, Tests/OCCTModelingTests/BOPAlgo/BOPAlgoShellSplitterTests.swift: kernel parity.
 // OCCTBOPAlgoShellSplitter: BOPAlgo_ShellSplitter, AddStartElement(shell), Perform, Shells().
 #include <BOPAlgo_ShellSplitter.hxx>
 #include <BRepPrimAPI_MakeBox.hxx>
