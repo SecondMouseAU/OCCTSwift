@@ -618,6 +618,7 @@ jobs:
           if not build.is_dir():
               print('no .build restored, nothing to clear')
               raise SystemExit(0)
+          SOURCE_SUFFIXES = ('.swift', '.m', '.mm', '.c', '.cc', '.cpp', '.cxx')
           removed = 0
           for here, dirs, _files in os.walk(build):
               depth = len(pathlib.Path(here).relative_to(build).parts)
@@ -635,7 +636,12 @@ jobs:
                       continue
                   have = {f.name for r in roots for f in r.rglob('*') if f.is_file()}
                   for obj in (pathlib.Path(here) / name).rglob('*.o'):
-                      if obj.name[:-2] not in have:
+                      stem = obj.name[:-2]
+                      # Only an object named after a source file is judged. Anything else (a
+                      # generated or linker-produced object) is left alone.
+                      if not stem.endswith(SOURCE_SUFFIXES):
+                          continue
+                      if stem not in have:
                           print('orphan object, source gone:', obj)
                           obj.unlink()
                           removed += 1

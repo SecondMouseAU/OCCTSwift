@@ -52,6 +52,18 @@ struct Issue2760HardTimeoutAllPlatforms {
         }
     }
 
+    // NaN is not `<= 0`, so it is deliberately NOT in the loop above. Measured on Apple: a NaN
+    // deadline never expires and the check answers. The wasm body falls through to the cooperative
+    // call for the same reason. Kilo asked for it in the nil loop on #3229; that would assert the
+    // wrong thing, so it has its own test.
+    @Test("a NaN bound never expires, so the check answers on every platform")
+    func nanBoundAnswers() throws {
+        let compound = try #require(overlappingCompound())
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        #expect(compound.isSelfIntersecting(hardTimeout: .nan) == true)
+        #expect(box.isSelfIntersecting(hardTimeout: .nan) == false)
+    }
+
     // The expiry path cannot be forced deterministically: OCCT may find the fault before its first
     // checkpoint, so the outcome is `true` or `nil`. What must hold on both platforms is that an
     // expired bound never reads as a clean answer for a shape that does self-intersect.
