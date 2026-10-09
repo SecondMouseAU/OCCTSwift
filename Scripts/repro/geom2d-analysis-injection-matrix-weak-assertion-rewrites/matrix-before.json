@@ -1,0 +1,8520 @@
+{
+ "label": "before",
+ "targets": {
+  "OCCTAnalysisTests": {
+   "changed": [
+    "BndRangeTests.addValue",
+    "BndRangeTests.common",
+    "BndRangeTests.createAndQuery",
+    "BndRangeTests.trimFromTo",
+    "BndRangeTests.voidRange",
+    "CanonicalRecognitionDetailedTests.recognizeEdgeLine",
+    "CanonicalRecognitionDetailedTests.recognizePlane",
+    "CanonicalRecognitionDetailedTests.recognizeSphere",
+    "DistAngleChamferTests.distAngle30",
+    "DistAngleChamferTests.distAngle60",
+    "DistAngleChamferTests.distAngleChamfer",
+    "GeomCylinder3DTests.cylinderAxis",
+    "GeomCylinder3DTests.cylinderRadius",
+    "GeomCylinder3DTests.cylinderSetRadius",
+    "GeomCylinder3DTests.cylinderUIso",
+    "GeomPlane3DTests.planeCoefficients",
+    "GeomPlane3DTests.planePln",
+    "GeomPlane3DTests.planeUIso",
+    "GeomPlane3DTests.planeVIso",
+    "MassPropertiesTests.linearProperties",
+    "MassPropertiesTests.momentOfInertia",
+    "MassPropertiesTests.principalAxes",
+    "MassPropertiesTests.radiusOfGyration",
+    "SelfIntersectionTests.boxNoSelfIntersection",
+    "SelfIntersectionTests.customParameters",
+    "SelfIntersectionTests.cylinderNoSelfIntersection",
+    "SelfIntersectionTests.overlappingCompoundReportsOverlaps",
+    "SelfIntersectionTests.sphereNoSelfIntersection"
+   ],
+   "crashes": [],
+   "live_switches": 46,
+   "rows": {
+    "OCCTCurve2DApproximate2D_RET_NIL": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTCurve2DApproximate_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTCurve2DApproximate_RET_NIL": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTCurve2DBSplineMaxDegree_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTCurve2DBSplineMaxDegree_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTCurve2DBSplineMaxDegree_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTCurve2DBezierMaxDegree_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTCurve2DBezierMaxDegree_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTCurve2DBezierMaxDegree_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTCurve2DGetContinuity_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTCurve2DGetContinuity_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTCurve2DGetContinuity_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTCurve2DGetCurvatureExtrema_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTCurve2DGetCurvatureExtrema_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTCurve2DGetCurvatureExtrema_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTCurve2DGetCurvatureExtrema_out_parameter_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTCurve2DGetCurvatureExtrema_out_parameter_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTCurve2DGetCurvatureExtrema_out_type_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTCurve2DGetDegree_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTCurve2DGetDegree_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTCurve2DGetDegree_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTCurve2DGetDomain_first_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTCurve2DGetDomain_first_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTCurve2DGetDomain_last_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTCurve2DGetDomain_last_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTCurve2DGetInflectionPoints_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTCurve2DGetInflectionPoints_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTCurve2DGetInflectionPoints_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTCurve2DGetInflectionPoints_outParams_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTCurve2DGetInflectionPoints_outParams_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTCurve2DGetPoint_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTCurve2DGetPoint_x_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTCurve2DGetPoint_x_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTCurve2DGetPoint_y_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTCurve2DGetPoint_y_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTCurve2DGetPoleCount_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTCurve2DGetPoleCount_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTCurve2DGetPoleCount_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTCurve2DHyperbolaEccentricity_RET_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTCurve2DHyperbolaEccentricity_RET_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTCurve2DHyperbolaFocal_RET_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTCurve2DHyperbolaFocal_RET_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTCurve2DHyperbolaFocus1_x_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTCurve2DHyperbolaFocus1_x_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTCurve2DHyperbolaFocus1_y_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTCurve2DHyperbolaFocus1_y_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTCurve2DHyperbolaMajorRadius_RET_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTCurve2DHyperbolaMajorRadius_RET_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTCurve2DHyperbolaMinorRadius_RET_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTCurve2DHyperbolaMinorRadius_RET_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTCurve2DInterpolate2D_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTCurve2DInterpolate2D_IN_periodic_FLIP": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTCurve2DInterpolate2D_RET_NIL": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTCurve2DIsCN_RET_FLIP": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTCurve2DIsPeriodic_RET_FLIP": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTCurve2DJoinToBSpline_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTCurve2DJoinToBSpline_RET_NIL": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTCurve2DOffsetBasisCurve_RET_NIL": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTCurve2DOffsetSetValue_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTCurve2DOffsetSetValue_RET_FLIP": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTCurve2DOffsetValue_RET_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTCurve2DOffsetValue_RET_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTCurve2DOffset_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTCurve2DOffset_RET_NIL": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTCurve2DReversedParameter_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTCurve2DReversedParameter_RET_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTCurve2DReversedParameter_RET_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTCurve2DSplitAtDiscontinuities_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTCurve2DSplitAtDiscontinuities_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTCurve2DSplitAtDiscontinuities_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTCurve2DSplitAtDiscontinuities_outKnotIndices_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTCurve2DToArcsAndSegments_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTCurve2DToArcsAndSegments_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTCurve2DToArcsAndSegments_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTCurve2DToArcsAndSegments_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTCurve2DToArcsAndSegments_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTCurve3DGetPoint_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTCurve3DGetPoint_x_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTCurve3DGetPoint_x_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTCurve3DGetPoint_y_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTCurve3DGetPoint_y_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTCurve3DGetPoint_z_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTCurve3DGetPoint_z_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCirc2d2TanOnLinLin_IN10_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCirc2d2TanOnLinLin_IN11_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCirc2d2TanOnLinLin_IN12_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCirc2d2TanOnLinLin_IN13_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCirc2d2TanOnLinLin_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCirc2d2TanOnLinLin_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCirc2d2TanOnLinLin_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCirc2d2TanOnLinLin_IN4_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCirc2d2TanOnLinLin_IN5_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCirc2d2TanOnLinLin_IN6_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCirc2d2TanOnLinLin_IN7_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCirc2d2TanOnLinLin_IN8_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCirc2d2TanOnLinLin_IN9_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCirc2d2TanOnLinLin_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCirc2d2TanOnLinLin_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCirc2d2TanOnLinLin_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCirc2d2TanOnLinLin_out_cx_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCirc2d2TanOnLinLin_out_cx_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCirc2d2TanOnLinLin_out_cy_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCirc2d2TanOnLinLin_out_cy_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCirc2d2TanOnLinLin_out_qualifier_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCirc2d2TanOnLinLin_out_radius_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCirc2d2TanOnLinLin_out_radius_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCirc2dBisec_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCirc2dBisec_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCirc2dBisec_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCirc2dBisec_IN4_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCirc2dBisec_IN5_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCirc2dBisec_IN6_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCirc2dBisec_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCirc2dBisec_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCirc2dBisec_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCirc2dBisec_out_dx_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCirc2dBisec_out_dx_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCirc2dBisec_out_dy_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCirc2dBisec_out_dy_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCirc2dBisec_out_px_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCirc2dBisec_out_px_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCirc2dBisec_out_py_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCirc2dBisec_out_py_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCirc2dBisec_out_radius_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCirc2dBisec_out_radius_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCirc2dBisec_out_type_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCirc2dTanOnRadLin_IN10_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCirc2dTanOnRadLin_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCirc2dTanOnRadLin_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCirc2dTanOnRadLin_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCirc2dTanOnRadLin_IN4_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCirc2dTanOnRadLin_IN5_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCirc2dTanOnRadLin_IN6_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCirc2dTanOnRadLin_IN7_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCirc2dTanOnRadLin_IN8_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCirc2dTanOnRadLin_IN9_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCirc2dTanOnRadLin_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCirc2dTanOnRadLin_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCirc2dTanOnRadLin_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCirc2dTanOnRadLin_out_cx_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCirc2dTanOnRadLin_out_cx_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCirc2dTanOnRadLin_out_cy_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCirc2dTanOnRadLin_out_cy_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCirc2dTanOnRadLin_out_qualifier_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCirc2dTanOnRadLin_out_radius_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCirc2dTanOnRadLin_out_radius_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCircLin2dBisec_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCircLin2dBisec_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCircLin2dBisec_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCircLin2dBisec_IN4_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCircLin2dBisec_IN5_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCircLin2dBisec_IN6_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCircLin2dBisec_IN7_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCircLin2dBisec_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCircLin2dBisec_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCircLin2dBisec_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCircLin2dBisec_out_dx_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCircLin2dBisec_out_dx_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCircLin2dBisec_out_dy_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCircLin2dBisec_out_dy_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCircLin2dBisec_out_px_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCircLin2dBisec_out_px_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCircLin2dBisec_out_py_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCircLin2dBisec_out_py_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCircLin2dBisec_out_radius_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCircLin2dBisec_out_radius_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCircLin2dBisec_out_type_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCircPnt2dBisec_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCircPnt2dBisec_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCircPnt2dBisec_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCircPnt2dBisec_IN4_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCircPnt2dBisec_IN5_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCircPnt2dBisec_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCircPnt2dBisec_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCircPnt2dBisec_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCircPnt2dBisec_out_dx_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCircPnt2dBisec_out_dx_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCircPnt2dBisec_out_dy_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCircPnt2dBisec_out_dy_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCircPnt2dBisec_out_px_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCircPnt2dBisec_out_px_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCircPnt2dBisec_out_py_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCircPnt2dBisec_out_py_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCircPnt2dBisec_out_radius_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCircPnt2dBisec_out_radius_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaCircPnt2dBisec_out_type_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dBisec_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dBisec_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dBisec_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dBisec_IN4_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dBisec_IN5_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dBisec_IN6_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dBisec_IN7_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dBisec_IN8_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dBisec_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dBisec_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dBisec_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dBisec_out_dx_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dBisec_out_dx_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dBisec_out_dy_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dBisec_out_dy_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dBisec_out_px_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dBisec_out_px_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dBisec_out_py_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dBisec_out_py_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dBisec_out_qualifier_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanOblPt_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanOblPt_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanOblPt_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanOblPt_IN4_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanOblPt_IN5_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanOblPt_IN6_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanOblPt_IN7_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanOblPt_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanOblPt_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanOblPt_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanOblPt_out_dx_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanOblPt_out_dx_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanOblPt_out_dy_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanOblPt_out_dy_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanOblPt_out_px_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanOblPt_out_px_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanOblPt_out_py_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanOblPt_out_py_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanOblPt_out_qualifier_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanParCirc_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanParCirc_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanParCirc_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanParCirc_IN4_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanParCirc_IN5_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanParCirc_IN6_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanParCirc_IN7_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanParCirc_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanParCirc_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanParCirc_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanParCirc_out_dx_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanParCirc_out_dx_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanParCirc_out_dy_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanParCirc_out_dy_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanParCirc_out_px_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanParCirc_out_px_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanParCirc_out_py_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanParCirc_out_py_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanParCirc_out_qualifier_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanParPt_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanParPt_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanParPt_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanParPt_IN4_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanParPt_IN5_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanParPt_IN6_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanParPt_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanParPt_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanParPt_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanParPt_out_dx_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanParPt_out_dx_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanParPt_out_dy_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanParPt_out_dy_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanParPt_out_px_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanParPt_out_px_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanParPt_out_py_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanParPt_out_py_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanParPt_out_qualifier_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanPerCircLin_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanPerCircLin_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanPerCircLin_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanPerCircLin_IN4_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanPerCircLin_IN5_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanPerCircLin_IN6_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanPerCircLin_IN7_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanPerCircLin_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanPerCircLin_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanPerCircLin_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanPerCircLin_out_dx_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanPerCircLin_out_dx_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanPerCircLin_out_dy_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanPerCircLin_out_dy_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanPerCircLin_out_px_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanPerCircLin_out_px_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanPerCircLin_out_py_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanPerCircLin_out_py_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanPerCircLin_out_qualifier_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanPerPtLin_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanPerPtLin_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanPerPtLin_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanPerPtLin_IN4_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanPerPtLin_IN5_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanPerPtLin_IN6_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanPerPtLin_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanPerPtLin_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanPerPtLin_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanPerPtLin_out_dx_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanPerPtLin_out_dx_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanPerPtLin_out_dy_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanPerPtLin_out_dy_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanPerPtLin_out_px_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanPerPtLin_out_px_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanPerPtLin_out_py_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanPerPtLin_out_py_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanPerPtLin_out_qualifier_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLinPnt2dBisec_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLinPnt2dBisec_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLinPnt2dBisec_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLinPnt2dBisec_IN4_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLinPnt2dBisec_IN5_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLinPnt2dBisec_IN6_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLinPnt2dBisec_RET_FLIP": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLinPnt2dBisec_out_dx_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLinPnt2dBisec_out_dx_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLinPnt2dBisec_out_dy_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLinPnt2dBisec_out_dy_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLinPnt2dBisec_out_px_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLinPnt2dBisec_out_px_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLinPnt2dBisec_out_py_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLinPnt2dBisec_out_py_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLinPnt2dBisec_out_radius_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLinPnt2dBisec_out_radius_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaLinPnt2dBisec_out_type_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaPnt2dBisec_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaPnt2dBisec_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaPnt2dBisec_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaPnt2dBisec_IN4_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaPnt2dBisec_RET_FLIP": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaPnt2dBisec_outDx_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaPnt2dBisec_outDx_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaPnt2dBisec_outDy_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaPnt2dBisec_outDy_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaPnt2dBisec_outPx_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaPnt2dBisec_outPx_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaPnt2dBisec_outPy_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccAnaPnt2dBisec_outPy_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccCircle2d2PtRad_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccCircle2d2PtRad_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccCircle2d2PtRad_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccCircle2d2PtRad_IN4_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccCircle2d2PtRad_IN5_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccCircle2d2PtRad_IN6_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccCircle2d2PtRad_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccCircle2d2PtRad_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccCircle2d2PtRad_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccCircle2d2PtRad_out_cx_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccCircle2d2PtRad_out_cx_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccCircle2d2PtRad_out_cy_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccCircle2d2PtRad_out_cy_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccCircle2d2PtRad_out_qualifier_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccCircle2d2PtRad_out_radius_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccCircle2d2PtRad_out_radius_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccCircle2d2TanPt_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccCircle2d2TanPt_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccCircle2d2TanPt_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccCircle2d2TanPt_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccCircle2d2TanPt_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccCircle2d2TanPt_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccCircle2d2TanPt_out_cx_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccCircle2d2TanPt_out_cx_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccCircle2d2TanPt_out_cy_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccCircle2d2TanPt_out_cy_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccCircle2d2TanPt_out_qualifier_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccCircle2d2TanPt_out_radius_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccCircle2d2TanPt_out_radius_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccCircle2d2TanRad_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccCircle2d2TanRad_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccCircle2d2TanRad_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccCircle2d2TanRad_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccCircle2d2TanRad_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccCircle2d2TanRad_out_cx_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccCircle2d2TanRad_out_cx_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccCircle2d2TanRad_out_cy_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccCircle2d2TanRad_out_cy_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccCircle2d2TanRad_out_qualifier_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccCircle2d2TanRad_out_radius_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccCircle2d2TanRad_out_radius_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccCircle2d3Pt_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccCircle2d3Pt_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccCircle2d3Pt_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccCircle2d3Pt_IN4_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccCircle2d3Pt_IN5_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccCircle2d3Pt_IN6_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccCircle2d3Pt_IN7_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccCircle2d3Pt_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccCircle2d3Pt_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccCircle2d3Pt_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccCircle2d3Pt_out_cx_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccCircle2d3Pt_out_cx_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccCircle2d3Pt_out_cy_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccCircle2d3Pt_out_cy_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccCircle2d3Pt_out_qualifier_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccCircle2d3Pt_out_radius_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccCircle2d3Pt_out_radius_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccCircle2d3Tan_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccCircle2d3Tan_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccCircle2d3Tan_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccCircle2d3Tan_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccCircle2d3Tan_out_cx_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccCircle2d3Tan_out_cx_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccCircle2d3Tan_out_cy_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccCircle2d3Tan_out_cy_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccCircle2d3Tan_out_qualifier_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccCircle2d3Tan_out_radius_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccCircle2d3Tan_out_radius_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccCircle2dTanCen_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccCircle2dTanCen_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccCircle2dTanCen_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccCircle2dTanCen_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccCircle2dTanCen_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccCircle2dTanCen_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccCircle2dTanCen_out_cx_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccCircle2dTanCen_out_cx_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccCircle2dTanCen_out_cy_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccCircle2dTanCen_out_cy_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccCircle2dTanCen_out_qualifier_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccCircle2dTanCen_out_radius_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccCircle2dTanCen_out_radius_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccCircle2dTanPtRad_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccCircle2dTanPtRad_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccCircle2dTanPtRad_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccCircle2dTanPtRad_IN4_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccCircle2dTanPtRad_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccCircle2dTanPtRad_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccCircle2dTanPtRad_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccCircle2dTanPtRad_out_cx_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccCircle2dTanPtRad_out_cx_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccCircle2dTanPtRad_out_cy_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccCircle2dTanPtRad_out_cy_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccCircle2dTanPtRad_out_qualifier_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccCircle2dTanPtRad_out_radius_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccCircle2dTanPtRad_out_radius_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccLine2d2Tan_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccLine2d2Tan_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccLine2d2Tan_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccLine2d2Tan_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccLine2d2Tan_out_dx_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccLine2d2Tan_out_dx_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccLine2d2Tan_out_dy_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccLine2d2Tan_out_dy_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccLine2d2Tan_out_px_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccLine2d2Tan_out_px_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccLine2d2Tan_out_py_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccLine2d2Tan_out_py_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccLine2d2Tan_out_qualifier_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccLine2dTanPt_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccLine2dTanPt_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccLine2dTanPt_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccLine2dTanPt_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccLine2dTanPt_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccLine2dTanPt_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccLine2dTanPt_out_dx_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccLine2dTanPt_out_dx_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccLine2dTanPt_out_dy_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccLine2dTanPt_out_dy_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccLine2dTanPt_out_px_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccLine2dTanPt_out_px_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccLine2dTanPt_out_py_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccLine2dTanPt_out_py_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGccLine2dTanPt_out_qualifier_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGceMakeCirc2dFrom3Points_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGceMakeCirc2dFrom3Points_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGceMakeCirc2dFrom3Points_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGceMakeCirc2dFrom3Points_IN4_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGceMakeCirc2dFrom3Points_IN5_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGceMakeCirc2dFrom3Points_IN6_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGceMakeCirc2dFrom3Points_RET_NIL": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGceMakeCirc2dFromCenterRadius_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGceMakeCirc2dFromCenterRadius_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGceMakeCirc2dFromCenterRadius_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGceMakeCirc2dFromCenterRadius_RET_NIL": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGceMakeElips2d_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGceMakeElips2d_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGceMakeElips2d_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGceMakeElips2d_IN4_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGceMakeElips2d_IN5_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGceMakeElips2d_IN6_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGceMakeElips2d_RET_NIL": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGceMakeHypr2d_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGceMakeHypr2d_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGceMakeHypr2d_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGceMakeHypr2d_IN4_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGceMakeHypr2d_IN5_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGceMakeHypr2d_IN6_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGceMakeHypr2d_RET_NIL": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGceMakeLin2dFrom2Points_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGceMakeLin2dFrom2Points_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGceMakeLin2dFrom2Points_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGceMakeLin2dFrom2Points_IN4_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGceMakeLin2dFrom2Points_RET_NIL": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGceMakeLin2dFromEquation_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGceMakeLin2dFromEquation_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGceMakeLin2dFromEquation_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGceMakeLin2dFromEquation_RET_NIL": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGceMakeParab2d_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGceMakeParab2d_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGceMakeParab2d_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGceMakeParab2d_IN4_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGceMakeParab2d_IN5_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGceMakeParab2d_RET_NIL": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGeom2dGccCirc2d2TanOn_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGeom2dGccCirc2d2TanOn_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGeom2dGccCirc2d2TanOn_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGeom2dGccCirc2d2TanOn_IN4_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGeom2dGccCirc2d2TanOn_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGeom2dGccCirc2d2TanOn_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGeom2dGccCirc2d2TanOn_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGeom2dGccCirc2d2TanOn_out_cx_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGeom2dGccCirc2d2TanOn_out_cx_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGeom2dGccCirc2d2TanOn_out_cy_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGeom2dGccCirc2d2TanOn_out_cy_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGeom2dGccCirc2d2TanOn_out_qualifier_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGeom2dGccCirc2d2TanOn_out_radius_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGeom2dGccCirc2d2TanOn_out_radius_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGeom2dGccCirc2dTanOnRad_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGeom2dGccCirc2dTanOnRad_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGeom2dGccCirc2dTanOnRad_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGeom2dGccCirc2dTanOnRad_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGeom2dGccCirc2dTanOnRad_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGeom2dGccCirc2dTanOnRad_out_cx_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGeom2dGccCirc2dTanOnRad_out_cx_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGeom2dGccCirc2dTanOnRad_out_cy_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGeom2dGccCirc2dTanOnRad_out_cy_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGeom2dGccCirc2dTanOnRad_out_qualifier_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGeom2dGccCirc2dTanOnRad_out_radius_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGeom2dGccCirc2dTanOnRad_out_radius_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGeom2dGccLin2dTanObl_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGeom2dGccLin2dTanObl_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGeom2dGccLin2dTanObl_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGeom2dGccLin2dTanObl_IN4_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGeom2dGccLin2dTanObl_IN5_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGeom2dGccLin2dTanObl_IN6_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGeom2dGccLin2dTanObl_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGeom2dGccLin2dTanObl_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGeom2dGccLin2dTanObl_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGeom2dGccLin2dTanObl_out_dx_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGeom2dGccLin2dTanObl_out_dx_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGeom2dGccLin2dTanObl_out_dy_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGeom2dGccLin2dTanObl_out_dy_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGeom2dGccLin2dTanObl_out_px_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGeom2dGccLin2dTanObl_out_px_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGeom2dGccLin2dTanObl_out_py_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGeom2dGccLin2dTanObl_out_py_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGeom2dGccLin2dTanObl_out_qualifier_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTRangeAddValue_IN1_PLUS": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "BndRangeTests.addValue"
+     ]
+    },
+    "OCCTRangeContains_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTRangeContains_RET_FLIP": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "BndRangeTests.contains"
+     ]
+    },
+    "OCCTRangeCreate_IN1_PLUS": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "BndRangeTests.common",
+      "BndRangeTests.createAndQuery"
+     ]
+    },
+    "OCCTRangeCreate_IN2_PLUS": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "BndRangeTests.common",
+      "BndRangeTests.createAndQuery"
+     ]
+    },
+    "OCCTRangeDelta_RET_NEG": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "BndRangeTests.createAndQuery"
+     ]
+    },
+    "OCCTRangeDelta_RET_PLUS": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "BndRangeTests.createAndQuery"
+     ]
+    },
+    "OCCTRangeEnlarge_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTRangeGetBounds_RET_FLIP": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTRangeGetBounds_first_NEG": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "BndRangeTests.common",
+      "BndRangeTests.createAndQuery",
+      "BndRangeTests.trimFromTo"
+     ]
+    },
+    "OCCTRangeGetBounds_first_PLUS": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "BndRangeTests.common",
+      "BndRangeTests.createAndQuery",
+      "BndRangeTests.trimFromTo"
+     ]
+    },
+    "OCCTRangeGetBounds_last_NEG": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "BndRangeTests.addValue",
+      "BndRangeTests.common",
+      "BndRangeTests.createAndQuery",
+      "BndRangeTests.trimFromTo"
+     ]
+    },
+    "OCCTRangeGetBounds_last_PLUS": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "BndRangeTests.addValue",
+      "BndRangeTests.common",
+      "BndRangeTests.createAndQuery",
+      "BndRangeTests.trimFromTo"
+     ]
+    },
+    "OCCTRangeIsVoid_RET_FLIP": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "BndRangeTests.createAndQuery",
+      "BndRangeTests.voidRange"
+     ]
+    },
+    "OCCTRangeTrimFrom_IN1_PLUS": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "BndRangeTests.trimFromTo"
+     ]
+    },
+    "OCCTRangeTrimTo_IN1_PLUS": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "BndRangeTests.trimFromTo"
+     ]
+    },
+    "OCCTShapeChamferDistAngle_RET_NIL": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "DistAngleChamferTests.distAngle30",
+      "DistAngleChamferTests.distAngle60",
+      "DistAngleChamferTests.distAngleChamfer"
+     ]
+    },
+    "OCCTShapeLinearProperties_RET_FLIP": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "MassPropertiesTests.linearProperties"
+     ]
+    },
+    "OCCTShapeLinearProperties_cx_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTShapeLinearProperties_cx_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTShapeLinearProperties_cy_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTShapeLinearProperties_cy_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTShapeLinearProperties_cz_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTShapeLinearProperties_cz_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTShapeLinearProperties_length_NEG": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "MassPropertiesTests.linearProperties"
+     ]
+    },
+    "OCCTShapeLinearProperties_length_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTShapeMomentOfInertia_RET_FLIP": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "MassPropertiesTests.momentOfInertia"
+     ]
+    },
+    "OCCTShapeMomentOfInertia_ixx_NEG": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "MassPropertiesTests.momentOfInertia"
+     ]
+    },
+    "OCCTShapeMomentOfInertia_ixx_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTShapeMomentOfInertia_ixy_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTShapeMomentOfInertia_ixy_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTShapeMomentOfInertia_ixz_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTShapeMomentOfInertia_ixz_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTShapeMomentOfInertia_iyy_NEG": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "MassPropertiesTests.momentOfInertia"
+     ]
+    },
+    "OCCTShapeMomentOfInertia_iyy_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTShapeMomentOfInertia_iyz_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTShapeMomentOfInertia_iyz_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTShapeMomentOfInertia_izz_NEG": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "MassPropertiesTests.momentOfInertia"
+     ]
+    },
+    "OCCTShapeMomentOfInertia_izz_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTShapePrincipalAxes_RET_FLIP": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "MassPropertiesTests.principalAxes"
+     ]
+    },
+    "OCCTShapePrincipalAxes_axes9_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTShapePrincipalAxes_axes9_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTShapeRadiusOfGyration_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTShapeRadiusOfGyration_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTShapeRadiusOfGyration_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTShapeRadiusOfGyration_IN4_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTShapeRadiusOfGyration_IN5_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTShapeRadiusOfGyration_IN6_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTShapeRadiusOfGyration_RET_FLIP": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "MassPropertiesTests.radiusOfGyration"
+     ]
+    },
+    "OCCTShapeRadiusOfGyration_outRadius_NEG": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "MassPropertiesTests.radiusOfGyration"
+     ]
+    },
+    "OCCTShapeRadiusOfGyration_outRadius_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTShapeRecognizeCanonicalCurve_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTShapeRecognizeCanonicalCurve_RET_dirX_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTShapeRecognizeCanonicalCurve_RET_dirX_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTShapeRecognizeCanonicalCurve_RET_dirY_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTShapeRecognizeCanonicalCurve_RET_dirY_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTShapeRecognizeCanonicalCurve_RET_dirZ_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTShapeRecognizeCanonicalCurve_RET_dirZ_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTShapeRecognizeCanonicalCurve_RET_gap_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTShapeRecognizeCanonicalCurve_RET_gap_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTShapeRecognizeCanonicalCurve_RET_originX_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTShapeRecognizeCanonicalCurve_RET_originX_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTShapeRecognizeCanonicalCurve_RET_originY_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTShapeRecognizeCanonicalCurve_RET_originY_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTShapeRecognizeCanonicalCurve_RET_originZ_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTShapeRecognizeCanonicalCurve_RET_originZ_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTShapeRecognizeCanonicalCurve_RET_param1_NEG": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "CanonicalRecognitionDetailedTests.recognizeEdgeCircle",
+      "CanonicalRecognitionDetailedTests.recognizeEdgeEllipse"
+     ]
+    },
+    "OCCTShapeRecognizeCanonicalCurve_RET_param1_PLUS": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "CanonicalRecognitionDetailedTests.recognizeEdgeCircle",
+      "CanonicalRecognitionDetailedTests.recognizeEdgeEllipse"
+     ]
+    },
+    "OCCTShapeRecognizeCanonicalCurve_RET_param2_NEG": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "CanonicalRecognitionDetailedTests.recognizeEdgeEllipse"
+     ]
+    },
+    "OCCTShapeRecognizeCanonicalCurve_RET_param2_PLUS": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "CanonicalRecognitionDetailedTests.recognizeEdgeEllipse"
+     ]
+    },
+    "OCCTShapeRecognizeCanonicalCurve_RET_type_PLUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "CanonicalRecognitionDetailedTests.recognizeCanonicalCurveOnNullShapeDoesNotCrash",
+      "CanonicalRecognitionDetailedTests.recognizeEdgeCircle",
+      "CanonicalRecognitionDetailedTests.recognizeEdgeEllipse",
+      "CanonicalRecognitionDetailedTests.recognizeEdgeLine"
+     ]
+    },
+    "OCCTShapeRecognizeCanonicalSurface_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTShapeRecognizeCanonicalSurface_RET_dirX_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTShapeRecognizeCanonicalSurface_RET_dirX_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTShapeRecognizeCanonicalSurface_RET_dirY_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTShapeRecognizeCanonicalSurface_RET_dirY_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTShapeRecognizeCanonicalSurface_RET_dirZ_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTShapeRecognizeCanonicalSurface_RET_dirZ_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTShapeRecognizeCanonicalSurface_RET_gap_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTShapeRecognizeCanonicalSurface_RET_gap_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTShapeRecognizeCanonicalSurface_RET_originX_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTShapeRecognizeCanonicalSurface_RET_originX_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTShapeRecognizeCanonicalSurface_RET_originY_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTShapeRecognizeCanonicalSurface_RET_originY_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTShapeRecognizeCanonicalSurface_RET_originZ_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTShapeRecognizeCanonicalSurface_RET_originZ_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTShapeRecognizeCanonicalSurface_RET_param1_NEG": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "CanonicalRecognitionDetailedTests.recognizeCone",
+      "CanonicalRecognitionDetailedTests.recognizeCylinder",
+      "CanonicalRecognitionDetailedTests.recognizeSphere"
+     ]
+    },
+    "OCCTShapeRecognizeCanonicalSurface_RET_param1_PLUS": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "CanonicalRecognitionDetailedTests.recognizeCone",
+      "CanonicalRecognitionDetailedTests.recognizeCylinder",
+      "CanonicalRecognitionDetailedTests.recognizeSphere"
+     ]
+    },
+    "OCCTShapeRecognizeCanonicalSurface_RET_param2_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTShapeRecognizeCanonicalSurface_RET_param2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTShapeRecognizeCanonicalSurface_RET_type_PLUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "CanonicalRecognitionDetailedTests.recognizeCanonicalSurfaceOnNullShapeDoesNotCrash",
+      "CanonicalRecognitionDetailedTests.recognizeCone",
+      "CanonicalRecognitionDetailedTests.recognizeCylinder",
+      "CanonicalRecognitionDetailedTests.recognizePlane",
+      "CanonicalRecognitionDetailedTests.recognizeSphere"
+     ]
+    },
+    "OCCTShapeSelfIntersection_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTShapeSelfIntersection_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTShapeSelfIntersection_RET_overlapCount_PLUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "SelfIntersectionTests.boxNoSelfIntersection"
+     ]
+    },
+    "OCCTSurfaceCylinderAxis_dx_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTSurfaceCylinderAxis_dx_PLUS": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "GeomCylinder3DTests.cylinderAxis"
+     ]
+    },
+    "OCCTSurfaceCylinderAxis_dy_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTSurfaceCylinderAxis_dy_PLUS": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "GeomCylinder3DTests.cylinderAxis"
+     ]
+    },
+    "OCCTSurfaceCylinderAxis_dz_NEG": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "GeomCylinder3DTests.cylinderAxis"
+     ]
+    },
+    "OCCTSurfaceCylinderAxis_dz_PLUS": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "GeomCylinder3DTests.cylinderAxis"
+     ]
+    },
+    "OCCTSurfaceCylinderAxis_px_NEG": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "GeomCylinder3DTests.cylinderAxis"
+     ]
+    },
+    "OCCTSurfaceCylinderAxis_px_PLUS": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "GeomCylinder3DTests.cylinderAxis"
+     ]
+    },
+    "OCCTSurfaceCylinderAxis_py_NEG": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "GeomCylinder3DTests.cylinderAxis"
+     ]
+    },
+    "OCCTSurfaceCylinderAxis_py_PLUS": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "GeomCylinder3DTests.cylinderAxis"
+     ]
+    },
+    "OCCTSurfaceCylinderAxis_pz_NEG": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "GeomCylinder3DTests.cylinderAxis"
+     ]
+    },
+    "OCCTSurfaceCylinderAxis_pz_PLUS": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "GeomCylinder3DTests.cylinderAxis"
+     ]
+    },
+    "OCCTSurfaceCylinderRadius_RET_NEG": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "GeomCylinder3DTests.cylinderRadius",
+      "GeomCylinder3DTests.cylinderSetRadius"
+     ]
+    },
+    "OCCTSurfaceCylinderRadius_RET_PLUS": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "GeomCylinder3DTests.cylinderRadius",
+      "GeomCylinder3DTests.cylinderSetRadius"
+     ]
+    },
+    "OCCTSurfaceCylinderSetRadius_IN1_PLUS": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "GeomCylinder3DTests.cylinderSetRadius"
+     ]
+    },
+    "OCCTSurfaceCylinderSetRadius_RET_FLIP": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "GeomCylinder3DTests.cylinderSetRadius"
+     ]
+    },
+    "OCCTSurfaceCylinderUIso_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTSurfaceCylinderUIso_RET_NIL": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTSurfacePlaneCoefficients_A_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTSurfacePlaneCoefficients_A_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTSurfacePlaneCoefficients_B_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTSurfacePlaneCoefficients_B_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTSurfacePlaneCoefficients_C_NEG": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "GeomPlane3DTests.planeCoefficients"
+     ]
+    },
+    "OCCTSurfacePlaneCoefficients_C_PLUS": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "GeomPlane3DTests.planeCoefficients"
+     ]
+    },
+    "OCCTSurfacePlaneCoefficients_D_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTSurfacePlaneCoefficients_D_PLUS": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "GeomPlane3DTests.planeCoefficients"
+     ]
+    },
+    "OCCTSurfacePlanePln_nx_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTSurfacePlanePln_nx_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTSurfacePlanePln_ny_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTSurfacePlanePln_ny_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTSurfacePlanePln_nz_NEG": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "GeomPlane3DTests.planePln"
+     ]
+    },
+    "OCCTSurfacePlanePln_nz_PLUS": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "GeomPlane3DTests.planePln"
+     ]
+    },
+    "OCCTSurfacePlanePln_px_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTSurfacePlanePln_px_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTSurfacePlanePln_py_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTSurfacePlanePln_py_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTSurfacePlanePln_pz_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTSurfacePlanePln_pz_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTSurfacePlaneUIso_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTSurfacePlaneUIso_RET_NIL": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTSurfacePlaneVIso_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTSurfacePlaneVIso_RET_NIL": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    }
+   },
+   "switches": 674,
+   "tests": [
+    "SelfIntersectionTests.boxNoSelfIntersection",
+    "SelfIntersectionTests.sphereNoSelfIntersection",
+    "SelfIntersectionTests.cylinderNoSelfIntersection",
+    "SelfIntersectionTests.customParameters",
+    "BndRangeTests.createAndQuery",
+    "BndRangeTests.contains",
+    "BndRangeTests.addValue",
+    "BndRangeTests.common",
+    "BndRangeTests.trimFromTo",
+    "BndRangeTests.voidRange",
+    "DistAngleChamferTests.distAngleChamfer",
+    "DistAngleChamferTests.distAngle30",
+    "DistAngleChamferTests.distAngle60",
+    "GeomCylinder3DTests.cylinderRadius",
+    "GeomCylinder3DTests.cylinderSetRadius",
+    "GeomCylinder3DTests.cylinderAxis",
+    "GeomCylinder3DTests.cylinderUIso",
+    "GeomPlane3DTests.planeCoefficients",
+    "GeomPlane3DTests.planeUIso",
+    "GeomPlane3DTests.planeVIso",
+    "GeomPlane3DTests.planePln",
+    "MassPropertiesTests.linearProperties",
+    "MassPropertiesTests.momentOfInertia",
+    "MassPropertiesTests.principalAxes",
+    "MassPropertiesTests.radiusOfGyration",
+    "CanonicalRecognitionDetailedTests.recognizePlane",
+    "CanonicalRecognitionDetailedTests.recognizeCylinder",
+    "CanonicalRecognitionDetailedTests.recognizeCone",
+    "CanonicalRecognitionDetailedTests.recognizeSphere",
+    "CanonicalRecognitionDetailedTests.recognizeEdgeLine",
+    "CanonicalRecognitionDetailedTests.recognizeEdgeCircle",
+    "CanonicalRecognitionDetailedTests.recognizeEdgeEllipse",
+    "CanonicalRecognitionDetailedTests.recognizeCanonicalSurfaceOnNullShapeDoesNotCrash",
+    "CanonicalRecognitionDetailedTests.recognizeCanonicalCurveOnNullShapeDoesNotCrash"
+   ],
+   "unreddened": [
+    "GeomCylinder3DTests.cylinderUIso",
+    "GeomPlane3DTests.planeUIso",
+    "GeomPlane3DTests.planeVIso",
+    "SelfIntersectionTests.customParameters",
+    "SelfIntersectionTests.cylinderNoSelfIntersection",
+    "SelfIntersectionTests.overlappingCompoundReportsOverlaps",
+    "SelfIntersectionTests.sphereNoSelfIntersection"
+   ]
+  },
+  "OCCTGeom2dTests": {
+   "changed": [
+    "Curve2DContinuityQueriesTests.bezierMaxDegree",
+    "Curve2DContinuityQueriesTests.bsplineMaxDegree",
+    "Curve2DContinuityQueriesTests.isCN",
+    "Curve2DContinuityQueriesTests.reversedParameter",
+    "Curve2DContinuityQueriesTests.segmentContinuityClass",
+    "Curve2DContinuityTests.bspline2DContinuity",
+    "Curve2DContinuityTests.line2DContinuity",
+    "Curve2DConvertExtrasTests.approximateCircle",
+    "Curve2DConvertExtrasTests.splitAtDiscontinuities",
+    "Curve2DConvertExtrasTests.toArcsAndSegments",
+    "GccAnaLineSolverTests.lineAtAngle",
+    "GccAnaLineSolverTests.lineParallel",
+    "GccAnaLineSolverTests.linePerpendicular",
+    "GccAnaLineSolverTests.lineTangentAtAngle",
+    "GccAnaLineSolverTests.lineTangentParallel",
+    "GccAnaLineSolverTests.lineTangentPerpendicular",
+    "GccCircleOnConstraintTests.circ2TanOnLinLin",
+    "GccCircleOnConstraintTests.circTanOnRadLin",
+    "GccCircleOnConstraintTests.geom2dCirc2TanOn",
+    "GccCircleOnConstraintTests.geom2dCircTanOnRad",
+    "GceMakeCirc2dTests.circleFromCenterRadius",
+    "GceMakeCirc2dTests.circleThrough3Points",
+    "GceMakeElips2dTests.ellipseFromCenterDir",
+    "GceMakeHypr2dTests.hyperbolaFromCenterDir",
+    "GceMakeLin2dTests.lineFrom2Points",
+    "GceMakeLin2dTests.lineFromEquation",
+    "GceMakeParab2dTests.parabolaFromCenterDir",
+    "Geom2dAPIInterpolateTests.basicInterpolation",
+    "Geom2dAPIInterpolateTests.periodicInterpolation",
+    "Geom2dAPIPointsToBSplineTests.basicApproximation",
+    "Geom2dHyperbolaTests.hyperbola2DEccentricity",
+    "Geom2dHyperbolaTests.hyperbola2DFocal",
+    "Geom2dHyperbolaTests.hyperbola2DFocus1",
+    "Geom2dHyperbolaTests.hyperbola2DRadii",
+    "Geom2dLPropTests.curvatureExtremaFamiliesAgree",
+    "Geom2dLPropTests.ellipseCurvatureExtrema",
+    "Geom2dLPropTests.inflectionPointFamiliesAgree",
+    "Geom2dLPropTests.inflectionPointsDetailed",
+    "Geom2dOffsetTests.offset2DBasisCurve",
+    "Geom2dOffsetTests.offset2DSetValue",
+    "Geom2dOffsetTests.offset2DValue"
+   ],
+   "crashes": [
+    "OCCTCurve2DGetDomain_last_NEG"
+   ],
+   "live_switches": 50,
+   "rows": {
+    "OCCTCurve2DApproximate2D_RET_NIL": {
+     "crash": false,
+     "exit": 1,
+     "ran": 42,
+     "red": [
+      "Geom2dAPIPointsToBSplineTests.basicApproximation"
+     ]
+    },
+    "OCCTCurve2DApproximate_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTCurve2DApproximate_RET_NIL": {
+     "crash": false,
+     "exit": 1,
+     "ran": 42,
+     "red": [
+      "Curve2DConvertExtrasTests.approximateCircle"
+     ]
+    },
+    "OCCTCurve2DBSplineMaxDegree_RET_MINUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 42,
+     "red": [
+      "Curve2DContinuityQueriesTests.bsplineMaxDegree"
+     ]
+    },
+    "OCCTCurve2DBSplineMaxDegree_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTCurve2DBSplineMaxDegree_RET_ZERO": {
+     "crash": false,
+     "exit": 1,
+     "ran": 42,
+     "red": [
+      "Curve2DContinuityQueriesTests.bsplineMaxDegree"
+     ]
+    },
+    "OCCTCurve2DBezierMaxDegree_RET_MINUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 42,
+     "red": [
+      "Curve2DContinuityQueriesTests.bezierMaxDegree"
+     ]
+    },
+    "OCCTCurve2DBezierMaxDegree_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTCurve2DBezierMaxDegree_RET_ZERO": {
+     "crash": false,
+     "exit": 1,
+     "ran": 42,
+     "red": [
+      "Curve2DContinuityQueriesTests.bezierMaxDegree"
+     ]
+    },
+    "OCCTCurve2DGetContinuity_RET_MINUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 42,
+     "red": [
+      "Curve2DContinuityQueriesTests.segmentContinuityClass"
+     ]
+    },
+    "OCCTCurve2DGetContinuity_RET_PLUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 42,
+     "red": [
+      "Curve2DContinuityQueriesTests.segmentContinuityClass"
+     ]
+    },
+    "OCCTCurve2DGetContinuity_RET_ZERO": {
+     "crash": false,
+     "exit": 1,
+     "ran": 42,
+     "red": [
+      "Curve2DContinuityQueriesTests.segmentContinuityClass"
+     ]
+    },
+    "OCCTCurve2DGetCurvatureExtrema_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTCurve2DGetCurvatureExtrema_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTCurve2DGetCurvatureExtrema_RET_ZERO": {
+     "crash": false,
+     "exit": 1,
+     "ran": 42,
+     "red": [
+      "Geom2dLPropTests.curvatureExtremaFamiliesAgree",
+      "Geom2dLPropTests.ellipseCurvatureExtrema"
+     ]
+    },
+    "OCCTCurve2DGetCurvatureExtrema_out_parameter_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTCurve2DGetCurvatureExtrema_out_parameter_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTCurve2DGetCurvatureExtrema_out_type_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTCurve2DGetDegree_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTCurve2DGetDegree_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTCurve2DGetDegree_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTCurve2DGetDomain_first_NEG": {
+     "crash": false,
+     "exit": 1,
+     "ran": 42,
+     "red": [
+      "GceMakeHypr2dTests.hyperbolaFromCenterDir",
+      "GceMakeLin2dTests.lineFrom2Points",
+      "GceMakeLin2dTests.lineFromEquation",
+      "GceMakeParab2dTests.parabolaFromCenterDir"
+     ]
+    },
+    "OCCTCurve2DGetDomain_first_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTCurve2DGetDomain_last_NEG": {
+     "crash": true,
+     "exit": -5,
+     "ran": 7,
+     "red": [
+      "GceMakeParab2dTests.parabolaFromCenterDir"
+     ]
+    },
+    "OCCTCurve2DGetDomain_last_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTCurve2DGetInflectionPoints_RET_MINUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 42,
+     "red": [
+      "Geom2dLPropTests.inflectionPointFamiliesAgree"
+     ]
+    },
+    "OCCTCurve2DGetInflectionPoints_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTCurve2DGetInflectionPoints_RET_ZERO": {
+     "crash": false,
+     "exit": 1,
+     "ran": 42,
+     "red": [
+      "Geom2dLPropTests.inflectionPointFamiliesAgree"
+     ]
+    },
+    "OCCTCurve2DGetInflectionPoints_outParams_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTCurve2DGetInflectionPoints_outParams_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTCurve2DGetPoint_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTCurve2DGetPoint_x_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTCurve2DGetPoint_x_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTCurve2DGetPoint_y_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTCurve2DGetPoint_y_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTCurve2DGetPoleCount_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTCurve2DGetPoleCount_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTCurve2DGetPoleCount_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTCurve2DHyperbolaEccentricity_RET_NEG": {
+     "crash": false,
+     "exit": 1,
+     "ran": 42,
+     "red": [
+      "Geom2dHyperbolaTests.hyperbola2DEccentricity"
+     ]
+    },
+    "OCCTCurve2DHyperbolaEccentricity_RET_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTCurve2DHyperbolaFocal_RET_NEG": {
+     "crash": false,
+     "exit": 1,
+     "ran": 42,
+     "red": [
+      "Geom2dHyperbolaTests.hyperbola2DFocal"
+     ]
+    },
+    "OCCTCurve2DHyperbolaFocal_RET_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTCurve2DHyperbolaFocus1_x_NEG": {
+     "crash": false,
+     "exit": 1,
+     "ran": 42,
+     "red": [
+      "Geom2dHyperbolaTests.hyperbola2DFocus1"
+     ]
+    },
+    "OCCTCurve2DHyperbolaFocus1_x_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTCurve2DHyperbolaFocus1_y_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTCurve2DHyperbolaFocus1_y_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTCurve2DHyperbolaMajorRadius_RET_NEG": {
+     "crash": false,
+     "exit": 1,
+     "ran": 42,
+     "red": [
+      "Geom2dHyperbolaTests.hyperbola2DRadii"
+     ]
+    },
+    "OCCTCurve2DHyperbolaMajorRadius_RET_PLUS": {
+     "crash": false,
+     "exit": 1,
+     "ran": 42,
+     "red": [
+      "Geom2dHyperbolaTests.hyperbola2DRadii"
+     ]
+    },
+    "OCCTCurve2DHyperbolaMinorRadius_RET_NEG": {
+     "crash": false,
+     "exit": 1,
+     "ran": 42,
+     "red": [
+      "Geom2dHyperbolaTests.hyperbola2DRadii"
+     ]
+    },
+    "OCCTCurve2DHyperbolaMinorRadius_RET_PLUS": {
+     "crash": false,
+     "exit": 1,
+     "ran": 42,
+     "red": [
+      "Geom2dHyperbolaTests.hyperbola2DRadii"
+     ]
+    },
+    "OCCTCurve2DInterpolate2D_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTCurve2DInterpolate2D_IN_periodic_FLIP": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTCurve2DInterpolate2D_RET_NIL": {
+     "crash": false,
+     "exit": 1,
+     "ran": 42,
+     "red": [
+      "Geom2dAPIInterpolateTests.basicInterpolation",
+      "Geom2dAPIInterpolateTests.periodicInterpolation"
+     ]
+    },
+    "OCCTCurve2DIsCN_RET_FLIP": {
+     "crash": false,
+     "exit": 1,
+     "ran": 42,
+     "red": [
+      "Curve2DContinuityQueriesTests.isCN"
+     ]
+    },
+    "OCCTCurve2DIsPeriodic_RET_FLIP": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTCurve2DJoinToBSpline_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTCurve2DJoinToBSpline_RET_NIL": {
+     "crash": false,
+     "exit": 1,
+     "ran": 42,
+     "red": [
+      "Curve2DConvertExtrasTests.splitAtDiscontinuities"
+     ]
+    },
+    "OCCTCurve2DOffsetBasisCurve_RET_NIL": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTCurve2DOffsetSetValue_IN1_PLUS": {
+     "crash": false,
+     "exit": 1,
+     "ran": 42,
+     "red": [
+      "Geom2dOffsetTests.offset2DSetValue"
+     ]
+    },
+    "OCCTCurve2DOffsetSetValue_RET_FLIP": {
+     "crash": false,
+     "exit": 1,
+     "ran": 42,
+     "red": [
+      "Geom2dOffsetTests.offset2DSetValue"
+     ]
+    },
+    "OCCTCurve2DOffsetValue_RET_NEG": {
+     "crash": false,
+     "exit": 1,
+     "ran": 42,
+     "red": [
+      "Geom2dOffsetTests.offset2DSetValue",
+      "Geom2dOffsetTests.offset2DValue"
+     ]
+    },
+    "OCCTCurve2DOffsetValue_RET_PLUS": {
+     "crash": false,
+     "exit": 1,
+     "ran": 42,
+     "red": [
+      "Geom2dOffsetTests.offset2DSetValue",
+      "Geom2dOffsetTests.offset2DValue"
+     ]
+    },
+    "OCCTCurve2DOffset_IN1_PLUS": {
+     "crash": false,
+     "exit": 1,
+     "ran": 42,
+     "red": [
+      "Geom2dOffsetTests.offset2DValue"
+     ]
+    },
+    "OCCTCurve2DOffset_RET_NIL": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTCurve2DReversedParameter_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTCurve2DReversedParameter_RET_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTCurve2DReversedParameter_RET_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTCurve2DSplitAtDiscontinuities_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTCurve2DSplitAtDiscontinuities_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTCurve2DSplitAtDiscontinuities_RET_ZERO": {
+     "crash": false,
+     "exit": 1,
+     "ran": 42,
+     "red": [
+      "Curve2DConvertExtrasTests.splitAtDiscontinuities"
+     ]
+    },
+    "OCCTCurve2DSplitAtDiscontinuities_outKnotIndices_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTCurve2DToArcsAndSegments_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTCurve2DToArcsAndSegments_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTCurve2DToArcsAndSegments_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTCurve2DToArcsAndSegments_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTCurve2DToArcsAndSegments_RET_ZERO": {
+     "crash": false,
+     "exit": 1,
+     "ran": 42,
+     "red": [
+      "Curve2DConvertExtrasTests.toArcsAndSegments"
+     ]
+    },
+    "OCCTCurve3DGetPoint_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTCurve3DGetPoint_x_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTCurve3DGetPoint_x_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTCurve3DGetPoint_y_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTCurve3DGetPoint_y_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTCurve3DGetPoint_z_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTCurve3DGetPoint_z_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCirc2d2TanOnLinLin_IN10_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCirc2d2TanOnLinLin_IN11_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCirc2d2TanOnLinLin_IN12_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCirc2d2TanOnLinLin_IN13_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCirc2d2TanOnLinLin_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCirc2d2TanOnLinLin_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCirc2d2TanOnLinLin_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCirc2d2TanOnLinLin_IN4_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCirc2d2TanOnLinLin_IN5_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCirc2d2TanOnLinLin_IN6_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCirc2d2TanOnLinLin_IN7_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCirc2d2TanOnLinLin_IN8_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCirc2d2TanOnLinLin_IN9_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCirc2d2TanOnLinLin_RET_MINUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 42,
+     "red": [
+      "GccCircleOnConstraintTests.circ2TanOnLinLin"
+     ]
+    },
+    "OCCTGccAnaCirc2d2TanOnLinLin_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCirc2d2TanOnLinLin_RET_ZERO": {
+     "crash": false,
+     "exit": 1,
+     "ran": 42,
+     "red": [
+      "GccCircleOnConstraintTests.circ2TanOnLinLin"
+     ]
+    },
+    "OCCTGccAnaCirc2d2TanOnLinLin_out_cx_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCirc2d2TanOnLinLin_out_cx_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCirc2d2TanOnLinLin_out_cy_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCirc2d2TanOnLinLin_out_cy_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCirc2d2TanOnLinLin_out_qualifier_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCirc2d2TanOnLinLin_out_radius_NEG": {
+     "crash": false,
+     "exit": 1,
+     "ran": 42,
+     "red": [
+      "GccCircleOnConstraintTests.circ2TanOnLinLin"
+     ]
+    },
+    "OCCTGccAnaCirc2d2TanOnLinLin_out_radius_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCirc2dBisec_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCirc2dBisec_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCirc2dBisec_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCirc2dBisec_IN4_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCirc2dBisec_IN5_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCirc2dBisec_IN6_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCirc2dBisec_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCirc2dBisec_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCirc2dBisec_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCirc2dBisec_out_dx_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCirc2dBisec_out_dx_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCirc2dBisec_out_dy_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCirc2dBisec_out_dy_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCirc2dBisec_out_px_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCirc2dBisec_out_px_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCirc2dBisec_out_py_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCirc2dBisec_out_py_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCirc2dBisec_out_radius_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCirc2dBisec_out_radius_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCirc2dBisec_out_type_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCirc2dTanOnRadLin_IN10_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCirc2dTanOnRadLin_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCirc2dTanOnRadLin_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCirc2dTanOnRadLin_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCirc2dTanOnRadLin_IN4_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCirc2dTanOnRadLin_IN5_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCirc2dTanOnRadLin_IN6_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCirc2dTanOnRadLin_IN7_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCirc2dTanOnRadLin_IN8_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCirc2dTanOnRadLin_IN9_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCirc2dTanOnRadLin_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCirc2dTanOnRadLin_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCirc2dTanOnRadLin_RET_ZERO": {
+     "crash": false,
+     "exit": 1,
+     "ran": 42,
+     "red": [
+      "GccCircleOnConstraintTests.circTanOnRadLin"
+     ]
+    },
+    "OCCTGccAnaCirc2dTanOnRadLin_out_cx_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCirc2dTanOnRadLin_out_cx_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCirc2dTanOnRadLin_out_cy_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCirc2dTanOnRadLin_out_cy_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCirc2dTanOnRadLin_out_qualifier_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCirc2dTanOnRadLin_out_radius_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCirc2dTanOnRadLin_out_radius_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCircLin2dBisec_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCircLin2dBisec_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCircLin2dBisec_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCircLin2dBisec_IN4_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCircLin2dBisec_IN5_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCircLin2dBisec_IN6_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCircLin2dBisec_IN7_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCircLin2dBisec_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCircLin2dBisec_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCircLin2dBisec_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCircLin2dBisec_out_dx_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCircLin2dBisec_out_dx_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCircLin2dBisec_out_dy_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCircLin2dBisec_out_dy_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCircLin2dBisec_out_px_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCircLin2dBisec_out_px_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCircLin2dBisec_out_py_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCircLin2dBisec_out_py_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCircLin2dBisec_out_radius_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCircLin2dBisec_out_radius_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCircLin2dBisec_out_type_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCircPnt2dBisec_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCircPnt2dBisec_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCircPnt2dBisec_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCircPnt2dBisec_IN4_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCircPnt2dBisec_IN5_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCircPnt2dBisec_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCircPnt2dBisec_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCircPnt2dBisec_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCircPnt2dBisec_out_dx_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCircPnt2dBisec_out_dx_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCircPnt2dBisec_out_dy_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCircPnt2dBisec_out_dy_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCircPnt2dBisec_out_px_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCircPnt2dBisec_out_px_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCircPnt2dBisec_out_py_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCircPnt2dBisec_out_py_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCircPnt2dBisec_out_radius_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCircPnt2dBisec_out_radius_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaCircPnt2dBisec_out_type_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dBisec_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dBisec_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dBisec_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dBisec_IN4_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dBisec_IN5_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dBisec_IN6_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dBisec_IN7_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dBisec_IN8_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dBisec_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dBisec_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dBisec_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dBisec_out_dx_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dBisec_out_dx_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dBisec_out_dy_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dBisec_out_dy_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dBisec_out_px_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dBisec_out_px_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dBisec_out_py_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dBisec_out_py_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dBisec_out_qualifier_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanOblPt_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanOblPt_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanOblPt_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanOblPt_IN4_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanOblPt_IN5_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanOblPt_IN6_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanOblPt_IN7_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanOblPt_RET_MINUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 42,
+     "red": [
+      "GccAnaLineSolverTests.lineAtAngle"
+     ]
+    },
+    "OCCTGccAnaLin2dTanOblPt_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanOblPt_RET_ZERO": {
+     "crash": false,
+     "exit": 1,
+     "ran": 42,
+     "red": [
+      "GccAnaLineSolverTests.lineAtAngle"
+     ]
+    },
+    "OCCTGccAnaLin2dTanOblPt_out_dx_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanOblPt_out_dx_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanOblPt_out_dy_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanOblPt_out_dy_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanOblPt_out_px_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanOblPt_out_px_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanOblPt_out_py_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanOblPt_out_py_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanOblPt_out_qualifier_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanParCirc_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanParCirc_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanParCirc_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanParCirc_IN4_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanParCirc_IN5_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanParCirc_IN6_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanParCirc_IN7_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanParCirc_RET_MINUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 42,
+     "red": [
+      "GccAnaLineSolverTests.lineTangentParallel"
+     ]
+    },
+    "OCCTGccAnaLin2dTanParCirc_RET_PLUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 42,
+     "red": [
+      "GccAnaLineSolverTests.lineTangentParallel"
+     ]
+    },
+    "OCCTGccAnaLin2dTanParCirc_RET_ZERO": {
+     "crash": false,
+     "exit": 1,
+     "ran": 42,
+     "red": [
+      "GccAnaLineSolverTests.lineTangentParallel"
+     ]
+    },
+    "OCCTGccAnaLin2dTanParCirc_out_dx_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanParCirc_out_dx_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanParCirc_out_dy_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanParCirc_out_dy_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanParCirc_out_px_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanParCirc_out_px_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanParCirc_out_py_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanParCirc_out_py_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanParCirc_out_qualifier_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanParPt_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanParPt_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanParPt_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanParPt_IN4_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanParPt_IN5_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanParPt_IN6_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanParPt_RET_MINUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 42,
+     "red": [
+      "GccAnaLineSolverTests.lineParallel"
+     ]
+    },
+    "OCCTGccAnaLin2dTanParPt_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanParPt_RET_ZERO": {
+     "crash": false,
+     "exit": 1,
+     "ran": 42,
+     "red": [
+      "GccAnaLineSolverTests.lineParallel"
+     ]
+    },
+    "OCCTGccAnaLin2dTanParPt_out_dx_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanParPt_out_dx_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanParPt_out_dy_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanParPt_out_dy_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanParPt_out_px_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanParPt_out_px_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanParPt_out_py_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanParPt_out_py_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanParPt_out_qualifier_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanPerCircLin_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanPerCircLin_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanPerCircLin_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanPerCircLin_IN4_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanPerCircLin_IN5_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanPerCircLin_IN6_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanPerCircLin_IN7_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanPerCircLin_RET_MINUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 42,
+     "red": [
+      "GccAnaLineSolverTests.lineTangentPerpendicular"
+     ]
+    },
+    "OCCTGccAnaLin2dTanPerCircLin_RET_PLUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 42,
+     "red": [
+      "GccAnaLineSolverTests.lineTangentPerpendicular"
+     ]
+    },
+    "OCCTGccAnaLin2dTanPerCircLin_RET_ZERO": {
+     "crash": false,
+     "exit": 1,
+     "ran": 42,
+     "red": [
+      "GccAnaLineSolverTests.lineTangentPerpendicular"
+     ]
+    },
+    "OCCTGccAnaLin2dTanPerCircLin_out_dx_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanPerCircLin_out_dx_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanPerCircLin_out_dy_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanPerCircLin_out_dy_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanPerCircLin_out_px_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanPerCircLin_out_px_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanPerCircLin_out_py_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanPerCircLin_out_py_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanPerCircLin_out_qualifier_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanPerPtLin_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanPerPtLin_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanPerPtLin_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanPerPtLin_IN4_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanPerPtLin_IN5_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanPerPtLin_IN6_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanPerPtLin_RET_MINUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 42,
+     "red": [
+      "GccAnaLineSolverTests.linePerpendicular"
+     ]
+    },
+    "OCCTGccAnaLin2dTanPerPtLin_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanPerPtLin_RET_ZERO": {
+     "crash": false,
+     "exit": 1,
+     "ran": 42,
+     "red": [
+      "GccAnaLineSolverTests.linePerpendicular"
+     ]
+    },
+    "OCCTGccAnaLin2dTanPerPtLin_out_dx_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanPerPtLin_out_dx_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanPerPtLin_out_dy_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanPerPtLin_out_dy_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanPerPtLin_out_px_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanPerPtLin_out_px_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanPerPtLin_out_py_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanPerPtLin_out_py_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLin2dTanPerPtLin_out_qualifier_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLinPnt2dBisec_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLinPnt2dBisec_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLinPnt2dBisec_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLinPnt2dBisec_IN4_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLinPnt2dBisec_IN5_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLinPnt2dBisec_IN6_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLinPnt2dBisec_RET_FLIP": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLinPnt2dBisec_out_dx_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLinPnt2dBisec_out_dx_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLinPnt2dBisec_out_dy_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLinPnt2dBisec_out_dy_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLinPnt2dBisec_out_px_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLinPnt2dBisec_out_px_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLinPnt2dBisec_out_py_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLinPnt2dBisec_out_py_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLinPnt2dBisec_out_radius_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLinPnt2dBisec_out_radius_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaLinPnt2dBisec_out_type_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaPnt2dBisec_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaPnt2dBisec_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaPnt2dBisec_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaPnt2dBisec_IN4_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaPnt2dBisec_RET_FLIP": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaPnt2dBisec_outDx_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaPnt2dBisec_outDx_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaPnt2dBisec_outDy_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaPnt2dBisec_outDy_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaPnt2dBisec_outPx_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaPnt2dBisec_outPx_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaPnt2dBisec_outPy_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccAnaPnt2dBisec_outPy_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccCircle2d2PtRad_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccCircle2d2PtRad_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccCircle2d2PtRad_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccCircle2d2PtRad_IN4_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccCircle2d2PtRad_IN5_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccCircle2d2PtRad_IN6_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccCircle2d2PtRad_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccCircle2d2PtRad_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccCircle2d2PtRad_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccCircle2d2PtRad_out_cx_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccCircle2d2PtRad_out_cx_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccCircle2d2PtRad_out_cy_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccCircle2d2PtRad_out_cy_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccCircle2d2PtRad_out_qualifier_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccCircle2d2PtRad_out_radius_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccCircle2d2PtRad_out_radius_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccCircle2d2TanPt_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccCircle2d2TanPt_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccCircle2d2TanPt_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccCircle2d2TanPt_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccCircle2d2TanPt_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccCircle2d2TanPt_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccCircle2d2TanPt_out_cx_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccCircle2d2TanPt_out_cx_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccCircle2d2TanPt_out_cy_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccCircle2d2TanPt_out_cy_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccCircle2d2TanPt_out_qualifier_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccCircle2d2TanPt_out_radius_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccCircle2d2TanPt_out_radius_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccCircle2d2TanRad_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccCircle2d2TanRad_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccCircle2d2TanRad_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccCircle2d2TanRad_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccCircle2d2TanRad_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccCircle2d2TanRad_out_cx_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccCircle2d2TanRad_out_cx_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccCircle2d2TanRad_out_cy_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccCircle2d2TanRad_out_cy_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccCircle2d2TanRad_out_qualifier_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccCircle2d2TanRad_out_radius_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccCircle2d2TanRad_out_radius_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccCircle2d3Pt_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccCircle2d3Pt_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccCircle2d3Pt_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccCircle2d3Pt_IN4_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccCircle2d3Pt_IN5_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccCircle2d3Pt_IN6_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccCircle2d3Pt_IN7_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccCircle2d3Pt_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccCircle2d3Pt_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccCircle2d3Pt_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccCircle2d3Pt_out_cx_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccCircle2d3Pt_out_cx_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccCircle2d3Pt_out_cy_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccCircle2d3Pt_out_cy_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccCircle2d3Pt_out_qualifier_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccCircle2d3Pt_out_radius_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccCircle2d3Pt_out_radius_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccCircle2d3Tan_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccCircle2d3Tan_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccCircle2d3Tan_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccCircle2d3Tan_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccCircle2d3Tan_out_cx_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccCircle2d3Tan_out_cx_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccCircle2d3Tan_out_cy_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccCircle2d3Tan_out_cy_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccCircle2d3Tan_out_qualifier_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccCircle2d3Tan_out_radius_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccCircle2d3Tan_out_radius_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccCircle2dTanCen_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccCircle2dTanCen_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccCircle2dTanCen_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccCircle2dTanCen_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccCircle2dTanCen_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccCircle2dTanCen_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccCircle2dTanCen_out_cx_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccCircle2dTanCen_out_cx_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccCircle2dTanCen_out_cy_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccCircle2dTanCen_out_cy_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccCircle2dTanCen_out_qualifier_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccCircle2dTanCen_out_radius_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccCircle2dTanCen_out_radius_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccCircle2dTanPtRad_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccCircle2dTanPtRad_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccCircle2dTanPtRad_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccCircle2dTanPtRad_IN4_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccCircle2dTanPtRad_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccCircle2dTanPtRad_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccCircle2dTanPtRad_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccCircle2dTanPtRad_out_cx_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccCircle2dTanPtRad_out_cx_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccCircle2dTanPtRad_out_cy_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccCircle2dTanPtRad_out_cy_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccCircle2dTanPtRad_out_qualifier_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccCircle2dTanPtRad_out_radius_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccCircle2dTanPtRad_out_radius_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccLine2d2Tan_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccLine2d2Tan_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccLine2d2Tan_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccLine2d2Tan_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccLine2d2Tan_out_dx_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccLine2d2Tan_out_dx_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccLine2d2Tan_out_dy_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccLine2d2Tan_out_dy_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccLine2d2Tan_out_px_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccLine2d2Tan_out_px_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccLine2d2Tan_out_py_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccLine2d2Tan_out_py_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccLine2d2Tan_out_qualifier_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccLine2dTanPt_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccLine2dTanPt_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccLine2dTanPt_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccLine2dTanPt_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccLine2dTanPt_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccLine2dTanPt_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccLine2dTanPt_out_dx_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccLine2dTanPt_out_dx_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccLine2dTanPt_out_dy_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccLine2dTanPt_out_dy_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccLine2dTanPt_out_px_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccLine2dTanPt_out_px_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccLine2dTanPt_out_py_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccLine2dTanPt_out_py_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGccLine2dTanPt_out_qualifier_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGceMakeCirc2dFrom3Points_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGceMakeCirc2dFrom3Points_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGceMakeCirc2dFrom3Points_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGceMakeCirc2dFrom3Points_IN4_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGceMakeCirc2dFrom3Points_IN5_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGceMakeCirc2dFrom3Points_IN6_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGceMakeCirc2dFrom3Points_RET_NIL": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGceMakeCirc2dFromCenterRadius_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGceMakeCirc2dFromCenterRadius_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGceMakeCirc2dFromCenterRadius_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGceMakeCirc2dFromCenterRadius_RET_NIL": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGceMakeElips2d_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGceMakeElips2d_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGceMakeElips2d_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGceMakeElips2d_IN4_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGceMakeElips2d_IN5_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGceMakeElips2d_IN6_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGceMakeElips2d_RET_NIL": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGceMakeHypr2d_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGceMakeHypr2d_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGceMakeHypr2d_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGceMakeHypr2d_IN4_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGceMakeHypr2d_IN5_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGceMakeHypr2d_IN6_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGceMakeHypr2d_RET_NIL": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGceMakeLin2dFrom2Points_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGceMakeLin2dFrom2Points_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGceMakeLin2dFrom2Points_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGceMakeLin2dFrom2Points_IN4_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGceMakeLin2dFrom2Points_RET_NIL": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGceMakeLin2dFromEquation_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGceMakeLin2dFromEquation_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGceMakeLin2dFromEquation_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGceMakeLin2dFromEquation_RET_NIL": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGceMakeParab2d_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGceMakeParab2d_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGceMakeParab2d_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGceMakeParab2d_IN4_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGceMakeParab2d_IN5_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGceMakeParab2d_RET_NIL": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGeom2dGccCirc2d2TanOn_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGeom2dGccCirc2d2TanOn_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGeom2dGccCirc2d2TanOn_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGeom2dGccCirc2d2TanOn_IN4_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGeom2dGccCirc2d2TanOn_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGeom2dGccCirc2d2TanOn_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGeom2dGccCirc2d2TanOn_RET_ZERO": {
+     "crash": false,
+     "exit": 1,
+     "ran": 42,
+     "red": [
+      "GccCircleOnConstraintTests.geom2dCirc2TanOn"
+     ]
+    },
+    "OCCTGeom2dGccCirc2d2TanOn_out_cx_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGeom2dGccCirc2d2TanOn_out_cx_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGeom2dGccCirc2d2TanOn_out_cy_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGeom2dGccCirc2d2TanOn_out_cy_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGeom2dGccCirc2d2TanOn_out_qualifier_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGeom2dGccCirc2d2TanOn_out_radius_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGeom2dGccCirc2d2TanOn_out_radius_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGeom2dGccCirc2dTanOnRad_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGeom2dGccCirc2dTanOnRad_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGeom2dGccCirc2dTanOnRad_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGeom2dGccCirc2dTanOnRad_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGeom2dGccCirc2dTanOnRad_RET_ZERO": {
+     "crash": false,
+     "exit": 1,
+     "ran": 42,
+     "red": [
+      "GccCircleOnConstraintTests.geom2dCircTanOnRad"
+     ]
+    },
+    "OCCTGeom2dGccCirc2dTanOnRad_out_cx_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGeom2dGccCirc2dTanOnRad_out_cx_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGeom2dGccCirc2dTanOnRad_out_cy_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGeom2dGccCirc2dTanOnRad_out_cy_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGeom2dGccCirc2dTanOnRad_out_qualifier_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGeom2dGccCirc2dTanOnRad_out_radius_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGeom2dGccCirc2dTanOnRad_out_radius_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGeom2dGccLin2dTanObl_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGeom2dGccLin2dTanObl_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGeom2dGccLin2dTanObl_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGeom2dGccLin2dTanObl_IN4_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGeom2dGccLin2dTanObl_IN5_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGeom2dGccLin2dTanObl_IN6_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGeom2dGccLin2dTanObl_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGeom2dGccLin2dTanObl_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGeom2dGccLin2dTanObl_RET_ZERO": {
+     "crash": false,
+     "exit": 1,
+     "ran": 42,
+     "red": [
+      "GccAnaLineSolverTests.lineTangentAtAngle"
+     ]
+    },
+    "OCCTGeom2dGccLin2dTanObl_out_dx_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGeom2dGccLin2dTanObl_out_dx_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGeom2dGccLin2dTanObl_out_dy_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGeom2dGccLin2dTanObl_out_dy_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGeom2dGccLin2dTanObl_out_px_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGeom2dGccLin2dTanObl_out_px_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGeom2dGccLin2dTanObl_out_py_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGeom2dGccLin2dTanObl_out_py_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTGeom2dGccLin2dTanObl_out_qualifier_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTRangeAddValue_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTRangeContains_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTRangeContains_RET_FLIP": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTRangeCreate_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTRangeCreate_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTRangeDelta_RET_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTRangeDelta_RET_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTRangeEnlarge_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTRangeGetBounds_RET_FLIP": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTRangeGetBounds_first_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTRangeGetBounds_first_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTRangeGetBounds_last_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTRangeGetBounds_last_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTRangeIsVoid_RET_FLIP": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTRangeTrimFrom_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTRangeTrimTo_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTShapeChamferDistAngle_RET_NIL": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTShapeLinearProperties_RET_FLIP": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTShapeLinearProperties_cx_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTShapeLinearProperties_cx_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTShapeLinearProperties_cy_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTShapeLinearProperties_cy_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTShapeLinearProperties_cz_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTShapeLinearProperties_cz_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTShapeLinearProperties_length_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTShapeLinearProperties_length_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTShapeMomentOfInertia_RET_FLIP": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTShapeMomentOfInertia_ixx_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTShapeMomentOfInertia_ixx_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTShapeMomentOfInertia_ixy_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTShapeMomentOfInertia_ixy_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTShapeMomentOfInertia_ixz_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTShapeMomentOfInertia_ixz_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTShapeMomentOfInertia_iyy_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTShapeMomentOfInertia_iyy_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTShapeMomentOfInertia_iyz_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTShapeMomentOfInertia_iyz_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTShapeMomentOfInertia_izz_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTShapeMomentOfInertia_izz_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTShapePrincipalAxes_RET_FLIP": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTShapePrincipalAxes_axes9_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTShapePrincipalAxes_axes9_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTShapeRadiusOfGyration_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTShapeRadiusOfGyration_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTShapeRadiusOfGyration_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTShapeRadiusOfGyration_IN4_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTShapeRadiusOfGyration_IN5_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTShapeRadiusOfGyration_IN6_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTShapeRadiusOfGyration_RET_FLIP": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTShapeRadiusOfGyration_outRadius_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTShapeRadiusOfGyration_outRadius_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTShapeRecognizeCanonicalCurve_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTShapeRecognizeCanonicalCurve_RET_dirX_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTShapeRecognizeCanonicalCurve_RET_dirX_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTShapeRecognizeCanonicalCurve_RET_dirY_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTShapeRecognizeCanonicalCurve_RET_dirY_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTShapeRecognizeCanonicalCurve_RET_dirZ_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTShapeRecognizeCanonicalCurve_RET_dirZ_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTShapeRecognizeCanonicalCurve_RET_gap_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTShapeRecognizeCanonicalCurve_RET_gap_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTShapeRecognizeCanonicalCurve_RET_originX_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTShapeRecognizeCanonicalCurve_RET_originX_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTShapeRecognizeCanonicalCurve_RET_originY_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTShapeRecognizeCanonicalCurve_RET_originY_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTShapeRecognizeCanonicalCurve_RET_originZ_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTShapeRecognizeCanonicalCurve_RET_originZ_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTShapeRecognizeCanonicalCurve_RET_param1_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTShapeRecognizeCanonicalCurve_RET_param1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTShapeRecognizeCanonicalCurve_RET_param2_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTShapeRecognizeCanonicalCurve_RET_param2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTShapeRecognizeCanonicalCurve_RET_type_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTShapeRecognizeCanonicalSurface_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTShapeRecognizeCanonicalSurface_RET_dirX_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTShapeRecognizeCanonicalSurface_RET_dirX_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTShapeRecognizeCanonicalSurface_RET_dirY_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTShapeRecognizeCanonicalSurface_RET_dirY_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTShapeRecognizeCanonicalSurface_RET_dirZ_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTShapeRecognizeCanonicalSurface_RET_dirZ_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTShapeRecognizeCanonicalSurface_RET_gap_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTShapeRecognizeCanonicalSurface_RET_gap_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTShapeRecognizeCanonicalSurface_RET_originX_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTShapeRecognizeCanonicalSurface_RET_originX_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTShapeRecognizeCanonicalSurface_RET_originY_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTShapeRecognizeCanonicalSurface_RET_originY_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTShapeRecognizeCanonicalSurface_RET_originZ_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTShapeRecognizeCanonicalSurface_RET_originZ_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTShapeRecognizeCanonicalSurface_RET_param1_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTShapeRecognizeCanonicalSurface_RET_param1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTShapeRecognizeCanonicalSurface_RET_param2_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTShapeRecognizeCanonicalSurface_RET_param2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTShapeRecognizeCanonicalSurface_RET_type_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTShapeSelfIntersection_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTShapeSelfIntersection_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTShapeSelfIntersection_RET_overlapCount_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTSurfaceCylinderAxis_dx_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTSurfaceCylinderAxis_dx_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTSurfaceCylinderAxis_dy_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTSurfaceCylinderAxis_dy_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTSurfaceCylinderAxis_dz_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTSurfaceCylinderAxis_dz_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTSurfaceCylinderAxis_px_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTSurfaceCylinderAxis_px_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTSurfaceCylinderAxis_py_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTSurfaceCylinderAxis_py_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTSurfaceCylinderAxis_pz_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTSurfaceCylinderAxis_pz_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTSurfaceCylinderRadius_RET_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTSurfaceCylinderRadius_RET_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTSurfaceCylinderSetRadius_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTSurfaceCylinderSetRadius_RET_FLIP": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTSurfaceCylinderUIso_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTSurfaceCylinderUIso_RET_NIL": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTSurfacePlaneCoefficients_A_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTSurfacePlaneCoefficients_A_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTSurfacePlaneCoefficients_B_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTSurfacePlaneCoefficients_B_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTSurfacePlaneCoefficients_C_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTSurfacePlaneCoefficients_C_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTSurfacePlaneCoefficients_D_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTSurfacePlaneCoefficients_D_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTSurfacePlanePln_nx_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTSurfacePlanePln_nx_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTSurfacePlanePln_ny_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTSurfacePlanePln_ny_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTSurfacePlanePln_nz_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTSurfacePlanePln_nz_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTSurfacePlanePln_px_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTSurfacePlanePln_px_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTSurfacePlanePln_py_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTSurfacePlanePln_py_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTSurfacePlanePln_pz_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTSurfacePlanePln_pz_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTSurfacePlaneUIso_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTSurfacePlaneUIso_RET_NIL": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTSurfacePlaneVIso_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    },
+    "OCCTSurfacePlaneVIso_RET_NIL": {
+     "crash": false,
+     "exit": 0,
+     "ran": 42,
+     "red": []
+    }
+   },
+   "switches": 674,
+   "tests": [
+    "Curve2DConvertExtrasTests.approximateCircle",
+    "Curve2DConvertExtrasTests.splitAtDiscontinuities",
+    "Curve2DConvertExtrasTests.toArcsAndSegments",
+    "Curve2DContinuityQueriesTests.segmentContinuityClass",
+    "Curve2DContinuityQueriesTests.isCN",
+    "Curve2DContinuityQueriesTests.reversedParameter",
+    "Curve2DContinuityQueriesTests.bezierMaxDegree",
+    "Curve2DContinuityQueriesTests.bsplineMaxDegree",
+    "Curve2DContinuityTests.line2DContinuity",
+    "Curve2DContinuityTests.bspline2DContinuity",
+    "Geom2dLPropTests.ellipseCurvatureExtrema",
+    "Geom2dLPropTests.inflectionPointsDetailed",
+    "Geom2dLPropTests.curInfTypeMirrorsSpecialPointType",
+    "Geom2dLPropTests.curvatureExtremaFamiliesAgree",
+    "Geom2dLPropTests.inflectionPointFamiliesAgree",
+    "GccAnaLineSolverTests.lineParallel",
+    "GccAnaLineSolverTests.lineTangentParallel",
+    "GccAnaLineSolverTests.linePerpendicular",
+    "GccAnaLineSolverTests.lineTangentPerpendicular",
+    "GccAnaLineSolverTests.lineAtAngle",
+    "GccAnaLineSolverTests.lineTangentAtAngle",
+    "GccCircleOnConstraintTests.circ2TanOnLinLin",
+    "GccCircleOnConstraintTests.circTanOnRadLin",
+    "GccCircleOnConstraintTests.geom2dCirc2TanOn",
+    "GccCircleOnConstraintTests.geom2dCircTanOnRad",
+    "GceMakeCirc2dTests.circleFromCenterRadius",
+    "GceMakeCirc2dTests.circleThrough3Points",
+    "GceMakeElips2dTests.ellipseFromCenterDir",
+    "GceMakeHypr2dTests.hyperbolaFromCenterDir",
+    "GceMakeLin2dTests.lineFrom2Points",
+    "GceMakeLin2dTests.lineFromEquation",
+    "GceMakeParab2dTests.parabolaFromCenterDir",
+    "Geom2dHyperbolaTests.hyperbola2DRadii",
+    "Geom2dHyperbolaTests.hyperbola2DEccentricity",
+    "Geom2dHyperbolaTests.hyperbola2DFocal",
+    "Geom2dHyperbolaTests.hyperbola2DFocus1",
+    "Geom2dOffsetTests.offset2DValue",
+    "Geom2dOffsetTests.offset2DSetValue",
+    "Geom2dOffsetTests.offset2DBasisCurve",
+    "Geom2dAPIInterpolateTests.basicInterpolation",
+    "Geom2dAPIInterpolateTests.periodicInterpolation",
+    "Geom2dAPIPointsToBSplineTests.basicApproximation"
+   ],
+   "unreddened": [
+    "Curve2DContinuityQueriesTests.reversedParameter",
+    "Curve2DContinuityTests.bspline2DContinuity",
+    "Curve2DContinuityTests.line2DContinuity",
+    "GceMakeCirc2dTests.circleFromCenterRadius",
+    "GceMakeCirc2dTests.circleThrough3Points",
+    "GceMakeElips2dTests.ellipseFromCenterDir",
+    "Geom2dLPropTests.inflectionPointsDetailed",
+    "Geom2dOffsetTests.offset2DBasisCurve"
+   ]
+  }
+ }
+}
