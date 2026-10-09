@@ -1,0 +1,12 @@
+ProjLib_ComputeApproxOnPolarSurface: IsDone=1
+projected edge bounds: min (-13.4392023242, -0.0227944592402, 6.68540947326) max (13.4392023242, 13.4392023242, 6.73099839174)
+analytic radial projection of the circle onto the sphere (the reference the test's 0.05 tolerance is centred on): radius 13.416407865, height 6.7082039325
+EF P2.bounds_max_x = 13.4392023242
+EF P2.bounds_min_x = -13.4392023242
+EF P2.bounds_min_z = 6.68540947326
+EF P2.bounds_max_z = 6.73099839174
+ProjLib_ProjectOnSurface: IsDone=1
+B-spline domain [0, 10], value(first) = (4.08248290464, 2.88675134595, 3.53553390593); poles=17 degree=8
+not asserted by the test: value(5) = (0, 0, 0), radius 0
+EF P3.domain = [0, 10]
+EF P3.start = [4.08248290464, 2.88675134595, 3.53553390593]
