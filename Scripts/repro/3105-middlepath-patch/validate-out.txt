@@ -1,0 +1,9 @@
+Traceback (most recent call last):
+  File "/private/tmp/claude-501/-Users-elb-Projects-OCCTSwift/375354c7-0f68-49e8-8e26-00af3f4b05ec/scratchpad/p3105/validate.py", line 62, in <module>
+    "path inside the solid (convex solids) or its bounding box":(kv.get("out","0/1").split("/")[0]=="0") if d["shape"] in CONVEX else inbox(d),
+                                                                                                                                      ~~~~~^^^
+  File "/private/tmp/claude-501/-Users-elb-Projects-OCCTSwift/375354c7-0f68-49e8-8e26-00af3f4b05ec/scratchpad/p3105/validate.py", line 12, in inbox
+    for l in open(os.environ["SP"]+"/viz/"+d["shape"]+".mesh"):
+                  ~~~~~~~~~~^^^^^^
+  File "<frozen os>", line 709, in __getitem__
+KeyError: 'SP'

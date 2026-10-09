@@ -21,6 +21,10 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### `Shape.middlePath(start:end:)` no longer aborts the process for a pair of faces that are not a pipe's two ends; kernel patch 0058 (#3105)
+
+`middlePath(start:end:)` aborted the process (an uncatchable SIGSEGV in `BRepOffsetAPI_MiddlePath::Build`) for face pairs that share no vertex and are not the two end caps of a pipe, 116 of the 196 such pairs over 16 test solids, and ran on without end when the sweep could not reach the end section. Carried kernel patch `0058` carries a path that has reached a vertex forward instead of casting it to an edge, and bounds the sweep. The intended input is still the two end caps (faces or wires) of an extruded, lofted or swept body, and the result is the sweep path. For any other pair the function is now best-effort: it never crashes, it returns the path traced through the section centroids, which the caller must judge (14 of the 81 new paths in the test set loop or overshoot), or `nil` when no path exists; `nil` means "no path could be built", not "the shape is not a pipe". 81 of the 116 crashing pairs now answer a validated path and 35 answer `nil`; the 42 pairs that answered before answer the same path. The patch is carried and not yet pinned: until a kernel carrying it is pinned, the pairs that share no vertex can still abort. Tests: `Issue3105MiddlePathKernelTests`, gated on `OCCTSWIFT_LOCAL=1`. Writeup: `Scripts/patches/README.md`, evidence: `Scripts/repro/3105-middlepath-patch/`.
+
 ### FeatureReconstructor boolean features skip operands that hold no solid (#3174)
 
 A union, subtract or intersect between named features used to report success when an operand was a bare shell or an empty compound, leaving a result with no solid. Such a boolean is now recorded in `skipped` as `underDetermined` and is not listed in `fulfilled`. A solid fused into a shell-only input body continues to be skipped as `boolean union failed`, now with a test.
