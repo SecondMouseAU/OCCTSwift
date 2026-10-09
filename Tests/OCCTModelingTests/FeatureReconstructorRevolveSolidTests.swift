@@ -103,7 +103,12 @@ struct Issue3139ReconstructorRevolveSolidTests {
         let result = FeatureReconstructor.build(from: [.revolve(spec)])
         #expect(result.shape == nil)
         #expect(result.fulfilled.isEmpty)
-        #expect(result.skipped.contains { $0.featureID == "sliver" })
+        let skip = result.skipped.first { $0.featureID == "sliver" }
+        if case .occtFailure(let why)? = skip?.reason {
+            #expect(why.contains("measurable volume"))
+        } else {
+            Issue.record("expected an occtFailure skip, got \(String(describing: skip?.reason))")
+        }
     }
 
     @Test("A hole on a body with no solid is skipped, not reported fulfilled")

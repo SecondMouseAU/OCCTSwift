@@ -364,15 +364,26 @@ public struct FeatureReconstructor: Sendable {
             let body = face.revolved(
                 axisOrigin: r.axisOrigin,
                 axisDirection: r.axisDirection,
-                angle: angle),
-            body.subShapeCount(ofType: .solid) > 0,
-            let volume = body.volume, abs(volume) > 0
+                angle: angle)
         else {
-            // No solid, or one with no measurable volume (a zero-area profile revolves into a
-            // Solid that cannot be measured): not a body the next feature can act on.
             recordSkip(
                 ctx: &ctx, id: r.id,
                 reason: .occtFailure("revolve failed"),
+                stage: .additive)
+            return
+        }
+        guard body.subShapeCount(ofType: .solid) > 0 else {
+            recordSkip(
+                ctx: &ctx, id: r.id,
+                reason: .occtFailure("revolve produced no solid"),
+                stage: .additive)
+            return
+        }
+        // A zero-area profile revolves into a Solid that cannot be measured.
+        guard let volume = body.volume, abs(volume) > 0 else {
+            recordSkip(
+                ctx: &ctx, id: r.id,
+                reason: .occtFailure("revolve produced a solid with no measurable volume"),
                 stage: .additive)
             return
         }
