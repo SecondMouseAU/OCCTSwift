@@ -297,7 +297,7 @@ retired**, each with a regression test that fails if it comes back:
   `0021`. Retired on measurement: the loop was instrumented to report any convergence past `n=2`
   or any exhaustion and the full suite run, **6,384 tests and zero reports**.
 
-`Tests/OCCTXCAFTests/Issue1030DatumLookupGuardTests.swift` kept its name and fixtures and flipped
+`Tests/OCCTXCAFTests/GDT/Issue1030DatumLookupGuardTests.swift` kept its name and fixtures and flipped
 its assertions, which is the only way a guard's retirement can be regression tested: a test that
 merely stops existing proves nothing.
 
