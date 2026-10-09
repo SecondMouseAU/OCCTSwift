@@ -6,13 +6,13 @@ import simd
 
 @Suite("BRepGraph Occurrences")
 struct BRepGraphOccurrenceTests {
-    @Test func occurrenceCountForPrimitive() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)
-        if let box {
-            let graph = BRepGraph(shape: box)
-            if let graph {
-                #expect(graph.occurrenceCount == 0)
-            }
-        }
+    // `== 0` alone passes a counter stuck at 0 (#1986). Linking the solid into a product
+    // creates its one occurrence (Scripts/repro/766-brepgraph-products-refs).
+    @Test func occurrenceCountForPrimitive() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let graph = try #require(BRepGraph(shape: box))
+        #expect(graph.occurrenceCount == 0)
+        _ = graph.linkProductToTopology(shapeRootKind: 0 /* Solid */, shapeRootIndex: 0)
+        #expect(graph.occurrenceCount == 1)
     }
 }
