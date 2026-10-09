@@ -25,8 +25,9 @@ struct HelixTests {
 
     @Test("Create basic helix")
     func basicHelix() {
-        Self.check(Wire.helix(radius: 5, pitch: 2, turns: 3), radius: 5, rise: 6,
-                   length: 94.438520381886207)
+        Self.check(
+            Wire.helix(radius: 5, pitch: 2, turns: 3), radius: 5, rise: 6,
+            length: 94.438520381886207)
     }
 
     @Test("Helix with custom origin and axis")
@@ -117,13 +118,15 @@ struct HelixTests {
 
     @Test("Helix with fractional turns")
     func fractionalTurns() {
-        Self.check(Wire.helix(radius: 5, pitch: 10, turns: 0.5), radius: 5, rise: 5,
-                   length: 16.484533267150862)
+        Self.check(
+            Wire.helix(radius: 5, pitch: 10, turns: 0.5), radius: 5, rise: 5,
+            length: 16.484533267150862)
     }
 
     @Test("Helix with many turns")
     func manyTurns() {
-        Self.check(Wire.helix(radius: 5, pitch: 1, turns: 20), radius: 5, rise: 20,
-                   length: 628.63641255844379)
+        Self.check(
+            Wire.helix(radius: 5, pitch: 1, turns: 20), radius: 5, rise: 20,
+            length: 628.63641255844379)
     }
 }

@@ -389,7 +389,8 @@ struct Issue558SamplingCountBounds {
             let c = Shape.edgeFromPoints(SIMD3(10, 10, 0), SIMD3(0, 10, 0)),
             let d = Shape.edgeFromPoints(SIMD3(0, 10, 0), SIMD3(0, 0, 0))
         {
-            let grid = Shape.coonsAlgPatch(edge1: a, edge2: b, edge3: c, edge4: d, evalU: 3, evalV: 4)
+            let grid = Shape.coonsAlgPatch(
+                edge1: a, edge2: b, edge3: c, edge4: d, evalU: 3, evalV: 4)
             #expect(grid?.count == 12, "a 3 x 4 grid on a real boundary")
         } else {
             Issue.record("could not build the square boundary")

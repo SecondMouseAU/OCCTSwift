@@ -16,12 +16,14 @@ struct ConicalProjectionTests {
     func projectConical() {
         guard let line = Wire.line(from: SIMD3(-3, 0, 0), to: SIMD3(3, 0, 0)),
             let lineShape = Shape.fromWire(line),
-            let box = Shape.box(width: 20, height: 20, depth: 1)?.translated(by: SIMD3(-10, -10, -5))
+            let box = Shape.box(width: 20, height: 20, depth: 1)?.translated(
+                by: SIMD3(-10, -10, -5))
         else {
             Issue.record("fixtures not built")
             return
         }
-        guard let result = Shape.projectWireConical(lineShape, onto: box, eye: SIMD3(0, 0, 10)) else {
+        guard let result = Shape.projectWireConical(lineShape, onto: box, eye: SIMD3(0, 0, 10))
+        else {
             Issue.record("conical projection returned nil")
             return
         }

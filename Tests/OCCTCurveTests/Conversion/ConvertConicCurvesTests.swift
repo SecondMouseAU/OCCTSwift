@@ -13,7 +13,9 @@ import simd
 struct ConvertConicCurvesTests {
     private static func samples(_ c: Curve2D) -> [SIMD2<Double>] {
         let d = c.domain
-        return (0...8).map { c.point(at: d.lowerBound + (d.upperBound - d.lowerBound) * Double($0) / 8) }
+        return (0...8).map {
+            c.point(at: d.lowerBound + (d.upperBound - d.lowerBound) * Double($0) / 8)
+        }
     }
 
     @Test func ellipseArc() {
