@@ -1,6 +1,6 @@
 # OCCTCurveTests batch 2: the injection matrix
 
-Evidence for the PR that lifted 19 OCCTCurveTests files off `v5.0.0-766-execution` (nine source PRs,
+Evidence for the PR that lifted 20 OCCTCurveTests files off `v5.0.0-766-execution` (nine source PRs,
 each file at its area-directory path) and, with them, nine probe directories. Measured against the
 pinned kernel `v4.0.0-kernel.5`; re-derive rather than quote.
 
@@ -42,3 +42,21 @@ matters is the first column: a changed test no switch can redden pins nothing th
 On `main`'s versions 26 changed tests catch nothing, among them all five `HelixTests`, all three
 `HelixGeomBuildTests`, `Curve3DEvalTests.evalD2BSpline` and `evalD3BSpline`, both `CurveLengthTests`,
 and `Issue558SamplingCountBoundsTests.coneSphereRequest`, whose sphere met the cone nowhere.
+
+## `BSplineApproxInterpTests`, measured separately
+
+`main` already carried a rewrite of two tests in this file (#3018), so the branch's measured pins
+(`maxError` to 1e-9, the domain `0...1`, exact end points, and the guards on the two untouched tests)
+were merged into `main`'s bodies, not taken over them. It was added after the 1039-switch matrix, so
+it has its own small one: `funcs-bsplineapproxinterp.txt` (15 entry points), `switches-bsplineapproxinterp.txt`
+(24 switches), `matrix-bsai-before.json` (`main`'s file) and `matrix-bsai-after.json`, run with
+`run-injection-matrix.py <label> <switches file>`. Switches that redden each test, crashing rows excluded:
+
+| test | `main`'s | merged |
+|---|---|---|
+| `basicApproximation` | 9 | 13 |
+| `withInterpolationConstraints` | 1 (`IsDone_RET_FLIP`) | 4 |
+| `performOptimal` | 7 | 13 |
+| `setters` | 1 (`IsDone_RET_FLIP`) | 11 |
+
+Two of the four tests on `main` pinned nothing the fit produced: only inverting `isDone` reddened them.
