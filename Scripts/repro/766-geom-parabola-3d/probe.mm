@@ -1,4 +1,4 @@
-// #766 kernel parity for Tests/OCCTAnalysisTests/GeomParabola3DTests.swift.
+// #766 kernel parity for Tests/OCCTAnalysisTests/GeomProperties/GeomParabola3DTests.swift.
 // Builds the parabola the way OCCTCurve3DCreateParabola does (Geom_Parabola on
 // gp_Ax2(center, normal), focal) and reads the same accessors the OCCTCurve3DParabola* bridge
 // functions read.

@@ -107,7 +107,7 @@ One enumeration and one base for every face index in the API: `occtMapSubShapes`
 (`OCCTBridge_Internal.h`, added in #502), 0-based. `OCCTShapeGetFaces` reads it, the fourteen
 explorer-backed consumers read it, and the 1-based entry points and index outputs were moved to
 0-based to match `Face.index`. Cross-checks live in
-`Tests/OCCTTopologyTests/Issue502SubShapeTraversalTests.swift`, alongside #502's.
+`Tests/OCCTTopologyTests/SubShapes/Issue502SubShapeTraversalTests.swift`, alongside #502's.
 
 Not an upstream defect, both OCCT primitives behave exactly as documented, and the kernel is not
 involved in the base convention at all. Nothing to file or patch upstream.

@@ -1,4 +1,4 @@
-// #766 kernel parity for Tests/OCCTAnalysisTests/CenterOfMassTests.swift.
+// #766 kernel parity for Tests/OCCTAnalysisTests/MassProperties/CenterOfMassTests.swift.
 // Every centre-of-mass entry point the suite reaches (OCCTShapeGetCenterOfMass,
 // OCCTShapeGetProperties, OCCTShapeCentroid, OCCTShapeVolumeInertia, OCCTShapeInertiaProperties)
 // reads BRepGProp::VolumeProperties(shape, props, OnlyClosed = true) and refuses Mass() == 0

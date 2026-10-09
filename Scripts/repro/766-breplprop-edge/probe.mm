@@ -1,4 +1,4 @@
-// Kernel parity probe for Tests/OCCTAnalysisTests/BRepLPropEdgeTests.swift (#766).
+// Kernel parity probe for Tests/OCCTAnalysisTests/LocalProperties/BRepLPropEdgeTests.swift (#766).
 //
 // Same calls as OCCTEdgeLPropValue / Tangent / Curvature / D1 (OCCTBridge_Properties.mm):
 // BRepLProp_CLProps(BRepAdaptor_Curve(edge), param, order, Precision::Confusion()), with the edge

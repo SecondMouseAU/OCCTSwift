@@ -1,4 +1,4 @@
-// #766 kernel parity for Tests/OCCTAnalysisTests/CurveCurveDistanceTests.swift:
+// #766 kernel parity for Tests/OCCTAnalysisTests/Extrema/CurveCurveDistanceTests.swift:
 //   GeomAPI_ExtremaCurveCurve::LowerDistance   (OCCTCurve3DMinDistanceToCurve)
 //   GeomAPI_ExtremaCurveCurve::Distance(i)     (OCCTCurve3DExtrema)
 //   GeomAPI_ExtremaCurveSurface::LowerDistance (OCCTCurve3DDistanceToSurface)

@@ -66,12 +66,12 @@ Not the kernel, not the bridge, `Sources/OCCTBridge/src/OCCTBridge_Modeling.mm`'
 `OCCTShapeCreatePipeShellMultiSection` and `OCCTWireCreateHelix` were read line-for-line against
 these probes and match exactly; there is nothing to patch there. The fix is:
 
-- `Tests/OCCTModelingTests/Issue598PipeShellFrenetModeTests.swift`'s
+- `Tests/OCCTModelingTests/Sweeps/Issue598PipeShellFrenetModeTests.swift`'s
   `cookbookSpringRecipeVolumeInvariant` corrected to measure the profile placement instead of
   computing it, and its "must not match" assertion replaced with "must match" (both modes now
   agree); its old construction is kept as a second test,
   `misplacedProfileReproducesIssue721Divergence`, a permanent regression against reintroducing it.
-- `Tests/OCCTModelingTests/Issue721CorrectedFrenetPlacementTests.swift` (new): the dense
+- `Tests/OCCTModelingTests/Sweeps/Issue721CorrectedFrenetPlacementTests.swift` (new): the dense
   pitch/turns sweep with the correct construction, plus a direct instrument confirming the per-edge
   reset is real without affecting volume.
 - `docs/guides/cookbook/helices.md`'s "coiled spring" recipe corrected to measure the tangent from

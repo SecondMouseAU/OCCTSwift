@@ -144,7 +144,7 @@ helper of the same name in OCCTReconstruct and OCCTDesignLoop, unrelated to this
 
 ## What the tests cover, and what they do not
 
-`Tests/OCCTTopologyTests/Issue1088SelfIntersectsAnswerTests.swift`, run against the shipped fix and
+`Tests/OCCTTopologyTests/Validity/Issue1088SelfIntersectsAnswerTests.swift`, run against the shipped fix and
 three injected bodies. Each injection is the real pre-#1088 code or one half of it.
 
 | body | runs | outcome |

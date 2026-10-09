@@ -1,4 +1,4 @@
-// Epic #766 evidence fix, Tests/OCCTModelingTests/BooleanFullHistoryTests.swift.
+// Epic #766 evidence fix, Tests/OCCTModelingTests/History/BooleanFullHistoryTests.swift.
 // probe.mm printed volumes at %.10g. This probe repeats the same builders the bridge retains for history
 // (BRepAlgoAPI_Fuse, _Cut, _Common, _Splitter; OCCTBooleanUnionWithHistory and its siblings) on the same
 // inputs as the five tests, at %.17g, and reads Modified / Generated / IsDeleted for every face of the

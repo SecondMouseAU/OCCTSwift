@@ -1,4 +1,4 @@
-// #766 kernel parity for Tests/OCCTAnalysisTests/GeomCircle3DTests.swift.
+// #766 kernel parity for Tests/OCCTAnalysisTests/GeomProperties/GeomCircle3DTests.swift.
 // Builds the circle the way OCCTCurve3DCreateCircle does (Geom_Circle on gp_Ax2(center, normal))
 // and reads the same accessors the OCCTCurve3DCircle* bridge functions read.
 #include <Geom_Circle.hxx>

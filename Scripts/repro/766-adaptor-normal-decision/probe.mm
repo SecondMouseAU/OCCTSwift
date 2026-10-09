@@ -1,4 +1,4 @@
-// #766 kernel parity for Tests/OCCTAnalysisTests/AdaptorNormalDecisionTests.swift.
+// #766 kernel parity for Tests/OCCTAnalysisTests/LocalProperties/AdaptorNormalDecisionTests.swift.
 // Face.normal: BRepLProp_SLProps(face, uMid, vMid, 1, Precision::Confusion()), reversed on a
 // reversed face (OCCTFaceGetNormal). Raycast: IntCurvesFace_ShapeIntersector loaded at the caller's
 // tolerance, normals from BRepLProp_SLProps at Precision::Confusion() (OCCTShapeRaycast); the

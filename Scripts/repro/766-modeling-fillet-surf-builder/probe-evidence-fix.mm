@@ -1,4 +1,4 @@
-// Epic #766 evidence correction for PR #2691 (Tests/OCCTModelingTests/FilletSurfBuilderTests.swift).
+// Epic #766 evidence correction for PR #2691 (Tests/OCCTModelingTests/Blends/FilletSurfBuilderTests.swift).
 // probe.mm printed the first edge's line as `status=0 (0=IsOk,...) nbSurface=1 tolApp3d(1)=... first=... last=...`
 // and the record's kernel side said "FilletSurf_IsOk on all 12 edges". The bridge side used the keys
 // status, surfaces, tolerance, firstParameter, lastParameter. This probe repeats the same

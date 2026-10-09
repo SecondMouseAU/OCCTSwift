@@ -1,4 +1,4 @@
-// Epic #766, Tests/OCCTModelingTests/BOPAlgoBuilderSolidTests.swift: kernel parity.
+// Epic #766, Tests/OCCTModelingTests/BOPAlgo/BOPAlgoBuilderSolidTests.swift: kernel parity.
 // OCCTBOPAlgoBuilderSolid runs BOPAlgo_BuilderSolid with SetShapes(faces), Perform, and returns
 // Areas(). The faces are the six distinct faces of Shape.box(10,10,10), centred at the origin.
 #include <BOPAlgo_BuilderSolid.hxx>

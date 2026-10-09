@@ -59,7 +59,7 @@ Compile and run:
 ## The same premise, re-measured from Swift against the live bridge
 
 `Issue979SubShapeIndexIdentity.theBridgeNeverHandsBackAHole`
-(`Tests/OCCTTopologyTests/Issue979SubShapeIndexIdentityTests.swift`) calls the real bridge
+(`Tests/OCCTTopologyTests/SubShapes/Issue979SubShapeIndexIdentityTests.swift`) calls the real bridge
 functions over a Swift battery and asserts every slot is non-null and `written == count`. It is a
 permanent test rather than a one-off measurement, because the design rests on this property: if a
 future bridge change ever makes a hole reachable, the premise is wrong and the design needs
