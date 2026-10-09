@@ -67,7 +67,7 @@ graph with a product placed by `(5, 6, 7)`:
 against `Shape.located(matrix:)` on the same twelve doubles, which moves the box to `0..10`,
 `1..11`, `2..12` and reports the identical twelve doubles back through `locationMatrix`. So this
 probe, not a Swift test, is the evidence that the BRepGraph conversion matches the Topology one.
-`Tests/OCCTTopologyTests/Issue994Matrix12Tests.swift` covers the reachable half.
+`Tests/OCCTTopologyTests/TopoDS/Issue994Matrix12Tests.swift` covers the reachable half.
 
 ## Build
 

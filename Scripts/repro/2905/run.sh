@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # #2905: measure ComputeNormals and EnsureNormalConsistency against the pinned kernel, on a
 # planar solid and two curved ones. The values this prints are the ones
-# Tests/OCCTTopologyTests/BRepLibToolTriangulatedShapeTests.swift and BRepLibExtendedTests.swift
+# Tests/OCCTTopologyTests/BRepLib/BRepLibToolTriangulatedShapeTests.swift and BRepLibExtendedTests.swift
 # pin, so re-run it before changing either of those expectations.
 #
 # Usage: Scripts/repro/2905/run.sh        # from the repo root
