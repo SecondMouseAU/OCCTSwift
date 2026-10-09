@@ -1,6 +1,6 @@
 # BRepGraph weak-assertion lift: the injection matrix
 
-Evidence for the PR that lifted 23 OCCTBRepGraphTests files off `v5.0.0-766-execution` (six source
+Evidence for the PR that lifted 25 OCCTBRepGraphTests files off `v5.0.0-766-execution` (six source
 PRs, each file at its area-directory path). Measured against the pinned kernel `v4.0.0-kernel.5`;
 re-derive rather than quote.
 
