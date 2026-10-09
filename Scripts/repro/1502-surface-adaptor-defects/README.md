@@ -78,7 +78,7 @@ the PR body / issue tracker), since it needs no kernel patch either but is a dis
 different file.
 
 No standalone reproducer needed for this one: it isn't a crash, and
-`Tests/OCCTAnalysisTests/Extrema/ExtremaExtSSTests.swift` (`bothPointsCarryTheirOwnUV`) asserts the fix
+`Tests/OCCTAnalysisTests/ExtSS/ExtremaExtSSTests.swift` (`bothPointsCarryTheirOwnUV`) asserts the fix
 directly against a real surface-surface extremum with known, non-trivial U and V on both sides.
 `probe_extrema_ss.cxx` is the scratch tool used to pick that fixture (two spheres offset in both X
 and Z, so the closest points land away from either equator, where V is 0 and a dropped V would pass

@@ -7,11 +7,11 @@ Tests/OCCTAnalysisTests/AsymmetricChamferTests.swift	Tests/OCCTAnalysisTests/Asy
 Tests/OCCTAnalysisTests/BRepBndLibTests.swift	Tests/OCCTAnalysisTests/Bounding/BRepBndLibTests.swift	Bounding	-	Bnd and BndLib bounding volumes, ranges and sort boxes
 Tests/OCCTAnalysisTests/BRepCheckAnalyzerTests.swift	Tests/OCCTAnalysisTests/ShapeAnalysis/BRepCheckAnalyzerTests.swift	ShapeAnalysis	-	shape validity, free bounds, plane and canonical-form recognition, point classification and KD-tree queries
 Tests/OCCTAnalysisTests/BRepExtremaDistanceSSTests.swift	Tests/OCCTAnalysisTests/BRepExtrema/BRepExtremaDistanceSSTests.swift	BRepExtrema	-	BRepExtrema_* distance and extrema between topological shapes
-Tests/OCCTAnalysisTests/BRepExtremaExtCCTests.swift	Tests/OCCTAnalysisTests/BRepExtrema/BRepExtremaExtCCTests.swift	BRepExtrema	-	BRepExtrema_* distance and extrema between topological shapes
-Tests/OCCTAnalysisTests/BRepExtremaExtCFTests.swift	Tests/OCCTAnalysisTests/BRepExtrema/BRepExtremaExtCFTests.swift	BRepExtrema	-	BRepExtrema_* distance and extrema between topological shapes
-Tests/OCCTAnalysisTests/BRepExtremaExtFFTests.swift	Tests/OCCTAnalysisTests/BRepExtrema/BRepExtremaExtFFTests.swift	BRepExtrema	-	BRepExtrema_* distance and extrema between topological shapes
-Tests/OCCTAnalysisTests/BRepExtremaExtPCTests.swift	Tests/OCCTAnalysisTests/BRepExtrema/BRepExtremaExtPCTests.swift	BRepExtrema	-	BRepExtrema_* distance and extrema between topological shapes
-Tests/OCCTAnalysisTests/BRepExtremaExtPFTests.swift	Tests/OCCTAnalysisTests/BRepExtrema/BRepExtremaExtPFTests.swift	BRepExtrema	-	BRepExtrema_* distance and extrema between topological shapes
+Tests/OCCTAnalysisTests/BRepExtremaExtCCTests.swift	Tests/OCCTAnalysisTests/ElementPairExtrema/BRepExtremaExtCCTests.swift	ElementPairExtrema	-	BRepExtrema_ExtCC/ExtCF/ExtFF/ExtPC/ExtPF extrema between points, edges and faces
+Tests/OCCTAnalysisTests/BRepExtremaExtCFTests.swift	Tests/OCCTAnalysisTests/ElementPairExtrema/BRepExtremaExtCFTests.swift	ElementPairExtrema	-	BRepExtrema_ExtCC/ExtCF/ExtFF/ExtPC/ExtPF extrema between points, edges and faces
+Tests/OCCTAnalysisTests/BRepExtremaExtFFTests.swift	Tests/OCCTAnalysisTests/ElementPairExtrema/BRepExtremaExtFFTests.swift	ElementPairExtrema	-	BRepExtrema_ExtCC/ExtCF/ExtFF/ExtPC/ExtPF extrema between points, edges and faces
+Tests/OCCTAnalysisTests/BRepExtremaExtPCTests.swift	Tests/OCCTAnalysisTests/ElementPairExtrema/BRepExtremaExtPCTests.swift	ElementPairExtrema	-	BRepExtrema_ExtCC/ExtCF/ExtFF/ExtPC/ExtPF extrema between points, edges and faces
+Tests/OCCTAnalysisTests/BRepExtremaExtPFTests.swift	Tests/OCCTAnalysisTests/ElementPairExtrema/BRepExtremaExtPFTests.swift	ElementPairExtrema	-	BRepExtrema_ExtCC/ExtCF/ExtFF/ExtPC/ExtPF extrema between points, edges and faces
 Tests/OCCTAnalysisTests/BRepGPropCinertTests.swift	Tests/OCCTAnalysisTests/BRepGProp/BRepGPropCinertTests.swift	BRepGProp	#2660	BRepGProp Cinert/Sinert/Vinert and face domain, including the two total-area overloads
 Tests/OCCTAnalysisTests/BRepGPropDomainTests.swift	Tests/OCCTAnalysisTests/BRepGProp/BRepGPropDomainTests.swift	BRepGProp	-	BRepGProp Cinert/Sinert/Vinert and face domain, including the two total-area overloads
 Tests/OCCTAnalysisTests/BRepGPropFaceTests.swift	Tests/OCCTAnalysisTests/BRepGProp/BRepGPropFaceTests.swift	BRepGProp	-	BRepGProp Cinert/Sinert/Vinert and face domain, including the two total-area overloads
@@ -34,37 +34,37 @@ Tests/OCCTAnalysisTests/Conic2DTests.swift	Tests/OCCTAnalysisTests/AnalyticInter
 Tests/OCCTAnalysisTests/ContapContourFullTests.swift	Tests/OCCTAnalysisTests/Contap/ContapContourFullTests.swift	Contap	#2669	Contap contour (silhouette) of analytic surfaces
 Tests/OCCTAnalysisTests/ContapContourTests.swift	Tests/OCCTAnalysisTests/Contap/ContapContourTests.swift	Contap	#2669	Contap contour (silhouette) of analytic surfaces
 Tests/OCCTAnalysisTests/Curve3DLocalPropertiesTests.swift	Tests/OCCTAnalysisTests/LocalProperties/Curve3DLocalPropertiesTests.swift	LocalProperties	-	curvature, tangent and normal queries on curves, edges and faces
-Tests/OCCTAnalysisTests/CurveCurveDistanceTests.swift	Tests/OCCTAnalysisTests/Extrema/CurveCurveDistanceTests.swift	Extrema	#2669	Surface.extrema and minDistance, curve-curve and curve-surface distance, all via Extrema_Ext*
+Tests/OCCTAnalysisTests/CurveCurveDistanceTests.swift	Tests/OCCTAnalysisTests/Extrema/CurveCurveDistanceTests.swift	Extrema	#2669	curve-curve and curve-surface distance, all via Extrema_Ext*
 Tests/OCCTAnalysisTests/CurveSurfaceIntersectionTests.swift	Tests/OCCTAnalysisTests/Intersection/CurveSurfaceIntersectionTests.swift	Intersection	#2661	curve-surface, surface-surface, ray and polygon intersection through the Swift API
 Tests/OCCTAnalysisTests/DistAngleChamferTests.swift	Tests/OCCTAnalysisTests/DistAngleChamferTests.swift	(stays)	-	tests BRepFilletAPI chamfers, a Modeling subject; cross-target, stays (issue filed)
 Tests/OCCTAnalysisTests/DistanceSolutionDetailTests.swift	Tests/OCCTAnalysisTests/BRepExtrema/DistanceSolutionDetailTests.swift	BRepExtrema	-	shape-to-shape and point-to-edge distance solutions (BRepExtrema_DistShapeShape)
 Tests/OCCTAnalysisTests/EdgeCurvePropertiesTests.swift	Tests/OCCTAnalysisTests/LocalProperties/EdgeCurvePropertiesTests.swift	LocalProperties	-	curvature, tangent and normal queries on curves, edges and faces
 Tests/OCCTAnalysisTests/EdgePropertyTests.swift	Tests/OCCTAnalysisTests/LocalProperties/EdgePropertyTests.swift	LocalProperties	#2670	curvature, tangent and normal queries on curves, edges and faces
 Tests/OCCTAnalysisTests/ExtendedDistanceTests.swift	Tests/OCCTAnalysisTests/BRepExtrema/ExtendedDistanceTests.swift	BRepExtrema	-	shape-to-shape and point-to-edge distance solutions (BRepExtrema_DistShapeShape)
-Tests/OCCTAnalysisTests/ExtremaElCCircCircTests.swift	Tests/OCCTAnalysisTests/Extrema/ExtremaElCCircCircTests.swift	Extrema	#2670	Extrema_ExtElC extrema between two analytic curves
-Tests/OCCTAnalysisTests/ExtremaElCLinCircTests.swift	Tests/OCCTAnalysisTests/Extrema/ExtremaElCLinCircTests.swift	Extrema	-	Extrema_ExtElC extrema between two analytic curves
-Tests/OCCTAnalysisTests/ExtremaElCLinElipsTests.swift	Tests/OCCTAnalysisTests/Extrema/ExtremaElCLinElipsTests.swift	Extrema	#2670	Extrema_ExtElC extrema between two analytic curves
-Tests/OCCTAnalysisTests/ExtremaElCLinLinTests.swift	Tests/OCCTAnalysisTests/Extrema/ExtremaElCLinLinTests.swift	Extrema	-	Extrema_ExtElC extrema between two analytic curves
-Tests/OCCTAnalysisTests/ExtremaElCSLinCylTests.swift	Tests/OCCTAnalysisTests/Extrema/ExtremaElCSLinCylTests.swift	Extrema	-	Extrema_ExtElCS extrema between a line and an analytic surface
-Tests/OCCTAnalysisTests/ExtremaElCSLinPlaneTests.swift	Tests/OCCTAnalysisTests/Extrema/ExtremaElCSLinPlaneTests.swift	Extrema	-	Extrema_ExtElCS extrema between a line and an analytic surface
-Tests/OCCTAnalysisTests/ExtremaElCSLinSphereTests.swift	Tests/OCCTAnalysisTests/Extrema/ExtremaElCSLinSphereTests.swift	Extrema	-	Extrema_ExtElCS extrema between a line and an analytic surface
+Tests/OCCTAnalysisTests/ExtremaElCCircCircTests.swift	Tests/OCCTAnalysisTests/ExtElC/ExtremaElCCircCircTests.swift	ExtElC	#2670	Extrema_ExtElC extrema between two analytic curves
+Tests/OCCTAnalysisTests/ExtremaElCLinCircTests.swift	Tests/OCCTAnalysisTests/ExtElC/ExtremaElCLinCircTests.swift	ExtElC	-	Extrema_ExtElC extrema between two analytic curves
+Tests/OCCTAnalysisTests/ExtremaElCLinElipsTests.swift	Tests/OCCTAnalysisTests/ExtElC/ExtremaElCLinElipsTests.swift	ExtElC	#2670	Extrema_ExtElC extrema between two analytic curves
+Tests/OCCTAnalysisTests/ExtremaElCLinLinTests.swift	Tests/OCCTAnalysisTests/ExtElC/ExtremaElCLinLinTests.swift	ExtElC	-	Extrema_ExtElC extrema between two analytic curves
+Tests/OCCTAnalysisTests/ExtremaElCSLinCylTests.swift	Tests/OCCTAnalysisTests/ExtElCS/ExtremaElCSLinCylTests.swift	ExtElCS	-	Extrema_ExtElCS extrema between a line and an analytic surface
+Tests/OCCTAnalysisTests/ExtremaElCSLinPlaneTests.swift	Tests/OCCTAnalysisTests/ExtElCS/ExtremaElCSLinPlaneTests.swift	ExtElCS	-	Extrema_ExtElCS extrema between a line and an analytic surface
+Tests/OCCTAnalysisTests/ExtremaElCSLinSphereTests.swift	Tests/OCCTAnalysisTests/ExtElCS/ExtremaElCSLinSphereTests.swift	ExtElCS	-	Extrema_ExtElCS extrema between a line and an analytic surface
 Tests/OCCTAnalysisTests/ExtremaElSSPlanePlaneTests.swift	Tests/OCCTAnalysisTests/Extrema/ExtremaElSSPlanePlaneTests.swift	Extrema	-	Extrema_ExtElSS plane-plane extrema and its out-param guard
-Tests/OCCTAnalysisTests/ExtremaExtCCTests.swift	Tests/OCCTAnalysisTests/Extrema/ExtremaExtCCTests.swift	Extrema	-	Extrema_ExtCC/ExtCS/ExtPS/ExtSS/ExtPC/LocateExtCC extrema on general curves and surfaces
-Tests/OCCTAnalysisTests/ExtremaExtCSTests.swift	Tests/OCCTAnalysisTests/Extrema/ExtremaExtCSTests.swift	Extrema	-	Extrema_ExtCC/ExtCS/ExtPS/ExtSS/ExtPC/LocateExtCC extrema on general curves and surfaces
-Tests/OCCTAnalysisTests/ExtremaExtPElCCircTests.swift	Tests/OCCTAnalysisTests/Extrema/ExtremaExtPElCCircTests.swift	Extrema	-	Extrema_ExtPElC point to analytic curve
-Tests/OCCTAnalysisTests/ExtremaExtPElCElipsTests.swift	Tests/OCCTAnalysisTests/Extrema/ExtremaExtPElCElipsTests.swift	Extrema	-	Extrema_ExtPElC point to analytic curve
-Tests/OCCTAnalysisTests/ExtremaExtPElCLinTests.swift	Tests/OCCTAnalysisTests/Extrema/ExtremaExtPElCLinTests.swift	Extrema	-	Extrema_ExtPElC point to analytic curve
-Tests/OCCTAnalysisTests/ExtremaExtPElCParabTests.swift	Tests/OCCTAnalysisTests/Extrema/ExtremaExtPElCParabTests.swift	Extrema	#2679	Extrema_ExtPElC point to analytic curve
-Tests/OCCTAnalysisTests/ExtremaExtPElSConeTests.swift	Tests/OCCTAnalysisTests/Extrema/ExtremaExtPElSConeTests.swift	Extrema	-	Extrema_ExtPElS point to analytic surface
-Tests/OCCTAnalysisTests/ExtremaExtPElSCylTests.swift	Tests/OCCTAnalysisTests/Extrema/ExtremaExtPElSCylTests.swift	Extrema	#2679	Extrema_ExtPElS point to analytic surface
-Tests/OCCTAnalysisTests/ExtremaExtPElSPlaneTests.swift	Tests/OCCTAnalysisTests/Extrema/ExtremaExtPElSPlaneTests.swift	Extrema	-	Extrema_ExtPElS point to analytic surface
-Tests/OCCTAnalysisTests/ExtremaExtPElSSphereTests.swift	Tests/OCCTAnalysisTests/Extrema/ExtremaExtPElSSphereTests.swift	Extrema	#2679	Extrema_ExtPElS point to analytic surface
-Tests/OCCTAnalysisTests/ExtremaExtPElSTorusTests.swift	Tests/OCCTAnalysisTests/Extrema/ExtremaExtPElSTorusTests.swift	Extrema	#2679	Extrema_ExtPElS point to analytic surface
-Tests/OCCTAnalysisTests/ExtremaExtPSTests.swift	Tests/OCCTAnalysisTests/Extrema/ExtremaExtPSTests.swift	Extrema	-	Extrema_ExtCC/ExtCS/ExtPS/ExtSS/ExtPC/LocateExtCC extrema on general curves and surfaces
-Tests/OCCTAnalysisTests/ExtremaExtSSTests.swift	Tests/OCCTAnalysisTests/Extrema/ExtremaExtSSTests.swift	Extrema	-	Extrema_ExtCC/ExtCS/ExtPS/ExtSS/ExtPC/LocateExtCC extrema on general curves and surfaces
-Tests/OCCTAnalysisTests/ExtremaExtrasV112Tests.swift	Tests/OCCTAnalysisTests/Extrema/ExtremaExtrasV112Tests.swift	Extrema	-	Extrema_ExtCC/ExtCS/ExtPS/ExtSS/ExtPC/LocateExtCC extrema on general curves and surfaces
-Tests/OCCTAnalysisTests/ExtremaLocateExtCCTests.swift	Tests/OCCTAnalysisTests/Extrema/ExtremaLocateExtCCTests.swift	Extrema	-	Extrema_ExtCC/ExtCS/ExtPS/ExtSS/ExtPC/LocateExtCC extrema on general curves and surfaces
-Tests/OCCTAnalysisTests/ExtremaPCTests.swift	Tests/OCCTAnalysisTests/Extrema/ExtremaPCTests.swift	Extrema	#2683	Extrema_ExtCC/ExtCS/ExtPS/ExtSS/ExtPC/LocateExtCC extrema on general curves and surfaces
+Tests/OCCTAnalysisTests/ExtremaExtCCTests.swift	Tests/OCCTAnalysisTests/Extrema/ExtremaExtCCTests.swift	Extrema	-	Extrema_ExtCC/ExtCS/ExtPS/ExtPC/LocateExtCC extrema on general curves, surfaces and points
+Tests/OCCTAnalysisTests/ExtremaExtCSTests.swift	Tests/OCCTAnalysisTests/Extrema/ExtremaExtCSTests.swift	Extrema	-	Extrema_ExtCC/ExtCS/ExtPS/ExtPC/LocateExtCC extrema on general curves, surfaces and points
+Tests/OCCTAnalysisTests/ExtremaExtPElCCircTests.swift	Tests/OCCTAnalysisTests/ExtPElC/ExtremaExtPElCCircTests.swift	ExtPElC	-	Extrema_ExtPElC point to analytic curve
+Tests/OCCTAnalysisTests/ExtremaExtPElCElipsTests.swift	Tests/OCCTAnalysisTests/ExtPElC/ExtremaExtPElCElipsTests.swift	ExtPElC	-	Extrema_ExtPElC point to analytic curve
+Tests/OCCTAnalysisTests/ExtremaExtPElCLinTests.swift	Tests/OCCTAnalysisTests/ExtPElC/ExtremaExtPElCLinTests.swift	ExtPElC	-	Extrema_ExtPElC point to analytic curve
+Tests/OCCTAnalysisTests/ExtremaExtPElCParabTests.swift	Tests/OCCTAnalysisTests/ExtPElC/ExtremaExtPElCParabTests.swift	ExtPElC	#2679	Extrema_ExtPElC point to analytic curve
+Tests/OCCTAnalysisTests/ExtremaExtPElSConeTests.swift	Tests/OCCTAnalysisTests/ExtPElS/ExtremaExtPElSConeTests.swift	ExtPElS	-	Extrema_ExtPElS point to analytic surface
+Tests/OCCTAnalysisTests/ExtremaExtPElSCylTests.swift	Tests/OCCTAnalysisTests/ExtPElS/ExtremaExtPElSCylTests.swift	ExtPElS	#2679	Extrema_ExtPElS point to analytic surface
+Tests/OCCTAnalysisTests/ExtremaExtPElSPlaneTests.swift	Tests/OCCTAnalysisTests/ExtPElS/ExtremaExtPElSPlaneTests.swift	ExtPElS	-	Extrema_ExtPElS point to analytic surface
+Tests/OCCTAnalysisTests/ExtremaExtPElSSphereTests.swift	Tests/OCCTAnalysisTests/ExtPElS/ExtremaExtPElSSphereTests.swift	ExtPElS	#2679	Extrema_ExtPElS point to analytic surface
+Tests/OCCTAnalysisTests/ExtremaExtPElSTorusTests.swift	Tests/OCCTAnalysisTests/ExtPElS/ExtremaExtPElSTorusTests.swift	ExtPElS	#2679	Extrema_ExtPElS point to analytic surface
+Tests/OCCTAnalysisTests/ExtremaExtPSTests.swift	Tests/OCCTAnalysisTests/Extrema/ExtremaExtPSTests.swift	Extrema	-	Extrema_ExtCC/ExtCS/ExtPS/ExtPC/LocateExtCC extrema on general curves, surfaces and points
+Tests/OCCTAnalysisTests/ExtremaExtSSTests.swift	Tests/OCCTAnalysisTests/ExtSS/ExtremaExtSSTests.swift	ExtSS	-	Extrema_ExtSS and Surface.extrema/minDistance between two surfaces
+Tests/OCCTAnalysisTests/ExtremaExtrasV112Tests.swift	Tests/OCCTAnalysisTests/Extrema/ExtremaExtrasV112Tests.swift	Extrema	-	Extrema_ExtCC/ExtCS/ExtPS/ExtPC/LocateExtCC extrema on general curves, surfaces and points
+Tests/OCCTAnalysisTests/ExtremaLocateExtCCTests.swift	Tests/OCCTAnalysisTests/Extrema/ExtremaLocateExtCCTests.swift	Extrema	-	Extrema_ExtCC/ExtCS/ExtPS/ExtPC/LocateExtCC extrema on general curves, surfaces and points
+Tests/OCCTAnalysisTests/ExtremaPCTests.swift	Tests/OCCTAnalysisTests/Extrema/ExtremaPCTests.swift	Extrema	#2683	Extrema_ExtCC/ExtCS/ExtPS/ExtPC/LocateExtCC extrema on general curves, surfaces and points
 Tests/OCCTAnalysisTests/FaceSurfacePropertiesTests.swift	Tests/OCCTAnalysisTests/LocalProperties/FaceSurfacePropertiesTests.swift	LocalProperties	-	curvature, tangent and normal queries on curves, edges and faces
 Tests/OCCTAnalysisTests/Fast3DPolygonTests.swift	Tests/OCCTAnalysisTests/Fast3DPolygonTests.swift	(stays)	-	tests Wire.polygon3D, wire construction (Topology); cross-target, stays (issue filed)
 Tests/OCCTAnalysisTests/FreeBoundsPropsTests.swift	Tests/OCCTAnalysisTests/ShapeAnalysis/FreeBoundsPropsTests.swift	ShapeAnalysis	#2689	shape validity, free bounds, plane and canonical-form recognition, point classification and KD-tree queries
@@ -114,12 +114,12 @@ Tests/OCCTAnalysisTests/Issue1493MedialAxisDistanceOnArcTests.swift	Tests/OCCTAn
 Tests/OCCTAnalysisTests/Issue1511EllipseCurvatureExtremaTests.swift	Tests/OCCTAnalysisTests/LocalProperties/Issue1511EllipseCurvatureExtremaTests.swift	LocalProperties	-	curvature, tangent and normal queries on curves, edges and faces
 Tests/OCCTAnalysisTests/Issue1544DistanceSSDeflectionDefaultTests.swift	Tests/OCCTAnalysisTests/BRepExtrema/Issue1544DistanceSSDeflectionDefaultTests.swift	BRepExtrema	-	shape-to-shape and point-to-edge distance solutions (BRepExtrema_DistShapeShape)
 Tests/OCCTAnalysisTests/Issue1635ContapAnalyticGeometryTests.swift	Tests/OCCTAnalysisTests/Contap/Issue1635ContapAnalyticGeometryTests.swift	Contap	-	Contap contour (silhouette) of analytic surfaces
-Tests/OCCTAnalysisTests/Issue2840SurfaceExtremaParallelTests.swift	Tests/OCCTAnalysisTests/Extrema/Issue2840SurfaceExtremaParallelTests.swift	Extrema	-	Surface.extrema and minDistance, curve-curve and curve-surface distance, all via Extrema_Ext*
+Tests/OCCTAnalysisTests/Issue2840SurfaceExtremaParallelTests.swift	Tests/OCCTAnalysisTests/ExtSS/Issue2840SurfaceExtremaParallelTests.swift	ExtSS	-	Extrema_ExtSS and Surface.extrema/minDistance between two surfaces
 Tests/OCCTAnalysisTests/Issue2857IntfToolIndexGuardTests.swift	Tests/OCCTAnalysisTests/Intersection/Issue2857IntfToolIndexGuardTests.swift	Intersection	-	IntCS, IntCurvesFace, IntTools, Intf_Tool and GeomInt_IntSS intersections
-Tests/OCCTAnalysisTests/Issue2876ParallelSurfaceDistanceTests.swift	Tests/OCCTAnalysisTests/Extrema/Issue2876ParallelSurfaceDistanceTests.swift	Extrema	-	Surface.extrema and minDistance, curve-curve and curve-surface distance, all via Extrema_Ext*
+Tests/OCCTAnalysisTests/Issue2876ParallelSurfaceDistanceTests.swift	Tests/OCCTAnalysisTests/ExtSS/Issue2876ParallelSurfaceDistanceTests.swift	ExtSS	-	Extrema_ExtSS and Surface.extrema/minDistance between two surfaces
 Tests/OCCTAnalysisTests/Issue3074LinearPropertiesEllipseTests.swift	Tests/OCCTAnalysisTests/MassProperties/Issue3074LinearPropertiesEllipseTests.swift	MassProperties	-	GProp mass, centroid and inertia of shapes and elements
 Tests/OCCTAnalysisTests/Issue3091GPropsTests.swift	Tests/OCCTAnalysisTests/MassProperties/Issue3091GPropsTests.swift	MassProperties	-	GProp mass, centroid and inertia of shapes and elements
-Tests/OCCTAnalysisTests/Issue580PointEdgeExtremaTests.swift	Tests/OCCTAnalysisTests/BRepExtrema/Issue580PointEdgeExtremaTests.swift	BRepExtrema	-	shape-to-shape and point-to-edge distance solutions (BRepExtrema_DistShapeShape)
+Tests/OCCTAnalysisTests/Issue580PointEdgeExtremaTests.swift	Tests/OCCTAnalysisTests/ElementPairExtrema/Issue580PointEdgeExtremaTests.swift	ElementPairExtrema	-	BRepExtrema_ExtPC nearest point on an edge of a shape
 Tests/OCCTAnalysisTests/Issue595CurvatureDefinednessTests.swift	Tests/OCCTAnalysisTests/LocalProperties/Issue595CurvatureDefinednessTests.swift	LocalProperties	-	curvature, tangent and normal queries on curves, edges and faces
 Tests/OCCTAnalysisTests/Issue885TotalAreaDivergenceTests.swift	Tests/OCCTAnalysisTests/BRepGProp/Issue885TotalAreaDivergenceTests.swift	BRepGProp	-	BRepGProp Cinert/Sinert/Vinert and face domain, including the two total-area overloads
 Tests/OCCTAnalysisTests/Issue943BoundsVoidTests.swift	Tests/OCCTAnalysisTests/Bounding/Issue943BoundsVoidTests.swift	Bounding	-	Bnd and BndLib bounding volumes, ranges and sort boxes
@@ -148,7 +148,7 @@ Tests/OCCTAnalysisTests/ShapeDistanceTests.swift	Tests/OCCTAnalysisTests/BRepExt
 Tests/OCCTAnalysisTests/ShapeMeasurementsTests.swift	Tests/OCCTAnalysisTests/MassProperties/ShapeMeasurementsTests.swift	MassProperties	-	GProp mass, centroid and inertia of shapes and elements
 Tests/OCCTAnalysisTests/ShapeRayIntersectionTests.swift	Tests/OCCTAnalysisTests/Intersection/ShapeRayIntersectionTests.swift	Intersection	-	curve-surface, surface-surface, ray and polygon intersection through the Swift API
 Tests/OCCTAnalysisTests/SurfaceBoundingBoxTests.swift	Tests/OCCTAnalysisTests/Bounding/SurfaceBoundingBoxTests.swift	Bounding	-	Bnd and BndLib bounding volumes, ranges and sort boxes
-Tests/OCCTAnalysisTests/SurfaceExtremaTests.swift	Tests/OCCTAnalysisTests/Extrema/SurfaceExtremaTests.swift	Extrema	-	Surface.extrema and minDistance, curve-curve and curve-surface distance, all via Extrema_Ext*
+Tests/OCCTAnalysisTests/SurfaceExtremaTests.swift	Tests/OCCTAnalysisTests/ExtSS/SurfaceExtremaTests.swift	ExtSS	-	Extrema_ExtSS and Surface.extrema/minDistance between two surfaces
 Tests/OCCTAnalysisTests/SurfaceInertiaTests.swift	Tests/OCCTAnalysisTests/MassProperties/SurfaceInertiaTests.swift	MassProperties	-	GProp mass, centroid and inertia of shapes and elements
 Tests/OCCTAnalysisTests/SurfaceIntersectionTests.swift	Tests/OCCTAnalysisTests/Intersection/SurfaceIntersectionTests.swift	Intersection	-	curve-surface, surface-surface, ray and polygon intersection through the Swift API
 Tests/OCCTAnalysisTests/SurfaceSurfaceIntersectionTests.swift	Tests/OCCTAnalysisTests/Intersection/SurfaceSurfaceIntersectionTests.swift	Intersection	-	curve-surface, surface-surface, ray and polygon intersection through the Swift API
