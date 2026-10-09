@@ -1,28 +1,29 @@
-# same, with BRepOffsetAPI_MiddlePath.cxx.o in the copy replaced by the object built from the 45-patch tree (ar r, macOS arm64 only)
 ◇ Test run started.
-◇ Suite "Issue3105 middlePath answers nil where the kernel read past a path" started.
-◇ Test lShapedPrismAnswersNilWhereAPathIsAVertexAtTheFirstLevel() started.
+◇ Suite "Issue3105 middlePath answers a valid path or nil where the kernel read past a path" started.
+◇ Test hexagonalPrismSidesThatAreNotOppositeAnswerAPath() started.
+◇ Test uShapedPrismAnswersAPathForEveryPair() started.
 ◇ Test tubeCapAgainstTheBoreAnswersNil() started.
-◇ Test octahedronFacesAnswerNil() started.
-◇ Test hexagonalPrismSidesThatAreNotOppositeAnswerNil() started.
-✔ Test octahedronFacesAnswerNil() passed after 0.028 seconds.
-✔ Test tubeCapAgainstTheBoreAnswersNil() passed after 0.033 seconds.
-✔ Test lShapedPrismAnswersNilWhereAPathIsAVertexAtTheFirstLevel() passed after 0.035 seconds.
-✔ Test hexagonalPrismSidesThatAreNotOppositeAnswerNil() passed after 0.038 seconds.
-✔ Suite "Issue3105 middlePath answers nil where the kernel read past a path" passed after 0.039 seconds.
-✔ Test run with 4 tests in 1 suite passed after 0.039 seconds.
-exit status of swift test: 0
+◇ Test lShapedPrismAnswersAPathThroughTheCorner() started.
+◇ Test octahedronOppositeTrianglesAnswerNil() started.
+✔ Test octahedronOppositeTrianglesAnswerNil() passed after 0.010 seconds.
+✔ Test tubeCapAgainstTheBoreAnswersNil() passed after 0.011 seconds.
+✔ Test hexagonalPrismSidesThatAreNotOppositeAnswerAPath() passed after 0.023 seconds.
+✔ Test lShapedPrismAnswersAPathThroughTheCorner() passed after 0.024 seconds.
+✔ Test uShapedPrismAnswersAPathForEveryPair() passed after 0.045 seconds.
+✔ Suite "Issue3105 middlePath answers a valid path or nil where the kernel read past a path" passed after 0.045 seconds.
+✔ Test run with 5 tests in 1 suite passed after 0.045 seconds.
+exit status: 0
 
-# and Issue3098MiddlePathGuardTests against the same archive
+# Issue3098MiddlePathGuardTests, same archive
 ◇ Test run started.
-✔ Test anEdgeEndAnswersNil() passed after 0.008 seconds.
-✔ Test nullShapesAnswerNil() passed after 0.008 seconds.
-✔ Test sameWireTwiceAnswersNil() passed after 0.008 seconds.
-✔ Test sameFaceTwiceAnswersNil() passed after 0.008 seconds.
-✔ Test adjacentFacesAnswerNil() passed after 0.011 seconds.
-✔ Test oppositeWiresOfABoxStillGiveASpine() passed after 0.018 seconds.
-✔ Test cylinderCapsStillGiveASpine() passed after 0.018 seconds.
-✔ Test oppositeFacesOfABoxStillGiveASpine() passed after 0.019 seconds.
-✔ Test aTubeStillGivesItsAxis() passed after 0.027 seconds.
-✔ Suite "Issue3098 middlePath refuses the inputs that crash the kernel" passed after 0.027 seconds.
-✔ Test run with 9 tests in 1 suite passed after 0.027 seconds.
+✔ Test sameWireTwiceAnswersNil() passed after 0.001 seconds.
+✔ Test anEdgeEndAnswersNil() passed after 0.002 seconds.
+✔ Test adjacentFacesAnswerNil() passed after 0.001 seconds.
+✔ Test sameFaceTwiceAnswersNil() passed after 0.002 seconds.
+✔ Test nullShapesAnswerNil() passed after 0.001 seconds.
+✔ Test cylinderCapsStillGiveASpine() passed after 0.002 seconds.
+✔ Test oppositeWiresOfABoxStillGiveASpine() passed after 0.002 seconds.
+✔ Test oppositeFacesOfABoxStillGiveASpine() passed after 0.002 seconds.
+✔ Test aTubeStillGivesItsAxis() passed after 0.003 seconds.
+✔ Suite "Issue3098 middlePath refuses the inputs that crash the kernel" passed after 0.004 seconds.
+✔ Test run with 9 tests in 1 suite passed after 0.004 seconds.
