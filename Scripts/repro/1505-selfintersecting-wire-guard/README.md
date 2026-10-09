@@ -61,4 +61,4 @@ wire, an open wire, and a null shape all return `false` (no verdict) with no exc
 
 Shipped bridge-side in `Sources/OCCTBridge/src/OCCTBridge.mm`'s `occtHasSelfIntersectingWire`, no
 OCCT kernel patch needed. Regression coverage:
-`Tests/OCCTShapeHealingTests/Issue1505BareWireSelfIntersectionGuardTests.swift`.
+`Tests/OCCTShapeHealingTests/ShapeFix/Issue1505BareWireSelfIntersectionGuardTests.swift`.

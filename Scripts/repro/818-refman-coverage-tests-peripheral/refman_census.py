@@ -136,11 +136,11 @@ MANUAL_OVERRIDES: dict[str, tuple[set[str], str]] = {
         {"OCCTIOTests"},
         "used as a struct field (`struct OCCTMeshFaceIter { RWMesh_FaceIterator iter; };`), the "
         "same struct-field shape as Graphic3d_ZLayerSettings above. Real test: "
-        "Tests/OCCTIOTests/RWMeshFaceIteratorTests.swift.",
+        "Tests/OCCTIOTests/MeshFormats/RWMeshFaceIteratorTests.swift.",
     ),
     "RWMesh_VertexIterator": (
         {"OCCTIOTests"},
-        "same struct-field shape. Real test: Tests/OCCTIOTests/RWMeshVertexIteratorTests.swift.",
+        "same struct-field shape. Real test: Tests/OCCTIOTests/MeshFormats/RWMeshVertexIteratorTests.swift.",
     ),
     "Plate_FreeGtoCConstraint": (
         {"OCCTSurfaceTests"},

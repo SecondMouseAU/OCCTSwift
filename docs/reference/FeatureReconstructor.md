@@ -455,6 +455,8 @@ public struct Boolean: Sendable, Hashable, Codable {
 
 Both `leftID` and `rightID` must reference feature ids already registered in the named-shape registry. Union booleans run in the additive stage; subtract and intersect run in the subtractive stage. The result is registered under `id` if set.
 
+Both operands must hold a solid. When either is a bare shell or an empty compound (an `inputBody` that is a shell, addressed as `"@input"`), the boolean is recorded in `BuildResult.skipped` as `underDetermined` ("boolean left operand '...' has no solid", or `right`) and is not listed in `fulfilled`; it used to answer a solid-less compound and report success (#3174).
+
 ---
 
 #### `FeatureSpec.Boolean.op`
@@ -527,7 +529,7 @@ Processes `specs` in four fixed stages, iterating the full array once per stage:
 3. **Finishing**: fillet, chamfer.
 4. **Annotation**: thread (metadata only, no geometry).
 
-Within each stage, features are processed in array order. Failures append to `BuildResult.skipped` rather than aborting remaining specs. The first additive feature seeds `current`; subsequent additive features are unioned into it via `Shape.unionWithFullHistory` or `Shape.union`.
+Within each stage, features are processed in array order. Failures append to `BuildResult.skipped` rather than aborting remaining specs. The first additive feature seeds `current`; subsequent additive features are unioned into it via `Shape.unionWithFullHistory` or `Shape.union`. When both fail (an `inputBody` that is a bare shell, which a solid cannot be fused into), the feature is recorded in `skipped` as `occtFailure("boolean union failed")`, the body so far is kept, and the feature is not listed in `fulfilled` (#3174).
 
 - **Parameters:**
   - `specs`: ordered array of `FeatureSpec` values to dispatch.

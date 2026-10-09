@@ -184,3 +184,4 @@ Tests/OCCTModelingTests/VariableSectionSweepTests.swift	Tests/OCCTModelingTests/
 Tests/OCCTModelingTests/WedgeTests.swift	Tests/OCCTModelingTests/Construction/WedgeTests.swift	Construction	-	wedge primitive
 Tests/OCCTModelingTests/WireJoinOffsetTests.swift	Tests/OCCTModelingTests/Offsets/WireJoinOffsetTests.swift	Offsets	-	join wires and offset a wire
 Tests/OCCTModelingTests/FeatureReconstructorRevolveSolidTests.swift	Tests/OCCTModelingTests/FeatureReconstruction/FeatureReconstructorRevolveSolidTests.swift	FeatureReconstruction	-	FeatureReconstructor revolve builds a Solid and a hole cuts it (#3139)
+Tests/OCCTModelingTests/FeatureReconstructorSolidOperandTests.swift	Tests/OCCTModelingTests/FeatureReconstruction/FeatureReconstructorSolidOperandTests.swift	FeatureReconstruction	-	absorbAdditive union failure and applyBoolean solid operands (#3174)

@@ -97,7 +97,8 @@ struct FeatureReconstructorTests {
         // `absorbAdditive` and observing the three assertions below fail.
         // Since #3139 the revolve feature revolves a face and refuses a body with no
         // measurable volume, so this zero-area profile is now Skipped by `applyRevolve`
-        // before it reaches `absorbAdditive`; the assertions below still hold.
+        // before it reaches `absorbAdditive`; the assertions below still hold. The union-failure branch
+        // itself is covered by Issue3174ReconstructorSolidOperandTests (a bare-shell input body).
         let degenerate = FeatureSpec.Revolve(
             profilePoints2D: [SIMD2(0, 0), SIMD2(10, 0), SIMD2(5, 0)],
             axisOrigin: SIMD3(30, 0, 0),

@@ -244,6 +244,23 @@ public struct CircleProperties: Sendable, NativeHandleView {
 `Scripts/check-borrowed-handles.py` fails the build on any struct or enum in `Sources/OCCTSwift`
 that stores an `OCCT*Ref`, so a new view cannot reintroduce the borrow.
 
+### Reading a handle off a collection element or a temporary
+
+`handle` is a raw pointer, and the compiler does not tie it to the wrapper that owns it. When the
+owner is a collection element or a call result, an optimised build may release it once the
+`.handle` load is its last use, which is before the C call that receives the pointer runs (#3130).
+A debug build extends every lifetime to scope end, so the same code passes there. Hold the owner for
+the call instead:
+
+```swift no-typecheck: internal API, illustrative fragment
+edges[0].withHandle { OCCTEdgeSetSameParameter($0, false) }   // not OCCTEdgeSetSameParameter(edges[0].handle, false)
+```
+
+`withHandle` is on every `NativeHandleOwner` (`Shape`, `Edge`, `Wire`, `Face` and the three
+curve and surface parents), and `Scripts/check-borrowed-handle-temporaries.py` fails the build on a
+`.handle` read off a subscript or a call result. An owner bound to its own `let` is not affected.
+`Scripts/repro/3130-borrowed-handle/` reproduces and measures it.
+
 ### A release the bridge never handed out is refused
 
 A bridge release gives back a reference the matching create took. Giving back one it did not take

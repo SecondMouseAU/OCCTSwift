@@ -347,7 +347,7 @@ those five phantom rows reads **AT RISK**, since the same paragraph names `SIMD3
 and `Array` while explaining the rule.
 
 One row the script answers on its own is worth naming:
-`Tests/OCCTBRepGraphTests/Issue881PerpendicularBasisTests.swift:76`, the only site writing SIMD
+`Tests/OCCTBRepGraphTests/ConstructionEntities/Issue881PerpendicularBasisTests.swift:76`, the only site writing SIMD
 types out in full, element `(SIMD3<Double>, SIMD3<Double>, SIMD3<Double>)`, no reference-counted
 member, matching clean cell C.
 

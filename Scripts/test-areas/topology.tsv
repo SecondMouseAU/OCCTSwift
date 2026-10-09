@@ -142,3 +142,4 @@ Tests/OCCTTopologyTests/WireFixingTests.swift	Tests/OCCTTopologyTests/ShapeFix/W
 Tests/OCCTTopologyTests/WireFromEdgesTests.swift	Tests/OCCTTopologyTests/BRepLib/WireFromEdgesTests.swift	BRepLib	-	BRepLib_MakeWire wire from edges
 Tests/OCCTTopologyTests/WireOrderTests.swift	Tests/OCCTTopologyTests/Wires/WireOrderTests.swift	Wires	-	wire order status and gaps
 Tests/OCCTTopologyTests/WireTests.swift	Tests/OCCTTopologyTests/Wires/WireTests.swift	Wires	-	Wire factories: rectangle, polygon, arc, line, BSpline
+Tests/OCCTTopologyTests/Issue3130BorrowedHandleTests.swift	Tests/OCCTTopologyTests/TopoDS/Issue3130BorrowedHandleTests.swift	TopoDS	-	Shape, Edge and Face wrappers keep their owner alive across a bridge call (#3130)
