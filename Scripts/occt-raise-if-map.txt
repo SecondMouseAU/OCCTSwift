@@ -58,7 +58,7 @@
 # the stray check in docs/guides/building-occt.md's "Shipping a rebuild" answers it.
 #
 # occt-version: 8.0.1
-# derived against: 46 carried patch(es) in Scripts/patches/, every one of them verified
+# derived against: 47 carried patch(es) in Scripts/patches/, every one of them verified
 # derived against: applied in the tree the rows below were derived from.
 # patch: 0010-Intf_Interference-O1-tangent-zone-checkpoint-breaker-319 79fe529c26ef
 # patch: 0011-XCAFDoc_ShapeTool-AutoNamingScope-341 76898e2438a2
@@ -106,16 +106,17 @@
 # patch: 0057-GProp_SelGProps-GProp_VelGProps-cylinder-sphere-torus-inertia-3091 04a543f518b6
 # patch: 0058-BRepOffsetAPI_MiddlePath-Build-carries-a-vertex-path-forward-3105 3aa5e4f75495
 # patch: 0059-ChFi3d-Builder-fillets-that-meet-exactly-are-built-not-refused-3207 eb520b90a343
+# patch: 0060-BRepFilletAPI_MakeFillet-fillets-that-cross-or-run-out-of-face-3208 af222bc1dc63
 #
 # totals: inline-raise       462 site(s) in  104 class(es)
 # totals: outofline-raise    828 site(s) in  284 class(es)
 # totals: inline-throw       501 site(s) in  212 class(es)
 # totals: outofline-throw   3764 site(s) in  830 class(es)
-# totals: outofline-delegated  5947 site(s) in  924 class(es)
+# totals: outofline-delegated  5955 site(s) in  925 class(es)
 # totals: inherited-live    2587 site(s) in 2587 class(es)
-# totals: inline-dead-at-depth  9911 site(s) in  100 class(es)
+# totals: inline-dead-at-depth  9916 site(s) in  100 class(es)
 #
-# member attribution: 332 of 5041 row(s) carry at least one <file-scope> site, 265 name no member at all
+# member attribution: 332 of 5042 row(s) carry at least one <file-scope> site, 265 name no member at all
 #
 # packages examined: 404
 # packages: AIS,APIHeaderSection,Adaptor2d,Adaptor3d,AdvApp2Var,AdvApprox,AppBlend,AppCont,AppDef,AppParCurves,AppStd,AppStdL
@@ -464,6 +465,7 @@ BRepFill_TrimSurfaceTool outofline-delegated 1 Standard_ConstructionError,gp_Vec
 BRepFilletAPI_LocalOperation inherited-live 1 StdFail_NotDone BRepBuilderAPI_Command
 BRepFilletAPI_MakeChamfer inherited-live 1 StdFail_NotDone BRepBuilderAPI_Command
 BRepFilletAPI_MakeChamfer_Test outofline-delegated 1 Standard_ConstructionError,Standard_OutOfRange gp_Dir
+BRepFilletAPI_MakeFillet outofline-delegated 8 Standard_ConstructionError,Standard_OutOfRange,gp_VectorWithNullMagnitude gp_Dir,gp_Vec
 BRepFilletAPI_MakeFillet inherited-live 1 StdFail_NotDone BRepBuilderAPI_Command
 BRepFilletAPI_MakeFillet2d inherited-live 1 StdFail_NotDone BRepBuilderAPI_Command
 BRepFilletAPI_MakeFillet_Test outofline-delegated 7 Standard_ConstructionError,Standard_OutOfRange,gp_VectorWithNullMagnitude gp_Dir,gp_Vec
@@ -2906,10 +2908,10 @@ NCollection_HeapAllocator outofline-throw 1 Standard_OutOfMemory Allocate
 NCollection_IncAllocator inherited-live 1 Standard_ProgramError Standard_Transient
 NCollection_IndexedDataMap inline-raise 19 Standard_NoSuchObject,Standard_OutOfRange <file-scope>
 NCollection_IndexedDataMap inline-throw 3 Standard_DomainError,Standard_NoSuchObject <file-scope>
-NCollection_IndexedDataMap inline-dead-at-depth 190 Standard_NoSuchObject,Standard_OutOfRange +67-more,BOPAlgo,BRepFill,BRepOffset,LocOpe,TopOpeBRep,TopOpeBRepBuild,TopOpeBRepTool,Transfer
+NCollection_IndexedDataMap inline-dead-at-depth 191 Standard_NoSuchObject,Standard_OutOfRange +67-more,BOPAlgo,BRepFill,BRepOffset,LocOpe,TopOpeBRep,TopOpeBRepBuild,TopOpeBRepTool,Transfer
 NCollection_IndexedMap inline-raise 10 Standard_NoSuchObject,Standard_OutOfRange <file-scope>
 NCollection_IndexedMap inline-throw 1 Standard_DomainError <file-scope>
-NCollection_IndexedMap inline-dead-at-depth 251 Standard_NoSuchObject,Standard_OutOfRange +70-more,BOPAlgo,BRepOffset,BinMDataStd,BinMDataXtd,BinMXCAFDoc,TopOpeBRep,TopOpeBRepBuild,TopOpeBRepTool
+NCollection_IndexedMap inline-dead-at-depth 252 Standard_NoSuchObject,Standard_OutOfRange +70-more,BOPAlgo,BRepOffset,BinMDataStd,BinMDataXtd,BinMXCAFDoc,TopOpeBRep,TopOpeBRepBuild,TopOpeBRepTool
 NCollection_LinearVector inline-raise 13 Standard_OutOfMemory,Standard_OutOfRange <file-scope>
 NCollection_LinearVector inline-dead-at-depth 94 Standard_OutOfMemory,Standard_OutOfRange +18-more,BOPDS,BRepGraph,BRepGraphInc,BRepMesh,GeomFill,OpenGl,QABugs,RWGltf
 NCollection_List inline-raise 4 Standard_NoSuchObject <file-scope>
@@ -4677,7 +4679,7 @@ TopOpeBRep_vpr outofline-delegated 2 Standard_ConstructionError,Standard_OutOfRa
 TopOpeBRep_vprclo outofline-throw 1 Standard_Failure GetEdgeTrans
 TopTrans_SurfaceTransition_Test outofline-delegated 12 Standard_ConstructionError,Standard_OutOfRange gp_Dir
 TopoDS inline-raise 16 Standard_TypeMismatch <file-scope>
-TopoDS inline-dead-at-depth 600 Standard_TypeMismatch +97-more,BRepFill,LocOpe,PrsDim,ShapeFix,TopOpeBRep,TopOpeBRepBuild,TopOpeBRepDS,TopOpeBRepTool
+TopoDS inline-dead-at-depth 601 Standard_TypeMismatch +97-more,BRepFill,LocOpe,PrsDim,ShapeFix,TopOpeBRep,TopOpeBRepBuild,TopOpeBRepDS,TopOpeBRepTool
 TopoDSToStep_Builder outofline-raise 2 StdFail_NotDone TessellatedValue,Value
 TopoDSToStep_MakeBrepWithVoids outofline-raise 2 StdFail_NotDone TessellatedValue,Value
 TopoDSToStep_MakeFacetedBrep outofline-raise 2 StdFail_NotDone TessellatedValue,Value
@@ -5044,7 +5046,7 @@ gp_Cone inline-dead-at-depth 86 Standard_ConstructionError +39-more,Adaptor3d,BR
 gp_Cylinder inline-raise 2 Standard_ConstructionError <file-scope>
 gp_Cylinder inline-dead-at-depth 85 Standard_ConstructionError +39-more,Adaptor3d,BOPTools,ChFiKPart,Extrema,GeomAdaptor,IntAna,IntTools,ProjLib
 gp_Dir inline-raise 5 Standard_ConstructionError,Standard_OutOfRange Cross,CrossCross,SetCoord,gp_Dir
-gp_Dir inline-dead-at-depth 602 Standard_ConstructionError,Standard_OutOfRange +144-more,AIS,DsgPrs,Geom,GeomFill,GeomGridEval,IGESSolid,PrsDim,gp
+gp_Dir inline-dead-at-depth 603 Standard_ConstructionError,Standard_OutOfRange +144-more,AIS,DsgPrs,Geom,GeomFill,GeomGridEval,IGESSolid,PrsDim,gp
 gp_Dir2d inline-raise 3 Standard_ConstructionError,Standard_OutOfRange SetCoord,gp_Dir2d
 gp_Dir2d inline-dead-at-depth 313 Standard_ConstructionError,Standard_OutOfRange +81-more,ChFiKPart,Convert,GccAna,Geom2d,Geom2dGcc,ProjLib,TopOpeBRepTool,gp
 gp_Dir2d_Test outofline-delegated 1 Standard_ConstructionError,Standard_OutOfRange gp_Dir2d
@@ -5104,7 +5106,7 @@ gp_Trsf2d outofline-delegated 3 Standard_ConstructionError,Standard_OutOfRange g
 gp_Trsf2d inline-dead-at-depth 97 Standard_OutOfRange +16-more,Bisector,Convert,Geom2d,Geom2dEval,IGESToBRep,ShapeFix,gce,gp
 gp_Trsf_Test outofline-delegated 2 Standard_ConstructionError,Standard_OutOfRange gp_Dir
 gp_Vec inline-raise 4 Standard_ConstructionError,gp_VectorWithNullMagnitude <file-scope>,Angle,AngleWithRef,Normalized
-gp_Vec inline-dead-at-depth 736 Standard_ConstructionError,gp_VectorWithNullMagnitude +135-more,BRepBlend,BRepFill,BlendFunc,Geom,GeomEval,GeomFill,GeomGridEval,PrsDim
+gp_Vec inline-dead-at-depth 737 Standard_ConstructionError,gp_VectorWithNullMagnitude +135-more,BRepBlend,BRepFill,BlendFunc,Geom,GeomEval,GeomFill,GeomGridEval,PrsDim
 gp_Vec2d inline-raise 2 Standard_ConstructionError <file-scope>,Normalized
 gp_Vec2d inline-dead-at-depth 376 Standard_ConstructionError +97-more,BRepBlend,BlendFunc,Geom2d,Geom2dEval,Geom2dGcc,Geom2dGridEval,GeomFill,IntPatch
 gp_XY inline-raise 5 Standard_ConstructionError,Standard_OutOfRange <file-scope>,Normalize

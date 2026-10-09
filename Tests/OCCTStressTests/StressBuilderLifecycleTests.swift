@@ -79,9 +79,11 @@ struct StressFilletBuilderLifecycleTests {
         // Oversized radius should fail gracefully
         builder.addEdge(edges[0], radius: 100.0)
         let result = builder.build()
-        // BRepFilletAPI_MakeFillet is not done for r = 100 on a 10-wide box (the old check read
-        // the result into `_`).
-        #expect(result == nil)
+        // BRepFilletAPI_MakeFillet is not done for r = 100 on a 10-wide box on the pinned kernel
+        // (the old check read the result into `_`). Carried patch 0060 (#3208) builds it: both faces
+        // run out, so the arc passes through both far edges. Either answer is graceful; a shape that
+        // is not valid is not.
+        if let result { #expect(result.isValid) }
     }
 
     // A second Build() on the same BRepFilletAPI_MakeFillet is done but hands back the box

@@ -19,7 +19,7 @@ which is what nothing did while `0042` sat in the kernel and not in the map for 
 2026-08-03 retired ten patches, `0032`
 retired 2026-09-02 (superseded by upstream's own fix, not shipped in our pin), and `0035` retired
 2026-09-20 (it reintroduced #280; see its [Retired patches](#retired-patches) entry).
-The carried sequence now reads 0010–0012, 0014–0031, 0033–0034, 0036–0048, 0050–0059.
+The carried sequence now reads 0010–0012, 0014–0031, 0033–0034, 0036–0048, 0050–0060.
 The gaps are the retirements, not missing files:
 the numbers are cited across `CLAUDE.md`, `docs/`, closed issues and `Scripts/repro/`, and
 renumbering would have silently repointed every one of those citations at a different fix.
@@ -3576,6 +3576,19 @@ The change lets exactly that through: `ChFi3d_IsEndContact` (the caps only touch
 Known limits: `Modified()`/`Generated()` return the faces from before `FixStripFace`; a meeting exact only up to rounding noise (random rotations of the box) fails cleanly 18 times in 40; `BRepFilletAPI_MakeChamfer` at d = w/2 is still refused; `Generated` history for the removed top face reads as deleted.
 
 Measured against the `v4.0.0-kernel.5` asset with the three changed files override-linked (`Scripts/repro/fillet-exact-meeting-fix/README.md`): 715 box cases before and after, none regressed and none newly invalid; 16 `IsDone` false now valid with the analytic volume.
+
+## 0060-BRepFilletAPI_MakeFillet-fillets-that-cross-or-run-out-of-face-3208.patch
+
+**Fillets whose arcs cross, and fillets that run out of face, are built** ([#3208](https://github.com/SecondMouseAU/OCCTSwift/issues/3208), upstream [OCCT#1177](https://github.com/Open-Cascade-SAS/OCCT/issues/1177)), `src/ModelingAlgorithms/TKFillet/BRepFilletAPI/` in the pinned tree. **Candidate: no PR, nothing reported upstream, the behaviour is waiting on the maintainer's review of `Scripts/repro/fillet-pivot-edges/review/`.**
+
+On a 4 x 10 x 6 box, fillets on the two top edges with r1 + r2 > 4 give `IsDone() == false` (`PerformOneCorner` and `ChFi3d_StripeEdgeInter` refuse the crossing end caps and contact curves), and so does one fillet with r >= 4 (the contact line on the top face is outside the face: `ChFiDS_StartsolFailure`). The stripe builder only cuts a face with a stripe; crossing stripes need a surface-surface section in the data structure, and a fillet that runs out of face needs an edge as its second support. This patch does not add either. After `Compute()` fails, `BRepFilletAPI_MakeFillet::Build` tries two constructions, each checked for a valid closed solid that takes material away:
+
+- contours that share no vertex, all constant radius: the `BRepAlgoAPI_Common` of the shape filleted on each contour alone. Each arc is tangent to the wall it starts on and the arcs cross on the face between at an included angle below 180 degrees (the intersection of the rounded profiles; the closed forms are in `oracle.py`);
+- one straight edge between two planar rectangles at a right angle: the pivot rule. A face that runs out before the tangent point ends the arc at its far edge: the arc stays tangent to the other face and passes through that edge, or through both far edges when both run out. The shape is cut by the prism of the region between the arc and the faces, and the cut must remove exactly cross-section area times edge length.
+
+Between them: the contour result must remove at least the maximum and at most the sum of what each contour removes, and the builder is reset so that its faulty contours read zero. `Modified`, `Generated` and `IsDeleted` know nothing of the new faces. Contours that share a vertex, variable radius, curved or non-rectangular faces and concave edges decline as before. `ChFi3d_Builder` gains the inline accessor `InitialShape()`; `TKFillet` lists `TKPrim`.
+
+Measured against the `v4.0.0-kernel.5` asset with 0058, 0059 and the changed units override-linked (`Scripts/repro/fillet-pivot-edges/README.md`): 715 box cases before and after, 312 valid ones identical, 331 unchanged, 70 `IsDone` false now valid, none newly invalid; every new success valid, closed, tessellating, deterministic and within 1e-11 of the analytic volume.
 
 ## 0035-STEPControl-Writer-drop-per-transfer-init-1259.patch
 

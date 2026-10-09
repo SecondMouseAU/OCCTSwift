@@ -115,14 +115,15 @@ mistake the rest of this page is about.
 
 ### The xcframework
 
-`Scripts/patches/` holds forty-six patches, of which the pinned asset carries forty-four. **These
+`Scripts/patches/` holds forty-seven patches, of which the pinned asset carries forty-four. **These
 are the counts `CLAUDE.md` used to restate and no longer does** (#2954); both are derived from
 `Scripts/patches/` and `Package.swift` by `check-inventory-prose.py`, which fails the PR that lets
-this page and the tree disagree. The v4.0.0-kernel.5 asset `Package.swift` pins lacks two of them,
+this page and the tree disagree. The v4.0.0-kernel.5 asset `Package.swift` pins lacks three of them,
 per [Pinned kernel patch check](../policies/pinned-kernel-patch-check.md).
 
 | Unpinned now | What it leaves exposed |
 |---|---|
+| `0060-BRepFilletAPI_MakeFillet-fillets-that-cross-or-run-out-of-face-3208` | Nothing that crashes. Two fillets on opposite edges whose radii sum to more than the face between them (a 4 mm face, 3 and 3), and a single fillet at least as wide as its face (4 on a 4 mm face), answer `IsDone() == false` on the pinned kernel and `Shape.filleted` answers nil, where the patch builds a valid solid for a box (contours sharing no vertex, a straight edge between planar right-angle rectangles). Taking it also builds a radius far past the face (r = 100 on a 10 cube is a near-flat cut through both far edges), which `StressBuilderLifecycleTests.invalidInput` used to pin as nil ([OCCT#1177](https://github.com/Open-Cascade-SAS/OCCT/issues/1177), [#3208](https://github.com/SecondMouseAU/OCCTSwift/issues/3208)) |
 | `0059-ChFi3d-Builder-fillets-that-meet-exactly-are-built-not-refused-3207` | Nothing that crashes. Two fillets whose radii sum to the width of the face between them (a 4 mm face, 2 and 2) answer `IsDone() == false` on the pinned kernel, and `Shape.filleted` answers nil, where the patch builds a valid solid. A radius above half the width is refused with and without it ([OCCT#1177](https://github.com/Open-Cascade-SAS/OCCT/issues/1177), [#3207](https://github.com/SecondMouseAU/OCCTSwift/issues/3207)) |
 | `0058-BRepOffsetAPI_MiddlePath-Build-carries-a-vertex-path-forward-3105` | An uncatchable SIGSEGV in the pinned kernel for a pair of faces that share no vertex and are not a pipe's two ends, and a loop that never ends for a sweep that cannot reach the end section, which the bridge cannot refuse because no exact precondition on the input exists: the faults come from state that only exists while `Build()` runs its section loop (#3105). #3098's guard refuses the pairs that share a vertex. `OCC_CATCH_SIGNALS` is inert in this build, so no bridge catch reaches the signal. `Issue3105MiddlePathKernelTests` runs it in `kernel-integration.yml`, gated on `OCCTSWIFT_LOCAL=1`. Taking it also makes 81 more pairs answer a path (see the writeup) |
 
