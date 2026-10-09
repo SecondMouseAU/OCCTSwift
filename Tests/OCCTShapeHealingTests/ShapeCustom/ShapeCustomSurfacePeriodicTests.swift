@@ -11,7 +11,8 @@ struct ShapeCustomSurfacePeriodicTests {
         // #766: this discarded its answer. A cylindrical surface is already periodic, and the
         // kernel's ShapeCustom_Surface::ConvertToPeriodic returns null for it (probe
         // Scripts/repro/766-healing-construct-custom-extend), so the wrapper's nil is pinned.
-        let surf = try #require(Surface.cylinder(origin: SIMD3(0, 0, 0), axis: SIMD3(0, 0, 1), radius: 5))
+        let surf = try #require(
+            Surface.cylinder(origin: SIMD3(0, 0, 0), axis: SIMD3(0, 0, 1), radius: 5))
         #expect(surf.convertToPeriodic() == nil)
     }
 

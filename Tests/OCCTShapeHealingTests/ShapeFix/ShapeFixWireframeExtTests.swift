@@ -22,14 +22,16 @@ struct ShapeFixWireframeExtTests {
     }
 
     @Test func fixSmallEdgesDropMode() throws {
-        let fixed = try #require(try box().fixSmallEdges(tolerance: 1e-7, dropSmall: true, limitAngle: -1))
+        let fixed = try #require(
+            try box().fixSmallEdges(tolerance: 1e-7, dropSmall: true, limitAngle: -1))
         #expect(fixed.isValid)
         #expect(fixed.subShapes(ofType: .edge).count == 12)
         #expect(abs((fixed.volume ?? 0) - 1000) < 1e-9)
     }
 
     @Test func fixSmallEdgesMergeMode() throws {
-        let fixed = try #require(try box().fixSmallEdges(tolerance: 1e-7, dropSmall: false, limitAngle: 0.01))
+        let fixed = try #require(
+            try box().fixSmallEdges(tolerance: 1e-7, dropSmall: false, limitAngle: 0.01))
         #expect(fixed.isValid)
         #expect(fixed.subShapes(ofType: .edge).count == 12)
         #expect(abs((fixed.volume ?? 0) - 1000) < 1e-9)

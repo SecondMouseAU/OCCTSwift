@@ -22,7 +22,8 @@ struct ShapeFixingTests {
     func fixWithSelectiveModes() throws {
         let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let fixed = try #require(
-            box.fixed(tolerance: 0.001, fixSolid: false, fixShell: true, fixFace: true, fixWire: true))
+            box.fixed(
+                tolerance: 0.001, fixSolid: false, fixShell: true, fixFace: true, fixWire: true))
         #expect(fixed.isValid)
         #expect(abs((fixed.volume ?? 0) - 1000) < 1e-9)
     }

@@ -26,7 +26,8 @@ struct ShapeFixSmallSolidTests {
     func mergeSmallSolids() throws {
         // Kernel: at width factor 1.0 the thin slab is not merged; both solids remain, 1001 total.
         let big = try #require(Shape.box(width: 10, height: 10, depth: 10))
-        let tiny = try #require(Shape.box(origin: SIMD3(10, 0, 0), width: 0.01, height: 10, depth: 10))
+        let tiny = try #require(
+            Shape.box(origin: SIMD3(10, 0, 0), width: 0.01, height: 10, depth: 10))
         let compound = try #require(Shape.compound([big, tiny]))
         #expect(compound.solids.count == 2)
         let result = try #require(compound.mergeSmallSolids(widthFactorThreshold: 1.0))

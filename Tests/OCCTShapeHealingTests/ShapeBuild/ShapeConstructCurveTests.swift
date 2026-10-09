@@ -22,8 +22,10 @@ struct ShapeConstructCurveTests {
     @Test("convert 3D circle segment to BSpline")
     func convert3DCircle() throws {
         // Kernel: degree 7, from (5,0,0) to (-5,0,0) over [0, pi], midpoint (0, 4.999934, 0).
-        let circle = try #require(Curve3D.circle(center: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5))
-        let bsp = try #require(circle.convertSegmentToBSpline(first: 0, last: Double.pi, precision: 1e-3))
+        let circle = try #require(
+            Curve3D.circle(center: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5))
+        let bsp = try #require(
+            circle.convertSegmentToBSpline(first: 0, last: Double.pi, precision: 1e-3))
         #expect(bsp.curveType == 6)
         #expect(simd_distance(bsp.point(at: bsp.domain.lowerBound), SIMD3(5, 0, 0)) < 1e-9)
         #expect(simd_distance(bsp.point(at: bsp.domain.upperBound), SIMD3(-5, 0, 0)) < 1e-9)
