@@ -458,10 +458,9 @@ typedef enum
 //                                        OCCTBSplineApproxInterp* (that family keeps the C ABI of
 //                                        Approx_BSplineApproxInterp, removed in OCCT 8.0.0p1, and
 //                                        is backed by this class; see its section for the no-ops)
-// GeomAPI_PointsToBSplineSurface      → OCCTPointsToSurfaceBSpline, OCCTSurfaceNLPlateG0,
-//                                        OCCTSurfaceNLPlateG1, OCCTSurfaceNLPlateG2,
-//                                        OCCTSurfaceNLPlateG3, OCCTSurfaceNLPlateIncrementalG0
-//                                        (NOT OCCTSurfacePlateThrough; see GeomPlate)
+// GeomAPI_PointsToBSplineSurface      → OCCTPointsToSurfaceBSpline
+//                                        (NOT OCCTSurfacePlateThrough; see GeomPlate; the NLPlate
+//                                        entry points interpolate with BSplCLib instead, #3133)
 // GeomAPI_ProjectPointOnCurve         → OCCTCurve3DNearestParameter, OCCTExtremaLocateOnCurve,
 //                                       OCCTExtremaPointCurve, OCCTProjOnCurve*,
 //                                       OCCTEdgeProjectPoint, OCCTCurve3DProjectPoint,
