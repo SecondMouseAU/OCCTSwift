@@ -35,8 +35,9 @@ Every baseline (no switch) was green. A crash is named, not counted: `OCCTIntAna
 
 Not reddened after: Analysis `FaceSurfacePropertiesTests.faceAreaBox` (it pins `Face.area()` through
 `OCCTFaceGetArea`, which other test files call by its C name, so it cannot be shadowed). Drawing:
-the ten `DiameterDimension`, `LengthDimension` and `RadiusDimension` tests, which compute their
-geometry in Swift past any bridge function, so no switch here reaches them; their values are exact
-pins (read the files), which this harness cannot prove. Two tests share the function name
+the ten `DiameterDimension`, `LengthDimension` and `RadiusDimension` tests. They reach
+`OCCTDimension*` in `Annotation.swift`, which the name match in `derive-funcs.py` did not derive, so
+no switch was ever generated for them: unmeasured, not proven weak. Their assertions are exact pins
+(read the files). Two tests share the function name
 `createAndQuery()` (`BndOBBTests`, `BndSphereTests`) and Swift Testing prints no suite, so a hit
 counts for both.
