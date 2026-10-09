@@ -1,0 +1,5 @@
+Tests/OCCTCurveTests/Conversion/CompCurveTests.swift
+Tests/OCCTCurveTests/Conversion/ConvertCircleTests.swift
+Tests/OCCTCurveTests/Conversion/ConvertConicCurvesTests.swift
+Tests/OCCTCurveTests/Fitting/PointsToBSplineExpansionTests.swift
+Tests/OCCTCurveTests/Projection/ConicalProjectionTests.swift
