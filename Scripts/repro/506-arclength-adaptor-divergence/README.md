@@ -81,7 +81,7 @@ propagates, so it passes and says nothing about splines. Filed as #548.
 ## What was done with it
 
 All three orphans deleted, with tombstone comments naming the surviving function. The four divergent
-ranges are pinned by `Tests/OCCTCurveTests/Issue506ArcLengthBridgeContractTests.swift`, verified by
+ranges are pinned by `Tests/OCCTCurveTests/ArcLength/Issue506ArcLengthBridgeContractTests.swift`, verified by
 injection: restoring the pre-#408 wiring reproduces this probe's figures through the public Swift API
 (`0` against 173.76, 8489.78 against 360.99, 1.34 against 0), and rewiring `length(from:to:)` itself
 onto the pre-bounded form fails all four tests.

@@ -83,7 +83,7 @@ reach it is a shape with no face and nothing left to convert:
 - a single-edge shape whose curve is already a Bezier, which is exactly what one conversion of a
   line edge produces. In Swift: `Shape.fromEdge(box.edges().first { $0.curveType == .line }!)`,
   then `convertedToBezier` twice. The second call returned `nil` before the fix, which
-  `Tests/OCCTCurveTests/Issue2765ConvertToBezierTests.swift` asserts against.
+  `Tests/OCCTCurveTests/Conversion/Issue2765ConvertToBezierTests.swift` asserts against.
 - a single vertex.
 
 ## `siblings.mm`: the sweep, and the rule #2769 settled
