@@ -47,13 +47,16 @@ struct Issue211MeshParam {
 
         let fineA = try #require(withFlag.mesh(parameters: fine))
         let coarseA = try #require(withFlag.mesh(parameters: coarseAllowed))
-        #expect(fineA.triangleCount == 976)
-        #expect(coarseA.triangleCount == 306)
+        // Within 1 percent and not exact: the wasm build's libm meshes the fine sphere to 978.
+        #expect(abs(fineA.triangleCount - 976) <= 10, "fine \(fineA.triangleCount), expected ~976")
+        #expect(
+            abs(coarseA.triangleCount - 306) <= 3, "coarse \(coarseA.triangleCount), expected ~306")
 
         // Control: the same re-mesh without the flag keeps the finer triangulation.
         let fineB = try #require(withoutFlag.mesh(parameters: fine))
         let coarseB = try #require(withoutFlag.mesh(parameters: coarse))
-        #expect(fineB.triangleCount == 976)
-        #expect(coarseB.triangleCount == 976)
+        #expect(abs(fineB.triangleCount - 976) <= 10)
+        #expect(
+            coarseB.triangleCount == fineB.triangleCount, "without the flag the finer mesh stays")
     }
 }

@@ -56,8 +56,10 @@ struct Issue197MeshDeflectionTests {
             (try? FileManager.default.attributesOfItem(atPath: url.path))?[.size] as? Int ?? 0
         // Pinned, not `> 84`: a writer that emitted any triangles at all, at any deflection,
         // passed that. StlAPI_Writer on this sphere at 0.1 writes 976 triangles, 84 + 50 * 976
-        // bytes (Scripts/repro/766-mesh-issue197/transcript.txt); 1.0 would write 306.
-        #expect(size == 84 + 50 * 976)
+        // bytes (Scripts/repro/766-mesh-issue197/transcript.txt); 1.0 would write 306. Within 1
+        // percent and not exact: the wasm build's libm meshes the same sphere to 978 triangles.
+        let expected = 84 + 50 * 976
+        #expect(abs(size - expected) <= expected / 100, "STL size \(size), expected ~\(expected)")
     }
 
     // This asserted only `tri != nil`, so a bridge that ignored `deflection` passed it. Two fresh
@@ -71,7 +73,9 @@ struct Issue197MeshDeflectionTests {
         let coarse = try #require(
             CoherentTriangulation.createFromMesh(coarseShape, deflection: 0.2))
         let fine = try #require(CoherentTriangulation.createFromMesh(fineShape, deflection: 0.1))
-        #expect(coarse.triangleCount == 516)
-        #expect(fine.triangleCount == 976)
+        // Within 1 percent and not exact: the wasm build's libm gives 978 for the fine mesh.
+        #expect(
+            abs(coarse.triangleCount - 516) <= 5, "coarse \(coarse.triangleCount), expected ~516")
+        #expect(abs(fine.triangleCount - 976) <= 10, "fine \(fine.triangleCount), expected ~976")
     }
 }
