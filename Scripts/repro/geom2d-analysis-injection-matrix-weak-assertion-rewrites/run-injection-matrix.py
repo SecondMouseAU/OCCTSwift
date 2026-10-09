@@ -39,7 +39,7 @@ TEST_DECL = re.compile(
     r'@Test(?:\(\s*"((?:[^"\\]|\\.)*)"[^)]*\))?\s*(?:private\s+|fileprivate\s+)?func\s+(\w+)\s*\(')
 FAIL = re.compile(r'^✘ Test (?:"((?:[^"\\]|\\.)*)"|(\w+)\(\)) (?:recorded an issue|failed)', re.M)
 PASS = re.compile(r'^[✔━] Test (?:"((?:[^"\\]|\\.)*)"|(\w+)\(\)) passed', re.M)
-STRUCT = re.compile(r'^\s*(?:@Suite[^\n]*\n\s*)?(?:final\s+)?struct\s+(\w+)', re.M)
+STRUCT = re.compile(r'^\s*(?:@Suite(?:\([^)]*\))?\s*)?(?:final\s+)?struct\s+(\w+)', re.M)
 
 
 def tests_in(text):
