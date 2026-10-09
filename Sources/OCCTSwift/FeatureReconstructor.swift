@@ -181,6 +181,16 @@ public enum FeatureSpec: Sendable, Hashable, Codable {
         }
     }
 
+    /// A union, subtract or intersect between two named bodies.
+    ///
+    /// Both operands must hold a solid. An operand that does not (a bare shell, say, from an
+    /// `inputBody`) is recorded in ``FeatureReconstructor/BuildResult/skipped`` as
+    /// `underDetermined` and the feature is not reported fulfilled (#3174).
+    ///
+    /// ```swift
+    /// let merge = FeatureSpec.Boolean(op: .union, leftID: "block", rightID: "boss", id: "merged")
+    /// print(merge.op.rawValue)  // "union"
+    /// ```
     public struct Boolean: Sendable, Hashable, Codable {
         public enum Op: String, Sendable, Codable { case union, subtract, intersect }
         public var op: Op
@@ -488,6 +498,22 @@ public struct FeatureReconstructor: Sendable {
             recordSkip(
                 ctx: &ctx, id: b.id,
                 reason: .unresolvedRef("right id '\(b.rightID)' not found in registry"),
+                stage: stage)
+            return
+        }
+        // A boolean on a bare shell or an empty compound answers a solid-less compound and used to
+        // be reported as fulfilled, the silent no-op #3139 closed for `applyHole` (#3174).
+        guard left.subShapeCount(ofType: .solid) > 0 else {
+            recordSkip(
+                ctx: &ctx, id: b.id,
+                reason: .underDetermined("boolean left operand '\(b.leftID)' has no solid"),
+                stage: stage)
+            return
+        }
+        guard right.subShapeCount(ofType: .solid) > 0 else {
+            recordSkip(
+                ctx: &ctx, id: b.id,
+                reason: .underDetermined("boolean right operand '\(b.rightID)' has no solid"),
                 stage: stage)
             return
         }
