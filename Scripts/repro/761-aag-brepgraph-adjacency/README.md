@@ -160,7 +160,7 @@ counts (uncapped, `outEdges == nullptr`) or collects up to `maxEdges` (the exist
 `IsSame`) now cannot be applied to one call and not the other.
 
 Pinned with a dedicated test
-(`Tests/OCCTModelingTests/Issue761SharedEdgeCountCapTests.swift`,
+(`Tests/OCCTModelingTests/FeatureRecognition/Issue761SharedEdgeCountCapTests.swift`,
 `bridgeFunctionsShareOneComparison`) that calls both bridge functions directly on the same
 top/front pair: `OCCTFaceGetSharedEdgeCount` returns 12, `OCCTFaceGetSharedEdges` with
 `maxEdges: 10` returns 10, and `OCCTFaceGetSharedEdges` with `maxEdges: 12` returns all 12. The two

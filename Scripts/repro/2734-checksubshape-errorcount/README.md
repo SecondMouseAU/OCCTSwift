@@ -78,5 +78,5 @@ VERTEX could not be driven to a non-`NoError` status through the `Minimum()`-onl
 `checkSubShape` uses, in this OCCT build, despite reasonable effort; this is a property of what
 `BRepCheck_Edge`/`Vertex::Minimum()` check (largely nothing, without a context shape), not a
 limitation of the fix. The regression test in
-`Tests/OCCTTopologyTests/Issue2734CheckSubShapeErrorCountTests.swift` therefore covers `checkWire`
+`Tests/OCCTTopologyTests/Validity/Issue2734CheckSubShapeErrorCountTests.swift` therefore covers `checkWire`
 and `checkShell`.

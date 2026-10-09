@@ -49,7 +49,7 @@ was that the missing-tools setup made `IsDone()` false on *every* input regardle
 argument/tool/glue/fuzzy path the function is named for. The observable symptom a caller can hit is
 exactly `(g)` vs `(e)`: near-touching parts that should glue into one body come back as two
 unconnected solids in a compound, silently, because the caller's own `tolerance` argument was never
-applied. `Tests/OCCTModelingTests/GlueTests.swift`'s `glueAppliesTolerance` asserts `solidCount == 1`
+applied. `Tests/OCCTModelingTests/Booleans/GlueTests.swift`'s `glueAppliesTolerance` asserts `solidCount == 1`
 on this fixture and is red on the pre-fix bridge code (measured `solidCount == 2`, matching `(g)`)
 and green after the fix (measured `solidCount == 1`, matching `(e)`).
 

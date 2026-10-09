@@ -79,7 +79,7 @@ and it is not carried: there is no crash and no fabricated measurement behind it
 and a carried patch that *relaxes* a kernel check buys nothing a caller can use while diverging the
 pin. Held for the OCCT 8.0.2 survey under the same hold as patch `0043`.
 
-`Tests/OCCTGeom2dTests/Issue2875BezierPoleCeilingTests.swift` pins every number above through the
+`Tests/OCCTGeom2dTests/BSplineBezier/Issue2875BezierPoleCeilingTests.swift` pins every number above through the
 Swift API, so a kernel bump that moves either boundary fails a test rather than passing quietly.
 
 ## Case 7, added in review: the index range, where the 3D header is also wrong

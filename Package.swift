@@ -913,7 +913,7 @@ let wasmExcludedTestFiles: [String: [String]] = [
         "SerialLockThreadSafetyTests.swift",
     ],
     "OCCTMiscTests": ["ConstructionContextConcurrencyTests.swift"],
-    "OCCTModelingTests": ["Issue208SelfIntersectionTests.swift"],
+    "OCCTModelingTests": ["BOPAlgo/Issue208SelfIntersectionTests.swift"],
     "OCCTShapeHealingTests": ["Issue772SelfIntersectionAnalysisTests.swift"],
     // One concurrency file, plus the seven that read a `.brep` out of `Fixtures/` by `#filePath`.
     // `#filePath` is an absolute HOST path baked in at compile time, and the suites run against an

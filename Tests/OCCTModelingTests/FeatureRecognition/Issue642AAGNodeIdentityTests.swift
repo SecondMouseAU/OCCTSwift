@@ -219,7 +219,7 @@ struct Issue642AAGNodeIdentityTests {
     }
 
     /// #614's own vertical-cut fixture (the exact construction
-    /// `Tests/OCCTTopologyTests/Issue614FaceOrientationTests.swift` uses, reproduced locally since
+    /// `Tests/OCCTTopologyTests/Faces/Issue614FaceOrientationTests.swift` uses, reproduced locally since
     /// each domain test target is its own module) does not exercise this defect: the shared wall's
     /// normal is horizontal-axis, so it never touches `isHorizontal()`/`isUpward()`.
     ///
