@@ -12,7 +12,8 @@ struct BRepGraphOccurrenceTests {
         let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let graph = try #require(BRepGraph(shape: box))
         #expect(graph.occurrenceCount == 0)
-        _ = graph.linkProductToTopology(shapeRootKind: 0 /* Solid */, shapeRootIndex: 0)
+        // shapeRootKind 0 is Solid.
+        _ = graph.linkProductToTopology(shapeRootKind: 0, shapeRootIndex: 0)
         #expect(graph.occurrenceCount == 1)
     }
 }

@@ -11,7 +11,8 @@ import simd
 struct BRepGraphEdgeWiresCoEdgesTests {
     // Each box edge sits in the wires of its two faces.
     static let wires: [[Int]] = [
-        [0, 2], [0, 4], [0, 3], [0, 5], [1, 2], [1, 4], [1, 3], [1, 5], [2, 4], [2, 5], [3, 4], [3, 5],
+        [0, 2], [0, 4], [0, 3], [0, 5], [1, 2], [1, 4], [1, 3], [1, 5], [2, 4], [2, 5], [3, 4],
+        [3, 5],
     ]
     // ...and has one coedge in each.
     static let coedges: [[Int]] = [
@@ -40,7 +41,8 @@ struct BRepGraphEdgeWiresCoEdgesTests {
         // For each edge, the coedge on its first face is the first of its two coedges.
         let firstFaces = [0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 3, 3]
         for i in 0..<graph.edgeCount {
-            #expect(graph.edgeFindCoEdge(edgeIndex: i, faceIndex: firstFaces[i]) == Self.coedges[i][0])
+            #expect(
+                graph.edgeFindCoEdge(edgeIndex: i, faceIndex: firstFaces[i]) == Self.coedges[i][0])
         }
     }
 }

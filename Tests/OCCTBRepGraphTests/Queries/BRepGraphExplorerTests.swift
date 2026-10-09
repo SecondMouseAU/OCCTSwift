@@ -19,7 +19,8 @@ struct BRepGraphExplorerTests {
         let roots = graph.rootNodes
         #expect(roots.count == 1)
         let root = try #require(roots.first)
-        #expect(graph.childCount(rootKind: root.kind, rootIndex: root.index, targetKind: .face) == 6)
+        #expect(
+            graph.childCount(rootKind: root.kind, rootIndex: root.index, targetKind: .face) == 6)
     }
 
     @Test func parentExplorer() throws {

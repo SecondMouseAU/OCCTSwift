@@ -18,7 +18,8 @@ struct BRepGraphProductTests {
         #expect(graph.productCount == 0)
         #expect(graph.occurrenceCount == 0)
         #expect(graph.rootProductCount == 0)
-        let pid = graph.linkProductToTopology(shapeRootKind: 0 /* Solid */, shapeRootIndex: 0)
+        // shapeRootKind 0 is Solid.
+        let pid = graph.linkProductToTopology(shapeRootKind: 0, shapeRootIndex: 0)
         #expect(pid == 0)
         #expect(graph.productCount == 1)
         // The linked product is a part, not an assembly
@@ -35,7 +36,8 @@ struct BRepGraphProductTests {
         let graph = try #require(BRepGraph(shape: sphere))
         #expect(graph.productCount == 0)
         #expect(graph.occurrenceCount == 0)
-        _ = graph.linkProductToTopology(shapeRootKind: 0 /* Solid */, shapeRootIndex: 0)
+        // shapeRootKind 0 is Solid.
+        _ = graph.linkProductToTopology(shapeRootKind: 0, shapeRootIndex: 0)
         #expect(graph.productCount == 1)
         #expect(graph.productIsPart(0))
         // The removed `== 0` assumed a part has no components; the kernel's
@@ -49,7 +51,8 @@ struct BRepGraphProductTests {
         let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let graph = try #require(BRepGraph(shape: box))
         #expect(graph.rootProductIndices.isEmpty)
-        _ = graph.linkProductToTopology(shapeRootKind: 0 /* Solid */, shapeRootIndex: 0)
+        // shapeRootKind 0 is Solid.
+        _ = graph.linkProductToTopology(shapeRootKind: 0, shapeRootIndex: 0)
         let indices = graph.rootProductIndices
         #expect(indices == [0])
         #expect(indices.count == graph.rootProductCount)

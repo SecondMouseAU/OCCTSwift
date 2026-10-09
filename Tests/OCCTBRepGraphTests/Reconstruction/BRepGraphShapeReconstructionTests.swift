@@ -68,18 +68,20 @@ struct BRepGraphShapeReconstructionTests {
             0, 1, 0, 6,
             0, 0, 1, 7,
         ]
-        guard let linked = graph.linkProducts(
-            parentProductIndex: parentProduct,
-            referencedProductIndex: childProduct,
-            placement: translationMatrix)
+        guard
+            let linked = graph.linkProducts(
+                parentProductIndex: parentProduct,
+                referencedProductIndex: childProduct,
+                placement: translationMatrix)
         else {
             Issue.record("linkProducts nil")
             return
         }
-        
+
         // Reconstruct the occurrence shape - it should have the placement applied
         // Use occurrence DEFINITION index (linked.occurrenceIndex)
-        let occShape = try #require(graph.shape(nodeKind: .occurrence, nodeIndex: linked.occurrenceIndex))
+        let occShape = try #require(
+            graph.shape(nodeKind: .occurrence, nodeIndex: linked.occurrenceIndex))
         // The occurrence shape should be the box translated by (5, 6, 7)
         // Box originally spans -5..5, so translated box spans 0..10, 1..11, 2..12
         let bbox = try #require(occShape.boundingBox)
