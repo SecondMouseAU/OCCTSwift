@@ -1,4 +1,4 @@
-// Epic #766 kernel-parity probe for Tests/OCCTMathTests/GeomLibInterpolateTests.swift,
+// Epic #766 kernel-parity probe for Tests/OCCTMathTests/GeomLib/GeomLibInterpolateTests.swift,
 // GeomLibIsPlanarSurfaceTests.swift and GeomLibToolTests.swift. Same OCCT calls and inputs as
 // OCCTGeomLibInterpolate, OCCTGeomLibIsPlanarSurface, OCCTGeomLibPlanarSurfacePlane,
 // OCCTGeomLibToolParameter3D / Parameter2D / ParametersSurface (maxDist 1.0, tolerance 1e-7).

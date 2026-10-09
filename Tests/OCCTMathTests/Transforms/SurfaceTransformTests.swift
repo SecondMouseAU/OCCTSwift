@@ -33,7 +33,8 @@ struct SurfaceTransformTests {
         #expect(ok)
         // Probed (Scripts/repro/766-math-surface-transform): P(1, 1) turns from (1, 1, 0) to (1, cos 45, sin 45).
         let p = s.point(atU: 1, v: 1)
-        #expect(simd_distance(p, SIMD3<Double>(1, 0.70710678118654757, 0.70710678118654746)) < 1e-12)
+        #expect(
+            simd_distance(p, SIMD3<Double>(1, 0.70710678118654757, 0.70710678118654746)) < 1e-12)
     }
 
     @Test("Scale surface")
