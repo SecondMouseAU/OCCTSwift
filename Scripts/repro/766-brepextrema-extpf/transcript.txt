@@ -1,0 +1,12 @@
+pointFaceDistance point=(5, 5, 15) face[0] IsDone=1 NbExt=0
+pointFaceDistance point=(5, 5, 15) face[1] IsDone=1 NbExt=0
+pointFaceDistance point=(5, 5, 15) face[2] IsDone=1 NbExt=0
+pointFaceDistance point=(5, 5, 15) face[3] IsDone=1 NbExt=0
+pointFaceDistance point=(5, 5, 15) face[4] IsDone=1 NbExt=1 distance=20 point=(5, 5, -5) uv=(10, 10)
+pointFaceDistance point=(5, 5, 15) face[5] IsDone=1 NbExt=1 distance=10 point=(5, 5, 5) uv=(10, 10)
+pointFaceDistance point=(0, 0, 15) face[0] IsDone=1 NbExt=0
+pointFaceDistance point=(0, 0, 15) face[1] IsDone=1 NbExt=0
+pointFaceDistance point=(0, 0, 15) face[2] IsDone=1 NbExt=0
+pointFaceDistance point=(0, 0, 15) face[3] IsDone=1 NbExt=0
+pointFaceDistance point=(0, 0, 15) face[4] IsDone=1 NbExt=1 distance=20 point=(0, 0, -5) uv=(5, 5)
+pointFaceDistance point=(0, 0, 15) face[5] IsDone=1 NbExt=1 distance=10 point=(0, 0, 5) uv=(5, 5)
