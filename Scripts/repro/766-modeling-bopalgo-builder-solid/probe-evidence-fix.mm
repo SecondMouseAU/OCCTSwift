@@ -1,4 +1,4 @@
-// Epic #766 evidence fix, Tests/OCCTModelingTests/BOPAlgoBuilderSolidTests.swift.
+// Epic #766 evidence fix, Tests/OCCTModelingTests/BOPAlgo/BOPAlgoBuilderSolidTests.swift.
 // probe.mm printed the first solid's volume at %.10g. This probe repeats the same bridge call
 // (OCCTBOPAlgoBuilderSolid: BOPAlgo_BuilderSolid with SetShapes(faces), Perform, Areas(); nothing on
 // HasErrors()) on the six distinct faces of Shape.box(10, 10, 10), centred at the origin, at %.17g.

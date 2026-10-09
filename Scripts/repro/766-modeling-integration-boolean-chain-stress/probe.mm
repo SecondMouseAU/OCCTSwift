@@ -1,4 +1,4 @@
-// Epic #766, Tests/OCCTModelingTests/IntegrationBooleanChainStressTests.swift: kernel parity for
+// Epic #766, Tests/OCCTModelingTests/Booleans/IntegrationBooleanChainStressTests.swift: kernel parity for
 // its one test. Shape.subtracting is OCCTShapeSubtractEx -> BRepAlgoAPI_Cut; twenty r=5 spheres on a
 // radius-30 ring at z=0 are cut in turn from a 100 mm box centred at the origin. Validity is
 // BRepCheck_Analyzer (OCCTShapeIsValid), volume BRepGProp::VolumeProperties.

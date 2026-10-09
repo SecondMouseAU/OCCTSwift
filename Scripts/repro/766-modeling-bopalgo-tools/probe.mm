@@ -1,4 +1,4 @@
-// Epic #766, Tests/OCCTModelingTests/BOPAlgoToolsTests.swift: kernel parity for both tests.
+// Epic #766, Tests/OCCTModelingTests/BOPAlgo/BOPAlgoToolsTests.swift: kernel parity for both tests.
 // OCCTBOPAlgoEdgesToWires: BOPAlgo_Tools::EdgesToWires(compound, result, false, 1e-7), status 0 = ok.
 // OCCTBOPAlgoWiresToFaces: BOPAlgo_Tools::WiresToFaces(wires, result, 1e-7).
 #include <BOPAlgo_Tools.hxx>

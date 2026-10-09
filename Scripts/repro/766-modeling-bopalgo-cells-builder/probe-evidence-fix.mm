@@ -1,4 +1,4 @@
-// Epic #766 evidence fix, Tests/OCCTModelingTests/BOPAlgoCellsBuilderTests.swift.
+// Epic #766 evidence fix, Tests/OCCTModelingTests/BOPAlgo/BOPAlgoCellsBuilderTests.swift.
 // probe.mm printed the volumes at %.10g. This probe repeats the same bridge calls (OCCTCellsBuilderCreate:
 // BOPAlgo_CellsBuilder, AddArgument per shape, Perform, nothing on HasErrors(); AddAllToResult(material, true);
 // RemoveAllFromResult; AddToResult(take, avoid, material, false); RemoveInternalBoundaries; Shape()) at %.17g.

@@ -1,4 +1,4 @@
-// Epic #766 evidence fix, Tests/OCCTModelingTests/BOPAlgoBuilderFaceTests.swift.
+// Epic #766 evidence fix, Tests/OCCTModelingTests/BOPAlgo/BOPAlgoBuilderFaceTests.swift.
 // probe.mm printed the total area at %.10g. This probe repeats the same bridge call (OCCTBOPAlgoBuilderFace:
 // BOPAlgo_BuilderFace with SetFace, SetShapes(the face's own edges), Perform, Areas(); nothing on
 // HasErrors()) on BRepBuilderAPI_MakeFace(Geom_Plane z=0, -5..5, -5..5, 1e-6) at %.17g. The area of each
