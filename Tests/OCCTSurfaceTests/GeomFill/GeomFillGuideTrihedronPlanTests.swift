@@ -6,26 +6,21 @@ import simd
 @Suite("GeomFill_GuideTrihedronPlan")
 struct GeomFillGuideTrihedronPlanTests {
     @Test("create and evaluate")
-    func createAndEvaluate() {
-        if let guide = Curve3D.line(through: SIMD3(0, 5, 0), direction: SIMD3(1, 0, 0)),
-            let guideTrimmed = guide.trimmed(from: 0, to: 10)
-        {
-            let triPlan = GuideTrihedronPlan.create(guideCurve: guideTrimmed)
-            if let path = Curve3D.line(through: SIMD3(0, 0, 0), direction: SIMD3(1, 0, 0)),
-                let pathTrimmed = path.trimmed(from: 0, to: 10)
-            {
-                triPlan.setCurve(pathTrimmed)
-                let frame = triPlan.evaluate(at: 5.0)
-                #expect(frame != nil)
-                // #766: `!= nil` only. GeomFill_GuideTrihedronPlan at 5 gives T (1, 0, 0),
-                // N (0, 1, 0), B (0, 0, 1), see Scripts/repro/766-geomfill-c/.
-                if let frame {
-                    #expect(simd_length(frame.tangent - SIMD3(1, 0, 0)) < 1e-9)
-                    #expect(simd_length(frame.normal - SIMD3(0, 1, 0)) < 1e-9)
-                    #expect(simd_length(frame.binormal - SIMD3(0, 0, 1)) < 1e-9)
-                }
-            }
-        }
+    func createAndEvaluate() throws {
+        let guide = try #require(Curve3D.line(through: SIMD3(0, 5, 0), direction: SIMD3(1, 0, 0)))
+        let guideTrimmed = try #require(guide.trimmed(from: 0, to: 10))
+        let path = try #require(Curve3D.line(through: SIMD3(0, 0, 0), direction: SIMD3(1, 0, 0)))
+        let pathTrimmed = try #require(path.trimmed(from: 0, to: 10))
+        let triPlan = GuideTrihedronPlan.create(guideCurve: guideTrimmed)
+        // #766: the verdict of `setCurve` was discarded, so a law that refused its path still
+        // passed through the `evaluate` below only when the kernel happened to answer.
+        #expect(triPlan.setCurve(pathTrimmed))
+        // #766: `!= nil` only. GeomFill_GuideTrihedronPlan at 5 gives T (1, 0, 0),
+        // N (0, 1, 0), B (0, 0, 1), see Scripts/repro/766-geomfill-c/.
+        let frame = try #require(triPlan.evaluate(at: 5.0))
+        #expect(simd_length(frame.tangent - SIMD3(1, 0, 0)) < 1e-9)
+        #expect(simd_length(frame.normal - SIMD3(0, 1, 0)) < 1e-9)
+        #expect(simd_length(frame.binormal - SIMD3(0, 0, 1)) < 1e-9)
     }
 
     /// `createAndEvaluate()` above only checks non-nil, so it could not catch a pairwise swap

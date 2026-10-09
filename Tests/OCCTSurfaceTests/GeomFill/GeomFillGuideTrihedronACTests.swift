@@ -28,26 +28,19 @@ struct GeomFillGuideTrihedronACTests {
     }
 
     @Test("D0 evaluation")
-    func d0Evaluation() {
-        if let guide = Curve3D.line(through: SIMD3(0, 5, 0), direction: SIMD3(1, 0, 0)),
-            let guideTrimmed = guide.trimmed(from: 0, to: 10)
-        {
-            let triAC = GuideTrihedronAC.create(guideCurve: guideTrimmed)
-            if let path = Curve3D.line(through: SIMD3(0, 0, 0), direction: SIMD3(1, 0, 0)),
-                let pathTrimmed = path.trimmed(from: 0, to: 10)
-            {
-                triAC.setCurve(pathTrimmed)
-                // #766: `|t.x| > 0.3` inside `if let` never read N or B; pinned to the kernel
-                // frame, see Scripts/repro/766-geomfill-c/.
-                let frame = triAC.evaluate(at: 5.0)
-                #expect(frame != nil)
-                if let frame {
-                    #expect(abs(frame.tangent.x) > 0.3)
-                    #expect(simd_length(frame.normal - SIMD3(0, 1, 0)) < 1e-9)
-                    #expect(simd_length(frame.binormal - SIMD3(0, 0, 1)) < 1e-9)
-                }
-            }
-        }
+    func d0Evaluation() throws {
+        let guide = try #require(Curve3D.line(through: SIMD3(0, 5, 0), direction: SIMD3(1, 0, 0)))
+        let guideTrimmed = try #require(guide.trimmed(from: 0, to: 10))
+        let path = try #require(Curve3D.line(through: SIMD3(0, 0, 0), direction: SIMD3(1, 0, 0)))
+        let pathTrimmed = try #require(path.trimmed(from: 0, to: 10))
+        let triAC = GuideTrihedronAC.create(guideCurve: guideTrimmed)
+        #expect(triAC.setCurve(pathTrimmed))
+        // #766: `|t.x| > 0.3` inside `if let` never read N or B, and 0.3 passes a tangent that is
+        // 70 percent wrong; pinned to the kernel frame, see Scripts/repro/766-geomfill-c/.
+        let frame = try #require(triAC.evaluate(at: 5.0))
+        #expect(simd_length(frame.tangent - SIMD3(1, 0, 0)) < 1e-9)
+        #expect(simd_length(frame.normal - SIMD3(0, 1, 0)) < 1e-9)
+        #expect(simd_length(frame.binormal - SIMD3(0, 0, 1)) < 1e-9)
     }
 
     /// evaluate(at:)'s three components are only distinguished by the labels
