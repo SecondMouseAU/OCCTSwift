@@ -623,6 +623,21 @@ static void occtNLPlateInterpolate(const std::vector<double>&  params,
   }
 }
 
+// How many lattice nodes per direction a requested tolerance buys. A cubic interpolant's error
+// falls as h^4, so the node count grows as tolerance^(-1/4): 20 at 0.1 (the lattice this code
+// always used), 36 at 1e-2, 63 at 1e-3. Bounded to [12, 80] so a tolerance of 0 or of 1e-12
+// neither starves the interpolation nor asks for a million evaluations.
+//
+// This replaces GeomAPI_PointsToBSplineSurface's tolerance, which only bounded the distance from
+// the 20 x 20 samples to the fit and so said nothing about the plate between them (#1046).
+static int occtNLPlateLatticeSize(double tolerance)
+{
+  if (!(tolerance > 0.0) || !std::isfinite(tolerance))
+    tolerance = 1e-3;
+  const double n = 20.0 * std::pow(0.1 / tolerance, 0.25);
+  return std::max(12, std::min(80, static_cast<int>(std::lround(n))));
+}
+
 // Sample the solved plate over the working domain and interpolate it as a cubic BSpline.
 //
 // NLPlate_NLPlate::Evaluate returns the absolute deformed point, not a displacement.
@@ -649,6 +664,8 @@ static void occtNLPlateInterpolate(const std::vector<double>&  params,
 //     is dragged by them everywhere, including at the constraint; an interpolant that holds the
 //     constraint parameters as nodes is exact there whatever the neighbours do.
 //
+// `tolerance` sets the lattice density (occtNLPlateLatticeSize), not a fit bound.
+//
 // The derivative targets of G1/G2/G3 constraints are met by the solver but are not reproduced by
 // the interpolant, whose derivative at a node depends on the (possibly extreme) neighbouring
 // samples. A non-finite sample refuses (returns nullptr) rather than building a surface from it.
@@ -656,9 +673,10 @@ static OCCTSurfaceRef occtNLPlateFitSolved(const NLPlate_NLPlate&          solve
                                            const OCCTNLPlateWorkingDomain& domain,
                                            const double*                   constraints,
                                            int32_t                         constraintCount,
-                                           int32_t                         stride)
+                                           int32_t                         stride,
+                                           double                          tolerance)
 {
-  const int base = 20;
+  const int base = occtNLPlateLatticeSize(tolerance);
 
   const std::vector<double> us =
     occtNLPlateSampleNodes(domain.u1, domain.u2, base, constraints, constraintCount, stride, 0);
@@ -684,6 +702,18 @@ static OCCTSurfaceRef occtNLPlateFitSolved(const NLPlate_NLPlate&          solve
   contactU.Init(0);
   contactV.Init(0);
 
+  // The largest displacement from the undeformed surface the samples may carry: a thousand times
+  // the largest displacement the caller asked for (at least 1 unit). Reached only where the plate
+  // is numerically meaningless; see the second finding above.
+  double limit = 1.0;
+  for (int32_t i = 0; i < constraintCount; i++)
+  {
+    const double* c = constraints + i * stride;
+    const gp_Pnt  b = domain.surface->Value(c[0], c[1]);
+    limit           = std::max(limit, gp_Vec(b, gp_Pnt(c[2], c[3], c[4])).Magnitude());
+  }
+  limit *= 1000.0;
+
   TColgp_Array2OfPnt poles(1, nu, 1, nv);
   for (int iu = 1; iu <= nu; iu++)
   {
@@ -692,7 +722,15 @@ static OCCTSurfaceRef occtNLPlateFitSolved(const NLPlate_NLPlate&          solve
       const gp_XYZ val = solver.Evaluate(gp_XY(us[iu - 1], vs[iv - 1]));
       if (!std::isfinite(val.X()) || !std::isfinite(val.Y()) || !std::isfinite(val.Z()))
         return nullptr;
-      poles(iu, iv) = gp_Pnt(val.X(), val.Y(), val.Z());
+      // Keep a sample within `limit` of the undeformed surface. The plate's values far from its
+      // constraints can reach 1e50, and an interpolant built from them loses the exact value at
+      // a constraint node to cancellation (the poles alternate in sign at that scale).
+      const gp_Pnt base3 = domain.surface->Value(us[iu - 1], vs[iv - 1]);
+      gp_Vec       dev(base3, gp_Pnt(val.X(), val.Y(), val.Z()));
+      const double mag = dev.Magnitude();
+      if (mag > limit)
+        dev.Multiply(limit / mag);
+      poles(iu, iv) = base3.Translated(dev);
     }
   }
 
@@ -812,8 +850,7 @@ OCCTSurfaceRef OCCTSurfaceNLPlateG0(OCCTSurfaceRef initialSurface,
     if (!solver.IsDone())
       return nullptr;
 
-    (void)tolerance;
-    return occtNLPlateFitSolved(solver, domain, constraints, constraintCount, 5);
+    return occtNLPlateFitSolved(solver, domain, constraints, constraintCount, 5, tolerance);
   }
   catch (...)
   {
@@ -862,8 +899,7 @@ OCCTSurfaceRef OCCTSurfaceNLPlateG1(OCCTSurfaceRef initialSurface,
     if (!solver.IsDone())
       return nullptr;
 
-    (void)tolerance;
-    return occtNLPlateFitSolved(solver, domain, constraints, constraintCount, 11);
+    return occtNLPlateFitSolved(solver, domain, constraints, constraintCount, 11, tolerance);
   }
   catch (...)
   {
@@ -1094,8 +1130,12 @@ OCCTSurfaceRef OCCTSurfaceNLPlateG2(OCCTSurfaceRef initialSurface,
     if (!solver.IsDone())
       return nullptr;
 
-    (void)tolerance;
-    return occtNLPlateFitSolved(solver, domain, constraints, constraintCount, 20);
+    return occtNLPlateFitSolved(solver,
+                                domain,
+                                constraints,
+                                constraintCount,
+                                20,
+                                tolerance > 0 ? tolerance : 1e-3);
   }
   catch (...)
   {
@@ -1149,8 +1189,12 @@ OCCTSurfaceRef OCCTSurfaceNLPlateG3(OCCTSurfaceRef initialSurface,
     if (!solver.IsDone())
       return nullptr;
 
-    (void)tolerance;
-    return occtNLPlateFitSolved(solver, domain, constraints, constraintCount, 32);
+    return occtNLPlateFitSolved(solver,
+                                domain,
+                                constraints,
+                                constraintCount,
+                                32,
+                                tolerance > 0 ? tolerance : 1e-3);
   }
   catch (...)
   {
@@ -1191,7 +1235,7 @@ OCCTSurfaceRef OCCTSurfaceNLPlateIncrementalG0(OCCTSurfaceRef initialSurface,
     if (!solver.IsDone())
       return nullptr;
 
-    return occtNLPlateFitSolved(solver, domain, constraints, constraintCount, 5);
+    return occtNLPlateFitSolved(solver, domain, constraints, constraintCount, 5, 1e-3);
   }
   catch (...)
   {
