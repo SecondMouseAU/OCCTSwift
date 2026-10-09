@@ -33,6 +33,9 @@ public final class ChamferBuilder: @unchecked Sendable {
     }
 
     /// Build the chamfered result.
+    ///
+    /// Answers nil when the builder is not done, and also when it is done but the result is
+    /// `BRepCheck`-invalid (#3200).
     public func build() -> Shape? {
         guard let ref = OCCTChamferBuilderBuild(handle) else { return nil }
         return Shape(handle: ref)
