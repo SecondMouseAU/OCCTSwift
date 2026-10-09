@@ -54,7 +54,7 @@ struct Issue3130BorrowedHandleTests {
     func ownerOutlivesBody() throws {
         let b = try #require(Self.box())
         var edges: [Edge]? = b.edges()
-        weak var weakEdge = edges?.first
+        weak let weakEdge = edges?.first
         let aliveInside = try #require(edges?.first).withHandle { handle -> Bool in
             edges = nil
             return weakEdge != nil && OCCTEdgeGetLength(handle) > 0
