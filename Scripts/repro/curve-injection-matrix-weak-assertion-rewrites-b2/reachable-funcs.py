@@ -46,4 +46,11 @@ for f, t in src.items():
         if re.search(r"\b(?:struct|class|enum|extension)\s+%s\b" % re.escape(ty), t):
             for m in re.finditer(r"\binit[?!]?\s*\(", t):
                 found |= set(re.findall(r"\b(OCCT\w+)\s*\(", body(t, m.end())))
-print("\n".join(sorted(found)))
+# A test file that imports OCCTBridge and calls a symbol itself sees the shadow and the import as equally
+# visible: "ambiguous use of". Those symbols cannot be shadowed (injection-sweep-mechanics.md).
+direct = set()
+for f in glob.glob("Tests/**/*.swift", recursive=True):
+    t = open(f).read()
+    if re.search(r"^import OCCTBridge", t, re.M):
+        direct |= set(re.findall(r"\b(OCCT\w+)\b", t))
+print("\n".join(sorted(found - direct)))

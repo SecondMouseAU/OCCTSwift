@@ -56,6 +56,8 @@ def load_headers():
                 if not mm:
                     continue
                 for name in mm.group(2).split(","):
+                    if "[" in name:  # a fixed-size array imports as a tuple, which cannot be indexed
+                        continue
                     fields.append((mm.group(1), name.strip()))
             structs[m.group(2)] = fields
         for m in re.finditer(r"typedef enum[^{]*\{[^}]*\}\s*(\w+)\s*;", t):
@@ -91,9 +93,16 @@ def swift_type(txt):
     b = swift_scalar(base)
     if stars == 0:
         if is_ref(base):
-            return b if nonnull else b + "?"
+            if nonnull:
+                return b
+            # an unannotated reference imports as an implicitly unwrapped optional, which call sites
+            # rely on (`Shape(handle: OCCTShapeFromWire(w))`), so the shadow must be one too
+            return b + "?" if "_Nullable" in txt else b + "!"
         return b
     if stars == 1:
+        if is_ref(base):
+            # a pointer to a reference imports with a nullability the header text does not carry
+            raise ValueError(txt)
         if base == "void":
             t = "UnsafeRawPointer" if const else "UnsafeMutableRawPointer"
         else:
