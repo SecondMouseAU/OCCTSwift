@@ -1,0 +1,14 @@
+# ablations of 0058: the final BRepOffsetAPI_MiddlePath.cxx with one change removed, the 573-pair scan against each (6 s limit per pair)
+# final: answer a path 124, not done 393, throw 56, abort 0, run on 0
+B10_no_chosen_edge_check     pairs scanned 573  {'not done': 393, 'path': 124, 'throw': 56}
+B11_no_pad_length_check      pairs scanned 573  {'not done': 393, 'path': 124, 'throw': 56}
+B1_pad_refuses_vertex        pairs scanned 573  {'not done': 465, 'path': 52, 'throw': 56}
+B2_no_level_bound            pairs scanned 7    {'run on': 6, 'path': 1}
+B3_vertex_end_refuses        pairs scanned 573  {'not done': 474, 'path': 43, 'throw': 56}
+B4_null_face_not_relaxed     pairs scanned 573  {'not done': 349, 'path': 123, 'abort': 46, 'throw': 55}
+B5_makeedge_unchecked        pairs scanned 573  {'not done': 338, 'path': 124, 'throw': 111}
+B6_no_empty_tangent_flag     pairs scanned 573  {'not done': 393, 'path': 112, 'throw': 68}
+B7_insert_unguarded          pairs scanned 573  {'not done': 388, 'path': 124, 'throw': 56, 'abort': 5}
+B9_no_interpolation_check    pairs scanned 573  {'not done': 393, 'path': 124, 'throw': 56}
+# B2 was stopped after 7 pairs: 6 of them ran past the limit
+# no effect when removed (so removed from the patch): a null PCurve check in the second branch, a null chosen-edge check, Interpol.IsDone(), the path-length check in PadPath (B9, B10, B11 and an earlier run)
