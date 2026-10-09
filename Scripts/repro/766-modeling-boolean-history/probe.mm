@@ -1,4 +1,4 @@
-// Epic #766, Tests/OCCTModelingTests/BooleanHistoryTests.swift: kernel parity for both tests.
+// Epic #766, Tests/OCCTModelingTests/History/BooleanHistoryTests.swift: kernel parity for both tests.
 // OCCTShapeFuseWithHistory runs BRepAlgoAPI_Fuse and collects Modified() of every shape1 face
 // reached by a TopExp_Explorer; the Swift result shape is a separate union. Same inputs here.
 #include <BRepAlgoAPI_Fuse.hxx>

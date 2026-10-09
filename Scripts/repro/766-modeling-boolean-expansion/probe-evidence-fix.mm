@@ -1,4 +1,4 @@
-// Epic #766 evidence correction for PR #2687 (Tests/OCCTModelingTests/BooleanExpansionTests.swift).
+// Epic #766 evidence correction for PR #2687 (Tests/OCCTModelingTests/Booleans/BooleanExpansionTests.swift).
 // probe.mm printed the kernel side at %.10g and under keys the bridge side did not share. This
 // probe repeats the same OCCT calls and prints every double at %.17g and every flag as true/false,
 // one `label: key=value ...` line per test, so a record's kernel data is read from the transcript.

@@ -219,7 +219,7 @@ harness's fixtures because the fit there is exact, and filed with the above.
 ## Swift-level regression tests
 
 `Tests/OCCTSurfaceTests/Conversion/Issue572ApproxConsumerTests.swift` and
-`Tests/OCCTModelingTests/Issue572SweepApproxTests.swift` pin the two paths that moved, and both were
+`Tests/OCCTModelingTests/Sweeps/Issue572SweepApproxTests.swift` pin the two paths that moved, and both were
 checked against the released pre-`0019` kernel with `OCCTSWIFT_REMOTE=1`, where exactly the two
 pinning tests fail with the numbers above (0.876114 and 0.103785) and the three deliberate
 non-regression controls pass.

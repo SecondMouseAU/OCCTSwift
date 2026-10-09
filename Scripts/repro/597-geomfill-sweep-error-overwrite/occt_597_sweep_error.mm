@@ -34,7 +34,7 @@
 // IsCNv(1) (not C1 across the spine parameter). BRepFill_Sweep splits its sweep at every
 // spine VERTEX, so a polyline or multi-edge spine never reaches it: the discontinuity has
 // to sit INSIDE one edge. The fixture that does this (borrowed from #572, and pinned by
-// Tests/OCCTModelingTests/Issue572SweepApproxTests.swift) is a single-edge spine built as one
+// Tests/OCCTModelingTests/Sweeps/Issue572SweepApproxTests.swift) is a single-edge spine built as one
 // degree-2 B-spline curve with an interior knot of multiplicity 2, a C0 corner in the
 // middle of what BRepFill_Sweep treats as a single, unsplit edge.
 //

@@ -1,4 +1,4 @@
-// Epic #766, Tests/OCCTModelingTests/BooleanExpansionTests.swift: kernel parity for all four tests.
+// Epic #766, Tests/OCCTModelingTests/Booleans/BooleanExpansionTests.swift: kernel parity for all four tests.
 // Same inputs as the Swift tests, straight to the OCCT classes the bridge calls:
 // BRepAlgoAPI_Section + SetFuzzyValue (OCCTBooleanSectionWithTolerance), BRepAlgoAPI_Splitter
 // (OCCTBooleanSplitMulti), BRepAlgoAPI_Cut with SetArguments/SetTools (OCCTBooleanCutWithHistory),

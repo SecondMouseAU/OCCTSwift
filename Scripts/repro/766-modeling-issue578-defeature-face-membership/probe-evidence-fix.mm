@@ -1,4 +1,4 @@
-// Epic #766 evidence fix, Tests/OCCTModelingTests/Issue578DefeatureFaceMembershipTests.swift.
+// Epic #766 evidence fix, Tests/OCCTModelingTests/Features/Issue578DefeatureFaceMembershipTests.swift.
 // probe.mm printed each kernel answer at %.9f and did not run every request the tests refuse. This probe
 // hands the kernel, at %.17g, the faces each request explodes to, the way the bridge would if its #578
 // membership check (occtDefeaturingFacesFromShapes) and its #497 index check (occtDefeaturingFacesByIndex)

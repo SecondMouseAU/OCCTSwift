@@ -1,4 +1,4 @@
-// Epic #766 evidence fix, Tests/OCCTModelingTests/BOPAlgoSectionTests.swift.
+// Epic #766 evidence fix, Tests/OCCTModelingTests/BOPAlgo/BOPAlgoSectionTests.swift.
 // probe.mm printed the shape type as an integer. This probe repeats the same bridge call (OCCTBOPAlgoSection:
 // BOPAlgo_Section with every object and tool as an argument, Perform, Shape()) and prints whether a shape came
 // back (no errors), its type as Shape.shapeTypeString spells it, and its edge and vertex counts.

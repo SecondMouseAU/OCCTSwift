@@ -1,4 +1,4 @@
-// Epic #766 evidence correction for PR #2687 (Tests/OCCTModelingTests/BooleanRegistryTests.swift),
+// Epic #766 evidence correction for PR #2687 (Tests/OCCTModelingTests/FeatureReconstruction/BooleanRegistryTests.swift),
 // record unionNamedRevolves only. probe.mm printed the volumes at %.10g under keys the bridge side
 // did not share. This probe repeats the same two revolves and their union and prints every double
 // at %.17g and every flag as true/false. The profiles are FeatureSpec.Revolve's triangles

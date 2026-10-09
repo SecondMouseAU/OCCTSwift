@@ -1,4 +1,4 @@
-// Epic #766, Tests/OCCTModelingTests/Issue598PipeShellFrenetModeTests.swift: kernel parity for all
+// Epic #766, Tests/OCCTModelingTests/Sweeps/Issue598PipeShellFrenetModeTests.swift: kernel parity for all
 // seven tests. The enum path (Shape.pipeShell / pipeShellMultiSection ->
 // OCCTShapeCreatePipeShellMultiSection -> occtPipeShellSetMode) is BRepOffsetAPI_MakePipeShell with
 // SetMode(IsFrenet) and a transformed transition, then MakeSolid; the oracle path (PipeShellBuilder)

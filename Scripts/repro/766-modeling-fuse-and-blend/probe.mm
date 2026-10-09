@@ -1,4 +1,4 @@
-// Epic #766, Tests/OCCTModelingTests/FuseAndBlendTests.swift: kernel parity for all three tests.
+// Epic #766, Tests/OCCTModelingTests/Blends/FuseAndBlendTests.swift: kernel parity for all three tests.
 // OCCTShapeFuseAndBlend / OCCTShapeCutAndBlend: BRepAlgoAPI_Fuse (or _Cut), then
 // BRepFilletAPI_MakeFillet with the radius on every SectionEdges() edge and every edge
 // Generated() from either argument's faces; the boolean result is returned as is when no contour

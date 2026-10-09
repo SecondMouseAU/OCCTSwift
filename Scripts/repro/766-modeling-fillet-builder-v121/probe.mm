@@ -1,4 +1,4 @@
-// Epic #766, Tests/OCCTModelingTests/FilletBuilderV121Tests.swift: kernel parity for all six
+// Epic #766, Tests/OCCTModelingTests/Blends/FilletBuilderV121Tests.swift: kernel parity for all six
 // tests. FilletBuilder is one BRepFilletAPI_MakeFillet: Add (OCCTFilletBuilderAddEdge /
 // ...AddEdgeEvolving), NbContours, IsConstant, Radius (OCCTFilletBuilderGetRadius), NbEdges,
 // Length (...GetLength), NbFaultyContours/Vertices, Reset, Remove (...RemoveEdge), Build.

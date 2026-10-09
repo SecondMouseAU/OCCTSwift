@@ -1,4 +1,4 @@
-// Epic #766, Tests/OCCTModelingTests/Issue633BlendedEdgesDuplicateReportTests.swift: kernel parity
+// Epic #766, Tests/OCCTModelingTests/Blends/Issue633BlendedEdgesDuplicateReportTests.swift: kernel parity
 // for all seven tests. blendedEdges / blendedEdgesWithReport are OCCTShapeBlendEdges:
 // BRepFilletAPI_MakeFillet::Add(R, E) per entry, declined edges read back as Contour(E) == 0
 // (occtFilletDeclinedIndices), Build. overwrittenDuplicateIndices is pure Swift bookkeeping over the

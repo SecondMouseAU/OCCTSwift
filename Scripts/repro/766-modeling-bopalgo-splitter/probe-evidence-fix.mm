@@ -1,4 +1,4 @@
-// Epic #766 evidence fix, Tests/OCCTModelingTests/BOPAlgoSplitterTests.swift.
+// Epic #766 evidence fix, Tests/OCCTModelingTests/BOPAlgo/BOPAlgoSplitterTests.swift.
 // probe.mm printed the volume at %.10g. This probe repeats the same bridge call (OCCTBOPAlgoSplit:
 // BOPAlgo_Splitter, AddArgument(objects), AddTool(tools), Perform, Shape(); nothing on HasErrors()) at %.17g.
 #include <BOPAlgo_Splitter.hxx>

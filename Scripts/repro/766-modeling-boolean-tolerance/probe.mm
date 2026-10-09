@@ -3,7 +3,7 @@
 // cubes sat clear of each other or met at one corner, and the glue tests passed glue off). The
 // tests were rewritten under #766 and their records cite probe-evidence-fix.mm. Kept as the
 // measurement that showed the weakness: fuseWithTolerance and fuseWithGlue are two solids here.
-// Epic #766, Tests/OCCTModelingTests/BooleanToleranceTests.swift: kernel parity for all six tests.
+// Epic #766, Tests/OCCTModelingTests/Booleans/BooleanToleranceTests.swift: kernel parity for all six tests.
 // fused/subtracted/intersected(tolerance:) and (glue:) reach OCCTShapeUnionEx / SubtractEx /
 // IntersectEx, i.e. runBooleanEx: BRepAlgoAPI_Fuse/Cut/Common with SetArguments/SetTools,
 // SetFuzzyValue when > 0, and SetGlue (GlueMode.shift -> BOPAlgo_GlueShift, .off -> GlueOff).

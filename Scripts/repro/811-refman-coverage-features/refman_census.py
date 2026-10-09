@@ -482,16 +482,16 @@ KNOWN_OVER_FINDINGS: list[tuple[str, str]] = [
     # fixing them: the family kept producing members after it had been declared closed.
     ("Sources/OCCTSwift/FeatureRecognition.swift",
      "face-to-face incidence to query instead. `OCCTFaceGetSharedEdges` compares only the two"),
-    ("Tests/OCCTModelingTests/Issue761SharedEdgeCountCapTests.swift",
+    ("Tests/OCCTModelingTests/FeatureRecognition/Issue761SharedEdgeCountCapTests.swift",
      "Fixed by sizing the buffer from a new `OCCTFaceGetSharedEdgeCount` bridge call first, in "
      "`AAG.buildGraph()` itself"),
     # And two more, from the THIRD review round, both in the same test file the second round had
     # just edited. Seven members now, found across three rounds, each of which had written up the
     # set as closed. That is the whole argument for pinning a family rather than fixing its members.
-    ("Tests/OCCTModelingTests/Issue761SharedEdgeCountCapTests.swift",
+    ("Tests/OCCTModelingTests/FeatureRecognition/Issue761SharedEdgeCountCapTests.swift",
      "not through `AAG`, which always sizes its own buffer from the true count now, so this "
      "specific disagreement is not otherwise observable"),
-    ("Tests/OCCTModelingTests/Issue761SharedEdgeCountCapTests.swift",
+    ("Tests/OCCTModelingTests/FeatureRecognition/Issue761SharedEdgeCountCapTests.swift",
      "the buffer fully populated. This is what AAG.buildGraph() does today."),
     # Round eight, and the four below are the ones that say most about the detectors' shape.
     #
@@ -521,13 +521,13 @@ KNOWN_OVER_FINDINGS: list[tuple[str, str]] = [
     # from what each round remembered fixing is not the same as a list of what the branch changed.
     ("docs/reference/Surface-Advanced.md",
      "computes a displacement field on the existing surface; the result preserves the original shape"),
-    ("Tests/OCCTModelingTests/Issue699AAGSolidScopedAdjacencyTests.swift",
+    ("Tests/OCCTModelingTests/FeatureRecognition/Issue699AAGSolidScopedAdjacencyTests.swift",
      "`OCCTEdgeGetConvexity` (`OCCTBridge_BRepGraph.mm`) test two `TopoDS_Face` values purely on "
      "their own edge geometry"),
-    ("Tests/OCCTModelingTests/Issue642AAGNodeIdentityTests.swift",
+    ("Tests/OCCTModelingTests/FeatureRecognition/Issue642AAGNodeIdentityTests.swift",
      "Without the identity guard in `buildGraph()`, `OCCTFacesAreAdjacent` reports every one of a "
      "face's own boundary edges"),
-    ("Tests/OCCTModelingTests/Issue761SharedEdgeCountCapTests.swift",
+    ("Tests/OCCTModelingTests/FeatureRecognition/Issue761SharedEdgeCountCapTests.swift",
      "#761: investigating whether AAG's hand-rolled pairwise face/edge adjacency "
      "(`OCCTFacesAreAdjacent`/`OCCTFaceGetSharedEdges`/`OCCTEdgeGetConvexity`) duplicates"),
 ]

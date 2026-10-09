@@ -1,4 +1,4 @@
-// Epic #766 evidence fix, Tests/OCCTModelingTests/FuseAndBlendTests.swift.
+// Epic #766 evidence fix, Tests/OCCTModelingTests/Blends/FuseAndBlendTests.swift.
 // probe.mm printed volume at %.10g and did not report the shape type or the face count. This probe
 // repeats the bridge's OCCTShapeFuseAndBlend / OCCTShapeCutAndBlend on the same inputs: the boolean
 // (BRepAlgoAPI_Fuse or _Cut), then BRepFilletAPI_MakeFillet with the radius on every SectionEdges() edge

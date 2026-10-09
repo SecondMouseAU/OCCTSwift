@@ -29,7 +29,7 @@ call and none of them needs the C1-forcing patch-up. The discontinuity has to si
 single, unsplit edge.
 
 The fixture that does this (found by #572, pinned by
-`Tests/OCCTModelingTests/Issue572SweepApproxTests.swift`) is a single-edge spine built as ONE
+`Tests/OCCTModelingTests/Sweeps/Issue572SweepApproxTests.swift`) is a single-edge spine built as ONE
 degree-2 B-spline curve with an **interior knot of multiplicity 2**, a C0 corner in the middle of
 what `BRepFill_Sweep` treats as one edge:
 

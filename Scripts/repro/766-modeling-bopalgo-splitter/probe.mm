@@ -1,4 +1,4 @@
-// Epic #766, Tests/OCCTModelingTests/BOPAlgoSplitterTests.swift: kernel parity for both tests.
+// Epic #766, Tests/OCCTModelingTests/BOPAlgo/BOPAlgoSplitterTests.swift: kernel parity for both tests.
 // OCCTBOPAlgoSplit: BOPAlgo_Splitter, AddArgument(objects), AddTool(tools), Perform, Shape().
 #include <BOPAlgo_Splitter.hxx>
 #include <BRepCheck_Analyzer.hxx>

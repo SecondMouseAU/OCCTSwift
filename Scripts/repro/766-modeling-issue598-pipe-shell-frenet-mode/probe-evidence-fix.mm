@@ -1,4 +1,4 @@
-// Epic #766 evidence fix, Tests/OCCTModelingTests/Issue598PipeShellFrenetModeTests.swift.
+// Epic #766 evidence fix, Tests/OCCTModelingTests/Sweeps/Issue598PipeShellFrenetModeTests.swift.
 // probe.mm printed the volumes at %.9f, the minimum curvature at %.3g and the ratios at %.6f. This probe is
 // the same kernel calls (the enum path BRepOffsetAPI_MakePipeShell with SetMode(IsFrenet) and a transformed
 // transition, then MakeSolid; the oracle path BRepFill_PipeShell::Set(frenet); BOPAlgo_ArgumentAnalyzer with

@@ -309,7 +309,7 @@ struct Issue753OffCenterPocketEnclosureTests {
 // Per this repo's own instruction for exactly this situation ("that test must invert when you
 // fix this"), the negative assertion below is now positive, and this suite is retitled to
 // describe what it proves today rather than what it used to pin. See
-// `Tests/OCCTModelingTests/Issue762FilletedPocketDetectionTests.swift` for the fuller fixture
+// `Tests/OCCTModelingTests/FeatureRecognition/Issue762FilletedPocketDetectionTests.swift` for the fuller fixture
 // set (several radii, chamfer, partial fillet, and the false-positive guards) this single case
 // is now a subset of; kept here, inverted rather than deleted, because it is literally the
 // fixture #753 finding 3 and #762 both name.

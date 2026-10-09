@@ -1,4 +1,4 @@
-// Epic #766 evidence fix, Tests/OCCTModelingTests/BOPAlgoToolsTests.swift.
+// Epic #766 evidence fix, Tests/OCCTModelingTests/BOPAlgo/BOPAlgoToolsTests.swift.
 // probe.mm printed the area at %.10g. This probe repeats the same bridge calls (OCCTBOPAlgoEdgesToWires:
 // BOPAlgo_Tools::EdgesToWires(compound, result, false, 1e-7), a result only when the status is 0;
 // OCCTBOPAlgoWiresToFaces: BOPAlgo_Tools::WiresToFaces(wires, result, 1e-7), a result only when it returns true)

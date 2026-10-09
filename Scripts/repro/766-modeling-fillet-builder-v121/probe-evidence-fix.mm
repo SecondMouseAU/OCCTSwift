@@ -1,4 +1,4 @@
-// Epic #766 evidence correction for PR #2694 (Tests/OCCTModelingTests/FilletBuilderV121Tests.swift).
+// Epic #766 evidence correction for PR #2694 (Tests/OCCTModelingTests/Blends/FilletBuilderV121Tests.swift).
 // probe.mm printed the kernel side under the OCCT member names (NbContours, IsConstant, Radius, ...)
 // and as prose ("done, valid") while the bridge side used the Swift names. The parity records now
 // carry the same keys and types on both sides, so this probe repeats the same calls under those

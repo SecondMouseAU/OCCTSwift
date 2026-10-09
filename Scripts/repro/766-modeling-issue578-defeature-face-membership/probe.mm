@@ -1,4 +1,4 @@
-// Epic #766, Tests/OCCTModelingTests/Issue578DefeatureFaceMembershipTests.swift: kernel parity for
+// Epic #766, Tests/OCCTModelingTests/Features/Issue578DefeatureFaceMembershipTests.swift: kernel parity for
 // all seven tests. OCCTShapeDefeature explodes each carrier for faces, checks membership by IsSame
 // (occtDefeaturingFacesFromShapes), then runs BRepAlgoAPI_Defeaturing (SetShape, AddFacesToRemove,
 // Build). The probe runs the kernel directly on the same fixture: what it answers for each accepted

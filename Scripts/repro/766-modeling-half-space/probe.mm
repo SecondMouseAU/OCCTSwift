@@ -1,4 +1,4 @@
-// Epic #766, Tests/OCCTModelingTests/HalfSpaceTests.swift: kernel parity for its one test.
+// Epic #766, Tests/OCCTModelingTests/Construction/HalfSpaceTests.swift: kernel parity for its one test.
 // OCCTShapeCreateHalfSpace is BRepPrimAPI_MakeHalfSpace(face, refPoint).Solid() on the first face
 // of its argument. Same input: a planar face on the 20x20 rectangle Wire.rectangle builds (centred
 // at the origin, z = 0), reference point (0, 0, 5).

@@ -1,4 +1,4 @@
-// Epic #766 evidence fix, Tests/OCCTModelingTests/IntegrationBooleanChainStressTests.swift.
+// Epic #766 evidence fix, Tests/OCCTModelingTests/Booleans/IntegrationBooleanChainStressTests.swift.
 // probe.mm printed the volumes at %.10g and never counted the cuts that failed. This probe repeats the same
 // chain (Shape.subtracting is OCCTShapeSubtractEx -> BRepAlgoAPI_Cut; twenty r=5 spheres on a radius-30 ring
 // at z=0 cut in turn from the centred 100 mm box) and prints, at %.17g, the volume before the first cut and

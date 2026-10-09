@@ -80,7 +80,7 @@ same class #1020 is about, a bound that should follow from the input and does no
 refuses a parameter outside `[first, last]`. `tol2d` stays at `1e-6`: with the range recovered by
 projection it is doing real work, refusing the two vertex cases above.
 
-Pinned by `Tests/OCCTModelingTests/Issue1020SplitEdgeRangeTests.swift`. With the guard removed, the
+Pinned by `Tests/OCCTModelingTests/Splitting/Issue1020SplitEdgeRangeTests.swift`. With the guard removed, the
 four out-of-range rows fail and the three control rows still pass.
 
 ## `Extrema_ExtPElC`, `OCCTBridge_Curve3D.mm`

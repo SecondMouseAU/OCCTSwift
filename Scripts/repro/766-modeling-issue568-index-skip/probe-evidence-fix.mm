@@ -1,4 +1,4 @@
-// Epic #766 evidence fix, Tests/OCCTModelingTests/Issue568IndexSkipTests.swift.
+// Epic #766 evidence fix, Tests/OCCTModelingTests/Offsets/Issue568IndexSkipTests.swift.
 // probe.mm printed the kernel's answer at %.6f and only for some of the requests the tests refuse.
 // This probe repeats the bridge's calls (OCCTShapeDraft, OCCTShapeShellWithOpenFaces,
 // OCCTShapeHistoryFromChamferEdges, OCCTFace2DFillet, OCCTFace2DChamfer) at %.17g, for every request

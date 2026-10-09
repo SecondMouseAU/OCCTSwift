@@ -1,4 +1,4 @@
-// Epic #766 silent-pass fix for PR #2688 (Tests/OCCTModelingTests/BooleanToleranceTests.swift).
+// Epic #766 silent-pass fix for PR #2688 (Tests/OCCTModelingTests/Booleans/BooleanToleranceTests.swift).
 // The first version of this probe, and of the tests, measured booleans whose fixtures never
 // reached the mode they were named for: Shape.box(width:height:depth:) is CENTRED, so the second
 // cube of fuseWithTolerance / fuseWithGlue sat clear of the first and the commons and the cut met
