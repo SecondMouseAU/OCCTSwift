@@ -204,7 +204,9 @@ struct NLPlateDeformationTests {
         let plane = Surface.plane(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1))
         guard let surface = plane else { return }
 
-        // Use closer constraints with more iterations for convergence
+        // Closer constraints and a higher resolution order (the plate's order, not an iteration
+        // count) so the kernel's solve converges; the loose tolerance of 1.0 deliberately gives the
+        // coarsest lattice (12 nodes per direction), which the constraint nodes must still survive.
         let deformed = surface.nlPlateDeformedG1(
             constraints: [
                 (

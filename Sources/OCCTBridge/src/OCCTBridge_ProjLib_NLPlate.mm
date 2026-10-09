@@ -571,6 +571,7 @@ static std::vector<double> occtNLPlateSampleNodes(double        lo,
   for (int32_t i = 0; i < constraintCount; i++)
   {
     const double c = constraints[i * stride + component];
+    // A constraint on the boundary needs no extra node: the two boundary nodes are always kept.
     if (c > lo + 1e-9 * span && c < hi - 1e-9 * span)
       fixed.push_back(c);
   }
@@ -624,7 +625,8 @@ static void occtNLPlateInterpolate(const std::vector<double>&  params,
 }
 
 // How many lattice nodes per direction a requested tolerance buys. A cubic interpolant's error
-// falls as h^4, so the node count grows as tolerance^(-1/4): 20 at 0.1 (the lattice this code
+// falls as h^4 with h ~ 1/n, so reaching an error of `tolerance` takes n ~ tolerance^(-1/4)
+// nodes, anchored at 20 for 0.1: 20 at 0.1 (the lattice this code
 // always used), 36 at 1e-2, 63 at 1e-3. Bounded to [12, 80] so a tolerance of 0 or of 1e-12
 // neither starves the interpolation nor asks for a million evaluations.
 //
@@ -703,9 +705,9 @@ static OCCTSurfaceRef occtNLPlateFitSolved(const NLPlate_NLPlate&          solve
   contactV.Init(0);
 
   // The largest displacement from the undeformed surface the samples may carry: a thousand times
-  // the largest displacement the caller asked for (at least 1000 units, since the floor of 1 is
-  // scaled too). Reached only where the plate
-  // is numerically meaningless; see the second finding above.
+  // the largest displacement the caller asked for (at least 1000 units, since the initial value of
+  // 1 is scaled too). Reached only where the plate is numerically meaningless; see the second
+  // finding above.
   double limit = 1.0;
   for (int32_t i = 0; i < constraintCount; i++)
   {

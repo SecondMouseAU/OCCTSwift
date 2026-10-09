@@ -34,7 +34,7 @@ Unlike the grid-based `fromPointGrid`, the points need no ordering or row/column
 for scattered probe data, feature points, or any unstructured point set. See also the
 [Surfaces from Points](../guides/cookbook/surfaces-from-points.md) cookbook page.
 
-- **Parameters:** `points`, 3D point cloud (minimum 3); `degree`, maximum polynomial degree; `tolerance`, the sampling density between the constraints (20 nodes per direction at 0.1, 63 at 1e-3, at most 80); it does not bound the error between samples.
+- **Parameters:** `points`, 3D point cloud (minimum 3); `degree`, maximum polynomial degree; `tolerance`, approximation tolerance.
 - **Returns:** BSpline surface, or `nil` if fewer than 3 points or `GeomPlate_MakeApprox` fails.
 - **OCCT:** `GeomPlate_BuildPlateSurface` + `GeomPlate_PointConstraint` + `GeomPlate_MakeApprox`.
 - **Example:**
