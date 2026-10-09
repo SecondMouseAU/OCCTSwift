@@ -24,11 +24,11 @@ struct IntToolsEdgeFaceTests {
         let face = try #require(box.subShapes(ofType: .face).first)
         let parts = try #require(edge.edgeFaceIntersection(with: face))
         #expect(parts.count == 1)
-        if let part = parts.first {
-            #expect(part.type == .vertex)
-            #expect(simd_distance(part.point, SIMD3(-5, 1, 2)) < 1e-9)
-            #expect(abs(part.param1Range.first - 5) < 1e-6)
-        }
+        let part = try #require(parts.first)
+        #expect(part.type == .vertex)
+        let point = try #require(part.point)
+        #expect(simd_distance(point, SIMD3(-5, 1, 2)) < 1e-9)
+        #expect(abs(part.param1Range.first - 5) < 1e-6)
     }
 
     /// The intersection is actually found, not merely reported as done (#1631).
