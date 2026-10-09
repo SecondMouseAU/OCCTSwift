@@ -1,0 +1,315 @@
+From: OCCTSwift ecosystem <noreply@secondmouse.au>
+Subject: [PATCH] Modeling Algorithms - ChFi3d_Builder builds two fillets that meet
+ exactly instead of refusing them
+
+Two fillets on opposite edges of a face whose radii sum to the face width (a 4 mm face, r = 2
+each) give BRepFilletAPI_MakeFillet IsDone() == false, while 1.99999999 builds. The refusal is
+the OCC119 guard against intersecting fillets, in two places, both throwing StdFail_NotDone
+"fillets have too big radiuses":
+
+ - ChFi3d_Builder::PerformOneCorner intersects the new end cap with the caps already on the end
+   face. Two quarter circles that touch at one point give a Geom2dInt_GInter result (a point or
+   a segment of no length) at an end of both curves.
+ - ChFi3d_StripeEdgeInter intersects the two stripes' contact curves on the shared face. At an
+   exact meeting they coincide over their whole length.
+
+Neither is a defect when the curves only touch: the fillets do not overlap, the face between them
+has no width. This change lets exactly that through and nothing else:
+
+ - ChFi3d_IsEndContact (new): the intersection holds only points where an end of one curve meets
+   an end of the other, and the first curve's end is not past the second's in the direction it
+   leaves (so a crossing, however small, is still refused). PerformOneCorner skips the throw for it.
+ - ChFi3d_StripeEdgeInter now returns bool, true when one segment spans both curves entirely, and
+   throws as before for any other intersection. Compute() records the result.
+ - Compute(), after SameParameter, when stripes meet exactly: ShapeFix_FixSmallFace::FixStripFace
+   removes the face of no width and joins the two fillet faces along one edge, and the result is
+   checked with BRepCheck_Analyzer. If it is not valid, Compute reports not done, as it did before.
+
+Radii above half the width are unchanged: the fillet surfaces cross, the stripe builder has no
+way to trim them at the crossing, and lifting the checks for them gives a done-but-invalid solid
+(volume 330 for a 240 box), so they keep being refused.
+
+Measured (Scripts/repro/fillet-exact-meeting-fix/): on a 4 x 10 x 6 box r = 2 now gives a valid
+closed solid of 7 faces, volume 222.831853072 against the analytic 222.831853072, deterministic over
+3 runs, tessellating; so do 10x4x6, vertical edges, a cube, scales 100x and 1/100, rotated boxes,
+unequal radii with r1 + r2 = w, and OCCT#1177's second sample (a 10 cube, 5 and 5). 715 box cases
+before and after: 296 valid ones identical in volume and face count, 42 invalid ones identical, 16
+IsDone false now valid, 361 still false, none newly invalid. tests/bugs/modalg_7/bug25478_1
+("Fillets can not touch", carrying a TODO) now builds. Known limits: Modified()/Generated() name
+the faces from before FixStripFace; a meeting that is exact only up to rounding noise (a rotated
+box) fails cleanly about half the time; chamfers at d = w/2 are still refused.
+
+Reported upstream as OCCT#1177. Tracked as SecondMouseAU/OCCTSwift#3207.
+
+---
+diff --git a/src/ModelingAlgorithms/TKFillet/ChFi3d/ChFi3d_Builder.cxx b/src/ModelingAlgorithms/TKFillet/ChFi3d/ChFi3d_Builder.cxx
+index 192f69f6..f790063c 100644
+--- a/src/ModelingAlgorithms/TKFillet/ChFi3d/ChFi3d_Builder.cxx
++++ b/src/ModelingAlgorithms/TKFillet/ChFi3d/ChFi3d_Builder.cxx
+@@ -17,6 +17,7 @@
+ #include <Adaptor2d_Curve2d.hxx>
+ #include <Blend_FuncInv.hxx>
+ #include <BRepBlend_Line.hxx>
++#include <BRepCheck_Analyzer.hxx>
+ #include <BRepLib.hxx>
+ #include <BRepTopAdaptor_TopolTool.hxx>
+ #include <ChFi3d_Builder.hxx>
+@@ -32,6 +33,7 @@
+ #include <gp_Pnt2d.hxx>
+ #include <Precision.hxx>
+ #include <ShapeFix.hxx>
++#include <ShapeFix_FixSmallFace.hxx>
+ #include <Standard_ErrorHandler.hxx>
+ #include <Standard_Failure.hxx>
+ #include <Standard_NotImplemented.hxx>
+@@ -344,6 +346,8 @@ void ChFi3d_Builder::Compute()
+     int                 indcursol = DStr.AddShape(cursol);
+     MapIndSo.Add(indcursol);
+   }
++  // Set if two stripes meet exactly: the face between them is then left with no width.
++  bool            hasMeeting = false;
+   TopExp_Explorer expsh(myShape, TopAbs_SHELL, TopAbs_SOLID);
+   for (; expsh.More(); expsh.Next())
+   {
+@@ -372,7 +376,10 @@ void ChFi3d_Builder::Compute()
+         try
+         {
+           OCC_CATCH_SIGNALS
+-          ChFi3d_StripeEdgeInter(st, aCheckStripe, DStr, tol2d);
++          if (ChFi3d_StripeEdgeInter(st, aCheckStripe, DStr, tol2d))
++          {
++            hasMeeting = true;
++          }
+         }
+         catch (Standard_Failure const& anException)
+         {
+@@ -671,6 +678,28 @@ void ChFi3d_Builder::Compute()
+         ShapeFix::SameParameter(aF, false, SameParTol);
+       }
+     }
++
++    // The faces between stripes that meet exactly have no width: remove them, which joins
++    // the fillet faces on either side along one edge.
++    if (hasMeeting)
++    {
++      ShapeFix_FixSmallFace aFixStrip;
++      aFixStrip.Init(myShapeResult);
++      aFixStrip.SetPrecision(Precision::Confusion());
++      aFixStrip.FixStripFace();
++      const TopoDS_Shape aFixed = aFixStrip.Shape();
++      if (!aFixed.IsNull())
++      {
++        myShapeResult = aFixed;
++      }
++      // Stripes that overlap by less than the tolerance look like stripes that meet, but the
++      // result is not a solid: report a failure, as before.
++      if (!BRepCheck_Analyzer(myShapeResult).IsValid())
++      {
++        hasresult = false;
++        done      = false;
++      }
++    }
+   }
+ }
+ 
+diff --git a/src/ModelingAlgorithms/TKFillet/ChFi3d/ChFi3d_Builder_0.cxx b/src/ModelingAlgorithms/TKFillet/ChFi3d/ChFi3d_Builder_0.cxx
+index 2fe42a00..dbccf237 100644
+--- a/src/ModelingAlgorithms/TKFillet/ChFi3d/ChFi3d_Builder_0.cxx
++++ b/src/ModelingAlgorithms/TKFillet/ChFi3d/ChFi3d_Builder_0.cxx
+@@ -34,6 +34,9 @@
+ #include <Extrema_LocateExtCC.hxx>
+ #include <GCPnts_AbscissaPoint.hxx>
+ #include <Geom2dInt_GInter.hxx>
++#include <gp_Vec2d.hxx>
++#include <IntRes2d_IntersectionPoint.hxx>
++#include <IntRes2d_IntersectionSegment.hxx>
+ #include <Geom2d_BezierCurve.hxx>
+ #include <Geom2d_BSplineCurve.hxx>
+ #include <Geom2d_Circle.hxx>
+@@ -3340,16 +3343,98 @@ void ChFi3d_FilDS(const int                         SolidIndex,
+   }
+ }
+ 
++namespace
++{
++//! Returns the end of the curve nearest to the point, and in theOutward the direction
++//! that leaves the curve at that end.
++gp_Pnt2d nearestEnd(const gp_Pnt2d&            thePnt,
++                    const Geom2dAdaptor_Curve& theCurve,
++                    gp_Vec2d&                  theOutward)
++{
++  gp_Pnt2d aFirst, aLast;
++  gp_Vec2d aVecFirst, aVecLast;
++  theCurve.D1(theCurve.FirstParameter(), aFirst, aVecFirst);
++  theCurve.D1(theCurve.LastParameter(), aLast, aVecLast);
++  if (thePnt.Distance(aFirst) <= thePnt.Distance(aLast))
++  {
++    theOutward = -aVecFirst;
++    return aFirst;
++  }
++  theOutward = aVecLast;
++  return aLast;
++}
++
++//! True if the point lies at an end of both curves, and the curve ends do not overlap: the end
++//! of the first curve is not past the end of the second one in the direction it leaves the first.
++bool isEndContact(const gp_Pnt2d&            thePnt,
++                  const Geom2dAdaptor_Curve& theCurve1,
++                  const Geom2dAdaptor_Curve& theCurve2,
++                  const double               theTol2d)
++{
++  gp_Vec2d       aOut1, aOut2;
++  const gp_Pnt2d aEnd1 = nearestEnd(thePnt, theCurve1, aOut1);
++  const gp_Pnt2d aEnd2 = nearestEnd(thePnt, theCurve2, aOut2);
++  if (thePnt.Distance(aEnd1) > theTol2d || thePnt.Distance(aEnd2) > theTol2d)
++  {
++    return false;
++  }
++  return aOut1.SquareMagnitude() == 0. || gp_Vec2d(aEnd2, aEnd1).Dot(aOut1) <= 0.;
++}
++
++//! True if the intersection segment runs from one end of the curve to the other.
++bool spansCurve(const IntRes2d_IntersectionSegment& theSeg,
++                const Geom2dAdaptor_Curve&          theCurve,
++                const double                        theTol2d)
++{
++  const gp_Pnt2d aP1 = theSeg.FirstPoint().Value();
++  const gp_Pnt2d aP2 = theSeg.LastPoint().Value();
++  const gp_Pnt2d aC1 = theCurve.Value(theCurve.FirstParameter());
++  const gp_Pnt2d aC2 = theCurve.Value(theCurve.LastParameter());
++  return (aP1.Distance(aC1) <= theTol2d && aP2.Distance(aC2) <= theTol2d)
++         || (aP1.Distance(aC2) <= theTol2d && aP2.Distance(aC1) <= theTol2d);
++}
++} // namespace
++
++//=================================================================================================
++
++bool ChFi3d_IsEndContact(const Geom2dInt_GInter&    theInter,
++                         const Geom2dAdaptor_Curve& theCurve1,
++                         const Geom2dAdaptor_Curve& theCurve2,
++                         const double               theTol2d)
++{
++  for (int i = 1; i <= theInter.NbPoints(); ++i)
++  {
++    const gp_Pnt2d aPnt = theInter.Point(i).Value();
++    if (!isEndContact(aPnt, theCurve1, theCurve2, theTol2d))
++    {
++      return false;
++    }
++  }
++  for (int i = 1; i <= theInter.NbSegments(); ++i)
++  {
++    // A segment of no length is a single point, which is a contact only at an end.
++    const gp_Pnt2d aP1 = theInter.Segment(i).FirstPoint().Value();
++    const gp_Pnt2d aP2 = theInter.Segment(i).LastPoint().Value();
++    if (aP1.Distance(aP2) > theTol2d || !isEndContact(aP1, theCurve1, theCurve2, theTol2d))
++    {
++      return false;
++    }
++  }
++  return true;
++}
++
+ //=======================================================================
+ // function : StripeEdgeInter
+ // purpose  : This function examines two stripes for an intersection
+ //           between curves of interference with faces. If the intersection
+ //           exists, it will cause bad result, so it's better to quit.
++//           Curves that coincide over their whole length are the exception:
++//           the two fillets meet exactly and the face between them has no width.
+ // remark   : If someone somewhen computes the interference between stripes,
+ //           this function will become useless.
+ // author   : akm, 06/02/02. Against bug OCC119.
+ //=======================================================================
+-void ChFi3d_StripeEdgeInter(const occ::handle<ChFiDS_Stripe>& theStripe1,
++bool ChFi3d_StripeEdgeInter(const occ::handle<ChFiDS_Stripe>& theStripe1,
+                             const occ::handle<ChFiDS_Stripe>& theStripe2,
+                             TopOpeBRepDS_DataStructure& /*DStr*/,
+                             const double tol2d)
+@@ -3364,7 +3449,7 @@ void ChFi3d_StripeEdgeInter(const occ::handle<ChFiDS_Stripe>& theStripe1,
+           || theStripe1->IndexPoint(true, iSur1) == theStripe2->IndexPoint(false, iSur2)
+           || theStripe1->IndexPoint(true, iSur1) == theStripe2->IndexPoint(true, iSur2))
+       {
+-        return;
++        return false;
+       }
+     }
+   }
+@@ -3375,6 +3460,7 @@ void ChFi3d_StripeEdgeInter(const occ::handle<ChFiDS_Stripe>& theStripe1,
+     theStripe2->SetOfSurfData();
+ 
+   Geom2dInt_GInter anIntersector;
++  bool             isMeeting = false;
+   int              iPart1, iPart2;
+   int              Ishape11, Ishape12, Ishape21, Ishape22;
+   // Loop on parts of the first stripe
+@@ -3435,10 +3521,18 @@ void ChFi3d_StripeEdgeInter(const occ::handle<ChFiDS_Stripe>& theStripe1,
+       anIntersector.Perform(aPCurve1, aPCurve2, tol2d, Precision::PConfusion());
+       if (anIntersector.NbSegments() > 0 || anIntersector.NbPoints() > 0)
+       {
++        if (anIntersector.NbPoints() == 0 && anIntersector.NbSegments() == 1
++            && spansCurve(anIntersector.Segment(1), aPCurve1, tol2d)
++            && spansCurve(anIntersector.Segment(1), aPCurve2, tol2d))
++        {
++          isMeeting = true;
++          continue;
++        }
+         throw StdFail_NotDone("StripeEdgeInter : fillets have too big radiuses");
+       }
+     }
+   }
++  return isMeeting;
+ }
+ 
+ //=================================================================================================
+diff --git a/src/ModelingAlgorithms/TKFillet/ChFi3d/ChFi3d_Builder_0.hxx b/src/ModelingAlgorithms/TKFillet/ChFi3d/ChFi3d_Builder_0.hxx
+index 466bf522..f2667dd3 100644
+--- a/src/ModelingAlgorithms/TKFillet/ChFi3d/ChFi3d_Builder_0.hxx
++++ b/src/ModelingAlgorithms/TKFillet/ChFi3d/ChFi3d_Builder_0.hxx
+@@ -37,6 +37,8 @@
+ #include <IntSurf_TypeTrans.hxx>
+ #include <GeomFill_BoundWithSurf.hxx>
+ #include <Geom2d_Curve.hxx>
++#include <Geom2dAdaptor_Curve.hxx>
++#include <Geom2dInt_GInter.hxx>
+ #include <Geom_Curve.hxx>
+ #include <Geom_TrimmedCurve.hxx>
+ #include <Geom_Surface.hxx>
+@@ -378,11 +380,22 @@ void ChFi3d_FilDS(const int                         SolidIndex,
+                   const double                      tol3d,
+                   const double                      tol2d);
+ 
+-void ChFi3d_StripeEdgeInter(const occ::handle<ChFiDS_Stripe>& theStripe1,
++//! Examines two stripes for an intersection between their curves of interference with faces.
++//! Throws StdFail_NotDone if the curves cross or overlap in part.
++//! @return true if the two stripes meet exactly: their curves of interference on a common face
++//! coincide over their whole length, so that the face between them has no width.
++bool ChFi3d_StripeEdgeInter(const occ::handle<ChFiDS_Stripe>& theStripe1,
+                             const occ::handle<ChFiDS_Stripe>& theStripe2,
+                             TopOpeBRepDS_DataStructure&       DStr,
+                             const double                      tol2d);
+ 
++//! True if theInter, computed for theCurve1 and theCurve2, holds nothing but the contact of
++//! one end of each curve: the two curves touch and do not cross.
++bool ChFi3d_IsEndContact(const Geom2dInt_GInter&    theInter,
++                         const Geom2dAdaptor_Curve& theCurve1,
++                         const Geom2dAdaptor_Curve& theCurve2,
++                         const double               theTol2d);
++
+ int ChFi3d_IndexOfSurfData(const TopoDS_Vertex&              V1,
+                            const occ::handle<ChFiDS_Stripe>& CD,
+                            int&                              sens);
+diff --git a/src/ModelingAlgorithms/TKFillet/ChFi3d/ChFi3d_Builder_C1.cxx b/src/ModelingAlgorithms/TKFillet/ChFi3d/ChFi3d_Builder_C1.cxx
+index d7195c79..d3f63984 100644
+--- a/src/ModelingAlgorithms/TKFillet/ChFi3d/ChFi3d_Builder_C1.cxx
++++ b/src/ModelingAlgorithms/TKFillet/ChFi3d/ChFi3d_Builder_C1.cxx
+@@ -1196,7 +1196,8 @@ void ChFi3d_Builder::PerformOneCorner(const int Index, const bool thePrepareOnSa
+                                         anOtherCur->FirstParameter(),
+                                         anOtherCur->LastParameter());
+       anIntersector.Perform(aCorkPCurve, anOtherPCurve, tol2d, Precision::PConfusion());
+-      if (anIntersector.NbSegments() > 0 || anIntersector.NbPoints() > 0)
++      if ((anIntersector.NbSegments() > 0 || anIntersector.NbPoints() > 0)
++          && !ChFi3d_IsEndContact(anIntersector, aCorkPCurve, anOtherPCurve, tol2d))
+       {
+         throw StdFail_NotDone("OneCorner : fillets have too big radiuses");
+       }

@@ -19,7 +19,7 @@ which is what nothing did while `0042` sat in the kernel and not in the map for 
 2026-08-03 retired ten patches, `0032`
 retired 2026-09-02 (superseded by upstream's own fix, not shipped in our pin), and `0035` retired
 2026-09-20 (it reintroduced #280; see its [Retired patches](#retired-patches) entry).
-The carried sequence now reads 0010–0012, 0014–0031, 0033–0034, 0036–0048, 0050–0057.
+The carried sequence now reads 0010–0012, 0014–0031, 0033–0034, 0036–0048, 0050–0057, 0059.
 The gaps are the retirements, not missing files:
 the numbers are cited across `CLAUDE.md`, `docs/`, closed issues and `Scripts/repro/`, and
 renumbering would have silently repointed every one of those citations at a different fix.
@@ -3412,6 +3412,20 @@ this depth; read them as history, not as a description of anything the build sti
 Before each file was deleted its hunks were checked against the as-merged upstream form in the
 pinned tag, because review can change a patch between submission and merge, and for `0001` it did.
 Each section opens with that verdict.
+
+## 0059-ChFi3d-Builder-fillets-that-meet-exactly-are-built-not-refused-3207.patch
+
+**Two fillets that meet exactly are built instead of refused** ([#3207](https://github.com/SecondMouseAU/OCCTSwift/issues/3207), upstream [OCCT#1177](https://github.com/Open-Cascade-SAS/OCCT/issues/1177) and `tests/bugs/modalg_7/bug25478_1`), `src/ModelingAlgorithms/TKFillet/ChFi3d/` in the pinned tree. **Candidate: no PR, nothing reported upstream.**
+
+On a 4 x 10 x 6 box, fillets on the two top edges along Y give `IsDone() == false` at r = 2 (half the 4 wide face) and valid solids up to 1.99999999. The refusal is the OCC119 guard against intersecting fillets, in two places that both throw `StdFail_NotDone("... fillets have too big radiuses")`: `PerformOneCorner` (the end caps on the end face touch at a point) and `ChFi3d_StripeEdgeInter` (the two contact curves on the top face coincide). With both lifted, r = 2 builds, but the top face between the stripes is left with no width and the result is BRepCheck-invalid (8 faces, one of area 0).
+
+The change lets exactly that through: `ChFi3d_IsEndContact` (the caps only touch end to end, and the first end is not past the second's), a `ChFi3d_StripeEdgeInter` that returns true when one segment spans both curves, then `ShapeFix_FixSmallFace::FixStripFace` on the result and a `BRepCheck_Analyzer` guard that turns a not-valid answer back into "not done". The two quarter cylinders end up sharing one edge: a semicircle.
+
+**What it does not do.** A radius above half the width is refused as before. The fillet surfaces cross, and the stripe builder only knows how to cut a face with a stripe, not how to trim two stripes at the curve where they cross: with the checks lifted for r = 2.2 the result is "done" with volume 330 for a 240 box. The right construction is the intersection of the single-edge fillets (`BRepAlgoAPI_Common`), which matches the analytic volume on 2.0 to 3.99999 in `Scripts/repro/fillet-exact-meeting-fix/`; it is a different algorithm and is not carried here.
+
+Known limits: `Modified()`/`Generated()` return the faces from before `FixStripFace`; a meeting exact only up to rounding noise (random rotations of the box) fails cleanly 18 times in 40; `BRepFilletAPI_MakeChamfer` at d = w/2 is still refused; `Generated` history for the removed top face reads as deleted.
+
+Measured against the `v4.0.0-kernel.5` asset with the three changed files override-linked (`Scripts/repro/fillet-exact-meeting-fix/README.md`): 715 box cases before and after, none regressed and none newly invalid; 16 `IsDone` false now valid with the analytic volume.
 
 ## 0035-STEPControl-Writer-drop-per-transfer-init-1259.patch
 

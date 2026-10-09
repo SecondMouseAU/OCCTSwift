@@ -114,11 +114,19 @@ mistake the rest of this page is about.
 
 ### The xcframework
 
-`Scripts/patches/` holds forty-four patches, of which the pinned asset carries forty-four. **These
+`Scripts/patches/` holds forty-five patches, of which the pinned asset carries forty-four. **These
 are the counts `CLAUDE.md` used to restate and no longer does** (#2954); both are derived from
 `Scripts/patches/` and `Package.swift` by `check-inventory-prose.py`, which fails the PR that lets
-this page and the tree disagree. The v4.0.0-kernel.5 asset `Package.swift` pins lacks zero of them,
+this page and the tree disagree. The v4.0.0-kernel.5 asset `Package.swift` pins lacks one of them,
 per [Pinned kernel patch check](../policies/pinned-kernel-patch-check.md).
+
+**One patch is authored and not yet pinned (2026-10-09).** `0059` is a candidate with no PR, so no
+CI job runs it: `build-and-test` resolves the asset, and the gated `Issue3207FilletMeetingTests`
+run only under `OCCTSWIFT_LOCAL=1` in `kernel-integration.yml`.
+
+| Unpinned | What it leaves exposed |
+|---|---|
+| `0059-ChFi3d-Builder-fillets-that-meet-exactly-are-built-not-refused-3207` | Nothing that crashes. Two fillets whose radii sum to the width of the face between them (a 4 mm face, 2 and 2) answer `IsDone() == false` on the pinned kernel, and `Shape.filleted` answers nil, where the patch builds a valid solid. A radius above half the width is refused with and without it ([OCCT#1177](https://github.com/Open-Cascade-SAS/OCCT/issues/1177), [#3207](https://github.com/SecondMouseAU/OCCTSwift/issues/3207)) |
 
 **The native divergence is closed, for the second time.** `0053` through `0057` were authored after
 v4.0.0-kernel.4 and were live nowhere until the v4.0.0-kernel.5 rebuild pinned all five. The table

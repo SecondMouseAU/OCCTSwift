@@ -317,11 +317,12 @@ let occtTarget: Target =
         // wrong: InitializeMissingParameters is also the REPAIR that re-sets DirectFaces on an actor a
         // STEPCAFControl_Reader has left with empty OperationsFlags, which is #280's exact mechanism.
         // kernel-integration.yml caught it on main. See Scripts/patches/README.md's retired 0035 entry.
-        // Scripts/patches/ holds forty-four patches and the pinned asset holds forty-four of them,
-        // enumerated above. `ls Scripts/patches/*.patch | wc -l` answers 44 against a list of 44.
-        // The pinned asset lacks zero of them: the v4.0.0-kernel.4 rebuild closed the divergence
-        // that 0044 had opened and that 0045 through 0052 widened, and the v4.0.0-kernel.5 rebuild
-        // closed the one that 0053 through 0057 opened, so there is no written divergence below.
+        // Scripts/patches/ holds forty-five patches and the pinned asset holds forty-four of them,
+        // enumerated above. `ls Scripts/patches/*.patch | wc -l` answers 45 against a list of 44.
+        // The pinned asset lacks one of them: 0059 (the candidate that builds two fillets that meet
+        // exactly, #3207), which no CI job exercises until a rebuild pins it. The v4.0.0-kernel.4
+        // rebuild closed the divergence that 0044 had opened and that 0045 through 0052 widened,
+        // and the v4.0.0-kernel.5 rebuild closed the one that 0053 through 0057 opened.
         // The rows that follow are kept as the record of what each patch does and which bridge
         // mitigation it does or does not retire:
         //
