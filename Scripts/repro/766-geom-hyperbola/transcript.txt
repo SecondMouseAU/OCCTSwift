@@ -1,0 +1,7 @@
+hyperbolaRadii MajorRadius=5 MinorRadius=3
+hyperbolaEccentricity Eccentricity=1.1661903789690602
+hyperbolaFocal Focal=11.661903789690601
+hyperbolaFocus1 Focus1=(5.8309518948453007, 0, 0)
+hyperbolaAsymptote1 location=(0, 0, 0) direction=(0.85749292571254432, 0.51449575542752657, 0)
+hyperbolaSetRadii after SetMajorRadius(8) MajorRadius=8
+hyperbolaSetRadii after SetMinorRadius(4) MinorRadius=4
