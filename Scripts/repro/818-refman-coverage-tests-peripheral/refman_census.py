@@ -154,7 +154,7 @@ MANUAL_OVERRIDES: dict[str, tuple[set[str], str]] = {
         "correct, but its coarser class-target-hit pass conflated it with a DIFFERENT call "
         "(`CoordinateSystem(...)`, a plain struct init) that OCCTMeshTests does make -- confirmed "
         "by grep: OCCTMeshTests calls zero of `convertCoordinateSystem`/"
-        "`coordinateSystemUpDirection`. Real test: Tests/OCCTMathTests/CoordinateSystemTests.swift.",
+        "`coordinateSystemUpDirection`. Real test: Tests/OCCTMathTests/CoordinateSystems/CoordinateSystemTests.swift.",
     ),
     # --- false POSITIVE: derive_lane.py said "tested," the match is a same-file name collision ---
     "Plate_Plate": (
