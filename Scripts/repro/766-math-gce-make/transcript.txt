@@ -1,0 +1,28 @@
+circleThrough3Points done=1 radius=5
+circleThrough3Points center (-3.53270803204e-16, 8.99849932549e-17, 0)
+circleThrough3Points P(0) (5, 0, 0)
+circleFromCenterNormal done=1 radius=7
+circleFromCenterNormal P(0) (8, 2, 3)
+circleFromCenterNormal P(pi/2) (1, 9, 3)
+coneFrom2PointsRadii done=1 semiAngle=-0.291456794477867 refRadius=5
+coneFrom2PointsRadii axis position (0, 0, 0)
+  radii swapped: semiAngle=0.291456794477867 refRadius=2
+cylinderFrom3Points done=1 radius=3
+cylinderFrom3Points axis position (0, 0, 0)
+  p1/p3 swapped: radius=2.87347885566
+directionFrom2Points done=1 (1, 0, 0)
+ellipseFromCenterNormal done=1 major=10 minor=5
+ellipseFromCenterNormal P(0) (10, 0, 0)
+ellipseFromCenterNormal P(pi/2) (6.12323399574e-16, 5, 0)
+hyperbolaFromCenterNormal done=1 major=8 minor=3
+hyperbolaFromCenterNormal P(0) (8, 0, 0)
+hyperbolaFromCenterNormal P(1) (12.3446450785, 3.52560358093, 0)
+lineFrom2Points done=1 dir (0.267261241912, 0.534522483825, 0.801783725737)
+lineFrom2Points P(0) (0, 0, 0)
+lineFrom2Points P(sqrt(14)) (1, 2, 3)
+parabolaFromCenterNormal done=1 focal=4
+parabolaFromCenterNormal P(0) (0, 0, 0)
+parabolaFromCenterNormal P(8) (4, 8, 0)
+planeFromEquation done=1 coefficients (0, 0, 1, -5)
+planeFromEquation location (0, 0, 5)
+planeFrom3Points (GC_MakePlane) done=1 coefficients (0, 0, 1, -0)
