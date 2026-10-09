@@ -1,4 +1,4 @@
-// Epic #766 kernel-parity probe for Tests/OCCTMathTests/GeomPoint3DTests.swift and
+// Epic #766 kernel-parity probe for Tests/OCCTMathTests/GeomPrimitives/GeomPoint3DTests.swift and
 // GeomTransformationTests.swift. Same OCCT calls and inputs as OCCTGeomPoint3D* and
 // OCCTGeomTransform* (Geom_CartesianPoint, Geom_Transformation).
 #include <Geom_CartesianPoint.hxx>

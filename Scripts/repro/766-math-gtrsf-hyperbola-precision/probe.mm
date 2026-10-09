@@ -1,4 +1,4 @@
-// Epic #766 kernel-parity probe for Tests/OCCTMathTests/GTrsfModificationTests.swift,
+// Epic #766 kernel-parity probe for Tests/OCCTMathTests/Transforms/GTrsfModificationTests.swift,
 // HyperbolaThreePointsTests.swift and IntegrationPrecisionExtremesTests.swift. Same OCCT calls
 // and inputs as OCCTShapeCreateBox, OCCTShapeConvertToNURBS, OCCTShapeGTrsfModification,
 // OCCTCurve3DMakeHyperbolaThreePoints, OCCTShapeDrillHole (oriented cylinder + BRepAlgoAPI_Cut),

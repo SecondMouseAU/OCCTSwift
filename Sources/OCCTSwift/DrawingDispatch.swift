@@ -21,7 +21,7 @@ import simd
 // `ops` closure bundle — DXFWriter already implements the same five primitives PDF/SVG do,
 // so the "different intermediate representation" concern that justified keeping DXF
 // separate never actually applied. Golden-output tests
-// (`Tests/OCCTIOTests/ExporterDrawingCollectionGoldenTests.swift`) proved
+// (`Tests/OCCTIOTests/DrawingFormats/ExporterDrawingCollectionGoldenTests.swift`) proved
 // the unification byte-identical before it was made permanent.
 //
 // `DrawingPrimitiveSink` is the shared conformance: any writer holding the five staging

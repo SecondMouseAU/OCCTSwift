@@ -123,7 +123,7 @@ script has is load-bearing for at least one fixture, which is the bar this polic
 
 The first full run of the sub-kind 2 detector reported 68 candidates. Reading every one of them by
 hand (see the per-site table below) found a single mechanism accounting for 21 of the 68, all in
-two files: `Tests/OCCTShapeHealingTests/Issue442FixSolidMultiBodyTests.swift` and
+two files: `Tests/OCCTShapeHealingTests/ShapeFix/Issue442FixSolidMultiBodyTests.swift` and
 `Issue443FirstOfNTests.swift` both define a private helper,
 
 ```swift

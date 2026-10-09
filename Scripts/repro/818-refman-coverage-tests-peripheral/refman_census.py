@@ -136,11 +136,11 @@ MANUAL_OVERRIDES: dict[str, tuple[set[str], str]] = {
         {"OCCTIOTests"},
         "used as a struct field (`struct OCCTMeshFaceIter { RWMesh_FaceIterator iter; };`), the "
         "same struct-field shape as Graphic3d_ZLayerSettings above. Real test: "
-        "Tests/OCCTIOTests/RWMeshFaceIteratorTests.swift.",
+        "Tests/OCCTIOTests/MeshFormats/RWMeshFaceIteratorTests.swift.",
     ),
     "RWMesh_VertexIterator": (
         {"OCCTIOTests"},
-        "same struct-field shape. Real test: Tests/OCCTIOTests/RWMeshVertexIteratorTests.swift.",
+        "same struct-field shape. Real test: Tests/OCCTIOTests/MeshFormats/RWMeshVertexIteratorTests.swift.",
     ),
     "Plate_FreeGtoCConstraint": (
         {"OCCTSurfaceTests"},
@@ -154,7 +154,7 @@ MANUAL_OVERRIDES: dict[str, tuple[set[str], str]] = {
         "correct, but its coarser class-target-hit pass conflated it with a DIFFERENT call "
         "(`CoordinateSystem(...)`, a plain struct init) that OCCTMeshTests does make -- confirmed "
         "by grep: OCCTMeshTests calls zero of `convertCoordinateSystem`/"
-        "`coordinateSystemUpDirection`. Real test: Tests/OCCTMathTests/CoordinateSystemTests.swift.",
+        "`coordinateSystemUpDirection`. Real test: Tests/OCCTMathTests/CoordinateSystems/CoordinateSystemTests.swift.",
     ),
     # --- false POSITIVE: derive_lane.py said "tested," the match is a same-file name collision ---
     "Plate_Plate": (
