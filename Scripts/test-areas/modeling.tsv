@@ -20,11 +20,11 @@ Tests/OCCTModelingTests/BOPAlgoToolsTests.swift	Tests/OCCTModelingTests/BOPAlgo/
 Tests/OCCTModelingTests/BOPAlgoWireSplitterMakeWireTests.swift	Tests/OCCTModelingTests/BOPAlgo/BOPAlgoWireSplitterMakeWireTests.swift	BOPAlgo	-	BOPAlgo_WireSplitter MakeWire
 Tests/OCCTModelingTests/BOPToolsAlgoTools3DTests.swift	Tests/OCCTModelingTests/BOPAlgo/BOPToolsAlgoTools3DTests.swift	BOPAlgo	-	BOPTools_AlgoTools3D normal on edge and point in face
 Tests/OCCTModelingTests/BOPToolsAlgoToolsTests.swift	Tests/OCCTModelingTests/BOPAlgo/BOPToolsAlgoToolsTests.swift	BOPAlgo	-	BOPTools_AlgoTools closed shell
-Tests/OCCTModelingTests/BRepAlgoAsDesTests.swift	Tests/OCCTModelingTests/BOPAlgo/BRepAlgoAsDesTests.swift	BOPAlgo	-	BRepAlgo_AsDes descendant tracker, the BRepAlgo utility used by the boolean algorithms
-Tests/OCCTModelingTests/BRepAlgoFaceRestrictorTests.swift	Tests/OCCTModelingTests/BOPAlgo/BRepAlgoFaceRestrictorTests.swift	BOPAlgo	-	BRepAlgo_FaceRestrictor
-Tests/OCCTModelingTests/BRepAlgoImageTests.swift	Tests/OCCTModelingTests/BOPAlgo/BRepAlgoImageTests.swift	BOPAlgo	-	BRepAlgo_Image bind and query
-Tests/OCCTModelingTests/BRepAlgoLoopTests.swift	Tests/OCCTModelingTests/BOPAlgo/BRepAlgoLoopTests.swift	BOPAlgo	-	BRepAlgo_Loop build loops
-Tests/OCCTModelingTests/BRepAlgoNormalProjectionTests.swift	Tests/OCCTModelingTests/BOPAlgo/BRepAlgoNormalProjectionTests.swift	BOPAlgo	-	BRepAlgo_NormalProjection of an edge or wire on a shape
+Tests/OCCTModelingTests/BRepAlgoAsDesTests.swift	Tests/OCCTModelingTests/BRepAlgo/BRepAlgoAsDesTests.swift	BRepAlgo	-	BRepAlgo_AsDes descendant tracker, the BRepAlgo utility used by the boolean algorithms
+Tests/OCCTModelingTests/BRepAlgoFaceRestrictorTests.swift	Tests/OCCTModelingTests/BRepAlgo/BRepAlgoFaceRestrictorTests.swift	BRepAlgo	-	BRepAlgo_FaceRestrictor
+Tests/OCCTModelingTests/BRepAlgoImageTests.swift	Tests/OCCTModelingTests/BRepAlgo/BRepAlgoImageTests.swift	BRepAlgo	-	BRepAlgo_Image bind and query
+Tests/OCCTModelingTests/BRepAlgoLoopTests.swift	Tests/OCCTModelingTests/BRepAlgo/BRepAlgoLoopTests.swift	BRepAlgo	-	BRepAlgo_Loop build loops
+Tests/OCCTModelingTests/BRepAlgoNormalProjectionTests.swift	Tests/OCCTModelingTests/BRepAlgo/BRepAlgoNormalProjectionTests.swift	BRepAlgo	-	BRepAlgo_NormalProjection of an edge or wire on a shape
 Tests/OCCTModelingTests/BRepFeatBuilderTests.swift	Tests/OCCTModelingTests/Features/BRepFeatBuilderTests.swift	Features	-	BRepFeat_Builder fuse and cut
 Tests/OCCTModelingTests/BRepFeatGluerTests.swift	Tests/OCCTModelingTests/Features/BRepFeatGluerTests.swift	Features	-	BRepFeat_Gluer on two boxes
 Tests/OCCTModelingTests/BRepFeatMakeCylindricalHoleTests.swift	Tests/OCCTModelingTests/Features/BRepFeatMakeCylindricalHoleTests.swift	Features	-	BRepFeat_MakeCylindricalHole through, blind and thru-next holes
