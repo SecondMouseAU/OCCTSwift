@@ -217,7 +217,7 @@ def findings_for_patch(patch_name, text, index):
 
     for target, line in removals:
         for spelling, test_files in index.qualified.items():
-            if spelling in line:
+            if mentions(line, spelling):
                 record(target, spelling, test_files, line)
         owner = class_of_file(target)
         if owner is None:
@@ -368,6 +368,15 @@ diff --git a/src/DataExchange/TKDESTEP/STEPControl/STEPControl_Writer.cxx b/src/
    return Standard_True;
 '''
 
+    longer_spelling = '''\
+--- a/src/DataExchange/TKDESTEP/STEPCAFControl/STEPCAFControl_Writer.cxx
++++ b/src/DataExchange/TKDESTEP/STEPCAFControl/STEPCAFControl_Writer.cxx
+@@ -300,7 +300,6 @@ Standard_Boolean STEPCAFControl_Writer::Perform()
+   if (!myWriter.IsNull())
+-    aStatus = STEPControl_Writer::TransferExtended(aShape, aMode);
+   return Standard_True;
+'''
+
     other_class_removal = '''\
 --- a/src/ModelingData/TKGeomBase/GeomTools/GeomTools_SurfaceSet.cxx
 +++ b/src/ModelingData/TKGeomBase/GeomTools/GeomTools_SurfaceSet.cxx
@@ -429,6 +438,11 @@ diff --git a/src/DataExchange/TKDESTEP/STEPControl/STEPControl_Writer.cxx b/src/
          'own source',
          {test_path: GUARDING_TEST}, caller_removal,
          [('STEPControl_Writer::Transfer', test_path)]),
+
+        ('a removal naming a longer method that starts with the guarded spelling',
+         'the whole-word match of the qualified channel: `BRep_Tool::CurveOnSurface` is not '
+         '`BRep_Tool::Curve`, and a plain substring test flagged carried patch 0058 for it',
+         {test_path: GUARDING_TEST}, longer_spelling, []),
 
         ('another class\'s file dropping a line that names a guarded method',
          'rule 2\'s file scoping: `Transfer` on a removed line in GeomTools_SurfaceSet.cxx is not '

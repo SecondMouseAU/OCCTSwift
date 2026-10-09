@@ -52,10 +52,10 @@ Tests/OCCTXCAFTests/XCAFViewObjectTests.swift	Tests/OCCTXCAFTests/Annotations/XC
 Tests/OCCTXCAFTests/XCAFDocClippingPlaneToolTests.swift	Tests/OCCTXCAFTests/Annotations/XCAFDocClippingPlaneToolTests.swift	Annotations	-	XCAFDoc_ClippingPlaneTool
 Tests/OCCTXCAFTests/DocumentTests.swift	Tests/OCCTXCAFTests/Document/DocumentTests.swift	Document	-	Document creation and lengthUnit
 Tests/OCCTXCAFTests/DocumentModifiedTests.swift	Tests/OCCTXCAFTests/Document/DocumentModifiedTests.swift	Document	-	TDocStd_Document modified labels
-Tests/OCCTXCAFTests/DocumentTransactionTests.swift	Tests/OCCTXCAFTests/Document/DocumentTransactionTests.swift	Document	-	Document open, commit and abort transaction
-Tests/OCCTXCAFTests/DocumentUndoRedoTests.swift	Tests/OCCTXCAFTests/Document/DocumentUndoRedoTests.swift	Document	-	Document undo and redo
-Tests/OCCTXCAFTests/Issue970TransactionAPITests.swift	Tests/OCCTXCAFTests/Document/Issue970TransactionAPITests.swift	Document	-	named transactions and transactionNumber
-Tests/OCCTXCAFTests/TDFTransactionNamedTests.swift	Tests/OCCTXCAFTests/Document/TDFTransactionNamedTests.swift	Document	-	TDF_Transaction with a name
+Tests/OCCTXCAFTests/DocumentTransactionTests.swift	Tests/OCCTXCAFTests/Transactions/DocumentTransactionTests.swift	Transactions	-	Document open, commit and abort transaction
+Tests/OCCTXCAFTests/DocumentUndoRedoTests.swift	Tests/OCCTXCAFTests/Transactions/DocumentUndoRedoTests.swift	Transactions	-	Document undo and redo
+Tests/OCCTXCAFTests/Issue970TransactionAPITests.swift	Tests/OCCTXCAFTests/Transactions/Issue970TransactionAPITests.swift	Transactions	-	named transactions and transactionNumber
+Tests/OCCTXCAFTests/TDFTransactionNamedTests.swift	Tests/OCCTXCAFTests/Transactions/TDFTransactionNamedTests.swift	Transactions	-	TDF_Transaction with a name
 Tests/OCCTXCAFTests/TDocStdXLinkToolTests.swift	Tests/OCCTXCAFTests/Document/TDocStdXLinkToolTests.swift	Document	-	TDocStd_XLinkTool
 Tests/OCCTXCAFTests/XLinkTests.swift	Tests/OCCTXCAFTests/Document/XLinkTests.swift	Document	-	TDocStd_XLink
 Tests/OCCTXCAFTests/OCAFDocumentMetadataTests.swift	Tests/OCCTXCAFTests/Document/OCAFDocumentMetadataTests.swift	Document	-	storage format, saved flag and document count
@@ -131,6 +131,6 @@ Tests/OCCTXCAFTests/TFunctionGraphNodeTests.swift	Tests/OCCTXCAFTests/TFunction/
 Tests/OCCTXCAFTests/TFunctionIFunctionTests.swift	Tests/OCCTXCAFTests/TFunction/TFunctionIFunctionTests.swift	TFunction	-	TFunction_IFunction
 Tests/OCCTXCAFTests/TFunctionLogbookTests.swift	Tests/OCCTXCAFTests/TFunction/TFunctionLogbookTests.swift	TFunction	-	TFunction_Logbook
 Tests/OCCTXCAFTests/TFunctionScopeTests.swift	Tests/OCCTXCAFTests/TFunction/TFunctionScopeTests.swift	TFunction	-	TFunction_Scope
-Tests/OCCTXCAFTests/BRepGraphAttributeTests.swift	Tests/OCCTXCAFTests/BRepGraphAttributeTests.swift	(stays)	-	BRepGraph attribute store and Codable snapshot, no XCAF Document involved: belongs in OCCTBRepGraphTests, cross-target so not moved here
-Tests/OCCTXCAFTests/TextLabelAndPointCloudTests.swift	Tests/OCCTXCAFTests/TextLabelAndPointCloudTests.swift	(stays)	-	TextLabel and PointCloud scene annotations (Annotation.swift), no XCAF Document involved: cross-target so not moved here
+Tests/OCCTXCAFTests/BRepGraphAttributeTests.swift	Tests/OCCTBRepGraphTests/Attributes/BRepGraphAttributeTests.swift	Attributes	-	BRepGraph attribute store and Codable snapshot
+Tests/OCCTXCAFTests/TextLabelAndPointCloudTests.swift	Tests/OCCTDrawingTests/Visualization/TextLabelAndPointCloudTests.swift	Visualization	-	TextLabel and PointCloud scene annotations
 Tests/OCCTXCAFTests/XCAFTestFixtures.swift	Tests/OCCTXCAFTests/XCAFTestFixtures.swift	(stays)	-	shared helpers used across areas; fixtures stay at the root

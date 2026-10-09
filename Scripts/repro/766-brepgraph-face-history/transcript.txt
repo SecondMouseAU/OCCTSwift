@@ -1,0 +1,15 @@
+faceAdjacency(0): [ 2 3 4 5 ] sharedEdges(0,2): [ 0 ] (1)
+outerWire: 0 1 2 3 4 5
+faceShells: [ 0 | compounds 0 ] [ 0 | compounds 0 ] [ 0 | compounds 0 ] [ 0 | compounds 0 ] [ 0 | compounds 0 ] [ 0 | compounds 0 ]
+historyDefaults: layer=1 enabled=1 records=0
+historyToggle: afterDisable=0 afterEnable=1
+historyClear: recordsBefore=1 after=0
+oneToOneReadback: records=1 op=TestFillet
+splitMapping: FindDerived(kind 4, 3) = [ (4,100) (4,101) (4,102) ]
+deletionMapping: FindDerived(kind 2, 5) = [ ]
+deletionMapping: records=1
+findDerivedWalksForward: FindDerived(kind 4, 1) = [ (4,10) (4,20) (4,21) ]
+modified: FindDerived(kind 2, 0) = [ (2,100) ]
+deleted: FindDerived(kind 2, 1) = [ ]
+untouched: FindDerived(kind 2, 2) = [ ]
+findOriginal(700) = (2,7); unrecorded findOriginal(3) = (2,3)
