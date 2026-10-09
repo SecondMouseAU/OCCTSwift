@@ -1,4 +1,4 @@
-// Epic #766, Tests/OCCTModelingTests/Issue532CylindricalHolePartSelectionTests.swift: kernel parity
+// Epic #766, Tests/OCCTModelingTests/Features/Issue532CylindricalHolePartSelectionTests.swift: kernel parity
 // for all seven tests. OCCTBRepFeatCylindricalHole / ...Status run BRepFeat_MakeCylindricalHole:
 // Init(shape, axis), then PerformUntilEnd / PerformThruNext / PerformBlind / Perform(R, from, to) /
 // Perform(R), Status(), Build(). Same fixtures and extents here, printing removed volume, solid

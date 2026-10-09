@@ -1,4 +1,4 @@
-// Epic #766, Tests/OCCTModelingTests/FilletBuilderCompletionsV124Tests.swift: kernel parity for
+// Epic #766, Tests/OCCTModelingTests/Blends/FilletBuilderCompletionsV124Tests.swift: kernel parity for
 // all six tests. FilletBuilder wraps one BRepFilletAPI_MakeFillet (OCCTFilletBuilderCreate); each
 // accessor is the same-named MakeFillet member (Contour, Edge, FirstVertex, LastVertex, Abscissa,
 // RelativeAbscissa, Closed, ClosedAndTangent, SetRadius, NbSurfaces, StripeStatus,

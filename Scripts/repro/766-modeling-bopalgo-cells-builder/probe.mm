@@ -1,4 +1,4 @@
-// Epic #766, Tests/OCCTModelingTests/BOPAlgoCellsBuilderTests.swift: kernel parity for all three tests.
+// Epic #766, Tests/OCCTModelingTests/BOPAlgo/BOPAlgoCellsBuilderTests.swift: kernel parity for all three tests.
 // CellsBuilder is BOPAlgo_CellsBuilder: AddArgument per shape + Perform (OCCTCellsBuilderCreate),
 // AddAllToResult(material, true), RemoveAllFromResult, RemoveInternalBoundaries, Shape().
 // AddAllToResult is always called with update = true by the bridge, which merges same-material

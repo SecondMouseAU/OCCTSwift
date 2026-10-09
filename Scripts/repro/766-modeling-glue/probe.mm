@@ -1,4 +1,4 @@
-// Epic #766, Tests/OCCTModelingTests/GlueTests.swift: kernel parity for its one test.
+// Epic #766, Tests/OCCTModelingTests/Booleans/GlueTests.swift: kernel parity for its one test.
 // OCCTShapeGlue is BRepAlgoAPI_Fuse with SetGlue(BOPAlgo_GlueShift), SetFuzzyValue(tol), the two
 // shapes as arguments, Build(). Same input: two 10 mm boxes, the second shifted +10 in x so they
 // share a face, tolerance 1e-6.

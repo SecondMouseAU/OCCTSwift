@@ -1,4 +1,4 @@
-// Epic #766, Tests/OCCTModelingTests/HistoryExtendedTests.swift: kernel parity for all three
+// Epic #766, Tests/OCCTModelingTests/History/HistoryExtendedTests.swift: kernel parity for all three
 // tests. Shape.History is one BRepTools_History (OCCTHistoryCreate); AddModified, AddGenerated,
 // Merge, ReplaceGenerated, ReplaceModified, HasModified, HasGenerated, Modified, Generated are
 // that class's members. Same inputs: three boxes of 10, 5 and 3 mm centred at the origin.

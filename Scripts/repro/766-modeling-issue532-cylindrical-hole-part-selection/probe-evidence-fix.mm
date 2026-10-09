@@ -2,7 +2,7 @@
 // validity as 0/1; the parity records now carry the same keys and types on both sides, so this
 // probe repeats the same drills with every double at %.17g and every flag as true/false, one
 // `label: key=value ...` line per drill. Original header follows.
-// Epic #766, Tests/OCCTModelingTests/Issue532CylindricalHolePartSelectionTests.swift: kernel parity
+// Epic #766, Tests/OCCTModelingTests/Features/Issue532CylindricalHolePartSelectionTests.swift: kernel parity
 // for all seven tests. OCCTBRepFeatCylindricalHole / ...Status run BRepFeat_MakeCylindricalHole:
 // Init(shape, axis), then PerformUntilEnd / PerformThruNext / PerformBlind / Perform(R, from, to) /
 // Perform(R), Status(), Build(). Same fixtures and extents here, printing removed volume, solid
