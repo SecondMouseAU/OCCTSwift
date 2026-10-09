@@ -1,0 +1,564 @@
+case	crit	label	radius	edges	outcome	failure_lines
+C1-opposite-top-w4	2	0.5c	1.0	2	done	
+C1-opposite-top-w4	2	c-1e-3	1.999	2	done	
+C1-opposite-top-w4	2	c-1e-4	1.9999	2	done	
+C1-opposite-top-w4	2	c-1e-8	1.99999999	2	done	
+C1-opposite-top-w4	2	c-1ulp	1.9999999999999998	2	IsDone=false	
+C1-opposite-top-w4	2	c	2	2	IsDone=false	OneCorner : fillets have too big radiuses
+C1-opposite-top-w4	2	c+1ulp	2.0000000000000004	2	IsDone=false	OneCorner : fillets have too big radiuses
+C1-opposite-top-w4	2	c+1e-8	2.00000001	2	IsDone=false	OneCorner : fillets have too big radiuses
+C1-opposite-top-w4	2	c+1e-4	2.0001	2	IsDone=false	OneCorner : fillets have too big radiuses
+C1-opposite-top-w4	2	c+1e-3	2.001	2	IsDone=false	OneCorner : fillets have too big radiuses
+C1-opposite-top-w4	2	1.5c	3.0	2	IsDone=false	OneCorner : fillets have too big radiuses
+C2-opposite-top-w10	5	0.5c	2.5	2	done	
+C2-opposite-top-w10	5	c-1e-3	4.999	2	done	
+C2-opposite-top-w10	5	c-1e-4	4.9999	2	done	
+C2-opposite-top-w10	5	c-1e-8	4.99999999	2	done	
+C2-opposite-top-w10	5	c-1ulp	4.999999999999999	2	IsDone=false	
+C2-opposite-top-w10	5	c	5	2	IsDone=false	OneCorner : fillets have too big radiuses
+C2-opposite-top-w10	5	c+1ulp	5.000000000000001	2	IsDone=false	OneCorner : fillets have too big radiuses
+C2-opposite-top-w10	5	c+1e-8	5.00000001	2	IsDone=false	OneCorner : fillets have too big radiuses
+C2-opposite-top-w10	5	c+1e-4	5.0001	2	IsDone=false	OneCorner : fillets have too big radiuses
+C2-opposite-top-w10	5	c+1e-3	5.001	2	IsDone=false	OneCorner : fillets have too big radiuses
+C2-opposite-top-w10	5	1.5c	7.5	2	IsDone=false	StartSol echec
+C3-opposite-side-w6	3	0.5c	1.5	2	done	
+C3-opposite-side-w6	3	c-1e-3	2.999	2	done	
+C3-opposite-side-w6	3	c-1e-4	2.9999	2	done	
+C3-opposite-side-w6	3	c-1e-8	2.99999999	2	done	
+C3-opposite-side-w6	3	c-1ulp	2.9999999999999996	2	IsDone=false	
+C3-opposite-side-w6	3	c	3	2	IsDone=false	OneCorner : fillets have too big radiuses
+C3-opposite-side-w6	3	c+1ulp	3.0000000000000004	2	IsDone=false	OneCorner : fillets have too big radiuses
+C3-opposite-side-w6	3	c+1e-8	3.00000001	2	IsDone=false	OneCorner : fillets have too big radiuses
+C3-opposite-side-w6	3	c+1e-4	3.0001	2	IsDone=false	OneCorner : fillets have too big radiuses
+C3-opposite-side-w6	3	c+1e-3	3.001	2	IsDone=false	OneCorner : fillets have too big radiuses
+C3-opposite-side-w6	3	1.5c	4.5	2	IsDone=false	StartSol echec
+C4-adjacent-top	2	0.5c	1.0	2	done	[TRACE] PerformTwoCornerbyInter return done=1 at C2.cxx(original) line-tag 807
+C4-adjacent-top	2	c-1e-3	1.999	2	done	[TRACE] PerformTwoCornerbyInter return done=1 at C2.cxx(original) line-tag 807
+C4-adjacent-top	2	c-1e-4	1.9999	2	done	[TRACE] PerformTwoCornerbyInter return done=1 at C2.cxx(original) line-tag 807
+C4-adjacent-top	2	c-1e-8	1.99999999	2	done	[TRACE] PerformTwoCornerbyInter return done=1 at C2.cxx(original) line-tag 807
+C4-adjacent-top	2	c-1ulp	1.9999999999999998	2	done	[TRACE] PerformTwoCornerbyInter return done=1 at C2.cxx(original) line-tag 807
+C4-adjacent-top	2	c	2	2	done	[TRACE] PerformTwoCornerbyInter return done=1 at C2.cxx(original) line-tag 807
+C4-adjacent-top	2	c+1ulp	2.0000000000000004	2	done	[TRACE] PerformTwoCornerbyInter return done=1 at C2.cxx(original) line-tag 807
+C4-adjacent-top	2	c+1e-8	2.00000001	2	done	[TRACE] PerformTwoCornerbyInter return done=1 at C2.cxx(original) line-tag 807
+C4-adjacent-top	2	c+1e-4	2.0001	2	done	[TRACE] PerformTwoCornerbyInter return done=1 at C2.cxx(original) line-tag 807
+C4-adjacent-top	2	c+1e-3	2.001	2	done	[TRACE] PerformTwoCornerbyInter return done=1 at C2.cxx(original) line-tag 807
+C4-adjacent-top	2	1.5c	3.0	2	done	[TRACE] PerformTwoCornerbyInter return done=1 at C2.cxx(original) line-tag 807
+C4-adjacent-top	3	0.5c	1.5	2	done	[TRACE] PerformTwoCornerbyInter return done=1 at C2.cxx(original) line-tag 807
+C4-adjacent-top	3	c-1e-3	2.999	2	done	[TRACE] PerformTwoCornerbyInter return done=1 at C2.cxx(original) line-tag 807
+C4-adjacent-top	3	c-1e-4	2.9999	2	done	[TRACE] PerformTwoCornerbyInter return done=1 at C2.cxx(original) line-tag 807
+C4-adjacent-top	3	c-1e-8	2.99999999	2	done	[TRACE] PerformTwoCornerbyInter return done=1 at C2.cxx(original) line-tag 807
+C4-adjacent-top	3	c-1ulp	2.9999999999999996	2	done	[TRACE] PerformTwoCornerbyInter return done=1 at C2.cxx(original) line-tag 807
+C4-adjacent-top	3	c	3	2	done	[TRACE] PerformTwoCornerbyInter return done=1 at C2.cxx(original) line-tag 807
+C4-adjacent-top	3	c+1ulp	3.0000000000000004	2	done	[TRACE] PerformTwoCornerbyInter return done=1 at C2.cxx(original) line-tag 807
+C4-adjacent-top	3	c+1e-8	3.00000001	2	done	[TRACE] PerformTwoCornerbyInter return done=1 at C2.cxx(original) line-tag 807
+C4-adjacent-top	3	c+1e-4	3.0001	2	done	[TRACE] PerformTwoCornerbyInter return done=1 at C2.cxx(original) line-tag 807
+C4-adjacent-top	3	c+1e-3	3.001	2	done	[TRACE] PerformTwoCornerbyInter return done=1 at C2.cxx(original) line-tag 807
+C4-adjacent-top	3	1.5c	4.5	2	IsDone=false	StartSol echec
+C4-adjacent-top	4	0.5c	2.0	2	done	[TRACE] PerformTwoCornerbyInter return done=1 at C2.cxx(original) line-tag 807
+C4-adjacent-top	4	c-1e-3	3.999	2	done	[TRACE] PerformTwoCornerbyInter return done=1 at C2.cxx(original) line-tag 807
+C4-adjacent-top	4	c-1e-4	3.9999	2	done	[TRACE] PerformTwoCornerbyInter return done=1 at C2.cxx(original) line-tag 807
+C4-adjacent-top	4	c-1e-8	3.99999999	2	done	[TRACE] PerformTwoCornerbyInter return done=1 at C2.cxx(original) line-tag 807
+C4-adjacent-top	4	c-1ulp	3.9999999999999996	2	IsDone=false	StartSol echec
+C4-adjacent-top	4	c	4	2	IsDone=false	StartSol echec
+C4-adjacent-top	4	c+1ulp	4.000000000000001	2	IsDone=false	StartSol echec
+C4-adjacent-top	4	c+1e-8	4.00000001	2	IsDone=false	StartSol echec
+C4-adjacent-top	4	c+1e-4	4.0001	2	IsDone=false	StartSol echec
+C4-adjacent-top	4	c+1e-3	4.001	2	IsDone=false	StartSol echec
+C4-adjacent-top	4	1.5c	6.0	2	IsDone=false	StartSol echec
+C4-adjacent-top	5	0.5c	2.5	2	done	[TRACE] PerformTwoCornerbyInter return done=1 at C2.cxx(original) line-tag 807
+C4-adjacent-top	5	c-1e-3	4.999	2	IsDone=false	StartSol echec
+C4-adjacent-top	5	c-1e-4	4.9999	2	IsDone=false	StartSol echec
+C4-adjacent-top	5	c-1e-8	4.99999999	2	IsDone=false	StartSol echec
+C4-adjacent-top	5	c-1ulp	4.999999999999999	2	IsDone=false	StartSol echec
+C4-adjacent-top	5	c	5	2	IsDone=false	StartSol echec
+C4-adjacent-top	5	c+1ulp	5.000000000000001	2	IsDone=false	StartSol echec
+C4-adjacent-top	5	c+1e-8	5.00000001	2	IsDone=false	StartSol echec
+C4-adjacent-top	5	c+1e-4	5.0001	2	IsDone=false	StartSol echec
+C4-adjacent-top	5	c+1e-3	5.001	2	IsDone=false	StartSol echec
+C4-adjacent-top	5	1.5c	7.5	2	IsDone=false	StartSol echec
+C4-adjacent-top	6	0.5c	3.0	2	done	[TRACE] PerformTwoCornerbyInter return done=1 at C2.cxx(original) line-tag 807
+C4-adjacent-top	6	c-1e-3	5.999	2	IsDone=false	StartSol echec
+C4-adjacent-top	6	c-1e-4	5.9999	2	IsDone=false	StartSol echec
+C4-adjacent-top	6	c-1e-8	5.99999999	2	IsDone=false	StartSol echec
+C4-adjacent-top	6	c-1ulp	5.999999999999999	2	IsDone=false	StartSol echec
+C4-adjacent-top	6	c	6	2	IsDone=false	StartSol echec
+C4-adjacent-top	6	c+1ulp	6.000000000000001	2	IsDone=false	StartSol echec
+C4-adjacent-top	6	c+1e-8	6.00000001	2	IsDone=false	StartSol echec
+C4-adjacent-top	6	c+1e-4	6.0001	2	IsDone=false	StartSol echec
+C4-adjacent-top	6	c+1e-3	6.001	2	IsDone=false	StartSol echec
+C4-adjacent-top	6	1.5c	9.0	2	IsDone=false	StartSol echec
+C5-adjacent-vertical	2	0.5c	1.0	2	done	[TRACE] PerformTwoCornerbyInter return done=1 at C2.cxx(original) line-tag 807
+C5-adjacent-vertical	2	c-1e-3	1.999	2	done	[TRACE] PerformTwoCornerbyInter return done=1 at C2.cxx(original) line-tag 807
+C5-adjacent-vertical	2	c-1e-4	1.9999	2	done	[TRACE] PerformTwoCornerbyInter return done=1 at C2.cxx(original) line-tag 807
+C5-adjacent-vertical	2	c-1e-8	1.99999999	2	done	[TRACE] PerformTwoCornerbyInter return done=1 at C2.cxx(original) line-tag 807
+C5-adjacent-vertical	2	c-1ulp	1.9999999999999998	2	done	[TRACE] PerformTwoCornerbyInter return done=1 at C2.cxx(original) line-tag 807
+C5-adjacent-vertical	2	c	2	2	done	[TRACE] PerformTwoCornerbyInter return done=1 at C2.cxx(original) line-tag 807
+C5-adjacent-vertical	2	c+1ulp	2.0000000000000004	2	done	[TRACE] PerformTwoCornerbyInter return done=1 at C2.cxx(original) line-tag 807
+C5-adjacent-vertical	2	c+1e-8	2.00000001	2	done	[TRACE] PerformTwoCornerbyInter return done=1 at C2.cxx(original) line-tag 807
+C5-adjacent-vertical	2	c+1e-4	2.0001	2	done	[TRACE] PerformTwoCornerbyInter return done=1 at C2.cxx(original) line-tag 807
+C5-adjacent-vertical	2	c+1e-3	2.001	2	done	[TRACE] PerformTwoCornerbyInter return done=1 at C2.cxx(original) line-tag 807
+C5-adjacent-vertical	2	1.5c	3.0	2	done	[TRACE] PerformTwoCornerbyInter return done=1 at C2.cxx(original) line-tag 807
+C5-adjacent-vertical	3	0.5c	1.5	2	done	[TRACE] PerformTwoCornerbyInter return done=1 at C2.cxx(original) line-tag 807
+C5-adjacent-vertical	3	c-1e-3	2.999	2	done	[TRACE] PerformTwoCornerbyInter return done=1 at C2.cxx(original) line-tag 807
+C5-adjacent-vertical	3	c-1e-4	2.9999	2	done	[TRACE] PerformTwoCornerbyInter return done=1 at C2.cxx(original) line-tag 807
+C5-adjacent-vertical	3	c-1e-8	2.99999999	2	done	[TRACE] PerformTwoCornerbyInter return done=1 at C2.cxx(original) line-tag 807
+C5-adjacent-vertical	3	c-1ulp	2.9999999999999996	2	done	[TRACE] PerformTwoCornerbyInter return done=1 at C2.cxx(original) line-tag 807
+C5-adjacent-vertical	3	c	3	2	done	[TRACE] PerformTwoCornerbyInter return done=1 at C2.cxx(original) line-tag 807
+C5-adjacent-vertical	3	c+1ulp	3.0000000000000004	2	done	[TRACE] PerformTwoCornerbyInter return done=1 at C2.cxx(original) line-tag 807
+C5-adjacent-vertical	3	c+1e-8	3.00000001	2	done	[TRACE] PerformTwoCornerbyInter return done=1 at C2.cxx(original) line-tag 807
+C5-adjacent-vertical	3	c+1e-4	3.0001	2	done	[TRACE] PerformTwoCornerbyInter return done=1 at C2.cxx(original) line-tag 807
+C5-adjacent-vertical	3	c+1e-3	3.001	2	done	[TRACE] PerformTwoCornerbyInter return done=1 at C2.cxx(original) line-tag 807
+C5-adjacent-vertical	3	1.5c	4.5	2	IsDone=false	StartSol echec
+C5-adjacent-vertical	4	0.5c	2.0	2	done	[TRACE] PerformTwoCornerbyInter return done=1 at C2.cxx(original) line-tag 807
+C5-adjacent-vertical	4	c-1e-3	3.999	2	done	[TRACE] PerformTwoCornerbyInter return done=1 at C2.cxx(original) line-tag 807
+C5-adjacent-vertical	4	c-1e-4	3.9999	2	done	[TRACE] PerformTwoCornerbyInter return done=1 at C2.cxx(original) line-tag 807
+C5-adjacent-vertical	4	c-1e-8	3.99999999	2	done	[TRACE] PerformTwoCornerbyInter return done=1 at C2.cxx(original) line-tag 807
+C5-adjacent-vertical	4	c-1ulp	3.9999999999999996	2	IsDone=false	StartSol echec
+C5-adjacent-vertical	4	c	4	2	IsDone=false	StartSol echec
+C5-adjacent-vertical	4	c+1ulp	4.000000000000001	2	IsDone=false	StartSol echec
+C5-adjacent-vertical	4	c+1e-8	4.00000001	2	IsDone=false	StartSol echec
+C5-adjacent-vertical	4	c+1e-4	4.0001	2	IsDone=false	StartSol echec
+C5-adjacent-vertical	4	c+1e-3	4.001	2	IsDone=false	StartSol echec
+C5-adjacent-vertical	4	1.5c	6.0	2	IsDone=false	StartSol echec
+C5-adjacent-vertical	5	0.5c	2.5	2	done	[TRACE] PerformTwoCornerbyInter return done=1 at C2.cxx(original) line-tag 807
+C5-adjacent-vertical	5	c-1e-3	4.999	2	IsDone=false	StartSol echec
+C5-adjacent-vertical	5	c-1e-4	4.9999	2	IsDone=false	StartSol echec
+C5-adjacent-vertical	5	c-1e-8	4.99999999	2	IsDone=false	StartSol echec
+C5-adjacent-vertical	5	c-1ulp	4.999999999999999	2	IsDone=false	StartSol echec
+C5-adjacent-vertical	5	c	5	2	IsDone=false	StartSol echec
+C5-adjacent-vertical	5	c+1ulp	5.000000000000001	2	IsDone=false	StartSol echec
+C5-adjacent-vertical	5	c+1e-8	5.00000001	2	IsDone=false	StartSol echec
+C5-adjacent-vertical	5	c+1e-4	5.0001	2	IsDone=false	StartSol echec
+C5-adjacent-vertical	5	c+1e-3	5.001	2	IsDone=false	StartSol echec
+C5-adjacent-vertical	5	1.5c	7.5	2	IsDone=false	StartSol echec
+C5-adjacent-vertical	6	0.5c	3.0	2	done	[TRACE] PerformTwoCornerbyInter return done=1 at C2.cxx(original) line-tag 807
+C5-adjacent-vertical	6	c-1e-3	5.999	2	IsDone=false	StartSol echec
+C5-adjacent-vertical	6	c-1e-4	5.9999	2	IsDone=false	StartSol echec
+C5-adjacent-vertical	6	c-1e-8	5.99999999	2	IsDone=false	StartSol echec
+C5-adjacent-vertical	6	c-1ulp	5.999999999999999	2	IsDone=false	StartSol echec
+C5-adjacent-vertical	6	c	6	2	IsDone=false	StartSol echec
+C5-adjacent-vertical	6	c+1ulp	6.000000000000001	2	IsDone=false	StartSol echec
+C5-adjacent-vertical	6	c+1e-8	6.00000001	2	IsDone=false	StartSol echec
+C5-adjacent-vertical	6	c+1e-4	6.0001	2	IsDone=false	StartSol echec
+C5-adjacent-vertical	6	c+1e-3	6.001	2	IsDone=false	StartSol echec
+C5-adjacent-vertical	6	1.5c	9.0	2	IsDone=false	StartSol echec
+C6-three-at-corner	2	0.5c	1.0	3	done	
+C6-three-at-corner	2	c-1e-3	1.999	3	done	
+C6-three-at-corner	2	c-1e-4	1.9999	3	done	
+C6-three-at-corner	2	c-1e-8	1.99999999	3	done	
+C6-three-at-corner	2	c-1ulp	1.9999999999999998	3	done	
+C6-three-at-corner	2	c	2	3	done	
+C6-three-at-corner	2	c+1ulp	2.0000000000000004	3	done	
+C6-three-at-corner	2	c+1e-8	2.00000001	3	done	
+C6-three-at-corner	2	c+1e-4	2.0001	3	done	
+C6-three-at-corner	2	c+1e-3	2.001	3	done	
+C6-three-at-corner	2	1.5c	3.0	3	done	
+C6-three-at-corner	3	0.5c	1.5	3	done	
+C6-three-at-corner	3	c-1e-3	2.999	3	done	
+C6-three-at-corner	3	c-1e-4	2.9999	3	done	
+C6-three-at-corner	3	c-1e-8	2.99999999	3	done	
+C6-three-at-corner	3	c-1ulp	2.9999999999999996	3	done	
+C6-three-at-corner	3	c	3	3	done	
+C6-three-at-corner	3	c+1ulp	3.0000000000000004	3	done	
+C6-three-at-corner	3	c+1e-8	3.00000001	3	done	
+C6-three-at-corner	3	c+1e-4	3.0001	3	done	
+C6-three-at-corner	3	c+1e-3	3.001	3	done	
+C6-three-at-corner	3	1.5c	4.5	3	IsDone=false	StartSol echec
+C6-three-at-corner	4	0.5c	2.0	3	done	
+C6-three-at-corner	4	c-1e-3	3.999	3	done	
+C6-three-at-corner	4	c-1e-4	3.9999	3	done	
+C6-three-at-corner	4	c-1e-8	3.99999999	3	done	
+C6-three-at-corner	4	c-1ulp	3.9999999999999996	3	IsDone=false	StartSol echec
+C6-three-at-corner	4	c	4	3	IsDone=false	StartSol echec
+C6-three-at-corner	4	c+1ulp	4.000000000000001	3	IsDone=false	StartSol echec
+C6-three-at-corner	4	c+1e-8	4.00000001	3	IsDone=false	StartSol echec
+C6-three-at-corner	4	c+1e-4	4.0001	3	IsDone=false	StartSol echec
+C6-three-at-corner	4	c+1e-3	4.001	3	IsDone=false	StartSol echec
+C6-three-at-corner	4	1.5c	6.0	3	IsDone=false	StartSol echec
+C6-three-at-corner	5	0.5c	2.5	3	done	
+C6-three-at-corner	5	c-1e-3	4.999	3	IsDone=false	StartSol echec
+C6-three-at-corner	5	c-1e-4	4.9999	3	IsDone=false	StartSol echec
+C6-three-at-corner	5	c-1e-8	4.99999999	3	IsDone=false	StartSol echec
+C6-three-at-corner	5	c-1ulp	4.999999999999999	3	IsDone=false	StartSol echec
+C6-three-at-corner	5	c	5	3	IsDone=false	StartSol echec
+C6-three-at-corner	5	c+1ulp	5.000000000000001	3	IsDone=false	StartSol echec
+C6-three-at-corner	5	c+1e-8	5.00000001	3	IsDone=false	StartSol echec
+C6-three-at-corner	5	c+1e-4	5.0001	3	IsDone=false	StartSol echec
+C6-three-at-corner	5	c+1e-3	5.001	3	IsDone=false	StartSol echec
+C6-three-at-corner	5	1.5c	7.5	3	IsDone=false	StartSol echec
+C6-three-at-corner	6	0.5c	3.0	3	done	
+C6-three-at-corner	6	c-1e-3	5.999	3	IsDone=false	StartSol echec
+C6-three-at-corner	6	c-1e-4	5.9999	3	IsDone=false	StartSol echec
+C6-three-at-corner	6	c-1e-8	5.99999999	3	IsDone=false	StartSol echec
+C6-three-at-corner	6	c-1ulp	5.999999999999999	3	IsDone=false	StartSol echec
+C6-three-at-corner	6	c	6	3	IsDone=false	StartSol echec
+C6-three-at-corner	6	c+1ulp	6.000000000000001	3	IsDone=false	StartSol echec
+C6-three-at-corner	6	c+1e-8	6.00000001	3	IsDone=false	StartSol echec
+C6-three-at-corner	6	c+1e-4	6.0001	3	IsDone=false	StartSol echec
+C6-three-at-corner	6	c+1e-3	6.001	3	IsDone=false	StartSol echec
+C6-three-at-corner	6	1.5c	9.0	3	IsDone=false	StartSol echec
+C7-top-frame	2	0.5c	1.0	4	done	[TRACE] PerformTwoCornerbyInter return done=1 at C2.cxx(original) line-tag 807
+C7-top-frame	2	c-1e-3	1.999	4	done	[TRACE] PerformTwoCornerbyInter return done=1 at C2.cxx(original) line-tag 807
+C7-top-frame	2	c-1e-4	1.9999	4	done	[TRACE] PerformTwoCornerbyInter return done=1 at C2.cxx(original) line-tag 807
+C7-top-frame	2	c-1e-8	1.99999999	4	done	[TRACE] PerformTwoCornerbyInter return done=1 at C2.cxx(original) line-tag 807
+C7-top-frame	2	c-1ulp	1.9999999999999998	4	IsDone=false	[TRACE] PerformTwoCornerbyInter return done=1 at C2.cxx(original) line-tag 807
+C7-top-frame	2	c	2	4	IsDone=false	[TRACE] PerformTwoCornerbyInter return done=1 at C2.cxx(original) line-tag 807
+C7-top-frame	2	c+1ulp	2.0000000000000004	4	IsDone=false	[TRACE] PerformTwoCornerbyInter return done=1 at C2.cxx(original) line-tag 807
+C7-top-frame	2	c+1e-8	2.00000001	4	done-INVALID	[TRACE] PerformTwoCornerbyInter return done=1 at C2.cxx(original) line-tag 807
+C7-top-frame	2	c+1e-4	2.0001	4	IsDone=false	[TRACE] PerformTwoCornerbyInter return done=1 at C2.cxx(original) line-tag 807
+C7-top-frame	2	c+1e-3	2.001	4	IsDone=false	[TRACE] PerformTwoCornerbyInter return done=1 at C2.cxx(original) line-tag 807
+C7-top-frame	2	1.5c	3.0	4	done-INVALID	[TRACE] PerformTwoCornerbyInter return done=0 at C2.cxx(original) line-tag 221 | [TRACE] PerformTwoCornerbyInter return done=1 at C2.cxx(original) line-tag 807
+C7-top-frame	3	0.5c	1.5	4	done	[TRACE] PerformTwoCornerbyInter return done=1 at C2.cxx(original) line-tag 807
+C7-top-frame	3	c-1e-3	2.999	4	done-INVALID	[TRACE] PerformTwoCornerbyInter return done=0 at C2.cxx(original) line-tag 221 | [TRACE] PerformTwoCornerbyInter return done=1 at C2.cxx(original) line-tag 807
+C7-top-frame	3	c-1e-4	2.9999	4	done-INVALID	[TRACE] PerformTwoCornerbyInter return done=0 at C2.cxx(original) line-tag 221 | [TRACE] PerformTwoCornerbyInter return done=1 at C2.cxx(original) line-tag 807
+C7-top-frame	3	c-1e-8	2.99999999	4	done-INVALID	[TRACE] PerformTwoCornerbyInter return done=0 at C2.cxx(original) line-tag 221 | [TRACE] PerformTwoCornerbyInter return done=1 at C2.cxx(original) line-tag 807
+C7-top-frame	3	c-1ulp	2.9999999999999996	4	done-INVALID	[TRACE] PerformTwoCornerbyInter return done=0 at C2.cxx(original) line-tag 221 | [TRACE] PerformTwoCornerbyInter return done=1 at C2.cxx(original) line-tag 807
+C7-top-frame	3	c	3	4	done-INVALID	[TRACE] PerformTwoCornerbyInter return done=0 at C2.cxx(original) line-tag 221 | [TRACE] PerformTwoCornerbyInter return done=1 at C2.cxx(original) line-tag 807
+C7-top-frame	3	c+1ulp	3.0000000000000004	4	done-INVALID	[TRACE] PerformTwoCornerbyInter return done=0 at C2.cxx(original) line-tag 221 | [TRACE] PerformTwoCornerbyInter return done=1 at C2.cxx(original) line-tag 807
+C7-top-frame	3	c+1e-8	3.00000001	4	done-INVALID	[TRACE] PerformTwoCornerbyInter return done=0 at C2.cxx(original) line-tag 221 | [TRACE] PerformTwoCornerbyInter return done=1 at C2.cxx(original) line-tag 807
+C7-top-frame	3	c+1e-4	3.0001	4	done-INVALID	[TRACE] PerformTwoCornerbyInter return done=0 at C2.cxx(original) line-tag 221 | [TRACE] PerformTwoCornerbyInter return done=1 at C2.cxx(original) line-tag 807
+C7-top-frame	3	c+1e-3	3.001	4	done-INVALID	[TRACE] PerformTwoCornerbyInter return done=0 at C2.cxx(original) line-tag 221 | [TRACE] PerformTwoCornerbyInter return done=1 at C2.cxx(original) line-tag 807
+C7-top-frame	3	1.5c	4.5	4	IsDone=false	StartSol echec
+C7-top-frame	5	0.5c	2.5	4	done-INVALID	[TRACE] PerformTwoCornerbyInter return done=0 at C2.cxx(original) line-tag 221 | [TRACE] PerformTwoCornerbyInter return done=1 at C2.cxx(original) line-tag 807
+C7-top-frame	5	c-1e-3	4.999	4	IsDone=false	StartSol echec
+C7-top-frame	5	c-1e-4	4.9999	4	IsDone=false	StartSol echec
+C7-top-frame	5	c-1e-8	4.99999999	4	IsDone=false	StartSol echec
+C7-top-frame	5	c-1ulp	4.999999999999999	4	IsDone=false	StartSol echec
+C7-top-frame	5	c	5	4	IsDone=false	StartSol echec
+C7-top-frame	5	c+1ulp	5.000000000000001	4	IsDone=false	StartSol echec
+C7-top-frame	5	c+1e-8	5.00000001	4	IsDone=false	StartSol echec
+C7-top-frame	5	c+1e-4	5.0001	4	IsDone=false	StartSol echec
+C7-top-frame	5	c+1e-3	5.001	4	IsDone=false	StartSol echec
+C7-top-frame	5	1.5c	7.5	4	IsDone=false	StartSol echec
+C8-all-12-edges	2	0.5c	1.0	12	done	
+C8-all-12-edges	2	c-1e-3	1.999	12	done	
+C8-all-12-edges	2	c-1e-4	1.9999	12	done	
+C8-all-12-edges	2	c-1e-8	1.99999999	12	done	
+C8-all-12-edges	2	c-1ulp	1.9999999999999998	12	IsDone=false	
+C8-all-12-edges	2	c	2	12	IsDone=false	
+C8-all-12-edges	2	c+1ulp	2.0000000000000004	12	IsDone=false	
+C8-all-12-edges	2	c+1e-8	2.00000001	12	IsDone=false	
+C8-all-12-edges	2	c+1e-4	2.0001	12	done-INVALID	
+C8-all-12-edges	2	c+1e-3	2.001	12	done-INVALID	
+C8-all-12-edges	2	1.5c	3.0	12	IsDone=false	
+C8-all-12-edges	3	0.5c	1.5	12	done	
+C8-all-12-edges	3	c-1e-3	2.999	12	done-INVALID	
+C8-all-12-edges	3	c-1e-4	2.9999	12	done-INVALID	
+C8-all-12-edges	3	c-1e-8	2.99999999	12	done-INVALID	
+C8-all-12-edges	3	c-1ulp	2.9999999999999996	12	IsDone=false	
+C8-all-12-edges	3	c	3	12	IsDone=false	
+C8-all-12-edges	3	c+1ulp	3.0000000000000004	12	IsDone=false	
+C8-all-12-edges	3	c+1e-8	3.00000001	12	IsDone=false	
+C8-all-12-edges	3	c+1e-4	3.0001	12	done-INVALID	
+C8-all-12-edges	3	c+1e-3	3.001	12	done-INVALID	
+C8-all-12-edges	3	1.5c	4.5	12	IsDone=false	StartSol echec
+C9-cube-opposite	2	0.5c	1.0	2	done	
+C9-cube-opposite	2	c-1e-3	1.999	2	done	
+C9-cube-opposite	2	c-1e-4	1.9999	2	done	
+C9-cube-opposite	2	c-1e-8	1.99999999	2	done	
+C9-cube-opposite	2	c-1ulp	1.9999999999999998	2	IsDone=false	
+C9-cube-opposite	2	c	2	2	IsDone=false	
+C9-cube-opposite	2	c+1ulp	2.0000000000000004	2	IsDone=false	OneCorner : fillets have too big radiuses
+C9-cube-opposite	2	c+1e-8	2.00000001	2	IsDone=false	OneCorner : fillets have too big radiuses
+C9-cube-opposite	2	c+1e-4	2.0001	2	IsDone=false	OneCorner : fillets have too big radiuses
+C9-cube-opposite	2	c+1e-3	2.001	2	IsDone=false	OneCorner : fillets have too big radiuses
+C9-cube-opposite	2	1.5c	3.0	2	IsDone=false	OneCorner : fillets have too big radiuses
+C10-cube-top-frame	2	0.5c	1.0	4	done	[TRACE] PerformTwoCornerbyInter return done=1 at C2.cxx(original) line-tag 807
+C10-cube-top-frame	2	c-1e-3	1.999	4	done	[TRACE] PerformTwoCornerbyInter return done=1 at C2.cxx(original) line-tag 807
+C10-cube-top-frame	2	c-1e-4	1.9999	4	done	[TRACE] PerformTwoCornerbyInter return done=1 at C2.cxx(original) line-tag 807
+C10-cube-top-frame	2	c-1e-8	1.99999999	4	done	[TRACE] PerformTwoCornerbyInter return done=1 at C2.cxx(original) line-tag 807
+C10-cube-top-frame	2	c-1ulp	1.9999999999999998	4	IsDone=false	[TRACE] PerformTwoCornerbyInter return done=1 at C2.cxx(original) line-tag 807
+C10-cube-top-frame	2	c	2	4	IsDone=false	[TRACE] PerformTwoCornerbyInter return done=1 at C2.cxx(original) line-tag 807
+C10-cube-top-frame	2	c+1ulp	2.0000000000000004	4	IsDone=false	[TRACE] PerformTwoCornerbyInter return done=1 at C2.cxx(original) line-tag 807
+C10-cube-top-frame	2	c+1e-8	2.00000001	4	done-INVALID	[TRACE] PerformTwoCornerbyInter return done=1 at C2.cxx(original) line-tag 807
+C10-cube-top-frame	2	c+1e-4	2.0001	4	IsDone=false	[TRACE] PerformTwoCornerbyInter return done=1 at C2.cxx(original) line-tag 807
+C10-cube-top-frame	2	c+1e-3	2.001	4	IsDone=false	[TRACE] PerformTwoCornerbyInter return done=1 at C2.cxx(original) line-tag 807
+C10-cube-top-frame	2	1.5c	3.0	4	done-INVALID	[TRACE] PerformTwoCornerbyInter return done=0 at C2.cxx(original) line-tag 221 | [TRACE] PerformTwoCornerbyInter return done=1 at C2.cxx(original) line-tag 807
+single-4x10x6	2.0	c-1ulp	1.9999999999999998	1	done	
+single-4x10x6	2.0	c	2.0	1	done	
+single-4x10x6	2.0	c+1ulp	2.0000000000000004	1	done	
+single-4x10x6	3.0	c-1ulp	2.9999999999999996	1	done	
+single-4x10x6	3.0	c	3.0	1	done	
+single-4x10x6	3.0	c+1ulp	3.0000000000000004	1	done	
+single-4x10x6	4	c-1ulp	3.9999999999999996	1	IsDone=false	StartSol echec
+single-4x10x6	4	c	4	1	IsDone=false	StartSol echec
+single-4x10x6	4	c+1ulp	4.000000000000001	1	IsDone=false	StartSol echec
+single-4x10x6	5.0	c-1ulp	4.999999999999999	1	IsDone=false	StartSol echec
+single-4x10x6	5.0	c	5.0	1	IsDone=false	StartSol echec
+single-4x10x6	5.0	c+1ulp	5.000000000000001	1	IsDone=false	StartSol echec
+single-4x10x6	6	c-1ulp	5.999999999999999	1	IsDone=false	StartSol echec
+single-4x10x6	6	c	6	1	IsDone=false	StartSol echec
+single-4x10x6	6	c+1ulp	6.000000000000001	1	IsDone=false	StartSol echec
+single-4x10x6	10	c-1ulp	9.999999999999998	1	IsDone=false	StartSol echec
+single-4x10x6	10	c	10	1	IsDone=false	StartSol echec
+single-4x10x6	10	c+1ulp	10.000000000000002	1	IsDone=false	StartSol echec
+single-4x10x6	2.0	c-1ulp	1.9999999999999998	1	done	
+single-4x10x6	2.0	c	2.0	1	done	
+single-4x10x6	2.0	c+1ulp	2.0000000000000004	1	done	
+single-4x10x6	3.0	c-1ulp	2.9999999999999996	1	done	
+single-4x10x6	3.0	c	3.0	1	done	
+single-4x10x6	3.0	c+1ulp	3.0000000000000004	1	done	
+single-4x10x6	4	c-1ulp	3.9999999999999996	1	IsDone=false	StartSol echec
+single-4x10x6	4	c	4	1	IsDone=false	StartSol echec
+single-4x10x6	4	c+1ulp	4.000000000000001	1	IsDone=false	StartSol echec
+single-4x10x6	5.0	c-1ulp	4.999999999999999	1	IsDone=false	StartSol echec
+single-4x10x6	5.0	c	5.0	1	IsDone=false	StartSol echec
+single-4x10x6	5.0	c+1ulp	5.000000000000001	1	IsDone=false	StartSol echec
+single-4x10x6	6	c-1ulp	5.999999999999999	1	IsDone=false	StartSol echec
+single-4x10x6	6	c	6	1	IsDone=false	StartSol echec
+single-4x10x6	6	c+1ulp	6.000000000000001	1	IsDone=false	StartSol echec
+single-4x10x6	10	c-1ulp	9.999999999999998	1	IsDone=false	StartSol echec
+single-4x10x6	10	c	10	1	IsDone=false	StartSol echec
+single-4x10x6	10	c+1ulp	10.000000000000002	1	IsDone=false	StartSol echec
+single-4x10x6	2.0	c-1ulp	1.9999999999999998	1	done	
+single-4x10x6	2.0	c	2.0	1	done	
+single-4x10x6	2.0	c+1ulp	2.0000000000000004	1	done	
+single-4x10x6	3.0	c-1ulp	2.9999999999999996	1	done	
+single-4x10x6	3.0	c	3.0	1	done	
+single-4x10x6	3.0	c+1ulp	3.0000000000000004	1	done	
+single-4x10x6	4	c-1ulp	3.9999999999999996	1	IsDone=false	StartSol echec
+single-4x10x6	4	c	4	1	IsDone=false	StartSol echec
+single-4x10x6	4	c+1ulp	4.000000000000001	1	IsDone=false	StartSol echec
+single-4x10x6	5.0	c-1ulp	4.999999999999999	1	IsDone=false	StartSol echec
+single-4x10x6	5.0	c	5.0	1	IsDone=false	StartSol echec
+single-4x10x6	5.0	c+1ulp	5.000000000000001	1	IsDone=false	StartSol echec
+single-4x10x6	6	c-1ulp	5.999999999999999	1	IsDone=false	StartSol echec
+single-4x10x6	6	c	6	1	IsDone=false	StartSol echec
+single-4x10x6	6	c+1ulp	6.000000000000001	1	IsDone=false	StartSol echec
+single-4x10x6	10	c-1ulp	9.999999999999998	1	IsDone=false	StartSol echec
+single-4x10x6	10	c	10	1	IsDone=false	StartSol echec
+single-4x10x6	10	c+1ulp	10.000000000000002	1	IsDone=false	StartSol echec
+single-4x10x6	2.0	c-1ulp	1.9999999999999998	1	done	
+single-4x10x6	2.0	c	2.0	1	done	
+single-4x10x6	2.0	c+1ulp	2.0000000000000004	1	done	
+single-4x10x6	3.0	c-1ulp	2.9999999999999996	1	done	
+single-4x10x6	3.0	c	3.0	1	done	
+single-4x10x6	3.0	c+1ulp	3.0000000000000004	1	done	
+single-4x10x6	4	c-1ulp	3.9999999999999996	1	IsDone=false	StartSol echec
+single-4x10x6	4	c	4	1	IsDone=false	StartSol echec
+single-4x10x6	4	c+1ulp	4.000000000000001	1	IsDone=false	StartSol echec
+single-4x10x6	5.0	c-1ulp	4.999999999999999	1	IsDone=false	StartSol echec
+single-4x10x6	5.0	c	5.0	1	IsDone=false	StartSol echec
+single-4x10x6	5.0	c+1ulp	5.000000000000001	1	IsDone=false	StartSol echec
+single-4x10x6	6	c-1ulp	5.999999999999999	1	IsDone=false	StartSol echec
+single-4x10x6	6	c	6	1	IsDone=false	StartSol echec
+single-4x10x6	6	c+1ulp	6.000000000000001	1	IsDone=false	StartSol echec
+single-4x10x6	10	c-1ulp	9.999999999999998	1	IsDone=false	StartSol echec
+single-4x10x6	10	c	10	1	IsDone=false	StartSol echec
+single-4x10x6	10	c+1ulp	10.000000000000002	1	IsDone=false	StartSol echec
+single-4x10x6	2.0	c-1ulp	1.9999999999999998	1	done	
+single-4x10x6	2.0	c	2.0	1	done	
+single-4x10x6	2.0	c+1ulp	2.0000000000000004	1	done	
+single-4x10x6	3.0	c-1ulp	2.9999999999999996	1	done	
+single-4x10x6	3.0	c	3.0	1	done	
+single-4x10x6	3.0	c+1ulp	3.0000000000000004	1	done	
+single-4x10x6	4	c-1ulp	3.9999999999999996	1	IsDone=false	StartSol echec
+single-4x10x6	4	c	4	1	IsDone=false	StartSol echec
+single-4x10x6	4	c+1ulp	4.000000000000001	1	IsDone=false	StartSol echec
+single-4x10x6	5.0	c-1ulp	4.999999999999999	1	IsDone=false	StartSol echec
+single-4x10x6	5.0	c	5.0	1	IsDone=false	StartSol echec
+single-4x10x6	5.0	c+1ulp	5.000000000000001	1	IsDone=false	StartSol echec
+single-4x10x6	6	c-1ulp	5.999999999999999	1	IsDone=false	StartSol echec
+single-4x10x6	6	c	6	1	IsDone=false	StartSol echec
+single-4x10x6	6	c+1ulp	6.000000000000001	1	IsDone=false	StartSol echec
+single-4x10x6	10	c-1ulp	9.999999999999998	1	IsDone=false	StartSol echec
+single-4x10x6	10	c	10	1	IsDone=false	StartSol echec
+single-4x10x6	10	c+1ulp	10.000000000000002	1	IsDone=false	StartSol echec
+single-4x10x6	2.0	c-1ulp	1.9999999999999998	1	done	
+single-4x10x6	2.0	c	2.0	1	done	
+single-4x10x6	2.0	c+1ulp	2.0000000000000004	1	done	
+single-4x10x6	3.0	c-1ulp	2.9999999999999996	1	done	
+single-4x10x6	3.0	c	3.0	1	done	
+single-4x10x6	3.0	c+1ulp	3.0000000000000004	1	done	
+single-4x10x6	4	c-1ulp	3.9999999999999996	1	IsDone=false	StartSol echec
+single-4x10x6	4	c	4	1	IsDone=false	StartSol echec
+single-4x10x6	4	c+1ulp	4.000000000000001	1	IsDone=false	StartSol echec
+single-4x10x6	5.0	c-1ulp	4.999999999999999	1	IsDone=false	StartSol echec
+single-4x10x6	5.0	c	5.0	1	IsDone=false	StartSol echec
+single-4x10x6	5.0	c+1ulp	5.000000000000001	1	IsDone=false	StartSol echec
+single-4x10x6	6	c-1ulp	5.999999999999999	1	IsDone=false	StartSol echec
+single-4x10x6	6	c	6	1	IsDone=false	StartSol echec
+single-4x10x6	6	c+1ulp	6.000000000000001	1	IsDone=false	StartSol echec
+single-4x10x6	10	c-1ulp	9.999999999999998	1	IsDone=false	StartSol echec
+single-4x10x6	10	c	10	1	IsDone=false	StartSol echec
+single-4x10x6	10	c+1ulp	10.000000000000002	1	IsDone=false	StartSol echec
+single-4x10x6	2.0	c-1ulp	1.9999999999999998	1	done	
+single-4x10x6	2.0	c	2.0	1	done	
+single-4x10x6	2.0	c+1ulp	2.0000000000000004	1	done	
+single-4x10x6	3.0	c-1ulp	2.9999999999999996	1	done	
+single-4x10x6	3.0	c	3.0	1	done	
+single-4x10x6	3.0	c+1ulp	3.0000000000000004	1	done	
+single-4x10x6	4	c-1ulp	3.9999999999999996	1	IsDone=false	StartSol echec
+single-4x10x6	4	c	4	1	IsDone=false	StartSol echec
+single-4x10x6	4	c+1ulp	4.000000000000001	1	IsDone=false	StartSol echec
+single-4x10x6	5.0	c-1ulp	4.999999999999999	1	IsDone=false	StartSol echec
+single-4x10x6	5.0	c	5.0	1	IsDone=false	StartSol echec
+single-4x10x6	5.0	c+1ulp	5.000000000000001	1	IsDone=false	StartSol echec
+single-4x10x6	6	c-1ulp	5.999999999999999	1	IsDone=false	StartSol echec
+single-4x10x6	6	c	6	1	IsDone=false	StartSol echec
+single-4x10x6	6	c+1ulp	6.000000000000001	1	IsDone=false	StartSol echec
+single-4x10x6	10	c-1ulp	9.999999999999998	1	IsDone=false	StartSol echec
+single-4x10x6	10	c	10	1	IsDone=false	StartSol echec
+single-4x10x6	10	c+1ulp	10.000000000000002	1	IsDone=false	StartSol echec
+single-4x10x6	2.0	c-1ulp	1.9999999999999998	1	done	
+single-4x10x6	2.0	c	2.0	1	done	
+single-4x10x6	2.0	c+1ulp	2.0000000000000004	1	done	
+single-4x10x6	3.0	c-1ulp	2.9999999999999996	1	done	
+single-4x10x6	3.0	c	3.0	1	done	
+single-4x10x6	3.0	c+1ulp	3.0000000000000004	1	done	
+single-4x10x6	4	c-1ulp	3.9999999999999996	1	IsDone=false	StartSol echec
+single-4x10x6	4	c	4	1	IsDone=false	StartSol echec
+single-4x10x6	4	c+1ulp	4.000000000000001	1	IsDone=false	StartSol echec
+single-4x10x6	5.0	c-1ulp	4.999999999999999	1	IsDone=false	StartSol echec
+single-4x10x6	5.0	c	5.0	1	IsDone=false	StartSol echec
+single-4x10x6	5.0	c+1ulp	5.000000000000001	1	IsDone=false	StartSol echec
+single-4x10x6	6	c-1ulp	5.999999999999999	1	IsDone=false	StartSol echec
+single-4x10x6	6	c	6	1	IsDone=false	StartSol echec
+single-4x10x6	6	c+1ulp	6.000000000000001	1	IsDone=false	StartSol echec
+single-4x10x6	10	c-1ulp	9.999999999999998	1	IsDone=false	StartSol echec
+single-4x10x6	10	c	10	1	IsDone=false	StartSol echec
+single-4x10x6	10	c+1ulp	10.000000000000002	1	IsDone=false	StartSol echec
+single-4x10x6	2.0	c-1ulp	1.9999999999999998	1	done	
+single-4x10x6	2.0	c	2.0	1	done	
+single-4x10x6	2.0	c+1ulp	2.0000000000000004	1	done	
+single-4x10x6	3.0	c-1ulp	2.9999999999999996	1	done	
+single-4x10x6	3.0	c	3.0	1	done	
+single-4x10x6	3.0	c+1ulp	3.0000000000000004	1	done	
+single-4x10x6	4	c-1ulp	3.9999999999999996	1	done	
+single-4x10x6	4	c	4	1	done	
+single-4x10x6	4	c+1ulp	4.000000000000001	1	done	
+single-4x10x6	5.0	c-1ulp	4.999999999999999	1	done	
+single-4x10x6	5.0	c	5.0	1	done	
+single-4x10x6	5.0	c+1ulp	5.000000000000001	1	done	
+single-4x10x6	6	c-1ulp	5.999999999999999	1	IsDone=false	StartSol echec
+single-4x10x6	6	c	6	1	IsDone=false	StartSol echec
+single-4x10x6	6	c+1ulp	6.000000000000001	1	IsDone=false	StartSol echec
+single-4x10x6	10	c-1ulp	9.999999999999998	1	IsDone=false	StartSol echec
+single-4x10x6	10	c	10	1	IsDone=false	StartSol echec
+single-4x10x6	10	c+1ulp	10.000000000000002	1	IsDone=false	StartSol echec
+single-4x10x6	2.0	c-1ulp	1.9999999999999998	1	done	
+single-4x10x6	2.0	c	2.0	1	done	
+single-4x10x6	2.0	c+1ulp	2.0000000000000004	1	done	
+single-4x10x6	3.0	c-1ulp	2.9999999999999996	1	done	
+single-4x10x6	3.0	c	3.0	1	done	
+single-4x10x6	3.0	c+1ulp	3.0000000000000004	1	done	
+single-4x10x6	4	c-1ulp	3.9999999999999996	1	done	
+single-4x10x6	4	c	4	1	done	
+single-4x10x6	4	c+1ulp	4.000000000000001	1	done	
+single-4x10x6	5.0	c-1ulp	4.999999999999999	1	done	
+single-4x10x6	5.0	c	5.0	1	done	
+single-4x10x6	5.0	c+1ulp	5.000000000000001	1	done	
+single-4x10x6	6	c-1ulp	5.999999999999999	1	IsDone=false	StartSol echec
+single-4x10x6	6	c	6	1	IsDone=false	StartSol echec
+single-4x10x6	6	c+1ulp	6.000000000000001	1	IsDone=false	StartSol echec
+single-4x10x6	10	c-1ulp	9.999999999999998	1	IsDone=false	StartSol echec
+single-4x10x6	10	c	10	1	IsDone=false	StartSol echec
+single-4x10x6	10	c+1ulp	10.000000000000002	1	IsDone=false	StartSol echec
+single-4x10x6	2.0	c-1ulp	1.9999999999999998	1	done	
+single-4x10x6	2.0	c	2.0	1	done	
+single-4x10x6	2.0	c+1ulp	2.0000000000000004	1	done	
+single-4x10x6	3.0	c-1ulp	2.9999999999999996	1	done	
+single-4x10x6	3.0	c	3.0	1	done	
+single-4x10x6	3.0	c+1ulp	3.0000000000000004	1	done	
+single-4x10x6	4	c-1ulp	3.9999999999999996	1	done	
+single-4x10x6	4	c	4	1	done	
+single-4x10x6	4	c+1ulp	4.000000000000001	1	done	
+single-4x10x6	5.0	c-1ulp	4.999999999999999	1	done	
+single-4x10x6	5.0	c	5.0	1	done	
+single-4x10x6	5.0	c+1ulp	5.000000000000001	1	done	
+single-4x10x6	6	c-1ulp	5.999999999999999	1	IsDone=false	StartSol echec
+single-4x10x6	6	c	6	1	IsDone=false	StartSol echec
+single-4x10x6	6	c+1ulp	6.000000000000001	1	IsDone=false	StartSol echec
+single-4x10x6	10	c-1ulp	9.999999999999998	1	IsDone=false	StartSol echec
+single-4x10x6	10	c	10	1	IsDone=false	StartSol echec
+single-4x10x6	10	c+1ulp	10.000000000000002	1	IsDone=false	StartSol echec
+single-4x10x6	2.0	c-1ulp	1.9999999999999998	1	done	
+single-4x10x6	2.0	c	2.0	1	done	
+single-4x10x6	2.0	c+1ulp	2.0000000000000004	1	done	
+single-4x10x6	3.0	c-1ulp	2.9999999999999996	1	done	
+single-4x10x6	3.0	c	3.0	1	done	
+single-4x10x6	3.0	c+1ulp	3.0000000000000004	1	done	
+single-4x10x6	4	c-1ulp	3.9999999999999996	1	done	
+single-4x10x6	4	c	4	1	done	
+single-4x10x6	4	c+1ulp	4.000000000000001	1	done	
+single-4x10x6	5.0	c-1ulp	4.999999999999999	1	done	
+single-4x10x6	5.0	c	5.0	1	done	
+single-4x10x6	5.0	c+1ulp	5.000000000000001	1	done	
+single-4x10x6	6	c-1ulp	5.999999999999999	1	IsDone=false	StartSol echec
+single-4x10x6	6	c	6	1	IsDone=false	StartSol echec
+single-4x10x6	6	c+1ulp	6.000000000000001	1	IsDone=false	StartSol echec
+single-4x10x6	10	c-1ulp	9.999999999999998	1	IsDone=false	StartSol echec
+single-4x10x6	10	c	10	1	IsDone=false	StartSol echec
+single-4x10x6	10	c+1ulp	10.000000000000002	1	IsDone=false	StartSol echec
+single-4x4x4	2.0	c-1ulp	1.9999999999999998	1	done	
+single-4x4x4	2.0	c	2.0	1	done	
+single-4x4x4	2.0	c+1ulp	2.0000000000000004	1	done	
+single-4x4x4	4	c-1ulp	3.9999999999999996	1	IsDone=false	StartSol echec
+single-4x4x4	4	c	4	1	IsDone=false	StartSol echec
+single-4x4x4	4	c+1ulp	4.000000000000001	1	IsDone=false	StartSol echec
+single-4x4x4	2.0	c-1ulp	1.9999999999999998	1	done	
+single-4x4x4	2.0	c	2.0	1	done	
+single-4x4x4	2.0	c+1ulp	2.0000000000000004	1	done	
+single-4x4x4	4	c-1ulp	3.9999999999999996	1	IsDone=false	StartSol echec
+single-4x4x4	4	c	4	1	IsDone=false	StartSol echec
+single-4x4x4	4	c+1ulp	4.000000000000001	1	IsDone=false	StartSol echec
+single-4x4x4	2.0	c-1ulp	1.9999999999999998	1	done	
+single-4x4x4	2.0	c	2.0	1	done	
+single-4x4x4	2.0	c+1ulp	2.0000000000000004	1	done	
+single-4x4x4	4	c-1ulp	3.9999999999999996	1	IsDone=false	StartSol echec
+single-4x4x4	4	c	4	1	IsDone=false	StartSol echec
+single-4x4x4	4	c+1ulp	4.000000000000001	1	IsDone=false	StartSol echec
+single-4x4x4	2.0	c-1ulp	1.9999999999999998	1	done	
+single-4x4x4	2.0	c	2.0	1	done	
+single-4x4x4	2.0	c+1ulp	2.0000000000000004	1	done	
+single-4x4x4	4	c-1ulp	3.9999999999999996	1	IsDone=false	StartSol echec
+single-4x4x4	4	c	4	1	IsDone=false	StartSol echec
+single-4x4x4	4	c+1ulp	4.000000000000001	1	IsDone=false	StartSol echec
+single-4x4x4	2.0	c-1ulp	1.9999999999999998	1	done	
+single-4x4x4	2.0	c	2.0	1	done	
+single-4x4x4	2.0	c+1ulp	2.0000000000000004	1	done	
+single-4x4x4	4	c-1ulp	3.9999999999999996	1	IsDone=false	StartSol echec
+single-4x4x4	4	c	4	1	IsDone=false	StartSol echec
+single-4x4x4	4	c+1ulp	4.000000000000001	1	IsDone=false	StartSol echec
+single-4x4x4	2.0	c-1ulp	1.9999999999999998	1	done	
+single-4x4x4	2.0	c	2.0	1	done	
+single-4x4x4	2.0	c+1ulp	2.0000000000000004	1	done	
+single-4x4x4	4	c-1ulp	3.9999999999999996	1	IsDone=false	StartSol echec
+single-4x4x4	4	c	4	1	IsDone=false	StartSol echec
+single-4x4x4	4	c+1ulp	4.000000000000001	1	IsDone=false	StartSol echec
+single-4x4x4	2.0	c-1ulp	1.9999999999999998	1	done	
+single-4x4x4	2.0	c	2.0	1	done	
+single-4x4x4	2.0	c+1ulp	2.0000000000000004	1	done	
+single-4x4x4	4	c-1ulp	3.9999999999999996	1	IsDone=false	StartSol echec
+single-4x4x4	4	c	4	1	IsDone=false	StartSol echec
+single-4x4x4	4	c+1ulp	4.000000000000001	1	IsDone=false	StartSol echec
+single-4x4x4	2.0	c-1ulp	1.9999999999999998	1	done	
+single-4x4x4	2.0	c	2.0	1	done	
+single-4x4x4	2.0	c+1ulp	2.0000000000000004	1	done	
+single-4x4x4	4	c-1ulp	3.9999999999999996	1	IsDone=false	StartSol echec
+single-4x4x4	4	c	4	1	IsDone=false	StartSol echec
+single-4x4x4	4	c+1ulp	4.000000000000001	1	IsDone=false	StartSol echec
+single-4x4x4	2.0	c-1ulp	1.9999999999999998	1	done	
+single-4x4x4	2.0	c	2.0	1	done	
+single-4x4x4	2.0	c+1ulp	2.0000000000000004	1	done	
+single-4x4x4	4	c-1ulp	3.9999999999999996	1	IsDone=false	StartSol echec
+single-4x4x4	4	c	4	1	IsDone=false	StartSol echec
+single-4x4x4	4	c+1ulp	4.000000000000001	1	IsDone=false	StartSol echec
+single-4x4x4	2.0	c-1ulp	1.9999999999999998	1	done	
+single-4x4x4	2.0	c	2.0	1	done	
+single-4x4x4	2.0	c+1ulp	2.0000000000000004	1	done	
+single-4x4x4	4	c-1ulp	3.9999999999999996	1	IsDone=false	StartSol echec
+single-4x4x4	4	c	4	1	IsDone=false	StartSol echec
+single-4x4x4	4	c+1ulp	4.000000000000001	1	IsDone=false	StartSol echec
+single-4x4x4	2.0	c-1ulp	1.9999999999999998	1	done	
+single-4x4x4	2.0	c	2.0	1	done	
+single-4x4x4	2.0	c+1ulp	2.0000000000000004	1	done	
+single-4x4x4	4	c-1ulp	3.9999999999999996	1	IsDone=false	StartSol echec
+single-4x4x4	4	c	4	1	IsDone=false	StartSol echec
+single-4x4x4	4	c+1ulp	4.000000000000001	1	IsDone=false	StartSol echec
+single-4x4x4	2.0	c-1ulp	1.9999999999999998	1	done	
+single-4x4x4	2.0	c	2.0	1	done	
+single-4x4x4	2.0	c+1ulp	2.0000000000000004	1	done	
+single-4x4x4	4	c-1ulp	3.9999999999999996	1	IsDone=false	StartSol echec
+single-4x4x4	4	c	4	1	IsDone=false	StartSol echec
+single-4x4x4	4	c+1ulp	4.000000000000001	1	IsDone=false	StartSol echec

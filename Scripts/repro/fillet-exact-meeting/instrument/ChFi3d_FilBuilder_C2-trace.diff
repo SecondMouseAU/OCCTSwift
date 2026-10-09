@@ -1,0 +1,18 @@
+--- a/ChFi3d_FilBuilder_C2.cxx	2026-10-09 17:46:49
++++ b/ChFi3d_FilBuilder_C2.cxx	2026-10-09 17:47:13
+@@ -23,6 +23,7 @@
+ #include <ChFi3d.hxx>
+ #include <ChFi3d_Builder_0.hxx>
+ #include <ChFi3d_FilBuilder.hxx>
++#include <cstdio>
+ #include <ChFiDS_CommonPoint.hxx>
+ #include <ChFiDS_FaceInterference.hxx>
+ #include <ChFiDS_FilSpine.hxx>
+@@ -460,6 +461,7 @@
+   ChFiDS_CommonPoint      cp11, cp12, cp21, cp22;
+   ChFiDS_FaceInterference intf11, intf12, intf21, intf22;
+ 
++  fprintf(stderr, "[TRACE] PerformTwoCorner(%d): c1biseau=%d c1rotule=%d\n", Index, (int)c1biseau, (int)c1rotule);
+   if (c1biseau)
+   {
+ #ifdef OCCT_DEBUG

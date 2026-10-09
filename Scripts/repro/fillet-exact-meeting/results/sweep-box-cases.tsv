@@ -1,0 +1,1706 @@
+kernel	mode	case	crit	label	radius	outcome	volume	expected	delta_pct_of_removed	faces
+k4	add	C1-opposite-top-w4	2	0.5c	1.0	valid	235.707963268	235.713	-0.12	8
+k5	add	C1-opposite-top-w4	2	0.5c	1.0	valid	235.707963268	235.713	-0.12	8
+k4	add2	C1-opposite-top-w4	2	0.5c	1.0	valid	235.707963268	235.713	-0.12	8
+k5	add2	C1-opposite-top-w4	2	0.5c	1.0	valid	235.707963268	235.713	-0.12	8
+k4	seq	C1-opposite-top-w4	2	0.5c	1.0	valid	235.707963268	235.713	-0.12	8
+k5	seq	C1-opposite-top-w4	2	0.5c	1.0	valid	235.707963268	235.713	-0.12	8
+k5	swift	C1-opposite-top-w4	2	0.5c	1.0	valid	235.707963268	235.713	-0.12	8
+k4	add	C1-opposite-top-w4	2	c-1e-3	1.999	valid	222.849016927	222.867	-0.10	8
+k5	add	C1-opposite-top-w4	2	c-1e-3	1.999	valid	222.849016927	222.867	-0.10	8
+k4	add2	C1-opposite-top-w4	2	c-1e-3	1.999	valid	222.849016927	222.867	-0.10	8
+k5	add2	C1-opposite-top-w4	2	c-1e-3	1.999	valid	222.849016927	222.867	-0.10	8
+k4	seq	C1-opposite-top-w4	2	c-1e-3	1.999	valid	222.849016927	222.867	-0.10	8
+k5	seq	C1-opposite-top-w4	2	c-1e-3	1.999	valid	222.849016927	222.867	-0.10	8
+k5	swift	C1-opposite-top-w4	2	c-1e-3	1.999	valid	222.849016927	222.867	-0.10	8
+k4	add	C1-opposite-top-w4	2	c-1e-4	1.9999	valid	222.833569844	222.849	-0.09	8
+k5	add	C1-opposite-top-w4	2	c-1e-4	1.9999	valid	222.833569844	222.849	-0.09	8
+k4	add2	C1-opposite-top-w4	2	c-1e-4	1.9999	valid	222.833569844	222.849	-0.09	8
+k5	add2	C1-opposite-top-w4	2	c-1e-4	1.9999	valid	222.833569844	222.849	-0.09	8
+k4	seq	C1-opposite-top-w4	2	c-1e-4	1.9999	valid	222.833569844	222.849	-0.09	8
+k5	seq	C1-opposite-top-w4	2	c-1e-4	1.9999	valid	222.833569844	222.849	-0.09	8
+k5	swift	C1-opposite-top-w4	2	c-1e-4	1.9999	valid	222.833569844	222.849	-0.09	8
+k4	add	C1-opposite-top-w4	2	c-1e-8	1.99999999	valid	222.831853243	222.849	-0.10	8
+k5	add	C1-opposite-top-w4	2	c-1e-8	1.99999999	valid	222.831853243	222.849	-0.10	8
+k4	add2	C1-opposite-top-w4	2	c-1e-8	1.99999999	valid	222.831853243	222.849	-0.10	8
+k5	add2	C1-opposite-top-w4	2	c-1e-8	1.99999999	valid	222.831853243	222.849	-0.10	8
+k4	seq	C1-opposite-top-w4	2	c-1e-8	1.99999999	valid	222.831853243	222.849	-0.10	8
+k5	seq	C1-opposite-top-w4	2	c-1e-8	1.99999999	valid	222.831853243	222.849	-0.10	8
+k5	swift	C1-opposite-top-w4	2	c-1e-8	1.99999999	valid	222.831853243	222.849	-0.10	8
+k4	add	C1-opposite-top-w4	2	c-1ulp	1.9999999999999998	IsDone=false	-1.0			0
+k5	add	C1-opposite-top-w4	2	c-1ulp	1.9999999999999998	IsDone=false	-1.0			0
+k4	add2	C1-opposite-top-w4	2	c-1ulp	1.9999999999999998	IsDone=false	-1.0			0
+k5	add2	C1-opposite-top-w4	2	c-1ulp	1.9999999999999998	IsDone=false	-1.0			0
+k4	seq	C1-opposite-top-w4	2	c-1ulp	1.9999999999999998	IsDone=false	-1.0			0
+k5	seq	C1-opposite-top-w4	2	c-1ulp	1.9999999999999998	IsDone=false	-1.0			0
+k5	swift	C1-opposite-top-w4	2	c-1ulp	1.9999999999999998	IsDone=false				
+k4	add	C1-opposite-top-w4	2	c	2	IsDone=false	-1.0			0
+k5	add	C1-opposite-top-w4	2	c	2	IsDone=false	-1.0			0
+k4	add2	C1-opposite-top-w4	2	c	2	IsDone=false	-1.0			0
+k5	add2	C1-opposite-top-w4	2	c	2	IsDone=false	-1.0			0
+k4	seq	C1-opposite-top-w4	2	c	2	IsDone=false	-1.0			0
+k5	seq	C1-opposite-top-w4	2	c	2	IsDone=false	-1.0			0
+k5	swift	C1-opposite-top-w4	2	c	2	IsDone=false				
+k4	add	C1-opposite-top-w4	2	c+1ulp	2.0000000000000004	IsDone=false	-1.0			0
+k5	add	C1-opposite-top-w4	2	c+1ulp	2.0000000000000004	IsDone=false	-1.0			0
+k4	add2	C1-opposite-top-w4	2	c+1ulp	2.0000000000000004	IsDone=false	-1.0			0
+k5	add2	C1-opposite-top-w4	2	c+1ulp	2.0000000000000004	IsDone=false	-1.0			0
+k4	seq	C1-opposite-top-w4	2	c+1ulp	2.0000000000000004	IsDone=false	-1.0			0
+k5	seq	C1-opposite-top-w4	2	c+1ulp	2.0000000000000004	IsDone=false	-1.0			0
+k5	swift	C1-opposite-top-w4	2	c+1ulp	2.0000000000000004	IsDone=false				
+k4	add	C1-opposite-top-w4	2	c+1e-8	2.00000001	IsDone=false	-1.0			0
+k5	add	C1-opposite-top-w4	2	c+1e-8	2.00000001	IsDone=false	-1.0			0
+k4	add2	C1-opposite-top-w4	2	c+1e-8	2.00000001	IsDone=false	-1.0			0
+k5	add2	C1-opposite-top-w4	2	c+1e-8	2.00000001	IsDone=false	-1.0			0
+k4	seq	C1-opposite-top-w4	2	c+1e-8	2.00000001	IsDone=false	-1.0			0
+k5	seq	C1-opposite-top-w4	2	c+1e-8	2.00000001	IsDone=false	-1.0			0
+k5	swift	C1-opposite-top-w4	2	c+1e-8	2.00000001	IsDone=false				
+k4	add	C1-opposite-top-w4	2	c+1e-4	2.0001	IsDone=false	-1.0			0
+k5	add	C1-opposite-top-w4	2	c+1e-4	2.0001	IsDone=false	-1.0			0
+k4	add2	C1-opposite-top-w4	2	c+1e-4	2.0001	IsDone=false	-1.0			0
+k5	add2	C1-opposite-top-w4	2	c+1e-4	2.0001	IsDone=false	-1.0			0
+k4	seq	C1-opposite-top-w4	2	c+1e-4	2.0001	IsDone=false	-1.0			0
+k5	seq	C1-opposite-top-w4	2	c+1e-4	2.0001	IsDone=false	-1.0			0
+k5	swift	C1-opposite-top-w4	2	c+1e-4	2.0001	IsDone=false				
+k4	add	C1-opposite-top-w4	2	c+1e-3	2.001	IsDone=false	-1.0			0
+k5	add	C1-opposite-top-w4	2	c+1e-3	2.001	IsDone=false	-1.0			0
+k4	add2	C1-opposite-top-w4	2	c+1e-3	2.001	IsDone=false	-1.0			0
+k5	add2	C1-opposite-top-w4	2	c+1e-3	2.001	IsDone=false	-1.0			0
+k4	seq	C1-opposite-top-w4	2	c+1e-3	2.001	IsDone=false	-1.0			0
+k5	seq	C1-opposite-top-w4	2	c+1e-3	2.001	IsDone=false	-1.0			0
+k5	swift	C1-opposite-top-w4	2	c+1e-3	2.001	IsDone=false				
+k4	add	C1-opposite-top-w4	2	1.5c	3.0	IsDone=false	-1.0			0
+k5	add	C1-opposite-top-w4	2	1.5c	3.0	IsDone=false	-1.0			0
+k4	add2	C1-opposite-top-w4	2	1.5c	3.0	IsDone=false	-1.0			0
+k5	add2	C1-opposite-top-w4	2	1.5c	3.0	IsDone=false	-1.0			0
+k4	seq	C1-opposite-top-w4	2	1.5c	3.0	IsDone=false	-1.0			0
+k5	seq	C1-opposite-top-w4	2	1.5c	3.0	IsDone=false	-1.0			0
+k5	swift	C1-opposite-top-w4	2	1.5c	3.0	IsDone=false				
+k4	add	C2-opposite-top-w10	5	0.5c	2.5	valid	229.26990817	229.281	-0.10	8
+k5	add	C2-opposite-top-w10	5	0.5c	2.5	valid	229.26990817	229.281	-0.10	8
+k4	add2	C2-opposite-top-w10	5	0.5c	2.5	valid	229.26990817	229.281	-0.10	8
+k5	add2	C2-opposite-top-w10	5	0.5c	2.5	valid	229.26990817	229.281	-0.10	8
+k4	seq	C2-opposite-top-w10	5	0.5c	2.5	valid	229.26990817	229.281	-0.10	8
+k5	seq	C2-opposite-top-w10	5	0.5c	2.5	valid	229.26990817	229.281	-0.10	8
+k5	swift	C2-opposite-top-w10	5	0.5c	2.5	valid	229.26990817	229.281	-0.10	8
+k4	add	C2-opposite-top-w10	5	c-1e-3	4.999	valid	197.09679911	197.088	0.02	8
+k5	add	C2-opposite-top-w10	5	c-1e-3	4.999	valid	197.09679911	197.088	0.02	8
+k4	add2	C2-opposite-top-w10	5	c-1e-3	4.999	valid	197.09679911	197.088	0.02	8
+k5	add2	C2-opposite-top-w10	5	c-1e-3	4.999	valid	197.09679911	197.088	0.02	8
+k4	seq	C2-opposite-top-w10	5	c-1e-3	4.999	valid	197.09679911	197.088	0.02	8
+k5	seq	C2-opposite-top-w10	5	c-1e-3	4.999	valid	197.09679911	197.088	0.02	8
+k5	swift	C2-opposite-top-w10	5	c-1e-3	4.999	valid	197.09679911	197.088	0.02	8
+k4	add	C2-opposite-top-w10	5	c-1e-4	4.9999	valid	197.081349477	197.082	-0.00	8
+k5	add	C2-opposite-top-w10	5	c-1e-4	4.9999	valid	197.081349477	197.082	-0.00	8
+k4	add2	C2-opposite-top-w10	5	c-1e-4	4.9999	valid	197.081349477	197.082	-0.00	8
+k5	add2	C2-opposite-top-w10	5	c-1e-4	4.9999	valid	197.081349477	197.082	-0.00	8
+k4	seq	C2-opposite-top-w10	5	c-1e-4	4.9999	valid	197.081349477	197.082	-0.00	8
+k5	seq	C2-opposite-top-w10	5	c-1e-4	4.9999	valid	197.081349477	197.082	-0.00	8
+k5	swift	C2-opposite-top-w10	5	c-1e-4	4.9999	valid	197.081349477	197.082	-0.00	8
+k4	add	C2-opposite-top-w10	5	c-1e-8	4.99999999	valid	197.079632851	197.082	-0.01	8
+k5	add	C2-opposite-top-w10	5	c-1e-8	4.99999999	valid	197.079632851	197.082	-0.01	8
+k4	add2	C2-opposite-top-w10	5	c-1e-8	4.99999999	valid	197.079632851	197.082	-0.01	8
+k5	add2	C2-opposite-top-w10	5	c-1e-8	4.99999999	valid	197.079632851	197.082	-0.01	8
+k4	seq	C2-opposite-top-w10	5	c-1e-8	4.99999999	valid	197.079632851	197.082	-0.01	8
+k5	seq	C2-opposite-top-w10	5	c-1e-8	4.99999999	valid	197.079632851	197.082	-0.01	8
+k5	swift	C2-opposite-top-w10	5	c-1e-8	4.99999999	valid	197.079632851	197.082	-0.01	8
+k4	add	C2-opposite-top-w10	5	c-1ulp	4.999999999999999	IsDone=false	-1.0			0
+k5	add	C2-opposite-top-w10	5	c-1ulp	4.999999999999999	IsDone=false	-1.0			0
+k4	add2	C2-opposite-top-w10	5	c-1ulp	4.999999999999999	IsDone=false	-1.0			0
+k5	add2	C2-opposite-top-w10	5	c-1ulp	4.999999999999999	IsDone=false	-1.0			0
+k4	seq	C2-opposite-top-w10	5	c-1ulp	4.999999999999999	IsDone=false	-1.0			0
+k5	seq	C2-opposite-top-w10	5	c-1ulp	4.999999999999999	IsDone=false	-1.0			0
+k5	swift	C2-opposite-top-w10	5	c-1ulp	4.999999999999999	IsDone=false				
+k4	add	C2-opposite-top-w10	5	c	5	IsDone=false	-1.0			0
+k5	add	C2-opposite-top-w10	5	c	5	IsDone=false	-1.0			0
+k4	add2	C2-opposite-top-w10	5	c	5	IsDone=false	-1.0			0
+k5	add2	C2-opposite-top-w10	5	c	5	IsDone=false	-1.0			0
+k4	seq	C2-opposite-top-w10	5	c	5	IsDone=false	-1.0			0
+k5	seq	C2-opposite-top-w10	5	c	5	IsDone=false	-1.0			0
+k5	swift	C2-opposite-top-w10	5	c	5	IsDone=false				
+k4	add	C2-opposite-top-w10	5	c+1ulp	5.000000000000001	IsDone=false	-1.0			0
+k5	add	C2-opposite-top-w10	5	c+1ulp	5.000000000000001	IsDone=false	-1.0			0
+k4	add2	C2-opposite-top-w10	5	c+1ulp	5.000000000000001	IsDone=false	-1.0			0
+k5	add2	C2-opposite-top-w10	5	c+1ulp	5.000000000000001	IsDone=false	-1.0			0
+k4	seq	C2-opposite-top-w10	5	c+1ulp	5.000000000000001	IsDone=false	-1.0			0
+k5	seq	C2-opposite-top-w10	5	c+1ulp	5.000000000000001	IsDone=false	-1.0			0
+k5	swift	C2-opposite-top-w10	5	c+1ulp	5.000000000000001	IsDone=false				
+k4	add	C2-opposite-top-w10	5	c+1e-8	5.00000001	IsDone=false	-1.0			0
+k5	add	C2-opposite-top-w10	5	c+1e-8	5.00000001	IsDone=false	-1.0			0
+k4	add2	C2-opposite-top-w10	5	c+1e-8	5.00000001	IsDone=false	-1.0			0
+k5	add2	C2-opposite-top-w10	5	c+1e-8	5.00000001	IsDone=false	-1.0			0
+k4	seq	C2-opposite-top-w10	5	c+1e-8	5.00000001	IsDone=false	-1.0			0
+k5	seq	C2-opposite-top-w10	5	c+1e-8	5.00000001	IsDone=false	-1.0			0
+k5	swift	C2-opposite-top-w10	5	c+1e-8	5.00000001	IsDone=false				
+k4	add	C2-opposite-top-w10	5	c+1e-4	5.0001	IsDone=false	-1.0			0
+k5	add	C2-opposite-top-w10	5	c+1e-4	5.0001	IsDone=false	-1.0			0
+k4	add2	C2-opposite-top-w10	5	c+1e-4	5.0001	IsDone=false	-1.0			0
+k5	add2	C2-opposite-top-w10	5	c+1e-4	5.0001	IsDone=false	-1.0			0
+k4	seq	C2-opposite-top-w10	5	c+1e-4	5.0001	IsDone=false	-1.0			0
+k5	seq	C2-opposite-top-w10	5	c+1e-4	5.0001	IsDone=false	-1.0			0
+k5	swift	C2-opposite-top-w10	5	c+1e-4	5.0001	IsDone=false				
+k4	add	C2-opposite-top-w10	5	c+1e-3	5.001	IsDone=false	-1.0			0
+k5	add	C2-opposite-top-w10	5	c+1e-3	5.001	IsDone=false	-1.0			0
+k4	add2	C2-opposite-top-w10	5	c+1e-3	5.001	IsDone=false	-1.0			0
+k5	add2	C2-opposite-top-w10	5	c+1e-3	5.001	IsDone=false	-1.0			0
+k4	seq	C2-opposite-top-w10	5	c+1e-3	5.001	IsDone=false	-1.0			0
+k5	seq	C2-opposite-top-w10	5	c+1e-3	5.001	IsDone=false	-1.0			0
+k5	swift	C2-opposite-top-w10	5	c+1e-3	5.001	IsDone=false				
+k4	add	C2-opposite-top-w10	5	1.5c	7.5	IsDone=false	-1.0			0
+k5	add	C2-opposite-top-w10	5	1.5c	7.5	IsDone=false	-1.0			0
+k4	add2	C2-opposite-top-w10	5	1.5c	7.5	IsDone=false	-1.0			0
+k5	add2	C2-opposite-top-w10	5	1.5c	7.5	IsDone=false	-1.0			0
+k4	seq	C2-opposite-top-w10	5	1.5c	7.5	IsDone=false	-1.0			0
+k5	seq	C2-opposite-top-w10	5	1.5c	7.5	IsDone=false	-1.0			0
+k5	swift	C2-opposite-top-w10	5	1.5c	7.5	IsDone=false				
+k4	add	C3-opposite-side-w6	3	0.5c	1.5	valid	230.342917353	230.349	-0.06	8
+k5	add	C3-opposite-side-w6	3	0.5c	1.5	valid	230.342917353	230.349	-0.06	8
+k4	add2	C3-opposite-side-w6	3	0.5c	1.5	valid	230.342917353	230.349	-0.06	8
+k5	add2	C3-opposite-side-w6	3	0.5c	1.5	valid	230.342917353	230.349	-0.06	8
+k4	seq	C3-opposite-side-w6	3	0.5c	1.5	valid	230.342917353	230.349	-0.06	8
+k5	seq	C3-opposite-side-w6	3	0.5c	1.5	valid	230.342917353	230.349	-0.06	8
+k5	swift	C3-opposite-side-w6	3	0.5c	1.5	valid	230.342917353	230.349	-0.06	8
+k4	add	C3-opposite-side-w6	3	c-1e-3	2.999	valid	201.39741734	201.396	0.00	8
+k5	add	C3-opposite-side-w6	3	c-1e-3	2.999	valid	201.39741734	201.396	0.00	8
+k4	add2	C3-opposite-side-w6	3	c-1e-3	2.999	valid	201.39741734	201.396	0.00	8
+k5	add2	C3-opposite-side-w6	3	c-1e-3	2.999	valid	201.39741734	201.396	0.00	8
+k4	seq	C3-opposite-side-w6	3	c-1e-3	2.999	valid	201.39741734	201.396	0.00	8
+k5	seq	C3-opposite-side-w6	3	c-1e-3	2.999	valid	201.39741734	201.396	0.00	8
+k5	swift	C3-opposite-side-w6	3	c-1e-3	2.999	valid	201.39741734	201.396	0.00	8
+k4	add	C3-opposite-side-w6	3	c-1e-4	2.9999	valid	201.374244591	201.375	-0.00	8
+k5	add	C3-opposite-side-w6	3	c-1e-4	2.9999	valid	201.374244591	201.375	-0.00	8
+k4	add2	C3-opposite-side-w6	3	c-1e-4	2.9999	valid	201.374244591	201.375	-0.00	8
+k5	add2	C3-opposite-side-w6	3	c-1e-4	2.9999	valid	201.374244591	201.375	-0.00	8
+k4	seq	C3-opposite-side-w6	3	c-1e-4	2.9999	valid	201.374244591	201.375	-0.00	8
+k5	seq	C3-opposite-side-w6	3	c-1e-4	2.9999	valid	201.374244591	201.375	-0.00	8
+k5	swift	C3-opposite-side-w6	3	c-1e-4	2.9999	valid	201.374244591	201.375	-0.00	8
+k4	add	C3-opposite-side-w6	3	c-1e-8	2.99999999	valid	201.371669669	201.375	-0.01	8
+k5	add	C3-opposite-side-w6	3	c-1e-8	2.99999999	valid	201.371669669	201.375	-0.01	8
+k4	add2	C3-opposite-side-w6	3	c-1e-8	2.99999999	valid	201.371669669	201.375	-0.01	8
+k5	add2	C3-opposite-side-w6	3	c-1e-8	2.99999999	valid	201.371669669	201.375	-0.01	8
+k4	seq	C3-opposite-side-w6	3	c-1e-8	2.99999999	valid	201.371669669	201.375	-0.01	8
+k5	seq	C3-opposite-side-w6	3	c-1e-8	2.99999999	valid	201.371669669	201.375	-0.01	8
+k5	swift	C3-opposite-side-w6	3	c-1e-8	2.99999999	valid	201.371669669	201.375	-0.01	8
+k4	add	C3-opposite-side-w6	3	c-1ulp	2.9999999999999996	IsDone=false	-1.0			0
+k5	add	C3-opposite-side-w6	3	c-1ulp	2.9999999999999996	IsDone=false	-1.0			0
+k4	add2	C3-opposite-side-w6	3	c-1ulp	2.9999999999999996	IsDone=false	-1.0			0
+k5	add2	C3-opposite-side-w6	3	c-1ulp	2.9999999999999996	IsDone=false	-1.0			0
+k4	seq	C3-opposite-side-w6	3	c-1ulp	2.9999999999999996	IsDone=false	-1.0			0
+k5	seq	C3-opposite-side-w6	3	c-1ulp	2.9999999999999996	IsDone=false	-1.0			0
+k5	swift	C3-opposite-side-w6	3	c-1ulp	2.9999999999999996	IsDone=false				
+k4	add	C3-opposite-side-w6	3	c	3	IsDone=false	-1.0			0
+k5	add	C3-opposite-side-w6	3	c	3	IsDone=false	-1.0			0
+k4	add2	C3-opposite-side-w6	3	c	3	IsDone=false	-1.0			0
+k5	add2	C3-opposite-side-w6	3	c	3	IsDone=false	-1.0			0
+k4	seq	C3-opposite-side-w6	3	c	3	IsDone=false	-1.0			0
+k5	seq	C3-opposite-side-w6	3	c	3	IsDone=false	-1.0			0
+k5	swift	C3-opposite-side-w6	3	c	3	IsDone=false				
+k4	add	C3-opposite-side-w6	3	c+1ulp	3.0000000000000004	IsDone=false	-1.0			0
+k5	add	C3-opposite-side-w6	3	c+1ulp	3.0000000000000004	IsDone=false	-1.0			0
+k4	add2	C3-opposite-side-w6	3	c+1ulp	3.0000000000000004	IsDone=false	-1.0			0
+k5	add2	C3-opposite-side-w6	3	c+1ulp	3.0000000000000004	IsDone=false	-1.0			0
+k4	seq	C3-opposite-side-w6	3	c+1ulp	3.0000000000000004	IsDone=false	-1.0			0
+k5	seq	C3-opposite-side-w6	3	c+1ulp	3.0000000000000004	IsDone=false	-1.0			0
+k5	swift	C3-opposite-side-w6	3	c+1ulp	3.0000000000000004	IsDone=false				
+k4	add	C3-opposite-side-w6	3	c+1e-8	3.00000001	IsDone=false	-1.0			0
+k5	add	C3-opposite-side-w6	3	c+1e-8	3.00000001	IsDone=false	-1.0			0
+k4	add2	C3-opposite-side-w6	3	c+1e-8	3.00000001	IsDone=false	-1.0			0
+k5	add2	C3-opposite-side-w6	3	c+1e-8	3.00000001	IsDone=false	-1.0			0
+k4	seq	C3-opposite-side-w6	3	c+1e-8	3.00000001	IsDone=false	-1.0			0
+k5	seq	C3-opposite-side-w6	3	c+1e-8	3.00000001	IsDone=false	-1.0			0
+k5	swift	C3-opposite-side-w6	3	c+1e-8	3.00000001	IsDone=false				
+k4	add	C3-opposite-side-w6	3	c+1e-4	3.0001	IsDone=false	-1.0			0
+k5	add	C3-opposite-side-w6	3	c+1e-4	3.0001	IsDone=false	-1.0			0
+k4	add2	C3-opposite-side-w6	3	c+1e-4	3.0001	IsDone=false	-1.0			0
+k5	add2	C3-opposite-side-w6	3	c+1e-4	3.0001	IsDone=false	-1.0			0
+k4	seq	C3-opposite-side-w6	3	c+1e-4	3.0001	IsDone=false	-1.0			0
+k5	seq	C3-opposite-side-w6	3	c+1e-4	3.0001	IsDone=false	-1.0			0
+k5	swift	C3-opposite-side-w6	3	c+1e-4	3.0001	IsDone=false				
+k4	add	C3-opposite-side-w6	3	c+1e-3	3.001	IsDone=false	-1.0			0
+k5	add	C3-opposite-side-w6	3	c+1e-3	3.001	IsDone=false	-1.0			0
+k4	add2	C3-opposite-side-w6	3	c+1e-3	3.001	IsDone=false	-1.0			0
+k5	add2	C3-opposite-side-w6	3	c+1e-3	3.001	IsDone=false	-1.0			0
+k4	seq	C3-opposite-side-w6	3	c+1e-3	3.001	IsDone=false	-1.0			0
+k5	seq	C3-opposite-side-w6	3	c+1e-3	3.001	IsDone=false	-1.0			0
+k5	swift	C3-opposite-side-w6	3	c+1e-3	3.001	IsDone=false				
+k4	add	C3-opposite-side-w6	3	1.5c	4.5	IsDone=false	-1.0			0
+k5	add	C3-opposite-side-w6	3	1.5c	4.5	IsDone=false	-1.0			0
+k4	add2	C3-opposite-side-w6	3	1.5c	4.5	IsDone=false	-1.0			0
+k5	add2	C3-opposite-side-w6	3	1.5c	4.5	IsDone=false	-1.0			0
+k4	seq	C3-opposite-side-w6	3	1.5c	4.5	IsDone=false	-1.0			0
+k5	seq	C3-opposite-side-w6	3	1.5c	4.5	IsDone=false	-1.0			0
+k5	swift	C3-opposite-side-w6	3	1.5c	4.5	IsDone=false				
+k4	add	C4-adjacent-top	2	0.5c	1.0	valid	237.091444625	237.094335	-0.10	8
+k5	add	C4-adjacent-top	2	0.5c	1.0	valid	237.091444625	237.094335	-0.10	8
+k4	add2	C4-adjacent-top	2	0.5c	1.0	valid	237.091444625	237.094335	-0.10	8
+k5	add2	C4-adjacent-top	2	0.5c	1.0	valid	237.091444625	237.094335	-0.10	8
+k4	seq	C4-adjacent-top	2	0.5c	1.0	valid	235.875367553	237.094335	-41.95	10
+k5	seq	C4-adjacent-top	2	0.5c	1.0	valid	235.875367553	237.094335	-41.95	10
+k5	swift	C4-adjacent-top	2	0.5c	1.0	valid	237.091444625	237.094335	-0.10	8
+k4	add	C4-adjacent-top	2	c-1e-3	1.999	valid	228.760124693	228.7732425	-0.12	8
+k5	add	C4-adjacent-top	2	c-1e-3	1.999	valid	228.760124693	228.7732425	-0.12	8
+k4	add2	C4-adjacent-top	2	c-1e-3	1.999	valid	228.760124693	228.7732425	-0.12	8
+k5	add2	C4-adjacent-top	2	c-1e-3	1.999	valid	228.760124693	228.7732425	-0.12	8
+k4	seq	C4-adjacent-top	2	c-1e-3	1.999	valid	224.186243363	228.7732425	-40.86	10
+k5	seq	C4-adjacent-top	2	c-1e-3	1.999	valid	224.186243363	228.7732425	-40.86	10
+k5	swift	C4-adjacent-top	2	c-1e-3	1.999	valid	228.760124693	228.7732425	-0.12	8
+k4	add	C4-adjacent-top	2	c-1e-4	1.9999	valid	228.750346555	228.7632375	-0.11	8
+k5	add	C4-adjacent-top	2	c-1e-4	1.9999	valid	228.750346555	228.7632375	-0.11	8
+k4	add2	C4-adjacent-top	2	c-1e-4	1.9999	valid	228.750346555	228.7632375	-0.11	8
+k5	add2	C4-adjacent-top	2	c-1e-4	1.9999	valid	228.750346555	228.7632375	-0.11	8
+k4	seq	C4-adjacent-top	2	c-1e-4	1.9999	valid	224.172603252	228.7632375	-40.85	10
+k5	seq	C4-adjacent-top	2	c-1e-4	1.9999	valid	224.172603252	228.7632375	-40.85	10
+k5	swift	C4-adjacent-top	2	c-1e-4	1.9999	valid	228.750346555	228.7632375	-0.11	8
+k4	add	C4-adjacent-top	2	c-1e-8	1.99999999	valid	228.749259962	228.7632375	-0.12	8
+k5	add	C4-adjacent-top	2	c-1e-8	1.99999999	valid	228.749259962	228.7632375	-0.12	8
+k4	add2	C4-adjacent-top	2	c-1e-8	1.99999999	valid	228.749259962	228.7632375	-0.12	8
+k5	add2	C4-adjacent-top	2	c-1e-8	1.99999999	valid	228.749259962	228.7632375	-0.12	8
+k4	seq	C4-adjacent-top	2	c-1e-8	1.99999999	valid	224.171087507	228.7632375	-40.87	10
+k5	seq	C4-adjacent-top	2	c-1e-8	1.99999999	valid	224.171087507	228.7632375	-40.87	10
+k5	swift	C4-adjacent-top	2	c-1e-8	1.99999999	valid	228.749259962	228.7632375	-0.12	8
+k4	add	C4-adjacent-top	2	c-1ulp	1.9999999999999998	valid	228.749259853	228.7632375	-0.12	8
+k5	add	C4-adjacent-top	2	c-1ulp	1.9999999999999998	valid	228.749259853	228.7632375	-0.12	8
+k4	add2	C4-adjacent-top	2	c-1ulp	1.9999999999999998	valid	228.749259853	228.7632375	-0.12	8
+k5	add2	C4-adjacent-top	2	c-1ulp	1.9999999999999998	valid	228.749259853	228.7632375	-0.12	8
+k4	seq	C4-adjacent-top	2	c-1ulp	1.9999999999999998	valid	224.171087355	228.7632375	-40.87	10
+k5	seq	C4-adjacent-top	2	c-1ulp	1.9999999999999998	valid	224.171087355	228.7632375	-40.87	10
+k5	swift	C4-adjacent-top	2	c-1ulp	1.9999999999999998	valid	228.749259853	228.7632375	-0.12	8
+k4	add	C4-adjacent-top	2	c	2	valid	228.749259864	228.7632375	-0.12	8
+k5	add	C4-adjacent-top	2	c	2	valid	228.749259864	228.7632375	-0.12	8
+k4	add2	C4-adjacent-top	2	c	2	valid	228.749259864	228.7632375	-0.12	8
+k5	add2	C4-adjacent-top	2	c	2	valid	228.749259864	228.7632375	-0.12	8
+k4	seq	C4-adjacent-top	2	c	2	valid	224.171087355	228.7632375	-40.87	10
+k5	seq	C4-adjacent-top	2	c	2	valid	224.171087355	228.7632375	-40.87	10
+k5	swift	C4-adjacent-top	2	c	2	valid	228.749259864	228.7632375	-0.12	8
+k4	add	C4-adjacent-top	2	c+1ulp	2.0000000000000004	valid	228.749259864	228.7632375	-0.12	8
+k5	add	C4-adjacent-top	2	c+1ulp	2.0000000000000004	valid	228.749259864	228.7632375	-0.12	8
+k4	add2	C4-adjacent-top	2	c+1ulp	2.0000000000000004	valid	228.749259864	228.7632375	-0.12	8
+k5	add2	C4-adjacent-top	2	c+1ulp	2.0000000000000004	valid	228.749259864	228.7632375	-0.12	8
+k4	seq	C4-adjacent-top	2	c+1ulp	2.0000000000000004	valid	224.171087355	228.7632375	-40.87	10
+k5	seq	C4-adjacent-top	2	c+1ulp	2.0000000000000004	valid	224.171087355	228.7632375	-40.87	10
+k5	swift	C4-adjacent-top	2	c+1ulp	2.0000000000000004	valid	228.749259864	228.7632375	-0.12	8
+k4	add	C4-adjacent-top	2	c+1e-8	2.00000001	valid	228.749259755	228.7632375	-0.12	8
+k5	add	C4-adjacent-top	2	c+1e-8	2.00000001	valid	228.749259755	228.7632375	-0.12	8
+k4	add2	C4-adjacent-top	2	c+1e-8	2.00000001	valid	228.749259755	228.7632375	-0.12	8
+k5	add2	C4-adjacent-top	2	c+1e-8	2.00000001	valid	228.749259755	228.7632375	-0.12	8
+k4	seq	C4-adjacent-top	2	c+1e-8	2.00000001	valid	224.171087203	228.7632375	-40.87	10
+k5	seq	C4-adjacent-top	2	c+1e-8	2.00000001	valid	224.171087203	228.7632375	-40.87	10
+k5	swift	C4-adjacent-top	2	c+1e-8	2.00000001	valid	228.749259755	228.7632375	-0.12	8
+k4	add	C4-adjacent-top	2	c+1e-4	2.0001	valid	228.748173103	228.75924	-0.10	8
+k5	add	C4-adjacent-top	2	c+1e-4	2.0001	valid	228.748173103	228.75924	-0.10	8
+k4	add2	C4-adjacent-top	2	c+1e-4	2.0001	valid	228.748173103	228.75924	-0.10	8
+k5	add2	C4-adjacent-top	2	c+1e-4	2.0001	valid	228.748173103	228.75924	-0.10	8
+k4	seq	C4-adjacent-top	2	c+1e-4	2.0001	valid	224.169571393	228.75924	-40.83	10
+k5	seq	C4-adjacent-top	2	c+1e-4	2.0001	valid	224.169571393	228.75924	-40.83	10
+k5	swift	C4-adjacent-top	2	c+1e-4	2.0001	valid	228.748173103	228.75924	-0.10	8
+k4	add	C4-adjacent-top	2	c+1e-3	2.001	valid	228.738390165	228.739875	-0.01	8
+k5	add	C4-adjacent-top	2	c+1e-3	2.001	valid	228.738390165	228.739875	-0.01	8
+k4	add2	C4-adjacent-top	2	c+1e-3	2.001	valid	228.738390165	228.739875	-0.01	8
+k5	add2	C4-adjacent-top	2	c+1e-3	2.001	valid	228.738390165	228.739875	-0.01	8
+k4	seq	C4-adjacent-top	2	c+1e-3	2.001	valid	224.155924772	228.739875	-40.71	10
+k5	seq	C4-adjacent-top	2	c+1e-3	2.001	valid	224.155924772	228.739875	-40.71	10
+k5	swift	C4-adjacent-top	2	c+1e-3	2.001	valid	228.738390165	228.739875	-0.01	8
+k4	add	C4-adjacent-top	2	1.5c	3.0	valid	215.54866775	215.5514925	-0.01	8
+k5	add	C4-adjacent-top	2	1.5c	3.0	valid	215.54866775	215.5514925	-0.01	8
+k4	add2	C4-adjacent-top	2	1.5c	3.0	valid	215.54866775	215.5514925	-0.01	8
+k5	add2	C4-adjacent-top	2	1.5c	3.0	valid	215.54866775	215.5514925	-0.01	8
+k4	seq	C4-adjacent-top	2	1.5c	3.0	valid	205.891585118	215.5514925	-39.51	10
+k5	seq	C4-adjacent-top	2	1.5c	3.0	valid	205.891585118	215.5514925	-39.51	10
+k5	swift	C4-adjacent-top	2	1.5c	3.0	valid	215.54866775	215.5514925	-0.01	8
+k4	add	C4-adjacent-top	3	0.5c	1.5	valid	233.563604539	233.5697775	-0.10	8
+k5	add	C4-adjacent-top	3	0.5c	1.5	valid	233.563604539	233.5697775	-0.10	8
+k4	add2	C4-adjacent-top	3	0.5c	1.5	valid	233.563604539	233.5697775	-0.10	8
+k5	add2	C4-adjacent-top	3	0.5c	1.5	valid	233.563604539	233.5697775	-0.10	8
+k4	seq	C4-adjacent-top	3	0.5c	1.5	valid	230.907906816	233.5697775	-41.40	10
+k5	seq	C4-adjacent-top	3	0.5c	1.5	valid	230.907906816	233.5697775	-41.40	10
+k5	swift	C4-adjacent-top	3	0.5c	1.5	valid	233.563604539	233.5697775	-0.10	8
+k4	add	C4-adjacent-top	3	c-1e-3	2.999	valid	215.564103663	215.56308375	0.00	8
+k5	add	C4-adjacent-top	3	c-1e-3	2.999	valid	215.564103663	215.56308375	0.00	8
+k4	add2	C4-adjacent-top	3	c-1e-3	2.999	valid	215.564103663	215.56308375	0.00	8
+k5	add2	C4-adjacent-top	3	c-1e-3	2.999	valid	215.564103663	215.56308375	0.00	8
+k4	seq	C4-adjacent-top	3	c-1e-3	2.999	valid	205.912814637	215.56308375	-39.49	10
+k5	seq	C4-adjacent-top	3	c-1e-3	2.999	valid	205.912814637	215.56308375	-39.49	10
+k5	swift	C4-adjacent-top	3	c-1e-3	2.999	valid	215.564103663	215.56308375	0.00	8
+k4	add	C4-adjacent-top	3	c-1e-4	2.9999	valid	215.550211534	215.5514925	-0.01	8
+k5	add	C4-adjacent-top	3	c-1e-4	2.9999	valid	215.550211534	215.5514925	-0.01	8
+k4	add2	C4-adjacent-top	3	c-1e-4	2.9999	valid	215.550211534	215.5514925	-0.01	8
+k5	add2	C4-adjacent-top	3	c-1e-4	2.9999	valid	215.550211534	215.5514925	-0.01	8
+k4	seq	C4-adjacent-top	3	c-1e-4	2.9999	valid	205.89370832	215.5514925	-39.50	10
+k5	seq	C4-adjacent-top	3	c-1e-4	2.9999	valid	205.89370832	215.5514925	-39.50	10
+k5	swift	C4-adjacent-top	3	c-1e-4	2.9999	valid	215.550211534	215.5514925	-0.01	8
+k4	add	C4-adjacent-top	3	c-1e-8	2.99999999	valid	215.548667904	215.5514925	-0.01	8
+k5	add	C4-adjacent-top	3	c-1e-8	2.99999999	valid	215.548667904	215.5514925	-0.01	8
+k4	add2	C4-adjacent-top	3	c-1e-8	2.99999999	valid	215.548667904	215.5514925	-0.01	8
+k5	add2	C4-adjacent-top	3	c-1e-8	2.99999999	valid	215.548667904	215.5514925	-0.01	8
+k4	seq	C4-adjacent-top	3	c-1e-8	2.99999999	valid	205.89158533	215.5514925	-39.51	10
+k5	seq	C4-adjacent-top	3	c-1e-8	2.99999999	valid	205.89158533	215.5514925	-39.51	10
+k5	swift	C4-adjacent-top	3	c-1e-8	2.99999999	valid	215.548667904	215.5514925	-0.01	8
+k4	add	C4-adjacent-top	3	c-1ulp	2.9999999999999996	valid	215.54866775	215.5514925	-0.01	8
+k5	add	C4-adjacent-top	3	c-1ulp	2.9999999999999996	valid	215.54866775	215.5514925	-0.01	8
+k4	add2	C4-adjacent-top	3	c-1ulp	2.9999999999999996	valid	215.54866775	215.5514925	-0.01	8
+k5	add2	C4-adjacent-top	3	c-1ulp	2.9999999999999996	valid	215.54866775	215.5514925	-0.01	8
+k4	seq	C4-adjacent-top	3	c-1ulp	2.9999999999999996	valid	205.891585118	215.5514925	-39.51	10
+k5	seq	C4-adjacent-top	3	c-1ulp	2.9999999999999996	valid	205.891585118	215.5514925	-39.51	10
+k5	swift	C4-adjacent-top	3	c-1ulp	2.9999999999999996	valid	215.54866775	215.5514925	-0.01	8
+k4	add	C4-adjacent-top	3	c	3	valid	215.54866775	215.5514925	-0.01	8
+k5	add	C4-adjacent-top	3	c	3	valid	215.54866775	215.5514925	-0.01	8
+k4	add2	C4-adjacent-top	3	c	3	valid	215.54866775	215.5514925	-0.01	8
+k5	add2	C4-adjacent-top	3	c	3	valid	215.54866775	215.5514925	-0.01	8
+k4	seq	C4-adjacent-top	3	c	3	valid	205.891585118	215.5514925	-39.51	10
+k5	seq	C4-adjacent-top	3	c	3	valid	205.891585118	215.5514925	-39.51	10
+k5	swift	C4-adjacent-top	3	c	3	valid	215.54866775	215.5514925	-0.01	8
+k4	add	C4-adjacent-top	3	c+1ulp	3.0000000000000004	valid	215.54866775	215.5514925	-0.01	8
+k5	add	C4-adjacent-top	3	c+1ulp	3.0000000000000004	valid	215.54866775	215.5514925	-0.01	8
+k4	add2	C4-adjacent-top	3	c+1ulp	3.0000000000000004	valid	215.54866775	215.5514925	-0.01	8
+k5	add2	C4-adjacent-top	3	c+1ulp	3.0000000000000004	valid	215.54866775	215.5514925	-0.01	8
+k4	seq	C4-adjacent-top	3	c+1ulp	3.0000000000000004	valid	205.891585118	215.5514925	-39.51	10
+k5	seq	C4-adjacent-top	3	c+1ulp	3.0000000000000004	valid	205.891585118	215.5514925	-39.51	10
+k5	swift	C4-adjacent-top	3	c+1ulp	3.0000000000000004	valid	215.54866775	215.5514925	-0.01	8
+k4	add	C4-adjacent-top	3	c+1e-8	3.00000001	valid	215.548667596	215.5514925	-0.01	8
+k5	add	C4-adjacent-top	3	c+1e-8	3.00000001	valid	215.548667596	215.5514925	-0.01	8
+k4	add2	C4-adjacent-top	3	c+1e-8	3.00000001	valid	215.548667596	215.5514925	-0.01	8
+k5	add2	C4-adjacent-top	3	c+1e-8	3.00000001	valid	215.548667596	215.5514925	-0.01	8
+k4	seq	C4-adjacent-top	3	c+1e-8	3.00000001	valid	205.891584905	215.5514925	-39.51	10
+k5	seq	C4-adjacent-top	3	c+1e-8	3.00000001	valid	205.891584905	215.5514925	-39.51	10
+k5	swift	C4-adjacent-top	3	c+1e-8	3.00000001	valid	215.548667596	215.5514925	-0.01	8
+k4	add	C4-adjacent-top	3	c+1e-4	3.0001	valid	215.547123923	215.54742375	-0.00	8
+k5	add	C4-adjacent-top	3	c+1e-4	3.0001	valid	215.547123923	215.54742375	-0.00	8
+k4	add2	C4-adjacent-top	3	c+1e-4	3.0001	valid	215.547123923	215.54742375	-0.00	8
+k5	add2	C4-adjacent-top	3	c+1e-4	3.0001	valid	215.547123923	215.54742375	-0.00	8
+k4	seq	C4-adjacent-top	3	c+1e-4	3.0001	valid	205.889461859	215.54742375	-39.50	10
+k5	seq	C4-adjacent-top	3	c+1e-4	3.0001	valid	205.889461859	215.54742375	-39.50	10
+k5	swift	C4-adjacent-top	3	c+1e-4	3.0001	valid	215.547123923	215.54742375	-0.00	8
+k4	add	C4-adjacent-top	3	c+1e-3	3.001	valid	215.533227523	215.54031375	-0.03	8
+k5	add	C4-adjacent-top	3	c+1e-3	3.001	valid	215.533227523	215.54031375	-0.03	8
+k4	add2	C4-adjacent-top	3	c+1e-3	3.001	valid	215.533227523	215.54031375	-0.03	8
+k5	add2	C4-adjacent-top	3	c+1e-3	3.001	valid	215.533227523	215.54031375	-0.03	8
+k4	seq	C4-adjacent-top	3	c+1e-3	3.001	valid	205.870350028	215.54031375	-39.53	10
+k5	seq	C4-adjacent-top	3	c+1e-3	3.001	valid	205.870350028	215.54031375	-39.53	10
+k5	swift	C4-adjacent-top	3	c+1e-3	3.001	valid	215.533227523	215.54031375	-0.03	8
+k4	add	C4-adjacent-top	3	1.5c	4.5	IsDone=false	-1.0			0
+k5	add	C4-adjacent-top	3	1.5c	4.5	IsDone=false	-1.0			0
+k4	add2	C4-adjacent-top	3	1.5c	4.5	IsDone=false	-1.0			0
+k5	add2	C4-adjacent-top	3	1.5c	4.5	IsDone=false	-1.0			0
+k4	seq	C4-adjacent-top	3	1.5c	4.5	IsDone=false	-1.0			0
+k5	seq	C4-adjacent-top	3	1.5c	4.5	IsDone=false	-1.0			0
+k5	swift	C4-adjacent-top	3	1.5c	4.5	IsDone=false				
+k4	add	C4-adjacent-top	4	0.5c	2.0	valid	228.749259864	228.7632375	-0.12	8
+k5	add	C4-adjacent-top	4	0.5c	2.0	valid	228.749259864	228.7632375	-0.12	8
+k4	add2	C4-adjacent-top	4	0.5c	2.0	valid	228.749259864	228.7632375	-0.12	8
+k5	add2	C4-adjacent-top	4	0.5c	2.0	valid	228.749259864	228.7632375	-0.12	8
+k4	seq	C4-adjacent-top	4	0.5c	2.0	valid	224.171087355	228.7632375	-40.87	10
+k5	seq	C4-adjacent-top	4	0.5c	2.0	valid	224.171087355	228.7632375	-40.87	10
+k5	swift	C4-adjacent-top	4	0.5c	2.0	valid	228.749259864	228.7632375	-0.12	8
+k4	add	C4-adjacent-top	4	c-1e-3	3.999	valid	198.084322128	198.0947775	-0.02	8
+k5	add	C4-adjacent-top	4	c-1e-3	3.999	valid	198.084322128	198.0947775	-0.02	8
+k4	add2	C4-adjacent-top	4	c-1e-3	3.999	valid	198.084322128	198.0947775	-0.02	8
+k5	add2	C4-adjacent-top	4	c-1e-3	3.999	valid	198.084322128	198.0947775	-0.02	8
+k4	seq	C4-adjacent-top	4	c-1e-3	3.999	valid	182.067585158	198.0947775	-38.25	10
+k5	seq	C4-adjacent-top	4	c-1e-3	3.999	valid	182.067585158	198.0947775	-38.25	10
+k5	swift	C4-adjacent-top	4	c-1e-3	3.999	valid	198.084322128	198.0947775	-0.02	8
+k4	add	C4-adjacent-top	4	c-1e-4	3.9999	valid	198.066833697	198.07555125	-0.02	8
+k5	add	C4-adjacent-top	4	c-1e-4	3.9999	valid	198.066833697	198.07555125	-0.02	8
+k4	add2	C4-adjacent-top	4	c-1e-4	3.9999	valid	198.066833697	198.07555125	-0.02	8
+k5	add2	C4-adjacent-top	4	c-1e-4	3.9999	valid	198.066833697	198.07555125	-0.02	8
+k4	seq	C4-adjacent-top	4	c-1e-4	3.9999	valid	182.043916619	198.07555125	-38.24	10
+k5	seq	C4-adjacent-top	4	c-1e-4	3.9999	valid	182.043916619	198.07555125	-38.24	10
+k5	swift	C4-adjacent-top	4	c-1e-4	3.9999	valid	198.066833697	198.07555125	-0.02	8
+k4	add	C4-adjacent-top	4	c-1e-8	3.99999999	valid	198.064890547	198.07433625	-0.02	8
+k5	add	C4-adjacent-top	4	c-1e-8	3.99999999	valid	198.064890547	198.07433625	-0.02	8
+k4	add2	C4-adjacent-top	4	c-1e-8	3.99999999	valid	198.064890547	198.07433625	-0.02	8
+k5	add2	C4-adjacent-top	4	c-1e-8	3.99999999	valid	198.064890547	198.07433625	-0.02	8
+k4	seq	C4-adjacent-top	4	c-1e-8	3.99999999	valid	182.041288519	198.07433625	-38.24	11
+k5	seq	C4-adjacent-top	4	c-1e-8	3.99999999	valid	182.041288519	198.07433625	-38.24	11
+k5	swift	C4-adjacent-top	4	c-1e-8	3.99999999	valid	198.064890547	198.07433625	-0.02	8
+k4	add	C4-adjacent-top	4	c-1ulp	3.9999999999999996	IsDone=false	-1.0			0
+k5	add	C4-adjacent-top	4	c-1ulp	3.9999999999999996	IsDone=false	-1.0			0
+k4	add2	C4-adjacent-top	4	c-1ulp	3.9999999999999996	IsDone=false	-1.0			0
+k5	add2	C4-adjacent-top	4	c-1ulp	3.9999999999999996	IsDone=false	-1.0			0
+k4	seq	C4-adjacent-top	4	c-1ulp	3.9999999999999996	IsDone=false	-1.0			0
+k5	seq	C4-adjacent-top	4	c-1ulp	3.9999999999999996	IsDone=false	-1.0			0
+k5	swift	C4-adjacent-top	4	c-1ulp	3.9999999999999996	IsDone=false				
+k4	add	C4-adjacent-top	4	c	4	IsDone=false	-1.0			0
+k5	add	C4-adjacent-top	4	c	4	IsDone=false	-1.0			0
+k4	add2	C4-adjacent-top	4	c	4	IsDone=false	-1.0			0
+k5	add2	C4-adjacent-top	4	c	4	IsDone=false	-1.0			0
+k4	seq	C4-adjacent-top	4	c	4	IsDone=false	-1.0			0
+k5	seq	C4-adjacent-top	4	c	4	IsDone=false	-1.0			0
+k5	swift	C4-adjacent-top	4	c	4	IsDone=false				
+k4	add	C4-adjacent-top	4	c+1ulp	4.000000000000001	IsDone=false	-1.0			0
+k5	add	C4-adjacent-top	4	c+1ulp	4.000000000000001	IsDone=false	-1.0			0
+k4	add2	C4-adjacent-top	4	c+1ulp	4.000000000000001	IsDone=false	-1.0			0
+k5	add2	C4-adjacent-top	4	c+1ulp	4.000000000000001	IsDone=false	-1.0			0
+k4	seq	C4-adjacent-top	4	c+1ulp	4.000000000000001	IsDone=false	-1.0			0
+k5	seq	C4-adjacent-top	4	c+1ulp	4.000000000000001	IsDone=false	-1.0			0
+k5	swift	C4-adjacent-top	4	c+1ulp	4.000000000000001	IsDone=false				
+k4	add	C4-adjacent-top	4	c+1e-8	4.00000001	IsDone=false	-1.0			0
+k5	add	C4-adjacent-top	4	c+1e-8	4.00000001	IsDone=false	-1.0			0
+k4	add2	C4-adjacent-top	4	c+1e-8	4.00000001	IsDone=false	-1.0			0
+k5	add2	C4-adjacent-top	4	c+1e-8	4.00000001	IsDone=false	-1.0			0
+k4	seq	C4-adjacent-top	4	c+1e-8	4.00000001	IsDone=false	-1.0			0
+k5	seq	C4-adjacent-top	4	c+1e-8	4.00000001	IsDone=false	-1.0			0
+k5	swift	C4-adjacent-top	4	c+1e-8	4.00000001	IsDone=false				
+k4	add	C4-adjacent-top	4	c+1e-4	4.0001	IsDone=false	-1.0			0
+k5	add	C4-adjacent-top	4	c+1e-4	4.0001	IsDone=false	-1.0			0
+k4	add2	C4-adjacent-top	4	c+1e-4	4.0001	IsDone=false	-1.0			0
+k5	add2	C4-adjacent-top	4	c+1e-4	4.0001	IsDone=false	-1.0			0
+k4	seq	C4-adjacent-top	4	c+1e-4	4.0001	IsDone=false	-1.0			0
+k5	seq	C4-adjacent-top	4	c+1e-4	4.0001	IsDone=false	-1.0			0
+k5	swift	C4-adjacent-top	4	c+1e-4	4.0001	IsDone=false				
+k4	add	C4-adjacent-top	4	c+1e-3	4.001	IsDone=false	-1.0			0
+k5	add	C4-adjacent-top	4	c+1e-3	4.001	IsDone=false	-1.0			0
+k4	add2	C4-adjacent-top	4	c+1e-3	4.001	IsDone=false	-1.0			0
+k5	add2	C4-adjacent-top	4	c+1e-3	4.001	IsDone=false	-1.0			0
+k4	seq	C4-adjacent-top	4	c+1e-3	4.001	IsDone=false	-1.0			0
+k5	seq	C4-adjacent-top	4	c+1e-3	4.001	IsDone=false	-1.0			0
+k5	swift	C4-adjacent-top	4	c+1e-3	4.001	IsDone=false				
+k4	add	C4-adjacent-top	4	1.5c	6.0	IsDone=false	-1.0			0
+k5	add	C4-adjacent-top	4	1.5c	6.0	IsDone=false	-1.0			0
+k4	add2	C4-adjacent-top	4	1.5c	6.0	IsDone=false	-1.0			0
+k5	add2	C4-adjacent-top	4	1.5c	6.0	IsDone=false	-1.0			0
+k4	seq	C4-adjacent-top	4	1.5c	6.0	IsDone=false	-1.0			0
+k5	seq	C4-adjacent-top	4	1.5c	6.0	IsDone=false	-1.0			0
+k5	swift	C4-adjacent-top	4	1.5c	6.0	IsDone=false				
+k4	add	C4-adjacent-top	5	0.5c	2.5	valid	222.720313349	222.72053625	-0.00	8
+k5	add	C4-adjacent-top	5	0.5c	2.5	valid	222.720313349	222.72053625	-0.00	8
+k4	add2	C4-adjacent-top	5	0.5c	2.5	valid	222.720313349	222.72053625	-0.00	8
+k5	add2	C4-adjacent-top	5	0.5c	2.5	valid	222.720313349	222.72053625	-0.00	8
+k4	seq	C4-adjacent-top	5	0.5c	2.5	valid	215.790462384	222.72053625	-40.11	10
+k5	seq	C4-adjacent-top	5	0.5c	2.5	valid	215.790462384	222.72053625	-40.11	10
+k5	swift	C4-adjacent-top	5	0.5c	2.5	valid	222.720313349	222.72053625	-0.00	8
+k4	add	C4-adjacent-top	5	c-1e-3	4.999	IsDone=false	-1.0			0
+k5	add	C4-adjacent-top	5	c-1e-3	4.999	IsDone=false	-1.0			0
+k4	add2	C4-adjacent-top	5	c-1e-3	4.999	IsDone=false	-1.0			0
+k5	add2	C4-adjacent-top	5	c-1e-3	4.999	IsDone=false	-1.0			0
+k4	seq	C4-adjacent-top	5	c-1e-3	4.999	IsDone=false	-1.0			0
+k5	seq	C4-adjacent-top	5	c-1e-3	4.999	IsDone=false	-1.0			0
+k5	swift	C4-adjacent-top	5	c-1e-3	4.999	IsDone=false				
+k4	add	C4-adjacent-top	5	c-1e-4	4.9999	IsDone=false	-1.0			0
+k5	add	C4-adjacent-top	5	c-1e-4	4.9999	IsDone=false	-1.0			0
+k4	add2	C4-adjacent-top	5	c-1e-4	4.9999	IsDone=false	-1.0			0
+k5	add2	C4-adjacent-top	5	c-1e-4	4.9999	IsDone=false	-1.0			0
+k4	seq	C4-adjacent-top	5	c-1e-4	4.9999	IsDone=false	-1.0			0
+k5	seq	C4-adjacent-top	5	c-1e-4	4.9999	IsDone=false	-1.0			0
+k5	swift	C4-adjacent-top	5	c-1e-4	4.9999	IsDone=false				
+k4	add	C4-adjacent-top	5	c-1e-8	4.99999999	IsDone=false	-1.0			0
+k5	add	C4-adjacent-top	5	c-1e-8	4.99999999	IsDone=false	-1.0			0
+k4	add2	C4-adjacent-top	5	c-1e-8	4.99999999	IsDone=false	-1.0			0
+k5	add2	C4-adjacent-top	5	c-1e-8	4.99999999	IsDone=false	-1.0			0
+k4	seq	C4-adjacent-top	5	c-1e-8	4.99999999	IsDone=false	-1.0			0
+k5	seq	C4-adjacent-top	5	c-1e-8	4.99999999	IsDone=false	-1.0			0
+k5	swift	C4-adjacent-top	5	c-1e-8	4.99999999	IsDone=false				
+k4	add	C4-adjacent-top	5	c-1ulp	4.999999999999999	IsDone=false	-1.0			0
+k5	add	C4-adjacent-top	5	c-1ulp	4.999999999999999	IsDone=false	-1.0			0
+k4	add2	C4-adjacent-top	5	c-1ulp	4.999999999999999	IsDone=false	-1.0			0
+k5	add2	C4-adjacent-top	5	c-1ulp	4.999999999999999	IsDone=false	-1.0			0
+k4	seq	C4-adjacent-top	5	c-1ulp	4.999999999999999	IsDone=false	-1.0			0
+k5	seq	C4-adjacent-top	5	c-1ulp	4.999999999999999	IsDone=false	-1.0			0
+k5	swift	C4-adjacent-top	5	c-1ulp	4.999999999999999	IsDone=false				
+k4	add	C4-adjacent-top	5	c	5	IsDone=false	-1.0			0
+k5	add	C4-adjacent-top	5	c	5	IsDone=false	-1.0			0
+k4	add2	C4-adjacent-top	5	c	5	IsDone=false	-1.0			0
+k5	add2	C4-adjacent-top	5	c	5	IsDone=false	-1.0			0
+k4	seq	C4-adjacent-top	5	c	5	IsDone=false	-1.0			0
+k5	seq	C4-adjacent-top	5	c	5	IsDone=false	-1.0			0
+k5	swift	C4-adjacent-top	5	c	5	IsDone=false				
+k4	add	C4-adjacent-top	5	c+1ulp	5.000000000000001	IsDone=false	-1.0			0
+k5	add	C4-adjacent-top	5	c+1ulp	5.000000000000001	IsDone=false	-1.0			0
+k4	add2	C4-adjacent-top	5	c+1ulp	5.000000000000001	IsDone=false	-1.0			0
+k5	add2	C4-adjacent-top	5	c+1ulp	5.000000000000001	IsDone=false	-1.0			0
+k4	seq	C4-adjacent-top	5	c+1ulp	5.000000000000001	IsDone=false	-1.0			0
+k5	seq	C4-adjacent-top	5	c+1ulp	5.000000000000001	IsDone=false	-1.0			0
+k5	swift	C4-adjacent-top	5	c+1ulp	5.000000000000001	IsDone=false				
+k4	add	C4-adjacent-top	5	c+1e-8	5.00000001	IsDone=false	-1.0			0
+k5	add	C4-adjacent-top	5	c+1e-8	5.00000001	IsDone=false	-1.0			0
+k4	add2	C4-adjacent-top	5	c+1e-8	5.00000001	IsDone=false	-1.0			0
+k5	add2	C4-adjacent-top	5	c+1e-8	5.00000001	IsDone=false	-1.0			0
+k4	seq	C4-adjacent-top	5	c+1e-8	5.00000001	IsDone=false	-1.0			0
+k5	seq	C4-adjacent-top	5	c+1e-8	5.00000001	IsDone=false	-1.0			0
+k5	swift	C4-adjacent-top	5	c+1e-8	5.00000001	IsDone=false				
+k4	add	C4-adjacent-top	5	c+1e-4	5.0001	IsDone=false	-1.0			0
+k5	add	C4-adjacent-top	5	c+1e-4	5.0001	IsDone=false	-1.0			0
+k4	add2	C4-adjacent-top	5	c+1e-4	5.0001	IsDone=false	-1.0			0
+k5	add2	C4-adjacent-top	5	c+1e-4	5.0001	IsDone=false	-1.0			0
+k4	seq	C4-adjacent-top	5	c+1e-4	5.0001	IsDone=false	-1.0			0
+k5	seq	C4-adjacent-top	5	c+1e-4	5.0001	IsDone=false	-1.0			0
+k5	swift	C4-adjacent-top	5	c+1e-4	5.0001	IsDone=false				
+k4	add	C4-adjacent-top	5	c+1e-3	5.001	IsDone=false	-1.0			0
+k5	add	C4-adjacent-top	5	c+1e-3	5.001	IsDone=false	-1.0			0
+k4	add2	C4-adjacent-top	5	c+1e-3	5.001	IsDone=false	-1.0			0
+k5	add2	C4-adjacent-top	5	c+1e-3	5.001	IsDone=false	-1.0			0
+k4	seq	C4-adjacent-top	5	c+1e-3	5.001	IsDone=false	-1.0			0
+k5	seq	C4-adjacent-top	5	c+1e-3	5.001	IsDone=false	-1.0			0
+k5	swift	C4-adjacent-top	5	c+1e-3	5.001	IsDone=false				
+k4	add	C4-adjacent-top	5	1.5c	7.5	IsDone=false	-1.0			0
+k5	add	C4-adjacent-top	5	1.5c	7.5	IsDone=false	-1.0			0
+k4	add2	C4-adjacent-top	5	1.5c	7.5	IsDone=false	-1.0			0
+k5	add2	C4-adjacent-top	5	1.5c	7.5	IsDone=false	-1.0			0
+k4	seq	C4-adjacent-top	5	1.5c	7.5	IsDone=false	-1.0			0
+k5	seq	C4-adjacent-top	5	1.5c	7.5	IsDone=false	-1.0			0
+k5	swift	C4-adjacent-top	5	1.5c	7.5	IsDone=false				
+k4	add	C4-adjacent-top	6	0.5c	3.0	valid	215.54866775	215.5514925	-0.01	8
+k5	add	C4-adjacent-top	6	0.5c	3.0	valid	215.54866775	215.5514925	-0.01	8
+k4	add2	C4-adjacent-top	6	0.5c	3.0	valid	215.54866775	215.5514925	-0.01	8
+k5	add2	C4-adjacent-top	6	0.5c	3.0	valid	215.54866775	215.5514925	-0.01	8
+k4	seq	C4-adjacent-top	6	0.5c	3.0	valid	205.891585118	215.5514925	-39.51	10
+k5	seq	C4-adjacent-top	6	0.5c	3.0	valid	205.891585118	215.5514925	-39.51	10
+k5	swift	C4-adjacent-top	6	0.5c	3.0	valid	215.54866775	215.5514925	-0.01	8
+k4	add	C4-adjacent-top	6	c-1e-3	5.999	IsDone=false	-1.0			0
+k5	add	C4-adjacent-top	6	c-1e-3	5.999	IsDone=false	-1.0			0
+k4	add2	C4-adjacent-top	6	c-1e-3	5.999	IsDone=false	-1.0			0
+k5	add2	C4-adjacent-top	6	c-1e-3	5.999	IsDone=false	-1.0			0
+k4	seq	C4-adjacent-top	6	c-1e-3	5.999	IsDone=false	-1.0			0
+k5	seq	C4-adjacent-top	6	c-1e-3	5.999	IsDone=false	-1.0			0
+k5	swift	C4-adjacent-top	6	c-1e-3	5.999	IsDone=false				
+k4	add	C4-adjacent-top	6	c-1e-4	5.9999	IsDone=false	-1.0			0
+k5	add	C4-adjacent-top	6	c-1e-4	5.9999	IsDone=false	-1.0			0
+k4	add2	C4-adjacent-top	6	c-1e-4	5.9999	IsDone=false	-1.0			0
+k5	add2	C4-adjacent-top	6	c-1e-4	5.9999	IsDone=false	-1.0			0
+k4	seq	C4-adjacent-top	6	c-1e-4	5.9999	IsDone=false	-1.0			0
+k5	seq	C4-adjacent-top	6	c-1e-4	5.9999	IsDone=false	-1.0			0
+k5	swift	C4-adjacent-top	6	c-1e-4	5.9999	IsDone=false				
+k4	add	C4-adjacent-top	6	c-1e-8	5.99999999	IsDone=false	-1.0			0
+k5	add	C4-adjacent-top	6	c-1e-8	5.99999999	IsDone=false	-1.0			0
+k4	add2	C4-adjacent-top	6	c-1e-8	5.99999999	IsDone=false	-1.0			0
+k5	add2	C4-adjacent-top	6	c-1e-8	5.99999999	IsDone=false	-1.0			0
+k4	seq	C4-adjacent-top	6	c-1e-8	5.99999999	IsDone=false	-1.0			0
+k5	seq	C4-adjacent-top	6	c-1e-8	5.99999999	IsDone=false	-1.0			0
+k5	swift	C4-adjacent-top	6	c-1e-8	5.99999999	IsDone=false				
+k4	add	C4-adjacent-top	6	c-1ulp	5.999999999999999	IsDone=false	-1.0			0
+k5	add	C4-adjacent-top	6	c-1ulp	5.999999999999999	IsDone=false	-1.0			0
+k4	add2	C4-adjacent-top	6	c-1ulp	5.999999999999999	IsDone=false	-1.0			0
+k5	add2	C4-adjacent-top	6	c-1ulp	5.999999999999999	IsDone=false	-1.0			0
+k4	seq	C4-adjacent-top	6	c-1ulp	5.999999999999999	IsDone=false	-1.0			0
+k5	seq	C4-adjacent-top	6	c-1ulp	5.999999999999999	IsDone=false	-1.0			0
+k5	swift	C4-adjacent-top	6	c-1ulp	5.999999999999999	IsDone=false				
+k4	add	C4-adjacent-top	6	c	6	IsDone=false	-1.0			0
+k5	add	C4-adjacent-top	6	c	6	IsDone=false	-1.0			0
+k4	add2	C4-adjacent-top	6	c	6	IsDone=false	-1.0			0
+k5	add2	C4-adjacent-top	6	c	6	IsDone=false	-1.0			0
+k4	seq	C4-adjacent-top	6	c	6	IsDone=false	-1.0			0
+k5	seq	C4-adjacent-top	6	c	6	IsDone=false	-1.0			0
+k5	swift	C4-adjacent-top	6	c	6	IsDone=false				
+k4	add	C4-adjacent-top	6	c+1ulp	6.000000000000001	IsDone=false	-1.0			0
+k5	add	C4-adjacent-top	6	c+1ulp	6.000000000000001	IsDone=false	-1.0			0
+k4	add2	C4-adjacent-top	6	c+1ulp	6.000000000000001	IsDone=false	-1.0			0
+k5	add2	C4-adjacent-top	6	c+1ulp	6.000000000000001	IsDone=false	-1.0			0
+k4	seq	C4-adjacent-top	6	c+1ulp	6.000000000000001	IsDone=false	-1.0			0
+k5	seq	C4-adjacent-top	6	c+1ulp	6.000000000000001	IsDone=false	-1.0			0
+k5	swift	C4-adjacent-top	6	c+1ulp	6.000000000000001	IsDone=false				
+k4	add	C4-adjacent-top	6	c+1e-8	6.00000001	IsDone=false	-1.0			0
+k5	add	C4-adjacent-top	6	c+1e-8	6.00000001	IsDone=false	-1.0			0
+k4	add2	C4-adjacent-top	6	c+1e-8	6.00000001	IsDone=false	-1.0			0
+k5	add2	C4-adjacent-top	6	c+1e-8	6.00000001	IsDone=false	-1.0			0
+k4	seq	C4-adjacent-top	6	c+1e-8	6.00000001	IsDone=false	-1.0			0
+k5	seq	C4-adjacent-top	6	c+1e-8	6.00000001	IsDone=false	-1.0			0
+k5	swift	C4-adjacent-top	6	c+1e-8	6.00000001	IsDone=false				
+k4	add	C4-adjacent-top	6	c+1e-4	6.0001	IsDone=false	-1.0			0
+k5	add	C4-adjacent-top	6	c+1e-4	6.0001	IsDone=false	-1.0			0
+k4	add2	C4-adjacent-top	6	c+1e-4	6.0001	IsDone=false	-1.0			0
+k5	add2	C4-adjacent-top	6	c+1e-4	6.0001	IsDone=false	-1.0			0
+k4	seq	C4-adjacent-top	6	c+1e-4	6.0001	IsDone=false	-1.0			0
+k5	seq	C4-adjacent-top	6	c+1e-4	6.0001	IsDone=false	-1.0			0
+k5	swift	C4-adjacent-top	6	c+1e-4	6.0001	IsDone=false				
+k4	add	C4-adjacent-top	6	c+1e-3	6.001	IsDone=false	-1.0			0
+k5	add	C4-adjacent-top	6	c+1e-3	6.001	IsDone=false	-1.0			0
+k4	add2	C4-adjacent-top	6	c+1e-3	6.001	IsDone=false	-1.0			0
+k5	add2	C4-adjacent-top	6	c+1e-3	6.001	IsDone=false	-1.0			0
+k4	seq	C4-adjacent-top	6	c+1e-3	6.001	IsDone=false	-1.0			0
+k5	seq	C4-adjacent-top	6	c+1e-3	6.001	IsDone=false	-1.0			0
+k5	swift	C4-adjacent-top	6	c+1e-3	6.001	IsDone=false				
+k4	add	C4-adjacent-top	6	1.5c	9.0	IsDone=false	-1.0			0
+k5	add	C4-adjacent-top	6	1.5c	9.0	IsDone=false	-1.0			0
+k4	add2	C4-adjacent-top	6	1.5c	9.0	IsDone=false	-1.0			0
+k5	add2	C4-adjacent-top	6	1.5c	9.0	IsDone=false	-1.0			0
+k4	seq	C4-adjacent-top	6	1.5c	9.0	IsDone=false	-1.0			0
+k5	seq	C4-adjacent-top	6	1.5c	9.0	IsDone=false	-1.0			0
+k5	swift	C4-adjacent-top	6	1.5c	9.0	IsDone=false				
+k4	add	C5-adjacent-vertical	2	0.5c	1.0	valid	236.662240952	236.66961375	-0.22	8
+k5	add	C5-adjacent-vertical	2	0.5c	1.0	valid	236.662240952	236.66961375	-0.22	8
+k4	add2	C5-adjacent-vertical	2	0.5c	1.0	valid	236.662240952	236.66961375	-0.22	8
+k5	add2	C5-adjacent-vertical	2	0.5c	1.0	valid	236.662240952	236.66961375	-0.22	8
+k4	seq	C5-adjacent-vertical	2	0.5c	1.0	valid	235.875367553	236.66961375	-23.85	10
+k5	seq	C5-adjacent-vertical	2	0.5c	1.0	valid	235.875367553	236.66961375	-23.85	10
+k5	swift	C5-adjacent-vertical	2	0.5c	1.0	valid	236.662240952	236.66961375	-0.22	8
+k4	add	C5-adjacent-vertical	2	c-1e-3	1.999	valid	227.045026384	227.0589375	-0.11	8
+k5	add	C5-adjacent-vertical	2	c-1e-3	1.999	valid	227.045026384	227.0589375	-0.11	8
+k4	add2	C5-adjacent-vertical	2	c-1e-3	1.999	valid	227.045026384	227.0589375	-0.11	8
+k5	add2	C5-adjacent-vertical	2	c-1e-3	1.999	valid	227.045026384	227.0589375	-0.11	8
+k4	seq	C5-adjacent-vertical	2	c-1e-3	1.999	valid	224.186243363	227.0589375	-22.20	10
+k5	seq	C5-adjacent-vertical	2	c-1e-3	1.999	valid	224.186243363	227.0589375	-22.20	10
+k5	swift	C5-adjacent-vertical	2	c-1e-3	1.999	valid	227.045026384	227.0589375	-0.11	8
+k4	add	C5-adjacent-vertical	2	c-1e-4	1.9999	valid	227.033703548	227.04937125	-0.12	8
+k5	add	C5-adjacent-vertical	2	c-1e-4	1.9999	valid	227.033703548	227.04937125	-0.12	8
+k4	add2	C5-adjacent-vertical	2	c-1e-4	1.9999	valid	227.033703548	227.04937125	-0.12	8
+k5	add2	C5-adjacent-vertical	2	c-1e-4	1.9999	valid	227.033703548	227.04937125	-0.12	8
+k4	seq	C5-adjacent-vertical	2	c-1e-4	1.9999	valid	224.172603252	227.04937125	-22.21	10
+k5	seq	C5-adjacent-vertical	2	c-1e-4	1.9999	valid	224.172603252	227.04937125	-22.21	10
+k5	swift	C5-adjacent-vertical	2	c-1e-4	1.9999	valid	227.033703548	227.04937125	-0.12	8
+k4	add	C5-adjacent-vertical	2	c-1e-8	1.99999999	valid	227.032445295	227.04937125	-0.13	8
+k5	add	C5-adjacent-vertical	2	c-1e-8	1.99999999	valid	227.032445295	227.04937125	-0.13	8
+k4	add2	C5-adjacent-vertical	2	c-1e-8	1.99999999	valid	227.032445295	227.04937125	-0.13	8
+k5	add2	C5-adjacent-vertical	2	c-1e-8	1.99999999	valid	227.032445295	227.04937125	-0.13	8
+k4	seq	C5-adjacent-vertical	2	c-1e-8	1.99999999	valid	224.171087507	227.04937125	-22.23	10
+k5	seq	C5-adjacent-vertical	2	c-1e-8	1.99999999	valid	224.171087507	227.04937125	-22.23	10
+k5	swift	C5-adjacent-vertical	2	c-1e-8	1.99999999	valid	227.032445295	227.04937125	-0.13	8
+k4	add	C5-adjacent-vertical	2	c-1ulp	1.9999999999999998	valid	227.032445158	227.04937125	-0.13	8
+k5	add	C5-adjacent-vertical	2	c-1ulp	1.9999999999999998	valid	227.032445158	227.04937125	-0.13	8
+k4	add2	C5-adjacent-vertical	2	c-1ulp	1.9999999999999998	valid	227.032445158	227.04937125	-0.13	8
+k5	add2	C5-adjacent-vertical	2	c-1ulp	1.9999999999999998	valid	227.032445158	227.04937125	-0.13	8
+k4	seq	C5-adjacent-vertical	2	c-1ulp	1.9999999999999998	valid	224.171087355	227.04937125	-22.23	10
+k5	seq	C5-adjacent-vertical	2	c-1ulp	1.9999999999999998	valid	224.171087355	227.04937125	-22.23	10
+k5	swift	C5-adjacent-vertical	2	c-1ulp	1.9999999999999998	valid	227.032445158	227.04937125	-0.13	8
+k4	add	C5-adjacent-vertical	2	c	2	valid	227.032445158	227.04937125	-0.13	8
+k5	add	C5-adjacent-vertical	2	c	2	valid	227.032445158	227.04937125	-0.13	8
+k4	add2	C5-adjacent-vertical	2	c	2	valid	227.032445158	227.04937125	-0.13	8
+k5	add2	C5-adjacent-vertical	2	c	2	valid	227.032445158	227.04937125	-0.13	8
+k4	seq	C5-adjacent-vertical	2	c	2	valid	224.171087355	227.04937125	-22.23	10
+k5	seq	C5-adjacent-vertical	2	c	2	valid	224.171087355	227.04937125	-22.23	10
+k5	swift	C5-adjacent-vertical	2	c	2	valid	227.032445158	227.04937125	-0.13	8
+k4	add	C5-adjacent-vertical	2	c+1ulp	2.0000000000000004	valid	227.032445158	227.04937125	-0.13	8
+k5	add	C5-adjacent-vertical	2	c+1ulp	2.0000000000000004	valid	227.032445158	227.04937125	-0.13	8
+k4	add2	C5-adjacent-vertical	2	c+1ulp	2.0000000000000004	valid	227.032445158	227.04937125	-0.13	8
+k5	add2	C5-adjacent-vertical	2	c+1ulp	2.0000000000000004	valid	227.032445158	227.04937125	-0.13	8
+k4	seq	C5-adjacent-vertical	2	c+1ulp	2.0000000000000004	valid	224.171087355	227.04937125	-22.23	10
+k5	seq	C5-adjacent-vertical	2	c+1ulp	2.0000000000000004	valid	224.171087355	227.04937125	-22.23	10
+k5	swift	C5-adjacent-vertical	2	c+1ulp	2.0000000000000004	valid	227.032445158	227.04937125	-0.13	8
+k4	add	C5-adjacent-vertical	2	c+1e-8	2.00000001	valid	227.032445043	227.04937125	-0.13	8
+k5	add	C5-adjacent-vertical	2	c+1e-8	2.00000001	valid	227.032445043	227.04937125	-0.13	8
+k4	add2	C5-adjacent-vertical	2	c+1e-8	2.00000001	valid	227.032445043	227.04937125	-0.13	8
+k5	add2	C5-adjacent-vertical	2	c+1e-8	2.00000001	valid	227.032445043	227.04937125	-0.13	8
+k4	seq	C5-adjacent-vertical	2	c+1e-8	2.00000001	valid	224.171087203	227.04937125	-22.23	10
+k5	seq	C5-adjacent-vertical	2	c+1e-8	2.00000001	valid	224.171087203	227.04937125	-22.23	10
+k5	swift	C5-adjacent-vertical	2	c+1e-8	2.00000001	valid	227.032445043	227.04937125	-0.13	8
+k4	add	C5-adjacent-vertical	2	c+1e-4	2.0001	valid	227.031186733	227.04546	-0.11	8
+k5	add	C5-adjacent-vertical	2	c+1e-4	2.0001	valid	227.031186733	227.04546	-0.11	8
+k4	add2	C5-adjacent-vertical	2	c+1e-4	2.0001	valid	227.031186733	227.04546	-0.11	8
+k5	add2	C5-adjacent-vertical	2	c+1e-4	2.0001	valid	227.031186733	227.04546	-0.11	8
+k4	seq	C5-adjacent-vertical	2	c+1e-4	2.0001	valid	224.169571393	227.04546	-22.20	10
+k5	seq	C5-adjacent-vertical	2	c+1e-4	2.0001	valid	224.169571393	227.04546	-22.20	10
+k5	swift	C5-adjacent-vertical	2	c+1e-4	2.0001	valid	227.031186733	227.04546	-0.11	8
+k4	add	C5-adjacent-vertical	2	c+1e-3	2.001	valid	227.019858237	227.02395375	-0.03	8
+k5	add	C5-adjacent-vertical	2	c+1e-3	2.001	valid	227.019858237	227.02395375	-0.03	8
+k4	add2	C5-adjacent-vertical	2	c+1e-3	2.001	valid	227.019858237	227.02395375	-0.03	8
+k5	add2	C5-adjacent-vertical	2	c+1e-3	2.001	valid	227.019858237	227.02395375	-0.03	8
+k4	seq	C5-adjacent-vertical	2	c+1e-3	2.001	valid	224.155924772	227.02395375	-22.10	10
+k5	seq	C5-adjacent-vertical	2	c+1e-3	2.001	valid	224.155924772	227.02395375	-22.10	10
+k5	swift	C5-adjacent-vertical	2	c+1e-3	2.001	valid	227.019858237	227.02395375	-0.03	8
+k4	add	C5-adjacent-vertical	2	1.5c	3.0	valid	211.685834686	211.6895025	-0.01	8
+k5	add	C5-adjacent-vertical	2	1.5c	3.0	valid	211.685834686	211.6895025	-0.01	8
+k4	add2	C5-adjacent-vertical	2	1.5c	3.0	valid	211.685834686	211.6895025	-0.01	8
+k5	add2	C5-adjacent-vertical	2	1.5c	3.0	valid	211.685834686	211.6895025	-0.01	8
+k4	seq	C5-adjacent-vertical	2	1.5c	3.0	valid	205.891585118	211.6895025	-20.48	10
+k5	seq	C5-adjacent-vertical	2	1.5c	3.0	valid	205.891585118	211.6895025	-20.48	10
+k5	swift	C5-adjacent-vertical	2	1.5c	3.0	valid	211.685834686	211.6895025	-0.01	8
+k4	add	C5-adjacent-vertical	3	0.5c	1.5	valid	232.597896274	232.60569	-0.11	8
+k5	add	C5-adjacent-vertical	3	0.5c	1.5	valid	232.597896274	232.60569	-0.11	8
+k4	add2	C5-adjacent-vertical	3	0.5c	1.5	valid	232.597896274	232.60569	-0.11	8
+k5	add2	C5-adjacent-vertical	3	0.5c	1.5	valid	232.597896274	232.60569	-0.11	8
+k4	seq	C5-adjacent-vertical	3	0.5c	1.5	valid	230.907906816	232.60569	-22.96	10
+k5	seq	C5-adjacent-vertical	3	0.5c	1.5	valid	230.907906816	232.60569	-22.96	10
+k5	swift	C5-adjacent-vertical	3	0.5c	1.5	valid	232.597896274	232.60569	-0.11	8
+k4	add	C5-adjacent-vertical	3	c-1e-3	2.999	valid	211.703845361	211.705005	-0.00	8
+k5	add	C5-adjacent-vertical	3	c-1e-3	2.999	valid	211.703845361	211.705005	-0.00	8
+k4	add2	C5-adjacent-vertical	3	c-1e-3	2.999	valid	211.703845361	211.705005	-0.00	8
+k5	add2	C5-adjacent-vertical	3	c-1e-3	2.999	valid	211.703845361	211.705005	-0.00	8
+k4	seq	C5-adjacent-vertical	3	c-1e-3	2.999	valid	205.912814637	211.705005	-20.47	10
+k5	seq	C5-adjacent-vertical	3	c-1e-3	2.999	valid	205.912814637	211.705005	-20.47	10
+k5	swift	C5-adjacent-vertical	3	c-1e-3	2.999	valid	211.703845361	211.705005	-0.00	8
+k4	add	C5-adjacent-vertical	3	c-1e-4	2.9999	valid	211.687635988	211.69054875	-0.01	8
+k5	add	C5-adjacent-vertical	3	c-1e-4	2.9999	valid	211.687635988	211.69054875	-0.01	8
+k4	add2	C5-adjacent-vertical	3	c-1e-4	2.9999	valid	211.687635988	211.69054875	-0.01	8
+k5	add2	C5-adjacent-vertical	3	c-1e-4	2.9999	valid	211.687635988	211.69054875	-0.01	8
+k4	seq	C5-adjacent-vertical	3	c-1e-4	2.9999	valid	205.89370832	211.69054875	-20.48	10
+k5	seq	C5-adjacent-vertical	3	c-1e-4	2.9999	valid	205.89370832	211.69054875	-20.48	10
+k5	swift	C5-adjacent-vertical	3	c-1e-4	2.9999	valid	211.687635988	211.69054875	-0.01	8
+k4	add	C5-adjacent-vertical	3	c-1e-8	2.99999999	valid	211.685834835	211.6895025	-0.01	8
+k5	add	C5-adjacent-vertical	3	c-1e-8	2.99999999	valid	211.685834835	211.6895025	-0.01	8
+k4	add2	C5-adjacent-vertical	3	c-1e-8	2.99999999	valid	211.685834835	211.6895025	-0.01	8
+k5	add2	C5-adjacent-vertical	3	c-1e-8	2.99999999	valid	211.685834835	211.6895025	-0.01	8
+k4	seq	C5-adjacent-vertical	3	c-1e-8	2.99999999	valid	205.89158533	211.6895025	-20.48	10
+k5	seq	C5-adjacent-vertical	3	c-1e-8	2.99999999	valid	205.89158533	211.6895025	-20.48	10
+k5	swift	C5-adjacent-vertical	3	c-1e-8	2.99999999	valid	211.685834835	211.6895025	-0.01	8
+k4	add	C5-adjacent-vertical	3	c-1ulp	2.9999999999999996	valid	211.685834685	211.6895025	-0.01	8
+k5	add	C5-adjacent-vertical	3	c-1ulp	2.9999999999999996	valid	211.685834685	211.6895025	-0.01	8
+k4	add2	C5-adjacent-vertical	3	c-1ulp	2.9999999999999996	valid	211.685834685	211.6895025	-0.01	8
+k5	add2	C5-adjacent-vertical	3	c-1ulp	2.9999999999999996	valid	211.685834685	211.6895025	-0.01	8
+k4	seq	C5-adjacent-vertical	3	c-1ulp	2.9999999999999996	valid	205.891585118	211.6895025	-20.48	10
+k5	seq	C5-adjacent-vertical	3	c-1ulp	2.9999999999999996	valid	205.891585118	211.6895025	-20.48	10
+k5	swift	C5-adjacent-vertical	3	c-1ulp	2.9999999999999996	valid	211.685834685	211.6895025	-0.01	8
+k4	add	C5-adjacent-vertical	3	c	3	valid	211.685834686	211.6895025	-0.01	8
+k5	add	C5-adjacent-vertical	3	c	3	valid	211.685834686	211.6895025	-0.01	8
+k4	add2	C5-adjacent-vertical	3	c	3	valid	211.685834686	211.6895025	-0.01	8
+k5	add2	C5-adjacent-vertical	3	c	3	valid	211.685834686	211.6895025	-0.01	8
+k4	seq	C5-adjacent-vertical	3	c	3	valid	205.891585118	211.6895025	-20.48	10
+k5	seq	C5-adjacent-vertical	3	c	3	valid	205.891585118	211.6895025	-20.48	10
+k5	swift	C5-adjacent-vertical	3	c	3	valid	211.685834686	211.6895025	-0.01	8
+k4	add	C5-adjacent-vertical	3	c+1ulp	3.0000000000000004	valid	211.685834686	211.6895025	-0.01	8
+k5	add	C5-adjacent-vertical	3	c+1ulp	3.0000000000000004	valid	211.685834686	211.6895025	-0.01	8
+k4	add2	C5-adjacent-vertical	3	c+1ulp	3.0000000000000004	valid	211.685834686	211.6895025	-0.01	8
+k5	add2	C5-adjacent-vertical	3	c+1ulp	3.0000000000000004	valid	211.685834686	211.6895025	-0.01	8
+k4	seq	C5-adjacent-vertical	3	c+1ulp	3.0000000000000004	valid	205.891585118	211.6895025	-20.48	10
+k5	seq	C5-adjacent-vertical	3	c+1ulp	3.0000000000000004	valid	205.891585118	211.6895025	-20.48	10
+k5	swift	C5-adjacent-vertical	3	c+1ulp	3.0000000000000004	valid	211.685834686	211.6895025	-0.01	8
+k4	add	C5-adjacent-vertical	3	c+1e-8	3.00000001	valid	211.685834505	211.6895025	-0.01	8
+k5	add	C5-adjacent-vertical	3	c+1e-8	3.00000001	valid	211.685834505	211.6895025	-0.01	8
+k4	add2	C5-adjacent-vertical	3	c+1e-8	3.00000001	valid	211.685834505	211.6895025	-0.01	8
+k5	add2	C5-adjacent-vertical	3	c+1e-8	3.00000001	valid	211.685834505	211.6895025	-0.01	8
+k4	seq	C5-adjacent-vertical	3	c+1e-8	3.00000001	valid	205.891584905	211.6895025	-20.48	10
+k5	seq	C5-adjacent-vertical	3	c+1e-8	3.00000001	valid	205.891584905	211.6895025	-20.48	10
+k5	swift	C5-adjacent-vertical	3	c+1e-8	3.00000001	valid	211.685834505	211.6895025	-0.01	8
+k4	add	C5-adjacent-vertical	3	c+1e-4	3.0001	valid	211.684033301	211.68408375	-0.00	8
+k5	add	C5-adjacent-vertical	3	c+1e-4	3.0001	valid	211.684033301	211.68408375	-0.00	8
+k4	add2	C5-adjacent-vertical	3	c+1e-4	3.0001	valid	211.684033301	211.68408375	-0.00	8
+k5	add2	C5-adjacent-vertical	3	c+1e-4	3.0001	valid	211.684033301	211.68408375	-0.00	8
+k4	seq	C5-adjacent-vertical	3	c+1e-4	3.0001	valid	205.889461859	211.68408375	-20.46	10
+k5	seq	C5-adjacent-vertical	3	c+1e-4	3.0001	valid	205.889461859	211.68408375	-20.46	10
+k5	swift	C5-adjacent-vertical	3	c+1e-4	3.0001	valid	211.684033301	211.68408375	-0.00	8
+k4	add	C5-adjacent-vertical	3	c+1e-3	3.001	valid	211.667818807	211.67694	-0.03	8
+k5	add	C5-adjacent-vertical	3	c+1e-3	3.001	valid	211.667818807	211.67694	-0.03	8
+k4	add2	C5-adjacent-vertical	3	c+1e-3	3.001	valid	211.667818807	211.67694	-0.03	8
+k5	add2	C5-adjacent-vertical	3	c+1e-3	3.001	valid	211.667818807	211.67694	-0.03	8
+k4	seq	C5-adjacent-vertical	3	c+1e-3	3.001	valid	205.870350028	211.67694	-20.50	10
+k5	seq	C5-adjacent-vertical	3	c+1e-3	3.001	valid	205.870350028	211.67694	-20.50	10
+k5	swift	C5-adjacent-vertical	3	c+1e-3	3.001	valid	211.667818807	211.67694	-0.03	8
+k4	add	C5-adjacent-vertical	3	1.5c	4.5	IsDone=false	-1.0			0
+k5	add	C5-adjacent-vertical	3	1.5c	4.5	IsDone=false	-1.0			0
+k4	add2	C5-adjacent-vertical	3	1.5c	4.5	IsDone=false	-1.0			0
+k5	add2	C5-adjacent-vertical	3	1.5c	4.5	IsDone=false	-1.0			0
+k4	seq	C5-adjacent-vertical	3	1.5c	4.5	IsDone=false	-1.0			0
+k5	seq	C5-adjacent-vertical	3	1.5c	4.5	IsDone=false	-1.0			0
+k5	swift	C5-adjacent-vertical	3	1.5c	4.5	IsDone=false				
+k4	add	C5-adjacent-vertical	4	0.5c	2.0	valid	227.032445158	227.04937125	-0.13	8
+k5	add	C5-adjacent-vertical	4	0.5c	2.0	valid	227.032445158	227.04937125	-0.13	8
+k4	add2	C5-adjacent-vertical	4	0.5c	2.0	valid	227.032445158	227.04937125	-0.13	8
+k5	add2	C5-adjacent-vertical	4	0.5c	2.0	valid	227.032445158	227.04937125	-0.13	8
+k4	seq	C5-adjacent-vertical	4	0.5c	2.0	valid	224.171087355	227.04937125	-22.23	10
+k5	seq	C5-adjacent-vertical	4	0.5c	2.0	valid	224.171087355	227.04937125	-22.23	10
+k5	swift	C5-adjacent-vertical	4	0.5c	2.0	valid	227.032445158	227.04937125	-0.13	8
+k4	add	C5-adjacent-vertical	4	c-1e-3	3.999	valid	191.220496557	191.22590625	-0.01	8
+k5	add	C5-adjacent-vertical	4	c-1e-3	3.999	valid	191.220496557	191.22590625	-0.01	8
+k4	add2	C5-adjacent-vertical	4	c-1e-3	3.999	valid	191.220496557	191.22590625	-0.01	8
+k5	add2	C5-adjacent-vertical	4	c-1e-3	3.999	valid	191.220496557	191.22590625	-0.01	8
+k4	seq	C5-adjacent-vertical	4	c-1e-3	3.999	valid	182.067585158	191.22590625	-18.78	10
+k5	seq	C5-adjacent-vertical	4	c-1e-3	3.999	valid	182.067585158	191.22590625	-18.78	10
+k5	swift	C5-adjacent-vertical	4	c-1e-3	3.999	valid	191.220496557	191.22590625	-0.01	8
+k4	add	C5-adjacent-vertical	4	c-1e-4	3.9999	valid	191.199918284	191.20648875	-0.01	8
+k5	add	C5-adjacent-vertical	4	c-1e-4	3.9999	valid	191.199918284	191.20648875	-0.01	8
+k4	add2	C5-adjacent-vertical	4	c-1e-4	3.9999	valid	191.199918284	191.20648875	-0.01	8
+k5	add2	C5-adjacent-vertical	4	c-1e-4	3.9999	valid	191.199918284	191.20648875	-0.01	8
+k4	seq	C5-adjacent-vertical	4	c-1e-4	3.9999	valid	182.043916619	191.20648875	-18.78	10
+k5	seq	C5-adjacent-vertical	4	c-1e-4	3.9999	valid	182.043916619	191.20648875	-18.78	10
+k5	swift	C5-adjacent-vertical	4	c-1e-4	3.9999	valid	191.199918284	191.20648875	-0.01	8
+k4	add	C5-adjacent-vertical	4	c-1e-8	3.99999999	valid	191.19763181	191.203845	-0.01	8
+k5	add	C5-adjacent-vertical	4	c-1e-8	3.99999999	valid	191.19763181	191.203845	-0.01	8
+k4	add2	C5-adjacent-vertical	4	c-1e-8	3.99999999	valid	191.19763181	191.203845	-0.01	8
+k5	add2	C5-adjacent-vertical	4	c-1e-8	3.99999999	valid	191.19763181	191.203845	-0.01	8
+k4	seq	C5-adjacent-vertical	4	c-1e-8	3.99999999	valid	182.04130884	191.203845	-18.78	11
+k5	seq	C5-adjacent-vertical	4	c-1e-8	3.99999999	valid	182.04130884	191.203845	-18.78	11
+k5	swift	C5-adjacent-vertical	4	c-1e-8	3.99999999	valid	191.19763181	191.203845	-0.01	8
+k4	add	C5-adjacent-vertical	4	c-1ulp	3.9999999999999996	IsDone=false	-1.0			0
+k5	add	C5-adjacent-vertical	4	c-1ulp	3.9999999999999996	IsDone=false	-1.0			0
+k4	add2	C5-adjacent-vertical	4	c-1ulp	3.9999999999999996	IsDone=false	-1.0			0
+k5	add2	C5-adjacent-vertical	4	c-1ulp	3.9999999999999996	IsDone=false	-1.0			0
+k4	seq	C5-adjacent-vertical	4	c-1ulp	3.9999999999999996	IsDone=false	-1.0			0
+k5	seq	C5-adjacent-vertical	4	c-1ulp	3.9999999999999996	IsDone=false	-1.0			0
+k5	swift	C5-adjacent-vertical	4	c-1ulp	3.9999999999999996	IsDone=false				
+k4	add	C5-adjacent-vertical	4	c	4	IsDone=false	-1.0			0
+k5	add	C5-adjacent-vertical	4	c	4	IsDone=false	-1.0			0
+k4	add2	C5-adjacent-vertical	4	c	4	IsDone=false	-1.0			0
+k5	add2	C5-adjacent-vertical	4	c	4	IsDone=false	-1.0			0
+k4	seq	C5-adjacent-vertical	4	c	4	IsDone=false	-1.0			0
+k5	seq	C5-adjacent-vertical	4	c	4	IsDone=false	-1.0			0
+k5	swift	C5-adjacent-vertical	4	c	4	IsDone=false				
+k4	add	C5-adjacent-vertical	4	c+1ulp	4.000000000000001	IsDone=false	-1.0			0
+k5	add	C5-adjacent-vertical	4	c+1ulp	4.000000000000001	IsDone=false	-1.0			0
+k4	add2	C5-adjacent-vertical	4	c+1ulp	4.000000000000001	IsDone=false	-1.0			0
+k5	add2	C5-adjacent-vertical	4	c+1ulp	4.000000000000001	IsDone=false	-1.0			0
+k4	seq	C5-adjacent-vertical	4	c+1ulp	4.000000000000001	IsDone=false	-1.0			0
+k5	seq	C5-adjacent-vertical	4	c+1ulp	4.000000000000001	IsDone=false	-1.0			0
+k5	swift	C5-adjacent-vertical	4	c+1ulp	4.000000000000001	IsDone=false				
+k4	add	C5-adjacent-vertical	4	c+1e-8	4.00000001	IsDone=false	-1.0			0
+k5	add	C5-adjacent-vertical	4	c+1e-8	4.00000001	IsDone=false	-1.0			0
+k4	add2	C5-adjacent-vertical	4	c+1e-8	4.00000001	IsDone=false	-1.0			0
+k5	add2	C5-adjacent-vertical	4	c+1e-8	4.00000001	IsDone=false	-1.0			0
+k4	seq	C5-adjacent-vertical	4	c+1e-8	4.00000001	IsDone=false	-1.0			0
+k5	seq	C5-adjacent-vertical	4	c+1e-8	4.00000001	IsDone=false	-1.0			0
+k5	swift	C5-adjacent-vertical	4	c+1e-8	4.00000001	IsDone=false				
+k4	add	C5-adjacent-vertical	4	c+1e-4	4.0001	IsDone=false	-1.0			0
+k5	add	C5-adjacent-vertical	4	c+1e-4	4.0001	IsDone=false	-1.0			0
+k4	add2	C5-adjacent-vertical	4	c+1e-4	4.0001	IsDone=false	-1.0			0
+k5	add2	C5-adjacent-vertical	4	c+1e-4	4.0001	IsDone=false	-1.0			0
+k4	seq	C5-adjacent-vertical	4	c+1e-4	4.0001	IsDone=false	-1.0			0
+k5	seq	C5-adjacent-vertical	4	c+1e-4	4.0001	IsDone=false	-1.0			0
+k5	swift	C5-adjacent-vertical	4	c+1e-4	4.0001	IsDone=false				
+k4	add	C5-adjacent-vertical	4	c+1e-3	4.001	IsDone=false	-1.0			0
+k5	add	C5-adjacent-vertical	4	c+1e-3	4.001	IsDone=false	-1.0			0
+k4	add2	C5-adjacent-vertical	4	c+1e-3	4.001	IsDone=false	-1.0			0
+k5	add2	C5-adjacent-vertical	4	c+1e-3	4.001	IsDone=false	-1.0			0
+k4	seq	C5-adjacent-vertical	4	c+1e-3	4.001	IsDone=false	-1.0			0
+k5	seq	C5-adjacent-vertical	4	c+1e-3	4.001	IsDone=false	-1.0			0
+k5	swift	C5-adjacent-vertical	4	c+1e-3	4.001	IsDone=false				
+k4	add	C5-adjacent-vertical	4	1.5c	6.0	IsDone=false	-1.0			0
+k5	add	C5-adjacent-vertical	4	1.5c	6.0	IsDone=false	-1.0			0
+k4	add2	C5-adjacent-vertical	4	1.5c	6.0	IsDone=false	-1.0			0
+k5	add2	C5-adjacent-vertical	4	1.5c	6.0	IsDone=false	-1.0			0
+k4	seq	C5-adjacent-vertical	4	1.5c	6.0	IsDone=false	-1.0			0
+k5	seq	C5-adjacent-vertical	4	1.5c	6.0	IsDone=false	-1.0			0
+k5	swift	C5-adjacent-vertical	4	1.5c	6.0	IsDone=false				
+k4	add	C5-adjacent-vertical	5	0.5c	2.5	valid	220.037790368	220.04239875	-0.02	8
+k5	add	C5-adjacent-vertical	5	0.5c	2.5	valid	220.037790368	220.04239875	-0.02	8
+k4	add2	C5-adjacent-vertical	5	0.5c	2.5	valid	220.037790368	220.04239875	-0.02	8
+k5	add2	C5-adjacent-vertical	5	0.5c	2.5	valid	220.037790368	220.04239875	-0.02	8
+k4	seq	C5-adjacent-vertical	5	0.5c	2.5	valid	215.790462384	220.04239875	-21.30	10
+k5	seq	C5-adjacent-vertical	5	0.5c	2.5	valid	215.790462384	220.04239875	-21.30	10
+k5	swift	C5-adjacent-vertical	5	0.5c	2.5	valid	220.037790368	220.04239875	-0.02	8
+k4	add	C5-adjacent-vertical	5	c-1e-3	4.999	IsDone=false	-1.0			0
+k5	add	C5-adjacent-vertical	5	c-1e-3	4.999	IsDone=false	-1.0			0
+k4	add2	C5-adjacent-vertical	5	c-1e-3	4.999	IsDone=false	-1.0			0
+k5	add2	C5-adjacent-vertical	5	c-1e-3	4.999	IsDone=false	-1.0			0
+k4	seq	C5-adjacent-vertical	5	c-1e-3	4.999	IsDone=false	-1.0			0
+k5	seq	C5-adjacent-vertical	5	c-1e-3	4.999	IsDone=false	-1.0			0
+k5	swift	C5-adjacent-vertical	5	c-1e-3	4.999	IsDone=false				
+k4	add	C5-adjacent-vertical	5	c-1e-4	4.9999	IsDone=false	-1.0			0
+k5	add	C5-adjacent-vertical	5	c-1e-4	4.9999	IsDone=false	-1.0			0
+k4	add2	C5-adjacent-vertical	5	c-1e-4	4.9999	IsDone=false	-1.0			0
+k5	add2	C5-adjacent-vertical	5	c-1e-4	4.9999	IsDone=false	-1.0			0
+k4	seq	C5-adjacent-vertical	5	c-1e-4	4.9999	IsDone=false	-1.0			0
+k5	seq	C5-adjacent-vertical	5	c-1e-4	4.9999	IsDone=false	-1.0			0
+k5	swift	C5-adjacent-vertical	5	c-1e-4	4.9999	IsDone=false				
+k4	add	C5-adjacent-vertical	5	c-1e-8	4.99999999	IsDone=false	-1.0			0
+k5	add	C5-adjacent-vertical	5	c-1e-8	4.99999999	IsDone=false	-1.0			0
+k4	add2	C5-adjacent-vertical	5	c-1e-8	4.99999999	IsDone=false	-1.0			0
+k5	add2	C5-adjacent-vertical	5	c-1e-8	4.99999999	IsDone=false	-1.0			0
+k4	seq	C5-adjacent-vertical	5	c-1e-8	4.99999999	IsDone=false	-1.0			0
+k5	seq	C5-adjacent-vertical	5	c-1e-8	4.99999999	IsDone=false	-1.0			0
+k5	swift	C5-adjacent-vertical	5	c-1e-8	4.99999999	IsDone=false				
+k4	add	C5-adjacent-vertical	5	c-1ulp	4.999999999999999	IsDone=false	-1.0			0
+k5	add	C5-adjacent-vertical	5	c-1ulp	4.999999999999999	IsDone=false	-1.0			0
+k4	add2	C5-adjacent-vertical	5	c-1ulp	4.999999999999999	IsDone=false	-1.0			0
+k5	add2	C5-adjacent-vertical	5	c-1ulp	4.999999999999999	IsDone=false	-1.0			0
+k4	seq	C5-adjacent-vertical	5	c-1ulp	4.999999999999999	IsDone=false	-1.0			0
+k5	seq	C5-adjacent-vertical	5	c-1ulp	4.999999999999999	IsDone=false	-1.0			0
+k5	swift	C5-adjacent-vertical	5	c-1ulp	4.999999999999999	IsDone=false				
+k4	add	C5-adjacent-vertical	5	c	5	IsDone=false	-1.0			0
+k5	add	C5-adjacent-vertical	5	c	5	IsDone=false	-1.0			0
+k4	add2	C5-adjacent-vertical	5	c	5	IsDone=false	-1.0			0
+k5	add2	C5-adjacent-vertical	5	c	5	IsDone=false	-1.0			0
+k4	seq	C5-adjacent-vertical	5	c	5	IsDone=false	-1.0			0
+k5	seq	C5-adjacent-vertical	5	c	5	IsDone=false	-1.0			0
+k5	swift	C5-adjacent-vertical	5	c	5	IsDone=false				
+k4	add	C5-adjacent-vertical	5	c+1ulp	5.000000000000001	IsDone=false	-1.0			0
+k5	add	C5-adjacent-vertical	5	c+1ulp	5.000000000000001	IsDone=false	-1.0			0
+k4	add2	C5-adjacent-vertical	5	c+1ulp	5.000000000000001	IsDone=false	-1.0			0
+k5	add2	C5-adjacent-vertical	5	c+1ulp	5.000000000000001	IsDone=false	-1.0			0
+k4	seq	C5-adjacent-vertical	5	c+1ulp	5.000000000000001	IsDone=false	-1.0			0
+k5	seq	C5-adjacent-vertical	5	c+1ulp	5.000000000000001	IsDone=false	-1.0			0
+k5	swift	C5-adjacent-vertical	5	c+1ulp	5.000000000000001	IsDone=false				
+k4	add	C5-adjacent-vertical	5	c+1e-8	5.00000001	IsDone=false	-1.0			0
+k5	add	C5-adjacent-vertical	5	c+1e-8	5.00000001	IsDone=false	-1.0			0
+k4	add2	C5-adjacent-vertical	5	c+1e-8	5.00000001	IsDone=false	-1.0			0
+k5	add2	C5-adjacent-vertical	5	c+1e-8	5.00000001	IsDone=false	-1.0			0
+k4	seq	C5-adjacent-vertical	5	c+1e-8	5.00000001	IsDone=false	-1.0			0
+k5	seq	C5-adjacent-vertical	5	c+1e-8	5.00000001	IsDone=false	-1.0			0
+k5	swift	C5-adjacent-vertical	5	c+1e-8	5.00000001	IsDone=false				
+k4	add	C5-adjacent-vertical	5	c+1e-4	5.0001	IsDone=false	-1.0			0
+k5	add	C5-adjacent-vertical	5	c+1e-4	5.0001	IsDone=false	-1.0			0
+k4	add2	C5-adjacent-vertical	5	c+1e-4	5.0001	IsDone=false	-1.0			0
+k5	add2	C5-adjacent-vertical	5	c+1e-4	5.0001	IsDone=false	-1.0			0
+k4	seq	C5-adjacent-vertical	5	c+1e-4	5.0001	IsDone=false	-1.0			0
+k5	seq	C5-adjacent-vertical	5	c+1e-4	5.0001	IsDone=false	-1.0			0
+k5	swift	C5-adjacent-vertical	5	c+1e-4	5.0001	IsDone=false				
+k4	add	C5-adjacent-vertical	5	c+1e-3	5.001	IsDone=false	-1.0			0
+k5	add	C5-adjacent-vertical	5	c+1e-3	5.001	IsDone=false	-1.0			0
+k4	add2	C5-adjacent-vertical	5	c+1e-3	5.001	IsDone=false	-1.0			0
+k5	add2	C5-adjacent-vertical	5	c+1e-3	5.001	IsDone=false	-1.0			0
+k4	seq	C5-adjacent-vertical	5	c+1e-3	5.001	IsDone=false	-1.0			0
+k5	seq	C5-adjacent-vertical	5	c+1e-3	5.001	IsDone=false	-1.0			0
+k5	swift	C5-adjacent-vertical	5	c+1e-3	5.001	IsDone=false				
+k4	add	C5-adjacent-vertical	5	1.5c	7.5	IsDone=false	-1.0			0
+k5	add	C5-adjacent-vertical	5	1.5c	7.5	IsDone=false	-1.0			0
+k4	add2	C5-adjacent-vertical	5	1.5c	7.5	IsDone=false	-1.0			0
+k5	add2	C5-adjacent-vertical	5	1.5c	7.5	IsDone=false	-1.0			0
+k4	seq	C5-adjacent-vertical	5	1.5c	7.5	IsDone=false	-1.0			0
+k5	seq	C5-adjacent-vertical	5	1.5c	7.5	IsDone=false	-1.0			0
+k5	swift	C5-adjacent-vertical	5	1.5c	7.5	IsDone=false				
+k4	add	C5-adjacent-vertical	6	0.5c	3.0	valid	211.685834686	211.6895025	-0.01	8
+k5	add	C5-adjacent-vertical	6	0.5c	3.0	valid	211.685834686	211.6895025	-0.01	8
+k4	add2	C5-adjacent-vertical	6	0.5c	3.0	valid	211.685834686	211.6895025	-0.01	8
+k5	add2	C5-adjacent-vertical	6	0.5c	3.0	valid	211.685834686	211.6895025	-0.01	8
+k4	seq	C5-adjacent-vertical	6	0.5c	3.0	valid	205.891585118	211.6895025	-20.48	10
+k5	seq	C5-adjacent-vertical	6	0.5c	3.0	valid	205.891585118	211.6895025	-20.48	10
+k5	swift	C5-adjacent-vertical	6	0.5c	3.0	valid	211.685834686	211.6895025	-0.01	8
+k4	add	C5-adjacent-vertical	6	c-1e-3	5.999	IsDone=false	-1.0			0
+k5	add	C5-adjacent-vertical	6	c-1e-3	5.999	IsDone=false	-1.0			0
+k4	add2	C5-adjacent-vertical	6	c-1e-3	5.999	IsDone=false	-1.0			0
+k5	add2	C5-adjacent-vertical	6	c-1e-3	5.999	IsDone=false	-1.0			0
+k4	seq	C5-adjacent-vertical	6	c-1e-3	5.999	IsDone=false	-1.0			0
+k5	seq	C5-adjacent-vertical	6	c-1e-3	5.999	IsDone=false	-1.0			0
+k5	swift	C5-adjacent-vertical	6	c-1e-3	5.999	IsDone=false				
+k4	add	C5-adjacent-vertical	6	c-1e-4	5.9999	IsDone=false	-1.0			0
+k5	add	C5-adjacent-vertical	6	c-1e-4	5.9999	IsDone=false	-1.0			0
+k4	add2	C5-adjacent-vertical	6	c-1e-4	5.9999	IsDone=false	-1.0			0
+k5	add2	C5-adjacent-vertical	6	c-1e-4	5.9999	IsDone=false	-1.0			0
+k4	seq	C5-adjacent-vertical	6	c-1e-4	5.9999	IsDone=false	-1.0			0
+k5	seq	C5-adjacent-vertical	6	c-1e-4	5.9999	IsDone=false	-1.0			0
+k5	swift	C5-adjacent-vertical	6	c-1e-4	5.9999	IsDone=false				
+k4	add	C5-adjacent-vertical	6	c-1e-8	5.99999999	IsDone=false	-1.0			0
+k5	add	C5-adjacent-vertical	6	c-1e-8	5.99999999	IsDone=false	-1.0			0
+k4	add2	C5-adjacent-vertical	6	c-1e-8	5.99999999	IsDone=false	-1.0			0
+k5	add2	C5-adjacent-vertical	6	c-1e-8	5.99999999	IsDone=false	-1.0			0
+k4	seq	C5-adjacent-vertical	6	c-1e-8	5.99999999	IsDone=false	-1.0			0
+k5	seq	C5-adjacent-vertical	6	c-1e-8	5.99999999	IsDone=false	-1.0			0
+k5	swift	C5-adjacent-vertical	6	c-1e-8	5.99999999	IsDone=false				
+k4	add	C5-adjacent-vertical	6	c-1ulp	5.999999999999999	IsDone=false	-1.0			0
+k5	add	C5-adjacent-vertical	6	c-1ulp	5.999999999999999	IsDone=false	-1.0			0
+k4	add2	C5-adjacent-vertical	6	c-1ulp	5.999999999999999	IsDone=false	-1.0			0
+k5	add2	C5-adjacent-vertical	6	c-1ulp	5.999999999999999	IsDone=false	-1.0			0
+k4	seq	C5-adjacent-vertical	6	c-1ulp	5.999999999999999	IsDone=false	-1.0			0
+k5	seq	C5-adjacent-vertical	6	c-1ulp	5.999999999999999	IsDone=false	-1.0			0
+k5	swift	C5-adjacent-vertical	6	c-1ulp	5.999999999999999	IsDone=false				
+k4	add	C5-adjacent-vertical	6	c	6	IsDone=false	-1.0			0
+k5	add	C5-adjacent-vertical	6	c	6	IsDone=false	-1.0			0
+k4	add2	C5-adjacent-vertical	6	c	6	IsDone=false	-1.0			0
+k5	add2	C5-adjacent-vertical	6	c	6	IsDone=false	-1.0			0
+k4	seq	C5-adjacent-vertical	6	c	6	IsDone=false	-1.0			0
+k5	seq	C5-adjacent-vertical	6	c	6	IsDone=false	-1.0			0
+k5	swift	C5-adjacent-vertical	6	c	6	IsDone=false				
+k4	add	C5-adjacent-vertical	6	c+1ulp	6.000000000000001	IsDone=false	-1.0			0
+k5	add	C5-adjacent-vertical	6	c+1ulp	6.000000000000001	IsDone=false	-1.0			0
+k4	add2	C5-adjacent-vertical	6	c+1ulp	6.000000000000001	IsDone=false	-1.0			0
+k5	add2	C5-adjacent-vertical	6	c+1ulp	6.000000000000001	IsDone=false	-1.0			0
+k4	seq	C5-adjacent-vertical	6	c+1ulp	6.000000000000001	IsDone=false	-1.0			0
+k5	seq	C5-adjacent-vertical	6	c+1ulp	6.000000000000001	IsDone=false	-1.0			0
+k5	swift	C5-adjacent-vertical	6	c+1ulp	6.000000000000001	IsDone=false				
+k4	add	C5-adjacent-vertical	6	c+1e-8	6.00000001	IsDone=false	-1.0			0
+k5	add	C5-adjacent-vertical	6	c+1e-8	6.00000001	IsDone=false	-1.0			0
+k4	add2	C5-adjacent-vertical	6	c+1e-8	6.00000001	IsDone=false	-1.0			0
+k5	add2	C5-adjacent-vertical	6	c+1e-8	6.00000001	IsDone=false	-1.0			0
+k4	seq	C5-adjacent-vertical	6	c+1e-8	6.00000001	IsDone=false	-1.0			0
+k5	seq	C5-adjacent-vertical	6	c+1e-8	6.00000001	IsDone=false	-1.0			0
+k5	swift	C5-adjacent-vertical	6	c+1e-8	6.00000001	IsDone=false				
+k4	add	C5-adjacent-vertical	6	c+1e-4	6.0001	IsDone=false	-1.0			0
+k5	add	C5-adjacent-vertical	6	c+1e-4	6.0001	IsDone=false	-1.0			0
+k4	add2	C5-adjacent-vertical	6	c+1e-4	6.0001	IsDone=false	-1.0			0
+k5	add2	C5-adjacent-vertical	6	c+1e-4	6.0001	IsDone=false	-1.0			0
+k4	seq	C5-adjacent-vertical	6	c+1e-4	6.0001	IsDone=false	-1.0			0
+k5	seq	C5-adjacent-vertical	6	c+1e-4	6.0001	IsDone=false	-1.0			0
+k5	swift	C5-adjacent-vertical	6	c+1e-4	6.0001	IsDone=false				
+k4	add	C5-adjacent-vertical	6	c+1e-3	6.001	IsDone=false	-1.0			0
+k5	add	C5-adjacent-vertical	6	c+1e-3	6.001	IsDone=false	-1.0			0
+k4	add2	C5-adjacent-vertical	6	c+1e-3	6.001	IsDone=false	-1.0			0
+k5	add2	C5-adjacent-vertical	6	c+1e-3	6.001	IsDone=false	-1.0			0
+k4	seq	C5-adjacent-vertical	6	c+1e-3	6.001	IsDone=false	-1.0			0
+k5	seq	C5-adjacent-vertical	6	c+1e-3	6.001	IsDone=false	-1.0			0
+k5	swift	C5-adjacent-vertical	6	c+1e-3	6.001	IsDone=false				
+k4	add	C5-adjacent-vertical	6	1.5c	9.0	IsDone=false	-1.0			0
+k5	add	C5-adjacent-vertical	6	1.5c	9.0	IsDone=false	-1.0			0
+k4	add2	C5-adjacent-vertical	6	1.5c	9.0	IsDone=false	-1.0			0
+k5	add2	C5-adjacent-vertical	6	1.5c	9.0	IsDone=false	-1.0			0
+k4	seq	C5-adjacent-vertical	6	1.5c	9.0	IsDone=false	-1.0			0
+k5	seq	C5-adjacent-vertical	6	1.5c	9.0	IsDone=false	-1.0			0
+k5	swift	C5-adjacent-vertical	6	1.5c	9.0	IsDone=false				
+k4	add	C6-three-at-corner	2	0.5c	1.0	valid	235.875367553	235.94449875	-1.70	10
+k5	add	C6-three-at-corner	2	0.5c	1.0	valid	235.875367553	235.94449875	-1.70	10
+k4	add2	C6-three-at-corner	2	0.5c	1.0	valid	235.875367553	235.94449875	-1.70	10
+k5	add2	C6-three-at-corner	2	0.5c	1.0	valid	235.875367553	235.94449875	-1.70	10
+k5	swift	C6-three-at-corner	2	0.5c	1.0	valid	235.875367553	235.94449875	-1.70	10
+k4	add	C6-three-at-corner	2	c-1e-3	1.999	valid	224.186243363	224.6987625	-3.35	10
+k5	add	C6-three-at-corner	2	c-1e-3	1.999	valid	224.186243363	224.6987625	-3.35	10
+k4	add2	C6-three-at-corner	2	c-1e-3	1.999	valid	224.186243363	224.6987625	-3.35	10
+k5	add2	C6-three-at-corner	2	c-1e-3	1.999	valid	224.186243363	224.6987625	-3.35	10
+k5	swift	C6-three-at-corner	2	c-1e-3	1.999	valid	224.186243363	224.6987625	-3.35	10
+k4	add	C6-three-at-corner	2	c-1e-4	1.9999	valid	224.172603252	224.688165	-3.37	10
+k5	add	C6-three-at-corner	2	c-1e-4	1.9999	valid	224.172603252	224.688165	-3.37	10
+k4	add2	C6-three-at-corner	2	c-1e-4	1.9999	valid	224.172603252	224.688165	-3.37	10
+k5	add2	C6-three-at-corner	2	c-1e-4	1.9999	valid	224.172603252	224.688165	-3.37	10
+k5	swift	C6-three-at-corner	2	c-1e-4	1.9999	valid	224.172603252	224.688165	-3.37	10
+k4	add	C6-three-at-corner	2	c-1e-8	1.99999999	valid	224.171087507	224.688165	-3.38	10
+k5	add	C6-three-at-corner	2	c-1e-8	1.99999999	valid	224.171087507	224.688165	-3.38	10
+k4	add2	C6-three-at-corner	2	c-1e-8	1.99999999	valid	224.171087507	224.688165	-3.38	10
+k5	add2	C6-three-at-corner	2	c-1e-8	1.99999999	valid	224.171087507	224.688165	-3.38	10
+k5	swift	C6-three-at-corner	2	c-1e-8	1.99999999	valid	224.171087507	224.688165	-3.38	10
+k4	add	C6-three-at-corner	2	c-1ulp	1.9999999999999998	valid	224.171087355	224.688165	-3.38	10
+k5	add	C6-three-at-corner	2	c-1ulp	1.9999999999999998	valid	224.171087355	224.688165	-3.38	10
+k4	add2	C6-three-at-corner	2	c-1ulp	1.9999999999999998	valid	224.171087355	224.688165	-3.38	10
+k5	add2	C6-three-at-corner	2	c-1ulp	1.9999999999999998	valid	224.171087355	224.688165	-3.38	10
+k5	swift	C6-three-at-corner	2	c-1ulp	1.9999999999999998	valid	224.171087355	224.688165	-3.38	10
+k4	add	C6-three-at-corner	2	c	2	valid	224.171087355	224.688165	-3.38	10
+k5	add	C6-three-at-corner	2	c	2	valid	224.171087355	224.688165	-3.38	10
+k4	add2	C6-three-at-corner	2	c	2	valid	224.171087355	224.688165	-3.38	10
+k5	add2	C6-three-at-corner	2	c	2	valid	224.171087355	224.688165	-3.38	10
+k5	swift	C6-three-at-corner	2	c	2	valid	224.171087355	224.688165	-3.38	10
+k4	add	C6-three-at-corner	2	c+1ulp	2.0000000000000004	valid	224.171087355	224.688165	-3.38	10
+k5	add	C6-three-at-corner	2	c+1ulp	2.0000000000000004	valid	224.171087355	224.688165	-3.38	10
+k4	add2	C6-three-at-corner	2	c+1ulp	2.0000000000000004	valid	224.171087355	224.688165	-3.38	10
+k5	add2	C6-three-at-corner	2	c+1ulp	2.0000000000000004	valid	224.171087355	224.688165	-3.38	10
+k5	swift	C6-three-at-corner	2	c+1ulp	2.0000000000000004	valid	224.171087355	224.688165	-3.38	10
+k4	add	C6-three-at-corner	2	c+1e-8	2.00000001	valid	224.171087203	224.688165	-3.38	10
+k5	add	C6-three-at-corner	2	c+1e-8	2.00000001	valid	224.171087203	224.688165	-3.38	10
+k4	add2	C6-three-at-corner	2	c+1e-8	2.00000001	valid	224.171087203	224.688165	-3.38	10
+k5	add2	C6-three-at-corner	2	c+1e-8	2.00000001	valid	224.171087203	224.688165	-3.38	10
+k5	swift	C6-three-at-corner	2	c+1e-8	2.00000001	valid	224.171087203	224.688165	-3.38	10
+k4	add	C6-three-at-corner	2	c+1e-4	2.0001	valid	224.169571393	224.6832	-3.35	10
+k5	add	C6-three-at-corner	2	c+1e-4	2.0001	valid	224.169571393	224.6832	-3.35	10
+k4	add2	C6-three-at-corner	2	c+1e-4	2.0001	valid	224.169571393	224.6832	-3.35	10
+k5	add2	C6-three-at-corner	2	c+1e-4	2.0001	valid	224.169571393	224.6832	-3.35	10
+k5	swift	C6-three-at-corner	2	c+1e-4	2.0001	valid	224.169571393	224.6832	-3.35	10
+k4	add	C6-three-at-corner	2	c+1e-3	2.001	valid	224.155924772	224.660685	-3.29	10
+k5	add	C6-three-at-corner	2	c+1e-3	2.001	valid	224.155924772	224.660685	-3.29	10
+k4	add2	C6-three-at-corner	2	c+1e-3	2.001	valid	224.155924772	224.660685	-3.29	10
+k5	add2	C6-three-at-corner	2	c+1e-3	2.001	valid	224.155924772	224.660685	-3.29	10
+k5	swift	C6-three-at-corner	2	c+1e-3	2.001	valid	224.155924772	224.660685	-3.29	10
+k4	add	C6-three-at-corner	2	1.5c	3.0	valid	205.891585118	207.5729775	-5.19	10
+k5	add	C6-three-at-corner	2	1.5c	3.0	valid	205.891585118	207.5729775	-5.19	10
+k4	add2	C6-three-at-corner	2	1.5c	3.0	valid	205.891585118	207.5729775	-5.19	10
+k5	add2	C6-three-at-corner	2	1.5c	3.0	valid	205.891585118	207.5729775	-5.19	10
+k5	swift	C6-three-at-corner	2	1.5c	3.0	valid	205.891585118	207.5729775	-5.19	10
+k4	add	C6-three-at-corner	3	0.5c	1.5	valid	230.907906816	231.12759	-2.48	10
+k5	add	C6-three-at-corner	3	0.5c	1.5	valid	230.907906816	231.12759	-2.48	10
+k4	add2	C6-three-at-corner	3	0.5c	1.5	valid	230.907906816	231.12759	-2.48	10
+k5	add2	C6-three-at-corner	3	0.5c	1.5	valid	230.907906816	231.12759	-2.48	10
+k5	swift	C6-three-at-corner	3	0.5c	1.5	valid	230.907906816	231.12759	-2.48	10
+k4	add	C6-three-at-corner	3	c-1e-3	2.999	valid	205.912814637	207.58952625	-5.17	10
+k5	add	C6-three-at-corner	3	c-1e-3	2.999	valid	205.912814637	207.58952625	-5.17	10
+k4	add2	C6-three-at-corner	3	c-1e-3	2.999	valid	205.912814637	207.58952625	-5.17	10
+k5	add2	C6-three-at-corner	3	c-1e-3	2.999	valid	205.912814637	207.58952625	-5.17	10
+k5	swift	C6-three-at-corner	3	c-1e-3	2.999	valid	205.912814637	207.58952625	-5.17	10
+k4	add	C6-three-at-corner	3	c-1e-4	2.9999	valid	205.89370832	207.57402375	-5.18	10
+k5	add	C6-three-at-corner	3	c-1e-4	2.9999	valid	205.89370832	207.57402375	-5.18	10
+k4	add2	C6-three-at-corner	3	c-1e-4	2.9999	valid	205.89370832	207.57402375	-5.18	10
+k5	add2	C6-three-at-corner	3	c-1e-4	2.9999	valid	205.89370832	207.57402375	-5.18	10
+k5	swift	C6-three-at-corner	3	c-1e-4	2.9999	valid	205.89370832	207.57402375	-5.18	10
+k4	add	C6-three-at-corner	3	c-1e-8	2.99999999	valid	205.89158533	207.5729775	-5.19	10
+k5	add	C6-three-at-corner	3	c-1e-8	2.99999999	valid	205.89158533	207.5729775	-5.19	10
+k4	add2	C6-three-at-corner	3	c-1e-8	2.99999999	valid	205.89158533	207.5729775	-5.19	10
+k5	add2	C6-three-at-corner	3	c-1e-8	2.99999999	valid	205.89158533	207.5729775	-5.19	10
+k5	swift	C6-three-at-corner	3	c-1e-8	2.99999999	valid	205.89158533	207.5729775	-5.19	10
+k4	add	C6-three-at-corner	3	c-1ulp	2.9999999999999996	valid	205.891585118	207.5729775	-5.19	10
+k5	add	C6-three-at-corner	3	c-1ulp	2.9999999999999996	valid	205.891585118	207.5729775	-5.19	10
+k4	add2	C6-three-at-corner	3	c-1ulp	2.9999999999999996	valid	205.891585118	207.5729775	-5.19	10
+k5	add2	C6-three-at-corner	3	c-1ulp	2.9999999999999996	valid	205.891585118	207.5729775	-5.19	10
+k5	swift	C6-three-at-corner	3	c-1ulp	2.9999999999999996	valid	205.891585118	207.5729775	-5.19	10
+k4	add	C6-three-at-corner	3	c	3	valid	205.891585118	207.5729775	-5.19	10
+k5	add	C6-three-at-corner	3	c	3	valid	205.891585118	207.5729775	-5.19	10
+k4	add2	C6-three-at-corner	3	c	3	valid	205.891585118	207.5729775	-5.19	10
+k5	add2	C6-three-at-corner	3	c	3	valid	205.891585118	207.5729775	-5.19	10
+k5	swift	C6-three-at-corner	3	c	3	valid	205.891585118	207.5729775	-5.19	10
+k4	add	C6-three-at-corner	3	c+1ulp	3.0000000000000004	valid	205.891585118	207.5729775	-5.19	10
+k5	add	C6-three-at-corner	3	c+1ulp	3.0000000000000004	valid	205.891585118	207.5729775	-5.19	10
+k4	add2	C6-three-at-corner	3	c+1ulp	3.0000000000000004	valid	205.891585118	207.5729775	-5.19	10
+k5	add2	C6-three-at-corner	3	c+1ulp	3.0000000000000004	valid	205.891585118	207.5729775	-5.19	10
+k5	swift	C6-three-at-corner	3	c+1ulp	3.0000000000000004	valid	205.891585118	207.5729775	-5.19	10
+k4	add	C6-three-at-corner	3	c+1e-8	3.00000001	valid	205.891584905	207.5729775	-5.19	10
+k5	add	C6-three-at-corner	3	c+1e-8	3.00000001	valid	205.891584905	207.5729775	-5.19	10
+k4	add2	C6-three-at-corner	3	c+1e-8	3.00000001	valid	205.891584905	207.5729775	-5.19	10
+k5	add2	C6-three-at-corner	3	c+1e-8	3.00000001	valid	205.891584905	207.5729775	-5.19	10
+k5	swift	C6-three-at-corner	3	c+1e-8	3.00000001	valid	205.891584905	207.5729775	-5.19	10
+k4	add	C6-three-at-corner	3	c+1e-4	3.0001	valid	205.889461859	207.5676375	-5.17	10
+k5	add	C6-three-at-corner	3	c+1e-4	3.0001	valid	205.889461859	207.5676375	-5.17	10
+k4	add2	C6-three-at-corner	3	c+1e-4	3.0001	valid	205.889461859	207.5676375	-5.17	10
+k5	add2	C6-three-at-corner	3	c+1e-4	3.0001	valid	205.889461859	207.5676375	-5.17	10
+k5	swift	C6-three-at-corner	3	c+1e-4	3.0001	valid	205.889461859	207.5676375	-5.17	10
+k4	add	C6-three-at-corner	3	c+1e-3	3.001	valid	205.870350028	207.5602425	-5.21	10
+k5	add	C6-three-at-corner	3	c+1e-3	3.001	valid	205.870350028	207.5602425	-5.21	10
+k4	add2	C6-three-at-corner	3	c+1e-3	3.001	valid	205.870350028	207.5602425	-5.21	10
+k5	add2	C6-three-at-corner	3	c+1e-3	3.001	valid	205.870350028	207.5602425	-5.21	10
+k5	swift	C6-three-at-corner	3	c+1e-3	3.001	valid	205.870350028	207.5602425	-5.21	10
+k4	add	C6-three-at-corner	3	1.5c	4.5	IsDone=false	-1.0			0
+k5	add	C6-three-at-corner	3	1.5c	4.5	IsDone=false	-1.0			0
+k4	add2	C6-three-at-corner	3	1.5c	4.5	IsDone=false	-1.0			0
+k5	add2	C6-three-at-corner	3	1.5c	4.5	IsDone=false	-1.0			0
+k5	swift	C6-three-at-corner	3	1.5c	4.5	IsDone=false				
+k4	add	C6-three-at-corner	4	0.5c	2.0	valid	224.171087355	224.688165	-3.38	10
+k5	add	C6-three-at-corner	4	0.5c	2.0	valid	224.171087355	224.688165	-3.38	10
+k4	add2	C6-three-at-corner	4	0.5c	2.0	valid	224.171087355	224.688165	-3.38	10
+k5	add2	C6-three-at-corner	4	0.5c	2.0	valid	224.171087355	224.688165	-3.38	10
+k5	swift	C6-three-at-corner	4	0.5c	2.0	valid	224.171087355	224.688165	-3.38	10
+k4	add	C6-three-at-corner	4	c-1e-3	3.999	valid	182.067585158	186.04990125	-7.38	10
+k5	add	C6-three-at-corner	4	c-1e-3	3.999	valid	182.067585158	186.04990125	-7.38	10
+k4	add2	C6-three-at-corner	4	c-1e-3	3.999	valid	182.067585158	186.04990125	-7.38	10
+k5	add2	C6-three-at-corner	4	c-1e-3	3.999	valid	182.067585158	186.04990125	-7.38	10
+k5	swift	C6-three-at-corner	4	c-1e-3	3.999	valid	182.067585158	186.04990125	-7.38	10
+k4	add	C6-three-at-corner	4	c-1e-4	3.9999	valid	182.043916619	186.0289125	-7.38	10
+k5	add	C6-three-at-corner	4	c-1e-4	3.9999	valid	182.043916619	186.0289125	-7.38	10
+k4	add2	C6-three-at-corner	4	c-1e-4	3.9999	valid	182.043916619	186.0289125	-7.38	10
+k5	add2	C6-three-at-corner	4	c-1e-4	3.9999	valid	182.043916619	186.0289125	-7.38	10
+k5	swift	C6-three-at-corner	4	c-1e-4	3.9999	valid	182.043916619	186.0289125	-7.38	10
+k4	add	C6-three-at-corner	4	c-1e-8	3.99999999	valid	182.041286816	186.02652	-7.38	10
+k5	add	C6-three-at-corner	4	c-1e-8	3.99999999	valid	182.041286816	186.02652	-7.38	10
+k4	add2	C6-three-at-corner	4	c-1e-8	3.99999999	valid	182.041286816	186.02652	-7.38	10
+k5	add2	C6-three-at-corner	4	c-1e-8	3.99999999	valid	182.041286816	186.02652	-7.38	10
+k5	swift	C6-three-at-corner	4	c-1e-8	3.99999999	valid	182.041286816	186.02652	-7.38	10
+k4	add	C6-three-at-corner	4	c-1ulp	3.9999999999999996	IsDone=false	-1.0			0
+k5	add	C6-three-at-corner	4	c-1ulp	3.9999999999999996	IsDone=false	-1.0			0
+k4	add2	C6-three-at-corner	4	c-1ulp	3.9999999999999996	IsDone=false	-1.0			0
+k5	add2	C6-three-at-corner	4	c-1ulp	3.9999999999999996	IsDone=false	-1.0			0
+k5	swift	C6-three-at-corner	4	c-1ulp	3.9999999999999996	IsDone=false				
+k4	add	C6-three-at-corner	4	c	4	IsDone=false	-1.0			0
+k5	add	C6-three-at-corner	4	c	4	IsDone=false	-1.0			0
+k4	add2	C6-three-at-corner	4	c	4	IsDone=false	-1.0			0
+k5	add2	C6-three-at-corner	4	c	4	IsDone=false	-1.0			0
+k5	swift	C6-three-at-corner	4	c	4	IsDone=false				
+k4	add	C6-three-at-corner	4	c+1ulp	4.000000000000001	IsDone=false	-1.0			0
+k5	add	C6-three-at-corner	4	c+1ulp	4.000000000000001	IsDone=false	-1.0			0
+k4	add2	C6-three-at-corner	4	c+1ulp	4.000000000000001	IsDone=false	-1.0			0
+k5	add2	C6-three-at-corner	4	c+1ulp	4.000000000000001	IsDone=false	-1.0			0
+k5	swift	C6-three-at-corner	4	c+1ulp	4.000000000000001	IsDone=false				
+k4	add	C6-three-at-corner	4	c+1e-8	4.00000001	IsDone=false	-1.0			0
+k5	add	C6-three-at-corner	4	c+1e-8	4.00000001	IsDone=false	-1.0			0
+k4	add2	C6-three-at-corner	4	c+1e-8	4.00000001	IsDone=false	-1.0			0
+k5	add2	C6-three-at-corner	4	c+1e-8	4.00000001	IsDone=false	-1.0			0
+k5	swift	C6-three-at-corner	4	c+1e-8	4.00000001	IsDone=false				
+k4	add	C6-three-at-corner	4	c+1e-4	4.0001	IsDone=false	-1.0			0
+k5	add	C6-three-at-corner	4	c+1e-4	4.0001	IsDone=false	-1.0			0
+k4	add2	C6-three-at-corner	4	c+1e-4	4.0001	IsDone=false	-1.0			0
+k5	add2	C6-three-at-corner	4	c+1e-4	4.0001	IsDone=false	-1.0			0
+k5	swift	C6-three-at-corner	4	c+1e-4	4.0001	IsDone=false				
+k4	add	C6-three-at-corner	4	c+1e-3	4.001	IsDone=false	-1.0			0
+k5	add	C6-three-at-corner	4	c+1e-3	4.001	IsDone=false	-1.0			0
+k4	add2	C6-three-at-corner	4	c+1e-3	4.001	IsDone=false	-1.0			0
+k5	add2	C6-three-at-corner	4	c+1e-3	4.001	IsDone=false	-1.0			0
+k5	swift	C6-three-at-corner	4	c+1e-3	4.001	IsDone=false				
+k4	add	C6-three-at-corner	4	1.5c	6.0	IsDone=false	-1.0			0
+k5	add	C6-three-at-corner	4	1.5c	6.0	IsDone=false	-1.0			0
+k4	add2	C6-three-at-corner	4	1.5c	6.0	IsDone=false	-1.0			0
+k5	add2	C6-three-at-corner	4	1.5c	6.0	IsDone=false	-1.0			0
+k5	swift	C6-three-at-corner	4	1.5c	6.0	IsDone=false				
+k4	add	C6-three-at-corner	5	0.5c	2.5	valid	215.790462384	216.768225	-4.21	10
+k5	add	C6-three-at-corner	5	0.5c	2.5	valid	215.790462384	216.768225	-4.21	10
+k4	add2	C6-three-at-corner	5	0.5c	2.5	valid	215.790462384	216.768225	-4.21	10
+k5	add2	C6-three-at-corner	5	0.5c	2.5	valid	215.790462384	216.768225	-4.21	10
+k5	swift	C6-three-at-corner	5	0.5c	2.5	valid	215.790462384	216.768225	-4.21	10
+k4	add	C6-three-at-corner	5	c-1e-3	4.999	IsDone=false	-1.0			0
+k5	add	C6-three-at-corner	5	c-1e-3	4.999	IsDone=false	-1.0			0
+k4	add2	C6-three-at-corner	5	c-1e-3	4.999	IsDone=false	-1.0			0
+k5	add2	C6-three-at-corner	5	c-1e-3	4.999	IsDone=false	-1.0			0
+k5	swift	C6-three-at-corner	5	c-1e-3	4.999	IsDone=false				
+k4	add	C6-three-at-corner	5	c-1e-4	4.9999	IsDone=false	-1.0			0
+k5	add	C6-three-at-corner	5	c-1e-4	4.9999	IsDone=false	-1.0			0
+k4	add2	C6-three-at-corner	5	c-1e-4	4.9999	IsDone=false	-1.0			0
+k5	add2	C6-three-at-corner	5	c-1e-4	4.9999	IsDone=false	-1.0			0
+k5	swift	C6-three-at-corner	5	c-1e-4	4.9999	IsDone=false				
+k4	add	C6-three-at-corner	5	c-1e-8	4.99999999	IsDone=false	-1.0			0
+k5	add	C6-three-at-corner	5	c-1e-8	4.99999999	IsDone=false	-1.0			0
+k4	add2	C6-three-at-corner	5	c-1e-8	4.99999999	IsDone=false	-1.0			0
+k5	add2	C6-three-at-corner	5	c-1e-8	4.99999999	IsDone=false	-1.0			0
+k5	swift	C6-three-at-corner	5	c-1e-8	4.99999999	IsDone=false				
+k4	add	C6-three-at-corner	5	c-1ulp	4.999999999999999	IsDone=false	-1.0			0
+k5	add	C6-three-at-corner	5	c-1ulp	4.999999999999999	IsDone=false	-1.0			0
+k4	add2	C6-three-at-corner	5	c-1ulp	4.999999999999999	IsDone=false	-1.0			0
+k5	add2	C6-three-at-corner	5	c-1ulp	4.999999999999999	IsDone=false	-1.0			0
+k5	swift	C6-three-at-corner	5	c-1ulp	4.999999999999999	IsDone=false				
+k4	add	C6-three-at-corner	5	c	5	IsDone=false	-1.0			0
+k5	add	C6-three-at-corner	5	c	5	IsDone=false	-1.0			0
+k4	add2	C6-three-at-corner	5	c	5	IsDone=false	-1.0			0
+k5	add2	C6-three-at-corner	5	c	5	IsDone=false	-1.0			0
+k5	swift	C6-three-at-corner	5	c	5	IsDone=false				
+k4	add	C6-three-at-corner	5	c+1ulp	5.000000000000001	IsDone=false	-1.0			0
+k5	add	C6-three-at-corner	5	c+1ulp	5.000000000000001	IsDone=false	-1.0			0
+k4	add2	C6-three-at-corner	5	c+1ulp	5.000000000000001	IsDone=false	-1.0			0
+k5	add2	C6-three-at-corner	5	c+1ulp	5.000000000000001	IsDone=false	-1.0			0
+k5	swift	C6-three-at-corner	5	c+1ulp	5.000000000000001	IsDone=false				
+k4	add	C6-three-at-corner	5	c+1e-8	5.00000001	IsDone=false	-1.0			0
+k5	add	C6-three-at-corner	5	c+1e-8	5.00000001	IsDone=false	-1.0			0
+k4	add2	C6-three-at-corner	5	c+1e-8	5.00000001	IsDone=false	-1.0			0
+k5	add2	C6-three-at-corner	5	c+1e-8	5.00000001	IsDone=false	-1.0			0
+k5	swift	C6-three-at-corner	5	c+1e-8	5.00000001	IsDone=false				
+k4	add	C6-three-at-corner	5	c+1e-4	5.0001	IsDone=false	-1.0			0
+k5	add	C6-three-at-corner	5	c+1e-4	5.0001	IsDone=false	-1.0			0
+k4	add2	C6-three-at-corner	5	c+1e-4	5.0001	IsDone=false	-1.0			0
+k5	add2	C6-three-at-corner	5	c+1e-4	5.0001	IsDone=false	-1.0			0
+k5	swift	C6-three-at-corner	5	c+1e-4	5.0001	IsDone=false				
+k4	add	C6-three-at-corner	5	c+1e-3	5.001	IsDone=false	-1.0			0
+k5	add	C6-three-at-corner	5	c+1e-3	5.001	IsDone=false	-1.0			0
+k4	add2	C6-three-at-corner	5	c+1e-3	5.001	IsDone=false	-1.0			0
+k5	add2	C6-three-at-corner	5	c+1e-3	5.001	IsDone=false	-1.0			0
+k5	swift	C6-three-at-corner	5	c+1e-3	5.001	IsDone=false				
+k4	add	C6-three-at-corner	5	1.5c	7.5	IsDone=false	-1.0			0
+k5	add	C6-three-at-corner	5	1.5c	7.5	IsDone=false	-1.0			0
+k4	add2	C6-three-at-corner	5	1.5c	7.5	IsDone=false	-1.0			0
+k5	add2	C6-three-at-corner	5	1.5c	7.5	IsDone=false	-1.0			0
+k5	swift	C6-three-at-corner	5	1.5c	7.5	IsDone=false				
+k4	add	C6-three-at-corner	6	0.5c	3.0	valid	205.891585118	207.5729775	-5.19	10
+k5	add	C6-three-at-corner	6	0.5c	3.0	valid	205.891585118	207.5729775	-5.19	10
+k4	add2	C6-three-at-corner	6	0.5c	3.0	valid	205.891585118	207.5729775	-5.19	10
+k5	add2	C6-three-at-corner	6	0.5c	3.0	valid	205.891585118	207.5729775	-5.19	10
+k5	swift	C6-three-at-corner	6	0.5c	3.0	valid	205.891585118	207.5729775	-5.19	10
+k4	add	C6-three-at-corner	6	c-1e-3	5.999	IsDone=false	-1.0			0
+k5	add	C6-three-at-corner	6	c-1e-3	5.999	IsDone=false	-1.0			0
+k4	add2	C6-three-at-corner	6	c-1e-3	5.999	IsDone=false	-1.0			0
+k5	add2	C6-three-at-corner	6	c-1e-3	5.999	IsDone=false	-1.0			0
+k5	swift	C6-three-at-corner	6	c-1e-3	5.999	IsDone=false				
+k4	add	C6-three-at-corner	6	c-1e-4	5.9999	IsDone=false	-1.0			0
+k5	add	C6-three-at-corner	6	c-1e-4	5.9999	IsDone=false	-1.0			0
+k4	add2	C6-three-at-corner	6	c-1e-4	5.9999	IsDone=false	-1.0			0
+k5	add2	C6-three-at-corner	6	c-1e-4	5.9999	IsDone=false	-1.0			0
+k5	swift	C6-three-at-corner	6	c-1e-4	5.9999	IsDone=false				
+k4	add	C6-three-at-corner	6	c-1e-8	5.99999999	IsDone=false	-1.0			0
+k5	add	C6-three-at-corner	6	c-1e-8	5.99999999	IsDone=false	-1.0			0
+k4	add2	C6-three-at-corner	6	c-1e-8	5.99999999	IsDone=false	-1.0			0
+k5	add2	C6-three-at-corner	6	c-1e-8	5.99999999	IsDone=false	-1.0			0
+k5	swift	C6-three-at-corner	6	c-1e-8	5.99999999	IsDone=false				
+k4	add	C6-three-at-corner	6	c-1ulp	5.999999999999999	IsDone=false	-1.0			0
+k5	add	C6-three-at-corner	6	c-1ulp	5.999999999999999	IsDone=false	-1.0			0
+k4	add2	C6-three-at-corner	6	c-1ulp	5.999999999999999	IsDone=false	-1.0			0
+k5	add2	C6-three-at-corner	6	c-1ulp	5.999999999999999	IsDone=false	-1.0			0
+k5	swift	C6-three-at-corner	6	c-1ulp	5.999999999999999	IsDone=false				
+k4	add	C6-three-at-corner	6	c	6	IsDone=false	-1.0			0
+k5	add	C6-three-at-corner	6	c	6	IsDone=false	-1.0			0
+k4	add2	C6-three-at-corner	6	c	6	IsDone=false	-1.0			0
+k5	add2	C6-three-at-corner	6	c	6	IsDone=false	-1.0			0
+k5	swift	C6-three-at-corner	6	c	6	IsDone=false				
+k4	add	C6-three-at-corner	6	c+1ulp	6.000000000000001	IsDone=false	-1.0			0
+k5	add	C6-three-at-corner	6	c+1ulp	6.000000000000001	IsDone=false	-1.0			0
+k4	add2	C6-three-at-corner	6	c+1ulp	6.000000000000001	IsDone=false	-1.0			0
+k5	add2	C6-three-at-corner	6	c+1ulp	6.000000000000001	IsDone=false	-1.0			0
+k5	swift	C6-three-at-corner	6	c+1ulp	6.000000000000001	IsDone=false				
+k4	add	C6-three-at-corner	6	c+1e-8	6.00000001	IsDone=false	-1.0			0
+k5	add	C6-three-at-corner	6	c+1e-8	6.00000001	IsDone=false	-1.0			0
+k4	add2	C6-three-at-corner	6	c+1e-8	6.00000001	IsDone=false	-1.0			0
+k5	add2	C6-three-at-corner	6	c+1e-8	6.00000001	IsDone=false	-1.0			0
+k5	swift	C6-three-at-corner	6	c+1e-8	6.00000001	IsDone=false				
+k4	add	C6-three-at-corner	6	c+1e-4	6.0001	IsDone=false	-1.0			0
+k5	add	C6-three-at-corner	6	c+1e-4	6.0001	IsDone=false	-1.0			0
+k4	add2	C6-three-at-corner	6	c+1e-4	6.0001	IsDone=false	-1.0			0
+k5	add2	C6-three-at-corner	6	c+1e-4	6.0001	IsDone=false	-1.0			0
+k5	swift	C6-three-at-corner	6	c+1e-4	6.0001	IsDone=false				
+k4	add	C6-three-at-corner	6	c+1e-3	6.001	IsDone=false	-1.0			0
+k5	add	C6-three-at-corner	6	c+1e-3	6.001	IsDone=false	-1.0			0
+k4	add2	C6-three-at-corner	6	c+1e-3	6.001	IsDone=false	-1.0			0
+k5	add2	C6-three-at-corner	6	c+1e-3	6.001	IsDone=false	-1.0			0
+k5	swift	C6-three-at-corner	6	c+1e-3	6.001	IsDone=false				
+k4	add	C6-three-at-corner	6	1.5c	9.0	IsDone=false	-1.0			0
+k5	add	C6-three-at-corner	6	1.5c	9.0	IsDone=false	-1.0			0
+k4	add2	C6-three-at-corner	6	1.5c	9.0	IsDone=false	-1.0			0
+k5	add2	C6-three-at-corner	6	1.5c	9.0	IsDone=false	-1.0			0
+k5	swift	C6-three-at-corner	6	1.5c	9.0	IsDone=false				
+k4	add	C7-top-frame	2	0.5c	1.0	valid	234.374629926	234.38034	-0.10	10
+k5	add	C7-top-frame	2	0.5c	1.0	valid	234.374629926	234.38034	-0.10	10
+k4	add2	C7-top-frame	2	0.5c	1.0	valid	234.374629926	234.38034	-0.10	10
+k5	add2	C7-top-frame	2	0.5c	1.0	valid	234.374629926	234.38034	-0.10	10
+k5	swift	C7-top-frame	2	0.5c	1.0	valid	234.374629926	234.38034	-0.10	10
+k4	add	C7-top-frame	2	c-1e-3	1.999	valid	219.051875054	219.07497	-0.11	10
+k5	add	C7-top-frame	2	c-1e-3	1.999	valid	219.051875054	219.07497	-0.11	10
+k4	add2	C7-top-frame	2	c-1e-3	1.999	valid	219.051875054	219.07497	-0.11	10
+k5	add2	C7-top-frame	2	c-1e-3	1.999	valid	219.051875054	219.07497	-0.11	10
+k5	swift	C7-top-frame	2	c-1e-3	1.999	valid	219.051875054	219.07497	-0.11	10
+k4	add	C7-top-frame	2	c-1e-4	1.9999	valid	219.034388459	219.05595	-0.10	10
+k5	add	C7-top-frame	2	c-1e-4	1.9999	valid	219.034388459	219.05595	-0.10	10
+k4	add2	C7-top-frame	2	c-1e-4	1.9999	valid	219.034388459	219.05595	-0.10	10
+k5	add2	C7-top-frame	2	c-1e-4	1.9999	valid	219.034388459	219.05595	-0.10	10
+k5	swift	C7-top-frame	2	c-1e-4	1.9999	valid	219.034388459	219.05595	-0.10	10
+k4	add	C7-top-frame	2	c-1e-8	1.99999999	valid	219.032445316	219.05595	-0.11	10
+k5	add	C7-top-frame	2	c-1e-8	1.99999999	valid	219.032445316	219.05595	-0.11	10
+k4	add2	C7-top-frame	2	c-1e-8	1.99999999	valid	219.032445316	219.05595	-0.11	10
+k5	add2	C7-top-frame	2	c-1e-8	1.99999999	valid	219.032445316	219.05595	-0.11	10
+k5	swift	C7-top-frame	2	c-1e-8	1.99999999	valid	219.032445316	219.05595	-0.11	10
+k4	add	C7-top-frame	2	c-1ulp	1.9999999999999998	IsDone=false	-1.0			0
+k5	add	C7-top-frame	2	c-1ulp	1.9999999999999998	IsDone=false	-1.0			0
+k4	add2	C7-top-frame	2	c-1ulp	1.9999999999999998	IsDone=false	-1.0			0
+k5	add2	C7-top-frame	2	c-1ulp	1.9999999999999998	IsDone=false	-1.0			0
+k5	swift	C7-top-frame	2	c-1ulp	1.9999999999999998	IsDone=false				
+k4	add	C7-top-frame	2	c	2	IsDone=false	-1.0			0
+k5	add	C7-top-frame	2	c	2	IsDone=false	-1.0			0
+k4	add2	C7-top-frame	2	c	2	IsDone=false	-1.0			0
+k5	add2	C7-top-frame	2	c	2	IsDone=false	-1.0			0
+k5	swift	C7-top-frame	2	c	2	IsDone=false				
+k4	add	C7-top-frame	2	c+1ulp	2.0000000000000004	IsDone=false	-1.0			0
+k5	add	C7-top-frame	2	c+1ulp	2.0000000000000004	IsDone=false	-1.0			0
+k4	add2	C7-top-frame	2	c+1ulp	2.0000000000000004	IsDone=false	-1.0			0
+k5	add2	C7-top-frame	2	c+1ulp	2.0000000000000004	IsDone=false	-1.0			0
+k5	swift	C7-top-frame	2	c+1ulp	2.0000000000000004	IsDone=false				
+k4	add	C7-top-frame	2	c+1e-8	2.00000001	done, INVALID	264.099111872	219.05595	215.06	11
+k5	add	C7-top-frame	2	c+1e-8	2.00000001	done, INVALID	264.099111872	219.05595	215.06	11
+k4	add2	C7-top-frame	2	c+1e-8	2.00000001	done, INVALID	264.099111872	219.05595	215.06	11
+k5	add2	C7-top-frame	2	c+1e-8	2.00000001	done, INVALID	264.099111872	219.05595	215.06	11
+k5	swift	C7-top-frame	2	c+1e-8	2.00000001	done, INVALID	-1.0			11
+k4	add	C7-top-frame	2	c+1e-4	2.0001	IsDone=false	-1.0			0
+k5	add	C7-top-frame	2	c+1e-4	2.0001	IsDone=false	-1.0			0
+k4	add2	C7-top-frame	2	c+1e-4	2.0001	IsDone=false	-1.0			0
+k5	add2	C7-top-frame	2	c+1e-4	2.0001	IsDone=false	-1.0			0
+k5	swift	C7-top-frame	2	c+1e-4	2.0001	IsDone=false				
+k4	add	C7-top-frame	2	c+1e-3	2.001	IsDone=false	-1.0			0
+k5	add	C7-top-frame	2	c+1e-3	2.001	IsDone=false	-1.0			0
+k4	add2	C7-top-frame	2	c+1e-3	2.001	IsDone=false	-1.0			0
+k5	add2	C7-top-frame	2	c+1e-3	2.001	IsDone=false	-1.0			0
+k5	swift	C7-top-frame	2	c+1e-3	2.001	IsDone=false				
+k4	add	C7-top-frame	2	1.5c	3.0	done, INVALID	225.654253602	196.84203	66.76	12
+k5	add	C7-top-frame	2	1.5c	3.0	done, INVALID	225.654253602	196.84203	66.76	12
+k4	add2	C7-top-frame	2	1.5c	3.0	done, INVALID	225.654253602	196.84203	66.76	12
+k5	add2	C7-top-frame	2	1.5c	3.0	done, INVALID	225.654253602	196.84203	66.76	12
+k5	swift	C7-top-frame	2	1.5c	3.0	done, INVALID	-1.0			12
+k4	add	C7-top-frame	3	0.5c	1.5	valid	227.774333862	227.78511	-0.09	10
+k5	add	C7-top-frame	3	0.5c	1.5	valid	227.774333862	227.78511	-0.09	10
+k4	add2	C7-top-frame	3	0.5c	1.5	valid	227.774333862	227.78511	-0.09	10
+k5	add2	C7-top-frame	3	0.5c	1.5	valid	227.774333862	227.78511	-0.09	10
+k5	swift	C7-top-frame	3	0.5c	1.5	valid	227.774333862	227.78511	-0.09	10
+k4	add	C7-top-frame	3	c-1e-3	2.999	done, INVALID	2.23992321541951e+28	196.86258	51925293988827110290107662336.00	12
+k5	add	C7-top-frame	3	c-1e-3	2.999	done, INVALID	2.23992321541951e+28	196.86258	51925293988827110290107662336.00	12
+k4	add2	C7-top-frame	3	c-1e-3	2.999	done, INVALID	2.23992321541951e+28	196.86258	51925293988827110290107662336.00	12
+k5	add2	C7-top-frame	3	c-1e-3	2.999	done, INVALID	2.23992321541951e+28	196.86258	51925293988827110290107662336.00	12
+k5	swift	C7-top-frame	3	c-1e-3	2.999	done, INVALID	-1.0			12
+k4	add	C7-top-frame	3	c-1e-4	2.9999	done, INVALID	225.656654502	196.84203	66.77	12
+k5	add	C7-top-frame	3	c-1e-4	2.9999	done, INVALID	225.656654502	196.84203	66.77	12
+k4	add2	C7-top-frame	3	c-1e-4	2.9999	done, INVALID	225.656654502	196.84203	66.77	12
+k5	add2	C7-top-frame	3	c-1e-4	2.9999	done, INVALID	225.656654502	196.84203	66.77	12
+k5	swift	C7-top-frame	3	c-1e-4	2.9999	done, INVALID	-1.0			12
+k4	add	C7-top-frame	3	c-1e-8	2.99999999	done, INVALID	225.65425381	196.84203	66.76	12
+k5	add	C7-top-frame	3	c-1e-8	2.99999999	done, INVALID	225.65425381	196.84203	66.76	12
+k4	add2	C7-top-frame	3	c-1e-8	2.99999999	done, INVALID	225.65425381	196.84203	66.76	12
+k5	add2	C7-top-frame	3	c-1e-8	2.99999999	done, INVALID	225.65425381	196.84203	66.76	12
+k5	swift	C7-top-frame	3	c-1e-8	2.99999999	done, INVALID	-1.0			12
+k4	add	C7-top-frame	3	c-1ulp	2.9999999999999996	done, INVALID	225.654253602	196.84203	66.76	12
+k5	add	C7-top-frame	3	c-1ulp	2.9999999999999996	done, INVALID	225.654253602	196.84203	66.76	12
+k4	add2	C7-top-frame	3	c-1ulp	2.9999999999999996	done, INVALID	225.654253602	196.84203	66.76	12
+k5	add2	C7-top-frame	3	c-1ulp	2.9999999999999996	done, INVALID	225.654253602	196.84203	66.76	12
+k5	swift	C7-top-frame	3	c-1ulp	2.9999999999999996	done, INVALID	-1.0			12
+k4	add	C7-top-frame	3	c	3	done, INVALID	225.654253602	196.84203	66.76	12
+k5	add	C7-top-frame	3	c	3	done, INVALID	225.654253602	196.84203	66.76	12
+k4	add2	C7-top-frame	3	c	3	done, INVALID	225.654253602	196.84203	66.76	12
+k5	add2	C7-top-frame	3	c	3	done, INVALID	225.654253602	196.84203	66.76	12
+k5	swift	C7-top-frame	3	c	3	done, INVALID	-1.0			12
+k4	add	C7-top-frame	3	c+1ulp	3.0000000000000004	done, INVALID	225.654253601	196.84203	66.76	12
+k5	add	C7-top-frame	3	c+1ulp	3.0000000000000004	done, INVALID	225.654253601	196.84203	66.76	12
+k4	add2	C7-top-frame	3	c+1ulp	3.0000000000000004	done, INVALID	225.654253601	196.84203	66.76	12
+k5	add2	C7-top-frame	3	c+1ulp	3.0000000000000004	done, INVALID	225.654253601	196.84203	66.76	12
+k5	swift	C7-top-frame	3	c+1ulp	3.0000000000000004	done, INVALID	-1.0			12
+k4	add	C7-top-frame	3	c+1e-8	3.00000001	done, INVALID	225.654253361	196.84203	66.76	12
+k5	add	C7-top-frame	3	c+1e-8	3.00000001	done, INVALID	225.654253361	196.84203	66.76	12
+k4	add2	C7-top-frame	3	c+1e-8	3.00000001	done, INVALID	225.654253361	196.84203	66.76	12
+k5	add2	C7-top-frame	3	c+1e-8	3.00000001	done, INVALID	225.654253361	196.84203	66.76	12
+k5	swift	C7-top-frame	3	c+1e-8	3.00000001	done, INVALID	-1.0			12
+k4	add	C7-top-frame	3	c+1e-4	3.0001	done, INVALID	-1.3031476602642464e+26			12
+k5	add	C7-top-frame	3	c+1e-4	3.0001	done, INVALID	-1.3031476602642464e+26			12
+k4	add2	C7-top-frame	3	c+1e-4	3.0001	done, INVALID	-1.3031476602642464e+26			12
+k5	add2	C7-top-frame	3	c+1e-4	3.0001	done, INVALID	-1.3031476602642464e+26			12
+k5	swift	C7-top-frame	3	c+1e-4	3.0001	done, INVALID	-1.0			12
+k4	add	C7-top-frame	3	c+1e-3	3.001	done, INVALID	225.630240708	196.82304	66.72	12
+k5	add	C7-top-frame	3	c+1e-3	3.001	done, INVALID	225.630240708	196.82304	66.72	12
+k4	add2	C7-top-frame	3	c+1e-3	3.001	done, INVALID	225.630240708	196.82304	66.72	12
+k5	add2	C7-top-frame	3	c+1e-3	3.001	done, INVALID	225.630240708	196.82304	66.72	12
+k5	swift	C7-top-frame	3	c+1e-3	3.001	done, INVALID	-1.0			12
+k4	add	C7-top-frame	3	1.5c	4.5	IsDone=false	-1.0			0
+k5	add	C7-top-frame	3	1.5c	4.5	IsDone=false	-1.0			0
+k4	add2	C7-top-frame	3	1.5c	4.5	IsDone=false	-1.0			0
+k5	add2	C7-top-frame	3	1.5c	4.5	IsDone=false	-1.0			0
+k5	swift	C7-top-frame	3	1.5c	4.5	IsDone=false				
+k4	add	C7-top-frame	5	0.5c	2.5	done, INVALID	236.740866286	208.527465	89.64	12
+k5	add	C7-top-frame	5	0.5c	2.5	done, INVALID	236.740866286	208.527465	89.64	12
+k4	add2	C7-top-frame	5	0.5c	2.5	done, INVALID	236.740866286	208.527465	89.64	12
+k5	add2	C7-top-frame	5	0.5c	2.5	done, INVALID	236.740866286	208.527465	89.64	12
+k5	swift	C7-top-frame	5	0.5c	2.5	done, INVALID	-1.0			12
+k4	add	C7-top-frame	5	c-1e-3	4.999	IsDone=false	-1.0			0
+k5	add	C7-top-frame	5	c-1e-3	4.999	IsDone=false	-1.0			0
+k4	add2	C7-top-frame	5	c-1e-3	4.999	IsDone=false	-1.0			0
+k5	add2	C7-top-frame	5	c-1e-3	4.999	IsDone=false	-1.0			0
+k5	swift	C7-top-frame	5	c-1e-3	4.999	IsDone=false				
+k4	add	C7-top-frame	5	c-1e-4	4.9999	IsDone=false	-1.0			0
+k5	add	C7-top-frame	5	c-1e-4	4.9999	IsDone=false	-1.0			0
+k4	add2	C7-top-frame	5	c-1e-4	4.9999	IsDone=false	-1.0			0
+k5	add2	C7-top-frame	5	c-1e-4	4.9999	IsDone=false	-1.0			0
+k5	swift	C7-top-frame	5	c-1e-4	4.9999	IsDone=false				
+k4	add	C7-top-frame	5	c-1e-8	4.99999999	IsDone=false	-1.0			0
+k5	add	C7-top-frame	5	c-1e-8	4.99999999	IsDone=false	-1.0			0
+k4	add2	C7-top-frame	5	c-1e-8	4.99999999	IsDone=false	-1.0			0
+k5	add2	C7-top-frame	5	c-1e-8	4.99999999	IsDone=false	-1.0			0
+k5	swift	C7-top-frame	5	c-1e-8	4.99999999	IsDone=false				
+k4	add	C7-top-frame	5	c-1ulp	4.999999999999999	IsDone=false	-1.0			0
+k5	add	C7-top-frame	5	c-1ulp	4.999999999999999	IsDone=false	-1.0			0
+k4	add2	C7-top-frame	5	c-1ulp	4.999999999999999	IsDone=false	-1.0			0
+k5	add2	C7-top-frame	5	c-1ulp	4.999999999999999	IsDone=false	-1.0			0
+k5	swift	C7-top-frame	5	c-1ulp	4.999999999999999	IsDone=false				
+k4	add	C7-top-frame	5	c	5	IsDone=false	-1.0			0
+k5	add	C7-top-frame	5	c	5	IsDone=false	-1.0			0
+k4	add2	C7-top-frame	5	c	5	IsDone=false	-1.0			0
+k5	add2	C7-top-frame	5	c	5	IsDone=false	-1.0			0
+k5	swift	C7-top-frame	5	c	5	IsDone=false				
+k4	add	C7-top-frame	5	c+1ulp	5.000000000000001	IsDone=false	-1.0			0
+k5	add	C7-top-frame	5	c+1ulp	5.000000000000001	IsDone=false	-1.0			0
+k4	add2	C7-top-frame	5	c+1ulp	5.000000000000001	IsDone=false	-1.0			0
+k5	add2	C7-top-frame	5	c+1ulp	5.000000000000001	IsDone=false	-1.0			0
+k5	swift	C7-top-frame	5	c+1ulp	5.000000000000001	IsDone=false				
+k4	add	C7-top-frame	5	c+1e-8	5.00000001	IsDone=false	-1.0			0
+k5	add	C7-top-frame	5	c+1e-8	5.00000001	IsDone=false	-1.0			0
+k4	add2	C7-top-frame	5	c+1e-8	5.00000001	IsDone=false	-1.0			0
+k5	add2	C7-top-frame	5	c+1e-8	5.00000001	IsDone=false	-1.0			0
+k5	swift	C7-top-frame	5	c+1e-8	5.00000001	IsDone=false				
+k4	add	C7-top-frame	5	c+1e-4	5.0001	IsDone=false	-1.0			0
+k5	add	C7-top-frame	5	c+1e-4	5.0001	IsDone=false	-1.0			0
+k4	add2	C7-top-frame	5	c+1e-4	5.0001	IsDone=false	-1.0			0
+k5	add2	C7-top-frame	5	c+1e-4	5.0001	IsDone=false	-1.0			0
+k5	swift	C7-top-frame	5	c+1e-4	5.0001	IsDone=false				
+k4	add	C7-top-frame	5	c+1e-3	5.001	IsDone=false	-1.0			0
+k5	add	C7-top-frame	5	c+1e-3	5.001	IsDone=false	-1.0			0
+k4	add2	C7-top-frame	5	c+1e-3	5.001	IsDone=false	-1.0			0
+k5	add2	C7-top-frame	5	c+1e-3	5.001	IsDone=false	-1.0			0
+k5	swift	C7-top-frame	5	c+1e-3	5.001	IsDone=false				
+k4	add	C7-top-frame	5	1.5c	7.5	IsDone=false	-1.0			0
+k5	add	C7-top-frame	5	1.5c	7.5	IsDone=false	-1.0			0
+k4	add2	C7-top-frame	5	1.5c	7.5	IsDone=false	-1.0			0
+k5	add2	C7-top-frame	5	1.5c	7.5	IsDone=false	-1.0			0
+k5	swift	C7-top-frame	5	1.5c	7.5	IsDone=false				
+k4	add	C8-all-12-edges	2	0.5c	1.0	valid	224.171087355	224.69199	-3.40	26
+k5	add	C8-all-12-edges	2	0.5c	1.0	valid	224.171087355	224.69199	-3.40	26
+k4	add2	C8-all-12-edges	2	0.5c	1.0	valid	224.171087355	224.69199	-3.40	26
+k5	add2	C8-all-12-edges	2	0.5c	1.0	valid	224.171087355	224.69199	-3.40	26
+k5	swift	C8-all-12-edges	2	0.5c	1.0	valid	224.171087355	224.69199	-3.40	26
+k4	add	C8-all-12-edges	2	c-1e-3	1.999	valid	182.093879195	186.1101	-7.45	26
+k5	add	C8-all-12-edges	2	c-1e-3	1.999	valid	182.093879195	186.1101	-7.45	26
+k4	add2	C8-all-12-edges	2	c-1e-3	1.999	valid	182.093879195	186.1101	-7.45	26
+k5	add2	C8-all-12-edges	2	c-1e-3	1.999	valid	182.093879195	186.1101	-7.45	26
+k5	swift	C8-all-12-edges	2	c-1e-3	1.999	valid	182.093879195	186.1101	-7.45	26
+k4	add	C8-all-12-edges	2	c-1e-4	1.9999	valid	182.046546639	186.07332	-7.47	26
+k5	add	C8-all-12-edges	2	c-1e-4	1.9999	valid	182.046546639	186.07332	-7.47	26
+k4	add2	C8-all-12-edges	2	c-1e-4	1.9999	valid	182.046546639	186.07332	-7.47	26
+k5	add2	C8-all-12-edges	2	c-1e-4	1.9999	valid	182.046546639	186.07332	-7.47	26
+k5	swift	C8-all-12-edges	2	c-1e-4	1.9999	valid	182.046546639	186.07332	-7.47	26
+k4	add	C8-all-12-edges	2	c-1e-8	1.99999999	valid	182.041287079	186.07332	-7.48	26
+k5	add	C8-all-12-edges	2	c-1e-8	1.99999999	valid	182.041287079	186.07332	-7.48	26
+k4	add2	C8-all-12-edges	2	c-1e-8	1.99999999	valid	182.041287079	186.07332	-7.48	26
+k5	add2	C8-all-12-edges	2	c-1e-8	1.99999999	valid	182.041287079	186.07332	-7.48	26
+k5	swift	C8-all-12-edges	2	c-1e-8	1.99999999	valid	182.041287079	186.07332	-7.48	26
+k4	add	C8-all-12-edges	2	c-1ulp	1.9999999999999998	IsDone=false	-1.0			0
+k5	add	C8-all-12-edges	2	c-1ulp	1.9999999999999998	IsDone=false	-1.0			0
+k4	add2	C8-all-12-edges	2	c-1ulp	1.9999999999999998	IsDone=false	-1.0			0
+k5	add2	C8-all-12-edges	2	c-1ulp	1.9999999999999998	IsDone=false	-1.0			0
+k5	swift	C8-all-12-edges	2	c-1ulp	1.9999999999999998	IsDone=false				
+k4	add	C8-all-12-edges	2	c	2	IsDone=false	-1.0			0
+k5	add	C8-all-12-edges	2	c	2	IsDone=false	-1.0			0
+k4	add2	C8-all-12-edges	2	c	2	IsDone=false	-1.0			0
+k5	add2	C8-all-12-edges	2	c	2	IsDone=false	-1.0			0
+k5	swift	C8-all-12-edges	2	c	2	IsDone=false				
+k4	add	C8-all-12-edges	2	c+1ulp	2.0000000000000004	IsDone=false	-1.0			0
+k5	add	C8-all-12-edges	2	c+1ulp	2.0000000000000004	IsDone=false	-1.0			0
+k4	add2	C8-all-12-edges	2	c+1ulp	2.0000000000000004	IsDone=false	-1.0			0
+k5	add2	C8-all-12-edges	2	c+1ulp	2.0000000000000004	IsDone=false	-1.0			0
+k5	swift	C8-all-12-edges	2	c+1ulp	2.0000000000000004	IsDone=false				
+k4	add	C8-all-12-edges	2	c+1e-8	2.00000001	IsDone=false	-1.0			0
+k5	add	C8-all-12-edges	2	c+1e-8	2.00000001	IsDone=false	-1.0			0
+k4	add2	C8-all-12-edges	2	c+1e-8	2.00000001	IsDone=false	-1.0			0
+k5	add2	C8-all-12-edges	2	c+1e-8	2.00000001	IsDone=false	-1.0			0
+k5	swift	C8-all-12-edges	2	c+1e-8	2.00000001	IsDone=false				
+k4	add	C8-all-12-edges	2	c+1e-4	2.0001	done, INVALID	269.058578028	186.0576	153.87	26
+k5	add	C8-all-12-edges	2	c+1e-4	2.0001	done, INVALID	269.058578028	186.0576	153.87	26
+k4	add2	C8-all-12-edges	2	c+1e-4	2.0001	done, INVALID	269.058578028	186.0576	153.87	26
+k5	add2	C8-all-12-edges	2	c+1e-4	2.0001	done, INVALID	269.058578028	186.0576	153.87	26
+k5	swift	C8-all-12-edges	2	c+1e-4	2.0001	done, INVALID	-1.0			26
+k4	add	C8-all-12-edges	2	c+1e-3	2.001	done, INVALID	269.019578701	185.98548	153.73	26
+k5	add	C8-all-12-edges	2	c+1e-3	2.001	done, INVALID	269.019578701	185.98548	153.73	26
+k4	add2	C8-all-12-edges	2	c+1e-3	2.001	done, INVALID	269.019578701	185.98548	153.73	26
+k5	add2	C8-all-12-edges	2	c+1e-3	2.001	done, INVALID	269.019578701	185.98548	153.73	26
+k5	swift	C8-all-12-edges	2	c+1e-3	2.001	done, INVALID	-1.0			26
+k4	add	C8-all-12-edges	2	1.5c	3.0	IsDone=false	-1.0			0
+k5	add	C8-all-12-edges	2	1.5c	3.0	IsDone=false	-1.0			0
+k4	add2	C8-all-12-edges	2	1.5c	3.0	IsDone=false	-1.0			0
+k5	add2	C8-all-12-edges	2	1.5c	3.0	IsDone=false	-1.0			0
+k5	swift	C8-all-12-edges	2	1.5c	3.0	IsDone=false				
+k4	add	C8-all-12-edges	3	0.5c	1.5	valid	205.891585118	207.60072	-5.28	26
+k5	add	C8-all-12-edges	3	0.5c	1.5	valid	205.891585118	207.60072	-5.28	26
+k4	add2	C8-all-12-edges	3	0.5c	1.5	valid	205.891585118	207.60072	-5.28	26
+k5	add2	C8-all-12-edges	3	0.5c	1.5	valid	205.891585118	207.60072	-5.28	26
+k5	swift	C8-all-12-edges	3	0.5c	1.5	valid	205.891585118	207.60072	-5.28	26
+k4	add	C8-all-12-edges	3	c-1e-3	2.999	done, INVALID	302.484824356	136.47792	160.36	26
+k5	add	C8-all-12-edges	3	c-1e-3	2.999	done, INVALID	302.484824356	136.47792	160.36	26
+k4	add2	C8-all-12-edges	3	c-1e-3	2.999	done, INVALID	302.484824356	136.47792	160.36	26
+k5	add2	C8-all-12-edges	3	c-1e-3	2.999	done, INVALID	302.484824356	136.47792	160.36	26
+k5	swift	C8-all-12-edges	3	c-1e-3	2.999	done, INVALID	-1.0			26
+k4	add	C8-all-12-edges	3	c-1e-4	2.9999	done, INVALID	302.441682719	136.43553	160.29	26
+k5	add	C8-all-12-edges	3	c-1e-4	2.9999	done, INVALID	302.441682719	136.43553	160.29	26
+k4	add2	C8-all-12-edges	3	c-1e-4	2.9999	done, INVALID	302.441682719	136.43553	160.29	26
+k5	add2	C8-all-12-edges	3	c-1e-4	2.9999	done, INVALID	302.441682719	136.43553	160.29	26
+k5	swift	C8-all-12-edges	3	c-1e-4	2.9999	done, INVALID	-1.0			26
+k4	add	C8-all-12-edges	3	c-1e-8	2.99999999	done, INVALID	302.436889739	136.43316	160.29	26
+k5	add	C8-all-12-edges	3	c-1e-8	2.99999999	done, INVALID	302.436889739	136.43316	160.29	26
+k4	add2	C8-all-12-edges	3	c-1e-8	2.99999999	done, INVALID	302.436889739	136.43316	160.29	26
+k5	add2	C8-all-12-edges	3	c-1e-8	2.99999999	done, INVALID	302.436889739	136.43316	160.29	26
+k5	swift	C8-all-12-edges	3	c-1e-8	2.99999999	done, INVALID	-1.0			26
+k4	add	C8-all-12-edges	3	c-1ulp	2.9999999999999996	IsDone=false	-1.0			0
+k5	add	C8-all-12-edges	3	c-1ulp	2.9999999999999996	IsDone=false	-1.0			0
+k4	add2	C8-all-12-edges	3	c-1ulp	2.9999999999999996	IsDone=false	-1.0			0
+k5	add2	C8-all-12-edges	3	c-1ulp	2.9999999999999996	IsDone=false	-1.0			0
+k5	swift	C8-all-12-edges	3	c-1ulp	2.9999999999999996	IsDone=false				
+k4	add	C8-all-12-edges	3	c	3	IsDone=false	-1.0			0
+k5	add	C8-all-12-edges	3	c	3	IsDone=false	-1.0			0
+k4	add2	C8-all-12-edges	3	c	3	IsDone=false	-1.0			0
+k5	add2	C8-all-12-edges	3	c	3	IsDone=false	-1.0			0
+k5	swift	C8-all-12-edges	3	c	3	IsDone=false				
+k4	add	C8-all-12-edges	3	c+1ulp	3.0000000000000004	IsDone=false	-1.0			0
+k5	add	C8-all-12-edges	3	c+1ulp	3.0000000000000004	IsDone=false	-1.0			0
+k4	add2	C8-all-12-edges	3	c+1ulp	3.0000000000000004	IsDone=false	-1.0			0
+k5	add2	C8-all-12-edges	3	c+1ulp	3.0000000000000004	IsDone=false	-1.0			0
+k5	swift	C8-all-12-edges	3	c+1ulp	3.0000000000000004	IsDone=false				
+k4	add	C8-all-12-edges	3	c+1e-8	3.00000001	IsDone=false	-1.0			0
+k5	add	C8-all-12-edges	3	c+1e-8	3.00000001	IsDone=false	-1.0			0
+k4	add2	C8-all-12-edges	3	c+1e-8	3.00000001	IsDone=false	-1.0			0
+k5	add2	C8-all-12-edges	3	c+1e-8	3.00000001	IsDone=false	-1.0			0
+k5	swift	C8-all-12-edges	3	c+1e-8	3.00000001	IsDone=false				
+k4	add	C8-all-12-edges	3	c+1e-4	3.0001	done, INVALID	324.241577944	136.41444	181.33	26
+k5	add	C8-all-12-edges	3	c+1e-4	3.0001	done, INVALID	324.241577944	136.41444	181.33	26
+k4	add2	C8-all-12-edges	3	c+1e-4	3.0001	done, INVALID	324.241577944	136.41444	181.33	26
+k5	add2	C8-all-12-edges	3	c+1e-4	3.0001	done, INVALID	324.241577944	136.41444	181.33	26
+k5	swift	C8-all-12-edges	3	c+1e-4	3.0001	done, INVALID	-1.0			26
+k4	add	C8-all-12-edges	3	c+1e-3	3.001	done, INVALID	320.572167857	136.39914	177.77	26
+k5	add	C8-all-12-edges	3	c+1e-3	3.001	done, INVALID	320.572167857	136.39914	177.77	26
+k4	add2	C8-all-12-edges	3	c+1e-3	3.001	done, INVALID	320.572167857	136.39914	177.77	26
+k5	add2	C8-all-12-edges	3	c+1e-3	3.001	done, INVALID	320.572167857	136.39914	177.77	26
+k5	swift	C8-all-12-edges	3	c+1e-3	3.001	done, INVALID	-1.0			26
+k4	add	C8-all-12-edges	3	1.5c	4.5	IsDone=false	-1.0			0
+k5	add	C8-all-12-edges	3	1.5c	4.5	IsDone=false	-1.0			0
+k4	add2	C8-all-12-edges	3	1.5c	4.5	IsDone=false	-1.0			0
+k5	add2	C8-all-12-edges	3	1.5c	4.5	IsDone=false	-1.0			0
+k5	swift	C8-all-12-edges	3	1.5c	4.5	IsDone=false				
+k4	add	C9-cube-opposite	2	0.5c	1.0	valid	62.283185307	62.2856	-0.14	8
+k5	add	C9-cube-opposite	2	0.5c	1.0	valid	62.283185307	62.2856	-0.14	8
+k4	add2	C9-cube-opposite	2	0.5c	1.0	valid	62.283185307	62.2856	-0.14	8
+k5	add2	C9-cube-opposite	2	0.5c	1.0	valid	62.283185307	62.2856	-0.14	8
+k4	seq	C9-cube-opposite	2	0.5c	1.0	valid	62.283185307	62.2856	-0.14	8
+k5	seq	C9-cube-opposite	2	0.5c	1.0	valid	62.283185307	62.2856	-0.14	8
+k5	swift	C9-cube-opposite	2	0.5c	1.0	valid	62.283185307	62.2856	-0.14	8
+k4	add	C9-cube-opposite	2	c-1e-3	1.999	valid	57.139606771	57.1384	0.02	8
+k5	add	C9-cube-opposite	2	c-1e-3	1.999	valid	57.139606771	57.1384	0.02	8
+k4	add2	C9-cube-opposite	2	c-1e-3	1.999	valid	57.139606771	57.1384	0.02	8
+k5	add2	C9-cube-opposite	2	c-1e-3	1.999	valid	57.139606771	57.1384	0.02	8
+k4	seq	C9-cube-opposite	2	c-1e-3	1.999	valid	57.139606771	57.1384	0.02	8
+k5	seq	C9-cube-opposite	2	c-1e-3	1.999	valid	57.139606771	57.1384	0.02	8
+k5	swift	C9-cube-opposite	2	c-1e-3	1.999	valid	57.139606771	57.1384	0.02	8
+k4	add	C9-cube-opposite	2	c-1e-4	1.9999	valid	57.133427937	57.1352	-0.03	8
+k5	add	C9-cube-opposite	2	c-1e-4	1.9999	valid	57.133427937	57.1352	-0.03	8
+k4	add2	C9-cube-opposite	2	c-1e-4	1.9999	valid	57.133427937	57.1352	-0.03	8
+k5	add2	C9-cube-opposite	2	c-1e-4	1.9999	valid	57.133427937	57.1352	-0.03	8
+k4	seq	C9-cube-opposite	2	c-1e-4	1.9999	valid	57.133427937	57.1352	-0.03	8
+k5	seq	C9-cube-opposite	2	c-1e-4	1.9999	valid	57.133427937	57.1352	-0.03	8
+k5	swift	C9-cube-opposite	2	c-1e-4	1.9999	valid	57.133427937	57.1352	-0.03	8
+k4	add	C9-cube-opposite	2	c-1e-8	1.99999999	valid	57.132741297	57.1352	-0.04	8
+k5	add	C9-cube-opposite	2	c-1e-8	1.99999999	valid	57.132741297	57.1352	-0.04	8
+k4	add2	C9-cube-opposite	2	c-1e-8	1.99999999	valid	57.132741297	57.1352	-0.04	8
+k5	add2	C9-cube-opposite	2	c-1e-8	1.99999999	valid	57.132741297	57.1352	-0.04	8
+k4	seq	C9-cube-opposite	2	c-1e-8	1.99999999	valid	57.132741297	57.1352	-0.04	8
+k5	seq	C9-cube-opposite	2	c-1e-8	1.99999999	valid	57.132741297	57.1352	-0.04	8
+k5	swift	C9-cube-opposite	2	c-1e-8	1.99999999	valid	57.132741297	57.1352	-0.04	8
+k4	add	C9-cube-opposite	2	c-1ulp	1.9999999999999998	IsDone=false	-1.0			0
+k5	add	C9-cube-opposite	2	c-1ulp	1.9999999999999998	IsDone=false	-1.0			0
+k4	add2	C9-cube-opposite	2	c-1ulp	1.9999999999999998	IsDone=false	-1.0			0
+k5	add2	C9-cube-opposite	2	c-1ulp	1.9999999999999998	IsDone=false	-1.0			0
+k4	seq	C9-cube-opposite	2	c-1ulp	1.9999999999999998	IsDone=false	-1.0			0
+k5	seq	C9-cube-opposite	2	c-1ulp	1.9999999999999998	IsDone=false	-1.0			0
+k5	swift	C9-cube-opposite	2	c-1ulp	1.9999999999999998	IsDone=false				
+k4	add	C9-cube-opposite	2	c	2	IsDone=false	-1.0			0
+k5	add	C9-cube-opposite	2	c	2	IsDone=false	-1.0			0
+k4	add2	C9-cube-opposite	2	c	2	IsDone=false	-1.0			0
+k5	add2	C9-cube-opposite	2	c	2	IsDone=false	-1.0			0
+k4	seq	C9-cube-opposite	2	c	2	IsDone=false	-1.0			0
+k5	seq	C9-cube-opposite	2	c	2	IsDone=false	-1.0			0
+k5	swift	C9-cube-opposite	2	c	2	IsDone=false				
+k4	add	C9-cube-opposite	2	c+1ulp	2.0000000000000004	IsDone=false	-1.0			0
+k5	add	C9-cube-opposite	2	c+1ulp	2.0000000000000004	IsDone=false	-1.0			0
+k4	add2	C9-cube-opposite	2	c+1ulp	2.0000000000000004	IsDone=false	-1.0			0
+k5	add2	C9-cube-opposite	2	c+1ulp	2.0000000000000004	IsDone=false	-1.0			0
+k4	seq	C9-cube-opposite	2	c+1ulp	2.0000000000000004	IsDone=false	-1.0			0
+k5	seq	C9-cube-opposite	2	c+1ulp	2.0000000000000004	IsDone=false	-1.0			0
+k5	swift	C9-cube-opposite	2	c+1ulp	2.0000000000000004	IsDone=false				
+k4	add	C9-cube-opposite	2	c+1e-8	2.00000001	IsDone=false	-1.0			0
+k5	add	C9-cube-opposite	2	c+1e-8	2.00000001	IsDone=false	-1.0			0
+k4	add2	C9-cube-opposite	2	c+1e-8	2.00000001	IsDone=false	-1.0			0
+k5	add2	C9-cube-opposite	2	c+1e-8	2.00000001	IsDone=false	-1.0			0
+k4	seq	C9-cube-opposite	2	c+1e-8	2.00000001	IsDone=false	-1.0			0
+k5	seq	C9-cube-opposite	2	c+1e-8	2.00000001	IsDone=false	-1.0			0
+k5	swift	C9-cube-opposite	2	c+1e-8	2.00000001	IsDone=false				
+k4	add	C9-cube-opposite	2	c+1e-4	2.0001	IsDone=false	-1.0			0
+k5	add	C9-cube-opposite	2	c+1e-4	2.0001	IsDone=false	-1.0			0
+k4	add2	C9-cube-opposite	2	c+1e-4	2.0001	IsDone=false	-1.0			0
+k5	add2	C9-cube-opposite	2	c+1e-4	2.0001	IsDone=false	-1.0			0
+k4	seq	C9-cube-opposite	2	c+1e-4	2.0001	IsDone=false	-1.0			0
+k5	seq	C9-cube-opposite	2	c+1e-4	2.0001	IsDone=false	-1.0			0
+k5	swift	C9-cube-opposite	2	c+1e-4	2.0001	IsDone=false				
+k4	add	C9-cube-opposite	2	c+1e-3	2.001	IsDone=false	-1.0			0
+k5	add	C9-cube-opposite	2	c+1e-3	2.001	IsDone=false	-1.0			0
+k4	add2	C9-cube-opposite	2	c+1e-3	2.001	IsDone=false	-1.0			0
+k5	add2	C9-cube-opposite	2	c+1e-3	2.001	IsDone=false	-1.0			0
+k4	seq	C9-cube-opposite	2	c+1e-3	2.001	IsDone=false	-1.0			0
+k5	seq	C9-cube-opposite	2	c+1e-3	2.001	IsDone=false	-1.0			0
+k5	swift	C9-cube-opposite	2	c+1e-3	2.001	IsDone=false				
+k4	add	C9-cube-opposite	2	1.5c	3.0	IsDone=false	-1.0			0
+k5	add	C9-cube-opposite	2	1.5c	3.0	IsDone=false	-1.0			0
+k4	add2	C9-cube-opposite	2	1.5c	3.0	IsDone=false	-1.0			0
+k5	add2	C9-cube-opposite	2	1.5c	3.0	IsDone=false	-1.0			0
+k4	seq	C9-cube-opposite	2	1.5c	3.0	IsDone=false	-1.0			0
+k5	seq	C9-cube-opposite	2	1.5c	3.0	IsDone=false	-1.0			0
+k5	swift	C9-cube-opposite	2	1.5c	3.0	IsDone=false				
+k4	add	C10-cube-top-frame	2	0.5c	1.0	valid	60.949851968	60.95382	-0.13	10
+k5	add	C10-cube-top-frame	2	0.5c	1.0	valid	60.949851968	60.95382	-0.13	10
+k4	add2	C10-cube-top-frame	2	0.5c	1.0	valid	60.949851968	60.95382	-0.13	10
+k5	add2	C10-cube-top-frame	2	0.5c	1.0	valid	60.949851968	60.95382	-0.13	10
+k4	seq	C10-cube-top-frame	2	0.5c	1.0	valid	57.80235837	60.95382	-103.46	18
+k5	seq	C10-cube-top-frame	2	0.5c	1.0	valid	57.80235837	60.95382	-103.46	18
+k5	swift	C10-cube-top-frame	2	0.5c	1.0	valid	60.949851968	60.95382	-0.13	10
+k4	add	C10-cube-top-frame	2	c-1e-3	1.999	valid	53.342464906	53.339924	0.02	10
+k5	add	C10-cube-top-frame	2	c-1e-3	1.999	valid	53.342464906	53.339924	0.02	10
+k4	add2	C10-cube-top-frame	2	c-1e-3	1.999	valid	53.342464906	53.339924	0.02	10
+k5	add2	C10-cube-top-frame	2	c-1e-3	1.999	valid	53.342464906	53.339924	0.02	10
+k4	seq	C10-cube-top-frame	2	c-1e-3	1.999	valid	41.907332827	53.339924	-107.25	18
+k5	seq	C10-cube-top-frame	2	c-1e-3	1.999	valid	41.907332827	53.339924	-107.25	18
+k5	swift	C10-cube-top-frame	2	c-1e-3	1.999	valid	53.342464906	53.339924	0.02	10
+k4	add	C10-cube-top-frame	2	c-1e-4	1.9999	valid	53.334246566	53.335956	-0.02	10
+k5	add	C10-cube-top-frame	2	c-1e-4	1.9999	valid	53.334246566	53.335956	-0.02	10
+k4	add2	C10-cube-top-frame	2	c-1e-4	1.9999	valid	53.334246566	53.335956	-0.02	10
+k5	add2	C10-cube-top-frame	2	c-1e-4	1.9999	valid	53.334246566	53.335956	-0.02	10
+k4	seq	C10-cube-top-frame	2	c-1e-4	1.9999	valid	41.889845382	53.335956	-107.33	18
+k5	seq	C10-cube-top-frame	2	c-1e-4	1.9999	valid	41.889845382	53.335956	-107.33	18
+k5	swift	C10-cube-top-frame	2	c-1e-4	1.9999	valid	53.334246566	53.335956	-0.02	10
+k4	add	C10-cube-top-frame	2	c-1e-8	1.99999999	valid	53.33333339	53.335956	-0.02	10
+k5	add	C10-cube-top-frame	2	c-1e-8	1.99999999	valid	53.33333339	53.335956	-0.02	10
+k4	add2	C10-cube-top-frame	2	c-1e-8	1.99999999	valid	53.33333339	53.335956	-0.02	10
+k5	add2	C10-cube-top-frame	2	c-1e-8	1.99999999	valid	53.33333339	53.335956	-0.02	10
+k4	seq	C10-cube-top-frame	2	c-1e-8	1.99999999	valid	41.887902242	53.335956	-107.35	18
+k5	seq	C10-cube-top-frame	2	c-1e-8	1.99999999	valid	41.887902242	53.335956	-107.35	18
+k5	swift	C10-cube-top-frame	2	c-1e-8	1.99999999	valid	53.33333339	53.335956	-0.02	10
+k4	add	C10-cube-top-frame	2	c-1ulp	1.9999999999999998	IsDone=false	-1.0			0
+k5	add	C10-cube-top-frame	2	c-1ulp	1.9999999999999998	IsDone=false	-1.0			0
+k4	add2	C10-cube-top-frame	2	c-1ulp	1.9999999999999998	IsDone=false	-1.0			0
+k5	add2	C10-cube-top-frame	2	c-1ulp	1.9999999999999998	IsDone=false	-1.0			0
+k4	seq	C10-cube-top-frame	2	c-1ulp	1.9999999999999998	IsDone=false	-1.0			0
+k5	seq	C10-cube-top-frame	2	c-1ulp	1.9999999999999998	IsDone=false	-1.0			0
+k5	swift	C10-cube-top-frame	2	c-1ulp	1.9999999999999998	IsDone=false				
+k4	add	C10-cube-top-frame	2	c	2	IsDone=false	-1.0			0
+k5	add	C10-cube-top-frame	2	c	2	IsDone=false	-1.0			0
+k4	add2	C10-cube-top-frame	2	c	2	IsDone=false	-1.0			0
+k5	add2	C10-cube-top-frame	2	c	2	IsDone=false	-1.0			0
+k4	seq	C10-cube-top-frame	2	c	2	IsDone=false	-1.0			0
+k5	seq	C10-cube-top-frame	2	c	2	IsDone=false	-1.0			0
+k5	swift	C10-cube-top-frame	2	c	2	IsDone=false				
+k4	add	C10-cube-top-frame	2	c+1ulp	2.0000000000000004	IsDone=false	-1.0			0
+k5	add	C10-cube-top-frame	2	c+1ulp	2.0000000000000004	IsDone=false	-1.0			0
+k4	add2	C10-cube-top-frame	2	c+1ulp	2.0000000000000004	IsDone=false	-1.0			0
+k5	add2	C10-cube-top-frame	2	c+1ulp	2.0000000000000004	IsDone=false	-1.0			0
+k4	seq	C10-cube-top-frame	2	c+1ulp	2.0000000000000004	IsDone=false	-1.0			0
+k5	seq	C10-cube-top-frame	2	c+1ulp	2.0000000000000004	IsDone=false	-1.0			0
+k5	swift	C10-cube-top-frame	2	c+1ulp	2.0000000000000004	IsDone=false				
+k4	add	C10-cube-top-frame	2	c+1e-8	2.00000001	done, INVALID	65.185185267	53.335956	111.11	10
+k5	add	C10-cube-top-frame	2	c+1e-8	2.00000001	done, INVALID	65.185185267	53.335956	111.11	10
+k4	add2	C10-cube-top-frame	2	c+1e-8	2.00000001	done, INVALID	65.185185267	53.335956	111.11	10
+k5	add2	C10-cube-top-frame	2	c+1e-8	2.00000001	done, INVALID	65.185185267	53.335956	111.11	10
+k4	seq	C10-cube-top-frame	2	c+1e-8	2.00000001	IsDone=false	-1.0			0
+k5	seq	C10-cube-top-frame	2	c+1e-8	2.00000001	IsDone=false	-1.0			0
+k5	swift	C10-cube-top-frame	2	c+1e-8	2.00000001	done, INVALID	53.333333406	53.335956	-0.02	10
+k4	add	C10-cube-top-frame	2	c+1e-4	2.0001	IsDone=false	-1.0			0
+k5	add	C10-cube-top-frame	2	c+1e-4	2.0001	IsDone=false	-1.0			0
+k4	add2	C10-cube-top-frame	2	c+1e-4	2.0001	IsDone=false	-1.0			0
+k5	add2	C10-cube-top-frame	2	c+1e-4	2.0001	IsDone=false	-1.0			0
+k4	seq	C10-cube-top-frame	2	c+1e-4	2.0001	IsDone=false	-1.0			0
+k5	seq	C10-cube-top-frame	2	c+1e-4	2.0001	IsDone=false	-1.0			0
+k5	swift	C10-cube-top-frame	2	c+1e-4	2.0001	IsDone=false				
+k4	add	C10-cube-top-frame	2	c+1e-3	2.001	IsDone=false	-1.0			0
+k5	add	C10-cube-top-frame	2	c+1e-3	2.001	IsDone=false	-1.0			0
+k4	add2	C10-cube-top-frame	2	c+1e-3	2.001	IsDone=false	-1.0			0
+k5	add2	C10-cube-top-frame	2	c+1e-3	2.001	IsDone=false	-1.0			0
+k4	seq	C10-cube-top-frame	2	c+1e-3	2.001	IsDone=false	-1.0			0
+k5	seq	C10-cube-top-frame	2	c+1e-3	2.001	IsDone=false	-1.0			0
+k5	swift	C10-cube-top-frame	2	c+1e-3	2.001	IsDone=false				
+k4	add	C10-cube-top-frame	2	1.5c	3.0	done, INVALID	50.987873498	43.349156	36.99	12
+k5	add	C10-cube-top-frame	2	1.5c	3.0	done, INVALID	50.987873498	43.349156	36.99	12
+k4	add2	C10-cube-top-frame	2	1.5c	3.0	done, INVALID	50.987873498	43.349156	36.99	12
+k5	add2	C10-cube-top-frame	2	1.5c	3.0	done, INVALID	50.987873498	43.349156	36.99	12
+k4	seq	C10-cube-top-frame	2	1.5c	3.0	IsDone=false	-1.0			0
+k5	seq	C10-cube-top-frame	2	1.5c	3.0	IsDone=false	-1.0			0
+k5	swift	C10-cube-top-frame	2	1.5c	3.0	done, INVALID	-1.0			12

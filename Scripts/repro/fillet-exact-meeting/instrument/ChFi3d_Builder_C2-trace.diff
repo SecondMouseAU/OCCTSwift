@@ -1,0 +1,136 @@
+--- a/ChFi3d_Builder_C2.cxx	2026-10-09 17:46:48
++++ b/ChFi3d_Builder_C2.cxx	2026-10-09 17:47:13
+@@ -20,6 +20,7 @@
+ #include <BRepBlend_Line.hxx>
+ #include <BRepTopAdaptor_TopolTool.hxx>
+ #include <ChFi3d_Builder.hxx>
++#include <cstdio>
+ #include <ChFi3d_Builder_0.hxx>
+ #include <ChFiDS_CommonPoint.hxx>
+ #include <ChFiDS_FaceInterference.hxx>
+@@ -178,7 +179,7 @@
+     std::cout << "TwoCorner : pas de face commune" << std::endl;
+ #endif
+     done = false;
+-    return done;
++    { fprintf(stderr, "[TRACE] PerformTwoCornerbyInter return done=%d at C2.cxx(original) line-tag %d\n", (int)done, __LINE__); return done; }
+   }
+   if (!OkinterCC)
+   {
+@@ -209,7 +210,7 @@
+     std::cout << "TwoCorner : no common face" << std::endl;
+ #endif
+     done = false;
+-    return done;
++    { fprintf(stderr, "[TRACE] PerformTwoCornerbyInter return done=%d at C2.cxx(original) line-tag %d\n", (int)done, __LINE__); return done; }
+   }
+   if (!OkinterCC)
+   {
+@@ -217,7 +218,7 @@
+     std::cout << "biseau : failed intersection of tangency lines on common face" << std::endl;
+ #endif
+     done = false;
+-    return done;
++    { fprintf(stderr, "[TRACE] PerformTwoCornerbyInter return done=%d at C2.cxx(original) line-tag %d\n", (int)done, __LINE__); return done; }
+   }
+   int IFaArc1 = 3 - IFaCo1, IFaArc2 = 3 - IFaCo2;
+ 
+@@ -233,7 +234,7 @@
+     std::cout << "fail 1 of 2 fillets are not on arc" << std::endl;
+ #endif
+     done = false;
+-    return done;
++    { fprintf(stderr, "[TRACE] PerformTwoCornerbyInter return done=%d at C2.cxx(original) line-tag %d\n", (int)done, __LINE__); return done; }
+   }
+   if (!CP1.Arc().IsSame(CP2.Arc()))
+   {
+@@ -243,7 +244,7 @@
+ #endif
+     done = true;
+     PerformMoreThreeCorner(Index, 2);
+-    return done;
++    { fprintf(stderr, "[TRACE] PerformTwoCornerbyInter return done=%d at C2.cxx(original) line-tag %d\n", (int)done, __LINE__); return done; }
+   }
+ 
+   TopoDS_Edge pivot;
+@@ -292,7 +293,7 @@
+     std::cout << "fail one of surfaces has no common base face with the pivot edge" << std::endl;
+ #endif
+     done = false;
+-    return done;
++    { fprintf(stderr, "[TRACE] PerformTwoCornerbyInter return done=%d at C2.cxx(original) line-tag %d\n", (int)done, __LINE__); return done; }
+   }
+ 
+   occ::handle<GeomAdaptor_Surface> HS1, HS2;
+@@ -361,7 +362,7 @@
+       std::cout << "failed to calculate bevel error interSS" << std::endl;
+ #endif
+       done = false;
+-      return done;
++      { fprintf(stderr, "[TRACE] PerformTwoCornerbyInter return done=%d at C2.cxx(original) line-tag %d\n", (int)done, __LINE__); return done; }
+     }
+     else if (IFaCo1 == 2
+              && !ChFi3d_ComputeCurves(HS1,
+@@ -379,7 +380,7 @@
+       std::cout << "failed to calculate bevel error interSS" << std::endl;
+ #endif
+       done = false;
+-      return done;
++      { fprintf(stderr, "[TRACE] PerformTwoCornerbyInter return done=%d at C2.cxx(original) line-tag %d\n", (int)done, __LINE__); return done; }
+     }
+     // CornerData are updated with results of the intersection.
+     double              WFirst = Gc->FirstParameter();
+@@ -558,7 +559,7 @@
+       std::cout << "bevel : failed inter C S" << std::endl;
+ #endif
+       done = false;
+-      return done;
++      { fprintf(stderr, "[TRACE] PerformTwoCornerbyInter return done=%d at C2.cxx(original) line-tag %d\n", (int)done, __LINE__); return done; }
+     }
+     Parfin(3)   = UVi.X();
+     Parfin(4)   = UVi.Y();
+@@ -583,7 +584,7 @@
+       std::cout << "failed to calculate bevel failed interSS" << std::endl;
+ #endif
+       done = false;
+-      return done;
++      { fprintf(stderr, "[TRACE] PerformTwoCornerbyInter return done=%d at C2.cxx(original) line-tag %d\n", (int)done, __LINE__); return done; }
+     }
+     // SmaCD is updated, for it this is all.
+     double              WFirst = Gc->FirstParameter();
+@@ -678,7 +679,7 @@
+     if (lsma < fsma)
+     {
+       done = false;
+-      return done;
++      { fprintf(stderr, "[TRACE] PerformTwoCornerbyInter return done=%d at C2.cxx(original) line-tag %d\n", (int)done, __LINE__); return done; }
+     }
+     occ::handle<Geom2dAdaptor_Curve> c2df =
+       new Geom2dAdaptor_Curve(SmaFD->Interference(IFaArcSma).PCurveOnFace(), fsma, lsma);
+@@ -690,7 +691,7 @@
+       std::cout << "bevel : failed inter C S" << std::endl;
+ #endif
+       done = false;
+-      return done;
++      { fprintf(stderr, "[TRACE] PerformTwoCornerbyInter return done=%d at C2.cxx(original) line-tag %d\n", (int)done, __LINE__); return done; }
+     }
+     Pardeb(3)      = UVi.X();
+     Pardeb(4)      = UVi.Y();
+@@ -739,7 +740,7 @@
+       std::cout << "fail calculation bevel fail interSS" << std::endl;
+ #endif
+       done = false;
+-      return done;
++      { fprintf(stderr, "[TRACE] PerformTwoCornerbyInter return done=%d at C2.cxx(original) line-tag %d\n", (int)done, __LINE__); return done; }
+     }
+ 
+     // End of update of the BigCD and the DS.
+@@ -803,7 +804,7 @@
+   }
+   done = true;
+ 
+-  return done;
++  { fprintf(stderr, "[TRACE] PerformTwoCornerbyInter return done=%d at C2.cxx(original) line-tag %d\n", (int)done, __LINE__); return done; }
+ }
+ 
+ //=======================================================================

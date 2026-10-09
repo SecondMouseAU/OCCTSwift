@@ -1,0 +1,42 @@
+--- a/ChFi3d_Builder.cxx	2026-10-09 17:45:21
++++ b/ChFi3d_Builder.cxx	2026-10-09 17:47:13
+@@ -20,6 +20,8 @@
+ #include <BRepLib.hxx>
+ #include <BRepTopAdaptor_TopolTool.hxx>
+ #include <ChFi3d_Builder.hxx>
++#include <cstdio>
++#include <Standard_Failure.hxx>
+ #include <ChFi3d_Builder_0.hxx>
+ #include <ChFiDS_CommonPoint.hxx>
+ #include <ChFiDS_SurfData.hxx>
+@@ -278,6 +280,7 @@
+       std::cout << "EXCEPTION Stripe compute " << anException << std::endl;
+ #endif
+       (void)anException;
++      fprintf(stderr, "[TRACE] PerformSetOfSurf THREW: %s\n", anException.GetMessageString() ? anException.GetMessageString() : "");
+       badstripes.Append(itel.Value());
+       done = true;
+       if (itel.Value()->Spine()->ErrorStatus() == ChFiDS_Ok)
+@@ -315,12 +318,14 @@
+         std::cout << "EXCEPTION Corner compute " << anException << std::endl;
+ #endif
+         (void)anException;
++        fprintf(stderr, "[TRACE] PerformFilletOnVertex(%d) THREW: %s\n", j, anException.GetMessageString() ? anException.GetMessageString() : "");
+         badvertices.Append(myVDataMap.FindKey(j));
+         hasresult = false;
+         done      = true;
+       }
+       if (!done)
+       {
++        fprintf(stderr, "[TRACE] PerformFilletOnVertex(%d) returned with done=false\n", j);
+         badvertices.Append(myVDataMap.FindKey(j));
+       }
+       done = true;
+@@ -811,6 +816,7 @@
+     nba=nba/2;*/
+   int nba = ChFi3d_NumberOfSharpEdges(Vtx, myVEMap, myEFMap);
+ 
++  fprintf(stderr, "[TRACE] PerformFilletOnVertex(%d): stripes at vertex=%d nba(sharp edges)=%d nondegenere=%d\n", Index, i, nba, (int)nondegenere);
+   if (nondegenere)
+   { // Normal processing
+     switch (i)

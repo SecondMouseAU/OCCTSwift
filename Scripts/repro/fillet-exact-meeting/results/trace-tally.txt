@@ -1,0 +1,9 @@
+  180  done            (no failure lines)
+   63  done            [TRACE] PerformTwoCornerbyInter return done=1 at C2.cxx(original) line-tag 807
+  254  IsDone=false    StartSol echec
+   21  IsDone=false    OneCorner : fillets have too big radiuses
+   14  IsDone=false    (no failure lines)
+   10  IsDone=false    [TRACE] PerformTwoCornerbyInter return done=1 at C2.cxx(original) line-tag 807
+   12  done-INVALID    [TRACE] PerformTwoCornerbyInter return done=0 at C2.cxx(original) line-tag 221 | [TRACE] PerformTwoCornerbyInter return done=1 at C2.cxx(original) line-tag 807
+    7  done-INVALID    (no failure lines)
+    2  done-INVALID    [TRACE] PerformTwoCornerbyInter return done=1 at C2.cxx(original) line-tag 807

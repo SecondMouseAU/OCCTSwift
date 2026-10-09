@@ -1,0 +1,56 @@
+--- a/ChFi3d_Builder_2.cxx	2026-10-09 17:45:20
++++ b/ChFi3d_Builder_2.cxx	2026-10-09 17:47:29
+@@ -24,6 +24,7 @@
+ #include <BRepTopAdaptor_TopolTool.hxx>
+ #include <ChFi3d.hxx>
+ #include <ChFi3d_Builder.hxx>
++#include <cstdio>
+ #include <ChFi3d_Builder_0.hxx>
+ #include <ChFiDS_ChamfSpine.hxx>
+ #include <ChFiDS_CommonPoint.hxx>
+@@ -1505,6 +1506,7 @@
+     }
+     else if (!Fv.IsNull())
+     {
++      fprintf(stderr, "[STARTSOL] obstacle branch entered (neighbour face Fv found, no edge-sharing continuation); Vref null=%d commonPointIsVertex=%d\n", (int)Vref.IsNull(), (int)aCommonPoint.IsVertex());
+       c1obstacle = true;
+       if (!Vref.IsNull())
+       {
+@@ -1521,6 +1523,7 @@
+       {
+         if (HSref.IsNull() || HCref.IsNull())
+         {
++          fprintf(stderr, "[STARTSOL] obstacle: HSref/HCref null -> return false (sibling exit)\n");
+           prepareDefaultReturn();
+           return false;
+         }
+@@ -1545,6 +1548,7 @@
+           HC->Initialize(newedge, Fv);
+           pons = HC->Value(W);
+           HCref->Initialize(anArcEdge, F);
++          fprintf(stderr, "[STARTSOL] obstacle: edge to follow found -> return true\n");
+           if (aCommonPoint.IsVertex())
+           {
+             RecP = true;
+@@ -1557,18 +1561,21 @@
+         }
+         else
+         {
++          fprintf(stderr, "[STARTSOL] obstacle: NO EDGE TO FOLLOW -> return false with HC empty (the patch 0054 branch)\n");
+           prepareDefaultReturn();
+           return false;
+         }
+       }
+       else
+       {
++        fprintf(stderr, "[STARTSOL] obstacle: Vref is an end vertex of the arc, not an obstacle -> return false\n");
+         prepareDefaultReturn();
+         return false;
+       }
+     }
+     else
+     {
++      fprintf(stderr, "[STARTSOL] no neighbour face at all -> return false\n");
+       // there is no neighbor face, the state is preserved and False is returned.
+       prepareDefaultReturn();
+       return false;
