@@ -1,0 +1,5 @@
+Tests/OCCTCurveTests/Adaptors/BRepAdaptorPCurveTests.swift
+Tests/OCCTCurveTests/Adaptors/BiTgteCurveOnEdgeTests.swift
+Tests/OCCTCurveTests/BSplineAndBezier/BSplineCurve3DCompletionsV121Tests.swift
+Tests/OCCTCurveTests/Fitting/BSplineApproxInterpTests.swift
+Tests/OCCTCurveTests/Sampling/Issue558SamplingCountBoundsTests.swift
