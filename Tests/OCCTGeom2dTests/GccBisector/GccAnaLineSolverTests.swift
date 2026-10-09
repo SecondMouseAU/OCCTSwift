@@ -72,6 +72,9 @@ import simd
             angle: .pi / 4)
         // Two 45-degree tangents, touching at (+-3.5355, -+3.5355).
         try #require(results.count == 2)
-        #expect(results.allSatisfy { abs(abs($0.point.x) - 3.53553390593) < 1e-6 && abs($0.point.x + $0.point.y) < 1e-6 })
+        #expect(
+            results.allSatisfy {
+                abs(abs($0.point.x) - 3.53553390593) < 1e-6 && abs($0.point.x + $0.point.y) < 1e-6
+            })
     }
 }

@@ -13,7 +13,10 @@ import simd
         let e = try #require(ellipse)
         let extrema = e.curvatureExtremaDetailed()
         try #require(extrema.count == 4)
-        #expect(extrema.map(\.type) == [.curvatureMinimum, .curvatureMaximum, .curvatureMinimum, .curvatureMaximum])
+        #expect(
+            extrema.map(\.type) == [
+                .curvatureMinimum, .curvatureMaximum, .curvatureMinimum, .curvatureMaximum,
+            ])
         #expect(abs(extrema[1].parameter - .pi / 2) < 1e-9)
     }
 
