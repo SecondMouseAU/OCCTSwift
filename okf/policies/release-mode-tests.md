@@ -41,10 +41,10 @@ those are upper bounds):
 
 | step | wall time |
 |---|---|
-| `swift build -c release -Xswiftc -enable-testing --build-tests`, CI, five runs | 586 s to 720 s (a restored cache did not shorten it) |
+| `swift build -c release -Xswiftc -enable-testing --build-tests`, CI, five runs | 528 s to 720 s (a restored cache did not shorten it) |
 | the whole `subset` job, CI (build plus about 160 tests in 0.4 s) | 10 min 31 s to 13 min 12 s |
 | the debug `swift build + test (macOS)` job, CI, same commits | 11 min 14 s to 13 min 38 s |
-| the whole suite, 6,897 tests, one target at a time, CI (the test phase of `full`) | about 2 min 40 s, plus the seven suites in `release-mode-known-failures.txt` |
+| the whole `full` job, CI (build 528 s, then 6,888 tests in 324 s with the known failures skipped) | 14 min 59 s |
 | `swift test -c release --skip-build`, whole suite, local, no malloc env | 6 min |
 | the same under all four `Malloc*` variables, local, three runs | 3 min 22 s to 4 min 8 s |
 | the same under `MallocScribble` + `MallocPreScribble` only, local | 4 min 12 s |
@@ -56,7 +56,7 @@ those are upper bounds):
   `B`; #3248's "1m44s + 7s" for one target was measured on a tree where the other seventeen bundles
   already existed. CI's SwiftPM links one `OCCTSwiftPackageTests.xctest`, so there is no narrower
   build to have.
-- **What the subset saves is the test phase, about three minutes, and a flake surface.** The full
+- **What the subset saves is the test phase, about five and a half minutes (324 s against 0.4 s), and a flake surface.** The full
   suite has one measured flake that is not release-specific (#3256, 1 in 40 in debug and 1 in 40 in
   release). `Scripts/merge-pr.py` refuses a PR while any non-wasm check is red, so a flake in a job
   every PR runs costs a re-run on that PR; the same flake on `main` costs a re-run and nothing else.
