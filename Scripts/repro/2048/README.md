@@ -66,7 +66,7 @@ So, flag by flag:
 | `-fwasm-exceptions -mllvm -wasm-use-legacy-eh=false` | none | toolset |
 | `-mllvm -wasm-enable-sjlj` | none | toolset |
 | `-lc++abi`, `-lunwind` | `.linkedLibrary` | **safe**, manifest |
-| `-lsetjmp` | `.linkedLibrary` | **safe**, manifest |
+| `-lsetjmp` | `.linkedLibrary` | **safe**, manifest. OCCTSwift's own manifest no longer lists it (#2758); a dependency that calls `setjmp` still would |
 | `-lwasi-emulated-getpid` | `.linkedLibrary` | **safe**, manifest |
 | `-lOCCT-wasm` | `.linkedLibrary` | **safe**, manifest |
 | `-L <wasi-sdk>/…/eh` | none | toolset |
@@ -112,7 +112,7 @@ asserts, which is the point of asserting rather than printing.
 | 3 | safe settings only, no shim, no toolset | compile fails on `std::mutex`, so the shim is load-bearing |
 | 4 | shim by a guarded `#include`, no toolset | compiles with no setting at all; the link then fails on exactly `-lSTUBKERNEL-wasm` and `-lunwind` |
 | 5 | toolset with the `-L`s but **no** exception flags | **builds clean, and the outermost `catch (...)` does not fire** |
-| 6 | setjmp present, exception flags on, no `-wasm-enable-sjlj` | refused at the LINK, `undefined symbol: setjmp` |
+| 6 | setjmp present, exception flags on, no `-wasm-enable-sjlj` | refused at the LINK, `undefined symbol: setjmp`. Uses its own `StubSjLj` target, not OCCT, so it is unaffected by OCCT's setjmp going away (#2175, #2758) |
 | 7 | toolset with the `-L`s, the exception flags and the sjlj flag | a versioned dependency builds for wasm and every case passes |
 | 8 | the same, shim force-included by the toolset | also works, so the shim has two viable mechanisms |
 | 9 | Objective-C++ plus `-fwasm-exceptions`, compiled directly | **clang crashes**, see below |
