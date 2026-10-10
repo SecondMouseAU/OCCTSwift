@@ -14,8 +14,9 @@ notes legitimately name the old spellings:
 
   * `import simd` in any spelling (`@_exported import simd`, `import simd.vector`);
   * `canImport(simd)`, which is how a conditional re-introduction would be written;
-  * any identifier beginning `simd_`, `matrix_` or `vector_`, which is Apple's C naming (`simd_dot`,
-    `simd_float4x4`, `matrix_identity_float4x4`, `vector_float3`).
+  * any identifier beginning `simd_`, or `matrix_`/`vector_` followed by one of Apple's type or
+    operation stems (`simd_dot`, `simd_float4x4`, `matrix_identity_float4x4`, `matrix_multiply`,
+    `vector_float3`, `vector_double3`). A variable named `matrix_size` or `vector_count` is not a hit.
 
 WHAT IT DELIBERATELY DOES NOT FLAG: the label `simd:` in `GeomDirection(simd:)` (a public argument
 label of this package, nothing to do with the module), the Swift stdlib types `SIMD2`/`SIMD3`/
@@ -40,7 +41,15 @@ MINIMUM_FILES = 200
 
 IMPORT_RE = re.compile(r"\bimport\s+simd\b")
 CAN_IMPORT_RE = re.compile(r"\bcanImport\s*\(\s*simd\s*\)")
-IDENT_RE = re.compile(r"\b(?:simd|matrix|vector)_[A-Za-z0-9_]*")
+# Apple's C spellings, not any identifier that happens to start with a similar word. `simd_` is
+# Apple's own namespace (simd_dot, simd_float4x4, simd_quatf). `matrix_` and `vector_` are only
+# Apple's when followed by one of its type or operation stems, so a variable called `matrix_size`
+# or `vector_count` is not a hit (#3291 review).
+IDENT_RE = re.compile(
+    r"\bsimd_[A-Za-z0-9_]+"
+    r"|\bmatrix_(?:identity|float|double|half|multiply|invert|transpose|determinant|from_)[A-Za-z0-9_]*"
+    r"|\bvector_(?:float|double|half|int|uint|short|ushort|char|uchar|long|ulong|bool)[A-Za-z0-9_]*"
+)
 
 
 def strip_comments_and_strings(text):
@@ -195,6 +204,11 @@ def self_test():
     expect("label is not the module", "let d = GeomDirection(simd: v)\nlet e = point.simd\n", [])
     expect("stdlib simd types", "let m = pointwiseMin(a, b)\nlet n = SIMD4<Float>.zero\n", [])
     expect("unrelated simd word", "let simdLike = 1\nlet mysimd_x = 2\n", [])
+    expect("matrix_/vector_ names that are not Apple's", "let matrix_size = 1\nlet vector_count = 2\nlet matrix_value = 3\nlet vector_math = 4\n", [])
+    expect("Apple matrix operation", "let p = matrix_multiply(a, b)\n", ["Apple simd identifier matrix_multiply"])
+    expect("Apple matrix type", "var m: matrix_float4x4\nvar d: matrix_double3x3\n", ["Apple simd identifier matrix_float4x4", "Apple simd identifier matrix_double3x3"])
+    expect("Apple vector types", "let a: vector_double3\nlet b: vector_int2\n", ["Apple simd identifier vector_double3", "Apple simd identifier vector_int2"])
+    expect("Apple quaternion", "let q = simd_quatf(angle: 1, axis: v)\n", ["Apple simd identifier simd_quatf"])
     expect("line numbers survive stripping", "/* x\ny */\nimport simd\n", ["import"])
     lines = [n for n, _, _ in violations_in("/* x\ny */\nimport simd\n")]
     if lines != [3]:

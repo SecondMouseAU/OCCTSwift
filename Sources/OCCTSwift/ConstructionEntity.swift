@@ -32,6 +32,9 @@ public struct Placement: Sendable, Hashable {
     /// Build a placement from a point on the plane and a normal.
     ///
     /// Picks deterministic x/y axes perpendicular to the normal.
+    ///
+    /// A zero or non-finite `normal` gives NaN axes (IEEE division). `BRepGraph.resolve(_:)` refuses
+    /// such a normal as `.degenerate` before one is built, so only a hand-built `Placement` has it.
     public init(origin: SIMD3<Double>, normal: SIMD3<Double>) {
         let z = normalizedVector(normal)
         let (x, y) = perpendicularBasis(to: z)
@@ -126,7 +129,15 @@ extension BRepGraph {
     > {
         switch plane {
         case .absolute(let origin, let normal):
-            return .success(Placement(origin: origin, normal: normal))
+            // A zero or non-finite normal is refused here, as OCCT refuses it: `gp_Dir(gp_Vec)`
+            // raises Standard_ConstructionError on a zero-norm vector (gp_Dir.hxx, "input vector
+            // has zero norm") and OCCT's callers test the magnitude first (e.g.
+            // PrsDim_AngleDimension::IsValidPoints, PrsDim_AngleDimension.cxx:1166). `Placement`'s
+            // own initialiser still yields NaNs for such a normal, as documented there (#2759).
+            let length = vectorLength(normal)
+            return requireNonDegenerate(
+                length.isFinite ? length : 0, Placement(origin: origin, normal: normal),
+                "plane normal is zero or not finite")
 
         case .offsetFromFace(let faceRef, let distance):
             return resolveFaceOrigin(faceRef).flatMap { (origin, normal) in
@@ -194,9 +205,13 @@ extension BRepGraph {
     > {
         switch axis {
         case .absolute(let origin, let direction):
-            // A zero direction resolves to NaNs, deliberately: `materialize` hands them to
-            // `Wire.line`, which refuses, and reports `.axisShapeFailed` (#880 pins that).
-            return .success((origin, normalizedVector(direction)))
+            // A zero or non-finite direction is refused, as OCCT refuses it (`gp_Dir` raises
+            // Standard_ConstructionError on a zero-norm vector, gp_Dir.hxx; callers test the
+            // magnitude first, e.g. PrsDim_AngleDimension::IsValidPoints, PrsDim_AngleDimension.cxx:1166).
+            let length = vectorLength(direction)
+            return requireNonDegenerate(
+                length.isFinite ? length : 0, (origin, normalizedVector(direction)),
+                "axis direction is zero or not finite")
 
         case .alongEdge(let edgeRef):
             // Result's Success isn't tuple-label-covariant the way a bare tuple return is, so

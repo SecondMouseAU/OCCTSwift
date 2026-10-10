@@ -529,8 +529,8 @@ private func emitDiameter(_ d: DrawingDimension.Diameter, into ops: DrawingPrimi
 }
 
 private func emitAngular(_ d: DrawingDimension.Angular, into ops: DrawingPrimitiveOps) {
-    // A ray that starts at the vertex has no direction, so there is no arc to draw.
-    guard vectorLength(d.ray1 - d.vertex) > 0, vectorLength(d.ray2 - d.vertex) > 0 else { return }
+    // No arc for geometry OCCT calls invalid (PrsDim_AngleDimension::IsValidPoints).
+    guard d.isValid else { return }
     let v1 = normalizedVector(d.ray1 - d.vertex)
     let v2 = normalizedVector(d.ray2 - d.vertex)
     let a1 = atan2(v1.y, v1.x)

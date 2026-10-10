@@ -295,11 +295,13 @@ public final class Drawing: @unchecked Sendable {
         let arrowDir2Dn =
             vectorLength(arrowDir2D) > 1e-9
             ? normalizedVector(arrowDir2D) : SIMD2(0, 1)
-        let cpl = DrawingAnnotation.CuttingPlaneLine(
-            label: label,
-            traceStart: start,
-            traceEnd: end,
-            arrowDirection: arrowDir2Dn)
+        guard
+            let cpl = DrawingAnnotation.CuttingPlaneLine(
+                label: label,
+                traceStart: start,
+                traceEnd: end,
+                arrowDirection: arrowDir2Dn)
+        else { return nil }
         let ann = DrawingAnnotation.cuttingPlaneLine(cpl)
         annotationStore.appendAnnotation(ann)
         return ann

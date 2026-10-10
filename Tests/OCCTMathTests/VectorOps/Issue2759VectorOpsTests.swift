@@ -62,23 +62,30 @@ struct Issue2759VectorOpsTests {
 
     // MARK: - The call sites that neither guarded nor fed OCCT (#2759 audit)
 
-    @Test("an absolute construction axis with a zero direction resolves to NaN, as #880 relies on")
-    func absoluteAxisZeroDirectionResolvesToNaN() {
+    @Test("an absolute construction axis or plane with a zero or non-finite vector is degenerate")
+    func absoluteEntitiesRefuseZeroVectors() {
+        // OCCT: `gp_Dir(gp_Vec)` raises Standard_ConstructionError on a zero-norm vector
+        // (gp_Dir.hxx), and OCCT's callers test the magnitude first
+        // (PrsDim_AngleDimension::IsValidPoints, PrsDim_AngleDimension.cxx:1166).
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
             let graph = BRepGraph(shape: box)
         else {
             Issue.record("setup nil")
             return
         }
-        // `materialize` hands the NaN direction to `Wire.line`, which refuses, and reports
-        // `.axisShapeFailed`; `OCCTMiscTests` pins that outcome. A resolver that returned a
-        // finite direction here would make `Wire.line` build a line from nothing.
-        let axis = ConstructionAxis.absolute(origin: .zero, direction: .zero)
-        if case .success(let resolved) = graph.resolve(axis) {
-            #expect(resolved.direction.x.isNaN && resolved.direction.y.isNaN)
-            #expect(resolved.direction.z.isNaN)
-        } else {
-            Issue.record("a zero-direction absolute axis resolves; materialize reports the failure")
+        for vector in [SIMD3<Double>.zero, SIMD3(.infinity, 0, 0), SIMD3(.nan, 0, 1)] {
+            if case .failure(.degenerate) = graph.resolve(
+                ConstructionAxis.absolute(origin: .zero, direction: vector))
+            {
+            } else {
+                Issue.record("axis: expected .degenerate for \(vector)")
+            }
+            if case .failure(.degenerate) = graph.resolve(
+                ConstructionPlane.absolute(origin: .zero, normal: vector))
+            {
+            } else {
+                Issue.record("plane: expected .degenerate for \(vector)")
+            }
         }
         if case .success(let resolved) = graph.resolve(
             ConstructionAxis.absolute(origin: .zero, direction: SIMD3(0, 0, 4)))
@@ -89,15 +96,54 @@ struct Issue2759VectorOpsTests {
         }
     }
 
-    @Test("a placement built from a zero normal is NaN, which materialize reports (#880)")
+    @Test("a hand-built placement from a zero normal is NaN, the documented IEEE result")
     func placementFromZeroNormalIsNaN() {
-        // ConstructionLayer.planeShape depends on this NaN to report .planeShapeFailed rather
-        // than hand MakePolygon coincident points. If normalising a zero vector ever returned a
-        // number, this fails before that behaviour changes silently.
+        // `resolve` refuses such a normal before a Placement is built (above); the initialiser
+        // itself stays IEEE division and says so in its documentation.
         let placement = Placement(origin: .zero, normal: .zero)
         #expect(placement.zAxis.x.isNaN)
         #expect(placement.zAxis.y.isNaN)
         #expect(placement.zAxis.z.isNaN)
+    }
+
+    @Test(
+        "an angular dimension follows PrsDim_AngleDimension: invalid points give isValid false, value 0"
+    )
+    func angularDimensionInvalidPoints() {
+        // PrsDim_AngleDimension::IsValidPoints (PrsDim_AngleDimension.cxx:1166): both rays longer
+        // than Precision::Confusion (1e-7) and the angle above Precision::Angular (1e-12);
+        // ComputeValue (555-560) returns 0.0 for an invalid geometry.
+        func angular(_ r1: SIMD2<Double>, _ r2: SIMD2<Double>) -> DrawingDimension.Angular {
+            DrawingDimension.Angular(vertex: .zero, ray1: r1, ray2: r2)
+        }
+        let right = angular(SIMD2(1, 0), SIMD2(0, 1))
+        #expect(right.isValid)
+        #expect(abs(right.value - .pi / 2) < 1e-12)
+        for bad in [
+            angular(.zero, SIMD2(0, 1)),  // ray1 starts at the vertex
+            angular(SIMD2(1, 0), SIMD2(1e-9, 0)),  // shorter than Precision::Confusion
+            angular(SIMD2(1, 0), SIMD2(0, 1e-9)),  // perpendicular, but still too short
+            angular(SIMD2(1, 0), SIMD2(2, 0)),  // parallel: angle 0, below Precision::Angular
+            angular(SIMD2(.nan, 0), SIMD2(0, 1)),
+            angular(SIMD2(.infinity, 0), SIMD2(0, 1)),
+        ] {
+            #expect(!bad.isValid)
+            #expect(bad.value == 0)
+        }
+        // A reflex-free opposite pair is a valid angle of pi.
+        #expect(abs(angular(SIMD2(1, 0), SIMD2(-1, 0)).value - .pi) < 1e-12)
+    }
+
+    @Test("a cutting-plane line refuses a zero or non-finite arrow direction")
+    func cuttingPlaneLineRefusesZeroArrow() {
+        func make(_ arrow: SIMD2<Double>) -> DrawingAnnotation.CuttingPlaneLine? {
+            DrawingAnnotation.CuttingPlaneLine(
+                label: "A", traceStart: SIMD2(0, 0), traceEnd: SIMD2(10, 0), arrowDirection: arrow)
+        }
+        #expect(make(.zero) == nil)
+        #expect(make(SIMD2(.nan, 1)) == nil)
+        #expect(make(SIMD2(.infinity, 0)) == nil)
+        #expect(make(SIMD2(0, 3))?.arrowDirection == SIMD2(0, 1))
     }
 
     @Test("a break line between coincident points is empty, not NaN")

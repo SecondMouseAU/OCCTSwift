@@ -67,13 +67,13 @@ struct Issue1173ArrowheadTriangleGeometryTests {
     func cuttingPlaneLineArrowheadsMatchHandDerivedGeometry() throws {
         let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let drawing = try #require(Drawing.frontView(of: box))
-        drawing.append(
-            .cuttingPlaneLine(
-                .init(
-                    label: "T",
-                    traceStart: SIMD2(0, 0),
-                    traceEnd: SIMD2(100, 0),
-                    arrowDirection: SIMD2(0, 1))))
+        let line = try #require(
+            DrawingAnnotation.CuttingPlaneLine(
+                label: "T",
+                traceStart: SIMD2(0, 0),
+                traceEnd: SIMD2(100, 0),
+                arrowDirection: SIMD2(0, 1)))
+        drawing.append(.cuttingPlaneLine(line))
 
         let writer = DXFWriter()
         writer.collectFromDrawing(drawing)
