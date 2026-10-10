@@ -1,0 +1,6 @@
+Tests/OCCTCurveTests/Curve3DCore/Curve3DExtrasTests.swift
+Tests/OCCTCurveTests/Curve3DCore/Curve3DOperationsTests.swift
+Tests/OCCTCurveTests/Curve3DCore/Curve3DPrimitiveTests.swift
+Tests/OCCTCurveTests/Projection/Curve3DPlaneProjectionTests.swift
+Tests/OCCTCurveTests/Projection/Issue1020ExtremaBoundsTests.swift
+Tests/OCCTDrawingTests/Symbols/CuttingPlaneLineTests.swift

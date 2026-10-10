@@ -22,10 +22,18 @@ struct CuttingPlaneLineTests {
             cuttingPlaneNormal: SIMD3(1, 0, 0),
             sectionViewDirection: SIMD3(1, 0, 0),
             viewDirection: SIMD3(0, 1, 0))
-        #expect(ann != nil)
-        if case .cuttingPlaneLine(let cpl)? = ann {
-            #expect(cpl.label == "A")
+        guard case .cuttingPlaneLine(let cpl)? = ann else {
+            Issue.record("no cutting-plane annotation returned")
+            return
         }
+        #expect(cpl.label == "A")
+        // The trace spans the default 60 units, and the section arrow is a unit vector
+        // perpendicular to it (the plane normal (1,0,0) is the view's in-plane X, the trace its
+        // other axis). Swift-side geometry: no kernel counterpart (#766).
+        let trace = cpl.traceEnd - cpl.traceStart
+        #expect(abs(simd_length(trace) - 60) < 1e-9)
+        #expect(abs(simd_length(cpl.arrowDirection) - 1) < 1e-12)
+        #expect(abs(simd_dot(simd_normalize(trace), cpl.arrowDirection)) < 1e-12)
     }
 
     @Test("Cutting plane parallel to view plane returns nil")
@@ -94,6 +102,11 @@ struct CuttingPlaneLineTests {
             Issue.record("setup nil")
             return
         }
+        // The view's own edges are lines too, so `>= 9` was already met without the cutting-plane
+        // line (#766). Count what the annotation adds: 3 chain segments + 2 arrows of 3 lines each,
+        // and 2 labels.
+        let before = DXFWriter()
+        before.collectFromDrawing(front)
         front.addCuttingPlaneLine(
             label: "A",
             cuttingPlaneOrigin: SIMD3(50, 25, 15),
@@ -102,9 +115,8 @@ struct CuttingPlaneLineTests {
             viewDirection: SIMD3(0, 1, 0))
         let writer = DXFWriter()
         writer.collectFromDrawing(front)
-        // Expect at least: 3 chain segments + 2 arrows (3 lines each) + 2 text labels
         let counts = writer.entityCounts
-        #expect(counts.lines >= 9)  // 3 chain + 6 arrow
-        #expect(counts.texts >= 2)
+        #expect(counts.lines - before.entityCounts.lines == 9)  // 3 chain + 6 arrow
+        #expect(counts.texts - before.entityCounts.texts == 2)
     }
 }
