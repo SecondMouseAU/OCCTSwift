@@ -1,0 +1,7 @@
+box edge[0]: raw curve Geom_Line domain=[-2e+100, 2e+100], edge range [0, 10]
+cylinder edge[0]: Geom_Circle radius=5
+cylinder edge[2]: Geom_Circle radius=5
+quarter arc edge: raw Geom_Circle domain=[0, 6.2831853071795862], edge range [0, 1.5707963267948966]
+arcOfEllipse angles [0, pi/2]: domain=[0, 1.5707963267948966] closed=0 start=(10, 0, 0) mid=(7.0710678118654755, 3.5355339059327373, 0) end=(6.1232339957367663e-16, 5, 0)
+arcOfEllipse (10,0,0) -> (-10,0,0): domain=[0, 3.1415926535897931] closed=0 start=(10, 0, 0) mid=(6.1232339957367663e-16, 5, 0) end=(-10, 6.1232339957367663e-16, 0)
+arcOfEllipse angles [0, pi]: domain=[0, 3.1415926535897931] closed=0 start=(10, 0, 0) mid=(6.1232339957367663e-16, 5, 0) end=(-10, 6.1232339957367663e-16, 0)

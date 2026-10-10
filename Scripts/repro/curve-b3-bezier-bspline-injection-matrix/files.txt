@@ -1,0 +1,6 @@
+Tests/OCCTCurveTests/BSplineAndBezier/BSplineKnotSplittingTests.swift
+Tests/OCCTCurveTests/BSplineAndBezier/BezierCurveManipulationTests.swift
+Tests/OCCTCurveTests/BSplineAndBezier/Curve3DBezierCompletionsTests.swift
+Tests/OCCTCurveTests/Conversion/BezierConversionTests.swift
+Tests/OCCTCurveTests/Curve3DCore/EdgeCurve3DTests.swift
+Tests/OCCTCurveTests/Curve3DCore/GeomTrimmedCurveTests.swift
