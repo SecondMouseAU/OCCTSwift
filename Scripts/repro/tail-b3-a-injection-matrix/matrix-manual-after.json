@@ -1,0 +1,11 @@
+{
+ "label": "after", "target": "OCCTDrawingTests",
+ "summary": {"changed": ["AutoCentermarksTests.cylinderSideViewSkipped", "SelectorTests.multipleShapes", "SelectorTests.pickBoxAtCenter", "SelectorTests.rectanglePick"], "crashes": [], "live_switches": 1, "switches": 1, "tests": ["AutoCentermarksTests.cylinderTopViewMark", "AutoCentermarksTests.cylinderSideViewSkipped", "AutoCentermarksTests.minRadiusFilter", "SelectorTests.pickBoxAtCenter", "SelectorTests.pickMiss", "SelectorTests.multipleShapes", "SelectorTests.removeShape", "SelectorTests.rectanglePick", "SelectorTests.clearAll"], "unreddened": ["AutoCentermarksTests.cylinderSideViewSkipped"]},
+ "rows_that_did_something": {
+  "MANUAL_PICK_WORKS": {"crash": false, "exit": 1, "ran": 9, "red": ["SelectorTests.clearAll", "SelectorTests.multipleShapes", "SelectorTests.pickBoxAtCenter", "SelectorTests.pickMiss", "SelectorTests.rectanglePick", "SelectorTests.removeShape"]}
+ }
+ "label": "after", "target": "OCCTXCAFTests",
+ "summary": {"changed": ["TDocStdXLinkToolTests.xlinkCopy", "TDocStdXLinkToolTests.xlinkCopyWithLink"], "crashes": [], "live_switches": 0, "switches": 1, "tests": ["TDocStdXLinkToolTests.xlinkCopy", "TDocStdXLinkToolTests.xlinkCopyWithLink"], "unreddened": ["TDocStdXLinkToolTests.xlinkCopy", "TDocStdXLinkToolTests.xlinkCopyWithLink"]},
+ "rows_that_did_something": {
+ }
+}
