@@ -72,12 +72,19 @@ those are upper bounds):
 
 ## What the first full runs found
 
-- **Seven `OCCTThreadTests` suites SIGSEGV in release on the CI runner** (the `threadedShaft` and
-  `threadedHole` builds), with and without the `Malloc*` variables, each run alone. They pass in
-  debug on the same commit and in release locally on Swift 6.4, so the cause is the optimiser, the
-  Swift 6.2.4 toolchain, or a defect only an optimised build reaches (#3261). They are listed in
-  `Scripts/release-mode-known-failures.txt`, which `release-mode-test.sh` turns into `--skip`, so the
-  job reports what is new and not what is known. Delete a line when its issue is fixed.
+- **Seven `OCCTThreadTests` suites SIGSEGV in release on the CI runner** (#3261), each run alone, in
+  7 of 7 plain runs on Swift 6.2.4 and in none on 6.4. It was a real defect, not the toolchain:
+  `Shape.loft(profiles:)` did `profiles.map { $0.handle }` and handed the pointers to
+  `OCCTShapeCreateLoft*`, and `Shape.screwSweptThreadCutter` (the `threadedHole` and `threadedShaft`
+  cutter) calls it on a local `sections` array with no later use. Once `loft` is inlined, nothing
+  keeps that array, which fits the wires being freed before `BRepOffsetAPI_ThruSections::AddWire` reads them
+  (lldb on the runner stopped in `AddWire` on a wild pointer, `EXC_BAD_ACCESS` in the first
+  `ldadd` of a TShape refcount; run 38049863685). `withExtendedLifetime(profiles)` around the C call
+  fixed it: 21 of 21 runs of the same seven suites passed (run 38051082613). That the 6.2 optimiser shortens
+  the array's life and 6.4 does not is inferred from the two outcomes, not isolated; it would explain why it was invisible locally. The same shape,
+  `array.map { $0.handle }` over a parameter, is at about 70 other sites; the gate cannot see it
+  (see "WHAT IT CANNOT SEE" in `Scripts/check-borrowed-handle-temporaries.py`) and only a caller that
+  passes a dying local reaches it.
 - One test failure that is not release-specific:
   `Issue2760HardTimeoutAllPlatformsTests.nonPositiveBoundIsNil` (#3256), 1 in 40 in debug and in
   release.

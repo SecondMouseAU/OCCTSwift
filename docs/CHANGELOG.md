@@ -21,6 +21,10 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### `Shape.loft(profiles:)` keeps its wires alive across the OCCT call, fixing a release-build crash in threaded holes (#3261)
+
+- `Shape.loft(profiles:)` (both overloads) kept no owner for the wires it passed to OCCT, so an optimised build on Swift 6.2 could free them first: `threadedHole` and `threadedShaft` crashed in release builds. The array is now held across the call.
+
 ### Kernel repin to v4.0.0-kernel.6: patches 0058 and 0059 pinned, patch 0031 retired (#3065, #3105, #3207)
 
 The pinned kernel is now `v4.0.0-kernel.6`, OCCT `V8_0_1` plus 45 carried patches. Two patches that were merged but not in the previous asset are now shipped: `0058`, which makes `Shape.middlePath(start:end:)` answer a path or `nil` for a pair of faces that share no vertex instead of aborting the process (#3105), and `0059`, which builds two fillets whose radii sum to the width of the face between them (`r == w / 2` gives a semicircle) instead of answering `nil` (#3207). Patch `0031`, the lock around the BSpline evaluation cache, is retired: OCCT's design is one adaptor per worker (or a `ShallowCopy()` per worker), and a single `EdgeCurve`, `WireCurve` or OCCT adaptor shared between threads now reads wrong points on the shipped kernel. `EdgeCurve` and `WireCurve` are not `Sendable`, so Swift 6 already refuses to share them across tasks.
