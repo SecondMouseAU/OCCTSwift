@@ -1,0 +1,22 @@
+{
+ "label": "before", "target": "OCCTCurveTests",
+ "summary": {"changed": ["CompCurveTests.concatenate2DCurves", "CompCurveTests.concatenate3DCurves", "ConicalProjectionTests.projectConical", "ConvertCircleTests.circleArcToBSpline", "ConvertConicCurvesTests.ellipseArc", "ConvertConicCurvesTests.hyperbolaArc", "ConvertConicCurvesTests.parabolaArc", "PointsToBSplineExpansionTests.approximate2DWithParams", "PointsToBSplineExpansionTests.approximate3DWithExplicitParams", "PointsToBSplineExpansionTests.approximate3DWithParams", "PointsToBSplineExpansionTests.surfaceFromPointGrid"], "crashes": ["OCCTShapeCreateBox_RET_NIL", "OCCTShapeFromWire_RET_NIL"], "live_switches": 14, "switches": 212, "tests": ["CompCurveTests.concatenate3DCurves", "CompCurveTests.concatenate2DCurves", "ConvertCircleTests.circleArcToBSpline", "ConvertConicCurvesTests.ellipseArc", "ConvertConicCurvesTests.hyperbolaArc", "ConvertConicCurvesTests.parabolaArc", "PointsToBSplineExpansionTests.approximate3DWithParams", "PointsToBSplineExpansionTests.approximate3DWithExplicitParams", "PointsToBSplineExpansionTests.approximate2DWithParams", "PointsToBSplineExpansionTests.surfaceFromPointGrid", "ConicalProjectionTests.projectConical"], "unreddened": ["ConicalProjectionTests.projectConical"]},
+ "rows_that_did_something": {
+  "OCCTConvertCircleToBSpline2D_RET_NIL": {"crash": false, "exit": 1, "ran": 11, "red": ["ConvertCircleTests.circleArcToBSpline"]},
+  "OCCTConvertEllipseToBSpline2D_RET_NIL": {"crash": false, "exit": 1, "ran": 11, "red": ["ConvertConicCurvesTests.ellipseArc"]},
+  "OCCTConvertHyperbolaToBSpline2D_RET_NIL": {"crash": false, "exit": 1, "ran": 11, "red": ["ConvertConicCurvesTests.hyperbolaArc"]},
+  "OCCTConvertParabolaToBSpline2D_RET_NIL": {"crash": false, "exit": 1, "ran": 11, "red": ["ConvertConicCurvesTests.parabolaArc"]},
+  "OCCTCurve2DCreateSegment_IN2_PLUS": {"crash": false, "exit": 1, "ran": 11, "red": ["CompCurveTests.concatenate2DCurves"]},
+  "OCCTCurve2DCreateSegment_IN4_PLUS": {"crash": false, "exit": 1, "ran": 11, "red": ["CompCurveTests.concatenate2DCurves"]},
+  "OCCTCurve3DCreateSegment_IN2_PLUS": {"crash": false, "exit": 1, "ran": 11, "red": ["CompCurveTests.concatenate3DCurves"]},
+  "OCCTCurve3DCreateSegment_IN3_PLUS": {"crash": false, "exit": 1, "ran": 11, "red": ["CompCurveTests.concatenate3DCurves"]},
+  "OCCTCurve3DCreateSegment_IN5_PLUS": {"crash": false, "exit": 1, "ran": 11, "red": ["CompCurveTests.concatenate3DCurves"]},
+  "OCCTCurve3DCreateSegment_IN6_PLUS": {"crash": false, "exit": 1, "ran": 11, "red": ["CompCurveTests.concatenate3DCurves"]},
+  "OCCTPoints2DToBSplineWithParams_RET_NIL": {"crash": false, "exit": 1, "ran": 11, "red": ["PointsToBSplineExpansionTests.approximate2DWithParams"]},
+  "OCCTPointsToBSplineWithParameters_RET_NIL": {"crash": false, "exit": 1, "ran": 11, "red": ["PointsToBSplineExpansionTests.approximate3DWithExplicitParams"]},
+  "OCCTPointsToBSplineWithParams_RET_NIL": {"crash": false, "exit": 1, "ran": 11, "red": ["PointsToBSplineExpansionTests.approximate3DWithParams"]},
+  "OCCTPointsToSurfaceBSpline_RET_NIL": {"crash": false, "exit": 1, "ran": 11, "red": ["PointsToBSplineExpansionTests.surfaceFromPointGrid"]},
+  "OCCTShapeCreateBox_RET_NIL": {"crash": true, "exit": -5, "ran": 10, "red": []},
+  "OCCTShapeFromWire_RET_NIL": {"crash": true, "exit": -5, "ran": 10, "red": []}
+ }
+}
