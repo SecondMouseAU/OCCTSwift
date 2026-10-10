@@ -35,25 +35,28 @@ into a failure in 7 of 8 runs (`Scripts/repro/3130-borrowed-handle/`).
 
 ## Why the split is where it is
 
-Measured on one M-series Mac (10 cores, shared with other agent builds, load average 25 to 250
-while measuring, so every wall time is an upper bound), pinned kernel from the release asset:
+Measured on the CI runner (macos-15, Xcode default, Swift 6.2.4, pinned kernel from the release
+asset) and, for the whole-suite numbers, on one M-series Mac (10 cores, shared with other builds, so
+those are upper bounds):
 
 | step | wall time |
 |---|---|
-| `swift build -c release -Xswiftc -enable-testing --build-tests`, cold to the first compile error (#3253) | 6 min 2 s |
-| the same build to completion, after fixing #3253 and a SIGTERM from load | 4 min + 9 min |
-| `swift test -c release --skip-build`, whole suite, 6,897 tests, no malloc env | 6 min (359 s) |
-| the same under `MallocScribble` + `MallocPreScribble` | 4 min 12 s |
-| the same under all four `Malloc*` variables, three runs | 3 min 45 s, 4 min 8 s, 3 min 22 s |
-| the subset (about 160 tests in 36 suites), all four variables | about 35 s, nearly all of it loading the 18 bundles |
-| for scale, the debug `swift build + test (macOS)` job on CI | 13 to 16 min |
+| `swift build -c release -Xswiftc -enable-testing --build-tests`, CI, five runs | 586 s to 720 s (a restored cache did not shorten it) |
+| the whole `subset` job, CI (build plus about 160 tests in 0.4 s) | 10 min 31 s to 13 min 12 s |
+| the debug `swift build + test (macOS)` job, CI, same commits | 11 min 14 s to 13 min 38 s |
+| the whole suite, 6,897 tests, one target at a time, CI (the test phase of `full`) | about 2 min 40 s, plus the seven suites in `release-mode-known-failures.txt` |
+| `swift test -c release --skip-build`, whole suite, local, no malloc env | 6 min |
+| the same under all four `Malloc*` variables, local, three runs | 3 min 22 s to 4 min 8 s |
+| the same under `MallocScribble` + `MallocPreScribble` only, local | 4 min 12 s |
 
-- **The build cannot be narrowed.** `swift test --skip-build` refuses to run unless every target's
-  `.xctest` bundle exists (`OCCTThreadTests.xctest doesn't exist in file system`, measured with only
-  the subset's targets built), and `swift build --target A --target B` builds only `B`. #3248's
-  "1m44s + 7s" for one target was measured on a tree where the other seventeen bundles already
-  existed. So the subset and the full run pay the same build.
-- **What the subset saves is the test phase, about four minutes, and a flake surface.** The full
+- **The build dominates and is the same for both scopes.** About 10 to 12 of the 13 minutes are the
+  optimised build of every test target. Locally `swift test --skip-build` also refuses to run unless
+  every target's `.xctest` bundle exists (`OCCTThreadTests.xctest doesn't exist in file system`,
+  measured with only the subset's targets built) and `swift build --target A --target B` builds only
+  `B`; #3248's "1m44s + 7s" for one target was measured on a tree where the other seventeen bundles
+  already existed. CI's SwiftPM links one `OCCTSwiftPackageTests.xctest`, so there is no narrower
+  build to have.
+- **What the subset saves is the test phase, about three minutes, and a flake surface.** The full
   suite has one measured flake that is not release-specific (#3256, 1 in 40 in debug and 1 in 40 in
   release). `Scripts/merge-pr.py` refuses a PR while any non-wasm check is red, so a flake in a job
   every PR runs costs a re-run on that PR; the same flake on `main` costs a re-run and nothing else.
@@ -62,25 +65,35 @@ while measuring, so every wall time is an upper bound), pinned kernel from the r
   subset did not select (a suite that reaches the hazard without the literal `.handle`) is found
   there, within one merge, and a published release is the point where "the debug suite is green"
   has to mean the shipped build is too.
-- **All four `Malloc*` variables**, because three full runs under them were green and no slower than
-  scribbling alone, and `MallocGuardEdges` and `MallocErrorAbort` turn an out-of-bounds write into an
-  immediate abort. If a run is ever red with an abort in a suite that has nothing to do with
-  lifetimes, drop those two in `Scripts/release-mode-test.sh` before suspecting the suite.
+- **All four `Malloc*` variables**, because three full local runs under them were green and no
+  slower than scribbling alone, and `MallocGuardEdges` and `MallocErrorAbort` turn an out-of-bounds
+  write into an immediate abort. If a run is ever red with an abort in a suite that has nothing to
+  do with lifetimes, drop those two in `Scripts/release-mode-test.sh` before suspecting the suite.
 
-## What the first full run found
+## What the first full runs found
 
-Compile failure: 34 test files used `simd_length` or `simd_distance` without `import simd` (#3253,
-fixed by #3257, which this job's branch carries so that it can build). That one is the Swift 6.4
-and wasm toolchain, not the optimiser. Test failure in the full run: one,
-`Issue2760HardTimeoutAllPlatformsTests.nonPositiveBoundIsNil`, also reproducible in debug
-(#3256). Nothing else in 6,897 tests differed between debug and release.
+- **Seven `OCCTThreadTests` suites SIGSEGV in release on the CI runner** (the `threadedShaft` and
+  `threadedHole` builds), with and without the `Malloc*` variables, each run alone. They pass in
+  debug on the same commit and in release locally on Swift 6.4, so the cause is the optimiser, the
+  Swift 6.2.4 toolchain, or a defect only an optimised build reaches (#3261). They are listed in
+  `Scripts/release-mode-known-failures.txt`, which `release-mode-test.sh` turns into `--skip`, so the
+  job reports what is new and not what is known. Delete a line when its issue is fixed.
+- One test failure that is not release-specific:
+  `Issue2760HardTimeoutAllPlatformsTests.nonPositiveBoundIsNil` (#3256), 1 in 40 in debug and in
+  release.
+- 34 test files did not compile for lack of `import simd` (#3253, fixed by #3257, which this job's
+  branch carries so that it can build). That is the Swift 6.4 and wasm toolchain, not the optimiser.
+- Nothing else in 6,897 tests differed between debug and release locally.
 
 ## Proof that it catches the class
 
 With the #2929 shape added to a suite the subset selects (`OCCTEdgeSetSameParameter(edges[0].handle,
 false)` after `let edges = box.edges()`), the release run dies with `exited with unexpected signal
 code 11` in 6 of 6 runs, with and without the `Malloc*` variables, and the same test passes in 6 of 6
-debug runs. Removing `withExtendedLifetime` from `withHandle` itself is **not** caught: the three
+debug runs. The same on CI (throwaway branch, never merged): the `subset` job failed with
+`Expectation failed: (b.isValid -> true) == false` on that test (the wrong-answer variant of the
+hazard, where locally it was the crash), while `swift build + test (macOS)` on the same commit
+passed. Removing `withExtendedLifetime` from `withHandle` itself is **not** caught: the three
 `Issue3130BorrowedHandle` tests still pass (#3258), so those tests pin the call sites, not the
 helper's contract.
 
@@ -89,6 +102,9 @@ helper's contract.
 - **A suite that takes a native pointer out of a wrapper and hands it to the bridge says `.handle`
   or `withHandle` in its file**, which is what puts it in the subset. A pointer reached some other
   way is not selected by a pull request; `main` still runs it.
+- **A suite that crashes in release and passes in debug goes in
+  `Scripts/release-mode-known-failures.txt` with its issue**, in the style of
+  `Scripts/wasm-test-known-failures.txt`; a bare skip with no issue is a finding.
 - **The job is not a required check** and does not become one until it has reported `success` on
   `main` ([required-status-checks](required-status-checks.md)).
 - **Do not add a `name:` key to its job** and do not wrap the script call in a pipe that discards

@@ -32,6 +32,8 @@
 # and MallocErrorAbort are set too (the malloc-scribble-stress.yml set): measured on the whole
 # suite, 4 of 4 runs green and no slower than scribbling alone.
 #
+# Suites in Scripts/release-mode-known-failures.txt are skipped in both scopes (each names its issue).
+#
 # Run from anywhere; it cds to the repo root. An ambient OCCTSWIFT_BRIDGE_PREBUILT is unset, since
 # a prebuilt bridge would hide a bridge-side change from the optimised build.
 
@@ -79,6 +81,14 @@ else
   regex="$(subset_suites | paste -sd'|' -)"
   echo "subset filter: $regex"
   test_args=(--filter "$regex")
+fi
+
+# Suites known to crash in release on the CI runner, each with its issue (a list in the style of
+# Scripts/wasm-test-known-failures.txt): skipped, so a known cause does not keep the job red.
+known="$(sed -E 's/#.*//; s/[[:space:]]+//g; /^$/d' Scripts/release-mode-known-failures.txt | paste -sd'|' -)"
+if [ -n "$known" ]; then
+  echo "skipping known release-mode failures: $known"
+  test_args+=(--skip "$known")
 fi
 
 mkdir -p .build

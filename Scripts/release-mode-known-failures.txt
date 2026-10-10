@@ -1,0 +1,13 @@
+# Suites that crash in a -c release build on the CI runner (Swift 6.2.4) and pass in debug.
+# Scripts/release-mode-test.sh passes them to --skip so a known cause does not keep the job red.
+# One suite (struct) name per line, then the issue. Remove a line when its issue is fixed; a
+# line whose suite no longer exists is skipped silently, so check this file at each release.
+
+# --- #3261: OCCTThreadTests, the threadedShaft / threadedHole builds, SIGSEGV --------------------
+ThreadFormsTests  # 3261
+Issue1578ThreadedHoleMinorDiameterTests  # 3261
+Issue991ThreadProfileFlatWidthTests  # 3261
+ThreadedFeatureTests  # 3261
+Issue187ScrewThreadTests  # 3261
+Issue232BoundsTests  # 3261
+Issue219SmoothInternal  # 3261

@@ -46,7 +46,11 @@ on:
 jobs:
   release-mode-tests:
     runs-on: macos-15
-    timeout-minutes: 60
+    # Measured on this runner: build 10 to 12 min (a restored cache did not shorten it), subset job
+    # 13 min end to end. The full suite adds its test phase on top (see okf/policies/release-mode-tests.md),
+    # so 45 leaves room for that and for a slow runner without letting a hung test hold a macOS
+    # runner for an hour.
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v7
         with:
@@ -133,6 +137,8 @@ jobs:
         with:
           name: release-mode-test-log-${{ github.run_id }}-${{ github.run_attempt }}
           path: .build/release-mode-test.log
+          # `.build` is a hidden directory, which upload-artifact skips unless told otherwise.
+          include-hidden-files: true
           if-no-files-found: ignore
           retention-days: 14
 
