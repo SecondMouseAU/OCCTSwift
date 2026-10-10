@@ -151,7 +151,13 @@ struct BridgeExceptionDiagnosticsTests {
         let (_, withTrace) = OCCTDiagnostics.capturing {
             callThatThrowsInsideTheBridge()
         }
-        #expect(!(try #require(withTrace.first).stackTrace.isEmpty))
+        #if os(WASI)
+            // #3025: no backtrace facility on wasm32-wasip1, so the documented answer is that a
+            // trace is never captured, though the depth setting itself still reads back (above).
+            #expect(try #require(withTrace.first).stackTrace.isEmpty)
+        #else
+            #expect(!(try #require(withTrace.first).stackTrace.isEmpty))
+        #endif
     }
 
     @Test("a negative stack-trace depth is clamped rather than passed through")
