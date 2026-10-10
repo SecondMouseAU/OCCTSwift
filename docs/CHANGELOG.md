@@ -21,6 +21,10 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### Raw-handle arrays now keep their wrappers alive across the OCCT call at 77 sites (#3266)
+
+- Operations that pass an array of shapes, wires, edges, faces, curves or surfaces to OCCT (booleans, lofts, sewing, fills, exporters and others) kept no owner for the wrappers, so an optimised build on Swift 6.2 could free them before the call. The arrays are now held across the call, and a static gate fails on a new unheld one.
+
 ### `isSelfIntersecting(hardTimeout:)` with a non-positive bound always returns `nil` (#3256)
 
 
