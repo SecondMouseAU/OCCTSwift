@@ -2781,7 +2781,8 @@ public final class Shape: @unchecked Sendable {
     ///   ``isSelfIntersecting(timeout:)`` unless a caller genuinely needs a hard in-process
     ///   wall-clock guarantee (e.g. no process/subprocess isolation available).
     ///
-    /// - Parameter hardTimeout: Seconds to wait before giving up and returning `nil`.
+    /// - Parameter hardTimeout: Seconds to wait before giving up and returning `nil`. A bound of
+    ///   zero or less is refused up front, on every platform, without running the check (#3256).
     /// - Returns: `true`/`false` if the check completed in time, `nil` if the deadline passed
     ///   first (indeterminate, the background check may still be running), if the analysis
     ///   could not answer the question, per ``isSelfIntersecting(timeout:)``, or if the
@@ -2801,14 +2802,17 @@ public final class Shape: @unchecked Sendable {
     /// }
     /// ```
     public func isSelfIntersecting(hardTimeout: Double) -> Bool? {
+        // A deadline that is not in the future cannot be met, so refuse up front on every platform
+        // (#3256). Leaving it to `semaphore.wait(timeout:)` made the answer a race: a wait on a
+        // deadline already in the past still returns `.success` when the worker signalled first,
+        // and a box checks in microseconds (measured 3 in 400 isolated runs answering `false`).
+        // NaN is not `<= 0`, so it falls through, as before: a NaN deadline never expires and the
+        // check answers (measured on Apple; the WASI body inherits the cooperative call).
+        if hardTimeout <= 0 { return nil }
         #if os(WASI)
             // Single-threaded: no background thread, so no shared-cache race and no probe copy is
-            // needed. Cooperative bound only, documented above (#2760). Apple's semaphore wait on
-            // a deadline already in the past returns nil without a conclusive answer (measured for
-            // 0, negative and -infinity); match that rather than inheriting `timeout:`'s
-            // "non-positive means unbounded". NaN is not `<= 0`, so it falls through, as on Apple,
-            // where a NaN deadline never expires and the check answers (measured).
-            if hardTimeout <= 0 { return nil }
+            // needed. Cooperative bound only, documented above (#2760); the non-positive refusal
+            // above also stops it inheriting `timeout:`'s "non-positive means unbounded".
             return isSelfIntersecting(timeout: hardTimeout)
         #else
             final class SelfIntersectResultBox: @unchecked Sendable {
