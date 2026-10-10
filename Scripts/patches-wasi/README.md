@@ -82,7 +82,7 @@ patch ourselves.
 
 ```bash
 cd Libraries/occt-src
-git checkout .                                   # a clean V8_0_1
+git checkout . && git clean -fd                  # a clean V8_0_1 (checkout alone keeps new files)
 for p in ../../Scripts/patches/*.patch; do git apply "$p"; done
 # ... make the WASI change ...
 git diff -- src/path/to/File.cxx > ../../Scripts/patches-wasi/wasi-<thing>.patch

@@ -36,10 +36,10 @@ struct Issue598PipeShellFrenetModeTests {
 
     /// The self-intersection verdict, read through whichever unwatchdogged bound this platform has.
     ///
-    /// `hardTimeout:` is what the call site below needs and `hardTimeout:` is `#if !os(WASI)`,
-    /// because its contract needs a second thread to run the check on while the caller waits, and
-    /// the non-threads wasm target has one thread by construction (#2760). The PROPERTY the call
-    /// site depends on is not the deadline: it is that no watchdog exists, since a cooperative
+    /// `hardTimeout:` exists on every platform since #2760, but on wasm it is the cooperative
+    /// `timeout:` with a watchdog, because the non-threads target has one thread by construction.
+    /// The PROPERTY the call site
+    /// depends on is not the deadline: it is that no watchdog exists, since a cooperative
     /// `timeout:` that aborts an analysis answers `nil` where this test asserts `true` (#1054).
     /// `hardTimeout:` gets that by passing `0` to the bridge from its background thread, and
     /// `isSelfIntersecting(timeout: 0)` passes the same `0` to the same bridge function from this

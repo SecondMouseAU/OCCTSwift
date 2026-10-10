@@ -38,10 +38,9 @@ struct Issue446UnifyInputMutationTests {
 
     /// The self-intersection verdict, read through whichever bound this platform can offer.
     ///
-    /// `isSelfIntersecting(hardTimeout:)` is `#if !os(WASI)` because its contract needs a second
-    /// thread to run the check on while the caller waits, and the non-threads wasm target has one
-    /// thread by construction (#2760). Its own inner call passes `0` to the same bridge function, so
-    /// `isSelfIntersecting(timeout: 0)` reaches the same analysis with the same freedom from #1054's
+    /// `isSelfIntersecting(hardTimeout:)` exists on every platform since #2760, but on wasm it is
+    /// the cooperative `timeout:` with a watchdog (no second thread). On Apple its inner call
+    /// passes `0` to the same bridge function, so `isSelfIntersecting(timeout: 0)` reaches the same analysis with the same freedom from #1054's
     /// aborted-analysis hazard; what it gives up is the wall-clock escape, which is the part that
     /// needs the thread.
     ///

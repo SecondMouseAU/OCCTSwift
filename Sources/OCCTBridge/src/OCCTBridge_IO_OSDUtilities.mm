@@ -299,12 +299,20 @@ double OCCTTimerGetWallClockTime()
   return OSD_Timer::GetWallClockTime();
 }
 
+// OSD_MemInfo::Value returns size_t(-1) for "unavailable". Widening that to int64_t gives -1 where
+// size_t is 64 bits and 4294967295 where it is 32 (wasm32), a figure that reads as a 4 GiB heap
+// (#3025). Map the sentinel explicitly so every target reports the same "unavailable".
+static int64_t occtMemInfoBytes(size_t theValue)
+{
+  return theValue == size_t(-1) ? -1 : (int64_t)theValue;
+}
+
 int64_t OCCTMemInfoHeapUsage()
 {
   try
   {
     OSD_MemInfo info(true);
-    return (int64_t)info.Value(OSD_MemInfo::MemHeapUsage);
+    return occtMemInfoBytes(info.Value(OSD_MemInfo::MemHeapUsage));
   }
   catch (...)
   {
@@ -318,7 +326,7 @@ int64_t OCCTMemInfoWorkingSet()
   try
   {
     OSD_MemInfo info(true);
-    return (int64_t)info.Value(OSD_MemInfo::MemWorkingSet);
+    return occtMemInfoBytes(info.Value(OSD_MemInfo::MemWorkingSet));
   }
   catch (...)
   {

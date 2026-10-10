@@ -686,10 +686,16 @@ CMAKE_COMMON_OPTS=(
     #                        measured both halves.
     #
     #                        IT NOW LOWERS NOTHING, because -UOCC_CONVERT_SIGNALS below removes
-    #                        every setjmp in the build. It is kept because it is inert in a build
-    #                        with no setjmp call and because retiring it also retires -lsetjmp
-    #                        from Package.swift, make-wasi-toolset.py's self-test and #2048's
-    #                        measured matrix, which is a separate change; see #2175's memo.
+    #                        every setjmp in the build, and -lsetjmp is no longer needed by the
+    #                        link either: Package.swift dropped it and the package links with and
+    #                        without it against the pinned kernel (#2758). The flag is KEPT here
+    #                        on purpose and the reason is the shipped asset, not sentiment: it is
+    #                        in CMAKE_CXX_FLAGS, so removing it changes the command line the
+    #                        pinned kernel was built with, and Scripts/check-wasm-kernel-parity.py
+    #                        and the 69-minute rebuild exist to keep that line and the asset in
+    #                        step. It costs nothing while no setjmp is compiled, and the preflight
+    #                        below compiles with it. Retire it with the next kernel rebuild, not
+    #                        in a comment fix.
     #
     # -UOCC_CONVERT_SIGNALS  OCCT's own CMake adds -DOCC_CONVERT_SIGNALS on every non-Windows
     #                        target, which makes OCC_CATCH_SIGNALS expand to a real setjmp. This
