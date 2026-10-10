@@ -6,29 +6,43 @@ import simd
 
 @Suite("Extrema_ExtSS Tests")
 struct ExtremaExtSSTests {
+    // Values probed on the pinned kernel: Scripts/repro/766-extrema-extss/transcript.txt.
+    // Before #766's execution pass both fixtures sat inside `if let`, so nil surfaces passed with
+    // nothing asserted, and `sphereDistance` read its distance only `if !result.isParallel &&
+    // result.count >= 1`, so a bridge reporting the spheres as parallel, or reporting no extrema,
+    // passed it.
     @Test func parallelPlanes() {
-        if let p1 = Surface.plane(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1)),
+        guard let p1 = Surface.plane(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1)),
             let p2 = Surface.plane(origin: SIMD3(0, 0, 7), normal: SIMD3(0, 0, 1))
-        {
-            let result = p1.extremaSS(other: p2)
-            #expect(result.isDone)
-            #expect(result.isParallel)
+        else {
+            Issue.record("Surface.plane returned nil")
+            return
         }
+        let result = p1.extremaSS(other: p2)
+        #expect(result.isDone)
+        #expect(result.isParallel)
+        // A parallel result carries no individual extrema.
+        #expect(result.count == 0)
     }
 
     @Test func sphereDistance() {
-        if let s1 = Surface.sphere(center: SIMD3(0, 0, 0), radius: 3.0),
+        guard let s1 = Surface.sphere(center: SIMD3(0, 0, 0), radius: 3.0),
             let s2 = Surface.sphere(center: SIMD3(10, 0, 0), radius: 2.0)
-        {
-            let result = s1.extremaSS(other: s2)
-            #expect(result.isDone)
-            // Two spheres, non-parallel
-            if !result.isParallel && result.count >= 1 {
-                let pp = s1.extremaSSPoint(other: s2, index: 1)
-                let dist = pp.squareDistance.squareRoot()
-                #expect(abs(dist - 5.0) < 0.5)  // 10 - 3 - 2 = 5
-            }
+        else {
+            Issue.record("Surface.sphere returned nil")
+            return
         }
+        let result = s1.extremaSS(other: s2)
+        #expect(result.isDone)
+        #expect(!result.isParallel)
+        // Two extrema along the centre line: nearest 10 - 3 - 2 = 5, farthest 10 + 3 + 2 = 15.
+        #expect(result.count == 2)
+        let near = s1.extremaSSPoint(other: s2, index: 1)
+        #expect(abs(near.squareDistance.squareRoot() - 5.0) < 1e-9, "got \(near.squareDistance)")
+        #expect(simd_length(near.point1 - SIMD3(3, 0, 0)) < 1e-6, "got \(near.point1)")
+        #expect(simd_length(near.point2 - SIMD3(8, 0, 0)) < 1e-6, "got \(near.point2)")
+        let far = s1.extremaSSPoint(other: s2, index: 2)
+        #expect(abs(far.squareDistance.squareRoot() - 15.0) < 1e-9, "got \(far.squareDistance)")
     }
 
     /// #1502 finding 2: `OCCTExtremaExtSSPoint` called `Extrema_POnSurf::Parameter(u, v)` for

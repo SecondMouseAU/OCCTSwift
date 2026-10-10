@@ -113,7 +113,11 @@ struct MeasurementTests {
         #expect(abs(props.volume - 1000.0) < 0.01)
         #expect(abs(props.surfaceArea - 600.0) < 0.1)
         #expect(abs(props.mass - 2500.0) < 0.1)  // 1000 × 2.5
-        #expect(abs(props.centerOfMass.x) < 0.01)  // Box centered at origin
+        // Box centered at origin. All three components, not only x: a bridge that wrote y or z
+        // from the wrong field would otherwise pass (#1775).
+        #expect(abs(props.centerOfMass.x) < 0.01)
+        #expect(abs(props.centerOfMass.y) < 0.01)
+        #expect(abs(props.centerOfMass.z) < 0.01)
     }
 
     // MARK: - Distance Tests
@@ -198,18 +202,51 @@ struct MeasurementTests {
         #expect(box.vertexCount == 8)
     }
 
+    /// Every vertex of the centred box, each corner once.
+    ///
+    /// The version of this test before #1783 checked only `vertices.count == 8`, so a bridge that
+    /// wrote eight zero points passed it. The box is centred, so its vertices are exactly the
+    /// eight sign combinations of (±5, ±5, ±5), each once.
     @Test("Get all vertices")
     func getAllVertices() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+        guard let box = Shape.box(width: 10, height: 10, depth: 10) else {
+            Issue.record("Shape.box returned nil")
+            return
+        }
         let vertices = box.vertices()
         #expect(vertices.count == 8)
+        for v in vertices {
+            #expect(
+                abs(abs(v.x) - 5) < 1e-12 && abs(abs(v.y) - 5) < 1e-12 && abs(abs(v.z) - 5) < 1e-12,
+                "every vertex of the centred box is a (±5, ±5, ±5) corner, got \(v)")
+        }
+        let corners = Set(vertices.map { [$0.x > 0, $0.y > 0, $0.z > 0] })
+        #expect(
+            corners.count == 8,
+            "the eight vertices are eight distinct corners, got \(corners.count)")
     }
 
+    /// Vertex 0 of the centred box, pinned to its coordinates.
+    ///
+    /// The version of this test before #1784 checked only `vertex != nil`, so a bridge returning
+    /// the wrong vertex, or a zero point, passed it. Index 0 of the deduplicated vertex
+    /// enumeration (`TopExp::MapShapes` on the `BRepPrimAPI_MakeBox` solid) is (-5, -5, 5), as
+    /// measured in Scripts/repro/766-measurement-tests/transcript.txt, and it must agree with
+    /// `vertices()[0]`, which reads the same enumeration.
     @Test("Get vertex at index")
     func vertexAtIndex() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
-        let vertex = box.vertex(at: 0)
-        #expect(vertex != nil)
+        guard let box = Shape.box(width: 10, height: 10, depth: 10) else {
+            Issue.record("Shape.box returned nil")
+            return
+        }
+        guard let vertex = box.vertex(at: 0) else {
+            Issue.record("vertex(at: 0) returned nil on a box with 8 vertices")
+            return
+        }
+        #expect(
+            vertex == SIMD3(-5, -5, 5), "vertex 0 of the centred box is (-5, -5, 5), got \(vertex)")
+        #expect(
+            vertex == box.vertices().first, "vertex(at: 0) and vertices()[0] read one enumeration")
     }
 
     @Test("Vertex out of bounds")

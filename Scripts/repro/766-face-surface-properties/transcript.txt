@@ -1,0 +1,41 @@
+box10 faces=6
+box10.face[0] uv=[0, 10] x [-10, 0] mid=(5, -5)
+box10.face[0] point=(-5, 0, 0)
+box10.face[0] normal=(-1, -0, 0) orient=1
+box10.face[0] curvatureDefined=1 gaussian=0 mean=0 kMin=0 kMax=0
+box10.face[0] dirMin=(0, 0, 1) dirMax=(-0, 1, 0)
+box10.face[0] type=0
+sphere5 faces=1
+sphere5.face[0] uv=[0, 6.2831853071795862] x [-1.5707963267948966, 1.5707963267948966] mid=(3.1415926535897931, 0)
+sphere5.face[0] point=(-5, 6.1232339957367663e-16, 0)
+sphere5.face[0] normal=(-1, 1.2246467991473532e-16, 0) orient=0
+sphere5.face[0] curvatureDefined=1 gaussian=0.040000000000000008 mean=-0.20000000000000001 kMin=-0.20000000000000001 kMax=-0.20000000000000001
+sphere5.face[0] dirMin=(-1.2246467991473532e-16, -1, -0) dirMax=(0, 0, -1)
+sphere5.face[0] type=3
+staleFirstRead sphere5 gaussian first=0 second=0.040000000000000008
+cyl5x10 faces=3
+cyl5x10.face[0] uv=[0, 6.2831853071795862] x [0, 10] mid=(3.1415926535897931, 5)
+cyl5x10.face[0] point=(-5, 6.1232339957367663e-16, 5)
+cyl5x10.face[0] normal=(-1, 1.2246467991473532e-16, 0) orient=0
+cyl5x10.face[0] curvatureDefined=1 gaussian=-0 mean=-0.10000000000000001 kMin=-0.20000000000000001 kMax=0
+cyl5x10.face[0] dirMin=(-1.2246467991473532e-16, -1, -0) dirMax=(0, 0, 1)
+cyl5x10.face[0] type=1
+cyl5x10.face[1] uv=[-5, 5] x [-5, 5] mid=(0, 0)
+cyl5x10.face[1] point=(0, 0, 10)
+cyl5x10.face[1] normal=(0, 0, 1) orient=0
+cyl5x10.face[1] curvatureDefined=1 gaussian=0 mean=0 kMin=0 kMax=0
+cyl5x10.face[1] dirMin=(1, 0, 0) dirMax=(0, -1, 0)
+cyl5x10.face[1] type=0
+cyl5x10.face[2] uv=[-5, 5] x [-5, 5] mid=(0, 0)
+cyl5x10.face[2] point=(0, 0, 0)
+cyl5x10.face[2] normal=(-0, -0, -1) orient=1
+cyl5x10.face[2] curvatureDefined=1 gaussian=0 mean=0 kMin=0 kMax=0
+cyl5x10.face[2] dirMin=(1, 0, 0) dirMax=(0, -1, 0)
+cyl5x10.face[2] type=0
+box10x20x30.face[0] area=599.99999999999989
+box10x20x30.face[1] area=599.99999999999989
+box10x20x30.face[2] area=299.99999999999994
+box10x20x30.face[3] area=299.99999999999994
+box10x20x30.face[4] area=200
+box10x20x30.face[5] area=200
+box10x20x30 faces=6 total_area=2200

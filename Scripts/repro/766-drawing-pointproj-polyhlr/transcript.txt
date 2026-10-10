@@ -1,0 +1,25 @@
+box top face, point (0,0,15): nbPoints=1 nearest=(0, 0, 5) distance=10
+sphere r5 face 0, point (10,0,0): nbPoints=2 nearest=(5, 0, 0) distance=5
+box edge 1 (-5,-5,-5)-(-5,-5,5), midpoint+(1,1,1): distance=1.4142135623730951 (sqrt 2 = 1.4142135623730951)
+cylinder circle edge 1, 3 out radially from its mid-parameter point: distance=3
+fastTopViewBox visible: edges=4 extent=(-5.0000001, -5.0000001)..(5.0000001, 5.0000001)
+fastTopViewBox hidden: edges=4 extent=(-5.0000001, -5.0000001)..(5.0000001, 5.0000001)
+fastTopViewBox outline: nil
+fastIsometricBox visible: edges=9 extent=(-8.83883486, -9.18558664)..(8.83883486, 9.18558664)
+fastIsometricBox hidden: edges=3 extent=(-8.83883486, -7.14434518)..(8.83883486, 9.18558664)
+fastIsometricBox outline: nil
+fastProjectCylinder visible: edges=76 extent=(-1e-07, -5.0000001)..(10.0000001, 5.0000001)
+fastProjectCylinder hidden: edges=74 extent=(-1e-07, -5.0000001)..(10.0000001, 5.0000001)
+fastProjectCylinder outline: edges=4 extent=(-1e-07, -5.0000001)..(10.0000001, 5.0000001)
+fastHiddenEdges visible: edges=10 extent=(-10.0000001, -5.0000001)..(10.0000001, 5.0000001)
+fastHiddenEdges hidden: edges=14 extent=(-10.0000001, -5.0000001)..(10.0000001, 5.0000001)
+fastHiddenEdges outline: nil
+fastVsExact fast visible: edges=197 extent=(-9.99879073, -10.0000001)..(10.0000001, 10.0000001)
+fastVsExact fast hidden: nil
+fastVsExact fast outline: edges=197 extent=(-9.99879073, -10.0000001)..(10.0000001, 10.0000001)
+customDeflection coarse visible: edges=35 extent=(-9.96194708, -9.96194708)..(10.0000001, 9.96194708)
+customDeflection coarse hidden: nil
+customDeflection coarse outline: edges=35 extent=(-9.96194708, -9.96194708)..(10.0000001, 9.96194708)
+customDeflection fine visible: edges=631 extent=(-9.9998781, -9.9998781)..(10.0000001, 9.9998781)
+customDeflection fine hidden: edges=1 extent=(9.99452306, -0.316756843)..(10.0000001, 9.99999976e-08)
+customDeflection fine outline: edges=632 extent=(-9.9998781, -9.9998781)..(10.0000001, 9.9998781)

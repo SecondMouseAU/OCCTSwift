@@ -1,0 +1,5 @@
+Tests/OCCTCurveTests/Conversion/Curve3DConversionTests.swift
+Tests/OCCTCurveTests/Curve3DCore/Curve3DEvalTests.swift
+Tests/OCCTCurveTests/Curve3DCore/HelixGeomBuildTests.swift
+Tests/OCCTCurveTests/Curve3DCore/HelixTests.swift
+Tests/OCCTCurveTests/Sampling/Curve3DDrawTests.swift

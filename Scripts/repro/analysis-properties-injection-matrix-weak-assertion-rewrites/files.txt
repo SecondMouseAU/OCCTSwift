@@ -1,0 +1,8 @@
+# The test files this PR lifts (current paths).
+Tests/OCCTAnalysisTests/BRepGProp/BRepGPropDomainTests.swift
+Tests/OCCTAnalysisTests/Bounding/BndOBBTests.swift
+Tests/OCCTAnalysisTests/Bounding/BndSphereTests.swift
+Tests/OCCTAnalysisTests/GeomProperties/GeomHyperbola3DTests.swift
+Tests/OCCTAnalysisTests/LocalProperties/FaceSurfacePropertiesTests.swift
+Tests/OCCTAnalysisTests/LocalProperties/LProp3dCurveTests.swift
+Tests/OCCTAnalysisTests/MassProperties/MeasurementTests.swift
