@@ -1,0 +1,3865 @@
+{
+ "label": "after",
+ "targets": {
+  "OCCTShapeHealingTests": {
+   "changed": [
+    "LocationPurgeTests.cleanShapePurge",
+    "LocationPurgeTests.mirroredShapePurge",
+    "NURBSConversionTests.convertBox",
+    "NURBSConversionTests.convertFilleted",
+    "NURBSConversionTests.convertSphere",
+    "RemoveLocationsTests.removeFromRotated",
+    "RemoveLocationsTests.removeFromTranslated",
+    "SameParameterTests.sameParameterBox",
+    "SameParameterTests.sameParameterCylinder",
+    "SameParameterTests.sameParameterPreservesVolume",
+    "ShapeBuildVertexTests.combineFromPoints",
+    "ShapeBuildVertexTests.combineVertices",
+    "ShapeBuildVertexTests.combineWithTolFactor"
+   ],
+   "crashes": [],
+   "live_switches": 61,
+   "rows": {
+    "OCCTAx3Angle_IN10_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTAx3Angle_IN11_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTAx3Angle_IN12_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTAx3Angle_IN13_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTAx3Angle_IN14_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTAx3Angle_IN15_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTAx3Angle_IN16_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTAx3Angle_IN17_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTAx3Angle_IN18_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTAx3Angle_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTAx3Angle_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTAx3Angle_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTAx3Angle_IN4_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTAx3Angle_IN5_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTAx3Angle_IN6_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTAx3Angle_IN7_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTAx3Angle_IN8_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTAx3Angle_IN9_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTAx3Angle_RET_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTAx3Angle_RET_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTAxis1PlacementLocation_x_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTAxis1PlacementLocation_x_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTAxis1PlacementLocation_y_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTAxis1PlacementLocation_y_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTAxis1PlacementLocation_z_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTAxis1PlacementLocation_z_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTAxis2PlacementLocation_x_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTAxis2PlacementLocation_x_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTAxis2PlacementLocation_y_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTAxis2PlacementLocation_y_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTAxis2PlacementLocation_z_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTAxis2PlacementLocation_z_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTAxisPlacement2DAngle_RET_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTAxisPlacement2DAngle_RET_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTBRepGraphCopy_IN_copyGeom_FLIP": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTBRepGraphCopy_RET_NIL": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTBRepGraphTransformTranslation_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTBRepGraphTransformTranslation_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTBRepGraphTransformTranslation_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTBRepGraphTransformTranslation_IN_copyGeom_FLIP": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTBRepGraphTransformTranslation_RET_NIL": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTBRepGraphVertexPoint_outX_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTBRepGraphVertexPoint_outX_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTBRepGraphVertexPoint_outY_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTBRepGraphVertexPoint_outY_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTBRepGraphVertexPoint_outZ_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTBRepGraphVertexPoint_outZ_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTBRepGraphVertexTolerance_RET_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTBRepGraphVertexTolerance_RET_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTBndLibCylinder_IN10_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTBndLibCylinder_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTBndLibCylinder_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTBndLibCylinder_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTBndLibCylinder_IN4_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTBndLibCylinder_IN5_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTBndLibCylinder_IN6_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTBndLibCylinder_IN7_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTBndLibCylinder_IN8_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTBndLibCylinder_IN9_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTBndLibCylinder_xmax_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTBndLibCylinder_xmax_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTBndLibCylinder_xmin_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTBndLibCylinder_xmin_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTBndLibCylinder_ymax_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTBndLibCylinder_ymax_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTBndLibCylinder_ymin_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTBndLibCylinder_ymin_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTBndLibCylinder_zmax_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTBndLibCylinder_zmax_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTBndLibCylinder_zmin_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTBndLibCylinder_zmin_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTBndLibSphere_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTBndLibSphere_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTBndLibSphere_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTBndLibSphere_IN4_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTBndLibSphere_IN5_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTBndLibSphere_xmax_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTBndLibSphere_xmax_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTBndLibSphere_xmin_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTBndLibSphere_xmin_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTBndLibSphere_ymax_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTBndLibSphere_ymax_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTBndLibSphere_ymin_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTBndLibSphere_ymin_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTBndLibSphere_zmax_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTBndLibSphere_zmax_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTBndLibSphere_zmin_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTBndLibSphere_zmin_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTBndSphereDistance_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTBndSphereDistance_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTBndSphereDistance_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTBndSphereDistance_RET_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTBndSphereDistance_RET_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTColorDistance_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTColorDistance_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTColorDistance_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTColorDistance_IN4_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTColorDistance_IN5_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTColorDistance_IN6_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTColorDistance_RET_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTColorDistance_RET_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTCompCurveParamAtAbscissa_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTCompCurveParamAtAbscissa_RET_FLIP": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTCompCurveParamAtAbscissa_outParam_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTCompCurveParamAtAbscissa_outParam_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTCompCurveSampleUniform_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTCompCurveSampleUniform_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTCompCurveSampleUniform_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTCompCurveSampleUniform_outXYZ_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTCompCurveSampleUniform_outXYZ_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTContapContourLineAsCircle_RET_FLIP": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTContapContourLineAsCircle_out_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTContapContourLineAsCircle_out_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTContapContourLineAsLine_RET_FLIP": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTContapContourLineAsLine_out_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTContapContourLineAsLine_out_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTContapContourLineVertex_RET_FLIP": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTContapContourLineVertex_out_parameterOnArc_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTContapContourLineVertex_out_parameterOnArc_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTContapContourLineVertex_out_parameterOnLine_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTContapContourLineVertex_out_parameterOnLine_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTContapContourLineVertex_out_u_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTContapContourLineVertex_out_u_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTContapContourLineVertex_out_v_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTContapContourLineVertex_out_v_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTContapContourLineVertex_out_x_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTContapContourLineVertex_out_x_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTContapContourLineVertex_out_y_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTContapContourLineVertex_out_y_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTContapContourLineVertex_out_z_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTContapContourLineVertex_out_z_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTCoordSystemConvert_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTCoordSystemConvert_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTCoordSystemConvert_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTCoordSystemConvert_IN4_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTCoordSystemConvert_IN5_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTCoordSystemConvert_RET_x_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTCoordSystemConvert_RET_x_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTCoordSystemConvert_RET_y_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTCoordSystemConvert_RET_y_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTCoordSystemConvert_RET_z_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTCoordSystemConvert_RET_z_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTCoordSystemUpDirection_RET_x_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTCoordSystemUpDirection_RET_x_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTCoordSystemUpDirection_RET_y_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTCoordSystemUpDirection_RET_y_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTCoordSystemUpDirection_RET_z_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTCoordSystemUpDirection_RET_z_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTCurve2DCopy_RET_NIL": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTCurve2DMirrorAxis_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTCurve2DMirrorAxis_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTCurve2DMirrorAxis_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTCurve2DMirrorAxis_IN4_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTCurve2DMirrorAxis_RET_NIL": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTCurve2DMirrorPoint_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTCurve2DMirrorPoint_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTCurve2DMirrorPoint_RET_NIL": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTCurve2DRotate_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTCurve2DRotate_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTCurve2DRotate_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTCurve2DRotate_RET_NIL": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTCurve2DTranslate_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTCurve2DTranslate_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTCurve2DTranslate_RET_NIL": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTCurve3DCopy_RET_NIL": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTCurve3DIsPlanar_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTCurve3DIsPlanar_RET_FLIP": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTCurve3DIsPlanar_outNX_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTCurve3DIsPlanar_outNX_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTCurve3DIsPlanar_outNY_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTCurve3DIsPlanar_outNY_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTCurve3DIsPlanar_outNZ_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTCurve3DIsPlanar_outNZ_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTCurve3DMirrorAxis_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTCurve3DMirrorAxis_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTCurve3DMirrorAxis_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTCurve3DMirrorAxis_IN4_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTCurve3DMirrorAxis_IN5_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTCurve3DMirrorAxis_IN6_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTCurve3DMirrorAxis_RET_NIL": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTCurve3DMirrorPlane_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTCurve3DMirrorPlane_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTCurve3DMirrorPlane_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTCurve3DMirrorPlane_IN4_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTCurve3DMirrorPlane_IN5_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTCurve3DMirrorPlane_IN6_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTCurve3DMirrorPlane_RET_NIL": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTCurve3DMirrorPoint_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTCurve3DMirrorPoint_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTCurve3DMirrorPoint_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTCurve3DMirrorPoint_RET_NIL": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTCurve3DRotate_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTCurve3DRotate_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTCurve3DRotate_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTCurve3DRotate_IN4_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTCurve3DRotate_IN5_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTCurve3DRotate_IN6_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTCurve3DRotate_IN7_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTCurve3DRotate_RET_NIL": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTCurve3DTranslate_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTCurve3DTranslate_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTCurve3DTranslate_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTCurve3DTranslate_RET_NIL": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTDimensionGetGeometry_RET_FLIP": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTDimensionGetGeometry_outGeometry_circleRadius_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTDimensionGetGeometry_outGeometry_circleRadius_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTDimensionGetGeometry_outGeometry_kind_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTDimensionGetGeometry_outGeometry_value_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTDimensionGetGeometry_outGeometry_value_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTDocumentGetSubShapeCount_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTDocumentGetSubShapeCount_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTDocumentGetSubShapeCount_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTEdgeCurveParamAtAbscissa_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTEdgeCurveParamAtAbscissa_RET_FLIP": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTEdgeCurveParamAtAbscissa_outParam_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTEdgeCurveParamAtAbscissa_outParam_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTEdgeCurveSampleUniform_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTEdgeCurveSampleUniform_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTEdgeCurveSampleUniform_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTEdgeCurveSampleUniform_outXYZ_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTEdgeCurveSampleUniform_outXYZ_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTEdgeGetBounds_RET_FLIP": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTEdgeGetBounds_maxX_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTEdgeGetBounds_maxX_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTEdgeGetBounds_maxY_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTEdgeGetBounds_maxY_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTEdgeGetBounds_maxZ_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTEdgeGetBounds_maxZ_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTEdgeGetBounds_minX_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTEdgeGetBounds_minX_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTEdgeGetBounds_minY_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTEdgeGetBounds_minY_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTEdgeGetBounds_minZ_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTEdgeGetBounds_minZ_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTEdgeGetPoints_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTEdgeGetPoints_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTEdgeGetPoints_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTEdgeGetPoints_outPoints_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTEdgeGetPoints_outPoints_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTFaceFixerFace_RET_NIL": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTFaceGetSurfaceType_RET_MINUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 13,
+     "red": [
+      "NURBSConversionTests.convertBox",
+      "NURBSConversionTests.convertFilleted",
+      "NURBSConversionTests.convertSphere"
+     ]
+    },
+    "OCCTFaceGetSurfaceType_RET_PLUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 13,
+     "red": [
+      "NURBSConversionTests.convertBox",
+      "NURBSConversionTests.convertFilleted",
+      "NURBSConversionTests.convertSphere"
+     ]
+    },
+    "OCCTFaceGetSurfaceType_RET_ZERO": {
+     "crash": false,
+     "exit": 1,
+     "ran": 13,
+     "red": [
+      "NURBSConversionTests.convertBox",
+      "NURBSConversionTests.convertFilleted",
+      "NURBSConversionTests.convertSphere"
+     ]
+    },
+    "OCCTGPropsCylinder_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTGPropsCylinder_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTGPropsCylinder_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTGPropsCylinder_IN4_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTGPropsCylinder_IN5_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTGPropsCylinder_IN_volume_FLIP": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTGPropsCylinder_RET_NIL": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTGPropsSphere_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTGPropsSphere_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTGPropsSphere_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTGPropsSphere_IN4_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTGPropsSphere_IN5_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTGPropsSphere_IN_volume_FLIP": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTGPropsSphere_RET_NIL": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTGeomAdaptorTransformedCurveCreate_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTGeomAdaptorTransformedCurveCreate_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTGeomAdaptorTransformedCurveCreate_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTGeomAdaptorTransformedCurveCreate_RET_NIL": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTGeomPoint3DDistance_RET_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTGeomPoint3DDistance_RET_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTGeomPoint3DX_RET_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTGeomPoint3DX_RET_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTIntrvIntervalBounds_RET_end_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTIntrvIntervalBounds_RET_end_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTIntrvIntervalBounds_RET_start_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTIntrvIntervalBounds_RET_start_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTIntrvIntervalsValue_RET_end_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTIntrvIntervalsValue_RET_end_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTIntrvIntervalsValue_RET_start_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTIntrvIntervalsValue_RET_start_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTLawFunctionBounds_first_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTLawFunctionBounds_first_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTLawFunctionBounds_last_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTLawFunctionBounds_last_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTMakeFaceFromSurfaceUV_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTMakeFaceFromSurfaceUV_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTMakeFaceFromSurfaceUV_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTMakeFaceFromSurfaceUV_IN4_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTMakeFaceFromSurfaceUV_IN5_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTMakeFaceFromSurfaceUV_RET_NIL": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTMakeTranslation2dPoints_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTMakeTranslation2dPoints_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTMakeTranslation2dPoints_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTMakeTranslation2dPoints_IN4_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTMakeTranslation2dPoints_matrix_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTMakeTranslation2dPoints_matrix_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTMakeTranslation2dVec_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTMakeTranslation2dVec_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTMakeTranslation2dVec_matrix_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTMakeTranslation2dVec_matrix_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTMakeTranslationPoints_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTMakeTranslationPoints_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTMakeTranslationPoints_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTMakeTranslationPoints_IN4_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTMakeTranslationPoints_IN5_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTMakeTranslationPoints_IN6_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTMakeTranslationPoints_matrix_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTMakeTranslationPoints_matrix_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTMakeTranslationVec_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTMakeTranslationVec_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTMakeTranslationVec_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTMakeTranslationVec_matrix_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTMakeTranslationVec_matrix_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTMeshCinertCompute_RET_centerX_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTMeshCinertCompute_RET_centerX_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTMeshCinertCompute_RET_centerY_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTMeshCinertCompute_RET_centerY_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTMeshCinertCompute_RET_centerZ_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTMeshCinertCompute_RET_centerZ_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTMeshCinertCompute_RET_mass_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTMeshCinertCompute_RET_mass_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTPoint2DDistanceToCurve_RET_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTPoint2DDistanceToCurve_RET_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTPoint2DDistance_RET_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTPoint2DDistance_RET_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTPoint2DGetX_RET_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTPoint2DGetX_RET_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTPoint2DMirroredAxis_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTPoint2DMirroredAxis_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTPoint2DMirroredAxis_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTPoint2DMirroredAxis_IN4_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTPoint2DMirroredAxis_RET_NIL": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTPoint2DMirroredPoint_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTPoint2DMirroredPoint_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTPoint2DMirroredPoint_RET_NIL": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTPoint2DRotated_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTPoint2DRotated_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTPoint2DRotated_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTPoint2DRotated_RET_NIL": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTPoint2DTranslated_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTPoint2DTranslated_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTPoint2DTranslated_RET_NIL": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTPointCloudGetBounds_RET_FLIP": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTPointCloudGetBounds_outMaxXYZ_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTPointCloudGetBounds_outMaxXYZ_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTPointCloudGetBounds_outMinXYZ_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTPointCloudGetBounds_outMinXYZ_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTPointCloudGetPoints_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTPointCloudGetPoints_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTPointCloudGetPoints_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTPointCloudGetPoints_outCoords_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTPointCloudGetPoints_outCoords_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTPolyPolygon2DCopy_RET_NIL": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTPolyPolygon3DParameter_RET_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTPolyPolygon3DParameter_RET_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTPolyPolygonOnTriCopy_RET_NIL": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTPolyPolygonOnTriParameter_RET_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTPolyPolygonOnTriParameter_RET_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTPrecisionApproximation_RET_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTPrecisionApproximation_RET_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTProjOnCurveDistance_RET_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTProjOnCurveDistance_RET_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTProjOnCurveParameter_RET_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTProjOnCurveParameter_RET_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTProjOnSurfDistance_RET_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTProjOnSurfDistance_RET_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTRangeGetBounds_RET_FLIP": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTRangeGetBounds_first_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTRangeGetBounds_first_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTRangeGetBounds_last_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTRangeGetBounds_last_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeBuildVertexCombineFromPoints_IN1_PLUS": {
+     "crash": false,
+     "exit": 1,
+     "ran": 13,
+     "red": [
+      "ShapeBuildVertexTests.combineFromPoints"
+     ]
+    },
+    "OCCTShapeBuildVertexCombineFromPoints_IN2_PLUS": {
+     "crash": false,
+     "exit": 1,
+     "ran": 13,
+     "red": [
+      "ShapeBuildVertexTests.combineFromPoints"
+     ]
+    },
+    "OCCTShapeBuildVertexCombineFromPoints_IN3_PLUS": {
+     "crash": false,
+     "exit": 1,
+     "ran": 13,
+     "red": [
+      "ShapeBuildVertexTests.combineFromPoints"
+     ]
+    },
+    "OCCTShapeBuildVertexCombineFromPoints_IN4_PLUS": {
+     "crash": false,
+     "exit": 1,
+     "ran": 13,
+     "red": [
+      "ShapeBuildVertexTests.combineFromPoints"
+     ]
+    },
+    "OCCTShapeBuildVertexCombineFromPoints_IN5_PLUS": {
+     "crash": false,
+     "exit": 1,
+     "ran": 13,
+     "red": [
+      "ShapeBuildVertexTests.combineFromPoints"
+     ]
+    },
+    "OCCTShapeBuildVertexCombineFromPoints_IN6_PLUS": {
+     "crash": false,
+     "exit": 1,
+     "ran": 13,
+     "red": [
+      "ShapeBuildVertexTests.combineFromPoints"
+     ]
+    },
+    "OCCTShapeBuildVertexCombineFromPoints_IN7_PLUS": {
+     "crash": false,
+     "exit": 1,
+     "ran": 13,
+     "red": [
+      "ShapeBuildVertexTests.combineFromPoints"
+     ]
+    },
+    "OCCTShapeBuildVertexCombineFromPoints_IN8_PLUS": {
+     "crash": false,
+     "exit": 1,
+     "ran": 13,
+     "red": [
+      "ShapeBuildVertexTests.combineFromPoints"
+     ]
+    },
+    "OCCTShapeBuildVertexCombineFromPoints_IN9_PLUS": {
+     "crash": false,
+     "exit": 1,
+     "ran": 13,
+     "red": [
+      "ShapeBuildVertexTests.combineFromPoints"
+     ]
+    },
+    "OCCTShapeBuildVertexCombineFromPoints_RET_NIL": {
+     "crash": false,
+     "exit": 1,
+     "ran": 13,
+     "red": [
+      "ShapeBuildVertexTests.combineFromPoints"
+     ]
+    },
+    "OCCTShapeBuildVertexCombine_IN1_PLUS": {
+     "crash": false,
+     "exit": 1,
+     "ran": 13,
+     "red": [
+      "ShapeBuildVertexTests.combineVertices",
+      "ShapeBuildVertexTests.combineWithTolFactor"
+     ]
+    },
+    "OCCTShapeBuildVertexCombine_RET_NIL": {
+     "crash": false,
+     "exit": 1,
+     "ran": 13,
+     "red": [
+      "ShapeBuildVertexTests.combineVertices",
+      "ShapeBuildVertexTests.combineWithTolFactor"
+     ]
+    },
+    "OCCTShapeConvertToNURBS_RET_NIL": {
+     "crash": false,
+     "exit": 1,
+     "ran": 13,
+     "red": [
+      "NURBSConversionTests.convertBox",
+      "NURBSConversionTests.convertFilleted",
+      "NURBSConversionTests.convertSphere"
+     ]
+    },
+    "OCCTShapeCopy_IN_copyGeom_FLIP": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeCopy_IN_copyMesh_FLIP": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeCopy_RET_NIL": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeCreateCylinderAt_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeCreateCylinderAt_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeCreateCylinderAt_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeCreateCylinderAt_IN4_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeCreateCylinderAt_IN5_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeCreateCylinderAt_RET_NIL": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeCreateCylinderOrientedPartial_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeCreateCylinderOrientedPartial_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeCreateCylinderOrientedPartial_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeCreateCylinderOrientedPartial_IN4_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeCreateCylinderOrientedPartial_IN5_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeCreateCylinderOrientedPartial_IN6_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeCreateCylinderOrientedPartial_IN7_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeCreateCylinderOrientedPartial_IN8_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeCreateCylinderOrientedPartial_IN9_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeCreateCylinderOrientedPartial_RET_NIL": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeCreateCylinderPartial_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeCreateCylinderPartial_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeCreateCylinderPartial_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeCreateCylinderPartial_RET_NIL": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeCreateCylinder_IN1_PLUS": {
+     "crash": false,
+     "exit": 1,
+     "ran": 13,
+     "red": [
+      "RemoveLocationsTests.removeFromRotated",
+      "SameParameterTests.sameParameterCylinder"
+     ]
+    },
+    "OCCTShapeCreateCylinder_IN2_PLUS": {
+     "crash": false,
+     "exit": 1,
+     "ran": 13,
+     "red": [
+      "RemoveLocationsTests.removeFromRotated",
+      "SameParameterTests.sameParameterCylinder"
+     ]
+    },
+    "OCCTShapeCreateCylinder_RET_NIL": {
+     "crash": false,
+     "exit": 1,
+     "ran": 13,
+     "red": [
+      "RemoveLocationsTests.removeFromRotated",
+      "SameParameterTests.sameParameterCylinder"
+     ]
+    },
+    "OCCTShapeCreateFaceFromSurfaceWireWithHoles_RET_NIL": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeCreateFaceFromSurfaceWire_RET_NIL": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeCreateFaceFromSurface_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeCreateFaceFromSurface_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeCreateFaceFromSurface_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeCreateFaceFromSurface_IN4_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeCreateFaceFromSurface_IN5_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeCreateFaceFromSurface_RET_NIL": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeCreateFaceFromWire_IN_planar_FLIP": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeCreateFaceFromWire_RET_NIL": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeCreateFaceWithHoles_RET_NIL": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeCreateSolidFromShell_RET_NIL": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeCreateSphereAtCenter_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeCreateSphereAtCenter_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeCreateSphereAtCenter_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeCreateSphereAtCenter_IN4_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeCreateSphereAtCenter_RET_NIL": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeCreateSphereOrientedPartial_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeCreateSphereOrientedPartial_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeCreateSphereOrientedPartial_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeCreateSphereOrientedPartial_IN4_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeCreateSphereOrientedPartial_IN5_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeCreateSphereOrientedPartial_IN6_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeCreateSphereOrientedPartial_IN7_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeCreateSphereOrientedPartial_IN8_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeCreateSphereOrientedPartial_RET_NIL": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeCreateSphereOrientedSegment_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeCreateSphereOrientedSegment_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeCreateSphereOrientedSegment_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeCreateSphereOrientedSegment_IN4_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeCreateSphereOrientedSegment_IN5_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeCreateSphereOrientedSegment_IN6_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeCreateSphereOrientedSegment_IN7_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeCreateSphereOrientedSegment_IN8_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeCreateSphereOrientedSegment_IN9_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeCreateSphereOrientedSegment_RET_NIL": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeCreateSphereOriented_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeCreateSphereOriented_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeCreateSphereOriented_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeCreateSphereOriented_IN4_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeCreateSphereOriented_IN5_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeCreateSphereOriented_IN6_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeCreateSphereOriented_IN7_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeCreateSphereOriented_RET_NIL": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeCreateSpherePartial_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeCreateSpherePartial_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeCreateSpherePartial_RET_NIL": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeCreateSphere_IN1_PLUS": {
+     "crash": false,
+     "exit": 1,
+     "ran": 13,
+     "red": [
+      "NURBSConversionTests.convertSphere"
+     ]
+    },
+    "OCCTShapeCreateSphere_RET_NIL": {
+     "crash": false,
+     "exit": 1,
+     "ran": 13,
+     "red": [
+      "NURBSConversionTests.convertSphere"
+     ]
+    },
+    "OCCTShapeCreateVertex_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeCreateVertex_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeCreateVertex_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeCreateVertex_RET_NIL": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeDistance_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeDistance_RET_distance_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeDistance_RET_distance_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeDistance_RET_p1x_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeDistance_RET_p1x_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeDistance_RET_p1y_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeDistance_RET_p1y_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeDistance_RET_p1z_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeDistance_RET_p1z_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeDistance_RET_p2x_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeDistance_RET_p2x_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeDistance_RET_p2y_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeDistance_RET_p2y_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeDistance_RET_p2z_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeDistance_RET_p2z_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeDistance_RET_solutionCount_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeFilletEdgesLinear_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeFilletEdgesLinear_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeFilletEdgesLinear_RET_NIL": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeFilletEdgesLinear_declinedEdgeIndices_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeFilletEdgesLinear_outDeclinedCount_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeFilletEdges_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeFilletEdges_RET_NIL": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeFilletEdges_declinedEdgeIndices_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeFilletEdges_outDeclinedCount_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeFillet_IN1_PLUS": {
+     "crash": false,
+     "exit": 1,
+     "ran": 13,
+     "red": [
+      "NURBSConversionTests.convertFilleted"
+     ]
+    },
+    "OCCTShapeFillet_RET_NIL": {
+     "crash": false,
+     "exit": 1,
+     "ran": 13,
+     "red": [
+      "NURBSConversionTests.convertFilleted"
+     ]
+    },
+    "OCCTShapeGetBounds_RET_FLIP": {
+     "crash": false,
+     "exit": 1,
+     "ran": 13,
+     "red": [
+      "RemoveLocationsTests.removeFromRotated",
+      "RemoveLocationsTests.removeFromTranslated"
+     ]
+    },
+    "OCCTShapeGetBounds_maxX_NEG": {
+     "crash": false,
+     "exit": 1,
+     "ran": 13,
+     "red": [
+      "RemoveLocationsTests.removeFromRotated",
+      "RemoveLocationsTests.removeFromTranslated"
+     ]
+    },
+    "OCCTShapeGetBounds_maxX_PLUS": {
+     "crash": false,
+     "exit": 1,
+     "ran": 13,
+     "red": [
+      "RemoveLocationsTests.removeFromRotated",
+      "RemoveLocationsTests.removeFromTranslated"
+     ]
+    },
+    "OCCTShapeGetBounds_maxY_NEG": {
+     "crash": false,
+     "exit": 1,
+     "ran": 13,
+     "red": [
+      "RemoveLocationsTests.removeFromRotated",
+      "RemoveLocationsTests.removeFromTranslated"
+     ]
+    },
+    "OCCTShapeGetBounds_maxY_PLUS": {
+     "crash": false,
+     "exit": 1,
+     "ran": 13,
+     "red": [
+      "RemoveLocationsTests.removeFromRotated",
+      "RemoveLocationsTests.removeFromTranslated"
+     ]
+    },
+    "OCCTShapeGetBounds_maxZ_NEG": {
+     "crash": false,
+     "exit": 1,
+     "ran": 13,
+     "red": [
+      "RemoveLocationsTests.removeFromRotated",
+      "RemoveLocationsTests.removeFromTranslated"
+     ]
+    },
+    "OCCTShapeGetBounds_maxZ_PLUS": {
+     "crash": false,
+     "exit": 1,
+     "ran": 13,
+     "red": [
+      "RemoveLocationsTests.removeFromRotated",
+      "RemoveLocationsTests.removeFromTranslated"
+     ]
+    },
+    "OCCTShapeGetBounds_minX_NEG": {
+     "crash": false,
+     "exit": 1,
+     "ran": 13,
+     "red": [
+      "RemoveLocationsTests.removeFromRotated",
+      "RemoveLocationsTests.removeFromTranslated"
+     ]
+    },
+    "OCCTShapeGetBounds_minX_PLUS": {
+     "crash": false,
+     "exit": 1,
+     "ran": 13,
+     "red": [
+      "RemoveLocationsTests.removeFromRotated",
+      "RemoveLocationsTests.removeFromTranslated"
+     ]
+    },
+    "OCCTShapeGetBounds_minY_NEG": {
+     "crash": false,
+     "exit": 1,
+     "ran": 13,
+     "red": [
+      "RemoveLocationsTests.removeFromRotated",
+      "RemoveLocationsTests.removeFromTranslated"
+     ]
+    },
+    "OCCTShapeGetBounds_minY_PLUS": {
+     "crash": false,
+     "exit": 1,
+     "ran": 13,
+     "red": [
+      "RemoveLocationsTests.removeFromTranslated"
+     ]
+    },
+    "OCCTShapeGetBounds_minZ_NEG": {
+     "crash": false,
+     "exit": 1,
+     "ran": 13,
+     "red": [
+      "RemoveLocationsTests.removeFromRotated",
+      "RemoveLocationsTests.removeFromTranslated"
+     ]
+    },
+    "OCCTShapeGetBounds_minZ_PLUS": {
+     "crash": false,
+     "exit": 1,
+     "ran": 13,
+     "red": [
+      "RemoveLocationsTests.removeFromTranslated"
+     ]
+    },
+    "OCCTShapeGetFaceAtIndex_RET_NIL": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeGetSubShapeCount_RET_MINUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 13,
+     "red": [
+      "LocationPurgeTests.cleanShapePurge",
+      "LocationPurgeTests.mirroredShapePurge"
+     ]
+    },
+    "OCCTShapeGetSubShapeCount_RET_PLUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 13,
+     "red": [
+      "LocationPurgeTests.cleanShapePurge",
+      "LocationPurgeTests.mirroredShapePurge",
+      "ShapeBuildVertexTests.combineVertices",
+      "ShapeBuildVertexTests.combineWithTolFactor"
+     ]
+    },
+    "OCCTShapeGetSubShapeCount_RET_ZERO": {
+     "crash": false,
+     "exit": 1,
+     "ran": 13,
+     "red": [
+      "LocationPurgeTests.cleanShapePurge",
+      "LocationPurgeTests.mirroredShapePurge",
+      "ShapeBuildVertexTests.combineVertices",
+      "ShapeBuildVertexTests.combineWithTolFactor"
+     ]
+    },
+    "OCCTShapeGetType_RET_MINUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 13,
+     "red": [
+      "ShapeBuildVertexTests.combineVertices"
+     ]
+    },
+    "OCCTShapeGetType_RET_PLUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 13,
+     "red": [
+      "ShapeBuildVertexTests.combineVertices"
+     ]
+    },
+    "OCCTShapeGetType_RET_ZERO": {
+     "crash": false,
+     "exit": 1,
+     "ran": 13,
+     "red": [
+      "ShapeBuildVertexTests.combineVertices"
+     ]
+    },
+    "OCCTShapeGetVertexAt_RET_FLIP": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeGetVertexAt_outX_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeGetVertexAt_outX_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeGetVertexAt_outY_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeGetVertexAt_outY_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeGetVertexAt_outZ_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeGetVertexAt_outZ_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeGetVertexCount_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeGetVertexCount_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeGetVertexCount_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeGetVertices_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeGetVertices_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeGetVertices_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeGetVertices_outVertices_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeGetVertices_outVertices_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeLocated_RET_NIL": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeMirror_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeMirror_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeMirror_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeMirror_IN4_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeMirror_IN5_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeMirror_IN6_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeMirror_RET_NIL": {
+     "crash": false,
+     "exit": 1,
+     "ran": 13,
+     "red": [
+      "LocationPurgeTests.mirroredShapePurge"
+     ]
+    },
+    "OCCTShapeMoved_IN1_PLUS": {
+     "crash": false,
+     "exit": 1,
+     "ran": 13,
+     "red": [
+      "RemoveLocationsTests.removeFromRotated",
+      "RemoveLocationsTests.removeFromTranslated"
+     ]
+    },
+    "OCCTShapeMoved_IN2_PLUS": {
+     "crash": false,
+     "exit": 1,
+     "ran": 13,
+     "red": [
+      "RemoveLocationsTests.removeFromRotated",
+      "RemoveLocationsTests.removeFromTranslated"
+     ]
+    },
+    "OCCTShapeMoved_IN3_PLUS": {
+     "crash": false,
+     "exit": 1,
+     "ran": 13,
+     "red": [
+      "RemoveLocationsTests.removeFromRotated",
+      "RemoveLocationsTests.removeFromTranslated"
+     ]
+    },
+    "OCCTShapeMoved_RET_NIL": {
+     "crash": false,
+     "exit": 1,
+     "ran": 13,
+     "red": [
+      "RemoveLocationsTests.removeFromRotated",
+      "RemoveLocationsTests.removeFromTranslated"
+     ]
+    },
+    "OCCTShapePurgeLocations_RET_NIL": {
+     "crash": false,
+     "exit": 1,
+     "ran": 13,
+     "red": [
+      "LocationPurgeTests.cleanShapePurge",
+      "LocationPurgeTests.mirroredShapePurge"
+     ]
+    },
+    "OCCTShapeRemoveLocations_RET_NIL": {
+     "crash": false,
+     "exit": 1,
+     "ran": 13,
+     "red": [
+      "RemoveLocationsTests.removeFromRotated",
+      "RemoveLocationsTests.removeFromTranslated"
+     ]
+    },
+    "OCCTShapeRotate_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeRotate_IN2_PLUS": {
+     "crash": false,
+     "exit": 1,
+     "ran": 13,
+     "red": [
+      "RemoveLocationsTests.removeFromRotated"
+     ]
+    },
+    "OCCTShapeRotate_IN3_PLUS": {
+     "crash": false,
+     "exit": 1,
+     "ran": 13,
+     "red": [
+      "RemoveLocationsTests.removeFromRotated"
+     ]
+    },
+    "OCCTShapeRotate_IN4_PLUS": {
+     "crash": false,
+     "exit": 1,
+     "ran": 13,
+     "red": [
+      "RemoveLocationsTests.removeFromRotated"
+     ]
+    },
+    "OCCTShapeRotate_RET_NIL": {
+     "crash": false,
+     "exit": 1,
+     "ran": 13,
+     "red": [
+      "RemoveLocationsTests.removeFromRotated"
+     ]
+    },
+    "OCCTShapeSameParameter_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeSameParameter_RET_NIL": {
+     "crash": false,
+     "exit": 1,
+     "ran": 13,
+     "red": [
+      "SameParameterTests.sameParameterBox",
+      "SameParameterTests.sameParameterCylinder",
+      "SameParameterTests.sameParameterPreservesVolume"
+     ]
+    },
+    "OCCTShapeTranslateByPoints_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeTranslateByPoints_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeTranslateByPoints_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeTranslateByPoints_IN4_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeTranslateByPoints_IN5_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeTranslateByPoints_IN6_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeTranslateByPoints_RET_NIL": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeTranslate_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeTranslate_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeTranslate_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTShapeTranslate_RET_NIL": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTSurfaceCopy_RET_NIL": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTSurfaceCreateCylinder_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTSurfaceCreateCylinder_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTSurfaceCreateCylinder_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTSurfaceCreateCylinder_IN4_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTSurfaceCreateCylinder_IN5_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTSurfaceCreateCylinder_IN6_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTSurfaceCreateCylinder_IN7_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTSurfaceCreateCylinder_RET_NIL": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTSurfaceCreateSphere_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTSurfaceCreateSphere_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTSurfaceCreateSphere_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTSurfaceCreateSphere_IN4_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTSurfaceCreateSphere_RET_NIL": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTSurfaceGetType_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTSurfaceGetType_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTSurfaceGetType_RET_ZERO": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTSurfaceMirrorAxis_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTSurfaceMirrorAxis_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTSurfaceMirrorAxis_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTSurfaceMirrorAxis_IN4_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTSurfaceMirrorAxis_IN5_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTSurfaceMirrorAxis_IN6_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTSurfaceMirrorAxis_RET_NIL": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTSurfaceMirrorPlane_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTSurfaceMirrorPlane_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTSurfaceMirrorPlane_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTSurfaceMirrorPlane_IN4_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTSurfaceMirrorPlane_IN5_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTSurfaceMirrorPlane_IN6_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTSurfaceMirrorPlane_RET_NIL": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTSurfaceMirrorPoint_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTSurfaceMirrorPoint_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTSurfaceMirrorPoint_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTSurfaceMirrorPoint_RET_NIL": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTSurfaceRotate_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTSurfaceRotate_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTSurfaceRotate_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTSurfaceRotate_IN4_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTSurfaceRotate_IN5_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTSurfaceRotate_IN6_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTSurfaceRotate_IN7_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTSurfaceRotate_RET_NIL": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTSurfaceTranslate_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTSurfaceTranslate_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTSurfaceTranslate_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTSurfaceTranslate_RET_NIL": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTTransform2DCreateTranslation_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTTransform2DCreateTranslation_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTTransform2DCreateTranslation_RET_NIL": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTVertexGetPoint_x_NEG": {
+     "crash": false,
+     "exit": 1,
+     "ran": 13,
+     "red": [
+      "ShapeBuildVertexTests.combineFromPoints",
+      "ShapeBuildVertexTests.combineVertices",
+      "ShapeBuildVertexTests.combineWithTolFactor"
+     ]
+    },
+    "OCCTVertexGetPoint_x_PLUS": {
+     "crash": false,
+     "exit": 1,
+     "ran": 13,
+     "red": [
+      "ShapeBuildVertexTests.combineFromPoints",
+      "ShapeBuildVertexTests.combineVertices",
+      "ShapeBuildVertexTests.combineWithTolFactor"
+     ]
+    },
+    "OCCTVertexGetPoint_y_NEG": {
+     "crash": false,
+     "exit": 1,
+     "ran": 13,
+     "red": [
+      "ShapeBuildVertexTests.combineVertices",
+      "ShapeBuildVertexTests.combineWithTolFactor"
+     ]
+    },
+    "OCCTVertexGetPoint_y_PLUS": {
+     "crash": false,
+     "exit": 1,
+     "ran": 13,
+     "red": [
+      "ShapeBuildVertexTests.combineFromPoints",
+      "ShapeBuildVertexTests.combineVertices",
+      "ShapeBuildVertexTests.combineWithTolFactor"
+     ]
+    },
+    "OCCTVertexGetPoint_z_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 13,
+     "red": []
+    },
+    "OCCTVertexGetPoint_z_PLUS": {
+     "crash": false,
+     "exit": 1,
+     "ran": 13,
+     "red": [
+      "ShapeBuildVertexTests.combineFromPoints",
+      "ShapeBuildVertexTests.combineVertices",
+      "ShapeBuildVertexTests.combineWithTolFactor"
+     ]
+    },
+    "OCCTVertexGetTolerance_RET_NEG": {
+     "crash": false,
+     "exit": 1,
+     "ran": 13,
+     "red": [
+      "ShapeBuildVertexTests.combineFromPoints",
+      "ShapeBuildVertexTests.combineVertices",
+      "ShapeBuildVertexTests.combineWithTolFactor"
+     ]
+    },
+    "OCCTVertexGetTolerance_RET_PLUS": {
+     "crash": false,
+     "exit": 1,
+     "ran": 13,
+     "red": [
+      "ShapeBuildVertexTests.combineFromPoints",
+      "ShapeBuildVertexTests.combineVertices",
+      "ShapeBuildVertexTests.combineWithTolFactor"
+     ]
+    }
+   },
+   "switches": 608,
+   "tests": [
+    "LocationPurgeTests.cleanShapePurge",
+    "LocationPurgeTests.mirroredShapePurge",
+    "RemoveLocationsTests.removeFromTranslated",
+    "RemoveLocationsTests.removeFromRotated",
+    "SameParameterTests.sameParameterBox",
+    "SameParameterTests.sameParameterCylinder",
+    "SameParameterTests.sameParameterPreservesVolume",
+    "ShapeBuildVertexTests.combineVertices",
+    "ShapeBuildVertexTests.combineFromPoints",
+    "ShapeBuildVertexTests.combineWithTolFactor",
+    "NURBSConversionTests.convertBox",
+    "NURBSConversionTests.convertSphere",
+    "NURBSConversionTests.convertFilleted"
+   ],
+   "unreddened": []
+  }
+ }
+}

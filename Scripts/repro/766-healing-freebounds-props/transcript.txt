@@ -1,0 +1,9 @@
+twoFaces compound: total=2 closed=2 open=0
+  closed[0]: area=100.000000000 perimeter=40.000000000 ratio=0.000000000 width=0.000000000 notches=0 wireEdges=4
+  closed[1]: area=100.000000000 perimeter=40.000000000 ratio=0.000000000 width=0.000000000 notches=0 wireEdges=4
+lone face: total=0 closed=0 open=0
+lone face wrapped in compound: total=1 closed=1 open=0
+  closed[0]: area=100.000000000 perimeter=40.000000000 ratio=0.000000000 width=0.000000000 notches=0 wireEdges=4
+box tol=1e-06: closed null=0 wires=0 edges=0; open null=0 wires=0
+box first face tol=1e-06: closed null=0 wires=0 edges=0; open null=0 wires=0
+box first face, non-sewing ctor: closed wires=1
