@@ -1,0 +1,6 @@
+Tests/OCCTCurveTests/Conversion/GeomConvertApproxCurveTests.swift
+Tests/OCCTCurveTests/Conversion/GeomConvertUtilTests.swift
+Tests/OCCTCurveTests/Fitting/ApproxCurvilinearParameterTests.swift
+Tests/OCCTCurveTests/Fitting/CurveApproximationTests.swift
+Tests/OCCTCurveTests/Sampling/GCPntsExpansionTests.swift
+Tests/OCCTCurveTests/Sampling/GCPntsTangentialDeflectionTests.swift
