@@ -61,6 +61,9 @@ struct DrawingSymbolsTests {
         let any = DrawingAnnotation.surfaceFinish(
             at: .zero, leaderTo: SIMD2(10, 0), ra: 1.0, symbol: .any)
         #expect(required.count > any.count)
+        // #766: exact counts: 2 arms + bar + Ra + leader, and the same without the bar.
+        #expect(required.count == 5)
+        #expect(any.count == 4)
     }
 
     @Test("Surface finish .machiningProhibited emits circle as centreline segments")
@@ -95,7 +98,9 @@ struct DrawingSymbolsTests {
         let lineCount = anns.filter {
             if case .centreline = $0 { return true } else { return false }
         }.count
-        #expect(lineCount >= 6)  // box + internal dividers
+        // #766: was `>= 6`, which passed a frame missing both datum dividers. 4 box edges + the
+        // symbol/tolerance and tolerance/datum dividers + one divider between each pair of datums.
+        #expect(lineCount == 8)
         let textCount = anns.filter {
             if case .textLabel = $0 { return true } else { return false }
         }.count
@@ -183,9 +188,11 @@ struct DrawingSymbolsTests {
 
     @Test("GDT symbol glyphs are non-empty")
     func gdtGlyphs() {
-        for s in [GDTSymbol.flatness, .position, .perpendicularity, .concentricity] {
-            #expect(!s.glyph.isEmpty)
-        }
+        // #766: `!isEmpty` passed any glyph at all; pin the documented ones.
+        #expect(GDTSymbol.flatness.glyph == "FLT")
+        #expect(GDTSymbol.position.glyph == "⌖")
+        #expect(GDTSymbol.perpendicularity.glyph == "⊥")
+        #expect(GDTSymbol.concentricity.glyph == "⊙")
     }
 
     @Test("Break line is a zigzag of 5 segments")
@@ -193,6 +200,17 @@ struct DrawingSymbolsTests {
         let anns = DrawingAnnotation.breakLine(
             from: SIMD2(0, 0), to: SIMD2(100, 0), amplitude: 2)
         #expect(anns.count == 5)
+        // #766: the count alone passed a straight line. The zigzag runs from the start to the end
+        // through the midpoint, peaking `amplitude` either side of the line.
+        let lines: [DrawingAnnotation.Centreline] = anns.compactMap {
+            if case .centreline(let c) = $0 { return c } else { return nil }
+        }
+        #expect(lines.count == 5)
+        if lines.count == 5 {
+            #expect(lines[0].from == SIMD2(0, 0) && lines[4].to == SIMD2(100, 0))
+            #expect(lines[1].to == SIMD2(49, 2))
+            #expect(lines[2].to == SIMD2(51, -2))
+        }
     }
 
     @Test("Detail view returns a TransformedDrawing with expected scale")
