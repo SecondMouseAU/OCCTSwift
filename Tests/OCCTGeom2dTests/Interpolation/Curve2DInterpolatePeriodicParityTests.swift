@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -29,7 +28,7 @@ struct Curve2DInterpolatePeriodicParityTests {
         // (Scripts/repro/766-geom2d-interpolate-tangents-periodic/).
         let c = try #require(periodic)
         #expect(abs(c.domain.upperBound - 40) < 1e-12)
-        #expect(simd_distance(c.point(at: 20), SIMD2(10, 10)) < 1e-9)
+        #expect(vectorDistance(c.point(at: 20), SIMD2(10, 10)) < 1e-9)
     }
 
     @Test("A non-default tolerance is now reachable through interpolatePeriodic")

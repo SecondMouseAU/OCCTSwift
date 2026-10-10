@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -18,8 +17,8 @@ struct GCMakeTrimmedConeTests {
         let d = s.domain
         #expect(abs(d.vMin) < 1e-12)
         #expect(abs(d.vMax - 10.4403065089) < 1e-9)
-        #expect(simd_length(s.point(atU: d.uMin, v: d.vMin) - SIMD3(5, 0, 0)) < 1e-9)
-        #expect(simd_length(s.point(atU: d.uMin, v: d.vMax) - SIMD3(2, 0, 10)) < 1e-9)
+        #expect(vectorLength(s.point(atU: d.uMin, v: d.vMin) - SIMD3(5, 0, 0)) < 1e-9)
+        #expect(vectorLength(s.point(atU: d.uMin, v: d.vMax) - SIMD3(2, 0, 10)) < 1e-9)
     }
 
     @Test func trimmedCone4Pts() throws {
@@ -34,7 +33,7 @@ struct GCMakeTrimmedConeTests {
                 p1: SIMD3(0, 0, 0), p2: SIMD3(0, 0, 10),
                 p3: SIMD3(5, 0, 0), p4: SIMD3(2, 0, 10)))
         let d = s.domain
-        #expect(simd_length(s.point(atU: d.uMin, v: d.vMin) - SIMD3(5, 0, 0)) < 1e-9)
-        #expect(simd_length(s.point(atU: d.uMin, v: d.vMax) - SIMD3(2, 0, 10)) < 1e-9)
+        #expect(vectorLength(s.point(atU: d.uMin, v: d.vMin) - SIMD3(5, 0, 0)) < 1e-9)
+        #expect(vectorLength(s.point(atU: d.uMin, v: d.vMax) - SIMD3(2, 0, 10)) < 1e-9)
     }
 }

@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -13,7 +12,7 @@ struct Geom2dAPIPointsToBSplineTests {
             Curve2D.approximate2D(points: [(0, 0), (1, 2), (2, 1), (3, 3), (4, 0)]))
         #expect(curve.degree == 4)
         #expect(curve.poleCount == 5)
-        #expect(simd_distance(curve.startPoint, SIMD2(0, 0)) < 1e-9)
-        #expect(simd_distance(curve.endPoint, SIMD2(4, 0)) < 1e-9)
+        #expect(vectorDistance(curve.startPoint, SIMD2(0, 0)) < 1e-9)
+        #expect(vectorDistance(curve.endPoint, SIMD2(4, 0)) < 1e-9)
     }
 }

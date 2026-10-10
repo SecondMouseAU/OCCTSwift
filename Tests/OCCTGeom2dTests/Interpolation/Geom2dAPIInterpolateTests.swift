@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -13,7 +12,7 @@ struct Geom2dAPIInterpolateTests {
         // Chord-length parametrised: (1, 1) at u = sqrt 2, 6 poles, domain [0, 3 sqrt 2].
         #expect(curve.poleCount == 6)
         #expect(abs(curve.domain.upperBound - 3 * 2.0.squareRoot()) < 1e-9)
-        #expect(simd_distance(curve.point(at: 2.0.squareRoot()), SIMD2(1, 1)) < 1e-9)
+        #expect(vectorDistance(curve.point(at: 2.0.squareRoot()), SIMD2(1, 1)) < 1e-9)
     }
 
     @Test func periodicInterpolation() throws {

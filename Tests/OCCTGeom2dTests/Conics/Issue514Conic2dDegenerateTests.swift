@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -50,15 +49,15 @@ struct Issue514Conic2dDegenerateTests {
             Curve2D.fromEllipseArc(
                 centerX: 0, centerY: 0,
                 majorRadius: 5, minorRadius: 3, u1: 0, u2: .pi))
-        #expect(simd_distance(e.startPoint, SIMD2(5, 0)) < 1e-9)
-        #expect(simd_distance(e.endPoint, SIMD2(-5, 0)) < 1e-9)
+        #expect(vectorDistance(e.startPoint, SIMD2(5, 0)) < 1e-9)
+        #expect(vectorDistance(e.endPoint, SIMD2(-5, 0)) < 1e-9)
         // Equal radii are a circle, which gp_Elips2d documents as valid.
         let c = try #require(
             Curve2D.fromEllipseArc(
                 centerX: 0, centerY: 0,
                 majorRadius: 4, minorRadius: 4, u1: 0, u2: .pi))
-        #expect(simd_distance(c.startPoint, SIMD2(4, 0)) < 1e-9)
-        #expect(simd_distance(c.endPoint, SIMD2(-4, 0)) < 1e-9)
+        #expect(vectorDistance(c.startPoint, SIMD2(4, 0)) < 1e-9)
+        #expect(vectorDistance(c.endPoint, SIMD2(-4, 0)) < 1e-9)
     }
 
     @Test func hyperbolaArcRejectsZeroRadii() {
@@ -84,8 +83,8 @@ struct Issue514Conic2dDegenerateTests {
                 centerX: 0, centerY: 0,
                 majorRadius: 3, minorRadius: 5, u1: 0, u2: 1))
         // #1979: `!= nil` only. The arc runs (3, 0) to (3 cosh 1, 5 sinh 1).
-        #expect(simd_distance(h.startPoint, SIMD2(3, 0)) < 1e-9)
-        #expect(simd_distance(h.endPoint, SIMD2(4.62924190445, 5.87600596822)) < 1e-9)
+        #expect(vectorDistance(h.startPoint, SIMD2(3, 0)) < 1e-9)
+        #expect(vectorDistance(h.endPoint, SIMD2(4.62924190445, 5.87600596822)) < 1e-9)
     }
 
     @Test func parabolaArcRejectsZeroFocal() {
@@ -98,8 +97,8 @@ struct Issue514Conic2dDegenerateTests {
         // #1979: `!= nil` only. The arc runs (0, 0) to (u^2 / 4f, u) = (0.125, 1).
         let p = try #require(
             Curve2D.fromParabolaArc(centerX: 0, centerY: 0, focal: 2, u1: 0, u2: 1))
-        #expect(simd_distance(p.startPoint, SIMD2(0, 0)) < 1e-9)
-        #expect(simd_distance(p.endPoint, SIMD2(0.125, 1)) < 1e-9)
+        #expect(vectorDistance(p.startPoint, SIMD2(0, 0)) < 1e-9)
+        #expect(vectorDistance(p.endPoint, SIMD2(0.125, 1)) < 1e-9)
     }
 
     @Test func circleArcRejectsZeroRadius() {

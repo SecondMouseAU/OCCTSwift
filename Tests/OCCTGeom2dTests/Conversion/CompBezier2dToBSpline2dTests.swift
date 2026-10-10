@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -18,7 +17,7 @@ struct CompBezier2dToBSpline2dTests {
         let result = try #require(CompBezierConverter.toBSpline2d(segments: [seg]))
         #expect(result.degree == 2)
         try #require(result.poles.count == 3)
-        #expect(zip(result.poles, seg).allSatisfy { simd_distance($0, $1) < 1e-12 })
+        #expect(zip(result.poles, seg).allSatisfy { vectorDistance($0, $1) < 1e-12 })
         #expect(result.knots == [0, 1])
         #expect(result.multiplicities == [3, 3])
     }
@@ -38,7 +37,7 @@ struct CompBezier2dToBSpline2dTests {
             SIMD2(0, 0), SIMD2(1, 1), SIMD2(2, 1), SIMD2(4, -1), SIMD2(5, -1), SIMD2(6, 0),
         ]
         try #require(result.poles.count == 6)
-        #expect(zip(result.poles, expected).allSatisfy { simd_distance($0, $1) < 1e-12 })
+        #expect(zip(result.poles, expected).allSatisfy { vectorDistance($0, $1) < 1e-12 })
         try #require(result.knots.count == 3)
         #expect(abs(result.knots[1] - 0.5) < 1e-12)
         #expect(result.multiplicities == [4, 2, 4])

@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -13,7 +12,7 @@ struct GceMakeLinTests {
         let line = try #require(Curve3D.lineFrom2Points(SIMD3(0, 0, 0), SIMD3(1, 2, 3)))
         let domain = line.domain
         #expect(domain.upperBound > domain.lowerBound)
-        #expect(simd_length(line.point(at: 0) - SIMD3(0, 0, 0)) < 1e-9)
-        #expect(simd_length(line.point(at: 14.0.squareRoot()) - SIMD3(1, 2, 3)) < 1e-9)
+        #expect(vectorLength(line.point(at: 0) - SIMD3(0, 0, 0)) < 1e-9)
+        #expect(vectorLength(line.point(at: 14.0.squareRoot()) - SIMD3(1, 2, 3)) < 1e-9)
     }
 }

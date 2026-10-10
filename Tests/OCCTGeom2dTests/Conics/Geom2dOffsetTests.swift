@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -17,20 +16,20 @@ struct Geom2dOffsetTests {
     @Test func offset2DValue() throws {
         let oc = try make()
         #expect(abs(oc.offsetProperties.offset - 3) < 1e-12)
-        #expect(simd_distance(oc.point(at: 0), SIMD2(0, -3)) < 1e-12)
+        #expect(vectorDistance(oc.point(at: 0), SIMD2(0, -3)) < 1e-12)
     }
 
     @Test func offset2DSetValue() throws {
         let oc = try make()
         #expect(oc.offsetProperties.setOffset(5))
         #expect(abs(oc.offsetProperties.offset - 5) < 1e-12)
-        #expect(simd_distance(oc.point(at: 0), SIMD2(0, -5)) < 1e-12)
+        #expect(vectorDistance(oc.point(at: 0), SIMD2(0, -5)) < 1e-12)
     }
 
     @Test func offset2DBasisCurve() throws {
         // The basis is the original x-axis line.
         let oc = try make()
         let basis = try #require(oc.offsetProperties.basisCurve)
-        #expect(simd_distance(basis.point(at: 2), SIMD2(2, 0)) < 1e-12)
+        #expect(vectorDistance(basis.point(at: 2), SIMD2(2, 0)) < 1e-12)
     }
 }

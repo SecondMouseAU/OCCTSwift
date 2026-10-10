@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -15,37 +14,37 @@ struct Geom2dLineTests {
 
     @Test func line2DDirection() throws {
         let l = try make()
-        #expect(simd_distance(l.lineProperties.direction, SIMD2(1, 0)) < 1e-12)
+        #expect(vectorDistance(l.lineProperties.direction, SIMD2(1, 0)) < 1e-12)
     }
 
     @Test func line2DDirectionIsNormalised() throws {
         // gp_Dir2d is a unit vector, so a (3, 4) direction reads back as (0.6, 0.8), whether it
         // came in through the factory or through the setter (a 5-12-13 triangle the second time).
         let l = try #require(Curve2D.line(through: .zero, direction: SIMD2(3, 4)))
-        #expect(simd_distance(l.lineProperties.direction, SIMD2(0.6, 0.8)) < 1e-12)
+        #expect(vectorDistance(l.lineProperties.direction, SIMD2(0.6, 0.8)) < 1e-12)
         #expect(l.lineProperties.setDirection(SIMD2(-5, 12)))
-        #expect(simd_distance(l.lineProperties.direction, SIMD2(-5.0 / 13.0, 12.0 / 13.0)) < 1e-12)
+        #expect(vectorDistance(l.lineProperties.direction, SIMD2(-5.0 / 13.0, 12.0 / 13.0)) < 1e-12)
     }
 
     @Test func line2DLocation() throws {
         let l = try make()
-        #expect(simd_distance(l.lineProperties.location, SIMD2(1, 2)) < 1e-12)
+        #expect(vectorDistance(l.lineProperties.location, SIMD2(1, 2)) < 1e-12)
     }
 
     @Test func line2DSetDirection() throws {
         let l = try make()
         #expect(l.lineProperties.setDirection(SIMD2(0, 1)))
-        #expect(simd_distance(l.lineProperties.direction, SIMD2(0, 1)) < 1e-12)
+        #expect(vectorDistance(l.lineProperties.direction, SIMD2(0, 1)) < 1e-12)
         // Turning the line does not move it.
-        #expect(simd_distance(l.lineProperties.location, SIMD2(1, 2)) < 1e-12)
+        #expect(vectorDistance(l.lineProperties.location, SIMD2(1, 2)) < 1e-12)
     }
 
     @Test func line2DSetLocation() throws {
         let l = try make()
         #expect(l.lineProperties.setLocation(SIMD2(5, 5)))
-        #expect(simd_distance(l.lineProperties.location, SIMD2(5, 5)) < 1e-12)
+        #expect(vectorDistance(l.lineProperties.location, SIMD2(5, 5)) < 1e-12)
         // Moving the line does not turn it.
-        #expect(simd_distance(l.lineProperties.direction, SIMD2(1, 0)) < 1e-12)
+        #expect(vectorDistance(l.lineProperties.direction, SIMD2(1, 0)) < 1e-12)
     }
 
     @Test func line2DDistance() throws {
@@ -65,7 +64,7 @@ struct Geom2dLineTests {
     @Test func line2DLin2d() throws {
         let l = try make()
         let gl = l.lineProperties.lin2d
-        #expect(simd_distance(gl.location, SIMD2(1, 2)) < 1e-12)
-        #expect(simd_distance(gl.direction, SIMD2(1, 0)) < 1e-12)
+        #expect(vectorDistance(gl.location, SIMD2(1, 2)) < 1e-12)
+        #expect(vectorDistance(gl.direction, SIMD2(1, 0)) < 1e-12)
     }
 }

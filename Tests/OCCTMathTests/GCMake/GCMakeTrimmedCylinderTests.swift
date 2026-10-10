@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -17,8 +16,8 @@ struct GCMakeTrimmedCylinderTests {
                 radius: 5, height: 10))
         let d = s.domain
         #expect(abs(d.vMax - d.vMin - 10) < 1e-12)
-        #expect(simd_length(s.point(atU: d.uMin, v: d.vMin) - SIMD3(5, 0, 0)) < 1e-9)
-        #expect(simd_length(s.point(atU: d.uMin, v: d.vMax) - SIMD3(5, 0, 10)) < 1e-9)
+        #expect(vectorLength(s.point(atU: d.uMin, v: d.vMin) - SIMD3(5, 0, 0)) < 1e-9)
+        #expect(vectorLength(s.point(atU: d.uMin, v: d.vMax) - SIMD3(5, 0, 10)) < 1e-9)
     }
 
     @Test func trimmedCylinderAxis() throws {
@@ -28,8 +27,8 @@ struct GCMakeTrimmedCylinderTests {
                 radius: 5, height: 10))
         let d = s.domain
         #expect(abs(d.vMax - d.vMin - 10) < 1e-12)
-        #expect(simd_length(s.point(atU: d.uMin, v: d.vMin) - SIMD3(5, 0, 0)) < 1e-9)
-        #expect(simd_length(s.point(atU: d.uMin, v: d.vMax) - SIMD3(5, 0, 10)) < 1e-9)
+        #expect(vectorLength(s.point(atU: d.uMin, v: d.vMin) - SIMD3(5, 0, 0)) < 1e-9)
+        #expect(vectorLength(s.point(atU: d.uMin, v: d.vMax) - SIMD3(5, 0, 10)) < 1e-9)
     }
 
     @Test func trimmedCylinder3Pts() throws {
@@ -38,7 +37,7 @@ struct GCMakeTrimmedCylinderTests {
                 p1: SIMD3(5, 0, 0), p2: SIMD3(5, 0, 10), p3: SIMD3(0, 5, 0)))
         let d = s.domain
         #expect(abs(d.vMax - d.vMin - 10) < 1e-12)
-        #expect(simd_length(s.point(atU: d.uMin, v: d.vMin) - SIMD3(12.0710678119, 0, 0)) < 1e-9)
-        #expect(simd_length(s.point(atU: d.uMin, v: d.vMax) - SIMD3(12.0710678119, 0, 10)) < 1e-9)
+        #expect(vectorLength(s.point(atU: d.uMin, v: d.vMin) - SIMD3(12.0710678119, 0, 0)) < 1e-9)
+        #expect(vectorLength(s.point(atU: d.uMin, v: d.vMax) - SIMD3(12.0710678119, 0, 10)) < 1e-9)
     }
 }

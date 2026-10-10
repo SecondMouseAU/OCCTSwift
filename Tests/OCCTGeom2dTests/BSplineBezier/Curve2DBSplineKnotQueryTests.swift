@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -67,7 +66,7 @@ struct Curve2DBSplineKnotQueryTests {
         let expected: [SIMD2<Double>] = [SIMD2(0, 0), SIMD2(1, 2), SIMD2(2, 0)]
         try #require(poles.count == expected.count)
         #expect(c.poleCount == 3)
-        #expect(zip(poles, expected).allSatisfy { simd_distance($0, $1) < 1e-9 })
+        #expect(zip(poles, expected).allSatisfy { vectorDistance($0, $1) < 1e-9 })
     }
 
     @Test("IsClosed and IsPeriodic")

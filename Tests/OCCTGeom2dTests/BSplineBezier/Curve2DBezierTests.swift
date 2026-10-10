@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -31,9 +30,9 @@ struct Curve2DBezierTests {
     @Test func getPole() throws {
         let bp = try makeBezier2D().bezierProperties
         // Poles are 1-based: pole 1 is the first one given, so an off-by-one reads (5, 10) here.
-        #expect(simd_distance(bp.pole(at: 1), SIMD2(0, 0)) < 1e-10)
-        #expect(simd_distance(bp.pole(at: 2), SIMD2(5, 10)) < 1e-10)
-        #expect(simd_distance(bp.pole(at: 3), SIMD2(10, 0)) < 1e-10)
+        #expect(vectorDistance(bp.pole(at: 1), SIMD2(0, 0)) < 1e-10)
+        #expect(vectorDistance(bp.pole(at: 2), SIMD2(5, 10)) < 1e-10)
+        #expect(vectorDistance(bp.pole(at: 3), SIMD2(10, 0)) < 1e-10)
     }
 
     @Test func setPole() throws {
@@ -44,8 +43,8 @@ struct Curve2DBezierTests {
         #expect(abs(p.x - 3.0) < 1e-10)
         #expect(abs(p.y - 7.0) < 1e-10)
         // Only pole 2 moved.
-        #expect(simd_distance(bp.pole(at: 1), SIMD2(0, 0)) < 1e-10)
-        #expect(simd_distance(bp.pole(at: 3), SIMD2(10, 0)) < 1e-10)
+        #expect(vectorDistance(bp.pole(at: 1), SIMD2(0, 0)) < 1e-10)
+        #expect(vectorDistance(bp.pole(at: 3), SIMD2(10, 0)) < 1e-10)
     }
 
     @Test func isRational() throws {
@@ -67,7 +66,7 @@ struct Curve2DBezierTests {
             numerator += share * Self.arch[i]
             denominator += share
         }
-        #expect(simd_distance(weighted.point(at: 0.5), numerator / denominator) < 1e-12)
+        #expect(vectorDistance(weighted.point(at: 0.5), numerator / denominator) < 1e-12)
 
         // OCCT drops weights that are all equal, so unit weights are not rational.
         let unit = try #require(Curve2D.bezier(poles: Self.arch, weights: [1, 1, 1]))

@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -37,7 +36,7 @@ import simd
             return
         }
         #expect(abs(r.distance - 3) < 1e-9)
-        let actualDistance = simd_distance(r.point1, r.point2)
+        let actualDistance = vectorDistance(r.point1, r.point2)
         #expect(abs(actualDistance - r.distance) < 1e-9)
     }
 
@@ -74,7 +73,7 @@ import simd
         // #1979: one extremum, the foot (5, 0) at distance 5.
         try #require(results.count == 1)
         #expect(abs(results[0].distance - 5) < 1e-9)
-        #expect(simd_distance(results[0].point2, SIMD2(5, 0)) < 1e-9)
+        #expect(vectorDistance(results[0].point2, SIMD2(5, 0)) < 1e-9)
     }
 
     @Test("Distance between two curves")

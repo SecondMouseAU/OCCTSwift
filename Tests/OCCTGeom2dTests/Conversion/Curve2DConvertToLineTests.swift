@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -19,6 +18,6 @@ struct Curve2DConvertToLineTests {
         #expect(abs(r.newFirst) < 1e-12)
         #expect(abs(r.newLast - 10) < 1e-12)
         #expect(r.deviation < 1e-12)
-        #expect(simd_distance(r.line.point(at: r.newLast), SIMD2(10, 0)) < 1e-12)
+        #expect(vectorDistance(r.line.point(at: r.newLast), SIMD2(10, 0)) < 1e-12)
     }
 }

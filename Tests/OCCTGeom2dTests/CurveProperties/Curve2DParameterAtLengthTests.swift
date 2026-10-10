@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -30,7 +29,7 @@ struct Curve2DParameterAtLengthTests {
         let pt = arc.point(at: param)
         let expectedX: Double = 10 * cos(Double.pi / 4)
         let expectedY: Double = 10 * sin(Double.pi / 4)
-        #expect(simd_distance(pt, SIMD2(expectedX, expectedY)) < 1e-9)
+        #expect(vectorDistance(pt, SIMD2(expectedX, expectedY)) < 1e-9)
     }
 
     @Test("Parameter at length on an arc that does not start at angle 0")
@@ -50,7 +49,7 @@ struct Curve2DParameterAtLengthTests {
         #expect(abs(half - halfAngle) < 1e-9)
         let expectedX: Double = 1 + 10 * cos(halfAngle)
         let expectedY: Double = 1 + 10 * sin(halfAngle)
-        #expect(simd_distance(arc.point(at: half), SIMD2(expectedX, expectedY)) < 1e-9)
+        #expect(vectorDistance(arc.point(at: half), SIMD2(expectedX, expectedY)) < 1e-9)
 
         // The documented identity: the whole length lands on the end of the domain.
         let full = try #require(arc.parameterAtLength(total))
@@ -63,7 +62,7 @@ struct Curve2DParameterAtLengthTests {
         let param = try #require(seg.parameterAtLength(0))
         #expect(abs(param) < 1e-12)
         let pt = seg.point(at: param)
-        #expect(simd_distance(pt, SIMD2(0, 0)) < 1e-12)
+        #expect(vectorDistance(pt, SIMD2(0, 0)) < 1e-12)
 
         // Zero travel returns the starting parameter, wherever that is.
         let later = try #require(seg.parameterAtLength(0, from: 4))
@@ -91,11 +90,11 @@ struct Curve2DParameterAtLengthTests {
 
         let half = try #require(seg.parameterAtLength(2.5))
         #expect(abs(half - 2.5) < 1e-12)
-        #expect(simd_distance(seg.point(at: half), SIMD2(2.5, 4)) < 1e-12)
+        #expect(vectorDistance(seg.point(at: half), SIMD2(2.5, 4)) < 1e-12)
 
         let full = try #require(seg.parameterAtLength(total))
         #expect(abs(full - seg.domain.upperBound) < 1e-12)
-        #expect(simd_distance(seg.point(at: full), SIMD2(4, 6)) < 1e-12)
+        #expect(vectorDistance(seg.point(at: full), SIMD2(4, 6)) < 1e-12)
     }
 
     @Test("Parameter at length from non-start parameter")
@@ -172,7 +171,7 @@ struct Curve2DParameterAtLengthTests {
     private func simpsonLength(_ curve: Curve2D, _ a: Double, _ b: Double) -> Double {
         let panels = 4000
         let h = (b - a) / Double(panels)
-        func speed(_ u: Double) -> Double { simd_length(curve.d1(at: u).tangent) }
+        func speed(_ u: Double) -> Double { vectorLength(curve.d1(at: u).tangent) }
         var sum = speed(a) + speed(b)
         for i in 1..<panels {
             let weight: Double = i % 2 == 1 ? 4 : 2
@@ -222,8 +221,8 @@ struct Curve2DParameterAtLengthTests {
         let trimmed = try #require(seg.trimmed(from: first, to: endParam))
         let len = try #require(trimmed.length)
         #expect(abs(len - 7.0) < 1e-9)
-        #expect(simd_distance(trimmed.point(at: trimmed.domain.lowerBound), SIMD2(0, 0)) < 1e-9)
-        #expect(simd_distance(trimmed.point(at: trimmed.domain.upperBound), SIMD2(7, 0)) < 1e-9)
+        #expect(vectorDistance(trimmed.point(at: trimmed.domain.lowerBound), SIMD2(0, 0)) < 1e-9)
+        #expect(vectorDistance(trimmed.point(at: trimmed.domain.upperBound), SIMD2(7, 0)) < 1e-9)
 
         // Starting part-way along, the same seven units run from x = 5 to x = 12.
         let mid = try #require(seg.parameterAtLength(5, from: first))
@@ -231,7 +230,7 @@ struct Curve2DParameterAtLengthTests {
         let piece = try #require(seg.trimmed(from: mid, to: end))
         let pieceLen = try #require(piece.length)
         #expect(abs(pieceLen - 7.0) < 1e-9)
-        #expect(simd_distance(piece.point(at: piece.domain.lowerBound), SIMD2(5, 0)) < 1e-9)
-        #expect(simd_distance(piece.point(at: piece.domain.upperBound), SIMD2(12, 0)) < 1e-9)
+        #expect(vectorDistance(piece.point(at: piece.domain.lowerBound), SIMD2(5, 0)) < 1e-9)
+        #expect(vectorDistance(piece.point(at: piece.domain.upperBound), SIMD2(12, 0)) < 1e-9)
     }
 }

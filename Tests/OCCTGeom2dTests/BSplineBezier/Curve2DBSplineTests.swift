@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -30,7 +29,7 @@ struct Curve2DBSplineTests {
         // (Scripts/repro/766-geom2d-bspline-local-and-factories/).
         let c = try #require(bsp)
         #expect(abs(c.domain.upperBound - 3) < 1e-12)
-        #expect(simd_distance(c.point(at: 1.5), SIMD2(5, 4.625)) < 1e-9)
+        #expect(vectorDistance(c.point(at: 1.5), SIMD2(5, 4.625)) < 1e-9)
     }
 
     @Test("Interpolate through points")
@@ -46,8 +45,8 @@ struct Curve2DBSplineTests {
             #expect(abs(start.y - 0) < 1e-6)
             // #1979: the start point alone passed a curve that missed every other point. It also
             // passes through (3, 4) at its second knot, u = 5, and ends at (10, 5).
-            #expect(simd_distance(curve.point(at: 5), SIMD2(3, 4)) < 1e-9)
-            #expect(simd_distance(curve.endPoint, SIMD2(10, 5)) < 1e-9)
+            #expect(vectorDistance(curve.point(at: 5), SIMD2(3, 4)) < 1e-9)
+            #expect(vectorDistance(curve.endPoint, SIMD2(10, 5)) < 1e-9)
         }
     }
 
@@ -63,8 +62,8 @@ struct Curve2DBSplineTests {
         let d = c.domain
         let startTangent = c.d1(at: d.lowerBound).tangent
         let endTangent = c.d1(at: d.upperBound).tangent
-        #expect(simd_distance(startTangent, SIMD2(1.06066017178, 1.06066017178)) < 1e-9)
-        #expect(simd_distance(endTangent, SIMD2(1.06066017178, -1.06066017178)) < 1e-9)
+        #expect(vectorDistance(startTangent, SIMD2(1.06066017178, 1.06066017178)) < 1e-9)
+        #expect(vectorDistance(endTangent, SIMD2(1.06066017178, -1.06066017178)) < 1e-9)
     }
 
     @Test("Fit points with tolerance")
@@ -79,7 +78,7 @@ struct Curve2DBSplineTests {
         let c = try #require(curve)
         #expect(c.degree == 3)
         #expect(c.poleCount == 22)
-        #expect(simd_distance(c.endPoint, SIMD2(10, sin(10.0))) < 1e-9)
+        #expect(vectorDistance(c.endPoint, SIMD2(10, sin(10.0))) < 1e-9)
     }
 
     @Test("Pole count query")
@@ -110,7 +109,7 @@ struct Curve2DBSplineTests {
         // #1979: `count >= 3` passed a sampler that returned almost nothing. GCPnts_TangentialDeflection
         // at the default (0.1, 0.01) gives 30 points from (0, 0) to (10, 0).
         try #require(points.count == 30)
-        #expect(simd_distance(points[0], SIMD2(0, 0)) < 1e-9)
-        #expect(simd_distance(points[29], SIMD2(10, 0)) < 1e-9)
+        #expect(vectorDistance(points[0], SIMD2(0, 0)) < 1e-9)
+        #expect(vectorDistance(points[29], SIMD2(10, 0)) < 1e-9)
     }
 }

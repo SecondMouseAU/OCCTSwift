@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -40,7 +39,7 @@ struct Curve2DCircleInvoluteTests {
         // At first parameter (0), C(0) = R*(1, 0) = (2, 0)
         #expect(abs(p.x - 2.0) < 1e-10)
         #expect(abs(p.y) < 1e-10)
-        #expect(simd_distance(curve.point(at: 1), Self.c1) < 1e-9)
+        #expect(vectorDistance(curve.point(at: 1), Self.c1) < 1e-9)
     }
 
     @Test func circleInvoluteTranslated() throws {
@@ -51,7 +50,7 @@ struct Curve2DCircleInvoluteTests {
         // C(0) = (10, 20) + 2*(1, 0) = (12, 20)
         #expect(abs(p.x - 12.0) < 1e-10)
         #expect(abs(p.y - 20.0) < 1e-10)
-        #expect(simd_distance(curve.point(at: 1), SIMD2(10, 20) + Self.c1) < 1e-9)
+        #expect(vectorDistance(curve.point(at: 1), SIMD2(10, 20) + Self.c1) < 1e-9)
     }
 
     @Test func circleInvoluteRotated() throws {
@@ -64,7 +63,7 @@ struct Curve2DCircleInvoluteTests {
         #expect(abs(p.x) < 1e-10)
         #expect(abs(p.y - 2.0) < 1e-10)
         // Rotating the placement by 90 degrees rotates C(1) the same way.
-        #expect(simd_distance(curve.point(at: 1), SIMD2(-Self.c1.y, Self.c1.x)) < 1e-9)
+        #expect(vectorDistance(curve.point(at: 1), SIMD2(-Self.c1.y, Self.c1.x)) < 1e-9)
     }
 
     @Test func circleInvoluteMirroredFlank() throws {
@@ -75,13 +74,13 @@ struct Curve2DCircleInvoluteTests {
             Curve2D.circleInvolute(origin: .zero, direction: SIMD2(-1, 0), radius: 2.0))
         // The mirrored placement is the standard one turned by 180 degrees: C(0) = (-2, 0) and
         // C(1) = -(standard C(1)).
-        #expect(simd_distance(standardCurve.point(at: 0), SIMD2(2, 0)) < 1e-9)
-        #expect(simd_distance(mirroredCurve.point(at: 0), SIMD2(-2, 0)) < 1e-9)
+        #expect(vectorDistance(standardCurve.point(at: 0), SIMD2(2, 0)) < 1e-9)
+        #expect(vectorDistance(mirroredCurve.point(at: 0), SIMD2(-2, 0)) < 1e-9)
         let pStandardU = standardCurve.point(at: 1)
         let pMirroredU = mirroredCurve.point(at: 1)
         #expect(pStandardU.y > 0)  // Standard flank goes positive Y
         #expect(pMirroredU.y < 0)  // Mirrored flank goes negative Y
-        #expect(simd_distance(pMirroredU, -Self.c1) < 1e-9)
+        #expect(vectorDistance(pMirroredU, -Self.c1) < 1e-9)
     }
 
     @Test func circleInvoluteCanBuildEdge() throws {

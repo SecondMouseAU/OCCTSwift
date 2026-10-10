@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -32,6 +31,6 @@ struct Geom2dHyperbolaTests {
     @Test func hyperbola2DFocus1() throws {
         let h = try make()
         let f = h.hyperbolaProperties.focus1
-        #expect(simd_distance(f, SIMD2(34.0.squareRoot(), 0)) < 1e-9)
+        #expect(vectorDistance(f, SIMD2(34.0.squareRoot(), 0)) < 1e-9)
     }
 }

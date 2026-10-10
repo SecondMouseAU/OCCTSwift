@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -18,7 +17,7 @@ struct Geom2dCircleTests {
         let c = try #require(Curve2D.circle(center: .zero, radius: 5))
         #expect(c.circleProperties.setRadius(8))
         #expect(abs(c.circleProperties.radius - 8) < 1e-12)
-        #expect(simd_distance(c.point(at: 0), SIMD2(8, 0)) < 1e-12)
+        #expect(vectorDistance(c.point(at: 0), SIMD2(8, 0)) < 1e-12)
     }
 
     @Test func circle2DEccentricity() throws {
@@ -36,7 +35,7 @@ struct Geom2dCircleTests {
     @Test func circle2DXAxis() throws {
         let c = try #require(Curve2D.circle(center: SIMD2(3, 4), radius: 5))
         let ax = c.circleProperties.xAxis
-        #expect(simd_distance(ax.direction, SIMD2(1, 0)) < 1e-12)
-        #expect(simd_distance(ax.position, SIMD2(3, 4)) < 1e-12)
+        #expect(vectorDistance(ax.direction, SIMD2(1, 0)) < 1e-12)
+        #expect(vectorDistance(ax.position, SIMD2(3, 4)) < 1e-12)
     }
 }

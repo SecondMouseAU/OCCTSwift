@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -20,9 +19,9 @@ struct GeomLibIsPlanarSurfaceTests {
     func getPlane() throws {
         let plane = try #require(Surface.plane(origin: SIMD3(1, 2, 3), normal: SIMD3(0, 0, 1)))
         let result = try #require(plane.planarPlane())
-        #expect(simd_length(result.origin - SIMD3(1, 2, 3)) < 1e-9)
-        #expect(simd_length(result.normal - SIMD3(0, 0, 1)) < 1e-9)
-        #expect(simd_length(result.xDirection - SIMD3(1, 0, 0)) < 1e-9)
+        #expect(vectorLength(result.origin - SIMD3(1, 2, 3)) < 1e-9)
+        #expect(vectorLength(result.normal - SIMD3(0, 0, 1)) < 1e-9)
+        #expect(vectorLength(result.xDirection - SIMD3(1, 0, 0)) < 1e-9)
     }
 
     @Test("cylinder is not planar")
