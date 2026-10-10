@@ -635,11 +635,17 @@ public final class Shape: @unchecked Sendable {
 
     /// Loft through multiple profile wires.
     public static func loft(profiles: [Wire], solid: Bool = true) -> Shape? {
+        // The pointers are borrowed from `profiles`, which an inlined caller may have no further use
+        // for once `map` has run, so hold the array across the C call (#3261, see `NativeHandleOwner`).
         let handles: [OCCTWireRef?] = profiles.map { $0.handle }
         guard
-            let handle = handles.withUnsafeBufferPointer({ buffer in
-                OCCTShapeCreateLoft(buffer.baseAddress, Int32(profiles.count), solid)
-            })
+            let handle = withExtendedLifetime(
+                profiles,
+                {
+                    handles.withUnsafeBufferPointer({ buffer in
+                        OCCTShapeCreateLoft(buffer.baseAddress, Int32(profiles.count), solid)
+                    })
+                })
         else { return nil }
         return Shape(handle: handle)
     }
@@ -674,17 +680,22 @@ public final class Shape: @unchecked Sendable {
         firstVertex: SIMD3<Double>? = nil,
         lastVertex: SIMD3<Double>? = nil
     ) -> Shape? {
+        // Same as the overload above: hold `profiles` across the C call (#3261, see `NativeHandleOwner`).
         let handles: [OCCTWireRef?] = profiles.map { $0.handle }
         let fv = firstVertex ?? SIMD3<Double>(Double.nan, Double.nan, Double.nan)
         let lv = lastVertex ?? SIMD3<Double>(Double.nan, Double.nan, Double.nan)
         guard
-            let handle = handles.withUnsafeBufferPointer({ buffer in
-                OCCTShapeCreateLoftAdvanced(
-                    buffer.baseAddress, Int32(profiles.count),
-                    solid, ruled,
-                    fv.x, fv.y, fv.z,
-                    lv.x, lv.y, lv.z)
-            })
+            let handle = withExtendedLifetime(
+                profiles,
+                {
+                    handles.withUnsafeBufferPointer({ buffer in
+                        OCCTShapeCreateLoftAdvanced(
+                            buffer.baseAddress, Int32(profiles.count),
+                            solid, ruled,
+                            fv.x, fv.y, fv.z,
+                            lv.x, lv.y, lv.z)
+                    })
+                })
         else { return nil }
         return Shape(handle: handle)
     }

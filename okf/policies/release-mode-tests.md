@@ -72,12 +72,19 @@ those are upper bounds):
 
 ## What the first full runs found
 
-- **Seven `OCCTThreadTests` suites SIGSEGV in release on the CI runner** (the `threadedShaft` and
-  `threadedHole` builds), with and without the `Malloc*` variables, each run alone. They pass in
-  debug on the same commit and in release locally on Swift 6.4, so the cause is the optimiser, the
-  Swift 6.2.4 toolchain, or a defect only an optimised build reaches (#3261). They are listed in
-  `Scripts/release-mode-known-failures.txt`, which `release-mode-test.sh` turns into `--skip`, so the
-  job reports what is new and not what is known. Delete a line when its issue is fixed.
+- **Seven `OCCTThreadTests` suites SIGSEGV in release on the CI runner** (#3261), each run alone, in
+  7 of 7 plain runs on Swift 6.2.4 and in none on 6.4. It was a real defect, not the toolchain:
+  `Shape.loft(profiles:)` did `profiles.map { $0.handle }` and handed the pointers to
+  `OCCTShapeCreateLoft*`, and `Shape.screwSweptThreadCutter` (the `threadedHole` and `threadedShaft`
+  cutter) calls it on a local `sections` array with no later use. Once `loft` is inlined, nothing
+  keeps that array, which fits the wires being freed before `BRepOffsetAPI_ThruSections::AddWire` reads them
+  (lldb on the runner stopped in `AddWire` on a wild pointer, `EXC_BAD_ACCESS` in the first
+  `ldadd` of a TShape refcount; run 38049863685). `withExtendedLifetime(profiles)` around the C call
+  fixed it: 21 of 21 runs of the same seven suites passed (run 38051082613). That the 6.2 optimiser shortens
+  the array's life and 6.4 does not is inferred from the two outcomes, not isolated; it would explain why it was invisible locally. The same shape,
+  `array.map { $0.handle }` over a parameter, is at about 70 other sites; the gate cannot see it
+  (see "WHAT IT CANNOT SEE" in `Scripts/check-borrowed-handle-temporaries.py`) and only a caller that
+  passes a dying local reaches it.
 - One test failure that is not release-specific:
   `Issue2760HardTimeoutAllPlatformsTests.nonPositiveBoundIsNil` (#3256), 1 in 40 in debug and in
   release.
@@ -93,9 +100,13 @@ code 11` in 6 of 6 runs, with and without the `Malloc*` variables, and the same 
 debug runs. The same on CI (throwaway branch, never merged): the `subset` job failed with
 `Expectation failed: (b.isValid -> true) == false` on that test (the wrong-answer variant of the
 hazard, where locally it was the crash), while `swift build + test (macOS)` on the same commit
-passed. Removing `withExtendedLifetime` from `withHandle` itself is **not** caught: the three
-`Issue3130BorrowedHandle` tests still pass (#3258), so those tests pin the call sites, not the
-helper's contract.
+passed. Removing `withExtendedLifetime` from `withHandle` itself was **not** caught by the three OCCT tests in
+`Issue3130BorrowedHandle` (#3258): they pin the call sites, not the helper's contract. Two `Probe`
+tests now pin the helper with an owner whose `deinit` is observable and no OCCT in the way. Measured
+with `withHandle` changed to `try body(handle)`: on the CI runner (Swift 6.2.4, run 38051692010) both
+fail and the three OCCT tests still pass; **on Swift 6.4 locally all five pass**, three runs, so the
+`Probe` tests cannot fail there (a lexical-lifetime difference in the optimiser, not isolated), and in a
+debug build they cannot fail on any toolchain. They guard the helper on the CI toolchain only.
 
 ## Rules
 
