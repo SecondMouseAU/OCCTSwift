@@ -333,7 +333,8 @@ locals alone; that is an optimiser behaviour and not a guarantee, and it is reco
 script's "what it cannot see" along with the local-array `map { $0.handle }` case. Two things about
 it generalise. **A debug build cannot show this class**, because debug extends every lifetime to
 scope end: a debug `swift test` passed the failing test (#2929), so the static gate is the only
-check that runs on every PR, and the release-build test is a manual command. And **it gated on its
+check that runs on every PR, and the release-build test now runs beside it as the `release-mode-tests`
+job ([Release-mode tests](release-mode-tests.md)). And **it gated on its
 first day with a clean tree**, since the one instance was the test #2929 found and the fix landed
 with the gate. The exemption is `handle-temporary-exempt: <reason>`, reason required.
 

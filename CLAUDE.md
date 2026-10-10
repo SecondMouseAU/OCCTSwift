@@ -68,6 +68,7 @@ swift build --target OCCTThreadTests # Focused compile: just one domain's tests 
 swift test                           # Run all tests
 swift test --filter "Issue187"       # Run suites whose struct name matches (matches the type, not @Suite title)
 swift run OCCTTest                   # Run test executable
+Scripts/release-mode-test.sh subset  # -c release + malloc scribbling: what CI's release-mode-tests job runs (okf/policies/release-mode-tests.md)
 Scripts/tsan-stress.sh all           # ThreadSanitizer gate: REQUIRED for concurrency-touching changes (see docs/thread-safety.md)
 Scripts/format-bridge.sh             # clang-format every enforced Sources/OCCTBridge file in place
 Scripts/format-bridge.sh --check     # ...or just report, which is exactly what CI and the hook run

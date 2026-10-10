@@ -54,3 +54,15 @@ jobs:
 
       - name: swift test
         run: swift test
+
+  # The tagged commit under an optimised build (#3130), the whole suite. `swift test` above is a
+  # debug build, which hides a wrapper released before the C call that receives its `.handle`; a
+  # release is the one point where "the debug suite is green" has to mean the shipped build is too.
+  # Same condition as the job above, for the same reason (a kernel pre-release tags a commit that
+  # does not carry its own pin yet). Definition: Scripts/release-mode-test.sh, release-mode-tests.yml.
+  release-mode-tests:
+    if: github.event_name == 'workflow_dispatch' || !github.event.release.prerelease
+    uses: ./.github/workflows/release-mode-tests.yml
+    with:
+      scope: full
+      ref: ${{ github.event.release.tag_name || github.ref }}
