@@ -8,6 +8,10 @@ import simd
 
 @Suite("Curve3D Primitive Tests")
 struct Curve3DPrimitiveTests {
+    // Pinned to GC_MakeSegment, Geom_Circle, Geom_Ellipse, GC_MakeArcOfCircle and Geom_Line on
+    // the same inputs (Scripts/repro/766-curve-projection-primitives/transcript.txt). The earlier
+    // circle and ellipse tests checked `period != nil` and nothing about the ellipse's shape, the
+    // arc checked its start x to 0.01, and d1Tangent accepted any non-zero tangent (#766).
 
     @Test("Create segment and verify endpoints")
     func createSegment() {
@@ -38,7 +42,7 @@ struct Curve3DPrimitiveTests {
         if let circle = circle {
             #expect(circle.isClosed)
             #expect(circle.isPeriodic)
-            #expect(circle.period != nil)
+            #expect(circle.period == 2 * .pi)
         }
     }
 
@@ -68,8 +72,8 @@ struct Curve3DPrimitiveTests {
         #expect(arc != nil)
         if let arc = arc {
             #expect(!arc.isClosed)
-            let start = arc.startPoint
-            #expect(abs(start.x - 5) < 0.01)
+            #expect(simd_distance(arc.startPoint, SIMD3(5, 0, 0)) < 1e-12)
+            #expect(simd_distance(arc.endPoint, SIMD3(-5, 0, 0)) < 1e-12)
         }
     }
 
@@ -82,6 +86,8 @@ struct Curve3DPrimitiveTests {
         if let e = ellipse {
             #expect(e.isClosed)
             #expect(e.isPeriodic)
+            #expect(e.period == 2 * .pi)
+            #expect(simd_distance(e.point(at: 0), SIMD3(10, 0, 0)) < 1e-12)
         }
     }
 
@@ -100,8 +106,9 @@ struct Curve3DPrimitiveTests {
         #expect(line != nil)
         if let line = line {
             let d = line.domain
-            // Line domain should be very large (practically infinite)
-            #expect(d.upperBound - d.lowerBound > 1e10)
+            // Geom_Line reports its infinite range as [-2e100, 2e100].
+            #expect(d.lowerBound == -2e100)
+            #expect(d.upperBound == 2e100)
         }
     }
 
@@ -119,8 +126,8 @@ struct Curve3DPrimitiveTests {
     func d1Tangent() {
         let seg = Curve3D.segment(from: SIMD3(0, 0, 0), to: SIMD3(10, 5, 3))!
         let result = seg.d1(at: seg.domain.lowerBound)
-        let len = simd_length(result.tangent)
-        #expect(len > 0)
+        // The segment is parameterised by length, so D1 is the unit direction (10, 5, 3)/|.|.
+        #expect(simd_distance(result.tangent, simd_normalize(SIMD3(10, 5, 3))) < 1e-12)
     }
 
     // #815: `d2(at:)` had no test anywhere in the tree (its sibling `d1(at:)`, immediately above,
