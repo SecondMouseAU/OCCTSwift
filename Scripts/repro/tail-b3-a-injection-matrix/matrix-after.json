@@ -1,0 +1,20 @@
+{
+ "label": "after", "target": "OCCTDrawingTests",
+ "summary": {"changed": ["AutoCentermarksTests.cylinderSideViewSkipped", "SelectorTests.multipleShapes", "SelectorTests.pickBoxAtCenter", "SelectorTests.rectanglePick"], "crashes": ["OCCTCameraCreate_RET_NIL", "OCCTSelectorCreate_RET_NIL", "OCCTShapeCreateBox_RET_NIL"], "live_switches": 1, "switches": 216, "tests": ["AutoCentermarksTests.cylinderTopViewMark", "AutoCentermarksTests.cylinderSideViewSkipped", "AutoCentermarksTests.minRadiusFilter", "SelectorTests.pickBoxAtCenter", "SelectorTests.pickMiss", "SelectorTests.multipleShapes", "SelectorTests.removeShape", "SelectorTests.rectanglePick", "SelectorTests.clearAll"], "unreddened": ["SelectorTests.multipleShapes", "SelectorTests.pickBoxAtCenter", "SelectorTests.rectanglePick"]},
+ "rows_that_did_something": {
+  "OCCTCameraCreate_RET_NIL": {"crash": true, "exit": -5, "ran": 0, "red": []},
+  "OCCTSelectorCreate_RET_NIL": {"crash": true, "exit": -5, "ran": 3, "red": []},
+  "OCCTSelectorPick_RET_PLUS1": {"crash": false, "exit": 1, "ran": 9, "red": ["SelectorTests.clearAll", "SelectorTests.pickMiss", "SelectorTests.removeShape"]},
+  "OCCTSelectorRemoveShape_RET_FLIP": {"crash": false, "exit": 1, "ran": 9, "red": ["SelectorTests.removeShape"]},
+  "OCCTShapeCreateBox_RET_NIL": {"crash": true, "exit": -5, "ran": 3, "red": []},
+  "OCCTShapeCreateCylinder_RET_NIL": {"crash": false, "exit": 1, "ran": 9, "red": ["AutoCentermarksTests.cylinderSideViewSkipped", "AutoCentermarksTests.cylinderTopViewMark", "AutoCentermarksTests.minRadiusFilter"]}
+ }
+ "label": "after", "target": "OCCTXCAFTests",
+ "summary": {"changed": ["TDocStdXLinkToolTests.xlinkCopy", "TDocStdXLinkToolTests.xlinkCopyWithLink"], "crashes": [], "live_switches": 4, "switches": 216, "tests": ["TDocStdXLinkToolTests.xlinkCopy", "TDocStdXLinkToolTests.xlinkCopyWithLink"], "unreddened": []},
+ "rows_that_did_something": {
+  "OCCTDocumentGetIntegerAttr_RET_FLIP": {"crash": false, "exit": 1, "ran": 2, "red": ["TDocStdXLinkToolTests.xlinkCopy", "TDocStdXLinkToolTests.xlinkCopyWithLink"]},
+  "OCCTDocumentGetIntegerAttr_outValue_PLUS1": {"crash": false, "exit": 1, "ran": 2, "red": ["TDocStdXLinkToolTests.xlinkCopy", "TDocStdXLinkToolTests.xlinkCopyWithLink"]},
+  "OCCTDocumentXLinkCopyWithLink_RET_FLIP": {"crash": false, "exit": 1, "ran": 2, "red": ["TDocStdXLinkToolTests.xlinkCopyWithLink"]},
+  "OCCTDocumentXLinkCopy_RET_FLIP": {"crash": false, "exit": 1, "ran": 2, "red": ["TDocStdXLinkToolTests.xlinkCopy"]}
+ }
+}
