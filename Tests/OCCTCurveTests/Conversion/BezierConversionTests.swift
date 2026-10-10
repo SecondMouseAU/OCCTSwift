@@ -6,9 +6,14 @@ import Testing
 // Counts are ShapeUpgrade_ShapeConvertToBezier's on the same primitives with every mode on
 // (Scripts/repro/766-curve-batch-bezier/transcript.txt). The earlier versions asserted only
 // `faceCount > 0` / `edgeCount > 0`, or the box's unchanged 6 and 12, so a bridge returning the
-// input unconverted passed all four (#766). GeomAbs_BezierSurface = 5, GeomAbs_BezierCurve = 5.
+// input unconverted passed all four (#766).
 @Suite("Bezier Conversion Tests")
 struct BezierConversionTests {
+
+    // GeomAbs_BezierSurface and GeomAbs_BezierCurve, taken from the public enums so a reordering
+    // there cannot silently retarget these tests.
+    private static let bezierSurface = Surface.SurfaceType.bezierSurface.rawValue
+    private static let bezierCurve = Edge.CurveType.bezierCurve.rawValue
 
     private static func faceTypes(_ s: Shape) -> [Int32] {
         s.subShapes(ofType: .face).map { $0.faceAdaptorSurfaceType }
@@ -25,7 +30,7 @@ struct BezierConversionTests {
         // split into Bezier segments: 3 edges become 17.
         #expect(bezier.subShapeCount(ofType: .face) == 3)
         #expect(bezier.subShapeCount(ofType: .edge) == 17)
-        #expect(Self.faceTypes(bezier).filter { $0 == 5 }.count == 2)
+        #expect(Self.faceTypes(bezier).filter { $0 == Self.bezierSurface }.count == 2)
     }
 
     @Test("Sphere converts to Bezier")
@@ -50,8 +55,11 @@ struct BezierConversionTests {
         #expect(bezier.subShapeCount(ofType: .face) == 6)
         #expect(bezier.subShapeCount(ofType: .edge) == 12)
         // Every planar face is now a Bezier patch, every straight edge a Bezier curve.
-        #expect(Self.faceTypes(bezier) == Array(repeating: 5, count: 6))
-        #expect(bezier.subShapes(ofType: .edge).allSatisfy { $0.edgeAdaptorCurveType == 5 })
+        #expect(Self.faceTypes(bezier) == Array(repeating: Self.bezierSurface, count: 6))
+        #expect(
+            bezier.subShapes(ofType: .edge).allSatisfy {
+                $0.edgeAdaptorCurveType == Self.bezierCurve
+            })
     }
 
     @Test("Cone converts to Bezier")
@@ -65,6 +73,6 @@ struct BezierConversionTests {
         // As the cylinder: two Bezier caps, the conical face kept, 3 edges become 17.
         #expect(bezier.subShapeCount(ofType: .face) == 3)
         #expect(bezier.subShapeCount(ofType: .edge) == 17)
-        #expect(Self.faceTypes(bezier).filter { $0 == 5 }.count == 2)
+        #expect(Self.faceTypes(bezier).filter { $0 == Self.bezierSurface }.count == 2)
     }
 }
