@@ -58,7 +58,7 @@
 # the stray check in docs/guides/building-occt.md's "Shipping a rebuild" answers it.
 #
 # occt-version: 8.0.1
-# derived against: 45 carried patch(es) in Scripts/patches/, every one of them verified
+# derived against: 46 carried patch(es) in Scripts/patches/, every one of them verified
 # derived against: applied in the tree the rows below were derived from.
 # patch: 0010-Intf_Interference-O1-tangent-zone-checkpoint-breaker-319 79fe529c26ef
 # patch: 0011-XCAFDoc_ShapeTool-AutoNamingScope-341 76898e2438a2
@@ -105,12 +105,13 @@
 # patch: 0056-BRepLib-Plane-creates-the-default-plane-under-the-magic-static-lock-3039 35b5684c9513
 # patch: 0057-GProp_SelGProps-GProp_VelGProps-cylinder-sphere-torus-inertia-3091 04a543f518b6
 # patch: 0058-BRepOffsetAPI_MiddlePath-Build-carries-a-vertex-path-forward-3105 3aa5e4f75495
+# patch: 0059-ChFi3d-Builder-fillets-that-meet-exactly-are-built-not-refused-3207 eb520b90a343
 #
 # totals: inline-raise       462 site(s) in  104 class(es)
 # totals: outofline-raise    828 site(s) in  284 class(es)
 # totals: inline-throw       501 site(s) in  212 class(es)
 # totals: outofline-throw   3764 site(s) in  830 class(es)
-# totals: outofline-delegated  5946 site(s) in  924 class(es)
+# totals: outofline-delegated  5947 site(s) in  924 class(es)
 # totals: inherited-live    2587 site(s) in 2587 class(es)
 # totals: inline-dead-at-depth  9911 site(s) in  100 class(es)
 #
@@ -923,7 +924,7 @@ ChFi2d_FilletAlgo outofline-throw 1 Standard_ConstructionError Init
 ChFi2d_FilletAlgo outofline-delegated 8 Standard_ConstructionError,Standard_OutOfRange gp_Dir2d,gp_Vec2d
 ChFi3d_Builder outofline-throw 1 Standard_Failure Compute
 ChFi3d_Builder_0 outofline-throw 21 Standard_ConstructionError,Standard_Failure,Standard_NotImplemented,Standard_NullObject,StdFail_NotDone <file-scope>
-ChFi3d_Builder_0 outofline-delegated 9 Standard_ConstructionError,Standard_OutOfRange,gp_VectorWithNullMagnitude gp_Dir,gp_Vec,gp_Vec2d
+ChFi3d_Builder_0 outofline-delegated 10 Standard_ConstructionError,Standard_OutOfRange,gp_VectorWithNullMagnitude gp_Dir,gp_Vec,gp_Vec2d
 ChFi3d_Builder_1 outofline-raise 2 Standard_NoSuchObject BadShape,Shape
 ChFi3d_Builder_1 outofline-throw 2 Standard_ConstructionError FaceTangency
 ChFi3d_Builder_2 outofline-throw 12 Standard_Failure <file-scope>,PerformSetOfKGen,PerformSetOfSurfOnElSpine,StartSol
