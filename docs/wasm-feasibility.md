@@ -129,7 +129,7 @@ translation unit that also carries the exception flags.
 |-----------|-------------------------|
 | `WASM_CXX_EH_FLAGS` reaches **every** C++ translation unit, OCCT's included | The exception still propagates, but frames compiled without the flags skip their stack cleanup, and a `try`/`catch` written inside such a frame never fires. No error, no warning. |
 | `-lc++abi -lunwind` from wasi-sdk's `eh` directory are on the link line | The link fails on `__cxa_throw` and seven more, which is at least loud |
-| setjmp users are compiled `-mllvm -wasm-enable-sjlj` and linked `-lsetjmp` | The link fails on `setjmp` and `longjmp`; `-fwasm-exceptions` does nothing for them |
+| setjmp users are compiled `-mllvm -wasm-enable-sjlj` and linked `-lsetjmp` | The link fails on `setjmp` and `longjmp`; `-fwasm-exceptions` does nothing for them. OCCTSwift has no such user since #2175 and no longer links `-lsetjmp` itself (#2758); a consumer's dependency that calls `setjmp` still needs both |
 
 The first is the one that matters for OCCT, because OCCT does not only raise `Standard_Failure`, it
 catches it internally to turn a failure into an `IsDone() == false`. Those handlers disappear with
@@ -157,7 +157,7 @@ section listed as unknown have answers, and one of them is not the answer the qu
 - **`operator new` throws `std::bad_alloc`.** A 3.5 GB request under the wasm32 ceiling raises and
   the catch fires, so an OCCT allocation failure is a C++ exception the bridge can handle rather
   than a trap.
-- `-lsetjmp` and `-lwasi-emulated-getpid` have now been on a link line; see
+- `-lsetjmp` and `-lwasi-emulated-getpid` have now been on a link line (`-lsetjmp` is no longer needed, #2758); see
   [`Scripts/repro/2174/README.md`](../Scripts/repro/2174/README.md).
 
 ### The one exception to all of it: an optimised frame can unwind wrongly (#2894)
@@ -243,7 +243,9 @@ its siblings write to.
     properly is #2759.
   - **`Shape.isSelfIntersecting(hardTimeout:)`**, the only Dispatch user in the
     package. Its contract is a hard deadline enforced by a second thread, and
-    wasip1 non-threads has one, so it is `#if !os(WASI)`. The API decision is #2760.
+    wasip1 non-threads has one. Decided in #2760: the name exists on wasm with the
+    cooperative behaviour (`isSelfIntersecting(timeout:)`), documented as not a hard
+    bound, so Apple source compiles unchanged and Dispatch is never imported on WASI.
 - **4 GB single-heap ceiling** (wasm32; Swift does not target wasm64) caps model size.
 - **Size is the real API-surface problem, and it is Foundation's rather than OCCT's.**
   A SwiftWasm module that does nothing but print a path is 13.11 MB brotli, 37.6 MB of
@@ -386,9 +388,10 @@ them still lets an exception propagate, while its stack cleanup never runs and a
 difference between a kernel that reports failures and one that quietly stops.
 
 `setjmp` is a separate mechanism needing a separate flag and `-lsetjmp` at link.
-It is not hypothetical: OCCT's CMake defines `OCC_CONVERT_SIGNALS` on every
-non-Windows target, so `OCC_CATCH_SIGNALS` expands to a real `setjmp` inside OCCT,
-and 6 of `TKernel`'s 127 objects carry a lowered pair.
+It was not hypothetical: OCCT's CMake defines `OCC_CONVERT_SIGNALS` on every
+non-Windows target, so `OCC_CATCH_SIGNALS` expanded to a real `setjmp` inside OCCT,
+and 6 of `TKernel`'s 127 objects carried a lowered pair. #2175 turned that off with
+`-UOCC_CONVERT_SIGNALS`, and #2758 then dropped `-lsetjmp` from `Package.swift`.
 
 ### What this does not settle
 
@@ -408,8 +411,8 @@ That settles the libc++ seam, `operator new` and
 `-lwasi-emulated-getpid`. It also settled `-lsetjmp`, and **#2175 unsettled that one
 again in the other direction**: `Scripts/build-occt-wasm.sh` now passes
 `-UOCC_CONVERT_SIGNALS`, so no OCCT function carries a lowered `setjmp` at all and the
-clean archive has zero references to `__wasm_setjmp`. Read #2174's `libs` case with
-that in mind, and see #2758.
+clean archive has zero references to `__wasm_setjmp`. #2758 followed through: `Package.swift`
+no longer links it, and #2174's `libs` case reports it as not load-bearing.
 
 **#2175 closed the Swift half.** Five calls through the OCCTSwift public API, over the
 bridge, over OCCT, in one module, including two that must fail and do. See
@@ -454,11 +457,12 @@ and `linkedLibrary` / `linkedFramework` for the linker. That list is the whole a
 be expressed safely.
 
 **In the manifest, because they have a safe spelling**: every library NAME
-(`-lOCCT-wasm`, `-lc++`, `-lc++abi`, `-lunwind`, `-lsetjmp`, `-lwasi-emulated-getpid`) as
+(`-lOCCT-wasm`, `-lc++`, `-lc++abi`, `-lunwind`, `-lwasi-emulated-getpid`) as
 `.linkedLibrary`, and every define.
 
 **In a toolset the consumer passes**, because nothing else can carry them:
-`-fwasm-exceptions -mllvm -wasm-use-legacy-eh=false`, `-mllvm -wasm-enable-sjlj`, the `-L` into
+`-fwasm-exceptions -mllvm -wasm-use-legacy-eh=false`, `-mllvm -wasm-enable-sjlj` (inert for OCCTSwift since #2175, kept for a consumer's own
+dependencies, #2758), the `-L` into
 wasi-sdk's `lib/wasm32-wasip1/eh`, the `-L` for `libOCCT-wasm.a`, and the **`-I` for the OCCT
 headers**. `Scripts/make-wasi-toolset.py` writes one, reading the exception flags from
 `Scripts/wasm-toolchain-versions.txt` so a toolset cannot drift away from the flags the kernel was
@@ -479,6 +483,11 @@ unpacked the asset, and both spellings coexist: in this checkout they name the s
 same three commands with the sharp edges attached, and it is verified against a real dependent
 package rather than against this repository's own build
 ([`Scripts/repro/1689/`](../Scripts/repro/1689/README.md)).
+
+The APIs whose host facility does not exist on wasm32-wasip1 (`MemInfo`, `SharedLibrary`,
+`DiskInfo`, `OCCTDiagnostics` stack traces) stay present and return a documented answer; that list
+lives in one place, [Present but unavailable on wasm](guides/wasm-consumer-setup.md#present-but-unavailable-on-wasm)
+(#3025).
 
 ### The three commands
 
@@ -503,8 +512,8 @@ passes neither. A consumer who put the asset somewhere else passes both. Both ar
 the toolset is written, rather than being left to surface as a link error at the end of a full
 build.
 
-Only `-lunwind` and the kernel archive actually need a `-L`. `libsetjmp.a` and
-`libwasi-emulated-getpid.a` are in the Swift SDK's own `WASI.sdk`, which is already the link's
+Only `-lunwind` and the kernel archive actually need a `-L`. `libwasi-emulated-getpid.a` (and
+`libsetjmp.a`, for a consumer dependency that wants it) are in the Swift SDK's own `WASI.sdk`, which is already the link's
 sysroot. `libc++abi.a` is there too, which is worse than absent: it is the no-exceptions flavour,
 so the `-L` into wasi-sdk's `eh` directory has to **precede** the sysroot, not merely be present.
 
@@ -668,10 +677,10 @@ equivalent and there does not need to be.
 
 | # | Blocker | State |
 |---|---|---|
-| [#2757](https://github.com/SecondMouseAU/OCCTSwift/issues/2757) | a function carrying both a lowered `setjmp` and wasm exceptions emits an **invalid** `br_table`, and the module dies at the first OCCT call | **fixed here**, with `-UOCC_CONVERT_SIGNALS`; the upstream LLVM report still needs a reduction |
-| [#2758](https://github.com/SecondMouseAU/OCCTSwift/issues/2758) | `-mllvm -wasm-enable-sjlj` and `-lsetjmp` are now inert, and four places still call them load-bearing | open, cosmetic |
+| [#2757](https://github.com/SecondMouseAU/OCCTSwift/issues/2757) | a function carrying both a lowered `setjmp` and wasm exceptions emits an **invalid** `br_table`, and the module dies at the first OCCT call | **fixed here**, with `-UOCC_CONVERT_SIGNALS`; reduced to a 12-line standalone file and an LLVM report drafted in `Scripts/repro/2757/` (filing it is open) |
+| [#2758](https://github.com/SecondMouseAU/OCCTSwift/issues/2758) | `-mllvm -wasm-enable-sjlj` and `-lsetjmp` are now inert, and four places still call them load-bearing | **fixed here**: `Package.swift` no longer links `setjmp`, the toolset and build-script flags stay with their reason written down |
 | [#2759](https://github.com/SecondMouseAU/OCCTSwift/issues/2759) | 196 of 230 Swift files `import simd`, which does not exist on wasm | **worked around here** with a WASI-only `simd` target; the shape of the real answer is open |
-| [#2760](https://github.com/SecondMouseAU/OCCTSwift/issues/2760) | `Shape.isSelfIntersecting(hardTimeout:)` needs a second thread, so it cannot exist on wasip1 non-threads | **removed here** under `#if !os(WASI)`; the API decision is open |
+| [#2760](https://github.com/SecondMouseAU/OCCTSwift/issues/2760) | `Shape.isSelfIntersecting(hardTimeout:)` needs a second thread, so it cannot exist on wasip1 non-threads | **fixed**: same name on wasm with the cooperative behaviour, documented as not a hard bound (additive on wasm) |
 | [#2761](https://github.com/SecondMouseAU/OCCTSwift/issues/2761) | module size, and 13.11 MB of the 26.98 MB being Foundation on its own | open, and not a gate: there is no target to gate against |
 
 Two more were fixed in place and need no issue: `OCCTBridge.h` needed `<stdbool.h>` as well as the
@@ -836,8 +845,9 @@ API surface should be, rather than making it build.
   and `FileManager` all work.
 - **`import simd`, in 196 of 230 files** (#2759). A WASI-only target named `simd`
   stands in today; the real answer is probably removing the gratuitous imports.
-- **`Shape.isSelfIntersecting(hardTimeout:)`** is `#if !os(WASI)` (#2760), and it is
-  the first case of a class: any API whose contract needs a second thread.
+- **`Shape.isSelfIntersecting(hardTimeout:)`** (#2760) is the first case of a class: any API
+  whose contract needs a second thread. Decided: the name exists on wasm with the cooperative
+  behaviour, documented as not a hard bound, so a future API of this class has a precedent.
 - **`FoundationEssentials` instead of `Foundation`** wherever a file only uses `Data`,
   `URL`, `Date` or `JSONEncoder`, which is the biggest single lever on module size
   (#2761). 219 of 230 files `import Foundation` today.

@@ -234,10 +234,12 @@ from `Scripts/wasm-toolchain-versions.txt` plus `-mllvm -wasm-enable-sjlj`, in `
 reaching every translation unit. Those are not emulation defines and this section's rule does not
 cover them. They are there because #2171 measured that their absence is silent, and because 44 of
 the 119 `TKernel` objects that compile carry a compiled catch handler and 6 carry a lowered `setjmp`
-pair. A preflight asserts they produce a handler before CMake starts, and #2174's link settles the
-other half: without `-lsetjmp` the module fails on `__wasm_setjmp`, `__wasm_longjmp` and
-`__c_longjmp`, and without wasi-sdk's `eh` `libc++abi` and `libunwind` it fails on
-`__cxa_allocate_exception`, `__cxa_begin_catch` and `__cxa_end_catch`.
+pair, **until #2175 removed them**. A preflight asserts they produce a handler before CMake
+starts, and #2174's link settles the other half: without wasi-sdk's `eh` `libc++abi` and
+`libunwind` it fails on `__cxa_allocate_exception`, `__cxa_begin_catch` and `__cxa_end_catch`.
+`-lsetjmp` was in that sentence too, failing on `__wasm_setjmp`, `__wasm_longjmp` and
+`__c_longjmp`, while six `TKernel` objects carried a lowered pair; it no longer is, see the end of
+the next section.
 
 ### The setjmp half is now switched off, and the reason is a codegen defect (#2175)
 
@@ -253,6 +255,8 @@ body: the emitted `br_table` has targets whose label types differ, `[i32, exnref
 nothing for the others, which the WebAssembly specification forbids. wasmkit refuses the module and
 is right to. The whole Swift-over-OCCT module died at its first OCCT call until this define was
 switched off. `Scripts/repro/2175/run.sh sjlj` reproduces both directions.
+The defect reduces to a 12-line file with no OCCT (`Scripts/repro/2757/`), and
+`Scripts/check-wasm-archive-no-setjmp.sh` asserts the fetched kernel archive holds no lowered `setjmp`.
 
 It is also the semantically correct setting rather than only the convenient one:
 `OCC_CONVERT_SIGNALS` exists to turn an OS signal into a C++ exception, and a wasm module receives
@@ -263,10 +267,22 @@ repo ships, where the macro is inert for a different reason
 **Two consequences for the paragraph above.** The clean archive contains **zero** references to
 `__wasm_setjmp`, `__wasm_longjmp` or `__c_longjmp`, measured with the pinned `llvm-nm` over all
 5,488 members, so `-mllvm -wasm-enable-sjlj` lowers nothing and `-lsetjmp` resolves nothing. Both
-are kept for now because retiring them also touches `Package.swift`,
-`Scripts/make-wasi-toolset.py`'s `--self-test` and #2048's measured matrix, which is a separate
-change; and `Scripts/repro/2174/run.sh libs` will now report `-lsetjmp` as **not** load-bearing,
-which is a moved number rather than a regression.
+are not the same decision, and #2758 measured both. `swift build` of the whole package for
+`wasm32-unknown-wasip1`, against the pinned kernel asset and the pinned toolchain, links in all four
+combinations of `.linkedLibrary("setjmp")` present or removed and the toolset's `-wasm-enable-sjlj`
+present or removed, and the linked `OCCTTest.wasm` has no `setjmp` or `longjmp` symbol in its name section in either the first or the last. So:
+
+- `Package.swift` no longer links `setjmp`. It resolved nothing.
+- `Scripts/make-wasi-toolset.py` keeps `-mllvm -wasm-enable-sjlj`, because the toolset also builds
+  the consumer's own dependencies and one that calls `setjmp` is refused at the link without it
+  (`Scripts/repro/2048/README.md` case 6, which uses its own stub and still measures what it says).
+  Such a dependency now supplies `-lsetjmp` from its own manifest.
+- `Scripts/build-occt-wasm.sh` keeps `-mllvm -wasm-enable-sjlj` in `CMAKE_CXX_FLAGS`. That line
+  describes how the pinned kernel asset was built, and changing it without a rebuild and republish
+  would put the script and the shipped kernel out of step. It is inert there and retires with the
+  next kernel rebuild.
+- `Scripts/repro/2174/run.sh libs` now reports `-lsetjmp` as **not load-bearing**, from the exit
+  status, instead of printing it with the pieces that are.
 
 ## Gaps that are closed, and what is left
 
