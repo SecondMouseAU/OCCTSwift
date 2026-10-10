@@ -1,0 +1,47 @@
+{
+ "label": "after", "target": "OCCTDrawingTests",
+ "summary": {"changed": ["DrawingSymbolsTests.breakLine", "DrawingSymbolsTests.featureControlFrame", "DrawingSymbolsTests.gdtGlyphs", "DrawingSymbolsTests.surfaceFinishAny"], "crashes": [], "live_switches": 0, "switches": 332, "tests": ["DrawingSymbolsTests.surfaceFinishMachiningRequired", "DrawingSymbolsTests.surfaceFinishArmsAreAsymmetric", "DrawingSymbolsTests.surfaceFinishAny", "DrawingSymbolsTests.surfaceFinishMachiningProhibited", "DrawingSymbolsTests.featureControlFrame", "DrawingSymbolsTests.datumFeature", "DrawingSymbolsTests.rectangleCentrelinesWinding", "DrawingSymbolsTests.featureControlFrameOuterBoxGeometry", "DrawingSymbolsTests.datumFeatureBoxGeometry", "DrawingSymbolsTests.gdtGlyphs", "DrawingSymbolsTests.breakLine", "DrawingSymbolsTests.detailView"], "unreddened": ["DrawingSymbolsTests.breakLine", "DrawingSymbolsTests.featureControlFrame", "DrawingSymbolsTests.gdtGlyphs", "DrawingSymbolsTests.surfaceFinishAny"]},
+ "rows_that_did_something": {
+  "OCCTShapeCreateBox_RET_NIL": {"crash": false, "exit": 1, "ran": 12, "red": ["DrawingSymbolsTests.detailView"]}
+ }
+ "label": "after", "target": "OCCTSurfaceTests",
+ "summary": {"changed": ["EvolvedSurfaceTests.simpleEvolved", "FindSurfaceTests.findPlaneFromWire", "Issue437PlatePointG2Tests.g0StillBuilds", "Issue437PlatePointG2Tests.mixedPointG0StillBuilds", "LocOpePipeTests.pipeSweep", "LocOpeRevolutionFormTests.revolutionForm"], "crashes": ["OCCTShapeCreateFaceFromWire_RET_NIL", "OCCTShapeFromWire_RET_NIL", "OCCTWireCreateArc_RET_NIL", "OCCTWireCreateRectangle_RET_NIL"], "live_switches": 32, "switches": 332, "tests": ["FindSurfaceTests.findPlaneFromWire", "Issue437PlatePointG2Tests.pointConstraintSupport", "Issue437PlatePointG2Tests.mixedGuardIgnoresCurveOrders", "Issue437PlatePointG2Tests.sharedPointOrderGuardIsUnified", "Issue437PlatePointG2Tests.allG2Rejected", "Issue437PlatePointG2Tests.oneG2AmongValidOrdersRejected", "Issue437PlatePointG2Tests.g0StillBuilds", "Issue437PlatePointG2Tests.mixedPointG2RejectedAlongsideValidCurve", "Issue437PlatePointG2Tests.mixedPointG0StillBuilds", "EvolvedSurfaceTests.simpleEvolved", "LocOpePipeTests.pipeSweep", "LocOpeRevolutionFormTests.revolutionForm"], "unreddened": []},
+ "rows_that_did_something": {
+  "OCCTLocOpePipe_RET_NIL": {"crash": false, "exit": 1, "ran": 12, "red": ["LocOpePipeTests.pipeSweep"]},
+  "OCCTLocOpeRevolutionForm_IN1_PLUS": {"crash": false, "exit": 1, "ran": 12, "red": ["LocOpeRevolutionFormTests.revolutionForm"]},
+  "OCCTLocOpeRevolutionForm_IN4_PLUS": {"crash": false, "exit": 1, "ran": 12, "red": ["LocOpeRevolutionFormTests.revolutionForm"]},
+  "OCCTLocOpeRevolutionForm_IN5_PLUS": {"crash": false, "exit": 1, "ran": 12, "red": ["LocOpeRevolutionFormTests.revolutionForm"]},
+  "OCCTLocOpeRevolutionForm_IN7_PLUS": {"crash": false, "exit": 1, "ran": 12, "red": ["LocOpeRevolutionFormTests.revolutionForm"]},
+  "OCCTLocOpeRevolutionForm_RET_NIL": {"crash": false, "exit": 1, "ran": 12, "red": ["LocOpeRevolutionFormTests.revolutionForm"]},
+  "OCCTShapeCreateEvolved_RET_NIL": {"crash": false, "exit": 1, "ran": 12, "red": ["EvolvedSurfaceTests.simpleEvolved"]},
+  "OCCTShapeCreateFaceFromWire_RET_NIL": {"crash": true, "exit": -5, "ran": 7, "red": []},
+  "OCCTShapeFindSurface_RET_NIL": {"crash": false, "exit": 1, "ran": 12, "red": ["FindSurfaceTests.findPlaneFromWire"]},
+  "OCCTShapeFromWire_RET_NIL": {"crash": true, "exit": -5, "ran": 8, "red": []},
+  "OCCTShapeGetFaceCount_RET_MINUS1": {"crash": false, "exit": 1, "ran": 12, "red": ["LocOpeRevolutionFormTests.revolutionForm"]},
+  "OCCTShapeGetFaceCount_RET_PLUS1": {"crash": false, "exit": 1, "ran": 12, "red": ["LocOpeRevolutionFormTests.revolutionForm"]},
+  "OCCTShapeGetFaceCount_RET_ZERO": {"crash": false, "exit": 1, "ran": 12, "red": ["LocOpeRevolutionFormTests.revolutionForm"]},
+  "OCCTShapeGetSurfaceArea_RET_NEG": {"crash": false, "exit": 1, "ran": 12, "red": ["EvolvedSurfaceTests.simpleEvolved", "Issue437PlatePointG2Tests.g0StillBuilds", "Issue437PlatePointG2Tests.mixedPointG0StillBuilds", "LocOpePipeTests.pipeSweep"]},
+  "OCCTShapeGetSurfaceArea_RET_PLUS": {"crash": false, "exit": 1, "ran": 12, "red": ["EvolvedSurfaceTests.simpleEvolved", "Issue437PlatePointG2Tests.g0StillBuilds", "Issue437PlatePointG2Tests.mixedPointG0StillBuilds", "LocOpePipeTests.pipeSweep"]},
+  "OCCTShapeGetVolume_RET_FLIP": {"crash": false, "exit": 1, "ran": 12, "red": ["LocOpePipeTests.pipeSweep", "LocOpeRevolutionFormTests.revolutionForm"]},
+  "OCCTShapeGetVolume_outVolume_NEG": {"crash": false, "exit": 1, "ran": 12, "red": ["LocOpePipeTests.pipeSweep", "LocOpeRevolutionFormTests.revolutionForm"]},
+  "OCCTShapeGetVolume_outVolume_PLUS": {"crash": false, "exit": 1, "ran": 12, "red": ["LocOpePipeTests.pipeSweep", "LocOpeRevolutionFormTests.revolutionForm"]},
+  "OCCTShapePlatePointsAdvanced_RET_NIL": {"crash": false, "exit": 1, "ran": 12, "red": ["Issue437PlatePointG2Tests.g0StillBuilds"]},
+  "OCCTSurfaceProjectPoint_IN3_PLUS": {"crash": false, "exit": 1, "ran": 12, "red": ["FindSurfaceTests.findPlaneFromWire"]},
+  "OCCTSurfaceProjectPoint_RET_FLIP": {"crash": false, "exit": 1, "ran": 12, "red": ["FindSurfaceTests.findPlaneFromWire"]},
+  "OCCTSurfaceProjectPoint_distance_NEG": {"crash": false, "exit": 1, "ran": 12, "red": ["FindSurfaceTests.findPlaneFromWire"]},
+  "OCCTSurfaceProjectPoint_distance_PLUS": {"crash": false, "exit": 1, "ran": 12, "red": ["FindSurfaceTests.findPlaneFromWire"]},
+  "OCCTWireCreateArc_RET_NIL": {"crash": true, "exit": -5, "ran": 6, "red": []},
+  "OCCTWireCreateFromPoints3D_IN_closed_FLIP": {"crash": false, "exit": 1, "ran": 12, "red": ["Issue437PlatePointG2Tests.mixedPointG0StillBuilds", "LocOpePipeTests.pipeSweep", "LocOpeRevolutionFormTests.revolutionForm"]},
+  "OCCTWireCreateFromPoints3D_RET_NIL": {"crash": false, "exit": 1, "ran": 12, "red": ["EvolvedSurfaceTests.simpleEvolved", "Issue437PlatePointG2Tests.mixedPointG0StillBuilds", "Issue437PlatePointG2Tests.mixedPointG2RejectedAlongsideValidCurve", "LocOpePipeTests.pipeSweep", "LocOpeRevolutionFormTests.revolutionForm"]},
+  "OCCTWireCreateLine_IN1_PLUS": {"crash": false, "exit": 1, "ran": 12, "red": ["LocOpePipeTests.pipeSweep"]},
+  "OCCTWireCreateLine_IN2_PLUS": {"crash": false, "exit": 1, "ran": 12, "red": ["LocOpePipeTests.pipeSweep"]},
+  "OCCTWireCreateLine_IN3_PLUS": {"crash": false, "exit": 1, "ran": 12, "red": ["LocOpePipeTests.pipeSweep"]},
+  "OCCTWireCreateLine_IN4_PLUS": {"crash": false, "exit": 1, "ran": 12, "red": ["LocOpePipeTests.pipeSweep"]},
+  "OCCTWireCreateLine_IN5_PLUS": {"crash": false, "exit": 1, "ran": 12, "red": ["LocOpePipeTests.pipeSweep"]},
+  "OCCTWireCreateLine_IN6_PLUS": {"crash": false, "exit": 1, "ran": 12, "red": ["LocOpePipeTests.pipeSweep"]},
+  "OCCTWireCreateLine_RET_NIL": {"crash": false, "exit": 1, "ran": 12, "red": ["LocOpePipeTests.pipeSweep"]},
+  "OCCTWireCreateRectangle_IN1_PLUS": {"crash": false, "exit": 1, "ran": 12, "red": ["EvolvedSurfaceTests.simpleEvolved"]},
+  "OCCTWireCreateRectangle_IN2_PLUS": {"crash": false, "exit": 1, "ran": 12, "red": ["EvolvedSurfaceTests.simpleEvolved"]},
+  "OCCTWireCreateRectangle_RET_NIL": {"crash": true, "exit": -5, "ran": 8, "red": []}
+ }
+}

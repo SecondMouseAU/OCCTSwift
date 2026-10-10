@@ -1,0 +1,6 @@
+Tests/OCCTDrawingTests/Symbols/DrawingSymbolsTests.swift
+Tests/OCCTSurfaceTests/FacesAndProjection/FindSurfaceTests.swift
+Tests/OCCTSurfaceTests/Plate/Issue437PlatePointG2Tests.swift
+Tests/OCCTSurfaceTests/SweepsAndLofts/EvolvedSurfaceTests.swift
+Tests/OCCTSurfaceTests/SweepsAndLofts/LocOpePipeTests.swift
+Tests/OCCTSurfaceTests/SweepsAndLofts/LocOpeRevolutionFormTests.swift
