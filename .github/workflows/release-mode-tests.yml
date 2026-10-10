@@ -10,13 +10,10 @@ name: release-mode-tests
 # crashed under malloc scribbling. The static gate (`check-borrowed-handle-temporaries.py`)
 # catches the shapes a regex can see; this job is the part that catches the rest by running them.
 #
-# It also catches a second, unrelated class a debug build hides: a test file that uses a `simd_*`
-# function without `import simd` compiles in debug (the import leaks from a sibling file of the
-# same module) and does not in release. 34 files did, #3255.
-#
 # TWO SCOPES, chosen from measurement (numbers in okf/policies/release-mode-tests.md):
-#   subset  Scripts/release-mode-test.sh subset. Builds only the test targets that hand a raw
-#           `.handle` to the bridge and runs only those suites. A pull request gets this.
+#   subset  Scripts/release-mode-test.sh subset. Builds every test target (the build cannot be
+#           narrowed) and runs only the suites that hand a raw `.handle` to the bridge. A pull
+#           request gets this.
 #   full    Scripts/release-mode-test.sh full. Builds every test target and runs all of them.
 #           `push` to main, `workflow_dispatch`, and the Release verification workflow get this.
 # The script is the single definition of both, so a local run and this job cannot disagree.

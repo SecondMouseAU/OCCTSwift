@@ -40,8 +40,8 @@ while measuring, so every wall time is an upper bound), pinned kernel from the r
 
 | step | wall time |
 |---|---|
-| `swift build -c release -Xswiftc -enable-testing --build-tests`, cold to the first compile error (#3255) | 6 min 2 s |
-| the same build to completion, after fixing #3255 and a SIGTERM from load | 4 min + 9 min |
+| `swift build -c release -Xswiftc -enable-testing --build-tests`, cold to the first compile error (#3253) | 6 min 2 s |
+| the same build to completion, after fixing #3253 and a SIGTERM from load | 4 min + 9 min |
 | `swift test -c release --skip-build`, whole suite, 6,897 tests, no malloc env | 6 min (359 s) |
 | the same under `MallocScribble` + `MallocPreScribble` | 4 min 12 s |
 | the same under all four `Malloc*` variables, three runs | 3 min 45 s, 4 min 8 s, 3 min 22 s |
@@ -69,9 +69,9 @@ while measuring, so every wall time is an upper bound), pinned kernel from the r
 
 ## What the first full run found
 
-Compile failure, release only: 34 test files used `simd_length` or `simd_distance` without
-`import simd` and compiled in debug only because a sibling file's import leaks within a module
-(#3255, fixed with the job: it cannot build without it). Test failure in the full run: one,
+Compile failure: 34 test files used `simd_length` or `simd_distance` without `import simd` (#3253,
+fixed by #3257, which this job's branch carries so that it can build). That one is the Swift 6.4
+and wasm toolchain, not the optimiser. Test failure in the full run: one,
 `Issue2760HardTimeoutAllPlatformsTests.nonPositiveBoundIsNil`, also reproducible in debug
 (#3256). Nothing else in 6,897 tests differed between debug and release.
 
