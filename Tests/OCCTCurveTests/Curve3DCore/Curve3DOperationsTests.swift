@@ -105,25 +105,26 @@ struct Curve3DOperationsTests {
     }
 
     @Test("Length of segment")
-    func segmentLength() {
+    func segmentLength() throws {
         let seg = Curve3D.segment(from: SIMD3(0, 0, 0), to: SIMD3(3, 4, 0))!
-        let len = seg.length
-        #expect(len == 5.0)
+        let len = try #require(seg.length)
+        #expect(abs(len - 5.0) < 1e-12)
     }
 
     @Test("Length of circle")
-    func circleLength() {
+    func circleLength() throws {
         let radius = 5.0
         let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: radius)!
-        let len = circle.length
-        #expect(abs((len ?? -1) - 2 * .pi * radius) < 1e-9)
+        let len = try #require(circle.length)
+        #expect(abs(len - 2 * .pi * radius) < 1e-9)
     }
 
     @Test("Partial length")
-    func partialLength() {
+    func partialLength() throws {
         let seg = Curve3D.segment(from: SIMD3(0, 0, 0), to: SIMD3(10, 0, 0))!
         let d = seg.domain
-        let halfLen = seg.length(from: d.lowerBound, to: (d.lowerBound + d.upperBound) / 2)
-        #expect(halfLen == 5.0)
+        let halfLen = try #require(
+            seg.length(from: d.lowerBound, to: (d.lowerBound + d.upperBound) / 2))
+        #expect(abs(halfLen - 5.0) < 1e-12)
     }
 }
