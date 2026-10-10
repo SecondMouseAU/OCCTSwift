@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -143,7 +142,7 @@ struct SurfaceApproximateDefaultsParityTests {
                     let v = domain.vMin + (domain.vMax - domain.vMin) * Double(j) / 4
                     let approxPoint = approx.point(atU: u, v: v)
                     let truePoint = offsetSurface.point(atU: u, v: v)
-                    maxDeviation = max(maxDeviation, simd_length(approxPoint - truePoint))
+                    maxDeviation = max(maxDeviation, vectorLength(approxPoint - truePoint))
                 }
             }
             #expect(maxDeviation < 0.5)

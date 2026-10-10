@@ -1,5 +1,5 @@
+import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -31,11 +31,11 @@ struct Issue1502DarbouxTrihedronTests {
         // it not crashed outright) has no surface to derive one from at all. Assert the frame is
         // a genuine orthonormal trihedron whose binormal matches the disc's own planar normal,
         // not merely "some non-crashing triple of numbers".
-        #expect(abs(simd_length(frame.tangent) - 1.0) < 1e-6)
-        #expect(abs(simd_length(frame.normal) - 1.0) < 1e-6)
-        #expect(abs(simd_length(frame.binormal) - 1.0) < 1e-6)
-        #expect(abs(simd_dot(frame.tangent, frame.normal)) < 1e-6)
-        #expect(abs(simd_dot(frame.tangent, frame.binormal)) < 1e-6)
+        #expect(abs(vectorLength(frame.tangent) - 1.0) < 1e-6)
+        #expect(abs(vectorLength(frame.normal) - 1.0) < 1e-6)
+        #expect(abs(vectorLength(frame.binormal) - 1.0) < 1e-6)
+        #expect(abs(dotProduct(frame.tangent, frame.normal)) < 1e-6)
+        #expect(abs(dotProduct(frame.tangent, frame.binormal)) < 1e-6)
         #expect(abs(abs(frame.binormal.z) - 1.0) < 1e-6)
     }
 
@@ -49,8 +49,8 @@ struct Issue1502DarbouxTrihedronTests {
 
         for param: Double in [0.0, 0.5, 1.5, 3.0, 5.0] {
             let frame = try #require(edge.darbouxTrihedron(onFace: face, at: param))
-            #expect(abs(simd_length(frame.tangent) - 1.0) < 1e-6)
-            #expect(abs(simd_dot(frame.tangent, frame.normal)) < 1e-6)
+            #expect(abs(vectorLength(frame.tangent) - 1.0) < 1e-6)
+            #expect(abs(dotProduct(frame.tangent, frame.normal)) < 1e-6)
         }
     }
 }

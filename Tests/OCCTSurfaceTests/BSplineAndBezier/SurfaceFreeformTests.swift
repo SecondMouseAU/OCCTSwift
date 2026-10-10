@@ -1,5 +1,5 @@
+import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -69,7 +69,7 @@ struct SurfaceFreeformTests {
         #expect(retrieved[0].count == 2)
         for i in 0..<2 {
             for j in 0..<2 {
-                let diff = simd_length(retrieved[i][j] - poles[i][j])
+                let diff = vectorLength(retrieved[i][j] - poles[i][j])
                 #expect(diff < 1e-10)
             }
         }

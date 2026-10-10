@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -96,7 +95,7 @@ struct SurfaceAnalyticTests {
         let sphere = Surface.sphere(center: .zero, radius: r)!
         // At u=0, v=0 → should be on equator at (r, 0, 0) in standard parametrization
         let p = sphere.point(atU: 0, v: 0)
-        let dist = simd_length(p)
+        let dist = vectorLength(p)
         #expect(abs(dist - r) < 1e-10)
         // Any point at radius r passed; (0, 0) is (r, 0, 0) on the equator.
         #expect(simd_length(p - SIMD3(r, 0, 0)) < 1e-12)

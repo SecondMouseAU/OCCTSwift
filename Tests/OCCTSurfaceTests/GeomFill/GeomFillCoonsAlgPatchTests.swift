@@ -1,5 +1,5 @@
+import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -20,10 +20,10 @@ struct GeomFillCoonsAlgPatchTests {
                 evalU: 5, evalV: 5
             ))
         try #require(result.count == 25)  // 5x5 grid
-        #expect(simd_length(result[0] - SIMD3(-5, -5, -5)) < 1e-9)
-        #expect(simd_length(result[12] - SIMD3(-5, 0, 0)) < 1e-9)
-        #expect(simd_length(result[24] - SIMD3(-5, 5, 5)) < 1e-9)
-        #expect(simd_length(result[5] - SIMD3(-5, -5, -2.5)) < 1e-9)
+        #expect(vectorLength(result[0] - SIMD3(-5, -5, -5)) < 1e-9)
+        #expect(vectorLength(result[12] - SIMD3(-5, 0, 0)) < 1e-9)
+        #expect(vectorLength(result[24] - SIMD3(-5, 5, 5)) < 1e-9)
+        #expect(vectorLength(result[5] - SIMD3(-5, -5, -2.5)) < 1e-9)
     }
 
     /// #1499: `OCCTGeomFillCoonsAlgPatchEval` never called `GeomFill_SimpleBound::Reparametrize()`
@@ -70,8 +70,8 @@ struct GeomFillCoonsAlgPatchTests {
         let center = result[4]
         let farCorner = result[8]
 
-        #expect(simd_length(nearCorner - c0) < 1e-6)
-        #expect(simd_length(center - SIMD3<Double>(5, 5, 0)) < 1e-6)
-        #expect(simd_length(farCorner - c2) < 1e-6)
+        #expect(vectorLength(nearCorner - c0) < 1e-6)
+        #expect(vectorLength(center - SIMD3<Double>(5, 5, 0)) < 1e-6)
+        #expect(vectorLength(farCorner - c2) < 1e-6)
     }
 }

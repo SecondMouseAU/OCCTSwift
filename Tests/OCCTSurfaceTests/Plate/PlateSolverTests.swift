@@ -1,5 +1,5 @@
+import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -22,9 +22,9 @@ struct PlateSolverTests {
         #expect(solver.isDone)
 
         let center = solver.evaluate(u: 0.5, v: 0.5)
-        #expect(simd_length(center - SIMD3(0.5, 0.5, 1)) < 1e-9)
+        #expect(vectorLength(center - SIMD3(0.5, 0.5, 1)) < 1e-9)
         let corner = solver.evaluate(u: 0, v: 0)
-        #expect(simd_length(corner) < 1e-9)
+        #expect(vectorLength(corner) < 1e-9)
     }
 
     @Test func uvBoxAndContinuity() {
@@ -53,7 +53,7 @@ struct PlateSolverTests {
         #expect(solver.solve())
         // The solution takes the imposed dF/du = (0, 0, 2) at (0.5, 0.5).
         let d = solver.evaluateDerivative(u: 0.5, v: 0.5, derivativeOrderU: 1, derivativeOrderV: 0)
-        #expect(simd_length(d - SIMD3(0, 0, 2)) < 1e-9)
+        #expect(vectorLength(d - SIMD3(0, 0, 2)) < 1e-9)
     }
 
     @Test func evaluateDerivative() {
@@ -69,7 +69,7 @@ struct PlateSolverTests {
             derivativeOrderU: 1, derivativeOrderV: 0)
         // Was `deriv.x.isFinite`.
         #expect(
-            simd_length(deriv - SIMD3(1.4761904524850298, 0.66666673383464681, 2.0000000928637642))
+            vectorLength(deriv - SIMD3(1.4761904524850298, 0.66666673383464681, 2.0000000928637642))
                 < 1e-9)
     }
 
@@ -87,7 +87,7 @@ struct PlateSolverTests {
         // The G-to-C constraint tilts the flat plate: dF/du and dF/dv each gain z = 0.1.
         let du = solver.evaluateDerivative(u: 0.5, v: 0.5, derivativeOrderU: 1, derivativeOrderV: 0)
         let dv = solver.evaluateDerivative(u: 0.5, v: 0.5, derivativeOrderU: 0, derivativeOrderV: 1)
-        #expect(simd_length(du - SIMD3(0, 0, 0.1)) < 1e-9)
-        #expect(simd_length(dv - SIMD3(0, 0, 0.1)) < 1e-9)
+        #expect(vectorLength(du - SIMD3(0, 0, 0.1)) < 1e-9)
+        #expect(vectorLength(dv - SIMD3(0, 0, 0.1)) < 1e-9)
     }
 }

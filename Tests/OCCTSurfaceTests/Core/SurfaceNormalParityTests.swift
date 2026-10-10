@@ -1,5 +1,5 @@
+import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -38,8 +38,8 @@ struct SurfaceNormalParityTests {
             let plain = surface.normal(u: u, v: v)
             #expect(optional != nil)
             if let n = optional {
-                #expect(simd_distance(n, plain) < 1e-12)
-                #expect(abs(simd_length(plain) - 1) < 1e-9)
+                #expect(vectorDistance(n, plain) < 1e-12)
+                #expect(abs(vectorLength(plain) - 1) < 1e-9)
             }
         }
     }
@@ -48,7 +48,7 @@ struct SurfaceNormalParityTests {
     func coneApexIsUndefinedInBoth() {
         let cone = Self.apexCone()
         #expect(cone.normal(atU: 0, v: 0) == nil)
-        #expect(simd_length(cone.normal(u: 0, v: 0)) < 1e-12)
+        #expect(vectorLength(cone.normal(u: 0, v: 0)) < 1e-12)
     }
 
     /// Regression for the divergence window the hand-rolled epsilon created.
@@ -64,17 +64,17 @@ struct SurfaceNormalParityTests {
         let v = 1e-16  // |d1u x d1v| ≈ 5e-17, under the old 1e-15 epsilon
 
         let (_, d1u, d1v) = cone.d1(atU: 0, v: v)
-        #expect(simd_length(simd_cross(d1u, d1v)) < 1e-15)  // the window really is entered
+        #expect(vectorLength(crossProduct(d1u, d1v)) < 1e-15)  // the window really is entered
 
         let optional = cone.normal(atU: 0, v: v)
         let plain = cone.normal(u: 0, v: v)
         #expect(optional != nil)  // OCCT says the normal exists
-        #expect(abs(simd_length(plain) - 1) < 1e-9)  // ... and so does normal(u:v:) now
+        #expect(abs(vectorLength(plain) - 1) < 1e-9)  // ... and so does normal(u:v:) now
         if let n = optional {
-            #expect(simd_distance(n, plain) < 1e-12)
+            #expect(vectorDistance(n, plain) < 1e-12)
         }
         // Same normal as a well-conditioned point on the same generatrix.
-        #expect(simd_distance(plain, cone.normal(u: 0, v: 5)) < 1e-9)
+        #expect(vectorDistance(plain, cone.normal(u: 0, v: 5)) < 1e-9)
     }
 
     /// A sphere pole is a parameterisation singularity but not a normal singularity: OCCT still
@@ -88,7 +88,7 @@ struct SurfaceNormalParityTests {
             let optional = sphere.normal(atU: 0, v: v)
             #expect(optional != nil)
             if let n = optional {
-                #expect(simd_distance(n, sphere.normal(u: 0, v: v)) < 1e-12)
+                #expect(vectorDistance(n, sphere.normal(u: 0, v: v)) < 1e-12)
                 #expect(abs(abs(n.z) - 1) < 1e-9)
             }
         }

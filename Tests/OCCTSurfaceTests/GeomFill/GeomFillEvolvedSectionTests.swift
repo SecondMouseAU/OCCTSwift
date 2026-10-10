@@ -1,5 +1,5 @@
+import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -20,7 +20,7 @@ struct GeomFillEvolvedSectionTests {
         #expect(asEdge.curveType == .circle)
         let circle = try #require(asEdge.circleProperties)
         #expect(abs(circle.radius - 5) < 1e-9)
-        #expect(simd_length(circle.center - SIMD3(0, 0, 10)) < 1e-9)
+        #expect(vectorLength(circle.center - SIMD3(0, 0, 10)) < 1e-9)
         #expect(circle.isFullCircle)
         let info = edge.evolvedSectionInfo()
         #expect(info.nbPoles == 6)

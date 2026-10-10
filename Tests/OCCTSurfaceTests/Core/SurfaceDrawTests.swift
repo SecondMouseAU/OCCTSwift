@@ -1,5 +1,5 @@
+import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -14,7 +14,7 @@ struct SurfaceDrawTests {
             #expect(line.count == 20)
             // All points should be on sphere
             for p in line {
-                let dist = simd_length(p)
+                let dist = vectorLength(p)
                 #expect(abs(dist - 5.0) < 0.5)  // allow some tolerance for polar regions
             }
         }
@@ -27,7 +27,7 @@ struct SurfaceDrawTests {
         #expect(mesh.uCount == 10)
         #expect(mesh.vCount == 10)
         let p = mesh.at(u: 0, v: 0)
-        #expect(abs(simd_length(p) - 5.0) < 1e-6)
+        #expect(abs(vectorLength(p) - 5.0) < 1e-6)
     }
 
     @Test("Draw mesh on an asymmetric grid indexes .at(u:v:) correctly")
@@ -55,7 +55,7 @@ struct SurfaceDrawTests {
                 let vParam = vMin + (vMax - vMin) * Double(v) / Double(vCount - 1)
                 let expected = sphere.point(atU: uParam, v: vParam)
                 let actual = mesh.at(u: u, v: v)
-                #expect(simd_length(actual - expected) < 1e-6)
+                #expect(vectorLength(actual - expected) < 1e-6)
             }
         }
     }

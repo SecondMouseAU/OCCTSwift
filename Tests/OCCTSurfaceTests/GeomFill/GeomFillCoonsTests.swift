@@ -1,5 +1,5 @@
+import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -46,9 +46,9 @@ struct GeomFillCoonsTests {
         #expect(result.nbU == 5)
         #expect(result.nbV == 5)
         try #require(result.poles.count == 25)
-        #expect(simd_length(result.poles[0] - SIMD3(0, 10, 0)) < 1e-9)
-        #expect(simd_length(result.poles[8] - SIMD3(-2.5, 2.5, 0)) < 1e-9)
-        #expect(simd_length(result.poles[24] - SIMD3(10, 10, 0)) < 1e-9)
+        #expect(vectorLength(result.poles[0] - SIMD3(0, 10, 0)) < 1e-9)
+        #expect(vectorLength(result.poles[8] - SIMD3(-2.5, 2.5, 0)) < 1e-9)
+        #expect(vectorLength(result.poles[24] - SIMD3(10, 10, 0)) < 1e-9)
     }
 
     /// #2795: the same four rows in the arrangement `GeomFill_Coons::Init` actually wants, which is
@@ -72,7 +72,7 @@ struct GeomFillCoonsTests {
             for v in 0..<5 {
                 let expected = SIMD3<Double>(Double(u) * 2.5, Double(v) * 2.5, 0)
                 #expect(
-                    simd_length(result.poles[u * 5 + v] - expected) < 1e-9,
+                    vectorLength(result.poles[u * 5 + v] - expected) < 1e-9,
                     "pole (\(u), \(v)) should be \(expected)")
             }
         }
@@ -92,12 +92,12 @@ struct GeomFillCoonsTests {
             Shape.coonsFilling(
                 boundary1: s.bottom, boundary2: left, boundary3: s.top, boundary4: s.right))
         try #require(result.poles.count == 25)
-        #expect(simd_length(result.poles[0] - SIMD3(0, 0, 99)) < 1e-9)
+        #expect(vectorLength(result.poles[0] - SIMD3(0, 0, 99)) < 1e-9)
         // And the well-formed call is unaffected, so the assertion above is about the corner and
         // not about the fixture.
         let clean = try #require(
             Shape.coonsFilling(
                 boundary1: s.bottom, boundary2: s.left, boundary3: s.top, boundary4: s.right))
-        #expect(simd_length(clean.poles[0] - SIMD3(0, 0, 0)) < 1e-9)
+        #expect(vectorLength(clean.poles[0] - SIMD3(0, 0, 0)) < 1e-9)
     }
 }

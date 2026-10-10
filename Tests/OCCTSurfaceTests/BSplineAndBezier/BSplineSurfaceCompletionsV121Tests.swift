@@ -1,5 +1,5 @@
+import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -32,8 +32,8 @@ struct BSplineSurfaceCompletionsV121Tests {
             #expect(r2)
             // A no-op on a non-periodic surface: still non-periodic, geometry untouched.
             #expect(!surf.isUPeriodic && !surf.isVPeriodic)
-            #expect(simd_length(surf.point(atU: 0.3, v: 0.7) - before) == 0)
-            #expect(simd_length(before - SIMD3(7.084, 2.916, 1.0269)) < 1e-12)
+            #expect(vectorLength(surf.point(atU: 0.3, v: 0.7) - before) == 0)
+            #expect(vectorLength(before - SIMD3(7.084, 2.916, 1.0269)) < 1e-12)
         }
     }
 
@@ -109,10 +109,10 @@ struct BSplineSurfaceCompletionsV121Tests {
             // GeomLib's MovePoint puts S(0.5, 0.5) on the target (z = 9.9999999999999982 in the
             // kernel); the old check tested x and y to within 1.0 and never looked at z.
             let p = surf.point(atU: 0.5, v: 0.5)
-            #expect(simd_length(p - target) < 1e-9)
+            #expect(vectorLength(p - target) < 1e-9)
             // and the rest of the surface follows the kernel's pole update
             #expect(
-                simd_length(surf.point(atU: 0.2, v: 0.2) - SIMD3(1.904, 1.904, 7.1359567567567552))
+                vectorLength(surf.point(atU: 0.2, v: 0.2) - SIMD3(1.904, 1.904, 7.1359567567567552))
                     < 1e-9)
         }
     }

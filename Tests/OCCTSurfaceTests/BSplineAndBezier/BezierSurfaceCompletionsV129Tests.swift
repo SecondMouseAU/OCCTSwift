@@ -1,5 +1,5 @@
+import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -21,7 +21,7 @@ struct BezierSurfaceCompletionsV129Tests {
     }
 
     private func samePoles(_ a: [SIMD3<Double>], _ b: [SIMD3<Double>]) -> Bool {
-        a.count == b.count && zip(a, b).allSatisfy { simd_length($0 - $1) < 1e-12 }
+        a.count == b.count && zip(a, b).allSatisfy { vectorLength($0 - $1) < 1e-12 }
     }
 
     @Test("InsertPoleColBefore and InsertPoleRowBefore")

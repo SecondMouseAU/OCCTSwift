@@ -1,5 +1,5 @@
+import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -16,10 +16,10 @@ struct GeomFillFrenetTests {
         let frame = edge.frenetTrihedron(at: 0)
         #expect(frame != nil)
         if let frame {
-            #expect(abs(simd_dot(frame.tangent, frame.normal)) < 1e-4)
-            #expect(simd_length(frame.tangent - SIMD3(0, 1, 0)) < 1e-9)
-            #expect(simd_length(frame.normal - SIMD3(-1, 0, 0)) < 1e-9)
-            #expect(simd_length(frame.binormal - SIMD3(0, 0, 1)) < 1e-9)
+            #expect(abs(dotProduct(frame.tangent, frame.normal)) < 1e-4)
+            #expect(vectorLength(frame.tangent - SIMD3(0, 1, 0)) < 1e-9)
+            #expect(vectorLength(frame.normal - SIMD3(-1, 0, 0)) < 1e-9)
+            #expect(vectorLength(frame.binormal - SIMD3(0, 0, 1)) < 1e-9)
         }
     }
 
@@ -34,9 +34,9 @@ struct GeomFillFrenetTests {
         #expect(frame != nil)
         if let frame {
             #expect(abs(frame.binormal.z) > 0.9)
-            #expect(simd_length(frame.tangent - SIMD3(0, 1, 0)) < 1e-9)
-            #expect(simd_length(frame.normal - SIMD3(-1, 0, 0)) < 1e-9)
-            #expect(simd_length(frame.binormal - SIMD3(0, 0, 1)) < 1e-9)
+            #expect(vectorLength(frame.tangent - SIMD3(0, 1, 0)) < 1e-9)
+            #expect(vectorLength(frame.normal - SIMD3(-1, 0, 0)) < 1e-9)
+            #expect(vectorLength(frame.binormal - SIMD3(0, 0, 1)) < 1e-9)
         }
     }
 

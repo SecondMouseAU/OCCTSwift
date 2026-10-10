@@ -1,5 +1,5 @@
+import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -49,12 +49,12 @@ struct Issue2843StretchFillArrangementTests {
             for v in 0..<r.nbVPoles {
                 let want = SIMD3<Double>(Self.t[u], Self.t[v], 0)
                 #expect(
-                    simd_distance(pole(r, u, v), want) < 1e-9,
+                    vectorDistance(pole(r, u, v), want) < 1e-9,
                     "pole (\(u),\(v)) should be \(want), got \(pole(r, u, v))")
             }
         }
         // The square's centre, spelled the way the doc snippet spells it.
-        #expect(simd_distance(r.poles[12], SIMD3(5, 5, 0)) < 1e-9)
+        #expect(vectorDistance(r.poles[12], SIMD3(5, 5, 0)) < 1e-9)
     }
 
     @Test("The Coons arrangement is wrong here, and the grid says so")
@@ -65,7 +65,7 @@ struct Issue2843StretchFillArrangementTests {
             Surface.stretchFill(p1: bottom, p2: left, p3: top, p4: right))
         let uniform = (0..<r.nbUPoles).allSatisfy { u in
             (0..<r.nbVPoles).allSatisfy { v in
-                simd_distance(pole(r, u, v), SIMD3(Self.t[u], Self.t[v], 0)) < 1e-9
+                vectorDistance(pole(r, u, v), SIMD3(Self.t[u], Self.t[v], 0)) < 1e-9
             }
         }
         #expect(!uniform, "the Coons arrangement must not reproduce the flat square")
@@ -83,11 +83,11 @@ struct Issue2843StretchFillArrangementTests {
 
         // The boundary corner keeps p1's value: the second loop never writes it.
         #expect(
-            simd_distance(pole(r, r.nbUPoles - 1, 0), SIMD3(10, 0, 0)) < 1e-9,
+            vectorDistance(pole(r, r.nbUPoles - 1, 0), SIMD3(10, 0, 0)) < 1e-9,
             "the corner pole should still be p1's (10, 0, 0)")
         // ...but the bilinear correction term reads p2[0], so the interior moves.
         #expect(
-            simd_distance(pole(r, 1, 1), pole(clean, 1, 1)) > 1.0,
+            vectorDistance(pole(r, 1, 1), pole(clean, 1, 1)) > 1.0,
             "the interior pole should have moved, got \(pole(r, 1, 1))")
     }
 
@@ -104,7 +104,7 @@ struct Issue2843StretchFillArrangementTests {
         #expect(r.nbUPoles == clean.nbUPoles && r.nbVPoles == clean.nbVPoles)
         for i in 0..<clean.poles.count {
             #expect(
-                simd_distance(r.poles[i], clean.poles[i]) < 1e-12,
+                vectorDistance(r.poles[i], clean.poles[i]) < 1e-12,
                 "pole \(i) should be untouched")
         }
     }

@@ -1,5 +1,5 @@
+import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -110,7 +110,7 @@ struct Issue620DrawMeshCountContractTests {
         for j in 0..<vCount {
             let v = d.vMin + (d.vMax - d.vMin) * Double(j) / Double(vCount - 1)
             let expected = s.point(atU: d.uMin, v: v)
-            #expect(simd_distance(grid.at(u: 0, v: j), expected) < 1e-9)
+            #expect(vectorDistance(grid.at(u: 0, v: j), expected) < 1e-9)
         }
     }
 
@@ -173,7 +173,7 @@ struct Issue620DrawMeshCountContractTests {
         }
 
         for j in 0..<vCount {
-            #expect(simd_distance(one.at(u: 0, v: j), many.at(u: 0, v: j)) < 1e-9)
+            #expect(vectorDistance(one.at(u: 0, v: j), many.at(u: 0, v: j)) < 1e-9)
         }
     }
 
@@ -195,7 +195,7 @@ struct Issue620DrawMeshCountContractTests {
         }
 
         let d = s.domain
-        #expect(simd_distance(grid.at(u: 0, v: 0), s.point(atU: d.uMin, v: d.vMin)) < 1e-9)
+        #expect(vectorDistance(grid.at(u: 0, v: 0), s.point(atU: d.uMin, v: d.vMin)) < 1e-9)
     }
 
     // MARK: - The bound moved to 1, it did not disappear

@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -68,7 +67,7 @@ struct Issue1515CoonsPatchUParameter {
                 let got = grid[i * n + j]
                 let want = SIMD3<Double>(Self.side * u, Self.side * v, 0)
                 #expect(
-                    simd_distance(got, want) < 1e-9,
+                    vectorDistance(got, want) < 1e-9,
                     "u=\(u) v=\(v): got \(got), expected the bilinear \(want)")
             }
         }
@@ -91,14 +90,14 @@ struct Issue1515CoonsPatchUParameter {
         let u0v1 = grid[1]
         let u1v0 = grid[2]
         let u1v1 = grid[3]
-        #expect(simd_distance(u0v0, SIMD3(0, 0, 0)) < 1e-9)
-        #expect(simd_distance(u1v1, SIMD3(Self.side, Self.side, 0)) < 1e-9)
+        #expect(vectorDistance(u0v0, SIMD3(0, 0, 0)) < 1e-9)
+        #expect(vectorDistance(u1v1, SIMD3(Self.side, Self.side, 0)) < 1e-9)
         // The two that the collapse folded onto the diagonal.
         #expect(
-            simd_distance(u1v0, SIMD3(Self.side, 0, 0)) < 1e-9,
+            vectorDistance(u1v0, SIMD3(Self.side, 0, 0)) < 1e-9,
             "u=1, v=0 collapsed onto the diagonal, which is #1515 unfixed")
         #expect(
-            simd_distance(u0v1, SIMD3(0, Self.side, 0)) < 1e-9,
+            vectorDistance(u0v1, SIMD3(0, Self.side, 0)) < 1e-9,
             "u=0, v=1 collapsed onto the diagonal, which is #1515 unfixed")
     }
 
@@ -114,7 +113,7 @@ struct Issue1515CoonsPatchUParameter {
         }
         for j in 0..<n {
             let column = (0..<n).map { grid[$0 * n + j] }
-            let spread = (1..<n).map { simd_distance(column[$0], column[0]) }.max() ?? 0
+            let spread = (1..<n).map { vectorDistance(column[$0], column[0]) }.max() ?? 0
             #expect(spread > 1e-6, "v index \(j): every u gave the same point, so Value ignores U")
         }
     }

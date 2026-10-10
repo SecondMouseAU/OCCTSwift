@@ -1,5 +1,5 @@
+import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -42,7 +42,7 @@ struct BSplineSurfaceExtrasTests {
             #expect(!s.isUPeriodic)
             #expect(s.point(atU: 0.3, v: 0.6) == before)
             #expect(
-                simd_length(
+                vectorLength(
                     before - SIMD3(2.4704944722029167, 5.4660517833716957, 0.4728327067804845))
                     < 1e-12)
         }
