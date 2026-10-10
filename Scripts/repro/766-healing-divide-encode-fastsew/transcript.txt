@@ -1,0 +1,15 @@
+box DivideByNumber(4,1): Perform=1 resultFaces=24
+box DivideByNumber(1,1): Perform=0 resultFaces=6
+cylinder DivideByNumber(4,1): Perform=1 resultFaces=6
+box before encode: sharedEdges=12 encoded=0 C0=0 aboveC0=0
+encoded box volume=1000.000000000
+box after encode(default): sharedEdges=12 encoded=12 C0=12 aboveC0=0
+filleted box faces=26
+filleted before encode: sharedEdges=48 encoded=48 C0=0 aboveC0=48
+filleted after encode(1 deg): sharedEdges=48 encoded=48 C0=0 aboveC0=48
+nearTangent fixture: sharedEdges=1 encoded=0 C0=0 aboveC0=0
+nearTangent encode(default 1e-10 rad): sharedEdges=1 encoded=1 C0=0 aboveC0=1
+nearTangent encode(1e-10 deg): sharedEdges=1 encoded=1 C0=1 aboveC0=0
+FastSewing(sphere r10, tol=1e-06): added=1 null=0 type=0 faces=1 area=1256.637061436 (4 pi r^2 = 1256.637061436)
+FastSewing(sphere r10, tol=0.01): added=1 null=0 type=0 faces=1 area=1256.637061436 (4 pi r^2 = 1256.637061436)
+FastSewing(box): added=0 resultNull=1

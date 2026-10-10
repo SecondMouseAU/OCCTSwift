@@ -1,0 +1,27 @@
+planar 10x10 1x1: faces=1 areas: 100.000000 total=100.000000000
+planar 10x10 2x1: faces=2 areas: 50.000000 50.000000 total=100.000000000
+planar 10x10 1x2: faces=2 areas: 50.000000 50.000000 total=100.000000000
+planar 10x10 3x2: faces=6 areas: 16.666667 16.666667 16.666667 16.666667 16.666667 16.666667 total=100.000000000
+planar 10x10 4x4: faces=16 areas: 6.250000 6.250000 6.250000 6.250000 6.250000 6.250000 6.250000 6.250000 6.250000 6.250000 6.250000 6.250000 6.250000 6.250000 6.250000 6.250000 total=100.000000000
+planar 10x10 2x2: faces=4 areas: 25.000000 25.000000 25.000000 25.000000 total=100.000000000
+cylinder wall area=314.159265359
+cylinder wall 4x1: faces=4 areas: 78.539816 78.539816 78.539816 78.539816 total=314.159265359
+cylinder wall 1x2: faces=2 areas: 157.079633 157.079633 total=314.159265359
+ShapeFix_Face.Perform=0 OK=1 DONE=0 FAIL=0 resultNull=0 faceArea=100.000000000
+individual passes: FixIntersectingWires=0 FixWiresTwoCoincEdges=0 FixLoopWire=0 FixPeriodicDegenerated=0 faceNull=0
+BRepCheck_Face: IntersectWires=NoError ClassifyWires=NoError OrientationOfWires=NoError
+#318 fixture: null=0 type=0 faces=2 shells=0 edges(explored)=65 degenerate=61 small(non-degenerate)=0 small(all, no skip)=60
+#438 C0: Perform=0 faces=-1
+#438 C0 (boundary criterion only): Perform=1 faces=4
+#438 C1: Perform=1 faces=4
+#438 C1 (boundary criterion only): Perform=1 faces=4
+#438 C2: Perform=1 faces=4
+#438 C2 (boundary criterion only): Perform=1 faces=4
+#438 C3: Perform=1 faces=25
+#438 C3 (boundary criterion only): Perform=1 faces=4
+#438 CN: Perform=1 faces=25
+#438 CN (boundary criterion only): Perform=1 faces=4
+#438 G1: Perform=1 faces=4
+#438 G1 (boundary criterion only): Perform=1 faces=4
+#438 G2: Perform=1 faces=4
+#438 G2 (boundary criterion only): Perform=1 faces=4
