@@ -291,6 +291,8 @@
 #include <Geom2d_BezierCurve.hxx>
 #include <Geom2d_BSplineCurve.hxx>
 #import <XCAFDoc_ShapeTool.hxx>
+#include <cstring>
+#include <new>
 #include <ChFiDS_ChamfMode.hxx>
 #include <gp_Trsf2d.hxx>
 #include <XCAFDoc_DocumentTool.hxx>
@@ -1056,7 +1058,22 @@ OCCTFilletBuilderRef OCCTFilletBuilderCreate(OCCTShapeRef shape)
     return nullptr;
   try
   {
-    return new OCCTFilletBuilder(shape->shape);
+    // ChFi3d_Builder's constructor (ChFi3d_Builder_1.cxx:341) initialises `done` but not
+    // `hasresult`; only Compute() assigns it (ChFi3d_Builder.cxx:234). HasResult() on a builder
+    // that was never built therefore reads whatever the heap held (#3137): zero on a fresh Apple
+    // heap, nonzero on wasm after earlier tests dirtied it. Zero the storage first, so the member
+    // starts false as the header's contract says it does.
+    void* mem = ::operator new(sizeof(OCCTFilletBuilder));
+    memset(mem, 0, sizeof(OCCTFilletBuilder));
+    try
+    {
+      return new (mem) OCCTFilletBuilder(shape->shape);
+    }
+    catch (...)
+    {
+      ::operator delete(mem);
+      throw;
+    }
   }
   catch (...)
   {

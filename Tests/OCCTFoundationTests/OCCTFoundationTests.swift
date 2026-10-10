@@ -833,7 +833,15 @@ struct OSDTimerTests {
 struct OSDMemInfoTests {
 
     @Test func heapUsage() {
-        #expect(MemInfo.heapUsage > 0)
+        #if os(WASI)
+            // #3025: no process-memory facility on wasm32-wasip1. OSD_MemInfo reports size_t(-1),
+            // which is 4294967295 once widened on a 32-bit size_t, so this passed `> 0` while
+            // reporting a 4 GiB heap until the bridge mapped the sentinel.
+            #expect(MemInfo.heapUsage == -1)
+            #expect(MemInfo.workingSet == -1)
+        #else
+            #expect(MemInfo.heapUsage > 0)
+        #endif
     }
 
     // #1987: `>= 0` passed zero and any unit. ValuePreciseMiB is Value / 2^20 exactly in the
@@ -841,12 +849,17 @@ struct OSDMemInfoTests {
     // heap this reports is small (about 1.15 MiB in a test run) and moves a few KB between
     // reads, hence the 25% slack; a KB-for-bytes slip is off by a factor of 1024.
     @Test func heapUsageMiB() {
-        let before = Double(MemInfo.heapUsage) / 1_048_576
-        let mib = MemInfo.heapUsageMiB
-        let after = Double(MemInfo.heapUsage) / 1_048_576
-        #expect(mib > 0)
-        #expect(mib >= min(before, after) * 0.75)
-        #expect(mib <= max(before, after) * 1.25)
+        #if os(WASI)
+            // #3025: documented as unavailable on WASI, OCCT's own -1.0 sentinel.
+            #expect(MemInfo.heapUsageMiB == -1.0)
+        #else
+            let before = Double(MemInfo.heapUsage) / 1_048_576
+            let mib = MemInfo.heapUsageMiB
+            let after = Double(MemInfo.heapUsage) / 1_048_576
+            #expect(mib > 0)
+            #expect(mib >= min(before, after) * 0.75)
+            #expect(mib <= max(before, after) * 1.25)
+        #endif
     }
 
     // #1987: `count > 0` passed any text. OSD_MemInfo::PrintInfo labels its heap line
@@ -854,7 +867,12 @@ struct OSDMemInfoTests {
     @Test func infoString() {
         let info = MemInfo.infoString
         #expect(info != nil)
-        if let info { #expect(info.contains("Heap memory")) }
+        #if os(WASI)
+            // #3025: documented as the empty string on WASI, where no counter is available.
+            if let info { #expect(info.isEmpty) }
+        #else
+            if let info { #expect(info.contains("Heap memory")) }
+        #endif
     }
 }
 
@@ -1127,8 +1145,14 @@ struct OSDSharedLibTests {
             Issue.record("SharedLibrary(name:) returned nil")
             return
         }
-        let ok = lib.open()
-        #expect(ok)
+        #if os(WASI)
+            // #3025: no dynamic linking on wasm32-wasip1, so open() is false for every name. The
+            // Apple spelling of the name is irrelevant there.
+            #expect(!lib.open())
+        #else
+            let ok = lib.open()
+            #expect(ok)
+        #endif
         lib.close()
     }
 

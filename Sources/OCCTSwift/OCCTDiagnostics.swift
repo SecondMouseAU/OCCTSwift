@@ -93,6 +93,8 @@ public enum OCCTDiagnostics {
         public let message: String
 
         /// `Standard_Failure::GetStackString()`, empty unless ``stackTraceDepth`` is non-zero.
+        ///
+        /// Always empty on WASI, which has no backtrace facility, whatever the depth.
         public let stackTrace: String
     }
 
@@ -133,6 +135,10 @@ public enum OCCTDiagnostics {
     /// every OCCT exception, not only the ones recorded here. `0`, OCCT's own default, means no
     /// stack trace, and capturing frames costs time on the throwing path, so raise it only while
     /// a trace is actually being read.
+    ///
+    /// **On WASI** the setting is accepted and reads back, but no frames are ever captured:
+    /// the target has no backtrace facility, so ``Record/stackTrace`` stays empty. See
+    /// [the wasm consumer guide](../../docs/guides/wasm-consumer-setup.md#present-but-unavailable-on-wasm).
     ///
     /// ```swift
     /// OCCTDiagnostics.stackTraceDepth = 16
