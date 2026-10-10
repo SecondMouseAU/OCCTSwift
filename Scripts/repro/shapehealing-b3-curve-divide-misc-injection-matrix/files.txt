@@ -1,0 +1,8 @@
+# The test files this PR lifts (current paths).
+Tests/OCCTShapeHealingTests/BRepLib/EncodeRegularityTests.swift
+Tests/OCCTShapeHealingTests/Sewing/FastSewingTests.swift
+Tests/OCCTShapeHealingTests/ShapeAnalysis/CurveSamplePointsTests.swift
+Tests/OCCTShapeHealingTests/ShapeCustom/BSplineRestrictionAdvancedTests.swift
+Tests/OCCTShapeHealingTests/ShapeCustom/ConvertToBSplineAdvancedTests.swift
+Tests/OCCTShapeHealingTests/ShapeFix/Issue1479HealingFixNullGuardsTests.swift
+Tests/OCCTShapeHealingTests/ShapeFix/Issue266FaceHealingControlTests.swift
