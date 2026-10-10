@@ -798,6 +798,11 @@ public struct FeatureReconstructor: Sendable {
     /// the 1e-15 noise of a measured volume), so it never rejects a correct result; the check is
     /// conservative and a wrong result inside the bounds (a tiny operand lost next to a huge one)
     /// is not detectable by volume. An operand or result that cannot be measured is not judged.
+    ///
+    /// Volumes are compared by magnitude. A negative measured volume (a reversed solid) is not
+    /// reachable from the specs: clockwise and counter-clockwise profiles and a negative extrude
+    /// length all measure positive (#3196), and `abs` would judge a wholly reversed operand and
+    /// result alike anyway.
     private static func volumeIsConsistent(
         _ op: FeatureSpec.Boolean.Op, left: Shape, right: Shape, result: Shape
     ) -> Bool {
@@ -862,7 +867,9 @@ public struct FeatureReconstructor: Sendable {
                 // No id: no Skipped entry possible anyway (recordSkip is a no-op
                 // for a nil id), so an anonymous feature that fails to fuse still
                 // falls back to absorbing its own unfused body. A union with an impossible
-                // volume (#3196) leaves the prior body untouched instead.
+                // volume (#3196) leaves the prior body untouched instead, the conservative
+                // choice: it matches the id'd path, and an anonymous fuse that was right is
+                // unchanged. (A failed fuse keeps its pre-existing replace-with-body behaviour.)
                 if let fused = prior.union(body) {
                     if volumeIsConsistent(.union, left: prior, right: body, result: fused) {
                         ctx.current = fused

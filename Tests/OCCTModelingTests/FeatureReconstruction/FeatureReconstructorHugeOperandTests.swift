@@ -102,4 +102,24 @@ struct Issue3196ReconstructorHugeOperandTests {
         let volume = try #require(result.shape?.volume)
         #expect(abs(volume - 1e36) < 1e30)
     }
+
+    @Test("Control: clockwise and negative-length extrudes measure positive and still fuse")
+    func windingDoesNotAffectTheCheck() throws {
+        let onto = FeatureSpec.Extrude(
+            profilePoints2D: [SIMD2(5, 5), SIMD2(15, 5), SIMD2(15, 15), SIMD2(5, 15)],
+            planeOrigin: .zero, planeNormal: SIMD3(0, 0, 1), length: 10, id: "onto")
+        let clockwise = FeatureSpec.Extrude(
+            profilePoints2D: [SIMD2(0, 0), SIMD2(0, 10), SIMD2(10, 10), SIMD2(10, 0)],
+            planeOrigin: .zero, planeNormal: SIMD3(0, 0, 1), length: 10, id: "cw")
+        let downward = FeatureSpec.Extrude(
+            profilePoints2D: [SIMD2(0, 0), SIMD2(10, 0), SIMD2(10, 10), SIMD2(0, 10)],
+            planeOrigin: .zero, planeNormal: SIMD3(0, 0, 1), length: -10, id: "neg")
+        for first in [clockwise, downward] {
+            let result = FeatureReconstructor.build(from: [.extrude(first), .extrude(onto)])
+            #expect(result.fulfilled == [first.id ?? "", "onto"])
+            let volume = try #require(result.shape?.volume)
+            #expect(volume > 0)
+            #expect(abs(volume - (first.id == "cw" ? 1750 : 2000)) < 1e-6)
+        }
+    }
 }
