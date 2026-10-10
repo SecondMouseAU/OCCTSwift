@@ -1,0 +1,7 @@
+basicBatten h=2: ok=1 code=0 degree=9 poles=10 domain=[0, 1] start=(0, 0) mid=(5, 0) end=(10, 0)
+battenWithSlope h=3 slope=0.5: ok=1 code=0 degree=9 poles=10 domain=[0, 1] start=(0, 0) mid=(5, 0) end=(10, 0)
+battenWithAngles h=2 a=+-0.3: ok=1 code=0 degree=9 poles=10 domain=[0, 1] start=(0, 0) mid=(5, -1.3183898417423734e-16) end=(10, -1.1102230246251565e-16)
+battenConstraintOrders 0,0: ok=1 code=0 degree=9 poles=10 domain=[0, 1] start=(0, 0) mid=(5, 0) end=(10, 0)
+basicMinimalVariation: ok=1 code=0 degree=9 poles=10 domain=[0, 1] start=(0, 0) mid=(5, 0) end=(10, 0)
+withCurvatureConstraints 2,2 k=0.1: ok=1 code=0 degree=9 poles=10 domain=[0, 1] start=(0, 0) mid=(5, 0.29798933520658766) end=(10, -1.3322676295501878e-15)
+withPhysicalRatio 0.5: ok=1 code=0 degree=9 poles=10 domain=[0, 1] start=(0, 0) mid=(5, 0) end=(10, 0)
