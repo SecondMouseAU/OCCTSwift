@@ -4,6 +4,21 @@ import simd
 
 /// A 3D geometric point with Handle-based memory management.
 public final class GeomPoint3D: @unchecked Sendable {
+    /// The raw bridge pointer.
+    ///
+    /// It is borrowed: it is valid only while this object is alive, and the
+    /// compiler does not tie it to its owner. In an optimised build an owner that is a temporary
+    /// or a collection element may be released once the `.handle` load is its last use, before the
+    /// bridge call that receives the pointer runs (#3130). Hold the owner across the call.
+    ///
+    /// ```swift
+    /// let point = GeomPoint3D(x: 1, y: 2, z: 3)
+    /// // Keeps `point` alive until the closure returns, so the pointer cannot dangle.
+    /// withExtendedLifetime(point) {
+    ///     let raw = point.handle
+    ///     _ = raw  // pass `raw` to the bridge call here
+    /// }
+    /// ```
     public let handle: OCCTGeomPoint3DRef
 
     public init(x: Double, y: Double, z: Double) {
@@ -41,6 +56,9 @@ public final class GeomPoint3D: @unchecked Sendable {
 
 /// A 3D unit vector (always normalized).
 public final class GeomDirection: @unchecked Sendable {
+    /// The raw bridge pointer, borrowed: valid only while this object is alive.
+    ///
+    /// Hold the owner across any bridge call that receives it, as ``GeomPoint3D/handle`` shows (#3130).
     public let handle: OCCTGeomDirectionRef
 
     /// Creates a unit direction from component values, normalising them.
@@ -114,6 +132,9 @@ public final class GeomDirection: @unchecked Sendable {
 
 /// A 3D vector with magnitude (can have zero length).
 public final class GeomVector3D: @unchecked Sendable {
+    /// The raw bridge pointer, borrowed: valid only while this object is alive.
+    ///
+    /// Hold the owner across any bridge call that receives it, as ``GeomPoint3D/handle`` shows (#3130).
     public let handle: OCCTGeomVector3DRef
 
     public init(x: Double, y: Double, z: Double) {
@@ -171,6 +192,9 @@ public final class GeomVector3D: @unchecked Sendable {
 
 /// A 3D axis defined by an origin point and a direction.
 public final class Axis1Placement: @unchecked Sendable {
+    /// The raw bridge pointer, borrowed: valid only while this object is alive.
+    ///
+    /// Hold the owner across any bridge call that receives it, as ``GeomPoint3D/handle`` shows (#3130).
     public let handle: OCCTAxis1PlacementRef
 
     public init(origin: SIMD3<Double>, direction: SIMD3<Double>) {
@@ -222,6 +246,9 @@ public final class Axis1Placement: @unchecked Sendable {
 
 /// A 3D right-handed coordinate system (origin, main direction, X direction).
 public final class Axis2Placement: @unchecked Sendable {
+    /// The raw bridge pointer, borrowed: valid only while this object is alive.
+    ///
+    /// Hold the owner across any bridge call that receives it, as ``GeomPoint3D/handle`` shows (#3130).
     public let handle: OCCTAxis2PlacementRef
 
     public init(origin: SIMD3<Double>, normal: SIMD3<Double>, xDirection: SIMD3<Double>) {

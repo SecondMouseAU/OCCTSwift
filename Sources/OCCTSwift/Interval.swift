@@ -11,6 +11,21 @@ import simd
 /// reference to shared, mutable OCCT state, not a Swift value type. Serialize access to a shared
 /// instance with `OCCTSerial.withLock { }`.
 public final class Interval: @unchecked Sendable {
+    /// The raw bridge pointer.
+    ///
+    /// It is borrowed: it is valid only while this object is alive, and the
+    /// compiler does not tie it to its owner. In an optimised build an owner that is a temporary
+    /// or a collection element may be released once the `.handle` load is its last use, before the
+    /// bridge call that receives the pointer runs (#3130). Hold the owner across the call.
+    ///
+    /// ```swift
+    /// let interval = Interval(start: 0, end: 1)
+    /// // Keeps `interval` alive until the closure returns, so the pointer cannot dangle.
+    /// withExtendedLifetime(interval) {
+    ///     let raw = interval.handle
+    ///     _ = raw  // pass `raw` to the bridge call here
+    /// }
+    /// ```
     public let handle: OCCTIntrvIntervalRef
 
     /// Create an interval with bounds and optional tolerances.
@@ -111,6 +126,9 @@ public final class Interval: @unchecked Sendable {
 /// underlying handle in place with no lock, same shape as ``Interval``. Serialize access to a
 /// shared instance with `OCCTSerial.withLock { }`.
 public final class IntervalSet: @unchecked Sendable {
+    /// The raw bridge pointer, borrowed: valid only while this object is alive.
+    ///
+    /// Hold the owner across any bridge call that receives it, as ``Interval/handle`` shows (#3130).
     public let handle: OCCTIntrvIntervalsRef
 
     /// Create an interval set containing a single interval.
