@@ -77,7 +77,7 @@ those are upper bounds):
   `Shape.loft(profiles:)` did `profiles.map { $0.handle }` and handed the pointers to
   `OCCTShapeCreateLoft*`, and `Shape.screwSweptThreadCutter` (the `threadedHole` and `threadedShaft`
   cutter) calls it on a local `sections` array with no later use. Once `loft` is inlined, nothing
-  keeps that array, so the wires are freed before `BRepOffsetAPI_ThruSections::AddWire` reads them
+  keeps that array, which fits the wires being freed before `BRepOffsetAPI_ThruSections::AddWire` reads them
   (lldb on the runner stopped in `AddWire` on a wild pointer, `EXC_BAD_ACCESS` in the first
   `ldadd` of a TShape refcount; run 38049863685). `withExtendedLifetime(profiles)` around the C call
   fixed it: 21 of 21 runs of the same seven suites passed (run 38051082613). That the 6.2 optimiser shortens
