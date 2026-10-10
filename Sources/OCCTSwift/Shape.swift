@@ -639,11 +639,13 @@ public final class Shape: @unchecked Sendable {
         // for once `map` has run, so hold the array across the C call (#3261, see `NativeHandleOwner`).
         let handles: [OCCTWireRef?] = profiles.map { $0.handle }
         guard
-            let handle = withExtendedLifetime(profiles, {
-                handles.withUnsafeBufferPointer({ buffer in
-                    OCCTShapeCreateLoft(buffer.baseAddress, Int32(profiles.count), solid)
+            let handle = withExtendedLifetime(
+                profiles,
+                {
+                    handles.withUnsafeBufferPointer({ buffer in
+                        OCCTShapeCreateLoft(buffer.baseAddress, Int32(profiles.count), solid)
+                    })
                 })
-            })
         else { return nil }
         return Shape(handle: handle)
     }
@@ -682,15 +684,17 @@ public final class Shape: @unchecked Sendable {
         let fv = firstVertex ?? SIMD3<Double>(Double.nan, Double.nan, Double.nan)
         let lv = lastVertex ?? SIMD3<Double>(Double.nan, Double.nan, Double.nan)
         guard
-            let handle = withExtendedLifetime(profiles, {
-                handles.withUnsafeBufferPointer({ buffer in
-                    OCCTShapeCreateLoftAdvanced(
-                        buffer.baseAddress, Int32(profiles.count),
-                        solid, ruled,
-                        fv.x, fv.y, fv.z,
-                        lv.x, lv.y, lv.z)
+            let handle = withExtendedLifetime(
+                profiles,
+                {
+                    handles.withUnsafeBufferPointer({ buffer in
+                        OCCTShapeCreateLoftAdvanced(
+                            buffer.baseAddress, Int32(profiles.count),
+                            solid, ruled,
+                            fv.x, fv.y, fv.z,
+                            lv.x, lv.y, lv.z)
+                    })
                 })
-            })
         else { return nil }
         return Shape(handle: handle)
     }
