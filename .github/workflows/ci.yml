@@ -279,7 +279,8 @@ jobs:
       # reading "all 14 patches apply cleanly". Applying cleanly and preprocessing are different
       # properties. This reads the patch text for directive deltas, so like its #2058 sibling it
       # needs no Libraries/occt-src and belongs here. Its deeper --tree mode does need a checkout
-      # and is deliberately NOT run in this job; the wasm build job is where that belongs.
+      # and is deliberately NOT run in this job, nor in wasm.yml, which fetches the prebuilt
+      # kernel and has no tree; it is run by hand (okf/policies/wasi-patch-base.md).
       - name: check-preprocessor-balance.py --self-test
         if: '!cancelled()'
         run: python3 Scripts/check-preprocessor-balance.py --self-test
@@ -294,7 +295,7 @@ jobs:
       # threading-dependent files are files we patch ourselves, and none of that is visible from
       # vanilla. This reads both patch sets as text, so like its two siblings above it needs no
       # Libraries/occt-src. The --tree mode runs the real `git apply --check` with the carried set
-      # applied and is deliberately NOT here; the wasm build job is where that belongs.
+      # applied and is deliberately NOT here, nor in wasm.yml (no tree there); it is run by hand.
       - name: check-wasi-patch-base.py --self-test
         if: '!cancelled()'
         run: python3 Scripts/check-wasi-patch-base.py --self-test
@@ -593,6 +594,59 @@ jobs:
           else
             echo "no .build restored, nothing to clear"
           fi
+
+      # The same argument applied to the per-target objects, which #2867's step does not reach.
+      # `restore-keys` above falls back to the newest cache entry of ANY branch, so a branch that
+      # lags `main` can restore a `.build` written against a newer tree. `swift build` recompiles
+      # what changed but never deletes an object whose source is gone, and the doc-snippet runner
+      # below links every `*.build/**/*.o` it finds (`check-doc-snippets.py`, `d.rglob('*.o')`).
+      # PR #3138, based on a branch 183 commits behind `main`, failed twice at that link with
+      # `_OCCTGPropsRelease` and the rest of GProps undefined: `GProps.swift.o` came from a
+      # `main` build and `GProps.swift` did not exist in the PR's tree.
+      #
+      # An object is an orphan when no file of that name (`Foo.swift.o` -> `Foo.swift`, and
+      # `Foo.mm.o` -> `Foo.mm` for the Clang targets) exists anywhere under that target's
+      # `Sources/<Target>` or `Tests/<Target>`. Deleting an object that was in fact wanted costs a
+      # recompile and nothing else, because llbuild rebuilds a command whose output is missing, so
+      # this can only be wrong in the safe direction. A target with neither directory (a
+      # dependency, a generated one) is left alone.
+      - name: Drop objects whose source file no longer exists (restored from another branch's cache)
+        run: |
+          python3 - <<'PY'
+          import os, pathlib
+          build = pathlib.Path('.build')
+          if not build.is_dir():
+              print('no .build restored, nothing to clear')
+              raise SystemExit(0)
+          SOURCE_SUFFIXES = ('.swift', '.m', '.mm', '.c', '.cc', '.cpp', '.cxx')
+          removed = 0
+          for here, dirs, _files in os.walk(build):
+              depth = len(pathlib.Path(here).relative_to(build).parts)
+              if depth >= 6:
+                  dirs[:] = []
+                  continue
+              for name in list(dirs):
+                  if not name.endswith('.build'):
+                      continue
+                  dirs.remove(name)
+                  target = name[:-len('.build')]
+                  roots = [pathlib.Path(r) / target for r in ('Sources', 'Tests')]
+                  roots = [r for r in roots if r.is_dir()]
+                  if not roots:
+                      continue
+                  have = {f.name for r in roots for f in r.rglob('*') if f.is_file()}
+                  for obj in (pathlib.Path(here) / name).rglob('*.o'):
+                      stem = obj.name[:-2]
+                      # Only an object named after a source file is judged. Anything else (a
+                      # generated or linker-produced object) is left alone.
+                      if not stem.endswith(SOURCE_SUFFIXES):
+                          continue
+                      if stem not in have:
+                          print('orphan object, source gone:', obj)
+                          obj.unlink()
+                          removed += 1
+          print(f'dropped {removed} orphan object(s)')
+          PY
 
       - name: swift build
         run: swift build

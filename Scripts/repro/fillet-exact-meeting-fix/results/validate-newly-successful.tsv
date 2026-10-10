@@ -1,0 +1,18 @@
+case	baseline	patched	valid	vol	oracle	|dvol|	faces	closed	mesh	deterministic
+C1 4x10x6 r=2 (forum case)	false	valid	yes	222.831853072	222.831853072	2.04e-10	7	True	True	True
+C1 4x10x6 r=2-1ulp	false	valid	yes	222.831853072	222.831853072	2.04e-10	7	True	True	True
+C1 add2 (FreeCAD Add(r,r,e))	false	valid	yes	222.831853072	222.831853072	2.04e-10	7	True	True	True
+C2 4x10x6 edges along X, w=10 r=5	false	valid	yes	197.079632679	197.079632679	4.90e-10	7	True	True	True
+C3 4x10x6 side face w=6 r=3	false	valid	yes	201.371669412	201.371669412	4.59e-10	7	True	True	True
+C9 cube 4 r=2	false	valid	yes	57.132741229	57.132741229	2.82e-10	7	True	True	True
+vertical edges 4x10x6 r=2	false	valid	yes	229.699111843	229.699111843	7.75e-11	7	True	True	True
+box 10x4x6 edges along X, r=2	false	valid	yes	222.831853072	222.831853072	2.04e-10	7	True	True	True
+scaled x10  40x100x60 r=20	false	valid	yes	222831.853071796	222831.853071796	1.46e-10	7	True	True	True
+scaled /100 .04x.1x.06 r=.02	false	valid	yes	0.000222832	0.000222832	1.47e-10	7	True	True	True
+unequal r1=1.5 r2=2.5 (r1+r2=w)	false	valid	yes	221.758843889	221.758843889	2.17e-10	7	True	True	True
+unequal r1=1 r2=3	false	valid	yes	218.539816340	218.539816340	2.55e-10	7	True	True	True
+unequal r1=.5 r2=3.5	false	valid	yes	213.174770425	213.174770425	3.19e-10	7	True	True	True
+rot z 30 deg	false	valid	yes	222.831853072	222.831853072	2.04e-10	7	True	True	True
+rot x/y 90 deg	false	valid	yes	222.831853072	222.831853072	2.04e-10	7	True	True	True
+random rigid motions of the forum box at r = 2 (40): {'valid': 22, 'false': 18}
+FAILED CASES: 0

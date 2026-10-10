@@ -32,8 +32,11 @@
 #                       failing. Also runs the classifier against a link with no archive at all,
 #                       which it must reject; that case used to print "0 undefined-symbol line(s)"
 #                       and read as the expected failure.
-#   ./run.sh libs       the link-only questions: -lsetjmp, -lwasi-emulated-getpid, the eh runtime,
-#                       and which libc++ definition of std::__throw_out_of_range won
+#   ./run.sh libs       the link-only questions: -lwasi-emulated-getpid, the eh runtime, and which
+#                       libc++ definition of std::__throw_out_of_range won. It also still asks
+#                       about -lsetjmp, and since #2175/#2758 the answer is "not load-bearing":
+#                       the link succeeds without it, and the output says so rather than listing
+#                       it with the pieces that are
 #   ./run.sh imports    the linked module's wasi_snapshot_preview1 imports, which is what #2052 needs
 #   ./run.sh size       the linked module's size, uncompressed and gzipped
 #
@@ -129,8 +132,10 @@ setup_resource_dir
 # differ from the one whose result is reported.
 #   -lc++abi / -lunwind from wasi-sdk's eh directory, because WASI.sdk's libc++abi defines no
 #     __cxa_throw (#2169, #2171);
-#   -lsetjmp because OCCT compiles with -DOCC_CONVERT_SIGNALS and OCC_CATCH_SIGNALS expands to a
-#     real setjmp inside OCCT (#2188), which -mllvm -wasm-enable-sjlj lowers to __wasm_setjmp.
+#   NO -lsetjmp. It was here while OCCT compiled with -DOCC_CONVERT_SIGNALS and OCC_CATCH_SIGNALS
+#     expanded to a real setjmp inside OCCT (#2188). -UOCC_CONVERT_SIGNALS (#2175) removed every
+#     setjmp from the archive, so nothing resolves against libsetjmp and the link no longer needs it
+#     (#2758; do_libs asks the question again and prints the answer).
 #
 # -include the threading shim, which #2170 introduced for OCCT's own compile and which turns out to
 # be a CONSUMER requirement too: Message_ProgressIndicator.hxx, NCollection_IncAllocator.hxx and
@@ -148,7 +153,6 @@ link_probe() { # link_probe <src> <out.wasm> [extra link flags...]
         -I"$HEADERS" \
         "$src" "$COMBINED" \
         -L"$EH_LIBDIR" -lc++abi -lunwind \
-        -lsetjmp \
         "$@" \
         -o "$out"
 }
@@ -644,6 +648,8 @@ do_libs() {
     echo "-- the negative cases: one piece removed from the link line at a time."
     echo "   Each is a claim that a flag is load-bearing, and a claim like that is worth nothing"
     echo "   until the link has been watched to fail without it."
+    printf '    archive members referencing __wasm_setjmp/__wasm_longjmp/__c_longjmp: %s (0 is why -lsetjmp is not needed)\n' \
+        "$("$NM" --undefined-only "$COMBINED" 2>/dev/null | grep -cE '__wasm_setjmp|__wasm_longjmp|__c_longjmp' || true)"
     local case_name out status
     for case_name in setjmp eh-runtime builtins shim; do
         out="$OUT_DIR/neg-$case_name.txt"
@@ -659,26 +665,29 @@ do_libs() {
                 "$CXX" --target="$TRIPLE" --sysroot="$SYSROOT" -resource-dir="$RESOURCE_DIR" \
                     -std=c++17 $EH_FLAGS -mllvm -wasm-enable-sjlj -include "$SHIM" \
                     -I"$HEADERS" "$SCRIPT_DIR/probe.cxx" "$COMBINED" \
-                    -lsetjmp \
                     -o "$OUT_DIR/neg.wasm" >"$out" 2>&1
                 ;;
             builtins)
                 "$CXX" --target="$TRIPLE" --sysroot="$SYSROOT" \
                     -std=c++17 $EH_FLAGS -mllvm -wasm-enable-sjlj -include "$SHIM" \
                     -I"$HEADERS" "$SCRIPT_DIR/probe.cxx" "$COMBINED" \
-                    -L"$EH_LIBDIR" -lc++abi -lunwind -lsetjmp \
+                    -L"$EH_LIBDIR" -lc++abi -lunwind \
                     -o "$OUT_DIR/neg.wasm" >"$out" 2>&1
                 ;;
             shim)
                 "$CXX" --target="$TRIPLE" --sysroot="$SYSROOT" -resource-dir="$RESOURCE_DIR" \
                     -std=c++17 $EH_FLAGS -mllvm -wasm-enable-sjlj \
                     -I"$HEADERS" "$SCRIPT_DIR/probe.cxx" "$COMBINED" \
-                    -L"$EH_LIBDIR" -lc++abi -lunwind -lsetjmp \
+                    -L"$EH_LIBDIR" -lc++abi -lunwind \
                     -o "$OUT_DIR/neg.wasm" >"$out" 2>&1
                 ;;
         esac
         status=$?
-        printf '    without %-11s exit=%s  %s\n' "$case_name" "$status" \
+        # The verdict is read from the exit status, never assumed: a piece is load-bearing only
+        # if the link or compile fails without it. -lsetjmp is not (#2758), and this line used to
+        # be printed for it as if it were.
+        printf '    without %-11s exit=%s  %s  %s\n' "$case_name" "$status" \
+            "$([ "$status" -eq 0 ] && echo 'NOT LOAD-BEARING' || echo 'load-bearing')" \
             "$(grep -oE 'undefined symbol: [^ ]+|no type named .[a-z_]+. in namespace .std.|cannot open [^ ]+' "$out" \
                | sort -u | head -3 | tr '\n' '|')"
         printf '      %s undefined-symbol line(s), %s compile error(s)\n' \
@@ -699,7 +708,7 @@ do_libs() {
     local without with
     "$CXX" --target="$TRIPLE" --sysroot="$SYSROOT" -resource-dir="$RESOURCE_DIR" \
         -std=c++17 $EH_FLAGS -mllvm -wasm-enable-sjlj -include "$SHIM" -I"$HEADERS" \
-        "$SCRIPT_DIR/probe-getpid.cxx" "$COMBINED" -L"$EH_LIBDIR" -lc++abi -lunwind -lsetjmp \
+        "$SCRIPT_DIR/probe-getpid.cxx" "$COMBINED" -L"$EH_LIBDIR" -lc++abi -lunwind \
         -o "$OUT_DIR/probe-getpid.wasm" >"$OUT_DIR/getpid-without.txt" 2>&1
     without=$?
     link_probe "$SCRIPT_DIR/probe-getpid.cxx" "$OUT_DIR/probe-getpid.wasm" \
