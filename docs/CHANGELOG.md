@@ -21,6 +21,11 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### `Selector.pick` returns hits: the headless selectable reports its bounding box (#3254)
+
+
+- `Selector.pick(at:camera:viewSize:)`, `pick(rect:...)` and `pick(polygon:...)` now return hits. The bridge's headless selectable object had a void bounding box, so OCCT's object-level BVH cull discarded it before any sensitive was tested and every pick came back empty (#3254).
+
 ### `Shape.fixEdgeConnect()` leaves the caller's shape untouched and valid (#3252)
 
 - `Shape.fixEdgeConnect()` no longer edits the receiver in place and no longer returns an invalid shape for a valid input (a box came back invalid, #3252). It works on a copy and returns an unchanged copy when connecting would make a valid shape invalid.
