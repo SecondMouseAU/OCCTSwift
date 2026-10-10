@@ -8,7 +8,7 @@ lifetime to scope end and hides the whole class.
 cd Scripts/repro/3130-borrowed-handle
 unset OCCTSWIFT_BRIDGE_PREBUILT
 swift build -c release -Xswiftc -enable-testing
-for v in A RE RF TF TS NCM LM NW NS REL RS WHM WHE WHF WHT WHS; do
+for v in A RE RF TF TS NCM LM NW NS REL RS SPL SPLF SPS WHM WHE WHF WHT WHS; do
   for i in 1 2 3 4 5 6 7 8; do MallocScribble=1 MallocPreScribble=1 .build/release/probe $v; done
 done
 ```
@@ -23,6 +23,8 @@ Measured on macOS arm64, `-c release`, 8 runs per variant under `MallocScribble`
 | TF | `b.edges().first!.handle` | segfault 5/8, 0.0 3/8 |
 | TS | `Shape.box(...)!.handle` | bus error 2/8, wrong `false` 6/8 |
 | NCM, LM, NW, NS, REL, RS | owner bound to a named `let` or `for` variable | correct 8/8 |
+| SPL, SPS | `let h = owner.handle`, owner unused afterwards, `h` used by later calls (`Document`, `Shape`) | correct 8/8 |
+| SPLF | SPL inside `withExtendedLifetime(doc)` | correct 8/8 |
 | WHM, WHE, WHF, WHT, WHS | the A, RE, RF, TF, TS shapes through `withHandle` | correct 8/8 |
 
 Not reproduced here: the wasm builds (not this repo's job to touch), and any claim about iOS.

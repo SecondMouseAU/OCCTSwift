@@ -21,6 +21,10 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+#### Documented the borrowed-handle rule on the seven public handle properties (#3130)
+
+`GeomPoint3D`, `GeomDirection`, `GeomVector3D`, `Axis1Placement`, `Axis2Placement`, `Interval` and `IntervalSet` expose a public `handle`. Its documentation now says it is borrowed, that an optimised build may release a temporary or collection-element owner before the bridge call that receives the pointer runs, and shows `withExtendedLifetime` as the fix. No behaviour changes.
+
 ### Fixed: the wasm test suites read their fixtures and no longer fail for test-side reasons (#2926, #2929, #3025, #3026, #3137)
 
 The wasm32-wasip1 test run now reads `#filePath` fixtures, so seven `OCCTStressTests` files that always failed with `.importFailed` run and pass (#3026). Test-side faults that looked like wasm defects are fixed: the NLPlate G3 tolerance pair now separates on both platforms (#2926), and `BRepLibExtendedTests."Same parameter all"` no longer writes its flag through a freed handle (#2929). The harness provides `HOME` and reports writable rights on its `/work` and `/tmp` preopens (#3025). `FilletBuilder.hasResult` is now `false` until `build()` runs on every platform: OCCT's `ChFi3d_Builder` constructor leaves the member uninitialised, and the bridge now zeroes the storage (#3137).
