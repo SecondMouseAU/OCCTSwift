@@ -1,0 +1,3 @@
+Tests/OCCTDrawingTests/Symbols/AutoCentermarksTests.swift
+Tests/OCCTDrawingTests/Visualization/SelectorTests.swift
+Tests/OCCTXCAFTests/Document/TDocStdXLinkToolTests.swift
