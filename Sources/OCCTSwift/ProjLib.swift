@@ -1,6 +1,5 @@
 import OCCTBridge
 import OCCTPlatform
-import simd
 
 /// Projection utilities for projecting 3D curves onto analytic surfaces.
 public enum ProjLib {

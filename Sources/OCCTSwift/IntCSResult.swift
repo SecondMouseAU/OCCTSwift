@@ -1,6 +1,5 @@
 import OCCTBridge
 import OCCTPlatform
-import simd
 
 /// Full multi-result curve-surface intersection using GeomAPI_IntCS.
 public final class IntCSResult: @unchecked Sendable {

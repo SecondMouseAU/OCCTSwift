@@ -1,6 +1,5 @@
 import OCCTBridge
 import OCCTPlatform
-import simd
 
 /// Builder for unifying same-domain faces and edges with advanced control.
 public final class UnifySameDomainBuilder: @unchecked Sendable {

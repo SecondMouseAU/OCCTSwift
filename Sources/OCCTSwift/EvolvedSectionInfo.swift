@@ -1,6 +1,5 @@
 import OCCTBridge
 import OCCTPlatform
-import simd
 
 /// Evolved section shape info.
 public struct EvolvedSectionInfo: Sendable {

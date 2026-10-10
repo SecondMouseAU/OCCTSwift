@@ -1,6 +1,5 @@
 import OCCTBridge
 import OCCTPlatform
-import simd
 
 /// A face from a 3D solid shape, representing a bounded surface.
 public final class Face: @unchecked Sendable {

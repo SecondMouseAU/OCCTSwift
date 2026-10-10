@@ -1,6 +1,5 @@
 import OCCTBridge
 import OCCTPlatform
-import simd
 
 /// CPU time measurement utilities.
 public enum CPUTime {

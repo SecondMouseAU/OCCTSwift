@@ -1,6 +1,5 @@
 import OCCTBridge
 import OCCTPlatform
-import simd
 
 /// XDE Document for loading STEP files with assembly structure,
 /// names, colors, and materials.

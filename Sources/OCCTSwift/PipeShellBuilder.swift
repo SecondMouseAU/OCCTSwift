@@ -1,6 +1,5 @@
 import OCCTBridge
 import OCCTPlatform
-import simd
 
 /// Transition mode for pipe shell construction.
 public enum PipeShellTransition: Int32, Sendable {

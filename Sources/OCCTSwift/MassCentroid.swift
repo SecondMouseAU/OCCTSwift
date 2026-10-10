@@ -12,7 +12,6 @@
 //  and Edge.swift's curveInertia — consolidated here (#842).
 //
 
-import simd
 
 /// Returns the measured centroid, or `nil` when `mass` is zero.
 ///

@@ -1,6 +1,5 @@
 import OCCTBridge
 import OCCTPlatform
-import simd
 
 /// Interleaved triangle mesh data suitable for Metal vertex buffers.
 ///

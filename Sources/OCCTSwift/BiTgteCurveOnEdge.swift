@@ -1,6 +1,5 @@
 import OCCTBridge
 import OCCTPlatform
-import simd
 
 /// Curve defined by an edge lying on another edge (from blend operations).
 public final class BiTgteCurveOnEdge: @unchecked Sendable {

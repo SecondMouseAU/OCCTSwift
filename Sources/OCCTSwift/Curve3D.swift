@@ -1,6 +1,5 @@
 import OCCTBridge
 import OCCTPlatform
-import simd
 
 /// A 3D parametric curve backed by OpenCASCADE Handle(Geom_Curve).
 ///

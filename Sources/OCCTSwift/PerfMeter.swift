@@ -1,6 +1,5 @@
 import OCCTBridge
 import OCCTPlatform
-import simd
 
 /// Performance measurement timer.
 public final class PerfMeter: @unchecked Sendable {

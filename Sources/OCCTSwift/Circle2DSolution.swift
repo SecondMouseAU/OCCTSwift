@@ -1,6 +1,5 @@
 import OCCTBridge
 import OCCTPlatform
-import simd
 
 /// Circle solution in 2D (center + radius).
 public struct Circle2DSolution: Sendable {

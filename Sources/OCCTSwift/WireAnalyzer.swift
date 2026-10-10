@@ -1,6 +1,5 @@
 import OCCTBridge
 import OCCTPlatform
-import simd
 
 /// Analyzer for wire geometry and topology, wrapping ShapeAnalysis_Wire.
 public final class WireAnalyzer: @unchecked Sendable {
