@@ -87,6 +87,10 @@ in that state, and runs the real `git apply --check`. It is NOT part of `gate-sc
 no checkout, and per #2098 a mode that examined nothing must fail rather than pass: `--require-tree`
 turns a missing tree from a printed note into an error.
 
+A WASI patch that is already applied in the tree (what build-occt-wasm.sh leaves behind) is checked
+against its `index` post-image blob instead of its pre-image one, which the tree no longer holds
+(#2272). A patch with no `index` line is unverifiable either way.
+
 HOW `--tree` DECIDES THE CARRIED SET IS APPLIED (#3093). Not by reverse-applying each carried patch
 against the final tree: the patches are a stack, and 0055 rewrites lines 0050 and 0051 added, so a
 correctly patched tree fails the per-patch reverse check for both. It undoes the patches newest
@@ -452,31 +456,38 @@ def scan_tree(tree, carried, wasi):
 
     examined = 0
     for name in sorted(wasi):
-        stamped = parse_index(wasi[name]['text'])
-        for target, (pre, _post) in sorted(stamped.items()):
-            code, actual = git(tree, 'hash-object', target)
-            if code != 0:
-                problems.append(('MISSING_TARGET', name, target,
-                                 'the patch names a file this checkout does not have.'))
-                continue
-            if not actual.startswith(pre) and not pre.startswith(actual[:len(pre)]):
-                problems.append((
-                    'WRONG_BASE', name, target,
-                    'the patch\'s `index` line names pre-image blob %s, and this file is %s with '
-                    'the carried set applied. The diff was cut from a different tree.'
-                    % (pre, actual[:len(pre)])))
         code, _ = git(tree, 'apply', '--check', os.path.abspath(name))
+        already = False
         if code != 0:
             reverse, _ = git(tree, 'apply', '--check', '--reverse', os.path.abspath(name))
-            if reverse == 0:
-                print('  note: %s is already applied in %s, so --check cannot re-verify it. '
-                      'build-occt-wasm.sh treats that as success.' % (name, tree))
+            already = reverse == 0
+            if already:
+                print('  note: %s is already applied in %s, so --check cannot re-verify it; its '
+                      'post-image blobs are checked instead. build-occt-wasm.sh treats that as '
+                      'success.' % (name, tree))
             else:
                 problems.append((
                     'DOES_NOT_APPLY', name, None,
                     '`git apply --check` fails in %s with the carried set applied, and the patch '
                     'is not already applied either. This is the defect the rule exists to stop: '
                     'a patch verified against some other state.' % tree))
+        # A patch that is already applied has turned its pre-image into its post-image, so the
+        # blob the tree must hold is the post-image one (#2272). A patch with no `index` line
+        # stays unverifiable here, as before.
+        for target, (pre, post) in sorted(parse_index(wasi[name]['text']).items()):
+            code, actual = git(tree, 'hash-object', target)
+            if code != 0:
+                problems.append(('MISSING_TARGET', name, target,
+                                 'the patch names a file this checkout does not have.'))
+                continue
+            want, which = (post, 'post') if already else (pre, 'pre')
+            if not actual.startswith(want) and not want.startswith(actual[:len(want)]):
+                problems.append((
+                    'WRONG_BASE', name, target,
+                    'the patch\'s `index` line names %s-image blob %s, and this file is %s with '
+                    'the carried set applied%s. The diff was cut from a different tree.'
+                    % (which, want, actual[:len(want)],
+                       ' and this patch already applied' if already else '')))
         examined += 1
     return problems, examined
 
@@ -946,7 +957,72 @@ def self_test():
     finally:
         shutil.rmtree(scratch, ignore_errors=True)
 
-    total = len(cases) + len(parser_cases) + len(tree_cases)
+    # #2272: a WASI patch already applied in the tree is verified against its post-image blob, not
+    # reported WRONG_BASE for no longer holding its pre-image. Needs a real repository because the
+    # blobs come from `git hash-object`; the temp one below is created and removed here.
+    print('applied-tree cases')
+    applied_cases = []
+    scratch = tempfile.mkdtemp(prefix='check-wasi-patch-base-')
+    try:
+        repo = os.path.join(scratch, 'repo')
+        os.makedirs(repo)
+        target = os.path.join(repo, 'f.cxx')
+
+        def write(content):
+            with open(target, 'w', encoding='utf-8') as handle:
+                handle.write(content)
+
+        git(repo, 'init', '-q')
+        write('int a;\nint b;\nint c;\n')
+        git(repo, 'add', 'f.cxx')
+        git(repo, '-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-q', '-m', 'base')
+        write('int a;\nint b2;\nint c;\n')
+        _code, stamped_text = git(repo, 'diff', '--', 'f.cxx')
+        stamped_text += '\n'
+        forged_text = '\n'.join(
+            re.sub(r'\.\.[0-9a-f]+', '..deadbee', line, count=1) if line.startswith('index ')
+            else line for line in stamped_text.splitlines()) + '\n'
+        bare_text = '\n'.join(line for line in stamped_text.splitlines()
+                              if not line.startswith('index ')) + '\n'
+        patches = {}
+        for key, text in (('stamped', stamped_text), ('forged', forged_text), ('bare', bare_text)):
+            path = os.path.join(scratch, key + '.patch')
+            with open(path, 'w', encoding='utf-8') as handle:
+                handle.write(text)
+            patches[key] = path
+
+        def rules(key, applied):
+            write('int a;\nint b2;\nint c;\n' if applied else 'int a;\nint b;\nint c;\n')
+            found, _count = scan_tree(repo, {}, {patches[key]: {'text': open(
+                patches[key], encoding='utf-8').read()}})
+            return sorted({entry[0] for entry in found})
+
+        saved = sys.stdout
+        sys.stdout = open(os.devnull, 'w')  # scan_tree prints a note for an applied patch
+        try:
+            applied_cases = [
+                ('an unapplied tree holding the pre-image blob is clean',
+                 rules('stamped', False), []),
+                ('an applied tree holding the post-image blob is clean (the #2272 case)',
+                 rules('stamped', True), []),
+                ('an applied tree whose patch stamps a post-image blob the file does not hold',
+                 rules('forged', True), ['WRONG_BASE']),
+                ('an applied tree and a patch with no `index` line stays unverifiable, clean',
+                 rules('bare', True), []),
+            ]
+        finally:
+            sys.stdout.close()
+            sys.stdout = saved
+    finally:
+        shutil.rmtree(scratch, ignore_errors=True)
+    for name, got, want in applied_cases:
+        ok = got == want
+        failed += not ok
+        print('  %s %s' % ('ok  ' if ok else 'MISS', name))
+        if not ok:
+            print('       expected %s, got %s' % (want, got))
+
+    total = len(cases) + len(parser_cases) + len(tree_cases) + len(applied_cases)
     print('%d/%d cases correct' % (total - failed, total))
     return 1 if failed else 0
 

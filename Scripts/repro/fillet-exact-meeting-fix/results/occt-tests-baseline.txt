@@ -1,0 +1,6 @@
+RESULT bug25478_1 done=0
+RESULT 1177_two_sides_r5 done=0
+RESULT 1177_one_side_r10 done=0
+RESULT 1177_two_sides_r4.99 done=1 valid=1 vol=893.127856
+RESULT bug25478_2 done=0
+RESULT stage1 done=0

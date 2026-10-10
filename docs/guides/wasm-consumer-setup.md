@@ -224,11 +224,31 @@ still being decided in [#2759](https://github.com/SecondMouseAU/OCCTSwift/issues
 types themselves are Swift standard library types and are not affected; what could change is the
 handful of `simd_*` free functions.
 
+## Present but unavailable on wasm
+
+These APIs compile for `wasm32-wasip1` and keep their Apple signatures, but the host facility under
+each does not exist there, so they return a fixed, documented answer rather than failing. Code that
+reads them must treat that answer as "unavailable", not as a measurement. This is the canonical
+list; each API's `///` comment states the same answer, and each answer is asserted by a test under
+`#if os(WASI)` ([#3025](https://github.com/SecondMouseAU/OCCTSwift/issues/3025)).
+
+| API | Answer on WASI | Why |
+|---|---|---|
+| `MemInfo.heapUsage`, `MemInfo.workingSet` | `-1` | `OSD_MemInfo` has no wasip1 implementation (no `/proc`, no `mach_task_basic_info`); `-1` is its "unavailable" value |
+| `MemInfo.heapUsageMiB` | `-1.0` | the same |
+| `MemInfo.infoString` | `""` (not `nil`) | the same: no counter to print, so no `Heap memory` line |
+| `SharedLibrary.open()` | `false` for every name | wasm32-wasip1 has no dynamic linking, so `OSD_SharedLibrary::DlOpen` cannot succeed |
+| `DiskInfo.isValid(path:)` | `false` for every path, `/` included | wasi-libc has no `statvfs`, and `/` is not a preopen |
+| `DiskInfo.size(path:)`, `DiskInfo.freeSpace(path:)` | `0` | the same |
+| `DiskInfo.name(path:)` | `""` | the same |
+| `OCCTDiagnostics.Record.stackTrace` | always `""`, whatever `stackTraceDepth` is | no backtrace facility; the depth setting still reads back |
+| `Shape.isSelfIntersecting(hardTimeout:)` | the check runs, and the bound is cooperative, not hard | no second thread on this target, so the deadline cannot be enforced from outside; it forwards to `isSelfIntersecting(timeout:)` and can overrun if OCCT does not reach a checkpoint. A non-positive value returns `nil` at once, as on Apple. A Web Worker or a process you can terminate is the real hard bound ([#2760](https://github.com/SecondMouseAU/OCCTSwift/issues/2760)) |
+
+The `-1` for `MemInfo` is the same on every target: before #3025 the bridge widened OCCT's
+`size_t(-1)` to `Int64`, which is `-1` on arm64 and `4294967295` on wasm32, so a consumer there read
+a 4 GiB heap.
+
 ## What is absent on wasm
 
-`Shape.isSelfIntersecting(hardTimeout:)`. Its contract is a hard wall-clock deadline enforced from a
-second thread, and this target is single-threaded by construction, so no implementation can honour
-it. Use `isSelfIntersecting(timeout:)`, whose bound is cooperative and documented as such. The
-decision is tracked in [#2760](https://github.com/SecondMouseAU/OCCTSwift/issues/2760).
-
-Everything else in the public API compiles for wasm.
+Nothing is absent. `Shape.isSelfIntersecting(hardTimeout:)` used to be, and now exists with a
+cooperative bound (see the table above). Everything else in the public API compiles for wasm.
