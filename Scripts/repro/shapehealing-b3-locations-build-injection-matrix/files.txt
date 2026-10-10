@@ -1,0 +1,6 @@
+# The test files this PR lifts (current paths).
+Tests/OCCTShapeHealingTests/BRepLib/LocationPurgeTests.swift
+Tests/OCCTShapeHealingTests/BRepLib/RemoveLocationsTests.swift
+Tests/OCCTShapeHealingTests/BRepLib/SameParameterTests.swift
+Tests/OCCTShapeHealingTests/ShapeBuild/ShapeBuildVertexTests.swift
+Tests/OCCTShapeHealingTests/ShapeCustom/NURBSConversionTests.swift
