@@ -1,0 +1,8 @@
+Tests/OCCTSurfaceTests/BSplineAndBezier/BSplineSurfaceKnotSplitTests.swift
+Tests/OCCTSurfaceTests/BSplineAndBezier/BSplineSurfaceRemoveVKnotTests.swift
+Tests/OCCTSurfaceTests/BSplineAndBezier/BezierSurfaceCompletionTests.swift
+Tests/OCCTSurfaceTests/BSplineAndBezier/BezierSurfaceCompletionsTests.swift
+Tests/OCCTSurfaceTests/BSplineAndBezier/BezierSurfaceResolutionTests.swift
+Tests/OCCTSurfaceTests/FacesAndProjection/ApproxCurveOnSurfaceTests.swift
+Tests/OCCTSurfaceTests/GeomEval/AHTBezierSurfaceTests.swift
+Tests/OCCTSurfaceTests/SweepsAndLofts/BRepFillPipeTests.swift
