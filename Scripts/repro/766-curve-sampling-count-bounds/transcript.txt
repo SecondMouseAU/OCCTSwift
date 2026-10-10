@@ -1,0 +1,2 @@
+sphere (0,0,5) r3, on the axis (original): IsDone 1 NbCurve 0
+sphere (5,0,0) r3, on the cone surface (rewrite): IsDone 1 NbCurve 2 | curve 1 domain [5.66704315, 6.89932747] start (3.9081, -2.76733, -0.386837)
