@@ -1,0 +1,26 @@
+{
+ "label": "before", "target": "OCCTSurfaceTests",
+ "summary": {"changed": ["ProjectCurveOnSurfaceTests.projectLineOnPlane", "RevolutionFormTests.addRevolutionForm", "ShellFromSurfaceTests.shellFromCylinder", "ShellFromSurfaceTests.shellFromPlane", "SurfaceExtrasTests.copySurface", "SurfaceExtrasTests.planeContinuityClass", "SurfaceExtrasTests.surfaceBounds", "SurfaceFromGridTests.surfaceCurvatures", "SurfaceFromGridTests.surfaceFromGrid", "SurfaceFromGridTests.surfaceNormal", "SurfaceSingularityTests.cylinderSingularities", "SurfaceSingularityTests.degenerationAtPole", "SurfaceSingularityTests.sphereSingularities"], "crashes": ["OCCTCurve3DGetDomain_last_NEG", "OCCTShapeCreateCylinder_RET_NIL", "OCCTShapeCreateCylinderAt_RET_NIL", "OCCTShapeGetSurfaceArea_RET_NEG", "OCCTSurfaceCreateCylinder_RET_NIL", "OCCTSurfaceCreateSphere_RET_NIL"], "live_switches": 14, "switches": 388, "tests": ["SurfaceExtrasTests.surfaceBounds", "SurfaceExtrasTests.planeContinuityClass", "SurfaceExtrasTests.copySurface", "SurfaceFromGridTests.surfaceNormal", "SurfaceFromGridTests.surfaceCurvatures", "SurfaceFromGridTests.surfaceFromGrid", "SurfaceSingularityTests.planeSingularities", "SurfaceSingularityTests.sphereSingularities", "SurfaceSingularityTests.cylinderSingularities", "SurfaceSingularityTests.degenerationAtPole", "ProjectCurveOnSurfaceTests.projectLineOnPlane", "ShellFromSurfaceTests.shellFromCylinder", "ShellFromSurfaceTests.shellFromPlane", "RevolutionFormTests.addRevolutionForm"], "unreddened": ["RevolutionFormTests.addRevolutionForm", "SurfaceExtrasTests.copySurface", "SurfaceFromGridTests.surfaceNormal", "SurfaceSingularityTests.degenerationAtPole"]},
+ "rows_that_did_something": {
+  "OCCTCurve3DGetDomain_last_NEG": {"crash": true, "exit": -5, "ran": 13, "red": []},
+  "OCCTPointsToSurfaceBSpline_RET_NIL": {"crash": false, "exit": 1, "ran": 14, "red": ["SurfaceFromGridTests.surfaceFromGrid"]},
+  "OCCTProjLibProjectOnSurface_RET_NIL": {"crash": false, "exit": 1, "ran": 14, "red": ["ProjectCurveOnSurfaceTests.projectLineOnPlane"]},
+  "OCCTShapeCreateCylinderAt_RET_NIL": {"crash": true, "exit": -5, "ran": 9, "red": []},
+  "OCCTShapeCreateCylinder_RET_NIL": {"crash": true, "exit": -5, "ran": 13, "red": []},
+  "OCCTShapeGetSurfaceArea_RET_NEG": {"crash": true, "exit": -5, "ran": 13, "red": []},
+  "OCCTShapeMakeShell_RET_NIL": {"crash": false, "exit": 1, "ran": 14, "red": ["ShellFromSurfaceTests.shellFromCylinder", "ShellFromSurfaceTests.shellFromPlane"]},
+  "OCCTSurfaceBounds_uMax_NEG": {"crash": false, "exit": 1, "ran": 14, "red": ["SurfaceExtrasTests.surfaceBounds"]},
+  "OCCTSurfaceBounds_uMin_NEG": {"crash": false, "exit": 1, "ran": 14, "red": ["SurfaceExtrasTests.surfaceBounds"]},
+  "OCCTSurfaceBounds_vMax_NEG": {"crash": false, "exit": 1, "ran": 14, "red": ["SurfaceExtrasTests.surfaceBounds"]},
+  "OCCTSurfaceBounds_vMin_NEG": {"crash": false, "exit": 1, "ran": 14, "red": ["SurfaceExtrasTests.surfaceBounds"]},
+  "OCCTSurfaceCreateCylinder_RET_NIL": {"crash": true, "exit": -5, "ran": 12, "red": []},
+  "OCCTSurfaceCreateSphere_RET_NIL": {"crash": true, "exit": -5, "ran": 11, "red": []},
+  "OCCTSurfaceCurvatures_RET_FLIP": {"crash": false, "exit": 1, "ran": 14, "red": ["SurfaceFromGridTests.surfaceCurvatures"]},
+  "OCCTSurfaceCurvatures_gaussian_NEG": {"crash": false, "exit": 1, "ran": 14, "red": ["SurfaceFromGridTests.surfaceCurvatures"]},
+  "OCCTSurfaceGetContinuity_RET_MINUS1": {"crash": false, "exit": 1, "ran": 14, "red": ["SurfaceExtrasTests.planeContinuityClass"]},
+  "OCCTSurfaceGetContinuity_RET_PLUS1": {"crash": false, "exit": 1, "ran": 14, "red": ["SurfaceExtrasTests.planeContinuityClass"]},
+  "OCCTSurfaceGetContinuity_RET_ZERO": {"crash": false, "exit": 1, "ran": 14, "red": ["SurfaceExtrasTests.planeContinuityClass"]},
+  "OCCTSurfaceSingularityCount_RET_PLUS1": {"crash": false, "exit": 1, "ran": 14, "red": ["SurfaceSingularityTests.cylinderSingularities", "SurfaceSingularityTests.planeSingularities"]},
+  "OCCTSurfaceSingularityCount_RET_ZERO": {"crash": false, "exit": 1, "ran": 14, "red": ["SurfaceSingularityTests.sphereSingularities"]}
+ }
+}
