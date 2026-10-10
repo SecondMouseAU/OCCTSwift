@@ -1,0 +1,6 @@
+Tests/OCCTSurfaceTests/Core/SurfaceExtrasTests.swift
+Tests/OCCTSurfaceTests/Core/SurfaceFromGridTests.swift
+Tests/OCCTSurfaceTests/Core/SurfaceSingularityTests.swift
+Tests/OCCTSurfaceTests/FacesAndProjection/ProjectCurveOnSurfaceTests.swift
+Tests/OCCTSurfaceTests/FacesAndProjection/ShellFromSurfaceTests.swift
+Tests/OCCTSurfaceTests/SweepsAndLofts/RevolutionFormTests.swift

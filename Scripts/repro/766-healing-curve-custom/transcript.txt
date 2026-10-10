@@ -1,0 +1,17 @@
+restrictBox IsDone=1
+restrictBox result: type=2 valid=1 faces=6 volume=6000.000000000 bboxSize=(10.000000, 20.000000, 30.000000) surfaces: plane=6
+convertCylinder IsDone=1
+convertCylinder result: type=2 valid=1 faces=3 volume=15707.963267949 bboxSize=(20.000000, 20.000000, 50.000000) surfaces: plane=2 cylinder=1
+convertCylinder planeMode=T: type=2 valid=1 faces=3 volume=15707.963267949 bboxSize=(20.000000, 20.000000, 50.000000) surfaces: cylinder=1 bspline=2
+interpolated closed: null=0 isPeriodic=0 isClosed=1 first=0.000000000 last=56.568542495
+ConvertToPeriodic: null=0 type=Geom_BSplineCurve isPeriodic=1 isClosed=1 first=0.000000000 last=56.568542495 start=(10.000000, 0.000000, 0.000000)
+segment domain=[0.000000000, 10.000000000]; circle domain=[0.000000000, 6.283185307]
+project (5,3,0) on segment: distance=3.000000000 parameter=5.000000000 point=(5.000000000, 0.000000000, 0.000000000)
+project (10,0,0) on circle r5: distance=5.000000000 parameter=0.000000000 point=(5.000000000, 0.000000000, 0.000000000)
+samples circle: ok=1 count=360 first=(5.000000000, 0.000000000, 0.000000000) last=(5.000000000, -0.000000000, 0.000000000) maxRadiusDev=8.882e-16
+samples segment: ok=1 count=2 (0.000000, 0.000000, 0.000000) (10.000000, 0.000000, 0.000000)
+split: domain=[0.000000000, 21.270825972] mid=10.635412986 point(mid)=(6.176464924, 3.684166024, 0.000000000) pieces=2
+  piece 1: [0.000000000, 10.635412986] start=(0.000000000, 0.000000000, 0.000000000) end=(6.176464924, 3.684166024, 0.000000000)
+  piece 2: [10.635412986, 21.270825972] start=(6.176464924, 3.684166024, 0.000000000) end=(10.000000000, 0.000000000, 0.000000000)
+ValidateRange(2, 8): returned=1 first=2.000000000 last=8.000000000
+ValidateRange(-5, 15): returned=1 first=0.000000000 last=10.000000000

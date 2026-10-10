@@ -1,0 +1,6 @@
+Tests/OCCTCurveTests/Fitting/CurveInterpolationTests.swift
+Tests/OCCTCurveTests/Fitting/FairCurveBattenTests.swift
+Tests/OCCTCurveTests/Fitting/FairCurveMinimalVariationTests.swift
+Tests/OCCTCurveTests/Laws/LawCompositeTests.swift
+Tests/OCCTCurveTests/Laws/LawInterpolateTests.swift
+Tests/OCCTCurveTests/Projection/LocOpeCurveShapeIntersectorTests.swift

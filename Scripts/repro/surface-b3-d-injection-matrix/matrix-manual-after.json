@@ -1,0 +1,14 @@
+{
+ "label": "after", "target": "OCCTDrawingTests",
+ "summary": {"changed": ["DrawingSymbolsTests.breakLine", "DrawingSymbolsTests.featureControlFrame", "DrawingSymbolsTests.gdtGlyphs", "DrawingSymbolsTests.surfaceFinishAny"], "crashes": [], "live_switches": 4, "switches": 4, "tests": ["DrawingSymbolsTests.surfaceFinishMachiningRequired", "DrawingSymbolsTests.surfaceFinishArmsAreAsymmetric", "DrawingSymbolsTests.surfaceFinishAny", "DrawingSymbolsTests.surfaceFinishMachiningProhibited", "DrawingSymbolsTests.featureControlFrame", "DrawingSymbolsTests.datumFeature", "DrawingSymbolsTests.rectangleCentrelinesWinding", "DrawingSymbolsTests.featureControlFrameOuterBoxGeometry", "DrawingSymbolsTests.datumFeatureBoxGeometry", "DrawingSymbolsTests.gdtGlyphs", "DrawingSymbolsTests.breakLine", "DrawingSymbolsTests.detailView"], "unreddened": []},
+ "rows_that_did_something": {
+  "BL_AMP": {"crash": false, "exit": 1, "ran": 12, "red": ["DrawingSymbolsTests.breakLine"]},
+  "FCF_NODIV2": {"crash": false, "exit": 1, "ran": 12, "red": ["DrawingSymbolsTests.featureControlFrame"]},
+  "GLYPH_FLT": {"crash": false, "exit": 1, "ran": 12, "red": ["DrawingSymbolsTests.gdtGlyphs"]},
+  "SF_NOBAR": {"crash": false, "exit": 1, "ran": 12, "red": ["DrawingSymbolsTests.surfaceFinishAny", "DrawingSymbolsTests.surfaceFinishMachiningRequired"]}
+ }
+ "label": "after", "target": "OCCTSurfaceTests",
+ "summary": {"changed": ["EvolvedSurfaceTests.simpleEvolved", "FindSurfaceTests.findPlaneFromWire", "Issue437PlatePointG2Tests.g0StillBuilds", "Issue437PlatePointG2Tests.mixedPointG0StillBuilds", "LocOpePipeTests.pipeSweep", "LocOpeRevolutionFormTests.revolutionForm"], "crashes": [], "live_switches": 0, "switches": 4, "tests": ["FindSurfaceTests.findPlaneFromWire", "Issue437PlatePointG2Tests.pointConstraintSupport", "Issue437PlatePointG2Tests.mixedGuardIgnoresCurveOrders", "Issue437PlatePointG2Tests.sharedPointOrderGuardIsUnified", "Issue437PlatePointG2Tests.allG2Rejected", "Issue437PlatePointG2Tests.oneG2AmongValidOrdersRejected", "Issue437PlatePointG2Tests.g0StillBuilds", "Issue437PlatePointG2Tests.mixedPointG2RejectedAlongsideValidCurve", "Issue437PlatePointG2Tests.mixedPointG0StillBuilds", "EvolvedSurfaceTests.simpleEvolved", "LocOpePipeTests.pipeSweep", "LocOpeRevolutionFormTests.revolutionForm"], "unreddened": ["EvolvedSurfaceTests.simpleEvolved", "FindSurfaceTests.findPlaneFromWire", "Issue437PlatePointG2Tests.g0StillBuilds", "Issue437PlatePointG2Tests.mixedPointG0StillBuilds", "LocOpePipeTests.pipeSweep", "LocOpeRevolutionFormTests.revolutionForm"]},
+ "rows_that_did_something": {
+ }
+}

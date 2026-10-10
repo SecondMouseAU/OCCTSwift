@@ -1,0 +1,13 @@
+box edge[0]: domain=[0, 10] length=10 length[f, mid]=5
+  parameter at half length from first = 5
+  quasi-uniform 10: 0 1.1111111111111112 2.2222222222222223 3.3333333333333335 4.4444444444444446 5.5555555555555554 6.6666666666666661 7.7777777777777768 8.8888888888888875 10
+sphere edge[0]: degenerated=1 type=8 domain=[0, 6.2831853071795862]
+  tangential deflection (0.1, 0.1): 2 points
+  tangential deflection (0.5, 1): 2 points
+  tangential deflection (0.05, 0.01): 2 points
+sphere seam edge[1]: type=1 domain=[4.7123889803846897, 7.8539816339744828]
+  seam tangential deflection (0.1, 0.1): 33 points
+  seam tangential deflection (0.5, 1): 8 points
+  seam tangential deflection (0.05, 0.01): 64 points
+circle r=10 tol 1e-3 C2: done=1 hasResult=1 maxError=0.00067601082781564242
+line (1,1,0) trimmed [0, 10] tol 1e-6 C1: done=1 hasResult=1 maxError=2.7511661196066775e-15
