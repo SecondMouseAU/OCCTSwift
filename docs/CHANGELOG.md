@@ -21,6 +21,11 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### `isSelfIntersecting(hardTimeout:)` with a non-positive bound always returns `nil` (#3256)
+
+
+- `Shape.isSelfIntersecting(hardTimeout:)` with a bound of zero or less now returns `nil` every time on every platform. On Apple it used to answer `true`/`false` intermittently (about 3 in 400 calls on a box) when the worker finished before the already-expired wait ran (#3256).
+
 ### `Selector.pick` returns hits: the headless selectable reports its bounding box (#3254)
 
 

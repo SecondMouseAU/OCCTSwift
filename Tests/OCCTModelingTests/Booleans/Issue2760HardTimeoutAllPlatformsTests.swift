@@ -39,9 +39,10 @@ struct Issue2760HardTimeoutAllPlatforms {
         #expect(nulled.isSelfIntersecting(hardTimeout: 5) == nil)
     }
 
-    // Measured on Apple: a deadline already in the past returns nil with no conclusive answer, for
-    // a conclusive shape of either kind. The wasm body guards `<= 0` to match; without that guard
-    // it would inherit `timeout:`'s "non-positive means unbounded" and answer true/false here.
+    // A non-positive bound is refused up front on every platform (#3256). It used to be left to
+    // the semaphore wait on Apple, where a deadline already in the past still answered whenever
+    // the worker signalled first (about 3 runs in 400 for a box), and to a `<= 0` guard on wasm
+    // only, without which wasm would inherit `timeout:`'s "non-positive means unbounded".
     @Test("a non-positive bound returns nil on every platform, not an unbounded answer")
     func nonPositiveBoundIsNil() throws {
         let compound = try #require(overlappingCompound())
