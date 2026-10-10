@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+import simd
 
 @testable import OCCTSwift
 
