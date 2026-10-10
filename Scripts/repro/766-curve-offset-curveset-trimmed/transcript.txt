@@ -1,0 +1,6 @@
+offset of X axis by 5 along (0,0,1): Offset=5 Direction=(0, 0, 1) value(0)=(0, -5, 0)
+CurveSet write/read of line + circle: 54 chars, curve 2 is Geom_Circle
+circle (1,2,3) r=7 round trip: value(0)=(8, 2, 3)
+adding one curve twice: indices 1 and 1 (deduplicated)
+trim [2, 8]: start (2, 0, 0) end (8, 0, 0); basis Geom_Line domain [-2e+100, 2e+100]
+trim [0, 10] then SetTrim(3, 7): start (3, 0, 0) end (7, 0, 0)
