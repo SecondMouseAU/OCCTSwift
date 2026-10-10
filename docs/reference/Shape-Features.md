@@ -1308,9 +1308,19 @@ public func filleted(edges: [Edge], radius: Double) -> Shape?
 ```
 
 - **Parameters:** `edges`, edges to fillet (must have valid `index` values from this shape); `radius`, fillet radius (must be > 0).
-- **Returns:** Filleted shape, or `nil` on failure, which includes a non-positive or NaN radius and
-  an edge whose `index` names no edge of this shape.
+- **Returns:** Filleted shape, or `nil` on failure, which includes a non-positive or NaN radius, an
+  edge whose `index` names no edge of this shape, a builder that is not done, and a result
+  `BRepCheck_Analyzer` reports invalid (#3200). A caller used to receive that invalid shape.
 - **OCCT:** `BRepFilletAPI_MakeFillet` (via `OCCTShapeFilletEdges`).
+- **When the answer is `nil` (#3200):** OCCT's builder reports done for fillets that meet or overlap
+  on a shared face (radii adding up past the face width) and in the vertex-snap window of #3209.
+  Every fillet and chamfer entry point now checks the result with `BRepCheck_Analyzer` after a
+  successful build and answers `nil` when it is invalid; a result that was valid is returned
+  unchanged. Two fillets on opposite edges of a face of width `w` are refused once their radii sum
+  to `w` or more, and so is a pair whose gap to `w` is below `PConfusion` (1e-9) (OCCT#1177), which
+  is why a 4 mm face takes `1.9999` where it refuses `2`. Whether `r == w / 2` itself builds depends
+  on the pinned kernel (patch 0059, #3207); radii past `w / 2` are not built (#3208). `nil` carries
+  no reason: `FilletBuilder` exposes the builder's diagnostics.
 - **Notes:** shares one bridge implementation with
   [`filleted(edges:startRadius:endRadius:)`](#filletededgesstartradiusendradius) and
   [`blendedEdges(_:)`](#blendededges_), so all three apply the same positive-radius precondition

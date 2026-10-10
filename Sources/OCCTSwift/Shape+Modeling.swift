@@ -117,16 +117,41 @@ extension Shape {
     /// Every edge must belong to this shape: only ``Edge/index`` is carried across, so an edge
     /// whose index names nothing here rejects the whole call rather than being skipped.
     ///
+    /// ## When the answer is nil (#3200)
+    ///
+    /// A result is a shape only if it is a valid one. The answer is `nil` when the builder is not
+    /// done, and also when it is done but `BRepCheck_Analyzer` rejects the result, which is what
+    /// OCCT's fillet builder produces when fillets meet or overlap on a shared face (radii adding
+    /// up past the face width) and in the vertex-snap window of #3209. A caller used to receive
+    /// that invalid shape, volume and all, as though it were a solid.
+    ///
+    /// Two fillets on opposite edges of a face of width `w` are refused once their radii sum to
+    /// `w` or more, and so is a pair whose gap to `w` is below `PConfusion` (1e-9): OCCT#1177
+    /// rejects a width gap under that threshold, which is why a 4 mm face takes `1.9999` where
+    /// it refuses `2`. Whether `r == w / 2` itself builds depends on the pinned kernel (patch 0059, #3207).
+    /// Radii past `w / 2` are refused by the kernel, or built into an invalid solid that is now
+    /// nil (#3208). `nil` carries no reason; ``FilletBuilder``
+    /// exposes the builder's diagnostics (``FilletBuilder/faultyContourCount`` and friends).
+    ///
     /// ```swift
-    /// let bracket = Shape.box(width: 40, height: 20, depth: 10)!
-    /// let rounded = bracket.filleted(edges: bracket.concaveEdges(), radius: 2)
+    /// let slab = Shape.box(width: 4, height: 10, depth: 6)!
+    /// let zTop = slab.bounds!.max.z
+    /// let topEdges = slab.edges().filter { abs(($0.bounds?.min.z ?? 0) - zTop) < 1e-3 }
+    ///
+    /// // Radii that fit the 4 mm wide top face: a valid, rounded solid.
+    /// let rounded = slab.filleted(edges: topEdges, radius: 1)
+    /// precondition(rounded?.isValid == true)
+    ///
+    /// // Radii that overlap there: nil, never an invalid solid.
+    /// let overlapped = slab.filleted(edges: topEdges, radius: 3)
+    /// precondition(overlapped == nil || overlapped?.isValid == true)
     /// ```
     ///
     /// - Parameters:
     ///   - edges: Edges to fillet (must have valid indices from this shape)
     ///   - radius: Fillet radius; must be > 0
-    /// - Returns: Filleted shape, or nil on failure, including when the list names an edge that is not
-    ///   this shape's.
+    /// - Returns: Filleted shape, or nil on failure: a non-positive radius, an edge that is not
+    ///   this shape's, a builder that is not done, or a result `BRepCheck_Analyzer` reports invalid.
     public func filleted(edges: [Edge], radius: Double) -> Shape? {
         guard !edges.isEmpty, radius > 0 else { return nil }
 
@@ -153,7 +178,9 @@ extension Shape {
     ///
     /// An edge OCCT cannot fillet is still skipped, not rejected: this changes only what a caller
     /// can learn about it, not the shape returned. See ``FilletResult`` for why the report is a
-    /// list of indices rather than a count or a reason.
+    /// list of indices rather than a count or a reason. A result `BRepCheck_Analyzer` reports invalid
+    /// answers nil, as for ``filleted(edges:radius:)``; see its "When the answer is nil" section
+    /// (#3200).
     ///
     /// ```swift
     /// let box = Shape.box(width: 10, height: 10, depth: 10)!
@@ -194,7 +221,8 @@ extension Shape {
     /// Fillet specific edges with linear radius interpolation.
     ///
     /// Every edge must belong to this shape, on the same all-or-nothing basis as
-    /// ``filleted(edges:radius:)``.
+    /// ``filleted(edges:radius:)``, and with the same nil contract: a result
+    /// `BRepCheck_Analyzer` reports invalid answers nil (#3200).
     ///
     /// ```swift
     /// let bar = Shape.box(width: 40, height: 20, depth: 10)!

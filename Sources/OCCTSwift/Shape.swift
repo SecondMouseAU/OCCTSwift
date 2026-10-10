@@ -922,12 +922,32 @@ public final class Shape: @unchecked Sendable {
     // MARK: - Modifications
 
     /// Fillet (round) all edges with given radius.
+    ///
+    /// Answers nil when the builder is not done or when its result is `BRepCheck`-invalid, which is
+    /// what a radius above half the width of any face gives (#3200). See
+    /// ``filleted(edges:radius:)`` for the contract and the threshold.
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// let rounded = box.filleted(radius: 1)      // valid, every edge rounded
+    /// let overlapped = box.filleted(radius: 6)   // fillets overlap: nil, never an invalid solid
+    /// precondition(rounded?.isValid == true && overlapped == nil)
+    /// ```
     public func filleted(radius: Double) -> Shape? {
         guard let handle = OCCTShapeFillet(self.handle, radius) else { return nil }
         return Shape(handle: handle)
     }
 
     /// Chamfer all edges with given distance.
+    ///
+    /// Answers nil when the builder is not done or when its result is `BRepCheck`-invalid (#3200),
+    /// as ``filleted(radius:)`` does for fillets.
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// let bevelled = box.chamfered(distance: 1)
+    /// precondition(bevelled?.isValid == true)
+    /// ```
     public func chamfered(distance: Double) -> Shape? {
         guard let handle = OCCTShapeChamfer(self.handle, distance) else { return nil }
         return Shape(handle: handle)
@@ -940,7 +960,7 @@ public final class Shape: @unchecked Sendable {
     /// `dist2` on the opposite side.
     ///
     /// - Parameter edges: Array of (edgeIndex, faceIndex, dist1, dist2) tuples
-    /// - Returns: Chamfered shape, or nil on failure
+    /// - Returns: Chamfered shape, or nil on failure, including a result `BRepCheck` reports invalid (#3200)
     public func chamferedTwoDistances(
         _ edges: [(edgeIndex: Int, faceIndex: Int, dist1: Double, dist2: Double)]
     ) -> Shape? {
@@ -960,7 +980,7 @@ public final class Shape: @unchecked Sendable {
     /// (must be between 0 and 90, exclusive).
     ///
     /// - Parameter edges: Array of (edgeIndex, faceIndex, distance, angleDegrees) tuples
-    /// - Returns: Chamfered shape, or nil on failure
+    /// - Returns: Chamfered shape, or nil on failure, including a result `BRepCheck` reports invalid (#3200)
     public func chamferedDistAngle(
         _ edges: [(edgeIndex: Int, faceIndex: Int, distance: Double, angleDegrees: Double)]
     ) -> Shape? {

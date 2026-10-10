@@ -21,6 +21,20 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### Fillet and chamfer entry points answer nil for a done-but-invalid result (#3200)
+
+`Shape.filleted(edges:radius:)`, `filleted(edges:startRadius:endRadius:)`, `filleted(radius:)`, `chamfered(distance:)`, the two-distance and distance-angle chamfers, `filletedVariable`, `blendedEdges`, `filletEvolving`, their `WithReport` and `WithFullHistory` siblings, `FilletBuilder.build()` and `ChamferBuilder.build()` now check the result with `BRepCheck_Analyzer` after OCCT reports the builder done, and answer `nil` when the result is invalid. Previously a configuration where fillets overlap (a frame of fillets whose radii exceed half the face width, all 12 edges of a box above half the width) or the #2881 model's radius window (1.4983 to 1.4985 and 1.500000002 to 1.5018 on edge 13) returned an invalid solid, with volumes as wrong as 2.2e28. A caller that used to receive that shape now receives `nil`.
+
+A valid result is unchanged to the last digit. `filleted(edges:radius:)` documents the contract, including the OCCT#1177 threshold (a width gap below `PConfusion`, 1e-9, is refused, which is why a 4 mm face takes 1.9999 where it refuses 2).
+
+```swift
+let slab = Shape.box(width: 4, height: 10, depth: 6)!
+let zTop = slab.bounds!.max.z
+let topEdges = slab.edges().filter { abs(($0.bounds?.min.z ?? 0) - zTop) < 1e-3 }
+let rounded = slab.filleted(edges: topEdges, radius: 1)      // valid
+let overlapped = slab.filleted(edges: topEdges, radius: 3)   // nil, never an invalid solid
+```
+
 ### Fixed
 - `FeatureReconstructor` no longer reports a feature fulfilled when its boolean (additive fuse, `FeatureSpec.Boolean`, `FeatureSpec.Hole`) answers a volume its operands cannot allow. A 1e12-sided extrude fused onto a 10-unit box answered the box alone and was reported fulfilled; it is now recorded in `skipped` and the body so far is kept (#3196).
 
