@@ -33,12 +33,25 @@ one instance, `BRepLibExtendedTests`, is fixed with this gate), so there is no b
 EXEMPTION: a comment `handle-temporary-exempt: <reason>` on the offending line or in the run of
 comment lines directly above it. The reason is required; a bare marker is itself reported.
 
+THE ARRAY SHAPE (#3266)
+-----------------------
+A third shape loses its owners the same way: `let hs = profiles.map { $0.handle }` followed by a C
+call taking `hs`. Once the function is inlined into a caller whose `profiles` is a local with no
+later use, nothing keeps the wrappers, and the optimiser (Swift 6.2.4, `-c release`) may release
+them before the C call runs: #3261, the `threadedHole` crash in `BRepOffsetAPI_ThruSections`. A
+parameter is not safe either, because inlining turns it into the caller's local. The gate cannot
+tell a parameter from a local, so it fires on every pure extraction (a `map`/`compactMap` whose
+closure is just `$0.handle`, `$0.x.handle`, optionally `as T`) unless the receiver is held, which
+is a `withExtendedLifetime(<receiver>)` on the same line or on one of the next three lines:
+
+    let handles = profiles.map { $0.handle }
+    defer { withExtendedLifetime(profiles) {} }
+
+A map whose closure calls the bridge itself (`bodies.map { f($0.handle) }`) consumes the pointer
+while `$0` is live and is not matched.
+
 WHAT IT CANNOT SEE
 ------------------
-  * `array.map { $0.handle }` where `array` is a LOCAL that is not used afterwards. The 69
-    `$0.handle` sites at the time of writing all map over a function parameter, which the caller
-    keeps alive, so nothing is lost today, but a local source array has the same exposure and
-    needs the receiver's declaration to tell. Not regex-decidable without a Swift parser.
   * A named local whose last use is the `.handle` load. Measured safe on macOS release in six
     variants, but by an optimiser behaviour and not a language guarantee.
   * A pointer copied out first (`let h = list[0].handle`) is caught, because the `[0].handle` part
@@ -66,6 +79,13 @@ EXEMPT_RE = re.compile(r'handle-temporary-exempt:\s*(\S.*)?')
 # the same shape without either bracket: `edges.first!.handle`.
 TEMP_RE = re.compile(
     r'(?:[\]\)]|\.(?:first|last)\b)[!?]?\s*\.handle\b')
+
+# `recv.map { $0.handle }`, `recv.compactMap { $0.a.handle as T }`: the closure only extracts.
+# The receiver is a dotted identifier path; anything fancier is not matched (see the docstring).
+ARRAY_RE = re.compile(
+    r'([A-Za-z_][A-Za-z0-9_.]*)\s*\.(?:map|compactMap)\s*\{\s*\$0(?:\.[A-Za-z_]\w*)*\.handle'
+    r'(?:\s+as\s+[A-Za-z0-9_?.]+)?\s*\}')
+HELD_WINDOW = 3
 
 
 def strip_code(text):
@@ -129,6 +149,25 @@ def find_in_text(text):
                 findings.append((line, m.group(0).strip(), 'exemption-without-reason'))
             continue
         findings.append((line, ' '.join(m.group(0).split()), 'borrowed-handle-temporary'))
+
+    lines = code.split('\n')
+    for m in ARRAY_RE.finditer(code):
+        line = code.count('\n', 0, m.start()) + 1
+        held_re = re.compile(r'withExtendedLifetime\(\s*' + re.escape(m.group(1)) + r'\s*[,)]')
+        if any(held_re.search(lines[k]) for k in range(line - 1, min(line + HELD_WINDOW, len(lines)))):
+            continue
+        exempt, k = None, line
+        while k >= 1 and (k == line or k in comments and lines[k - 1].strip() == ''):
+            em = EXEMPT_RE.search(comments.get(k, ''))
+            if em:
+                exempt = em
+                break
+            k -= 1
+        if exempt is not None:
+            if not (exempt.group(1) or '').strip():
+                findings.append((line, ' '.join(m.group(0).split()), 'exemption-without-reason'))
+            continue
+        findings.append((line, ' '.join(m.group(0).split()), 'unheld-handle-array'))
     return findings
 
 
@@ -166,7 +205,25 @@ def self_test():
     # Must stay quiet.
     expect('named local', 'let e = edges[0]\nf(e.handle)\n', [])
     expect('parameter optional chain', 'f(face?.handle)\n', [])
-    expect('closure arg', 'let hs = shapes.map { $0.handle }\n', [])
+    expect('closure consuming the pointer', 'let n = bodies.map { f($0.handle) }\n', [])
+    # The array shape (#3266).
+    arr = 'unheld-handle-array'
+    expect('array plain', 'let hs = shapes.map { $0.handle }\n', [arr])
+    expect('array cast', 'let hs = shapes.map { $0.handle as OCCTShapeRef? }\n', [arr])
+    expect('array nested owner', 'var hs = curves.map { $0.wire.handle as OCCTWireRef? }\n', [arr])
+    expect('array compactMap', 'let hs = xs.compactMap { $0.handle }\n', [arr])
+    expect('array typed', 'let hs: [OCCTWireRef?] = profiles.map { $0.handle }\n', [arr])
+    expect('array held', 'let hs = shapes.map { $0.handle }\ndefer { withExtendedLifetime(shapes) {} }\n', [])
+    expect('array held two lines on', 'let hs = a.map { $0.handle }\nlet z = 1\n'
+           'defer { withExtendedLifetime(a) {} }\n', [])
+    expect('array held for the wrong array',
+           'let hs = a.map { $0.handle }\ndefer { withExtendedLifetime(b) {} }\n', [arr])
+    expect('array held too far on',
+           'let hs = a.map { $0.handle }\nlet z = 1\nlet y = 2\nlet x = 3\n'
+           'defer { withExtendedLifetime(a) {} }\n', [arr])
+    expect('array held by a prefix name only',
+           'let hs = a.map { $0.handle }\ndefer { withExtendedLifetime(ab) {} }\n', [arr])
+    expect('array exempt', 'let hs = a.map { $0.handle } // handle-temporary-exempt: a is a literal\n', [])
     expect('member', 'f(self.handle, other.handle)\n', [])
     expect('comment', '// f(edges[0].handle)\n/* g(a[1].handle) */\n', [])
     expect('string', 'let s = "edges[0].handle"\n', [])
@@ -215,6 +272,9 @@ def main():
     for f, line, snippet, kind in findings:
         if kind == 'exemption-without-reason':
             print('%s:%d: handle-temporary-exempt needs a reason' % (f, line))
+        elif kind == 'unheld-handle-array':
+            print('%s:%d: `%s` extracts raw pointers and nothing holds the owners; add '
+                  '`defer { withExtendedLifetime(<array>) {} }` after it (#3266)' % (f, line, snippet))
         else:
             print('%s:%d: `%s` reads a borrowed pointer off a temporary owner; use '
                   '`owner.withHandle { ... }` (#3130)' % (f, line, snippet))

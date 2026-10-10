@@ -168,6 +168,7 @@ public final class NSections: @unchecked Sendable {
     /// Create from an array of wire shapes.
     public static func create(wires: [Shape]) -> NSections? {
         let refs = wires.map { $0.handle as OCCTShapeRef }
+        defer { withExtendedLifetime(wires) {} }
         return refs.withUnsafeBufferPointer { buf in
             guard let ref = OCCTBRepFillNSectionsCreate(buf.baseAddress!, Int32(wires.count)) else {
                 return nil

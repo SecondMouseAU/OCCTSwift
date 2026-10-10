@@ -638,6 +638,7 @@ public final class Shape: @unchecked Sendable {
         // The pointers are borrowed from `profiles`, which an inlined caller may have no further use
         // for once `map` has run, so hold the array across the C call (#3261, see `NativeHandleOwner`).
         let handles: [OCCTWireRef?] = profiles.map { $0.handle }
+        defer { withExtendedLifetime(profiles) {} }
         guard
             let handle = withExtendedLifetime(
                 profiles,
@@ -682,6 +683,7 @@ public final class Shape: @unchecked Sendable {
     ) -> Shape? {
         // Same as the overload above: hold `profiles` across the C call (#3261, see `NativeHandleOwner`).
         let handles: [OCCTWireRef?] = profiles.map { $0.handle }
+        defer { withExtendedLifetime(profiles) {} }
         let fv = firstVertex ?? SIMD3<Double>(Double.nan, Double.nan, Double.nan)
         let lv = lastVertex ?? SIMD3<Double>(Double.nan, Double.nan, Double.nan)
         guard
@@ -1130,6 +1132,7 @@ public final class Shape: @unchecked Sendable {
     /// Combine multiple shapes into a compound (no boolean, just grouping).
     public static func compound(_ shapes: [Shape]) -> Shape? {
         let handles: [OCCTShapeRef?] = shapes.map { $0.handle }
+        defer { withExtendedLifetime(shapes) {} }
         guard
             let handle = handles.withUnsafeBufferPointer({ buffer in
                 OCCTShapeCreateCompound(buffer.baseAddress, Int32(shapes.count))
@@ -2116,6 +2119,7 @@ public final class Shape: @unchecked Sendable {
     /// ```
     public static func face(outer: Wire, holes: [Wire]) -> Shape? {
         var holeHandles = holes.map { $0.handle as OCCTWireRef? }
+        defer { withExtendedLifetime(holes) {} }
         guard
             let handle = holeHandles.withUnsafeMutableBufferPointer({ buffer in
                 OCCTShapeCreateFaceWithHoles(outer.handle, buffer.baseAddress, Int32(holes.count))
@@ -2191,6 +2195,7 @@ public final class Shape: @unchecked Sendable {
         guard !shapes.isEmpty else { return nil }
 
         var shapeHandles = shapes.map { $0.handle as OCCTShapeRef? }
+        defer { withExtendedLifetime(shapes) {} }
         guard
             let handle = shapeHandles.withUnsafeMutableBufferPointer({ buffer in
                 OCCTShapeSew(buffer.baseAddress, Int32(shapes.count), tolerance)

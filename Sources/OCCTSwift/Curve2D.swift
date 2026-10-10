@@ -1263,6 +1263,7 @@ public final class Curve2D: @unchecked Sendable {
     /// Join multiple curves into a single B-spline.
     public static func join(_ curves: [Curve2D], tolerance: Double = 1e-6) -> Curve2D? {
         let handles = curves.map { $0.handle as OCCTCurve2DRef? }
+        defer { withExtendedLifetime(curves) {} }
         let h = handles.withUnsafeBufferPointer { ptr in
             OCCTCurve2DJoinToBSpline(ptr.baseAddress, Int32(curves.count), tolerance)
         }
@@ -1971,6 +1972,7 @@ extension Curve2D {
     /// Serialize 2D curves to string via GeomTools_Curve2dSet.
     public static func serializeCurves(_ curves: [Curve2D]) -> String? {
         let handles = curves.map { $0.handle as OCCTCurve2DRef }
+        defer { withExtendedLifetime(curves) {} }
         guard
             let cStr = handles.withUnsafeBufferPointer({
                 OCCTGeomToolsCurve2dSetWrite($0.baseAddress!, Int32(curves.count))
@@ -3185,6 +3187,7 @@ extension Curve2D {
     public static func concatenate(_ curves: [Curve2D], tolerance: Double = 1e-4) -> Curve2D? {
         guard !curves.isEmpty else { return nil }
         var handles = curves.map { $0.handle as OCCTCurve2DRef }
+        defer { withExtendedLifetime(curves) {} }
         guard let ref = OCCTConcatenateCurves2D(&handles, Int32(curves.count), tolerance) else {
             return nil
         }

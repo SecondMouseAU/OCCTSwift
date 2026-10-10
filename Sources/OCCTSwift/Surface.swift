@@ -2430,6 +2430,7 @@ extension Surface {
     public static func joinBezierPatches(_ patches: [Surface], rows: Int, cols: Int) -> Surface? {
         guard patches.count == rows * cols, rows > 0, cols > 0 else { return nil }
         var handles: [OCCTSurfaceRef?] = patches.map { $0.handle }
+        defer { withExtendedLifetime(patches) {} }
         guard let ref = OCCTSurfaceJoinBezierPatches(&handles, Int32(rows), Int32(cols)) else {
             return nil
         }
@@ -2622,6 +2623,7 @@ extension Surface {
     public static func nSections(curves: [Curve3D], params: [Double]) -> Surface? {
         guard curves.count == params.count, curves.count >= 2 else { return nil }
         let handles = curves.map { $0.handle as OCCTCurve3DRef }
+        defer { withExtendedLifetime(curves) {} }
         return handles.withUnsafeBufferPointer { hBuf in
             params.withUnsafeBufferPointer { pBuf in
                 guard
@@ -2639,6 +2641,7 @@ extension Surface {
     )? {
         guard curves.count == params.count, curves.count >= 2 else { return nil }
         let handles = curves.map { $0.handle as OCCTCurve3DRef }
+        defer { withExtendedLifetime(curves) {} }
         var nbPoles: Int32 = 0
         var nbKnots: Int32 = 0
         var deg: Int32 = 0
@@ -2882,6 +2885,7 @@ extension Surface {
     ) -> Surface? {
         guard curves.count >= 2 else { return nil }
         let handles = curves.map { $0.handle as OCCTCurve3DRef }
+        defer { withExtendedLifetime(curves) {} }
         return handles.withUnsafeBufferPointer { buf in
             guard let h = OCCTGeomFillGenerator(buf.baseAddress!, Int32(curves.count), tolerance)
             else { return nil as Surface? }
@@ -3152,6 +3156,7 @@ extension Surface {
     /// Serialize surfaces to string via GeomTools_SurfaceSet.
     public static func serializeSurfaces(_ surfaces: [Surface]) -> String? {
         let handles = surfaces.map { $0.handle as OCCTSurfaceRef }
+        defer { withExtendedLifetime(surfaces) {} }
         guard
             let cStr = handles.withUnsafeBufferPointer({
                 OCCTGeomToolsSurfaceSetWrite($0.baseAddress!, Int32(surfaces.count))
@@ -4152,7 +4157,9 @@ extension Surface {
     {
         guard profiles.count >= 2, guides.count >= 2 else { return nil }
         let profileRefs = profiles.map { $0.handle }
+        defer { withExtendedLifetime(profiles) {} }
         let guideRefs = guides.map { $0.handle }
+        defer { withExtendedLifetime(guides) {} }
         return profileRefs.withUnsafeBufferPointer { pBuf in
             guideRefs.withUnsafeBufferPointer { gBuf in
                 guard let pPtr = pBuf.baseAddress, let gPtr = gBuf.baseAddress else {
@@ -4232,7 +4239,9 @@ extension Surface {
             return GordonResult(surface: nil, status: .invalidInput, isApproximate: false)
         }
         let profileRefs = profiles.map { $0.handle }
+        defer { withExtendedLifetime(profiles) {} }
         let guideRefs = guides.map { $0.handle }
+        defer { withExtendedLifetime(guides) {} }
         var statusRaw: Int32 = 0
         var isApprox: Bool = false
         let surfaceRef: OCCTSurfaceRef? = profileRefs.withUnsafeBufferPointer { pBuf in
@@ -4298,7 +4307,9 @@ extension Surface {
     {
         guard profiles.count >= 2, guides.count >= 2 else { return (nil, .invalidInput) }
         let profileRefs = profiles.map { $0.handle }
+        defer { withExtendedLifetime(profiles) {} }
         let guideRefs = guides.map { $0.handle }
+        defer { withExtendedLifetime(guides) {} }
         var statusRaw: Int32 = 0
         let surfaceRef: OCCTSurfaceRef? = profileRefs.withUnsafeBufferPointer { pBuf in
             guideRefs.withUnsafeBufferPointer { gBuf in
@@ -4756,6 +4767,7 @@ extension Surface {
     ) -> AppSurfResult? {
         guard curves.count >= 2 else { return nil }
         let refs = curves.map { $0.handle as OCCTCurve3DRef }
+        defer { withExtendedLifetime(curves) {} }
         return refs.withUnsafeBufferPointer { buf in
             let r = OCCTGeomFillAppSurf(
                 buf.baseAddress!, Int32(curves.count),
