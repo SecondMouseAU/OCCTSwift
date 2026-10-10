@@ -1,0 +1,6 @@
+Tests/OCCTSurfaceTests/Conversion/GeomConvertApproxSurfaceTests.swift
+Tests/OCCTSurfaceTests/GeomEval/GeomEvalCircularHelicoidTests.swift
+Tests/OCCTSurfaceTests/GeomEval/GeomEvalEllipsoidTests.swift
+Tests/OCCTSurfaceTests/GeomEval/GeomEvalHypParaboloidTests.swift
+Tests/OCCTSurfaceTests/GeomEval/GeomEvalParaboloidTests.swift
+Tests/OCCTSurfaceTests/GeomEval/GeomEvalSineWaveTests.swift
