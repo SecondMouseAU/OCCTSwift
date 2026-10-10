@@ -31,4 +31,8 @@ Not reproduced here: the wasm builds (not this repo's job to touch), and any cla
 
 The regression test is `Tests/OCCTTopologyTests/TopoDS/Issue3130BorrowedHandleTests.swift`; it cannot fail in
 a debug build, so the optimised run is
-`swift test -c release -Xswiftc -enable-testing --filter Issue3130BorrowedHandle`.
+`swift test -c release -Xswiftc -enable-testing --filter Issue3130BorrowedHandle`, and CI runs it
+(with every other suite that hands a raw `.handle` to the bridge) as the `release-mode-tests` job:
+`Scripts/release-mode-test.sh subset`, or `full` for the whole suite. Reintroducing the bare
+`edges[0].handle` form into a suite that job selects makes it fail with a SIGSEGV in release (6 of 6
+runs, with and without malloc scribbling) while the same test passes in debug (6 of 6).

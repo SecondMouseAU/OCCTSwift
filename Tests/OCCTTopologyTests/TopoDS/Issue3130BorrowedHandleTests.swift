@@ -13,7 +13,9 @@ import Testing
 //
 // A debug build extends every lifetime to scope end, so these tests cannot fail there. They are the
 // release-build regression for the helper; the static half is `check-borrowed-handle-temporaries.py`.
-// Run them in an optimised build with
+// CI runs them in the `release-mode-tests` job (Scripts/release-mode-test.sh, which selects every
+// suite that mentions `.handle` or `withHandle`, this one included). Run them in an optimised
+// build locally with
 //   swift test -c release -Xswiftc -enable-testing --filter Issue3130BorrowedHandle
 @Suite("Issue3130BorrowedHandle")
 struct Issue3130BorrowedHandleTests {

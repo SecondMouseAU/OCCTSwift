@@ -270,6 +270,12 @@ Seven public classes still expose a bare `public let handle`: `GeomPoint3D`, `Ge
 instead; hold the owner with `withExtendedLifetime(x) { ... x.handle ... }`.
 `Scripts/repro/3130-borrowed-handle/` reproduces and measures it.
 
+Because a debug `swift test` cannot see this class, CI also runs the tests in an optimised build:
+the `release-mode-tests` job runs `Scripts/release-mode-test.sh` (`subset` on a pull request, `full`
+on `main`, on a manual dispatch and when a release is published) under `MallocScribble`. Run the
+same thing locally with `Scripts/release-mode-test.sh subset`; the design and measurements are in
+[`okf/policies/release-mode-tests.md`](../../okf/policies/release-mode-tests.md).
+
 ### A release the bridge never handed out is refused
 
 A bridge release gives back a reference the matching create took. Giving back one it did not take

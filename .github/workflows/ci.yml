@@ -771,6 +771,7 @@ jobs:
   #   code-structure         ubuntu, cheap
   #   code-style             macOS; after code-structure
   #   build-and-test, ios    macOS builds; as before, they wait only for `changes`
+  #   release-mode-tests     macOS, `-c release`; waits only for `changes`, beside the two above
   #   wasm                   LAST: after code-style and both macOS builds
   #
   # Why this file and not three workflows: GitHub orders jobs only within one workflow, and
@@ -802,3 +803,18 @@ jobs:
     needs: [changes, code-style, build-and-test, ios-simulator-build]
     if: ${{ !cancelled() && needs.changes.outputs.code == 'true' }}
     uses: ./.github/workflows/wasm.yml
+
+  # The optimised-build test run (#3130). `build-and-test` above is a debug build, which extends
+  # every local's lifetime to scope end and so cannot see a wrapper released before the C call that
+  # receives its `.handle`; this job can. The scope is decided here and defined in
+  # Scripts/release-mode-test.sh: a pull request (and a push to any branch but main) gets the
+  # subset of suites that hand a raw pointer to the bridge, `main` and a manual dispatch get the
+  # whole suite. Gated on `changes.outputs.build`, exactly as `build-and-test` is, so a prose-only
+  # PR skips it. Not a required check: it has to report on `main` before it can be (see
+  # okf/policies/required-status-checks.md and okf/policies/release-mode-tests.md).
+  release-mode-tests:
+    needs: changes
+    if: ${{ !cancelled() && needs.changes.outputs.build == 'true' }}
+    uses: ./.github/workflows/release-mode-tests.yml
+    with:
+      scope: ${{ (github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main') && 'full' || 'subset' }}
