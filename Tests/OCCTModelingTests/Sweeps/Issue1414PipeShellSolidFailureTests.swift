@@ -9,7 +9,6 @@
 // non-nil, with no way for a caller to tell it apart from a genuine solid.
 
 import Testing
-import simd
 
 @testable import OCCTSwift
 
