@@ -1,6 +1,5 @@
 import OCCTBridge
 import OCCTPlatform
-import simd
 
 /// A 2D geometric transformation backed by `Geom2d_Transformation`.
 ///

@@ -1,6 +1,5 @@
 import OCCTBridge
 import OCCTPlatform
-import simd
 
 /// A 3D geometric point with Handle-based memory management.
 public final class GeomPoint3D: @unchecked Sendable {

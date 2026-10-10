@@ -1,6 +1,5 @@
 import OCCTBridge
 import OCCTPlatform
-import simd
 
 /// Result of a boolean operation with shape tracking.
 public struct BooleanResult: Sendable {

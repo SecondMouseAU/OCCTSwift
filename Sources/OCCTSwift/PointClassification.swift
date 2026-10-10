@@ -1,6 +1,5 @@
 import OCCTBridge
 import OCCTPlatform
-import simd
 
 /// Classification of a point relative to a shape.
 public enum PointClassification: Int32, Sendable {

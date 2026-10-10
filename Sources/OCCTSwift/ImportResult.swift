@@ -1,6 +1,5 @@
 import OCCTBridge
 import OCCTPlatform
-import simd
 
 public enum ImportError: Error, LocalizedError {
     case importFailed(String)

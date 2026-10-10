@@ -1,6 +1,5 @@
 import OCCTBridge
 import OCCTPlatform
-import simd
 
 /// A 2D hatching builder.
 public final class HatchBuilder: @unchecked Sendable {

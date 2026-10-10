@@ -1,6 +1,5 @@
 import OCCTBridge
 import OCCTPlatform
-import simd
 
 /// STEP representation type for controlling how shapes are written.
 public enum StepModelType: Int32, Sendable {

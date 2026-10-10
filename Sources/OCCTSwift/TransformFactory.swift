@@ -1,6 +1,5 @@
 import OCCTBridge
 import OCCTPlatform
-import simd
 
 /// Shared validation for ``TransformMatrix3D`` and ``Matrix12Grouped``, both of which wrap a
 /// fixed 12-element `[Double]` (row-major 3x4) in a distinct, non-interchangeable element order.
