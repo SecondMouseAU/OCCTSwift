@@ -1,0 +1,15 @@
+purge box: IsDone=1 faces=6
+purge mirrored box: locatedFacesBefore=0 IsDone=1 faces=6 locatedFacesAfter=0 volume=1000.000000
+NearestPlane: ok=1 maxDeviation=0.062505859 normal=(0.002500313, 0.007500938, 0.999968742)
+NurbsConvert box 10x5x3: valid=1 faces=6 bsplineFaces=6 volume=150.000000 (input 150.000000)
+NurbsConvert sphere r5: valid=1 faces=1 bsplineFaces=1 volume=523.369781 (input 523.598776)
+NurbsConvert filleted box: valid=1 faces=26 bsplineFaces=26 volume=975.587014 (input 975.587014)
+RemoveLocations(translated box): locatedBefore=0 locatedAfter=0 valid=1 volume=1000.000000
+  result bounds=(95.0000, 195.0000, 295.0000)-(105.0000, 205.0000, 305.0000)
+RemoveLocations(located box via Moved): rootLocationIdentity before=0 after=1 locatedFacesAfter=0 valid=1 volume=1000.000000
+  result bounds=(95.0000, 195.0000, 295.0000)-(105.0000, 205.0000, 305.0000)
+  located input with its location dropped (REMLOCDROP) bounds=(-5.0000, -5.0000, -5.0000)-(5.0000, 5.0000, 5.0000)
+RemoveLocations(rotated cylinder): valid=1 volume=785.398163
+  result bounds=(-5.0000, -10.6066, -3.5355)-(5.0000, 3.5355, 10.6066)
+SameParameter(box, 1e-6): valid=1 volume=1000.000000000
+SameParameter(cylinder, 1e-6): valid=1 volume=785.398163397
