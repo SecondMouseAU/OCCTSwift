@@ -22,7 +22,9 @@ WHAT IT DELIBERATELY DOES NOT FLAG: the label `simd:` in `GeomDirection(simd:)` 
 label of this package, nothing to do with the module), the Swift stdlib types `SIMD2`/`SIMD3`/
 `SIMD4` and their `.sum()`, `pointwiseMin`, `pointwiseMax`, and the word `simd` in prose.
 
-THE POPULATION is every `*.swift` under `Sources/` and `Tests/`. There is no exemption: the stand-in
+THE POPULATION is every `*.swift` under `Sources/`, `Tests/` and the three `Scripts/repro/` directories `Package.swift` compiles as targets
+(`runner-core`, `censuses`, `harnesses`). Other `Scripts/repro/` files are standalone probes, not part of
+any build. There is no exemption: the stand-in
 this gate used to exempt (`Sources/WASICompat/simd`) is deleted. A run that finds fewer than
 `MINIMUM_FILES` Swift files in total exits 2 as a refusal rather than reporting "clean" over an
 empty population, which is what a blind detector looks like.
@@ -41,7 +43,14 @@ import os
 import re
 import sys
 
-ROOTS = ["Sources", "Tests"]
+ROOTS = [
+    "Sources",
+    "Tests",
+    # Compiled by Package.swift as targets, and a wasm build broke on `import simd` here once (#3296).
+    "Scripts/repro/runner-core",
+    "Scripts/repro/censuses",
+    "Scripts/repro/harnesses",
+]
 EXEMPT = []
 MINIMUM_FILES = 1000
 HELPERS_NAME = "SIMDTestHelpers.swift"
