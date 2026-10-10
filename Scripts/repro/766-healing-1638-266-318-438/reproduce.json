@@ -1,0 +1,6 @@
+{
+  "cwd": {
+    "value": "repo-root",
+    "reason": "the #318 fixture is read at Tests/OCCTShapeHealingTests/ShapeAnalysis/Issue318DegenerateCurveOnSurfaceEdgeTests.swift, relative to the repo root, so there is one copy of it. Run in the probe's own directory the ifstream finds nothing, std::string::substr throws std::out_of_range and the process dies before the #318 and #438 sections print. From the repo root the whole transcript reproduces byte for byte against v4.0.0-kernel.2 (PR #2823) and against the pinned v4.0.0-kernel.5."
+  }
+}
