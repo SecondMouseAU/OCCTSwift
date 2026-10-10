@@ -22,7 +22,9 @@ private final class ProbeToken: @unchecked Sendable {
     var ownerIsAlive = true
 }
 
-/// A `NativeHandleOwner` whose lifetime is observable without touching OCCT (#3258). The pointer-based
+/// A `NativeHandleOwner` whose lifetime is observable without touching OCCT (#3258).
+///
+/// The pointer-based
 /// tests below cannot tell whether `withHandle` held its owner, because the owners they use are kept
 /// alive by something else (the enclosing `#require` temporary, a `let`, the optimiser's own choice).
 /// This one can: the handle it hands out is the token its `deinit` clears.
