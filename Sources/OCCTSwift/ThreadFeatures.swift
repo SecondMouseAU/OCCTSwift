@@ -1,6 +1,5 @@
 import OCCTBridge
 import OCCTPlatform
-import simd
 
 // MARK: - Thread feature API (#66, v0.139 Thread Form v2)
 //
@@ -730,7 +729,7 @@ extension Shape {
             cutDepth > 0, cutDepth < nominalDiameter / 2,
             customProfile.supportsSmoothRodBuild
         else { return nil }
-        let axis = simd_normalize(axisDirection)
+        guard let axis = normalizedVectorOrNil(axisDirection) else { return nil }
         guard
             let stock = Shape.cylinder(
                 at: axisOrigin, direction: axis,
@@ -766,7 +765,7 @@ extension Shape {
         guard length > 0, spec.pitch > 0, starts >= 1,
             spec.cutDepth < spec.nominalDiameter / 2
         else { return nil }
-        let axis = simd_normalize(axisDirection)
+        guard let axis = normalizedVectorOrNil(axisDirection) else { return nil }
         let radial0 = orthonormalRadial(axis: axis)
         let majorR = spec.nominalDiameter / 2
 
@@ -781,7 +780,7 @@ extension Shape {
         for cx in [b.min.x, b.max.x] {
             for cy in [b.min.y, b.max.y] {
                 for cz in [b.min.z, b.max.z] {
-                    let proj = simd_dot(SIMD3(cx, cy, cz) - axisOrigin, axis)
+                    let proj = dotProduct(SIMD3(cx, cy, cz) - axisOrigin, axis)
                     lo = min(lo, proj)
                     hi = max(hi, proj)
                 }
@@ -849,9 +848,9 @@ extension Shape {
         // cut path. Piecewise-linear forms (iso/acme/trapezoidal/square/buttress) have ≤2 straight flanks.
         guard segs.filter({ $0.kind == .flank }).count <= 2 else { return nil }
 
-        let a = simd_normalize(axis)
-        let x = simd_normalize(radial0)
-        let y = simd_cross(a, x)
+        let a = normalizedVector(axis)
+        let x = normalizedVector(radial0)
+        let y = crossProduct(a, x)
         let rMaj = majorRadius
         let p = pitch
         let twoPi = 2 * Double.pi
@@ -1023,9 +1022,9 @@ extension Shape {
         let turns = length / spec.pitch
         guard turns > 0 else { return nil }
 
-        let axis = simd_normalize(axisDirection)
+        guard let axis = normalizedVectorOrNil(axisDirection) else { return nil }
         let radial0 = orthonormalRadial(axis: axis)
-        let tangential0 = simd_normalize(simd_cross(axis, radial0))
+        let tangential0 = normalizedVector(crossProduct(axis, radial0))
         let handed: Double = spec.leftHanded ? -1 : 1
         let bleed = max(spec.cutDepth * 0.05, 1e-3)
         // ISO-68 V-groove cutter cross-section (radial depth = cutDepth). #213:

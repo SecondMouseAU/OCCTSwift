@@ -240,10 +240,12 @@ its siblings write to.
   - **`import simd`, in 196 of the 230 files.** Apple's `simd` is part of the Apple
     SDKs and has no wasm build. Answered with a WASI-only target named `simd`
     (`Sources/WASICompat/simd`), which left all 196 files untouched. #2759 then removed
-    the imports no file needed, measured by building both platforms with each one gone:
-    26 of the 230 files still import it, because they use a `simd_*` function, a
-    `simd_*` matrix type or the unqualified SIMD `min`/`max`. Whether to replace those
-    calls and delete the stand-in is the part of #2759 still open.
+    the imports no file needed, measured by building both platforms with each one gone,
+    and then replaced the remaining uses: `Sources/OCCTSwift` imports no `simd` module and
+    calls no `simd_*` function (`Scripts/check-no-simd.py` holds that), the vector
+    operations are plain Swift in `SIMDVectorOps.swift`, and the five public matrix
+    properties return the package-owned `Matrix4x4F` and `Matrix3x3D`. Apple and wasm run
+    the same code.
   - **`Shape.isSelfIntersecting(hardTimeout:)`**, the only Dispatch user in the
     package. Its contract is a hard deadline enforced by a second thread, and
     wasip1 non-threads has one. Decided in #2760: the name exists on wasm with the
@@ -682,7 +684,7 @@ equivalent and there does not need to be.
 |---|---|---|
 | [#2757](https://github.com/SecondMouseAU/OCCTSwift/issues/2757) | a function carrying both a lowered `setjmp` and wasm exceptions emits an **invalid** `br_table`, and the module dies at the first OCCT call | **fixed here**, with `-UOCC_CONVERT_SIGNALS`; reduced to a 12-line standalone file and an LLVM report drafted in `Scripts/repro/2757/` (filing it is open) |
 | [#2758](https://github.com/SecondMouseAU/OCCTSwift/issues/2758) | `-mllvm -wasm-enable-sjlj` and `-lsetjmp` are now inert, and four places still call them load-bearing | **fixed here**: `Package.swift` no longer links `setjmp`, the toolset and build-script flags stay with their reason written down |
-| [#2759](https://github.com/SecondMouseAU/OCCTSwift/issues/2759) | 196 of 230 Swift files `import simd`, which does not exist on wasm | **worked around here** with a WASI-only `simd` target, then the 171 imports no file needed were removed (26 files keep it); replacing the remaining `simd_*` calls and deleting the stand-in is open |
+| [#2759](https://github.com/SecondMouseAU/OCCTSwift/issues/2759) | 196 of 230 Swift files `import simd`, which does not exist on wasm | **fixed**: the 171 imports no file needed were removed, then the remaining `simd_*` calls were replaced by plain-Swift helpers and the public matrix types by `Matrix4x4F` / `Matrix3x3D`; `Sources/OCCTSwift` no longer depends on any `simd` module (`Scripts/check-no-simd.py`) |
 | [#2760](https://github.com/SecondMouseAU/OCCTSwift/issues/2760) | `Shape.isSelfIntersecting(hardTimeout:)` needs a second thread, so it cannot exist on wasip1 non-threads | **fixed**: same name on wasm with the cooperative behaviour, documented as not a hard bound (additive on wasm) |
 | [#2761](https://github.com/SecondMouseAU/OCCTSwift/issues/2761) | module size, and 13.11 MB of the 26.98 MB being Foundation on its own | open, and not a gate: there is no target to gate against |
 
@@ -846,9 +848,8 @@ API surface should be, rather than making it build.
   in `Sources/OCCTSwift`.
 - ~~Conditionalise the Foundation surface.~~ Not needed to build. `Data`, `URL`, `Date`
   and `FileManager` all work.
-- **`import simd`, in 26 of 230 files** (#2759, down from 196 at the spike, 197 by the time of the change: the other 171 never used the module).
-  A WASI-only target named `simd` stands in for those 26; replacing their `simd_*` calls with
-  standard-library spellings and deleting it is the open decision.
+- **`import simd`, in 0 of 230 files** (#2759, down from 196 at the spike: 171 never used the module, the rest now use
+  plain-Swift helpers). `Scripts/check-no-simd.py` keeps it at zero.
 - **`Shape.isSelfIntersecting(hardTimeout:)`** (#2760) is the first case of a class: any API
   whose contract needs a second thread. Decided: the name exists on wasm with the cooperative
   behaviour, documented as not a hard bound, so a future API of this class has a precedent.

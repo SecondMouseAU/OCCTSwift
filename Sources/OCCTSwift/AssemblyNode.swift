@@ -1,6 +1,5 @@
 import OCCTBridge
 import OCCTPlatform
-import simd
 
 /// A node in an XDE assembly tree.
 ///
@@ -46,10 +45,10 @@ public final class AssemblyNode: @unchecked Sendable {
     }
 
     /// Transform matrix (position/rotation relative to parent).
-    public var transform: simd_float4x4 {
+    public var transform: Matrix4x4F {
         var matrix = [Float](repeating: 0, count: 16)
         OCCTDocumentGetLocation(document.handle, labelId, &matrix)
-        return simd_float4x4(
+        return Matrix4x4F(
             SIMD4(matrix[0], matrix[1], matrix[2], matrix[3]),
             SIMD4(matrix[4], matrix[5], matrix[6], matrix[7]),
             SIMD4(matrix[8], matrix[9], matrix[10], matrix[11]),

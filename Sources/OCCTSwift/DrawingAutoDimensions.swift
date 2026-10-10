@@ -1,5 +1,4 @@
 import OCCTPlatform
-import simd
 
 // MARK: - Auto dimensioning (#83, v0.149)
 //
@@ -33,7 +32,8 @@ extension Drawing {
     ///     the dimension line for overall extents.
     ///   - bounds: Optional 2D clipping rectangle; when non-nil, circles
     ///     whose projected centre falls outside the rectangle are skipped.
-    /// - Returns: The dimensions added, and a reason string for each one skipped.
+    /// - Returns: The dimensions added, and a reason string for each one skipped. A zero or
+    ///   non-finite `viewDirection` adds nothing and says so in `skipped`.
     @discardableResult
     public func addAutoDimensions(
         from shape: Shape,
@@ -42,7 +42,11 @@ extension Drawing {
         dimensionOffset: Double = 10,
         bounds: (min: SIMD2<Double>, max: SIMD2<Double>)? = nil
     ) -> AutoDimensionResult {
-        let viewZ = simd_normalize(viewDirection)
+        guard vectorLength(viewDirection) > 0, vectorLength(viewDirection).isFinite else {
+            return AutoDimensionResult(
+                added: [], skipped: ["view direction is zero or not finite"])
+        }
+        let viewZ = normalizedVector(viewDirection)
         var added: [DrawingDimension] = []
         var skipped: [String] = []
 

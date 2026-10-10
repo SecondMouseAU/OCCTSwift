@@ -165,7 +165,7 @@ as well. That is why `Shape.computeNormals()` reports `0` for a shape that has b
   let mesh = Shape.sphere(radius: 5)!.mesh(linearDeflection: 0.5)!
   for (vertex, normal) in zip(mesh.vertices, mesh.normals) {
       // On a sphere centred on the origin the normal is the vertex direction.
-      print(simd_normalize(vertex), normal)
+      print(Vector3DMath.normalize(SIMD3<Double>(vertex)) ?? .zero, normal)
   }
   ```
 

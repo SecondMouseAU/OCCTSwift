@@ -1,6 +1,5 @@
 import OCCTBridge
 import OCCTPlatform
-import simd
 
 extension Shape {
 
@@ -604,7 +603,7 @@ extension Shape {
         solid: Bool = true
     ) -> Shape? {
         guard !profiles.isEmpty, radius > 0, pitch > 0, turns > 0 else { return nil }
-        let axis = simd_normalize(axisDirection)
+        guard let axis = normalizedVectorOrNil(axisDirection) else { return nil }
         guard
             let helix = Wire.helix(
                 origin: axisOrigin, axis: axis, radius: radius,

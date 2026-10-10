@@ -916,10 +916,10 @@ Update whenever the drawable size changes.
 
 ### `projectionMatrix`
 
-Projection matrix as a column-major `simd_float4x4` with Metal [0,1] depth range.
+Projection matrix as a column-major ``Matrix4x4F`` with Metal [0,1] depth range.
 
 ```swift
-public var projectionMatrix: simd_float4x4 { get }
+public var projectionMatrix: Matrix4x4F { get }
 ```
 
 Uses `Graphic3d_Camera::ProjectionMatrixF()`. The zero-to-one depth range is set at construction; no further remapping is needed in the vertex shader.
@@ -935,10 +935,10 @@ Uses `Graphic3d_Camera::ProjectionMatrixF()`. The zero-to-one depth range is set
 
 ### `viewMatrix`
 
-View (camera/orientation) matrix as a column-major `simd_float4x4`.
+View (camera/orientation) matrix as a column-major ``Matrix4x4F``.
 
 ```swift
-public var viewMatrix: simd_float4x4 { get }
+public var viewMatrix: Matrix4x4F { get }
 ```
 
 - **OCCT:** `Graphic3d_Camera::OrientationMatrixF()` → `Graphic3d_Mat4`.

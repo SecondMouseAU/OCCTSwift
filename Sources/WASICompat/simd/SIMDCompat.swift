@@ -13,6 +13,12 @@
 
 // SIMDCompat.swift
 //
+// STATUS (#2759): TEST-ONLY AND ON ITS WAY OUT. `Sources/OCCTSwift` no longer imports `simd` or calls
+// a `simd_` function (`Scripts/check-no-simd.py` holds that), and the library target does not depend
+// on this module. It remains reachable only from the wasm TEST targets, for the test files that
+// have not yet been migrated to the plain-Swift helpers, and the last of the #2759 PRs deletes it.
+// The paragraphs below describe the module as it was when the library depended on it.
+//
 // A `simd` module for `wasm32-unknown-wasip1`, where Apple's is not available.
 //
 // WHY THIS IS A MODULE AND NOT A SET OF EDITS. 196 of the 230 files in `Sources/OCCTSwift` opened

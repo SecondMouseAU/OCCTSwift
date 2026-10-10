@@ -461,7 +461,7 @@ public func addCuttingPlaneLine(label: String,
   - `viewDirection`: the projection direction of this parent drawing (used to project the trace into 2D).
   - `traceLength`: length of the trace line in drawing units (default 60 mm).
 - **Returns:** The appended annotation, or `nil` if the cutting plane is parallel to the view plane (trace degenerates to a point).
-- **Note:** Pure-Swift: computes the 2D trace via `simd_cross(cuttingPlaneNormal, viewDirection)` and projects both trace and arrow direction into the drawing plane.
+- **Note:** Pure-Swift: computes the 2D trace as the cross product of `cuttingPlaneNormal` and `viewDirection` and projects both trace and arrow direction into the drawing plane.
 - **Example:**
   ```swift
   if let cpl = drawing.addCuttingPlaneLine(

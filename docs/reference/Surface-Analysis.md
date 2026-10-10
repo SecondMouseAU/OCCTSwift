@@ -947,6 +947,6 @@ disagreed with `evaluateGrid` about exactly that.
   if let srf = Surface.sphere(center: .zero, radius: 5) {
       let grid = srf.evaluateGridD1(uParameters: [0, 1, 2], vParameters: [0, 0.5])
       let sample = grid.at(u: 1, v: 0)
-      let normal = simd_normalize(simd_cross(sample.d1u, sample.d1v))
+      let normal = Vector3DMath.normalize(Vector3DMath.cross(sample.d1u, sample.d1v))
   }
   ```

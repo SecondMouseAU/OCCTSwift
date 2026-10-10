@@ -36,7 +36,7 @@ struct CameraTests {
         #expect(!isIdentity)
 
         // Determinant should be non-zero
-        let det = simd_determinant(proj)
+        let det = proj.determinant
         #expect(abs(det) > 1e-10)
     }
 

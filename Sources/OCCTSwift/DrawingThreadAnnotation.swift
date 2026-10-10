@@ -1,5 +1,4 @@
 import OCCTPlatform
-import simd
 
 // MARK: - ISO 6410 cosmetic thread representation (#77, v0.146)
 //
@@ -39,7 +38,7 @@ extension DrawingAnnotation {
         callout: String? = nil
     ) -> [DrawingAnnotation] {
         let axis = axisEnd - axisStart
-        let len = simd_length(axis)
+        let len = vectorLength(axis)
         guard len > 1e-6 else { return [] }
         let axisUnit = axis / len
         let perp = leftPerpendicular2D(of: axisUnit)

@@ -219,10 +219,14 @@ After the run, a file the guest wrote is a `Uint8Array` in that map, so handing 
 of 0.5: 130 vertices, 116 triangles, 348 indices, 130 normals, every coordinate finite and every
 index in range.
 
-Note that `SIMD3<Float>` here comes from a **WASI-only stand-in** for Apple's `simd`, whose long-term
-shape is still open in [#2759](https://github.com/SecondMouseAU/OCCTSwift/issues/2759). The vector
-types themselves are Swift standard library types and are not affected; what could change is the
-handful of `simd_*` free functions.
+`SIMD3<Float>` here is the Swift standard library type, the same on every platform. OCCTSwift does
+not import Apple's `simd` module and defines no `simd_*` functions, so there is nothing
+platform-specific between your code and the vectors it receives ([#2759](https://github.com/SecondMouseAU/OCCTSwift/issues/2759)).
+The three places the public API used to return an Apple matrix now return package-owned types,
+`Matrix4x4F` (`AssemblyNode.transform`, `Camera.projectionMatrix`, `Camera.viewMatrix`) and
+`Matrix3x3D` (`GProps.matrixOfInertia`, `ShapeProperties.momentOfInertia`): column-major, indexed
+`m[column][row]`, with `columns`, `columnMajorElements` and `determinant`. A browser consumer reads
+`columnMajorElements` straight into a `Float32Array`.
 
 ## Present but unavailable on wasm
 

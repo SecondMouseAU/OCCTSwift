@@ -58,7 +58,7 @@ for node in doc.rootNodes {
     print(node.name ?? "unnamed", node.isAssembly)
     for child in node.children {
         if let shape = child.shape {           // includes the inherited placement transform
-            let xform = child.transform        // simd_float4x4
+            let xform = child.transform        // Matrix4x4F, column-major
             _ = (shape, xform)
         }
     }

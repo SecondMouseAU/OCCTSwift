@@ -1,6 +1,5 @@
 import OCCTBridge
 import OCCTPlatform
-import simd
 
 // MARK: - Edge Convexity
 
@@ -1150,12 +1149,12 @@ extension AAG {
             // meaningful test.
             radial = offset
         } else {
-            let axisUnit = simd_normalize(revolution.axis.direction)
-            radial = offset - simd_dot(offset, axisUnit) * axisUnit
+            let axisUnit = normalizedVector(revolution.axis.direction)
+            radial = offset - dotProduct(offset, axisUnit) * axisUnit
         }
-        let radialLength = simd_length(radial)
+        let radialLength = vectorLength(radial)
         guard radialLength > 1e-9 else { return false }
-        return simd_dot(midNormal, radial / radialLength) < 0
+        return dotProduct(midNormal, radial / radialLength) < 0
     }
 
     /// Detect holes (through or blind) in the shape.
@@ -1240,7 +1239,7 @@ extension AAG {
             }
 
             guard let revolution = face.revolutionProperties else { continue }
-            let axisUnit = simd_normalize(revolution.axis.direction)
+            let axisUnit = normalizedVector(revolution.axis.direction)
 
             // The material-side test (see isMaterialRadiallyInward's own doc comment, shared
             // with isRadiallyInwardFillet(_:), #762): a hole's own outward normal points back
@@ -1264,7 +1263,7 @@ extension AAG {
             else {
                 continue
             }
-            let depth = abs(simd_dot(high - low, axisUnit))
+            let depth = abs(dotProduct(high - low, axisUnit))
 
             holes.append((faceIndex: index, radius: revolution.radius, depth: depth))
         }

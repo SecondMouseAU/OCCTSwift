@@ -16,7 +16,7 @@ every number about the list is written down.
 
 ## How many there are
 
-Twenty gates, eight censuses and one merge-history audit run in `ci.yml`'s `gate-scripts` job,
+Twenty-one gates, eight censuses and one merge-history audit run in `ci.yml`'s `gate-scripts` job,
 beside the release check that "The fourth kind" below counts apart from them. Every one of those
 numbers is derived from the job rather than kept by hand:
 `Scripts/check-inventory-prose.py` reads this sentence against `ci.yml` on every PR and fails when
@@ -320,6 +320,21 @@ correctness (PR #2969). Three things about it are the general shape rather than 
   (`OCCTTObjApplicationRelease`, whose singleton must never destroy on a zero count) carries
   `transient-release-exempt: <reason>` in the comment beside it, with the reason required on
   `check-doc-snippets.py`'s precedent.
+
+**One gate keeps a second implementation from coming back.** `check-no-simd.py` (#2759) fails on
+`import simd`, `canImport(simd)` and any `simd_`, `matrix_` or `vector_` identifier in the code of a
+Swift file under `Sources/`. Apple's `simd` exists on Apple platforms only, and the stand-in that
+covered WebAssembly was a second implementation of the same functions that disagreed with Apple's
+on `simd_normalize` of a zero vector until it was aligned by hand (#2764). The package now owns its
+vector helpers (`Sources/OCCTSwift/SIMDVectorOps.swift`) and matrix types (`Matrix.swift`), so one
+implementation runs everywhere, and the gate is what holds it. Three things about it are the
+general shape. **It reads code, not text**: comments and string literals are stripped first, since
+the migration notes legitimately name the old spellings, and the self-test holds that a mention in
+a comment, a block comment, a raw string and a multi-line string is not a finding while the same
+word in code is. **Its one exemption is a directory with a deadline**: the stand-in itself, kept
+only while test files still import it, and removed with the last of them. **An empty population is
+a refusal**: under 200 Swift files exits 2, since a run from the wrong directory reports clean
+exactly as loudly as a clean tree.
 
 **One gate holds the Swift layer to a lifetime rule the compiler does not state.**
 `check-borrowed-handle-temporaries.py` (#3130) fails on a `.handle` read straight off a subscript
@@ -702,7 +717,7 @@ build was on disk.
 
 ## Every detector proves it is not blind
 
-Nineteen of the twenty gates, all eight censuses, the merge-history audit and the release check
+Twenty of the twenty-one gates, all eight censuses, the merge-history audit and the release check
 take `--self-test`, a fixture battery proving the *detector* catches each failure mode. Run it
 whenever you change one of these scripts. Three gate scripts were confidently wrong while
 reporting all clear (#618, #624/#630, #626), and a detector reporting "all clear" because it is
@@ -812,7 +827,7 @@ change to the ruleset.
 
 ## The pre-commit hook
 
-`Scripts/git-hooks/pre-commit` runs forty-eight of `gate-scripts`' fifty invocations, flag for
+`Scripts/git-hooks/pre-commit` runs fifty of `gate-scripts`' fifty-two invocations, flag for
 flag. The one it omits is `check-changelog-transcription.py`'s real run, which answers a question
 about the branch rather than about the commit being made; its `--self-test` does run. That is the
 only deliberate divergence, and it is written here because an undocumented difference between the

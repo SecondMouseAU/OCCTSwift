@@ -1,5 +1,4 @@
 import OCCTPlatform
-import simd
 
 // MARK: - Sketch (#72 Phase 4)
 //
@@ -142,6 +141,6 @@ extension Sketch {
     private func approxEqual(_ a: SIMD3<Double>, _ b: SIMD3<Double>, tolerance: Double = 1e-9)
         -> Bool
     {
-        simd_length_squared(a - b) < tolerance * tolerance
+        vectorLengthSquared(a - b) < tolerance * tolerance
     }
 }

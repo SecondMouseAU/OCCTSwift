@@ -1,5 +1,4 @@
 import OCCTPlatform
-import simd
 
 // MARK: - Ad-hoc measurement helpers (v0.143 M3, M4)
 //
@@ -180,7 +179,7 @@ extension Face {
             let otherPoint = other.point(atU: otherMidU, v: otherMidV)
         else { return nil }
         let offset = point - otherPoint
-        let signedDist = abs(simd_dot(offset, simd_normalize(otherNormal)))
+        let signedDist = abs(dotProduct(offset, normalizedVector(otherNormal)))
         return signedDist < tolerance
     }
 }
@@ -216,10 +215,10 @@ extension ConstructionPlane {
 /// reporting a degenerate/near-singular normal as "parallel" to anything through
 /// `normalsAreParallel` below (PR #897 review, finding 5).
 public func unsignedAngle(between a: SIMD3<Double>, and b: SIMD3<Double>) -> Double? {
-    let la = simd_length(a)
-    let lb = simd_length(b)
+    let la = vectorLength(a)
+    let lb = vectorLength(b)
     guard la > 1e-12, lb > 1e-12 else { return nil }
-    let cosTheta = simd_dot(a, b) / (la * lb)
+    let cosTheta = dotProduct(a, b) / (la * lb)
     return acos(max(-1.0, min(1.0, cosTheta)))
 }
 
@@ -329,7 +328,7 @@ extension Face {
             // spherical cap as the sample point approaches the pole.
             guard let samplePoint = uvMidpointPoint() else { return nil }
             return RevolutionProperties(
-                axis: primary, radius: simd_length(samplePoint - primary.origin))
+                axis: primary, radius: vectorLength(samplePoint - primary.origin))
         case .cylinder, .cone, .torus, .revolution:
             // Radius is the distance from the axis line to a representative
             // surface point. For non-cylindrical revolved surfaces "radius" is
@@ -339,10 +338,10 @@ extension Face {
             // normal, so use the lighter-weight accessor (PR #897 review).
             guard let samplePoint = uvMidpointPoint() else { return nil }
             let offset = samplePoint - primary.origin
-            let axisUnit = simd_normalize(primary.direction)
-            let axialComponent = simd_dot(offset, axisUnit) * axisUnit
+            let axisUnit = normalizedVector(primary.direction)
+            let axialComponent = dotProduct(offset, axisUnit) * axisUnit
             let radial = offset - axialComponent
-            return RevolutionProperties(axis: primary, radius: simd_length(radial))
+            return RevolutionProperties(axis: primary, radius: vectorLength(radial))
         default:
             return nil
         }
@@ -361,15 +360,15 @@ internal func circleThroughThreePoints(
 {
     let a = p2 - p1
     let b = p3 - p1
-    let axb = simd_cross(a, b)
-    let denom = 2 * simd_length_squared(axb)
+    let axb = crossProduct(a, b)
+    let denom = 2 * vectorLengthSquared(axb)
     guard denom > 1e-18 else { return nil }
-    let aLenSq = simd_length_squared(a)
-    let bLenSq = simd_length_squared(b)
-    let term1 = bLenSq * simd_dot(a, a - b) * a
-    let term2 = aLenSq * simd_dot(b, b - a) * b
+    let aLenSq = vectorLengthSquared(a)
+    let bLenSq = vectorLengthSquared(b)
+    let term1 = bLenSq * dotProduct(a, a - b) * a
+    let term2 = aLenSq * dotProduct(b, b - a) * b
     let center = p1 + (term1 + term2) / denom
-    let radius = simd_length(center - p1)
-    let axis = simd_normalize(axb)
+    let radius = vectorLength(center - p1)
+    let axis = normalizedVector(axb)
     return (center, radius, axis)
 }

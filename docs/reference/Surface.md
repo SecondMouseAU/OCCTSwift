@@ -413,7 +413,7 @@ Returns the point together with the first partial derivatives in U and V in a si
 - **Example:**
   ```swift
   let (pt, du, dv) = surface.d1(atU: 0.5, v: 0.5)
-  let normal = simd_cross(du, dv)
+  let normal = Vector3DMath.cross(du, dv)
   ```
 
 ---
@@ -1132,7 +1132,7 @@ public struct SurfaceGridD1: Sendable {
   ```swift
   let grid = surface.evaluateGridD1(uParameters: [0, 0.5, 1], vParameters: [0, 1])
   let sample = grid.at(u: 2, v: 0)
-  let normal = simd_normalize(simd_cross(sample.d1u, sample.d1v))
+  let normal = Vector3DMath.normalize(Vector3DMath.cross(sample.d1u, sample.d1v))
   ```
 
 | Member | Kind | Meaning |
@@ -1738,7 +1738,7 @@ A cone apex is a genuine singularity for this test; a sphere pole (`v = ±π/2`)
 - **Example:**
   ```swift
   let cone = Surface.cone(origin: .zero, axis: SIMD3(0, 0, 1), radius: 0, semiAngle: .pi / 6)!
-  #expect(simd_length(cone.normal(u: 0, v: 0)) < 1e-12)   // apex: undefined
+  #expect(Vector3DMath.modulus(cone.normal(u: 0, v: 0)) < 1e-12)   // apex: undefined
   #expect(cone.normal(atU: 0, v: 0) == nil)               // ... reported as nil here
   ```
 

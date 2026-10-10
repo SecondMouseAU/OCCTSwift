@@ -932,7 +932,7 @@ public struct ShapeProperties: Sendable, Equatable {
     public var surfaceArea: Double
     public var mass: Double
     public var centerOfMass: SIMD3<Double>
-    public var momentOfInertia: simd_double3x3
+    public var momentOfInertia: Matrix3x3D
 }
 ```
 

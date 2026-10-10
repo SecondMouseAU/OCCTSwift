@@ -1,6 +1,5 @@
 import OCCTBridge
 import OCCTPlatform
-import simd
 
 #if canImport(SceneKit)
     import SceneKit
@@ -327,7 +326,7 @@ public final class Mesh: @unchecked Sendable {
     /// let mesh = Shape.sphere(radius: 5)!.mesh(linearDeflection: 0.5)!
     /// for (vertex, normal) in zip(mesh.vertices, mesh.normals) {
     ///     // On a sphere centred on the origin the normal is the vertex direction.
-    ///     print(simd_normalize(vertex), normal)
+    ///     print(normalizedVector(vertex), normal)
     /// }
     /// ```
     public var normals: [SIMD3<Float>] {
@@ -418,8 +417,8 @@ public final class Mesh: @unchecked Sendable {
         var maxPt = verts[0]
 
         for v in verts {
-            minPt = min(minPt, v)
-            maxPt = max(maxPt, v)
+            minPt = pointwiseMin(minPt, v)
+            maxPt = pointwiseMax(maxPt, v)
         }
 
         return (minPt, maxPt)

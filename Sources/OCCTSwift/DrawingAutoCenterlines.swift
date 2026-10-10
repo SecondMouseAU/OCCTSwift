@@ -1,5 +1,4 @@
 import OCCTPlatform
-import simd
 
 // MARK: - Auto-centreline generation from #65 revolution axes
 //
@@ -30,6 +29,7 @@ extension Drawing {
     ///     falls back to a sensible default (±1000 square centred at origin), the caller
     ///     should pass the drawing's actual bbox when it's known.
     /// - Returns: The added centrelines plus any axes skipped because they projected to a point.
+    ///   A zero or non-finite `viewDirection` returns an empty result.
     @discardableResult
     public func addAutoCentrelines(
         from shape: Shape,
@@ -38,11 +38,16 @@ extension Drawing {
         tolerance: Double = 1e-6,
         bounds: (min: SIMD2<Double>, max: SIMD2<Double>)? = nil
     ) -> AutoCentrelineResult {
+        // A zero or non-finite view direction normalises to NaNs, which every projection below
+        // would carry silently into the drawing; there is no view to centre-line.
+        guard vectorLength(viewDirection) > 0, vectorLength(viewDirection).isFinite else {
+            return AutoCentrelineResult(added: [], skipped: [])
+        }
         let axes = shape.revolutionAxes(tolerance: tolerance)
         let bb = bounds ?? (min: SIMD2(-1000, -1000), max: SIMD2(1000, 1000))
         var added: [DrawingAnnotation] = []
         var skipped: [ShapeAxis] = []
-        let viewZ = simd_normalize(viewDirection)
+        let viewZ = normalizedVector(viewDirection)
 
         for axis in axes {
             guard
@@ -86,7 +91,10 @@ extension Drawing {
         minRadius: Double = 0,
         bounds: (min: SIMD2<Double>, max: SIMD2<Double>)? = nil
     ) -> AutoCentermarkResult {
-        let viewZ = simd_normalize(viewDirection)
+        guard vectorLength(viewDirection) > 0, vectorLength(viewDirection).isFinite else {
+            return AutoCentermarkResult(added: [], skipped: [])
+        }
+        let viewZ = normalizedVector(viewDirection)
         var added: [DrawingAnnotation] = []
         var skipped: [Edge] = []
         for edge in shape.edges() where edge.curveType == .circle {
@@ -125,13 +133,13 @@ internal func projectPointToPlane(
     viewDirection: SIMD3<Double>
 ) -> SIMD2<Double> {
     let (right, up) = perpendicularBasis(to: viewDirection)
-    return SIMD2(simd_dot(p, right), simd_dot(p, up))
+    return SIMD2(dotProduct(p, right), dotProduct(p, up))
 }
 
 /// Project a 3D *direction* (not a point) onto the 2D plane perpendicular to `viewDirection`,
 /// using `perpendicularBasis(to:)` directly.
 ///
-/// A direction has no position to translate, so this is a plain `simd_dot` against `(right, up)`,
+/// A direction has no position to translate, so this is a plain `dotProduct` against `(right, up)`,
 /// never `projectPointToPlane(direction, ...) - projectPointToPlane(.zero, ...)`: that roundabout
 /// point-difference idiom only produces the right answer today because `projectPointToPlane` has
 /// no translation term of its own, and would silently start leaking an origin term into every
@@ -143,7 +151,7 @@ internal func projectDirectionToPlane(
     viewDirection: SIMD3<Double>
 ) -> SIMD2<Double> {
     let (right, up) = perpendicularBasis(to: viewDirection)
-    return SIMD2(simd_dot(direction, right), simd_dot(direction, up))
+    return SIMD2(dotProduct(direction, right), dotProduct(direction, up))
 }
 
 // MARK: - Shared circle-visibility test
@@ -179,8 +187,8 @@ internal func testCircleVisibility(
     // Edge-on test: if the circle's plane normal is perpendicular to
     // the view direction (dot ≈ 0), the circle projects to a line
     // segment, not a circle. Skip.
-    let normal = simd_cross(props.xAxis.direction, props.yAxis.direction)
-    let dotAxis = abs(simd_dot(simd_normalize(normal), viewZ))
+    let normal = crossProduct(props.xAxis.direction, props.yAxis.direction)
+    let dotAxis = abs(dotProduct(normalizedVector(normal), viewZ))
     if dotAxis < 0.1 {
         onSkip("circle edge-on in view")
         return nil
@@ -211,8 +219,8 @@ internal func projectAxisToPlane(
 ) -> (SIMD2<Double>, SIMD2<Double>)? {
     // Project axis direction onto view plane. If it collapses to a point, skip.
     let dir2 = projectDirectionToPlane(direction, viewDirection: viewDirection)
-    if simd_length(dir2) < 1e-9 { return nil }
-    let dir2n = simd_normalize(dir2)
+    if vectorLength(dir2) < 1e-9 { return nil }
+    let dir2n = normalizedVector(dir2)
     let origin2 = projectPointToPlane(origin, viewDirection: viewDirection)
 
     // Parameterise the line as origin2 + t * dir2n and clip to bounds.

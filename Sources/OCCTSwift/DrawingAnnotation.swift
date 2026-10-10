@@ -1,5 +1,4 @@
 import OCCTPlatform
-import simd
 
 // MARK: - Value types for 2D drawing dimensions and annotations
 //
@@ -86,7 +85,7 @@ public enum DrawingDimension: Sendable, Hashable {
         }
 
         /// Measured 2D distance between `from` and `to`.
-        public var value: Double { simd_distance(from, to) }
+        public var value: Double { vectorDistance(from, to) }
     }
 
     /// Shared field set for `.radial` and `.diameter` dimensions: a circle (or arc)
@@ -166,9 +165,9 @@ public enum DrawingDimension: Sendable, Hashable {
 
         /// Measured angle between the two rays, in radians (0 ≤ θ ≤ π).
         public var value: Double {
-            let v1 = simd_normalize(ray1 - vertex)
-            let v2 = simd_normalize(ray2 - vertex)
-            return acos(max(-1.0, min(1.0, simd_dot(v1, v2))))
+            let v1 = normalizedVector(ray1 - vertex)
+            let v2 = normalizedVector(ray2 - vertex)
+            return acos(max(-1.0, min(1.0, dotProduct(v1, v2))))
         }
     }
 
@@ -335,7 +334,7 @@ public enum DrawingAnnotation: Sendable, Hashable {
             self.label = label
             self.traceStart = traceStart
             self.traceEnd = traceEnd
-            self.arrowDirection = simd_normalize(arrowDirection)
+            self.arrowDirection = normalizedVector(arrowDirection)
             self.id = id
         }
     }

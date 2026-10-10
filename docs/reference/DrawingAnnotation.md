@@ -269,7 +269,7 @@ The measured 2D distance between `from` and `to`.
 public var value: Double { get }
 ```
 
-Pure-Swift: `simd_distance(from, to)`.
+Pure-Swift: the Euclidean distance between `from` and `to`.
 
 - **Returns:** Euclidean distance in drawing units.
 - **Example:**
@@ -911,7 +911,7 @@ public init(label: String,
   - `label`: callout letter(s) placed at each arrow (e.g. `"A"`).
   - `traceStart`: start of the cutting-plane trace.
   - `traceEnd`: end of the cutting-plane trace.
-  - `arrowDirection`: view direction for the section (need not be unit length; stored as `simd_normalize(arrowDirection)`).
+  - `arrowDirection`: view direction for the section (need not be unit length; stored normalised; a zero direction is stored as NaNs).
   - `id`: optional identifier.
 - **Example:**
   ```swift

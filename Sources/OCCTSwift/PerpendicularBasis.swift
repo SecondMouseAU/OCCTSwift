@@ -1,5 +1,3 @@
-import simd
-
 // Deterministic perpendicular-to-a-direction basis, matching OCCT's own `gp_Ax2(gp_Pnt, gp_Dir)`
 // canonical algorithm. Module-wide: shared by `Placement.init(origin:normal:)` and
 // `ConstructionPlane.throughAxis` (`ConstructionEntity.swift`), `Shape.sectionPlaneBasis`
@@ -29,7 +27,7 @@ import simd
 internal func perpendicularBasis(to direction: SIMD3<Double>) -> (
     SIMD3<Double>, SIMD3<Double>
 ) {
-    let v = simd_normalize(direction)
+    let v = normalizedVector(direction)
     let aAbs = abs(v.x)
     let bAbs = abs(v.y)
     let cAbs = abs(v.z)
@@ -41,7 +39,7 @@ internal func perpendicularBasis(to direction: SIMD3<Double>) -> (
     } else {
         raw = aAbs > bAbs ? SIMD3(-v.y, v.x, 0) : SIMD3(v.y, -v.x, 0)
     }
-    let right = simd_normalize(raw)
-    let up = simd_normalize(simd_cross(v, right))
+    let right = normalizedVector(raw)
+    let up = normalizedVector(crossProduct(v, right))
     return (right, up)
 }
