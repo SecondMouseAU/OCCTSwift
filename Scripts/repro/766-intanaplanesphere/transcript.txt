@@ -1,0 +1,2 @@
+planeSphereIntersection: IsDone=1 NbSolutions=1 TypeInter=2 (IntAna_Circle=2)
+  circle 1: center=(0, 0, 0) axis=(0, 0, 1) radius=5

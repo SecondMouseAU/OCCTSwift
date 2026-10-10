@@ -1,0 +1,12 @@
+lineBoxIntersection: ray (5,5,-10)+t(0,0,1), which runs along the box's x=5,y=5 edge:
+  hit[0] pnt=(5, 5, -5) u=10 v=10 w=5 faceArea=99.999999999999986
+  hit[1] pnt=(5, 5, 5) u=10 v=10 w=15 faceArea=99.999999999999986
+  hits=2
+curveSphereIntersection: line (0,0,-10)+t(0,0,1) through both poles:
+  hit[0] pnt=(0, 0, 5) u=0 v=1.5707963267948966 w=15 faceArea=314.15926535897938
+  hit[1] pnt=(0, 0, -5) u=0 v=-1.5707963267948966 w=5 faceArea=314.15926535897938
+  hits=2
+hitFaceAccess: ray (0,0,-10)+t(0,0,1):
+  hit[0] pnt=(0, 0, -5) u=5 v=5 w=5 faceArea=99.999999999999986
+  hit[1] pnt=(0, 0, 5) u=5 v=5 w=15 faceArea=99.999999999999986
+  hits=2

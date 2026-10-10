@@ -1,0 +1,10 @@
+# The test files this PR lifts (current paths).
+Tests/OCCTAnalysisTests/PlanarGeometry/HatchBuilderTests.swift
+Tests/OCCTAnalysisTests/PlanarGeometry/HatchTests.swift
+Tests/OCCTAnalysisTests/ShapeAnalysis/PlaneDetectionTests.swift
+Tests/OCCTBRepGraphTests/Assembly/EditorViewProductOpsTests.swift
+Tests/OCCTBRepGraphTests/Mutation/EditorViewAddRemoveTests.swift
+Tests/OCCTBRepGraphTests/Mutation/EditorViewSettersTests.swift
+Tests/OCCTBRepGraphTests/Mutation/EditorViewV164Tests.swift
+Tests/OCCTIntegrationTests/Workflows/IntegrationAssemblyInterferenceTests.swift
+Tests/OCCTModelingTests/BOPAlgo/MakeVolumeTests.swift
