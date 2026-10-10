@@ -1,0 +1,11 @@
+compactBox: nodesBefore=58 removedVertices=0 removedEdges=0 removedFaces=0 nodesAfter=58
+compactAfterRemove: removedVertices=1 removedEdges=0 removedFaces=0 nodesAfter=57 vertices=7
+compoundQueriesOnCompound: compounds=1 solids=2 children=2 parents=0
+compSolidCount: 0
+deepCopy: ok=1 faces=6 edges=12 vertices=8 surfaces=6
+lightCopy: ok=1 faces=6 edges=12 vertices=8
+copyFace: valid=1 faces=1 edges=4 vertices=4 wires=1
+activeCounts: faces=6 edges=12 vertices=8
+geometryCounts: surfaces=6 curves3d=12 curves2d=24
+coedgeCounts: 24
+deduplicateBox: canonicalSurfaces=6 canonicalCurves=12 surfaceRewrites=0 curveRewrites=0
