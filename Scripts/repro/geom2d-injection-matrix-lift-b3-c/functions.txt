@@ -1,0 +1,19 @@
+# bridge entry points reached by this PR's lifted suites (GD3B_TRACE run)
+OCCTApproxCurve2d
+OCCTAxisPlacement2DAngle
+OCCTAxisPlacement2DCreate
+OCCTAxisPlacement2DGetDirection
+OCCTAxisPlacement2DGetOrigin
+OCCTAxisPlacement2DRelease
+OCCTAxisPlacement2DReversed
+OCCTBisectorBisecAnaCurveCurve
+OCCTBisectorBisecAnaPointPoint
+OCCTBisectorInterPointPoint
+OCCTChFi2dAnaFillet
+OCCTCurve2DCreateCircle
+OCCTCurve2DCreateLine
+OCCTCurve2DGetDomain
+OCCTCurve2DGetPoint
+OCCTCurve2DRelease
+OCCTCurve2DTrim
+OCCTGeom2dEvalAHTBezierCurveCreate
