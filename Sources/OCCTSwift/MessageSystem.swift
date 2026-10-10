@@ -1,6 +1,5 @@
 import OCCTBridge
 import OCCTPlatform
-import simd
 
 /// OCCT message system utilities.
 public enum MessageSystem {

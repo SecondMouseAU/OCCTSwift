@@ -1,6 +1,5 @@
 import OCCTBridge
 import OCCTPlatform
-import simd
 
 /// Traces ancestry of edges in an offset wire back to original edges.
 public final class OffsetAncestors: @unchecked Sendable {

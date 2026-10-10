@@ -1,6 +1,5 @@
 import OCCTBridge
 import OCCTPlatform
-import simd
 
 /// A 1D interval [min, max] with void state.
 public final class Range: @unchecked Sendable {

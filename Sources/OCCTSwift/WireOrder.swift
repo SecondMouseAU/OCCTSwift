@@ -1,6 +1,5 @@
 import OCCTBridge
 import OCCTPlatform
-import simd
 
 /// Result of wire edge ordering analysis using ShapeAnalysis_WireOrder.
 ///

@@ -1,6 +1,5 @@
 import OCCTBridge
 import OCCTPlatform
-import simd
 
 extension GeometryProperties {
     /// Cylinder lateral surface area.

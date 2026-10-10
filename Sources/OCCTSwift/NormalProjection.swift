@@ -1,6 +1,5 @@
 import OCCTBridge
 import OCCTPlatform
-import simd
 
 /// Projects wires/edges onto a shape by normal projection.
 public final class NormalProjection: @unchecked Sendable {

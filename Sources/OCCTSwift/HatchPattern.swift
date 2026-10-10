@@ -1,6 +1,5 @@
 import OCCTBridge
 import OCCTPlatform
-import simd
 
 /// A line segment in a 2D hatch pattern.
 public struct HatchSegment: Sendable {

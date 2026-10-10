@@ -1,6 +1,5 @@
 import OCCTBridge
 import OCCTPlatform
-import simd
 
 /// Shared marshaling for `GuideTrihedronAC.evaluate`/`GuideTrihedronPlan.evaluate`: both call a
 /// bridge `D0` function of the same `(ref, param, 9x double*) -> Bool` shape and pack the same
