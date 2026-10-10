@@ -21,6 +21,9 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### Fixed
+- `FeatureReconstructor` no longer reports a feature fulfilled when its boolean (additive fuse, `FeatureSpec.Boolean`, `FeatureSpec.Hole`) answers a volume its operands cannot allow. A 1e12-sided extrude fused onto a 10-unit box answered the box alone and was reported fulfilled; it is now recorded in `skipped` and the body so far is kept (#3196).
+
 #### Documented the borrowed-handle rule on the seven public handle properties (#3130)
 
 `GeomPoint3D`, `GeomDirection`, `GeomVector3D`, `Axis1Placement`, `Axis2Placement`, `Interval` and `IntervalSet` expose a public `handle`. Its documentation now says it is borrowed, that an optimised build may release a temporary or collection-element owner before the bridge call that receives the pointer runs, and shows `withExtendedLifetime` as the fix. No behaviour changes.
