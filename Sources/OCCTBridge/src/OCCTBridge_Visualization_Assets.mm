@@ -47,6 +47,7 @@
 #include <BRepMesh_IncrementalMesh.hxx>
 #include <GCPnts_TangentialDeflection.hxx>
 #include <Bnd_Box.hxx>
+#include <BRepBndLib.hxx>
 #include <Poly_Triangulation.hxx>
 #include <Poly_PolygonOnTriangulation.hxx>
 
@@ -155,6 +156,14 @@ public:
   }
 
   const TopoDS_Shape& Shape() const { return myShape; }
+
+  // SelectMgr_SelectableObjectSet builds its object-level BVH from
+  // BoundingBox(Bnd_Box&). PrsMgr_PresentableObject's default reads the
+  // bounds off a presentation, and this object has none, so the box was void
+  // and TraverseSensitives pruned the object before reaching a sensitive: every
+  // pick returned nothing (#3254). Mirrors IVtkOCC_SelectableObject::BoundingBox
+  // (Visualization/TKIVtk/IVtkOCC), OCCT's own V3d-free SelectMgr caller.
+  void BoundingBox(Bnd_Box& theBndBox) override { BRepBndLib::Add(myShape, theBndBox, true); }
 
 private:
   void Compute(const Handle(PrsMgr_PresentationManager)&,
