@@ -680,6 +680,7 @@ public final class Shape: @unchecked Sendable {
         firstVertex: SIMD3<Double>? = nil,
         lastVertex: SIMD3<Double>? = nil
     ) -> Shape? {
+        // Same as the overload above: hold `profiles` across the C call (#3261, see `NativeHandleOwner`).
         let handles: [OCCTWireRef?] = profiles.map { $0.handle }
         let fv = firstVertex ?? SIMD3<Double>(Double.nan, Double.nan, Double.nan)
         let lv = lastVertex ?? SIMD3<Double>(Double.nan, Double.nan, Double.nan)
