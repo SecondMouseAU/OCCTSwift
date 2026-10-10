@@ -16,6 +16,7 @@ public final class CellsBuilder: @unchecked Sendable {
     /// - Parameter shapes: Input shapes to partition
     public init?(shapes: [Shape]) {
         let ptrs = shapes.map { $0.handle as OCCTShapeRef? }
+        defer { withExtendedLifetime(shapes) {} }
         guard
             let h = ptrs.withUnsafeBufferPointer({ buf in
                 OCCTCellsBuilderCreate(buf.baseAddress, Int32(buf.count))
@@ -62,7 +63,9 @@ extension CellsBuilder {
         take: [Shape], avoid: [Shape] = [], material: Int32 = 0, update: Bool = false
     ) {
         let takePtrs: [OCCTShapeRef] = take.map { $0.handle }
+        defer { withExtendedLifetime(take) {} }
         let avoidPtrs: [OCCTShapeRef] = avoid.map { $0.handle }
+        defer { withExtendedLifetime(avoid) {} }
         takePtrs.withUnsafeBufferPointer { takeBuf in
             avoidPtrs.withUnsafeBufferPointer { avoidBuf in
                 OCCTCellsBuilderAddToResultSelective(
@@ -77,7 +80,9 @@ extension CellsBuilder {
     /// Remove cells from result: cells present in all take shapes but none of avoid shapes.
     public func removeFromResult(take: [Shape], avoid: [Shape] = []) {
         let takePtrs: [OCCTShapeRef] = take.map { $0.handle }
+        defer { withExtendedLifetime(take) {} }
         let avoidPtrs: [OCCTShapeRef] = avoid.map { $0.handle }
+        defer { withExtendedLifetime(avoid) {} }
         takePtrs.withUnsafeBufferPointer { takeBuf in
             avoidPtrs.withUnsafeBufferPointer { avoidBuf in
                 OCCTCellsBuilderRemoveFromResult(

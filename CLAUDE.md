@@ -109,7 +109,7 @@ python3 Scripts/check-null-handle-guards.py      # every bridge fn guards the Ha
 python3 Scripts/check-docs-defaults.py           # every default AND enum case list docs/reference/ restates matches its declaration (#2145)
 python3 Scripts/check-docs-existence.py          # every symbol docs/ documents as current still exists in Sources (#802)
 python3 Scripts/check-borrowed-handles.py        # no struct/enum stores an OCCT*Ref it has no deinit to release (#965)
-python3 Scripts/check-borrowed-handle-temporaries.py  # no .handle read off a subscript or call result; use withHandle (#3130)
+python3 Scripts/check-borrowed-handle-temporaries.py  # no .handle off a subscript/call result (use withHandle), no unheld xs.map { $0.handle } (#3130, #3266)
 python3 Scripts/derive-bridge-header-split.py --verify  # every declaration sits in the header its .mm owns (#673)
 python3 Scripts/derive-gdt-enums.py --verify      # the GD&T enums still match the pinned XCAFDimTolObjects headers (#996)
 python3 Scripts/count-operations.py              # README + API_REFERENCE + docs/index.md totals match the derived count

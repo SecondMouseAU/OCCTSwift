@@ -441,6 +441,7 @@ public enum Exporter {
         let path = url.path
         guard !path.isEmpty else { throw ExportError.invalidPath }
         var handles: [OCCTShapeRef?] = shapes.map { $0.handle }
+        defer { withExtendedLifetime(shapes) {} }
         let success = handles.withUnsafeMutableBufferPointer { buffer in
             OCCTExportIGESMultiShape(buffer.baseAddress, Int32(buffer.count), path)
         }

@@ -278,6 +278,7 @@ extension Shape {
     /// - Returns: Quilted shell, or nil on failure
     public static func quilt(_ shapes: [Shape]) -> Shape? {
         var handles = shapes.map { $0.handle as OCCTShapeRef? }
+        defer { withExtendedLifetime(shapes) {} }
         guard let h = OCCTShapeQuilt(&handles, Int32(shapes.count)) else { return nil }
         return Shape(handle: h)
     }
@@ -380,6 +381,7 @@ extension Shape {
     ///   self-intersecting loop, or a hole not enclosed by `outer`).
     public static func face(from surface: Surface, outer: Wire, innerWires: [Wire]) -> Shape? {
         let handles: [OCCTWireRef?] = innerWires.map { $0.handle }
+        defer { withExtendedLifetime(innerWires) {} }
         guard
             let handle = handles.withUnsafeBufferPointer({ buffer in
                 OCCTShapeCreateFaceFromSurfaceWireWithHoles(
@@ -616,6 +618,7 @@ extension Shape {
     /// - Returns: Shape with sub-shapes removed, or nil on failure
     public func removingSubShapes(_ subShapes: [Shape]) -> Shape? {
         var handles = subShapes.map { $0.handle as OCCTShapeRef? }
+        defer { withExtendedLifetime(subShapes) {} }
         guard
             let h = handles.withUnsafeMutableBufferPointer({ buf in
                 OCCTShapeRemoveSubShapes(handle, buf.baseAddress, Int32(subShapes.count))
@@ -631,7 +634,9 @@ extension Shape {
     /// - Returns: Shape with replacements applied, or nil on failure
     public func replacingSubShapes(_ replacements: [(old: Shape, new: Shape)]) -> Shape? {
         var oldHandles = replacements.map { $0.old.handle as OCCTShapeRef? }
+        defer { withExtendedLifetime(replacements) {} }
         var newHandles = replacements.map { $0.new.handle as OCCTShapeRef? }
+        defer { withExtendedLifetime(replacements) {} }
         guard
             let h = oldHandles.withUnsafeMutableBufferPointer({ oldBuf in
                 newHandles.withUnsafeMutableBufferPointer({ newBuf in
@@ -655,6 +660,7 @@ extension Shape {
     public func faceRestricted(by boundaries: [Wire]) -> [Shape]? {
         let maxFaces: Int32 = 64
         var wireHandles = boundaries.map { $0.handle as OCCTWireRef? }
+        defer { withExtendedLifetime(boundaries) {} }
         var outFaces = [OCCTShapeRef?](repeating: nil, count: Int(maxFaces))
 
         let count = wireHandles.withUnsafeMutableBufferPointer { wireBuf in
@@ -688,6 +694,7 @@ extension Shape {
     public static func solidFromShells(_ shells: [Shape]) -> Shape? {
         guard !shells.isEmpty else { return nil }
         var handles = shells.map { $0.handle as OCCTShapeRef? }
+        defer { withExtendedLifetime(shells) {} }
         let result = handles.withUnsafeMutableBufferPointer { buffer in
             OCCTSolidFromShells(buffer.baseAddress, Int32(shells.count))
         }
@@ -2368,6 +2375,7 @@ extension Shape {
             }
         }
         var handles = newSubShapes.map { $0.handle as OCCTShapeRef? }
+        defer { withExtendedLifetime(newSubShapes) {} }
         return handles.withUnsafeMutableBufferPointer { buf in
             guard
                 let h = OCCTShapeSubstitute(
@@ -2844,6 +2852,7 @@ extension Shape {
     /// Create a wire from an array of edge shapes.
     public static func wireFromEdges(_ edges: [Shape]) -> Shape? {
         let refs = edges.map { $0.handle as OCCTShapeRef }
+        defer { withExtendedLifetime(edges) {} }
         guard
             let ref = refs.withUnsafeBufferPointer({ buf in
                 OCCTMakeWireFromEdges(buf.baseAddress!, Int32(edges.count))
@@ -2855,6 +2864,7 @@ extension Shape {
     /// Create a shell from an array of face shapes.
     public static func shellFromFaces(_ faces: [Shape]) -> Shape? {
         let refs = faces.map { $0.handle as OCCTShapeRef }
+        defer { withExtendedLifetime(faces) {} }
         guard
             let ref = refs.withUnsafeBufferPointer({ buf in
                 OCCTMakeShell(buf.baseAddress!, Int32(faces.count))
@@ -3278,6 +3288,7 @@ extension Shape {
         joinType: OffsetJoinType = .arc
     ) -> Shape? {
         var faceRefs: [OCCTShapeRef] = facesToRemove.map { $0.handle }
+        defer { withExtendedLifetime(facesToRemove) {} }
         guard
             let ref = OCCTThickSolidWithOptions(
                 handle, &faceRefs, Int32(faceRefs.count),
