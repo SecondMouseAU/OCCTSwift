@@ -1,0 +1,15 @@
+Issue1477Geom2dCurvesTests.returnedCountMatchesWritten calls OCCTGeom2dConvertApproxArcsSegments
+directly from the test module, so the generated shadow cannot reach it (a shadow and the import would
+be ambiguous in that module, see generate-shadow.py). The one lifted pin on that call is
+`#expect(fullCount == 11)`. Hand injection, on the pinned kernel, bundle rebuilt for each side:
+
+    fullCount = <the bridge's returned count> - 1      (the bridge's count off by one)
+
+lifted version (run: OCCTGeom2dTests.Issue1477Geom2dCurvesTests):
+    FAIL  returned count never exceeds a small buffer's capacity, and matches what was written
+          Expectation failed: fullCount == 11        (4 tests in the suite, 1 issue)
+origin/main's version of the file with the same injection:
+    PASS  4 of 4 tests in the suite
+
+The injection was a one-line edit to the test, reverted with `git checkout HEAD -- <file>` and not
+committed. It is the only lifted test of this PR that calls a bridge symbol directly.
