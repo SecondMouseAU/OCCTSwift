@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -41,13 +40,13 @@ struct IntAnaConeSphereTests {
             // On the cone (apex at the origin, semi-angle pi/4): the distance from the Z axis is z.
             #expect(abs((p.x * p.x + p.y * p.y).squareRoot() - p.z) < 1e-9)
             // On the sphere.
-            #expect(abs(simd_length(p - center) - radius) < 1e-9)
+            #expect(abs(vectorLength(p - center) - radius) < 1e-9)
         }
         // The samples span the curve's whole domain: the first is its start, measured at
         // (3.545, -1.560, 3.873), and the last its end, the mirror image across y = 0.
         if let first = pts.first, let last = pts.last {
-            #expect(simd_length(first - SIMD3(3.545027756, -1.559736583, 3.872983346)) < 1e-6)
-            #expect(simd_length(last - SIMD3(3.545027756, 1.559736583, 3.872983346)) < 1e-6)
+            #expect(vectorLength(first - SIMD3(3.545027756, -1.559736583, 3.872983346)) < 1e-6)
+            #expect(vectorLength(last - SIMD3(3.545027756, 1.559736583, 3.872983346)) < 1e-6)
         }
     }
 

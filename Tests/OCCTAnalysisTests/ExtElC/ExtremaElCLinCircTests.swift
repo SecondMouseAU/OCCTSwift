@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -34,8 +33,8 @@ struct ExtremaElCLinCircTests {
             #expect(abs(p1.z - 10) < 1e-9, "p1 \(p1)")
             #expect(abs(p1.y) < 1e-9, "p1 \(p1)")
             #expect(abs(p2.z) < 1e-9, "p2 \(p2)")
-            #expect(abs(simd_length(p2) - 5) < 1e-9, "p2 \(p2)")
-            #expect(abs(simd_distance_squared(p1, p2) - r.squareDistance) < 1e-9)
+            #expect(abs(vectorLength(p2) - 5) < 1e-9, "p2 \(p2)")
+            #expect(abs(vectorDistanceSquared(p1, p2) - r.squareDistance) < 1e-9)
         }
     }
 
@@ -55,11 +54,11 @@ struct ExtremaElCLinCircTests {
         let nearest = try #require(results.min(by: { $0.squareDistance < $1.squareDistance }))
         let farthest = try #require(results.max(by: { $0.squareDistance < $1.squareDistance }))
         #expect(abs(nearest.squareDistance - 25) < 1e-9)
-        #expect(simd_distance(try #require(nearest.point1), SIMD3(10, 0, 0)) < 1e-9)
-        #expect(simd_distance(try #require(nearest.point2), SIMD3(5, 0, 0)) < 1e-9)
+        #expect(vectorDistance(try #require(nearest.point1), SIMD3(10, 0, 0)) < 1e-9)
+        #expect(vectorDistance(try #require(nearest.point2), SIMD3(5, 0, 0)) < 1e-9)
         #expect(abs(farthest.squareDistance - 225) < 1e-9)
-        #expect(simd_distance(try #require(farthest.point1), SIMD3(10, 0, 0)) < 1e-9)
-        #expect(simd_distance(try #require(farthest.point2), SIMD3(-5, 0, 0)) < 1e-9)
+        #expect(vectorDistance(try #require(farthest.point1), SIMD3(10, 0, 0)) < 1e-9)
+        #expect(vectorDistance(try #require(farthest.point2), SIMD3(-5, 0, 0)) < 1e-9)
     }
 
     /// A line coincident with the circle's own axis (#1501): `Extrema_ExtElC` reports

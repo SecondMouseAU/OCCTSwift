@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -113,8 +112,8 @@ struct Issue1635ContapAnalyticGeometryTests {
         // A silhouette circle is perpendicular to the view direction, so its axis is that
         // direction, and its X direction is perpendicular to it.
         #expect(abs(abs(axis.z) - 1.0) < 1e-9)
-        #expect(abs(simd_dot(axis, xDirection)) < 1e-9)
-        #expect(abs(simd_length(xDirection) - 1.0) < 1e-9)
+        #expect(abs(dotProduct(axis, xDirection)) < 1e-9)
+        #expect(abs(vectorLength(xDirection) - 1.0) < 1e-9)
     }
 
     /// A traced contour still reports its points, and reports the same ones through the new door.
@@ -133,7 +132,7 @@ struct Issue1635ContapAnalyticGeometryTests {
             return
         }
         #expect(points.count == direct.count)
-        for (a, b) in zip(points, direct) { #expect(simd_distance(a, b) < 1e-12) }
+        for (a, b) in zip(points, direct) { #expect(vectorDistance(a, b) < 1e-12) }
 
         // Vertices are the ends of the traced run, and exist here too.
         #expect(contour.vertexCount(line: 1) >= 2)
@@ -171,7 +170,7 @@ struct Issue1635ContapAnalyticGeometryTests {
         if let first, let last, vertices.count == 2 {
             let ends = [first, last]
             for v in vertices {
-                #expect(ends.contains { simd_distance($0, v.uv) < 1e-9 })
+                #expect(ends.contains { vectorDistance($0, v.uv) < 1e-9 })
             }
         }
     }

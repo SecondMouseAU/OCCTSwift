@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -19,8 +18,8 @@ struct IntAnaPlaneSphereTests {
         #expect(r.count == 1)
         #expect(r.resultType == .circle)
         if let circle = r.circles.first {
-            #expect(simd_length(circle.center) < 1e-12)
-            #expect(simd_distance(circle.axis, SIMD3(0, 0, 1)) < 1e-12)
+            #expect(vectorLength(circle.center) < 1e-12)
+            #expect(vectorDistance(circle.axis, SIMD3(0, 0, 1)) < 1e-12)
             #expect(abs(circle.radius - 5) < 1e-12)
         } else {
             Issue.record("no circle reported")

@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -47,7 +46,7 @@ struct BRepExtremaExtPCTests {
         let result = try #require(
             shape.pointEdgeExtrema(point: SIMD3(5.0, 3.0, 0.0), edgeIndex: 0))
         #expect(abs(result.distance - 3.0) < 1e-9)
-        #expect(simd_distance(result.pointOnEdge, SIMD3(5, 0, 0)) < 1e-9)
+        #expect(vectorDistance(result.pointOnEdge, SIMD3(5, 0, 0)) < 1e-9)
         #expect(abs(result.parameter - 5.0) < 1e-9)
         #expect(result.solutionCount == 1)
     }

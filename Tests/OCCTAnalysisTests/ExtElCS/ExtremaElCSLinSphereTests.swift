@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -26,13 +25,13 @@ struct ExtremaElCSLinSphereTests {
         #expect(
             abs(results[0].squareDistance - 225) < 1e-9,
             "near: distance 15, got \(results[0].squareDistance.squareRoot())")
-        #expect(simd_distance(try #require(results[0].point1), SIMD3(0, 0, 20)) < 1e-9)
-        #expect(simd_distance(try #require(results[0].point2), SIMD3(0, 0, 5)) < 1e-9)
+        #expect(vectorDistance(try #require(results[0].point1), SIMD3(0, 0, 20)) < 1e-9)
+        #expect(vectorDistance(try #require(results[0].point2), SIMD3(0, 0, 5)) < 1e-9)
 
         #expect(
             abs(results[1].squareDistance - 625) < 1e-9,
             "far: distance 25, got \(results[1].squareDistance.squareRoot())")
-        #expect(simd_distance(try #require(results[1].point1), SIMD3(0, 0, 20)) < 1e-9)
-        #expect(simd_distance(try #require(results[1].point2), SIMD3(0, 0, -5)) < 1e-9)
+        #expect(vectorDistance(try #require(results[1].point1), SIMD3(0, 0, 20)) < 1e-9)
+        #expect(vectorDistance(try #require(results[1].point2), SIMD3(0, 0, -5)) < 1e-9)
     }
 }

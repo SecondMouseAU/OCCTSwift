@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -19,7 +18,7 @@ struct IntAnaPlanePlaneTests {
             p2Origin: SIMD3(0, 0, 0), p2Normal: SIMD3(0, 1, 0))
         try #require(r.count == 1)
         let line = try #require(r.lines.first)
-        #expect(simd_length(line.origin) < 1e-12)
+        #expect(vectorLength(line.origin) < 1e-12)
         #expect(abs(line.direction.x + 1) < 1e-12)
         #expect(abs(line.direction.y) < 1e-12)
         #expect(abs(line.direction.z) < 1e-12)
@@ -36,7 +35,7 @@ struct IntAnaPlanePlaneTests {
             p2Origin: SIMD3(0, 0, 0), p2Normal: SIMD3(0, 1, 0))
         try #require(r.count == 1)
         let line = try #require(r.lines.first)
-        #expect(simd_length(line.origin) < 1e-12)
+        #expect(vectorLength(line.origin) < 1e-12)
         #expect(abs(line.direction.x + 1) < 1e-12)
         #expect(abs(line.direction.y) < 1e-12)
         #expect(abs(line.direction.z) < 1e-12)

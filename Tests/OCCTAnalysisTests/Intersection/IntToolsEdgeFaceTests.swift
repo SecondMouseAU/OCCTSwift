@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -27,7 +26,7 @@ struct IntToolsEdgeFaceTests {
         let part = try #require(parts.first)
         #expect(part.type == .vertex)
         let point = try #require(part.point)
-        #expect(simd_distance(point, SIMD3(-5, 1, 2)) < 1e-9)
+        #expect(vectorDistance(point, SIMD3(-5, 1, 2)) < 1e-9)
         #expect(abs(part.param1Range.first - 5) < 1e-6)
     }
 
@@ -204,7 +203,7 @@ struct IntToolsEdgeFaceTests {
             if range.first < 1e-9 || abs(range.last - 2 * .pi) < 1e-9 { seamParts += 1 }
 
             let point = try #require(part.point)
-            #expect(abs(simd_length(point) - 5) < 1e-9, "point \(point) is off the circle")
+            #expect(abs(vectorLength(point) - 5) < 1e-9, "point \(point) is off the circle")
             #expect(abs(point.y) < 1e-9, "point \(point) is off the XZ plane")
             let reach = max(abs(point.x), abs(point.z))
             #expect(abs(reach - 5) < 1e-6, "point \(point) is not at one of the four contacts")
@@ -248,8 +247,8 @@ struct IntToolsEdgeFaceTests {
                     continue
                 }
                 #expect(
-                    abs(simd_length(point) - 10.0) < 1e-6,
-                    "point \(point) is \(simd_length(point)) from the centre, not on the arc")
+                    abs(vectorLength(point) - 10.0) < 1e-6,
+                    "point \(point) is \(vectorLength(point)) from the centre, not on the arc")
                 #expect(abs(point.z) < 1e-9)
             }
         }

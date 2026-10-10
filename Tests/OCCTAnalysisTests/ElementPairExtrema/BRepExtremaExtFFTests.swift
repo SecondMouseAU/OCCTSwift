@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -123,8 +122,8 @@ struct BRepExtremaExtFFTests {
             #expect(r.face2UV != nil)
             // The two points are what the distance measures, so they have to agree with it.
             #expect(
-                abs(simd_distance(p1, p2) - r.distance) < 1e-6,
-                "face \(i): |p1 - p2| = \(simd_distance(p1, p2)) but distance = \(r.distance)")
+                abs(vectorDistance(p1, p2) - r.distance) < 1e-6,
+                "face \(i): |p1 - p2| = \(vectorDistance(p1, p2)) but distance = \(r.distance)")
             witnessed += 1
         }
         #expect(witnessed == 6, "only \(witnessed) of the 6 box faces answered")

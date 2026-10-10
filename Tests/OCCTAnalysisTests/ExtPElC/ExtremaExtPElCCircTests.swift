@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -21,11 +20,11 @@ struct ExtremaExtPElCCircTests {
         #expect(near != nil)
         #expect(far != nil)
         if let near {
-            #expect(simd_distance(try #require(near.point1), SIMD3(10, 0, 0)) < 1e-9)
-            #expect(simd_distance(try #require(near.point2), SIMD3(5, 0, 0)) < 1e-9)
+            #expect(vectorDistance(try #require(near.point1), SIMD3(10, 0, 0)) < 1e-9)
+            #expect(vectorDistance(try #require(near.point2), SIMD3(5, 0, 0)) < 1e-9)
         }
         if let far {
-            #expect(simd_distance(try #require(far.point2), SIMD3(-5, 0, 0)) < 1e-9)
+            #expect(vectorDistance(try #require(far.point2), SIMD3(-5, 0, 0)) < 1e-9)
         }
     }
 

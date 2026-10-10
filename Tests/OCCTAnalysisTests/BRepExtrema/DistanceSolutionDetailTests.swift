@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -34,7 +33,7 @@ struct DistanceSolutionDetailTests {
             #expect(abs(s.point2.x - 17.5) < 1e-9, "p2 \(s.point2)")
             #expect(abs(abs(s.point2.y) - 2.5) < 1e-9, "p2 \(s.point2)")
             #expect(abs(abs(s.point2.z) - 2.5) < 1e-9, "p2 \(s.point2)")
-            #expect(abs(simd_distance(s.point1, s.point2) - s.distance) < 1e-9)
+            #expect(abs(vectorDistance(s.point1, s.point2) - s.distance) < 1e-9)
         }
 
         let detail = try #require(box1.distanceSolutionDetail(to: moved, solutionIndex: 0))
@@ -49,7 +48,7 @@ struct DistanceSolutionDetailTests {
         let carries = box1.subShapes(ofType: .face)
             .compactMap { $0.faceSurfaceGeom() }
             .contains {
-                simd_distance($0.point(atU: detail.paramFaceUV1.u, v: detail.paramFaceUV1.v), p1)
+                vectorDistance($0.point(atU: detail.paramFaceUV1.u, v: detail.paramFaceUV1.v), p1)
                     < 1e-9
             }
         #expect(carries, "no face of box 1 maps \(detail.paramFaceUV1) to \(p1)")
@@ -72,8 +71,8 @@ struct DistanceSolutionDetailTests {
         #expect(solutions.count == 2)
         for s in solutions {
             #expect(abs(s.distance - 12) < 1e-6, "got \(s.distance)")
-            #expect(simd_distance(s.point1, SIMD3(5, 5, 5)) < 1e-6, "p1 \(s.point1)")
-            #expect(simd_distance(s.point2, SIMD3(17, 5, 5)) < 1e-6, "p2 \(s.point2)")
+            #expect(vectorDistance(s.point1, SIMD3(5, 5, 5)) < 1e-6, "p1 \(s.point1)")
+            #expect(vectorDistance(s.point2, SIMD3(17, 5, 5)) < 1e-6, "p2 \(s.point2)")
         }
 
         let detail = try #require(box.distanceSolutionDetail(to: moved, solutionIndex: 0))
@@ -84,7 +83,7 @@ struct DistanceSolutionDetailTests {
         let carries = moved.subShapes(ofType: .face)
             .compactMap { $0.faceSurfaceGeom() }
             .contains {
-                simd_distance(
+                vectorDistance(
                     $0.point(atU: detail.paramFaceUV2.u, v: detail.paramFaceUV2.v),
                     SIMD3(17, 5, 5)) < 1e-9
             }

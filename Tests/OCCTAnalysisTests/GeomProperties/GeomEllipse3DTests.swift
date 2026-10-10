@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -73,14 +72,14 @@ struct GeomEllipse3DTests {
         let f2 = e.ellipseProperties.focus2
         // Focus1 sits on the positive XAxis at +c, Focus2 is its mirror. The old symmetry check
         // (f1.x + f2.x == 0) was equally happy with both foci at the origin.
-        #expect(simd_length(f1 - SIMD3(Self.focusOffset, 0, 0)) < 1e-9, "focus1 \(f1)")
-        #expect(simd_length(f2 - SIMD3(-Self.focusOffset, 0, 0)) < 1e-9, "focus2 \(f2)")
+        #expect(vectorLength(f1 - SIMD3(Self.focusOffset, 0, 0)) < 1e-9, "focus1 \(f1)")
+        #expect(vectorLength(f2 - SIMD3(-Self.focusOffset, 0, 0)) < 1e-9, "focus2 \(f2)")
         // The defining property of the foci, checked against the curve itself: the sum of the
         // distances to a point on the ellipse is 2 * major. Taken at the end of the minor axis,
         // where two foci collapsed onto the origin would give 2 * minor instead.
         let p = e.point(at: .pi / 2)
-        #expect(simd_length(p - SIMD3(0, Self.minor, 0)) < 1e-9, "minor-axis point \(p)")
-        let sum = simd_length(p - f1) + simd_length(p - f2)
+        #expect(vectorLength(p - SIMD3(0, Self.minor, 0)) < 1e-9, "minor-axis point \(p)")
+        let sum = vectorLength(p - f1) + vectorLength(p - f2)
         #expect(abs(sum - 2 * Self.major) < 1e-9, "focal sum \(sum)")
     }
 

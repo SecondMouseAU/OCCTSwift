@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -26,8 +25,8 @@ import simd
         // The r = 1 circle in z = 0 around (20, 0, 0) comes nearest the x = 5 face at (19, 0, 0).
         #expect(
             abs(result.distance - 14) < 1e-9, "expected 20 - 1 - 5 = 14, got \(result.distance)")
-        #expect(simd_distance(result.pointOnShape1, SIMD3(5, 0, 0)) < 1e-9)
-        #expect(simd_distance(result.pointOnShape2, SIMD3(19, 0, 0)) < 1e-9)
+        #expect(vectorDistance(result.pointOnShape1, SIMD3(5, 0, 0)) < 1e-9)
+        #expect(vectorDistance(result.pointOnShape2, SIMD3(19, 0, 0)) < 1e-9)
     }
 
     @Test("Shape intersects Wire")
@@ -66,7 +65,7 @@ import simd
         #expect(
             abs(result.distance) < 1e-9,
             "a shape's own edge is at distance 0, got \(result.distance)")
-        #expect(simd_distance(result.pointOnShape1, result.pointOnShape2) < 1e-9)
+        #expect(vectorDistance(result.pointOnShape1, result.pointOnShape2) < 1e-9)
     }
 
     @Test("Shape distance to Face")

@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -28,8 +27,8 @@ struct ExtremaExtCCTests {
         #expect(abs(pp.squareDistance - 25.0) < 1e-9, "square distance \(pp.squareDistance) != 25")
         // The feet themselves, which nothing pinned before: a bridge that returned the right
         // distance between the wrong pair of points passed the old test.
-        #expect(simd_distance(pp.point1, SIMD3(0, 0, 0)) < 1e-9, "foot on line1 is \(pp.point1)")
-        #expect(simd_distance(pp.point2, SIMD3(0, 5, 0)) < 1e-9, "foot on line2 is \(pp.point2)")
+        #expect(vectorDistance(pp.point1, SIMD3(0, 0, 0)) < 1e-9, "foot on line1 is \(pp.point1)")
+        #expect(vectorDistance(pp.point2, SIMD3(0, 5, 0)) < 1e-9, "foot on line2 is \(pp.point2)")
         // The feet are at the lines' own parameter 0, both lines being unit-speed from their
         // through-point.
         #expect(abs(pp.param1) < 1e-9, "param1 \(pp.param1) != 0")

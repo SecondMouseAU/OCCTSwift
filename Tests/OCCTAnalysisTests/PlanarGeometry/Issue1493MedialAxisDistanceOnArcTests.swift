@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -39,7 +38,7 @@ struct Issue1493MedialAxisDistanceOnArcTests {
 
     static var lShapeEdgeLengths: [Double] {
         let n = lShapePoints.count
-        return (0..<n).map { i in simd_distance(lShapePoints[i], lShapePoints[(i + 1) % n]) }
+        return (0..<n).map { i in vectorDistance(lShapePoints[i], lShapePoints[(i + 1) % n]) }
     }
 
     /// Shortest distance from `p` to the closed polygon's boundary: the minimum distance to each
@@ -52,15 +51,15 @@ struct Issue1493MedialAxisDistanceOnArcTests {
             let a = polygon[i]
             let b = polygon[(i + 1) % n]
             let ab = b - a
-            let lenSq = simd_dot(ab, ab)
+            let lenSq = dotProduct(ab, ab)
             let t: Double
             if lenSq < 1e-12 {
                 t = 0
             } else {
-                t = max(0, min(1, simd_dot(p - a, ab) / lenSq))
+                t = max(0, min(1, dotProduct(p - a, ab) / lenSq))
             }
             let proj = a + t * ab
-            minDist = min(minDist, simd_distance(p, proj))
+            minDist = min(minDist, vectorDistance(p, proj))
         }
         return minDist
     }
@@ -100,7 +99,7 @@ struct Issue1493MedialAxisDistanceOnArcTests {
         var found: [Int]?
 
         func distances(for order: [Int]) -> [Double] {
-            (0..<n).map { i in simd_distance(points[order[i]], points[order[(i + 1) % n]]) }
+            (0..<n).map { i in vectorDistance(points[order[i]], points[order[(i + 1) % n]]) }
         }
 
         func permute(_ remaining: [Int], _ chosen: [Int]) {
@@ -131,7 +130,7 @@ struct Issue1493MedialAxisDistanceOnArcTests {
     {
         var result: [SIMD2<Double>] = []
         for node in ma.nodes where node.isOnBoundary {
-            if !result.contains(where: { simd_distance($0, node.position) < tolerance }) {
+            if !result.contains(where: { vectorDistance($0, node.position) < tolerance }) {
                 result.append(node.position)
             }
         }

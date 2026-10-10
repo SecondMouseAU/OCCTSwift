@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -59,7 +58,7 @@ struct IntToolsEdgeEdgeTests {
         #expect(abs(first.param2Range.last - (1 + halfWidth2)) < 1e-12, "r2 \(first.param2Range)")
 
         let point = try #require(first.point, "a vertex part reported no point")
-        #expect(simd_length(point) < 1e-6, "point \(point) is not the origin")
+        #expect(vectorLength(point) < 1e-6, "point \(point) is not the origin")
     }
 
     /// #3012: a shallower crossing carries a wider window, and the width is the kernel's own.
@@ -264,8 +263,8 @@ struct IntToolsEdgeEdgeTests {
         // An edge part's point is interior to the overlap and on the circle, not on the chord.
         let point = try #require(part.point)
         #expect(
-            abs(simd_length(point) - 10.0) < 1e-6,
-            "point \(point) is \(simd_length(point)) from the centre, not 10")
+            abs(vectorLength(point) - 10.0) < 1e-6,
+            "point \(point) is \(vectorLength(point)) from the centre, not 10")
         #expect(abs(point.z) < 1e-9)
     }
 

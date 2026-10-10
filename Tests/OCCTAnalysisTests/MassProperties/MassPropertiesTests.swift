@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -18,7 +17,7 @@ struct MassPropertiesTests {
         let lp = try #require(wireShape.linearProperties())
         #expect(abs(lp.length - 40.0) < 1e-9)  // perimeter of 10x10 rect
         // The rectangle is centred on the origin, so its centre of mass is too.
-        #expect(simd_length(lp.centerOfMass) < 1e-9)
+        #expect(vectorLength(lp.centerOfMass) < 1e-9)
     }
 
     @Test func momentOfInertia() throws {
@@ -43,8 +42,8 @@ struct MassPropertiesTests {
         #expect(abs(abs(pa.axis1.x) - 1.0) < 1e-9)
         #expect(abs(abs(pa.axis2.y) - 1.0) < 1e-9)
         #expect(abs(abs(pa.axis3.z) - 1.0) < 1e-9)
-        #expect(abs(simd_dot(pa.axis1, pa.axis2)) < 1e-9)
-        #expect(abs(simd_dot(pa.axis2, pa.axis3)) < 1e-9)
+        #expect(abs(dotProduct(pa.axis1, pa.axis2)) < 1e-9)
+        #expect(abs(dotProduct(pa.axis2, pa.axis3)) < 1e-9)
     }
 
     @Test func radiusOfGyration() throws {

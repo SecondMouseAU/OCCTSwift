@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -454,7 +453,7 @@ struct ZeroMassResultsTests {
 
         // A real segment still answers.
         let real = GeometryProperties.lineSegment(from: .zero, to: p)
-        #expect(abs((real?.length ?? 0) - simd_length(p)) < 1e-9)
+        #expect(abs((real?.length ?? 0) - vectorLength(p)) < 1e-9)
 
         // A valid circle sampled over an empty range answers with length 0 and a correct centre,
         // computed analytically rather than accumulated, so there is nothing to refuse.

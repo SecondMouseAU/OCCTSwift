@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -93,9 +92,9 @@ struct AdaptorNormalDecisionTests {
             for hit in hits {
                 #expect(hit.normalDefined, label)
                 // A sphere's normal is radial: parallel to the hit point itself.
-                let radial = simd_normalize(hit.point)
+                let radial = normalizedVector(hit.point)
                 #expect(
-                    abs(abs(simd_dot(radial, hit.normal)) - 1.0) < 1e-6,
+                    abs(abs(dotProduct(radial, hit.normal)) - 1.0) < 1e-6,
                     "\(label) hit \(hit.point) normal \(hit.normal)")
             }
         }
