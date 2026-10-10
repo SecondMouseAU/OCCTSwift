@@ -14,6 +14,10 @@ struct SelectorSubShapeTests {
         cam.eye = SIMD3(0, 0, 50)
         cam.center = SIMD3(0, 0, 0)
         cam.up = SIMD3(0, 1, 0)
+        // A new Camera() is orthographic at scale 1000, where a 10-unit box covers ~6 px and
+        // the pixel tolerance reaches every edge at once. Perspective makes the pixels mean
+        // something (#3254).
+        cam.projectionType = .perspective
         cam.fieldOfView = 45
         cam.aspect = 1.0
         cam.zRange = (near: 1, far: 1000)
@@ -68,6 +72,7 @@ struct SelectorSubShapeTests {
             viewSize: SIMD2(800, 600)
         )
 
+        #expect(!results.isEmpty)
         if !results.isEmpty {
             #expect(results[0].shapeId == 1)
             #expect(results[0].subShapeType == .face)
@@ -89,14 +94,19 @@ struct SelectorSubShapeTests {
         // Increase tolerance for edge picking
         selector.pixelTolerance = 10
 
-        let results = selector.pick(
-            at: SIMD2(400, 300),
-            camera: cam,
-            viewSize: SIMD2(800, 600)
-        )
+        // The front face is 45 units from the eye, so one unit is about 16 px and the face's
+        // top and bottom edges (y = +-5, z = 5) sit about 80 px above and below the centre pixel.
+        // Pixel y may grow either way and the box is symmetric, so both rows lie on an edge.
+        let rows: [Double] = [300 - 80.5, 300 + 80.5]
+        let results = rows.flatMap {
+            selector.pick(at: SIMD2(400, $0), camera: cam, viewSize: SIMD2(800, 600))
+        }
 
-        // Edges are thin, so we might or might not hit one
-        // Just verify no crash and correct sub-shape type if hit
+        // The centre pixel is 80 px from every edge, well outside the 10 px tolerance.
+        let centre = selector.pick(at: SIMD2(400, 300), camera: cam, viewSize: SIMD2(800, 600))
+        #expect(centre.isEmpty)
+
+        #expect(!results.isEmpty)
         if !results.isEmpty {
             #expect(results[0].subShapeType == .edge)
             // #541: 0-based, addressable against the shape the pick came from.
@@ -126,6 +136,7 @@ struct SelectorSubShapeTests {
             viewSize: SIMD2(800, 600)
         )
 
+        #expect(!results.isEmpty)
         if !results.isEmpty {
             // #541: the "whole shape" sentinel is -1, since 0 is now a real sub-shape index.
             #expect(results[0].subShapeIndex == -1)
