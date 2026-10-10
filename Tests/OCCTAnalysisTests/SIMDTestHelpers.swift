@@ -4,12 +4,19 @@
 //
 // The tests used Apple's `simd_length`, `simd_dot` and friends, which exist on Apple platforms
 // only. Each test target is its own module and has no shared helper module, so each carries this
-// copy of the plain-Swift versions the library uses internally (`Sources/OCCTSwift/SIMDVectorOps.swift`).
-// `Scripts/check-no-simd.py` fails if any copy differs from another, so an edit here is an edit in
-// all of them.
+// copy of plain-Swift vector helpers written against the standard library's `SIMD` protocols
+// (componentwise arithmetic and `.sum()`), with no dependency on Apple's `simd` module. Once the
+// whole #2759 series has merged, `Scripts/check-no-simd.py` fails if any copy differs from another,
+// so an edit here is an edit in all of them.
 //
-// A zero or non-finite vector normalises to NaNs, by IEEE division, on every platform. See the
-// library file for why.
+// A ZERO OR NON-FINITE VECTOR NORMALISES TO NaNs, by IEEE division, as the library's own helpers
+// do. A test that feeds one through `normalizedVector` and then compares the result gets a failing
+// comparison (every ordered comparison with NaN is false), so the NaN is loud and does not pass
+// silently. This differs on purpose from the older `SIMD3.normalized` fixtures that some targets
+// define for their own use (`ModelingTestExtensions.swift`, `DrawingTestFixtures.swift`,
+// `XCAFTestFixtures.swift`): those return the zero vector unchanged for a test that wants a
+// zero-safe unit vector, and were left as they are. Pick `normalized` for that, `normalizedVector`
+// to match the library.
 
 func dotProduct<V: SIMD>(_ a: V, _ b: V) -> V.Scalar where V.Scalar: FloatingPoint {
     (a * b).sum()
