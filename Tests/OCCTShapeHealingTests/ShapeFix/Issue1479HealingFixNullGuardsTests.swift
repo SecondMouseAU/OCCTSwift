@@ -76,5 +76,8 @@ struct Issue1479HealingFixNullGuardsTests {
         let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let fixed = box.fixEdgeConnect()
         #expect(fixed != nil)
+        // #3252: "unaffected" includes the result and the receiver both staying valid.
+        if let fixed { #expect(fixed.isValid) }
+        #expect(box.isValid)
     }
 }

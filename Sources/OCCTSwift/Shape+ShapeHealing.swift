@@ -1878,7 +1878,20 @@ extension Shape {
 }
 
 extension Shape {
-    /// Connect edges in a shape by extending/trimming to match.
+    /// Merge the end vertices of consecutive edges in each wire into one shared vertex.
+    ///
+    /// Wraps `ShapeFix_EdgeConnect`, which repairs wires whose edges carry separate, slightly apart
+    /// vertices. The work is done on a copy, so the receiver is never edited. If the connected copy
+    /// fails `BRepCheck` while the receiver passes it (the class does this to a box, whose vertices
+    /// are already shared), the result is a copy of the receiver unchanged (#3252).
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// let fixed = box.fixEdgeConnect()
+    /// print(fixed?.isValid ?? false, box.isValid)  // true true
+    /// ```
+    ///
+    /// - Returns: The connected copy, or `nil` if the receiver is null or OCCT threw.
     public func fixEdgeConnect() -> Shape? {
         guard let ref = OCCTShapeFixEdgeConnect(handle) else { return nil }
         return Shape(handle: ref)

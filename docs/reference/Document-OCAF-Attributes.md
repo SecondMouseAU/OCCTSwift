@@ -919,13 +919,13 @@ with the outer shell first.
 
 ### `Shape.fixEdgeConnect()`
 
-Connect edges in a shape by extending or trimming them to meet at their endpoints.
+Merge the end vertices of consecutive edges in each wire into one shared vertex. Runs on a copy, so the receiver is never edited; if the connected copy fails `BRepCheck` while the receiver passes it (as on a box), a copy of the receiver unchanged is returned (#3252).
 
 ```swift
 public func fixEdgeConnect() -> Shape?
 ```
 
-- **Returns:** The repaired shape, or `nil` on failure.
+- **Returns:** The connected copy, or `nil` if the receiver is null or OCCT threw.
 - **OCCT:** `ShapeFix_EdgeConnect::Build`.
 
 ---

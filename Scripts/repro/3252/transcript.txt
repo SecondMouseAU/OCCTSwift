@@ -1,0 +1,31 @@
+box before: valid=1
+   type 5 invalid 0 of 6
+   type 4 invalid 0 of 6
+   type 3 invalid 0 of 1
+   type 2 invalid 0 of 1
+A in place, caller's shape after: valid=0
+   type 5 invalid 3 of 6
+   type 4 invalid 5 of 6
+   type 3 invalid 1 of 1
+   type 2 invalid 1 of 1
+B original after copy-run: valid=1
+   type 5 invalid 0 of 6
+   type 4 invalid 0 of 6
+   type 3 invalid 0 of 1
+   type 2 invalid 0 of 1
+B copy after: valid=0
+   type 5 invalid 3 of 6
+   type 4 invalid 5 of 6
+   type 3 invalid 1 of 1
+   type 2 invalid 1 of 1
+C wire before: valid=0
+   type 5 invalid 1 of 1
+   type 4 invalid 0 of 0
+   type 3 invalid 0 of 0
+   type 2 invalid 0 of 0
+C wire after: valid=1
+   type 5 invalid 0 of 1
+   type 4 invalid 0 of 0
+   type 3 invalid 0 of 0
+   type 2 invalid 0 of 0
+   vertex occurrences 8
