@@ -1,0 +1,7 @@
+# The test files this PR lifts (current paths).
+Tests/OCCTAnalysisTests/AnalyticIntersection/IntAnaConeSphereTests.swift
+Tests/OCCTAnalysisTests/AnalyticIntersection/IntAnaLineTorusTests.swift
+Tests/OCCTAnalysisTests/AnalyticIntersection/IntAnaPlaneSphereTests.swift
+Tests/OCCTAnalysisTests/Intersection/IntCurvesFaceTests.swift
+Tests/OCCTAnalysisTests/Intersection/IntToolsEdgeFaceTests.swift
+Tests/OCCTAnalysisTests/Intersection/ShapeRayIntersectionTests.swift
