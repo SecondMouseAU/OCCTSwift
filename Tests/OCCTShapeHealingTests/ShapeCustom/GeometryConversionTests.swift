@@ -37,7 +37,8 @@ struct GeometryConversionTests {
         let result = try #require(cyl.withSurfacesAsRevolution())
         #expect(result.isValid)
         #expect(kinds(result) == [.plane: 2, .surfaceOfRevolution: 1])
-        #expect(abs((result.volume ?? 0) - 785.398163397) < 1e-6)
+        let volume = try #require(result.volume)
+        #expect(abs(volume - 785.398163397) < 1e-6)
     }
 
     @Test("BSpline conversion preserves volume")
