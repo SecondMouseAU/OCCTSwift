@@ -284,6 +284,7 @@ public enum Curve2DGcc {
         let maxSegments = 4096
         var buffer = [Double](repeating: 0, count: maxSegments * 4)
         let handles = boundaries.map { $0.handle as OCCTCurve2DRef? }
+        defer { withExtendedLifetime(boundaries) {} }
         let n = Int(
             handles.withUnsafeBufferPointer { ptr in
                 OCCTCurve2DHatch(

@@ -365,6 +365,7 @@ extension Shape {
     /// - Returns: A solid shape, or nil on failure
     public static func makeVolume(from shapes: [Shape]) -> Shape? {
         var handles = shapes.map { $0.handle as OCCTShapeRef? }
+        defer { withExtendedLifetime(shapes) {} }
         guard let h = OCCTShapeMakeVolume(&handles, Int32(shapes.count)) else { return nil }
         return Shape(handle: h)
     }

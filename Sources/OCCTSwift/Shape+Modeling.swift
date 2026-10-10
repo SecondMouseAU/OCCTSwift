@@ -538,6 +538,7 @@ extension Shape {
         }
 
         let handles: [OCCTWireRef?] = profiles.map { $0.handle }
+        defer { withExtendedLifetime(profiles) {} }
         guard
             let result = handles.withUnsafeBufferPointer({ buffer in
                 OCCTShapeCreatePipeShellMultiSection(
@@ -1100,6 +1101,7 @@ extension Shape {
     /// - Returns: Connected shape, or nil on failure
     public static func makeConnected(_ shapes: [Shape]) -> Shape? {
         var handles = shapes.map { $0.handle as OCCTShapeRef? }
+        defer { withExtendedLifetime(shapes) {} }
         guard let h = OCCTShapeMakeConnected(&handles, Int32(shapes.count)) else { return nil }
         return Shape(handle: h)
     }
@@ -1288,6 +1290,7 @@ extension Shape {
     public static func fuseAll(_ shapes: [Shape]) -> Shape? {
         guard shapes.count >= 2 else { return nil }
         let handles: [OCCTShapeRef?] = shapes.map { $0.handle }
+        defer { withExtendedLifetime(shapes) {} }
         let result = handles.withUnsafeBufferPointer { buffer in
             OCCTShapeFuseMulti(buffer.baseAddress, Int32(shapes.count))
         }
@@ -1530,6 +1533,7 @@ extension Shape {
     {
         guard !shapes.isEmpty else { return nil }
         var shapeHandles = shapes.map { $0.handle as OCCTShapeRef? }
+        defer { withExtendedLifetime(shapes) {} }
         var resultRef: OCCTShapeRef?
         let h = shapeHandles.withUnsafeMutableBufferPointer { buffer in
             OCCTShapeSewWithHistory(buffer.baseAddress, Int32(shapes.count), tolerance, &resultRef)
@@ -1563,6 +1567,7 @@ extension Shape {
     {
         guard !shapes.isEmpty else { return nil }
         var handles = shapes.map { $0.handle }
+        defer { withExtendedLifetime(shapes) {} }
         var resultRef: OCCTShapeRef?
         guard let h = OCCTShapeQuiltWithHistory(&handles, Int32(shapes.count), &resultRef),
             let resultRef
@@ -1767,6 +1772,7 @@ extension Shape {
     public static func commonAll(_ shapes: [Shape]) -> Shape? {
         guard shapes.count >= 2 else { return nil }
         let handles: [OCCTShapeRef?] = shapes.map { $0.handle }
+        defer { withExtendedLifetime(shapes) {} }
         let result = handles.withUnsafeBufferPointer { buffer in
             OCCTShapeCommonMulti(buffer.baseAddress, Int32(shapes.count))
         }
@@ -2248,6 +2254,7 @@ extension Shape {
     public static func ruledShell(from wires: [Wire]) -> Shape? {
         guard wires.count >= 2 else { return nil }
         let handles: [OCCTWireRef] = wires.map { $0.handle }
+        defer { withExtendedLifetime(wires) {} }
         return handles.withUnsafeBufferPointer { buffer in
             guard let h = OCCTBRepFillGenerator(buffer.baseAddress!, Int32(wires.count)) else {
                 return nil
@@ -2333,6 +2340,7 @@ extension Shape {
     public static func compatibleWires(_ wires: [Wire]) -> [Wire]? {
         guard wires.count >= 2 else { return nil }
         let handles: [OCCTWireRef] = wires.map { $0.handle }
+        defer { withExtendedLifetime(wires) {} }
         var outHandles = [OCCTWireRef?](repeating: nil, count: wires.count)
         let count = handles.withUnsafeBufferPointer { inBuf in
             outHandles.withUnsafeMutableBufferPointer { outBuf in
@@ -2371,7 +2379,9 @@ extension Shape {
     /// - Returns: Result shape containing all split fragments, or nil on failure
     public static func split(objects: [Shape], by tools: [Shape]) -> Shape? {
         let objPtrs = objects.map { $0.handle as OCCTShapeRef? }
+        defer { withExtendedLifetime(objects) {} }
         let toolPtrs = tools.map { $0.handle as OCCTShapeRef? }
+        defer { withExtendedLifetime(tools) {} }
         guard
             let h = objPtrs.withUnsafeBufferPointer({ objBuf in
                 toolPtrs.withUnsafeBufferPointer({ toolBuf in
@@ -2533,6 +2543,7 @@ extension Shape {
     public func section(with tools: [Shape]) -> Shape? {
         let objHandles = [handle as OCCTShapeRef]
         let toolHandles = tools.map { $0.handle as OCCTShapeRef }
+        defer { withExtendedLifetime(tools) {} }
         guard
             let ref = objHandles.withUnsafeBufferPointer({ objBuf in
                 toolHandles.withUnsafeBufferPointer({ toolBuf in
@@ -2551,6 +2562,7 @@ extension Shape {
     /// - Returns: Compound of edges/vertices at intersections, or nil on failure
     public static func section(shapes: [Shape]) -> Shape? {
         let handles = shapes.map { $0.handle as OCCTShapeRef }
+        defer { withExtendedLifetime(shapes) {} }
         guard handles.count >= 2 else { return nil }
         return handles.withUnsafeBufferPointer({ buf in
             // Pass all shapes as objects (BOPAlgo_Section treats all arguments equally)
@@ -2577,6 +2589,7 @@ extension Shape {
     /// - Returns: Array of result face shapes, or nil on failure
     public func buildFaces(from edges: [Shape]) -> [Shape]? {
         let edgeHandles = edges.map { $0.handle as OCCTShapeRef }
+        defer { withExtendedLifetime(edges) {} }
         var outFaces: UnsafeMutablePointer<OCCTShapeRef?>?
         var outCount: Int32 = 0
         guard
@@ -2600,6 +2613,7 @@ extension Shape {
     /// - Returns: Array of result solid shapes, or nil on failure
     public static func buildSolids(from faces: [Shape]) -> [Shape]? {
         let faceHandles = faces.map { $0.handle as OCCTShapeRef }
+        defer { withExtendedLifetime(faces) {} }
         var outSolids: UnsafeMutablePointer<OCCTShapeRef?>?
         var outCount: Int32 = 0
         guard
@@ -2699,6 +2713,7 @@ extension Shape {
     /// - Returns: Result wire as a shape, or nil on failure.
     public static func makeWire(from edges: [Shape]) -> Shape? {
         let handles = edges.map { $0.handle as OCCTShapeRef }
+        defer { withExtendedLifetime(edges) {} }
         guard
             let ref = handles.withUnsafeBufferPointer({ buf in
                 OCCTBOPAlgoMakeWire(buf.baseAddress!, Int32(edges.count))
@@ -3033,7 +3048,9 @@ extension Shape {
     /// - Returns: Result glued shape, or nil on failure.
     public func glue(_ gluedShape: Shape, facePairs: [(base: Shape, glued: Shape)]) -> Shape? {
         let baseFaces = facePairs.map { $0.base.handle as OCCTShapeRef }
+        defer { withExtendedLifetime(facePairs) {} }
         let gluedFaces = facePairs.map { $0.glued.handle as OCCTShapeRef }
+        defer { withExtendedLifetime(facePairs) {} }
         guard
             let ref = baseFaces.withUnsafeBufferPointer({ baseBuf in
                 gluedFaces.withUnsafeBufferPointer({ gluedBuf in
@@ -3104,6 +3121,7 @@ extension Shape {
     /// - Returns: Result shape, or nil on failure.
     public func locOpeSplitAuto(wires: [Shape]) -> Shape? {
         let wireHandles = wires.map { $0.handle as OCCTShapeRef }
+        defer { withExtendedLifetime(wires) {} }
         guard
             let ref = wireHandles.withUnsafeBufferPointer({ buf in
                 OCCTLocOpeSplitByWiresAuto(handle, buf.baseAddress!, Int32(wires.count))
@@ -3128,9 +3146,13 @@ extension Shape {
         edgePairs: [(base: Shape, glued: Shape)] = []
     ) -> Shape? {
         let baseFaces = facePairs.map { $0.base.handle as OCCTShapeRef }
+        defer { withExtendedLifetime(facePairs) {} }
         let gluedFaces = facePairs.map { $0.glued.handle as OCCTShapeRef }
+        defer { withExtendedLifetime(facePairs) {} }
         let baseEdges = edgePairs.map { $0.base.handle as OCCTShapeRef? }
+        defer { withExtendedLifetime(edgePairs) {} }
         let gluedEdges = edgePairs.map { $0.glued.handle as OCCTShapeRef? }
+        defer { withExtendedLifetime(edgePairs) {} }
 
         let ref: OCCTShapeRef? = baseFaces.withUnsafeBufferPointer { baseFBuf in
             gluedFaces.withUnsafeBufferPointer { gluedFBuf in
@@ -3217,6 +3239,7 @@ extension Shape {
     /// - Returns: Fillet surface result, or nil on failure.
     public func filletSurfaces(edges: [Shape], radius: Double) -> FilletSurfaceResult? {
         let edgeHandles = edges.map { $0.handle as OCCTShapeRef }
+        defer { withExtendedLifetime(edges) {} }
         var outSurfaces: UnsafeMutablePointer<OCCTFilletSurfInfo>?
         var outCount: Int32 = 0
         let status = edgeHandles.withUnsafeBufferPointer { buf in
@@ -3307,6 +3330,7 @@ extension Shape {
     /// Split this shape by multiple tool shapes.
     public func split(tools: [Shape], tolerance: Double = 0) -> Shape? {
         let toolRefs = tools.map { $0.handle as OCCTShapeRef }
+        defer { withExtendedLifetime(tools) {} }
         guard
             let ref = toolRefs.withUnsafeBufferPointer({ buf in
                 OCCTBooleanSplitMulti(handle, buf.baseAddress!, Int32(tools.count), tolerance)
@@ -3690,6 +3714,7 @@ extension Shape {
     ///   face this shape does not have.
     public func defeature(faces: [Shape]) -> Shape? {
         let faceHandles = faces.map { $0.handle as OCCTShapeRef? }
+        defer { withExtendedLifetime(faces) {} }
         return faceHandles.withUnsafeBufferPointer { buf -> Shape? in
             guard let baseAddress = buf.baseAddress else { return nil }
             // Need to cast from UnsafePointer<OCCTShapeRef?> to UnsafePointer<OCCTShapeRef>

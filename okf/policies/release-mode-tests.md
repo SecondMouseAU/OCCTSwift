@@ -82,9 +82,10 @@ those are upper bounds):
   `ldadd` of a TShape refcount; run 38049863685). `withExtendedLifetime(profiles)` around the C call
   fixed it: 21 of 21 runs of the same seven suites passed (run 38051082613). That the 6.2 optimiser shortens
   the array's life and 6.4 does not is inferred from the two outcomes, not isolated; it would explain why it was invisible locally. The same shape,
-  `array.map { $0.handle }` over a parameter, is at about 70 other sites; the gate cannot see it
-  (see "WHAT IT CANNOT SEE" in `Scripts/check-borrowed-handle-temporaries.py`) and only a caller that
-  passes a dying local reaches it.
+  `array.map { $0.handle }`, was at 77 other sites (#3266); each now holds its source array with
+  `defer { withExtendedLifetime(array) {} }` and `check-borrowed-handle-temporaries.py` fails on one
+  that does not. No test can fail on this locally (Swift 6.4 keeps the array), so the gate is the
+  regression, not a test.
 - One test failure that is not release-specific:
   `Issue2760HardTimeoutAllPlatformsTests.nonPositiveBoundIsNil` (#3256), 1 in 40 in debug and in
   release.

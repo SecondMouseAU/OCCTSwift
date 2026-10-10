@@ -330,7 +330,10 @@ released once the load is its last use, before the C call runs. Measured on macO
 returned 0.0 or crashed, and every shape was right through `owner.withHandle { ... }`. An owner
 bound to its own `let` or `for` variable survived all six variants tried, so the gate leaves named
 locals alone; that is an optimiser behaviour and not a guarantee, and it is recorded in the
-script's "what it cannot see" along with the local-array `map { $0.handle }` case. Two things about
+script's "what it cannot see". It also fails on the array shape (#3266), `xs.map { $0.handle }`
+with no `defer { withExtendedLifetime(xs) {} }` within three lines: 77 sites carried it, a parameter
+is no safer than a local once the function inlines, and no local test can fail on it (Swift 6.4
+keeps the array that 6.2.4 released), so the gate is the only regression. Two things about
 it generalise. **A debug build cannot show this class**, because debug extends every lifetime to
 scope end: a debug `swift test` passed the failing test (#2929), so the static gate is the only
 check that runs on every PR, and the release-build test now runs beside it as the `release-mode-tests`

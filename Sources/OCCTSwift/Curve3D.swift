@@ -576,6 +576,7 @@ public final class Curve3D: @unchecked Sendable {
     /// Join multiple curves into a single BSpline.
     public static func join(_ curves: [Curve3D], tolerance: Double = 1e-6) -> Curve3D? {
         let handles: [OCCTCurve3DRef?] = curves.map { $0.handle }
+        defer { withExtendedLifetime(curves) {} }
         let h = handles.withUnsafeBufferPointer { ptr in
             OCCTCurve3DJoinToBSpline(ptr.baseAddress, Int32(curves.count), tolerance)
         }
@@ -1233,6 +1234,7 @@ extension Curve3D {
     public static func joined(curves: [Curve3D], tolerance: Double = 1e-6) -> Curve3D? {
         guard !curves.isEmpty else { return nil }
         var handles: [OCCTCurve3DRef?] = curves.map { $0.handle }
+        defer { withExtendedLifetime(curves) {} }
         guard let ref = OCCTCurve3DJoinCurves(&handles, Int32(curves.count), tolerance) else {
             return nil
         }
@@ -1966,6 +1968,7 @@ extension Curve3D {
     /// Serialize curves to string via GeomTools_CurveSet.
     public static func serializeCurves(_ curves: [Curve3D]) -> String? {
         let handles = curves.map { $0.handle as OCCTCurve3DRef }
+        defer { withExtendedLifetime(curves) {} }
         guard
             let cStr = handles.withUnsafeBufferPointer({
                 OCCTGeomToolsCurveSetWrite($0.baseAddress!, Int32(curves.count))
@@ -2541,6 +2544,7 @@ extension Curve3D {
     /// Concatenate an array of curves into a single BSpline with G1 continuity.
     public static func concatenateG1(curves: [Curve3D], tolerance: Double = 1e-6) -> Curve3D? {
         let refs = curves.map { $0.handle as OCCTCurve3DRef }
+        defer { withExtendedLifetime(curves) {} }
         guard
             let ref = refs.withUnsafeBufferPointer({ buf in
                 OCCTCurve3DConcatenateG1(buf.baseAddress!, Int32(curves.count), tolerance)
@@ -3536,6 +3540,7 @@ extension Curve3D {
     public static func concatenate(_ curves: [Curve3D], tolerance: Double = 1e-4) -> Curve3D? {
         guard !curves.isEmpty else { return nil }
         var handles = curves.map { $0.handle as OCCTCurve3DRef }
+        defer { withExtendedLifetime(curves) {} }
         guard let ref = OCCTConcatenateCurves3D(&handles, Int32(curves.count), tolerance) else {
             return nil
         }

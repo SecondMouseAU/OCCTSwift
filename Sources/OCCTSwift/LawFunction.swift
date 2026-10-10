@@ -137,6 +137,7 @@ public final class LawFunction: @unchecked Sendable {
     ) -> LawFunction? {
         guard laws.count >= 1 else { return nil }
         let handles = laws.map { $0.handle as OCCTLawFunctionRef }
+        defer { withExtendedLifetime(laws) {} }
         return handles.withUnsafeBufferPointer { buf in
             guard
                 let h = OCCTLawComposite(
