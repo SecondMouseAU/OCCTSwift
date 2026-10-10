@@ -5,7 +5,7 @@ OCCT's geometry adaptors (`GeomAdaptor_Curve`, `BRepAdaptor_Curve`, `Adaptor3d_S
 a BSpline evaluation cache that a `const` evaluator rebuilds in place. Upstream's stated design
 (Open-Cascade-SAS/OCCT#1554, @gkv311) is that **each worker owns its adaptor**, taking
 `ShallowCopy()` of a shared one, which drops the cache. Sharing one adaptor between threads is
-unsupported, and measured wrong every time under load: without carried patch `0031`, eight threads
+unsupported, and measured wrong every time under load: without the locks of retired patch `0031`, eight threads
 on one shared adaptor read a wrong point in 97 of 97 completed runs (#3065).
 
 So the question for the bridge is not whether it evaluates through an adaptor, it constantly does,

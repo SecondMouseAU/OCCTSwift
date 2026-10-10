@@ -998,7 +998,7 @@ For any other pair the function is best-effort. It never crashes: it returns the
   - `endShape`: the other end of the pipe, a face or a wire. Any other shape type answers nil.
 - **Returns:** The middle path wire, or nil when no path could be built.
 - **Answers nil:** a null shape, a start or end that is not a face or a wire, the same face or wire twice, two sections that share a vertex (the bridge refuses these before the call, #3098), and a pair whose sweep from the start section does not reach the end section (a cap of a tube against its bore, opposite triangles of an octahedron).
-- **Pinned kernel:** a pair of faces that share no vertex and are not a pipe's ends can still abort the process on a kernel without carried patch `0058` (#3105), which includes the one currently pinned.
+- **Pinned kernel:** a pair of faces that share no vertex and are not a pipe's ends answers a path or nil from `v4.0.0-kernel.6` (carried patch `0058`, #3105); on an older kernel it can abort the process.
 - **OCCT:** `BRepOffsetAPI_MiddlePath` (via `OCCTShapeMiddlePath`).
 - **Example:**
   ```swift

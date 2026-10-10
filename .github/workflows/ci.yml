@@ -352,7 +352,7 @@ jobs:
 
       # #3065: an OCCT adaptor carries a BSpline evaluation cache a const evaluator rebuilds in
       # place, and upstream's design is one adaptor per worker. Sharing one is unsupported (wrong
-      # points in 97 of 97 runs without carried patch 0031). The per-call adaptors the bridge builds
+      # points in 97 of 97 runs on a kernel without the retired patch 0031's locks). The per-call adaptors the bridge builds
       # are private by construction; this holds the two stored ones (EdgeCurve, WireCurve) to an
       # allowlist, and holds those two Swift classes to not being Sendable.
       - name: check-bridge-adaptor-members.py --self-test

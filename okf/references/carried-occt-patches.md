@@ -58,7 +58,6 @@ without silently closing it, see
 | `0029-XCAFDoc_Datum-point-read-from-plane-array-1022` | `XCAFDoc_Datum::GetObject` builds the datum point's X from the annotation plane's array, a wrong answer with both present and an uncatchable SIGSEGV with a point and no plane ([#1022](https://github.com/SecondMouseAU/OCCTSwift/issues/1022)) | **[OCCT#1483](https://github.com/Open-Cascade-SAS/OCCT/pull/1483)** (our fix PR, no companion issue) | bundled OCCT includes the fix |
 
 | `0030-TopoDS_TShape-myState-atomic-1154` | `TopoDS_TShape::myState` mutated by non-atomic read-modify-write on a TShape shared between a boolean result and its inputs, a lost-update race in ordinary concurrent use ([#1154](https://github.com/SecondMouseAU/OCCTSwift/issues/1154)) | **[OCCT#1548](https://github.com/Open-Cascade-SAS/OCCT/pull/1548)** (our fix PR, open, base `master`) | bundled OCCT includes the fix; also trim the `Scripts/tsan.supp` lines that suppress it |
-| `0031-bspline-adaptor-cache-thread-safety-1153` | `BSplCLib_Cache`/`BSplSLib_Cache` unsynchronised span cache, plus `GeomAdaptor_Curve`/`GeomAdaptor_Surface`'s check-then-act on the cache handle; a first attempt (PR #1322) self-deadlocked and was rejected ([#1153](https://github.com/SecondMouseAU/OCCTSwift/issues/1153)) | **[OCCT#1554](https://github.com/Open-Cascade-SAS/OCCT/pull/1554)** (our fix PR, **closed and withdrawn 2026-10-05**: the maintainer, gkv311, said the per-thread `ShallowCopy` adaptor is the intended design). Carried until the retire-or-keep decision, [#3065](https://github.com/SecondMouseAU/OCCTSwift/issues/3065); if [OCCT#1076](https://github.com/Open-Cascade-SAS/OCCT/pull/1076) ever merges, retarget at its renamed classes rather than dropping | bundled OCCT includes the fix |
 | `0033-Interface_Static-thread-safety-mutex-1157` | `Interface_Static`'s shared STEP/IGES parameter table mutated concurrently; a recursive mutex over all seventeen entry points. Partial by design: no accessor lock stops two operations setting the same parameter from cross-talking, so the bridge's `igesMutex()` stays ([#1157](https://github.com/SecondMouseAU/OCCTSwift/issues/1157)) | **[OCCT#1553](https://github.com/Open-Cascade-SAS/OCCT/pull/1553)** (our fix PR, open, base `master`) | bundled OCCT includes the fix |
 | `0034-GeomFill-CoonsAlgPatch-Value-U-parameter-1515` | `GeomFill_CoonsAlgPatch::Value(U, V)` sampled all four boundaries at `V`, where `bound[0]`/`bound[2]` are the U-direction sides. For any boundary set with straight V-direction sides the surface is independent of `U` and collapses onto the `U == V` diagonal; only `U == V` samples were right. Two lines, coefficients untouched, and `D1U` is exactly its derivative ([#1515](https://github.com/SecondMouseAU/OCCTSwift/issues/1515)) | **[OCCT#1550](https://github.com/Open-Cascade-SAS/OCCT/pull/1550)** (our fix PR, open, base `master`) | bundled OCCT includes the fix |
 | `0036-IFSelect_WorkSession-per-instance-error-guard-1403` | `IFSelect_WorkSession`'s file-scope `errhand` is a recursion sentinel, not a value: one thread clearing it makes another take the **unguarded** path and lose its exception handling. Relocated to a per-instance `myInErrorHandler`, no lock, the #363 pattern. 6 race access sites to 0, measured ([#1403](https://github.com/SecondMouseAU/OCCTSwift/issues/1403)) | **[OCCT#1549](https://github.com/Open-Cascade-SAS/OCCT/pull/1549)** (our fix PR, open, base `master`) | bundled OCCT includes the fix |
@@ -107,6 +106,18 @@ job that builds an unpinned patch. The general lesson is in `Scripts/patches/REA
 `0035` entry: a byte-identical hunk is not a safe backport when the rest of its upstream change is
 what made it safe. Tracked as [#2056](https://github.com/SecondMouseAU/OCCTSwift/issues/2056).
 
+**Retired 2026-10-10, at the `v4.0.0-kernel.6` repin: `0031`** (`BSplCLib_Cache`/`BSplSLib_Cache`
+locks, [#1153](https://github.com/SecondMouseAU/OCCTSwift/issues/1153)). Not superseded by an
+upstream fix: retired because the pattern it made safe, one `GeomAdaptor_*`/`BRepAdaptor_*`
+shared between threads, is unsupported by OCCT's design (each worker owns its adaptor or takes a
+`ShallowCopy()`, [OCCT#1554](https://github.com/Open-Cascade-SAS/OCCT/pull/1554)), and the lock
+cost about 7x on a cached `D0` while hiding a caller defect as a slower correct answer. The guards
+landed first (#3121); the maintainer's decision is on
+[#3065](https://github.com/SecondMouseAU/OCCTSwift/issues/3065). A consumer sharing one adaptor
+across threads, which the shipped kernel from `v4.0.0-kernel.6` no longer protects, reads wrong
+points; `EdgeCurve` and `WireCurve` are the only adaptors the bridge keeps alive across calls and
+are not `Sendable`. See `Scripts/patches/README.md`'s retired `0031` entry.
+
 ## Pinned against carried
 
 **There are two pinned kernels, and they are on different patch sets right now.** The heading below
@@ -115,18 +126,25 @@ mistake the rest of this page is about.
 
 ### The xcframework
 
-`Scripts/patches/` holds forty-six patches, of which the pinned asset carries forty-four. **These
+`Scripts/patches/` holds forty-five patches, of which the pinned asset carries forty-five. **These
 are the counts `CLAUDE.md` used to restate and no longer does** (#2954); both are derived from
 `Scripts/patches/` and `Package.swift` by `check-inventory-prose.py`, which fails the PR that lets
-this page and the tree disagree. The v4.0.0-kernel.5 asset `Package.swift` pins lacks two of them,
-per [Pinned kernel patch check](../policies/pinned-kernel-patch-check.md).
+this page and the tree disagree. The v4.0.0-kernel.6 asset `Package.swift` pins lacks none of them, so **there is no native
+divergence**, per [Pinned kernel patch check](../policies/pinned-kernel-patch-check.md). It was
+built from a fresh `V8_0_1` clone with every patch on disk applied, and it is the first asset
+built without `0031`.
 
-| Unpinned now | What it leaves exposed |
+**The divergence that stood until v4.0.0-kernel.6 is closed.** `0058` and `0059` were merged after
+v4.0.0-kernel.5 and were live nowhere until the v4.0.0-kernel.6 rebuild pinned both. The table
+below is kept as the record of what each left exposed while it was unpinned, and of which test
+gate the repin did and did not retire; it is history now, not a live gap.
+
+| Was unpinned until v4.0.0-kernel.6 | What it left exposed |
 |---|---|
-| `0059-ChFi3d-Builder-fillets-that-meet-exactly-are-built-not-refused-3207` | Nothing that crashes. Two fillets whose radii sum to the width of the face between them (a 4 mm face, 2 and 2) answer `IsDone() == false` on the pinned kernel, and `Shape.filleted` answers nil, where the patch builds a valid solid. A radius above half the width is refused with and without it ([OCCT#1177](https://github.com/Open-Cascade-SAS/OCCT/issues/1177), [#3207](https://github.com/SecondMouseAU/OCCTSwift/issues/3207)) |
-| `0058-BRepOffsetAPI_MiddlePath-Build-carries-a-vertex-path-forward-3105` | An uncatchable SIGSEGV in the pinned kernel for a pair of faces that share no vertex and are not a pipe's two ends, and a loop that never ends for a sweep that cannot reach the end section, which the bridge cannot refuse because no exact precondition on the input exists: the faults come from state that only exists while `Build()` runs its section loop (#3105). #3098's guard refuses the pairs that share a vertex. `OCC_CATCH_SIGNALS` is inert in this build, so no bridge catch reaches the signal. `Issue3105MiddlePathKernelTests` runs it in `kernel-integration.yml`, gated on `OCCTSWIFT_LOCAL=1`. Taking it also makes 81 more pairs answer a path (see the writeup) |
+| `0059-ChFi3d-Builder-fillets-that-meet-exactly-are-built-not-refused-3207` | Nothing that crashes. Two fillets whose radii sum to the width of the face between them (a 4 mm face, 2 and 2) answered `IsDone() == false` on the kernel pinned before v4.0.0-kernel.6, and `Shape.filleted` answered nil, where the patch builds a valid solid. A radius above half the width is refused with and without it ([OCCT#1177](https://github.com/Open-Cascade-SAS/OCCT/issues/1177), [#3207](https://github.com/SecondMouseAU/OCCTSwift/issues/3207)). `Issue3207FilletMeetingTests` ran in `kernel-integration.yml`, gated on `OCCTSWIFT_LOCAL=1`, and is ungated by the repin |
+| `0058-BRepOffsetAPI_MiddlePath-Build-carries-a-vertex-path-forward-3105` | An uncatchable SIGSEGV in the kernel pinned before v4.0.0-kernel.6 for a pair of faces that share no vertex and are not a pipe's two ends, and a loop that never ends for a sweep that cannot reach the end section, which the bridge cannot refuse because no exact precondition on the input exists: the faults come from state that only exists while `Build()` runs its section loop (#3105). #3098's guard refuses the pairs that share a vertex. `OCC_CATCH_SIGNALS` is inert in this build, so no bridge catch reaches the signal. `Issue3105MiddlePathKernelTests` ran it in `kernel-integration.yml`, gated on `OCCTSWIFT_LOCAL=1`, and is ungated by the repin. Taking it also makes 81 more pairs answer a path (see the writeup) |
 
-**The previous native divergence is closed, for the second time.** `0053` through `0057` were authored after
+**The divergence before that is closed too.** `0053` through `0057` were authored after
 v4.0.0-kernel.4 and were live nowhere until the v4.0.0-kernel.5 rebuild pinned all five. The table
 below is kept as the record of what each of them left exposed while it was unpinned, and of which
 bridge mitigation or test gate the repin did and did not retire; it is history now, not a live gap.
@@ -181,8 +199,8 @@ older asset. `Package.swift`'s pin block records that exception against
 
 `libOCCT-wasm.a` and its header tree are a **second** pinned asset, recorded in
 `Scripts/wasm-kernel-pin.txt` rather than in `Package.swift`, because SwiftPM has no `binaryTarget`
-for a bare static library. Both kernels carry the same patches, `0010` to `0057`. As of this
-writing the pinned native asset carries forty-four, and so does this one, plus the eleven in
+for a bare static library. Both kernels carry the same patches, `0010` to `0059`. As of this
+writing the pinned native asset carries forty-five, and so does this one, plus the eleven in
 `Scripts/patches-wasi/` that only the wasm build applies. They were built from one tree in one
 sitting and published to one release tag, so **there is no divergence between the two platforms to
 record**.
@@ -282,7 +300,7 @@ rather than bookkeeping, and all four now ship:
 |---|---|
 | `0029` (#1022) | An uncatchable SIGSEGV on `Document.datums` for any OCAF document whose datum has a point and no annotation plane. **The bridge guard added for #1030 is retired**, in all six files that carried it, since it was refusing a shape the kernel can read. |
 | `0030` (#1154) | A live data race on `TopoDS_TShape::myState` under ordinary concurrent use of a boolean result, invisible to `swift test`. Its `Scripts/tsan.supp` suppressions were removed at this repin, and `check-inventory-prose.py` is what caught them (#1409). |
-| `0031` (#1153) | The same shape in `BSplCLib_Cache`/`GeomAdaptor_*` for any consumer sharing an adaptor across threads. No suppression existed, so nothing to retire. |
+| `0031` (#1153) | The same shape in `BSplCLib_Cache`/`GeomAdaptor_*` for any consumer sharing an adaptor across threads. No suppression existed, so nothing to retire. **The patch itself was retired at v4.0.0-kernel.6 (#3065).** |
 | `0034` (#1515) | `Shape.coonsAlgPatch` returning a surface collapsed onto its `u == v` diagonal for every off-diagonal sample, silently. The Swift test that asserts the correct surface was impossible before the repin, because `build-and-test` resolved the unpatched asset; it exists now, in `Tests/OCCTSurfaceTests/GeomFill/Issue1515CoonsPatchUParameterTests.swift`. |
 
 The other eight (`0028`, `0033`, `0036`-`0041`) were either unreachable from the bridge (`0028`'s

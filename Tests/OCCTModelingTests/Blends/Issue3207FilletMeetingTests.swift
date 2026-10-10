@@ -75,15 +75,15 @@ struct Issue3207FilletMeetingTests {
 
     /// Radius exactly half the width: the top is a semicircle and the solid is valid.
     ///
-    /// Gated on `OCCTSWIFT_LOCAL=1`, the way `Issue3003OffsetOrderTests` was: the fix is carried
-    /// patch `0059`, which the pinned asset does not carry, and `ci.yml`'s `build-and-test`
-    /// resolves that asset. `kernel-integration.yml` builds the patches from source with
-    /// `OCCTSWIFT_LOCAL=1`, which is where this runs. A skipped test and a passing one both report
-    /// green, so the per-test line in the log is the only signal: read `started`, not `skipped`.
+    /// This was gated on `OCCTSWIFT_LOCAL=1` while the fix, carried patch `0059`, was missing from
+    /// the pinned asset, so `ci.yml`'s `build-and-test` skipped it on every default run. The repin
+    /// to `v4.0.0-kernel.6` put `0059` in the pinned asset, and a gate that outlives its fix leaves
+    /// the test skipped, which is the one outcome a test cannot recover from (#2983, and the same
+    /// disposition `Issue3003OffsetOrderTests` got at the `kernel.5` repin).
     ///
     /// Seven faces, not eight: the top face, which would have no width, is removed and the two
     /// quarter cylinders share the edge where it was.
-    @Test(.enabled(if: ProcessInfo.processInfo.environment["OCCTSWIFT_LOCAL"] == "1"))
+    @Test
     func radiusOfHalfTheWidthGivesASemicircle() throws {
         let box = try #require(Shape.box(origin: .zero, width: 4, height: 10, depth: 6))
         let edges = topEdgesAlongY(box, width: 4, height: 6, length: 10)
@@ -111,7 +111,7 @@ struct Issue3207FilletMeetingTests {
     }
 
     /// OCCT#1177's second sample: a 10 cube with a fillet of 5 on each of two opposite edges.
-    @Test(.enabled(if: ProcessInfo.processInfo.environment["OCCTSWIFT_LOCAL"] == "1"))
+    @Test
     func tenCubeWithTwoFilletsOfFiveMeets() throws {
         let cube = try #require(Shape.box(origin: .zero, width: 10, height: 10, depth: 10))
         let edges = topEdgesAlongY(cube, width: 10, height: 10, length: 10)

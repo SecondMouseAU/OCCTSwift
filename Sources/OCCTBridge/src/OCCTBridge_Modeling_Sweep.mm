@@ -597,6 +597,11 @@ OCCTShapeRef OCCTShapeMiddlePath(OCCTShapeRef shape, OCCTShapeRef startShape, OC
     // vertex where Build() casts it to an edge (BRepOffsetAPI_MiddlePath.cxx, the "for the end of
     // initial shape" block) and faults. BRepTest's middlepath command, the only OCCT caller,
     // checks nothing but null, so the precondition is read from Build() itself.
+    // Carried patch 0058 (#3105, v4.0.0-kernel.6) made these pairs answer nil on every solid
+    // scanned (Issue3105MiddlePathKernelTests walks every pair, the face with itself included), so
+    // with the guard removed all of Issue3098MiddlePathGuardTests still passes. It is KEPT:
+    // redundant rather than wrong, it refuses nothing the kernel answers, and a signal here is
+    // uncatchable.
     TopTools_IndexedMapOfShape startVertices;
     TopExp::MapShapes(occtMiddlePathSection(startShape->shape), TopAbs_VERTEX, startVertices);
     for (TopExp_Explorer explorer(occtMiddlePathSection(endShape->shape), TopAbs_VERTEX);

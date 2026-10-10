@@ -58,7 +58,7 @@
 # the stray check in docs/guides/building-occt.md's "Shipping a rebuild" answers it.
 #
 # occt-version: 8.0.1
-# derived against: 46 carried patch(es) in Scripts/patches/, every one of them verified
+# derived against: 45 carried patch(es) in Scripts/patches/, every one of them verified
 # derived against: applied in the tree the rows below were derived from.
 # patch: 0010-Intf_Interference-O1-tangent-zone-checkpoint-breaker-319 79fe529c26ef
 # patch: 0011-XCAFDoc_ShapeTool-AutoNamingScope-341 76898e2438a2
@@ -80,7 +80,6 @@
 # patch: 0028-GeomPlate_BuildPlateSurface-uninitialised-G0-G1-G2-errors-1018 89e36b4349ba
 # patch: 0029-XCAFDoc_Datum-point-read-from-plane-array-1022 d2fb2ba52ec8
 # patch: 0030-TopoDS_TShape-myState-atomic-1154 efabc01f31f2
-# patch: 0031-bspline-adaptor-cache-thread-safety-1153 3a99d396788f
 # patch: 0033-Interface_Static-thread-safety-mutex-1157 c21a2ee573ac
 # patch: 0034-GeomFill-CoonsAlgPatch-Value-U-parameter-1515 a16958a08528
 # patch: 0036-IFSelect_WorkSession-per-instance-error-guard-1403 e8f54ab54929

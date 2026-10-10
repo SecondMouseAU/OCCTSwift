@@ -125,10 +125,10 @@ extension Shape {
     /// up past the face width) and in the vertex-snap window of #3209. A caller used to receive
     /// that invalid shape, volume and all, as though it were a solid.
     ///
-    /// Two fillets on opposite edges of a face of width `w` are refused once their radii sum to
-    /// `w` or more, and so is a pair whose gap to `w` is below `PConfusion` (1e-9): OCCT#1177
-    /// rejects a width gap under that threshold, which is why a 4 mm face takes `1.9999` where
-    /// it refuses `2`. Whether `r == w / 2` itself builds depends on the pinned kernel (patch 0059, #3207).
+    /// Two fillets on opposite edges of a face of width `w` are refused once their radii sum past
+    /// `w`. A sum of exactly `w`, and a gap to `w` below `PConfusion` (1e-9), build from
+    /// `v4.0.0-kernel.6` (patch 0059, #3207; OCCT#1177): `r == w / 2` gives a semicircle, and an
+    /// older kernel answers `nil` there.
     /// Radii past `w / 2` are refused by the kernel, or built into an invalid solid that is now
     /// nil (#3208). `nil` carries no reason; ``FilletBuilder``
     /// exposes the builder's diagnostics (``FilletBuilder/faultyContourCount`` and friends).
@@ -1061,9 +1061,10 @@ extension Shape {
     /// the start section does not reach the end section, the two ends are the same face or share
     /// a vertex, or an end is null or neither a face nor a wire.
     ///
-    /// On a kernel without carried patch `0058`, which includes the one currently pinned, a pair
-    /// of faces that share no vertex and are not the ends of a pipe can still abort the process
-    /// (#3105); the bridge refuses the pairs that share a vertex (#3098).
+    /// Carried patch `0058` (#3105), pinned by `v4.0.0-kernel.6`, is what makes a pair of faces that
+    /// share no vertex and are not the ends of a pipe answer a path or `nil`; on an older kernel
+    /// such a pair can abort the process. The bridge refuses the pairs that share a vertex
+    /// (#3098), which the patch does not cover.
     ///
     /// - Parameters:
     ///   - startShape: One end of the pipe, a face or a wire. Any other shape type answers `nil`.
