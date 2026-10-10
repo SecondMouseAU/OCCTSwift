@@ -1,0 +1,11 @@
+drawGrid: max |r - 5| = 8.88e-16; line 0 point 10 = (4.982922465033349, 0, 0.41289672736166172); line 5 (first v-iso) point 10 at v = -1.5708 = (0, 0, 0)
+  line 5 point 10 = (-3.0198605325373887e-16, -5.0392559536067671e-17, -5) (v = -1.5708, the south pole)
+  line 7 point 5 = (-0.41289672736166133, 4.982922465033349, 0)
+drawMesh: at(0,0) = (3.0616169978683831e-16, 0, -5)
+evalD0Sphere: Geom_SphericalSurface D0(0,0) = (5, 0, 0)
+evalD1Sphere: P = (3.5355339059327378, 0, 3.5355339059327373) D1U = (0, 3.5355339059327378, 0) D1V = (-3.5355339059327373, 0, 3.5355339059327378)
+evalD2BoxFace: Geom_Plane P = (-5, -5.5, -4.5) D1U = (0, 0, 1) |D2U| = 0 |D2V| = 0 |D2UV| = 0
+surfaceBounds: box face 1 [-2e+100, 2e+100]x[-2e+100, 2e+100]
+planeContinuityClass: Continuity = 6
+copySurface: distinct=1 S(1,2) original=(-5,-7,-4) copy=(-5,-7,-4)
+surfaceTypePlane: 0  surfaceTypeSphere: 3
