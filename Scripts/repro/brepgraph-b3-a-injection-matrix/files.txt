@@ -1,0 +1,7 @@
+Tests/OCCTBRepGraphTests/Counts/BRepGraphCompSolidCountTests.swift
+Tests/OCCTBRepGraphTests/Counts/BRepGraphCountTests.swift
+Tests/OCCTBRepGraphTests/Definitions/BRepGraphEdgeDefTests.swift
+Tests/OCCTBRepGraphTests/Mutation/BRepGraphCompactTests.swift
+Tests/OCCTBRepGraphTests/Mutation/BRepGraphDeduplicateTests.swift
+Tests/OCCTBRepGraphTests/Queries/BRepGraphCompoundTests.swift
+Tests/OCCTBRepGraphTests/Reconstruction/BRepGraphCopyTests.swift
