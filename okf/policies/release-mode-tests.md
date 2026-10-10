@@ -93,9 +93,13 @@ code 11` in 6 of 6 runs, with and without the `Malloc*` variables, and the same 
 debug runs. The same on CI (throwaway branch, never merged): the `subset` job failed with
 `Expectation failed: (b.isValid -> true) == false` on that test (the wrong-answer variant of the
 hazard, where locally it was the crash), while `swift build + test (macOS)` on the same commit
-passed. Removing `withExtendedLifetime` from `withHandle` itself is **not** caught: the three
-`Issue3130BorrowedHandle` tests still pass (#3258), so those tests pin the call sites, not the
-helper's contract.
+passed. Removing `withExtendedLifetime` from `withHandle` itself was **not** caught by the three OCCT tests in
+`Issue3130BorrowedHandle` (#3258): they pin the call sites, not the helper's contract. Two `Probe`
+tests now pin the helper with an owner whose `deinit` is observable and no OCCT in the way. Measured
+with `withHandle` changed to `try body(handle)`: on the CI runner (Swift 6.2.4, run 38051692010) both
+fail and the three OCCT tests still pass; **on Swift 6.4 locally all five pass**, three runs, so the
+`Probe` tests cannot fail there (a lexical-lifetime difference in the optimiser, not isolated), and in a
+debug build they cannot fail on any toolchain. They guard the helper on the CI toolchain only.
 
 ## Rules
 
