@@ -1316,10 +1316,7 @@ public func filleted(edges: [Edge], radius: Double) -> Shape?
   on a shared face (radii adding up past the face width) and in the vertex-snap window of #3209.
   Every fillet and chamfer entry point now checks the result with `BRepCheck_Analyzer` after a
   successful build and answers `nil` when it is invalid; a result that was valid is returned
-  unchanged. Two fillets on opposite edges of a face of width `w` are refused once their radii sum
-  to `w` or more, and so is a pair whose gap to `w` is below `PConfusion` (1e-9) (OCCT#1177), which
-  is why a 4 mm face takes `1.9999` where it refuses `2`. Whether `r == w / 2` itself builds depends
-  on the pinned kernel (patch 0059, #3207); radii past `w / 2` are not built (#3208). `nil` carries
+  unchanged. Two fillets on opposite edges of a face of width `w` are refused once their radii sum past `w`. A sum of exactly `w`, and a gap to `w` below `PConfusion` (1e-9), build from `v4.0.0-kernel.6` (patch 0059, #3207; OCCT#1177): `r == w / 2` gives a semicircle, and an older kernel answers `nil` there. Radii past `w / 2` answer `nil` (#3208). `nil` carries
   no reason: `FilletBuilder` exposes the builder's diagnostics.
 - **Notes:** shares one bridge implementation with
   [`filleted(edges:startRadius:endRadius:)`](#filletededgesstartradiusendradius) and

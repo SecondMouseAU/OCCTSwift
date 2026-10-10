@@ -122,7 +122,7 @@ SCENARIOS=(
   #
   # #2074, Surface/Curve3D evaluation. Carried patch 0031 already found a real defect on exactly
   # this surface (BSplCLib_Cache/BSplSLib_Cache rebuilding a span in place from a const
-  # evaluator), and 0031 is pinned as of v4.0.0-kernel.1. Every mode drives threads at parameters
+  # evaluator), and 0031 was pinned from v4.0.0-kernel.1 until it was retired at v4.0.0-kernel.6. Every mode drives threads at parameters
   # in DIFFERENT spans, staggered by thread index, because a harness whose threads all evaluate
   # one span would find nothing here however many threads it ran.
   #
@@ -138,7 +138,8 @@ SCENARIOS=(
   "2074-adaptor-evaluation/occt_2074_stress.cpp|curve_shared_geometry 8 40"
   "2074-adaptor-evaluation/occt_2074_stress.cpp|surface_shared_geometry 8 40"
   # #3065: the pattern the kernel's maintainer says an adaptor is designed for, ONE adaptor with a
-  # ShallowCopy() per thread, which is also what carried patch 0031 lets us stop depending on. Each
+  # ShallowCopy() per thread, which is the pattern retired patch 0031 (v4.0.0-kernel.6) stopped masking
+  # the lack of. Each
   # thread copies from the shared source and checks every point against the geometry's own
   # evaluator, so a copy that leaked the source's cache fails as a wrong point and not only as a
   # race. The *_shared_adaptor modes stay out: sharing the adaptor itself is the unsupported shape.

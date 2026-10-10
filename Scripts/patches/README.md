@@ -18,8 +18,10 @@ which is what nothing did while `0042` sat in the kernel and not in the map for 
 **Numbers are never reused, with one recorded exception.** Re-pinning to OCCT `V8_0_1` on
 2026-08-03 retired ten patches, `0032`
 retired 2026-09-02 (superseded by upstream's own fix, not shipped in our pin), and `0035` retired
-2026-09-20 (it reintroduced #280; see its [Retired patches](#retired-patches) entry).
-The carried sequence now reads 0010–0012, 0014–0031, 0033–0034, 0036–0048, 0050–0059.
+2026-09-20 (it reintroduced #280; see its [Retired patches](#retired-patches) entry), and
+`0031` retired 2026-10-10 at the `v4.0.0-kernel.6` repin (#3065: the supported pattern is one
+adaptor per worker, so the lock it added is not needed).
+The carried sequence now reads 0010–0012, 0014–0030, 0033–0034, 0036–0048, 0050–0059.
 The gaps are the retirements, not missing files:
 the numbers are cited across `CLAUDE.md`, `docs/`, closed issues and `Scripts/repro/`, and
 renumbering would have silently repointed every one of those citations at a different fix.
@@ -1169,152 +1171,6 @@ patched header and the modified test file reports zero violations. See
 for the full writeup, transcripts and reproducer.
 
 Filed upstream as [OCCT#1548](https://github.com/Open-Cascade-SAS/OCCT/pull/1548) against `master`, a fix PR (override-link validated, not yet in a rebuilt xcframework when written).
-
-**Retire** once the bundled OCCT includes this fix.
-
-## 0031-bspline-adaptor-cache-thread-safety-1153.patch
-
-**Fixes the upstream OCCT data race behind
-[#1153](https://github.com/SecondMouseAU/OCCTSwift/issues/1153)**, on the second attempt: PR #1322
-first tried this fix and was rejected on six review findings, the most serious a genuine
-self-deadlock. This patch is a rewrite from scratch, not a fixup of #1322's content; #1322's own
-branch/patch never merged and is not part of this repo's history.
-
-`BSplCLib_Cache`/`BSplSLib_Cache` (backing `GeomAdaptor_Curve`/`GeomAdaptor_Surface` for BSpline
-and Bezier curves/surfaces) cache polynomial coefficients per span for evaluation performance, and
-every method touching that mutable cache state (`BuildCache`, `D0`-`D3`, the `*Local` overloads)
-was `const` and completely unsynchronized. A second, independent race sits one layer up:
-`GeomAdaptor_Curve`/`GeomAdaptor_Surface`'s `EvalD0`-`EvalD3`/`D0`-`D2` do an unsynchronized
-check-then-act on the `Cache` handle (`if (Cache.IsNull() || !IsCacheValid(u)) RebuildCache(u);`),
-so two threads sharing one adaptor can both replace the handle and race on it directly, independent
-of anything inside the cache object itself.
-
-**Finding 1 (self-deadlock).** #1322's patch wrapped every `BSplCLib_Cache` method body in
-`Locked(myMutex, [&]{...})`, backed by a plain `std::mutex`. `D1()`/`D2()`/`D3()` (and the
-protected `calculateDerivative()`) each lock once, then call a `*Local`/`calculateDerivativeLocal`
-overload that is *itself* a public entry point and locks the same non-recursive mutex again on the
-same thread: undefined behavior, and a guaranteed hang in every real implementation, on the very
-first derivative call, single-threaded, no concurrency needed to observe it. Confirmed by direct
-reproduction against #1322's actual patch content (`Scripts/repro/1153-bspline-adaptor-cache/deadlock_before.txt`),
-not by reasoning about the code: a single-threaded `D1()` call never returns; an external-timeout
-probe (background process + `pgrep`, since GTest's own timeout mechanisms do not reliably terminate
-a thread genuinely blocked inside a system mutex) confirms it is still alive seconds later.
-
-**Fix: `std::recursive_mutex`, chosen over the lock-once refactor.** Both are legitimate options;
-recursive was chosen because `D0Local`/`D1Local`/`D2Local`/`D3Local` (and `calculateDerivativeLocal`)
-are genuinely dual-role in this API — each is documented as a public entry point in its own right
-(for a caller that already has a pre-computed local parameter) *and* is called internally by the
-flat-parameter overloads. A lock-once design would need every such method split into a thin public
-locking wrapper plus a private unlocked twin, doubling the method count across two classes for a
-change whose only goal is correctness, not restructuring the public surface. `std::recursive_mutex`
-fixes the actual defect with the smallest, most reviewable diff: every method keeps its exact
-existing body, wrapped in the same `Locked()` helper #1322 used, with only the mutex type changed.
-This project has precedent for the identical tradeoff: the `Storage_Schema`/`#374` entry above
-chose a recursive mutex for the same reason (a critical section that calls back into sibling locked
-methods on the same thread).
-
-**Finding 2 (false scope claim, now genuinely fixed).** #1322's commit message and PR body claimed
-all four classes were protected; the actual diff touched only `BSplCLib_Cache`. This patch fixes
-`BSplSLib_Cache` for real, confirmed by reading its actual structure (`BSplSLib_Cache.cxx`) rather
-than assuming symmetry with its curve-side twin: its `D1()`/`D2()` do *not* themselves nest into
-`D1Local()`/`D2Local()` the way the curve side's do (they duplicate the computation inline instead),
-so only `D0()`→`D0Local()` has the nesting shape finding 1 describes — a narrower exposure than
-`BSplCLib_Cache`'s, but real, and the same `Locked()`/`std::recursive_mutex` pattern is applied
-uniformly to all six of its methods regardless, since a recursive mutex is correct whether or not a
-given method happens to nest.
-
-`GeomAdaptor_Curve`/`GeomAdaptor_Surface` are fixed too, determined by reading their `.cxx` rather
-than assumed necessary or unnecessary: fixing the caches' own internal mutex does nothing for the
-Cache-handle race, since that race is about *which object* the `Cache` member points to, not about
-serializing calls into whichever object it currently holds. Each class gets a second, independent
-`mutable std::mutex myCacheMutex;`, locked around the whole check-`IsCacheValid`-`RebuildCache`-
-evaluate sequence at every call site (8 in `GeomAdaptor_Curve::EvalD0`-`EvalD3`, 6 in
-`GeomAdaptor_Surface::D0`-`D2`); `RebuildCache()` itself takes no lock, since every call site into
-it already holds `myCacheMutex` (a "lock once" design here, unlike the caches themselves, because
-nothing in `RebuildCache()` calls back into another locked entry point on the same thread). Both
-classes' doc comments previously stated outright that "these evaluations are not thread-safe and
-parallel evaluations need to be prevented" — updated to describe the corrected contract.
-
-**A `std::mutex` member breaks copy semantics — checked by real compilation, not declared and
-hoped.** The first attempt at this half of the fix deleted the copy constructor/assignment
-operator outright, on the reasoning that these are `Standard_Transient` (handle-based) classes with
-a sanctioned `ShallowCopy()` clone path. A real compile check against real, load-bearing OCCT code
-(`GeomAdaptor_TransformedCurve.cxx`/`GeomAdaptor_TransformedSurface.cxx`) immediately broke: both
-classes' own `ShallowCopy()` overrides do `aCopy->myCurve = aGeomCurve;` — an actual
-copy-**assignment** of a `GeomAdaptor_Curve`/`GeomAdaptor_Surface` value
-(`error: overload resolution selected deleted operator '='`). Fixed instead with a hand-written
-copy constructor and assignment operator on each class that copy every field except the new mutex;
-the copy gets a freshly default-constructed mutex, which is the only correct semantics, since a
-copied adaptor's critical section is independent of the original's. Re-verified clean by direct
-compilation (`clang++ -fsyntax-only`) of 8 real consumer files against the patched headers:
-`GeomAdaptor_Curve.cxx`, `GeomAdaptor_Surface.cxx`, `GeomAdaptor_TransformedCurve.cxx`,
-`GeomAdaptor_TransformedSurface.cxx`, `GeomAdaptor_SurfaceOfLinearExtrusion.cxx` and
-`GeomAdaptor_SurfaceOfRevolution.cxx` (both real `GeomAdaptor_Surface` subclasses),
-`BRepAdaptor_Curve.cxx` and `BRepAdaptor_Surface.cxx` (the two highest-traffic consumers, which
-hold a `GeomAdaptor_Curve`/`GeomAdaptor_Surface` **by value**, not by handle, via
-`GeomAdaptor_TransformedCurve`/`GeomAdaptor_TransformedSurface`).
-
-**Finding 3 (the reproducer's own "0 races" claim was not evidence, for two separate reasons).**
-`occt_1153_stress.cpp` only ever called `D0()` in both scenarios, never touching the
-derivative-family nesting finding 1 is about, so a clean run said nothing about whether that path
-was safe. Separately, #1322's own branch (not `main`, since it never merged) carried
-`Scripts/tsan.supp` suppressions for `BSplSLib_Cache::D0Local`/`BSplSLib::BuildCache`/
-`BSplCLib_Cache::D0` that would have masked whatever the surface scenario's D0-only run otherwise
-reported. Fixed: the reproducer now cycles every iteration through `D0`/`D1`/`D2`/`D3` (curve) and
-`D0`/`D1`/`D2` (surface), exercising every nesting site in both classes' public surface under load.
-`main`'s `Scripts/tsan.supp` never carried the finding-3 suppression lines at all (confirmed by
-grep before writing this entry, not assumed): they existed only on #1322's own, never-merged
-branch, added by that PR's own reproducer commit, so there is nothing to retire here.
-
-**A second, real bug was found and fixed while doing this, independent of #1153 itself.** The
-original reproducer's `main()` declared `GeomAdaptor_Curve sharedAdaptor(curve);` *inside* the
-`if (scenario == "shared_adaptor_curve") { ... }` block, while `pool` and the `t.join()` loop lived
-outside the whole `if`/`else if` chain. A local variable's scope ends at its own block's closing
-brace regardless of what runs afterwards, so `sharedAdaptor` was destroyed the instant that block
-finished spawning threads — while every worker thread was still running against it, well before
-`t.join()` ever executed. This use-after-scope bug was corrupting both the "before" and "after"
-TSan results: an adaptor (including its own brand-new mutex) torn down under threads still calling
-into it produces the same crash signature as the race #1153 is about, and at 16×3000 it crashed the
-patched binary with a `pthread_mutex_lock` SIGSEGV inside `BSplCLib_Cache::D3` that had nothing to
-do with the real fix (an ASan single-threaded control, `asan_probe.cpp`, ruled out a buffer overflow
-as the cause first, which is what pointed the investigation at the scoping bug instead). Fixed by
-giving each scenario its own `pool`/join loop inside its own scope, so the adaptor outlives every
-thread that touches it.
-
-**Validation.** TSan (`Scripts/repro/1153-bspline-adaptor-cache/run.sh`), both scenarios at 16
-threads × 3000 iterations: **before** (stock), curve 42 races (including a genuine SIGSEGV inside
-`Geom_BSplineCurve::Weights()` reached through a torn `GeomAdaptor_Curve::EvalD3`), surface 15
-races; **after** (this patch), 0 races both scenarios, 48000 clean operations each, confirmed
-across repeated runs. GTests added to both classes' existing `*_Cache_Test.cxx`
-(`Libraries/occt-src/src/FoundationClasses/TKMath/GTests/`; `gtest-addition-bsplclib.diff`/
-`gtest-addition-bspslib.diff` in the repro directory are the exact additions, not carried here since
-GTest source never is): a single-threaded `DerivativeMethodsDoNotDeadlock` (hangs against #1322's
-actual patch / a hand-built naive non-recursive-mutex `BSplSLib_Cache` variant, passes in
-milliseconds against the fix) and a concurrent `ConcurrentRebuildAndEvaluationMatchesReference` (16
-threads × 3000 iterations, each rebuilding the cache every iteration before evaluating, matching
-against a single-threaded reference). Stated plainly rather than glossed over: the concurrent GTest
-needed a genuine correction mid-writing (a first version that only evaluated an already-built cache
-was exercising pure concurrent reads, not a data race at all, and passed against unpatched code
-unconditionally), and even corrected it still passes leniently against stock code on plain hardware
-without TSan, since every thread computes identical bytes, unlike #1154's bit-ownership design
-where a clobbered bit is directly observable; the TSan transcript above, not this GTest, is the
-authoritative evidence the race itself is gone. `GeomAdaptor_Curve`/`GeomAdaptor_Surface`'s own
-layer has no GTest in this patch, a real gap noted rather than hidden; the TSan evidence above
-covers it instead, and a `GeomAdaptor_Curve_Test.cxx` already exists as the natural place to add one
-later (`GeomAdaptor_Surface_Test.cxx` does not exist yet).
-
-`clang-format --dry-run --Werror -style=file:Libraries/occt-src/.clang-format`: both touched
-headers clean as written; `BSplCLib_Cache.cxx`/`BSplSLib_Cache.cxx`/`GeomAdaptor_Curve.cxx`
-reformatted wholesale (safe, since every line in the relevant sections is new or immediately
-adjacent to new code); `GeomAdaptor_Surface.cxx` fixed surgically with `clang-format -lines=N:N`
-targeting only this patch's 4 new lines, since the stock file already carries 7 pre-existing,
-unrelated violations (confirmed byte-identical, same lines, in the untouched stock file) that a
-whole-file reformat would have swept in as noise.
-
-See [`Scripts/repro/1153-bspline-adaptor-cache/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/1153-bspline-adaptor-cache)
-for the full writeup, transcripts and reproducer.
-
-Filed upstream as [OCCT#1554](https://github.com/Open-Cascade-SAS/OCCT/pull/1554) against `master`, **closed and withdrawn 2026-10-05**: the maintainer (gkv311) said the per-thread `ShallowCopy` adaptor is the intended design. Carried until the retire-or-keep decision, [#3065](https://github.com/SecondMouseAU/OCCTSwift/issues/3065).
 
 **Retire** once the bundled OCCT includes this fix.
 
@@ -3539,29 +3395,22 @@ than the longest guide. Those 14 are the doubtful ones. The 42 older paths pass 
 `Issue3105MiddlePathKernelTests` (`OCCTModelingTests`) walks every pair of faces of a hexagonal prism, an
 L-shaped prism, a U-shaped prism, a tube and an octahedron and checks each path it gets: valid, from
 the centroid of the start face to the centroid of the end face, between the chord and one and a half
-times it; the counts per solid are the scan's (10, 10, 21, 1, 0). It is gated on `OCCTSWIFT_LOCAL=1`,
-the way the other unpinned patches' tests were, and runs in `kernel-integration.yml`. Measured with the
-`ar r` swap into a copy of the pinned xcframework, macOS arm64: on the archive as shipped it aborts the
-process with SIGSEGV (`swift-test-unpatched.txt`); with the member built from `0058` all five tests pass
-(`swift-test-patched.txt`), and the nine #3098 guard tests still pass. The bridge guard stays: it
-protects every kernel without `0058`, and is retired at the repin that pins it.
+times it; the counts per solid are the scan's (10, 10, 21, 1, 0). It was gated on `OCCTSWIFT_LOCAL=1`
+until the `v4.0.0-kernel.6` repin pinned this patch, and is ungated by that change. Measured with the
+`ar r` swap into a copy of the xcframework of `v4.0.0-kernel.5`, macOS arm64: on the archive as
+shipped it aborts the process with SIGSEGV (`swift-test-unpatched.txt`); with the member built from
+`0058` all five tests pass (`swift-test-patched.txt`), and the nine #3098 guard tests still pass. The
+same was measured again at the repin: on `kernel.5` the suite aborts with SIGSEGV, on `kernel.6` it
+passes. The #3098 shared-vertex guard in the bridge is KEPT at the repin: with it removed, on
+`kernel.6`, every #3098 guard test and every count of the scan above still pass (the kernel answers
+nil for the pairs the guard refuses, the face with itself included), so it is redundant on every
+solid scanned and not wrong, and a signal in `Build()` is uncatchable, so it stays for unscanned input.
 
 **Upstream checked 2026-10-09:** no PR or issue mentions `MiddlePath`, and `IR` carries the same file as
 `V8_0_1`. **Not yet filed upstream**; it needs a GTest of its own in `TKOffset/GTests/` (a hexagonal
 prism, faces 0 and 2) and the contract above stated in its description.
 
 **Retire** once the bundled OCCT includes this fix.
-
-# Retired patches
-
-The `.patch` files below are **deleted**. Each fix now comes from the pinned OCCT release itself, so
-re-applying it would fail (the change is already in the source tree) and `build-occt.sh` would abort.
-The writeups are kept because for several of these they are the only record of the root cause at
-this depth; read them as history, not as a description of anything the build still does.
-
-Before each file was deleted its hunks were checked against the as-merged upstream form in the
-pinned tag, because review can change a patch between submission and merge, and for `0001` it did.
-Each section opens with that verdict.
 
 ## 0059-ChFi3d-Builder-fillets-that-meet-exactly-are-built-not-refused-3207.patch
 
@@ -3576,6 +3425,184 @@ The change lets exactly that through: `ChFi3d_IsEndContact` (the caps only touch
 Known limits: `Modified()`/`Generated()` return the faces from before `FixStripFace`; a meeting exact only up to rounding noise (random rotations of the box) fails cleanly 18 times in 40; `BRepFilletAPI_MakeChamfer` at d = w/2 is still refused; `Generated` history for the removed top face reads as deleted.
 
 Measured against the `v4.0.0-kernel.5` asset with the three changed files override-linked (`Scripts/repro/fillet-exact-meeting-fix/README.md`): 715 box cases before and after, none regressed and none newly invalid; 16 `IsDone` false now valid with the analytic volume.
+
+# Retired patches
+
+The `.patch` files below are **deleted**. Each fix now comes from the pinned OCCT release itself, so
+re-applying it would fail (the change is already in the source tree) and `build-occt.sh` would abort.
+The writeups are kept because for several of these they are the only record of the root cause at
+this depth; read them as history, not as a description of anything the build still does.
+
+Before each file was deleted its hunks were checked against the as-merged upstream form in the
+pinned tag, because review can change a patch between submission and merge, and for `0001` it did.
+Each section opens with that verdict.
+
+## 0031-bspline-adaptor-cache-thread-safety-1153.patch
+
+**RETIRED 2026-10-10, at the `v4.0.0-kernel.6` repin. The `.patch` file is deleted and the asset
+does not carry it.** Maintainer decision on [#3065](https://github.com/SecondMouseAU/OCCTSwift/issues/3065):
+the patch made a pattern safe that OCCT's design says not to use. Upstream states that each worker
+owns its own adaptor, taking `ShallowCopy()` of a shared one, which drops the cache
+([OCCT#1554](https://github.com/Open-Cascade-SAS/OCCT/pull/1554), withdrawn in favour of that rule;
+`GeomLib_CheckCurveOnSurface` does it per worker). Measured for #3065 on vanilla `V8_0_1` sources,
+100 runs per cell: one adaptor shared by eight threads reads wrong points in 97 of 97 completed
+runs, and a `ShallowCopy()` per thread reads none wrong, with or without this patch. The lock cost
+about 7x on a single-thread cached `D0` (23.7 ns against 170.7 ns) and hid a caller defect as a
+slower correct answer. The guards that make the retirement safe landed first (#3121): TSan modes
+for per-thread `ShallowCopy()`, the per-task `EdgeCurve` test (`Issue3065EdgeCurvePerTaskTests`),
+`check-bridge-adaptor-members.py`, and the per-worker rule in `docs/thread-safety.md`. The bridge's
+only persistent adaptors are `EdgeCurve` and `WireCurve`, which are not `Sendable`.
+
+**Retiring it meant deleting the file AND starting from a clean source tree**: the
+`v4.0.0-kernel.6` build was made from a fresh `V8_0_1` clone with the other forty-five patches
+applied, so none of `0031`'s eight files carry its edits (the #2190 lesson). The writeup below is
+history and describes the patch as it was, including the `OCCT#1076` note: that PR was never merged
+and there is nothing to retarget.
+
+
+**Fixes the upstream OCCT data race behind
+[#1153](https://github.com/SecondMouseAU/OCCTSwift/issues/1153)**, on the second attempt: PR #1322
+first tried this fix and was rejected on six review findings, the most serious a genuine
+self-deadlock. This patch is a rewrite from scratch, not a fixup of #1322's content; #1322's own
+branch/patch never merged and is not part of this repo's history.
+
+`BSplCLib_Cache`/`BSplSLib_Cache` (backing `GeomAdaptor_Curve`/`GeomAdaptor_Surface` for BSpline
+and Bezier curves/surfaces) cache polynomial coefficients per span for evaluation performance, and
+every method touching that mutable cache state (`BuildCache`, `D0`-`D3`, the `*Local` overloads)
+was `const` and completely unsynchronized. A second, independent race sits one layer up:
+`GeomAdaptor_Curve`/`GeomAdaptor_Surface`'s `EvalD0`-`EvalD3`/`D0`-`D2` do an unsynchronized
+check-then-act on the `Cache` handle (`if (Cache.IsNull() || !IsCacheValid(u)) RebuildCache(u);`),
+so two threads sharing one adaptor can both replace the handle and race on it directly, independent
+of anything inside the cache object itself.
+
+**Finding 1 (self-deadlock).** #1322's patch wrapped every `BSplCLib_Cache` method body in
+`Locked(myMutex, [&]{...})`, backed by a plain `std::mutex`. `D1()`/`D2()`/`D3()` (and the
+protected `calculateDerivative()`) each lock once, then call a `*Local`/`calculateDerivativeLocal`
+overload that is *itself* a public entry point and locks the same non-recursive mutex again on the
+same thread: undefined behavior, and a guaranteed hang in every real implementation, on the very
+first derivative call, single-threaded, no concurrency needed to observe it. Confirmed by direct
+reproduction against #1322's actual patch content (`Scripts/repro/1153-bspline-adaptor-cache/deadlock_before.txt`),
+not by reasoning about the code: a single-threaded `D1()` call never returns; an external-timeout
+probe (background process + `pgrep`, since GTest's own timeout mechanisms do not reliably terminate
+a thread genuinely blocked inside a system mutex) confirms it is still alive seconds later.
+
+**Fix: `std::recursive_mutex`, chosen over the lock-once refactor.** Both are legitimate options;
+recursive was chosen because `D0Local`/`D1Local`/`D2Local`/`D3Local` (and `calculateDerivativeLocal`)
+are genuinely dual-role in this API — each is documented as a public entry point in its own right
+(for a caller that already has a pre-computed local parameter) *and* is called internally by the
+flat-parameter overloads. A lock-once design would need every such method split into a thin public
+locking wrapper plus a private unlocked twin, doubling the method count across two classes for a
+change whose only goal is correctness, not restructuring the public surface. `std::recursive_mutex`
+fixes the actual defect with the smallest, most reviewable diff: every method keeps its exact
+existing body, wrapped in the same `Locked()` helper #1322 used, with only the mutex type changed.
+This project has precedent for the identical tradeoff: the `Storage_Schema`/`#374` entry above
+chose a recursive mutex for the same reason (a critical section that calls back into sibling locked
+methods on the same thread).
+
+**Finding 2 (false scope claim, now genuinely fixed).** #1322's commit message and PR body claimed
+all four classes were protected; the actual diff touched only `BSplCLib_Cache`. This patch fixes
+`BSplSLib_Cache` for real, confirmed by reading its actual structure (`BSplSLib_Cache.cxx`) rather
+than assuming symmetry with its curve-side twin: its `D1()`/`D2()` do *not* themselves nest into
+`D1Local()`/`D2Local()` the way the curve side's do (they duplicate the computation inline instead),
+so only `D0()`→`D0Local()` has the nesting shape finding 1 describes — a narrower exposure than
+`BSplCLib_Cache`'s, but real, and the same `Locked()`/`std::recursive_mutex` pattern is applied
+uniformly to all six of its methods regardless, since a recursive mutex is correct whether or not a
+given method happens to nest.
+
+`GeomAdaptor_Curve`/`GeomAdaptor_Surface` are fixed too, determined by reading their `.cxx` rather
+than assumed necessary or unnecessary: fixing the caches' own internal mutex does nothing for the
+Cache-handle race, since that race is about *which object* the `Cache` member points to, not about
+serializing calls into whichever object it currently holds. Each class gets a second, independent
+`mutable std::mutex myCacheMutex;`, locked around the whole check-`IsCacheValid`-`RebuildCache`-
+evaluate sequence at every call site (8 in `GeomAdaptor_Curve::EvalD0`-`EvalD3`, 6 in
+`GeomAdaptor_Surface::D0`-`D2`); `RebuildCache()` itself takes no lock, since every call site into
+it already holds `myCacheMutex` (a "lock once" design here, unlike the caches themselves, because
+nothing in `RebuildCache()` calls back into another locked entry point on the same thread). Both
+classes' doc comments previously stated outright that "these evaluations are not thread-safe and
+parallel evaluations need to be prevented" — updated to describe the corrected contract.
+
+**A `std::mutex` member breaks copy semantics — checked by real compilation, not declared and
+hoped.** The first attempt at this half of the fix deleted the copy constructor/assignment
+operator outright, on the reasoning that these are `Standard_Transient` (handle-based) classes with
+a sanctioned `ShallowCopy()` clone path. A real compile check against real, load-bearing OCCT code
+(`GeomAdaptor_TransformedCurve.cxx`/`GeomAdaptor_TransformedSurface.cxx`) immediately broke: both
+classes' own `ShallowCopy()` overrides do `aCopy->myCurve = aGeomCurve;` — an actual
+copy-**assignment** of a `GeomAdaptor_Curve`/`GeomAdaptor_Surface` value
+(`error: overload resolution selected deleted operator '='`). Fixed instead with a hand-written
+copy constructor and assignment operator on each class that copy every field except the new mutex;
+the copy gets a freshly default-constructed mutex, which is the only correct semantics, since a
+copied adaptor's critical section is independent of the original's. Re-verified clean by direct
+compilation (`clang++ -fsyntax-only`) of 8 real consumer files against the patched headers:
+`GeomAdaptor_Curve.cxx`, `GeomAdaptor_Surface.cxx`, `GeomAdaptor_TransformedCurve.cxx`,
+`GeomAdaptor_TransformedSurface.cxx`, `GeomAdaptor_SurfaceOfLinearExtrusion.cxx` and
+`GeomAdaptor_SurfaceOfRevolution.cxx` (both real `GeomAdaptor_Surface` subclasses),
+`BRepAdaptor_Curve.cxx` and `BRepAdaptor_Surface.cxx` (the two highest-traffic consumers, which
+hold a `GeomAdaptor_Curve`/`GeomAdaptor_Surface` **by value**, not by handle, via
+`GeomAdaptor_TransformedCurve`/`GeomAdaptor_TransformedSurface`).
+
+**Finding 3 (the reproducer's own "0 races" claim was not evidence, for two separate reasons).**
+`occt_1153_stress.cpp` only ever called `D0()` in both scenarios, never touching the
+derivative-family nesting finding 1 is about, so a clean run said nothing about whether that path
+was safe. Separately, #1322's own branch (not `main`, since it never merged) carried
+`Scripts/tsan.supp` suppressions for `BSplSLib_Cache::D0Local`/`BSplSLib::BuildCache`/
+`BSplCLib_Cache::D0` that would have masked whatever the surface scenario's D0-only run otherwise
+reported. Fixed: the reproducer now cycles every iteration through `D0`/`D1`/`D2`/`D3` (curve) and
+`D0`/`D1`/`D2` (surface), exercising every nesting site in both classes' public surface under load.
+`main`'s `Scripts/tsan.supp` never carried the finding-3 suppression lines at all (confirmed by
+grep before writing this entry, not assumed): they existed only on #1322's own, never-merged
+branch, added by that PR's own reproducer commit, so there is nothing to retire here.
+
+**A second, real bug was found and fixed while doing this, independent of #1153 itself.** The
+original reproducer's `main()` declared `GeomAdaptor_Curve sharedAdaptor(curve);` *inside* the
+`if (scenario == "shared_adaptor_curve") { ... }` block, while `pool` and the `t.join()` loop lived
+outside the whole `if`/`else if` chain. A local variable's scope ends at its own block's closing
+brace regardless of what runs afterwards, so `sharedAdaptor` was destroyed the instant that block
+finished spawning threads — while every worker thread was still running against it, well before
+`t.join()` ever executed. This use-after-scope bug was corrupting both the "before" and "after"
+TSan results: an adaptor (including its own brand-new mutex) torn down under threads still calling
+into it produces the same crash signature as the race #1153 is about, and at 16×3000 it crashed the
+patched binary with a `pthread_mutex_lock` SIGSEGV inside `BSplCLib_Cache::D3` that had nothing to
+do with the real fix (an ASan single-threaded control, `asan_probe.cpp`, ruled out a buffer overflow
+as the cause first, which is what pointed the investigation at the scoping bug instead). Fixed by
+giving each scenario its own `pool`/join loop inside its own scope, so the adaptor outlives every
+thread that touches it.
+
+**Validation.** TSan (`Scripts/repro/1153-bspline-adaptor-cache/run.sh`), both scenarios at 16
+threads × 3000 iterations: **before** (stock), curve 42 races (including a genuine SIGSEGV inside
+`Geom_BSplineCurve::Weights()` reached through a torn `GeomAdaptor_Curve::EvalD3`), surface 15
+races; **after** (this patch), 0 races both scenarios, 48000 clean operations each, confirmed
+across repeated runs. GTests added to both classes' existing `*_Cache_Test.cxx`
+(`Libraries/occt-src/src/FoundationClasses/TKMath/GTests/`; `gtest-addition-bsplclib.diff`/
+`gtest-addition-bspslib.diff` in the repro directory are the exact additions, not carried here since
+GTest source never is): a single-threaded `DerivativeMethodsDoNotDeadlock` (hangs against #1322's
+actual patch / a hand-built naive non-recursive-mutex `BSplSLib_Cache` variant, passes in
+milliseconds against the fix) and a concurrent `ConcurrentRebuildAndEvaluationMatchesReference` (16
+threads × 3000 iterations, each rebuilding the cache every iteration before evaluating, matching
+against a single-threaded reference). Stated plainly rather than glossed over: the concurrent GTest
+needed a genuine correction mid-writing (a first version that only evaluated an already-built cache
+was exercising pure concurrent reads, not a data race at all, and passed against unpatched code
+unconditionally), and even corrected it still passes leniently against stock code on plain hardware
+without TSan, since every thread computes identical bytes, unlike #1154's bit-ownership design
+where a clobbered bit is directly observable; the TSan transcript above, not this GTest, is the
+authoritative evidence the race itself is gone. `GeomAdaptor_Curve`/`GeomAdaptor_Surface`'s own
+layer has no GTest in this patch, a real gap noted rather than hidden; the TSan evidence above
+covers it instead, and a `GeomAdaptor_Curve_Test.cxx` already exists as the natural place to add one
+later (`GeomAdaptor_Surface_Test.cxx` does not exist yet).
+
+`clang-format --dry-run --Werror -style=file:Libraries/occt-src/.clang-format`: both touched
+headers clean as written; `BSplCLib_Cache.cxx`/`BSplSLib_Cache.cxx`/`GeomAdaptor_Curve.cxx`
+reformatted wholesale (safe, since every line in the relevant sections is new or immediately
+adjacent to new code); `GeomAdaptor_Surface.cxx` fixed surgically with `clang-format -lines=N:N`
+targeting only this patch's 4 new lines, since the stock file already carries 7 pre-existing,
+unrelated violations (confirmed byte-identical, same lines, in the untouched stock file) that a
+whole-file reformat would have swept in as noise.
+
+See [`Scripts/repro/1153-bspline-adaptor-cache/`](https://github.com/SecondMouseAU/OCCTSwift/tree/main/Scripts/repro/1153-bspline-adaptor-cache)
+for the full writeup, transcripts and reproducer.
+
+Filed upstream as [OCCT#1554](https://github.com/Open-Cascade-SAS/OCCT/pull/1554) against `master`, **closed and withdrawn 2026-10-05**: the maintainer (gkv311) said the per-thread `ShallowCopy` adaptor is the intended design. Carried until the retire-or-keep decision, [#3065](https://github.com/SecondMouseAU/OCCTSwift/issues/3065).
+
+**Retire** once the bundled OCCT includes this fix.
 
 ## 0035-STEPControl-Writer-drop-per-transfer-init-1259.patch
 

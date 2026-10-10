@@ -23,8 +23,8 @@ import OCCTPlatform
 /// `ref` holds a persistent `BRepAdaptor_CompCurve` built once at `init` and reused by every
 /// subsequent call, and OCCT designs an adaptor to be owned by one worker, because its BSpline
 /// evaluation cache is rebuilt in place by `const` evaluators. Sharing one `WireCurve` between
-/// threads is unsupported: without carried patch `0031` (#1153), which currently serializes that
-/// cache, it reads wrong points (#3065). Swift 6 enforces the supported pattern, since a
+/// threads is unsupported: the cache is unsynchronised (carried patch `0031`, which serialized it,
+/// was retired at `v4.0.0-kernel.6`), so a shared instance reads wrong points (#3065). Swift 6 enforces the supported pattern, since a
 /// non-`Sendable` instance cannot cross a task boundary: share the ``Wire`` and construct a
 /// `WireCurve` inside each task, or serialize access with `OCCTSerial.withLock { }`.
 public final class WireCurve: ArcLengthCurveAdaptor {
