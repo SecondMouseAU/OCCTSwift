@@ -36,25 +36,25 @@
 # for why a count alone is necessary and not sufficient.
 
 # --- where the asset is ---
-OCCT_WASM_RELEASE_TAG=v4.0.0-kernel.5
+OCCT_WASM_RELEASE_TAG=v4.0.0-kernel.6
 OCCT_WASM_ASSET_NAME=libOCCT-wasm.tar.gz
-OCCT_WASM_ASSET_URL=https://github.com/SecondMouseAU/OCCTSwift/releases/download/v4.0.0-kernel.5/libOCCT-wasm.tar.gz
-OCCT_WASM_ASSET_SHA256=251d3563a9cc552c3c673460d341cdb35ab5574b0f79f716f48af234e4131c25
-OCCT_WASM_ASSET_BYTES=40255777
+OCCT_WASM_ASSET_URL=https://github.com/SecondMouseAU/OCCTSwift/releases/download/v4.0.0-kernel.6/libOCCT-wasm.tar.gz
+OCCT_WASM_ASSET_SHA256=a215f0270cc34aa424d3fbb6f060f0e1d16f6fe4c026527a7999d5a412e29ae7
+OCCT_WASM_ASSET_BYTES=40251435
 
 # --- what is inside it, for the parity gate ---
 # The carried patches are Scripts/patches/NNNN-*.patch. FIRST and LAST are the numbers, not an
 # assertion that every number between them exists: the gate reads the actual file list.
 OCCT_VERSION=V8_0_1
-OCCT_WASM_PATCH_COUNT=44
+OCCT_WASM_PATCH_COUNT=45
 OCCT_WASM_PATCH_FIRST=0010
-OCCT_WASM_PATCH_LAST=0057
+OCCT_WASM_PATCH_LAST=0059
 # The WASI-only source changes, Scripts/patches-wasi/*.patch, which only build-occt-wasm.sh applies.
 OCCT_WASM_WASI_PATCH_COUNT=11
 
 # --- the acknowledged divergence, and what closes it ---
-# THERE IS NO DIVERGENCE. Both kernels in v4.0.0-kernel.5 were built from one tree carrying all
-# forty-four carried patches, in one sitting, which is what the retired acknowledgement below
+# THERE IS NO DIVERGENCE. Both kernels in v4.0.0-kernel.6 were built from one tree carrying all
+# forty-five carried patches, in one sitting, which is what the retired acknowledgement below
 # said would close it. The two ACKNOWLEDGED_* keys are deliberately absent rather than set to a
 # zero or a nil: this field's own rule is that AGAINST is never a number to bump, so an
 # acknowledgement that no longer acknowledges anything is deleted, not updated. Retired here:
@@ -67,9 +67,9 @@ OCCT_WASM_WASI_PATCH_COUNT=11
 # --- provenance ---
 # The commit whose Scripts/patches/ and Scripts/patches-wasi/ the archive was built from, so the
 # claim above can be checked rather than believed: `git show <sha>:Scripts/patches` lists them.
-OCCT_WASM_BUILT_FROM=826f33b0449e15b8538d2140e340e65fab319192
-OCCT_WASM_BUILT_ON=2026-10-07
+OCCT_WASM_BUILT_FROM=170be6c7e9e14da156c34aec5dfd44e4a03a6941
+OCCT_WASM_BUILT_ON=2026-10-10
 # Unpacked sizes, so a truncated or wrong-shaped extraction is caught before a 69-minute rebuild is
 # blamed for it.
-OCCT_WASM_ARCHIVE_BYTES=153170678
+OCCT_WASM_ARCHIVE_BYTES=153157846
 OCCT_WASM_HEADER_FILES=7160
