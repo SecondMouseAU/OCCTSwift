@@ -1,0 +1,7 @@
+# The test files this PR lifts (current paths).
+Tests/OCCTShapeHealingTests/ShapeUpgrade/ShapeUpgradeClosedEdgeDivideTests.swift
+Tests/OCCTShapeHealingTests/ShapeUpgrade/ShapeUpgradeEdgeDivideTests.swift
+Tests/OCCTShapeHealingTests/ShapeUpgrade/ShapeUpgradeFaceDivideTests.swift
+Tests/OCCTShapeHealingTests/ShapeUpgrade/ShapeUpgradeShellSewingTests.swift
+Tests/OCCTShapeHealingTests/ShapeUpgrade/ShapeUpgradeSplitCurveTests.swift
+Tests/OCCTShapeHealingTests/ShapeUpgrade/ShapeUpgradeWireDivideTests.swift
