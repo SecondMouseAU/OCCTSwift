@@ -1,0 +1,20 @@
+createHatcher constructed tolerance=1e-06
+addLinesAndCount NbLines=3
+  line 1 coord=0 NbIntervals=0
+  line 2 coord=5 NbIntervals=0
+  line 3 coord=10 NbIntervals=0
+addYLines NbLines=2
+  line 1 coord=0 NbIntervals=0
+  line 2 coord=5 NbIntervals=0
+trimAndIntervals diagonal segment NbLines=3
+  line 1 coord=0 NbIntervals=0
+  line 2 coord=5 NbIntervals=0
+  line 3 coord=10 NbIntervals=0
+trimAndIntervals closed square NbLines=3
+  line 1 coord=0 NbIntervals=1 [-1, 11]
+  line 2 coord=5 NbIntervals=1 [-1, 11]
+  line 3 coord=10 NbIntervals=1 [-1, 11]
+untrimmed NbLines=3
+  line 1 coord=0 NbIntervals=0
+  line 2 coord=5 NbIntervals=0
+  line 3 coord=10 NbIntervals=0
