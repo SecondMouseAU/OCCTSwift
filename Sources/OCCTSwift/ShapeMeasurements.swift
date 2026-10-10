@@ -4,7 +4,6 @@
 // Per-face area / centroid / perimeter + per-edge length reports for
 // dimension widgets, BOM extractors, and other measurement-driven UIs.
 
-
 /// Measurements computed from the topology of a `Shape`, indexed parallel to its
 /// face / edge enumeration so consumers (e.g. AIS-layer dimension widgets)
 /// can resolve a picked face / edge index directly to its scalar measurement.

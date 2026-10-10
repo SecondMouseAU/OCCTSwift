@@ -800,16 +800,16 @@ let occtBridgeTarget: Target =
 
 // The `simd` module, on WASI only (#2175).
 //
-// 196 of the 230 files in Sources/OCCTSwift open with `import simd`, and on
-// wasm32-unknown-wasip1 that is `error: no such module 'simd'`, which stops the entire Swift
+// 196 of the 230 files in Sources/OCCTSwift opened with `import simd` when this was written, and
+// on wasm32-unknown-wasip1 that is `error: no such module 'simd'`, which stops the entire Swift
 // layer before any of it is type-checked. Apple's simd is part of the Apple SDKs and there is no
-// wasm build of it.
+// wasm build of it. #2759 then removed the imports no file needed (measured by building Apple and
+// wasm with each one gone); 26 files in Sources/OCCTSwift still import it.
 //
-// A target NAMED `simd`, reachable only when isWASI, answers that without editing any of the 196
-// files and without changing a single byte of what an Apple build compiles: `import simd` still
-// resolves to Apple's there, because this target is not in the graph at all. The alternative,
-// 196 `#if canImport(simd)` edits, is a mechanical diff through nearly every file in the package
-// and would still need the definitions this module carries.
+// A target NAMED `simd`, reachable only when isWASI, answers that for those files without
+// changing a single byte of what an Apple build compiles: `import simd` still resolves to Apple's
+// there, because this target is not in the graph at all. The alternative, `#if canImport(simd)`
+// around each import, would still need the definitions this module carries.
 //
 // What it defines is what Sources/OCCTSwift measurably uses and no more; see the file's own
 // header for the counts. It re-exports the platform C library for the same reason Apple's module
@@ -969,7 +969,7 @@ let wasmExcludedTestFiles: [String: [String]] = [
 // test file already compiles for wasm WITHOUT this, because every target shares one build-products
 // directory and `simd` is always in it (OCCTSwift depends on it). That is module visibility by
 // accident of layout, it is not a declared edge, and it would break the first time the layout or
-// the dependency changed. 1,179 of the 1,428 test files import `simd`.
+// the dependency changed. 271 of the 1,428 test files still import `simd` (#2759 removed the other 954).
 func adjustedForWASM(_ target: Target) -> Target? {
     guard isWASI, target.type == .test else { return target }
     guard !wasmUnportableTestTargets.contains(target.name) else { return nil }
