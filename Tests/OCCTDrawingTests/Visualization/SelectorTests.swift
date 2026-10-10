@@ -13,6 +13,7 @@ struct SelectorTests {
         cam.eye = SIMD3(0, 0, 50)
         cam.center = SIMD3(0, 0, 0)
         cam.up = SIMD3(0, 1, 0)
+        cam.projectionType = .perspective  // a new Camera() is orthographic at scale 1000
         cam.fieldOfView = 45
         cam.aspect = 1.0
         cam.zRange = (near: 1, far: 1000)
@@ -28,9 +29,46 @@ struct SelectorTests {
             viewSize: SIMD2(800, 600)
         )
 
-        // The box should be hit
-        if !results.isEmpty {
-            #expect(results[0].shapeId == 42)
+        // The box should be hit (#3254: this used to pass on zero hits).
+        #expect(!results.isEmpty)
+        if let hit = results.first {
+            #expect(hit.shapeId == 42)
+            // The camera looks down -Z from z = 50 at a box whose front face is z = 5.
+            #expect(abs(hit.point.z - 5) < 1e-6)
+        }
+    }
+
+    @Test("Nearest shape along the ray is reported first")
+    func nearestShapeFirst() {
+        let near = Shape.box(width: 10, height: 10, depth: 10)!
+        let far = Shape.box(width: 10, height: 10, depth: 10)!
+            .translated(by: SIMD3(0, 0, -30))!
+
+        let cam = Camera()
+        cam.eye = SIMD3(0, 0, 50)
+        cam.center = SIMD3(0, 0, 0)
+        cam.up = SIMD3(0, 1, 0)
+        cam.projectionType = .perspective  // a new Camera() is orthographic at scale 1000
+        cam.fieldOfView = 45
+        cam.aspect = 1.0
+        cam.zRange = (near: 1, far: 1000)
+
+        let selector = Selector()
+        // Added far-first so a hit order that merely follows insertion order fails.
+        selector.add(shape: far, id: 2)
+        selector.add(shape: near, id: 1)
+
+        let results = selector.pick(
+            at: SIMD2(400, 300),
+            camera: cam,
+            viewSize: SIMD2(800, 600)
+        )
+
+        #expect(results.count == 2)
+        if results.count == 2 {
+            #expect(results[0].shapeId == 1)
+            #expect(results[1].shapeId == 2)
+            #expect(results[0].depth < results[1].depth)
         }
     }
 
@@ -41,6 +79,7 @@ struct SelectorTests {
         cam.eye = SIMD3(0, 0, 50)
         cam.center = SIMD3(0, 0, 0)
         cam.up = SIMD3(0, 1, 0)
+        cam.projectionType = .perspective  // a new Camera() is orthographic at scale 1000
         cam.fieldOfView = 45
         cam.aspect = 1.0
         cam.zRange = (near: 1, far: 1000)
@@ -69,6 +108,7 @@ struct SelectorTests {
         cam.eye = SIMD3(0, 0, 100)
         cam.center = SIMD3(0, 0, 0)
         cam.up = SIMD3(0, 1, 0)
+        cam.projectionType = .perspective  // a new Camera() is orthographic at scale 1000
         cam.fieldOfView = 45
         cam.aspect = 1.0
         cam.zRange = (near: 1, far: 1000)
@@ -113,6 +153,7 @@ struct SelectorTests {
         cam.eye = SIMD3(0, 0, 50)
         cam.center = SIMD3(0, 0, 0)
         cam.up = SIMD3(0, 1, 0)
+        cam.projectionType = .perspective  // a new Camera() is orthographic at scale 1000
         cam.fieldOfView = 45
         cam.aspect = 1.0
         cam.zRange = (near: 1, far: 1000)
@@ -127,8 +168,9 @@ struct SelectorTests {
             viewSize: SIMD2(800, 600)
         )
 
-        if !results.isEmpty {
-            #expect(results[0].shapeId == 7)
+        #expect(!results.isEmpty)
+        if let hit = results.first {
+            #expect(hit.shapeId == 7)
         }
     }
 
