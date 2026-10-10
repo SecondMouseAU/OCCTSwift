@@ -22,6 +22,10 @@
 // Built with the same flags and no setjmp, the same function is valid and runs.
 //
 // `run.sh sjlj` builds it both ways and runs both.
+//
+// NOTE (#2757): contrary to the paragraph above, this probe's module is VALID; its `Label()` is
+// inline and cannot throw, which the real trigger needs. The reduction that does reproduce the
+// failure is Scripts/repro/2757/sjlj-br-table.cpp.
 
 #include <csetjmp>
 #include <cstdio>
