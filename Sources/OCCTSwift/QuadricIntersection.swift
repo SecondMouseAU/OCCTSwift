@@ -1,6 +1,5 @@
 import OCCTBridge
 import OCCTPlatform
-import simd
 
 /// Analytic quadric-quadric intersection.
 public enum QuadricIntersection {

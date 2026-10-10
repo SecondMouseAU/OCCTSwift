@@ -1,6 +1,5 @@
 import OCCTBridge
 import OCCTPlatform
-import simd
 
 // Continuity order for filling constraints is `SurfaceContinuity` (Continuity.swift); the
 // `FillingContinuity` copy this file used to declare is now a deprecated alias of it. See #398.

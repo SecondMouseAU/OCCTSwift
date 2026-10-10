@@ -219,8 +219,8 @@ After the run, a file the guest wrote is a `Uint8Array` in that map, so handing 
 of 0.5: 130 vertices, 116 triangles, 348 indices, 130 normals, every coordinate finite and every
 index in range.
 
-Note that `SIMD3<Float>` here comes from a **WASI-only stand-in** for Apple's `simd`, whose shape is
-still being decided in [#2759](https://github.com/SecondMouseAU/OCCTSwift/issues/2759). The vector
+Note that `SIMD3<Float>` here comes from a **WASI-only stand-in** for Apple's `simd`, whose long-term
+shape is still open in [#2759](https://github.com/SecondMouseAU/OCCTSwift/issues/2759). The vector
 types themselves are Swift standard library types and are not affected; what could change is the
 handful of `simd_*` free functions.
 

@@ -466,13 +466,21 @@ public struct FeatureReconstructor: Sendable {
         // Use the history-recording variant so consumers (e.g. selection
         // remappers) can walk per-input subshape history through the cut.
         if let id = h.id, let r = target.subtractedWithFullHistory(drill) {
+            guard volumeIsConsistent(.subtract, left: target, right: drill, result: r.result) else {
+                recordSkip(
+                    ctx: &ctx, id: h.id,
+                    reason: .occtFailure(impossibleVolume("subtract")), stage: .subtractive)
+                return
+            }
             ctx.current = r.result
             ctx.fulfilled.append(id)
             ctx.namedShapes[id] = r.result
             ctx.histories[id] = r.history
         } else if h.id == nil, let cut = target.subtracting(drill) {
             // No id → no key to retain history under; skip the history capture.
-            ctx.current = cut
+            if volumeIsConsistent(.subtract, left: target, right: drill, result: cut) {
+                ctx.current = cut
+            }
         } else {
             recordSkip(
                 ctx: &ctx, id: h.id,
@@ -534,6 +542,12 @@ public struct FeatureReconstructor: Sendable {
                     stage: stage)
                 return
             }
+            guard volumeIsConsistent(b.op, left: left, right: right, result: r.result) else {
+                recordSkip(
+                    ctx: &ctx, id: b.id,
+                    reason: .occtFailure(impossibleVolume(b.op.rawValue)), stage: stage)
+                return
+            }
             ctx.fulfilled.append(id)
             ctx.namedShapes[id] = r.result
             ctx.histories[id] = r.history
@@ -550,6 +564,12 @@ public struct FeatureReconstructor: Sendable {
                     ctx: &ctx, id: b.id,
                     reason: .occtFailure("boolean \(b.op.rawValue) failed"),
                     stage: stage)
+                return
+            }
+            guard volumeIsConsistent(b.op, left: left, right: right, result: r) else {
+                recordSkip(
+                    ctx: &ctx, id: b.id,
+                    reason: .occtFailure(impossibleVolume(b.op.rawValue)), stage: stage)
                 return
             }
             ctx.current = r
@@ -767,6 +787,40 @@ public struct FeatureReconstructor: Sendable {
 
     // MARK: - Utilities
 
+    /// Whether a boolean's result volume is possible given its operands' volumes (#3196).
+    ///
+    /// At extreme scale OCCT's fuse can answer a valid-looking solid that is only one operand: a
+    /// 1e12-sized extrude unioned onto a 10-unit box answered the box (volume 1000) and reported
+    /// success. The volume bounds below hold for any correct result: a union holds both operands
+    /// and no more than their sum, a cut holds at most the target and at least target minus tool,
+    /// an intersection holds at most the smaller operand. A result outside them is not what the
+    /// feature asked for. The slack is relative to the operands' summed volume (1e-6, far above
+    /// the 1e-15 noise of a measured volume), so it never rejects a correct result; the check is
+    /// conservative and a wrong result inside the bounds (a tiny operand lost next to a huge one)
+    /// is not detectable by volume. An operand or result that cannot be measured is not judged.
+    ///
+    /// Volumes are compared by magnitude. A negative measured volume (a reversed solid) is not
+    /// reachable from the specs: clockwise and counter-clockwise profiles and a negative extrude
+    /// length all measure positive (#3196), and `abs` would judge a wholly reversed operand and
+    /// result alike anyway.
+    private static func volumeIsConsistent(
+        _ op: FeatureSpec.Boolean.Op, left: Shape, right: Shape, result: Shape
+    ) -> Bool {
+        guard let a = left.volume, let b = right.volume, let v = result.volume else { return true }
+        let (va, vb, vr) = (abs(a), abs(b), abs(v))
+        guard va.isFinite, vb.isFinite, vr.isFinite else { return false }
+        let slack = 1e-6 * (va + vb)
+        switch op {
+        case .union: return vr >= max(va, vb) - slack && vr <= va + vb + slack
+        case .subtract: return vr >= va - vb - slack && vr <= va + slack
+        case .intersect: return vr <= min(va, vb) + slack
+        }
+    }
+
+    private static func impossibleVolume(_ op: String) -> String {
+        "boolean \(op) result volume is outside what its operands allow (operands too large for a reliable boolean)"
+    }
+
     private static func recordSkip(
         ctx: inout BuildContext,
         id: String?,
@@ -783,12 +837,14 @@ public struct FeatureReconstructor: Sendable {
         // when an id is set so selections originating in either operand can be
         // remapped through the union.
         if let prior = ctx.current {
-            if let id, let r = prior.unionWithFullHistory(body) {
+            if let id, let r = prior.unionWithFullHistory(body),
+                volumeIsConsistent(.union, left: prior, right: body, result: r.result)
+            {
                 ctx.current = r.result
                 ctx.histories[id] = r.history
             } else if let id {
-                // History-recording union failed; fall back to the plain union.
-                // If that also fails, this id'd feature never fused: surface it
+                // History-recording union failed or answered an impossible volume; fall back to
+                // the plain union. If that also fails, this id'd feature never fused: surface it
                 // as Skipped and leave `ctx.current` (every prior accumulated
                 // shape) untouched, matching applyBoolean/applyHole/applyFillet/
                 // applyChamfer's own failure-path handling.
@@ -799,12 +855,28 @@ public struct FeatureReconstructor: Sendable {
                         stage: .additive)
                     return
                 }
+                guard volumeIsConsistent(.union, left: prior, right: body, result: fused) else {
+                    recordSkip(
+                        ctx: &ctx, id: id,
+                        reason: .occtFailure(impossibleVolume("union")),
+                        stage: .additive)
+                    return
+                }
                 ctx.current = fused
             } else {
                 // No id: no Skipped entry possible anyway (recordSkip is a no-op
                 // for a nil id), so an anonymous feature that fails to fuse still
-                // falls back to absorbing its own unfused body.
-                ctx.current = prior.union(body) ?? body
+                // falls back to absorbing its own unfused body. A union with an impossible
+                // volume (#3196) leaves the prior body untouched instead, the conservative
+                // choice: it matches the id'd path, and an anonymous fuse that was right is
+                // unchanged. (A failed fuse keeps its pre-existing replace-with-body behaviour.)
+                if let fused = prior.union(body) {
+                    if volumeIsConsistent(.union, left: prior, right: body, result: fused) {
+                        ctx.current = fused
+                    }
+                } else {
+                    ctx.current = body
+                }
             }
         } else {
             ctx.current = body

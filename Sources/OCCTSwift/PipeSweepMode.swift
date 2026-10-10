@@ -1,6 +1,5 @@
 import OCCTBridge
 import OCCTPlatform
-import simd
 
 /// Sweep mode for advanced pipe creation.
 public enum PipeSweepMode: Sendable {

@@ -1,5 +1,4 @@
 import OCCTPlatform
-import simd
 
 // MARK: - SVG export (#86, v0.150)
 //

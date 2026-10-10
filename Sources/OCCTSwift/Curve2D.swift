@@ -1,6 +1,5 @@
 import OCCTBridge
 import OCCTPlatform
-import simd
 
 /// A parametric 2D curve backed by `Geom2d_Curve`.
 ///

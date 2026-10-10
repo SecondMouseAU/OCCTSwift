@@ -1,6 +1,5 @@
 import OCCTBridge
 import OCCTPlatform
-import simd
 
 /// Builder for Boolean cell operations on shapes.
 ///

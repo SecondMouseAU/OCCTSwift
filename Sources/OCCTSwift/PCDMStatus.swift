@@ -1,6 +1,5 @@
 import OCCTBridge
 import OCCTPlatform
-import simd
 
 /// Status returned by OCAF document save operations.
 public enum StoreStatus: Int32 {

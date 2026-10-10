@@ -1,5 +1,4 @@
 import OCCTPlatform
-import simd
 
 // MARK: - Drawing transform + bounds (#75, v0.144)
 //

@@ -1,6 +1,5 @@
 import OCCTBridge
 import OCCTPlatform
-import simd
 
 /// Phong material properties (diffuse, ambient, specular, emissive, shininess, transparency).
 public struct VisMaterialCommon: Sendable {

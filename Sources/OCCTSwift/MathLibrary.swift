@@ -1,6 +1,5 @@
 import OCCTBridge
 import OCCTPlatform
-import simd
 
 /// Dense mathematical matrix with 1-based indexing.
 public final class MathMatrix: @unchecked Sendable {

@@ -1,6 +1,5 @@
 import OCCTBridge
 import OCCTPlatform
-import simd
 
 /// Join type for offset operations.
 public enum OffsetJoinType: Int32, Sendable {

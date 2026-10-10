@@ -1,6 +1,5 @@
 import OCCTBridge
 import OCCTPlatform
-import simd
 
 /// Contour line type.
 public enum ContourLineType: Int32, Sendable {
