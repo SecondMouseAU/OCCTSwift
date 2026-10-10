@@ -21,6 +21,10 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### `Shape.fixEdgeConnect()` leaves the caller's shape untouched and valid (#3252)
+
+- `Shape.fixEdgeConnect()` no longer edits the receiver in place and no longer returns an invalid shape for a valid input (a box came back invalid, #3252). It works on a copy and returns an unchanged copy when connecting would make a valid shape invalid.
+
 ### `Shape.loft(profiles:)` keeps its wires alive across the OCCT call, fixing a release-build crash in threaded holes (#3261)
 
 - `Shape.loft(profiles:)` (both overloads) kept no owner for the wires it passed to OCCT, so an optimised build on Swift 6.2 could free them first: `threadedHole` and `threadedShaft` crashed in release builds. The array is now held across the call.
