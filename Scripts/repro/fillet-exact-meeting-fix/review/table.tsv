@@ -1,0 +1,7 @@
+r	file	kernel5	patched	reference	analytic
+1.9999	r-1_9999.png	valid 222.833570	valid 222.833570	valid 222.833570	222.833570
+2.0	r-2_0.png	IsDone false	valid 222.831853	valid 222.831853	222.831853
+2.0001	r-2_0001.png	IsDone false	IsDone false	valid 222.830136	222.830136
+2.2	r-2_2.png	IsDone false	IsDone false	valid 219.238678	219.238678
+2.5	r-2_5.png	IsDone false	IsDone false	valid 213.342452	213.342452
+3.0	r-3_0.png	IsDone false	IsDone false	valid 202.502076	202.502076
