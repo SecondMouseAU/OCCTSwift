@@ -21,6 +21,10 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### Kernel repin to v4.0.0-kernel.6: patches 0058 and 0059 pinned, patch 0031 retired (#3065, #3105, #3207)
+
+The pinned kernel is now `v4.0.0-kernel.6`, OCCT `V8_0_1` plus 45 carried patches. Two patches that were merged but not in the previous asset are now shipped: `0058`, which makes `Shape.middlePath(start:end:)` answer a path or `nil` for a pair of faces that share no vertex instead of aborting the process (#3105), and `0059`, which builds two fillets whose radii sum to the width of the face between them (`r == w / 2` gives a semicircle) instead of answering `nil` (#3207). Patch `0031`, the lock around the BSpline evaluation cache, is retired: OCCT's design is one adaptor per worker (or a `ShallowCopy()` per worker), and a single `EdgeCurve`, `WireCurve` or OCCT adaptor shared between threads now reads wrong points on the shipped kernel. `EdgeCurve` and `WireCurve` are not `Sendable`, so Swift 6 already refuses to share them across tasks.
+
 ### Fillet and chamfer entry points answer nil for a done-but-invalid result (#3200)
 
 `Shape.filleted(edges:radius:)`, `filleted(edges:startRadius:endRadius:)`, `filleted(radius:)`, `chamfered(distance:)`, the two-distance and distance-angle chamfers, `filletedVariable`, `blendedEdges`, `filletEvolving`, their `WithReport` and `WithFullHistory` siblings, `FilletBuilder.build()` and `ChamferBuilder.build()` now check the result with `BRepCheck_Analyzer` after OCCT reports the builder done, and answer `nil` when the result is invalid. Previously a configuration where fillets overlap (a frame of fillets whose radii exceed half the face width, all 12 edges of a box above half the width) or the #2881 model's radius window (1.4983 to 1.4985 and 1.500000002 to 1.5018 on edge 13) returned an invalid solid, with volumes as wrong as 2.2e28. A caller that used to receive that shape now receives `nil`.
