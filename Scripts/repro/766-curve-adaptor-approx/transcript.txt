@@ -1,0 +1,63 @@
+cylinder face 0: adaptor type 1
+cylinder face 1: adaptor type 0
+cylinder face 2: adaptor type 0
+uIsoOnCylinder: lateral face, u=0, count=5
+  iso range raw [-2e+100, 2e+100]
+  pt[0] t=-1000000 (10, 0, -1000000)
+  pt[1] t=-500000 (10, 0, -500000)
+  pt[2] t=0 (10, 0, 0)
+  pt[3] t=500000 (10, 0, 500000)
+  pt[4] t=1000000 (10, 0, 1000000)
+vIsoOnCylinder: lateral face, v=10, count=10
+  iso range raw [0, 6.2831853071795862]
+  pt[0] t=0 (10, 0, 10)
+  pt[1] t=0.69813170079773179 (7.6604444311897799, 6.4278760968653925, 10)
+  pt[2] t=1.3962634015954636 (1.7364817766693041, 9.8480775301220795, 10)
+  pt[3] t=2.0943951023931953 (-4.9999999999999982, 8.6602540378443873, 10)
+  pt[4] t=2.7925268031909272 (-9.3969262078590834, 3.4202014332566888, 10)
+  pt[5] t=3.4906585039886591 (-9.3969262078590852, -3.4202014332566866, 10)
+  pt[6] t=4.1887902047863905 (-5.0000000000000044, -8.6602540378443837, 10)
+  pt[7] t=4.8869219055841224 (1.7364817766692997, -9.8480775301220813, 10)
+  pt[8] t=5.5850536063818543 (7.6604444311897781, -6.4278760968653961, 10)
+  pt[9] t=6.2831853071795862 (10, -2.4492935982947065e-15, 10)
+uIsoCurveEdge: lateral face, u=0, v in [0, 10]
+  done=1
+  type=0 range=[0, 10] length=10
+  start=(10, 0, 0) end=(10, 0, 10)
+vIsoCurveEdge: lateral face, v=10, u in [0, pi]
+  done=1
+  type=1 range=[0, 3.1415926535897931] length=31.415926535897931
+  start=(10, 0, 10) end=(-10, 1.2246467991473533e-15, 10)
+curvilinearCircle: edge 0 type=1 range=[0, 6.2831853071795862] length=62.831853071795862
+  done=1 hasResult=1 maxError3d=0.000188631
+  bspline range=[0, 1] degree=7 poles=14
+  result edge type=6 length=62.831818308373776
+  length [first, mid-parameter]=31.415909154186899
+curvilinearCircle: edge 1 type=0 range=[0, 5] length=5
+  done=1 hasResult=1 maxError3d=7.83159e-16
+  bspline range=[0, 1] degree=1 poles=2
+  result edge type=6 length=5
+  length [first, mid-parameter]=2.5
+curvilinearCircle: edge 2 type=1 range=[0, 6.2831853071795862] length=62.831853071795862
+  done=1 hasResult=1 maxError3d=0.000188631
+  bspline range=[0, 1] degree=7 poles=14
+  result edge type=6 length=62.831818308373776
+  length [first, mid-parameter]=31.415909154186899
+curvilinearCircle: edge 3 type=0 range=[0, 5] length=5
+  done=1 hasResult=1 maxError3d=7.83159e-16
+  bspline range=[0, 1] degree=1 poles=2
+  result edge type=6 length=5
+  length [first, mid-parameter]=2.5
+curvilinearCircle: edge 4 type=1 range=[0, 6.2831853071795862] length=62.831853071795862
+  done=1 hasResult=1 maxError3d=0.000188631
+  bspline range=[0, 1] degree=7 poles=14
+  result edge type=6 length=62.831818308373776
+  length [first, mid-parameter]=31.415909154186899
+curvilinearCircle: edge 5 type=1 range=[0, 6.2831853071795862] length=62.831853071795862
+  done=1 hasResult=1 maxError3d=0.000188631
+  bspline range=[0, 1] degree=7 poles=14
+  result edge type=6 length=62.831818308373776
+  length [first, mid-parameter]=31.415909154186899
+sameParamLinePlane
+  done=1 isSame=1 tolReached=1.4849242404917499e+50
+  reversed 2D line: done=0 isSame=0 tolReached=1.4849242404917499e+50
