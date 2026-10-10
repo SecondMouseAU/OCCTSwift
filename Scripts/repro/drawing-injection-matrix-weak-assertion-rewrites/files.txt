@@ -1,0 +1,9 @@
+# The test files this PR lifts (current paths).
+Tests/OCCTDrawingTests/Dimensions/DiameterDimensionTests.swift
+Tests/OCCTDrawingTests/Dimensions/LengthDimensionTests.swift
+Tests/OCCTDrawingTests/Dimensions/RadiusDimensionTests.swift
+Tests/OCCTDrawingTests/HiddenLine/HLRReflectLinesTests.swift
+Tests/OCCTDrawingTests/HiddenLine/PolyHLRTests.swift
+Tests/OCCTDrawingTests/Projection/CylindricalProjectionTests.swift
+Tests/OCCTDrawingTests/Projection/NormalProjectionTests.swift
+Tests/OCCTTopologyTests/Faces/PointProjectionTests.swift

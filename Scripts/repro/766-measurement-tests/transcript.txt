@@ -1,0 +1,24 @@
+volumeOfBox: 1000.000000000000
+volumeOfCylinder: 785.398163397448 (pi*25*10 = 785.398163397448)
+volumeOfSphere: 523.598775598299 (4/3*pi*125 = 523.598775598299)
+surfaceAreaOfBox: 600.000000000000
+surfaceAreaOfSphere: 314.159265358979 (4*pi*25 = 314.159265358979)
+centerOfMassBox: (-0.000000000000, -0.000000000000, 0.000000000000)
+centerOfMassTranslatedBox: (100.000000000000, 200.000000000000, 300.000000000000)
+fullShapeProperties: volume=1000.000000000000 area=600.000000000000 mass=2500.000000000000 com=(-0.000000000000, -0.000000000000, 0.000000000000)
+distanceBetweenBoxes: done=1 n=4 value=10.000000000000
+distanceBetweenTouchingBoxes: done=1 n=4 value=0.000000000000
+minDistanceConvenience: done=1 n=1 value=7.000000000000
+intersectsOverlapping: value=0.000000000000 intersects=1
+intersectsSeparated: value=42.000000000000 intersects=0
+intersectsTouching: value=0.000000000174 intersects=1
+vertexCountBox / getAllVertices: 8
+  vertex[0] = (-5, -5, 5)
+  vertex[1] = (-5, -5, -5)
+  vertex[2] = (-5, 5, 5)
+  vertex[3] = (-5, 5, -5)
+  vertex[4] = (5, -5, 5)
+  vertex[5] = (5, -5, -5)
+  vertex[6] = (5, 5, 5)
+  vertex[7] = (5, 5, -5)
+vertexOutOfBounds: index 100 >= extent 8 -> nil
