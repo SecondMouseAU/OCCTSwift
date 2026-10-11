@@ -5,6 +5,21 @@ import Foundation
 import OCCTSwift
 import Testing
 
+// #2983: every link of every chain below is required. The chains used to bind each link with
+// `if let ... { shape = result }`, which skips a link the kernel (or the bridge) refuses and goes on
+// to assert on the shorter chain; only the final figure said whether every link ran, and for the
+// chains whose figure barely moves per link that is a small signal. On the pinned kernel every link
+// of every chain here succeeds (measured, 0 refusals in 50 + 100 + 50 + 50 + 30 booleans, 1000 + 1000
+// + 100 + 100 transforms and 4 + 5 + 10 + 10 features), so a refusal is now a failure that names its
+// link. `tenSuccessiveFillets` is the one chain whose second link is refused by the kernel, and it
+// still says so.
+
+/// A sphere of `radius` centred at (`x`, `y`, 0), required.
+private func sphereAt(radius: Double, x: Double, y: Double) throws -> Shape {
+    let sphere = try #require(Shape.sphere(radius: radius), "sphere r=\(radius)")
+    return try #require(sphere.translated(by: SIMD3(x, y, 0)), "translate sphere to (\(x), \(y))")
+}
+
 // MARK: - Boolean Chains
 
 @Suite("Stress: Boolean Chains")
@@ -12,20 +27,18 @@ struct StressBooleanChainTests {
 
     @Test func fiftySubtractions() throws {
         var shape = try #require(Shape.box(width: 100, height: 100, depth: 100))
-        let origVol = shape.volume ?? 0
         for i in 0..<50 {
             let angle = Double(i) * (2.0 * .pi / 50.0)
-            let x = 30.0 * cos(angle)
-            let y = 30.0 * sin(angle)
-            if let sphere = Shape.sphere(radius: 3),
-                let positioned = sphere.translated(by: SIMD3(x, y, 0)),
-                let result = shape.subtracting(positioned)
-            {
-                shape = result
+            let cutter = try sphereAt(radius: 3, x: 30.0 * cos(angle), y: 30.0 * sin(angle))
+            shape = try #require(shape.subtracting(cutter), "cut \(i)")
+            // The first cut is on its own: a sphere of r = 3 is 4/3 pi 27 = 113.0973355. Every
+            // later one overlaps its neighbours (3.77 apart, 6 across), so only the first has a
+            // closed form.
+            if i == 0 {
+                #expect(abs((shape.volume ?? 0) - (1e6 - 4.0 / 3.0 * .pi * 27)) < 1e-6)
             }
         }
         #expect(shape.isValid)
-        if let vol = shape.volume { #expect(vol < origVol) }
         // Epic #766: "smaller than before" held for any single successful cut. The kernel's
         // volume after all fifty is 995373.8819 (Scripts/repro/766-stress-chain-depth/).
         #expect(abs((shape.volume ?? 0) - 995373.8819) < 1e-3)
@@ -33,21 +46,18 @@ struct StressBooleanChainTests {
 
     @Test func hundredSubtractions() throws {
         var shape = try #require(Shape.box(width: 200, height: 200, depth: 200))
-        let origVol = shape.volume ?? 0
         for i in 0..<100 {
             let angle = Double(i) * (2.0 * .pi / 100.0)
-            let x = 60.0 * cos(angle)
-            let y = 60.0 * sin(angle)
-            if let sphere = Shape.sphere(radius: 2),
-                let positioned = sphere.translated(by: SIMD3(x, y, 0)),
-                let result = shape.subtracting(positioned)
-            {
-                shape = result
-            }
+            let cutter = try sphereAt(radius: 2, x: 60.0 * cos(angle), y: 60.0 * sin(angle))
+            shape = try #require(shape.subtracting(cutter), "cut \(i)")
             // Check validity every 25 ops
-            if (i + 1) % 25 == 0 { #expect(shape.isValid) }
+            if (i + 1) % 25 == 0 { #expect(shape.isValid, "invalid after cut \(i)") }
+            // The neighbouring spheres are 3.77 apart and 4 across, so the first cut alone has a
+            // closed form: 4/3 pi 8 = 33.5103216.
+            if i == 0 {
+                #expect(abs((shape.volume ?? 0) - (8e6 - 4.0 / 3.0 * .pi * 8)) < 1e-6)
+            }
         }
-        if let vol = shape.volume { #expect(vol < origVol) }
         // Epic #766: pinned to the kernel's volume after all hundred cuts.
         #expect(abs((shape.volume ?? 0) - 7996665.368) < 1e-2)
     }
@@ -55,18 +65,20 @@ struct StressBooleanChainTests {
     @Test func fiftyUnions() throws {
         var shape = try #require(Shape.box(width: 5, height: 5, depth: 5))
         for i in 0..<50 {
-            if let box = Shape.box(
-                origin: SIMD3(Double(i) * 5, 0, 0), width: 5, height: 5, depth: 5),
-                let result = shape.union(box)
-            {
-                shape = result
-            }
+            let box = try #require(
+                Shape.box(origin: SIMD3(Double(i) * 5, 0, 0), width: 5, height: 5, depth: 5),
+                "box \(i)")
+            shape = try #require(shape.union(box), "union \(i)")
         }
         #expect(shape.isValid)
-        if let vol = shape.volume { #expect(vol > 0) }
         // Epic #766: "positive" held for the starting box alone, so fifty failed unions passed.
-        // The kernel's fused volume is 6359.375.
-        #expect(abs((shape.volume ?? 0) - 6359.375) < 1e-6)
+        // Closed form: the starting box is centred on the origin, [-2.5, 2.5]^3, and
+        // `box(origin:)` takes the minimum corner, so box i is [5i, 5i + 5] x [0, 5] x [0, 5]. The
+        // fifty are disjoint from one another, and only box 0 meets the starting box, in
+        // [0, 2.5]^3 = 15.625. So 51 boxes of 125, less that one overlap: 6375 - 15.625 = 6359.375.
+        #expect(abs((shape.volume ?? 0) - (51 * 125 - 15.625)) < 1e-6)
+        // One solid, not fifty-one touching ones: the fuse merged the abutting faces.
+        #expect(shape.solidCount == 1)
     }
 
     @Test func fiftyIntersections() throws {
@@ -74,10 +86,11 @@ struct StressBooleanChainTests {
         var shape = try #require(Shape.box(width: 100, height: 100, depth: 100))
         for i in 0..<50 {
             let size = 100.0 - Double(i) * 0.5
-            if let box = Shape.box(width: size, height: size, depth: size),
-                let result = shape.intersection(box)
-            {
-                shape = result
+            let box = try #require(Shape.box(width: size, height: size, depth: size), "box \(i)")
+            shape = try #require(shape.intersection(box), "intersection \(i)")
+            // Boxes are centred, so each common is the smaller of the two cubes.
+            if i == 1 || i == 49 {
+                #expect(abs((shape.volume ?? 0) - size * size * size) < 1e-4, "after \(i)")
             }
         }
         #expect(shape.isValid)
@@ -88,21 +101,47 @@ struct StressBooleanChainTests {
     @Test func mixedBooleans() throws {
         var shape = try #require(Shape.box(width: 50, height: 50, depth: 50))
         for i in 0..<30 {
-            let small = Shape.box(
-                origin: SIMD3(Double(i % 5) * 8, Double(i / 5) * 8, 0),
-                width: 6, height: 6, depth: 6)!
+            let small = try #require(
+                Shape.box(
+                    origin: SIMD3(Double(i % 5) * 8, Double(i / 5) * 8, 0),
+                    width: 6, height: 6, depth: 6),
+                "small box \(i)")
+            let combined: Shape?
             switch i % 3 {
-            case 0: if let r = shape.union(small) { shape = r }
-            case 1: if let r = shape.subtracting(small) { shape = r }
-            default: if let r = shape.intersection(small) { shape = r }
+            case 0: combined = shape.union(small)
+            case 1: combined = shape.subtracting(small)
+            default: combined = shape.intersection(small)
+            }
+            shape = try #require(combined, "boolean \(i) (kind \(i % 3))")
+            // Epic #766: validity alone passed for thirty no-op booleans, and so did the final
+            // "ends empty" figure, which any chain that loses its shape reaches. So the volume
+            // after every link is pinned. The 50-cube is centred on the origin and the small
+            // boxes start at their minimum corner, so:
+            //   0 union at (0,0)     inside the cube          125000
+            //   1 subtract at (8,0)  inside the cube          125000 - 216
+            //   2 intersect at (16,0) inside, clear of the cut  216
+            //   3 union at (24,0)    abuts nothing, disjoint    432
+            //   4 subtract at (32,0) disjoint from both         432
+            //   5 intersect at (0,8) meets neither              empty
+            // and from there the chain repeats: a union puts a 216 box back, a subtract misses it,
+            // and the intersect at the next cell misses it, leaving nothing again. An empty
+            // result has no volume (reported as nil, not 0) and no faces.
+            let expected: Double?
+            switch i {
+            case 0: expected = 125_000
+            case 1: expected = 125_000 - 216
+            case 2: expected = 216
+            case 3, 4: expected = 432
+            default: expected = i % 3 == 2 ? nil : 216
+            }
+            if let expected {
+                #expect(abs((shape.volume ?? 0) - expected) < 1e-6, "volume after \(i)")
+            } else {
+                #expect(shape.volume == nil, "volume after \(i)")
+                #expect(shape.subShapeCount(ofType: .face) == 0, "faces after \(i)")
             }
         }
         #expect(shape.isValid)
-        // Epic #766: validity alone passed for thirty no-op booleans. In the kernel the chain
-        // ends empty: a later common with a small box that no longer overlaps what is left leaves
-        // nothing, and an empty result has no volume (reported as nil, not 0).
-        #expect(shape.volume == nil)
-        #expect(shape.subShapeCount(ofType: .face) == 0)
     }
 }
 
@@ -113,23 +152,36 @@ struct StressFeatureChainTests {
 
     @Test func filletDrillChamferChain() throws {
         var shape = try #require(Shape.box(width: 40, height: 40, depth: 20))
-        // Fillet
-        if let f = shape.filleted(radius: 1.0) { shape = f }
+        // Fillet. Each link is required (see the note at the top of the file), and pinned as it
+        // goes: a link that returned its input would leave the later figures where they were.
+        shape = try #require(shape.filleted(radius: 1.0), "fillet")
         #expect(shape.isValid)
+        #expect(shape.subShapeCount(ofType: .face) == 26, "6 faces + 12 edge fillets + 8 corners")
+        // Closed form: the twelve edges are 4 x (38 + 38 + 18) = 376 long between the corners and
+        // each removes (1 - pi/4) r^2 per unit length; each of the eight corners removes
+        // (1 - pi/6) r^3 more. 32000 - 80.6903 - 3.8112 = 31915.4985.
+        let edgeLoss: Double = 376.0 * (1.0 - Double.pi / 4.0)
+        let cornerLoss: Double = 8.0 * (1.0 - Double.pi / 6.0)
+        var expectedVolume: Double = 32000.0 - edgeLoss - cornerLoss
+        #expect(abs((shape.volume ?? 0) - expectedVolume) < 1e-6)
         // Drill 4 holes
         let positions: [SIMD3<Double>] = [
             SIMD3(-10, -10, 10), SIMD3(10, -10, 10),
             SIMD3(-10, 10, 10), SIMD3(10, 10, 10),
         ]
-        for pos in positions {
-            if let d = shape.drilled(at: pos, direction: SIMD3(0, 0, -1), radius: 2, depth: 0) {
-                shape = d
-            }
+        for (n, pos) in positions.enumerated() {
+            shape = try #require(
+                shape.drilled(at: pos, direction: SIMD3(0, 0, -1), radius: 2, depth: 0),
+                "drill \(n)")
+            // A through-hole of r = 2 in the 20-deep plate takes 80 pi, well clear of the fillets.
+            expectedVolume -= 80 * .pi
+            #expect(abs((shape.volume ?? 0) - expectedVolume) < 1e-6, "volume after drill \(n)")
         }
         #expect(shape.isValid)
         // Chamfer
-        if let c = shape.chamfered(distance: 0.3) { shape = c }
+        shape = try #require(shape.chamfered(distance: 0.3), "chamfer")
         #expect(shape.isValid)
+        #expect(shape.subShapeCount(ofType: .face) == 38, "measured 26 fillet faces + 4 hole walls + 8 chamfer faces")
         // Shell. #2830: this link never ran, and "may fail on complex geometry" was the wrong
         // reason. `shelled(thickness:)` is `MakeThickSolidBySimple`, whose domain is a non-closed
         // shell or face, so it refuses this closed chain result for the same reason it refuses a
@@ -177,40 +229,31 @@ struct StressFeatureChainTests {
             for col in 0..<2 {
                 let x = -30.0 + Double(row) * 15.0
                 let y = -10.0 + Double(col) * 20.0
-                if let d = shape.drilled(
-                    at: SIMD3(x, y, 10), direction: SIMD3(0, 0, -1), radius: 2, depth: 0)
-                {
-                    shape = d
-                }
+                shape = try #require(
+                    shape.drilled(
+                        at: SIMD3(x, y, 10), direction: SIMD3(0, 0, -1), radius: 2, depth: 0),
+                    "drill (\(row), \(col))")
             }
         }
         #expect(shape.isValid)
-        if let vol = shape.volume { #expect(vol > 0) }
         // Epic #766: ten through-holes of radius 2 in a 10-thick plate: 1e5 - 10·π·4·10.
         #expect(abs((shape.volume ?? 0) - (1e5 - 400 * .pi)) < 1e-3)
+        // Each hole adds one cylindrical face to the box's six.
+        #expect(shape.subShapeCount(ofType: .face) == 16)
     }
 
     @Test func deepFeatureChain() throws {
         var shape = try #require(Shape.box(width: 50, height: 50, depth: 30))
-        var stepCount = 0
-        // Fillet → drill → fillet → drill → ... 10 cycles
+        // Fillet → drill → fillet → drill → ... 10 cycles. All twenty links are required, which
+        // is what the old `stepCount == 20` counted (measured: every one succeeds in the kernel).
         for i in 0..<10 {
-            if let f = shape.filleted(radius: 0.3) {
-                shape = f
-                stepCount += 1
-            }
+            shape = try #require(shape.filleted(radius: 0.3), "fillet \(i)")
             let x = -15.0 + Double(i) * 3.0
-            if let d = shape.drilled(
-                at: SIMD3(x, 0, 15), direction: SIMD3(0, 0, -1), radius: 1, depth: 0)
-            {
-                shape = d
-                stepCount += 1
-            }
+            shape = try #require(
+                shape.drilled(at: SIMD3(x, 0, 15), direction: SIMD3(0, 0, -1), radius: 1, depth: 0),
+                "drill \(i)")
         }
-        #expect(stepCount > 0)
         #expect(shape.isValid)
-        // Epic #766: in the kernel all twenty steps succeed.
-        #expect(stepCount == 20)
         #expect(abs((shape.volume ?? 0) - 74045.18424) < 1e-3)
     }
 }
@@ -222,10 +265,8 @@ struct StressTransformChainTests {
 
     @Test func thousandTranslations() throws {
         var shape = standardBox()
-        for _ in 0..<1000 {
-            if let t = shape.translated(by: SIMD3(0.001, 0, 0)) {
-                shape = t
-            }
+        for i in 0..<1000 {
+            shape = try #require(shape.translated(by: SIMD3(0.001, 0, 0)), "translation \(i)")
         }
         #expect(shape.isValid)
         // Epic #766: `b.max.x > 0.5` held after a single successful translation, and the `bounds!`
@@ -236,41 +277,58 @@ struct StressTransformChainTests {
         #expect(abs(b.min.x - -4) < 1e-6)
         #expect(abs(b.max.y - 5) < 1e-6)
         #expect(abs(b.min.y - -5) < 1e-6)
+        #expect(abs(b.max.z - 5) < 1e-6)
+        #expect(abs(b.min.z - -5) < 1e-6)
     }
 
     @Test func thousandRotations() throws {
         var shape = standardBox()
         let angleStep = (2.0 * .pi) / 1000.0
-        for _ in 0..<1000 {
-            if let r = shape.rotated(axis: SIMD3(0, 0, 1), angle: angleStep) {
-                shape = r
+        for i in 0..<1000 {
+            shape = try #require(shape.rotated(axis: SIMD3(0, 0, 1), angle: angleStep), "turn \(i)")
+            // The control a full turn cannot give: a box that was never rotated has the same
+            // bounds as one turned all the way round. An eighth of the way (125 steps, 45 degrees)
+            // the box is on its diagonal, so its x and y extents are 5 sqrt(2) = 7.0711 and not 5.
+            // The box bounds carry the kernel's 1e-7 enlargement.
+            if i == 124 {
+                let mid = try #require(shape.bounds)
+                #expect(abs(mid.max.x - 5 * 2.0.squareRoot()) < 1e-6)
+                #expect(abs(mid.min.y - -5 * 2.0.squareRoot()) < 1e-6)
             }
         }
         #expect(shape.isValid)
-        // After full rotation, should be back near original
-        if let vol = shape.volume { #expect(abs(vol - 1000.0) < 1.0) }
+        // After the full turn the box is back where it started and axis-aligned, volume 1000 to
+        // rounding (measured 999.9999999999875).
+        #expect(abs((shape.volume ?? 0) - 1000.0) < 1e-6)
         // Epic #766: the volume is the same at every angle, so it could not see a wrong one. The
-        // bounds can: after a full turn the box is axis-aligned again, max corner (5, 5, 5).
+        // bounds can: after a full turn the box is axis-aligned again, corners at +/- 5.
         let b = try #require(shape.bounds)
         #expect(abs(b.max.x - 5) < 1e-6)
         #expect(abs(b.max.y - 5) < 1e-6)
+        #expect(abs(b.min.x - -5) < 1e-6)
+        #expect(abs(b.min.y - -5) < 1e-6)
     }
 
     @Test func hundredScales() throws {
         var shape = standardBox()
-        // Scale up then back down
-        for _ in 0..<50 {
-            if let s = shape.scaled(by: 1.01) { shape = s }
+        // Scale up then back down. Up by 1.01 and back by 1/1.01 fifty times each is the identity,
+        // so a chain that did nothing ends where this one does. The half-way figure is the part a
+        // no-op cannot reach: fifty scalings by 1.01 take the half-side to 5 * 1.01^50 and the
+        // volume to 1000 * 1.01^150.
+        for i in 0..<50 {
+            shape = try #require(shape.scaled(by: 1.01), "scale up \(i)")
         }
-        for _ in 0..<50 {
-            if let s = shape.scaled(by: 1.0 / 1.01) { shape = s }
+        let upBounds = try #require(shape.bounds)
+        #expect(abs(upBounds.max.x - 5 * pow(1.01, 50)) < 1e-5)
+        #expect(abs((shape.volume ?? 0) - 1000 * pow(1.01, 150)) < 1e-6 * pow(1.01, 150) * 1000)
+        for i in 0..<50 {
+            shape = try #require(shape.scaled(by: 1.0 / 1.01), "scale down \(i)")
         }
         #expect(shape.isValid)
         // Epic #766: a 10 percent band around 1000 passed for a chain in which the fifty scalings
         // up and the fifty back down had both done nothing, and it also passed if one direction
-        // had run and the other had not been far off. Up by 1.01 and back by 1/1.01 fifty times
-        // each is the identity to rounding, so the box is the box again: volume 1000, corners at
-        // +/- 5.
+        // had run and the other had not been far off. Back at the start, the box is the box
+        // again: volume 1000, corners at +/- 5.
         #expect(abs((shape.volume ?? 0) - 1000) < 1e-6)
         let b = try #require(shape.bounds)
         // 1e-6 and not 1e-9: a hundred `gp_Trsf` scalings accumulate rounding in the corner
@@ -280,19 +338,45 @@ struct StressTransformChainTests {
         #expect(abs(b.min.z - -5) < 1e-6)
     }
 
-    @Test func mixedTransforms() {
+    @Test func mixedTransforms() throws {
         var shape = standardBox()
+        // The same hundred links followed on paper: the box's centre c, its turn angle and its
+        // scale. `translated` adds to c, `rotated` about Z through the origin turns c and the box,
+        // `scaled` scales about the origin so it scales c and the box.
+        var centre = SIMD2<Double>(0, 0)
+        var angle = 0.0
+        var scale = 1.0
         for i in 0..<100 {
             switch i % 3 {
-            case 0: if let t = shape.translated(by: SIMD3(0.01, 0, 0)) { shape = t }
-            case 1: if let r = shape.rotated(axis: SIMD3(0, 0, 1), angle: 0.01) { shape = r }
-            default: if let s = shape.scaled(by: 1.001) { shape = s }
+            case 0:
+                shape = try #require(shape.translated(by: SIMD3(0.01, 0, 0)), "translate \(i)")
+                centre.x += 0.01
+            case 1:
+                shape = try #require(shape.rotated(axis: SIMD3(0, 0, 1), angle: 0.01), "rotate \(i)")
+                let (c, s) = (cos(0.01), sin(0.01))
+                centre = SIMD2(c * centre.x - s * centre.y, s * centre.x + c * centre.y)
+                angle += 0.01
+            default:
+                shape = try #require(shape.scaled(by: 1.001), "scale \(i)")
+                centre *= 1.001
+                scale *= 1.001
             }
         }
         #expect(shape.isValid)
         // Epic #766: 33 scalings by 1.001 (rotation and translation keep the volume), so
         // 1000 · 1.001^99 = 1104.01168603.
         #expect(abs((shape.volume ?? 0) - 1104.01168603) < 1e-6)
+        // Rotation and translation keep the volume, so the figure above cannot see them. The
+        // bounds can: an axis-aligned box of half-side 5 * scale turned by `angle` spans
+        // 5 * scale * (|cos| + |sin|) each side of its centre in x and y, and 5 * scale in z.
+        // The box bounds carry the kernel's 1e-7 enlargement.
+        let half = 5 * scale * (abs(cos(angle)) + abs(sin(angle)))
+        let b = try #require(shape.bounds)
+        #expect(abs(b.max.x - (centre.x + half)) < 1e-5)
+        #expect(abs(b.min.x - (centre.x - half)) < 1e-5)
+        #expect(abs(b.max.y - (centre.y + half)) < 1e-5)
+        #expect(abs(b.min.y - (centre.y - half)) < 1e-5)
+        #expect(abs(b.max.z - 5 * scale) < 1e-5)
     }
 }
 
@@ -369,12 +453,15 @@ struct StressDocumentAssemblyTests {
     // failed, in all three tests. They now require the document.
     @Test func hundredShapesInDocument() throws {
         let doc = try #require(Document.create())
+        var labels = Set<Int64>()
         for i in 0..<100 {
-            if let box = Shape.box(width: Double(i + 1), height: 10, depth: 10) {
-                doc.addShape(box)
-            }
+            let box = try #require(Shape.box(width: Double(i + 1), height: 10, depth: 10), "box \(i)")
+            labels.insert(doc.addShape(box))
         }
         #expect(doc.shapeCount == 100)
+        // A hundred distinct labels, not one label overwritten (measured: 0 through 99).
+        #expect(labels.count == 100)
+        #expect(!labels.contains { $0 < 0 })
     }
 
     @Test func deepAssemblyTree() throws {

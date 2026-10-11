@@ -88,38 +88,111 @@ struct StressRoundTripBREPTests {
 
 // MARK: - BREP String Round-Trip
 
+/// What each standard fixture is, so a round trip is compared with the fixture's own closed-form
+/// figures and not only with what the same shape reported before it was written. #2983: the old
+/// check compared the restored shape with the original within 1e-3 relative, which a restore that
+/// scaled by 1.0005 passed, and `origVol > 0, let rVol` skipped the comparison for a shape with no
+/// volume or one whose volume came back nil. The figures are closed form (box 10^3, cylinder
+/// r = 5 h = 10, sphere r = 5, cone r = 5 -> 2 h = 10, torus R = 10 r = 3, the r = 1 rounded box, the
+/// 50 x 50 x 5 plate with an r = 3 hole, the box fused with the cylinder, a ruled loft r = 5 -> 3 over
+/// h = 10) except the edge counts, which are the kernel's (measured on the pinned kernel).
+private struct FixtureFigures {
+    let volume: Double?
+    let area: Double
+    let faces: Int
+    let edges: Int
+    let type: ShapeType
+}
+
+private let fixtureFigures: [String: FixtureFigures] = [
+    "box": .init(volume: 1000, area: 600, faces: 6, edges: 12, type: .solid),
+    "cylinder": .init(volume: 250 * .pi, area: 150 * .pi, faces: 3, edges: 3, type: .solid),
+    "sphere": .init(volume: 500.0 / 3.0 * .pi, area: 100 * .pi, faces: 1, edges: 3, type: .solid),
+    // pi h / 3 (R^2 + R r + r^2) = 130 pi; area pi R^2 + pi r^2 + pi (R + r) slant, slant = sqrt(109).
+    "cone": .init(
+        volume: 130 * .pi, area: .pi * (29 + 7 * 109.0.squareRoot()), faces: 3, edges: 3,
+        type: .solid),
+    // V = 2 pi^2 R r^2, A = 4 pi^2 R r.
+    "torus": .init(
+        volume: 180 * .pi * .pi, area: 120 * .pi * .pi, faces: 1, edges: 2, type: .solid),
+    // (a - 2r)^3 + 6 (a - 2r)^2 r + 3 pi r^2 (a - 2r) + 4/3 pi r^3 and 6 (a - 2r)^2 +
+    // 12 (pi/2) r (a - 2r) + 4 pi r^2, at a = 10, r = 1. The result is a compound on this kernel.
+    "filletedBox": .init(
+        volume: 896 + 24 * .pi + 4.0 / 3.0 * .pi, area: 384 + 48 * .pi + 4 * .pi, faces: 26,
+        edges: 56, type: .compound),
+    // 12500 - pi 9 5, and 2 * 2500 + 4 * 250 + 2 pi 3 5 - 2 pi 9.
+    "drilledPlate": .init(
+        volume: 12500 - 45 * .pi, area: 6000 + 30 * .pi - 18 * .pi, faces: 7, edges: 15,
+        type: .compound),
+    // The cylinder (z from 0 to 10) is inside the box (z from -5 to 5) for its lower half:
+    // 1000 + 250 pi - 125 pi, and 600 - 25 pi + 50 pi + 25 pi.
+    "compound": .init(
+        volume: 1000 + 125 * .pi, area: 600 + 50 * .pi, faces: 11, edges: 26, type: .compound),
+    // Five of the box's six faces: no volume by design (#605/#609).
+    "openShell": .init(volume: nil, area: 500, faces: 5, edges: 12, type: .shell),
+    // pi h / 3 (R^2 + R r + r^2) = 490 pi / 3; A = pi R^2 + pi r^2 + pi (R + r) sqrt(h^2 + (R - r)^2).
+    "loftedSolid": .init(
+        volume: 490 * .pi / 3, area: .pi * (34 + 8 * 104.0.squareRoot()), faces: 3, edges: 3,
+        type: .solid),
+]
+
+/// Pin `shape` and its restored copy against `name`'s figures. Both halves: the original has to be
+/// what the table says (or the comparison is between two copies of the same wrong shape), and the
+/// restored one has to match the original to rounding.
+private func expectFigures(
+    _ shape: Shape, restored: Shape, name: String, volumeTolerance: Double = 1e-9
+) throws {
+    let expected = try #require(fixtureFigures[name], "no figures for fixture \(name)")
+    for (label, s) in [("original", shape), ("restored", restored)] {
+        #expect(s.isValid, "\(label) \(name) not valid")
+        #expect(s.shapeType == expected.type, "\(label) \(name) type \(s.shapeType)")
+        #expect(s.subShapeCount(ofType: .face) == expected.faces, "\(label) \(name) faces")
+        #expect(s.subShapeCount(ofType: .edge) == expected.edges, "\(label) \(name) edges")
+        if let volume = expected.volume {
+            let measured = s.volume ?? .nan
+            #expect(
+                abs(measured - volume) <= volumeTolerance * volume,
+                "\(label) \(name) volume \(measured), expected \(volume)")
+        } else {
+            #expect(s.volume == nil, "\(label) \(name) must report no volume")
+        }
+        let area = s.surfaceArea ?? .nan
+        #expect(
+            abs(area - expected.area) <= volumeTolerance * expected.area,
+            "\(label) \(name) area \(area), expected \(expected.area)")
+    }
+}
+
 @Suite("Stress: Round-Trip BREP String")
 struct StressRoundTripBREPStringTests {
 
-    private func roundTrip(_ shape: Shape, name: String) {
-        let origVol = shape.volume ?? 0
-        let origFaces = shape.subShapeCount(ofType: .face)
-
-        guard let brepStr = shape.toBREPString() else {
-            #expect(Bool(false), "toBREPString failed for \(name)")
-            return
-        }
+    private func roundTrip(_ shape: Shape, name: String) throws {
+        let brepStr = try #require(shape.toBREPString(), "toBREPString failed for \(name)")
         #expect(!brepStr.isEmpty)
-
-        guard let restored = Shape.fromBREPString(brepStr) else {
-            #expect(Bool(false), "fromBREPString failed for \(name)")
-            return
-        }
-        #expect(restored.isValid)
-        if origVol > 0, let rVol = restored.volume {
-            #expect(abs(rVol - origVol) / origVol < 0.001, "Volume mismatch for \(name)")
-        }
-        #expect(restored.subShapeCount(ofType: .face) == origFaces)
+        let restored = try #require(
+            Shape.fromBREPString(brepStr), "fromBREPString failed for \(name)")
+        try expectFigures(shape, restored: restored, name: name)
     }
 
-    @Test func box() { roundTrip(standardBox(), name: "box") }
-    @Test func cylinder() { roundTrip(standardCylinder(), name: "cylinder") }
-    @Test func sphere() { roundTrip(standardSphere(), name: "sphere") }
-    @Test func cone() { roundTrip(standardCone(), name: "cone") }
-    @Test func torus() { roundTrip(standardTorus(), name: "torus") }
-    @Test func filletedBoxShape() throws { roundTrip(try filletedBox(), name: "filletedBox") }
-    @Test func drilledPlateShape() throws { roundTrip(try drilledPlate(), name: "drilledPlate") }
-    @Test func compound() throws { roundTrip(try standardCompound(), name: "compound") }
+    @Test func box() throws { try roundTrip(standardBox(), name: "box") }
+    @Test func cylinder() throws { try roundTrip(standardCylinder(), name: "cylinder") }
+    @Test func sphere() throws { try roundTrip(standardSphere(), name: "sphere") }
+    @Test func cone() throws { try roundTrip(standardCone(), name: "cone") }
+    @Test func torus() throws { try roundTrip(standardTorus(), name: "torus") }
+    @Test func filletedBoxShape() throws { try roundTrip(try filletedBox(), name: "filletedBox") }
+    @Test func drilledPlateShape() throws { try roundTrip(try drilledPlate(), name: "drilledPlate") }
+    @Test func compound() throws { try roundTrip(try standardCompound(), name: "compound") }
+
+    /// The strings are the shapes: a different fixture is a different string, and a restore does
+    /// not hand back some other fixture. Without this, a `toBREPString` that always wrote the box
+    /// would fail only the eight tests whose own figures differ from the box's, by name.
+    @Test func distinctShapesWriteDistinctStrings() throws {
+        let box = try #require(standardBox().toBREPString())
+        let cylinder = try #require(standardCylinder().toBREPString())
+        let sphere = try #require(standardSphere().toBREPString())
+        #expect(Set([box, cylinder, sphere]).count == 3)
+        #expect(box.count != cylinder.count)
+    }
 }
 
 // MARK: - STL Round-Trip
@@ -296,11 +369,16 @@ struct StressCrossFormatConsistencyTests {
     ///
     /// Both halves now fail.
     @Test func allShapesBREPString() throws {
-        for (name, shape) in try allStandardShapes() {
+        // `allStandardShapes()` asserts its own membership against `standardShapeNames`; the
+        // figures table is checked against the same names here, in both directions, so a fixture
+        // added to one and not the other fails by name.
+        let shapes = try allStandardShapes()
+        #expect(Set(shapes.map(\.0)) == Set(fixtureFigures.keys))
+        for (name, shape) in shapes {
             let brep = try #require(shape.toBREPString(), "BREP string export failed for \(name)")
             let restored = try #require(
                 Shape.fromBREPString(brep), "BREP string restore failed for \(name)")
-            #expect(restored.isValid, "Restored \(name) not valid")
+            try expectFigures(shape, restored: restored, name: name)
         }
     }
 }
