@@ -1,0 +1,3427 @@
+{
+ "E1-adj-1-1": {
+  "ref": {
+   "ref": {
+    "valid": 1,
+    "vol": 237.091444625,
+    "faces": 8,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "rc": 0
+  },
+  "k5": {
+   "kernel": {
+    "valid": 1,
+    "vol": 237.091444625,
+    "faces": 8,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 237.091444625,
+    "faces": 8,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "diff": {
+    "kernel_minus_ref": 0.0,
+    "ref_minus_kernel": 0.0
+   },
+   "rc": 0
+  },
+  "main": {
+   "kernel": {
+    "valid": 1,
+    "vol": 237.091444625,
+    "faces": 8,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 237.091444625,
+    "faces": 8,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "diff": {
+    "kernel_minus_ref": 0.0,
+    "ref_minus_kernel": 0.0
+   },
+   "rc": 0
+  },
+  "new": {
+   "kernel": {
+    "valid": 1,
+    "vol": 237.091444625,
+    "faces": 8,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 237.091444625,
+    "faces": 8,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "diff": {
+    "kernel_minus_ref": 0.0,
+    "ref_minus_kernel": 0.0
+   },
+   "rc": 0
+  },
+  "p61": {
+   "kernel": {
+    "valid": 1,
+    "vol": 237.091444625,
+    "faces": 8,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 237.091444625,
+    "faces": 8,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "diff": {
+    "kernel_minus_ref": 0.0,
+    "ref_minus_kernel": 0.0
+   },
+   "rc": 0
+  }
+ },
+ "E2-adj-1-2": {
+  "ref": {
+   "ref": {
+    "valid": 1,
+    "vol": 230.811017362,
+    "faces": 8,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "rc": 0
+  },
+  "k5": {
+   "kernel": {
+    "valid": 1,
+    "vol": 230.811017374,
+    "faces": 8,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 230.811017362,
+    "faces": 8,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "diff": {
+    "kernel_minus_ref": 0.0,
+    "ref_minus_kernel": 0.0
+   },
+   "rc": 0
+  },
+  "main": {
+   "kernel": {
+    "valid": 1,
+    "vol": 230.811017374,
+    "faces": 8,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 230.811017362,
+    "faces": 8,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "diff": {
+    "kernel_minus_ref": 0.0,
+    "ref_minus_kernel": 0.0
+   },
+   "rc": 0
+  },
+  "new": {
+   "kernel": {
+    "valid": 1,
+    "vol": 230.811017374,
+    "faces": 8,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 230.811017362,
+    "faces": 8,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "diff": {
+    "kernel_minus_ref": 0.0,
+    "ref_minus_kernel": 0.0
+   },
+   "rc": 0
+  },
+  "p61": {
+   "kernel": {
+    "valid": 1,
+    "vol": 230.811017374,
+    "faces": 8,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 230.811017362,
+    "faces": 8,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "diff": {
+    "kernel_minus_ref": 0.0,
+    "ref_minus_kernel": 0.0
+   },
+   "rc": 0
+  }
+ },
+ "E3-adj-3-3": {
+  "ref": {
+   "ref": {
+    "valid": 1,
+    "vol": 215.548667765,
+    "faces": 8,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "rc": 0
+  },
+  "k5": {
+   "kernel": {
+    "valid": 1,
+    "vol": 215.548667719,
+    "faces": 8,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 215.548667765,
+    "faces": 8,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "diff": {
+    "kernel_minus_ref": 0.0,
+    "ref_minus_kernel": 0.0
+   },
+   "rc": 0
+  },
+  "main": {
+   "kernel": {
+    "valid": 1,
+    "vol": 215.548667719,
+    "faces": 8,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 215.548667765,
+    "faces": 8,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "diff": {
+    "kernel_minus_ref": 0.0,
+    "ref_minus_kernel": 0.0
+   },
+   "rc": 0
+  },
+  "new": {
+   "kernel": {
+    "valid": 1,
+    "vol": 215.548667719,
+    "faces": 8,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 215.548667765,
+    "faces": 8,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "diff": {
+    "kernel_minus_ref": 0.0,
+    "ref_minus_kernel": 0.0
+   },
+   "rc": 0
+  },
+  "p61": {
+   "kernel": {
+    "valid": 1,
+    "vol": 215.548667719,
+    "faces": 8,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 215.548667765,
+    "faces": 8,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "diff": {
+    "kernel_minus_ref": 0.0,
+    "ref_minus_kernel": 0.0
+   },
+   "rc": 0
+  }
+ },
+ "E4-adj-1-4_5": {
+  "ref": {
+   "ref": {
+    "valid": 1,
+    "vol": 197.516663965,
+    "faces": 7,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "rc": 0
+  },
+  "k5": {
+   "kernel": {
+    "done": false,
+    "why": "declined"
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 197.516663965,
+    "faces": 7,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "rc": 0
+  },
+  "main": {
+   "kernel": {
+    "done": false,
+    "why": "declined"
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 197.516663965,
+    "faces": 7,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "rc": 0
+  },
+  "new": {
+   "kernel": {
+    "done": false,
+    "why": "declined"
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 197.516663965,
+    "faces": 7,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "rc": 0
+  },
+  "p61": {
+   "kernel": {
+    "valid": 1,
+    "vol": 197.516663813,
+    "faces": 7,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 197.516663965,
+    "faces": 7,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "diff": {
+    "kernel_minus_ref": 0.0,
+    "ref_minus_kernel": 0.0
+   },
+   "rc": 0
+  }
+ },
+ "E5-adj-3-4_5": {
+  "ref": {
+   "ref": {
+    "valid": 1,
+    "vol": 194.484740734,
+    "faces": 7,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "rc": 0
+  },
+  "k5": {
+   "kernel": {
+    "done": false,
+    "why": "declined"
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 194.484740734,
+    "faces": 7,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "rc": 0
+  },
+  "main": {
+   "kernel": {
+    "done": false,
+    "why": "declined"
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 194.484740734,
+    "faces": 7,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "rc": 0
+  },
+  "new": {
+   "kernel": {
+    "done": false,
+    "why": "declined"
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 194.484740734,
+    "faces": 7,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "rc": 0
+  },
+  "p61": {
+   "kernel": {
+    "valid": 1,
+    "vol": 194.484740591,
+    "faces": 7,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 194.484740734,
+    "faces": 7,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "diff": {
+    "kernel_minus_ref": 0.0,
+    "ref_minus_kernel": 0.0
+   },
+   "rc": 0
+  }
+ },
+ "E6-adj-4_5-4_5": {
+  "ref": {
+   "ref": {
+    "valid": 1,
+    "vol": 188.811386313,
+    "faces": 7,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "rc": 0
+  },
+  "k5": {
+   "kernel": {
+    "done": false,
+    "why": "declined"
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 188.811386313,
+    "faces": 7,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "rc": 0
+  },
+  "main": {
+   "kernel": {
+    "done": false,
+    "why": "declined"
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 188.811386313,
+    "faces": 7,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "rc": 0
+  },
+  "new": {
+   "kernel": {
+    "done": false,
+    "why": "declined"
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 188.811386313,
+    "faces": 7,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "rc": 0
+  },
+  "p61": {
+   "kernel": {
+    "valid": 1,
+    "vol": 188.811386313,
+    "faces": 7,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 188.811386313,
+    "faces": 7,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "diff": {
+    "kernel_minus_ref": 0.0,
+    "ref_minus_kernel": 0.0
+   },
+   "rc": 0
+  }
+ },
+ "F1-corner-1": {
+  "ref": {
+   "ref": {
+    "valid": 1,
+    "vol": 235.875367553,
+    "faces": 10,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "rc": 0
+  },
+  "k5": {
+   "kernel": {
+    "valid": 1,
+    "vol": 235.875367553,
+    "faces": 10,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 235.875367553,
+    "faces": 10,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "diff": {
+    "kernel_minus_ref": 0.0,
+    "ref_minus_kernel": 0.0
+   },
+   "rc": 0
+  },
+  "main": {
+   "kernel": {
+    "valid": 1,
+    "vol": 235.875367553,
+    "faces": 10,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 235.875367553,
+    "faces": 10,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "diff": {
+    "kernel_minus_ref": 0.0,
+    "ref_minus_kernel": 0.0
+   },
+   "rc": 0
+  },
+  "new": {
+   "kernel": {
+    "valid": 1,
+    "vol": 235.875367553,
+    "faces": 10,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 235.875367553,
+    "faces": 10,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "diff": {
+    "kernel_minus_ref": 0.0,
+    "ref_minus_kernel": 0.0
+   },
+   "rc": 0
+  },
+  "p61": {
+   "kernel": {
+    "valid": 1,
+    "vol": 235.875367553,
+    "faces": 10,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 235.875367553,
+    "faces": 10,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "diff": {
+    "kernel_minus_ref": 0.0,
+    "ref_minus_kernel": 0.0
+   },
+   "rc": 0
+  }
+ },
+ "F2-corner-2": {
+  "ref": {
+   "ref": {
+    "valid": 1,
+    "vol": 224.171087355,
+    "faces": 10,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "rc": 0
+  },
+  "k5": {
+   "kernel": {
+    "valid": 1,
+    "vol": 224.171087355,
+    "faces": 10,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 224.171087355,
+    "faces": 10,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "diff": {
+    "kernel_minus_ref": 0.0,
+    "ref_minus_kernel": 0.0
+   },
+   "rc": 0
+  },
+  "main": {
+   "kernel": {
+    "valid": 1,
+    "vol": 224.171087355,
+    "faces": 10,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 224.171087355,
+    "faces": 10,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "diff": {
+    "kernel_minus_ref": 0.0,
+    "ref_minus_kernel": 0.0
+   },
+   "rc": 0
+  },
+  "new": {
+   "kernel": {
+    "valid": 1,
+    "vol": 224.171087355,
+    "faces": 10,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 224.171087355,
+    "faces": 10,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "diff": {
+    "kernel_minus_ref": 0.0,
+    "ref_minus_kernel": 0.0
+   },
+   "rc": 0
+  },
+  "p61": {
+   "kernel": {
+    "valid": 1,
+    "vol": 224.171087355,
+    "faces": 10,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 224.171087355,
+    "faces": 10,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "diff": {
+    "kernel_minus_ref": 0.0,
+    "ref_minus_kernel": 0.0
+   },
+   "rc": 0
+  }
+ },
+ "F3-corner-3_5": {
+  "ref": {
+   "ref": {
+    "valid": 1,
+    "vol": 194.600008769,
+    "faces": 10,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "rc": 0
+  },
+  "k5": {
+   "kernel": {
+    "valid": 1,
+    "vol": 194.600008769,
+    "faces": 10,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 194.600008769,
+    "faces": 10,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "diff": {
+    "kernel_minus_ref": 0.0,
+    "ref_minus_kernel": 0.0
+   },
+   "rc": 0
+  },
+  "main": {
+   "kernel": {
+    "valid": 1,
+    "vol": 194.600008769,
+    "faces": 10,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 194.600008769,
+    "faces": 10,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "diff": {
+    "kernel_minus_ref": 0.0,
+    "ref_minus_kernel": 0.0
+   },
+   "rc": 0
+  },
+  "new": {
+   "kernel": {
+    "valid": 1,
+    "vol": 194.600008769,
+    "faces": 10,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 194.600008769,
+    "faces": 10,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "diff": {
+    "kernel_minus_ref": 0.0,
+    "ref_minus_kernel": 0.0
+   },
+   "rc": 0
+  },
+  "p61": {
+   "kernel": {
+    "valid": 1,
+    "vol": 194.600008769,
+    "faces": 10,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 194.600008769,
+    "faces": 10,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "diff": {
+    "kernel_minus_ref": 0.0,
+    "ref_minus_kernel": 0.0
+   },
+   "rc": 0
+  }
+ },
+ "F4-corner-unequal": {
+  "ref": {
+   "ref": {
+    "valid": 1,
+    "vol": 228.42888919,
+    "faces": 9,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "rc": 0
+  },
+  "k5": {
+   "kernel": {
+    "valid": 1,
+    "vol": 228.137050289,
+    "faces": 10,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 228.42888919,
+    "faces": 9,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "diff": {
+    "kernel_minus_ref": 228.428889181,
+    "ref_minus_kernel": 228.137050298
+   },
+   "rc": 0
+  },
+  "main": {
+   "kernel": {
+    "valid": 1,
+    "vol": 228.137050289,
+    "faces": 10,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 228.42888919,
+    "faces": 9,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "diff": {
+    "kernel_minus_ref": 228.428889181,
+    "ref_minus_kernel": 228.137050298
+   },
+   "rc": 0
+  },
+  "new": {
+   "kernel": {
+    "valid": 1,
+    "vol": 228.137050289,
+    "faces": 10,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 228.42888919,
+    "faces": 9,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "diff": {
+    "kernel_minus_ref": 228.428889181,
+    "ref_minus_kernel": 228.137050298
+   },
+   "rc": 0
+  },
+  "p61": {
+   "kernel": {
+    "valid": 1,
+    "vol": 228.137050289,
+    "faces": 10,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 228.42888919,
+    "faces": 9,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "diff": {
+    "kernel_minus_ref": 228.428889181,
+    "ref_minus_kernel": 228.137050298
+   },
+   "rc": 0
+  }
+ },
+ "F5-corner-4_5": {
+  "ref": {
+   "ref": {
+    "valid": 1,
+    "vol": 175.253621953,
+    "faces": 7,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "rc": 0
+  },
+  "k5": {
+   "kernel": {
+    "done": false,
+    "why": "declined"
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 175.253621953,
+    "faces": 7,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "rc": 0
+  },
+  "main": {
+   "kernel": {
+    "done": false,
+    "why": "declined"
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 175.253621953,
+    "faces": 7,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "rc": 0
+  },
+  "new": {
+   "kernel": {
+    "done": false,
+    "why": "declined"
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 175.253621953,
+    "faces": 7,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "rc": 0
+  },
+  "p61": {
+   "kernel": {
+    "done": false,
+    "why": "declined"
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 175.253621953,
+    "faces": 7,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "rc": 0
+  }
+ },
+ "G1-frame-1": {
+  "ref": {
+   "ref": {
+    "valid": 1,
+    "vol": 234.374629926,
+    "faces": 10,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "rc": 0
+  },
+  "k5": {
+   "kernel": {
+    "valid": 1,
+    "vol": 234.374629926,
+    "faces": 10,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 234.374629926,
+    "faces": 10,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "diff": {
+    "kernel_minus_ref": 0.0,
+    "ref_minus_kernel": 0.0
+   },
+   "rc": 0
+  },
+  "main": {
+   "kernel": {
+    "valid": 1,
+    "vol": 234.374629926,
+    "faces": 10,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 234.374629926,
+    "faces": 10,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "diff": {
+    "kernel_minus_ref": 0.0,
+    "ref_minus_kernel": 0.0
+   },
+   "rc": 0
+  },
+  "new": {
+   "kernel": {
+    "valid": 1,
+    "vol": 234.374629926,
+    "faces": 10,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 234.374629926,
+    "faces": 10,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "diff": {
+    "kernel_minus_ref": 0.0,
+    "ref_minus_kernel": 0.0
+   },
+   "rc": 0
+  },
+  "p61": {
+   "kernel": {
+    "valid": 1,
+    "vol": 234.374629926,
+    "faces": 10,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 234.374629926,
+    "faces": 10,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "diff": {
+    "kernel_minus_ref": 0.0,
+    "ref_minus_kernel": 0.0
+   },
+   "rc": 0
+  }
+ },
+ "G2-frame-2": {
+  "ref": {
+   "ref": {
+    "valid": 1,
+    "vol": 219.032445176,
+    "faces": 9,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "rc": 0
+  },
+  "k5": {
+   "kernel": {
+    "done": false,
+    "why": "declined"
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 219.032445176,
+    "faces": 9,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "rc": 0
+  },
+  "main": {
+   "kernel": {
+    "valid": 1,
+    "vol": 219.032445121,
+    "faces": 9,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 219.032445176,
+    "faces": 9,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "diff": {
+    "kernel_minus_ref": 0.0,
+    "ref_minus_kernel": 0.0
+   },
+   "rc": 0
+  },
+  "new": {
+   "kernel": {
+    "valid": 1,
+    "vol": 219.032445121,
+    "faces": 9,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 219.032445176,
+    "faces": 9,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "diff": {
+    "kernel_minus_ref": 0.0,
+    "ref_minus_kernel": 0.0
+   },
+   "rc": 0
+  },
+  "p61": {
+   "kernel": {
+    "valid": 1,
+    "vol": 219.032445121,
+    "faces": 9,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 219.032445176,
+    "faces": 9,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "diff": {
+    "kernel_minus_ref": 0.0,
+    "ref_minus_kernel": 0.0
+   },
+   "rc": 0
+  }
+ },
+ "G3-frame-2_5": {
+  "ref": {
+   "ref": {
+    "valid": 1,
+    "vol": 208.528816541,
+    "faces": 9,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "rc": 0
+  },
+  "k5": {
+   "kernel": {
+    "valid": 0,
+    "vol": -2.255997775876905e+26,
+    "faces": 12,
+    "solids": 1,
+    "shells": 1,
+    "free": 4,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 208.528816541,
+    "faces": 9,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "rc": 0
+  },
+  "main": {
+   "kernel": {
+    "valid": 0,
+    "vol": -2.255997775876905e+26,
+    "faces": 12,
+    "solids": 1,
+    "shells": 1,
+    "free": 4,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 208.528816541,
+    "faces": 9,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "rc": 0
+  },
+  "new": {
+   "kernel": {
+    "valid": 0,
+    "vol": -2.255997775876905e+26,
+    "faces": 12,
+    "solids": 1,
+    "shells": 1,
+    "free": 4,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 208.528816541,
+    "faces": 9,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "rc": 0
+  },
+  "p61": {
+   "kernel": {
+    "valid": 1,
+    "vol": 208.528816564,
+    "faces": 9,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 208.528816541,
+    "faces": 9,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "diff": {
+    "kernel_minus_ref": 0.0,
+    "ref_minus_kernel": 0.0
+   },
+   "rc": 0
+  }
+ },
+ "G4-frame-3": {
+  "ref": {
+   "ref": {
+    "valid": 1,
+    "vol": 196.840193931,
+    "faces": 9,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "rc": 0
+  },
+  "k5": {
+   "kernel": {
+    "valid": 0,
+    "vol": 3.5069858225647574e+29,
+    "faces": 12,
+    "solids": 1,
+    "shells": 1,
+    "free": 4,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 196.840193931,
+    "faces": 9,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "rc": 0
+  },
+  "main": {
+   "kernel": {
+    "valid": 0,
+    "vol": 3.5069858225647574e+29,
+    "faces": 12,
+    "solids": 1,
+    "shells": 1,
+    "free": 4,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 196.840193931,
+    "faces": 9,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "rc": 0
+  },
+  "new": {
+   "kernel": {
+    "valid": 0,
+    "vol": 3.5069858225647574e+29,
+    "faces": 12,
+    "solids": 1,
+    "shells": 1,
+    "free": 4,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 196.840193931,
+    "faces": 9,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "rc": 0
+  },
+  "p61": {
+   "kernel": {
+    "valid": 1,
+    "vol": 196.840194173,
+    "faces": 9,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 196.840193931,
+    "faces": 9,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "diff": {
+    "kernel_minus_ref": 0.0,
+    "ref_minus_kernel": 0.0
+   },
+   "rc": 0
+  }
+ },
+ "G5-frame-3_9": {
+  "ref": {
+   "ref": {
+    "valid": 1,
+    "vol": 173.865651423,
+    "faces": 9,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "rc": 0
+  },
+  "k5": {
+   "kernel": {
+    "valid": 0,
+    "vol": -3.670525163714432e+28,
+    "faces": 12,
+    "solids": 1,
+    "shells": 1,
+    "free": 4,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 173.865651423,
+    "faces": 9,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "rc": 0
+  },
+  "main": {
+   "kernel": {
+    "valid": 0,
+    "vol": -3.670525163714432e+28,
+    "faces": 12,
+    "solids": 1,
+    "shells": 1,
+    "free": 4,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 173.865651423,
+    "faces": 9,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "rc": 0
+  },
+  "new": {
+   "kernel": {
+    "valid": 0,
+    "vol": -3.670525163714432e+28,
+    "faces": 12,
+    "solids": 1,
+    "shells": 1,
+    "free": 4,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 173.865651423,
+    "faces": 9,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "rc": 0
+  },
+  "p61": {
+   "kernel": {
+    "valid": 1,
+    "vol": 173.865651229,
+    "faces": 9,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 173.865651423,
+    "faces": 9,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "diff": {
+    "kernel_minus_ref": 0.0,
+    "ref_minus_kernel": 0.0
+   },
+   "rc": 0
+  }
+ },
+ "G6-frame-4_5": {
+  "ref": {
+   "ref": {
+    "valid": 1,
+    "vol": 158.471230281,
+    "faces": 9,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "rc": 0
+  },
+  "k5": {
+   "kernel": {
+    "done": false,
+    "why": "declined"
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 158.471230281,
+    "faces": 9,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "rc": 0
+  },
+  "main": {
+   "kernel": {
+    "done": false,
+    "why": "declined"
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 158.471230281,
+    "faces": 9,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "rc": 0
+  },
+  "new": {
+   "kernel": {
+    "done": false,
+    "why": "declined"
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 158.471230281,
+    "faces": 9,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "rc": 0
+  },
+  "p61": {
+   "kernel": {
+    "valid": 1,
+    "vol": 158.471230159,
+    "faces": 9,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 158.471230281,
+    "faces": 9,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "diff": {
+    "kernel_minus_ref": 0.0,
+    "ref_minus_kernel": 0.0
+   },
+   "rc": 0
+  }
+ },
+ "G10-frame-3-1": {
+  "ref": {
+   "ref": {
+    "valid": 1,
+    "vol": 202.326335466,
+    "faces": 9,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "rc": 0
+  },
+  "k5": {
+   "kernel": {
+    "valid": 0,
+    "vol": 229.335527312,
+    "faces": 12,
+    "solids": 1,
+    "shells": 1,
+    "free": 4,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 202.326335466,
+    "faces": 9,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "rc": 0
+  },
+  "main": {
+   "kernel": {
+    "valid": 0,
+    "vol": 229.335527312,
+    "faces": 12,
+    "solids": 1,
+    "shells": 1,
+    "free": 4,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 202.326335466,
+    "faces": 9,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "rc": 0
+  },
+  "new": {
+   "kernel": {
+    "valid": 0,
+    "vol": 229.335527312,
+    "faces": 12,
+    "solids": 1,
+    "shells": 1,
+    "free": 4,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 202.326335466,
+    "faces": 9,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "rc": 0
+  },
+  "p61": {
+   "kernel": {
+    "valid": 1,
+    "vol": 202.326335456,
+    "faces": 9,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 202.326335466,
+    "faces": 9,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "diff": {
+    "kernel_minus_ref": 0.0,
+    "ref_minus_kernel": 0.0
+   },
+   "rc": 0
+  }
+ },
+ "G7-frame-sq-3": {
+  "ref": {
+   "ref": {
+    "valid": 1,
+    "vol": 733.097335529,
+    "faces": 10,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "rc": 0
+  },
+  "k5": {
+   "kernel": {
+    "valid": 1,
+    "vol": 733.097335313,
+    "faces": 10,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 733.097335529,
+    "faces": 10,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "diff": {
+    "kernel_minus_ref": 0.0,
+    "ref_minus_kernel": 0.0
+   },
+   "rc": 0
+  },
+  "main": {
+   "kernel": {
+    "valid": 1,
+    "vol": 733.097335313,
+    "faces": 10,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 733.097335529,
+    "faces": 10,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "diff": {
+    "kernel_minus_ref": 0.0,
+    "ref_minus_kernel": 0.0
+   },
+   "rc": 0
+  },
+  "new": {
+   "kernel": {
+    "valid": 1,
+    "vol": 733.097335313,
+    "faces": 10,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 733.097335529,
+    "faces": 10,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "diff": {
+    "kernel_minus_ref": 0.0,
+    "ref_minus_kernel": 0.0
+   },
+   "rc": 0
+  },
+  "p61": {
+   "kernel": {
+    "valid": 1,
+    "vol": 733.097335313,
+    "faces": 10,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 733.097335529,
+    "faces": 10,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "diff": {
+    "kernel_minus_ref": 0.0,
+    "ref_minus_kernel": 0.0
+   },
+   "rc": 0
+  }
+ },
+ "G8-frame-sq-5": {
+  "ref": {
+   "ref": {
+    "valid": 1,
+    "vol": 633.333333334,
+    "faces": 9,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "rc": 0
+  },
+  "k5": {
+   "kernel": {
+    "done": false,
+    "why": "declined"
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 633.333333334,
+    "faces": 9,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "rc": 0
+  },
+  "main": {
+   "kernel": {
+    "done": false,
+    "why": "declined"
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 633.333333334,
+    "faces": 9,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "rc": 0
+  },
+  "new": {
+   "kernel": {
+    "done": false,
+    "why": "declined"
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 633.333333334,
+    "faces": 9,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "rc": 0
+  },
+  "p61": {
+   "kernel": {
+    "valid": 1,
+    "vol": 633.333333333,
+    "faces": 9,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 633.333333334,
+    "faces": 9,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "diff": {
+    "kernel_minus_ref": 0.0,
+    "ref_minus_kernel": 0.0
+   },
+   "rc": 0
+  }
+ },
+ "G9-frame-sq-6": {
+  "ref": {
+   "ref": {
+    "valid": 1,
+    "vol": 573.749617867,
+    "faces": 9,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "rc": 0
+  },
+  "k5": {
+   "kernel": {
+    "valid": 0,
+    "vol": 684.22993347,
+    "faces": 12,
+    "solids": 1,
+    "shells": 1,
+    "free": 4,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 573.749617867,
+    "faces": 9,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "rc": 0
+  },
+  "main": {
+   "kernel": {
+    "valid": 0,
+    "vol": 684.22993347,
+    "faces": 12,
+    "solids": 1,
+    "shells": 1,
+    "free": 4,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 573.749617867,
+    "faces": 9,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "rc": 0
+  },
+  "new": {
+   "kernel": {
+    "valid": 0,
+    "vol": 684.22993347,
+    "faces": 12,
+    "solids": 1,
+    "shells": 1,
+    "free": 4,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 573.749617867,
+    "faces": 9,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "rc": 0
+  },
+  "p61": {
+   "kernel": {
+    "valid": 1,
+    "vol": 573.749617679,
+    "faces": 9,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 573.749617867,
+    "faces": 9,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "diff": {
+    "kernel_minus_ref": 0.0,
+    "ref_minus_kernel": 0.0
+   },
+   "rc": 0
+  }
+ },
+ "H1-L-1": {
+  "ref": {
+   "ref": {
+    "valid": 1,
+    "vol": 227.536796529,
+    "faces": 15,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "rc": 0
+  },
+  "k5": {
+   "kernel": {
+    "valid": 1,
+    "vol": 227.516222579,
+    "faces": 14,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 227.536796529,
+    "faces": 15,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "diff": {
+    "kernel_minus_ref": 0.0,
+    "ref_minus_kernel": 0.020573951
+   },
+   "rc": 0
+  },
+  "main": {
+   "kernel": {
+    "valid": 1,
+    "vol": 227.516222579,
+    "faces": 14,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 227.536796529,
+    "faces": 15,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "diff": {
+    "kernel_minus_ref": 0.0,
+    "ref_minus_kernel": 0.020573951
+   },
+   "rc": 0
+  },
+  "new": {
+   "kernel": {
+    "valid": 1,
+    "vol": 227.516222579,
+    "faces": 14,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 227.536796529,
+    "faces": 15,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "diff": {
+    "kernel_minus_ref": 0.0,
+    "ref_minus_kernel": 0.020573951
+   },
+   "rc": 0
+  },
+  "p61": {
+   "kernel": {
+    "valid": 1,
+    "vol": 227.516222579,
+    "faces": 14,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 227.536796529,
+    "faces": 15,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "diff": {
+    "kernel_minus_ref": 0.0,
+    "ref_minus_kernel": 0.020573951
+   },
+   "rc": 0
+  },
+  "alt": {
+   "ref": {
+    "valid": 1,
+    "vol": 227.278759585,
+    "faces": 20,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "rc": 0
+  }
+ },
+ "H2-L-1_5": {
+  "ref": {
+   "ref": {
+    "valid": 1,
+    "vol": 219.912354413,
+    "faces": 15,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "rc": 0
+  },
+  "k5": {
+   "kernel": {
+    "done": false,
+    "why": "declined"
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 219.912354413,
+    "faces": 15,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "rc": 0
+  },
+  "main": {
+   "kernel": {
+    "done": false,
+    "why": "declined"
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 219.912354413,
+    "faces": 15,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "rc": 0
+  },
+  "new": {
+   "kernel": {
+    "done": false,
+    "why": "declined"
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 219.912354413,
+    "faces": 15,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "rc": 0
+  },
+  "p61": {
+   "kernel": {
+    "done": false,
+    "why": "declined"
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 219.912354413,
+    "faces": 15,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "rc": 0
+  },
+  "alt": {
+   "ref": {
+    "valid": 1,
+    "vol": 219.041479724,
+    "faces": 19,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "rc": 0
+  }
+ },
+ "H3-L-2": {
+  "ref": {
+   "ref": {
+    "valid": 1,
+    "vol": 209.933798864,
+    "faces": 14,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "rc": 0
+  },
+  "k5": {
+   "kernel": {
+    "valid": 0,
+    "vol": 236.807298653,
+    "faces": 16,
+    "solids": 1,
+    "shells": 1,
+    "free": 6,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 209.933798864,
+    "faces": 14,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "rc": 0
+  },
+  "main": {
+   "kernel": {
+    "valid": 0,
+    "vol": 236.807298653,
+    "faces": 16,
+    "solids": 1,
+    "shells": 1,
+    "free": 6,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 209.933798864,
+    "faces": 14,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "rc": 0
+  },
+  "new": {
+   "kernel": {
+    "valid": 0,
+    "vol": 236.807298653,
+    "faces": 16,
+    "solids": 1,
+    "shells": 1,
+    "free": 6,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 209.933798864,
+    "faces": 14,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "rc": 0
+  },
+  "p61": {
+   "kernel": {
+    "valid": 0,
+    "vol": 236.807298653,
+    "faces": 16,
+    "solids": 1,
+    "shells": 1,
+    "free": 6,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 209.933798864,
+    "faces": 14,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "rc": 0
+  },
+  "alt": {
+   "ref": {
+    "valid": 1,
+    "vol": 208.08450377,
+    "faces": 19,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "rc": 0
+  }
+ },
+ "H4-U-1": {
+  "ref": {
+   "ref": {
+    "valid": 1,
+    "vol": 297.840555786,
+    "faces": 20,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "rc": 0
+  },
+  "k5": {
+   "kernel": {
+    "valid": 1,
+    "vol": 297.799407885,
+    "faces": 18,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 297.840555786,
+    "faces": 20,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "diff": {
+    "kernel_minus_ref": 0.0,
+    "ref_minus_kernel": 0.041147902
+   },
+   "rc": 0
+  },
+  "main": {
+   "kernel": {
+    "valid": 1,
+    "vol": 297.799407885,
+    "faces": 18,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 297.840555786,
+    "faces": 20,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "diff": {
+    "kernel_minus_ref": 0.0,
+    "ref_minus_kernel": 0.041147902
+   },
+   "rc": 0
+  },
+  "new": {
+   "kernel": {
+    "valid": 1,
+    "vol": 297.799407885,
+    "faces": 18,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 297.840555786,
+    "faces": 20,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "diff": {
+    "kernel_minus_ref": 0.0,
+    "ref_minus_kernel": 0.041147902
+   },
+   "rc": 0
+  },
+  "p61": {
+   "kernel": {
+    "valid": 1,
+    "vol": 297.799407885,
+    "faces": 18,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 297.840555786,
+    "faces": 20,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "diff": {
+    "kernel_minus_ref": 0.0,
+    "ref_minus_kernel": 0.041147902
+   },
+   "rc": 0
+  },
+  "alt": {
+   "ref": {
+    "valid": 1,
+    "vol": 297.324481897,
+    "faces": 30,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "rc": 0
+  }
+ },
+ "H5-U-1_5": {
+  "ref": {
+   "ref": {
+    "valid": 1,
+    "vol": 288.118958368,
+    "faces": 23,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "rc": 0
+  },
+  "k5": {
+   "kernel": {
+    "done": false,
+    "why": "declined"
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 288.118958368,
+    "faces": 23,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "rc": 0
+  },
+  "main": {
+   "kernel": {
+    "done": false,
+    "why": "declined"
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 288.118958368,
+    "faces": 23,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "rc": 0
+  },
+  "new": {
+   "kernel": {
+    "done": false,
+    "why": "declined"
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 288.118958368,
+    "faces": 23,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "rc": 0
+  },
+  "p61": {
+   "kernel": {
+    "done": false,
+    "why": "declined"
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 288.118958368,
+    "faces": 23,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "rc": 0
+  },
+  "alt": {
+   "ref": {
+    "valid": 1,
+    "vol": 286.377208996,
+    "faces": 31,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "rc": 0
+  }
+ },
+ "H6-L-3_5": {
+  "ref": {
+   "ref": {
+    "valid": 1,
+    "vol": 174.207581781,
+    "faces": 16,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 1,
+    "done": true
+   },
+   "rc": 0
+  },
+  "k5": {
+   "kernel": {
+    "done": false,
+    "why": "declined"
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 174.207581781,
+    "faces": 16,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 1,
+    "done": true
+   },
+   "rc": 0
+  },
+  "main": {
+   "kernel": {
+    "done": false,
+    "why": "declined"
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 174.207581781,
+    "faces": 16,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 1,
+    "done": true
+   },
+   "rc": 0
+  },
+  "new": {
+   "kernel": {
+    "done": false,
+    "why": "declined"
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 174.207581781,
+    "faces": 16,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 1,
+    "done": true
+   },
+   "rc": 0
+  },
+  "p61": {
+   "kernel": {
+    "done": false,
+    "why": "declined"
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 174.207581781,
+    "faces": 16,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 1,
+    "done": true
+   },
+   "rc": 0
+  },
+  "alt": {
+   "ref": {
+    "valid": 1,
+    "vol": 170.69563351,
+    "faces": 19,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "rc": 0
+  }
+ },
+ "I1-round-1-1": {
+  "ref": {
+   "ref": {
+    "valid": 1,
+    "vol": 229.510321638,
+    "faces": 18,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "rc": 0
+  },
+  "k5": {
+   "kernel": {
+    "valid": 1,
+    "vol": 229.510321638,
+    "faces": 18,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 229.510321638,
+    "faces": 18,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "diff": {
+    "kernel_minus_ref": 0.0,
+    "ref_minus_kernel": 0.0
+   },
+   "rc": 0
+  },
+  "main": {
+   "kernel": {
+    "valid": 1,
+    "vol": 229.510321638,
+    "faces": 18,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 229.510321638,
+    "faces": 18,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "diff": {
+    "kernel_minus_ref": 0.0,
+    "ref_minus_kernel": 0.0
+   },
+   "rc": 0
+  },
+  "new": {
+   "kernel": {
+    "valid": 1,
+    "vol": 229.510321638,
+    "faces": 18,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 229.510321638,
+    "faces": 18,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "diff": {
+    "kernel_minus_ref": 0.0,
+    "ref_minus_kernel": 0.0
+   },
+   "rc": 0
+  },
+  "p61": {
+   "kernel": {
+    "valid": 1,
+    "vol": 229.510321638,
+    "faces": 18,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 229.510321638,
+    "faces": 18,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "diff": {
+    "kernel_minus_ref": 0.0,
+    "ref_minus_kernel": 0.0
+   },
+   "rc": 0
+  }
+ },
+ "I2-round-1_5-1_5": {
+  "ref": {
+   "ref": {
+    "valid": 1,
+    "vol": 217.15154297,
+    "faces": 18,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "rc": 0
+  },
+  "k5": {
+   "kernel": {
+    "valid": 1,
+    "vol": 217.15154297,
+    "faces": 18,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 217.15154297,
+    "faces": 18,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "diff": {
+    "kernel_minus_ref": 0.0,
+    "ref_minus_kernel": 0.0
+   },
+   "rc": 0
+  },
+  "main": {
+   "kernel": {
+    "valid": 1,
+    "vol": 217.15154297,
+    "faces": 18,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 217.15154297,
+    "faces": 18,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "diff": {
+    "kernel_minus_ref": 0.0,
+    "ref_minus_kernel": 0.0
+   },
+   "rc": 0
+  },
+  "new": {
+   "kernel": {
+    "valid": 1,
+    "vol": 217.15154297,
+    "faces": 18,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 217.15154297,
+    "faces": 18,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "diff": {
+    "kernel_minus_ref": 0.0,
+    "ref_minus_kernel": 0.0
+   },
+   "rc": 0
+  },
+  "p61": {
+   "kernel": {
+    "valid": 1,
+    "vol": 217.15154297,
+    "faces": 18,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 217.15154297,
+    "faces": 18,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "diff": {
+    "kernel_minus_ref": 0.0,
+    "ref_minus_kernel": 0.0
+   },
+   "rc": 0
+  }
+ },
+ "I3-round-2-2": {
+  "ref": {
+   "ref": {
+    "valid": 1,
+    "vol": 200.71975512,
+    "faces": 13,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "rc": 0
+  },
+  "k5": {
+   "kernel": {
+    "done": false,
+    "why": "declined"
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 200.71975512,
+    "faces": 13,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "rc": 0
+  },
+  "main": {
+   "kernel": {
+    "done": false,
+    "why": "declined"
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 200.71975512,
+    "faces": 13,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "rc": 0
+  },
+  "new": {
+   "kernel": {
+    "done": false,
+    "why": "declined"
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 200.71975512,
+    "faces": 13,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "rc": 0
+  },
+  "p61": {
+   "kernel": {
+    "valid": 1,
+    "vol": 200.71975512,
+    "faces": 13,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 200.71975512,
+    "faces": 13,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "diff": {
+    "kernel_minus_ref": 0.0,
+    "ref_minus_kernel": 0.0
+   },
+   "rc": 0
+  }
+ },
+ "I4-round-1-2": {
+  "ref": {
+   "ref": {
+    "valid": 1,
+    "vol": 215.436308481,
+    "faces": 12,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "rc": 0
+  },
+  "k5": {
+   "kernel": {
+    "done": false,
+    "why": "declined"
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 215.436308481,
+    "faces": 12,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "rc": 0
+  },
+  "main": {
+   "kernel": {
+    "done": false,
+    "why": "declined"
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 215.436308481,
+    "faces": 12,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "rc": 0
+  },
+  "new": {
+   "kernel": {
+    "done": false,
+    "why": "declined"
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 215.436308481,
+    "faces": 12,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "rc": 0
+  },
+  "p61": {
+   "kernel": {
+    "done": false,
+    "why": "declined"
+   },
+   "ref": {
+    "valid": 1,
+    "vol": 215.436308481,
+    "faces": 12,
+    "solids": 1,
+    "shells": 1,
+    "free": 0,
+    "nonmanifold": 0,
+    "done": true
+   },
+   "rc": 0
+  }
+ }
+}

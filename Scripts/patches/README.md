@@ -19,7 +19,7 @@ which is what nothing did while `0042` sat in the kernel and not in the map for 
 2026-08-03 retired ten patches, `0032`
 retired 2026-09-02 (superseded by upstream's own fix, not shipped in our pin), and `0035` retired
 2026-09-20 (it reintroduced #280; see its [Retired patches](#retired-patches) entry).
-The carried sequence now reads 0010–0012, 0014–0031, 0033–0034, 0036–0048, 0050–0060.
+The carried sequence now reads 0010–0012, 0014–0031, 0033–0034, 0036–0048, 0050–0061.
 The gaps are the retirements, not missing files:
 the numbers are cited across `CLAUDE.md`, `docs/`, closed issues and `Scripts/repro/`, and
 renumbering would have silently repointed every one of those citations at a different fix.
@@ -3589,6 +3589,20 @@ On a 4 x 10 x 6 box, fillets on the two top edges with r1 + r2 > 4 give `IsDone(
 Between them: the contour result must remove at least the maximum and at most the sum of what each contour removes, and the builder is reset so that its faulty contours read zero. `Modified`, `Generated` and `IsDeleted` know nothing of the new faces. Contours that share a vertex, variable radius, curved or non-rectangular faces and concave edges decline as before. `ChFi3d_Builder` gains the inline accessor `InitialShape()`; `TKFillet` lists `TKPrim`.
 
 Measured against the `v4.0.0-kernel.5` asset with 0058, 0059 and the changed units override-linked (`Scripts/repro/fillet-pivot-edges/README.md`): 715 box cases before and after, 312 valid ones identical, 331 unchanged, 70 `IsDone` false now valid, none newly invalid; every new success valid, closed, tessellating, deterministic and within 1e-11 of the analytic volume.
+
+## 0061-BRepFilletAPI_MakeFillet-fillets-that-meet-at-a-corner-are-built-3233.patch
+
+**Fillets that share a corner are built, and an open result is replaced** ([#3233](https://github.com/SecondMouseAU/OCCTSwift/issues/3233), parent [#3208](https://github.com/SecondMouseAU/OCCTSwift/issues/3208)), `src/ModelingAlgorithms/TKFillet/BRepFilletAPI/` in the pinned tree. **Candidate on `fix/fillet-3233-corners`: no PR, nothing reported upstream, it sits on 0060 and waits on the decisions in `Scripts/repro/fillet-3233/review/` (index.md, "Decisions waiting for you").**
+
+Patch 0060's fallback intersects the single-contour fillets but only for contours that share no vertex, and only after `Compute()` fails. On a 4 x 10 x 6 box a frame of four top edges with r = 2.5, 3 or 3.9 does not fail: `Compute()` answers `IsDone() == true` with a shell that has four free edges, a volume of 1e26 and more, and a tessellator (`BRepMesh_Delaun`) that never returns; r = 4.5 on the frame, and the left top edge r = 4.5 next to the front top edge r = 1, give `IsDone() == false`; so does top and vertical edges all at r = 2 (the two long fillets meet exactly, four ball corners). This patch:
+
+- lets two contours share a vertex where it is a convex corner of three mutually perpendicular planar faces and the third edge is not filleted (the mitre, the intersection of the two surfaces);
+- lets three contours of one radius meet at such a corner when every edge there is at least 2 r long: the intersection of the single-edge results with the corner cube minus the ball of radius r cut out (the ball is tangent to the three faces and to the three cylinders);
+- runs the fallback when `Compute()` answers done with a result that has an edge bordering fewer than two faces, the input having none, and there are several contours, and replaces the result when the fallback applies; otherwise the result is left as it was.
+
+Not covered, unchanged: a concave (reflex) corner, unequal radii at a corner of three edges, a vertex blend with a radius past its face, more than three contours at a vertex, curved or non-perpendicular faces. Those are design choices (review `D1` to `D3`) or the data-structure fix of #3235.
+
+Measured against the `v4.0.0-kernel.5` asset with 0058 to 0061 override-linked (`Scripts/repro/fillet-3233/`): 31 configurations against a reference built from removal prisms and cube-minus-ball pieces with no fillet code, every new success valid, one closed solid, volume within 2e-7 of the reference; 1200 random box cases against 0060: none regressed, none newly invalid. Three of four new GTests fail without it.
 
 ## 0035-STEPControl-Writer-drop-per-transfer-init-1259.patch
 

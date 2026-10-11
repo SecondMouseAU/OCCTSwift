@@ -58,7 +58,7 @@
 # the stray check in docs/guides/building-occt.md's "Shipping a rebuild" answers it.
 #
 # occt-version: 8.0.1
-# derived against: 47 carried patch(es) in Scripts/patches/, every one of them verified
+# derived against: 48 carried patch(es) in Scripts/patches/, every one of them verified
 # derived against: applied in the tree the rows below were derived from.
 # patch: 0010-Intf_Interference-O1-tangent-zone-checkpoint-breaker-319 79fe529c26ef
 # patch: 0011-XCAFDoc_ShapeTool-AutoNamingScope-341 76898e2438a2
@@ -107,12 +107,13 @@
 # patch: 0058-BRepOffsetAPI_MiddlePath-Build-carries-a-vertex-path-forward-3105 3aa5e4f75495
 # patch: 0059-ChFi3d-Builder-fillets-that-meet-exactly-are-built-not-refused-3207 eb520b90a343
 # patch: 0060-BRepFilletAPI_MakeFillet-fillets-that-cross-or-run-out-of-face-3208 af222bc1dc63
+# patch: 0061-BRepFilletAPI_MakeFillet-fillets-that-meet-at-a-corner-are-built-3233 a043deb4a66a
 #
 # totals: inline-raise       462 site(s) in  104 class(es)
 # totals: outofline-raise    828 site(s) in  284 class(es)
 # totals: inline-throw       501 site(s) in  212 class(es)
 # totals: outofline-throw   3764 site(s) in  830 class(es)
-# totals: outofline-delegated  5955 site(s) in  925 class(es)
+# totals: outofline-delegated  5961 site(s) in  925 class(es)
 # totals: inherited-live    2587 site(s) in 2587 class(es)
 # totals: inline-dead-at-depth  9916 site(s) in  100 class(es)
 #
@@ -465,7 +466,7 @@ BRepFill_TrimSurfaceTool outofline-delegated 1 Standard_ConstructionError,gp_Vec
 BRepFilletAPI_LocalOperation inherited-live 1 StdFail_NotDone BRepBuilderAPI_Command
 BRepFilletAPI_MakeChamfer inherited-live 1 StdFail_NotDone BRepBuilderAPI_Command
 BRepFilletAPI_MakeChamfer_Test outofline-delegated 1 Standard_ConstructionError,Standard_OutOfRange gp_Dir
-BRepFilletAPI_MakeFillet outofline-delegated 8 Standard_ConstructionError,Standard_OutOfRange,gp_VectorWithNullMagnitude gp_Dir,gp_Vec
+BRepFilletAPI_MakeFillet outofline-delegated 14 Standard_ConstructionError,Standard_OutOfRange,gp_VectorWithNullMagnitude gp_Dir,gp_Vec
 BRepFilletAPI_MakeFillet inherited-live 1 StdFail_NotDone BRepBuilderAPI_Command
 BRepFilletAPI_MakeFillet2d inherited-live 1 StdFail_NotDone BRepBuilderAPI_Command
 BRepFilletAPI_MakeFillet_Test outofline-delegated 7 Standard_ConstructionError,Standard_OutOfRange,gp_VectorWithNullMagnitude gp_Dir,gp_Vec

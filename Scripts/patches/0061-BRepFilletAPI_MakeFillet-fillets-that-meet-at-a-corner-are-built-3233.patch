@@ -1,0 +1,460 @@
+From: OCCTSwift ecosystem <noreply@secondmouse.au>
+Subject: [PATCH] Modeling Algorithms - BRepFilletAPI_MakeFillet builds fillets that
+ share a corner and replaces an open result, in the fallback of patch 0060
+
+Patch 0060 builds fillets whose arcs cross, or that run out of face, as the intersection of the
+shape filleted on each contour alone, but only for contours that share no vertex, and only after
+Compute() has failed. Fillets that share a vertex were left as they were, which is two defects.
+
+ - Frames and adjacent edges: with radii that cross (a 4 x 10 x 6 box, all four top edges, r = 3)
+   or that run out of face (the left top edge r = 4.5 next to the front top edge r = 1) Compute()
+   either answers IsDone() == false or answers true with an open shell: an edge that borders one
+   face, a volume of 1e26 and more, and a tessellator that never returns.
+ - Three edges of one radius at a corner where the fillets meet exactly (r = w/2 on the 4 mm
+   width, top and vertical edges): IsDone() == false.
+
+This change widens the fallback and moves its trigger:
+
+ - Two contours may share a vertex where it is a convex corner of three mutually perpendicular
+   planar faces whose third edge is not filleted. The two fillets then meet in the intersection of
+   their surfaces, which is the intersection of the two single-edge results.
+ - Three contours of one radius may meet at such a corner when every edge there is at least 2 r
+   long: the result is the intersection of the single-edge results with the corner cube minus the
+   ball of radius r (centre r along each edge) cut out, a ball tangent to the three faces and to
+   the three cylinders.
+ - When Compute() answers done but the result has an edge bordering fewer than two faces and the
+   shape did not, and there are several contours, the fallback runs and replaces the result if it
+   applies. Where it does not apply the result is left as it was.
+
+Any other vertex (a concave corner, an unequal vertex blend, a vertex blend with a radius past its
+face, more than three contours, curved or non-perpendicular faces) is not covered and keeps the
+behaviour it had. Every fallback result must still be one valid closed solid that takes material
+away and removes at least the maximum and at most the sum (plus the corner pieces) of what the
+single contours remove.
+
+Measured (Scripts/repro/fillet-3233/): 31 configurations on 4 x 10 x 6, 10 x 10 x 8 and L and U
+extrusions against a reference built from removal prisms and cube-minus-ball pieces with no fillet
+code. Frames at r = 2.5, 3, 3.9, 4.5 (and 3 with 1 on the short edges) and 10 x 10 at r = 5 and
+6, adjacent edges with one radius past its face, and the r = 2 eight-edge ball case: valid, one
+closed solid, volume equal to the reference to 2e-7. 1200 random box cases (two seeds) against
+patch 0060: 0 regressed, 0 newly invalid, 290 newly valid, the add-mode ones within grid noise of
+an independent prism-union volume. Three of the four new GTests fail on kernel.5 and on kernel.5 plus patches
+0059 and 0060, pass with this change; all 16 fillet and 5 chamfer GTests pass.
+
+Tracked as SecondMouseAU/OCCTSwift#3233.
+
+---
+diff --git a/src/ModelingAlgorithms/TKFillet/BRepFilletAPI/BRepFilletAPI_MakeFillet.cxx b/src/ModelingAlgorithms/TKFillet/BRepFilletAPI/BRepFilletAPI_MakeFillet.cxx
+index 8f3550f1..e5342d45 100644
+--- a/src/ModelingAlgorithms/TKFillet/BRepFilletAPI/BRepFilletAPI_MakeFillet.cxx
++++ b/src/ModelingAlgorithms/TKFillet/BRepFilletAPI/BRepFilletAPI_MakeFillet.cxx
+@@ -16,6 +16,7 @@
+ 
+ #include <algorithm>
+ #include <cmath>
++#include <vector>
+ 
+ #include <BRep_Tool.hxx>
+ #include <BRepAdaptor_Curve.hxx>
+@@ -28,7 +29,9 @@
+ #include <BRepCheck_Analyzer.hxx>
+ #include <BRepFilletAPI_MakeFillet.hxx>
+ #include <BRepGProp.hxx>
++#include <BRepPrimAPI_MakeBox.hxx>
+ #include <BRepPrimAPI_MakePrism.hxx>
++#include <BRepPrimAPI_MakeSphere.hxx>
+ #include <ChFiDS_ErrorStatus.hxx>
+ #include <ChFiDS_Spine.hxx>
+ #include <GC_MakeArcOfCircle.hxx>
+@@ -324,13 +327,148 @@ TopoDS_Shape pivotCut(const TopoDS_Shape& theShape,
+   return aCut.Shape();
+ }
+ 
++//! True if some edge of the shape borders fewer than two faces: a solid with such an edge is open.
++bool hasFreeEdge(const TopoDS_Shape& theShape)
++{
++  EdgeFaceMap anEdgeFaces;
++  TopExp::MapShapesAndAncestors(theShape, TopAbs_EDGE, TopAbs_FACE, anEdgeFaces);
++  for (int anIdx = 1; anIdx <= anEdgeFaces.Extent(); ++anIdx)
++  {
++    if (!BRep_Tool::Degenerated(TopoDS::Edge(anEdgeFaces.FindKey(anIdx)))
++        && anEdgeFaces.FindFromIndex(anIdx).Extent() < 2)
++    {
++      return true;
++    }
++  }
++  return false;
++}
++
++//! The outward normal of a planar face, false if the face is not planar.
++bool planeNormal(const TopoDS_Face& theFace, gp_Dir& theNormal)
++{
++  BRepAdaptor_Surface aSurf(theFace);
++  if (aSurf.GetType() != GeomAbs_Plane)
++  {
++    return false;
++  }
++  gp_Pnt aPnt;
++  gp_Vec aDU, aDV;
++  aSurf.D1(0., 0., aPnt, aDU, aDV);
++  const gp_Vec aNorm = aDU.Crossed(aDV);
++  if (aNorm.SquareMagnitude() < gp::Resolution())
++  {
++    return false;
++  }
++  theNormal = gp_Dir(aNorm);
++  if (theFace.Orientation() == TopAbs_REVERSED)
++  {
++    theNormal.Reverse();
++  }
++  return true;
++}
++
++//! A convex corner of three mutually perpendicular planar faces and the three straight edges
++//! that leave it.
++struct Corner
++{
++  gp_Pnt       myPoint;
++  gp_Dir       myDirection[3]; //!< away from the corner along each edge
++  double       myLength[3];    //!< of each edge
++  TopoDS_Shape myEdge[3];
++};
++
++//! True if theVertex is such a corner.
++bool convexCorner(const TopoDS_Vertex& theVertex,
++                  const EdgeFaceMap&   theVertexEdges,
++                  const EdgeFaceMap&   theEdgeFaces,
++                  Corner&              theCorner)
++{
++  NCollection_IndexedMap<TopoDS_Shape, TopTools_ShapeMapHasher> aEdgeSet, aFaceSet;
++  for (const TopoDS_Shape& anEdge : theVertexEdges.FindFromKey(theVertex))
++  {
++    aEdgeSet.Add(anEdge);
++  }
++  if (aEdgeSet.Extent() != 3)
++  {
++    return false;
++  }
++  for (int anIdx = 1; anIdx <= 3; ++anIdx)
++  {
++    if (!theEdgeFaces.Contains(aEdgeSet(anIdx)))
++    {
++      return false;
++    }
++    for (const TopoDS_Shape& aFace : theEdgeFaces.FindFromKey(aEdgeSet(anIdx)))
++    {
++      aFaceSet.Add(aFace);
++    }
++  }
++  if (aFaceSet.Extent() != 3)
++  {
++    return false;
++  }
++  gp_Dir aNormals[3];
++  for (int anIdx = 1; anIdx <= 3; ++anIdx)
++  {
++    if (!planeNormal(TopoDS::Face(aFaceSet(anIdx)), aNormals[anIdx - 1]))
++    {
++      return false;
++    }
++  }
++  for (int anI = 0; anI < 3; ++anI)
++  {
++    if (std::abs(aNormals[anI].Dot(aNormals[(anI + 1) % 3])) > 1.e-7)
++    {
++      return false;
++    }
++  }
++  theCorner.myPoint = BRep_Tool::Pnt(theVertex);
++  for (int anIdx = 1; anIdx <= 3; ++anIdx)
++  {
++    const TopoDS_Edge& anEdge = TopoDS::Edge(aEdgeSet(anIdx));
++    BRepAdaptor_Curve  aCurve(anEdge);
++    if (aCurve.GetType() != GeomAbs_Line)
++    {
++      return false;
++    }
++    const gp_Pnt aFirst = aCurve.Value(aCurve.FirstParameter());
++    const gp_Pnt aLast  = aCurve.Value(aCurve.LastParameter());
++    const gp_Vec aAway(
++      theCorner.myPoint,
++      aFirst.Distance(theCorner.myPoint) > aLast.Distance(theCorner.myPoint) ? aFirst : aLast);
++    if (aAway.SquareMagnitude() < gp::Resolution())
++    {
++      return false;
++    }
++    theCorner.myDirection[anIdx - 1] = gp_Dir(aAway);
++    theCorner.myLength[anIdx - 1]    = aAway.Magnitude();
++    theCorner.myEdge[anIdx - 1]      = anEdge;
++    // The face of the corner that does not contain this edge: the edge runs into the material,
++    // against that face's outward normal.
++    for (int aFaceIdx = 1; aFaceIdx <= 3; ++aFaceIdx)
++    {
++      bool aContains = false;
++      for (const TopoDS_Shape& aFace : theEdgeFaces.FindFromKey(anEdge))
++      {
++        aContains = aContains || aFace.IsSame(aFaceSet(aFaceIdx));
++      }
++      if (!aContains && theCorner.myDirection[anIdx - 1].Dot(aNormals[aFaceIdx - 1]) > -1. + 1.e-7)
++      {
++        return false;
++      }
++    }
++  }
++  return true;
++}
++
+ //! The most contours the fallback intersects: each costs a fillet and a Boolean operation.
+ const int THE_MAX_CONTOURS = 8;
+ 
+ //! The fillets of the contours of theBuilder, computed after Compute() failed: each contour on its
+ //! own (by the same builder, or by a pivot cut when that fails too), and the intersection of the
+ //! results. Two fillets whose arcs cross, or that run out of face, are built this way. The contours
+-//! must share no vertex, and every contour must be a constant radius. Null if not applicable.
++//! must be a constant radius, and may share a vertex only where two of them meet at a convex corner
++//! of three perpendicular planes. Null if not applicable.
+ TopoDS_Shape fallbackFillets(ChFi3d_FilBuilder& theBuilder, const ChFi3d_FilletShape theShape)
+ {
+   const int aNbContours = theBuilder.NbElements();
+@@ -338,8 +476,9 @@ TopoDS_Shape fallbackFillets(ChFi3d_FilBuilder& theBuilder, const ChFi3d_FilletS
+   {
+     return TopoDS_Shape();
+   }
+-  const TopoDS_Shape&                                           aShape = theBuilder.InitialShape();
+-  NCollection_IndexedMap<TopoDS_Shape, TopTools_ShapeMapHasher> aVertices;
++  const TopoDS_Shape& aShape = theBuilder.InitialShape();
++  NCollection_IndexedDataMap<TopoDS_Shape, int, TopTools_ShapeMapHasher> aEdgeContour;
++  NCollection_IndexedDataMap<TopoDS_Shape, int, TopTools_ShapeMapHasher> aVertexContours;
+   for (int aContour = 1; aContour <= aNbContours; ++aContour)
+   {
+     const occ::handle<ChFiDS_Spine> aSpine = theBuilder.Value(aContour);
+@@ -350,18 +489,94 @@ TopoDS_Shape fallbackFillets(ChFi3d_FilBuilder& theBuilder, const ChFi3d_FilletS
+     NCollection_IndexedMap<TopoDS_Shape, TopTools_ShapeMapHasher> aOwn;
+     for (int anEdge = 1; anEdge <= aSpine->NbEdges(); ++anEdge)
+     {
++      aEdgeContour.Add(aSpine->Edges(anEdge), aContour);
+       TopExp::MapShapes(aSpine->Edges(anEdge), TopAbs_VERTEX, aOwn);
+     }
+     for (int aVertex = 1; aVertex <= aOwn.Extent(); ++aVertex)
+     {
+-      if (aVertices.Contains(aOwn(aVertex)))
++      if (aVertexContours.Contains(aOwn(aVertex)))
++      {
++        aVertexContours.ChangeFromKey(aOwn(aVertex)) += 1;
++      }
++      else
+       {
+-        return TopoDS_Shape();
++        aVertexContours.Add(aOwn(aVertex), 1);
+       }
+     }
+-    for (int aVertex = 1; aVertex <= aOwn.Extent(); ++aVertex)
++  }
++
++  // Contours that share a vertex are an intersection only where the vertex is a convex corner of
++  // three perpendicular planes. Two fillets meet there in the intersection of their surfaces (the
++  // third edge is not filleted); three fillets of one radius meet in a ball, which is cut from the
++  // intersection. Anything else needs a vertex blend, which this does not build.
++  struct Ball
++  {
++    gp_Ax2 myFrame; //!< at the corner, the cube of side myRadius lies along its three axes
++    gp_Pnt myCentre;
++    double myRadius;
++  };
++
++  std::vector<Ball> aBalls;
++  EdgeFaceMap       aVertexEdges, aEdgeFaces;
++  for (int aVertex = 1; aVertex <= aVertexContours.Extent(); ++aVertex)
++  {
++    if (aVertexContours(aVertex) < 2)
+     {
+-      aVertices.Add(aOwn(aVertex));
++      continue;
++    }
++    if (aVertexEdges.IsEmpty())
++    {
++      TopExp::MapShapesAndAncestors(aShape, TopAbs_VERTEX, TopAbs_EDGE, aVertexEdges);
++      TopExp::MapShapesAndAncestors(aShape, TopAbs_EDGE, TopAbs_FACE, aEdgeFaces);
++    }
++    Corner aCorner;
++    if (!aVertexEdges.Contains(aVertexContours.FindKey(aVertex))
++        || !convexCorner(TopoDS::Vertex(aVertexContours.FindKey(aVertex)),
++                         aVertexEdges,
++                         aEdgeFaces,
++                         aCorner))
++    {
++      return TopoDS_Shape();
++    }
++    int aNbFilleted = 0;
++    for (int anEdge = 0; anEdge < 3; ++anEdge)
++    {
++      aNbFilleted += aEdgeContour.Contains(aCorner.myEdge[anEdge]) ? 1 : 0;
++    }
++    if (aNbFilleted != aVertexContours(aVertex))
++    {
++      return TopoDS_Shape();
++    }
++    if (aNbFilleted == 3)
++    {
++      const double aRadius = theBuilder.Radius(aEdgeContour.FindFromKey(aCorner.myEdge[0]));
++      gp_Vec       aToCentre;
++      for (int anEdge = 0; anEdge < 3; ++anEdge)
++      {
++        if (std::abs(theBuilder.Radius(aEdgeContour.FindFromKey(aCorner.myEdge[anEdge])) - aRadius)
++              > Precision::Confusion()
++            || aCorner.myLength[anEdge] < 2. * aRadius - Precision::Confusion())
++        {
++          return TopoDS_Shape();
++        }
++        aToCentre += gp_Vec(aCorner.myDirection[anEdge]) * aRadius;
++      }
++      // The cube along the edges: x along the first, z along the third, y = z cross x must be
++      // the second, so swap the first two if the three directions are left-handed.
++      const bool aRight = gp_Vec(aCorner.myDirection[0])
++                            .Crossed(gp_Vec(aCorner.myDirection[1]))
++                            .Dot(gp_Vec(aCorner.myDirection[2]))
++                          > 0.;
++      Ball       aBall;
++      aBall.myFrame =
++        gp_Ax2(aCorner.myPoint, aCorner.myDirection[2], aCorner.myDirection[aRight ? 0 : 1]);
++      aBall.myCentre = aCorner.myPoint.Translated(aToCentre);
++      aBall.myRadius = aRadius;
++      aBalls.push_back(aBall);
++    }
++    else if (aNbFilleted != 2)
++    {
++      return TopoDS_Shape();
+     }
+   }
+ 
+@@ -411,6 +626,24 @@ TopoDS_Shape fallbackFillets(ChFi3d_FilBuilder& theBuilder, const ChFi3d_FilletS
+     }
+     aResult = aCommon.Shape();
+   }
++  // Three fillets of one radius at a corner end in a ball: the corner cube minus the ball goes.
++  for (const Ball& aBall : aBalls)
++  {
++    BRepPrimAPI_MakeBox aCube(aBall.myFrame, aBall.myRadius, aBall.myRadius, aBall.myRadius);
++    BRepAlgoAPI_Cut     aPiece(aCube.Shape(),
++                               BRepPrimAPI_MakeSphere(aBall.myCentre, aBall.myRadius).Shape());
++    if (!aPiece.IsDone() || aPiece.HasErrors())
++    {
++      return TopoDS_Shape();
++    }
++    BRepAlgoAPI_Cut aCut(aResult, aPiece.Shape());
++    if (!aCut.IsDone() || aCut.HasErrors() || !isClosedValidSolid(aCut.Shape()))
++    {
++      return TopoDS_Shape();
++    }
++    aResult = aCut.Shape();
++    aSumRemoved += volumeOf(aPiece.Shape());
++  }
+   // What the intersection removes is at least what any one fillet removes and at most the sum.
+   const double aTol     = 1.e-6 * aVolume;
+   const double aRemoved = aVolume - volumeOf(aResult);
+@@ -795,6 +1028,27 @@ void BRepFilletAPI_MakeFillet::Build(const Message_ProgressRange& /*theRange*/)
+     Done();
+     myShape = myBuilder.Shape();
+ 
++    // Several contours whose arcs cross can come back as done but open (an edge that borders one
++    // face, volumes of 1e26 and more) and a tessellator that never returns. Where the fallback
++    // applies it replaces such a result; otherwise the result is left as it was.
++    if (myBuilder.NbElements() > 1 && hasFreeEdge(myShape)
++        && !hasFreeEdge(myBuilder.InitialShape()))
++    {
++      TopoDS_Shape aFallback;
++      try
++      {
++        aFallback = fallbackFillets(myBuilder, myBuilder.GetFilletShape());
++      }
++      catch (Standard_Failure const&)
++      {
++      }
++      if (!aFallback.IsNull())
++      {
++        myBuilder.Reset();
++        myShape = aFallback;
++      }
++    }
++
+     // creation of the Map.
+     TopExp_Explorer ex;
+     for (ex.Init(myShape, TopAbs_FACE); ex.More(); ex.Next())
+diff --git a/src/ModelingAlgorithms/TKFillet/GTests/BRepFilletAPI_MakeFillet_Test.cxx b/src/ModelingAlgorithms/TKFillet/GTests/BRepFilletAPI_MakeFillet_Test.cxx
+index f0f92230..a34ec058 100644
+--- a/src/ModelingAlgorithms/TKFillet/GTests/BRepFilletAPI_MakeFillet_Test.cxx
++++ b/src/ModelingAlgorithms/TKFillet/GTests/BRepFilletAPI_MakeFillet_Test.cxx
+@@ -615,3 +615,73 @@ TEST(BRepFilletAPI_MakeFilletTest, FilletWiderThanBothFacesEndsAtBothFarEdges)
+   EXPECT_TRUE(BRepCheck_Analyzer(aFillet.Shape()).IsValid());
+   EXPECT_NEAR(volumeOf(aFillet.Shape()), 120.0 - 10.0 * 3.426266, 1.e-4);
+ }
++
++TEST(BRepFilletAPI_MakeFilletTest, FrameOfFilletsWhoseArcsCrossIsTheirIntersection)
++{
++  // All four top edges of a 4 x 10 x 6 box with r = 3: the long edges' arcs cross (r > w / 2) and
++  // the end edges meet them at the corners. Compute() answers done with an open shell here; the
++  // result is the intersection of the four single-edge fillets, 196.8401939 (the box minus the
++  // prisms of the four removed sections, a boolean of simple solids).
++  const TopoDS_Shape       aBox = BRepPrimAPI_MakeBox(4.0, 10.0, 6.0).Shape();
++  BRepFilletAPI_MakeFillet aFillet(aBox);
++  aFillet.Add(3.0, findEdgeAt(aBox, gp_Pnt(2.0, 0.0, 6.0)));
++  aFillet.Add(3.0, findEdgeAt(aBox, gp_Pnt(4.0, 5.0, 6.0)));
++  aFillet.Add(3.0, findEdgeAt(aBox, gp_Pnt(2.0, 10.0, 6.0)));
++  aFillet.Add(3.0, findEdgeAt(aBox, gp_Pnt(0.0, 5.0, 6.0)));
++  aFillet.Build();
++  ASSERT_TRUE(aFillet.IsDone());
++  EXPECT_TRUE(BRepCheck_Analyzer(aFillet.Shape()).IsValid());
++  EXPECT_NEAR(volumeOf(aFillet.Shape()), 196.8401939, 1.e-5);
++}
++
++TEST(BRepFilletAPI_MakeFilletTest, AdjacentFilletsOneOfThemWiderThanItsFaceMeetInTheirIntersection)
++{
++  // The left top edge with r = 4.5 on the 4 wide top face (pivot at the far top edge) and the front
++  // top edge with r = 1, meeting at the corner (0, 0, 6). Intersection of the two single-edge
++  // results, 197.5166640.
++  const TopoDS_Shape       aBox = BRepPrimAPI_MakeBox(4.0, 10.0, 6.0).Shape();
++  BRepFilletAPI_MakeFillet aFillet(aBox);
++  aFillet.Add(4.5, findEdgeAt(aBox, gp_Pnt(0.0, 5.0, 6.0)));
++  aFillet.Add(1.0, findEdgeAt(aBox, gp_Pnt(2.0, 0.0, 6.0)));
++  aFillet.Build();
++  ASSERT_TRUE(aFillet.IsDone());
++  EXPECT_TRUE(BRepCheck_Analyzer(aFillet.Shape()).IsValid());
++  // The default volume integration over the mitre curve is good to about 2e-4 here.
++  EXPECT_NEAR(volumeOf(aFillet.Shape()), 197.5166640, 5.e-4);
++}
++
++TEST(BRepFilletAPI_MakeFilletTest, ThreeEqualFilletsAtEachCornerThatMeetExactlyEndInBalls)
++{
++  // The four top edges and the four vertical edges of a 4 x 10 x 6 box with r = 2 = w / 2: the two
++  // long top fillets meet exactly along the middle and each corner is a ball of radius 2.
++  // 200.7197551 (the box minus eight edge prisms and four corner cubes minus balls).
++  const TopoDS_Shape       aBox = BRepPrimAPI_MakeBox(4.0, 10.0, 6.0).Shape();
++  BRepFilletAPI_MakeFillet aFillet(aBox);
++  aFillet.Add(2.0, findEdgeAt(aBox, gp_Pnt(2.0, 0.0, 6.0)));
++  aFillet.Add(2.0, findEdgeAt(aBox, gp_Pnt(4.0, 5.0, 6.0)));
++  aFillet.Add(2.0, findEdgeAt(aBox, gp_Pnt(2.0, 10.0, 6.0)));
++  aFillet.Add(2.0, findEdgeAt(aBox, gp_Pnt(0.0, 5.0, 6.0)));
++  aFillet.Add(2.0, findEdgeAt(aBox, gp_Pnt(0.0, 0.0, 3.0)));
++  aFillet.Add(2.0, findEdgeAt(aBox, gp_Pnt(4.0, 0.0, 3.0)));
++  aFillet.Add(2.0, findEdgeAt(aBox, gp_Pnt(4.0, 10.0, 3.0)));
++  aFillet.Add(2.0, findEdgeAt(aBox, gp_Pnt(0.0, 10.0, 3.0)));
++  aFillet.Build();
++  ASSERT_TRUE(aFillet.IsDone());
++  EXPECT_TRUE(BRepCheck_Analyzer(aFillet.Shape()).IsValid());
++  EXPECT_NEAR(volumeOf(aFillet.Shape()), 200.7197551, 1.e-5);
++}
++
++TEST(BRepFilletAPI_MakeFilletTest, ThreeFilletsOfDifferentRadiiAtACornerAreNotRebuilt)
++{
++  // Different radii at a corner need a vertex blend, which the intersection of single-edge
++  // fillets is not; the stripe builder's own answer is left alone.
++  const TopoDS_Shape       aBox = BRepPrimAPI_MakeBox(4.0, 10.0, 6.0).Shape();
++  BRepFilletAPI_MakeFillet aFillet(aBox);
++  aFillet.Add(1.0, findEdgeAt(aBox, gp_Pnt(2.0, 0.0, 6.0)));
++  aFillet.Add(1.5, findEdgeAt(aBox, gp_Pnt(0.0, 5.0, 6.0)));
++  aFillet.Add(2.0, findEdgeAt(aBox, gp_Pnt(0.0, 0.0, 3.0)));
++  aFillet.Build();
++  ASSERT_TRUE(aFillet.IsDone());
++  EXPECT_TRUE(BRepCheck_Analyzer(aFillet.Shape()).IsValid());
++  EXPECT_LT(volumeOf(aFillet.Shape()), 240.0);
++}
