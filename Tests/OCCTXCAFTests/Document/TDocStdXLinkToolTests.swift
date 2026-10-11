@@ -26,8 +26,8 @@ struct TDocStdXLinkToolTests {
         src.setInteger(88)
         let ok = doc.xlinkCopyWithLink(targetLabelId: tgt.labelId, sourceLabelId: src.labelId)
         doc.commitTransaction()
-        // The call's answer and its effect were both discarded, so only a crash could fail this
-        // test (#766). XLinkTool::CopyWithLink copies the source's attributes onto the target.
+        // XLinkTool::CopyWithLink copies the source's attributes onto the target. The answer and the
+        // effect are both asserted here; the version on v5 discarded both (#766).
         #expect(ok)
         #expect(tgt.integer == 88)
     }
