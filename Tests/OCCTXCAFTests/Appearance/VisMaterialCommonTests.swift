@@ -41,6 +41,8 @@ struct VisMaterialCommonTests {
         #expect(abs(mat.ambientColor.red - 0.1) < 1e-6)
         #expect(abs(mat.specularColor.red - 0.2) < 1e-6)
         #expect(mat.emissiveColor.red == 0.0)
+        #expect(mat.emissiveColor.green == 0.0)
+        #expect(mat.emissiveColor.blue == 0.0)
         // And it is no longer the default.
         #expect(!mat.isEqual(to: VisMaterialCommon()))
     }
