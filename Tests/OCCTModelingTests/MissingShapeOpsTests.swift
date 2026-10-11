@@ -14,7 +14,8 @@ struct MissingShapeOpsTests {
         // Volume of torus = 2 * pi^2 * R * r^2
         let expected = 2.0 * Double.pi * Double.pi * 10.0 * 9.0
         // The probe (766-modeling-missing-shape-ops) measured 1776.5287921960844 against the analytic
-        // 1776.5287921960846, so a 1e-9 relative bound is loose by four orders of magnitude.
+        // 1776.5287921960846 (relative difference about 1e-16); 1e-9 leaves room for libm variation
+        // across platforms while still failing on any real geometry change.
         #expect(abs(vol - expected) / expected < 1e-9)
     }
 

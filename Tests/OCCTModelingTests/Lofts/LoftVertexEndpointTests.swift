@@ -13,7 +13,6 @@ struct LoftVertexEndpointTests {
                 lastVertex: SIMD3(0, 0, 10)))
         #expect(cone.isValid)
         let volume = try #require(cone.volume)
-        #expect(volume > 0)
         // #766: `volume > 0` holds for any solid. Pinned to the kernel
         // (Scripts/repro/766-modeling-loft-vertex-endpoint, transcript-evidence-fix.txt): the
         // loft is a solid of 2 faces whose volume is the analytic cone, pi * 5^2 * 10 / 3.
