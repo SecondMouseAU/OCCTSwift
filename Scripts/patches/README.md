@@ -19,7 +19,7 @@ which is what nothing did while `0042` sat in the kernel and not in the map for 
 2026-08-03 retired ten patches, `0032`
 retired 2026-09-02 (superseded by upstream's own fix, not shipped in our pin), and `0035` retired
 2026-09-20 (it reintroduced #280; see its [Retired patches](#retired-patches) entry).
-The carried sequence now reads 0010–0012, 0014–0031, 0033–0034, 0036–0048, 0050–0060.
+The carried sequence now reads 0010–0012, 0014–0031, 0033–0034, 0036–0048, 0050–0060, 0062.
 The gaps are the retirements, not missing files:
 the numbers are cited across `CLAUDE.md`, `docs/`, closed issues and `Scripts/repro/`, and
 renumbering would have silently repointed every one of those citations at a different fix.
@@ -3589,6 +3589,14 @@ On a 4 x 10 x 6 box, fillets on the two top edges with r1 + r2 > 4 give `IsDone(
 Between them: the contour result must remove at least the maximum and at most the sum of what each contour removes, and the builder is reset so that its faulty contours read zero. `Modified`, `Generated` and `IsDeleted` know nothing of the new faces. Contours that share a vertex, variable radius, curved or non-rectangular faces and concave edges decline as before. `ChFi3d_Builder` gains the inline accessor `InitialShape()`; `TKFillet` lists `TKPrim`.
 
 Measured against the `v4.0.0-kernel.5` asset with 0058, 0059 and the changed units override-linked (`Scripts/repro/fillet-pivot-edges/README.md`): 715 box cases before and after, 312 valid ones identical, 331 unchanged, 70 `IsDone` false now valid, none newly invalid; every new success valid, closed, tessellating, deterministic and within 1e-11 of the analytic volume.
+
+## 0062-BRepFilletAPI_MakeFillet-pivot-fillets-at-any-planar-angle-and-on-concave-edges-3234.patch
+
+**The pivot construction of 0060 for any angle between two planar faces, and for concave edges** ([#3234](https://github.com/SecondMouseAU/OCCTSwift/issues/3234), upstream [OCCT#1177](https://github.com/Open-Cascade-SAS/OCCT/issues/1177)), `src/ModelingAlgorithms/TKFillet/BRepFilletAPI/` in the pinned tree. **Candidate: branch `fix/fillet-3234-beyond-rectangles`, no PR, nothing reported upstream, waiting on the maintainer's decisions in `Scripts/repro/fillet-3234/review/index.md`.**
+
+0060 builds one straight edge between two planar rectangles only at a right angle. This generalises `pivotArc` and `pivotCut` to the wedge the two faces span at angle phi: the fillet circle has radius r, is tangent to both faces while both tangent points (at distance r / tan(phi / 2) from the edge) lie on them, passes through the far edge of a face that runs out (the shorter face first), or through both far edges. A convex edge has the region between the arc and the faces cut out as before; a concave edge, where the circle sits in the air wedge, has it filled (`BRepAlgoAPI_Fuse` of the region, merged by `ShapeUpgrade_UnifySameDomain`, volume checked to rise by area times length). Each result must be one valid closed solid whose volume changed by exactly area times length, otherwise the failure stands. A concave contour is built only when it is the only contour. Curved faces, contours that share a vertex, variable radius, two concave contours and mixed convex and concave contours decline as before.
+
+Measured against the `v4.0.0-kernel.5` asset with 0059, 0060 and this patch override-linked (`Scripts/repro/fillet-3234/`): 49 section cases (45, 60, 120, 135 degree edges, a concave L, a cylinder, cone, dome, washer, D-profile and groove), every one the rule's volume to 1e-6 or declined; 11 radius sweeps of 61 radii, none wrong or invalid; 900 random polygon prisms (convex and concave corners, one or two contours), none wrong or invalid, 765 built against 281 with 0060 alone; 800 random boxes (`fuzz.py`) against 0060: 431 identical, 352 unchanged outcomes, 1 newly valid, 16 whose two-contour Common differs in volume by at most 9e-7 relative (radii far past the faces, near-flat arcs), validity and face counts identical.
 
 ## 0035-STEPControl-Writer-drop-per-transfer-init-1259.patch
 

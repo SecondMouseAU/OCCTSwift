@@ -1,0 +1,490 @@
+diff --git a/src/ModelingAlgorithms/TKFillet/BRepFilletAPI/BRepFilletAPI_MakeFillet.cxx b/src/ModelingAlgorithms/TKFillet/BRepFilletAPI/BRepFilletAPI_MakeFillet.cxx
+index 8f3550f..0ff4c37 100644
+--- a/src/ModelingAlgorithms/TKFillet/BRepFilletAPI/BRepFilletAPI_MakeFillet.cxx
++++ b/src/ModelingAlgorithms/TKFillet/BRepFilletAPI/BRepFilletAPI_MakeFillet.cxx
+@@ -22,6 +22,7 @@
+ #include <BRepAdaptor_Surface.hxx>
+ #include <BRepAlgoAPI_Common.hxx>
+ #include <BRepAlgoAPI_Cut.hxx>
++#include <BRepAlgoAPI_Fuse.hxx>
+ #include <BRepBuilderAPI_MakeEdge.hxx>
+ #include <BRepBuilderAPI_MakeFace.hxx>
+ #include <BRepBuilderAPI_MakeWire.hxx>
+@@ -38,6 +39,7 @@
+ #include <NCollection_IndexedDataMap.hxx>
+ #include <NCollection_IndexedMap.hxx>
+ #include <Precision.hxx>
++#include <ShapeUpgrade_UnifySameDomain.hxx>
+ #include <Standard_Failure.hxx>
+ #include <TopExp.hxx>
+ #include <TopExp_Explorer.hxx>
+@@ -97,61 +99,126 @@ bool isClosedValidSolid(const TopoDS_Shape& theShape)
+   return true;
+ }
+ 
+-//! The circle of a fillet in the cross-section of a right-angle convex edge: face 1 along the
+-//! first axis, face 2 along the second, the material in the first quadrant, the edge at the origin.
+-//! The arc runs from (theQ1, 0) to (0, theQ2) and is convex towards the origin.
++//! The circle of a fillet in the cross-section of an edge between two planar faces, any angle,
++//! convex or concave. The section plane has the edge at the origin, face 1 along the first axis
++//! (U), face 2 along the direction at angle phi from it (V), and the circle in the wedge they span:
++//! the material wedge of a convex edge, the air wedge of a concave one. The arc runs from Q1 on
++//! face 1 to Q2 on face 2 and is convex towards the origin.
+ struct SectionArc
+ {
+-  double myCx, myCy; //!< centre
+-  double myQ1, myQ2; //!< ends of the arc on face 1 and on face 2
+-  double myArea;     //!< area between the arc and the two faces, the part the fillet removes
++  double myCx, myCy;                 //!< centre
++  double myQ1x, myQ1y, myQ2x, myQ2y; //!< ends of the arc on face 1 and on face 2
++  double myArea; //!< area between the arc and the two faces, the part the fillet removes or adds
+ };
+ 
+-//! Where a fillet of radius theR ends in the section of an edge between two faces that reach
+-//! theA and theB from the edge. It is tangent to a face while the face lasts. When a face runs out
+-//! before the tangent point, its far edge is the pivot: the arc passes through it and stays tangent
+-//! to the other face, and through both far edges when both run out. False if no arc exists.
+-bool pivotArc(const double theA, const double theB, const double theR, SectionArc& theArc)
++//! True if the circle centre theCx, theCy keeps to the wedge side of both face lines and is no
++//! further than theR from either: the circle can touch the face, not cross it.
++bool centreInWedge(const double theCx,
++                   const double theCy,
++                   const double thePhi,
++                   const double theR,
++                   const double theTol)
++{
++  const double aD1 = theCy;
++  const double aD2 = theCx * std::sin(thePhi) - theCy * std::cos(thePhi);
++  return aD1 >= -theTol && aD1 <= theR + theTol && aD2 >= -theTol && aD2 <= theR + theTol;
++}
++
++//! Where a fillet of radius theR ends in the section of an edge between two planar faces at the
++//! angle thePhi that reach theA and theB from the edge. It is tangent to a face while the face
++//! lasts. When a face runs out before the tangent point, its far edge is the pivot: the arc passes
++//! through it and stays tangent to the other face, and through both far edges when both run out.
++//! The shorter face is the one that runs out first when either could. False if the fillet fits both
++//! faces (an ordinary fillet) or if no arc exists.
++bool pivotArc(const double thePhi,
++              const double theA,
++              const double theB,
++              const double theR,
++              SectionArc&  theArc)
+ {
+   const double aTol = Precision::Confusion();
+-  if (theR < std::min(theA, theB) - aTol)
++  const double aSin = std::sin(thePhi), aCos = std::cos(thePhi);
++  const double aT = theR / std::tan(thePhi / 2.);
++  if (aT < std::min(theA, theB) - aTol)
+   {
+     return false;
+   }
+-  const double aCx =
+-    theR >= theA - aTol ? std::sqrt(std::max(2. * theA * theR - theA * theA, 0.)) : -1.;
+-  const double aCy =
+-    theR >= theB - aTol ? std::sqrt(std::max(2. * theB * theR - theB * theB, 0.)) : -1.;
+-  if (aCx >= 0. && aCx <= theB + aTol)
+-  {
+-    theArc.myCx = theR;
+-    theArc.myCy = aCx;
+-    theArc.myQ1 = theA;
+-    theArc.myQ2 = aCx;
+-  }
+-  else if (aCy >= 0. && aCy <= theA + aTol)
+-  {
+-    theArc.myCx = aCy;
+-    theArc.myCy = theR;
+-    theArc.myQ1 = aCy;
+-    theArc.myQ2 = theB;
+-  }
+-  else
++  // Face 1 pivot: through P1 = (A, 0), tangent to face 2; the centre is S V + R N2.
++  auto aFace1Pivot = [&]() {
++    const double aDisc = 2. * theA * theR * aSin - theA * theA * aSin * aSin;
++    if (aDisc < 0.)
++    {
++      return false;
++    }
++    const double aS  = theA * aCos + std::sqrt(aDisc);
++    const double aCx = aS * aCos + theR * aSin;
++    const double aCy = aS * aSin - theR * aCos;
++    if (aS < -aTol || aS > theB + aTol || !centreInWedge(aCx, aCy, thePhi, theR, aTol))
++    {
++      return false;
++    }
++    theArc.myCx  = aCx;
++    theArc.myCy  = aCy;
++    theArc.myQ1x = theA;
++    theArc.myQ1y = 0.;
++    theArc.myQ2x = aS * aCos;
++    theArc.myQ2y = aS * aSin;
++    return true;
++  };
++  // Face 2 pivot: through P2 = B V, tangent to face 1; the centre is (S, R).
++  auto aFace2Pivot = [&]() {
++    const double aDisc = 2. * theB * theR * aSin - theB * theB * aSin * aSin;
++    if (aDisc < 0.)
++    {
++      return false;
++    }
++    const double aS = theB * aCos + std::sqrt(aDisc);
++    if (aS < -aTol || aS > theA + aTol || !centreInWedge(aS, theR, thePhi, theR, aTol))
++    {
++      return false;
++    }
++    theArc.myCx  = aS;
++    theArc.myCy  = theR;
++    theArc.myQ1x = aS;
++    theArc.myQ1y = 0.;
++    theArc.myQ2x = theB * aCos;
++    theArc.myQ2y = theB * aSin;
++    return true;
++  };
++  bool aFound = theA <= theB ? (aFace1Pivot() || aFace2Pivot()) : (aFace2Pivot() || aFace1Pivot());
++  if (!aFound)
+   {
+-    const double aChord = std::hypot(theA, theB);
+-    if (theR < aChord / 2.)
++    // Both far edges: the centre on the bisector of P1 P2, on the side away from the edge.
++    const double aP2x = theB * aCos, aP2y = theB * aSin;
++    const double aChord = std::hypot(aP2x - theA, aP2y);
++    if (aChord < aTol || theR < aChord / 2. - aTol)
++    {
++      return false;
++    }
++    const double aH  = std::sqrt(std::max(theR * theR - aChord * aChord / 4., 0.));
++    const double aMx = (theA + aP2x) / 2., aMy = aP2y / 2.;
++    double       aNx = -(aP2y), aNy = aP2x - theA;
++    if (aNx * aMx + aNy * aMy < 0.)
++    {
++      aNx = -aNx;
++      aNy = -aNy;
++    }
++    const double aCx = aMx + aH * aNx / aChord, aCy = aMy + aH * aNy / aChord;
++    if (!centreInWedge(aCx, aCy, thePhi, theR, aTol))
+     {
+       return false;
+     }
+-    const double aH = std::sqrt(theR * theR - aChord * aChord / 4.);
+-    theArc.myCx     = theA / 2. + aH * theB / aChord;
+-    theArc.myCy     = theB / 2. + aH * theA / aChord;
+-    theArc.myQ1     = theA;
+-    theArc.myQ2     = theB;
+-  }
+-  const double aTheta =
+-    2. * std::asin(std::min(1., std::hypot(theArc.myQ1, theArc.myQ2) / (2. * theR)));
+-  theArc.myArea = theArc.myQ1 * theArc.myQ2 / 2. - theR * theR / 2. * (aTheta - std::sin(aTheta));
++    theArc.myCx  = aCx;
++    theArc.myCy  = aCy;
++    theArc.myQ1x = theA;
++    theArc.myQ1y = 0.;
++    theArc.myQ2x = aP2x;
++    theArc.myQ2y = aP2y;
++  }
++  const double aDx = theArc.myQ2x - theArc.myQ1x, aDy = theArc.myQ2y - theArc.myQ1y;
++  const double aTheta    = 2. * std::asin(std::min(1., std::hypot(aDx, aDy) / (2. * theR)));
++  const double aTriangle = std::abs(theArc.myQ1x * theArc.myQ2y - theArc.myQ1y * theArc.myQ2x) / 2.;
++  theArc.myArea          = aTriangle - theR * theR / 2. * (aTheta - std::sin(aTheta));
+   return true;
+ }
+ 
+@@ -219,12 +286,15 @@ bool rectangleWidth(const TopoDS_Face& theFace,
+   return aNbEdges == 4 && aNbParallel == 1;
+ }
+ 
+-//! Cuts the pivot fillet of theRadius on theEdge out of theShape (a solid with right-angle
+-//! planar corners along the edge), or returns a null shape if the configuration is not that.
++//! Builds the pivot fillet of theRadius on theEdge of theShape: a straight edge between two planar
++//! rectangles at any angle. A convex edge has the fillet cut out of the solid; a concave edge has
++//! the corner filled (theConcave is set). Returns a null shape if the configuration is not that.
+ TopoDS_Shape pivotCut(const TopoDS_Shape& theShape,
+                       const TopoDS_Edge&  theEdge,
+-                      const double        theRadius)
++                      const double        theRadius,
++                      bool&               theConcave)
+ {
++  theConcave = false;
+   BRepAdaptor_Curve aCurve(theEdge);
+   if (aCurve.GetType() != GeomAbs_Line)
+   {
+@@ -256,28 +326,35 @@ TopoDS_Shape pivotCut(const TopoDS_Shape& theShape,
+   {
+     return TopoDS_Shape();
+   }
+-  // A convex right angle: each face leads into the material side of the other.
+-  if (std::abs(aU.Dot(aV)) > 1.e-7 || aU.Dot(aN2) > -0.5 || aV.Dot(aN1) > -0.5)
++  // Each face leads into the material side of the other at a convex edge, out of it at a concave
++  // one. The fillet circle lies in the wedge the two faces span, whose angle is phi.
++  const double aToN2 = aU.Dot(aN2), aToN1 = aV.Dot(aN1);
++  const bool   aConvex  = aToN2 < -1.e-7 && aToN1 < -1.e-7;
++  const bool   aConcave = aToN2 > 1.e-7 && aToN1 > 1.e-7;
++  const double aCosPhi  = aU.Dot(aV);
++  if ((!aConvex && !aConcave) || std::abs(aCosPhi) > 1. - 1.e-6)
+   {
+     return TopoDS_Shape();
+   }
+-  SectionArc anArc;
+-  if (!pivotArc(aA, aB, theRadius, anArc))
++  const double aPhi = std::acos(aCosPhi);
++  SectionArc   anArc;
++  if (!pivotArc(aPhi, aA, aB, theRadius, anArc))
+   {
+     return TopoDS_Shape();
+   }
+-
+-  // The tool: the region between the arc and the two faces, enlarged beyond them, swept along the
+-  // edge.
++  // Section plane frame: first axis U, second W perpendicular to U towards V.
++  gp_Vec aWv = gp_Vec(aV) - gp_Vec(aU) * aCosPhi;
++  aWv.Normalize();
++  const double aSin    = std::sin(aPhi);
+   const double aMargin = 0.1 * (aA + aB + aLength);
+-  const gp_Vec aStart  = gp_Vec(aAxis) * (-aMargin);
+-  auto         aPoint  = [&](const double theU, const double theW) {
+-    return aOrigin.Translated(gp_Vec(aU) * theU + gp_Vec(aV) * theW + aStart);
++  const gp_Vec aStart  = aConvex ? gp_Vec(aAxis) * (-aMargin) : gp_Vec();
++  auto         aPoint  = [&](const double theX, const double theY) {
++    return aOrigin.Translated(gp_Vec(aU) * theX + aWv * theY + aStart);
+   };
+-  const gp_Pnt aQ1  = aPoint(anArc.myQ1, 0.);
+-  const gp_Pnt aQ2  = aPoint(0., anArc.myQ2);
++  const gp_Pnt aQ1  = aPoint(anArc.myQ1x, anArc.myQ1y);
++  const gp_Pnt aQ2  = aPoint(anArc.myQ2x, anArc.myQ2y);
+   const gp_Pnt aCen = aPoint(anArc.myCx, anArc.myCy);
+-  const gp_Pnt aMid = aPoint((anArc.myQ1) / 2., (anArc.myQ2) / 2.);
++  const gp_Pnt aMid = aPoint((anArc.myQ1x + anArc.myQ2x) / 2., (anArc.myQ1y + anArc.myQ2y) / 2.);
+   gp_Vec       aToMid(aCen, aMid);
+   if (aToMid.SquareMagnitude() < gp::Resolution())
+   {
+@@ -285,15 +362,31 @@ TopoDS_Shape pivotCut(const TopoDS_Shape& theShape,
+   }
+   aToMid.Normalize();
+   const gp_Pnt            aArcMid = aCen.Translated(aToMid * theRadius);
+-  const gp_Pnt            aS1     = aPoint(anArc.myQ1 + aMargin, -aMargin);
+-  const gp_Pnt            aS2     = aPoint(-aMargin, anArc.myQ2 + aMargin);
+-  const gp_Pnt            aS0     = aPoint(-aMargin, -aMargin);
+   BRepBuilderAPI_MakeWire aWire;
+-  aWire.Add(BRepBuilderAPI_MakeEdge(aS1, aQ1).Edge());
+   aWire.Add(BRepBuilderAPI_MakeEdge(GC_MakeArcOfCircle(aQ1, aArcMid, aQ2).Value()).Edge());
+-  aWire.Add(BRepBuilderAPI_MakeEdge(aQ2, aS2).Edge());
+-  aWire.Add(BRepBuilderAPI_MakeEdge(aS2, aS0).Edge());
+-  aWire.Add(BRepBuilderAPI_MakeEdge(aS0, aS1).Edge());
++  double aToolLength = aLength;
++  if (aConvex)
++  {
++    // The region between the arc and the faces, enlarged beyond them so that no face of the tool
++    // lies in a face of the solid.
++    const gp_Pnt aS1 = aPoint(anArc.myQ1x + aMargin, anArc.myQ1y - aMargin);
++    const gp_Pnt aS2 = aPoint(anArc.myQ2x + aMargin * aCosPhi - aMargin * aSin,
++                              anArc.myQ2y + aMargin * aSin + aMargin * aCosPhi);
++    const gp_Pnt aS0 = aPoint(-aMargin * (1. + aCosPhi), -aMargin * aSin);
++    aWire.Add(BRepBuilderAPI_MakeEdge(aQ2, aS2).Edge());
++    aWire.Add(BRepBuilderAPI_MakeEdge(aS2, aS0).Edge());
++    aWire.Add(BRepBuilderAPI_MakeEdge(aS0, aS1).Edge());
++    aWire.Add(BRepBuilderAPI_MakeEdge(aS1, aQ1).Edge());
++    aToolLength += 2. * aMargin;
++  }
++  else
++  {
++    // The region between the arc and the faces, filling the corner: it touches the solid along
++    // the two faces and ends in the planes of the solid's end faces.
++    const gp_Pnt aO = aPoint(0., 0.);
++    aWire.Add(BRepBuilderAPI_MakeEdge(aQ2, aO).Edge());
++    aWire.Add(BRepBuilderAPI_MakeEdge(aO, aQ1).Edge());
++  }
+   if (!aWire.IsDone())
+   {
+     return TopoDS_Shape();
+@@ -303,25 +396,47 @@ TopoDS_Shape pivotCut(const TopoDS_Shape& theShape,
+   {
+     return TopoDS_Shape();
+   }
+-  TopoDS_Shape aTool =
+-    BRepPrimAPI_MakePrism(aFace.Face(), gp_Vec(aAxis) * (aLength + 2. * aMargin)).Shape();
++  TopoDS_Shape aTool = BRepPrimAPI_MakePrism(aFace.Face(), gp_Vec(aAxis) * aToolLength).Shape();
+   if (volumeOf(aTool) < 0.)
+   {
+     aTool.Reverse();
+   }
+-  BRepAlgoAPI_Cut aCut(theShape, aTool);
+-  if (!aCut.IsDone() || aCut.HasErrors() || !isClosedValidSolid(aCut.Shape()))
++  TopoDS_Shape aResult;
++  if (aConvex)
++  {
++    BRepAlgoAPI_Cut aCut(theShape, aTool);
++    if (!aCut.IsDone() || aCut.HasErrors())
++    {
++      return TopoDS_Shape();
++    }
++    aResult = aCut.Shape();
++  }
++  else
++  {
++    BRepAlgoAPI_Fuse aFuse(theShape, aTool);
++    if (!aFuse.IsDone() || aFuse.HasErrors())
++    {
++      return TopoDS_Shape();
++    }
++    ShapeUpgrade_UnifySameDomain aUnify(aFuse.Shape(), true, true, true);
++    aUnify.Build();
++    aResult = aUnify.Shape();
++  }
++  if (!isClosedValidSolid(aResult))
+   {
+     return TopoDS_Shape();
+   }
+-  // The section is the same along the edge, so the volume that went is the area times the length.
++  // The section is the same along the edge, so the volume that went (or came) is the area times
++  // the length.
+   const double aVolume  = volumeOf(theShape);
+-  const double aRemoved = anArc.myArea * aLength;
+-  if (std::abs(aVolume - volumeOf(aCut.Shape()) - aRemoved) > 1.e-6 * aRemoved + 1.e-10 * aVolume)
++  const double aChanged = anArc.myArea * aLength;
++  const double aActual  = aConvex ? aVolume - volumeOf(aResult) : volumeOf(aResult) - aVolume;
++  if (std::abs(aActual - aChanged) > 1.e-6 * aChanged + 1.e-10 * aVolume)
+   {
+     return TopoDS_Shape();
+   }
+-  return aCut.Shape();
++  theConcave = aConcave;
++  return aResult;
+ }
+ 
+ //! The most contours the fallback intersects: each costs a fillet and a Boolean operation.
+@@ -385,7 +500,14 @@ TopoDS_Shape fallbackFillets(ChFi3d_FilBuilder& theBuilder, const ChFi3d_FilletS
+     }
+     if (aOne.IsNull() && theBuilder.Value(aContour)->NbEdges() == 1)
+     {
+-      aOne = pivotCut(aShape, aFirst, aRadius);
++      bool aConcave = false;
++      aOne          = pivotCut(aShape, aFirst, aRadius, aConcave);
++      if (aConcave)
++      {
++        // A concave edge adds material: built for a lone contour only, the intersection rule being
++        // the one for fillets that take material away.
++        return aNbContours == 1 ? aOne : TopoDS_Shape();
++      }
+     }
+     if (aOne.IsNull())
+     {
+diff --git a/src/ModelingAlgorithms/TKFillet/GTests/BRepFilletAPI_MakeFillet_Test.cxx b/src/ModelingAlgorithms/TKFillet/GTests/BRepFilletAPI_MakeFillet_Test.cxx
+index f0f9223..7f91fd7 100644
+--- a/src/ModelingAlgorithms/TKFillet/GTests/BRepFilletAPI_MakeFillet_Test.cxx
++++ b/src/ModelingAlgorithms/TKFillet/GTests/BRepFilletAPI_MakeFillet_Test.cxx
+@@ -615,3 +615,117 @@ TEST(BRepFilletAPI_MakeFilletTest, FilletWiderThanBothFacesEndsAtBothFarEdges)
+   EXPECT_TRUE(BRepCheck_Analyzer(aFillet.Shape()).IsValid());
+   EXPECT_NEAR(volumeOf(aFillet.Shape()), 120.0 - 10.0 * 3.426266, 1.e-4);
+ }
++
++namespace
++{
++//! The polygon (x, z pairs, y = 0) extruded 10 along +Y.
++TopoDS_Shape prismOfSection(const NCollection_Array1<gp_Pnt>& thePoints)
++{
++  BRepBuilderAPI_MakePolygon aPoly;
++  for (int anIdx = thePoints.Lower(); anIdx <= thePoints.Upper(); ++anIdx)
++  {
++    aPoly.Add(thePoints(anIdx));
++  }
++  aPoly.Close();
++  TopoDS_Shape aPrism =
++    BRepPrimAPI_MakePrism(BRepBuilderAPI_MakeFace(aPoly.Wire(), true).Face(), gp_Vec(0., 10., 0.))
++      .Shape();
++  if (volumeOf(aPrism) < 0.)
++  {
++    aPrism.Reverse();
++  }
++  return aPrism;
++}
++
++//! The prism of the 45 or 60 degree parallelogram: the edge at the origin between a face 4 wide
++//! along x and one 6 wide at the angle theDegrees below it.
++TopoDS_Shape parallelogramPrism(const double theDegrees)
++{
++  const double               aC = std::cos(theDegrees * M_PI / 180.);
++  const double               aS = std::sin(theDegrees * M_PI / 180.);
++  NCollection_Array1<gp_Pnt> aPts(1, 4);
++  aPts(1) = gp_Pnt(4., 0., 0.);
++  aPts(2) = gp_Pnt(0., 0., 0.);
++  aPts(3) = gp_Pnt(6. * aC, 0., -6. * aS);
++  aPts(4) = gp_Pnt(4. + 6. * aC, 0., -6. * aS);
++  return prismOfSection(aPts);
++}
++
++//! The L profile: foot 3 thick and 6 wide, wall 2 thick and 6 high; the inside corner is the edge
++//! at (2, y, 3), the foot top reaching 4 from it and the wall 3 above it.
++TopoDS_Shape lProfilePrism()
++{
++  NCollection_Array1<gp_Pnt> aPts(1, 6);
++  aPts(1) = gp_Pnt(0., 0., 0.);
++  aPts(2) = gp_Pnt(6., 0., 0.);
++  aPts(3) = gp_Pnt(6., 0., 3.);
++  aPts(4) = gp_Pnt(2., 0., 3.);
++  aPts(5) = gp_Pnt(2., 0., 6.);
++  aPts(6) = gp_Pnt(0., 0., 6.);
++  return prismOfSection(aPts);
++}
++} // namespace
++
++TEST(BRepFilletAPI_MakeFilletTest, FilletWiderThanItsFaceOnAnAcuteEdgeEndsAtTheFarEdge)
++{
++  // 45 degree edge, faces 4 and 6 wide, r = 2: the tangent length 4.83 is past the 4 wide face, so
++  // its far edge is the pivot and the arc stays tangent to the other face. Removed area 4.398801.
++  const TopoDS_Shape       aPrism = parallelogramPrism(45.);
++  BRepFilletAPI_MakeFillet aFillet(aPrism);
++  aFillet.Add(2.0, findEdgeAt(aPrism, gp_Pnt(0.0, 5.0, 0.0)));
++  aFillet.Build();
++  ASSERT_TRUE(aFillet.IsDone());
++  EXPECT_TRUE(BRepCheck_Analyzer(aFillet.Shape()).IsValid());
++  EXPECT_NEAR(volumeOf(aFillet.Shape()), 125.715761, 1.e-4);
++}
++
++TEST(BRepFilletAPI_MakeFilletTest, FilletWiderThanBothFacesOnAnAcuteEdgeEndsAtBothFarEdges)
++{
++  // 60 degree edge, r = 4.2: the arc passes through both far edges.
++  const TopoDS_Shape       aPrism = parallelogramPrism(60.);
++  BRepFilletAPI_MakeFillet aFillet(aPrism);
++  aFillet.Add(4.2, findEdgeAt(aPrism, gp_Pnt(0.0, 5.0, 0.0)));
++  aFillet.Build();
++  ASSERT_TRUE(aFillet.IsDone());
++  EXPECT_TRUE(BRepCheck_Analyzer(aFillet.Shape()).IsValid());
++  EXPECT_NEAR(volumeOf(aFillet.Shape()), 137.833790, 1.e-4);
++}
++
++TEST(BRepFilletAPI_MakeFilletTest, FilletWiderThanItsFaceOnAnObtuseEdgeEndsAtTheFarEdge)
++{
++  // 120 degree edge, r = 8.7: a radius far past both faces whose tangent length (5.02) is only
++  // just past the 4 wide one.
++  const TopoDS_Shape       aPrism = parallelogramPrism(120.);
++  BRepFilletAPI_MakeFillet aFillet(aPrism);
++  aFillet.Add(8.7, findEdgeAt(aPrism, gp_Pnt(0.0, 5.0, 0.0)));
++  aFillet.Build();
++  ASSERT_TRUE(aFillet.IsDone());
++  EXPECT_TRUE(BRepCheck_Analyzer(aFillet.Shape()).IsValid());
++  EXPECT_NEAR(volumeOf(aFillet.Shape()), 169.972974, 1.e-4);
++}
++
++TEST(BRepFilletAPI_MakeFilletTest, ConcaveFilletWiderThanItsFaceFillsTheCornerToTheFarEdge)
++{
++  // The inside corner of an L, r = 3.5 on a wall 3 high: the wall's top edge is the pivot and the
++  // corner is filled, the volume goes UP. Added area 2.6152066.
++  const TopoDS_Shape       aL = lProfilePrism();
++  BRepFilletAPI_MakeFillet aFillet(aL);
++  aFillet.Add(3.5, findEdgeAt(aL, gp_Pnt(2.0, 5.0, 3.0)));
++  aFillet.Build();
++  ASSERT_TRUE(aFillet.IsDone());
++  EXPECT_TRUE(BRepCheck_Analyzer(aFillet.Shape()).IsValid());
++  EXPECT_GT(volumeOf(aFillet.Shape()), volumeOf(aL));
++  EXPECT_NEAR(volumeOf(aFillet.Shape()), 265.152066, 1.e-4);
++}
++
++TEST(BRepFilletAPI_MakeFilletTest, ConcaveFilletWiderThanBothFacesPassesThroughBothFarEdges)
++{
++  // r = 8 on the same corner: the arc passes through the toe of the foot and the top of the wall.
++  const TopoDS_Shape       aL = lProfilePrism();
++  BRepFilletAPI_MakeFillet aFillet(aL);
++  aFillet.Add(8.0, findEdgeAt(aL, gp_Pnt(2.0, 5.0, 3.0)));
++  aFillet.Build();
++  ASSERT_TRUE(aFillet.IsDone());
++  EXPECT_TRUE(BRepCheck_Analyzer(aFillet.Shape()).IsValid());
++  EXPECT_NEAR(volumeOf(aFillet.Shape()), 286.576381, 1.e-4);
++}

@@ -1,0 +1,50 @@
+file	case	rule_volume	k5	main	new	62
+E45-r1_25.png	E: one fillet r = 1.25 on the 45 degree edge of a parallelogram prism (faces 4 and 6 wide)	150.391310	valid 150.391310	valid 150.391310	valid 150.391310	valid 150.391310
+E45-r1_65.png	E: one fillet r = 1.65 on the 45 degree edge of a parallelogram prism (faces 4 and 6 wide)	136.052361	valid 136.052361	valid 136.052361	valid 136.052361	valid 136.052361
+E45-r2.png	E: one fillet r = 2 on the 45 degree edge of a parallelogram prism (faces 4 and 6 wide)	125.715761	declined	declined	declined	valid 125.715761
+E45-r3.png	E: one fillet r = 3 on the 45 degree edge of a parallelogram prism (faces 4 and 6 wide)	110.533152	declined	declined	declined	valid 110.533152
+E60-r1_75.png	E: one fillet r = 1.75 on the 60 degree edge of a parallelogram prism (faces 4 and 6 wide)	186.872466	valid 186.872466	valid 186.872466	valid 186.872466	valid 186.872466
+E60-r2_3.png	E: one fillet r = 2.3 on the 60 degree edge of a parallelogram prism (faces 4 and 6 wide)	171.617360	valid 171.617360	valid 171.617360	valid 171.617360	valid 171.617360
+E60-r3.png	E: one fillet r = 3 on the 60 degree edge of a parallelogram prism (faces 4 and 6 wide)	155.086267	declined	declined	declined	valid 155.086267
+E60-r4_2.png	E: one fillet r = 4.2 on the 60 degree edge of a parallelogram prism (faces 4 and 6 wide)	137.833790	declined	declined	declined	valid 137.833790
+E120-r5_2.png	E: one fillet r = 5.2 on the 120 degree edge of a parallelogram prism (faces 4 and 6 wide)	193.311693	valid 193.311693	valid 193.311693	valid 193.311693	valid 193.311693
+E120-r6_9.png	E: one fillet r = 6.9 on the 120 degree edge of a parallelogram prism (faces 4 and 6 wide)	182.255011	valid 182.255011	valid 182.255011	valid 182.255011	valid 182.255011
+E120-r8_7.png	E: one fillet r = 8.7 on the 120 degree edge of a parallelogram prism (faces 4 and 6 wide)	169.972974	declined	declined	declined	valid 169.972974
+E120-r12_2.png	E: one fillet r = 12.2 on the 120 degree edge of a parallelogram prism (faces 4 and 6 wide)	151.041842	declined	declined	declined	valid 151.041842
+E135-r7_25.png	E: one fillet r = 7.25 on the 135 degree edge of a parallelogram prism (faces 4 and 6 wide)	158.397079	valid 158.397079	valid 158.397079	valid 158.397079	valid 158.397079
+E135-r9_6.png	E: one fillet r = 9.6 on the 135 degree edge of a parallelogram prism (faces 4 and 6 wide)	149.877882	valid 149.877882	valid 149.877882	valid 149.877882	valid 149.877882
+E135-r12.png	E: one fillet r = 12 on the 135 degree edge of a parallelogram prism (faces 4 and 6 wide)	140.575109	declined	declined	declined	valid 140.575109
+E135-r17.png	E: one fillet r = 17 on the 135 degree edge of a parallelogram prism (faces 4 and 6 wide)	124.814833	declined	declined	declined	valid 124.814833
+F60-r1_15.png	F: equal radii 1.15 on both top edges of a trapezoid prism, top 4 wide, walls 3 long at 60 degrees	46.837537	valid 46.837537	valid 46.837537	valid 46.837537	valid 46.837537
+F60-r1_45.png	F: equal radii 1.45 on both top edges of a trapezoid prism, top 4 wide, walls 3 long at 60 degrees	36.467434	declined	declined	valid 36.467434	valid 36.467434
+F60-r1_6.png	F: equal radii 1.6 on both top edges of a trapezoid prism, top 4 wide, walls 3 long at 60 degrees	30.879729	declined	declined	valid 30.879729	valid 30.879729
+F120-r3_5.png	F: equal radii 3.5 on both top edges of a trapezoid prism, top 4 wide, walls 3 long at 120 degrees	129.725084	declined	declined	valid 129.725084	valid 129.725084
+F120-r4_3.png	F: equal radii 4.3 on both top edges of a trapezoid prism, top 4 wide, walls 3 long at 120 degrees	123.104189	declined	declined	valid 123.104189	valid 123.104189
+F120-r4_85.png	F: equal radii 4.85 on both top edges of a trapezoid prism, top 4 wide, walls 3 long at 120 degrees	117.960340	declined	declined	valid 117.960340	valid 117.960340
+G-L-r2_5.png	G: concave edge, radius 2.5 in the inside corner of an L profile (foot 4 past the wall, wall 3 above the foot)	253.412615	valid 253.412615	valid 253.412615	valid 253.412615	valid 253.412615
+G-L-r3_5.png	G: concave edge, radius 3.5 in the inside corner of an L profile (foot 4 past the wall, wall 3 above the foot)	265.152066	declined	declined	declined	valid 265.152066
+G-L-r5.png	G: concave edge, radius 5 in the inside corner of an L profile (foot 4 past the wall, wall 3 above the foot)	277.353482	declined	declined	declined	valid 277.353482
+G-L-r8.png	G: concave edge, radius 8 in the inside corner of an L profile (foot 4 past the wall, wall 3 above the foot)	286.576381	declined	declined	declined	valid 286.576381
+H1-cyl-r3.png	H1: top edge of a cylinder (radius 5, height 6), fillet 3	418.693668	valid 418.693668	valid 418.693668	valid 418.693668	valid 418.693668
+H1-cyl-r5.png	H1: top edge of a cylinder (radius 5, height 6), fillet 5	340.339204	valid 340.339204	valid 340.339204	valid 340.339204	valid 340.339204
+H1-cyl-r5_5.png	H1: top edge of a cylinder (radius 5, height 6), fillet 5.5	319.191422	declined	declined	declined	declined
+H1-cyl-r7.png	H1: top edge of a cylinder (radius 5, height 6), fillet 7	270.859271	declined	declined	declined	declined
+H2-cyl3-r3_5.png	H2: top edge of a short cylinder (radius 5, height 3), fillet 3.5: the wall runs out, the bottom circle is the pivot	168.935364	declined	declined	declined	declined
+H2-cyl3-r4_5.png	H2: top edge of a short cylinder (radius 5, height 3), fillet 4.5: the wall runs out, the bottom circle is the pivot	148.533293	declined	declined	declined	declined
+H3-cone-r1_5.png	H3: base edge of a cone (base radius 5, apex 6 above), fillet 1.5	105.186606	valid 105.186606	valid 105.186606	valid 105.186606	valid 105.186606
+H3-cone-r2_2.png	H3: base edge of a cone (base radius 5, apex 6 above), fillet 2.2	64.478542	valid 64.478542	valid 64.478542	valid 64.478542	valid 64.478542
+H3-cone-r2_5.png	H3: base edge of a cone (base radius 5, apex 6 above), fillet 2.5	48.979129	declined	declined	declined	declined
+H3-cone-r3_5.png	H3: base edge of a cone (base radius 5, apex 6 above), fillet 3.5	24.574664	declined	declined	declined	declined
+H4-dome-r1_5.png	H4: rim of a hemispherical dome (sphere radius 6, flat base), fillet 1.5 between the base disc and the sphere	424.865199	valid 424.865208	valid 424.865208	valid 424.865208	valid 424.865208
+H4-dome-r2_5.png	H4: rim of a hemispherical dome (sphere radius 6, flat base), fillet 2.5 between the base disc and the sphere	330.583330	valid 330.583343	valid 330.583343	valid 330.583343	valid 330.583343
+H4-dome-r4_5.png	H4: rim of a hemispherical dome (sphere radius 6, flat base), fillet 4.5 between the base disc and the sphere	13.738093	declined	declined	declined	declined
+H5-washer-r2.png	H5: bore edge of a washer (outer radius 6, bore radius 3, height 6), fillet 2: the 3 mm ring runs out onto the outer circle	490.347928	valid 490.347928	valid 490.347928	valid 490.347928	valid 490.347928
+H5-washer-r3_5.png	H5: bore edge of a washer (outer radius 6, bore radius 3, height 6), fillet 3.5: the 3 mm ring runs out onto the outer circle	449.746385	declined	declined	declined	declined
+H5-washer-r5.png	H5: bore edge of a washer (outer radius 6, bore radius 3, height 6), fillet 5: the 3 mm ring runs out onto the outer circle	416.729380	declined	declined	declined	declined
+H5-washer-r7.png	H5: bore edge of a washer (outer radius 6, bore radius 3, height 6), fillet 7: the 3 mm ring runs out onto the outer circle	384.480018	declined	declined	declined	declined
+H6-dprism-r1_5.png	H6: edge between a flat (8 wide) and a convex cylinder (radius 5), fillet 1.5	672.340558	valid 672.340558	valid 672.340558	valid 672.340558	valid 672.340558
+H6-dprism-r3.png	H6: edge between a flat (8 wide) and a convex cylinder (radius 5), fillet 3	663.822555	valid 663.822555	valid 663.822555	valid 663.822555	valid 663.822555
+H7-groove-r2.png	H7: edge between the 3 mm flat and a concave cylindrical groove (radius 3) in a 12 x 6 block, fillet 2	574.506421	valid 574.506421	valid 574.506421	valid 574.506421	valid 574.506421
+H7-groove-r4.png	H7: edge between the 3 mm flat and a concave cylindrical groove (radius 3) in a 12 x 6 block, fillet 4	568.112189	valid 568.112189	valid 568.112189	valid 568.112189	valid 568.112189
+H7-groove-r5.png	H7: edge between the 3 mm flat and a concave cylindrical groove (radius 3) in a 12 x 6 block, fillet 5	564.982441	declined	declined	declined	declined
+H7-groove-r8.png	H7: edge between the 3 mm flat and a concave cylindrical groove (radius 3) in a 12 x 6 block, fillet 8	559.546265	declined	declined	declined	declined

@@ -271,9 +271,9 @@ let occtTarget: Target =
         // which is what they were built to do; if a later asset repeats either stray the finding comes
         // back rather than staying suppressed.
         //
-        // The asset holds forty-four and Scripts/patches/ holds forty-seven, so 0058 (MiddlePath,
-        // #3105), 0059 (fillets that meet exactly, #3207) and 0060 (fillets that cross or run out of
-        // face, #3208) are the three untested patches, and the rows for 0053 through 0057 below are history in the way the
+        // The asset holds forty-four and Scripts/patches/ holds forty-eight, so 0058 (MiddlePath,
+        // #3105), 0059 (fillets that meet exactly, #3207), 0060 (fillets that cross or run out of
+        // face, #3208) and 0062 (pivot fillets at any planar angle and on concave edges, #3234) are the four untested patches, and the rows for 0053 through 0057 below are history in the way the
         // rows for 0044 through 0052 became at v4.0.0-kernel.4.
         // If you rebuild and the checksum does not match the value below, that is a real difference to
         // investigate rather than an expected one, which is the opposite of what this paragraph said
@@ -318,14 +318,15 @@ let occtTarget: Target =
         // wrong: InitializeMissingParameters is also the REPAIR that re-sets DirectFaces on an actor a
         // STEPCAFControl_Reader has left with empty OperationsFlags, which is #280's exact mechanism.
         // kernel-integration.yml caught it on main. See Scripts/patches/README.md's retired 0035 entry.
-        // Scripts/patches/ holds forty-seven patches and the pinned asset holds forty-four of them,
-        // enumerated above. `ls Scripts/patches/*.patch | wc -l` answers 47 against a list of 44.
-        // The pinned asset lacks three of them, and this is the written divergence: 0058, the
+        // Scripts/patches/ holds forty-eight patches and the pinned asset holds forty-four of them,
+        // enumerated above. `ls Scripts/patches/*.patch | wc -l` answers 48 against a list of 44.
+        // The pinned asset lacks four of them, and this is the written divergence: 0058, the
         // BRepOffsetAPI_MiddlePath patch (#3105), and 0059, the ChFi3d fillet candidate that builds
         // two fillets that meet exactly (#3207), and 0060, the BRepFilletAPI_MakeFillet fallback for
-        // fillets that cross or run out of face (#3208). No CI job exercises any of them until a rebuild pins them. The v4.0.0-kernel.4 rebuild closed the divergence
+        // fillets that cross or run out of face (#3208), and 0062, its extension to any planar angle and
+        // to concave edges (#3234). No CI job exercises any of them until a rebuild pins them. The v4.0.0-kernel.4 rebuild closed the divergence
         // that 0044 had opened and that 0045 through 0052 widened, and the v4.0.0-kernel.5
-        // rebuild closed the one that 0053 through 0057 opened, so 0058, 0059 and 0060 are the rows
+        // rebuild closed the one that 0053 through 0057 opened, so 0058, 0059, 0060 and 0062 are the rows
         // about patches the asset does not carry. The other
         // rows that follow are kept as the record of what each patch does and which bridge
         // mitigation it does or does not retire:
@@ -505,6 +506,12 @@ let occtTarget: Target =
         //         face that runs out is the pivot). Carried and NOT built; anything else still
         //         declines. Issue3208FilletPivotTests runs it in kernel-integration.yml, gated on
         //         OCCTSWIFT_LOCAL=1 (#3208, OCCT#1177).
+        //
+        //   0062  BRepFilletAPI_MakeFillet, the single-edge pivot construction of 0060 for any angle
+        //         between two planar rectangles (not only 90 degrees) and for a concave edge (the
+        //         corner is filled, not cut). Carried and NOT built; curved faces still decline.
+        //         Issue3234FilletPivotAnglesTests runs it in kernel-integration.yml, gated on
+        //         OCCTSWIFT_LOCAL=1 (#3234).
         //
         // 0043 (#2827, BRepGProp_Gauss keeps the by-plane mass) was the one outstanding before it,
         // and it went the other way, which is the comparison worth keeping beside 0044: carried

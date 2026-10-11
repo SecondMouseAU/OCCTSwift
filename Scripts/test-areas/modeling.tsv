@@ -188,3 +188,4 @@ Tests/OCCTModelingTests/FeatureReconstructorSolidOperandTests.swift	Tests/OCCTMo
 Tests/OCCTModelingTests/Issue3207FilletMeetingTests.swift	Tests/OCCTModelingTests/Blends/Issue3207FilletMeetingTests.swift	Blends	-	fillets whose radii sum to the face width are built (carried patch 0059, #3207)
 Tests/OCCTModelingTests/Issue3105MiddlePathKernelTests.swift	Tests/OCCTModelingTests/Sweeps/Issue3105MiddlePathKernelTests.swift	Sweeps	-	middlePath no longer aborts for a non-pipe face pair, kernel patch 0058 (#3105)
 Tests/OCCTModelingTests/Issue3208FilletPivotTests.swift	Tests/OCCTModelingTests/Blends/Issue3208FilletPivotTests.swift	Blends	-	fillets whose arcs cross, and fillets that run out of face, are built (carried patch 0060, #3208)
+Tests/OCCTModelingTests/Issue3234FilletPivotAnglesTests.swift	Tests/OCCTModelingTests/Blends/Issue3234FilletPivotAnglesTests.swift	Blends	-	pivot fillets at any planar angle and on concave edges (carried patch 0062, #3234)

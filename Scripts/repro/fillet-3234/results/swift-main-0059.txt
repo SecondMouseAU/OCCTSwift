@@ -1,0 +1,10 @@
+◇ Test run started.
+✔ Test aFilletPastTheCentreOfADiscIsNeverReturnedInvalid() passed after 0.011 seconds.
+✘ Test aConcaveFilletWiderThanItsFaceFillsTheCornerToTheFarEdge() recorded an issue at Issue3234FilletPivotAnglesTests.swift:106:30: Expectation failed: try filleted(l, radius: radius, at: SIMD3(2, 5, 3))
+✔ Test aFilletThatFitsAnAcuteEdgeIsTheControl() passed after 0.012 seconds.
+✘ Test aConcaveFilletWiderThanItsFaceFillsTheCornerToTheFarEdge() failed after 0.012 seconds with 1 issue.
+✘ Test aFilletWiderThanItsFaceEndsAtTheFarEdgeAtAnyAngle() recorded an issue at Issue3234FilletPivotAnglesTests.swift:89:30: Expectation failed: try filleted(p, radius: c.radius, at: SIMD3(0, 5, 0))
+✘ Test aFilletWiderThanItsFaceEndsAtTheFarEdgeAtAnyAngle() failed after 0.013 seconds with 1 issue.
+✘ Suite "Issue 3234: pivot fillets at any planar angle and on concave edges" failed after 0.014 seconds with 2 issues.
+✘ Test run with 4 tests in 1 suite failed after 0.014 seconds with 2 issues.
+exit 1

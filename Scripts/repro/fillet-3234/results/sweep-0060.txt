@@ -1,0 +1,11 @@
+E45   right[TT] 0.3..1.6317  declined 1.71..5
+E60   right[TT] 0.3..2.1983  declined 2.31..7
+E90   right[TT] 0.3..3.81  right[P1T2] 4.005..6.345  right[PP] 6.54..12
+E120  right[TT] 1..6.7  declined 7.0167..20
+E135  right[TT] 1..9.55  declined 10..28
+G     right[TT] 0.3..2.8867  declined 3.0483..10
+H1    right[TT] 0.3..4.94  declined 5.085..9
+H2    right[TT] 0.3..2.91  declined 3.055..9
+H3    right[TT] 0.3..2.295  declined 2.39..6
+H5    right[TT] 0.3..2.91  declined 3.055..9
+H7    right[TT] 0.3..4.395  declined 4.59..12

@@ -1,0 +1,21 @@
+◇ Test run started.
+✔ Test aFilletThatFitsAnAcuteEdgeIsTheControl() passed after 0.048 seconds.
+✔ Test justUnderHalfTheWidthFilletsToTheOracleVolume() passed after 0.048 seconds.
+✔ Test aFilletPastTheCentreOfADiscIsNeverReturnedInvalid() passed after 0.048 seconds.
+✔ Test tenCubeWithTwoFilletsOfFiveMeets() passed after 0.048 seconds.
+✔ Test aFilletThatFitsItsFaceIsTheControl() passed after 0.048 seconds.
+✔ Test aFilletWiderThanBothFacesPassesThroughBothFarEdges() passed after 0.048 seconds.
+✔ Test aFilletNextToAFinishedFilletPivotsAtItsTangentEdge() passed after 0.057 seconds.
+✔ Test crossingArcsAreTangentToTheirWallsAndMeetAtTheIncludedAngle() passed after 0.064 seconds.
+✔ Test filletsAtACornerAreNeverReturnedInvalid() passed after 0.070 seconds.
+✔ Test radiusOfHalfTheWidthGivesASemicircle() passed after 0.081 seconds.
+✔ Test aConcaveFilletWiderThanItsFaceFillsTheCornerToTheFarEdge() passed after 0.089 seconds.
+✔ Test aRadiusAboveHalfTheWidthStillDeclines() passed after 0.116 seconds.
+✔ Suite "Issue 3207: fillets that meet exactly" passed after 0.117 seconds.
+✔ Test aFilletWiderThanItsFaceEndsAtTheFarEdge() passed after 0.127 seconds.
+✔ Test aFilletWiderThanItsFaceEndsAtTheFarEdgeAtAnyAngle() passed after 0.157 seconds.
+✔ Suite "Issue 3234: pivot fillets at any planar angle and on concave edges" passed after 0.157 seconds.
+✔ Test filletsWhoseArcsCrossGiveTheIntersectionOfTheRoundedProfiles() passed after 0.514 seconds.
+✔ Suite "Issue 3208: fillets that cross or run out of face" passed after 0.514 seconds.
+✔ Test run with 15 tests in 3 suites passed after 0.514 seconds.
+exit 0
