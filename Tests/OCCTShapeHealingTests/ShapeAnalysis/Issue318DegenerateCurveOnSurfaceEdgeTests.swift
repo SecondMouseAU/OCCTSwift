@@ -27,19 +27,20 @@ struct Issue318DegenerateCurveOnSurfaceEdgeTests {
     @Test(
         "Shape.analyze(tolerance:) no longer crashes on a sewn shape with a degenerate BSpline-pcurve edge"
     )
-    func analyzeSurvivesDegenerateCurveOnSurfaceEdge() {
-        guard let shape = Shape.fromBREPString(Self.fixtureBREP) else {
-            Issue.record("Shape.fromBREPString failed to parse the fixture")
-            return
-        }
+    func analyzeSurvivesDegenerateCurveOnSurfaceEdge() throws {
+        let shape = try #require(
+            Shape.fromBREPString(Self.fixtureBREP),
+            "Shape.fromBREPString failed to parse the fixture"
+        )
+        // The fixture is what its comment says: two faces and no shell, carrying the degenerate
+        // edges. Measured on the pinned kernel: 65 edges in all.
+        try #require(shape.subShapeCount(ofType: .face) == 2, "the fixture is not two faces")
+        try #require(shape.subShapeCount(ofType: .shell) == 0, "the fixture holds a shell")
+        try #require(shape.subShapeCount(ofType: .edge) == 65, "the fixture lost edges")
 
         // No #expect needed for the crash itself -- a regression would abort the whole test
         // process (uncatchable SIGSEGV); reaching the assertions below is the real assertion.
-        let result = shape.analyze(tolerance: 0.11477)
-        guard let result else {
-            Issue.record("Shape.analyze returned nil")
-            return
-        }
+        let result = try #require(shape.analyze(tolerance: 0.11477), "Shape.analyze returned nil")
         // The fixture is a genuinely malformed shape (two faces that failed to sew into a
         // shell) -- these counts just pin the known-good post-fix values, not "healthy".
         // smallEdgeCount is 0, not the ~60 raw degenerate edges the fixture carries: the
@@ -47,6 +48,13 @@ struct Issue318DegenerateCurveOnSurfaceEdgeTests {
         // degenerate edge's zero extent is a topological given, not a "small edge" defect.
         #expect(result.smallEdgeCount == 0)
         #expect(result.freeEdgeCount == 0)
+        // The zeros above are what a walk that bailed out early also reports, so the same result
+        // carries the non-zero answers of a walk that ran to the end (measured on the pinned
+        // kernel): one small face, and a topology the analyzer calls invalid, which is the
+        // two-faces-no-shell fixture's own defect.
+        #expect(result.smallFaceCount == 1)
+        #expect(result.hasInvalidTopology)
+        #expect(!result.isHealthy)
     }
 
     /// The literal output of `Shape.sew(shapes: [region10Face, region64Face], tolerance: 0.11477)` --
