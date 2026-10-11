@@ -269,7 +269,7 @@ The measured 2D distance between `from` and `to`.
 public var value: Double { get }
 ```
 
-Pure-Swift: `simd_distance(from, to)`.
+Pure-Swift: the Euclidean distance between `from` and `to`.
 
 - **Returns:** Euclidean distance in drawing units.
 - **Example:**
@@ -468,6 +468,18 @@ public init(vertex: SIMD2<Double>, ray1: SIMD2<Double>, ray2: SIMD2<Double>,
 
 ---
 
+### `DrawingDimension.Angular.isValid`
+
+Whether the three points define an angle, by OCCT's own test.
+
+```swift
+public var isValid: Bool { get }
+```
+
+`PrsDim_AngleDimension::IsValidPoints` requires both rays longer than `Precision::Confusion()` (1e-7) and the angle between them above `Precision::Angular()` (1e-12), and it tests the lengths before calling `gp_Vec::Angle`, which is indefinite for a zero vector. Coincident, NaN and infinite points are invalid, and `emitAngular` draws nothing for them.
+
+---
+
 ### `DrawingDimension.Angular.value`
 
 The angle between the two rays in radians (0 ≤ θ ≤ π).
@@ -476,7 +488,7 @@ The angle between the two rays in radians (0 ≤ θ ≤ π).
 public var value: Double { get }
 ```
 
-Pure-Swift: normalises `ray1 - vertex` and `ray2 - vertex`, returns `acos(dot(v1, v2))` clamped to `[-1, 1]`.
+Pure-Swift: normalises `ray1 - vertex` and `ray2 - vertex`, returns `acos(dot(v1, v2))` clamped to `[-1, 1]`. Returns `0` when ``isValid`` is false, as `PrsDim_AngleDimension::ComputeValue` returns `0.0` for an invalid geometry.
 
 - **Returns:** Angle in radians.
 - **Example:**
@@ -899,8 +911,10 @@ Rendered as heavy-chain segments at each endpoint (~10 mm), a thin-chain segment
 
 Creates a cutting-plane-line annotation. The `arrowDirection` is normalised on construction.
 
+Returns `nil` for a zero or non-finite `arrowDirection`. OCCT's `gp_Dir(gp_Vec)` raises `Standard_ConstructionError` on a zero-norm vector (`gp_Dir.hxx`), and OCCT's callers test the magnitude first.
+
 ```swift
-public init(label: String,
+public init?(label: String,
             traceStart: SIMD2<Double>,
             traceEnd: SIMD2<Double>,
             arrowDirection: SIMD2<Double>,
@@ -911,18 +925,19 @@ public init(label: String,
   - `label`: callout letter(s) placed at each arrow (e.g. `"A"`).
   - `traceStart`: start of the cutting-plane trace.
   - `traceEnd`: end of the cutting-plane trace.
-  - `arrowDirection`: view direction for the section (need not be unit length; stored as `simd_normalize(arrowDirection)`).
+  - `arrowDirection`: view direction for the section (need not be unit length; stored normalised; a zero or non-finite direction makes the initialiser return `nil`).
   - `id`: optional identifier.
 - **Example:**
   ```swift
-  let cpl = DrawingAnnotation.cuttingPlaneLine(
-      DrawingAnnotation.CuttingPlaneLine(
-          label: "A",
-          traceStart: SIMD2(0, 50),
-          traceEnd:   SIMD2(100, 50),
-          arrowDirection: SIMD2(0, -1)   // section looks downward
-      )
-  )
+  if let line = DrawingAnnotation.CuttingPlaneLine(
+      label: "A",
+      traceStart: SIMD2(0, 50),
+      traceEnd:   SIMD2(100, 50),
+      arrowDirection: SIMD2(0, -1)   // section looks downward
+  ) {
+      let cpl = DrawingAnnotation.cuttingPlaneLine(line)
+      _ = cpl
+  }
   ```
 
 ---

@@ -1,6 +1,5 @@
 import OCCTBridge
 import OCCTPlatform
-import simd
 
 extension Shape {
 
@@ -1002,7 +1001,7 @@ extension Shape {
     /// returns: a zero-length tangent means the law is degenerate at this parameter (#796).
     private static func trihedronFrame(from r: OCCTTrihedronFrame) -> TrihedronFrame? {
         let t = SIMD3(r.tx, r.ty, r.tz)
-        guard simd_length(t) > 1e-10 else { return nil }
+        guard vectorLength(t) > 1e-10 else { return nil }
         return TrihedronFrame(
             tangent: t, normal: SIMD3(r.nx, r.ny, r.nz), binormal: SIMD3(r.bx, r.by, r.bz))
     }
@@ -1233,7 +1232,7 @@ extension Shape {
             Int32(evalU), Int32(evalV), &outPoints)
         let points: [SIMD3<Double>] = unpackSIMD3(outPoints, count: total)
         // Check if any non-zero points
-        guard points.contains(where: { simd_length($0) > 1e-10 }) else { return nil }
+        guard points.contains(where: { vectorLength($0) > 1e-10 }) else { return nil }
         return points
     }
 

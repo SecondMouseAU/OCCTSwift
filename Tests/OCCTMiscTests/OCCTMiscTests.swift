@@ -787,8 +787,12 @@ struct ConstructionLayerTests {
     // way `Wire.line` itself already guards against: a degenerate direction. This is a
     // regression guard that #880's dead-code removal (deleting the never-succeeding
     // `Shape.face(from: wire) ??` attempt) didn't change that outcome.
-    @Test("materialize reports axisShapeFailed for a zero-length axis direction (#880)")
-    func materializeReportsAxisShapeFailedForZeroLengthDirection() {
+    //
+    // #2759: a zero direction is now refused at `resolve` (`.degenerate`), as OCCT refuses a
+    // zero-norm `gp_Dir`, so it never reaches `axisShape`; the invariant #880 guards, that no
+    // non-finite geometry reaches the document, is unchanged, and so is `totalMaterialized == 0`.
+    @Test("materialize reports axisResolveFailed for a zero-length axis direction (#880, #2759)")
+    func materializeReportsAxisResolveFailedForZeroLengthDirection() {
         guard let doc = Document.create(),
             let box = Shape.box(width: 10, height: 10, depth: 10),
             let graph = BRepGraph(shape: box)
@@ -802,11 +806,12 @@ struct ConstructionLayerTests {
         let result = ctx.materialize(in: doc, graph: graph)
         #expect(result.totalMaterialized == 0)
         #expect(result.failures.count == 1)
-        if case .axisShapeFailed = result.failures.first {
+        if case .axisResolveFailed(_, .degenerate) = result.failures.first {
             // expected
         } else {
             Issue.record(
-                "expected axisShapeFailed, got \(String(describing: result.failures.first))")
+                "expected axisResolveFailed(.degenerate), got \(String(describing: result.failures.first))"
+            )
         }
     }
 
@@ -846,10 +851,13 @@ struct ConstructionLayerTests {
     // "success" that adds non-finite geometry to the document instead of reporting failure,
     // measured directly, not assumed: this is the fixture that would regress if that fallback
     // were ever added. `planeShape` deliberately does not have it.
+    //
+    // #2759: the zero normal is now refused at `resolve` (`.degenerate`), as OCCT refuses a
+    // zero-norm `gp_Dir`; this still asserts that nothing non-finite reaches the document.
     @Test(
-        "materialize reports planeShapeFailed, not non-finite geometry, for a zero-length normal (#880)"
+        "materialize reports planeResolveFailed, not non-finite geometry, for a zero-length normal (#880, #2759)"
     )
-    func materializeReportsPlaneShapeFailedForNonFinitePlacement() {
+    func materializeReportsPlaneResolveFailedForZeroNormal() {
         guard let doc = Document.create(),
             let box = Shape.box(width: 10, height: 10, depth: 10),
             let graph = BRepGraph(shape: box)
@@ -863,11 +871,12 @@ struct ConstructionLayerTests {
         let result = ctx.materialize(in: doc, graph: graph)
         #expect(result.totalMaterialized == 0)
         #expect(result.failures.count == 1)
-        if case .planeShapeFailed = result.failures.first {
+        if case .planeResolveFailed(_, .degenerate) = result.failures.first {
             // expected
         } else {
             Issue.record(
-                "expected planeShapeFailed, got \(String(describing: result.failures.first))")
+                "expected planeResolveFailed(.degenerate), got \(String(describing: result.failures.first))"
+            )
         }
     }
 

@@ -1,6 +1,5 @@
 import OCCTBridge
 import OCCTPlatform
-import simd
 
 /// A 3D camera backed by OpenCASCADE Graphic3d_Camera.
 ///
@@ -115,11 +114,11 @@ public final class Camera: @unchecked Sendable {
 
     // MARK: - Matrices (Metal-compatible, column-major, [0,1] depth)
 
-    /// Projection matrix as column-major simd_float4x4 with Metal [0,1] depth range.
-    public var projectionMatrix: simd_float4x4 {
+    /// Projection matrix as column-major Matrix4x4F with Metal [0,1] depth range.
+    public var projectionMatrix: Matrix4x4F {
         var data = [Float](repeating: 0, count: 16)
         OCCTCameraGetProjectionMatrix(handle, &data)
-        return simd_float4x4(
+        return Matrix4x4F(
             SIMD4(data[0], data[1], data[2], data[3]),
             SIMD4(data[4], data[5], data[6], data[7]),
             SIMD4(data[8], data[9], data[10], data[11]),
@@ -127,11 +126,11 @@ public final class Camera: @unchecked Sendable {
         )
     }
 
-    /// View (camera) matrix as column-major simd_float4x4.
-    public var viewMatrix: simd_float4x4 {
+    /// View (camera) matrix as column-major Matrix4x4F.
+    public var viewMatrix: Matrix4x4F {
         var data = [Float](repeating: 0, count: 16)
         OCCTCameraGetViewMatrix(handle, &data)
-        return simd_float4x4(
+        return Matrix4x4F(
             SIMD4(data[0], data[1], data[2], data[3]),
             SIMD4(data[4], data[5], data[6], data[7]),
             SIMD4(data[8], data[9], data[10], data[11]),

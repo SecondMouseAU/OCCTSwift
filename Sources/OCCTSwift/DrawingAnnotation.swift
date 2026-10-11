@@ -1,5 +1,4 @@
 import OCCTPlatform
-import simd
 
 // MARK: - Value types for 2D drawing dimensions and annotations
 //
@@ -86,7 +85,7 @@ public enum DrawingDimension: Sendable, Hashable {
         }
 
         /// Measured 2D distance between `from` and `to`.
-        public var value: Double { simd_distance(from, to) }
+        public var value: Double { vectorDistance(from, to) }
     }
 
     /// Shared field set for `.radial` and `.diameter` dimensions: a circle (or arc)
@@ -164,11 +163,32 @@ public enum DrawingDimension: Sendable, Hashable {
             self.tolerance = tolerance
         }
 
+        /// Whether the three points define an angle, by OCCT's own test.
+        ///
+        /// `PrsDim_AngleDimension::IsValidPoints` (PrsDim_AngleDimension.cxx:1166) requires both
+        /// rays longer than `Precision::Confusion()` (1e-7) and the angle between them above
+        /// `Precision::Angular()` (1e-12). It tests the lengths before it calls `gp_Vec::Angle`,
+        /// which is indefinite for a zero vector (gp_Vec.hxx: "Raises VectorWithNullMagnitude ...
+        /// because the angular value is indefinite"). NaN, infinite and coincident points fail it.
+        public var isValid: Bool {
+            let a = ray1 - vertex
+            let b = ray2 - vertex
+            let confusion = OCCTPrecision.confusion
+            guard vectorLength(a) > confusion, vectorLength(b) > confusion else { return false }
+            let cross = a.x * b.y - a.y * b.x
+            return atan2(abs(cross), dotProduct(a, b)) > OCCTPrecision.angular
+        }
+
         /// Measured angle between the two rays, in radians (0 ≤ θ ≤ π).
+        ///
+        /// 0 when ``isValid`` is false, as `PrsDim_AngleDimension::ComputeValue` returns 0.0 for an
+        /// invalid geometry (PrsDim_AngleDimension.cxx:555-560). A caller that must tell "no angle"
+        /// from a true zero angle checks ``isValid``.
         public var value: Double {
-            let v1 = simd_normalize(ray1 - vertex)
-            let v2 = simd_normalize(ray2 - vertex)
-            return acos(max(-1.0, min(1.0, simd_dot(v1, v2))))
+            guard isValid else { return 0 }
+            let v1 = normalizedVector(ray1 - vertex)
+            let v2 = normalizedVector(ray2 - vertex)
+            return acos(max(-1.0, min(1.0, dotProduct(v1, v2))))
         }
     }
 
@@ -325,17 +345,23 @@ public enum DrawingAnnotation: Sendable, Hashable {
         public var arrowDirection: SIMD2<Double>  // perpendicular to trace, in view 2D
         public var id: String?
 
-        public init(
+        /// Creates a cutting-plane line; `arrowDirection` is stored normalised.
+        ///
+        /// Returns nil for a zero or non-finite `arrowDirection`: `gp_Dir(gp_Vec)` raises
+        /// Standard_ConstructionError on a zero-norm vector (gp_Dir.hxx, "input vector has zero
+        /// norm") and OCCT's callers test the magnitude before building one.
+        public init?(
             label: String,
             traceStart: SIMD2<Double>,
             traceEnd: SIMD2<Double>,
             arrowDirection: SIMD2<Double>,
             id: String? = nil
         ) {
+            guard let unit = normalizedVectorOrNil(arrowDirection) else { return nil }
             self.label = label
             self.traceStart = traceStart
             self.traceEnd = traceEnd
-            self.arrowDirection = simd_normalize(arrowDirection)
+            self.arrowDirection = unit
             self.id = id
         }
     }

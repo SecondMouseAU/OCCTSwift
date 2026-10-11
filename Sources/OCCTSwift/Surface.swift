@@ -63,7 +63,7 @@ internal func surfaceGridIndex(u: Int, v: Int, vCount: Int) -> Int {
 /// ```swift
 /// let grid = surface.evaluateGridD1(uParameters: [0, 0.5, 1], vParameters: [0, 1])
 /// let sample = grid.at(u: 2, v: 0)
-/// let normal = simd_normalize(simd_cross(sample.d1u, sample.d1v))
+/// let normal = normalizedVector(crossProduct(sample.d1u, sample.d1v))
 /// ```
 public struct SurfaceGridD1: Sendable {
     /// Number of samples in the U direction.
@@ -1257,7 +1257,7 @@ extension Surface {
     /// let sphere = Surface.sphere(center: .zero, radius: 5)!
     /// let grid = sphere.evaluateGridD1(uParameters: [0, 1, 2], vParameters: [0, 0.5])
     /// let sample = grid.at(u: 1, v: 0)
-    /// let normal = simd_normalize(simd_cross(sample.d1u, sample.d1v))
+    /// let normal = normalizedVector(crossProduct(sample.d1u, sample.d1v))
     /// ```
     public func evaluateGridD1(uParameters: [Double], vParameters: [Double]) -> SurfaceGridD1 {
         guard !uParameters.isEmpty, !vParameters.isEmpty else { return .empty }
@@ -3432,11 +3432,11 @@ extension Surface {
     /// ```swift
     /// let sphere = Surface.sphere(center: .zero, radius: 5)!
     /// let n = sphere.normal(u: 0, v: .pi / 4)     // unit length
-    /// #expect(abs(simd_length(n) - 1) < 1e-9)
+    /// #expect(abs(vectorLength(n) - 1) < 1e-9)
     ///
     /// // A cone apex is a genuine singularity: zero vector here, nil from normal(atU:v:).
     /// let cone = Surface.cone(origin: .zero, axis: SIMD3(0, 0, 1), radius: 0, semiAngle: .pi / 6)!
-    /// #expect(simd_length(cone.normal(u: 0, v: 0)) < 1e-12)
+    /// #expect(vectorLength(cone.normal(u: 0, v: 0)) < 1e-12)
     /// #expect(cone.normal(atU: 0, v: 0) == nil)
     /// ```
     ///

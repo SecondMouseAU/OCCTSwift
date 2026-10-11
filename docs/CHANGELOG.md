@@ -21,6 +21,10 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### Breaking: the package no longer depends on Apple's `simd`; matrix-typed public properties use `Matrix4x4F` and `Matrix3x3D` (#2759)
+
+- **Breaking.** The package no longer imports or depends on Apple's `simd` module (#2759). `AssemblyNode.transform`, `Camera.projectionMatrix` and `Camera.viewMatrix` return the new `Matrix4x4F`, and `GProps.matrixOfInertia` and `ShapeProperties.momentOfInertia` (and `ShapeProperties.init`) use the new `Matrix3x3D`, both column-major with `columns`, `m[column][row]`, `columnMajorElements` and `determinant`. Reads through `.columns` and `m[i][j]` compile unchanged; code that passes the value to an Apple API converts at the boundary (see `docs/reference/Matrix.md`). `addAutoCentrelines`, `addAutoCentermarks` and `addAutoDimensions` return an empty result for a zero or non-finite view direction, and coincident-point linear/angular dimensions and `DrawingAnnotation.breakLine` emit nothing, instead of NaN geometry. `DrawingAnnotation.CuttingPlaneLine.init` is failable and returns nil for a zero arrow direction; `Dimension.Angular` gains `isValid` and `value` follows `PrsDim_AngleDimension` (0 when invalid); `BRepGraph.resolve` refuses a zero absolute plane normal or axis direction as `.degenerate`.
+
 ### Raw-handle arrays now keep their wrappers alive across the OCCT call at 77 sites (#3266)
 
 - Operations that pass an array of shapes, wires, edges, faces, curves or surfaces to OCCT (booleans, lofts, sewing, fills, exporters and others) kept no owner for the wrappers, so an optimised build on Swift 6.2 could free them before the call. The arrays are now held across the call, and a static gate fails on a new unheld one.

@@ -123,6 +123,7 @@ python3 Scripts/check-bridge-type-odr.py         # every type defined in more th
 python3 Scripts/check-bridge-adaptor-members.py # no bridge struct stores an OCCT adaptor beyond the two allowlisted ones (#3065)
 python3 Scripts/check-test-path-citations.py   # every Tests/OCCT<Domain>Tests/...swift path cited in Scripts/, docs/, okf/, Sources/, Tests/ resolves to a file (#3148)
 python3 Scripts/check-transient-release-idiom.py  # every bridge release of a raw Standard_Transient is opencascade::handle::EndScope (#2974)
+python3 Scripts/check-no-simd.py                 # no Swift file imports Apple's simd or calls a simd_ function (#2759)
 python3 Scripts/census-unmeasured-values.py      # CENSUS, not a gate: values returned as measurements that were never computed (#726)
 python3 Scripts/census-doc-occt-attribution.py   # CENSUS, not a gate: docs attributing a method to an OCCT class its bridge fn never reaches (#928)
 python3 Scripts/census-arguments-tuple-shapes.py # CENSUS, not a gate: @Test(arguments:) elements whose layout trips the toolchain defect (#1057)

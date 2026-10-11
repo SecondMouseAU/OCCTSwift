@@ -269,10 +269,10 @@ public var isReference: Bool { get }
 
 ### `transform`
 
-Transform matrix (position/rotation relative to parent), as a column-major `simd_float4x4`.
+Transform matrix (position/rotation relative to parent), as a column-major ``Matrix4x4F``.
 
 ```swift
-public var transform: simd_float4x4 { get }
+public var transform: Matrix4x4F { get }
 ```
 
 - **OCCT:** `XCAFDoc_ShapeTool::GetLocation` (via `OCCTDocumentGetLocation`).

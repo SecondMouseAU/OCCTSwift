@@ -36,7 +36,7 @@ guard let spine = Wire.helix(radius: r, pitch: pitch, turns: turns) else { retur
 // is (-r, ~0, 0), descending, not (r, 0, 0) ascending as a naive right-handed formula would give.
 guard let firstEdge = spine.edges().first, let curve = firstEdge.curve3D else { return }
 let (origin, tangent) = curve.d1(at: curve.domain.lowerBound)
-guard let profile = Wire.circle(origin: origin, normal: simd_normalize(tangent), radius: wireRadius),
+guard let profile = Wire.circle(origin: origin, normal: tangent, radius: wireRadius),
       let spring  = Shape.pipeShell(spine: spine, profile: profile,
                                     mode: .frenet, solid: true) else { return }
 // spring.isValid == true; spring.volume ≈ π·wireRadius²·(coil length)

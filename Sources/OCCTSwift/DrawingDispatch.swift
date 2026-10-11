@@ -1,5 +1,4 @@
 import OCCTPlatform
-import simd
 
 // MARK: - Shared annotation + dimension dispatch (#85, v0.150; unified onto DXF, #795)
 //
@@ -340,7 +339,7 @@ private func emitBalloon(_ b: DrawingAnnotation.Balloon, into ops: DrawingPrimit
     ops.addText(String(b.itemNumber), b.centre, b.radius * 0.9, 0, "TEXT")
     if let target = b.leaderTo {
         let dir = target - b.centre
-        let len = simd_length(dir)
+        let len = vectorLength(dir)
         if len > 1e-9 {
             let exit = b.centre + (dir / len) * b.radius
             ops.addLine(exit, target, "DIMENSION")
@@ -355,7 +354,7 @@ private func emitCuttingPlaneLine(
     let start = cpl.traceStart
     let end = cpl.traceEnd
     let traceDir = end - start
-    let traceLen = simd_length(traceDir)
+    let traceLen = vectorLength(traceDir)
     guard traceLen > 1e-6 else { return }
     let u = traceDir / traceLen
     let heavyLen = min(10.0, traceLen * 0.2)
@@ -475,7 +474,9 @@ private func emitTolerancedText(
 }
 
 private func emitLinear(_ d: DrawingDimension.Linear, into ops: DrawingPrimitiveOps) {
-    let dir = simd_normalize(d.to - d.from)
+    // Coincident endpoints have no direction to offset along; emit nothing rather than NaN lines.
+    guard vectorLength(d.to - d.from) > 0 else { return }
+    let dir = normalizedVector(d.to - d.from)
     let perp = leftPerpendicular2D(of: dir)
     let from2 = d.from + perp * d.offset
     let to2 = d.to + perp * d.offset
@@ -528,8 +529,10 @@ private func emitDiameter(_ d: DrawingDimension.Diameter, into ops: DrawingPrimi
 }
 
 private func emitAngular(_ d: DrawingDimension.Angular, into ops: DrawingPrimitiveOps) {
-    let v1 = simd_normalize(d.ray1 - d.vertex)
-    let v2 = simd_normalize(d.ray2 - d.vertex)
+    // No arc for geometry OCCT calls invalid (PrsDim_AngleDimension::IsValidPoints).
+    guard d.isValid else { return }
+    let v1 = normalizedVector(d.ray1 - d.vertex)
+    let v2 = normalizedVector(d.ray2 - d.vertex)
     let a1 = atan2(v1.y, v1.x)
     let a2 = atan2(v2.y, v2.x)
     var start = a1

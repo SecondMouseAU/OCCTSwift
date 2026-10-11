@@ -921,7 +921,7 @@ The returned `normal` is the cross product `dS/du × dS/dv` whose magnitude equa
   if let nb = face.naturalBounds,
      let eval = face.evaluateGProp(u: (nb.uMin + nb.uMax) / 2,
                                    v: (nb.vMin + nb.vMax) / 2) {
-      let areaElement = simd_length(eval.normal)  // Jacobian at this UV point
+      let areaElement = Vector3DMath.modulus(eval.normal)  // Jacobian at this UV point
       print(eval.point, eval.normal, areaElement)
   }
   ```

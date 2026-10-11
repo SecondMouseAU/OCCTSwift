@@ -1,6 +1,5 @@
 import OCCTBridge
 import OCCTPlatform
-import simd
 
 extension Shape {
 
@@ -33,7 +32,7 @@ extension Shape {
         let result = OCCTShapeGetProperties(handle, density)
         guard result.isValid else { return nil }
 
-        let inertia = simd_double3x3(
+        let inertia = Matrix3x3D(
             SIMD3<Double>(result.ixx, result.iyx, result.izx),
             SIMD3<Double>(result.ixy, result.iyy, result.izy),
             SIMD3<Double>(result.ixz, result.iyz, result.izz)

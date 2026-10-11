@@ -1,6 +1,5 @@
 import OCCTBridge
 import OCCTPlatform
-import simd
 
 // MARK: - Construction Geometry (#72 Phase 2)
 //
@@ -33,8 +32,11 @@ public struct Placement: Sendable, Hashable {
     /// Build a placement from a point on the plane and a normal.
     ///
     /// Picks deterministic x/y axes perpendicular to the normal.
+    ///
+    /// A zero or non-finite `normal` gives NaN axes (IEEE division). `BRepGraph.resolve(_:)` refuses
+    /// such a normal as `.degenerate` before one is built, so only a hand-built `Placement` has it.
     public init(origin: SIMD3<Double>, normal: SIMD3<Double>) {
-        let z = simd_normalize(normal)
+        let z = normalizedVector(normal)
         let (x, y) = perpendicularBasis(to: z)
         self.init(origin: origin, xAxis: x, yAxis: y, zAxis: z)
     }
@@ -127,23 +129,31 @@ extension BRepGraph {
     > {
         switch plane {
         case .absolute(let origin, let normal):
-            return .success(Placement(origin: origin, normal: normal))
+            // A zero or non-finite normal is refused here, as OCCT refuses it: `gp_Dir(gp_Vec)`
+            // raises Standard_ConstructionError on a zero-norm vector (gp_Dir.hxx, "input vector
+            // has zero norm") and OCCT's callers test the magnitude first (e.g.
+            // PrsDim_AngleDimension::IsValidPoints, PrsDim_AngleDimension.cxx:1166). `Placement`'s
+            // own initialiser still yields NaNs for such a normal, as documented there (#2759).
+            let length = vectorLength(normal)
+            return requireNonDegenerate(
+                length.isFinite ? length : 0, Placement(origin: origin, normal: normal),
+                "plane normal is zero or not finite")
 
         case .offsetFromFace(let faceRef, let distance):
             return resolveFaceOrigin(faceRef).flatMap { (origin, normal) in
                 .success(
-                    Placement(origin: origin + distance * simd_normalize(normal), normal: normal))
+                    Placement(origin: origin + distance * normalizedVector(normal), normal: normal))
             }
 
         case .throughAxis(let axisRef, let angleDeg):
             return resolveEdgeDirection(axisRef).flatMap {
                 (anchor, dir) -> Result<Placement, ConstructionResolutionError> in
                 // Rotate a perpendicular-to-dir reference by angleDeg around dir.
-                let dirN = simd_normalize(dir)
+                let dirN = normalizedVector(dir)
                 let (refPerp, _) = perpendicularBasis(to: dirN)
                 let rad = angleDeg * .pi / 180
-                let rotated = cos(rad) * refPerp + sin(rad) * simd_cross(dirN, refPerp)
-                let normal = simd_normalize(simd_cross(dirN, rotated))
+                let rotated = cos(rad) * refPerp + sin(rad) * crossProduct(dirN, refPerp)
+                let normal = normalizedVector(crossProduct(dirN, rotated))
                 return .success(Placement(origin: anchor, normal: normal))
             }
 
@@ -163,9 +173,9 @@ extension BRepGraph {
                 resolveFaceOrigin(b).flatMap { (oB, nB) in
                     let origin = (oA + oB) / 2
                     let avgNormal =
-                        simd_length_squared(nA + nB) > 1e-12
-                        ? simd_normalize(nA + nB)
-                        : simd_normalize(nA - nB)  // antiparallel faces, use either normal
+                        vectorLengthSquared(nA + nB) > 1e-12
+                        ? normalizedVector(nA + nB)
+                        : normalizedVector(nA - nB)  // antiparallel faces, use either normal
                     return .success(Placement(origin: origin, normal: avgNormal))
                 }
             }
@@ -175,9 +185,9 @@ extension BRepGraph {
                 resolveVertexPoint(b).flatMap { pB in
                     resolveVertexPoint(c).flatMap {
                         pC -> Result<Placement, ConstructionResolutionError> in
-                        let n = simd_cross(pB - pA, pC - pA)
+                        let n = crossProduct(pB - pA, pC - pA)
                         return requireNonDegenerate(
-                            simd_length(n), Placement(origin: pA, normal: n),
+                            vectorLength(n), Placement(origin: pA, normal: n),
                             "three points are collinear")
                     }
                 }
@@ -195,7 +205,13 @@ extension BRepGraph {
     > {
         switch axis {
         case .absolute(let origin, let direction):
-            return .success((origin, simd_normalize(direction)))
+            // A zero or non-finite direction is refused, as OCCT refuses it (`gp_Dir` raises
+            // Standard_ConstructionError on a zero-norm vector, gp_Dir.hxx; callers test the
+            // magnitude first, e.g. PrsDim_AngleDimension::IsValidPoints, PrsDim_AngleDimension.cxx:1166).
+            let length = vectorLength(direction)
+            return requireNonDegenerate(
+                length.isFinite ? length : 0, (origin, normalizedVector(direction)),
+                "axis direction is zero or not finite")
 
         case .alongEdge(let edgeRef):
             // Result's Success isn't tuple-label-covariant the way a bare tuple return is, so
@@ -225,7 +241,7 @@ extension BRepGraph {
                     > in
                     let d = pB - pA
                     return requireNonDegenerate(
-                        simd_length(d), (pA, simd_normalize(d)), "points coincide")
+                        vectorLength(d), (pA, normalizedVector(d)), "points coincide")
                 }
             }
 
@@ -238,18 +254,21 @@ extension BRepGraph {
                     > in
                     let nA = pA.zAxis
                     let nB = pB.zAxis
-                    let d = simd_cross(nA, nB)
+                    let d = crossProduct(nA, nB)
                     // Origin: the point of the line {p : nA.(p - oA) = 0, nB.(p - oB) = 0}
                     // nearest the world origin, p = (hA (nB x d) + hB (d x nA)) / |d|^2 with
                     // hA = nA.oA and hB = nB.oB (#3037). It lies on both planes, and it does not
                     // depend on which plane is passed first. The midpoint of the two plane
                     // origins this replaces lies on neither plane in general.
-                    let hA = simd_dot(nA, pA.origin)
-                    let hB = simd_dot(nB, pB.origin)
-                    let dd = simd_length_squared(d)
+                    let hA = dotProduct(nA, pA.origin)
+                    let hB = dotProduct(nB, pB.origin)
+                    let dd = vectorLengthSquared(d)
                     return requireNonDegenerate(
-                        simd_length(d),
-                        ((hA * simd_cross(nB, d) + hB * simd_cross(d, nA)) / dd, simd_normalize(d)),
+                        vectorLength(d),
+                        (
+                            (hA * crossProduct(nB, d) + hB * crossProduct(d, nA)) / dd,
+                            normalizedVector(d)
+                        ),
                         "planes are parallel")
                 }
             }
@@ -281,10 +300,10 @@ extension BRepGraph {
                     // Line origin + t * direction intersects plane where
                     // (plane.origin - axOrigin) . plane.normal == t * axDir . plane.normal
                     let n = pl.zAxis
-                    let denom = simd_dot(axDir, n)
+                    let denom = dotProduct(axDir, n)
                     return requireNonDegenerate(
                         abs(denom),
-                        axOrigin + (simd_dot(pl.origin - axOrigin, n) / denom) * axDir,
+                        axOrigin + (dotProduct(pl.origin - axOrigin, n) / denom) * axDir,
                         "axis parallel to plane")
                 }
             }
@@ -619,21 +638,21 @@ extension BRepGraph {
             if let axis = face.primaryAxis {
                 switch axis.kind {
                 case .cylinder, .cone, .torus, .revolution:
-                    let axisDirection = simd_normalize(axis.direction)
+                    let axisDirection = normalizedVector(axis.direction)
                     let toPoint = point - axis.origin
-                    let onAxis = axis.origin + simd_dot(toPoint, axisDirection) * axisDirection
+                    let onAxis = axis.origin + dotProduct(toPoint, axisDirection) * axisDirection
                     return .success((onAxis, axisDirection))
                 default:
                     guard let (fallbackPoint, fallbackNormal) = face.uvMidpointSample() else {
                         return .failure(.missingGeometry(node))
                     }
-                    return .success((fallbackPoint, simd_normalize(fallbackNormal)))
+                    return .success((fallbackPoint, normalizedVector(fallbackNormal)))
                 }
             }
             guard let resolved = projectedNormal(on: face, at: point) else {
                 return .failure(.missingGeometry(node))
             }
-            return .success((resolved.0, simd_normalize(resolved.1)))
+            return .success((resolved.0, normalizedVector(resolved.1)))
         }
     }
 
@@ -702,17 +721,17 @@ extension BRepGraph {
     /// `internal`, not `private`, for the same testability reason as ``revolutionAxis(ofEdgeAt:)``
     /// (#894 finding 5, second pass).
     func axesAgree(_ reference: ShapeAxis, _ other: ShapeAxis) -> Bool {
-        let referenceDirection = simd_normalize(reference.direction)
-        let otherDirection = simd_normalize(other.direction)
+        let referenceDirection = normalizedVector(reference.direction)
+        let otherDirection = normalizedVector(other.direction)
         guard
-            abs(abs(simd_dot(referenceDirection, otherDirection)) - 1.0)
+            abs(abs(dotProduct(referenceDirection, otherDirection)) - 1.0)
                 < Self.axisDirectionAgreementCosineTolerance
         else {
             return false
         }
         let offset = other.origin - reference.origin
-        let perpendicular = offset - simd_dot(offset, referenceDirection) * referenceDirection
-        return simd_length(perpendicular) < Self.axisOriginAgreementDistanceTolerance
+        let perpendicular = offset - dotProduct(offset, referenceDirection) * referenceDirection
+        return vectorLength(perpendicular) < Self.axisOriginAgreementDistanceTolerance
     }
 
     /// - Returns: `(origin, direction)`, unlabeled, an internal function returning a tuple with
@@ -753,7 +772,7 @@ extension BRepGraph {
                 }
                 let dir = end - start
                 return requireNonDegenerate(
-                    simd_length(dir), (start, simd_normalize(dir)), "zero-length edge")
+                    vectorLength(dir), (start, normalizedVector(dir)), "zero-length edge")
             }
 
             // The edge's own degeneracy is checked before any axis lookup, and by true arc
@@ -817,9 +836,9 @@ extension BRepGraph {
                         .degenerate(
                             "edge tangent unavailable at start; cannot determine axis sign"))
                 }
-                var axisDirection = simd_normalize(axis.direction)
+                var axisDirection = normalizedVector(axis.direction)
                 let radial = start - axis.origin
-                if simd_dot(axisDirection, simd_cross(radial, tangentAtStart)) < 0 {
+                if dotProduct(axisDirection, crossProduct(radial, tangentAtStart)) < 0 {
                     axisDirection = -axisDirection
                 }
                 // Keep the origin edge-local: project the edge's own start point onto the resolved
@@ -829,13 +848,14 @@ extension BRepGraph {
                 // both `axisDirection` and the dot product it's multiplied by leaves the product
                 // unchanged.
                 let toStart = start - axis.origin
-                let projectedOrigin = axis.origin + simd_dot(toStart, axisDirection) * axisDirection
+                let projectedOrigin =
+                    axis.origin + dotProduct(toStart, axisDirection) * axisDirection
                 return .success((projectedOrigin, axisDirection))
             }
 
             let dir = end - start
             return requireNonDegenerate(
-                simd_length(dir), (start, simd_normalize(dir)), "zero-length edge")
+                vectorLength(dir), (start, normalizedVector(dir)), "zero-length edge")
         }
     }
 
@@ -877,7 +897,7 @@ extension BRepGraph {
         of edge: Edge, bounds: (first: Double, last: Double), start: SIMD3<Double>,
         end: SIMD3<Double>, axis: ShapeAxis, edgeTolerance: Double
     ) -> Bool {
-        let axisDirection = simd_normalize(axis.direction)
+        let axisDirection = normalizedVector(axis.direction)
         let span = bounds.last - bounds.first
         var samples = [start]
         for fraction in [0.25, 0.5, 0.75] {
@@ -886,10 +906,10 @@ extension BRepGraph {
         }
         samples.append(end)
 
-        let heights = samples.map { simd_dot($0 - axis.origin, axisDirection) }
+        let heights = samples.map { dotProduct($0 - axis.origin, axisDirection) }
         let radii = samples.map { sample -> Double in
             let offset = sample - axis.origin
-            return simd_length(offset - simd_dot(offset, axisDirection) * axisDirection)
+            return vectorLength(offset - dotProduct(offset, axisDirection) * axisDirection)
         }
         guard let minHeight = heights.min(), let maxHeight = heights.max(),
             let minRadius = radii.min(), let maxRadius = radii.max()
@@ -910,7 +930,7 @@ extension BRepGraph {
             else {
                 return .failure(.missingGeometry(node))
             }
-            return .success((point, simd_normalize(tangent)))
+            return .success((point, normalizedVector(tangent)))
         }
     }
 

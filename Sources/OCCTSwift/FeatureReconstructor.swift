@@ -1,5 +1,4 @@
 import OCCTPlatform
-import simd
 
 // MARK: - FeatureReconstructor (#62, on #72 substrate)
 //
@@ -420,7 +419,7 @@ public struct FeatureReconstructor: Sendable {
         guard
             let body = Shape.extrude(
                 profile: wire,
-                direction: simd_normalize(e.planeNormal),
+                direction: normalizedVector(e.planeNormal),
                 length: e.length)
         else {
             recordSkip(
@@ -752,7 +751,7 @@ public struct FeatureReconstructor: Sendable {
             guard let bounds = edge.parameterBounds,
                 let mid = edge.point(at: (bounds.first + bounds.last) / 2)
             else { continue }
-            if simd_length(mid - point) <= tolerance {
+            if vectorLength(mid - point) <= tolerance {
                 matching.append(i)
             }
         }
@@ -778,7 +777,7 @@ public struct FeatureReconstructor: Sendable {
             guard let bounds = edge.parameterBounds,
                 let mid = edge.point(at: (bounds.first + bounds.last) / 2)
             else { continue }
-            if sourceEdgeMidpoints.contains(where: { simd_length($0 - mid) <= tolerance }) {
+            if sourceEdgeMidpoints.contains(where: { vectorLength($0 - mid) <= tolerance }) {
                 matching.append(i)
             }
         }

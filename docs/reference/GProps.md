@@ -94,7 +94,7 @@ public static func torus(_ kind: Kind, frame: Frame = Frame(), majorRadius: Doub
 ```swift
 public var mass: Double
 public var centreOfMass: SIMD3<Double>
-public var matrixOfInertia: simd_double3x3
+public var matrixOfInertia: Matrix3x3D
 public var staticMoments: SIMD3<Double>
 public func momentOfInertia(about origin: SIMD3<Double>, direction: SIMD3<Double>) -> Double?
 public func radiusOfGyration(about origin: SIMD3<Double>, direction: SIMD3<Double>) -> Double?
@@ -105,7 +105,7 @@ public func symmetry(tolerance: Double) -> (hasAxis: Bool, hasPoint: Bool)?
 - **OCCT:** `GProp_GProps::Mass`, `CentreOfMass`, `MatrixOfInertia`, `StaticMoments`,
   `MomentOfInertia(gp_Ax1)`, `RadiusOfGyration(gp_Ax1)`, `PrincipalProperties`, and
   `GProp_PrincipalProps::HasSymmetryAxis(double)` and `HasSymmetryPoint(double)`.
-- `matrixOfInertia` is about the centre of mass, in axes parallel to the global ones. It is a `simd_double3x3`, so index it as `matrix[column][row]`; the matrix is symmetric.
+- `matrixOfInertia` is about the centre of mass, in axes parallel to the global ones. It is a ``Matrix3x3D``, so index it as `matrix[column][row]`; the matrix is symmetric.
 - `momentOfInertia` and `radiusOfGyration` return nil for a zero or non-finite direction, which
   OCCT rejects when it builds the `gp_Dir`. `radiusOfGyration` also returns nil where OCCT's answer
   is not a number, which is a system of no mass.

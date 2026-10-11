@@ -1,6 +1,5 @@
 import OCCTBridge
 import OCCTPlatform
-import simd
 
 extension Shape {
 
@@ -347,11 +346,11 @@ extension Shape {
                 guard let proj = surface.projectPoint(p) else { continue }
                 let q = SIMD2(proj.u, proj.v)
                 // dedup shared vertices
-                if let last = uv.last, simd_distance(last, q) < 1e-9 { continue }
+                if let last = uv.last, vectorDistance(last, q) < 1e-9 { continue }
                 uv.append(q)
             }
         }
-        if let f = uv.first, let l = uv.last, simd_distance(f, l) < 1e-9 { uv.removeLast() }
+        if let f = uv.first, let l = uv.last, vectorDistance(f, l) < 1e-9 { uv.removeLast() }
         guard uv.count >= 3 else { return nil }
         return surface.toFace(uvBoundary: uv)
     }
@@ -947,17 +946,17 @@ extension Shape {
     ///   - tolerance: Maximum sine of the angle between edge and axis (default 1e-4).
     /// - Returns: The matching straight edges, each with a valid index.
     public func edges(parallelTo axis: SIMD3<Double>, tolerance: Double = 1e-4) -> [Edge] {
-        let axisLen = simd_length(axis)
+        let axisLen = vectorLength(axis)
         guard axisLen > 0 else { return [] }
         let a = axis / axisLen
         return edges().filter { edge in
             guard edge.isLine else { return false }
             let (start, end) = edge.endpoints
             let d = end - start
-            let len = simd_length(d)
+            let len = vectorLength(d)
             guard len > 0 else { return false }
             // |cross| = sin(theta) for unit vectors; parallel when ~0.
-            return simd_length(simd_cross(d / len, a)) <= tolerance
+            return vectorLength(crossProduct(d / len, a)) <= tolerance
         }
     }
 
@@ -972,8 +971,8 @@ extension Shape {
     ///   - max: The upper corner of the region.
     /// - Returns: The contained edges, each with a valid index.
     public func edges(inBounds min: SIMD3<Double>, _ max: SIMD3<Double>) -> [Edge] {
-        let lo = simd_min(min, max)
-        let hi = simd_max(min, max)
+        let lo = pointwiseMin(min, max)
+        let hi = pointwiseMax(min, max)
         return edges().filter { edge in
             // An edge with no bounding box (#943) has no extent to contain, so it is not inside
             // any region: excluded rather than admitted on a fabricated zero box.

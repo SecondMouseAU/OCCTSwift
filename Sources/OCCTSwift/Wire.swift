@@ -1,6 +1,5 @@
 import OCCTBridge
 import OCCTPlatform
-import simd
 
 /// A wire represents a connected sequence of edges (curves).
 ///
@@ -186,7 +185,7 @@ public final class Wire: @unchecked Sendable {
     /// - Returns: A wire consisting of a single straight edge, or nil if creation fails
     public static func line(from start: SIMD3<Double>, to end: SIMD3<Double>) -> Wire? {
         // Check for degenerate edge (start == end)
-        let dist = simd_distance(start, end)
+        let dist = vectorDistance(start, end)
         guard dist > 1e-10 else { return nil }
 
         guard

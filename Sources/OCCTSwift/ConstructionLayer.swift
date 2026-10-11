@@ -1,6 +1,5 @@
 import OCCTBridge
 import OCCTPlatform
-import simd
 
 // MARK: - XCAF CONSTRUCTION layer persistence (#72 D1, v0.143)
 //
@@ -234,7 +233,7 @@ extension ConstructionContext {
     // sweep from 1e300 down to Precision::Confusion() (~1e-7), `BRepBuilderAPI_MakeFace` never
     // once failed on a wire `BRepBuilderAPI_MakePolygon` reported done. The one input that DOES
     // reach "wire built, face failed" is a placement corrupted by a zero-length normal (`.absolute`
-    // called with `normal: .zero`): `simd_normalize` turns that into NaN, and `MakePolygon` builds
+    // called with `normal: .zero`): `normalizedVector` turns that into NaN, and `MakePolygon` builds
     // a "done" wire from NaN points anyway. Measured directly: adding `?? Shape.shape(from: wire)`
     // there does make that case "succeed", by silently adding a NaN-vertexed shape to the document
     // instead of reporting `.planeShapeFailed`. That's a worse outcome than the failure it would
@@ -262,7 +261,7 @@ extension ConstructionContext {
     private func axisShape(origin: SIMD3<Double>, direction: SIMD3<Double>, halfLength: Double)
         -> Shape?
     {
-        let d = simd_normalize(direction)
+        let d = normalizedVector(direction)
         let start = origin - d * halfLength
         let end = origin + d * halfLength
         guard let wire = Wire.line(from: start, to: end) else { return nil }

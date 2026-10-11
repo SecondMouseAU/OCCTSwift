@@ -1,6 +1,5 @@
 import Foundation
 import OCCTBridge
-import simd
 
 /// Global properties of a patch of an analytic surface, or of the solid it sweeps: mass, centre of
 /// mass, matrix of inertia and the other interrogations of `GProp_GProps`.
@@ -271,12 +270,11 @@ public final class GProps {
 
     /// The matrix of inertia about the centre of mass, in axes parallel to the global ones.
     /// `GProp_GProps::MatrixOfInertia`.
-    public var matrixOfInertia: simd_double3x3 {
+    public var matrixOfInertia: Matrix3x3D {
         var v = [Double](repeating: 0, count: 9)
         _ = OCCTGPropsMatrixOfInertia(handle, &v)
-        // Column initialiser, not `rows:`: the WASI simd stand-in has no `init(rows:)`. `v` is
-        // row-major, so column j is (v[j], v[3 + j], v[6 + j]) and the matrix is unchanged.
-        return simd_double3x3(
+        // `v` is row-major, so column j is (v[j], v[3 + j], v[6 + j]).
+        return Matrix3x3D(
             SIMD3(v[0], v[3], v[6]),
             SIMD3(v[1], v[4], v[7]),
             SIMD3(v[2], v[5], v[8]))

@@ -803,23 +803,16 @@ let occtBridgeTarget: Target =
                 ]
             )
 
-// The `simd` module, on WASI only (#2175).
+// The `simd` module, on WASI only, and for TEST targets only (#2175, #2759).
 //
-// 196 of the 230 files in Sources/OCCTSwift opened with `import simd` when this was written, and
-// on wasm32-unknown-wasip1 that is `error: no such module 'simd'`, which stops the entire Swift
-// layer before any of it is type-checked. Apple's simd is part of the Apple SDKs and there is no
-// wasm build of it. #2759 then removed the imports no file needed (measured by building Apple and
-// wasm with each one gone); 26 files in Sources/OCCTSwift still import it.
+// `Sources/OCCTSwift` no longer imports Apple's `simd` or calls a `simd_` function (#2759): the
+// vector helpers are plain Swift in `SIMDVectorOps.swift` and the public matrix types are
+// `Matrix4x4F` and `Matrix3x3D`, so the library target does not depend on this module on any
+// platform. `Scripts/check-no-simd.py` holds that.
 //
-// A target NAMED `simd`, reachable only when isWASI, answers that for those files without
-// changing a single byte of what an Apple build compiles: `import simd` still resolves to Apple's
-// there, because this target is not in the graph at all. The alternative, `#if canImport(simd)`
-// around each import, would still need the definitions this module carries.
-//
-// What it defines is what Sources/OCCTSwift measurably uses and no more; see the file's own
-// header for the counts. It re-exports the platform C library for the same reason Apple's module
-// does, measured rather than assumed (#2793), so a file whose only import is `simd` gets `cos` and
-// `atan2` in scope on both platforms.
+// What remains is a stand-in for the test files that have not yet been migrated off
+// `import simd`. It exists on WASI only and is deleted, with this declaration and the dependency
+// appended in `adjustedForWASM`, by the last PR of #2759 once no file under `Tests/` imports it.
 let wasiCompatTargets: [Target] =
     isWASI
     ? [
@@ -833,10 +826,7 @@ let wasiCompatTargets: [Target] =
 
 // OCCTPlatform is unconditional: it is the one target that knows which platform this is, and every
 // file in the Swift layer imports it instead of Foundation. See Sources/OCCTPlatform/Platform.swift.
-let swiftLayerDependencies: [Target.Dependency] =
-    isWASI
-    ? ["OCCTBridge", "OCCT", "OCCTPlatform", "simd"]
-    : ["OCCTBridge", "OCCT", "OCCTPlatform"]
+let swiftLayerDependencies: [Target.Dependency] = ["OCCTBridge", "OCCT", "OCCTPlatform"]
 
 // Per-domain test targets that cannot exist on wasm32-unknown-wasip1 at all (#2793, emptied by
 // #2928).

@@ -1,5 +1,4 @@
 import OCCTPlatform
-import simd
 
 // MARK: - ISO 1302 surface finish + ISO 1101 GD&T + detail views + break lines (v0.146)
 
@@ -298,7 +297,7 @@ extension DrawingAnnotation {
 
         // Triangle pointing at target
         let dir = target - position
-        let len = simd_length(dir)
+        let len = vectorLength(dir)
         if len > 1e-6 {
             let u = dir / len
             let apex = target
@@ -343,8 +342,10 @@ extension DrawingAnnotation {
         from: SIMD2<Double>, to: SIMD2<Double>,
         amplitude: Double = 2.0
     ) -> [DrawingAnnotation] {
+        // Coincident endpoints have no direction to zigzag across.
+        guard vectorLength(to - from) > 0 else { return [] }
         let mid = (from + to) / 2
-        let dir = simd_normalize(to - from)
+        let dir = normalizedVector(to - from)
         let perp = leftPerpendicular2D(of: dir)
         let step = 2.0
         let p1 = mid - step * dir

@@ -77,11 +77,16 @@ struct DrawingAppendTests {
             Issue.record("setup nil")
             return
         }
-        let cpl = DrawingAnnotation.cuttingPlaneLine(
-            .init(
+        guard
+            let line = DrawingAnnotation.CuttingPlaneLine(
                 label: "A",
                 traceStart: SIMD2(0, 0), traceEnd: SIMD2(100, 0),
-                arrowDirection: SIMD2(0, 1)))
+                arrowDirection: SIMD2(0, 1))
+        else {
+            Issue.record("cutting plane line nil")
+            return
+        }
+        let cpl = DrawingAnnotation.cuttingPlaneLine(line)
         drawing.append(cpl)
         if case .cuttingPlaneLine = drawing.annotations.first {
         } else {

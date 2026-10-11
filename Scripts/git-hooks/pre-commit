@@ -155,6 +155,11 @@ run "check-test-path-citations.py"            Scripts/check-test-path-citations.
 run "check-transient-release-idiom.py --self-test" Scripts/check-transient-release-idiom.py --self-test
 run "check-transient-release-idiom.py"        Scripts/check-transient-release-idiom.py
 
+# #2759. No file imports Apple's simd module or calls a simd_ function; one implementation runs on
+# Apple and on wasm. Pure text.
+run "check-no-simd.py --self-test"            Scripts/check-no-simd.py --self-test
+run "check-no-simd.py"                        Scripts/check-no-simd.py
+
 # Not a Python gate, so it does not go through run(). merge.conflictStyle is diff3 in this repo, and
 # a resolver written for the default two-way style strips <<<<<<< / ======= / >>>>>>> and leaves the
 # ||||||| ancestor line behind. Five reached docs/CHANGELOG.md before anyone noticed.

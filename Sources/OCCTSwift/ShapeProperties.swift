@@ -1,6 +1,5 @@
 import OCCTBridge
 import OCCTPlatform
-import simd
 
 /// Mass and geometric properties of a shape.
 public struct ShapeProperties: Sendable, Equatable {
@@ -17,14 +16,14 @@ public struct ShapeProperties: Sendable, Equatable {
     public var centerOfMass: SIMD3<Double>
 
     /// Moment of inertia tensor (3x3 matrix).
-    public var momentOfInertia: simd_double3x3
+    public var momentOfInertia: Matrix3x3D
 
     public init(
         volume: Double,
         surfaceArea: Double,
         mass: Double,
         centerOfMass: SIMD3<Double>,
-        momentOfInertia: simd_double3x3
+        momentOfInertia: Matrix3x3D
     ) {
         self.volume = volume
         self.surfaceArea = surfaceArea
