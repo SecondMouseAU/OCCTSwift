@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -11,7 +10,7 @@ struct GccAnaCirc2dTanCenTests {
     func pointCentered() throws {
         let r = try #require(circleThroughPointCentered(point: SIMD2(3, 0), center: SIMD2(0, 0)))
         #expect(abs(r.radius - 3.0) < 1e-6)
-        #expect(simd_length(r.center) < 1e-12)
+        #expect(vectorLength(r.center) < 1e-12)
     }
 
     @Test("circle tangent to line centered")
@@ -21,6 +20,6 @@ struct GccAnaCirc2dTanCenTests {
                 lineOrigin: SIMD2(0, 5), lineDirection: SIMD2(1, 0),
                 center: SIMD2(0, 0)))
         #expect(abs(r.radius - 5.0) < 1e-6)
-        #expect(simd_length(r.center) < 1e-12)
+        #expect(vectorLength(r.center) < 1e-12)
     }
 }

@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -74,7 +73,7 @@ struct ChFi2dFilletAPITests {
         let filletEndpoints = filletVerts
         let neighbourVerts = r.modifiedEdge1.vertices() + r.modifiedEdge2.vertices()
         let connects = filletEndpoints.contains { fp in
-            neighbourVerts.contains { nv in simd_distance(fp, nv) < 1e-6 }
+            neighbourVerts.contains { nv in vectorDistance(fp, nv) < 1e-6 }
         }
         #expect(connects, "fillet edge does not meet either trimmed neighbour edge")
     }

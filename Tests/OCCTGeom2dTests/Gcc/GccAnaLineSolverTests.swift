@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -15,8 +14,8 @@ import simd
             point: SIMD2(5, 5),
             parallelTo: SIMD2(0, 0), lineDir: SIMD2(1, 0))
         try #require(results.count == 1)
-        #expect(simd_distance(results[0].point, SIMD2(5, 5)) < 1e-12)
-        #expect(simd_distance(results[0].direction, SIMD2(1, 0)) < 1e-12)
+        #expect(vectorDistance(results[0].point, SIMD2(5, 5)) < 1e-12)
+        #expect(vectorDistance(results[0].direction, SIMD2(1, 0)) < 1e-12)
     }
 
     @Test("Lines tangent to circle parallel to reference")
@@ -36,7 +35,7 @@ import simd
             perpendicularTo: SIMD2(0, 0), lineDir: SIMD2(1, 0))
         try #require(results.count == 1)
         // perpendicular to horizontal → vertical direction, through (5, 5)
-        #expect(simd_distance(results[0].point, SIMD2(5, 5)) < 1e-12)
+        #expect(vectorDistance(results[0].point, SIMD2(5, 5)) < 1e-12)
         #expect(abs(results[0].direction.x) < 1e-12)
         #expect(abs(abs(results[0].direction.y) - 1) < 1e-12)
     }
@@ -59,8 +58,8 @@ import simd
             angle: .pi / 4)
         try #require(results.count == 1)
         let s = 0.5.squareRoot()
-        #expect(simd_distance(results[0].point, SIMD2(5, 5)) < 1e-12)
-        #expect(simd_distance(results[0].direction, SIMD2(s, s)) < 1e-12)
+        #expect(vectorDistance(results[0].point, SIMD2(5, 5)) < 1e-12)
+        #expect(vectorDistance(results[0].direction, SIMD2(s, s)) < 1e-12)
     }
 
     @Test("Lines tangent to curve at angle (Geom2dGcc)")

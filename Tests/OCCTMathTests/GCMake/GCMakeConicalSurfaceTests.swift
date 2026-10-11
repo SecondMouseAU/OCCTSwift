@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -19,7 +18,7 @@ struct GCMakeConicalSurfaceTests {
                 center: .zero, normal: SIMD3(0, 0, 1),
                 semiAngle: .pi / 6, radius: 5))
         #expect(abs(s.coneProperties.semiAngle - .pi / 6) < 1e-12)
-        #expect(simd_length(s.point(atU: 0, v: 1) - SIMD3(5.5, 0, 0.866025403784)) < 1e-9)
+        #expect(vectorLength(s.point(atU: 0, v: 1) - SIMD3(5.5, 0, 0.866025403784)) < 1e-9)
     }
 
     @Test func conicalFrom2PtsRadii() throws {

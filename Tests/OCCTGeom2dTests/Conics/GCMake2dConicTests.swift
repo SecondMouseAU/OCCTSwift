@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -16,7 +15,7 @@ struct GCMake2dConicTests {
     ) {
         #expect(c.isClosed, sourceLocation: loc)
         #expect(abs(c.circleProperties.radius - radius) < 1e-9, sourceLocation: loc)
-        #expect(simd_length(c.circleProperties.center) < 1e-9, sourceLocation: loc)
+        #expect(vectorLength(c.circleProperties.center) < 1e-9, sourceLocation: loc)
     }
 
     @Test func circle2dCenterRadius() throws {
@@ -88,7 +87,7 @@ struct GCMake2dConicTests {
                 yDirection: SIMD2(0, 1),
                 majorRadius: 10, minorRadius: 5))
         #expect(e.isClosed)
-        #expect(simd_distance(e.point(at: .pi / 2), SIMD2(0, 5)) < 1e-9)
+        #expect(vectorDistance(e.point(at: .pi / 2), SIMD2(0, 5)) < 1e-9)
     }
 
     @Test func hyperbola2dFromAxis() throws {
@@ -98,7 +97,7 @@ struct GCMake2dConicTests {
                 majorRadius: 10, minorRadius: 5))
         #expect(abs(h.hyperbolaProperties.majorRadius - 10) < 1e-9)
         #expect(abs(h.hyperbolaProperties.minorRadius - 5) < 1e-9)
-        #expect(simd_distance(h.point(at: 0), SIMD2(10, 0)) < 1e-9)
+        #expect(vectorDistance(h.point(at: 0), SIMD2(10, 0)) < 1e-9)
     }
 
     /// `GC_MakeHyperbola2d(S1, S2, Center)`: S1 is the main-branch vertex on the
@@ -115,8 +114,8 @@ struct GCMake2dConicTests {
             Curve2D.gceParabola(center: SIMD2(0, 0), direction: SIMD2(1, 0), focalDistance: 5))
         // Vertex at the origin, focus (5, 0): (u^2 / 20, u).
         #expect(abs(p.parabolaProperties.focal - 5) < 1e-9)
-        #expect(simd_distance(p.parabolaProperties.focus, SIMD2(5, 0)) < 1e-9)
-        #expect(simd_distance(p.point(at: 2), SIMD2(0.2, 2)) < 1e-9)
+        #expect(vectorDistance(p.parabolaProperties.focus, SIMD2(5, 0)) < 1e-9)
+        #expect(vectorDistance(p.point(at: 2), SIMD2(0.2, 2)) < 1e-9)
     }
 
     @Test func parabola2dFromDirectrixFocus() throws {
@@ -126,7 +125,7 @@ struct GCMake2dConicTests {
                 focus: SIMD2(5, 0)))
         // Directrix x = 0, focus (5, 0): vertex (2.5, 0), focal 2.5.
         #expect(abs(p.parabolaProperties.focal - 2.5) < 1e-9)
-        #expect(simd_distance(p.point(at: 0), SIMD2(2.5, 0)) < 1e-9)
-        #expect(simd_distance(p.point(at: 2), SIMD2(2.9, 2)) < 1e-9)
+        #expect(vectorDistance(p.point(at: 0), SIMD2(2.5, 0)) < 1e-9)
+        #expect(vectorDistance(p.point(at: 2), SIMD2(2.9, 2)) < 1e-9)
     }
 }

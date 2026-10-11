@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -54,7 +53,7 @@ struct Issue549Curve2DArcLengthRangeTests {
         for i in 1...segments {
             let u = u1 + (u2 - u1) * Double(i) / Double(segments)
             let p = c.point(at: u)
-            total += simd_distance(p, prev)
+            total += vectorDistance(p, prev)
             prev = p
         }
         return total

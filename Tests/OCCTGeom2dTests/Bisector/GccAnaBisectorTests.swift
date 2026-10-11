@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -21,15 +20,15 @@ import simd
     func pointBisector() throws {
         let line = try #require(GccAnaBisector.ofPoints(SIMD2(0, 0), SIMD2(10, 0)))
         // Through the midpoint (5, 0), perpendicular to the segment: direction (0, 1).
-        #expect(simd_distance(line.point, SIMD2(5, 0)) < 1e-12)
-        #expect(simd_distance(line.direction, SIMD2(0, 1)) < 1e-12)
+        #expect(vectorDistance(line.point, SIMD2(5, 0)) < 1e-12)
+        #expect(vectorDistance(line.direction, SIMD2(0, 1)) < 1e-12)
 
         // A segment along neither axis, so a direction swapped or taken along the segment is not
         // mistaken for the answer. (1, 1) to (4, 5): the midpoint is (2.5, 3), the segment runs
         // (3, 4), and the bisector is that turned a quarter turn anticlockwise, (-4, 3) / 5.
         let slanted = try #require(GccAnaBisector.ofPoints(SIMD2(1, 1), SIMD2(4, 5)))
-        #expect(simd_distance(slanted.point, SIMD2(2.5, 3)) < 1e-12)
-        #expect(simd_distance(slanted.direction, SIMD2(-0.8, 0.6)) < 1e-12)
+        #expect(vectorDistance(slanted.point, SIMD2(2.5, 3)) < 1e-12)
+        #expect(vectorDistance(slanted.direction, SIMD2(-0.8, 0.6)) < 1e-12)
     }
 
     @Test("Angle bisectors of two lines")
@@ -42,9 +41,9 @@ import simd
         // solver's own (measured): the bisector of the angle between the lines, then the one
         // across it.
         let r = 0.5.squareRoot()
-        #expect(results.allSatisfy { simd_length($0.point) < 1e-12 })
-        #expect(simd_distance(results[0].direction, SIMD2(r, r)) < 1e-12)
-        #expect(simd_distance(results[1].direction, SIMD2(-r, r)) < 1e-12)
+        #expect(results.allSatisfy { vectorLength($0.point) < 1e-12 })
+        #expect(vectorDistance(results[0].direction, SIMD2(r, r)) < 1e-12)
+        #expect(vectorDistance(results[1].direction, SIMD2(-r, r)) < 1e-12)
 
         // Lines at 0 and 60 degrees, which are not symmetric under swapping x and y: the angle
         // bisectors are at 30 and 120 degrees, (cos 30, sin 30) and (-sin 30, cos 30).
@@ -53,9 +52,9 @@ import simd
             line2Point: SIMD2(0, 0), line2Dir: SIMD2(0.5, 0.75.squareRoot()))
         try #require(slanted.count == 2)
         let s = 0.75.squareRoot()
-        #expect(slanted.allSatisfy { simd_length($0.point) < 1e-12 })
-        #expect(simd_distance(slanted[0].direction, SIMD2(s, 0.5)) < 1e-12)
-        #expect(simd_distance(slanted[1].direction, SIMD2(-0.5, s)) < 1e-12)
+        #expect(slanted.allSatisfy { vectorLength($0.point) < 1e-12 })
+        #expect(vectorDistance(slanted[0].direction, SIMD2(s, 0.5)) < 1e-12)
+        #expect(vectorDistance(slanted[1].direction, SIMD2(-0.5, s)) < 1e-12)
     }
 
     @Test("Bisector between line and point")
@@ -66,7 +65,7 @@ import simd
                 point: SIMD2(5, 5)))
         // The parabola with focus (5, 5) and directrix y = 0: vertex (5, 2.5), focal 2.5.
         #expect(sol.type == .parabola)
-        #expect(simd_distance(sol.position, SIMD2(5, 2.5)) < 1e-12)
+        #expect(vectorDistance(sol.position, SIMD2(5, 2.5)) < 1e-12)
         #expect(abs(sol.secondary.x - 2.5) < 1e-12)
         #expect(sol.secondary.y == 0)
     }
@@ -82,7 +81,7 @@ import simd
         // difference: a = 1 and a = 4, two branches each.
         try #require(results.count == 4)
         #expect(results.allSatisfy { $0.type == .hyperbola })
-        #expect(results.allSatisfy { simd_distance($0.position, SIMD2(7.5, 0)) < 1e-9 })
+        #expect(results.allSatisfy { vectorDistance($0.position, SIMD2(7.5, 0)) < 1e-9 })
         let c = 7.5
         let byMajor = results.sorted { $0.secondary.x < $1.secondary.x }
         for (sol, a) in zip(byMajor, [1.0, 1.0, 4.0, 4.0]) {
@@ -119,8 +118,8 @@ import simd
         // point, so c = 5, and a = radius / 2 = 2.5, which gives b = sqrt(25 - 6.25).
         try #require(results.count == 2)
         #expect(results.allSatisfy { $0.type == .hyperbola })
-        #expect(results.allSatisfy { simd_distance($0.position, SIMD2(5, 0)) < 1e-9 })
+        #expect(results.allSatisfy { vectorDistance($0.position, SIMD2(5, 0)) < 1e-9 })
         let b = (25.0 - 6.25).squareRoot()
-        #expect(results.allSatisfy { simd_distance($0.secondary, SIMD2(2.5, b)) < 1e-12 })
+        #expect(results.allSatisfy { vectorDistance($0.secondary, SIMD2(2.5, b)) < 1e-12 })
     }
 }

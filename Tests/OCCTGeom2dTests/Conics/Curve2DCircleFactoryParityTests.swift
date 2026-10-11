@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -32,8 +31,8 @@ struct Curve2DCircleFactoryParityTests {
         let b = try #require(gce)
         // #1979: agreement alone passed two factories wrong the same way. Both start at (8, -4),
         // as gce_MakeCirc2d and Geom2d_Circle give (Scripts/repro/766-geom2d-conic-factory-parity/).
-        #expect(simd_distance(a.point(at: 0), SIMD2(8, -4)) < 1e-9)
-        #expect(simd_distance(b.point(at: 0), SIMD2(8, -4)) < 1e-9)
+        #expect(vectorDistance(a.point(at: 0), SIMD2(8, -4)) < 1e-9)
+        #expect(vectorDistance(b.point(at: 0), SIMD2(8, -4)) < 1e-9)
 
         #expect(a.isClosed == b.isClosed)
         #expect(a.isPeriodic == b.isPeriodic)

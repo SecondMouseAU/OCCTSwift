@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -16,8 +15,8 @@ struct GCMakeCircleTests {
             #expect(c.isClosed)
             // isClosed holds for every circle. Pin it (kernel values from
             // Scripts/repro/766-math-gc-circle-cone-cylinder/transcript.txt).
-            #expect(simd_length(c.point(at: 0) - SIMD3(5, 0, 0)) < 1e-9)
-            #expect(simd_length(c.point(at: .pi / 2) - SIMD3(0, 5, 0)) < 1e-9)
+            #expect(vectorLength(c.point(at: 0) - SIMD3(5, 0, 0)) < 1e-9)
+            #expect(vectorLength(c.point(at: .pi / 2) - SIMD3(0, 5, 0)) < 1e-9)
         }
     }
 
@@ -28,8 +27,8 @@ struct GCMakeCircleTests {
             #expect(c.isClosed)
             // isClosed holds for every circle. Pin it (kernel values from
             // Scripts/repro/766-math-gc-circle-cone-cylinder/transcript.txt).
-            #expect(simd_length(c.point(at: 0) - SIMD3(1, 0, 0)) < 1e-9)
-            #expect(simd_length(c.point(at: .pi / 2) - SIMD3(0, 1, 0)) < 1e-9)
+            #expect(vectorLength(c.point(at: 0) - SIMD3(1, 0, 0)) < 1e-9)
+            #expect(vectorLength(c.point(at: .pi / 2) - SIMD3(0, 1, 0)) < 1e-9)
         }
     }
 
@@ -41,8 +40,8 @@ struct GCMakeCircleTests {
             #expect(c.isClosed)
             // isClosed holds for every circle. Pin it (kernel values from
             // Scripts/repro/766-math-gc-circle-cone-cylinder/transcript.txt).
-            #expect(simd_length(c.point(at: 0) - SIMD3(11, 2, 3)) < 1e-9)
-            #expect(simd_length(c.point(at: .pi / 2) - SIMD3(1, 12, 3)) < 1e-9)
+            #expect(vectorLength(c.point(at: 0) - SIMD3(11, 2, 3)) < 1e-9)
+            #expect(vectorLength(c.point(at: .pi / 2) - SIMD3(1, 12, 3)) < 1e-9)
         }
     }
 
@@ -55,8 +54,8 @@ struct GCMakeCircleTests {
             #expect(c.isClosed)
             // isClosed holds for every circle. Pin it (kernel values from
             // Scripts/repro/766-math-gc-circle-cone-cylinder/transcript.txt).
-            #expect(simd_length(c.point(at: 0) - SIMD3(8, 0, 0)) < 1e-9)
-            #expect(simd_length(c.point(at: .pi / 2) - SIMD3(0, 8, 0)) < 1e-9)
+            #expect(vectorLength(c.point(at: 0) - SIMD3(8, 0, 0)) < 1e-9)
+            #expect(vectorLength(c.point(at: .pi / 2) - SIMD3(0, 8, 0)) < 1e-9)
         }
     }
 }

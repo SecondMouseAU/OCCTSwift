@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -23,7 +22,7 @@ struct HyperbolaThreePointsTests {
         // exchanged. Pin the curve itself: P(u) = C + 5 cosh(u) X + 3 sinh(u) Y, so the vertex
         // is (5, 0, 0) and P(1) = (5 cosh 1, 3 sinh 1, 0), as GC_MakeHyperbola reports
         // (Scripts/repro/766-math-gtrsf-hyperbola-precision/transcript.txt).
-        #expect(simd_length(c.point(at: 0) - SIMD3(5, 0, 0)) < 1e-9)
-        #expect(simd_length(c.point(at: 1) - SIMD3(5 * cosh(1.0), 3 * sinh(1.0), 0)) < 1e-9)
+        #expect(vectorLength(c.point(at: 0) - SIMD3(5, 0, 0)) < 1e-9)
+        #expect(vectorLength(c.point(at: 1) - SIMD3(5 * cosh(1.0), 3 * sinh(1.0), 0)) < 1e-9)
     }
 }

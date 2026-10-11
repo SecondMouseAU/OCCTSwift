@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -22,7 +21,7 @@ struct Curve2DInteriorTangentTests {
     private func knots(_ pts: [SIMD2<Double>]) -> [Double] {
         var out: [Double] = [0]
         for i in 1..<pts.count {
-            out.append(out[i - 1] + simd_distance(pts[i], pts[i - 1]))
+            out.append(out[i - 1] + vectorDistance(pts[i], pts[i - 1]))
         }
         return out
     }
@@ -30,7 +29,7 @@ struct Curve2DInteriorTangentTests {
     /// Checks that `curve` passes through every point of `pts` at that point's own knot.
     private func expectInterpolates(_ curve: Curve2D, _ pts: [SIMD2<Double>]) {
         for (i, u) in knots(pts).enumerated() {
-            let miss = simd_distance(curve.point(at: u), pts[i])
+            let miss = vectorDistance(curve.point(at: u), pts[i])
             #expect(miss < 1e-9, "point \(i) missed by \(miss) at u = \(u)")
         }
     }
@@ -49,7 +48,7 @@ struct Curve2DInteriorTangentTests {
         #expect(abs(w.domain.upperBound - length) < 1e-9)
         for i in 0...4 {
             let u = w.domain.upperBound * Double(i) / 4
-            #expect(simd_distance(w.point(at: u), b.point(at: u)) < 1e-12, "u = \(u)")
+            #expect(vectorDistance(w.point(at: u), b.point(at: u)) < 1e-12, "u = \(u)")
         }
         expectInterpolates(w, pts)
     }
@@ -70,8 +69,8 @@ struct Curve2DInteriorTangentTests {
         // different curve. The derivative at the start is (2.1213, 0).
         let start = try #require(c.tangentDirection(at: c.domain.lowerBound))
         let end = try #require(c.tangentDirection(at: c.domain.upperBound))
-        #expect(simd_distance(start, SIMD2(1, 0)) < 1e-9)
-        #expect(simd_distance(end, SIMD2(1, 0)) < 1e-9)
+        #expect(vectorDistance(start, SIMD2(1, 0)) < 1e-9)
+        #expect(vectorDistance(end, SIMD2(1, 0)) < 1e-9)
         #expect(c.poleCount == 5)
 
         // The control: the same points with no constraint leave the arch rising steeply, so the
@@ -99,13 +98,13 @@ struct Curve2DInteriorTangentTests {
         #expect(abs(u - 6.76782893563) < 1e-9)
         let tan = try #require(c.tangentDirection(at: u))
         let wanted = SIMD2<Double>(1, 2) / Double(5).squareRoot()
-        #expect(simd_distance(tan, wanted) < 1e-9)
+        #expect(vectorDistance(tan, wanted) < 1e-9)
         #expect(c.poleCount == 8)
 
         // The control: unconstrained, the same curve is horizontal at that knot.
         let plain = try #require(Curve2D.interpolate(through: pts))
         let natural = try #require(plain.tangentDirection(at: u))
-        #expect(simd_distance(natural, wanted) > 0.5, "unconstrained tangent \(natural)")
+        #expect(vectorDistance(natural, wanted) > 0.5, "unconstrained tangent \(natural)")
     }
 
     @Test("Closed curve with interior tangent constraint")
@@ -130,7 +129,7 @@ struct Curve2DInteriorTangentTests {
         // Horizontal at the second point, along +x.
         let u = knots(pts)[1]
         let tan = try #require(c.tangentDirection(at: u))
-        #expect(simd_distance(tan, SIMD2(1, 0)) < 1e-9)
+        #expect(vectorDistance(tan, SIMD2(1, 0)) < 1e-9)
 
         // The control: without the constraint the loop climbs through that point.
         let plain = try #require(Curve2D.interpolate(through: pts, closed: true))
@@ -148,7 +147,7 @@ struct Curve2DInteriorTangentTests {
         let c = try #require(Curve2D.interpolate(through: pts, tangents: tangents))
         #expect(c.poleCount == 4)
         expectInterpolates(c, pts)
-        #expect(simd_distance(c.point(at: 5), SIMD2(5, 0)) < 1e-9)
+        #expect(vectorDistance(c.point(at: 5), SIMD2(5, 0)) < 1e-9)
         let plain = try #require(Curve2D.interpolate(through: pts))
         #expect(plain.poleCount == 2)
     }
@@ -164,14 +163,14 @@ struct Curve2DInteriorTangentTests {
         expectInterpolates(c, pts)
         let start = try #require(c.tangentDirection(at: c.domain.lowerBound))
         let end = try #require(c.tangentDirection(at: c.domain.upperBound))
-        #expect(simd_distance(start, SIMD2(0, 1)) < 1e-9)
-        #expect(simd_distance(end, SIMD2(0, 1)) < 1e-9)
-        #expect(simd_distance(c.point(at: 5), SIMD2(5, 0)) < 1e-9)
+        #expect(vectorDistance(start, SIMD2(0, 1)) < 1e-9)
+        #expect(vectorDistance(end, SIMD2(0, 1)) < 1e-9)
+        #expect(vectorDistance(c.point(at: 5), SIMD2(5, 0)) < 1e-9)
         // A quarter of the way along, the cubic Hermite form with end derivatives (0, 1) over a
         // parameter span of 10 is at t = 1/4: x = 10 (3 t^2 - 2 t^3) = 1.5625 and
         // y = 10 (2 t^3 - 3 t^2 + t) = 0.9375, so the curve has left the x axis. The kernel keeps
         // the unit derivative the caller gave (`Scripts/repro/766-geom2d-curve2d-cluster/`).
-        #expect(simd_distance(c.point(at: 2.5), SIMD2(1.5625, 0.9375)) < 1e-9)
+        #expect(vectorDistance(c.point(at: 2.5), SIMD2(1.5625, 0.9375)) < 1e-9)
     }
 
     @Test("A tangent keyed outside 0..<points.count is refused, not dropped (#3036)")
@@ -196,9 +195,9 @@ struct Curve2DInteriorTangentTests {
         let both = try #require(Curve2D.interpolate(through: pts, tangents: [0: east, 2: east]))
         #expect(both.poleCount == 5)
         let start = try #require(both.tangentDirection(at: both.domain.lowerBound))
-        #expect(simd_distance(start, east) < 1e-9)
+        #expect(vectorDistance(start, east) < 1e-9)
         let last = try #require(Curve2D.interpolate(through: pts, tangents: [2: east]))
         let end = try #require(last.tangentDirection(at: last.domain.upperBound))
-        #expect(simd_distance(end, east) < 1e-9)
+        #expect(vectorDistance(end, east) < 1e-9)
     }
 }

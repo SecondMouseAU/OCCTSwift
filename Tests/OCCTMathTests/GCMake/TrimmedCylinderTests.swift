@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -27,8 +26,8 @@ struct TrimmedCylinderTests {
         #expect(abs((d.uMax - d.uMin) - 2 * Double.pi) < 1e-9)
 
         // Both end circles, at the requested radius and at the two ends of the requested height.
-        #expect(simd_length(surf.point(atU: 0, v: d.vMin) - SIMD3(4, 0, 0)) < 1e-9)
-        #expect(simd_length(surf.point(atU: 0, v: d.vMax) - SIMD3(4, 0, 8)) < 1e-9)
-        #expect(simd_length(surf.point(atU: .pi, v: d.vMin) - SIMD3(-4, 0, 0)) < 1e-9)
+        #expect(vectorLength(surf.point(atU: 0, v: d.vMin) - SIMD3(4, 0, 0)) < 1e-9)
+        #expect(vectorLength(surf.point(atU: 0, v: d.vMax) - SIMD3(4, 0, 8)) < 1e-9)
+        #expect(vectorLength(surf.point(atU: .pi, v: d.vMin) - SIMD3(-4, 0, 0)) < 1e-9)
     }
 }

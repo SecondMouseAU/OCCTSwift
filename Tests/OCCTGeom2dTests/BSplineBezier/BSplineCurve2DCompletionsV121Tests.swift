@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -34,7 +33,7 @@ struct BSplineCurve2DCompletionsV121Tests {
         #expect(curve.bsplineSetNotPeriodic())
         #expect(!curve.isPeriodic)
         #expect(curve.bspline.poleCount == 7)
-        #expect(simd_distance(curve.point(at: 20), SIMD2(10, 10)) < 1e-9)
+        #expect(vectorDistance(curve.point(at: 20), SIMD2(10, 10)) < 1e-9)
     }
 
     @Test("IncreaseMultiplicity 2D")
@@ -46,7 +45,7 @@ struct BSplineCurve2DCompletionsV121Tests {
         #expect(r)
         #expect(curve.bsplineMultiplicities == [4, 2, 4])
         #expect(curve.bspline.poleCount == 6)
-        #expect(simd_distance(curve.point(at: 0.25), SIMD2(2.40625, 2.8125)) < 1e-9)
+        #expect(vectorDistance(curve.point(at: 0.25), SIMD2(2.40625, 2.8125)) < 1e-9)
     }
 
     @Test("Reverse 2D")
@@ -54,9 +53,9 @@ struct BSplineCurve2DCompletionsV121Tests {
         let curve = try makeBSplineCurve2D()
         let r = curve.bsplineReverse()
         #expect(r)
-        #expect(simd_distance(curve.point(at: 0), SIMD2(10, 0)) < 1e-9)
-        #expect(simd_distance(curve.point(at: 0.25), SIMD2(7.59375, 2.8125)) < 1e-9)
-        #expect(simd_distance(curve.point(at: 1), SIMD2(0, 0)) < 1e-9)
+        #expect(vectorDistance(curve.point(at: 0), SIMD2(10, 0)) < 1e-9)
+        #expect(vectorDistance(curve.point(at: 0.25), SIMD2(7.59375, 2.8125)) < 1e-9)
+        #expect(vectorDistance(curve.point(at: 1), SIMD2(0, 0)) < 1e-9)
     }
 
     @Test("SetKnots 2D")
@@ -65,7 +64,7 @@ struct BSplineCurve2DCompletionsV121Tests {
         let r = curve.bsplineSetKnots([0.0, 2.0])
         #expect(r)
         #expect(abs(curve.domain.upperBound - 2.0) < 1e-12)
-        #expect(simd_distance(curve.point(at: 1.0), SIMD2(5, 3.75)) < 1e-9)
+        #expect(vectorDistance(curve.point(at: 1.0), SIMD2(5, 3.75)) < 1e-9)
     }
 
     @Test("MovePointAndTangent 2D")
@@ -81,7 +80,7 @@ struct BSplineCurve2DCompletionsV121Tests {
             u: 0.5, point: target, tangent: tangent,
             tolerance: 1e-6, startingCondition: 1, endingCondition: 1)
         #expect(!r)
-        #expect(simd_distance(curve.point(at: 0.5), SIMD2(5, 3.75)) < 1e-9)
+        #expect(vectorDistance(curve.point(at: 0.5), SIMD2(5, 3.75)) < 1e-9)
     }
 
     // #1542: startingCondition/endingCondition are OCCT's independent continuity codes, not a
@@ -97,8 +96,8 @@ struct BSplineCurve2DCompletionsV121Tests {
             u: 0.5, point: target, tangent: tangent,
             tolerance: 1e-6, startingCondition: 1, endingCondition: -1)
         #expect(r)
-        #expect(simd_distance(curve.point(at: 0.5), target) < 1e-9)
-        #expect(simd_distance(curve.point(at: 1), SIMD2(-9, -25)) < 1e-9)
+        #expect(vectorDistance(curve.point(at: 0.5), target) < 1e-9)
+        #expect(vectorDistance(curve.point(at: 1), SIMD2(-9, -25)) < 1e-9)
     }
 
     @Test("IncrementMultiplicity 2D")
@@ -123,6 +122,6 @@ struct BSplineCurve2DCompletionsV121Tests {
         // #766: `!r` alone also holds for a bridge that mangles the curve and then reports
         // failure, so the refusal pins that the curve is the one the helper built.
         #expect(curve.bsplineMultiplicities == [4, 4])
-        #expect(simd_distance(curve.point(at: 0.5), SIMD2(5, 3.75)) < 1e-9)
+        #expect(vectorDistance(curve.point(at: 0.5), SIMD2(5, 3.75)) < 1e-9)
     }
 }

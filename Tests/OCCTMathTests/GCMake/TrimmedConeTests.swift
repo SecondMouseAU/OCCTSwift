@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -31,9 +30,9 @@ struct TrimmedConeTests {
         #expect(abs((d.uMax - d.uMin) - 2 * Double.pi) < 1e-9)
 
         // The two end circles, which pin both radii and both heights at once.
-        #expect(simd_length(surf.point(atU: 0, v: d.vMin) - SIMD3(5, 0, 0)) < 1e-9)
-        #expect(simd_length(surf.point(atU: 0, v: d.vMax) - SIMD3(2, 0, 10)) < 1e-9)
+        #expect(vectorLength(surf.point(atU: 0, v: d.vMin) - SIMD3(5, 0, 0)) < 1e-9)
+        #expect(vectorLength(surf.point(atU: 0, v: d.vMax) - SIMD3(2, 0, 10)) < 1e-9)
         // Half a turn round the base circle, so the trim did not collapse u.
-        #expect(simd_length(surf.point(atU: .pi, v: d.vMin) - SIMD3(-5, 0, 0)) < 1e-9)
+        #expect(vectorLength(surf.point(atU: .pi, v: d.vMin) - SIMD3(-5, 0, 0)) < 1e-9)
     }
 }

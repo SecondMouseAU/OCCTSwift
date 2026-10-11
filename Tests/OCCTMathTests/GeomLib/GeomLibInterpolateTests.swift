@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -18,7 +17,7 @@ struct GeomLibInterpolateTests {
         let curve = try #require(
             Curve3D.polynomialInterpolation(degree: 3, points: points, parameters: params))
         for (p, t) in zip(points, params) {
-            #expect(simd_length(curve.point(at: t) - p) < 1e-9)
+            #expect(vectorLength(curve.point(at: t) - p) < 1e-9)
         }
     }
 

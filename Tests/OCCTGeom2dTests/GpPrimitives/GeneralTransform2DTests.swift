@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -26,7 +25,7 @@ struct GeneralTransform2DTests {
         // #1979: the product was discarded. Ratio 2 then 0.5 composes to the identity.
         let r = a.multiplied(by: b)
         #expect(zip(r.matrix, [1.0, 0, 0, 1]).allSatisfy { abs($0 - $1) < 1e-12 })
-        #expect(simd_length(r.translation) < 1e-12)
+        #expect(vectorLength(r.translation) < 1e-12)
     }
 
     @Test func invert() throws {

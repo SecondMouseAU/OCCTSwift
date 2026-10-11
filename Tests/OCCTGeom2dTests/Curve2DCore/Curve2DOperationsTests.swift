@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -27,8 +26,8 @@ struct Curve2DOperationsTests {
         // +2 on the right of +x: the segment (0, -2)-(10, -2)
         // (Scripts/repro/766-geom2d-localprops-operations/).
         let offset = try #require(seg.offset(by: 2.0))
-        #expect(simd_distance(offset.startPoint, SIMD2(0, -2)) < 1e-9)
-        #expect(simd_distance(offset.endPoint, SIMD2(10, -2)) < 1e-9)
+        #expect(vectorDistance(offset.startPoint, SIMD2(0, -2)) < 1e-9)
+        #expect(vectorDistance(offset.endPoint, SIMD2(10, -2)) < 1e-9)
     }
 
     @Test("Reverse segment swaps endpoints")

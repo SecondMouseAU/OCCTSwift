@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -19,7 +18,7 @@ struct Curve2DGccTests {
         // #1979: `radius > 0` passed any circle. Geom2dGcc_Circ2d3Tan gives the circumcircle,
         // centre (5, 0), radius 5 (Scripts/repro/766-geom2d-gcc-hatching/).
         try #require(results.count == 1)
-        #expect(simd_distance(results[0].center, SIMD2(5, 0)) < 1e-9)
+        #expect(vectorDistance(results[0].center, SIMD2(5, 0)) < 1e-9)
         #expect(abs(results[0].radius - 5) < 1e-9)
     }
 
@@ -67,8 +66,8 @@ struct Curve2DGccTests {
         // side: Geom2dGcc_Lin2d2Tan returns one solution, touching at (2.5, 4.3301)
         // (Scripts/repro/766-geom2d-gcc-hatching/).
         try #require(results.count == 1)
-        #expect(simd_distance(results[0].point, SIMD2(2.5, 4.33012701892)) < 1e-9)
-        #expect(simd_distance(results[0].direction, SIMD2(0.866025403784, -0.5)) < 1e-9)
+        #expect(vectorDistance(results[0].point, SIMD2(2.5, 4.33012701892)) < 1e-9)
+        #expect(vectorDistance(results[0].direction, SIMD2(0.866025403784, -0.5)) < 1e-9)
     }
 
     @Test("Circles tangent to curve and point with radius")

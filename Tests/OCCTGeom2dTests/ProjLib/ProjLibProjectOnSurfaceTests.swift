@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -21,7 +20,7 @@ struct ProjLibProjectOnSurfaceTests {
         let domain = projected.domain
         #expect(abs(domain.lowerBound) < 1e-12 && abs(domain.upperBound - 10) < 1e-12)
         let start = projected.point(at: domain.lowerBound)
-        #expect(simd_distance(start, SIMD3(4.08248290464, 2.88675134595, 3.53553390593)) < 1e-9)
-        #expect(abs(simd_length(SIMD2(start.x, start.y)) - 5) < 1e-9)
+        #expect(vectorDistance(start, SIMD3(4.08248290464, 2.88675134595, 3.53553390593)) < 1e-9)
+        #expect(abs(vectorLength(SIMD2(start.x, start.y)) - 5) < 1e-9)
     }
 }

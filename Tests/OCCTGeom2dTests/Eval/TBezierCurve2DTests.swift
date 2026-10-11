@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -18,8 +17,8 @@ struct TBezierCurve2DTests {
         let domain = curve.domain
         #expect(abs(domain.lowerBound) < 1e-12)
         #expect(abs(domain.upperBound - .pi) < 1e-12)
-        #expect(simd_distance(curve.point(at: 0), SIMD2(2, 0)) < 1e-9)
-        #expect(simd_distance(curve.point(at: .pi / 2), SIMD2(1, 1)) < 1e-9)
-        #expect(simd_distance(curve.point(at: .pi), SIMD2(-2, 0)) < 1e-9)
+        #expect(vectorDistance(curve.point(at: 0), SIMD2(2, 0)) < 1e-9)
+        #expect(vectorDistance(curve.point(at: .pi / 2), SIMD2(1, 1)) < 1e-9)
+        #expect(vectorDistance(curve.point(at: .pi), SIMD2(-2, 0)) < 1e-9)
     }
 }

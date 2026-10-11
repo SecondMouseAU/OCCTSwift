@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -27,8 +26,8 @@ struct Issue881SectionPerpendicularBasisTests {
     @Test("sectionPlaneBasis's auto-derived (u, v) matches OCCT's gp_Ax2 canonical basis")
     func autoDerivedBasisMatchesGpAx2() {
         let (u, v) = Shape.sectionPlaneBasis(normal: Self.nearDegenerate, explicitU: nil)
-        #expect(simd_length(u - Self.expectedU) < 1e-9)
-        #expect(simd_length(v - Self.expectedV) < 1e-9)
+        #expect(vectorLength(u - Self.expectedU) < 1e-9)
+        #expect(vectorLength(v - Self.expectedV) < 1e-9)
     }
 
     @Test("sectionPlaneBasis with an explicitU is unaffected by the unification")
@@ -37,10 +36,11 @@ struct Issue881SectionPerpendicularBasisTests {
         // orthogonalisation against the supplied vector is untouched by #881.
         let explicit = SIMD3<Double>(1, 1, 0)
         let (u, v) = Shape.sectionPlaneBasis(normal: Self.nearDegenerate, explicitU: explicit)
-        #expect(abs(simd_length(u) - 1.0) < 1e-9)
-        #expect(abs(simd_dot(u, simd_normalize(Self.nearDegenerate))) < 1e-9)
+        #expect(abs(vectorLength(u) - 1.0) < 1e-9)
+        #expect(abs(dotProduct(u, normalizedVector(Self.nearDegenerate))) < 1e-9)
         #expect(
-            simd_length(v - simd_normalize(simd_cross(simd_normalize(Self.nearDegenerate), u)))
+            vectorLength(
+                v - normalizedVector(crossProduct(normalizedVector(Self.nearDegenerate), u)))
                 < 1e-9)
     }
 }

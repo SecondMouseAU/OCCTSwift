@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -22,8 +21,8 @@ struct GceMakeConeTests {
         // the inputs fix.
         #expect(abs(abs(cone.coneProperties.semiAngle) - atan(0.3)) < 1e-12)
         // The apex is where that slope reaches radius 0, at z = 10 * 5/3, and both radii are in it.
-        #expect(simd_length(cone.coneProperties.apex - SIMD3(0, 0, 50.0 / 3.0)) < 1e-9)
-        #expect(simd_length(cone.point(atU: 0, v: 0) - SIMD3(5, 0, 0)) < 1e-9)
+        #expect(vectorLength(cone.coneProperties.apex - SIMD3(0, 0, 50.0 / 3.0)) < 1e-9)
+        #expect(vectorLength(cone.point(atU: 0, v: 0) - SIMD3(5, 0, 0)) < 1e-9)
     }
 
     // #420: coneFrom2PointsRadii and conicalSurface(point1:point2:r1:r2:) now
@@ -45,10 +44,10 @@ struct GceMakeConeTests {
         #expect(abs(viaGce.coneProperties.semiAngle - viaGC.coneProperties.semiAngle) < 1e-9)
         #expect(abs(viaGce.coneProperties.refRadius - viaGC.coneProperties.refRadius) < 1e-9)
         #expect(
-            simd_length(viaGce.coneProperties.axis.position - viaGC.coneProperties.axis.position)
+            vectorLength(viaGce.coneProperties.axis.position - viaGC.coneProperties.axis.position)
                 < 1e-9)
         #expect(
-            simd_length(viaGce.coneProperties.axis.direction - viaGC.coneProperties.axis.direction)
+            vectorLength(viaGce.coneProperties.axis.direction - viaGC.coneProperties.axis.direction)
                 < 1e-9)
     }
 }

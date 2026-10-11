@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -12,7 +11,7 @@ struct GccAnaLin2d2TanTests {
         let r = try #require(lineThroughPoints(SIMD2(0, 0), SIMD2(1, 1)))
         // Direction (1, 1)/sqrt 2, sign included, through the origin.
         let s = 0.5.squareRoot()
-        #expect(simd_distance(r.direction, SIMD2(s, s)) < 1e-9)
+        #expect(vectorDistance(r.direction, SIMD2(s, s)) < 1e-9)
         #expect(abs(r.origin.x - r.origin.y) < 1e-9)
     }
 

@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -18,8 +17,8 @@ import simd
                 with: l2,
                 referencePoint: SIMD2(1, 1),
                 direction1: SIMD2(1, 0), direction2: SIMD2(0, 1)))
-        #expect(simd_distance(bisector.point(at: 0), SIMD2(1, 1)) < 1e-9)
-        #expect(simd_distance(bisector.point(at: 1), SIMD2(0.292893218813, 1.70710678119)) < 1e-9)
+        #expect(vectorDistance(bisector.point(at: 0), SIMD2(1, 1)) < 1e-9)
+        #expect(vectorDistance(bisector.point(at: 1), SIMD2(0.292893218813, 1.70710678119)) < 1e-9)
     }
 
     @Test("Bisector between two points")
@@ -31,7 +30,7 @@ import simd
                 SIMD2(0, 0), SIMD2(10, 0),
                 referencePoint: SIMD2(5, 0),
                 direction1: SIMD2(1, 0), direction2: SIMD2(-1, 0)))
-        #expect(simd_distance(bisector.point(at: 0), SIMD2(5, 0)) < 1e-9)
-        #expect(simd_distance(bisector.point(at: 5), SIMD2(5, 5)) < 1e-9)
+        #expect(vectorDistance(bisector.point(at: 0), SIMD2(5, 0)) < 1e-9)
+        #expect(vectorDistance(bisector.point(at: 5), SIMD2(5, 5)) < 1e-9)
     }
 }

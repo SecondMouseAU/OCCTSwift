@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -96,7 +95,7 @@ struct Curve2DAnalysisTests {
             // The corner (5, 5) sits at the middle of the joined parameter range.
             let d = joined.domain
             let mid = joined.point(at: (d.lowerBound + d.upperBound) / 2)
-            #expect(simd_distance(mid, SIMD2(5, 5)) < 1e-9)
+            #expect(vectorDistance(mid, SIMD2(5, 5)) < 1e-9)
         }
     }
 

@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -30,8 +29,8 @@ struct WireFromCurve2DOnPlaneTests {
         let w = try #require(Wire.fromCurve2D(seg))
         #expect(abs((w.length ?? 0) - 10.0) < 1e-9)
         let e = try ends(w)
-        #expect(simd_distance(e.start, SIMD3(0, 0, 0)) < 1e-9)
-        #expect(simd_distance(e.end, SIMD3(10, 0, 0)) < 1e-9)
+        #expect(vectorDistance(e.start, SIMD3(0, 0, 0)) < 1e-9)
+        #expect(vectorDistance(e.end, SIMD3(10, 0, 0)) < 1e-9)
         let shape = try #require(Shape.fromWire(w))
         #expect(shape.isValid)
     }
@@ -46,8 +45,8 @@ struct WireFromCurve2DOnPlaneTests {
         let w = try #require(Wire.fromCurve2D(arc))
         #expect(abs((w.length ?? 0) - .pi / 2.0 * 5.0) < 1e-9)
         let e = try ends(w)
-        #expect(simd_distance(e.start, SIMD3(5, 0, 0)) < 1e-9)
-        #expect(simd_distance(e.end, SIMD3(0, 5, 0)) < 1e-9)
+        #expect(vectorDistance(e.start, SIMD3(5, 0, 0)) < 1e-9)
+        #expect(vectorDistance(e.end, SIMD3(0, 5, 0)) < 1e-9)
         let shape = try #require(Shape.fromWire(w))
         #expect(shape.isValid)
     }
@@ -62,8 +61,8 @@ struct WireFromCurve2DOnPlaneTests {
                 normal: SIMD3(0, 0, 1),
                 xAxis: SIMD3(1, 0, 0)))
         let e = try ends(w)
-        #expect(simd_distance(e.start, SIMD3(0, 0, 5)) < 1e-9)
-        #expect(simd_distance(e.end, SIMD3(10, 0, 5)) < 1e-9)
+        #expect(vectorDistance(e.start, SIMD3(0, 0, 5)) < 1e-9)
+        #expect(vectorDistance(e.end, SIMD3(10, 0, 5)) < 1e-9)
         // The box of an edge carries the edge's 1e-7 tolerance, so 1e-6 is what it can pin.
         let shape = try #require(Shape.fromWire(w))
         let bb = try #require(shape.bounds)
@@ -84,8 +83,8 @@ struct WireFromCurve2DOnPlaneTests {
                 xAxis: SIMD3(0, 1, 0)))
         // X should stay at 3; Y spans 0-5; Z stays 0
         let e = try ends(w)
-        #expect(simd_distance(e.start, SIMD3(3, 0, 0)) < 1e-9)
-        #expect(simd_distance(e.end, SIMD3(3, 5, 0)) < 1e-9)
+        #expect(vectorDistance(e.start, SIMD3(3, 0, 0)) < 1e-9)
+        #expect(vectorDistance(e.end, SIMD3(3, 5, 0)) < 1e-9)
         let shape = try #require(Shape.fromWire(w))
         let bb = try #require(shape.bounds)
         #expect(abs(bb.min.x - 3.0) < 1e-6)
@@ -108,8 +107,8 @@ struct WireFromCurve2DOnPlaneTests {
                 seg, origin: SIMD3(3, 0, 0), normal: SIMD3(1, 0, 0), xAxis: SIMD3(0, 1, 0)))
         #expect(abs((up.length ?? 0) - 5) < 1e-9)
         let upEnds = try ends(up)
-        #expect(simd_distance(upEnds.start, SIMD3(3, 0, 0)) < 1e-9)
-        #expect(simd_distance(upEnds.end, SIMD3(3, 3, 4)) < 1e-9)
+        #expect(vectorDistance(upEnds.start, SIMD3(3, 0, 0)) < 1e-9)
+        #expect(vectorDistance(upEnds.end, SIMD3(3, 3, 4)) < 1e-9)
 
         // The same plane seen from the other side: normal -x gives (-1, 0, 0) x (0, 1, 0) =
         // (0, 0, -1), so v is -z and the end is (3, 3, -4). A lift that ignored the normal's
@@ -118,7 +117,7 @@ struct WireFromCurve2DOnPlaneTests {
             Wire.fromCurve2D(
                 seg, origin: SIMD3(3, 0, 0), normal: SIMD3(-1, 0, 0), xAxis: SIMD3(0, 1, 0)))
         let downEnd = try ends(down).end
-        #expect(simd_distance(downEnd, SIMD3(3, 3, -4)) < 1e-9)
+        #expect(vectorDistance(downEnd, SIMD3(3, 3, -4)) < 1e-9)
 
         // An oblique origin on the xz plane: normal +y, x axis +x gives (0, 1, 0) x (1, 0, 0) =
         // (0, 0, -1), so the end is (1, 2, 3) + 3 * (1, 0, 0) + 4 * (0, 0, -1) = (4, 2, -1).
@@ -126,8 +125,8 @@ struct WireFromCurve2DOnPlaneTests {
             Wire.fromCurve2D(
                 seg, origin: SIMD3(1, 2, 3), normal: SIMD3(0, 1, 0), xAxis: SIMD3(1, 0, 0)))
         let obliqueEnds = try ends(oblique)
-        #expect(simd_distance(obliqueEnds.start, SIMD3(1, 2, 3)) < 1e-9)
-        #expect(simd_distance(obliqueEnds.end, SIMD3(4, 2, -1)) < 1e-9)
+        #expect(vectorDistance(obliqueEnds.start, SIMD3(1, 2, 3)) < 1e-9)
+        #expect(vectorDistance(obliqueEnds.end, SIMD3(4, 2, -1)) < 1e-9)
     }
 
     @Test("BSpline interpolated curve lifts to 3D wire")
@@ -144,8 +143,8 @@ struct WireFromCurve2DOnPlaneTests {
         #expect(abs((w.length ?? 0) - expected) < 1e-9)
         // The interpolant passes through its first and last point, and so does the lift.
         let e = try ends(w)
-        #expect(simd_distance(e.start, SIMD3(0, 0, 0)) < 1e-9)
-        #expect(simd_distance(e.end, SIMD3(10, 5, 0)) < 1e-9)
+        #expect(vectorDistance(e.start, SIMD3(0, 0, 0)) < 1e-9)
+        #expect(vectorDistance(e.end, SIMD3(10, 5, 0)) < 1e-9)
     }
 
     @Test("Resulting 3D wire can be used as profile for extrusion")

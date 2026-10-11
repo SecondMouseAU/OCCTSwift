@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -33,7 +32,7 @@ struct PlaneConstructionTests {
         // The control: a point 7 above the z = 0 plane is 7 away from it.
         #expect(abs(distance(from: SIMD3(0, 0, 7), to: surf) - 7) < 1e-9)
         // Three points in the z = 0 plane can only produce a plane normal to Z.
-        #expect(abs(abs(simd_dot(surf.planeProperties.pln.normal, SIMD3(0, 0, 1))) - 1) < 1e-9)
+        #expect(abs(abs(dotProduct(surf.planeProperties.pln.normal, SIMD3(0, 0, 1))) - 1) < 1e-9)
     }
 
     @Test("Plane from point and normal")
@@ -42,14 +41,14 @@ struct PlaneConstructionTests {
         let normal = SIMD3(1.0, 1.0, 1.0)
         let surf = try #require(Surface.planeFromPointNormal(point: origin, normal: normal))
         #expect(surf.isPlane)
-        #expect(simd_length(surf.planeProperties.pln.origin - origin) < 1e-9)
+        #expect(vectorLength(surf.planeProperties.pln.origin - origin) < 1e-9)
         // OCCT normalises the direction it was handed.
-        #expect(simd_length(surf.planeProperties.pln.normal - simd_normalize(normal)) < 1e-9)
+        #expect(vectorLength(surf.planeProperties.pln.normal - normalizedVector(normal)) < 1e-9)
         #expect(distance(from: origin, to: surf) < 1e-9)
         // The control: 2 along the unit normal is 2 off the plane, and 2 across it is still on.
-        let unit = simd_normalize(normal)
+        let unit = normalizedVector(normal)
         #expect(abs(distance(from: origin + 2 * unit, to: surf) - 2) < 1e-9)
-        let across = simd_normalize(simd_cross(unit, SIMD3(0.0, 0.0, 1.0)))
+        let across = normalizedVector(crossProduct(unit, SIMD3(0.0, 0.0, 1.0)))
         #expect(distance(from: origin + 2 * across, to: surf) < 1e-9)
     }
 }

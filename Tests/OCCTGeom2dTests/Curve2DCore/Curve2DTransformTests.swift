@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -22,8 +21,8 @@ struct Curve2DTransformTests {
     ) {
         let at0 = c.point(at: 0)
         let at1 = c.point(at: 1)
-        #expect(simd_distance(at0, start) < 1e-12, "\(label): u = 0 is \(at0), expected \(start)")
-        #expect(simd_distance(at1, next) < 1e-12, "\(label): u = 1 is \(at1), expected \(next)")
+        #expect(vectorDistance(at0, start) < 1e-12, "\(label): u = 0 is \(at0), expected \(start)")
+        #expect(vectorDistance(at1, next) < 1e-12, "\(label): u = 1 is \(at1), expected \(next)")
     }
 
     @Test("Translate 2D curve")
