@@ -52,7 +52,7 @@ and "weak on `main`, stronger on the head" rose 20 to 66, because a silent `else
 `OCCTMiscTests.swift`, `Issue213VProfile.flankAngleFromSpec`,
 `Issue1034NullAndEmptyTests.deprecatedAliasAgrees`) and are `main`'s renames or removals, which
 only a hand check sees. `census-766-weak-assertions.py --summary` is unchanged: 595 SEVERE and
-2,460 ESCAPABLE of 6,933 tests at `f7722275e`.
+2,460 ESCAPABLE of 6,933 tests at `f7722275e`. Re-measure before quoting any of these figures; they carry a commit pair and go stale as the tree moves.
 
 **The merged row stands at 876 gains over 396 paths**, measured on 2026-10-02 against
 `origin/main` at `e6a3b8f` and branch head `ee42388`. Most of the fall from 1,229 is the

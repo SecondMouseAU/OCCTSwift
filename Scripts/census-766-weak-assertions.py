@@ -889,6 +889,18 @@ struct OnlySuite {
     cases.append(("withKnownIssue assertions are excluded from live_pins (#3301)",
                   ki["tier"] == "clean" and ki["pinning"] == 3 and ki["live_pins"] == 1))
 
+    # 23. #3301 review: an escaped backslash before the closing quote, and a nested
+    #     `withKnownIssue`, are both stripped whole and leave the live assertion counted.
+    ki2 = prof("""@Test func a() {
+  withKnownIssue("a \\\\") { #expect(x == 1) }
+  withKnownIssue { withKnownIssue { #expect(y == 2) }
+    #expect(z == 3) }
+  #expect(live == 4)
+}
+""")[0]
+    cases.append(("an escaped backslash and a nested withKnownIssue strip cleanly (#3301)",
+                  ki2["live_pins"] == 1))
+
     failures = 0
     for label, ok in cases:
         print(f"  {'PASS' if ok else 'FAIL'}  {label}")

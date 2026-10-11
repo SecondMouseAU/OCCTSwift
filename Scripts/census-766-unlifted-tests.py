@@ -265,7 +265,7 @@ def _improved(n, onto_tiers, head_tiers, onto_pins, head_pins):
     t = onto_tiers[n]
     if not (t > 0 and head_tiers.get(n, 99) < t):
         return False
-    if onto_pins is not None and head_pins is not None and n in head_tiers:
+    if onto_pins is not None and head_pins is not None:
         return head_pins.get(n, 0) >= onto_pins.get(n, 0)
     return True
 
@@ -281,7 +281,11 @@ def onto_func_names(root, onto):
     A head-only test label is not proof `main` lacks the test: `main` splits and moves files, so
     the same function sits in another file or suite there. A test whose bare name is declared
     anywhere on `main` is therefore not counted as new. That under-counts a genuinely new test
-    that shares a common name, which this census already says of every count: a lower bound."""
+    that shares a common name, which this census already says of every count: a lower bound.
+
+    The grep is over every `func`, helpers and private methods included, because `git grep` reads
+    one line and `@Test` sits on the line above. A head-only test named like a `main` helper is
+    therefore read as moved. The error is in the same under-counting direction."""
     out = git(root, "grep", "-h", "-o", "-E", r"func [A-Za-z_][A-Za-z0-9_]*", onto,
               "--", "Tests/", check=False)
     return {ln.split()[1] for ln in out.splitlines() if ln.startswith("func ")}
