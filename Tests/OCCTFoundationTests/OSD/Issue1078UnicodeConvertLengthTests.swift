@@ -26,8 +26,10 @@ struct Issue1078UnicodeConvertLengthTests {
     func longStringConverts() throws {
         OCCTSerial.withLock {
             UnicodeUtils.setFormat(.ansi)
+            // ANSI is a one-byte-per-character target, so 5000 characters need exactly 5000 bytes.
+            // `len >= 0` passed the old 4096 truncation, which is the defect (#1078).
             let len = OCCTUnicodeConvertFromUnicode(Self.longString, nil, 0)
-            #expect(len >= 0)
+            #expect(len == 5000)
 
             var buf = [CChar](repeating: 0, count: Int(len) + 1)
             let actual = OCCTUnicodeConvertFromUnicode(Self.longString, &buf, Int32(buf.count))
@@ -38,6 +40,8 @@ struct Issue1078UnicodeConvertLengthTests {
                     as: UTF8.self)
             }
             #expect(result.count == Self.longString.count)
+            // U+6F22 has no ANSI form; the kernel converts it to a space (0x20), measured.
+            #expect(result == String(repeating: " ", count: 5000))
         }
     }
 
@@ -56,7 +60,7 @@ struct Issue1078UnicodeConvertLengthTests {
         OCCTSerial.withLock {
             UnicodeUtils.setFormat(.ansi)
             let len = OCCTUnicodeConvertFromUnicode(Self.longString, nil, 0)
-            #expect(len >= 0)
+            #expect(len == 5000)
 
             var small = [CChar](repeating: 0, count: 8)
             let reported = OCCTUnicodeConvertFromUnicode(
@@ -67,7 +71,7 @@ struct Issue1078UnicodeConvertLengthTests {
                     decoding: ptr.prefix(while: { $0 != 0 }).map { UInt8(bitPattern: $0) },
                     as: UTF8.self)
             }
-            #expect(prefix.count == 7)
+            #expect(prefix == String(repeating: " ", count: 7))
             #expect(small[7] == 0)
         }
     }
@@ -85,29 +89,23 @@ struct Issue1078UnicodeConvertLengthTests {
 
     @Test("Swift API convertFromUnicode returns full string by default")
     func swiftAPIReturnsFullString() throws {
-        OCCTSerial.withLock {
+        try OCCTSerial.withLock {
             UnicodeUtils.setFormat(.ansi)
-            let result = UnicodeUtils.convertFromUnicode(Self.longString, maxSize: 10000)
-            #expect(result != nil)
-            if let r = result {
-                #expect(r.count == Self.longString.count)
-            }
+            let r = try #require(UnicodeUtils.convertFromUnicode(Self.longString, maxSize: 10000))
+            #expect(r == String(repeating: " ", count: 5000))
         }
     }
 
     @Test("Swift API convertFromUnicode respects maxSize when smaller than needed")
     func swiftAPIRespectsMaxSize() throws {
-        OCCTSerial.withLock {
+        try OCCTSerial.withLock {
             UnicodeUtils.setFormat(.ansi)
             // The buffer size is maxSize-1 for NUL. The result length in CHARACTERS depends on
             // the target encoding (ANSI in this test). For multi-byte source chars converted to
             // single-byte ANSI, 10 bytes buffer = 9 chars + NUL.
-            let result = UnicodeUtils.convertFromUnicode(Self.longString, maxSize: 10)
-            #expect(result != nil)
-            if let r = result {
-                // With maxSize=10, buffer is 10 bytes = 9 chars + NUL in single-byte encoding
-                #expect(r.count <= 9)
-            }
+            let r = try #require(UnicodeUtils.convertFromUnicode(Self.longString, maxSize: 10))
+            // `r.count <= 9` passed an empty string. Exactly 9 characters, all spaces (measured).
+            #expect(r == String(repeating: " ", count: 9))
         }
     }
 }

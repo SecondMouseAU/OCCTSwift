@@ -65,8 +65,13 @@ struct Issue361SharedSingletonThreadSafetyTests {
 
     @Test("Concurrent naming-scope access across independent documents doesn't crash or deadlock")
     func concurrentNamingScopeAccessSucceeds() async throws {
+        // Each task owns its documents, so every count below is deterministic whatever the
+        // other seven tasks do. A scope shared between documents (the #363 defect) makes some
+        // other task's mark or clear show up in a count and fails here; the previous version
+        // only counted failed Document.create() calls, which a shared scope never produces.
         struct Outcome: Sendable {
-            var failures = 0
+            var setupFailures = 0
+            var wrongAnswers = 0
         }
 
         let agg = await withTaskGroup(of: Outcome.self) { group -> Outcome in
@@ -74,52 +79,90 @@ struct Issue361SharedSingletonThreadSafetyTests {
                 group.addTask {
                     var o = Outcome()
                     for _ in 0..<20 {
-                        guard let doc = Document.create() else {
-                            o.failures += 1
+                        guard let doc = Document.create(),
+                            let box = Shape.box(width: 5, height: 5, depth: 5)
+                        else {
+                            o.setupFailures += 1
                             continue
                         }
-                        let box = Shape.box(width: 5, height: 5, depth: 5)!
                         let labelId = doc.addShape(box, makeAssembly: false)
 
                         doc.namingScopeValid(labelId: labelId)
-                        _ = doc.namingScopeIsValid(labelId: labelId)
+                        if !doc.namingScopeIsValid(labelId: labelId) { o.wrongAnswers += 1 }
+                        if doc.namingScopeValidCount != 1 { o.wrongAnswers += 1 }
                         doc.namingScopeValidChildren(labelId: labelId)
-                        _ = doc.namingScopeValidCount
+                        if doc.namingScopeValidCount < 1 { o.wrongAnswers += 1 }
                         doc.namingScopeUnvalid(labelId: labelId)
+                        if doc.namingScopeIsValid(labelId: labelId) { o.wrongAnswers += 1 }
+                        doc.namingScopeValid(labelId: labelId)
                         doc.namingScopeClear()
+                        if doc.namingScopeValidCount != 0 { o.wrongAnswers += 1 }
+                        if doc.namingScopeIsValid(labelId: labelId) { o.wrongAnswers += 1 }
                     }
                     return o
                 }
             }
             var total = Outcome()
-            for await o in group { total.failures += o.failures }
+            for await o in group {
+                total.setupFailures += o.setupFailures
+                total.wrongAnswers += o.wrongAnswers
+            }
             return total
         }
 
-        #expect(agg.failures == 0, "concurrent document creation failed (expected 0 of 160)")
+        #expect(agg.setupFailures == 0, "document or box creation failed (expected 0 of 160)")
+        #expect(agg.wrongAnswers == 0, "a document's naming scope reflected another's state")
     }
 
     @Test("Concurrent font-database init + queries don't crash or deadlock")
     func concurrentFontQueriesSucceed() async throws {
-        await withTaskGroup(of: Void.self) { group in
+        // Font availability is environment-dependent (headless CI may register zero fonts), so
+        // the expectation is relative: read the count once serially, then require every
+        // concurrent read to agree with it. initDatabase() rebuilds the same list under the
+        // mutex, so a reader that saw an empty or half-built list (the #361 race) disagrees.
+        FontManager.initDatabase()
+        let expectedCount = FontManager.fontCount
+
+        struct Outcome: Sendable {
+            var countMismatches = 0
+            var missingEntries = 0
+        }
+        let agg = await withTaskGroup(of: Outcome.self) { group -> Outcome in
             for taskIndex in 0..<8 {
                 group.addTask {
+                    var o = Outcome()
                     for i in 0..<10 {
                         if (taskIndex + i) % 3 == 0 {
                             FontManager.initDatabase()
                         }
                         let count = FontManager.fontCount
+                        if count != expectedCount { o.countMismatches += 1 }
                         if count > 0 {
                             let idx = i % count
-                            _ = FontManager.fontName(at: idx)
-                            _ = FontManager.fontPath(at: idx)
-                            _ = FontManager.fontHasAspect(at: idx, aspect: .regular)
+                            if FontManager.fontName(at: idx) == nil { o.missingEntries += 1 }
+                            // A font without a regular face has no regular path, so the path
+                            // is only required where the same font says it has one.
+                            if FontManager.fontHasAspect(at: idx, aspect: .regular),
+                                FontManager.fontPath(at: idx) == nil
+                            {
+                                o.missingEntries += 1
+                            }
                         }
                     }
+                    return o
                 }
             }
+            var total = Outcome()
+            for await o in group {
+                total.countMismatches += o.countMismatches
+                total.missingEntries += o.missingEntries
+            }
+            return total
         }
-        // No #expect needed beyond "didn't crash/deadlock" -- font availability is
-        // environment-dependent (headless CI may have zero system fonts registered).
+
+        #expect(agg.countMismatches == 0, "font count changed under concurrent initDatabase()")
+        #expect(
+            agg.missingEntries == 0,
+            "an in-range font index had no name, or a regular face had no path")
     }
 }

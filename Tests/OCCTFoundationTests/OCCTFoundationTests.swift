@@ -548,6 +548,12 @@ struct PixMapTests {
     @Test func createEmpty() throws {
         let img = try #require(PixMap())
         #expect(img.isEmpty)
+        // `isEmpty` alone is passed by a constant; a fresh image has no size, and the same
+        // object stops being empty once it is given one (initTrash below pins the converse).
+        #expect(img.width == 0)
+        #expect(img.height == 0)
+        #expect(img.initTrash(format: .rgb, width: 4, height: 4))
+        #expect(!img.isEmpty)
     }
 
     @Test func initTrash() throws {
@@ -691,9 +697,11 @@ struct UnitsAPITests {
 
 @Suite("Message_Messenger Tests")
 struct MessengerTests {
-    @Test func createMessenger() {
-        let msg = Messenger()
-        #expect(msg != nil)
+    @Test func createMessenger() throws {
+        // A bare `!= nil` passes a Messenger with no printers. Message_Messenger's constructor
+        // installs one default printer (the same count printerCount pins below).
+        let msg = try #require(Messenger())
+        #expect(msg.printerCount == 1)
     }
 
     // #1987: the four tests below used to run their assertions only `if let msg`, so a
@@ -738,6 +746,8 @@ struct MessengerTests {
             Issue.record("Messenger() returned nil")
             return
         }
+        // The control: there is a printer to remove, so 0 afterwards is the removal.
+        #expect(msg.printerCount == 1)
         msg.removeAllPrinters()
         #expect(msg.printerCount == 0)
     }
@@ -745,9 +755,12 @@ struct MessengerTests {
 
 @Suite("Message_Report Tests")
 struct ReportTests {
-    @Test func createReport() {
-        let report = Report()
-        #expect(report != nil)
+    @Test func createReport() throws {
+        // A bare `!= nil` passes a report whose handle is dead. Message_Report starts with no
+        // limit (-1) and nothing dumped.
+        let report = try #require(Report())
+        #expect(report.limit == -1)
+        #expect(report.dump() == "")
     }
 
     @Test func setAndGetLimit() {
@@ -863,14 +876,13 @@ struct OSDMemInfoTests {
 
     // #1987: `count > 0` passed any text. OSD_MemInfo::PrintInfo labels its heap line
     // "Heap memory".
-    @Test func infoString() {
-        let info = MemInfo.infoString
-        #expect(info != nil)
+    @Test func infoString() throws {
+        let info = try #require(MemInfo.infoString)
         #if os(WASI)
             // #3025: documented as the empty string on WASI, where no counter is available.
-            if let info { #expect(info.isEmpty) }
+            #expect(info.isEmpty)
         #else
-            if let info { #expect(info.contains("Heap memory")) }
+            #expect(info.contains("Heap memory"))
         #endif
     }
 }
@@ -927,6 +939,8 @@ struct OSDFileTests {
             return
         }
         #expect(reader.readLine() == "Hello, OSD_File!\n")
+        // The second line proves the write kept all of `content`, not just its first line.
+        #expect(reader.readLine() == "Line 2\n")
         reader.close()
     }
 
@@ -1030,25 +1044,19 @@ struct ResourceUnicodeTests {
         }
     }
 
-    @Test func convertToUnicode() {
-        OCCTSerial.withLock {
+    @Test func convertToUnicode() throws {
+        try OCCTSerial.withLock {
             UnicodeUtils.setFormat(.ansi)
-            let result = UnicodeUtils.convertToUnicode("hello")
-            #expect(result != nil)
-            if let r = result {
-                #expect(r == "hello")
-            }
+            let result = try #require(UnicodeUtils.convertToUnicode("hello"))
+            #expect(result == "hello")
         }
     }
 
-    @Test func convertFromUnicode() {
-        OCCTSerial.withLock {
+    @Test func convertFromUnicode() throws {
+        try OCCTSerial.withLock {
             UnicodeUtils.setFormat(.ansi)
-            let result = UnicodeUtils.convertFromUnicode("hello")
-            #expect(result != nil)
-            if let r = result {
-                #expect(r == "hello")
-            }
+            let result = try #require(UnicodeUtils.convertFromUnicode("hello"))
+            #expect(result == "hello")
         }
     }
 }
@@ -1124,9 +1132,10 @@ struct OSDFileIteratorTests {
 
 @Suite("OSD_SharedLibrary")
 struct OSDSharedLibTests {
-    @Test func createLibrary() {
-        let lib = SharedLibrary(name: "libc.dylib")
-        #expect(lib != nil)
+    @Test func createLibrary() throws {
+        // A bare `!= nil` passes a library that forgot its name; construction does not load it.
+        let lib = try #require(SharedLibrary(name: "libc.dylib"))
+        #expect(lib.name == "libc.dylib")
     }
 
     // #1987: these three used to run their assertions only `if let lib`, so a SharedLibrary
@@ -1273,6 +1282,11 @@ struct ColorToolGetAllColorsTests {
         }
         let allColors = doc.colorToolGetAllColors()
         #expect(allColors.isEmpty)
+        // The control: a constant empty list passes the line above, so add one colour and
+        // require that the same query now reports it.
+        let id = doc.colorToolAddColor(r: 0.0, g: 0.0, b: 1.0)
+        #expect(id >= 0)
+        #expect(doc.colorToolGetAllColors() == [id])
     }
 }
 
@@ -1280,6 +1294,20 @@ struct ColorToolGetAllColorsTests {
 
 @Suite("v0.149 Sheet.standardLayout")
 struct SheetStandardLayoutTests {
+    /// Where a placed view's own bounding-box centre lands on the sheet: the point
+    /// `standardLayout` is documented to put on its cell centre.
+    private func landedCentre(_ view: StandardLayout.PlacedView) -> SIMD2<Double>? {
+        guard let b = view.drawing.bounds(includeAnnotations: false) else { return nil }
+        return view.offset + view.scale * ((b.min + b.max) / 2)
+    }
+
+    /// The vertical distance between the upper and lower cell centres at `margin`:
+    /// one cell height plus the margin/2 gap the documented algorithm leaves between cells.
+    private func rowPitch(_ sheet: Sheet, margin: Double) -> Double {
+        let frame = sheet.innerFrame
+        let innerH = frame.max.y - frame.min.y - 2 * margin
+        return (innerH - margin / 2) / 2 + margin / 2
+    }
     @Test("First-angle layout places top below front")
     func firstAngleTopBelow() {
         let sheet = Sheet(size: .a3, orientation: .landscape, projection: .first)
@@ -1289,7 +1317,15 @@ struct SheetStandardLayoutTests {
             Issue.record("setup nil")
             return
         }
-        #expect(layout.top.offset.y < layout.front.offset.y)
+        // The ordering alone passes any pair that is merely unequal, and the two angle tests
+        // share a fixture, so pin where each view lands: top in front's column, exactly one
+        // row pitch below it (the third-angle test below pins the mirror image).
+        guard let front = landedCentre(layout.front), let top = landedCentre(layout.top) else {
+            Issue.record("placed view has no bounds")
+            return
+        }
+        #expect(abs(top.x - front.x) < 1e-9)
+        #expect(abs((front.y - top.y) - rowPitch(sheet, margin: 20)) < 1e-9)
     }
 
     @Test("Third-angle layout places top above front")
@@ -1301,7 +1337,12 @@ struct SheetStandardLayoutTests {
             Issue.record("setup nil")
             return
         }
-        #expect(layout.top.offset.y > layout.front.offset.y)
+        guard let front = landedCentre(layout.front), let top = landedCentre(layout.top) else {
+            Issue.record("placed view has no bounds")
+            return
+        }
+        #expect(abs(top.x - front.x) < 1e-9)
+        #expect(abs((top.y - front.y) - rowPitch(sheet, margin: 20)) < 1e-9)
     }
 
     // #1987: this used to check only each view's offset, the point its centre lands on, at 1:1
@@ -1391,6 +1432,10 @@ struct SheetStandardLayoutTests {
         }
         #expect(layout.iso == nil)
         #expect(layout.placed.count == 3)
+        // The control: the default layout of the same box and sheet does carry the iso view.
+        let withIso = sheet.standardLayout(of: box)
+        #expect(withIso?.iso != nil)
+        #expect(withIso?.placed.count == 4)
     }
 
     @Test("render(into:) emits geometry for every placed view")
