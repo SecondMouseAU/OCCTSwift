@@ -11,7 +11,7 @@ struct BSplineSurfaceExtrasTests {
     // required now, so a nil fixture fails the test by name. The fixture is a non-rational bicubic
     // on [0, 1] x [0, 1]; values below are Geom_BSplineSurface's own, see
     // Scripts/repro/766-bspline-extras-fill-iso/.
-    func makeBSplineSurface() throws -> Surface {
+    private func makeBSplineSurface() throws -> Surface {
         try #require(makeModThreeGridBSplineSurface(), "fixture surface")
     }
 
@@ -29,7 +29,8 @@ struct BSplineSurfaceExtrasTests {
         #expect(abs(w - 1.0) < 1e-10)
         // A non-rational surface reads 1 everywhere, so that alone cannot tell a weight getter
         // from a constant. The cylinder-derived rational surface (6 x 2 poles, measured) has
-        // weights 1, 0.5, 1 down the first column and 1 at (1, 2), so the index order is pinned.
+        // weights 1, 0.5, 1 at uIndex 1, 2, 3 of the first column (vIndex 1) and 0.5 at (2, 2), so
+        // the index order is pinned.
         let cyl = try #require(makeCylinderDerivedBSplineSurface(), "rational fixture")
         #expect(abs(cyl.bsplineWeight(uIndex: 1, vIndex: 1) - 1.0) < 1e-12)
         #expect(abs(cyl.bsplineWeight(uIndex: 2, vIndex: 1) - 0.5) < 1e-12)

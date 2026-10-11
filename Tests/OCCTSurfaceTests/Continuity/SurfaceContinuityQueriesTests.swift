@@ -12,7 +12,7 @@ struct SurfaceContinuityQueriesTests {
     // continuity tests now also read a bicubic B-spline whose interior U knot multiplicity m
     // gives C(3 - m), where the answer flips from true to false at a measured order, and the
     // reversal tests read a surface whose reversed parameter is not just the negation.
-    func makePlane() throws -> Surface {
+    private func makePlane() throws -> Surface {
         try #require(Surface.plane(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1)), "plane")
     }
 
