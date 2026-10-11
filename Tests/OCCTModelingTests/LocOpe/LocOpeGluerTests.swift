@@ -27,5 +27,9 @@ struct LocOpeGluerTests {
             b1.locOpeGlue(b2, facePairs: [(base: faces1[1], glued: faces2[0])]))
         #expect(result.subShapes(ofType: .face).count == 11)
         #expect(result.isValid)
+        // Pinned to the kernel (Scripts/repro/766-modeling-locope-gluer, transcript-evidence-fix.txt):
+        // volume 999.99999999999977 for this pair.
+        let volume = try #require(result.volume)
+        #expect(abs(volume - 1000) < 1e-6)
     }
 }

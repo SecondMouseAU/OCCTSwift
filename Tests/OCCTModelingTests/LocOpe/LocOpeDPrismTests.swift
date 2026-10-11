@@ -43,9 +43,13 @@ struct LocOpeDPrismTests {
         // when the prism failed (nil skipped the only assertion) and accepted any face count.
         // Pinned to the kernel (Scripts/repro/766-modeling-locope-dprism): LocOpe_DPrism with
         // two heights on face 0 of this box is a valid solid of 10 faces; the single-height
-        // form of the same face has 6, so the count also tells the two constructors apart.
-        let result = try #require(face.draftPrism(height1: 5, height2: 3, angle: 0.1))
-        #expect(result.faceCount == 10)
-        #expect(result.isValid)
+        // form of the same face has 6. Both constructors are called here so that the counts tell
+        // them apart, which neither of the sibling tests does on its own.
+        let twoHeights = try #require(face.draftPrism(height1: 5, height2: 3, angle: 0.1))
+        let oneHeight = try #require(face.draftPrism(height: 5, angle: 0.1))
+        #expect(twoHeights.faceCount == 10)
+        #expect(oneHeight.faceCount == 6)
+        #expect(twoHeights.isValid)
+        #expect(oneHeight.isValid)
     }
 }

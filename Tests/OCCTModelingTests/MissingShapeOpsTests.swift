@@ -13,7 +13,9 @@ struct MissingShapeOpsTests {
         let vol = torus.volume ?? 0
         // Volume of torus = 2 * pi^2 * R * r^2
         let expected = 2.0 * Double.pi * Double.pi * 10.0 * 9.0
-        #expect(abs(vol - expected) / expected < 0.01)
+        // The probe (766-modeling-missing-shape-ops) measured 1776.5287921960844 against the analytic
+        // 1776.5287921960846, so a 1e-9 relative bound is loose by four orders of magnitude.
+        #expect(abs(vol - expected) / expected < 1e-9)
     }
 
     @Test("Chamfer on box")
@@ -55,9 +57,9 @@ struct MissingShapeOpsTests {
         let scaled = try #require(box.scaled(by: 2.0))
         #expect(scaled.isValid)
         let scaledSize = try #require(scaled.size)
-        #expect(abs(scaledSize.x - 20) < 0.01)
-        #expect(abs(scaledSize.y - 20) < 0.01)
-        #expect(abs(scaledSize.z - 20) < 0.01)
+        #expect(abs(scaledSize.x - 20) < 1e-6)
+        #expect(abs(scaledSize.y - 20) < 1e-6)
+        #expect(abs(scaledSize.z - 20) < 1e-6)
     }
 
     @Test("Mirror shape")
@@ -84,7 +86,8 @@ struct MissingShapeOpsTests {
         let slice = try #require(box.sliceAtZ(5))
         #expect(slice.isValid)
         #expect(slice.subShapes(ofType: .edge).count == 4)
-        #expect(slice.center.map { abs($0.z - 5) < 1e-6 } ?? false)
+        let center = try #require(slice.center)
+        #expect(abs(center.z - 5) < 1e-6)
     }
 
     @Test("SectionWiresAtZ extracts wires")
