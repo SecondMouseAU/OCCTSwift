@@ -30,9 +30,14 @@ PR and strict; this one is per path and over a whole branch.
 sides, every `@Test` is tiered on each side with `census-766-weak-assertions.py`'s own detector
 (SEVERE, nothing pins a value; ESCAPABLE, a value is pinned behind a nil-skip; clean). A test is
 a **gain** when the head's tier is better than `main`'s, or when the head has a clean test
-`main` has not at all. That is exactly the quantity the programme exists to move: `main`'s SEVERE
-tests, 1,230 of 6,671 when `python3 Scripts/census-766-weak-assertions.py --summary` was last run,
-against `origin/main` at `e6a3b8f` on 2026-10-02, are what "`main`'s tests cannot fail" means, and
+`main` has not at all. Since #3301 the comparison reads the detector's `loud_tier` and not its
+plain tier: a `guard ... else { Issue.record(...); return }` fails the test, so it is not an
+escape; a `withKnownIssue` body is not a live assertion; the head must keep at least as many
+value-pinning assertion sites as `main` for the same test; and a head-only test is not new when
+`main` declares a function of that name anywhere (it moved). The plain `--summary` tiers of
+`census-766-weak-assertions.py` are unchanged by all four. That is exactly the quantity the programme exists to move: `main`'s SEVERE
+tests, 595 of 6,933 when `python3 Scripts/census-766-weak-assertions.py --summary` was last run,
+against `origin/main` at `f7722275e` on 2026-10-12 (unchanged by #3301), are what "`main`'s tests cannot fail" means, and
 a lift is worth its cost in proportion to how many of them it retires. Re-run that command rather
 than quoting this line: it said 1,579, then 1,492, then 1,185 for as long as it took the tree to
 move under it, and the step from 1,185 to 1,230 was the detector getting three defects fixed
@@ -219,48 +224,95 @@ def test_labels(wa, path, text):
 # ------------------------------------------------------------------ tiering and gains
 
 
-def tier_map(wa, text, scratch, tag):
-    """{test label: 2 SEVERE / 1 ESCAPABLE / 0 clean} for one Swift blob's text.
+def profile_map(wa, text, scratch, tag):
+    """{test label: (gain tier, live pinning sites)} for one Swift blob's text.
 
-    The detector reads a file, so the blob is written to the scratch directory first. Giving it
-    the real extension matters: `tests_in` does not care, but a future caller that globs would.
+    The gain tier is the detector's `loud_tier` (#3301): 2 SEVERE, 1 ESCAPABLE, 0 clean, read with
+    a fail-loudly guard (`else { Issue.record(...); return }`, or a `throw`) NOT counted as an
+    escape and with `withKnownIssue` bodies removed. The plain `--summary` tier is untouched; only
+    the comparison between two sides reads this one, because a recording guard fails the test and
+    a force-unwrap crashes it, so the guard is the stronger of the two and must not tier worse.
+
+    The detector reads a file, so the blob is written to the scratch directory first.
 
     The key is `test_labels`' suite-qualified label and not the bare function name (#2949). The
-    line number is the join between the two parses: `inspect` iterates `tests_in`, so a finding's
-    line is one `tests_in` yielded, and `TEST_ATTR` anchors at the start of a line, so no two
-    `@Test`s can share one."""
+    line number is the join between the two parses: `analyse` iterates `tests_in`, and `TEST_ATTR`
+    anchors at the start of a line, so no two `@Test`s can share one."""
     f = os.path.join(scratch, tag + ".swift")
     with open(f, "w", encoding="utf-8") as fh:
         fh.write(text)
     by_line = dict(test_labels(wa, f, text))
-    out = {label: 0 for label in by_line.values()}
-    for finding in wa.inspect(f):
+    out = {label: (0, 0) for label in by_line.values()}
+    for finding in wa.analyse(f):
         label = by_line.get(finding["line"])
         if label is not None:
-            out[label] = TIER_RANK[finding["tier"]]
+            out[label] = (finding["loud_tier"], finding["live_pins"])
     return out
 
 
-def gains(onto_tiers, head_tiers):
+def tier_map(wa, text, scratch, tag):
+    """{test label: gain tier} for one Swift blob's text; see `profile_map`."""
+    return {k: v[0] for k, v in profile_map(wa, text, scratch, tag).items()}
+
+
+def _improved(n, onto_tiers, head_tiers, onto_pins, head_pins):
+    """True when test `n` is weak on `onto` and the head is both a better tier and no thinner.
+
+    `head_pins` fewer than `onto_pins` means the head dropped value-pinning assertion sites, so a
+    better tier is the head losing the weak shape by losing the assertions (a force-unwrap in
+    place of a guard, `> 4` in place of `== [0, 2.5, 5, 7.5, 10]`) and lifting it would take pins
+    OFF `main` (#3301). Absent pin maps keep the tier-only rule."""
+    t = onto_tiers[n]
+    if not (t > 0 and head_tiers.get(n, 99) < t):
+        return False
+    if onto_pins is not None and head_pins is not None:
+        return head_pins.get(n, 0) >= onto_pins.get(n, 0)
+    return True
+
+
+def bare_name(label):
+    """The function name of a `test_labels` label: `Suite.Inner.fn#2` -> `fn`."""
+    return label.split("#")[0].rsplit(".", 1)[-1]
+
+
+def onto_func_names(root, onto):
+    """Every `func` name declared under Tests/ on `onto`, from one `git grep` (#3301).
+
+    A head-only test label is not proof `main` lacks the test: `main` splits and moves files, so
+    the same function sits in another file or suite there. A test whose bare name is declared
+    anywhere on `main` is therefore not counted as new. That under-counts a genuinely new test
+    that shares a common name, which this census already says of every count: a lower bound.
+
+    The grep is over every `func`, helpers and private methods included, because `git grep` reads
+    one line and `@Test` sits on the line above. A head-only test named like a `main` helper is
+    therefore read as moved. The error is in the same under-counting direction."""
+    out = git(root, "grep", "-h", "-o", "-E", r"func [A-Za-z_][A-Za-z0-9_]*", onto,
+              "--", "Tests/", check=False)
+    return {ln.split()[1] for ln in out.splitlines() if ln.startswith("func ")}
+
+
+def gains(onto_tiers, head_tiers, onto_pins=None, head_pins=None, onto_funcs=None):
     """The two kinds of gain, as (strengthened, new_strong).
 
     `strengthened`: a test `main` has weak and the head has better, which is the quantity the
-    weak-assertion census counts. `new_strong`: a clean test the head has and `main` has not at
-    all. A test the head has weak and `main` lacks is neither, deliberately: lifting it would
+    weak-assertion census counts, provided the head keeps at least as many value-pinning
+    assertion sites as `main` (#3301). `new_strong`: a clean test the head has and `main` has not
+    at all. A test the head has weak and `main` lacks is neither, deliberately: lifting it would
     raise the SEVERE count rather than lower it."""
-    strengthened = sorted(n for n, t in onto_tiers.items()
-                          if t > 0 and head_tiers.get(n, 99) < t)
-    new_strong = sorted(n for n, t in head_tiers.items() if n not in onto_tiers and t == 0)
+    strengthened = sorted(n for n in onto_tiers
+                          if _improved(n, onto_tiers, head_tiers, onto_pins, head_pins))
+    new_strong = sorted(n for n, t in head_tiers.items()
+                        if n not in onto_tiers and t == 0
+                        and not (onto_funcs and bare_name(n) in onto_funcs))
     return strengthened, new_strong
 
 
-def transitions(onto_tiers, head_tiers):
+def transitions(onto_tiers, head_tiers, onto_pins=None, head_pins=None):
     """{"SEVERE -> clean": n, ...} for the strengthened set, which is how a gain is read."""
     out = {}
     for name, t in onto_tiers.items():
-        h = head_tiers.get(name, 99)
-        if t > 0 and h < t:
-            key = "%s -> %s" % (TIER_NAME[t], TIER_NAME[h])
+        if _improved(name, onto_tiers, head_tiers, onto_pins, head_pins):
+            key = "%s -> %s" % (TIER_NAME[t], TIER_NAME[head_tiers[name]])
             out[key] = out.get(key, 0) + 1
     return out
 
@@ -563,6 +615,7 @@ def survey(root, head, onto, al, wa, scratch, path_filter=None, path_map=None):
     supersets = {p: (None if n is None else n[1] == 0) for p, n in numstat.items()}
     verdicts = al.classify(head_blobs, onto_blobs, supersets)
 
+    onto_funcs = onto_func_names(root, onto)
     rows = []
     for path in paths:
         row = {"path": path, "verdict": verdicts[path],
@@ -575,10 +628,14 @@ def survey(root, head, onto, al, wa, scratch, path_filter=None, path_map=None):
             head_text = blob_text(root, head, path)
             onto_text = blob_text(root, onto, (path_map or {}).get(path, path)) or ""
             if head_text is not None:
-                ht = tier_map(wa, head_text, scratch, "head")
-                ot = tier_map(wa, onto_text, scratch, "onto")
-                row["strengthened"], row["new_strong"] = gains(ot, ht)
-                row["transitions"] = transitions(ot, ht)
+                hp = profile_map(wa, head_text, scratch, "head")
+                op = profile_map(wa, onto_text, scratch, "onto")
+                ht = {k: v[0] for k, v in hp.items()}
+                ot = {k: v[0] for k, v in op.items()}
+                hpin = {k: v[1] for k, v in hp.items()}
+                opin = {k: v[1] for k, v in op.items()}
+                row["strengthened"], row["new_strong"] = gains(ot, ht, opin, hpin, onto_funcs)
+                row["transitions"] = transitions(ot, ht, opin, hpin)
                 row["onto_severe"] = sum(1 for t in ot.values() if t == 2)
                 row["onto_escapable"] = sum(1 for t in ot.values() if t == 1)
                 row["onto_tests"], row["head_tests"] = len(ot), len(ht)
@@ -845,8 +902,7 @@ def self_test():
         cases.append(("the gain is the two kinds summed",
                       f is not None and f["gain"] == 3))
         cases.append(("the transition is named, so a gain can be read without the file",
-                      f is not None and f["transitions"] == {"SEVERE -> ESCAPABLE": 1,
-                                                             "SEVERE -> clean": 1}))
+                      f is not None and f["transitions"] == {"SEVERE -> clean": 2}))
         cases.append(("main's own weak tally is reported beside the gain",
                       f is not None and f["onto_tests"] == 5
                       and f["onto_severe"] + f["onto_escapable"] == 3))
@@ -893,6 +949,47 @@ def self_test():
         cases.append(("a type the test is not inside does not reach its key",
                       labels("struct Before {\n  func helper() {}\n}\nstruct S {\n"
                              "  @Test func t() { #expect(1 == 1) }\n}\n") == ["S.t"]))
+
+        # #3301: the gain comparison must not rank a weaker head above a stronger main.
+        def cmp(main_src, head_src, funcs=None):
+            hp = profile_map(wa, head_src, scratch, "h3301")
+            op = profile_map(wa, main_src, scratch, "o3301")
+            return gains({k: v[0] for k, v in op.items()}, {k: v[0] for k, v in hp.items()},
+                         {k: v[1] for k, v in op.items()}, {k: v[1] for k, v in hp.items()},
+                         funcs)
+
+        MAIN_LOUD = (
+            "struct S {\n  @Test func t() {\n"
+            "    guard let c = Curve3D.segment() else { Issue.record(\"nil\"); return }\n"
+            "    #expect(c.params == [0, 2.5, 5])\n    #expect(abs(c.length - 5) < 1e-9)\n  }\n}\n")
+        HEAD_FORCE = (
+            "struct S {\n  @Test func t() {\n    let c = Curve3D.segment()!\n"
+            "    #expect(c.params.count > 2)\n  }\n}\n")
+        cases.append(("a recording guard on main is not an escape, so main is not 'weak' (#3301)",
+                      cmp(MAIN_LOUD, HEAD_FORCE) == ([], [])))
+        SILENT = MAIN_LOUD.replace('Issue.record("nil"); ', "")
+        cases.append(("a silent guard on main still loses to a head that records (#3301)",
+                      cmp(SILENT, MAIN_LOUD) == (["S.t"], [])))
+        HEAD_FEWER = (
+            "struct S {\n  @Test func t() {\n"
+            "    guard let c = Curve3D.segment() else { Issue.record(\"nil\"); return }\n"
+            "    #expect(c.params == [0, 2.5, 5])\n  }\n}\n")
+        cases.append(("a head with a strict subset of main's pins is not a gain (#3301)",
+                      cmp(SILENT, HEAD_FEWER) == ([], [])))
+        HEAD_KNOWN = (
+            "struct S {\n  @Test func t() {\n    let c = Curve3D.segment()!\n"
+            "    withKnownIssue(\"#1\") {\n      #expect(c.params == [0, 2.5, 5])\n"
+            "      #expect(abs(c.length - 5) < 1e-9)\n    }\n  }\n}\n")
+        cases.append(("a withKnownIssue body never scores as stronger than live assertions (#3301)",
+                      cmp(SILENT, HEAD_KNOWN) == ([], [])))
+        cases.append(("withKnownIssue as the only assertions is SEVERE for the gain tier (#3301)",
+                      list(profile_map(wa, HEAD_KNOWN, scratch, "k").values()) == [(2, 0)]))
+        HEAD_NEW = "struct T {\n  @Test func moved() { #expect(abs(1 - 1) < 1e-9) }\n}\n"
+        cases.append(("a head-only test main declares elsewhere is not new (#3301)",
+                      cmp("", HEAD_NEW, {"moved"}) == ([], [])
+                      and cmp("", HEAD_NEW, {"other"}) == ([], ["T.moved"])))
+        cases.append(("onto_func_names reads every func name main declares (#3301)",
+                      {"pinned", "dup", "alsoWeak"} <= onto_func_names(root, "mainbranch")))
 
         p = by_path.get("Scripts/repro/766-foo/probe.mm")
         cases.append(("a probe main lacks is ABSENT and is never tiered",
