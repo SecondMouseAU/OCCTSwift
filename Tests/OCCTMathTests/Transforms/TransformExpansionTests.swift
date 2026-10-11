@@ -6,55 +6,54 @@ import Testing
 @Suite("v0.115.0 - Transform Expansion")
 struct TransformExpansionTests {
 
-    @Test func generalTransform() {
-        if let box = Shape.box(width: 10, height: 10, depth: 10) {
-            // Identity rotation + translation by (5,0,0)
-            let matrix = Matrix12Grouped([
+    /// Shared check: a box's bounds against the six expected extents, to 1e-6 (the vertex
+    /// tolerance widens every face by 1e-7; probed on the pinned kernel).
+    private func expectBounds(
+        _ shape: Shape, min lo: SIMD3<Double>, max hi: SIMD3<Double>,
+        sourceLocation: SourceLocation = #_sourceLocation
+    ) throws {
+        let bb = try #require(shape.boundingBox, sourceLocation: sourceLocation)
+        for (got, want) in zip([bb.min.x, bb.min.y, bb.min.z], [lo.x, lo.y, lo.z]) {
+            #expect(abs(got - want) < 1e-6, sourceLocation: sourceLocation)
+        }
+        for (got, want) in zip([bb.max.x, bb.max.y, bb.max.z], [hi.x, hi.y, hi.z]) {
+            #expect(abs(got - want) < 1e-6, sourceLocation: sourceLocation)
+        }
+    }
+
+    @Test func generalTransform() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        // Identity rotation + translation by (5,0,0)
+        let matrix = try #require(
+            Matrix12Grouped([
                 1, 0, 0,  // row 0 of rotation
                 0, 1, 0,  // row 1
                 0, 0, 1,  // row 2
                 5, 0, 0,  // translation
-            ])!
-            let result = box.transformed(matrix: matrix)
-            #expect(result != nil)
-            if let r = result {
-                #expect(r.isValid)
-                // Probed (Scripts/repro/766-math-transform-expansion): the centred cube moves
-                // from -5..5 to 0..10 in x and stays at -5..5 in y and z, each face widened by
-                // the 1e-7 vertex tolerance.
-                let bounds = r.boundingBox
-                #expect(bounds != nil)
-                if let bb = bounds {
-                    #expect(abs(bb.min.x - 0.0) < 1e-6)
-                    #expect(abs(bb.max.x - 10.0) < 1e-6)
-                    #expect(abs(bb.min.y + 5.0) < 1e-6)
-                    #expect(abs(bb.max.y - 5.0) < 1e-6)
-                }
-            }
-        }
+            ]))
+        let r = try #require(box.transformed(matrix: matrix))
+        #expect(r.isValid)
+        // Probed (Scripts/repro/766-math-transform-expansion): the centred cube moves
+        // from -5..5 to 0..10 in x and stays at -5..5 in y and z, each face widened by
+        // the 1e-7 vertex tolerance.
+        try expectBounds(r, min: SIMD3(0, -5, -5), max: SIMD3(10, 5, 5))
+        // Control: the source box did not move.
+        try expectBounds(box, min: SIMD3(-5, -5, -5), max: SIMD3(5, 5, 5))
     }
 
-    @Test func nonUniformScale() {
-        if let box = Shape.box(width: 10, height: 10, depth: 10) {
-            // Scale by (2, 1, 0.5) = non-uniform
-            let matrix = TransformMatrix3D([
+    @Test func nonUniformScale() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        // Scale by (2, 1, 0.5) = non-uniform
+        let matrix = try #require(
+            TransformMatrix3D([
                 2, 0, 0, 0,  // row 0: scaleX=2, no translate
                 0, 1, 0, 0,  // row 1: scaleY=1
                 0, 0, 0.5, 0,  // row 2: scaleZ=0.5
-            ])!
-            let result = box.gTransformed(matrix: matrix)
-            #expect(result != nil)
-            // Probed (Scripts/repro/766-math-transform-expansion): the centred cube becomes
-            // -10..10 x -5..5 x -2.5..2.5, each face widened by 2e-7.
-            if let r = result, let bb = r.boundingBox {
-                #expect(abs(bb.min.x + 10.0) < 1e-6)
-                #expect(abs(bb.max.x - 10.0) < 1e-6)
-                #expect(abs(bb.min.y + 5.0) < 1e-6)
-                #expect(abs(bb.max.y - 5.0) < 1e-6)
-                #expect(abs(bb.min.z + 2.5) < 1e-6)
-                #expect(abs(bb.max.z - 2.5) < 1e-6)
-            }
-        }
+            ]))
+        let r = try #require(box.gTransformed(matrix: matrix))
+        // Probed (Scripts/repro/766-math-transform-expansion): the centred cube becomes
+        // -10..10 x -5..5 x -2.5..2.5, each face widened by 2e-7.
+        try expectBounds(r, min: SIMD3(-10, -5, -2.5), max: SIMD3(10, 5, 2.5))
     }
 
     /// #835 regression: `transformed(matrix:)` uses a GROUPED layout
@@ -66,26 +65,18 @@ struct TransformExpansionTests {
     /// ``Matrix12Grouped`` rather than a raw `[Double]`, so the layouts can no longer be
     /// swapped at a call site at all, this test is now about the GROUPED index mapping inside
     /// that type, not about which method you called.
-    @Test func generalTransformGroupedLayoutTranslatesAsDocumented() {
-        if let box = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10) {
-            // Identity rotation, translate by (5, 0, 0). GROUPED: rotation first, then tx,ty,tz.
-            let matrix = Matrix12Grouped([
+    @Test func generalTransformGroupedLayoutTranslatesAsDocumented() throws {
+        let box = try #require(Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10))
+        // Identity rotation, translate by (5, 0, 0). GROUPED: rotation first, then tx,ty,tz.
+        let matrix = try #require(
+            Matrix12Grouped([
                 1, 0, 0,
                 0, 1, 0,
                 0, 0, 1,
                 5, 0, 0,
-            ])!
-            let result = box.transformed(matrix: matrix)
-            #expect(result != nil)
-            if let r = result, let bb = r.boundingBox {
-                #expect(abs(bb.min.x - 5.0) < 1e-6)
-                #expect(abs(bb.max.x - 15.0) < 1e-6)
-                #expect(abs(bb.min.y - 0.0) < 1e-6)
-                #expect(abs(bb.max.y - 10.0) < 1e-6)
-                #expect(abs(bb.min.z - 0.0) < 1e-6)
-                #expect(abs(bb.max.z - 10.0) < 1e-6)
-            }
-        }
+            ]))
+        let r = try #require(box.transformed(matrix: matrix))
+        try expectBounds(r, min: SIMD3(5, 0, 0), max: SIMD3(15, 10, 10))
     }
 
     /// #835 regression: `gTransformed(matrix:)` uses the same INTERLEAVED row-major layout as
@@ -94,28 +85,20 @@ struct TransformExpansionTests {
     ///
     /// Locks in the documented convention against
     /// real bounding-box geometry.
-    @Test func nonUniformScaleInterleavedLayoutScalesAsDocumented() {
+    @Test func nonUniformScaleInterleavedLayoutScalesAsDocumented() throws {
         // Deliberately non-cubic (10 x 20 x 30): a cube's symmetric extent lets a wrong-layout
         // matrix that only reads column 0 coincidentally reproduce the right bounding box, which
         // would make the prove-the-test-fails injection below pass vacuously. See #835 PR notes.
-        if let box = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 20, depth: 30) {
-            // Scale by (2, 1, 0.5), no translation. INTERLEAVED: each row's own tx/ty/tz.
-            let matrix = TransformMatrix3D([
+        let box = try #require(Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 20, depth: 30))
+        // Scale by (2, 1, 0.5), no translation. INTERLEAVED: each row's own tx/ty/tz.
+        let matrix = try #require(
+            TransformMatrix3D([
                 2, 0, 0, 0,
                 0, 1, 0, 0,
                 0, 0, 0.5, 0,
-            ])!
-            let result = box.gTransformed(matrix: matrix)
-            #expect(result != nil)
-            if let r = result, let bb = r.boundingBox {
-                #expect(abs(bb.min.x - 0.0) < 1e-6)
-                #expect(abs(bb.max.x - 20.0) < 1e-6)
-                #expect(abs(bb.min.y - 0.0) < 1e-6)
-                #expect(abs(bb.max.y - 20.0) < 1e-6)
-                #expect(abs(bb.min.z - 0.0) < 1e-6)
-                #expect(abs(bb.max.z - 15.0) < 1e-6)
-            }
-        }
+            ]))
+        let r = try #require(box.gTransformed(matrix: matrix))
+        try expectBounds(r, min: SIMD3(0, 0, 0), max: SIMD3(20, 20, 15))
     }
 
     /// #835 PR #864 review finding 1: the three transform methods used to take a plain
@@ -127,7 +110,7 @@ struct TransformExpansionTests {
     /// two layouts, `Matrix12Grouped.interleaved` / `TransformMatrix3D.grouped`, round-trips a
     /// transform correctly, so a caller who has one layout can still reach the method that wants
     /// the other without hand-shuffling indices.
-    @Test func groupedInterleavedConversionRoundTripsTheSameTransform() {
+    @Test func groupedInterleavedConversionRoundTripsTheSameTransform() throws {
         // A matrix with no accidental symmetry in either its rotation or its translation, so a
         // shuffled index would move the box to the wrong place rather than coincidentally the
         // right one.
@@ -137,24 +120,16 @@ struct TransformExpansionTests {
             0, 0, 1,
             5, 10, 15,
         ])!
-        guard let box = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10) else {
-            Issue.record("box construction failed")
-            return
-        }
-        let viaGrouped = box.transformed(matrix: grouped)
-        let viaInterleaved = box.transformed(byMatrix: grouped.interleaved)
-        #expect(viaGrouped != nil)
-        #expect(viaInterleaved != nil)
-        if let a = viaGrouped?.boundingBox, let b = viaInterleaved?.boundingBox {
-            #expect(abs(a.min.x - b.min.x) < 1e-6)
-            #expect(abs(a.min.y - b.min.y) < 1e-6)
-            #expect(abs(a.min.z - b.min.z) < 1e-6)
-            #expect(abs(a.min.x - 5.0) < 1e-6)
-            #expect(abs(a.min.y - 10.0) < 1e-6)
-            #expect(abs(a.min.z - 15.0) < 1e-6)
-        }
+        let box = try #require(Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10))
+        let viaGrouped = try #require(box.transformed(matrix: grouped))
+        let viaInterleaved = try #require(box.transformed(byMatrix: grouped.interleaved))
+        // Both routes land the box at (5, 10, 15)..(15, 20, 25).
+        try expectBounds(viaGrouped, min: SIMD3(5, 10, 15), max: SIMD3(15, 20, 25))
+        try expectBounds(viaInterleaved, min: SIMD3(5, 10, 15), max: SIMD3(15, 20, 25))
         // And the reverse conversion agrees too.
         #expect(grouped.interleaved.grouped.values == grouped.values)
+        // The conversion actually moved entries: the two layouts differ for this matrix.
+        #expect(grouped.interleaved.values != grouped.values)
     }
 
     /// #835 PR #864 review finding 1, the deprecated-overload half: the old `[Double]`-taking
@@ -165,25 +140,21 @@ struct TransformExpansionTests {
     /// `TransformMatrix3D`'s own raw-array initializers are `nil`-returning too, so these
     /// deprecated overloads are no longer the *only* path to graceful failure, but they stay,
     /// unchanged, for source compatibility with existing `[Double]` call sites.
-    @Test func deprecatedArrayOverloadsStillWork() {
-        guard let box = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10) else {
-            Issue.record("box construction failed")
-            return
-        }
+    @Test func deprecatedArrayOverloadsStillWork() throws {
+        let box = try #require(Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10))
         let grouped: [Double] = [1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 0, 0]
         let interleaved: [Double] = [1, 0, 0, 5, 0, 1, 0, 10, 0, 0, 1, 15]
 
-        let a = box.transformed(matrix: grouped)
-        #expect(a != nil)
-        if let bb = a?.boundingBox { #expect(abs(bb.min.x - 5.0) < 1e-6) }
+        // Each overload is read in its own layout: grouped moves x by 5 only, interleaved by
+        // (5, 10, 15), so a swapped layout lands somewhere different.
+        let a = try #require(box.transformed(matrix: grouped))
+        try expectBounds(a, min: SIMD3(5, 0, 0), max: SIMD3(15, 10, 10))
 
-        let b = box.gTransformed(matrix: interleaved)
-        #expect(b != nil)
-        if let bb = b?.boundingBox { #expect(abs(bb.min.x - 5.0) < 1e-6) }
+        let b = try #require(box.gTransformed(matrix: interleaved))
+        try expectBounds(b, min: SIMD3(5, 10, 15), max: SIMD3(15, 20, 25))
 
-        let c = box.transformed(byMatrix: interleaved)
-        #expect(c != nil)
-        if let bb = c?.boundingBox { #expect(abs(bb.min.x - 5.0) < 1e-6) }
+        let c = try #require(box.transformed(byMatrix: interleaved))
+        try expectBounds(c, min: SIMD3(5, 10, 15), max: SIMD3(15, 20, 25))
 
         // Wrong element count still returns nil rather than trapping.
         #expect(box.transformed(matrix: [1, 0, 0]) == nil)

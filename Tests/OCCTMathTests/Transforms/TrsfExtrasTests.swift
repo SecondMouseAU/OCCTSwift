@@ -5,59 +5,60 @@ import Testing
 
 @Suite("gp_Trsf_Extras")
 struct TrsfExtrasTests {
-    @Test func transformFromMatrix() {
-        // Translation by (5, 10, 15)
-        let box = Shape.box(width: 1, height: 1, depth: 1)
-        if let b = box {
-            let result = b.transformed(
-                byMatrix: TransformMatrix3D([
-                    1, 0, 0, 5,
-                    0, 1, 0, 10,
-                    0, 0, 1, 15,
-                ])!)
-            #expect(result != nil)
-            if let r = result {
-                let bb = r.boundingBox
-                #expect(bb != nil)
-                if let bb = bb {
-                    // Should be translated
-                    #expect(bb.min.x > 4.0)
-                    #expect(bb.min.y > 9.0)
-                    #expect(bb.min.z > 14.0)
-                }
-            }
+    /// Bounds of a shape against six expected extents, to 1e-6 (every face is widened by the
+    /// 1e-7 vertex tolerance; probed on the pinned kernel).
+    private func expectBounds(
+        _ shape: Shape, min lo: SIMD3<Double>, max hi: SIMD3<Double>,
+        sourceLocation: SourceLocation = #_sourceLocation
+    ) throws {
+        let bb = try #require(shape.boundingBox, sourceLocation: sourceLocation)
+        for (got, want) in zip([bb.min.x, bb.min.y, bb.min.z], [lo.x, lo.y, lo.z]) {
+            #expect(abs(got - want) < 1e-6, sourceLocation: sourceLocation)
+        }
+        for (got, want) in zip([bb.max.x, bb.max.y, bb.max.z], [hi.x, hi.y, hi.z]) {
+            #expect(abs(got - want) < 1e-6, sourceLocation: sourceLocation)
         }
     }
 
-    @Test func transformIsNegative() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)
-        if let b = box {
-            // A freshly created box has identity location
-            #expect(b.isTransformNegative == false)
-        }
+    @Test func transformFromMatrix() throws {
+        // Translation by (5, 10, 15) of the centred unit cube (-0.5..0.5 on each axis).
+        let b = try #require(Shape.box(width: 1, height: 1, depth: 1))
+        let matrix = try #require(
+            TransformMatrix3D([
+                1, 0, 0, 5,
+                0, 1, 0, 10,
+                0, 0, 1, 15,
+            ]))
+        let r = try #require(b.transformed(byMatrix: matrix))
+        try expectBounds(r, min: SIMD3(4.5, 9.5, 14.5), max: SIMD3(5.5, 10.5, 15.5))
     }
 
-    @Test func mirrorTransformProducesResult() {
+    @Test func transformIsNegative() throws {
+        let b = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        // A freshly created box has identity location
+        #expect(b.isTransformNegative == false)
+        // Control requiring the opposite answer: a location whose matrix is a mirror (x -> -x,
+        // determinant -1) reports negative. Probed true on the pinned kernel.
+        let mirrored = try #require(b.located(matrix: [-1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0]))
+        #expect(mirrored.isTransformNegative == true)
+        // And a proper rotation/translation location is not negative.
+        let moved = try #require(b.located(matrix: [1, 0, 0, 5, 0, 1, 0, 0, 0, 0, 1, 0]))
+        #expect(moved.isTransformNegative == false)
+    }
+
+    @Test func mirrorTransformProducesResult() throws {
         // Use origin-based box (corner at 5,0,0) so mirror moves it clearly
-        let box = Shape.box(origin: SIMD3(5, 0, 0), width: 10, height: 10, depth: 10)
-        if let b = box {
-            // Mirror through YZ plane: X -> -X
-            let mirrored = b.transformed(
-                byMatrix: TransformMatrix3D([
-                    -1, 0, 0, 0,
-                    0, 1, 0, 0,
-                    0, 0, 1, 0,
-                ])!)
-            #expect(mirrored != nil)
-            if let m = mirrored {
-                let bb = m.boundingBox
-                #expect(bb != nil)
-                if let bb = bb {
-                    // Original was [5,15], mirrored should be [-15,-5]
-                    #expect(bb.max.x < -4.0)
-                }
-            }
-        }
+        let b = try #require(Shape.box(origin: SIMD3(5, 0, 0), width: 10, height: 10, depth: 10))
+        // Mirror through YZ plane: X -> -X
+        let matrix = try #require(
+            TransformMatrix3D([
+                -1, 0, 0, 0,
+                0, 1, 0, 0,
+                0, 0, 1, 0,
+            ]))
+        let m = try #require(b.transformed(byMatrix: matrix))
+        // Original was x in [5, 15], mirrored is [-15, -5]; y and z are unchanged at [0, 10].
+        try expectBounds(m, min: SIMD3(-15, 0, 0), max: SIMD3(-5, 10, 10))
     }
 
     @Test func displacement() {
@@ -74,19 +75,29 @@ struct TrsfExtrasTests {
             from: (point: SIMD3(0, 0, 0), direction: SIMD3(0, 0, 1)),
             to: (point: SIMD3(5, 5, 5), direction: SIMD3(0, 0, 1)))
         #expect(m.values.count == 12)
+        // Probed on the pinned kernel: gp_Trsf::SetTransformation maps coordinates from the
+        // global frame into the target frame, so a target at (5, 5, 5) gives translation
+        // -5 on each axis (the opposite sign to `displacement`), identity rotation.
+        let expected: [Double] = [1, 0, 0, -5, 0, 1, 0, -5, 0, 0, 1, -5]
+        for (got, want) in zip(m.values, expected) {
+            #expect(abs(got - want) < 1e-10)
+        }
     }
 
     /// Exercises the deprecated `[Double]`-taking overload directly (an array literal here
     /// infers `[Double]`, not `TransformMatrix3D`), see
     /// `TransformExpansionTests.deprecatedArrayOverloadsStillWork` for the same coverage across
     /// all three methods.
-    @Test func invalidMatrixSize() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)
-        if let b = box {
-            // Wrong size array should return nil
-            let result = b.transformed(byMatrix: [1, 0, 0])
-            #expect(result == nil)
-        }
+    @Test func invalidMatrixSize() throws {
+        let b = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        // Wrong size arrays return nil, short and long.
+        #expect(b.transformed(byMatrix: [1, 0, 0]) == nil)
+        #expect(b.transformed(byMatrix: [Double](repeating: 0, count: 13)) == nil)
+        // Control: a correctly sized identity array is accepted, so the nil above is the size
+        // check and not a blanket refusal.
+        let identity: [Double] = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0]
+        let ok = try #require(b.transformed(byMatrix: identity))
+        try expectBounds(ok, min: SIMD3(-5, -5, -5), max: SIMD3(5, 5, 5))
     }
 
     /// #835 regression: `transformed(byMatrix:)` uses an INTERLEAVED row-major layout
@@ -95,24 +106,16 @@ struct TrsfExtrasTests {
     /// last). Locks in the documented convention against real bounding-box geometry, so a
     /// future edit that accidentally aligns this method's array shape with
     /// `transformed(matrix:)`'s GROUPED layout is caught here.
-    @Test func transformFromMatrixInterleavedLayoutTranslatesAsDocumented() {
-        if let box = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10) {
-            // Identity rotation, translate by (5, 10, 15). INTERLEAVED: each row's own tx/ty/tz.
-            let matrix = TransformMatrix3D([
+    @Test func transformFromMatrixInterleavedLayoutTranslatesAsDocumented() throws {
+        let box = try #require(Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10))
+        // Identity rotation, translate by (5, 10, 15). INTERLEAVED: each row's own tx/ty/tz.
+        let matrix = try #require(
+            TransformMatrix3D([
                 1, 0, 0, 5,
                 0, 1, 0, 10,
                 0, 0, 1, 15,
-            ])!
-            let result = box.transformed(byMatrix: matrix)
-            #expect(result != nil)
-            if let r = result, let bb = r.boundingBox {
-                #expect(abs(bb.min.x - 5.0) < 1e-6)
-                #expect(abs(bb.min.y - 10.0) < 1e-6)
-                #expect(abs(bb.min.z - 15.0) < 1e-6)
-                #expect(abs(bb.max.x - 15.0) < 1e-6)
-                #expect(abs(bb.max.y - 20.0) < 1e-6)
-                #expect(abs(bb.max.z - 25.0) < 1e-6)
-            }
-        }
+            ]))
+        let r = try #require(box.transformed(byMatrix: matrix))
+        try expectBounds(r, min: SIMD3(5, 10, 15), max: SIMD3(15, 20, 25))
     }
 }
