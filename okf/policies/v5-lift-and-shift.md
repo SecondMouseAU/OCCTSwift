@@ -38,6 +38,22 @@ gains to 32 and from ninth in the ranking to fifth. The open and closed-unmerged
 them. No path the old key reported at zero gain has one under the new key, so nothing a batch
 declared drained on the merged population was wrongly declared.
 
+**The gain comparison stopped scoring `main`'s stronger tests as gains (#3301).** It tiered a
+`guard ... else { Issue.record(...); return }` ESCAPABLE, so a head that swapped the guard for a
+force-unwrap and dropped the pins read as a gain over `main`. It now reads the detector's
+`loud_tier` (a recording guard is not an escape, a `withKnownIssue` body is not a live
+assertion), requires the head to keep at least as many value-pinning assertion sites as `main`
+for the same test, and does not call a head-only test new when `main` declares a function of that
+name anywhere. Against `origin/main` at `44b0f937e` and branch head `ee42388` with a basename
+path map, total gains went **191 to 71**: "clean tests `main` lacks" fell 171 to 5 (moved tests),
+and "weak on `main`, stronger on the head" rose 20 to 66, because a silent `else { return }` on
+`main` against a recording guard on the head is a real gain the old tier hid. The thirteen files
+#3301 named read zero strengthened gains; four head-only tests survive by name (two in
+`OCCTMiscTests.swift`, `Issue213VProfile.flankAngleFromSpec`,
+`Issue1034NullAndEmptyTests.deprecatedAliasAgrees`) and are `main`'s renames or removals, which
+only a hand check sees. `census-766-weak-assertions.py --summary` is unchanged: 595 SEVERE and
+2,460 ESCAPABLE of 6,933 tests at `f7722275e`. Re-measure before quoting any of these figures; they carry a commit pair and go stale as the tree moves.
+
 **The merged row stands at 876 gains over 396 paths**, measured on 2026-10-02 against
 `origin/main` at `e6a3b8f` and branch head `ee42388`. Most of the fall from 1,229 is the
 programme working: batches have lifted that work onto `main`. A small part of it is the detector
