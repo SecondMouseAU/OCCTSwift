@@ -632,6 +632,9 @@ extension Document {
     ///
     ///
     /// Registers all format drivers automatically.
+    ///
+    /// An empty file, a non-OCAF file or a damaged header returns `(nil, .driverFailure)`
+    /// instead of crashing; a missing file returns `(nil, .unknownDocument)`.
     public static func loadOCAF(from path: String) -> (document: Document?, status: ReaderStatus) {
         var statusRaw: Int32 = -1
         guard let ref = OCCTDocumentLoadOCAF(path, &statusRaw) else {

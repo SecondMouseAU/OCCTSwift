@@ -587,6 +587,10 @@ public static func loadOCAF(from path: String) -> (document: Document?, status: 
 - **Returns:** A tuple `(document, status)`. `document` is non-nil only when `status == .ok`.
 - **OCCT:** `TDocStd_Application::Open` (with `BinDrivers`, `XmlDrivers`, `BinXCAFDrivers`,
   `XmlXCAFDrivers` registered on the document's own private application instance).
+- **Malformed files:** an empty file, a text file, or a recognised header followed by garbage
+  returns `(nil, .driverFailure)` (#3318); a missing file returns `(nil, .unknownDocument)`. The
+  bridge checks the file's header before OCCT sees it, because OCCT dereferences a null header on
+  these inputs and the fault cannot be caught.
 - **Example:**
   ```swift
   let result = Document.loadOCAF(from: "/tmp/model.cbf")

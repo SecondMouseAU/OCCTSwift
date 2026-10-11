@@ -30,6 +30,13 @@
 // === Area-specific OCCT headers ===
 
 #include <algorithm>
+#include <fstream>
+#include <PCDM.hxx>
+#include <PCDM_TypeOfFileDriver.hxx>
+#include <Storage_BaseDriver.hxx>
+#include <Storage_HeaderData.hxx>
+#include <Storage_TypeData.hxx>
+#include <NCollection_Sequence.hxx>
 
 #include <STEPCAFControl_Reader.hxx>
 #include <STEPCAFControl_Writer.hxx>
@@ -1839,12 +1846,77 @@ int32_t OCCTDocumentSaveOCAF(OCCTDocumentRef doc, const char* path)
   }
 }
 
+// #3318: whether OCCT's retrieval can be handed this file without dereferencing a null.
+// Two uncatchable SIGSEGVs sit behind loadOCAF on a non-OCAF file (OCC_CATCH_SIGNALS is inert):
+//  - an empty or text file reaches BinLDrivers_DocumentRetrievalDriver::Read with a null
+//    Storage_HeaderData and dereferences it at `aHeaderData->StorageVersion()`;
+//  - a recognised magic number followed by garbage reaches `td.Types()->Value(1)` in
+//    PCDM_ReadWriter::FileFormat with no types table.
+// This mirrors the front half of PCDM_ReadWriter::FileFormat(filename) and refuses where that
+// would have faulted. A path that cannot be opened is passed through, so a missing file keeps the
+// status Open gives it (unknownDocument).
+static bool occtOcafFileIsRetrievable(const char* path)
+{
+  std::ifstream probe(path, std::ios::in | std::ios::binary);
+  if (!probe.is_open())
+    return true;
+  try
+  {
+    occ::handle<Storage_BaseDriver> streamDriver;
+    const PCDM_TypeOfFileDriver     kind = PCDM::FileDriverType(probe, streamDriver);
+    if (kind == PCDM_TOFD_Unknown)
+      return false;
+    if (kind == PCDM_TOFD_XmlFile)
+      return true;
+
+    occ::handle<Storage_BaseDriver> driver;
+    if (PCDM::FileDriverType(TCollection_AsciiString(path), driver) == PCDM_TOFD_Unknown
+        || driver.IsNull())
+      return false;
+    if (driver->Open(TCollection_AsciiString(path), Storage_VSRead) != Storage_VSOk)
+      return false;
+    bool ok = false;
+    try
+    {
+      Storage_HeaderData header;
+      header.Read(driver);
+      const NCollection_Sequence<TCollection_AsciiString>& info = header.UserInfo();
+      for (int i = 1; !ok && i <= info.Length(); i++)
+        ok = info(i).Search("FILE_FORMAT: ") != -1;
+      if (!ok)
+      {
+        Storage_TypeData types;
+        types.Read(driver);
+        ok = !types.Types().IsNull() && types.Types()->Length() >= 1;
+      }
+    }
+    catch (...)
+    {
+      ok = false;
+    }
+    driver->Close();
+    return ok;
+  }
+  catch (...)
+  {
+    occtRecordCaughtException(__func__);
+    return false;
+  }
+}
+
 OCCTDocumentRef OCCTDocumentLoadOCAF(const char* path, int32_t* outStatus)
 {
   if (!path)
   {
     if (outStatus)
       *outStatus = -1;
+    return nullptr;
+  }
+  // #3318: refuse a file OCCT would crash on, with the status a corrupt file already gets.
+  if (!occtOcafFileIsRetrievable(path))
+  {
+    if (outStatus)
+      *outStatus = static_cast<int32_t>(PCDM_RS_DriverFailure);
     return nullptr;
   }
   OCCTDocument* document = nullptr;
