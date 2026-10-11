@@ -161,6 +161,15 @@ private func expectFigures(
             abs(area - expected.area) <= volumeTolerance * expected.area,
             "\(label) \(name) area \(area), expected \(expected.area)")
     }
+    // Where it is: the figures above are translation-invariant, so a restore that moved the shape
+    // passes all of them. BREP text carries full-precision coordinates, so the boxes agree to
+    // rounding (the 1e-9 is above the measured difference, which is below 1e-12).
+    let before = try #require(shape.bounds, "original \(name) has no bounds")
+    let after = try #require(restored.bounds, "restored \(name) has no bounds")
+    let dMin = before.min - after.min
+    let dMax = before.max - after.max
+    #expect((dMin * dMin).sum() < 1e-18, "\(name) min corner moved: \(before.min) -> \(after.min)")
+    #expect((dMax * dMax).sum() < 1e-18, "\(name) max corner moved: \(before.max) -> \(after.max)")
 }
 
 @Suite("Stress: Round-Trip BREP String")

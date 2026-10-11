@@ -20,6 +20,17 @@ private func sphereAt(radius: Double, x: Double, y: Double) throws -> Shape {
     return try #require(sphere.translated(by: SIMD3(x, y, 0)), "translate sphere to (\(x), \(y))")
 }
 
+/// The (x, y) centres of `shape`'s cylindrical faces, sorted by x then y. A full cylinder's box is
+/// centred on its axis, so the middle of the face's bounds is the axis' position.
+private func cylinderCentres(of shape: Shape) throws -> [SIMD2<Double>] {
+    var centres: [SIMD2<Double>] = []
+    for face in shape.faces() where face.surfaceType == .cylinder {
+        let b = try #require(face.bounds, "cylindrical face with no bounds")
+        centres.append(SIMD2((b.min.x + b.max.x) / 2, (b.min.y + b.max.y) / 2))
+    }
+    return centres.sorted { $0.x != $1.x ? $0.x < $1.x : $0.y < $1.y }
+}
+
 // MARK: - Boolean Chains
 
 @Suite("Stress: Boolean Chains")
@@ -240,6 +251,21 @@ struct StressFeatureChainTests {
         #expect(abs((shape.volume ?? 0) - (1e5 - 400 * .pi)) < 1e-3)
         // Each hole adds one cylindrical face to the box's six.
         #expect(shape.subShapeCount(ofType: .face) == 16)
+        // Where the holes are. The volume is the same wherever a hole sits inside the plate, and
+        // so is the face count, so neither can see a drill that swapped x and y or ignored the
+        // row spacing; the cylinder axes can: rows at x = -30, -15, 0, 15, 30, columns at
+        // y = -10, 10.
+        var expected: [SIMD2<Double>] = []
+        for row in 0..<5 {
+            for col in 0..<2 {
+                expected.append(SIMD2(-30.0 + Double(row) * 15.0, -10.0 + Double(col) * 20.0))
+            }
+        }
+        let centres = try cylinderCentres(of: shape)
+        #expect(centres.count == 10)
+        for (found, want) in zip(centres, expected) {
+            #expect(abs(found.x - want.x) < 1e-5 && abs(found.y - want.y) < 1e-5, "hole at \(want)")
+        }
     }
 
     @Test func deepFeatureChain() throws {
