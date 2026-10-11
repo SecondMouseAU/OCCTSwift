@@ -95,11 +95,6 @@
     "subtractPeriods"
    ]
   },
-  "PER_SUB_REVERSED": {
-   "exit": 0,
-   "crash": false,
-   "red": []
-  },
   "PER_EQ_TRUE": {
    "exit": 1,
    "crash": false,
@@ -226,6 +221,13 @@
     "transformFromMatrixInterleavedLayoutTranslatesAsDocumented"
    ]
   },
+  "TRF_BYM_NOMIRROR": {
+   "exit": 1,
+   "crash": false,
+   "red": [
+    "mirrorTransformProducesResult"
+   ]
+  },
   "TRF_BYM_TXONLY": {
    "exit": 1,
    "crash": false,
@@ -235,11 +237,6 @@
     "transformFromMatrix",
     "transformFromMatrixInterleavedLayoutTranslatesAsDocumented"
    ]
-  },
-  "TRF_BYM_NOMIRROR": {
-   "exit": 0,
-   "crash": false,
-   "red": []
   },
   "TRF_NEG_FALSE": {
    "exit": 1,
