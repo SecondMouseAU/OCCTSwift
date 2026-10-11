@@ -123,7 +123,7 @@ MANUAL_OVERRIDES: dict[str, tuple[set[str], str]] = {
         {"OCCTAnalysisTests"},
         "same param-type-only shape as BRepFeat_Status. Real tests: Tests/OCCTAnalysisTests/"
         "MedialAxisVariousShapesTests.swift, MedialAxisRectangleTests.swift. (The one match inside "
-        "Pass 5d's own six, Tests/OCCTMiscTests/Issue622AllocationBoundsTests.swift, names "
+        "Pass 5d's own six, Tests/OCCTMiscTests/Bridge/Issue622AllocationBoundsTests.swift, names "
         "`MedialAxis.drawArc` only in a `//` comment about test history -- confirmed by reading "
         "the file -- so it is not counted as coverage.)",
     ),
