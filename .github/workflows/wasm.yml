@@ -116,9 +116,20 @@ jobs:
 
       - name: Install the Swift SDK for WebAssembly
         if: steps.cache-sdk.outputs.cache-hit != 'true'
+        # Retried ONLY when the installer aborts (exit 134, SIGABRT): the Swift 6.4.0 installer has
+        # crashed twice in Foundation's curl handle teardown after a complete download (#3083, runs
+        # 37447912387 and 38090445782). Any other failure, a checksum mismatch included, is a real
+        # failure and fails at once, so the pin keeps its meaning.
         run: |
-          swift sdk install "${{ steps.pins.outputs.wasm_sdk_url }}" \
-            --checksum "${{ steps.pins.outputs.wasm_sdk_checksum }}"
+          for attempt in 1 2 3; do
+            status=0
+            swift sdk install "${{ steps.pins.outputs.wasm_sdk_url }}" \
+              --checksum "${{ steps.pins.outputs.wasm_sdk_checksum }}" || status=$?
+            if [ "$status" -eq 0 ]; then break; fi
+            if [ "$status" -ne 134 ] || [ "$attempt" -eq 3 ]; then exit "$status"; fi
+            echo "::warning::swift sdk install aborted (exit 134), attempt $attempt of 3; retrying (#3083)"
+            sleep 10
+          done
           swift sdk list
 
       # wasi-sdk is needed for exactly one thing the Swift SDK does not ship: a libc++abi and
