@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -16,7 +15,7 @@ struct SurfaceFromGridTests {
             let n = sphere.normal(u: 0, v: Double.pi / 4)
             let mag = sqrt(n.x * n.x + n.y * n.y + n.z * n.z)
             #expect(abs(mag - 1.0) < 0.01)
-            #expect(simd_length(n - SIMD3(0.70710678118654757, 0, 0.70710678118654746)) < 1e-12)
+            #expect(vectorLength(n - SIMD3(0.70710678118654757, 0, 0.70710678118654746)) < 1e-12)
         }
     }
 
@@ -52,9 +51,9 @@ struct SurfaceFromGridTests {
         if let surf {
             #expect(surf.uDegree == 4 && surf.vDegree == 4)
             let d = surf.domain
-            #expect(simd_length(surf.point(atU: d.uMin, v: d.vMin) - SIMD3(0, 0, 0)) < 1e-12)
+            #expect(vectorLength(surf.point(atU: d.uMin, v: d.vMin) - SIMD3(0, 0, 0)) < 1e-12)
             #expect(
-                simd_length(surf.point(atU: d.uMax, v: d.vMax) - SIMD3(4, 4, sin(4.0) * cos(4.0)))
+                vectorLength(surf.point(atU: d.uMax, v: d.vMax) - SIMD3(4, 4, sin(4.0) * cos(4.0)))
                     < 1e-12)
         }
     }

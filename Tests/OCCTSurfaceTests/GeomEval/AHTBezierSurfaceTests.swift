@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -25,7 +24,7 @@ struct AHTBezierSurfaceTests {
         // poles, see Scripts/repro/766-aht-bezier/. `surf != nil` passed a transposed pole grid.
         if let s = surf {
             let expected = SIMD3(31.415697292121592, 29.74530741910133, -0.039437938300482867)
-            #expect(simd_length(s.point(atU: 0.3, v: 0.7) - expected) < 1e-9)
+            #expect(vectorLength(s.point(atU: 0.3, v: 0.7) - expected) < 1e-9)
         }
     }
 }

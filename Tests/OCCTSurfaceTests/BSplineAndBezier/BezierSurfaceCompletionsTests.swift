@@ -1,5 +1,5 @@
+import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -13,7 +13,7 @@ struct BezierSurfaceCompletionsTests {
     // v columns.
 
     private func samePoles(_ a: [SIMD3<Double>], _ b: [SIMD3<Double>]) -> Bool {
-        a.count == b.count && zip(a, b).allSatisfy { simd_length($0 - $1) < 1e-12 }
+        a.count == b.count && zip(a, b).allSatisfy { vectorLength($0 - $1) < 1e-12 }
     }
     @Test("InsertPoleColAfter and RemovePoleCol")
     func insertRemoveCol() {
@@ -93,7 +93,7 @@ struct BezierSurfaceCompletionsTests {
             #expect(s.bezierUDegree == origUDeg + 1)
             #expect(s.bezierVDegree == origVDeg + 1)
             // Degree elevation keeps the geometry: the kernel moves (0.3, 0.7) by 2.8e-17.
-            #expect(simd_length(s.point(atU: 0.3, v: 0.7) - before) < 1e-12)
+            #expect(vectorLength(s.point(atU: 0.3, v: 0.7) - before) < 1e-12)
         }
     }
 
