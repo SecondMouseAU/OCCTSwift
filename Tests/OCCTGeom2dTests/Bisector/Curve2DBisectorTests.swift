@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -32,7 +31,7 @@ struct Curve2DBisectorTests {
         let pts = bis.drawAdaptive()
         #expect(pts.count >= 2)
         #expect(abs(bis.domain.upperBound - 20) < 1e-9)
-        #expect(simd_distance(bis.point(at: 10), SIMD2(0, 2.5)) < 1e-9)
-        #expect(simd_distance(bis.point(at: 0), SIMD2(-10, 12.5)) < 1e-9)
+        #expect(vectorDistance(bis.point(at: 10), SIMD2(0, 2.5)) < 1e-9)
+        #expect(vectorDistance(bis.point(at: 0), SIMD2(-10, 12.5)) < 1e-9)
     }
 }

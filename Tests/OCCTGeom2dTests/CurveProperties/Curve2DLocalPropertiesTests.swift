@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -47,14 +46,14 @@ struct Curve2DLocalPropertiesTests {
         let n = try #require(circle.normal(at: 0))
         let len = sqrt(n.x * n.x + n.y * n.y)
         #expect(abs(len - 1.0) < 1e-6)
-        #expect(simd_distance(n, SIMD2(-1, 0)) < 1e-9)
+        #expect(vectorDistance(n, SIMD2(-1, 0)) < 1e-9)
 
         // About a centre that is not the origin the normal is still the direction to the centre,
         // and not merely minus the position vector: at u = pi/2 the point is (3, 9) and the
         // centre (3, 4) is straight down.
         let offset = try #require(Curve2D.circle(center: SIMD2(3, 4), radius: 5))
         let down = try #require(offset.normal(at: Double.pi / 2))
-        #expect(simd_distance(down, SIMD2(0, -1)) < 1e-9)
+        #expect(vectorDistance(down, SIMD2(0, -1)) < 1e-9)
     }
 
     @Test("Tangent direction on segment is along direction")
@@ -63,18 +62,18 @@ struct Curve2DLocalPropertiesTests {
         let mid = (seg.domain.lowerBound + seg.domain.upperBound) / 2
         let t = try #require(seg.tangentDirection(at: mid))
         // Along +X: the sign is pinned too, which `abs(t.y) < 1e-6` did not.
-        #expect(simd_distance(t, SIMD2(1, 0)) < 1e-9)
+        #expect(vectorDistance(t, SIMD2(1, 0)) < 1e-9)
 
         // A diagonal segment, (1, 1) to (4, 5), runs along (3, 4) / 5, so a swap of x and y or a
         // reversed sign both miss.
         let diagonal = try #require(Curve2D.segment(from: SIMD2(1, 1), to: SIMD2(4, 5)))
         let dt = try #require(diagonal.tangentDirection(at: 2))
-        #expect(simd_distance(dt, SIMD2(0.6, 0.8)) < 1e-9)
+        #expect(vectorDistance(dt, SIMD2(0.6, 0.8)) < 1e-9)
 
         // On a circle, which runs counter-clockwise, the tangent at u = 0 is +Y.
         let circle = try #require(Curve2D.circle(center: .zero, radius: 5))
         let ct = try #require(circle.tangentDirection(at: 0))
-        #expect(simd_distance(ct, SIMD2(0, 1)) < 1e-9)
+        #expect(vectorDistance(ct, SIMD2(0, 1)) < 1e-9)
     }
 
     @Test("Center of curvature on circle is at center")
@@ -86,7 +85,7 @@ struct Curve2DLocalPropertiesTests {
 
         // The centre does not depend on where on the circle it is taken.
         let other = try #require(circle.centerOfCurvature(at: 2.1))
-        #expect(simd_distance(other, SIMD2(3, 4)) < 1e-6)
+        #expect(vectorDistance(other, SIMD2(3, 4)) < 1e-6)
     }
 
     @Test("Local properties follow the parameter on an ellipse, where nothing is constant")
@@ -108,18 +107,18 @@ struct Curve2DLocalPropertiesTests {
 
         let centreMajor = try #require(ellipse.centerOfCurvature(at: major))
         let centreMinor = try #require(ellipse.centerOfCurvature(at: minor))
-        #expect(simd_distance(centreMajor, SIMD2(7.5, 0)) < 1e-9)
-        #expect(simd_distance(centreMinor, SIMD2(0, -15)) < 1e-9)
+        #expect(vectorDistance(centreMajor, SIMD2(7.5, 0)) < 1e-9)
+        #expect(vectorDistance(centreMinor, SIMD2(0, -15)) < 1e-9)
 
         let normalMajor = try #require(ellipse.normal(at: major))
         let normalMinor = try #require(ellipse.normal(at: minor))
-        #expect(simd_distance(normalMajor, SIMD2(-1, 0)) < 1e-9)
-        #expect(simd_distance(normalMinor, SIMD2(0, -1)) < 1e-9)
+        #expect(vectorDistance(normalMajor, SIMD2(-1, 0)) < 1e-9)
+        #expect(vectorDistance(normalMinor, SIMD2(0, -1)) < 1e-9)
 
         let tangentMajor = try #require(ellipse.tangentDirection(at: major))
         let tangentMinor = try #require(ellipse.tangentDirection(at: minor))
-        #expect(simd_distance(tangentMajor, SIMD2(0, 1)) < 1e-9)
-        #expect(simd_distance(tangentMinor, SIMD2(-1, 0)) < 1e-9)
+        #expect(vectorDistance(tangentMajor, SIMD2(0, 1)) < 1e-9)
+        #expect(vectorDistance(tangentMinor, SIMD2(-1, 0)) < 1e-9)
     }
 
     @Test("Inflection points of cubic BSpline")

@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -110,10 +109,10 @@ struct Issue3091GPropsTests {
         for a in 0..<3 {
             for b in 0..<3 { dSd += d[a] * m.second[a][b] * d[b] }
         }
-        let yy = trS - 2 * simd_dot(q, m.first) + m.mass * simd_dot(q, q)
+        let yy = trS - 2 * dotProduct(q, m.first) + m.mass * dotProduct(q, q)
         let ydd =
-            dSd - 2 * simd_dot(q, d) * simd_dot(d, m.first) + m.mass * simd_dot(q, d)
-            * simd_dot(q, d)
+            dSd - 2 * dotProduct(q, d) * dotProduct(d, m.first) + m.mass * dotProduct(q, d)
+            * dotProduct(q, d)
         return yy - ydd
     }
 
@@ -126,12 +125,12 @@ struct Issue3091GPropsTests {
         init(_ frame: GProps.Frame) {
             self.frame = frame
             // gp_Ax3 with an X direction orthogonalised against the main direction, as OCCT does.
-            let zz = simd_normalize(frame.axis)
+            let zz = normalizedVector(frame.axis)
             let x0 = frame.xDirection ?? V3(1, 0, 0)
-            let xx = simd_normalize(x0 - simd_dot(x0, zz) * zz)
+            let xx = normalizedVector(x0 - dotProduct(x0, zz) * zz)
             self.z = zz
             self.x = xx
-            self.y = simd_cross(zz, xx)
+            self.y = crossProduct(zz, xx)
         }
         func global(_ a: Double, _ b: Double, _ c: Double) -> V3 {
             frame.origin + a * x + b * y + c * z
@@ -282,7 +281,7 @@ struct Issue3091GPropsTests {
     /// of the largest entry; patched, the largest deviation is below 2e-13.
     @Test
     func everyOverloadAgreesWithTheIndependentIntegral() throws {
-        let d = simd_normalize(V3(1, 2, 2))
+        let d = normalizedVector(V3(1, 2, 2))
         let q = V3(2, -1, 3)
         var failures: [String] = []
         var checked = 0
@@ -297,7 +296,7 @@ struct Issue3091GPropsTests {
                     checked += 1
 
                     let massErr = abs(g.mass - m.mass) / abs(m.mass)
-                    let cmErr = simd_length(g.centreOfMass - cm) / (1 + simd_length(cm))
+                    let cmErr = vectorLength(g.centreOfMass - cm) / (1 + vectorLength(cm))
                     var scale = 0.0
                     var dev = 0.0
                     let k = g.matrixOfInertia
@@ -312,7 +311,7 @@ struct Issue3091GPropsTests {
                     let axisExact = Self.axisMoment(m, q: q, d: d)
                     let axisErr = abs(axis - axisExact) / abs(axisExact)
                     let staticMoments = g.staticMoments
-                    let smErr = simd_length(staticMoments - m.first) / (1 + simd_length(m.first))
+                    let smErr = vectorLength(staticMoments - m.first) / (1 + vectorLength(m.first))
 
                     if massErr > 1e-9 { failures.append("\(label): mass off by \(massErr)") }
                     if cmErr > 1e-9 { failures.append("\(label): centre of mass off by \(cmErr)") }
@@ -357,14 +356,14 @@ struct Issue3091GPropsTests {
             GProps.cylinder(.volume, radius: 5, alpha1: 0, alpha2: .pi / 2, z1: 0, z2: 10))
         // x = y = (2 R / 3) * (sin(pi/2) - sin 0) / (pi/2) = 4 R / (3 pi)
         let c = 4.0 * 5.0 / (3.0 * .pi)
-        #expect(simd_length(cyl.centreOfMass - V3(c, c, 5)) < 1e-12)
+        #expect(vectorLength(cyl.centreOfMass - V3(c, c, 5)) < 1e-12)
 
         let ball = try #require(
             GProps.sphere(
                 .volume, radius: 5, teta1: 0, teta2: .pi / 2, alpha1: -.pi / 2, alpha2: .pi / 2))
         // A ball wedge of angle b has its centre (3 pi R / 16) sin(b/2) / (b/2) from the axis, along
         // the bisector, so for b = pi/2 and R = 5 it is at x = y = 3 R / 8.
-        #expect(simd_length(ball.centreOfMass - V3(1.875, 1.875, 0)) < 1e-12)
+        #expect(vectorLength(ball.centreOfMass - V3(1.875, 1.875, 0)) < 1e-12)
     }
 
     // MARK: - What holds on the pinned asset too
@@ -408,12 +407,12 @@ struct Issue3091GPropsTests {
             GProps.cylinder(.surface, radius: 5, alpha1: 0, alpha2: .pi / 2, z1: 0, z2: 10))
         // x = y = R (sin(pi/2) - sin 0) / (pi/2) = 2 R / pi
         let c = 2.0 * 5.0 / .pi
-        #expect(simd_length(cyl.centreOfMass - V3(c, c, 5)) < 1e-12)
+        #expect(vectorLength(cyl.centreOfMass - V3(c, c, 5)) < 1e-12)
         let sph = try #require(
             GProps.sphere(.surface, radius: 5, teta1: 0, teta2: 2 * .pi, alpha1: 0, alpha2: .pi / 2)
         )
         // The cap of a sphere: the centre of mass of the hemisphere's surface is R / 2 up the axis.
-        #expect(simd_length(sph.centreOfMass - V3(0, 0, 2.5)) < 1e-12)
+        #expect(vectorLength(sph.centreOfMass - V3(0, 0, 2.5)) < 1e-12)
     }
 
     /// Placement: the frame moves the measurement and does not change the mass.
@@ -424,7 +423,7 @@ struct Issue3091GPropsTests {
             GProps.cylinder(
                 .surface, frame: frame, radius: 2, alpha1: 0, alpha2: 2 * .pi, z1: 0, z2: 6))
         // The cylinder runs along +X from x = 10 to 16, so its centre is (13, 20, 30).
-        #expect(simd_length(g.centreOfMass - V3(13, 20, 30)) < 1e-12)
+        #expect(vectorLength(g.centreOfMass - V3(13, 20, 30)) < 1e-12)
         #expect(abs(g.mass - 2 * 2 * .pi * 6) < 1e-12)
     }
 
@@ -534,6 +533,6 @@ struct Issue3091GPropsTests {
         #expect(abs(a.mass - (ma + 3 * mb)) < 1e-12)
         // Centres at z = 1 and z = 4 on the axis, so the weighted mean of z.
         let z = (ma * 1 + 3 * mb * 4) / (ma + 3 * mb)
-        #expect(simd_length(a.centreOfMass - V3(0, 0, z)) < 1e-12)
+        #expect(vectorLength(a.centreOfMass - V3(0, 0, z)) < 1e-12)
     }
 }

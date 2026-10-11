@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -144,7 +143,7 @@ struct MeshTests {
             let a = SIMD3<Double>(v[Int(idx[i])])
             let b = SIMD3<Double>(v[Int(idx[i + 1])])
             let c = SIMD3<Double>(v[Int(idx[i + 2])])
-            volume += simd_dot(a, simd_cross(b, c)) / 6
+            volume += dotProduct(a, crossProduct(b, c)) / 6
             i += 3
         }
         return volume
@@ -183,7 +182,7 @@ struct MeshTests {
         #expect(indices.count == 306 * 3)
         #expect(indices.allSatisfy { Int($0) < vertices.count })
         let offSphere = vertices.filter {
-            let r = Double(simd_length($0))
+            let r = Double(vectorLength($0))
             return r > 5 + 1e-4 || r < 5 - 0.5
         }
         #expect(offSphere.isEmpty, "\(offSphere.count) vertices off the r = 5 sphere")

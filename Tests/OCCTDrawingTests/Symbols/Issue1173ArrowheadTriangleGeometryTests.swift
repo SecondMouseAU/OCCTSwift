@@ -56,7 +56,7 @@ struct Issue1173ArrowheadTriangleGeometryTests {
     /// either function directly.
     ///
     /// `arrowDirection: SIMD2(0, 1)` is axis-aligned deliberately: `CuttingPlaneLine.init`
-    /// normalizes it via `simd_normalize`, and only an already-unit axis-aligned vector survives
+    /// normalizes it via `normalizedVector`, and only an already-unit axis-aligned vector survives
     /// that unchanged in binary floating point, which the DXF text comparison below (exact
     /// `%.6f`-formatted coordinates) needs.
     ///

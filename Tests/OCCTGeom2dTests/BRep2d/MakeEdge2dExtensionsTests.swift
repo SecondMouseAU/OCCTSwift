@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -134,7 +133,7 @@ struct MakeEdge2dExtensionsTests {
         let got = edge.vertices()
         #expect(got.count == want.count, "\(label): \(got.count) vertices")
         for w in want {
-            #expect(got.contains { simd_distance($0, w) < 1e-9 }, "\(label): no vertex at \(w)")
+            #expect(got.contains { vectorDistance($0, w) < 1e-9 }, "\(label): no vertex at \(w)")
         }
     }
 

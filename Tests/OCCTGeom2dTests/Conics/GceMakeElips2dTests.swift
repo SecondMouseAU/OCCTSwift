@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -12,7 +11,7 @@ struct GceMakeElips2dTests {
             Curve2D.ellipseFromCenterDir(
                 center: SIMD2(0, 0), direction: SIMD2(1, 0),
                 majorRadius: 8, minorRadius: 4))
-        #expect(simd_distance(elips.point(at: 0), SIMD2(8, 0)) < 1e-12)
-        #expect(simd_distance(elips.point(at: .pi / 2), SIMD2(0, 4)) < 1e-12)
+        #expect(vectorDistance(elips.point(at: 0), SIMD2(8, 0)) < 1e-12)
+        #expect(vectorDistance(elips.point(at: .pi / 2), SIMD2(0, 4)) < 1e-12)
     }
 }

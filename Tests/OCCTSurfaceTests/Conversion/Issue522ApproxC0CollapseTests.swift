@@ -1,5 +1,5 @@
+import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -32,7 +32,7 @@ struct Issue522ApproxC0Collapse {
                 let u = d.uMin + (d.uMax - d.uMin) * Double(i) / Double(steps)
                 let v = d.vMin + (d.vMax - d.vMin) * Double(j) / Double(steps)
                 worst = max(
-                    worst, simd_length(surface.point(atU: u, v: v) - fit.point(atU: u, v: v)))
+                    worst, vectorLength(surface.point(atU: u, v: v) - fit.point(atU: u, v: v)))
             }
         }
         return worst

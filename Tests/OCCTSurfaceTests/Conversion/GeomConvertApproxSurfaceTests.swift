@@ -1,5 +1,5 @@
+import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -20,7 +20,7 @@ struct GeomConvertApproxSurfaceTests {
             #expect(abs(result.maxError - 0.00020644039516730319) < 1e-12)
             #expect(result.surface != nil)
             if let surf = result.surface {
-                #expect(abs(simd_length(surf.point(atU: 1.0, v: 0.5)) - 10) < 1e-3)
+                #expect(abs(vectorLength(surf.point(atU: 1.0, v: 0.5)) - 10) < 1e-3)
             }
         }
     }

@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -27,7 +26,7 @@ struct GeomSwept3DTests {
         let basis = try #require(ext.sweptProperties.basisCurve)
         let loc = basis.lineProperties.location
         let dir = basis.lineProperties.direction
-        #expect(simd_length(loc) < 1e-12)
+        #expect(vectorLength(loc) < 1e-12)
         #expect(abs(dir.x - 1) < 1e-12)
         #expect(abs(dir.y) < 1e-12)
         #expect(abs(dir.z) < 1e-12)

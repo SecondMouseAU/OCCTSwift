@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -22,8 +21,8 @@ struct XDEAssemblyOperationTests {
         max hi: SIMD3<Double>, _ what: String
     ) {
         // The bounding box is padded by about 1e-7, so the tolerance is looser than that.
-        #expect(simd_length(b.min - lo) < 1e-5, "\(what): min \(b.min), expected \(lo)")
-        #expect(simd_length(b.max - hi) < 1e-5, "\(what): max \(b.max), expected \(hi)")
+        #expect(vectorLength(b.min - lo) < 1e-5, "\(what): min \(b.min), expected \(lo)")
+        #expect(vectorLength(b.max - hi) < 1e-5, "\(what): max \(b.max), expected \(hi)")
     }
 
     @Test("AddComponent creates assembly")

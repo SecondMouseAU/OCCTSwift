@@ -1,7 +1,6 @@
 import Foundation
 import OCCTBridge
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -122,7 +121,7 @@ struct Issue1477Geom2dCurvesTests {
         // #1979: `!= nil` only. The joined B-spline runs (0, 0) to (10, 0), as
         // Geom2dConvert_CompCurveToBSplineCurve gives (Scripts/repro/766-geom2d-issue-regressions-a/).
         let joined = try #require(Curve2D.join([c1, c2]))
-        #expect(simd_distance(joined.startPoint, SIMD2(0, 0)) < 1e-9)
-        #expect(simd_distance(joined.endPoint, SIMD2(10, 0)) < 1e-9)
+        #expect(vectorDistance(joined.startPoint, SIMD2(0, 0)) < 1e-9)
+        #expect(vectorDistance(joined.endPoint, SIMD2(10, 0)) < 1e-9)
     }
 }

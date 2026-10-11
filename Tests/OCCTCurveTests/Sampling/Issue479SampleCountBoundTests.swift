@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -54,7 +53,7 @@ struct Issue479SampleCountBound {
         sourceLocation: SourceLocation = #_sourceLocation
     ) {
         #expect(
-            simd_distance(got, want) < 1e-9, "\(what): got \(got), want \(want)",
+            vectorDistance(got, want) < 1e-9, "\(what): got \(got), want \(want)",
             sourceLocation: sourceLocation)
     }
 

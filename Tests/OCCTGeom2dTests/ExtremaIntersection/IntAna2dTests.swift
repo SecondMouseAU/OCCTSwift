@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -15,7 +14,7 @@ import simd
             line1Point: SIMD2(0, 0), line1Dir: SIMD2(1, 1),
             line2Point: SIMD2(10, 0), line2Dir: SIMD2(-1, 1))
         try #require(results.count == 1)
-        #expect(simd_distance(results[0].point, SIMD2(5, 5)) < 1e-9)
+        #expect(vectorDistance(results[0].point, SIMD2(5, 5)) < 1e-9)
     }
 
     @Test("Intersection of line and circle")

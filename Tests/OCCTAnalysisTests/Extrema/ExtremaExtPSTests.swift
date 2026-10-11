@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -37,7 +36,7 @@ struct ExtremaExtPSTests {
         let r = (ps.point.x * ps.point.x + ps.point.y * ps.point.y + ps.point.z * ps.point.z)
             .squareRoot()
         #expect(abs(r - 5.0) < 1e-9)
-        #expect(simd_distance(ps.point, SIMD3(0, 0, 5)) < 1e-9)
+        #expect(vectorDistance(ps.point, SIMD3(0, 0, 5)) < 1e-9)
         #expect(abs(ps.squareDistance - 25) < 1e-9)
         #expect(abs(ps.v - Double.pi / 2) < 1e-9)
     }

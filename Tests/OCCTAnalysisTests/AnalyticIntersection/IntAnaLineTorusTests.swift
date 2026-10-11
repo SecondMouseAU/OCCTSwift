@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -24,7 +23,7 @@ struct IntAnaLineTorusTests {
             SIMD3(-25, 0, 0), SIMD3(-15, 0, 0), SIMD3(15, 0, 0), SIMD3(25, 0, 0),
         ]
         for (p, e) in zip(pts.sorted { $0.x < $1.x }, expected) {
-            #expect(simd_distance(p, e) < 1e-9, "got \(p), expected \(e)")
+            #expect(vectorDistance(p, e) < 1e-9, "got \(p), expected \(e)")
         }
     }
 }

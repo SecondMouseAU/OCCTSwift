@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -17,7 +16,7 @@ struct InterpolationExpansion2DTests {
         // (Scripts/repro/766-geom2d-curveset-intana-misc/).
         let c = try #require(curve)
         #expect(c.poleCount == 5)
-        #expect(simd_distance(c.point(at: 2), SIMD2(1.84960461481, 2.06475180106)) < 1e-9)
+        #expect(vectorDistance(c.point(at: 2), SIMD2(1.84960461481, 2.06475180106)) < 1e-9)
     }
 
     @Test func interpolate2DPeriodic() throws {
@@ -30,6 +29,6 @@ struct InterpolationExpansion2DTests {
         let c = try #require(curve)
         #expect(c.isPeriodic)
         #expect(abs(c.domain.upperBound - 40) < 1e-12)
-        #expect(simd_distance(c.point(at: 20), SIMD2(10, 10)) < 1e-9)
+        #expect(vectorDistance(c.point(at: 20), SIMD2(10, 10)) < 1e-9)
     }
 }

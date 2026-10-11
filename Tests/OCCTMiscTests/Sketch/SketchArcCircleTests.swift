@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -21,8 +20,8 @@ struct SketchArcCircleTests {
         }
         let first = try #require(pts.first)
         let last = try #require(pts.last)
-        #expect(simd_distance(first, SIMD2(5, 0)) < 1e-9)
-        #expect(simd_distance(last, first) < 1e-9)
+        #expect(vectorDistance(first, SIMD2(5, 0)) < 1e-9)
+        #expect(vectorDistance(last, first) < 1e-9)
     }
 
     @Test("Arc tessellation stays within bounds")
@@ -37,10 +36,10 @@ struct SketchArcCircleTests {
             Issue.record("arc tessellation was empty")
             return
         }
-        #expect(simd_distance(first, SIMD2(2, 0)) < 1e-9)
-        #expect(simd_distance(last, SIMD2(0, 2)) < 1e-9)
+        #expect(vectorDistance(first, SIMD2(2, 0)) < 1e-9)
+        #expect(vectorDistance(last, SIMD2(0, 2)) < 1e-9)
         for p in pts {
-            #expect(abs(simd_length(p) - 2) < 1e-9)
+            #expect(abs(vectorLength(p) - 2) < 1e-9)
         }
     }
 

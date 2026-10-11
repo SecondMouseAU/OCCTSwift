@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -34,19 +33,19 @@ struct GccAnaCirc2d3TanTests {
     /// How far a solution is from touching a circle: the centres are `r + rho` apart when the
     /// circles are outside each other and `|r - rho|` apart when one holds the other.
     private func tangencyError(_ s: Solution, _ c: Disc) -> Double {
-        let d = simd_distance(center(s), c.center)
+        let d = vectorDistance(center(s), c.center)
         return min(abs(d - (s.radius + c.radius)), abs(d - abs(s.radius - c.radius)))
     }
 
     /// How far a solution is from touching a line: its centre is `r` from the line.
     private func lineError(_ s: Solution, _ line: Line) -> Double {
-        let normal = SIMD2(-line.direction.y, line.direction.x) / simd_length(line.direction)
-        return abs(abs(simd_dot(center(s) - line.point, normal)) - s.radius)
+        let normal = SIMD2(-line.direction.y, line.direction.x) / vectorLength(line.direction)
+        return abs(abs(dotProduct(center(s) - line.point, normal)) - s.radius)
     }
 
     /// How far a solution is from passing through a point.
     private func pointError(_ s: Solution, _ p: SIMD2<Double>) -> Double {
-        abs(simd_distance(center(s), p) - s.radius)
+        abs(vectorDistance(center(s), p) - s.radius)
     }
 
     @Test func threePoints() throws {
@@ -95,7 +94,7 @@ struct GccAnaCirc2d3TanTests {
         ]
         for (got, expected) in zip(byRadius, want) {
             #expect(abs(got.radius - expected.radius) < 1e-9)
-            #expect(simd_distance(center(got), SIMD2(expected.x, expected.y)) < 1e-9)
+            #expect(vectorDistance(center(got), SIMD2(expected.x, expected.y)) < 1e-9)
         }
         let lines: [Line] = [
             (SIMD2<Double>(0, 0), SIMD2<Double>(1, 0)), (SIMD2<Double>(0, 0), SIMD2<Double>(0, 1)),
@@ -243,8 +242,8 @@ struct GccAnaCirc2d3TanTests {
         let byRadius = solutions.sorted { $0.radius < $1.radius }
         try #require(byRadius.count == 2)
         #expect(abs(byRadius[0].radius - 2) < 1e-9)
-        #expect(simd_distance(center(byRadius[0]), SIMD2(5, 2)) < 1e-9)
+        #expect(vectorDistance(center(byRadius[0]), SIMD2(5, 2)) < 1e-9)
         #expect(abs(byRadius[1].radius - 10) < 1e-9)
-        #expect(simd_distance(center(byRadius[1]), SIMD2(13, 10)) < 1e-9)
+        #expect(vectorDistance(center(byRadius[1]), SIMD2(13, 10)) < 1e-9)
     }
 }

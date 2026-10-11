@@ -1,7 +1,6 @@
 import Foundation
 import OCCTBridge
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -31,9 +30,9 @@ struct BRepAdaptorTests {
         try #require(edges.count == 12)
         let domain = edges[0].edgeAdaptorDomain
         let p = edges[0].edgeAdaptorValue(at: domain.lowerBound)
-        #expect(simd_distance(p, SIMD3(-5, -5, -5)) < 1e-12, "start point \(p)")
+        #expect(vectorDistance(p, SIMD3(-5, -5, -5)) < 1e-12, "start point \(p)")
         let q = edges[0].edgeAdaptorValue(at: domain.upperBound)
-        #expect(simd_distance(q, SIMD3(-5, -5, 5)) < 1e-12, "end point \(q)")
+        #expect(vectorDistance(q, SIMD3(-5, -5, 5)) < 1e-12, "end point \(q)")
     }
 
     @Test func edgeCurveType() {
@@ -63,7 +62,7 @@ struct BRepAdaptorTests {
         let midU = (bounds.uMin + bounds.uMax) / 2.0
         let midV = (bounds.vMin + bounds.vMax) / 2.0
         let p = faces[0].faceAdaptorValue(u: midU, v: midV)
-        #expect(simd_distance(p, SIMD3(-5, 0, 0)) < 1e-12, "face centre \(p)")
+        #expect(vectorDistance(p, SIMD3(-5, 0, 0)) < 1e-12, "face centre \(p)")
     }
 
     @Test func faceSurfaceType() {

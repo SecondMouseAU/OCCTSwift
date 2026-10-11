@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -19,10 +18,10 @@ private func expectAnalyticBounds(
     sourceLocation: SourceLocation = #_sourceLocation
 ) {
     #expect(
-        simd_distance(b.min, min) < tolerance, "min \(b.min), expected \(min)",
+        vectorDistance(b.min, min) < tolerance, "min \(b.min), expected \(min)",
         sourceLocation: sourceLocation)
     #expect(
-        simd_distance(b.max, max) < tolerance, "max \(b.max), expected \(max)",
+        vectorDistance(b.max, max) < tolerance, "max \(b.max), expected \(max)",
         sourceLocation: sourceLocation)
 }
 

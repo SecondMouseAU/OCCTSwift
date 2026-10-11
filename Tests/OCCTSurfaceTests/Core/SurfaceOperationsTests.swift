@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -31,7 +30,7 @@ struct SurfaceOperationsTests {
         if let offset = offset {
             // Point on offset sphere should be at distance 7 from center
             let p = offset.point(atU: 0, v: 0)
-            let dist = simd_length(p)
+            let dist = vectorLength(p)
             #expect(abs(dist - 7.0) < 1e-6)
         }
     }
@@ -55,7 +54,7 @@ struct SurfaceOperationsTests {
         #expect(scaled != nil)
         if let scaled = scaled {
             let p = scaled.point(atU: 0, v: 0)
-            let dist = simd_length(p)
+            let dist = vectorLength(p)
             #expect(abs(dist - 10.0) < 1e-6)
         }
     }

@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -27,7 +26,7 @@ struct Curve3DEvalTests {
     @Test func evalD0BSpline() {
         guard let curve = Self.curve() else { return }
         let p = curve.evalD0(at: curve.domain.lowerBound)
-        #expect(simd_length(p) < 1e-12)
+        #expect(vectorLength(p) < 1e-12)
     }
 
     @Test func evalD1BSpline() {
@@ -38,25 +37,25 @@ struct Curve3DEvalTests {
         // The point half must agree with the independently-tested point(at:) accessor
         // (a different bridge call, OCCTCurve3DGetPoint vs. OCCTCurve3DEvalD1), which
         // catches a point/tangent swap that a magnitude-only check on d1 alone would miss.
-        #expect(simd_distance(r.point, curve.point(at: mid)) < 1e-9)
-        #expect(simd_distance(r.point, Self.p) < 1e-12)
-        #expect(simd_distance(r.d1, Self.d1) < 1e-12)
+        #expect(vectorDistance(r.point, curve.point(at: mid)) < 1e-9)
+        #expect(vectorDistance(r.point, Self.p) < 1e-12)
+        #expect(vectorDistance(r.d1, Self.d1) < 1e-12)
     }
 
     @Test func evalD2BSpline() {
         guard let curve = Self.curve() else { return }
         let r = curve.evalD2(at: Self.mid)
-        #expect(simd_distance(r.point, Self.p) < 1e-12)
-        #expect(simd_distance(r.d1, Self.d1) < 1e-12)
-        #expect(simd_distance(r.d2, Self.d2) < 1e-12)
+        #expect(vectorDistance(r.point, Self.p) < 1e-12)
+        #expect(vectorDistance(r.d1, Self.d1) < 1e-12)
+        #expect(vectorDistance(r.d2, Self.d2) < 1e-12)
     }
 
     @Test func evalD3BSpline() {
         guard let curve = Self.curve() else { return }
         let r = curve.evalD3(at: Self.mid)
-        #expect(simd_distance(r.point, Self.p) < 1e-12)
-        #expect(simd_distance(r.d2, Self.d2) < 1e-12)
-        #expect(simd_distance(r.d3, Self.d3) < 1e-12)
+        #expect(vectorDistance(r.point, Self.p) < 1e-12)
+        #expect(vectorDistance(r.d2, Self.d2) < 1e-12)
+        #expect(vectorDistance(r.d3, Self.d3) < 1e-12)
     }
 
     @Test func evalD0Circle() {

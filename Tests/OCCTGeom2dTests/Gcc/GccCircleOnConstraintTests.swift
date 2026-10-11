@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -17,7 +16,7 @@ import simd
             centerOnPoint: SIMD2(5, 0), centerOnDir: SIMD2(0, 1))
         try #require(results.count == 1)
         #expect(abs(results[0].radius - 5) < 1e-9)
-        #expect(simd_distance(results[0].center, SIMD2(5, 5)) < 1e-9)
+        #expect(vectorDistance(results[0].center, SIMD2(5, 5)) < 1e-9)
     }
 
     @Test("Circle tangent to line center on line given radius")
@@ -40,7 +39,7 @@ import simd
             c1, .unqualified, c2, .unqualified, centerOn: onCurve)
         // Both centred at (10, 0): radius 5 (outside both) and 15 (enclosing both).
         #expect(results.map(\.radius).sorted() == [5, 15])
-        #expect(results.allSatisfy { simd_distance($0.center, SIMD2(10, 0)) < 1e-9 })
+        #expect(results.allSatisfy { vectorDistance($0.center, SIMD2(10, 0)) < 1e-9 })
     }
 
     @Test("Geom2dGcc circle tangent to curve center on curve given radius")

@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -121,6 +120,6 @@ struct BRepLPropEdgeTests {
         #expect(abs(c1.x - (-5 * sin(0.5))) < 1e-12, "x: expected \(-5 * sin(0.5)), got \(c1.x)")
         #expect(abs(c1.y - 5 * cos(0.5)) < 1e-12, "y: expected \(5 * cos(0.5)), got \(c1.y)")
         #expect(abs(c1.z) < 1e-12, "z: expected 0, got \(c1.z)")
-        #expect(abs(simd_length(c1) - 5) < 1e-12, "expected length 5, got \(simd_length(c1))")
+        #expect(abs(vectorLength(c1) - 5) < 1e-12, "expected length 5, got \(vectorLength(c1))")
     }
 }

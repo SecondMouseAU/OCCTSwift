@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -42,7 +41,7 @@ struct GeomEvalCircularHelixTests {
         #expect(curve != nil)
         // #766: pinned to the GeomEval evaluator's own value on the same inputs, see Scripts/repro/766-geomeval-approx/; `!= nil` passed a surface built from the wrong parameters.
         if let curve {
-            #expect(simd_length(curve.point(at: .pi) - SIMD3(-3, 0, 3)) < 1e-12)
+            #expect(vectorLength(curve.point(at: .pi) - SIMD3(-3, 0, 3)) < 1e-12)
         }
     }
 

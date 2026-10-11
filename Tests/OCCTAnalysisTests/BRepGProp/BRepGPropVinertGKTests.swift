@@ -1,7 +1,6 @@
 import Foundation
 import OCCTBridge
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -24,7 +23,7 @@ struct BRepGPropVinertGKTests {
         let r = face.vinertGK()
         #expect(abs(r.mass - 500.0 / 3.0) < 1e-9, "expected 500/3, got \(r.mass)")
         let center = try #require(r.center)
-        #expect(simd_distance(center, SIMD3(-3.75, 0, 0)) < 1e-9, "got \(center)")
+        #expect(vectorDistance(center, SIMD3(-3.75, 0, 0)) < 1e-9, "got \(center)")
     }
 
     /// The same integral at a different size, with the reported error bounded above as well as

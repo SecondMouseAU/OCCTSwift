@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -19,10 +18,10 @@ private func expectAnalyticBounds(
     sourceLocation: SourceLocation = #_sourceLocation
 ) {
     #expect(
-        simd_distance(b.min, min) < tolerance, "min \(b.min), expected \(min)",
+        vectorDistance(b.min, min) < tolerance, "min \(b.min), expected \(min)",
         sourceLocation: sourceLocation)
     #expect(
-        simd_distance(b.max, max) < tolerance, "max \(b.max), expected \(max)",
+        vectorDistance(b.max, max) < tolerance, "max \(b.max), expected \(max)",
         sourceLocation: sourceLocation)
 }
 
@@ -87,8 +86,8 @@ struct BndLibTests {
             let nonZero = [span.x, span.y, span.z].filter { abs($0) > 1e-9 }
             #expect(nonZero.count == 1, "an axis-aligned edge spans one axis, got \(span)")
             extents.append(contentsOf: nonZero)
-            lo = simd_min(lo, b.min)
-            hi = simd_max(hi, b.max)
+            lo = pointwiseMin(lo, b.min)
+            hi = pointwiseMax(hi, b.max)
         }
         #expect(extents.sorted() == [10, 10, 10, 10, 20, 20, 20, 20, 30, 30, 30, 30])
         #expect(lo == SIMD3(-5, -10, -15))

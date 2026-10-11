@@ -10,7 +10,6 @@
 
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -202,7 +201,7 @@ struct Issue598PipeShellFrenetModeTests {
         let (_, startTangent) = curve.d1(at: domain.lowerBound)
         guard
             let profile = Wire.circle(
-                origin: .zero, normal: simd_normalize(startTangent), radius: 2),
+                origin: .zero, normal: normalizedVector(startTangent), radius: 2),
             let frenet = Shape.pipeShell(spine: spine, profile: profile, mode: .frenet),
             let corrected = Shape.pipeShell(spine: spine, profile: profile, mode: .correctedFrenet)
         else {
@@ -271,7 +270,8 @@ struct Issue598PipeShellFrenetModeTests {
         // The profile belongs at the spine's own measured start point and tangent, not at a
         // point/tangent merely consistent with *some* congruent helix (#721).
         let (p0, t0) = curve.d1(at: curve.domain.lowerBound)
-        guard let profile = Wire.circle(origin: p0, normal: simd_normalize(t0), radius: wireRadius),
+        guard
+            let profile = Wire.circle(origin: p0, normal: normalizedVector(t0), radius: wireRadius),
             let frenet = Shape.pipeShell(
                 spine: spine, profile: profile, mode: .frenet, solid: true),
             let corrected = Shape.pipeShell(
@@ -334,7 +334,7 @@ struct Issue598PipeShellFrenetModeTests {
             // The ORIGINAL (wrong) recipe: origin at (r, 0, 0), the antipode of the wire's real
             // start (-r, 0, 0), with a tangent sign that matches an ascending helix, not the
             // descending one `clockwise: false` actually builds.
-            let mismatchedTangent = simd_normalize(SIMD3<Double>(0, r, pitch / (2 * .pi)))
+            let mismatchedTangent = normalizedVector(SIMD3<Double>(0, r, pitch / (2 * .pi)))
             guard
                 let profile = Wire.circle(
                     origin: SIMD3(r, 0, 0), normal: mismatchedTangent, radius: wireRadius),

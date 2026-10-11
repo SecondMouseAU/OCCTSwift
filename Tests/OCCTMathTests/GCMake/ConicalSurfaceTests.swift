@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -22,9 +21,9 @@ struct ConicalSurfaceTests {
         // The default axis is +Z through the origin, and the reference radius sits at v = 0, so
         // the apex is 5/tan(30 degrees) below the origin.
         let apex = SIMD3(0, 0, -5.0 / tan(Double.pi / 6))
-        #expect(simd_length(surf.coneProperties.apex - apex) < 1e-9)
+        #expect(vectorLength(surf.coneProperties.apex - apex) < 1e-9)
         // v = 0 is the reference circle itself: the surface passes through radius 5 at z = 0.
-        #expect(simd_length(surf.point(atU: 0, v: 0) - SIMD3(5, 0, 0)) < 1e-9)
+        #expect(vectorLength(surf.point(atU: 0, v: 0) - SIMD3(5, 0, 0)) < 1e-9)
     }
 
     @Test("Conical surface from points and radii")
@@ -41,7 +40,7 @@ struct ConicalSurfaceTests {
         #expect(abs(abs(surf.coneProperties.semiAngle) - atan(0.3)) < 1e-12)
         // The apex is where that slope reaches radius 0, at z = 10 * 5/3, and it is the value no
         // single wrong radius leaves standing: 5 and 2 are both in it.
-        #expect(simd_length(surf.coneProperties.apex - SIMD3(0, 0, 50.0 / 3.0)) < 1e-9)
-        #expect(simd_length(surf.point(atU: 0, v: 0) - SIMD3(5, 0, 0)) < 1e-9)
+        #expect(vectorLength(surf.coneProperties.apex - SIMD3(0, 0, 50.0 / 3.0)) < 1e-9)
+        #expect(vectorLength(surf.point(atU: 0, v: 0) - SIMD3(5, 0, 0)) < 1e-9)
     }
 }

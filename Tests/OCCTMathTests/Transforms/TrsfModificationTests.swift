@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -35,8 +34,8 @@ struct TrsfModificationTests {
         let bounds = result.bounds
         #expect(bounds != nil)
         if let bb = bounds {
-            #expect(simd_distance(bb.min, SIMD3<Double>(95, 190, 285)) < 1e-6)
-            #expect(simd_distance(bb.max, SIMD3<Double>(105, 210, 315)) < 1e-6)
+            #expect(vectorDistance(bb.min, SIMD3<Double>(95, 190, 285)) < 1e-6)
+            #expect(vectorDistance(bb.max, SIMD3<Double>(105, 210, 315)) < 1e-6)
         }
     }
 
@@ -65,8 +64,8 @@ struct TrsfModificationTests {
         let bounds = result.bounds
         #expect(bounds != nil)
         if let bb = bounds {
-            #expect(simd_distance(bb.min, SIMD3<Double>(-20, 1, 0)) < 1e-6)
-            #expect(simd_distance(bb.max, SIMD3<Double>(0, 11, 30)) < 1e-6)
+            #expect(vectorDistance(bb.min, SIMD3<Double>(-20, 1, 0)) < 1e-6)
+            #expect(vectorDistance(bb.max, SIMD3<Double>(0, 11, 30)) < 1e-6)
         }
     }
 }

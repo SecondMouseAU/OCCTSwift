@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -16,7 +15,7 @@ struct GeomToolsCurve2dSetTests {
         #expect(!data.isEmpty)
         let curves = try #require(Curve2D.deserializeCurves(data))
         try #require(curves.count == 2)
-        #expect(simd_distance(curves[0].point(at: 3), SIMD2(3, 0)) < 1e-12)
+        #expect(vectorDistance(curves[0].point(at: 3), SIMD2(3, 0)) < 1e-12)
         #expect(abs(curves[1].circleProperties.radius - 3) < 1e-12)
     }
 

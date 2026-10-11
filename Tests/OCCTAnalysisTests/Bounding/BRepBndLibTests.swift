@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -25,10 +24,10 @@ private func expectBox(
     sourceLocation: SourceLocation = #_sourceLocation
 ) {
     #expect(
-        simd_distance(b.min, min) < 1e-12, "min \(b.min), expected \(min)",
+        vectorDistance(b.min, min) < 1e-12, "min \(b.min), expected \(min)",
         sourceLocation: sourceLocation)
     #expect(
-        simd_distance(b.max, max) < 1e-12, "max \(b.max), expected \(max)",
+        vectorDistance(b.max, max) < 1e-12, "max \(b.max), expected \(max)",
         sourceLocation: sourceLocation)
 }
 
@@ -40,12 +39,12 @@ private func expectBox(
 private func expectOrthonormalFrame(
     _ obb: Shape.DetailedOBB, sourceLocation: SourceLocation = #_sourceLocation
 ) {
-    #expect(abs(simd_length(obb.xDirection) - 1) < 1e-12, sourceLocation: sourceLocation)
-    #expect(abs(simd_length(obb.yDirection) - 1) < 1e-12, sourceLocation: sourceLocation)
-    #expect(abs(simd_length(obb.zDirection) - 1) < 1e-12, sourceLocation: sourceLocation)
-    #expect(abs(simd_dot(obb.xDirection, obb.yDirection)) < 1e-12, sourceLocation: sourceLocation)
-    #expect(abs(simd_dot(obb.yDirection, obb.zDirection)) < 1e-12, sourceLocation: sourceLocation)
-    #expect(abs(simd_dot(obb.xDirection, obb.zDirection)) < 1e-12, sourceLocation: sourceLocation)
+    #expect(abs(vectorLength(obb.xDirection) - 1) < 1e-12, sourceLocation: sourceLocation)
+    #expect(abs(vectorLength(obb.yDirection) - 1) < 1e-12, sourceLocation: sourceLocation)
+    #expect(abs(vectorLength(obb.zDirection) - 1) < 1e-12, sourceLocation: sourceLocation)
+    #expect(abs(dotProduct(obb.xDirection, obb.yDirection)) < 1e-12, sourceLocation: sourceLocation)
+    #expect(abs(dotProduct(obb.yDirection, obb.zDirection)) < 1e-12, sourceLocation: sourceLocation)
+    #expect(abs(dotProduct(obb.xDirection, obb.zDirection)) < 1e-12, sourceLocation: sourceLocation)
 }
 
 @Suite("BRepBndLib")
@@ -97,7 +96,7 @@ struct BRepBndLibTests {
         #expect(abs(obb.xHalfSize - half.x) < 1e-12)
         #expect(abs(obb.yHalfSize - half.y) < 1e-12)
         #expect(abs(obb.zHalfSize - half.z) < 1e-12)
-        #expect(simd_length(obb.center) < 1e-12)
+        #expect(vectorLength(obb.center) < 1e-12)
         expectOrthonormalFrame(obb)
     }
 
@@ -113,7 +112,7 @@ struct BRepBndLibTests {
         #expect(abs(obb.xHalfSize - half) < 1e-12)
         #expect(abs(obb.yHalfSize - half) < 1e-12)
         #expect(abs(obb.zHalfSize - half) < 1e-12)
-        #expect(simd_length(obb.center) < 1e-12)
+        #expect(vectorLength(obb.center) < 1e-12)
         expectOrthonormalFrame(obb)
     }
 
@@ -136,8 +135,8 @@ struct BRepBndLibTests {
         #expect(abs(packed.halfSizes.z - detailed.zHalfSize) < 1e-9)
 
         let half = boxHalfExtent + SIMD3(repeating: shapeTolerance)
-        #expect(simd_distance(packed.halfSizes, half) < 1e-9)
-        #expect(simd_length(packed.center) < 1e-9)
+        #expect(vectorDistance(packed.halfSizes, half) < 1e-9)
+        #expect(vectorLength(packed.center) < 1e-9)
     }
 
     /// #1875: `bb.min.x < -9` and `bb.max.x > 9` hold of any box a radius-10 sphere could

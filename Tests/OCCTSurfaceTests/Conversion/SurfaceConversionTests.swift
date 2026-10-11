@@ -1,5 +1,5 @@
+import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -19,11 +19,11 @@ struct SurfaceConversionTests {
             let vMid = (dom.vMin + dom.vMax) / 2
             let pOrig = sphere.point(atU: uMid, v: vMid)
             let pBsp = bsp.point(atU: uMid, v: vMid)
-            let diff = simd_length(pOrig - pBsp)
+            let diff = vectorLength(pOrig - pBsp)
             #expect(diff < 0.01)
             // Both should be on sphere surface
-            #expect(abs(simd_length(pOrig) - 5.0) < 1e-6)
-            #expect(abs(simd_length(pBsp) - 5.0) < 0.01)
+            #expect(abs(vectorLength(pOrig) - 5.0) < 1e-6)
+            #expect(abs(vectorLength(pBsp) - 5.0) < 0.01)
         }
     }
 
@@ -48,12 +48,12 @@ struct SurfaceConversionTests {
         if let iso = iso {
             // U-iso at u=0 is a meridian (half-circle)
             let p = iso.startPoint
-            let dist = simd_length(p)
+            let dist = vectorLength(p)
             #expect(abs(dist - 5.0) < 1e-6)
             // #766: any point at radius 5 passed. The meridian at u = 0 starts at the south pole
             // and passes (5, 0, 0) at v = 0.
-            #expect(simd_length(p - SIMD3(0, 0, -5)) < 1e-12)
-            #expect(simd_length(iso.point(at: 0) - SIMD3(5, 0, 0)) < 1e-12)
+            #expect(vectorLength(p - SIMD3(0, 0, -5)) < 1e-12)
+            #expect(vectorLength(iso.point(at: 0) - SIMD3(5, 0, 0)) < 1e-12)
         }
     }
 
@@ -66,7 +66,7 @@ struct SurfaceConversionTests {
             // V-iso at v=0 is the equator (circle)
             #expect(iso.isClosed == true)
             // #766: any closed curve passed; the equator passes (0, 5, 0) at u = pi/2.
-            #expect(simd_length(iso.point(at: .pi / 2) - SIMD3(0, 5, 0)) < 1e-12)
+            #expect(vectorLength(iso.point(at: .pi / 2) - SIMD3(0, 5, 0)) < 1e-12)
         }
     }
 }

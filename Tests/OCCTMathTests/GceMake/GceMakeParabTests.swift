@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -15,7 +14,7 @@ struct GceMakeParabTests {
                 focal: 4.0))
         let domain = parab.domain
         #expect(domain.upperBound > domain.lowerBound)
-        #expect(simd_length(parab.point(at: 0) - SIMD3(0, 0, 0)) < 1e-9)
-        #expect(simd_length(parab.point(at: 8) - SIMD3(4, 8, 0)) < 1e-9)
+        #expect(vectorLength(parab.point(at: 0) - SIMD3(0, 0, 0)) < 1e-9)
+        #expect(vectorLength(parab.point(at: 8) - SIMD3(4, 8, 0)) < 1e-9)
     }
 }

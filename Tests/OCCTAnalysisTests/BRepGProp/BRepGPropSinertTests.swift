@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -35,7 +34,7 @@ struct BRepGPropSinertTests {
             "adaptive area was \(inertia.area)")
         #expect(inertia.epsilon < 1e-9, "reported error was \(inertia.epsilon)")
         let centre = try #require(inertia.centerOfMass)
-        #expect(simd_length(centre) < 1e-9, "centre of mass was \(centre)")
+        #expect(vectorLength(centre) < 1e-9, "centre of mass was \(centre)")
     }
 
     /// A planar face too, since the comment this replaces claimed the adaptive overload was

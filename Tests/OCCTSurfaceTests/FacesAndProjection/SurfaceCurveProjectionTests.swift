@@ -1,5 +1,5 @@
+import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -63,7 +63,7 @@ struct SurfaceCurveProjectionTests {
             let mid = c.point(at: (c.domain.lowerBound + c.domain.upperBound) / 2.0)
             #expect(abs(mid.z) < 1e-6)
             // Any curve in z = 0 passed; the projection's midpoint is (5, 3.5, 0).
-            #expect(simd_length(mid - SIMD3(5, 3.5, 0)) < 1e-12)
+            #expect(vectorLength(mid - SIMD3(5, 3.5, 0)) < 1e-12)
         }
     }
 
@@ -117,7 +117,7 @@ struct SurfaceCurveProjectionTests {
             let a = c.point(at: c.domain.lowerBound)
             let b = c.point(at: c.domain.upperBound)
             #expect(a == SIMD2(0, 0) && b == SIMD2(4, 3))
-            #expect(simd_length(b - a) == 5)
+            #expect(vectorLength(b - a) == 5)
         }
     }
 

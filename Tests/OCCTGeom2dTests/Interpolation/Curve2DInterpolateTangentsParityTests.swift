@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -35,7 +34,7 @@ struct Curve2DInterpolateTangentsParityTests {
         // (Scripts/repro/766-geom2d-tangents-islinear-line/).
         let c = try #require(a)
         #expect(c.poleCount == 5)
-        #expect(simd_distance(c.point(at: 2), SIMD2(1.84960461481, 2.06475180106)) < 1e-9)
+        #expect(vectorDistance(c.point(at: 2), SIMD2(1.84960461481, 2.06475180106)) < 1e-9)
     }
 
     /// The capability gap #410 found: previously `interpolate(points:...)` had no way to reach

@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -44,10 +43,10 @@ private func expectTwoPieces2D(_ pieces: [Curve2D]) {
     guard pieces.count == 2 else { return }
     let (a0, a1) = ends(pieces[0])
     let (b0, b1) = ends(pieces[1])
-    #expect(simd_distance(a0, SIMD2(0, 0)) < 1e-9)
-    #expect(simd_distance(a1, SIMD2(2.5, 1.5)) < 1e-9)
-    #expect(simd_distance(b0, SIMD2(2.5, 1.5)) < 1e-9)
-    #expect(simd_distance(b1, SIMD2(5, 1)) < 1e-9)
+    #expect(vectorDistance(a0, SIMD2(0, 0)) < 1e-9)
+    #expect(vectorDistance(a1, SIMD2(2.5, 1.5)) < 1e-9)
+    #expect(vectorDistance(b0, SIMD2(2.5, 1.5)) < 1e-9)
+    #expect(vectorDistance(b1, SIMD2(5, 1)) < 1e-9)
 }
 
 @Suite("ShapeUpgrade SplitCurve Tests")
@@ -62,8 +61,8 @@ struct ShapeUpgradeSplitCurveTests {
         #expect(one.count == 1)
         if let p = one.first {
             let (s, e) = ends(p)
-            #expect(simd_distance(s, SIMD3(0, 0, 0)) < 1e-9)
-            #expect(simd_distance(e, SIMD3(4, 0, 0)) < 1e-9)
+            #expect(vectorDistance(s, SIMD3(0, 0, 0)) < 1e-9)
+            #expect(vectorDistance(e, SIMD3(4, 0, 0)) < 1e-9)
         }
 
         let kinked = try #require(
@@ -74,10 +73,10 @@ struct ShapeUpgradeSplitCurveTests {
         if two.count == 2 {
             let (a0, a1) = ends(two[0])
             let (b0, b1) = ends(two[1])
-            #expect(simd_distance(a0, SIMD3(0, 0, 0)) < 1e-9)
-            #expect(simd_distance(a1, SIMD3(2.5, 1.5, 0)) < 1e-9)
-            #expect(simd_distance(b0, SIMD3(2.5, 1.5, 0)) < 1e-9)
-            #expect(simd_distance(b1, SIMD3(5, 1, 0)) < 1e-9)
+            #expect(vectorDistance(a0, SIMD3(0, 0, 0)) < 1e-9)
+            #expect(vectorDistance(a1, SIMD3(2.5, 1.5, 0)) < 1e-9)
+            #expect(vectorDistance(b0, SIMD3(2.5, 1.5, 0)) < 1e-9)
+            #expect(vectorDistance(b1, SIMD3(5, 1, 0)) < 1e-9)
         }
     }
 
@@ -90,8 +89,8 @@ struct ShapeUpgradeSplitCurveTests {
         #expect(one.count == 1)
         if let p = one.first {
             let (s, e) = ends(p)
-            #expect(simd_distance(s, SIMD2(0, 0)) < 1e-9)
-            #expect(simd_distance(e, SIMD2(4, 0)) < 1e-9)
+            #expect(vectorDistance(s, SIMD2(0, 0)) < 1e-9)
+            #expect(vectorDistance(e, SIMD2(4, 0)) < 1e-9)
         }
 
         expectTwoPieces2D(try twoSpanCurve2D().splitByContinuity(criterion: 2))
@@ -109,8 +108,8 @@ struct ShapeUpgradeSplitCurveTests {
         #expect(one.allSatisfy { $0.curveType == 5 })
         if let p = one.first {
             let (s, e) = ends(p)
-            #expect(simd_distance(s, SIMD2(0, 0)) < 1e-9)
-            #expect(simd_distance(e, SIMD2(4, 0)) < 1e-9)
+            #expect(vectorDistance(s, SIMD2(0, 0)) < 1e-9)
+            #expect(vectorDistance(e, SIMD2(4, 0)) < 1e-9)
         }
 
         let two = try twoSpanCurve2D().convertToBezierSegments()

@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -52,7 +51,7 @@ struct ConstructionAxisTests {
     private func isClose(
         _ a: SIMD3<Double>, _ b: SIMD3<Double>, _ tolerance: Double = 1e-9
     ) -> Bool {
-        simd_distance(a, b) < tolerance
+        vectorDistance(a, b) < tolerance
     }
 
     private struct CircleEdge {
@@ -107,7 +106,7 @@ struct ConstructionAxisTests {
         let first = try #require(edge.point(at: bounds.first), "first point of the edge")
         let span = bounds.last - bounds.first
         let ahead = try #require(edge.point(at: bounds.first + span * 0.25), "a quarter ahead")
-        let turn = simd_dot(axis, simd_cross(first - center, ahead - center))
+        let turn = dotProduct(axis, crossProduct(first - center, ahead - center))
         try #require(abs(turn) > 1e-12, "the two samples must not be collinear with the axis")
         return turn > 0 ? axis : -axis
     }
@@ -138,7 +137,7 @@ struct ConstructionAxisTests {
             let ax = try alongEdge(graph, edgeIndex).get()
             #expect(
                 isClose(ax.origin, start), "edge \(edgeIndex): origin \(ax.origin), start \(start)")
-            #expect(abs(simd_length(ax.direction) - 1.0) < 1e-12, "edge \(edgeIndex): not unit")
+            #expect(abs(vectorLength(ax.direction) - 1.0) < 1e-12, "edge \(edgeIndex): not unit")
             let reach = ax.origin + 10.0 * ax.direction
             #expect(isClose(reach, end), "edge \(edgeIndex): start + 10 * direction is \(reach)")
         }
@@ -194,7 +193,7 @@ struct ConstructionAxisTests {
             // is parallel to Z, and perpendicular to that chord.
             let bounds = try #require(arc.edge.parameterBounds, "arc bounds")
             let end = try #require(arc.edge.point(at: bounds.last), "arc end")
-            let chordDirection = simd_normalize(end - arc.start)
+            let chordDirection = normalizedVector(end - arc.start)
             let onAxis = SIMD3<Double>(0, 0, arc.start.z)
             let expected = try rightHandedAxis(of: arc.edge, about: Self.zAxis, through: onAxis)
             #expect(isClose(expected, Self.zAxis), "fixture: the arc turns counterclockwise")
@@ -202,7 +201,7 @@ struct ConstructionAxisTests {
             let ax = try alongEdge(graph, arc.index).get()
             #expect(isClose(ax.direction, expected), "arc at z \(arc.start.z): \(ax.direction)")
             #expect(
-                abs(simd_dot(ax.direction, chordDirection)) < 1e-9, "the chord is not the answer")
+                abs(dotProduct(ax.direction, chordDirection)) < 1e-9, "the chord is not the answer")
             // #894 finding 2: the origin must stay edge-local (on the axis, at the arc's own
             // height), not the surface's own placement origin (0, 0, 0) regardless of which end
             // of the cylinder this arc sits at.
@@ -242,7 +241,7 @@ struct ConstructionAxisTests {
         #expect(arcGraph.faces(of: 0).isEmpty)
         let ax = try alongEdge(arcGraph, 0).get()
         #expect(isClose(ax.origin, SIMD3<Double>(5, 0, 0)), "arc origin \(ax.origin)")
-        let chord = simd_normalize(SIMD3<Double>(-5, 5, 0))
+        let chord = normalizedVector(SIMD3<Double>(-5, 5, 0))
         #expect(isClose(ax.direction, chord), "arc direction \(ax.direction)")
     }
 
@@ -261,7 +260,7 @@ struct ConstructionAxisTests {
             "main cylinder")
         let branchCyl = try #require(
             Shape.cylinder(
-                at: SIMD3(-10, -10, -2), direction: simd_normalize(SIMD3(1, 1, 0.3)),
+                at: SIMD3(-10, -10, -2), direction: normalizedVector(SIMD3(1, 1, 0.3)),
                 radius: 2.5, height: 20),
             "branch cylinder")
         let fused = try #require(mainCyl.union(branchCyl), "fused T-branch")
@@ -304,13 +303,13 @@ struct ConstructionAxisTests {
                 let end = edge.point(at: bounds.last)
             else { continue }
             let chord = end - start
-            let chordLength = simd_length(chord)
+            let chordLength = vectorLength(chord)
             guard chordLength > 1e-6 else { continue }
             let chordDirection = chord / chordLength
-            let directionA = simd_normalize(candidates[0].direction)
-            let directionB = simd_normalize(candidates[1].direction)
-            guard abs(simd_dot(chordDirection, directionA)) < 0.9,
-                abs(simd_dot(chordDirection, directionB)) < 0.9
+            let directionA = normalizedVector(candidates[0].direction)
+            let directionB = normalizedVector(candidates[1].direction)
+            guard abs(dotProduct(chordDirection, directionA)) < 0.9,
+                abs(dotProduct(chordDirection, directionB)) < 0.9
             else { continue }
 
             target = (edgeIndex, start, end)
@@ -329,7 +328,7 @@ struct ConstructionAxisTests {
         // above only took an edge whose chord has a dot product below 0.9 with both of them.
         let ax = try alongEdge(graph, branch.edgeIndex).get()
         #expect(isClose(ax.origin, branch.start), "origin \(ax.origin), edge start \(branch.start)")
-        let chord = simd_normalize(branch.end - branch.start)
+        let chord = normalizedVector(branch.end - branch.start)
         #expect(isClose(ax.direction, chord), "direction \(ax.direction), chord \(chord)")
     }
 
@@ -479,7 +478,7 @@ struct ConstructionAxisTests {
         let bounds = try #require(ellipse.parameterBounds, "ellipse bounds")
         let start = try #require(ellipse.point(at: bounds.first), "ellipse start")
         let end = try #require(ellipse.point(at: bounds.last), "ellipse end")
-        #expect(simd_distance(start, end) < 1e-9, "a full ellipse closes on itself")
+        #expect(vectorDistance(start, end) < 1e-9, "a full ellipse closes on itself")
 
         // The answer is a clean `.degenerate`: not the cylinder's centerline (the bug), and not
         // some other made-up axis either. A full ellipse's own chord is zero, same as a full
@@ -617,7 +616,7 @@ struct ConstructionAxisTests {
         // the axis" here too, so both direction and origin are asserted directly against the
         // seam's own geometry, as vectors rather than through a dot-product threshold: the
         // chord is 0.3 rad away from the axis, so the two answers are far apart.
-        let expectedDirection = simd_normalize(p0top - p0bot)
+        let expectedDirection = normalizedVector(p0top - p0bot)
         #expect(isClose(ax.direction, expectedDirection), "direction \(ax.direction)")
         #expect(isClose(ax.origin, p0bot), "origin \(ax.origin), the seam starts at \(p0bot)")
     }
@@ -809,8 +808,8 @@ struct ConstructionAxisTests {
         // The chord fallback: origin is the helix's own start point (on the cylinder wall, never
         // on the centerline) and the direction is the secant, which climbs and turns and is
         // nowhere near the axis.
-        let secant = simd_normalize(helixEnd - helixStart)
-        #expect(abs(simd_dot(secant, Self.zAxis)) < 0.5, "fixture: the secant must not be axial")
+        let secant = normalizedVector(helixEnd - helixStart)
+        #expect(abs(dotProduct(secant, Self.zAxis)) < 0.5, "fixture: the secant must not be axial")
         let ax = try alongEdge(graph, helixIndex).get()
         #expect(isClose(ax.origin, helixStart, 1e-6), "origin \(ax.origin), helix start")
         #expect(isClose(ax.direction, secant, 1e-6), "direction \(ax.direction), secant \(secant)")
@@ -846,10 +845,10 @@ struct ConstructionAxisTests {
         let to = SIMD3<Double>(p7.x, p7.y, p7.z)
         let forward = try graph.resolve(ConstructionAxis.throughPoints(v, v7)).get()
         #expect(isClose(forward.origin, from), "origin \(forward.origin), first point \(from)")
-        #expect(isClose(forward.direction, simd_normalize(to - from)), "\(forward.direction)")
+        #expect(isClose(forward.direction, normalizedVector(to - from)), "\(forward.direction)")
         let backward = try graph.resolve(ConstructionAxis.throughPoints(v7, v)).get()
         #expect(isClose(backward.origin, to), "origin \(backward.origin), first point \(to)")
-        #expect(isClose(backward.direction, simd_normalize(from - to)), "\(backward.direction)")
+        #expect(isClose(backward.direction, normalizedVector(from - to)), "\(backward.direction)")
     }
 
     @Test("intersectionOfPlanes on parallel planes fails with degenerate")
@@ -897,20 +896,20 @@ struct ConstructionAxisTests {
 
         // Planes in general position, checked against their plane equations rather than the
         // formula: n.(p - o) = 0 for each, and the direction is perpendicular to both normals.
-        let nA = simd_normalize(SIMD3<Double>(1, 2, 3))
-        let nB = simd_normalize(SIMD3<Double>(-2, 1, 0.5))
+        let nA = normalizedVector(SIMD3<Double>(1, 2, 3))
+        let nB = normalizedVector(SIMD3<Double>(-2, 1, 0.5))
         let oA = SIMD3<Double>(3, -4, 7)
         let oB = SIMD3<Double>(-6, 2, 9)
         let pa = ConstructionPlane.absolute(origin: oA, normal: nA)
         let pb = ConstructionPlane.absolute(origin: oB, normal: nB)
         let skew = try graph.resolve(ConstructionAxis.intersectionOfPlanes(pa, pb)).get()
-        #expect(abs(simd_dot(nA, skew.origin - oA)) < 1e-9, "origin \(skew.origin) off plane A")
-        #expect(abs(simd_dot(nB, skew.origin - oB)) < 1e-9, "origin \(skew.origin) off plane B")
-        #expect(abs(simd_dot(nA, skew.direction)) < 1e-9, "direction \(skew.direction)")
-        #expect(abs(simd_dot(nB, skew.direction)) < 1e-9, "direction \(skew.direction)")
+        #expect(abs(dotProduct(nA, skew.origin - oA)) < 1e-9, "origin \(skew.origin) off plane A")
+        #expect(abs(dotProduct(nB, skew.origin - oB)) < 1e-9, "origin \(skew.origin) off plane B")
+        #expect(abs(dotProduct(nA, skew.direction)) < 1e-9, "direction \(skew.direction)")
+        #expect(abs(dotProduct(nB, skew.direction)) < 1e-9, "direction \(skew.direction)")
         // A point a step along the axis stays on both planes.
         let step = skew.origin + 3.5 * skew.direction
-        #expect(abs(simd_dot(nA, step - oA)) < 1e-9 && abs(simd_dot(nB, step - oB)) < 1e-9)
+        #expect(abs(dotProduct(nA, step - oA)) < 1e-9 && abs(dotProduct(nB, step - oB)) < 1e-9)
         // The plane order flips the direction and leaves the origin alone.
         let swapped = try graph.resolve(ConstructionAxis.intersectionOfPlanes(pb, pa)).get()
         #expect(isClose(swapped.origin, skew.origin), "origin \(swapped.origin) vs \(skew.origin)")
@@ -980,7 +979,7 @@ struct ConstructionAxisTests {
         // projected onto the axis line the cylinder was BUILT on, and the expected direction is
         // the direction it was built with.
         let base = SIMD3<Double>(1, 2, 3)
-        let axisDirection = simd_normalize(SIMD3<Double>(1, 2, 2))
+        let axisDirection = normalizedVector(SIMD3<Double>(1, 2, 2))
         let tilted = try #require(
             Shape.cylinder(at: base, direction: axisDirection, radius: 5, height: 10),
             "tilted cylinder")
@@ -991,7 +990,7 @@ struct ConstructionAxisTests {
         for vertexIndex in 0..<tiltedGraph.vertexCount {
             let raw = tiltedGraph.vertexPoint(vertexIndex)
             let vertex = SIMD3<Double>(raw.x, raw.y, raw.z)
-            let reach = simd_dot(vertex - base, axisDirection)
+            let reach = dotProduct(vertex - base, axisDirection)
             along.append(reach)
             let expectedOrigin = base + reach * axisDirection
             let ax = try normalToFace(tiltedGraph, face: tiltedWall, vertex: vertexIndex).get()
@@ -1055,7 +1054,7 @@ struct ConstructionAxisTests {
             let centroid = try #require(centroids.first ?? nil, "centroid of face \(faceIndex)")
             // Shape.box is centred on the origin, so a face's outward normal is its own centroid
             // scaled to unit length: derived from the box, not from `Face.normal`.
-            let outward = simd_normalize(centroid)
+            let outward = normalizedVector(centroid)
             for vertexIndex in 0..<graph.vertexCount {
                 let raw = graph.vertexPoint(vertexIndex)
                 let vertex = SIMD3<Double>(raw.x, raw.y, raw.z)
@@ -1065,7 +1064,7 @@ struct ConstructionAxisTests {
                     "face \(faceIndex), vertex \(vertexIndex): \(ax.direction)")
                 // The origin is `at` projected onto the plane of the face, which is the vertex
                 // itself for the four vertices on the face and a point of the plane otherwise.
-                let projected = vertex - simd_dot(vertex - centroid, outward) * outward
+                let projected = vertex - dotProduct(vertex - centroid, outward) * outward
                 #expect(
                     isClose(ax.origin, projected),
                     "face \(faceIndex), vertex \(vertexIndex): \(ax.origin)")
@@ -1135,7 +1134,7 @@ struct ConstructionAxisTests {
             graph.shape(nodeKind: .face, nodeIndex: 0)?.faces().first, "the face")
         let axis = try #require(face.primaryAxis, "the primary axis")
         #expect(axis.kind == .sphere, "fixture is not a spherical face")
-        let poleDirection = simd_normalize(axis.direction)
+        let poleDirection = normalizedVector(axis.direction)
 
         // Find the two real pole vertices by position, not by assuming fixed indices 0/1:
         // vertex enumeration order isn't guaranteed stable across an OCCT kernel rebuild or
@@ -1145,9 +1144,9 @@ struct ConstructionAxisTests {
         for vertexIndex in 0..<graph.vertexCount {
             let raw = graph.vertexPoint(vertexIndex)
             let offset = SIMD3(raw.x, raw.y, raw.z) - axis.origin
-            let axial = simd_dot(offset, poleDirection)
+            let axial = dotProduct(offset, poleDirection)
             let radial = offset - axial * poleDirection
-            if abs(abs(axial) - radius) < 1e-6, simd_length(radial) < 1e-6 {
+            if abs(abs(axial) - radius) < 1e-6, vectorLength(radial) < 1e-6 {
                 poleIndices.append(vertexIndex)
             }
         }
@@ -1168,19 +1167,20 @@ struct ConstructionAxisTests {
             isClose(expectedFallbackPoint, SIMD3<Double>(-radius, 0, 0)), "\(expectedFallbackPoint)"
         )
         #expect(
-            isClose(simd_normalize(expectedFallbackNormal), SIMD3<Double>(-1, 0, 0)),
+            isClose(normalizedVector(expectedFallbackNormal), SIMD3<Double>(-1, 0, 0)),
             "\(expectedFallbackNormal)")
 
         // Checked at both poles to show the exclusion holds regardless of which vertex is asked.
         for vertexIndex in poleIndices {
             let ax = try normalToFace(graph, face: 0, vertex: vertexIndex).get()
-            #expect(abs(simd_length(ax.direction) - 1.0) < 1e-6)
+            #expect(abs(vectorLength(ax.direction) - 1.0) < 1e-6)
             // The old, broken code returned the fixed pole axis unconditionally; the fallback
             // UV-midpoint normal (at the sphere's equator) is perpendicular to it instead.
-            #expect(abs(simd_dot(ax.direction, poleDirection)) < 1e-9, "pole \(vertexIndex)")
-            #expect(simd_length(ax.origin - expectedFallbackPoint) < 1e-6, "pole \(vertexIndex)")
+            #expect(abs(dotProduct(ax.direction, poleDirection)) < 1e-9, "pole \(vertexIndex)")
+            #expect(vectorLength(ax.origin - expectedFallbackPoint) < 1e-6, "pole \(vertexIndex)")
             #expect(
-                simd_length(simd_normalize(ax.direction) - simd_normalize(expectedFallbackNormal))
+                vectorLength(
+                    normalizedVector(ax.direction) - normalizedVector(expectedFallbackNormal))
                     < 1e-6, "pole \(vertexIndex)")
         }
     }
@@ -1229,7 +1229,7 @@ struct ConstructionAxisTests {
             let raw = graph.vertexPoint(vertexIndex)
             let u = raw.x / 3.0
             let v = raw.y / 3.0
-            let expected = simd_normalize(SIMD3<Double>(2.0 * v - 1.0, 2.0 * u - 1.0, 1.0))
+            let expected = normalizedVector(SIMD3<Double>(2.0 * v - 1.0, 2.0 * u - 1.0, 1.0))
             normals.append(expected)
             let ax = try normalToFace(graph, face: 0, vertex: vertexIndex).get()
             #expect(isClose(ax.direction, expected), "corner \(vertexIndex): \(ax.direction)")
@@ -1240,7 +1240,7 @@ struct ConstructionAxisTests {
         // The four expected normals are four different directions: the premise of the test.
         for i in 0..<normals.count {
             for j in (i + 1)..<normals.count {
-                #expect(simd_dot(normals[i], normals[j]) < 0.99, "corners \(i) and \(j)")
+                #expect(dotProduct(normals[i], normals[j]) < 0.99, "corners \(i) and \(j)")
             }
         }
     }
@@ -1265,7 +1265,7 @@ struct ConstructionAxisTests {
         let saddleFace = try #require(
             Shape.face(from: surface, uBounds: 0...1, vBounds: 0...1), "saddle face")
         let foot = SIMD3<Double>(0.75, 2.25, 1.875)
-        let normal = simd_normalize(SIMD3<Double>(0.5, -0.5, 1.0))
+        let normal = normalizedVector(SIMD3<Double>(0.5, -0.5, 1.0))
         let corner = foot + normal
         let box = try #require(
             Shape.box(origin: corner, width: 10, height: 10, depth: 10), "box with a corner at P")
@@ -1296,7 +1296,7 @@ struct ConstructionAxisTests {
         let surfaceZ = ax.origin.x + ax.origin.y - 2.0 * ax.origin.x * ax.origin.y / 3.0
         #expect(abs(ax.origin.z - surfaceZ) < 1e-6, "origin \(ax.origin) is off the surface")
         // And it is the unit of distance the corner was placed off the face, not the raw corner.
-        let offset = simd_distance(ax.origin, corner)
+        let offset = vectorDistance(ax.origin, corner)
         #expect(abs(offset - 1.0) < 1e-6, "the origin is \(offset) from the raw point, not 1")
         #expect(isClose(ax.direction, normal, 1e-6), "direction \(ax.direction), normal \(normal)")
     }
@@ -1557,7 +1557,7 @@ struct ConstructionAxisTests {
         for fraction in [0.0, 0.25, 0.5, 0.75, 1.0] {
             let sample = try #require(
                 rim.point(at: bounds.first + (bounds.last - bounds.first) * fraction), "sample")
-            radii.append(simd_length(SIMD3<Double>(sample.x, sample.y, 0)))
+            radii.append(vectorLength(SIMD3<Double>(sample.x, sample.y, 0)))
         }
         let spread = (radii.max() ?? 0) - (radii.min() ?? 0)
         let naturalTolerance = graph.edgeTolerance(rimIndex)
@@ -1585,7 +1585,7 @@ struct ConstructionAxisTests {
         #expect(tightGraph.edgeTolerance(tightIndex) < spread, "tolerance 1e-4 is below \(spread)")
         let chord = try alongEdge(tightGraph, tightIndex).get()
         #expect(isClose(chord.origin, rimStart, 1e-6), "chord origin \(chord.origin)")
-        let chordDirection = simd_normalize(rimEnd - rimStart)
+        let chordDirection = normalizedVector(rimEnd - rimStart)
         #expect(
             isClose(chord.direction, chordDirection, 1e-6), "chord direction \(chord.direction)")
     }

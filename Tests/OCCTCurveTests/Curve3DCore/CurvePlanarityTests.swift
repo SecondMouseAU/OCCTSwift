@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -20,7 +19,7 @@ struct CurvePlanarityTests {
             Issue.record("circle reported non-planar")
             return
         }
-        #expect(simd_distance(normal, SIMD3(0, 0, 1)) < 1e-10)
+        #expect(vectorDistance(normal, SIMD3(0, 0, 1)) < 1e-10)
     }
 
     @Test("Line is planar")
@@ -34,6 +33,6 @@ struct CurvePlanarityTests {
             Issue.record("segment reported non-planar")
             return
         }
-        #expect(simd_distance(normal, SIMD3(0, 0, 1)) < 1e-10)
+        #expect(vectorDistance(normal, SIMD3(0, 0, 1)) < 1e-10)
     }
 }

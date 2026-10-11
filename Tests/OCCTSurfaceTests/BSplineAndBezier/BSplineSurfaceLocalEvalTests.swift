@@ -1,5 +1,5 @@
+import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -37,8 +37,8 @@ struct BSplineSurfaceLocalEvalTests {
             let localPt = bs.bsplineLocalD0(
                 u: s.u, v: s.v, fromUK1: s.i1, toUK2: s.i2, fromVK1: s.j1, toVK2: s.j2)
             let globalPt = bs.point(atU: s.u, v: s.v)
-            #expect(simd_length(localPt - globalPt) < 1e-10)
-            #expect(simd_length(localPt - SIMD3(-5, 0, 0)) < 1e-12)
+            #expect(vectorLength(localPt - globalPt) < 1e-10)
+            #expect(vectorLength(localPt - SIMD3(-5, 0, 0)) < 1e-12)
         }
     }
 
@@ -50,8 +50,8 @@ struct BSplineSurfaceLocalEvalTests {
                 u: s.u, v: s.v, fromUK1: s.i1, toUK2: s.i2, fromVK1: s.j1, toVK2: s.j2)
             // Was `|d1u| > 0` and `|d1v| > 0`. The rational parameterisation makes |D1U| 5.513,
             // not the radius.
-            #expect(simd_length(r.d1u - SIMD3(0, -5.5132889542179191, 0)) < 1e-9)
-            #expect(simd_length(r.d1v - SIMD3(0, 0, 4.5015815807855297)) < 1e-9)
+            #expect(vectorLength(r.d1u - SIMD3(0, -5.5132889542179191, 0)) < 1e-9)
+            #expect(vectorLength(r.d1v - SIMD3(0, 0, 4.5015815807855297)) < 1e-9)
         }
     }
 
@@ -61,10 +61,10 @@ struct BSplineSurfaceLocalEvalTests {
             let s = spans(bs)
             let r = bs.bsplineLocalD2(
                 u: s.u, v: s.v, fromUK1: s.i1, toUK2: s.i2, fromVK1: s.j1, toVK2: s.j2)
-            #expect(simd_length(r.point - SIMD3(-5, 0, 0)) < 1e-9)
-            #expect(simd_length(r.d2u - SIMD3(6.0792710185402647, 0, 0)) < 1e-9)
-            #expect(simd_length(r.d2v - SIMD3(4.0528473456935101, 0, -1.6787443368140527)) < 1e-9)
-            #expect(simd_length(r.d2uv) < 1e-9)
+            #expect(vectorLength(r.point - SIMD3(-5, 0, 0)) < 1e-9)
+            #expect(vectorLength(r.d2u - SIMD3(6.0792710185402647, 0, 0)) < 1e-9)
+            #expect(vectorLength(r.d2v - SIMD3(4.0528473456935101, 0, -1.6787443368140527)) < 1e-9)
+            #expect(vectorLength(r.d2uv) < 1e-9)
         }
     }
 
@@ -74,9 +74,9 @@ struct BSplineSurfaceLocalEvalTests {
             let s = spans(bs)
             let r = bs.bsplineLocalD3(
                 u: s.u, v: s.v, fromUK1: s.i1, toUK2: s.i2, fromVK1: s.j1, toVK2: s.j2)
-            #expect(simd_length(r.point - SIMD3(-5, 0, 0)) < 1e-9)
-            #expect(simd_length(r.d3u - SIMD3(0, 10.055033326864551, 0)) < 1e-9)
-            #expect(simd_length(r.d3v - SIMD3(-4.5342027512700955, 0, -4.5342027512700929)) < 1e-9)
+            #expect(vectorLength(r.point - SIMD3(-5, 0, 0)) < 1e-9)
+            #expect(vectorLength(r.d3u - SIMD3(0, 10.055033326864551, 0)) < 1e-9)
+            #expect(vectorLength(r.d3v - SIMD3(-4.5342027512700955, 0, -4.5342027512700929)) < 1e-9)
         }
     }
 
@@ -88,7 +88,7 @@ struct BSplineSurfaceLocalEvalTests {
                 u: s.u, v: s.v, fromUK1: s.i1, toUK2: s.i2, fromVK1: s.j1, toVK2: s.j2, nu: 1, nv: 0
             )
             // DN(1, 0) is D1U.
-            #expect(simd_length(v - SIMD3(0, -5.5132889542179191, 0)) < 1e-9)
+            #expect(vectorLength(v - SIMD3(0, -5.5132889542179191, 0)) < 1e-9)
         }
     }
 
@@ -99,8 +99,8 @@ struct BSplineSurfaceLocalEvalTests {
             let localPt = bs.bsplineLocalValue(
                 u: s.u, v: s.v, fromUK1: s.i1, toUK2: s.i2, fromVK1: s.j1, toVK2: s.j2)
             let globalPt = bs.point(atU: s.u, v: s.v)
-            #expect(simd_length(localPt - globalPt) < 1e-10)
-            #expect(simd_length(localPt - SIMD3(-5, 0, 0)) < 1e-12)
+            #expect(vectorLength(localPt - globalPt) < 1e-10)
+            #expect(vectorLength(localPt - SIMD3(-5, 0, 0)) < 1e-12)
         }
     }
 }

@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -65,7 +64,7 @@ struct GeomHyperbola3DTests {
         #expect(abs(a.position.x) < 1e-6)
         #expect(abs(a.position.y) < 1e-6)
         #expect(abs(a.position.z) < 1e-6)
-        let expected = simd_normalize(SIMD3<Double>(5, 3, 0))
+        let expected = normalizedVector(SIMD3<Double>(5, 3, 0))
         #expect(abs(a.direction.x - expected.x) < 1e-6)
         #expect(abs(a.direction.y - expected.y) < 1e-6)
         #expect(abs(a.direction.z) < 1e-6)

@@ -1,5 +1,5 @@
+import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -25,7 +25,7 @@ struct AHTBezierCurve3DTests {
         #expect(domain.lowerBound == 0)
         #expect(domain.upperBound == 1)
         let pt = curve.point(at: 0.5)
-        #expect(simd_length(pt - SIMD3(7.7249540992806089, 1.1276259652063807, 0)) < 1e-9)
+        #expect(vectorLength(pt - SIMD3(7.7249540992806089, 1.1276259652063807, 0)) < 1e-9)
     }
 
     @Test func rationalAHTBezier() {
@@ -44,7 +44,7 @@ struct AHTBezierCurve3DTests {
         // Scripts/repro/766-aht-bezier/.
         if let c = curve {
             #expect(
-                simd_length(c.point(at: 0.5) - SIMD3(1.9441876464157528, 0.43933290852097595, 0))
+                vectorLength(c.point(at: 0.5) - SIMD3(1.9441876464157528, 0.43933290852097595, 0))
                     < 1e-9)
         }
     }

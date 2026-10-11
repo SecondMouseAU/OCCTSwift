@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -40,7 +39,7 @@ struct Geom2dEllipseTests {
         let halfFocal = (400.0 - 64.0).squareRoot()
         #expect(abs(e.ellipseProperties.eccentricity - eccentricity) < 1e-12)
         #expect(abs(e.ellipseProperties.focal - 2 * halfFocal) < 1e-9)
-        #expect(simd_distance(e.ellipseProperties.focus1, SIMD2(halfFocal, 0)) < 1e-9)
+        #expect(vectorDistance(e.ellipseProperties.focus1, SIMD2(halfFocal, 0)) < 1e-9)
     }
 
     @Test func ellipse2DEccentricity() throws {
@@ -59,7 +58,7 @@ struct Geom2dEllipseTests {
         // Focus should be along major axis, at +sqrt 75.
         let e = try make()
         let f = e.ellipseProperties.focus1
-        #expect(simd_distance(f, SIMD2(75.0.squareRoot(), 0)) < 1e-9)
+        #expect(vectorDistance(f, SIMD2(75.0.squareRoot(), 0)) < 1e-9)
     }
 
     @Test func ellipse2DPlacedAndRotated() throws {
@@ -71,11 +70,11 @@ struct Geom2dEllipseTests {
         let e = try #require(
             Curve2D.ellipse(center: SIMD2(3, 4), majorRadius: 10, minorRadius: 5, rotation: .pi / 2)
         )
-        #expect(simd_distance(e.point(at: 0), SIMD2(3, 14)) < 1e-9)
-        #expect(simd_distance(e.point(at: .pi / 2), SIMD2(-2, 4)) < 1e-9)
+        #expect(vectorDistance(e.point(at: 0), SIMD2(3, 14)) < 1e-9)
+        #expect(vectorDistance(e.point(at: .pi / 2), SIMD2(-2, 4)) < 1e-9)
         let focus = e.ellipseProperties.focus1
-        #expect(simd_distance(focus, SIMD2(3, 4 + 75.0.squareRoot())) < 1e-9)
-        #expect(abs(simd_distance(focus, SIMD2(3, 4)) - 75.0.squareRoot()) < 1e-9)
+        #expect(vectorDistance(focus, SIMD2(3, 4 + 75.0.squareRoot())) < 1e-9)
+        #expect(abs(vectorDistance(focus, SIMD2(3, 4)) - 75.0.squareRoot()) < 1e-9)
         #expect(abs(e.ellipseProperties.majorRadius - 10) < 1e-12)
         #expect(abs(e.ellipseProperties.minorRadius - 5) < 1e-12)
         #expect(abs(e.ellipseProperties.eccentricity - 0.75.squareRoot()) < 1e-12)

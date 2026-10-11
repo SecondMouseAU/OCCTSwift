@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -18,9 +17,9 @@ struct GceMakeCylinderTests {
         // The axis runs p1 to p2; the radius is p3's distance from that axis, which is 3.
         #expect(abs(cyl.cylinderProperties.radius - 3.0) < 1e-12)
         let axis = cyl.cylinderProperties.axis
-        #expect(simd_length(axis.position - SIMD3(0, 0, 0)) < 1e-12)
-        #expect(simd_length(axis.direction - SIMD3(0, 0, 1)) < 1e-12)
-        #expect(simd_length(cyl.point(atU: 0, v: 0) - SIMD3(3, 0, 0)) < 1e-9)
+        #expect(vectorLength(axis.position - SIMD3(0, 0, 0)) < 1e-12)
+        #expect(vectorLength(axis.direction - SIMD3(0, 0, 1)) < 1e-12)
+        #expect(vectorLength(cyl.point(atU: 0, v: 0) - SIMD3(3, 0, 0)) < 1e-9)
     }
 
     // #420: cylinderFrom3Points and cylindricalSurface(point1:point2:point3:) now
@@ -36,11 +35,11 @@ struct GceMakeCylinderTests {
 
         #expect(abs(viaGce.cylinderProperties.radius - viaGC.cylinderProperties.radius) < 1e-9)
         #expect(
-            simd_length(
+            vectorLength(
                 viaGce.cylinderProperties.axis.position - viaGC.cylinderProperties.axis.position)
                 < 1e-9)
         #expect(
-            simd_length(
+            vectorLength(
                 viaGce.cylinderProperties.axis.direction - viaGC.cylinderProperties.axis.direction)
                 < 1e-9)
     }

@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -48,7 +47,7 @@ struct BSplineCurve2DManipulationTests {
         #expect(abs(p.y - 6.0) < 1e-12)
         // Moving pole 2 moves the curve's midpoint from (4.3237, 3.6390) to here.
         let mid = bsp.point(at: 6.53884361523)
-        #expect(simd_distance(mid, SIMD2(4.48048559535, 3.8185952988)) < 1e-9)
+        #expect(vectorDistance(mid, SIMD2(4.48048559535, 3.8185952988)) < 1e-9)
     }
 
     @Test func resolution() throws {
@@ -67,7 +66,7 @@ struct BSplineCurve2DManipulationTests {
         #expect(abs(bsp.bsplineKnot(index: 3) - mid) < 1e-12)
         #expect(bsp.bspline.poleCount == 7)
         // Knot insertion does not change the shape.
-        #expect(simd_distance(bsp.point(at: mid), SIMD2(4.32365835512, 3.63901574245)) < 1e-9)
+        #expect(vectorDistance(bsp.point(at: mid), SIMD2(4.32365835512, 3.63901574245)) < 1e-9)
     }
 
     @Test func segment() throws {
@@ -79,8 +78,8 @@ struct BSplineCurve2DManipulationTests {
         #expect(ok)
         #expect(abs(bsp.domain.lowerBound - u1) < 1e-12)
         #expect(abs(bsp.domain.upperBound - u2) < 1e-12)
-        #expect(simd_distance(bsp.point(at: u1), SIMD2(1.68164527884, 3.67817687899)) < 1e-9)
-        #expect(simd_distance(bsp.point(at: u2), SIMD2(7.30384225384, 1.78034673468)) < 1e-9)
+        #expect(vectorDistance(bsp.point(at: u1), SIMD2(1.68164527884, 3.67817687899)) < 1e-9)
+        #expect(vectorDistance(bsp.point(at: u2), SIMD2(7.30384225384, 1.78034673468)) < 1e-9)
     }
 
     @Test func increaseDegree() throws {

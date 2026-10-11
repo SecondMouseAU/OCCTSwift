@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -29,9 +28,9 @@ struct ExtremaLocateExtCCTests {
         #expect(result.isDone)
         #expect(
             abs(result.squareDistance - 34) < 1e-12, "expected 34, got \(result.squareDistance)")
-        #expect(simd_distance(result.point1, SIMD3(5, 0, 0)) < 1e-12, "p1 got \(result.point1)")
+        #expect(vectorDistance(result.point1, SIMD3(5, 0, 0)) < 1e-12, "p1 got \(result.point1)")
         #expect(abs(result.param1) < 1e-12, "param1 got \(result.param1)")
-        #expect(simd_distance(result.point2, SIMD3(10, 0, 3)) < 1e-12, "p2 got \(result.point2)")
+        #expect(vectorDistance(result.point2, SIMD3(10, 0, 3)) < 1e-12, "p2 got \(result.point2)")
         #expect(abs(result.param2) < 1e-12, "param2 got \(result.param2)")
     }
 }

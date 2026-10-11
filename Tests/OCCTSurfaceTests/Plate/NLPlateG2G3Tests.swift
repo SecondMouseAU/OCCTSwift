@@ -1,5 +1,5 @@
+import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -18,7 +18,7 @@ struct NLPlateG2G3Tests {
     private func near(_ s: Surface, _ uv: SIMD2<Double>, _ target: SIMD3<Double>, _ tol: Double)
         -> Bool
     {
-        simd_length(s.point(atU: uv.x, v: uv.y) - target) < tol
+        vectorLength(s.point(atU: uv.x, v: uv.y) - target) < tol
     }
     @Test func nlPlateG2Deformation() throws {
         let plane = try #require(Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1)))
@@ -84,7 +84,7 @@ struct NLPlateG2G3Tests {
             u: 0.5, v: 0.5, iu: 1, iv: 0)
         #expect(deriv != nil)
         if let deriv {
-            #expect(simd_length(deriv - SIMD3(1, 0, 0.99999950000024984)) < 1e-12)
+            #expect(vectorLength(deriv - SIMD3(1, 0, 0.99999950000024984)) < 1e-12)
         }
     }
 }

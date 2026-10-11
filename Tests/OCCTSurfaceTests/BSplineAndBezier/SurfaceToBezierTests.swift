@@ -1,5 +1,5 @@
+import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -25,8 +25,8 @@ struct SurfaceToBezierTests {
                 let d = patch.domain
                 let a = patch.point(atU: d.uMin, v: d.vMin)
                 let b = patch.point(atU: d.uMax, v: d.vMax)
-                #expect(abs(simd_length(SIMD2(a.x, a.y)) - 5) < 1e-9)
-                #expect(abs(simd_length(SIMD2(b.x, b.y)) - 5) < 1e-9)
+                #expect(abs(vectorLength(SIMD2(a.x, a.y)) - 5) < 1e-9)
+                #expect(abs(vectorLength(SIMD2(b.x, b.y)) - 5) < 1e-9)
             }
         }
     }
@@ -48,8 +48,8 @@ struct SurfaceToBezierTests {
             if let patch = patches.first {
                 let d = patch.domain
                 #expect(
-                    simd_length(patch.point(atU: d.uMin, v: d.vMin) - SIMD3(-5, -5, 0)) < 1e-9)
-                #expect(simd_length(patch.point(atU: d.uMax, v: d.vMax) - SIMD3(5, 5, 0)) < 1e-9)
+                    vectorLength(patch.point(atU: d.uMin, v: d.vMin) - SIMD3(-5, -5, 0)) < 1e-9)
+                #expect(vectorLength(patch.point(atU: d.uMax, v: d.vMax) - SIMD3(5, 5, 0)) < 1e-9)
             }
         }
     }

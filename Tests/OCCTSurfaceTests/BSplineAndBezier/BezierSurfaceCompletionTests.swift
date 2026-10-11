@@ -1,5 +1,5 @@
+import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -26,10 +26,10 @@ struct BezierSurfaceCompletionTests {
             #expect(vIso != nil)
             // The U-iso at u = 0.5 is the surface's v-curve there, and the V-iso the u-curve.
             if let uIso, let vIso {
-                #expect(simd_length(uIso.point(at: 0.3) - s.point(atU: 0.5, v: 0.3)) < 1e-12)
-                #expect(simd_length(uIso.point(at: 0.3) - SIMD3(1, 0.6, 0.5)) < 1e-12)
-                #expect(simd_length(vIso.point(at: 0.3) - s.point(atU: 0.3, v: 0.5)) < 1e-12)
-                #expect(simd_length(vIso.point(at: 0.3) - SIMD3(0.6, 1, 0.42)) < 1e-12)
+                #expect(vectorLength(uIso.point(at: 0.3) - s.point(atU: 0.5, v: 0.3)) < 1e-12)
+                #expect(vectorLength(uIso.point(at: 0.3) - SIMD3(1, 0.6, 0.5)) < 1e-12)
+                #expect(vectorLength(vIso.point(at: 0.3) - s.point(atU: 0.3, v: 0.5)) < 1e-12)
+                #expect(vectorLength(vIso.point(at: 0.3) - SIMD3(0.6, 1, 0.42)) < 1e-12)
             }
         }
     }

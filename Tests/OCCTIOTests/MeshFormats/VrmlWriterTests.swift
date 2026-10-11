@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -98,8 +97,8 @@ struct VrmlWriterTests {
         // OBJ is a mesh format, so what comes back is triangulated rather than the original solid.
         #expect(loaded.subShapes(ofType: .face).count >= 1)
         let box3D = try #require(loaded.boundingBox)
-        #expect(simd_distance(box3D.min, SIMD3(-5, -5, -5)) < 1e-3)
-        #expect(simd_distance(box3D.max, SIMD3(5, 5, 5)) < 1e-3)
+        #expect(vectorDistance(box3D.min, SIMD3(-5, -5, -5)) < 1e-3)
+        #expect(vectorDistance(box3D.max, SIMD3(5, 5, 5)) < 1e-3)
     }
 
     /// The STEP round trip carries the solid, not just a document.

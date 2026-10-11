@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -144,7 +143,7 @@ struct PointProjectionTests {
             }
             // Offset radially outward by 3 units in XY plane
             let radialDir = SIMD3(onCurve.x, onCurve.y, 0.0)
-            let radialLen = simd_length(radialDir)
+            let radialLen = vectorLength(radialDir)
             let offset =
                 radialLen > 0.01
                 ? onCurve + (radialDir / radialLen) * 3.0

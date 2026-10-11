@@ -1,5 +1,5 @@
+import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -33,13 +33,13 @@ struct BSplineSurfaceCompletionsTests {
         if let surf {
             // Reversing a direction maps the point at u to u1 + u2 - u (domain [0, 10] x [-10, 0]).
             let before = surf.point(atU: 2, v: -3)
-            #expect(simd_length(before - SIMD3(-5, -2, -3)) < 1e-12)
+            #expect(vectorLength(before - SIMD3(-5, -2, -3)) < 1e-12)
             #expect(surf.bsplineUReverse())
-            #expect(simd_length(surf.point(atU: 8, v: -3) - before) < 1e-12)
+            #expect(vectorLength(surf.point(atU: 8, v: -3) - before) < 1e-12)
             #expect(surf.bsplineVReverse())
-            #expect(simd_length(surf.point(atU: 8, v: -7) - before) < 1e-12)
+            #expect(vectorLength(surf.point(atU: 8, v: -7) - before) < 1e-12)
             // And the original parameters now name the point mirrored through the face centre.
-            #expect(simd_length(surf.point(atU: 2, v: -3) - SIMD3(-5, 2, 3)) < 1e-12)
+            #expect(vectorLength(surf.point(atU: 2, v: -3) - SIMD3(-5, 2, 3)) < 1e-12)
         }
     }
 }

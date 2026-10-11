@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -56,8 +55,8 @@ struct Curve2DTests {
                 center: .zero, radius: 5,
                 startAngle: 0, endAngle: .pi / 2))
         #expect(!arc.isClosed)
-        #expect(simd_distance(arc.startPoint, SIMD2(5, 0)) < 1e-12)
-        #expect(simd_distance(arc.endPoint, SIMD2(0, 5)) < 1e-12)
+        #expect(vectorDistance(arc.startPoint, SIMD2(5, 0)) < 1e-12)
+        #expect(vectorDistance(arc.endPoint, SIMD2(0, 5)) < 1e-12)
     }
 
     @Test("Arc through 3 points")
@@ -67,9 +66,9 @@ struct Curve2DTests {
         #expect(abs(start.x - 0) < 1e-6)
         #expect(abs(start.y - 0) < 1e-6)
         // The half circle through the three points: ends at (10, 0), passes (5, 5) at mid-domain.
-        #expect(simd_distance(arc.endPoint, SIMD2(10, 0)) < 1e-9)
+        #expect(vectorDistance(arc.endPoint, SIMD2(10, 0)) < 1e-9)
         #expect(
-            simd_distance(
+            vectorDistance(
                 arc.point(at: (arc.domain.lowerBound + arc.domain.upperBound) / 2), SIMD2(5, 5))
                 < 1e-9)
     }
@@ -79,8 +78,8 @@ struct Curve2DTests {
         let ell = try #require(Curve2D.ellipse(center: .zero, majorRadius: 10, minorRadius: 5))
         #expect(ell.isClosed)
         #expect(ell.isPeriodic)
-        #expect(simd_distance(ell.point(at: 0), SIMD2(10, 0)) < 1e-12)
-        #expect(simd_distance(ell.point(at: .pi / 2), SIMD2(0, 5)) < 1e-12)
+        #expect(vectorDistance(ell.point(at: 0), SIMD2(10, 0)) < 1e-12)
+        #expect(vectorDistance(ell.point(at: .pi / 2), SIMD2(0, 5)) < 1e-12)
     }
 
     @Test("Ellipse minor > major returns nil")
@@ -93,7 +92,7 @@ struct Curve2DTests {
     func infiniteLine() throws {
         let line = try #require(Curve2D.line(through: .zero, direction: SIMD2(1, 0)))
         #expect(!line.isClosed)
-        #expect(simd_distance(line.point(at: 3), SIMD2(3, 0)) < 1e-12)
+        #expect(vectorDistance(line.point(at: 3), SIMD2(3, 0)) < 1e-12)
     }
 
     @Test("Parabola creation")
@@ -101,14 +100,14 @@ struct Curve2DTests {
         let p = try #require(
             Curve2D.parabola(focus: SIMD2(1, 0), direction: SIMD2(1, 0), focalLength: 1))
         #expect(abs(p.parabolaProperties.focal - 1) < 1e-12)
-        #expect(simd_distance(p.parabolaProperties.focus, SIMD2(1, 0)) < 1e-12)
+        #expect(vectorDistance(p.parabolaProperties.focus, SIMD2(1, 0)) < 1e-12)
     }
 
     @Test("Hyperbola creation")
     func createHyperbola() throws {
         let h = try #require(Curve2D.hyperbola(center: .zero, majorRadius: 5, minorRadius: 3))
         #expect(abs(h.hyperbolaProperties.majorRadius - 5) < 1e-12)
-        #expect(simd_distance(h.point(at: 0), SIMD2(5, 0)) < 1e-12)
+        #expect(vectorDistance(h.point(at: 0), SIMD2(5, 0)) < 1e-12)
     }
 
     @Test("Evaluate segment midpoint")
@@ -140,7 +139,7 @@ struct Curve2DTests {
             result.tangent.x * result.tangent.x + result.tangent.y * result.tangent.y)
         #expect(tangentLen > 0)
         // The segment is parameterised by length, so D1 is the unit direction (10, 5) / sqrt 125.
-        #expect(simd_distance(result.tangent, SIMD2(10, 5) / 125.0.squareRoot()) < 1e-12)
+        #expect(vectorDistance(result.tangent, SIMD2(10, 5) / 125.0.squareRoot()) < 1e-12)
     }
 
     // #815: `d2(at:)` had no test anywhere in the tree (its sibling `d1(at:)`, immediately above,
@@ -210,7 +209,7 @@ struct Curve2DTests {
             // enough to accept exactly the defect: the bridge dropping the surplus sample instead
             // of giving the final slot the sampler's last one. The kept end point is the same
             // double evaluated twice, so the distance is 0.
-            #expect(distance(points[count - 1], endPoint) < 1e-9)
+            #expect(vectorDistance(points[count - 1], endPoint) < 1e-9)
         }
         // A control at the same counts on #501's own ellipse, which no longer overshoots: the
         // clamp is a no-op there and the end arrives in the last slot anyway.
@@ -220,7 +219,7 @@ struct Curve2DTests {
         for count in [24, 34, 35, 41] {
             let points = settled.drawUniform(pointCount: count)
             try #require(points.count == count)
-            #expect(distance(points[count - 1], settledEnd) < 1e-9)
+            #expect(vectorDistance(points[count - 1], settledEnd) < 1e-9)
         }
     }
 
@@ -257,7 +256,7 @@ struct Curve2DTests {
         // #766: the lift wrote the two endpoint pins inside `if let points.first/.last`, which an
         // empty sample skips, so the count is required rather than expected and the ends indexed.
         try #require(points.count == 43)  // GCPnts_TangentialDeflection(0.1, 0.01)
-        #expect(simd_distance(points[0], SIMD2(10, 0)) < 1e-9)
-        #expect(simd_distance(points[42], SIMD2(-10, 0)) < 1e-9)
+        #expect(vectorDistance(points[0], SIMD2(10, 0)) < 1e-9)
+        #expect(vectorDistance(points[42], SIMD2(-10, 0)) < 1e-9)
     }
 }

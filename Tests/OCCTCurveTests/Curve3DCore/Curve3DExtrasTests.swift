@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -17,8 +16,8 @@ struct Curve3DExtrasTests {
         }
         #expect(c.reverse())
         // In place: the direction flips, so the start is now (10, 0, 0).
-        #expect(simd_distance(c.startPoint, SIMD3(10, 0, 0)) < 1e-12)
-        #expect(simd_distance(c.endPoint, SIMD3(0, 0, 0)) < 1e-12)
+        #expect(vectorDistance(c.startPoint, SIMD3(10, 0, 0)) < 1e-12)
+        #expect(vectorDistance(c.endPoint, SIMD3(0, 0, 0)) < 1e-12)
     }
 
     @Test func copyCurve() {
@@ -29,7 +28,7 @@ struct Curve3DExtrasTests {
             return
         }
         for u in [-5.0, 0, 3, 7] {
-            #expect(simd_distance(c.point(at: u), copy.point(at: u)) < 1e-12)
+            #expect(vectorDistance(c.point(at: u), copy.point(at: u)) < 1e-12)
         }
     }
 
@@ -43,7 +42,7 @@ struct Curve3DExtrasTests {
         #expect(copy.startPoint == c.startPoint)
         // Reversing the original leaves the copy as it was.
         #expect(c.reverse())
-        #expect(simd_distance(copy.startPoint, SIMD3(0, 0, 0)) < 1e-12)
-        #expect(simd_distance(c.startPoint, SIMD3(10, 0, 0)) < 1e-12)
+        #expect(vectorDistance(copy.startPoint, SIMD3(0, 0, 0)) < 1e-12)
+        #expect(vectorDistance(c.startPoint, SIMD3(10, 0, 0)) < 1e-12)
     }
 }

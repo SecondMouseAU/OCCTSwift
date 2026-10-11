@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -18,8 +17,8 @@ struct ApproxArcsSegmentsTests {
         try #require(segments.count == 2)
         let start = segments[0].point(at: segments[0].domain.lowerBound)
         let end = segments[1].point(at: segments[1].domain.upperBound)
-        #expect(simd_distance(start, SIMD2(5, 0)) < 1e-9)
-        #expect(simd_distance(end, SIMD2(-5, 0)) < 1e-9)
+        #expect(vectorDistance(start, SIMD2(5, 0)) < 1e-9)
+        #expect(vectorDistance(end, SIMD2(-5, 0)) < 1e-9)
     }
 
     @Test("approximate line")
@@ -29,7 +28,7 @@ struct ApproxArcsSegmentsTests {
         let segments = trimmed.approxArcsAndSegments(tolerance: 0.1, angleTolerance: 0.1)
         try #require(segments.count == 1)
         let seg = segments[0]
-        #expect(simd_distance(seg.point(at: seg.domain.lowerBound), SIMD2(0, 0)) < 1e-9)
-        #expect(simd_distance(seg.point(at: seg.domain.upperBound), SIMD2(10, 0)) < 1e-9)
+        #expect(vectorDistance(seg.point(at: seg.domain.lowerBound), SIMD2(0, 0)) < 1e-9)
+        #expect(vectorDistance(seg.point(at: seg.domain.upperBound), SIMD2(10, 0)) < 1e-9)
     }
 }

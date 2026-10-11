@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -61,7 +60,7 @@ struct GeomSphere3DTests {
     @Test func sphereCenter() throws {
         let s = try makeSphere(center: SIMD3(1, 2, 3))
         let c = s.sphereProperties.center
-        #expect(simd_length(c - SIMD3(1, 2, 3)) < 1e-12, "centre \(c)")
+        #expect(vectorLength(c - SIMD3(1, 2, 3)) < 1e-12, "centre \(c)")
     }
 
     @Test func sphereUIso() throws {
@@ -71,13 +70,13 @@ struct GeomSphere3DTests {
         // (5, 0, 0) -> north pole, trimmed to [3pi/2, 5pi/2] (see the file comment).
         #expect(abs(iso.domain.lowerBound - 1.5 * Double.pi) < 1e-12, "domain \(iso.domain)")
         #expect(abs(iso.domain.upperBound - 2.5 * Double.pi) < 1e-12, "domain \(iso.domain)")
-        #expect(simd_length(iso.startPoint - SIMD3(0, 0, -Self.radius)) < 1e-9)
-        #expect(simd_length(iso.point(at: 2 * Double.pi) - SIMD3(Self.radius, 0, 0)) < 1e-9)
-        #expect(simd_length(iso.endPoint - SIMD3(0, 0, Self.radius)) < 1e-9)
+        #expect(vectorLength(iso.startPoint - SIMD3(0, 0, -Self.radius)) < 1e-9)
+        #expect(vectorLength(iso.point(at: 2 * Double.pi) - SIMD3(Self.radius, 0, 0)) < 1e-9)
+        #expect(vectorLength(iso.endPoint - SIMD3(0, 0, Self.radius)) < 1e-9)
         // Every point of a meridian lies on the sphere and in the y = 0 plane.
         for t in stride(from: 1.5 * Double.pi, through: 2.5 * Double.pi, by: Double.pi / 8) {
             let p = iso.point(at: t)
-            #expect(abs(simd_length(p) - Self.radius) < 1e-9, "off the sphere at \(t): \(p)")
+            #expect(abs(vectorLength(p) - Self.radius) < 1e-9, "off the sphere at \(t): \(p)")
             #expect(abs(p.y) < 1e-9, "off the XZ plane at \(t): \(p)")
         }
     }
@@ -89,14 +88,14 @@ struct GeomSphere3DTests {
         // counter-clockwise about +Z.
         #expect(abs(iso.domain.lowerBound) < 1e-12, "domain \(iso.domain)")
         #expect(abs(iso.domain.upperBound - 2 * Double.pi) < 1e-12, "domain \(iso.domain)")
-        #expect(simd_length(iso.startPoint - SIMD3(Self.radius, 0, 0)) < 1e-9)
-        #expect(simd_length(iso.point(at: Double.pi / 2) - SIMD3(0, Self.radius, 0)) < 1e-9)
-        #expect(simd_length(iso.point(at: Double.pi) - SIMD3(-Self.radius, 0, 0)) < 1e-9)
+        #expect(vectorLength(iso.startPoint - SIMD3(Self.radius, 0, 0)) < 1e-9)
+        #expect(vectorLength(iso.point(at: Double.pi / 2) - SIMD3(0, Self.radius, 0)) < 1e-9)
+        #expect(vectorLength(iso.point(at: Double.pi) - SIMD3(-Self.radius, 0, 0)) < 1e-9)
         // A parallel at v = pi/6 sits at z = r*sin(pi/6) on a circle of radius r*cos(pi/6).
         let upper = try #require(s.sphereProperties.vIso(Double.pi / 6), "vIso(pi/6) returned nil")
         let q = upper.startPoint
         #expect(abs(q.z - Self.radius * sin(Double.pi / 6)) < 1e-9, "parallel height \(q)")
-        #expect(abs(simd_length(SIMD2(q.x, q.y)) - Self.radius * cos(Double.pi / 6)) < 1e-9)
+        #expect(abs(vectorLength(SIMD2(q.x, q.y)) - Self.radius * cos(Double.pi / 6)) < 1e-9)
     }
 
     @Test func sphereSphere() throws {
@@ -104,6 +103,6 @@ struct GeomSphere3DTests {
         let sph = s.sphereProperties.sphere
         #expect(abs(sph.radius - 5) < 1e-12)
         // The centre travels with the surface; a sphere at the origin hid a dropped location.
-        #expect(simd_length(sph.center - SIMD3(1, 2, 3)) < 1e-12, "centre \(sph.center)")
+        #expect(vectorLength(sph.center - SIMD3(1, 2, 3)) < 1e-12, "centre \(sph.center)")
     }
 }

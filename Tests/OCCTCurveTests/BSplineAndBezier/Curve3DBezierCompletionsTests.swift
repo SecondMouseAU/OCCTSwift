@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -46,6 +45,6 @@ struct Curve3DBezierCompletionsTests {
         #expect(c.bezierSetPoleWithWeight(index: 2, point: SIMD3(5, 10, 0), weight: 2.0))
         #expect(c.bezierWeights == [1, 2, 1])
         // C(0.5) = (0.25 * 0 + 2 * 0.5 * 2 * (5, 10) + 0.25 * (10, 0)) / (0.25 + 1 + 0.25)
-        #expect(simd_distance(c.point(at: 0.5), SIMD3(5, 6.666666666666667, 0)) < 1e-12)
+        #expect(vectorDistance(c.point(at: 0.5), SIMD3(5, 6.666666666666667, 0)) < 1e-12)
     }
 }

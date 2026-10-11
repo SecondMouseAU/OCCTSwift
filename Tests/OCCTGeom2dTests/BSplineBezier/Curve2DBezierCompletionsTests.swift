@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -15,7 +14,7 @@ import simd
 @Suite("v0.126.0: Curve2D Bezier completions")
 struct Curve2DBezierCompletionsTests {
     private func close(_ a: [SIMD2<Double>], _ b: [SIMD2<Double>]) -> Bool {
-        a.count == b.count && zip(a, b).allSatisfy { simd_distance($0, $1) < 1e-12 }
+        a.count == b.count && zip(a, b).allSatisfy { vectorDistance($0, $1) < 1e-12 }
     }
 
     @Test("InsertPoleAfter increases pole count")
@@ -101,7 +100,7 @@ struct Curve2DBezierCompletionsTests {
 
         // Elevating changes the representation and never the curve.
         for (u, was) in zip(samples, before) {
-            #expect(simd_distance(c.point(at: u), was) < 1e-12, "u = \(u)")
+            #expect(vectorDistance(c.point(at: u), was) < 1e-12, "u = \(u)")
         }
     }
 
@@ -117,8 +116,8 @@ struct Curve2DBezierCompletionsTests {
 
         // With an interior pole the ends are still the first and last poles, not a neighbour.
         let arch = try #require(Curve2D.bezier(poles: [SIMD2(1, 2), SIMD2(5, 10), SIMD2(9, 3)]))
-        #expect(simd_distance(arch.bezierStartPoint, SIMD2(1, 2)) < 1e-10)
-        #expect(simd_distance(arch.bezierEndPoint, SIMD2(9, 3)) < 1e-10)
+        #expect(vectorDistance(arch.bezierStartPoint, SIMD2(1, 2)) < 1e-10)
+        #expect(vectorDistance(arch.bezierEndPoint, SIMD2(9, 3)) < 1e-10)
     }
 
     @Test("GetPoles returns correct poles")

@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -159,7 +158,7 @@ struct ConstructionPointTests {
             let edgeRef = TopologyRef.literal(.init(kind: .edge, index: edgeIndex))
             switch graph.resolve(ConstructionPoint.atEdgeParameter(edge: edgeRef, t: 0.25)) {
             case .success(let p):
-                #expect(simd_length(p - expected) < 1e-9)
+                #expect(vectorLength(p - expected) < 1e-9)
             case .failure(let e): Issue.record("atEdgeParameter failed at edge \(edgeIndex): \(e)")
             }
         }

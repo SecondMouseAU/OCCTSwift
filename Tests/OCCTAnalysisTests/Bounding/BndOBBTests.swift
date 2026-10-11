@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -54,7 +53,7 @@ struct BndOBBTests {
         let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let obb = try #require(OBB.fromShape(box), "should create OBB from shape")
         #expect(!obb.isVoid)
-        #expect(simd_length(obb.center) < 1e-12)
+        #expect(vectorLength(obb.center) < 1e-12)
         #expect(abs(obb.halfSizes.x - 5.0000001) < 1e-12)
         #expect(abs(obb.halfSizes.y - 5.0000001) < 1e-12)
         #expect(abs(obb.halfSizes.z - 5.0000001) < 1e-12)

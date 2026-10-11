@@ -1,5 +1,5 @@
+import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -23,9 +23,9 @@ struct TBezierCurve3DTests {
         let start = curve.point(at: domain.lowerBound)
         let end = curve.point(at: domain.upperBound)
         // T-Bezier basis at t=0: {1, 0, 1} so start = P0 + P2
-        #expect(simd_length(start - SIMD3(2, 0, 0)) < 1e-12)
-        #expect(simd_length(end - SIMD3(-2, 0, 0)) < 1e-12)
-        #expect(simd_length(curve.point(at: .pi / 2) - SIMD3(1, 1, 0)) < 1e-12)
+        #expect(vectorLength(start - SIMD3(2, 0, 0)) < 1e-12)
+        #expect(vectorLength(end - SIMD3(-2, 0, 0)) < 1e-12)
+        #expect(vectorLength(curve.point(at: .pi / 2) - SIMD3(1, 1, 0)) < 1e-12)
     }
 
     @Test func rationalTBezier() {
@@ -37,7 +37,7 @@ struct TBezierCurve3DTests {
         #expect(curve != nil)
         // #766: the weight must reach the kernel: (2/3, 2/3, 0) at pi/2, against (1, 1, 0) unweighted.
         if let curve {
-            #expect(simd_length(curve.point(at: .pi / 2) - SIMD3(2.0 / 3, 2.0 / 3, 0)) < 1e-12)
+            #expect(vectorLength(curve.point(at: .pi / 2) - SIMD3(2.0 / 3, 2.0 / 3, 0)) < 1e-12)
         }
     }
 

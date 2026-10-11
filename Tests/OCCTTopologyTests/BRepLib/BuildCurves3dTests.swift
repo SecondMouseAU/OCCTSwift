@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -85,7 +84,7 @@ struct BuildCurves3dTests {
                 let t = built.first + (built.last - built.first) * Double(i) / 100.0
                 let uv = pcurve.point(at: t)
                 let exact = surface.point(atU: uv.x, v: uv.y)
-                worst = max(worst, simd_distance(exact, built.curve.point(at: t)))
+                worst = max(worst, vectorDistance(exact, built.curve.point(at: t)))
             }
             return worst
         }

@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -28,8 +27,8 @@ struct BRepExtremaExtCCTests {
         #expect(r.solutionCount == 1)
         #expect(!r.isParallel)
         #expect(abs(r.distance - 25) < 1e-9)
-        #expect(simd_distance(r.pointOnEdge1, SIMD3(-5, 0, 5)) < 1e-9)
-        #expect(simd_distance(r.pointOnEdge2, SIMD3(20, 0, 5)) < 1e-9)
+        #expect(vectorDistance(r.pointOnEdge1, SIMD3(-5, 0, 5)) < 1e-9)
+        #expect(vectorDistance(r.pointOnEdge2, SIMD3(20, 0, 5)) < 1e-9)
     }
 
     @Test("Edge-edge distance between standalone edge shapes")
@@ -59,7 +58,7 @@ struct BRepExtremaExtCCTests {
         #expect(r.solutionCount == 1)
         #expect(!r.isParallel)
         #expect(abs(r.distance - 25) < 1e-9)
-        #expect(simd_distance(r.pointOnEdge1, SIMD3(-5, 0, 5)) < 1e-9)
-        #expect(simd_distance(r.pointOnEdge2, SIMD3(20, 0, 5)) < 1e-9)
+        #expect(vectorDistance(r.pointOnEdge1, SIMD3(-5, 0, 5)) < 1e-9)
+        #expect(vectorDistance(r.pointOnEdge2, SIMD3(20, 0, 5)) < 1e-9)
     }
 }

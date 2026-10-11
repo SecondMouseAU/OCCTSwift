@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -51,7 +50,7 @@ struct Curve3DLocalPropertiesTests {
         let n = circle.normal(at: 0)
         #expect(n != nil)
         if let n = n {
-            let len = simd_length(n)
+            let len = vectorLength(n)
             #expect(abs(len - 1.0) < 1e-6)
         }
     }

@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -125,7 +124,7 @@ struct BRepGPropVinertTests {
     /// significant digits are lost to the cancellation before any of them is wrong.
     @Test("the by-plane per-face sum is the volume, for any plane (#2827)")
     func byPlaneFaceSumIsTheVolumeForAnyPlane() throws {
-        let oblique = simd_normalize(SIMD3(1.0, 2.0, 3.0))
+        let oblique = normalizedVector(SIMD3(1.0, 2.0, 3.0))
         for shape in [try holedPlate(), try #require(Shape.cylinder(radius: 5, height: 10))] {
             let volume = try #require(shape.volume)
             // A plane through the origin, one nowhere near the shape, and one at an angle to it.
@@ -165,7 +164,7 @@ struct BRepGPropVinertTests {
             abs(expected.x) > 1.0 && abs(expected.y) > 1.0 && abs(expected.z) > 1.0,
             "first moment \(expected) has a zero component, so the fixture is not off-origin")
 
-        let oblique = simd_normalize(SIMD3(1.0, 2.0, 3.0))
+        let oblique = normalizedVector(SIMD3(1.0, 2.0, 3.0))
         for (normal, distance) in [
             (SIMD3(0.0, 0.0, 1.0), 0.0), (SIMD3(0.0, 0.0, 1.0), -100.0), (oblique, 7.0),
         ] {
@@ -240,7 +239,7 @@ struct BRepGPropVinertTests {
                 let measured = face.volumeInertia(
                     planeNormal: normal, planeDistance: distance
                 ).volume
-                let predicted = projectedArea * (simd_dot(normal, centroid) - distance)
+                let predicted = projectedArea * (dotProduct(normal, centroid) - distance)
                 #expect(
                     abs(measured - predicted) < 1e-9 * max(1.0, abs(predicted)),
                     "face measured \(measured), closed form \(predicted), at offset \(distance)")
@@ -274,7 +273,7 @@ struct BRepGPropVinertTests {
         for face in holed.faces() where face.area() > 300 {
             caps += 1
             let centroid = try #require(face.surfaceInertia.centerOfMass)
-            let height = simd_dot(normal, centroid)
+            let height = dotProduct(normal, centroid)
             let area = face.area()
             #expect(abs(height) > 1.0, "cap at \(centroid) is too near the origin to discriminate")
 

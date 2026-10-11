@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -22,6 +21,6 @@ struct Curve2DSimplifyBSplineTests {
         #expect(curve.simplifyBSpline(tolerance: 0.2))
         #expect(curve.bspline.poleCount == 6)
         #expect(curve.bspline.knotCount == 4)
-        #expect(simd_distance(curve.endPoint, SIMD2(10, 0)) < 1e-9)
+        #expect(vectorDistance(curve.endPoint, SIMD2(10, 0)) < 1e-9)
     }
 }

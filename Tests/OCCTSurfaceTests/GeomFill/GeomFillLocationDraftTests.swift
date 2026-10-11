@@ -1,5 +1,5 @@
+import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -31,7 +31,7 @@ struct GeomFillLocationDraftTests {
             ]
             #expect(result.matrix.count == 9)
             #expect(zip(result.matrix, expected).allSatisfy { abs($0 - $1) < 1e-9 })
-            #expect(simd_length(result.translation - SIMD3(5, 0, 0)) < 1e-9)
+            #expect(vectorLength(result.translation - SIMD3(5, 0, 0)) < 1e-9)
         }
     }
 

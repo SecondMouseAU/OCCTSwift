@@ -2,8 +2,8 @@
 // Shared extensions for OCCTModelingTests.
 // No @Suite or @Test: only shared helpers.
 
+import Foundation
 import OCCTSwift
-import simd
 
 extension SIMD3 where Scalar == Double {
     /// Returns a unit vector in the same direction, or `self` if the length is zero.

@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -22,8 +21,8 @@ struct CompCurveTests {
             Issue.record("concatenation failed")
             return
         }
-        #expect(simd_distance(combined.startPoint, SIMD3(0, 0, 0)) < 1e-12)
-        #expect(simd_distance(combined.endPoint, SIMD3(2, 1, 0)) < 1e-12)
+        #expect(vectorDistance(combined.startPoint, SIMD3(0, 0, 0)) < 1e-12)
+        #expect(vectorDistance(combined.endPoint, SIMD3(2, 1, 0)) < 1e-12)
         #expect(abs(combined.domain.upperBound - (1 + 2.0.squareRoot())) < 1e-12)
     }
 
@@ -38,8 +37,8 @@ struct CompCurveTests {
             Issue.record("concatenation failed")
             return
         }
-        #expect(simd_distance(combined.startPoint, SIMD2(0, 0)) < 1e-12)
-        #expect(simd_distance(combined.endPoint, SIMD2(2, 1)) < 1e-12)
+        #expect(vectorDistance(combined.startPoint, SIMD2(0, 0)) < 1e-12)
+        #expect(vectorDistance(combined.endPoint, SIMD2(2, 1)) < 1e-12)
         #expect(abs(combined.domain.upperBound - (1 + 2.0.squareRoot())) < 1e-12)
     }
 }

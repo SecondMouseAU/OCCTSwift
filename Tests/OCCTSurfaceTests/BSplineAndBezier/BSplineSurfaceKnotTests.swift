@@ -1,5 +1,5 @@
+import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -100,7 +100,7 @@ struct BSplineSurfaceKnotTests {
             // Row-major: poles[k] is pole(1, k + 1). The first is the south pole (0, 0, -5).
             let grid = bs.bsplineSurface
             if poles.count == 30 {
-                #expect(simd_length(poles[0] - SIMD3(0, 0, -5)) < 1e-12)
+                #expect(vectorLength(poles[0] - SIMD3(0, 0, -5)) < 1e-12)
                 #expect((0..<5).allSatisfy { poles[$0] == grid.pole(uIndex: 1, vIndex: $0 + 1) })
                 #expect(poles[5] == grid.pole(uIndex: 2, vIndex: 1))
             }

@@ -31,7 +31,6 @@
 
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -46,7 +45,7 @@ struct Issue721CorrectedFrenetPlacementTests {
     )? {
         guard let firstEdge = spine.edges().first, let curve = firstEdge.curve3D else { return nil }
         let (p0, t0) = curve.d1(at: curve.domain.lowerBound)
-        return (p0, simd_normalize(t0))
+        return (p0, normalizedVector(t0))
     }
 
     /// The discriminator the issue asked for: does the divergence require an internal wire
@@ -141,8 +140,8 @@ struct Issue721CorrectedFrenetPlacementTests {
             return
         }
 
-        let cosAngle = simd_dot(
-            simd_normalize(frameBefore.normal), simd_normalize(frameAfter.normal))
+        let cosAngle = dotProduct(
+            normalizedVector(frameBefore.normal), normalizedVector(frameAfter.normal))
         let angleDeg = acos(Swift.max(-1, Swift.min(1, cosAngle))) * 180 / .pi
 
         // The curve is C-infinity smooth across this point (it is one continuous helix, split

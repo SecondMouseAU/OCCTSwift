@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -24,7 +23,7 @@ struct ShapeBuildVertexTests {
         let v = try boxVertices()
         let combined = try #require(v[0].combineVertex(with: v[1]))
         #expect(combined.shapeType == .vertex)
-        #expect(simd_distance(combined.vertexPoint, SIMD3(-5, -5, 0)) < 1e-9)
+        #expect(vectorDistance(combined.vertexPoint, SIMD3(-5, -5, 0)) < 1e-9)
         #expect(abs(combined.vertexTolerance - 5.0005001) < 1e-6)
     }
 
@@ -34,7 +33,7 @@ struct ShapeBuildVertexTests {
             Shape.combineVertices(
                 point1: SIMD3(0, 0, 0), tol1: 0.01,
                 point2: SIMD3(0.01, 0, 0), tol2: 0.01))
-        #expect(simd_distance(combined.vertexPoint, SIMD3(0.005, 0, 0)) < 1e-12)
+        #expect(vectorDistance(combined.vertexPoint, SIMD3(0.005, 0, 0)) < 1e-12)
         #expect(abs(combined.vertexTolerance - 0.0150015) < 1e-9)
     }
 
@@ -42,7 +41,7 @@ struct ShapeBuildVertexTests {
     func combineWithTolFactor() throws {
         let v = try boxVertices()
         let combined = try #require(v[0].combineVertex(with: v[1], tolFactor: 1.5))
-        #expect(simd_distance(combined.vertexPoint, SIMD3(-5, -5, 0)) < 1e-9)
+        #expect(vectorDistance(combined.vertexPoint, SIMD3(-5, -5, 0)) < 1e-9)
         #expect(abs(combined.vertexTolerance - 7.50000015) < 1e-6)
     }
 }

@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -83,7 +82,7 @@ struct Curve3DConicFactoryParityTests {
             for t in stride(from: 0.0, to: 2 * .pi, by: .pi / 4) {
                 let pa = a.point(at: t)
                 let pb = b.point(at: t)
-                #expect(simd_distance(pa, pb) < 1e-9)
+                #expect(vectorDistance(pa, pb) < 1e-9)
             }
         }
 
@@ -98,7 +97,7 @@ struct Curve3DConicFactoryParityTests {
         #expect(e2 != nil)
         if let a = e1, let b = e2 {
             for t in stride(from: 0.0, to: 2 * .pi, by: .pi / 4) {
-                #expect(simd_distance(a.point(at: t), b.point(at: t)) < 1e-9)
+                #expect(vectorDistance(a.point(at: t), b.point(at: t)) < 1e-9)
             }
         }
 
@@ -113,7 +112,7 @@ struct Curve3DConicFactoryParityTests {
         #expect(h2 != nil)
         if let a = h1, let b = h2 {
             for t in stride(from: -1.0, through: 1.0, by: 0.25) {
-                #expect(simd_distance(a.point(at: t), b.point(at: t)) < 1e-9)
+                #expect(vectorDistance(a.point(at: t), b.point(at: t)) < 1e-9)
             }
         }
 
@@ -125,7 +124,7 @@ struct Curve3DConicFactoryParityTests {
         #expect(p2 != nil)
         if let a = p1, let b = p2 {
             for t in stride(from: -2.0, through: 2.0, by: 0.5) {
-                #expect(simd_distance(a.point(at: t), b.point(at: t)) < 1e-9)
+                #expect(vectorDistance(a.point(at: t), b.point(at: t)) < 1e-9)
             }
         }
     }

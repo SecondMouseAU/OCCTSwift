@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -33,7 +32,7 @@ struct RadiusDimensionTests {
             return
         }
         #expect(abs(g.circleRadius - 5) < 1e-9, "circleRadius \(g.circleRadius)")
-        #expect(simd_length(g.centerPoint) < 1e-9, "centre \(g.centerPoint)")
+        #expect(vectorLength(g.centerPoint) < 1e-9, "centre \(g.centerPoint)")
         #expect(g.isValid)
     }
 

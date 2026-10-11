@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -17,8 +16,8 @@ struct PointsToBSplineExpansionTests {
         #expect(curve != nil)
         // #766: non-nil alone passed any fit. GeomAPI_PointsToBSpline passes through both ends.
         if let curve {
-            #expect(simd_distance(curve.point(at: curve.domain.lowerBound), points[0]) < 1e-9)
-            #expect(simd_distance(curve.point(at: curve.domain.upperBound), points[4]) < 1e-9)
+            #expect(vectorDistance(curve.point(at: curve.domain.lowerBound), points[0]) < 1e-9)
+            #expect(vectorDistance(curve.point(at: curve.domain.upperBound), points[4]) < 1e-9)
         }
     }
 
@@ -30,7 +29,7 @@ struct PointsToBSplineExpansionTests {
         // #766: three points and degree 2 are an exact interpolation, so the middle point sits
         // at its own parameter 0.3.
         if let curve {
-            #expect(simd_distance(curve.point(at: 0.3), points[1]) < 1e-6)
+            #expect(vectorDistance(curve.point(at: 0.3), points[1]) < 1e-6)
         }
     }
 
@@ -39,8 +38,8 @@ struct PointsToBSplineExpansionTests {
         let curve = Curve2D.approximate(points: points, degMin: 2, degMax: 6)
         #expect(curve != nil)
         if let curve {  // #766: pinned to the end points the fit passes through
-            #expect(simd_distance(curve.point(at: curve.domain.lowerBound), points[0]) < 1e-9)
-            #expect(simd_distance(curve.point(at: curve.domain.upperBound), points[3]) < 1e-9)
+            #expect(vectorDistance(curve.point(at: curve.domain.lowerBound), points[0]) < 1e-9)
+            #expect(vectorDistance(curve.point(at: curve.domain.upperBound), points[3]) < 1e-9)
         }
     }
 
@@ -60,7 +59,7 @@ struct PointsToBSplineExpansionTests {
         #expect(surf != nil)
         if let surf {  // #766: the fitted surface passes through the grid's corner (0, 0, 0)
             let d = surf.domain
-            #expect(simd_distance(surf.point(atU: d.uMin, v: d.vMin), points[0]) < 1e-6)
+            #expect(vectorDistance(surf.point(atU: d.uMin, v: d.vMin), points[0]) < 1e-6)
         }
     }
 }

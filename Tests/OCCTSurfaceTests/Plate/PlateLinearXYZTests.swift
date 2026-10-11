@@ -1,5 +1,5 @@
+import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -16,7 +16,7 @@ struct PlateLinearXYZTests {
         // (Plate_Plate, Scripts/repro/766-plate-solver-surface/).
         plate.loadPinpoint(u: 0, v: 0, position: SIMD3(0, 0, 3))
         #expect(plate.solve())
-        #expect(simd_length(plate.evaluate(u: 1, v: 0) - SIMD3(0, 0, 3)) < 1e-9)
+        #expect(vectorLength(plate.evaluate(u: 1, v: 0) - SIMD3(0, 0, 3)) < 1e-9)
     }
 
     /// #1583: `targets`/`coefficients` shorter than `uvPoints` used to be read past their end

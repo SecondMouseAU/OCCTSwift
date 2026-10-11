@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -19,7 +18,7 @@ struct BRepGraphEdgeSamplingTests {
         #expect(points[0] == SIMD3(-5, -5, -5))
         #expect(points[9] == SIMD3(-5, -5, 5))
         // Evenly spaced: consecutive samples 10/9 apart.
-        #expect(abs(simd_distance(points[0], points[1]) - 10.0 / 9.0) < 1e-12)
+        #expect(abs(vectorDistance(points[0], points[1]) - 10.0 / 9.0) < 1e-12)
     }
 
     @Test func sampleSinglePoint() throws {
@@ -55,7 +54,7 @@ struct BRepGraphEdgeSamplingTests {
         try #require(points.count == 20)
         // All points should be on the sphere surface (distance from origin ~= 5)
         for p in points {
-            #expect(abs(simd_length(p) - 5.0) < 1e-9)
+            #expect(abs(vectorLength(p) - 5.0) < 1e-9)
         }
         // The seam runs pole to pole.
         #expect(abs(points[0].z + 5) < 1e-12)

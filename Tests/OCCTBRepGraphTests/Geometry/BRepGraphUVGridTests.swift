@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -30,8 +29,8 @@ struct BRepGraphUVGridTests {
         for h in sample.meanCurvatures {
             #expect(abs(h) < 1e-10)
         }
-        #expect(simd_distance(sample.positions[0], SIMD3(-5, 5, -5)) < 1e-9)
-        #expect(simd_distance(sample.positions[24], SIMD3(-5, -5, 5)) < 1e-9)
+        #expect(vectorDistance(sample.positions[0], SIMD3(-5, 5, -5)) < 1e-9)
+        #expect(vectorDistance(sample.positions[24], SIMD3(-5, -5, 5)) < 1e-9)
     }
 
     @Test func sampleSphereFace() throws {
@@ -58,7 +57,7 @@ struct BRepGraphUVGridTests {
         let sample = try #require(graph.sampleFaceUVGrid(faceIndex: 0, uSamples: 1, vSamples: 1))
         #expect(sample.positions.count == 1)
         // Kernel: one sample sits at (uMin, vMin), the corner (-5, 5, -5).
-        #expect(simd_distance(sample.positions[0], SIMD3(-5, 5, -5)) < 1e-9)
+        #expect(vectorDistance(sample.positions[0], SIMD3(-5, 5, -5)) < 1e-9)
     }
 
     @Test func sampleInvalidFace() throws {

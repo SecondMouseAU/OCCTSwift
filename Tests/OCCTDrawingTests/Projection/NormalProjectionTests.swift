@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -21,7 +20,7 @@ struct NormalProjectionTests {
         #expect(projected.isValid)
         #expect(projected.edges().count == 2, "\(what): \(projected.edges().count) edges")
         #expect(
-            simd_length(bb.min - min) < 1e-6 && simd_length(bb.max - max) < 1e-6,
+            vectorLength(bb.min - min) < 1e-6 && vectorLength(bb.max - max) < 1e-6,
             "\(what): bounds \(bb.min) .. \(bb.max)")
     }
 

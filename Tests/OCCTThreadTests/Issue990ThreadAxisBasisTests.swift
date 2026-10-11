@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -46,7 +45,7 @@ struct Issue990ThreadAxisBasisTests {
     static func grooveAngle(axis: SIMD3<Double>, datum: SIMD3<Double>) -> (
         degrees: Double, grooveFraction: Double, removed: Double
     )? {
-        let a = simd_normalize(axis)
+        let a = normalizedVector(axis)
         let spec = ThreadSpec(form: .iso68, nominalDiameter: nominalDiameter, pitch: pitch)
         guard
             let shank = Shape.cylinder(
@@ -55,7 +54,7 @@ struct Issue990ThreadAxisBasisTests {
                 axisOrigin: .zero, axisDirection: a, spec: spec, length: threadLength),
             let blankVolume = shank.volume, let threadedVolume = threaded.volume
         else { return nil }
-        let tangential = simd_normalize(simd_cross(a, datum))
+        let tangential = normalizedVector(crossProduct(a, datum))
         let probeRadius = nominalDiameter / 2 - spec.cutDepth / 2
         let axialStation = 2 * pitch
         var x = 0.0

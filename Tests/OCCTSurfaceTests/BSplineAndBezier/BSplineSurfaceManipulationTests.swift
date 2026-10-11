@@ -1,5 +1,5 @@
+import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -132,7 +132,7 @@ struct BSplineSurfaceManipulationTests {
         #expect(bs.bsplineSurface.nbUPoles == 9)
         #expect(bs.bsplineSurface.nbVPoles == 3)
         // Degree elevation keeps the geometry.
-        #expect(simd_length(bs.point(atU: 1.0, v: 0.5) - before) < 1e-12)
+        #expect(vectorLength(bs.point(atU: 1.0, v: 0.5) - before) < 1e-12)
     }
 
     @Test func setWeight() throws {

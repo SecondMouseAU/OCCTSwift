@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -47,7 +46,7 @@ struct Issue999Curve2DParametersTests {
             for k in 0...200 {
                 let u = d.lowerBound + (d.upperBound - d.lowerBound) * Double(k) / 200
                 let pt = b.point(at: u)
-                worst = max(worst, abs(simd_length(pt) - radius))
+                worst = max(worst, abs(vectorLength(pt) - radius))
             }
             return worst
         }

@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -24,8 +23,8 @@ struct Curve2DPoint2DIntegrationTests {
         let seg = try #require(Curve2D.segment(from: p1, to: p2))
         let pts = seg.drawUniform(pointCount: 2)
         try #require(pts.count == 2)
-        #expect(simd_distance(pts[0], SIMD2(0, 0)) < 1e-6)
-        #expect(simd_distance(pts[1], SIMD2(5, 5)) < 1e-6)
+        #expect(vectorDistance(pts[0], SIMD2(0, 0)) < 1e-6)
+        #expect(vectorDistance(pts[1], SIMD2(5, 5)) < 1e-6)
     }
 
     @Test func projectPoint() throws {

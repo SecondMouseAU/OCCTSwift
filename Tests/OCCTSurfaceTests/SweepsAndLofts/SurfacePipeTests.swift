@@ -1,5 +1,5 @@
+import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -17,7 +17,7 @@ struct SurfacePipeTests {
         // at 30% / 60% of it, a point at radius 2 (Scripts/repro/766-surface-operations-pipe/).
         #expect(dom.uMax == 2 * .pi && dom.vMax == 10)
         let p = pipe.point(atU: 0.3 * dom.uMax, v: 6)
-        #expect(simd_length(p - SIMD3(-1.9021130325903073, -0.61803398874989446, 6)) < 1e-9)
+        #expect(vectorLength(p - SIMD3(-1.9021130325903073, -0.61803398874989446, 6)) < 1e-9)
     }
 
     @Test("Pipe with section curve")
@@ -28,6 +28,6 @@ struct SurfacePipeTests {
         // #766: was non-nil only; the section's radius 3 must carry through.
         let pipe = try #require(pipeOpt)
         let p = pipe.point(atU: 0.3 * pipe.domain.uMax, v: 6)
-        #expect(simd_length(p - SIMD3(-0.92705098312484202, 2.8531695488854609, 6)) < 1e-9)
+        #expect(vectorLength(p - SIMD3(-0.92705098312484202, 2.8531695488854609, 6)) < 1e-9)
     }
 }

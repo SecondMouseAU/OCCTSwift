@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -16,7 +15,7 @@ import simd
 // change to `projectPointToPlane`/`perpendicularBasis` (e.g. picking up a plane origin), would have
 // gone uncaught.
 //
-// Fixed by extracting `projectDirectionToPlane(_:viewDirection:)`, a plain `simd_dot` against
+// Fixed by extracting `projectDirectionToPlane(_:viewDirection:)`, a plain `dotProduct` against
 // `perpendicularBasis(to:)`'s `(right, up)` with no point-difference detour, and routing both
 // `addCuttingPlaneLine` blocks *and* `projectAxisToPlane`'s `dir2` through it, so there is one
 // canonical "project a direction into the view plane" recipe instead of three.
@@ -87,13 +86,13 @@ struct Issue1193CuttingPlaneDirectionTests {
         let expectedArrow = SIMD2<Double>(0, 1)
 
         #expect(
-            simd_length(cpl.traceStart - expectedStart) < 1e-9,
+            vectorLength(cpl.traceStart - expectedStart) < 1e-9,
             "traceStart \(cpl.traceStart) != expected \(expectedStart)")
         #expect(
-            simd_length(cpl.traceEnd - expectedEnd) < 1e-9,
+            vectorLength(cpl.traceEnd - expectedEnd) < 1e-9,
             "traceEnd \(cpl.traceEnd) != expected \(expectedEnd)")
         #expect(
-            simd_length(cpl.arrowDirection - expectedArrow) < 1e-9,
+            vectorLength(cpl.arrowDirection - expectedArrow) < 1e-9,
             "arrowDirection \(cpl.arrowDirection) != expected \(expectedArrow)")
     }
 }

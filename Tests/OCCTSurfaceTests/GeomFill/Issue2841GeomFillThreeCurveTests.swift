@@ -1,5 +1,5 @@
+import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -50,7 +50,7 @@ struct Issue2841GeomFillThreeCurveTests {
         -> Bool
     {
         guard a.count == b.count else { return false }
-        return zip(a, b).allSatisfy { simd_distance($0, $1) < tol }
+        return zip(a, b).allSatisfy { vectorDistance($0, $1) < tol }
     }
 
     // Three sides of a planar 10 x 10 square. The fourth, d -> a, is the synthesised chord.
@@ -162,7 +162,7 @@ struct Issue2841GeomFillThreeCurveTests {
             let got = corners(surface)
             for p in want {
                 #expect(
-                    got.contains(where: { simd_distance($0, p) < 1e-7 }),
+                    got.contains(where: { vectorDistance($0, p) < 1e-7 }),
                     "flips \(flips) lost corner \(p)")
             }
         }
@@ -209,7 +209,7 @@ struct Issue2841GeomFillThreeCurveTests {
         let got = corners(surface)
         #expect(got.count == 4)
         for p in got {
-            #expect(abs(simd_length(SIMD2<Double>(p.x, p.y)) - 5) < 1e-6)
+            #expect(abs(vectorLength(SIMD2<Double>(p.x, p.y)) - 5) < 1e-6)
         }
 
         // `.coons` reaches the same patch, which the raw kernel on the same three curves does

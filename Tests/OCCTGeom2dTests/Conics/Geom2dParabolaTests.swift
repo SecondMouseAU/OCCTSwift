@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -31,15 +30,15 @@ struct Geom2dParabolaTests {
         let p = try make()
         #expect(p.parabolaProperties.setFocal(5))
         #expect(abs(p.parabolaProperties.focal - 5) < 1e-12)
-        #expect(simd_distance(p.parabolaProperties.focus, SIMD2(2, 0)) < 1e-12)
-        #expect(simd_distance(p.point(at: 0), SIMD2(-3, 0)) < 1e-12)
+        #expect(vectorDistance(p.parabolaProperties.focus, SIMD2(2, 0)) < 1e-12)
+        #expect(vectorDistance(p.point(at: 0), SIMD2(-3, 0)) < 1e-12)
     }
 
     @Test func parabola2DFocus() throws {
         let p = try make()
-        #expect(simd_length(p.parabolaProperties.focus) < 1e-12)
+        #expect(vectorLength(p.parabolaProperties.focus) < 1e-12)
         // The vertex is the curve at u = 0, three behind the focus.
-        #expect(simd_distance(p.point(at: 0), SIMD2(-3, 0)) < 1e-12)
+        #expect(vectorDistance(p.point(at: 0), SIMD2(-3, 0)) < 1e-12)
     }
 
     @Test func parabola2DEccentricity() throws {
@@ -53,8 +52,8 @@ struct Geom2dParabolaTests {
         // (0, +-6), and u is the local y coordinate, so that is the curve at u = +-parameter.
         let p = try make()
         #expect(abs(p.parabolaProperties.parameter - 6) < 1e-12)
-        #expect(simd_distance(p.point(at: 6), SIMD2(0, 6)) < 1e-12)
-        #expect(simd_distance(p.point(at: -6), SIMD2(0, -6)) < 1e-12)
+        #expect(vectorDistance(p.point(at: 6), SIMD2(0, 6)) < 1e-12)
+        #expect(vectorDistance(p.point(at: -6), SIMD2(0, -6)) < 1e-12)
     }
 
     @Test func parabola2DPlacedAndRotated() throws {
@@ -63,15 +62,15 @@ struct Geom2dParabolaTests {
         // because the local y axis is the axis direction turned a quarter turn anticlockwise.
         let p = try #require(
             Curve2D.parabola(focus: SIMD2(2, 3), direction: SIMD2(0, 1), focalLength: 2))
-        #expect(simd_distance(p.parabolaProperties.focus, SIMD2(2, 3)) < 1e-12)
-        #expect(simd_distance(p.point(at: 0), SIMD2(2, 1)) < 1e-12)
+        #expect(vectorDistance(p.parabolaProperties.focus, SIMD2(2, 3)) < 1e-12)
+        #expect(vectorDistance(p.point(at: 0), SIMD2(2, 1)) < 1e-12)
         #expect(abs(p.parabolaProperties.parameter - 4) < 1e-12)
-        #expect(simd_distance(p.point(at: 4), SIMD2(-2, 3)) < 1e-12)
-        #expect(simd_distance(p.point(at: -4), SIMD2(6, 3)) < 1e-12)
+        #expect(vectorDistance(p.point(at: 4), SIMD2(-2, 3)) < 1e-12)
+        #expect(vectorDistance(p.point(at: -4), SIMD2(6, 3)) < 1e-12)
         // SetFocal(4) keeps the vertex and moves the focus along the axis to (2, 5).
         #expect(p.parabolaProperties.setFocal(4))
-        #expect(simd_distance(p.point(at: 0), SIMD2(2, 1)) < 1e-12)
-        #expect(simd_distance(p.parabolaProperties.focus, SIMD2(2, 5)) < 1e-12)
+        #expect(vectorDistance(p.point(at: 0), SIMD2(2, 1)) < 1e-12)
+        #expect(vectorDistance(p.parabolaProperties.focus, SIMD2(2, 5)) < 1e-12)
     }
 
     /// The focus is where it was asked for whatever the length of `direction` (#3042).
@@ -86,29 +85,30 @@ struct Geom2dParabolaTests {
     @Test func parabola2DNonUnitDirectionPlacesTheFocusWhereAsked() throws {
         let unit = try #require(
             Curve2D.parabola(focus: SIMD2(1, 1), direction: SIMD2(0.6, 0.8), focalLength: 5))
-        #expect(simd_distance(unit.parabolaProperties.focus, SIMD2(1, 1)) < 1e-9)
-        #expect(simd_distance(unit.point(at: 0), SIMD2(-2, -3)) < 1e-9)
+        #expect(vectorDistance(unit.parabolaProperties.focus, SIMD2(1, 1)) < 1e-9)
+        #expect(vectorDistance(unit.point(at: 0), SIMD2(-2, -3)) < 1e-9)
 
         let p = try #require(
             Curve2D.parabola(focus: SIMD2(1, 1), direction: SIMD2(3, 4), focalLength: 5))
-        #expect(simd_distance(p.point(at: 0), SIMD2(-2, -3)) < 1e-9)
-        #expect(simd_distance(p.parabolaProperties.focus, SIMD2(1, 1)) < 1e-9)
+        #expect(vectorDistance(p.point(at: 0), SIMD2(-2, -3)) < 1e-9)
+        #expect(vectorDistance(p.parabolaProperties.focus, SIMD2(1, 1)) < 1e-9)
         #expect(abs(p.parabolaProperties.focal - 5) < 1e-9)
 
         // The second row of the issue: focus (2, 3), direction (0, 2), focal 1 used to put the
         // focus at (2, 2) and the vertex at (2, 1). The vertex is one behind the focus, (2, 2).
         let up = try #require(
             Curve2D.parabola(focus: SIMD2(2, 3), direction: SIMD2(0, 2), focalLength: 1))
-        #expect(simd_distance(up.parabolaProperties.focus, SIMD2(2, 3)) < 1e-9)
-        #expect(simd_distance(up.point(at: 0), SIMD2(2, 2)) < 1e-9)
+        #expect(vectorDistance(up.parabolaProperties.focus, SIMD2(2, 3)) < 1e-9)
+        #expect(vectorDistance(up.point(at: 0), SIMD2(2, 2)) < 1e-9)
 
         // A tiny direction is as good as a large one, and the curve is the same parabola.
         for scale in [1e-3, 0.5, 7.0, 1e4] {
             let scaled = try #require(
                 Curve2D.parabola(
                     focus: SIMD2(1, 1), direction: SIMD2(0.6, 0.8) * scale, focalLength: 5))
-            #expect(simd_distance(scaled.parabolaProperties.focus, SIMD2(1, 1)) < 1e-9, "x\(scale)")
-            #expect(simd_distance(scaled.point(at: 3), unit.point(at: 3)) < 1e-9, "x\(scale)")
+            #expect(
+                vectorDistance(scaled.parabolaProperties.focus, SIMD2(1, 1)) < 1e-9, "x\(scale)")
+            #expect(vectorDistance(scaled.point(at: 3), unit.point(at: 3)) < 1e-9, "x\(scale)")
         }
 
         // An independent check on the geometry: every point of a parabola is as far from the
@@ -117,19 +117,19 @@ struct Geom2dParabolaTests {
         let axis = SIMD2<Double>(0.6, 0.8)
         for u in [-6.0, -1.5, 0, 2.0, 9.0] {
             let q = p.point(at: u)
-            let along = simd_dot(q - SIMD2(-2, -3), axis)
-            #expect(abs(simd_distance(q, SIMD2(1, 1)) - (along + 5)) < 1e-9, "u = \(u)")
+            let along = dotProduct(q - SIMD2(-2, -3), axis)
+            #expect(abs(vectorDistance(q, SIMD2(1, 1)) - (along + 5)) < 1e-9, "u = \(u)")
         }
 
         let center = try #require(
             Curve2D.parabolaFromCenterDir(center: SIMD2(1, 1), direction: SIMD2(3, 4), focal: 5))
-        #expect(simd_distance(center.point(at: 0), SIMD2(1, 1)) < 1e-9)
-        #expect(simd_distance(center.parabolaProperties.focus, SIMD2(4, 5)) < 1e-9)
+        #expect(vectorDistance(center.point(at: 0), SIMD2(1, 1)) < 1e-9)
+        #expect(vectorDistance(center.parabolaProperties.focus, SIMD2(4, 5)) < 1e-9)
         // The two factories agree on the same curve: the centre form from the vertex (-2, -3).
         let viaCenter = try #require(
             Curve2D.parabolaFromCenterDir(center: SIMD2(-2, -3), direction: SIMD2(3, 4), focal: 5))
-        #expect(simd_distance(viaCenter.parabolaProperties.focus, SIMD2(1, 1)) < 1e-9)
-        #expect(simd_distance(viaCenter.point(at: 3), p.point(at: 3)) < 1e-9)
+        #expect(vectorDistance(viaCenter.parabolaProperties.focus, SIMD2(1, 1)) < 1e-9)
+        #expect(vectorDistance(viaCenter.point(at: 3), p.point(at: 3)) < 1e-9)
     }
 
     @Test func arcOfParabolaNonUnitDirectionPlacesTheFocusWhereAsked() throws {
@@ -143,16 +143,16 @@ struct Geom2dParabolaTests {
                 focus: SIMD2(1, 1), direction: SIMD2(3, 4), focalLength: 5,
                 startParam: -4, endParam: 4))
         // The vertex, at u = 0, is (-2, -3) either way, and the arc is the same curve.
-        #expect(simd_distance(arc.point(at: 0), SIMD2(-2, -3)) < 1e-9)
+        #expect(vectorDistance(arc.point(at: 0), SIMD2(-2, -3)) < 1e-9)
         for u in [-4.0, -2.0, 0, 1.0, 4.0] {
-            #expect(simd_distance(arc.point(at: u), unit.point(at: u)) < 1e-9, "u = \(u)")
+            #expect(vectorDistance(arc.point(at: u), unit.point(at: u)) < 1e-9, "u = \(u)")
         }
         // Distance to the focus (1, 1) is the axis coordinate from the vertex plus the focal length.
         let axis = SIMD2<Double>(0.6, 0.8)
         for u in [-4.0, 0, 2.5, 4.0] {
             let q = arc.point(at: u)
-            let along = simd_dot(q - SIMD2(-2, -3), axis)
-            #expect(abs(simd_distance(q, SIMD2(1, 1)) - (along + 5)) < 1e-9, "u = \(u)")
+            let along = dotProduct(q - SIMD2(-2, -3), axis)
+            #expect(abs(vectorDistance(q, SIMD2(1, 1)) - (along + 5)) < 1e-9, "u = \(u)")
         }
     }
 

@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -13,7 +12,7 @@ struct QuasiUniformDeflectionTests {
     private func maxSagitta(_ points: [SIMD3<Double>], radius r: Double) -> Double {
         var worst = 0.0
         for i in 1..<max(points.count, 1) {
-            let chord = simd_distance(points[i], points[i - 1])
+            let chord = vectorDistance(points[i], points[i - 1])
             worst = max(worst, r - sqrt(r * r - chord * chord / 4))
         }
         return worst
@@ -33,7 +32,7 @@ struct QuasiUniformDeflectionTests {
         }
         #expect(maxSagitta(points, radius: 10) <= 0.1)
         let first = try #require(points.first)
-        #expect(simd_distance(first, SIMD3(10, 0, 0)) < 1e-9)
+        #expect(vectorDistance(first, SIMD3(10, 0, 0)) < 1e-9)
     }
 
     @Test("Tighter deflection yields more points")

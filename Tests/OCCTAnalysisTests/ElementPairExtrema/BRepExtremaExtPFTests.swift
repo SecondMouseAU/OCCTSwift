@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -34,9 +33,9 @@ struct BRepExtremaExtPFTests {
         let sorted = answered.sorted { $0.distance < $1.distance }
         guard sorted.count == 2 else { return }
         #expect(abs(sorted[0].distance - 10) < 1e-9)
-        #expect(simd_distance(sorted[0].point, SIMD3(5, 5, 5)) < 1e-9)
+        #expect(vectorDistance(sorted[0].point, SIMD3(5, 5, 5)) < 1e-9)
         #expect(abs(sorted[1].distance - 20) < 1e-9)
-        #expect(simd_distance(sorted[1].point, SIMD3(5, 5, -5)) < 1e-9)
+        #expect(vectorDistance(sorted[1].point, SIMD3(5, 5, -5)) < 1e-9)
     }
 }
 

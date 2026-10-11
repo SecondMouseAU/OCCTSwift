@@ -1,5 +1,5 @@
+import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -22,8 +22,8 @@ struct GeomFillStretchTests {
             #expect(result.nbVPoles == 3)
             #expect(result.poles.count == result.nbUPoles * result.nbVPoles)
             if result.poles.count == 9 {
-                #expect(simd_length(result.poles[4] - SIMD3(7.5, 7.5, 3)) < 1e-9)
-                #expect(simd_length(result.poles[1] - SIMD3(0, 5, 2)) < 1e-9)
+                #expect(vectorLength(result.poles[4] - SIMD3(7.5, 7.5, 3)) < 1e-9)
+                #expect(vectorLength(result.poles[1] - SIMD3(0, 5, 2)) < 1e-9)
             }
         }
     }

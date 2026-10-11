@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -22,8 +21,8 @@ struct Curve2DArcTypesTests {
         #expect(!a.isClosed)
         let pts = a.drawAdaptive()
         #expect(pts.count >= 2)
-        #expect(simd_distance(a.startPoint, SIMD2(5.63812982603, -1.56328591648)) < 1e-9)
-        #expect(simd_distance(a.endPoint, SIMD2(5.63812982603, 1.56328591648)) < 1e-9)
+        #expect(vectorDistance(a.startPoint, SIMD2(5.63812982603, -1.56328591648)) < 1e-9)
+        #expect(vectorDistance(a.endPoint, SIMD2(5.63812982603, 1.56328591648)) < 1e-9)
     }
 
     @Test("Arc of parabola creation")
@@ -38,7 +37,7 @@ struct Curve2DArcTypesTests {
         #expect(!a.isClosed)
         let pts = a.drawAdaptive()
         #expect(pts.count >= 2)
-        #expect(simd_distance(a.startPoint, SIMD2(1.125, -5)) < 1e-9)
-        #expect(simd_distance(a.endPoint, SIMD2(1.125, 5)) < 1e-9)
+        #expect(vectorDistance(a.startPoint, SIMD2(1.125, -5)) < 1e-9)
+        #expect(vectorDistance(a.endPoint, SIMD2(1.125, 5)) < 1e-9)
     }
 }

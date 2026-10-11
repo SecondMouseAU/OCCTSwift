@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -51,9 +50,9 @@ struct Curve3DPlaneProjectionTests {
             // Should still be a circle of radius 5 at z=0
             let pt = c.point(at: c.domain.lowerBound)
             #expect(abs(pt.z) < 1e-6)
-            #expect(simd_distance(pt, SIMD3(5, 0, 0)) < 1e-9)
+            #expect(vectorDistance(pt, SIMD3(5, 0, 0)) < 1e-9)
             let mid = c.point(at: (c.domain.lowerBound + c.domain.upperBound) / 2)
-            #expect(simd_distance(mid, SIMD3(-5, 0, 0)) < 1e-9)
+            #expect(vectorDistance(mid, SIMD3(-5, 0, 0)) < 1e-9)
         }
     }
 
@@ -76,9 +75,9 @@ struct Curve3DPlaneProjectionTests {
             // All Y coordinates should be zero
             // The half circle flattens onto the X axis: its midpoint lands on the origin.
             let mid = c.point(at: (c.domain.lowerBound + c.domain.upperBound) / 2.0)
-            #expect(simd_distance(mid, SIMD3(0, 0, 0)) < 1e-9)
-            #expect(simd_distance(c.point(at: c.domain.lowerBound), SIMD3(5, 0, 0)) < 1e-9)
-            #expect(simd_distance(c.point(at: c.domain.upperBound), SIMD3(-5, 0, 0)) < 1e-9)
+            #expect(vectorDistance(mid, SIMD3(0, 0, 0)) < 1e-9)
+            #expect(vectorDistance(c.point(at: c.domain.lowerBound), SIMD3(5, 0, 0)) < 1e-9)
+            #expect(vectorDistance(c.point(at: c.domain.upperBound), SIMD3(-5, 0, 0)) < 1e-9)
         }
     }
 
@@ -104,8 +103,8 @@ struct Curve3DPlaneProjectionTests {
             for pt in pts {
                 #expect(abs(pt.z) < 1e-6)
             }
-            #expect(simd_distance(c.point(at: c.domain.lowerBound), SIMD3(0, 0, 0)) < 1e-9)
-            #expect(simd_distance(c.point(at: c.domain.upperBound), SIMD3(10, 8, 0)) < 1e-9)
+            #expect(vectorDistance(c.point(at: c.domain.lowerBound), SIMD3(0, 0, 0)) < 1e-9)
+            #expect(vectorDistance(c.point(at: c.domain.upperBound), SIMD3(10, 8, 0)) < 1e-9)
         }
     }
 
@@ -123,8 +122,8 @@ struct Curve3DPlaneProjectionTests {
             // Start and end should correspond
             let start = c.point(at: c.domain.lowerBound)
             let end = c.point(at: c.domain.upperBound)
-            #expect(simd_distance(start, SIMD3(2, 3, 0)) < 1e-9)
-            #expect(simd_distance(end, SIMD3(12, 3, 0)) < 1e-9)
+            #expect(vectorDistance(start, SIMD3(2, 3, 0)) < 1e-9)
+            #expect(vectorDistance(end, SIMD3(12, 3, 0)) < 1e-9)
         }
     }
 
@@ -146,7 +145,7 @@ struct Curve3DPlaneProjectionTests {
             #expect(abs(start.z) < 1e-6)
             // The X shift should be -10 (projected from z=10 along (1,0,1) to z=0)
             #expect(abs(start.x - (-10.0)) < 1e-9)
-            #expect(simd_distance(c.point(at: c.domain.upperBound), SIMD3(0, 0, 0)) < 1e-9)
+            #expect(vectorDistance(c.point(at: c.domain.upperBound), SIMD3(0, 0, 0)) < 1e-9)
         }
     }
 
@@ -166,7 +165,7 @@ struct Curve3DPlaneProjectionTests {
             Issue.record("projection along a grazing direction returned nil")
             return
         }
-        #expect(simd_distance(c.point(at: c.domain.lowerBound), SIMD3(0, 0, 0)) < 1e-9)
-        #expect(simd_distance(c.point(at: c.domain.upperBound), SIMD3(10, 0, 0)) < 1e-9)
+        #expect(vectorDistance(c.point(at: c.domain.lowerBound), SIMD3(0, 0, 0)) < 1e-9)
+        #expect(vectorDistance(c.point(at: c.domain.upperBound), SIMD3(10, 0, 0)) < 1e-9)
     }
 }

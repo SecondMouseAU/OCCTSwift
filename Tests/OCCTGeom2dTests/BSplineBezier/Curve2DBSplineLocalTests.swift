@@ -1,12 +1,11 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
 // #1979: every test here returned early, green, when the span could not be located, and three
-// could not fail at all: `simd_length(r.v1) > 0`, `simd_length(r.point) > 0 || ... == 0` and
-// `simd_length(dn) > 0` pass a wrong derivative. The span is now required and each derivative is
+// could not fail at all: `vectorLength(r.v1) > 0`, `vectorLength(r.point) > 0 || ... == 0` and
+// `vectorLength(dn) > 0` pass a wrong derivative. The span is now required and each derivative is
 // pinned to what Geom2d_BSplineCurve::LocalD1/D2/D3/DN return for the same curve and span
 // (Scripts/repro/766-geom2d-bspline-local-and-factories/).
 @Suite("Curve2D BSpline Local Evaluation")
@@ -32,9 +31,9 @@ struct Curve2DBSplineLocalTests {
         let (c, u, k1, k2) = try locateLocalSpan(pts)
         let local = c.bsplineLocalD0(u: u, fromK1: k1, toK2: k2)
         let global = c.point(at: u)
-        let dist = simd_length(local - global)
+        let dist = vectorLength(local - global)
         #expect(dist < 1e-10)
-        #expect(simd_distance(local, SIMD2(1.5, 0.5)) < 1e-9)
+        #expect(vectorDistance(local, SIMD2(1.5, 0.5)) < 1e-9)
     }
 
     @Test("LocalD1 returns derivative")
@@ -42,8 +41,8 @@ struct Curve2DBSplineLocalTests {
         let pts: [SIMD2<Double>] = [SIMD2(0, 0), SIMD2(1, 1), SIMD2(2, 0)]
         let (c, u, k1, k2) = try locateLocalSpan(pts)
         let r = c.bsplineLocalD1(u: u, fromK1: k1, toK2: k2)
-        #expect(simd_distance(r.point, SIMD2(1, 1)) < 1e-9)
-        #expect(simd_distance(r.v1, SIMD2(0.707106781187, 0)) < 1e-9)
+        #expect(vectorDistance(r.point, SIMD2(1, 1)) < 1e-9)
+        #expect(vectorDistance(r.v1, SIMD2(0.707106781187, 0)) < 1e-9)
     }
 
     @Test("LocalD2 returns second derivative")
@@ -51,10 +50,10 @@ struct Curve2DBSplineLocalTests {
         let pts: [SIMD2<Double>] = [SIMD2(0, 0), SIMD2(1, 2), SIMD2(2, 0), SIMD2(3, 2)]
         let (c, u, k1, k2) = try locateLocalSpan(pts)
         let r = c.bsplineLocalD2(u: u, fromK1: k1, toK2: k2)
-        #expect(simd_distance(r.point, SIMD2(1.5, 1)) < 1e-9)
-        #expect(simd_distance(r.v1, SIMD2(0.4472135955, -1.0434983895)) < 1e-9)
+        #expect(vectorDistance(r.point, SIMD2(1.5, 1)) < 1e-9)
+        #expect(vectorDistance(r.v1, SIMD2(0.4472135955, -1.0434983895)) < 1e-9)
         // The midpoint is the inflection of this symmetric zigzag: zero second derivative.
-        #expect(simd_length(r.v2) < 1e-9)
+        #expect(vectorLength(r.v2) < 1e-9)
     }
 
     @Test("LocalD3 and LocalDN")
@@ -64,10 +63,10 @@ struct Curve2DBSplineLocalTests {
         ]
         let (c, u, k1, k2) = try locateLocalSpan(pts)
         let d3 = c.bsplineLocalD3(u: u, fromK1: k1, toK2: k2)
-        #expect(simd_distance(d3.v2, SIMD2(0, 1.73333333333)) < 1e-9)
-        #expect(simd_distance(d3.v3, SIMD2(0, 1.2521980674)) < 1e-9)
+        #expect(vectorDistance(d3.v2, SIMD2(0, 1.73333333333)) < 1e-9)
+        #expect(vectorDistance(d3.v3, SIMD2(0, 1.2521980674)) < 1e-9)
         let dn = c.bsplineLocalDN(u: u, fromK1: k1, toK2: k2, n: 1)
-        #expect(simd_distance(dn, SIMD2(0.4472135955, 0)) < 1e-9)
+        #expect(vectorDistance(dn, SIMD2(0.4472135955, 0)) < 1e-9)
     }
 
     @Test("LocalValue matches global")
@@ -76,8 +75,8 @@ struct Curve2DBSplineLocalTests {
         let (c, u, k1, k2) = try locateLocalSpan(pts)
         let local = c.bsplineLocalValue(u: u, fromK1: k1, toK2: k2)
         let global = c.point(at: u)
-        let dist = simd_length(local - global)
+        let dist = vectorLength(local - global)
         #expect(dist < 1e-10)
-        #expect(simd_distance(local, SIMD2(1, 1)) < 1e-9)
+        #expect(vectorDistance(local, SIMD2(1, 1)) < 1e-9)
     }
 }

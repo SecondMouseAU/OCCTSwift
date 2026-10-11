@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -20,8 +19,8 @@ struct Curve3DOperationsTests {
             #expect(!arc.isClosed)
             let start = arc.startPoint
             let end = arc.endPoint
-            #expect(simd_distance(start, SIMD3(5, 0, 0)) < 1e-12)
-            #expect(simd_distance(end, SIMD3(0, 5, 0)) < 1e-12)
+            #expect(vectorDistance(start, SIMD3(5, 0, 0)) < 1e-12)
+            #expect(vectorDistance(end, SIMD3(0, 5, 0)) < 1e-12)
         }
     }
 
@@ -31,8 +30,8 @@ struct Curve3DOperationsTests {
         let rev = seg.reversed()!
         let revStart = rev.startPoint
         let revEnd = rev.endPoint
-        #expect(simd_distance(revStart, SIMD3(10, 5, 3)) < 1e-12)
-        #expect(simd_distance(revEnd, SIMD3(0, 0, 0)) < 1e-12)
+        #expect(vectorDistance(revStart, SIMD3(10, 5, 3)) < 1e-12)
+        #expect(vectorDistance(revEnd, SIMD3(0, 0, 0)) < 1e-12)
     }
 
     @Test("Translate segment")
@@ -40,8 +39,8 @@ struct Curve3DOperationsTests {
         let seg = Curve3D.segment(from: SIMD3(0, 0, 0), to: SIMD3(10, 0, 0))!
         let moved = seg.translated(by: SIMD3(5, 5, 5))!
         let start = moved.startPoint
-        #expect(simd_distance(start, SIMD3(5, 5, 5)) < 1e-12)
-        #expect(simd_distance(moved.endPoint, SIMD3(15, 5, 5)) < 1e-12)
+        #expect(vectorDistance(start, SIMD3(5, 5, 5)) < 1e-12)
+        #expect(vectorDistance(moved.endPoint, SIMD3(15, 5, 5)) < 1e-12)
     }
 
     @Test("Rotate segment around Z axis")
@@ -50,8 +49,8 @@ struct Curve3DOperationsTests {
         let rotated = seg.rotated(around: .zero, direction: SIMD3(0, 0, 1), angle: .pi / 2)!
         let start = rotated.startPoint
         // A quarter turn about Z takes (5, 0, 0) to (0, 5, 0) and (10, 0, 0) to (0, 10, 0).
-        #expect(simd_distance(start, SIMD3(0, 5, 0)) < 1e-12)
-        #expect(simd_distance(rotated.endPoint, SIMD3(0, 10, 0)) < 1e-12)
+        #expect(vectorDistance(start, SIMD3(0, 5, 0)) < 1e-12)
+        #expect(vectorDistance(rotated.endPoint, SIMD3(0, 10, 0)) < 1e-12)
     }
 
     @Test("Scale segment")
@@ -68,8 +67,8 @@ struct Curve3DOperationsTests {
     func mirrorPlane() {
         let seg = Curve3D.segment(from: SIMD3(0, 0, 1), to: SIMD3(10, 0, 1))!
         let mirrored = seg.mirrored(acrossPlane: .zero, normal: SIMD3(0, 0, 1))!
-        #expect(simd_distance(mirrored.startPoint, SIMD3(0, 0, -1)) < 1e-12)
-        #expect(simd_distance(mirrored.endPoint, SIMD3(10, 0, -1)) < 1e-12)
+        #expect(vectorDistance(mirrored.startPoint, SIMD3(0, 0, -1)) < 1e-12)
+        #expect(vectorDistance(mirrored.endPoint, SIMD3(10, 0, -1)) < 1e-12)
     }
 
     // #416: mirrored(acrossPoint:) had zero test coverage anywhere in Tests/.

@@ -1,5 +1,5 @@
+import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -16,8 +16,8 @@ struct GeomFillGeneratorTests {
         let c2 = try #require(c2Opt)
         let surfOpt = Surface.generatedFromSections(curves: [c1, c2])
         let surf = try #require(surfOpt)
-        #expect(simd_length(surf.point(atU: .pi, v: 0.5) - SIMD3(-1.25, 0, 1)) < 1e-6)
-        #expect(simd_length(surf.point(atU: 0, v: 1) - SIMD3(1.5, 0, 2)) < 1e-9)
+        #expect(vectorLength(surf.point(atU: .pi, v: 0.5) - SIMD3(-1.25, 0, 1)) < 1e-6)
+        #expect(vectorLength(surf.point(atU: 0, v: 1) - SIMD3(1.5, 0, 2)) < 1e-9)
     }
 
     @Test func threeSections() throws {
@@ -31,7 +31,7 @@ struct GeomFillGeneratorTests {
         let c3 = try #require(c3Opt)
         let surfOpt = Surface.generatedFromSections(curves: [c1, c2, c3])
         let surf = try #require(surfOpt)
-        #expect(simd_length(surf.point(atU: .pi, v: 1) - SIMD3(-1.5, 0, 2)) < 1e-6)
-        #expect(simd_length(surf.point(atU: 0, v: 2) - SIMD3(0.5, 0, 4)) < 1e-9)
+        #expect(vectorLength(surf.point(atU: .pi, v: 1) - SIMD3(-1.5, 0, 2)) < 1e-6)
+        #expect(vectorLength(surf.point(atU: 0, v: 2) - SIMD3(0.5, 0, 4)) < 1e-9)
     }
 }

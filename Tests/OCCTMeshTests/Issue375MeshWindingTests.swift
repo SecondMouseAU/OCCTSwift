@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -29,8 +28,8 @@ struct Issue375MeshWindingTests {
             let p1 = verts[Int(idx[i])]
             let p2 = verts[Int(idx[i + 1])]
             let p3 = verts[Int(idx[i + 2])]
-            let normal = simd_cross(p2 - p1, p3 - p1)
-            if simd_dot(normal, p1 - center) > 0 { outward += 1 }
+            let normal = crossProduct(p2 - p1, p3 - p1)
+            if dotProduct(normal, p1 - center) > 0 { outward += 1 }
             total += 1
             i += 3
         }

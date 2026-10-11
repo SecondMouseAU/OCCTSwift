@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -14,7 +13,7 @@ struct Curve2DExtrasTests {
         let c = try #require(Curve2D.line(through: SIMD2(0, 0), direction: SIMD2(1, 0)))
         #expect(c.reverse())
         // The reversed line runs along -x: u = 1 is (-1, 0).
-        #expect(simd_distance(c.point(at: 1), SIMD2(-1, 0)) < 1e-12)
+        #expect(vectorDistance(c.point(at: 1), SIMD2(-1, 0)) < 1e-12)
     }
 
     @Test func copyCurve2D() throws {
@@ -32,7 +31,7 @@ struct Curve2DExtrasTests {
         #expect(copy.isClosed)
         // Reversing the original must not reach the copy.
         #expect(c.reverse())
-        #expect(simd_distance(c.point(at: .pi / 2), SIMD2(0, -5)) < 1e-9)
-        #expect(simd_distance(copy.point(at: .pi / 2), SIMD2(0, 5)) < 1e-9)
+        #expect(vectorDistance(c.point(at: .pi / 2), SIMD2(0, -5)) < 1e-9)
+        #expect(vectorDistance(copy.point(at: .pi / 2), SIMD2(0, 5)) < 1e-9)
     }
 }
