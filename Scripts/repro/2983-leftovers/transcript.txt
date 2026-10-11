@@ -1,0 +1,7 @@
+#2983 leftovers re-sweep: values read off the pinned kernel (v4.0.0-kernel.6 asset) by a throwaway
+test that printed recognizeCanonicalSurface() / recognizeCanonicalCurve() for each fixture.
+Shape.cylinder(radius: 5, height: 20): type cylinder, gap 0, origin (0,0,0), direction (0,0,1), param1 5, param2 0
+Shape.cone(bottomRadius: 5, topRadius: 0, height: 10): type cone, gap 0, origin (0,0,0), direction (0,0,1), param1 5, param2 -0.46364760900080615 (= -atan(5/10))
+Shape.sphere(radius: 5): type sphere, gap 0, origin (0,0,0), direction (0,0,0), param1 5, param2 0
+Curve3D.circle(center: (1,2,3), normal: +Z, radius: 5) as an edge: type circle, origin (1,2,3), direction (0,0,1), param1 5, param2 0
+Curve3D.ellipse(center: (1,2,3), normal: +Z, majorRadius: 10, minorRadius: 5) as an edge: type ellipse, origin (1,2,3), direction (0,0,1), param1 10, param2 5
