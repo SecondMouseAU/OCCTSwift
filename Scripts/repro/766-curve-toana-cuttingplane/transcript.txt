@@ -1,0 +1,3 @@
+line [0, 10]: BSpline domain [0, 10] ok=1 result=Geom_Line newFirst=0 newLast=10 gap=0
+circle r=5 [0, pi]: BSpline domain [0, 3.1415926535897931] ok=1 result=Geom_Circle newFirst=0 newLast=3.1415926535897922 gap=3.5527136788005009e-15
+IsLinear (0,0,0) (5,0,0) (10,0,0): 1 deviation=0
