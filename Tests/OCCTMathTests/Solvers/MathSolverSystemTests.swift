@@ -43,17 +43,17 @@ struct MathSolverSystemTests {
 
     @Test func solveLinearSystem() throws {
         // 2x + y = 5, x - y = 1 -> x=2, y=1
-        let sol = try #require(
-            MathSolver.solveSystem(
-                variables: 2, equations: 2,
-                startPoint: [0.0, 0.0],
-                values: { x in
-                    [2 * x[0] + x[1] - 5, x[0] - x[1] - 1]
-                },
-                jacobian: { _ in
-                    [2.0, 1.0, 1.0, -1.0]
-                }
-            ))
+        let solved = MathSolver.solveSystem(
+            variables: 2, equations: 2,
+            startPoint: [0.0, 0.0],
+            values: { x in
+                [2 * x[0] + x[1] - 5, x[0] - x[1] - 1]
+            },
+            jacobian: { _ in
+                [2.0, 1.0, 1.0, -1.0]
+            }
+        )
+        let sol = try #require(solved)
         try #require(sol.count == 2)
         #expect(abs(sol[0] - 2.0) < 1e-4)
         #expect(abs(sol[1] - 1.0) < 1e-4)

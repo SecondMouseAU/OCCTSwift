@@ -1,0 +1,432 @@
+{
+ "label": "after",
+ "tests": [
+  "addPeriods",
+  "comparison",
+  "cosHalf",
+  "createFromComponents",
+  "createFromSeconds",
+  "deprecatedArrayOverloadsStillWork",
+  "displacement",
+  "equality",
+  "generalTransform",
+  "generalTransformGroupedLayoutTranslatesAsDocumented",
+  "groupedInterleavedConversionRoundTripsTheSameTransform",
+  "infiniteRoots",
+  "invalidMatrixSize",
+  "isValidComponents",
+  "isValidSeconds",
+  "linear",
+  "minimizeQuadratic",
+  "minimizeRosenbrock",
+  "mirrorTransformProducesResult",
+  "noRealRoots",
+  "nonUniformScale",
+  "nonUniformScaleInterleavedLayoutScalesAsDocumented",
+  "quadratic",
+  "sinZero",
+  "solveCircleLine",
+  "solveLinearSystem",
+  "subtractPeriods",
+  "transformFromMatrix",
+  "transformFromMatrixInterleavedLayoutTranslatesAsDocumented",
+  "transformIsNegative",
+  "transformation",
+  "typedInitializersReturnNilRatherThanTrapOnWrongCount",
+  "withMilliseconds",
+  "zeroPeriod"
+ ],
+ "rows": {
+  "PER_TOTSEC": {
+   "exit": 1,
+   "crash": false,
+   "red": [
+    "addPeriods",
+    "createFromComponents",
+    "createFromSeconds",
+    "subtractPeriods",
+    "withMilliseconds",
+    "zeroPeriod"
+   ]
+  },
+  "PER_TOTUS": {
+   "exit": 1,
+   "crash": false,
+   "red": [
+    "createFromSeconds",
+    "withMilliseconds"
+   ]
+  },
+  "PER_COMP_SWAP": {
+   "exit": 1,
+   "crash": false,
+   "red": [
+    "addPeriods",
+    "createFromComponents",
+    "subtractPeriods"
+   ]
+  },
+  "PER_COMP_NOMS": {
+   "exit": 1,
+   "crash": false,
+   "red": [
+    "withMilliseconds"
+   ]
+  },
+  "PER_ADD_LHS": {
+   "exit": 1,
+   "crash": false,
+   "red": [
+    "addPeriods",
+    "zeroPeriod"
+   ]
+  },
+  "PER_SUB_LHS": {
+   "exit": 1,
+   "crash": false,
+   "red": [
+    "subtractPeriods"
+   ]
+  },
+  "PER_SUB_AS_ADD": {
+   "exit": 1,
+   "crash": false,
+   "red": [
+    "subtractPeriods"
+   ]
+  },
+  "PER_SUB_REVERSED": {
+   "exit": 0,
+   "crash": false,
+   "red": []
+  },
+  "PER_EQ_TRUE": {
+   "exit": 1,
+   "crash": false,
+   "red": [
+    "equality",
+    "subtractPeriods"
+   ]
+  },
+  "PER_EQ_SEC": {
+   "exit": 1,
+   "crash": false,
+   "red": [
+    "equality"
+   ]
+  },
+  "PER_LT_FALSE": {
+   "exit": 1,
+   "crash": false,
+   "red": [
+    "comparison",
+    "zeroPeriod"
+   ]
+  },
+  "PER_LT_SEC": {
+   "exit": 1,
+   "crash": false,
+   "red": [
+    "comparison"
+   ]
+  },
+  "PER_LT_LE": {
+   "exit": 1,
+   "crash": false,
+   "red": [
+    "comparison"
+   ]
+  },
+  "PER_INIT_NIL": {
+   "exit": 1,
+   "crash": false,
+   "red": [
+    "addPeriods",
+    "comparison",
+    "createFromComponents",
+    "equality",
+    "subtractPeriods",
+    "withMilliseconds"
+   ]
+  },
+  "PER_INIT_NODAYS": {
+   "exit": 1,
+   "crash": false,
+   "red": [
+    "createFromComponents"
+   ]
+  },
+  "PER_SECS_NOUS": {
+   "exit": 1,
+   "crash": false,
+   "red": [
+    "comparison",
+    "createFromSeconds",
+    "equality"
+   ]
+  },
+  "TRF_GROUPED_IDENT": {
+   "exit": 1,
+   "crash": false,
+   "red": [
+    "deprecatedArrayOverloadsStillWork",
+    "generalTransform",
+    "generalTransformGroupedLayoutTranslatesAsDocumented",
+    "groupedInterleavedConversionRoundTripsTheSameTransform"
+   ]
+  },
+  "TRF_GROUPED_NIL": {
+   "exit": 1,
+   "crash": false,
+   "red": [
+    "deprecatedArrayOverloadsStillWork",
+    "generalTransform",
+    "generalTransformGroupedLayoutTranslatesAsDocumented",
+    "groupedInterleavedConversionRoundTripsTheSameTransform"
+   ]
+  },
+  "TRF_GT_IDENT": {
+   "exit": 1,
+   "crash": false,
+   "red": [
+    "deprecatedArrayOverloadsStillWork",
+    "nonUniformScale",
+    "nonUniformScaleInterleavedLayoutScalesAsDocumented"
+   ]
+  },
+  "TRF_GT_NIL": {
+   "exit": 1,
+   "crash": false,
+   "red": [
+    "deprecatedArrayOverloadsStillWork",
+    "nonUniformScale",
+    "nonUniformScaleInterleavedLayoutScalesAsDocumented"
+   ]
+  },
+  "TRF_BYM_IDENT": {
+   "exit": 1,
+   "crash": false,
+   "red": [
+    "deprecatedArrayOverloadsStillWork",
+    "groupedInterleavedConversionRoundTripsTheSameTransform",
+    "mirrorTransformProducesResult",
+    "transformFromMatrix",
+    "transformFromMatrixInterleavedLayoutTranslatesAsDocumented"
+   ]
+  },
+  "TRF_BYM_NIL": {
+   "exit": 1,
+   "crash": false,
+   "red": [
+    "deprecatedArrayOverloadsStillWork",
+    "groupedInterleavedConversionRoundTripsTheSameTransform",
+    "invalidMatrixSize",
+    "mirrorTransformProducesResult",
+    "transformFromMatrix",
+    "transformFromMatrixInterleavedLayoutTranslatesAsDocumented"
+   ]
+  },
+  "TRF_BYM_TXONLY": {
+   "exit": 1,
+   "crash": false,
+   "red": [
+    "deprecatedArrayOverloadsStillWork",
+    "groupedInterleavedConversionRoundTripsTheSameTransform",
+    "transformFromMatrix",
+    "transformFromMatrixInterleavedLayoutTranslatesAsDocumented"
+   ]
+  },
+  "TRF_BYM_NOMIRROR": {
+   "exit": 0,
+   "crash": false,
+   "red": []
+  },
+  "TRF_NEG_FALSE": {
+   "exit": 1,
+   "crash": false,
+   "red": [
+    "transformIsNegative"
+   ]
+  },
+  "TRF_NEG_TRUE": {
+   "exit": 1,
+   "crash": false,
+   "red": [
+    "transformIsNegative"
+   ]
+  },
+  "TRF_VALIDATE_LONG": {
+   "exit": 1,
+   "crash": false,
+   "red": [
+    "invalidMatrixSize",
+    "typedInitializersReturnNilRatherThanTrapOnWrongCount"
+   ]
+  },
+  "TRF_VALIDATE_ANY": {
+   "exit": 1,
+   "crash": false,
+   "red": [
+    "invalidMatrixSize",
+    "typedInitializersReturnNilRatherThanTrapOnWrongCount"
+   ]
+  },
+  "TRF_GROUPED_ID": {
+   "exit": 1,
+   "crash": false,
+   "red": [
+    "groupedInterleavedConversionRoundTripsTheSameTransform"
+   ]
+  },
+  "TRF_INTERLEAVED_ID": {
+   "exit": 1,
+   "crash": false,
+   "red": [
+    "groupedInterleavedConversionRoundTripsTheSameTransform"
+   ]
+  },
+  "TRF_TRSF_SIGN": {
+   "exit": 1,
+   "crash": false,
+   "red": [
+    "transformation"
+   ]
+  },
+  "TRF_LOCATED_IDENT": {
+   "exit": 1,
+   "crash": false,
+   "red": [
+    "transformIsNegative"
+   ]
+  },
+  "SYS_START": {
+   "exit": 1,
+   "crash": false,
+   "red": [
+    "solveCircleLine",
+    "solveLinearSystem"
+   ]
+  },
+  "SYS_NIL": {
+   "exit": 1,
+   "crash": false,
+   "red": [
+    "solveCircleLine",
+    "solveLinearSystem"
+   ]
+  },
+  "SYS_REVERSED": {
+   "exit": 1,
+   "crash": false,
+   "red": [
+    "solveCircleLine",
+    "solveLinearSystem"
+   ]
+  },
+  "SYS_LOOSE": {
+   "exit": 1,
+   "crash": false,
+   "red": [
+    "solveCircleLine",
+    "solveLinearSystem"
+   ]
+  },
+  "NEW_START": {
+   "exit": 1,
+   "crash": false,
+   "red": [
+    "minimizeQuadratic",
+    "minimizeRosenbrock"
+   ]
+  },
+  "NEW_NIL": {
+   "exit": 1,
+   "crash": false,
+   "red": [
+    "minimizeQuadratic",
+    "minimizeRosenbrock"
+   ]
+  },
+  "NEW_REVERSED": {
+   "exit": 1,
+   "crash": false,
+   "red": [
+    "minimizeQuadratic"
+   ]
+  },
+  "NEW_LOOSE": {
+   "exit": 1,
+   "crash": false,
+   "red": [
+    "minimizeQuadratic",
+    "minimizeRosenbrock"
+   ]
+  },
+  "NEW_MIN": {
+   "exit": 1,
+   "crash": false,
+   "red": [
+    "minimizeQuadratic",
+    "minimizeRosenbrock"
+   ]
+  },
+  "POLY_NIL": {
+   "exit": 1,
+   "crash": false,
+   "red": [
+    "linear",
+    "noRealRoots",
+    "quadratic"
+   ]
+  },
+  "POLY_EMPTY": {
+   "exit": 1,
+   "crash": false,
+   "red": [
+    "linear",
+    "noRealRoots",
+    "quadratic"
+   ]
+  },
+  "POLY_DROP_LAST": {
+   "exit": 1,
+   "crash": false,
+   "red": [
+    "linear",
+    "noRealRoots",
+    "quadratic"
+   ]
+  },
+  "POLY_NEG": {
+   "exit": 1,
+   "crash": false,
+   "red": [
+    "linear",
+    "quadratic"
+   ]
+  },
+  "POLY_EXTRA": {
+   "exit": 1,
+   "crash": false,
+   "red": [
+    "linear",
+    "noRealRoots",
+    "quadratic"
+   ]
+  },
+  "TRIG_INF_TRUE": {
+   "exit": 1,
+   "crash": false,
+   "red": [
+    "infiniteRoots"
+   ]
+  },
+  "TRIG_INF_FALSE": {
+   "exit": 1,
+   "crash": false,
+   "red": [
+    "infiniteRoots"
+   ]
+  }
+ }
+}
