@@ -70,7 +70,7 @@ is a system-type syntax check and not a "can I open this" test. Its doc comment 
 Fixed bridge-side, no kernel patch and no xcframework rebuild. `OCCTPathParserTrek`/`Name`/
 `Extension`/`FreeString` are deleted, `TDocStd_PathParser` is no longer wrapped, and Swift
 `PathParser` is a deprecated forwarder onto `OSDPath`. Regression coverage lives in
-`Tests/OCCTFoundationTests/PathParsingContractTests.swift`, which cross-checks the two spellings
+`Tests/OCCTFoundationTests/OSD/PathParsingContractTests.swift`, which cross-checks the two spellings
 against each other and pins each case in the table above. 8 of its 15 original tests failed against
 the unmodified bridge.
 

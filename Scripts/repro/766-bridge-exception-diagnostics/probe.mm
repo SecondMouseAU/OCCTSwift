@@ -1,4 +1,4 @@
-// #766 / #1989: kernel-parity probe for Tests/OCCTMiscTests/BridgeExceptionDiagnosticsTests.swift.
+// #766 / #1989: kernel-parity probe for Tests/OCCTMiscTests/Bridge/BridgeExceptionDiagnosticsTests.swift.
 //
 // The suite tests the bridge's caught-exception channel (#1161). What the kernel decides, and what
 // this probe measures directly, is the exception each fixture raises: its OCCT type name, its

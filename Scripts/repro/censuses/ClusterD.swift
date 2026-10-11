@@ -25,7 +25,6 @@
 
 import Foundation
 import OCCTSwift
-import simd
 
 // MARK: - Report plumbing
 
