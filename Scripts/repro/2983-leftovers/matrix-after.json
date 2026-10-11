@@ -1,0 +1,88 @@
+{
+ "CAN_TYPE_NONE": [
+  "recognizeCanonicalCurveOnNullShapeDoesNotCrash()",
+  "recognizeCanonicalSurfaceOnNullShapeDoesNotCrash()",
+  "recognizeCone()",
+  "recognizeCylinder()",
+  "recognizeEdgeCircle()",
+  "recognizeEdgeEllipse()",
+  "recognizeEdgeLine()",
+  "recognizePlane()",
+  "recognizeSphere()"
+ ],
+ "CAN_ORIGIN0": [
+  "recognizeCone()",
+  "recognizeCylinder()",
+  "recognizeEdgeCircle()",
+  "recognizeEdgeEllipse()",
+  "recognizePlane()",
+  "recognizeSphere()"
+ ],
+ "CAN_DIRX": [
+  "recognizeCone()",
+  "recognizeCylinder()",
+  "recognizeEdgeCircle()",
+  "recognizeEdgeEllipse()"
+ ],
+ "CAN_NONE_P1": [
+  "recognizeCanonicalCurveOnNullShapeDoesNotCrash()",
+  "recognizeCanonicalSurfaceOnNullShapeDoesNotCrash()"
+ ],
+ "CAN_P2_0": [
+  "recognizeCone()",
+  "recognizeEdgeEllipse()"
+ ],
+ "HATCH_NB1": [
+  "addLinesAndCount()",
+  "addYLines()",
+  "createHatcher()",
+  "trimAndIntervals()"
+ ],
+ "HATCH_ADD_NOOP": [
+  "addLinesAndCount()",
+  "createHatcher()",
+  "nbIntervalsRefusesAnIndexOutsideTheLineTable()",
+  "trimAndIntervals()"
+ ],
+ "AX_RAWDIR": [
+  "createAxis()",
+  "directionIsNormalised()",
+  "reversed()"
+ ],
+ "AX_ORIGIN_X": [
+  "createAxis()",
+  "directionIsNormalised()",
+  "reversed()"
+ ],
+ "H_SEQ_NOWRITE": [
+  "A null buffer asks for the length alone",
+  "Operation names report full length even when stored string is truncated"
+ ],
+ "H_COPY_SHORT": [
+  "A negative max length, or a null buffer with a positive one, is refused",
+  "A short buffer yields a prefix and the full length",
+  "Operation names report full length even when stored string is truncated",
+  "two chained WithFullHistory cuts both absorb real records"
+ ],
+ "H_COPY_FIRSTCHAR_X": [
+  "A negative max length, or a null buffer with a positive one, is refused",
+  "A short buffer yields a prefix and the full length",
+  "Operation names report full length even when stored string is truncated",
+  "two chained WithFullHistory cuts both absorb real records"
+ ],
+ "H_LEN_TRUNC": [
+  "A short buffer yields a prefix and the full length",
+  "Operation names report full length even when stored string is truncated"
+ ],
+ "VOLUME_NIL": [
+  "a genuinely non-intersecting second cut absorbs nothing, correctly",
+  "two chained WithFullHistory cuts both absorb real records"
+ ],
+ "ADD_WRONG_ROOT": [
+  "a genuinely non-intersecting second cut absorbs nothing, correctly",
+  "two chained WithFullHistory cuts both absorb real records"
+ ],
+ "ADD_NAME": [
+  "two chained WithFullHistory cuts both absorb real records"
+ ]
+}
