@@ -58,7 +58,7 @@ evidence about the axes callers actually pass.
 
 ## What pins it
 
-`Tests/OCCTThreadTests/Issue990ThreadAxisBasisTests.swift` measures the groove's angular position
+`Tests/OCCTThreadTests/Construction/Issue990ThreadAxisBasisTests.swift` measures the groove's angular position
 on a real threaded rod for all six world axes, through `Shape.classifyPoint`, and expects it on the
 `gp_Ax2` Y direction (the constants above, not a second call to `perpendicularBasis(to:)`).
 

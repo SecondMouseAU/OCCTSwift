@@ -71,7 +71,7 @@ way it excludes #341's `shared_adaptor_cache` and `obj_roundtrip_shared` modes.
 
 The harness is evidence that the defect is real. What verifies the **fix** is
 `Scripts/tsan-stress.sh swift` over
-`Tests/OCCTThreadTests/Issue1404TObjApplicationThreadSafetyTests.swift`, which reaches the singleton
+`Tests/OCCTThreadTests/Concurrency/Issue1404TObjApplicationThreadSafetyTests.swift`, which reaches the singleton
 the way a consumer does, through `tobjApplicationMutex()`.
 
 ## The fix
