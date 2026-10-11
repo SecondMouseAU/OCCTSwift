@@ -16,20 +16,21 @@ struct ShapeCustomSurfacePeriodicTests {
     }
 
     @Test("conversion gap is deprecated and always -1.0 (#1510)")
-    func conversionGapIsDeprecatedSentinel() {
+    func conversionGapIsDeprecatedSentinel() throws {
         // A genuinely U-closed, non-periodic clamped BSpline surface: a full-revolution trimmed
         // cylinder converted to BSpline form, then forced non-periodic. This is exactly the
         // shape ConvertToPeriodic is meant to consume, and #1510's own compiled reproducer
         // showed the OLD code fabricated a nonzero "gap" (0.003363078) from an unrelated,
         // throwaway ConvertToAnalytical(1e-3) call on surfaces like this, despite that
         // recognition attempt failing outright.
-        guard let cyl = Surface.trimmedCylinder(radius: 5, height: 10),
-            let bsp = cyl.toBSpline()
-        else {
-            Issue.record("setup: could not build a trimmed-cylinder BSpline surface")
-            return
-        }
+        let cyl = try #require(Surface.trimmedCylinder(radius: 5, height: 10), "setup: cylinder")
+        let bsp = try #require(cyl.toBSpline(), "setup: could not convert to BSpline")
+        // Measured on the pinned kernel: the BSpline starts periodic in U, and un-periodising it
+        // leaves it closed in U, which is the shape ConvertToPeriodic consumes.
+        try #require(bsp.isUPeriodic, "setup: the BSpline should start periodic in U")
         bsp.bsplineSetUNotPeriodic()
+        try #require(!bsp.isUPeriodic, "setup: the BSpline is still periodic in U")
+        try #require(bsp.isUClosed, "setup: the BSpline is not closed in U")
 
         // Before any conversion: the deprecated accessor reports the -1.0 sentinel, not 0.0
         // (ShapeCustom_Surface's own constructor default) and not a value derived from an
@@ -37,15 +38,15 @@ struct ShapeCustomSurfacePeriodicTests {
         #expect(bsp.conversionGap == -1.0)
 
         // A real, successful ConvertToPeriodic call...
-        let periodic = bsp.convertToPeriodic()
-        #expect(periodic != nil)
+        let periodic = try #require(bsp.convertToPeriodic(), "convertToPeriodic returned nil")
+        // ...which really did make it periodic in U (and only in U).
+        #expect(periodic.isUPeriodic)
+        #expect(!periodic.isVPeriodic)
 
         // ...changes nothing about the deprecated accessor. It never reflected this operation
         // (that was #1510's whole defect) and is now documented to always return -1.0, on the
         // original surface and on the conversion's own result alike.
         #expect(bsp.conversionGap == -1.0)
-        if let periodic {
-            #expect(periodic.conversionGap == -1.0)
-        }
+        #expect(periodic.conversionGap == -1.0)
     }
 }

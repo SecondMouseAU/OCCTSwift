@@ -77,11 +77,8 @@ struct Issue655FreeBoundsInternalOrientationTests {
     }
 
     @Test("An embedded INTERNAL loop is absent from both closed and open free bounds")
-    func freeBoundsUnaffectedByInternalOrientation() {
-        guard let shape = Self.fixture(loopOrientation: .internal) else {
-            Issue.record("fixture build failed")
-            return
-        }
+    func freeBoundsUnaffectedByInternalOrientation() throws {
+        let shape = try #require(Self.fixture(loopOrientation: .internal), "fixture build failed")
         // Fixture sanity check: the assertions below alone cannot distinguish "the loop was
         // excluded from free bounds" from "the loop was never attached to face1 at all" -- both
         // look identical downstream. This confirms the input actually carries all 12 edges (the
@@ -102,12 +99,11 @@ struct Issue655FreeBoundsInternalOrientationTests {
             (shape.freeBoundsOpenWires(tolerance: 1e-6)?.subShapeCount(ofType: .wire) ?? 0) == 0,
             "the INTERNAL loop must not surface as an open free bound either")
 
-        if let result = shape.freeBounds(sewingTolerance: 1e-6) {
-            #expect(result.closedCount == 2, "freeBounds() must agree with freeBoundsClosedCount")
-            #expect(result.openCount == 0, "freeBounds() must agree with freeBoundsOpenWires")
-        } else {
-            Issue.record("freeBounds() returned nil; expected the two outer boundaries")
-        }
+        let result = try #require(
+            shape.freeBounds(sewingTolerance: 1e-6),
+            "freeBounds() returned nil; expected the two outer boundaries")
+        #expect(result.closedCount == 2, "freeBounds() must agree with freeBoundsClosedCount")
+        #expect(result.openCount == 0, "freeBounds() must agree with freeBoundsOpenWires")
     }
 
     /// The "prove the test fails" injection for the test above: the same fixture with the embedded
@@ -119,14 +115,21 @@ struct Issue655FreeBoundsInternalOrientationTests {
     /// outer boundaries. Run as a live contrast fixture (not a disabled test) so a future change
     /// that stops the exclusion from mattering fails this test too.
     @Test("The same loop, left FORWARD, IS counted (contrast fixture)")
-    func forwardLoopIsCounted() {
-        guard let shape = Self.fixture(loopOrientation: .forward) else {
-            Issue.record("fixture build failed")
-            return
-        }
+    func forwardLoopIsCounted() throws {
+        let shape = try #require(Self.fixture(loopOrientation: .forward), "fixture build failed")
         #expect(
             shape.freeBoundsClosedCount(tolerance: 1e-6) == 3,
             "expected 3 closed wires (2 outer boundaries + the now-visible loop)")
+        // Measured on the pinned kernel: all 12 edges (8 outer + the loop's 4) are in the closed
+        // wires, none are left over as an open bound, and `freeBounds()` agrees with the counts.
+        #expect(
+            shape.freeBoundsClosedWires(tolerance: 1e-6)?.subShapeCount(ofType: .edge) == 12,
+            "expected all 12 edges in closed wires, the loop's 4 included")
+        #expect(
+            (shape.freeBoundsOpenWires(tolerance: 1e-6)?.subShapeCount(ofType: .wire) ?? 0) == 0)
+        let result = try #require(shape.freeBounds(sewingTolerance: 1e-6), "freeBounds() nil")
+        #expect(result.closedCount == 3)
+        #expect(result.openCount == 0)
     }
 
     /// `freeBoundsAnalysis(tolerance:)` (and every sibling built on `FreeBoundsProperties`) takes a
@@ -174,11 +177,9 @@ struct Issue655FreeBoundsInternalOrientationTests {
     func sharedTopologyBranchMeasuredDirectly(
         loopOrientation: Shape.Orientation, tolerance: Double, expectedClosed: Int,
         expectedOpen: Int
-    ) {
-        guard let shape = Self.fixture(loopOrientation: loopOrientation) else {
-            Issue.record("fixture build failed")
-            return
-        }
+    ) throws {
+        let shape = try #require(
+            Self.fixture(loopOrientation: loopOrientation), "fixture build failed")
         let analysis = shape.freeBoundsAnalysis(tolerance: tolerance)
         #expect(
             analysis.closedCount == expectedClosed,

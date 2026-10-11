@@ -74,51 +74,47 @@ struct Issue837FixDetailedModeFlagsTests {
     }
 
     @Test("Fixture actually has the wire-orientation defect it claims to")
-    func fixtureHasBadOrientation() {
-        guard let face = Self.badHoleOrientationFace() else {
-            Issue.record("fixture build failed")
-            return
-        }
+    func fixtureHasBadOrientation() throws {
+        let face = try #require(Self.badHoleOrientationFace(), "fixture build failed")
         #expect(face.checkFaceWireOrientation() == .badOrientationOfSubshape)
+        // The wrong winding makes the 2x2 hole ADD to the face's area: 10x10 plus 2x2 is 104, where
+        // a correctly wound hole gives 96. Both tests below pin their result against these two.
+        #expect(abs((face.surfaceArea ?? 0) - 104) < 1e-9)
     }
 
     @Test("fixFace: false leaves a free face's wire-orientation defect uncorrected")
-    func fixFaceFalseLeavesDefectInPlace() {
-        guard let badFace = Self.badHoleOrientationFace(),
-            let compound = Shape.compound([badFace])
-        else {
-            Issue.record("fixture build failed")
-            return
-        }
-        guard
-            let result = compound.fixed(
+    func fixFaceFalseLeavesDefectInPlace() throws {
+        let badFace = try #require(Self.badHoleOrientationFace(), "fixture build failed")
+        let compound = try #require(Shape.compound([badFace]), "fixture build failed")
+        let result = try #require(
+            compound.fixed(
                 tolerance: 1e-6, fixSolid: true, fixShell: true,
                 fixFace: false, fixWire: true),
-            let resultFace = result.subShapes(ofType: .face).first
-        else {
-            Issue.record("fixed(fixFace: false) produced no face")
-            return
-        }
+            "fixed(fixFace: false) returned nil")
+        let faces = result.subShapes(ofType: .face)
+        try #require(faces.count == 1, "fixed(fixFace: false) gave \(faces.count) faces, not 1")
+        let resultFace = try #require(faces.first)
         #expect(resultFace.checkFaceWireOrientation() == .badOrientationOfSubshape)
+        // Measured on the pinned kernel: the hole still adds, 104, and keeps both wires.
+        #expect(abs((resultFace.surfaceArea ?? 0) - 104) < 1e-9)
+        #expect(resultFace.subShapeCount(ofType: .wire) == 2)
     }
 
     @Test("fixFace: true corrects a free face's wire-orientation defect")
-    func fixFaceTrueCorrectsDefect() {
-        guard let badFace = Self.badHoleOrientationFace(),
-            let compound = Shape.compound([badFace])
-        else {
-            Issue.record("fixture build failed")
-            return
-        }
-        guard
-            let result = compound.fixed(
+    func fixFaceTrueCorrectsDefect() throws {
+        let badFace = try #require(Self.badHoleOrientationFace(), "fixture build failed")
+        let compound = try #require(Shape.compound([badFace]), "fixture build failed")
+        let result = try #require(
+            compound.fixed(
                 tolerance: 1e-6, fixSolid: true, fixShell: true,
                 fixFace: true, fixWire: true),
-            let resultFace = result.subShapes(ofType: .face).first
-        else {
-            Issue.record("fixed(fixFace: true) produced no face")
-            return
-        }
+            "fixed(fixFace: true) returned nil")
+        let faces = result.subShapes(ofType: .face)
+        try #require(faces.count == 1, "fixed(fixFace: true) gave \(faces.count) faces, not 1")
+        let resultFace = try #require(faces.first)
         #expect(resultFace.checkFaceWireOrientation() == .noError)
+        // Measured on the pinned kernel: the hole is now subtracted, 96, and both wires survive.
+        #expect(abs((resultFace.surfaceArea ?? 0) - 96) < 1e-9)
+        #expect(resultFace.subShapeCount(ofType: .wire) == 2)
     }
 }

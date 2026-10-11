@@ -66,13 +66,18 @@ struct Issue849ShapeFixStatusTests {
     /// the fix, proven directly: reverting `ShapeFixStatus` to the pre-#849 encoding fails this
     /// test's `.done` comparison (`fixer.status(2) → true` vs `fixer.status(.done) → false`), not
     /// just the raw-value test above.
-    @Test func legacyAndTypeSafeOverloadsAgree() {
-        guard let box = Shape.box(width: 10, height: 10, depth: 10) else {
-            Issue.record("setup: box")
-            return
-        }
+    @Test func legacyAndTypeSafeOverloadsAgree() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10), "setup: box")
         let fixer = ShapeFixer(shape: box)
-        _ = fixer.perform()
+        // Measured on the pinned kernel: perform() on a plain box returns false and leaves status
+        // DONE set, OK and FAIL clear. The agreement checks below are between two overloads, so
+        // they pass if both are wired to the same constant; these absolute values are what a
+        // constant cannot match, and `.done` being the one that is true is what the off-by-one
+        // encoding got wrong.
+        #expect(fixer.perform() == false)
+        #expect(fixer.status(.ok) == false)
+        #expect(fixer.status(.done) == true)
+        #expect(fixer.status(.fail) == false)
 
         #expect(fixer.status(1) == fixer.status(.ok))
         #expect(fixer.status(2) == fixer.status(.done))
@@ -84,11 +89,8 @@ struct Issue849ShapeFixStatusTests {
     /// Pinned so nobody "fixes" it into forwarding raw ordinals directly, which would be a real
     /// behavior change to already-shipped public API (the type-safe overload above is the
     /// additive replacement for that).
-    @Test func legacyOverloadStaysNarrow() {
-        guard let box = Shape.box(width: 10, height: 10, depth: 10) else {
-            Issue.record("setup: box")
-            return
-        }
+    @Test func legacyOverloadStaysNarrow() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10), "setup: box")
         let fixer = ShapeFixer(shape: box)
         _ = fixer.perform()
 

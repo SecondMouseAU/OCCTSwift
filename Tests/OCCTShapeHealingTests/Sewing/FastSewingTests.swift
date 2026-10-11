@@ -14,25 +14,20 @@ struct FastSewingTests {
     // checked `sewn != nil`, which passed even while `OCCTShapeFastSewn` was wrapping an empty
     // `TopoDS_Shape` in a non-nil handle (the #1475 defect).
     @Test("Fast sew a valid shape")
-    func fastSewValid() {
-        let sphere = Shape.sphere(radius: 10)!
-        let sewn = sphere.fastSewn()
-        #expect(sewn != nil)
-        if let sewn {
-            #expect(sewn.faces().count == 1)
-            // `.volume` needs `Shape.Closed()` set on the enclosing shell, which
-            // `BRepBuilderAPI_FastSewing` does not set even for a geometrically-closed single-face
-            // sphere (confirmed directly against the kernel: `BRepGProp::VolumeProperties(...,
-            // OnlyClosed: true)` reports 0 here). `.surfaceArea` has no such closedness
-            // requirement and is the measurement that actually distinguishes real geometry from
-            // an empty result.
-            if let area = sewn.surfaceArea {
-                let expected = 4.0 * Double.pi * pow(10, 2)
-                #expect(abs(area - expected) < 1.0)
-            } else {
-                Issue.record("fastSewn() result on a sphere has no computable surface area")
-            }
-        }
+    func fastSewValid() throws {
+        let sphere = try #require(Shape.sphere(radius: 10), "sphere fixture failed")
+        let sewn = try #require(sphere.fastSewn(), "fastSewn() returned nil for a sphere")
+        #expect(sewn.faces().count == 1)
+        // `.volume` needs `Shape.Closed()` set on the enclosing shell, which
+        // `BRepBuilderAPI_FastSewing` does not set even for a geometrically-closed single-face
+        // sphere (confirmed directly against the kernel: `BRepGProp::VolumeProperties(...,
+        // OnlyClosed: true)` reports 0 here). `.surfaceArea` has no such closedness
+        // requirement and is the measurement that actually distinguishes real geometry from
+        // an empty result. Measured on the pinned kernel: 1256.637061435917, which is
+        // 4 pi 10^2 to the last digit shown, so the tolerance is rounding and not slack.
+        let area = try #require(
+            sewn.surfaceArea, "fastSewn() result on a sphere has no computable surface area")
+        #expect(abs(area - 4.0 * Double.pi * 100) < 1e-6)
     }
 
     @Test("Fast sew with custom tolerance")
@@ -54,9 +49,9 @@ struct FastSewingTests {
     // `fastSewn()` must genuinely return nil here, matching its own doc ("Returns: The sewn
     // shape, or nil on failure").
     @Test("Fast sew declines a box (faces are not naturally bounded)")
-    func fastSewBoxReturnsNil() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
-        let sewn = box.fastSewn()
-        #expect(sewn == nil)
+    func fastSewBoxReturnsNil() throws {
+        // (the control for this nil is `fastSewValid`: the same call on a sphere is answered)
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10), "box fixture failed")
+        #expect(box.fastSewn() == nil)
     }
 }

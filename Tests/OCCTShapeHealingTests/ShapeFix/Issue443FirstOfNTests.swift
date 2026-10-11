@@ -563,16 +563,25 @@ struct Issue443FirstOfN {
 
         // Every face the history reports as modified is held by the result, and its replacement
         // is in connection order.
-        var modified = 0
+        //
+        // Exactly one face is repaired: the top face, the only one built with its wire out of
+        // order. Counted exactly, not "at least one", so a history that also reports the five
+        // untouched sides as modified (or none at all) is a failure and not a pass.
+        var modified: [Shape] = []
         for original in body.subShapes(ofType: .face) {
             let record = history.record(of: original)
             guard let replacement = record.modified.first else { continue }
-            modified += 1
+            modified.append(original)
             #expect(
                 result.subShapes(ofType: .face).contains { $0.isSame(as: replacement) },
                 "the history replaces a face the result does not hold")
         }
-        #expect(modified >= 1, "nothing was repaired, so the fixture shows nothing")
+        #expect(modified.count == 1, "\(modified.count) faces reported modified, expected 1")
+        let repaired = try #require(modified.first, "no face was repaired")
+        let repairedBounds = try #require(repaired.boundingBox, "the repaired face has no bounds")
+        #expect(
+            repairedBounds.min.z > 9.9,
+            "the repaired face is not the top face: z from \(repairedBounds.min.z)")
     }
 
     /// Bodies the history variant builds are turned outward too, every one of them.

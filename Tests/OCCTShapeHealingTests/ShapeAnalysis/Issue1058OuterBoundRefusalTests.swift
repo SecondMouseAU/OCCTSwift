@@ -61,94 +61,88 @@ struct Issue1058OuterBoundRefusalTests {
         return widest
     }
 
+    /// The centred-window panel and its two wires, told apart by the verdict they get on their own
+    /// face: the outer bound answers `false`, the window answers `true`.
+    ///
+    /// Every refusal test below needs a pair that is NOT refused, so a `nil` it sees can only come
+    /// from the argument it changed. Without one, a `checkOuterBound` that returned `nil` for
+    /// everything would pass the five refusal tests and fail only the two that expect a verdict.
+    private func panelWithItsTwoWires() throws -> (panel: Shape, outer: Shape, window: Shape) {
+        let panel = try #require(panelWithCentredWindow(), "panel fixture failed")
+        let wires = panel.subShapes(ofType: .wire)
+        try #require(wires.count == 2, "the panel holds \(wires.count) wires, not 2")
+        let verdicts = wires.map { SAWireAnalysis.checkOuterBound(wire: $0, face: panel) }
+        let outerIndex = try #require(
+            verdicts.firstIndex(of: false), "no wire of the panel is its outer bound: \(verdicts)")
+        let windowIndex = try #require(
+            verdicts.firstIndex(of: true), "no wire of the panel is its window: \(verdicts)")
+        return (panel, wires[outerIndex], wires[windowIndex])
+    }
+
     @Test("The cylinder's own wire answers false, so the fixture is not refused for being curved")
-    func cylinderAnswersForItsOwnWire() {
-        guard let lateral = cylinderLateralFace() else {
-            Issue.record("cylinder fixture failed")
-            return
-        }
-        guard let own = lateral.subShapes(ofType: .wire).first else {
-            Issue.record("cylinder lateral face has no wire")
-            return
-        }
+    func cylinderAnswersForItsOwnWire() throws {
+        let lateral = try #require(cylinderLateralFace(), "cylinder fixture failed")
+        let wires = lateral.subShapes(ofType: .wire)
+        // One wire: the lateral face's boundary, seam included, so `.first` is not a choice.
+        try #require(wires.count == 1, "the lateral face holds \(wires.count) wires, not 1")
+        let own = try #require(wires.first)
         // The control that isolates the next test's nil to the wire rather than to the face's
         // surface type, and the only assertion here on the non-nil polarity.
         #expect(SAWireAnalysis.checkOuterBound(wire: own, face: lateral) == false)
     }
 
     @Test("A wire with no pcurve on the face is refused, not reported as the outer bound")
-    func wireNotOnTheFaceIsRefused() {
-        guard let panel = panelWithCentredWindow(), let lateral = cylinderLateralFace()
-        else {
-            Issue.record("fixtures failed")
-            return
-        }
-        guard let panelWire = panel.subShapes(ofType: .wire).first else {
-            Issue.record("panel has no wire")
-            return
-        }
+    func wireNotOnTheFaceIsRefused() throws {
+        let (panel, panelWire, _) = try panelWithItsTwoWires()
+        let lateral = try #require(cylinderLateralFace(), "cylinder fixture failed")
         // Before #1058 this was `false`, the same answer a face's own outer wire gives, produced
         // by signing a zero area no edge contributed to.
         #expect(SAWireAnalysis.checkOuterBound(wire: panelWire, face: lateral) == nil)
+        // The same wire on its own face is answered, so the nil above is the face's doing.
+        #expect(SAWireAnalysis.checkOuterBound(wire: panelWire, face: panel) == false)
     }
 
     @Test("A Shape that is not a wire is refused, and so is one that is not a face")
-    func wrongTypedShapeIsRefused() {
-        guard
-            let panel = panelWithCentredWindow(),
-            let box = Shape.box(width: 1, height: 1, depth: 1)
-        else {
-            Issue.record("fixtures failed")
-            return
-        }
-        guard let panelWire = panel.subShapes(ofType: .wire).first else {
-            Issue.record("panel has no wire")
-            return
-        }
+    func wrongTypedShapeIsRefused() throws {
+        let (panel, panelWire, window) = try panelWithItsTwoWires()
+        let box = try #require(Shape.box(width: 1, height: 1, depth: 1), "box fixture failed")
         #expect(SAWireAnalysis.checkOuterBound(wire: box, face: panel) == nil)
         #expect(SAWireAnalysis.checkOuterBound(wire: panelWire, face: box) == nil)
+        // Controls: the right types, on the same panel, are answered, both ways round.
+        #expect(SAWireAnalysis.checkOuterBound(wire: panelWire, face: panel) == false)
+        #expect(SAWireAnalysis.checkOuterBound(wire: window, face: panel) == true)
     }
 
     @Test("A null shape is refused rather than crashing")
-    func nullShapeIsRefused() {
-        guard let panel = panelWithCentredWindow() else {
-            Issue.record("panel fixture failed")
-            return
-        }
-        guard let panelWire = panel.subShapes(ofType: .wire).first, let empty = panel.nullified
-        else {
-            Issue.record("panel has no wire, or could not be nullified")
-            return
-        }
+    func nullShapeIsRefused() throws {
+        let (panel, panelWire, window) = try panelWithItsTwoWires()
+        let empty = try #require(panel.nullified, "could not nullify the panel")
         #expect(SAWireAnalysis.checkOuterBound(wire: empty, face: panel) == nil)
         #expect(SAWireAnalysis.checkOuterBound(wire: panelWire, face: empty) == nil)
+        // Controls: the un-nullified pair is answered, both ways round.
+        #expect(SAWireAnalysis.checkOuterBound(wire: panelWire, face: panel) == false)
+        #expect(SAWireAnalysis.checkOuterBound(wire: window, face: panel) == true)
     }
 
     @Test("A wire with no edges is refused")
-    func edgelessWireIsRefused() {
-        guard let panel = panelWithCentredWindow(), let wire = Shape.builderMakeWire() else {
-            Issue.record("fixtures failed")
-            return
-        }
+    func edgelessWireIsRefused() throws {
+        let (panel, panelWire, _) = try panelWithItsTwoWires()
+        let wire = try #require(Shape.builderMakeWire(), "builderMakeWire failed")
         // A real, non-null TopoDS_Wire carrying nothing, so it clears the type guard and stops at
         // ShapeAnalysis_Wire::IsReady(), which is `IsLoaded() && !myFace.IsNull()` and false for a
         // WireData of zero edges. This does isolate that guard: make it return 0 instead of -1,
         // leaving every other guard in place, and this is the one test of six that fails.
         #expect(wire.subShapes(ofType: .edge).isEmpty)
         #expect(SAWireAnalysis.checkOuterBound(wire: wire, face: panel) == nil)
+        #expect(SAWireAnalysis.checkOuterBound(wire: panelWire, face: panel) == false)
     }
 
     @Test("A wire whose edges do not assemble is refused rather than taking the process down")
-    func disconnectedEdgeWireIsRefused() {
-        guard
-            let panel = panelWithCentredWindow(),
-            let wire = Shape.builderMakeWire(),
-            let a = Shape.edgeFromPoints(SIMD3(0, 0, 0), SIMD3(1, 0, 0)),
-            let b = Shape.edgeFromPoints(SIMD3(5, 5, 0), SIMD3(6, 5, 0))
-        else {
-            Issue.record("fixtures failed")
-            return
-        }
+    func disconnectedEdgeWireIsRefused() throws {
+        let (panel, panelWire, _) = try panelWithItsTwoWires()
+        let wire = try #require(Shape.builderMakeWire(), "builderMakeWire failed")
+        let a = try #require(Shape.edgeFromPoints(SIMD3(0, 0, 0), SIMD3(1, 0, 0)))
+        let b = try #require(Shape.edgeFromPoints(SIMD3(5, 5, 0), SIMD3(6, 5, 0)))
         #expect(wire.builderAdd(a))
         #expect(wire.builderAdd(b))
         // Two edges that share no vertex, so BRepBuilderAPI_MakeWire cannot assemble them and
@@ -163,6 +157,7 @@ struct Issue1058OuterBoundRefusalTests {
         // proves guards, not fixtures" is exactly this hole.
         #expect(wire.subShapes(ofType: .edge).count == 2)
         #expect(SAWireAnalysis.checkOuterBound(wire: wire, face: panel) == nil)
+        #expect(SAWireAnalysis.checkOuterBound(wire: panelWire, face: panel) == false)
     }
 
     // #1073: A wire whose projected area cancels to rounding (~1.8e-15) is refused.
@@ -173,20 +168,17 @@ struct Issue1058OuterBoundRefusalTests {
     // ALL edges to have pcurves AND the area magnitude to be significant relative
     // to the face UV bounds.
     @Test("A wire whose projected area cancels to rounding is refused (#1073)")
-    func cylinderWireOnPlanarFaceIsRefused() {
-        guard let panel = panelWithCentredWindow(), let lateral = cylinderLateralFace()
-        else {
-            Issue.record("fixtures failed")
-            return
-        }
-        guard let cylinderWire = lateral.subShapes(ofType: .wire).first else {
-            Issue.record("cylinder has no wire")
-            return
-        }
+    func cylinderWireOnPlanarFaceIsRefused() throws {
+        let (panel, _, _) = try panelWithItsTwoWires()
+        let lateral = try #require(cylinderLateralFace(), "cylinder fixture failed")
+        let cylinderWire = try #require(
+            lateral.subShapes(ofType: .wire).first, "cylinder has no wire")
         // Before #1073 this was `true` (or `false` depending on sign), the same as a
         // real problem verdict, produced by signing a cancelling area of ~-1.8e-15.
         // All edges of the cylinder's seam wire have pcurves on the plane (projected),
         // but the projection degenerates and the area cancels.
         #expect(SAWireAnalysis.checkOuterBound(wire: cylinderWire, face: panel) == nil)
+        // The same wire on its own face is answered, so the nil above is the planar face's doing.
+        #expect(SAWireAnalysis.checkOuterBound(wire: cylinderWire, face: lateral) == false)
     }
 }

@@ -11,18 +11,14 @@ import Testing
 struct Issue999OuterBoundTests {
 
     @Test("The verdict follows the wire, not the face")
-    func verdictVariesWithTheWire() {
+    func verdictVariesWithTheWire() throws {
         // `panelWithCentredWindow()` lives in ShapeHealingTestFixtures.swift, this target's own
         // shared-fixture file: one fixture, since both suites want exactly the same panel (#1058).
-        guard let face = panelWithCentredWindow() else {
-            Issue.record("panel fixture failed")
-            return
-        }
+        let face = try #require(panelWithCentredWindow(), "panel fixture failed")
         let wires = face.subShapes(ofType: .wire)
         // Two wires on one face, so the old implementation's answer ("this face has a wire") is
         // the same for both and this test cannot pass under it.
-        #expect(wires.count == 2)
-        guard wires.count == 2 else { return }
+        try #require(wires.count == 2, "the panel holds \(wires.count) wires, not 2")
 
         let verdicts = wires.map { SAWireAnalysis.checkOuterBound(wire: $0, face: face) }
         // Exactly one of the two is the outer bound. Asserting the partition rather than indexing
@@ -34,17 +30,16 @@ struct Issue999OuterBoundTests {
     }
 
     @Test("A face's own single wire is its outer bound, so nothing is reported")
-    func plainFaceReportsNoProblem() {
-        guard
-            let plane = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1)),
-            let outer = Wire.polygon3D(
-                [SIMD3(0, 0, 0), SIMD3(10, 0, 0), SIMD3(10, 10, 0), SIMD3(0, 10, 0)], closed: true),
-            let face = Shape.face(from: plane, outer: outer, innerWires: []),
-            let wire = face.subShapes(ofType: .wire).first
-        else {
-            Issue.record("plain face fixture failed")
-            return
-        }
+    func plainFaceReportsNoProblem() throws {
+        let plane = try #require(Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1)))
+        let outer = try #require(
+            Wire.polygon3D(
+                [SIMD3(0, 0, 0), SIMD3(10, 0, 0), SIMD3(10, 10, 0), SIMD3(0, 10, 0)], closed: true))
+        let face = try #require(
+            Shape.face(from: plane, outer: outer, innerWires: []), "plain face fixture failed")
+        let wires = face.subShapes(ofType: .wire)
+        try #require(wires.count == 1, "the plain face holds \(wires.count) wires, not 1")
+        let wire = try #require(wires.first)
         #expect(SAWireAnalysis.checkOuterBound(wire: wire, face: face) == false)
     }
 }
