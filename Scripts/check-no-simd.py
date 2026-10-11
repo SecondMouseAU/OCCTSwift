@@ -22,11 +22,19 @@ WHAT IT DELIBERATELY DOES NOT FLAG: the label `simd:` in `GeomDirection(simd:)` 
 label of this package, nothing to do with the module), the Swift stdlib types `SIMD2`/`SIMD3`/
 `SIMD4` and their `.sum()`, `pointwiseMin`, `pointwiseMax`, and the word `simd` in prose.
 
-THE POPULATION is every `*.swift` under the roots in `ROOTS`, minus `EXEMPT`. The one exemption is
-the stand-in itself, which exists only while test files that still import it do; the PR that migrates
-the last such file deletes the stand-in, this exemption and the `Tests` gap in `ROOTS` together. A run
-that finds fewer than `MINIMUM_FILES` Swift files in total exits 2 as a refusal rather than reporting
-"clean" over an empty population, which is what a blind detector looks like.
+THE POPULATION is every `*.swift` under `Sources/`, `Tests/` and the three `Scripts/repro/`
+directories `Package.swift` compiles as targets (`runner-core`, `censuses`, `harnesses`); the other
+`Scripts/repro/` files are standalone probes that no build compiles. There is no exemption: the
+stand-in this gate used to exempt (`Sources/WASICompat/simd`) is deleted. A run that finds fewer
+than `MINIMUM_FILES` Swift files in total exits 2 as a refusal rather than reporting "clean" over
+an empty population, which is what a blind detector looks like.
+
+THE TEST HELPERS ARE COPIES, AND THE GATE HOLDS THEM TOGETHER. Each `Tests/OCCT<Domain>Tests` target
+is its own module with no shared helper module, so each carries a `SIMDTestHelpers.swift` with the
+plain-Swift vector helpers, as `CLAUDE.md` already prescribes for any helper tests share. A copy
+that is edited alone is a test target computing `vectorLength` differently from its neighbours, so
+the gate fails when two copies differ. It refuses (exit 2) if there are none, since a tree with no
+copies means the files were renamed and the check went blind.
 
 Exit status: 0 clean, 1 a violation, 2 a refusal (wrong directory, empty population, bad option).
 """
@@ -35,9 +43,17 @@ import os
 import re
 import sys
 
-ROOTS = ["Sources"]
-EXEMPT = ["Sources/WASICompat/simd"]
-MINIMUM_FILES = 200
+ROOTS = [
+    "Sources",
+    "Tests",
+    # Compiled by Package.swift as targets, and a wasm build broke on `import simd` here once (#3296).
+    "Scripts/repro/runner-core",
+    "Scripts/repro/censuses",
+    "Scripts/repro/harnesses",
+]
+EXEMPT = []
+MINIMUM_FILES = 1000
+HELPERS_NAME = "SIMDTestHelpers.swift"
 
 IMPORT_RE = re.compile(r"\bimport\s+simd\b")
 CAN_IMPORT_RE = re.compile(r"\bcanImport\s*\(\s*simd\s*\)")
@@ -150,7 +166,38 @@ def swift_files(root, roots, exempt):
     return sorted(files)
 
 
-def run(root, roots=None, exempt=None, minimum=MINIMUM_FILES):
+def helper_copies(root):
+    """Return {relative path: bytes} for every SIMDTestHelpers.swift under Tests/."""
+    found = {}
+    base = os.path.join(root, "Tests")
+    for dirpath, dirnames, filenames in os.walk(base):
+        dirnames[:] = [d for d in dirnames if d != ".build"]
+        if HELPERS_NAME in filenames:
+            path = os.path.join(dirpath, HELPERS_NAME)
+            with open(path, "rb") as handle:
+                found[os.path.relpath(path, root)] = handle.read()
+    return found
+
+
+def check_helper_copies(root):
+    """0 when all copies are byte-identical, 1 when two differ, 2 when there are none."""
+    copies = helper_copies(root)
+    if not copies:
+        print(f"check-no-simd: refusing, no {HELPERS_NAME} under Tests/", file=sys.stderr)
+        return 2
+    distinct = {}
+    for rel, data in copies.items():
+        distinct.setdefault(data, []).append(rel)
+    if len(distinct) > 1:
+        print(f"check-no-simd: {HELPERS_NAME} copies differ ({len(distinct)} distinct versions):")
+        for group in distinct.values():
+            print("  " + ", ".join(sorted(group)))
+        print("\nThey are identical on purpose; edit all of them together.")
+        return 1
+    return 0
+
+
+def run(root, roots=None, exempt=None, minimum=MINIMUM_FILES, copies=True):
     roots = ROOTS if roots is None else roots
     exempt = EXEMPT if exempt is None else exempt
     files = swift_files(root, roots, exempt)
@@ -176,6 +223,10 @@ def run(root, roots=None, exempt=None, minimum=MINIMUM_FILES):
             "the target's SIMDTestHelpers.swift) and Matrix4x4F / Matrix3x3D. See #2759."
         )
         return 1
+    if copies:
+        status = check_helper_copies(root)
+        if status:
+            return status
     print(f"check-no-simd: {len(files)} Swift files, no Apple simd import or call.")
     return 0
 
@@ -237,17 +288,36 @@ def self_test():
             with open(path, "w") as handle:
                 handle.write(body)
         with quiet, quiet_err:
-            if run(tmp, ["Sources"], ["Sources/WASICompat/simd"], minimum=1) != 1:
+            if run(tmp, ["Sources"], ["Sources/WASICompat/simd"], minimum=1, copies=False) != 1:
                 failures.append("walker: the import in Sources/B must fail")
             os.remove(os.path.join(tmp, "Sources/B/b.swift"))
-            if run(tmp, ["Sources"], ["Sources/WASICompat/simd"], minimum=1) != 0:
+            if run(tmp, ["Sources"], ["Sources/WASICompat/simd"], minimum=1, copies=False) != 0:
                 failures.append("walker: the exempt directory must not be scanned")
-            if run(tmp, ["Sources"], [], minimum=1) != 1:
+            if run(tmp, ["Sources"], [], minimum=1, copies=False) != 1:
                 failures.append("walker: without the exemption the shim must fail")
-            if run(tmp, ["Sources"], ["Sources/WASICompat/simd"], minimum=50) != 2:
+            if run(tmp, ["Sources"], ["Sources/WASICompat/simd"], minimum=50, copies=False) != 2:
                 failures.append("walker: an under-populated tree must refuse with 2")
-            if run(os.path.join(tmp, "nowhere"), ["Sources"], [], minimum=1) != 2:
+            if run(os.path.join(tmp, "nowhere"), ["Sources"], [], minimum=1, copies=False) != 2:
                 failures.append("walker: a missing root must refuse with 2")
+            # The helper copies: identical passes, a differing copy fails, none refuses.
+            for rel, body in [
+                ("Tests/A/SIMDTestHelpers.swift", "func f() {}\n"),
+                ("Tests/B/SIMDTestHelpers.swift", "func f() {}\n"),
+            ]:
+                path = os.path.join(tmp, rel)
+                os.makedirs(os.path.dirname(path), exist_ok=True)
+                with open(path, "w") as handle:
+                    handle.write(body)
+            if check_helper_copies(tmp) != 0:
+                failures.append("helpers: identical copies must pass")
+            with open(os.path.join(tmp, "Tests/B/SIMDTestHelpers.swift"), "w") as handle:
+                handle.write("func f() { /* edited alone */ }\n")
+            if check_helper_copies(tmp) != 1:
+                failures.append("helpers: a copy edited alone must fail")
+            os.remove(os.path.join(tmp, "Tests/A/SIMDTestHelpers.swift"))
+            os.remove(os.path.join(tmp, "Tests/B/SIMDTestHelpers.swift"))
+            if check_helper_copies(tmp) != 2:
+                failures.append("helpers: no copies at all must refuse with 2")
     finally:
         shutil.rmtree(tmp)
 
