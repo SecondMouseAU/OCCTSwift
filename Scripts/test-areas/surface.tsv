@@ -135,6 +135,7 @@ Tests/OCCTSurfaceTests/RectangularTrimmedSurfaceTests.swift	Tests/OCCTSurfaceTes
 Tests/OCCTSurfaceTests/RevolutionFeatureTests.swift	Tests/OCCTSurfaceTests/SweepsAndLofts/RevolutionFeatureTests.swift	SweepsAndLofts	-	revolved boss and through-all feature
 Tests/OCCTSurfaceTests/RevolutionFormTests.swift	Tests/OCCTSurfaceTests/SweepsAndLofts/RevolutionFormTests.swift	SweepsAndLofts	-	revolution form rib feature
 Tests/OCCTSurfaceTests/RevolutionFromCurveTests.swift	Tests/OCCTSurfaceTests/SweepsAndLofts/RevolutionFromCurveTests.swift	SweepsAndLofts	-	revolve a segment or circle into a cylinder or torus
+Tests/OCCTSurfaceTests/SIMDTestHelpers.swift	Tests/OCCTSurfaceTests/SIMDTestHelpers.swift	(stays)	-	shared helper with no tests; stays at the target root so every area sees it
 Tests/OCCTSurfaceTests/SectionPlaneTests.swift	Tests/OCCTSurfaceTests/FacesAndProjection/SectionPlaneTests.swift	FacesAndProjection	-	Shape section with a plane or a surface; the nearest area is surface-meets-shape
 Tests/OCCTSurfaceTests/ShapeRevolutionAxesTests.swift	Tests/OCCTSurfaceTests/Core/ShapeRevolutionAxesTests.swift	Core	-	Shape.revolutionAxes reads the revolution axes of a shape's surfaces, with dedup of coaxial ones
 Tests/OCCTSurfaceTests/ShellFromSurfaceTests.swift	Tests/OCCTSurfaceTests/FacesAndProjection/ShellFromSurfaceTests.swift	FacesAndProjection	-	shell from a cylinder or a plane

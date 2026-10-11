@@ -93,6 +93,7 @@ Tests/OCCTTopologyTests/ProjectWireWithWireTests.swift	Tests/OCCTTopologyTests/W
 Tests/OCCTTopologyTests/QuiltFacesTests.swift	Tests/OCCTTopologyTests/Modification/QuiltFacesTests.swift	Modification	-	BRepTools_Quilt of box faces
 Tests/OCCTTopologyTests/ReShapeContextTests.swift	Tests/OCCTTopologyTests/Modification/ReShapeContextTests.swift	Modification	-	BRepTools_ReShape remove, replace, clear
 Tests/OCCTTopologyTests/ReShapeTests.swift	Tests/OCCTTopologyTests/Modification/ReShapeTests.swift	Modification	-	sub-shape replacement through ReShape
+Tests/OCCTTopologyTests/SIMDTestHelpers.swift	Tests/OCCTTopologyTests/SIMDTestHelpers.swift	(stays)	-	shared helper with no tests; stays at the target root so every area sees it
 Tests/OCCTTopologyTests/SelectorSubShapeTests.swift	Tests/OCCTDrawingTests/Visualization/SelectorSubShapeTests.swift	Visualization	-	AIS selector sub-shape pick modes, beside SelectorTests
 Tests/OCCTTopologyTests/ShapeCSIntersectorTestsV52.swift	Tests/OCCTTopologyTests/Interference/ShapeCSIntersectorTestsV52.swift	Interference	-	curve-shape intersector line against a box
 Tests/OCCTTopologyTests/ShapeCheckTests.swift	Tests/OCCTTopologyTests/Validity/ShapeCheckTests.swift	Validity	-	Shape check results on valid primitives and detailed check

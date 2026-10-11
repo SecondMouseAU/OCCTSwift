@@ -141,6 +141,7 @@ Tests/OCCTAnalysisTests/PointToEdgeDistanceTests.swift	Tests/OCCTAnalysisTests/B
 Tests/OCCTAnalysisTests/PolygonInterferenceTests.swift	Tests/OCCTAnalysisTests/Intersection/PolygonInterferenceTests.swift	Intersection	-	curve-surface, surface-surface, ray and polygon intersection through the Swift API
 Tests/OCCTAnalysisTests/PolyhedralDistanceTests.swift	Tests/OCCTAnalysisTests/BRepExtrema/PolyhedralDistanceTests.swift	BRepExtrema	-	BRepExtrema_* distance and extrema between topological shapes
 Tests/OCCTAnalysisTests/RaycastTests.swift	Tests/OCCTAnalysisTests/Intersection/RaycastTests.swift	Intersection	-	curve-surface, surface-surface, ray and polygon intersection through the Swift API
+Tests/OCCTAnalysisTests/SIMDTestHelpers.swift	Tests/OCCTAnalysisTests/SIMDTestHelpers.swift	(stays)	-	shared helper with no tests; stays at the target root so every area sees it
 Tests/OCCTAnalysisTests/SelfIntersectionPairTests.swift	Tests/OCCTAnalysisTests/BRepExtrema/SelfIntersectionPairTests.swift	BRepExtrema	-	BRepExtrema_SelfIntersection
 Tests/OCCTAnalysisTests/SelfIntersectionTests.swift	Tests/OCCTAnalysisTests/BRepExtrema/SelfIntersectionTests.swift	BRepExtrema	-	BRepExtrema_SelfIntersection
 Tests/OCCTAnalysisTests/ShapeDistanceOverloadTests.swift	Tests/OCCTAnalysisTests/BRepExtrema/ShapeDistanceOverloadTests.swift	BRepExtrema	-	shape-to-shape and point-to-edge distance solutions (BRepExtrema_DistShapeShape)

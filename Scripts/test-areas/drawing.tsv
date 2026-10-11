@@ -37,6 +37,7 @@ Tests/OCCTDrawingTests/PointProjectionTests.swift	Tests/OCCTTopologyTests/Faces/
 Tests/OCCTDrawingTests/PolyHLRTests.swift	Tests/OCCTDrawingTests/HiddenLine/PolyHLRTests.swift	HiddenLine	-	hidden-line removal: Drawing.project visible and hidden edges, polygon HLR, ReflectLines
 Tests/OCCTDrawingTests/RadialDiameterSharedPayloadTests.swift	Tests/OCCTDrawingTests/Dimensions/RadialDiameterSharedPayloadTests.swift	Dimensions	-	drawing dimensions, tolerances and the ISO style constants they use
 Tests/OCCTDrawingTests/RadiusDimensionTests.swift	Tests/OCCTDrawingTests/Dimensions/RadiusDimensionTests.swift	Dimensions	-	drawing dimensions, tolerances and the ISO style constants they use
+Tests/OCCTDrawingTests/SIMDTestHelpers.swift	Tests/OCCTDrawingTests/SIMDTestHelpers.swift	(stays)	-	shared helper with no tests; stays at the target root so every area sees it
 Tests/OCCTDrawingTests/SelectorTests.swift	Tests/OCCTDrawingTests/Visualization/SelectorTests.swift	Visualization	-	viewer-side objects: Camera, ClipPlane, DisplayDrawer, Selector, ZLayerSettings
 Tests/OCCTDrawingTests/ToleranceTests.swift	Tests/OCCTDrawingTests/Dimensions/ToleranceTests.swift	Dimensions	-	drawing dimensions, tolerances and the ISO style constants they use
 Tests/OCCTDrawingTests/ZLayerSettingsTests.swift	Tests/OCCTDrawingTests/Visualization/ZLayerSettingsTests.swift	Visualization	-	viewer-side objects: Camera, ClipPlane, DisplayDrawer, Selector, ZLayerSettings
