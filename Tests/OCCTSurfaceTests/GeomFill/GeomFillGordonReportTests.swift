@@ -7,51 +7,49 @@ import Testing
 @Suite("GeomFill, Gordon Report & Network Surface")
 struct GeomFillGordonReportTests {
 
-    @Test func gordonReportDoneForGoodNetwork() {
-        guard let network = makeQuarterCylinderGordonNetwork() else {
-            Issue.record("quarter-cylinder network fixture failed to build")
-            return
-        }
+    // #2983: setup was `guard let ... else { Issue.record; return }` or a bare `else { return }`,
+    // and the `.done` cases asserted `surface != nil`. Setup is required now, the too-few cases
+    // pin both families, and the domed network pins the corners and midpoints it was measured at.
+
+    @Test func gordonReportDoneForGoodNetwork() throws {
+        let network = try #require(
+            makeQuarterCylinderGordonNetwork(), "quarter-cylinder network fixture failed to build")
         let result = Surface.gordonReport(
             profiles: network.profiles, guides: network.guides, tolerance: 1e-6)
         #expect(result.status == .done)
         #expect(result.isApproximate == false)
-        guard let surface = result.surface else {
-            Issue.record("gordonReport surface nil")
-            return
-        }
+        let surface = try #require(result.surface, "gordonReport surface nil")
         assertMatchesQuarterCylinder(surface)
     }
 
-    @Test func gordonReportInvalidInput() {
-        guard let p1 = Curve3D.interpolate(points: [SIMD3(0, 0, 0), SIMD3(10, 0, 0)]) else {
-            return
-        }
+    @Test func gordonReportInvalidInput() throws {
+        let p1 = try #require(Curve3D.interpolate(points: [SIMD3(0, 0, 0), SIMD3(10, 0, 0)]))
+        let p2 = try #require(Curve3D.interpolate(points: [SIMD3(0, 10, 0), SIMD3(10, 10, 0)]))
         let result = Surface.gordonReport(profiles: [p1], guides: [p1])
         #expect(result.surface == nil)
         #expect(result.status == .invalidInput)
+        // One family short is refused as well, and the good network above reports `.done`, so
+        // the status is a verdict on the input and not a constant.
+        let oneGuide = Surface.gordonReport(profiles: [p1, p2], guides: [p1])
+        #expect(oneGuide.surface == nil)
+        #expect(oneGuide.status == .invalidInput)
     }
 
-    @Test func gordonReportApproximateFallbackMode() {
+    @Test func gordonReportApproximateFallbackMode() throws {
         // With fallback enabled a good network still builds exactly (the fallback never
         // has to engage), and the geometry is unaffected by allowing it.
-        guard let network = makeQuarterCylinderGordonNetwork() else {
-            Issue.record("quarter-cylinder network fixture failed to build")
-            return
-        }
+        let network = try #require(
+            makeQuarterCylinderGordonNetwork(), "quarter-cylinder network fixture failed to build")
         let result = Surface.gordonReport(
             profiles: network.profiles, guides: network.guides,
             tolerance: 1e-6, allowApproximateFallback: true)
         #expect(result.status == .done)
         #expect(result.isApproximate == false)
-        guard let surface = result.surface else {
-            Issue.record("gordonReport surface nil")
-            return
-        }
+        let surface = try #require(result.surface, "gordonReport surface nil")
         assertMatchesQuarterCylinder(surface)
     }
 
-    @Test func networkSurfaceBuildsTheQuarterCylinderNetwork() {
+    @Test func networkSurfaceBuildsTheQuarterCylinderNetwork() throws {
         // #689: `OCCTGeomFillNetworkSurface` used to fail EVERY network tried with
         // .knotAlignmentFailed, including the simplest possible bilinear patch (see
         // `networkSurfaceBuildsASimpleBilinearPatch` below), and not because the intersection
@@ -65,18 +63,13 @@ struct GeomFillGordonReportTests {
         // cylinder despite the intersection grid's weights all being 1.0, because
         // `makeCorrectedProfileSkin`'s rational branch combines the already-rational profile
         // and guide skins independently of that weight.
-        guard let network = makeQuarterCylinderGordonNetwork() else {
-            Issue.record("quarter-cylinder network fixture failed to build")
-            return
-        }
-        let (surface, status) = Surface.networkSurface(
+        let network = try #require(
+            makeQuarterCylinderGordonNetwork(), "quarter-cylinder network fixture failed to build")
+        let (built, status) = Surface.networkSurface(
             profiles: network.profiles, guides: network.guides,
             tolerance: 1e-6)
         #expect(status == .done)
-        guard let surface else {
-            Issue.record("networkSurface returned nil despite .done")
-            return
-        }
+        let surface = try #require(built, "networkSurface returned nil despite .done")
         assertMatchesQuarterCylinder(surface)
     }
 
@@ -92,19 +85,28 @@ struct GeomFillGordonReportTests {
         let g1 = try #require(Curve3D.interpolate(points: [SIMD3(0, 0, 0), SIMD3(0, 10, 0)]))
         let g2 = try #require(Curve3D.interpolate(points: [SIMD3(10, 0, 0), SIMD3(10, 10, 0)]))
 
-        let (surface, status) = Surface.networkSurface(
+        let (built, status) = Surface.networkSurface(
             profiles: [p1, p2], guides: [g1, g2], tolerance: 1e-6)
         #expect(status == .done)
-        guard let surface else {
-            Issue.record("networkSurface returned nil despite .done")
-            return
-        }
+        let surface = try #require(built, "networkSurface returned nil despite .done")
         let bounds = surface.parameterBounds
         let mid = surface.point(
             atU: (bounds.uMin + bounds.uMax) / 2, v: (bounds.vMin + bounds.vMax) / 2)
         #expect(abs(mid.x - 5) < 1e-9)
         #expect(abs(mid.y - 5) < 1e-9)
         #expect(abs(mid.z - 0) < 1e-9)
+        // The four corners and an off-centre point (measured, and the patch is bilinear): a
+        // transposed or mirrored grid agrees at the centre and fails at these.
+        func at(_ fu: Double, _ fv: Double) -> SIMD3<Double> {
+            surface.point(
+                atU: bounds.uMin + (bounds.uMax - bounds.uMin) * fu,
+                v: bounds.vMin + (bounds.vMax - bounds.vMin) * fv)
+        }
+        #expect(vectorLength(at(0, 0) - SIMD3(0, 0, 0)) < 1e-9)
+        #expect(vectorLength(at(1, 0) - SIMD3(10, 0, 0)) < 1e-9)
+        #expect(vectorLength(at(0, 1) - SIMD3(0, 10, 0)) < 1e-9)
+        #expect(vectorLength(at(1, 1) - SIMD3(10, 10, 0)) < 1e-9)
+        #expect(vectorLength(at(0.25, 0.75) - SIMD3(2.5, 7.5, 0)) < 1e-9)
     }
 
     @Test func networkSurfaceParallelCurvesDoNotCrash() throws {
@@ -145,19 +147,11 @@ struct GeomFillGordonReportTests {
     @Test func networkSurfaceReportsDoneForTheCookbookDomedNetwork() throws {
         // `docs/guides/cookbook/gordon-surfaces.md`'s "lower-level network builder" section
         // used to claim `networkSurface` "is enough" to build the same domed 2x2 network its
-        // own opening example builds with `gordon`/`gordonReport` -- a real review finding
-        // (neither this PR's stated verification fixtures nor its permanent tests exercised
-        // that exact curve set, so the claim was accurate by luck, not by anything checked).
-        //
-        // Checking it turned up more than an unverified claim: `networkSurface` does report
-        // `.done` for this network (and for the plain bilinear rectangle in
-        // `networkSurfaceBuildsASimpleBilinearPatch` above), but the resulting surface is
-        // wrong at two of its four corners -- confirmed by comparing against `gordon()` on the
-        // identical curves, which gets all four right. Filed as #748 rather than fixed here:
-        // it is a kernel-level GeomFill_NetworkSurface defect, not a bridge misuse, and out of
-        // scope for this PR's three named fixes. The cookbook section was reworded rather than
-        // demonstrating a build whose interior is subtly wrong; this test locks in only the
-        // narrower, actually-verified claim (`.done`, not full corner fidelity).
+        // own opening example builds with `gordon`/`gordonReport`, and checking it turned up
+        // a surface that was wrong at two of its four corners (filed as #748, since closed).
+        // Measured on this kernel: all four corners are now right, the centre is (5, 5, 5) and
+        // the profile and guide midpoints are the curves' own apex points, which is what
+        // `gordon` gives on the identical curves. #2983 pins those instead of `surface != nil`.
         let p1 = try #require(
             Curve3D.interpolate(points: [SIMD3(0, 0, 0), SIMD3(5, 0, 3), SIMD3(10, 0, 0)]))
         let p2 = try #require(
@@ -167,19 +161,34 @@ struct GeomFillGordonReportTests {
         let g2 = try #require(
             Curve3D.interpolate(points: [SIMD3(10, 0, 0), SIMD3(10, 5, 2), SIMD3(10, 10, 0)]))
 
-        let (surface, status) = Surface.networkSurface(
+        let (built, status) = Surface.networkSurface(
             profiles: [p1, p2], guides: [g1, g2], tolerance: 1e-3)
         #expect(status == .done)
-        #expect(surface != nil)
+        let surface = try #require(built, "networkSurface returned nil despite .done")
+        let b = surface.parameterBounds
+        func at(_ fu: Double, _ fv: Double) -> SIMD3<Double> {
+            surface.point(
+                atU: b.uMin + (b.uMax - b.uMin) * fu, v: b.vMin + (b.vMax - b.vMin) * fv)
+        }
+        #expect(vectorLength(at(0, 0) - SIMD3(0, 0, 0)) < 1e-9)
+        #expect(vectorLength(at(1, 0) - SIMD3(10, 0, 0)) < 1e-9)
+        #expect(vectorLength(at(0, 1) - SIMD3(0, 10, 0)) < 1e-9)
+        #expect(vectorLength(at(1, 1) - SIMD3(10, 10, 0)) < 1e-9)
+        #expect(vectorLength(at(0.5, 0.5) - SIMD3(5, 5, 5)) < 1e-9)
+        #expect(vectorLength(at(0.5, 0) - SIMD3(5, 0, 3)) < 1e-9)
+        #expect(vectorLength(at(0, 0.5) - SIMD3(0, 5, 2)) < 1e-9)
     }
 
-    @Test func networkSurfaceTooFewCurves() {
-        guard let p1 = Curve3D.interpolate(points: [SIMD3(0, 0, 0), SIMD3(10, 0, 0)]) else {
-            return
-        }
+    @Test func networkSurfaceTooFewCurves() throws {
+        let p1 = try #require(Curve3D.interpolate(points: [SIMD3(0, 0, 0), SIMD3(10, 0, 0)]))
+        let p2 = try #require(Curve3D.interpolate(points: [SIMD3(0, 10, 0), SIMD3(10, 10, 0)]))
         let (surface, status) = Surface.networkSurface(profiles: [p1], guides: [p1])
         #expect(surface == nil)
         #expect(status == .invalidInput)
+        // One family short is refused as well.
+        let (other, otherStatus) = Surface.networkSurface(profiles: [p1, p2], guides: [p1])
+        #expect(other == nil)
+        #expect(otherStatus == .invalidInput)
     }
 
     @Test func networkSurfaceRejectsOneDegeneratePairAmongOtherwiseGoodOnes() throws {
