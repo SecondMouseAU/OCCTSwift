@@ -35,7 +35,7 @@ Scripts/repro/3039-brep-lib-plane/run.sh --occt-src Libraries/occt-src
 3000 fresh processes per row, 16 threads: `asset` 129 failures, `control` 368, `warm` 0, `patched` 0.
 At 4 threads: 79, 749, 0, 0. See `transcript.txt` and the patch's entry in `Scripts/patches/README.md`.
 
-The Swift-level test is `Tests/OCCTThreadTests/Issue3039BRepLibPlaneFirstUseTests.swift`.
+The Swift-level test is `Tests/OCCTThreadTests/Concurrency/Issue3039BRepLibPlaneFirstUseTests.swift`.
 
 ## Not in the kernel's way
 

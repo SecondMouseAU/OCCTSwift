@@ -323,7 +323,7 @@ correctness (PR #2969). Three things about it are the general shape rather than 
 
 **One gate keeps a second implementation from coming back.** `check-no-simd.py` (#2759) fails on
 `import simd`, `canImport(simd)` and any `simd_`, `matrix_` or `vector_` identifier in the code of a
-Swift file under `Sources/`. Apple's `simd` exists on Apple platforms only, and the stand-in that
+Swift file under `Sources/` or `Tests/`. Apple's `simd` exists on Apple platforms only, and the stand-in that
 covered WebAssembly was a second implementation of the same functions that disagreed with Apple's
 on `simd_normalize` of a zero vector until it was aligned by hand (#2764). The package now owns its
 vector helpers (`Sources/OCCTSwift/SIMDVectorOps.swift`) and matrix types (`Matrix.swift`), so one
@@ -331,10 +331,13 @@ implementation runs everywhere, and the gate is what holds it. Three things abou
 general shape. **It reads code, not text**: comments and string literals are stripped first, since
 the migration notes legitimately name the old spellings, and the self-test holds that a mention in
 a comment, a block comment, a raw string and a multi-line string is not a finding while the same
-word in code is. **Its one exemption is a directory with a deadline**: the stand-in itself, kept
-only while test files still import it, and removed with the last of them. **An empty population is
-a refusal**: under 200 Swift files exits 2, since a run from the wrong directory reports clean
-exactly as loudly as a clean tree.
+word in code is. **It has no exemption**: it briefly exempted the stand-in
+directory while test files still imported it, and the PR that deleted the stand-in removed the
+exemption with it. **The test helpers are copies it holds together**: each test target carries a
+byte-identical `SIMDTestHelpers.swift` (there is no shared helper module), and the gate fails if one
+is edited alone. **An empty population is a refusal**: under 1,000 Swift files, or no helper copies
+at all, exits 2, since a run from the wrong directory reports clean exactly as loudly as a clean
+tree.
 
 **One gate holds the Swift layer to a lifetime rule the compiler does not state.**
 `check-borrowed-handle-temporaries.py` (#3130) fails on a `.handle` read straight off a subscript

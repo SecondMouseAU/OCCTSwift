@@ -1,0 +1,13 @@
+# current_path	proposed_path	area	pending_prs	reason
+Tests/OCCTMeshTests/OCCTMeshTests.swift	Tests/OCCTMeshTests/Core/OCCTMeshTests.swift	Core	-	Mesh class, presentation meshes, BRepMesh, Poly_* and mesh cache and view storage
+Tests/OCCTMeshTests/Issue2301MeshBooleanContractTests.swift	Tests/OCCTMeshTests/Core/Issue2301MeshBooleanContractTests.swift	Core	-	Mesh Boolean union, subtract, intersect on shells and the documented solid route
+Tests/OCCTMeshTests/Issue197MeshDeflectionTests.swift	Tests/OCCTMeshTests/Meshing/Issue197MeshDeflectionTests.swift	Meshing	-	deflection as a caller-tunable parameter of STL export and coherent triangulation
+Tests/OCCTMeshTests/Issue211MeshParamTests.swift	Tests/OCCTMeshTests/Meshing/Issue211MeshParamTests.swift	Meshing	-	allowQualityDecrease mesh parameter
+Tests/OCCTMeshTests/Issue2337MeshNodeNormalsTests.swift	Tests/OCCTMeshTests/Meshing/Issue2337MeshNodeNormalsTests.swift	Meshing	-	meshed node normals measured on sphere, box and mirrored locations
+Tests/OCCTMeshTests/Issue2879MeshDeflectionGuardTests.swift	Tests/OCCTMeshTests/Meshing/Issue2879MeshDeflectionGuardTests.swift	Meshing	-	NaN, zero and negative deflection refused by every mesh entry point
+Tests/OCCTMeshTests/Issue2900MeshAngleGuardTests.swift	Tests/OCCTMeshTests/Meshing/Issue2900MeshAngleGuardTests.swift	Meshing	-	NaN, zero, negative and sub-floor angle refused by every mesh entry point
+Tests/OCCTMeshTests/Issue375MeshWindingTests.swift	Tests/OCCTMeshTests/Meshing/Issue375MeshWindingTests.swift	Meshing	-	mirrored valid solid still meshes with outward winding
+Tests/OCCTMeshTests/Issue613MeshIndexContractTests.swift	Tests/OCCTMeshTests/Meshing/Issue613MeshIndexContractTests.swift	Meshing	-	triangle face indices address faces() and winding survives a shared wall
+Tests/OCCTMeshTests/Issue1440Polygon3DParameterGuardTests.swift	Tests/OCCTMeshTests/Poly/Issue1440Polygon3DParameterGuardTests.swift	Poly	-	Poly_Polygon3D parameter(at:) null-handle guard
+Tests/OCCTMeshTests/Issue1566MergeNodesOverflowGuardTests.swift	Tests/OCCTMeshTests/Poly/Issue1566MergeNodesOverflowGuardTests.swift	Poly	-	Poly_MergeNodesTool buffer overflow refusal
+Tests/OCCTMeshTests/SIMDTestHelpers.swift	Tests/OCCTMeshTests/SIMDTestHelpers.swift	(stays)	-	shared helper with no tests; stays at the target root so every area sees it

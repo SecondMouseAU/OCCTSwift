@@ -15,7 +15,6 @@
 
 import Foundation
 import OCCTSwift
-import simd
 
 enum Issue761 {
     // MARK: - Fixtures private to this census

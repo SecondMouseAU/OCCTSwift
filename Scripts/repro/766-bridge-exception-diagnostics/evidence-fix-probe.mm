@@ -1,4 +1,4 @@
-// #766 / #1989 evidence correction for Tests/OCCTMiscTests/BridgeExceptionDiagnosticsTests.swift:
+// #766 / #1989 evidence correction for Tests/OCCTMiscTests/Bridge/BridgeExceptionDiagnosticsTests.swift:
 // the kernel side of the like-for-like records, one `<record>|<key>|<json>` line per key, the same
 // format as the Swift-side print in bridge-observed.txt (a temporary test, deleted, never
 // committed). The earlier probe.mm in this directory printed prose and named different quantities

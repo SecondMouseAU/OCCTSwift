@@ -159,3 +159,26 @@ prints that model's faces and edge 13; `boxprobe.cxx` is the box sweep.
 Upstream already hardened this function once: OCCT#1407 ("Prevent crashes in
 `ChFi3d_Builder::StartSol`", merged 2026-07-29) is where `prepareDefaultReturn` came from. This is a
 remaining hole in the same function.
+
+## A GTest for upstream: 2026-10-11 (#3072)
+
+`gtest/` holds a GTest for patch 0054, written against `upstream/IR` (the fillet code in
+`ChFi3d_Builder_2.cxx` is identical to the pinned V8_0_1 there, so nothing needed porting).
+
+- `window.brep` is a 3.5 x 3.5 x 2.7 window cut out of `model.brep` around the vertex where the
+  blend meets a round (`BRepAlgoAPI_Common` with a box, x 52.5..56, y 85.5..89, z 17.5..20.2),
+  written with 12 significant digits (15 KB; 10 digits already moves it off the coincidence).
+  `BRepFilletAPI_MakeFillet` with the `blend` parameters on its straight rim edge at y = 88.097,
+  radius 1.5, reaches the obstacle branch and dies with SIGSEGV on unpatched IR.
+- `BRepFilletAPI_MakeFillet_Obstacle_Test.cxx` embeds that BREP, so it is an embedded input and
+  not a built one. No programmatic input was found: a plate with a pocket, rounded pocket
+  edges and a rim blend, a pocket whose wall has a vertical strip so the fillet chain splits
+  into a cylinder and a B-spline round, and a stepped wall with coplanar faces, all built in
+  code, never reached the branch or crashed in a different place that patch 0054 does not fix.
+  What the branch needs is the blend boundary landing exactly on a vertex where two tangent rounds
+  meet, and the engine's own output does not land there at a chosen radius.
+- Measured: unpatched 5 of 5 runs SIGSEGV (exit 139), with the three-line change 5 of 5 pass.
+  Full GTest suite (Foundation, Modeling Data, Modeling Algorithms, Release): before 8352 passed,
+  7 skipped; after 8353 passed, 7 skipped (the new test is the one more).
+- `0001-fillet-gtest-for-OCCT1568.patch` is the commit (the fix and the test) on top of
+  `upstream/IR` 23d68aeb9.
