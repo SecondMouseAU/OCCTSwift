@@ -1,6 +1,5 @@
 import OCCTBridge
 import OCCTPlatform
-import simd
 
 /// VRML representation mode for export.
 public enum VrmlRepresentation: Int32, Sendable {

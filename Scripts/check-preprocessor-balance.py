@@ -61,10 +61,10 @@ WHAT IT CANNOT SEE, and the answer to it. A patch can be delta-balanced and stil
 broken, because balance is a whole-file property and the hunks show slivers. `--tree` is the deeper
 mode: given a real checkout (`Libraries/occt-src` by default) it parses each file the patches target
 end to end and reports `#else` after `#else`, `#endif` with no open conditional, and a conditional
-left open at end of file. That mode is for a developer and for the wasm build job. It is NOT part of
+left open at end of file. That mode is for a developer; wasm.yml has no tree to run it on (#2272). It is NOT part of
 `gate-scripts`, which has no checkout, and per #2098 a mode that examined nothing must fail rather
-than pass: `--require-tree` turns a missing tree from a printed note into an error, and CI's wasm
-job passes it.
+than pass: `--require-tree` turns a missing tree from a printed note into an error, and a by-hand
+run should pass it.
 
 Usage:
   Scripts/check-preprocessor-balance.py                    # the gate: patch text only

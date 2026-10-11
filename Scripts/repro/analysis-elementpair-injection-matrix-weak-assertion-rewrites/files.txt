@@ -1,0 +1,7 @@
+# The test files this PR lifts (current paths).
+Tests/OCCTAnalysisTests/BRepExtrema/SelfIntersectionPairTests.swift
+Tests/OCCTAnalysisTests/BRepExtrema/ShapeDistanceOverloadTests.swift
+Tests/OCCTAnalysisTests/ElementPairExtrema/BRepExtremaExtCCTests.swift
+Tests/OCCTAnalysisTests/ElementPairExtrema/BRepExtremaExtCFTests.swift
+Tests/OCCTAnalysisTests/ElementPairExtrema/BRepExtremaExtPCTests.swift
+Tests/OCCTAnalysisTests/ElementPairExtrema/BRepExtremaExtPFTests.swift

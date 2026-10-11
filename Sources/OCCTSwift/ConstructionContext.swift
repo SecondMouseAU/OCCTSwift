@@ -1,5 +1,4 @@
 import OCCTPlatform
-import simd
 
 // MARK: - ConstructionContext (#72 Phase 3)
 //

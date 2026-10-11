@@ -1,6 +1,5 @@
 import OCCTBridge
 import OCCTPlatform
-import simd
 
 /// A node in the medial axis graph.
 ///

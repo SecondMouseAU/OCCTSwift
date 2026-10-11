@@ -1,6 +1,5 @@
 import OCCTBridge
 import OCCTPlatform
-import simd
 
 /// Multi-result projection of a point onto a 3D curve.
 ///

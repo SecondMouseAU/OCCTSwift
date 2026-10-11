@@ -1,6 +1,5 @@
 import OCCTBridge
 import OCCTPlatform
-import simd
 
 /// Describes an evolving radius along an edge for filleting.
 ///

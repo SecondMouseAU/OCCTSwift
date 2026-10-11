@@ -1,6 +1,5 @@
 import OCCTBridge
 import OCCTPlatform
-import simd
 
 /// A 2D polygon (sequence of 2D points).
 public final class Polygon2D: @unchecked Sendable {

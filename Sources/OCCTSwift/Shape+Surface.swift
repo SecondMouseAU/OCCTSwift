@@ -120,6 +120,7 @@ extension Shape {
         guard !boundaries.isEmpty else { return nil }
 
         var handles = boundaries.map { $0.handle as OCCTWireRef? }
+        defer { withExtendedLifetime(boundaries) {} }
 
         guard
             let result = handles.withUnsafeMutableBufferPointer({ buffer in
@@ -172,6 +173,7 @@ extension Shape {
         guard !boundaries.isEmpty else { return nil }
 
         var handles = boundaries.map { $0.handle as OCCTWireRef? }
+        defer { withExtendedLifetime(boundaries) {} }
 
         guard
             let result = handles.withUnsafeMutableBufferPointer({ buffer in
@@ -322,6 +324,7 @@ extension Shape {
         guard !curves.isEmpty else { return nil }
 
         var handles = curves.map { $0.handle as OCCTWireRef? }
+        defer { withExtendedLifetime(curves) {} }
 
         guard
             let result = handles.withUnsafeMutableBufferPointer({ buffer in
@@ -472,6 +475,7 @@ extension Shape {
         }
 
         var wireHandles = curves.map { $0.wire.handle as OCCTWireRef? }
+        defer { withExtendedLifetime(curves) {} }
         var curveOrders = curves.map { Int32($0.order.rawValue) }
 
         let result: OCCTShapeRef? = flatPoints.withUnsafeMutableBufferPointer { ptBuf in

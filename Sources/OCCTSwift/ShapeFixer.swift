@@ -1,6 +1,5 @@
 import OCCTBridge
 import OCCTPlatform
-import simd
 
 /// Configurable shape repair using ShapeFix_Shape.
 public final class ShapeFixer: @unchecked Sendable {

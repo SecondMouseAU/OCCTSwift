@@ -1,6 +1,5 @@
 import OCCTBridge
 import OCCTPlatform
-import simd
 
 /// Wire analysis utilities using ShapeAnalysis_Wire (v0.106.0).
 ///

@@ -25,7 +25,6 @@
 import Foundation
 import OCCTSwift
 import Testing
-import simd
 
 // MARK: - Shape Fixtures
 

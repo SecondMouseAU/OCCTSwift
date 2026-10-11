@@ -1,0 +1,29 @@
+{
+ "label": "before",
+ "targets": {
+  "OCCTCurveTests": {
+   "summary": {"changed": ["ApproxCurvilinearParameterTests.curvilinearCircle", "CurveApproximationTests.approxInfo", "CurveApproximationTests.approximateCircle", "CurveApproximationTests.approximateLine", "GCPntsExpansionTests.edgeArcLength", "GCPntsExpansionTests.edgeArcLengthBetween", "GCPntsExpansionTests.edgeParameterAtArcLength", "GCPntsExpansionTests.edgeParameterAtFraction", "GCPntsTangentialDeflectionTests.tangentialDeflectionEdge", "GCPntsTangentialDeflectionTests.tighterDeflection", "GeomConvertApproxCurveTests.approxCircle", "GeomConvertApproxCurveTests.approxLine", "GeomConvertUtilTests.curveSplitAndJoin"], "crashes": ["OCCTEdgeAdaptorDomain_last_NEG", "OCCTShapeCreateBox_RET_NIL", "OCCTShapeCreateCylinder_RET_NIL", "OCCTShapeCreateSphere_RET_NIL"], "live_switches": 10, "switches": 430, "tests": ["GeomConvertApproxCurveTests.approxCircle", "GeomConvertApproxCurveTests.approxLine", "GeomConvertUtilTests.curveSplitAndJoin", "ApproxCurvilinearParameterTests.curvilinearCircle", "CurveApproximationTests.approximateCircle", "CurveApproximationTests.approxInfo", "CurveApproximationTests.approximateLine", "GCPntsExpansionTests.edgeArcLength", "GCPntsExpansionTests.edgeArcLengthBetween", "GCPntsExpansionTests.edgeParameterAtFraction", "GCPntsExpansionTests.edgeParameterAtArcLength", "GCPntsExpansionTests.edgeParameterAtArcLengthRefusesANonFiniteDistance", "GCPntsTangentialDeflectionTests.tangentialDeflectionEdge", "GCPntsTangentialDeflectionTests.tighterDeflection"], "unreddened": ["ApproxCurvilinearParameterTests.curvilinearCircle", "GCPntsTangentialDeflectionTests.tighterDeflection", "GeomConvertApproxCurveTests.approxLine", "GeomConvertUtilTests.curveSplitAndJoin"]},
+   "rows_that_did_something": {
+    "OCCTBRepLibMakeEdgeFromPoints_RET_NIL": {"crash": false, "exit": 1, "ran": 14, "red": ["GCPntsExpansionTests.edgeParameterAtArcLengthRefusesANonFiniteDistance"]},
+    "OCCTEdgeAdaptorDomain_last_NEG": {"crash": true, "exit": -5, "ran": 9, "red": []},
+    "OCCTEdgeApproxCurveInfo_RET_FLIP": {"crash": false, "exit": 1, "ran": 14, "red": ["CurveApproximationTests.approxInfo"]},
+    "OCCTEdgeApproxCurve_RET_NIL": {"crash": false, "exit": 1, "ran": 14, "red": ["CurveApproximationTests.approximateCircle", "CurveApproximationTests.approximateLine"]},
+    "OCCTEdgeArcLengthBetween_RET_NEG": {"crash": false, "exit": 1, "ran": 14, "red": ["GCPntsExpansionTests.edgeArcLengthBetween"]},
+    "OCCTEdgeArcLength_RET_NEG": {"crash": false, "exit": 1, "ran": 14, "red": ["GCPntsExpansionTests.edgeArcLength", "GCPntsExpansionTests.edgeParameterAtArcLength"]},
+    "OCCTEdgeIsCircle_RET_FLIP": {"crash": false, "exit": 1, "ran": 14, "red": ["CurveApproximationTests.approxInfo"]},
+    "OCCTEdgeParameterAtArcLength_IN1_PLUS": {"crash": false, "exit": 1, "ran": 14, "red": ["GCPntsExpansionTests.edgeParameterAtArcLengthRefusesANonFiniteDistance"]},
+    "OCCTEdgeParameterAtArcLength_IN2_PLUS": {"crash": false, "exit": 1, "ran": 14, "red": ["GCPntsExpansionTests.edgeParameterAtArcLengthRefusesANonFiniteDistance"]},
+    "OCCTEdgeParameterAtArcLength_RET_NEG": {"crash": false, "exit": 1, "ran": 14, "red": ["GCPntsExpansionTests.edgeParameterAtArcLength", "GCPntsExpansionTests.edgeParameterAtArcLengthRefusesANonFiniteDistance"]},
+    "OCCTEdgeParameterAtArcLength_RET_PLUS": {"crash": false, "exit": 1, "ran": 14, "red": ["GCPntsExpansionTests.edgeParameterAtArcLengthRefusesANonFiniteDistance"]},
+    "OCCTEdgeParameterAtFraction_RET_NEG": {"crash": false, "exit": 1, "ran": 14, "red": ["GCPntsExpansionTests.edgeParameterAtFraction"]},
+    "OCCTEdgeParameterAtFraction_RET_PLUS": {"crash": false, "exit": 1, "ran": 14, "red": ["GCPntsExpansionTests.edgeParameterAtArcLengthRefusesANonFiniteDistance"]},
+    "OCCTGCPntsTangentialDeflection_RET_MINUS1": {"crash": false, "exit": 1, "ran": 14, "red": ["GCPntsTangentialDeflectionTests.tangentialDeflectionEdge"]},
+    "OCCTGCPntsTangentialDeflection_RET_ZERO": {"crash": false, "exit": 1, "ran": 14, "red": ["GCPntsTangentialDeflectionTests.tangentialDeflectionEdge"]},
+    "OCCTGeomConvertApproxCurve_RET_maxError_PLUS": {"crash": false, "exit": 1, "ran": 14, "red": ["GeomConvertApproxCurveTests.approxCircle"]},
+    "OCCTShapeCreateBox_RET_NIL": {"crash": true, "exit": -5, "ran": 13, "red": []},
+    "OCCTShapeCreateCylinder_RET_NIL": {"crash": true, "exit": -5, "ran": 11, "red": []},
+    "OCCTShapeCreateSphere_RET_NIL": {"crash": true, "exit": -5, "ran": 12, "red": []}
+   }
+  }
+ }
+}

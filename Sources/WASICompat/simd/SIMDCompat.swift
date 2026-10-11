@@ -1,9 +1,9 @@
 // swift-format-ignore-file: AlwaysUseLowerCamelCase, TypeNamesShouldBeCapitalized
 //
 // TWO RULES ARE DISABLED FOR THIS FILE AND ONLY TWO. Every public name here has to be spelled
-// exactly as Apple's `simd` module spells it, because the point of the module is that 196 files in
-// `Sources/OCCTSwift` and 1,179 under `Tests/` write `import simd` and compile unchanged on both
-// platforms. `simd_float4x4` cannot become `SimdFloat4x4` and `simd_dot` cannot become `simdDot`
+// exactly as Apple's `simd` module spells it, because the point of the module is that the 26 files in
+// `Sources/OCCTSwift` and the 271 under `Tests/` that still write `import simd` (after #2759
+// removed the rest) compile unchanged on both platforms. `simd_float4x4` cannot become `SimdFloat4x4` and `simd_dot` cannot become `simdDot`
 // without defeating that, so `TypeNamesShouldBeCapitalized` and `AlwaysUseLowerCamelCase` are
 // suppressed here by name rather than the whole file being exempted: everything else swift-format
 // checks, including the spacing, the doc comments and the one-variable-per-line rule, still applies.
@@ -15,21 +15,25 @@
 //
 // A `simd` module for `wasm32-unknown-wasip1`, where Apple's is not available.
 //
-// WHY THIS IS A MODULE AND NOT A SET OF EDITS. 196 of the 230 files in `Sources/OCCTSwift` open
-// with `import simd`, which on this target is `error: no such module 'simd'` and stops the whole
-// Swift layer. The alternative is 196 `#if canImport(simd)` edits, which is a large mechanical
-// diff through every file in the package for a decision spike, and which would still have to be
-// followed by definitions of the free functions below. One target named `simd`, added to
-// `OCCTSwift`'s dependencies only when `isWASI` (see `Package.swift`), leaves every one of those
-// files untouched and unchanged on Apple platforms, where `import simd` still resolves to Apple's
-// own.
+// WHY THIS IS A MODULE AND NOT A SET OF EDITS. 196 of the 230 files in `Sources/OCCTSwift` opened
+// with `import simd` when this was written, which on this target is `error: no such module
+// 'simd'` and stops the whole Swift layer. #2759 removed the imports no file needed, measured by
+// building Apple and wasm with each one gone, and 26 remain: files that call a `simd_*` function,
+// build a `simd_*` matrix, or use the unqualified SIMD `min`/`max`. The alternative to this module
+// is `#if canImport(simd)` around those imports, which would still have to be followed by
+// definitions of the free functions below. One target named `simd`, added to `OCCTSwift`'s
+// dependencies only when `isWASI` (see `Package.swift`), leaves every remaining file unchanged on
+// Apple platforms, where `import simd` still resolves to Apple's own.
 //
 // WHAT IS HERE IS WHAT `Sources/OCCTSwift` USES, and nothing else. Measured, not guessed:
 //
 //     grep -rho "simd_[a-zA-Z_0-9]*" Sources/OCCTSwift/ | sort | uniq -c
 //
-// gives `simd_normalize` 62, `simd_length` 32, `simd_dot` 28, `simd_cross` 16, `simd_float4x4` 8,
-// `simd_length_squared` 5, `simd_distance` 4, `simd_double3x3` 3, `simd_min` 1, `simd_max` 1.
+// gave `simd_normalize` 62, `simd_length` 32, `simd_dot` 28, `simd_cross` 16, `simd_float4x4` 8,
+// `simd_length_squared` 5, `simd_distance` 4, `simd_double3x3` 3, `simd_min` 1, `simd_max` 1 when
+// the stand-in was written. After #2759, counting code and not comments: `simd_normalize` 57,
+// `simd_length` 30, `simd_dot` 29, `simd_cross` 15, `simd_length_squared` 6, `simd_distance` 4,
+// `simd_float4x4` 6, `simd_double3x3` 5, `simd_min` 1, `simd_max` 1.
 // `SIMD2`/`SIMD3`/`SIMD4` themselves are Swift standard library types on every platform and are
 // NOT redefined here. Nothing in `Sources/OCCTSwift` reads a matrix back apart, measured: no
 // `.columns` access, no matrix arithmetic, no `matrix_*` or `vector_*` name anywhere. The two

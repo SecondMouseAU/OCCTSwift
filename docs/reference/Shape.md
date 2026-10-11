@@ -948,7 +948,9 @@ public func filleted(radius: Double) -> Shape?
 ```
 
 - **Parameters:** `radius`, fillet radius.
-- **Returns:** Shape with all edges rounded, or `nil` on failure.
+- **Returns:** Shape with all edges rounded, or `nil` on failure, including a result
+  `BRepCheck_Analyzer` reports invalid, such as a radius above half the width of a face (#3200).
+  See [`filleted(edges:radius:)`](Shape-Features.md#filletededgesradius) for the contract.
 - **OCCT:** `BRepFilletAPI_MakeFillet`.
 - **Example:**
   ```swift
@@ -966,7 +968,8 @@ public func chamfered(distance: Double) -> Shape?
 ```
 
 - **Parameters:** `distance`, chamfer distance (equal on both sides).
-- **Returns:** Shape with all edges chamfered, or `nil` on failure.
+- **Returns:** Shape with all edges chamfered, or `nil` on failure, including a result
+  `BRepCheck_Analyzer` reports invalid (#3200).
 - **OCCT:** `BRepFilletAPI_MakeChamfer`.
 - **Example:**
   ```swift

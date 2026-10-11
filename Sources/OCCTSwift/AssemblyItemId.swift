@@ -1,6 +1,5 @@
 import OCCTBridge
 import OCCTPlatform
-import simd
 
 /// Value-type wrapper for XCAFDoc_AssemblyItemId (represented as a string path).
 public struct AssemblyItemId: Sendable {

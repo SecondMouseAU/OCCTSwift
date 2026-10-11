@@ -256,13 +256,12 @@ struct StressDegenerateOperationTests {
         #expect(box.filleted(radius: 5.0) == nil)
     }
 
-    @Test func filletRadiusExceedsEdge() throws {
+    @Test func filletRadiusExceedsEdge() {
         let box = standardBox()
-        // OCCT does return a shape for this oversized radius, and it is not a valid solid:
-        // BRepCheck_Analyzer rejects it and it encloses no volume.
-        let r = try #require(box.filleted(radius: 6.0))
-        #expect(!r.isValid)
-        #expect(r.volume == nil)
+        // OCCT reports this oversized radius done, and the shape is not a valid solid:
+        // BRepCheck_Analyzer rejects it and it encloses no volume. Until #3200 the invalid shape
+        // was handed back; every fillet entry point now answers nil for it.
+        #expect(box.filleted(radius: 6.0) == nil)
     }
 
     /// #2830: a magnitude boundary needs an input the algorithm accepts.

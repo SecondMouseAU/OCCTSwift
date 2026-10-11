@@ -3,7 +3,6 @@
 // No @Suite or test functions here: only a shared assertion helper.
 
 import Testing
-import simd
 
 @testable import OCCTSwift
 

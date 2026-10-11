@@ -1,6 +1,5 @@
 import OCCTBridge
 import OCCTPlatform
-import simd
 
 /// Wrapper for XCAFNoteObjects_NoteObject — note annotation data.
 public final class NoteObject: @unchecked Sendable {

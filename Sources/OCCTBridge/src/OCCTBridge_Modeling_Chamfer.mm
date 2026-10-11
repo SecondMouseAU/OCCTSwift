@@ -1011,6 +1011,8 @@ OCCTShapeRef OCCTChamferBuilderBuild(OCCTChamferBuilderRef builder)
     builder->chamfer.Build();
     if (!builder->chamfer.IsDone())
       return nullptr;
+    if (!occtBlendResultIsValid(builder->chamfer.Shape())) // #3200
+      return nullptr;
     return new OCCTShape(builder->chamfer.Shape());
   }
   catch (...)

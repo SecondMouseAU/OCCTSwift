@@ -3,7 +3,6 @@
 // No suites or test declarations here: only a shared, non-suite-specific helper.
 
 import Foundation
-import simd
 
 /// See Test Layout in CLAUDE.md: "the only shared helper is `SIMD3.normalized`
 /// (redefine it in the target if needed)". Not owned by any single suite in this

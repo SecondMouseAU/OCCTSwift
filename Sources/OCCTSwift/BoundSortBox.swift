@@ -1,6 +1,5 @@
 import OCCTBridge
 import OCCTPlatform
-import simd
 
 /// Spatial bounding box sort for fast intersection queries.
 public final class BoundSortBox: @unchecked Sendable {

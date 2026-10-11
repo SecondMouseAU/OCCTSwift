@@ -1,6 +1,5 @@
 import OCCTBridge
 import OCCTPlatform
-import simd
 
 /// A 3D solid shape backed by OpenCASCADE B-Rep geometry.
 ///
@@ -636,11 +635,18 @@ public final class Shape: @unchecked Sendable {
 
     /// Loft through multiple profile wires.
     public static func loft(profiles: [Wire], solid: Bool = true) -> Shape? {
+        // The pointers are borrowed from `profiles`, which an inlined caller may have no further use
+        // for once `map` has run, so hold the array across the C call (#3261, see `NativeHandleOwner`).
         let handles: [OCCTWireRef?] = profiles.map { $0.handle }
+        defer { withExtendedLifetime(profiles) {} }
         guard
-            let handle = handles.withUnsafeBufferPointer({ buffer in
-                OCCTShapeCreateLoft(buffer.baseAddress, Int32(profiles.count), solid)
-            })
+            let handle = withExtendedLifetime(
+                profiles,
+                {
+                    handles.withUnsafeBufferPointer({ buffer in
+                        OCCTShapeCreateLoft(buffer.baseAddress, Int32(profiles.count), solid)
+                    })
+                })
         else { return nil }
         return Shape(handle: handle)
     }
@@ -675,17 +681,23 @@ public final class Shape: @unchecked Sendable {
         firstVertex: SIMD3<Double>? = nil,
         lastVertex: SIMD3<Double>? = nil
     ) -> Shape? {
+        // Same as the overload above: hold `profiles` across the C call (#3261, see `NativeHandleOwner`).
         let handles: [OCCTWireRef?] = profiles.map { $0.handle }
+        defer { withExtendedLifetime(profiles) {} }
         let fv = firstVertex ?? SIMD3<Double>(Double.nan, Double.nan, Double.nan)
         let lv = lastVertex ?? SIMD3<Double>(Double.nan, Double.nan, Double.nan)
         guard
-            let handle = handles.withUnsafeBufferPointer({ buffer in
-                OCCTShapeCreateLoftAdvanced(
-                    buffer.baseAddress, Int32(profiles.count),
-                    solid, ruled,
-                    fv.x, fv.y, fv.z,
-                    lv.x, lv.y, lv.z)
-            })
+            let handle = withExtendedLifetime(
+                profiles,
+                {
+                    handles.withUnsafeBufferPointer({ buffer in
+                        OCCTShapeCreateLoftAdvanced(
+                            buffer.baseAddress, Int32(profiles.count),
+                            solid, ruled,
+                            fv.x, fv.y, fv.z,
+                            lv.x, lv.y, lv.z)
+                    })
+                })
         else { return nil }
         return Shape(handle: handle)
     }
@@ -923,12 +935,32 @@ public final class Shape: @unchecked Sendable {
     // MARK: - Modifications
 
     /// Fillet (round) all edges with given radius.
+    ///
+    /// Answers nil when the builder is not done or when its result is `BRepCheck`-invalid, which is
+    /// what a radius above half the width of any face gives (#3200). See
+    /// ``filleted(edges:radius:)`` for the contract and the threshold.
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// let rounded = box.filleted(radius: 1)      // valid, every edge rounded
+    /// let overlapped = box.filleted(radius: 6)   // fillets overlap: nil, never an invalid solid
+    /// precondition(rounded?.isValid == true && overlapped == nil)
+    /// ```
     public func filleted(radius: Double) -> Shape? {
         guard let handle = OCCTShapeFillet(self.handle, radius) else { return nil }
         return Shape(handle: handle)
     }
 
     /// Chamfer all edges with given distance.
+    ///
+    /// Answers nil when the builder is not done or when its result is `BRepCheck`-invalid (#3200),
+    /// as ``filleted(radius:)`` does for fillets.
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// let bevelled = box.chamfered(distance: 1)
+    /// precondition(bevelled?.isValid == true)
+    /// ```
     public func chamfered(distance: Double) -> Shape? {
         guard let handle = OCCTShapeChamfer(self.handle, distance) else { return nil }
         return Shape(handle: handle)
@@ -941,7 +973,7 @@ public final class Shape: @unchecked Sendable {
     /// `dist2` on the opposite side.
     ///
     /// - Parameter edges: Array of (edgeIndex, faceIndex, dist1, dist2) tuples
-    /// - Returns: Chamfered shape, or nil on failure
+    /// - Returns: Chamfered shape, or nil on failure, including a result `BRepCheck` reports invalid (#3200)
     public func chamferedTwoDistances(
         _ edges: [(edgeIndex: Int, faceIndex: Int, dist1: Double, dist2: Double)]
     ) -> Shape? {
@@ -961,7 +993,7 @@ public final class Shape: @unchecked Sendable {
     /// (must be between 0 and 90, exclusive).
     ///
     /// - Parameter edges: Array of (edgeIndex, faceIndex, distance, angleDegrees) tuples
-    /// - Returns: Chamfered shape, or nil on failure
+    /// - Returns: Chamfered shape, or nil on failure, including a result `BRepCheck` reports invalid (#3200)
     public func chamferedDistAngle(
         _ edges: [(edgeIndex: Int, faceIndex: Int, distance: Double, angleDegrees: Double)]
     ) -> Shape? {
@@ -1100,6 +1132,7 @@ public final class Shape: @unchecked Sendable {
     /// Combine multiple shapes into a compound (no boolean, just grouping).
     public static func compound(_ shapes: [Shape]) -> Shape? {
         let handles: [OCCTShapeRef?] = shapes.map { $0.handle }
+        defer { withExtendedLifetime(shapes) {} }
         guard
             let handle = handles.withUnsafeBufferPointer({ buffer in
                 OCCTShapeCreateCompound(buffer.baseAddress, Int32(shapes.count))
@@ -2086,6 +2119,7 @@ public final class Shape: @unchecked Sendable {
     /// ```
     public static func face(outer: Wire, holes: [Wire]) -> Shape? {
         var holeHandles = holes.map { $0.handle as OCCTWireRef? }
+        defer { withExtendedLifetime(holes) {} }
         guard
             let handle = holeHandles.withUnsafeMutableBufferPointer({ buffer in
                 OCCTShapeCreateFaceWithHoles(outer.handle, buffer.baseAddress, Int32(holes.count))
@@ -2161,6 +2195,7 @@ public final class Shape: @unchecked Sendable {
         guard !shapes.isEmpty else { return nil }
 
         var shapeHandles = shapes.map { $0.handle as OCCTShapeRef? }
+        defer { withExtendedLifetime(shapes) {} }
         guard
             let handle = shapeHandles.withUnsafeMutableBufferPointer({ buffer in
                 OCCTShapeSew(buffer.baseAddress, Int32(shapes.count), tolerance)
@@ -2705,76 +2740,97 @@ public final class Shape: @unchecked Sendable {
         }
     }
 
-    // NOT AVAILABLE ON WASI, and not because Dispatch happens to be missing (#2175).
+    // Same name on every platform, two mechanisms (#2175, #2760).
     //
-    // This entry point's whole contract is a HARD wall-clock deadline: a second thread runs the
-    // check while this one waits on a semaphore, so the caller gets an answer at `hardTimeout`
-    // whether or not OCCT has reached a checkpoint. `wasm32-unknown-wasip1` in the non-threads
-    // configuration this package targets has one thread and one linear memory. There is no
-    // second thread to run the check on, so no implementation of this signature can honour it:
-    // a wasm version would have to become the cooperative `isSelfIntersecting(timeout:)` that
-    // already exists beside it, under a name that promises something stronger.
-    //
-    // So it is removed rather than weakened. A caller who needs a bound on wasm calls
-    // ``isSelfIntersecting(timeout:)``, whose bound is cooperative and says so. Whether the wasm
-    // surface should instead carry this name with the cooperative behaviour is an API decision
-    // for Phase 2 and is filed as its own issue, not settled here by a `#if`.
-    #if !os(WASI)
-        /// Whether this shape self-intersects, with a **true hard wall-clock deadline** (#319),
-        /// unlike ``isSelfIntersecting(timeout:)``, this returns at `hardTimeout` even if OCCT never
-        /// reaches a checkpoint to poll.
-        ///
-        /// Runs the check on a detached background thread against a geometry-independent copy of
-        /// this shape and waits on the calling thread with a real deadline. If the deadline passes
-        /// first, this returns `nil` immediately and the background computation is **abandoned, not
-        /// cancelled**, it keeps running orphaned on its own thread until it eventually completes.
-        /// That is a deliberate trade (burned CPU for a caller-side wall-clock guarantee), the same
-        /// one the #286 mesher-hang caller accepted.
-        ///
-        /// - Note: The probe is built via `Shape.deepCopy(_:copyGeometry:copyMesh:)`
-        ///   (`BRepTools_CopyModification`), not the no-argument instance `deepCopy()`
-        ///   (`TNaming_CopyShape::CopyTool`), which only clones topology and would leave the probe
-        ///   sharing `Geom_Surface`/`Geom_Curve` handles, and their mutable evaluation caches, with
-        ///   `self` (#1160, following up on #831). The orphaned background computation on `probe`
-        ///   and the caller continuing to use `self` after a timeout are independent `Geom_Surface`/
-        ///   `Geom_Curve` objects, not just independent `TopoDS_Shape`s, so they no longer race on
-        ///   `docs/thread-safety.md` item 1's shared adaptor caches. `copyMesh` stays `false`, the
-        ///   triangulation plays no part in `BOPAlgo_CheckerSI`'s self-interference analysis. If
-        ///   `deepCopy` itself fails (rare on a valid shape; `BRepTools_Modifier` throws a catchable
-        ///   `Standard_Failure` for, e.g., a nullified shape, and `deepCopy` returns `nil` for that
-        ///   or any other construction failure), this returns `nil` rather than silently falling back
-        ///   to a `self`-based check, which would reintroduce the exact shared-cache race this method
-        ///   exists to avoid (#1549).
-        ///
-        /// - Important: `BOPAlgo_ArgumentAnalyzer`'s safety when run on a background thread
-        ///   concurrently with unrelated OCCT calls on other threads was verified with a
-        ///   ThreadSanitizer stress test (60 bursts × 8 threads, half running self-intersection
-        ///   checks on independent self-intersecting shapes, half running unrelated fuse+mesh work,
-        ///   480 operations total): zero TSan race reports, zero wrong-but-plausible results. That
-        ///   covers one stress shape and one access pattern, not an exhaustive audit of every
-        ///   `BOPAlgo_ArgumentAnalyzer`/`Intf_Interference` code path, prefer
-        ///   ``isSelfIntersecting(timeout:)`` unless a caller genuinely needs a hard in-process
-        ///   wall-clock guarantee (e.g. no process/subprocess isolation available).
-        ///
-        /// - Parameter hardTimeout: Seconds to wait before giving up and returning `nil`.
-        /// - Returns: `true`/`false` if the check completed in time, `nil` if the deadline passed
-        ///   first (indeterminate, the background check may still be running), if the analysis
-        ///   could not answer the question, per ``isSelfIntersecting(timeout:)``, or if the
-        ///   geometry-independent probe itself could not be built (#1549). The inner call
-        ///   passes `0`, so no watchdog can abort it, but `BOPAlgo_OperationAborted` is recorded for
-        ///   any `BOPAlgo_CheckerSI` error and not only a watchdog break, so that case reaches this
-        ///   entry point too.
-        ///
-        /// ```swift
-        /// // Bound total wall-clock time even on a pathological B-spline solid with no
-        /// // OCCT checkpoints in its self-interference phase.
-        /// switch solid.isSelfIntersecting(hardTimeout: 5) {
-        /// case .some(true):  print("self-intersects")
-        /// case .some(false): print("clean")
-        /// case .none:        print("deadline hit, treat as unknown, not clean")
-        /// }
-        /// ```
-        public func isSelfIntersecting(hardTimeout: Double) -> Bool? {
+    // On Apple the contract is a HARD wall-clock deadline: a second thread runs the check while
+    // this one waits on a semaphore. `wasm32-unknown-wasip1` in the non-threads configuration
+    // this package targets has one thread and one linear memory, so no implementation there can
+    // honour that. Rather than remove the name (source-incompatible with Apple callers), the
+    // WASI body forwards to the cooperative ``isSelfIntersecting(timeout:)`` and the doc
+    // comment says so. Dispatch is not imported on WASI.
+    /// Whether this shape self-intersects, with a **true hard wall-clock deadline** (#319) on
+    /// Apple platforms, unlike ``isSelfIntersecting(timeout:)``, this returns at `hardTimeout` even
+    /// if OCCT never reaches a checkpoint to poll.
+    ///
+    /// - Important: **On WebAssembly (`wasm32-unknown-wasip1`) the bound is cooperative, not hard**
+    ///   (#2760). There is no second thread there, so this call is exactly
+    ///   ``isSelfIntersecting(timeout:)`` with `timeout: hardTimeout`: OCCT is *asked* to give up
+    ///   once `hardTimeout` seconds have passed and returns `nil` at its next progress checkpoint,
+    ///   which can be much later, or never, if it is inside a checkpoint-free stretch. The call can
+    ///   therefore overrun `hardTimeout` and blocks the only thread while it does. On wasm the real
+    ///   hard bound is isolation you can kill: run the check in a Web Worker or separate process
+    ///   and terminate it at your own deadline. The paragraphs below about a background thread, an
+    ///   abandoned computation, the probe copy and ThreadSanitizer describe Apple only. A
+    ///   non-positive `hardTimeout` returns `nil` at once on every platform, unlike `timeout:`
+    ///   where non-positive means unbounded. On wasm the check is not run; on Apple the
+    ///   background thread is still started and the abandoned computation finishes on its own.
+    ///
+    /// Runs the check on a detached background thread against a geometry-independent copy of
+    /// this shape and waits on the calling thread with a real deadline. If the deadline passes
+    /// first, this returns `nil` immediately and the background computation is **abandoned, not
+    /// cancelled**, it keeps running orphaned on its own thread until it eventually completes.
+    /// That is a deliberate trade (burned CPU for a caller-side wall-clock guarantee), the same
+    /// one the #286 mesher-hang caller accepted.
+    ///
+    /// - Note: The probe is built via `Shape.deepCopy(_:copyGeometry:copyMesh:)`
+    ///   (`BRepTools_CopyModification`), not the no-argument instance `deepCopy()`
+    ///   (`TNaming_CopyShape::CopyTool`), which only clones topology and would leave the probe
+    ///   sharing `Geom_Surface`/`Geom_Curve` handles, and their mutable evaluation caches, with
+    ///   `self` (#1160, following up on #831). The orphaned background computation on `probe`
+    ///   and the caller continuing to use `self` after a timeout are independent `Geom_Surface`/
+    ///   `Geom_Curve` objects, not just independent `TopoDS_Shape`s, so they no longer race on
+    ///   `docs/thread-safety.md` item 1's shared adaptor caches. `copyMesh` stays `false`, the
+    ///   triangulation plays no part in `BOPAlgo_CheckerSI`'s self-interference analysis. If
+    ///   `deepCopy` itself fails (rare on a valid shape; `BRepTools_Modifier` throws a catchable
+    ///   `Standard_Failure` for, e.g., a nullified shape, and `deepCopy` returns `nil` for that
+    ///   or any other construction failure), this returns `nil` rather than silently falling back
+    ///   to a `self`-based check, which would reintroduce the exact shared-cache race this method
+    ///   exists to avoid (#1549).
+    ///
+    /// - Important: `BOPAlgo_ArgumentAnalyzer`'s safety when run on a background thread
+    ///   concurrently with unrelated OCCT calls on other threads was verified with a
+    ///   ThreadSanitizer stress test (60 bursts × 8 threads, half running self-intersection
+    ///   checks on independent self-intersecting shapes, half running unrelated fuse+mesh work,
+    ///   480 operations total): zero TSan race reports, zero wrong-but-plausible results. That
+    ///   covers one stress shape and one access pattern, not an exhaustive audit of every
+    ///   `BOPAlgo_ArgumentAnalyzer`/`Intf_Interference` code path, prefer
+    ///   ``isSelfIntersecting(timeout:)`` unless a caller genuinely needs a hard in-process
+    ///   wall-clock guarantee (e.g. no process/subprocess isolation available).
+    ///
+    /// - Parameter hardTimeout: Seconds to wait before giving up and returning `nil`. A bound of
+    ///   zero or less is refused up front, on every platform, without running the check (#3256).
+    /// - Returns: `true`/`false` if the check completed in time, `nil` if the deadline passed
+    ///   first (indeterminate, the background check may still be running), if the analysis
+    ///   could not answer the question, per ``isSelfIntersecting(timeout:)``, or if the
+    ///   geometry-independent probe itself could not be built (#1549). The inner call
+    ///   passes `0`, so no watchdog can abort it, but `BOPAlgo_OperationAborted` is recorded for
+    ///   any `BOPAlgo_CheckerSI` error and not only a watchdog break, so that case reaches this
+    ///   entry point too.
+    ///
+    /// ```swift
+    /// // Bound total wall-clock time even on a pathological B-spline solid with no
+    /// // OCCT checkpoints in its self-interference phase (hard on Apple; on wasm the bound is
+    /// // cooperative, so also run it in a worker you can terminate).
+    /// switch solid.isSelfIntersecting(hardTimeout: 5) {
+    /// case .some(true):  print("self-intersects")
+    /// case .some(false): print("clean")
+    /// case .none:        print("deadline hit, treat as unknown, not clean")
+    /// }
+    /// ```
+    public func isSelfIntersecting(hardTimeout: Double) -> Bool? {
+        // A deadline that is not in the future cannot be met, so refuse up front on every platform
+        // (#3256). Leaving it to `semaphore.wait(timeout:)` made the answer a race: a wait on a
+        // deadline already in the past still returns `.success` when the worker signalled first,
+        // and a box checks in microseconds (measured 3 in 400 isolated runs answering `false`).
+        // NaN is not `<= 0`, so it falls through, as before: a NaN deadline never expires and the
+        // check answers (measured on Apple; the WASI body inherits the cooperative call).
+        if hardTimeout <= 0 { return nil }
+        #if os(WASI)
+            // Single-threaded: no background thread, so no shared-cache race and no probe copy is
+            // needed. Cooperative bound only, documented above (#2760); the non-positive refusal
+            // above also stops it inheriting `timeout:`'s "non-positive means unbounded".
+            return isSelfIntersecting(timeout: hardTimeout)
+        #else
             final class SelfIntersectResultBox: @unchecked Sendable {
                 var rawResult: Int32 = -1
             }
@@ -2805,8 +2861,8 @@ public final class Shape: @unchecked Sendable {
             case 0: return false
             default: return nil
             }
-        }
-    #endif
+        #endif
+    }
 
     /// Detailed self-intersection check with progress information (BOPAlgo-based).
     ///

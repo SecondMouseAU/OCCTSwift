@@ -1,6 +1,5 @@
 import OCCTBridge
 import OCCTPlatform
-import simd
 
 /// A STEP file header manager for reading and writing header fields
 /// (name, timestamp, author, organization, preprocessor version, originating system).

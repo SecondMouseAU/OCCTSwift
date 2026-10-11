@@ -1,5 +1,4 @@
 import OCCTPlatform
-import simd
 
 // MARK: - PDF 1.4 export (#85, v0.150)
 //

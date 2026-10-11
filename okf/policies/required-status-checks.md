@@ -96,6 +96,15 @@ from `refactor/381-pass1b`, the integration branch, now merged.
   pointed at a release asset still uploading, so SwiftPM got a 404). Measure a run of green results
   before requiring it, rather than requiring it on one.
 
+- **`release-mode-tests` is required nowhere, and is not to be required until it has reported
+  `success` on `main`.** It is the `-c release` test job (#3130, [Release-mode
+  tests](release-mode-tests.md)), a reusable workflow called from `ci.yml` and `release.yml`, so
+  its check is named `release-mode-tests / release-mode-tests`, and it takes `changes.outputs.build`
+  exactly as `build-and-test` does. A pull request runs its subset and never the `main`-only full
+  run, so a check that has reported on `main` is a different run from the one a PR sees; require it
+  only after both have been green over a run of merges. `Scripts/merge-pr.py` refuses a PR while
+  any non-wasm check is red, so a flake in this job blocks merges whether or not it is required.
+
 ## Required is not sufficient, and what enforces that
 
 One required check lets GitHub merge a PR the moment `gate-scripts` is green, whatever the

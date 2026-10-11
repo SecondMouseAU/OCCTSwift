@@ -17,6 +17,10 @@ extension NativeHandleOwner {
     ///
     /// `Scripts/check-borrowed-handle-temporaries.py` fails the build on a `.handle` read straight
     /// off a subscript or call result.
+    ///
+    /// An array of owners needs the same: `let hs = xs.map { $0.handle }` must be followed by
+    /// `defer { withExtendedLifetime(xs) {} }`, or inlining can release `xs` before the C call
+    /// that reads `hs` (#3261, #3266). The same script checks that too.
     @inline(__always)
     func withHandle<Result>(_ body: (NativeHandle) throws -> Result) rethrows -> Result {
         try withExtendedLifetime(self) { try body(handle) }

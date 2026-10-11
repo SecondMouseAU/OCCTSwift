@@ -92,7 +92,38 @@ let variant = CommandLine.arguments.count > 1 ? CommandLine.arguments[1] : "A"
 @inline(never) func withHandleTempShape() -> Bool {
     Shape.box(width: 10, height: 10, depth: 10)!.withHandle { OCCTShapeIsValid($0) }
 }
+// Split form: `let h = owner.handle`, owner unused afterwards, h used by several later calls.
+@inline(never) func splitHandle() -> Int32 {
+    let doc = Document.create()!
+    let h = doc.handle
+    var junk = [[UInt8]]()
+    for i in 0..<64 { junk.append([UInt8](repeating: UInt8(i), count: 4096)) }
+    var total: Int32 = 0
+    for _ in 0..<3 { total += OCCTDocumentGetLayerCount(h) + Int32(junk.count) }
+    return total
+}
+@inline(never) func splitHandleFenced() -> Int32 {
+    let doc = Document.create()!
+    let h = doc.handle
+    var junk = [[UInt8]]()
+    for i in 0..<64 { junk.append([UInt8](repeating: UInt8(i), count: 4096)) }
+    var total: Int32 = 0
+    withExtendedLifetime(doc) {
+        for _ in 0..<3 { total += OCCTDocumentGetLayerCount(h) + Int32(junk.count) }
+    }
+    return total
+}
+@inline(never) func splitShape() -> Bool {
+    let s = Shape.box(width: 10, height: 10, depth: 10)!
+    let h = s.handle
+    var junk = [[UInt8]]()
+    for i in 0..<64 { junk.append([UInt8](repeating: UInt8(i), count: 4096)) }
+    return OCCTShapeIsValid(h) && junk.count == 64
+}
 switch variant {
+case "SPL": print("SPL total=\(splitHandle()) (expect 192)")
+case "SPLF": print("SPLF total=\(splitHandleFenced()) (expect 192)")
+case "SPS": print("SPS valid=\(splitShape()) (expect true)")
 case "WHM": print("WHM isValid=\(withHandleMut()) (expect false)")
 case "WHE": print("WHE len=\(withHandleReadEdge()) (expect 10)")
 case "WHF": print("WHF area=\(withHandleReadFace()) (expect 100)")

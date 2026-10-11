@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -208,7 +207,9 @@ struct Issue999NLPlateParametersTests {
             return
         }
         guard
-            let loose = plane.nlPlateDeformedG3(constraints: multiG3Constraints, tolerance: 1e-1),
+            // 100.0, not 1e-1: the G3 solver saturates earlier on wasm, so 1e-1 and 1e-3 coincide
+            // there while the tolerance is still live (#2926).
+            let loose = plane.nlPlateDeformedG3(constraints: multiG3Constraints, tolerance: 100.0),
             let tight = plane.nlPlateDeformedG3(constraints: multiG3Constraints, tolerance: 1e-3)
         else {
             Issue.record("a G3 deformation failed")

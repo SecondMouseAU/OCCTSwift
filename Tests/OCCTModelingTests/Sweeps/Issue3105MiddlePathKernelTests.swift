@@ -85,17 +85,16 @@ struct Issue3105MiddlePathKernelTests {
         return answered
     }
 
-    // Gated on `OCCTSWIFT_LOCAL=1`: the fix is carried patch `0058`, which the pinned asset does
-    // not carry, and `ci.yml`'s `build-and-test` resolves that asset, where this aborts the
-    // process. `kernel-integration.yml` builds the patches from source with `OCCTSWIFT_LOCAL=1`,
-    // which is where this runs. A skipped test and a passing one both report green, so the
-    // per-test line in the log is the only signal: read `started`, not `skipped`. Ungate it at the
-    // repin that pins `0058`.
-    private static let gated = ProcessInfo.processInfo.environment["OCCTSWIFT_LOCAL"] == "1"
+    // This was gated on `OCCTSWIFT_LOCAL=1` while the fix, carried patch `0058`, was missing from
+    // the pinned asset, because `ci.yml`'s `build-and-test` resolves that asset and on it these
+    // abort the process. The repin to `v4.0.0-kernel.6` put `0058` in the pinned asset, and a gate
+    // that outlives its fix leaves the test skipped, which is the one outcome a test cannot
+    // recover from (#2983, and the same disposition `Issue3003OffsetOrderTests` got at the
+    // `kernel.5` repin). Run against `v4.0.0-kernel.5` the suite aborts the process.
 
     /// A hexagonal prism: its six side faces give ten pairs that share no vertex, and every one of
     /// them is a path (three opposite pairs and the two caps worked before, six did not).
-    @Test(.enabled(if: Issue3105MiddlePathKernelTests.gated))
+    @Test
     func hexagonalPrismSidesThatAreNotOppositeAnswerAPath() throws {
         let hexagon = (0..<6).map { k in
             SIMD2(5 * cos(Double(k) * .pi / 3), 5 * sin(Double(k) * .pi / 3))
@@ -107,7 +106,7 @@ struct Issue3105MiddlePathKernelTests {
     ///
     /// There the path is a point, and the section is the section before it. All ten pairs answer a
     /// path.
-    @Test(.enabled(if: Issue3105MiddlePathKernelTests.gated))
+    @Test
     func lShapedPrismAnswersAPathThroughTheCorner() throws {
         let outline: [SIMD2<Double>] = [
             SIMD2(0, 0), SIMD2(10, 0), SIMD2(10, 5), SIMD2(5, 5), SIMD2(5, 10), SIMD2(0, 10),
@@ -118,7 +117,7 @@ struct Issue3105MiddlePathKernelTests {
     /// A U-shaped prism, the solid with the most corners.
     ///
     /// It has 21 pairs that share no vertex, and all of them answer a path.
-    @Test(.enabled(if: Issue3105MiddlePathKernelTests.gated))
+    @Test
     func uShapedPrismAnswersAPathForEveryPair() throws {
         let outline: [SIMD2<Double>] = [
             SIMD2(0, 0), SIMD2(10, 0), SIMD2(10, 10), SIMD2(7, 10), SIMD2(7, 3), SIMD2(3, 3),
@@ -131,7 +130,7 @@ struct Issue3105MiddlePathKernelTests {
     ///
     /// The cap's single path ends on the far circle and never reaches the bore. Only the two caps
     /// answer a path.
-    @Test(.enabled(if: Issue3105MiddlePathKernelTests.gated))
+    @Test
     func tubeCapAgainstTheBoreAnswersNil() throws {
         let outer = try #require(Shape.cylinder(radius: 5, height: 10))
         let bore = try #require(Shape.cylinder(radius: 2, height: 10))
@@ -141,7 +140,7 @@ struct Issue3105MiddlePathKernelTests {
 
     /// An octahedron: two of the three paths from the start triangle end on the same vertex of the
     /// opposite triangle and none reaches the third, so no sweep reaches the end section.
-    @Test(.enabled(if: Issue3105MiddlePathKernelTests.gated))
+    @Test
     func octahedronOppositeTrianglesAnswerNil() throws {
         #expect(try pathsAnswered(by: try octahedron(), faces: 8, planar: true) == 0)
     }
@@ -153,7 +152,7 @@ struct Issue3105MiddlePathKernelTests {
     /// a star prism (concave, 12 faces), a cube with a square hole and two fused boxes to the five
     /// above, and every pair of faces of each is tried, including a face with itself and pairs
     /// that share a vertex.
-    @Test(.enabled(if: Issue3105MiddlePathKernelTests.gated))
+    @Test
     func noPairOfFacesOfAnySolidAbortsOrAnswersAnInvalidShape() throws {
         let star = try prism(
             (0..<10).map { k in

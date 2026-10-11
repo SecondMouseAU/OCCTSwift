@@ -1,6 +1,5 @@
 import OCCTBridge
 import OCCTPlatform
-import simd
 
 /// Builder for creating chamfers on edges of a shape, wrapping BRepFilletAPI_MakeChamfer.
 public final class ChamferBuilder: @unchecked Sendable {
@@ -33,6 +32,9 @@ public final class ChamferBuilder: @unchecked Sendable {
     }
 
     /// Build the chamfered result.
+    ///
+    /// Answers nil when the builder is not done, and also when it is done but the result is
+    /// `BRepCheck`-invalid (#3200).
     public func build() -> Shape? {
         guard let ref = OCCTChamferBuilderBuild(handle) else { return nil }
         return Shape(handle: ref)

@@ -1,6 +1,5 @@
 import OCCTBridge
 import OCCTPlatform
-import simd
 
 /// Standalone evaluators for analytical curves and surfaces.
 ///

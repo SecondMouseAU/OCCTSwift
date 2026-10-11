@@ -483,7 +483,11 @@ The selector is headless by construction. `OCCTHeadlessSelector`, the bridge-pri
 `TraverseSensitives` and `GetManager`, so a pick can run against a camera alone where OCCT's own
 entry points all require a view object. Each shape handed to `add(shape:id:)` is wrapped in a
 second bridge-private class, a selectable object whose `Compute` is empty because nothing is ever
-drawn; see that method for its own attribution.
+drawn; see that method for its own attribution. That object overrides
+`PrsMgr_PresentableObject::BoundingBox(Bnd_Box&)` with `BRepBndLib::Add` over its shape, as
+`IVtkOCC_SelectableObject` does: the default reads the box off a presentation, a headless object
+has none, and the void box made `SelectMgr_ViewerSelector::TraverseSensitives` prune the object
+before it reached a sensitive, so every pick returned nothing (#3254).
 
 - **OCCT:** `SelectMgr_SelectionManager` + `OCCTHeadlessSelector`.
 - **Example:**
@@ -728,6 +732,11 @@ public func pick(at pixel: SIMD2<Double>,
 ```
 
 Results are sorted by depth (nearest first). Only shapes and sub-shape modes that have been activated are returned.
+
+The pick uses the camera exactly as given. A new `Camera()` is orthographic with a scale of 1000
+(Graphic3d_Camera's own default), so `fieldOfView` has no effect until `projectionType` is set to
+`.perspective`; at that scale a 10-unit part covers a few pixels and `pixelTolerance` reaches far
+past it.
 
 - **Parameters:**
   - `pixel`: pixel coordinate in the viewport (origin at top-left).

@@ -21,7 +21,7 @@ something a published manifest could know.
 
 WHAT IS AND IS NOT IN HERE
 
-Only what has no safe spelling. `-lc++abi`, `-lunwind`, `-lsetjmp`, `-lwasi-emulated-getpid` and
+Only what has no safe spelling. `-lc++abi`, `-lunwind`, `-lwasi-emulated-getpid` and
 `-lOCCT-wasm` are `.linkedLibrary` entries in `Package.swift`, which SwiftPM considers safe, so
 this file supplies the `-L` that finds them and not the names. `-D` defines and header search paths
 are safe settings too and are likewise in the manifest.
@@ -54,6 +54,12 @@ SHIM = REPO_ROOT / "Scripts" / "wasm-shims" / "wasi-std-threading.hpp"
 # libsetjmp defines. See #2172 and Scripts/repro/2048/run.sh case 6, where their absence is a LINK
 # error naming setjmp: without them the compiler emits a plain call to `setjmp`, which nothing in
 # the sysroot defines, and `wasm-ld: error: ... undefined symbol: setjmp` is what the build says.
+#
+# KEPT, NOT LOAD-BEARING FOR OCCTSwift (#2758). The kernel is built with -UOCC_CONVERT_SIGNALS
+# (#2175) and holds zero setjmp references, and the package links without these flags (measured
+# against the pinned kernel). They stay because this toolset also builds the consumer's own
+# dependencies, any of which may call setjmp, and the flag costs nothing where nothing does. Such
+# a dependency needs -lsetjmp from its own manifest: Package.swift no longer supplies it.
 SJLJ_FLAGS = ["-mllvm", "-wasm-enable-sjlj"]
 
 
@@ -220,8 +226,9 @@ def self_test() -> int:
         failures.append("cxxCompiler is missing -x c++, so the bridge's .mm files would go "
                         "through the Objective-C++ personality and crash clang (#2256)")
 
-    # The sjlj pair is separate from the exception flags, and without it the link fails outright
-    # on an undefined `setjmp` (measured, run.sh case 6), so it is never a silent loss.
+    # The sjlj pair is separate from the exception flags, and without it a dependency that calls
+    # setjmp fails to link on an undefined `setjmp` (measured, run.sh case 6), so it is never a
+    # silent loss. OCCTSwift itself no longer needs it (#2758).
     c_opts = doc["cCompiler"]["extraCLIOptions"]
     if has_x_cxx(c_opts):
         failures.append("cCompiler must NOT carry -x c++: it would compile a genuine .c source "

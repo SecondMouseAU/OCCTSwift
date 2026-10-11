@@ -291,6 +291,8 @@
 #include <Geom2d_BezierCurve.hxx>
 #include <Geom2d_BSplineCurve.hxx>
 #import <XCAFDoc_ShapeTool.hxx>
+#include <cstring>
+#include <new>
 #include <ChFiDS_ChamfMode.hxx>
 #include <gp_Trsf2d.hxx>
 #include <XCAFDoc_DocumentTool.hxx>
@@ -630,6 +632,8 @@ OCCTShapeRef OCCTShapeChamferTwoDistances(OCCTShapeRef   shape,
     chamfer.Build();
     if (!chamfer.IsDone())
       return nullptr;
+    if (!occtBlendResultIsValid(chamfer.Shape())) // #3200
+      return nullptr;
     return new OCCTShape(chamfer.Shape());
   }
   catch (...)
@@ -668,6 +672,8 @@ OCCTShapeRef OCCTShapeChamferDistAngle(OCCTShapeRef   shape,
     }
     chamfer.Build();
     if (!chamfer.IsDone())
+      return nullptr;
+    if (!occtBlendResultIsValid(chamfer.Shape())) // #3200
       return nullptr;
     return new OCCTShape(chamfer.Shape());
   }
@@ -743,7 +749,7 @@ OCCTShapeRef OCCTShapeFilletEvolving(OCCTShapeRef                 shape,
       return nullptr;
 
     TopoDS_Shape result = fillet.Shape();
-    if (result.IsNull())
+    if (!occtBlendResultIsValid(result)) // #3200
       return nullptr;
     return new OCCTShape(result);
   }
@@ -788,6 +794,8 @@ OCCTShapeRef OCCTFace2DFillet(OCCTShapeRef   shape,
 
     fillet.Build();
     if (!fillet.IsDone())
+      return nullptr;
+    if (!occtBlendResultIsValid(fillet.Shape())) // #3200
       return nullptr;
     return new OCCTShape(fillet.Shape());
   }
@@ -865,6 +873,8 @@ OCCTShapeRef OCCTFace2DChamfer(OCCTShapeRef   shape,
 
     chamfer.Build();
     if (!chamfer.IsDone())
+      return nullptr;
+    if (!occtBlendResultIsValid(chamfer.Shape())) // #3200
       return nullptr;
     return new OCCTShape(chamfer.Shape());
   }
@@ -1056,7 +1066,22 @@ OCCTFilletBuilderRef OCCTFilletBuilderCreate(OCCTShapeRef shape)
     return nullptr;
   try
   {
-    return new OCCTFilletBuilder(shape->shape);
+    // ChFi3d_Builder's constructor (ChFi3d_Builder_1.cxx:341) initialises `done` but not
+    // `hasresult`; only Compute() assigns it (ChFi3d_Builder.cxx:234). HasResult() on a builder
+    // that was never built therefore reads whatever the heap held (#3137): zero on a fresh Apple
+    // heap, nonzero on wasm after earlier tests dirtied it. Zero the storage first, so the member
+    // starts false as the header's contract says it does.
+    void* mem = ::operator new(sizeof(OCCTFilletBuilder));
+    memset(mem, 0, sizeof(OCCTFilletBuilder));
+    try
+    {
+      return new (mem) OCCTFilletBuilder(shape->shape);
+    }
+    catch (...)
+    {
+      ::operator delete(mem);
+      throw;
+    }
   }
   catch (...)
   {
@@ -1113,6 +1138,8 @@ OCCTShapeRef OCCTFilletBuilderBuild(OCCTFilletBuilderRef builder)
   {
     builder->fillet.Build();
     if (!builder->fillet.IsDone())
+      return nullptr;
+    if (!occtBlendResultIsValid(builder->fillet.Shape())) // #3200
       return nullptr;
     return new OCCTShape(builder->fillet.Shape());
   }
@@ -1795,6 +1822,8 @@ OCCTShapeRef OCCTShapeFillet(OCCTShapeRef shape, double radius)
     fillet.Build();
     if (!fillet.IsDone())
       return nullptr;
+    if (!occtBlendResultIsValid(fillet.Shape())) // #3200
+      return nullptr;
     return new OCCTShape(fillet.Shape());
   }
   catch (...)
@@ -1822,6 +1851,8 @@ OCCTShapeRef OCCTShapeChamfer(OCCTShapeRef shape, double distance)
 
     chamfer.Build();
     if (!chamfer.IsDone())
+      return nullptr;
+    if (!occtBlendResultIsValid(chamfer.Shape())) // #3200
       return nullptr;
     return new OCCTShape(chamfer.Shape());
   }

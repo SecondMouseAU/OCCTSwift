@@ -1,5 +1,4 @@
 import OCCTPlatform
-import simd
 
 // MARK: - Bill of materials + balloon callouts (#87, v0.150)
 //

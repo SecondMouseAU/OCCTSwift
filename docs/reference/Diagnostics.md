@@ -119,7 +119,7 @@ How many frames OCCT captures into every `Standard_Failure` it constructs.
 public static var stackTraceDepth: Int { get set }
 ```
 
-`0`, OCCT's own default, means no stack trace, and [`Record.stackTrace`](#occtdiagnosticsrecord) is then empty. Capturing frames costs time on the throwing path, and this is process-wide: it affects every OCCT exception, not only the ones this channel records. Raise it only while a trace is actually being read. A negative value is clamped to `0`.
+`0`, OCCT's own default, means no stack trace, and [`Record.stackTrace`](#occtdiagnosticsrecord) is then empty. Capturing frames costs time on the throwing path, and this is process-wide: it affects every OCCT exception, not only the ones this channel records. Raise it only while a trace is actually being read. A negative value is clamped to `0`. **On WASI** the setting reads back but no frames are captured, so `Record.stackTrace` stays empty: see [Present but unavailable on wasm](../guides/wasm-consumer-setup.md#present-but-unavailable-on-wasm).
 
 - **OCCT:** `Standard_Failure::SetDefaultStackTraceLength` / `DefaultStackTraceLength`.
 - **Example:**

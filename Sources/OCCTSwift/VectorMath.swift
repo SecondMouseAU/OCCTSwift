@@ -1,6 +1,5 @@
 import OCCTBridge
 import OCCTPlatform
-import simd
 
 /// 2D vector math utilities wrapping gp_XY.
 public enum Vector2DMath {

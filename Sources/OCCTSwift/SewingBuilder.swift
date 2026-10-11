@@ -1,6 +1,5 @@
 import OCCTBridge
 import OCCTPlatform
-import simd
 
 /// A builder for sewing shapes together.
 public final class SewingBuilder: @unchecked Sendable {

@@ -560,7 +560,9 @@ Checks whether the shape has overlapping or interfering sub-faces, with a true h
 public func isSelfIntersecting(hardTimeout: Double) -> Bool?
 ```
 
-Runs the check on a detached background thread against a `deepCopy()` of this shape (independent geometry) and waits on the calling thread with a real deadline. If the deadline passes first, this returns `nil` immediately and the background computation is abandoned, not cancelled: it keeps running orphaned on its own thread until it eventually completes. That is a deliberate trade (burned CPU for a caller-side wall-clock guarantee).
+**On WebAssembly (`wasm32-unknown-wasip1`) the bound is cooperative, not hard (#2760).** The method exists there with the same signature, so code written for Apple compiles unchanged, but there is no second thread: the call is exactly `isSelfIntersecting(timeout: hardTimeout)`. OCCT is asked to give up after `hardTimeout` seconds and returns `nil` at its next progress checkpoint, which can be much later, or never, inside a checkpoint-free stretch; the call blocks the only thread meanwhile. The real hard bound on wasm is isolation you can terminate (a Web Worker or separate process) at your own deadline. A non-positive `hardTimeout` returns `nil` immediately on every platform without running the check (unlike `timeout:`, where it means unbounded).
+
+On Apple platforms it runs the check on a detached background thread against a `deepCopy()` of this shape (independent geometry) and waits on the calling thread with a real deadline. If the deadline passes first, this returns `nil` immediately and the background computation is abandoned, not cancelled: it keeps running orphaned on its own thread until it eventually completes. That is a deliberate trade (burned CPU for a caller-side wall-clock guarantee).
 
 - **Parameters:** `hardTimeout`: seconds to wait before giving up and returning `nil`.
 - **Returns:** `true`/`false` if the check completed in time; `nil` if the deadline passed first (indeterminate, the background check may still be running) or if the analysis could not answer the question, per `isSelfIntersecting(timeout:)`. Its inner call passes `0` (unbounded), so no watchdog can abort it, but `BOPAlgo_OperationAborted` is recorded for any `BOPAlgo_CheckerSI` error and not only a watchdog break, so both that case and `BOPAlgo_BadType` reach this entry point too.
@@ -1306,9 +1308,16 @@ public func filleted(edges: [Edge], radius: Double) -> Shape?
 ```
 
 - **Parameters:** `edges`, edges to fillet (must have valid `index` values from this shape); `radius`, fillet radius (must be > 0).
-- **Returns:** Filleted shape, or `nil` on failure, which includes a non-positive or NaN radius and
-  an edge whose `index` names no edge of this shape.
+- **Returns:** Filleted shape, or `nil` on failure, which includes a non-positive or NaN radius, an
+  edge whose `index` names no edge of this shape, a builder that is not done, and a result
+  `BRepCheck_Analyzer` reports invalid (#3200). A caller used to receive that invalid shape.
 - **OCCT:** `BRepFilletAPI_MakeFillet` (via `OCCTShapeFilletEdges`).
+- **When the answer is `nil` (#3200):** OCCT's builder reports done for fillets that meet or overlap
+  on a shared face (radii adding up past the face width) and in the vertex-snap window of #3209.
+  Every fillet and chamfer entry point now checks the result with `BRepCheck_Analyzer` after a
+  successful build and answers `nil` when it is invalid; a result that was valid is returned
+  unchanged. Two fillets on opposite edges of a face of width `w` are refused once their radii sum past `w`. A sum of exactly `w`, and a gap to `w` below `PConfusion` (1e-9), build from `v4.0.0-kernel.6` (patch 0059, #3207; OCCT#1177): `r == w / 2` gives a semicircle, and an older kernel answers `nil` there. Radii past `w / 2` answer `nil` (#3208). `nil` carries
+  no reason: `FilletBuilder` exposes the builder's diagnostics.
 - **Notes:** shares one bridge implementation with
   [`filleted(edges:startRadius:endRadius:)`](#filletededgesstartradiusendradius) and
   [`blendedEdges(_:)`](#blendededges_), so all three apply the same positive-radius precondition

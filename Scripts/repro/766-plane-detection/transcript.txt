@@ -1,0 +1,8 @@
+Planar wire finds plane: Found=1
+  normal=(0, 0, -1)
+  origin=(-5, -5, 0)
+Non-planar 3D wire returns nil: Found=0
+face IsDone=1
+Face shape is planar: Found=1
+  normal=(0, 0, -1)
+  origin=(-5, -5, 0)

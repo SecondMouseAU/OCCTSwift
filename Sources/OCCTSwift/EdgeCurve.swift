@@ -21,9 +21,9 @@ import OCCTPlatform
 /// adaptor to be owned by one worker (each worker takes its own, or a `ShallowCopy()` of a shared
 /// one), because its BSpline evaluation cache is rebuilt in place by `const` evaluators. So
 /// `point`/`tangent`/`length`/every other accessor here is not a pure query on a BSpline edge, even
-/// though each one reads as one. Sharing one `EdgeCurve` between threads is unsupported: without
-/// carried patch `0031` (#1153), which currently serializes that cache, it reads wrong points
-/// (#3065). Swift 6 enforces the supported pattern, since a non-`Sendable` instance cannot cross a
+/// though each one reads as one. Sharing one `EdgeCurve` between threads is unsupported: the
+/// cache is unsynchronised (carried patch `0031`, which serialized it, was retired at
+/// `v4.0.0-kernel.6`), so a shared instance reads wrong points (#3065). Swift 6 enforces the supported pattern, since a non-`Sendable` instance cannot cross a
 /// task boundary: share the ``Edge``, which is `Sendable`, and construct an `EdgeCurve` inside each
 /// task (cheap), or serialize access with `OCCTSerial.withLock { }`.
 public final class EdgeCurve: ArcLengthCurveAdaptor {

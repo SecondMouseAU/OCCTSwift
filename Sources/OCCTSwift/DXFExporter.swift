@@ -1,5 +1,4 @@
 import OCCTPlatform
-import simd
 
 // MARK: - DXF 2D export (#63)
 //

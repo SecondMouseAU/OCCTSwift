@@ -303,14 +303,16 @@ and that it fails on `br_table` rather than for some other reason.
       Error: "Message(text: "expected the same copy types for all branches in `br_table` ...
     VERDICT: refused, and refused for the br_table reason. This is #2175's blocker.
 
-### What is NOT reduced
+### The reduction, and why the hand-written probe missed it
 
-[`probe-sjlj-eh.cxx`](probe-sjlj-eh.cxx) reproduces the **source shape**: a `setjmp` inside a `try`
-whose handler object has a destructor, six of them in one loop body, which is
-`BRepCheck_ParallelAnalyzer`'s shape. Compiled with the same flags, **that module is valid and
-runs**. So the trigger needs more than the shape, and #2757 records that the upstream LLVM report
-still needs a reduction. The probe is kept because a negative result about a reduction is worth as
-much as the reduction would have been: it says where not to look.
+[`probe-sjlj-eh.cxx`](probe-sjlj-eh.cxx) reproduces the **source shape** (a `setjmp` inside a `try`
+whose handler object has a destructor, six of them in one loop body) and compiled with the same
+flags **that module is valid and runs**. It is kept as the negative result. #2757 then reduced the
+real failure to a 12-line file with no OCCT in it,
+[`Scripts/repro/2757/sjlj-br-table.cpp`](../2757/sjlj-br-table.cpp): the trigger is a `setjmp`
+whose argument is a call that may throw, inside a `try`, inside two nested loops. The probe's
+`Label()` is inline and cannot throw, which is where it differs. Commands and measurements are in
+[`Scripts/repro/2757/README.md`](../2757/README.md).
 
 ## The four gaps in merged code
 

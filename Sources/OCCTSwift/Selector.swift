@@ -1,6 +1,5 @@
 import OCCTBridge
 import OCCTPlatform
-import simd
 
 /// BVH-accelerated hit testing for interactive picking without OpenGL.
 ///

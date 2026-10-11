@@ -1,6 +1,5 @@
 import OCCTBridge
 import OCCTPlatform
-import simd
 
 /// Curve local properties at a parameter point.
 public struct CurveLocalProperties: Sendable {

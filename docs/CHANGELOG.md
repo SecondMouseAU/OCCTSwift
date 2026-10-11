@@ -21,9 +21,76 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
-### Fillets whose arcs cross, and fillets wider than their face, are built, carried patch 0060 (#3208)
+### Raw-handle arrays now keep their wrappers alive across the OCCT call at 77 sites (#3266)
 
-Two fillets on opposite edges whose radii add up to more than the face between them (a 4 mm face with 3 and 3), and one fillet at least as wide as its face (4 or more on a 4 mm face), used to answer `IsDone() == false`, and `Shape.filleted` answered nil (OCCT#1177). Carried kernel patch `0060` builds them for boxes and other solids with planar right-angle faces. Fillets that cross give the intersection of the two rounded profiles: each arc stays tangent to its wall and they meet at an angle below 180 degrees. A fillet wider than its face ends at that face's far edge, the pivot: it stays tangent to the other face and passes through the edge, or through both far edges if both faces run out. One fillet after another is not the same as both at once, because the first fillet's tangent edge is the pivot of the second. A radius far past the face now builds, a near-flat cut through the far edges, where it used to answer nil. Contours that share a vertex, variable radii and curved faces still decline. For these results `Modified()` and `Generated()` return nothing. The patch is carried and not yet pinned, so the new tests, `Issue3208FilletPivotTests`, run under `OCCTSWIFT_LOCAL=1` in `kernel-integration.yml` until the asset is rebuilt.
+- Operations that pass an array of shapes, wires, edges, faces, curves or surfaces to OCCT (booleans, lofts, sewing, fills, exporters and others) kept no owner for the wrappers, so an optimised build on Swift 6.2 could free them before the call. The arrays are now held across the call, and a static gate fails on a new unheld one.
+
+### `isSelfIntersecting(hardTimeout:)` with a non-positive bound always returns `nil` (#3256)
+
+
+- `Shape.isSelfIntersecting(hardTimeout:)` with a bound of zero or less now returns `nil` every time on every platform. On Apple it used to answer `true`/`false` intermittently (about 3 in 400 calls on a box) when the worker finished before the already-expired wait ran (#3256).
+
+### `Selector.pick` returns hits: the headless selectable reports its bounding box (#3254)
+
+
+- `Selector.pick(at:camera:viewSize:)`, `pick(rect:...)` and `pick(polygon:...)` now return hits. The bridge's headless selectable object had a void bounding box, so OCCT's object-level BVH cull discarded it before any sensitive was tested and every pick came back empty (#3254).
+
+### `Shape.fixEdgeConnect()` leaves the caller's shape untouched and valid (#3252)
+
+- `Shape.fixEdgeConnect()` no longer edits the receiver in place and no longer returns an invalid shape for a valid input (a box came back invalid, #3252). It works on a copy and returns an unchanged copy when connecting would make a valid shape invalid.
+
+### `Shape.loft(profiles:)` keeps its wires alive across the OCCT call, fixing a release-build crash in threaded holes (#3261)
+
+- `Shape.loft(profiles:)` (both overloads) kept no owner for the wires it passed to OCCT, so an optimised build on Swift 6.2 could free them first: `threadedHole` and `threadedShaft` crashed in release builds. The array is now held across the call.
+
+### Kernel repin to v4.0.0-kernel.6: patches 0058 and 0059 pinned, patch 0031 retired (#3065, #3105, #3207)
+
+The pinned kernel is now `v4.0.0-kernel.6`, OCCT `V8_0_1` plus 45 carried patches. Two patches that were merged but not in the previous asset are now shipped: `0058`, which makes `Shape.middlePath(start:end:)` answer a path or `nil` for a pair of faces that share no vertex instead of aborting the process (#3105), and `0059`, which builds two fillets whose radii sum to the width of the face between them (`r == w / 2` gives a semicircle) instead of answering `nil` (#3207). Patch `0031`, the lock around the BSpline evaluation cache, is retired: OCCT's design is one adaptor per worker (or a `ShallowCopy()` per worker), and a single `EdgeCurve`, `WireCurve` or OCCT adaptor shared between threads now reads wrong points on the shipped kernel. `EdgeCurve` and `WireCurve` are not `Sendable`, so Swift 6 already refuses to share them across tasks.
+
+### Fillet and chamfer entry points answer nil for a done-but-invalid result (#3200)
+
+`Shape.filleted(edges:radius:)`, `filleted(edges:startRadius:endRadius:)`, `filleted(radius:)`, `chamfered(distance:)`, the two-distance and distance-angle chamfers, `filletedVariable`, `blendedEdges`, `filletEvolving`, their `WithReport` and `WithFullHistory` siblings, `FilletBuilder.build()` and `ChamferBuilder.build()` now check the result with `BRepCheck_Analyzer` after OCCT reports the builder done, and answer `nil` when the result is invalid. Previously a configuration where fillets overlap (a frame of fillets whose radii exceed half the face width, all 12 edges of a box above half the width) or the #2881 model's radius window (1.4983 to 1.4985 and 1.500000002 to 1.5018 on edge 13) returned an invalid solid, with volumes as wrong as 2.2e28. A caller that used to receive that shape now receives `nil`.
+
+A valid result is unchanged to the last digit. `filleted(edges:radius:)` documents the contract, including the OCCT#1177 threshold (a width gap below `PConfusion`, 1e-9, is refused, which is why a 4 mm face takes 1.9999 where it refuses 2).
+
+```swift
+let slab = Shape.box(width: 4, height: 10, depth: 6)!
+let zTop = slab.bounds!.max.z
+let topEdges = slab.edges().filter { abs(($0.bounds?.min.z ?? 0) - zTop) < 1e-3 }
+let rounded = slab.filleted(edges: topEdges, radius: 1)      // valid
+let overlapped = slab.filleted(edges: topEdges, radius: 3)   // nil, never an invalid solid
+```
+
+### Fixed
+- `FeatureReconstructor` no longer reports a feature fulfilled when its boolean (additive fuse, `FeatureSpec.Boolean`, `FeatureSpec.Hole`) answers a volume its operands cannot allow. A 1e12-sided extrude fused onto a 10-unit box answered the box alone and was reported fulfilled; it is now recorded in `skipped` and the body so far is kept (#3196).
+
+#### Documented the borrowed-handle rule on the seven public handle properties (#3130)
+
+`GeomPoint3D`, `GeomDirection`, `GeomVector3D`, `Axis1Placement`, `Axis2Placement`, `Interval` and `IntervalSet` expose a public `handle`. Its documentation now says it is borrowed, that an optimised build may release a temporary or collection-element owner before the bridge call that receives the pointer runs, and shows `withExtendedLifetime` as the fix. No behaviour changes.
+
+### Fixed: the wasm test suites read their fixtures and no longer fail for test-side reasons (#2926, #2929, #3025, #3026, #3137)
+
+The wasm32-wasip1 test run now reads `#filePath` fixtures, so seven `OCCTStressTests` files that always failed with `.importFailed` run and pass (#3026). Test-side faults that looked like wasm defects are fixed: the NLPlate G3 tolerance pair now separates on both platforms (#2926), and `BRepLibExtendedTests."Same parameter all"` no longer writes its flag through a freed handle (#2929). The harness provides `HOME` and reports writable rights on its `/work` and `/tmp` preopens (#3025). `FilletBuilder.hasResult` is now `false` until `build()` runs on every platform: OCCT's `ChFi3d_Builder` constructor leaves the member uninitialised, and the bridge now zeroes the storage (#3137).
+
+### Changed: `Shape.isSelfIntersecting(hardTimeout:)` exists on wasm, with a cooperative bound (#2760)
+
+Previously absent under `#if !os(WASI)`, so Apple code using it did not compile for `wasm32-unknown-wasip1`. It now exists everywhere with the same signature. On Apple it is unchanged. On wasm there is no second thread, so the bound is cooperative and can overrun if OCCT does not reach a checkpoint; a worker or process you can terminate is the real hard bound. A non-positive `hardTimeout` returns `nil` at once on both platforms, unlike `timeout:` where non-positive means unbounded.
+
+### Changed: facilities wasm32-wasip1 does not have are documented as unavailable, and `MemInfo` no longer reads a 4 GiB heap there (#3025)
+
+`MemInfo`, `SharedLibrary.open()`, `DiskInfo` and `OCCTDiagnostics.Record.stackTrace` stay present and source compatible; their `///` comments and one table in `docs/guides/wasm-consumer-setup.md` state the answer on WASI (`-1`, `""`, `false`, `0`, empty). `MemInfo.heapUsage` and `workingSet` widened OCCT's `size_t(-1)` "unavailable" value to `Int64`, which is `4294967295` on wasm32 and read as a 4 GiB heap; the bridge now maps the sentinel to `-1` on every target.
+
+### Changed: the WASI package no longer links `setjmp`, and every claim that it was load-bearing is corrected (#2758, #2757)
+
+`Package.swift` drops `.linkedLibrary("setjmp")` from the WASI `OCCTBridge` target: since `-UOCC_CONVERT_SIGNALS` the kernel archive holds zero references to `__wasm_setjmp`, `__wasm_longjmp` and `__c_longjmp`. A consumer whose own dependency calls `setjmp` supplies `-lsetjmp` from its own manifest. `-mllvm -wasm-enable-sjlj` stays in the generated toolset for exactly that case. #2757's invalid `br_table` now has a 12-statement standalone reduction under `Scripts/repro/2757/` with a drafted LLVM report (not filed), and `wasm.yml` checks the fetched kernel archive for setjmp references.
+
+### Fixed: `check-wasi-patch-base.py --tree` no longer reports WRONG_BASE for an applied WASI patch (#2272)
+
+The mode compared each patch's pre-image blob against a tree where the patch was already applied, so the tree `build-occt-wasm.sh` leaves produced nine false defects. An applied patch is now verified against its post-image blob. The policy no longer names a wasm CI job as the place `--tree` runs, since `wasm.yml` has no `Libraries/occt-src`.
+
+### Changed: CI drops objects whose source no longer exists after the SwiftPM cache restore (#3214)
+
+CI configuration only: a branch lagging `main` restored a `.build` with a `GProps.swift.o` its tree could not link, and the doc-snippet runner links every object it finds.
 
 ### Two fillets whose radii sum to the face width are built, carried patch 0059 (#3207)
 

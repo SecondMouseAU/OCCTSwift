@@ -2,11 +2,9 @@
 //
 // Lifted out of `StressNullInvalidTests.swift` by #2928, because it is the only test in that file of
 // 60 that reads a `.brep` fixture out of the source tree by `#filePath`, and the wasm suites cannot
-// see the source tree: the module runs against an in-memory filesystem whose only preopens are
-// `/tmp` and `/work`, so the load fails with `.importFailed` and the test fails on its fixture rather
-// than on anything it asserts. `Package.swift` excludes this file for wasm and #3026 is the fix,
-// which is to teach `Scripts/wasm-test-node-runner.mjs` to preopen the fixture directories. The other
-// 59 tests in that file need no fixture and run.
+// see the source tree unless `Scripts/wasm-test-node-runner.mjs` preopens it: it does, for the
+// `Fixtures` directories only, at the same absolute host path `#filePath` bakes in (#3026), so this
+// file runs on wasm like the other 59 tests in `StressNullInvalidTests.swift`.
 
 import Foundation
 import OCCTSwift

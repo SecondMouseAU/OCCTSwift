@@ -1,0 +1,8 @@
+# The test files this PR lifts (current paths).
+Tests/OCCTAnalysisTests/ExtElCS/ExtremaElCSLinSphereTests.swift
+Tests/OCCTAnalysisTests/ExtPElC/ExtremaExtPElCCircTests.swift
+Tests/OCCTAnalysisTests/ExtPElS/ExtremaExtPElSConeTests.swift
+Tests/OCCTAnalysisTests/ExtSS/ExtremaExtSSTests.swift
+Tests/OCCTAnalysisTests/Extrema/ExtremaExtCSTests.swift
+Tests/OCCTAnalysisTests/Extrema/ExtremaExtPSTests.swift
+Tests/OCCTAnalysisTests/Extrema/ExtremaLocateExtCCTests.swift

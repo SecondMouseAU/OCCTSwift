@@ -1,0 +1,10 @@
+tangent interpolation tol 1e-06: domain=[0, 14.1421356237] poles=5 mid=(5, 5) value(2)=(1.84960461481, 2.06475180106)
+tangent interpolation tol 0.001: domain=[0, 14.1421356237] poles=5 mid=(5, 5) value(2)=(1.84960461481, 2.06475180106)
+tangent interpolation tol 1e-08: domain=[0, 14.1421356237] poles=5 mid=(5, 5) value(2)=(1.84960461481, 2.06475180106)
+single point: constructed
+IsLinear (0,0)-(5,5)-(10,10) tol 0.1: 1 deviation=0
+IsLinear (0,0)-(5,5)-(10,10) tol 1e-06: 1 deviation=0
+IsLinear (0,0)-(5,10)-(10,0) tol 0.1: 0 deviation=0
+IsLinear (0,0)-(5,10)-(10,0) tol 1e-06: 0 deviation=0
+line through (0,0),(10,10): location=(0, 0) direction=(0.707106781187, 0.707106781187)
+line parallel to x-axis at 5: location=(0, 5) direction=(1, 0)

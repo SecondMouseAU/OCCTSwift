@@ -1,0 +1,155 @@
+name: release-mode-tests
+
+# The optimised-build (`-c release`) test run (#3130). ci.yml's `build-and-test` is a debug
+# `swift test`, and a debug build extends every local's lifetime to the end of its scope. Swift is
+# free to do the opposite in an optimised build: release an owning wrapper (`let edges =
+# box.edges()`) once its last use is the `.handle` load, BEFORE the C call that receives the
+# pointer runs. `OCCTEdgeSetSameParameter(edges[0].handle, false)` then writes through a freed
+# OCCTEdge. That is how #2929 passed every debug run and failed on wasm, and how the tree held an
+# exposure for as long as it did. Measured in Scripts/repro/3130-borrowed-handle/: 7 of 8 runs
+# crashed under malloc scribbling. The static gate (`check-borrowed-handle-temporaries.py`)
+# catches the shapes a regex can see; this job is the part that catches the rest by running them.
+#
+# TWO SCOPES, chosen from measurement (numbers in okf/policies/release-mode-tests.md):
+#   subset  Scripts/release-mode-test.sh subset. Builds every test target (the build cannot be
+#           narrowed) and runs only the suites that hand a raw `.handle` to the bridge. A pull
+#           request gets this.
+#   full    Scripts/release-mode-test.sh full. Builds every test target and runs all of them.
+#           `push` to main, `workflow_dispatch`, and the Release verification workflow get this.
+# The script is the single definition of both, so a local run and this job cannot disagree.
+#
+# Called from ci.yml (and release.yml), not triggered on its own, for the reason code-style.yml
+# gives: GitHub orders jobs only within one workflow, and ci.yml's `changes` job is what lets a
+# prose-only PR skip the job. `workflow_dispatch` is kept so it can be run by hand.
+#
+# NOT a required check, and not to be made one until it has reported on `main`: see
+# okf/policies/required-status-checks.md. Deliberately NO `name:` key on the job below.
+on:
+  workflow_call:
+    inputs:
+      scope:
+        description: 'subset or full'
+        type: string
+        default: 'full'
+      ref:
+        description: 'Ref to check out (the Release verification workflow passes the release tag)'
+        type: string
+        default: ''
+  workflow_dispatch:
+    inputs:
+      scope:
+        description: 'subset or full'
+        type: choice
+        options: [full, subset]
+        default: 'full'
+
+jobs:
+  release-mode-tests:
+    runs-on: macos-15
+    # Measured on this runner: build 10 to 12 min (a restored cache did not shorten it), subset job
+    # 13 min end to end. The full suite adds its test phase on top (see okf/policies/release-mode-tests.md),
+    # so 45 leaves room for that and for a slow runner without letting a hung test hold a macOS
+    # runner for an hour.
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
+
+      - name: Select Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      # Its own key. A release build and a debug build do not share products, and a shared key would
+      # have each job's save overwrite the other's: the debug job would restore a multi-gigabyte
+      # release tree it never reads, and this one would rebuild from nothing every time.
+      - name: Cache SwiftPM artifacts
+        uses: actions/cache@v6
+        with:
+          path: |
+            .build
+            ~/Library/Caches/org.swift.swiftpm
+          key: ${{ runner.os }}-spm-release-${{ hashFiles('Package.swift') }}
+          restore-keys: |
+            ${{ runner.os }}-spm-release-
+
+      # Copied from ci.yml's `build-and-test` (#3214), unchanged, because the argument is the same:
+      # `restore-keys` falls back to the newest entry of ANY branch, `swift build` never deletes an
+      # object whose source is gone, and a stale object is linked into the test bundle. Read the
+      # comment there for the incident. The module/archive drop (#2867) is NOT copied: it protects
+      # the doc-snippet gate, which this job does not run.
+      - name: Drop objects whose source file no longer exists (restored from another branch's cache)
+        run: |
+          python3 - <<'PY'
+          import os, pathlib
+          build = pathlib.Path('.build')
+          if not build.is_dir():
+              print('no .build restored, nothing to clear')
+              raise SystemExit(0)
+          SOURCE_SUFFIXES = ('.swift', '.m', '.mm', '.c', '.cc', '.cpp', '.cxx')
+          removed = 0
+          for here, dirs, _files in os.walk(build):
+              depth = len(pathlib.Path(here).relative_to(build).parts)
+              if depth >= 6:
+                  dirs[:] = []
+                  continue
+              for name in list(dirs):
+                  if not name.endswith('.build'):
+                      continue
+                  dirs.remove(name)
+                  target = name[:-len('.build')]
+                  roots = [pathlib.Path(r) / target for r in ('Sources', 'Tests')]
+                  roots = [r for r in roots if r.is_dir()]
+                  if not roots:
+                      continue
+                  have = {f.name for r in roots for f in r.rglob('*') if f.is_file()}
+                  for obj in (pathlib.Path(here) / name).rglob('*.o'):
+                      stem = obj.name[:-2]
+                      # Only an object named after a source file is judged. Anything else (a
+                      # generated or linker-produced object) is left alone.
+                      if not stem.endswith(SOURCE_SUFFIXES):
+                          continue
+                      if stem not in have:
+                          print('orphan object, source gone:', obj)
+                          obj.unlink()
+                          removed += 1
+          print(f'dropped {removed} orphan object(s)')
+          PY
+
+      # The scope is passed through the environment, not interpolated into the script, so an
+      # input cannot become shell. `workflow_dispatch` and a caller that omits it both land on
+      # `full` through the input default.
+      - name: swift build + test -c release, malloc scribbling and guard edges
+        env:
+          SCOPE: ${{ inputs.scope }}
+        run: |
+          case "$SCOPE" in
+            subset | full) ;;
+            *) echo "::error::scope must be subset or full, got '$SCOPE'"; exit 2 ;;
+          esac
+          mkdir -p .build
+          Scripts/release-mode-test.sh "$SCOPE"
+
+      - name: Upload test log
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: release-mode-test-log-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .build/release-mode-test.log
+          # `.build` is a hidden directory, which upload-artifact skips unless told otherwise.
+          include-hidden-files: true
+          if-no-files-found: ignore
+          retention-days: 14
+
+      # Same as ci.yml's #2714 upload: a glob, so an absent or empty directory is a no-op.
+      - name: Upload crash diagnostic reports
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: release-mode-diagnostic-reports-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ~/Library/Logs/DiagnosticReports/*
+            /Library/Logs/DiagnosticReports/*
+          if-no-files-found: ignore
+          retention-days: 30

@@ -1,6 +1,5 @@
 import OCCTBridge
 import OCCTPlatform
-import simd
 
 /// Builder for creating fillets on edges of a shape, wrapping BRepFilletAPI_MakeFillet.
 ///
@@ -47,6 +46,10 @@ public final class FilletBuilder: @unchecked Sendable {
     }
 
     /// Build the filleted result.
+    ///
+    /// Answers nil when the builder is not done, and also when it is done but the result is
+    /// `BRepCheck`-invalid (#3200); ``hasResult``, ``faultyContourCount`` and ``faultyVertexCount``
+    /// are the builder's own diagnostics and are not changed by that.
     public func build() -> Shape? {
         guard let ref = OCCTFilletBuilderBuild(handle) else { return nil }
         return Shape(handle: ref)

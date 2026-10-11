@@ -1,0 +1,10 @@
+line DN(0,1)=(1, 0, 0) DN(0,2)=(0, 0, 0)
+2D line (1,1) DN(0,1)=(0.70710678118654746, 0.70710678118654746)
+sphere r=5 DN(0, pi/4, 1, 0)=(-0, 3.5355339059327378, 0)
+2 points (0,0,0) (10,10,0): closed=0 length=14.142135623730951 value(0.5)=(5, 5, 0)
+5 points zigzag: closed=0 length=47.413493009755058 value(0.5)=(20, 1.4890117483609058e-15, 0)
+closed 4 points r=10: closed=1 length=63.932939200133482 value(0.5)=(-10, -1.3333238173074634e-15, 0)
+2 points with tangents (1,1,0) (1,-1,0): closed=0 length=10.509492144701596 value(0.5)=(5.0000000000000009, 1.25, 0)
+5 points 3D: closed=0 length=45.256201511381249 value(0.5)=(20, 0, 10)
+bounded: Geom_Line=0 fitted BSpline=1
+bounded 2D: Geom2d_Line=0 fitted BSpline=1

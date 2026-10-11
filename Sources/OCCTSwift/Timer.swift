@@ -1,6 +1,5 @@
 import OCCTBridge
 import OCCTPlatform
-import simd
 
 /// High-resolution wall-clock timer.
 public final class Timer: @unchecked Sendable {

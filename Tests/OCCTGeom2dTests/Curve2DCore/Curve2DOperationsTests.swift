@@ -8,11 +8,10 @@ import simd
 struct Curve2DOperationsTests {
 
     @Test("Trim circle to quarter arc")
-    func trimCircle() {
+    func trimCircle() throws {
         let circle = Curve2D.circle(center: .zero, radius: 5)!
-        let arc = circle.trimmed(from: 0, to: .pi / 2)
-        #expect(arc != nil)
-        if let arc = arc {
+        do {
+            let arc = try #require(circle.trimmed(from: 0, to: .pi / 2))
             #expect(!arc.isClosed)
             let start = arc.startPoint
             let end = arc.endPoint
@@ -22,10 +21,14 @@ struct Curve2DOperationsTests {
     }
 
     @Test("Offset segment")
-    func offsetSegment() {
+    func offsetSegment() throws {
         let seg = Curve2D.segment(from: SIMD2(0, 0), to: SIMD2(10, 0))!
-        let offset = seg.offset(by: 2.0)
-        #expect(offset != nil)
+        // #1979: `!= nil` passed an offset to either side or of any size. Geom2d_OffsetCurve puts
+        // +2 on the right of +x: the segment (0, -2)-(10, -2)
+        // (Scripts/repro/766-geom2d-localprops-operations/).
+        let offset = try #require(seg.offset(by: 2.0))
+        #expect(simd_distance(offset.startPoint, SIMD2(0, -2)) < 1e-9)
+        #expect(simd_distance(offset.endPoint, SIMD2(10, -2)) < 1e-9)
     }
 
     @Test("Reverse segment swaps endpoints")

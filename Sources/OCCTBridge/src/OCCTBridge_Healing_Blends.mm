@@ -309,7 +309,7 @@ OCCTShapeRef OCCTShapeFilletVariable(OCCTShapeRef  shape,
       return nullptr;
 
     TopoDS_Shape result = fillet.Shape();
-    if (result.IsNull())
+    if (!occtBlendResultIsValid(result)) // #3200
       return nullptr;
 
     return new OCCTShape(result);

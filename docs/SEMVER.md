@@ -53,14 +53,18 @@ pre-release as `v4.0.0-beta.5`.
 #### v4.0.0
 
 **A major by Rule 2, on a much larger set than v3.0.0.** OCCT does not move: the kernel stays at
-`V8_0_1`, rebuilt as `v4.0.0-kernel.4` to carry every patch in `Scripts/patches/` where the v3.0.0
+`V8_0_1`, rebuilt as `v4.0.0-kernel.6` to carry every patch in `Scripts/patches/` where the v3.0.0
 asset carried seventeen. A kernel rebuild is a MINOR trigger at most and forces nothing on its own.
 What forces the major is Rule 2, carried by the breaking changes tabulated below.
 
-**The kernel pin of `v4.0.0-beta.5`, a frozen measurement of 2026-10-03.** `Package.swift` pins
-`v4.0.0-kernel.4` (#3031). That release carries thirty-nine patches in the native asset and the same
-thirty-nine in the wasm asset, with the eleven WASI-only source changes on top of the wasm one, and
+**The kernel pin of `v4.0.0-beta.5`, a frozen measurement of 2026-10-10.** `Package.swift` pins
+`v4.0.0-kernel.6` (#3260). That release carries forty-five patches in the native asset and the same
+forty-five in the wasm asset, with the eleven WASI-only source changes on top of the wasm one, and
 `Scripts/check-wasm-kernel-parity.py` reports the two clean with no acknowledgement standing.
+Patch `0031` (the `BSplCLib_Cache`/`BSplSLib_Cache` locks) is retired at this repin and is not in
+that asset, and `0058` and `0059` are pinned by it. The first beta.5 assembly (2026-10-03) was
+pinned at `v4.0.0-kernel.4` (#3031); `v4.0.0-kernel.5` (#3151) sat between. The behaviour the
+kernel changes carry to a consumer is recorded under the headings below, not here.
 `ls Scripts/patches/*.patch | wc -l` and that script re-derive it, and
 [`okf/references/carried-occt-patches.md`](../okf/references/carried-occt-patches.md) is where the
 inventory is kept.
@@ -107,12 +111,13 @@ a claim about the wasm work, not about the release: twenty-nine `Sources/` files
 beta.3 and most did so for unrelated reasons, including the Apple-platform behaviour changes
 recorded under #2186 below.
 
-On wasm the surface is the whole public API **except
+At `v4.0.0-beta.4` the wasm surface was the whole public API **except
 `Shape.isSelfIntersecting(hardTimeout:)`**, whose contract is a hard wall-clock deadline enforced
-from a second thread and which therefore cannot exist on a single-threaded target. A caller wanting
-a bound there uses `isSelfIntersecting(timeout:)`, which exists on every platform and whose bound is
-cooperative. That difference is the one thing a cross-platform consumer discovers at compile time,
-and the decision about it is open (#2760).
+from a second thread and which therefore cannot exist on a single-threaded target. #3229 settled
+the open decision (#2760) by making it exist everywhere with the same signature: on Apple it is
+unchanged, and on wasm the bound is cooperative and can overrun where OCCT reaches no checkpoint,
+so a worker or process the caller can terminate is the real hard bound there. That is additive
+(MINOR), and the cross-platform compile-time difference is gone.
 
 Two things a consumer should know before pinning beta.4 or later for wasm. The kernel is a **separate
 release asset**, `libOCCT-wasm.tar.gz`, fetched by `Scripts/fetch-occt-wasm.sh` rather than resolved
@@ -130,8 +135,9 @@ working, but a caller asserting on the old refusal will see the new value.
 
 **What `v4.0.0-beta.5` adds to the picture.** Its breaks are in
 [their own table](#new-in-v400-beta5-every-break-and-what-a-caller-does) below, each with a
-migration, and nothing was removed. The other kinds of change are not compile errors and are listed
-here, because a consumer upgrading from beta.4 should read them.
+migration. One declaration was removed, the deprecated alias `Shape.isEmptyShape` (#3062); the
+other breaks change a type or a value. The other kinds of change are not compile errors and are
+listed here, because a consumer upgrading from beta.4 should read them.
 
 **Additive API, MINOR.**
 
@@ -148,7 +154,16 @@ here, because a consumer upgrading from beta.4 should read them.
 - `IntfTool.segmentCount` and `MathMatrix.isSquare`, and a `@discardableResult Bool` return on
   `MathMatrix.setValue(row:col:value:)`, `MathMatrix.transpose()` and
   `GeomDirection.setCoordinates(x:y:z:)` (#2857, #2860, #2331).
-- In the C bridge, `OCCTBridgeRefusedReleaseCount` (#2952) and `OCCTTObjApplicationRefCount` (#2897),
+- `GProps`, a handle over `GProp_GProps` with `GProps.cylinder`, `cone`, `sphere` and `torus`
+  constructors, `mass`, `centreOfMass`, `matrixOfInertia`, `staticMoments`, `momentOfInertia`,
+  `radiusOfGyration`, `principalProperties`, `symmetry` and `add`, over `GProp_SelGProps` and
+  `GProp_VelGProps` (#3132; carried patch `0057`).
+- `Messenger.defaultTraceLevel` and `Messenger.setDefaultTraceLevel(_:)`, the host's control over
+  the default messenger's printers, which silences the statistics block of a STEP write while
+  keeping warnings and failures. The default is unchanged (#3062, #3029).
+- `Shape.isSelfIntersecting(hardTimeout:)` exists on wasm, with a cooperative bound (#3229).
+- In the C bridge, `OCCTGProps*` and `OCCTGPropsRef` for `GProps` (#3132),
+  `OCCTBridgeRefusedReleaseCount` (#2952) and `OCCTTObjApplicationRefCount` (#2897),
   diagnostics for a release the bridge refused, beside the functions behind the Swift additions
   above. A new internal target, `OCCTPlatform`, is neither a product nor re-exported (#2839).
 
@@ -178,6 +193,33 @@ change.
   surplus length (#2972).
 - `BRepGraph.findNode(for:)` and `hasNode(for:)` resolve the sub-shapes of a placed instance to the
   definition node it instantiates, where they returned `nil` and `false` (#2650).
+- Edge lengths measure with adaptive arc length where one Gauss rule was wrong by up to 1.5 percent
+  on elliptical and other non-circular edges: `Edge.length` (#3077), `Shape.totalEdgeLength` and
+  `linearProperties()` (#3085, whose centroid was 0.165 off on a 10 x 1 ellipse) and the small-edge
+  classification of `Shape.analyze`, which flips for the narrow band of edges within about 1.5
+  percent of the tolerance and so moves `smallEdgeCount`, `totalProblems` and `isHealthy` (#3095).
+  Lines and circles read the same. #3077 states PATCH and is recorded MINOR beside the other three.
+- A concave sheet-metal bend is rounded with a prism, not a fillet: it returns a valid solid on the
+  closed form where it returned an invalid one or one up to 0.375 off, and a radius that reaches past
+  a flange's face now throws `filletFailed` (#3096).
+- `Curve2D.parabola` and `arcOfParabola` place the focus where asked for a non-unit direction
+  (#3090). `ConstructionAxis.intersectionOfPlanes` has its origin on the line the planes share
+  (#3078, stated PATCH).
+- The `NLPlate` surface deformations pass through their constraint targets where they missed or
+  returned `nil`, with a different pole count and knot vector (#3177, stated PATCH).
+- `FeatureReconstructor`'s `revolve` builds a Solid where it answered a Shell, so a following hole
+  now cuts (#3175, stated PATCH).
+- `BRepGraph` absorbed history is recorded in node-id order, so every `sequenceNumber` of absorbed
+  history differs and `createdBy(... occurrence:)` can name a different node (#3102).
+- `PresentationStyle.isEmpty` is `false` for a hidden style with no colours, where it was `true`
+  (#3120, stated PATCH).
+- Kernel changes that arrive with the repin to `v4.0.0-kernel.5` and `.6`: a deterministic arc-join
+  offset face order where it was allocator-dependent (patch `0053`; the offset of two fused boxes
+  with coplanar faces left split deterministically fails, where it succeeded in 7 to 11 of 20
+  processes), `GProp_SelGProps` and `GProp_VelGProps` values for a cone, cylinder, sphere and torus
+  (patches `0055` and `0057`), and fillets of two edges whose radii sum to the width of the face
+  between them (patch `0059`, #3225), which returned `nil` and now return a valid shape (#3151,
+  #3260).
 
 **Refusals, MINOR: input that was answered with garbage is refused.** The return type already
 allowed the refusal in each case, so nothing stops compiling.
@@ -218,6 +260,30 @@ allowed the refusal in each case, so nothing stops compiling.
   `Shape.scaledAboutPoint(_:factor:)` returns `nil` for a zero factor where it returned a zero-volume
   solid, and `Shape.trsfModification(...)` returns `nil` for a singular 3x3 where it applied a `nan`
   transform (#2860).
+- `Shape.middlePath(start:end:)` refuses a null shape, an edge, the same shape twice and touching
+  ends where it aborted the process (#3107), and patch `0058` returns a path for the pairs that
+  aborted inside the kernel (#3199, stated PATCH; #3260 pins it). The pairs that already answered
+  answer the identical path, measured on 42 of 42.
+- `Shape.loft` refuses fewer than two sections, where one profile aborted the process (smooth) or
+  returned an invalid shape (ruled) (#3103).
+- The extrusion, draft, revolve and mesh builders refuse zero, NaN and overflowing input, and the
+  revolve and revolved-feature builders return `nil` for an unusable axis where they returned a
+  shape (for the thru-all feature, the unchanged original) (#3108). A revolve angle past 1e4
+  radians answers `nil` (#3122, stated PATCH), and `Shape.fromMesh` refuses a triangle index outside
+  `1...points.count` where it crashed or built an empty shape that read as a valid result (#3119,
+  stated PATCH).
+- `Curve2D.parameterAtLength` refuses a non-finite distance, `Curve3D.parameterAtLength`,
+  `edgeParameterAtArcLength` and `edgeParameterAtFraction` answer `0` for one (#3092), and
+  `Curve2D.interpolate(through:tangents:)` answers `nil` for an out-of-range tangent key (#3084).
+- Every fillet and chamfer entry point answers `nil` for a result the kernel reported done and
+  `BRepCheck` found invalid (#3232). Not PATCH, because a configuration that returned a shape now
+  does not; a caller that force-unwrapped the old result now traps at the unwrap, though what it held
+  was unusable.
+- `FeatureReconstructor` lists in `skipped` a boolean whose result volume its operands cannot allow
+  (#3231, stated PATCH) and a boolean with a solid-less operand (#3185, stated PATCH), where each
+  reported a wrong result as fulfilled, which its documented contract already promised.
+- A done-but-null offset result returns `nil` where it returned a wrapper around a null shape, so
+  code that read `isNull` on the result takes its `nil` branch (#3080, stated PATCH).
 - `Curve2D.bezierInsertPoleAfter(_:point:)` and the 3D `insertPoleAfter(index:point:)` accept one
   pole more before refusing, `MaxDegree() + 1`, the count the constructors already allow. That
   arrives with the kernel, as carried patch `0045` (#2875, #3013).
@@ -230,7 +296,11 @@ wrappers `Shape.evalAndUpdateTolerance(edge:face:)`, `curveOnSurface(edge:face:)
 do not close a loop (#2829), `Surface.extrema(to:)` on two parallel surfaces (#2831),
 `SewingBuilder.deletedFace(at:)` (#2856), and the `Document` naming lookups `sameShapeCount`,
 `sameShapeLabels`, `namingFindLabel` and `namingValidUntil` on a document that never recorded
-naming (#766). A crash is not a contract a caller can have depended on.
+naming (#766). A crash is not a contract a caller can have depended on. Since the first assembly:
+`HatchBuilder.nbIntervals` returns `0` for an index outside the line table, where it read out of
+bounds (#3070, issue #3057), a fillet blend over an empty obstacle returns `nil` (patch `0054`,
+#3071), `Shape.filleted` at a radius of half the face width answers a result (patch `0059`), and on
+wasm the parallel `direction`/`xDirection` pair `gp_Ax3` does not refuse is refused (#3024).
 
 **WebAssembly.** `Exporter.writeDXF` and `Exporter.writeSVG` work on `wasm32-unknown-wasip1`, where
 every export threw (#2793). The module is about 37 percent smaller: #2839 moved the Swift layer to
@@ -246,7 +316,12 @@ against its diff. The public Swift declarations (`Sources/OCCTSwift`) and the C 
 compared, keyed by container, name and argument labels, so that a break nobody declared would show
 as a changed declaration with no MAJOR attached. No declaration was removed and no enum case was
 added or removed, `SheetMetal.BuildError` included, and every changed Swift declaration traces to a
-MAJOR below, apart from the second `bsplineFill` overload (#2888), which is additive. That
+MAJOR below, apart from the second `bsplineFill` overload (#2888), which is additive. **That
+statement was true of the 2026-10-03 assembly and is not true of the release**: the changes since
+(everything after `714f71019`) were re-screened on 2026-10-10 by comparing the removed `public`
+lines of `git diff v4.0.0-beta.4 HEAD -- Sources/OCCTSwift` against the table, and exactly one
+declaration was removed that no earlier MAJOR covers, `Shape.isEmptyShape` (#3062), which is now a
+row. That
 comparison is a screen over declarations and not a `swift-api-digester` run, and
 it cannot see a changed value behind an unchanged signature: those are the PRs' own statements, read
 against their diffs.
@@ -266,6 +341,18 @@ MINOR by its own authors and one shape should not carry two grades; #2836 said s
 would be defensible"). A PR that states PATCH for an additive public C function (#2953) is recorded
 with #2969, which states MINOR for the same thing. None of this moves the version, since v4.0.0 is a
 major already.
+
+**The same exercise for the PRs merged after the first assembly.** #3077, #3078, #3080, #3119,
+#3120, #3122, #3151, #3175, #3177, #3185, #3199 and #3231 state PATCH for a change a caller can
+observe in a returned value or a refusal, and are recorded above as MINOR by the same rule. #3089
+and #3086 state MAJOR for a changed value behind an unchanged signature, and #3062 states MAJOR for
+a removed alias; all three are in the break table, and the first two were weighed against the
+authors' own invitation to downgrade (#3089 says a reviewer "may reasonably downgrade it to
+MINOR"). They stay MAJOR: a returned value or a verdict (`isHealthy`) that a caller branched on
+changes, and the rule is that a wrong MINOR costs a consumer's build. The other PRs merged
+since are tests, test reorganisation (#3147, #3202), tooling, CI and documentation, state NONE
+(or PATCH for documentation only) and change nothing a consumer compiles against; every one of the
+PRs examined carries a `## SemVer impact` section.
 
 **Pull requests with no `## SemVer impact` section.** #2883, #2886, #2922, #2942, #2955, #2973,
 #2980, #3001, #3016 and #3023 carry none, and no statement was written for their authors. Each was
@@ -479,6 +566,9 @@ Breaks recorded after beta.4. The table above is unchanged. Each row links to it
 | `EdgeAnalysis.checkSameParameter` and `checkVertexTolerance` rename a tuple element | compile error for a caller reading the label | [#2901](#v400-two-tuple-labels-were-the-opposite-of-what-they-said-2901) |
 | `Shape.BeanFaceIntersection.minSquareDistance` becomes Optional, and the ranges change | compile error, and a different result | [#2943](#v400-beanfaceintersectionminsquaredistance-is-nil-when-nothing-was-measured-2943) |
 | `Document.layerCount` and `layerNames` read the real layer table | silent value change | [#2413](#v400-documentlayercount-and-layernames-read-the-real-layer-table-2413) |
+| `Shape.isEmptyShape` removed, use `Shape.isNull` | compile error | [#3062](#v400-the-isemptyshape-alias-is-removed-3062) |
+| `Shape.analyze(tolerance:)`: `gapCount`, `totalProblems` and `isHealthy` change for every shape with an unordered wire | silent value change | [#3086](#v400-shapeanalyze-orders-each-wire-before-counting-gaps-3086) |
+| `Shape.solid(from:)` and `solidWithFullHistory(from:)` return the repaired face of a body that stays open | silent value change | [#3089](#v400-solidfrom-and-solidwithfullhistory-return-the-repaired-face-3089) |
 | Bridge functions change signature or nullability | compile error, direct callers of `OCCTBridge` only | [#2331, #2755, #2857, #2860, #2905, #2943](#v400-the-bridge-signatures-that-moved-with-them-2331-2755-2857-2860-2905-2943) |
 
 ##### v4.0.0: three results stop reporting zeros as witness points (#2249, #2251, #2993)
@@ -674,6 +764,31 @@ the write side writes: `0` and `[]` for a fresh document, and the real layers fo
 **Migration.** There is none, because the old list held no layers and code reading it was reading
 something else. A caller that branched on `layerCount > 0` or displayed `layerNames` sees different
 behaviour with no compiler warning, which is why this is listed as a break.
+
+##### v4.0.0: the `isEmptyShape` alias is removed (#3062)
+
+`Shape.isEmptyShape` was a deprecated alias of `Shape.isNull` through the betas ("until the next
+major"), and is removed (#1034). A grep of 38 sibling repositories found no use of it. **Migration:**
+rename to `Shape.isNull`, the same predicate (`TopoDS_Shape::IsNull`). `Shape.nullified` stays and is
+no longer deprecated, because it is the only public way to build a null shape.
+
+##### v4.0.0: `Shape.analyze` orders each wire before counting gaps (#3086)
+
+`Shape.analyze(tolerance:)` counted `gapCount` on wires whose edges are stored out of connection
+order, which is every face of a primitive, so a 10 mm box read `gapCount == 24` and
+`isHealthy == false` at every tolerance. Each wire is now ordered first, as `ShapeFix_Wire` does, and
+a box, a cylinder and a sphere read `0` and `true`. `totalProblems` drops by the same amount, and a
+wire with a real gap still reports it. **Migration:** none unless the old numbers were pinned or
+branched on; they were never a measurement of the shape.
+
+##### v4.0.0: `solid(from:)` and `solidWithFullHistory(from:)` return the repaired face (#3089)
+
+Both read the body from `ShapeFix_Solid::Solid()`, which the open-shell branch never assigns. For a
+body the fixer repairs but cannot close, the returned solid held the unrepaired face while the
+history reported it replaced. They now read the fixer's shared context, so the result holds the face
+the history reports; identity and wire order of that face differ. A body that closes, and an open
+body with nothing to repair, are unchanged. **Migration:** a caller that compared against the
+original face should compare against `history.record(of:).modified`.
 
 ##### v4.0.0: the bridge signatures that moved with them (#2331, #2755, #2857, #2860, #2905, #2943)
 

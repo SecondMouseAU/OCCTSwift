@@ -1,6 +1,5 @@
 import OCCTBridge
 import OCCTPlatform
-import simd
 
 /// Builder for lofted shapes through multiple wire sections.
 ///

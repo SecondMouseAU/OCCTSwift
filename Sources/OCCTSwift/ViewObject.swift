@@ -1,6 +1,5 @@
 import OCCTBridge
 import OCCTPlatform
-import simd
 
 /// Wrapper for XCAFView_Object — standalone view definition.
 public final class ViewObject: @unchecked Sendable {

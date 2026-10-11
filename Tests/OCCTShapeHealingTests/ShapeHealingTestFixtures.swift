@@ -5,7 +5,6 @@
 import Foundation
 import OCCTSwift
 import Testing
-import simd
 
 // The one shared helper CLAUDE.md's Test Layout section documents across every per-domain target
 // ("the only shared helper is SIMD3.normalized"). Moved here verbatim from the top of

@@ -1,6 +1,5 @@
 import OCCTBridge
 import OCCTPlatform
-import simd
 
 /// OCCT messaging system for dispatching messages to printers.
 public final class Messenger: @unchecked Sendable {

@@ -1,0 +1,6 @@
+# Suites that crash in a -c release build on the CI runner (Swift 6.2.4) and pass in debug.
+# Scripts/release-mode-test.sh passes them to --skip so a known cause does not keep the job red.
+# One suite (struct) name per line, then the issue. Remove a line when its issue is fixed; a
+# line whose suite no longer exists is skipped silently, so check this file at each release.
+
+# (empty: the seven #3261 suites were a real use-after-free in Shape.loft, fixed, not a toolchain defect)

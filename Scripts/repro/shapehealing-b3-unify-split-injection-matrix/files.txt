@@ -1,0 +1,6 @@
+# The test files this PR lifts (current paths).
+Tests/OCCTShapeHealingTests/BRepLib/UpdateTolerancesTests.swift
+Tests/OCCTShapeHealingTests/ShapeAnalysis/ShellAnalysisTests.swift
+Tests/OCCTShapeHealingTests/ShapeCustom/SurfaceConvertToAnalyticalTests.swift
+Tests/OCCTShapeHealingTests/ShapeUpgrade/SplitSurfaceTests.swift
+Tests/OCCTShapeHealingTests/ShapeUpgrade/UnifySameDomainBuilderTests.swift

@@ -1,6 +1,5 @@
 import OCCTBridge
 import OCCTPlatform
-import simd
 
 /// Directory operations using OSD_Directory.
 public enum DirectoryUtils {

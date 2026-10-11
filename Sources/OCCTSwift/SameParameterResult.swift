@@ -1,6 +1,5 @@
 import OCCTBridge
 import OCCTPlatform
-import simd
 
 /// Result of same-parameter check between 3D and 2D curves on a surface.
 public struct SameParameterResult: Sendable {

@@ -1,6 +1,5 @@
 import OCCTBridge
 import OCCTPlatform
-import simd
 
 /// Incremental wire builder.
 public final class WireBuilder: @unchecked Sendable {

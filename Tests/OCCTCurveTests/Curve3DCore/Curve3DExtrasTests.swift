@@ -4,37 +4,46 @@ import simd
 
 @testable import OCCTSwift
 
+// The earlier reverseCurve discarded both start points ("verified by no crash"), copyCurve
+// compared the copy with its source only at u = 0 inside `if let`, and copiedCurveIndependent
+// checked only `isClosed` (#766). Geom_Curve::Reverse and Copy on the same curves
+// (Scripts/repro/766-curve-extras-interp/transcript.txt) give the values pinned here.
 @Suite("Curve3D Extras v0.109")
 struct Curve3DExtrasTests {
     @Test func reverseCurve() {
-        if let c = Curve3D.line(through: SIMD3(0, 0, 0), direction: SIMD3(1, 0, 0)) {
-            let start = c.startPoint
-            #expect(c.reverse())
-            // After reverse, the curve direction should be flipped
-            let newStart = c.startPoint
-            let _ = newStart  // Direction changes verified by no crash
-            let _ = start
+        guard let c = Curve3D.segment(from: SIMD3(0, 0, 0), to: SIMD3(10, 0, 0)) else {
+            Issue.record("segment not built")
+            return
         }
+        #expect(c.reverse())
+        // In place: the direction flips, so the start is now (10, 0, 0).
+        #expect(simd_distance(c.startPoint, SIMD3(10, 0, 0)) < 1e-12)
+        #expect(simd_distance(c.endPoint, SIMD3(0, 0, 0)) < 1e-12)
     }
 
     @Test func copyCurve() {
-        if let c = Curve3D.line(through: SIMD3(0, 0, 0), direction: SIMD3(1, 0, 0)) {
-            if let copy = c.copy() {
-                // Copy should be independent
-                let p1 = c.point(at: 0)
-                let p2 = copy.point(at: 0)
-                #expect(abs(p1.x - p2.x) < 1e-6)
-                #expect(abs(p1.y - p2.y) < 1e-6)
-                #expect(abs(p1.z - p2.z) < 1e-6)
-            }
+        guard let c = Curve3D.line(through: SIMD3(0, 0, 0), direction: SIMD3(1, 0, 0)),
+            let copy = c.copy()
+        else {
+            Issue.record("line or its copy not built")
+            return
+        }
+        for u in [-5.0, 0, 3, 7] {
+            #expect(simd_distance(c.point(at: u), copy.point(at: u)) < 1e-12)
         }
     }
 
     @Test func copiedCurveIndependent() {
-        if let c = Curve3D.circle(center: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5) {
-            if let copy = c.copy() {
-                #expect(copy.isClosed)
-            }
+        guard let c = Curve3D.segment(from: SIMD3(0, 0, 0), to: SIMD3(10, 0, 0)),
+            let copy = c.copy()
+        else {
+            Issue.record("segment or its copy not built")
+            return
         }
+        #expect(copy.startPoint == c.startPoint)
+        // Reversing the original leaves the copy as it was.
+        #expect(c.reverse())
+        #expect(simd_distance(copy.startPoint, SIMD3(0, 0, 0)) < 1e-12)
+        #expect(simd_distance(c.startPoint, SIMD3(10, 0, 0)) < 1e-12)
     }
 }

@@ -86,10 +86,10 @@ let occtTarget: Target =
             name: "OCCT",
             path: "Libraries/OCCT.xcframework"
         )
-        // OCCT V8_0_1 + the forty-four carried patches listed below.
+        // OCCT V8_0_1 + the forty-five carried patches listed below.
         //
         // Scripts/build-occt.sh builds V8_0_1, which absorbed ten of the previously carried patches (0001-0009 and 0013; their files are deleted,
-        // their writeups kept in Scripts/patches/README.md under "Retired patches"). The forty-four that
+        // their writeups kept in Scripts/patches/README.md under "Retired patches"). The forty-five that
         // survive, all present in Scripts/patches/, are:
         //
         //   0010  Intf_Interference O(1) tangent-zone lookup + checkpointed breaker            #319
@@ -113,10 +113,10 @@ let occtTarget: Target =
         //   0028  GeomPlate_BuildPlateSurface's uninitialised G0/G1/G2 errors                #1018
         //   0029  XCAFDoc_Datum reads the datum point's X from the annotation plane's array  #1022
         //   0030  TopoDS_TShape::myState non-atomic flag-mutation data race                  #1154
-        //   0031  BSplCLib_Cache/BSplSLib_Cache mutable evaluation state, unsynchronized     #1153
-        //         (watch OCCT#1076: would rename these to BSplCLib_CacheGrid/BSplSLib_CacheGrid
-        //         and keep the identical race, so retarget this patch if it merges, don't drop it)
-        //   0033  Interface_Static's shared STEP/IGES parameter table, recursive mutex       #1157
+        //   (0031, the BSplCLib_Cache/BSplSLib_Cache locks, #1153, is RETIRED at the
+        //   v4.0.0-kernel.6 repin and is NOT in that asset; see "Retired patches" in
+        //   Scripts/patches/README.md and #3065)
+        //   0033 Interface_Static's shared STEP/IGES parameter table, recursive mutex       #1157
         //         (a partial fix, deliberately: closes the memory-safety hole, does not make two
         //         concurrent operations setting DIFFERENT values for the SAME named parameter
         //         produce correct output; see the patch's own doc comment)
@@ -172,6 +172,12 @@ let occtTarget: Target =
         //         (gp_Torus) compute the matrix of inertia, the solid's centre of mass over a
         //         partial turn and a torus's area and volume over part of the tube from the
         //         integral. GProps (#3091) is the wrapper that reads them
+        //   0058  BRepOffsetAPI_MiddlePath::Build carries a path that has reached a vertex       #3105
+        //         forward instead of casting it to an edge, and bounds the levels. Pinned by
+        //         v4.0.0-kernel.6
+        //   0059  ChFi3d_Builder builds two fillets that meet exactly (radii summing to the      #3207
+        //         width of the face between them) instead of answering IsDone() == false.
+        //         Pinned by v4.0.0-kernel.6
         //
         // This list said "fifteen" above a list of eleven until the release check ran, which is the
         // #585 failure shape in miniature: `ls Scripts/patches/*.patch | wc -l` agreed with the count
@@ -233,7 +239,7 @@ let occtTarget: Target =
         //     They are the only two patches in the tree with no CI coverage of any kind, which is
         //     worth knowing before trusting "the fix is in the kernel" about either.
         //
-        // Pinned to the v4.0.0-kernel.5 pre-release asset: upstream V8_0_1 plus the forty-four patches listed above,
+        // Pinned to the v4.0.0-kernel.6 pre-release asset: upstream V8_0_1 plus the forty-five patches listed above,
         // and nothing else. That was NOT true of v4.0.0-kernel.1, which carried two patches that are
         // not in Scripts/patches/ at all, so read the next paragraph before treating any older asset's
         // enumeration as its contents.
@@ -262,19 +268,19 @@ let occtTarget: Target =
         // probe. Nothing a consumer can call behaves differently.
         //
         // THAT DIVERGENCE IS CLOSED. The two strays above belonged to the v4.0.0-kernel.1 asset. The
-        // pin below is now v4.0.0-kernel.5, built from a tree whose only modifications are the carried
+        // pin below is now v4.0.0-kernel.6, built from a tree whose only modifications are the carried
         // patches, so neither is present: step 1 of "Shipping a rebuild" computes zero modified files
-        // that no carried patch explains, over 96 as of 2026-10-07 (v4.0.0-kernel.4 computed the same
-        // over 92, v4.0.0-kernel.3 over 79 and v4.0.0-kernel.2 over 78, before 0043 added its one).
+        // that no carried patch explains, over 93 as of 2026-10-10 (v4.0.0-kernel.5 computed the same
+        // over 96, v4.0.0-kernel.4 over 92, v4.0.0-kernel.3 over 79 and v4.0.0-kernel.2 over 78, before 0043 added its one).
         // The two ACKNOWLEDGED rows in
         // check-pinned-asset-patches.py stay keyed on v4.0.0-kernel.1 and so expire on their own here,
         // which is what they were built to do; if a later asset repeats either stray the finding comes
         // back rather than staying suppressed.
         //
-        // The asset holds forty-four and Scripts/patches/ holds forty-seven, so 0058 (MiddlePath,
-        // #3105), 0059 (fillets that meet exactly, #3207) and 0060 (fillets that cross or run out of
-        // face, #3208) are the three untested patches, and the rows for 0053 through 0057 below are history in the way the
-        // rows for 0044 through 0052 became at v4.0.0-kernel.4.
+        // The pinned asset lacks none of them: it holds forty-five and Scripts/patches/ holds forty-five,
+        // so there is no untested patch, and the rows for 0053 through 0059 below are history in the way the rows for 0044
+        // through 0052 became at v4.0.0-kernel.4. kernel.6 also dropped 0031 (retired, #3065), which
+        // is the one difference from kernel.5 besides 0058 and 0059.
         // If you rebuild and the checksum does not match the value below, that is a real difference to
         // investigate rather than an expected one, which is the opposite of what this paragraph said
         // while kernel.1 was pinned.
@@ -318,17 +324,13 @@ let occtTarget: Target =
         // wrong: InitializeMissingParameters is also the REPAIR that re-sets DirectFaces on an actor a
         // STEPCAFControl_Reader has left with empty OperationsFlags, which is #280's exact mechanism.
         // kernel-integration.yml caught it on main. See Scripts/patches/README.md's retired 0035 entry.
-        // Scripts/patches/ holds forty-seven patches and the pinned asset holds forty-four of them,
-        // enumerated above. `ls Scripts/patches/*.patch | wc -l` answers 47 against a list of 44.
-        // The pinned asset lacks three of them, and this is the written divergence: 0058, the
-        // BRepOffsetAPI_MiddlePath patch (#3105), and 0059, the ChFi3d fillet candidate that builds
-        // two fillets that meet exactly (#3207), and 0060, the BRepFilletAPI_MakeFillet fallback for
-        // fillets that cross or run out of face (#3208). No CI job exercises any of them until a rebuild pins them. The v4.0.0-kernel.4 rebuild closed the divergence
-        // that 0044 had opened and that 0045 through 0052 widened, and the v4.0.0-kernel.5
-        // rebuild closed the one that 0053 through 0057 opened, so 0058, 0059 and 0060 are the rows
-        // about patches the asset does not carry. The other
-        // rows that follow are kept as the record of what each patch does and which bridge
-        // mitigation it does or does not retire:
+        // Scripts/patches/ holds forty-five patches and the pinned asset holds the same forty-five,
+        // enumerated above. `ls Scripts/patches/*.patch | wc -l` answers 45 against a list of 45,
+        // and there is no divergence. The v4.0.0-kernel.4 rebuild closed the divergence that 0044 had
+        // opened and that 0045 through 0052 widened, the v4.0.0-kernel.5 rebuild closed the one that
+        // 0053 through 0057 opened, and the v4.0.0-kernel.6 rebuild closed the one that 0058 and 0059
+        // opened. The rows that follow are kept as the record of what each patch does and which
+        // bridge mitigation it does or does not retire:
         //
         //   0044  Extrema_ExtSS::Points / Extrema_ExtCS::Points bound against the point       #2840
         //         sequence rather than against NbExt(), which counts mySqDist and so counts
@@ -482,29 +484,22 @@ let occtTarget: Target =
         //   0058  BRepOffsetAPI_MiddlePath::Build casts a path that has already reached a
         //         vertex to an edge, reads past a path, hands a null face to
         //         BRep_Tool::CurveOnSurface and never ends for a sweep that cannot reach the end
-        //         section, for a pair of faces that are not the ends of a pipe. Carried and NOT
-        //         built: it carries the vertex forward, as the first pad does, and bounds the
+        //         section, for a pair of faces that are not the ends of a pipe. Built into
+        //         v4.0.0-kernel.6: it carries the vertex forward, as the first pad does, and bounds the
         //         levels. 423 of 573 pairs over 16 solids abort the process on the shipped archive
         //         and none patched; 81 of the 116 that share no vertex and aborted answer a
         //         validated path, 35 answer not done, and the 42 that answered answer the same,
         //         by override-link in Scripts/repro/3105-middlepath-patch/ (#3105).
-        //         Issue3105MiddlePathKernelTests runs it in kernel-integration.yml, gated on
-        //         OCCTSWIFT_LOCAL=1.
+        //         Issue3105MiddlePathKernelTests was gated on OCCTSWIFT_LOCAL=1 until the
+        //         repin that pinned this, and is ungated by the same change.
         //
         //   0059  ChFi3d_Builder lets two fillets that meet exactly through: radii that sum to the
         //         width of the face between them (r = 2 and 2 on a 4 mm face) answered
         //         IsDone() == false from the OCC119 guards in PerformOneCorner and
-        //         ChFi3d_StripeEdgeInter. Carried and NOT built; a radius above half the width
-        //         still declines. Issue3207FilletMeetingTests runs it in kernel-integration.yml,
-        //         gated on OCCTSWIFT_LOCAL=1 (#3207, OCCT#1177).
-        //
-        //   0060  BRepFilletAPI_MakeFillet::Build, after the stripe builder fails: fillets on
-        //         contours that share no vertex are the intersection of each contour filleted alone
-        //         (arcs that cross), and a single edge between two planar right-angle rectangles
-        //         whose radius reaches past a face is cut with the pivot arc (the far edge of the
-        //         face that runs out is the pivot). Carried and NOT built; anything else still
-        //         declines. Issue3208FilletPivotTests runs it in kernel-integration.yml, gated on
-        //         OCCTSWIFT_LOCAL=1 (#3208, OCCT#1177).
+        //         ChFi3d_StripeEdgeInter. Built into v4.0.0-kernel.6; a radius above half the
+        //         width still declines. Issue3207FilletMeetingTests was gated on
+        //         OCCTSWIFT_LOCAL=1 until the repin that pinned this, and is ungated by the
+        //         same change (#3207, OCCT#1177).
         //
         // 0043 (#2827, BRepGProp_Gauss keeps the by-plane mass) was the one outstanding before it,
         // and it went the other way, which is the comparison worth keeping beside 0044: carried
@@ -610,8 +605,8 @@ let occtTarget: Target =
         : .binaryTarget(
             name: "OCCT",
             url:
-                "https://github.com/SecondMouseAU/OCCTSwift/releases/download/v4.0.0-kernel.5/OCCT.xcframework.zip",
-            checksum: "91688c08d55f8f7f05f4965e32679b045dfead119ceeff766bd3bd68cb5a9ca8"
+                "https://github.com/SecondMouseAU/OCCTSwift/releases/download/v4.0.0-kernel.6/OCCT.xcframework.zip",
+            checksum: "1ea2e218eabda124fbbb03619e5c11936bf0c18404637e27f78ab95741b61444"
         )
 
 // OCCTBridge is 16 Objective-C++ files / ~62K lines wrapping the OCCT header tree; SwiftPM recompiles
@@ -743,10 +738,13 @@ let occtBridgeTarget: Target =
                     .linkedLibrary("c++"),
                     .linkedLibrary("c++abi"),
                     .linkedLibrary("unwind"),
-                    // -fwasm-exceptions does nothing for setjmp. OCCT's own CMake defines
-                    // OCC_CONVERT_SIGNALS, so OCC_CATCH_SIGNALS expands to a real setjmp inside OCCT
-                    // and six TKernel objects reference __wasm_setjmp (#2172, #2188).
-                    .linkedLibrary("setjmp"),
+                    // No setjmp here, deliberately (#2758). The kernel is built with
+                    // -UOCC_CONVERT_SIGNALS (#2175), so OCC_CATCH_SIGNALS expands to nothing and the
+                    // archive holds zero references to __wasm_setjmp, __wasm_longjmp or __c_longjmp;
+                    // and a link of this package with and without the library, against the pinned
+                    // kernel, succeeds both ways. A dependency that really calls setjmp would need
+                    // -lsetjmp from its own manifest, and the toolset's -mllvm -wasm-enable-sjlj
+                    // (Scripts/make-wasi-toolset.py) is kept for exactly that dependency.
                     // OSD_Directory::BuildTemporary() and OSD_Process::ProcessId() both call getpid(),
                     // which wasi-libc declares and does not define (docs/WASI_GUARD_SITES.md). The
                     // define is deliberately absent above; the library is what the link needs.
@@ -807,16 +805,16 @@ let occtBridgeTarget: Target =
 
 // The `simd` module, on WASI only (#2175).
 //
-// 196 of the 230 files in Sources/OCCTSwift open with `import simd`, and on
-// wasm32-unknown-wasip1 that is `error: no such module 'simd'`, which stops the entire Swift
+// 196 of the 230 files in Sources/OCCTSwift opened with `import simd` when this was written, and
+// on wasm32-unknown-wasip1 that is `error: no such module 'simd'`, which stops the entire Swift
 // layer before any of it is type-checked. Apple's simd is part of the Apple SDKs and there is no
-// wasm build of it.
+// wasm build of it. #2759 then removed the imports no file needed (measured by building Apple and
+// wasm with each one gone); 26 files in Sources/OCCTSwift still import it.
 //
-// A target NAMED `simd`, reachable only when isWASI, answers that without editing any of the 196
-// files and without changing a single byte of what an Apple build compiles: `import simd` still
-// resolves to Apple's there, because this target is not in the graph at all. The alternative,
-// 196 `#if canImport(simd)` edits, is a mechanical diff through nearly every file in the package
-// and would still need the definitions this module carries.
+// A target NAMED `simd`, reachable only when isWASI, answers that for those files without
+// changing a single byte of what an Apple build compiles: `import simd` still resolves to Apple's
+// there, because this target is not in the graph at all. The alternative, `#if canImport(simd)`
+// around each import, would still need the definitions this module carries.
 //
 // What it defines is what Sources/OCCTSwift measurably uses and no more; see the file's own
 // header for the counts. It re-exports the platform C library for the same reason Apple's module
@@ -916,9 +914,9 @@ let wasmUnportableTestTargets: Set<String> = []
 //   every case it is that a detector which cannot fail is worse than one that does not run.
 //   `OCCTThreadTests` contributes six of its 28 files, listed by name below.
 //
-//   SEVEN READ A `.brep` FIXTURE OUT OF THE SOURCE TREE, which the module cannot see. That one is a
-//   harness limitation and not a platform one, it is #3026, and the per-target note below says why
-//   those seven are excluded rather than listed as known failures.
+//   SEVEN READ A `.brep` FIXTURE OUT OF THE SOURCE TREE by `#filePath`, and are no longer excluded:
+//   that was a harness limitation and not a platform one, and #3026 taught
+//   `wasm-test-node-runner.mjs` to preopen `<repo>/Tests` (Fixtures only) so the path resolves.
 //
 //   ONE COMPARES AN OCCT READING AGAINST THE HOST OS, which wasi-libc cannot be asked.
 //   `HostOSCrossCheckTests` holds the six suites that bracket an OCCT reading with `getrusage`,
@@ -947,28 +945,12 @@ let wasmExcludedTestFiles: [String: [String]] = [
     "OCCTMiscTests": ["ConstructionContextConcurrencyTests.swift"],
     "OCCTModelingTests": ["BOPAlgo/Issue208SelfIntersectionTests.swift"],
     "OCCTShapeHealingTests": ["ShapeAnalysis/Issue772SelfIntersectionAnalysisTests.swift"],
-    // One concurrency file, plus the seven that read a `.brep` out of `Fixtures/` by `#filePath`.
-    // `#filePath` is an absolute HOST path baked in at compile time, and the suites run against an
-    // in-memory filesystem whose only preopens are `/tmp` and `/work`, so every one of those tests
-    // fails with `.importFailed`, 56 recorded issues with no second cause among them. Excluded
-    // rather than listed, for two reasons: the tests never reach the kernel guard they are named
-    // for (#2746, #2773, #2777, #2789, #2790, #2881), so a known-failure line would record a property of
-    // the harness under the name of a guard; and the five guard suites reuse test names
-    // deliberately, which the known-failure list cannot tell apart. Teaching
-    // `wasm-test-node-runner.mjs` to preopen the fixture directories is the fix, and is #3026.
-    // `StressUnifySameDomainNullPCurveTests` is the one of the original six that was lifted into a
-    // file of its own, because its fixture test was one of 60 in `StressNullInvalidTests.swift`.
-    // `Issue2881FilletObstacleTests` is the seventh: its control test loads the reporter's model, so
-    // on wasm it would fail with `.importFailed` and prove nothing about the fillet.
+    // One concurrency file. The seven that read a `.brep` out of `Fixtures/` by `#filePath` ran
+    // here once, and failed with `.importFailed` because `#filePath` is an absolute HOST path and
+    // the in-memory filesystem had no such directory (#3026). `wasm-test-node-runner.mjs` now
+    // preopens `<repo>/Tests`, Fixtures only, at that same absolute name.
     "OCCTStressTests": [
-        "Issue2881FilletObstacleTests.swift",
-        "StressAnalyzerSurfacelessFaceGuardTests.swift",
-        "StressBRepCheckInContextGuardTests.swift",
-        "StressConcurrencyTests.swift",
-        "StressIgesExportSurfacelessFaceGuardTests.swift",
-        "StressShapeCustomSurfacelessFaceGuardTests.swift",
-        "StressShapeDivideSurfacelessFaceGuardTests.swift",
-        "StressUnifySameDomainNullPCurveTests.swift",
+        "StressConcurrencyTests.swift"
     ],
     // The seven files of 29 whose subject is CPU threads rather than screw threads. Measured:
     // `grep -ln 'Dispatch\|NSLock\|withTaskGroup\|Thread\.' Tests/OCCTThreadTests/*.swift` returns
@@ -992,7 +974,7 @@ let wasmExcludedTestFiles: [String: [String]] = [
 // test file already compiles for wasm WITHOUT this, because every target shares one build-products
 // directory and `simd` is always in it (OCCTSwift depends on it). That is module visibility by
 // accident of layout, it is not a declared edge, and it would break the first time the layout or
-// the dependency changed. 1,179 of the 1,428 test files import `simd`.
+// the dependency changed. 271 of the 1,428 test files still import `simd` (#2759 removed the other 954).
 func adjustedForWASM(_ target: Target) -> Target? {
     guard isWASI, target.type == .test else { return target }
     guard !wasmUnportableTestTargets.contains(target.name) else { return nil }

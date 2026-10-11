@@ -117,16 +117,41 @@ extension Shape {
     /// Every edge must belong to this shape: only ``Edge/index`` is carried across, so an edge
     /// whose index names nothing here rejects the whole call rather than being skipped.
     ///
+    /// ## When the answer is nil (#3200)
+    ///
+    /// A result is a shape only if it is a valid one. The answer is `nil` when the builder is not
+    /// done, and also when it is done but `BRepCheck_Analyzer` rejects the result, which is what
+    /// OCCT's fillet builder produces when fillets meet or overlap on a shared face (radii adding
+    /// up past the face width) and in the vertex-snap window of #3209. A caller used to receive
+    /// that invalid shape, volume and all, as though it were a solid.
+    ///
+    /// Two fillets on opposite edges of a face of width `w` are refused once their radii sum past
+    /// `w`. A sum of exactly `w`, and a gap to `w` below `PConfusion` (1e-9), build from
+    /// `v4.0.0-kernel.6` (patch 0059, #3207; OCCT#1177): `r == w / 2` gives a semicircle, and an
+    /// older kernel answers `nil` there.
+    /// Radii past `w / 2` are refused by the kernel, or built into an invalid solid that is now
+    /// nil (#3208). `nil` carries no reason; ``FilletBuilder``
+    /// exposes the builder's diagnostics (``FilletBuilder/faultyContourCount`` and friends).
+    ///
     /// ```swift
-    /// let bracket = Shape.box(width: 40, height: 20, depth: 10)!
-    /// let rounded = bracket.filleted(edges: bracket.concaveEdges(), radius: 2)
+    /// let slab = Shape.box(width: 4, height: 10, depth: 6)!
+    /// let zTop = slab.bounds!.max.z
+    /// let topEdges = slab.edges().filter { abs(($0.bounds?.min.z ?? 0) - zTop) < 1e-3 }
+    ///
+    /// // Radii that fit the 4 mm wide top face: a valid, rounded solid.
+    /// let rounded = slab.filleted(edges: topEdges, radius: 1)
+    /// precondition(rounded?.isValid == true)
+    ///
+    /// // Radii that overlap there: nil, never an invalid solid.
+    /// let overlapped = slab.filleted(edges: topEdges, radius: 3)
+    /// precondition(overlapped == nil || overlapped?.isValid == true)
     /// ```
     ///
     /// - Parameters:
     ///   - edges: Edges to fillet (must have valid indices from this shape)
     ///   - radius: Fillet radius; must be > 0
-    /// - Returns: Filleted shape, or nil on failure, including when the list names an edge that is not
-    ///   this shape's.
+    /// - Returns: Filleted shape, or nil on failure: a non-positive radius, an edge that is not
+    ///   this shape's, a builder that is not done, or a result `BRepCheck_Analyzer` reports invalid.
     public func filleted(edges: [Edge], radius: Double) -> Shape? {
         guard !edges.isEmpty, radius > 0 else { return nil }
 
@@ -153,7 +178,9 @@ extension Shape {
     ///
     /// An edge OCCT cannot fillet is still skipped, not rejected: this changes only what a caller
     /// can learn about it, not the shape returned. See ``FilletResult`` for why the report is a
-    /// list of indices rather than a count or a reason.
+    /// list of indices rather than a count or a reason. A result `BRepCheck_Analyzer` reports invalid
+    /// answers nil, as for ``filleted(edges:radius:)``; see its "When the answer is nil" section
+    /// (#3200).
     ///
     /// ```swift
     /// let box = Shape.box(width: 10, height: 10, depth: 10)!
@@ -194,7 +221,8 @@ extension Shape {
     /// Fillet specific edges with linear radius interpolation.
     ///
     /// Every edge must belong to this shape, on the same all-or-nothing basis as
-    /// ``filleted(edges:radius:)``.
+    /// ``filleted(edges:radius:)``, and with the same nil contract: a result
+    /// `BRepCheck_Analyzer` reports invalid answers nil (#3200).
     ///
     /// ```swift
     /// let bar = Shape.box(width: 40, height: 20, depth: 10)!
@@ -510,6 +538,7 @@ extension Shape {
         }
 
         let handles: [OCCTWireRef?] = profiles.map { $0.handle }
+        defer { withExtendedLifetime(profiles) {} }
         guard
             let result = handles.withUnsafeBufferPointer({ buffer in
                 OCCTShapeCreatePipeShellMultiSection(
@@ -1033,9 +1062,10 @@ extension Shape {
     /// the start section does not reach the end section, the two ends are the same face or share
     /// a vertex, or an end is null or neither a face nor a wire.
     ///
-    /// On a kernel without carried patch `0058`, which includes the one currently pinned, a pair
-    /// of faces that share no vertex and are not the ends of a pipe can still abort the process
-    /// (#3105); the bridge refuses the pairs that share a vertex (#3098).
+    /// Carried patch `0058` (#3105), pinned by `v4.0.0-kernel.6`, is what makes a pair of faces that
+    /// share no vertex and are not the ends of a pipe answer a path or `nil`; on an older kernel
+    /// such a pair can abort the process. The bridge refuses the pairs that share a vertex
+    /// (#3098), which the patch does not cover.
     ///
     /// - Parameters:
     ///   - startShape: One end of the pipe, a face or a wire. Any other shape type answers `nil`.
@@ -1071,6 +1101,7 @@ extension Shape {
     /// - Returns: Connected shape, or nil on failure
     public static func makeConnected(_ shapes: [Shape]) -> Shape? {
         var handles = shapes.map { $0.handle as OCCTShapeRef? }
+        defer { withExtendedLifetime(shapes) {} }
         guard let h = OCCTShapeMakeConnected(&handles, Int32(shapes.count)) else { return nil }
         return Shape(handle: h)
     }
@@ -1259,6 +1290,7 @@ extension Shape {
     public static func fuseAll(_ shapes: [Shape]) -> Shape? {
         guard shapes.count >= 2 else { return nil }
         let handles: [OCCTShapeRef?] = shapes.map { $0.handle }
+        defer { withExtendedLifetime(shapes) {} }
         let result = handles.withUnsafeBufferPointer { buffer in
             OCCTShapeFuseMulti(buffer.baseAddress, Int32(shapes.count))
         }
@@ -1501,6 +1533,7 @@ extension Shape {
     {
         guard !shapes.isEmpty else { return nil }
         var shapeHandles = shapes.map { $0.handle as OCCTShapeRef? }
+        defer { withExtendedLifetime(shapes) {} }
         var resultRef: OCCTShapeRef?
         let h = shapeHandles.withUnsafeMutableBufferPointer { buffer in
             OCCTShapeSewWithHistory(buffer.baseAddress, Int32(shapes.count), tolerance, &resultRef)
@@ -1534,6 +1567,7 @@ extension Shape {
     {
         guard !shapes.isEmpty else { return nil }
         var handles = shapes.map { $0.handle }
+        defer { withExtendedLifetime(shapes) {} }
         var resultRef: OCCTShapeRef?
         guard let h = OCCTShapeQuiltWithHistory(&handles, Int32(shapes.count), &resultRef),
             let resultRef
@@ -1738,6 +1772,7 @@ extension Shape {
     public static func commonAll(_ shapes: [Shape]) -> Shape? {
         guard shapes.count >= 2 else { return nil }
         let handles: [OCCTShapeRef?] = shapes.map { $0.handle }
+        defer { withExtendedLifetime(shapes) {} }
         let result = handles.withUnsafeBufferPointer { buffer in
             OCCTShapeCommonMulti(buffer.baseAddress, Int32(shapes.count))
         }
@@ -2219,6 +2254,7 @@ extension Shape {
     public static func ruledShell(from wires: [Wire]) -> Shape? {
         guard wires.count >= 2 else { return nil }
         let handles: [OCCTWireRef] = wires.map { $0.handle }
+        defer { withExtendedLifetime(wires) {} }
         return handles.withUnsafeBufferPointer { buffer in
             guard let h = OCCTBRepFillGenerator(buffer.baseAddress!, Int32(wires.count)) else {
                 return nil
@@ -2304,6 +2340,7 @@ extension Shape {
     public static func compatibleWires(_ wires: [Wire]) -> [Wire]? {
         guard wires.count >= 2 else { return nil }
         let handles: [OCCTWireRef] = wires.map { $0.handle }
+        defer { withExtendedLifetime(wires) {} }
         var outHandles = [OCCTWireRef?](repeating: nil, count: wires.count)
         let count = handles.withUnsafeBufferPointer { inBuf in
             outHandles.withUnsafeMutableBufferPointer { outBuf in
@@ -2342,7 +2379,9 @@ extension Shape {
     /// - Returns: Result shape containing all split fragments, or nil on failure
     public static func split(objects: [Shape], by tools: [Shape]) -> Shape? {
         let objPtrs = objects.map { $0.handle as OCCTShapeRef? }
+        defer { withExtendedLifetime(objects) {} }
         let toolPtrs = tools.map { $0.handle as OCCTShapeRef? }
+        defer { withExtendedLifetime(tools) {} }
         guard
             let h = objPtrs.withUnsafeBufferPointer({ objBuf in
                 toolPtrs.withUnsafeBufferPointer({ toolBuf in
@@ -2504,6 +2543,7 @@ extension Shape {
     public func section(with tools: [Shape]) -> Shape? {
         let objHandles = [handle as OCCTShapeRef]
         let toolHandles = tools.map { $0.handle as OCCTShapeRef }
+        defer { withExtendedLifetime(tools) {} }
         guard
             let ref = objHandles.withUnsafeBufferPointer({ objBuf in
                 toolHandles.withUnsafeBufferPointer({ toolBuf in
@@ -2522,6 +2562,7 @@ extension Shape {
     /// - Returns: Compound of edges/vertices at intersections, or nil on failure
     public static func section(shapes: [Shape]) -> Shape? {
         let handles = shapes.map { $0.handle as OCCTShapeRef }
+        defer { withExtendedLifetime(shapes) {} }
         guard handles.count >= 2 else { return nil }
         return handles.withUnsafeBufferPointer({ buf in
             // Pass all shapes as objects (BOPAlgo_Section treats all arguments equally)
@@ -2548,6 +2589,7 @@ extension Shape {
     /// - Returns: Array of result face shapes, or nil on failure
     public func buildFaces(from edges: [Shape]) -> [Shape]? {
         let edgeHandles = edges.map { $0.handle as OCCTShapeRef }
+        defer { withExtendedLifetime(edges) {} }
         var outFaces: UnsafeMutablePointer<OCCTShapeRef?>?
         var outCount: Int32 = 0
         guard
@@ -2571,6 +2613,7 @@ extension Shape {
     /// - Returns: Array of result solid shapes, or nil on failure
     public static func buildSolids(from faces: [Shape]) -> [Shape]? {
         let faceHandles = faces.map { $0.handle as OCCTShapeRef }
+        defer { withExtendedLifetime(faces) {} }
         var outSolids: UnsafeMutablePointer<OCCTShapeRef?>?
         var outCount: Int32 = 0
         guard
@@ -2670,6 +2713,7 @@ extension Shape {
     /// - Returns: Result wire as a shape, or nil on failure.
     public static func makeWire(from edges: [Shape]) -> Shape? {
         let handles = edges.map { $0.handle as OCCTShapeRef }
+        defer { withExtendedLifetime(edges) {} }
         guard
             let ref = handles.withUnsafeBufferPointer({ buf in
                 OCCTBOPAlgoMakeWire(buf.baseAddress!, Int32(edges.count))
@@ -3004,7 +3048,9 @@ extension Shape {
     /// - Returns: Result glued shape, or nil on failure.
     public func glue(_ gluedShape: Shape, facePairs: [(base: Shape, glued: Shape)]) -> Shape? {
         let baseFaces = facePairs.map { $0.base.handle as OCCTShapeRef }
+        defer { withExtendedLifetime(facePairs) {} }
         let gluedFaces = facePairs.map { $0.glued.handle as OCCTShapeRef }
+        defer { withExtendedLifetime(facePairs) {} }
         guard
             let ref = baseFaces.withUnsafeBufferPointer({ baseBuf in
                 gluedFaces.withUnsafeBufferPointer({ gluedBuf in
@@ -3075,6 +3121,7 @@ extension Shape {
     /// - Returns: Result shape, or nil on failure.
     public func locOpeSplitAuto(wires: [Shape]) -> Shape? {
         let wireHandles = wires.map { $0.handle as OCCTShapeRef }
+        defer { withExtendedLifetime(wires) {} }
         guard
             let ref = wireHandles.withUnsafeBufferPointer({ buf in
                 OCCTLocOpeSplitByWiresAuto(handle, buf.baseAddress!, Int32(wires.count))
@@ -3099,9 +3146,13 @@ extension Shape {
         edgePairs: [(base: Shape, glued: Shape)] = []
     ) -> Shape? {
         let baseFaces = facePairs.map { $0.base.handle as OCCTShapeRef }
+        defer { withExtendedLifetime(facePairs) {} }
         let gluedFaces = facePairs.map { $0.glued.handle as OCCTShapeRef }
+        defer { withExtendedLifetime(facePairs) {} }
         let baseEdges = edgePairs.map { $0.base.handle as OCCTShapeRef? }
+        defer { withExtendedLifetime(edgePairs) {} }
         let gluedEdges = edgePairs.map { $0.glued.handle as OCCTShapeRef? }
+        defer { withExtendedLifetime(edgePairs) {} }
 
         let ref: OCCTShapeRef? = baseFaces.withUnsafeBufferPointer { baseFBuf in
             gluedFaces.withUnsafeBufferPointer { gluedFBuf in
@@ -3188,6 +3239,7 @@ extension Shape {
     /// - Returns: Fillet surface result, or nil on failure.
     public func filletSurfaces(edges: [Shape], radius: Double) -> FilletSurfaceResult? {
         let edgeHandles = edges.map { $0.handle as OCCTShapeRef }
+        defer { withExtendedLifetime(edges) {} }
         var outSurfaces: UnsafeMutablePointer<OCCTFilletSurfInfo>?
         var outCount: Int32 = 0
         let status = edgeHandles.withUnsafeBufferPointer { buf in
@@ -3278,6 +3330,7 @@ extension Shape {
     /// Split this shape by multiple tool shapes.
     public func split(tools: [Shape], tolerance: Double = 0) -> Shape? {
         let toolRefs = tools.map { $0.handle as OCCTShapeRef }
+        defer { withExtendedLifetime(tools) {} }
         guard
             let ref = toolRefs.withUnsafeBufferPointer({ buf in
                 OCCTBooleanSplitMulti(handle, buf.baseAddress!, Int32(tools.count), tolerance)
@@ -3661,6 +3714,7 @@ extension Shape {
     ///   face this shape does not have.
     public func defeature(faces: [Shape]) -> Shape? {
         let faceHandles = faces.map { $0.handle as OCCTShapeRef? }
+        defer { withExtendedLifetime(faces) {} }
         return faceHandles.withUnsafeBufferPointer { buf -> Shape? in
             guard let baseAddress = buf.baseAddress else { return nil }
             // Need to cast from UnsafePointer<OCCTShapeRef?> to UnsafePointer<OCCTShapeRef>

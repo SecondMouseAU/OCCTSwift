@@ -15,9 +15,8 @@ struct TDocStdXLinkToolTests {
         let ok = doc.xlinkCopy(targetLabelId: tgt.labelId, sourceLabelId: src.labelId)
         doc.commitTransaction()
         #expect(ok)
-        if let val = tgt.integer {
-            #expect(val == 77)
-        }
+        // Unconditional: inside `if let`, a copy that carried nothing across passed (#766).
+        #expect(tgt.integer == 77)
     }
 
     @Test func xlinkCopyWithLink() {
@@ -27,7 +26,9 @@ struct TDocStdXLinkToolTests {
         src.setInteger(88)
         let ok = doc.xlinkCopyWithLink(targetLabelId: tgt.labelId, sourceLabelId: src.labelId)
         doc.commitTransaction()
-        // CopyWithLink may fail if labels are in same document, just check no crash
-        _ = ok
+        // XLinkTool::CopyWithLink copies the source's attributes onto the target. The answer and the
+        // effect are both asserted here; the version on v5 discarded both (#766).
+        #expect(ok)
+        #expect(tgt.integer == 88)
     }
 }

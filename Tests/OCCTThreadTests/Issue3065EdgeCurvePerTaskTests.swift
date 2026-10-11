@@ -12,13 +12,13 @@ import simd
 /// pattern: every task builds its own, samples spans staggered by task index, and every point must
 /// equal the one a serial run produced.
 ///
-/// **What this test can and cannot see.** Carried patch `0031` locks the BSpline evaluation cache,
-/// so against a kernel that carries it, even a shared `EdgeCurve` returns correct points (more
-/// slowly), and this test passes either way. It fails if the bridge ever hands one adaptor to two
-/// `EdgeCurve` instances on a kernel WITHOUT that lock, which is the situation after `0031` is
-/// retired: #3065's investigation measured eight threads on one shared adaptor reading wrong points
-/// in 97 of 97 completed runs without the lock, and none with one adaptor per thread. The test
-/// therefore holds the property the lock currently masks.
+/// **What this test can and cannot see.** Carried patch `0031` used to lock the BSpline evaluation
+/// cache, so against a kernel that carried it even a shared `EdgeCurve` returned correct points
+/// (more slowly) and this test passed either way. `0031` was retired at `v4.0.0-kernel.6`, so the
+/// pinned kernel has no such lock and this test now fails if the bridge ever hands one adaptor to
+/// two `EdgeCurve` instances: #3065's investigation measured eight threads on one shared adaptor
+/// reading wrong points in 97 of 97 completed runs without the lock, and none with one adaptor per
+/// thread. The test holds the property the lock used to mask.
 ///
 /// Measured 2026-10-07 for #3065 by linking the stock (lock-free) `BSplCLib_Cache`, `BSplSLib_Cache`,
 /// `GeomAdaptor_Curve` and `GeomAdaptor_Surface` objects, built against the patched headers so the

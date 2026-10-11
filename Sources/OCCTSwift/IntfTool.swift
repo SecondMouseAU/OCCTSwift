@@ -1,6 +1,5 @@
 import OCCTBridge
 import OCCTPlatform
-import simd
 
 /// Line-box clipping using Intf_Tool.
 public final class IntfTool: @unchecked Sendable {

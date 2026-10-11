@@ -1,6 +1,5 @@
 import OCCTBridge
 import OCCTPlatform
-import simd
 
 /// Coordinate system transformation utilities.
 public enum TransformUtils {

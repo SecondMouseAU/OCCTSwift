@@ -1,0 +1,13 @@
+reflectLinesSphere: edges=1 bbox=(-10.0000001, -10.0000001, -1e-07)..(10.0000001, 10.0000001, 1e-07)
+reflectLinesFiltered outLine visible in3d: edges=1 bbox=(-10.0000001, -10.0000001, -1e-07)..(10.0000001, 10.0000001, 1e-07)
+shapeBeyondTheEye: reach=1010 focus=50 guard(reach >= focus)=refuse
+eyePlaneCuttingTheShape: reach=10.0000001 focus=5.5 guard(reach >= focus)=refuse
+eyeExactlyOnAFace: reach=10.0000001 focus=10 guard(reach >= focus)=refuse
+eyeAnchor atOrigin: reach=10.0000001 focus=50 guard(reach >= focus)=project
+eyeAnchor atOrigin: visible x range [-6.2500001, 6.2500001]
+eyeAnchor farAway: reach=1010 focus=1050 guard(reach >= focus)=project
+eyeAnchor farAway: visible x range [-131.2500001, 131.2500001]
+shapeBehindThePicturePlane: reach=-1000 focus=50 guard(reach >= focus)=project
+shapeBehindThePicturePlane: visible x range [0.943396126415, 1.42857152857]
+extremeButValidFocus: reach=10.0000001 focus=10.01 guard(reach >= focus)=project
+extremeButValidFocus: visible x range [19.9999999, 30030.0000001]

@@ -1,0 +1,5 @@
+interpolate default params: [0, 8] values at 0, 1/4, 1/2, 1: 0 2.30952381 4 0
+interpolate params 0..1: values at 0.25, 0.5: 1 4
+smooth junction G1: IsG1 1 G1Angle 1.87540029e-17 C0Value 0
+smooth junction C2: IsC1 1 C1Ratio 1 C1Angle 1.87540029e-17
+LocOpe line x=y=5: done 1 NbPoints 2 5 15

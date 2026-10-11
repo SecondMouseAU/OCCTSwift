@@ -1,0 +1,4 @@
+Tests/OCCTSurfaceTests/Continuity/Issue623ContinuityFloorTests.swift
+Tests/OCCTSurfaceTests/Conversion/SurfaceApproximateDefaultsParityTests.swift
+Tests/OCCTSurfaceTests/Core/GeomOffsetSurfaceExtTests.swift
+Tests/OCCTSurfaceTests/Core/SurfaceAnalyticTests.swift

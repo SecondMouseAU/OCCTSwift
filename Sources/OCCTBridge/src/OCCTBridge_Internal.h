@@ -2266,6 +2266,35 @@ inline bool occtShapeHasSurfacelessFace(const TopoDS_Shape& shape)
   return occtShapeSurfacelessFaceCount(shape, 1) > 0;
 }
 
+// === #3200: a done blend is not a valid blend ===
+//
+// BRepFilletAPI_MakeFillet and MakeChamfer report IsDone() true for results BRepCheck_Analyzer
+// rejects: fillets whose radii overlap on a shared face (a 4-edge frame above half the face width,
+// all 12 edges above half width), and the vertex-snap window of the #2881 model (#3209, 27 or 28
+// faces, about 26000 mm3 missing). The shape handed back read as a result and was not one.
+//
+// Every success path of the fillet and chamfer entry points answers nullptr when this is false.
+// It runs only after the builder reported done, so a failing blend pays nothing, and it is the
+// predicate Shape.isValid uses (OCCTShapeIsValid), so "invalid" means the same thing on both sides.
+// A throw out of the analyzer counts as invalid: a result that cannot be checked is not certified.
+inline bool occtBlendResultIsValid(const TopoDS_Shape& result)
+{
+  if (result.IsNull())
+    return false;
+  if (occtShapeHasPCurveOnlyEdge(result) || occtShapeHasSurfacelessFace(result))
+    return false;
+  try
+  {
+    BRepCheck_Analyzer analyzer(result);
+    return analyzer.IsValid();
+  }
+  catch (...)
+  {
+    occtRecordCaughtException(__func__);
+    return false;
+  }
+}
+
 // === #2790: the same predicate, three more lines, and the two subclasses OCCT got right ===
 //
 // The pair above is the right one for the rest of the ShapeCustom family too, and that was measured
@@ -3007,7 +3036,7 @@ OCCTShapeRef occtShapeFilletEdgeList(OCCTShapeRef   shape,
       return nullptr;
 
     TopoDS_Shape result = fillet.Shape();
-    if (result.IsNull())
+    if (!occtBlendResultIsValid(result))
       return nullptr;
 
     return new OCCTShape(result);

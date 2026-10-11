@@ -1,6 +1,5 @@
 import OCCTBridge
 import OCCTPlatform
-import simd
 
 /// Iterator over triangulated faces of a meshed shape.
 public final class MeshFaceIterator: @unchecked Sendable {

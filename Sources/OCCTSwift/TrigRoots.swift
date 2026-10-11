@@ -1,6 +1,5 @@
 import OCCTBridge
 import OCCTPlatform
-import simd
 
 /// Trigonometric equation solver: a*cos(x) + b*sin(x) + c*cos(2x) + d*sin(2x) + e = 0.
 public enum TrigRoots {

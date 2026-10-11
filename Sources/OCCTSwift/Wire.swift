@@ -553,6 +553,7 @@ public final class Wire: @unchecked Sendable {
     public static func wireFromEdges(_ edges: [Edge]) -> Wire? {
         guard !edges.isEmpty else { return nil }
         let handles: [OCCTEdgeRef] = edges.map { $0.handle }
+        defer { withExtendedLifetime(edges) {} }
         return handles.withUnsafeBufferPointer { buffer in
             guard
                 let wireRef = OCCTWireMakeWireFromEdgeRefs(buffer.baseAddress!, Int32(edges.count))
@@ -631,6 +632,7 @@ public final class Wire: @unchecked Sendable {
         guard !wires.isEmpty else { return nil }
 
         let handles: [OCCTWireRef?] = wires.map { $0.handle }
+        defer { withExtendedLifetime(wires) {} }
         let handle = handles.withUnsafeBufferPointer { buffer in
             OCCTWireJoin(buffer.baseAddress, Int32(wires.count))
         }

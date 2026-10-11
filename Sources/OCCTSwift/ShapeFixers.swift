@@ -1,6 +1,5 @@
 import OCCTBridge
 import OCCTPlatform
-import simd
 
 /// Individual fix operations on a wire using ShapeFix_Wire.
 public final class WireFixer: @unchecked Sendable {

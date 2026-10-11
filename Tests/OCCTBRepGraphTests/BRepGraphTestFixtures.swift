@@ -9,7 +9,6 @@
 import Foundation
 import OCCTSwift
 import Testing
-import simd
 
 extension SIMD3 where Scalar == Double {
     var normalized: SIMD3<Double> {

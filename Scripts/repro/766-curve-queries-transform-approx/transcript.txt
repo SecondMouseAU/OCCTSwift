@@ -1,0 +1,5 @@
+circle r=5: period=6.2831853071795862 first=0 last=6.2831853071795862
+line: first=-2e+100 last=2e+100
+rotate pi/3: in place start=(2.5000000000000004, 4.3301270189221928) copy start=(2.5000000000000004, 4.3301270189221928)
+first circular edge of cylinder r=5 h=10: done=1 hasResult=1 maxError=0.00033800541390782121 degree=7 poles=13 start=(5.0000000000000018, -8.8817841970012523e-16, 10) mid=(-5.0000000000000018, -2.2204460492503131e-16, 10) end=(5, -1.7763568394002505e-15, 10)
+box 10 (centred) edge[0]: done=1 hasResult=1 maxError=1.3618629968015702e-15 degree=1 poles=2 start=(-5, -5, -5) mid=(-5, -5, 0) end=(-5, -5, 5)

@@ -259,7 +259,22 @@ edges[0].withHandle { OCCTEdgeSetSameParameter($0, false) }   // not OCCTEdgeSet
 `withHandle` is on every `NativeHandleOwner` (`Shape`, `Edge`, `Wire`, `Face` and the three
 curve and surface parents), and `Scripts/check-borrowed-handle-temporaries.py` fails the build on a
 `.handle` read off a subscript or a call result. An owner bound to its own `let` is not affected.
+A split read, `let h = doc.handle` with the owner unused afterwards and `h` used by later calls,
+did not reproduce either (variants SPL and SPS in the probe: correct 8/8 under `MallocScribble`),
+so the gate does not flag it; that is a measurement, not a guarantee, and `withExtendedLifetime`
+is the form that holds.
+
+Seven public classes still expose a bare `public let handle`: `GeomPoint3D`, `GeomDirection`,
+`GeomVector3D`, `Axis1Placement`, `Axis2Placement`, `Interval` and `IntervalSet`. Making them
+`internal` is a source-breaking change, so each carries the rule on the property's documentation
+instead; hold the owner with `withExtendedLifetime(x) { ... x.handle ... }`.
 `Scripts/repro/3130-borrowed-handle/` reproduces and measures it.
+
+Because a debug `swift test` cannot see this class, CI also runs the tests in an optimised build:
+the `release-mode-tests` job runs `Scripts/release-mode-test.sh` (`subset` on a pull request, `full`
+on `main`, on a manual dispatch and when a release is published) under `MallocScribble`. Run the
+same thing locally with `Scripts/release-mode-test.sh subset`; the design and measurements are in
+[`okf/policies/release-mode-tests.md`](../../okf/policies/release-mode-tests.md).
 
 ### A release the bridge never handed out is refused
 

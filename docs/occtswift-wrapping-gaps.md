@@ -7,17 +7,18 @@ search_exclude: true
 
 ## Coverage
 
-All user-facing OCCT classes are wrapped to method-level completeness: **4,365 operations**
-across **1,174 OCCT headers the bridge includes** (of 6,774 shipped in the xcframework).
+All user-facing OCCT classes are wrapped to method-level completeness: **4,391 operations**
+across **1,186 OCCT headers the bridge includes** (of 6,774 shipped in the xcframework).
 
 Both numbers are derived, not maintained by hand: the first is
 `python3 Scripts/count-operations.py`'s `DERIVED` row, which the `count-operations` gate holds
 README.md, `docs/API_REFERENCE.md` and, since #967, `docs/index.md` to. It still does **not** hold
 this file, which is how the figure here sat at 3,333 from 2026-04-13 until v2.0.0 while the real
 count grew past 4,200, and reached 4,256 (against a derived 4,355) by #807's own opening. **Both
-re-derived again at #820 (Phase 6)**, 2026-08-31: `count-operations.py` now reports 4,365, and
+re-derived again for the v4.0.0-beta.5 release**, 2026-10-10 (last at #820, 2026-08-31, when they were 4,365 and
+1,174): `count-operations.py` now reports 4,391, and
 `grep -rhoE '#include <[A-Za-z0-9_]+\.hxx>' Sources/OCCTBridge/{src,include} | sort -u | wc -l`
-(the same query this figure has always meant) now reports 1,174. Re-derive both again before
+(the same query this figure has always meant) now reports 1,186. Re-derive both again before
 trusting either; this file has a five-month history of exactly this drift.
 
 ### What's Wrapped

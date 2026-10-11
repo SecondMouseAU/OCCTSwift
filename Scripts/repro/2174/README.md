@@ -384,13 +384,14 @@ link has been watched to fail without it. `run.sh libs` removes one piece at a t
 
 | Removed | Result |
 |---|---|
-| `-lsetjmp` | link fails: `undefined symbol: __wasm_setjmp`, `__wasm_longjmp`, `__c_longjmp` |
+| `-lsetjmp` | **link succeeds** since #2175 (`-UOCC_CONVERT_SIGNALS` left no setjmp in the archive); it used to fail on `__wasm_setjmp`, `__wasm_longjmp`, `__c_longjmp` while six `TKernel` objects carried a lowered pair. `run.sh libs` now prints it as NOT LOAD-BEARING (#2758) |
 | `-L<wasi-sdk eh> -lc++abi -lunwind` | link fails: `undefined symbol: __cxa_allocate_exception`, `__cxa_begin_catch`, `__cxa_end_catch` |
 | the compiler-rt resource directory | fails before the link: `cannot open .../libclang_rt.builtins.a` |
 | the threading shim | 8 compile errors, `no type named 'mutex' in namespace 'std'` and friends |
 
-`-lsetjmp` is now settled rather than predicted: #2172 measured six `TKernel` objects carrying a
-lowered `setjmp` pair, and this is the link that needs them.
+`-lsetjmp` was settled at the time rather than predicted: #2172 measured six `TKernel` objects
+carrying a lowered `setjmp` pair, and this was the link that needed them. #2175 then removed the
+pair, and the row above is the answer today; the numbers in the rest of this file predate it.
 
 **`-lwasi-emulated-getpid` is settled too, and the answer is "yes, when a caller reaches it".**
 `docs/WASI_GUARD_SITES.md` has carried it as genuinely open. Two members of the archive reference
@@ -642,8 +643,8 @@ archive that does not exist, and requires the classifier to reject it.
 ### What is unchanged
 
 `probe.wasm` still reports 0 failures over all five cases, against the real archive rather than the
-partial one, and `run.sh libs` still finds every piece of the link line load-bearing: `-lsetjmp`,
-the wasi-sdk `eh` runtime, the compiler-rt builtins and the threading shim each break the link or
+partial one, and `run.sh libs` still finds every piece of the link line load-bearing, as of that
+measurement: `-lsetjmp` (no longer, #2758), the wasi-sdk `eh` runtime, the compiler-rt builtins and the threading shim each break the link or
 the compile when removed, and `-lwasi-emulated-getpid` is still needed only by a probe that reaches
 one of the two `getpid()` sites.
 
