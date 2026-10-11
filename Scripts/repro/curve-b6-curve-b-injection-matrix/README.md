@@ -10,13 +10,13 @@ kernel `v4.0.0-kernel.6`; re-derive rather than quote. `files.txt` lists the 13 
 |---|---|
 | `reachable-funcs.py` | over-approximates the bridge entry points the tests reach, minus any symbol a test file calls itself through `import OCCTBridge`, which cannot be shadowed |
 | `generate-shadow.py` | reads the C declaration of each and writes a module-local Swift function with the same name and signature, calling the real one and distorting its answer when `CRV_SWITCH` names a switch (a Bool inverted, a reference dropped, a scalar offset or negated, a count off by one or zeroed or short by one, one out parameter or struct field offset or negated, a Double input offset, a Bool input inverted). Entry points with an out-pointer-to-pointer or array-of-handles parameter cannot be mapped and are skipped |
-| `manual-shadow.swift`, `manual-switches.txt` | hand-written shadows for the two skipped entry points `GeomToolsCurveSetTests` depends on (`OCCTGeomToolsCurveSetWrite` returns nil; `OCCTGeomToolsCurveSetRead` reports one curve fewer, or returns them reversed). Appended to the generated shadow for the sweep |
+| `manual-shadow.swift.txt`, `manual-switches.txt` | hand-written shadows for the two skipped entry points `GeomToolsCurveSetTests` depends on (`OCCTGeomToolsCurveSetWrite` returns nil; `OCCTGeomToolsCurveSetRead` reports one curve fewer, or returns them reversed). Appended to the generated shadow for the sweep |
 | `run-injection-matrix.py` | runs the built test bundle per switch through `swiftpm-testing-helper`, derives the changed-test set from `git diff origin/main`, and reports both directions |
 | `matrix-before.json`, `matrix-after.json` | `origin/main`'s versions of the 13 files, and the lifted ones; one row per switch that reddened a test or crashed |
 
 Running it (repo root): `python3 <this dir>/generate-shadow.py --out Sources/OCCTSwift/InjectionShadow.swift
---switches /dev/null --funcs <this dir>/funcs.txt`, append `manual-shadow.swift` to the output (the file is never
-committed), build `swift build --product OCCTCurveTests` and `--product OCCTBRepGraphTests`, symlink
+--switches /dev/null --funcs <this dir>/funcs.txt`, append `manual-shadow.swift.txt` to the output (the shadow is never
+committed; the hand-written part is kept as `.txt` because the style gate lints every tracked `.swift`), build `swift build --product OCCTCurveTests` and `--product OCCTBRepGraphTests`, symlink
 `XCTest.framework`, `Testing.framework` and `libXCTestSwiftSupport.dylib` into
 `.build/out/Products/Debug/PackageFrameworks`, then `python3 <this dir>/run-injection-matrix.py after --files
 <this dir>/files.txt`. For `before`: `git checkout origin/main -- $(cat files.txt)`, rebuild, run with label
