@@ -37,45 +37,9 @@ import Testing
 @Suite("#837: fixed() mode-flag wiring")
 struct Issue837FixDetailedModeFlagsTests {
 
-    /// A face with a hole wire wound the *same* rotational sense as the outer wire -- a genuine
-    /// `BRepCheck_Face` wire-orientation defect a correct hole must avoid.
-    ///
-    /// Built via the raw
-    /// `Shape.builderMakeWire()`/`.builderAdd(_:)`/`.setOrientation(_:)` primitives (same as
-    /// `Issue655FreeBoundsInternalOrientationTests`) so no automatic orientation correction runs
-    /// during construction -- `Shape.face(from:outer:innerWires:)` would fix the hole's
-    /// orientation itself via `ShapeFix_Face`, which would defeat this fixture's purpose.
-    static func badHoleOrientationFace() -> Shape? {
-        guard
-            let outerWire = Wire.polygon3D(
-                [SIMD3(-5, -5, 0), SIMD3(5, -5, 0), SIMD3(5, 5, 0), SIMD3(-5, 5, 0)], closed: true
-            ), let face = Shape.face(from: outerWire)
-        else { return nil }
-
-        // Same winding (CCW, viewed from +Z) as the outer wire -- should be the opposite for a
-        // valid hole.
-        let holePoints: [SIMD3<Double>] = [
-            SIMD3(-1, -1, 0), SIMD3(1, -1, 0), SIMD3(1, 1, 0), SIMD3(-1, 1, 0),
-        ]
-        guard let holeWireShape = Shape.builderMakeWire() else { return nil }
-        for i in 0..<holePoints.count {
-            guard
-                let edgeWire = Wire.line(
-                    from: holePoints[i], to: holePoints[(i + 1) % holePoints.count]),
-                let edge = edgeWire.edges().first,
-                let edgeShape = Shape.fromEdge(edge)
-            else { return nil }
-            edgeShape.setOrientation(.forward)
-            guard holeWireShape.builderAdd(edgeShape) else { return nil }
-        }
-        holeWireShape.setOrientation(.forward)
-        guard face.builderAdd(holeWireShape) else { return nil }
-        return face
-    }
-
     @Test("Fixture actually has the wire-orientation defect it claims to")
     func fixtureHasBadOrientation() throws {
-        let face = try #require(Self.badHoleOrientationFace(), "fixture build failed")
+        let face = try #require(badHoleOrientationFace(), "fixture build failed")
         #expect(face.checkFaceWireOrientation() == .badOrientationOfSubshape)
         // The wrong winding makes the 2x2 hole ADD to the face's area: 10x10 plus 2x2 is 104, where
         // a correctly wound hole gives 96. Both tests below pin their result against these two.
@@ -84,7 +48,7 @@ struct Issue837FixDetailedModeFlagsTests {
 
     @Test("fixFace: false leaves a free face's wire-orientation defect uncorrected")
     func fixFaceFalseLeavesDefectInPlace() throws {
-        let badFace = try #require(Self.badHoleOrientationFace(), "fixture build failed")
+        let badFace = try #require(badHoleOrientationFace(), "fixture build failed")
         let compound = try #require(Shape.compound([badFace]), "fixture build failed")
         let result = try #require(
             compound.fixed(
@@ -102,7 +66,7 @@ struct Issue837FixDetailedModeFlagsTests {
 
     @Test("fixFace: true corrects a free face's wire-orientation defect")
     func fixFaceTrueCorrectsDefect() throws {
-        let badFace = try #require(Self.badHoleOrientationFace(), "fixture build failed")
+        let badFace = try #require(badHoleOrientationFace(), "fixture build failed")
         let compound = try #require(Shape.compound([badFace]), "fixture build failed")
         let result = try #require(
             compound.fixed(

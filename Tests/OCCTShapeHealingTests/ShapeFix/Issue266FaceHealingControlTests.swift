@@ -80,7 +80,7 @@ struct Issue266FaceHealingControlTests {
     /// `perform`/`status` wired to constants reads the same on the clean face.
     @Test("FaceFixer reports a repair when the face needs one, with the orientation pass on")
     func faceFixerReportsARepair() throws {
-        let bad = try #require(Issue837FixDetailedModeFlagsTests.badHoleOrientationFace())
+        let bad = try #require(badHoleOrientationFace())
         try #require(bad.checkFaceWireOrientation() == .badOrientationOfSubshape)
         let fixer = try #require(FaceFixer(face: bad), "setup")
         fixer.setMode(.orientation, .on)
@@ -138,7 +138,7 @@ struct Issue266FaceHealingControlTests {
         #expect(crossing.checkFaceIntersectingWires() == .intersectingWires)
         #expect(crossing.checkFaceWireImbrication() == .intersectingWires)
         #expect(crossing.checkFaceWireOrientation() == .intersectingWires)
-        let wound = try #require(Issue837FixDetailedModeFlagsTests.badHoleOrientationFace())
+        let wound = try #require(badHoleOrientationFace())
         #expect(wound.checkFaceIntersectingWires() == .noError)
         #expect(wound.checkFaceWireImbrication() == .noError)
         #expect(wound.checkFaceWireOrientation() == .badOrientationOfSubshape)
