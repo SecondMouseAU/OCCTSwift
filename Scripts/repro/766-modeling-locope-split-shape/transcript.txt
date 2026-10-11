@@ -1,0 +1,4 @@
+splitEdge: range=[0, 10] split point=(-5, -5, 0) descendants=2
+  descendant 0: type=6 length=5
+  descendant 1: type=6 length=5
+splitEdge: distinct vertices over descendants=3
