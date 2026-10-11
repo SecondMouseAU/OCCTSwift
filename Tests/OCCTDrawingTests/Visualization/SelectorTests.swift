@@ -119,6 +119,15 @@ struct SelectorTests {
 
         #expect(added1, "First shape should be added")
         #expect(added2, "Second shape should be added")
+
+        // Picking uses the view's own aspect (800 / 600). At 100 units with a 45 degree vertical
+        // field of view the half-height is 41.4, so the half-width is 55.2 and the boxes' centres
+        // (x = -20 and x = 20) sit at pixels 255 and 545 of the 800-wide view; each pick must name
+        // its own box, not merely hit something.
+        let left = selector.pick(at: SIMD2(255, 300), camera: cam, viewSize: SIMD2(800, 600))
+        let right = selector.pick(at: SIMD2(545, 300), camera: cam, viewSize: SIMD2(800, 600))
+        #expect(left.first?.shapeId == 1)
+        #expect(right.first?.shapeId == 2)
     }
 
     @Test("Remove shape then pick returns miss")
