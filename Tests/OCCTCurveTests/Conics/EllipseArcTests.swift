@@ -5,6 +5,9 @@ import Testing
 
 @Suite("Ellipse Arc Tests")
 struct EllipseArcTests {
+    // Pinned to GC_MakeArcOfEllipse on the same inputs
+    // (Scripts/repro/766-curve-edgecurve-ellipsearc/transcript.txt). The earlier versions sat
+    // inside `if let` with 0.1 of slack, and arcProperties checked `start.x > 9`, `end.y > 4` (#766).
 
     @Test("Arc of ellipse from angles")
     func arcFromAngles() {
@@ -17,17 +20,13 @@ struct EllipseArcTests {
             startAngle: 0,
             endAngle: .pi / 2
         )
-        #expect(arc != nil)
-        if let arc {
-            // Start point should be on major axis: (10, 0, 0)
-            let start = arc.startPoint
-            #expect(abs(start.x - 10.0) < 0.1)
-            #expect(abs(start.y) < 0.1)
-            // End point should be on minor axis: (0, 5, 0)
-            let end = arc.endPoint
-            #expect(abs(end.x) < 0.1)
-            #expect(abs(end.y - 5.0) < 0.1)
+        guard let arc else {
+            Issue.record("arc not built")
+            return
         }
+        // Start on the major axis (10, 0, 0), end on the minor axis (0, 5, 0).
+        #expect(vectorDistance(arc.startPoint, SIMD3(10, 0, 0)) < 1e-12)
+        #expect(vectorDistance(arc.endPoint, SIMD3(0, 5, 0)) < 1e-12)
     }
 
     @Test("Arc of ellipse between two points")
@@ -40,13 +39,17 @@ struct EllipseArcTests {
             from: SIMD3(10, 0, 0),
             to: SIMD3(-10, 0, 0)
         )
-        #expect(arc != nil)
-        if let arc {
-            let start = arc.startPoint
-            let end = arc.endPoint
-            #expect(abs(start.x - 10.0) < 0.1)
-            #expect(abs(end.x + 10.0) < 0.1)
+        guard let arc else {
+            Issue.record("arc not built")
+            return
         }
+        #expect(vectorDistance(arc.startPoint, SIMD3(10, 0, 0)) < 1e-12)
+        #expect(vectorDistance(arc.endPoint, SIMD3(-10, 0, 0)) < 1e-12)
+        // Counterclockwise from (10, 0, 0): the arc passes through (0, 5, 0), not (0, -5, 0).
+        let d = arc.domain
+        #expect(
+            vectorDistance(arc.point(at: (d.lowerBound + d.upperBound) / 2), SIMD3(0, 5, 0)) < 1e-12
+        )
     }
 
     @Test("Full semi-ellipse arc")
@@ -59,14 +62,13 @@ struct EllipseArcTests {
             startAngle: 0,
             endAngle: .pi
         )
-        #expect(arc != nil)
-        if let arc {
-            // Start at (10,0,0), end at (-10,0,0)
-            let start = arc.startPoint
-            let end = arc.endPoint
-            #expect(abs(start.x - 10.0) < 0.1)
-            #expect(abs(end.x + 10.0) < 0.1)
+        guard let arc else {
+            Issue.record("arc not built")
+            return
         }
+        // Start at (10,0,0), end at (-10,0,0)
+        #expect(vectorDistance(arc.startPoint, SIMD3(10, 0, 0)) < 1e-12)
+        #expect(vectorDistance(arc.endPoint, SIMD3(-10, 0, 0)) < 1e-12)
     }
 
     @Test("Ellipse arc properties")
@@ -79,14 +81,16 @@ struct EllipseArcTests {
             startAngle: 0,
             endAngle: .pi / 2
         )
-        #expect(arc != nil)
-        if let arc {
-            #expect(!arc.isClosed)
-            let start = arc.startPoint
-            let end = arc.endPoint
-            // Length of quarter-ellipse arc should be reasonable
-            #expect(start.x > 9.0)
-            #expect(end.y > 4.0)
+        guard let arc else {
+            Issue.record("arc not built")
+            return
         }
+        #expect(!arc.isClosed)
+        #expect(arc.domain == 0...(Double.pi / 2))
+        // The parameter midpoint is (10 cos pi/4, 5 sin pi/4, 0).
+        #expect(
+            vectorDistance(
+                arc.point(at: Double.pi / 4), SIMD3(7.0710678118654755, 3.5355339059327373, 0))
+                < 1e-12)
     }
 }

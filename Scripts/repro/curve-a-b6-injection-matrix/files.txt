@@ -1,0 +1,7 @@
+Tests/OCCTCurveTests/ArcLength/Issue600OutOfDomainRangeTests.swift
+Tests/OCCTCurveTests/Adaptors/Adaptor3dIsoCurveTests.swift
+Tests/OCCTCurveTests/BSplineAndBezier/Curve3DBSplineTests.swift
+Tests/OCCTCurveTests/Continuity/LocalAnalysisCurveContinuityTests.swift
+Tests/OCCTCurveTests/ArcLength/Issue506ArcLengthBridgeContractTests.swift
+Tests/OCCTCurveTests/Conversion/CurveJoinTests.swift
+Tests/OCCTCurveTests/Conics/EllipseArcTests.swift
