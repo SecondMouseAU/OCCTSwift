@@ -21,13 +21,22 @@ an allowlist nobody rereads. `Scripts/test-areas/` itself is not scanned: the ma
 name the destination of a move that has not happened yet, so their `proposed_path` column dangles
 by design.
 
-EXIT STATUS. 0 clean, 1 on a dangling citation or a stale exemption.
+THE AREA TABLES (#3308). The gate also runs the plan `move-test-files.py --map` makes for every
+`Scripts/test-areas/*.tsv` table (except the exemptions table): the dry run's own checks, without
+its clean-tree refusal. A table fails when a Swift file under its target has no row, which is how a
+shared helper added later (`SIMDTestHelpers.swift`) or a test that landed straight in an area
+directory left twelve tables refusing unseen; when a row's current and proposed paths both exist
+or neither does; and when the table itself is malformed. After the roll-out every row is `done` or
+`same`, and "clean" means the plan found no problem. A shared helper gets a `(stays)` row.
+
+EXIT STATUS. 0 clean, 1 on a dangling citation, a stale exemption or an area-table problem.
 
     python3 Scripts/check-test-path-citations.py            # the gate
     python3 Scripts/check-test-path-citations.py --list     # every citation, one per line
     python3 Scripts/check-test-path-citations.py --self-test
 """
 import fnmatch
+import importlib.util
 import os
 import re
 import subprocess
@@ -139,17 +148,45 @@ def check(root):
     return dangling, stale
 
 
+def map_problems(root):
+    """[(table, problem)] for every area table under Scripts/test-areas/: the plan
+    `move-test-files.py --map` builds, so a file no row names (a new shared helper, a test that
+    landed in its area directory) fails here instead of refusing a later apply (#3308)."""
+    d = os.path.join(root, "Scripts", "test-areas")
+    if not os.path.isdir(d):
+        return []
+    spec = importlib.util.spec_from_file_location(
+        "move_test_files", os.path.join(os.path.dirname(os.path.abspath(__file__)), "move-test-files.py"))
+    mover = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mover)
+    out = []
+    for name in sorted(os.listdir(d)):
+        if not name.endswith(".tsv") or name == os.path.basename(EXEMPTIONS):
+            continue
+        path = os.path.join(d, name)
+        try:
+            rows = mover.load_map(path)
+            _states, problems = mover.plan(root, rows, mover.other_rows(root, path))
+        except mover.Refusal as e:
+            problems = [str(e)]
+        out.extend((name, p) for p in problems)
+    return out
+
+
 def report(root):
     dangling, stale = check(root)
+    maps = map_problems(root)
+    for name, p in maps:
+        print("AREA TABLE %s: %s" % (name, p))
     for rel, n, cited in dangling:
         print("DANGLING %s:%d cites %s, which does not exist" % (rel, n, cited))
     for k, pat, _ in stale:
         print("STALE EXEMPTION %s %s matches no dangling citation; delete the row from %s"
               % (k, pat, EXEMPTIONS))
     total = len(citations(root))
-    print("check-test-path-citations: %d citation(s) scanned, %d dangling, %d stale exemption(s)"
-          % (total, len(dangling), len(stale)))
-    return 1 if dangling or stale else 0
+    print("check-test-path-citations: %d citation(s) scanned, %d dangling, %d stale exemption(s), "
+          "%d area-table problem(s)" % (total, len(dangling), len(stale), len(maps)))
+    return 1 if dangling or stale or maps else 0
 
 
 # --- self-test ---------------------------------------------------------------------------------
@@ -229,6 +266,29 @@ def self_test():
         fh.write(b"\xff\xfe\x00" + b"Tests/" + b"OCCTAATests/A.swift")
     dangling, stale = check(d)
     cases[-1] = (cases[-1][0], not dangling and not stale, "dangling=%d" % len(dangling))
+    # Area tables (#3308). A target with one test and one shared helper; a table naming only the
+    # test leaves the helper as a file no row names, which is what broke twelve tables.
+    test_row = "@@XTests/FooTests.swift\t@@XTests/Area/FooTests.swift\tArea\t-\twhy\n"
+    helper_row = "@@XTests/SIMDTestHelpers.swift\t@@XTests/SIMDTestHelpers.swift\t(stays)\t-\tshared\n"
+    header = "# current_path\tproposed_path\tarea\tpending_prs\treason\n"
+
+    def map_case(name, table, want, extra=None):
+        files = {"@@XTests/Area/FooTests.swift": "x", "@@XTests/SIMDTestHelpers.swift": "x"}
+        files.update(extra or {})
+        if table is not None:
+            files["Scripts/test-areas/x.tsv"] = table
+        got = map_problems(_tree(files))
+        cases.append((name, len(got) == want, "area-table problems=%d" % len(got)))
+
+    map_case("a table naming the test and the helper is clean", header + test_row + helper_row, 0)
+    map_case("a shared helper with no row fails", header + test_row, 1)
+    map_case("a test that landed in its area with no row fails",
+             header + test_row + helper_row, 1, {"@@XTests/Area/BarTests.swift": "x"})
+    map_case("a malformed table is a problem, not a crash", header + "only\ttwo\n", 1)
+    map_case("a tree with no tables is clean", None, 0)
+    map_case("the exemptions table is not read as an area table",
+             header + test_row + helper_row, 0,
+             {"Scripts/test-areas/citation-exemptions.tsv": "file\tdocs/x.md\thistory\n"})
     bad = [c for c in cases if not c[1]]
     for name, passed, detail in cases:
         print("  %s  %s (%s)" % ("ok  " if passed else "FAIL", name, detail))
