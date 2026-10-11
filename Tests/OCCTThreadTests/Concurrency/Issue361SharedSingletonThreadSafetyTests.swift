@@ -116,10 +116,13 @@ struct Issue361SharedSingletonThreadSafetyTests {
 
     @Test("Concurrent font-database init + queries don't crash or deadlock")
     func concurrentFontQueriesSucceed() async throws {
-        // Font availability is environment-dependent (headless CI may register zero fonts), so
-        // the expectation is relative: read the count once serially, then require every
-        // concurrent read to agree with it. initDatabase() rebuilds the same list under the
-        // mutex, so a reader that saw an empty or half-built list (the #361 race) disagrees.
+        // Font availability is environment-dependent, so the expectation is relative: read the
+        // count once serially, then require every concurrent read to agree with it.
+        // initDatabase() rebuilds the same list under the mutex, so a reader that saw an empty
+        // or half-built list (the #361 race) disagrees. The pinned kernel registers no fonts
+        // at all (FontManagerTests.fontCount pins 0), so there the in-range branch below is
+        // dormant and the agreement of the counts is the whole assertion; where fonts exist
+        // it also requires every in-range index to resolve.
         FontManager.initDatabase()
         let expectedCount = FontManager.fontCount
 
