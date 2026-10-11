@@ -39,40 +39,87 @@ struct CanonicalRecognitionDetailedTests {
     // ground-truthed with and without ClearStatus() that each fixture below reports type=0
     // (Unrecognized) before the fix and its true type afterwards.
 
-    @Test func recognizeCylinder() {
-        guard let cyl = Shape.cylinder(radius: 5, height: 20),
-            let cylFace = face(of: cyl, surfaceType: .cylinder)
-        else {
-            Issue.record("failed to build cylinder / find its cylindrical face")
-            return
-        }
+    /// The recognised parameters, not only the type and radius: the axis, where it passes, and
+    /// that the answer moves with the shape.
+    ///
+    /// The fixtures are measured on the pinned kernel (`Scripts/repro/2983-leftovers/`): a
+    /// cylinder, a cone and a sphere built at the origin recognise at the origin with the axis
+    /// along +Z, and each translated copy recognises at its own centre. A recogniser that
+    /// returned the right type with a default placement would pass the untranslated case alone.
+    private func expectOrigin(
+        _ got: (x: Double, y: Double, z: Double), _ want: SIMD3<Double>, _ what: String,
+        sourceLocation: SourceLocation = #_sourceLocation
+    ) {
+        #expect(
+            abs(got.x - want.x) < 1e-9, "\(what) x: got \(got.x)", sourceLocation: sourceLocation)
+        #expect(
+            abs(got.y - want.y) < 1e-9, "\(what) y: got \(got.y)", sourceLocation: sourceLocation)
+        #expect(
+            abs(got.z - want.z) < 1e-9, "\(what) z: got \(got.z)", sourceLocation: sourceLocation)
+    }
+
+    @Test func recognizeCylinder() throws {
+        let cyl = try #require(Shape.cylinder(radius: 5, height: 20), "the cylinder builds")
+        let cylFace = try #require(
+            face(of: cyl, surfaceType: .cylinder), "the cylinder has a cylindrical face")
         let result = cylFace.recognizeCanonicalSurface()
         #expect(result.type == .cylinder)
         #expect(abs(result.param1 - 5) < 1e-6)
+        #expect(abs(result.gap) < 1e-9, "the face is exactly cylindrical, got gap \(result.gap)")
+        expectOrigin(result.origin, SIMD3(0, 0, 0), "cylinder axis point")
+        expectOrigin(result.direction, SIMD3(0, 0, 1), "cylinder axis")
+
+        // Moved off the origin in x and y: the axis passes through the new position. The z of
+        // the reported axis point is any point on the axis, so only x and y are pinned.
+        let moved = try #require(cyl.translated(by: SIMD3(3, -2, 0)), "the copy translates")
+        let movedFace = try #require(face(of: moved, surfaceType: .cylinder))
+        let movedResult = movedFace.recognizeCanonicalSurface()
+        #expect(movedResult.type == .cylinder)
+        #expect(abs(movedResult.param1 - 5) < 1e-6)
+        #expect(abs(movedResult.origin.x - 3) < 1e-9, "axis x: got \(movedResult.origin.x)")
+        #expect(abs(movedResult.origin.y - -2) < 1e-9, "axis y: got \(movedResult.origin.y)")
+        expectOrigin(movedResult.direction, SIMD3(0, 0, 1), "moved cylinder axis")
     }
 
-    @Test func recognizeCone() {
-        guard let cone = Shape.cone(bottomRadius: 5, topRadius: 0, height: 10),
-            let coneFace = face(of: cone, surfaceType: .cone)
-        else {
-            Issue.record("failed to build cone / find its conical face")
-            return
-        }
+    @Test func recognizeCone() throws {
+        let cone = try #require(
+            Shape.cone(bottomRadius: 5, topRadius: 0, height: 10), "the cone builds")
+        let coneFace = try #require(
+            face(of: cone, surfaceType: .cone), "the cone has a conical face")
         let result = coneFace.recognizeCanonicalSurface()
         #expect(result.type == .cone)
         #expect(abs(result.param1 - 5) < 1e-6)
+        // The semi-angle is atan(5 / 10), the radius lost over the height, and it is reported
+        // negative because the radius shrinks along the +Z axis the cone is built on.
+        #expect(
+            abs(result.param2 - -atan(0.5)) < 1e-9,
+            "semi-angle should be -atan(5/10) = -0.4636, got \(result.param2)")
+        expectOrigin(result.origin, SIMD3(0, 0, 0), "cone reference point")
+        expectOrigin(result.direction, SIMD3(0, 0, 1), "cone axis")
+
+        let moved = try #require(cone.translated(by: SIMD3(3, -2, 1)), "the copy translates")
+        let movedFace = try #require(face(of: moved, surfaceType: .cone))
+        let movedResult = movedFace.recognizeCanonicalSurface()
+        #expect(movedResult.type == .cone)
+        expectOrigin(movedResult.origin, SIMD3(3, -2, 1), "moved cone reference point")
+        #expect(abs(movedResult.param2 - -atan(0.5)) < 1e-9, "moving does not change the angle")
     }
 
-    @Test func recognizeSphere() {
-        guard let sph = Shape.sphere(radius: 5),
-            let sphFace = face(of: sph, surfaceType: .sphere)
-        else {
-            Issue.record("failed to build sphere / find its spherical face")
-            return
-        }
+    @Test func recognizeSphere() throws {
+        let sph = try #require(Shape.sphere(radius: 5), "the sphere builds")
+        let sphFace = try #require(
+            face(of: sph, surfaceType: .sphere), "the sphere has a spherical face")
         let result = sphFace.recognizeCanonicalSurface()
         #expect(result.type == .sphere)
         #expect(abs(result.param1 - 5) < 1e-6)
+        expectOrigin(result.origin, SIMD3(0, 0, 0), "sphere centre")
+
+        let moved = try #require(sph.translated(by: SIMD3(3, -2, 1)), "the copy translates")
+        let movedFace = try #require(face(of: moved, surfaceType: .sphere))
+        let movedResult = movedFace.recognizeCanonicalSurface()
+        #expect(movedResult.type == .sphere)
+        #expect(abs(movedResult.param1 - 5) < 1e-6)
+        expectOrigin(movedResult.origin, SIMD3(3, -2, 1), "moved sphere centre")
     }
 
     // #1862: this sat inside `if let box` and passed on the first line it found. Every one of a
@@ -96,31 +143,30 @@ struct CanonicalRecognitionDetailedTests {
     // coverage of OCCTShapeRecognizeCanonicalCurve's happy path for the issue's own circular/
     // elliptical-edge fixtures (and of the sibling-file fix landing, which the null-shape-guard
     // tests below don't touch), just not proof of #1509 recurring on their own.
-    @Test func recognizeEdgeCircle() {
-        guard let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5),
-            let edge = Shape.edgeFromCurve(circle)
-        else {
-            Issue.record("failed to build the circle edge fixture")
-            return
-        }
+    @Test func recognizeEdgeCircle() throws {
+        let circle = try #require(
+            Curve3D.circle(center: SIMD3(1, 2, 3), normal: SIMD3(0, 0, 1), radius: 5),
+            "the circle builds")
+        let edge = try #require(Shape.edgeFromCurve(circle), "the circle edge builds")
         let result = edge.recognizeCanonicalCurve()
         #expect(result.type == .circle)
         #expect(abs(result.param1 - 5) < 1e-6)
+        expectOrigin(result.origin, SIMD3(1, 2, 3), "circle centre")
+        expectOrigin(result.direction, SIMD3(0, 0, 1), "circle normal")
     }
 
-    @Test func recognizeEdgeEllipse() {
-        guard
-            let ellipse = Curve3D.ellipse(
-                center: .zero, normal: SIMD3(0, 0, 1), majorRadius: 10, minorRadius: 5),
-            let edge = Shape.edgeFromCurve(ellipse)
-        else {
-            Issue.record("failed to build the ellipse edge fixture")
-            return
-        }
+    @Test func recognizeEdgeEllipse() throws {
+        let ellipse = try #require(
+            Curve3D.ellipse(
+                center: SIMD3(1, 2, 3), normal: SIMD3(0, 0, 1), majorRadius: 10, minorRadius: 5),
+            "the ellipse builds")
+        let edge = try #require(Shape.edgeFromCurve(ellipse), "the ellipse edge builds")
         let result = edge.recognizeCanonicalCurve()
         #expect(result.type == .ellipse)
         #expect(abs(result.param1 - 10) < 1e-6)
         #expect(abs(result.param2 - 5) < 1e-6)
+        expectOrigin(result.origin, SIMD3(1, 2, 3), "ellipse centre")
+        expectOrigin(result.direction, SIMD3(0, 0, 1), "ellipse normal")
     }
 
     // #1438: OCCTShapeRecognizeCanonicalSurface had no guard at all (not even a pointer check),
@@ -128,25 +174,29 @@ struct CanonicalRecognitionDetailedTests {
     // shape's TShape (TopoDS_Shape::ShapeType()), an uncatchable SIGSEGV on a nullified wrapper --
     // `catch (...)` cannot absorb it. `.nullified` is a real, public, non-crashing way to get a
     // non-null wrapper pointer around a null TopoDS_Shape.
-    @Test func recognizeCanonicalSurfaceOnNullShapeDoesNotCrash() {
-        guard let box = Shape.box(width: 10, height: 10, depth: 10), let nullShape = box.nullified
-        else {
-            Issue.record("failed to build box / nullified shape")
-            return
-        }
+    @Test func recognizeCanonicalSurfaceOnNullShapeDoesNotCrash() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10), "the box builds")
+        let nullShape = try #require(box.nullified, "the box nullifies")
         let result = nullShape.recognizeCanonicalSurface(tolerance: 1e-4)
         #expect(result.type == .none)
+        #expect(result.param1 == 0 && result.param2 == 0, "no parameter is reported for nothing")
+        // The control: a real face of the same box is recognised, so `.none` above is the guard
+        // speaking and not a recogniser that never answers.
+        let face = try #require(box.subShapes(ofType: .face).first)
+        #expect(face.recognizeCanonicalSurface(tolerance: 1e-4).type == .plane)
     }
 
     // #1438: same crash mechanism as recognizeCanonicalSurfaceOnNullShapeDoesNotCrash above, for
     // OCCTShapeRecognizeCanonicalCurve.
-    @Test func recognizeCanonicalCurveOnNullShapeDoesNotCrash() {
-        guard let box = Shape.box(width: 10, height: 10, depth: 10), let nullShape = box.nullified
-        else {
-            Issue.record("failed to build box / nullified shape")
-            return
-        }
+    @Test func recognizeCanonicalCurveOnNullShapeDoesNotCrash() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10), "the box builds")
+        let nullShape = try #require(box.nullified, "the box nullifies")
         let result = nullShape.recognizeCanonicalCurve(tolerance: 1e-4)
         #expect(result.type == .none)
+        #expect(result.param1 == 0 && result.param2 == 0, "no parameter is reported for nothing")
+        // The control: a real edge of the same box is recognised, so `.none` above is the guard
+        // speaking and not a recogniser that never answers.
+        let edge = try #require(box.subShapes(ofType: .edge).first)
+        #expect(edge.recognizeCanonicalCurve(tolerance: 1e-4).type == .line)
     }
 }
