@@ -1,0 +1,5 @@
+# The test files this PR lifts (current paths).
+Tests/OCCTShapeHealingTests/FreeBounds/FreeBoundsPropertiesTests.swift
+Tests/OCCTShapeHealingTests/FreeBounds/FreeBoundsSimplifiedTests.swift
+Tests/OCCTShapeHealingTests/FreeBounds/FreeBoundsTests.swift
+Tests/OCCTShapeHealingTests/ShapeCustom/GeometryConversionTests.swift
