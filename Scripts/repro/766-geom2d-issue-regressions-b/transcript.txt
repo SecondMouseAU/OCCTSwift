@@ -1,0 +1,28 @@
+cubic, 300 interior knots at multiplicity 3, split at C1: NbSplits=302 last=302
+cubic, 253 interior knots at multiplicity 3, split at C1: NbSplits=255 last=255
+cubic, 254 interior knots at multiplicity 3, split at C1: NbSplits=256 last=256
+cubic, 255 interior knots at multiplicity 3, split at C1: NbSplits=257 last=257
+half circle from (0,-6): interior extrema=1 nearest u=0 distance=7.81024967590665
+half circle from (3,-4): interior extrema=1 nearest u=0 distance=4.47213595499958
+segment [3,8] from (100,0): interior extrema=0 nearest u=8 distance=92
+segment [3,8] from (0,0): interior extrema=0 nearest u=3 distance=3
+  pre-#615 (interior extrema only) from (0,-6): n=1 lower distance=11 at u=1.57079632679
+ExtremaCurveCurve two r5 circles 20 apart: n=4 20 10 30 20
+looped Bezier self-intersections: n=1 (2.5, 3)
+circle self-intersections: n=0
+gp_Ax2 basis for the 15-degree normal: X=(3.56876177880591e-18, 0.9777876596251667, -0.2095979310125447) Y=(-0.9878687021467979, 0.03254876181607849, 0.1518420410263285)
+CurveToBSplineCurve(circle r5, TgtThetaOver2): degree=2 poles=6
+CurveToBSplineCurve(circle r5, TgtThetaOver2_1): throws 
+CurveToBSplineCurve(circle r5, TgtThetaOver2_2): throws 
+CurveToBSplineCurve(circle r5, TgtThetaOver2_3): degree=2 poles=6
+CurveToBSplineCurve(circle r5, TgtThetaOver2_4): degree=2 poles=8
+CurveToBSplineCurve(circle r5, QuasiAngular): degree=6 poles=6
+CurveToBSplineCurve(circle r5, RationalC1): degree=4 poles=12
+CurveToBSplineCurve(circle r5, Polynomial): degree=7 poles=7
+IntTools_FClass2d tol 1e-06: (-5e-7, 5)=2 (5,5)=0 (15,15)=1  [IN=0 OUT=1 ON=2]
+IntTools_FClass2d tol 1e-07: (-5e-7, 5)=1 (5,5)=0 (15,15)=1  [IN=0 OUT=1 ON=2]
+Bisector_BisecPC maxDistance 1: empty=1 span=0
+Bisector_BisecPC maxDistance 10: empty=0 span=15.9999999992
+Bisector_BisecPC maxDistance 100: empty=0 span=56.0000000009
+Bisector_BisecPC maxDistance 500: empty=0 span=126.237870704
+Bisector_BisecPC maxDistance 5000: empty=0 span=399.919991999

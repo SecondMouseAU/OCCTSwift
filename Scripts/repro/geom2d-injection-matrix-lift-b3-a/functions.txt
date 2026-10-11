@@ -1,0 +1,27 @@
+# bridge entry points reached by this PR's lifted suites (GD3B_TRACE run)
+OCCTCurve2DAllExtrema
+OCCTCurve2DCreateBSpline
+OCCTCurve2DCreateBezier
+OCCTCurve2DCreateCircle
+OCCTCurve2DCreateEllipse
+OCCTCurve2DCreateHyperbola
+OCCTCurve2DCreateParabola
+OCCTCurve2DCreateSegment
+OCCTCurve2DGetContinuity
+OCCTCurve2DGetDomain
+OCCTCurve2DGetPoint
+OCCTCurve2DGetPoleCount
+OCCTCurve2DInterpolate
+OCCTCurve2DInterpolateWithTangents
+OCCTCurve2DIsClosed
+OCCTCurve2DIsLinear
+OCCTCurve2DIsPeriodic
+OCCTCurve2DMakeLineParallel
+OCCTCurve2DMakeLineThroughPoints
+OCCTCurve2DOffset
+OCCTCurve2DRelease
+OCCTCurve2DSelfIntersect
+OCCTGceMakeCirc2dFromCenterRadius
+OCCTGceMakeElips2d
+OCCTGceMakeHypr2d
+OCCTGceMakeParab2d
