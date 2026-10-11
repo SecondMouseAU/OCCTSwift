@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -57,7 +56,7 @@ struct BatchSurfaceTests {
             for v in 0..<vParams.count {
                 let expected = sphere.point(atU: uParams[u], v: vParams[v])
                 let actual = grid.at(u: u, v: v)
-                #expect(simd_length(actual - expected) < 1e-6)
+                #expect(vectorLength(actual - expected) < 1e-6)
             }
         }
     }
@@ -88,7 +87,7 @@ struct BatchSurfaceTests {
             for v in 0..<vCount {
                 let fromMesh = meshGrid.at(u: u, v: v)
                 let fromEval = evalGrid.at(u: u, v: v)
-                #expect(simd_length(fromMesh - fromEval) < 1e-6)
+                #expect(vectorLength(fromMesh - fromEval) < 1e-6)
             }
         }
     }

@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -201,7 +200,7 @@ struct Issue491SurfaceApproxParityTests {
             #expect(a.count == b.count)
             if a.count == b.count {
                 var maxGap = 0.0
-                for (pa, pb) in zip(a, b) { maxGap = max(maxGap, simd_length(pa - pb)) }
+                for (pa, pb) in zip(a, b) { maxGap = max(maxGap, vectorLength(pa - pb)) }
                 #expect(maxGap < 1e-12, "\(request.label): sampled points differ by \(maxGap)")
             }
         }
@@ -270,7 +269,7 @@ struct Issue491SurfaceApproxParityTests {
                     let v = d.vMin + (d.vMax - d.vMin) * Double(j) / 10.0
                     deviation = max(
                         deviation,
-                        simd_length(
+                        vectorLength(
                             request.surface.point(atU: u, v: v)
                                 - fit.point(atU: u, v: v)))
                 }

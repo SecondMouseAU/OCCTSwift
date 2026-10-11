@@ -1,5 +1,5 @@
+import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -21,9 +21,9 @@ struct GeomFillGuideTrihedronACTests {
         let frame = triAC.evaluate(at: 5.0)
         #expect(frame != nil)
         if let frame {
-            #expect(simd_length(frame.tangent - SIMD3(1, 0, 0)) < 1e-9)
-            #expect(simd_length(frame.normal - SIMD3(0, 1, 0)) < 1e-9)
-            #expect(simd_length(frame.binormal - SIMD3(0, 0, 1)) < 1e-9)
+            #expect(vectorLength(frame.tangent - SIMD3(1, 0, 0)) < 1e-9)
+            #expect(vectorLength(frame.normal - SIMD3(0, 1, 0)) < 1e-9)
+            #expect(vectorLength(frame.binormal - SIMD3(0, 0, 1)) < 1e-9)
         }
     }
 
@@ -38,9 +38,9 @@ struct GeomFillGuideTrihedronACTests {
         // #766: `|t.x| > 0.3` inside `if let` never read N or B, and 0.3 passes a tangent that is
         // 70 percent wrong; pinned to the kernel frame, see Scripts/repro/766-geomfill-c/.
         let frame = try #require(triAC.evaluate(at: 5.0))
-        #expect(simd_length(frame.tangent - SIMD3(1, 0, 0)) < 1e-9)
-        #expect(simd_length(frame.normal - SIMD3(0, 1, 0)) < 1e-9)
-        #expect(simd_length(frame.binormal - SIMD3(0, 0, 1)) < 1e-9)
+        #expect(vectorLength(frame.tangent - SIMD3(1, 0, 0)) < 1e-9)
+        #expect(vectorLength(frame.normal - SIMD3(0, 1, 0)) < 1e-9)
+        #expect(vectorLength(frame.binormal - SIMD3(0, 0, 1)) < 1e-9)
     }
 
     /// evaluate(at:)'s three components are only distinguished by the labels
@@ -65,12 +65,12 @@ struct GeomFillGuideTrihedronACTests {
         let t = frame.tangent
         let n = frame.normal
         let b = frame.binormal
-        #expect(abs(simd_length(t) - 1) < 1e-6)
-        #expect(abs(simd_length(n) - 1) < 1e-6)
-        #expect(abs(simd_length(b) - 1) < 1e-6)
-        #expect(abs(simd_dot(t, n)) < 1e-6)
-        #expect(abs(simd_dot(t, b)) < 1e-6)
-        #expect(abs(simd_dot(n, b)) < 1e-6)
-        #expect(simd_length(simd_cross(t, n) - b) < 1e-6)
+        #expect(abs(vectorLength(t) - 1) < 1e-6)
+        #expect(abs(vectorLength(n) - 1) < 1e-6)
+        #expect(abs(vectorLength(b) - 1) < 1e-6)
+        #expect(abs(dotProduct(t, n)) < 1e-6)
+        #expect(abs(dotProduct(t, b)) < 1e-6)
+        #expect(abs(dotProduct(n, b)) < 1e-6)
+        #expect(vectorLength(crossProduct(t, n) - b) < 1e-6)
     }
 }

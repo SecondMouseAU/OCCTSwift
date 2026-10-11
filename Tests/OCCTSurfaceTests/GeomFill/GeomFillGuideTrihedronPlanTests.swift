@@ -1,5 +1,5 @@
+import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -18,9 +18,9 @@ struct GeomFillGuideTrihedronPlanTests {
         // #766: `!= nil` only. GeomFill_GuideTrihedronPlan at 5 gives T (1, 0, 0),
         // N (0, 1, 0), B (0, 0, 1), see Scripts/repro/766-geomfill-c/.
         let frame = try #require(triPlan.evaluate(at: 5.0))
-        #expect(simd_length(frame.tangent - SIMD3(1, 0, 0)) < 1e-9)
-        #expect(simd_length(frame.normal - SIMD3(0, 1, 0)) < 1e-9)
-        #expect(simd_length(frame.binormal - SIMD3(0, 0, 1)) < 1e-9)
+        #expect(vectorLength(frame.tangent - SIMD3(1, 0, 0)) < 1e-9)
+        #expect(vectorLength(frame.normal - SIMD3(0, 1, 0)) < 1e-9)
+        #expect(vectorLength(frame.binormal - SIMD3(0, 0, 1)) < 1e-9)
     }
 
     /// `createAndEvaluate()` above only checks non-nil, so it could not catch a pairwise swap
@@ -39,12 +39,12 @@ struct GeomFillGuideTrihedronPlanTests {
         let t = frame.tangent
         let n = frame.normal
         let b = frame.binormal
-        #expect(abs(simd_length(t) - 1) < 1e-6)
-        #expect(abs(simd_length(n) - 1) < 1e-6)
-        #expect(abs(simd_length(b) - 1) < 1e-6)
-        #expect(abs(simd_dot(t, n)) < 1e-6)
-        #expect(abs(simd_dot(t, b)) < 1e-6)
-        #expect(abs(simd_dot(n, b)) < 1e-6)
-        #expect(simd_length(simd_cross(t, n) - b) < 1e-6)
+        #expect(abs(vectorLength(t) - 1) < 1e-6)
+        #expect(abs(vectorLength(n) - 1) < 1e-6)
+        #expect(abs(vectorLength(b) - 1) < 1e-6)
+        #expect(abs(dotProduct(t, n)) < 1e-6)
+        #expect(abs(dotProduct(t, b)) < 1e-6)
+        #expect(abs(dotProduct(n, b)) < 1e-6)
+        #expect(vectorLength(crossProduct(t, n) - b) < 1e-6)
     }
 }

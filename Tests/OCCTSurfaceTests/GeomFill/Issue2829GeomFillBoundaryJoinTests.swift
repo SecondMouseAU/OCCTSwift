@@ -1,5 +1,5 @@
+import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -44,7 +44,7 @@ struct Issue2829GeomFillBoundaryJoinTests {
         -> Bool
     {
         guard a.count == b.count else { return false }
-        return zip(a, b).allSatisfy { simd_distance($0, $1) < tol }
+        return zip(a, b).allSatisfy { vectorDistance($0, $1) < tol }
     }
 
     // The planar square, as four separate edges of a closed loop.
@@ -139,7 +139,7 @@ struct Issue2829GeomFillBoundaryJoinTests {
         #expect(got.count == 4)
         // Every corner sits on the cylinder of radius 5.
         for p in got {
-            #expect(abs(simd_length(SIMD2<Double>(p.x, p.y)) - 5) < 1e-6)
+            #expect(abs(vectorLength(SIMD2<Double>(p.x, p.y)) - 5) < 1e-6)
         }
     }
 

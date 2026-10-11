@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -96,10 +95,10 @@ struct SurfaceAnalyticTests {
         let sphere = Surface.sphere(center: .zero, radius: r)!
         // At u=0, v=0 → should be on equator at (r, 0, 0) in standard parametrization
         let p = sphere.point(atU: 0, v: 0)
-        let dist = simd_length(p)
+        let dist = vectorLength(p)
         #expect(abs(dist - r) < 1e-10)
         // Any point at radius r passed; (0, 0) is (r, 0, 0) on the equator.
-        #expect(simd_length(p - SIMD3(r, 0, 0)) < 1e-12)
+        #expect(vectorLength(p - SIMD3(r, 0, 0)) < 1e-12)
     }
 
     @Test("Create cylinder")
@@ -112,7 +111,7 @@ struct SurfaceAnalyticTests {
             // At u=0, v=0 should be at radius distance from Z axis
             let rDist = sqrt(p.x * p.x + p.y * p.y)
             #expect(abs(rDist - 3.0) < 1e-10)
-            #expect(simd_length(p - SIMD3(3, 0, 0)) < 1e-12)
+            #expect(vectorLength(p - SIMD3(3, 0, 0)) < 1e-12)
         }
     }
 
@@ -125,9 +124,9 @@ struct SurfaceAnalyticTests {
         // Was non-nil only. The reference circle has radius 5 at v = 0, and v runs along the
         // generatrix: 10 along it at 30 degrees is (5 + 10 sin 30, 0, 10 cos 30).
         if let cone {
-            #expect(simd_length(cone.point(atU: 0, v: 0) - SIMD3(5, 0, 0)) < 1e-12)
+            #expect(vectorLength(cone.point(atU: 0, v: 0) - SIMD3(5, 0, 0)) < 1e-12)
             #expect(
-                simd_length(cone.point(atU: 0, v: 10) - SIMD3(10, 0, 8.6602540378443873)) < 1e-12)
+                vectorLength(cone.point(atU: 0, v: 10) - SIMD3(10, 0, 8.6602540378443873)) < 1e-12)
         }
     }
 
@@ -140,7 +139,7 @@ struct SurfaceAnalyticTests {
         if let torus = torus {
             #expect(torus.isUPeriodic == true)
             #expect(torus.isVPeriodic == true)
-            #expect(simd_length(torus.point(atU: 0, v: 0) - SIMD3(13, 0, 0)) < 1e-12)
+            #expect(vectorLength(torus.point(atU: 0, v: 0) - SIMD3(13, 0, 0)) < 1e-12)
         }
     }
 

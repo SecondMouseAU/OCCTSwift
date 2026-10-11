@@ -1,5 +1,5 @@
+import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -17,8 +17,8 @@ struct PlateGlobalTranslationTests {
         // The three uv points must share one translation: pin one, and the others follow it.
         plate.loadPinpoint(u: 0, v: 0, position: SIMD3(0, 0, 1))
         #expect(plate.solve())
-        #expect(simd_length(plate.evaluate(u: 1, v: 0) - SIMD3(0, 0, 1)) < 1e-9)
-        #expect(simd_length(plate.evaluate(u: 0, v: 1) - SIMD3(0, 0, 1)) < 1e-9)
+        #expect(vectorLength(plate.evaluate(u: 1, v: 0) - SIMD3(0, 0, 1)) < 1e-9)
+        #expect(vectorLength(plate.evaluate(u: 0, v: 1) - SIMD3(0, 0, 1)) < 1e-9)
     }
 
     @Test func solveWithGlobalTranslation() {

@@ -1,5 +1,5 @@
+import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -22,9 +22,9 @@ struct BSplineSurfaceIsoTests {
             let iso = bs.bsplineUIso(u: uMid)
             #expect(iso != nil)
             if let iso {
-                #expect(simd_length(iso.point(at: 0.3) - bs.point(atU: uMid, v: 0.3)) < 1e-12)
+                #expect(vectorLength(iso.point(at: 0.3) - bs.point(atU: uMid, v: 0.3)) < 1e-12)
                 #expect(
-                    simd_length(
+                    vectorLength(
                         iso.point(at: 0.3) - SIMD3(-4.7994720789928271, 0, 1.401808746929577))
                         < 1e-12)
             }
@@ -42,9 +42,9 @@ struct BSplineSurfaceIsoTests {
             let iso = bs.bsplineVIso(v: vMid)
             #expect(iso != nil)
             if let iso {
-                #expect(simd_length(iso.point(at: 1.0) - bs.point(atU: 1.0, v: vMid)) < 1e-12)
+                #expect(vectorLength(iso.point(at: 1.0) - bs.point(atU: 1.0, v: vMid)) < 1e-12)
                 #expect(
-                    simd_length(
+                    vectorLength(
                         iso.point(at: 1.0) - SIMD3(2.7218159535591542, 4.194248194247792, 0))
                         < 1e-12)
             }

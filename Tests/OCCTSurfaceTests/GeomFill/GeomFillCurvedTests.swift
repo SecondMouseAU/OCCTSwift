@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -57,9 +56,9 @@ struct GeomFillCurvedTests {
         // Scripts/repro/2795-geomfill-boundary-arrangement/.
         #expect(result.nbU == 5 && result.nbV == 5)
         try #require(result.poles.count == 25)
-        #expect(simd_length(result.poles[1] - SIMD3(10, 2.5, 0.853553390593)) < 1e-9)
-        #expect(simd_length(result.poles[12] - SIMD3(5, 5, 1.125)) < 1e-9)
-        #expect(simd_length(result.poles[22] - SIMD3(5, 10, 2)) < 1e-9)
+        #expect(vectorLength(result.poles[1] - SIMD3(10, 2.5, 0.853553390593)) < 1e-9)
+        #expect(vectorLength(result.poles[12] - SIMD3(5, 5, 1.125)) < 1e-9)
+        #expect(vectorLength(result.poles[22] - SIMD3(5, 10, 2)) < 1e-9)
     }
 
     /// #2795: a flat square passed in the arrangement `GeomFill_Curved::Init` actually wants,
@@ -83,7 +82,7 @@ struct GeomFillCurvedTests {
             for v in 0..<5 {
                 let expected = SIMD3<Double>(Double(u) * 2.5, Double(v) * 2.5, 0)
                 #expect(
-                    simd_length(result.poles[u * 5 + v] - expected) < 1e-9,
+                    vectorLength(result.poles[u * 5 + v] - expected) < 1e-9,
                     "pole (\(u), \(v)) should be \(expected)")
             }
         }
@@ -95,8 +94,8 @@ struct GeomFillCurvedTests {
             Shape.curvedFilling(
                 boundary1: s.bottom, boundary2: s.left, boundary3: s.top, boundary4: s.right))
         try #require(coonsOrder.poles.count == 25)
-        #expect(simd_length(coonsOrder.poles[1] - SIMD3(10, 2.5, 0)) < 1e-9)
-        #expect(simd_length(coonsOrder.poles[21] - SIMD3(0, 2.5, 0)) < 1e-9)
+        #expect(vectorLength(coonsOrder.poles[1] - SIMD3(10, 2.5, 0)) < 1e-9)
+        #expect(vectorLength(coonsOrder.poles[21] - SIMD3(0, 2.5, 0)) < 1e-9)
     }
 
     /// #2795: `GeomFill_Curved::Init` never reads boundary2's or boundary4's first and last
@@ -114,7 +113,7 @@ struct GeomFillCurvedTests {
             Shape.curvedFilling(
                 boundary1: s.bottom, boundary2: s.right, boundary3: s.top, boundary4: left))
         try #require(result.poles.count == 25)
-        #expect(simd_length(result.poles[0] - SIMD3(0, 0, 0)) < 1e-9)
+        #expect(vectorLength(result.poles[0] - SIMD3(0, 0, 0)) < 1e-9)
 
         // The same disagreement through GeomFill_Coons, where the corner wins instead. Both
         // assertions are about the corner rule, so pinning only one of them would leave the
@@ -124,6 +123,6 @@ struct GeomFillCurvedTests {
         let coons = try #require(
             Shape.coonsFilling(
                 boundary1: s.bottom, boundary2: coonsLeft, boundary3: s.top, boundary4: s.right))
-        #expect(simd_length(coons.poles[0] - SIMD3(0, 0, 99)) < 1e-9)
+        #expect(vectorLength(coons.poles[0] - SIMD3(0, 0, 99)) < 1e-9)
     }
 }

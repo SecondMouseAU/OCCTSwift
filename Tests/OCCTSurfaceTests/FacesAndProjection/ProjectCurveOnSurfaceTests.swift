@@ -1,5 +1,5 @@
+import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -18,8 +18,8 @@ struct ProjectCurveOnSurfaceTests {
             let curve2d: Curve2D? = trimmed.projectOnSurface(plane)
             #expect(curve2d != nil)
             if let curve2d {
-                #expect(simd_length(curve2d.point(at: 0) - SIMD2(1, 2)) < 1e-9)
-                #expect(simd_length(curve2d.point(at: 10) - SIMD2(11, 2)) < 1e-9)
+                #expect(vectorLength(curve2d.point(at: 0) - SIMD2(1, 2)) < 1e-9)
+                #expect(vectorLength(curve2d.point(at: 10) - SIMD2(11, 2)) < 1e-9)
             }
         }
     }

@@ -1,5 +1,5 @@
+import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -13,7 +13,7 @@ struct GeomFillBoundWithSurfTests {
         let curve = try #require(Curve2D.line(through: SIMD2(0, 0.5), direction: SIMD2(1, 0)))
         let r = try #require(
             surf.boundaryWithSurfaceEvaluate(curve2d: curve, first: 0, last: 1, parameter: 0.5))
-        #expect(simd_length(r.point - SIMD3(0.5, 0.5, 0)) < 1e-12)
-        #expect(simd_length(r.normal - SIMD3(0, 0, 1)) < 1e-12)
+        #expect(vectorLength(r.point - SIMD3(0.5, 0.5, 0)) < 1e-12)
+        #expect(vectorLength(r.normal - SIMD3(0, 0, 1)) < 1e-12)
     }
 }

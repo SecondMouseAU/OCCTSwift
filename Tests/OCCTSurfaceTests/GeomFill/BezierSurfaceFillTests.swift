@@ -1,5 +1,5 @@
+import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -20,10 +20,10 @@ struct BezierSurfaceFillTests {
         let surfOpt = Surface.bezierFill(c1, c2, c3, c4)
         let surf = try #require(surfOpt)
         // Boundary: c1 is the v = 0 edge, so (0.5, 0) is c1's midpoint (5, 0.5, 0).
-        #expect(simd_length(surf.point(atU: 0, v: 0) - SIMD3(0, 0, 0)) < 1e-12)
-        #expect(simd_length(surf.point(atU: 0.5, v: 0) - SIMD3(5, 0.5, 0)) < 1e-12)
+        #expect(vectorLength(surf.point(atU: 0, v: 0) - SIMD3(0, 0, 0)) < 1e-12)
+        #expect(vectorLength(surf.point(atU: 0.5, v: 0) - SIMD3(5, 0.5, 0)) < 1e-12)
         // Interior, stretch style (the default); Coons gives x = 2.72736 here instead.
-        #expect(simd_length(surf.point(atU: 0.3, v: 0.6) - SIMD3(2.808, 6.42, 0)) < 1e-12)
+        #expect(vectorLength(surf.point(atU: 0.3, v: 0.6) - SIMD3(2.808, 6.42, 0)) < 1e-12)
     }
 
     @Test("Fill 2 bezier curves into surface")
@@ -33,9 +33,9 @@ struct BezierSurfaceFillTests {
         let surfOpt = Surface.bezierFill(c1, c2)
         let surf = try #require(surfOpt)
         // The two curves are the v = 0 and v = 1 edges; midpoints (5, 1, 0) and (5, 9, 0).
-        #expect(simd_length(surf.point(atU: 0.5, v: 0) - SIMD3(5, 1, 0)) < 1e-12)
-        #expect(simd_length(surf.point(atU: 0.5, v: 1) - SIMD3(5, 9, 0)) < 1e-12)
-        #expect(simd_length(surf.point(atU: 0.3, v: 0.6) - SIMD3(3, 5.832, 0)) < 1e-12)
+        #expect(vectorLength(surf.point(atU: 0.5, v: 0) - SIMD3(5, 1, 0)) < 1e-12)
+        #expect(vectorLength(surf.point(atU: 0.5, v: 1) - SIMD3(5, 9, 0)) < 1e-12)
+        #expect(vectorLength(surf.point(atU: 0.3, v: 0.6) - SIMD3(3, 5.832, 0)) < 1e-12)
     }
 
     @Test("Fill with different styles")
@@ -51,8 +51,8 @@ struct BezierSurfaceFillTests {
         #expect(curved == nil)
         let stretch = try #require(stretchOpt)
         let coons = try #require(coonsOpt)
-        #expect(simd_length(stretch.point(atU: 0.3, v: 0.6) - SIMD3(3, 5.832, 0)) < 1e-12)
-        #expect(simd_length(coons.point(atU: 0.3, v: 0.6) - SIMD3(3, 5.832, 0)) < 1e-12)
+        #expect(vectorLength(stretch.point(atU: 0.3, v: 0.6) - SIMD3(3, 5.832, 0)) < 1e-12)
+        #expect(vectorLength(coons.point(atU: 0.3, v: 0.6) - SIMD3(3, 5.832, 0)) < 1e-12)
     }
 
     @Test("Non-bezier curves return nil")

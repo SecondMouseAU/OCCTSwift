@@ -1,5 +1,5 @@
+import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -20,8 +20,8 @@ struct GeomPlateBuildAveragePlaneTests {
         if let r = result {
             #expect(r.isPlane)
             #expect(r.uvBox.umax > r.uvBox.umin)
-            #expect(simd_length(r.normal - SIMD3(-0.099503719021, 0, 0.99503719021)) < 1e-9)
-            #expect(simd_length(r.origin - SIMD3(0.5, 0.5, 0.05)) < 1e-9)
+            #expect(vectorLength(r.normal - SIMD3(-0.099503719021, 0, 0.99503719021)) < 1e-9)
+            #expect(vectorLength(r.origin - SIMD3(0.5, 0.5, 0.05)) < 1e-9)
             #expect(
                 abs(r.uvBox.umin + 0.502493781056) < 1e-9
                     && abs(r.uvBox.umax - 0.502493781056) < 1e-9)
@@ -40,9 +40,9 @@ struct GeomPlateBuildAveragePlaneTests {
         if let r = result {
             #expect(r.isPlane && !r.isLine)
             #expect(
-                simd_length(r.normal - SIMD3(-0.408248290464, 0.816496580928, -0.408248290464))
+                vectorLength(r.normal - SIMD3(-0.408248290464, 0.816496580928, -0.408248290464))
                     < 1e-9)
-            #expect(simd_length(r.origin - SIMD3(1, 1, 1)) < 1e-9)
+            #expect(vectorLength(r.origin - SIMD3(1, 1, 1)) < 1e-9)
         }
     }
 }

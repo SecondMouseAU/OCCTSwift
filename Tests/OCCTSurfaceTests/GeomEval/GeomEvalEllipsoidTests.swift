@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -28,7 +27,7 @@ struct GeomEvalEllipsoidTests {
         // #766: pinned to the GeomEval evaluator's own value on the same inputs, see Scripts/repro/766-geomeval-approx/; `!= nil` passed a surface built from the wrong parameters.
         if let surf {
             let expected = SIMD3(1.7598463525625141, 0.81657640588629432, 1.5576733692346021)
-            #expect(simd_length(surf.point(atU: 0.3, v: 0.4) - expected) < 1e-12)
+            #expect(vectorLength(surf.point(atU: 0.3, v: 0.4) - expected) < 1e-12)
         }
     }
 }

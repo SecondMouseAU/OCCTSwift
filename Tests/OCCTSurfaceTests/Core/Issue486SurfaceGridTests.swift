@@ -1,5 +1,5 @@
+import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -33,9 +33,9 @@ struct Issue486SurfaceGridTests {
             for iv in 0..<v.count {
                 let expected = sphere.evalD1(u: u[iu], v: v[iv])
                 let actual = grid.at(u: iu, v: iv)
-                #expect(simd_length(actual.point - expected.point) < 1e-6)
-                #expect(simd_length(actual.d1u - expected.d1u) < 1e-6)
-                #expect(simd_length(actual.d1v - expected.d1v) < 1e-6)
+                #expect(vectorLength(actual.point - expected.point) < 1e-6)
+                #expect(vectorLength(actual.d1u - expected.d1u) < 1e-6)
+                #expect(vectorLength(actual.d1v - expected.d1v) < 1e-6)
             }
         }
     }
@@ -53,7 +53,7 @@ struct Issue486SurfaceGridTests {
 
         for iu in 0..<u.count {
             for iv in 0..<v.count {
-                #expect(simd_length(d0.at(u: iu, v: iv) - d1.at(u: iu, v: iv).point) < 1e-9)
+                #expect(vectorLength(d0.at(u: iu, v: iv) - d1.at(u: iu, v: iv).point) < 1e-9)
             }
         }
     }
@@ -77,7 +77,7 @@ struct Issue486SurfaceGridTests {
         guard !mesh.isEmpty, !d1.isEmpty else { return }
         for iu in 0..<uCount {
             for iv in 0..<vCount {
-                #expect(simd_length(mesh.at(u: iu, v: iv) - d1.at(u: iu, v: iv).point) < 1e-6)
+                #expect(vectorLength(mesh.at(u: iu, v: iv) - d1.at(u: iu, v: iv).point) < 1e-6)
             }
         }
     }

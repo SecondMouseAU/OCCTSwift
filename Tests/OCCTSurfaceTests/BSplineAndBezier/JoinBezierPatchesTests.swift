@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -28,13 +27,13 @@ struct JoinBezierPatchesTests {
         #expect(abs(d.uMax - 2) < 1e-9)
         #expect(abs(d.vMin - 0) < 1e-9)
         #expect(abs(d.vMax - 1) < 1e-9)
-        #expect(simd_length(joined.point(atU: d.uMin, v: d.vMin) - SIMD3(0, 0, 0)) < 1e-9)
-        #expect(simd_length(joined.point(atU: d.uMin, v: d.vMax) - SIMD3(0, 10, 0)) < 1e-9)
+        #expect(vectorLength(joined.point(atU: d.uMin, v: d.vMin) - SIMD3(0, 0, 0)) < 1e-9)
+        #expect(vectorLength(joined.point(atU: d.uMin, v: d.vMax) - SIMD3(0, 10, 0)) < 1e-9)
         // The far corners are inside patch2, which a dropped second patch could not reach.
-        #expect(simd_length(joined.point(atU: d.uMax, v: d.vMin) - SIMD3(10, 0, 0)) < 1e-9)
-        #expect(simd_length(joined.point(atU: d.uMax, v: d.vMax) - SIMD3(10, 10, 0)) < 1e-9)
+        #expect(vectorLength(joined.point(atU: d.uMax, v: d.vMin) - SIMD3(10, 0, 0)) < 1e-9)
+        #expect(vectorLength(joined.point(atU: d.uMax, v: d.vMax) - SIMD3(10, 10, 0)) < 1e-9)
         // And the seam, where the two control nets met.
-        #expect(simd_length(joined.point(atU: 1, v: 0.5) - SIMD3(5, 5, 0)) < 1e-9)
+        #expect(vectorLength(joined.point(atU: 1, v: 0.5) - SIMD3(5, 5, 0)) < 1e-9)
     }
 
     @Test("Rejects a rational patch instead of silently dropping its weights (#725)")

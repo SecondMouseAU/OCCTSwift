@@ -1,5 +1,5 @@
+import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -41,7 +41,7 @@ struct Issue266FaceAnalysisFollowupTests {
         // The apex sits on the axis (x ≈ y ≈ 0); the iso-line collapses to it.
         #expect(abs(s.point.x) < 1e-6)
         #expect(abs(s.point.y) < 1e-6)
-        #expect(simd_distance(s.firstUV, s.lastUV) > 0)  // a real degenerate iso, not a point
+        #expect(vectorDistance(s.firstUV, s.lastUV) > 0)  // a real degenerate iso, not a point
         // #766: the apex is 5 / tan(0.5) below the reference circle.
         // #766: kernel values from Scripts/repro/766-issue233-244-266-317/.
         #expect(abs(s.point.z - (-9.15243860856)) < 1e-9)
@@ -122,11 +122,11 @@ struct Issue266FaceAnalysisFollowupTests {
             return
         }
         // On a plane the two tangents span the plane, not parallel.
-        let cross = simd_cross(tu, tv)
-        #expect(simd_length(cross) > 0.5)  // ~unit (orthonormal axes) ⇒ well clear of parallel
+        let cross = crossProduct(tu, tv)
+        #expect(vectorLength(cross) > 0.5)  // ~unit (orthonormal axes) ⇒ well clear of parallel
         // #766: the plane's D1U and D1V are the X and Y axes.
-        #expect(simd_length(tu - SIMD3(1, 0, 0)) < 1e-12)
-        #expect(simd_length(tv - SIMD3(0, 1, 0)) < 1e-12)
+        #expect(vectorLength(tu - SIMD3(1, 0, 0)) < 1e-12)
+        #expect(vectorLength(tv - SIMD3(0, 1, 0)) < 1e-12)
     }
 
     @Test("BRepGProp_Face V knots + surface-integration params")

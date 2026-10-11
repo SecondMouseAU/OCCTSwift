@@ -1,5 +1,5 @@
+import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -20,11 +20,11 @@ struct GeomFillDiscreteTrihedronTests {
         #expect(asEdge.curveType == .circle)
         let circle = try #require(asEdge.circleProperties)
         #expect(abs(circle.radius - 10) < 1e-9)
-        #expect(simd_length(circle.center - SIMD3(0, 0, 5)) < 1e-9)
+        #expect(vectorLength(circle.center - SIMD3(0, 0, 5)) < 1e-9)
         #expect(circle.isFullCircle)
         let frame = try #require(edge.discreteTrihedron(at: 0))
-        #expect(simd_length(frame.tangent - SIMD3(0, 1, 0)) < 1e-9)
-        #expect(simd_length(frame.normal - SIMD3(-1, 0, 0)) < 1e-9)
-        #expect(simd_length(frame.binormal - SIMD3(0, 0, 1)) < 1e-9)
+        #expect(vectorLength(frame.tangent - SIMD3(0, 1, 0)) < 1e-9)
+        #expect(vectorLength(frame.normal - SIMD3(-1, 0, 0)) < 1e-9)
+        #expect(vectorLength(frame.binormal - SIMD3(0, 0, 1)) < 1e-9)
     }
 }
