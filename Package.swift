@@ -803,27 +803,6 @@ let occtBridgeTarget: Target =
                 ]
             )
 
-// The `simd` module, on WASI only, and for TEST targets only (#2175, #2759).
-//
-// `Sources/OCCTSwift` no longer imports Apple's `simd` or calls a `simd_` function (#2759): the
-// vector helpers are plain Swift in `SIMDVectorOps.swift` and the public matrix types are
-// `Matrix4x4F` and `Matrix3x3D`, so the library target does not depend on this module on any
-// platform. `Scripts/check-no-simd.py` holds that.
-//
-// What remains is a stand-in for the test files that have not yet been migrated off
-// `import simd`. It exists on WASI only and is deleted, with this declaration and the dependency
-// appended in `adjustedForWASM`, by the last PR of #2759 once no file under `Tests/` imports it.
-let wasiCompatTargets: [Target] =
-    isWASI
-    ? [
-        .target(
-            name: "simd",
-            path: "Sources/WASICompat/simd",
-            swiftSettings: [.swiftLanguageMode(.v6)]
-        )
-    ]
-    : []
-
 // OCCTPlatform is unconditional: it is the one target that knows which platform this is, and every
 // file in the Swift layer imports it instead of Foundation. See Sources/OCCTPlatform/Platform.swift.
 let swiftLayerDependencies: [Target.Dependency] = ["OCCTBridge", "OCCT", "OCCTPlatform"]
@@ -929,10 +908,10 @@ let wasmUnportableTestTargets: Set<String> = []
 // a 1e9 aspect ratio walked for arc length against 16 measured overshoot counts.
 let wasmExcludedTestFiles: [String: [String]] = [
     "OCCTFoundationTests": [
-        "HostOSCrossCheckTests.swift",
-        "SerialLockThreadSafetyTests.swift",
+        "OSD/HostOSCrossCheckTests.swift",
+        "Concurrency/SerialLockThreadSafetyTests.swift",
     ],
-    "OCCTMiscTests": ["ConstructionContextConcurrencyTests.swift"],
+    "OCCTMiscTests": ["ConstructionContext/ConstructionContextConcurrencyTests.swift"],
     "OCCTModelingTests": ["BOPAlgo/Issue208SelfIntersectionTests.swift"],
     "OCCTShapeHealingTests": ["ShapeAnalysis/Issue772SelfIntersectionAnalysisTests.swift"],
     // One concurrency file. The seven that read a `.brep` out of `Fixtures/` by `#filePath` ran
@@ -943,36 +922,32 @@ let wasmExcludedTestFiles: [String: [String]] = [
         "StressConcurrencyTests.swift"
     ],
     // The seven files of 29 whose subject is CPU threads rather than screw threads. Measured:
-    // `grep -ln 'Dispatch\|NSLock\|withTaskGroup\|Thread\.' Tests/OCCTThreadTests/*.swift` returns
+    // `grep -rln 'Dispatch\|NSLock\|withTaskGroup\|Thread\.' Tests/OCCTThreadTests` returns
     // exactly these, and the other 22 are fastener geometry. `Issue3039BRepLibPlaneFirstUseTests`
     // is the seventh: it uses `DispatchGroup` and spawns child processes with `Process`, and
     // neither exists on wasm, so the file does not compile there.
     "OCCTThreadTests": [
-        "Issue1404TObjApplicationThreadSafetyTests.swift",
-        "Issue298FilletThreadSafetyTests.swift",
-        "Issue341MeshCafThreadSafetyTests.swift",
-        "Issue359STEPThreadSafetyTests.swift",
-        "Issue361SharedSingletonThreadSafetyTests.swift",
-        "Issue367FuseMultiThreadSafetyTests.swift",
-        "Issue3039BRepLibPlaneFirstUseTests.swift",
+        "Concurrency/Issue1404TObjApplicationThreadSafetyTests.swift",
+        "Concurrency/Issue298FilletThreadSafetyTests.swift",
+        "Concurrency/Issue341MeshCafThreadSafetyTests.swift",
+        "Concurrency/Issue359STEPThreadSafetyTests.swift",
+        "Concurrency/Issue361SharedSingletonThreadSafetyTests.swift",
+        "Concurrency/Issue367FuseMultiThreadSafetyTests.swift",
+        "Concurrency/Issue3039BRepLibPlaneFirstUseTests.swift",
     ],
 ]
 
-// Drop the test targets wasm cannot build, and give the ones it can the `simd` stand-in.
+// Drop the test targets wasm cannot build.
 //
-// The dependency is declared here rather than left to resolve itself. Measured: `import simd` in a
-// test file already compiles for wasm WITHOUT this, because every target shares one build-products
-// directory and `simd` is always in it (OCCTSwift depends on it). That is module visibility by
-// accident of layout, it is not a declared edge, and it would break the first time the layout or
-// the dependency changed. 271 of the 1,428 test files still import `simd` (#2759 removed the other 954).
+// There is no `simd` stand-in any more: neither the library nor a test file imports Apple's `simd`
+// (#2759), and `Scripts/check-no-simd.py` holds that for `Sources/` and `Tests/` alike.
 func adjustedForWASM(_ target: Target) -> Target? {
     guard isWASI, target.type == .test else { return target }
     guard !wasmUnportableTestTargets.contains(target.name) else { return nil }
-    // `Target` IS A CLASS, so these mutate the object the array literal above already holds and
+    // `Target` IS A CLASS, so this mutates the object the array literal above already holds and
     // there is nothing to copy or reassign. Worth stating because the first version of this function
     // wrote `var target = target` out of struct habit, and the compiler's
     // "variable 'target' was never mutated" warning is what gave the reference semantics away.
-    target.dependencies.append("simd")
     if let excluded = wasmExcludedTestFiles[target.name] {
         target.exclude += excluded
     }
@@ -1196,6 +1171,6 @@ let package = Package(
                 .swiftLanguageMode(.v6)
             ]
         ),
-    ].compactMap(adjustedForWASM) + wasiCompatTargets,
+    ].compactMap(adjustedForWASM),
     cxxLanguageStandard: .cxx17
 )

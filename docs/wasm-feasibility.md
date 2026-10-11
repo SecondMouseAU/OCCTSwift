@@ -239,13 +239,14 @@ its siblings write to.
 - **What did break, and neither was on this list:**
   - **`import simd`, in 196 of the 230 files.** Apple's `simd` is part of the Apple
     SDKs and has no wasm build. Answered with a WASI-only target named `simd`
-    (`Sources/WASICompat/simd`), which left all 196 files untouched. #2759 then removed
+    (`Sources/WASICompat/simd`, since deleted), which left all 196 files untouched. #2759 then removed
     the imports no file needed, measured by building both platforms with each one gone,
     and then replaced the remaining uses: `Sources/OCCTSwift` imports no `simd` module and
     calls no `simd_*` function (`Scripts/check-no-simd.py` holds that), the vector
     operations are plain Swift in `SIMDVectorOps.swift`, and the five public matrix
-    properties return the package-owned `Matrix4x4F` and `Matrix3x3D`. Apple and wasm run
-    the same code.
+    properties return the package-owned `Matrix4x4F` and `Matrix3x3D`. The test files
+    were migrated the same way and the stand-in was deleted, so Apple and wasm run the
+    same code and `Scripts/check-no-simd.py` covers `Sources/` and `Tests/`.
   - **`Shape.isSelfIntersecting(hardTimeout:)`**, the only Dispatch user in the
     package. Its contract is a hard deadline enforced by a second thread, and
     wasip1 non-threads has one. Decided in #2760: the name exists on wasm with the
