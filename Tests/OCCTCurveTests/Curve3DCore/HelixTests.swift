@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -18,7 +17,7 @@ struct HelixTests {
             Issue.record("helix not built")
             return
         }
-        #expect(abs(simd_length(SIMD2(a.x, a.y)) - radius) < 1e-9)
+        #expect(abs(vectorLength(SIMD2(a.x, a.y)) - radius) < 1e-9)
         #expect(abs(abs(b.z - a.z) - rise) < 1e-9)
         #expect(abs((helix.length ?? 0) - length) < 1e-6)
     }
@@ -45,7 +44,7 @@ struct HelixTests {
             Issue.record("helix not built")
             return
         }
-        #expect(simd_distance(a, SIMD3(0, 20, 30)) < 1e-9)
+        #expect(vectorDistance(a, SIMD3(0, 20, 30)) < 1e-9)
         #expect(abs(abs(b.z - a.z) - 10) < 1e-9)
         #expect(abs((helix.length ?? 0) - 126.06094379666393) < 1e-6)
     }
@@ -61,8 +60,8 @@ struct HelixTests {
             return
         }
         // The two senses start on opposite sides and climb in opposite axis directions.
-        #expect(simd_distance(a, SIMD3(-5, 0, 0)) < 1e-9)
-        #expect(simd_distance(b, SIMD3(5, 0, 0)) < 1e-9)
+        #expect(vectorDistance(a, SIMD3(-5, 0, 0)) < 1e-9)
+        #expect(vectorDistance(b, SIMD3(5, 0, 0)) < 1e-9)
         #expect(abs(ae.z - (-2)) < 1e-9)
         #expect(abs(be.z - 2) < 1e-9)
     }
@@ -105,8 +104,8 @@ struct HelixTests {
             Issue.record("tapered helix not built")
             return
         }
-        #expect(abs(simd_length(SIMD2(a.x, a.y)) - 10) < 1e-9)
-        #expect(abs(simd_length(SIMD2(b.x, b.y)) - 3) < 1e-9)
+        #expect(abs(vectorLength(SIMD2(a.x, a.y)) - 10) < 1e-9)
+        #expect(abs(vectorLength(SIMD2(b.x, b.y)) - 3) < 1e-9)
         #expect(abs(abs(b.z - a.z) - 16) < 1e-9)
     }
 

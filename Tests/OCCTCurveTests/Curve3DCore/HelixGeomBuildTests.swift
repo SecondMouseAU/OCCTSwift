@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -20,8 +19,8 @@ struct HelixGeomBuildTests {
         #expect(r.toleranceReached < 0.1)
         // The kernel places the end one pitch up the axis, at (10, 0, 5).
         let end = r.curve.endPoint
-        #expect(simd_distance(r.curve.startPoint, SIMD3(10, 0, 0)) < 1e-9)
-        #expect(simd_distance(end, SIMD3(10, 0, 5)) < 1e-9)
+        #expect(vectorDistance(r.curve.startPoint, SIMD3(10, 0, 0)) < 1e-9)
+        #expect(vectorDistance(end, SIMD3(10, 0, 5)) < 1e-9)
     }
 
     @Test func taperedHelix() {
@@ -34,7 +33,7 @@ struct HelixGeomBuildTests {
             return
         }
         // The kernel ends the tapered helix at (10.437, 0, 5).
-        #expect(simd_distance(r.curve.endPoint, SIMD3(10.437443317629619, 0, 5)) < 1e-6)
+        #expect(vectorDistance(r.curve.endPoint, SIMD3(10.437443317629619, 0, 5)) < 1e-6)
     }
 
     @Test func helixWithCustomPosition() {
@@ -45,8 +44,8 @@ struct HelixGeomBuildTests {
             Issue.record("positioned helix not built")
             return
         }
-        #expect(simd_distance(r.curve.startPoint, SIMD3(9, 2, 3)) < 1e-9)
-        #expect(simd_distance(r.curve.endPoint, SIMD3(9, 2, 7)) < 1e-9)
+        #expect(vectorDistance(r.curve.startPoint, SIMD3(9, 2, 3)) < 1e-9)
+        #expect(vectorDistance(r.curve.endPoint, SIMD3(9, 2, 7)) < 1e-9)
     }
 
     @Test func coilBuild() {
@@ -55,6 +54,6 @@ struct HelixGeomBuildTests {
             return
         }
         // Four turns of pitch 3 climb to z = 12.
-        #expect(simd_distance(r.curve.endPoint, SIMD3(5, 0, 12)) < 1e-9)
+        #expect(vectorDistance(r.curve.endPoint, SIMD3(5, 0, 12)) < 1e-9)
     }
 }

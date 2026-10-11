@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -60,7 +59,7 @@ struct Issue570HealingApproxTests {
                 let v = d.vMin + (d.vMax - d.vMin) * Double(j) / Double(samples)
                 let a = source.point(atU: u, v: v)
                 let b = fitted.point(atU: u, v: v)
-                worst = max(worst, simd_length(a - b))
+                worst = max(worst, vectorLength(a - b))
             }
         }
         return worst

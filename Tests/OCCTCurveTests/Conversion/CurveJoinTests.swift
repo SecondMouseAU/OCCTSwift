@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -15,8 +14,8 @@ struct CurveJoinTests {
             let dom = joined.domain
             let start = joined.point(at: dom.lowerBound)
             let end = joined.point(at: dom.upperBound)
-            #expect(simd_distance(start, SIMD3(0, 0, 0)) < 0.01)
-            #expect(simd_distance(end, SIMD3(2, 1, 0)) < 0.01)
+            #expect(vectorDistance(start, SIMD3(0, 0, 0)) < 0.01)
+            #expect(vectorDistance(end, SIMD3(2, 1, 0)) < 0.01)
         }
     }
 
@@ -30,8 +29,8 @@ struct CurveJoinTests {
             let dom = joined.domain
             let start = joined.point(at: dom.lowerBound)
             let end = joined.point(at: dom.upperBound)
-            #expect(simd_distance(start, SIMD3(0, 0, 0)) < 0.01)
-            #expect(simd_distance(end, SIMD3(3, 1, 1)) < 0.01)
+            #expect(vectorDistance(start, SIMD3(0, 0, 0)) < 0.01)
+            #expect(vectorDistance(end, SIMD3(3, 1, 1)) < 0.01)
         }
     }
 
@@ -42,8 +41,8 @@ struct CurveJoinTests {
             let dom = joined.domain
             let start = joined.point(at: dom.lowerBound)
             let end = joined.point(at: dom.upperBound)
-            #expect(simd_distance(start, SIMD3(0, 0, 0)) < 0.01)
-            #expect(simd_distance(end, SIMD3(5, 0, 0)) < 0.01)
+            #expect(vectorDistance(start, SIMD3(0, 0, 0)) < 0.01)
+            #expect(vectorDistance(end, SIMD3(5, 0, 0)) < 0.01)
         }
     }
 }

@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -34,7 +33,7 @@ struct BSplineCurve3DManipulationTests {
     }
 
     private static func near(_ a: SIMD3<Double>, _ b: SIMD3<Double>) -> Bool {
-        simd_distance(a, b) < 1e-12
+        vectorDistance(a, b) < 1e-12
     }
 
     @Test func knotCount() throws {
@@ -113,8 +112,8 @@ struct BSplineCurve3DManipulationTests {
         #expect(abs(bsp.domain.lowerBound - 3.6055512754639891) < 1e-12)
         #expect(abs(bsp.domain.upperBound - 10.816653826391967) < 1e-12)
         #expect(bsp.bspline.poleCount == 5)
-        #expect(simd_distance(bsp.startPoint, SIMD3(2, 3, 0)) < 1e-9)
-        #expect(simd_distance(bsp.endPoint, SIMD3(8, 3, 0)) < 1e-9)
+        #expect(vectorDistance(bsp.startPoint, SIMD3(2, 3, 0)) < 1e-9)
+        #expect(vectorDistance(bsp.endPoint, SIMD3(8, 3, 0)) < 1e-9)
     }
 
     @Test func increaseDegree() throws {
@@ -124,8 +123,8 @@ struct BSplineCurve3DManipulationTests {
         #expect(bsp.bspline.poleCount == 11)
         #expect(bsp.bspline.multiplicities == [5, 2, 2, 2, 5])
         // Degree elevation keeps the geometry.
-        #expect(simd_distance(bsp.startPoint, SIMD3(0, 0, 0)) < 1e-12)
-        #expect(simd_distance(bsp.endPoint, SIMD3(10, 0, 0)) < 1e-12)
+        #expect(vectorDistance(bsp.startPoint, SIMD3(0, 0, 0)) < 1e-12)
+        #expect(vectorDistance(bsp.endPoint, SIMD3(10, 0, 0)) < 1e-12)
     }
 
     @Test func resolution() throws {

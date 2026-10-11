@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -65,7 +64,7 @@ struct AutoCentermarkFrameAgreementTests {
             let message =
                 "centermark at \(mark.centre) does not match the drawing's own projected circle "
                 + "center at \(projectedCentre)"
-            #expect(simd_length(mark.centre - projectedCentre) < 1e-6, "\(message)")
+            #expect(vectorLength(mark.centre - projectedCentre) < 1e-6, "\(message)")
         }
     }
 }

@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -167,7 +166,7 @@ struct Issue443TriangulationAttributeTests {
         // density. A node read back in the wrong frame, scaled or from the wrong index leaves it.
         for label in [coarseLabel, fineLabel] {
             for node in try storedNodes(label) {
-                #expect(abs(simd_length(node) - 10.0) < 1e-6, "node \(node) is off the sphere")
+                #expect(abs(vectorLength(node) - 10.0) < 1e-6, "node \(node) is off the sphere")
             }
         }
 
@@ -259,7 +258,7 @@ struct Issue443TriangulationAttributeTests {
         #expect(read.counts.count == 8)
         #expect(read.counts.values.allSatisfy { $0 == 3 }, "corner multiplicities: \(read.counts)")
         // The pre-fix defect, stated directly: nothing sits near the origin.
-        #expect(nodes.allSatisfy { simd_length($0) > 100 })
+        #expect(nodes.allSatisfy { vectorLength($0) > 100 })
     }
 
     /// A mirrored shape reverses its faces, which is the other half of the per-face handling
@@ -346,21 +345,21 @@ struct Issue443TriangulationAttributeTests {
         // Nodes lie on the sphere (the glTF mesh was made from it), which is what makes the
         // outward direction at a node its own position over its length.
         for (i, p) in nodes.enumerated() {
-            #expect(abs(simd_length(p) - 10.0) < 1e-3, "node \(i + 1) at \(p) is off the sphere")
+            #expect(abs(vectorLength(p) - 10.0) < 1e-3, "node \(i + 1) at \(p) is off the sphere")
         }
         var checked = 0
         for (i, p) in nodes.enumerated() {
             let n = try #require(
                 label.triangulationNormal(at: Int32(i + 1)),
                 "node \(i + 1) stored no normal, so the branch did not run")
-            #expect(abs(simd_length(n) - 1.0) < 1e-6, "normal \(n) is not unit length")
+            #expect(abs(vectorLength(n) - 1.0) < 1e-6, "normal \(n) is not unit length")
             // The sphere's outward normal at p is p / |p|. A dropped reversal flips a face's
             // worth (dot near -1) and a normal read from the wrong node points elsewhere. The
             // glTF carries the sphere's analytic normals, so the stored one is radial to double
             // precision (measured: the smallest dot over all 168 nodes is 1 - 1.2e-15); 1 - 1e-6
             // leaves six orders of margin and still rejects a normal turned by even 0.1 degree.
             #expect(
-                simd_dot(n, p / simd_length(p)) > 1 - 1e-6,
+                dotProduct(n, p / vectorLength(p)) > 1 - 1e-6,
                 "node \(i + 1) normal \(n) does not point outward from \(p)")
             checked += 1
         }

@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -52,8 +51,8 @@ struct Curve3DConversionTests {
             Issue.record("join returned nil")
             return
         }
-        #expect(simd_distance(j.startPoint, SIMD3(0, 0, 0)) < 1e-12)
-        #expect(simd_distance(j.endPoint, SIMD3(10, 5, 0)) < 1e-12)
+        #expect(vectorDistance(j.startPoint, SIMD3(0, 0, 0)) < 1e-12)
+        #expect(vectorDistance(j.endPoint, SIMD3(10, 5, 0)) < 1e-12)
         #expect(abs(j.domain.upperBound - (5 + 50.0.squareRoot())) < 1e-9)
     }
 
@@ -82,12 +81,12 @@ struct Curve3DConversionTests {
             return
         }
         // Within the 0.01 tolerance of the r = 5 half circle everywhere.
-        #expect(simd_distance(approx.startPoint, SIMD3(5, 0, 0)) < 0.01)
-        #expect(simd_distance(approx.endPoint, SIMD3(-5, 0, 0)) < 0.01)
+        #expect(vectorDistance(approx.startPoint, SIMD3(5, 0, 0)) < 0.01)
+        #expect(vectorDistance(approx.endPoint, SIMD3(-5, 0, 0)) < 0.01)
         let d = approx.domain
         for i in 0...16 {
             let p = approx.point(at: d.lowerBound + (d.upperBound - d.lowerBound) * Double(i) / 16)
-            #expect(abs(simd_length(p) - 5) < 0.01)
+            #expect(abs(vectorLength(p) - 5) < 0.01)
         }
     }
 }

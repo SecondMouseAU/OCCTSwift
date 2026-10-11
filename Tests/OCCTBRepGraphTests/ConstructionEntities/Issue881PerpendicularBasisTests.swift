@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -32,8 +31,8 @@ struct Issue881ConstructionPerpendicularBasisTests {
     @Test("Placement.init(origin:normal:) matches OCCT's gp_Ax2 canonical basis")
     func placementInitMatchesGpAx2() {
         let p = Placement(origin: .zero, normal: Self.nearDegenerate)
-        #expect(simd_length(p.xAxis - Self.expectedRight) < 1e-9)
-        #expect(simd_length(p.yAxis - Self.expectedUp) < 1e-9)
+        #expect(vectorLength(p.xAxis - Self.expectedRight) < 1e-9)
+        #expect(vectorLength(p.yAxis - Self.expectedUp) < 1e-9)
     }
 
     /// `.throughAxis` had zero test coverage before #881 (`grep -rn "\.throughAxis" Tests/`
@@ -53,7 +52,7 @@ struct Issue881ConstructionPerpendicularBasisTests {
         let plane = ConstructionPlane.throughAxis(axis: edgeRef, angleDeg: 0)
         switch graph.resolve(plane) {
         case .success(let p):
-            #expect(simd_length(p.zAxis - Self.expectedUp) < 1e-9)
+            #expect(vectorLength(p.zAxis - Self.expectedUp) < 1e-9)
         case .failure(let e):
             Issue.record("resolve failed: \(e)")
         }
@@ -88,7 +87,7 @@ struct Issue881ConstructionPerpendicularBasisTests {
         _ fixture: (normal: SIMD3<Double>, expectedX: SIMD3<Double>, expectedY: SIMD3<Double>)
     ) {
         let p = Placement(origin: .zero, normal: fixture.normal)
-        #expect(simd_length(p.xAxis - fixture.expectedX) < 1e-9)
-        #expect(simd_length(p.yAxis - fixture.expectedY) < 1e-9)
+        #expect(vectorLength(p.xAxis - fixture.expectedX) < 1e-9)
+        #expect(vectorLength(p.yAxis - fixture.expectedY) < 1e-9)
     }
 }

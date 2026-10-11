@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -21,8 +20,8 @@ struct RemoveLocationsTests {
         #expect(flat.isValid)
         #expect(abs((flat.volume ?? 0) - 1000) < 1e-9)
         let b = try #require(flat.bounds)
-        #expect(simd_distance(b.min, SIMD3(95, 195, 295)) < 1e-6)
-        #expect(simd_distance(b.max, SIMD3(105, 205, 305)) < 1e-6)
+        #expect(vectorDistance(b.min, SIMD3(95, 195, 295)) < 1e-6)
+        #expect(vectorDistance(b.max, SIMD3(105, 205, 305)) < 1e-6)
     }
 
     @Test("Remove locations from rotated shape")
@@ -36,7 +35,7 @@ struct RemoveLocationsTests {
         #expect(flat.isValid)
         #expect(abs((flat.volume ?? 0) - 785.398163) < 1e-5)
         let b = try #require(flat.bounds)
-        #expect(simd_distance(b.min, SIMD3(45, -10.6066, -3.5355)) < 1e-3)
-        #expect(simd_distance(b.max, SIMD3(55, 3.5355, 10.6066)) < 1e-3)
+        #expect(vectorDistance(b.min, SIMD3(45, -10.6066, -3.5355)) < 1e-3)
+        #expect(vectorDistance(b.max, SIMD3(55, 3.5355, 10.6066)) < 1e-3)
     }
 }

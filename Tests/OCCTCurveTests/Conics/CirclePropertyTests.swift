@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -33,7 +32,7 @@ struct CirclePropertyTests {
             Issue.record("collinear")
             return
         }
-        #expect(abs(simd_length(circle.center - SIMD3<Double>(0, 0, 0))) < 1e-9)
+        #expect(abs(vectorLength(circle.center - SIMD3<Double>(0, 0, 0))) < 1e-9)
         #expect(abs(circle.radius - 1.0) < 1e-9)
     }
 

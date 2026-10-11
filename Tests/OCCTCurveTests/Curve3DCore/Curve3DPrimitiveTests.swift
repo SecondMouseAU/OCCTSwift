@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -72,8 +71,8 @@ struct Curve3DPrimitiveTests {
         #expect(arc != nil)
         if let arc = arc {
             #expect(!arc.isClosed)
-            #expect(simd_distance(arc.startPoint, SIMD3(5, 0, 0)) < 1e-12)
-            #expect(simd_distance(arc.endPoint, SIMD3(-5, 0, 0)) < 1e-12)
+            #expect(vectorDistance(arc.startPoint, SIMD3(5, 0, 0)) < 1e-12)
+            #expect(vectorDistance(arc.endPoint, SIMD3(-5, 0, 0)) < 1e-12)
         }
     }
 
@@ -87,7 +86,7 @@ struct Curve3DPrimitiveTests {
             #expect(e.isClosed)
             #expect(e.isPeriodic)
             #expect(e.period == 2 * .pi)
-            #expect(simd_distance(e.point(at: 0), SIMD3(10, 0, 0)) < 1e-12)
+            #expect(vectorDistance(e.point(at: 0), SIMD3(10, 0, 0)) < 1e-12)
         }
     }
 
@@ -127,7 +126,7 @@ struct Curve3DPrimitiveTests {
         let seg = Curve3D.segment(from: SIMD3(0, 0, 0), to: SIMD3(10, 5, 3))!
         let result = seg.d1(at: seg.domain.lowerBound)
         // The segment is parameterised by length, so D1 is the unit direction (10, 5, 3)/|.|.
-        #expect(simd_distance(result.tangent, simd_normalize(SIMD3(10, 5, 3))) < 1e-12)
+        #expect(vectorDistance(result.tangent, normalizedVector(SIMD3(10, 5, 3))) < 1e-12)
     }
 
     // #815: `d2(at:)` had no test anywhere in the tree (its sibling `d1(at:)`, immediately above,

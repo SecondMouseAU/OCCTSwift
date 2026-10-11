@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -29,7 +28,7 @@ struct CurveApproximationTests {
         let d = bspline.domain
         for i in 0...16 {
             let p = bspline.point(at: d.lowerBound + (d.upperBound - d.lowerBound) * Double(i) / 16)
-            #expect(abs(simd_length(SIMD2(p.x, p.y)) - 5) < 1e-3)
+            #expect(abs(vectorLength(SIMD2(p.x, p.y)) - 5) < 1e-3)
         }
     }
 
@@ -69,7 +68,7 @@ struct CurveApproximationTests {
             return
         }
         // Box edge 0 of the centred 10 box runs (-5,-5,-5) -> (-5,-5,5).
-        #expect(simd_distance(bspline.startPoint, SIMD3(-5, -5, -5)) < 1e-9)
-        #expect(simd_distance(bspline.endPoint, SIMD3(-5, -5, 5)) < 1e-9)
+        #expect(vectorDistance(bspline.startPoint, SIMD3(-5, -5, -5)) < 1e-9)
+        #expect(vectorDistance(bspline.endPoint, SIMD3(-5, -5, 5)) < 1e-9)
     }
 }

@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -58,7 +57,7 @@ struct ConstructionPlaneTests {
             // The face normal is unit length; offset 5.0 along it produces a
             // plane whose origin is 5.0 away (in the plane normal direction) from
             // the face centroid.
-            #expect(simd_length(p.zAxis) > 0.99 && simd_length(p.zAxis) < 1.01)
+            #expect(vectorLength(p.zAxis) > 0.99 && vectorLength(p.zAxis) < 1.01)
         case .failure(let e): Issue.record("failed: \(e)")
         }
     }
@@ -77,7 +76,7 @@ struct ConstructionPlaneTests {
         let plane = ConstructionPlane.byThreePoints(v0, v1, v2)
         switch graph.resolve(plane) {
         case .success(let p):
-            #expect(simd_length(p.zAxis) > 0.99)
+            #expect(vectorLength(p.zAxis) > 0.99)
         case .failure: Issue.record("byThreePoints failed")
         }
     }
@@ -112,7 +111,7 @@ struct ConstructionPlaneTests {
         switch graph.resolve(plane) {
         case .success(let p):
             // The plane normal is the edge tangent, so non-zero unit vector.
-            #expect(simd_length(p.zAxis) > 0.99 && simd_length(p.zAxis) < 1.01)
+            #expect(vectorLength(p.zAxis) > 0.99 && vectorLength(p.zAxis) < 1.01)
         case .failure(let e): Issue.record("failed: \(e)")
         }
     }
@@ -211,11 +210,11 @@ struct ConstructionPlaneTests {
             #expect(abs(p.origin.x) < 1e-6)
             #expect(abs(p.origin.y) < 1e-6)
             #expect(abs(p.origin.z) < 1e-6)
-            #expect(abs(simd_length(p.zAxis) - 1.0) < 1e-6)
+            #expect(abs(vectorLength(p.zAxis) - 1.0) < 1e-6)
             // Compare against the actual UV-midpoint normal value, not just unit length, so a
             // wrong (but still unit-length) fallback normal would be caught (#897 review, second
             // xhigh pass, finding 3).
-            #expect(simd_length(p.zAxis - simd_normalize(expectedFallback)) < 1e-6)
+            #expect(vectorLength(p.zAxis - normalizedVector(expectedFallback)) < 1e-6)
         case .failure(let e):
             Issue.record("tangentToFace failed at the cone apex: \(e)")
         }
@@ -275,9 +274,9 @@ struct ConstructionPlaneTests {
             // The origin must be the UV-midpoint sample's own point -- a genuine on-face
             // location -- NOT the raw sphere-center input point, which is nowhere near the
             // face's surface (distance = the sphere's own radius, 5).
-            #expect(simd_length(p.origin - expectedFallbackPoint) < 1e-6)
-            #expect(simd_length(p.origin) > 1.0, "origin should not be the raw center point")
-            #expect(simd_length(p.zAxis - simd_normalize(expectedFallbackNormal)) < 1e-6)
+            #expect(vectorLength(p.origin - expectedFallbackPoint) < 1e-6)
+            #expect(vectorLength(p.origin) > 1.0, "origin should not be the raw center point")
+            #expect(vectorLength(p.zAxis - normalizedVector(expectedFallbackNormal)) < 1e-6)
         case .failure(let e):
             Issue.record("tangentToFace failed: \(e)")
         }
@@ -300,7 +299,7 @@ struct ConstructionPlaneTests {
             Issue.record("face0 unavailable")
             return
         }
-        let faceNormalUnit = simd_normalize(sampleNormal)
+        let faceNormalUnit = normalizedVector(sampleNormal)
 
         // Find a vertex that does NOT lie on face 0 -- the genuine misuse scenario finding 2
         // describes, where `at` doesn't actually reference a point on `face`.
@@ -308,7 +307,7 @@ struct ConstructionPlaneTests {
         for vertexIndex in 0..<graph.vertexCount {
             let raw = graph.vertexPoint(vertexIndex)
             let p = SIMD3(raw.x, raw.y, raw.z)
-            if abs(simd_dot(p - samplePoint, faceNormalUnit)) > 1e-3 {
+            if abs(dotProduct(p - samplePoint, faceNormalUnit)) > 1e-3 {
                 offFaceVertexIndex = vertexIndex
                 break
             }
@@ -323,9 +322,9 @@ struct ConstructionPlaneTests {
         switch graph.resolve(ConstructionPlane.tangentToFace(face: faceRef, at: vertexRef)) {
         case .success(let p):
             // The origin must lie ON face 0's plane, not at the raw off-face vertex position.
-            #expect(abs(simd_dot(p.origin - samplePoint, faceNormalUnit)) < 1e-6)
+            #expect(abs(dotProduct(p.origin - samplePoint, faceNormalUnit)) < 1e-6)
             #expect(
-                simd_length(p.origin - rawPoint) > 1e-3,
+                vectorLength(p.origin - rawPoint) > 1e-3,
                 "origin should differ from the raw off-face point")
         case .failure(let e):
             Issue.record("tangentToFace failed: \(e)")

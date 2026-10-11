@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -39,7 +38,7 @@ struct CurveInterpolationTests {
         }
         #expect(!info.isClosed)
         // The normalised midpoint is the middle input point.
-        #expect(simd_distance(wire.point(at: 0.5) ?? .zero, SIMD3(20, 0, 0)) < 1e-9)
+        #expect(vectorDistance(wire.point(at: 0.5) ?? .zero, SIMD3(20, 0, 0)) < 1e-9)
         #expect(abs((wire.length ?? 0) - 47.413493009755058) < 1e-6)
     }
 
@@ -59,7 +58,7 @@ struct CurveInterpolationTests {
             return
         }
         #expect(info.isClosed)
-        #expect(simd_distance(wire.point(at: 0.5) ?? .zero, SIMD3(-10, 0, 0)) < 1e-9)
+        #expect(vectorDistance(wire.point(at: 0.5) ?? .zero, SIMD3(-10, 0, 0)) < 1e-9)
     }
 
     @Test("Interpolate with tangent constraints")
@@ -81,7 +80,7 @@ struct CurveInterpolationTests {
             return
         }
         // The curve arcs above the straight line: its midpoint is (5, 1.25, 0).
-        #expect(simd_distance(midPoint, SIMD3(5, 1.25, 0)) < 1e-9)
+        #expect(vectorDistance(midPoint, SIMD3(5, 1.25, 0)) < 1e-9)
     }
 
     @Test("Interpolate 3D curve")
@@ -99,7 +98,7 @@ struct CurveInterpolationTests {
             return
         }
         // The normalised midpoint is the middle input point.
-        #expect(simd_distance(midPoint, SIMD3(20, 0, 10)) < 1e-9)
+        #expect(vectorDistance(midPoint, SIMD3(20, 0, 10)) < 1e-9)
     }
 
     @Test("Interpolate too few points returns nil")

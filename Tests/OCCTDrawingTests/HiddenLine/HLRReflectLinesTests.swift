@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -19,8 +18,8 @@ struct HLRReflectLinesTests {
         }
         #expect(shape.subShapes(ofType: .edge).count == 1, "\(what): edge count")
         #expect(
-            simd_length(bb.min - SIMD3(-10.0000001, -10.0000001, -1e-7)) < 1e-6
-                && simd_length(bb.max - SIMD3(10.0000001, 10.0000001, 1e-7)) < 1e-6,
+            vectorLength(bb.min - SIMD3(-10.0000001, -10.0000001, -1e-7)) < 1e-6
+                && vectorLength(bb.max - SIMD3(10.0000001, 10.0000001, 1e-7)) < 1e-6,
             "\(what): bounds \(bb.min) .. \(bb.max)")
     }
 

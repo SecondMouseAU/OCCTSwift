@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -19,7 +18,7 @@ import simd
         // (Scripts/repro/766-curve-final-sampling/transcript.txt): the first edge of the centred
         // 10x5 rectangle is the straight bottom side, sampled at its two ends.
         try #require(polyline.count == 2)
-        #expect(simd_distance(polyline[0], SIMD3(-5, -2.5, 0)) < 1e-9)
-        #expect(simd_distance(polyline[1], SIMD3(5, -2.5, 0)) < 1e-9)
+        #expect(vectorDistance(polyline[0], SIMD3(-5, -2.5, 0)) < 1e-9)
+        #expect(vectorDistance(polyline[1], SIMD3(5, -2.5, 0)) < 1e-9)
     }
 }

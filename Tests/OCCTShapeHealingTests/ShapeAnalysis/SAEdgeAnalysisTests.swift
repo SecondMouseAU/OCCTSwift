@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -153,8 +152,8 @@ struct SAEdgeAnalysisTests {
     @Test func edgeEndTangent2d() throws {
         let (edge, face) = try faceAndItsEdge()
         let tang = try #require(EdgeAnalysis.endTangent2d(edge, face: face, atEnd: false))
-        #expect(simd_distance(tang.point, SIMD2(0, 0)) < 1e-12)
-        #expect(simd_distance(tang.tangent, SIMD2(1, 0)) < 1e-12)
+        #expect(vectorDistance(tang.point, SIMD2(0, 0)) < 1e-12)
+        #expect(vectorDistance(tang.tangent, SIMD2(1, 0)) < 1e-12)
     }
 
     @Test func edgePCurveRange() throws {

@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -94,7 +93,7 @@ struct Issue3065EdgeCurvePerTaskTests {
                             continue
                         }
                         let want = expectedRows[task][step]
-                        if simd_distance(p, want) > 1e-9 {
+                        if vectorDistance(p, want) > 1e-9 {
                             found.append("task \(task) step \(step): got \(p), want \(want)")
                         }
                     }
@@ -130,7 +129,7 @@ struct Issue3065EdgeCurvePerTaskTests {
                             found.append("task \(task) step \(step): nil point")
                             continue
                         }
-                        if simd_distance(p, q) > 1e-9 {
+                        if vectorDistance(p, q) > 1e-9 {
                             found.append("task \(task) step \(step): EdgeCurve \(p), Edge \(q)")
                         }
                     }

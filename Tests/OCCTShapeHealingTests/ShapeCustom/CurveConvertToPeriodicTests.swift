@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -38,7 +37,7 @@ struct CurveConvertToPeriodicTests {
             let f = Double(k) / 8.0
             let span = curve.domain.upperBound - curve.domain.lowerBound
             let u = curve.domain.lowerBound + span * f
-            #expect(simd_distance(periodic.point(at: u), curve.point(at: u)) < 1e-7)
+            #expect(vectorDistance(periodic.point(at: u), curve.point(at: u)) < 1e-7)
         }
     }
 }

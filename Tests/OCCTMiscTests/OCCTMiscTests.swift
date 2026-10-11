@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -30,7 +29,7 @@ struct InterpolationExpansion3DTests {
 
     /// The unit tangent at `u`, so a direction is compared independent of its magnitude.
     private func unitTangent(_ curve: Curve3D, at u: Double) -> SIMD3<Double> {
-        simd_normalize(curve.d1(at: u).tangent)
+        normalizedVector(curve.d1(at: u).tangent)
     }
 
     @Test func interpolateWithEndpointTangents() throws {
@@ -42,10 +41,10 @@ struct InterpolationExpansion3DTests {
         let s2 = 2.0.squareRoot() / 2
         let start = unitTangent(curve, at: curve.domain.lowerBound)
         let end = unitTangent(curve, at: curve.domain.upperBound)
-        #expect(simd_distance(curve.startPoint, SIMD3(0, 0, 0)) < 1e-9)
-        #expect(simd_distance(curve.endPoint, SIMD3(10, 0, 0)) < 1e-9)
-        #expect(simd_distance(start, SIMD3(s2, s2, 0)) < 1e-9)
-        #expect(simd_distance(end, SIMD3(s2, -s2, 0)) < 1e-9)
+        #expect(vectorDistance(curve.startPoint, SIMD3(0, 0, 0)) < 1e-9)
+        #expect(vectorDistance(curve.endPoint, SIMD3(10, 0, 0)) < 1e-9)
+        #expect(vectorDistance(start, SIMD3(s2, s2, 0)) < 1e-9)
+        #expect(vectorDistance(end, SIMD3(s2, -s2, 0)) < 1e-9)
     }
 
     @Test func interpolateWithAllTangents() throws {
@@ -56,10 +55,10 @@ struct InterpolationExpansion3DTests {
         let s2 = 2.0.squareRoot() / 2
         let start = unitTangent(curve, at: curve.domain.lowerBound)
         let end = unitTangent(curve, at: curve.domain.upperBound)
-        #expect(simd_distance(curve.startPoint, SIMD3(0, 0, 0)) < 1e-9)
-        #expect(simd_distance(curve.endPoint, SIMD3(10, 0, 0)) < 1e-9)
-        #expect(simd_distance(start, SIMD3(s2, s2, 0)) < 1e-9)
-        #expect(simd_distance(end, SIMD3(s2, -s2, 0)) < 1e-9)
+        #expect(vectorDistance(curve.startPoint, SIMD3(0, 0, 0)) < 1e-9)
+        #expect(vectorDistance(curve.endPoint, SIMD3(10, 0, 0)) < 1e-9)
+        #expect(vectorDistance(start, SIMD3(s2, s2, 0)) < 1e-9)
+        #expect(vectorDistance(end, SIMD3(s2, -s2, 0)) < 1e-9)
     }
 
     @Test func interpolateWithParameters() throws {
@@ -69,7 +68,7 @@ struct InterpolationExpansion3DTests {
         // is reached at 0.5, where a chord-length parameterisation reaches it at 7.07.
         #expect(abs(curve.domain.lowerBound - 0) < 1e-12)
         #expect(abs(curve.domain.upperBound - 1) < 1e-12)
-        #expect(simd_distance(curve.point(at: 0.5), SIMD3(5, 5, 0)) < 1e-9)
+        #expect(vectorDistance(curve.point(at: 0.5), SIMD3(5, 5, 0)) < 1e-9)
     }
 
     @Test func interpolatePeriodic() throws {
@@ -82,7 +81,7 @@ struct InterpolationExpansion3DTests {
         #expect(curve.isClosed)
         // Chord-length domain of the closed square: four sides of 10.
         #expect(abs(curve.domain.upperBound - curve.domain.lowerBound - 40) < 1e-9)
-        #expect(simd_distance(curve.startPoint, SIMD3(0, 0, 0)) < 1e-9)
+        #expect(vectorDistance(curve.startPoint, SIMD3(0, 0, 0)) < 1e-9)
     }
 }
 
@@ -517,8 +516,8 @@ struct FaceUVMidpointSampleTests {
             Issue.record("sample nil")
             return
         }
-        #expect(simd_length(samplePoint - expectedPoint) < 1e-9)
-        #expect(simd_length(sampleNormal - expectedNormal) < 1e-9)
+        #expect(vectorLength(samplePoint - expectedPoint) < 1e-9)
+        #expect(vectorLength(sampleNormal - expectedNormal) < 1e-9)
     }
 
     @Test("isCoplanar: a face is coplanar with itself")
@@ -567,7 +566,7 @@ struct FaceUVMidpointSampleTests {
             // Scripts/repro/766-misc-edge-face-leaf-layer/). A radius taken as the distance to the
             // axis origin instead of to the axis line is 5.59, also positive.
             #expect(abs(props.radius - 2.5) < 1e-9)
-            #expect(simd_length(props.axis.direction - axis.direction) < 1e-9)
+            #expect(vectorLength(props.axis.direction - axis.direction) < 1e-9)
             found = true
         }
         #expect(found)
@@ -844,7 +843,7 @@ struct ConstructionLayerTests {
     }
 
     // #880: the *only* input measured to reach planeShape's face-build failure with a non-nil
-    // wire is a zero-length plane normal, `Placement`'s `simd_normalize` turns that into NaN,
+    // wire is a zero-length plane normal, `Placement`'s `normalizedVector` turns that into NaN,
     // and `BRepBuilderAPI_MakePolygon` reports "done" on the resulting NaN-vertexed wire anyway.
     // `BRepBuilderAPI_MakeFace` then correctly declines it. Giving `planeShape` the same
     // `?? Shape.shape(from: wire)` fallback `axisShape` has would turn this case into a silent

@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -36,13 +35,13 @@ struct ShapeAnalysisCurveStaticTests {
     @Test func circleIsPlanar() throws {
         // Kernel: planar, normal (0, 0, 1).
         let normal = try #require(try circle().planeNormal(tolerance: 1e-6))
-        #expect(simd_distance(normal, SIMD3(0, 0, 1)) < 1e-12)
+        #expect(vectorDistance(normal, SIMD3(0, 0, 1)) < 1e-12)
     }
 
     @Test func lineIsPlanar() throws {
         // A line lies in every plane containing it; the kernel reports planar with normal
         // (0, 0, 1) for this one.
         let normal = try #require(try line().planeNormal(tolerance: 1e-6))
-        #expect(simd_distance(normal, SIMD3(0, 0, 1)) < 1e-12)
+        #expect(vectorDistance(normal, SIMD3(0, 0, 1)) < 1e-12)
     }
 }

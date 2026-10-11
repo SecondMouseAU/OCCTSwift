@@ -2,7 +2,7 @@
 // Shared fixtures for OCCTXCAFTests.
 // No @Suite or @Test: only shared helpers.
 
-import simd
+import Foundation
 
 /// Every per-domain test target carries its own copy of this helper (see CLAUDE.md's Test Layout
 /// note: "the only shared helper is SIMD3.normalized"); moved here verbatim from

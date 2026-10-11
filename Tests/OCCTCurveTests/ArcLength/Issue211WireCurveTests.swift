@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -14,7 +13,7 @@ private func expectPoint(
         return
     }
     #expect(
-        simd_distance(got, want) < tolerance, "\(what): got \(got), want \(want)",
+        vectorDistance(got, want) < tolerance, "\(what): got \(got), want \(want)",
         sourceLocation: sourceLocation)
 }
 
@@ -226,8 +225,8 @@ struct Issue211EdgeCurve {
             ec.point(atAbscissa: ec.length / 2), (ends.start + ends.end) / 2, "mid abscissa")
         // unit tangent, along the edge
         let t = try #require(ec.tangent(atAbscissa: ec.length / 2), "tangent nil")
-        #expect(abs(simd_length(t) - 1.0) < 1e-9)
-        expectPoint(t, simd_normalize(ends.end - ends.start), "tangent along the edge")
+        #expect(abs(vectorLength(t) - 1.0) < 1e-9)
+        expectPoint(t, normalizedVector(ends.end - ends.start), "tangent along the edge")
 
         // The same on the straight edge whose direction is known: along +X, length 10.
         let line = try #require(EdgeCurve(try straightEdge()))

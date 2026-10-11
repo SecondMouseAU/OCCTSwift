@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -61,8 +60,8 @@ struct XCAFComponentMatrixTests {
             _ b: (min: SIMD3<Double>, max: SIMD3<Double>), _ lo: SIMD3<Double>,
             _ hi: SIMD3<Double>, _ what: String
         ) {
-            #expect(simd_length(b.min - lo) < 1e-5, "\(what): min \(b.min), expected \(lo)")
-            #expect(simd_length(b.max - hi) < 1e-5, "\(what): max \(b.max), expected \(hi)")
+            #expect(vectorLength(b.min - lo) < 1e-5, "\(what): min \(b.min), expected \(lo)")
+            #expect(vectorLength(b.max - hi) < 1e-5, "\(what): max \(b.max), expected \(hi)")
         }
         expectBounds(
             try placement(doc, rigidId), SIMD3(9, 18, 29.5), SIMD3(11, 22, 30.5), "rigid")

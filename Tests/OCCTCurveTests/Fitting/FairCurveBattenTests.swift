@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -19,8 +18,8 @@ struct FairCurveBattenTests {
             return
         }
         #expect(result.code == .ok)
-        #expect(simd_distance(result.curve.startPoint, SIMD2(0, 0)) < 1e-9)
-        #expect(simd_distance(result.curve.endPoint, SIMD2(10, 0)) < 1e-9)
+        #expect(vectorDistance(result.curve.startPoint, SIMD2(0, 0)) < 1e-9)
+        #expect(vectorDistance(result.curve.endPoint, SIMD2(10, 0)) < 1e-9)
     }
 
     @Test func basicBatten() {
@@ -58,6 +57,6 @@ struct FairCurveBattenTests {
             return
         }
         #expect(result.curve.domain == 0...1)
-        #expect(simd_distance(result.curve.point(at: 0.5), SIMD2(5, 0)) < 1e-9)
+        #expect(vectorDistance(result.curve.point(at: 0.5), SIMD2(5, 0)) < 1e-9)
     }
 }

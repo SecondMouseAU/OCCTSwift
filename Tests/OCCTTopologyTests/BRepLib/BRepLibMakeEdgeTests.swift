@@ -1,7 +1,6 @@
 import Foundation
 import OCCTBridge
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -24,8 +23,8 @@ struct BRepLibMakeEdgeTests {
         #expect(abs(edge.edgeArcLength - 10) < 1e-9, "length \(edge.edgeArcLength)")
         let v = edge.vertices()
         try #require(v.count == 2)
-        #expect(simd_distance(v[0], SIMD3(0, 0, 0)) < 1e-12)
-        #expect(simd_distance(v[1], SIMD3(10, 0, 0)) < 1e-12)
+        #expect(vectorDistance(v[0], SIMD3(0, 0, 0)) < 1e-12)
+        #expect(vectorDistance(v[1], SIMD3(10, 0, 0)) < 1e-12)
     }
 
     @Test("Edge from two points")
@@ -35,7 +34,7 @@ struct BRepLibMakeEdgeTests {
         #expect(abs(edge.edgeArcLength - 11.575836902790225) < 1e-9, "length \(edge.edgeArcLength)")
         let v = edge.vertices()
         try #require(v.count == 2)
-        #expect(simd_distance(v[1], SIMD3(10, 5, 3)) < 1e-12, "end \(v[1])")
+        #expect(vectorDistance(v[1], SIMD3(10, 5, 3)) < 1e-12, "end \(v[1])")
     }
 
     @Test("Edge from circle arc")

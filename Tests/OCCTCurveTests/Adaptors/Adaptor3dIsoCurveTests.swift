@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -15,7 +14,7 @@ struct Adaptor3dIsoCurveTests {
         for face in faces {
             let pts = face.uIsoCurvePoints(u: 0, count: 5)
             // Check for valid points (not all zero)
-            if pts.contains(where: { simd_length($0) > 1 }) {
+            if pts.contains(where: { vectorLength($0) > 1 }) {
                 #expect(pts.count == 5)
                 return
             }
@@ -29,7 +28,7 @@ struct Adaptor3dIsoCurveTests {
         guard !faces.isEmpty else { return }
         for face in faces {
             let pts = face.vIsoCurvePoints(v: 10, count: 10)
-            if pts.contains(where: { simd_length($0) > 1 }) {
+            if pts.contains(where: { vectorLength($0) > 1 }) {
                 #expect(pts.count == 10)
                 return
             }

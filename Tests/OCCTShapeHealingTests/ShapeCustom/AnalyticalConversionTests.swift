@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -19,7 +18,7 @@ struct AnalyticalConversionTests {
         let a = try #require(bs.toAnalytical(tolerance: 0.01))
         #expect(a.curveType == 1)  // Circle
         #expect(abs(a.circleProperties.radius - 10) < 1e-9)
-        #expect(simd_distance(a.point(at: 0), SIMD3(10, 0, 0)) < 1e-9)
+        #expect(vectorDistance(a.point(at: 0), SIMD3(10, 0, 0)) < 1e-9)
     }
 
     @Test("Surface analytical conversion")
@@ -32,6 +31,6 @@ struct AnalyticalConversionTests {
         #expect(bs.surfaceKind == .bsplineSurface)
         let a = try #require(bs.toAnalytical(tolerance: 0.01))
         #expect(a.surfaceKind == .cylinder)
-        #expect(simd_distance(a.point(atU: 0, v: 0), SIMD3(5, 0, 0)) < 1e-9)
+        #expect(vectorDistance(a.point(atU: 0, v: 0), SIMD3(5, 0, 0)) < 1e-9)
     }
 }

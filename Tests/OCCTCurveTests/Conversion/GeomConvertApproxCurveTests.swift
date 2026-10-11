@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -39,6 +38,6 @@ struct GeomConvertApproxCurveTests {
             Issue.record("no approximated curve")
             return
         }
-        #expect(simd_distance(c.endPoint, SIMD3(10, 10, 0) / 2.0.squareRoot()) < 1e-9)
+        #expect(vectorDistance(c.endPoint, SIMD3(10, 10, 0) / 2.0.squareRoot()) < 1e-9)
     }
 }

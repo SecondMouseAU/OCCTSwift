@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -10,7 +9,7 @@ private func expectPoint(
     sourceLocation: SourceLocation = #_sourceLocation
 ) {
     #expect(
-        simd_distance(got, want) < tolerance, "\(what): got \(got), want \(want)",
+        vectorDistance(got, want) < tolerance, "\(what): got \(got), want \(want)",
         sourceLocation: sourceLocation)
 }
 

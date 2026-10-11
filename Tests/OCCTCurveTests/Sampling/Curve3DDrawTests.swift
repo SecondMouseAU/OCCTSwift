@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -22,7 +21,7 @@ struct Curve3DDrawTests {
         // GCPnts_TangentialDeflection(0.1 rad, 0.01) on the r = 5 circle.
         #expect(points.count == 64)
         for p in points {
-            #expect(abs(simd_length(SIMD2(p.x, p.y)) - 5) < 1e-9)
+            #expect(abs(vectorLength(SIMD2(p.x, p.y)) - 5) < 1e-9)
         }
     }
 
@@ -32,7 +31,7 @@ struct Curve3DDrawTests {
         let points = circle.drawUniform(pointCount: 32)
         #expect(points.count == 32)
         for p in points {
-            #expect(abs(simd_length(SIMD2(p.x, p.y)) - 5) < 1e-9)
+            #expect(abs(vectorLength(SIMD2(p.x, p.y)) - 5) < 1e-9)
         }
     }
 
@@ -53,7 +52,7 @@ struct Curve3DDrawTests {
         let points = seg.drawAdaptive()
         // A straight segment needs only its two ends.
         #expect(points.count == 2)
-        #expect(simd_distance(points.first ?? .zero, SIMD3(0, 0, 0)) < 1e-12)
-        #expect(simd_distance(points.last ?? .zero, SIMD3(10, 5, 3)) < 1e-12)
+        #expect(vectorDistance(points.first ?? .zero, SIMD3(0, 0, 0)) < 1e-12)
+        #expect(vectorDistance(points.last ?? .zero, SIMD3(10, 5, 3)) < 1e-12)
     }
 }

@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -33,7 +32,7 @@ struct DiameterDimensionTests {
         }
         #expect(abs(g.circleRadius - 5) < 1e-9, "circleRadius \(g.circleRadius)")
         // First and second points should be diametrically opposite
-        let dist = simd_distance(g.firstPoint, g.secondPoint)
+        let dist = vectorDistance(g.firstPoint, g.secondPoint)
         #expect(
             abs(dist - 10.0) < 1e-3,
             "Diameter endpoints should be 10 apart, got \(dist)")

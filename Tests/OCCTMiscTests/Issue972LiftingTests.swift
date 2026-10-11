@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -47,8 +46,8 @@ struct Issue972LiftingTests {
             origin: .zero,
             normal: SIMD3(0, 0, 7),  // deliberately not unit
             uAxis: SIMD3(1, 0, 0))
-        #expect(abs(simd_length(flange.normal) - 1) < 1e-12)
+        #expect(abs(vectorLength(flange.normal) - 1) < 1e-12)
         let d = flange.normal - flange.placement.zAxis
-        #expect(simd_length(d) < 1e-12)
+        #expect(vectorLength(d) < 1e-12)
     }
 }

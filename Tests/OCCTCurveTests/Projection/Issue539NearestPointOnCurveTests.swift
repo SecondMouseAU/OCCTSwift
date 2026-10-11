@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -41,13 +40,13 @@ struct Issue539NearestPointOnCurveTests {
         let beyond = curve.projectPoint(SIMD3(100, 0, 0))
         #expect(abs(beyond.parameter - 8) < 1e-9)
         #expect(abs(beyond.distance - 92) < 1e-9)
-        #expect(simd_distance(beyond.point, SIMD3(8, 0, 0)) < 1e-9)
+        #expect(vectorDistance(beyond.point, SIMD3(8, 0, 0)) < 1e-9)
 
         // Was: parameter 0, distance 0. Parameter 0 is not even inside this curve's domain.
         let before = curve.projectPoint(.zero)
         #expect(abs(before.parameter - 3) < 1e-9)
         #expect(abs(before.distance - 3) < 1e-9)
-        #expect(simd_distance(before.point, SIMD3(3, 0, 0)) < 1e-9)
+        #expect(vectorDistance(before.point, SIMD3(3, 0, 0)) < 1e-9)
 
         // Off to one side and past the start: the answer is the start point, not the perpendicular
         // foot at parameter -50. Was: distance 3.
@@ -124,7 +123,7 @@ struct Issue539NearestPointOnCurveTests {
         let projected = curve.projectPoint(SIMD3(5, 2, 0))
         #expect(abs(projected.parameter - 5) < 1e-9)
         #expect(abs(projected.distance - 2) < 1e-9)
-        #expect(simd_distance(projected.point, SIMD3(5, 0, 0)) < 1e-9)
+        #expect(vectorDistance(projected.point, SIMD3(5, 0, 0)) < 1e-9)
 
         let arc = try #require(halfCircle())
         let above = arc.projectPoint(SIMD3(0, 6, 0))
@@ -141,11 +140,11 @@ struct Issue539NearestPointOnCurveTests {
     func closedCurveStillAnswers() throws {
         let circle = try #require(Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5))
         let tied = try #require(circle.nearestParameter(to: .zero))
-        #expect(abs(simd_length(circle.point(at: tied)) - 5) < 1e-9)
+        #expect(abs(vectorLength(circle.point(at: tied)) - 5) < 1e-9)
 
         let centre = circle.projectPoint(.zero)
         #expect(abs(centre.distance - 5) < 1e-9)
-        #expect(abs(simd_length(centre.point) - 5) < 1e-9)
+        #expect(abs(vectorLength(centre.point) - 5) < 1e-9)
 
         let outside = circle.projectPoint(SIMD3(6, 0, 0))
         #expect(abs(outside.distance - 1) < 1e-9)
@@ -160,7 +159,7 @@ struct Issue539NearestPointOnCurveTests {
         let projected = line.projectPoint(SIMD3(100, 7, 0))
         #expect(abs(projected.parameter - 100) < 1e-9)
         #expect(abs(projected.distance - 7) < 1e-9)
-        #expect(simd_distance(projected.point, SIMD3(100, 0, 0)) < 1e-9)
+        #expect(vectorDistance(projected.point, SIMD3(100, 0, 0)) < 1e-9)
     }
 
     /// `distance(to:)` is a one-liner over `projectPoint`, so it inherits the fix rather than
@@ -197,11 +196,11 @@ struct Issue539NearestPointOnCurveTests {
 
         let beyond = try #require(edge.project(point: SIMD3(100, 0, 0)))
         #expect(abs(beyond.distance - 92) < 1e-9)
-        #expect(simd_distance(beyond.point, SIMD3(8, 0, 0)) < 1e-9)
+        #expect(vectorDistance(beyond.point, SIMD3(8, 0, 0)) < 1e-9)
 
         let before = try #require(edge.project(point: .zero))
         #expect(abs(before.distance - 3) < 1e-9)
-        #expect(simd_distance(before.point, SIMD3(3, 0, 0)) < 1e-9)
+        #expect(vectorDistance(before.point, SIMD3(3, 0, 0)) < 1e-9)
 
         // The one-liner over it stops returning nil for the same reason.
         #expect(abs(try #require(edge.distance(to: SIMD3(100, 0, 0))) - 92) < 1e-9)
@@ -240,7 +239,7 @@ struct Issue539NearestPointOnCurveTests {
             let viaEdge = try #require(edge.project(point: point), "\(point)")
             let viaCurve = arc.projectPoint(point)
             #expect(abs(viaEdge.distance - viaCurve.distance) < 1e-6, "\(point)")
-            #expect(simd_distance(viaEdge.point, viaCurve.point) < 1e-6, "\(point)")
+            #expect(vectorDistance(viaEdge.point, viaCurve.point) < 1e-6, "\(point)")
         }
     }
 
@@ -261,11 +260,11 @@ struct Issue539NearestPointOnCurveTests {
             // points, clamped to it, which is the whole edge for a straight one. All three
             // coordinates of the probe are past every edge, so the answer is an end point.
             let axis = ends.end - ends.start
-            let t = max(0, min(1, simd_dot(probe - ends.start, axis) / simd_dot(axis, axis)))
+            let t = max(0, min(1, dotProduct(probe - ends.start, axis) / dotProduct(axis, axis)))
             let closest = ends.start + t * axis
             let projected = try #require(edge.project(point: probe), "edge \(ends)")
-            #expect(abs(projected.distance - simd_distance(probe, closest)) < 1e-9, "\(ends)")
-            #expect(simd_distance(projected.point, closest) < 1e-9, "\(ends)")
+            #expect(abs(projected.distance - vectorDistance(probe, closest)) < 1e-9, "\(ends)")
+            #expect(vectorDistance(projected.point, closest) < 1e-9, "\(ends)")
         }
     }
 }

@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -14,8 +13,8 @@ struct CylindricalProjectionTests {
         _ bb: (min: SIMD3<Double>, max: SIMD3<Double>),
         min: SIMD3<Double>, max: SIMD3<Double>
     ) {
-        #expect(simd_length(bb.min - min) < 1e-6, "bbox min \(bb.min), expected \(min)")
-        #expect(simd_length(bb.max - max) < 1e-6, "bbox max \(bb.max), expected \(max)")
+        #expect(vectorLength(bb.min - min) < 1e-6, "bbox min \(bb.min), expected \(min)")
+        #expect(vectorLength(bb.max - max) < 1e-6, "bbox max \(bb.max), expected \(max)")
     }
 
     @Test("Project wire onto box")

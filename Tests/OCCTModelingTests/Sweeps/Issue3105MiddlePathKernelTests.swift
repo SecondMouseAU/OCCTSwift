@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -44,7 +43,7 @@ struct Issue3105MiddlePathKernelTests {
 
     /// Whether a vertex of `path` is `point`.
     private func hasVertex(_ path: Shape, at point: SIMD3<Double>) -> Bool {
-        path.vertices().contains { simd_distance($0, point) < 1e-6 }
+        path.vertices().contains { vectorDistance($0, point) < 1e-6 }
     }
 
     /// Walks every pair of faces of `solid` and returns the number that answer a path.
@@ -58,7 +57,7 @@ struct Issue3105MiddlePathKernelTests {
         let faces = solid.subShapes(ofType: .face)
         try #require(faces.count == expected, "the fixture is not the solid the scan used")
         let box = try #require(solid.bounds)
-        let diagonal = simd_distance(box.min, box.max)
+        let diagonal = vectorDistance(box.min, box.max)
         var answered = 0
         for i in faces.indices {
             for j in faces.indices where j >= i {
@@ -75,7 +74,7 @@ struct Issue3105MiddlePathKernelTests {
                 #expect(
                     hasVertex(path, at: b), "faces \(i) and \(j): the path misses the end centroid")
                 let length = try #require(path.linearProperties()).length
-                let chord = simd_distance(a, b)
+                let chord = vectorDistance(a, b)
                 #expect(length >= chord - 1e-6, "faces \(i) and \(j): shorter than the chord")
                 #expect(
                     length <= 3 * diagonal,

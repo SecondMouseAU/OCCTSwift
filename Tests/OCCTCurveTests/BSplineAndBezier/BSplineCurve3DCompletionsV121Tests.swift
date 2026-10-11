@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -33,7 +32,7 @@ struct BSplineCurve3DCompletionsV121Tests {
         // Already clamped: nothing changes.
         #expect(!curve.isPeriodic)
         #expect(Self.near(curve.bsplineKnotSequence(), [0, 0, 0, 0, 1, 1, 1, 1]))
-        #expect(simd_distance(curve.endPoint, SIMD3(10, 0, 0)) < 1e-12)
+        #expect(vectorDistance(curve.endPoint, SIMD3(10, 0, 0)) < 1e-12)
     }
 
     @Test("IncreaseMultiplicity")
@@ -63,8 +62,8 @@ struct BSplineCurve3DCompletionsV121Tests {
         guard let curve = makeBSplineCurve() else { return }
         #expect(curve.bsplineReverse())
         // After reverse, start and end swap.
-        #expect(simd_distance(curve.startPoint, SIMD3(10, 0, 0)) < 1e-12)
-        #expect(simd_distance(curve.endPoint, SIMD3(0, 0, 0)) < 1e-12)
+        #expect(vectorDistance(curve.startPoint, SIMD3(10, 0, 0)) < 1e-12)
+        #expect(vectorDistance(curve.endPoint, SIMD3(0, 0, 0)) < 1e-12)
     }
 
     @Test("SetKnots batch")
@@ -108,7 +107,7 @@ struct BSplineCurve3DCompletionsV121Tests {
             u: 0.5, point: target, tangent: tangent,
             tolerance: 1e-6, startingCondition: 1, endingCondition: 1)
         #expect(!r)
-        #expect(simd_distance(curve.point(at: 0.5), SIMD3(5, 3.75, 0)) < 1e-12)
+        #expect(vectorDistance(curve.point(at: 0.5), SIMD3(5, 3.75, 0)) < 1e-12)
     }
 
     // #1542: startingCondition/endingCondition are OCCT's independent continuity codes, not a
@@ -125,6 +124,6 @@ struct BSplineCurve3DCompletionsV121Tests {
             tolerance: 1e-6, startingCondition: 1, endingCondition: -1)
         #expect(r)
         // The curve now passes through the target.
-        #expect(simd_distance(curve.point(at: 0.5), target) < 1e-9)
+        #expect(vectorDistance(curve.point(at: 0.5), target) < 1e-9)
     }
 }

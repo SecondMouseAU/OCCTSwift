@@ -2,7 +2,7 @@
 // Shared fixtures for OCCTDrawingTests.
 // No @Suite or @Test: only shared helpers.
 
-import simd
+import Foundation
 
 extension SIMD3 where Scalar == Double {
     var normalized: SIMD3<Double> {

@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -21,7 +20,7 @@ struct BezierCurveManipulationTests {
     }
 
     private static func near(_ a: SIMD3<Double>, _ b: SIMD3<Double>) -> Bool {
-        simd_distance(a, b) < 1e-9
+        vectorDistance(a, b) < 1e-9
     }
 
     @Test func degreeAndPoleCount() {

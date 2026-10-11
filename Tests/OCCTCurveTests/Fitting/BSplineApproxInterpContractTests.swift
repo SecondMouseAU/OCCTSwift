@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -31,7 +30,7 @@ struct BSplineApproxInterpContractTests {
 
     private static func maxDeviation(_ a: [SIMD3<Double>], _ b: [SIMD3<Double>]) -> Double {
         guard a.count == b.count else { return .infinity }
-        return zip(a, b).reduce(0.0) { max($0, simd_distance($1.0, $1.1)) }
+        return zip(a, b).reduce(0.0) { max($0, vectorDistance($1.0, $1.1)) }
     }
 
     /// Control for every "…produces the same curve" test below: the fit tolerance is a knob that
@@ -169,9 +168,9 @@ struct BSplineApproxInterpContractTests {
         }
         let halfChord =
             zip(samples, samples.dropFirst())
-            .reduce(0.0) { max($0, simd_distance($1.0, $1.1)) } / 2.0
+            .reduce(0.0) { max($0, vectorDistance($1.0, $1.1)) } / 2.0
         let worst = pts.reduce(0.0) { acc, p in
-            max(acc, samples.reduce(Double.infinity) { min($0, simd_distance($1, p)) })
+            max(acc, samples.reduce(Double.infinity) { min($0, vectorDistance($1, p)) })
         }
         #expect(solver.maxError >= 0)
         #expect(worst >= solver.maxError - 1e-9)
