@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -88,7 +87,7 @@ struct GCPntsSamplerBoundsTests {
             // last-but-one point is 1.5e-7 from the end on this curve, so 1e-6 would accept the
             // very defect the case exists for (#2977). The kept end point is the same double
             // evaluated twice, so the distance is 0.
-            #expect(distance(points[count - 1], endPoint) < 1e-9)
+            #expect(vectorDistance(points[count - 1], endPoint) < 1e-9)
         }
     }
 
@@ -107,7 +106,7 @@ struct GCPntsSamplerBoundsTests {
             #expect(abs(params[count - 1] - end) < 1e-12)
             let points = ellipse.drawUniform(pointCount: count)
             try #require(points.count == count)
-            #expect(distance(points[count - 1], endPoint) < 1e-9)
+            #expect(vectorDistance(points[count - 1], endPoint) < 1e-9)
         }
     }
 

@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -19,8 +18,8 @@ struct FairCurveMinimalVariationTests {
             return
         }
         #expect(result.code == .ok)
-        #expect(simd_distance(result.curve.endPoint, SIMD2(10, 0)) < 1e-9)
-        #expect(simd_distance(result.curve.point(at: 0.5), SIMD2(5, 0)) < 1e-9)
+        #expect(vectorDistance(result.curve.endPoint, SIMD2(10, 0)) < 1e-9)
+        #expect(vectorDistance(result.curve.point(at: 0.5), SIMD2(5, 0)) < 1e-9)
     }
 
     @Test func withCurvatureConstraints() {
@@ -37,8 +36,8 @@ struct FairCurveMinimalVariationTests {
             return
         }
         #expect(result.code == .ok)
-        #expect(simd_distance(result.curve.point(at: 0.5), SIMD2(5, 0.29798933520658766)) < 1e-6)
-        #expect(simd_distance(result.curve.endPoint, SIMD2(10, 0)) < 1e-9)
+        #expect(vectorDistance(result.curve.point(at: 0.5), SIMD2(5, 0.29798933520658766)) < 1e-6)
+        #expect(vectorDistance(result.curve.endPoint, SIMD2(10, 0)) < 1e-9)
     }
 
     @Test func withPhysicalRatio() {
@@ -52,6 +51,6 @@ struct FairCurveMinimalVariationTests {
             return
         }
         #expect(result.code == .ok)
-        #expect(simd_distance(result.curve.endPoint, SIMD2(10, 0)) < 1e-9)
+        #expect(vectorDistance(result.curve.endPoint, SIMD2(10, 0)) < 1e-9)
     }
 }

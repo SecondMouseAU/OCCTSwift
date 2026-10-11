@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -31,9 +30,9 @@ struct CuttingPlaneLineTests {
         // perpendicular to it (the plane normal (1,0,0) is the view's in-plane X, the trace its
         // other axis). Swift-side geometry: no kernel counterpart (#766).
         let trace = cpl.traceEnd - cpl.traceStart
-        #expect(abs(simd_length(trace) - 60) < 1e-9)
-        #expect(abs(simd_length(cpl.arrowDirection) - 1) < 1e-12)
-        #expect(abs(simd_dot(simd_normalize(trace), cpl.arrowDirection)) < 1e-12)
+        #expect(abs(vectorLength(trace) - 60) < 1e-9)
+        #expect(abs(vectorLength(cpl.arrowDirection) - 1) < 1e-12)
+        #expect(abs(dotProduct(normalizedVector(trace), cpl.arrowDirection)) < 1e-12)
     }
 
     @Test("Cutting plane parallel to view plane returns nil")
@@ -53,10 +52,10 @@ struct CuttingPlaneLineTests {
         #expect(ann == nil)
     }
 
-    // #1581: simd_normalize(.zero) produces a NaN vector, and under IEEE-754
+    // #1581: normalizedVector(.zero) produces a NaN vector, and under IEEE-754
     // NaN compares false against both `< 1e-9` and `> 1e-9`. That let a
     // zero-length cuttingPlaneNormal/viewDirection slip past the degenerate
-    // guard (`simd_length(traceDir3D) < 1e-9`, itself NaN and so never true)
+    // guard (`vectorLength(traceDir3D) < 1e-9`, itself NaN and so never true)
     // and fall through to the later `> 1e-9`-gated fallback-axis checks
     // (also never true for NaN), silently returning a non-nil annotation
     // built from arbitrary hardcoded axes instead of the documented nil.

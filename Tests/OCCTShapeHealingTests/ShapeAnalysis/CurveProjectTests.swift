@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -12,7 +11,7 @@ struct CurveProjectTests {
         let proj = seg.projectPoint(SIMD3(5, 3, 0))
         #expect(abs(proj.distance - 3.0) < 0.1)
         #expect(abs(proj.parameter - 5.0) < 0.1)
-        #expect(simd_distance(proj.point, SIMD3(5, 0, 0)) < 0.1)
+        #expect(vectorDistance(proj.point, SIMD3(5, 0, 0)) < 0.1)
     }
 
     @Test("Project point onto circle")
@@ -21,6 +20,6 @@ struct CurveProjectTests {
         // Point at (10, 0, 0), closest circle point at (5, 0, 0), distance 5
         let proj = circle.projectPoint(SIMD3(10, 0, 0))
         #expect(abs(proj.distance - 5.0) < 0.1)
-        #expect(simd_distance(proj.point, SIMD3(5, 0, 0)) < 0.5)
+        #expect(vectorDistance(proj.point, SIMD3(5, 0, 0)) < 0.5)
     }
 }

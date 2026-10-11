@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -39,7 +38,7 @@ struct Curve3DInterpolateTangentToleranceParityTests {
                 from: a.domain.lowerBound, through: a.domain.upperBound,
                 by: (a.domain.upperBound - a.domain.lowerBound) / 8)
             {
-                #expect(simd_distance(a.point(at: t), b.point(at: t)) < 1e-12)
+                #expect(vectorDistance(a.point(at: t), b.point(at: t)) < 1e-12)
             }
         }
     }

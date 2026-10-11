@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -21,8 +20,8 @@ struct PolyHLRTests {
         }
         #expect(shape.edges().count == count, "\(what): \(shape.edges().count) edges")
         #expect(
-            simd_length(SIMD2(bb.min.x, bb.min.y) - min) < 1e-6
-                && simd_length(SIMD2(bb.max.x, bb.max.y) - max) < 1e-6,
+            vectorLength(SIMD2(bb.min.x, bb.min.y) - min) < 1e-6
+                && vectorLength(SIMD2(bb.max.x, bb.max.y) - max) < 1e-6,
             "\(what): extent \(bb.min) .. \(bb.max)")
     }
 

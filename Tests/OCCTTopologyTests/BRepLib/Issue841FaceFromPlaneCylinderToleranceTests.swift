@@ -1,5 +1,5 @@
+import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -42,8 +42,8 @@ struct Issue841FaceFromPlaneCylinderToleranceTests {
         let rangeBox = viaRange.boundingBox
         #expect(boundsBox != nil && rangeBox != nil)
         if let b = boundsBox, let r = rangeBox {
-            #expect(simd_length(b.min - r.min) < 1e-9)
-            #expect(simd_length(b.max - r.max) < 1e-9)
+            #expect(vectorLength(b.min - r.min) < 1e-9)
+            #expect(vectorLength(b.max - r.max) < 1e-9)
         }
     }
 
@@ -68,8 +68,8 @@ struct Issue841FaceFromPlaneCylinderToleranceTests {
         let rangeBox = viaRange.boundingBox
         #expect(boundsBox != nil && rangeBox != nil)
         if let b = boundsBox, let r = rangeBox {
-            #expect(simd_length(b.min - r.min) < 1e-9)
-            #expect(simd_length(b.max - r.max) < 1e-9)
+            #expect(vectorLength(b.min - r.min) < 1e-9)
+            #expect(vectorLength(b.max - r.max) < 1e-9)
         }
     }
 

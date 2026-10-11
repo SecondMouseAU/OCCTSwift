@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -15,12 +14,12 @@ struct ConvertCircleTests {
             Issue.record("circle arc not converted")
             return
         }
-        #expect(simd_distance(curve.startPoint, SIMD2(10, 0)) < 1e-12)
-        #expect(simd_distance(curve.endPoint, SIMD2(-10, 0)) < 1e-12)
+        #expect(vectorDistance(curve.startPoint, SIMD2(10, 0)) < 1e-12)
+        #expect(vectorDistance(curve.endPoint, SIMD2(-10, 0)) < 1e-12)
         let d = curve.domain
         for i in 0...8 {
             let p = curve.point(at: d.lowerBound + (d.upperBound - d.lowerBound) * Double(i) / 8)
-            #expect(abs(simd_length(p) - 10) < 1e-9)
+            #expect(abs(vectorLength(p) - 10) < 1e-9)
         }
     }
 }

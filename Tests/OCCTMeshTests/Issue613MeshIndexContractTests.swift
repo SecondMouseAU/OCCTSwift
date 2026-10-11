@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -58,7 +57,7 @@ struct Issue613MeshIndexContractTests {
     }
 
     static func dot(_ a: SIMD3<Double>, _ b: SIMD3<Double>) -> Double {
-        simd_dot(a, b)
+        dotProduct(a, b)
     }
 
     /// The geometric normal of a triangle, from its winding, deliberately recomputed from the
@@ -69,7 +68,7 @@ struct Issue613MeshIndexContractTests {
     > {
         let ab = SIMD3<Double>(Double(b.x - a.x), Double(b.y - a.y), Double(b.z - a.z))
         let ac = SIMD3<Double>(Double(c.x - a.x), Double(c.y - a.y), Double(c.z - a.z))
-        return simd_cross(ab, ac)
+        return crossProduct(ab, ac)
     }
 
     // MARK: - The premise

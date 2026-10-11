@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -21,7 +20,7 @@ struct GeomConvertUtilTests {
             Issue.record("rejoin returned nil")
             return
         }
-        #expect(simd_distance(rejoined.startPoint, SIMD3(0, 0, 0)) < 1e-9)
-        #expect(simd_distance(rejoined.endPoint, SIMD3(10, 0, 0)) < 1e-9)
+        #expect(vectorDistance(rejoined.startPoint, SIMD3(0, 0, 0)) < 1e-9)
+        #expect(vectorDistance(rejoined.endPoint, SIMD3(10, 0, 0)) < 1e-9)
     }
 }

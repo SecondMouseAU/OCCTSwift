@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -15,8 +14,8 @@ struct ShapeConstructCurveTests {
         let bsp = try #require(line.convertSegmentToBSpline(first: 0, last: 10))
         #expect(bsp.curveType == 6)
         #expect(bsp.degree == 1)
-        #expect(simd_distance(bsp.point(at: bsp.domain.lowerBound), SIMD3(0, 0, 0)) < 1e-9)
-        #expect(simd_distance(bsp.point(at: bsp.domain.upperBound), SIMD3(10, 0, 0)) < 1e-9)
+        #expect(vectorDistance(bsp.point(at: bsp.domain.lowerBound), SIMD3(0, 0, 0)) < 1e-9)
+        #expect(vectorDistance(bsp.point(at: bsp.domain.upperBound), SIMD3(10, 0, 0)) < 1e-9)
     }
 
     @Test("convert 3D circle segment to BSpline")
@@ -27,18 +26,18 @@ struct ShapeConstructCurveTests {
         let bsp = try #require(
             circle.convertSegmentToBSpline(first: 0, last: Double.pi, precision: 1e-3))
         #expect(bsp.curveType == 6)
-        #expect(simd_distance(bsp.point(at: bsp.domain.lowerBound), SIMD3(5, 0, 0)) < 1e-9)
-        #expect(simd_distance(bsp.point(at: bsp.domain.upperBound), SIMD3(-5, 0, 0)) < 1e-9)
+        #expect(vectorDistance(bsp.point(at: bsp.domain.lowerBound), SIMD3(5, 0, 0)) < 1e-9)
+        #expect(vectorDistance(bsp.point(at: bsp.domain.upperBound), SIMD3(-5, 0, 0)) < 1e-9)
         let mid = (bsp.domain.lowerBound + bsp.domain.upperBound) / 2
-        #expect(simd_distance(bsp.point(at: mid), SIMD3(0, 4.999934, 0)) < 1e-5)
+        #expect(vectorDistance(bsp.point(at: mid), SIMD3(0, 4.999934, 0)) < 1e-5)
     }
 
     @Test("convert 2D line to BSpline")
     func convert2DLine() throws {
         let line = try #require(Curve2D.line(through: SIMD2(0, 0), direction: SIMD2(1, 0)))
         let bsp = try #require(line.convertSegmentToBSpline(first: 0, last: 5))
-        #expect(simd_distance(bsp.point(at: bsp.domain.lowerBound), SIMD2(0, 0)) < 1e-9)
-        #expect(simd_distance(bsp.point(at: bsp.domain.upperBound), SIMD2(5, 0)) < 1e-9)
+        #expect(vectorDistance(bsp.point(at: bsp.domain.lowerBound), SIMD2(0, 0)) < 1e-9)
+        #expect(vectorDistance(bsp.point(at: bsp.domain.upperBound), SIMD2(5, 0)) < 1e-9)
     }
 
     @Test("adjust 3D curve endpoints")

@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -42,14 +41,14 @@ struct BSplineApproxInterpTests {
         let domain = curve.domain
         #expect(domain == 0...1)
         // The ends are interpolated, so they are the first and last input points.
-        #expect(simd_distance(curve.startPoint, SIMD3(1, 0, 0)) < 1e-9)
-        #expect(simd_distance(curve.endPoint, SIMD3(1, 0, 0.2 * .pi)) < 1e-9)
+        #expect(vectorDistance(curve.startPoint, SIMD3(1, 0, 0)) < 1e-9)
+        #expect(vectorDistance(curve.endPoint, SIMD3(1, 0, 0.2 * .pi)) < 1e-9)
         // And in between, the curve is still on the helix: radius 1 about Z, rising 0.1 per radian
         // of turn, so z = 0.2 * pi at the far end of a normalised parameter.
         for k in 0...8 {
             let f = Double(k) / 8.0
             let p = curve.point(at: domain.lowerBound + (domain.upperBound - domain.lowerBound) * f)
-            #expect(abs(simd_length(SIMD2(p.x, p.y)) - 1.0) < 2e-3)
+            #expect(abs(vectorLength(SIMD2(p.x, p.y)) - 1.0) < 2e-3)
             #expect(abs(p.z - 0.2 * Double.pi * f) < 2e-3)
         }
     }
@@ -101,8 +100,8 @@ struct BSplineApproxInterpTests {
             #expect(p.z == 0)
             #expect(abs(p.y - p.x * p.x) < 2e-3)
         }
-        #expect(simd_distance(curve.startPoint, SIMD3(0, 0, 0)) < 1e-9)
-        #expect(simd_distance(curve.endPoint, SIMD3(1, 1, 0)) < 1e-9)
+        #expect(vectorDistance(curve.startPoint, SIMD3(0, 0, 0)) < 1e-9)
+        #expect(vectorDistance(curve.endPoint, SIMD3(1, 1, 0)) < 1e-9)
     }
 
     @Test func setters() {
@@ -128,7 +127,7 @@ struct BSplineApproxInterpTests {
             Issue.record("no curve after perform()")
             return
         }
-        #expect(simd_distance(curve.startPoint, SIMD3(1, 0, 0)) < 1e-9)
-        #expect(simd_distance(curve.endPoint, SIMD3(10, 0, 0)) < 1e-9)
+        #expect(vectorDistance(curve.startPoint, SIMD3(1, 0, 0)) < 1e-9)
+        #expect(vectorDistance(curve.endPoint, SIMD3(10, 0, 0)) < 1e-9)
     }
 }

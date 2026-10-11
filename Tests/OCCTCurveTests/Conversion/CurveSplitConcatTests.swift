@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -17,7 +16,7 @@ struct CurveSplitConcatTests {
         // (GeomConvert::C0BSplineToArrayOfC1BSplineCurve, Scripts/repro/766-curve-join-length-split/).
         let segs = curve.splitAtContinuity()
         #expect(segs.count == 1)
-        #expect(simd_distance(segs.first?.endPoint ?? .zero, SIMD3(10, 0, 0)) < 1e-9)
+        #expect(vectorDistance(segs.first?.endPoint ?? .zero, SIMD3(10, 0, 0)) < 1e-9)
     }
 
     @Test func concatenateCurvesG1() {
@@ -31,8 +30,8 @@ struct CurveSplitConcatTests {
             Issue.record("concatenateG1 returned nil")
             return
         }
-        #expect(simd_distance(joined.startPoint, SIMD3(0, 0, 0)) < 1e-9)
-        #expect(simd_distance(joined.endPoint, SIMD3(20, 0, 0)) < 1e-9)
+        #expect(vectorDistance(joined.startPoint, SIMD3(0, 0, 0)) < 1e-9)
+        #expect(vectorDistance(joined.endPoint, SIMD3(20, 0, 0)) < 1e-9)
     }
 
     @Test func concatenateG1RejectsDisconnectedCurve() {

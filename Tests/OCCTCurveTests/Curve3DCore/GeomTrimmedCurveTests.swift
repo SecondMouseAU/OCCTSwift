@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -19,8 +18,8 @@ struct GeomTrimmedCurveTests {
 
     @Test func trimLineCreatesSubset() {
         guard let line = Self.xAxis(), let trimmed = line.trimmed(u1: 2.0, u2: 8.0) else { return }
-        #expect(simd_distance(trimmed.startPoint, SIMD3(2, 0, 0)) < 1e-12)
-        #expect(simd_distance(trimmed.endPoint, SIMD3(8, 0, 0)) < 1e-12)
+        #expect(vectorDistance(trimmed.startPoint, SIMD3(2, 0, 0)) < 1e-12)
+        #expect(vectorDistance(trimmed.endPoint, SIMD3(8, 0, 0)) < 1e-12)
     }
 
     @Test func trimmedBasisReturnsOriginal() {
@@ -42,7 +41,7 @@ struct GeomTrimmedCurveTests {
     @Test func setTrimUpdatesRange() {
         guard let line = Self.xAxis(), let trimmed = line.trimmed(u1: 0, u2: 10) else { return }
         #expect(trimmed.setTrim(u1: 3.0, u2: 7.0))
-        #expect(simd_distance(trimmed.startPoint, SIMD3(3, 0, 0)) < 1e-12)
-        #expect(simd_distance(trimmed.endPoint, SIMD3(7, 0, 0)) < 1e-12)
+        #expect(vectorDistance(trimmed.startPoint, SIMD3(3, 0, 0)) < 1e-12)
+        #expect(vectorDistance(trimmed.endPoint, SIMD3(7, 0, 0)) < 1e-12)
     }
 }

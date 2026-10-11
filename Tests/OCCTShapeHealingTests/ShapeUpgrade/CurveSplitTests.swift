@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -33,14 +32,14 @@ struct CurveSplitTests {
         #expect(abs(result.second.domain.upperBound - dom.upperBound) < 1e-9)
 
         // The pieces are the right way round and meet where the split was asked for.
-        #expect(simd_distance(result.first.startPoint, curve.startPoint) < 1e-9)
-        #expect(simd_distance(result.first.endPoint, seam) < 1e-9)
-        #expect(simd_distance(result.second.startPoint, seam) < 1e-9)
-        #expect(simd_distance(result.second.endPoint, curve.endPoint) < 1e-9)
+        #expect(vectorDistance(result.first.startPoint, curve.startPoint) < 1e-9)
+        #expect(vectorDistance(result.first.endPoint, seam) < 1e-9)
+        #expect(vectorDistance(result.second.startPoint, seam) < 1e-9)
+        #expect(vectorDistance(result.second.endPoint, curve.endPoint) < 1e-9)
 
         // The control: the two halves are different curves, so "split" is not "copied twice". The
         // fixture's start and end are 10 apart, so the seam cannot coincide with either.
-        #expect(simd_distance(curve.startPoint, seam) > 1.0)
-        #expect(simd_distance(curve.endPoint, seam) > 1.0)
+        #expect(vectorDistance(curve.startPoint, seam) > 1.0)
+        #expect(vectorDistance(curve.endPoint, seam) > 1.0)
     }
 }

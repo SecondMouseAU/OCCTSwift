@@ -1,7 +1,6 @@
 import Foundation
 import OCCTBridge
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -75,10 +74,10 @@ struct BRepLibToolTriangulatedShapeTests {
             #expect(count == 4)
             guard count == 4 else { continue }
             let reference = face.triangulationNormal(at: 1)
-            #expect(abs(simd_length(reference) - 1.0) < 1e-6)
+            #expect(abs(vectorLength(reference) - 1.0) < 1e-6)
             for index in Int32(1)...count {
                 let normal = face.triangulationNormal(at: index)
-                #expect(abs(abs(simd_dot(normal, reference)) - 1.0) < 1e-6)
+                #expect(abs(abs(dotProduct(normal, reference)) - 1.0) < 1e-6)
                 // A box's faces are axis aligned, so exactly one component carries the whole
                 // normal. A normal taken from the triangle winding rather than the surface would
                 // still be axis aligned here, but one taken from nothing at all, the (0, 0, 1)

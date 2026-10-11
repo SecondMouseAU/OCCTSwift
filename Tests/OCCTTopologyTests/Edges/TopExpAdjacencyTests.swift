@@ -1,7 +1,6 @@
 import Foundation
 import OCCTBridge
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -45,7 +44,7 @@ struct TopExpAdjacencyTests {
             let verts = ws.wireVertices()
         {
             // Closed wire: first == last
-            let dist = simd_distance(verts.first, verts.last)
+            let dist = vectorDistance(verts.first, verts.last)
             #expect(dist < 1e-6)
         }
     }

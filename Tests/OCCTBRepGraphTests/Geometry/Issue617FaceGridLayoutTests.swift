@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -129,7 +128,7 @@ struct Issue617FaceGridLayoutTests {
                 let v = f.vMin + Double(iv) * vStep
                 let expected = f.surface.point(atU: u, v: v)
                 let got = sample.at(u: iu, v: iv).position
-                let d = simd_distance(got, expected)
+                let d = vectorDistance(got, expected)
                 #expect(
                     d < 1e-9,
                     "\(uSamples)x\(vSamples) at (u: \(iu), v: \(iv)) gave \(got), expected \(expected) at (\(u), \(v)), off by \(d)"
@@ -170,7 +169,7 @@ struct Issue617FaceGridLayoutTests {
                 else { continue }
                 maxDrift = max(
                     maxDrift,
-                    simd_distance(sample.positions[vMajor], sample.positions[uMajor]))
+                    vectorDistance(sample.positions[vMajor], sample.positions[uMajor]))
             }
         }
         // The patch spans 21 in X and 8 in Y; a transposed read is nowhere near a rounding error.
@@ -223,14 +222,14 @@ struct Issue617FaceGridLayoutTests {
                 let u = f.uMin + Double(iu) * uStep
                 let v = f.vMin + Double(iv) * vStep
                 let d = f.surface.d1(atU: u, v: v)
-                let cross = simd_cross(d.du, d.dv)
-                let len = simd_length(cross)
+                let cross = crossProduct(d.du, d.dv)
+                let len = vectorLength(cross)
                 guard len > 1e-9 else { continue }
                 let expected = cross / len
                 let got = sample.at(u: iu, v: iv).normal
-                guard simd_length(got) > 0.5 else { continue }  // undefined normal, skip
+                guard vectorLength(got) > 0.5 else { continue }  // undefined normal, skip
                 #expect(
-                    abs(simd_dot(got, expected)) > 0.999_999,
+                    abs(dotProduct(got, expected)) > 0.999_999,
                     "normal at (u: \(iu), v: \(iv)) is \(got), expected ±\(expected)")
             }
         }
@@ -297,7 +296,7 @@ struct Issue617FaceGridLayoutTests {
                     let expected = f.surface.point(
                         atU: f.uMin + Double(iu) * uStep,
                         v: f.vMin + Double(iv) * vStep)
-                    #expect(simd_distance(square.at(u: iu, v: iv).position, expected) < 1e-9)
+                    #expect(vectorDistance(square.at(u: iu, v: iv).position, expected) < 1e-9)
                 }
             }
         } else {

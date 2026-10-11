@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -19,9 +18,9 @@ struct ProjectionOnCurveTests {
             return
         }
         try #require(proj.count == 2)
-        #expect(simd_distance(proj.point(at: 0), SIMD3(5, 0, 0)) < 1e-9)
+        #expect(vectorDistance(proj.point(at: 0), SIMD3(5, 0, 0)) < 1e-9)
         #expect(abs(proj.distance(at: 0) - 5.0) < 1e-9)
-        #expect(simd_distance(proj.point(at: 1), SIMD3(-5, 0, 0)) < 1e-9)
+        #expect(vectorDistance(proj.point(at: 1), SIMD3(-5, 0, 0)) < 1e-9)
         #expect(abs(proj.distance(at: 1) - 15.0) < 1e-9)
         #expect(abs(proj.lowerDistance - 5.0) < 1e-9)
     }

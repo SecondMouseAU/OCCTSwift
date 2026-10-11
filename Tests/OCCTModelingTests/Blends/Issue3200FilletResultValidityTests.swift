@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -29,7 +28,7 @@ struct Issue3200FilletResultValidityTests {
         var best: (distance: Double, edge: Edge)?
         for candidate in shape.edges() {
             guard let b = candidate.bounds else { continue }
-            let d = simd_length_squared((b.min + b.max) / 2 - target)
+            let d = vectorLengthSquared((b.min + b.max) / 2 - target)
             if best == nil || d < best!.distance { best = (d, candidate) }
         }
         return best?.edge

@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -15,11 +14,11 @@ struct CurveSamplePointsTests {
         let dom = circle.domain
         let points = circle.samplePoints(first: dom.lowerBound, last: dom.upperBound)
         #expect(points.count == 360)
-        #expect(points.allSatisfy { abs(simd_length($0) - 5.0) < 1e-9 })
+        #expect(points.allSatisfy { abs(vectorLength($0) - 5.0) < 1e-9 })
         let first = try #require(points.first)
         let last = try #require(points.last)
-        #expect(simd_distance(first, SIMD3(5, 0, 0)) < 1e-9)
-        #expect(simd_distance(last, SIMD3(5, 0, 0)) < 1e-9)
+        #expect(vectorDistance(first, SIMD3(5, 0, 0)) < 1e-9)
+        #expect(vectorDistance(last, SIMD3(5, 0, 0)) < 1e-9)
     }
 
     @Test("Sample points on line segment")

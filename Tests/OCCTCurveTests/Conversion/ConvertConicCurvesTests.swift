@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -26,8 +25,8 @@ struct ConvertConicCurvesTests {
             Issue.record("ellipse arc not converted")
             return
         }
-        #expect(simd_distance(curve.startPoint, SIMD2(20, 0)) < 1e-12)
-        #expect(simd_distance(curve.endPoint, SIMD2(-20, 0)) < 1e-12)
+        #expect(vectorDistance(curve.startPoint, SIMD2(20, 0)) < 1e-12)
+        #expect(vectorDistance(curve.endPoint, SIMD2(-20, 0)) < 1e-12)
         for p in Self.samples(curve) {
             #expect(abs(p.x * p.x / 400 + p.y * p.y / 100 - 1) < 1e-9)
         }
@@ -42,8 +41,8 @@ struct ConvertConicCurvesTests {
             return
         }
         // (10 cosh u, 5 sinh u) for u in [-1, 1].
-        #expect(simd_distance(curve.startPoint, SIMD2(10 * cosh(-1.0), 5 * sinh(-1.0))) < 1e-9)
-        #expect(simd_distance(curve.endPoint, SIMD2(10 * cosh(1.0), 5 * sinh(1.0))) < 1e-9)
+        #expect(vectorDistance(curve.startPoint, SIMD2(10 * cosh(-1.0), 5 * sinh(-1.0))) < 1e-9)
+        #expect(vectorDistance(curve.endPoint, SIMD2(10 * cosh(1.0), 5 * sinh(1.0))) < 1e-9)
         for p in Self.samples(curve) {
             #expect(abs(p.x * p.x / 100 - p.y * p.y / 25 - 1) < 1e-9)
         }
@@ -56,8 +55,8 @@ struct ConvertConicCurvesTests {
             return
         }
         // gp_Parab2d with focal length 5: y^2 = 20 x, parameter u = y.
-        #expect(simd_distance(curve.startPoint, SIMD2(0.2, -2)) < 1e-12)
-        #expect(simd_distance(curve.endPoint, SIMD2(0.2, 2)) < 1e-12)
+        #expect(vectorDistance(curve.startPoint, SIMD2(0.2, -2)) < 1e-12)
+        #expect(vectorDistance(curve.endPoint, SIMD2(0.2, 2)) < 1e-12)
         for p in Self.samples(curve) {
             #expect(abs(p.y * p.y - 20 * p.x) < 1e-9)
         }

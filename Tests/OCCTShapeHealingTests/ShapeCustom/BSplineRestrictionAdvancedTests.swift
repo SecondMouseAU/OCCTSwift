@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -19,7 +18,7 @@ struct BSplineRestrictionAdvancedTests {
                 tol3d: 0.1, tol2d: 0.1,
                 maxDegree: 5, maxSegments: 20))
         let size = try #require(r.size)
-        #expect(simd_distance(size, SIMD3(10, 20, 30)) < 1e-6)
+        #expect(vectorDistance(size, SIMD3(10, 20, 30)) < 1e-6)
         #expect(abs((r.volume ?? 0) - 6000) < 1e-9)
         #expect(r.faces().allSatisfy { $0.surfaceType == .plane })
     }

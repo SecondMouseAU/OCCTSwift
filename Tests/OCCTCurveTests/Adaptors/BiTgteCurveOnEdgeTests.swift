@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -40,7 +39,7 @@ struct BiTgteCurveOnEdgeTests {
         guard let curve = Self.adjacentCurve() else { return }
         // The kernel answers the shared vertex, (-5, -5, 5), at every parameter of this pair.
         let mid = (curve.domain.lowerBound + curve.domain.upperBound) / 2
-        #expect(simd_distance(curve.point(at: mid), SIMD3(-5, -5, 5)) < 1e-9)
+        #expect(vectorDistance(curve.point(at: mid), SIMD3(-5, -5, 5)) < 1e-9)
     }
 
     @Test func domainIsValid() {
@@ -58,6 +57,6 @@ struct BiTgteCurveOnEdgeTests {
         }
         #expect(c.domain == 0...10)
         // On itself, the curve is the edge: its midpoint is (-5, -5, 0).
-        #expect(simd_distance(c.point(at: 5), SIMD3(-5, -5, 0)) < 1e-9)
+        #expect(vectorDistance(c.point(at: 5), SIMD3(-5, -5, 0)) < 1e-9)
     }
 }
