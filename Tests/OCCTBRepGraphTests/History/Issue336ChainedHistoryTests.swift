@@ -30,69 +30,118 @@ import Testing
 @Suite("Chained WithFullHistory absorb (#336)")
 struct Issue336ChainedHistoryTests {
 
+    /// What a corner cut leaves in the history, by the kind of node each record is keyed on.
+    ///
+    /// Clipping one corner of a box touches the solid, the three faces and three edges that meet
+    /// at the corner, and deletes the corner's one vertex: a Modified and a Generated record for
+    /// each face and each edge (the faces and edges split into the pieces the cut leaves), one
+    /// Modified record for the solid, and one Deleted record (empty replacements) for the vertex.
+    /// That is 1 + 3 * 2 + 3 * 2 + 1 = 14 records, which is what the kernel gives for each hop.
+    private struct CornerCut: Equatable {
+        var solids = Set<Int>()
+        var faces = Set<Int>()
+        var edges = Set<Int>()
+        var deletedVertices = Set<Int>()
+        var records = 0
+
+        init(_ records: ArraySlice<BRepGraph.HistoryRecord>) {
+            for record in records {
+                self.records += 1
+                for (key, replacements) in record.mapping {
+                    switch key.kind {
+                    case .solid: solids.insert(key.index)
+                    case .face: faces.insert(key.index)
+                    case .edge: edges.insert(key.index)
+                    case .vertex: if replacements.isEmpty { deletedVertices.insert(key.index) }
+                    default: break
+                    }
+                }
+            }
+        }
+
+        func expectIsOneCorner(_ what: String, sourceLocation: SourceLocation = #_sourceLocation) {
+            #expect(
+                records == 14, "\(what): records, got \(records)", sourceLocation: sourceLocation)
+            #expect(
+                solids.count == 1, "\(what): one solid, got \(solids)",
+                sourceLocation: sourceLocation)
+            #expect(
+                faces.count == 3, "\(what): the 3 faces at the corner, got \(faces)",
+                sourceLocation: sourceLocation)
+            #expect(
+                edges.count == 3, "\(what): the 3 edges at the corner, got \(edges)",
+                sourceLocation: sourceLocation)
+            #expect(
+                deletedVertices.count == 1,
+                "\(what): the corner vertex deleted, got \(deletedVertices)",
+                sourceLocation: sourceLocation)
+        }
+    }
+
+    /// A node of `shape` in `graph`, as the `NodeRef` the history calls take.
+    private func nodeRef(of shape: Shape, in graph: BRepGraph) throws -> BRepGraph.NodeRef {
+        let raw = try #require(graph.findNode(for: shape), "the shape is a node of the graph")
+        return BRepGraph.NodeRef(kind: raw.kind, index: raw.index)
+    }
+
     /// Same shape and box-centering as the issue, but with tool placements
     /// that actually clip real corners, proving the chain absorbs correctly
     /// once the geometry genuinely intersects.
     @Test("two chained WithFullHistory cuts both absorb real records")
-    func chainedCutsAbsorbAcrossTwoHops() {
+    func chainedCutsAbsorbAcrossTwoHops() throws {
         // Shape.box(width:height:depth:) is centered at the origin:
-        // [-5,5] x [-10,10] x [-15,15].
-        guard let box = Shape.box(width: 10, height: 20, depth: 30),
-            let graph = BRepGraph(shape: box),
-            let root0Raw = graph.findNode(for: box)
-        else {
-            Issue.record("box/graph setup failed")
-            return
-        }
-        let root0 = BRepGraph.NodeRef(kind: root0Raw.kind, index: root0Raw.index)
+        // [-5,5] x [-10,10] x [-15,15], volume 6000.
+        let box = try #require(Shape.box(width: 10, height: 20, depth: 30))
+        let graph = try #require(BRepGraph(shape: box))
+        let root0 = try nodeRef(of: box, in: graph)
+        #expect(graph.historyRecordCount == 0, "nothing is recorded before the first hop")
 
-        // Corner-anchored tool clipping the (5, 10, 15) corner.
-        guard let tool1 = Shape.box(origin: SIMD3(4, 9, 14), width: 3, height: 3, depth: 3),
-            let (out1, hist1) = box.subtractedWithFullHistory(tool1)
-        else {
-            Issue.record("hop1 subtract failed")
-            return
-        }
+        // Corner-anchored tool clipping the (5, 10, 15) corner: it overlaps the box in the
+        // unit cube [4,5] x [9,10] x [14,15], so the cut removes volume 1.
+        let tool1 = try #require(Shape.box(origin: SIMD3(4, 9, 14), width: 3, height: 3, depth: 3))
+        let (out1, hist1) = try #require(box.subtractedWithFullHistory(tool1), "hop1 subtract")
+        let v1 = try #require(out1.volume, "out1 has a volume")
+        #expect(abs(v1 - 5999) < 1e-6, "hop1 removes the unit corner cube, got \(v1)")
 
         let before1 = graph.historyRecordCount
         let added1 = graph.add(out1, absorbing: hist1, inputRoots: [root0], operationName: "hop1")
-        #expect(added1 != nil, "hop1 add should return the result's topology root")
+        // The result is added as its own topology root, the node findNode(for:) finds for it.
+        let out1Root = try nodeRef(of: out1, in: graph)
+        #expect(added1 == out1Root, "hop1 returns out1's root")
+        let hop1Records = graph.historyRecords.dropFirst(before1)
+        CornerCut(hop1Records).expectIsOneCorner("hop1")
         #expect(
-            graph.historyRecordCount > before1,
-            "hop1 should absorb real records, tool1 genuinely clips a corner of the box")
+            hop1Records.allSatisfy { $0.operationName == "hop1" },
+            "every record hop1 added carries hop1's label")
 
-        guard let out1Solid = out1.subShapes(ofType: .solid).first,
-            let root1Raw = graph.findNode(for: out1Solid)
-        else {
-            Issue.record("out1Solid/root1 lookup failed")
-            return
-        }
-        let root1 = BRepGraph.NodeRef(kind: root1Raw.kind, index: root1Raw.index)
+        let out1Solid = try #require(out1.subShapes(ofType: .solid).first, "out1 has a solid")
+        let root1 = try nodeRef(of: out1Solid, in: graph)
 
         // Corner-anchored tool clipping the OPPOSITE (-5, -10, -15) corner of
         // the ORIGINAL box, which remains a real corner of out1, since hop1
-        // only touched the (5, 10, 15) corner.
-        guard let tool2 = Shape.box(origin: SIMD3(-6, -11, -16), width: 3, height: 3, depth: 3),
-            let (out2, hist2) = out1.subtractedWithFullHistory(tool2)
-        else {
-            Issue.record("hop2 subtract failed")
-            return
-        }
-        if let v1 = out1.volume, let v2 = out2.volume {
-            #expect(v2 < v1, "hop2's tool genuinely overlaps out1, so its volume must shrink")
-        } else {
-            Issue.record("volume() failed for out1/out2")
-        }
+        // only touched the (5, 10, 15) corner. It overlaps in [-5,-3] x [-10,-8] x [-15,-13],
+        // a cube of side 2, so the cut removes volume 8.
+        let tool2 = try #require(
+            Shape.box(origin: SIMD3(-6, -11, -16), width: 3, height: 3, depth: 3))
+        let (out2, hist2) = try #require(out1.subtractedWithFullHistory(tool2), "hop2 subtract")
+        let v2 = try #require(out2.volume, "out2 has a volume")
+        #expect(abs(v2 - 5991) < 1e-6, "hop2 removes the 2-sided corner cube, got \(v2)")
 
         // This is the exact call the issue reported as broken, chaining a
         // second *WithFullHistory op onto the first op's live output, using a
         // non-root NodeId (root1) as inputRoots.
         let before2 = graph.historyRecordCount
         let added2 = graph.add(out2, absorbing: hist2, inputRoots: [root1], operationName: "hop2")
-        #expect(added2 != nil, "hop2 add should return the result's topology root")
+        let out2Root = try nodeRef(of: out2, in: graph)
+        #expect(added2 == out2Root, "hop2 returns out2's root")
+        let hop2Records = graph.historyRecords.dropFirst(before2)
+        CornerCut(hop2Records).expectIsOneCorner("hop2")
         #expect(
-            graph.historyRecordCount > before2,
-            "hop2 should absorb real records once its tool genuinely clips a corner of out1")
+            hop2Records.allSatisfy { $0.operationName == "hop2" },
+            "every record hop2 added carries hop2's label, and none of hop1's is rewritten")
+        #expect(
+            graph.historyRecords.prefix(before2).allSatisfy { $0.operationName == "hop1" },
+            "hop2 leaves hop1's records as they were")
         #expect(
             graph.hasHistoryRecord(for: root1),
             "root1 should carry a history record after a real chained cut touched it")
@@ -112,57 +161,45 @@ struct Issue336ChainedHistoryTests {
             .appendingPathComponent("issue336-\(UUID().uuidString).brep")
         defer { try? FileManager.default.removeItem(at: brepURL) }
 
-        guard let box = Shape.box(width: 10, height: 20, depth: 30) else {
-            Issue.record("box failed")
-            return
-        }
+        let box = try #require(Shape.box(width: 10, height: 20, depth: 30))
         try Exporter.writeBREP(shape: box, to: brepURL)
         let loaded = try Shape.loadBREP(from: brepURL)
 
-        guard let graph = BRepGraph(shape: loaded),
-            let root0Raw = graph.findNode(for: loaded)
-        else {
-            Issue.record("graph/root0 setup failed")
-            return
-        }
-        let root0 = BRepGraph.NodeRef(kind: root0Raw.kind, index: root0Raw.index)
+        let graph = try #require(BRepGraph(shape: loaded))
+        let root0 = try nodeRef(of: loaded, in: graph)
 
         // Fully INSIDE the centered box, an interior cavity cut, not a
-        // corner clip, but still a real geometric change.
-        guard
-            let tool1 = Shape.box(width: 3, height: 3, depth: 3)?.translated(by: SIMD3(-1, -1, -1)),
-            let (out1, hist1) = loaded.subtractedWithFullHistory(tool1)
-        else {
-            Issue.record("hop1 subtract failed")
-            return
-        }
-        _ = graph.add(out1, absorbing: hist1, inputRoots: [root0], operationName: "hop1")
+        // corner clip, but still a real geometric change: a 3 x 3 x 3 void, volume 27.
+        let tool1 = try #require(
+            Shape.box(width: 3, height: 3, depth: 3)?.translated(by: SIMD3(-1, -1, -1)))
+        let (out1, hist1) = try #require(loaded.subtractedWithFullHistory(tool1), "hop1 subtract")
+        let v1 = try #require(out1.volume, "out1 has a volume")
+        #expect(abs(v1 - 5973) < 1e-6, "the cavity removes 27 from 6000, got \(v1)")
+        let hop1 = graph.add(out1, absorbing: hist1, inputRoots: [root0], operationName: "hop1")
+        #expect(hop1 != nil, "hop1 adds")
 
-        guard let out1Solid = out1.subShapes(ofType: .solid).first,
-            let root1Raw = graph.findNode(for: out1Solid)
-        else {
-            Issue.record("out1Solid/root1 lookup failed")
-            return
-        }
-        let root1 = BRepGraph.NodeRef(kind: root1Raw.kind, index: root1Raw.index)
+        let out1Solid = try #require(out1.subShapes(ofType: .solid).first, "out1 has a solid")
+        let root1 = try nodeRef(of: out1Solid, in: graph)
 
         // Entirely outside out1's [-5,5] x [-10,10] x [-15,15] bounds.
-        guard
-            let tool2 = Shape.box(width: 3, height: 3, depth: 3)?.translated(by: SIMD3(8, 18, 28)),
-            let (out2, hist2) = out1.subtractedWithFullHistory(tool2)
-        else {
-            Issue.record("hop2 subtract failed")
-            return
-        }
+        let tool2 = try #require(
+            Shape.box(width: 3, height: 3, depth: 3)?.translated(by: SIMD3(8, 18, 28)))
+        let (out2, hist2) = try #require(out1.subtractedWithFullHistory(tool2), "hop2 subtract")
+        // Both volumes required: two nils would compare equal and pass.
+        let v2 = try #require(out2.volume, "out2 has a volume")
         #expect(
-            out1.volume == out2.volume, "a non-intersecting tool must leave the volume unchanged")
+            abs(v2 - v1) < 1e-9, "a non-intersecting tool must leave the volume unchanged")
 
         let before2 = graph.historyRecordCount
+        #expect(before2 > 0, "the control: hop1 did record, so an empty hop2 is not an empty graph")
         let added2 = graph.add(out2, absorbing: hist2, inputRoots: [root1], operationName: "hop2")
-        #expect(added2 != nil, "add() itself still succeeds, there is simply nothing to absorb")
+        let out2Root = try nodeRef(of: out2, in: graph)
+        #expect(
+            added2 == out2Root, "add() itself still succeeds, there is simply nothing to absorb")
         #expect(
             graph.historyRecordCount == before2,
             "no geometry changed, so no records should be absorbed")
+        #expect(!graph.historyRecords.contains { $0.operationName == "hop2" })
         #expect(!graph.hasHistoryRecord(for: root1))
         #expect(
             graph.findDerivedOrSelf(of: root1) == [root1],

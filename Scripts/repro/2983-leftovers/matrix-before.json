@@ -1,0 +1,51 @@
+{
+ "CAN_TYPE_NONE": [
+  "recognizeCone()",
+  "recognizeCylinder()",
+  "recognizeEdgeCircle()",
+  "recognizeEdgeEllipse()",
+  "recognizeEdgeLine()",
+  "recognizePlane()",
+  "recognizeSphere()"
+ ],
+ "CAN_ORIGIN0": [
+  "recognizePlane()"
+ ],
+ "CAN_DIRX": [],
+ "CAN_NONE_P1": [],
+ "CAN_P2_0": [
+  "recognizeEdgeEllipse()"
+ ],
+ "HATCH_NB1": [
+  "addLinesAndCount()",
+  "addYLines()",
+  "trimAndIntervals()"
+ ],
+ "HATCH_ADD_NOOP": [
+  "addLinesAndCount()",
+  "nbIntervalsRefusesAnIndexOutsideTheLineTable()",
+  "trimAndIntervals()"
+ ],
+ "AX_RAWDIR": [
+  "createAxis()",
+  "reversed()"
+ ],
+ "AX_ORIGIN_X": [
+  "createAxis()",
+  "reversed()"
+ ],
+ "H_SEQ_NOWRITE": [],
+ "H_COPY_SHORT": [
+  "A short buffer yields a prefix and the full length"
+ ],
+ "H_COPY_FIRSTCHAR_X": [],
+ "H_LEN_TRUNC": [
+  "A short buffer yields a prefix and the full length",
+  "Operation names report full length even when stored string is truncated"
+ ],
+ "VOLUME_NIL": [
+  "two chained WithFullHistory cuts both absorb real records"
+ ],
+ "ADD_WRONG_ROOT": [],
+ "ADD_NAME": []
+}
