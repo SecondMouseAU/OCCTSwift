@@ -932,7 +932,7 @@ let wasmExcludedTestFiles: [String: [String]] = [
         "HostOSCrossCheckTests.swift",
         "SerialLockThreadSafetyTests.swift",
     ],
-    "OCCTMiscTests": ["ConstructionContextConcurrencyTests.swift"],
+    "OCCTMiscTests": ["ConstructionContext/ConstructionContextConcurrencyTests.swift"],
     "OCCTModelingTests": ["BOPAlgo/Issue208SelfIntersectionTests.swift"],
     "OCCTShapeHealingTests": ["ShapeAnalysis/Issue772SelfIntersectionAnalysisTests.swift"],
     // One concurrency file. The seven that read a `.brep` out of `Fixtures/` by `#filePath` ran
