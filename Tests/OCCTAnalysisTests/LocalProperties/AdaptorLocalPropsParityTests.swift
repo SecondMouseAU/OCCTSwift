@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -153,7 +152,7 @@ struct AdaptorLocalPropsParityTests {
                     let orientedNormal = face.normal(atU: u, v: v)
                     #expect((adaptorNormal != nil) == (orientedNormal != nil), label)
                     if let adaptorNormal, let orientedNormal {
-                        let dot = simd_dot(adaptorNormal, orientedNormal)
+                        let dot = dotProduct(adaptorNormal, orientedNormal)
                         #expect(abs(abs(dot) - 1.0) < 1e-9, label)
                     }
                 }

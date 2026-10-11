@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -46,14 +45,14 @@ struct ExtremaExtCSTests {
         #expect(
             abs(near.squareDistance - 25) < 1e-9,
             "near extremum at distance 5, got \(near.squareDistance.squareRoot())")
-        #expect(simd_distance(near.point1, SIMD3(10, 0, 0)) < 1e-9)
-        #expect(simd_distance(near.point2, SIMD3(5, 0, 0)) < 1e-9)
+        #expect(vectorDistance(near.point1, SIMD3(10, 0, 0)) < 1e-9)
+        #expect(vectorDistance(near.point2, SIMD3(5, 0, 0)) < 1e-9)
 
         let far = line.extremaCSPoint(range: -5...5, surface: sphere, index: 2)
         #expect(
             abs(far.squareDistance - 225) < 1e-9,
             "far extremum at distance 15, got \(far.squareDistance.squareRoot())")
-        #expect(simd_distance(far.point2, SIMD3(-5, 0, 0)) < 1e-9)
+        #expect(vectorDistance(far.point2, SIMD3(-5, 0, 0)) < 1e-9)
     }
 
     /// The surface-side point carries both its parameters (#1514).
@@ -85,10 +84,10 @@ struct ExtremaExtCSTests {
 
         // The parameters are the ones that produce the reported point, which is the whole claim.
         let reconstructed = sphere.point(atU: pp.u2, v: pp.v2)
-        #expect(simd_distance(reconstructed, pp.point2) < 1e-6)
+        #expect(vectorDistance(reconstructed, pp.point2) < 1e-6)
 
         // And the point itself is the expected nearest point, radius 5 along (1, 1, 1).
-        let expected = simd_normalize(SIMD3<Double>(1, 1, 1)) * 5.0
-        #expect(simd_distance(pp.point2, expected) < 1e-6)
+        let expected = normalizedVector(SIMD3<Double>(1, 1, 1)) * 5.0
+        #expect(vectorDistance(pp.point2, expected) < 1e-6)
     }
 }

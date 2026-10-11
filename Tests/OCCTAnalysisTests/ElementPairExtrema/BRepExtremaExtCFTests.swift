@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -44,7 +43,7 @@ struct BRepExtremaExtCFTests {
                 crossingEdges += 1
                 #expect(result.solutionCount == 4, "edge \(i)")
                 // The crossing point lies on the sphere: |p| = 3.
-                #expect(abs(simd_length(result.pointOnFace) - 3) < 1e-9, "edge \(i)")
+                #expect(abs(vectorLength(result.pointOnFace) - 3) < 1e-9, "edge \(i)")
             } else {
                 Issue.record("edge \(i): unexpected distance \(result.distance)")
             }
@@ -87,8 +86,8 @@ struct BRepExtremaExtCFTests {
         #expect(result.solutionCount == 1)
         #expect(abs(result.distance - (250.0).squareRoot()) < 1e-9, "got \(result.distance)")
         #expect(
-            simd_length(result.pointOnEdge - SIMD3(-5, 0, 5)) < 1e-6, "got \(result.pointOnEdge)")
+            vectorLength(result.pointOnEdge - SIMD3(-5, 0, 5)) < 1e-6, "got \(result.pointOnEdge)")
         #expect(
-            simd_length(result.pointOnFace - SIMD3(0, 0, 20)) < 1e-9, "got \(result.pointOnFace)")
+            vectorLength(result.pointOnFace - SIMD3(0, 0, 20)) < 1e-9, "got \(result.pointOnFace)")
     }
 }

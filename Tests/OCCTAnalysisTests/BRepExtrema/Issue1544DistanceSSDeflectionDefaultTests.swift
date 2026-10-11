@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -60,7 +59,7 @@ struct Issue1544DistanceSSDeflectionDefaultTests {
         #expect(r.solutionCount == 1)
         #expect(abs(r.distance - 10) < 1e-6)
 
-        let actualPointDistance = simd_distance(r.point1, r.point2)
+        let actualPointDistance = vectorDistance(r.point1, r.point2)
         #expect(abs(actualPointDistance - 10) < 1e-6)
         #expect(
             abs(r.distance - actualPointDistance) < 1e-6,
@@ -84,7 +83,7 @@ struct Issue1544DistanceSSDeflectionDefaultTests {
         // demonstrably NOT the pair distance reports. This is documenting BRepExtrema_DistanceSS's
         // own (unfixed, un-fixable at the bridge layer) solution-ordering behavior for a caller
         // who explicitly opts into a wide deflection, not a regression this issue introduces.
-        let actualPointDistance = simd_distance(r.point1, r.point2)
+        let actualPointDistance = vectorDistance(r.point1, r.point2)
         #expect(abs(actualPointDistance - 30) < 1e-6)
         #expect(abs(actualPointDistance - r.distance) > 1)
     }

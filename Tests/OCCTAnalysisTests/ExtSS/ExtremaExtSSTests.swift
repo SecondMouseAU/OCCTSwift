@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -39,8 +38,8 @@ struct ExtremaExtSSTests {
         #expect(result.count == 2)
         let near = s1.extremaSSPoint(other: s2, index: 1)
         #expect(abs(near.squareDistance.squareRoot() - 5.0) < 1e-9, "got \(near.squareDistance)")
-        #expect(simd_length(near.point1 - SIMD3(3, 0, 0)) < 1e-6, "got \(near.point1)")
-        #expect(simd_length(near.point2 - SIMD3(8, 0, 0)) < 1e-6, "got \(near.point2)")
+        #expect(vectorLength(near.point1 - SIMD3(3, 0, 0)) < 1e-6, "got \(near.point1)")
+        #expect(vectorLength(near.point2 - SIMD3(8, 0, 0)) < 1e-6, "got \(near.point2)")
         let far = s1.extremaSSPoint(other: s2, index: 2)
         #expect(abs(far.squareDistance.squareRoot() - 15.0) < 1e-9, "got \(far.squareDistance)")
     }
@@ -77,8 +76,8 @@ struct ExtremaExtSSTests {
         // 0 too -- ruled out by the offset fixture above.
         let reconstructed1 = s1.point(atU: pair.u1, v: pair.v1)
         let reconstructed2 = s2.point(atU: pair.u2, v: pair.v2)
-        #expect(simd_length(reconstructed1 - pair.point1) < 1e-6)
-        #expect(simd_length(reconstructed2 - pair.point2) < 1e-6)
+        #expect(vectorLength(reconstructed1 - pair.point1) < 1e-6)
+        #expect(vectorLength(reconstructed2 - pair.point2) < 1e-6)
 
         // And confirm this fixture actually exercises a non-trivial V on both sides.
         #expect(abs(pair.v1) > 1e-3)

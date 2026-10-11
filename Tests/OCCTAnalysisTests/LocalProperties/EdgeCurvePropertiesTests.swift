@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -242,11 +241,11 @@ struct EdgeCurvePropertiesTests {
         #expect(ptEnd != nil)
 
         if let s = ptStart {
-            let dist = simd_length(s - endpoints.start)
+            let dist = vectorLength(s - endpoints.start)
             #expect(dist < 0.01)
         }
         if let e = ptEnd {
-            let dist = simd_length(e - endpoints.end)
+            let dist = vectorLength(e - endpoints.end)
             #expect(dist < 0.01)
         }
     }

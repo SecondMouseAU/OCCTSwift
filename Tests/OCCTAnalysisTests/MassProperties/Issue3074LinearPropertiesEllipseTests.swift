@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -81,7 +80,7 @@ struct Issue3074LinearPropertiesEllipseTests {
             let lp = shape.linearProperties()
         {
             #expect(abs(lp.length - 60) < 1e-12)
-            #expect(simd_length(lp.centerOfMass) < 1e-9)
+            #expect(vectorLength(lp.centerOfMass) < 1e-9)
         } else {
             Issue.record("no rectangle")
         }
@@ -89,7 +88,7 @@ struct Issue3074LinearPropertiesEllipseTests {
             let lp = shape.linearProperties()
         {
             #expect(abs(lp.length - 2 * Double.pi * 5) < 1e-9)
-            #expect(simd_length(lp.centerOfMass) < 1e-9)
+            #expect(vectorLength(lp.centerOfMass) < 1e-9)
         } else {
             Issue.record("no circle")
         }
@@ -97,13 +96,13 @@ struct Issue3074LinearPropertiesEllipseTests {
             let shape = Shape.fromWire(line), let lp = shape.linearProperties()
         {
             #expect(abs(lp.length - 5) < 1e-12)
-            #expect(simd_length(lp.centerOfMass - SIMD3(1.5, 2, 0)) < 1e-12)
+            #expect(vectorLength(lp.centerOfMass - SIMD3(1.5, 2, 0)) < 1e-12)
         } else {
             Issue.record("no line")
         }
         if let box = Shape.box(width: 2, height: 3, depth: 5), let lp = box.linearProperties() {
             #expect(abs(lp.length - 80) < 1e-9, "each edge counted once per face")
-            #expect(simd_length(lp.centerOfMass) < 1e-9, "Shape.box is centred on the origin")
+            #expect(vectorLength(lp.centerOfMass) < 1e-9, "Shape.box is centred on the origin")
         } else {
             Issue.record("no box")
         }

@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -29,15 +28,15 @@ struct ExtremaExtPElSConeTests {
 
         #expect(abs(results[0].squareDistance - 112.5) < 1e-9, "got \(results[0].squareDistance)")
         #expect(
-            simd_distance(try #require(results[0].point1), SIMD3(20, 0, 0)) < 1e-12,
+            vectorDistance(try #require(results[0].point1), SIMD3(20, 0, 0)) < 1e-12,
             "point1 is the query point")
         #expect(
-            simd_distance(try #require(results[0].point2), SIMD3(12.5, 0, 7.5)) < 1e-9,
+            vectorDistance(try #require(results[0].point2), SIMD3(12.5, 0, 7.5)) < 1e-9,
             "nearest foot expected (12.5, 0, 7.5), got \(String(describing: results[0].point2))")
 
         #expect(abs(results[1].squareDistance - 312.5) < 1e-9, "got \(results[1].squareDistance)")
         #expect(
-            simd_distance(try #require(results[1].point2), SIMD3(7.5, 0, -12.5)) < 1e-9,
+            vectorDistance(try #require(results[1].point2), SIMD3(7.5, 0, -12.5)) < 1e-9,
             "lower-nappe foot expected (7.5, 0, -12.5), got \(String(describing: results[1].point2))"
         )
     }

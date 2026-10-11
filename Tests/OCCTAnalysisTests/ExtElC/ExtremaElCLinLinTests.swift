@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -36,8 +35,8 @@ struct ExtremaElCLinLinTests {
         #expect(first.squareDistance < 1e-6)
         // Crossing lines have a witness pair, and it is the crossing point on both (#2993).
         #expect(!first.isParallel)
-        #expect(simd_length(try #require(first.point1)) < 1e-9)
-        #expect(simd_length(try #require(first.point2)) < 1e-9)
+        #expect(vectorLength(try #require(first.point1)) < 1e-9)
+        #expect(vectorLength(try #require(first.point2)) < 1e-9)
     }
 
     @Test func skewLines() throws {
@@ -53,6 +52,6 @@ struct ExtremaElCLinLinTests {
         #expect(!first.isParallel)
         let p1 = try #require(first.point1)
         let p2 = try #require(first.point2)
-        #expect(abs(simd_distance_squared(p1, p2) - first.squareDistance) < 1e-9)
+        #expect(abs(vectorDistanceSquared(p1, p2) - first.squareDistance) < 1e-9)
     }
 }

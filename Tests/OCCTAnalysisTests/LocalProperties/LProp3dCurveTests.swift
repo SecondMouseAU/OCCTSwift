@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -16,7 +15,7 @@ struct LProp3dCurveTests {
             Curve3D.circle(center: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5.0))
         let t = try #require(c.localTangent(at: 0.0))
         // At u=0 on a circle in the XY plane the curve runs towards +Y.
-        #expect(simd_distance(t, SIMD3(0, 1, 0)) < 1e-12)
+        #expect(vectorDistance(t, SIMD3(0, 1, 0)) < 1e-12)
     }
 
     @Test func normalOfCircle() throws {
@@ -24,7 +23,7 @@ struct LProp3dCurveTests {
             Curve3D.circle(center: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1), radius: 5.0))
         let n = try #require(c.localNormal(at: 0.0))
         // The principal normal at (5, 0, 0) points back at the centre.
-        #expect(simd_distance(n, SIMD3(-1, 0, 0)) < 1e-12)
+        #expect(vectorDistance(n, SIMD3(-1, 0, 0)) < 1e-12)
     }
 
     @Test func centreOfCurvature() throws {

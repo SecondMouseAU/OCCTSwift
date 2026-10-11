@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -20,7 +19,7 @@ struct ContapContourTests {
         #expect(result.count == 1)
         #expect(result.type == .circle)
         // A view along the axis sees the equator: centre at the origin, radius 10.
-        #expect(simd_length(SIMD3(result.data[0], result.data[1], result.data[2])) < 1e-12)
+        #expect(vectorLength(SIMD3(result.data[0], result.data[1], result.data[2])) < 1e-12)
         #expect(abs(result.data[3] - 10.0) < 1e-12)
     }
 
@@ -35,8 +34,8 @@ struct ContapContourTests {
         // The two rulings at y = +5 and y = -5, both along the axis.
         let loc1 = SIMD3(result.data[0], result.data[1], result.data[2])
         let loc2 = SIMD3(result.data[6], result.data[7], result.data[8])
-        #expect(simd_length(loc1 - SIMD3(0, 5, 0)) < 1e-12, "line 1 at \(loc1)")
-        #expect(simd_length(loc2 - SIMD3(0, -5, 0)) < 1e-12, "line 2 at \(loc2)")
+        #expect(vectorLength(loc1 - SIMD3(0, 5, 0)) < 1e-12, "line 1 at \(loc1)")
+        #expect(vectorLength(loc2 - SIMD3(0, -5, 0)) < 1e-12, "line 2 at \(loc2)")
     }
 
     /// #1416: a cylinder's silhouette is always a pair of tangent rulings, never one.
@@ -73,7 +72,7 @@ struct ContapContourTests {
         // Expected geometry: both tangent lines run parallel to the axis, offset from the
         // origin by +/- radius along normalize(axis x direction) (the OCCT kernel's own
         // construction, re-derived here rather than copied, per Contap_ContAna.cxx).
-        let normale = simd_cross(axis, direction).normalized
+        let normale = crossProduct(axis, direction).normalized
         let expectedLoc1 = origin + radius * normale
         let expectedLoc2 = origin - radius * normale
 
@@ -83,14 +82,14 @@ struct ContapContourTests {
         let dir2 = SIMD3(result.data[9], result.data[10], result.data[11])
 
         let tol = 1e-9
-        #expect(simd_length(loc1 - expectedLoc1) < tol)
-        #expect(simd_length(dir1 - axis) < tol)
-        #expect(simd_length(loc2 - expectedLoc2) < tol)
-        #expect(simd_length(dir2 - axis) < tol)
+        #expect(vectorLength(loc1 - expectedLoc1) < tol)
+        #expect(vectorLength(dir1 - axis) < tol)
+        #expect(vectorLength(loc2 - expectedLoc2) < tol)
+        #expect(vectorLength(dir2 - axis) < tol)
 
         // The two lines are genuinely distinct: mirror-image locations either side of the axis.
-        #expect(simd_length(loc2) > 1.0)
-        #expect(simd_length(loc1 - loc2) > 1.0)
+        #expect(vectorLength(loc2) > 1.0)
+        #expect(vectorLength(loc1 - loc2) > 1.0)
     }
 
     /// From an eye at distance d = 100 a sphere of radius r = 10 shows a circle centred r^2/d = 1
@@ -104,7 +103,7 @@ struct ContapContourTests {
         #expect(result.count == 1)
         #expect(result.type == .circle)
         let centre = SIMD3(result.data[0], result.data[1], result.data[2])
-        #expect(simd_length(centre - SIMD3(1, 0, 0)) < 1e-12, "centre \(centre)")
+        #expect(vectorLength(centre - SIMD3(1, 0, 0)) < 1e-12, "centre \(centre)")
         #expect(abs(result.data[3] - 10 * (0.99).squareRoot()) < 1e-12, "radius \(result.data[3])")
     }
 }

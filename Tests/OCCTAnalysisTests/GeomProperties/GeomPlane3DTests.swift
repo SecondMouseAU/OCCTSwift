@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -34,8 +33,8 @@ struct GeomPlane3DTests {
         // U iso at u = 3: the line through (3, 0, 2) along the plane's YDirection, parameterised by v.
         let p0 = iso.point(at: 0)
         let p1 = iso.point(at: 1)
-        #expect(simd_length(p0 - SIMD3(3, 0, 2)) < 1e-12)
-        #expect(simd_length((p1 - p0) - SIMD3(0, 1, 0)) < 1e-12)
+        #expect(vectorLength(p0 - SIMD3(3, 0, 2)) < 1e-12)
+        #expect(vectorLength((p1 - p0) - SIMD3(0, 1, 0)) < 1e-12)
     }
 
     @Test func planeVIso() throws {
@@ -44,14 +43,14 @@ struct GeomPlane3DTests {
         // V iso at v = 3: the line through (0, 3, 2) along the plane's XDirection, parameterised by u.
         let p0 = iso.point(at: 0)
         let p1 = iso.point(at: 1)
-        #expect(simd_length(p0 - SIMD3(0, 3, 2)) < 1e-12)
-        #expect(simd_length((p1 - p0) - SIMD3(1, 0, 0)) < 1e-12)
+        #expect(vectorLength(p0 - SIMD3(0, 3, 2)) < 1e-12)
+        #expect(vectorLength((p1 - p0) - SIMD3(1, 0, 0)) < 1e-12)
     }
 
     @Test func planePln() throws {
         let p = try #require(Self.planeZ2())
         let pln = p.planeProperties.pln
-        #expect(simd_length(pln.origin - SIMD3(0, 0, 2)) < 1e-12)
-        #expect(simd_length(pln.normal - SIMD3(0, 0, 1)) < 1e-12)
+        #expect(vectorLength(pln.origin - SIMD3(0, 0, 2)) < 1e-12)
+        #expect(vectorLength(pln.normal - SIMD3(0, 0, 1)) < 1e-12)
     }
 }

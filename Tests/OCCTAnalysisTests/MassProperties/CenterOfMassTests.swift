@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -52,7 +51,7 @@ struct CenterOfMassTests {
 
         #expect(abs(props.centerOfMass.x - 0.158730159) < 1e-6)
         #expect(
-            simd_distance(props.centerOfMass, com) < 1e-9,
+            vectorDistance(props.centerOfMass, com) < 1e-9,
             "the two entry points disagree: \(props.centerOfMass) vs \(com)")
     }
 
@@ -175,7 +174,7 @@ struct CenterOfMassTests {
             let com = try #require(shape.centerOfMass)
             let centroid = try #require(shape.centroid)
             #expect(
-                simd_distance(com, centroid) < 1e-6,
+                vectorDistance(com, centroid) < 1e-6,
                 "centerOfMass \(com) disagrees with centroid \(centroid)")
         }
     }
@@ -190,9 +189,9 @@ struct CenterOfMassTests {
         let com = try #require(part.centerOfMass)
 
         let vi = try #require(part.volumeInertia)
-        #expect(simd_distance(com, vi.centerOfMass) < 1e-6)
+        #expect(vectorDistance(com, vi.centerOfMass) < 1e-6)
 
         let ip = try #require(part.inertiaProperties())
-        #expect(simd_distance(com, ip.centerOfMass) < 1e-6)
+        #expect(vectorDistance(com, ip.centerOfMass) < 1e-6)
     }
 }

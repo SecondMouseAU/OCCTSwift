@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -27,10 +26,10 @@ struct ExtremaExtPElCLinTests {
         // none, so a `nil` here would be a real failure rather than a case to skip.
         #expect(!first.isParallel)
         let foot = try #require(first.point2, "a point-line extremum has a foot")
-        #expect(simd_distance(foot, SIMD3(0, 0, 0)) < 1e-9, "foot is \(foot)")
+        #expect(vectorDistance(foot, SIMD3(0, 0, 0)) < 1e-9, "foot is \(foot)")
         // `point1` is the query point echoed by the bridge rather than a kernel value, so this
         // asserts the pair is not transposed and nothing more.
         let query = try #require(first.point1)
-        #expect(simd_distance(query, SIMD3(0, 5, 0)) < 1e-9, "point1 is \(query)")
+        #expect(vectorDistance(query, SIMD3(0, 5, 0)) < 1e-9, "point1 is \(query)")
     }
 }

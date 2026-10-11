@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -39,7 +38,7 @@ struct BRepGPropFaceTests {
         #expect(eval != nil)
         if let eval {
             // Normal should be non-zero for a box face
-            let mag = simd_length(eval.normal)
+            let mag = vectorLength(eval.normal)
             #expect(mag > 0.01)
         }
     }
@@ -58,7 +57,7 @@ struct BRepGPropFaceTests {
             let vMid = (bounds.vMin + bounds.vMax) / 2
 
             if let eval = face.evaluateGProp(u: uMid, v: vMid) {
-                let mag = simd_length(eval.normal)
+                let mag = vectorLength(eval.normal)
                 if mag > 0.01 {
                     found = true
                     break
@@ -86,8 +85,8 @@ struct BRepGPropFaceTests {
         #expect(eval2 != nil)
 
         if let eval1, let eval2 {
-            let mag1 = simd_length(eval1.normal)
-            let mag2 = simd_length(eval2.normal)
+            let mag1 = vectorLength(eval1.normal)
+            let mag2 = vectorLength(eval2.normal)
             // For a planar face, magnitudes should be equal
             #expect(abs(mag1 - mag2) < 0.001)
         }

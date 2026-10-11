@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -41,11 +40,11 @@ struct GeomCylinder3DTests {
         let iso0 = try #require(c.cylinderProperties.uIso(0))
         let a = iso0.point(at: 0)
         let b = iso0.point(at: 3)
-        #expect(simd_distance(a, SIMD3(5, 0, 0)) < 1e-9)
-        #expect(simd_distance(b, SIMD3(5, 0, 3)) < 1e-9)
+        #expect(vectorDistance(a, SIMD3(5, 0, 0)) < 1e-9)
+        #expect(vectorDistance(b, SIMD3(5, 0, 3)) < 1e-9)
 
         // A second angle, so an iso that ignored u would not pass.
         let isoQuarter = try #require(c.cylinderProperties.uIso(.pi / 2))
-        #expect(simd_distance(isoQuarter.point(at: 3), SIMD3(0, 5, 3)) < 1e-9)
+        #expect(vectorDistance(isoQuarter.point(at: 3), SIMD3(0, 5, 3)) < 1e-9)
     }
 }
