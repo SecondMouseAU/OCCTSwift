@@ -1,0 +1,6 @@
+segment: periodic 0 domain [0, 10] whole 10 | [f, l+s] 20 | [l+s, l+2s] 10 | [f, f+2s] 20
+bezier: periodic 0 domain [0, 1] whole 122.184728 | [f, l+s] 1000.67204 | [l+s, l+2s] 3582.8733 | [f, f+2s] 1000.67204
+arc [0, pi] r5: periodic 1 domain [0, 3.14159] whole 15.7079633 | [f, l+s] 31.4159265 | [l+s, l+2s] 15.7079633 | [f, f+2s] 31.4159265
+circle r5: periodic 1 domain [0, 6.28319] whole 31.4159265 | [f, l+s] 62.8318531 | [l+s, l+2s] 31.4159265 | [f, f+2s] 62.8318531
+ellipse 8x3: periodic 1 domain [0, 6.28319] whole 36.3668628 | [f, l+s] 72.7337256 | [l+s, l+2s] 36.3668628 | [f, f+2s] 72.7337256
+periodic bspline: periodic 1 domain [0, 504.057] whole 548.507775 | [f, l+s] 548.507775 | [l+s, l+2s] 0 | [f, f+2s] 548.507775
