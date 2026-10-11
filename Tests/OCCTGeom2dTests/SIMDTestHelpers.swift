@@ -9,14 +9,19 @@
 // whole #2759 series has merged, `Scripts/check-no-simd.py` fails if any copy differs from another,
 // so an edit here is an edit in all of them.
 //
-// A ZERO OR NON-FINITE VECTOR NORMALISES TO NaNs, by IEEE division, as the library's own helpers
-// do. A test that feeds one through `normalizedVector` and then compares the result gets a failing
-// comparison (every ordered comparison with NaN is false), so the NaN is loud and does not pass
-// silently. This differs on purpose from the older `SIMD3.normalized` fixtures that some targets
-// define for their own use (`ModelingTestExtensions.swift`, `DrawingTestFixtures.swift`,
-// `XCAFTestFixtures.swift`): those return the zero vector unchanged for a test that wants a
-// zero-safe unit vector, and were left as they are. Pick `normalized` for that, `normalizedVector`
-// to match the library.
+// A ZERO OR NON-FINITE VECTOR NORMALISES TO NaNs, by IEEE division. That is what Apple's
+// `simd_normalize`, which these tests used before, returns (measured: a zero vector gives
+// (nan, nan, nan), and (inf, 0, 0) gives (nan, 0, 0)), so migrating changed no result. It is a
+// different contract from the library's public `Vector3DMath.normalize`, which returns nil.
+//
+// Two consequences for a test author. An assertion on a NaN result, `#expect(x < tol)`, fails,
+// because every ordered comparison with NaN is false. A GUARD written as `length < tol` does not
+// catch NaN for the same reason; write `!(length >= tol)` where a zero input is possible.
+//
+// The older per-target `SIMD3.normalized` fixtures some targets define for their own use
+// (`ModelingTestExtensions.swift`, `DrawingTestFixtures.swift`, `XCAFTestFixtures.swift`) return the
+// zero vector unchanged, for a test that wants a zero-safe unit vector, and were left as they are.
+// Pick `normalized` for that, `normalizedVector` to match Apple's behaviour.
 
 func dotProduct<V: SIMD>(_ a: V, _ b: V) -> V.Scalar where V.Scalar: FloatingPoint {
     (a * b).sum()

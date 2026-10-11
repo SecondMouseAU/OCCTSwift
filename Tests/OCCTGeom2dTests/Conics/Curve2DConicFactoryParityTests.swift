@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -103,8 +102,8 @@ struct Curve2DConicFactoryParityTests {
         let b = try #require(gce)
         // #1979: agreement alone passed two factories wrong the same way. Pinned to the ellipse
         // gce_MakeElips2d gives (Scripts/repro/766-geom2d-conic-factory-parity/).
-        #expect(simd_distance(b.point(at: 0), SIMD2(11, -4)) < 1e-9)
-        #expect(simd_distance(b.point(at: .pi / 2), SIMD2(3, 0)) < 1e-9)
+        #expect(vectorDistance(b.point(at: 0), SIMD2(11, -4)) < 1e-9)
+        #expect(vectorDistance(b.point(at: .pi / 2), SIMD2(3, 0)) < 1e-9)
 
         #expect(a.isClosed == b.isClosed)
         #expect(a.isPeriodic == b.isPeriodic)
@@ -125,7 +124,7 @@ struct Curve2DConicFactoryParityTests {
         let a = try #require(direct)
         let b = try #require(gce)
         // #1979: pinned to the vertex gce_MakeHypr2d gives, so a shared error cannot pass.
-        #expect(simd_distance(b.point(at: 0), SIMD2(9, -4)) < 1e-9)
+        #expect(vectorDistance(b.point(at: 0), SIMD2(9, -4)) < 1e-9)
 
         for t in stride(from: -1.0, through: 1.0, by: 0.25) {
             let pa = a.point(at: t)
@@ -148,7 +147,7 @@ struct Curve2DConicFactoryParityTests {
         let a = try #require(direct)
         let b = try #require(gce)
         // #1979: pinned to the point gce_MakeParab2d gives at u = 2: (3 + 4 / 12, -4 + 2).
-        #expect(simd_distance(b.point(at: 2), SIMD2(3 + 1.0 / 3.0, -2)) < 1e-9)
+        #expect(vectorDistance(b.point(at: 2), SIMD2(3 + 1.0 / 3.0, -2)) < 1e-9)
 
         for t in stride(from: -2.0, through: 2.0, by: 0.5) {
             let pa = a.point(at: t)
