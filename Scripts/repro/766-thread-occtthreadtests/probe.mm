@@ -1,4 +1,4 @@
-// #1990 (epic #766): kernel parity for Tests/OCCTThreadTests/OCCTThreadTests.swift.
+// #1990 (epic #766): kernel parity for Tests/OCCTThreadTests/Specs/OCCTThreadTests.swift.
 //
 // ThreadedFeatureTests' four tests reach the kernel through OCCTShapeBuildThreadCutter (the
 // analytic helicoid cutter, OCCTBridge_AdvancedModeling.mm) plus BRepAlgoAPI_Cut/Fuse, or
