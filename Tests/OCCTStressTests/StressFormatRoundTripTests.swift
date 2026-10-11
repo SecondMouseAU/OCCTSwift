@@ -202,11 +202,20 @@ struct StressRoundTripBREPStringTests {
     /// Without this, a `toBREPString` that always wrote the first shape it was given would fail
     /// only through the other fixtures' figures, never by saying that the strings coincide.
     @Test func distinctShapesWriteDistinctStrings() throws {
-        let box = try #require(standardBox().toBREPString())
-        let cylinder = try #require(standardCylinder().toBREPString())
-        let sphere = try #require(standardSphere().toBREPString())
-        #expect(Set([box, cylinder, sphere]).count == 3)
-        #expect(box.count != cylinder.count)
+        let fixtures: [(String, Shape)] = [
+            ("box", standardBox()), ("cylinder", standardCylinder()),
+            ("sphere", standardSphere()), ("cone", standardCone()),
+            ("torus", standardTorus()), ("filletedBox", try filletedBox()),
+            ("drilledPlate", try drilledPlate()), ("compound", try standardCompound()),
+        ]
+        var strings: [String] = []
+        for (name, shape) in fixtures {
+            strings.append(try #require(shape.toBREPString(), "toBREPString failed for \(name)"))
+        }
+        #expect(Set(strings).count == fixtures.count, "two fixtures wrote the same BREP string")
+        // The box and the cylinder also differ in length, so equal strings cannot hide behind a
+        // set that happened to collapse for another reason.
+        #expect(strings[0].count != strings[1].count)
     }
 }
 

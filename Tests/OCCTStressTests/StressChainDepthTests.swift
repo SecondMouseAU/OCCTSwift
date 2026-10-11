@@ -322,6 +322,8 @@ struct StressTransformChainTests {
                 let mid = try #require(shape.bounds)
                 #expect(abs(mid.max.x - 5 * 2.0.squareRoot()) < 1e-6)
                 #expect(abs(mid.min.y - -5 * 2.0.squareRoot()) < 1e-6)
+                #expect(abs(mid.max.y - 5 * 2.0.squareRoot()) < 1e-6)
+                #expect(abs(mid.min.x - -5 * 2.0.squareRoot()) < 1e-6)
             }
         }
         #expect(shape.isValid)
@@ -335,6 +337,9 @@ struct StressTransformChainTests {
         #expect(abs(b.max.y - 5) < 1e-6)
         #expect(abs(b.min.x - -5) < 1e-6)
         #expect(abs(b.min.y - -5) < 1e-6)
+        // A turn about Z leaves Z alone.
+        #expect(abs(b.max.z - 5) < 1e-6)
+        #expect(abs(b.min.z - -5) < 1e-6)
     }
 
     @Test func hundredScales() throws {
@@ -363,6 +368,10 @@ struct StressTransformChainTests {
         // coordinates that the volume, being a product of three of them, happens to cancel.
         // Measured on the pinned kernel, 1e-9 is below that floor and 1e-6 is well above it.
         #expect(abs(b.max.x - 5) < 1e-6)
+        #expect(abs(b.min.x - -5) < 1e-6)
+        #expect(abs(b.max.y - 5) < 1e-6)
+        #expect(abs(b.min.y - -5) < 1e-6)
+        #expect(abs(b.max.z - 5) < 1e-6)
         #expect(abs(b.min.z - -5) < 1e-6)
     }
 
@@ -406,6 +415,7 @@ struct StressTransformChainTests {
         #expect(abs(b.max.y - (centre.y + half)) < 1e-5)
         #expect(abs(b.min.y - (centre.y - half)) < 1e-5)
         #expect(abs(b.max.z - 5 * scale) < 1e-5)
+        #expect(abs(b.min.z - -5 * scale) < 1e-5)
     }
 }
 
