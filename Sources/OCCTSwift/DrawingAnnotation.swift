@@ -173,9 +173,10 @@ public enum DrawingDimension: Sendable, Hashable {
         public var isValid: Bool {
             let a = ray1 - vertex
             let b = ray2 - vertex
-            guard vectorLength(a) > 1e-7, vectorLength(b) > 1e-7 else { return false }
+            let confusion = OCCTPrecision.confusion
+            guard vectorLength(a) > confusion, vectorLength(b) > confusion else { return false }
             let cross = a.x * b.y - a.y * b.x
-            return atan2(abs(cross), dotProduct(a, b)) > 1e-12
+            return atan2(abs(cross), dotProduct(a, b)) > OCCTPrecision.angular
         }
 
         /// Measured angle between the two rays, in radians (0 ≤ θ ≤ π).

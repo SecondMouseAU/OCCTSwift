@@ -94,6 +94,10 @@ internal func normalizedVector<V: SIMD>(_ a: V) -> V where V.Scalar: FloatingPoi
 /// The unit vector in the same direction, or nil for a zero or non-finite vector.
 ///
 /// The spelling for a call site that must refuse such an input instead of carrying NaNs forward.
+///
+/// A vector whose squared length underflows to zero (components below about 1e-154) counts as
+/// zero here, exactly as `normalizedVector` turns it into NaNs (0 / 0); no CAD coordinate is
+/// that small, and the two spellings agree on which inputs they refuse.
 @inline(__always)
 internal func normalizedVectorOrNil<V: SIMD>(_ a: V) -> V? where V.Scalar: FloatingPoint {
     let length = vectorLength(a)

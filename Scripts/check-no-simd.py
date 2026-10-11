@@ -45,11 +45,14 @@ CAN_IMPORT_RE = re.compile(r"\bcanImport\s*\(\s*simd\s*\)")
 # Apple's own namespace (simd_dot, simd_float4x4, simd_quatf). `matrix_` and `vector_` are only
 # Apple's when followed by one of its type or operation stems, so a variable called `matrix_size`
 # or `vector_count` is not a hit (#3291 review).
-IDENT_RE = re.compile(
-    r"\bsimd_[A-Za-z0-9_]+"
-    r"|\bmatrix_(?:identity|float|double|half|multiply|invert|transpose|determinant|from_)[A-Za-z0-9_]*"
-    r"|\bvector_(?:float|double|half|int|uint|short|ushort|char|uchar|long|ulong|bool)[A-Za-z0-9_]*"
+SIMD_RE = r"\bsimd_[A-Za-z0-9_]+"
+MATRIX_RE = (
+    r"\bmatrix_(?:identity|float|double|half|multiply|invert|transpose|determinant|from_)[A-Za-z0-9_]*"
 )
+VECTOR_RE = (
+    r"\bvector_(?:float|double|half|int|uint|short|ushort|char|uchar|long|ulong|bool)[A-Za-z0-9_]*"
+)
+IDENT_RE = re.compile(f"{SIMD_RE}|{MATRIX_RE}|{VECTOR_RE}")
 
 
 def strip_comments_and_strings(text):
