@@ -6,9 +6,17 @@ import Testing
 @Suite("Hatch Builder Tests")
 struct HatchBuilderTests {
 
-    @Test func createHatcher() {
-        let hatcher = HatchBuilder(tolerance: 1e-6)
-        #expect(hatcher != nil)
+    /// A new hatcher is required, not merely checked for nil, and it starts empty and usable.
+    ///
+    /// The earlier form asserted `hatcher != nil` alone, which a constructor returning a dead
+    /// handle also satisfied. A hatcher that reports no lines before any is added, and one more
+    /// for each it is given, is a live one.
+    @Test func createHatcher() throws {
+        let hatcher = try #require(
+            HatchBuilder(tolerance: 1e-6), "a hatcher with tolerance 1e-6 builds")
+        #expect(hatcher.nbLines == 0, "a new hatcher holds no line")
+        hatcher.addXLine(2.0)
+        #expect(hatcher.nbLines == 1, "and takes one")
     }
 
     @Test func addLinesAndCount() {
