@@ -56,6 +56,15 @@ test calling `Document.loadOBJ(` picks up the body of the sibling `@Test func lo
 helpers to their declaring suite (#2964) does not reach this, because the sibling is usually in
 the same suite. Recorded on #2964's thread and open.
 
+**A test the plain tiers misread, and what covers it (#3301).** The tiers above are for reading
+ONE tree. Comparing two trees needs `analyse`'s extra fields, which `census-766-unlifted-tests.py`
+reads: `loud_tier` (a `guard` whose `else` records an issue or throws is a loud failure, not a
+skip, and a `withKnownIssue` body is not a live assertion) and `live_pins` (value-pinning sites
+outside `withKnownIssue`, so a head with fewer than `main` has dropped pins). The plain `tier`
+and the `--summary` counts are unchanged; a recording guard still tiers ESCAPABLE here.
+**Still not covered:** a test renamed or removed on `main` reads as a head-only test there, so a
+"new" clean test can be `main`'s rename of it; only a hand check against the two files tells.
+
 NOT FOR `gate-scripts`
 ----------------------
 Its subject is the `exec/766-*` branches, not `main`, and it is meant to be scoped to a file list a
@@ -359,8 +368,90 @@ def tests_in(path: str):
         yield i + 1, m.group("name"), text[s:e]
 
 
-def inspect(path: str):
-    """Yield one finding dict per `@Test` whose assertions cannot fail on a wrong value."""
+WITH_KNOWN_ISSUE = re.compile(r"\bwithKnownIssue\b")
+LOUD_ELSE = re.compile(r"\bIssue\.record\b|\bthrow\b|\bfatalError\b|\bpreconditionFailure\b")
+
+
+def _skip_parens(text: str, i: int) -> int:
+    """Offset just past the paren group opening at `i` (string-aware), or `i` if none opens."""
+    n = len(text)
+    j = i
+    while j < n and text[j] in " \t\n":
+        j += 1
+    if j >= n or text[j] != "(":
+        return i
+    depth = 0
+    while j < n:
+        c = text[j]
+        if c == '"':
+            j += 1
+            while j < n and text[j] != '"':
+                j += 2 if text[j] == "\\" else 1
+        elif c == "(":
+            depth += 1
+        elif c == ")":
+            depth -= 1
+            if depth == 0:
+                return j + 1
+        j += 1
+    return i
+
+
+def strip_known_issue(body: str) -> tuple[str, bool]:
+    """`body` with every `withKnownIssue` closure removed, and whether there was one (#3301).
+
+    An assertion inside `withKnownIssue` is expected to FAIL, so it records what the kernel does
+    wrong today and pins nothing about a correct answer. The gain comparison must not read it as a
+    live pin: a v5 test that wraps its hit expectations in it is not stronger than a main test
+    asserting the real hits."""
+    out, pos, found = [], 0, False
+    for m in WITH_KNOWN_ISSUE.finditer(body):
+        if m.start() < pos:
+            continue
+        j = _skip_parens(body, m.end())
+        k = j
+        while k < len(body) and body[k] in " \t\n":
+            k += 1
+        if k >= len(body) or body[k] != "{":
+            continue
+        s, e = balanced_body(body, k)
+        if s < 0 or e < 0:
+            continue
+        out.append(body[pos:m.start()])
+        pos = e
+        found = True
+    out.append(body[pos:])
+    return "".join(out), found
+
+
+def silent_guard_exit(body: str) -> bool:
+    """True when some `guard`'s `else` returns WITHOUT recording an issue or throwing (#3301).
+
+    That is the vacuous pass. `guard let x = ... else { Issue.record(...); return }` fails the
+    test, so it is a fail-loudly guard and not a skip."""
+    for m in GUARD_RETURN.finditer(body):
+        s, e = balanced_body(body, m.end())
+        if s < 0 or e < 0:
+            continue
+        blk = body[s:e]
+        if re.search(r"\breturn\b", blk) and not LOUD_ELSE.search(blk):
+            return True
+    return False
+
+
+def analyse(path: str):
+    """Yield one dict for EVERY `@Test` in `path`, clean ones included.
+
+    `tier` is the tier `inspect` has always reported (0 clean, 1 ESCAPABLE, 2 SEVERE as the
+    name). The extra fields exist for the gain comparison in `census-766-unlifted-tests.py`
+    (#3301) and never change `tier`:
+
+      * `loud_tier`: the tier with a fail-loudly guard not counted as an escape and with
+        `withKnownIssue` bodies removed, so a recording guard does not read as weaker than a
+        force-unwrap and an expected-failure body does not read as a live assertion.
+      * `live_pins`: pinning assertion sites outside `withKnownIssue`. A head with fewer than
+        main for the same test has dropped pins, whatever its tier says.
+    """
     helpers = helpers_in(path)
     text = open(path, encoding="utf-8", errors="ignore").read()
     spans = type_spans(text)
@@ -383,29 +474,53 @@ def inspect(path: str):
             escapes.append("if-let-no-else")
         if NONNEG_INT.search(body):
             escapes.append("if-int-ge-zero")
-        if args and pinning and not escapes:
-            continue
         reasons = []
         if not args:
             reasons.append("no-assertions")
         elif not pinning:
             reasons.append("all-assertions-weak:" + ",".join(sorted({s for s in shapes if s})))
-        reasons += escapes
-        if not reasons:
-            continue
+        if not (args and pinning and not escapes):
+            reasons += escapes
         # SEVERE is the tier that predicted batch 1's blind tests: nothing in the test pins a
         # value, so no wrong value can fail it. ESCAPABLE is the weaker signal: the test does pin
         # a value, but a nil or a false from the bridge skips the assertion instead of failing it.
         severe = not args or not pinning
+        tier = 0 if not reasons else (2 if severe else 1)
+
+        live, _had_kni = strip_known_issue(body)
+        l_args = assertion_args(live)
+        l_pins = [a for a in l_args if weak(a) is None]
+        l_esc = []
+        if silent_guard_exit(live):
+            l_esc.append("guard-else-return")
+        if len(IF_LET.findall(live)) > len(re.findall(r"\}\s*else\s*\{", live)):
+            l_esc.append("if-let-no-else")
+        if NONNEG_INT.search(live):
+            l_esc.append("if-int-ge-zero")
+        if not l_pins:
+            loud = 2
+        elif l_esc:
+            loud = 1
+        else:
+            loud = 0
         yield {
             "file": path,
             "line": line_no,
             "test": name,
             "assertions": len(args),
             "pinning": len(pinning),
-            "tier": "SEVERE" if severe else "ESCAPABLE",
+            "tier": {0: "clean", 1: "ESCAPABLE", 2: "SEVERE"}[tier],
             "reasons": reasons,
+            "loud_tier": loud,
+            "live_pins": len(l_pins),
         }
+
+
+def inspect(path: str):
+    """Yield one finding dict per `@Test` whose assertions cannot fail on a wrong value."""
+    for f in analyse(path):
+        if f["tier"] != "clean":
+            yield f
 
 
 def swift_files(args) -> list[str]:
@@ -734,6 +849,45 @@ struct OnlySuite {
 }
 """)
     cases.append(("a file-scope helper is still visible inside a suite (#2964)", got == []))
+
+    # 21. #3301. `analyse` reports clean tests too, and its `loud_tier` does not change `tier`.
+    #     A guard whose else records an issue is ESCAPABLE in `tier` (summary population,
+    #     unchanged) and clean in `loud_tier`; a silent one is ESCAPABLE in both.
+    def prof(src):
+        with tempfile.NamedTemporaryFile("w", suffix=".swift", delete=False,
+                                         encoding="utf-8") as fh:
+            fh.write(src)
+            q = fh.name
+        try:
+            return list(analyse(q))
+        finally:
+            os.unlink(q)
+
+    loud = prof("""@Test func a() throws {
+  guard let s = f() else { Issue.record("nil"); return }
+  #expect(abs(s - 1) < 1e-9)
+}
+""")[0]
+    silent = prof("""@Test func a() throws {
+  guard let s = f() else { return }
+  #expect(abs(s - 1) < 1e-9)
+}
+""")[0]
+    cases.append(("a recording guard keeps tier ESCAPABLE but is clean in loud_tier (#3301)",
+                  loud["tier"] == "ESCAPABLE" and loud["loud_tier"] == 0
+                  and silent["tier"] == "ESCAPABLE" and silent["loud_tier"] == 1))
+
+    # 22. #3301. `withKnownIssue` assertions are not live pins; a clean test is still reported.
+    ki = prof("""@Test func a() {
+  #expect(abs(x - 1) < 1e-9)
+  withKnownIssue("#9") {
+    #expect(abs(y - 2) < 1e-9)
+    #expect(z == 3)
+  }
+}
+""")[0]
+    cases.append(("withKnownIssue assertions are excluded from live_pins (#3301)",
+                  ki["tier"] == "clean" and ki["pinning"] == 3 and ki["live_pins"] == 1))
 
     failures = 0
     for label, ok in cases:
