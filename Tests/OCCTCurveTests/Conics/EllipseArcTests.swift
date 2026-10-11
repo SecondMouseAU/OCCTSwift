@@ -90,7 +90,7 @@ struct EllipseArcTests {
         // The parameter midpoint is (10 cos pi/4, 5 sin pi/4, 0).
         #expect(
             vectorDistance(
-                arc.point(at: Double.pi / 4), SIMD3(7.0710678118654755, 3.5355339059327373, 0))
-                < 1e-12)
+                arc.point(at: Double.pi / 4),
+                SIMD3(10 * cos(Double.pi / 4), 5 * sin(Double.pi / 4), 0)) < 1e-12)
     }
 }

@@ -37,7 +37,6 @@ struct LocalAnalysisCurveContinuityTests {
             u2: c2.domain.lowerBound, order: .g1)
         {
             #expect(analysis.isG1 == true)
-            #expect(analysis.g1Angle >= 0)
             // #766: `>= 0` held for any angle. The two fits share a tangent direction at (5,0,0):
             // LocalAnalysis_CurveContinuity reports G1Angle 1.9e-17.
             #expect(analysis.g1Angle < 1e-9, "g1Angle \(analysis.g1Angle)")
@@ -69,7 +68,6 @@ struct LocalAnalysisCurveContinuityTests {
             // `order` is the request echoed back, so pinning it to the default is all it can
             // tell us; the measurement is `c1Ratio`, which the default order does compute.
             #expect(a.order == .c2)
-            #expect(a.c1Ratio > 0)
             // #766: `> 0` held for any ratio; the two fits have equal first-derivative magnitude.
             #expect(abs(a.c1Ratio - 1) < 1e-9, "c1Ratio \(a.c1Ratio)")
         } else {

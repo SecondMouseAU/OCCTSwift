@@ -32,6 +32,8 @@ struct Adaptor3dIsoCurveTests {
         for (p, zk) in zip(pts, z) {
             #expect(abs(p.x - 10) < 1e-9)
             #expect(abs(p.y) < 1e-9)
+            // z reaches 1e6, where one double ulp is ~1.2e-10, so an absolute 1e-9 would sit within
+            // a few ulps of the representable spacing; 1e-6 is a relative 1e-12.
             #expect(abs(p.z - zk) < 1e-6)
         }
     }
