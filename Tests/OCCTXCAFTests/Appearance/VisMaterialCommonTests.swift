@@ -5,9 +5,11 @@ import Testing
 
 @Suite("XCAFDoc_VisMaterialCommon Tests")
 struct VisMaterialCommonTests {
-    /// OCCT's own default constructor (`XCAFDoc_VisMaterialCommon.hxx`): ambient 0.1, diffuse 0.8,
-    /// specular 0.2, emissive 0, shininess 1, transparency 0, defined. Every member is read, so a
-    /// default copied from the wrong colour slot shows.
+    /// The defaults are OCCT's own.
+    ///
+    /// `XCAFDoc_VisMaterialCommon.hxx` constructs ambient 0.1, diffuse 0.8, specular 0.2,
+    /// emissive 0, shininess 1, transparency 0 and defined. Every member is read, so a default
+    /// copied from the wrong colour slot shows.
     @Test func defaultValues() {
         let mat = VisMaterialCommon()
         #expect(mat.isDefined)
