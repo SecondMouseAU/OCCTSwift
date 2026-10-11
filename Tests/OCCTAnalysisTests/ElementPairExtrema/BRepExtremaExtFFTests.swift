@@ -153,4 +153,18 @@ struct BRepExtremaExtFFTests {
             Issue.record("the nearest pair reported no point on face 2")
         }
     }
+
+    // #766 (#2253): two pins the suite above does not make. The face index is honoured, so the
+    // x = -2.5 cap against the same x = 10 cap is 12.5 apart where the facing caps are 7.5; and
+    // two perpendicular planar faces have no extremum at all (NbExt() == 0), so the API is nil.
+    // Both are the pinned kernel's answers for the 36 face pairs, in
+    // Scripts/repro/766-brepextrema-extff/transcript.txt.
+    @Test("Face index selects the plane pair, and perpendicular planes answer nil (#2253)")
+    func faceIndexIsHonouredAndPerpendicularPlanesAreNil() throws {
+        let (box1, box2) = try twoCubes()
+        let far = try #require(box1.faceFaceExtrema(faceIndex1: 0, other: box2, faceIndex2: 0))
+        #expect(abs(far.distance - 12.5) < 1e-12, "expected 12.5, got \(far.distance)")
+        #expect(far.isParallel)
+        #expect(box1.faceFaceExtrema(faceIndex1: 0, other: box2, faceIndex2: 2) == nil)
+    }
 }

@@ -5,14 +5,18 @@ import Testing
 
 @Suite("BRepGProp Sinert Tests")
 struct BRepGPropSinertTests {
+    // #766: the face came from `if let face = faces.first`, so a box with no faces passed with
+    // nothing asserted, and the centre of mass was never read. `Shape.box` is centred on the
+    // origin and `faces()[0]` is the x = -5 face (TopExp::MapShapes order): area 100, centroid
+    // (-5, 0, 0), probed in Scripts/repro/766-brepgpropsinert.
     @Test("face surface inertia")
-    func faceSurfaceInertia() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
-        let faces = box.faces()
-        if let face = faces.first {
-            let inertia = face.surfaceInertia
-            #expect(abs(inertia.area - 100.0) < 1e-9, "area was \(inertia.area)")
-        }
+    func faceSurfaceInertia() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let face = try #require(box.faces().first)
+        let inertia = face.surfaceInertia
+        #expect(abs(inertia.area - 100.0) < 1e-9, "area was \(inertia.area)")
+        let centre = try #require(inertia.centerOfMass)
+        #expect(vectorDistance(centre, SIMD3(-5, 0, 0)) < 1e-9, "centre of mass was \(centre)")
     }
 
     /// #2204: the adaptive overload integrates the face, and used to integrate nothing.

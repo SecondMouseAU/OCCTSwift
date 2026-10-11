@@ -1,0 +1,2 @@
+unmeshed (no triangulation): ok=0
+polyDist (both meshed at 0.1): ok=1 distance=10.123940560713 p1=(4.96354437, -1.21571775e-15, 0.602683401) p2=(15.0465703, 0.680833245, -1.66533454e-15)
