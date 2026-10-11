@@ -1,0 +1,1033 @@
+id,family,subset,op,fraction,cprobe_cls,swift,agree
+0,box-10x10x10,single,fillet,0.1,OK,swift=shape valid=1 vol=997.8539816339743 faces=7,1
+1,box-10x10x10,single,fillet,0.25,OK,swift=shape valid=1 vol=986.5873852123406 faces=7,1
+2,box-10x10x10,single,fillet,0.4,OK,swift=shape valid=1 vol=965.6637061435918 faces=7,1
+3,box-10x10x10,single,fillet,0.5,OK,swift=shape valid=1 vol=946.3495408493621 faces=7,1
+4,box-10x10x10,single,fillet,0.6,OK,swift=shape valid=1 vol=922.7433388230814 faces=7,1
+5,box-10x10x10,single,fillet,0.9,OK,swift=shape valid=1 vol=826.1725123519333 faces=7,1
+6,box-10x10x10,single,fillet,1.0,OK,swift=shape valid=1 vol=785.3981633974482 faces=5,1
+12,box-10x10x10,single,chamfer_sym,0.1,OK,swift=shape valid=1 vol=994.9999999999998 faces=7,1
+13,box-10x10x10,single,chamfer_sym,0.25,OK,swift=shape valid=1 vol=968.7500000000001 faces=7,1
+14,box-10x10x10,single,chamfer_sym,0.4,OK,swift=shape valid=1 vol=920.0 faces=7,1
+15,box-10x10x10,single,chamfer_sym,0.5,OK,swift=shape valid=1 vol=874.9999999999999 faces=7,1
+16,box-10x10x10,single,chamfer_sym,0.6,OK,swift=shape valid=1 vol=820.0 faces=7,1
+17,box-10x10x10,single,chamfer_sym,0.9,OK,swift=shape valid=1 vol=595.0 faces=7,1
+18,box-10x10x10,single,chamfer_sym,1.0,DECLINED,swift=nil,1
+24,box-10x10x10,single,chamfer2,0.1,OK,swift=shape valid=1 vol=997.5 faces=7,1
+25,box-10x10x10,single,chamfer2,0.25,OK,swift=shape valid=1 vol=984.375 faces=7,1
+26,box-10x10x10,single,chamfer2,0.4,OK,swift=shape valid=1 vol=960.0 faces=7,1
+27,box-10x10x10,single,chamfer2,0.5,OK,swift=shape valid=1 vol=937.5 faces=7,1
+28,box-10x10x10,single,chamfer2,0.6,OK,swift=shape valid=1 vol=910.0000000000001 faces=7,1
+29,box-10x10x10,single,chamfer2,0.9,OK,swift=shape valid=1 vol=797.5000000000001 faces=7,1
+30,box-10x10x10,single,chamfer2,1.0,DECLINED,swift=nil,1
+36,box-10x10x10,opposite,fillet,0.1,OK,swift=shape valid=1 vol=995.7079632679489 faces=8,1
+37,box-10x10x10,opposite,fillet,0.25,OK,swift=shape valid=1 vol=973.174770424681 faces=8,1
+38,box-10x10x10,opposite,fillet,0.4,OK,swift=shape valid=1 vol=931.3274122871837 faces=8,1
+39,box-10x10x10,opposite,fillet,0.5,OK,swift=shape valid=1 vol=892.6990816987244 faces=7,1
+48,box-10x10x10,opposite,chamfer_sym,0.1,OK,swift=shape valid=1 vol=990.0 faces=8,1
+49,box-10x10x10,opposite,chamfer_sym,0.25,OK,swift=shape valid=1 vol=937.5 faces=8,1
+50,box-10x10x10,opposite,chamfer_sym,0.4,OK,swift=shape valid=1 vol=839.9999999999999 faces=8,1
+51,box-10x10x10,opposite,chamfer_sym,0.5,DECLINED,swift=nil,1
+60,box-10x10x10,opposite,chamfer2,0.1,OK,swift=shape valid=1 vol=994.9999999999999 faces=8,1
+61,box-10x10x10,opposite,chamfer2,0.25,OK,swift=shape valid=1 vol=968.75 faces=8,1
+62,box-10x10x10,opposite,chamfer2,0.4,OK,swift=shape valid=1 vol=919.9999999999999 faces=8,1
+63,box-10x10x10,opposite,chamfer2,0.5,DECLINED,swift=nil,1
+72,box-10x10x10,diagonal,fillet,0.1,OK,swift=shape valid=1 vol=995.7079632679489 faces=8,1
+73,box-10x10x10,diagonal,fillet,0.25,OK,swift=shape valid=1 vol=973.1747704246809 faces=8,1
+74,box-10x10x10,diagonal,fillet,0.4,OK,swift=shape valid=1 vol=931.3274122871834 faces=8,1
+75,box-10x10x10,diagonal,fillet,0.5,OK,swift=shape valid=1 vol=892.6990816987243 faces=8,1
+76,box-10x10x10,diagonal,fillet,0.6,OK,swift=shape valid=1 vol=845.4866776461629 faces=8,1
+77,box-10x10x10,diagonal,fillet,0.9,OK,swift=shape valid=1 vol=652.3450247038667 faces=8,1
+78,box-10x10x10,diagonal,fillet,1.0,OK,swift=shape valid=1 vol=570.7963267948965 faces=4,1
+84,box-10x10x10,diagonal,chamfer_sym,0.1,OK,swift=shape valid=1 vol=990.0 faces=8,1
+85,box-10x10x10,diagonal,chamfer_sym,0.25,OK,swift=shape valid=1 vol=937.5 faces=8,1
+86,box-10x10x10,diagonal,chamfer_sym,0.4,OK,swift=shape valid=1 vol=840.0 faces=8,1
+87,box-10x10x10,diagonal,chamfer_sym,0.5,OK,swift=shape valid=1 vol=749.9999999999998 faces=8,1
+88,box-10x10x10,diagonal,chamfer_sym,0.6,OK,swift=shape valid=1 vol=639.9999999999999 faces=8,1
+89,box-10x10x10,diagonal,chamfer_sym,0.9,OK,swift=shape valid=1 vol=189.99999999999994 faces=8,1
+90,box-10x10x10,diagonal,chamfer_sym,1.0,DECLINED,swift=nil,1
+96,box-10x10x10,adjacent,fillet,0.1,OK,swift=shape valid=1 vol=995.8038336047463 faces=8,1
+97,box-10x10x10,adjacent,fillet,0.25,OK,swift=shape valid=1 vol=974.6727444466546 faces=8,1
+98,box-10x10x10,adjacent,fillet,0.4,OK,swift=shape valid=1 vol=937.4631140389155 faces=8,1
+99,box-10x10x10,adjacent,fillet,0.5,OK,swift=shape valid=1 vol=904.6828741826341 faces=8,1
+100,box-10x10x10,adjacent,fillet,0.6,OK,swift=shape valid=1 vol=866.1946710583874 faces=8,1
+101,box-10x10x10,adjacent,fillet,0.9,OK,swift=shape valid=1 vol=722.234502470512 faces=8,1
+102,box-10x10x10,adjacent,fillet,1.0,DECLINED,swift=nil,1
+108,box-10x10x10,adjacent,chamfer_sym,0.1,OK,swift=shape valid=1 vol=990.3333333333335 faces=8,1
+109,box-10x10x10,adjacent,chamfer_sym,0.25,OK,swift=shape valid=1 vol=942.7083333333333 faces=8,1
+110,box-10x10x10,adjacent,chamfer_sym,0.4,OK,swift=shape valid=1 vol=861.3333333333334 faces=8,1
+111,box-10x10x10,adjacent,chamfer_sym,0.5,OK,swift=shape valid=1 vol=791.6666666666666 faces=8,1
+112,box-10x10x10,adjacent,chamfer_sym,0.6,OK,swift=shape valid=1 vol=712.0000000000001 faces=8,1
+113,box-10x10x10,adjacent,chamfer_sym,0.9,OK,swift=shape valid=1 vol=432.99999999999994 faces=8,1
+114,box-10x10x10,adjacent,chamfer_sym,1.0,DECLINED,swift=nil,1
+120,box-10x10x10,adjacent,chamfer2,0.1,OK,swift=shape valid=1 vol=995.1666666666666 faces=8,1
+121,box-10x10x10,adjacent,chamfer2,0.25,OK,swift=shape valid=1 vol=971.3541666666665 faces=8,1
+122,box-10x10x10,adjacent,chamfer2,0.4,OK,swift=shape valid=1 vol=930.6666666666667 faces=8,1
+123,box-10x10x10,adjacent,chamfer2,0.5,OK,swift=shape valid=1 vol=895.8333333333333 faces=8,1
+124,box-10x10x10,adjacent,chamfer2,0.6,OK,swift=shape valid=1 vol=856.0000000000001 faces=8,1
+125,box-10x10x10,adjacent,chamfer2,0.9,OK,swift=shape valid=1 vol=716.5000000000002 faces=8,1
+126,box-10x10x10,adjacent,chamfer2,1.0,DECLINED,swift=nil,1
+132,box-10x10x10,vertex3,fillet,0.1,OK,swift=shape valid=1 vol=993.7293491873295 faces=10,1
+133,box-10x10x10,vertex3,fillet,0.25,OK,swift=shape valid=1 vol=962.3778475964898 faces=10,1
+134,box-10x10x10,vertex3,fillet,0.4,OK,swift=shape valid=1 vol=907.7049926967566 faces=10,1
+135,box-10x10x10,vertex3,fillet,0.5,OK,swift=shape valid=1 vol=859.9741582238306 faces=10,1
+136,box-10x10x10,vertex3,fillet,0.6,OK,swift=shape valid=1 vol=804.3893421169304 faces=10,1
+137,box-10x10x10,vertex3,fillet,0.9,OK,swift=shape valid=1 vol=600.5552611167401 faces=10,1
+138,box-10x10x10,vertex3,fillet,1.0,DECLINED,swift=nil,1
+144,box-10x10x10,vertex3,chamfer_sym,0.1,OK,swift=shape valid=1 vol=985.6666666666666 faces=10,1
+145,box-10x10x10,vertex3,chamfer_sym,0.25,OK,swift=shape valid=1 vol=916.6666666666667 faces=10,1
+146,box-10x10x10,vertex3,chamfer_sym,0.4,OK,swift=shape valid=1 vol=802.6666666666666 faces=10,1
+147,box-10x10x10,vertex3,chamfer_sym,0.5,OK,swift=shape valid=1 vol=708.3333333333334 faces=10,1
+156,box-10x10x10,topface,fillet,0.1,OK,swift=shape valid=1 vol=991.7994078830887 faces=10,1
+157,box-10x10x10,topface,fillet,0.25,OK,swift=shape valid=1 vol=952.3414369520149 faces=10,1
+158,box-10x10x10,topface,fillet,0.4,OK,swift=shape valid=1 vol=887.1976315811404 faces=10,1
+159,box-10x10x10,topface,fillet,0.5,DECLINED,swift=nil,1
+160,box-10x10x10,topface,fillet,0.6,INVALID,swift=nil,1
+161,box-10x10x10,topface,fillet,0.9,INVALID,swift=nil,1
+168,box-10x10x10,topface,chamfer_sym,0.1,OK,swift=shape valid=1 vol=981.3333333333335 faces=10,1
+169,box-10x10x10,topface,chamfer_sym,0.25,OK,swift=shape valid=1 vol=895.8333333333334 faces=10,1
+170,box-10x10x10,topface,chamfer_sym,0.4,OK,swift=shape valid=1 vol=765.3333333333333 faces=10,1
+171,box-10x10x10,topface,chamfer_sym,0.5,INVALID,swift=nil,1
+180,box-10x10x10,topface,chamfer2,0.1,OK,swift=shape valid=1 vol=990.6666666666664 faces=10,1
+181,box-10x10x10,topface,chamfer2,0.25,OK,swift=shape valid=1 vol=947.9166666666667 faces=10,1
+182,box-10x10x10,topface,chamfer2,0.4,OK,swift=shape valid=1 vol=882.6666666666665 faces=10,1
+183,box-10x10x10,topface,chamfer2,0.5,INVALID,swift=nil,1
+192,box-10x10x10,all12,fillet,0.1,OK,swift=shape valid=1 vol=975.5870138909415 faces=26,1
+193,box-10x10x10,all12,fillet,0.25,OK,swift=shape valid=1 vol=859.9741582238305 faces=26,1
+194,box-10x10x10,all12,fillet,0.4,OK,swift=shape valid=1 vol=673.6754678509495 faces=26,1
+195,box-10x10x10,all12,fillet,0.5,DECLINED,swift=nil,1
+196,box-10x10x10,all12,fillet,0.6,INVALID,swift=nil,1
+197,box-10x10x10,all12,fillet,0.9,INVALID,swift=nil,1
+204,box-10x10x10,all12,chamfer_sym,0.1,OK,swift=shape valid=1 vol=945.333333333333 faces=26,1
+205,box-10x10x10,all12,chamfer_sym,0.25,OK,swift=shape valid=1 vol=708.3333333333333 faces=26,1
+206,box-10x10x10,all12,chamfer_sym,0.4,OK,swift=shape valid=1 vol=381.33333333333337 faces=26,1
+207,box-10x10x10,all12,chamfer_sym,0.5,WRONG-VOL,swift=shape valid=1 vol=999.9999999999998 faces=6,1
+216,box-4x10x6,single,fillet,0.1,OK,swift=shape valid=1 vol=239.6566370614359 faces=7,1
+217,box-4x10x6,single,fillet,0.25,OK,swift=shape valid=1 vol=237.85398163397446 faces=7,1
+218,box-4x10x6,single,fillet,0.4,OK,swift=shape valid=1 vol=234.50619298297465 faces=7,1
+219,box-4x10x6,single,fillet,0.5,OK,swift=shape valid=1 vol=231.41592653589794 faces=7,1
+220,box-4x10x6,single,fillet,0.6,OK,swift=shape valid=1 vol=227.63893421169303 faces=7,1
+221,box-4x10x6,single,fillet,0.9,OK,swift=shape valid=1 vol=212.18760197630928 faces=7,1
+222,box-4x10x6,single,fillet,1.0,OK,swift=shape valid=1 vol=205.66370614359167 faces=6,1
+228,box-4x10x6,single,chamfer_sym,0.1,OK,swift=shape valid=1 vol=239.20000000000002 faces=7,1
+229,box-4x10x6,single,chamfer_sym,0.25,OK,swift=shape valid=1 vol=234.99999999999997 faces=7,1
+230,box-4x10x6,single,chamfer_sym,0.4,OK,swift=shape valid=1 vol=227.19999999999996 faces=7,1
+231,box-4x10x6,single,chamfer_sym,0.5,OK,swift=shape valid=1 vol=219.99999999999997 faces=7,1
+232,box-4x10x6,single,chamfer_sym,0.6,OK,swift=shape valid=1 vol=211.2 faces=7,1
+233,box-4x10x6,single,chamfer_sym,0.9,OK,swift=shape valid=1 vol=175.19999999999996 faces=7,1
+234,box-4x10x6,single,chamfer_sym,1.0,DECLINED,swift=nil,1
+240,box-4x10x6,single,chamfer2,0.1,OK,swift=shape valid=1 vol=239.59999999999997 faces=7,1
+241,box-4x10x6,single,chamfer2,0.25,OK,swift=shape valid=1 vol=237.5 faces=7,1
+242,box-4x10x6,single,chamfer2,0.4,OK,swift=shape valid=1 vol=233.59999999999997 faces=7,1
+243,box-4x10x6,single,chamfer2,0.5,OK,swift=shape valid=1 vol=229.99999999999997 faces=7,1
+244,box-4x10x6,single,chamfer2,0.6,OK,swift=shape valid=1 vol=225.59999999999997 faces=7,1
+245,box-4x10x6,single,chamfer2,0.9,OK,swift=shape valid=1 vol=207.60000000000005 faces=7,1
+246,box-4x10x6,single,chamfer2,1.0,DECLINED,swift=nil,1
+252,box-4x10x6,opposite,fillet,0.1,OK,swift=shape valid=1 vol=239.3132741228718 faces=8,1
+253,box-4x10x6,opposite,fillet,0.25,OK,swift=shape valid=1 vol=235.7079632679489 faces=8,1
+254,box-4x10x6,opposite,fillet,0.4,OK,swift=shape valid=1 vol=229.0123859659494 faces=8,1
+255,box-4x10x6,opposite,fillet,0.5,OK,swift=shape valid=1 vol=222.83185307179585 faces=7,1
+264,box-4x10x6,opposite,chamfer_sym,0.1,OK,swift=shape valid=1 vol=238.4 faces=8,1
+265,box-4x10x6,opposite,chamfer_sym,0.25,OK,swift=shape valid=1 vol=229.99999999999997 faces=8,1
+266,box-4x10x6,opposite,chamfer_sym,0.4,OK,swift=shape valid=1 vol=214.4 faces=8,1
+267,box-4x10x6,opposite,chamfer_sym,0.5,DECLINED,swift=nil,1
+276,box-4x10x6,opposite,chamfer2,0.1,OK,swift=shape valid=1 vol=239.20000000000002 faces=8,1
+277,box-4x10x6,opposite,chamfer2,0.25,OK,swift=shape valid=1 vol=234.99999999999994 faces=8,1
+278,box-4x10x6,opposite,chamfer2,0.4,OK,swift=shape valid=1 vol=227.2 faces=8,1
+279,box-4x10x6,opposite,chamfer2,0.5,DECLINED,swift=nil,1
+288,box-4x10x6,diagonal,fillet,0.1,OK,swift=shape valid=1 vol=239.3132741228718 faces=8,1
+289,box-4x10x6,diagonal,fillet,0.25,OK,swift=shape valid=1 vol=235.7079632679489 faces=8,1
+290,box-4x10x6,diagonal,fillet,0.4,OK,swift=shape valid=1 vol=229.01238596594933 faces=8,1
+291,box-4x10x6,diagonal,fillet,0.5,OK,swift=shape valid=1 vol=222.83185307179588 faces=8,1
+292,box-4x10x6,diagonal,fillet,0.6,OK,swift=shape valid=1 vol=215.27786842338608 faces=8,1
+293,box-4x10x6,diagonal,fillet,0.9,OK,swift=shape valid=1 vol=184.37520395261862 faces=8,1
+294,box-4x10x6,diagonal,fillet,1.0,OK,swift=shape valid=1 vol=171.32741228718342 faces=6,1
+300,box-4x10x6,diagonal,chamfer_sym,0.1,OK,swift=shape valid=1 vol=238.4 faces=8,1
+301,box-4x10x6,diagonal,chamfer_sym,0.25,OK,swift=shape valid=1 vol=230.0 faces=8,1
+302,box-4x10x6,diagonal,chamfer_sym,0.4,OK,swift=shape valid=1 vol=214.39999999999998 faces=8,1
+303,box-4x10x6,diagonal,chamfer_sym,0.5,OK,swift=shape valid=1 vol=199.99999999999997 faces=8,1
+304,box-4x10x6,diagonal,chamfer_sym,0.6,OK,swift=shape valid=1 vol=182.39999999999998 faces=8,1
+305,box-4x10x6,diagonal,chamfer_sym,0.9,OK,swift=shape valid=1 vol=110.39999999999999 faces=8,1
+306,box-4x10x6,diagonal,chamfer_sym,1.0,DECLINED,swift=nil,1
+312,box-4x10x6,adjacent,fillet,0.1,OK,swift=shape valid=1 vol=239.52542759534126 faces=8,1
+313,box-4x10x6,adjacent,fillet,0.25,OK,swift=shape valid=1 vol=237.09144462530384 faces=8,1
+314,box-4x10x6,adjacent,fillet,0.4,OK,swift=shape valid=1 vol=232.70135508186445 faces=8,1
+315,box-4x10x6,adjacent,fillet,0.5,OK,swift=shape valid=1 vol=228.74925985293737 faces=8,1
+316,box-4x10x6,adjacent,fillet,0.6,OK,swift=shape valid=1 vol=224.01981944951552 faces=8,1
+317,box-4x10x6,adjacent,fillet,0.9,OK,swift=shape valid=1 vol=205.5355693438303 faces=8,1
+318,box-4x10x6,adjacent,fillet,1.0,DECLINED,swift=nil,1
+324,box-4x10x6,adjacent,chamfer_sym,0.1,OK,swift=shape valid=1 vol=238.90133333333333 faces=8,1
+325,box-4x10x6,adjacent,chamfer_sym,0.25,OK,swift=shape valid=1 vol=233.33333333333334 faces=8,1
+326,box-4x10x6,adjacent,chamfer_sym,0.4,OK,swift=shape valid=1 vol=223.44533333333328 faces=8,1
+327,box-4x10x6,adjacent,chamfer_sym,0.5,OK,swift=shape valid=1 vol=214.66666666666669 faces=8,1
+328,box-4x10x6,adjacent,chamfer_sym,0.6,OK,swift=shape valid=1 vol=204.28799999999998 faces=8,1
+329,box-4x10x6,adjacent,chamfer_sym,0.9,OK,swift=shape valid=1 vol=164.832 faces=8,1
+330,box-4x10x6,adjacent,chamfer_sym,1.0,DECLINED,swift=nil,1
+336,box-4x10x6,adjacent,chamfer2,0.1,OK,swift=shape valid=1 vol=239.45066666666662 faces=8,1
+337,box-4x10x6,adjacent,chamfer2,0.25,OK,swift=shape valid=1 vol=236.66666666666663 faces=8,1
+338,box-4x10x6,adjacent,chamfer2,0.4,OK,swift=shape valid=1 vol=231.72266666666667 faces=8,1
+339,box-4x10x6,adjacent,chamfer2,0.5,OK,swift=shape valid=1 vol=227.33333333333337 faces=8,1
+340,box-4x10x6,adjacent,chamfer2,0.6,OK,swift=shape valid=1 vol=222.14399999999998 faces=8,1
+341,box-4x10x6,adjacent,chamfer2,0.9,OK,swift=shape valid=1 vol=202.41600000000005 faces=8,1
+342,box-4x10x6,adjacent,chamfer2,1.0,DECLINED,swift=nil,1
+348,box-4x10x6,vertex3,fillet,0.1,OK,swift=shape valid=1 vol=239.32398799713778 faces=10,1
+349,box-4x10x6,vertex3,fillet,0.25,OK,swift=shape valid=1 vol=235.87536755335495 faces=10,1
+350,box-4x10x6,vertex3,fillet,0.4,OK,swift=shape valid=1 vol=229.69807391897214 faces=10,1
+351,box-4x10x6,vertex3,fillet,0.5,OK,swift=shape valid=1 vol=224.1710873550435 faces=10,1
+352,box-4x10x6,vertex3,fillet,0.6,OK,swift=shape valid=1 vol=217.5920652648379 faces=10,1
+353,box-4x10x6,vertex3,fillet,0.9,OK,swift=shape valid=1 vol=192.18561829251877 faces=10,1
+354,box-4x10x6,vertex3,fillet,1.0,DECLINED,swift=nil,1
+360,box-4x10x6,vertex3,chamfer_sym,0.1,OK,swift=shape valid=1 vol=238.44266666666664 faces=10,1
+361,box-4x10x6,vertex3,chamfer_sym,0.25,OK,swift=shape valid=1 vol=230.66666666666663 faces=10,1
+362,box-4x10x6,vertex3,chamfer_sym,0.4,OK,swift=shape valid=1 vol=217.13066666666663 faces=10,1
+363,box-4x10x6,vertex3,chamfer_sym,0.5,OK,swift=shape valid=1 vol=205.33333333333334 faces=10,1
+372,box-4x10x6,topface,fillet,0.1,OK,swift=shape valid=1 vol=239.06312665909172 faces=10,1
+373,box-4x10x6,topface,fillet,0.25,OK,swift=shape valid=1 vol=234.37462992604603 faces=10,1
+374,box-4x10x6,topface,fillet,0.4,OK,swift=shape valid=1 vol=226.18807997503524 faces=10,1
+375,box-4x10x6,topface,fillet,0.5,OK,swift=nil,0
+376,box-4x10x6,topface,fillet,0.6,INVALID,swift=nil,1
+377,box-4x10x6,topface,fillet,0.9,INVALID,swift=nil,1
+384,box-4x10x6,topface,chamfer_sym,0.1,OK,swift=shape valid=1 vol=237.84533333333331 faces=10,1
+385,box-4x10x6,topface,chamfer_sym,0.25,OK,swift=shape valid=1 vol=227.3333333333333 faces=10,1
+386,box-4x10x6,topface,chamfer_sym,0.4,OK,swift=shape valid=1 vol=209.6213333333333 faces=10,1
+387,box-4x10x6,topface,chamfer_sym,0.5,DECLINED,swift=nil,1
+396,box-4x10x6,topface,chamfer2,0.1,OK,swift=shape valid=1 vol=238.92266666666663 faces=10,1
+397,box-4x10x6,topface,chamfer2,0.25,OK,swift=shape valid=1 vol=233.6666666666666 faces=10,1
+398,box-4x10x6,topface,chamfer2,0.4,OK,swift=shape valid=1 vol=224.81066666666666 faces=10,1
+399,box-4x10x6,topface,chamfer2,0.5,DECLINED,swift=nil,1
+408,box-4x10x6,all12,fillet,0.1,OK,swift=shape valid=1 vol=237.33880748561512 faces=26,1
+409,box-4x10x6,all12,fillet,0.25,OK,swift=shape valid=1 vol=224.1710873550435 faces=26,1
+410,box-4x10x6,all12,fillet,0.4,OK,swift=shape valid=1 vol=201.53504748797977 faces=26,1
+411,box-4x10x6,all12,fillet,0.5,OK,swift=nil,0
+412,box-4x10x6,all12,fillet,0.6,INVALID,swift=nil,1
+413,box-4x10x6,all12,fillet,0.9,INVALID,swift=nil,1
+420,box-4x10x6,all12,chamfer_sym,0.1,OK,swift=shape valid=1 vol=233.94133333333332 faces=26,1
+421,box-4x10x6,all12,chamfer_sym,0.25,OK,swift=shape valid=1 vol=205.33333333333331 faces=26,1
+422,box-4x10x6,all12,chamfer_sym,0.4,OK,swift=shape valid=1 vol=159.44533333333334 faces=26,1
+423,box-4x10x6,all12,chamfer_sym,0.5,DECLINED,swift=nil,1
+432,box-20x20x2,single,fillet,0.1,OK,swift=shape valid=1 vol=799.828318530718 faces=7,1
+433,box-20x20x2,single,fillet,0.25,OK,swift=shape valid=1 vol=798.9269908169872 faces=7,1
+434,box-20x20x2,single,fillet,0.4,OK,swift=shape valid=1 vol=797.2530964914874 faces=7,1
+435,box-20x20x2,single,fillet,0.5,OK,swift=shape valid=1 vol=795.7079632679489 faces=7,1
+436,box-20x20x2,single,fillet,0.6,OK,swift=shape valid=1 vol=793.8194671058466 faces=7,1
+437,box-20x20x2,single,fillet,0.9,OK,swift=shape valid=1 vol=786.0938009881546 faces=7,1
+438,box-20x20x2,single,fillet,1.0,OK,swift=shape valid=1 vol=782.8318530717958 faces=6,1
+444,box-20x20x2,single,chamfer_sym,0.1,OK,swift=shape valid=1 vol=799.6 faces=7,1
+445,box-20x20x2,single,chamfer_sym,0.25,OK,swift=shape valid=1 vol=797.5 faces=7,1
+446,box-20x20x2,single,chamfer_sym,0.4,OK,swift=shape valid=1 vol=793.6 faces=7,1
+447,box-20x20x2,single,chamfer_sym,0.5,OK,swift=shape valid=1 vol=789.9999999999999 faces=7,1
+448,box-20x20x2,single,chamfer_sym,0.6,OK,swift=shape valid=1 vol=785.5999999999999 faces=7,1
+449,box-20x20x2,single,chamfer_sym,0.9,OK,swift=shape valid=1 vol=767.5999999999999 faces=7,1
+450,box-20x20x2,single,chamfer_sym,1.0,DECLINED,swift=nil,1
+456,box-20x20x2,single,chamfer2,0.1,OK,swift=shape valid=1 vol=799.8 faces=7,1
+457,box-20x20x2,single,chamfer2,0.25,OK,swift=shape valid=1 vol=798.7499999999999 faces=7,1
+458,box-20x20x2,single,chamfer2,0.4,OK,swift=shape valid=1 vol=796.8 faces=7,1
+459,box-20x20x2,single,chamfer2,0.5,OK,swift=shape valid=1 vol=795.0000000000001 faces=7,1
+460,box-20x20x2,single,chamfer2,0.6,OK,swift=shape valid=1 vol=792.8 faces=7,1
+461,box-20x20x2,single,chamfer2,0.9,OK,swift=shape valid=1 vol=783.7999999999998 faces=7,1
+462,box-20x20x2,single,chamfer2,1.0,OK,swift=shape valid=1 vol=780.0 faces=7,1
+468,box-20x20x2,opposite,fillet,0.1,OK,swift=shape valid=1 vol=799.656637061436 faces=8,1
+469,box-20x20x2,opposite,fillet,0.25,OK,swift=shape valid=1 vol=797.8539816339744 faces=8,1
+470,box-20x20x2,opposite,fillet,0.4,OK,swift=shape valid=1 vol=794.5061929829747 faces=8,1
+471,box-20x20x2,opposite,fillet,0.5,OK,swift=shape valid=1 vol=791.4159265358979 faces=8,1
+472,box-20x20x2,opposite,fillet,0.6,OK,swift=shape valid=1 vol=787.638934211693 faces=8,1
+473,box-20x20x2,opposite,fillet,0.9,OK,swift=shape valid=1 vol=772.1876019763095 faces=8,1
+474,box-20x20x2,opposite,fillet,1.0,OK,swift=shape valid=1 vol=765.6637061435916 faces=6,1
+480,box-20x20x2,opposite,chamfer_sym,0.1,OK,swift=shape valid=1 vol=799.2 faces=8,1
+481,box-20x20x2,opposite,chamfer_sym,0.25,OK,swift=shape valid=1 vol=794.9999999999999 faces=8,1
+482,box-20x20x2,opposite,chamfer_sym,0.4,OK,swift=shape valid=1 vol=787.1999999999999 faces=8,1
+483,box-20x20x2,opposite,chamfer_sym,0.5,OK,swift=shape valid=1 vol=779.9999999999999 faces=8,1
+484,box-20x20x2,opposite,chamfer_sym,0.6,OK,swift=shape valid=1 vol=771.2 faces=8,1
+485,box-20x20x2,opposite,chamfer_sym,0.9,OK,swift=shape valid=1 vol=735.2 faces=8,1
+486,box-20x20x2,opposite,chamfer_sym,1.0,DECLINED,swift=nil,1
+492,box-20x20x2,opposite,chamfer2,0.1,OK,swift=shape valid=1 vol=799.5999999999999 faces=8,1
+493,box-20x20x2,opposite,chamfer2,0.25,OK,swift=shape valid=1 vol=797.4999999999997 faces=8,1
+494,box-20x20x2,opposite,chamfer2,0.4,OK,swift=shape valid=1 vol=793.5999999999999 faces=8,1
+495,box-20x20x2,opposite,chamfer2,0.5,OK,swift=shape valid=1 vol=790.0 faces=8,1
+496,box-20x20x2,opposite,chamfer2,0.6,OK,swift=shape valid=1 vol=785.6 faces=8,1
+497,box-20x20x2,opposite,chamfer2,0.9,OK,swift=shape valid=1 vol=767.5999999999999 faces=8,1
+498,box-20x20x2,opposite,chamfer2,1.0,OK,swift=shape valid=1 vol=760.0 faces=8,1
+504,box-20x20x2,diagonal,fillet,0.1,OK,swift=shape valid=1 vol=799.656637061436 faces=8,1
+505,box-20x20x2,diagonal,fillet,0.25,OK,swift=shape valid=1 vol=797.8539816339745 faces=8,1
+506,box-20x20x2,diagonal,fillet,0.4,OK,swift=shape valid=1 vol=794.5061929829747 faces=8,1
+507,box-20x20x2,diagonal,fillet,0.5,OK,swift=shape valid=1 vol=791.4159265358977 faces=8,1
+508,box-20x20x2,diagonal,fillet,0.6,OK,swift=shape valid=1 vol=787.638934211693 faces=8,1
+509,box-20x20x2,diagonal,fillet,0.9,OK,swift=shape valid=1 vol=772.1876019763093 faces=8,1
+510,box-20x20x2,diagonal,fillet,1.0,OK,swift=shape valid=1 vol=765.6637061435918 faces=6,1
+516,box-20x20x2,diagonal,chamfer_sym,0.1,OK,swift=shape valid=1 vol=799.2 faces=8,1
+517,box-20x20x2,diagonal,chamfer_sym,0.25,OK,swift=shape valid=1 vol=795.0 faces=8,1
+518,box-20x20x2,diagonal,chamfer_sym,0.4,OK,swift=shape valid=1 vol=787.2 faces=8,1
+519,box-20x20x2,diagonal,chamfer_sym,0.5,OK,swift=shape valid=1 vol=779.9999999999999 faces=8,1
+520,box-20x20x2,diagonal,chamfer_sym,0.6,OK,swift=shape valid=1 vol=771.2 faces=8,1
+521,box-20x20x2,diagonal,chamfer_sym,0.9,OK,swift=shape valid=1 vol=735.1999999999999 faces=8,1
+522,box-20x20x2,diagonal,chamfer_sym,1.0,DECLINED,swift=nil,1
+528,box-20x20x2,adjacent,fillet,0.1,OK,swift=shape valid=1 vol=799.6574040450898 faces=8,1
+529,box-20x20x2,adjacent,fillet,0.25,OK,swift=shape valid=1 vol=797.8659654255856 faces=8,1
+530,box-20x20x2,adjacent,fillet,0.4,OK,swift=shape valid=1 vol=794.5552785946908 faces=8,1
+531,box-20x20x2,adjacent,fillet,0.5,OK,swift=shape valid=1 vol=791.5117968721122 faces=8,1
+532,box-20x20x2,adjacent,fillet,0.6,OK,swift=shape valid=1 vol=787.8045981536286 faces=8,1
+533,box-20x20x2,adjacent,fillet,0.9,OK,swift=shape valid=1 vol=772.7467177867571 faces=8,1
+534,box-20x20x2,adjacent,fillet,1.0,DECLINED,swift=nil,1
+540,box-20x20x2,adjacent,chamfer_sym,0.1,OK,swift=shape valid=1 vol=799.2026666666667 faces=8,1
+541,box-20x20x2,adjacent,chamfer_sym,0.25,OK,swift=shape valid=1 vol=795.0416666666665 faces=8,1
+542,box-20x20x2,adjacent,chamfer_sym,0.4,OK,swift=shape valid=1 vol=787.3706666666666 faces=8,1
+543,box-20x20x2,adjacent,chamfer_sym,0.5,OK,swift=shape valid=1 vol=780.3333333333333 faces=8,1
+544,box-20x20x2,adjacent,chamfer_sym,0.6,OK,swift=shape valid=1 vol=771.7760000000001 faces=8,1
+545,box-20x20x2,adjacent,chamfer_sym,0.9,OK,swift=shape valid=1 vol=737.144 faces=8,1
+546,box-20x20x2,adjacent,chamfer_sym,1.0,DECLINED,swift=nil,1
+552,box-20x20x2,adjacent,chamfer2,0.1,OK,swift=shape valid=1 vol=799.6013333333333 faces=8,1
+553,box-20x20x2,adjacent,chamfer2,0.25,OK,swift=shape valid=1 vol=797.5208333333334 faces=8,1
+554,box-20x20x2,adjacent,chamfer2,0.4,OK,swift=shape valid=1 vol=793.6853333333332 faces=8,1
+555,box-20x20x2,adjacent,chamfer2,0.5,OK,swift=shape valid=1 vol=790.1666666666666 faces=8,1
+556,box-20x20x2,adjacent,chamfer2,0.6,OK,swift=shape valid=1 vol=785.888 faces=8,1
+557,box-20x20x2,adjacent,chamfer2,0.9,OK,swift=shape valid=1 vol=768.572 faces=8,1
+558,box-20x20x2,adjacent,chamfer2,1.0,OK,swift=shape valid=1 vol=761.3333333333334 faces=8,1
+564,box-20x20x2,vertex3,fillet,0.1,OK,swift=shape valid=1 vol=799.6408081487909 faces=10,1
+565,box-20x20x2,vertex3,fillet,0.25,OK,swift=shape valid=1 vol=797.7676062513489 faces=10,1
+566,box-20x20x2,vertex3,fillet,0.4,OK,swift=shape valid=1 vol=794.3172136262514 faces=10,1
+567,box-20x20x2,vertex3,fillet,0.5,OK,swift=shape valid=1 vol=791.1541271480988 faces=10,1
+568,box-20x20x2,vertex3,fillet,0.6,OK,swift=shape valid=1 vol=787.3101555274593 faces=10,1
+569,box-20x20x2,vertex3,fillet,0.9,OK,swift=shape valid=1 vol=771.7732838676122 faces=10,1
+570,box-20x20x2,vertex3,fillet,1.0,DECLINED,swift=nil,1
+576,box-20x20x2,vertex3,chamfer_sym,0.1,OK,swift=shape valid=1 vol=799.1653333333335 faces=10,1
+577,box-20x20x2,vertex3,chamfer_sym,0.25,OK,swift=shape valid=1 vol=794.8333333333334 faces=10,1
+578,box-20x20x2,vertex3,chamfer_sym,0.4,OK,swift=shape valid=1 vol=786.9013333333334 faces=10,1
+579,box-20x20x2,vertex3,chamfer_sym,0.5,OK,swift=shape valid=1 vol=779.6666666666666 faces=10,1
+588,box-20x20x2,topface,fillet,0.1,OK,swift=shape valid=1 vol=799.3163420684466 faces=10,1
+589,box-20x20x2,topface,fillet,0.25,OK,swift=shape valid=1 vol=795.7558984340341 faces=10,1
+590,box-20x20x2,topface,fillet,0.4,OK,swift=shape valid=1 vol=789.208728411907 faces=10,1
+591,box-20x20x2,topface,fillet,0.5,OK,swift=shape valid=1 vol=783.2153344152557 faces=10,1
+592,box-20x20x2,topface,fillet,0.6,OK,swift=shape valid=1 vol=775.9405241891556 faces=10,1
+593,box-20x20x2,topface,fillet,0.9,OK,swift=shape valid=1 vol=746.6116671652069 faces=10,1
+594,box-20x20x2,topface,fillet,1.0,DECLINED,swift=nil,1
+600,box-20x20x2,topface,chamfer_sym,0.1,OK,swift=shape valid=1 vol=798.4106666666663 faces=10,1
+601,box-20x20x2,topface,chamfer_sym,0.25,OK,swift=shape valid=1 vol=790.1666666666667 faces=10,1
+602,box-20x20x2,topface,chamfer_sym,0.4,OK,swift=shape valid=1 vol=775.0826666666665 faces=10,1
+603,box-20x20x2,topface,chamfer_sym,0.5,OK,swift=shape valid=1 vol=761.3333333333335 faces=10,1
+604,box-20x20x2,topface,chamfer_sym,0.6,OK,swift=shape valid=1 vol=744.7040000000004 faces=10,1
+605,box-20x20x2,topface,chamfer_sym,0.9,OK,swift=shape valid=1 vol=678.1760000000006 faces=10,1
+606,box-20x20x2,topface,chamfer_sym,1.0,DECLINED,swift=nil,1
+612,box-20x20x2,topface,chamfer2,0.1,OK,swift=shape valid=1 vol=799.2053333333334 faces=10,1
+613,box-20x20x2,topface,chamfer2,0.25,OK,swift=shape valid=1 vol=795.0833333333328 faces=10,1
+614,box-20x20x2,topface,chamfer2,0.4,OK,swift=shape valid=1 vol=787.5413333333333 faces=10,1
+615,box-20x20x2,topface,chamfer2,0.5,OK,swift=shape valid=1 vol=780.6666666666667 faces=10,1
+616,box-20x20x2,topface,chamfer2,0.6,OK,swift=shape valid=1 vol=772.3520000000001 faces=10,1
+617,box-20x20x2,topface,chamfer2,0.9,OK,swift=shape valid=1 vol=739.0880000000001 faces=10,1
+618,box-20x20x2,topface,chamfer2,1.0,OK,swift=shape valid=1 vol=725.3333333333333 faces=10,1
+624,box-20x20x2,all12,fillet,0.1,OK,swift=shape valid=1 vol=798.5685895322969 faces=26,1
+625,box-20x20x2,all12,fillet,0.25,OK,swift=shape valid=1 vol=791.1541271480988 faces=26,1
+626,box-20x20x2,all12,fillet,0.4,OK,swift=shape valid=1 vol=777.6116984815164 faces=26,1
+627,box-20x20x2,all12,fillet,0.5,DECLINED,swift=shape valid=1 vol=765.2861257340188 faces=18,0
+628,box-20x20x2,all12,fillet,0.6,INVALID,swift=nil,1
+629,box-20x20x2,all12,fillet,0.9,INVALID,swift=nil,1
+636,box-20x20x2,all12,chamfer_sym,0.1,OK,swift=shape valid=1 vol=796.6826666666666 faces=26,1
+637,box-20x20x2,all12,chamfer_sym,0.25,OK,swift=shape valid=1 vol=779.6666666666667 faces=26,1
+638,box-20x20x2,all12,chamfer_sym,0.4,OK,swift=shape valid=1 vol=748.9706666666668 faces=26,1
+639,box-20x20x2,all12,chamfer_sym,0.5,DECLINED,swift=nil,1
+648,box-30x10x5,single,fillet,0.1,OK,swift=shape valid=1 vol=1499.4634954084936 faces=7,1
+649,box-30x10x5,single,fillet,0.25,OK,swift=shape valid=1 vol=1496.6468463030849 faces=7,1
+650,box-30x10x5,single,fillet,0.4,OK,swift=shape valid=1 vol=1491.415926535898 faces=7,1
+651,box-30x10x5,single,fillet,0.5,OK,swift=shape valid=1 vol=1486.5873852123405 faces=7,1
+652,box-30x10x5,single,fillet,0.6,OK,swift=shape valid=1 vol=1480.6858347057703 faces=7,1
+653,box-30x10x5,single,fillet,0.9,OK,swift=shape valid=1 vol=1456.5431280879832 faces=7,1
+654,box-30x10x5,single,fillet,1.0,OK,swift=shape valid=1 vol=1446.349540849362 faces=6,1
+660,box-30x10x5,single,chamfer_sym,0.1,OK,swift=shape valid=1 vol=1498.75 faces=7,1
+661,box-30x10x5,single,chamfer_sym,0.25,OK,swift=shape valid=1 vol=1492.1874999999998 faces=7,1
+662,box-30x10x5,single,chamfer_sym,0.4,OK,swift=shape valid=1 vol=1480.0 faces=7,1
+663,box-30x10x5,single,chamfer_sym,0.5,OK,swift=shape valid=1 vol=1468.7499999999998 faces=7,1
+664,box-30x10x5,single,chamfer_sym,0.6,OK,swift=shape valid=1 vol=1455.0 faces=7,1
+665,box-30x10x5,single,chamfer_sym,0.9,OK,swift=shape valid=1 vol=1398.75 faces=7,1
+666,box-30x10x5,single,chamfer_sym,1.0,DECLINED,swift=nil,1
+672,box-30x10x5,single,chamfer2,0.1,OK,swift=shape valid=1 vol=1499.375 faces=7,1
+673,box-30x10x5,single,chamfer2,0.25,OK,swift=shape valid=1 vol=1496.0937499999998 faces=7,1
+674,box-30x10x5,single,chamfer2,0.4,OK,swift=shape valid=1 vol=1490.0 faces=7,1
+675,box-30x10x5,single,chamfer2,0.5,OK,swift=shape valid=1 vol=1484.375 faces=7,1
+676,box-30x10x5,single,chamfer2,0.6,OK,swift=shape valid=1 vol=1477.5 faces=7,1
+677,box-30x10x5,single,chamfer2,0.9,OK,swift=shape valid=1 vol=1449.375 faces=7,1
+678,box-30x10x5,single,chamfer2,1.0,OK,swift=shape valid=1 vol=1437.5 faces=7,1
+684,box-30x10x5,opposite,fillet,0.1,OK,swift=shape valid=1 vol=1498.926990816987 faces=8,1
+685,box-30x10x5,opposite,fillet,0.25,OK,swift=shape valid=1 vol=1493.29369260617 faces=8,1
+686,box-30x10x5,opposite,fillet,0.4,OK,swift=shape valid=1 vol=1482.8318530717959 faces=8,1
+687,box-30x10x5,opposite,fillet,0.5,OK,swift=shape valid=1 vol=1473.174770424681 faces=8,1
+688,box-30x10x5,opposite,fillet,0.6,OK,swift=shape valid=1 vol=1461.3716694115406 faces=8,1
+689,box-30x10x5,opposite,fillet,0.9,OK,swift=shape valid=1 vol=1413.0862561759668 faces=8,1
+690,box-30x10x5,opposite,fillet,1.0,OK,swift=shape valid=1 vol=1392.699081698724 faces=6,1
+696,box-30x10x5,opposite,chamfer_sym,0.1,OK,swift=shape valid=1 vol=1497.5 faces=8,1
+697,box-30x10x5,opposite,chamfer_sym,0.25,OK,swift=shape valid=1 vol=1484.3749999999998 faces=8,1
+698,box-30x10x5,opposite,chamfer_sym,0.4,OK,swift=shape valid=1 vol=1460.0 faces=8,1
+699,box-30x10x5,opposite,chamfer_sym,0.5,OK,swift=shape valid=1 vol=1437.4999999999998 faces=8,1
+700,box-30x10x5,opposite,chamfer_sym,0.6,OK,swift=shape valid=1 vol=1410.0 faces=8,1
+701,box-30x10x5,opposite,chamfer_sym,0.9,OK,swift=shape valid=1 vol=1297.5 faces=8,1
+702,box-30x10x5,opposite,chamfer_sym,1.0,DECLINED,swift=nil,1
+708,box-30x10x5,opposite,chamfer2,0.1,OK,swift=shape valid=1 vol=1498.75 faces=8,1
+709,box-30x10x5,opposite,chamfer2,0.25,OK,swift=shape valid=1 vol=1492.1874999999998 faces=8,1
+710,box-30x10x5,opposite,chamfer2,0.4,OK,swift=shape valid=1 vol=1480.0 faces=8,1
+711,box-30x10x5,opposite,chamfer2,0.5,OK,swift=shape valid=1 vol=1468.75 faces=8,1
+712,box-30x10x5,opposite,chamfer2,0.6,OK,swift=shape valid=1 vol=1455.0 faces=8,1
+713,box-30x10x5,opposite,chamfer2,0.9,OK,swift=shape valid=1 vol=1398.75 faces=8,1
+714,box-30x10x5,opposite,chamfer2,1.0,OK,swift=shape valid=1 vol=1375.0 faces=8,1
+720,box-30x10x5,diagonal,fillet,0.1,OK,swift=shape valid=1 vol=1498.926990816987 faces=8,1
+721,box-30x10x5,diagonal,fillet,0.25,OK,swift=shape valid=1 vol=1493.29369260617 faces=8,1
+722,box-30x10x5,diagonal,fillet,0.4,OK,swift=shape valid=1 vol=1482.8318530717956 faces=8,1
+723,box-30x10x5,diagonal,fillet,0.5,OK,swift=shape valid=1 vol=1473.174770424681 faces=8,1
+724,box-30x10x5,diagonal,fillet,0.6,OK,swift=shape valid=1 vol=1461.3716694115406 faces=8,1
+725,box-30x10x5,diagonal,fillet,0.9,OK,swift=shape valid=1 vol=1413.0862561759668 faces=8,1
+726,box-30x10x5,diagonal,fillet,1.0,OK,swift=shape valid=1 vol=1392.6990816987243 faces=6,1
+732,box-30x10x5,diagonal,chamfer_sym,0.1,OK,swift=shape valid=1 vol=1497.5 faces=8,1
+733,box-30x10x5,diagonal,chamfer_sym,0.25,OK,swift=shape valid=1 vol=1484.3749999999998 faces=8,1
+734,box-30x10x5,diagonal,chamfer_sym,0.4,OK,swift=shape valid=1 vol=1460.0 faces=8,1
+735,box-30x10x5,diagonal,chamfer_sym,0.5,OK,swift=shape valid=1 vol=1437.5 faces=8,1
+736,box-30x10x5,diagonal,chamfer_sym,0.6,OK,swift=shape valid=1 vol=1410.0 faces=8,1
+737,box-30x10x5,diagonal,chamfer_sym,0.9,OK,swift=shape valid=1 vol=1297.5 faces=8,1
+738,box-30x10x5,diagonal,chamfer_sym,1.0,DECLINED,swift=nil,1
+744,box-30x10x5,adjacent,fillet,0.1,OK,swift=shape valid=1 vol=1497.8659654254957 faces=8,1
+745,box-30x10x5,adjacent,fillet,0.25,OK,swift=shape valid=1 vol=1486.7746319634953 faces=8,1
+746,box-30x10x5,adjacent,fillet,0.4,OK,swift=shape valid=1 vol=1466.4306688221081 faces=8,1
+747,box-30x10x5,adjacent,fillet,0.5,OK,swift=shape valid=1 vol=1447.8475148355667 faces=8,1
+748,box-30x10x5,adjacent,fillet,0.6,OK,swift=shape valid=1 vol=1425.3318378836398 faces=8,1
+749,box-30x10x5,adjacent,fillet,0.9,OK,swift=shape valid=1 vol=1334.908697071694 faces=8,1
+750,box-30x10x5,adjacent,fillet,1.0,DECLINED,swift=nil,1
+756,box-30x10x5,adjacent,chamfer_sym,0.1,OK,swift=shape valid=1 vol=1495.0416666666667 faces=8,1
+757,box-30x10x5,adjacent,chamfer_sym,0.25,OK,swift=shape valid=1 vol=1469.401041666667 faces=8,1
+758,box-30x10x5,adjacent,chamfer_sym,0.4,OK,swift=shape valid=1 vol=1422.6666666666667 faces=8,1
+759,box-30x10x5,adjacent,chamfer_sym,0.5,OK,swift=shape valid=1 vol=1380.2083333333335 faces=8,1
+760,box-30x10x5,adjacent,chamfer_sym,0.6,OK,swift=shape valid=1 vol=1329.0 faces=8,1
+761,box-30x10x5,adjacent,chamfer_sym,0.9,OK,swift=shape valid=1 vol=1125.375 faces=8,1
+762,box-30x10x5,adjacent,chamfer_sym,1.0,DECLINED,swift=nil,1
+768,box-30x10x5,adjacent,chamfer2,0.1,OK,swift=shape valid=1 vol=1497.5208333333333 faces=8,1
+769,box-30x10x5,adjacent,chamfer2,0.25,OK,swift=shape valid=1 vol=1484.7005208333335 faces=8,1
+770,box-30x10x5,adjacent,chamfer2,0.4,OK,swift=shape valid=1 vol=1461.3333333333333 faces=8,1
+771,box-30x10x5,adjacent,chamfer2,0.5,OK,swift=shape valid=1 vol=1440.104166666667 faces=8,1
+772,box-30x10x5,adjacent,chamfer2,0.6,OK,swift=shape valid=1 vol=1414.5 faces=8,1
+773,box-30x10x5,adjacent,chamfer2,0.9,OK,swift=shape valid=1 vol=1312.6875000000002 faces=8,1
+774,box-30x10x5,adjacent,chamfer2,1.0,OK,swift=shape valid=1 vol=1270.8333333333335 faces=8,1
+780,box-30x10x5,vertex3,fillet,0.1,OK,swift=shape valid=1 vol=1497.606654873897 faces=10,1
+781,box-30x10x5,vertex3,fillet,0.25,OK,swift=shape valid=1 vol=1485.2377698588166 faces=10,1
+782,box-30x10x5,vertex3,fillet,0.4,OK,swift=shape valid=1 vol=1462.7109036947884 faces=10,1
+783,box-30x10x5,vertex3,fillet,0.5,OK,swift=shape valid=1 vol=1442.2589254150002 faces=10,1
+784,box-30x10x5,vertex3,fillet,0.6,OK,swift=shape valid=1 vol=1417.6061718819271 faces=10,1
+785,box-30x10x5,vertex3,fillet,0.9,OK,swift=shape valid=1 vol=1319.6987919035423 faces=10,1
+786,box-30x10x5,vertex3,fillet,1.0,DECLINED,swift=nil,1
+792,box-30x10x5,vertex3,chamfer_sym,0.1,OK,swift=shape valid=1 vol=1494.4583333333333 faces=10,1
+793,box-30x10x5,vertex3,chamfer_sym,0.25,OK,swift=shape valid=1 vol=1466.1458333333337 faces=10,1
+794,box-30x10x5,vertex3,chamfer_sym,0.4,OK,swift=shape valid=1 vol=1415.3333333333337 faces=10,1
+795,box-30x10x5,vertex3,chamfer_sym,0.5,OK,swift=shape valid=1 vol=1369.7916666666665 faces=10,1
+804,box-30x10x5,topface,fillet,0.1,OK,swift=shape valid=1 vol=1495.7558984337265 faces=10,1
+805,box-30x10x5,topface,fillet,0.25,OK,swift=shape valid=1 vol=1473.9237574274944 faces=10,1
+806,box-30x10x5,topface,fillet,0.4,OK,swift=shape valid=1 vol=1434.3952629987275 faces=10,1
+807,box-30x10x5,topface,fillet,0.5,OK,swift=shape valid=1 vol=1398.6909776403882 faces=10,1
+808,box-30x10x5,topface,fillet,0.6,OK,swift=shape valid=1 vol=1355.8406738879085 faces=10,1
+809,box-30x10x5,topface,fillet,0.9,OK,swift=shape valid=1 vol=1187.2897635824424 faces=10,1
+810,box-30x10x5,topface,fillet,1.0,DECLINED,swift=nil,1
+816,box-30x10x5,topface,chamfer_sym,0.1,OK,swift=shape valid=1 vol=1490.1666666666667 faces=10,1
+817,box-30x10x5,topface,chamfer_sym,0.25,OK,swift=shape valid=1 vol=1440.104166666667 faces=10,1
+818,box-30x10x5,topface,chamfer_sym,0.4,OK,swift=shape valid=1 vol=1350.6666666666667 faces=10,1
+819,box-30x10x5,topface,chamfer_sym,0.5,OK,swift=shape valid=1 vol=1270.8333333333333 faces=10,1
+820,box-30x10x5,topface,chamfer_sym,0.6,OK,swift=shape valid=1 vol=1176.0 faces=10,1
+821,box-30x10x5,topface,chamfer_sym,0.9,OK,swift=shape valid=1 vol=811.5000000000002 faces=10,1
+822,box-30x10x5,topface,chamfer_sym,1.0,DECLINED,swift=nil,1
+828,box-30x10x5,topface,chamfer2,0.1,OK,swift=shape valid=1 vol=1495.0833333333333 faces=10,1
+829,box-30x10x5,topface,chamfer2,0.25,OK,swift=shape valid=1 vol=1470.0520833333335 faces=10,1
+830,box-30x10x5,topface,chamfer2,0.4,OK,swift=shape valid=1 vol=1425.3333333333333 faces=10,1
+831,box-30x10x5,topface,chamfer2,0.5,OK,swift=shape valid=1 vol=1385.4166666666667 faces=10,1
+832,box-30x10x5,topface,chamfer2,0.6,OK,swift=shape valid=1 vol=1338.0 faces=10,1
+833,box-30x10x5,topface,chamfer2,0.9,OK,swift=shape valid=1 vol=1155.75 faces=10,1
+834,box-30x10x5,topface,chamfer2,1.0,DECLINED,swift=nil,1
+840,box-30x10x5,all12,fillet,0.1,OK,swift=shape valid=1 vol=1490.5103216382913 faces=26,1
+841,box-30x10x5,all12,fillet,0.25,OK,swift=shape valid=1 vol=1442.2589254150005 faces=26,1
+842,box-30x10x5,all12,fillet,0.4,OK,swift=shape valid=1 vol=1356.2005519121442 faces=26,1
+843,box-30x10x5,all12,fillet,0.5,DECLINED,swift=shape valid=1 vol=1279.4984694978739 faces=18,0
+844,box-30x10x5,all12,fillet,0.6,INVALID,swift=nil,1
+845,box-30x10x5,all12,fillet,0.9,INVALID,swift=nil,1
+852,box-30x10x5,all12,chamfer_sym,0.1,OK,swift=shape valid=1 vol=1478.1666666666663 faces=26,1
+853,box-30x10x5,all12,chamfer_sym,0.25,OK,swift=shape valid=1 vol=1369.791666666667 faces=26,1
+854,box-30x10x5,all12,chamfer_sym,0.4,OK,swift=shape valid=1 vol=1182.6666666666672 faces=26,1
+855,box-30x10x5,all12,chamfer_sym,0.5,DECLINED,swift=nil,1
+864,box-5x5x40,single,fillet,0.1,OK,swift=shape valid=1 vol=999.7317477042468 faces=7,1
+865,box-5x5x40,single,fillet,0.25,OK,swift=shape valid=1 vol=998.3234231515427 faces=7,1
+866,box-5x5x40,single,fillet,0.4,OK,swift=shape valid=1 vol=995.707963267949 faces=7,1
+867,box-5x5x40,single,fillet,0.5,OK,swift=shape valid=1 vol=993.2936926061701 faces=7,1
+868,box-5x5x40,single,fillet,0.6,OK,swift=shape valid=1 vol=990.3429173528851 faces=7,1
+869,box-5x5x40,single,fillet,0.9,OK,swift=shape valid=1 vol=978.2715640439917 faces=7,1
+870,box-5x5x40,single,fillet,1.0,OK,swift=shape valid=1 vol=973.174770424681 faces=6,1
+876,box-5x5x40,single,chamfer_sym,0.1,OK,swift=shape valid=1 vol=999.3749999999999 faces=7,1
+877,box-5x5x40,single,chamfer_sym,0.25,OK,swift=shape valid=1 vol=996.0937500000001 faces=7,1
+878,box-5x5x40,single,chamfer_sym,0.4,OK,swift=shape valid=1 vol=990.0 faces=7,1
+879,box-5x5x40,single,chamfer_sym,0.5,OK,swift=shape valid=1 vol=984.3749999999999 faces=7,1
+880,box-5x5x40,single,chamfer_sym,0.6,OK,swift=shape valid=1 vol=977.4999999999999 faces=7,1
+881,box-5x5x40,single,chamfer_sym,0.9,OK,swift=shape valid=1 vol=949.375 faces=7,1
+882,box-5x5x40,single,chamfer_sym,1.0,DECLINED,swift=nil,1
+888,box-5x5x40,single,chamfer2,0.1,OK,swift=shape valid=1 vol=999.6874999999998 faces=7,1
+889,box-5x5x40,single,chamfer2,0.25,OK,swift=shape valid=1 vol=998.0468749999999 faces=7,1
+890,box-5x5x40,single,chamfer2,0.4,OK,swift=shape valid=1 vol=994.9999999999998 faces=7,1
+891,box-5x5x40,single,chamfer2,0.5,OK,swift=shape valid=1 vol=992.1875 faces=7,1
+892,box-5x5x40,single,chamfer2,0.6,OK,swift=shape valid=1 vol=988.7500000000002 faces=7,1
+893,box-5x5x40,single,chamfer2,0.9,OK,swift=shape valid=1 vol=974.6875 faces=7,1
+894,box-5x5x40,single,chamfer2,1.0,DECLINED,swift=nil,1
+900,box-5x5x40,opposite,fillet,0.1,OK,swift=shape valid=1 vol=999.4634954084936 faces=8,1
+901,box-5x5x40,opposite,fillet,0.25,OK,swift=shape valid=1 vol=996.646846303085 faces=8,1
+902,box-5x5x40,opposite,fillet,0.4,OK,swift=shape valid=1 vol=991.4159265358979 faces=8,1
+903,box-5x5x40,opposite,fillet,0.5,OK,swift=shape valid=1 vol=986.5873852123403 faces=7,1
+912,box-5x5x40,opposite,chamfer_sym,0.1,OK,swift=shape valid=1 vol=998.7500000000001 faces=8,1
+913,box-5x5x40,opposite,chamfer_sym,0.25,OK,swift=shape valid=1 vol=992.1874999999999 faces=8,1
+914,box-5x5x40,opposite,chamfer_sym,0.4,OK,swift=shape valid=1 vol=980.0 faces=8,1
+915,box-5x5x40,opposite,chamfer_sym,0.5,DECLINED,swift=nil,1
+924,box-5x5x40,opposite,chamfer2,0.1,OK,swift=shape valid=1 vol=999.3749999999999 faces=8,1
+925,box-5x5x40,opposite,chamfer2,0.25,OK,swift=shape valid=1 vol=996.09375 faces=8,1
+926,box-5x5x40,opposite,chamfer2,0.4,OK,swift=shape valid=1 vol=990.0 faces=8,1
+927,box-5x5x40,opposite,chamfer2,0.5,DECLINED,swift=nil,1
+936,box-5x5x40,diagonal,fillet,0.1,OK,swift=shape valid=1 vol=999.4634954084934 faces=8,1
+937,box-5x5x40,diagonal,fillet,0.25,OK,swift=shape valid=1 vol=996.6468463030851 faces=8,1
+938,box-5x5x40,diagonal,fillet,0.4,OK,swift=shape valid=1 vol=991.4159265358978 faces=8,1
+939,box-5x5x40,diagonal,fillet,0.5,OK,swift=shape valid=1 vol=986.5873852123407 faces=8,1
+940,box-5x5x40,diagonal,fillet,0.6,OK,swift=shape valid=1 vol=980.68583470577 faces=8,1
+941,box-5x5x40,diagonal,fillet,0.9,OK,swift=shape valid=1 vol=956.5431280879834 faces=8,1
+942,box-5x5x40,diagonal,fillet,1.0,OK,swift=shape valid=1 vol=946.3495408493621 faces=6,1
+948,box-5x5x40,diagonal,chamfer_sym,0.1,OK,swift=shape valid=1 vol=998.75 faces=8,1
+949,box-5x5x40,diagonal,chamfer_sym,0.25,OK,swift=shape valid=1 vol=992.1875 faces=8,1
+950,box-5x5x40,diagonal,chamfer_sym,0.4,OK,swift=shape valid=1 vol=980.0 faces=8,1
+951,box-5x5x40,diagonal,chamfer_sym,0.5,OK,swift=shape valid=1 vol=968.75 faces=8,1
+952,box-5x5x40,diagonal,chamfer_sym,0.6,OK,swift=shape valid=1 vol=954.9999999999998 faces=8,1
+953,box-5x5x40,diagonal,chamfer_sym,0.9,OK,swift=shape valid=1 vol=898.7499999999999 faces=8,1
+954,box-5x5x40,diagonal,chamfer_sym,1.0,DECLINED,swift=nil,1
+960,box-5x5x40,adjacent,fillet,0.1,OK,swift=shape valid=1 vol=999.4754791995441 faces=8,1
+961,box-5x5x40,adjacent,fillet,0.25,OK,swift=shape valid=1 vol=996.8340930512977 faces=8,1
+962,box-5x5x40,adjacent,fillet,0.4,OK,swift=shape valid=1 vol=992.1828892391944 faces=8,1
+963,box-5x5x40,adjacent,fillet,0.5,OK,swift=shape valid=1 vol=988.0853592564191 faces=8,1
+964,box-5x5x40,adjacent,fillet,0.6,OK,swift=shape valid=1 vol=983.2743338572017 faces=8,1
+965,box-5x5x40,adjacent,fillet,0.9,OK,swift=shape valid=1 vol=965.2793128107713 faces=8,1
+966,box-5x5x40,adjacent,fillet,1.0,DECLINED,swift=nil,1
+972,box-5x5x40,adjacent,chamfer_sym,0.1,OK,swift=shape valid=1 vol=998.7916666666665 faces=8,1
+973,box-5x5x40,adjacent,chamfer_sym,0.25,OK,swift=shape valid=1 vol=992.8385416666667 faces=8,1
+974,box-5x5x40,adjacent,chamfer_sym,0.4,OK,swift=shape valid=1 vol=982.6666666666666 faces=8,1
+975,box-5x5x40,adjacent,chamfer_sym,0.5,OK,swift=shape valid=1 vol=973.9583333333333 faces=8,1
+976,box-5x5x40,adjacent,chamfer_sym,0.6,OK,swift=shape valid=1 vol=963.9999999999998 faces=8,1
+977,box-5x5x40,adjacent,chamfer_sym,0.9,OK,swift=shape valid=1 vol=929.125 faces=8,1
+978,box-5x5x40,adjacent,chamfer_sym,1.0,DECLINED,swift=nil,1
+984,box-5x5x40,adjacent,chamfer2,0.1,OK,swift=shape valid=1 vol=999.3958333333333 faces=8,1
+985,box-5x5x40,adjacent,chamfer2,0.25,OK,swift=shape valid=1 vol=996.4192708333333 faces=8,1
+986,box-5x5x40,adjacent,chamfer2,0.4,OK,swift=shape valid=1 vol=991.3333333333331 faces=8,1
+987,box-5x5x40,adjacent,chamfer2,0.5,OK,swift=shape valid=1 vol=986.9791666666665 faces=8,1
+988,box-5x5x40,adjacent,chamfer2,0.6,OK,swift=shape valid=1 vol=982.0000000000002 faces=8,1
+989,box-5x5x40,adjacent,chamfer2,0.9,OK,swift=shape valid=1 vol=964.5624999999997 faces=8,1
+990,box-5x5x40,adjacent,chamfer2,1.0,DECLINED,swift=nil,1
+996,box-5x5x40,vertex3,fillet,0.1,OK,swift=shape valid=1 vol=997.338402578144 faces=10,1
+997,box-5x5x40,vertex3,fillet,0.25,OK,swift=shape valid=1 vol=983.5611930103593 faces=10,1
+998,box-5x5x40,vertex3,fillet,0.4,OK,swift=shape valid=1 vol=958.4188669627374 faces=10,1
+999,box-5x5x40,vertex3,fillet,0.5,OK,swift=shape valid=1 vol=935.5526180211707 faces=10,1
+1000,box-5x5x40,vertex3,fillet,0.6,OK,swift=shape valid=1 vol=907.9490892348126 faces=10,1
+1001,box-5x5x40,vertex3,fillet,0.9,OK,swift=shape valid=1 vol=797.9703559475344 faces=10,1
+1002,box-5x5x40,vertex3,fillet,1.0,DECLINED,swift=nil,1
+1008,box-5x5x40,vertex3,chamfer_sym,0.1,OK,swift=shape valid=1 vol=993.8333333333335 faces=10,1
+1009,box-5x5x40,vertex3,chamfer_sym,0.25,OK,swift=shape valid=1 vol=962.2395833333334 faces=10,1
+1010,box-5x5x40,vertex3,chamfer_sym,0.4,OK,swift=shape valid=1 vol=905.3333333333335 faces=10,1
+1011,box-5x5x40,vertex3,chamfer_sym,0.5,OK,swift=shape valid=1 vol=854.1666666666666 faces=10,1
+1020,box-5x5x40,topface,fillet,0.1,OK,swift=shape valid=1 vol=998.9749259818195 faces=10,1
+1021,box-5x5x40,topface,fillet,0.25,OK,swift=shape valid=1 vol=994.0426796030785 faces=10,1
+1022,box-5x5x40,topface,fillet,0.4,OK,swift=shape valid=1 vol=985.8997038955853 faces=10,1
+1023,box-5x5x40,topface,fillet,0.5,DECLINED,swift=nil,1
+1024,box-5x5x40,topface,fillet,0.6,INVALID,swift=nil,1
+1025,box-5x5x40,topface,fillet,0.9,INVALID,swift=nil,1
+1032,box-5x5x40,topface,chamfer_sym,0.1,OK,swift=shape valid=1 vol=997.6666666666665 faces=10,1
+1033,box-5x5x40,topface,chamfer_sym,0.25,OK,swift=shape valid=1 vol=986.9791666666664 faces=10,1
+1034,box-5x5x40,topface,chamfer_sym,0.4,OK,swift=shape valid=1 vol=970.6666666666666 faces=10,1
+1035,box-5x5x40,topface,chamfer_sym,0.5,INVALID,swift=nil,1
+1044,box-5x5x40,topface,chamfer2,0.1,OK,swift=shape valid=1 vol=998.8333333333335 faces=10,1
+1045,box-5x5x40,topface,chamfer2,0.25,OK,swift=shape valid=1 vol=993.4895833333333 faces=10,1
+1046,box-5x5x40,topface,chamfer2,0.4,OK,swift=shape valid=1 vol=985.3333333333331 faces=10,1
+1047,box-5x5x40,topface,chamfer2,0.5,INVALID,swift=nil,1
+1056,box-5x5x40,all12,fillet,0.1,OK,swift=shape valid=1 vol=989.4373124552782 faces=26,1
+1057,box-5x5x40,all12,fillet,0.25,OK,swift=shape valid=1 vol=935.5526180211707 faces=26,1
+1058,box-5x5x40,all12,fillet,0.4,OK,swift=shape valid=1 vol=839.0324049839398 faces=26,1
+1059,box-5x5x40,all12,fillet,0.5,DECLINED,swift=nil,1
+1060,box-5x5x40,all12,fillet,0.6,INVALID,swift=nil,1
+1061,box-5x5x40,all12,fillet,0.9,INVALID,swift=nil,1
+1068,box-5x5x40,all12,chamfer_sym,0.1,OK,swift=shape valid=1 vol=975.6666666666663 faces=26,1
+1069,box-5x5x40,all12,chamfer_sym,0.25,OK,swift=shape valid=1 vol=854.1666666666667 faces=26,1
+1070,box-5x5x40,all12,chamfer_sym,0.4,OK,swift=shape valid=1 vol=642.6666666666669 faces=26,1
+1071,box-5x5x40,all12,chamfer_sym,0.5,DECLINED,swift=nil,1
+1080,cylinder,toprim,fillet,0.1,OK,swift=shape valid=1 vol=783.7503327085849 faces=4,1
+1081,cylinder,toprim,fillet,0.25,OK,swift=shape valid=1 vol=775.452173414829 faces=4,1
+1082,cylinder,toprim,fillet,0.4,OK,swift=shape valid=1 vol=760.8399857082568 faces=4,1
+1083,cylinder,toprim,fillet,0.5,OK,swift=shape valid=1 vol=747.9672156188312 faces=4,1
+1084,cylinder,toprim,fillet,0.6,OK,swift=shape valid=1 vol=732.8529335957121 faces=4,1
+1085,cylinder,toprim,fillet,0.9,OK,swift=shape valid=1 vol=676.3199075899802 faces=4,1
+1086,cylinder,toprim,fillet,1.0,OK,swift=shape valid=1 vol=654.4984694978738 faces=3,1
+1092,cylinder,toprim,chamfer_sym,0.1,OK,swift=shape valid=1 vol=781.602072274361 faces=4,1
+1093,cylinder,toprim,chamfer_sym,0.25,OK,swift=shape valid=1 vol=762.8997785084592 faces=4,1
+1094,cylinder,toprim,chamfer_sym,0.4,OK,swift=shape valid=1 vol=730.9438907352254 faces=4,1
+1095,cylinder,toprim,chamfer_sym,0.5,OK,swift=shape valid=1 vol=703.5858547102143 faces=4,1
+1096,cylinder,toprim,chamfer_sym,0.6,OK,swift=shape valid=1 vol=672.3008278682161 faces=4,1
+1097,cylinder,toprim,chamfer_sym,0.9,OK,swift=shape valid=1 vol=562.737784074272 faces=4,1
+1098,cylinder,toprim,chamfer_sym,1.0,OK,swift=shape valid=1 vol=523.5987755982991 faces=3,1
+1099,cylinder,toprim,chamfer_sym,1.1,INVALID,swift=nil,1
+1100,cylinder,toprim,chamfer_sym,1.5,INVALID,swift=nil,1
+1104,cylinder,bothrims,fillet,0.1,OK,swift=shape valid=1 vol=782.1025020197206 faces=5,1
+1105,cylinder,bothrims,fillet,0.25,OK,swift=shape valid=1 vol=765.5061834322088 faces=5,1
+1106,cylinder,bothrims,fillet,0.4,OK,swift=shape valid=1 vol=736.2818080190649 faces=5,1
+1107,cylinder,bothrims,fillet,0.5,OK,swift=shape valid=1 vol=710.5362678402138 faces=5,1
+1108,cylinder,bothrims,fillet,0.6,OK,swift=shape valid=1 vol=680.3077037939754 faces=5,1
+1109,cylinder,bothrims,fillet,0.9,OK,swift=shape valid=1 vol=567.2416517825116 faces=5,1
+1110,cylinder,bothrims,fillet,1.0,SANITY,swift=shape valid=1 vol=1308.9969389957478 faces=6,1
+1116,cylinder,bothrims,chamfer_sym,0.1,OK,swift=shape valid=1 vol=777.805981151273 faces=5,1
+1117,cylinder,bothrims,chamfer_sym,0.25,OK,swift=shape valid=1 vol=740.4013936194696 faces=5,1
+1118,cylinder,bothrims,chamfer_sym,0.4,OK,swift=shape valid=1 vol=676.489618073002 faces=5,1
+1119,cylinder,bothrims,chamfer_sym,0.5,OK,swift=shape valid=1 vol=621.7735460229799 faces=5,1
+1120,cylinder,bothrims,chamfer_sym,0.6,OK,swift=shape valid=1 vol=559.2034923389833 faces=5,1
+1121,cylinder,bothrims,chamfer_sym,0.9,OK,swift=shape valid=1 vol=340.0774047510952 faces=5,1
+1122,cylinder,bothrims,chamfer_sym,1.0,SANITY,swift=shape valid=1 vol=1047.1975511965982 faces=6,1
+1123,cylinder,bothrims,chamfer_sym,1.1,INVALID,swift=nil,1
+1124,cylinder,bothrims,chamfer_sym,1.5,INVALID,swift=nil,1
+1128,plate-hole,holetop,fillet,0.1,OK,swift=shape valid=1 vol=1486.2361647040348 faces=8,1
+1129,plate-hole,holetop,fillet,0.25,OK,swift=shape valid=1 vol=1482.556329595424 faces=8,1
+1130,plate-hole,holetop,fillet,0.4,OK,swift=shape valid=1 vol=1475.3134261767361 faces=8,1
+1131,plate-hole,holetop,fillet,0.5,OK,swift=shape valid=1 vol=1468.3125827476417 faces=8,1
+1132,plate-hole,holetop,fillet,0.6,OK,swift=shape valid=1 vol=1459.439015269737 faces=8,1
+1133,plate-hole,holetop,fillet,0.9,OK,swift=shape valid=1 vol=1420.4254160102726 faces=8,1
+1134,plate-hole,holetop,fillet,1.0,DECLINED,swift=nil,1
+1140,plate-hole,holetop,chamfer_sym,0.1,OK,swift=shape valid=1 vol=1485.3276793537675 faces=8,1
+1141,plate-hole,holetop,chamfer_sym,0.25,OK,swift=shape valid=1 vol=1476.430688958801 faces=8,1
+1142,plate-hole,holetop,chamfer_sym,0.4,OK,swift=shape valid=1 vol=1458.4859117214964 faces=8,1
+1143,plate-hole,holetop,chamfer_sym,0.5,OK,swift=shape valid=1 vol=1440.8259722181167 faces=8,1
+1144,plate-hole,holetop,chamfer_sym,0.6,OK,swift=shape valid=1 vol=1418.139484468994 faces=8,1
+1145,plate-hole,holetop,chamfer_sym,0.9,OK,swift=shape valid=1 vol=1315.8994931505679 faces=8,1
+1146,plate-hole,holetop,chamfer_sym,1.0,DECLINED,swift=nil,1
+1152,plate-hole,holeboth,fillet,0.1,OK,swift=shape valid=1 vol=1485.5696649373017 faces=9,1
+1153,plate-hole,holeboth,fillet,0.25,OK,swift=shape valid=1 vol=1478.2099947200813 faces=9,1
+1154,plate-hole,holeboth,fillet,0.4,OK,swift=shape valid=1 vol=1463.7241878827044 faces=9,1
+1155,plate-hole,holeboth,fillet,0.5,OK,swift=shape valid=1 vol=1449.7225010245165 faces=8,1
+1156,plate-hole,holeboth,fillet,0.6,INVALID,swift=nil,1
+1157,plate-hole,holeboth,fillet,0.9,INVALID,swift=nil,1
+1164,plate-hole,holeboth,chamfer_sym,0.1,OK,swift=shape valid=1 vol=1483.752694236768 faces=9,1
+1165,plate-hole,holeboth,chamfer_sym,0.25,OK,swift=shape valid=1 vol=1465.9587134468352 faces=9,1
+1166,plate-hole,holeboth,chamfer_sym,0.4,OK,swift=shape valid=1 vol=1430.0691589722255 faces=9,1
+1167,plate-hole,holeboth,chamfer_sym,0.5,DECLINED,swift=nil,1
+1168,plate-hole,holeboth,chamfer_sym,0.6,INVALID,swift=nil,1
+1169,plate-hole,holeboth,chamfer_sym,0.9,INVALID,swift=nil,1
+1176,plate-hole,outertop,fillet,0.1,OK,swift=shape valid=1 vol=1484.1803040519728 faces=11,1
+1177,plate-hole,outertop,fillet,0.25,OK,swift=shape valid=1 vol=1470.1179988851354 faces=11,1
+1178,plate-hole,outertop,fillet,0.4,OK,swift=shape valid=1 vol=1444.5229479307538 faces=11,1
+1179,plate-hole,outertop,fillet,0.5,OK,swift=shape valid=1 vol=1421.2979275012444 faces=11,1
+1180,plate-hole,outertop,fillet,0.6,OK,swift=shape valid=1 vol=1393.3153842286997 faces=11,1
+1181,plate-hole,outertop,fillet,0.9,OK,swift=shape valid=1 vol=1282.2951865858722 faces=11,1
+1182,plate-hole,outertop,fillet,1.0,DECLINED,swift=nil,1
+1188,plate-hole,outertop,chamfer_sym,0.1,OK,swift=shape valid=1 vol=1480.5879978041007 faces=11,1
+1189,plate-hole,outertop,chamfer_sym,0.25,OK,swift=shape valid=1 vol=1448.2359978041009 faces=11,1
+1190,plate-hole,outertop,chamfer_sym,0.4,OK,swift=shape valid=1 vol=1389.963997804101 faces=11,1
+1191,plate-hole,outertop,chamfer_sym,0.5,OK,swift=shape valid=1 vol=1337.569331137434 faces=11,1
+1192,plate-hole,outertop,chamfer_sym,0.6,OK,swift=shape valid=1 vol=1274.9346644707673 faces=11,1
+1193,plate-hole,outertop,chamfer_sym,0.9,OK,swift=shape valid=1 vol=1030.7106644707674 faces=11,1
+1194,plate-hole,outertop,chamfer_sym,1.0,DECLINED,swift=nil,1
+1200,plate-hole,topall,fillet,0.1,OK,swift=shape valid=1 vol=1483.5138042865296 faces=12,1
+1201,plate-hole,topall,fillet,0.25,OK,swift=shape valid=1 vol=1465.7716640098631 faces=12,1
+1202,plate-hole,topall,fillet,0.4,OK,swift=shape valid=1 vol=1432.933709636789 faces=12,1
+1203,plate-hole,topall,fillet,0.5,OK,swift=shape valid=1 vol=1402.707845777429 faces=12,1
+1204,plate-hole,topall,fillet,0.6,OK,swift=shape valid=1 vol=1365.8517350277 faces=12,1
+1212,plate-hole,topall,chamfer_sym,0.1,OK,swift=shape valid=1 vol=1479.0130126871004 faces=12,1
+1213,plate-hole,topall,chamfer_sym,0.25,OK,swift=shape valid=1 vol=1437.7640222921348 faces=12,1
+1214,plate-hole,topall,chamfer_sym,0.4,OK,swift=shape valid=1 vol=1361.54724505483 faces=12,1
+1215,plate-hole,topall,chamfer_sym,0.5,OK,swift=shape valid=1 vol=1291.4926388847837 faces=12,1
+1216,plate-hole,topall,chamfer_sym,0.6,OK,swift=shape valid=1 vol=1206.1714844689943 faces=12,1
+1224,plate-hole,all,fillet,0.1,OK,swift=shape valid=1 vol=1479.6121882127018 faces=29,1
+1225,plate-hole,all,fillet,0.25,OK,swift=shape valid=1 vol=1441.7793057612796 faces=29,1
+1226,plate-hole,all,fillet,0.4,OK,swift=shape valid=1 vol=1372.518688007241 faces=29,1
+1227,plate-hole,all,fillet,0.5,DECLINED,swift=nil,1
+1228,plate-hole,all,fillet,0.6,INVALID,swift=nil,1
+1236,plate-hole,all,chamfer_sym,0.1,OK,swift=shape valid=1 vol=1470.0140275701021 faces=29,1
+1237,plate-hole,all,chamfer_sym,0.25,OK,swift=shape valid=1 vol=1383.2920467801684 faces=29,1
+1238,plate-hole,all,chamfer_sym,0.4,OK,swift=shape valid=1 vol=1226.634492305559 faces=29,1
+1239,plate-hole,all,chamfer_sym,0.5,DECLINED,swift=nil,1
+1248,L-extrusion,top-single,fillet,0.1,OK,swift=shape valid=1 vol=1630.4548667764618 faces=9,1
+1249,L-extrusion,top-single,fillet,0.25,OK,swift=shape valid=1 vol=1622.3429173528853 faces=9,1
+1250,L-extrusion,top-single,fillet,0.4,OK,swift=shape valid=1 vol=1607.2778684233858 faces=9,1
+1251,L-extrusion,top-single,fillet,0.5,OK,swift=shape valid=1 vol=1593.3716694115408 faces=9,1
+1252,L-extrusion,top-single,fillet,0.6,OK,swift=shape valid=1 vol=1576.3752039526187 faces=9,1
+1253,L-extrusion,top-single,fillet,0.9,OK,swift=shape valid=1 vol=1506.8442088933923 faces=9,1
+1254,L-extrusion,top-single,fillet,1.0,OK,swift=shape valid=1 vol=1477.4866776461631 faces=9,1
+1260,L-extrusion,top-single,chamfer_sym,0.1,OK,swift=shape valid=1 vol=1628.4 faces=9,1
+1261,L-extrusion,top-single,chamfer_sym,0.25,OK,swift=shape valid=1 vol=1609.5 faces=9,1
+1262,L-extrusion,top-single,chamfer_sym,0.4,OK,swift=shape valid=1 vol=1574.3999999999999 faces=9,1
+1263,L-extrusion,top-single,chamfer_sym,0.5,OK,swift=shape valid=1 vol=1541.9999999999998 faces=9,1
+1264,L-extrusion,top-single,chamfer_sym,0.6,OK,swift=shape valid=1 vol=1502.3999999999999 faces=9,1
+1265,L-extrusion,top-single,chamfer_sym,0.9,OK,swift=shape valid=1 vol=1340.4000000000003 faces=9,1
+1266,L-extrusion,top-single,chamfer_sym,1.0,OK,swift=shape valid=1 vol=1272.0 faces=9,1
+1272,L-extrusion,top-outline,fillet,0.1,OK-unref,swift=shape valid=1 vol=1625.9022990730257 faces=14,1
+1273,L-extrusion,top-outline,fillet,0.25,OK-unref,swift=shape valid=1 vol=1594.665918956858 faces=14,1
+1274,L-extrusion,top-outline,fillet,0.4,OK-unref,swift=shape valid=1 vol=1538.412719816235 faces=14,1
+1275,L-extrusion,top-outline,fillet,0.5,DECLINED,swift=nil,1
+1276,L-extrusion,top-outline,fillet,0.6,INVALID,swift=nil,1
+1277,L-extrusion,top-outline,fillet,0.9,INVALID,swift=nil,1
+1284,L-extrusion,top-outline,chamfer_sym,0.1,OK-unref,swift=shape valid=1 vol=1617.888 faces=14,1
+1285,L-extrusion,top-outline,chamfer_sym,0.25,OK-unref,swift=shape valid=1 vol=1546.5 faces=14,1
+1286,L-extrusion,top-outline,chamfer_sym,0.4,OK-unref,swift=shape valid=1 vol=1420.0320000000002 faces=14,1
+1287,L-extrusion,top-outline,chamfer_sym,0.5,DECLINED,swift=nil,1
+1296,L-extrusion,vert-convex-single,fillet,0.1,OK,swift=shape valid=1 vol=1631.3819467105848 faces=9,1
+1297,L-extrusion,vert-convex-single,fillet,0.25,OK,swift=shape valid=1 vol=1628.1371669411544 faces=9,1
+1298,L-extrusion,vert-convex-single,fillet,0.4,OK,swift=shape valid=1 vol=1622.1111473693545 faces=9,1
+1299,L-extrusion,vert-convex-single,fillet,0.5,OK,swift=shape valid=1 vol=1616.5486677646159 faces=9,1
+1300,L-extrusion,vert-convex-single,fillet,0.6,OK,swift=shape valid=1 vol=1609.7500815810472 faces=9,1
+1301,L-extrusion,vert-convex-single,fillet,0.9,OK,swift=shape valid=1 vol=1581.9376835573569 faces=9,1
+1302,L-extrusion,vert-convex-single,fillet,1.0,OK,swift=shape valid=1 vol=1570.1946710584652 faces=9,1
+1308,L-extrusion,vert-convex-single,chamfer_sym,0.1,OK,swift=shape valid=1 vol=1630.56 faces=9,1
+1309,L-extrusion,vert-convex-single,chamfer_sym,0.25,OK,swift=shape valid=1 vol=1623.0000000000002 faces=9,1
+1310,L-extrusion,vert-convex-single,chamfer_sym,0.4,OK,swift=shape valid=1 vol=1608.96 faces=9,1
+1311,L-extrusion,vert-convex-single,chamfer_sym,0.5,OK,swift=shape valid=1 vol=1596.0 faces=9,1
+1312,L-extrusion,vert-convex-single,chamfer_sym,0.6,OK,swift=shape valid=1 vol=1580.1599999999999 faces=9,1
+1313,L-extrusion,vert-convex-single,chamfer_sym,0.9,OK,swift=shape valid=1 vol=1515.3600000000001 faces=9,1
+1314,L-extrusion,vert-convex-single,chamfer_sym,1.0,OK,swift=shape valid=1 vol=1488.0 faces=9,1
+1317,L-extrusion,vert-convex-single,chamfer_sym,2.0,INVALID,swift=nil,1
+1318,L-extrusion,vert-convex-single,chamfer_sym,3.0,INVALID,swift=nil,1
+1320,L-extrusion,vert-concave-single,fillet,0.1,OK,swift=shape valid=1 vol=1632.6180532894155 faces=9,1
+1321,L-extrusion,vert-concave-single,fillet,0.25,OK,swift=shape valid=1 vol=1635.8628330588458 faces=9,1
+1322,L-extrusion,vert-concave-single,fillet,0.4,OK,swift=shape valid=1 vol=1641.8888526306455 faces=9,1
+1323,L-extrusion,vert-concave-single,fillet,0.5,OK,swift=shape valid=1 vol=1647.451332235384 faces=9,1
+1324,L-extrusion,vert-concave-single,fillet,0.6,OK,swift=shape valid=1 vol=1654.2499184189523 faces=9,1
+1325,L-extrusion,vert-concave-single,fillet,0.9,OK,swift=shape valid=1 vol=1682.0623164426434 faces=9,1
+1326,L-extrusion,vert-concave-single,fillet,1.0,OK,swift=shape valid=1 vol=1693.8053289415352 faces=9,1
+1327,L-extrusion,vert-concave-single,fillet,1.1,OK,swift=shape valid=1 vol=1706.7844480192575 faces=9,1
+1328,L-extrusion,vert-concave-single,fillet,1.5,OK,swift=shape valid=1 vol=1771.0619901184537 faces=9,1
+1329,L-extrusion,vert-concave-single,fillet,2.0,OK,swift=shape valid=1 vol=1879.221315766139 faces=9,1
+1332,L-extrusion,vert-concave-single,chamfer_sym,0.1,OK,swift=shape valid=1 vol=1633.44 faces=9,1
+1333,L-extrusion,vert-concave-single,chamfer_sym,0.25,OK,swift=shape valid=1 vol=1641.0 faces=9,1
+1334,L-extrusion,vert-concave-single,chamfer_sym,0.4,OK,swift=shape valid=1 vol=1655.04 faces=9,1
+1335,L-extrusion,vert-concave-single,chamfer_sym,0.5,OK,swift=shape valid=1 vol=1668.0000000000002 faces=9,1
+1336,L-extrusion,vert-concave-single,chamfer_sym,0.6,OK,swift=shape valid=1 vol=1683.8399999999997 faces=9,1
+1337,L-extrusion,vert-concave-single,chamfer_sym,0.9,OK,swift=shape valid=1 vol=1748.6399999999999 faces=9,1
+1338,L-extrusion,vert-concave-single,chamfer_sym,1.0,OK,swift=shape valid=1 vol=1776.0 faces=9,1
+1339,L-extrusion,vert-concave-single,chamfer_sym,1.1,OK,swift=shape valid=1 vol=1806.2400000000002 faces=9,1
+1340,L-extrusion,vert-concave-single,chamfer_sym,1.5,OK,swift=shape valid=1 vol=1956.0000000000005 faces=9,1
+1341,L-extrusion,vert-concave-single,chamfer_sym,2.0,OK,swift=shape valid=1 vol=2208.0 faces=9,1
+1344,L-extrusion,vert-all,fillet,0.1,OK,swift=shape valid=1 vol=1629.5277868423382 faces=14,1
+1345,L-extrusion,vert-all,fillet,0.25,OK,swift=shape valid=1 vol=1616.548667764616 faces=14,1
+1346,L-extrusion,vert-all,fillet,0.4,OK,swift=shape valid=1 vol=1592.4445894774183 faces=14,1
+1347,L-extrusion,vert-all,fillet,0.5,OK,swift=shape valid=1 vol=1570.194671058465 faces=12,1
+1356,L-extrusion,vert-all,chamfer_sym,0.1,OK,swift=shape valid=1 vol=1626.24 faces=14,1
+1357,L-extrusion,vert-all,chamfer_sym,0.25,OK,swift=shape valid=1 vol=1596.0000000000002 faces=14,1
+1358,L-extrusion,vert-all,chamfer_sym,0.4,OK,swift=shape valid=1 vol=1539.8400000000004 faces=14,1
+1359,L-extrusion,vert-all,chamfer_sym,0.5,DECLINED,swift=nil,1
+1373,L-extrusion,all,fillet,0.9,INVALID,swift=nil,1
+1392,U-extrusion,top-single,fillet,0.1,OK,swift=shape valid=1 vol=2302.1458401317536 faces=11,1
+1393,U-extrusion,top-single,fillet,0.25,OK,swift=shape valid=1 vol=2292.411500823462 faces=11,1
+1394,U-extrusion,top-single,fillet,0.4,OK,swift=shape valid=1 vol=2274.3334421080635 faces=11,1
+1395,U-extrusion,top-single,fillet,0.5,OK,swift=shape valid=1 vol=2257.646003293849 faces=11,1
+1396,U-extrusion,top-single,fillet,0.6,OK,swift=shape valid=1 vol=2237.250244743142 faces=11,1
+1397,U-extrusion,top-single,fillet,0.9,OK,swift=shape valid=1 vol=2153.81305067207 faces=11,1
+1398,U-extrusion,top-single,fillet,1.0,DECLINED,swift=nil,1
+1404,U-extrusion,top-single,chamfer_sym,0.1,OK,swift=shape valid=1 vol=2299.68 faces=11,1
+1405,U-extrusion,top-single,chamfer_sym,0.25,OK,swift=shape valid=1 vol=2277.0 faces=11,1
+1406,U-extrusion,top-single,chamfer_sym,0.4,OK,swift=shape valid=1 vol=2234.8800000000006 faces=11,1
+1407,U-extrusion,top-single,chamfer_sym,0.5,OK,swift=shape valid=1 vol=2196.0 faces=11,1
+1408,U-extrusion,top-single,chamfer_sym,0.6,OK,swift=shape valid=1 vol=2148.48 faces=11,1
+1409,U-extrusion,top-single,chamfer_sym,0.9,OK,swift=shape valid=1 vol=1954.08 faces=11,1
+1410,U-extrusion,top-single,chamfer_sym,1.0,DECLINED,swift=nil,1
+1416,U-extrusion,top-outline,fillet,0.1,OK-unref,swift=shape valid=1 vol=2295.739112558311 faces=18,1
+1417,U-extrusion,top-outline,fillet,0.25,OK-unref,swift=shape valid=1 vol=2253.146003239896 faces=18,1
+1418,U-extrusion,top-outline,fillet,0.4,OK-unref,swift=shape valid=1 vol=2175.801735572765 faces=18,1
+1419,U-extrusion,top-outline,fillet,0.5,DECLINED,swift=nil,1
+1420,U-extrusion,top-outline,fillet,0.6,INVALID,swift=nil,1
+1421,U-extrusion,top-outline,fillet,0.9,INVALID,swift=nil,1
+1428,U-extrusion,top-outline,chamfer_sym,0.1,OK-unref,swift=shape valid=1 vol=2284.848 faces=18,1
+1429,U-extrusion,top-outline,chamfer_sym,0.25,OK-unref,swift=shape valid=1 vol=2187.0000000000005 faces=18,1
+1430,U-extrusion,top-outline,chamfer_sym,0.4,OK-unref,swift=shape valid=1 vol=2011.392 faces=18,1
+1431,U-extrusion,top-outline,chamfer_sym,0.5,DECLINED,swift=nil,1
+1440,U-extrusion,vert-convex-single,fillet,0.1,OK,swift=shape valid=1 vol=2303.381946710584 faces=11,1
+1441,U-extrusion,vert-convex-single,fillet,0.25,OK,swift=shape valid=1 vol=2300.137166941154 faces=11,1
+1442,U-extrusion,vert-convex-single,fillet,0.4,OK,swift=shape valid=1 vol=2294.1111473693545 faces=11,1
+1443,U-extrusion,vert-convex-single,fillet,0.5,OK,swift=shape valid=1 vol=2288.5486677646163 faces=11,1
+1444,U-extrusion,vert-convex-single,fillet,0.6,OK,swift=shape valid=1 vol=2281.7500815810467 faces=11,1
+1445,U-extrusion,vert-convex-single,fillet,0.9,OK,swift=shape valid=1 vol=2253.9376835573566 faces=11,1
+1446,U-extrusion,vert-convex-single,fillet,1.0,OK,swift=shape valid=1 vol=2242.1946710584652 faces=11,1
+1452,U-extrusion,vert-convex-single,chamfer_sym,0.1,OK,swift=shape valid=1 vol=2302.5599999999995 faces=11,1
+1453,U-extrusion,vert-convex-single,chamfer_sym,0.25,OK,swift=shape valid=1 vol=2295.0 faces=11,1
+1454,U-extrusion,vert-convex-single,chamfer_sym,0.4,OK,swift=shape valid=1 vol=2280.96 faces=11,1
+1455,U-extrusion,vert-convex-single,chamfer_sym,0.5,OK,swift=shape valid=1 vol=2268.0 faces=11,1
+1456,U-extrusion,vert-convex-single,chamfer_sym,0.6,OK,swift=shape valid=1 vol=2252.1599999999994 faces=11,1
+1457,U-extrusion,vert-convex-single,chamfer_sym,0.9,OK,swift=shape valid=1 vol=2187.3599999999997 faces=11,1
+1458,U-extrusion,vert-convex-single,chamfer_sym,1.0,OK,swift=shape valid=1 vol=2160.0 faces=11,1
+1461,U-extrusion,vert-convex-single,chamfer_sym,2.0,INVALID,swift=nil,1
+1464,U-extrusion,vert-concave-single,fillet,0.1,OK,swift=shape valid=1 vol=2304.618053289415 faces=11,1
+1465,U-extrusion,vert-concave-single,fillet,0.25,OK,swift=shape valid=1 vol=2307.862833058846 faces=11,1
+1466,U-extrusion,vert-concave-single,fillet,0.4,OK,swift=shape valid=1 vol=2313.8888526306455 faces=11,1
+1467,U-extrusion,vert-concave-single,fillet,0.5,OK,swift=shape valid=1 vol=2319.451332235384 faces=11,1
+1468,U-extrusion,vert-concave-single,fillet,0.6,OK,swift=shape valid=1 vol=2326.2499184189523 faces=11,1
+1469,U-extrusion,vert-concave-single,fillet,0.9,OK,swift=shape valid=1 vol=2354.0623164426434 faces=11,1
+1470,U-extrusion,vert-concave-single,fillet,1.0,OK,swift=shape valid=1 vol=2365.8053289415348 faces=11,1
+1471,U-extrusion,vert-concave-single,fillet,1.1,OK,swift=shape valid=1 vol=2378.784448019257 faces=11,1
+1472,U-extrusion,vert-concave-single,fillet,1.5,OK,swift=shape valid=1 vol=2443.0619901184537 faces=11,1
+1473,U-extrusion,vert-concave-single,fillet,2.0,DECLINED,swift=nil,1
+1476,U-extrusion,vert-concave-single,chamfer_sym,0.1,OK,swift=shape valid=1 vol=2305.4399999999996 faces=11,1
+1477,U-extrusion,vert-concave-single,chamfer_sym,0.25,OK,swift=shape valid=1 vol=2313.0 faces=11,1
+1478,U-extrusion,vert-concave-single,chamfer_sym,0.4,OK,swift=shape valid=1 vol=2327.04 faces=11,1
+1479,U-extrusion,vert-concave-single,chamfer_sym,0.5,OK,swift=shape valid=1 vol=2340.0 faces=11,1
+1480,U-extrusion,vert-concave-single,chamfer_sym,0.6,OK,swift=shape valid=1 vol=2355.8399999999997 faces=11,1
+1481,U-extrusion,vert-concave-single,chamfer_sym,0.9,OK,swift=shape valid=1 vol=2420.64 faces=11,1
+1482,U-extrusion,vert-concave-single,chamfer_sym,1.0,OK,swift=shape valid=1 vol=2448.0 faces=11,1
+1483,U-extrusion,vert-concave-single,chamfer_sym,1.1,OK,swift=shape valid=1 vol=2478.24 faces=11,1
+1484,U-extrusion,vert-concave-single,chamfer_sym,1.5,OK,swift=shape valid=1 vol=2628.0 faces=11,1
+1485,U-extrusion,vert-concave-single,chamfer_sym,2.0,DECLINED,swift=nil,1
+1488,U-extrusion,vert-all,fillet,0.1,OK,swift=shape valid=1 vol=2301.527786842338 faces=18,1
+1489,U-extrusion,vert-all,fillet,0.25,OK,swift=shape valid=1 vol=2288.5486677646168 faces=18,1
+1490,U-extrusion,vert-all,fillet,0.4,OK,swift=shape valid=1 vol=2264.4445894774194 faces=18,1
+1491,U-extrusion,vert-all,fillet,0.5,DECLINED,swift=nil,1
+1500,U-extrusion,vert-all,chamfer_sym,0.1,OK,swift=shape valid=1 vol=2298.2400000000002 faces=18,1
+1501,U-extrusion,vert-all,chamfer_sym,0.25,OK,swift=shape valid=1 vol=2268.0 faces=18,1
+1502,U-extrusion,vert-all,chamfer_sym,0.4,OK,swift=shape valid=1 vol=2211.8400000000006 faces=18,1
+1503,U-extrusion,vert-all,chamfer_sym,0.5,DECLINED,swift=nil,1
+1517,U-extrusion,all,fillet,0.9,INVALID,swift=nil,1
+1541,model2881,edge13,fillet,1.4983,INVALID,swift=nil,1
+1542,model2881,edge13,fillet,1.4985,INVALID,swift=nil,1
+1543,model2881,edge13,fillet,1.49853,INVALID,swift=nil,1
+1547,model2881,edge13,fillet,1.500000002,INVALID,swift=nil,1
+1548,model2881,edge13,fillet,1.5001,INVALID,swift=nil,1
+1549,model2881,edge13,fillet,1.501,INVALID,swift=nil,1
+1550,model2881,edge13,fillet,1.5018,INVALID,swift=nil,1
+1369,L-extrusion,all,fillet,0.25,OK-unref,swift=shape valid=1 vol=1545.0553788970335 faces=38,1
+623,box-20x20x2,topface,chamfer2,5.0,DECLINED,swift=nil,1
+1590,model2881,edge3,fillet,2.0,OK-unref,swift=shape valid=1 vol=100214.70375886992 faces=20,1
+191,box-10x10x10,topface,chamfer2,5.0,DECLINED,swift=nil,1
+284,box-4x10x6,opposite,chamfer2,1.5,DECLINED,swift=nil,1
+380,box-4x10x6,topface,fillet,1.5,DECLINED,swift=nil,1
+1523,U-extrusion,all,fillet,5.0,DECLINED,swift=nil,1
+235,box-4x10x6,single,chamfer_sym,1.1,DECLINED,swift=nil,1
+1821,model2881,edge41,chamfer_sym,2.0,DECLINED,swift=nil,1
+908,box-5x5x40,opposite,fillet,1.5,OK,swift=shape valid=1 vol=920.0196197068561 faces=7,1
+155,box-10x10x10,vertex3,chamfer_sym,5.0,DECLINED,swift=nil,1
+347,box-4x10x6,adjacent,chamfer2,5.0,DECLINED,swift=nil,1
+1670,model2881,edge16,chamfer_sym,1.0,OK-unref,swift=shape valid=1 vol=100125.09379688204 faces=25,1
+1638,model2881,edge11,fillet,2.0,OK-unref,swift=shape valid=1 vol=100214.70617638259 faces=20,1
+275,box-4x10x6,opposite,chamfer_sym,5.0,DECLINED,swift=nil,1
+1015,box-5x5x40,vertex3,chamfer_sym,1.1,DECLINED,swift=nil,1
+367,box-4x10x6,vertex3,chamfer_sym,1.1,DECLINED,swift=nil,1
+1651,model2881,edge13,chamfer_sym,0.3,OK-unref,swift=shape valid=1 vol=100297.61863264604 faces=29,1
+238,box-4x10x6,single,chamfer_sym,3.0,DECLINED,swift=nil,1
+501,box-20x20x2,opposite,chamfer2,2.0,DECLINED,swift=nil,1
+934,box-5x5x40,opposite,chamfer2,3.0,DECLINED,swift=nil,1
+250,box-4x10x6,single,chamfer2,3.0,DECLINED,swift=nil,1
+1594,model2881,edge4,fillet,0.3,OK-unref,swift=shape valid=1 vol=100312.45841667899 faces=20,1
+200,box-10x10x10,all12,fillet,1.5,DECLINED,swift=nil,1
+929,box-5x5x40,opposite,chamfer2,0.9,DECLINED,swift=nil,1
+188,box-10x10x10,topface,chamfer2,1.5,DECLINED,swift=nil,1
+548,box-20x20x2,adjacent,chamfer_sym,1.5,DECLINED,swift=nil,1
+1222,plate-hole,topall,chamfer_sym,3.0,DECLINED,swift=nil,1
+1640,model2881,edge11,chamfer_sym,1.0,OK-unref,swift=shape valid=1 vol=100256.4606434039 faces=20,1
+596,box-20x20x2,topface,fillet,1.5,DECLINED,swift=nil,1
+475,box-20x20x2,opposite,fillet,1.1,OK,swift=shape valid=1 vol=759.2061385979885 faces=6,1
+1293,L-extrusion,top-outline,chamfer_sym,2.0,DECLINED,swift=nil,1
+765,box-30x10x5,adjacent,chamfer_sym,2.0,DECLINED,swift=nil,1
+407,box-4x10x6,topface,chamfer2,5.0,DECLINED,swift=nil,1
+797,box-30x10x5,vertex3,chamfer_sym,0.9,OK-unref,swift=shape valid=1 vol=1105.125 faces=10,1
+1537,model2881,edge13,fillet,0.6,OK-unref,swift=shape valid=1 vol=100291.21193399196 faces=29,1
+391,box-4x10x6,topface,chamfer_sym,1.1,DECLINED,swift=nil,1
+256,box-4x10x6,opposite,fillet,0.6,OK,swift=shape valid=1 vol=215.36713140737263 faces=7,1
+239,box-4x10x6,single,chamfer_sym,5.0,DECLINED,swift=nil,1
+872,box-5x5x40,single,fillet,1.5,OK,swift=shape valid=1 vol=952.1327989427507 faces=6,1
+1798,model2881,edge38,fillet,0.3,DECLINED,swift=nil,1
+1657,model2881,edge14,chamfer_sym,0.3,OK-unref,swift=shape valid=1 vol=100297.61863265366 faces=29,1
+1331,L-extrusion,vert-concave-single,fillet,5.0,DECLINED,swift=nil,1
+1735,model2881,edge27,chamfer_sym,0.3,DECLINED,swift=nil,1
+1710,model2881,edge23,fillet,2.0,DECLINED,swift=nil,1
+1514,U-extrusion,all,fillet,0.4,OK-unref,swift=shape valid=1 vol=2026.1455396764595 faces=50,1
+1258,L-extrusion,top-single,fillet,3.0,DECLINED,swift=nil,1
+1041,box-5x5x40,topface,chamfer_sym,2.0,DECLINED,swift=nil,1
+763,box-30x10x5,adjacent,chamfer_sym,1.1,DECLINED,swift=nil,1
+1028,box-5x5x40,topface,fillet,1.5,DECLINED,swift=nil,1
+331,box-4x10x6,adjacent,chamfer_sym,1.1,DECLINED,swift=nil,1
+1259,L-extrusion,top-single,fillet,5.0,DECLINED,swift=nil,1
+1795,model2881,edge37,chamfer_sym,0.3,DECLINED,swift=nil,1
+1434,U-extrusion,top-outline,chamfer_sym,1.0,DECLINED,swift=nil,1
+1701,model2881,edge21,chamfer_sym,2.0,DECLINED,swift=nil,1
+1218,plate-hole,topall,chamfer_sym,1.0,DECLINED,swift=nil,1
+285,box-4x10x6,opposite,chamfer2,2.0,DECLINED,swift=nil,1
+683,box-30x10x5,single,chamfer2,5.0,DECLINED,swift=nil,1
+1427,U-extrusion,top-outline,fillet,5.0,DECLINED,swift=nil,1
+632,box-20x20x2,all12,fillet,1.5,DECLINED,swift=nil,1
+1783,model2881,edge35,chamfer_sym,0.3,DECLINED,swift=nil,1
+1645,model2881,edge12,chamfer_sym,0.3,OK-unref,swift=shape valid=1 vol=100297.61933866725 faces=29,1
+165,box-10x10x10,topface,fillet,2.0,DECLINED,swift=nil,1
+308,box-4x10x6,diagonal,chamfer_sym,1.5,DECLINED,swift=nil,1
+1330,L-extrusion,vert-concave-single,fillet,3.0,DECLINED,swift=nil,1
+1423,U-extrusion,top-outline,fillet,1.1,DECLINED,swift=nil,1
+1463,U-extrusion,vert-convex-single,chamfer_sym,5.0,DECLINED,swift=nil,1
+1799,model2881,edge38,fillet,1.0,DECLINED,swift=nil,1
+1716,model2881,edge24,fillet,2.0,DECLINED,swift=nil,1
+272,box-4x10x6,opposite,chamfer_sym,1.5,DECLINED,swift=nil,1
+379,box-4x10x6,topface,fillet,1.1,DECLINED,swift=nil,1
+1138,plate-hole,holetop,fillet,3.0,DECLINED,swift=nil,1
+1752,model2881,edge30,fillet,2.0,DECLINED,swift=nil,1
+261,box-4x10x6,opposite,fillet,2.0,OK,swift=shape valid=1 vol=112.0351091155637 faces=5,1
+248,box-4x10x6,single,chamfer2,1.5,DECLINED,swift=nil,1
+1303,L-extrusion,vert-convex-single,fillet,1.1,OK-unref,swift=shape valid=1 vol=1557.2155519807432 faces=9,1
+1694,model2881,edge20,chamfer_sym,1.0,OK-unref,swift=shape valid=1 vol=100256.46099592825 faces=20,1
+1206,plate-hole,topall,fillet,1.0,DECLINED,swift=nil,1
+1572,model2881,edge13,chamfer_sym,1.52,OK-unref,swift=shape valid=1 vol=99875.91326814976 faces=25,1
+1448,U-extrusion,vert-convex-single,fillet,1.5,OK-unref,swift=shape valid=1 vol=2164.938009881547 faces=11,1
+93,box-10x10x10,diagonal,chamfer_sym,2.0,DECLINED,swift=nil,1
+1727,model2881,edge26,fillet,1.0,DECLINED,swift=nil,1
+1497,U-extrusion,vert-all,fillet,2.0,DECLINED,swift=nil,1
+704,box-30x10x5,opposite,chamfer_sym,1.5,DECLINED,swift=nil,1
+466,box-20x20x2,single,chamfer2,3.0,DECLINED,swift=nil,1
+1793,model2881,edge37,fillet,1.0,DECLINED,swift=nil,1
+237,box-4x10x6,single,chamfer_sym,2.0,DECLINED,swift=nil,1
+919,box-5x5x40,opposite,chamfer_sym,1.1,DECLINED,swift=nil,1
+1217,plate-hole,topall,chamfer_sym,0.9,DECLINED,swift=nil,1
+526,box-20x20x2,diagonal,chamfer_sym,3.0,DECLINED,swift=nil,1
+1040,box-5x5x40,topface,chamfer_sym,1.5,DECLINED,swift=nil,1
+1596,model2881,edge4,fillet,2.0,OK-unref,swift=shape valid=1 vol=100214.70408005877 faces=20,1
+1582,model2881,edge2,fillet,0.3,OK-unref,swift=shape valid=1 vol=100314.2351326571 faces=20,1
+322,box-4x10x6,adjacent,fillet,3.0,DECLINED,swift=nil,1
+693,box-30x10x5,opposite,fillet,2.0,OK,swift=shape valid=1 vol=1248.1594455199395 faces=6,1
+1604,model2881,edge5,chamfer_sym,1.0,OK-unref,swift=shape valid=1 vol=100302.4608196654 faces=20,1
+1174,plate-hole,holeboth,chamfer_sym,3.0,DECLINED,swift=nil,1
+563,box-20x20x2,adjacent,chamfer2,5.0,DECLINED,swift=nil,1
+1663,model2881,edge15,chamfer_sym,0.3,OK-unref,swift=shape valid=1 vol=100297.61933866658 faces=29,1
+1175,plate-hole,holeboth,chamfer_sym,5.0,DECLINED,swift=nil,1
+1632,model2881,edge10,fillet,2.0,OK-unref,swift=shape valid=1 vol=100233.93618397582 faces=20,1
+1508,U-extrusion,vert-all,chamfer_sym,1.5,DECLINED,swift=nil,1
+1561,model2881,edge13,chamfer_sym,1.4983,OK-unref,swift=shape valid=1 vol=99888.72310319006 faces=25,1
+970,box-5x5x40,adjacent,fillet,3.0,DECLINED,swift=nil,1
+630,box-20x20x2,all12,fillet,1.0,DECLINED,swift=nil,1
+333,box-4x10x6,adjacent,chamfer_sym,2.0,DECLINED,swift=nil,1
+741,box-30x10x5,diagonal,chamfer_sym,2.0,DECLINED,swift=nil,1
+980,box-5x5x40,adjacent,chamfer_sym,1.5,DECLINED,swift=nil,1
+982,box-5x5x40,adjacent,chamfer_sym,3.0,DECLINED,swift=nil,1
+53,box-10x10x10,opposite,chamfer_sym,0.9,DECLINED,swift=nil,1
+1775,model2881,edge34,fillet,1.0,DECLINED,swift=nil,1
+775,box-30x10x5,adjacent,chamfer2,1.1,OK-unref,swift=shape valid=1 vol=1225.2291666666667 faces=8,1
+1101,cylinder,toprim,chamfer_sym,2.0,DECLINED,swift=nil,1
+1196,plate-hole,outertop,chamfer_sym,1.5,DECLINED,swift=nil,1
+22,box-10x10x10,single,chamfer_sym,3.0,DECLINED,swift=nil,1
+599,box-20x20x2,topface,fillet,5.0,DECLINED,swift=nil,1
+1531,U-extrusion,all,chamfer_sym,1.1,DECLINED,swift=nil,1
+1354,L-extrusion,vert-all,fillet,3.0,DECLINED,swift=nil,1
+512,box-20x20x2,diagonal,fillet,1.5,OK-unref,swift=shape valid=1 vol=738.7299826467205 faces=6,1
+213,box-10x10x10,all12,chamfer_sym,2.0,DECLINED,swift=nil,1
+1717,model2881,edge24,chamfer_sym,0.3,DECLINED,swift=nil,1
+1585,model2881,edge2,chamfer_sym,0.3,OK-unref,swift=shape valid=1 vol=100313.60582970681 faces=20,1
+1597,model2881,edge4,chamfer_sym,0.3,OK-unref,swift=shape valid=1 vol=100309.46601693575 faces=20,1
+1599,model2881,edge4,chamfer_sym,2.0,OK-unref,swift=shape valid=1 vol=100081.70853591558 faces=20,1
+1589,model2881,edge3,fillet,1.0,OK-unref,swift=shape valid=1 vol=100289.70705826239 faces=20,1
+414,box-4x10x6,all12,fillet,1.0,DECLINED,swift=nil,1
+1768,model2881,edge33,fillet,0.3,DECLINED,swift=nil,1
+1602,model2881,edge5,fillet,2.0,OK-unref,swift=shape valid=1 vol=100293.67981284614 faces=20,1
+251,box-4x10x6,single,chamfer2,5.0,DECLINED,swift=nil,1
+803,box-30x10x5,vertex3,chamfer_sym,5.0,DECLINED,swift=nil,1
+269,box-4x10x6,opposite,chamfer_sym,0.9,DECLINED,swift=nil,1
+885,box-5x5x40,single,chamfer_sym,2.0,DECLINED,swift=nil,1
+1684,model2881,edge19,fillet,0.3,OK-unref,swift=shape valid=1 vol=100308.79770942923 faces=29,1
+671,box-30x10x5,single,chamfer_sym,5.0,DECLINED,swift=nil,1
+431,box-4x10x6,all12,chamfer_sym,5.0,DECLINED,swift=nil,1
+210,box-10x10x10,all12,chamfer_sym,1.0,DECLINED,swift=nil,1
+405,box-4x10x6,topface,chamfer2,2.0,DECLINED,swift=nil,1
+7,box-10x10x10,single,fillet,1.1,OK,swift=shape valid=1 vol=748.9786221646115 faces=5,1
+403,box-4x10x6,topface,chamfer2,1.1,DECLINED,swift=nil,1
+1519,U-extrusion,all,fillet,1.1,DECLINED,swift=nil,1
+106,box-10x10x10,adjacent,fillet,3.0,DECLINED,swift=nil,1
+280,box-4x10x6,opposite,chamfer2,0.6,DECLINED,swift=nil,1
+883,box-5x5x40,single,chamfer_sym,1.1,DECLINED,swift=nil,1
+1552,model2881,edge13,fillet,1.52,OK-unref,swift=shape valid=1 vol=100169.16422661871 faces=25,1
+619,box-20x20x2,topface,chamfer2,1.1,OK-unref,swift=shape valid=1 vol=710.2986666666669 faces=10,1
+1053,box-5x5x40,topface,chamfer2,2.0,DECLINED,swift=nil,1
+1449,U-extrusion,vert-convex-single,fillet,2.0,OK-unref,swift=shape valid=1 vol=2056.778684233861 faces=11,1
+1520,U-extrusion,all,fillet,1.5,DECLINED,swift=nil,1
+1753,model2881,edge30,chamfer_sym,0.3,DECLINED,swift=nil,1
+499,box-20x20x2,opposite,chamfer2,1.1,OK-unref,swift=shape valid=1 vol=751.6 faces=8,1
+463,box-20x20x2,single,chamfer2,1.1,OK-unref,swift=shape valid=1 vol=775.8 faces=7,1
+1781,model2881,edge35,fillet,1.0,DECLINED,swift=nil,1
+1736,model2881,edge27,chamfer_sym,1.0,DECLINED,swift=nil,1
+1765,model2881,edge32,chamfer_sym,0.3,DECLINED,swift=nil,1
+1772,model2881,edge33,chamfer_sym,1.0,DECLINED,swift=nil,1
+1307,L-extrusion,vert-convex-single,fillet,5.0,DECLINED,swift=nil,1
+346,box-4x10x6,adjacent,chamfer2,3.0,DECLINED,swift=nil,1
+1432,U-extrusion,top-outline,chamfer_sym,0.6,DECLINED,swift=nil,1
+1112,cylinder,bothrims,fillet,1.5,DECLINED,swift=nil,1
+1762,model2881,edge32,fillet,0.3,DECLINED,swift=nil,1
+669,box-30x10x5,single,chamfer_sym,2.0,DECLINED,swift=nil,1
+94,box-10x10x10,diagonal,chamfer_sym,3.0,DECLINED,swift=nil,1
+871,box-5x5x40,single,fillet,1.1,OK,swift=shape valid=1 vol=968.1297957796784 faces=6,1
+608,box-20x20x2,topface,chamfer_sym,1.5,DECLINED,swift=nil,1
+116,box-10x10x10,adjacent,chamfer_sym,1.5,DECLINED,swift=nil,1
+1255,L-extrusion,top-single,fillet,1.1,OK-unref,swift=shape valid=1 vol=1445.1153385344285 faces=9,1
+368,box-4x10x6,vertex3,chamfer_sym,1.5,DECLINED,swift=nil,1
+1088,cylinder,toprim,fillet,1.5,DECLINED,swift=nil,1
+1526,U-extrusion,all,chamfer_sym,0.4,OK-unref,swift=shape valid=1 vol=1718.7839999999999 faces=50,1
+695,box-30x10x5,opposite,fillet,5.0,OK,swift=shape valid=1 vol=1021.8819299580284 faces=5,1
+1498,U-extrusion,vert-all,fillet,3.0,DECLINED,swift=nil,1
+933,box-5x5x40,opposite,chamfer2,2.0,DECLINED,swift=nil,1
+1811,model2881,edge40,fillet,1.0,DECLINED,swift=nil,1
+1382,L-extrusion,all,chamfer_sym,0.4,OK-unref,swift=shape valid=1 vol=1180.4159999999995 faces=38,1
+826,box-30x10x5,topface,chamfer_sym,3.0,DECLINED,swift=nil,1
+1013,box-5x5x40,vertex3,chamfer_sym,0.9,OK-unref,swift=shape valid=1 vol=554.5000000000005 faces=10,1
+955,box-5x5x40,diagonal,chamfer_sym,1.1,DECLINED,swift=nil,1
+849,box-30x10x5,all12,fillet,2.0,DECLINED,swift=nil,1
+1791,model2881,edge36,chamfer_sym,2.0,DECLINED,swift=nil,1
+127,box-10x10x10,adjacent,chamfer2,1.1,DECLINED,swift=nil,1
+118,box-10x10x10,adjacent,chamfer_sym,3.0,DECLINED,swift=nil,1
+1184,plate-hole,outertop,fillet,1.5,DECLINED,swift=nil,1
+1749,model2881,edge29,chamfer_sym,2.0,DECLINED,swift=nil,1
+1077,box-5x5x40,all12,chamfer_sym,2.0,DECLINED,swift=nil,1
+823,box-30x10x5,topface,chamfer_sym,1.1,DECLINED,swift=nil,1
+1436,U-extrusion,top-outline,chamfer_sym,1.5,DECLINED,swift=nil,1
+1697,model2881,edge21,fillet,1.0,DECLINED,swift=nil,1
+1460,U-extrusion,vert-convex-single,chamfer_sym,1.5,OK-unref,swift=shape valid=1 vol=1979.9999999999998 faces=11,1
+1521,U-extrusion,all,fillet,2.0,DECLINED,swift=nil,1
+321,box-4x10x6,adjacent,fillet,2.0,DECLINED,swift=nil,1
+928,box-5x5x40,opposite,chamfer2,0.6,DECLINED,swift=nil,1
+1744,model2881,edge29,fillet,0.3,DECLINED,swift=nil,1
+836,box-30x10x5,topface,chamfer2,1.5,DECLINED,swift=nil,1
+1412,U-extrusion,top-single,chamfer_sym,1.5,DECLINED,swift=nil,1
+862,box-30x10x5,all12,chamfer_sym,3.0,DECLINED,swift=nil,1
+1770,model2881,edge33,fillet,2.0,DECLINED,swift=nil,1
+10,box-10x10x10,single,fillet,3.0,OK,swift=shape valid=1 vol=579.9173106630441 faces=5,1
+1763,model2881,edge32,fillet,1.0,DECLINED,swift=nil,1
+1435,U-extrusion,top-outline,chamfer_sym,1.1,DECLINED,swift=nil,1
+344,box-4x10x6,adjacent,chamfer2,1.5,DECLINED,swift=nil,1
+479,box-20x20x2,opposite,fillet,5.0,OK,swift=shape valid=1 vol=647.0022175865689 faces=6,1
+1577,model2881,edge1,fillet,1.0,OK-unref,swift=shape valid=1 vol=100309.4506034914 faces=20,1
+848,box-30x10x5,all12,fillet,1.5,DECLINED,swift=nil,1
+1761,model2881,edge31,chamfer_sym,2.0,DECLINED,swift=nil,1
+753,box-30x10x5,adjacent,fillet,2.0,DECLINED,swift=nil,1
+1387,L-extrusion,all,chamfer_sym,1.1,DECLINED,swift=nil,1
+355,box-4x10x6,vertex3,fillet,1.1,DECLINED,swift=nil,1
+1592,model2881,edge3,chamfer_sym,1.0,OK-unref,swift=shape valid=1 vol=100256.4581722266 faces=20,1
+1730,model2881,edge26,chamfer_sym,1.0,DECLINED,swift=nil,1
+657,box-30x10x5,single,fillet,2.0,OK,swift=shape valid=1 vol=1374.0797227599696 faces=6,1
+715,box-30x10x5,opposite,chamfer2,1.1,OK-unref,swift=shape valid=1 vol=1348.7500000000002 faces=8,1
+515,box-20x20x2,diagonal,fillet,5.0,OK-unref,swift=shape valid=1 vol=647.0022175865688 faces=6,1
+117,box-10x10x10,adjacent,chamfer_sym,2.0,DECLINED,swift=nil,1
+607,box-20x20x2,topface,chamfer_sym,1.1,DECLINED,swift=nil,1
+644,box-20x20x2,all12,chamfer_sym,1.5,DECLINED,swift=nil,1
+537,box-20x20x2,adjacent,fillet,2.0,DECLINED,swift=nil,1
+83,box-10x10x10,diagonal,fillet,5.0,OK-unref,swift=shape valid=1 vol=94.85273020819537 faces=4,1
+58,box-10x10x10,opposite,chamfer_sym,3.0,DECLINED,swift=nil,1
+406,box-4x10x6,topface,chamfer2,3.0,DECLINED,swift=nil,1
+575,box-20x20x2,vertex3,fillet,5.0,DECLINED,swift=nil,1
+825,box-30x10x5,topface,chamfer_sym,2.0,DECLINED,swift=nil,1
+897,box-5x5x40,single,chamfer2,2.0,DECLINED,swift=nil,1
+1052,box-5x5x40,topface,chamfer2,1.5,DECLINED,swift=nil,1
+904,box-5x5x40,opposite,fillet,0.6,OK,swift=shape valid=1 vol=980.7555714120095 faces=7,1
+1233,plate-hole,all,fillet,2.0,DECLINED,swift=nil,1
+1808,model2881,edge39,chamfer_sym,1.0,DECLINED,swift=nil,1
+1374,L-extrusion,all,fillet,1.0,DECLINED,swift=nil,1
+1078,box-5x5x40,all12,chamfer_sym,3.0,DECLINED,swift=nil,1
+1494,U-extrusion,vert-all,fillet,1.0,DECLINED,swift=nil,1
+1720,model2881,edge25,fillet,0.3,DECLINED,swift=nil,1
+1643,model2881,edge12,fillet,1.0,OK-unref,swift=shape valid=1 vol=100250.36843057358 faces=29,1
+1809,model2881,edge39,chamfer_sym,2.0,DECLINED,swift=nil,1
+536,box-20x20x2,adjacent,fillet,1.5,DECLINED,swift=nil,1
+631,box-20x20x2,all12,fillet,1.1,DECLINED,swift=nil,1
+1827,model2881,edge42,chamfer_sym,2.0,DECLINED,swift=nil,1
+71,box-10x10x10,opposite,chamfer2,5.0,DECLINED,swift=nil,1
+1683,model2881,edge18,chamfer_sym,2.0,OK-unref,swift=shape valid=1 vol=99555.01346806754 faces=25,1
+777,box-30x10x5,adjacent,chamfer2,2.0,DECLINED,swift=nil,1
+621,box-20x20x2,topface,chamfer2,2.0,DECLINED,swift=nil,1
+719,box-30x10x5,opposite,chamfer2,5.0,DECLINED,swift=nil,1
+583,box-20x20x2,vertex3,chamfer_sym,1.1,DECLINED,swift=nil,1
+1751,model2881,edge30,fillet,1.0,DECLINED,swift=nil,1
+487,box-20x20x2,opposite,chamfer_sym,1.1,DECLINED,swift=nil,1
+419,box-4x10x6,all12,fillet,5.0,DECLINED,swift=nil,1
+226,box-4x10x6,single,fillet,3.0,OK,swift=shape valid=1 vol=146.78158757501296 faces=5,1
+811,box-30x10x5,topface,fillet,1.1,DECLINED,swift=nil,1
+1172,plate-hole,holeboth,chamfer_sym,1.5,DECLINED,swift=nil,1
+175,box-10x10x10,topface,chamfer_sym,1.1,DECLINED,swift=nil,1
+392,box-4x10x6,topface,chamfer_sym,1.5,DECLINED,swift=nil,1
+1708,model2881,edge23,fillet,0.3,DECLINED,swift=nil,1

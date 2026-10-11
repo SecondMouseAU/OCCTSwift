@@ -1,0 +1,43 @@
+file	case	category	expected_pivot	expected_halfspace	pinned_kernel6	0063_decline	0063_pivot	0063_halfspace
+S-sym-1.png	S: ONE symmetric chamfer, distance 1, on the left top edge of a 4 x 10 x 6 box	one answer	235.000000	235.000000	valid 235.000000	valid 235.000000	valid 235.000000	valid 235.000000
+S-sym-2.png	S: ONE symmetric chamfer, distance 2, on the left top edge of a 4 x 10 x 6 box	one answer	220.000000	220.000000	valid 220.000000	valid 220.000000	valid 220.000000	valid 220.000000
+S-sym-3p9.png	S: ONE symmetric chamfer, distance 3.9, on the left top edge of a 4 x 10 x 6 box	one answer	163.950000	163.950000	valid 163.950000	valid 163.950000	valid 163.950000	valid 163.950000
+S-sym-4.png	S: ONE symmetric chamfer, distance 4, on the left top edge of a 4 x 10 x 6 box	one answer	160.000000	160.000000	declined	valid 160.000000	valid 160.000000	valid 160.000000
+S-sym-4p5.png	S: ONE symmetric chamfer, distance 4.5, on the left top edge of a 4 x 10 x 6 box	DECISION	150.000000	140.000000	declined	declined	valid 150.000000	valid 140.000000
+S-sym-5p9.png	S: ONE symmetric chamfer, distance 5.9, on the left top edge of a 4 x 10 x 6 box	DECISION	122.000000	84.000000	declined	declined	valid 122.000000	valid 84.000000
+S-sym-6.png	S: ONE symmetric chamfer, distance 6, on the left top edge of a 4 x 10 x 6 box	DECISION	120.000000	80.000000	declined	declined	valid 120.000000	valid 80.000000
+S-sym-7.png	S: ONE symmetric chamfer, distance 7, on the left top edge of a 4 x 10 x 6 box	DECISION	120.000000	45.000000	declined	declined	valid 120.000000	valid 45.000000
+T-1_3.png	T: ONE chamfer, 1 on the top face and 3 on the left wall, left top edge of a 4 x 10 x 6 box	one answer	225.000000	225.000000	valid 225.000000	valid 225.000000	valid 225.000000	valid 225.000000
+T-3_1.png	T: ONE chamfer, 3 on the top face and 1 on the left wall, left top edge of a 4 x 10 x 6 box	one answer	225.000000	225.000000	valid 225.000000	valid 225.000000	valid 225.000000	valid 225.000000
+T-3p9_2.png	T: ONE chamfer, 3.9 on the top face and 2 on the left wall, left top edge of a 4 x 10 x 6 box	one answer	201.000000	201.000000	valid 201.000000	valid 201.000000	valid 201.000000	valid 201.000000
+T-4_2.png	T: ONE chamfer, 4 on the top face and 2 on the left wall, left top edge of a 4 x 10 x 6 box	one answer	200.000000	200.000000	declined	valid 200.000000	valid 200.000000	valid 200.000000
+T-5_2.png	T: ONE chamfer, 5 on the top face and 2 on the left wall, left top edge of a 4 x 10 x 6 box	DECISION	200.000000	192.000000	declined	declined	valid 200.000000	valid 192.000000
+T-2_5p9.png	T: ONE chamfer, 2 on the top face and 5.9 on the left wall, left top edge of a 4 x 10 x 6 box	one answer	181.000000	181.000000	valid 181.000000	valid 181.000000	valid 181.000000	valid 181.000000
+T-2_6.png	T: ONE chamfer, 2 on the top face and 6 on the left wall, left top edge of a 4 x 10 x 6 box	one answer	180.000000	180.000000	declined	valid 180.000000	valid 180.000000	valid 180.000000
+T-2_7.png	T: ONE chamfer, 2 on the top face and 7 on the left wall, left top edge of a 4 x 10 x 6 box	DECISION	180.000000	171.428571	declined	declined	valid 180.000000	valid 171.428571
+T-5_7.png	T: ONE chamfer, 5 on the top face and 7 on the left wall, left top edge of a 4 x 10 x 6 box	DECISION	120.000000	75.571429	declined	declined	valid 120.000000	valid 75.571429
+W-2_5.png	W: ONE chamfer, reference face = the left WALL: 2 on the wall and 5 on the top, left top edge	DECISION	200.000000	192.000000	declined	declined	valid 200.000000	valid 192.000000
+W-5_2.png	W: ONE chamfer, reference face = the left WALL: 5 on the wall and 2 on the top, left top edge	one answer	190.000000	190.000000	valid 190.000000	valid 190.000000	valid 190.000000	valid 190.000000
+B-sym-1.png	B: BOTH top edges at once, 1 on the top face and 1 on each wall, 4 x 10 x 6 box	one answer	230.000000	230.000000	valid 230.000000	valid 230.000000	valid 230.000000	valid 230.000000
+B-sym-1p9.png	B: BOTH top edges at once, 1.9 on the top face and 1.9 on each wall, 4 x 10 x 6 box	one answer	203.900000	203.900000	valid 203.900000	valid 203.900000	valid 203.900000	valid 203.900000
+B-sym-2.png	B: BOTH top edges at once, 2 on the top face and 2 on each wall, 4 x 10 x 6 box	one answer	200.000000	200.000000	declined	valid 200.000000	valid 200.000000	valid 200.000000
+B-sym-2p1.png	B: BOTH top edges at once, 2.1 on the top face and 2.1 on each wall, 4 x 10 x 6 box	one answer	196.000000	196.000000	declined	valid 196.000000	valid 196.000000	valid 196.000000
+B-sym-3.png	B: BOTH top edges at once, 3 on the top face and 3 on each wall, 4 x 10 x 6 box	one answer	160.000000	160.000000	declined	valid 160.000000	valid 160.000000	valid 160.000000
+B-sym-3p9.png	B: BOTH top edges at once, 3.9 on the top face and 3.9 on each wall, 4 x 10 x 6 box	one answer	124.000000	124.000000	declined	valid 124.000000	valid 124.000000	valid 124.000000
+B-sym-4p5.png	B: BOTH top edges at once, 4.5 on the top face and 4.5 on each wall, 4 x 10 x 6 box	DECISION	105.000000	100.000000	declined	declined	valid 105.000000	valid 100.000000
+B-asym-1_3-3_1.png	B: BOTH top edges at once, left (1 on top, 3 on the wall), right (3 on top, 1 on the wall)	one answer	210.000000	210.000000	declined	valid 210.000000	valid 210.000000	valid 210.000000
+B-asym-1_3-2_2.png	B: BOTH top edges at once, left (1, 3), right (2, 2)	one answer	205.000000	205.000000	valid 205.000000	valid 205.000000	valid 205.000000	valid 205.000000
+B-asym-3_2-3_2.png	B: BOTH top edges at once, each (3 on top, 2 on the wall): the cuts cross	one answer	186.666667	186.666667	declined	valid 186.666667	valid 186.666667	valid 186.666667
+B-sym-5-2.png	B: BOTH top edges at once, each (5 on top, 2 on the wall): each runs past the far edge	DECISION	180.000000	176.000000	declined	declined	valid 180.000000	valid 176.000000
+D-seq-1p5.png	D: 1.5 then 1.5, left top edge then right, one after the other (symmetric distances)	one answer	217.500000	217.500000	valid 217.500000	valid 217.500000	valid 217.500000	valid 217.500000
+D-seq-2.png	D: 2 then 2, left top edge then right, one after the other (symmetric distances)	one answer	200.000000	200.000000	declined	valid 200.000000	valid 200.000000	valid 200.000000
+D-seq-3.png	D: 3 then 3, left top edge then right, one after the other (symmetric distances)	DECISION	180.000000	160.000000	declined	declined	valid 180.000000	valid 160.000000
+A-2_20.png	A: distance 2 on the top face and 20 degrees, left top edge (the wall distance is 0.7279)	one answer	232.720595	232.720595	valid 232.720595	valid 232.720595	valid 232.720595	valid 232.720595
+A-2_30.png	A: distance 2 on the top face and 30 degrees, left top edge (the wall distance is 1.1547)	one answer	228.452995	228.452995	valid 228.452995	valid 228.452995	valid 228.452995	valid 228.452995
+A-2_45.png	A: distance 2 on the top face and 45 degrees, left top edge (the wall distance is 2.0000)	one answer	220.000000	220.000000	valid 220.000000	valid 220.000000	valid 220.000000	valid 220.000000
+A-2_60.png	A: distance 2 on the top face and 60 degrees, left top edge (the wall distance is 3.4641)	one answer	205.358984	205.358984	valid 205.358984	valid 205.358984	valid 205.358984	valid 205.358984
+A-2_75.png	A: distance 2 on the top face and 75 degrees, left top edge (the wall distance is 7.4641)	DECISION	180.000000	168.230855	declined	declined	valid 180.000000	valid 168.230855
+A-3p9_30.png	A: distance 3.9 on the top face and 30 degrees, left top edge (the wall distance is 2.2517)	one answer	196.092512	196.092512	valid 196.092512	valid 196.092512	valid 196.092512	valid 196.092512
+A-5_30.png	A: distance 5 on the top face and 30 degrees, left top edge (the wall distance is 2.8868)	DECISION	182.264973	170.717968	declined	declined	valid 182.264973	valid 170.717968
+A-2_80.png	A: distance 2 on the top face and 80 degrees, left top edge (the wall distance is 11.3426)	DECISION	180.000000	151.738857	declined	declined	valid 180.000000	valid 151.738857
+A-both-2p1-45.png	A: BOTH top edges at once, distance 2.1 and 45 degrees each	one answer	196.000000	196.000000	declined	valid 196.000000	valid 196.000000	valid 196.000000
