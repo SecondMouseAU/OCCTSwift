@@ -1,0 +1,68 @@
+#3326: BRepGProp_Vinert(face, gp_Pln, location) on a 10-cube, three kernels. macOS arm64, 2026-10-12.
+Probe: Scripts/repro/3326/probe.mm, compiled once per kernel with the line in its header.
+
+  local   Libraries/OCCT.xcframework of the main checkout, dated 22 Sep 2026: the v4.0.0-kernel.1
+          build (29 patches, no 0043). This is what the #2660 v5 agent had.
+  k2      v4.0.0-kernel.2 asset (30 patches, still no 0043).
+  k6      v4.0.0-kernel.6 asset (the current pin; carries 0043 and 0048).
+
+READ: local and k2 print vinertPlane=0 for all six faces, exactly the #2660 transcript. k6 prints
+500 / 500 for the two z faces at plane z = 0, whose closed form is (n . nFace) * area *
+(n . areaCentroid - d):  face z=-5: (-1)(100)(-5-0) = 500;  face z=+5: (+1)(100)(5-0) = 500;
+the four side faces have n . nFace = 0.  At plane z = -10: face z=-5: (-1)(100)(-5+10) = -500,
+face z=+5: (+1)(100)(5+10) = 1500, and the six sum to 1000, the volume, as it must.
+
+=== local
+Shape volume (BRepGProp::VolumeProperties): 999.99999999999977
+plane z = 0
+  face 0: area=100 faceZ(centroid)=-6.93889e-18 vinert=166.66666666666666 vinertPlane=0
+  face 1: area=100 faceZ(centroid)=-6.93889e-18 vinert=166.66666666666666 vinertPlane=0
+  face 2: area=100 faceZ(centroid)=-6.93889e-18 vinert=166.66666666666666 vinertPlane=0
+  face 3: area=100 faceZ(centroid)=-6.93889e-18 vinert=166.66666666666666 vinertPlane=0
+  face 4: area=100 faceZ(centroid)=-5 vinert=166.66666666666666 vinertPlane=0
+  face 5: area=100 faceZ(centroid)=5 vinert=166.66666666666666 vinertPlane=0
+  by-plane sum over the six faces = 0
+plane z = -10
+  face 0: area=100 faceZ(centroid)=-6.93889e-18 vinert=166.66666666666666 vinertPlane=0
+  face 1: area=100 faceZ(centroid)=-6.93889e-18 vinert=166.66666666666666 vinertPlane=0
+  face 2: area=100 faceZ(centroid)=-6.93889e-18 vinert=166.66666666666666 vinertPlane=0
+  face 3: area=100 faceZ(centroid)=-6.93889e-18 vinert=166.66666666666666 vinertPlane=0
+  face 4: area=100 faceZ(centroid)=-5 vinert=166.66666666666666 vinertPlane=0
+  face 5: area=100 faceZ(centroid)=5 vinert=166.66666666666666 vinertPlane=0
+  by-plane sum over the six faces = 0
+=== k2
+Shape volume (BRepGProp::VolumeProperties): 999.99999999999977
+plane z = 0
+  face 0: area=100 faceZ(centroid)=-6.93889e-18 vinert=166.66666666666666 vinertPlane=0
+  face 1: area=100 faceZ(centroid)=-6.93889e-18 vinert=166.66666666666666 vinertPlane=0
+  face 2: area=100 faceZ(centroid)=-6.93889e-18 vinert=166.66666666666666 vinertPlane=0
+  face 3: area=100 faceZ(centroid)=-6.93889e-18 vinert=166.66666666666666 vinertPlane=0
+  face 4: area=100 faceZ(centroid)=-5 vinert=166.66666666666666 vinertPlane=0
+  face 5: area=100 faceZ(centroid)=5 vinert=166.66666666666666 vinertPlane=0
+  by-plane sum over the six faces = 0
+plane z = -10
+  face 0: area=100 faceZ(centroid)=-6.93889e-18 vinert=166.66666666666666 vinertPlane=0
+  face 1: area=100 faceZ(centroid)=-6.93889e-18 vinert=166.66666666666666 vinertPlane=0
+  face 2: area=100 faceZ(centroid)=-6.93889e-18 vinert=166.66666666666666 vinertPlane=0
+  face 3: area=100 faceZ(centroid)=-6.93889e-18 vinert=166.66666666666666 vinertPlane=0
+  face 4: area=100 faceZ(centroid)=-5 vinert=166.66666666666666 vinertPlane=0
+  face 5: area=100 faceZ(centroid)=5 vinert=166.66666666666666 vinertPlane=0
+  by-plane sum over the six faces = 0
+=== k6
+Shape volume (BRepGProp::VolumeProperties): 999.99999999999977
+plane z = 0
+  face 0: area=100 faceZ(centroid)=-6.93889e-18 vinert=166.66666666666666 vinertPlane=0
+  face 1: area=100 faceZ(centroid)=-6.93889e-18 vinert=166.66666666666666 vinertPlane=0
+  face 2: area=100 faceZ(centroid)=-6.93889e-18 vinert=166.66666666666666 vinertPlane=0
+  face 3: area=100 faceZ(centroid)=-6.93889e-18 vinert=166.66666666666666 vinertPlane=0
+  face 4: area=100 faceZ(centroid)=-5 vinert=166.66666666666666 vinertPlane=500
+  face 5: area=100 faceZ(centroid)=5 vinert=166.66666666666666 vinertPlane=500
+  by-plane sum over the six faces = 1000
+plane z = -10
+  face 0: area=100 faceZ(centroid)=-6.93889e-18 vinert=166.66666666666666 vinertPlane=0
+  face 1: area=100 faceZ(centroid)=-6.93889e-18 vinert=166.66666666666666 vinertPlane=0
+  face 2: area=100 faceZ(centroid)=-6.93889e-18 vinert=166.66666666666666 vinertPlane=0
+  face 3: area=100 faceZ(centroid)=-6.93889e-18 vinert=166.66666666666666 vinertPlane=0
+  face 4: area=100 faceZ(centroid)=-5 vinert=166.66666666666666 vinertPlane=-500
+  face 5: area=100 faceZ(centroid)=5 vinert=166.66666666666666 vinertPlane=1500.0000000000002
+  by-plane sum over the six faces = 1000.0000000000002
