@@ -19,9 +19,11 @@ struct Issue266FaceHealingControlTests {
         return Shape.face(from: plane, outer: outer, innerWires: [])
     }
 
-    /// A 10x10 face on z=0 whose hole runs from x=8 to x=12, so it crosses the outer wire at
-    /// x=10. Wound the same way as the outer wire, which `ShapeFix_Face` would also repair, but
-    /// the defect these tests use it for is the crossing.
+    /// A 10x10 face on z=0 with a hole that crosses the outer wire.
+    ///
+    /// The hole runs from x=8 to x=12, so it crosses the outer wire at x=10. It is also wound
+    /// the same way as the outer wire, which `ShapeFix_Face` would repair too, but the defect
+    /// these tests use it for is the crossing.
     ///
     /// Built from raw `builderAdd` primitives so no fixing runs during construction.
     private func faceWithCrossingHole() throws -> Shape {
@@ -107,9 +109,11 @@ struct Issue266FaceHealingControlTests {
         #expect(abs((kept.surfaceArea ?? 0) - 100) < 1e-9)
     }
 
-    /// The control for the four `false`s above, for the one pass that has a cheap defect: a hole
-    /// crossing the outer wire. Measured: `fixIntersectingWires()` returns true on it and the
-    /// other three stay false, since the crossing is not a loop or a coincident-edge pair.
+    /// The control for the four negative answers above, for the one pass with a cheap defect.
+    ///
+    /// The defect is a hole crossing the outer wire. Measured: `fixIntersectingWires()` returns
+    /// true on it and the other three stay false, since the crossing is not a loop or a
+    /// coincident-edge pair.
     @Test("fixIntersectingWires reports a repair on a hole that crosses the outer wire")
     func fixIntersectingWiresReportsARepair() throws {
         let crossing = try faceWithCrossingHole()

@@ -29,7 +29,8 @@ struct Issue318DegenerateCurveOnSurfaceEdgeTests {
     )
     func analyzeSurvivesDegenerateCurveOnSurfaceEdge() throws {
         let shape = try #require(
-            Shape.fromBREPString(Self.fixtureBREP), "Shape.fromBREPString failed to parse the fixture"
+            Shape.fromBREPString(Self.fixtureBREP),
+            "Shape.fromBREPString failed to parse the fixture"
         )
         // The fixture is what its comment says: two faces and no shell, carrying the degenerate
         // edges. Measured on the pinned kernel: 65 edges in all.

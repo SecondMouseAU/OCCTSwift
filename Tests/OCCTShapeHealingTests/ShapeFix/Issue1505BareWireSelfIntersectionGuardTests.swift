@@ -88,7 +88,9 @@ struct Issue1505BareWireSelfIntersectionGuardTests {
         #expect(abs((extruded.surfaceArea ?? 0) - 4.0) < 1e-9)
         let box = try #require(extruded.boundingBox, "the extrusion has no bounds")
         // Bounds are padded by the shape's own tolerance, 1e-7 here.
-        #expect(abs(box.min.z) < 1e-6 && abs(box.max.z - 1.0) < 1e-6, "z span \(box.min.z)...\(box.max.z)")
+        #expect(
+            abs(box.min.z) < 1e-6 && abs(box.max.z - 1.0) < 1e-6,
+            "z span \(box.min.z)...\(box.max.z)")
         let healed = try #require(shape.healed(), "healing refused")
         #expect(healed.shapeType == .wire)
         #expect(healed.subShapeCount(ofType: .edge) == 4)
