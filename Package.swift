@@ -929,8 +929,8 @@ let wasmUnportableTestTargets: Set<String> = []
 // a 1e9 aspect ratio walked for arc length against 16 measured overshoot counts.
 let wasmExcludedTestFiles: [String: [String]] = [
     "OCCTFoundationTests": [
-        "HostOSCrossCheckTests.swift",
-        "SerialLockThreadSafetyTests.swift",
+        "OSD/HostOSCrossCheckTests.swift",
+        "Concurrency/SerialLockThreadSafetyTests.swift",
     ],
     "OCCTMiscTests": ["ConstructionContextConcurrencyTests.swift"],
     "OCCTModelingTests": ["BOPAlgo/Issue208SelfIntersectionTests.swift"],
