@@ -55,7 +55,7 @@ struct MathSolverSystemTests {
         )
         let sol = try #require(solved)
         try #require(sol.count == 2)
-        #expect(abs(sol[0] - 2.0) < 1e-4)
-        #expect(abs(sol[1] - 1.0) < 1e-4)
+        #expect(abs(sol[0] - 2.0) < 1e-6)
+        #expect(abs(sol[1] - 1.0) < 1e-6)
     }
 }
