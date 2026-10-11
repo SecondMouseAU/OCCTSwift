@@ -1,6 +1,6 @@
 # #1057: `@Test(arguments:)` over a mixed tuple corrupts the Swift task allocator
 
-`Tests/OCCTThreadTests/Issue990ThreadAxisBasisTests.swift` used to carry a comment attributing a
+`Tests/OCCTThreadTests/Construction/Issue990ThreadAxisBasisTests.swift` used to carry a comment attributing a
 SIGSEGV to OCCT and linking it to #344/#345. It is not OCCT. It is a toolchain defect, it needs no
 OCCT, no bridge and no `OCCT.xcframework`, and it reproduces in a package with nothing in it.
 
