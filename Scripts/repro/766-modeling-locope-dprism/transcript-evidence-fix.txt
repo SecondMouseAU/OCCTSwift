@@ -1,0 +1,2 @@
+draftPrismTwoHeights / draftPrismHasFaces: produced=1 type=solid faces=10 valid=1 volume=64.050646231928056
+draftPrismSingleHeight: produced=1 type=solid faces=6 valid=1 volume=24.085995119264528

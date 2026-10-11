@@ -1,0 +1,45 @@
+import Foundation
+import OCCTBridge
+
+// Hand-written shadows for the three entry points generate-shadow.py cannot map (they take a
+// pointer to an array of references). Copied to Sources/OCCTSwift/InjectionShadowExtra.swift for
+// the sweep, deleted afterwards, never committed there. Same B3_SWITCH gate as the generated file.
+
+func OCCTLocOpeGlue(
+    _ baseShape: OCCTShapeRef, _ gluedShape: OCCTShapeRef,
+    _ baseFaces: UnsafePointer<OCCTShapeRef>, _ gluedFaces: UnsafePointer<OCCTShapeRef>,
+    _ faceCount: Int32,
+    _ baseEdges: UnsafePointer<OCCTShapeRef?>?, _ gluedEdges: UnsafePointer<OCCTShapeRef?>?,
+    _ edgeCount: Int32
+) -> OCCTShapeRef? {
+    if GD.on("OCCTLocOpeGlue_RET_NIL") { return nil }
+    var n = faceCount
+    if GD.on("OCCTLocOpeGlue_DROP_LAST_PAIR") { n -= 1 }
+    // swap which shape's face is bound to which: base faces against base faces
+    let g = GD.on("OCCTLocOpeGlue_BIND_BASE_FACES_TO_THEMSELVES") ? baseFaces : gluedFaces
+    return OCCTBridge.OCCTLocOpeGlue(
+        baseShape, gluedShape, baseFaces, g, n, baseEdges, gluedEdges, edgeCount)
+}
+
+func OCCTLocOpeSplitByWires(
+    _ shape: OCCTShapeRef, _ wiresOnFaces: UnsafePointer<OCCTShapeRef>, _ pairCount: Int32,
+    _ outDirectLeft: UnsafeMutablePointer<UnsafeMutablePointer<OCCTShapeRef?>?>,
+    _ outDirectLeftCount: UnsafeMutablePointer<Int32>
+) -> OCCTShapeRef? {
+    if GD.on("OCCTLocOpeSplitByWires_RET_NIL") { return nil }
+    var n = pairCount
+    if GD.on("OCCTLocOpeSplitByWires_DROP_LAST_PAIR") { n -= 1 }
+    let r = OCCTBridge.OCCTLocOpeSplitByWires(
+        shape, wiresOnFaces, n, outDirectLeft, outDirectLeftCount)
+    if GD.on("OCCTLocOpeSplitByWires_DIRECT_LEFT_ZERO") { outDirectLeftCount.pointee = 0 }
+    return r
+}
+
+func OCCTLocOpeSplitByWiresAuto(
+    _ shape: OCCTShapeRef, _ wires: UnsafePointer<OCCTShapeRef>, _ wireCount: Int32
+) -> OCCTShapeRef? {
+    if GD.on("OCCTLocOpeSplitByWiresAuto_RET_NIL") { return nil }
+    var n = wireCount
+    if GD.on("OCCTLocOpeSplitByWiresAuto_DROP_LAST_WIRE") { n -= 1 }
+    return OCCTBridge.OCCTLocOpeSplitByWiresAuto(shape, wires, n)
+}

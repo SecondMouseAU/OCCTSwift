@@ -1,0 +1,2 @@
+input faces: 6 + 6
+glueByFace pair (1,0): produced=1 type=compound faces=11 valid=1 volume=999.99999999999977

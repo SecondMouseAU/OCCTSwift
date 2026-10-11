@@ -1,0 +1,6 @@
+faceIndex 1: done faces=6 valid=1
+faceIndex 2: done faces=6 valid=1
+faceIndex 3: done faces=6 valid=1
+faceIndex 4: done faces=6 valid=1
+faceIndex 5: done faces=7 valid=1
+faceIndex 6: no such face (bridge returns nullptr)
