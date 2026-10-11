@@ -25,5 +25,9 @@ struct TrigRootsTests {
         // 0 = 0 => all reals are solutions
         let inf = TrigRoots.hasInfiniteRoots(a: 0, b: 0, c: 0, d: 0, e: 0, from: 0, to: 2 * .pi)
         #expect(inf)
+        // Controls requiring the opposite answer (probed false): a nonzero cos term or a
+        // nonzero constant leaves isolated or no roots, so the verdict is not a constant true.
+        #expect(!TrigRoots.hasInfiniteRoots(a: 0, b: 0, c: 1, d: 0, e: 0, from: 0, to: 2 * .pi))
+        #expect(!TrigRoots.hasInfiniteRoots(a: 0, b: 0, c: 0, d: 0, e: 1, from: 0, to: 2 * .pi))
     }
 }

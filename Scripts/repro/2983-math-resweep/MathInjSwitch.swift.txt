@@ -1,0 +1,7 @@
+import Foundation
+
+/// #2983 Math re-sweep: runtime gate for the splices `inject.py` makes. Temporary; never committed
+/// as a .swift file. `MATH_INJ=<name>` turns one defect on, unset turns every one off.
+private let mathInjActive: String? = ProcessInfo.processInfo.environment["MATH_INJ"]
+
+func injOn(_ name: String) -> Bool { mathInjActive == name }
