@@ -1,0 +1,3 @@
+OCCTGeomToolsCurveSetWrite_RET_NIL
+OCCTGeomToolsCurveSetRead_COUNT_MINUS1
+OCCTGeomToolsCurveSetRead_REVERSED

@@ -1,0 +1,17 @@
+cylinderRevolutionRadius: cylinder face radius=5 axis origin=(0, 0, 0) dir=(0, 0, 1)
+threePointCircle: gce_MakeCirc done=1 centre=(-7.8504622934188746e-17, 1.014653635756952e-17, 0) radius=1
+collinearPointsNil: gce_MakeCirc done=0 status=3 (gce_ColinearPoints = 3)
+edgeCirclePropertiesFullCircle: edge[0] circle radius=3 range=[0, 6.2831853071795862] centre z=8
+edgeCirclePropertiesFullCircle: edge[2] circle radius=3 range=[0, 6.2831853071795862] centre z=0
+singleCubicSegment3D: degree=3 poles=4 knots=2
+  poles: (0, 0, 0) (1, 2, 0) (2, 2, 0) (3, 0, 0)
+  knots: 0 1
+  mults: 4 4
+twoCubicSegments3D: degree=3 poles=6 knots=3
+  poles: (0, 0, 0) (1, 1, 0) (2, 1, 0) (4, -1, 0) (5, -1, 0) (6, 0, 0)
+  knots: 0 0.5 1
+  mults: 4 2 4
+manySegmentsExceedingCapacity (60 cubic segments; the bridge caps at 100 poles, 50 knots): degree=3 poles=122 knots=61
+  poles: (0, 0, 0) (1, 1, 0) (2, -1, 0) (4, 1, 0) (5, -1, 0) (7, 1, 0) (8, -1, 0) (10, 1, 0)
+  knots: 0 0.016666666666666666 0.033333333333333333 0.050000000000000003 0.066666666666666666 0.083333333333333329 0.099999999999999992 0.11666666666666665
+  mults: 4 2 2 2 2 2 2 2
