@@ -1,0 +1,7 @@
+# The test files this PR lifts (current paths).
+Tests/OCCTAnalysisTests/GeomProperties/BezierSurfaceTests.swift
+Tests/OCCTAnalysisTests/LocalProperties/LProp3dSurfaceTests.swift
+Tests/OCCTAnalysisTests/LocalProperties/LPropAnalyticCurInfTests.swift
+Tests/OCCTAnalysisTests/MassProperties/InertiaPropertiesTests.swift
+Tests/OCCTAnalysisTests/PlanarGeometry/MedialAxisRectangleTests.swift
+Tests/OCCTAnalysisTests/PlanarGeometry/MedialAxisVariousShapesTests.swift

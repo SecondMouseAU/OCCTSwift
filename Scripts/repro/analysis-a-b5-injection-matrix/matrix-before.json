@@ -1,0 +1,1228 @@
+{
+ "label": "before",
+ "targets": {
+  "OCCTAnalysisTests": {
+   "changed": [
+    "BezierSurfaceTests.degree",
+    "BezierSurfaceTests.exchangeUV",
+    "BezierSurfaceTests.getPoleAndSet",
+    "BezierSurfaceTests.nbPoles",
+    "BezierSurfaceTests.rationalFlags",
+    "InertiaPropertiesTests.boxInertia",
+    "InertiaPropertiesTests.cylinderPrincipal",
+    "InertiaPropertiesTests.sphereSymmetry",
+    "InertiaPropertiesTests.surfaceInertia",
+    "LProp3dSurfaceTests.curvatureDirections",
+    "LProp3dSurfaceTests.cylinderCurvatures",
+    "LProp3dSurfaceTests.sphereCurvatures",
+    "LPropAnalyticCurInfTests.ellipseHasExtrema",
+    "MedialAxisRectangleTests.rectangleArcs",
+    "MedialAxisRectangleTests.rectangleDistanceOnArc",
+    "MedialAxisRectangleTests.rectangleDrawAll",
+    "MedialAxisRectangleTests.rectangleDrawArc",
+    "MedialAxisRectangleTests.rectangleGraphCounts",
+    "MedialAxisRectangleTests.rectangleMinThickness",
+    "MedialAxisRectangleTests.rectangleNodes",
+    "MedialAxisVariousShapesTests.arcOutOfBounds",
+    "MedialAxisVariousShapesTests.distanceInvalidArc",
+    "MedialAxisVariousShapesTests.drawArcInvalidIndex",
+    "MedialAxisVariousShapesTests.lShapedMedialAxis",
+    "MedialAxisVariousShapesTests.narrowRectangle",
+    "MedialAxisVariousShapesTests.nodeOutOfBounds",
+    "MedialAxisVariousShapesTests.nodesInsideBoundary",
+    "MedialAxisVariousShapesTests.squareMedialAxis",
+    "MedialAxisVariousShapesTests.triangleMedialAxis"
+   ],
+   "crashes": [
+    "OCCTMedialAxisDrawAll_lineStarts_PLUS1",
+    "OCCTMedialAxisDrawAll_lineLengths_PLUS1",
+    "OCCTMedialAxisDrawArc_RET_PLUS1",
+    "OCCTSurfaceBezierNbUPoles_RET_ZERO",
+    "OCCTSurfaceBezierNbVPoles_RET_ZERO"
+   ],
+   "live_switches": 48,
+   "rows": {
+    "OCCTGPropsCylinder_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGPropsCylinder_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGPropsCylinder_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGPropsCylinder_IN4_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGPropsCylinder_IN5_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGPropsCylinder_IN_volume_FLIP": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGPropsCylinder_RET_NIL": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGPropsMass_RET_FLIP": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGPropsMass_outMass_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGPropsMass_outMass_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGPropsPrincipalSymmetry_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGPropsPrincipalSymmetry_RET_FLIP": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGPropsSphere_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGPropsSphere_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGPropsSphere_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGPropsSphere_IN4_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGPropsSphere_IN5_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGPropsSphere_IN_volume_FLIP": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTGPropsSphere_RET_NIL": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTLPropAnalyticCurInf_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTLPropAnalyticCurInf_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTLPropAnalyticCurInf_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTLPropAnalyticCurInf_RET_PLUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "LPropAnalyticCurInfTests.circleHasNoSpecialPoints",
+      "LPropAnalyticCurInfTests.lineHasNoSpecialPoints"
+     ]
+    },
+    "OCCTLPropAnalyticCurInf_RET_ZERO": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "LPropAnalyticCurInfTests.ellipseHasExtrema"
+     ]
+    },
+    "OCCTLPropAnalyticCurInf_outParams_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTLPropAnalyticCurInf_outParams_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTLPropAnalyticCurInf_outTypes_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTMedialAxisDrawAll_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTMedialAxisDrawAll_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTMedialAxisDrawAll_RET_ZERO": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "MedialAxisRectangleTests.rectangleDrawAll"
+     ]
+    },
+    "OCCTMedialAxisDrawAll_lineLengths_PLUS1": {
+     "crash": true,
+     "exit": -5,
+     "ran": 3,
+     "red": []
+    },
+    "OCCTMedialAxisDrawAll_lineStarts_PLUS1": {
+     "crash": true,
+     "exit": -5,
+     "ran": 32,
+     "red": []
+    },
+    "OCCTMedialAxisDrawAll_outXY_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTMedialAxisDrawAll_outXY_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTMedialAxisDrawArc_RET_MINUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "MedialAxisRectangleTests.rectangleDrawArc"
+     ]
+    },
+    "OCCTMedialAxisDrawArc_RET_PLUS1": {
+     "crash": true,
+     "exit": -5,
+     "ran": 33,
+     "red": [
+      "MedialAxisVariousShapesTests.drawArcInvalidIndex"
+     ]
+    },
+    "OCCTMedialAxisDrawArc_RET_ZERO": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "MedialAxisRectangleTests.rectangleDrawArc"
+     ]
+    },
+    "OCCTMedialAxisDrawArc_outXY_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTMedialAxisDrawArc_outXY_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTMedialAxisGetArcCount_RET_MINUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "MedialAxisVariousShapesTests.arcOutOfBounds",
+      "MedialAxisVariousShapesTests.distanceInvalidArc",
+      "MedialAxisVariousShapesTests.drawArcInvalidIndex"
+     ]
+    },
+    "OCCTMedialAxisGetArcCount_RET_PLUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "MedialAxisRectangleTests.rectangleArcs",
+      "MedialAxisRectangleTests.rectangleDrawAll"
+     ]
+    },
+    "OCCTMedialAxisGetArcCount_RET_ZERO": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "MedialAxisRectangleTests.rectangleArcs",
+      "MedialAxisRectangleTests.rectangleDrawArc",
+      "MedialAxisRectangleTests.rectangleGraphCounts",
+      "MedialAxisVariousShapesTests.arcOutOfBounds",
+      "MedialAxisVariousShapesTests.distanceInvalidArc",
+      "MedialAxisVariousShapesTests.drawArcInvalidIndex",
+      "MedialAxisVariousShapesTests.lShapedMedialAxis",
+      "MedialAxisVariousShapesTests.squareMedialAxis",
+      "MedialAxisVariousShapesTests.triangleMedialAxis"
+     ]
+    },
+    "OCCTMedialAxisGetArc_RET_FLIP": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "MedialAxisRectangleTests.rectangleArcs",
+      "MedialAxisVariousShapesTests.arcOutOfBounds"
+     ]
+    },
+    "OCCTMedialAxisGetArc_outArc_firstEltIndex_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTMedialAxisGetArc_outArc_firstNodeIndex_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTMedialAxisGetArc_outArc_geomIndex_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTMedialAxisGetArc_outArc_index_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTMedialAxisGetArc_outArc_secondEltIndex_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTMedialAxisGetArc_outArc_secondNodeIndex_PLUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "MedialAxisRectangleTests.rectangleArcs"
+     ]
+    },
+    "OCCTMedialAxisGetBasicEltCount_RET_MINUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTMedialAxisGetBasicEltCount_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTMedialAxisGetBasicEltCount_RET_ZERO": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "MedialAxisRectangleTests.rectangleGraphCounts"
+     ]
+    },
+    "OCCTMedialAxisGetNodeCount_RET_MINUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "MedialAxisRectangleTests.rectangleArcs",
+      "MedialAxisVariousShapesTests.nodeOutOfBounds"
+     ]
+    },
+    "OCCTMedialAxisGetNodeCount_RET_PLUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "MedialAxisRectangleTests.rectangleNodes"
+     ]
+    },
+    "OCCTMedialAxisGetNodeCount_RET_ZERO": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "MedialAxisRectangleTests.rectangleArcs",
+      "MedialAxisRectangleTests.rectangleGraphCounts",
+      "MedialAxisRectangleTests.rectangleNodes",
+      "MedialAxisVariousShapesTests.lShapedMedialAxis",
+      "MedialAxisVariousShapesTests.nodeOutOfBounds",
+      "MedialAxisVariousShapesTests.squareMedialAxis",
+      "MedialAxisVariousShapesTests.triangleMedialAxis"
+     ]
+    },
+    "OCCTMedialAxisGetNode_RET_FLIP": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "MedialAxisRectangleTests.rectangleNodes",
+      "MedialAxisVariousShapesTests.nodeOutOfBounds"
+     ]
+    },
+    "OCCTMedialAxisGetNode_outNode_distance_NEG": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "MedialAxisRectangleTests.rectangleNodes"
+     ]
+    },
+    "OCCTMedialAxisGetNode_outNode_distance_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTMedialAxisGetNode_outNode_index_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTMedialAxisGetNode_outNode_x_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTMedialAxisGetNode_outNode_x_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTMedialAxisGetNode_outNode_y_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTMedialAxisGetNode_outNode_y_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTMedialAxisMinThickness_RET_NEG": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "MedialAxisRectangleTests.rectangleMinThickness",
+      "MedialAxisVariousShapesTests.narrowRectangle",
+      "MedialAxisVariousShapesTests.squareMedialAxis"
+     ]
+    },
+    "OCCTMedialAxisMinThickness_RET_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTShapeInertiaProperties_RET_FLIP": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "InertiaPropertiesTests.boxInertia",
+      "InertiaPropertiesTests.cylinderPrincipal",
+      "InertiaPropertiesTests.sphereSymmetry"
+     ]
+    },
+    "OCCTShapeInertiaProperties_outProps_centerX_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTShapeInertiaProperties_outProps_centerX_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTShapeInertiaProperties_outProps_centerY_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTShapeInertiaProperties_outProps_centerY_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTShapeInertiaProperties_outProps_centerZ_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTShapeInertiaProperties_outProps_centerZ_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTShapeInertiaProperties_outProps_principalIx_NEG": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "InertiaPropertiesTests.boxInertia"
+     ]
+    },
+    "OCCTShapeInertiaProperties_outProps_principalIx_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTShapeInertiaProperties_outProps_principalIy_NEG": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "InertiaPropertiesTests.boxInertia"
+     ]
+    },
+    "OCCTShapeInertiaProperties_outProps_principalIy_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTShapeInertiaProperties_outProps_principalIz_NEG": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "InertiaPropertiesTests.boxInertia"
+     ]
+    },
+    "OCCTShapeInertiaProperties_outProps_principalIz_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTShapeInertiaProperties_outProps_volume_NEG": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "InertiaPropertiesTests.boxInertia",
+      "InertiaPropertiesTests.cylinderPrincipal",
+      "InertiaPropertiesTests.sphereSymmetry"
+     ]
+    },
+    "OCCTShapeInertiaProperties_outProps_volume_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTShapeSurfaceInertiaProperties_RET_FLIP": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "InertiaPropertiesTests.surfaceInertia"
+     ]
+    },
+    "OCCTShapeSurfaceInertiaProperties_outProps_centerX_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTShapeSurfaceInertiaProperties_outProps_centerX_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTShapeSurfaceInertiaProperties_outProps_centerY_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTShapeSurfaceInertiaProperties_outProps_centerY_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTShapeSurfaceInertiaProperties_outProps_centerZ_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTShapeSurfaceInertiaProperties_outProps_centerZ_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTShapeSurfaceInertiaProperties_outProps_principalIx_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTShapeSurfaceInertiaProperties_outProps_principalIx_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTShapeSurfaceInertiaProperties_outProps_principalIy_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTShapeSurfaceInertiaProperties_outProps_principalIy_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTShapeSurfaceInertiaProperties_outProps_principalIz_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTShapeSurfaceInertiaProperties_outProps_principalIz_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTShapeSurfaceInertiaProperties_outProps_volume_NEG": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "InertiaPropertiesTests.surfaceInertia"
+     ]
+    },
+    "OCCTShapeSurfaceInertiaProperties_outProps_volume_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTShapeSurfaceInertia_RET_FLIP": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTShapeSurfaceInertia_result_area_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTShapeSurfaceInertia_result_area_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTShapeSurfaceInertia_result_centerX_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTShapeSurfaceInertia_result_centerX_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTShapeSurfaceInertia_result_centerY_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTShapeSurfaceInertia_result_centerY_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTShapeSurfaceInertia_result_centerZ_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTShapeSurfaceInertia_result_centerZ_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTShapeSurfaceInertia_result_principalMoment1_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTShapeSurfaceInertia_result_principalMoment1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTShapeSurfaceInertia_result_principalMoment2_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTShapeSurfaceInertia_result_principalMoment2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTShapeSurfaceInertia_result_principalMoment3_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTShapeSurfaceInertia_result_principalMoment3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTSurfaceBezierExchangeUV_RET_FLIP": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "BezierSurfaceTests.exchangeUV"
+     ]
+    },
+    "OCCTSurfaceBezierGetPole_x_NEG": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "BezierSurfaceTests.getPoleAndSet"
+     ]
+    },
+    "OCCTSurfaceBezierGetPole_x_PLUS": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "BezierSurfaceTests.getPoleAndSet"
+     ]
+    },
+    "OCCTSurfaceBezierGetPole_y_NEG": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "BezierSurfaceTests.getPoleAndSet"
+     ]
+    },
+    "OCCTSurfaceBezierGetPole_y_PLUS": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "BezierSurfaceTests.getPoleAndSet"
+     ]
+    },
+    "OCCTSurfaceBezierGetPole_z_NEG": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "BezierSurfaceTests.getPoleAndSet"
+     ]
+    },
+    "OCCTSurfaceBezierGetPole_z_PLUS": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "BezierSurfaceTests.getPoleAndSet"
+     ]
+    },
+    "OCCTSurfaceBezierIsURational_RET_FLIP": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "BezierSurfaceTests.rationalFlags",
+      "BezierSurfaceTests.rationalFlagsReportTheOppositeAxis"
+     ]
+    },
+    "OCCTSurfaceBezierIsVRational_RET_FLIP": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "BezierSurfaceTests.rationalFlags",
+      "BezierSurfaceTests.rationalFlagsReportTheOppositeAxis"
+     ]
+    },
+    "OCCTSurfaceBezierNbUPoles_RET_MINUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "BezierSurfaceTests.rationalFlagsReportTheOppositeAxis"
+     ]
+    },
+    "OCCTSurfaceBezierNbUPoles_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTSurfaceBezierNbUPoles_RET_ZERO": {
+     "crash": true,
+     "exit": -5,
+     "ran": 19,
+     "red": [
+      "BezierSurfaceTests.nbPoles"
+     ]
+    },
+    "OCCTSurfaceBezierNbVPoles_RET_MINUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "BezierSurfaceTests.rationalFlagsReportTheOppositeAxis"
+     ]
+    },
+    "OCCTSurfaceBezierNbVPoles_RET_PLUS1": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTSurfaceBezierNbVPoles_RET_ZERO": {
+     "crash": true,
+     "exit": -5,
+     "ran": 32,
+     "red": [
+      "BezierSurfaceTests.nbPoles"
+     ]
+    },
+    "OCCTSurfaceBezierSegment_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTSurfaceBezierSegment_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTSurfaceBezierSegment_IN3_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTSurfaceBezierSegment_IN4_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTSurfaceBezierSegment_RET_FLIP": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTSurfaceBezierSetPole_IN1_PLUS": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "BezierSurfaceTests.getPoleAndSet"
+     ]
+    },
+    "OCCTSurfaceBezierSetPole_IN2_PLUS": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "BezierSurfaceTests.getPoleAndSet"
+     ]
+    },
+    "OCCTSurfaceBezierSetPole_IN3_PLUS": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "BezierSurfaceTests.getPoleAndSet"
+     ]
+    },
+    "OCCTSurfaceBezierSetPole_RET_FLIP": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "BezierSurfaceTests.getPoleAndSet"
+     ]
+    },
+    "OCCTSurfaceBezierSetWeight_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTSurfaceBezierSetWeight_RET_FLIP": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTSurfaceBezierUDegree_RET_MINUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "BezierSurfaceTests.exchangeUV"
+     ]
+    },
+    "OCCTSurfaceBezierUDegree_RET_PLUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "BezierSurfaceTests.exchangeUV"
+     ]
+    },
+    "OCCTSurfaceBezierUDegree_RET_ZERO": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "BezierSurfaceTests.degree",
+      "BezierSurfaceTests.exchangeUV"
+     ]
+    },
+    "OCCTSurfaceBezierVDegree_RET_MINUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "BezierSurfaceTests.exchangeUV"
+     ]
+    },
+    "OCCTSurfaceBezierVDegree_RET_PLUS1": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "BezierSurfaceTests.exchangeUV"
+     ]
+    },
+    "OCCTSurfaceBezierVDegree_RET_ZERO": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "BezierSurfaceTests.degree",
+      "BezierSurfaceTests.exchangeUV"
+     ]
+    },
+    "OCCTSurfaceCreateBezier_RET_NIL": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "BezierSurfaceTests.rationalFlagsReportTheOppositeAxis"
+     ]
+    },
+    "OCCTSurfaceLocalCurvatureDirections_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTSurfaceLocalCurvatureDirections_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTSurfaceLocalCurvatureDirections_maxDx_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTSurfaceLocalCurvatureDirections_maxDx_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTSurfaceLocalCurvatureDirections_maxDy_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTSurfaceLocalCurvatureDirections_maxDy_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTSurfaceLocalCurvatureDirections_maxDz_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTSurfaceLocalCurvatureDirections_maxDz_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTSurfaceLocalCurvatureDirections_minDx_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTSurfaceLocalCurvatureDirections_minDx_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTSurfaceLocalCurvatureDirections_minDy_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTSurfaceLocalCurvatureDirections_minDy_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTSurfaceLocalCurvatureDirections_minDz_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTSurfaceLocalCurvatureDirections_minDz_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTSurfaceLocalCurvatures_IN1_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTSurfaceLocalCurvatures_IN2_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTSurfaceLocalCurvatures_gaussian_NEG": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "LProp3dSurfaceTests.sphereCurvatures"
+     ]
+    },
+    "OCCTSurfaceLocalCurvatures_gaussian_PLUS": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "LProp3dSurfaceTests.cylinderCurvatures",
+      "LProp3dSurfaceTests.sphereCurvatures"
+     ]
+    },
+    "OCCTSurfaceLocalCurvatures_maxCurvature_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTSurfaceLocalCurvatures_maxCurvature_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTSurfaceLocalCurvatures_mean_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTSurfaceLocalCurvatures_mean_PLUS": {
+     "crash": false,
+     "exit": 1,
+     "ran": 34,
+     "red": [
+      "LProp3dSurfaceTests.sphereCurvatures"
+     ]
+    },
+    "OCCTSurfaceLocalCurvatures_minCurvature_NEG": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    },
+    "OCCTSurfaceLocalCurvatures_minCurvature_PLUS": {
+     "crash": false,
+     "exit": 0,
+     "ran": 34,
+     "red": []
+    }
+   },
+   "switches": 167,
+   "tests": [
+    "BezierSurfaceTests.nbPoles",
+    "BezierSurfaceTests.degree",
+    "BezierSurfaceTests.getPoleAndSet",
+    "BezierSurfaceTests.rationalFlags",
+    "BezierSurfaceTests.rationalFlagsReportTheOppositeAxis",
+    "BezierSurfaceTests.exchangeUV",
+    "LProp3dSurfaceTests.sphereCurvatures",
+    "LProp3dSurfaceTests.cylinderCurvatures",
+    "LProp3dSurfaceTests.curvatureDirections",
+    "LPropAnalyticCurInfTests.ellipseHasExtrema",
+    "LPropAnalyticCurInfTests.lineHasNoSpecialPoints",
+    "LPropAnalyticCurInfTests.circleHasNoSpecialPoints",
+    "InertiaPropertiesTests.boxInertia",
+    "InertiaPropertiesTests.sphereSymmetry",
+    "InertiaPropertiesTests.surfaceInertia",
+    "InertiaPropertiesTests.cylinderPrincipal",
+    "MedialAxisRectangleTests.rectangleComputesSuccessfully",
+    "MedialAxisRectangleTests.rectangleGraphCounts",
+    "MedialAxisRectangleTests.rectangleMinThickness",
+    "MedialAxisRectangleTests.rectangleNodes",
+    "MedialAxisRectangleTests.rectangleArcs",
+    "MedialAxisRectangleTests.rectangleDrawArc",
+    "MedialAxisRectangleTests.rectangleDrawAll",
+    "MedialAxisRectangleTests.rectangleDistanceOnArc",
+    "MedialAxisVariousShapesTests.squareMedialAxis",
+    "MedialAxisVariousShapesTests.lShapedMedialAxis",
+    "MedialAxisVariousShapesTests.narrowRectangle",
+    "MedialAxisVariousShapesTests.triangleMedialAxis",
+    "MedialAxisVariousShapesTests.noFaceFails",
+    "MedialAxisVariousShapesTests.nodeOutOfBounds",
+    "MedialAxisVariousShapesTests.arcOutOfBounds",
+    "MedialAxisVariousShapesTests.distanceInvalidArc",
+    "MedialAxisVariousShapesTests.drawArcInvalidIndex",
+    "MedialAxisVariousShapesTests.nodesInsideBoundary"
+   ],
+   "unreddened": [
+    "LProp3dSurfaceTests.curvatureDirections",
+    "MedialAxisRectangleTests.rectangleDistanceOnArc",
+    "MedialAxisVariousShapesTests.nodesInsideBoundary"
+   ]
+  }
+ }
+}
