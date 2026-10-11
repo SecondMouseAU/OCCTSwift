@@ -192,7 +192,9 @@ struct StressFeatureChainTests {
         // Chamfer
         shape = try #require(shape.chamfered(distance: 0.3), "chamfer")
         #expect(shape.isValid)
-        #expect(shape.subShapeCount(ofType: .face) == 38, "measured 26 fillet faces + 4 hole walls + 8 chamfer faces")
+        #expect(
+            shape.subShapeCount(ofType: .face) == 38,
+            "measured 26 fillet faces + 4 hole walls + 8 chamfer faces")
         // Shell. #2830: this link never ran, and "may fail on complex geometry" was the wrong
         // reason. `shelled(thickness:)` is `MakeThickSolidBySimple`, whose domain is a non-closed
         // shell or face, so it refuses this closed chain result for the same reason it refuses a
@@ -378,7 +380,8 @@ struct StressTransformChainTests {
                 shape = try #require(shape.translated(by: SIMD3(0.01, 0, 0)), "translate \(i)")
                 centre.x += 0.01
             case 1:
-                shape = try #require(shape.rotated(axis: SIMD3(0, 0, 1), angle: 0.01), "rotate \(i)")
+                shape = try #require(
+                    shape.rotated(axis: SIMD3(0, 0, 1), angle: 0.01), "rotate \(i)")
                 let (c, s) = (cos(0.01), sin(0.01))
                 centre = SIMD2(c * centre.x - s * centre.y, s * centre.x + c * centre.y)
                 angle += 0.01
@@ -481,7 +484,8 @@ struct StressDocumentAssemblyTests {
         let doc = try #require(Document.create())
         var labels = Set<Int64>()
         for i in 0..<100 {
-            let box = try #require(Shape.box(width: Double(i + 1), height: 10, depth: 10), "box \(i)")
+            let box = try #require(
+                Shape.box(width: Double(i + 1), height: 10, depth: 10), "box \(i)")
             labels.insert(doc.addShape(box))
         }
         #expect(doc.shapeCount == 100)

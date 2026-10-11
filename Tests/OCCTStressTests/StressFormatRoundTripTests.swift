@@ -88,7 +88,9 @@ struct StressRoundTripBREPTests {
 
 // MARK: - BREP String Round-Trip
 
-/// What each standard fixture is, so a round trip is compared with the fixture's own closed-form
+/// What each standard fixture is.
+///
+/// A round trip is compared with the fixture's own closed-form
 /// figures and not only with what the same shape reported before it was written. #2983: the old
 /// check compared the restored shape with the original within 1e-3 relative, which a restore that
 /// scaled by 1.0005 passed, and `origVol > 0, let rVol` skipped the comparison for a shape with no
@@ -136,9 +138,10 @@ private let fixtureFigures: [String: FixtureFigures] = [
         type: .solid),
 ]
 
-/// Pin `shape` and its restored copy against `name`'s figures. Both halves: the original has to be
-/// what the table says (or the comparison is between two copies of the same wrong shape), and the
-/// restored one has to match the original to rounding.
+/// Pin a fixture and its restored copy against the fixture's closed-form figures.
+///
+/// Both halves matter: the original has to be what the table says (or the comparison is between
+/// two copies of the same wrong shape), and the restored one has to match the original to rounding.
 private func expectFigures(
     _ shape: Shape, restored: Shape, name: String, volumeTolerance: Double = 1e-9
 ) throws {
@@ -189,12 +192,15 @@ struct StressRoundTripBREPStringTests {
     @Test func cone() throws { try roundTrip(standardCone(), name: "cone") }
     @Test func torus() throws { try roundTrip(standardTorus(), name: "torus") }
     @Test func filletedBoxShape() throws { try roundTrip(try filletedBox(), name: "filletedBox") }
-    @Test func drilledPlateShape() throws { try roundTrip(try drilledPlate(), name: "drilledPlate") }
+    @Test func drilledPlateShape() throws {
+        try roundTrip(try drilledPlate(), name: "drilledPlate")
+    }
     @Test func compound() throws { try roundTrip(try standardCompound(), name: "compound") }
 
-    /// The strings are the shapes: a different fixture is a different string, and a restore does
-    /// not hand back some other fixture. Without this, a `toBREPString` that always wrote the box
-    /// would fail only the eight tests whose own figures differ from the box's, by name.
+    /// A different fixture is a different string.
+    ///
+    /// Without this, a `toBREPString` that always wrote the first shape it was given would fail
+    /// only through the other fixtures' figures, never by saying that the strings coincide.
     @Test func distinctShapesWriteDistinctStrings() throws {
         let box = try #require(standardBox().toBREPString())
         let cylinder = try #require(standardCylinder().toBREPString())
