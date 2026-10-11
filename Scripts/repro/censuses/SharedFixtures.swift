@@ -9,7 +9,6 @@
 
 import Foundation
 import OCCTSwift
-import simd
 
 enum SharedFixture {
     /// A single 10mm box, origin-centred (-5...5 on every axis).

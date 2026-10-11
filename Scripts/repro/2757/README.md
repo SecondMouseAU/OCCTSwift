@@ -103,11 +103,40 @@ So the trigger, as far as it was bounded: **a `setjmp` whose argument is a call 
 * The hand-written [`2175/probe-sjlj-eh.cxx`](../2175/probe-sjlj-eh.cxx) missed it because its
   `Label()` is inline and cannot throw, which is the `noexcept` row above.
 
+## Upstream re-check (2026-10-11): it reproduces on upstream LLVM
+
+Everything above is the swift-6.4.0 fork (clang 21). The same file was rebuilt against upstream
+toolchains, with the same flags, and validated three ways (V8 in `node` v26.10.0, `wasm-tools`
+1.258.3, wabt 1.0.42 `wasm-validate --enable-all`):
+
+| Toolchain | `-O1` .. `-Oz` | `-O0` | Controls (legacy EH, no `setjmp`, `noexcept`, global buffer, one loop) |
+|---|---|---|---|
+| wasi-sdk 34: `clang version 23.1.0-wasi-sdk` (llvm-project `895aa2c896ad`), WASI sysroot from the same SDK | all five invalid, all three validators | clang crashes in `WebAssembly CFG Stackify`, `addNestedTryTable` | all valid |
+| LLVM 23.1.3 release: `clang version 23.1.3` (llvm-project `0d261d1ca552`), sysroot from wasi-sdk 34 | all five invalid, all three validators | same crash | all valid |
+| Compiler Explorer `wasm32clang` ("WebAssembly clang (trunk)"): `clang version 24.0.0git` (llvm-project `680b97545e81`, trunk build of 2026-10-06), no libc, so `setjmp` is declared by hand | all five invalid (the returned assembly assembled with the 23.1.3 `llvm-mc`, linked, then validated) | same crash (exit 139) | all valid |
+
+The failing function and message match the fork's: `Compiling function #9:"f()" failed: br_table:
+label arity inconsistent with previous arity 0`; the `.s` from trunk shows the same
+`try_table`-nested `br_table {4, 3, 2, 2}` shape. Two differences from the fork: upstream crashes at
+`-O0` where the fork emitted an invalid module, and no upstream run needed the Swift SDK. The
+`-O0` crash is in the same function (`addNestedTryTable`) as the open upstream report
+[llvm/llvm-project#217723](https://github.com/llvm/llvm-project/issues/217723) (C++20 coroutines under
+exnref EH: crash at `-O1`/`-O2`, the same `br_table` arity message at `-Oz`). That one has no
+`setjmp`, so it is a neighbour, not a duplicate; nothing else matching `setjmp`/`sjlj` with exnref
+was found, and no commit to `WebAssemblyLowerEmscriptenEHSjLj.cpp` or `WebAssemblyCFGStackify.cpp`
+on `main` up to 2026-10-10 addresses it. `-wasm-use-legacy-eh` still defaults to `true` on `main`
+(`WebAssemblyTargetMachine.cpp`), so only builds that opt in with `=false` can hit it.
+
+The Compiler Explorer row proves the compiler's output (the assembly), not validity: the validity
+check is the local assemble, link and validate step above. A report should attach the command line,
+the `clang --version` line, and the validator message, and may link a Compiler Explorer compile
+of the hand-declared `setjmp` variant for the assembly.
+
 ## Draft LLVM issue (NOT posted; the decision to file is the owner's)
 
-Before filing: re-check against an LLVM `main` build or Compiler Explorer, since the measurement
-above is the swift-6.4.0 fork's clang 21, and search for an existing report on the wasm backend's
-`WebAssemblyLowerEmscriptenEHSjLj` / `-wasm-enable-sjlj` with `-wasm-use-legacy-eh=false`.
+Re-checked against upstream on 2026-10-11 (section above): still reproduces on 23.1.3 and on trunk,
+and no duplicate was found. The toolchain line at the end of the draft is the fork's; replace it
+with the upstream versions from the table when filing.
 
 > **[WebAssembly] invalid `br_table` (label types differ) with `-wasm-enable-sjlj` and
 > `-wasm-use-legacy-eh=false`**
@@ -146,7 +175,8 @@ above is the swift-6.4.0 fork's clang 21, and search for an existing report on t
 >
 > The function contains `try_table (catch 1 0)` with a `br_table {3, 2, 1, 1}` whose depth-1 and
 > depth-2 targets have different result types, which the specification forbids. Reproduces at
-> `-O0` through `-Oz`.
+> `-O1` through `-Oz`; at `-O0` upstream clang crashes in `WebAssembly CFG Stackify`
+> (`addNestedTryTable`) instead.
 >
 > The module is valid if any one of these changes: the legacy EH encoding is used, the `setjmp` is
 > removed, `lab()` is `noexcept`, the buffer is a global with no call in the `try`, or the loops are
