@@ -51,38 +51,38 @@ struct Issue1442DiskUnicodeOSDUtilitiesTests {
 
     @Test("A code unit in [0x80,0x7FF] is UTF-8 encoded as 2 bytes, not dropped")
     func twoByteRangeCodeUnitIsUTF8Encoded() throws {
-        OCCTSerial.withLock {
+        try OCCTSerial.withLock {
             UnicodeUtils.setFormat(.ansi)
             // ANSI format is a Latin-1-style pass-through (Resource_Unicode.cxx:
             // `TCollection_ExtendedString(theFromStr, /*isMultiByte*/ false)`, confirmed against
             // Standard_ExtCharacter.hxx's ToExtCharacter): each raw byte becomes the identical
             // char16_t code unit. 0xE9 -> U+00E9 (e-acute), UTF-8 0xC3 0xA9.
             let raw: [CChar] = [0x41, CChar(bitPattern: 0xE9), 0x42, 0]  // "A" + U+00E9 + "B"
-            let ptr = OCCTUnicodeConvertToUnicode(raw)
-            #expect(ptr != nil)
-            if let ptr {
-                defer { free(ptr) }
-                let result = String(cString: ptr)
-                #expect(result == "A\u{00E9}B")
-            }
+            // Required, not `if let`: a bridge that returned nil would otherwise skip the
+            // comparison and pass. The comparison below is on the raw bytes as well, because
+            // `String ==` is Unicode-canonical and would not tell 0xC3 0xA9 from a decomposed
+            // "e" plus U+0301 (0x65 0xCC 0x81).
+            let ptr = try #require(OCCTUnicodeConvertToUnicode(raw))
+            defer { free(ptr) }
+            let result = String(cString: ptr)
+            #expect(result == "A\u{00E9}B")
+            #expect(Array(result.utf8) == [0x41, 0xC3, 0xA9, 0x42])
         }
     }
 
     @Test("A code unit in [0x800,0xFFFF] is UTF-8 encoded as 3 bytes, not dropped")
     func threeByteRangeCodeUnitIsUTF8Encoded() throws {
-        OCCTSerial.withLock {
+        try OCCTSerial.withLock {
             UnicodeUtils.setFormat(.sjis)
             // SJIS bytes 0x82 0xA0 decode (Resource_Unicode::ConvertSJISToUnicode's lookup table)
             // to U+3042 (hiragana "A"), ground-truthed directly against the pinned OCCT kernel.
             // UTF-8 for U+3042 is 0xE3 0x81 0x82.
             let raw: [CChar] = [CChar(bitPattern: 0x82), CChar(bitPattern: 0xA0), 0]
-            let ptr = OCCTUnicodeConvertToUnicode(raw)
-            #expect(ptr != nil)
-            if let ptr {
-                defer { free(ptr) }
-                let result = String(cString: ptr)
-                #expect(result == "\u{3042}")
-            }
+            let ptr = try #require(OCCTUnicodeConvertToUnicode(raw))
+            defer { free(ptr) }
+            let result = String(cString: ptr)
+            #expect(result == "\u{3042}")
+            #expect(Array(result.utf8) == [0xE3, 0x81, 0x82])
         }
     }
 
