@@ -7,23 +7,29 @@ import Testing
 struct EditorViewV162Tests {
     @Test("Per-(edge, face1, face2) regularity setter reports failure on the pinned kernel")
     func edgeRegularitySetterReportsFailure() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)
-        if let box {
-            let graph = BRepGraph(shape: box)
-            if let graph, graph.coedgeCount > 0, graph.edgeCount > 0, graph.faceCount > 1 {
-                // OCCT 8.0.0 GA replaced per-coedge SetContinuity / SetSeamContinuity /
-                // SetSeamPairId with EdgeOps:SetRegularity, continuity now lives on
-                // (edge, face1, face2). face1 == face2 expresses seam continuity.
-                //
-                // That write path does not exist in 8.0.1: BRepGraph_LayerRegularity does not
-                // compile and is absent from libOCCT, so the bridge function is a stub that
-                // reports failure and never reads the continuity argument. Assert that, rather
-                // than discarding the result, this test had shipped since the GA upgrade with
-                // `_ =` on both calls and no expectation, so nothing noticed. #490/#513.
-                #expect(graph.setEdgeRegularity(0, face1: 0, face2: 1, continuity: 1) == false)
-                #expect(graph.setEdgeRegularity(0, face1: 0, face2: 0, continuity: 0) == false)
-            }
+        // Was nested `if let`s, so a box or graph that failed to build passed with nothing
+        // checked (#766).
+        guard let box = Shape.box(width: 10, height: 10, depth: 10) else {
+            Issue.record("box not built")
+            return
         }
+        guard let graph = BRepGraph(shape: box), graph.coedgeCount > 0, graph.edgeCount > 0,
+            graph.faceCount > 1
+        else {
+            Issue.record("box graph unavailable")
+            return
+        }
+        // OCCT 8.0.0 GA replaced per-coedge SetContinuity / SetSeamContinuity /
+        // SetSeamPairId with EdgeOps:SetRegularity, continuity now lives on
+        // (edge, face1, face2). face1 == face2 expresses seam continuity.
+        //
+        // That write path does not exist in 8.0.1: BRepGraph_LayerRegularity does not
+        // compile and is absent from libOCCT, so the bridge function is a stub that
+        // reports failure and never reads the continuity argument. Assert that, rather
+        // than discarding the result, this test had shipped since the GA upgrade with
+        // `_ =` on both calls and no expectation, so nothing noticed. #490/#513.
+        #expect(graph.setEdgeRegularity(0, face1: 0, face2: 1, continuity: 1) == false)
+        #expect(graph.setEdgeRegularity(0, face1: 0, face2: 0, continuity: 0) == false)
     }
 
     // #1652 removed `setCoEdgeUVBox(_:u1:v1:u2:v2:)`: OCCT 8.0.1 stores no per-coedge UV box, and
