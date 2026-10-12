@@ -59,24 +59,31 @@ struct GeomFillGordonTests {
         #expect(Surface.gordon(profiles: [p1], guides: [p1, p2]) == nil)
     }
 
-    @Test func gordonRationalQuarterCylinderNetworkMatchesReference() {
+    @Test func gordonRationalQuarterCylinderNetworkMatchesReference() throws {
         // The crux of #645: a rational network's Gordon build checked against a known
         // exact answer, not just non-nil-ness. This is the fixture that would have
         // failed on OCCT 8.0.0p1 (see the module-level comment above).
-        guard let network = makeQuarterCylinderGordonNetwork() else {
-            Issue.record("quarter-cylinder network fixture failed to build")
-            return
-        }
-        guard
-            let surf = Surface.gordon(
-                profiles: network.profiles, guides: network.guides, tolerance: 1e-6)
-        else {
-            Issue.record("gordon surface nil for quarter-cylinder network")
-            return
-        }
+        let network = try #require(
+            makeQuarterCylinderGordonNetwork(), "quarter-cylinder network fixture failed to build")
+        let surf = try #require(
+            Surface.gordon(profiles: network.profiles, guides: network.guides, tolerance: 1e-6),
+            "gordon surface nil for quarter-cylinder network")
         let bsp = surf.bsplineSurface
         #expect(bsp.isURational)
         #expect(bsp.isVRational)
         assertMatchesQuarterCylinder(surf)
+
+        // The reference check reads three points; the whole surface is the cylinder: a 5 by 5
+        // grid of samples is 5 from the axis, and its height runs 0 to 10 across the V range.
+        let b = surf.parameterBounds
+        for i in 0...4 {
+            for j in 0...4 {
+                let u = b.uMin + (b.uMax - b.uMin) * Double(i) / 4
+                let v = b.vMin + (b.vMax - b.vMin) * Double(j) / 4
+                let p = surf.point(atU: u, v: v)
+                #expect(abs((p.x * p.x + p.y * p.y).squareRoot() - 5) < 1e-6, "(\(i), \(j)): \(p)")
+                #expect(p.x > -1e-9 && p.y > -1e-9, "first quadrant at (\(i), \(j)): \(p)")
+            }
+        }
     }
 }

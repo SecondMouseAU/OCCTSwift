@@ -103,6 +103,10 @@ struct BezierSurfaceCompletionTests {
             #expect(s.bezierIsCNu(10))
             #expect(s.bezierIsCNv(0))
             #expect(s.bezierIsCNv(10))
+            // A negative order is not a question about the surface and is refused (#2862), which
+            // is what makes the four `true`s above an answer rather than the constant.
+            #expect(!s.bezierIsCNu(-1))
+            #expect(!s.bezierIsCNv(-1))
         }
     }
 

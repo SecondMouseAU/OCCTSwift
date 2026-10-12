@@ -50,6 +50,23 @@ struct LocalAnalysisSurfaceContinuityTests {
             return
         }
         let analysis = s1.continuityWith(s2, u1: 0, v1: 0, u2: 0, v2: 0, order: .c1)
-        #expect((analysis?.flags ?? 0) > 0)
+        // Two copies of the one plane: C0 and C1 both hold, and the flag word carries exactly
+        // those two bits (C0 is 1, C1 is 4, as read off `ContinuityClass.analysisFlagBit`).
+        #expect(analysis?.flags == 5)
+        #expect(analysis?.measured == [.c0, .c1])
+        #expect(analysis?.isC0 == true)
+        #expect(analysis?.isC1 == true)
+        #expect(analysis?.c0Value == 0)
+
+        // The control: a plane tilted about the shared point still meets at it (C0 holds, flag
+        // word 1) and no longer has a common tangent plane, so the C1 bit is clear.
+        guard let tilted = Surface.plane(origin: .zero, normal: SIMD3(0, 1, 1)) else {
+            Issue.record("tilted plane fixture")
+            return
+        }
+        let bent = s1.continuityWith(tilted, u1: 0, v1: 0, u2: 0, v2: 0, order: .c1)
+        #expect(bent?.flags == 1)
+        #expect(bent?.isC0 == true)
+        #expect(bent?.isC1 == false)
     }
 }

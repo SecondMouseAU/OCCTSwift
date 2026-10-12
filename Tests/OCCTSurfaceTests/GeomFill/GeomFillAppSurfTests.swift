@@ -66,5 +66,10 @@ struct GeomFillAppSurfTests {
             return
         }
         #expect(result.isDone)
+        // Two circles homogenize to degree 14 with 15 poles in U and a ruled V (degree 1, 2
+        // poles), the same shape `GeomFill_Profiler` gives the same pair in `GeomFillProfilerTests`.
+        #expect(result.uDegree == 14 && result.vDegree == 1, "\(result)")
+        #expect(result.nbUPoles == 15 && result.nbVPoles == 2, "\(result)")
+        #expect(result.nbUKnots == 2 && result.nbVKnots == 2, "\(result)")
     }
 }

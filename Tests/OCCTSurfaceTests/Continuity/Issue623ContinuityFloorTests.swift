@@ -56,9 +56,13 @@ struct Issue623ContinuityFloorTests {
     func everyClassClearsTheC0Floor() {
         // C0 is the bottom of `GeomAbs_Shape`'s ladder, no class sits below it, so a caller
         // gating on "is this at least positionally continuous?" must never be told no.
+        #expect(ContinuityClass.allCases.count == 7, "the loop below walks the whole ladder")
         for measured in ContinuityClass.allCases {
             #expect(measured.satisfies(.c0), "\(measured) failed the C0 floor")
         }
+        // And it is a floor, not a constant answer: the bottom of the ladder clears nothing above.
+        #expect(!ContinuityClass.c0.satisfies(.c1))
+        #expect(!ContinuityClass.c0.satisfies(.c2))
     }
 
     // MARK: - The property that would have caught it

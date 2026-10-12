@@ -52,7 +52,9 @@ struct GeomFillProfilerTests {
             )
             return
         }
-        #expect(profiler.poleCount > 0)
+        // The kernel's own answer for the pair, as in `addCurvesAndPerform`: degree 14, 15 poles.
+        #expect(profiler.degree == 14)
+        #expect(profiler.poleCount == 15)
     }
 
     @Test("extract poles")
