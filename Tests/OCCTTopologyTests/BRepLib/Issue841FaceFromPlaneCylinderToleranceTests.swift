@@ -77,10 +77,24 @@ struct Issue841FaceFromPlaneCylinderToleranceTests {
     /// must accept an explicit, non-default tolerance and still succeed.
     @Test("faceFromPlane/faceFromCylinder's uBounds overloads accept an explicit tolerance")
     func explicitToleranceIsAccepted() throws {
-        let plane = Shape.faceFromPlane(uBounds: 0...10, vBounds: 0...10, tolerance: 1e-4)
-        #expect(plane != nil)
-        let cylinder = Shape.faceFromCylinder(
-            radius: 5, uBounds: 0...(2 * Double.pi), vBounds: 0...10, tolerance: 1e-4)
-        #expect(cylinder != nil)
+        // Measured on kernel.6: the tolerance reaches only `BRepLib_MakeFace`'s degenerate-edge
+        // test, not the face's own tolerance (1e-7 whether 1e-4 or 1e-2 is passed), so what an
+        // explicit value can be held to is that it builds the same face as the default.
+        let plane = try #require(
+            Shape.faceFromPlane(uBounds: 0...10, vBounds: 0...10, tolerance: 1e-4))
+        let planeDefault = try #require(Shape.faceFromPlane(uBounds: 0...10, vBounds: 0...10))
+        #expect(abs((plane.surfaceArea ?? 0) - 100) < 1e-6)
+        #expect(abs((planeDefault.surfaceArea ?? 0) - 100) < 1e-6)
+        #expect(plane.faces().count == 1)
+        #expect(plane.edges().count == 4)
+        #expect(plane.isValid)
+
+        let cylinder = try #require(
+            Shape.faceFromCylinder(
+                radius: 5, uBounds: 0...(2 * Double.pi), vBounds: 0...10, tolerance: 1e-4))
+        // 2 pi r h
+        #expect(abs((cylinder.surfaceArea ?? 0) - 100 * Double.pi) < 1e-6)
+        #expect(cylinder.faces().count == 1)
+        #expect(cylinder.isValid)
     }
 }

@@ -7,18 +7,30 @@ import Testing
 @Suite("v0.114.0 - BRepLib Utilities")
 struct BRepLibUtilitiesTests {
 
-    @Test func orientClosedSolid() {
-        if let box = Shape.box(width: 10, height: 10, depth: 10) {
-            // Box is already oriented, this should still succeed
-            let shells = box.subShapes(ofType: .shell)
-            if shells.count > 0 {
-                if let solid = Shape.builderMakeSolid() {
-                    solid.builderAdd(shells[0])
-                    let ok = solid.orientClosedSolid()
-                    // May or may not succeed depending on shell state
-                    let _ = ok
-                }
-            }
+    /// A forward shell is already outward, so the call is a no-op that answers `true`; a REVERSED
+    /// shell makes an inward solid (signed volume -1000), which the call should flip.
+    ///
+    /// Measured on kernel.6: the call answers `true` for both and the inward solid stays at -1000,
+    /// because the bridge reverses a local copy of the solid (the orientation lives in the
+    /// `TopoDS_Shape` value, not the shared TShape) and drops it. #3357.
+    @Test func orientClosedSolid() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let shell = try #require(box.subShapes(ofType: .shell).first)
+
+        let outward = try #require(Shape.builderMakeSolid())
+        outward.builderAdd(shell)
+        #expect(abs(outward.signedVolume - 1000) < 1e-6)
+        #expect(outward.orientClosedSolid())
+        #expect(abs(outward.signedVolume - 1000) < 1e-6)
+
+        let inwardShell = try #require(shell.oriented(1))
+        let inward = try #require(Shape.builderMakeSolid())
+        inward.builderAdd(inwardShell)
+        // The fixture really is inward before the call, so the check below is about the call.
+        #expect(abs(inward.signedVolume + 1000) < 1e-6)
+        #expect(inward.orientClosedSolid())
+        withKnownIssue("orientClosedSolid reverses a local copy and never writes it back (#3357)") {
+            #expect(abs(inward.signedVolume - 1000) < 1e-6)
         }
     }
 
