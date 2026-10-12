@@ -20,8 +20,12 @@ struct PrecisionTests {
     }
 
     @Test func ordering() {
+        // Precision.cxx: Intersection() is Confusion() / 100 and Approximation() is
+        // Confusion() * 10, so the ordering is a factor and not merely a direction.
         #expect(OCCTPrecision.intersection < OCCTPrecision.confusion)
         #expect(OCCTPrecision.approximation > OCCTPrecision.confusion)
+        #expect(abs(OCCTPrecision.intersection - 1e-9) < 1e-18)
+        #expect(abs(OCCTPrecision.approximation - 1e-6) < 1e-15)
     }
 
     // #815: `.infinite` and `.pConfusion` had no test anywhere in the tree, unlike every other
