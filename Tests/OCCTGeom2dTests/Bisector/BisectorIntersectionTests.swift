@@ -31,5 +31,19 @@ struct BisectorIntersectionTests {
             a: (0, 0), b: (4, 0),
             c: (0, 0), d: (0, 4))
         #expect(results.isEmpty)
+
+        // The control: the same two pairs with the second one reversed run +x instead of -x, so
+        // the half-lines now cross at (2, 2), 2 along each. Without it an
+        // `bisectorIntersections` that always answered nothing passes the diverging case.
+        let crossing = bisectorIntersections(
+            a: (0, 0), b: (4, 0),
+            c: (0, 4), d: (0, 0))
+        #expect(crossing.count == 1)
+        if let hit = crossing.first {
+            #expect(abs(hit.x - 2) < 1e-9)
+            #expect(abs(hit.y - 2) < 1e-9)
+            #expect(abs(hit.paramOnFirst - 2) < 1e-9)
+            #expect(abs(hit.paramOnSecond - 2) < 1e-9)
+        }
     }
 }

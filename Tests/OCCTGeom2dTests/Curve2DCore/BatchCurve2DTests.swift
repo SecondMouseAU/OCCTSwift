@@ -37,6 +37,22 @@ struct BatchCurve2DTests {
         let line = Curve2D.segment(from: .zero, to: SIMD2(10, 0))!
         #expect(line.evaluateGrid([]).isEmpty)
         #expect(line.evaluateGridD1([]).isEmpty)
+
+        // The control: the same segment with two parameters returns its own two end points, and
+        // a tangent along +x at each, so an evaluator that always answered nothing cannot pass.
+        let u0 = line.domain.lowerBound
+        let u1 = line.domain.upperBound
+        let pts = line.evaluateGrid([u0, u1])
+        #expect(pts.count == 2)
+        if pts.count == 2 {
+            #expect(abs(pts[0].x) < 1e-9 && abs(pts[0].y) < 1e-9, "start \(pts[0])")
+            #expect(abs(pts[1].x - 10) < 1e-9 && abs(pts[1].y) < 1e-9, "end \(pts[1])")
+        }
+        let d1 = line.evaluateGridD1([u0, u1])
+        #expect(d1.count == 2)
+        for p in d1 {
+            #expect(p.tangent.x > 0.5 && abs(p.tangent.y) < 1e-9, "tangent \(p.tangent)")
+        }
     }
 
     @Test("Grid evaluation matches individual evaluation")
