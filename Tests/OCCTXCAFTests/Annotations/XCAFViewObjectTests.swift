@@ -6,9 +6,11 @@ import Testing
 
 @Suite("XCAFView_Object Tests")
 struct XCAFViewObjectTests {
-    @Test func create() {
-        let view = ViewObject()
-        #expect(view != nil)
+    @Test func create() throws {
+        let view = try #require(ViewObject())
+        // A new view object has no camera and looks along +X, which are OCCT's own defaults.
+        #expect(view.type == .noCamera)
+        #expect(view.viewDirection == (1, 0, 0))
     }
 
     @Test func projectionType() {

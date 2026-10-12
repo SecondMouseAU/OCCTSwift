@@ -11,18 +11,19 @@ struct NoteBookTests {
         #expect(doc.noteBookExists(tag: 200))
     }
 
-    @Test func appendReal() {
-        guard let doc = Document.create() else { return }
-        doc.setNoteBook(tag: 201)
-        let childTag = doc.noteBookAppendReal(tag: 201, value: 3.14)
-        #expect(childTag != nil)
+    @Test func appendReal() throws {
+        let doc = try #require(Document.create())
+        #expect(doc.setNoteBook(tag: 201))
+        // Entries are appended under successive tags, starting at 1.
+        #expect(doc.noteBookAppendReal(tag: 201, value: 3.14) == 1)
+        #expect(doc.noteBookAppendReal(tag: 201, value: 2.71) == 2)
     }
 
-    @Test func appendInteger() {
-        guard let doc = Document.create() else { return }
-        doc.setNoteBook(tag: 202)
-        let childTag = doc.noteBookAppendInteger(tag: 202, value: 42)
-        #expect(childTag != nil)
+    @Test func appendInteger() throws {
+        let doc = try #require(Document.create())
+        #expect(doc.setNoteBook(tag: 202))
+        #expect(doc.noteBookAppendInteger(tag: 202, value: 42) == 1)
+        #expect(doc.noteBookAppendInteger(tag: 202, value: 43) == 2)
     }
 
     @Test func multipleAppends() {

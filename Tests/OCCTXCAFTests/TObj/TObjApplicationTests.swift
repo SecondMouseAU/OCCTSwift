@@ -5,9 +5,17 @@ import Testing
 
 @Suite("TObj_Application Tests")
 struct TObjApplicationTests {
-    @Test func getInstance() {
-        let app = TObjApplication.shared
-        #expect(app != nil)
+    @Test func getInstance() throws {
+        // OCCTSerial.withLock: see verboseFlag below, the singleton's field is unsynchronised.
+        try OCCTSerial.withLock {
+            let first = try #require(TObjApplication.shared)
+            first.isVerbose = true
+            // A second fetch is the same singleton, so it sees what the first one set.
+            let second = try #require(TObjApplication.shared)
+            #expect(second.isVerbose)
+            second.isVerbose = false
+            #expect(!first.isVerbose)
+        }
     }
 
     @Test func verboseFlag() {
@@ -25,12 +33,13 @@ struct TObjApplicationTests {
         }
     }
 
-    @Test func createDocument() {
-        OCCTSerial.withLock {
-            if let app = TObjApplication.shared {
-                let doc = app.createDocument()
-                #expect(doc != nil)
-            }
+    @Test func createDocument() throws {
+        try OCCTSerial.withLock {
+            let app = try #require(TObjApplication.shared)
+            let doc = try #require(app.createDocument())
+            // A new TObj document holds no shapes.
+            #expect(doc.rootNodes.isEmpty)
+            #expect(doc.shapeCount == 0)
         }
     }
 }

@@ -21,16 +21,24 @@ struct TDFCopyLabelTests {
     }
 
     @Test("Copy label with children")
-    func copyLabelWithChildren() {
-        let doc = Document.create()!
-        let source = doc.createLabel()!
+    func copyLabelWithChildren() throws {
+        let doc = try #require(Document.create())
+        let source = try #require(doc.createLabel())
         source.setName("Parent")
-        let child = doc.createLabel(parent: source)!
+        let child = try #require(doc.createLabel(parent: source))
         child.setName("Child")
+        child.setInteger(7)
 
-        let dest = doc.createLabel()!
-        let ok = doc.copyLabel(from: source, to: dest)
-        #expect(ok, "Copy should succeed")
-        #expect(dest.hasChild, "Destination should have children after copy")
+        let dest = try #require(doc.createLabel())
+        #expect(doc.copyLabel(from: source, to: dest), "Copy should succeed")
+        #expect(dest.name == "Parent")
+
+        // The child came across with its attributes, under the same tag.
+        #expect(dest.childCount == 1)
+        let copied = try #require(dest.findChild(tag: child.tag))
+        #expect(copied.name == "Child")
+        #expect(copied.integer == 7)
+        // And the source is untouched.
+        #expect(source.childCount == 1)
     }
 }

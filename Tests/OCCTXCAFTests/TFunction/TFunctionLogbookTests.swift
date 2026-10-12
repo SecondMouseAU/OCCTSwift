@@ -25,14 +25,21 @@ struct TFunctionLogbookTests {
     }
 
     @Test("Logbook impacted and clear")
-    func logbookImpactedAndClear() {
-        let doc = Document.create()!
-        let logLabel = doc.createLabel()!
-        let target = doc.createLabel()!
+    func logbookImpactedAndClear() throws {
+        let doc = try #require(Document.create())
+        let logLabel = try #require(doc.createLabel())
+        let target = try #require(doc.createLabel())
 
-        logLabel.setLogbook()
+        #expect(logLabel.setLogbook())
+        #expect(logLabel.logbookIsEmpty)
+        #expect(!logLabel.logbookIsModified(target))
         #expect(logLabel.logbookSetImpacted(target))
+        // An impacted label is on the logbook and counts as modified.
+        #expect(!logLabel.logbookIsEmpty)
+        #expect(logLabel.logbookIsModified(target))
+
         #expect(logLabel.logbookClear())
         #expect(logLabel.logbookIsEmpty)
+        #expect(!logLabel.logbookIsModified(target))
     }
 }

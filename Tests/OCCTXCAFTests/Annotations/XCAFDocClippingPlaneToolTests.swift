@@ -22,15 +22,25 @@ struct XCAFDocClippingPlaneToolTests {
         }
     }
 
-    @Test func remove() {
-        if let doc = Document.create() {
-            if let clip = doc.clippingPlaneToolAdd(
+    @Test func remove() throws {
+        let doc = try #require(Document.create())
+        let clip = try #require(
+            doc.clippingPlaneToolAdd(
                 originX: 0, originY: 0, originZ: 0,
                 normalX: 1, normalY: 0, normalZ: 0,
-                name: "XClip", capping: false)
-            {
-                #expect(doc.clippingPlaneToolRemove(clip))
-            }
-        }
+                name: "XClip", capping: false))
+        // Before: a clipping plane that reads back what was added.
+        #expect(doc.clippingPlaneToolIsClipPlane(clip))
+        let plane = try #require(doc.clippingPlaneToolGet(clip))
+        #expect(plane.normalX == 1)
+        #expect(!plane.capping)
+
+        #expect(doc.clippingPlaneToolRemove(clip))
+
+        // After: it is no longer a clipping plane and reads back as nothing, and a second removal
+        // has nothing left to remove.
+        #expect(!doc.clippingPlaneToolIsClipPlane(clip))
+        #expect(doc.clippingPlaneToolGet(clip) == nil)
+        #expect(!doc.clippingPlaneToolRemove(clip))
     }
 }

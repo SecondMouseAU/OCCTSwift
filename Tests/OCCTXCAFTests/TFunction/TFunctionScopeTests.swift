@@ -6,12 +6,16 @@ import Testing
 @Suite("TFunction Scope Tests")
 struct TFunctionScopeTests {
 
-    @Test func setFunctionScope() {
-        guard let doc = Document.create() else { return }
+    @Test func setFunctionScope() throws {
+        let doc = try #require(Document.create())
         doc.openTransaction()
         let ok = doc.setFunctionScope()
+        let node = try #require(doc.createLabel())
+        // The scope starts out empty.
+        let hasBefore = doc.functionScopeHas(labelId: node.labelId)
         doc.commitTransaction()
         #expect(ok)
+        #expect(!hasBefore)
     }
 
     @Test func addAndHasFunction() {

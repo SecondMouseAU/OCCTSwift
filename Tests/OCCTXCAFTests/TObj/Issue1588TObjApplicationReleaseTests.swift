@@ -73,13 +73,17 @@ struct Issue1588TObjApplicationReleaseTests {
     func singleGetReleaseRoundTrip() throws {
         try OCCTSerial.withLock {
             let app = try #require(OCCTTObjApplicationGetInstance())
+            // State set before the release is still there after it: the singleton lives on.
+            OCCTTObjApplicationSetVerbose(app, true)
+            #expect(OCCTTObjApplicationIsVerbose(app))
             OCCTTObjApplicationRelease(app)
 
             // The singleton must still be alive and fully functional immediately afterward:
             // TObj_Application::GetInstance()'s own static Handle keeps it alive regardless.
             let again = try #require(OCCTTObjApplicationGetInstance())
-            OCCTTObjApplicationSetVerbose(again, true)
             #expect(OCCTTObjApplicationIsVerbose(again))
+            OCCTTObjApplicationSetVerbose(again, false)
+            #expect(!OCCTTObjApplicationIsVerbose(again))
             OCCTTObjApplicationRelease(again)
         }
     }
@@ -113,13 +117,20 @@ struct Issue1588TObjApplicationReleaseTests {
                     Issue.record("OCCTTObjApplicationGetInstance() returned nil on iteration \(i)")
                     return
                 }
+                // Each cycle's write is the next cycle's starting state, so a corrupted
+                // singleton reads back wrong, not just crashes.
                 OCCTTObjApplicationSetVerbose(app, i % 2 == 0)
+                #expect(OCCTTObjApplicationIsVerbose(app) == (i % 2 == 0), "iteration \(i)")
                 OCCTTObjApplicationRelease(app)
             }
 
+            // The last cycle (i = 499) set false, and the singleton still holds it.
             let again = try #require(OCCTTObjApplicationGetInstance())
+            #expect(!OCCTTObjApplicationIsVerbose(again))
             let doc = try #require(OCCTTObjApplicationCreateDocument(again))
-            OCCTDocumentRelease(doc)
+            let wrapped = Document(handle: doc)
+            #expect(wrapped.rootNodes.isEmpty)
+            #expect(wrapped.shapeCount == 0)
             OCCTTObjApplicationRelease(again)
         }
     }
@@ -138,13 +149,18 @@ struct Issue1588TObjApplicationReleaseTests {
                     return
                 }
                 app.isVerbose = (i % 2 == 0)
+                #expect(app.isVerbose == (i % 2 == 0), "iteration \(i)")
             }
 
+            // A fresh wrapper reads the state the last (dropped) wrapper left: the last
+            // iteration set false.
             let app = try #require(TObjApplication.shared)
+            #expect(!app.isVerbose)
             app.isVerbose = true
             #expect(app.isVerbose)
-            let doc = app.createDocument()
-            #expect(doc != nil)
+            let doc = try #require(app.createDocument())
+            #expect(doc.rootNodes.isEmpty)
+            app.isVerbose = false
         }
     }
 }
