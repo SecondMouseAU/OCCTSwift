@@ -56,6 +56,23 @@ import Testing
 @Suite("PR #898 review: ConstructionContext cross-store atomicity")
 struct ConstructionContextConcurrencyTests {
 
+    /// What the context holds once each round of a race has finished.
+    ///
+    /// The detectors below only ever looked for torn reads, so a `removeAll()` that did nothing,
+    /// or a harness whose readers all ran before it started, passed too. The end state is a value,
+    /// and it is read here, one entry per round.
+    private final class RaceOutcome: @unchecked Sendable {
+        var finals: [(planes: Int, axes: Int, points: Int)] = []
+    }
+
+    /// How many independent populate-and-race rounds each detector runs.
+    ///
+    /// One `removeAll()` is a window of microseconds, and a single round saw a tear on the
+    /// pre-fix code in only some of the sweeps that injected it (measured on the pinned kernel,
+    /// 2026-10-13: one red in two sweeps of twelve runs each for the count detector). Each round is
+    /// a fresh context, so the rounds are independent chances at the same window.
+    private static let rounds = 30
+
     /// Shared bucketing for every "torn cross-store snapshot" detector in this suite: `true` if
     /// the three counts don't all agree on being above or below `threshold`, the signature of a
     /// concurrent `removeAll()`/`remove()` caught mid-flight (some kinds already reflecting it,
@@ -76,54 +93,58 @@ struct ConstructionContextConcurrencyTests {
         entitiesPerKind: Int,
         readerCount: Int,
         readsPerReader: Int,
-        extraConcurrentWork: [@Sendable (ConstructionContext) -> Void] = []
+        extraConcurrentWork: [@Sendable (ConstructionContext) -> Void] = [],
+        outcome: RaceOutcome = RaceOutcome()
     ) async -> [(planes: Int, axes: Int, points: Int)] {
-        let ctx = ConstructionContext()
-        for _ in 0..<entitiesPerKind {
-            ctx.add(.absolute(origin: .zero, normal: SIMD3(0, 0, 1)))
-            ctx.add(.absolute(origin: .zero, direction: SIMD3(1, 0, 0)))
-            ctx.add(ConstructionPoint.absolute(.zero))
-        }
-
         let threshold = entitiesPerKind / 2
         var torn: [(planes: Int, axes: Int, points: Int)] = []
 
-        // Each task returns its own torn observations rather than appending to a shared array
-        // under a lock: `NSLock.lock()`/`unlock()` are `noasync` (unavailable from an
-        // asynchronous context), and collecting results through the task group's own
-        // `for await` sequence needs no lock at all, the parent task is the only one that ever
-        // touches `torn`.
-        await withTaskGroup(of: [(planes: Int, axes: Int, points: Int)].self) { group in
-            for _ in 0..<readerCount {
-                group.addTask {
-                    var localTorn: [(planes: Int, axes: Int, points: Int)] = []
-                    for _ in 0..<readsPerReader {
-                        let c = ctx.count
-                        if isTornSnapshot((c.planes, c.axes, c.points), threshold: threshold) {
-                            localTorn.append(c)
-                        }
-                    }
-                    return localTorn
-                }
+        for _ in 0..<Self.rounds {
+            let ctx = ConstructionContext()
+            for _ in 0..<entitiesPerKind {
+                ctx.add(.absolute(origin: .zero, normal: SIMD3(0, 0, 1)))
+                ctx.add(.absolute(origin: .zero, direction: SIMD3(1, 0, 0)))
+                ctx.add(ConstructionPoint.absolute(.zero))
             }
 
-            for work in extraConcurrentWork {
+            // Each task returns its own torn observations rather than appending to a shared array
+            // under a lock: `NSLock.lock()`/`unlock()` are `noasync` (unavailable from an
+            // asynchronous context), and collecting results through the task group's own
+            // `for await` sequence needs no lock at all, the parent task is the only one that ever
+            // touches `torn`.
+            await withTaskGroup(of: [(planes: Int, axes: Int, points: Int)].self) { group in
+                for _ in 0..<readerCount {
+                    group.addTask {
+                        var localTorn: [(planes: Int, axes: Int, points: Int)] = []
+                        for _ in 0..<readsPerReader {
+                            let c = ctx.count
+                            if isTornSnapshot((c.planes, c.axes, c.points), threshold: threshold) {
+                                localTorn.append(c)
+                            }
+                        }
+                        return localTorn
+                    }
+                }
+
+                for work in extraConcurrentWork {
+                    group.addTask {
+                        work(ctx)
+                        return []
+                    }
+                }
+
                 group.addTask {
-                    work(ctx)
+                    ctx.removeAll()
                     return []
                 }
+
+                for await result in group {
+                    torn.append(contentsOf: result)
+                }
             }
 
-            group.addTask {
-                ctx.removeAll()
-                return []
-            }
-
-            for await result in group {
-                torn.append(contentsOf: result)
-            }
+            outcome.finals.append(ctx.count)
         }
-
         return torn
     }
 
@@ -131,13 +152,35 @@ struct ConstructionContextConcurrencyTests {
     // snapshot, so a concurrent `removeAll()` could be caught mid-flight.
     @Test("count() never observes a torn cross-store snapshot during removeAll()")
     func countNeverTearsDuringRemoveAll() async {
+        let outcome = RaceOutcome()
         let torn = await tornCountObservations(
-            entitiesPerKind: 4000, readerCount: 8, readsPerReader: 3000
+            entitiesPerKind: 4000, readerCount: 8, readsPerReader: 3000, outcome: outcome
         )
         #expect(
             torn.isEmpty,
             "count() observed \(torn.count) torn snapshot(s), e.g. \(String(describing: torn.first))"
         )
+        // Nothing racing adds to it, so once each race is over the context is empty in all three
+        // kinds: a `removeAll()` that did nothing leaves 4000 of each and no tear to detect.
+        #expect(outcome.finals.count == Self.rounds)
+        #expect(
+            outcome.finals.allSatisfy { $0 == (planes: 0, axes: 0, points: 0) },
+            "\(outcome.finals.first { $0 != (planes: 0, axes: 0, points: 0) } as Any)")
+    }
+
+    // The detector itself, because every test below is "no torn reading was seen" and a
+    // classifier that called everything consistent would pass them all. Counts above the threshold
+    // are "full", at or below it "empty"; a snapshot is torn when the three kinds disagree.
+    @Test("the torn-snapshot classifier separates mixed readings from uniform ones")
+    func tornClassifierSeparatesMixedFromUniform() {
+        #expect(!isTornSnapshot((4000, 4000, 4000), threshold: 2000))
+        #expect(!isTornSnapshot((0, 0, 0), threshold: 2000))
+        #expect(isTornSnapshot((4000, 0, 0), threshold: 2000))
+        #expect(isTornSnapshot((0, 4000, 4000), threshold: 2000))
+        #expect(isTornSnapshot((4000, 4000, 0), threshold: 2000))
+        // The boundary: a count equal to the threshold is on the empty side.
+        #expect(!isTornSnapshot((2000, 2000, 2000), threshold: 2000))
+        #expect(isTornSnapshot((2001, 2000, 2000), threshold: 2000))
     }
 
     // Finding 2 (line ~183): `removeAll()` did `planes.removeAll(); axes.removeAll();
@@ -163,13 +206,25 @@ struct ConstructionContextConcurrencyTests {
                 }
             }
         }
+        let outcome = RaceOutcome()
         let torn = await tornCountObservations(
-            entitiesPerKind: 4000, readerCount: 8, readsPerReader: 3000, extraConcurrentWork: adders
+            entitiesPerKind: 4000, readerCount: 8, readsPerReader: 3000,
+            extraConcurrentWork: adders,
+            outcome: outcome
         )
         let message =
             "count() observed \(torn.count) torn snapshot(s) while add() raced removeAll(), "
             + "e.g. \(String(describing: torn.first))"
         #expect(torn.isEmpty, "\(message)")
+        // Each kind is cleared except for the adds that landed after `removeAll()`: three of each
+        // kind were issued, so at most three survive, and 4000 survivors would mean it did nothing.
+        #expect(outcome.finals.count == Self.rounds)
+        for end in outcome.finals {
+            #expect(
+                (0...3).contains(end.planes) && (0...3).contains(end.axes)
+                    && (0...3).contains(end.points),
+                "\(end)")
+        }
     }
 
     // Finding 5 (3772117915): `crossStoreLock` now guards `remove(plane:)`/`remove(axis:)`/
@@ -209,14 +264,20 @@ struct ConstructionContextConcurrencyTests {
                 }
             }
         }
+        let outcome = RaceOutcome()
         let torn = await tornCountObservations(
             entitiesPerKind: 4000, readerCount: 8, readsPerReader: 3000,
-            extraConcurrentWork: removers
+            extraConcurrentWork: removers, outcome: outcome
         )
         let message =
             "count() observed \(torn.count) torn snapshot(s) while single remove() raced "
             + "removeAll(), e.g. \(String(describing: torn.first))"
         #expect(torn.isEmpty, "\(message)")
+        // Removes only ever take entities out, so once `removeAll()` has run nothing is left.
+        #expect(outcome.finals.count == Self.rounds)
+        #expect(
+            outcome.finals.allSatisfy { $0 == (planes: 0, axes: 0, points: 0) },
+            "\(outcome.finals.first { $0 != (planes: 0, axes: 0, points: 0) } as Any)")
     }
 
     // Sequential baseline for the invariant the two race tests above stress under concurrency:
@@ -248,7 +309,8 @@ struct ConstructionContextConcurrencyTests {
     private func tornAllBrokenObservations(
         entitiesPerKind: Int,
         readerCount: Int,
-        readsPerReader: Int
+        readsPerReader: Int,
+        outcome: RaceOutcome = RaceOutcome()
     ) async -> [(planes: Int, axes: Int, points: Int)] {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
             let graph = BRepGraph(shape: box)
@@ -256,39 +318,49 @@ struct ConstructionContextConcurrencyTests {
             Issue.record("setup nil")
             return []
         }
-        let ctx = ConstructionContext()
         let brokenFace = TopologyRef.createdBy(operationName: "NeverHappened", kind: .face)
         let brokenEdge = TopologyRef.createdBy(operationName: "NeverHappened", kind: .edge)
         let brokenVertex = TopologyRef.createdBy(operationName: "NeverHappened", kind: .vertex)
-        for _ in 0..<entitiesPerKind {
-            ctx.add(ConstructionPlane.offsetFromFace(face: brokenFace, distance: 5))
-            ctx.add(ConstructionAxis.alongEdge(brokenEdge))
-            ctx.add(ConstructionPoint.atVertex(brokenVertex))
-        }
-
         let threshold = entitiesPerKind / 2
         var torn: [(planes: Int, axes: Int, points: Int)] = []
 
-        await withTaskGroup(of: [(planes: Int, axes: Int, points: Int)].self) { group in
-            for _ in 0..<readerCount {
-                group.addTask {
-                    var localTorn: [(planes: Int, axes: Int, points: Int)] = []
-                    for _ in 0..<readsPerReader {
-                        let broken = ctx.allBroken(in: graph)
-                        let counts = (broken.planes.count, broken.axes.count, broken.points.count)
-                        if isTornSnapshot(counts, threshold: threshold) {
-                            localTorn.append(counts)
+        for _ in 0..<Self.rounds {
+            let ctx = ConstructionContext()
+            for _ in 0..<entitiesPerKind {
+                ctx.add(ConstructionPlane.offsetFromFace(face: brokenFace, distance: 5))
+                ctx.add(ConstructionAxis.alongEdge(brokenEdge))
+                ctx.add(ConstructionPoint.atVertex(brokenVertex))
+            }
+
+            await withTaskGroup(of: [(planes: Int, axes: Int, points: Int)].self) { group in
+                for _ in 0..<readerCount {
+                    group.addTask {
+                        var localTorn: [(planes: Int, axes: Int, points: Int)] = []
+                        for _ in 0..<readsPerReader {
+                            let broken = ctx.allBroken(in: graph)
+                            let counts = (
+                                broken.planes.count, broken.axes.count, broken.points.count
+                            )
+                            if isTornSnapshot(counts, threshold: threshold) {
+                                localTorn.append(counts)
+                            }
                         }
+                        return localTorn
                     }
-                    return localTorn
+                }
+                group.addTask {
+                    ctx.removeAll()
+                    return []
+                }
+                for await result in group {
+                    torn.append(contentsOf: result)
                 }
             }
-            group.addTask {
-                ctx.removeAll()
-                return []
-            }
-            for await result in group {
-                torn.append(contentsOf: result)
+            outcome.finals.append(ctx.count)
+            // The snapshot after the race is the empty one: every entity was broken, none is left.
+            let after = ctx.allBroken(in: graph)
+            if after.planes.count + after.axes.count + after.points.count != 0 {
+                Issue.record("allBroken still reports entities after removeAll(): \(after)")
             }
         }
         return torn
@@ -296,13 +368,18 @@ struct ConstructionContextConcurrencyTests {
 
     @Test("allBroken(in:) never observes a torn cross-store snapshot during removeAll()")
     func allBrokenNeverTearsDuringRemoveAll() async {
+        let outcome = RaceOutcome()
         let torn = await tornAllBrokenObservations(
-            entitiesPerKind: 1000, readerCount: 8, readsPerReader: 300
+            entitiesPerKind: 1000, readerCount: 8, readsPerReader: 300, outcome: outcome
         )
         let message =
             "allBroken(in:) observed \(torn.count) torn snapshot(s), "
             + "e.g. \(String(describing: torn.first))"
         #expect(torn.isEmpty, "\(message)")
+        #expect(outcome.finals.count == Self.rounds)
+        #expect(
+            outcome.finals.allSatisfy { $0 == (planes: 0, axes: 0, points: 0) },
+            "\(outcome.finals.first { $0 != (planes: 0, axes: 0, points: 0) } as Any)")
     }
 
     /// Races `removeAll()` against `readerCount` tasks, each calling `materialize(in:graph:)`
@@ -319,7 +396,8 @@ struct ConstructionContextConcurrencyTests {
     private func tornMaterializeObservations(
         iterations: Int,
         entitiesPerKind: Int,
-        readerCount: Int
+        readerCount: Int,
+        nonEmptyAfterRace: RaceOutcome = RaceOutcome()
     ) async -> [(planes: Int, axes: Int, points: Int)] {
         let threshold = entitiesPerKind / 2
         var torn: [(planes: Int, axes: Int, points: Int)] = []
@@ -355,19 +433,26 @@ struct ConstructionContextConcurrencyTests {
                     if let counts = result { torn.append(counts) }
                 }
             }
+            // Recorded per iteration: each context must be empty once its race is over.
+            nonEmptyAfterRace.finals.append(ctx.count)
         }
         return torn
     }
 
     @Test("materialize(in:graph:) never observes a torn cross-store snapshot during removeAll()")
     func materializeNeverTearsDuringRemoveAll() async {
+        let outcome = RaceOutcome()
         let torn = await tornMaterializeObservations(
-            iterations: 60, entitiesPerKind: 20, readerCount: 6
+            iterations: 60, entitiesPerKind: 20, readerCount: 6, nonEmptyAfterRace: outcome
         )
         let message =
             "materialize(in:graph:) observed \(torn.count) torn snapshot(s), "
             + "e.g. \(String(describing: torn.first))"
         #expect(torn.isEmpty, "\(message)")
+        #expect(outcome.finals.count == 60)
+        #expect(
+            outcome.finals.allSatisfy { $0 == (planes: 0, axes: 0, points: 0) },
+            "\(outcome.finals.first { $0 != (planes: 0, axes: 0, points: 0) } as Any)")
     }
 }
 
@@ -425,6 +510,14 @@ struct DocumentConstructionContextRaceTests {
             let distinct = Set(contexts.map { ObjectIdentifier($0) }).count
             if distinct != 1 {
                 divergentRounds.append((round, distinct))
+                continue
+            }
+            // The harm the lost instance did: an entity added through the first one must be
+            // visible through the document's own context afterwards, not orphaned with it.
+            contexts[0].add(.absolute(origin: .zero, normal: SIMD3(0, 0, 1)))
+            if doc.constructionContext.count.planes != 1 || doc.constructionContext !== contexts[0]
+            {
+                divergentRounds.append((round, -1))
             }
         }
 
