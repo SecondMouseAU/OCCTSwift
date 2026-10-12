@@ -170,6 +170,14 @@ struct MeasurementTests {
         let sphere = Shape.sphere(radius: 3)!  // At origin, inside box
 
         #expect(box.intersects(sphere))
+        // Symmetric: the answer does not depend on which operand is asked.
+        #expect(sphere.intersects(box))
+
+        // The same sphere, once it has been moved clear of the box (its surface 2 past the face
+        // at x = 5), is the control that makes "always true" fail here.
+        let moved = sphere.translated(by: SIMD3(10, 0, 0))!
+        #expect(!box.intersects(moved))
+        #expect(!moved.intersects(box))
     }
 
     @Test("Intersects - separated shapes")

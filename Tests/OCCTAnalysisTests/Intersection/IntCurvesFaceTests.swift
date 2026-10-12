@@ -53,5 +53,15 @@ struct IntCurvesFaceTests {
         // faces()[0] is the x = -5 plane; a +Z ray runs in it, never through it.
         let hits = xCap.intersectLine(origin: SIMD3(0, 0, -50), direction: SIMD3(0, 0, 1))
         #expect(hits.isEmpty, "a ray parallel to a plane cannot cross it, got \(hits.count)")
+
+        // The same cap crossed head on, by a ray along +X: one hit at the cap's centre, 45 units
+        // along. Without it, an `intersectLine` that always answered nothing would pass the
+        // parallel case.
+        let crossing = xCap.intersectLine(origin: SIMD3(-50, 0, 0), direction: SIMD3(1, 0, 0))
+        #expect(crossing.count == 1, "a head-on ray crosses the cap once, got \(crossing.count)")
+        if let h = crossing.first {
+            #expect(abs(h.point.x + 5) < 1e-9 && abs(h.point.y) < 1e-9 && abs(h.point.z) < 1e-9)
+            #expect(abs(h.parameter - 45) < 1e-9, "expected parameter 45, got \(h.parameter)")
+        }
     }
 }

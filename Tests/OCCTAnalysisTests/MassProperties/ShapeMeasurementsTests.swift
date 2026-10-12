@@ -44,11 +44,18 @@ struct ShapeMeasurementsTests {
             return
         }
         let m = cyl.measure()
-        #expect(m.faceAreas.count >= 3)
-        #expect(m.totalFaceArea > 0)
-        #expect(m.totalFaceArea.isFinite)
-        #expect(m.totalEdgeLength > 0)
-        #expect(m.totalEdgeLength.isFinite)
+        // Radius 5, height 10: side 2 pi r h = 100 pi, two caps pi r^2 = 25 pi each, so
+        // 150 pi in all. The edges are the two rims, 2 pi r = 10 pi each, and the seam, 10.
+        #expect(m.faceAreas.count == 3)
+        #expect(abs(m.totalFaceArea - 150 * Double.pi) < 1e-6, "got \(m.totalFaceArea)")
+        #expect(m.edgeLengths.count == 3)
+        #expect(abs(m.totalEdgeLength - (20 * Double.pi + 10)) < 1e-6, "got \(m.totalEdgeLength)")
+        let areas = m.faceAreas.sorted()
+        if areas.count == 3 {
+            #expect(abs(areas[0] - 25 * Double.pi) < 1e-6)
+            #expect(abs(areas[1] - 25 * Double.pi) < 1e-6)
+            #expect(abs(areas[2] - 100 * Double.pi) < 1e-6)
+        }
     }
 
     @Test func boxFaceCentroidsLieInsideFaceBounds() {

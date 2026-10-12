@@ -19,9 +19,21 @@ struct KDTreeTests {
     ]
 
     @Test("Build KD-tree")
-    func buildTree() {
-        let tree = KDTree(points: testPoints)
-        #expect(tree != nil)
+    func buildTree() throws {
+        let tree = try #require(KDTree(points: testPoints))
+        // A tree that built but indexed nothing, or indexed a different array, would still be
+        // non-nil. Every input point is its own nearest neighbour at distance 0, under its own
+        // index, which is what a correct build is for.
+        for (i, p) in testPoints.enumerated() {
+            let r = try #require(tree.nearest(to: p))
+            #expect(r.index == i, "point \(i) found as \(r.index)")
+            #expect(r.distance < 1e-12)
+        }
+        // And it knows about the far point too: nothing is closer to (100, 100, 100) than the
+        // corner at (10, 10, 10), 90 sqrt(3) away.
+        let far = try #require(tree.nearest(to: SIMD3(100, 100, 100)))
+        #expect(far.index == 6)
+        #expect(abs(far.distance - 90.0 * 3.0.squareRoot()) < 1e-9)
     }
 
     @Test("Empty points returns nil")

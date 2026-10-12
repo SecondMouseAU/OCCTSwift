@@ -60,11 +60,22 @@ struct PointCloudAnalysisTests {
             SIMD3(0, 0, 0), SIMD3(10, 0, 0),
             SIMD3(0, 10, 0), SIMD3(0, 0, 10),
         ])
-        #expect(result != nil)
-        if case .space = result {
-            // Good, points in 3D space
+        // The origin and the three axis points are not coplanar: the fourth leaves the plane
+        // through the other three.
+        guard case .space = result else {
+            Issue.record("Expected .space, got \(String(describing: result))")
+            return
+        }
+
+        // The same four points with the last one moved into the z = 0 plane become planar, so
+        // `.space` is a real answer and not the default.
+        let flat = Shape.analyzePointCloud([
+            SIMD3(0, 0, 0), SIMD3(10, 0, 0), SIMD3(0, 10, 0), SIMD3(10, 10, 0),
+        ])
+        if case .planar(_, let normal) = flat {
+            #expect(abs(abs(normal.z) - 1.0) < 1e-9)
         } else {
-            #expect(Bool(false), "Expected .space")
+            Issue.record("Expected .planar, got \(String(describing: flat))")
         }
     }
 

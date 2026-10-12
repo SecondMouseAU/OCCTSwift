@@ -58,11 +58,24 @@ struct CurveSurfaceIntersectionTests {
     }
 
     @Test("Line missing sphere produces no points")
-    func lineMissingSphere() {
-        let line = Curve3D.segment(from: SIMD3(-10, 10, 0), to: SIMD3(10, 10, 0))!
-        let sphere = Surface.sphere(center: SIMD3(0, 0, 0), radius: 5)!
+    func lineMissingSphere() throws {
+        let sphere = try #require(Surface.sphere(center: SIMD3(0, 0, 0), radius: 5))
+        let line = try #require(Curve3D.segment(from: SIMD3(-10, 10, 0), to: SIMD3(10, 10, 0)))
         let results = line.intersections(with: sphere)
         #expect(results.isEmpty)
+
+        // The same line a little either side of the radius, so "always empty" cannot pass: at
+        // y = 4.9 the chord is x = +-sqrt(25 - 24.01) and at y = 5.1 there is no chord.
+        let inside = try #require(Curve3D.segment(from: SIMD3(-10, 4.9, 0), to: SIMD3(10, 4.9, 0)))
+        let hits = inside.intersections(with: sphere)
+        try #require(hits.count == 2)
+        let half = (25.0 - 4.9 * 4.9).squareRoot()
+        let xs = hits.map { $0.point.x }.sorted()
+        #expect(abs(xs[0] + half) < 1e-6 && abs(xs[1] - half) < 1e-6, "got \(xs)")
+        #expect(hits.allSatisfy { abs($0.point.y - 4.9) < 1e-9 })
+
+        let outside = try #require(Curve3D.segment(from: SIMD3(-10, 5.1, 0), to: SIMD3(10, 5.1, 0)))
+        #expect(outside.intersections(with: sphere).isEmpty)
     }
 
     @Test("Line through plane produces one point")

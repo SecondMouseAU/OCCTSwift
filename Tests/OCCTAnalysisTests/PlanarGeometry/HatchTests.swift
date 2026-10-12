@@ -15,7 +15,19 @@ struct HatchTests {
             direction: SIMD2(1, 0),
             spacing: 2.0
         )
-        #expect(segments.count > 0)
+        // Measured on the pinned kernel (`Hatch_Hatcher`, `Scripts/repro/766-hatch-redo/`): one
+        // horizontal line at each of y = 2, 4, 6, 8, 10, each running the full width of the
+        // square. The y = 0 line coincides with the bottom edge and is not emitted.
+        #expect(segments.count == 5, "got \(segments.count)")
+        let ys = segments.map { $0.start.y }.sorted()
+        for (y, want) in zip(ys, [2.0, 4.0, 6.0, 8.0, 10.0]) {
+            #expect(abs(y - want) < 1e-9, "line at y = \(y), expected \(want)")
+        }
+        for s in segments {
+            #expect(abs(s.start.y - s.end.y) < 1e-9, "horizontal: \(s)")
+            let xs = [s.start.x, s.end.x].sorted()
+            #expect(abs(xs[0]) < 1e-9 && abs(xs[1] - 10) < 1e-9, "spans the width: \(s)")
+        }
     }
 
     @Test("Diagonal hatches")
@@ -28,7 +40,29 @@ struct HatchTests {
             direction: SIMD2(1, 1),
             spacing: 1.5
         )
-        #expect(segments.count > 0)
+        // Lines at 45 degrees, 1.5 apart perpendicular to the direction: 9 of them cross the
+        // square (the main diagonal and four either side). Each lies on x - y = c, with c a
+        // multiple of 1.5 * sqrt(2) = 2.1213 (the perpendicular spacing seen along an axis).
+        #expect(segments.count == 9, "got \(segments.count)")
+        let step = 1.5 * 2.0.squareRoot()
+        var cs: [Double] = []
+        for s in segments {
+            let dx = s.end.x - s.start.x
+            let dy = s.end.y - s.start.y
+            #expect(abs(dx - dy) < 1e-9, "45 degrees: \(s)")
+            #expect(dx > 0)
+            cs.append(s.start.x - s.start.y)
+        }
+        cs.sort()
+        for (i, c) in cs.enumerated() {
+            let want = Double(i - 4) * step
+            #expect(abs(c - want) < 1e-9, "line \(i): x - y = \(c), expected \(want)")
+        }
+        // The longest is the main diagonal, 10 sqrt(2).
+        let longest = segments.map { hypot($0.end.x - $0.start.x, $0.end.y - $0.start.y) }.max()
+        if let longest {
+            #expect(abs(longest - 200.0.squareRoot()) < 1e-9)
+        }
     }
 
     /// An empty boundary hatches nothing, even when islands are supplied.
@@ -56,6 +90,18 @@ struct HatchTests {
         )
         #expect(
             islandOnly.isEmpty, "an island with no boundary fills nothing, got \(islandOnly.count)")
+
+        // The control: the same polygon given as the boundary is hatched, at y = 8, 10, 12.
+        let asBoundary = HatchPattern.generate(
+            boundary: [SIMD2(7, 7), SIMD2(13, 7), SIMD2(13, 13), SIMD2(7, 13)],
+            direction: SIMD2(1, 0),
+            spacing: 2.0
+        )
+        #expect(asBoundary.count == 3, "got \(asBoundary.count)")
+        let ys = asBoundary.map { $0.start.y }.sorted()
+        for (y, want) in zip(ys, [8.0, 10.0, 12.0]) {
+            #expect(abs(y - want) < 1e-9, "line at y = \(y), expected \(want)")
+        }
     }
 
     @Test("Triangle boundary")

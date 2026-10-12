@@ -9,17 +9,25 @@ import Testing
 struct EdgeCurvePropertiesTests {
 
     @Test("Parameter bounds of line edge")
-    func parameterBoundsLineEdge() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func parameterBoundsLineEdge() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let edges = box.edges()
-        #expect(!edges.isEmpty)
+        try #require(edges.count == 12)
 
-        let edge = edges[0]
-        let bounds = edge.parameterBounds
-        #expect(bounds != nil)
-        if let b = bounds {
-            #expect(b.last > b.first)
+        // A line edge is parametrised by arc length, so its parameter span is its length: 10
+        // for every edge of the cube, and the bounds start at 0.
+        for (i, edge) in edges.enumerated() {
+            let b = try #require(edge.parameterBounds, "edge \(i) has parameter bounds")
+            #expect(abs(b.first) < 1e-9, "edge \(i) starts at \(b.first)")
+            #expect(abs(b.last - 10.0) < 1e-9, "edge \(i) ends at \(b.last)")
         }
+
+        // A circle is parametrised by angle, not length: a radius 5 cylinder's circular edges
+        // span 2 pi, which is what separates this from a "span is the length" shortcut.
+        let cyl = try #require(Shape.cylinder(radius: 5, height: 10))
+        let circle = try #require(cyl.edges().first { $0.curveType == .circle })
+        let cb = try #require(circle.parameterBounds)
+        #expect(abs(cb.last - cb.first - 2 * Double.pi) < 1e-9)
     }
 
     @Test("Curvature of circle edge is 1/r")

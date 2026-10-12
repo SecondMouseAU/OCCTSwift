@@ -13,8 +13,15 @@ struct MedialAxisRectangleTests {
     func rectangleComputesSuccessfully() {
         let wire = Wire.rectangle(width: 10, height: 4)!
         let face = Shape.face(from: wire)!
-        let ma = MedialAxis(of: face)
-        #expect(ma != nil)
+        // Non-nil alone passed a locus with nothing in it, so read what it computed: the five
+        // arcs and six nodes of `rectangleGraphCounts`, and the half short side as thickness.
+        guard let ma = MedialAxis(of: face) else {
+            Issue.record("medial axis of a 10 x 4 rectangle was nil")
+            return
+        }
+        #expect(ma.arcCount == 5)
+        #expect(ma.nodeCount == 6)
+        #expect(abs(ma.minThickness - 2.0) < 1e-9, "got \(ma.minThickness)")
     }
 
     @Test("Rectangle has correct arc and node counts")
