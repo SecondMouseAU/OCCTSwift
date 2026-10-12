@@ -20,6 +20,14 @@ struct CameraTests {
         let upLen = sqrt(up.x * up.x + up.y * up.y + up.z * up.z)
         #expect(eyeLen > 0)
         #expect(upLen > 0)
+        // And the values themselves, measured on the pinned kernel: looking at the origin down
+        // +Z from 1500 out, Y up, a 45 degree field, orthographic.
+        #expect(eye == SIMD3(0, 0, -1500))
+        #expect(center == SIMD3(0, 0, 0))
+        #expect(up == SIMD3(0, 1, 0))
+        #expect(cam.fieldOfView == 45)
+        #expect(cam.aspect == 1)
+        #expect(cam.projectionType == .orthographic)
     }
 
     @Test("Projection matrix non-identity")

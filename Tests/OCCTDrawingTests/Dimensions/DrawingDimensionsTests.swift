@@ -80,6 +80,9 @@ struct DrawingDimensionsTests {
         }
         drawing.addLinearDimension(from: SIMD2(0, 0), to: SIMD2(5, 0))
         drawing.addCentreLine(from: SIMD2(0, 0), to: SIMD2(5, 0))
+        // One of each before, so the empty collections after are the clear's doing.
+        #expect(drawing.dimensions.count == 1)
+        #expect(drawing.annotations.count == 1)
         drawing.clearAnnotations()
         #expect(drawing.dimensions.isEmpty)
         #expect(drawing.annotations.isEmpty)

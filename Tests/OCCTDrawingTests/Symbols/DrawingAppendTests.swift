@@ -63,7 +63,13 @@ struct DrawingAppendTests {
                 boundary: [SIMD2(0, 0), SIMD2(10, 0), SIMD2(10, 10), SIMD2(0, 10)],
                 angle: .pi / 4, spacing: 2.0))
         drawing.append(hatch)
-        if case .hatch = drawing.annotations.first {
+        #expect(drawing.annotations.count == 1)
+        // What comes back is what went in, value for value.
+        if case .hatch(let stored)? = drawing.annotations.first {
+            #expect(
+                stored.boundary == [SIMD2(0, 0), SIMD2(10, 0), SIMD2(10, 10), SIMD2(0, 10)])
+            #expect(abs(stored.angle - .pi / 4) < 1e-12)
+            #expect(abs(stored.spacing - 2.0) < 1e-12)
         } else {
             Issue.record("expected hatch to be stored")
         }
@@ -88,7 +94,11 @@ struct DrawingAppendTests {
         }
         let cpl = DrawingAnnotation.cuttingPlaneLine(line)
         drawing.append(cpl)
-        if case .cuttingPlaneLine = drawing.annotations.first {
+        #expect(drawing.annotations.count == 1)
+        if case .cuttingPlaneLine(let stored)? = drawing.annotations.first {
+            #expect(stored == line)
+            #expect(stored.label == "A")
+            #expect(stored.traceStart == SIMD2(0, 0) && stored.traceEnd == SIMD2(100, 0))
         } else {
             Issue.record("expected cuttingPlaneLine to be stored")
         }

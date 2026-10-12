@@ -49,5 +49,12 @@ struct AutoCentermarksTests {
             from: cyl, viewDirection: SIMD3(0, 0, 1),
             minRadius: 100)
         #expect(result.added.isEmpty)
+
+        // The control, so a call that always answered nothing cannot pass: the same view with a
+        // minimum below the 5 unit radius keeps both circles, as `cylinderTopViewMark` does.
+        let kept = top.addAutoCentermarks(
+            from: cyl, viewDirection: SIMD3(0, 0, 1),
+            minRadius: 1)
+        #expect(kept.added.count == 2)
     }
 }
