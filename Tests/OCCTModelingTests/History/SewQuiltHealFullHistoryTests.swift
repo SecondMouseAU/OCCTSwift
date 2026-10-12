@@ -74,17 +74,35 @@ struct SewQuiltHealFullHistoryTests {
     }
 
     @Test("Self-sew (sewnWithFullHistory(tolerance:)) merges two touching faces in one compound")
-    func selfSewWithHistory() {
+    func selfSewWithHistory() throws {
         let (face1, face2) = Self.touchingFaces()
-        guard let compound = Shape.compound([face1, face2]) else {
-            Issue.record("compound construction should succeed")
-            return
-        }
-        guard let r = compound.sewnWithFullHistory(tolerance: 1e-6) else {
-            Issue.record("self-sew should succeed")
-            return
-        }
+        let compound = try #require(Shape.compound([face1, face2]))
+        // Two separate 10 x 10 faces: 2 faces, 8 edges (the touching pair counted twice).
+        #expect(compound.subShapes(ofType: .edge).count == 8)
+        let r = try #require(compound.sewnWithFullHistory(tolerance: 1e-6))
+        // #3332: the old test asserted `r.result.isValid` alone, which the unsewn compound also
+        // satisfies. Sewn, the result is ONE shell of the same two faces (area 200) with the
+        // coincident edges merged: 7 edges, not 8.
         #expect(r.result.isValid)
+        #expect(r.result.shapeType == .shell)
+        #expect(r.result.shellCount == 1)
+        #expect(r.result.faceCount == 2)
+        #expect(r.result.subShapes(ofType: .edge).count == 7)
+        let area = try #require(r.result.surfaceArea)
+        #expect(abs(area - 200) < 1e-6)
+
+        // History: both faces survive as one modified image each, neither deleted ...
+        for face in compound.subShapes(ofType: .face) {
+            let record = r.history.record(of: face)
+            #expect(!record.isDeleted)
+            #expect(record.modified.count == 1)
+        }
+        // ... and the two edges that met at x = 5 are Modified into the SAME output edge.
+        let left = Self.edgeNearX(face1, 5)
+        let right = Self.edgeNearX(face2, 5)
+        let leftImage = try #require(r.history.record(of: left).modified.first)
+        let rightImage = try #require(r.history.record(of: right).modified.first)
+        #expect(leftImage.isSame(as: rightImage))
     }
 
     @Test("Quilt: box's own faces produce a valid shell with queryable, non-deleted history")

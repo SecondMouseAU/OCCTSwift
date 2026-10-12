@@ -87,29 +87,37 @@ struct Tier2HistoryTests {
     }
 
     @Test("Defeatured: removed face is deleted in the result")
-    func defeaturedWithHistory() {
+    func defeaturedWithHistory() throws {
         // Create a box with a small chamfer, then defeature the chamfer face.
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
-        guard let chamfered = box.chamfered(distance: 0.5) else {
-            Issue.record("could not chamfer box for defeature test")
-            return
-        }
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let chamfered = try #require(box.chamfered(distance: 0.5))
         let chamferedFaces = chamfered.subShapes(ofType: .face)
-        // Box has 6 faces; chamfered version has 6 + 12 chamfer faces = 18.
-        // Find a chamfer face (non-axis-aligned, smaller area). For test
-        // simplicity, just pick face 6 (first non-original face).
-        guard chamferedFaces.count > 6 else {
-            Issue.record("chamfered box has fewer faces than expected")
-            return
-        }
-        guard let r = chamfered.defeaturedWithFullHistory(faces: [6]) else {
-            // Defeature can fail if the picked face isn't removable (e.g. it's
-            // a primary face). Try another chamfer face.
-            return
-        }
-        #expect(r.result.volume! > 0)
-        let removedFace = chamferedFaces[6]
+        // #3332: a chamfered box has 26 faces, not 18 (the old comment): the 6 box faces, 12 edge
+        // chamfers (area 0.5 * sqrt(2) * 0.5 * 9 = 6.364 each) and 8 corner triangles (0.2165).
+        // The old test picked face 6, a corner triangle, under `guard ... else { return }`, and
+        // asserted `volume > 0`. Pick an EDGE chamfer by its area, so removing it must restore
+        // the sharp edge: measured volume 985.667 -> 986.75 (13/12 mm^3 back).
+        #expect(chamferedFaces.count == 26)
+        let edgeChamferIndex = try #require(
+            chamferedFaces.firstIndex { face in
+                abs((face.surfaceArea ?? 0) - 6.3639610306789285) < 1e-6
+            })
+        let before = try #require(chamfered.volume)
+        #expect(abs(before - 985.6666666666669) < 1e-6)
+
+        let r = try #require(chamfered.defeaturedWithFullHistory(faces: [edgeChamferIndex]))
+        #expect(r.result.isValid)
+        let after = try #require(r.result.volume)
+        #expect(abs(after - 986.75) < 1e-6)
+        #expect(after > before, "removing a chamfer gives material back")
+        #expect(r.result.faceCount == 25)
+
+        let removedFace = chamferedFaces[edgeChamferIndex]
         let rec = r.history.record(of: removedFace)
         #expect(rec.isDeleted, "explicitly defeatured face should be marked deleted")
+        // A face the defeature did not touch is not deleted: the +z box face (area 81 = 9 x 9).
+        let bigFace = try #require(
+            chamferedFaces.first { abs(($0.surfaceArea ?? 0) - 81) < 1e-6 })
+        #expect(!r.history.record(of: bigFace).isDeleted)
     }
 }

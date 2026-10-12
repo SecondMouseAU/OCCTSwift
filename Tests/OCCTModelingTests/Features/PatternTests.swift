@@ -1,3 +1,4 @@
+import Foundation
 import Testing
 
 @testable import OCCTSwift
@@ -44,20 +45,49 @@ struct PatternTests {
     }
 
     @Test("Partial circular pattern")
-    func partialCircularPattern() {
-        let box = Shape.box(width: 5, height: 5, depth: 5)!
-            .translated(by: SIMD3(15, 0, 0))!
+    func partialCircularPattern() throws {
+        let box = try #require(
+            Shape.box(width: 5, height: 5, depth: 5)?.translated(by: SIMD3(15, 0, 0)))
 
         // Create 3 boxes spanning 90 degrees
-        let pattern = box.circularPattern(
-            axisPoint: SIMD3(0, 0, 0),
-            axisDirection: SIMD3(0, 0, 1),
-            count: 3,
-            angle: .pi / 2  // 90 degrees
-        )
+        let pattern = try #require(
+            box.circularPattern(
+                axisPoint: SIMD3(0, 0, 0),
+                axisDirection: SIMD3(0, 0, 1),
+                count: 3,
+                angle: .pi / 2  // 90 degrees
+            ))
+        #expect(pattern.isValid)
 
-        #expect(pattern != nil)
-        #expect(pattern!.isValid)
+        // #3332: the old test stopped at `isValid`. Three copies of a 125 mm^3 box, one of them
+        // the original at (15, 0, 0), all on the radius-15 circle about the axis.
+        let solids = pattern.subShapes(ofType: .solid)
+        #expect(solids.count == 3)
+        let total = try #require(pattern.volume)
+        #expect(abs(total - 375) < 1e-6)
+        var angles: [Double] = []
+        for solid in solids {
+            let centre = try #require(solid.center)
+            #expect(abs((centre.x * centre.x + centre.y * centre.y).squareRoot() - 15) < 1e-6)
+            #expect(abs(centre.z) < 1e-6)
+            angles.append(atan2(centre.y, centre.x) * 180 / Double.pi)
+        }
+        angles.sort()
+        #expect(angles.count == 3)
+        if angles.count == 3 {
+            #expect(abs(angles[0]) < 1e-6, "the original copy stays put")
+            // Documented: `angle` is the TOTAL angle to span, so the last copy sits at 90 and the
+            // three are 0, 45, 90 degrees. Measured: 0, 30, 60 (step angle / count), which is
+            // right for a full circle and short of the span for a partial one (#3356).
+            withKnownIssue("#3356: partial angle steps by angle/count, so the span is not reached")
+            {
+                #expect(abs(angles[1] - 45) < 1e-6)
+                #expect(abs(angles[2] - 90) < 1e-6)
+            }
+            // The measured spacing, so the day the step changes this fails visibly with the above.
+            #expect(abs(angles[1] - 30) < 1e-6)
+            #expect(abs(angles[2] - 60) < 1e-6)
+        }
     }
 
     // Issue #169: feature-level circular pattern (bolt circle).

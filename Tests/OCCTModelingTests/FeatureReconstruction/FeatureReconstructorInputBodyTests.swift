@@ -76,7 +76,7 @@ struct FeatureReconstructorInputBodyTests {
     }
 
     @Test("@input not registered when inputBody is nil, boolean skips with unresolvedRef")
-    func sentinelAbsentWhenNoInput() {
+    func sentinelAbsentWhenNoInput() throws {
         let slot = FeatureSpec.Extrude(
             profilePoints2D: [SIMD2(0, 0), SIMD2(5, 0), SIMD2(5, 5), SIMD2(0, 5)],
             planeOrigin: .zero, planeNormal: SIMD3(0, 0, 1), length: 5, id: "slot")
@@ -89,13 +89,24 @@ struct FeatureReconstructorInputBodyTests {
             from: [.extrude(slot), .boolean(cut)],
             inputBody: nil)
         // Should skip the boolean with unresolvedRef on `@input`.
-        let skip = result.skipped.first { $0.featureID == "cut_slot" }
-        #expect(skip != nil)
-        if case .unresolvedRef(let msg)? = skip?.reason {
-            #expect(msg.contains(FeatureReconstructor.inputBodySentinel))
-        } else {
-            Issue.record("expected unresolvedRef reason for missing @input")
+        // #3332: the old body asserted `skip != nil` and an `if case` that recorded only in its
+        // else arm. Pinned: the slot itself still builds (it is the result, a 5 x 5 x 5 block of
+        // volume 125, untouched by the refused cut), the cut is the one and only skip, in the
+        // subtractive stage, and no history is retained for it.
+        #expect(result.fulfilled == ["slot"])
+        #expect(result.skipped.count == 1)
+        let skip = try #require(result.skipped.first)
+        #expect(skip.featureID == "cut_slot")
+        #expect(skip.stage == .subtractive)
+        guard case .unresolvedRef(let msg) = skip.reason else {
+            Issue.record("expected unresolvedRef reason for missing @input, got \(skip.reason)")
+            return
         }
+        #expect(msg.contains(FeatureReconstructor.inputBodySentinel))
+        let shape = try #require(result.shape)
+        let volume = try #require(shape.volume)
+        #expect(abs(volume - 125) < 1e-6)
+        #expect(result.histories["cut_slot"] == nil)
     }
 
     @Test("Sheet-metal Builder output → reconstructor cuts a mounting hole")
