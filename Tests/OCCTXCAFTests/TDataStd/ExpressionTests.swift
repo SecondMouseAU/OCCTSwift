@@ -5,11 +5,11 @@ import Testing
 
 @Suite("TDataStd_Expression Tests")
 struct ExpressionTests {
-    @Test func setExpression() {
-        if let doc = Document.create() {
-            let ok = doc.setExpression(at: 1)
-            #expect(ok)
-        }
+    @Test func setExpression() throws {
+        let doc = try #require(Document.create())
+        #expect(doc.setExpression(at: 1))
+        // The attribute exists and holds an empty expression until one is written.
+        #expect(doc.expressionString(at: 1) == "")
     }
 
     @Test func setAndGetString() {
@@ -21,12 +21,12 @@ struct ExpressionTests {
         }
     }
 
-    @Test func getName() {
-        if let doc = Document.create() {
-            doc.setExpression(at: 1)
-            doc.setExpressionString("a + b", at: 1)
-            let name = doc.expressionName(at: 1)
-            #expect(name != nil)
-        }
+    @Test func getName() throws {
+        let doc = try #require(Document.create())
+        #expect(doc.setExpression(at: 1))
+        #expect(doc.expressionName(at: 1) == "")
+        #expect(doc.setExpressionString("a + b", at: 1))
+        // An expression is named by its own text.
+        #expect(doc.expressionName(at: 1) == "a + b")
     }
 }

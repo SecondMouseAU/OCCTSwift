@@ -7,12 +7,13 @@ import Testing
 struct DocumentTests {
 
     @Test("Create empty document")
-    func createEmptyDocument() {
-        let doc = Document.create()
-        #expect(doc != nil)
-        if let doc = doc {
-            #expect(doc.rootNodes.isEmpty)
-        }
+    func createEmptyDocument() throws {
+        let doc = try #require(Document.create())
+        #expect(doc.rootNodes.isEmpty)
+        #expect(doc.shapeCount == 0)
+        #expect(doc.freeShapeCount == 0)
+        #expect(doc.allShapes().isEmpty)
+        #expect(doc.lengthUnit == nil)
     }
 
     // Note: Loading tests require test STEP files with assemblies
@@ -37,8 +38,9 @@ struct DocumentTests {
 
         let doc = try Document.loadSTEP(from: url)
         let unit = try #require(doc.lengthUnit)
-        #expect(unit.scale > 0)
-        #expect(!unit.name.isEmpty)
+        // writeSTEP declares millimetres, which is 0.001 of a metre.
+        #expect(unit.scale == 0.001)
+        #expect(unit.name == "mm")
     }
 
     @Test("Document.lengthUnit is nil for a document with no length unit attribute")

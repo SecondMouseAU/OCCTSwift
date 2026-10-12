@@ -53,11 +53,24 @@ struct XCAFDocNotesToolTests {
         }
     }
 
-    @Test func orphanNotes() {
-        if let doc = Document.create() {
-            doc.notesToolCreateComment(userName: "U", timeStamp: "T", comment: "orphan")
-            // Notes not attached to shapes are orphans
-            #expect(doc.notesToolOrphanNoteCount >= 0)
-        }
+    @Test func orphanNotes() throws {
+        let doc = try #require(Document.create())
+        let first = try #require(
+            doc.notesToolCreateComment(userName: "U", timeStamp: "T", comment: "orphan"))
+        _ = try #require(
+            doc.notesToolCreateBalloon(userName: "U", timeStamp: "T", comment: "balloon"))
+        // Neither note is attached to an item, so both are orphans.
+        #expect(doc.notesToolNoteCount == 2)
+        #expect(doc.notesToolOrphanNoteCount == 2)
+
+        // Deleting one takes it out of both counts and leaves the other an orphan.
+        #expect(doc.notesToolDeleteNote(first))
+        #expect(doc.notesToolNoteCount == 1)
+        #expect(doc.notesToolOrphanNoteCount == 1)
+
+        // Deleting orphans reports how many it removed, and removes the last note.
+        #expect(doc.notesToolDeleteOrphanNotes() == 1)
+        #expect(doc.notesToolNoteCount == 0)
+        #expect(doc.notesToolOrphanNoteCount == 0)
     }
 }

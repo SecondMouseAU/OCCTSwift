@@ -5,11 +5,16 @@ import Testing
 
 @Suite("TDocStd_XLink Tests")
 struct XLinkTests {
-    @Test func setXLink() {
-        if let doc = Document.create() {
-            let ok = doc.setXLink(at: 1)
-            #expect(ok)
-        }
+    @Test func setXLink() throws {
+        let doc = try #require(Document.create())
+        // Nothing is linked at label 1 until one is set.
+        #expect(doc.xLinkDocumentEntry(at: 1) == nil)
+        #expect(doc.xLinkLabelEntry(at: 1) == nil)
+
+        #expect(doc.setXLink(at: 1))
+        // A fresh link has empty entries, and they are there to be filled.
+        #expect(doc.xLinkDocumentEntry(at: 1) == "")
+        #expect(doc.xLinkLabelEntry(at: 1) == "")
     }
 
     @Test func documentEntry() {

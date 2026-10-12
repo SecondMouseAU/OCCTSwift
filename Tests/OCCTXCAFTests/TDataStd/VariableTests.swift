@@ -5,11 +5,15 @@ import Testing
 
 @Suite("TDataStd_Variable Tests")
 struct VariableTests {
-    @Test func setVariable() {
-        if let doc = Document.create() {
-            let ok = doc.setVariable(at: 1)
-            #expect(ok)
-        }
+    @Test func setVariable() throws {
+        let doc = try #require(Document.create())
+        #expect(doc.setVariable(at: 1))
+        // A new variable has no value, is not constant, and has the scalar unit.
+        #expect(!doc.variableIsValued(at: 1))
+        #expect(doc.variableValue(at: 1) == 0)
+        #expect(!doc.variableIsConstant(at: 1))
+        #expect(doc.variableUnit(at: 1) == "SCALAR")
+        #expect(!doc.variableIsAssigned(at: 1))
     }
 
     @Test func setAndGetName() {

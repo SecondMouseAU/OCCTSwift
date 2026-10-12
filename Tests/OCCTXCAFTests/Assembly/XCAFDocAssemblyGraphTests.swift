@@ -5,20 +5,38 @@ import Testing
 
 @Suite("XCAFDoc_AssemblyGraph Tests")
 struct XCAFDocAssemblyGraphTests {
-    @Test func createFromDocument() {
-        if let doc = Document.create() {
-            // Add a shape to make the graph non-trivial
-            if let main = doc.mainLabel, let label = doc.createLabel(parent: main) {
-                if let box = Shape.box(width: 10, height: 10, depth: 10) {
-                    // We can't easily call ShapeTool from Swift, but creating the graph should work
-                    if let graph = AssemblyGraph(document: doc) {
-                        #expect(graph.nodeCount >= 0)
-                        #expect(graph.linkCount >= 0)
-                        #expect(graph.rootCount >= 0)
-                    }
-                }
-            }
-        }
+    @Test func createFromDocument() throws {
+        // An empty document has an empty graph.
+        let empty = try #require(Document.create())
+        let emptyGraph = try #require(AssemblyGraph(document: empty))
+        #expect(emptyGraph.nodeCount == 0)
+        #expect(emptyGraph.linkCount == 0)
+        #expect(emptyGraph.rootCount == 0)
+
+        // One free part is a single node, which is its own root.
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let single = try #require(Document.create())
+        #expect(single.addShape(box, makeAssembly: false) >= 0)
+        let singleGraph = try #require(AssemblyGraph(document: single))
+        #expect(singleGraph.nodeCount == 1)
+        #expect(singleGraph.linkCount == 0)
+        #expect(singleGraph.rootCount == 1)
+        #expect(singleGraph.nodeType(at: 1) == .part)
+
+        // An assembly holding one part is three nodes (the assembly, its occurrence of the part,
+        // the part) joined by two links, under one root.
+        let doc = try #require(Document.create())
+        let partId = doc.addShape(box, makeAssembly: false)
+        let assemblyId = doc.newShapeLabel()
+        #expect(doc.addComponent(assemblyLabelId: assemblyId, shapeLabelId: partId) >= 0)
+        doc.updateAssemblies()
+        let graph = try #require(AssemblyGraph(document: doc))
+        #expect(graph.nodeCount == 3)
+        #expect(graph.linkCount == 2)
+        #expect(graph.rootCount == 1)
+        #expect(graph.nodeType(at: 1) == .assemblyRoot)
+        #expect(graph.nodeType(at: 2) == .occurrence)
+        #expect(graph.nodeType(at: 3) == .part)
     }
 
     /// #1568 regression: AssemblyGraph.NodeType's raw values must match

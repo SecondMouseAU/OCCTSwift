@@ -5,9 +5,15 @@ import Testing
 
 @Suite("XCAFNoteObjects_NoteObject Tests")
 struct XCAFNoteObjectsTests {
-    @Test func create() {
-        let obj = NoteObject()
-        #expect(obj != nil)
+    @Test func create() throws {
+        let obj = try #require(NoteObject())
+        // A new note object holds nothing: no plane, point, text point or presentation.
+        #expect(!obj.hasPlane)
+        #expect(!obj.hasPoint)
+        #expect(!obj.hasPointText)
+        #expect(obj.planeOrigin == (0, 0, 0))
+        #expect(obj.point == (0, 0, 0))
+        #expect(obj.presentation == nil)
     }
 
     @Test func initiallyEmpty() {
@@ -38,13 +44,19 @@ struct XCAFNoteObjectsTests {
         }
     }
 
-    @Test func setPresentation() {
-        if let obj = NoteObject() {
-            if let box = Shape.box(width: 1, height: 1, depth: 1) {
-                obj.setPresentation(box)
-                #expect(obj.presentation != nil)
-            }
-        }
+    @Test func setPresentation() throws {
+        let obj = try #require(NoteObject())
+        #expect(obj.presentation == nil)
+        let box = try #require(Shape.box(width: 1, height: 1, depth: 1))
+        obj.setPresentation(box)
+
+        // What comes back is the box that went in: a unit solid centred on the origin.
+        let presentation = try #require(obj.presentation)
+        #expect(presentation.shapeType == .solid)
+        #expect(abs((presentation.volume ?? 0) - 1) < 1e-9)
+        let bounds = try #require(presentation.bounds)
+        #expect(vectorDistance(bounds.min, SIMD3(-0.5, -0.5, -0.5)) < 1e-5)
+        #expect(vectorDistance(bounds.max, SIMD3(0.5, 0.5, 0.5)) < 1e-5)
     }
 
     @Test func reset() {
