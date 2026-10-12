@@ -51,7 +51,11 @@ def main():
     jobs = []
     for model, rel in MODELS.items():
         path = f"{att}/{rel}"
-        n = int(subprocess.run([first, path, "count"], capture_output=True, text=True).stdout.split("edges=")[1])
+        probe = subprocess.run([first, path, "count"], capture_output=True, text=True)
+        if probe.returncode != 0 or "edges=" not in probe.stdout:
+            print(f"{model:5} skipped: count probe failed on {path} (rc={probe.returncode}): {probe.stdout.strip()[:80]}")
+            continue
+        n = int(probe.stdout.split("edges=")[1].split()[0])
         for label, probe in probes.items():
             for op in ("blend", "chamf"):
                 jobs += [(label, probe, model, path, op, e) for e in range(1, n + 1)]

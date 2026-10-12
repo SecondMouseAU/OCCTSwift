@@ -51,6 +51,7 @@ for line in sys.stdin:
             body.append(line[1:])
 sys.stdout.write("".join(body))
 ' "$2" > "$3"
+  [ -s "$3" ] || { echo "fetch-attachments: $2 not found in the diff of PR $1, $3 is empty" >&2; rm -f "$3"; return 1; }
 }
 extract 1507 data/occ/periodic_seam_fillet.brep "$OUT/1507/periodic_seam_fillet.brep"
 extract 1533 src/ModelingAlgorithms/TKFillet/GTests/data/bug1177_corner.brep "$OUT/1533/bug1177_corner.brep"
