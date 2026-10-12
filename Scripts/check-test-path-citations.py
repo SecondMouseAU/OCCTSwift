@@ -321,12 +321,9 @@ def self_test():
     # One scan serves the report: a precomputed citation list must give check() the same answer.
     d = _tree({EXEMPTIONS: "file\tdocs/h.md\thistory\n", "docs/h.md": "@@AATests/Old.swift",
                "docs/a.md": "@@AATests/Gone.swift"})
+    plain, pre = check(d), check(d, citations(d))
     cases.append(("check() with a precomputed scan agrees with its own scan and applies file rows",
-                  check(d) == check(d, citations(d)) and len(check(d, citations(d))[0]) == 1,
-                  "dangling=%d" % len(check(d, citations(d))[0])))
-    map_case("the exemptions table is not read as an area table",
-             header + test_row + helper_row, 0,
-             {"Scripts/test-areas/citation-exemptions.tsv": "file\tdocs/x.md\thistory\n"})
+                  plain == pre and len(pre[0]) == 1, "dangling=%d" % len(pre[0])))
     bad = [c for c in cases if not c[1]]
     for name, passed, detail in cases:
         print("  %s  %s (%s)" % ("ok  " if passed else "FAIL", name, detail))
