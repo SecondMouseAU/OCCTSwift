@@ -56,7 +56,9 @@ struct Issue3065EdgeCurvePerTaskTests {
         let poles = try #require(edge.curve3D?.poleCount)
         #expect(poles >= 10, "a single-span edge never rebuilds an evaluation cache")
         // The 16 control points make 18 poles of one cubic BSpline (measured on kernel.6): 15
-        // spans, which is what the 13-span ring in `parameter(task:step:range:)` walks.
+        // spans. `parameter(task:step:range:)` cuts the range into 13 equal slots and samples each
+        // slot's midpoint, so its slots are not the 15 knot spans: they are a little wider, which
+        // puts neighbouring samples in different spans and forces the cache rebuild.
         #expect(poles == 18, "got \(poles) poles")
     }
 

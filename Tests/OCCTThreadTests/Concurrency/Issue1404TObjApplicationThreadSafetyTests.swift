@@ -84,7 +84,7 @@ struct Issue1404TObjApplicationThreadSafetyTests {
         // write shows as a read of the other value. 400 reads each, counted so that a task group
         // that ran nothing cannot pass.
         for value in [true, false] {
-            let wrong = await withTaskGroup(of: (reads: Int, wrong: Int).self) { group in
+            let counts = await withTaskGroup(of: (reads: Int, wrong: Int).self) { group in
                 for _ in 0..<8 {
                     group.addTask {
                         var reads = 0
@@ -105,9 +105,9 @@ struct Issue1404TObjApplicationThreadSafetyTests {
                 }
                 return total
             }
-            #expect(wrong.reads == 400, "every read ran")
+            #expect(counts.reads == 400, "every read ran")
             #expect(
-                wrong.wrong == 0, "\(wrong.wrong) of 400 reads after writing \(value) disagreed")
+                counts.wrong == 0, "\(counts.wrong) of 400 reads after writing \(value) disagreed")
         }
     }
 
