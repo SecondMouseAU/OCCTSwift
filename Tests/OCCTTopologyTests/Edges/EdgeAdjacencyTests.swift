@@ -52,18 +52,35 @@ struct EdgeAdjacencyTests {
     }
 
     @Test("Cylinder edge adjacent faces")
-    func cylinderEdgeAdjacent() {
-        let cyl = Shape.cylinder(radius: 5, height: 10)!
+    func cylinderEdgeAdjacent() throws {
+        let cyl = try #require(Shape.cylinder(radius: 5, height: 10))
         let edges = cyl.edges()
-        #expect(edges.count >= 2)
+        #expect(edges.count == 3)
 
-        var foundPair = false
+        // The two rim circles (length 2 pi r) are shared by the lateral face (2 pi r h = 100 pi)
+        // and one cap (pi r^2 = 25 pi), so each has exactly those two faces. The seam (length h)
+        // lies on the lateral face alone, so it reports that one face, not a pair. Measured on
+        // kernel.6: counts [2, 1, 2], areas as below.
+        var circleCount = 0
+        var seamCount = 0
         for edge in edges {
-            if let adj = edge.adjacentFaces(in: cyl), adj.count >= 2 {
-                foundPair = true
-                break
+            let adj = try #require(edge.adjacentFaces(in: cyl))
+            let areas = adj.map { $0.area() }.sorted()
+            if abs(edge.length - 2 * .pi * 5) < 1e-9 {
+                circleCount += 1
+                #expect(areas.count == 2)
+                if areas.count == 2 {
+                    #expect(abs(areas[0] - 25 * .pi) < 1e-9)
+                    #expect(abs(areas[1] - 100 * .pi) < 1e-9)
+                }
+            } else {
+                seamCount += 1
+                #expect(abs(edge.length - 10) < 1e-9)
+                #expect(areas.count == 1)
+                if let lateral = areas.first { #expect(abs(lateral - 100 * .pi) < 1e-9) }
             }
         }
-        #expect(foundPair)
+        #expect(circleCount == 2)
+        #expect(seamCount == 1)
     }
 }

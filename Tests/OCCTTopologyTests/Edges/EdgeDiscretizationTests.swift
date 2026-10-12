@@ -8,17 +8,29 @@ import Testing
 struct EdgeDiscretizationTests {
 
     @Test("Edge polyline from box")
-    func edgePolylineFromBox() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func edgePolylineFromBox() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        #expect(box.edgeCount == 12)
 
-        // Box has edges (OCCT may count shared edges per face)
-        #expect(box.edgeCount > 0)
+        // Every box edge is a straight segment of length 10, so its polyline is exactly its two
+        // endpoints and nothing in between.
+        let edges = box.edges()
+        #expect(edges.count == 12)
+        for index in 0..<box.edgeCount {
+            let pts = try #require(box.edgePolyline(at: index, deflection: 0.1))
+            #expect(pts.count == 2)
+            guard pts.count == 2 else { continue }
+            #expect(abs(vectorDistance(pts[0], pts[1]) - 10) < 1e-9)
+            #expect(vectorDistance(pts[0], edges[index].endpoints.start) < 1e-9)
+            #expect(vectorDistance(pts[1], edges[index].endpoints.end) < 1e-9)
+        }
 
-        // Get polyline for first edge
-        let polyline = box.edgePolyline(at: 0, deflection: 0.1)
-        #expect(polyline != nil)
-        if let pts = polyline {
-            #expect(pts.count >= 2)  // At least start and end
+        // Edge 0 is the vertical edge at (-5, -5), measured on kernel.6.
+        let first = try #require(box.edgePolyline(at: 0, deflection: 0.1))
+        #expect(first.count == 2)
+        if first.count == 2 {
+            #expect(vectorDistance(first[0], SIMD3(-5, -5, -5)) < 1e-9)
+            #expect(vectorDistance(first[1], SIMD3(-5, -5, 5)) < 1e-9)
         }
     }
 

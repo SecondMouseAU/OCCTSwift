@@ -9,15 +9,27 @@ import Testing
 @Suite("Face, Outer Wire and ZLevel")
 struct FacePropertyTests {
     @Test("Face outer wire exists")
-    func faceOuterWire() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func faceOuterWire() throws {
+        // Every face of a 10-cube is bounded by one wire of four edges of length 10.
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let faces = box.faces()
-        guard let face = faces.first else {
-            Issue.record("Box should have faces")
-            return
+        #expect(faces.count == 6)
+        for face in faces {
+            let wire = try #require(face.outerWire)
+            let edges = wire.edges()
+            #expect(edges.count == 4)
+            for edge in edges { #expect(abs(edge.length - 10) < 1e-9) }
         }
-        let wire = face.outerWire
-        #expect(wire != nil)
+
+        // With a hole, the outer wire is the 20x20 boundary and not the 4x4 hole: perimeter 80.
+        let plate = try #require(Shape.box(origin: .zero, width: 20, height: 20, depth: 4))
+        let hole = try #require(Shape.box(origin: SIMD3(8, 8, -1), width: 4, height: 4, depth: 6))
+        let drilled = try #require(plate.subtracting(hole))
+        let top = try #require(drilled.faces().first { ($0.zLevel ?? 0) > 3.9 })
+        let outer = try #require(top.outerWire)
+        #expect(outer.edges().count == 4)
+        let perimeter = outer.edges().map(\.length).reduce(0, +)
+        #expect(abs(perimeter - 80) < 1e-9)
     }
 
     @Test("Face(_:Shape) recovers a Face from a face-shape; rejects non-faces")
@@ -96,12 +108,20 @@ struct FacePropertyTests {
     }
 
     @Test("Horizontal face zLevel")
-    func horizontalFaceZLevel() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func horizontalFaceZLevel() throws {
+        // The box spans z in [-5, 5]: exactly the bottom and top faces are horizontal, and their
+        // levels are -5 and +5. The four walls are not horizontal and have no z level.
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let horizontal = box.faces().filter { $0.isHorizontal() }
-        #expect(!horizontal.isEmpty)
-        // At least one should have a defined zLevel
-        let withZ = horizontal.compactMap { $0.zLevel }
-        #expect(!withZ.isEmpty)
+        #expect(horizontal.count == 2)
+        let levels = horizontal.compactMap { $0.zLevel }.sorted()
+        #expect(levels.count == 2)
+        if levels.count == 2 {
+            #expect(abs(levels[0] + 5) < 1e-9)
+            #expect(abs(levels[1] - 5) < 1e-9)
+        }
+        for wall in box.faces() where !wall.isHorizontal() {
+            #expect(wall.zLevel == nil)
+        }
     }
 }

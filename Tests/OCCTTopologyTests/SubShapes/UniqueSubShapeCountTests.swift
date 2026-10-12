@@ -15,11 +15,12 @@ struct UniqueSubShapeCountTests {
         }
     }
 
-    @Test func sphereUniqueCounts() {
-        if let sphere = Shape.sphere(radius: 5) {
-            #expect(sphere.uniqueFaceCount >= 1)
-            #expect(sphere.uniqueEdgeCount >= 1)
-        }
+    @Test func sphereUniqueCounts() throws {
+        // One face, three edges (the seam and the two degenerate pole edges), two pole vertices.
+        let sphere = try #require(Shape.sphere(radius: 5))
+        #expect(sphere.uniqueFaceCount == 1)
+        #expect(sphere.uniqueEdgeCount == 3)
+        #expect(sphere.uniqueVertexCount == 2)
     }
 
     @Test func uniqueSubShapeCountByType() {

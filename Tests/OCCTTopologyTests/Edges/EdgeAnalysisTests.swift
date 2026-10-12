@@ -25,31 +25,47 @@ struct EdgeAnalysisTests {
     }
 
     @Test("Circle edge is closed")
-    func circleEdgeClosed() {
-        let circle = Wire.circle(radius: 5)!
-        let face = Shape.face(from: circle)!
+    func circleEdgeClosed() throws {
+        let circle = try #require(Wire.circle(radius: 5))
+        let face = try #require(Shape.face(from: circle))
+        // A disc face is bounded by exactly one edge, the closed circle.
         let edges = face.edges()
-        // The circular edge should be closed
-        let hasClosedEdge = edges.contains(where: { $0.isClosed3D })
-        #expect(hasClosedEdge)
+        #expect(edges.count == 1)
+        for edge in edges {
+            #expect(edge.isClosed3D)
+            #expect(abs(edge.length - 2 * .pi * 5) < 1e-9)
+        }
+
+        // Control: the four edges of a rectangular face are open, so a getter that answers
+        // true for everything cannot pass.
+        let rect = try #require(Wire.rectangle(width: 10, height: 5))
+        let rectFace = try #require(Shape.face(from: rect))
+        let rectEdges = rectFace.edges()
+        #expect(rectEdges.count == 4)
+        for edge in rectEdges { #expect(!edge.isClosed3D) }
     }
 
     @Test("Cylinder has seam edge")
-    func cylinderSeamEdge() {
-        let cyl = Shape.cylinder(radius: 5, height: 10)!
-        let faces = cyl.faces()
-        let edges = cyl.edges()
-        // At least one edge should be a seam on a face
-        var foundSeam = false
-        for face in faces {
-            for edge in edges {
-                if edge.isSeam(on: face) {
-                    foundSeam = true
-                    break
-                }
+    func cylinderSeamEdge() throws {
+        let cyl = try #require(Shape.cylinder(radius: 5, height: 10))
+        // Exactly one (edge, face) pair is a seam: the length-10 generator on the lateral face
+        // (area 100 pi). The rim circles are not seams on any of the three faces.
+        var seams: [(length: Double, area: Double)] = []
+        for face in cyl.faces() {
+            for edge in cyl.edges() where edge.isSeam(on: face) {
+                seams.append((edge.length, face.area()))
             }
-            if foundSeam { break }
         }
-        #expect(foundSeam)
+        #expect(seams.count == 1)
+        if let seam = seams.first {
+            #expect(abs(seam.length - 10) < 1e-9)
+            #expect(abs(seam.area - 100 * .pi) < 1e-9)
+        }
+
+        // Control: a box has no seams, so an answer that is true for every pair cannot pass.
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        for face in box.faces() {
+            for edge in box.edges() { #expect(!edge.isSeam(on: face)) }
+        }
     }
 }
