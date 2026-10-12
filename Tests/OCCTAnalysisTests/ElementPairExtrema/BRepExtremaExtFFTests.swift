@@ -18,22 +18,18 @@ struct BRepExtremaExtFFTests {
         return (box1, box2)
     }
 
+    // #766 (#2253): this walked all 36 pairs and asserted `distance >= 0` on the first one that
+    // answered, which any non-negative number passes. The pair is named instead: the facing x caps
+    // (x = 2.5 against x = 10) are one parallel extremum 7.5 apart, per the pinned kernel's answer
+    // for that pair in Scripts/repro/766-brepextrema-extff/transcript.txt. The requirement that
+    // the pair answers at all is what the removed loop never made.
     @Test("Face-face distance between separated boxes")
     func faceFaceDistance() throws {
         let (box1, box2) = try twoCubes()
-        // Try different face pairs until we find one with a result
-        var foundResult = false
-        for i in 0..<6 {
-            for j in 0..<6 {
-                if let result = box1.faceFaceExtrema(faceIndex1: i, other: box2, faceIndex2: j) {
-                    #expect(result.distance >= 0, "Distance should be non-negative")
-                    foundResult = true
-                    break
-                }
-            }
-            if foundResult { break }
-        }
-        #expect(foundResult, "no face pair of two separated boxes answered at all")
+        let facing = try #require(box1.faceFaceExtrema(faceIndex1: 1, other: box2, faceIndex2: 0))
+        #expect(abs(facing.distance - 7.5) < 1e-9, "expected 7.5, got \(facing.distance)")
+        #expect(facing.isParallel)
+        #expect(facing.solutionCount == 1, "got \(facing.solutionCount)")
     }
 
     /// #2249: for parallel faces the kernel computes no witness point, so the API reports none.
