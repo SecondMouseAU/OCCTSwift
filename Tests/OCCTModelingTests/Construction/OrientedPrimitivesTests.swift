@@ -160,14 +160,21 @@ struct OrientedPrimitivesTests {
     // MARK: - Wedge oriented
 
     @Test("Oriented wedge")
-    func orientedWedge() {
-        let w = Shape.wedge(
-            at: SIMD3(0, 0, 10), direction: SIMD3(0, 1, 0),
-            dx: 10, dy: 5, dz: 8, ltx: 4)
-        #expect(w != nil)
-        if let w {
-            #expect(w.isValid)
-        }
+    func orientedWedge() throws {
+        let w = try #require(
+            Shape.wedge(
+                at: SIMD3(0, 0, 10), direction: SIMD3(0, 1, 0),
+                dx: 10, dy: 5, dz: 8, ltx: 4))
+        #expect(w.isValid)
+        // The same wedge as the default one, 5 * 8 * (10 + 4) / 2 = 280.
+        #expect(abs((w.volume ?? -1) - 280.0) < 1e-6)
+        // Local z is the direction (global +y), so the 8 mm dz runs 0 to 8 in y. The 10 mm dx
+        // lands on global z from the origin's z = 10, and the 5 mm dy on global x (measured on
+        // kernel.6: x in [0, 5], y in [0, 8], z in [10, 20]).
+        let bounds = try #require(w.boundingBox)
+        #expect(abs(bounds.min.x) < 1e-6 && abs(bounds.max.x - 5) < 1e-6)
+        #expect(abs(bounds.min.y) < 1e-6 && abs(bounds.max.y - 8) < 1e-6)
+        #expect(abs(bounds.min.z - 10) < 1e-6 && abs(bounds.max.z - 20) < 1e-6)
     }
 
     @Test("Oriented wedge volume matches default")

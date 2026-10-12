@@ -6,63 +6,87 @@ import Testing
 struct SweepTests {
 
     @Test("Extrude profile")
-    func extrudeProfile() {
+    func extrudeProfile() throws {
         guard let profile = Wire.rectangle(width: 5, height: 3) else {
             Issue.record("Failed to create rectangle profile")
             return
         }
-        let solid = Shape.extrude(
-            profile: profile,
-            direction: SIMD3(0, 0, 1),
-            length: 10
-        )!
+        let solid = try #require(
+            Shape.extrude(
+                profile: profile,
+                direction: SIMD3(0, 0, 1),
+                length: 10
+            ))
         #expect(solid.isValid)
+        // 5 x 3 x 10: volume 150, area 2 * (15 + 50 + 30) = 190, six faces, z from 0 to 10.
+        #expect(solid.shapeType == .solid)
+        #expect(abs((solid.volume ?? -1) - 150.0) < 1e-6)
+        #expect(abs((solid.surfaceArea ?? -1) - 190.0) < 1e-6)
+        #expect(solid.faces().count == 6)
+        let bounds = try #require(solid.boundingBox)
+        #expect(abs(bounds.min.z) < 1e-5 && abs(bounds.max.z - 10.0) < 1e-5)
     }
 
+    // The old fixture put the circle at the origin in the XY plane, while the arc starts at
+    // (50, 0, 0) heading +y in the same plane, so the profile contained the path tangent and
+    // was not at the path: the sweep is a flat disc of area 1e-16 (measured) that `isValid`
+    // accepted. The profile has to sit at the start of the path with its normal along the
+    // tangent, here the circle of radius 1 centred (50, 0, 0) with normal +y. A pipe of
+    // radius 1 along a quarter of an r = 50 arc has lateral area (Pappus) 2 pi * 1 * 50 pi / 2.
     @Test("Pipe sweep")
-    func pipeSweep() {
-        guard let profile = Wire.circle(radius: 1) else {
-            Issue.record("Failed to create circle profile")
-            return
-        }
-        guard
-            let path = Wire.arc(
+    func pipeSweep() throws {
+        let profile = try #require(
+            Wire.circle(origin: SIMD3(50, 0, 0), normal: SIMD3(0, 1, 0), radius: 1))
+        let path = try #require(
+            Wire.arc(
                 center: .zero,
                 radius: 50,
                 startAngle: 0,
                 endAngle: .pi / 2
-            )
-        else {
-            Issue.record("Failed to create arc path")
-            return
-        }
-        let pipe = Shape.sweep(profile: profile, along: path)!
+            ))
+        let pipe = try #require(Shape.sweep(profile: profile, along: path))
         #expect(pipe.isValid)
+        let expectedArea = 2.0 * Double.pi * 1.0 * 50.0 * Double.pi / 2.0
+        #expect(abs((pipe.surfaceArea ?? -1) - expectedArea) < 1e-3)
+        // It follows the quarter arc: x and y reach 51 at the far ends of the swept tube and the
+        // tube stays 1 mm either side of z = 0. The default box is the control-point hull (55.2
+        // here), so the tight one is used.
+        let bounds = try #require(pipe.boundingBoxOptimal())
+        #expect(abs(bounds.max.x - 51.0) < 1e-3 && abs(bounds.max.y - 51.0) < 1e-3)
+        #expect(abs(bounds.min.z + 1.0) < 1e-3 && abs(bounds.max.z - 1.0) < 1e-3)
+        #expect(abs(bounds.min.x) < 1e-3 && abs(bounds.min.y) < 1e-3)
     }
 
     @Test("Revolution")
-    func revolution() {
+    func revolution() throws {
         // Create a simple profile to revolve
-        guard
-            let profile = Wire.polygon(
+        let profile = try #require(
+            Wire.polygon(
                 [
                     SIMD2(5, 0),
                     SIMD2(7, 0),
                     SIMD2(7, 10),
                     SIMD2(5, 10),
-                ], closed: true)
-        else {
-            Issue.record("Failed to create polygon profile")
-            return
-        }
+                ], closed: true))
 
-        let solid = Shape.revolve(
-            profile: profile,
-            axisOrigin: .zero,
-            axisDirection: SIMD3(0, 1, 0),
-            angle: .pi * 2
-        )!
+        let solid = try #require(
+            Shape.revolve(
+                profile: profile,
+                axisOrigin: .zero,
+                axisDirection: SIMD3(0, 1, 0),
+                angle: .pi * 2
+            ))
         #expect(solid.isValid)
+        // A tube of outer radius 7, inner 5 and height 10 about the y axis: four faces (outer,
+        // inner, two annular caps), volume pi * (49 - 25) * 10, surface 2 pi * (7 + 5) * 10 +
+        // 2 pi * (49 - 25) = 904.7786...
+        #expect(solid.faces().count == 4)
+        #expect(abs((solid.volume ?? -1) - Double.pi * 24.0 * 10.0) < 1e-6)
+        let area = 2.0 * Double.pi * 12.0 * 10.0 + 2.0 * Double.pi * 24.0
+        #expect(abs((solid.surfaceArea ?? -1) - area) < 1e-6)
+        let bounds = try #require(solid.boundingBox)
+        #expect(abs(bounds.max.x - 7.0) < 1e-5 && abs(bounds.min.x + 7.0) < 1e-5)
+        #expect(abs(bounds.min.y) < 1e-5 && abs(bounds.max.y - 10.0) < 1e-5)
     }
 
     // Issue #170: a pipe sweep must yield a positive-volume (outward-oriented)
