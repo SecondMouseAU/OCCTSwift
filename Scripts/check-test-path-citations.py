@@ -324,6 +324,9 @@ def self_test():
     plain, pre = check(d), check(d, citations(d))
     cases.append(("check() with a precomputed scan agrees with its own scan and applies file rows",
                   plain == pre and len(pre[0]) == 1, "dangling=%d" % len(pre[0])))
+    map_case("the exemptions table is not read as an area table",
+             header + test_row + helper_row, 0,
+             {"Scripts/test-areas/citation-exemptions.tsv": "file\tdocs/x.md\thistory\n"})
     bad = [c for c in cases if not c[1]]
     for name, passed, detail in cases:
         print("  %s  %s (%s)" % ("ok  " if passed else "FAIL", name, detail))
