@@ -16,7 +16,7 @@ struct VrmlWriterTests {
         let url = URL(fileURLWithPath: NSTemporaryDirectory())
             .appendingPathComponent("test_vrml_\(UUID()).wrl")
         defer { try? FileManager.default.removeItem(at: url) }
-        #expect(shape.writeVRML(to: url, representation: representation))
+        try #require(shape.writeVRML(to: url, representation: representation))
         return try String(contentsOf: url, encoding: .utf8)
     }
     @Test func writeShapeToVRML() {

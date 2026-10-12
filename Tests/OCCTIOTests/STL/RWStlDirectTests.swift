@@ -13,9 +13,11 @@ struct RWStlDirectTests {
         NSTemporaryDirectory() + "occt_rwstl_\(stem)_\(UUID()).stl"
     }
 
-    /// The triangle count a binary STL file declares in its header (bytes 80 to 83).
+    /// The triangle count a binary STL file declares in its header (bytes 80 to 83), which the
+    /// format fixes as little-endian whatever the host is.
     private func declaredTriangles(_ data: Data) -> Int {
-        Int(data.subdata(in: 80..<84).withUnsafeBytes { $0.load(as: UInt32.self) })
+        let raw = data.subdata(in: 80..<84).withUnsafeBytes { $0.load(as: UInt32.self) }
+        return Int(UInt32(littleEndian: raw))
     }
 
     @Test func writeBinarySTL() throws {

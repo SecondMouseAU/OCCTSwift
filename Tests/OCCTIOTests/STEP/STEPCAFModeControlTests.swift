@@ -22,7 +22,7 @@ struct STEPCAFModeControlTests {
         node.setLayer("L1")
         let url = URL(fileURLWithPath: NSTemporaryDirectory())
             .appendingPathComponent("swift_test_v58_caf_\(UUID()).step")
-        #expect(source.writeSTEP(to: url, modelType: .asIs))
+        try #require(source.writeSTEP(to: url, modelType: .asIs))
         return url
     }
 
