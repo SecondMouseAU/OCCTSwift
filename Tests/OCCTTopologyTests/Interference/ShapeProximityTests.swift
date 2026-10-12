@@ -29,12 +29,19 @@ struct ShapeProximityTests {
     }
 
     @Test("Two distant shapes have no proximity")
-    func distantShapesNoProximity() {
-        let box1 = Shape.box(width: 10, height: 10, depth: 10)!
-        let box2 = Shape.box(origin: SIMD3(100, 100, 100), width: 10, height: 10, depth: 10)!
+    func distantShapesNoProximity() throws {
+        let box1 = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let box2 = try #require(
+            Shape.box(origin: SIMD3(100, 100, 100), width: 10, height: 10, depth: 10))
 
-        let pairs = box1.proximityFaces(with: box2, tolerance: 0.5)
-        #expect(pairs.isEmpty)
+        // The nearest corners are (5,5,5) and (100,100,100): 95 * sqrt(3) apart.
+        let gap = try #require(box1.distance(to: box2)).distance
+        #expect(abs(gap - 95 * 3.0.squareRoot()) < 1e-9)
+
+        #expect(box1.proximityFaces(with: box2, tolerance: 0.5).isEmpty)
+        // Control: the same pair is reported once the tolerance exceeds the gap, so an
+        // implementation that answers "no pairs" to everything cannot pass.
+        #expect(!box1.proximityFaces(with: box2, tolerance: 200).isEmpty)
     }
 
     // Deliberately exercises the deprecated `selfIntersects` (#1088); the annotation silences the

@@ -36,12 +36,16 @@ struct Issue211OuterShell {
     }
 
     @Test("a plain solid returns its single (outer) shell")
-    func plainSolidOuterShell() {
-        guard let box = Shape.box(width: 10, height: 10, depth: 10) else {
-            #expect(Bool(false))
-            return
-        }
-        #expect(box.outerShell != nil)
+    func plainSolidOuterShell() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        // The single shell of a plain solid: all six faces, spanning the whole 10-cube.
+        let shell = try #require(box.outerShell)
+        #expect(shell.shapeType == .shell)
+        #expect(shell.faceCount == 6)
+        let bb = try #require(shell.bounds)
+        #expect(abs((bb.max.x - bb.min.x) - 10.0) < 1e-3)
+        #expect(abs((bb.max.y - bb.min.y) - 10.0) < 1e-3)
+        #expect(abs((bb.max.z - bb.min.z) - 10.0) < 1e-3)
     }
 
     @Test("a non-solid returns nil")
