@@ -115,6 +115,17 @@ struct OSDDiskTests {
     @Test func diskIsValid() {
         let valid = DiskInfo.isValid(path: "/")
         #expect(valid)
+        // The host agrees that the same path is a mount, and the temporary directory is on a
+        // disk too, so the answer is the path's and not a constant.
+        var vfs = statvfs()
+        #expect(statvfs("/", &vfs) == 0)
+        #expect(DiskInfo.isValid(path: NSTemporaryDirectory()))
+
+        // A path that is not on any disk is refused, by the host's own account as well.
+        let missing = "/nonexistent-3332-\(UUID().uuidString)/x"
+        var absent = statvfs()
+        #expect(statvfs(missing, &absent) != 0)
+        #expect(!DiskInfo.isValid(path: missing), "\(missing) is not a disk path")
     }
 
     // #1987: `name != nil` passed any string. OSD_Disk built from an OSD_Path, as the bridge

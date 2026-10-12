@@ -436,6 +436,18 @@ struct StressPostOperationStateTests {
         try Exporter.writeBREP(shape: box, to: url2)
         try Exporter.writeSTL(shape: box, to: url3)
         #expect(box.isValid)
+
+        // The shape is exported three times and still the same solid: each file holds it. STEP
+        // and BREP read back as the 10-cube, 1000 in volume with 6 faces, and the STL has the
+        // box's 12 triangles (84 bytes of header and count plus 50 per triangle, as binary).
+        for (url, back) in [
+            (url1, try Shape.loadSTEP(from: url1)), (url2, try Shape.loadBREP(from: url2)),
+        ] {
+            #expect(abs((back.volume ?? 0) - 1000.0) < 1e-6, "\(url.lastPathComponent)")
+            #expect(back.subShapeCount(ofType: .face) == 6, "\(url.lastPathComponent)")
+        }
+        let stl = try Data(contentsOf: url3)
+        #expect(stl.count == 84 + 50 * 12, "STL is \(stl.count) bytes")
     }
 
     @Test func meshRepeatedGeneration() {
