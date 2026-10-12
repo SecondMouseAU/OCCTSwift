@@ -37,6 +37,18 @@ struct Issue1229DrawingEmptyRemovedTests {
         try DXFWriter().write(to: dxfURL)
         try PDFWriter().write(to: pdfURL)
         try SVGWriter().write(to: svgURL)
+
+        // Succeeding is not the same as writing: each file is a complete document of its format.
+        let dxf = try String(contentsOf: dxfURL, encoding: .utf8)
+        #expect(dxf.contains("ENTITIES"))
+        #expect(dxf.hasSuffix("0\nEOF\n"))
+        let pdf = try String(contentsOf: pdfURL, encoding: .isoLatin1)
+        #expect(pdf.hasPrefix("%PDF-1.4"))
+        #expect(pdf.hasSuffix("%%EOF\n"))
+        let svg = try String(contentsOf: svgURL, encoding: .utf8)
+        #expect(svg.hasPrefix("<?xml"))
+        #expect(svg.contains("viewBox=\"0.0000 0.0000 100.0000 100.0000\""))
+        #expect(svg.hasSuffix("</svg>\n"))
     }
 
     /// `DXFError`/`PDFError` now declare exactly one case, matching `SVGError`. This isn't

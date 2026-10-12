@@ -81,41 +81,66 @@ struct BREPTests {
         #expect(abs(importedArea - originalArea) < 1e-10)
     }
 
+    /// The number after `Triangulations` in a BREP file's text, which is how many triangulations
+    /// the writer put in the file.
+    ///
+    /// `Triangulations 0` is a file with none. The token is present either way, so a bare
+    /// `contains("Triangulations")` cannot tell the two apart.
+    private func triangulationCount(inBREP text: String) throws -> Int {
+        let range = try #require(text.range(of: "Triangulations "))
+        let digits = text[range.upperBound...].prefix { $0.isNumber }
+        return try #require(Int(digits))
+    }
+
+    /// `withTriangles: true` carries the triangulation, and the sphere has one to carry.
+    ///
+    /// This used to export a sphere nobody had meshed, so the file was 915 bytes with
+    /// `Triangulations 0` whatever `withTriangles` said, and the test passed on `data.count > 0`
+    /// (#3332). Measured on the pinned kernel after meshing at 0.1: 83800 bytes with normals,
+    /// 56408 without, 915 with `withTriangles: false`.
     @Test("BREP export with triangles")
     func brepExportWithTriangles() throws {
-        let sphere = Shape.sphere(radius: 10)!
-
+        let sphere = try #require(Shape.sphere(radius: 10))
         let tempURL = FileManager.default.temporaryDirectory
-            .appendingPathComponent("test_triangles.brep")
+            .appendingPathComponent("test_triangles_\(UUID()).brep")
+        defer { try? FileManager.default.removeItem(at: tempURL) }
 
-        defer {
-            try? FileManager.default.removeItem(at: tempURL)
-        }
-
-        // Export with triangulation
+        // Control: an unmeshed sphere has no triangulation to export, so the option changes nothing.
         try sphere.writeBREP(to: tempURL, withTriangles: true, withNormals: true)
+        let unmeshed = try String(contentsOf: tempURL, encoding: .ascii)
+        #expect(try triangulationCount(inBREP: unmeshed) == 0)
+        #expect(unmeshed.utf8.count < 2000)
 
-        // Verify file was created and has content
-        let data = try Data(contentsOf: tempURL)
-        #expect(data.count > 0)
+        _ = try #require(sphere.mesh(linearDeflection: 0.1, angularDeflection: 0.5))
+        try sphere.writeBREP(to: tempURL, withTriangles: true, withNormals: true)
+        let withNormals = try String(contentsOf: tempURL, encoding: .ascii)
+        #expect(try triangulationCount(inBREP: withNormals) > 0)
+        #expect(withNormals.utf8.count > 50_000)
 
-        // Re-import
+        // Normals are extra payload on top of the triangulation.
+        try sphere.writeBREP(to: tempURL, withTriangles: true, withNormals: false)
+        let noNormals = try String(contentsOf: tempURL, encoding: .ascii)
+        #expect(try triangulationCount(inBREP: noNormals) > 0)
+        #expect(withNormals.utf8.count > noNormals.utf8.count)
+        #expect(noNormals.utf8.count > 50_000)
+
+        // Re-import keeps the geometry.
         let imported = try Shape.loadBREP(from: tempURL)
         #expect(imported.isValid)
+        #expect(abs((imported.volume ?? 0) - 4.0 / 3.0 * Double.pi * 1000.0) < 1e-6)
+        #expect(imported.subShapes(ofType: .face).count == 1)
     }
 
     @Test("BREP export with and without triangles options")
     func brepExportTriangleOptions() throws {
-        // Use a sphere which has actual triangulation data
-        let sphere = Shape.sphere(radius: 10)!
-        // Mesh the sphere first to ensure triangulation exists
-        let _ = sphere.mesh(linearDeflection: 0.1, angularDeflection: 0.5)!
+        let sphere = try #require(Shape.sphere(radius: 10))
+        // Mesh the sphere first so there is a triangulation to include or leave out.
+        _ = try #require(sphere.mesh(linearDeflection: 0.1, angularDeflection: 0.5))
 
         let withTriangles = FileManager.default.temporaryDirectory
-            .appendingPathComponent("with_tri.brep")
+            .appendingPathComponent("with_tri_\(UUID()).brep")
         let withoutTriangles = FileManager.default.temporaryDirectory
-            .appendingPathComponent("without_tri.brep")
-
+            .appendingPathComponent("without_tri_\(UUID()).brep")
         defer {
             try? FileManager.default.removeItem(at: withTriangles)
             try? FileManager.default.removeItem(at: withoutTriangles)
@@ -124,18 +149,23 @@ struct BREPTests {
         try sphere.writeBREP(to: withTriangles, withTriangles: true)
         try sphere.writeBREP(to: withoutTriangles, withTriangles: false)
 
-        // Both should be valid BREP files
-        let withData = try Data(contentsOf: withTriangles)
-        let withoutData = try Data(contentsOf: withoutTriangles)
+        let withText = try String(contentsOf: withTriangles, encoding: .ascii)
+        let withoutText = try String(contentsOf: withoutTriangles, encoding: .ascii)
 
-        #expect(withData.count > 0)
-        #expect(withoutData.count > 0)
+        // The option is the only difference between the two files, so it is the difference in
+        // triangulation count and in size (56408 against 915 bytes on the pinned kernel).
+        #expect(try triangulationCount(inBREP: withText) > 0)
+        #expect(try triangulationCount(inBREP: withoutText) == 0)
+        #expect(withText.utf8.count > 50_000)
+        #expect(withoutText.utf8.count < 2000)
 
-        // Can reimport both
-        let reimportWith = try Shape.loadBREP(from: withTriangles)
-        let reimportWithout = try Shape.loadBREP(from: withoutTriangles)
-        #expect(reimportWith.isValid)
-        #expect(reimportWithout.isValid)
+        // Both re-import to the same sphere.
+        let expectedVolume = 4.0 / 3.0 * Double.pi * 1000.0
+        for url in [withTriangles, withoutTriangles] {
+            let reimported = try Shape.loadBREP(from: url)
+            #expect(reimported.isValid)
+            #expect(abs((reimported.volume ?? 0) - expectedVolume) < 1e-6)
+        }
     }
 
     @Test("Get BREP data")

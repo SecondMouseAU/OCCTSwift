@@ -14,6 +14,11 @@ import Testing
 // `defer`-scoped cleanup that keeps the round trip from ever leaving a temp file behind
 // (leak checks below), the exact gap the issue itself calls out: "No test asserts the four share
 // a common temp-file lifecycle."
+/// The first `count` bytes of `data` as ASCII, or "" when they are not.
+private func asciiPrefix(_ data: Data, _ count: Int) -> String {
+    String(data: data.prefix(count), encoding: .ascii) ?? ""
+}
+
 @Suite("Issue #1230: Exporter *Data temp-file round trip")
 struct Issue1230ExporterDataTempFileTests {
 
@@ -108,42 +113,91 @@ struct Issue1230ExporterDataTempFileTests {
     ///
     /// No threshold. #3073: the count of the whole temp directory against a margin of 10 failed
     /// when other suites wrote 11 entries in the window, and passed a leak of fewer than 10.
+    ///
+    /// `isExpectedPayload` is what makes the loop a test of the round trip and not only of the
+    /// directory: a call that returned nothing, or another format's bytes, produces no leak
+    /// either, so on its own the absence of leaked names would be true of an exporter that does
+    /// no work (#3332).
     private func assertNoTempFileLeak(
-        extension ext: String, iterations: Int = 30, _ makeData: () throws -> Data
+        extension ext: String, iterations: Int = 30,
+        isExpectedPayload: (Data) -> Bool,
+        makeData: () throws -> Data
     ) throws {
+        var wrongPayloads = 0
         let leaked = try leakedExporterTempNames(extensions: [ext]) {
             for _ in 0..<iterations {
-                _ = try makeData()
+                if !isExpectedPayload(try makeData()) { wrongPayloads += 1 }
             }
         }
+        #expect(
+            wrongPayloads == 0, "\(wrongPayloads) of \(iterations) calls returned the wrong payload"
+        )
         #expect(
             leaked.isEmpty,
             "\(leaked.count) temp file(s) outlived \(iterations) calls; each call's own file must be removed: \(leaked)"
         )
     }
 
+    /// The detector itself: a file with the exporter's own naming that is still there after
+    /// the body returns is reported, and one that is gone by then is not.
+    ///
+    /// Without this the four leak tests below are green for a detector that can never report
+    /// anything (a wrong extension, a changed naming rule), and nothing would say so (#3332).
+    @Test("The leak detector reports a planted leftover and ignores a transient one")
+    func leakDetectorSeesAPlantedFile() throws {
+        let dir = FileManager.default.temporaryDirectory
+        let leftover = dir.appendingPathComponent(UUID().uuidString).appendingPathExtension("stl")
+        let transient = dir.appendingPathComponent(UUID().uuidString).appendingPathExtension("stl")
+        defer {
+            try? FileManager.default.removeItem(at: leftover)
+            try? FileManager.default.removeItem(at: transient)
+        }
+        let leaked = try leakedExporterTempNames(extensions: ["stl"], settle: 0.3) {
+            try Data([1]).write(to: leftover)
+            try Data([1]).write(to: transient)
+            try FileManager.default.removeItem(at: transient)
+        }
+        #expect(leaked == [leftover.lastPathComponent])
+    }
+
     @Test("stlData does not leak temp files across repeated calls")
     func stlDataDoesNotLeakTempFiles() throws {
-        let box = Shape.box(width: 5, height: 5, depth: 5)!
-        try assertNoTempFileLeak(extension: "stl") { try Exporter.stlData(shape: box) }
+        let box = try #require(Shape.box(width: 5, height: 5, depth: 5))
+        // Binary STL of a box: 84 bytes of header and count, then 50 per triangle, 12 triangles.
+        try assertNoTempFileLeak(
+            extension: "stl", isExpectedPayload: { $0.count == 84 + 12 * 50 },
+            makeData: { try Exporter.stlData(shape: box) })
     }
 
     @Test("stepData does not leak temp files across repeated calls")
     func stepDataDoesNotLeakTempFiles() throws {
-        let box = Shape.box(width: 5, height: 5, depth: 5)!
-        try assertNoTempFileLeak(extension: "step") { try Exporter.stepData(shape: box) }
+        let box = try #require(Shape.box(width: 5, height: 5, depth: 5))
+        try assertNoTempFileLeak(
+            extension: "step",
+            isExpectedPayload: { asciiPrefix($0, 13) == "ISO-10303-21;" && $0.count > 5000 },
+            makeData: { try Exporter.stepData(shape: box) })
     }
 
     @Test("igesData does not leak temp files across repeated calls")
     func igesDataDoesNotLeakTempFiles() throws {
-        let box = Shape.box(width: 5, height: 5, depth: 5)!
-        try assertNoTempFileLeak(extension: "igs") { try Exporter.igesData(shape: box) }
+        let box = try #require(Shape.box(width: 5, height: 5, depth: 5))
+        // IGES is 80-column fixed records, and its first record ends in the start-section tag S0000001.
+        try assertNoTempFileLeak(
+            extension: "igs",
+            isExpectedPayload: {
+                let first = asciiPrefix($0, 80)
+                return first.count == 80 && first.hasSuffix("S0000001") && $0.count > 5000
+            },
+            makeData: { try Exporter.igesData(shape: box) })
     }
 
     @Test("brepData does not leak temp files across repeated calls")
     func brepDataDoesNotLeakTempFiles() throws {
-        let box = Shape.box(width: 5, height: 5, depth: 5)!
-        try assertNoTempFileLeak(extension: "brep") { try Exporter.brepData(shape: box) }
+        let box = try #require(Shape.box(width: 5, height: 5, depth: 5))
+        try assertNoTempFileLeak(
+            extension: "brep",
+            isExpectedPayload: { asciiPrefix($0, 19) == "DBRep_DrawableShape" },
+            makeData: { try Exporter.brepData(shape: box) })
     }
 
     // MARK: Cleanup on a failed write, not just a successful one

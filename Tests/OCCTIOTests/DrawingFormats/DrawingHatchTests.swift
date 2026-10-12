@@ -27,13 +27,13 @@ struct DrawingHatchTests {
     }
 
     @Test("DXFWriter tessellates hatch into line segments")
-    func tessellatesIntoLines() {
-        guard let box = Shape.box(width: 1, height: 1, depth: 1),
-            let drawing = Drawing.topView(of: box)
-        else {
-            Issue.record("setup nil")
-            return
-        }
+    func tessellatesIntoLines() throws {
+        let box = try #require(Shape.box(width: 1, height: 1, depth: 1))
+        let drawing = try #require(Drawing.topView(of: box))
+        let bare = DXFWriter()
+        bare.collectFromDrawing(drawing)
+        #expect(bare.entityCounts.lines == 8)
+
         drawing.addHatch(
             boundary: [
                 SIMD2(0, 0), SIMD2(10, 0),
@@ -43,9 +43,12 @@ struct DrawingHatchTests {
             spacing: 2.0)
         let w = DXFWriter()
         w.collectFromDrawing(drawing)
-        // 10 / 2 = 5 scanlines should produce 5 line segments (each horizontal
-        // at y = 2, 4, 6, 8 within the square). Allow a little slack.
-        #expect(w.entityCounts.lines >= 3)
+        // The hatch is exactly the lines it adds to the body's 8: 5 scanlines at spacing 2 across
+        // a 10 square (measured 13 in all on the pinned kernel), and nothing else.
+        #expect(w.entityCounts.lines - bare.entityCounts.lines == 5)
+        #expect(w.entityCounts.polylines == 0)
+        #expect(w.entityCounts.circles == 0)
+        #expect(w.entityCounts.texts == 0)
     }
 
     // #1172: emitHatch used to be a hand-rolled rotate/scanline/intersect duplicate of
