@@ -70,22 +70,28 @@ struct ChamferBuilderV121Tests {
     }
 
     @Test("Chamfer builder multiple edges")
-    func chamferBuilderMultiple() {
-        let box = Shape.box(width: 20, height: 20, depth: 20)
-        if let box = box {
-            if let builder = ChamferBuilder(shape: box) {
-                let edges = box.edges()
-                var addedCount = 0
-                for edge in edges.prefix(4) {
-                    if builder.addEdge(edge, distance: 1.0) {
-                        addedCount += 1
-                    }
-                }
-                #expect(addedCount > 0)
-                if let result = builder.build() {
-                    #expect(result.isValid)
-                }
+    func chamferBuilderMultiple() throws {
+        let box = try #require(Shape.box(width: 20, height: 20, depth: 20))
+        let builder = try #require(ChamferBuilder(shape: box))
+        var addedCount = 0
+        for edge in box.edges().prefix(4) {
+            if builder.addEdge(edge, distance: 1.0) {
+                addedCount += 1
             }
         }
+        // Every one of the four edges is accepted and is its own contour.
+        #expect(addedCount == 4)
+        #expect(builder.contourCount == 4)
+        for contour in 1...4 {
+            #expect(abs(builder.length(contour: contour) - 20.0) < 1e-9)
+        }
+
+        // Four 20 mm edges at d = 1 remove 4 * 0.5 * 20 = 40 from the 8000 cube; the corners
+        // shared between edges give back 1.33, measured 7961.333... on the pinned kernel
+        // (v4.0.0-kernel.6).
+        let result = try #require(builder.build())
+        #expect(result.isValid)
+        #expect(abs((result.volume ?? -1) - 7961.333333333333) < 1e-6)
+        #expect(result.faces().count == 10)
     }
 }

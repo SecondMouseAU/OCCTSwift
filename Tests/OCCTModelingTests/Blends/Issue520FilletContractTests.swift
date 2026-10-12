@@ -321,28 +321,35 @@ struct Issue520FilletContractTests {
     /// Box edges all start at
     /// 0, which is why this went unnoticed; the edges a boolean cut produces do not.
     @Test("A variable fillet on a re-parameterised edge does not crash")
-    func variableFilletOnReparameterisedEdge() {
-        let box = Shape.box(width: 20, height: 20, depth: 20)!
-        let offset = Shape.box(width: 20, height: 20, depth: 20)!.translated(by: SIMD3(10, 10, 10))!
-        guard let cut = box.subtracting(offset) else {
-            Issue.record("cut failed")
-            return
-        }
+    func variableFilletOnReparameterisedEdge() throws {
+        let box = try #require(Shape.box(width: 20, height: 20, depth: 20))
+        let offset = try #require(
+            Shape.box(width: 20, height: 20, depth: 20)?.translated(by: SIMD3(10, 10, 10)))
+        let cut = try #require(box.subtracting(offset))
+        let cutVolume = try #require(cut.volume)
         // Edge 8 of this cut measured a curve range of [5, 15]; scan rather than hard-code it,
-        // since edge ordering is not guaranteed.
+        // since edge ordering is not guaranteed. The six edges that bound the removed corner
+        // are the ones that do not start at 0 (measured on kernel.6: 8, 9, 12, 13, 16, 17).
         var checked = 0
         for edge in cut.edges() {
             guard let range = edge.parameterBounds, range.first != 0 else { continue }
             checked += 1
-            // Whatever OCCT makes of this edge, the call must return rather than SIGSEGV, and any
-            // shape it hands back must be a real one.
-            if let filleted = cut.filletedVariable(
-                edgeIndex: edge.index,
-                radiusProfile: [(0.0, 0.5), (1.0, 1.0)])
-            {
-                #expect(filleted.isValid)
-            }
+            // A 0.5 to 1.0 law on a 10 mm edge removes (1 - pi/4) * mean(r^2) * 10 = 1.26 of
+            // 7000, which sits between the constant 0.5 (0.54 removed) and 1.0 (2.15) fillets.
+            // Measured 6998.7371 on every one of the six (kernel.6).
+            let filleted = try #require(
+                cut.filletedVariable(
+                    edgeIndex: edge.index,
+                    radiusProfile: [(0.0, 0.5), (1.0, 1.0)]))
+            #expect(filleted.isValid)
+            let volume = try #require(filleted.volume)
+            #expect(abs(volume - 6998.7371) < 1e-3)
+            let small = try #require(cut.filleted(edges: [edge], radius: 0.5)?.volume)
+            let large = try #require(cut.filleted(edges: [edge], radius: 1.0)?.volume)
+            #expect(volume < small)
+            #expect(volume > large)
+            #expect(small < cutVolume)
         }
-        #expect(checked > 0, "no re-parameterised edge in the cut result")
+        #expect(checked == 6, "the corner cut has six re-parameterised edges")
     }
 }

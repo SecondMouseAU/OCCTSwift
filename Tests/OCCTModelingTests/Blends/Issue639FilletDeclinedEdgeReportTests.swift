@@ -53,16 +53,15 @@ struct Issue639FilletDeclinedEdgeReport {
     }
 
     @Test("filletedWithReport(edges:radius:) reports no declines on a closed solid")
-    func filletedWithReportEmptyOnClosedSolid() {
-        guard let box = Shape.box(width: 10, height: 10, depth: 10) else {
-            Issue.record("box fixture failed to build")
-            return
-        }
-        guard let report = box.filletedWithReport(edges: box.edges(), radius: 1.0) else {
-            Issue.record("filletedWithReport unexpectedly returned nil on a closed box")
-            return
-        }
+    func filletedWithReportEmptyOnClosedSolid() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let report = try #require(box.filletedWithReport(edges: box.edges(), radius: 1.0))
         #expect(report.declinedEdgeIndices.isEmpty)
+        // Empty because every edge took: the rounded box, 975.587... and 26 faces (kernel.6; the
+        // closed form is (a-2r)^3 + 6 (a-2r)^2 r + 3 pi r^2 (a-2r) + 4/3 pi r^3).
+        let expected = 512.0 + 384.0 + 3.0 * Double.pi * 8.0 + 4.0 / 3.0 * Double.pi
+        #expect(abs((report.shape.volume ?? -1) - expected) < 1e-6)
+        #expect(report.shape.faces().count == 26)
     }
 
     // MARK: - filletedWithReport(edges:startRadius:endRadius:)
@@ -102,19 +101,17 @@ struct Issue639FilletDeclinedEdgeReport {
     }
 
     @Test("filletEvolvingWithReport(_:) reports no declines on a closed solid")
-    func filletEvolvingWithReportEmptyOnClosedSolid() {
-        guard let box = Shape.box(width: 10, height: 10, depth: 10) else {
-            Issue.record("box fixture failed to build")
-            return
-        }
+    func filletEvolvingWithReportEmptyOnClosedSolid() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let laws = box.edges().map {
             EvolvingFilletEdge(edge: $0, radiusPoints: [(0.0, 1.0), (1.0, 1.0)])
         }
-        guard let report = box.filletEvolvingWithReport(laws) else {
-            Issue.record("filletEvolvingWithReport unexpectedly returned nil on a closed box")
-            return
-        }
+        let report = try #require(box.filletEvolvingWithReport(laws))
         #expect(report.declinedEdgeIndices.isEmpty)
+        // A constant law of 1 on all twelve edges is the same rounded box as the constant fillet.
+        let expected = 512.0 + 384.0 + 3.0 * Double.pi * 8.0 + 4.0 / 3.0 * Double.pi
+        #expect(abs((report.shape.volume ?? -1) - expected) < 1e-6)
+        #expect(report.shape.faces().count == 26)
     }
 
     // MARK: - FilletBuilder.contour(for:) already answers this (documented, not new code)
