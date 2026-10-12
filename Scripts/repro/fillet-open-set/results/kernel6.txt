@@ -1,0 +1,43 @@
+#1177  10 cube, one edge d=10 (fillet)                         done=0 faultyContours=1 faultyVertices=0 ms=55
+#1177  10 cube, fillets 5+5 on opposite edges                  done=1 valid=1 bopfaults=0 solids=1 faces=7 vol=892.699 ms=10
+#1177  10 cube, chamfer d=10                                   done=0  ms=2
+#1177  10 cube, chamfers 5+5 on opposite edges                 done=0  ms=1
+#1568  reporter script, 12 edges r=1.5                         done=0 faultyContours=1 faultyVertices=0 ms=19
+#1568  edge 13 alone r=1.5                                     done=0 faultyContours=1 faultyVertices=0 ms=6
+#1568  edge 13 alone r=1.49                                    done=1 valid=1 bopfaults=0 solids=1 faces=29 vol=100173 ms=14
+#1421  example.brep r=1 edge 22                                done=1 valid=0 bopfaults=139 solids=2 faces=14 vol=18352.9 ms=30
+#1576  chamfer d=1 edge 11 (the issue's script)                done=0  ms=8
+#1576  chamfer d=1 edge 14                                     CRASH signal 11
+#1217  prism Y=-76.6894 chamfer d=1 edge 3                     done=0  ms=4
+#1217  prism Y=-76.75 chamfer d=1 edge 3 (control)             done=1 valid=1 bopfaults=0 solids=1 faces=9 vol=9518.91 ms=7
+#1570  r=5 edges 1,8                                           done=1 valid=1 bopfaults=0 solids=1 faces=8 vol=5.04722e+06 ms=29
+#1570  r=5.5 edges 1,8                                         NO RETURN in 60s after volume (BUILD done=1 ms=15)
+#1570  r=29 edges 1,8                                          done=1 valid=1 bopfaults=45 solids=1 faces=10 vol=4.09725e+06 ms=15
+#1569  r=1 edge 12                                             done=1 valid=1 bopfaults=63 solids=1 faces=9 vol=202730 ms=10
+#1430  crash_1 r=2 edges 2,5                                   CRASH signal 11
+#1430  crash_2 r=2 edges 51,54                                 CRASH signal 11
+#1430  self_intersection_1 r=1 edges 92,95,98,99               done=1 valid=1 bopfaults=0 solids=1 faces=35 vol=71089.7 ms=33
+#1430  self_intersection_2 r=1.7 edge 2                        done=1 valid=0 bopfaults=189 solids=1 faces=32 vol=71091.6 ms=28
+#1430  self_intersection_3 r=1.7 edge 51                       done=1 valid=0 bopfaults=189 solids=1 faces=32 vol=71091.6 ms=24
+#1430  r=1 edge 67 (found by the sweep)                        NO RETURN in 60s after volume (BUILD done=1 ms=34)
+#1571  2 edges r=1 (13,43)                                     done=1 valid=1 bopfaults=70 solids=1 faces=32 vol=5152.99 ms=50
+#1571  4 edges r=1 (13,43,58,35)                               NO RETURN in 60s after volume (BUILD done=1 ms=32)
+#1427  tapered 2.8 deg r=1 edge 12 (the good case)             done=1 valid=1 bopfaults=0 solids=1 faces=43 vol=94200 ms=39
+#1427  tapered 2.9 deg r=1 edge 12                             done=0 faultyContours=0 faultyVertices=2 ms=13
+#736   vol.brep r=1 edge 6                                     done=1 valid=0 bopfaults=22 solids=0 faces=2 vol=77280.8 ms=39
+#736   vol.brep r=0.99 edge 6                                  done=1 valid=1 bopfaults=0 solids=0 faces=3 vol=86506.7 ms=34
+#736   vol.brep r=1.01 edge 6                                  done=1 valid=1 bopfaults=0 solids=0 faces=3 vol=86509.5 ms=31
+#737   r=1 edge 13                                             done=1 valid=0 bopfaults=13 solids=1 faces=10 vol=1597.49 ms=105
+#737   chamfer d=1 edge 13                                     done=1 valid=1 bopfaults=10 solids=1 faces=10 vol=1639.42 ms=28
+#691   r=1 edge 20                                             done=1 valid=0 bopfaults=146 solids=1 faces=14 vol=74101.4 ms=38
+#692   r=1 edge 17                                             done=1 valid=0 bopfaults=130 solids=1 faces=13 vol=17099.1 ms=33
+#694   r=1 edge 6                                              done=1 valid=1 bopfaults=183 solids=1 faces=12 vol=8983.25 ms=12
+#899   r=1 edge 13                                             done=1 valid=0 bopfaults=146 solids=1 faces=14 vol=69032.4 ms=39
+#900   r=1 edge 5                                              done=1 valid=0 bopfaults=243 solids=1 faces=14 vol=12656 ms=15
+#1619  s_26+s_35 r=1.25 (x20)                                  CRASH signal 11 (x20, identical)
+#1619  s_26+s_35 r=1.0 (control)                               done=1 valid=1 bopfaults=0 solids=1 faces=32 vol=2037.69 ms=5
+#1507  PR 1507 data, first 24 of its 34 edges, r=2             done=1 valid=1 bopfaults=0 solids=1 faces=73 vol=35896.2 ms=271
+#1507  PR 1507 data, all 34 edges, r=2                         NO RETURN in 60s after volume (BUILD done=1 ms=315)
+#1533  PR 1533 corner brep, edge 31 d=0.5                      done=1 valid=0 bopfaults=14 solids=1 faces=39 vol=11235 ms=28
+#1533  PR 1533 corner brep, edge 31 d=1                        done=1 valid=0 bopfaults=14 solids=1 faces=39 vol=11045.4 ms=28
+#1533  PR 1533 corner brep, edge 31 d=2                        done=0  ms=21

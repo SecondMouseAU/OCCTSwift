@@ -1,0 +1,76 @@
+# sweep-edges.py output, r = d = 0.5 on every edge of every model, one edge at a time, 20 s per case (a case
+# that does not finish in 20 s is 'timeout': Build returned and the checks did not; see the stage output of run_cases.py).
+# 'exception' is 'There are no suitable edges for chamfer or fillet' (seams, degenerate edges).
+3104 jobs
+1568  blend k6 edges= 42 exception=22 valid=20
+1568  blend ir edges= 42 exception=22 valid=20
+1568  chamf k6 edges= 42 exception=22 valid=20
+1568  chamf ir edges= 42 exception=22 valid=20
+1421  blend k6 edges= 31 exception=1 valid=30
+1421  blend ir edges= 31 exception=1 valid=30
+1421  chamf k6 edges= 31 exception=1 valid=30
+1421  chamf ir edges= 31 exception=1 valid=30
+1576  blend k6 edges= 36 declined=1 done-invalid=24 exception=11
+1576  blend ir edges= 36 declined=1 done-invalid=12 exception=11 timeout=12
+1576  chamf k6 edges= 36 crash=12 declined=12 done-invalid=1 exception=11
+1576  chamf ir edges= 36 declined=24 done-invalid=1 exception=11
+1569  blend k6 edges= 16 done-invalid=1 exception=2 valid=13
+1569  blend ir edges= 16 done-invalid=1 exception=2 valid=13
+1569  chamf k6 edges= 16 done-invalid=1 exception=2 valid=13
+1569  chamf ir edges= 16 done-invalid=1 exception=2 valid=13
+1570  blend k6 edges= 10 valid=10
+1570  blend ir edges= 10 valid=10
+1570  chamf k6 edges= 10 done-invalid=1 valid=9
+1570  chamf ir edges= 10 done-invalid=1 valid=9
+1430  blend k6 edges= 99 declined=18 done-invalid=4 exception=18 timeout=6 valid=53
+1430  blend ir edges= 99 declined=18 done-invalid=4 exception=18 timeout=6 valid=51 valid-bopfaulty=2
+1430  chamf k6 edges= 99 declined=24 done-invalid=4 exception=18 valid=53
+1430  chamf ir edges= 99 declined=24 done-invalid=4 exception=18 valid=53
+1571  blend k6 edges= 60 done-invalid=8 exception=48 valid=4
+1571  blend ir edges= 60 done-invalid=7 exception=48 timeout=1 valid=4
+1571  chamf k6 edges= 60 declined=8 done-invalid=4 exception=48
+1571  chamf ir edges= 60 declined=8 done-invalid=4 exception=48
+1427  blend k6 edges= 73 declined=30 exception=25 valid=18
+1427  blend ir edges= 73 declined=30 exception=25 valid=18
+1427  chamf k6 edges= 73 declined=23 done-invalid=7 exception=25 valid=18
+1427  chamf ir edges= 73 declined=21 done-invalid=6 exception=25 timeout=3 valid=18
+736   blend k6 edges= 10 exception=9 valid=1
+736   blend ir edges= 10 exception=9 valid-bopfaulty=1
+736   chamf k6 edges= 10 exception=9 valid=1
+736   chamf ir edges= 10 exception=9 valid-bopfaulty=1
+737   blend k6 edges= 17 done-invalid=3 exception=4 valid=10
+737   blend ir edges= 17 done-invalid=3 exception=4 valid=10
+737   chamf k6 edges= 17 done-invalid=2 exception=4 valid=10 valid-bopfaulty=1
+737   chamf ir edges= 17 done-invalid=2 exception=4 valid=10 valid-bopfaulty=1
+691   blend k6 edges= 26 declined=1 done-invalid=4 exception=5 valid=16
+691   blend ir edges= 26 declined=1 done-invalid=4 exception=5 valid=16
+691   chamf k6 edges= 26 declined=3 done-invalid=2 exception=5 valid=16
+691   chamf ir edges= 26 declined=3 done-invalid=1 exception=5 timeout=1 valid=16
+692   blend k6 edges= 24 declined=2 done-invalid=3 exception=4 valid=15
+692   blend ir edges= 24 declined=2 done-invalid=3 exception=4 valid=15
+692   chamf k6 edges= 24 declined=4 done-invalid=1 exception=4 valid=15
+692   chamf ir edges= 24 declined=4 done-invalid=1 exception=4 valid=15
+694   blend k6 edges= 23 declined=2 exception=3 valid=16 valid-bopfaulty=2
+694   blend ir edges= 23 declined=2 exception=3 valid=16 valid-bopfaulty=2
+694   chamf k6 edges= 23 declined=2 done-invalid=2 exception=3 valid=16
+694   chamf ir edges= 23 declined=2 done-invalid=2 exception=3 valid=16
+899   blend k6 edges= 26 declined=1 done-invalid=4 exception=5 valid=16
+899   blend ir edges= 26 declined=1 done-invalid=4 exception=5 valid=16
+899   chamf k6 edges= 26 declined=3 done-invalid=2 exception=5 valid=16
+899   chamf ir edges= 26 declined=3 done-invalid=2 exception=5 valid=16
+900   blend k6 edges= 28 declined=1 done-invalid=4 exception=5 valid=18
+900   blend ir edges= 28 declined=1 done-invalid=4 exception=5 valid=18
+900   chamf k6 edges= 28 declined=3 done-invalid=2 exception=5 valid=18
+900   chamf ir edges= 28 declined=3 exception=5 timeout=2 valid=18
+1619  blend k6 edges= 70 declined=10 exception=20 valid=40
+1619  blend ir edges= 70 declined=10 exception=20 valid=40
+1619  chamf k6 edges= 70 declined=10 exception=20 valid=40
+1619  chamf ir edges= 70 declined=10 exception=20 valid=40
+1507  blend k6 edges=114 exception=26 valid=88
+1507  blend ir edges=114 exception=26 timeout=10 valid=78
+1507  chamf k6 edges=114 exception=26 valid=88
+1507  chamf ir edges=114 exception=26 timeout=1 valid=87
+1533  blend k6 edges= 71 declined=2 done-invalid=8 exception=20 valid=41
+1533  blend ir edges= 71 declined=2 done-invalid=8 exception=20 valid=41
+1533  chamf k6 edges= 71 declined=2 done-invalid=8 exception=20 valid=41
+1533  chamf ir edges= 71 declined=2 done-invalid=8 exception=20 valid=41
