@@ -121,8 +121,25 @@ struct Issue2879MeshDeflectionGuardTests {
         // curved solid terminates too but takes about ninety seconds; see Scripts/repro/2879/.
         let shape = try #require(box())
 
-        #expect(shape.mesh(linearDeflection: 1e-7) != nil)
-        #expect(shape.shadedMesh(deflection: 1e-7) != nil)
-        #expect(shape.edgeMesh(deflection: 1e-7) != nil)
+        // "Accepted" is a mesh of the box: 6 planar faces of 2 triangles, 4 nodes each (24 and
+        // 12, the counts the unguarded NaN case also reports), every node on the 10 x 5 x 3 box.
+        let mesh = try #require(shape.mesh(linearDeflection: 1e-7))
+        #expect(mesh.vertexCount == 24)
+        #expect(mesh.triangleCount == 12)
+
+        let shaded = try #require(shape.shadedMesh(deflection: 1e-7))
+        #expect(shaded.vertices.count == 24)
+        #expect(shaded.indices.count == 36)
+
+        // The wireframe is the box's 12 edges, a segment of two nodes each.
+        let edges = try #require(shape.edgeMesh(deflection: 1e-7))
+        #expect(edges.vertices.count == 24)
+        #expect(edges.segmentStarts.count == 12)
+
+        for v in shaded.vertices + edges.vertices {
+            #expect(
+                abs(v.x) < 5 + 1e-5 && abs(v.y) < 2.5 + 1e-5 && abs(v.z) < 1.5 + 1e-5,
+                "node \(v) outside the box")
+        }
     }
 }

@@ -127,7 +127,14 @@ struct Issue2900MeshAngleGuardTests {
         // request on the cylinder is the expensive one and is deliberately not made here.
         let shape = try #require(box())
 
-        #expect(shape.mesh(linearDeflection: 0.1, angularDeflection: 1e-12) != nil)
+        // Accepted means meshed: the box's 6 planar faces, 4 nodes and 2 triangles each, the same
+        // 24 and 12 the ordinary 0.5 rad request gives, since a plane has no angular error.
+        let atFloor = try #require(shape.mesh(linearDeflection: 0.1, angularDeflection: 1e-12))
+        #expect(atFloor.vertexCount == 24)
+        #expect(atFloor.triangleCount == 12)
+        let ordinary = try #require(shape.mesh(linearDeflection: 0.1, angularDeflection: 0.5))
+        #expect(ordinary.vertexCount == atFloor.vertexCount)
+        #expect(ordinary.triangleCount == atFloor.triangleCount)
     }
 
     @Test("A NaN angleInterior needs no guard: the bridge's `> 0` test already drops it")

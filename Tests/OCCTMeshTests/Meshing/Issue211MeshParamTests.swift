@@ -13,20 +13,30 @@ struct Issue211MeshParam {
     }
 
     @Test("meshing with the flag set produces a valid mesh")
-    func meshesWithFlag() {
-        guard let sphere = Shape.sphere(radius: 5) else {
-            #expect(Bool(false))
-            return
-        }
+    func meshesWithFlag() throws {
+        let sphere = try #require(Shape.sphere(radius: 5))
         var params = MeshParameters.default
         params.deflection = 0.1
         params.allowQualityDecrease = true
-        guard let mesh = sphere.mesh(parameters: params) else {
-            #expect(Bool(false))
-            return
-        }
+        let mesh = try #require(sphere.mesh(parameters: params))
         #expect(mesh.vertexCount > 0)
         #expect(mesh.triangleCount > 0)
+
+        // "Valid" is a claim about the surface: every node of the radius 5 sphere lies on it
+        // (the shape is exact there, the deflection only chords between nodes).
+        for v in mesh.vertices {
+            let r = Double(v.x * v.x + v.y * v.y + v.z * v.z).squareRoot()
+            #expect(abs(r - 5) < 1e-4, "node \(v) is \(r) from the centre")
+        }
+
+        // The flag is about a re-mesh replacing a finer one, so on a first mesh it changes
+        // nothing: the same sphere without it gives the same node and triangle counts.
+        let plain = try #require(Shape.sphere(radius: 5))
+        var control = MeshParameters.default
+        control.deflection = 0.1
+        let expected = try #require(plain.mesh(parameters: control))
+        #expect(mesh.vertexCount == expected.vertexCount)
+        #expect(mesh.triangleCount == expected.triangleCount)
     }
 
     // Re-meshing the SAME shape coarser: with the flag, the coarse result must take effect, and
