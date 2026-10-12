@@ -148,13 +148,35 @@ struct Issue1566MergeNodesOverflowGuardTests {
             }
         }
 
+        // The counts are the box's own, 24 nodes and 12 triangles, whether or not an index buffer
+        // was asked for: the same call with generous buffers is the reference.
         #expect(
-            nVerts > 0,
+            nVerts == 24,
             "no outIndices buffer was requested, so a 0-capacity maxIndices must not fail the call")
         #expect(
-            triCount > 0,
+            triCount == 12,
             "the true triangle count is still informational when the caller didn't ask for indices at all"
         )
+
+        var refVertices = [Float](repeating: -1, count: Int(maxVerts) * 3)
+        var refNormals = [Float](repeating: -1, count: Int(maxVerts) * 3)
+        var refIndices = [UInt32](repeating: .max, count: 1024 * 3)
+        var refTriCount: Int32 = -1
+        let refVerts = refVertices.withUnsafeMutableBufferPointer { vBuf in
+            refNormals.withUnsafeMutableBufferPointer { nBuf in
+                refIndices.withUnsafeMutableBufferPointer { iBuf in
+                    OCCTPolyMergeNodes(
+                        box.handle, .pi / 4, 0.0,
+                        vBuf.baseAddress, nBuf.baseAddress, iBuf.baseAddress,
+                        maxVerts, 1024 * 3, &refTriCount)
+                }
+            }
+        }
+        #expect(nVerts == refVerts)
+        #expect(triCount == refTriCount)
+        // And the vertices written are the reference's, so the missing index buffer cost nothing.
+        #expect(
+            Array(vertices.prefix(Int(nVerts) * 3)) == Array(refVertices.prefix(Int(refVerts) * 3)))
     }
 
     // MARK: - The Swift-level public API surfaces the same refusal as nil
