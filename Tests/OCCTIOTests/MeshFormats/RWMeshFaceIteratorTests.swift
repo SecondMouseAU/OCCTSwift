@@ -1,6 +1,5 @@
 import Foundation
 import Testing
-import simd
 
 @testable import OCCTSwift
 
@@ -83,7 +82,7 @@ struct RWMeshFaceIteratorTests {
         }
         for id in 1...nodeCount {
             let p = iter.node(at: id)
-            #expect(abs(simd_length(p) - 5) < 1e-9, "node \(id) at \(p)")
+            #expect(abs(vectorLength(p) - 5) < 1e-9, "node \(id) at \(p)")
         }
     }
 
@@ -126,8 +125,8 @@ struct RWMeshFaceIteratorTests {
         for id in 1...iter.nodeCount {
             let n = iter.normal(at: id)
             let outward = iter.node(at: id) / 5
-            #expect(abs(simd_length(n) - 1) < 1e-6, "normal \(id) is \(n)")
-            #expect(simd_dot(n, outward) > 0.999, "normal \(id) is \(n) at \(outward * 5)")
+            #expect(abs(vectorLength(n) - 1) < 1e-6, "normal \(id) is \(n)")
+            #expect(dotProduct(n, outward) > 0.999, "normal \(id) is \(n) at \(outward * 5)")
         }
     }
 
