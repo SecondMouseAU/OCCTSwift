@@ -55,6 +55,9 @@ struct Issue3065EdgeCurvePerTaskTests {
         let edge = try #require(Self.makeEdge())
         let poles = try #require(edge.curve3D?.poleCount)
         #expect(poles >= 10, "a single-span edge never rebuilds an evaluation cache")
+        // The 16 control points make 18 poles of one cubic BSpline (measured on kernel.6): 15
+        // spans, which is what the 13-span ring in `parameter(task:step:range:)` walks.
+        #expect(poles == 18, "got \(poles) poles")
     }
 
     @Test("tasks that each own an EdgeCurve read the same points a serial run reads")

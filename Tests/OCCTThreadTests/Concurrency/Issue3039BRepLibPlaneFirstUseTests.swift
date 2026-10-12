@@ -20,6 +20,7 @@ import Testing
 struct Issue3039BRepLibPlaneFirstUseTests {
 
     private static let childKey = "OCCTSWIFT_3039_CHILD"
+    private static let markKey = "OCCTSWIFT_3039_MARK"
     private static let isChild = ProcessInfo.processInfo.environment[childKey] == "1"
     private static let threads = 16
     private static let children = 64
@@ -28,6 +29,7 @@ struct Issue3039BRepLibPlaneFirstUseTests {
     private final class Gate: @unchecked Sendable {
         private let lock = NSLock()
         private var arrived = 0
+        private var finished = 0
         private var open = false
         private var failures: [String] = []
 
@@ -40,6 +42,16 @@ struct Issue3039BRepLibPlaneFirstUseTests {
             lock.lock()
             defer { lock.unlock() }
             return arrived
+        }
+        func finish() {
+            lock.lock()
+            finished += 1
+            lock.unlock()
+        }
+        var finishedCount: Int {
+            lock.lock()
+            defer { lock.unlock() }
+            return finished
         }
         func release() {
             lock.lock()
@@ -98,6 +110,7 @@ struct Issue3039BRepLibPlaneFirstUseTests {
                         gate.fail("thread \(i) segment vertices \(v)")
                     }
                 }
+                gate.finish()
                 done.leave()
             }
             thread.start()
@@ -106,6 +119,21 @@ struct Issue3039BRepLibPlaneFirstUseTests {
         gate.release()
         done.wait()
         #expect(gate.recorded.isEmpty, "\(gate.recorded)")
+        // Every thread got through its check: a `fail` is recorded, but a thread that never ran
+        // records nothing at all.
+        #expect(gate.finishedCount == Self.threads, "\(gate.finishedCount) of \(Self.threads)")
+
+        // Tell the parent this child ran its test to the end. A child whose filter matched nothing
+        // exits 0 having measured nothing, which the exit status alone cannot tell from a pass.
+        if let path = ProcessInfo.processInfo.environment[Self.markKey],
+            gate.recorded.isEmpty, gate.finishedCount == Self.threads
+        {
+            if let h = FileHandle(forWritingAtPath: path) {
+                h.seekToEndOfFile()
+                h.write(Data("ok\n".utf8))
+                try? h.close()
+            }
+        }
     }
 
     /// Fresh processes never see a wrong vertex or die.
@@ -145,12 +173,17 @@ struct Issue3039BRepLibPlaneFirstUseTests {
         arguments = kept + ["--filter", "Issue3039BRepLibPlaneFirstUseTests"]
 
         var bad: [String] = []
+        let mark = FileManager.default.temporaryDirectory
+            .appendingPathComponent("occt-3039-\(UUID().uuidString).marks")
+        FileManager.default.createFile(atPath: mark.path, contents: Data())
+        defer { try? FileManager.default.removeItem(at: mark) }
         for n in 0..<Self.children {
             let p = Process()
             p.executableURL = URL(fileURLWithPath: CommandLine.arguments[0])
             p.arguments = arguments
             var env = ProcessInfo.processInfo.environment
             env[Self.childKey] = "1"
+            env[Self.markKey] = mark.path
             p.environment = env
             p.standardOutput = FileHandle.nullDevice
             p.standardError = FileHandle.nullDevice
@@ -163,5 +196,9 @@ struct Issue3039BRepLibPlaneFirstUseTests {
             }
         }
         #expect(bad.isEmpty, "\(bad.count) of \(Self.children) fresh processes failed: \(bad)")
+        // And every child ran the child test: one "ok" line each.
+        let marks = (try? String(contentsOf: mark, encoding: .utf8)) ?? ""
+        let okCount = marks.split(separator: "\n").filter { $0 == "ok" }.count
+        #expect(okCount == Self.children, "\(okCount) of \(Self.children) children ran the check")
     }
 }
