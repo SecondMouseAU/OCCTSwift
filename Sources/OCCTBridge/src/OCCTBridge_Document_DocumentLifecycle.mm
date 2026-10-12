@@ -1861,6 +1861,8 @@ int32_t OCCTDocumentSaveOCAF(OCCTDocumentRef doc, const char* path)
 // must close) and `<!...>` declarations (quotes and `[...]` subsets skipped), then requires the
 // first element to be `<document` with a `format` that starts with "Xml". Any other name is left
 // to OCCT: an unregistered Xml* format answers status 19 without faulting (measured).
+// Not handled on purpose, because OCCT does not load them either (status 9, no fault, measured):
+// UTF-16 files (with or without a BOM) and a comment between the DOCTYPE name and its subset.
 enum class OcafXmlScan
 {
   Accept,
@@ -1918,7 +1920,8 @@ static OcafXmlScan occtOcafScanXmlProlog(const std::string& head)
           const size_t close = head.find("-->", i + 4);
           if (close == std::string::npos)
             return OcafXmlScan::NeedMore;
-          i = close + 2;
+          i = close + 3; // past the closing "-->"
+          continue;
         }
         else if (c == '[')
           depth++;
@@ -1972,8 +1975,9 @@ static OcafXmlScan occtOcafScanXmlProlog(const std::string& head)
 // full (up to a 1 GiB window, past which the file is not an OCAF document in any practical sense).
 static bool occtOcafXmlHeaderIsRetrievable(std::ifstream& stream)
 {
-  static const size_t kMaxWindow = static_cast<size_t>(1) << 30;
-  for (size_t window = 65536; window <= kMaxWindow; window *= 2)
+  // Past 1 GiB of prolog the file is not an OCAF document in any practical sense.
+  static const size_t kMaxScanWindow = static_cast<size_t>(1024) * 1024 * 1024;
+  for (size_t window = 65536; window <= kMaxScanWindow; window *= 2)
   {
     stream.clear();
     stream.seekg(0, std::ios::beg);
