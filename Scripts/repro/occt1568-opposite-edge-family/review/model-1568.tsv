@@ -1,0 +1,19 @@
+edges	radius	kernel5	IR_before	IR_with_series
+outer 4 (3 9 11 6)	1.0	valid 100224.7	valid 100224.7	valid 100224.7
+outer 4 (3 9 11 6)	1.49	valid 100115.3	valid 100115.3	valid 100115.3
+outer 4 (3 9 11 6)	1.4999999	valid 100112.6	valid 100112.6	valid 100112.6
+outer 4 (3 9 11 6)	1.5	valid 100112.6	valid 100112.6	valid 100112.6
+outer 4 (3 9 11 6)	1.5000001	valid 100112.6	valid 100112.6	valid 100112.6
+outer 4 (3 9 11 6)	1.6	valid 100084.9	valid 100084.9	valid 100084.9
+inner 8 (12 to 19)	1.0	valid 100250.4	valid 100250.4	valid 100250.4
+inner 8 (12 to 19)	1.49	valid 100172.8	valid 100172.8	valid 100172.8
+inner 8 (12 to 19)	1.4999999	declined	declined	declined
+inner 8 (12 to 19)	1.5	SIGSEGV	SIGSEGV	declined
+inner 8 (12 to 19)	1.5000001	INVALID 74243	INVALID 74243	declined
+inner 8 (12 to 19)	1.6	valid 100151.8	valid 100151.8	valid 100151.8
+all 12 (the script)	1.0	valid 100160.4	valid 100160.4	valid 100160.4
+all 12 (the script)	1.49	valid 99973.5	valid 99973.5	valid 99973.5
+all 12 (the script)	1.4999999	declined	declined	declined
+all 12 (the script)	1.5	SIGSEGV	SIGSEGV	declined
+all 12 (the script)	1.5000001	declined	declined	declined
+all 12 (the script)	1.6	declined	declined	declined
