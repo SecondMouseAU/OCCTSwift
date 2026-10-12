@@ -121,6 +121,7 @@ Tests/OCCTCurveTests/PolylinePickTests.swift	Tests/OCCTDrawingTests/Visualizatio
 Tests/OCCTCurveTests/ProjectionOnCurveTests.swift	Tests/OCCTCurveTests/Projection/ProjectionOnCurveTests.swift	Projection	-	GeomAPI_ProjectPointOnCurve multi-result and parameter access
 Tests/OCCTCurveTests/QuasiUniformAbscissaTests.swift	Tests/OCCTCurveTests/Sampling/QuasiUniformAbscissaTests.swift	Sampling	-	quasi-uniform abscissa sampling
 Tests/OCCTCurveTests/QuasiUniformDeflectionTests.swift	Tests/OCCTCurveTests/Sampling/QuasiUniformDeflectionTests.swift	Sampling	-	quasi-uniform deflection sampling
+Tests/OCCTCurveTests/SIMDTestHelpers.swift	Tests/OCCTCurveTests/SIMDTestHelpers.swift	(stays)	-	shared helper with no tests; stays at the target root so every area sees it
 Tests/OCCTCurveTests/SketchArcCircleTests.swift	Tests/OCCTMiscTests/Sketch/SketchArcCircleTests.swift	Sketch	-	SketchElement arc and circle tessellation
 Tests/OCCTCurveTests/SurfToAnaSurfTests.swift	Tests/OCCTSurfaceTests/Conversion/SurfToAnaSurfTests.swift	Conversion	-	GeomConvert_SurfToAnaSurf recognising a plane from a BSpline surface
 Tests/OCCTCurveTests/TopTransCurveTransitionTests.swift	Tests/OCCTCurveTests/Curve3DCore/TopTransCurveTransitionTests.swift	Curve3DCore	-	TopTrans_CurveTransition via Shape.curveTransition (weak fit)

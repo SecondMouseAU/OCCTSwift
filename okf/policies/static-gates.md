@@ -389,6 +389,11 @@ no dangling citation fails the gate, so the list cannot become an allowlist nobo
 `Scripts/test-areas/` is not scanned, because its mapping tables name destinations that do not
 exist until the move.
 
+The gate also runs the plan `move-test-files.py --map` makes for every `Scripts/test-areas/*.tsv`
+table (#3308): a Swift file under a mapped target that no row names fails it, so a helper added
+later (`SIMDTestHelpers.swift` left twelve tables refusing at once) needs a `(stays)` row, and a
+test that lands straight in an area directory needs a row that keeps its path.
+
 `Scripts/move-test-files.py` is the other half and is not a gate: it reads a mapping table, does the
 `git mv`, rewrites the `wasmExcludedTestFiles` entries in `Package.swift` (SwiftPM resolves
 `exclude:` relative to the target, so a bare name silently stops excluding a file that moved into a

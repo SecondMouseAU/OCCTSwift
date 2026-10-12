@@ -21,13 +21,22 @@ an allowlist nobody rereads. `Scripts/test-areas/` itself is not scanned: the ma
 name the destination of a move that has not happened yet, so their `proposed_path` column dangles
 by design.
 
-EXIT STATUS. 0 clean, 1 on a dangling citation or a stale exemption.
+THE AREA TABLES (#3308). The gate also runs the plan `move-test-files.py --map` makes for every
+`Scripts/test-areas/*.tsv` table (except the exemptions table): the dry run's own checks, without
+its clean-tree refusal. A table fails when a Swift file under its target has no row, which is how a
+shared helper added later (`SIMDTestHelpers.swift`) or a test that landed straight in an area
+directory left twelve tables refusing unseen; when a row's current and proposed paths both exist
+or neither does; and when the table itself is malformed. After the roll-out every row is `done` or
+`same`, and "clean" means the plan found no problem. A shared helper gets a `(stays)` row.
+
+EXIT STATUS. 0 clean, 1 on a dangling citation, a stale exemption or an area-table problem.
 
     python3 Scripts/check-test-path-citations.py            # the gate
     python3 Scripts/check-test-path-citations.py --list     # every citation, one per line
     python3 Scripts/check-test-path-citations.py --self-test
 """
 import fnmatch
+import importlib.util
 import os
 import re
 import subprocess
@@ -122,12 +131,19 @@ def citations(root, rows=None):
     return out
 
 
-def check(root):
-    """(dangling, stale): dangling is [(file, line, cited)], stale is [exemption row]."""
+def check(root, cites=None):
+    """(dangling, stale): dangling is [(file, line, cited)], stale is [exemption row].
+
+    `cites` is an unfiltered `citations(root)` the caller already holds, so a report that also
+    counts them scans the tree once; the `file` rows are applied here."""
     rows = load_exemptions(root)
     used = set()
     dangling = []
-    for rel, n, cited in citations(root, rows):
+    if cites is None:
+        cites = citations(root, rows)
+    else:
+        cites = [c for c in cites if not file_exempt(c[0], rows)]
+    for rel, n, cited in cites:
         if os.path.isfile(os.path.join(root, cited)):
             continue
         idx = path_exempt_row(cited, rows)
@@ -139,17 +155,54 @@ def check(root):
     return dangling, stale
 
 
+def map_problems(root, mover_path=None):
+    """[(table, problem)] for every area table under Scripts/test-areas/: the plan
+    `move-test-files.py --map` builds, so a file no row names (a new shared helper, a test that
+    landed in its area directory) fails here instead of refusing a later apply (#3308)."""
+    d = os.path.join(root, "Scripts", "test-areas")
+    if not os.path.isdir(d):
+        return []
+    mover_path = mover_path or os.path.join(os.path.dirname(os.path.abspath(__file__)), "move-test-files.py")
+    # A gate that cannot load the plan it runs has not passed: report it as a problem (exit 1)
+    # rather than crash with a traceback or, worse, skip the check.
+    try:
+        spec = importlib.util.spec_from_file_location("move_test_files", mover_path)
+        mover = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mover)
+    except BaseException as e:  # SyntaxError, a missing file, SystemExit from the module itself
+        if isinstance(e, KeyboardInterrupt):
+            raise
+        return [("move-test-files.py", "cannot load %s, so no area table was checked: %s: %s"
+                 % (mover_path, type(e).__name__, e))]
+    out = []
+    for name in sorted(os.listdir(d)):
+        if not name.endswith(".tsv") or name == os.path.basename(EXEMPTIONS):
+            continue
+        path = os.path.join(d, name)
+        try:
+            rows = mover.load_map(path)
+            _states, problems = mover.plan(root, rows, mover.other_rows(root, path))
+        except mover.Refusal as e:
+            problems = [str(e)]
+        out.extend((name, p) for p in problems)
+    return out
+
+
 def report(root):
-    dangling, stale = check(root)
+    cites = citations(root)
+    dangling, stale = check(root, cites)
+    maps = map_problems(root)
+    for name, p in maps:
+        print("AREA TABLE %s: %s" % (name, p))
     for rel, n, cited in dangling:
         print("DANGLING %s:%d cites %s, which does not exist" % (rel, n, cited))
     for k, pat, _ in stale:
         print("STALE EXEMPTION %s %s matches no dangling citation; delete the row from %s"
               % (k, pat, EXEMPTIONS))
-    total = len(citations(root))
-    print("check-test-path-citations: %d citation(s) scanned, %d dangling, %d stale exemption(s)"
-          % (total, len(dangling), len(stale)))
-    return 1 if dangling or stale else 0
+    total = len(cites)
+    print("check-test-path-citations: %d citation(s) scanned, %d dangling, %d stale exemption(s), "
+          "%d area-table problem(s)" % (total, len(dangling), len(stale), len(maps)))
+    return 1 if dangling or stale or maps else 0
 
 
 # --- self-test ---------------------------------------------------------------------------------
@@ -229,6 +282,51 @@ def self_test():
         fh.write(b"\xff\xfe\x00" + b"Tests/" + b"OCCTAATests/A.swift")
     dangling, stale = check(d)
     cases[-1] = (cases[-1][0], not dangling and not stale, "dangling=%d" % len(dangling))
+    # Area tables (#3308). A target with one test and one shared helper; a table naming only the
+    # test leaves the helper as a file no row names, which is what broke twelve tables.
+    test_row = "@@XTests/FooTests.swift\t@@XTests/Area/FooTests.swift\tArea\t-\twhy\n"
+    helper_row = "@@XTests/SIMDTestHelpers.swift\t@@XTests/SIMDTestHelpers.swift\t(stays)\t-\tshared\n"
+    header = "# current_path\tproposed_path\tarea\tpending_prs\treason\n"
+
+    def map_case(name, table, want, extra=None):
+        files = {"@@XTests/Area/FooTests.swift": "x", "@@XTests/SIMDTestHelpers.swift": "x"}
+        files.update(extra or {})
+        if table is not None:
+            files["Scripts/test-areas/x.tsv"] = table
+        got = map_problems(_tree(files))
+        cases.append((name, len(got) == want, "area-table problems=%d" % len(got)))
+
+    map_case("a table naming the test and the helper is clean", header + test_row + helper_row, 0)
+    map_case("a shared helper with no row fails", header + test_row, 1)
+    map_case("a test that landed in its area with no row fails",
+             header + test_row + helper_row, 1, {"@@XTests/Area/BarTests.swift": "x"})
+    map_case("a malformed table is a problem, not a crash", header + "only\ttwo\n", 1)
+    map_case("a tree with no tables is clean", None, 0)
+
+    def load_case(name, mover_text, want):
+        d = _tree({"@@XTests/Area/FooTests.swift": "x", "@@XTests/SIMDTestHelpers.swift": "x",
+                   "Scripts/test-areas/x.tsv": header + test_row + helper_row})
+        path = os.path.join(d, "mover.py")
+        if mover_text is not None:
+            with open(path, "w", encoding="utf-8") as fh:
+                fh.write(mover_text)
+        got = map_problems(d, mover_path=path)
+        cases.append((name, len(got) == want and all("cannot load" in p for _n, p in got),
+                      "problems=%s" % [p[:40] for _n, p in got]))
+
+    load_case("a missing move-test-files.py is a gate failure, not a crash", None, 1)
+    load_case("a move-test-files.py with a syntax error is a gate failure", "def (:\n", 1)
+    load_case("a move-test-files.py that raises on import is a gate failure", "raise RuntimeError('x')\n", 1)
+
+    # One scan serves the report: a precomputed citation list must give check() the same answer.
+    d = _tree({EXEMPTIONS: "file\tdocs/h.md\thistory\n", "docs/h.md": "@@AATests/Old.swift",
+               "docs/a.md": "@@AATests/Gone.swift"})
+    plain, pre = check(d), check(d, citations(d))
+    cases.append(("check() with a precomputed scan agrees with its own scan and applies file rows",
+                  plain == pre and len(pre[0]) == 1, "dangling=%d" % len(pre[0])))
+    map_case("the exemptions table is not read as an area table",
+             header + test_row + helper_row, 0,
+             {"Scripts/test-areas/citation-exemptions.tsv": "file\tdocs/x.md\thistory\n"})
     bad = [c for c in cases if not c[1]]
     for name, passed, detail in cases:
         print("  %s  %s (%s)" % ("ok  " if passed else "FAIL", name, detail))

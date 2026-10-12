@@ -128,6 +128,7 @@ Tests/OCCTGeom2dTests/ProjLibComputeApproxOnPolarSurfaceTests.swift	Tests/OCCTGe
 Tests/OCCTGeom2dTests/ProjLibComputeApproxTests.swift	Tests/OCCTGeom2dTests/ProjLib/ProjLibComputeApproxTests.swift	ProjLib	-	ProjLib projection of curves onto surfaces
 Tests/OCCTGeom2dTests/ProjLibProjectOnSurfaceTests.swift	Tests/OCCTGeom2dTests/ProjLib/ProjLibProjectOnSurfaceTests.swift	ProjLib	-	ProjLib projection of curves onto surfaces
 Tests/OCCTGeom2dTests/ProjLibTests.swift	Tests/OCCTGeom2dTests/ProjLib/ProjLibTests.swift	ProjLib	-	ProjLib projection of curves onto surfaces
+Tests/OCCTGeom2dTests/SIMDTestHelpers.swift	Tests/OCCTGeom2dTests/SIMDTestHelpers.swift	(stays)	-	shared helper with no tests; stays at the target root so every area sees it
 Tests/OCCTGeom2dTests/Section2DTests.swift	Tests/OCCTGeom2dTests/BRep2d/Section2DTests.swift	BRep2d	-	2D curves in B-Rep: MakeEdge2d, wires on planes, section2D, Poly_Polygon2D and Curve2dSet
 Tests/OCCTGeom2dTests/TBezierCurve2DTests.swift	Tests/OCCTGeom2dTests/Eval/TBezierCurve2DTests.swift	Eval	-	Geom2dEval evaluators: AHT/T Bezier, spirals, involutes, sine wave, and their argument guards
 Tests/OCCTGeom2dTests/Transform2DCompositionTests.swift	Tests/OCCTGeom2dTests/GpPrimitives/Transform2DCompositionTests.swift	GpPrimitives	#2620	gp 2D value types: points, vectors, directions, axes, matrices and transforms

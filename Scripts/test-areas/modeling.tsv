@@ -164,6 +164,7 @@ Tests/OCCTModelingTests/PerFaceVariableOffsetTests.swift	Tests/OCCTModelingTests
 Tests/OCCTModelingTests/PrismaticFeatureTests.swift	Tests/OCCTModelingTests/Features/PrismaticFeatureTests.swift	Features	-	add boss and create pocket on a box
 Tests/OCCTModelingTests/PrismUntilFaceTests.swift	Tests/OCCTModelingTests/Features/PrismUntilFaceTests.swift	Features	-	prism through all and until a face
 Tests/OCCTModelingTests/ReconstructorHistoryTests.swift	Tests/OCCTModelingTests/FeatureReconstruction/ReconstructorHistoryTests.swift	FeatureReconstruction	-	FeatureReconstructor BuildResult.histories
+Tests/OCCTModelingTests/SIMDTestHelpers.swift	Tests/OCCTModelingTests/SIMDTestHelpers.swift	(stays)	-	shared helper with no tests; stays at the target root so every area sees it
 Tests/OCCTModelingTests/SectionBuilderTests.swift	Tests/OCCTModelingTests/Booleans/SectionBuilderTests.swift	Booleans	-	SectionBuilder two shapes and surface
 Tests/OCCTModelingTests/SectionExtendedTests.swift	Tests/OCCTModelingTests/Booleans/SectionExtendedTests.swift	Booleans	-	BRepAlgoAPI_Section approximation, pcurves and ancestors
 Tests/OCCTModelingTests/SemiInfiniteExtrusionTests.swift	Tests/OCCTModelingTests/Sweeps/SemiInfiniteExtrusionTests.swift	Sweeps	-	semi-infinite and infinite extrusion
