@@ -442,15 +442,33 @@ struct AdvancedModelingTests {
     }
 
     @Test("Ruled surface between two circles")
-    func ruledSurfaceBetweenCircles() {
-        let bottom = Wire.circle(radius: 10)
-        #expect(bottom != nil)
+    func ruledSurfaceBetweenCircles() throws {
+        let bottom = try #require(Wire.circle(radius: 10))
+        let top = try #require(bottom.offset3D(distance: 20, direction: SIMD3(0, 0, 1)))
 
-        let top = bottom?.offset3D(distance: 20, direction: SIMD3(0, 0, 1))
-        #expect(top != nil)
+        let ruled = try #require(Shape.ruled(profile1: bottom, profile2: top))
+        // #3332: a ruled surface between two coaxial radius-10 circles 20 apart is the lateral
+        // face of a cylinder: one face, a shell (no end caps), area 2 pi r h = 400 pi. The
+        // bounding box of this BSpline face is loose in X and Y (-14.8 measured), so only Z is
+        // pinned; the area is what a wrong ruling (a cone, a twisted ruling) cannot match.
+        #expect(ruled.shapeType == .shell)
+        #expect(ruled.isValid)
+        #expect(ruled.faceCount == 1)
+        let area = try #require(ruled.surfaceArea)
+        #expect(abs(area - 2 * Double.pi * 10 * 20) < 1e-4)
+        let bounds = try #require(ruled.bounds)
+        #expect(abs(bounds.min.z - 0) < 1e-3)
+        #expect(abs(bounds.max.z - 20) < 1e-3)
 
-        let ruled = Shape.ruled(profile1: bottom!, profile2: top!)
-        #expect(ruled != nil)
+        // Circles of different radius ruled together are a cone frustum: lateral area
+        // pi (r1 + r2) slant, slant = sqrt(h^2 + (r1 - r2)^2).
+        let narrow = try #require(Wire.circle(radius: 5))
+        let wide = try #require(
+            Wire.circle(origin: SIMD3(0, 0, 20), normal: SIMD3(0, 0, 1), radius: 10))
+        let frustum = try #require(Shape.ruled(profile1: narrow, profile2: wide))
+        let slant = (20.0 * 20.0 + 5.0 * 5.0).squareRoot()
+        let frustumArea = try #require(frustum.surfaceArea)
+        #expect(abs(frustumArea - Double.pi * (5 + 10) * slant) < 1e-3)
     }
 
     @Test("Shell with open faces")
@@ -467,15 +485,47 @@ struct AdvancedModelingTests {
     }
 
     @Test("Shell with specific face open")
-    func shellWithSpecificFaceOpen() {
-        let box = Shape.box(width: 30, height: 20, depth: 10)!
+    func shellWithSpecificFaceOpen() throws {
+        let box = try #require(Shape.box(width: 30, height: 20, depth: 10))
 
-        // Get the first face and use it as the open face
+        // Face 0 of the centred box is the x = -15 face (centre (-15, 0, 0), 20 x 10).
         let faces = box.faces()
-        #expect(!faces.isEmpty)
+        let open = try #require(faces.first)
+        let openCentre = try #require(Shape.fromFace(open)?.center)
+        #expect(abs(openCentre.x + 15) < 1e-6)
+        #expect(abs(openCentre.y) < 1e-6)
+        #expect(abs(openCentre.z) < 1e-6)
 
-        let shelled = box.shelled(thickness: 1.5, openFaces: [faces[0]])
-        #expect(shelled != nil)
+        // #3332: a positive thickness offsets OUTWARD (measured: x -15...16.5, y +-11.5, z +-6.5,
+        // 23 faces: the offset's rounded edges), a negative one hollows INWARD. Each has a closed
+        // form, so the two volumes below are the Minkowski-sum algebra, not measured constants.
+        let a = 30.0
+        let b = 20.0
+        let c = 10.0
+        let r = 1.5
+        let pi = Double.pi
+
+        // Outward: (box + ball r) minus the box, minus the slab of the offset that lies beyond the
+        // open face's own plane (the open face is not extended).
+        let offsetVolume =
+            a * b * c + 2 * (a * b + b * c + c * a) * r + pi * r * r * (a + b + c)
+            + 4.0 / 3.0 * pi * r * r * r
+        let beyondOpenFace =
+            b * c * r + 2 * (b + c) * (pi * r * r / 4) + pi * (2.0 / 3.0) * r * r * r
+        let outward = try #require(box.shelled(thickness: r, openFaces: [open]))
+        #expect(outward.isValid)
+        let outwardVolume = try #require(outward.volume)
+        #expect(abs(outwardVolume - (offsetVolume - beyondOpenFace - a * b * c)) < 1e-3)
+        let outwardBounds = try #require(outward.bounds)
+        #expect(abs(outwardBounds.min.x + 15) < 1e-3, "the open side is not extended")
+        #expect(abs(outwardBounds.max.x - 16.5) < 1e-3)
+
+        // Inward: cavity (28.5 x 17 x 7) removed from the 30 x 20 x 10 box, open at x = -15.
+        let inward = try #require(box.shelled(thickness: -r, openFaces: [open]))
+        #expect(inward.isValid)
+        let inwardVolume = try #require(inward.volume)
+        #expect(abs(inwardVolume - (a * b * c - (a - r) * (b - 2 * r) * (c - 2 * r))) < 1e-6)
+        #expect(inward.faceCount == 11)
     }
 
     // MARK: - #766 pipe-shell fixtures

@@ -58,15 +58,43 @@ struct EdgePolylineTests {
         #expect(polylines.count == edgeCount)
     }
 
+    // #3332: the old assertions were `count >= 2` and `longest >= 10` points. A radius-5, 10 high
+    // cylinder has exactly three edges (top circle, bottom circle, seam). Measured: the circles
+    // come back as 64-point closed polylines and the seam as a 2-point segment.
     @Test("Cylinder edge polylines include circular edges")
-    func cylinderEdgePolylines() {
-        let cyl = Shape.cylinder(radius: 5, height: 10)!
+    func cylinderEdgePolylines() throws {
+        let cyl = try #require(Shape.cylinder(radius: 5, height: 10))
         let polylines = cyl.allEdgePolylines()
-        // Cylinder has 3 edges: top circle, bottom circle, seam
-        #expect(polylines.count >= 2)
-        // Circular edges should have many points
-        let longPoly = polylines.max(by: { $0.count < $1.count })!
-        #expect(longPoly.count >= 10)
+        #expect(polylines.count == 3)
+        #expect(polylines.map { $0.count }.sorted() == [2, 64, 64])
+
+        var circleHeights: [Double] = []
+        for poly in polylines where poly.count > 2 {
+            // Closed: the last point is the first.
+            let first = try #require(poly.first)
+            let last = try #require(poly.last)
+            #expect(abs(first.x - last.x) < 1e-9 && abs(first.y - last.y) < 1e-9)
+            #expect(abs(first.z - last.z) < 1e-9)
+            // On the cylinder wall, at one height.
+            for p in poly {
+                #expect(abs((p.x * p.x + p.y * p.y).squareRoot() - 5) < 1e-9)
+                #expect(abs(p.z - first.z) < 1e-9)
+            }
+            circleHeights.append(first.z)
+        }
+        #expect(circleHeights.sorted().count == 2)
+        if circleHeights.count == 2 {
+            let heights = circleHeights.sorted()
+            #expect(abs(heights[0] - 0) < 1e-9)
+            #expect(abs(heights[1] - 10) < 1e-9)
+        }
+
+        // The seam runs the full height at the wall.
+        let seam = try #require(polylines.first { $0.count == 2 })
+        #expect(abs(abs(seam[0].z - seam[1].z) - 10) < 1e-9)
+        for p in seam {
+            #expect(abs((p.x * p.x + p.y * p.y).squareRoot() - 5) < 1e-9)
+        }
     }
 
     @Test("Single edge polyline by index")

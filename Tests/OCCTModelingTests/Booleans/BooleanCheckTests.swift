@@ -9,9 +9,19 @@ import Testing
 @Suite("Boolean Pre-Validation")
 struct BooleanCheckTests {
     @Test("Valid box passes boolean check")
-    func validBoxCheck() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func validBoxCheck() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         #expect(box.isValidForBoolean)
+        // #3332: `isValidForBoolean` answering true for everything also passed the old line, so the
+        // negative controls the parity tests below use are repeated here: a 5e-7 deep box (small
+        // edges) and two overlapping cubes in one compound (self-interference) are NOT valid.
+        let thin = try #require(Shape.box(origin: .zero, width: 10, height: 10, depth: 5e-7))
+        #expect(!thin.isValidForBoolean)
+        let cube1 = try #require(Shape.box(origin: .zero, width: 10, height: 10, depth: 10))
+        let cube2 = try #require(
+            Shape.box(origin: SIMD3(5, 5, 5), width: 10, height: 10, depth: 10))
+        let overlap = try #require(Shape.compound([cube1, cube2]))
+        #expect(!overlap.isValidForBoolean)
     }
 
     @Test("Two boxes valid for boolean together")
@@ -22,9 +32,18 @@ struct BooleanCheckTests {
     }
 
     @Test("Cylinder valid for boolean")
-    func cylinderValid() {
-        let cyl = Shape.cylinder(radius: 5, height: 10)!
+    func cylinderValid() throws {
+        let cyl = try #require(Shape.cylinder(radius: 5, height: 10))
         #expect(cyl.isValidForBoolean)
+        // #3332: a cylinder is valid on its own AND as a Boolean partner for a box, while the same
+        // cylinder paired with a face is not (solid against face is a dimension mismatch for FUSE,
+        // see `solidVsFaceCutAndCut21Disagree`); the second answer is what distinguishes a real
+        // analysis from a constant.
+        let box = try #require(Shape.box(width: 4, height: 4, depth: 4))
+        #expect(cyl.isValidForBoolean(with: box))
+        let firstFace = try #require(box.faces().first)
+        let face = try #require(Shape.fromFace(firstFace))
+        #expect(!Shape.analyzeBoolean(cyl, face, operation: .fuse))
     }
 
     // #766: singleShapeValid, sphereValid, pairShapesValidForFuse, pairShapesValidForCut and
