@@ -15,14 +15,44 @@ struct AAGTests {
         #expect(aag.edges.count == 12)
     }
 
+    // #3332: the old loop asserted `node.normal != nil` and `isPlanar`, which a normal of
+    // (0, 0, 0) satisfies. The six face normals of an axis-aligned box are exactly the six
+    // signed unit axes (measured on the pinned kernel: -x, +x, -y, +y, -z, +z for faces 0...5),
+    // each a unit vector, and only the +z / -z faces are horizontal (upward / downward) with the
+    // other four vertical.
     @Test("AAG nodes have valid normals")
-    func aagNodeNormals() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func aagNodeNormals() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let aag = box.buildAAG()
+        #expect(aag.nodes.count == 6)
+
+        let boxFaces = box.faces()
+        var axes = Set<[Int]>()
         for node in aag.nodes {
-            #expect(node.normal != nil)
+            let n = try #require(node.normal)
+            #expect(abs(n.x * n.x + n.y * n.y + n.z * n.z - 1) < 1e-9)
             #expect(node.isPlanar)
+            // Each normal is a signed unit axis: one component +-1, the others 0.
+            let rounded = [Int(n.x.rounded()), Int(n.y.rounded()), Int(n.z.rounded())]
+            #expect(abs(n.x - Double(rounded[0])) < 1e-9)
+            #expect(abs(n.y - Double(rounded[1])) < 1e-9)
+            #expect(abs(n.z - Double(rounded[2])) < 1e-9)
+            axes.insert(rounded)
+            // Outward: the normal points the way the face's own centre lies from the box's.
+            let face = try #require(
+                boxFaces.indices.contains(node.faceIndex) ? boxFaces[node.faceIndex] : nil)
+            let faceShape = try #require(Shape.fromFace(face))
+            let faceCentre = try #require(faceShape.center)
+            #expect(n.x * faceCentre.x + n.y * faceCentre.y + n.z * faceCentre.z > 4.9)
+            #expect(node.isUpward == (rounded == [0, 0, 1]))
+            #expect(node.isDownward == (rounded == [0, 0, -1]))
+            #expect(node.isVertical == (rounded[2] == 0))
+            #expect(node.isHorizontal == (rounded[2] != 0))
         }
+        let expected: Set<[Int]> = [
+            [1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0], [0, 0, 1], [0, 0, -1],
+        ]
+        #expect(axes == expected)
     }
 
     @Test("AAG neighbors returns correct count")
@@ -36,18 +66,43 @@ struct AAGTests {
         }
     }
 
+    // #3332: the old test took neighbour 0's edge and asserted `sharedEdgeCount > 0`, so any edge
+    // object passed. Every face of a box meets four others along one convex 90 degree edge, and
+    // the one face it does not meet is its opposite, whose normal is the negation of its own.
     @Test("AAG edge between adjacent faces exists")
-    func aagEdgeBetween() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func aagEdgeBetween() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let aag = box.buildAAG()
-        let nbrs = aag.neighbors(of: 0)
-        guard let first = nbrs.first else {
-            Issue.record("Face 0 should have neighbors")
-            return
+        for face in 0..<6 {
+            let normal = try #require(aag.nodes[face].normal)
+            let neighbours = aag.neighbors(of: face)
+            #expect(neighbours.count == 4)
+            for other in neighbours {
+                let edge = try #require(aag.edge(between: face, and: other))
+                #expect(Set([edge.face1Index, edge.face2Index]) == Set([face, other]))
+                #expect(edge.convexity == .convex)
+                #expect(edge.sharedEdgeCount == 1)
+                // Adjacent faces of a box are perpendicular.
+                let otherNormal = try #require(aag.nodes[other].normal)
+                let dot =
+                    normal.x * otherNormal.x + normal.y * otherNormal.y + normal.z * otherNormal.z
+                #expect(abs(dot) < 1e-9)
+                // The edge is symmetric in its arguments.
+                let reverse = try #require(aag.edge(between: other, and: face))
+                #expect(reverse.face1Index == edge.face1Index)
+                #expect(reverse.face2Index == edge.face2Index)
+            }
+            // The opposite face is the one that is not a neighbour: normals negate, no edge.
+            let opposite = (0..<6).filter { $0 != face && !neighbours.contains($0) }
+            #expect(opposite.count == 1)
+            if let o = opposite.first {
+                let oNormal = try #require(aag.nodes[o].normal)
+                #expect(
+                    abs(normal.x + oNormal.x) + abs(normal.y + oNormal.y)
+                        + abs(normal.z + oNormal.z) < 1e-9)
+                #expect(aag.edge(between: face, and: o) == nil)
+            }
         }
-        let edge = aag.edge(between: 0, and: first)
-        #expect(edge != nil)
-        #expect(edge?.sharedEdgeCount ?? 0 > 0)
     }
 
     @Test("Box with pocket detects pocket via AAG")

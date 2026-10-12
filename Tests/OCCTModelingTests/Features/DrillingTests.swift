@@ -46,31 +46,30 @@ struct DrillingTests {
     }
 
     @Test("Multiple holes")
-    func multipleHoles() {
+    func multipleHoles() throws {
         // Box 50x50x10 is centered at origin: X[-25,25], Y[-25,25], Z[-5,5]
-        let box = Shape.box(width: 50, height: 50, depth: 10)!
+        let box = try #require(Shape.box(width: 50, height: 50, depth: 10))
+        // pi r^2 h for one through hole of radius 3 in a 10 deep plate
+        let hole = Double.pi * 9 * 10
 
-        // Drill multiple holes from above top surface (Z=5) along Y centerline
-        guard
-            var r = box.drilled(
-                at: SIMD3(-15, 0, 8), direction: SIMD3(0, 0, -1), radius: 3, depth: 0)
-        else {
-            #expect(false, "First drill failed")
-            return
+        // Drill multiple holes from above top surface (Z=5) along Y centerline.
+        // #3332: the old test asserted only `r3.isValid` after three drills. Each drill removes
+        // exactly one cylinder (volume and face count move by one hole at a time: a through hole
+        // adds one cylindrical wall to the six faces of the plate).
+        let first = try #require(
+            box.drilled(at: SIMD3(-15, 0, 8), direction: SIMD3(0, 0, -1), radius: 3, depth: 0))
+        let second = try #require(
+            first.drilled(at: SIMD3(0, 0, 8), direction: SIMD3(0, 0, -1), radius: 3, depth: 0))
+        let third = try #require(
+            second.drilled(at: SIMD3(15, 0, 8), direction: SIMD3(0, 0, -1), radius: 3, depth: 0))
+        #expect(third.isValid)
+
+        let plate = 50.0 * 50 * 10
+        for (n, shape) in [first, second, third].enumerated() {
+            let volume = try #require(shape.volume)
+            #expect(abs(volume - (plate - Double(n + 1) * hole)) < 1e-3, "after hole \(n + 1)")
+            #expect(shape.faceCount == 7 + n, "after hole \(n + 1)")
+            #expect(shape.isValid)
         }
-        guard
-            let r2 = r.drilled(at: SIMD3(0, 0, 8), direction: SIMD3(0, 0, -1), radius: 3, depth: 0)
-        else {
-            #expect(false, "Second drill failed")
-            return
-        }
-        guard
-            let r3 = r2.drilled(
-                at: SIMD3(15, 0, 8), direction: SIMD3(0, 0, -1), radius: 3, depth: 0)
-        else {
-            #expect(false, "Third drill failed")
-            return
-        }
-        #expect(r3.isValid)
     }
 }

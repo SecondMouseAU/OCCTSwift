@@ -25,16 +25,36 @@ struct BooleanRegistryTests {
     }
 
     @Test("Boolean with missing named left reports unresolvedRef")
-    func missingLeftRef() {
+    // #3332: the old body nested `if let skip` / `if case` and recorded an Issue only in the else
+    // arms, so a build that fulfilled something, returned a shape, or skipped under the wrong stage
+    // passed. Pinned here: nothing fulfilled, no shape, exactly one skip for the boolean's own id,
+    // in the additive stage, as an unresolvedRef that names the left id (the one reported first).
+    // A subtract with the same unknown ids refuses in the subtractive stage.
+    func missingLeftRef() throws {
         let b = FeatureSpec.Boolean(op: .union, leftID: "nope", rightID: "alsoNope", id: "bad")
         let result = FeatureReconstructor.build(from: [.boolean(b)])
-        if let skip = result.skipped.first(where: { $0.featureID == "bad" }) {
-            if case .unresolvedRef = skip.reason {
-            } else {
-                Issue.record("expected unresolvedRef")
-            }
-        } else {
-            Issue.record("expected skipped")
+        #expect(result.shape == nil)
+        #expect(result.fulfilled.isEmpty)
+        #expect(result.histories.isEmpty)
+        #expect(result.skipped.count == 1)
+        let skip = try #require(result.skipped.first)
+        #expect(skip.featureID == "bad")
+        #expect(skip.stage == .additive)
+        guard case .unresolvedRef(let message) = skip.reason else {
+            Issue.record("expected unresolvedRef, got \(skip.reason)")
+            return
+        }
+        #expect(message.contains("nope"))
+        #expect(!message.contains("alsoNope"), "the left id is reported first")
+
+        let cut = FeatureSpec.Boolean(op: .subtract, leftID: "nope", rightID: "alsoNope", id: "cut")
+        let cutResult = FeatureReconstructor.build(from: [.boolean(cut)])
+        let cutSkip = try #require(cutResult.skipped.first)
+        #expect(cutSkip.featureID == "cut")
+        #expect(cutSkip.stage == .subtractive)
+        guard case .unresolvedRef = cutSkip.reason else {
+            Issue.record("expected unresolvedRef for subtract, got \(cutSkip.reason)")
+            return
         }
     }
 }

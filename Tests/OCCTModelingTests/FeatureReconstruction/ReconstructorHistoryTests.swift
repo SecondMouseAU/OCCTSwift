@@ -7,7 +7,7 @@ import Testing
 @Suite("FeatureReconstructor BuildResult.histories")
 struct ReconstructorHistoryTests {
     @Test("Hole feature with id → history retained under that id")
-    func holeFeatureExposesHistory() {
+    func holeFeatureExposesHistory() throws {
         let r = FeatureSpec.Revolve(
             profilePoints2D: [SIMD2(0, 0), SIMD2(20, 0), SIMD2(20, 10), SIMD2(0, 10)],
             axisOrigin: .zero, axisDirection: SIMD3(0, 0, 1), id: "base")
@@ -18,17 +18,54 @@ struct ReconstructorHistoryTests {
             id: "drill_top"
         )
         let result = FeatureReconstructor.build(from: [.revolve(r), .hole(h)])
-        #expect(result.shape != nil)
-        // The hole feature uses a history-recording subtract → must register.
-        #expect(
-            result.histories["drill_top"] != nil,
-            "hole with non-nil id should retain history")
-        // Look up history for any base-shape face, must not crash.
-        if let history = result.histories["drill_top"], let final = result.shape {
-            for face in final.subShapes(ofType: .face).prefix(3) {
-                _ = history.record(of: face)
+        // #3332: the old body asserted `shape != nil` and that a history existed, then called
+        // `record(of:)` on the RESULT's faces and discarded every answer. The hole starts at
+        // z = 5, inside the radius-20, height-10 revolve, and runs 8 mm down: it leaves through
+        // the bottom at z = 0 after 5 mm, so pi * 2^2 * 5 comes off pi * 20^2 * 10 = 12566.37.
+        #expect(result.fulfilled == ["base", "drill_top"])
+        #expect(result.skipped.isEmpty)
+        #expect(result.histories.keys.sorted() == ["drill_top"])
+        let shape = try #require(result.shape)
+        #expect(shape.isValid)
+        let volume = try #require(shape.volume)
+        #expect(abs(volume - (Double.pi * 400 * 10 - Double.pi * 4 * 5)) < 1e-3)
+    }
+
+    // #3332: the history of a reconstructor feature answers for the faces of the body that FEATURE
+    // received. The hole above receives a body built inside the reconstructor, which a caller
+    // cannot hold, so no identity lookup is possible there. Handing the same feature an
+    // `inputBody` the caller owns makes it checkable: the plate's side faces are untouched, and
+    // its top and bottom faces (the hole goes through) are each modified into the pierced face.
+    @Test("Hole on an input body: history answers for the caller's own faces")
+    func holeHistoryOnInputBody() throws {
+        let plate = try #require(Shape.box(width: 40, height: 40, depth: 10))
+        let hole = FeatureSpec.Hole(
+            axisPoint: SIMD3(0, 0, 8), axisDirection: SIMD3(0, 0, -1),
+            diameter: 4.0, depth: 20.0, id: "drill")
+        let result = FeatureReconstructor.build(from: [.hole(hole)], inputBody: plate)
+        #expect(result.fulfilled == ["drill"])
+        let shape = try #require(result.shape)
+        let volume = try #require(shape.volume)
+        #expect(abs(volume - (40 * 40 * 10 - Double.pi * 4 * 10)) < 1e-3)
+
+        let history = try #require(result.histories["drill"])
+        var modified = 0
+        var untouched = 0
+        for face in plate.subShapes(ofType: .face) {
+            let record = history.record(of: face)
+            #expect(!record.isDeleted)
+            if record.modified.count == 1 {
+                modified += 1
+                let centre = try #require(face.center)
+                #expect(abs(abs(centre.z) - 5) < 1e-6, "only the top and bottom faces are pierced")
+            } else {
+                untouched += 1
+                #expect(record.modified.isEmpty)
+                #expect(record.generated.isEmpty)
             }
         }
+        #expect(modified == 2)
+        #expect(untouched == 4)
     }
 
     @Test("Boolean spec with id retains history; without id doesn't")
@@ -64,6 +101,11 @@ struct ReconstructorHistoryTests {
     func emptyBuildEmptyHistories() {
         let result = FeatureReconstructor.build(from: [])
         #expect(result.histories.isEmpty)
+        // #3332: the whole result is empty, not just its history map (measured).
+        #expect(result.shape == nil)
+        #expect(result.fulfilled.isEmpty)
+        #expect(result.skipped.isEmpty)
+        #expect(result.annotations.isEmpty)
     }
 
     @Test("Fillet feature (.all) with id retains history under that id")
@@ -98,7 +140,7 @@ struct ReconstructorHistoryTests {
     }
 
     @Test("Chamfer .nearPoint now resolves (was skipped as unsupported in v1.0.3)")
-    func chamferNearPointResolves() {
+    func chamferNearPointResolves() throws {
         let e = FeatureSpec.Extrude(
             profilePoints2D: [SIMD2(0, 0), SIMD2(20, 0), SIMD2(20, 20), SIMD2(0, 20)],
             planeOrigin: .zero, planeNormal: SIMD3(0, 0, 1),
@@ -108,13 +150,18 @@ struct ReconstructorHistoryTests {
             edgeSelector: .nearPoint(SIMD3<Double>(10, 0, 10), tolerance: 0.5),
             distance: 0.3, id: "ch_near")
         let result = FeatureReconstructor.build(from: [.extrude(e), .chamfer(c)])
-        // Whether or not the chamfer succeeds depends on edge geometry, but it
-        // must NOT be skipped as `.unsupported`, that was the v1.0.3 stub
-        // status removed by #166.
-        if let skipped = result.skipped.first(where: { $0.featureID == "ch_near" }) {
-            if case .unsupported = skipped.reason {
-                Issue.record("chamfer .nearPoint should no longer be unsupported")
-            }
-        }
+        // #3332: the old body only recorded when the chamfer was skipped as `.unsupported` (the
+        // v1.0.3 stub status removed by #166), so a chamfer skipped for ANY other reason, or one
+        // that cut nothing, passed. The point is the midpoint of the block's top front edge, a
+        // 20 mm line, so one 0.3 mm chamfer takes 0.5 * 0.3 * 0.3 * 20 = 0.9 mm^3 off the
+        // 4000 mm^3 block.
+        #expect(result.fulfilled == ["block", "ch_near"])
+        #expect(result.skipped.isEmpty)
+        let shape = try #require(result.shape)
+        #expect(shape.isValid)
+        let volume = try #require(shape.volume)
+        #expect(abs(volume - (4000 - 0.9)) < 1e-6)
+        #expect(shape.faceCount == 7)
+        #expect(result.histories["ch_near"] != nil)
     }
 }
