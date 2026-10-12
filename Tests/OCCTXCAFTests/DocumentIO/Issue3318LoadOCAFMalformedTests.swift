@@ -45,19 +45,17 @@ struct Issue3318LoadOCAFMalformedTests {
     }
 
     @Test("A real binary header followed by garbage returns driverFailure")
-    func headerThenGarbage() {
-        guard let doc = Document.create(format: "BinOcaf"), let label = doc.createLabel() else {
-            Issue.record("could not create a BinXCAF document")
-            return
-        }
+    func headerThenGarbage() throws {
+        let doc = try #require(
+            Document.create(format: "BinOcaf"), "could not create a BinOcaf document")
+        let label = try #require(doc.createLabel(), "could not create label")
         #expect(label.setInteger(7))
         let src = NSTemporaryDirectory() + "issue3318_real.cbf"
         defer { try? FileManager.default.removeItem(atPath: src) }
         #expect(doc.saveOCAF(to: src) == .ok)
-        guard let full = FileManager.default.contents(atPath: src), full.count > 64 else {
-            Issue.record("the saved file is missing or too short")
-            return
-        }
+        let full = try #require(
+            FileManager.default.contents(atPath: src), "the saved file is missing")
+        try #require(full.count > 64, "the saved file is too short")
         // Keep the magic number and a few header bytes, then 200 bytes of 0xFF.
         let garbled = Array(full.prefix(16)) + [UInt8](repeating: 0xFF, count: 200)
         expectRefused(write(garbled, name: "garbled.xbf"), "header + garbage")
@@ -65,26 +63,66 @@ struct Issue3318LoadOCAFMalformedTests {
         expectRefused(write(Array(full.prefix(full.count / 2)), name: "truncated.xbf"), "truncated")
     }
 
-    @Test("Garbage after an XML declaration does not crash")
-    func xmlGarbage() {
-        let path = write(Array("<?xml version=\"1.0\"?>\n<not-ocaf/>".utf8), name: "garbage.xml")
+    // Measured against OCCT with the guard off (Scripts/repro/3318/probe.mm): an XML file whose root
+    // `format` names a Bin* format is handed to the binary reader and dies with SIGSEGV (null
+    // Storage_HeaderData), and an XML declaration with no closing `?>` makes LDOM spin forever.
+    // Every case here must come back as driverFailure; one test walks a list of plain Strings.
+    @Test("XML that is not an OCAF document returns driverFailure")
+    func xmlNotOcaf() {
+        let cases: [String] = [
+            "<?xml version=\"1.0\"?>\n<not-ocaf/>",
+            "<?xml version=\"1.0\"?>",
+            "<?xml version=\"1.0\"?>\n<document format=\"BinOcaf\"><label tag=\"0\"/></document>",
+            "<?xml version=\"1.0\"?>\n<document format=\"BinXCAF\"></document>",
+            "<?xml version=\"1.0\"?>\n<!-- <document format=\"XmlOcaf\"> -->\n<document format=\"BinOcaf\"></document>",
+            "<?xml version=\"1.0\"?>\n<document><label tag=\"0\"/></document>",
+            "<?xml version=\"1.0\"?>\n<document format=\"\"></document>",
+            "<?xml version=\"1.0\"?>\n<document format=\"Unknown\"></document>",
+            "<?xml version=\"1.0\"?>\n<!-- never closed",
+            "<?xml version=\"1.0\"?>\n<document format=\"XmlOcaf\"",
+            "<?xml",
+            "<?xml version=\"1.0\"",
+        ]
+        for (index, text) in cases.enumerated() {
+            expectRefused(write(Array(text.utf8), name: "notocaf\(index).xml"), "xml case \(index)")
+        }
+    }
+
+    @Test("Every prefix of a saved XML document returns without hanging or crashing")
+    func xmlTruncations() throws {
+        let doc = try #require(
+            Document.create(format: "XmlOcaf"), "could not create an XmlOcaf document")
+        let label = try #require(doc.createLabel(), "could not create label")
+        #expect(label.setInteger(7))
+        let src = NSTemporaryDirectory() + "issue3318_prefix_src.xml"
+        defer { try? FileManager.default.removeItem(atPath: src) }
+        #expect(doc.saveOCAF(to: src) == .ok)
+        let full = try #require(
+            FileManager.default.contents(atPath: src), "the saved file is missing")
+        try #require(full.count > 64, "the saved file is too short")
+        let path = NSTemporaryDirectory() + "issue3318_prefix.xml"
         defer { try? FileManager.default.removeItem(atPath: path) }
-        // OCCT's XML retrieval answers this one itself; the contract here is that it returns.
-        let (doc, status) = Document.loadOCAF(from: path)
-        #expect(doc != nil || status != .ok)
+        // Prefixes that end inside the declaration used to hang LDOM. Only a prefix that reaches the
+        // closing tag (the file less its trailing newline) is a complete document and may load.
+        for length in 0..<full.count {
+            FileManager.default.createFile(atPath: path, contents: full.prefix(length))
+            let complete = String(decoding: full.prefix(length), as: UTF8.self).hasSuffix(
+                "</document>")
+            let (loaded, status) = Document.loadOCAF(from: path)
+            #expect((loaded != nil) == complete, "prefix \(length) of \(full.count): got \(status)")
+        }
     }
 
     @Test("A missing file still reports its own status and a valid file still loads")
-    func unchangedPaths() {
+    func unchangedPaths() throws {
         let (missing, status) = Document.loadOCAF(from: "/nonexistent/issue3318.xbf")
         #expect(missing == nil)
         #expect(status == .unknownDocument)
 
         for fmt in ["BinOcaf", "XmlOcaf"] {
-            guard let doc = Document.create(format: fmt), let label = doc.createLabel() else {
-                Issue.record("could not create a \(fmt) document")
-                continue
-            }
+            let doc = try #require(
+                Document.create(format: fmt), "could not create a \(fmt) document")
+            let label = try #require(doc.createLabel(), "could not create label for \(fmt)")
             let path =
                 NSTemporaryDirectory() + "issue3318_valid_\(fmt)."
                 + (fmt == "BinOcaf" ? "cbf" : "xml")

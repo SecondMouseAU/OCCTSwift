@@ -81,7 +81,9 @@
 #include <TopoDS.hxx>
 #include <BRep_Tool.hxx>
 
+#include <cctype>
 #include <cstring>
+#include <string>
 
 // Additional includes gathered from throughout the original file (#1380):
 #include <XCAFDoc_LengthUnit.hxx>
@@ -1846,6 +1848,86 @@ int32_t OCCTDocumentSaveOCAF(OCCTDocumentRef doc, const char* path)
   }
 }
 
+// #3318: the XML half of the guard. TDocStd_Application::Open reads the root element's `format`
+// attribute (PCDM_ReadWriter::FileFormat) and hands the stream to whichever reader that format
+// names:
+//  - format="BinOcaf" (or any Bin* format) in an XML file selects the binary reader, which
+//    dereferences a null Storage_HeaderData and faults (measured, uncatchable);
+//  - an XML declaration with no closing `?>` makes LDOM_XmlReader::ReadRecord spin forever
+//    (measured on every prefix of a saved file that ends inside the declaration).
+// So an XML file is passed on only if its declaration closes and its first element is `document`
+// with a format that starts with "Xml". Comments, a DOCTYPE and the declaration are skipped.
+static bool occtOcafXmlHeaderIsRetrievable(std::ifstream& stream)
+{
+  stream.clear();
+  stream.seekg(0, std::ios::beg);
+  std::string head(65536, '\0');
+  stream.read(&head[0], static_cast<std::streamsize>(head.size()));
+  head.resize(static_cast<size_t>(stream.gcount()));
+
+  size_t pos = head.find("<?xml");
+  if (pos == std::string::npos)
+    return false;
+  while (true)
+  {
+    pos = head.find('<', pos);
+    if (pos == std::string::npos)
+      return false;
+    if (head.compare(pos, 4, "<!--") == 0)
+    {
+      pos = head.find("-->", pos + 4);
+      if (pos == std::string::npos)
+        return false;
+      pos += 3;
+    }
+    else if (head.compare(pos, 2, "<?") == 0)
+    {
+      pos = head.find("?>", pos + 2);
+      if (pos == std::string::npos)
+        return false;
+      pos += 2;
+    }
+    else if (head.compare(pos, 2, "<!") == 0)
+    {
+      pos = head.find('>', pos + 2);
+      if (pos == std::string::npos)
+        return false;
+      pos += 1;
+    }
+    else
+    {
+      break;
+    }
+  }
+  static const std::string kRoot = "<document";
+  if (head.compare(pos, kRoot.size(), kRoot) != 0)
+    return false;
+  const size_t tagEnd = head.find('>', pos);
+  if (tagEnd == std::string::npos)
+    return false;
+  const std::string tag = head.substr(pos + kRoot.size(), tagEnd - pos - kRoot.size());
+  if (!tag.empty() && !std::isspace(static_cast<unsigned char>(tag[0])) && tag[0] != '/')
+    return false;
+  size_t at = 0;
+  while ((at = tag.find("format", at)) != std::string::npos)
+  {
+    const bool startsName = at > 0 && std::isspace(static_cast<unsigned char>(tag[at - 1]));
+    size_t     i          = at + 6;
+    at += 6;
+    while (i < tag.size() && std::isspace(static_cast<unsigned char>(tag[i])))
+      i++;
+    if (!startsName || i >= tag.size() || tag[i] != '=')
+      continue;
+    i++;
+    while (i < tag.size() && std::isspace(static_cast<unsigned char>(tag[i])))
+      i++;
+    if (i >= tag.size() || (tag[i] != '"' && tag[i] != '\''))
+      return false;
+    return tag.compare(i + 1, 3, "Xml") == 0;
+  }
+  return false;
+}
+
 // #3318: whether OCCT's retrieval can be handed this file without dereferencing a null.
 // Two uncatchable SIGSEGVs sit behind loadOCAF on a non-OCAF file (OCC_CATCH_SIGNALS is inert):
 //  - an empty or text file reaches BinLDrivers_DocumentRetrievalDriver::Read with a null
@@ -1867,7 +1949,7 @@ static bool occtOcafFileIsRetrievable(const char* path)
     if (kind == PCDM_TOFD_Unknown)
       return false;
     if (kind == PCDM_TOFD_XmlFile)
-      return true;
+      return occtOcafXmlHeaderIsRetrievable(probe);
 
     occ::handle<Storage_BaseDriver> driver;
     if (PCDM::FileDriverType(TCollection_AsciiString(path), driver) == PCDM_TOFD_Unknown
