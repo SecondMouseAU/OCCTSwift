@@ -630,8 +630,13 @@ extension Document {
 
     /// Load an OCAF document from a file.
     ///
-    ///
     /// Registers all format drivers automatically.
+    ///
+    /// An empty file, a non-OCAF file or a damaged header returns `(nil, .driverFailure)` instead of
+    /// crashing. For XML that includes a root element other than `document`, a missing or non-`Xml*`
+    /// `format` attribute (a `Bin*` format would reach the binary reader and fault), and an
+    /// unterminated declaration, comment or DOCTYPE (which would hang the parser). A missing file
+    /// returns `(nil, .unknownDocument)`.
     public static func loadOCAF(from path: String) -> (document: Document?, status: ReaderStatus) {
         var statusRaw: Int32 = -1
         guard let ref = OCCTDocumentLoadOCAF(path, &statusRaw) else {

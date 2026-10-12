@@ -21,6 +21,10 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### `Document.loadOCAF(from:)` no longer crashes or hangs on a damaged file (#3318)
+
+`Document.loadOCAF(from:)` no longer crashes or hangs the process on an empty file, a non-OCAF text file, a valid binary magic number followed by garbage, an XML file naming a binary format, or an XML file with an unterminated declaration. An XML file that OCCT can load (any prolog size, BOM, DOCTYPE, no declaration) still loads; one that is not an OCAF document now returns `(nil, .driverFailure)` instead of an empty document. A missing file still returns `.unknownDocument`. The faults are in OCCT and the guard sits in the bridge; the kernel follow-up is #3330. (#3318)
+
 ### Breaking: the package no longer depends on Apple's `simd`; matrix-typed public properties use `Matrix4x4F` and `Matrix3x3D` (#2759)
 
 - **Breaking.** The package no longer imports or depends on Apple's `simd` module (#2759). `AssemblyNode.transform`, `Camera.projectionMatrix` and `Camera.viewMatrix` return the new `Matrix4x4F`, and `GProps.matrixOfInertia` and `ShapeProperties.momentOfInertia` (and `ShapeProperties.init`) use the new `Matrix3x3D`, both column-major with `columns`, `m[column][row]`, `columnMajorElements` and `determinant`. Reads through `.columns` and `m[i][j]` compile unchanged; code that passes the value to an Apple API converts at the boundary (see `docs/reference/Matrix.md`). `addAutoCentrelines`, `addAutoCentermarks` and `addAutoDimensions` return an empty result for a zero or non-finite view direction, and coincident-point linear/angular dimensions and `DrawingAnnotation.breakLine` emit nothing, instead of NaN geometry. `DrawingAnnotation.CuttingPlaneLine.init` is failable and returns nil for a zero arrow direction; `Dimension.Angular` gains `isValid` and `value` follows `PrsDim_AngleDimension` (0 when invalid); `BRepGraph.resolve` refuses a zero absolute plane normal or axis direction as `.degenerate`.
