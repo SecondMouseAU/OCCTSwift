@@ -9,6 +9,16 @@ import Testing
 
 @Suite("VrmlAPI Writer Tests")
 struct VrmlWriterTests {
+
+    private func writeAndRead(
+        _ shape: Shape, representation: VrmlRepresentation
+    ) throws -> String {
+        let url = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent("test_vrml_\(UUID()).wrl")
+        defer { try? FileManager.default.removeItem(at: url) }
+        #expect(shape.writeVRML(to: url, representation: representation))
+        return try String(contentsOf: url, encoding: .utf8)
+    }
     @Test func writeShapeToVRML() {
         let box = Shape.box(width: 10, height: 20, depth: 30)
         if let box = box {
@@ -24,37 +34,67 @@ struct VrmlWriterTests {
         }
     }
 
-    @Test func writeShapeWireframe() {
-        let sphere = Shape.sphere(radius: 5)
-        if let sphere = sphere {
-            let url = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent(
-                "test_v84_sphere.wrl")
-            let ok = sphere.writeVRML(to: url, representation: .wireFrame)
-            #expect(ok)
-            try? FileManager.default.removeItem(at: url)
-        }
+    @Test func writeShapeWireframe() throws {
+        let sphere = try #require(Shape.sphere(radius: 5))
+        let text = try writeAndRead(sphere, representation: .wireFrame)
+        // Wireframe writes the edges as line sets and no faces, and does not need a triangulation.
+        #expect(text.hasPrefix("#VRML V2.0"))
+        #expect(text.contains("IndexedLineSet"))
+        #expect(!text.contains("IndexedFaceSet"))
+        #expect(text.utf8.count > 1000)
     }
 
-    @Test func writeShapeBothRepresentation() {
-        let box = Shape.box(width: 5, height: 5, depth: 5)
-        if let box = box {
-            let url = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent(
-                "test_v84_both.wrl")
-            let ok = box.writeVRML(to: url, representation: .both)
-            #expect(ok)
-            try? FileManager.default.removeItem(at: url)
-        }
+    @Test func writeShapeBothRepresentation() throws {
+        let box = try #require(Shape.box(width: 5, height: 5, depth: 5))
+
+        // The shaded part of the file is the shape's existing triangulation, which VrmlAPI does not
+        // create: an unmeshed box writes 91 bytes of header and no faces, whatever the
+        // representation says. This test used to write exactly that and assert only `ok` (#3332).
+        let unmeshed = try writeAndRead(box, representation: .shaded)
+        #expect(!unmeshed.contains("IndexedFaceSet"))
+
+        _ = try #require(box.mesh(linearDeflection: 0.1))
+        let shaded = try writeAndRead(box, representation: .shaded)
+        let wire = try writeAndRead(box, representation: .wireFrame)
+        let both = try writeAndRead(box, representation: .both)
+
+        #expect(shaded.contains("IndexedFaceSet"))
+        #expect(!shaded.contains("IndexedLineSet"))
+        #expect(wire.contains("IndexedLineSet"))
+        #expect(!wire.contains("IndexedFaceSet"))
+        // Both is the faces and the lines, each in full.
+        #expect(both.contains("IndexedFaceSet"))
+        #expect(both.contains("IndexedLineSet"))
+        #expect(both.utf8.count > shaded.utf8.count)
+        #expect(both.utf8.count > wire.utf8.count)
+        // One face set per box face.
+        #expect(both.components(separatedBy: "IndexedFaceSet").count - 1 == 6)
     }
 
-    @Test func writeDocumentToVRML() {
-        if let doc = Document.create() {
-            let url = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent(
-                "test_v84_doc.wrl")
-            let ok = doc.writeVRML(to: url, scale: 1.0)
-            // May succeed or fail depending on document contents
-            _ = ok
-            try? FileManager.default.removeItem(at: url)
-        }
+    @Test func writeDocumentToVRML() throws {
+        let box = try #require(Shape.box(width: 5, height: 5, depth: 5))
+        _ = try #require(box.mesh(linearDeflection: 0.1))
+        let doc = try #require(Document.create())
+        _ = doc.addShape(box)
+        let url = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent("test_v84_doc_\(UUID()).wrl")
+        defer { try? FileManager.default.removeItem(at: url) }
+        #expect(doc.writeVRML(to: url, scale: 1.0))
+
+        // The document's box is in the file: six face sets for its six faces.
+        let text = try String(contentsOf: url, encoding: .utf8)
+        #expect(text.hasPrefix("#VRML V2.0"))
+        #expect(text.components(separatedBy: "IndexedFaceSet").count - 1 == 6)
+
+        // Control: an empty document writes the header and nothing else.
+        let empty = try #require(Document.create())
+        let emptyURL = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent("test_v84_empty_\(UUID()).wrl")
+        defer { try? FileManager.default.removeItem(at: emptyURL) }
+        #expect(empty.writeVRML(to: emptyURL, scale: 1.0))
+        let emptyText = try String(contentsOf: emptyURL, encoding: .utf8)
+        #expect(!emptyText.contains("IndexedFaceSet"))
+        #expect(emptyText.utf8.count < text.utf8.count)
     }
 
     /// A fresh document is empty, and it is a working document rather than just a non-nil one.

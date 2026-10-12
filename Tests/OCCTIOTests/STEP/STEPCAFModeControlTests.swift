@@ -8,46 +8,83 @@ import Testing
 @Suite("STEP CAF Mode Control")
 struct STEPCAFModeControlTests {
 
+    /// A STEP file of a 10 x 20 x 30 box named "Bracket", coloured red, on layer "L1".
+    ///
+    /// The previous tests wrote a bare box, which has no name, colour or layer to keep or drop,
+    /// so a reader mode could not be seen working (#3332). Each caller gets its own file.
+    private func makeDecoratedSTEP() throws -> URL {
+        let box = try #require(Shape.box(width: 10, height: 20, depth: 30))
+        let source = try #require(Document.create())
+        _ = source.addShape(box)
+        let node = try #require(source.rootNodes.first)
+        _ = node.setName("Bracket")
+        node.setColor(Color(red: 1, green: 0, blue: 0))
+        node.setLayer("L1")
+        let url = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent("swift_test_v58_caf_\(UUID()).step")
+        #expect(source.writeSTEP(to: url, modelType: .asIs))
+        return url
+    }
+
+    private func expectRed(_ color: Color?) {
+        guard let color else {
+            Issue.record("expected the red surface colour, got nil")
+            return
+        }
+        #expect(abs(color.red - 1) < 1e-6)
+        #expect(abs(color.green) < 1e-6)
+        #expect(abs(color.blue) < 1e-6)
+    }
+
+    private func expectBox(_ doc: Document) throws {
+        let shape = try #require(doc.allShapes().first)
+        #expect(shape.shapeType == .solid)
+        #expect(abs((shape.volume ?? 0) - 6000) < 1e-6)
+    }
+
     @Test("Load STEP with default modes")
     func loadWithDefaultModes() throws {
-        // Write a STEP file with a shape
-        let box = Shape.box(width: 10, height: 20, depth: 30)!
-        let tmpPath = NSTemporaryDirectory() + "swift_test_v58_caf_modes.step"
-        let url = URL(fileURLWithPath: tmpPath)
-        try box.writeSTEP(to: url)
+        let url = try makeDecoratedSTEP()
+        defer { try? FileManager.default.removeItem(at: url) }
 
-        let doc = Document.loadSTEP(from: url, modes: STEPReaderModes())
-        #expect(doc != nil)
-        if let doc = doc {
-            #expect(doc.rootNodes.count > 0)
-        }
-        try? FileManager.default.removeItem(atPath: tmpPath)
+        let doc = try #require(Document.loadSTEP(from: url, modes: STEPReaderModes()))
+        #expect(doc.rootNodes.count == 1)
+        let node = try #require(doc.rootNodes.first)
+        // Defaults read the name, colour and layer back.
+        #expect(node.name == "Bracket")
+        expectRed(node.color)
+        #expect(node.layers == ["L1"])
+        try expectBox(doc)
     }
 
     @Test("Load STEP with GDT mode enabled")
     func loadWithGDTMode() throws {
-        let box = Shape.box(width: 10, height: 20, depth: 30)!
-        let tmpPath = NSTemporaryDirectory() + "swift_test_v58_caf_gdt.step"
-        let url = URL(fileURLWithPath: tmpPath)
-        try box.writeSTEP(to: url)
+        let url = try makeDecoratedSTEP()
+        defer { try? FileManager.default.removeItem(at: url) }
 
-        let modes = STEPReaderModes(gdt: true)
-        let doc = Document.loadSTEP(from: url, modes: modes)
-        #expect(doc != nil)
-        try? FileManager.default.removeItem(atPath: tmpPath)
+        let doc = try #require(Document.loadSTEP(from: url, modes: STEPReaderModes(gdt: true)))
+        // GD&T mode adds the dimension and tolerance reader; the file has none, so what comes
+        // back is the same document as with the defaults.
+        #expect(doc.rootNodes.count == 1)
+        let node = try #require(doc.rootNodes.first)
+        #expect(node.name == "Bracket")
+        expectRed(node.color)
+        try expectBox(doc)
     }
 
     @Test("Load STEP with names disabled")
     func loadWithNamesDisabled() throws {
-        let box = Shape.box(width: 10, height: 20, depth: 30)!
-        let tmpPath = NSTemporaryDirectory() + "swift_test_v58_caf_noname.step"
-        let url = URL(fileURLWithPath: tmpPath)
-        try box.writeSTEP(to: url)
+        let url = try makeDecoratedSTEP()
+        defer { try? FileManager.default.removeItem(at: url) }
 
-        let modes = STEPReaderModes(name: false)
-        let doc = Document.loadSTEP(from: url, modes: modes)
-        #expect(doc != nil)
-        try? FileManager.default.removeItem(atPath: tmpPath)
+        let doc = try #require(Document.loadSTEP(from: url, modes: STEPReaderModes(name: false)))
+        let node = try #require(doc.rootNodes.first)
+        // The name in the file is ignored and the reader's own fallback label is used, while the
+        // colour and the geometry still arrive.
+        #expect(node.name != "Bracket")
+        #expect(node.name == "SOLID")
+        expectRed(node.color)
+        try expectBox(doc)
     }
 
     @Test("Write STEP with model type")
@@ -88,53 +125,74 @@ struct STEPCAFModeControlTests {
 
     @Test("Round-trip with mode control")
     func roundTrip() throws {
-        // Create source STEP
-        let box = Shape.box(width: 10, height: 20, depth: 30)!
-        let srcPath = NSTemporaryDirectory() + "swift_test_v58_caf_rtsrc.step"
-        try box.writeSTEP(to: URL(fileURLWithPath: srcPath))
-        let doc = try Document.load(from: URL(fileURLWithPath: srcPath))
+        let srcURL = try makeDecoratedSTEP()
+        defer { try? FileManager.default.removeItem(at: srcURL) }
+        let doc = try Document.load(from: srcURL)
 
-        let tmpPath = NSTemporaryDirectory() + "swift_test_v58_caf_rt.step"
-        let url = URL(fileURLWithPath: tmpPath)
-
-        let writerModes = STEPWriterModes(color: true, name: true)
-        let writeOk = doc.writeSTEP(to: url, modelType: .asIs, modes: writerModes)
-        #expect(writeOk)
-
-        // Read back
-        let readerModes = STEPReaderModes(color: true, name: true)
-        let doc2 = Document.loadSTEP(from: url, modes: readerModes)
-        #expect(doc2 != nil)
-        if let doc2 = doc2 {
-            #expect(doc2.rootNodes.count > 0)
+        let named = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent("swift_test_v58_caf_rt_\(UUID()).step")
+        let unnamed = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent("swift_test_v58_caf_rt_noname_\(UUID()).step")
+        defer {
+            try? FileManager.default.removeItem(at: named)
+            try? FileManager.default.removeItem(at: unnamed)
         }
 
-        try? FileManager.default.removeItem(atPath: srcPath)
-        try? FileManager.default.removeItem(atPath: tmpPath)
+        // Writer modes: names on keeps the name through the file, names off drops it.
+        #expect(
+            doc.writeSTEP(
+                to: named, modelType: .asIs, modes: STEPWriterModes(color: true, name: true)))
+        #expect(
+            doc.writeSTEP(
+                to: unnamed, modelType: .asIs, modes: STEPWriterModes(color: true, name: false)))
+
+        let readerModes = STEPReaderModes(color: true, name: true)
+        let back = try #require(Document.loadSTEP(from: named, modes: readerModes))
+        let node = try #require(back.rootNodes.first)
+        #expect(back.rootNodes.count == 1)
+        #expect(node.name == "Bracket")
+        expectRed(node.color)
+        try expectBox(back)
+
+        let backUnnamed = try #require(Document.loadSTEP(from: unnamed, modes: readerModes))
+        #expect(backUnnamed.rootNodes.first?.name != "Bracket")
+        try expectBox(backUnnamed)
     }
 
     @Test("Load from path with modes")
     func loadFromPathWithModes() throws {
-        let box = Shape.box(width: 10, height: 20, depth: 30)!
-        let tmpPath = NSTemporaryDirectory() + "swift_test_v58_caf_path.step"
-        try box.writeSTEP(to: URL(fileURLWithPath: tmpPath))
+        let url = try makeDecoratedSTEP()
+        defer { try? FileManager.default.removeItem(at: url) }
 
-        let doc = Document.loadSTEP(fromPath: tmpPath, modes: STEPReaderModes())
-        #expect(doc != nil)
-        try? FileManager.default.removeItem(atPath: tmpPath)
+        // Colour off: the colour in the file is not read, the name still is.
+        let doc = try #require(
+            Document.loadSTEP(fromPath: url.path, modes: STEPReaderModes(color: false)))
+        let node = try #require(doc.rootNodes.first)
+        #expect(node.color == nil)
+        #expect(node.name == "Bracket")
+        try expectBox(doc)
+
+        // And with the colour mode on, the same path gives the colour.
+        let withColor = try #require(
+            Document.loadSTEP(fromPath: url.path, modes: STEPReaderModes()))
+        expectRed(withColor.rootNodes.first?.color)
     }
 
     @Test("Write to path with modes")
     func writeToPathWithModes() throws {
-        let box = Shape.box(width: 10, height: 20, depth: 30)!
-        let srcPath = NSTemporaryDirectory() + "swift_test_v58_caf_wsrc.step"
-        try box.writeSTEP(to: URL(fileURLWithPath: srcPath))
-        let doc = try Document.load(from: URL(fileURLWithPath: srcPath))
+        let srcURL = try makeDecoratedSTEP()
+        defer { try? FileManager.default.removeItem(at: srcURL) }
+        let doc = try Document.load(from: srcURL)
 
-        let tmpPath = NSTemporaryDirectory() + "swift_test_v58_caf_wpath.step"
-        let ok = doc.writeSTEP(toPath: tmpPath, modelType: .asIs)
-        #expect(ok)
-        try? FileManager.default.removeItem(atPath: srcPath)
-        try? FileManager.default.removeItem(atPath: tmpPath)
+        let tmpPath = NSTemporaryDirectory() + "swift_test_v58_caf_wpath_\(UUID()).step"
+        defer { try? FileManager.default.removeItem(atPath: tmpPath) }
+        #expect(doc.writeSTEP(toPath: tmpPath, modelType: .asIs))
+        #expect(FileManager.default.fileExists(atPath: tmpPath))
+
+        // What was written is the document: reading it back gives the name and the solid.
+        let back = try Document.load(from: URL(fileURLWithPath: tmpPath))
+        let node = try #require(back.rootNodes.first)
+        #expect(node.name == "Bracket")
+        try expectBox(back)
     }
 }

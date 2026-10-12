@@ -10,34 +10,44 @@ struct STEPReaderRootsTests {
 
     @Test("Root count from STEP file")
     func rootCount() throws {
-        let box = Shape.box(width: 10, height: 20, depth: 30)!
-        let tmpPath = NSTemporaryDirectory() + "swift_test_v58_roots.step"
-        let url = URL(fileURLWithPath: tmpPath)
+        let box = try #require(Shape.box(width: 10, height: 20, depth: 30))
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("swift_test_v58_roots_\(UUID()).step")
+        defer { try? FileManager.default.removeItem(at: url) }
         try box.writeSTEP(to: url)
-        let count = Shape.stepRootCount(url: url)
-        #expect(count > 0)
-        try? FileManager.default.removeItem(atPath: tmpPath)
+        // One product, one root.
+        #expect(Shape.stepRootCount(url: url) == 1)
     }
 
     @Test("Root count from path")
     func rootCountFromPath() throws {
-        let box = Shape.box(width: 10, height: 20, depth: 30)!
-        let tmpPath = NSTemporaryDirectory() + "swift_test_v58_roots2.step"
+        let box = try #require(Shape.box(width: 10, height: 20, depth: 30))
+        let tmpPath = NSTemporaryDirectory() + "swift_test_v58_roots2_\(UUID()).step"
+        defer { try? FileManager.default.removeItem(atPath: tmpPath) }
         try box.writeSTEP(to: URL(fileURLWithPath: tmpPath))
-        let count = Shape.stepRootCount(path: tmpPath)
-        #expect(count > 0)
-        try? FileManager.default.removeItem(atPath: tmpPath)
+        #expect(Shape.stepRootCount(path: tmpPath) == 1)
     }
 
     @Test("Import specific root")
     func importRoot() throws {
-        let box = Shape.box(width: 10, height: 20, depth: 30)!
-        let tmpPath = NSTemporaryDirectory() + "swift_test_v58_root1.step"
-        let url = URL(fileURLWithPath: tmpPath)
+        let box = try #require(Shape.box(width: 10, height: 20, depth: 30))
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("swift_test_v58_root1_\(UUID()).step")
+        defer { try? FileManager.default.removeItem(at: url) }
         try box.writeSTEP(to: url)
+
+        // Root 1 is the box: a solid of volume 10 * 20 * 30 spanning the same extent.
         let shape = try Shape.loadSTEPRoot(from: url, rootIndex: 1)
         #expect(shape.isValid)
-        try? FileManager.default.removeItem(atPath: tmpPath)
+        #expect(shape.shapeType == .solid)
+        #expect(abs((shape.volume ?? 0) - 6000) < 1e-6)
+        let bounds = try #require(shape.bounds)
+        #expect(vectorDistance(bounds.min, SIMD3(-5, -10, -15)) < 1e-5)
+        #expect(vectorDistance(bounds.max, SIMD3(5, 10, 15)) < 1e-5)
+
+        // Roots are 1-based and there is one: neither index 0 nor index 2 is a root.
+        #expect(throws: ImportError.self) { _ = try Shape.loadSTEPRoot(from: url, rootIndex: 0) }
+        #expect(throws: ImportError.self) { _ = try Shape.loadSTEPRoot(from: url, rootIndex: 2) }
     }
 
     @Test("Import with system length unit (millimeters, unscaled)")
@@ -92,13 +102,12 @@ struct STEPReaderRootsTests {
 
     @Test("Shape count from STEP file")
     func shapeCount() throws {
-        let box = Shape.box(width: 10, height: 20, depth: 30)!
-        let tmpPath = NSTemporaryDirectory() + "swift_test_v58_count.step"
-        let url = URL(fileURLWithPath: tmpPath)
+        let box = try #require(Shape.box(width: 10, height: 20, depth: 30))
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("swift_test_v58_count_\(UUID()).step")
+        defer { try? FileManager.default.removeItem(at: url) }
         try box.writeSTEP(to: url)
-        let count = Shape.stepShapeCount(url: url)
-        #expect(count > 0)
-        try? FileManager.default.removeItem(atPath: tmpPath)
+        #expect(Shape.stepShapeCount(url: url) == 1)
     }
 
     @Test("Nonexistent file returns zero roots")
