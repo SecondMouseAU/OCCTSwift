@@ -15,9 +15,12 @@ struct BRepFillOffsetAncestorsTests {
         #expect(outward.isDone)
         let inward = try #require(OffsetAncestors.create(face: face, offset: -1.0))
         #expect(inward.isDone)
-        for joinType in [0, 1, 2] {
+        // `create` takes the join type as an `Int`; the enum's raw values name the three it
+        // documents (0 arc, 1 tangent, 2 intersection), so a renumbering would move this loop.
+        for joinType in [OffsetJoinType.arc, .tangent, .intersection] {
             let ancestors = try #require(
-                OffsetAncestors.create(face: face, offset: 1.0, joinType: joinType))
+                OffsetAncestors.create(
+                    face: face, offset: 1.0, joinType: Int(joinType.rawValue)))
             #expect(ancestors.isDone, "join type \(joinType)")
         }
     }

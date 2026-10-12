@@ -30,7 +30,9 @@ struct BRepFillOffsetWireTests {
         let edges = result.edges()
         #expect(edges.count == 4)
         let half = try halfWidth(result)
-        #expect(abs(abs(half - 10.0) - 3.0) < 1e-6)
+        // Three from the original half-width of 10, on either side (7 or 13).
+        let distanceFromOriginal = abs(half - 10.0)
+        #expect(abs(distanceFromOriginal - 3.0) < 1e-6)
         // A square of that half-width: four edges of 2 * half.
         let length = edges.reduce(0.0) { $0 + ($1.length ?? 0) }
         #expect(abs(length - 8.0 * half) < 1e-6)
@@ -51,7 +53,9 @@ struct BRepFillOffsetWireTests {
         withKnownIssue("#3364: the negative offset is four untrimmed crossing segments") {
             #expect(result.shapeType == .wire)
             let half = try halfWidth(result)
-            #expect(abs(abs(half - 10.0) - 3.0) < 1e-6)
+            // Three from the original half-width of 10, on either side (7 or 13).
+            let distanceFromOriginal = abs(half - 10.0)
+            #expect(abs(distanceFromOriginal - 3.0) < 1e-6)
         }
     }
 }
