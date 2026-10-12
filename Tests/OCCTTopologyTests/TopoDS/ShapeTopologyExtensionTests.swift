@@ -56,6 +56,8 @@ struct ShapeTopologyExtensionTests {
 
         // It has no setter, so the positive reading comes through the BREP text: the last
         // digit of a shape's flag line is Convex.
+        // The record text is the one OCCT 8.0.1's BREP writer produces (verified on kernel.6); a
+        // format change leaves `edited == brep`, which the next expectation reports.
         let face = try #require(Shape.faceFromPlane(uBounds: 0...10, vBounds: 0...10))
         #expect(!face.isConvex)
         let brep = try #require(face.toBREPString())

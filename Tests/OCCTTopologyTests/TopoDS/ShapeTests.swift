@@ -64,6 +64,9 @@ struct ShapeTests {
 
         // A sphere centred at x = 7 pokes 1 out through the x = 5 face: the union adds the sphere
         // less the cap inside the box, V = 36 pi - pi h^2 (3 r - h) / 3 with h = 1, r = 3.
+        // The formula is exact; the 1e-4 bound is the volume integral's own accuracy on the trimmed
+        // sphere face (measured on kernel.6: 1e-6 fails, 1e-4 passes), still far below the 8 pi / 3
+        // cap term a wrong result would move it by.
         let outside = try #require(Shape.sphere(radius: 3))
         let moved = try #require(outside.translated(by: SIMD3(7, 0, 0)))
         let pokes: Shape? = box + moved
