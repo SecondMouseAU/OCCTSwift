@@ -74,14 +74,24 @@ struct BezierCurve3DCompletionTests {
     }
 
     @Test("IsClosed for closed curve")
-    func isClosedTrue() {
+    func isClosedTrue() throws {
         let poles: [SIMD3<Double>] = [
             SIMD3(0, 0, 0), SIMD3(1, 2, 0), SIMD3(2, 0, 0), SIMD3(0, 0, 0),
         ]
-        let c = Curve3D.bezier(poles: poles)
-        if let c = c {
-            #expect(c.bezierIsClosed)
-        }
+        let c = try #require(Curve3D.bezier(poles: poles))
+        #expect(c.bezierIsClosed)
+        // The first and last poles coincide, so the curve's two ends do too: the flag is the
+        // geometry's, not a property of having four poles.
+        let a = c.point(at: c.domain.lowerBound)
+        let b = c.point(at: c.domain.upperBound)
+        #expect(vectorLength(a - b) < 1e-12, "ends \(a) and \(b)")
+
+        // Moving the last pole off the first opens it, so the flag is read from the poles.
+        let open = try #require(
+            Curve3D.bezier(poles: [
+                SIMD3(0, 0, 0), SIMD3(1, 2, 0), SIMD3(2, 0, 0), SIMD3(0, 1, 0),
+            ]))
+        #expect(!open.bezierIsClosed)
     }
 
     @Test("IsPeriodic always false for Bezier")
@@ -104,13 +114,14 @@ struct BezierCurve3DCompletionTests {
     }
 
     @Test("IsCN always true for Bezier")
-    func isCN() {
+    func isCN() throws {
         let poles: [SIMD3<Double>] = [SIMD3(0, 0, 0), SIMD3(1, 2, 0), SIMD3(2, 0, 0)]
-        let c = Curve3D.bezier(poles: poles)
-        if let c = c {
-            #expect(c.bezierIsCN(0))
-            #expect(c.bezierIsCN(1))
-            #expect(c.bezierIsCN(10))
-        }
+        let c = try #require(Curve3D.bezier(poles: poles))
+        #expect(c.bezierIsCN(0))
+        #expect(c.bezierIsCN(1))
+        #expect(c.bezierIsCN(10))
+        // A Bezier is analytic, so every non-negative order holds; a negative order is not a
+        // question about the curve and is refused (#2862). The pinned kernel would answer true.
+        #expect(!c.bezierIsCN(-1), "a negative order is refused")
     }
 }

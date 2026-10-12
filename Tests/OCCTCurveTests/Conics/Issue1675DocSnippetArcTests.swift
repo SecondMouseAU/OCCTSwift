@@ -22,7 +22,16 @@ struct Issue1675DocSnippetArcTests {
 
     @Test("The canonical snippet arc is constructible")
     func arcConstructs() throws {
-        _ = try #require(canonicalArc(), "the expression used in 18 doc snippets must construct")
+        let arc = try #require(
+            canonicalArc(), "the expression used in 18 doc snippets must construct")
+        // Constructing is not the claim: a three-point arc that returned a different arc would
+        // construct too. This one is the half circle of radius 5 about the origin: its length
+        // is 5 pi and its midpoint parameter lands on the interior point (0, 5, 0).
+        let len = try #require(arc.length)
+        #expect(abs(len - 5 * Double.pi) < 1e-9, "half circle of radius 5, got \(len)")
+        let mid = arc.point(at: (arc.domain.lowerBound + arc.domain.upperBound) / 2)
+        #expect(abs(mid.x) < 1e-9 && abs(mid.y - 5) < 1e-9 && abs(mid.z) < 1e-9, "midpoint \(mid)")
+        #expect(!arc.isClosed)
     }
 
     @Test("Curvature is 1/R, which is what the curvature snippet claims (0.2)")

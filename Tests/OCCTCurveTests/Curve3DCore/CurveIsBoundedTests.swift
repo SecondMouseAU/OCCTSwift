@@ -23,6 +23,13 @@ struct CurveIsBoundedTests {
             return
         }
         #expect(curve.isBounded)
+        // A bounded curve has a finite parameter range that starts and ends at the data. The
+        // line, which is not bounded, has no finite range to report.
+        #expect(curve.domain.lowerBound.isFinite && curve.domain.upperBound.isFinite)
+        let a = curve.point(at: curve.domain.lowerBound)
+        let b = curve.point(at: curve.domain.upperBound)
+        #expect(vectorLength(a - SIMD3(0, 0, 0)) < 1e-9, "starts at the first point, got \(a)")
+        #expect(vectorLength(b - SIMD3(2, 0, 0)) < 1e-9, "ends at the last point, got \(b)")
     }
 
     @Test func line2dIsNotBounded() {
@@ -40,5 +47,10 @@ struct CurveIsBoundedTests {
             return
         }
         #expect(curve.isBounded)
+        #expect(curve.domain.lowerBound.isFinite && curve.domain.upperBound.isFinite)
+        let a = curve.point(at: curve.domain.lowerBound)
+        let b = curve.point(at: curve.domain.upperBound)
+        #expect(vectorLength(a - SIMD2(0, 0)) < 1e-9, "starts at the first point, got \(a)")
+        #expect(vectorLength(b - SIMD2(2, 0)) < 1e-9, "ends at the last point, got \(b)")
     }
 }
