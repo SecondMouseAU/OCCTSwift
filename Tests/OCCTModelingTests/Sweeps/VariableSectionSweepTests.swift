@@ -9,20 +9,11 @@ struct VariableSectionSweepTests {
     @Test("Pipe shell with constant law")
     func pipeShellConstantLaw() throws {
         // Straight spine
-        guard let spine = Wire.line(from: .zero, to: SIMD3(0, 0, 20)) else {
-            Issue.record("Could not create spine")
-            return
-        }
+        let spine = try #require(Wire.line(from: .zero, to: SIMD3(0, 0, 20)))
         // Circular profile
-        guard let profile = Wire.circle(radius: 5) else {
-            Issue.record("Could not create profile")
-            return
-        }
+        let profile = try #require(Wire.circle(radius: 5))
         // Constant scaling law (no change)
-        guard let law = LawFunction.constant(1.0, from: 0, to: 1) else {
-            Issue.record("Could not create law")
-            return
-        }
+        let law = try #require(LawFunction.constant(1.0, from: 0, to: 1))
 
         let pipe = try #require(Shape.pipeShellWithLaw(spine: spine, profile: profile, law: law))
         // A constant law of 1 is the plain pipe: pi * 5^2 * 20 = 1570.796... (kernel.6 measured
@@ -36,20 +27,11 @@ struct VariableSectionSweepTests {
     @Test("Pipe shell with linear tapering law")
     func pipeShellLinearLaw() throws {
         // Straight spine
-        guard let spine = Wire.line(from: .zero, to: SIMD3(0, 0, 30)) else {
-            Issue.record("Could not create spine")
-            return
-        }
+        let spine = try #require(Wire.line(from: .zero, to: SIMD3(0, 0, 30)))
         // Circular profile
-        guard let profile = Wire.circle(radius: 5) else {
-            Issue.record("Could not create profile")
-            return
-        }
+        let profile = try #require(Wire.circle(radius: 5))
         // Linear tapering: starts at 1x, ends at 2x
-        guard let law = LawFunction.linear(from: 1.0, to: 2.0) else {
-            Issue.record("Could not create law")
-            return
-        }
+        let law = try #require(LawFunction.linear(from: 1.0, to: 2.0))
 
         let pipe = try #require(Shape.pipeShellWithLaw(spine: spine, profile: profile, law: law))
         // Radius 5 growing to 10 over 30 is a cone frustum: pi h / 3 (r1^2 + r1 r2 + r2^2) =

@@ -7,10 +7,7 @@ struct SweepTests {
 
     @Test("Extrude profile")
     func extrudeProfile() throws {
-        guard let profile = Wire.rectangle(width: 5, height: 3) else {
-            Issue.record("Failed to create rectangle profile")
-            return
-        }
+        let profile = try #require(Wire.rectangle(width: 5, height: 3))
         let solid = try #require(
             Shape.extrude(
                 profile: profile,

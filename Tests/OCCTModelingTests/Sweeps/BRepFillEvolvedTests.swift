@@ -29,6 +29,6 @@ struct BRepFillEvolvedTests {
             Shape.evolved(spineFace: spineFace, profileWire: profile, makeSolid: true))
         #expect(slab.isValid)
         #expect(slab.shapeType == .solid)
-        #expect(abs((slab.volume ?? -1) - 50000.0) < 1e-4)
+        #expect(abs((slab.volume ?? -1) - 50000.0) < 1e-6)
     }
 }
