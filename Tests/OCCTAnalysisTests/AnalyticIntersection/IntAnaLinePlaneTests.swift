@@ -40,5 +40,27 @@ struct IntAnaLinePlaneTests {
         #expect(r.points.isEmpty)
         #expect(r.params.isEmpty)
         #expect(r.isInQuadric)
+
+        // A diagonal direction in the same plane is embedded too, so the flag follows the
+        // geometry rather than the axis the fixture happens to use.
+        let diagonal = IntAna.linePlane(
+            lineOrigin: SIMD3(1, 2, 0), lineDir: SIMD3(1, 1, 0),
+            planeOrigin: SIMD3(0, 0, 0), planeNormal: SIMD3(0, 0, 1))
+        #expect(diagonal.isParallel)
+        #expect(diagonal.isInQuadric)
+    }
+
+    /// The control that makes the embedded case mean something: a line that starts on the same
+    /// point of the plane but leaves it is a single crossing at that point, not an embedding.
+    @Test func lineStartingOnPlaneButCrossingIsNotEmbedded() throws {
+        let r = IntAna.linePlane(
+            lineOrigin: SIMD3(1, 2, 0), lineDir: SIMD3(0, 0, 1),
+            planeOrigin: SIMD3(0, 0, 0), planeNormal: SIMD3(0, 0, 1))
+        #expect(!r.isParallel)
+        #expect(!r.isInQuadric)
+        try #require(r.points.count == 1)
+        #expect(abs(r.points[0].x - 1) < 1e-12)
+        #expect(abs(r.points[0].y - 2) < 1e-12)
+        #expect(abs(r.points[0].z) < 1e-12)
     }
 }

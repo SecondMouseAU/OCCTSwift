@@ -33,6 +33,16 @@ struct RaycastTests {
             direction: SIMD3(0, 0, 1)
         )
         #expect(hits.isEmpty)
+
+        // The same direction from inside the footprint, so "always empty" cannot pass: it enters
+        // the bottom face at z = -5, 15 away, and leaves through the top at z = 5, 25 away.
+        let through = box.raycast(origin: SIMD3(2, 2, -20), direction: SIMD3(0, 0, 1))
+        #expect(through.count == 2)
+        let ds = through.map { $0.distance }.sorted()
+        if ds.count == 2 {
+            #expect(abs(ds[0] - 15) < 1e-9 && abs(ds[1] - 25) < 1e-9, "got \(ds)")
+        }
+        #expect(through.allSatisfy { abs($0.point.x - 2) < 1e-9 && abs($0.point.y - 2) < 1e-9 })
     }
 
     @Test("Raycast nearest returns closest hit")

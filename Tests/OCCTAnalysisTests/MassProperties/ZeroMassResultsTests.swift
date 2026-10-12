@@ -308,8 +308,15 @@ struct ZeroMassResultsTests {
         let b = try #require(box())
         let edge = try #require(b.edges().first)
         let ci = edge.curveInertia
-        #expect(ci.length > 0)
-        #expect(ci.centerOfMass != nil)
+        // `box()` is the centred 10 x 20 x 30 fixture of this suite, so whichever edge is first,
+        // its length is one of the three sides and its centroid is its own midpoint.
+        #expect(
+            [10.0, 20.0, 30.0].contains { abs($0 - ci.length) < 1e-9 }, "length \(ci.length)")
+        let c = try #require(ci.centerOfMass)
+        let ends = edge.endpoints
+        let mid = (ends.start + ends.end) / 2
+        #expect(vectorLength(c - mid) < 1e-9, "centroid \(c), midpoint \(mid)")
+        #expect(abs(ci.length - edge.length) < 1e-9)
     }
 
     // MARK: - the nil branch of the per-element results

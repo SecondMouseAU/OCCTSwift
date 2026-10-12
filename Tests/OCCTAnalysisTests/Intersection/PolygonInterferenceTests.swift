@@ -26,6 +26,16 @@ struct PolygonInterferenceTests {
     @Test func selfIntersection() {
         let result = Shape.polygonSelfInterference(
             polygon: [SIMD2(0, 0), SIMD2(10, 10), SIMD2(10, 0), SIMD2(0, 10)])
-        #expect(result.points.count >= 1)
+        // The two diagonals of the bow-tie cross once, at the centre.
+        #expect(result.points.count == 1, "got \(result.points)")
+        if let pt = result.points.first {
+            #expect(abs(pt.x - 5.0) < 1e-9)
+            #expect(abs(pt.y - 5.0) < 1e-9)
+        }
+
+        // The same four corners in perimeter order do not touch themselves.
+        let square = Shape.polygonSelfInterference(
+            polygon: [SIMD2(0, 0), SIMD2(10, 0), SIMD2(10, 10), SIMD2(0, 10)])
+        #expect(square.points.isEmpty, "got \(square.points)")
     }
 }
