@@ -20,7 +20,8 @@ struct MakeFaceExtrasTests {
             Shape.faceFromTorus(
                 majorRadius: 10, minorRadius: 2, uMin: 0, uMax: .pi, vMin: 0, vMax: .pi))
         #expect(face.isValid)
-        // r (u2 - u1)(R (v2 - v1) + r (sin v2 - sin v1)) = 2 pi (10 pi)
+        // r (u2 - u1)(R (v2 - v1) + r (sin v2 - sin v1)) with r = 2, R = 10 and u, v over [0, pi]
+        // = 2 * pi * (10 * pi) = 20 pi^2
         #expect(abs((face.surfaceArea ?? 0) - 20 * Double.pi * Double.pi) < 1e-6)
     }
 
@@ -29,7 +30,9 @@ struct MakeFaceExtrasTests {
             Shape.faceFromCone(
                 semiAngle: .pi / 6, radius: 5, uMin: 0, uMax: .pi, vMin: 0, vMax: 10))
         #expect(face.isValid)
-        // (u2 - u1)(R v + v^2 sin(a) / 2) over v in [0, 10] = pi (50 + 25)
+        // (u2 - u1)(R v + v^2 sin(a) / 2) over v in [0, 10], where R is the `radius` argument
+        // (5, the radius at v = 0) and a the semi-angle (pi / 6, sin a = 1/2)
+        // = pi * (5 * 10 + 100 * 0.5 / 2) = pi * (50 + 25)
         #expect(abs((face.surfaceArea ?? 0) - 75 * Double.pi) < 1e-6)
     }
 

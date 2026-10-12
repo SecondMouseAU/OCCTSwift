@@ -52,6 +52,7 @@ struct EdgesToFacesTests {
                 closed: true))
         let skewShape = try #require(Shape.fromWire(skew))
         #expect(Shape.facesFromEdges(skewShape, onlyPlanar: true) == nil)
+        #expect(Shape.facesFromEdges(skewShape, onlyPlanar: false) == nil)
     }
 
     @Test("Edges to faces from two disjoint closed loops (#1506)")
