@@ -55,13 +55,24 @@ struct WireAnalysisTests {
     }
 
     @Test("Analyze circle wire")
-    func analyzeCircle() {
-        let circle = Wire.circle(radius: 5)!
-        let analysis = circle.analyze()
-        #expect(analysis != nil)
-        if let a = analysis {
-            #expect(a.isClosed)
-        }
+    func analyzeCircle() throws {
+        let circle = try #require(Wire.circle(radius: 5))
+        let a = try #require(circle.analyze())
+        // One closed, ordered edge with nothing wrong with it. The two ends of the single edge
+        // coincide to rounding (1.2e-15 apart).
+        #expect(a.edgeCount == 1)
+        #expect(a.isClosed)
+        #expect(a.isOrdered)
+        #expect(!a.hasGaps)
+        #expect(!a.hasSmallEdges)
+        #expect(!a.hasSelfIntersection)
+        #expect(a.minGap < 1e-9)
+        #expect(a.maxGap < 1e-9)
+
+        // Control: the same call on an open line reads not closed.
+        let line = try #require(Wire.line(from: SIMD3(0, 0, 0), to: SIMD3(10, 0, 0)))
+        let open = try #require(line.analyze())
+        #expect(!open.isClosed)
     }
 
     @Test("Analyze self-intersecting bowtie wire")

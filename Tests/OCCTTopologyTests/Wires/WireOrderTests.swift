@@ -53,14 +53,28 @@ struct WireOrderTests {
 
     @Test("Wire order with gaps")
     func wireOrderGaps() throws {
-        // Disconnected edges
+        // Two edges 100+ units apart: nothing to reorder or reverse, so the analysis is a
+        // successful "unchanged" with the edges in their given order, none reversed. (The
+        // status has no gap code; gap size is not reported by this wrapper.)
         let edges: [(start: SIMD3<Double>, end: SIMD3<Double>)] = [
             (start: SIMD3(0, 0, 0), end: SIMD3(10, 0, 0)),
             (start: SIMD3(100, 100, 0), end: SIMD3(200, 100, 0)),
         ]
 
-        let result = WireOrder.analyze(edges: edges)
-        #expect(result != nil)
+        let result = try #require(WireOrder.analyze(edges: edges))
+        #expect(result.status == .unchanged)
+        #expect(result.orderedEdges.map(\.originalIndex) == [0, 1])
+        #expect(result.orderedEdges.map(\.isReversed) == [false, false])
+
+        // Control: a chain handed over back to front is a different answer, a shifted walk that
+        // starts at the second input edge, so a constant status cannot pass.
+        let chain: [(start: SIMD3<Double>, end: SIMD3<Double>)] = [
+            (start: SIMD3(10, 0, 0), end: SIMD3(20, 0, 0)),
+            (start: SIMD3(0, 0, 0), end: SIMD3(10, 0, 0)),
+        ]
+        let shifted = try #require(WireOrder.analyze(edges: chain))
+        #expect(shifted.status == .shifted)
+        #expect(shifted.orderedEdges.map(\.originalIndex) == [1, 0])
     }
 
     @Test("Analyze wire shape")
