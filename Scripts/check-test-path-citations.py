@@ -131,12 +131,19 @@ def citations(root, rows=None):
     return out
 
 
-def check(root):
-    """(dangling, stale): dangling is [(file, line, cited)], stale is [exemption row]."""
+def check(root, cites=None):
+    """(dangling, stale): dangling is [(file, line, cited)], stale is [exemption row].
+
+    `cites` is an unfiltered `citations(root)` the caller already holds, so a report that also
+    counts them scans the tree once; the `file` rows are applied here."""
     rows = load_exemptions(root)
     used = set()
     dangling = []
-    for rel, n, cited in citations(root, rows):
+    if cites is None:
+        cites = citations(root, rows)
+    else:
+        cites = [c for c in cites if not file_exempt(c[0], rows)]
+    for rel, n, cited in cites:
         if os.path.isfile(os.path.join(root, cited)):
             continue
         idx = path_exempt_row(cited, rows)
@@ -148,17 +155,25 @@ def check(root):
     return dangling, stale
 
 
-def map_problems(root):
+def map_problems(root, mover_path=None):
     """[(table, problem)] for every area table under Scripts/test-areas/: the plan
     `move-test-files.py --map` builds, so a file no row names (a new shared helper, a test that
     landed in its area directory) fails here instead of refusing a later apply (#3308)."""
     d = os.path.join(root, "Scripts", "test-areas")
     if not os.path.isdir(d):
         return []
-    spec = importlib.util.spec_from_file_location(
-        "move_test_files", os.path.join(os.path.dirname(os.path.abspath(__file__)), "move-test-files.py"))
-    mover = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(mover)
+    mover_path = mover_path or os.path.join(os.path.dirname(os.path.abspath(__file__)), "move-test-files.py")
+    # A gate that cannot load the plan it runs has not passed: report it as a problem (exit 1)
+    # rather than crash with a traceback or, worse, skip the check.
+    try:
+        spec = importlib.util.spec_from_file_location("move_test_files", mover_path)
+        mover = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mover)
+    except BaseException as e:  # SyntaxError, a missing file, SystemExit from the module itself
+        if isinstance(e, KeyboardInterrupt):
+            raise
+        return [("move-test-files.py", "cannot load %s, so no area table was checked: %s: %s"
+                 % (mover_path, type(e).__name__, e))]
     out = []
     for name in sorted(os.listdir(d)):
         if not name.endswith(".tsv") or name == os.path.basename(EXEMPTIONS):
@@ -174,7 +189,8 @@ def map_problems(root):
 
 
 def report(root):
-    dangling, stale = check(root)
+    cites = citations(root)
+    dangling, stale = check(root, cites)
     maps = map_problems(root)
     for name, p in maps:
         print("AREA TABLE %s: %s" % (name, p))
@@ -183,7 +199,7 @@ def report(root):
     for k, pat, _ in stale:
         print("STALE EXEMPTION %s %s matches no dangling citation; delete the row from %s"
               % (k, pat, EXEMPTIONS))
-    total = len(citations(root))
+    total = len(cites)
     print("check-test-path-citations: %d citation(s) scanned, %d dangling, %d stale exemption(s), "
           "%d area-table problem(s)" % (total, len(dangling), len(stale), len(maps)))
     return 1 if dangling or stale or maps else 0
@@ -286,6 +302,28 @@ def self_test():
              header + test_row + helper_row, 1, {"@@XTests/Area/BarTests.swift": "x"})
     map_case("a malformed table is a problem, not a crash", header + "only\ttwo\n", 1)
     map_case("a tree with no tables is clean", None, 0)
+
+    def load_case(name, mover_text, want):
+        d = _tree({"@@XTests/Area/FooTests.swift": "x", "@@XTests/SIMDTestHelpers.swift": "x",
+                   "Scripts/test-areas/x.tsv": header + test_row + helper_row})
+        path = os.path.join(d, "mover.py")
+        if mover_text is not None:
+            with open(path, "w", encoding="utf-8") as fh:
+                fh.write(mover_text)
+        got = map_problems(d, mover_path=path)
+        cases.append((name, len(got) == want and all("cannot load" in p for _n, p in got),
+                      "problems=%s" % [p[:40] for _n, p in got]))
+
+    load_case("a missing move-test-files.py is a gate failure, not a crash", None, 1)
+    load_case("a move-test-files.py with a syntax error is a gate failure", "def (:\n", 1)
+    load_case("a move-test-files.py that raises on import is a gate failure", "raise RuntimeError('x')\n", 1)
+
+    # One scan serves the report: a precomputed citation list must give check() the same answer.
+    d = _tree({EXEMPTIONS: "file\tdocs/h.md\thistory\n", "docs/h.md": "@@AATests/Old.swift",
+               "docs/a.md": "@@AATests/Gone.swift"})
+    cases.append(("check() with a precomputed scan agrees with its own scan and applies file rows",
+                  check(d) == check(d, citations(d)) and len(check(d, citations(d))[0]) == 1,
+                  "dangling=%d" % len(check(d, citations(d))[0])))
     map_case("the exemptions table is not read as an area table",
              header + test_row + helper_row, 0,
              {"Scripts/test-areas/citation-exemptions.tsv": "file\tdocs/x.md\thistory\n"})
