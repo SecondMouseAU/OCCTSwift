@@ -58,6 +58,16 @@ struct BRepGraphSupplementVertexTests {
         let uid = graph.edgeAddInternalVertex(0, vertexIndex: 0)
         #expect(uid != nil)
         if let uid { #expect(uid >= 0) }
+
+        // A second attachment is a different attachment, so the uid names the attachment and is
+        // not a constant; and an index that names no edge is refused rather than answered with a
+        // uid.
+        let second = graph.edgeAddInternalVertex(0, vertexIndex: 1)
+        #expect(second != nil)
+        if let uid, let second { #expect(second != uid) }
+        #expect(graph.edgeAddInternalVertex(9999, vertexIndex: 0) == nil)
+        // An out-of-range vertex index is deliberately not exercised: it is not refused and
+        // reads past the vertex table, and the process died of SIGSEGV on it (#3394).
     }
 
     // FaceIsNaturalRestriction: honest read of NbWires == 0. p1 normalizes natural-bound faces

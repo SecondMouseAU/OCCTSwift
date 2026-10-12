@@ -19,6 +19,8 @@ struct PackSIMD3Tests {
         let points: [SIMD3<Double>] = []
         let flat = packSIMD3(points)
         #expect(flat.isEmpty)
+        // The control: one point is three scalars, so empty is the input's and not the helper's.
+        #expect(packSIMD3([SIMD3<Double>(1, 2, 3)]) == [1, 2, 3])
     }
 
     @Test("Works generically for a Float scalar")

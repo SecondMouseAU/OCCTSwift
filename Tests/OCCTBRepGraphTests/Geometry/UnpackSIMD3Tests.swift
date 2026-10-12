@@ -20,6 +20,9 @@ struct UnpackSIMD3Tests {
         let flat: [Double] = [1, 2, 3]
         let points: [SIMD3<Double>] = unpackSIMD3(flat, count: 0)
         #expect(points.isEmpty)
+        // The control: the same buffer with `count: 1` is its first triple.
+        let one: [SIMD3<Double>] = unpackSIMD3(flat, count: 1)
+        #expect(one == [SIMD3(1, 2, 3)])
     }
 
     @Test("Only reads the first `count` triples, never buffer entries past it")
