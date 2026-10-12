@@ -1,0 +1,118 @@
+# Open FreeCAD issues labelled "Topic: Fillets" or "3rd party: OCC" and mentioning fillet/chamfer/blend/round, 2026-10-12.
+# number | opened | linked from an OCCT issue or PR (L) | title.  Not triaged: each needs a FreeCAD document.
+33433 | 2026-10-10 | - | Bad fillets at intersections of conic, cylindrical and planar faces
+33432 | 2026-10-10 | - | PartDesign: Fillets fail on several faces but work if applied one by one
+33375 | 2026-10-09 | - | OCC: simple fillet breaks model
+33092 | 2026-09-30 | - | PartDesign: Chamfer with all edges fails
+32885 | 2026-09-22 | - | OCC: Fillet fails depending on orientation of geometry within sketch
+32487 | 2026-09-07 | - | OCC: Broken body with helix & pad
+32486 | 2026-09-07 | - | OCC: Fillet on Helical edges fails sometimes
+32435 | 2026-09-05 | - | OCC: STEP exporter mangles geometry (has workaround)
+32428 | 2026-09-05 | - | Sketcher: Filleted polyline is broken
+32309 | 2026-08-31 | - | OCC: PartDesign Fillet doesn't work for some angles
+32231 | 2026-08-28 | - | PartDesign: Fillet makes strange dent on edge that should not be affected at all (update: chamfers also fail)
+31936 | 2026-08-13 | - | Pocket operation erroneous due to fillets
+31894 | 2026-08-12 | - | OCC: Fillets not closing / strange corner seams
+31868 | 2026-08-10 | - | Chamfer/Fillet: "There are no suitable edges for chamfer or fillet" on suitable edge
+31438 | 2026-07-18 | - | PartDesign: Fillet preview with missing sections
+31048 | 2026-06-29 | - | OCC: Chamfer operation creates invalid geometry
+30886 | 2026-06-20 | L | OCC: Chamfers and fillets break geometry of the PartDesign model
+30858 | 2026-06-18 | - | Issue when patterning a hole intersecting a chamfer edge
+30484 | 2026-05-28 | - | PartDesign: Adding fillet to LinearPatern causes crash
+30244 | 2026-05-17 | - | PartDesign: Chamfer results in broken shape if other edges are touched
+30230 | 2026-05-17 | - | PartDesign: adding chamfer renders incorrect result
+29809 | 2026-05-02 | - | OCC: Not possible to make a chamfer or fillet
+29480 | 2026-04-18 | L | OCC: “Fillet problem on the perpendicular surface to the semicircular face”
+29476 | 2026-04-17 | L | OCC: Fillet causes parts of connected faces to disappear
+29352 | 2026-04-13 | L | PartDesign Fillet and Chamfer: Use All Edges seems broken and not documented well
+29234 | 2026-04-09 | - | PartDesign: Edges of planar faces of angled shape can't be filleted
+28992 | 2026-04-02 | - | PartDesign: Fillet breaks the model of a round pipe when applied to a beveled pipe end
+28850 | 2026-03-30 | - | PartDesign: Outward thickness not working in Arc mode on some rounded edges
+28827 | 2026-03-29 | L | OCC: Chamfer: BRep_API: command not found
+28548 | 2026-03-22 | - | PartDesign: accidents on complex objects when determining chamfers or roundings
+28544 | 2026-03-22 | L | PartDesign: Rendering issue with fillet on polar copied pocket
+28338 | 2026-03-14 | - | Chamfer on Involute Gear causes incorrect Slicing
+27918 | 2026-02-27 | - | Fillets Overlapping, creating zero-thickness model
+27839 | 2026-02-24 | - | PartDesign: Fillet tool intermittently creates non-manifold edges when blending external corners meeting at an angle less than 180°
+27807 | 2026-02-22 | - | OCC: Bugged 3D modeling when adding fillet to revolved square
+27456 | 2026-02-09 | - | OCC: Fillet not working on cylinder when it ends at an edge along the cylinder
+27266 | 2026-01-31 | - | Toponaming: Chamfer loses reference (face) after applying thickness command
+27112 | 2026-01-23 | - | PartDesign: Pacman with incorrect fillet
+26889 | 2026-01-13 | - | Fillet operation fails with "Invalid edge link" after Pocketing nearby geometry
+26587 | 2026-01-01 | - | PartDesign: Pocket fails on a finished part with thickness and fillets
+26152 | 2025-12-14 | - | OCC: Fillet bends inside even with merged bodies
+26039 | 2025-12-09 | L | PartDesign: Chamfers and Fillets Gives Incorrect Result (Possible OCC)
+25916 | 2025-12-03 | - | Fillet malformed after applying.
+25868 | 2025-12-01 | L | OCC: Crash on fillet size change
+25475 | 2025-11-19 | - | PartDesign: Chamfer breaks after unrelated change
+25206 | 2025-11-10 | - | Fillet works on surface but not on its edges - chamfer not working on either - BRep_API: Command not done
+25134 | 2025-11-06 | - | OCC: PartDesign Fillet is crashing in 1.1dev and 1.1RC1 but not in 1.0.x (Regression)
+25067 | 2025-11-04 | L | PartDesign: Fillet or chamfer on a loft breaks the model
+25029 | 2025-11-03 | - | PartDesign: Blank Fillet/Chamfer leads to a crash
+24892 | 2025-10-28 | - | OCC: Failing fillets between tilted faces
+24747 | 2025-10-19 | - | OCC: Fillet rarely fails when intersecting a hole
+24155 | 2025-09-23 | - | Wrong orientation of fillet edge blend leads to invalid solid
+24132 | 2025-09-22 | - | OCC: PartDesign Thickness fail when there are round corners
+23818 | 2025-09-10 | L | PartDesign: Crash when doing a chamfer on an edge connected to a fillet (OCC related)
+23751 | 2025-09-08 | - | PartDesign: Chamfer/Fillet - Hard to find edges with this new preview
+23133 | 2025-08-15 | - | Floating artifacts added after fillet is created
+23065 | 2025-08-12 | - | Some faces disappear before using fillet tool!
+22921 | 2025-08-04 | L | PartDesign: Errors (was: 'Segfault') when attempting a chamfer using "Use All Edges"
+22575 | 2025-07-18 | - | Part: Crash caused by fillet or chamfer
+21937 | 2025-06-11 | - | PartDesign: issues with thickness/chamfer/fillet with compound part
+21729 | 2025-06-02 | - | PartDesign: fillet and chamfer could use 'up to face' option
+21665 | 2025-05-30 | L | OCC: Fillet breaks on tapered surfaces depending on the angle
+21369 | 2025-05-15 | L | PartDesign: Chamfer after AdditiveLoft crashes freecad
+21173 | 2025-05-06 | - | PartDesign: Fillet and Subtractive Pipe are failing to make a fillet.
+21003 | 2025-04-25 | - | OCC: Unable to add "Fillet" to a mirrored element created by a shaped Additive Pipe on a wire
+20889 | 2025-04-20 | - | STEP: export gives wrong results for fillets (OCC related)
+20718 | 2025-04-09 | - | Part: Relevance Part B-spline weight assignment workaround (OCCT related)
+20586 | 2025-04-02 | - | OCC: Create a Fillet one way- it works, but create a fillet another way it fails.
+20408 | 2025-03-24 | - | OCC: Two-distance Chamfer not working on other end of two-sided, symmetrical model
+20148 | 2025-03-12 | - | Sketcher: Add quick assignment of dimension when creating fillets and chamfers
+20085 | 2025-03-09 | L | Freeze on fillet creation
+20071 | 2025-03-08 | - | Part/ PartDesign: Fillets and chamfers are automatically propagated to edges tangent to selection
+19703 | 2025-02-19 | - | Rendering bug due to (apparent) collision between fillet and other geometry
+19702 | 2025-02-19 | - | Fillet on curve surface or edge will crash
+19594 | 2025-02-14 | - | OCC: chamfer and fillet fail on two adjoining edges
+19509 | 2025-02-10 | - | PartDesign: Chamfer appears broken for some shapes
+19383 | 2025-02-03 | - | Filleting on pockets on domes with flat tops is broken
+19184 | 2025-01-21 | - | Part Design and Part Thickness fails for a very simple revolution feature around Z axis, but not for X or Y axes
+19182 | 2025-01-21 | - | Configuration table linked variants are confused about fillet edges
+19055 | 2025-01-14 | - | PartDesign: Fillet causes face not closed and self intersecting wire
+18908 | 2025-01-06 | - | Sketcher: Retain constraints when adding chamfer/fillet (like in LinkBranch)
+18723 | 2024-12-25 | - | Exception in Geometry.cpp when moving cursor around in Sketcher (Works in OCCT v8.7.1 but not in v8.6.3 or v8.7.2dev)
+18573 | 2024-12-17 | - | Fillet on subtracted squared off cylinder creates round and square corners simultaneously
+18556 | 2024-12-16 | L | PartDesign: When chamfer is too large at top of a cylinder, previous versions used to report an error but in 1.1-dev it computes an invalid body
+18383 | 2024-12-09 | - | PartDesign: Fillet: BRep_API: command not done - on a padded circle with a sphere hollow on its side
+18372 | 2024-12-08 | - | FreeCAD v1.0 selects the wrong edges for chamfers and fillets when opening older FreeCAD files.
+18290 | 2024-12-04 | - | Crash when trying to fillet/chamfer this surface
+18169 | 2024-11-28 | - | PartDesign: Fillet looses edges after Pad editing - dimension change
+18082 | 2024-11-22 | - | PartDesign: Fillet does not round correctly (can't reproduce?)
+17845 | 2024-11-13 | - | Radius on curved shape problem
+17829 | 2024-11-12 | - | PartDesign: Chamfering end of helix-created inner thread using grove tool results in broken face
+17682 | 2024-11-05 | - | PartDesign: Fillet results in a wrong shape for a complex body
+17642 | 2024-11-03 | - | Crash when trying to add a fillet (RC2)
+17604 | 2024-11-01 | L | OCC: Chamfer: BRep_API: command not done - on a bspline wall
+17452 | 2024-10-24 | - | PartDesign: Subsequent attempts to create fillets are created incorrectly or get aborted
+16968 | 2024-10-02 | - | OCC: fillet builder where there is a condition that is overzealous in preventing a seam correction (knot reduction) operation from running
+16782 | 2024-09-24 | L | Object created from a chamfer is not solid
+16654 | 2024-09-19 | - | Part: Fillet fails on refined shape, where it succeeds on same edges before refinement
+16101 | 2024-08-28 | - | PartDesign: No TriTangent Fillet Option
+16100 | 2024-08-28 | - | PartDesign: No Face-Face fillet option
+14657 | 2024-06-13 | - | Sketcher: add dimensioning on the go (OVP) in Fillet and Chamfer
+14604 | 2024-06-10 | - | Fillet failing on curved object
+13217 | 2024-03-29 | - | Core: Refine Option doesn't work with Fillet and angled pad
+12522 | 2024-02-20 | L | PartDesign: fillet causes huge memory consumption (OCC Related)
+12240 | 2024-02-02 | L | [Problem] Chamfer001: Failed to create chamfer after modification
+12176 | 2024-01-28 | - | OCC: Arc shape in linear pattern corrupted / twisted (tessellation issue, has workaround)
+11654 | 2023-12-05 | - | OCC: Fillet causes a crash
+11082 | 2023-10-17 | - | PartDesign: Broken fillet (OCC Related)
+8549 | 2023-02-19 | - | OCCT: Fillet is bumpy on edge of cylinder
+5940 | 2022-02-07 | - | Fillet tool not showing which edge/face fails
+5932 | 2022-02-07 | - | PartDesign: Fillet feature fails on solid obtained by revolution
+5799 | 2022-02-07 | - | OCC: fillet fails on cut torus
+5723 | 2022-02-07 | - | Advanced filleting options (variable radius fillet)
+5665 | 2022-02-07 | - | OCC: Result for fillet of the union of cube and sphere is wrong
+5634 | 2022-02-07 | - | OCC: Pad → Fillet → Apply Thickness causes (was: crash) incorrect and invalid geometry (upstream OCC bug)
+5561 | 2022-02-07 | - | Fillet can not round a face (Fixed in OCC 8.1.0)

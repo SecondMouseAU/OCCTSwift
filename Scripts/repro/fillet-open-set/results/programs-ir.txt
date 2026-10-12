@@ -1,0 +1,36 @@
+# program outputs, upstream IR
+
+## pr_ports 1592
+1592 base valid=1 vol=546796.920
+1592 concave edges found: 2
+1592 alone: done=1 valid=1 vol=546994.982
+1592 alone: done=1 valid=1 vol=546994.982
+1592 both: done=1 valid=0 solids=1 vol=545229.612 expected=547193.043
+
+## offprobe pacman, wrench
+done=1
+valid=0 bopfaults=54 solids=0 shells=1 faces=7 vol=3911.7 (input vol 3141.59)
+done=1
+valid=0 bopfaults=16 solids=0 shells=2 faces=48 vol=104773 (input vol 86474.8)
+## histprobe
+fillet vertices: original 8, present unchanged in the result 6, of those IsDeleted()==true: 6
+fillet edges: original 12, present unchanged in the result 7, of those IsDeleted()==true: 7
+fillet faces: original 6, present unchanged in the result 2, of those IsDeleted()==true: 0
+chamfer vertices: original 8, present unchanged in the result 6, of those IsDeleted()==true: 6
+chamfer edges: original 12, present unchanged in the result 7, of those IsDeleted()==true: 7
+chamfer faces: original 6, present unchanged in the result 2, of those IsDeleted()==true: 0
+## occt1494
+polled 0, IsDone() = 1
+## occt1371 (type aliases for the 8.1 headers)
+circle rim: IsDone=true faultyContours=0 BRepCheck=valid selfInterference=clean
+closed B-spline rim: IsDone=true faultyContours=0 BRepCheck=INVALID selfInterference=FAULTY
+  invalid face #1: BRepCheck_UnorientableShape 
+  faults: selfIntersect=3 tooSmallEdge=8 other=1
+periodic B-spline rim: IsDone=true faultyContours=0 BRepCheck=INVALID selfInterference=FAULTY
+  invalid face #1: BRepCheck_UnorientableShape 
+  faults: selfIntersect=4 tooSmallEdge=8 other=1
+four-edge rim: IsDone=true faultyContours=0 BRepCheck=valid selfInterference=clean
+BUG REPRODUCED: closed B-spline rim is invalid in both the clamped and SetPeriodic representations, while the identical four-edge geometry and the circle are valid
+## occt1431 exit code
+/opt/homebrew/bin/bash: line 7: 23512 Segmentation fault: 11     $P/1431_ir
+exit 139
