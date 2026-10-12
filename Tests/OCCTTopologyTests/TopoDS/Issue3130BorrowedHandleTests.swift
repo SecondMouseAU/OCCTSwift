@@ -53,19 +53,34 @@ private final class Probe: NativeHandleOwner {
 struct Issue3130BorrowedHandleTests {
     @Test("a temporary owner is still alive inside the body (observable owner, no OCCT)")
     func temporaryOwnerIsAliveInsideBody() {
-        let aliveInside = Probe.make().withHandle { token in token.ownerIsAlive }
-        #expect(aliveInside, "withHandle must keep a temporary owner alive until the body returns")
+        var escaped: ProbeToken?
+        let aliveInside = Probe.make().withHandle { token -> Bool in
+            escaped = token
+            return token.ownerIsAlive
+        }
+        #expect(
+            aliveInside == true,
+            "withHandle must keep a temporary owner alive until the body returns")
+        // And only until then: once the statement is over nothing holds the owner, so its deinit
+        // has run. A helper that retained the owner for good would leave this true (a leak).
+        #expect(escaped?.ownerIsAlive == false, "withHandle must not keep the owner past the call")
     }
 
     @Test("an owner taken from an array and dropped by the body is still alive in it")
     func arrayElementOwnerIsAliveInsideBody() {
         var probes: [Probe]? = Probe.makeArray()
+        var escaped: ProbeToken?
         let aliveInside = probes![0].withHandle { token -> Bool in
             // The array held the only other reference to the owner; the body drops it.
+            escaped = token
             probes = nil
             return token.ownerIsAlive
         }
-        #expect(aliveInside, "withHandle must keep the element alive after the array drops it")
+        #expect(
+            aliveInside == true, "withHandle must keep the element alive after the array drops it")
+        // Once the call returns the element has no owner left, so it is released.
+        #expect(
+            escaped?.ownerIsAlive == false, "withHandle must not keep the element past the call")
     }
 
     private static func box() -> Shape? {
@@ -106,10 +121,15 @@ struct Issue3130BorrowedHandleTests {
         let b = try #require(Self.box())
         var edges: [Edge]? = b.edges()
         weak let weakEdge = edges?.first
-        let aliveInside = try #require(edges?.first).withHandle { handle -> Bool in
+        let (aliveInside, length) = try #require(edges?.first).withHandle {
+            handle -> (Bool, Double) in
             edges = nil
-            return weakEdge != nil && OCCTEdgeGetLength(handle) > 0
+            return (weakEdge != nil, OCCTEdgeGetLength(handle))
         }
-        #expect(aliveInside, "withHandle must keep the Edge alive until the body returns")
+        #expect(aliveInside == true, "withHandle must keep the Edge alive until the body returns")
+        // The handle read inside the body is the live edge's: a box edge is 10 long.
+        #expect(abs(length - 10) < 1e-9)
+        // After the body nothing holds the Edge any more.
+        #expect(weakEdge == nil)
     }
 }

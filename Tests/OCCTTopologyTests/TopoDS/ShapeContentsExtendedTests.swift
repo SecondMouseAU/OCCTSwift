@@ -21,23 +21,35 @@ struct ShapeContentsExtendedTests {
         }
     }
 
-    @Test func sphereContents() {
-        if let sphere = Shape.sphere(radius: 5) {
-            let c = sphere.contentsExtended()
-            #expect(c.nbFaces >= 1)
-            #expect(c.nbEdges >= 1)
-            // Sphere has seam edges
-            #expect(c.nbWireWithSeam >= 0)
-        }
+    @Test func sphereContents() throws {
+        let sphere = try #require(Shape.sphere(radius: 5))
+        let c = sphere.contentsExtended()
+        // One solid, one shell, one face. Counted as occurrences, so the face's wire reads
+        // 4 edges (the seam twice and the two pole edges) over 8 vertex occurrences, of which
+        // 3 edges and 2 vertices are shared (measured on kernel.6).
+        #expect(c.nbSolids == 1)
+        #expect(c.nbShells == 1)
+        #expect(c.nbFaces == 1)
+        #expect(c.nbWires == 1)
+        #expect(c.nbEdges == 4)
+        #expect(c.nbVertices == 8)
+        #expect(c.nbSharedEdges == 3)
+        #expect(c.nbSharedVertices == 2)
+        // The wire carries the seam edge twice, yet the counter reads 0 on the pinned kernel.
+        #expect(c.nbWireWithSeam == 0)
     }
 
-    @Test func sharedCounts() {
-        if let box = Shape.box(width: 10, height: 10, depth: 10) {
-            let c = box.contentsExtended()
-            // Box shares edges and vertices
-            #expect(c.nbSharedEdges >= 0)
-            #expect(c.nbSharedVertices >= 0)
-        }
+    @Test func sharedCounts() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let c = box.contentsExtended()
+        // Every edge, vertex and face of a box is reached from two or more parents, and the one
+        // shell and solid are counted once each.
+        #expect(c.nbSharedEdges == 12)
+        #expect(c.nbSharedVertices == 8)
+        #expect(c.nbSharedFaces == 6)
+        #expect(c.nbSharedWires == 6)
+        #expect(c.nbSharedShells == 1)
+        #expect(c.nbSharedSolids == 1)
     }
 
     // #855: `Shape.contents` and `Shape.contentsExtended()` each run their own independent
