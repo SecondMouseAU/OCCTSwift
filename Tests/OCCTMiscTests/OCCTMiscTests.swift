@@ -706,7 +706,7 @@ struct MultiLeafCreatedByTests {
 @Suite("v0.143 Construction layer persistence")
 struct ConstructionLayerTests {
     @Test("addConstructionShape tags the shape with the CONSTRUCTION layer")
-    func addConstructionShape() {
+    func addConstructionShape() throws {
         guard let doc = Document.create() else {
             Issue.record("doc nil")
             return
@@ -719,6 +719,17 @@ struct ConstructionLayerTests {
         #expect(id >= 0)
         let labels = doc.constructionShapeLabels
         #expect(labels.contains(id))
+        // Exactly that shape is on the layer, so the layer is not "everything in the document":
+        // a plain shape added afterwards is not tagged, and a second construction shape is.
+        #expect(labels == [id], "\(labels)")
+        let sphere = try #require(Shape.sphere(radius: 3))
+        let plain = doc.addShape(sphere, makeAssembly: false)
+        #expect(plain >= 0 && plain != id)
+        #expect(doc.constructionShapeLabels == [id], "a plain shape must not be tagged")
+        let cylinder = try #require(Shape.cylinder(radius: 2, height: 4))
+        let second = doc.addConstructionShape(cylinder)
+        #expect(second >= 0 && second != id && second != plain)
+        #expect(Set(doc.constructionShapeLabels) == [id, second])
     }
 
     @Test("Materialize all ConstructionContext entities as shapes on the CONSTRUCTION layer")
