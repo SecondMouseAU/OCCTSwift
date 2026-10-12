@@ -1855,44 +1855,82 @@ int32_t OCCTDocumentSaveOCAF(OCCTDocumentRef doc, const char* path)
 //    dereferences a null Storage_HeaderData and faults (measured, uncatchable);
 //  - an XML declaration with no closing `?>` makes LDOM_XmlReader::ReadRecord spin forever
 //    (measured on every prefix of a saved file that ends inside the declaration).
-// So an XML file is passed on only if its declaration closes and its first element is `document`
-// with a format that starts with "Xml". Comments, a DOCTYPE and the declaration are skipped.
-static bool occtOcafXmlHeaderIsRetrievable(std::ifstream& stream)
+// OCCT also loads an XML file with no declaration, a BOM, a DOCTYPE with an internal subset, or a
+// prolog of any size (all measured), so none of those may be refused. The scan therefore accepts
+// whitespace/BOM, then any run of comments, processing instructions (the declaration is one, and
+// must close) and `<!...>` declarations (quotes and `[...]` subsets skipped), then requires the
+// first element to be `<document` with a `format` that starts with "Xml". Any other name is left
+// to OCCT: an unregistered Xml* format answers status 19 without faulting (measured).
+enum class OcafXmlScan
 {
-  stream.clear();
-  stream.seekg(0, std::ios::beg);
-  std::string head(65536, '\0');
-  stream.read(&head[0], static_cast<std::streamsize>(head.size()));
-  head.resize(static_cast<size_t>(stream.gcount()));
+  Accept,
+  Reject,
+  NeedMore
+};
 
-  size_t pos = head.find("<?xml");
-  if (pos == std::string::npos)
-    return false;
+static OcafXmlScan occtOcafScanXmlProlog(const std::string& head)
+{
+  const size_t end = head.size();
+  size_t       pos = 0;
+  if (head.compare(0, 3, "\xEF\xBB\xBF") == 0)
+    pos = 3;
   while (true)
   {
-    pos = head.find('<', pos);
-    if (pos == std::string::npos)
-      return false;
+    while (pos < end && std::isspace(static_cast<unsigned char>(head[pos])))
+      pos++;
+    if (pos >= end)
+      return OcafXmlScan::NeedMore;
+    if (head[pos] != '<')
+      return OcafXmlScan::Reject;
     if (head.compare(pos, 4, "<!--") == 0)
     {
-      pos = head.find("-->", pos + 4);
-      if (pos == std::string::npos)
-        return false;
-      pos += 3;
+      const size_t close = head.find("-->", pos + 4);
+      if (close == std::string::npos)
+        return OcafXmlScan::NeedMore;
+      pos = close + 3;
     }
     else if (head.compare(pos, 2, "<?") == 0)
     {
-      pos = head.find("?>", pos + 2);
-      if (pos == std::string::npos)
-        return false;
-      pos += 2;
+      const size_t close = head.find("?>", pos + 2);
+      if (close == std::string::npos)
+        return OcafXmlScan::NeedMore;
+      pos = close + 2;
     }
     else if (head.compare(pos, 2, "<!") == 0)
     {
-      pos = head.find('>', pos + 2);
-      if (pos == std::string::npos)
-        return false;
-      pos += 1;
+      // DOCTYPE and friends: ends at the first '>' outside quotes and outside a [...] subset.
+      size_t i     = pos + 2;
+      int    depth = 0;
+      char   quote = 0;
+      bool   done  = false;
+      while (i < end && !done)
+      {
+        const char c = head[i];
+        if (quote != 0)
+        {
+          if (c == quote)
+            quote = 0;
+        }
+        else if (c == '"' || c == '\'')
+          quote = c;
+        else if (depth > 0 && head.compare(i, 4, "<!--") == 0)
+        {
+          const size_t close = head.find("-->", i + 4);
+          if (close == std::string::npos)
+            return OcafXmlScan::NeedMore;
+          i = close + 2;
+        }
+        else if (c == '[')
+          depth++;
+        else if (c == ']' && depth > 0)
+          depth--;
+        else if (c == '>' && depth == 0)
+          done = true;
+        i++;
+      }
+      if (!done)
+        return OcafXmlScan::NeedMore;
+      pos = i;
     }
     else
     {
@@ -1900,14 +1938,16 @@ static bool occtOcafXmlHeaderIsRetrievable(std::ifstream& stream)
     }
   }
   static const std::string kRoot = "<document";
+  if (end - pos < kRoot.size() + 1)
+    return OcafXmlScan::NeedMore;
   if (head.compare(pos, kRoot.size(), kRoot) != 0)
-    return false;
+    return OcafXmlScan::Reject;
   const size_t tagEnd = head.find('>', pos);
   if (tagEnd == std::string::npos)
-    return false;
+    return OcafXmlScan::NeedMore;
   const std::string tag = head.substr(pos + kRoot.size(), tagEnd - pos - kRoot.size());
   if (!tag.empty() && !std::isspace(static_cast<unsigned char>(tag[0])) && tag[0] != '/')
-    return false;
+    return OcafXmlScan::Reject;
   size_t at = 0;
   while ((at = tag.find("format", at)) != std::string::npos)
   {
@@ -1922,8 +1962,30 @@ static bool occtOcafXmlHeaderIsRetrievable(std::ifstream& stream)
     while (i < tag.size() && std::isspace(static_cast<unsigned char>(tag[i])))
       i++;
     if (i >= tag.size() || (tag[i] != '"' && tag[i] != '\''))
+      return OcafXmlScan::Reject;
+    return tag.compare(i + 1, 3, "Xml") == 0 ? OcafXmlScan::Accept : OcafXmlScan::Reject;
+  }
+  return OcafXmlScan::Reject;
+}
+
+// Reads from the start of the file in doubling windows, so a prolog of any size is scanned in
+// full (up to a 1 GiB window, past which the file is not an OCAF document in any practical sense).
+static bool occtOcafXmlHeaderIsRetrievable(std::ifstream& stream)
+{
+  static const size_t kMaxWindow = static_cast<size_t>(1) << 30;
+  for (size_t window = 65536; window <= kMaxWindow; window *= 2)
+  {
+    stream.clear();
+    stream.seekg(0, std::ios::beg);
+    std::string head(window, '\0');
+    stream.read(&head[0], static_cast<std::streamsize>(window));
+    const bool atEof = static_cast<size_t>(stream.gcount()) < window;
+    head.resize(static_cast<size_t>(stream.gcount()));
+    const OcafXmlScan result = occtOcafScanXmlProlog(head);
+    if (result == OcafXmlScan::Accept)
+      return true;
+    if (result == OcafXmlScan::Reject || atEof)
       return false;
-    return tag.compare(i + 1, 3, "Xml") == 0;
   }
   return false;
 }
@@ -1946,9 +2008,9 @@ static bool occtOcafFileIsRetrievable(const char* path)
   {
     occ::handle<Storage_BaseDriver> streamDriver;
     const PCDM_TypeOfFileDriver     kind = PCDM::FileDriverType(probe, streamDriver);
-    if (kind == PCDM_TOFD_Unknown)
-      return false;
-    if (kind == PCDM_TOFD_XmlFile)
+    // Unknown covers an XML file with no declaration, which OCCT loads (measured), as well as an
+    // empty or text file, which it faults on; the scan tells them apart.
+    if (kind == PCDM_TOFD_Unknown || kind == PCDM_TOFD_XmlFile)
       return occtOcafXmlHeaderIsRetrievable(probe);
 
     occ::handle<Storage_BaseDriver> driver;

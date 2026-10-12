@@ -588,7 +588,7 @@ public static func loadOCAF(from path: String) -> (document: Document?, status: 
 - **OCCT:** `TDocStd_Application::Open` (with `BinDrivers`, `XmlDrivers`, `BinXCAFDrivers`,
   `XmlXCAFDrivers` registered on the document's own private application instance).
 - **Malformed files:** an empty file, a text file, or a recognised header followed by garbage
-  returns `(nil, .driverFailure)` (#3318), as does an XML file that is not an OCAF document (a root other than `document`, a `format` that is not an `Xml*` format, or an unterminated XML declaration); a missing file returns `(nil, .unknownDocument)`. The
+  returns `(nil, .driverFailure)` (#3318), as does an XML file that is not an OCAF document (a root other than `document`, a `format` that is not an `Xml*` format, or an unterminated declaration, comment or DOCTYPE); an XML file OCCT can load, whatever its prolog, still loads; a missing file returns `(nil, .unknownDocument)`. The
   bridge checks the file's header before OCCT sees it, because OCCT dereferences a null header on
   these inputs and the fault cannot be caught.
 - **Example:**

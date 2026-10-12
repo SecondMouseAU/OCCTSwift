@@ -82,6 +82,9 @@ struct Issue3318LoadOCAFMalformedTests {
             "<?xml version=\"1.0\"?>\n<document format=\"XmlOcaf\"",
             "<?xml",
             "<?xml version=\"1.0\"",
+            "<document format=\"BinOcaf\"><label tag=\"0\"/></document>",
+            "<document format=\"XmlOcaf\"",
+            "<!DOCTYPE document [ <!ENTITY e \"unterminated",
         ]
         for (index, text) in cases.enumerated() {
             expectRefused(write(Array(text.utf8), name: "notocaf\(index).xml"), "xml case \(index)")
@@ -103,13 +106,62 @@ struct Issue3318LoadOCAFMalformedTests {
         let path = NSTemporaryDirectory() + "issue3318_prefix.xml"
         defer { try? FileManager.default.removeItem(atPath: path) }
         // Prefixes that end inside the declaration used to hang LDOM. Only a prefix that reaches the
-        // closing tag (the file less its trailing newline) is a complete document and may load.
-        for length in 0..<full.count {
+        // closing tag is a complete document; the complete file itself (length == count) is included.
+        for length in 0...full.count {
             FileManager.default.createFile(atPath: path, contents: full.prefix(length))
-            let complete = String(decoding: full.prefix(length), as: UTF8.self).hasSuffix(
+            let text = String(decoding: full.prefix(length), as: UTF8.self)
+            let complete = text.trimmingCharacters(in: .whitespacesAndNewlines).hasSuffix(
                 "</document>")
             let (loaded, status) = Document.loadOCAF(from: path)
-            #expect((loaded != nil) == complete, "prefix \(length) of \(full.count): got \(status)")
+            #expect(
+                (loaded != nil && status == .ok) == complete,
+                "prefix \(length) of \(full.count): complete=\(complete), got \(status)")
+        }
+        let (whole, wholeStatus) = Document.loadOCAF(from: src)
+        #expect(
+            whole != nil && wholeStatus == .ok, "the complete saved file must load: \(wholeStatus)")
+    }
+
+    // The guard must never refuse an XML OCAF file OCCT loads. Each variant below was measured to
+    // load (status ok) through TDocStd_Application::Open with the guard absent: a prolog far past
+    // 64 KB, a DOCTYPE with an internal subset (and a '>' inside a quoted entity), a BOM, CRLF,
+    // single-quoted attributes, and no XML declaration at all.
+    @Test("Valid XML OCAF documents with unusual prologs still load")
+    func xmlValidVariants() throws {
+        let doc = try #require(
+            Document.create(format: "XmlOcaf"), "could not create an XmlOcaf document")
+        let label = try #require(doc.createLabel(), "could not create label")
+        #expect(label.setInteger(7))
+        let src = NSTemporaryDirectory() + "issue3318_variants_src.xml"
+        defer { try? FileManager.default.removeItem(atPath: src) }
+        #expect(doc.saveOCAF(to: src) == .ok)
+        let data = try #require(
+            FileManager.default.contents(atPath: src), "the saved file is missing")
+        let original = String(decoding: data, as: UTF8.self)
+        let newline = try #require(original.firstIndex(of: "\n"), "no newline in the saved file")
+        let declaration = String(original[..<newline])
+        let body = String(original[original.index(after: newline)...])
+        let bigComment = "<!--" + String(repeating: "x", count: 100_000) + "-->"
+        let variants: [String] = [
+            declaration + "\n" + bigComment + "\n" + body,
+            declaration + "\n<!-- note -->\n" + body,
+            declaration + "\n<!DOCTYPE document>\n" + body,
+            declaration + "\n<!DOCTYPE document [ <!ELEMENT document ANY> ]>\n" + body,
+            declaration + "\n<!DOCTYPE document [ <!ENTITY e \"a>b\"> ]>\n" + body,
+            declaration + "\n<?note kept?>\n" + body,
+            declaration + "\n"
+                + body.replacingOccurrences(of: "format=\"XmlOcaf\"", with: "format = 'XmlOcaf'"),
+            original.replacingOccurrences(of: "\n", with: "\r\n"),
+            "\u{FEFF}" + original,
+            "\n\n" + original,
+            body,
+        ]
+        for (index, text) in variants.enumerated() {
+            let path = write(Array(text.utf8), name: "variant\(index).xml")
+            defer { try? FileManager.default.removeItem(atPath: path) }
+            let (loaded, status) = Document.loadOCAF(from: path)
+            #expect(status == .ok, "variant \(index): got \(status)")
+            #expect(loaded != nil, "variant \(index) must load")
         }
     }
 
