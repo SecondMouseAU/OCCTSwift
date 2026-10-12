@@ -95,6 +95,11 @@ struct SelectorTests {
         )
 
         #expect(results.isEmpty)
+
+        // The control: the same box, camera and view picked at the centre is hit, so the miss
+        // above is the corner's and not a picker that answers nothing.
+        let centre = selector.pick(at: SIMD2(400, 300), camera: cam, viewSize: SIMD2(800, 600))
+        #expect(centre.first?.shapeId == 1)
     }
 
     @Test("Multiple shapes return correct IDs")
@@ -136,14 +141,24 @@ struct SelectorTests {
 
         let selector = Selector()
         selector.add(shape: box, id: 99)
-        let removed = selector.remove(id: 99)
-        #expect(removed)
 
+        // A new Camera() is orthographic at scale 1000, which a 10 unit box does not show up in,
+        // so this miss used to be the camera's and not the removal's. Perspective, like the other
+        // pick tests here, and a hit before the removal.
         let cam = Camera()
         cam.eye = SIMD3(0, 0, 50)
         cam.center = SIMD3(0, 0, 0)
         cam.up = SIMD3(0, 1, 0)
+        cam.projectionType = .perspective
+        cam.fieldOfView = 45
         cam.aspect = 1.0
+        cam.zRange = (near: 1, far: 1000)
+
+        let before = selector.pick(at: SIMD2(400, 300), camera: cam, viewSize: SIMD2(800, 600))
+        #expect(before.first?.shapeId == 99)
+
+        let removed = selector.remove(id: 99)
+        #expect(removed)
 
         let results = selector.pick(
             at: SIMD2(400, 300),
@@ -189,13 +204,22 @@ struct SelectorTests {
         let box = Shape.box(width: 10, height: 10, depth: 10)!
         selector.add(shape: box, id: 1)
         selector.add(shape: box, id: 2)
-        selector.clearAll()
 
+        // Perspective, as in the other pick tests (a new Camera() is orthographic at scale 1000
+        // and shows a 10 unit box nowhere), with a hit before the clear.
         let cam = Camera()
         cam.eye = SIMD3(0, 0, 50)
         cam.center = SIMD3(0, 0, 0)
         cam.up = SIMD3(0, 1, 0)
+        cam.projectionType = .perspective
+        cam.fieldOfView = 45
         cam.aspect = 1.0
+        cam.zRange = (near: 1, far: 1000)
+
+        let before = selector.pick(at: SIMD2(400, 300), camera: cam, viewSize: SIMD2(800, 600))
+        #expect(before.count == 2)
+
+        selector.clearAll()
 
         let results = selector.pick(
             at: SIMD2(400, 300),

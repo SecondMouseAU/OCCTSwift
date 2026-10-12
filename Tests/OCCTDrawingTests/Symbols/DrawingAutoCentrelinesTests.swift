@@ -50,5 +50,18 @@ struct DrawingAutoCentrelinesTests {
         let result = drawing.addAutoCentrelines(from: box, viewDirection: SIMD3(0, 1, 0))
         #expect(result.added.isEmpty)
         #expect(result.skipped.isEmpty)
+        #expect(drawing.annotations.isEmpty)
+
+        // The control: the same call on a cylinder, which has a revolution axis, adds one.
+        guard let cyl = Shape.cylinder(radius: 5, height: 20),
+            let cylDrawing = Drawing.frontView(of: cyl)
+        else {
+            Issue.record("cylinder setup nil")
+            return
+        }
+        let withAxis = cylDrawing.addAutoCentrelines(
+            from: cyl, viewDirection: SIMD3(0, 1, 0),
+            bounds: (min: SIMD2(-50, -50), max: SIMD2(50, 50)))
+        #expect(withAxis.added.count == 1)
     }
 }
