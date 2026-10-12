@@ -97,8 +97,16 @@ struct DoubleMinusRegressionTests {
         defer { try? FileManager.default.removeItem(at: url) }
         try writer.write(to: url)
         let content = try String(contentsOf: url, encoding: .utf8)
-        let offenders = xmlAttributeValues(in: content).filter { $0.contains("--") }
+        let values = xmlAttributeValues(in: content)
+        let offenders = values.filter { $0.contains("--") }
         #expect(offenders.isEmpty, "malformed double-sign attribute value(s): \(offenders)")
+        // The scan is only worth anything if the golden has negative coordinates to go wrong on:
+        // 78 attribute values start with a minus sign on the pinned kernel, so a golden that
+        // lost them (a drawing that came back empty, a fixture that stopped using negative
+        // positions) would pass the scan above for the wrong reason.
+        let negatives = values.filter { $0.hasPrefix("-") || $0.contains(",-") }
+        #expect(negatives.count >= 60, "only \(negatives.count) negative values to scan")
+        #expect(content.contains("<text"), "the golden's labels reached the file")
     }
 
     @Test("No numeric operand in PDFWriter's content stream contains a double minus sign")
@@ -126,7 +134,13 @@ struct DoubleMinusRegressionTests {
         defer { try? FileManager.default.removeItem(at: url) }
         try writer.write(to: url)
         let content = try String(contentsOf: url, encoding: .utf8)
-        let offenders = dxfNonTextValues(content).filter { $0.contains("--") }
+        let values = dxfNonTextValues(content)
+        let offenders = values.filter { $0.contains("--") }
         #expect(offenders.isEmpty, "malformed double-sign value(s): \(offenders)")
+        // Same non-vacuity floor as the SVG scan: 80 values start with a minus sign on the
+        // pinned kernel, and an empty or all-positive golden would otherwise pass.
+        let negatives = values.filter { $0.hasPrefix("-") }
+        #expect(negatives.count >= 60, "only \(negatives.count) negative values to scan")
+        #expect(content.contains("\nTEXT\n"), "the golden's labels reached the file")
     }
 }

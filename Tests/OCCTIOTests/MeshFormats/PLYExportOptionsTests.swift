@@ -31,15 +31,23 @@ struct PLYExportOptionsTests {
     @Test("Document PLY export")
     func documentPLYExport() throws {
         let box = Shape.box(width: 10, height: 20, depth: 30)!
-        let srcPath = NSTemporaryDirectory() + "swift_test_v59_ply_src.obj"
+        let srcPath = NSTemporaryDirectory() + "swift_test_v59_ply_src_\(UUID()).obj"
+        defer { try? FileManager.default.removeItem(atPath: srcPath) }
         try box.writeOBJ(to: URL(fileURLWithPath: srcPath))
-        let doc = Document.loadOBJ(fromPath: srcPath)!
+        let doc = try #require(Document.loadOBJ(fromPath: srcPath))
+        #expect(doc.freeShapeCount == 1)
 
-        let tmpPath = NSTemporaryDirectory() + "swift_test_v59_ply_doc.ply"
+        let tmpPath = NSTemporaryDirectory() + "swift_test_v59_ply_doc_\(UUID()).ply"
+        defer { try? FileManager.default.removeItem(atPath: tmpPath) }
         let ok = doc.writePLY(to: URL(fileURLWithPath: tmpPath), deflection: 1.0, normals: true)
         #expect(ok)
-        try? FileManager.default.removeItem(atPath: srcPath)
-        try? FileManager.default.removeItem(atPath: tmpPath)
+
+        // The mesh of the box: 24 vertices (4 per face) and 12 triangles, with normals.
+        let text = try String(contentsOfFile: tmpPath, encoding: .ascii)
+        #expect(text.hasPrefix("ply\nformat ascii 1.0"))
+        #expect(text.contains("element vertex 24"))
+        #expect(text.contains("element face 12"))
+        #expect(text.contains("property float nx"))
     }
 
     @Test("Static exporter PLY with options")

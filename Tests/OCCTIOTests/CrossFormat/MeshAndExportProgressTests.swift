@@ -11,39 +11,50 @@ struct MeshAndExportProgressTests {
 
     @Test("Shape.meshWithProgress runs and is observable")
     func meshProgress() throws {
-        guard let box = Shape.box(width: 10, height: 10, depth: 10) else {
-            Issue.record("box construction failed")
-            return
-        }
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let recorder = ProgressRecorder()
         let result = try box.meshWithProgress(
             linearDeflection: 0.5, angularDeflection: 0.5, progress: recorder)
-        // After meshing the shape should be able to produce a mesh via the existing API.
-        let mesh = result.mesh(linearDeflection: 0.5, angularDeflection: 0.5)
-        #expect(mesh != nil)
-        // We don't assert >= 1 events: small box meshing may complete inside one checkpoint
-        // and hence skip Show() entirely on some toolchains. Coverage is via the larger
-        // assemblies in OCCTSwiftTools' downstream tests.
-        _ = recorder.events.count
+        let mesh = try #require(result.mesh(linearDeflection: 0.5, angularDeflection: 0.5))
+        // A box is two triangles per face, with the vertices of each face its own (4 x 6).
+        #expect(mesh.triangleCount == 12)
+        #expect(mesh.vertexCount == 24)
+        // 9 progress calls on the pinned kernel. The earlier comment worried that a small box
+        // might finish inside one checkpoint and report nothing, so the floor is one call, and
+        // every fraction must be a real fraction.
+        #expect(recorder.events.count >= 1)
+        #expect(recorder.events.allSatisfy { $0.fraction >= 0 && $0.fraction <= 1 })
     }
 
+    /// Cancelling a mesh throws `.cancelled`.
+    ///
+    /// This used to accept a completed mesh as well ("meshing may complete before any cancellation
+    /// checkpoint"), so a build that ignored `shouldCancel()` passed. At this deflection the
+    /// pinned kernel polls on the first checkpoint and always cancels (9 progress calls, then the
+    /// throw) (#3332).
     @Test("Shape.meshWithProgress honours cancellation")
     func meshCancellation() throws {
-        guard let box = Shape.box(width: 10, height: 10, depth: 10) else {
-            Issue.record("box construction failed")
-            return
-        }
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let recorder = ProgressRecorder()
         recorder.setCancel(true)
+        var thrown: ImportError?
         do {
             _ = try box.meshWithProgress(
                 linearDeflection: 0.001, angularDeflection: 0.01, progress: recorder)
-            // Acceptable: meshing may complete before any cancellation checkpoint.
-        } catch ImportError.cancelled {
-            // Expected outcome.
-        } catch {
-            Issue.record("Unexpected error: \(error)")
+        } catch let error as ImportError {
+            thrown = error
         }
+        guard case .cancelled? = thrown else {
+            Issue.record("expected ImportError.cancelled, got \(String(describing: thrown))")
+            return
+        }
+        #expect(recorder.events.count >= 1)
+
+        // Control: the same call with nothing cancelling it completes.
+        let free = ProgressRecorder()
+        let done = try box.meshWithProgress(
+            linearDeflection: 0.5, angularDeflection: 0.5, progress: free)
+        #expect(done.mesh(linearDeflection: 0.5, angularDeflection: 0.5)?.triangleCount == 12)
     }
 
     /// Cancels once a wall-clock budget elapses, and counts how often it was asked.
@@ -189,7 +200,17 @@ struct MeshAndExportProgressTests {
             Issue.record("Expected ExportError.invalidShape to be thrown")
         } catch Exporter.ExportError.invalidShape {
             // expected
+        } catch {
+            Issue.record("Expected ExportError.invalidShape, got \(error)")
         }
+        // Rejected before the writer ran, so no file was started.
+        #expect(!FileManager.default.fileExists(atPath: url.path))
+
+        // Control: the same overload writes a valid shape, so the refusal above is about the
+        // shape and not a writer that refuses everything.
+        let box = try #require(Shape.box(width: 5, height: 5, depth: 5))
+        try Exporter.writeSTEP(shape: box, to: url, progress: nil as ImportProgress?)
+        #expect(FileManager.default.fileExists(atPath: url.path))
     }
 
     @Test(
@@ -206,7 +227,17 @@ struct MeshAndExportProgressTests {
             Issue.record("Expected ExportError.invalidShape to be thrown")
         } catch Exporter.ExportError.invalidShape {
             // expected
+        } catch {
+            Issue.record("Expected ExportError.invalidShape, got \(error)")
         }
+        // Rejected before the writer ran, so no file was started.
+        #expect(!FileManager.default.fileExists(atPath: url.path))
+
+        // Control: the same overload writes a valid shape, so the refusal above is about the
+        // shape and not a writer that refuses everything.
+        let box = try #require(Shape.box(width: 5, height: 5, depth: 5))
+        try Exporter.writeIGES(shape: box, to: url, progress: nil as ImportProgress?)
+        #expect(FileManager.default.fileExists(atPath: url.path))
     }
 
     @Test(

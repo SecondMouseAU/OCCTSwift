@@ -64,10 +64,19 @@ struct IGESTests {
         let cylinder = Shape.cylinder(radius: 5, height: 20)!
 
         let data = try cylinder.igesData()
-        #expect(data.count > 0)
 
-        // IGES files start with specific header
-        let headerString = String(data: data.prefix(80), encoding: .ascii) ?? ""
-        #expect(headerString.contains("S") || headerString.count > 0)
+        // IGES is a deck of 80-column records, each with a section letter and a sequence number in
+        // columns 73 to 80. The old check (`contains("S") || count > 0`) was true of any text.
+        let text = try #require(String(data: data, encoding: .ascii))
+        let records = text.split(separator: "\n").map(String.init)
+        #expect(records.count == 87)
+        #expect(records.allSatisfy { $0.count == 80 })
+        #expect(records.first?.hasSuffix("S0000001") == true)
+        // The terminate record counts the sections before it: 1 start, 1 global, 54 directory and
+        // 27 parameter records (the 7047 bytes measured on the pinned kernel are 87 x 81).
+        let terminate = try #require(records.last)
+        #expect(terminate.hasPrefix("S      1G      4D     54P     27"))
+        #expect(terminate.hasSuffix("T0000001"))
+        #expect(data.count == 87 * 81)
     }
 }

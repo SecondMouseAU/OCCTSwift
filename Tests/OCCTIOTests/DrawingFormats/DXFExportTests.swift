@@ -65,21 +65,38 @@ struct DXFExportTests {
             return
         }
         drawing.clearAnnotations()
+        let before = DXFWriter()
+        before.collectFromDrawing(drawing)
+        // A box top view is 8 line segments and no text (measured on the pinned kernel).
+        #expect(before.entityCounts.lines == 8)
+        #expect(before.entityCounts.texts == 0)
+
         drawing.addLinearDimension(from: SIMD2(0, 0), to: SIMD2(20, 0), offset: 10, label: "20.00")
         let w = DXFWriter()
         w.collectFromDrawing(drawing)
-        // 2 extension lines + 1 dim line + body edges
-        #expect(w.entityCounts.lines >= 3)
-        #expect(w.entityCounts.texts >= 1)
+        // 2 extension lines + 1 dimension line on top of the 8 body lines, and the one label.
+        #expect(w.entityCounts.lines == before.entityCounts.lines + 3)
+        #expect(w.entityCounts.texts == 1)
+        #expect(w.entityCounts.circles == 0)
+        #expect(w.entityCounts.arcs == 0)
     }
 
     @Test("Diameter dimension emits CIRCLE element (via radial)")
-    func radialEmitsCircle() {
-        let w = DXFWriter()
-        let drawing = Drawing.topView(of: Shape.box(width: 10, height: 10, depth: 10)!)!
+    func radialEmitsCircle() throws {
+        let cube = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let drawing = try #require(Drawing.topView(of: cube))
+        let before = DXFWriter()
+        before.collectFromDrawing(drawing)
+        #expect(before.entityCounts.circles == 0)
+        #expect(before.entityCounts.texts == 0)
+
         drawing.addRadialDimension(centre: SIMD2(0, 0), radius: 5)
+        let w = DXFWriter()
         w.collectFromDrawing(drawing)
-        #expect(w.entityCounts.circles >= 1)
+        // The radial dimension is one circle, one leader line and one label on top of the body.
+        #expect(w.entityCounts.circles == 1)
+        #expect(w.entityCounts.lines == before.entityCounts.lines + 1)
+        #expect(w.entityCounts.texts == 1)
     }
 
     // #1589: DXFWriter.tables()'s LTYPE table header declared a group-70 max-entry count of 4

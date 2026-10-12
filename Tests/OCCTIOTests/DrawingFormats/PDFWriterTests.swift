@@ -20,17 +20,18 @@ struct PDFWriterTests {
     }
 
     @Test("Box front view PDF contains the expected polyline count")
-    func boxFrontPDF() {
-        guard let box = Shape.box(width: 10, height: 5, depth: 3),
-            let front = Drawing.frontView(of: box)
-        else {
-            Issue.record("setup nil")
-            return
-        }
+    func boxFrontPDF() throws {
+        let box = try #require(Shape.box(width: 10, height: 5, depth: 3))
+        let front = try #require(Drawing.frontView(of: box))
         let writer = PDFWriter()
         writer.collectFromDrawing(front)
         let counts = writer.entityCounts
-        #expect(counts.lines + counts.polylines > 0)
+        // A box front view is 8 line segments and nothing else (measured on the pinned kernel).
+        #expect(counts.lines == 8)
+        #expect(counts.polylines == 0)
+        #expect(counts.circles == 0)
+        #expect(counts.arcs == 0)
+        #expect(counts.texts == 0)
     }
 
     @Test("Hidden-layer content emits a dash pattern")

@@ -8,15 +8,21 @@ import Testing
 @Suite("GLTF Export/Import v121")
 struct GLTFTests {
     @Test func exportGLB() throws {
-        let box = Shape.box(width: 10, height: 10, depth: 10)
-        if let b = box {
-            let tmpPath = NSTemporaryDirectory() + "test_v121.glb"
-            let url = URL(fileURLWithPath: tmpPath)
-            try Exporter.writeGLTF(shape: b, to: url, binary: true, deflection: 0.5)
-            let data = try Data(contentsOf: url)
-            #expect(data.count > 0)
-            try? FileManager.default.removeItem(at: url)
-        }
+        let b = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let url = URL(fileURLWithPath: NSTemporaryDirectory() + "test_v121_\(UUID()).glb")
+        defer { try? FileManager.default.removeItem(at: url) }
+        try Exporter.writeGLTF(shape: b, to: url, binary: true, deflection: 0.5)
+        let data = try Data(contentsOf: url)
+
+        // The binary container's own header: magic "glTF", version 2, and a length field that
+        // is the file's length. `count > 0` was true of any file at all (#3332).
+        #expect(String(data: data.prefix(4), encoding: .ascii) == "glTF")
+        let version = data.subdata(in: 4..<8).withUnsafeBytes { $0.load(as: UInt32.self) }
+        let length = data.subdata(in: 8..<12).withUnsafeBytes { $0.load(as: UInt32.self) }
+        #expect(version == 2)
+        #expect(Int(length) == data.count)
+        // 3216 bytes on the pinned kernel: a JSON chunk and a mesh buffer, not just the header.
+        #expect(data.count > 1000)
     }
 
     @Test func exportGLTF() throws {
@@ -36,32 +42,35 @@ struct GLTFTests {
     }
 
     @Test func roundTripGLB() throws {
-        let box = Shape.box(width: 10, height: 20, depth: 30)
-        if let b = box {
-            let tmpPath = NSTemporaryDirectory() + "test_roundtrip_v121.glb"
-            let url = URL(fileURLWithPath: tmpPath)
-            try Exporter.writeGLTF(shape: b, to: url, binary: true, deflection: 0.1)
+        let b = try #require(Shape.box(width: 10, height: 20, depth: 30))
+        let url = URL(fileURLWithPath: NSTemporaryDirectory() + "test_roundtrip_v121_\(UUID()).glb")
+        defer { try? FileManager.default.removeItem(at: url) }
+        try Exporter.writeGLTF(shape: b, to: url, binary: true, deflection: 0.1)
 
-            // Reimport. GLTF is mesh-based, produces triangulation faces not B-Rep
-            let reimported = Shape.loadGLTF(from: url)
-            // loadGLTF returns non-nil if file was successfully read
-            #expect(reimported != nil)
-            try? FileManager.default.removeItem(at: url)
-        }
+        // Reimport. GLTF is mesh-based: one triangulated face per box face, not a B-Rep solid, and
+        // it spans the box that was written (the reader pads by 1e-7).
+        let reimported = try #require(Shape.loadGLTF(from: url))
+        #expect(reimported.subShapes(ofType: .face).count == 6)
+        let bounds = try #require(reimported.bounds)
+        #expect(vectorDistance(bounds.min, SIMD3(-5, -10, -15)) < 1e-5)
+        #expect(vectorDistance(bounds.max, SIMD3(5, 10, 15)) < 1e-5)
     }
 
     @Test func documentGLTFRoundTrip() throws {
-        let box = Shape.box(width: 5, height: 5, depth: 5)
-        if let b = box {
-            let tmpPath = NSTemporaryDirectory() + "test_doc_v121.glb"
-            let url = URL(fileURLWithPath: tmpPath)
-            try Exporter.writeGLTF(shape: b, to: url, binary: true, deflection: 0.5)
+        let b = try #require(Shape.box(width: 5, height: 5, depth: 5))
+        let url = URL(fileURLWithPath: NSTemporaryDirectory() + "test_doc_v121_\(UUID()).glb")
+        defer { try? FileManager.default.removeItem(at: url) }
+        try Exporter.writeGLTF(shape: b, to: url, binary: true, deflection: 0.5)
 
-            // Load as document. GLTF documents contain mesh data
-            let doc = Document.loadGLTF(from: url)
-            #expect(doc != nil)
-            try? FileManager.default.removeItem(at: url)
-        }
+        // Load as document. A GLTF document holds the mesh: one free shape with six faces
+        // spanning the 5-box.
+        let doc = try #require(Document.loadGLTF(from: url))
+        #expect(doc.freeShapeCount == 1)
+        let shape = try #require(doc.allShapes().first)
+        #expect(shape.subShapes(ofType: .face).count == 6)
+        let bounds = try #require(shape.bounds)
+        #expect(vectorDistance(bounds.min, SIMD3(-2.5, -2.5, -2.5)) < 1e-5)
+        #expect(vectorDistance(bounds.max, SIMD3(2.5, 2.5, 2.5)) < 1e-5)
     }
 
     // #1226 regression: writeGLTF had no guard of any kind, Swift-side or bridge-side, unlike
