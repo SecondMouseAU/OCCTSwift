@@ -20,7 +20,7 @@ struct ShapeCheckTests {
 
     @Test("Valid box passes check")
     func validBoxPasses() throws {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         #expect(box.isValid)
         let result = box.checkResult
         #expect(result.isValid)
@@ -62,7 +62,7 @@ struct ShapeCheckTests {
 
     @Test("Check result has no first error for valid shape")
     func checkResultNoError() throws {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let result = box.checkResult
         #expect(result.firstError == nil)
     }
