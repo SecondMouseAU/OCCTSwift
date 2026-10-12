@@ -53,7 +53,8 @@ struct ContainedInTests {
         if case .failure(.occurrenceOutOfRange(_, let available, let requested)) = graph.resolve(
             pastEnd)
         {
-            #expect(available == 6 && requested == 6)
+            #expect(available == 6)
+            #expect(requested == 6)
         } else {
             Issue.record("occurrence 6 of 6 must not resolve")
         }
