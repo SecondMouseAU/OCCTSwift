@@ -32,7 +32,23 @@ struct Curve3DContinuityQueriesTests {
             #expect(c.isCN(0))
             #expect(c.isCN(1))
             #expect(c.isCN(2))
+            #expect(c.isCN(1000))
+            // A negative order is refused rather than answered (#2862).
+            #expect(!c.isCN(-1))
         }
+
+        // The control: a cubic interpolating BSpline is C2 at its interior knots and no more, so
+        // the same query is not true for every order.
+        guard
+            let spline = Curve3D.interpolate(points: [
+                SIMD3(0, 0, 0), SIMD3(1, 2, 0), SIMD3(3, 1, 1), SIMD3(4, 4, 0),
+            ])
+        else {
+            Issue.record("interpolating curve not built")
+            return
+        }
+        #expect(spline.isCN(2))
+        #expect(!spline.isCN(3))
     }
 
     @Test func reversedParameter() {
