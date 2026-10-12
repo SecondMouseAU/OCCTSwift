@@ -8,7 +8,9 @@ import Testing
 ///
 /// An edge
 /// record reads `tolerance sameParameter sameRange degenerated`; a face record starts with its
-/// NaturalRestriction flag.
+/// NaturalRestriction flag. The record format is the one OCCT 8.0.1's BREP writer produces
+/// (verified on kernel.6); a change returns nil at the `edited != brep` guard and every caller
+/// `#require`s the result, so it fails loudly rather than passing on an unedited shape.
 private func boxWithEdited(_ from: String, _ to: String) -> Shape? {
     guard let box = Shape.box(width: 10, height: 10, depth: 10), let brep = box.toBREPString()
     else { return nil }

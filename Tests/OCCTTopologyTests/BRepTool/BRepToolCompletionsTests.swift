@@ -24,16 +24,6 @@ private func faceWithNaturalRestriction() -> Shape? {
     return Shape.fromBREPString(edited)
 }
 
-/// A box whose every edge record carries tolerance 0.5 (vertices and faces stay at 1e-7), by the
-/// same route: an edge record reads `tolerance sameParameter sameRange degenerated`.
-private func boxWithLooseEdges() -> Shape? {
-    guard let box = Shape.box(width: 10, height: 10, depth: 10), let brep = box.toBREPString()
-    else { return nil }
-    let edited = brep.replacingOccurrences(of: "Ed\n 1e-07 1 1 0", with: "Ed\n 0.5 1 1 0")
-    guard edited != brep else { return nil }
-    return Shape.fromBREPString(edited)
-}
-
 @Suite("v0.126.0, BRep_Tool completions")
 struct BRepToolCompletionsTests {
     @Test("CurveOnSurface returns pcurve of edge on face")
@@ -181,6 +171,7 @@ struct BRepToolCompletionsTests {
         ]
         var onFace = 0
         for vertex in box.subShapes(ofType: .vertex) {
+            // A vertex shape's vertices() is the one-element list holding its own point.
             let point = try #require(vertex.vertices().first)
             let uv = Shape.parametersOnFace(vertex: vertex, face: face)
             if let corner = corners.first(where: { vectorLength($0.point - point) < 1e-9 }) {

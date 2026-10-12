@@ -4,16 +4,6 @@ import Testing
 
 @testable import OCCTSwift
 
-/// A box whose every edge record carries tolerance 0.5 (vertices and faces stay at 1e-7), written
-/// through the BREP text: an edge record reads `tolerance sameParameter sameRange degenerated`.
-private func boxWithLooseEdges() -> Shape? {
-    guard let box = Shape.box(width: 10, height: 10, depth: 10), let brep = box.toBREPString()
-    else { return nil }
-    let edited = brep.replacingOccurrences(of: "Ed\n 1e-07 1 1 0", with: "Ed\n 0.5 1 1 0")
-    guard edited != brep else { return nil }
-    return Shape.fromBREPString(edited)
-}
-
 @Suite("v0.122.0, BRepTools Statics")
 struct BRepToolsStaticsTests {
     @Test("Clean triangulation")
