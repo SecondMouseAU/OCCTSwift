@@ -19,8 +19,21 @@ struct Issue486Curve2DBatchTests {
 
     @Test("empty parameters give an empty result, not one padded with zeroes")
     func emptyParametersGiveEmptyResult() {
-        guard let curve = bspline() else { return }
+        guard let curve = bspline() else {
+            Issue.record("interpolating curve not built")
+            return
+        }
         #expect(curve.evaluateGrid([]).isEmpty)
         #expect(curve.evaluateGridD1([]).isEmpty)
+
+        // The control: two parameters give the curve's own end points, so an evaluator that
+        // always answered nothing cannot pass.
+        let pts = curve.evaluateGrid([curve.domain.lowerBound, curve.domain.upperBound])
+        #expect(pts.count == 2)
+        if pts.count == 2 {
+            #expect(abs(pts[0].x) < 1e-9 && abs(pts[0].y) < 1e-9, "start \(pts[0])")
+            #expect(abs(pts[1].x - 10) < 1e-9 && abs(pts[1].y) < 1e-9, "end \(pts[1])")
+        }
+        #expect(curve.evaluateGridD1([curve.domain.lowerBound]).count == 1)
     }
 }

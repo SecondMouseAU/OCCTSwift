@@ -1,3 +1,4 @@
+import Foundation
 import Testing
 
 @testable import OCCTSwift
@@ -31,10 +32,23 @@ struct Issue2884EllipseConverterRangeTests {
     }
 
     @Test("an in-range sweep still converts, including exactly one full turn")
-    func inRangeStillConverts() {
-        #expect(Self.ellipse(0, .pi) != nil)
-        #expect(Self.ellipse(0, 2 * .pi) != nil)
-        #expect(Self.ellipse(-1, 1) != nil)
+    func inRangeStillConverts() throws {
+        // Converting is not the claim: each curve is the arc asked for, so its end points are
+        // the ellipse's at u1 and u2 (x = 5 cos u, y = 3 sin u) and the middle sample is on it.
+        for (u1, u2) in [(0.0, Double.pi), (0.0, 2 * Double.pi), (-1.0, 1.0)] {
+            let c = try #require(Self.ellipse(u1, u2), "(\(u1), \(u2)) converts")
+            let d = c.domain
+            let p0 = c.point(at: d.lowerBound)
+            let p1 = c.point(at: d.upperBound)
+            #expect(abs(p0.x - 5 * cos(u1)) < 1e-9 && abs(p0.y - 3 * sin(u1)) < 1e-9, "start \(p0)")
+            #expect(abs(p1.x - 5 * cos(u2)) < 1e-9 && abs(p1.y - 3 * sin(u2)) < 1e-9, "end \(p1)")
+            for k in 1..<4 {
+                let t = d.lowerBound + (d.upperBound - d.lowerBound) * Double(k) / 4
+                let p = c.point(at: t)
+                let r = (p.x * p.x) / 25 + (p.y * p.y) / 9
+                #expect(abs(r - 1) < 1e-6, "sample \(p) is off the ellipse, x2/25 + y2/9 = \(r)")
+            }
+        }
     }
 
     @Test("every out-of-range sweep is refused")

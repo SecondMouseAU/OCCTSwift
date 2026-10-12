@@ -71,25 +71,45 @@ struct Curve2DConicFactoryParityTests {
     }
 
     @Test("Hyperbola: a minor radius larger than the major is accepted by both families")
-    func hyperbolaMinorLargerThanMajorAcceptedByBoth() {
+    func hyperbolaMinorLargerThanMajorAcceptedByBoth() throws {
         // A hyperbola puts no ordering on its radii, unlike an ellipse. Pinned so the shared
         // precondition is not tightened into the ellipse's rule by a later pass.
-        #expect(Curve2D.hyperbola(center: Self.center, majorRadius: 3, minorRadius: 6) != nil)
-        #expect(
+        let direct = try #require(
+            Curve2D.hyperbola(center: Self.center, majorRadius: 3, minorRadius: 6))
+        let gce = try #require(
             Curve2D.hyperbolaFromCenterDir(
                 center: Self.center, direction: Self.xDir,
-                majorRadius: 3, minorRadius: 6) != nil)
+                majorRadius: 3, minorRadius: 6))
+        // P(u) = C + a cosh(u) X + b sinh(u) Y, so the vertex is `major` along X and u = 1 is
+        // (3 cosh 1, 6 sinh 1) from the centre: the 6 is the minor radius, not the major's.
+        let want0 = Self.center + SIMD2(3, 0)
+        let want1 = Self.center + SIMD2(3 * cosh(1.0), 6 * sinh(1.0))
+        for (name, c) in [("direct", direct), ("gce", gce)] {
+            #expect(vectorDistance(c.point(at: 0), want0) < 1e-9, "\(name) vertex")
+            #expect(vectorDistance(c.point(at: 1), want1) < 1e-9, "\(name) at u = 1")
+        }
     }
 
     @Test("Ellipse: equal radii are accepted by both families")
-    func ellipseEqualRadiiAcceptedByBoth() {
+    func ellipseEqualRadiiAcceptedByBoth() throws {
         // gp_Elips2d documents MajorRadius == MinorRadius as valid, so the shared precondition
         // must reject only minor > major, not minor >= major.
-        #expect(Curve2D.ellipse(center: Self.center, majorRadius: 5, minorRadius: 5) != nil)
-        #expect(
+        let direct = try #require(
+            Curve2D.ellipse(center: Self.center, majorRadius: 5, minorRadius: 5))
+        let gce = try #require(
             Curve2D.ellipseFromCenterDir(
                 center: Self.center, direction: Self.xDir,
-                majorRadius: 5, minorRadius: 5) != nil)
+                majorRadius: 5, minorRadius: 5))
+        // An ellipse of equal radii is the circle of that radius about the same centre: every
+        // sample is 5 from it, and the parameter-0 point is `major` along X.
+        for (name, c) in [("direct", direct), ("gce", gce)] {
+            #expect(vectorDistance(c.point(at: 0), Self.center + SIMD2(5, 0)) < 1e-9, "\(name)")
+            for t in stride(from: 0.0, to: 2 * Double.pi, by: Double.pi / 5) {
+                #expect(
+                    abs(vectorDistance(c.point(at: t), Self.center) - 5) < 1e-9,
+                    "\(name) at \(t)")
+            }
+        }
     }
 
     @Test("Valid ellipse radii still build the identical curve in both families")

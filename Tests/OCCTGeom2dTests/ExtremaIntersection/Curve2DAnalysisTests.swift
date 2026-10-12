@@ -26,6 +26,20 @@ struct Curve2DAnalysisTests {
         let seg2 = Curve2D.segment(from: SIMD2(0, 5), to: SIMD2(10, 5))!
         let ints = seg1.intersections(with: seg2)
         #expect(ints.isEmpty)
+
+        // The control: a vertical segment through both crosses each of them once, at x = 5.
+        // Without it an `intersections` that always answered nothing passes the parallel pair.
+        let vertical = Curve2D.segment(from: SIMD2(5, -5), to: SIMD2(5, 10))!
+        let a = seg1.intersections(with: vertical)
+        let b = seg2.intersections(with: vertical)
+        #expect(a.count == 1)
+        #expect(b.count == 1)
+        if let p = a.first {
+            #expect(abs(p.point.x - 5) < 1e-9 && abs(p.point.y) < 1e-9, "got \(p.point)")
+        }
+        if let p = b.first {
+            #expect(abs(p.point.x - 5) < 1e-9 && abs(p.point.y - 5) < 1e-9, "got \(p.point)")
+        }
     }
 
     @Test("Project point onto segment")

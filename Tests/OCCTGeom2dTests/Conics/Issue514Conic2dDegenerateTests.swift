@@ -139,19 +139,35 @@ struct Issue514Conic2dDegenerateTests {
                 radius: 0) == nil)
     }
 
-    @Test func edge2dConstructorsAcceptValidDimensions() {
-        #expect(
+    @Test func edge2dConstructorsAcceptValidDimensions() throws {
+        // Built and measured: the box of each edge is the one its dimensions describe.
+        func box(_ s: Shape) throws -> (min: SIMD3<Double>, max: SIMD3<Double>) {
+            try #require(s.bounds)
+        }
+        let ellipse = try #require(
             Shape.edge2dEllipse(
                 center: SIMD2(0, 0), direction: SIMD2(1, 0),
-                majorRadius: 5, minorRadius: 3) != nil)
-        #expect(
+                majorRadius: 5, minorRadius: 3))
+        let e = try box(ellipse)
+        #expect(abs(e.min.x + 5) < 1e-4 && abs(e.max.x - 5) < 1e-4, "x \(e.min.x)...\(e.max.x)")
+        #expect(abs(e.min.y + 3) < 1e-4 && abs(e.max.y - 3) < 1e-4, "y \(e.min.y)...\(e.max.y)")
+
+        // Half the ellipse, u from 0 to pi: the upper half, x across 5 and y from 0 to 3.
+        let arc = try #require(
             Shape.edge2dEllipseArc(
                 center: SIMD2(0, 0), direction: SIMD2(1, 0),
-                majorRadius: 5, minorRadius: 3, u1: 0, u2: .pi) != nil)
-        #expect(
+                majorRadius: 5, minorRadius: 3, u1: 0, u2: .pi))
+        let a = try box(arc)
+        #expect(abs(a.min.x + 5) < 1e-4 && abs(a.max.x - 5) < 1e-4, "x \(a.min.x)...\(a.max.x)")
+        #expect(abs(a.min.y) < 1e-4 && abs(a.max.y - 3) < 1e-4, "y \(a.min.y)...\(a.max.y)")
+
+        let circle = try #require(
             Shape.edge2dFullCircle(
                 center: SIMD2(0, 0), direction: SIMD2(1, 0),
-                radius: 5) != nil)
+                radius: 5))
+        let c = try box(circle)
+        #expect(abs(c.min.x + 5) < 1e-4 && abs(c.max.x - 5) < 1e-4)
+        #expect(abs(c.min.y + 5) < 1e-4 && abs(c.max.y - 5) < 1e-4)
     }
 
     // MARK: - IntAna2d_Conic (Conic2D)
