@@ -65,6 +65,10 @@ struct GeomFillSectionPlacementTests {
             )
             return
         }
-        #expect(result.distance >= 0)
+        // Placed as in `placeSectionOnPath`: the radius 2 circle is 2 from the path, at path
+        // parameter 0, a quarter turn.
+        #expect(abs(result.distance - 2) < 1e-9, "distance \(result.distance)")
+        #expect(abs(result.angle - .pi / 2) < 1e-9, "angle \(result.angle)")
+        #expect(abs(result.parameterOnPath) < 1e-9)
     }
 }

@@ -25,6 +25,13 @@ struct ShapeRevolutionAxesTests {
             return
         }
         #expect(box.revolutionAxes().isEmpty)
+
+        // The control: the cylinder of the sibling test has one, so an empty answer is the box's.
+        guard let cyl = Shape.cylinder(radius: 5, height: 10) else {
+            Issue.record("cylinder nil")
+            return
+        }
+        #expect(cyl.revolutionAxes().count == 1)
     }
 
     @Test("Torus yields one deduplicated axis")

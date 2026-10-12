@@ -48,5 +48,15 @@ struct BRepLibFindSurfaceTests {
             let existed = wire.findSurfaceExisted(onlyPlane: true)
             #expect(existed)
         }
+
+        // The control: a free rectangle has no face carrying a surface, so `FindSurface` makes
+        // the plane and does not find one.
+        guard let rect = Wire.rectangle(width: 10, height: 10),
+            let free = Shape.fromWire(rect)
+        else {
+            Issue.record("free wire fixture")
+            return
+        }
+        #expect(!free.findSurfaceExisted(onlyPlane: true))
     }
 }

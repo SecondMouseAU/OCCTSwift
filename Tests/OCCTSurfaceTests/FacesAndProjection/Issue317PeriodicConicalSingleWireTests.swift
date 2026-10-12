@@ -53,5 +53,14 @@ struct Issue317PeriodicConicalSingleWireTests {
             return
         }
         #expect(face.isValid)
+        // And it is the face asked for: one face, the apex cap of the cone inside the ring, whose
+        // area is the cone's lateral area from the apex to the ring (pi r l, 0.2872 measured on
+        // the pinned kernel) and which spans the ring's 0.36 in y.
+        #expect(face.subShapeCount(ofType: .face) == 1)
+        let area = face.surfaceArea ?? -1
+        #expect(abs(area - 0.28718630) < 1e-4, "area \(area)")
+        if let b = face.bounds {
+            #expect(abs(b.max.y - b.min.y - 0.3547) < 1e-3, "y extent \(b.max.y - b.min.y)")
+        }
     }
 }
