@@ -7,16 +7,20 @@ import Testing
 @Suite("Shape extras v0.112")
 struct ShapeExtrasV112Tests {
 
-    @Test func childAccess() {
-        if let box = Shape.box(width: 10, height: 10, depth: 10) {
-            // A box solid should have at least one child (shell)
-            let nbChildren = box.nbChildren
-            if nbChildren > 0 {
-                if let child = box.child(at: 0) {
-                    #expect(child.isValid)
-                }
-            }
-        }
+    @Test func childAccess() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        // A box solid has one child, its shell, and the shell has the six faces.
+        #expect(box.nbChildren == 1)
+        let child = try #require(box.child(at: 0))
+        #expect(child.isValid)
+        #expect(child.isShell)
+        #expect(child.faces().count == 6)
+        // One past the last child is nil, not a wrapped or stale handle.
+        #expect(box.child(at: 1) == nil)
+        // The shell's children are its faces.
+        #expect(child.nbChildren == 6)
+        let face = try #require(child.child(at: 0))
+        #expect(face.isFace)
     }
 
     @Test func lockedState() {
@@ -70,21 +74,34 @@ struct ShapeExtrasV112Tests {
         }
     }
 
-    @Test func oriented() {
-        if let box = Shape.box(width: 10, height: 10, depth: 10) {
-            if let rev = box.oriented(1) {  // REVERSED
-                #expect(rev.isValid)
-            }
-        }
+    @Test func oriented() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        #expect(box.orientationValue == 0)
+        #expect(abs(box.signedVolume - 1000) < 1e-6)
+        let rev = try #require(box.oriented(1))  // REVERSED
+        #expect(rev.isValid)
+        #expect(rev.orientationValue == 1)
+        // A reversed solid reads an inside-out volume: the sign is the orientation.
+        #expect(abs(rev.signedVolume + 1000) < 1e-6)
+        // The receiver is untouched.
+        #expect(box.orientationValue == 0)
+        #expect(abs(box.signedVolume - 1000) < 1e-6)
     }
 
-    @Test func empty() {
-        if let compound = Shape.empty(type: 0) {
-            #expect(compound.isCompound)
-        }
-        if let shell = Shape.empty(type: 3) {
-            #expect(shell.isShell)
-        }
+    @Test func empty() throws {
+        let compound = try #require(Shape.empty(type: 0))
+        #expect(compound.isCompound)
+        #expect(compound.nbChildren == 0)
+        #expect(!compound.isNull)
+        let solid = try #require(Shape.empty(type: 2))
+        #expect(solid.isSolid)
+        #expect(solid.nbChildren == 0)
+        let shell = try #require(Shape.empty(type: 3))
+        #expect(shell.isShell)
+        #expect(shell.nbChildren == 0)
+        let wire = try #require(Shape.empty(type: 5))
+        #expect(wire.shapeType == .wire)
+        #expect(wire.nbChildren == 0)
     }
 
     @Test func shapeTypeQueries() {
@@ -120,24 +137,33 @@ struct ShapeExtrasV112Tests {
         }
     }
 
-    @Test func shellFromFaces() {
-        if let box = Shape.box(width: 10, height: 10, depth: 10) {
-            let faces = box.subShapes(ofType: .face)
-            if faces.count > 0 {
-                if let shell = Shape.shellFromFaces(Array(faces.prefix(2))) {
-                    #expect(shell.isShell)
-                }
-            }
-        }
+    @Test func shellFromFaces() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let faces = box.subShapes(ofType: .face)
+        #expect(faces.count == 6)
+        let shell = try #require(Shape.shellFromFaces(Array(faces.prefix(2))))
+        #expect(shell.isShell)
+        #expect(shell.faces().count == 2)
+        // Two of the six 10 x 10 faces.
+        #expect(abs((shell.surfaceArea ?? 0) - 200) < 1e-6)
+        // And all six give the box's own shell: closed area, closed volume.
+        let all = try #require(Shape.shellFromFaces(faces))
+        #expect(all.faces().count == 6)
+        #expect(abs((all.surfaceArea ?? 0) - 600) < 1e-6)
     }
 
-    @Test func isCompoundOnCompound() {
-        if let box = Shape.box(width: 10, height: 10, depth: 10),
-            let sphere = Shape.sphere(radius: 5)
-        {
-            if let c = Shape.compound([box, sphere]) {
-                #expect(c.isCompound)
-            }
-        }
+    @Test func isCompoundOnCompound() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let sphere = try #require(Shape.sphere(radius: 5))
+        let c = try #require(Shape.compound([box, sphere]))
+        #expect(c.isCompound)
+        #expect(c.nbChildren == 2)
+        #expect(c.subShapes(ofType: .solid).count == 2)
+        // 1000 + 4/3 pi 5^3
+        #expect(abs((c.volume ?? 0) - (1000 + 500 * Double.pi / 3)) < 1e-6)
+        // A compound of that compound is a compound of one child, not a flattened copy.
+        let outer = try #require(Shape.compound([c]))
+        #expect(outer.isCompound)
+        #expect(outer.nbChildren == 1)
     }
 }
