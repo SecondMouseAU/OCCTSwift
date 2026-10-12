@@ -369,6 +369,8 @@ jobs:
       # all of them historical and now listed with a reason in
       # Scripts/test-areas/citation-exemptions.tsv. The gate is what makes the test-directory
       # reorganisation (#3147) checkable: a citation the move tool missed fails here.
+      # #3308: it also runs the move tool's plan for every area table, so a file no row names
+      # (a new shared helper) fails here rather than at the next --apply.
       - name: check-test-path-citations.py --self-test
         if: '!cancelled()'
         run: python3 Scripts/check-test-path-citations.py --self-test

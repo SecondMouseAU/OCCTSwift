@@ -89,6 +89,7 @@ Tests/OCCTMathTests/PolynomialTests.swift	Tests/OCCTMathTests/Polynomials/Polyno
 Tests/OCCTMathTests/PrecisionTests.swift	Tests/OCCTMathTests/Utilities/PrecisionTests.swift	Utilities	-	Precision, Quantity_Period, Intrv intervals and GeomLib_LogSample
 Tests/OCCTMathTests/QuaternionInterpolationTests.swift	Tests/OCCTMathTests/Transforms/QuaternionInterpolationTests.swift	Transforms	-	gp_Trsf/gp_GTrsf, Geom_Transformation, shape/curve/surface mirror, scale, translate and quaternion rotation
 Tests/OCCTMathTests/QuaternionTests.swift	Tests/OCCTMathTests/Transforms/QuaternionTests.swift	Transforms	-	gp_Trsf/gp_GTrsf, Geom_Transformation, shape/curve/surface mirror, scale, translate and quaternion rotation
+Tests/OCCTMathTests/SIMDTestHelpers.swift	Tests/OCCTMathTests/SIMDTestHelpers.swift	(stays)	-	shared helper with no tests; stays at the target root so every area sees it
 Tests/OCCTMathTests/ShapeMirrorTests.swift	Tests/OCCTMathTests/Transforms/ShapeMirrorTests.swift	Transforms	-	gp_Trsf/gp_GTrsf, Geom_Transformation, shape/curve/surface mirror, scale, translate and quaternion rotation
 Tests/OCCTMathTests/ShapeScaleAboutPointTests.swift	Tests/OCCTMathTests/Transforms/ShapeScaleAboutPointTests.swift	Transforms	-	gp_Trsf/gp_GTrsf, Geom_Transformation, shape/curve/surface mirror, scale, translate and quaternion rotation
 Tests/OCCTMathTests/ShapeTranslateByPointsTests.swift	Tests/OCCTMathTests/Transforms/ShapeTranslateByPointsTests.swift	Transforms	-	gp_Trsf/gp_GTrsf, Geom_Transformation, shape/curve/surface mirror, scale, translate and quaternion rotation
@@ -104,3 +105,4 @@ Tests/OCCTMathTests/TrsfModificationTests.swift	Tests/OCCTMathTests/Transforms/T
 Tests/OCCTMathTests/UzawaTests.swift	Tests/OCCTMathTests/Solvers/UzawaTests.swift	Solvers	-	math_* root finders, minimizers, nonlinear systems, integration and global optimisation
 Tests/OCCTMathTests/Vector2DMathTests.swift	Tests/OCCTMathTests/GpPrimitives/Vector2DMathTests.swift	GpPrimitives	-	gp_Dir, gp_Vec and 2D/3D vector math, ElCLib/ElSLib evaluation, line and plane analytics
 Tests/OCCTMathTests/Vector3DMathTests.swift	Tests/OCCTMathTests/GpPrimitives/Vector3DMathTests.swift	GpPrimitives	-	gp_Dir, gp_Vec and 2D/3D vector math, ElCLib/ElSLib evaluation, line and plane analytics
+Tests/OCCTMathTests/VectorOps/Issue2759VectorOpsTests.swift	Tests/OCCTMathTests/VectorOps/Issue2759VectorOpsTests.swift	VectorOps	-	vector operations and matrix values the package computes itself; landed directly in its area, so the row keeps its path
