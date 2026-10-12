@@ -19,13 +19,28 @@ struct FuseAndBlendTests {
         }
     }
 
+    // A 20 x 20 x 10 slab (x, y in [-20, 0], z in [-5, 5]) and a r = 5, h = 15 cylinder on the
+    // origin overlap in a quarter of the cylinder's lower 5 mm. The plain union is
+    // 4000 + 1178.097 - 98.175 = 5079.922...; the r = 1 blend adds fillet material along the
+    // concave seam, measured 5085.8656... on the pinned kernel (v4.0.0-kernel.6).
     @Test("Fuse box and cylinder with blend")
-    func fuseBlendBoxCylinder() {
-        let box = Shape.box(width: 20, height: 20, depth: 10)!.translated(by: SIMD3(-10, -10, 0))!
-        let cyl = Shape.cylinder(radius: 5, height: 15)!
-        let result = box.fusedAndBlended(with: cyl, radius: 1.0)
-        #expect(result != nil)
-        if let r = result { #expect(r.isValid) }
+    func fuseBlendBoxCylinder() throws {
+        let box = try #require(
+            Shape.box(width: 20, height: 20, depth: 10)?.translated(by: SIMD3(-10, -10, 0)))
+        let cyl = try #require(Shape.cylinder(radius: 5, height: 15))
+        let plain = try #require(box.union(cyl))
+        let plainVolume = try #require(plain.volume)
+        #expect(abs(plainVolume - 5079.922474671491) < 1e-6)
+
+        let result = try #require(box.fusedAndBlended(with: cyl, radius: 1.0))
+        #expect(result.isValid)
+        let volume = try #require(result.volume)
+        #expect(abs(volume - 5085.865669986801) < 1e-4)
+        // The blend adds material at the concave seam, it does not remove any.
+        #expect(volume > plainVolume)
+        // Five more faces than the plain union: the blend strips.
+        #expect(result.faces().count == 14)
+        #expect(plain.faces().count == 9)
     }
 
     @Test("Cut and blend")

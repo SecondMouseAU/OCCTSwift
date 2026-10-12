@@ -302,26 +302,32 @@ struct Issue612FilletContourSelection {
     }
 
     @Test("A variable fillet on an edge Add() refuses fails, where it used to SIGSEGV")
-    func variableFilletOnARefusedEdgeDoesNotCrash() {
-        guard let shell = FilletTestFixtures.openShell() else {
-            Issue.record("open shell fixture failed to build")
-            return
-        }
+    func variableFilletOnARefusedEdgeDoesNotCrash() throws {
+        let shell = try #require(
+            FilletTestFixtures.openShell(), "open shell fixture failed to build")
 
-        // Reaching the end of this loop at all is the assertion: SetRadius(law, 0, 1) on a refused
-        // edge is the unchecked low side of OCCT's contour index, and it used to take the whole
-        // test process down with SIGSEGV, uncatchable, so no catch(...) on the bridge side helps.
-        var refusedCount = 0
+        // Reaching the end of this loop at all is part of the assertion: SetRadius(law, 0, 1) on
+        // a refused edge is the unchecked low side of OCCT's contour index, and it used to take
+        // the whole test process down with SIGSEGV, uncatchable, so no catch(...) on the bridge
+        // side helps. What it returns is pinned too: exactly the four free-boundary edges the
+        // census measured (`FilletTestFixtures.declinedIndices`) come back nil, and every other
+        // edge builds a shell of the measured area (492.50 for edges 0-3, 492.62 for 4, 5, 7, 8,
+        // kernel.6; the open shell is 500 before).
+        var refused: [Int] = []
         for index in shell.edges().indices {
-            if shell.filletedVariable(
-                edgeIndex: index,
-                radiusProfile: [(0.0, 1.0), (1.0, 2.0)]) == nil
-            {
-                refusedCount += 1
+            guard
+                let result = shell.filletedVariable(
+                    edgeIndex: index,
+                    radiusProfile: [(0.0, 1.0), (1.0, 2.0)])
+            else {
+                refused.append(index)
+                continue
             }
+            let area = try #require(result.surfaceArea)
+            let expected = index <= 3 ? 492.50024 : 492.62131
+            #expect(abs(area - expected) < 1e-3, "edge \(index) area \(area)")
         }
-        // At least one edge of this shell is one OCCT declines, and it now fails cleanly.
-        #expect(refusedCount > 0)
+        #expect(refused == FilletTestFixtures.declinedIndices.sorted())
     }
 
     // MARK: - Preconditions still reject

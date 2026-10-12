@@ -83,17 +83,24 @@ struct Issue633BlendedEdgesDuplicateReport {
     // MARK: - No duplicates: empty report
 
     @Test("distinct edge indices report no overwritten entries")
-    func distinctIndicesReportNoOverwrites() {
-        guard let box = Shape.box(width: 10, height: 10, depth: 10) else {
-            Issue.record("box fixture failed to build")
-            return
-        }
-        guard let report = box.blendedEdgesWithReport([(0, 1.0), (1, 2.0), (2, 0.5)]) else {
-            Issue.record("blendedEdgesWithReport unexpectedly returned nil")
-            return
-        }
+    func distinctIndicesReportNoOverwrites() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let report = try #require(box.blendedEdgesWithReport([(0, 1.0), (1, 2.0), (2, 0.5)]))
         #expect(report.overwrittenDuplicateIndices.isEmpty)
         #expect(report.declinedEdgeIndices.isEmpty)
+
+        // Nothing was overwritten, so all three radii took effect: the shape is the three-edge
+        // blend (989.0624884..., kernel.6), smaller than any single-edge one, and the same shape
+        // the non-reporting sibling builds.
+        let volume = try #require(report.shape.volume)
+        #expect(abs(volume - 989.0624884756555) < 1e-6)
+        #expect(report.shape.isValid)
+        let plain = try #require(box.blendedEdges([(0, 1.0), (1, 2.0), (2, 0.5)]))
+        #expect(abs(volume - (plain.volume ?? -1)) < 1e-9)
+        for (index, radius) in [(0, 1.0), (1, 2.0), (2, 0.5)] {
+            let alone = try #require(box.blendedEdges([(index, radius)])?.volume)
+            #expect(volume < alone)
+        }
     }
 
     // MARK: - declinedEdgeIndices: blendedEdgesWithReport adopts #639's mechanism too
@@ -170,17 +177,19 @@ struct Issue633BlendedEdgesDuplicateReport {
     @Test(
         "blendedEdgesWithReport reports no declines or overwrites on a closed solid's own edge list"
     )
-    func emptyReportsOnAClosedSolid() {
-        guard let box = Shape.box(width: 10, height: 10, depth: 10) else {
-            Issue.record("box fixture failed to build")
-            return
-        }
+    func emptyReportsOnAClosedSolid() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let request = (0..<box.edges().count).map { ($0, 1.0) }
-        guard let report = box.blendedEdgesWithReport(request) else {
-            Issue.record("blendedEdgesWithReport unexpectedly returned nil on a closed box")
-            return
-        }
+        let report = try #require(box.blendedEdgesWithReport(request))
         #expect(report.declinedEdgeIndices.isEmpty)
         #expect(report.overwrittenDuplicateIndices.isEmpty)
+
+        // The report is empty because every edge took, and the shape says so: all twelve edges of
+        // a 10 mm cube at r = 1 is the rounded box (a - 2r)^3 + 6 (a - 2r)^2 r + 3 pi r^2 (a - 2r)
+        // + 4/3 pi r^3 = 975.587..., 26 faces.
+        let expected = 512.0 + 384.0 + 3.0 * Double.pi * 8.0 + 4.0 / 3.0 * Double.pi
+        #expect(abs((report.shape.volume ?? -1) - expected) < 1e-6)
+        #expect(report.shape.faces().count == 26)
+        #expect(report.shape.isValid)
     }
 }
