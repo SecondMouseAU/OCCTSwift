@@ -45,6 +45,16 @@ struct GeomTransformationTests {
         let t = try #require(GeomTransformation())
         t.setMirrorPoint(x: 0, y: 0, z: 0)
         #expect(t.isNegative)
+        // A point mirror sends (x, y, z) to (-x, -y, -z); the sign flag alone would also be set
+        // by a plane or axis mirror, so read the image.
+        let p = t.apply(x: 1, y: 2, z: 3)
+        #expect(abs(p.x + 1) < 1e-10 && abs(p.y + 2) < 1e-10 && abs(p.z + 3) < 1e-10, "got \(p)")
+
+        // About a centre that is not the origin: (x, y, z) -> 2c - (x, y, z).
+        let c = try #require(GeomTransformation())
+        c.setMirrorPoint(x: 1, y: 1, z: 1)
+        let q = c.apply(x: 3, y: 0, z: 1)
+        #expect(abs(q.x + 1) < 1e-10 && abs(q.y - 2) < 1e-10 && abs(q.z - 1) < 1e-10, "got \(q)")
     }
 
     @Test func multiply() throws {

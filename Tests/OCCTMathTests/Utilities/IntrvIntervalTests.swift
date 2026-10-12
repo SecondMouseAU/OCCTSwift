@@ -36,6 +36,13 @@ struct IntrvIntervalTests {
         let b = Interval(start: 5, end: 8)
         #expect(a.isBefore(b))
         #expect(b.isAfter(a))
+        // Each relation is one-directional, and an overlapping pair is neither.
+        #expect(!b.isBefore(a))
+        #expect(!a.isAfter(b))
+        let overlapping = Interval(start: 2, end: 6)
+        #expect(!a.isBefore(overlapping))
+        #expect(!overlapping.isAfter(a))
+        #expect(!a.isBefore(a))
     }
 
     @Test("inside and enclosing")
@@ -44,6 +51,12 @@ struct IntrvIntervalTests {
         let inner = Interval(start: 2, end: 8)
         #expect(inner.isInside(outer))
         #expect(outer.isEnclosing(inner))
+        // And not the other way round, nor for a partial overlap.
+        #expect(!outer.isInside(inner))
+        #expect(!inner.isEnclosing(outer))
+        let overlapping = Interval(start: 5, end: 15)
+        #expect(!overlapping.isInside(outer))
+        #expect(!outer.isEnclosing(overlapping))
     }
 
     @Test("similar")

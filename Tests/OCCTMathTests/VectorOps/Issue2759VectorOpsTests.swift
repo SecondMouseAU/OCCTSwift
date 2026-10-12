@@ -104,6 +104,12 @@ struct Issue2759VectorOpsTests {
         #expect(placement.zAxis.x.isNaN)
         #expect(placement.zAxis.y.isNaN)
         #expect(placement.zAxis.z.isNaN)
+        // The origin is stored as given, and a valid normal does not take the NaN path: the
+        // same initialiser normalises (0, 0, 4) to the unit z axis.
+        #expect(placement.origin == .zero)
+        let valid = Placement(origin: SIMD3(1, 2, 3), normal: SIMD3(0, 0, 4))
+        #expect(valid.zAxis == SIMD3(0, 0, 1))
+        #expect(valid.origin == SIMD3(1, 2, 3))
     }
 
     @Test(

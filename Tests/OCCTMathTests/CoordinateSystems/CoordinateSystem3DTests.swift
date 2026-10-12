@@ -15,6 +15,32 @@ struct CoordinateSystem3DTests {
     @Test func fromNormal() {
         let cs = CoordinateSystem3D(origin: .zero, direction: SIMD3(0, 0, 1))
         #expect(cs.isDirect)
+        #expect(cs.direction == SIMD3(0, 0, 1))
+
+        // The two directions the constructor chose are what makes this an axis system and not
+        // merely a flag: unit length, square to the normal and to each other, right-handed.
+        func check(_ cs: CoordinateSystem3D, _ n: SIMD3<Double>, _ what: String) {
+            let x = cs.xDirection
+            let y = cs.yDirection
+            #expect(abs(vectorLength(x) - 1) < 1e-12, "\(what): |x| = \(vectorLength(x))")
+            #expect(abs(vectorLength(y) - 1) < 1e-12, "\(what): |y| = \(vectorLength(y))")
+            #expect(abs(dotProduct(x, n)) < 1e-12, "\(what): x . n")
+            #expect(abs(dotProduct(y, n)) < 1e-12, "\(what): y . n")
+            #expect(abs(dotProduct(x, y)) < 1e-12, "\(what): x . y")
+            let c = crossProduct(x, y)
+            #expect(vectorLength(c - n) < 1e-12, "\(what): x cross y = \(c)")
+        }
+        check(cs, SIMD3(0, 0, 1), "+z")
+
+        // A non-unit normal. x and y are the unit axes of the system, so they are checked against
+        // the unit normal. `direction` itself is the caller's vector rather than the unit one
+        // (#3371), so that one assertion is a known issue.
+        let n = SIMD3(1.0, 2.0, 2.0) / 3.0
+        let skew = CoordinateSystem3D(origin: SIMD3(4, 5, 6), direction: SIMD3(1, 2, 2))
+        check(skew, n, "(1, 2, 2)")
+        withKnownIssue("#3371: direction is the caller's vector, not gp_Ax3's unit one") {
+            #expect(vectorLength(skew.direction - n) < 1e-12)
+        }
     }
 
     @Test func angle() {

@@ -38,6 +38,24 @@ struct PlaneGeometryTests {
             planeOrigin: SIMD3(0, 0, 0), planeNormal: SIMD3(0, 0, 1),
             point: SIMD3(100, 200, 0), tolerance: 1e-7)
         #expect(r)
+
+        // A plane that is not a coordinate plane, and the tolerance as the threshold: the plane
+        // through (1, 2, 3) with normal (0, 0, 1) is z = 3, so 5e-8 above it is on the plane,
+        // 5e-6 above is not, and a wider tolerance takes it back.
+        let o = SIMD3(1.0, 2.0, 3.0)
+        let n = SIMD3(0.0, 0.0, 1.0)
+        #expect(
+            PlaneGeometry.containsPoint(
+                planeOrigin: o, planeNormal: n, point: SIMD3(-40, 7, 3), tolerance: 1e-7))
+        #expect(
+            PlaneGeometry.containsPoint(
+                planeOrigin: o, planeNormal: n, point: SIMD3(-40, 7, 3 + 5e-8), tolerance: 1e-7))
+        #expect(
+            !PlaneGeometry.containsPoint(
+                planeOrigin: o, planeNormal: n, point: SIMD3(-40, 7, 3 + 5e-6), tolerance: 1e-7))
+        #expect(
+            PlaneGeometry.containsPoint(
+                planeOrigin: o, planeNormal: n, point: SIMD3(-40, 7, 3 + 5e-6), tolerance: 1e-4))
     }
 
     @Test func containsPointFalse() {
