@@ -292,7 +292,7 @@ struct StressFeatureChainTests {
 struct StressTransformChainTests {
 
     @Test func thousandTranslations() throws {
-        var shape = standardBox()
+        var shape = try standardBox()
         for i in 0..<1000 {
             shape = try #require(shape.translated(by: SIMD3(0.001, 0, 0)), "translation \(i)")
         }
@@ -310,7 +310,7 @@ struct StressTransformChainTests {
     }
 
     @Test func thousandRotations() throws {
-        var shape = standardBox()
+        var shape = try standardBox()
         let angleStep = (2.0 * .pi) / 1000.0
         for i in 0..<1000 {
             shape = try #require(shape.rotated(axis: SIMD3(0, 0, 1), angle: angleStep), "turn \(i)")
@@ -343,7 +343,7 @@ struct StressTransformChainTests {
     }
 
     @Test func hundredScales() throws {
-        var shape = standardBox()
+        var shape = try standardBox()
         // Scale up then back down. Up by 1.01 and back by 1/1.01 fifty times each is the identity,
         // so a chain that did nothing ends where this one does. The half-way figure is the part a
         // no-op cannot reach: fifty scalings by 1.01 take the half-side to 5 * 1.01^50 and the
@@ -376,7 +376,7 @@ struct StressTransformChainTests {
     }
 
     @Test func mixedTransforms() throws {
-        var shape = standardBox()
+        var shape = try standardBox()
         // The same hundred links followed on paper: the box's centre c, its turn angle and its
         // scale. `translated` adds to c, `rotated` about Z through the origin turns c and the box,
         // `scaled` scales about the origin so it scales c and the box.
@@ -424,9 +424,9 @@ struct StressTransformChainTests {
 @Suite("Stress: Wire Construction Chains")
 struct StressWireConstructionTests {
 
-    @Test func hundredEdgeWire() {
+    @Test func hundredEdgeWire() throws {
         let builder = WireBuilder()
-        let box = Shape.box(width: 100, height: 100, depth: 100)!
+        let box = try #require(Shape.box(width: 100, height: 100, depth: 100))
         let edges = box.subShapes(ofType: .edge)
         // Add many edges (some may be duplicates, that's fine)
         for i in 0..<min(100, edges.count * 10) {
@@ -507,9 +507,9 @@ struct StressDocumentAssemblyTests {
     @Test func deepAssemblyTree() throws {
         let doc = try #require(Document.create())
         // Build 5-level deep assembly
-        let lastLabel = doc.addShape(standardBox())
+        let lastLabel = doc.addShape(try standardBox())
         for _ in 0..<5 {
-            let childBox = Shape.box(width: 5, height: 5, depth: 5)!
+            let childBox = try #require(Shape.box(width: 5, height: 5, depth: 5))
             let childLabel = doc.addShape(childBox)
             _ = childLabel
             _ = lastLabel
@@ -539,8 +539,8 @@ struct StressCurveEvalDepthTests {
     // every one of the ten thousand points is exactly 5 from the origin and exactly on z = 0.
     // The errors are accumulated and asserted once: ten thousand `#expect` calls cost more than
     // the evaluation they wrap, and a maximum names the worst sample rather than the first.
-    @Test func tenThousandPointEval() {
-        let curve = standardCurve3D()
+    @Test func tenThousandPointEval() throws {
+        let curve = try standardCurve3D()
         let domain = curve.domain
         var maxRadiusError = 0.0
         var maxAbsZ = 0.0
@@ -559,8 +559,8 @@ struct StressCurveEvalDepthTests {
     // z(u, v) = 2 * A(u) * A(v) with A(t) = B1(t) + B2(t) = 3t(1 - t), so z = 18 u(1-u) v(1-v)
     // exactly. Its x and y poles are evenly spaced 0, 5, 10, 15, so x and y are linear in the
     // parameters over [0, 15].
-    @Test func surfaceGridEval10x10() {
-        let surf = standardBezierSurface()
+    @Test func surfaceGridEval10x10() throws {
+        let surf = try standardBezierSurface()
         let dom = surf.domain
         var maxZError = 0.0
         var maxPlanError = 0.0
@@ -581,8 +581,8 @@ struct StressCurveEvalDepthTests {
 
     // Epic #766: `standardCurve2D()` is the r = 5 circle about the 2D origin, so every sample is
     // exactly 5 away from it. `pt.x.isFinite` was true of any answer at all.
-    @Test func curve2DThousandPoints() {
-        let curve = standardCurve2D()
+    @Test func curve2DThousandPoints() throws {
+        let curve = try standardCurve2D()
         let domain = curve.domain
         var maxRadiusError = 0.0
         for i in 0..<1000 {
