@@ -10,8 +10,8 @@ struct Curve3DPlaneProjectionTests {
     // coordinate, or z alone, and the circle test allowed 0.1 of slack (#766).
 
     @Test("Project segment onto XY plane along Z direction")
-    func projectSegmentOntoXYPlane() {
-        let seg = Curve3D.segment(from: SIMD3(0, 0, 5), to: SIMD3(10, 7, 5))!
+    func projectSegmentOntoXYPlane() throws {
+        let seg = try #require(Curve3D.segment(from: SIMD3(0, 0, 5), to: SIMD3(10, 7, 5)))
 
         let projected = seg.projectedOnPlane(
             origin: SIMD3(0, 0, 0),
@@ -34,11 +34,12 @@ struct Curve3DPlaneProjectionTests {
     }
 
     @Test("Project circle onto XY plane preserves shape")
-    func projectCircleOntoXYPlane() {
+    func projectCircleOntoXYPlane() throws {
         // Circle at z=10 in XY plane
-        let circle = Curve3D.circle(
-            center: SIMD3(0, 0, 10),
-            normal: SIMD3(0, 0, 1), radius: 5)!
+        let circle = try #require(
+            Curve3D.circle(
+                center: SIMD3(0, 0, 10),
+                normal: SIMD3(0, 0, 1), radius: 5))
 
         let projected = circle.projectedOnPlane(
             origin: SIMD3(0, 0, 0),
@@ -57,12 +58,13 @@ struct Curve3DPlaneProjectionTests {
     }
 
     @Test("Project arc onto tilted plane")
-    func projectArcOntoTiltedPlane() {
-        let arc = Curve3D.arcOfCircle(
-            start: SIMD3(5, 0, 0),
-            interior: SIMD3(0, 5, 0),
-            end: SIMD3(-5, 0, 0)
-        )!
+    func projectArcOntoTiltedPlane() throws {
+        let arc = try #require(
+            Curve3D.arcOfCircle(
+                start: SIMD3(5, 0, 0),
+                interior: SIMD3(0, 5, 0),
+                end: SIMD3(-5, 0, 0)
+            ))
 
         // Project onto XZ plane along Y direction
         let projected = arc.projectedOnPlane(
@@ -82,13 +84,14 @@ struct Curve3DPlaneProjectionTests {
     }
 
     @Test("Project BSpline onto plane")
-    func projectBSplineOntoPlane() {
-        let spline = Curve3D.interpolate(points: [
-            SIMD3(0, 0, 1),
-            SIMD3(3, 5, 2),
-            SIMD3(7, 2, 4),
-            SIMD3(10, 8, 3),
-        ])!
+    func projectBSplineOntoPlane() throws {
+        let spline = try #require(
+            Curve3D.interpolate(points: [
+                SIMD3(0, 0, 1),
+                SIMD3(3, 5, 2),
+                SIMD3(7, 2, 4),
+                SIMD3(10, 8, 3),
+            ]))
 
         let projected = spline.projectedOnPlane(
             origin: SIMD3(0, 0, 0),
@@ -109,8 +112,8 @@ struct Curve3DPlaneProjectionTests {
     }
 
     @Test("Projected curve preserves parametric consistency")
-    func projectedCurveParametricConsistency() {
-        let seg = Curve3D.segment(from: SIMD3(2, 3, 8), to: SIMD3(12, 3, 8))!
+    func projectedCurveParametricConsistency() throws {
+        let seg = try #require(Curve3D.segment(from: SIMD3(2, 3, 8), to: SIMD3(12, 3, 8)))
 
         let projected = seg.projectedOnPlane(
             origin: SIMD3(0, 0, 0),
@@ -128,9 +131,9 @@ struct Curve3DPlaneProjectionTests {
     }
 
     @Test("Project segment along oblique direction")
-    func projectSegmentObliqueDirection() {
+    func projectSegmentObliqueDirection() throws {
         // Segment at height z=10
-        let seg = Curve3D.segment(from: SIMD3(0, 0, 10), to: SIMD3(10, 0, 10))!
+        let seg = try #require(Curve3D.segment(from: SIMD3(0, 0, 10), to: SIMD3(10, 0, 10)))
 
         // Project onto z=0 plane at 45-degree angle
         let projected = seg.projectedOnPlane(
@@ -150,8 +153,8 @@ struct Curve3DPlaneProjectionTests {
     }
 
     @Test("Project onto plane with near-parallel direction returns nil or valid curve")
-    func projectNearParallelDirection() {
-        let seg = Curve3D.segment(from: SIMD3(0, 0, 0), to: SIMD3(10, 0, 0))!
+    func projectNearParallelDirection() throws {
+        let seg = try #require(Curve3D.segment(from: SIMD3(0, 0, 0), to: SIMD3(10, 0, 0)))
         // Direction nearly in the plane. The earlier version discarded the result, so it could
         // not fail (#766). The segment already lies in the plane, so GeomProjLib::ProjectOnPlane
         // returns it unchanged even along this grazing direction.
