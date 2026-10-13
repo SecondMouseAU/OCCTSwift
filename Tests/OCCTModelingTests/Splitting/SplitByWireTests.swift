@@ -5,13 +5,13 @@ import Testing
 @Suite("Split Shape by Wire")
 struct SplitByWireTests {
     @Test("Split box face with diagonal wire")
-    func splitBoxFace() {
+    func splitBoxFace() throws {
         // Box is centered: (-5,-5,-5) to (5,5,5)
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         // Top face is at z=5, index 5 (0-based). Wire must lie ON the face.
         let wire = Wire.line(from: SIMD3(-5, -5, 5), to: SIMD3(5, 5, 5))
         #expect(wire != nil)
-        let result = box.splittingFace(with: wire!, faceIndex: 5)
+        let result = try box.splittingFace(with: #require(wire), faceIndex: 5)
         #expect(result != nil)
         if let r = result {
             // Splitting one face should produce 7 faces (6 original - 1 split + 2 halves)
@@ -20,9 +20,9 @@ struct SplitByWireTests {
     }
 
     @Test("Split with invalid face index returns nil")
-    func splitInvalidFaceIndex() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
-        let wire = Wire.line(from: SIMD3(-5, -5, 5), to: SIMD3(5, 5, 5))!
+    func splitInvalidFaceIndex() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let wire = try #require(Wire.line(from: SIMD3(-5, -5, 5), to: SIMD3(5, 5, 5)))
         let result = box.splittingFace(with: wire, faceIndex: 999)
         #expect(result == nil)
     }

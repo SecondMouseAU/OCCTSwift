@@ -7,8 +7,8 @@ import Testing
 @Suite("Feature Recognition, AAG")
 struct AAGTests {
     @Test("Box AAG has 6 nodes and 12 edges")
-    func boxAAG() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func boxAAG() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let aag = box.buildAAG()
         #expect(aag.nodes.count == 6)
         // A box has 12 edges connecting 6 faces
@@ -56,8 +56,8 @@ struct AAGTests {
     }
 
     @Test("AAG neighbors returns correct count")
-    func aagNeighbors() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func aagNeighbors() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let aag = box.buildAAG()
         // Each face of a box touches 4 other faces
         for i in 0..<6 {
@@ -106,7 +106,7 @@ struct AAGTests {
     }
 
     @Test("Box with pocket detects pocket via AAG")
-    func detectPocket() {
+    func detectPocket() throws {
         // #703: `Shape.box(width:height:depth:)` is centred at the origin (`OCCTShapeCreateBox`),
         // so a 20mm box spans -10...10 on every axis. The pocket tool has to actually overlap that
         // range to remove real material -- this fixture used to place it at `origin: SIMD3(5, 5,
@@ -117,8 +117,9 @@ struct AAGTests {
         // #703 measured on a plain, uncut box -- not a real feature of this shape. Centring the
         // tool's footprint under the box and starting its z range below the box's own top (here,
         // 0...15, cutting through at z=10 down to a floor at z=0) gives an actual 10mm-deep pocket.
-        let box = Shape.box(width: 20, height: 20, depth: 20)!
-        let pocket = Shape.box(origin: SIMD3(-5, -5, 0), width: 10, height: 10, depth: 15)!
+        let box = try #require(Shape.box(width: 20, height: 20, depth: 20))
+        let pocket = try #require(
+            Shape.box(origin: SIMD3(-5, -5, 0), width: 10, height: 10, depth: 15))
         // #720 review of #703, finding 5: `(result.volume ?? 0) < (box.volume ?? 0)` would still
         // pass if EITHER volume computation silently failed and returned nil: 0 < 0 is false,
         // but 0 < someNil-coerced-to-0 reads as "no material removed", not "the fixture is
@@ -148,14 +149,14 @@ struct AAGTests {
     }
 
     @Test("Convex and concave neighbors on filleted box")
-    func convexConcaveNeighbors() {
+    func convexConcaveNeighbors() throws {
         // #766: this test used to end in `#expect(hasAnyNeighbors || aag.nodes.count > 6)`, which
         // the node count alone satisfies, so no convexity defect could fail it. The values below
         // are the kernel's own (Scripts/repro/766-modeling-aag): the plain box's 12 adjacent
         // pairs are all convex, and the filleted box has 26 faces (6 + 12 fillet + 8 corner)
         // and 48 adjacent pairs, every one tangential, so no face has a convex or a concave
         // neighbor at all.
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let plain = box.buildAAG()
         #expect(plain.edges.filter { $0.convexity == .convex }.count == 12)
         #expect((0..<plain.nodes.count).allSatisfy { plain.convexNeighbors(of: $0).count == 4 })
