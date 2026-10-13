@@ -1,4 +1,4 @@
-// Epic #766, Tests/OCCTModelingTests/LocOpe/LocOpeSpliterV71Tests.swift: kernel parity for both tests.
+// Epic #766, Tests/OCCTModelingTests/LocOpe/LocOpeSpliterByWireTests.swift: kernel parity for both tests.
 // splitByWireOnFace: OCCTLocOpeSplitByWires binds (wire, face) with LocOpe_WiresOnShape::Bind (no
 // BindAll) and runs LocOpe_Spliter; the test tries every face of the origin-cornered 10 mm box
 // with the edge (0,5,10)-(10,5,10) made into a wire by BOPAlgo_WireSplitter::MakeWire.

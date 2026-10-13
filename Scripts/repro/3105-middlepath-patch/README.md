@@ -35,7 +35,7 @@ sweep that cannot reach the end runs on). Four checks that changed nothing were 
 
 ## Swift test and images
 
-`Tests/OCCTModelingTests/Sweeps/Issue3105MiddlePathKernelTests.swift`, gated on `OCCTSWIFT_LOCAL=1`;
+`Tests/OCCTModelingTests/Sweeps/MiddlePathKernelReadPastPathTests.swift`, gated on `OCCTSWIFT_LOCAL=1`;
 `swift-test-unpatched.txt` (aborts), `swift-test-patched.txt`. Images and the round-2 index are in
 `review/` (`render2.py` draws them with matplotlib; `mkret.py` builds the instrumented copy of the
 patched file that prints the traced paths and the return that fired, for the images and

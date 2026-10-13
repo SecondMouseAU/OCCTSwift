@@ -163,11 +163,11 @@ class's own behaviour that this project's docs/tests do not already carry eviden
 |---|---|---|
 | `BRepLib::ContinuityOfFaces` never returns `GeomAbs_C3` (`Issue495FaceContinuityTests.swift`) | pinned source, `BRepLib.cxx:2197-2419` | confirmed -- every explicit assignment in the function is C0/G1/C1/G2/C2, plus an elementary-seam early return of CN and a C2->CN promotion; C3 is assigned nowhere |
 | `BRep_Tool::MaxTolerance` returns 0 for `TopAbs_SOLID` (`Issue833MaxToleranceEncodingTests.swift`) | pinned source, `BRep_Tool.cxx:1830-1862` | confirmed -- the function branches on FACE/EDGE/VERTEX only; SOLID falls through every arm with the accumulator at its initial 0.0 |
-| `BRepFilletAPI_MakeFillet::Add` silently skips an unfilletable edge (`Issue639FilletDeclinedEdgeReportTests.swift`) | `occt-refman@8.0.1` | not a refman claim: the comment says "measured" and cites its own probe; the refman's `Add()` entries document only what a successful call builds, contradicting nothing |
+| `BRepFilletAPI_MakeFillet::Add` silently skips an unfilletable edge (`FilletDeclinedEdgeReportTests.swift`) | `occt-refman@8.0.1` | not a refman claim: the comment says "measured" and cites its own probe; the refman's `Add()` entries document only what a successful call builds, contradicting nothing |
 | `BRepGProp::SurfaceProperties`'s `Eps > 0.001` triggers non-adaptive integration (`Issue885TotalAreaDivergenceTests.swift`) | `occt-refman@8.0.1` | confirmed, verbatim: "WARNING: if Eps > 0.001 algorithm performs non-adaptive integration" |
 | `ShapeAnalysis_FreeBounds.hxx:98`'s `checkinternaledges` defaults `false` (`Issue655FreeBoundsInternalOrientationTests.swift`) | pinned header, line 98 | confirmed, exact line |
 | `ShapeFix_Shape::FixFreeFaceMode()` defaults to on (`Issue837FixDetailedModeFlagsTests.swift`) | pinned header | confirmed: "Returns (modifiable) the mode for applying fixes of ShapeFix_Face, by default True" |
-| `BRepFeat_HoleTooLong` is set in exactly two places in the kernel (`Issue496CylindricalHoleTests.swift`) | pinned source, `BRepFeat_MakeCylindricalHole.cxx` | confirmed, lines 526 and 667 |
+| `BRepFeat_HoleTooLong` is set in exactly two places in the kernel (`CylindricalHoleContractTests.swift`) | pinned source, `BRepFeat_MakeCylindricalHole.cxx` | confirmed, lines 526 and 667 |
 | `BRep_Tool::CurveOnSurface` projects onto a plane with no stored pcurve (`Issue1058OuterBoundRefusalTests.swift`) | the file's own cited probe, `Scripts/repro/1058-outer-bound-refusal/` | backed by its own investigation (a guard-by-guard prove-the-test-fails table sits in the same file); not re-derived here |
 
 Three of these (`ContinuityOfFaces`, `MaxTolerance`, `FixFreeFaceMode`) came back **empty** from

@@ -324,7 +324,7 @@ ADJUDICATED_CLAIMS = {
         "branches on FACE/EDGE/VERTEX only; TopAbs_SOLID (and anything else) falls through all "
         "three `if`/`else if` arms with aTol left at its initial 0.0, exactly the claimed 'returns "
         "0 for anything else'."),
-    ("OCCTModelingTests/Issue639FilletDeclinedEdgeReportTests.swift", "silently does nothing"): (
+    ("OCCTModelingTests/FilletDeclinedEdgeReportTests.swift", "silently does nothing"): (
         "not a refman claim: the comment says 'measured' and cites a probe "
         "(Scripts/repro/cluster-b-fillet-edge-contract/), and occt-refman@8.0.1's Add() entries "
         "document only what a call BUILDS, saying nothing about a declined edge either way, so "
@@ -351,12 +351,12 @@ ADJUDICATED_CLAIMS = {
         "same #495/ContinuityOfFaces finding as the entry above (one paragraph, two flagged "
         "lines); the 'no lookup table' phrase is what the source read (2197-2419) confirms: a "
         "direct GeomAbs_Shape assignment, never a value-mapping table that could introduce C3."),
-    ("OCCTModelingTests/Issue655SectionWiresOrientationTests.swift", "never hands this"): (
+    ("OCCTModelingTests/SectionWiresOrientationTests.swift", "never hands this"): (
         "cross-references the same #655 finding as Issue655FreeBoundsInternalOrientationTests.swift "
         "(BRepBuilderAPI_Sewing::FreeEdge not handing an INTERNAL/EXTERNAL edge to the free-bounds "
         "chainage), from the sectionWiresAtZ side that IS affected rather than the freeBounds side "
         "that isn't; same investigation, not re-derived twice."),
-    ("OCCTModelingTests/Issue496CylindricalHoleTests.swift", "exactly two places"): (
+    ("OCCTModelingTests/CylindricalHoleContractTests.swift", "exactly two places"): (
         "confirmed. grep of BRepFeat_MakeCylindricalHole.cxx: BRepFeat_HoleTooLong is assigned at "
         "exactly two lines, 526 and 667."),
     ("OCCTShapeHealingTests/Issue1058OuterBoundRefusalTests.swift", "A plane cannot show"): (
@@ -382,20 +382,20 @@ ADJUDICATED_CLAIMS = {
         "about this repo's own check-null-handle-guards.py gate, not OCCT."),
     ("OCCTModelingTests/BooleanExpansionTests.swift", "tolerance argument this test used to pass"): (
         "about this bridge's own historical API surface (a removed parameter), not OCCT."),
-    ("OCCTModelingTests/Issue1054SelfIntersectFaultKindTests.swift", "Boolean Operations cannot use"): (
+    ("OCCTModelingTests/SelfIntersectFaultKindTests.swift", "Boolean Operations cannot use"): (
         "narrates #1054's own bridge-side fault-kind mapping, not a refman claim."),
-    ("OCCTModelingTests/Issue1054SelfIntersectFaultKindTests.swift", "HasFaulty() cannot tell"): (
+    ("OCCTModelingTests/SelfIntersectFaultKindTests.swift", "HasFaulty() cannot tell"): (
         "same #1054 narrative as above."),
-    ("OCCTModelingTests/Issue208SelfIntersectionTests.swift", "bounded so it cannot hang"): (
+    ("OCCTModelingTests/SelfIntersectionCheckTests.swift", "bounded so it cannot hang"): (
         "narrates #319's already-fixed, already-documented (CLAUDE.md Known OCCT Bugs) hardTimeout "
         "fix; the CLAUDE.md entry itself is the evidence trail."),
-    ("OCCTModelingTests/Issue497DefeaturingTests.swift", "BOPAlgo_Options` is stored and never read"): (
+    ("OCCTModelingTests/DefeaturingFamilyTests.swift", "BOPAlgo_Options` is stored and never read"): (
         "about this bridge's own historical option-plumbing bug (#497), not OCCT."),
-    ("OCCTModelingTests/Issue733MeshTriangulationBoundsTests.swift", "always takes the exact"): (
+    ("OCCTModelingTests/AAGBoundsAfterMeshingTests.swift", "always takes the exact"): (
         "describes this bridge's own triangulation-bounds formula choice, not an OCCT guarantee."),
-    ("OCCTModelingTests/Issue735PocketEnclosureTests.swift", "can never contribute to this test"): (
+    ("OCCTModelingTests/PocketEnclosureTests.swift", "can never contribute to this test"): (
         "test-fixture-specific reasoning about this test's own geometry, not a general OCCT claim."),
-    ("OCCTModelingTests/Issue762FilletedPocketDetectionTests.swift", "exact Z by about"): (
+    ("OCCTModelingTests/FilletedPocketDetectionTests.swift", "exact Z by about"): (
         "a MEASURED numeric deviation from a real fillet operation, reported as an observation, "
         "not asserted as an OCCT-guaranteed tolerance."),
     ("OCCTAnalysisTests/BRepBndLibTests.swift", "measures exactly"): (

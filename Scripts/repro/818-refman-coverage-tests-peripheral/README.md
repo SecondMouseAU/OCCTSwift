@@ -71,7 +71,7 @@ to `derive_lane.py`'s raw signal, with the two genuine `under` findings pulled i
 (`derive_lane.py --structural`'s own RAW output differs slightly from this table for lane #811,
 because it is the signal BEFORE `MANUAL_OVERRIDES` and before pulling the two `under` findings into
 their own column, and because it is re-run against whatever is on disk right now: with this
-branch's own `Issue818MiddlePathTests.swift` already committed, the raw pass now finds
+branch's own `MiddlePathGroundTruthTests.swift` already committed, the raw pass now finds
 `BRepOffsetAPI_MiddlePath` `tested-elsewhere` on the signal alone, correctly, one class earlier than
 `MANUAL_OVERRIDES` needs to move it. `classify()` consults `FIXED_UNDER`/`FILED_UNDER` before the
 raw signal either way, so the final table above does not depend on that alignment holding.)
@@ -232,7 +232,7 @@ describes, and its two flat annular end faces are valid `StartShape`/`EndShape` 
 ground truth's own bbox for the resulting spine, `X[-1e-07,1e-07] Y[-1e-07,1e-07] Z[-1e-07,10]` for
 a radius-5/radius-2/height-10 tube, is the checkable assertion the new test makes: the spine
 collapses onto the shared cylinder axis and runs the tube's full height. New test:
-`Tests/OCCTModelingTests/Sweeps/Issue818MiddlePathTests.swift`. **Proved to fail**: forced
+`Tests/OCCTModelingTests/Sweeps/MiddlePathGroundTruthTests.swift`. **Proved to fail**: forced
 `OCCTShapeMiddlePath` to `return nullptr;` unconditionally, ran `swift test --filter
 Issue818MiddlePathTests`, confirmed red (`Expectation failed: spine → nil`), reverted, confirmed
 green. `git diff` on the bridge file is clean after the revert. Placed in `OCCTModelingTests` rather
