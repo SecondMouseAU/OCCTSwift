@@ -227,9 +227,9 @@ struct Issue642AAGNodeIdentityTests {
     /// and pocket count must still agree across order after this fix, exactly as they did before
     /// it.
     @Test("#614's own vertical-cut fixture is unaffected by member order")
-    func verticalCutFixtureUpwardHorizontalUnaffected() {
+    func verticalCutFixtureUpwardHorizontalUnaffected() throws {
         guard let block = Shape.box(origin: .zero, width: 20, height: 10, depth: 10),
-            let plate = Shape.face(from: Wire.rectangle(width: 60, height: 60)!),
+            let plate = try Shape.face(from: #require(Wire.rectangle(width: 60, height: 60))),
             let upright = plate.rotated(axis: SIMD3(0, 1, 0), angle: .pi / 2),
             let knife = upright.translated(by: SIMD3(10, 0, 0)),
             let pieces = block.split(by: knife),

@@ -44,7 +44,7 @@ struct Issue189ThreadGuardTests {
     // many times the cut depth). A worm pitch on a small shaft is the #181-C garbage case;
     // whatever it returns must NOT carry material far outside the blank.
     @Test("Coarse worm-pitch result is still rejected or in (loosened) envelope (#181-C kept)")
-    func coarseWormStillGuarded() {
+    func coarseWormStillGuarded() throws {
         guard let shank = Shape.cylinder(radius: 6, height: 15) else {
             Issue.record("no shank")
             return
@@ -56,8 +56,8 @@ struct Issue189ThreadGuardTests {
         if let worm {
             // If it returns a solid, it must be within blank + one thread depth (~0.95),
             // never the ~Ø22 balloon.
-            let b = shank.bounds!
-            let c = worm.bounds!
+            let b = try #require(shank.bounds)
+            let c = try #require(worm.bounds)
             let tol = spec.cutDepth + 0.05
             #expect(c.max.x <= b.max.x + tol)
             #expect(c.max.y <= b.max.y + tol)

@@ -22,8 +22,8 @@ struct Issue833MaxToleranceEncodingTests {
     /// `BRep_Tool::MaxTolerance` never measures, so it silently reports 0) under
     /// maxTolerance(subShapeType:)'s convention.
     @Test("legacy Int(type:) and Int(subShapeType:) disagree on the same literal 2")
-    func legacyIntConventionsDisagreeOnTheSameLiteral() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func legacyIntConventionsDisagreeOnTheSameLiteral() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
 
         // "2" under maxTolerance(type:)'s compressed convention is FACE, and a fresh box has a
         // real, non-zero face tolerance (Precision::Confusion(), ~1e-7).
@@ -45,8 +45,8 @@ struct Issue833MaxToleranceEncodingTests {
     /// the three values the legacy encoding actually supports (vertex/edge/face) -- proving the
     /// additive overload is a pure convention change, not a different computation.
     @Test("ShapeType overload matches legacy Int overload for vertex/edge/face")
-    func typedOverloadMatchesLegacyForSharedCases() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func typedOverloadMatchesLegacyForSharedCases() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
 
         #expect(box.maxTolerance(type: .vertex) == box.maxTolerance(type: 0))
         #expect(box.maxTolerance(type: .edge) == box.maxTolerance(type: 1))
@@ -71,7 +71,7 @@ struct Issue833MaxToleranceEncodingTests {
     /// Tolerance()` -- so they must agree at any tolerance value, not only the default.
     @Test("ShapeType overload agrees with maxTolerance(subShapeType:)'s ordinal convention")
     func typedOverloadAgreesWithSubShapeTypeConvention() throws {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
 
         // At the box's default (fresh construction) tolerances:
         // TopAbs_VERTEX

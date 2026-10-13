@@ -7,9 +7,9 @@ import Testing
 struct TDataStdRealTests {
 
     @Test("Set and get real")
-    func setGetReal() {
-        let doc = Document.create()!
-        let label = doc.createLabel()!
+    func setGetReal() throws {
+        let doc = try #require(Document.create())
+        let label = try #require(doc.createLabel())
         let ok = label.setReal(3.14)
         #expect(ok)
         if let val = label.real {
@@ -18,9 +18,9 @@ struct TDataStdRealTests {
     }
 
     @Test("Change real value")
-    func changeReal() {
-        let doc = Document.create()!
-        let label = doc.createLabel()!
+    func changeReal() throws {
+        let doc = try #require(Document.create())
+        let label = try #require(doc.createLabel())
         label.setReal(3.14)
         label.setReal(2.718)
         if let val = label.real {
