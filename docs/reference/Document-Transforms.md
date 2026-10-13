@@ -25,11 +25,11 @@ Create from origin, main direction, and explicit X direction.
 public init(origin: SIMD3<Double>, direction: SIMD3<Double>, xDirection: SIMD3<Double>)
 ```
 
-OCCT normalises and orthogonalises the input vectors; computed `xDirection`, `yDirection`, and `isDirect` are stored on the value.
+OCCT normalises and orthogonalises the input vectors; computed `direction`, `xDirection`, `yDirection`, and `isDirect` are stored on the value. `direction` is `gp_Ax3`'s unit main direction (`gp_Ax3::Direction()`), not the vector passed in, so `CoordinateSystem3D(origin: .zero, direction: SIMD3(0, 0, 5), xDirection: SIMD3(1, 0, 0)).direction == SIMD3(0, 0, 1)` (#3371).
 
 On a construction failure (a zero-length `direction`/`xDirection`, or the two parallel/antiparallel)
-this initializer does not throw or fail: `isDirect` is `false` and `xDirection`/`yDirection` are
-both `.zero`, unambiguous since a genuine result direction is always a unit vector (#1443).
+this initializer does not throw or fail: `isDirect` is `false` and `direction`/`xDirection`/`yDirection`
+are all `.zero`, unambiguous since a genuine result direction is always a unit vector (#1443).
 
 - **Parameters:** `origin`, position; `direction`, main (Z) axis; `xDirection`, desired X axis (will be corrected to be orthogonal).
 - **OCCT:** `OCCTAx3Create` → `gp_Ax3(gp_Pnt, gp_Dir, gp_Dir)`.
@@ -52,8 +52,10 @@ Create from origin and main direction only; X/Y axes are auto-computed.
 public init(origin: SIMD3<Double>, direction: SIMD3<Double>)
 ```
 
-On a zero-length `direction` this initializer does not throw or fail: `isDirect` is `false` and
-`xDirection`/`yDirection` are both `.zero` (#1443, same fallback as the three-argument initializer).
+`direction` is the unit main direction (`gp_Ax3::Direction()`), so `SIMD3(1, 2, 2)` is reported as
+`SIMD3(1, 2, 2) / 3` (#3371). On a zero-length `direction` this initializer does not throw or fail:
+`isDirect` is `false` and `direction`/`xDirection`/`yDirection` are all `.zero` (#1443, same fallback
+as the three-argument initializer).
 
 - **Parameters:** `origin`, position; `direction`, main (Z) axis. X and Y are chosen by OCCT.
 - **OCCT:** `OCCTAx3CreateFromNormal` → `gp_Ax3(gp_Pnt, gp_Dir)`.

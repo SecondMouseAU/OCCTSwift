@@ -38,6 +38,9 @@ struct Issue1443Ax3EmptyCatchTests {
     )
     func createParallelDirectionOverwritesSentinel() {
         var isDirect = true
+        var nDx = -1.0
+        var nDy = -1.0
+        var nDz = -1.0
         var xDx = -1.0
         var xDy = -1.0
         var xDz = -1.0
@@ -50,8 +53,9 @@ struct Issue1443Ax3EmptyCatchTests {
             0, 0, 0,
             0, 0, 1,
             0, 0, 1,
-            &isDirect, &xDx, &xDy, &xDz, &yDx, &yDy, &yDz)
+            &isDirect, &nDx, &nDy, &nDz, &xDx, &xDy, &xDz, &yDx, &yDy, &yDz)
         #expect(!isDirect)
+        #expect(nDx == 0 && nDy == 0 && nDz == 0)
         #expect(xDx == 0 && xDy == 0 && xDz == 0)
         #expect(yDx == 0 && yDy == 0 && yDz == 0)
     }
@@ -61,6 +65,9 @@ struct Issue1443Ax3EmptyCatchTests {
     )
     func createFromNormalZeroNormalOverwritesSentinel() {
         var isDirect = true
+        var nDx = -1.0
+        var nDy = -1.0
+        var nDz = -1.0
         var xDx = -1.0
         var xDy = -1.0
         var xDz = -1.0
@@ -70,8 +77,9 @@ struct Issue1443Ax3EmptyCatchTests {
         OCCTAx3CreateFromNormal(
             0, 0, 0,
             0, 0, 0,
-            &isDirect, &xDx, &xDy, &xDz, &yDx, &yDy, &yDz)
+            &isDirect, &nDx, &nDy, &nDz, &xDx, &xDy, &xDz, &yDx, &yDy, &yDz)
         #expect(!isDirect)
+        #expect(nDx == 0 && nDy == 0 && nDz == 0)
         #expect(xDx == 0 && xDy == 0 && xDz == 0)
         #expect(yDx == 0 && yDy == 0 && yDz == 0)
     }

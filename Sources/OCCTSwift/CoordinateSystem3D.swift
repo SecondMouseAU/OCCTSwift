@@ -4,6 +4,8 @@ import OCCTPlatform
 /// A 3D coordinate system (right- or left-handed), wrapping gp_Ax3.
 public struct CoordinateSystem3D: Sendable {
     public let origin: SIMD3<Double>
+    /// The unit main direction of the underlying `gp_Ax3` (`gp_Ax3::Direction()`), not the vector
+    /// passed to the initialiser. `.zero` when construction failed (see `isDirect`).
     public let direction: SIMD3<Double>
     public let xDirection: SIMD3<Double>
     public let yDirection: SIMD3<Double>
@@ -12,6 +14,9 @@ public struct CoordinateSystem3D: Sendable {
     /// Create from origin, main direction, and X direction.
     public init(origin: SIMD3<Double>, direction: SIMD3<Double>, xDirection: SIMD3<Double>) {
         var isDirect = false
+        var nDx = 0.0
+        var nDy = 0.0
+        var nDz = 0.0
         var xDx = 0.0
         var xDy = 0.0
         var xDz = 0.0
@@ -22,9 +27,9 @@ public struct CoordinateSystem3D: Sendable {
             origin.x, origin.y, origin.z,
             direction.x, direction.y, direction.z,
             xDirection.x, xDirection.y, xDirection.z,
-            &isDirect, &xDx, &xDy, &xDz, &yDx, &yDy, &yDz)
+            &isDirect, &nDx, &nDy, &nDz, &xDx, &xDy, &xDz, &yDx, &yDy, &yDz)
         self.origin = origin
-        self.direction = direction
+        self.direction = SIMD3(nDx, nDy, nDz)
         self.xDirection = SIMD3(xDx, xDy, xDz)
         self.yDirection = SIMD3(yDx, yDy, yDz)
         self.isDirect = isDirect
@@ -33,6 +38,9 @@ public struct CoordinateSystem3D: Sendable {
     /// Create from origin and main direction only (X/Y auto-computed).
     public init(origin: SIMD3<Double>, direction: SIMD3<Double>) {
         var isDirect = false
+        var nDx = 0.0
+        var nDy = 0.0
+        var nDz = 0.0
         var xDx = 0.0
         var xDy = 0.0
         var xDz = 0.0
@@ -42,9 +50,9 @@ public struct CoordinateSystem3D: Sendable {
         OCCTAx3CreateFromNormal(
             origin.x, origin.y, origin.z,
             direction.x, direction.y, direction.z,
-            &isDirect, &xDx, &xDy, &xDz, &yDx, &yDy, &yDz)
+            &isDirect, &nDx, &nDy, &nDz, &xDx, &xDy, &xDz, &yDx, &yDy, &yDz)
         self.origin = origin
-        self.direction = direction
+        self.direction = SIMD3(nDx, nDy, nDz)
         self.xDirection = SIMD3(xDx, xDy, xDz)
         self.yDirection = SIMD3(yDx, yDy, yDz)
         self.isDirect = isDirect
