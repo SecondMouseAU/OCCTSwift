@@ -24,16 +24,18 @@ struct WireBuilderTests {
         }
     }
 
-    @Test func buildWireFromWire() {
-        if let rect = Wire.rectangle(width: 10, height: 5),
-            let wireShape = Shape.fromWire(rect)
-        {
-            let wb = WireBuilder()
-            wb.addWire(wireShape)
-            #expect(wb.isDone)
-            let wire = wb.wire
-            #expect(wire != nil)
-        }
+    @Test func buildWireFromWire() throws {
+        let rect = try #require(Wire.rectangle(width: 10, height: 5))
+        let wireShape = try #require(Shape.fromWire(rect))
+        let wb = WireBuilder()
+        wb.addWire(wireShape)
+        #expect(wb.isDone)
+        #expect(wb.error == .wireDone)
+        // The same four edges, perimeter 2 (10 + 5).
+        let wire = try #require(wb.wire)
+        #expect(wire.shapeType == .wire)
+        #expect(wire.edges().count == 4)
+        #expect(abs(wire.totalEdgeLength - 30) < 1e-9)
     }
 
     @Test func emptyWireError() {
