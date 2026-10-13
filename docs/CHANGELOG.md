@@ -21,6 +21,10 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### `Shape.connectedEdges` leaves the receiver untouched and valid (#3354)
+
+- `Shape.connectedEdges` no longer edits the receiver in place and no longer returns an invalid shape for a valid input (a box, a cylinder and a box fused with a sphere all came back invalid). It works on a copy and returns an unchanged copy when connecting would make a valid shape invalid, the same as `fixEdgeConnect()`.
+
 `Shape.faceRestrictAlgo(faceIndex:)` now returns the number of result faces. It returned 0 for every face, because the bridge counted into a zero-capacity buffer.
 
 ### `Document.loadOCAF(from:)` no longer crashes or hangs on a damaged file (#3318)
