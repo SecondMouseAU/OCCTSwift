@@ -21,6 +21,10 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### `circularPattern(angle:)` with a partial angle spans the angle, stepping `angle / (count - 1)` (#3356)
+
+A partial `angle` passed to `circularPattern(axisPoint:axisDirection:count:angle:)`, `circularPatternCut(tool:axisPoint:axisDirection:count:angle:timeout:)` and `circularPatternWithFullHistory(axisPoint:axisDirection:count:angle:)` now runs from the original to the last copy, as its documentation says: three copies over `.pi / 2` sit at 0, 45 and 90 degrees (they used to sit at 0, 30 and 60 because the step was `angle / count`). A full circle, `angle: 0` or an explicit `2 * .pi`, is unchanged and steps by `2 * .pi / count`, since another copy would coincide with the original. A `count` of 1 returns just the original. Callers who relied on the old `angle / count` spacing for a partial angle should pass `angle * Double(count - 1) / Double(count)`.
+
 ### `Document.loadOCAF(from:)` no longer crashes or hangs on a damaged file (#3318)
 
 `Document.loadOCAF(from:)` no longer crashes or hangs the process on an empty file, a non-OCAF text file, a valid binary magic number followed by garbage, an XML file naming a binary format, or an XML file with an unterminated declaration. An XML file that OCCT can load (any prolog size, BOM, DOCTYPE, no declaration) still loads; one that is not an OCAF document now returns `(nil, .driverFailure)` instead of an empty document. A missing file still returns `.unknownDocument`. The faults are in OCCT and the guard sits in the bridge; the kernel follow-up is #3330. (#3318)
