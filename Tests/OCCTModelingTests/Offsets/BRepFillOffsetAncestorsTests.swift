@@ -106,6 +106,59 @@ struct BRepFillOffsetAncestorsTests {
         }
     }
 
+    // An outward offset larger than the face's own size (+12 on a 20 x 20 face, the distance
+    // `Shape.offsetWire`'s large-outward test uses): the domains and the ancestry are the same
+    // as for a small one, so every offset edge keys an ancestor and the wire is half-width 22.
+    @Test("large outward offset keeps the ancestry")
+    func largeOutward() throws {
+        let face = try rectangleFace(width: 20, height: 20)
+        let originals = face.subShapes(ofType: .edge)
+        let vertices = face.subShapes(ofType: .vertex)
+        let ancestors = try #require(OffsetAncestors.create(face: face, offset: 12.0))
+        #expect(ancestors.isDone)
+        let wire = try #require(ancestors.offsetWire)
+        let box = try #require(wire.boundingBox)
+        #expect(abs(box.max.x - 22.0) < 1e-6)
+        #expect(abs(box.min.x + 22.0) < 1e-6)
+        let edges = wire.subShapes(ofType: .edge)
+        #expect(edges.count == 8)
+        for edge in edges {
+            #expect(ancestors.hasAncestor(edge))
+            if let ancestor = ancestors.ancestor(of: edge) {
+                #expect(isOneOf(ancestor, in: originals) || isOneOf(ancestor, in: vertices))
+            } else {
+                Issue.record("an offset edge has no ancestor")
+            }
+        }
+    }
+
+    // A face with a hole is two domains' worth of wires, offset in opposite senses. Every edge of
+    // the offset wire, outer and hole, keys an ancestor edge of the face.
+    @Test("face with a hole keeps the ancestry of both wires")
+    func faceWithHole() throws {
+        let outer = try #require(Wire.rectangle(width: 40, height: 40))
+        let hole = try #require(Wire.circle(radius: 5))
+        let face = try #require(Shape.face(outer: outer, holes: [hole]))
+        let originals = face.subShapes(ofType: .edge)
+        let vertices = face.subShapes(ofType: .vertex)
+        for offset in [2.0, -2.0] {
+            let ancestors = try #require(OffsetAncestors.create(face: face, offset: offset))
+            #expect(ancestors.isDone, "offset \(offset)")
+            let wire = try #require(ancestors.offsetWire)
+            #expect(wire.subShapes(ofType: .wire).count == 2, "offset \(offset)")
+            for edge in wire.subShapes(ofType: .edge) {
+                #expect(ancestors.hasAncestor(edge), "offset \(offset)")
+                if let ancestor = ancestors.ancestor(of: edge) {
+                    #expect(
+                        isOneOf(ancestor, in: originals) || isOneOf(ancestor, in: vertices),
+                        "offset \(offset)")
+                } else {
+                    Issue.record("an offset edge has no ancestor, offset \(offset)")
+                }
+            }
+        }
+    }
+
     // Not done is not a wire: a collapse past the inradius, an input that is not a face, and a
     // non-finite offset.
     @Test("not done gives no offset wire")

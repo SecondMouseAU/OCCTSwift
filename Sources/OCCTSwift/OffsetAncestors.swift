@@ -35,6 +35,9 @@ public final class OffsetAncestors: @unchecked Sendable {
     /// The sign follows ``Shape/offsetWire(face:offset:)`` and `BRepOffsetAPI_MakeOffset`:
     /// a positive offset is outward, a negative one inward (#3364).
     ///
+    /// A face whose wires are a mix of closed and open ones is not offset: ``isDone`` is false.
+    /// A face with holes (all wires closed) is.
+    ///
     /// - Parameters:
     ///   - face: The planar face to offset.
     ///   - offset: Signed offset distance (positive outward, negative inward).

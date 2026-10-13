@@ -2295,6 +2295,10 @@ extension Shape {
     /// ``offsetWireOnPlane(distance:joinType:)``) define the sign (#3364). The result is trimmed:
     /// a closed wire for a rectangle, with rounded (arc-join) corners when it expands.
     ///
+    /// A face whose wires are a mix of closed and open ones is refused (nil): a face with holes,
+    /// whose wires are all closed, is offset, but the open wires of a mixed face have no domain
+    /// to be offset in.
+    ///
     /// ```swift
     /// let rect = Wire.rectangle(width: 20, height: 20)!
     /// let face = Shape.face(from: rect)!.faces().first!
