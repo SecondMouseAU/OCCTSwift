@@ -988,17 +988,38 @@ OCCTShapeRef OCCTShapeCustomConvertToRevolution(OCCTShapeRef shape)
   }
 }
 
+// #3252/#3354: ShapeFix_EdgeConnect::Build rewrites the vertices of the edges it was given, in
+// place (ShapeFix_EdgeConnect.cxx, Remove/Add on the edge). Run it on a copy so the caller's shape
+// is never edited. OCCT has no caller of this class (src/ and Draw), so there is no call site to
+// follow for the result's contract; Scripts/repro/3252/transcript.txt measures it instead.
+// Shared by OCCTShapeConnectEdges and OCCTShapeFixEdgeConnect, which differ only in name.
+static TopoDS_Shape occtEdgeConnectOnCopy(const TopoDS_Shape& input)
+{
+  BRepBuilderAPI_Copy copier(input, false, false);
+  TopoDS_Shape        work = copier.Shape();
+
+  ShapeFix_EdgeConnect connector;
+  connector.Add(work);
+  connector.Build();
+
+  // The class is built for wires whose edges carry separate, slightly apart vertices. On a shape
+  // whose vertices are already shared (a box) it leaves the copy invalid even though the input
+  // was valid, so a result that is worse than the input is discarded: the input has nothing to
+  // connect.
+  if (!BRepCheck_Analyzer(work).IsValid() && BRepCheck_Analyzer(input).IsValid())
+    work = BRepBuilderAPI_Copy(input, false, false).Shape();
+  return work;
+}
+
 OCCTShapeRef OCCTShapeConnectEdges(OCCTShapeRef shape)
 {
-  if (!shape)
+  if (!occtShapeIsPresent(shape))
     return nullptr;
   try
   {
-    ShapeFix_EdgeConnect connector;
-    connector.Add(shape->shape);
-    connector.Build();
-    // EdgeConnect modifies edges in place, return a copy of the shape
-    return new OCCTShape(shape->shape);
+    auto* ref  = new OCCTShape();
+    ref->shape = occtEdgeConnectOnCopy(shape->shape);
+    return ref;
   }
   catch (...)
   {
@@ -1551,25 +1572,8 @@ OCCTShapeRef OCCTShapeFixEdgeConnect(OCCTShapeRef shape)
     return nullptr;
   try
   {
-    // #3252: ShapeFix_EdgeConnect::Build rewrites the vertices of the edges it was given, in place
-    // (ShapeFix_EdgeConnect.cxx, Remove/Add on the edge). Run it on a copy so the caller's shape is
-    // never edited. OCCT has no caller of this class (src/ and Draw), so there is no call site to
-    // follow for the result's contract; Scripts/repro/3252/transcript.txt measures it instead.
-    BRepBuilderAPI_Copy copier(shape->shape, false, false);
-    TopoDS_Shape        work = copier.Shape();
-
-    ShapeFix_EdgeConnect connector;
-    connector.Add(work);
-    connector.Build();
-
-    // The class is built for wires whose edges carry separate, slightly apart vertices. On a shape
-    // whose vertices are already shared (a box) it leaves the copy invalid even though the input
-    // was valid, so a result that is worse than the input is discarded: the input has nothing to
-    // connect.
-    if (!BRepCheck_Analyzer(work).IsValid() && BRepCheck_Analyzer(shape->shape).IsValid())
-      work = BRepBuilderAPI_Copy(shape->shape, false, false).Shape();
     auto* ref  = new OCCTShape();
-    ref->shape = work;
+    ref->shape = occtEdgeConnectOnCopy(shape->shape);
     return ref;
   }
   catch (...)
