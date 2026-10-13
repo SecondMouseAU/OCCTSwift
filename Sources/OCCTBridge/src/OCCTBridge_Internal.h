@@ -1430,6 +1430,33 @@ inline bool occtIsUsableAngle(double angle)
   return std::isfinite(angle);
 }
 
+/// The rotation step, in radians, between consecutive copies of a circular pattern (#3356).
+///
+/// `angle` is the TOTAL angle the pattern spans and `count` includes the original, so a partial
+/// angle puts the last copy AT `angle`: `count - 1` steps of `angle / (count - 1)`. This is the
+/// convention of every parametric CAD polar pattern (FreeCAD's PolarPattern, SolidWorks and
+/// Fusion's circular pattern), and what the Swift doc comment promised; OCCT itself has no
+/// circular-pattern algorithm for a call site to follow.
+///
+/// A full circle is the one place the step is `2 pi / count`, because copy `count` would land on
+/// the original: `angle == 0` means a full turn, and so does an explicit `+-2 pi`, which is what
+/// callers passing the span literally got before this helper and still get (no coincident
+/// duplicate). A single copy has no step to take.
+///
+/// Shared by `OCCTShapeCircularPattern` (Transform.mm) and `OCCTShapeHistoryFromCircularPattern`
+/// (Boolean.mm), per `okf/policies/helper-placement-by-reach.md`.
+inline double occtCircularPatternStep(double angle, int32_t count)
+{
+  if (count < 1)
+    return 0.0;
+  const double aFullTurn = 2.0 * M_PI;
+  if (angle == 0.0)
+    return aFullTurn / count;
+  if (std::fabs(std::fabs(angle) - aFullTurn) <= 1e-9)
+    return std::copysign(aFullTurn, angle) / count;
+  return count > 1 ? angle / (count - 1) : 0.0;
+}
+
 /// The largest sweep angle, in radians, a revolve builder is handed (#3109): `1e4`, about 1591
 /// turns.
 ///

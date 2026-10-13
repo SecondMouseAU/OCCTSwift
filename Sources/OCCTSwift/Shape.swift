@@ -2558,7 +2558,11 @@ public final class Shape: @unchecked Sendable {
     ///   - axisPoint: Point on the rotation axis
     ///   - axisDirection: Direction of the rotation axis
     ///   - count: Number of copies (including original)
-    ///   - angle: Total angle to span in radians (0 for full circle)
+    ///   - angle: Total angle to span in radians (0 for full circle). A partial angle runs from
+    ///     the original to the last copy, so consecutive copies are `angle / (count - 1)` apart
+    ///     (three copies over `.pi / 2` sit at 0, 45 and 90 degrees). A full circle, `0` or an
+    ///     explicit `2 * .pi`, steps by `2 * .pi / count`, since a further copy would coincide
+    ///     with the original. A `count` of 1 returns just the original.
     ///
     /// - Returns: Compound containing all copies, or nil on failure
     ///
@@ -2605,7 +2609,8 @@ public final class Shape: @unchecked Sendable {
     ///   - axisPoint: Point on the rotation axis
     ///   - axisDirection: Direction of the rotation axis
     ///   - count: Number of tool copies (including the original `tool`)
-    ///   - angle: Total angle to span in radians (0 for a full circle)
+    ///   - angle: Total angle to span in radians (0 for a full circle); spacing as for
+    ///     ``circularPattern(axisPoint:axisDirection:count:angle:)``
     ///   - timeout: Wall-clock bound in seconds for the subtraction this ends with (default
     ///     ``defaultBooleanTimeout``, 120s). `0`/negative = unbounded. Before #1067 the bound
     ///     applied but was not reachable from this signature, so a caller who knew their cut was

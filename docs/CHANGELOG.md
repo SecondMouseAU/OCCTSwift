@@ -21,6 +21,10 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### `circularPattern(angle:)` with a partial angle spans the angle, stepping `angle / (count - 1)` (#3356)
+
+A partial `angle` passed to `circularPattern(axisPoint:axisDirection:count:angle:)`, `circularPatternCut(tool:axisPoint:axisDirection:count:angle:timeout:)` and `circularPatternWithFullHistory(axisPoint:axisDirection:count:angle:)` now runs from the original to the last copy, as its documentation says: three copies over `.pi / 2` sit at 0, 45 and 90 degrees (they used to sit at 0, 30 and 60 because the step was `angle / count`). A full circle, `angle: 0` or an explicit `2 * .pi`, is unchanged and steps by `2 * .pi / count`, since another copy would coincide with the original. A `count` of 1 returns just the original. Callers who relied on the old `angle / count` spacing for a partial angle should pass `angle * Double(count - 1) / Double(count)`.
+
 ### `Shape.orientClosedSolid()` reorients an inward solid in place (#3357)
 
 - `Shape.orientClosedSolid()` reported `true` for a solid whose shell pointed inward and left it unchanged (signed volume stayed negative). It now writes the reversed solid back, so the receiver reads the positive volume afterwards.

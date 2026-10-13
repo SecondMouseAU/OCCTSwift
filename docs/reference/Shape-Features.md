@@ -396,6 +396,7 @@ public func circularPattern(axisPoint: SIMD3<Double>, axisDirection: SIMD3<Doubl
 Duplicates the **entire body** `count` times around `axisPoint`/`axisDirection` and returns a compound. It does **not** pattern features, to replicate a cut feature, see `circularPatternCut(tool:...)`.
 
 - **Parameters:** `axisPoint`, point on the rotation axis; `axisDirection`, axis direction; `count`, number of copies (including original); `angle`, total arc to span in radians (`0` = full circle).
+- **Spacing:** a partial `angle` is the span from the original to the LAST copy, so consecutive copies are `angle / (count - 1)` apart (3 copies over `.pi / 2` sit at 0, 45 and 90 degrees); a single copy stays put. A full circle (`angle: 0`, or an explicit `2 * .pi`) steps by `2 * .pi / count`, because the next copy would land on the original (#3356).
 - **Returns:** Compound of all copies, or `nil` on failure.
 - **OCCT:** `gp_Trsf::SetRotation` applied iteratively.
 - **Example:**
@@ -421,7 +422,7 @@ public func circularPatternCut(tool: Shape, axisPoint: SIMD3<Double>,
 
 Combines `circularPattern` of `tool` with `subtracting` in a single call. The natural primitive for bolt circles.
 
-- **Parameters:** `tool`, the cutting feature (e.g. a cylinder at the first hole position); `axisPoint`, rotation axis point; `axisDirection`, axis direction; `count`, number of tool copies (including original); `angle`, arc span in radians (`0` = full circle); `timeout`, wall-clock bound in seconds for the closing subtraction (`0`/negative = unbounded).
+- **Parameters:** `tool`, the cutting feature (e.g. a cylinder at the first hole position); `axisPoint`, rotation axis point; `axisDirection`, axis direction; `count`, number of tool copies (including original); `angle`, arc span in radians, first to last copy (`0` = full circle, spacing as for `circularPattern`, #3356); `timeout`, wall-clock bound in seconds for the closing subtraction (`0`/negative = unbounded).
 - **Returns:** This body with all `count` features cut out, or `nil` on failure.
 - **OCCT:** `circularPattern` + `BRepAlgoAPI_Cut`.
 - **⚠️ Three indistinguishable `nil`s.** `count <= 0`, the pattern failing, and the subtraction failing or exceeding `timeout` all return the same `nil`. Before [#1067](https://github.com/SecondMouseAU/OCCTSwift/issues/1067) the 120s bound applied here but was not reachable from this signature at all, so a caller whose cut was legitimately long could not raise it. A caller who needs to tell the three apart runs the two steps directly, which is all this method does.
