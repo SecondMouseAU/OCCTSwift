@@ -1,4 +1,4 @@
-Tests/OCCTBRepGraphTests/Mutation/EditorViewV162Tests.swift
+Tests/OCCTBRepGraphTests/Mutation/EditorViewGeometricSettersTests.swift
 Tests/OCCTCurveTests/BSplineAndBezier/BSplineCurveCompletionsTests.swift
 Tests/OCCTCurveTests/Conics/Curve3DArcAliasParityTests.swift
 Tests/OCCTCurveTests/Continuity/ContinuityEncodingTests.swift

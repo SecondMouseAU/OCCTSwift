@@ -45,7 +45,7 @@ struct BRepCheckAnalyzerTests {
 
     @Test("Analyzer without geometry checks")
     func noGeomChecks() throws {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         #expect(box.analyzeValidity(geometryChecks: false))
     }
 }

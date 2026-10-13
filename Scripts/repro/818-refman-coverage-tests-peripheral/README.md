@@ -147,7 +147,7 @@ file in the tree. `BRepOffsetAPI_MakePipeShell`'s own "tested by `OCCTThreadTest
 case where the gate passed only vacuously (its matched decl, `helicalSweep`, lives in
 `Shape+Modeling.swift` alongside a dozen unrelated types) **and turned out to be correct anyway** —
 confirmed separately by `grep -n "helicalSweep(" Tests/OCCTThreadTests/`, which finds a real,
-non-comment call in `Issue185HelicalSweepTests.swift`. So every one of the 53 `tested` verdicts
+non-comment call in `HelicalSweepTests.swift`. So every one of the 53 `tested` verdicts
 involving a large multi-type file was individually grep-confirmed by hand during this pass, not
 trusted from the gate alone; `MANUAL_OVERRIDES` records only the cases where hand-checking
 disagreed with the automated signal, which is a strict subset of the cases hand-checking looked at.
@@ -190,7 +190,7 @@ concurrency-defect cluster (#298/#341/#344/#349/#353/#374/#1154/#1153).
 **One candidate was investigated in depth and rejected; nothing else the sweeps surfaced was a
 genuine claim requiring investigation** (mostly retrospective bug-fix documentation quoting the
 issue numbers directly, or comments already carefully hedged about what they can and cannot prove —
-e.g. `Issue361SharedSingletonThreadSafetyTests.swift`'s own header: *"the concurrent tests below are
+e.g. `SharedSingletonThreadSafetyTests.swift`'s own header: *"the concurrent tests below are
 basic exercisers through the Swift API... not the authoritative verification for a lock-coverage
 bug"*, exactly the caveat #818 asks whether tests carry).
 

@@ -35,7 +35,7 @@ struct BRepGPropFaceTests {
 
     @Test("Evaluate GProp normal on box face")
     func evaluateBoxFace() throws {
-        let box = Shape.box(width: 10, height: 20, depth: 30)!
+        let box = try #require(Shape.box(width: 10, height: 20, depth: 30))
         let faces = box.faces()
         let face = faces[0]
 
@@ -95,7 +95,7 @@ struct BRepGPropFaceTests {
     @Test("GProp normal magnitude is area element")
     func normalMagnitudeIsAreaElement() throws {
         // For a planar face, the normal magnitude should be constant
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let face = box.faces()[0]
 
         guard let bounds = face.naturalBounds else {

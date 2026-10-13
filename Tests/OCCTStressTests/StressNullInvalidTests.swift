@@ -10,8 +10,8 @@ import Testing
 @Suite("Stress: Nil Propagation")
 struct StressNilPropagationTests {
 
-    @Test func failedFilletFedToBoolean() {
-        let box = standardBox()
+    @Test func failedFilletFedToBoolean() throws {
+        let box = try standardBox()
         let badFillet = box.filleted(radius: 999.0)  // nil, radius too large
         #expect(badFillet == nil)
     }
@@ -20,8 +20,8 @@ struct StressNilPropagationTests {
     // the fillet of the cut both succeed in the kernel (Scripts/repro/766-stress-null-invalid/);
     // the values are BRepGProp's, 1000 - 4/3·π·125 for the cut.
     @Test func failedBooleanChain() throws {
-        let box = standardBox()
-        let sphere = standardSphere()
+        let box = try standardBox()
+        let sphere = try standardSphere()
         let result = try #require(box.subtracting(sphere))
         #expect(result.isValid)
         #expect(abs((result.volume ?? 0) - 476.4012244) < 1e-6)
@@ -39,7 +39,7 @@ struct StressNilPropagationTests {
     /// and this test asserted nothing at all. The refusal is now pinned and the drill runs on the
     /// input the caller still holds, which is the scenario the name describes.
     @Test func drillAfterFailedShell() throws {
-        let box = standardBox()
+        let box = try standardBox()
         #expect(box.shelled(thickness: -6.0) == nil, "a closed box has no MakeThickSolidBySimple")
         let drilled = try #require(
             box.drilled(at: SIMD3(0, 0, 5), direction: SIMD3(0, 0, -1), radius: 1, depth: 0),
@@ -55,7 +55,7 @@ struct StressNilPropagationTests {
     // filleted box throws Standard_Failure "There are no suitable edges for chamfer or fillet",
     // which OCCTShapeChamfer's catch turns into nil. Both outcomes are now pinned.
     @Test func chamferAfterFailedFillet() throws {
-        let box = standardBox()
+        let box = try standardBox()
         let filleted = try #require(box.filleted(radius: 0.5))
         #expect(abs((filleted.volume ?? 0) - 993.7293492) < 1e-6)
         let chamfered = filleted.chamfered(distance: 0.3)
@@ -63,7 +63,7 @@ struct StressNilPropagationTests {
     }
 
     @Test func unionWithSelf() throws {
-        let box = standardBox()
+        let box = try standardBox()
         let r = try #require(box.union(box))
         #expect(r.isValid)
         #expect(abs((r.volume ?? 0) - 1000.0) < 1e-6)
@@ -73,15 +73,16 @@ struct StressNilPropagationTests {
     // Epic #766: BRepAlgoAPI_Cut of a box by itself is done and empty: no faces, and a zero
     // volume integral that ``Shape/volume`` reports as nil rather than as a measured 0.
     @Test func subtractSelf() throws {
-        let box = standardBox()
+        let box = try standardBox()
         let r = try #require(box.subtracting(box))
         #expect(r.subShapeCount(ofType: .face) == 0)
         #expect(r.volume == nil)
     }
 
     @Test func intersectDisjoint() throws {
-        let b1 = Shape.box(width: 10, height: 10, depth: 10)!
-        let b2 = Shape.box(origin: SIMD3(100, 100, 100), width: 10, height: 10, depth: 10)!
+        let b1 = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let b2 = try #require(
+            Shape.box(origin: SIMD3(100, 100, 100), width: 10, height: 10, depth: 10))
         // Epic #766: BRepAlgoAPI_Common is done and empty for disjoint arguments.
         let r = try #require(b1.intersection(b2))
         #expect(r.subShapeCount(ofType: .face) == 0)
@@ -240,7 +241,7 @@ struct StressInvalidParameterTests {
     // BRepFilletAPI_MakeFillet is not done for a negative radius. The positive radius on the same
     // box is the control: it removes material, so the nil above is the sign and not the box.
     @Test func negativeFillet() throws {
-        let box = standardBox()
+        let box = try standardBox()
         #expect(box.filleted(radius: -1.0) == nil)
         let ok = try #require(box.filleted(radius: 1.0))
         #expect(abs(try #require(ok.volume) - 975.5870139) < 1e-6)
@@ -248,7 +249,7 @@ struct StressInvalidParameterTests {
 
     // BRepFilletAPI_MakeChamfer, likewise.
     @Test func negativeChamfer() throws {
-        let box = standardBox()
+        let box = try standardBox()
         #expect(box.chamfered(distance: -1.0) == nil)
         let ok = try #require(box.chamfered(distance: 1.0))
         #expect(abs(try #require(ok.volume) - 945.3333333) < 1e-6)
@@ -260,8 +261,8 @@ struct StressInvalidParameterTests {
     /// sign and every magnitude (#2739), so the previous `if let r = result { _ = r.isValid }`
     /// was unreachable and discarded its own result besides. Both signs are pinned here;
     /// hollowing a closed solid is `shelled(thickness:openFaces:)`.
-    @Test func negativeShell() {
-        let box = standardBox()
+    @Test func negativeShell() throws {
+        let box = try standardBox()
         #expect(box.shelled(thickness: -1.0) == nil)
         #expect(box.shelled(thickness: 1.0) == nil)
     }
@@ -270,7 +271,7 @@ struct StressInvalidParameterTests {
     // kernel cut succeeds and removes nothing, so a missing guard would read as a drilled hole:
     // the control below is the drill that does remove material.
     @Test func zeroDrill() throws {
-        let box = standardBox()
+        let box = try standardBox()
         #expect(
             box.drilled(at: SIMD3(0, 0, 5), direction: SIMD3(0, 0, -1), radius: 0, depth: 0) == nil)
         let ok = try #require(
@@ -281,7 +282,7 @@ struct StressInvalidParameterTests {
     // A zero direction is refused by occtValidDrillDirection; unguarded, gp_Dir throws
     // Standard_ConstructionError. The same drill along -Z is the control.
     @Test func zeroDirectionVector() throws {
-        let box = standardBox()
+        let box = try standardBox()
         #expect(
             box.drilled(at: SIMD3(0, 0, 5), direction: SIMD3(0, 0, 0), radius: 1, depth: 5) == nil)
         let ok = try #require(
@@ -292,7 +293,7 @@ struct StressInvalidParameterTests {
     // The box has 12 edges, so index 999 has no edge and no polyline. The old assertion ended in
     // `|| true` and could not fail whatever the call returned; index 0 is the control.
     @Test func outOfBoundsSubShapeIndex() throws {
-        let box = standardBox()
+        let box = try standardBox()
         #expect(box.edgePolyline(at: 999, deflection: 0.1) == nil)
         let pts = try #require(box.edgePolyline(at: 0, deflection: 0.1))
         #expect(pts.count >= 2)
@@ -301,8 +302,8 @@ struct StressInvalidParameterTests {
     // Geom_Circle is periodic, so a parameter past the domain evaluates at the wrapped angle:
     // 5·(cos 10, sin 10, 0), not a clamp to the end point. The wrap is the claim, so the same
     // point one period down has to agree.
-    @Test func curveEvalOutsideDomain() {
-        let curve = standardCurve3D()
+    @Test func curveEvalOutsideDomain() throws {
+        let curve = try standardCurve3D()
         let domain = curve.domain
         let pt = curve.point(at: domain.upperBound + 10.0)
         #expect(abs(pt.x - -4.1953576453822627) < 1e-9)
@@ -315,8 +316,8 @@ struct StressInvalidParameterTests {
 
     // A plane has no parametric bound; (u, v) far out maps to (u, v, 0). The two parameters
     // differ, and differ in sign, so a u/v swap or a dropped sign would show.
-    @Test func surfaceEvalOutsideDomain() {
-        let surf = standardSurface()
+    @Test func surfaceEvalOutsideDomain() throws {
+        let surf = try standardSurface()
         let pt = surf.point(atU: 1e12, v: -2e12)
         #expect(pt.x == 1e12)
         #expect(pt.y == -2e12)
@@ -392,9 +393,9 @@ struct StressInvalidParameterTests {
 @Suite("Stress: Post-Operation State")
 struct StressPostOperationStateTests {
 
-    @Test func shapeReusedAfterBoolean() {
-        let box = standardBox()
-        let sphere = standardSphere()
+    @Test func shapeReusedAfterBoolean() throws {
+        let box = try standardBox()
+        let sphere = try standardSphere()
         let r1 = box.union(sphere)
         // Original shapes should still be usable
         let v1 = box.volume
@@ -413,7 +414,7 @@ struct StressPostOperationStateTests {
     }
 
     @Test func shapeQueriesAfterExport() throws {
-        let box = standardBox()
+        let box = try standardBox()
         let url = tempURL("brep")
         defer { cleanupTemp(url) }
         try Exporter.writeBREP(shape: box, to: url)
@@ -423,7 +424,7 @@ struct StressPostOperationStateTests {
     }
 
     @Test func multipleExportsOfSameShape() throws {
-        let box = standardBox()
+        let box = try standardBox()
         let url1 = tempURL("step")
         let url2 = tempURL("brep")
         let url3 = tempURL("stl")
@@ -450,8 +451,8 @@ struct StressPostOperationStateTests {
         #expect(stl.count == 84 + 50 * 12, "STL is \(stl.count) bytes")
     }
 
-    @Test func meshRepeatedGeneration() {
-        let box = standardBox()
+    @Test func meshRepeatedGeneration() throws {
+        let box = try standardBox()
         let m1 = box.mesh(linearDeflection: 0.5)
         let m2 = box.mesh(linearDeflection: 0.1)
         let m3 = box.mesh(linearDeflection: 1.0)
@@ -463,8 +464,8 @@ struct StressPostOperationStateTests {
         }
     }
 
-    @Test func volumeCalledManyTimes() {
-        let box = standardBox()
+    @Test func volumeCalledManyTimes() throws {
+        let box = try standardBox()
         for _ in 0..<100 {
             let v = box.volume
             #expect(abs((v ?? 0) - 1000.0) < 1e-9)
@@ -520,7 +521,7 @@ struct StressUnusualInputTests {
     }
 
     @Test func sectionOfSameShape() throws {
-        let box = standardBox()
+        let box = try standardBox()
         let section = try #require(SectionBuilder(shape1: box, shape2: box))
         // Epic #766: BRepAlgoAPI_Section of a box with itself is done and has no edges, since
         // every face is coincident rather than crossing.
@@ -530,21 +531,21 @@ struct StressUnusualInputTests {
     }
 
     @Test func translateByZero() throws {
-        let box = standardBox()
+        let box = try standardBox()
         let r = try #require(box.translated(by: SIMD3(0, 0, 0)))
         #expect(r.isValid)
         #expect(abs((r.volume ?? 0) - 1000.0) < 1e-6)
     }
 
     @Test func rotateByZero() throws {
-        let box = standardBox()
+        let box = try standardBox()
         let r = try #require(box.rotated(axis: SIMD3(0, 0, 1), angle: 0))
         #expect(r.isValid)
         #expect(abs((r.volume ?? 0) - 1000.0) < 1e-6)
     }
 
     @Test func scaleByOne() throws {
-        let box = standardBox()
+        let box = try standardBox()
         let r = try #require(box.scaled(by: 1.0))
         #expect(r.isValid)
         #expect(abs((r.volume ?? 0) - 1000.0) < 1e-6)
@@ -553,7 +554,7 @@ struct StressUnusualInputTests {
     // Epic #766: gp_Trsf::SetScale(0) does not throw in a release kernel, and
     // BRepBuilderAPI_Transform collapses the box to a point: six faces, invalid, no volume.
     @Test func scaleByZero() throws {
-        let box = standardBox()
+        let box = try standardBox()
         let r = try #require(box.scaled(by: 0.0))
         #expect(!r.isValid)
         #expect(r.volume == nil)
@@ -561,7 +562,7 @@ struct StressUnusualInputTests {
 
     // A factor of -1 is a point reflection through the origin: a valid box of the same volume.
     @Test func scaleByNegative() throws {
-        let box = standardBox()
+        let box = try standardBox()
         let r = try #require(box.scaled(by: -1.0))
         #expect(r.isValid)
         #expect(abs((r.volume ?? 0) - 1000.0) < 1e-6)

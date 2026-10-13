@@ -8,7 +8,7 @@ struct ExporterDrawingCollectionGoldenTests {
     @Test("SVGWriter.collectFromDrawing output is byte-identical to the pre-consolidation capture")
     func svgGolden() throws {
         let writer = SVGWriter()
-        writer.collectFromDrawing(makeGolden795Drawing())
+        writer.collectFromDrawing(try makeGolden795Drawing())
         let url = URL(fileURLWithPath: NSTemporaryDirectory())
             .appendingPathComponent("795_golden_\(UUID()).svg")
         defer { try? FileManager.default.removeItem(at: url) }
@@ -20,7 +20,7 @@ struct ExporterDrawingCollectionGoldenTests {
     @Test("DXFWriter.collectFromDrawing output is byte-identical to the pre-consolidation capture")
     func dxfGolden() throws {
         let writer = DXFWriter()
-        writer.collectFromDrawing(makeGolden795Drawing())
+        writer.collectFromDrawing(try makeGolden795Drawing())
         let url = URL(fileURLWithPath: NSTemporaryDirectory())
             .appendingPathComponent("795_golden_\(UUID()).dxf")
         defer { try? FileManager.default.removeItem(at: url) }
@@ -32,7 +32,7 @@ struct ExporterDrawingCollectionGoldenTests {
     @Test("PDFWriter.collectFromDrawing output is byte-identical to the pre-consolidation capture")
     func pdfGolden() throws {
         let writer = PDFWriter()
-        writer.collectFromDrawing(makeGolden795Drawing())
+        writer.collectFromDrawing(try makeGolden795Drawing())
         let url = URL(fileURLWithPath: NSTemporaryDirectory())
             .appendingPathComponent("795_golden_\(UUID()).pdf")
         defer { try? FileManager.default.removeItem(at: url) }

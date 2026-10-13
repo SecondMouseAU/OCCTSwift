@@ -21,12 +21,12 @@ struct STEPWriterOversizedNameTests {
     @Test("A STEP export with a >72-char unbroken name completes and preserves the name")
     func oversizedUnbrokenNameDoesNotHang() throws {
         let longName = String(
-            (0..<150).map { i in
-                Character(UnicodeScalar(65 + i % 26)!)
+            try (0..<150).map { i in
+                Character(try #require(UnicodeScalar(65 + i % 26)))
             })
         #expect(longName.count > 72)
 
-        let box = Shape.box(width: 1, height: 1, depth: 1)!
+        let box = try #require(Shape.box(width: 1, height: 1, depth: 1))
         let url = FileManager.default.temporaryDirectory
             .appendingPathComponent("occt-323-oversized-name-\(UUID().uuidString).step")
         defer { try? FileManager.default.removeItem(at: url) }

@@ -1,33 +1,33 @@
 # current_path	proposed_path	area	pending_prs	reason
-Tests/OCCTThreadTests/Issue1404TObjApplicationThreadSafetyTests.swift	Tests/OCCTThreadTests/Concurrency/Issue1404TObjApplicationThreadSafetyTests.swift	Concurrency	-	TObj_Application singleton fields serialized
-Tests/OCCTThreadTests/Issue298FilletThreadSafetyTests.swift	Tests/OCCTThreadTests/Concurrency/Issue298FilletThreadSafetyTests.swift	Concurrency	-	fillet of boolean thread-safe in a sheet-metal build
-Tests/OCCTThreadTests/Issue3039BRepLibPlaneFirstUseTests.swift	Tests/OCCTThreadTests/Concurrency/Issue3039BRepLibPlaneFirstUseTests.swift	Concurrency	-	first concurrent edge2d calls in a process
-Tests/OCCTThreadTests/Issue3065EdgeCurvePerTaskTests.swift	Tests/OCCTThreadTests/Concurrency/Issue3065EdgeCurvePerTaskTests.swift	Concurrency	-	one EdgeCurve per task over a shared BSpline edge
-Tests/OCCTThreadTests/Issue3097FilletDirectThreadSafetyTests.swift	Tests/OCCTThreadTests/Concurrency/Issue3097FilletDirectThreadSafetyTests.swift	Concurrency	-	Shape.filleted thread-safe on boolean results
-Tests/OCCTThreadTests/Issue341MeshCafThreadSafetyTests.swift	Tests/OCCTThreadTests/Concurrency/Issue341MeshCafThreadSafetyTests.swift	Concurrency	-	concurrent OBJ import and export
-Tests/OCCTThreadTests/Issue359STEPThreadSafetyTests.swift	Tests/OCCTThreadTests/Concurrency/Issue359STEPThreadSafetyTests.swift	Concurrency	-	concurrent STEP import and export
-Tests/OCCTThreadTests/Issue361SharedSingletonThreadSafetyTests.swift	Tests/OCCTThreadTests/Concurrency/Issue361SharedSingletonThreadSafetyTests.swift	Concurrency	-	naming scope and font manager singletons
-Tests/OCCTThreadTests/Issue367FuseMultiThreadSafetyTests.swift	Tests/OCCTThreadTests/Concurrency/Issue367FuseMultiThreadSafetyTests.swift	Concurrency	-	concurrent fuseAll matches the single-threaded baseline
+Tests/OCCTThreadTests/Issue1404TObjApplicationThreadSafetyTests.swift	Tests/OCCTThreadTests/Concurrency/TObjApplicationThreadSafetyTests.swift	Concurrency	-	TObj_Application singleton fields serialized
+Tests/OCCTThreadTests/Issue298FilletThreadSafetyTests.swift	Tests/OCCTThreadTests/Concurrency/FilletOfBooleanThreadSafetyTests.swift	Concurrency	-	fillet of boolean thread-safe in a sheet-metal build
+Tests/OCCTThreadTests/Issue3039BRepLibPlaneFirstUseTests.swift	Tests/OCCTThreadTests/Concurrency/BRepLibPlaneFirstUseTests.swift	Concurrency	-	first concurrent edge2d calls in a process
+Tests/OCCTThreadTests/Issue3065EdgeCurvePerTaskTests.swift	Tests/OCCTThreadTests/Concurrency/EdgeCurvePerTaskTests.swift	Concurrency	-	one EdgeCurve per task over a shared BSpline edge
+Tests/OCCTThreadTests/Issue3097FilletDirectThreadSafetyTests.swift	Tests/OCCTThreadTests/Concurrency/FilletDirectThreadSafetyTests.swift	Concurrency	-	Shape.filleted thread-safe on boolean results
+Tests/OCCTThreadTests/Issue341MeshCafThreadSafetyTests.swift	Tests/OCCTThreadTests/Concurrency/MeshCafThreadSafetyTests.swift	Concurrency	-	concurrent OBJ import and export
+Tests/OCCTThreadTests/Issue359STEPThreadSafetyTests.swift	Tests/OCCTThreadTests/Concurrency/STEPThreadSafetyTests.swift	Concurrency	-	concurrent STEP import and export
+Tests/OCCTThreadTests/Issue361SharedSingletonThreadSafetyTests.swift	Tests/OCCTThreadTests/Concurrency/SharedSingletonThreadSafetyTests.swift	Concurrency	-	naming scope and font manager singletons
+Tests/OCCTThreadTests/Issue367FuseMultiThreadSafetyTests.swift	Tests/OCCTThreadTests/Concurrency/FuseMultiThreadSafetyTests.swift	Concurrency	-	concurrent fuseAll matches the single-threaded baseline
 Tests/OCCTThreadTests/OCCTThreadTests.swift	Tests/OCCTThreadTests/Specs/OCCTThreadTests.swift	Specs	-	ThreadSpec parsing and thread form v2
-Tests/OCCTThreadTests/Issue989ThreadDesignationParseTests.swift	Tests/OCCTThreadTests/Specs/Issue989ThreadDesignationParseTests.swift	Specs	-	thread designation parsing
-Tests/OCCTThreadTests/Issue784ThreadBuildCodableCompatTests.swift	Tests/OCCTThreadTests/Specs/Issue784ThreadBuildCodableCompatTests.swift	Specs	-	ThreadBuild legacy payload decoding
+Tests/OCCTThreadTests/Issue989ThreadDesignationParseTests.swift	Tests/OCCTThreadTests/Specs/ThreadDesignationParseTests.swift	Specs	-	thread designation parsing
+Tests/OCCTThreadTests/Issue784ThreadBuildCodableCompatTests.swift	Tests/OCCTThreadTests/Specs/ThreadBuildCodableCompatTests.swift	Specs	-	ThreadBuild legacy payload decoding
 Tests/OCCTThreadTests/ThreadFormsTests.swift	Tests/OCCTThreadTests/Profiles/ThreadFormsTests.swift	Profiles	-	Whitworth, BSP, ACME, trapezoidal, square, buttress, knuckle, taper and custom forms
-Tests/OCCTThreadTests/Issue988ThreadProfileFactoryTests.swift	Tests/OCCTThreadTests/Profiles/Issue988ThreadProfileFactoryTests.swift	Profiles	-	square and buttress from the trapezoid factory unchanged
-Tests/OCCTThreadTests/Issue991ThreadProfileFlatWidthTests.swift	Tests/OCCTThreadTests/Profiles/Issue991ThreadProfileFlatWidthTests.swift	Profiles	-	profile owns its flat widths
-Tests/OCCTThreadTests/Issue185HelicalSweepTests.swift	Tests/OCCTThreadTests/Construction/Issue185HelicalSweepTests.swift	Construction	-	helical sweep and worm-thread helicoid
-Tests/OCCTThreadTests/Issue187ScrewThreadTests.swift	Tests/OCCTThreadTests/Construction/Issue187ScrewThreadTests.swift	Construction	-	screw-motion thread cutter, smooth analytic helicoid
-Tests/OCCTThreadTests/Issue213VProfileTests.swift	Tests/OCCTThreadTests/Construction/Issue213VProfileTests.swift	Construction	#2369	ISO-68 V-thread profile flanks and removed material
-Tests/OCCTThreadTests/Issue219SmoothInternalTests.swift	Tests/OCCTThreadTests/Construction/Issue219SmoothInternalTests.swift	Construction	-	smooth fine-pitch internal thread
-Tests/OCCTThreadTests/Issue225ThreadedRodTests.swift	Tests/OCCTThreadTests/Construction/Issue225ThreadedRodTests.swift	Construction	-	threadedRod from a custom profile
-Tests/OCCTThreadTests/Issue254BuildModesTests.swift	Tests/OCCTThreadTests/Construction/Issue254BuildModesTests.swift	Construction	-	single-start threads smooth for every build mode
-Tests/OCCTThreadTests/Issue257MultiStartTests.swift	Tests/OCCTThreadTests/Construction/Issue257MultiStartTests.swift	Construction	#2351	smooth multi-start direct thread build
-Tests/OCCTThreadTests/Issue990ThreadAxisBasisTests.swift	Tests/OCCTThreadTests/Construction/Issue990ThreadAxisBasisTests.swift	Construction	-	thread clocking follows the gp_Ax2 perpendicular basis
-Tests/OCCTThreadTests/Issue1578ThreadedHoleMinorDiameterTests.swift	Tests/OCCTThreadTests/Construction/Issue1578ThreadedHoleMinorDiameterTests.swift	Construction	-	threadedHole internal cutter minor radius, nut mates bolt
-Tests/OCCTThreadTests/Issue181RobustnessTests.swift	Tests/OCCTThreadTests/Envelope/Issue181RobustnessTests.swift	Envelope	-	threaded shaft envelope and STEP writer serialization
-Tests/OCCTThreadTests/Issue189ThreadGuardTests.swift	Tests/OCCTThreadTests/Envelope/Issue189ThreadGuardTests.swift	Envelope	-	coarse worm-pitch result rejected or in envelope
-Tests/OCCTThreadTests/Issue193LongThreadTests.swift	Tests/OCCTThreadTests/Envelope/Issue193LongThreadTests.swift	Envelope	-	long full-length threads return a usable solid
-Tests/OCCTThreadTests/Issue222EnvelopeTests.swift	Tests/OCCTThreadTests/Envelope/Issue222EnvelopeTests.swift	Envelope	-	coarse-pitch thread crest within the nominal major radius
-Tests/OCCTThreadTests/Issue232BoundsTests.swift	Tests/OCCTThreadTests/Envelope/Issue232BoundsTests.swift	Envelope	-	threaded solids bounded exactly to length and depth
-Tests/OCCTThreadTests/Issue1266CrestRadiusSentinelTests.swift	Tests/OCCTThreadTests/Envelope/Issue1266CrestRadiusSentinelTests.swift	Envelope	#2351	crest-radius mesh measurement: failure is nil, not a sentinel
-Tests/OCCTThreadTests/Issue196PolyHLRTests.swift	Tests/OCCTThreadTests/HiddenLine/Issue196PolyHLRTests.swift	HiddenLine	#2369	polyhedral HLR of threaded solids and its deflection
+Tests/OCCTThreadTests/Issue988ThreadProfileFactoryTests.swift	Tests/OCCTThreadTests/Profiles/ThreadProfileFactoryTests.swift	Profiles	-	square and buttress from the trapezoid factory unchanged
+Tests/OCCTThreadTests/Issue991ThreadProfileFlatWidthTests.swift	Tests/OCCTThreadTests/Profiles/ThreadProfileFlatWidthTests.swift	Profiles	-	profile owns its flat widths
+Tests/OCCTThreadTests/Issue185HelicalSweepTests.swift	Tests/OCCTThreadTests/Construction/HelicalSweepTests.swift	Construction	-	helical sweep and worm-thread helicoid
+Tests/OCCTThreadTests/Issue187ScrewThreadTests.swift	Tests/OCCTThreadTests/Construction/ScrewMotionThreadCutterTests.swift	Construction	-	screw-motion thread cutter, smooth analytic helicoid
+Tests/OCCTThreadTests/Issue213VProfileTests.swift	Tests/OCCTThreadTests/Construction/VProfileThreadTests.swift	Construction	#2369	ISO-68 V-thread profile flanks and removed material
+Tests/OCCTThreadTests/Issue219SmoothInternalTests.swift	Tests/OCCTThreadTests/Construction/SmoothInternalThreadTests.swift	Construction	-	smooth fine-pitch internal thread
+Tests/OCCTThreadTests/Issue225ThreadedRodTests.swift	Tests/OCCTThreadTests/Construction/ThreadedRodCustomProfileTests.swift	Construction	-	threadedRod from a custom profile
+Tests/OCCTThreadTests/Issue254BuildModesTests.swift	Tests/OCCTThreadTests/Construction/ThreadBuildModesTests.swift	Construction	-	single-start threads smooth for every build mode
+Tests/OCCTThreadTests/Issue257MultiStartTests.swift	Tests/OCCTThreadTests/Construction/MultiStartThreadTests.swift	Construction	#2351	smooth multi-start direct thread build
+Tests/OCCTThreadTests/Issue990ThreadAxisBasisTests.swift	Tests/OCCTThreadTests/Construction/ThreadAxisBasisTests.swift	Construction	-	thread clocking follows the gp_Ax2 perpendicular basis
+Tests/OCCTThreadTests/Issue1578ThreadedHoleMinorDiameterTests.swift	Tests/OCCTThreadTests/Construction/ThreadedHoleMinorDiameterTests.swift	Construction	-	threadedHole internal cutter minor radius, nut mates bolt
+Tests/OCCTThreadTests/Issue181RobustnessTests.swift	Tests/OCCTThreadTests/Envelope/ThreadEnvelopeRobustnessTests.swift	Envelope	-	threaded shaft envelope and STEP writer serialization
+Tests/OCCTThreadTests/Issue189ThreadGuardTests.swift	Tests/OCCTThreadTests/Envelope/FastenerThreadGuardTests.swift	Envelope	-	coarse worm-pitch result rejected or in envelope
+Tests/OCCTThreadTests/Issue193LongThreadTests.swift	Tests/OCCTThreadTests/Envelope/LongThreadTests.swift	Envelope	-	long full-length threads return a usable solid
+Tests/OCCTThreadTests/Issue222EnvelopeTests.swift	Tests/OCCTThreadTests/Envelope/CoarsePitchCrestEnvelopeTests.swift	Envelope	-	coarse-pitch thread crest within the nominal major radius
+Tests/OCCTThreadTests/Issue232BoundsTests.swift	Tests/OCCTThreadTests/Envelope/ThreadedSolidBoundsTests.swift	Envelope	-	threaded solids bounded exactly to length and depth
+Tests/OCCTThreadTests/Issue1266CrestRadiusSentinelTests.swift	Tests/OCCTThreadTests/Envelope/CrestRadiusSentinelTests.swift	Envelope	#2351	crest-radius mesh measurement: failure is nil, not a sentinel
+Tests/OCCTThreadTests/Issue196PolyHLRTests.swift	Tests/OCCTThreadTests/HiddenLine/ThreadPolyHLRTests.swift	HiddenLine	#2369	polyhedral HLR of threaded solids and its deflection
 Tests/OCCTThreadTests/SIMDTestHelpers.swift	Tests/OCCTThreadTests/SIMDTestHelpers.swift	(stays)	-	shared helper with no tests; stays at the target root so every area sees it

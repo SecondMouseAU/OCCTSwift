@@ -12,7 +12,7 @@ struct STEPWriterCAFCorruptionTests {
     private func coneRoundTrip(_ tag: String) throws -> (
         faces: Int, volume: Double, conicalInFile: Int
     ) {
-        let cone = Shape.cone(bottomRadius: 5, topRadius: 2, height: 10)!
+        let cone = try #require(Shape.cone(bottomRadius: 5, topRadius: 2, height: 10))
         let url = FileManager.default.temporaryDirectory
             .appendingPathComponent("occt-280-\(tag)-\(UUID().uuidString).step")
         defer { try? FileManager.default.removeItem(at: url) }
@@ -63,7 +63,7 @@ struct STEPWriterCAFCorruptionTests {
         // full run another suite's CAF read has usually already tripped it before we get here,
         // a baseline assertion would make this test order-dependent (and fail for the wrong
         // reason). The invariant below holds regardless of what ran earlier.
-        let box = Shape.box(width: 10, height: 20, depth: 30)!
+        let box = try #require(Shape.box(width: 10, height: 20, depth: 30))
         let boxURL = FileManager.default.temporaryDirectory
             .appendingPathComponent("occt-280-poison-\(UUID().uuidString).step")
         defer { try? FileManager.default.removeItem(at: boxURL) }
