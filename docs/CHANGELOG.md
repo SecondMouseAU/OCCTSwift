@@ -21,6 +21,21 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### `OffsetAncestors.offsetWire`, so `hasAncestor(_:)` and `ancestor(of:)` can be given an offset-wire edge (#3366)
+
+`OffsetAncestors` now exposes the offset wire its ancestry is keyed on as `offsetWire`. Its edges are the ones `hasAncestor(_:)` and `ancestor(of:)` answer for; before, no edge a caller could obtain was a key, so they were always `false` and `nil`. `create(face:offset:joinType:)` now offsets with the sign `Shape.offsetWire(face:offset:)` uses (positive outward), is done for every join type in both directions, and reports `isDone == false` for an offset that collapses the face.
+
+```swift
+let face = Shape.face(from: Wire.rectangle(width: 10, height: 10)!)!
+if let ancestors = OffsetAncestors.create(face: face, offset: -1.0),
+    let wire = ancestors.offsetWire
+{
+    for edge in wire.subShapes(ofType: .edge) {
+        let original = ancestors.ancestor(of: edge)  // the face edge it was offset from
+    }
+}
+```
+
 `Shape.faceCopy(_:)` now returns the copied face. It returned nil for every face, because the bridge waited on a `BRepBuilderAPI_MakeFace` done flag the face-loading constructor never sets. A shape that is not a face is refused.
 
 ### `Shape.offsetWire(face:offset:)` offsets outward for a positive offset and inward for a negative one (#3364)
