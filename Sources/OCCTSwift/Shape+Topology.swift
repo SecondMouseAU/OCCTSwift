@@ -793,6 +793,17 @@ extension Shape {
     /// and merges their vertices. Useful for healing imported geometry where
     /// topologically disconnected edges actually meet at the same point.
     ///
+    /// The work is done on a copy, so the receiver is never edited. If the connected copy fails
+    /// `BRepCheck` while the receiver passes it (the class does this to a box, whose vertices are
+    /// already shared), the result is a copy of the receiver unchanged (#3354, twin of #3252).
+    /// Same operation as ``fixEdgeConnect()``.
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// let connected = box.connectedEdges
+    /// print(connected?.isValid ?? false, box.isValid)  // true true
+    /// ```
+    ///
     /// - Returns: Shape with connected edges, or nil on failure
     public var connectedEdges: Shape? {
         guard let ref = OCCTShapeConnectEdges(handle) else { return nil }
@@ -3315,6 +3326,21 @@ extension Shape {
 extension Shape {
 
     /// Orient a closed solid so that face normals point outward.
+    ///
+    /// An inward solid (negative `signedVolume`) is reversed in place, so the receiver reads the
+    /// positive volume afterwards (#3357). A solid that is already outward is left alone.
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// let shell = box.subShapes(ofType: .shell)[0].oriented(1)!
+    /// let solid = Shape.builderMakeSolid()!
+    /// solid.builderAdd(shell)
+    /// solid.orientClosedSolid()
+    /// print(solid.signedVolume)  // 1000
+    /// ```
+    ///
+    /// - Returns: `true` if the solid is now outward, `false` if it is not a solid or is open or
+    ///   incoherent (OCCT cannot classify it).
     @discardableResult
     public func orientClosedSolid() -> Bool {
         OCCTBRepLibOrientClosedSolid(handle)

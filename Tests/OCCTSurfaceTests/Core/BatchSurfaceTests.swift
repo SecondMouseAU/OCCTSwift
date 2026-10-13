@@ -6,8 +6,8 @@ import Testing
 @Suite("Batch Surface Evaluation")
 struct BatchSurfaceTests {
     @Test("Evaluate grid on plane")
-    func evalGridPlane() {
-        let plane = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1))!
+    func evalGridPlane() throws {
+        let plane = try #require(Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1)))
         let uParams = [0.0, 1.0, 2.0]
         let vParams = [0.0, 1.0]
         let grid = plane.evaluateGrid(uParameters: uParams, vParameters: vParams)
@@ -22,8 +22,8 @@ struct BatchSurfaceTests {
     }
 
     @Test("Evaluate grid on sphere")
-    func evalGridSphere() {
-        let sphere = Surface.sphere(center: .zero, radius: 5)!
+    func evalGridSphere() throws {
+        let sphere = try #require(Surface.sphere(center: .zero, radius: 5))
         let uParams = stride(from: 0.0, to: 2 * Double.pi, by: Double.pi / 4).map { $0 }
         let vParams = stride(from: -Double.pi / 2, to: Double.pi / 2, by: Double.pi / 4).map { $0 }
         let grid = sphere.evaluateGrid(uParameters: uParams, vParameters: vParams)
@@ -40,12 +40,12 @@ struct BatchSurfaceTests {
     }
 
     @Test("evaluateGrid indexes each (u, v) at its own parameter, not transposed")
-    func evalGridAsymmetricMatchesDirectEvaluation() {
+    func evalGridAsymmetricMatchesDirectEvaluation() throws {
         // #404: evaluateGrid used to return [vIndex][uIndex] while drawMesh returned
         // [uIndex][vIndex], a symmetric grid can't tell the two conventions apart, so use an
         // asymmetric one and cross-check every sample against the independent point(atU:v:)
         // evaluator.
-        let sphere = Surface.sphere(center: .zero, radius: 5)!
+        let sphere = try #require(Surface.sphere(center: .zero, radius: 5))
         let uParams = [0.0, 0.4, 1.1, 2.0, 3.5]
         let vParams = [-1.2, 0.0, 1.2]
         let grid = sphere.evaluateGrid(uParameters: uParams, vParameters: vParams)
@@ -62,12 +62,12 @@ struct BatchSurfaceTests {
     }
 
     @Test("drawMesh and evaluateGrid agree at matching parameters")
-    func drawMeshAndEvaluateGridAgree() {
+    func drawMeshAndEvaluateGridAgree() throws {
         // #404: the two methods used opposite index conventions internally, but nothing at the
         // type level distinguished them, a caller mixing them up would silently read transposed
         // data. Now both return SurfaceGrid, sampled here at the same asymmetric (u, v) grid, so
         // they must agree point-for-point under the same .at(u:v:) indexing.
-        let sphere = Surface.sphere(center: .zero, radius: 5)!
+        let sphere = try #require(Surface.sphere(center: .zero, radius: 5))
         let uCount = 5
         let vCount = 3
         let meshGrid = sphere.drawMesh(uCount: uCount, vCount: vCount)

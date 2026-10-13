@@ -13,11 +13,11 @@ struct SurfaceCurveProjectionTests {
     // report on the same inputs, see Scripts/repro/766-surface-curve-projection/.
 
     @Test("Project line onto plane returns valid 2D curve")
-    func projectLineOntoPlane() {
+    func projectLineOntoPlane() throws {
         // Create a plane at z=0
-        let plane = Surface.plane(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1))!
+        let plane = try #require(Surface.plane(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1)))
         // Create a 3D line segment in the XY plane (at z=5)
-        let line = Curve3D.segment(from: SIMD3(0, 0, 5), to: SIMD3(10, 0, 5))!
+        let line = try #require(Curve3D.segment(from: SIMD3(0, 0, 5), to: SIMD3(10, 0, 5)))
 
         let projected = plane.projectCurve(line)
         #expect(projected != nil)
@@ -31,15 +31,17 @@ struct SurfaceCurveProjectionTests {
     }
 
     @Test("Project circle onto cylinder returns 2D curve")
-    func projectCircleOntoCylinder() {
+    func projectCircleOntoCylinder() throws {
         // Cylinder along Z axis
-        let cyl = Surface.cylinder(
-            origin: SIMD3(0, 0, 0),
-            axis: SIMD3(0, 0, 1), radius: 5)!
+        let cyl = try #require(
+            Surface.cylinder(
+                origin: SIMD3(0, 0, 0),
+                axis: SIMD3(0, 0, 1), radius: 5))
         // Circle in the XY plane at z=3, radius matching the cylinder
-        let circle = Curve3D.circle(
-            center: SIMD3(0, 0, 3),
-            normal: SIMD3(0, 0, 1), radius: 5)!
+        let circle = try #require(
+            Curve3D.circle(
+                center: SIMD3(0, 0, 3),
+                normal: SIMD3(0, 0, 1), radius: 5))
 
         let projected = cyl.projectCurve(circle)
         #expect(projected != nil)
@@ -51,10 +53,10 @@ struct SurfaceCurveProjectionTests {
     }
 
     @Test("Project 3D curve onto plane returns 3D curve on surface")
-    func projectCurve3DOntoPlane() {
-        let plane = Surface.plane(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1))!
+    func projectCurve3DOntoPlane() throws {
+        let plane = try #require(Surface.plane(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1)))
         // A line segment above the plane
-        let line = Curve3D.segment(from: SIMD3(0, 0, 5), to: SIMD3(10, 7, 5))!
+        let line = try #require(Curve3D.segment(from: SIMD3(0, 0, 5), to: SIMD3(10, 7, 5)))
 
         let projected = plane.projectCurve3D(line)
         #expect(projected != nil)
@@ -68,8 +70,8 @@ struct SurfaceCurveProjectionTests {
     }
 
     @Test("Project point onto plane surface")
-    func projectPointOntoPlane() {
-        let plane = Surface.plane(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1))!
+    func projectPointOntoPlane() throws {
+        let plane = try #require(Surface.plane(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1)))
         let result = plane.projectPoint(SIMD3(5, 3, 7))
         #expect(result != nil)
         if let r = result {
@@ -79,8 +81,8 @@ struct SurfaceCurveProjectionTests {
     }
 
     @Test("Project point onto sphere surface")
-    func projectPointOntoSphere() {
-        let sphere = Surface.sphere(center: SIMD3(0, 0, 0), radius: 5)!
+    func projectPointOntoSphere() throws {
+        let sphere = try #require(Surface.sphere(center: SIMD3(0, 0, 0), radius: 5))
         // Point at distance 10 from origin along X axis
         let result = sphere.projectPoint(SIMD3(10, 0, 0))
         #expect(result != nil)
@@ -92,10 +94,11 @@ struct SurfaceCurveProjectionTests {
     }
 
     @Test("Project point onto cylinder surface")
-    func projectPointOntoCylinder() {
-        let cyl = Surface.cylinder(
-            origin: SIMD3(0, 0, 0),
-            axis: SIMD3(0, 0, 1), radius: 3)!
+    func projectPointOntoCylinder() throws {
+        let cyl = try #require(
+            Surface.cylinder(
+                origin: SIMD3(0, 0, 0),
+                axis: SIMD3(0, 0, 1), radius: 3))
         let result = cyl.projectPoint(SIMD3(6, 0, 5))
         #expect(result != nil)
         if let r = result {
@@ -106,10 +109,10 @@ struct SurfaceCurveProjectionTests {
     }
 
     @Test("Project segment onto plane returns 2D curve with correct length")
-    func projectSegmentOntoPlaneLength() {
-        let plane = Surface.plane(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1))!
+    func projectSegmentOntoPlaneLength() throws {
+        let plane = try #require(Surface.plane(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1)))
         // Diagonal segment in 3D
-        let seg = Curve3D.segment(from: SIMD3(0, 0, 3), to: SIMD3(4, 3, 3))!
+        let seg = try #require(Curve3D.segment(from: SIMD3(0, 0, 3), to: SIMD3(4, 3, 3)))
         let projected = plane.projectCurve(seg)
         #expect(projected != nil)
         // Its title promised the length and it checked only non-nil: (0, 0) to (4, 3), length 5.
@@ -122,10 +125,10 @@ struct SurfaceCurveProjectionTests {
     }
 
     @Test("Composite projection returns multiple segments when needed")
-    func compositeProjectionBasic() {
+    func compositeProjectionBasic() throws {
         // Project onto a simple surface, even single-segment results should work
-        let plane = Surface.plane(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1))!
-        let seg = Curve3D.segment(from: SIMD3(0, 0, 5), to: SIMD3(10, 0, 5))!
+        let plane = try #require(Surface.plane(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1)))
+        let seg = try #require(Curve3D.segment(from: SIMD3(0, 0, 5), to: SIMD3(10, 0, 5)))
 
         let segments = plane.projectCurveSegments(seg)
         // Should return at least one segment for a simple case
@@ -138,8 +141,8 @@ struct SurfaceCurveProjectionTests {
     }
 
     @Test("Projection with nil-producing inputs returns nil")
-    func projectionNilSafety() {
-        let plane = Surface.plane(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1))!
+    func projectionNilSafety() throws {
+        let plane = try #require(Surface.plane(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1)))
 
         // Very degenerate scenario: project a zero-length segment
         // The projection may or may not succeed, but it shouldn't crash

@@ -48,9 +48,10 @@ private final class RecordingSink: DrawingPrimitiveSink {
 @Suite("#1183 Drawing transform sites share one formula")
 struct DrawingTransformUnificationTests {
     @Test("TransformedDrawing.apply(_:) computes scale*p+translate")
-    func applyDirect() {
+    func applyDirect() throws {
+        let unwrapped1 = try #require(Shape.box(width: 1, height: 1, depth: 1))
         let t = TransformedDrawing(
-            source: Drawing.frontView(of: Shape.box(width: 1, height: 1, depth: 1)!)!,
+            source: try #require(Drawing.frontView(of: unwrapped1)),
             translate: SIMD2(100, 200), scale: 2.0)
         #expect(t.apply(SIMD2(3, 4)) == SIMD2(106, 208))
     }
@@ -93,7 +94,7 @@ struct DrawingTransformUnificationTests {
     }
 
     @Test("collectDrawing's edge path (collectProjectedEdges) applies scale*p+translate")
-    func edgeCollectionTransform() {
+    func edgeCollectionTransform() throws {
         guard let box = Shape.box(width: 10, height: 10, depth: 10),
             let top = Drawing.topView(of: box),
             let bounds = top.bounds(includeAnnotations: false)
@@ -114,10 +115,10 @@ struct DrawingTransformUnificationTests {
         // differently-derived formula).
         let expectedMin = scale * bounds.min + translate
         let expectedMax = scale * bounds.max + translate
-        let gotMinX = sink.linePoints.map(\.x).min()!
-        let gotMaxX = sink.linePoints.map(\.x).max()!
-        let gotMinY = sink.linePoints.map(\.y).min()!
-        let gotMaxY = sink.linePoints.map(\.y).max()!
+        let gotMinX = try #require(sink.linePoints.map(\.x).min())
+        let gotMaxX = try #require(sink.linePoints.map(\.x).max())
+        let gotMinY = try #require(sink.linePoints.map(\.y).min())
+        let gotMaxY = try #require(sink.linePoints.map(\.y).max())
         #expect(abs(gotMinX - expectedMin.x) < 1e-6)
         #expect(abs(gotMaxX - expectedMax.x) < 1e-6)
         #expect(abs(gotMinY - expectedMin.y) < 1e-6)

@@ -7,7 +7,7 @@ import Testing
 struct SurfacePipeTests {
     @Test("Pipe with circular cross-section")
     func pipeCircular() throws {
-        let path = Curve3D.segment(from: SIMD3(0, 0, 0), to: SIMD3(0, 0, 10))!
+        let path = try #require(Curve3D.segment(from: SIMD3(0, 0, 0), to: SIMD3(0, 0, 10)))
         let pipeOpt = Surface.pipe(path: path, radius: 2)
         let pipe = try #require(pipeOpt)
         let dom = pipe.domain
@@ -22,8 +22,8 @@ struct SurfacePipeTests {
 
     @Test("Pipe with section curve")
     func pipeWithSection() throws {
-        let path = Curve3D.segment(from: SIMD3(0, 0, 0), to: SIMD3(0, 0, 10))!
-        let section = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 3)!
+        let path = try #require(Curve3D.segment(from: SIMD3(0, 0, 0), to: SIMD3(0, 0, 10)))
+        let section = try #require(Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 3))
         let pipeOpt = Surface.pipe(path: path, section: section)
         // #766: was non-nil only; the section's radius 3 must carry through.
         let pipe = try #require(pipeOpt)

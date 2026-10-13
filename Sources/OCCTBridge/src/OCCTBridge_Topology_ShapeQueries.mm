@@ -1911,12 +1911,21 @@ bool OCCTBuilderRemove(OCCTShapeRef parent, OCCTShapeRef child)
 
 bool OCCTBRepLibOrientClosedSolid(OCCTShapeRef shape)
 {
-  if (!shape)
+  if (!occtShapeIsType(shape, TopAbs_SOLID))
     return false;
   try
   {
+    // #3357: BRepLib::OrientClosedSolid fixes an inward solid with solid.Reverse(), which flips the
+    // orientation held in the TopoDS_Shape value, not in the shared TShape. The caller must keep
+    // the reversed value: BRepTest's orientsolid does
+    // `BRepLib::OrientClosedSolid(TopoDS::Solid(S))` on the Draw variable itself and then
+    // `DBRep::Set` (BRepTest_BasicCommands.cxx). A local copy that is dropped, which this used to
+    // do, left the caller's solid inward.
     TopoDS_Solid solid = TopoDS::Solid(shape->shape);
-    return BRepLib::OrientClosedSolid(solid);
+    const bool   ok    = BRepLib::OrientClosedSolid(solid);
+    if (ok)
+      shape->shape = solid;
+    return ok;
   }
   catch (...)
   {

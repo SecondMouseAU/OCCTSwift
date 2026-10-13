@@ -1300,6 +1300,8 @@ public var connectedEdges: Shape? { get }
 
 Identifies edges that share geometric positions and merges their vertices. Useful for healing imported geometry where topologically disconnected edges actually meet at the same point.
 
+The work is done on a copy, so the receiver is never edited. If the connected copy fails `BRepCheck` while the receiver passes it (the class does this to a box, whose vertices are already shared), the result is a copy of the receiver unchanged (#3354, twin of #3252). Same operation as `fixEdgeConnect()`.
+
 - **Returns:** Shape with connected edges, or `nil` on failure.
 - **OCCT:** `ShapeFix_EdgeConnect` (via `OCCTShapeConnectEdges`).
 

@@ -913,7 +913,7 @@ let wasmExcludedTestFiles: [String: [String]] = [
     ],
     "OCCTMiscTests": ["ConstructionContext/ConstructionContextConcurrencyTests.swift"],
     "OCCTModelingTests": ["BOPAlgo/Issue208SelfIntersectionTests.swift"],
-    "OCCTShapeHealingTests": ["ShapeAnalysis/Issue772SelfIntersectionAnalysisTests.swift"],
+    "OCCTShapeHealingTests": ["ShapeAnalysis/SelfIntersectionAnalysisTests.swift"],
     // One concurrency file. The seven that read a `.brep` out of `Fixtures/` by `#filePath` ran
     // here once, and failed with `.importFailed` because `#filePath` is an absolute HOST path and
     // the in-memory filesystem had no such directory (#3026). `wasm-test-node-runner.mjs` now
