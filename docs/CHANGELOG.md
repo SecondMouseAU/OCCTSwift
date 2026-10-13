@@ -21,6 +21,16 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### Evolved builders refuse the inputs that never returned and the empty shapes they answered (#3368)
+
+`Shape.evolvedAdvanced(spine:profile:axeProf: false)` no longer hangs on a profile through the centre of a circular spine (OCCT's `BRepFill::Axe` leaves the frame NaN there and the sweep spun in `Geom_TrimmedCurve::SetTrim`); it returns `nil`, as does `Shape.evolved(spineFace:profileWire:axis...)` for a NaN, infinite or zero axis. `evolved`, `evolvedAdvanced`, `evolved(spineFace:)` and `advancedEvolved` return `nil` instead of an empty compound when the profile offsets the spine to nothing or lies in the spine's plane. The profile placement rule (Y lateral offset, Z height, X dropped), that only the arc join is implemented, and that `advancedEvolved` is a different algorithm from `evolved` are documented.
+
+```swift
+let circle = Shape.fromWire(Wire.circle(radius: 20)!)!
+let centre = Wire.polygon3D([SIMD3(0, 0, 0), SIMD3(0, 0, 3)], closed: false)!
+Shape.evolvedAdvanced(spine: circle, profile: centre, axeProf: false, solid: false)  // nil, was a hang
+```
+
 ### `Document.loadOCAF(from:)` no longer crashes or hangs on a damaged file (#3318)
 
 `Document.loadOCAF(from:)` no longer crashes or hangs the process on an empty file, a non-OCAF text file, a valid binary magic number followed by garbage, an XML file naming a binary format, or an XML file with an unterminated declaration. An XML file that OCCT can load (any prolog size, BOM, DOCTYPE, no declaration) still loads; one that is not an OCAF document now returns `(nil, .driverFailure)` instead of an empty document. A missing file still returns `.unknownDocument`. The faults are in OCCT and the guard sits in the bridge; the kernel follow-up is #3330. (#3318)
