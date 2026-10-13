@@ -57,8 +57,8 @@ struct StressConcurrentReadTests {
     // readings is the box's exact 1000, and they sum to 200 000. #2983: the readings were compared
     // with the first one that arrived, so a race that made every answer wrong the same way passed,
     // and the `if let first` skipped the comparison when no reading arrived at all.
-    @Test func parallelVolumeQuery() async {
-        let box = standardBox()
+    @Test func parallelVolumeQuery() async throws {
+        let box = try standardBox()
         let readings = await withTaskGroup(of: [Double].self) { group in
             for _ in 0..<8 {
                 group.addTask { (0..<25).compactMap { _ in box.volume } }
@@ -75,8 +75,8 @@ struct StressConcurrentReadTests {
 
     // The same shape of test on the sphere's surface area, 100·π, which BRepGProp integrates rather
     // than reads off, so a race in the integration shows as a different number.
-    @Test func parallelAreaQuery() async {
-        let sphere = standardSphere()
+    @Test func parallelAreaQuery() async throws {
+        let sphere = try standardSphere()
         let readings = await withTaskGroup(of: [Double].self) { group in
             for _ in 0..<8 {
                 group.addTask { (0..<25).compactMap { _ in sphere.surfaceArea } }
@@ -97,7 +97,7 @@ struct StressConcurrentReadTests {
     // came back. Every box is the cylinder's, (-5, -5, 0) to (5, 5, 10).
     @Test func parallelBoundsQuery() async throws {
         typealias Box = (min: SIMD3<Double>, max: SIMD3<Double>)
-        let cyl = standardCylinder()
+        let cyl = try standardCylinder()
         let boxes = await withTaskGroup(of: Box?.self) { group in
             for _ in 0..<8 {
                 group.addTask { cyl.bounds }
@@ -114,8 +114,8 @@ struct StressConcurrentReadTests {
         }
     }
 
-    @Test func parallelFaceCountQuery() async {
-        let box = standardBox()
+    @Test func parallelFaceCountQuery() async throws {
+        let box = try standardBox()
         await withTaskGroup(of: Int.self) { group in
             for _ in 0..<4 {
                 group.addTask { box.subShapeCount(ofType: .face) }
@@ -127,8 +127,8 @@ struct StressConcurrentReadTests {
         }
     }
 
-    @Test func parallelIsValidQuery() async {
-        let torus = standardTorus()
+    @Test func parallelIsValidQuery() async throws {
+        let torus = try standardTorus()
         await withTaskGroup(of: Bool.self) { group in
             for _ in 0..<4 {
                 group.addTask { torus.isValid }
@@ -153,8 +153,8 @@ struct StressConcurrentEvalTests {
     // seven distinct points are the seventh roots of unity, which sum to zero, and the eighth
     // repeats the first. #2983: the points were checked finite, which a point at the wrong
     // parameter is too.
-    @Test func parallelCurve3DEval() async {
-        let curve = standardCurve3D()
+    @Test func parallelCurve3DEval() async throws {
+        let curve = try standardCurve3D()
         let domain = curve.domain
         let points = await withTaskGroup(of: (Int, SIMD3<Double>).self) { group in
             for i in 0..<8 {
@@ -181,8 +181,8 @@ struct StressConcurrentEvalTests {
     }
 
     // The same on the 2D circle, whose evaluator is a different class with its own state.
-    @Test func parallelCurve2DEval() async {
-        let curve = standardCurve2D()
+    @Test func parallelCurve2DEval() async throws {
+        let curve = try standardCurve2D()
         let domain = curve.domain
         let points = await withTaskGroup(of: (Int, SIMD2<Double>).self) { group in
             for i in 0..<8 {
@@ -214,8 +214,8 @@ struct StressConcurrentEvalTests {
     // control points and 0 elsewhere, so z separates into 3t(1 - t) twice). The invariant: each
     // task's point is the patch's point at its own (u, v), and across the threads the coordinates
     // sum to the grid's: 120 in x, 120 in y and 32/9 in z. #2983: the points were checked finite.
-    @Test func parallelSurfaceEval() async {
-        let surf = standardBezierSurface()
+    @Test func parallelSurfaceEval() async throws {
+        let surf = try standardBezierSurface()
         let dom = surf.domain
         let points = await withTaskGroup(of: (Int, Int, SIMD3<Double>).self) { group in
             for ui in 0..<4 {
@@ -286,8 +286,8 @@ struct StressConcurrentCreationTests {
     // whole box. #2983: this was `_ = results` under a comment that 0 to 3 results were acceptable,
     // so it asserted nothing, and a race that corrupted a boolean was invisible.
     @Test func parallelBooleanOps() async throws {
-        let box = standardBox()
-        let sphere = standardSphere()
+        let box = try standardBox()
+        let sphere = try standardSphere()
         let answers = await withTaskGroup(of: (String, Double?).self) { group in
             group.addTask { ("union", box.union(sphere)?.volume) }
             group.addTask { ("subtract", box.subtracting(sphere)?.volume) }
@@ -342,7 +342,7 @@ struct StressConcurrentDocumentCreationTests {
         let documents = made.compactMap { $0 }
         #expect(documents.count == 40)
         #expect(Set(documents.map { ObjectIdentifier($0) }).count == 40)
-        let box = standardBox()
+        let box = try standardBox()
         for doc in documents {
             #expect(doc.shapeCount == 0)
             #expect(doc.addShape(box) >= 0)
@@ -360,9 +360,9 @@ struct StressSequentialDeterminismTests {
     // answer is the closed-form 1000 - 4/3·π·125, and they agree with each other to 1e-10, so state
     // left behind by one cut does not leak into the next. #2983: the volumes were compared with the
     // first one only, behind an `if let first`, so ten wrong answers that agreed passed.
-    @Test func booleanDeterministic() {
-        let box = standardBox()
-        let sphere = standardSphere()
+    @Test func booleanDeterministic() throws {
+        let box = try standardBox()
+        let sphere = try standardSphere()
         let volumes = (0..<10).compactMap { _ in box.subtracting(sphere)?.volume }
         let expected: Double = 1000 - 500 * Double.pi / 3
         #expect(volumes.count == 10)
@@ -375,8 +375,8 @@ struct StressSequentialDeterminismTests {
     // swept by a unit sphere, a³ + 6a²r + 3π·a·r² + 4π/3·r³ with a = 8 and r = 1, which is
     // 896 + 76π/3. Every one answers that, and they agree with each other. #2983: as the cuts above,
     // the volumes were compared with the first only, and the count was not checked at all.
-    @Test func filletDeterministic() {
-        let box = standardBox()
+    @Test func filletDeterministic() throws {
+        let box = try standardBox()
         let volumes = (0..<10).compactMap { _ in box.filleted(radius: 1.0)?.volume }
         let expected: Double = 896 + 76 * Double.pi / 3
         #expect(volumes.count == 10)
@@ -388,8 +388,8 @@ struct StressSequentialDeterminismTests {
     // Ten meshes of the box at deflection 0.5: a planar face meshes to four nodes and two triangles
     // at any deflection, so 24 nodes and 12 triangles each time. #2983: the node counts were only
     // compared with the first, and the triangles not at all.
-    @Test func meshDeterministic() {
-        let box = standardBox()
+    @Test func meshDeterministic() throws {
+        let box = try standardBox()
         let meshes = (0..<10).compactMap { _ in box.mesh(linearDeflection: 0.5) }
         #expect(meshes.map(\.vertexCount) == Array(repeating: 24, count: 10))
         #expect(meshes.map(\.triangleCount) == Array(repeating: 12, count: 10))
@@ -397,8 +397,8 @@ struct StressSequentialDeterminismTests {
 
     // A hundred reads of the torus's volume, each the closed-form 2·π²·R·r² = 180·π² and equal to
     // the rest to 1e-12. #2983: they were compared with the first only, behind an `if let first`.
-    @Test func volumeQueryDeterministic() {
-        let torus = standardTorus()
+    @Test func volumeQueryDeterministic() throws {
+        let torus = try standardTorus()
         let volumes = (0..<100).compactMap { _ in torus.volume }
         let expected: Double = 180 * Double.pi * Double.pi
         #expect(volumes.count == 100)
@@ -420,15 +420,15 @@ struct StressSendableBoundaryTests {
 
     // The box's volume, 1000, read in a child task.
     @Test func shapeAcrossTaskBoundary() async throws {
-        let box = standardBox()
+        let box = try standardBox()
         let child = try #require(await Task { box.volume }.value)
         #expect(abs(child - 1000.0) < 1e-9)
         #expect(child == box.volume)
     }
 
     // The circle at half way round is (-5, 0, 0), up to the 6e-16 sine of π.
-    @Test func curveAcrossTaskBoundary() async {
-        let curve = standardCurve3D()
+    @Test func curveAcrossTaskBoundary() async throws {
+        let curve = try standardCurve3D()
         let domain = curve.domain
         let midT = (domain.lowerBound + domain.upperBound) / 2.0
         let child = await Task { curve.point(at: midT) }.value
@@ -439,16 +439,16 @@ struct StressSendableBoundaryTests {
     // The plane's (u, v) = (3, 4) is the point (3, 4, 0), so both parameters and the plane's own
     // axes cross the boundary correctly. (0, 0) was evaluated before, the origin, which any
     // transposed or dropped parameter also gives.
-    @Test func surfaceAcrossTaskBoundary() async {
-        let surf = standardSurface()
+    @Test func surfaceAcrossTaskBoundary() async throws {
+        let surf = try standardSurface()
         let child = await Task { surf.point(atU: 3, v: 4) }.value
         #expect(near(child, SIMD3(3, 4, 0), tol: 1e-12))
         #expect(child == surf.point(atU: 3, v: 4))
     }
 
     // The fixture document holds exactly the one box it was given.
-    @Test func documentAcrossTaskBoundary() async {
-        let doc = standardDocument()
+    @Test func documentAcrossTaskBoundary() async throws {
+        let doc = try standardDocument()
         let child = await Task { doc.shapeCount }.value
         #expect(child == 1)
         #expect(child == doc.shapeCount)
@@ -456,7 +456,7 @@ struct StressSendableBoundaryTests {
 
     // The 10 x 10 square's perimeter, 40, read in a child task.
     @Test func wireAcrossTaskBoundary() async throws {
-        let wire = standardWire()
+        let wire = try standardWire()
         let child = try #require(await Task { wire.length }.value)
         #expect(abs(child - 40) < 1e-9)
         #expect(child == wire.length)
