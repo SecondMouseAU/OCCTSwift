@@ -37,7 +37,11 @@ struct Issue359STEPThreadSafetyTests {
                 group.addTask {
                     var o = Outcome()
                     for i in 0..<15 {
-                        let box = Shape.box(width: 10, height: 20, depth: 30)!
+                        guard let box = Shape.box(width: 10, height: 20, depth: 30) else {
+                            // A nil fixture is counted into an asserted-zero tally, so it fails the test.
+                            o.writeFailed += 1
+                            continue
+                        }
                         let path = NSTemporaryDirectory() + "occt359_step_\(taskIndex)_\(i).step"
                         let url = URL(fileURLWithPath: path)
                         defer { try? FileManager.default.removeItem(at: url) }
