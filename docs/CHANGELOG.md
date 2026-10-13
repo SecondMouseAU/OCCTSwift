@@ -21,6 +21,16 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### `Shape.offsetPerFace` refuses entries OCCT would merge into one offset but that disagree, and documents the Arc-join propagation (#3365)
+
+With the default `.arc` join, `BRepOffset_MakeOffset` gives each per-face entry to every face connected to it by a tangent or convex edge (concave for a negative offset), so on a convex solid a single entry is the whole shape's offset and `defaultOffset` is unused. `offsetPerFace` now documents that, and returns `nil` when two entries in one such group ask for different distances; before, one of them won and which one changed between processes (a cube with `[0: 2, 1: 3]` was uniform 3 in one run and uniform 2 in the next). Per-face distances that differ need `.intersection` or a negative offset, which are unchanged. `.tangent` is documented as not built by OCCT.
+
+```swift
+let cube = Shape.box(width: 10, height: 10, depth: 10)!
+cube.offsetPerFace(defaultOffset: 1, faceOffsets: [0: 2, 1: 3])                           // nil
+cube.offsetPerFace(defaultOffset: 1, faceOffsets: [0: 2, 1: 3], joinType: .intersection)  // x in [-7, 8]
+```
+
 `BRepGraph.edgeAddInternalVertex(_:vertexIndex:)` and `BRepGraph.faceAddVertex(_:vertexIndex:)` now return nil for a vertex index the graph does not have. Before, such an index was read past the vertex table and could crash the process.
 
 ### `Shape.solidFromShells(_:)` orients extra shells as cavities (#3359)
