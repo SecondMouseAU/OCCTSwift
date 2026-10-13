@@ -21,6 +21,10 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### `Shape.solidFromShells(_:)` orients extra shells as cavities (#3359)
+
+- `Shape.solidFromShells(_:)` now reverses a closed cavity shell that points outward, so `solidFromShells([outer, inner])` with two plain boxes returns the valid hollow solid (volume outer less cavity) instead of an invalid solid whose volume is the sum. Shells already reversed by the caller give the same result as before.
+
 ### `OffsetAncestors.offsetWire`, so `hasAncestor(_:)` and `ancestor(of:)` can be given an offset-wire edge (#3366)
 
 `OffsetAncestors` now exposes the offset wire its ancestry is keyed on as `offsetWire`. Its edges are the ones `hasAncestor(_:)` and `ancestor(of:)` answer for; before, no edge a caller could obtain was a key, so they were always `false` and `nil`. `create(face:offset:joinType:)` now offsets with the sign `Shape.offsetWire(face:offset:)` uses (positive outward), is done for every join type in both directions, and reports `isDone == false` for an offset that collapses the face.

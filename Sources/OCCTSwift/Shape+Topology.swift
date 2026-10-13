@@ -684,6 +684,19 @@ extension Shape {
     /// the given shapes. The first shape provides the outer shell, and additional shapes
     /// provide cavity (inner) shells.
     ///
+    /// The orientation of each cavity shell is normalised: a closed shell is classified on its own
+    /// and reversed when it points outward, so a plain box passed as the second shape gives the
+    /// hollow block (valid, volume outer less cavity) the same as an already reversed one (#3359).
+    /// An open cavity shell cannot be classified and is added as given. The shapes passed in are
+    /// never edited.
+    ///
+    /// ```swift
+    /// let outer = Shape.box(width: 20, height: 20, depth: 20)!
+    /// let inner = Shape.box(width: 10, height: 10, depth: 10)!
+    /// let hollow = Shape.solidFromShells([outer, inner])!
+    /// print(hollow.isValid, hollow.signedVolume)  // true 7000.0
+    /// ```
+    ///
     /// - Note: Each element contributes only the **first** shell found in it, so pass one
     ///   shape per shell rather than a compound of several. An element holding no shell is
     ///   skipped silently, except the first, which fails the whole call.
