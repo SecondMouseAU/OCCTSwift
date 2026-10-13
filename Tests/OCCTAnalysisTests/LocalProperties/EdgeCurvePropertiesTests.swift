@@ -31,9 +31,9 @@ struct EdgeCurvePropertiesTests {
     }
 
     @Test("Curvature of circle edge is 1/r")
-    func curvatureCircleEdge() {
+    func curvatureCircleEdge() throws {
         let radius = 5.0
-        let cyl = Shape.cylinder(radius: radius, height: 10)!
+        let cyl = try #require(Shape.cylinder(radius: radius, height: 10))
         let edges = cyl.edges()
 
         // Find a circular edge
@@ -61,8 +61,8 @@ struct EdgeCurvePropertiesTests {
     }
 
     @Test("Curvature of line edge is zero")
-    func curvatureLineEdge() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func curvatureLineEdge() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let edges = box.edges()
 
         var lineEdge: Edge?
@@ -89,8 +89,8 @@ struct EdgeCurvePropertiesTests {
     }
 
     @Test("Tangent direction of straight edge")
-    func tangentStraightEdge() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func tangentStraightEdge() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let edges = box.edges()
         #expect(!edges.isEmpty)
 
@@ -120,9 +120,9 @@ struct EdgeCurvePropertiesTests {
     }
 
     @Test("Normal of circle edge points toward center")
-    func normalCircleEdge() {
+    func normalCircleEdge() throws {
         let radius = 5.0
-        let cyl = Shape.cylinder(radius: radius, height: 10)!
+        let cyl = try #require(Shape.cylinder(radius: radius, height: 10))
         let edges = cyl.edges()
 
         var circEdge: Edge?
@@ -150,9 +150,9 @@ struct EdgeCurvePropertiesTests {
     }
 
     @Test("Center of curvature of circle matches circle center")
-    func centerOfCurvatureCircle() {
+    func centerOfCurvatureCircle() throws {
         let radius = 5.0
-        let cyl = Shape.cylinder(radius: radius, height: 10)!
+        let cyl = try #require(Shape.cylinder(radius: radius, height: 10))
         let edges = cyl.edges()
 
         var circEdge: Edge?
@@ -182,9 +182,9 @@ struct EdgeCurvePropertiesTests {
     }
 
     @Test("Torsion of planar curve is zero")
-    func torsionPlanarCurve() {
+    func torsionPlanarCurve() throws {
         let radius = 5.0
-        let cyl = Shape.cylinder(radius: radius, height: 10)!
+        let cyl = try #require(Shape.cylinder(radius: radius, height: 10))
         let edges = cyl.edges()
 
         var circEdge: Edge?
@@ -211,13 +211,13 @@ struct EdgeCurvePropertiesTests {
     }
 
     @Test("Curve type detection")
-    func curveTypeDetection() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func curveTypeDetection() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let boxEdges = box.edges()
         #expect(!boxEdges.isEmpty)
         #expect(boxEdges[0].curveType == .line)
 
-        let cyl = Shape.cylinder(radius: 5, height: 10)!
+        let cyl = try #require(Shape.cylinder(radius: 5, height: 10))
         let cylEdges = cyl.edges()
         var hasCircle = false
         for edge in cylEdges {
@@ -230,8 +230,8 @@ struct EdgeCurvePropertiesTests {
     }
 
     @Test("Point at parameter matches expected location")
-    func pointAtParameter() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func pointAtParameter() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let edges = box.edges()
         #expect(!edges.isEmpty)
 

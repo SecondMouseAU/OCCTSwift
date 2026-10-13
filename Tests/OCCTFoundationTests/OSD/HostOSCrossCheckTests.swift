@@ -222,7 +222,7 @@ struct OSDHostTests {
 }
 
 // The two #1442 tests whose oracle is `statvfs`, which wasi-libc does not have, lifted out of
-// `Issue1442DiskUnicodeOSDUtilitiesTests.swift` by #2928. The suite name is new because they were
+// `DiskUnicodeOSDUtilitiesTests.swift` by #2928. The suite name is new because they were
 // two of six tests in one suite there, and the other four, the two UTF-8 encoding ones and the two
 // `DiskInfo.isValid` ones, need no host oracle and run for wasm.
 @Suite("#1442 disk size and free space are KB, against statvfs")

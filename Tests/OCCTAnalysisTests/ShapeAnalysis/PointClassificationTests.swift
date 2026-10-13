@@ -9,31 +9,31 @@ import Testing
 struct PointClassificationTests {
 
     @Test("Point inside box")
-    func pointInsideBox() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func pointInsideBox() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         // Box is centered at origin, extends from -5 to 5 in each axis
         let result = box.classify(point: SIMD3(0, 0, 0), tolerance: 1e-6)
         #expect(result == .inside)
     }
 
     @Test("Point outside box")
-    func pointOutsideBox() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func pointOutsideBox() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let result = box.classify(point: SIMD3(100, 100, 100), tolerance: 1e-6)
         #expect(result == .outside)
     }
 
     @Test("Point on box face")
-    func pointOnBoxFace() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func pointOnBoxFace() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         // Point on the top face at Z=5 (box extends from -5 to 5 on Z)
         let result = box.classify(point: SIMD3(0, 0, 5), tolerance: 1e-3)
         #expect(result == .onBoundary)
     }
 
     @Test("Point inside sphere")
-    func pointInsideSphere() {
-        let sphere = Shape.sphere(radius: 10)!
+    func pointInsideSphere() throws {
+        let sphere = try #require(Shape.sphere(radius: 10))
         let result = sphere.classify(point: SIMD3(1, 1, 1), tolerance: 1e-6)
         #expect(result == .inside)
     }

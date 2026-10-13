@@ -1,6 +1,6 @@
 // Epic #766 (#1978), kernel parity for EdgePolylineConsistencyTests.swift: the edge counts the
 // polylines are compared against, from TopExp::MapShapes on the same shapes, and which of them
-// carry a 3D curve (a degenerated edge has none and is skipped). EditorViewV162Tests.swift is not
+// carry a 3D curve (a degenerated edge has none and is skipped). EditorViewGeometricSettersTests.swift is not
 // probed here: its observables are BRepGraph editor state, and the regularity setter is a bridge
 // stub on 8.0.1 by design (#490/#513).
 #include <BRepBuilderAPI_MakeFace.hxx>

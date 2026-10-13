@@ -30,18 +30,18 @@
 
 | Test File | Argument Type | Risk for #1057 Defect |
 |-----------|---------------|----------------------|
-| `Issue181RobustnessTests.swift` | `[Double]` | ❌ No — simple scalars |
-| `Issue185HelicalSweepTests.swift` | `[Bool]` | ❌ No — simple scalars |
-| `Issue187ScrewThreadTests.swift` | `[(Double, Double)]` | ❌ No — tuple of scalars |
-| `Issue189ThreadGuardTests.swift` | `[(Double, Double)]` | ❌ No — tuple of scalars |
-| `Issue193LongThreadTests.swift` | `[Double]` | ❌ No — simple scalars |
+| `ThreadEnvelopeRobustnessTests.swift` | `[Double]` | ❌ No — simple scalars |
+| `HelicalSweepTests.swift` | `[Bool]` | ❌ No — simple scalars |
+| `ScrewMotionThreadCutterTests.swift` | `[(Double, Double)]` | ❌ No — tuple of scalars |
+| `FastenerThreadGuardTests.swift` | `[(Double, Double)]` | ❌ No — tuple of scalars |
+| `LongThreadTests.swift` | `[Double]` | ❌ No — simple scalars |
 | `ThreadFormsTests.swift` | `[ThreadForm]` (enum) | ❌ No — enum values |
 
 **None** of the `@Test(arguments:)` sites at that time used the problematic pattern of mixing a reference-counted member with a ≥32-byte SIMD vector.
 
 ### 2. When Was the Problematic Pattern Introduced?
 
-The `Issue990ThreadAxisBasisTests.swift` file (commit `dc71b028`, fix for #990) introduced:
+The `ThreadAxisBasisTests.swift` file (commit `dc71b028`, fix for #990) introduced:
 ```swift
 static let axes: [(String, SIMD3<Double>, SIMD3<Double>)] = [...]
 ```

@@ -1,4 +1,4 @@
-// Epic #766, Issue197MeshDeflectionTests.swift: kernel parity for all three tests.
+// Epic #766, MeshDeflectionParameterTests.swift: kernel parity for all three tests.
 // Same inputs as the Swift tests, straight to OCCT: BRepPrimAPI_MakeSphere(10), meshed by
 // BRepMesh_IncrementalMesh(shape, deflection) and written by StlAPI_Writer in binary mode (what
 // OCCTShapeWriteSTLBinary -> OCCTExportSTLWithMode does), then Poly_CoherentTriangulation built
