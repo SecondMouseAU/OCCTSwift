@@ -145,6 +145,27 @@ struct EvolvedAdvancedTests {
         #expect(abs((onEdge.surfaceArea ?? -1) - 240.0) < 1e-6)
     }
 
+    // The spine is a wire or a face and nothing else: BRepOffsetAPI_MakeEvolved's constructor
+    // throws Standard_TypeMismatch for any other shape type ("face or wire is expected as a
+    // spine"), which the bridge's catch turns into nil, in both volume and non-volume mode. A
+    // box solid is the fixture the old test used; the wire spine is the control that builds.
+    @Test("A spine that is neither a wire nor a face is refused")
+    func solidSpineIsRefused() throws {
+        let box = try #require(Shape.box(width: 20, height: 20, depth: 5))
+        let wire = try rectangleWire()
+        let spineWire = try #require(Shape.fromWire(wire))
+        for volume in [false, true] {
+            #expect(
+                Shape.evolvedAdvanced(
+                    spine: box, profile: try segment(), axeProf: true, solid: false,
+                    volume: volume) == nil, "volume \(volume)")
+        }
+        let control = try #require(
+            Shape.evolvedAdvanced(
+                spine: spineWire, profile: try segment(), axeProf: true, solid: false))
+        #expect(control.faces().count == 4)
+    }
+
     // The profile is placed in the frame R and projected onto its YOZ plane: Y is the lateral
     // offset from the spine in the spine's plane (positive to the left of the spine's direction,
     // which is the inside of a counter-clockwise rectangle), Z the height above it, and X, along
