@@ -3,6 +3,20 @@ import Testing
 
 @testable import OCCTSwift
 
+/// Bounds of an edge inside a predicate that cannot throw.
+///
+/// An edge with no bounds records an issue, so the test fails instead of crashing, and answers an
+/// infinite box so the predicate stays false.
+private func boundsOrRecord(
+    _ edge: Edge, sourceLocation: SourceLocation = #_sourceLocation
+) -> (min: SIMD3<Double>, max: SIMD3<Double>) {
+    guard let b = edge.bounds else {
+        Issue.record("edge has no bounds", sourceLocation: sourceLocation)
+        return (SIMD3(repeating: .infinity), SIMD3(repeating: .infinity))
+    }
+    return b
+}
+
 // #735: `PocketFeature.isOpen` was `wallIndices.count < 3`, a wall count, not a test of
 // enclosure. A blind cylindrical pocket has exactly ONE wall (the cylinder's own lateral
 // face) and is fully enclosed, so it reported `isOpen == true`. Three walls was also the
@@ -331,7 +345,7 @@ struct Issue753FilletedJunctionDetectedTests {
         #expect(prePockets.count == 1)
 
         let junctionEdges = cut.edges(where: {
-            abs($0.bounds!.min.z) < 1e-6 && abs($0.bounds!.max.z) < 1e-6
+            abs(boundsOrRecord($0).min.z) < 1e-6 && abs(boundsOrRecord($0).max.z) < 1e-6
         })
         #expect(junctionEdges.count == 4)
         let filleted = try #require(cut.filleted(edges: junctionEdges, radius: 1.0))

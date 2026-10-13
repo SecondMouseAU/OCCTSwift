@@ -6,9 +6,9 @@ import Testing
 @Suite("Curve-Surface Intersection")
 struct CurveSurfaceIntersectionTests {
     @Test("Line intersects sphere")
-    func lineIntersectsSphere() {
-        let line = Curve3D.segment(from: SIMD3(0, 0, -20), to: SIMD3(0, 0, 20))!
-        let sphere = Surface.sphere(center: .zero, radius: 5)!
+    func lineIntersectsSphere() throws {
+        let line = try #require(Curve3D.segment(from: SIMD3(0, 0, -20), to: SIMD3(0, 0, 20)))
+        let sphere = try #require(Surface.sphere(center: .zero, radius: 5))
         let hits = line.intersections(with: sphere)
         #expect(hits.count == 2)
         if hits.count == 2 {
@@ -20,17 +20,17 @@ struct CurveSurfaceIntersectionTests {
     }
 
     @Test("Line parallel to plane doesn't intersect")
-    func lineParallelToPlane() {
-        let line = Curve3D.segment(from: SIMD3(0, 0, 5), to: SIMD3(10, 0, 5))!
-        let plane = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1))!
+    func lineParallelToPlane() throws {
+        let line = try #require(Curve3D.segment(from: SIMD3(0, 0, 5), to: SIMD3(10, 0, 5)))
+        let plane = try #require(Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1)))
         let hits = line.intersections(with: plane)
         #expect(hits.count == 0)
     }
 
     @Test("Line through sphere produces two points (X-axis)")
-    func lineThroughSphereXAxis() {
-        let line = Curve3D.segment(from: SIMD3(-10, 0, 0), to: SIMD3(10, 0, 0))!
-        let sphere = Surface.sphere(center: SIMD3(0, 0, 0), radius: 5)!
+    func lineThroughSphereXAxis() throws {
+        let line = try #require(Curve3D.segment(from: SIMD3(-10, 0, 0), to: SIMD3(10, 0, 0)))
+        let sphere = try #require(Surface.sphere(center: SIMD3(0, 0, 0), radius: 5))
         let results = line.intersections(with: sphere)
         #expect(results.count == 2)
         if results.count == 2 {
@@ -44,9 +44,9 @@ struct CurveSurfaceIntersectionTests {
     /// (`Scripts/repro/766-curve-surface-intersection/`). `count >= 1` also passed a duplicated
     /// or displaced point, so the count and the point are both pinned.
     @Test("Line tangent to sphere produces one point")
-    func lineTangentToSphere() {
-        let line = Curve3D.segment(from: SIMD3(-10, 5, 0), to: SIMD3(10, 5, 0))!
-        let sphere = Surface.sphere(center: SIMD3(0, 0, 0), radius: 5)!
+    func lineTangentToSphere() throws {
+        let line = try #require(Curve3D.segment(from: SIMD3(-10, 5, 0), to: SIMD3(10, 5, 0)))
+        let sphere = try #require(Surface.sphere(center: SIMD3(0, 0, 0), radius: 5))
         let results = line.intersections(with: sphere)
         #expect(results.count == 1)
         if let only = results.first {
@@ -79,9 +79,9 @@ struct CurveSurfaceIntersectionTests {
     }
 
     @Test("Line through plane produces one point")
-    func lineThroughPlane() {
-        let line = Curve3D.segment(from: SIMD3(0, 0, -5), to: SIMD3(0, 0, 5))!
-        let plane = Surface.plane(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1))!
+    func lineThroughPlane() throws {
+        let line = try #require(Curve3D.segment(from: SIMD3(0, 0, -5), to: SIMD3(0, 0, 5)))
+        let plane = try #require(Surface.plane(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1)))
         let results = line.intersections(with: plane)
         #expect(results.count == 1)
         if let first = results.first {

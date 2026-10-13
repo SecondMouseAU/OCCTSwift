@@ -236,7 +236,7 @@ verification exists that the detector cannot see, inline or through a helper).
 
 | Site | Function | Verdict | Still flagged | Why |
 |---|---|---|---|---|
-| `Issue617FaceGridLayoutTests.swift:254` | `squareAndSingleGridsStillWork` | LOW-RISK | yes | count is `uSamples x vSamples`, deterministic, and cross-checked against a computed expected point |
+| `FaceGridLayoutTests.swift:254` | `squareAndSingleGridsStillWork` | LOW-RISK | yes | count is `uSamples x vSamples`, deterministic, and cross-checked against a computed expected point |
 | `OCCTBRepGraphTests.swift:717` | `shellSolids` | LOW-RISK | yes | plain box trivially has 1 shell / 1 solid by construction, no risky op involved |
 | `OCCTCurveTests.swift:20` | `loftedShapeEdgePolylines` | NEEDS-FOLLOWUP | yes | both profile circles default to z=0 despite a comment claiming different Z heights; the loft may be a degenerate, coplanar shape |
 | `OCCTIOTests.swift:1757` | `stepProgressCallbackFires` | LOW-RISK | yes | companion `stepRoundTripPreservesGeometry` (same file) already verifies STEP roundtrip volume/area/face/edge fidelity |
@@ -297,12 +297,12 @@ verification exists that the detector cannot see, inline or through a helper).
 | `Issue484FaceFixContextTests.swift:59` | `unhealedPeriodicConicalUVFaceSurvivesFaceFix` | LOW-RISK | yes | the doc's own claim is "completes and returns a face"; `count == 1` states exactly that |
 | `Issue484FaceFixContextTests.swift:82` | `wellFormedBoxFacesUnaffected` | LOW-RISK | yes | box face count (6) is deterministic; per-face `fixed().count == 1` is a structural invariant of the operation |
 | `OCCTSurfaceTests.swift:5667` | `coaxialDedup` | NEEDS-FOLLOWUP | yes | nothing confirms both a cylindrical and a toroidal face actually survive the union before dedup is asserted to 1 axis |
-| `Issue211OuterShellTests.swift:42` | `innerShells` | ALREADY-FIXED | yes | a bounding-box check (`bb.max.x - bb.min.x` around 8.0) confirms the found shell is the cavity, not the outer body; bbox spans are not a `VERIFICATION` noun |
-| `Issue439OuterShellMultiSolidTests.swift:68` | `multiSolidInnerShellsEmpty` | LOW-RISK | yes | subtracting one fully-enclosed cavity from a box deterministically gives exactly 1 cavity shell |
-| `Issue439OuterShellMultiSolidTests.swift:81` | `outerShellsPerSolid` | ALREADY-FIXED | yes | bounding-box spans confirm the two shells match the two known box positions; same bbox blind spot as `innerShells` |
-| `Issue502SubShapeTraversalTests.swift:176` | `indexedAndArrayAccessMatch` | LOW-RISK | yes | `shells.count == 2` is the well-established hollow-box (20-cube minus an enclosed 8-cube) deterministic shell count |
-| `Issue613IndexContractTests.swift:102` | `concaveEdgeIsTheConcaveEdge` | LOW-RISK | yes | `concave.map(\.index) == [corner]` pins the exact, geometrically located edge, not merely a count of 1 |
-| `Issue614FaceOrientationTests.swift:117` | `sharedWallFacesOutOfBothSolids` | LOW-RISK | yes | counts deterministic for a one-plane box split; the outward-normal claim is confirmed via a dot-product check |
+| `OuterShellTests.swift:42` | `innerShells` | ALREADY-FIXED | yes | a bounding-box check (`bb.max.x - bb.min.x` around 8.0) confirms the found shell is the cavity, not the outer body; bbox spans are not a `VERIFICATION` noun |
+| `OuterShellMultiSolidTests.swift:68` | `multiSolidInnerShellsEmpty` | LOW-RISK | yes | subtracting one fully-enclosed cavity from a box deterministically gives exactly 1 cavity shell |
+| `OuterShellMultiSolidTests.swift:81` | `outerShellsPerSolid` | ALREADY-FIXED | yes | bounding-box spans confirm the two shells match the two known box positions; same bbox blind spot as `innerShells` |
+| `SubShapeTraversalTests.swift:176` | `indexedAndArrayAccessMatch` | LOW-RISK | yes | `shells.count == 2` is the well-established hollow-box (20-cube minus an enclosed 8-cube) deterministic shell count |
+| `SubShapeIndexContractTests.swift:102` | `concaveEdgeIsTheConcaveEdge` | LOW-RISK | yes | `concave.map(\.index) == [corner]` pins the exact, geometrically located edge, not merely a count of 1 |
+| `FaceOrientationTests.swift:117` | `sharedWallFacesOutOfBothSolids` | LOW-RISK | yes | counts deterministic for a one-plane box split; the outward-normal claim is confirmed via a dot-product check |
 | `OCCTTopologyTests.swift:1348` | `boxShells` | LOW-RISK | yes | a plain box's shell count is trivially 1 by construction, no risky operation involved |
 
 **Follow-up recommendation:** file one issue per cluster among the 11 NEEDS-FOLLOWUP rows, not one

@@ -10,9 +10,9 @@ import Testing
 struct MedialAxisRectangleTests {
 
     @Test("Rectangle produces non-nil medial axis")
-    func rectangleComputesSuccessfully() {
-        let wire = Wire.rectangle(width: 10, height: 4)!
-        let face = Shape.face(from: wire)!
+    func rectangleComputesSuccessfully() throws {
+        let wire = try #require(Wire.rectangle(width: 10, height: 4))
+        let face = try #require(Shape.face(from: wire))
         // Non-nil alone passed a locus with nothing in it, so read what it computed: the five
         // arcs and six nodes of `rectangleGraphCounts`, and the half short side as thickness.
         guard let ma = MedialAxis(of: face) else {
@@ -25,9 +25,9 @@ struct MedialAxisRectangleTests {
     }
 
     @Test("Rectangle has correct arc and node counts")
-    func rectangleGraphCounts() {
-        let wire = Wire.rectangle(width: 10, height: 4)!
-        let face = Shape.face(from: wire)!
+    func rectangleGraphCounts() throws {
+        let wire = try #require(Wire.rectangle(width: 10, height: 4))
+        let face = try #require(Shape.face(from: wire))
         guard let ma = MedialAxis(of: face) else {
             Issue.record("Failed to compute medial axis")
             return
@@ -39,9 +39,9 @@ struct MedialAxisRectangleTests {
     }
 
     @Test("Rectangle min thickness equals half the short side")
-    func rectangleMinThickness() {
-        let wire = Wire.rectangle(width: 10, height: 4)!
-        let face = Shape.face(from: wire)!
+    func rectangleMinThickness() throws {
+        let wire = try #require(Wire.rectangle(width: 10, height: 4))
+        let face = try #require(Shape.face(from: wire))
         guard let ma = MedialAxis(of: face) else {
             Issue.record("Failed to compute medial axis")
             return
@@ -56,8 +56,8 @@ struct MedialAxisRectangleTests {
 
     @Test("Rectangle nodes have valid positions and distances")
     func rectangleNodes() throws {
-        let wire = Wire.rectangle(width: 10, height: 4)!
-        let face = Shape.face(from: wire)!
+        let wire = try #require(Wire.rectangle(width: 10, height: 4))
+        let face = try #require(Shape.face(from: wire))
         guard let ma = MedialAxis(of: face) else {
             Issue.record("Failed to compute medial axis")
             return
@@ -92,9 +92,9 @@ struct MedialAxisRectangleTests {
     }
 
     @Test("Rectangle arcs have valid node references")
-    func rectangleArcs() {
-        let wire = Wire.rectangle(width: 10, height: 4)!
-        let face = Shape.face(from: wire)!
+    func rectangleArcs() throws {
+        let wire = try #require(Wire.rectangle(width: 10, height: 4))
+        let face = try #require(Shape.face(from: wire))
         guard let ma = MedialAxis(of: face) else {
             Issue.record("Failed to compute medial axis")
             return
@@ -117,8 +117,8 @@ struct MedialAxisRectangleTests {
 
     @Test("Rectangle arc drawing produces polylines")
     func rectangleDrawArc() throws {
-        let wire = Wire.rectangle(width: 10, height: 4)!
-        let face = Shape.face(from: wire)!
+        let wire = try #require(Wire.rectangle(width: 10, height: 4))
+        let face = try #require(Shape.face(from: wire))
         guard let ma = MedialAxis(of: face) else {
             Issue.record("Failed to compute medial axis")
             return
@@ -143,8 +143,8 @@ struct MedialAxisRectangleTests {
 
     @Test("Rectangle draw all produces one polyline per arc")
     func rectangleDrawAll() throws {
-        let wire = Wire.rectangle(width: 10, height: 4)!
-        let face = Shape.face(from: wire)!
+        let wire = try #require(Wire.rectangle(width: 10, height: 4))
+        let face = try #require(Shape.face(from: wire))
         guard let ma = MedialAxis(of: face) else {
             Issue.record("Failed to compute medial axis")
             return
@@ -173,8 +173,8 @@ struct MedialAxisRectangleTests {
 
     @Test("Rectangle distance on arc interpolates between endpoints")
     func rectangleDistanceOnArc() throws {
-        let wire = Wire.rectangle(width: 10, height: 4)!
-        let face = Shape.face(from: wire)!
+        let wire = try #require(Wire.rectangle(width: 10, height: 4))
+        let face = try #require(Shape.face(from: wire))
         guard let ma = MedialAxis(of: face) else {
             Issue.record("Failed to compute medial axis")
             return

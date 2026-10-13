@@ -10,7 +10,7 @@ struct STEPWriterExportTests {
 
     @Test("Export with AsIs mode")
     func exportAsIs() throws {
-        let box = Shape.box(width: 10, height: 20, depth: 30)!
+        let box = try #require(Shape.box(width: 10, height: 20, depth: 30))
         let tmpPath = NSTemporaryDirectory() + "swift_test_v58_asis.step"
         let url = URL(fileURLWithPath: tmpPath)
         try box.writeSTEP(to: url, modelType: .asIs)
@@ -20,7 +20,7 @@ struct STEPWriterExportTests {
 
     @Test("Export with ManifoldSolidBrep mode")
     func exportManifoldSolidBrep() throws {
-        let box = Shape.box(width: 10, height: 20, depth: 30)!
+        let box = try #require(Shape.box(width: 10, height: 20, depth: 30))
         let tmpPath = NSTemporaryDirectory() + "swift_test_v58_msb.step"
         let url = URL(fileURLWithPath: tmpPath)
         try box.writeSTEP(to: url, modelType: .manifoldSolidBrep)
@@ -30,7 +30,7 @@ struct STEPWriterExportTests {
 
     @Test("Export with tolerance")
     func exportWithTolerance() throws {
-        let box = Shape.box(width: 10, height: 20, depth: 30)!
+        let box = try #require(Shape.box(width: 10, height: 20, depth: 30))
         let tmpPath = NSTemporaryDirectory() + "swift_test_v58_tol.step"
         let url = URL(fileURLWithPath: tmpPath)
         try box.writeSTEP(to: url, modelType: .asIs, tolerance: 0.01)
@@ -40,7 +40,7 @@ struct STEPWriterExportTests {
 
     @Test("Export with clean duplicates")
     func exportCleanDuplicates() throws {
-        let box = Shape.box(width: 10, height: 20, depth: 30)!
+        let box = try #require(Shape.box(width: 10, height: 20, depth: 30))
         let tmpPath = NSTemporaryDirectory() + "swift_test_v58_clean.step"
         let url = URL(fileURLWithPath: tmpPath)
         try box.writeSTEPCleanDuplicates(to: url)
@@ -50,7 +50,7 @@ struct STEPWriterExportTests {
 
     @Test("Exporter static method with mode")
     func exporterStaticWithMode() throws {
-        let box = Shape.box(width: 10, height: 20, depth: 30)!
+        let box = try #require(Shape.box(width: 10, height: 20, depth: 30))
         let tmpPath = NSTemporaryDirectory() + "swift_test_v58_static.step"
         let url = URL(fileURLWithPath: tmpPath)
         try Exporter.writeSTEP(shape: box, to: url, modelType: .asIs)
@@ -64,7 +64,7 @@ struct STEPWriterExportTests {
 
     @Test("Export with model type rejects an invalid shape (#1226)")
     func exportModelTypeInvalidShape() throws {
-        let invalid = invalidBowtieShape()
+        let invalid = try invalidBowtieShape()
         #expect(!invalid.isValid)
         let tmpPath = NSTemporaryDirectory() + "swift_test_1226_step_modeltype_invalid.step"
         let url = URL(fileURLWithPath: tmpPath)
@@ -83,7 +83,7 @@ struct STEPWriterExportTests {
 
     @Test("Export with model type and tolerance rejects an invalid shape (#1226)")
     func exportModelTypeToleranceInvalidShape() throws {
-        let invalid = invalidBowtieShape()
+        let invalid = try invalidBowtieShape()
         #expect(!invalid.isValid)
         let tmpPath = NSTemporaryDirectory() + "swift_test_1226_step_tolerance_invalid.step"
         let url = URL(fileURLWithPath: tmpPath)
@@ -102,7 +102,7 @@ struct STEPWriterExportTests {
 
     @Test("Export with clean duplicates rejects an invalid shape (#1226)")
     func exportCleanDuplicatesInvalidShape() throws {
-        let invalid = invalidBowtieShape()
+        let invalid = try invalidBowtieShape()
         #expect(!invalid.isValid)
         let tmpPath = NSTemporaryDirectory() + "swift_test_1226_step_clean_invalid.step"
         let url = URL(fileURLWithPath: tmpPath)

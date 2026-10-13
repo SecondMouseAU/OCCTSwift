@@ -831,7 +831,7 @@ let swiftLayerDependencies: [Target.Dependency] = ["OCCTBridge", "OCCT", "OCCTPl
 // `DispatchSemaphore`, `autoreleasepool`, and the host-OS facilities `getrusage`, `statvfs`,
 // `getpwuid`, `gethostname` and `uname`. Those are handled file by file below, and `autoreleasepool`
 // by a shim. A sixth reason surfaced only on the build and was on no list: a bare `import Darwin` in
-// `OCCTFoundationTests/Issue1442DiskUnicodeOSDUtilitiesTests.swift`, for two `free` calls, now the
+// `OCCTFoundationTests/DiskUnicodeOSDUtilitiesTests.swift`, for two `free` calls, now the
 // same per-platform conditional `Sources/OCCTPlatform/Platform.swift` uses. It is not a concurrency
 // primitive, so the survey that found the others could not have found it; the build did.
 //
@@ -890,7 +890,7 @@ let wasmUnportableTestTargets: Set<String> = []
 //   ONE COMPARES AN OCCT READING AGAINST THE HOST OS, which wasi-libc cannot be asked.
 //   `HostOSCrossCheckTests` holds the six suites that bracket an OCCT reading with `getrusage`,
 //   `statvfs`, `getpwuid`, `gethostname`, `uname` or `inet_pton`, five lifted out of
-//   `OCCTFoundationTests.swift` and one out of `Issue1442DiskUnicodeOSDUtilitiesTests.swift`, whose
+//   `OCCTFoundationTests.swift` and one out of `DiskUnicodeOSDUtilitiesTests.swift`, whose
 //   other four tests need no host oracle and run. These are not weakened to `>= 0` so that they build
 //   here: `>= 0` is the assertion #1987 removed from five of them, because a bridge returning 0
 //   passes it.
@@ -927,13 +927,13 @@ let wasmExcludedTestFiles: [String: [String]] = [
     // is the seventh: it uses `DispatchGroup` and spawns child processes with `Process`, and
     // neither exists on wasm, so the file does not compile there.
     "OCCTThreadTests": [
-        "Concurrency/Issue1404TObjApplicationThreadSafetyTests.swift",
-        "Concurrency/Issue298FilletThreadSafetyTests.swift",
-        "Concurrency/Issue341MeshCafThreadSafetyTests.swift",
-        "Concurrency/Issue359STEPThreadSafetyTests.swift",
-        "Concurrency/Issue361SharedSingletonThreadSafetyTests.swift",
-        "Concurrency/Issue367FuseMultiThreadSafetyTests.swift",
-        "Concurrency/Issue3039BRepLibPlaneFirstUseTests.swift",
+        "Concurrency/TObjApplicationThreadSafetyTests.swift",
+        "Concurrency/FilletOfBooleanThreadSafetyTests.swift",
+        "Concurrency/MeshCafThreadSafetyTests.swift",
+        "Concurrency/STEPThreadSafetyTests.swift",
+        "Concurrency/SharedSingletonThreadSafetyTests.swift",
+        "Concurrency/FuseMultiThreadSafetyTests.swift",
+        "Concurrency/BRepLibPlaneFirstUseTests.swift",
     ],
 ]
 

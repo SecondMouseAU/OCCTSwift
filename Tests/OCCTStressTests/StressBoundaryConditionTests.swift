@@ -166,8 +166,8 @@ struct StressMixedScaleTests {
 struct StressCoincidentGeometryTests {
 
     @Test func identicalBoxUnion() throws {
-        let b1 = standardBox()
-        let b2 = standardBox()
+        let b1 = try standardBox()
+        let b2 = try standardBox()
         let r = try #require(b1.union(b2))
         #expect(r.isValid)
         #expect(abs((r.volume ?? 0) - 1000) < 1e-6)
@@ -176,24 +176,24 @@ struct StressCoincidentGeometryTests {
 
     // Done and empty: no faces, so no volume (nil, not a measured 0).
     @Test func identicalBoxSubtract() throws {
-        let b1 = standardBox()
-        let b2 = standardBox()
+        let b1 = try standardBox()
+        let b2 = try standardBox()
         let r = try #require(b1.subtracting(b2))
         #expect(r.subShapeCount(ofType: .face) == 0)
         #expect(r.volume == nil)
     }
 
     @Test func identicalBoxIntersect() throws {
-        let b1 = standardBox()
-        let b2 = standardBox()
+        let b1 = try standardBox()
+        let b2 = try standardBox()
         let r = try #require(b1.intersection(b2))
         #expect(r.isValid)
         #expect(abs((r.volume ?? 0) - 1000) < 1e-6)
     }
 
     @Test func touchingFaceUnion() throws {
-        let b1 = Shape.box(width: 10, height: 10, depth: 10)!
-        let b2 = Shape.box(origin: SIMD3(10, 0, 0), width: 10, height: 10, depth: 10)!
+        let b1 = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let b2 = try #require(Shape.box(origin: SIMD3(10, 0, 0), width: 10, height: 10, depth: 10))
         // b1 spans [-5, 5], so b2 at x = 10 does not touch it: the union is two disjoint boxes.
         let r = try #require(b1.union(b2))
         #expect(r.isValid)
@@ -202,8 +202,8 @@ struct StressCoincidentGeometryTests {
     }
 
     @Test func touchingFaceSubtract() throws {
-        let b1 = Shape.box(width: 10, height: 10, depth: 10)!
-        let b2 = Shape.box(origin: SIMD3(10, 0, 0), width: 10, height: 10, depth: 10)!
+        let b1 = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let b2 = try #require(Shape.box(origin: SIMD3(10, 0, 0), width: 10, height: 10, depth: 10))
         let r = try #require(b1.subtracting(b2))
         #expect(r.isValid)
         #expect(abs((r.volume ?? 0) - 1000) < 1e-6)
@@ -227,8 +227,8 @@ struct StressCoincidentGeometryTests {
     }
 
     @Test func nestedSpheres() throws {
-        let outer = Shape.sphere(radius: 10)!
-        let inner = Shape.sphere(radius: 5)!
+        let outer = try #require(Shape.sphere(radius: 10))
+        let inner = try #require(Shape.sphere(radius: 5))
         let r = try #require(outer.subtracting(inner))
         #expect(r.isValid)
         let expected = (4.0 / 3.0) * .pi * (1000.0 - 125.0)
@@ -236,8 +236,8 @@ struct StressCoincidentGeometryTests {
     }
 
     @Test func concentricCylinders() throws {
-        let outer = Shape.cylinder(radius: 10, height: 20)!
-        let inner = Shape.cylinder(radius: 5, height: 20)!
+        let outer = try #require(Shape.cylinder(radius: 10, height: 20))
+        let inner = try #require(Shape.cylinder(radius: 5, height: 20))
         let t = try #require(outer.subtracting(inner))
         #expect(t.isValid)
         #expect(abs((t.volume ?? 0) - .pi * 75 * 20) < 1e-6)
@@ -249,15 +249,15 @@ struct StressCoincidentGeometryTests {
 @Suite("Stress: Degenerate Operations")
 struct StressDegenerateOperationTests {
 
-    @Test func filletRadiusEqualsHalfEdge() {
+    @Test func filletRadiusEqualsHalfEdge() throws {
         // 10×10×10 box → edge length 10, half = 5
-        let box = standardBox()
+        let box = try standardBox()
         // At the exact boundary BRepFilletAPI_MakeFillet is not done.
         #expect(box.filleted(radius: 5.0) == nil)
     }
 
-    @Test func filletRadiusExceedsEdge() {
-        let box = standardBox()
+    @Test func filletRadiusExceedsEdge() throws {
+        let box = try standardBox()
         // OCCT reports this oversized radius done, and the shape is not a valid solid:
         // BRepCheck_Analyzer rejects it and it encloses no volume. Until #3200 the invalid shape
         // was handed back; every fillet entry point now answers nil for it.
@@ -298,7 +298,7 @@ struct StressDegenerateOperationTests {
     }
 
     @Test func offsetByZero() throws {
-        let box = standardBox()
+        let box = try standardBox()
         let faces = box.faces()
         #expect(faces.count == 6)
         // Some offset operations take a face, try the general approach
@@ -308,7 +308,7 @@ struct StressDegenerateOperationTests {
     }
 
     @Test func rotateByTwoPi() throws {
-        let box = standardBox()
+        let box = try standardBox()
         let r = try #require(box.rotated(axis: SIMD3(0, 0, 1), angle: 2 * .pi))
         #expect(r.isValid)
         #expect(abs((r.volume ?? 0) - 1000.0) < 1e-6)
@@ -319,7 +319,7 @@ struct StressDegenerateOperationTests {
     }
 
     @Test func rotateByLargeAngle() throws {
-        let box = standardBox()
+        let box = try standardBox()
         let r = try #require(box.rotated(axis: SIMD3(0, 0, 1), angle: 1000.0 * .pi))
         #expect(r.isValid)
         // 1000π is 500 full turns: axis-aligned again.
@@ -329,21 +329,21 @@ struct StressDegenerateOperationTests {
     }
 
     @Test func scaleByVerySmall() throws {
-        let box = standardBox()
+        let box = try standardBox()
         let r = try #require(box.scaled(by: 1e-10))
         #expect(r.isValid)
         #expect(near(r.volume, 1e-27))
     }
 
     @Test func scaleByVeryLarge() throws {
-        let box = standardBox()
+        let box = try standardBox()
         let r = try #require(box.scaled(by: 1e10))
         #expect(r.isValid)
         #expect(near(r.volume, 1e33))
     }
 
     @Test func drillRadiusLargerThanBox() throws {
-        let box = standardBox()
+        let box = try standardBox()
         // Drill hole bigger than the box
         let result = box.drilled(
             at: SIMD3(0, 0, 5), direction: SIMD3(0, 0, -1), radius: 20, depth: 0)
@@ -354,7 +354,7 @@ struct StressDegenerateOperationTests {
     }
 
     @Test func drillOutsideBox() throws {
-        let box = standardBox()
+        let box = try standardBox()
         let result = box.drilled(
             at: SIMD3(100, 100, 5), direction: SIMD3(0, 0, -1), radius: 1, depth: 5)
         // Drill missed entirely, volume unchanged (the cut is still done).
@@ -376,7 +376,7 @@ struct StressNearDegenerateTests {
     }
 
     @Test func verySmallFillet() throws {
-        let box = standardBox()
+        let box = try standardBox()
         let r = try #require(box.filleted(radius: 1e-5))
         #expect(r.isValid)
         #expect(r.subShapeCount(ofType: .face) == 26)
@@ -384,7 +384,7 @@ struct StressNearDegenerateTests {
     }
 
     @Test func verySmallChamfer() throws {
-        let box = standardBox()
+        let box = try standardBox()
         let r = try #require(box.chamfered(distance: 1e-5))
         #expect(r.isValid)
         #expect(r.subShapeCount(ofType: .face) == 26)
@@ -392,9 +392,10 @@ struct StressNearDegenerateTests {
     }
 
     @Test func nearlyTouchingBoxes() throws {
-        let b1 = Shape.box(width: 10, height: 10, depth: 10)!
+        let b1 = try #require(Shape.box(width: 10, height: 10, depth: 10))
         // Gap of 1e-6 between boxes
-        let b2 = Shape.box(origin: SIMD3(10.000001, 0, 0), width: 10, height: 10, depth: 10)!
+        let b2 = try #require(
+            Shape.box(origin: SIMD3(10.000001, 0, 0), width: 10, height: 10, depth: 10))
         // b1 spans [-5, 5], so b2 at 10.000001 is 5 away: two disjoint boxes.
         let r = try #require(b1.union(b2))
         #expect(r.isValid)
@@ -403,9 +404,10 @@ struct StressNearDegenerateTests {
     }
 
     @Test func nearlyCoincidentSubtract() throws {
-        let b1 = Shape.box(width: 10, height: 10, depth: 10)!
+        let b1 = try #require(Shape.box(width: 10, height: 10, depth: 10))
         // Offset by 1e-8, nearly identical
-        let b2 = Shape.box(origin: SIMD3(1e-8, 1e-8, 1e-8), width: 10, height: 10, depth: 10)!
+        let b2 = try #require(
+            Shape.box(origin: SIMD3(1e-8, 1e-8, 1e-8), width: 10, height: 10, depth: 10))
         // b2's corner is at the origin, b1's is at -5: the cut keeps the 5-deep L-shaped rim,
         // 1000 - 5³ = 875 (plus the 1e-8 sliver), 9 faces.
         let r = try #require(b1.subtracting(b2))
@@ -427,7 +429,7 @@ struct StressNearDegenerateTests {
 
     // 1e-5 clears occtValidDrillRadius (Precision::Confusion() is 1e-7), so the hole is cut.
     @Test func verySmallDrill() throws {
-        let box = standardBox()
+        let box = try standardBox()
         let r = try #require(
             box.drilled(at: SIMD3(0, 0, 5), direction: SIMD3(0, 0, -1), radius: 1e-5, depth: 0))
         #expect(r.isValid)
@@ -443,8 +445,8 @@ struct StressCurveSurfaceBoundaryTests {
 
     // The radius-5 circle is closed: both ends of its domain are (5, 0), to within the sine of
     // 2π. `isFinite` alone was true of every double the call could return.
-    @Test func curveEvalAtDomainBounds() {
-        let curve = standardCurve3D()
+    @Test func curveEvalAtDomainBounds() throws {
+        let curve = try standardCurve3D()
         let domain = curve.domain
         let p1 = curve.point(at: domain.lowerBound)
         let p2 = curve.point(at: domain.upperBound)
@@ -454,8 +456,8 @@ struct StressCurveSurfaceBoundaryTests {
         #expect(abs(p2.y) < 1e-12)
     }
 
-    @Test func curveEvalSlightlyOutside() {
-        let curve = standardCurve3D()
+    @Test func curveEvalSlightlyOutside() throws {
+        let curve = try standardCurve3D()
         let domain = curve.domain
         let p1 = curve.point(at: domain.lowerBound - 0.001)
         let p2 = curve.point(at: domain.upperBound + 0.001)
@@ -470,8 +472,8 @@ struct StressCurveSurfaceBoundaryTests {
     // A Bezier patch interpolates its corner poles: the fixture's four are (0, 0), (15, 15) and
     // the two mixed ones, all flat. The mixed pair is pinned by its sum, which holds whichever
     // way round the pole grid is indexed.
-    @Test func surfaceEvalAtDomainCorners() {
-        let surf = standardBezierSurface()
+    @Test func surfaceEvalAtDomainCorners() throws {
+        let surf = try standardBezierSurface()
         let dom = surf.domain
         let p1 = surf.point(atU: dom.uMin, v: dom.vMin)
         let p2 = surf.point(atU: dom.uMax, v: dom.vMax)
@@ -485,8 +487,8 @@ struct StressCurveSurfaceBoundaryTests {
     }
 
     // The 2D sibling of ``curveEvalAtDomainBounds()``, same circle, same two ends.
-    @Test func curve2DEvalAtDomainBounds() {
-        let curve = standardCurve2D()
+    @Test func curve2DEvalAtDomainBounds() throws {
+        let curve = try standardCurve2D()
         let domain = curve.domain
         let p1 = curve.point(at: domain.lowerBound)
         let p2 = curve.point(at: domain.upperBound)
@@ -496,8 +498,8 @@ struct StressCurveSurfaceBoundaryTests {
         #expect(abs(p2.y) < 1e-12)
     }
 
-    @Test func bezierSurfaceEvalGrid() {
-        let surf = standardBezierSurface()
+    @Test func bezierSurfaceEvalGrid() throws {
+        let surf = try standardBezierSurface()
         let dom = surf.domain
         // 20×20 grid including boundaries
         for ui in 0...20 {
@@ -515,8 +517,8 @@ struct StressCurveSurfaceBoundaryTests {
         }
     }
 
-    @Test func curveCurvatureAtBounds() {
-        let curve = standardBSplineCurve()
+    @Test func curveCurvatureAtBounds() throws {
+        let curve = try standardBSplineCurve()
         let domain = curve.domain
         // #595: localCurvature is deprecated onto curvature(at:), and both report definedness.
         let k1 = curve.curvature(at: domain.lowerBound)
@@ -528,8 +530,8 @@ struct StressCurveSurfaceBoundaryTests {
         #expect(abs((k2 ?? 0) - 0.0185120076021) < 1e-9)
     }
 
-    @Test func surfaceCurvatureAtBounds() {
-        let surf = standardBezierSurface()
+    @Test func surfaceCurvatureAtBounds() throws {
+        let surf = try standardBezierSurface()
         let dom = surf.domain
         let g = surf.gaussianCurvature(atU: dom.uMin, v: dom.vMin)
         let m = surf.meanCurvature(atU: dom.uMax, v: dom.vMax)
@@ -540,9 +542,9 @@ struct StressCurveSurfaceBoundaryTests {
         #expect(abs(m ?? 1) < 1e-9)
     }
 
-    @Test func periodicCurveAtPeriodBoundary() {
+    @Test func periodicCurveAtPeriodBoundary() throws {
         // Circle is periodic
-        let circle = standardCurve3D()
+        let circle = try standardCurve3D()
         let domain = circle.domain
         let pStart = circle.point(at: domain.lowerBound)
         let pEnd = circle.point(at: domain.upperBound)

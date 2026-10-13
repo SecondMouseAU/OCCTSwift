@@ -10,7 +10,7 @@ struct IGESWriterExpansionTests {
 
     @Test("Export with MM unit")
     func exportWithMMUnit() throws {
-        let box = Shape.box(width: 10, height: 20, depth: 30)!
+        let box = try #require(Shape.box(width: 10, height: 20, depth: 30))
         let tmpPath = NSTemporaryDirectory() + "swift_test_v59_iges_mm.iges"
         let url = URL(fileURLWithPath: tmpPath)
         try box.writeIGES(to: url, unit: "MM")
@@ -20,7 +20,7 @@ struct IGESWriterExpansionTests {
 
     @Test("Export with IN unit")
     func exportWithINUnit() throws {
-        let box = Shape.box(width: 10, height: 20, depth: 30)!
+        let box = try #require(Shape.box(width: 10, height: 20, depth: 30))
         let tmpPath = NSTemporaryDirectory() + "swift_test_v59_iges_in.iges"
         let url = URL(fileURLWithPath: tmpPath)
         try box.writeIGES(to: url, unit: "IN")
@@ -30,7 +30,7 @@ struct IGESWriterExpansionTests {
 
     @Test("Export in BRep mode")
     func exportBRepMode() throws {
-        let box = Shape.box(width: 10, height: 20, depth: 30)!
+        let box = try #require(Shape.box(width: 10, height: 20, depth: 30))
         let tmpPath = NSTemporaryDirectory() + "swift_test_v59_iges_brep.iges"
         let url = URL(fileURLWithPath: tmpPath)
         try box.writeIGESBRep(to: url)
@@ -40,8 +40,8 @@ struct IGESWriterExpansionTests {
 
     @Test("Export multiple shapes")
     func exportMultiShape() throws {
-        let box = Shape.box(width: 10, height: 20, depth: 30)!
-        let sphere = Shape.sphere(radius: 5)!
+        let box = try #require(Shape.box(width: 10, height: 20, depth: 30))
+        let sphere = try #require(Shape.sphere(radius: 5))
         let tmpPath = NSTemporaryDirectory() + "swift_test_v59_iges_multi.iges"
         let url = URL(fileURLWithPath: tmpPath)
         try Exporter.writeIGES(shapes: [box, sphere], to: url)
@@ -57,7 +57,7 @@ struct IGESWriterExpansionTests {
 
     @Test("Export with unit rejects an invalid shape (#1226)")
     func exportWithUnitInvalidShape() throws {
-        let invalid = invalidBowtieShape()
+        let invalid = try invalidBowtieShape()
         #expect(!invalid.isValid)
         let tmpPath = NSTemporaryDirectory() + "swift_test_1226_iges_unit_invalid.iges"
         let url = URL(fileURLWithPath: tmpPath)
@@ -76,7 +76,7 @@ struct IGESWriterExpansionTests {
 
     @Test("Export in BRep mode rejects an invalid shape (#1226)")
     func exportBRepModeInvalidShape() throws {
-        let invalid = invalidBowtieShape()
+        let invalid = try invalidBowtieShape()
         #expect(!invalid.isValid)
         let tmpPath = NSTemporaryDirectory() + "swift_test_1226_iges_brep_invalid.iges"
         let url = URL(fileURLWithPath: tmpPath)
@@ -100,8 +100,8 @@ struct IGESWriterExpansionTests {
         now fails fast like every other writer in the file instead of partially succeeding.
         """)
     func exportMultiShapeInvalidShape() throws {
-        let box = Shape.box(width: 10, height: 20, depth: 30)!
-        let invalid = invalidBowtieShape()
+        let box = try #require(Shape.box(width: 10, height: 20, depth: 30))
+        let invalid = try invalidBowtieShape()
         #expect(!invalid.isValid)
         let tmpPath = NSTemporaryDirectory() + "swift_test_1226_iges_multi_invalid.iges"
         let url = URL(fileURLWithPath: tmpPath)

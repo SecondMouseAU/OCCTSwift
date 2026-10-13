@@ -7,7 +7,7 @@ import Testing
 struct CurveApproximationTests {
     @Test("Approximate circle edge to BSpline")
     func approximateCircle() throws {
-        let cyl = Shape.cylinder(radius: 5, height: 10)!
+        let cyl = try #require(Shape.cylinder(radius: 5, height: 10))
         let edges = cyl.edges()
         // Find a circular edge
         var circularEdge: Edge?
@@ -34,7 +34,7 @@ struct CurveApproximationTests {
 
     @Test("Approximation info returns valid data")
     func approxInfo() throws {
-        let cyl = Shape.cylinder(radius: 5, height: 10)!
+        let cyl = try #require(Shape.cylinder(radius: 5, height: 10))
         let edges = cyl.edges()
         var circularEdge: Edge?
         for edge in edges {
@@ -59,7 +59,7 @@ struct CurveApproximationTests {
 
     @Test("Approximate straight edge")
     func approximateLine() throws {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let edge = box.edge(at: 0)
         #expect(edge != nil)
 

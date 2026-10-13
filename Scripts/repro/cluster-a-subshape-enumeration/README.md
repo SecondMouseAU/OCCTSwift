@@ -48,7 +48,7 @@ ordinary caller would see:
   is #502's own box measurement (24 edge occurrences over 12 distinct, 48 vertex occurrences over
   8 distinct) and it needs no compound at all.
 - **`splitBoxCompound(order:)`** ("vertical-cut fixture", `compoundA`/`compoundB` below), the
-  *exact* construction `Tests/OCCTTopologyTests/Faces/Issue614FaceOrientationTests.swift` already uses
+  *exact* construction `Tests/OCCTTopologyTests/Faces/FaceOrientationTests.swift` already uses
   and has coverage for: a 20×10×10 block cut by an upright plane, recompounded in two member
   orders. Measured here at 11 distinct faces / 12 occurrences, matching that test file exactly.
 - **`horizontalSplitBoxCompound(order:)`** ("horizontal-cut fixture", `hCompoundA`/`hCompoundB`
@@ -339,7 +339,7 @@ accurate one. Regression tests now fail if any `Edge` accessor becomes orientati
 **#642 reproduces exactly, but only on a fixture #642's own issue text doesn't fully specify,
 which is the correction worth posting.** `detectPocketsAAG()` 2 vs 1 and the AAG upward+horizontal
 node set `[2, 8]` vs `[2]` are reproduced bit-for-bit on the horizontal-cut fixture. They do **not**
-reproduce on the vertical-cut fixture, the one `Issue614FaceOrientationTests.swift` already commits
+reproduce on the vertical-cut fixture, the one `FaceOrientationTests.swift` already commits
 and the one a reader would naturally reach for first ("PR #631's own two-solid split fixture"). A
 future PR for #642 that reused #614's committed fixture verbatim, expecting the same order-dependence,
 would have found none and wrongly concluded the defect didn't reproduce. #642's own "complete
