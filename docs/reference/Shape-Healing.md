@@ -922,13 +922,17 @@ public static func shell(from surface: Surface) -> Shape?
 
 Converts a `Surface` to a topological shell shape (a single face inside a shell, no trimming).
 
-**The surface must already be bounded.** `BRepBuilderAPI_MakeShell` has no bounds of its own to
-fall back on, and `Surface.cylinder` / `.plane` / `.cone` are infinite, so handing one of those
-straight to this factory takes the process down rather than returning nil. Build the bounded form
-(`Surface.trimmedCylinder(...)`, `trimmed(u1:u2:v1:v2:)`) first.
+**A surface unbounded in exactly one direction returns `nil`.** `BRepBuilderAPI_MakeShell` builds an
+edge for every finite parametric boundary, so an infinite `Surface.cylinder` or `.cone` (bounded
+in `u`, unbounded in `v`) gets seam edges with a +-1e100 range, and approximating them recursed
+until the process died (#3360, `Scripts/repro/3360/probe.mm`). The bridge now refuses that case.
+A surface unbounded in both directions (`Surface.plane`) has no such edges and is still built,
+with a +-1e100 extent that is not a usable shell. Build the bounded form
+(`Surface.trimmedCylinder(...)`, `trimmed(u1:u2:v1:v2:)`) or use
+`Shape.shell(from:uRange:vRange:)`.
 
-- **Parameters:** `surface`, the parametric surface to convert. Must be bounded.
-- **Returns:** Shell shape, or nil on failure.
+- **Parameters:** `surface`, the parametric surface to convert.
+- **Returns:** Shell shape, or nil on failure or for a surface unbounded in exactly one direction.
 - **OCCT:** `BRepBuilderAPI_MakeShell` (via `OCCTShapeCreateShellFromSurface`).
 - **Example:**
   ```swift

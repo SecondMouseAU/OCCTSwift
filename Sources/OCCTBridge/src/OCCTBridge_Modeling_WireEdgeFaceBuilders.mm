@@ -720,6 +720,19 @@ OCCTShapeRef OCCTShapeCreateShellFromSurface(OCCTSurfaceRef surface)
     return nullptr;
   try
   {
+    // #3360: BRepLib_MakeShell makes an edge for every finite parametric boundary. A surface
+    // unbounded in exactly one direction (infinite cylinder, cone, extrusion) therefore gets
+    // edges whose range is +-1e100, and BRepLib::BuildCurves3d at the end of Init recurses in
+    // AdvApprox_SimpleApprox::Perform until the stack is gone: an uncatchable SIGSEGV
+    // (Scripts/repro/3360/probe.mm). Unbounded in both directions makes no edges at all (the
+    // plane is built, as before) and bounded in both is the ordinary case.
+    double u0 = 0.0, u1 = 0.0, v0 = 0.0, v1 = 0.0;
+    surface->surface->Bounds(u0, u1, v0, v1);
+    const bool uInfinite = Precision::IsInfinite(u0) || Precision::IsInfinite(u1);
+    const bool vInfinite = Precision::IsInfinite(v0) || Precision::IsInfinite(v1);
+    if (uInfinite != vInfinite)
+      return nullptr;
+
     BRepBuilderAPI_MakeShell builder(surface->surface);
     if (!builder.IsDone())
       return nullptr;

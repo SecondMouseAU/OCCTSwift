@@ -188,8 +188,21 @@ extension Shape {
     ///
     /// Converts a `Surface` to a topological shell shape.
     ///
+    /// A surface unbounded in exactly one direction (an infinite cylinder or cone) is refused with
+    /// `nil`: OCCT builds edges with a +-1e100 range for it and then crashes the process
+    /// approximating them (#3360). Trim it first, or use
+    /// ``shell(from:uRange:vRange:)``. A surface bounded in both directions, or unbounded in both
+    /// (a plane, whose shell has a 1e100 extent), is built as before.
+    ///
+    /// ```swift
+    /// let cylinder = Surface.cylinder(origin: .zero, axis: SIMD3(0, 0, 1), radius: 3)!
+    /// print(Shape.shell(from: cylinder) == nil)  // true
+    /// let sphere = Surface.sphere(center: .zero, radius: 5)!
+    /// print(Shape.shell(from: sphere) != nil)  // true
+    /// ```
+    ///
     /// - Parameter surface: The parametric surface to convert
-    /// - Returns: A shell shape, or nil on failure
+    /// - Returns: A shell shape, or nil on failure or for a half-infinite surface
     public static func shell(from surface: Surface) -> Shape? {
         guard let h = OCCTShapeCreateShellFromSurface(surface.handle) else { return nil }
         return Shape(handle: h)
