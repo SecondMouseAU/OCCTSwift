@@ -7,9 +7,9 @@ import Testing
 struct TDataStdRealArrayTests {
 
     @Test("Initialize and use real array")
-    func initAndUse() {
-        let doc = Document.create()!
-        let label = doc.createLabel()!
+    func initAndUse() throws {
+        let doc = try #require(Document.create())
+        let label = try #require(doc.createLabel())
         let ok = label.initRealArray(lower: 0, upper: 2)
         #expect(ok)
 

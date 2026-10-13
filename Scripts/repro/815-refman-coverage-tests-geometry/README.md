@@ -190,13 +190,13 @@ commit history.
 | `Curve3D.d2(at:)` | its sibling `d1(at:)` is tested two lines above; `d2` itself: 0 hits anywhere in `Tests/` | `Curve3DPrimitiveTests.swift`: for a circle at the origin, `d2(u) = -P(u)` exactly, for any `u` |
 | `Curve3D.bsplineSetKnot(index:value:)` | its batch sibling `bsplineSetKnots` is tested; the singular setter: 0 hits | `BSplineCurve3DCompletionsV121Tests.swift`: set two knot indices, read back via `bsplineKnotSequence()` |
 | `Curve2D.d2(at:)` | same shape as `Curve3D.d2` | `Curve2DTests.swift`: same relationship, 2D |
-| `Curve2D.allExtrema(with:)` | 0 hits anywhere | `Issue815Curve2DExtremaSelfIntersectTests.swift`: two circles 20 apart, exact nearest (10) and farthest (30) distances |
+| `Curve2D.allExtrema(with:)` | 0 hits anywhere | `Curve2DExtremaSelfIntersectTests.swift`: two circles 20 apart, exact nearest (10) and farthest (30) distances |
 | `Curve2D.selfIntersections(tolerance:)` | 0 hits anywhere; `OCCTCurve2DSelfIntersect` (the bridge fn) is a real, live entry point, not dead code | same file: a control-point loop measured (not derived analytically — a first hand-picked "bowtie" control polygon proved NOT to self-intersect, see below) to self-intersect at (2.5, 3.0), plus a circle control asserting zero hits |
 | `OCCTPrecision.infinite` | its siblings `.confusion`/`.angular`/`.approximation`/`.isInfinite` are all tested; `.infinite` itself: 0 hits | `PrecisionTests.swift`: `isInfinite(.infinite)` and a magnitude floor, tied to the documented relationship rather than the literal `2e100` |
 | `OCCTPrecision.pConfusion` | same pattern | `PrecisionTests.swift`: `pConfusion == confusion / 100` exactly, per occt-refman@8.0.1's own documented `PConfusion()` contract |
-| `Surface.bsplineSetUKnot`/`.bsplineSetVKnot` | the batch `bsplineInsertUKnots`/`VKnots` are tested; the singular setters: 0 hits | `BSplineSurfaceCompletionsV121Tests.swift`: set + read back via `bsplineUKnots()`/`bsplineVKnots()` |
+| `Surface.bsplineSetUKnot`/`.bsplineSetVKnot` | the batch `bsplineInsertUKnots`/`VKnots` are tested; the singular setters: 0 hits | `BSplineSurfaceModificationTests.swift`: set + read back via `bsplineUKnots()`/`bsplineVKnots()` |
 | `Surface.bsplineRemoveUKnot` | its V twin (`BSplineSurfaceRemoveVKnotTests.swift`) is tested; U: 0 hits | new `BSplineSurfaceRemoveUKnotTests.swift`, mirroring the V file, PLUS a genuinely-removable-knot case the V file's own test never had (insert then remove, asserting the boolean, not just survival) |
-| `Surface.bsplineIncreaseVMultiplicity` | its U twin is tested; V: 0 hits | `BSplineSurfaceCompletionsV121Tests.swift`, mirroring the U test |
+| `Surface.bsplineIncreaseVMultiplicity` | its U twin is tested; V: 0 hits | `BSplineSurfaceModificationTests.swift`, mirroring the U test |
 | `Surface.isUClosed`/`.isVClosed` | siblings `isUPeriodic`/`isVPeriodic` tested throughout `SurfaceAnalyticTests.swift`, `isUClosedSA`/`isVClosedSA` tested elsewhere; the plain, non-SA closure flags: 0 hits anywhere | `SurfaceAnalyticTests.swift`: plane/cylinder/sphere/torus against the pinned kernel's own header comments on `Geom_Plane`/`Geom_CylindricalSurface`/`Geom_SphericalSurface`/`Geom_ToroidalSurface` |
 
 **The self-intersection fixture took two attempts, and the failed one is worth recording.** The

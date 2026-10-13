@@ -216,7 +216,7 @@ struct Issue503PipeShellTests {
     }
 
     @Test("withContact and withCorrection reach a single-profile sweep")
-    func singleProfileHonoursContactAndCorrection() {
+    func singleProfileHonoursContactAndCorrection() throws {
         // A profile parked off the spine and tilted away from it, so both flags have work.
         guard let spine = Wire.line(from: .zero, to: SIMD3(0, 0, 20)),
             let profile = Wire.circle(origin: SIMD3(6, 0, 0), normal: SIMD3(1, 1, 2), radius: 2)
@@ -244,8 +244,8 @@ struct Issue503PipeShellTests {
                     spine: spine, profile: profile, withContact: true)
             {
                 #expect(
-                    !plainShape.bounds!.min.x.isApproximatelyEqual(
-                        to: contactedShape.bounds!.min.x, tolerance: 1e-6),
+                    try !#require(plainShape.bounds).min.x.isApproximatelyEqual(
+                        to: #require(contactedShape.bounds).min.x, tolerance: 1e-6),
                     "withContact had no effect")
             }
             #expect(contacted.volume > 0)

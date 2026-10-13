@@ -1,5 +1,5 @@
 //
-//  Issue1644IOReturnStatusTests.swift
+//  IOReturnStatusTests.swift
 //  OCCTSwift
 //
 //  #1644: IFSelect_ReturnStatus was compared to IFSelect_RetDone and thrown away at every STEP

@@ -1952,8 +1952,8 @@ OCCTBooleanHistoryRef OCCTShapeHistoryFromCircularPattern(OCCTShapeRef  shape,
     // gp_Dir's constructor throws on a zero-length vector, same guarding
     // rationale as OCCTShapeHistoryFromLinearPattern above.
     gp_Ax1 axis(gp_Pnt(axisX, axisY, axisZ), gp_Dir(axisDirX, axisDirY, axisDirZ));
-    double totalAngle = (angle == 0) ? (2.0 * M_PI) : angle;
-    double stepAngle  = (count > 0) ? (totalAngle / count) : 0.0;
+    // Same step as OCCTShapeCircularPattern (#3356).
+    const double stepAngle = occtCircularPatternStep(angle, count);
     return occtPatternHistory(
       shape,
       count,
