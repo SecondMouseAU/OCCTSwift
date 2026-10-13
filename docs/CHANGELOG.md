@@ -25,7 +25,52 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 - `Shape.solidFromShells(_:)` now reverses a closed cavity shell that points outward, so `solidFromShells([outer, inner])` with two plain boxes returns the valid hollow solid (volume outer less cavity) instead of an invalid solid whose volume is the sum. Shells already reversed by the caller give the same result as before.
 
-||||||| 1b2019e22
+### `OffsetAncestors.offsetWire`, so `hasAncestor(_:)` and `ancestor(of:)` can be given an offset-wire edge (#3366)
+
+`OffsetAncestors` now exposes the offset wire its ancestry is keyed on as `offsetWire`. Its edges are the ones `hasAncestor(_:)` and `ancestor(of:)` answer for; before, no edge a caller could obtain was a key, so they were always `false` and `nil`. `create(face:offset:joinType:)` now offsets with the sign `Shape.offsetWire(face:offset:)` uses (positive outward), is done for every join type in both directions, and reports `isDone == false` for an offset that collapses the face.
+
+```swift
+let face = Shape.face(from: Wire.rectangle(width: 10, height: 10)!)!
+if let ancestors = OffsetAncestors.create(face: face, offset: -1.0),
+    let wire = ancestors.offsetWire
+{
+    for edge in wire.subShapes(ofType: .edge) {
+        let original = ancestors.ancestor(of: edge)  // the face edge it was offset from
+    }
+}
+```
+
+`Shape.faceCopy(_:)` now returns the copied face. It returned nil for every face, because the bridge waited on a `BRepBuilderAPI_MakeFace` done flag the face-loading constructor never sets. A shape that is not a face is refused.
+
+### `Shape.offsetWire(face:offset:)` offsets outward for a positive offset and inward for a negative one (#3364)
+
+`Shape.offsetWire(face:offset:)` now follows `BRepOffsetAPI_MakeOffset`: a positive offset expands the face's wires outward (an Arc join rounds the corners) and a negative offset shrinks them inward, both as trimmed closed wires. It used to shrink for a positive offset and return four untrimmed crossing segments for a negative one. An inward offset that collapses the face, and a non-finite offset, return `nil` instead of an empty compound.
+
+```swift
+let rect = Wire.rectangle(width: 20, height: 20)!
+let face = Shape.face(from: rect)!.faces().first!
+let grown = Shape.offsetWire(face: face, offset: 3)    // 8 edges, half-width 13
+let shrunk = Shape.offsetWire(face: face, offset: -3)  // 4 edges, half-width 7
+```
+
+### `circularPattern(angle:)` with a partial angle spans the angle, stepping `angle / (count - 1)` (#3356)
+
+A partial `angle` passed to `circularPattern(axisPoint:axisDirection:count:angle:)`, `circularPatternCut(tool:axisPoint:axisDirection:count:angle:timeout:)` and `circularPatternWithFullHistory(axisPoint:axisDirection:count:angle:)` now runs from the original to the last copy, as its documentation says: three copies over `.pi / 2` sit at 0, 45 and 90 degrees (they used to sit at 0, 30 and 60 because the step was `angle / count`). A full circle, `angle: 0` or an explicit `2 * .pi`, is unchanged and steps by `2 * .pi / count`, since another copy would coincide with the original. A `count` of 1 returns just the original. Callers who relied on the old `angle / count` spacing for a partial angle should pass `angle * Double(count - 1) / Double(count)`.
+
+### `Shape.orientClosedSolid()` reorients an inward solid in place (#3357)
+
+- `Shape.orientClosedSolid()` reported `true` for a solid whose shell pointed inward and left it unchanged (signed volume stayed negative). It now writes the reversed solid back, so the receiver reads the positive volume afterwards.
+
+Transforming the triangulation-only face returned by `Shape.readSTL(from:)` (translate, rotate, scale, mirror and the point/axis variants) now moves it. Before, the call returned a shape whose bounds were unchanged.
+
+### `CoordinateSystem3D.direction` is the unit main direction of the `gp_Ax3`, not the caller's vector (#3371)
+
+`CoordinateSystem3D(origin:direction:)` and `CoordinateSystem3D(origin:direction:xDirection:)` stored the `direction` they were given, so a non-unit vector such as `SIMD3(1, 2, 2)` was reported back as `(1, 2, 2)` while `xDirection` and `yDirection` were the unit axes of the system and `cross(xDirection, yDirection)` was `(1/3, 2/3, 2/3)`. `direction` is now `gp_Ax3::Direction()`, always a unit vector, so the three axes agree. A construction that fails (a zero-length `direction`, or `direction` parallel to `xDirection`) now reports `direction == .zero` alongside the existing zero `xDirection`/`yDirection` and `isDirect == false`. `mirrored(about:)`, `rotated(about:axisDirection:angle:)` and `translated(by:)` inherit the unit direction.
+
+### `Shape.connectedEdges` leaves the receiver untouched and valid (#3354)
+
+- `Shape.connectedEdges` no longer edits the receiver in place and no longer returns an invalid shape for a valid input (a box, a cylinder and a box fused with a sphere all came back invalid). It works on a copy and returns an unchanged copy when connecting would make a valid shape invalid, the same as `fixEdgeConnect()`.
+
 `Shape.faceRestrictAlgo(faceIndex:)` now returns the number of result faces. It returned 0 for every face, because the bridge counted into a zero-capacity buffer.
 
 ### `Document.loadOCAF(from:)` no longer crashes or hangs on a damaged file (#3318)

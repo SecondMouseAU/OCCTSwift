@@ -8,11 +8,11 @@ import Testing
 struct BRepLibUtilitiesTests {
 
     /// A forward shell is already outward, so the call is a no-op that answers `true`; a REVERSED
-    /// shell makes an inward solid (signed volume -1000), which the call should flip.
+    /// shell makes an inward solid (signed volume -1000), which the call flips in place.
     ///
-    /// Measured on kernel.6: the call answers `true` for both and the inward solid stays at -1000,
-    /// because the bridge reverses a local copy of the solid (the orientation lives in the
-    /// `TopoDS_Shape` value, not the shared TShape) and drops it. #3357.
+    /// Before #3357 the call answered `true` for both and the inward solid stayed at -1000,
+    /// because the bridge reversed a local copy of the solid (the orientation lives in the
+    /// `TopoDS_Shape` value, not the shared TShape) and dropped it.
     @Test func orientClosedSolid() throws {
         let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let shell = try #require(box.subShapes(ofType: .shell).first)
@@ -26,12 +26,13 @@ struct BRepLibUtilitiesTests {
         let inwardShell = try #require(shell.oriented(1))
         let inward = try #require(Shape.builderMakeSolid())
         inward.builderAdd(inwardShell)
-        // The fixture really is inward before the call, so the check below is about the call.
+        // The fixture is inward before the call, so the check below is about the call.
         #expect(abs(inward.signedVolume + 1000) < 1e-6)
         #expect(inward.orientClosedSolid())
-        withKnownIssue("orientClosedSolid reverses a local copy and never writes it back (#3357)") {
-            #expect(abs(inward.signedVolume - 1000) < 1e-6)
-        }
+        #expect(abs(inward.signedVolume - 1000) < 1e-6)
+        // Idempotent: a second call finds it already outward and leaves it alone.
+        #expect(inward.orientClosedSolid())
+        #expect(abs(inward.signedVolume - 1000) < 1e-6)
     }
 
     /// A box's edges all have 3D curves already, so this is the early-return path: OCCT returns

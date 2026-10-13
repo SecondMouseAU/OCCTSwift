@@ -6,8 +6,8 @@ import Testing
 @Suite("Surface Conversion")
 struct SurfaceConversionTests {
     @Test("Sphere to BSpline conversion")
-    func sphereToBSpline() {
-        let sphere = Surface.sphere(center: .zero, radius: 5)!
+    func sphereToBSpline() throws {
+        let sphere = try #require(Surface.sphere(center: .zero, radius: 5))
         let bsp = sphere.toBSpline()
         #expect(bsp != nil)
         if let bsp = bsp {
@@ -28,8 +28,8 @@ struct SurfaceConversionTests {
     }
 
     @Test("Approximate surface")
-    func approximateSurface() {
-        let sphere = Surface.sphere(center: .zero, radius: 5)!
+    func approximateSurface() throws {
+        let sphere = try #require(Surface.sphere(center: .zero, radius: 5))
         let approx = sphere.approximated(tolerance: 0.001)
         #expect(approx != nil)
         // #766: was non-nil only. GeomConvert_ApproxSurface at 1e-3 / degree 8 gives degree
@@ -41,8 +41,8 @@ struct SurfaceConversionTests {
     }
 
     @Test("U-iso curve from sphere")
-    func uIsoCurve() {
-        let sphere = Surface.sphere(center: .zero, radius: 5)!
+    func uIsoCurve() throws {
+        let sphere = try #require(Surface.sphere(center: .zero, radius: 5))
         let iso = sphere.uIso(at: 0)
         #expect(iso != nil)
         if let iso = iso {
@@ -58,8 +58,8 @@ struct SurfaceConversionTests {
     }
 
     @Test("V-iso curve from sphere")
-    func vIsoCurve() {
-        let sphere = Surface.sphere(center: .zero, radius: 5)!
+    func vIsoCurve() throws {
+        let sphere = try #require(Surface.sphere(center: .zero, radius: 5))
         let iso = sphere.vIso(at: 0)
         #expect(iso != nil)
         if let iso = iso {

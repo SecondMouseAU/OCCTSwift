@@ -440,7 +440,7 @@ real, observed source of noise in the candidate list, not a hypothetical:
     run's 64 candidates were this shape, all in two files.
   - SUB-KIND 2's VERIFICATION CHECK ONLY READS `#expect(...)` BODIES, SO A VERIFICATION PERFORMED
     THROUGH A HELPER CALL WAS INVISIBLE UNTIL THIS WAS FOUND AND FIXED MID-PASS.
-    `Issue442FixSolidMultiBodyTests.swift`/`Issue443FirstOfNTests.swift` both define a private
+    `FixSolidMultiBodyTests.swift`/`SolidFromUpgradedEveryBodyTests.swift` both define a private
     `expectVolume(_:_:_:)` wrapping `#expect(abs(volume - expected) < 1e-6, ...)`; every call site
     reads `expectVolume(healed, 2000.0, "...")`, which is not itself a `#expect(...)` call, so the
     verification inside it was invisible to a scan that only reads `#expect(` bodies. This alone
@@ -850,7 +850,7 @@ RISKY_PRODUCER = re.compile(
 def verifying_helpers(text):
     """Names of every function in this file whose own body contains a VERIFICATION-matching
     #expect. A test that calls one of these BY NAME gets the same credit as writing the check
-    inline: the shape `Issue442FixSolidMultiBodyTests.swift`'s private
+    inline: the shape `FixSolidMultiBodyTests.swift`'s private
     `expectVolume(_:_:_:)` uses (wrapping `#expect(abs(volume - expected) < 1e-6, ...)`), which is
     otherwise invisible, since the call site `expectVolume(healed, 2000.0, "...")` is not itself a
     `#expect(...)` call, so a scan that only reads `#expect(` bodies never sees the verification at

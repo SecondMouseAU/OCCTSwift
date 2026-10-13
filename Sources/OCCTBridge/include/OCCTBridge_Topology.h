@@ -1678,7 +1678,8 @@ bool OCCTBuilderRemove(OCCTShapeRef _Nonnull parent, OCCTShapeRef _Nonnull child
 
 // --- BRepLib utilities ---
 
-/// Orient a closed solid so that its faces' normals point outward.
+/// Orient a closed solid so that its faces' normals point outward. An inward solid is reversed in
+/// place in the wrapper, so the caller's handle sees the new orientation (#3357).
 bool OCCTBRepLibOrientClosedSolid(OCCTShapeRef _Nonnull solid);
 
 /// Build a 3D curve for every edge of a shape that has only pcurves. The one entry point for

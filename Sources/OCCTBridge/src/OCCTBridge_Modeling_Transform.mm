@@ -668,9 +668,8 @@ OCCTShapeRef OCCTShapeCircularPattern(OCCTShapeRef shape,
     gp_Dir axisDir(axisDirX, axisDirY, axisDirZ);
     gp_Ax1 axis(axisPoint, axisDir);
 
-    // If angle is 0, use full circle
-    double totalAngle = (angle == 0) ? (2.0 * M_PI) : angle;
-    double stepAngle  = totalAngle / count;
+    // `angle` is the total span, the last copy sits at `angle` (#3356); 0 is a full circle.
+    const double stepAngle = occtCircularPatternStep(angle, count);
 
     for (int32_t i = 0; i < count; i++)
     {
@@ -743,13 +742,13 @@ OCCTShapeRef _Nullable OCCTShapeMirrorAboutPoint(OCCTShapeRef shape,
     return nullptr;
   try
   {
-    GC_MakeMirror            mm(gp_Pnt(px, py, pz));
-    gp_Trsf                  trsf = mm.Value()->Trsf();
-    BRepBuilderAPI_Transform bt(shape->shape, trsf, true);
-    if (!bt.IsDone())
+    GC_MakeMirror mm(gp_Pnt(px, py, pz));
+    gp_Trsf       trsf  = mm.Value()->Trsf();
+    TopoDS_Shape  moved = occtTransformShape(shape->shape, trsf);
+    if (moved.IsNull())
       return nullptr;
     auto* result  = new OCCTShape();
-    result->shape = bt.Shape();
+    result->shape = moved;
     return result;
   }
   catch (...)
@@ -771,13 +770,13 @@ OCCTShapeRef _Nullable OCCTShapeMirrorAboutAxis(OCCTShapeRef shape,
     return nullptr;
   try
   {
-    GC_MakeMirror            mm(gp_Ax1(gp_Pnt(ox, oy, oz), gp_Dir(dx, dy, dz)));
-    gp_Trsf                  trsf = mm.Value()->Trsf();
-    BRepBuilderAPI_Transform bt(shape->shape, trsf, true);
-    if (!bt.IsDone())
+    GC_MakeMirror mm(gp_Ax1(gp_Pnt(ox, oy, oz), gp_Dir(dx, dy, dz)));
+    gp_Trsf       trsf  = mm.Value()->Trsf();
+    TopoDS_Shape  moved = occtTransformShape(shape->shape, trsf);
+    if (moved.IsNull())
       return nullptr;
     auto* result  = new OCCTShape();
-    result->shape = bt.Shape();
+    result->shape = moved;
     return result;
   }
   catch (...)
@@ -808,13 +807,13 @@ OCCTShapeRef _Nullable OCCTShapeScaleAboutPoint(OCCTShapeRef shape,
     return nullptr;
   try
   {
-    GC_MakeScale             ms(gp_Pnt(px, py, pz), factor);
-    gp_Trsf                  trsf = ms.Value()->Trsf();
-    BRepBuilderAPI_Transform bt(shape->shape, trsf, true);
-    if (!bt.IsDone())
+    GC_MakeScale ms(gp_Pnt(px, py, pz), factor);
+    gp_Trsf      trsf  = ms.Value()->Trsf();
+    TopoDS_Shape moved = occtTransformShape(shape->shape, trsf);
+    if (moved.IsNull())
       return nullptr;
     auto* result  = new OCCTShape();
-    result->shape = bt.Shape();
+    result->shape = moved;
     return result;
   }
   catch (...)
@@ -836,13 +835,13 @@ OCCTShapeRef _Nullable OCCTShapeTranslateByPoints(OCCTShapeRef shape,
     return nullptr;
   try
   {
-    GC_MakeTranslation       mt(gp_Pnt(p1x, p1y, p1z), gp_Pnt(p2x, p2y, p2z));
-    gp_Trsf                  trsf = mt.Value()->Trsf();
-    BRepBuilderAPI_Transform bt(shape->shape, trsf, true);
-    if (!bt.IsDone())
+    GC_MakeTranslation mt(gp_Pnt(p1x, p1y, p1z), gp_Pnt(p2x, p2y, p2z));
+    gp_Trsf            trsf  = mt.Value()->Trsf();
+    TopoDS_Shape       moved = occtTransformShape(shape->shape, trsf);
+    if (moved.IsNull())
       return nullptr;
     auto* result  = new OCCTShape();
-    result->shape = bt.Shape();
+    result->shape = moved;
     return result;
   }
   catch (...)
@@ -1169,8 +1168,10 @@ OCCTShapeRef OCCTShapeTranslate(OCCTShapeRef shape, double dx, double dy, double
   {
     gp_Trsf transform;
     transform.SetTranslation(gp_Vec(dx, dy, dz));
-    BRepBuilderAPI_Transform transformer(shape->shape, transform, Standard_True);
-    return new OCCTShape(transformer.Shape());
+    TopoDS_Shape moved = occtTransformShape(shape->shape, transform);
+    if (moved.IsNull())
+      return nullptr;
+    return new OCCTShape(moved);
   }
   catch (...)
   {
@@ -1192,8 +1193,10 @@ OCCTShapeRef OCCTShapeRotate(OCCTShapeRef shape,
     gp_Ax1  axis(gp_Pnt(0, 0, 0), gp_Dir(axisX, axisY, axisZ));
     gp_Trsf transform;
     transform.SetRotation(axis, angle);
-    BRepBuilderAPI_Transform transformer(shape->shape, transform, Standard_True);
-    return new OCCTShape(transformer.Shape());
+    TopoDS_Shape moved = occtTransformShape(shape->shape, transform);
+    if (moved.IsNull())
+      return nullptr;
+    return new OCCTShape(moved);
   }
   catch (...)
   {
@@ -1210,8 +1213,10 @@ OCCTShapeRef OCCTShapeScale(OCCTShapeRef shape, double factor)
   {
     gp_Trsf transform;
     transform.SetScale(gp_Pnt(0, 0, 0), factor);
-    BRepBuilderAPI_Transform transformer(shape->shape, transform, Standard_True);
-    return new OCCTShape(transformer.Shape());
+    TopoDS_Shape moved = occtTransformShape(shape->shape, transform);
+    if (moved.IsNull())
+      return nullptr;
+    return new OCCTShape(moved);
   }
   catch (...)
   {
@@ -1235,8 +1240,10 @@ OCCTShapeRef OCCTShapeMirror(OCCTShapeRef shape,
     gp_Ax2  mirrorPlane(gp_Pnt(originX, originY, originZ), gp_Dir(normalX, normalY, normalZ));
     gp_Trsf transform;
     transform.SetMirror(mirrorPlane);
-    BRepBuilderAPI_Transform transformer(shape->shape, transform, Standard_True);
-    return new OCCTShape(transformer.Shape());
+    TopoDS_Shape moved = occtTransformShape(shape->shape, transform);
+    if (moved.IsNull())
+      return nullptr;
+    return new OCCTShape(moved);
   }
   catch (...)
   {
