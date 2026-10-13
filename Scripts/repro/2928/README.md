@@ -83,7 +83,7 @@ was running the thing.
   included it. Its 21 sites are all CAPACITIES, which this layer clamps rather than rejects, so the
   value becomes `Int.max` where `Int` is 32 bits rather than nil, and every assertion keeps its
   meaning.
-- **A bare `import Darwin`**, in `OCCTFoundationTests/Issue1442DiskUnicodeOSDUtilitiesTests.swift`,
+- **A bare `import Darwin`**, in `OCCTFoundationTests/DiskUnicodeOSDUtilitiesTests.swift`,
   for two `free` calls. Not a concurrency primitive and not an integer width, so neither survey
   above could have found it. The build did, which is why the build came before the exclusion list
   rather than after it.
