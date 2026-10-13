@@ -927,13 +927,13 @@ let wasmExcludedTestFiles: [String: [String]] = [
     // is the seventh: it uses `DispatchGroup` and spawns child processes with `Process`, and
     // neither exists on wasm, so the file does not compile there.
     "OCCTThreadTests": [
-        "Concurrency/Issue1404TObjApplicationThreadSafetyTests.swift",
-        "Concurrency/Issue298FilletThreadSafetyTests.swift",
-        "Concurrency/Issue341MeshCafThreadSafetyTests.swift",
-        "Concurrency/Issue359STEPThreadSafetyTests.swift",
-        "Concurrency/Issue361SharedSingletonThreadSafetyTests.swift",
-        "Concurrency/Issue367FuseMultiThreadSafetyTests.swift",
-        "Concurrency/Issue3039BRepLibPlaneFirstUseTests.swift",
+        "Concurrency/TObjApplicationThreadSafetyTests.swift",
+        "Concurrency/FilletOfBooleanThreadSafetyTests.swift",
+        "Concurrency/MeshCafThreadSafetyTests.swift",
+        "Concurrency/STEPThreadSafetyTests.swift",
+        "Concurrency/SharedSingletonThreadSafetyTests.swift",
+        "Concurrency/FuseMultiThreadSafetyTests.swift",
+        "Concurrency/BRepLibPlaneFirstUseTests.swift",
     ],
 ]
 
