@@ -76,14 +76,14 @@ The four questions above were all answerable before the suites ran. Three more t
 they are worth recording because they are the same lesson #2997 left: the measurement that mattered
 was running the thing.
 
-- **A sixth `Int32.max` file.** `Tests/OCCTMiscTests/Bridge/Issue622AllocationBoundsTests.swift` carries the
+- **A sixth `Int32.max` file.** `Tests/OCCTMiscTests/Bridge/ResultBufferAllocationBoundsTests.swift` carries the
   same `private static let pastInt32 = Int(Int32.max) + 1` as the five #2793 listed. It was on no
   list, because the whole of `OCCTMiscTests` was excluded for an unrelated reason
   (`autoreleasepool`), so nothing had ever run it. It trapped the module on the first run that
   included it. Its 21 sites are all CAPACITIES, which this layer clamps rather than rejects, so the
   value becomes `Int.max` where `Int` is 32 bits rather than nil, and every assertion keeps its
   meaning.
-- **A bare `import Darwin`**, in `OCCTFoundationTests/Issue1442DiskUnicodeOSDUtilitiesTests.swift`,
+- **A bare `import Darwin`**, in `OCCTFoundationTests/DiskUnicodeOSDUtilitiesTests.swift`,
   for two `free` calls. Not a concurrency primitive and not an integer width, so neither survey
   above could have found it. The build did, which is why the build came before the exclusion list
   rather than after it.

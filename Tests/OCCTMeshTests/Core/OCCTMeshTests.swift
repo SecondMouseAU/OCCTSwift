@@ -207,9 +207,9 @@ struct MeshTests {
     }
 
     @Test("Triangles with face info")
-    func trianglesWithFaces() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
-        let mesh = box.mesh(linearDeflection: 0.1)!
+    func trianglesWithFaces() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let mesh = try #require(box.mesh(linearDeflection: 0.1))
 
         let triangles = mesh.trianglesWithFaces()
         #expect(triangles.count == mesh.triangleCount)
@@ -243,9 +243,9 @@ struct MeshTests {
 
     // issue #197: Mesh.toShape weld tolerance is now caller-tunable.
     @Test("toShape weldTolerance: default parity, guards, and large-mesh welding")
-    func meshToShapeWeldTolerance() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
-        let mesh = box.mesh(linearDeflection: 0.5)!
+    func meshToShapeWeldTolerance() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let mesh = try #require(box.mesh(linearDeflection: 0.5))
 
         // Default and an explicit 1e-6 must behave identically (non-breaking).
         if let d = mesh.toShape(), let e = mesh.toShape(weldTolerance: 1e-6) {
@@ -350,8 +350,8 @@ struct PresentationMeshTests {
 struct DrawerMeshTests {
 
     @Test("Shaded mesh with default drawer produces valid mesh")
-    func shadedMeshDefaultDrawer() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func shadedMeshDefaultDrawer() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let drawer = DisplayDrawer()
 
         let mesh = box.shadedMesh(drawer: drawer)
@@ -364,8 +364,8 @@ struct DrawerMeshTests {
     }
 
     @Test("Edge mesh with default drawer produces valid segments")
-    func edgeMeshDefaultDrawer() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func edgeMeshDefaultDrawer() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let drawer = DisplayDrawer()
 
         let mesh = box.edgeMesh(drawer: drawer)
@@ -377,8 +377,8 @@ struct DrawerMeshTests {
     }
 
     @Test("Finer deviation produces more triangles for curved shape")
-    func finerDeviationMoreTriangles() {
-        let sphere = Shape.sphere(radius: 10)!
+    func finerDeviationMoreTriangles() throws {
+        let sphere = try #require(Shape.sphere(radius: 10))
 
         let coarseDrawer = DisplayDrawer()
         coarseDrawer.deviationCoefficient = 0.1
@@ -413,7 +413,7 @@ struct DrawerMeshTests {
 
     @Test(
         "Relative deflection scales with shape size, matching OCCT's own reference caller (#1418)")
-    func relativeDeflectionScalesWithShapeSize() {
+    func relativeDeflectionScalesWithShapeSize() throws {
         // A drawer's TypeOfDeflection() default is .relative, and DeviationCoefficient() (default
         // ~0.001) is documented as a coefficient of the shape's own bounding-box diagonal, not a
         // usable absolute deflection on its own -- OCCTDrawerGetEffectiveDeflection used to return
@@ -425,8 +425,8 @@ struct DrawerMeshTests {
         // not 50x more. Without the fix, the raw ~0.001 coefficient stays a constant *absolute*
         // deflection, so the larger sphere (needing the same absolute chordal tolerance over a
         // much bigger surface) needs dramatically more triangles.
-        let smallSphere = Shape.sphere(radius: 1)!
-        let largeSphere = Shape.sphere(radius: 50)!
+        let smallSphere = try #require(Shape.sphere(radius: 1))
+        let largeSphere = try #require(Shape.sphere(radius: 50))
         let drawer = DisplayDrawer()
 
         let smallMesh = smallSphere.shadedMesh(drawer: drawer)
@@ -461,8 +461,8 @@ struct DrawerMeshTests {
 struct Issue1224PresentationMeshParityTests {
 
     @Test("shadedMesh(deflection:) and shadedMesh(drawer:) deinterleave identically")
-    func shadedMeshOverloadsAgree() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func shadedMeshOverloadsAgree() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let drawer = DisplayDrawer()
         drawer.deflectionType = .absolute
         drawer.maximalChordialDeviation = 0.1
@@ -480,8 +480,8 @@ struct Issue1224PresentationMeshParityTests {
     }
 
     @Test("edgeMesh(deflection:) and edgeMesh(drawer:) deinterleave identically")
-    func edgeMeshOverloadsAgree() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func edgeMeshOverloadsAgree() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let drawer = DisplayDrawer()
         drawer.deflectionType = .absolute
         drawer.maximalChordialDeviation = 0.1

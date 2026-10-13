@@ -1,7 +1,7 @@
 # current_path	proposed_path	area	pending_prs	reason
 Tests/OCCTFoundationTests/HostOSCrossCheckTests.swift	Tests/OCCTFoundationTests/OSD/HostOSCrossCheckTests.swift	OSD	-	OSD_PerfMeter, OSD_Disk and host environment cross-checks
-Tests/OCCTFoundationTests/Issue1078UnicodeConvertLengthTests.swift	Tests/OCCTFoundationTests/OSD/Issue1078UnicodeConvertLengthTests.swift	OSD	-	UnicodeUtils.convertFromUnicode length contract
-Tests/OCCTFoundationTests/Issue1442DiskUnicodeOSDUtilitiesTests.swift	Tests/OCCTFoundationTests/OSD/Issue1442DiskUnicodeOSDUtilitiesTests.swift	OSD	-	OSD disk size, free space, validity and UTF-8 encoding of code units
+Tests/OCCTFoundationTests/Issue1078UnicodeConvertLengthTests.swift	Tests/OCCTFoundationTests/OSD/UnicodeConvertLengthTests.swift	OSD	-	UnicodeUtils.convertFromUnicode length contract
+Tests/OCCTFoundationTests/Issue1442DiskUnicodeOSDUtilitiesTests.swift	Tests/OCCTFoundationTests/OSD/DiskUnicodeOSDUtilitiesTests.swift	OSD	-	OSD disk size, free space, validity and UTF-8 encoding of code units
 Tests/OCCTFoundationTests/PathParsingContractTests.swift	Tests/OCCTFoundationTests/OSD/PathParsingContractTests.swift	OSD	-	OSD_Path parsing: non-ASCII, extension, name, trek syntax
 Tests/OCCTFoundationTests/SerialLockThreadSafetyTests.swift	Tests/OCCTFoundationTests/Concurrency/SerialLockThreadSafetyTests.swift	Concurrency	-	OCCTSerial lock: basic, reentrant, deep copy for parallel, serialized access
 Tests/OCCTFoundationTests/OCCTFoundationTests.swift	Tests/OCCTFoundationTests/OCCTFoundationTests.swift	(stays)	-	mixed monolith (Color, Material, Date, Font, PixMap, Units, Message, OSD, Sheet, BillOfMaterials); splitting it is a content change, so it stays at the root
