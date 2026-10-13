@@ -7,8 +7,8 @@ import Testing
 @Suite("Wire Explorer")
 struct WireExplorerTests {
     @Test("Rectangle has 4 ordered edges")
-    func rectangleEdges() {
-        let rect = Wire.rectangle(width: 10, height: 5)!
+    func rectangleEdges() throws {
+        let rect = try #require(Wire.rectangle(width: 10, height: 5))
         #expect(rect.orderedEdgeCount == 4)
     }
 
@@ -32,8 +32,8 @@ struct WireExplorerTests {
     }
 
     @Test("Out of range returns nil")
-    func outOfRange() {
-        let rect = Wire.rectangle(width: 10, height: 5)!
+    func outOfRange() throws {
+        let rect = try #require(Wire.rectangle(width: 10, height: 5))
         #expect(rect.orderedEdgePoints(at: 99) == nil)
         #expect(rect.orderedEdgePoints(at: -1) == nil)
     }

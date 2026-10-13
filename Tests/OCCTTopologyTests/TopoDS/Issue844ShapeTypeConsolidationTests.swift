@@ -17,8 +17,8 @@ import Testing
 struct Issue844ShapeTypeConsolidationTests {
 
     @Test("isSubShapeValid(type:) takes the canonical ShapeType directly")
-    func isSubShapeValidTakesShapeType() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func isSubShapeValidTakesShapeType() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
 
         // Explicitly typed as ShapeType (not the deleted local Shape.TopAbs_ShapeEnum) --
         // compiles only if isSubShapeValid(type:)'s parameter really is ShapeType.
@@ -37,7 +37,7 @@ struct Issue844ShapeTypeConsolidationTests {
 
     @Test("ShapeFilterType is a typealias for ShapeType -- interchangeable with no conversion")
     func shapeFilterTypeIsShapeType() throws {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         guard let solid1 = Shape.box(width: 5, height: 5, depth: 5),
             let solid2 = Shape.box(width: 5, height: 5, depth: 5)?.translated(by: SIMD3(20, 0, 0))
         else {

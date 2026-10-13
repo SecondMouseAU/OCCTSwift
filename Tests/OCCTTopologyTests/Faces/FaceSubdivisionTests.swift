@@ -9,8 +9,8 @@ import Testing
 @Suite("Face Subdivision by Area")
 struct FaceSubdivisionTests {
     @Test("Divide box faces by area")
-    func divideByArea() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func divideByArea() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let origFaces = box.subShapeCount(ofType: .face)
         #expect(origFaces == 6)
 
@@ -24,8 +24,8 @@ struct FaceSubdivisionTests {
     }
 
     @Test("Large max area does not split")
-    func largeAreaNoSplit() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func largeAreaNoSplit() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let result = box.dividedByArea(maxArea: 10000)
         #expect(result != nil)
         if let result {
