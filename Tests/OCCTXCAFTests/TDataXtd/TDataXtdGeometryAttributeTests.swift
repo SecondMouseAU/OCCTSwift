@@ -9,9 +9,9 @@ import Testing
 struct TDataXtdGeometryAttributeTests {
 
     @Test("Set and get geometry type")
-    func setGetGeometryType() {
-        let doc = Document.create()!
-        let label = doc.createLabel()!
+    func setGetGeometryType() throws {
+        let doc = try #require(Document.create())
+        let label = try #require(doc.createLabel())
 
         #expect(label.setGeometryType(.point))
         #expect(label.hasGeometryAttribute)
@@ -25,13 +25,13 @@ struct TDataXtdGeometryAttributeTests {
     }
 
     @Test("All geometry type values")
-    func allGeometryTypes() {
-        let doc = Document.create()!
+    func allGeometryTypes() throws {
+        let doc = try #require(Document.create())
         let types: [GeometryType] = [
             .anyGeom, .point, .line, .circle, .ellipse, .spline, .plane, .cylinder,
         ]
         for type in types {
-            let label = doc.createLabel()!
+            let label = try #require(doc.createLabel())
             #expect(label.setGeometryType(type))
             #expect(label.geometryType() == type)
         }

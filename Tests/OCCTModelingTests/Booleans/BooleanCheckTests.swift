@@ -25,9 +25,9 @@ struct BooleanCheckTests {
     }
 
     @Test("Two boxes valid for boolean together")
-    func twoBoxesValid() {
-        let box1 = Shape.box(width: 10, height: 10, depth: 10)!
-        let box2 = Shape.sphere(radius: 5)!
+    func twoBoxesValid() throws {
+        let box1 = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let box2 = try #require(Shape.sphere(radius: 5))
         #expect(box1.isValidForBoolean(with: box2))
     }
 
@@ -89,9 +89,9 @@ struct BooleanCheckTests {
     // would flip one or both. testSmallEdges/testSelfInterference are turned off so the result
     // reflects only the type-compatibility check this test targets.
     @Test("Solid vs. face: real CUT and CUT21 disagree (#1540)")
-    func solidVsFaceCutAndCut21Disagree() {
-        let box = Shape.box(width: 10, height: 20, depth: 30)!
-        let face = Shape.fromFace(box.faces()[0])!
+    func solidVsFaceCutAndCut21Disagree() throws {
+        let box = try #require(Shape.box(width: 10, height: 20, depth: 30))
+        let face = try #require(Shape.fromFace(box.faces()[0]))
 
         // Real BOPAlgo_CUT (ordinal 2): solid minus face is a dimension downgrade, bad type.
         #expect(

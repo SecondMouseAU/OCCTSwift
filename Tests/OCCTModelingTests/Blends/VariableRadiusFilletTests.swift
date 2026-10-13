@@ -55,8 +55,8 @@ struct VariableRadiusFilletTests {
     }
 
     @Test("Variable fillet requires at least two points")
-    func variableFilletRequiresMinPoints() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func variableFilletRequiresMinPoints() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
 
         // Should fail with only one point
         let filleted = box.filletedVariable(

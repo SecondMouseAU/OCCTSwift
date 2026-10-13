@@ -10,7 +10,7 @@ import Testing
 struct EdgeConcavityTests {
     @Test("Box edges are all convex")
     func boxEdgesConvex() throws {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let concavities = box.edgeConcavities()
         #expect(concavities != nil)
         if let concavities {
@@ -39,7 +39,7 @@ struct EdgeConcavityTests {
 
     @Test("No concave edges on box")
     func noConcaveOnBox() throws {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let count = box.edgeConcavityCount(.concave)
         #expect(count != nil)
         #expect(count == 0)

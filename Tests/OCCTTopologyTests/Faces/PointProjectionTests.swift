@@ -13,8 +13,8 @@ import Testing
 struct PointProjectionTests {
 
     @Test("Project point onto box face")
-    func projectPointOntoBoxFace() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func projectPointOntoBoxFace() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let faces = box.faces()
 
         // Find the top face (Z=5)
@@ -39,9 +39,9 @@ struct PointProjectionTests {
     }
 
     @Test("Project point onto sphere face with UV")
-    func projectPointOntoSphere() {
+    func projectPointOntoSphere() throws {
         let radius = 5.0
-        let sphere = Shape.sphere(radius: radius)!
+        let sphere = try #require(Shape.sphere(radius: radius))
         let faces = sphere.faces()
         #expect(!faces.isEmpty)
 
@@ -59,8 +59,8 @@ struct PointProjectionTests {
     }
 
     @Test("All projections returns results")
-    func allProjections() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func allProjections() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let faces = box.faces()
         #expect(!faces.isEmpty)
 
@@ -85,8 +85,8 @@ struct PointProjectionTests {
     }
 
     @Test("Project point onto straight edge")
-    func projectPointOntoEdge() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func projectPointOntoEdge() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let edges = box.edges()
         #expect(!edges.isEmpty)
 
@@ -116,9 +116,9 @@ struct PointProjectionTests {
     }
 
     @Test("Project point onto circular edge")
-    func projectPointOntoCircularEdge() {
+    func projectPointOntoCircularEdge() throws {
         let radius = 5.0
-        let cyl = Shape.cylinder(radius: radius, height: 10)!
+        let cyl = try #require(Shape.cylinder(radius: radius, height: 10))
         let edges = cyl.edges()
 
         var circEdge: Edge?

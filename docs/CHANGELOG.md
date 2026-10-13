@@ -25,6 +25,9 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 - `Shape.solidFromShells(_:)` now reverses a closed cavity shell that points outward, so `solidFromShells([outer, inner])` with two plain boxes returns the valid hollow solid (volume outer less cavity) instead of an invalid solid whose volume is the sum. Shells already reversed by the caller give the same result as before.
 
+||||||| 1b2019e22
+`Shape.faceRestrictAlgo(faceIndex:)` now returns the number of result faces. It returned 0 for every face, because the bridge counted into a zero-capacity buffer.
+
 ### `Document.loadOCAF(from:)` no longer crashes or hangs on a damaged file (#3318)
 
 `Document.loadOCAF(from:)` no longer crashes or hangs the process on an empty file, a non-OCAF text file, a valid binary magic number followed by garbage, an XML file naming a binary format, or an XML file with an unterminated declaration. An XML file that OCCT can load (any prolog size, BOM, DOCTYPE, no declaration) still loads; one that is not an OCAF document now returns `(nil, .driverFailure)` instead of an empty document. A missing file still returns `.unknownDocument`. The faults are in OCCT and the guard sits in the bridge; the kernel follow-up is #3330. (#3318)

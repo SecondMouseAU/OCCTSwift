@@ -13,7 +13,7 @@ struct ShapeMirrorTests {
         #expect(mirrored != nil)
         if let m = mirrored {
             #expect(m.isValid)
-            let bb = m.bounds!
+            let bb = try #require(m.bounds)
             // Box (-5..5) mirrored about x=20 gives (35..45)
             #expect(abs(bb.min.x - 35) < 0.5)
             #expect(abs(bb.max.x - 45) < 0.5)

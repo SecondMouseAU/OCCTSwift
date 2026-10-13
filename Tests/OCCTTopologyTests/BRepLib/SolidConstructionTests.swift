@@ -9,14 +9,14 @@ import Testing
 @Suite("Solid Construction")
 struct SolidConstructionTests {
     @Test("Solid from single box shell")
-    func solidFromSingleShell() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func solidFromSingleShell() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let solid = Shape.solidFromShells([box])
         #expect(solid != nil)
         if let solid {
             #expect(solid.isValid)
             // Volume should match the box volume
-            let vol = solid.volume!
+            let vol = try #require(solid.volume)
             #expect(abs(vol - 1000.0) < 1.0)
         }
     }

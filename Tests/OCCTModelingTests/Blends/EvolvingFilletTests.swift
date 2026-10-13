@@ -64,8 +64,8 @@ struct EvolvingFilletTests {
     }
 
     @Test("Constant radius via evolving API")
-    func constantRadiusViaEvolving() {
-        let box = Shape.box(width: 40, height: 40, depth: 40)!
+    func constantRadiusViaEvolving() throws {
+        let box = try #require(Shape.box(width: 40, height: 40, depth: 40))
         var result: Shape? = nil
         for edge in box.edges() {
             let spec = EvolvingFilletEdge(
@@ -80,7 +80,7 @@ struct EvolvingFilletTests {
         #expect(result != nil)
         if let r = result {
             #expect(r.isValid)
-            #expect(r.volume! < 64000.0)  // less than 40^3
+            #expect(try #require(r.volume) < 64000.0)  // less than 40^3
         }
     }
 }
