@@ -84,10 +84,22 @@ struct BRepFillOffsetWireTests {
         #expect(abs(try halfWidth(result) - 22.0) < 1e-6)
     }
 
-    // An inward offset past the inradius collapses the face. OCCT reports done with an empty
+    // Zero is not a side: it takes the `Offset <= 0` branch of BRepOffsetAPI_MakeOffset, the
+    // inward one, and answers the face's own outline.
+    @Test("Zero offset answers the outline unchanged")
+    func zeroOffset() throws {
+        let face = try rectangleFace()
+        let result = try #require(Shape.offsetWire(face: face, offset: 0.0))
+        #expect(result.edges().count == 4)
+        #expect(abs(try halfWidth(result) - 10.0) < 1e-6)
+        #expect(abs(totalLength(result) - 80.0) < 1e-6)
+    }
+
+    // An inward offset past the inradius collapses the face (the 20 x 20 rectangle's inradius is
+    // 10, the offset here is -12). OCCT reports done with an empty
     // compound there (BRepOffsetAPI_MakeOffset does the same); the wrapper refuses it, since an
     // empty compound is no wire and read as a successful offset.
-    @Test("Inward offset past the inradius is refused")
+    @Test("Inward offset of 12 past the inradius of 10 is refused")
     func collapsedIsRefused() throws {
         let face = try rectangleFace()
         #expect(Shape.offsetWire(face: face, offset: -12.0) == nil)
