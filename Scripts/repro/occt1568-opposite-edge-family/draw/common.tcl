@@ -1,12 +1,15 @@
 # Helpers shared by the scripts in this directory (sourced, not a DRAW command set).
 # They exist so every case prints one verdict line in one format that run-all.py reads:
 #
-#   FAMILY label=<label> done=<0|1> valid=<0|1> vol=<volume|-> faces=<n|-> expect=<mode> want=<volume> verdict=<PASS|FAIL>
+#   FAMILY label=<label> done=<0|1> valid=<0|1|hang> vol=<volume|-> faces=<n|-> expect=<mode> want=<volume> verdict=<PASS|FAIL>
 #
 # expect modes:
 #   valid             must be done, a valid solid, volume within 1e-6 (relative) of want
 #   valid_or_refused  either of: refused (IsDone false), or valid with that volume (1e-4); never invalid
 #   refused           must be refused (IsDone false), never invalid and never a crash
+#
+# valid=hang appears only with FAM_NO_CHECK=1 on a case that sets ::fam_check_may_hang: the check
+# does not return on a kernel without the BRepTools_WireExplorer fix, so it was not called.
 
 # fam_edge_at shape x y z: name of the edge of shape whose bounding box centre is nearest the point.
 proc fam_edge_at {shape x y z} {
@@ -37,7 +40,18 @@ proc fam_verdict {label ok res want expect} {
   set valid 0
   set vol "-"
   set nf "-"
-  if {$ok} {
+  set hang 0
+  # a case that may hang the check on a kernel without the fix sets ::fam_check_may_hang;
+  # FAM_NO_CHECK=1 then reports "check does not return" instead of calling it (valid=hang)
+  if {$ok && [info exists ::fam_check_may_hang] && [info exists ::env(FAM_NO_CHECK)]} {
+    set hang 1
+    set ok 1
+  }
+  if {$ok && $hang} {
+    set valid hang
+    set props [uplevel #0 [list vprops $res 1e-9 -full]]
+    if {[regexp {Mass\s*:\s*([-0-9.eE+]+)} $props -> m]} { set vol $m }
+  } elseif {$ok} {
     set chk [uplevel #0 [list checkshape $res]]
     set valid [regexp -nocase {seems to be valid} $chk]
     set props [uplevel #0 [list vprops $res 1e-9 -full]]
@@ -53,8 +67,8 @@ proc fam_verdict {label ok res want expect} {
     set volok [expr {abs($vol - $want) <= $tol * $want}]
   }
   switch -- $expect {
-    valid            { if {$ok && $valid && $volok} { set verdict PASS } }
-    valid_or_refused { if {!$ok || ($valid && $volok)} { set verdict PASS } }
+    valid            { if {$ok && $valid == 1 && $volok} { set verdict PASS } }
+    valid_or_refused { if {!$ok || ($valid == 1 && $volok)} { set verdict PASS } }
     refused          { if {!$ok} { set verdict PASS } }
   }
   puts "FAMILY label=$label done=$ok valid=$valid vol=$vol faces=$nf expect=$expect want=$want verdict=$verdict"

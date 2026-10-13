@@ -18,6 +18,8 @@ ap.add_argument("--build", required=True)
 ap.add_argument("--out", required=True)
 ap.add_argument("--state", action="append", required=True, help="NAME or NAME=libdir of replacement dylibs")
 ap.add_argument("--timeout", type=int, default=180)
+ap.add_argument("--no-check", action="append", default=[],
+                help="state name for which FAM_NO_CHECK=1 is set (cases that set fam_check_may_hang skip checkshape)")
 ap.add_argument("scripts", nargs="*")
 a = ap.parse_args()
 
@@ -44,6 +46,8 @@ for name, libs in states:
         if os.path.exists(logf):
             os.remove(logf)
         env = dict(os.environ, FAM_OUT=raw, FAM_STATE=name, FAM_LOG=logf)
+        if name in a.no_check:
+            env["FAM_NO_CHECK"] = "1"
         cmd = (f'cd {build} && source ./env.sh >/dev/null 2>&1 && export DYLD_LIBRARY_PATH="{dyld}" '
                f'&& cd {here} && {build}/mac64/clang/bin/DRAWEXE -c "source {here}/render-images.tcl; '
                f'source {sc}; exit"')
@@ -70,6 +74,8 @@ except Exception:
 def outcome(d):
     if d["done"] != "1":
         return "IsDone false (refused)", (90, 90, 90)
+    if d["valid"] == "hang":
+        return "IsDone true; BRepCheck of it never returns", (190, 30, 30)
     if d["valid"] != "1":
         return f"INVALID solid, volume {float(d['vol']):.4f}", (190, 30, 30)
     return f"valid, volume {float(d['vol']):.6f}", (20, 120, 50)

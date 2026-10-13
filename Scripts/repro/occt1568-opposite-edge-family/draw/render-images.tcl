@@ -57,9 +57,11 @@ proc fam_hook {label ok res valid vol verdict} {
     foreach a {x y z} { if {$ext($a) > $best} { set best $ext($a); set dir $a } }
   }
   set shown {}
-  if {$ok} {
+  # valid=hang: the result was not checked because the check does not return on it; it is not
+  # meshed either, the picture is the input with the filleted edges in red, like a refusal
+  if {$ok && $valid ne "hang"} {
     G vdisplay -dispMode 1 $res
-    if {$valid} {
+    if {$valid eq "1"} {
       G vaspects $res -color 0.86 0.66 0.15 -faceBoundaryDraw 1 -faceBoundaryColor BLACK
     } else {
       G vaspects $res -color RED -faceBoundaryDraw 1 -faceBoundaryColor BLACK

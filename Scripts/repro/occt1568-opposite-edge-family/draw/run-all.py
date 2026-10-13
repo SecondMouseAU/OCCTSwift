@@ -53,7 +53,7 @@ for s in scripts:
     for l in lines:
         d = dict(kv.split("=", 1) for kv in l.split())
         rows.append((base, d["label"], "done" if d["done"] == "1" else "refused",
-                     ("valid" if d["valid"] == "1" else "INVALID") if d["done"] == "1" else "-",
+                     ("valid" if d["valid"] == "1" else ("check-hangs" if d["valid"] == "hang" else "INVALID")) if d["done"] == "1" else "-",
                      d["vol"], d["want"], d["verdict"]))
     if rc not in (0, "TIMEOUT") and len(lines) < 1:
         rows.append((base, "-", f"CRASH rc={rc}", "-", "-", "-", "-"))
