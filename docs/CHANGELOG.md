@@ -21,6 +21,8 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+`BRepGraph.edgeAddInternalVertex(_:vertexIndex:)` and `BRepGraph.faceAddVertex(_:vertexIndex:)` now return nil for a vertex index the graph does not have. Before, such an index was read past the vertex table and could crash the process.
+
 ### `Shape.solidFromShells(_:)` orients extra shells as cavities (#3359)
 
 - `Shape.solidFromShells(_:)` now reverses a closed cavity shell that points outward, so `solidFromShells([outer, inner])` with two plain boxes returns the valid hollow solid (volume outer less cavity) instead of an invalid solid whose volume is the sum. Shells already reversed by the caller give the same result as before.
