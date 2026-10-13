@@ -2713,7 +2713,22 @@ extension Shape {
         return Shape(handle: ref)
     }
 
-    /// Copy a face.
+    /// Copy a face's top-level shape, sharing its geometry and boundary.
+    ///
+    /// The result is a new face with its own `TopoDS_TShape` that carries the same surface,
+    /// location, tolerance and orientation, and the same wires as the input: this is
+    /// `BRepBuilderAPI_MakeFace(F)`, which is how OCCT loads a face to add wires to. It is not an
+    /// independent deep copy; use ``deepCopy(_:copyGeometry:copyMesh:)`` for that.
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// let face = box.subShapes(ofType: .face).first!
+    /// let copy = Shape.faceCopy(face)!
+    /// copy.surfaceArea   // 100
+    /// ```
+    ///
+    /// - Parameter face: A shape of type `.face`.
+    /// - Returns: The copied face, or nil if `face` is not a face.
     public static func faceCopy(_ face: Shape) -> Shape? {
         guard let ref = OCCTMakeFaceCopy(face.handle) else { return nil }
         return Shape(handle: ref)

@@ -21,6 +21,8 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+`Shape.faceCopy(_:)` now returns the copied face. It returned nil for every face, because the bridge waited on a `BRepBuilderAPI_MakeFace` done flag the face-loading constructor never sets. A shape that is not a face is refused.
+
 ### `Shape.offsetWire(face:offset:)` offsets outward for a positive offset and inward for a negative one (#3364)
 
 `Shape.offsetWire(face:offset:)` now follows `BRepOffsetAPI_MakeOffset`: a positive offset expands the face's wires outward (an Arc join rounds the corners) and a negative offset shrinks them inward, both as trimmed closed wires. It used to shrink for a positive offset and return four untrimmed crossing segments for a negative one. An inward offset that collapses the face, and a non-finite offset, return `nil` instead of an empty compound.

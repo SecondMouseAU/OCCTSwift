@@ -1411,13 +1411,14 @@ holed.extruded(by: SIMD3(0, 0, 5))!.isValidSolid   // true, hole runs through
 
 ### `Shape.faceCopy(_:)`
 
-Shallow-copy a face shape.
+Copy a face's top-level shape. The result is a new face (own `TopoDS_TShape`) that shares the input's surface and wires; it is not a deep copy, use `Shape.deepCopy(_:)` for that.
 
 ```swift
 public static func faceCopy(_ face: Shape) -> Shape?
 ```
 
-- **OCCT:** `BRepBuilderAPI_MakeFace` copy constructor path.
+- **Returns:** `nil` if `face` is not a face.
+- **OCCT:** `BRepBuilderAPI_MakeFace(F)` read back with `Face()` (the builder never reports `IsDone()` for this constructor).
 
 ---
 
