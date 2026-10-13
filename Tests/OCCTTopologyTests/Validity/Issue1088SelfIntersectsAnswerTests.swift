@@ -81,6 +81,15 @@ struct Issue1088SelfIntersectsAnswer {
             return
         }
         #expect(shape.selfIntersects)
+        // The bounded spelling reaches the same answer, and says it completed (non-nil).
+        #expect(shape.isSelfIntersecting(timeout: 30) == true)
+        // Control through the same compound wrapper: disjoint boxes answer false, so a getter
+        // that is true for every compound cannot pass.
+        if let clean = Self.disjointBoxes() {
+            #expect(!clean.selfIntersects)
+        } else {
+            Issue.record("could not build the disjoint-box control")
+        }
     }
 
     @available(*, deprecated)
@@ -91,6 +100,22 @@ struct Issue1088SelfIntersectsAnswer {
             return
         }
         #expect(shape.selfIntersects)
+        #expect(shape.isSelfIntersecting(timeout: 30) == true)
+        // Two separate spheres of radius 10 whose centres are 12 apart: they overlap in a lens,
+        // so each solid is a whole sphere (4/3 pi 10^3) and there are exactly two of them.
+        let solids = shape.subShapes(ofType: .solid)
+        #expect(solids.count == 2)
+        for solid in solids {
+            #expect(abs((solid.volume ?? 0) - 4.0 / 3.0 * .pi * 1000) < 1e-6)
+        }
+        if let clean = Shape.compound(
+            [
+                Shape.sphere(center: SIMD3(0, 0, 0), radius: 10),
+                Shape.sphere(center: SIMD3(50, 0, 0), radius: 10),
+            ].compactMap { $0 })
+        {
+            #expect(!clean.selfIntersects)
+        }
     }
 
     // MARK: - The controls

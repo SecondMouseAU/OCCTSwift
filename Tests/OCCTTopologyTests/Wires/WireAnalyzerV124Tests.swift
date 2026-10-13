@@ -92,11 +92,12 @@ struct WireAnalyzerV124Tests {
             Issue.record("could not build the rectangle WireAnalyzer")
             return
         }
-        _ = a.perform()
-        let min3d = a.minDistance3d
-        let max3d = a.maxDistance3d
-        #expect(min3d >= 0)
-        #expect(max3d >= 0)
+        // A closed rectangle has no gap between consecutive edges, so no issue is found and the
+        // smallest and largest 3D gaps are both 0.
+        #expect(a.edgeCount == 4)
+        #expect(!a.perform())
+        #expect(abs(a.minDistance3d) < 1e-9)
+        #expect(abs(a.maxDistance3d) < 1e-9)
     }
 
     @Test("WireAnalyzer gap checks")
