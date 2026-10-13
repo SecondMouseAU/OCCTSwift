@@ -9,9 +9,9 @@ import Testing
 struct TFunctionFunctionAttrTests {
 
     @Test("Create function attribute")
-    func createFunction() {
-        let doc = Document.create()!
-        let label = doc.createLabel()!
+    func createFunction() throws {
+        let doc = try #require(Document.create())
+        let label = try #require(doc.createLabel())
 
         #expect(label.setFunctionAttribute())
         // Initially not failed
@@ -19,9 +19,9 @@ struct TFunctionFunctionAttrTests {
     }
 
     @Test("Function failure mode")
-    func functionFailure() {
-        let doc = Document.create()!
-        let label = doc.createLabel()!
+    func functionFailure() throws {
+        let doc = try #require(Document.create())
+        let label = try #require(doc.createLabel())
 
         label.setFunctionAttribute()
         #expect(label.setFunctionFailure(1))

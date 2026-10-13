@@ -158,20 +158,24 @@ struct Issue1089PocketFeatureIsOpenCompoundTests {
 struct NonManifoldEdgeAdjacentFacesTests {
 
     @Test("Non-manifold edge has more than two adjacent faces using Edge.adjacentFaces")
-    func nonManifoldEdgeAdjacentFaces() {
+    func nonManifoldEdgeAdjacentFaces() throws {
         // Reproduce the Issue1089 fixture exactly: a pocketed box split through the pocket,
         // creating two solids sharing a cut face, plus a free face to trigger solidGroups nil.
-        let box = Shape.box(origin: SIMD3(-10, -10, -10), width: 20, height: 20, depth: 20)!
-        let tool = Shape.box(origin: SIMD3(-5, -5, 0), width: 10, height: 10, depth: 15)!
-        let cut = box.subtracting(tool)!
-        let pieces = cut.split(atPlane: .zero, normal: SIMD3(1, 0, 0))!
+        let box = try #require(
+            Shape.box(origin: SIMD3(-10, -10, -10), width: 20, height: 20, depth: 20))
+        let tool = try #require(
+            Shape.box(origin: SIMD3(-5, -5, 0), width: 10, height: 10, depth: 15))
+        let cut = try #require(box.subtracting(tool))
+        let pieces = try #require(cut.split(atPlane: .zero, normal: SIMD3(1, 0, 0)))
         #expect(pieces.count == 2)
 
         // Add a free face to match Issue1089 fixture exactly
-        let wire = Wire.polygon3D(
-            [SIMD3(40, 0, 0), SIMD3(50, 0, 0), SIMD3(50, 10, 0), SIMD3(40, 10, 0)], closed: true)!
-        let freeFace = Shape.face(from: wire)!
-        let compound = Shape.compound(pieces + [freeFace])!
+        let wire = try #require(
+            Wire.polygon3D(
+                [SIMD3(40, 0, 0), SIMD3(50, 0, 0), SIMD3(50, 10, 0), SIMD3(40, 10, 0)], closed: true
+            ))
+        let freeFace = try #require(Shape.face(from: wire))
+        let compound = try #require(Shape.compound(pieces + [freeFace]))
 
         // Check edges of the pocket floor faces (need to call detectPocketsAAG first)
         let pockets = compound.detectPocketsAAG()

@@ -67,10 +67,10 @@ struct Issue3130BorrowedHandleTests {
     }
 
     @Test("an owner taken from an array and dropped by the body is still alive in it")
-    func arrayElementOwnerIsAliveInsideBody() {
+    func arrayElementOwnerIsAliveInsideBody() throws {
         var probes: [Probe]? = Probe.makeArray()
         var escaped: ProbeToken?
-        let aliveInside = probes![0].withHandle { token -> Bool in
+        let aliveInside = try #require(probes)[0].withHandle { token -> Bool in
             // The array held the only other reference to the owner; the body drops it.
             escaped = token
             probes = nil

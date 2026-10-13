@@ -33,8 +33,8 @@ struct FacePropertyTests {
     }
 
     @Test("Face(_:Shape) recovers a Face from a face-shape; rejects non-faces")
-    func faceFromShape() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func faceFromShape() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let faceShapes = box.subShapes(ofType: .face)
         guard let fs = faceShapes.first else {
             Issue.record("Box should have face subshapes")
@@ -51,8 +51,8 @@ struct FacePropertyTests {
     }
 
     @Test("Edge(_:Shape) recovers an Edge from an edge-shape; rejects non-edges")
-    func edgeFromShape() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func edgeFromShape() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let edgeShapes = box.subShapes(ofType: .edge)
         guard let es = edgeShapes.first else {
             Issue.record("Box should have edge subshapes")
@@ -68,8 +68,8 @@ struct FacePropertyTests {
     }
 
     @Test("Wire(_:Shape) recovers a Wire from a wire-shape; rejects non-wires")
-    func wireFromShape() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func wireFromShape() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let wireShapes = box.subShapes(ofType: .wire)
         guard let ws = wireShapes.first else {
             Issue.record("Box should have wire subshapes")

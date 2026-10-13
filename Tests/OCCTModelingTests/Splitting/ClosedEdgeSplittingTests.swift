@@ -7,8 +7,8 @@ import Testing
 @Suite("Closed Edge Splitting")
 struct ClosedEdgeSplittingTests {
     @Test("Cylinder closed edges are split")
-    func cylinderClosedEdges() {
-        let cyl = Shape.cylinder(radius: 5, height: 10)!
+    func cylinderClosedEdges() throws {
+        let cyl = try #require(Shape.cylinder(radius: 5, height: 10))
         let edgesBefore = cyl.edges().count
         let result = cyl.dividedClosedEdges()
         #expect(result != nil)
