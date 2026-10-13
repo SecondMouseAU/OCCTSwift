@@ -9,11 +9,11 @@ import Testing
 struct TDFReferenceTests {
 
     @Test("Set and get reference")
-    func setGetReference() {
-        let doc = Document.create()!
-        let source = doc.createLabel()!
-        let target = doc.createLabel()!
-        let refLabel = doc.createLabel()!
+    func setGetReference() throws {
+        let doc = try #require(Document.create())
+        let source = try #require(doc.createLabel())
+        let target = try #require(doc.createLabel())
+        let refLabel = try #require(doc.createLabel())
 
         source.setName("Source")
         target.setName("Target")
@@ -29,9 +29,9 @@ struct TDFReferenceTests {
     }
 
     @Test("No reference on fresh label")
-    func noReference() {
-        let doc = Document.create()!
-        let label = doc.createLabel()!
+    func noReference() throws {
+        let doc = try #require(Document.create())
+        let label = try #require(doc.createLabel())
         #expect(label.referencedLabel == nil, "Fresh label should have no reference")
     }
 }
