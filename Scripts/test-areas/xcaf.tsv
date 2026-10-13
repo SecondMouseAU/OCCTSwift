@@ -10,7 +10,7 @@ Tests/OCCTXCAFTests/XCAFDocGraphNodeTests.swift	Tests/OCCTXCAFTests/Assembly/XCA
 Tests/OCCTXCAFTests/XDEAssemblyOperationTests.swift	Tests/OCCTXCAFTests/ShapeTool/XDEAssemblyOperationTests.swift	ShapeTool	-	assembly add, remove and update operations through the XDE shape tool
 Tests/OCCTXCAFTests/DocumentExplorerTests.swift	Tests/OCCTXCAFTests/Assembly/DocumentExplorerTests.swift	Assembly	-	XCAFPrs_DocumentExplorer traversal and path ids
 Tests/OCCTXCAFTests/DocumentExplorerExtensionTests.swift	Tests/OCCTXCAFTests/Assembly/DocumentExplorerExtensionTests.swift	Assembly	-	explorer depth, isAssembly and location
-Tests/OCCTXCAFTests/Issue173AssemblySTEPTests.swift	Tests/OCCTXCAFTests/Assembly/Issue173AssemblySTEPTests.swift	Assembly	-	instanced assembly STEP writer, product structure of an XCAF assembly
+Tests/OCCTXCAFTests/Issue173AssemblySTEPTests.swift	Tests/OCCTXCAFTests/Assembly/AssemblySTEPInstancingTests.swift	Assembly	-	instanced assembly STEP writer, product structure of an XCAF assembly
 Tests/OCCTXCAFTests/XDEEditorTests.swift	Tests/OCCTXCAFTests/Assembly/XDEEditorTests.swift	Assembly	-	XCAFDoc_Editor expand and rescale of assembly labels
 Tests/OCCTXCAFTests/ShapeToolCompletionsTests.swift	Tests/OCCTXCAFTests/ShapeTool/ShapeToolCompletionsTests.swift	ShapeTool	-	XCAFDoc_ShapeTool predicates and counters
 Tests/OCCTXCAFTests/XDEShapeToolQueryTests.swift	Tests/OCCTXCAFTests/ShapeTool/XDEShapeToolQueryTests.swift	ShapeTool	-	XCAFDoc_ShapeTool queries
@@ -29,7 +29,7 @@ Tests/OCCTXCAFTests/XCAFPrsStyleTests.swift	Tests/OCCTXCAFTests/Appearance/XCAFP
 Tests/OCCTXCAFTests/XCAFPrsStyleIsEmptyTests.swift	Tests/OCCTXCAFTests/Appearance/XCAFPrsStyleIsEmptyTests.swift	Appearance	-	PresentationStyle.isEmpty against XCAFPrs_Style::IsEmpty
 Tests/OCCTXCAFTests/DocumentLayerTests.swift	Tests/OCCTXCAFTests/Layers/DocumentLayerTests.swift	Layers	-	XCAFDoc_LayerTool layers on a document
 Tests/OCCTXCAFTests/XDELayerToolExpansionTests.swift	Tests/OCCTXCAFTests/Layers/XDELayerToolExpansionTests.swift	Layers	-	XCAFDoc_LayerTool expansion queries
-Tests/OCCTXCAFTests/Issue1078LayerNameLengthTests.swift	Tests/OCCTXCAFTests/Layers/Issue1078LayerNameLengthTests.swift	Layers	-	layer names round-trip at any length
+Tests/OCCTXCAFTests/Issue1078LayerNameLengthTests.swift	Tests/OCCTXCAFTests/Layers/LayerNameLengthTests.swift	Layers	-	layer names round-trip at any length
 Tests/OCCTXCAFTests/DimTolToolTests.swift	Tests/OCCTXCAFTests/GDT/DimTolToolTests.swift	GDT	-	XCAFDimTolObjects_Tool
 Tests/OCCTXCAFTests/DocumentGDTTests.swift	Tests/OCCTXCAFTests/GDT/DocumentGDTTests.swift	GDT	-	Document GD&T write path
 Tests/OCCTXCAFTests/GDTDimensionAccessorTests.swift	Tests/OCCTXCAFTests/GDT/GDTDimensionAccessorTests.swift	GDT	-	GD&T dimension accessors
@@ -37,13 +37,13 @@ Tests/OCCTXCAFTests/GDTDocumentTests.swift	Tests/OCCTXCAFTests/GDT/GDTDocumentTe
 Tests/OCCTXCAFTests/GDTToleranceDatumAccessorTests.swift	Tests/OCCTXCAFTests/GDT/GDTToleranceDatumAccessorTests.swift	GDT	-	GD&T tolerance and datum accessors
 Tests/OCCTXCAFTests/GDTUnifiedReadTests.swift	Tests/OCCTXCAFTests/GDT/GDTUnifiedReadTests.swift	GDT	-	GD&T unified read surface
 Tests/OCCTXCAFTests/XCAFDocDimTolTests.swift	Tests/OCCTXCAFTests/GDT/XCAFDocDimTolTests.swift	GDT	-	XCAFDoc_DimTol attribute
-Tests/OCCTXCAFTests/Issue1030DatumLookupGuardTests.swift	Tests/OCCTXCAFTests/GDT/Issue1030DatumLookupGuardTests.swift	GDT	-	datum lookup of a point-without-plane datum
-Tests/OCCTXCAFTests/Issue1037GDTEnumRangeTests.swift	Tests/OCCTXCAFTests/GDT/Issue1037GDTEnumRangeTests.swift	GDT	-	GD&T setters reject values that name no enumerator
-Tests/OCCTXCAFTests/Issue1038DatumTargetPlacementTests.swift	Tests/OCCTXCAFTests/GDT/Issue1038DatumTargetPlacementTests.swift	GDT	-	datum target placement precondition
-Tests/OCCTXCAFTests/Issue1055DatumNameLengthTests.swift	Tests/OCCTXCAFTests/GDT/Issue1055DatumNameLengthTests.swift	GDT	-	datum identifiers round-trip at any length
-Tests/OCCTXCAFTests/Issue1056GDTWriteAnswerTests.swift	Tests/OCCTXCAFTests/GDT/Issue1056GDTWriteAnswerTests.swift	GDT	-	GD&T write paths report what the document took
-Tests/OCCTXCAFTests/Issue1435DatumDocumentToolTableTests.swift	Tests/OCCTXCAFTests/GDT/Issue1435DatumDocumentToolTableTests.swift	GDT	-	datum lands on the DocumentTool DimTol table
-Tests/OCCTXCAFTests/Issue1481DimensionRefCountTests.swift	Tests/OCCTXCAFTests/GDT/Issue1481DimensionRefCountTests.swift	GDT	-	single-shape dimension registers once
+Tests/OCCTXCAFTests/Issue1030DatumLookupGuardTests.swift	Tests/OCCTXCAFTests/GDT/DatumLookupPointWithoutPlaneTests.swift	GDT	-	datum lookup of a point-without-plane datum
+Tests/OCCTXCAFTests/Issue1037GDTEnumRangeTests.swift	Tests/OCCTXCAFTests/GDT/GDTEnumRangeTests.swift	GDT	-	GD&T setters reject values that name no enumerator
+Tests/OCCTXCAFTests/Issue1038DatumTargetPlacementTests.swift	Tests/OCCTXCAFTests/GDT/DatumTargetPlacementTests.swift	GDT	-	datum target placement precondition
+Tests/OCCTXCAFTests/Issue1055DatumNameLengthTests.swift	Tests/OCCTXCAFTests/GDT/DatumNameLengthTests.swift	GDT	-	datum identifiers round-trip at any length
+Tests/OCCTXCAFTests/Issue1056GDTWriteAnswerTests.swift	Tests/OCCTXCAFTests/GDT/GDTWriteAnswerTests.swift	GDT	-	GD&T write paths report what the document took
+Tests/OCCTXCAFTests/Issue1435DatumDocumentToolTableTests.swift	Tests/OCCTXCAFTests/GDT/DatumDocumentToolTableTests.swift	GDT	-	datum lands on the DocumentTool DimTol table
+Tests/OCCTXCAFTests/Issue1481DimensionRefCountTests.swift	Tests/OCCTXCAFTests/GDT/DimensionRefCountTests.swift	GDT	-	single-shape dimension registers once
 Tests/OCCTXCAFTests/XCAFDocNoteBalloonTests.swift	Tests/OCCTXCAFTests/Annotations/XCAFDocNoteBalloonTests.swift	Annotations	-	XCAFDoc_NoteBalloon
 Tests/OCCTXCAFTests/XCAFDocNoteBinDataTests.swift	Tests/OCCTXCAFTests/Annotations/XCAFDocNoteBinDataTests.swift	Annotations	-	XCAFDoc_NoteBinData
 Tests/OCCTXCAFTests/XCAFDocNoteCommentTests.swift	Tests/OCCTXCAFTests/Annotations/XCAFDocNoteCommentTests.swift	Annotations	-	XCAFDoc_NoteComment
@@ -55,15 +55,15 @@ Tests/OCCTXCAFTests/DocumentTests.swift	Tests/OCCTXCAFTests/Document/DocumentTes
 Tests/OCCTXCAFTests/DocumentModifiedTests.swift	Tests/OCCTXCAFTests/Document/DocumentModifiedTests.swift	Document	-	TDocStd_Document modified labels
 Tests/OCCTXCAFTests/DocumentTransactionTests.swift	Tests/OCCTXCAFTests/Transactions/DocumentTransactionTests.swift	Transactions	-	Document open, commit and abort transaction
 Tests/OCCTXCAFTests/DocumentUndoRedoTests.swift	Tests/OCCTXCAFTests/Transactions/DocumentUndoRedoTests.swift	Transactions	-	Document undo and redo
-Tests/OCCTXCAFTests/Issue970TransactionAPITests.swift	Tests/OCCTXCAFTests/Transactions/Issue970TransactionAPITests.swift	Transactions	-	named transactions and transactionNumber
+Tests/OCCTXCAFTests/Issue970TransactionAPITests.swift	Tests/OCCTXCAFTests/Transactions/TransactionNamingTests.swift	Transactions	-	named transactions and transactionNumber
 Tests/OCCTXCAFTests/TDFTransactionNamedTests.swift	Tests/OCCTXCAFTests/Transactions/TDFTransactionNamedTests.swift	Transactions	-	TDF_Transaction with a name
 Tests/OCCTXCAFTests/TDocStdXLinkToolTests.swift	Tests/OCCTXCAFTests/Document/TDocStdXLinkToolTests.swift	Document	-	TDocStd_XLinkTool
 Tests/OCCTXCAFTests/XLinkTests.swift	Tests/OCCTXCAFTests/Document/XLinkTests.swift	Document	-	TDocStd_XLink
 Tests/OCCTXCAFTests/OCAFDocumentMetadataTests.swift	Tests/OCCTXCAFTests/Document/OCAFDocumentMetadataTests.swift	Document	-	storage format, saved flag and document count
-Tests/OCCTXCAFTests/Issue2730CreateLabelTagSourceTests.swift	Tests/OCCTXCAFTests/Document/Issue2730CreateLabelTagSourceTests.swift	Document	-	createLabel on a fresh XCAF document
+Tests/OCCTXCAFTests/Issue2730CreateLabelTagSourceTests.swift	Tests/OCCTXCAFTests/Document/CreateLabelTagSourceTests.swift	Document	-	createLabel on a fresh XCAF document
 Tests/OCCTXCAFTests/TObjApplicationTests.swift	Tests/OCCTXCAFTests/TObj/TObjApplicationTests.swift	TObj	-	TObj_Application
-Tests/OCCTXCAFTests/Issue1588TObjApplicationReleaseTests.swift	Tests/OCCTXCAFTests/TObj/Issue1588TObjApplicationReleaseTests.swift	TObj	-	TObj_Application release path
-Tests/OCCTXCAFTests/Issue2897TObjApplicationOverReleaseTests.swift	Tests/OCCTXCAFTests/TObj/Issue2897TObjApplicationOverReleaseTests.swift	TObj	-	TObj_Application over-release
+Tests/OCCTXCAFTests/Issue1588TObjApplicationReleaseTests.swift	Tests/OCCTXCAFTests/TObj/TObjApplicationReleaseTests.swift	TObj	-	TObj_Application release path
+Tests/OCCTXCAFTests/Issue2897TObjApplicationOverReleaseTests.swift	Tests/OCCTXCAFTests/TObj/TObjApplicationOverReleaseTests.swift	TObj	-	TObj_Application over-release
 Tests/OCCTXCAFTests/OBJDocumentIOTests.swift	Tests/OCCTXCAFTests/DocumentIO/OBJDocumentIOTests.swift	DocumentIO	-	OBJ read and write of a Document
 Tests/OCCTXCAFTests/OCAFFormatRegistrationTests.swift	Tests/OCCTXCAFTests/DocumentIO/OCAFFormatRegistrationTests.swift	DocumentIO	-	OCAF format registration
 Tests/OCCTXCAFTests/OCAFSaveInPlaceTests.swift	Tests/OCCTXCAFTests/DocumentIO/OCAFSaveInPlaceTests.swift	DocumentIO	-	OCAF save in place
@@ -105,8 +105,8 @@ Tests/OCCTXCAFTests/ExpressionTests.swift	Tests/OCCTXCAFTests/TDataStd/Expressio
 Tests/OCCTXCAFTests/TickTests.swift	Tests/OCCTXCAFTests/TDataStd/TickTests.swift	TDataStd	-	TDataStd_Tick
 Tests/OCCTXCAFTests/UAttributeTests.swift	Tests/OCCTXCAFTests/TDataStd/UAttributeTests.swift	TDataStd	-	TDataStd_UAttribute
 Tests/OCCTXCAFTests/VariableTests.swift	Tests/OCCTXCAFTests/TDataStd/VariableTests.swift	TDataStd	-	TDataStd_Variable
-Tests/OCCTXCAFTests/Issue2855OCAFArrayBoundsTests.swift	Tests/OCCTXCAFTests/TDataStd/Issue2855OCAFArrayBoundsTests.swift	TDataStd	-	IntegerArray and RealArray SetValue bounds
-Tests/OCCTXCAFTests/Issue2866OCAFArraySetterRangeTests.swift	Tests/OCCTXCAFTests/TDataStd/Issue2866OCAFArraySetterRangeTests.swift	TDataStd	-	OCAF array buffer setter ranges
+Tests/OCCTXCAFTests/Issue2855OCAFArrayBoundsTests.swift	Tests/OCCTXCAFTests/TDataStd/OCAFArrayBoundsTests.swift	TDataStd	-	IntegerArray and RealArray SetValue bounds
+Tests/OCCTXCAFTests/Issue2866OCAFArraySetterRangeTests.swift	Tests/OCCTXCAFTests/TDataStd/OCAFArraySetterRangeTests.swift	TDataStd	-	OCAF array buffer setter ranges
 Tests/OCCTXCAFTests/TDataXtdConstraintTests.swift	Tests/OCCTXCAFTests/TDataXtd/TDataXtdConstraintTests.swift	TDataXtd	-	TDataXtd_Constraint
 Tests/OCCTXCAFTests/TDataXtdGeometricAttrTests.swift	Tests/OCCTXCAFTests/TDataXtd/TDataXtdGeometricAttrTests.swift	TDataXtd	-	TDataXtd_Point, Axis and Plane
 Tests/OCCTXCAFTests/TDataXtdGeometryAttributeTests.swift	Tests/OCCTXCAFTests/TDataXtd/TDataXtdGeometryAttributeTests.swift	TDataXtd	-	TDataXtd_Geometry
@@ -116,7 +116,7 @@ Tests/OCCTXCAFTests/TDataXtdPositionAttributeTests.swift	Tests/OCCTXCAFTests/TDa
 Tests/OCCTXCAFTests/TDataXtdPresentationTests.swift	Tests/OCCTXCAFTests/TDataXtd/TDataXtdPresentationTests.swift	TDataXtd	-	TDataXtd_Presentation
 Tests/OCCTXCAFTests/TDataXtdShapeAttributeTests.swift	Tests/OCCTXCAFTests/TDataXtd/TDataXtdShapeAttributeTests.swift	TDataXtd	-	TDataXtd_Shape
 Tests/OCCTXCAFTests/TDataXtdTriangulationAttributeTests.swift	Tests/OCCTXCAFTests/TDataXtd/TDataXtdTriangulationAttributeTests.swift	TDataXtd	-	TDataXtd_Triangulation
-Tests/OCCTXCAFTests/Issue443TriangulationAttributeTests.swift	Tests/OCCTXCAFTests/TDataXtd/Issue443TriangulationAttributeTests.swift	TDataXtd	-	triangulation attribute stores the whole shape
+Tests/OCCTXCAFTests/Issue443TriangulationAttributeTests.swift	Tests/OCCTXCAFTests/TDataXtd/TriangulationAttributeTests.swift	TDataXtd	-	triangulation attribute stores the whole shape
 Tests/OCCTXCAFTests/DriverTableTests.swift	Tests/OCCTXCAFTests/TDataXtd/DriverTableTests.swift	TDataXtd	-	TPrsStd_DriverTable, the presentation driver table beside TDataXtd_Presentation
 Tests/OCCTXCAFTests/TNamingBasicTests.swift	Tests/OCCTXCAFTests/TNaming/TNamingBasicTests.swift	TNaming	-	TNaming record and retrieve
 Tests/OCCTXCAFTests/TNamingCopyShapeTests.swift	Tests/OCCTXCAFTests/TNaming/TNamingCopyShapeTests.swift	TNaming	-	TNaming_CopyShape
@@ -135,4 +135,4 @@ Tests/OCCTXCAFTests/TFunctionScopeTests.swift	Tests/OCCTXCAFTests/TFunction/TFun
 Tests/OCCTXCAFTests/BRepGraphAttributeTests.swift	Tests/OCCTBRepGraphTests/Attributes/BRepGraphAttributeTests.swift	Attributes	-	BRepGraph attribute store and Codable snapshot
 Tests/OCCTXCAFTests/TextLabelAndPointCloudTests.swift	Tests/OCCTDrawingTests/Visualization/TextLabelAndPointCloudTests.swift	Visualization	-	TextLabel and PointCloud scene annotations
 Tests/OCCTXCAFTests/XCAFTestFixtures.swift	Tests/OCCTXCAFTests/XCAFTestFixtures.swift	(stays)	-	shared helpers used across areas; fixtures stay at the root
-Tests/OCCTXCAFTests/DocumentIO/Issue3318LoadOCAFMalformedTests.swift	Tests/OCCTXCAFTests/DocumentIO/Issue3318LoadOCAFMalformedTests.swift	DocumentIO	-	loadOCAF on malformed files
+Tests/OCCTXCAFTests/DocumentIO/Issue3318LoadOCAFMalformedTests.swift	Tests/OCCTXCAFTests/DocumentIO/LoadOCAFMalformedTests.swift	DocumentIO	-	loadOCAF on malformed files
