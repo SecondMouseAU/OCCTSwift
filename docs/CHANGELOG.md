@@ -21,6 +21,10 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### `Shape.orientClosedSolid()` reorients an inward solid in place (#3357)
+
+- `Shape.orientClosedSolid()` reported `true` for a solid whose shell pointed inward and left it unchanged (signed volume stayed negative). It now writes the reversed solid back, so the receiver reads the positive volume afterwards.
+
 ### `Document.loadOCAF(from:)` no longer crashes or hangs on a damaged file (#3318)
 
 `Document.loadOCAF(from:)` no longer crashes or hangs the process on an empty file, a non-OCAF text file, a valid binary magic number followed by garbage, an XML file naming a binary format, or an XML file with an unterminated declaration. An XML file that OCCT can load (any prolog size, BOM, DOCTYPE, no declaration) still loads; one that is not an OCAF document now returns `(nil, .driverFailure)` instead of an empty document. A missing file still returns `.unknownDocument`. The faults are in OCCT and the guard sits in the bridge; the kernel follow-up is #3330. (#3318)
