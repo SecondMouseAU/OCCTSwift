@@ -1,6 +1,6 @@
-// Epic #766, Issue233FaceFromSurfaceWireTests.swift, Issue244PointGridDegreeTests.swift,
-// Issue266FaceAnalysisFollowupTests.swift, Issue266FaceWithHolesTests.swift and
-// Issue317PeriodicConicalSingleWireTests.swift: kernel parity. The same OCCT calls as the bridge
+// Epic #766, FaceFromSurfaceWireTests.swift, PointGridDegreeTests.swift,
+// SurfaceAnalysisExtrasTests.swift, FaceFromSurfaceWithHolesTests.swift and
+// PeriodicConicalSingleWireTests.swift: kernel parity. The same OCCT calls as the bridge
 // functions named in the evidence records, on the same inputs.
 #include <BRepBuilderAPI_MakeEdge.hxx>
 #include <BRepBuilderAPI_MakeFace.hxx>
