@@ -24,16 +24,27 @@ struct MultiOffsetWireTests {
         }
     }
 
+    // An outward offset of d on a 10 x 10 rectangle with the arc join is four 10 mm edges and
+    // four quarter arcs of radius d, so 40 + 2 pi d: 46.28... at 1 and 52.56... at 2.
     @Test("Outward offset from face")
-    func outwardOffset() {
-        let face = Shape.face(from: Wire.rectangle(width: 10, height: 10)!)!
+    func outwardOffset() throws {
+        let rectangle = try #require(Wire.rectangle(width: 10, height: 10))
+        let face = try #require(Shape.face(from: rectangle))
         let wires = face.multiOffsetWires(offsets: [1.0, 2.0])
-        #expect(wires.count >= 2)
+        #expect(wires.count == 2)
+        for (wire, distance) in zip(wires, [1.0, 2.0]) {
+            let length = try #require(wire.length)
+            #expect(abs(length - (40.0 + 2.0 * Double.pi * distance)) < 1e-6)
+        }
     }
 
     @Test("Empty offsets returns empty array")
-    func emptyOffsets() {
-        let face = Shape.face(from: Wire.rectangle(width: 10, height: 10)!)!
+    func emptyOffsets() throws {
+        let rectangle = try #require(Wire.rectangle(width: 10, height: 10))
+        let face = try #require(Shape.face(from: rectangle))
+        // The control: the same face gives one wire for one offset, so the empty answer is the
+        // empty request and not a face that offsets to nothing.
+        #expect(face.multiOffsetWires(offsets: [1.0]).count == 1)
         let wires = face.multiOffsetWires(offsets: [])
         #expect(wires.isEmpty)
     }
