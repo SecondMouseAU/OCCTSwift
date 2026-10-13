@@ -12,7 +12,7 @@ struct ShapeTranslateByPointsTests {
         #expect(translated != nil)
         if let t = translated {
             #expect(t.isValid)
-            let bb = t.bounds!
+            let bb = try #require(t.bounds)
             // Box centered at origin (-5..5) translated by (20,0,0) → (15..25)
             #expect(abs(bb.min.x - 15) < 0.5)
             #expect(abs(bb.max.x - 25) < 0.5)
