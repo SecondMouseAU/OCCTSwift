@@ -1257,7 +1257,7 @@ OCCTShapeRef _Nullable OCCTBRepFillAdvancedEvolved(OCCTWireRef spine,
 // complement domain: a face whose wires are reversed. BRepOffsetAPI_MakeOffset::Perform does
 // exactly this, calling its static BuildDomains with `isPositive` false for offset <= 0 and true
 // for offset > 0, then Perform(abs(offset)) on each domain (BRepOffsetAPI_MakeOffset.cxx
-// :171-338 BuildDomains, :398-434 Perform), and reverses each result back when it reversed the
+// :172-337 BuildDomains, :341-474 Perform), and reverses each result back when it reversed the
 // wires. Handing the face straight to Perform(+d), as this wrapper used to, shrinks it, and
 // Perform(-d) returns untrimmed bisector lines because there is no exterior locus to trim on.
 //
@@ -1337,8 +1337,8 @@ static bool occtBuildOffsetDomains(const TopoDS_Face& face,
 }
 
 // The shape BRepOffsetAPI_MakeOffset::Perform hands back for the domains it ran: the one
-// domain's shape as it is, a compound when there are several (:429 `if (i > 2) myShape = Res`),
-// reversed back when the wires were (:410, :436). Null when no domain produced a shape.
+// domain's shape as it is, a compound when there are several (:449 `if (i > 2) myShape = Res`),
+// reversed back when the wires were (:411, :437). Null when no domain produced a shape.
 static TopoDS_Shape occtAssembleOffsetDomains(const OcctOffsetDomains& domains)
 {
   TopoDS_Compound result;
