@@ -101,6 +101,7 @@
 #include <TopExp.hxx>
 #include <TopExp_Explorer.hxx>          // #613: occtForEachOrientedFace's per-occurrence walk
 #include <BRepBuilderAPI_Transform.hxx> // #3388: occtTransformShape
+#include <BRepTools_ReShape.hxx>        // #3388: occtTransformShape, mixed shapes
 #include <TopLoc_Location.hxx>
 #include <gp_Trsf.hxx>
 #include <TopoDS.hxx>
@@ -2536,21 +2537,39 @@ inline TopoDS_Face occtFaceAt(const TopoDS_Shape& shape, int32_t index)
 /// `Scripts/repro/3388/probe.mm`: translate and scale both return the input's own TShape with the
 /// triangulation unmoved, and `Copy = false` moves a translation but not a scale. Such a shape is
 /// placed with `TopoDS_Shape::Moved` instead, which carries the transformation in the shape's
-/// location and so applies to the triangulation when it is read. Every other shape keeps the
-/// `Copy = true` path, so a box, a compound of faces with surfaces and so on come back as before.
+/// location and so applies to the triangulation when it is read. A shape with no such face keeps
+/// the `Copy = true` path, so a box, a compound of faces with surfaces and so on come back as
+/// before.
+///
+/// A shape that mixes the two (a compound of a box and an STL face) takes the `Copy = true` path
+/// and then has each triangulation-only face replaced by its `Moved` self. `Moved` on the whole
+/// shape would also put a scale or a mirror into the location of every face that has a surface,
+/// which OCCT forbids there (`TopoDS_Shape::Move`, `theRaiseExc`) and which downstream algorithms
+/// do not expect; `BRepBuilderAPI_Transform` rebuilds those faces instead.
 inline TopoDS_Shape occtTransformShape(const TopoDS_Shape& shape, const gp_Trsf& trsf)
 {
   if (shape.IsNull())
     return TopoDS_Shape();
+  std::vector<TopoDS_Shape> bare;
+  bool                      anySurface = false;
   for (TopExp_Explorer ex(shape, TopAbs_FACE); ex.More(); ex.Next())
   {
     if (BRep_Tool::Surface(TopoDS::Face(ex.Current())).IsNull())
-      return shape.Moved(TopLoc_Location(trsf));
+      bare.push_back(ex.Current());
+    else
+      anySurface = true;
   }
+  if (!bare.empty() && !anySurface)
+    return shape.Moved(TopLoc_Location(trsf));
   BRepBuilderAPI_Transform transformer(shape, trsf, Standard_True);
   if (!transformer.IsDone())
     return TopoDS_Shape();
-  return transformer.Shape();
+  if (bare.empty())
+    return transformer.Shape();
+  occ::handle<BRepTools_ReShape> reshape = new BRepTools_ReShape();
+  for (const TopoDS_Shape& face : bare)
+    reshape->Replace(face, face.Moved(TopLoc_Location(trsf)));
+  return reshape->Apply(transformer.Shape());
 }
 
 /// The edge at 0-based `index` in `shape`'s edge enumeration, or a null edge when the index is

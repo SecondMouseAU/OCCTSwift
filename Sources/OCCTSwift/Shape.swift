@@ -1097,8 +1097,13 @@ public final class Shape: @unchecked Sendable {
     ///
     /// A shape with a face that has no surface, such as the triangulation-only face
     /// ``readSTL(from:)`` returns, is placed by location (`TopoDS_Shape::Moved`) and shares its
-    /// TShapes with the input; every other shape is copied by `BRepBuilderAPI_Transform`. The same
-    /// holds for ``rotated(axis:angle:)``, ``scaled(by:)`` and ``mirrored(planeNormal:planeOrigin:)``.
+    /// TShapes with the input; every other shape is copied by `BRepBuilderAPI_Transform`. A
+    /// compound that mixes the two has only its surface-less faces placed by location. The same
+    /// holds for ``rotated(axis:angle:)``, ``scaled(by:)``, ``mirrored(planeNormal:planeOrigin:)``,
+    /// ``translated(from:to:)``, ``scaledAboutPoint(_:factor:)``, ``mirroredAboutPoint(_:)`` and
+    /// ``mirroredAboutAxis(origin:direction:)``. The `*WithFullHistory` variants, the pattern
+    /// functions, `nonUniformScaled` and the matrix `transformed` and `gTransformed` forms are not
+    /// covered and still leave such a face in place.
     ///
     /// ```swift
     /// let box = Shape.box(width: 10, height: 10, depth: 10)!

@@ -139,6 +139,47 @@ struct RWStlDirectTests {
             "loadSTL compound")
     }
 
+    /// A compound that mixes a triangulation-only face with a box moves both parts (#3388).
+    ///
+    /// The helper takes the `BRepBuilderAPI_Transform` path for the box and places only the bare
+    /// face by location, so a scale or a mirror is not written into the location of the box's
+    /// faces. Every part of the compound must land where a transform of it alone does.
+    @Test func transformsMoveMixedCompound() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let path = tempPath("transform_mixed")
+        defer { try? FileManager.default.removeItem(atPath: path) }
+        let off = try #require(box.translated(by: SIMD3(20, 0, 0)))
+        #expect(off.writeSTLBinary(to: path))
+        let bare = try #require(Shape.readSTL(from: path))
+        let mixed = try #require(Shape.compound([box, bare]))
+        let faceCount = mixed.faces().count
+        #expect(faceCount == 7)
+
+        func expectBounds(
+            _ shape: Shape?, _ lo: SIMD3<Double>, _ hi: SIMD3<Double>, _ label: String
+        ) throws {
+            let b = try #require(shape?.bounds, "\(label): no bounds")
+            #expect(vectorDistance(b.min, lo) < 1e-5, "\(label): min \(b.min)")
+            #expect(vectorDistance(b.max, hi) < 1e-5, "\(label): max \(b.max)")
+        }
+
+        // Box x -5...5 and bare face x 15...25: together x -5...25.
+        try expectBounds(mixed, SIMD3(-5, -5, -5), SIMD3(25, 5, 5), "mixed")
+        try expectBounds(
+            mixed.translated(by: SIMD3(100, 0, 0)), SIMD3(95, -5, -5), SIMD3(125, 5, 5),
+            "translated")
+        let scaled = try #require(mixed.scaled(by: 2))
+        try expectBounds(scaled, SIMD3(-10, -10, -10), SIMD3(50, 10, 10), "scaled")
+        #expect(scaled.faces().count == faceCount)
+        try expectBounds(
+            mixed.mirrored(planeNormal: SIMD3(1, 0, 0), planeOrigin: SIMD3(0, 0, 0)),
+            SIMD3(-25, -5, -5), SIMD3(5, 5, 5), "mirrored")
+
+        // The box part of the scaled compound is a solid of eight times the volume.
+        let solid = try #require(scaled.solids.first)
+        #expect(abs((solid.volume ?? 0) - 8000) < 1e-3)
+    }
+
     @Test func roundTripBinarySTL() throws {
         let sphere = try #require(Shape.sphere(radius: 5))
         let path = tempPath("round")
