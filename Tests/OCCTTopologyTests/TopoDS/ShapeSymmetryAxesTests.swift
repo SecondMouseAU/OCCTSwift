@@ -30,12 +30,15 @@ struct ShapeSymmetryAxesTests {
     }
 
     @Test("Asymmetric box reports no symmetry axis")
-    func asymmetricBoxNoSymmetry() {
-        guard let box = Shape.box(width: 10, height: 7, depth: 3) else {
-            Issue.record("box nil")
-            return
-        }
+    func asymmetricBoxNoSymmetry() throws {
+        let box = try #require(Shape.box(width: 10, height: 7, depth: 3))
         #expect(box.symmetryAxes().isEmpty)
+        // Controls: one pair of sides made equal gives one axis, all three equal give three. So
+        // the empty answer above is the call finding no symmetry, not the call finding nothing.
+        let square = try #require(Shape.box(width: 10, height: 10, depth: 3))
+        #expect(square.symmetryAxes().count == 1)
+        let cube = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        #expect(cube.symmetryAxes().count == 3)
     }
 
     // #726/#763: same defect as `Shape.revolutionAxes`' extent (see the sibling test in
