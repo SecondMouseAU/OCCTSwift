@@ -7,9 +7,9 @@ import Testing
 @Suite("Find Surface Extended")
 struct FindSurfaceExTests {
     @Test("Wire on plane finds surface")
-    func wireOnPlane() {
-        let wire = Wire.rectangle(width: 10, height: 10)!
-        let wireShape = Shape.fromWire(wire)!
+    func wireOnPlane() throws {
+        let wire = try #require(Wire.rectangle(width: 10, height: 10))
+        let wireShape = try #require(Shape.fromWire(wire))
         let surface = wireShape.findSurfaceEx()
         #expect(surface != nil)
         // `Wire.rectangle` lies in z = 0: a point of the plane is 0 from it and (3, 4, 7) is 7.
@@ -20,9 +20,9 @@ struct FindSurfaceExTests {
     }
 
     @Test("Plane-only mode works")
-    func planeOnlyMode() {
-        let wire = Wire.rectangle(width: 10, height: 10)!
-        let wireShape = Shape.fromWire(wire)!
+    func planeOnlyMode() throws {
+        let wire = try #require(Wire.rectangle(width: 10, height: 10))
+        let wireShape = try #require(Shape.fromWire(wire))
         let surface = wireShape.findSurfaceEx(onlyPlane: true)
         #expect(surface != nil)
         if let surface {

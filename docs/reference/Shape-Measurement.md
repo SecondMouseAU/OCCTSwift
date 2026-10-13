@@ -368,23 +368,36 @@ public func offsetPerFace(defaultOffset: Double,
 ```
 
 - **Parameters:**
-  - `defaultOffset`: Default offset distance applied to all faces not listed in `faceOffsets`.
+  - `defaultOffset`: Default offset distance for faces the offset of an entry does not reach.
   - `faceOffsets`: Dictionary mapping 0-based face indices, as `Face.index` and `face(at:)` use,
     to custom offset distances. A key outside `0..<faceCount` fails the call.
   - `tolerance`: Offset tolerance.
-  - `joinType`: Join strategy for offset gaps (`.arc` or `.intersection`).
-- **Returns:** Offset shape, or `nil` on failure.
+  - `joinType`: Join strategy for offset gaps (`.arc` or `.intersection`; `.tangent` is not built
+    by OCCT and returns `nil`).
+- **Returns:** Offset shape, or `nil` on failure, including entries OCCT would merge into one
+  offset that ask for different distances.
 - **OCCT:** `BRepOffset_MakeOffset` (via `OCCTShapeOffsetPerFace`).
+- **Propagation:** an entry's offset is also given to every face connected to its face by a tangent
+  edge and, with the `.arc` join, by an edge of the offset direction's own concavity (convex for a
+  positive `defaultOffset`, concave for a negative one), per `BRepOffset_MakeOffset::UpdateFaceOffset`.
+  On a convex solid with a positive offset that is every face: `[0: 2]` is the uniform offset 2 and
+  `defaultOffset` is not used. Distances that differ between faces need `.intersection` (positive
+  offset) or a negative offset.
 - **Example:**
   ```swift
+  // Face 1 reaches x = 7, every other face 6.
   if let result = solid.offsetPerFace(defaultOffset: 1.0,
-                                       faceOffsets: [0: 2.0, 2: 0.5]) {
+                                       faceOffsets: [1: 2.0],
+                                       joinType: .intersection) {
       print(result.isValid)
   }
   ```
 - **Note:** #541 moved the keys off 1-based, and made an out-of-range key fail the call. It used to
   be skipped, which returned a shape offset by the default everywhere and looked exactly like a
   successful run, the same silent success #497 fixed for defeaturing.
+- **Note:** #3365: two entries that the propagation above puts in one group but that differ are
+  refused. OCCT applied them in the order of a hash map keyed on object addresses, so the winner
+  changed between processes.
 
 ---
 
@@ -992,6 +1005,8 @@ public static func solidFromShells(_ shells: [Shape]) -> Shape?
 
 The first shape provides the outer shell; additional shapes provide cavity (inner) shells.
 
+The orientation of each cavity shell is normalised: a closed shell is classified on its own (`BRepClass3d_SolidClassifier`, infinite point, as `ShapeFix_Solid` does for a hole shell) and reversed when it points outward, so a plain box passed as the second shape gives the same valid hollow solid as an already reversed one (#3359). An open cavity shell cannot be classified and is added as given. The shapes passed in are never edited.
+
 - **Parameters:** `shells`, Array of shapes containing shells; must not be empty.
 - **Returns:** Solid shape, or `nil` on failure.
 - **OCCT:** `BRepBuilderAPI_MakeSolid` (via `OCCTSolidFromShells`).
@@ -1299,6 +1314,8 @@ public var connectedEdges: Shape? { get }
 ```
 
 Identifies edges that share geometric positions and merges their vertices. Useful for healing imported geometry where topologically disconnected edges actually meet at the same point.
+
+The work is done on a copy, so the receiver is never edited. If the connected copy fails `BRepCheck` while the receiver passes it (the class does this to a box, whose vertices are already shared), the result is a copy of the receiver unchanged (#3354, twin of #3252). Same operation as `fixEdgeConnect()`.
 
 - **Returns:** Shape with connected edges, or `nil` on failure.
 - **OCCT:** `ShapeFix_EdgeConnect` (via `OCCTShapeConnectEdges`).

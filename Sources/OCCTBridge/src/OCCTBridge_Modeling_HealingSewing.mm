@@ -255,6 +255,13 @@
 #include <functional>
 #include <memory>
 #include <BRepOffset_MakeOffset.hxx>
+#include <BRepOffset_Analyse.hxx>
+#include <ChFiDS_TypeOfConcavity.hxx>
+#include <TopTools_ShapeMapHasher.hxx>
+#include <NCollection_Map.hxx>
+#include <algorithm>
+#include <cmath>
+#include <vector>
 #include <ShapeFix_Shape.hxx>
 #include <Law_Function.hxx>
 #include <Law_Constant.hxx>
@@ -804,6 +811,75 @@ OCCTShapeRef OCCTShapeCreateFaceFromSurfaceWireWithHoles(OCCTSurfaceRef     surf
   }
 }
 
+// One per-face entry of OCCTShapeOffsetPerFace: a face of the shape and the offset asked of it.
+struct OcctPerFaceOffset
+{
+  int32_t     index;
+  TopoDS_Face face;
+  double      offset;
+};
+
+// True when two entries ask different offsets of faces BRepOffset_MakeOffset will give one offset
+// (#3365). BRepOffset_MakeOffset::UpdateFaceOffset (BRepOffset_MakeOffset.cxx:2342-2386) does
+// not offset each named face alone: it propagates the entry's offset to every face reachable
+// from it through tangent edges and, for the Arc join, through edges of the sign's own
+// concavity (convex for a positive default offset, concave for a negative one). On a convex
+// solid with a positive offset that is every face, so one entry is the whole shape's offset. Two
+// entries in one such group are applied in the iteration order of a hash map keyed on TShape
+// addresses, which changes from one process to the next, so the result is not reproducible.
+//
+// The groups are computed with the same BRepOffset_Analyse, tolerance angle and AddFaces calls
+// UpdateFaceOffset makes (TolAngle from :882-884, Analyse::Perform at :890, AddFaces at
+// :2368-2375), so the answer cannot differ from the kernel's own propagation.
+static bool occtPerFaceOffsetsConflict(const TopoDS_Shape&                   shape,
+                                       double                                defaultOffset,
+                                       double                                tolerance,
+                                       GeomAbs_JoinType                      join,
+                                       const std::vector<OcctPerFaceOffset>& entries)
+{
+  double tol = tolerance;
+  for (TopExp_Explorer exp(shape, TopAbs_VERTEX); exp.More(); exp.Next())
+    tol = std::max(tol, BRep_Tool::Tolerance(TopoDS::Vertex(exp.Current())));
+  const double tolAngleCoeff =
+    std::min(tol / (std::abs(defaultOffset * 0.5) + Precision::Confusion()), 1.0);
+  const double tolAngle = 4.0 * std::asin(tolAngleCoeff);
+
+  // BRepOffset_MakeOffset::BuildFaceComp: the analysis runs on a compound of the shape's faces.
+  TopoDS_Compound faceComp;
+  BRep_Builder    builder;
+  builder.MakeCompound(faceComp);
+  for (TopExp_Explorer exp(shape, TopAbs_FACE); exp.More(); exp.Next())
+    builder.Add(faceComp, exp.Current());
+
+  BRepOffset_Analyse analyse;
+  analyse.Perform(faceComp, tolAngle);
+
+  const ChFiDS_TypeOfConcavity sideType = defaultOffset < 0.0 ? ChFiDS_Concave : ChFiDS_Convex;
+  for (size_t i = 0; i < entries.size(); i++)
+  {
+    TopoDS_Compound                                        group;
+    NCollection_Map<TopoDS_Shape, TopTools_ShapeMapHasher> visited;
+    builder.MakeCompound(group);
+    builder.Add(group, entries[i].face);
+    if (join == GeomAbs_Arc)
+      analyse.AddFaces(entries[i].face, group, visited, ChFiDS_Tangential, sideType);
+    else
+      analyse.AddFaces(entries[i].face, group, visited, ChFiDS_Tangential);
+
+    NCollection_Map<TopoDS_Shape, TopTools_ShapeMapHasher> members;
+    for (TopExp_Explorer exp(group, TopAbs_FACE); exp.More(); exp.Next())
+      members.Add(exp.Current());
+    for (size_t j = 0; j < entries.size(); j++)
+    {
+      if (j == i || !members.Contains(entries[j].face))
+        continue;
+      if (std::abs(entries[j].offset - entries[i].offset) > Precision::Confusion())
+        return true;
+    }
+  }
+  return false;
+}
+
 OCCTShapeRef OCCTShapeOffsetPerFace(OCCTShapeRef   shape,
                                     double         defaultOffset,
                                     const int32_t* faceIndices,
@@ -812,7 +888,7 @@ OCCTShapeRef OCCTShapeOffsetPerFace(OCCTShapeRef   shape,
                                     double         tolerance,
                                     int32_t        joinType)
 {
-  if (!shape)
+  if (!shape || faceCount < 0 || (faceCount > 0 && (!faceIndices || !faceOffsets)))
     return nullptr;
   try
   {
@@ -833,14 +909,28 @@ OCCTShapeRef OCCTShapeOffsetPerFace(OCCTShapeRef   shape,
     // Out of range is a caller error rather than something to skip: skipping returned a
     // shape offset by the default everywhere, indistinguishable from a successful run
     // (the same failure #497 fixed for defeaturing).
+    std::vector<OcctPerFaceOffset> entries;
     for (int32_t i = 0; i < faceCount; i++)
     {
       int32_t idx = faceIndices[i] + 1;
       if (idx < 1 || idx > faceMap.Extent())
         return nullptr;
-      const TopoDS_Face& face = TopoDS::Face(faceMap(idx));
-      offset.SetOffsetOnFace(face, faceOffsets[i]);
+      entries.push_back({faceIndices[i], TopoDS::Face(faceMap(idx)), faceOffsets[i]});
     }
+
+    // #3365: entries the kernel would merge into one offset but that disagree are refused, not
+    // left to a hash-map iteration order that differs per process.
+    if (occtPerFaceOffsetsConflict(shape->shape, defaultOffset, tolerance, jt, entries))
+      return nullptr;
+
+    // Ascending face index. With no conflicting group the order cannot change the result, and a
+    // fixed order keeps the kernel's own bookkeeping reproducible.
+    std::stable_sort(
+      entries.begin(),
+      entries.end(),
+      [](const OcctPerFaceOffset& a, const OcctPerFaceOffset& b) { return a.index < b.index; });
+    for (const OcctPerFaceOffset& entry : entries)
+      offset.SetOffsetOnFace(entry.face, entry.offset);
 
     offset.MakeOffsetShape();
     if (!offset.IsDone())

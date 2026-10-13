@@ -35,15 +35,51 @@ struct SolidConstructionTests {
         #expect(hollow.faces().count == 12)
         #expect(abs((hollow.volume ?? 0) - 7000) < 1e-6)
 
-        // As documented ("rest = cavities") the plain inner box should do the same. Measured on
-        // kernel.6 it does not: the shells are taken as given, the solid is invalid and reads
-        // 9000. #3359.
+        // As documented ("rest = cavities") the plain inner box does the same: a cavity shell is
+        // classified against itself and reversed when it points outward (#3359, the rule
+        // ShapeFix_Solid's CreateSolids applies to a hole shell). Before the fix the shells were
+        // taken as given, the solid was invalid and read 9000.
         let plain = try #require(Shape.solidFromShells([outer, inner]))
         #expect(plain.subShapes(ofType: .shell).count == 2)
-        withKnownIssue("an unreversed inner shell is not oriented as a cavity (#3359)") {
-            #expect(plain.isValid)
-            #expect(abs(plain.signedVolume - 7000) < 1e-6)
-        }
+        #expect(plain.isValid)
+        #expect(abs(plain.signedVolume - 7000) < 1e-6)
+        #expect(plain.faces().count == 12)
+    }
+
+    /// Caller-supplied orientation must not matter, and the caller's own shapes are not edited.
+    @Test("Cavity orientation is normalised without touching the inputs")
+    func cavityOrientationIsNormalised() throws {
+        let outer = try #require(Shape.box(width: 20, height: 20, depth: 20))
+        let inner = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let innerVolumeBefore = inner.signedVolume
+
+        let first = try #require(Shape.solidFromShells([outer, inner]))
+        let second = try #require(Shape.solidFromShells([outer, inner]))
+        #expect(first.isValid)
+        #expect(second.isValid)
+        #expect(abs(first.signedVolume - 7000) < 1e-6)
+        #expect(abs(second.signedVolume - 7000) < 1e-6)
+        // The receiver of the call is read-only for the bridge: the inner box is still a solid
+        // of +1000 afterwards.
+        #expect(abs(inner.signedVolume - innerVolumeBefore) < 1e-9)
+        #expect(abs(innerVolumeBefore - 1000) < 1e-9)
+    }
+
+    /// Two cavities, one passed already reversed and one passed as a plain box, give the same
+    /// answer: the volume of the block less both.
+    @Test("Mixed-orientation cavities")
+    func mixedOrientationCavities() throws {
+        let outer = try #require(Shape.box(width: 40, height: 20, depth: 20))
+        let a = try #require(Shape.box(width: 5, height: 5, depth: 5))
+        let b = try #require(Shape.box(width: 5, height: 5, depth: 5))
+        let aMoved = try #require(a.translated(by: SIMD3(-10, 0, 0)))
+        let bMoved = try #require(b.translated(by: SIMD3(10, 0, 0)))
+        let bReversed = try #require(bMoved.reversed)
+
+        let solid = try #require(Shape.solidFromShells([outer, aMoved, bReversed]))
+        #expect(solid.subShapes(ofType: .shell).count == 3)
+        #expect(solid.isValid)
+        #expect(abs(solid.signedVolume - (16000 - 250)) < 1e-6)
     }
 
     @Test("Solid from empty array returns nil")

@@ -2664,7 +2664,7 @@ feature-cut use cases (drill one hole, pattern the tool, subtract).
   - `axisPoint`: point on the rotation axis.
   - `axisDirection`: direction of the rotation axis.
   - `count`: number of copies, including the original.
-  - `angle`: total angle to span in radians (0 = full circle).
+  - `angle`: total angle to span in radians, first to last copy (0 = full circle); spacing is the same as `circularPattern` (#3356).
 - **Returns:** Compound of all copies and history, or nil on failure.
 - **OCCT:** `BRepBuilderAPI_Transform` × `count`, folded into one `BRepTools_History` (via
   `OCCTShapeHistoryFromCircularPattern`).

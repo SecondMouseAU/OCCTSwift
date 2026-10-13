@@ -178,7 +178,7 @@ a map of the major areas, and the `Total` as the count.
 | **Poly_MergeNodesTool** | 1 | mergedMeshNodes (merge duplicate vertices from shape triangulations) |
 | **Poly_CoherentTriangulation** | 12 | create, createFromMesh, setNode, addTriangle, removeTriangle, triangleCount, computeLinks, linkCount, deflection, removeDegenerated, getResult, nodeCoords |
 | **BRepFill_Evolved** | 1 | evolved (face spine + wire profile sweep) |
-| **BRepFill_OffsetAncestors** | 3 | create, hasAncestor, ancestor (trace offset wire edge ancestry) |
+| **BRepFill_OffsetAncestors** | 4 | create, offsetWire, hasAncestor, ancestor (trace offset wire edge ancestry) |
 | **BRepExtrema_DistanceSS** | 1 | distanceSS (sub-shape to sub-shape minimum distance) |
 | **BRepGProp_VinertGK** | 1 | vinertGK (Gauss-Kronrod volume integration on face) |
 | **GeomFill_Profiler** | 8 | create, addCurve, perform, degree, poleCount, knotCount, isPeriodic, poles, knotsAndMults |
@@ -505,7 +505,7 @@ a map of the major areas, and the `Total` as the count.
 | **GeomEval TBezier/AHTBezier Surfaces** | 2 | tBezier surface, ahtBezier surface |
 | **Geom2dEval TBezier/AHTBezier** | 2 | tBezier (2D), ahtBezier (2D) |
 | **Bridge Diagnostics** (#1161, see [Diagnostics](reference/Diagnostics.md)) | 8 | OCCTDiagnostics: capturing, records, clear, isCaptureEnabled, isLoggingEnabled, stackTraceDepth, droppedRecordCount; Record: description |
-| **Total** | **4,402** | |
+| **Total** | **4,403** | |
 > **Note:** OCCTSwift wraps a curated subset of OCCT. To add new functions, see [docs/EXTENDING.md](docs/EXTENDING.md).
 
 

@@ -1803,7 +1803,8 @@ public final class BRepGraph: @unchecked Sendable {
     ///   - edgeIndex: The edge index.
     ///   - vertexIndex: The vertex index.
     ///   - orientation: Accepted for source-compat but ignored by the supplement layer.
-    /// - Returns: The layer-local attachment uid, or nil on failure.
+    /// - Returns: The layer-local attachment uid, or nil if `edgeIndex` or `vertexIndex` names no
+    ///   edge or vertex of the graph (a negative or too-large index is refused).
     public func edgeAddInternalVertex(_ edgeIndex: Int, vertexIndex: Int, orientation: Int = 2)
         -> Int?
     {
@@ -1823,7 +1824,8 @@ public final class BRepGraph: @unchecked Sendable {
     ///   - faceIndex: The face index.
     ///   - vertexIndex: The vertex index.
     ///   - orientation: Accepted for source-compat but ignored by the supplement layer.
-    /// - Returns: The layer-local attachment uid, or nil on failure.
+    /// - Returns: The layer-local attachment uid, or nil if `faceIndex` or `vertexIndex` names no
+    ///   face or vertex of the graph (a negative or too-large index is refused).
     public func faceAddVertex(_ faceIndex: Int, vertexIndex: Int, orientation: Int = 0) -> Int? {
         let id = Int(
             OCCTBRepGraphFaceAddVertex(

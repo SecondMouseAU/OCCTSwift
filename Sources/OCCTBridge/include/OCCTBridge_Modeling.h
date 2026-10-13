@@ -3227,8 +3227,13 @@ OCCTOffsetAncestorsRef OCCTBRepFillOffsetAncestorsCreate(OCCTShapeRef _Nonnull f
                                                          double offset,
                                                          int    joinType);
 bool                   OCCTBRepFillOffsetAncestorsIsDone(OCCTOffsetAncestorsRef _Nonnull ref);
-bool                   OCCTBRepFillOffsetAncestorsHasAncestor(OCCTOffsetAncestorsRef _Nonnull ref,
-                                                              OCCTShapeRef _Nonnull edgeRef);
+/// The offset wire the ancestry was computed on: the shape whose edges are the keys
+/// `OCCTBRepFillOffsetAncestorsHasAncestor` / `GetAncestor` answer for (#3366). The same wire
+/// `OCCTBRepFillOffsetWire` returns for the same face and offset, with the same sign (positive
+/// outward). NULL when the offset was not done.
+OCCTShapeRef _Nullable OCCTBRepFillOffsetAncestorsOffsetWire(OCCTOffsetAncestorsRef _Nonnull ref);
+bool OCCTBRepFillOffsetAncestorsHasAncestor(OCCTOffsetAncestorsRef _Nonnull ref,
+                                            OCCTShapeRef _Nonnull edgeRef);
 OCCTShapeRef _Nullable OCCTBRepFillOffsetAncestorsGetAncestor(OCCTOffsetAncestorsRef _Nonnull ref,
                                                               OCCTShapeRef _Nonnull edgeRef);
 void OCCTBRepFillOffsetAncestorsRelease(OCCTOffsetAncestorsRef _Nonnull ref);

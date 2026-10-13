@@ -259,10 +259,10 @@ public static func create(face: Shape, offset: Double, joinType: Int = 0) -> Off
 
 - **Parameters:**
   - `face`: the source face.
-  - `offset`: signed offset distance.
+  - `offset`: signed offset distance; positive is outward, negative inward, as `Shape.offsetWire(face:offset:)` and `BRepOffsetAPI_MakeOffset` define them.
   - `joinType`: `0`=Arc, `1`=Tangent, `2`=Intersection.
-- **Returns:** An `OffsetAncestors` instance, or `nil` if the operation fails.
-- **OCCT:** `BRepFill_OffsetAncestors`.
+- **Returns:** An `OffsetAncestors` instance, or `nil` if `face` is not a face or `offset` is not finite. `isDone` is `false` when the offset did not build or collapsed the face.
+- **OCCT:** `BRepFill_OffsetWire` run on the domains `BRepOffsetAPI_MakeOffset` builds, then `BRepFill_OffsetAncestors`.
 
 ---
 
@@ -278,9 +278,22 @@ public var isDone: Bool { get }
 
 ---
 
+### `offsetWire`
+
+The offset wire the ancestry was computed on. Its edges are the keys `hasAncestor(_:)` and `ancestor(of:)` take: `BRepFill_OffsetAncestors::HasAncestor` is keyed on the offset wire's own edges, which `Shape.offsetWire(face:offset:)` does not return (it builds a second, unrelated `BRepFill_OffsetWire`).
+
+```swift
+public var offsetWire: Shape? { get }
+```
+
+- **Returns:** The offset wire, or `nil` when the offset was not done.
+- **OCCT:** `BRepFill_OffsetWire::Shape`.
+
+---
+
 ### `hasAncestor(_:)`
 
-Checks if an offset edge has a recorded ancestor.
+Checks if an edge of the offset wire has a recorded ancestor. An edge of the original face is not an edge of the offset wire, so it has none.
 
 ```swift
 public func hasAncestor(_ edge: Shape) -> Bool
@@ -292,7 +305,7 @@ public func hasAncestor(_ edge: Shape) -> Bool
 
 ### `ancestor(of:)`
 
-Returns the original edge that gave rise to the given offset edge.
+Returns the original edge that gave rise to the given edge of the offset wire. For a corner arc an Arc join adds on an outward offset, the ancestor is the face vertex it rounds.
 
 ```swift
 public func ancestor(of edge: Shape) -> Shape?
@@ -302,9 +315,9 @@ public func ancestor(of edge: Shape) -> Shape?
 - **OCCT:** `BRepFill_OffsetAncestors::Ancestor`.
 - **Example:**
   ```swift
-  if let oa = OffsetAncestors.create(face: myFace, offset: 2.0), oa.isDone {
-      for edge in offsetWireEdges {
-          if let orig = oa.ancestor(of: edge) { print("traced") }
+  if let oa = OffsetAncestors.create(face: myFace, offset: -2.0), let wire = oa.offsetWire {
+      for edge in wire.subShapes(ofType: .edge) {
+          if let orig = oa.ancestor(of: edge) { print("traced", orig.shapeType) }
       }
   }
   ```
