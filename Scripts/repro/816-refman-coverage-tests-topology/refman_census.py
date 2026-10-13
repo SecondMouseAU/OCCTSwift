@@ -333,11 +333,11 @@ ADJUDICATED_CLAIMS = {
         "confirmed, verbatim. occt-refman@8.0.1's BRepGProp::SurfaceProperties entry: 'WARNING: "
         "if Eps > 0.001 algorithm performs non-adaptive integration', matching the test's quote "
         "exactly."),
-    ("OCCTShapeHealingTests/Issue655FreeBoundsInternalOrientationTests.swift",
+    ("OCCTShapeHealingTests/FreeBoundsInternalOrientationTests.swift",
      "ShapeAnalysis_FreeBounds.hxx:98"): (
         "confirmed. Line 98 of the pinned header is exactly `const bool checkinternaledges = "
         "false);`, the default the comment cites."),
-    ("OCCTShapeHealingTests/Issue837FixDetailedModeFlagsTests.swift", "always-on default"): (
+    ("OCCTShapeHealingTests/FixDetailedModeFlagsTests.swift", "always-on default"): (
         "confirmed and appropriately scoped. ShapeFix_Shape.hxx: 'Returns (modifiable) the mode "
         "for applying fixes of ShapeFix_Face, by default True.' The comment's 'always-on' is about "
         "the NOW-FIXED bridge bug (the caller's fixFace param was never forwarded, so every call "
@@ -352,25 +352,25 @@ ADJUDICATED_CLAIMS = {
         "lines); the 'no lookup table' phrase is what the source read (2197-2419) confirms: a "
         "direct GeomAbs_Shape assignment, never a value-mapping table that could introduce C3."),
     ("OCCTModelingTests/SectionWiresOrientationTests.swift", "never hands this"): (
-        "cross-references the same #655 finding as Issue655FreeBoundsInternalOrientationTests.swift "
+        "cross-references the same #655 finding as FreeBoundsInternalOrientationTests.swift "
         "(BRepBuilderAPI_Sewing::FreeEdge not handing an INTERNAL/EXTERNAL edge to the free-bounds "
         "chainage), from the sectionWiresAtZ side that IS affected rather than the freeBounds side "
         "that isn't; same investigation, not re-derived twice."),
     ("OCCTModelingTests/CylindricalHoleContractTests.swift", "exactly two places"): (
         "confirmed. grep of BRepFeat_MakeCylindricalHole.cxx: BRepFeat_HoleTooLong is assigned at "
         "exactly two lines, 526 and 667."),
-    ("OCCTShapeHealingTests/Issue1058OuterBoundRefusalTests.swift", "A plane cannot show"): (
+    ("OCCTShapeHealingTests/OuterBoundRefusalTests.swift", "A plane cannot show"): (
         "backed by its own investigation, not re-derived here: the same comment block cites "
         "Scripts/repro/1058-outer-bound-refusal/ and the file's own 'WHAT THESE TESTS ISOLATE' "
         "section immediately below states, per guard, which specific test fails when that guard "
         "alone is disabled -- a prove-the-test-fails table already in the source, not a claim "
         "resting on the refman."),
-    ("OCCTShapeHealingTests/Issue655FreeBoundsInternalOrientationTests.swift", "FreeEdge` stage"): (
+    ("OCCTShapeHealingTests/FreeBoundsInternalOrientationTests.swift", "FreeEdge` stage"): (
         "backed by its own investigation: the doc explicitly says a PRIOR round's 'unaffected on "
         "either kernel' note was 'an unmeasured extrapolation' and this suite exists to measure it "
         "directly instead, i.e. the file is itself a correction of an earlier over-claim, not a "
         "fresh one."),
-    ("OCCTShapeHealingTests/Issue655FreeBoundsInternalOrientationTests.swift", "never via"): (
+    ("OCCTShapeHealingTests/FreeBoundsInternalOrientationTests.swift", "never via"): (
         "same investigation as the entry above (checkinternaledges=false at "
         "ShapeAnalysis_FreeBounds.hxx:98, confirmed against the pinned header)."),
     # The remaining candidates are historical/narrative: each describes an ALREADY-FIXED bug in
@@ -408,28 +408,28 @@ ADJUDICATED_CLAIMS = {
     ("OCCTAnalysisTests/ZeroMassResultsTests.swift", "throws first."): (
         "restates this project's own, already-verified #345 finding (CLAUDE.md Known OCCT Bugs: "
         "gp_Dir throws Standard_ConstructionError for a zero-length vector); not re-derived here."),
-    ("OCCTShapeHealingTests/Issue1058OuterBoundRefusalTests.swift", "cannot assemble them"): (
+    ("OCCTShapeHealingTests/OuterBoundRefusalTests.swift", "cannot assemble them"): (
         "BRepBuilderAPI_MakeWire requiring connected edges is the method's basic, undisputed "
         "contract (its own refman entries document Add()'s edge-connection requirement); not a "
         "risk-bearing claim."),
-    ("OCCTShapeHealingTests/Issue484ConnectedFacesTests.swift", "wires them into one shell exactly"): (
+    ("OCCTShapeHealingTests/ConnectedFacesTests.swift", "wires them into one shell exactly"): (
         "describes this bridge's own shellFromFaces implementation choice (no sewing), not an "
         "OCCT-documented guarantee about BRep_Builder::Add."),
-    ("OCCTShapeHealingTests/Issue490ContinuityDecoderTests.swift", "exactly what the advanced entry"): (
+    ("OCCTShapeHealingTests/HealingContinuityDecoderTests.swift", "exactly what the advanced entry"): (
         "describes two of this bridge's own code paths being equivalent, not an OCCT claim."),
-    ("OCCTShapeHealingTests/Issue702SolidDemotionTests.swift", "exactly what `Shape.solidFromShells"): (
+    ("OCCTShapeHealingTests/SolidDemotionTests.swift", "exactly what `Shape.solidFromShells"): (
         "describes this bridge's own solidFromShells behavior on the fixture, not an OCCT claim."),
-    ("OCCTShapeHealingTests/Issue702SolidDemotionTests.swift", "cannot close"): (
+    ("OCCTShapeHealingTests/SolidDemotionTests.swift", "cannot close"): (
         "names a ShapeFix_Solid branch by its own established nickname in this project's prior "
         "#702 investigation (already closed, see CLAUDE.md/#702), not a fresh refman claim."),
-    ("OCCTShapeHealingTests/Issue702SolidDemotionTests.swift", "which does not"): (
+    ("OCCTShapeHealingTests/SolidDemotionTests.swift", "which does not"): (
         "same #702 fixture narrative as the two entries above."),
-    ("OCCTShapeHealingTests/Issue772SelfIntersectionAnalysisTests.swift", "was always 0 and never computed"): (
+    ("OCCTShapeHealingTests/SelfIntersectionAnalysisTests.swift", "was always 0 and never computed"): (
         "narrates #772/#763, an already-fixed bug in this project's OWN "
         "ShapeAnalysisResult.selfIntersectionCount field, not an OCCT claim."),
-    ("OCCTShapeHealingTests/Issue772SelfIntersectionAnalysisTests.swift", "never a count"): (
+    ("OCCTShapeHealingTests/SelfIntersectionAnalysisTests.swift", "never a count"): (
         "same #772 narrative as above."),
-    ("OCCTShapeHealingTests/Issue837FixDetailedModeFlagsTests.swift", "never passed to the underlying"): (
+    ("OCCTShapeHealingTests/FixDetailedModeFlagsTests.swift", "never passed to the underlying"): (
         "same #837 finding as the 'always-on default' entry above (one paragraph, two flagged "
         "lines)."),
     ("OCCTShapeHealingTests/SelfIntersectingProfileGuard263.swift", "OCC_CATCH_SIGNALS` is inert"): (

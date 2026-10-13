@@ -51,7 +51,7 @@ This is #726's own named seed instance. Verified independently before acting:
   (`Shape+Analysis.swift`'s `analyze(tolerance:)` construction, and
   `ShapeAnalysisResult.totalProblems`'s sum), and by two test files
   (`Tests/OCCTShapeHealingTests/OCCTShapeHealingTests.swift`,
-  `Tests/OCCTShapeHealingTests/ShapeFix/Issue702SolidDemotionTests.swift`), both of which only re-derive
+  `Tests/OCCTShapeHealingTests/ShapeFix/SolidDemotionTests.swift`), both of which only re-derive
   `totalProblems` from the same fields `analyze()` returns, no test asserted a *specific*
   self-intersection count, because there was never a real one to assert.
 - Confirmed `Shape.isSelfIntersecting(timeout:)` / `isSelfIntersecting(hardTimeout:)`
@@ -80,7 +80,7 @@ This is #726's own named seed instance. Verified independently before acting:
 - Docs: `docs/reference/Shape-Features.md`, `docs/guides/cookbook/healing-and-validity.md`, both
   named the field explicitly and are updated (see "Documentation" below).
 - Tests: `OCCTShapeHealingTests.swift`'s `analysisResultProperties()` and
-  `Issue702SolidDemotionTests.swift`'s `totalProblemsExcludingFreeFace(_:)` helper both dropped the
+  `SolidDemotionTests.swift`'s `totalProblemsExcludingFreeFace(_:)` helper both dropped the
   term from their independently-recomputed `expectedTotal` (both still pass, see "Test results"
   below; this alone is not a strong regression check since the term contributed 0 either way, but
   it does prove the removal doesn't break either file's compile or its arithmetic).
@@ -274,7 +274,7 @@ Removing `selfIntersectionCount` broke the build twice before it was clean, both
    `0`.
 2. Two Swift test files referenced `analysis.selfIntersectionCount` directly in their own
    independently-recomputed `expectedTotal`/`totalProblemsExcludingFreeFace` sums
-   (`OCCTShapeHealingTests.swift`, `Issue702SolidDemotionTests.swift`), both updated to drop the
+   (`OCCTShapeHealingTests.swift`, `SolidDemotionTests.swift`), both updated to drop the
    term (see "Verdict 4" above).
 
 ## Test results

@@ -123,8 +123,8 @@ script has is load-bearing for at least one fixture, which is the bar this polic
 
 The first full run of the sub-kind 2 detector reported 68 candidates. Reading every one of them by
 hand (see the per-site table below) found a single mechanism accounting for 21 of the 68, all in
-two files: `Tests/OCCTShapeHealingTests/ShapeFix/Issue442FixSolidMultiBodyTests.swift` and
-`Issue443FirstOfNTests.swift` both define a private helper,
+two files: `Tests/OCCTShapeHealingTests/ShapeFix/FixSolidMultiBodyTests.swift` and
+`SolidFromUpgradedEveryBodyTests.swift` both define a private helper,
 
 ```swift
 private func expectVolume(_ shape: Shape, _ expected: Double, _ what: String,
@@ -267,35 +267,35 @@ verification exists that the detector cannot see, inline or through a helper).
 | `OCCTModelingTests.swift:1199` | `loftedEdgePolylines` | NEEDS-FOLLOWUP | yes | bottom and top rectangles both default to z=0; the loft fixture may be coplanar/degenerate, unverified |
 | `OCCTModelingTests.swift:3053` | `splitSingleShell` | NEEDS-FOLLOWUP | yes | the sole assertion sits inside `if let`, so a nil/failed split silently skips all verification |
 | `OCCTModelingTests.swift:5160` | `modified` | NEEDS-FOLLOWUP | yes | `mod.count >= 0` is vacuously true for any array; it verifies nothing about whether the face was modified |
-| `Issue442FixSolidMultiBodyTests.swift:64` | `fixSolidMultiBody` | ALREADY-FIXED | no | calls the private `expectVolume(healed, 2000.0, ...)` helper |
-| `Issue442FixSolidMultiBodyTests.swift:83` | `fixSolidSingleBody` | ALREADY-FIXED | no | `expectVolume` helper, target 1000.0 |
-| `Issue442FixSolidMultiBodyTests.swift:99` | `fixSolidHollow` | ALREADY-FIXED | no | `expectVolume` helper, target 7000.0 |
-| `Issue442FixSolidMultiBodyTests.swift:115` | `fixSolidMulticonnex` | ALREADY-FIXED | no | `expectVolume` helper, target 2000.0 |
-| `Issue442FixSolidMultiBodyTests.swift:182` | `solidFromShellSkipsCavity` | ALREADY-FIXED | no | `expectVolume` helper, target 8000.0 |
-| `Issue442FixSolidMultiBodyTests.swift:201` | `solidFromShellMulticonnex` | ALREADY-FIXED | no | `expectVolume` helper, target 2000.0 |
-| `Issue442FixSolidMultiBodyTests.swift:223` | `solidFromShellCavityWithWiderSibling` | ALREADY-FIXED | no | `expectVolume` helper, target 35000.0 |
-| `Issue442FixSolidMultiBodyTests.swift:251` | `solidFromShellFreeShells` | ALREADY-FIXED | no | `expectVolume` helper, target 2000.0 |
-| `Issue442FixSolidMultiBodyTests.swift:273` | `solidFromShellDeduplicates` | ALREADY-FIXED | no | `expectVolume` helper, target 1000.0 |
-| `Issue442FixSolidMultiBodyTests.swift:314` | `documentedUnclosedCheck` | LOW-RISK | yes | reuses `twoBoxes().fixSolid()`, already volume-verified by the companion `fixSolidMultiBody` in the same file |
-| `Issue442FixSolidMultiBodyTests.swift:390` | `reproducerTable` | ALREADY-FIXED | no | the loop body calls `expectVolume(shape, 2000.0, label)` for every row |
-| `Issue443FirstOfNTests.swift:69` | `solidFromSewnMultiBody` | ALREADY-FIXED | no | private `expectVolume` helper (same pattern), target 2000.0 |
-| `Issue443FirstOfNTests.swift:89` | `solidFromAgreesWithSibling` | ALREADY-FIXED | no | two `expectVolume` calls, one per code path, both target 2000.0 |
-| `Issue443FirstOfNTests.swift:107` | `solidFromSingleShell` | ALREADY-FIXED | no | `expectVolume` helper, target 1000.0 |
-| `Issue443FirstOfNTests.swift:134` | `solidFromKeepsOpenBody` | LOW-RISK | yes | face count 11 = 6+5 is derived from the fixture's own explicit face slicing; rules out a dropped body |
-| `Issue443FirstOfNTests.swift:151` | `solidFromSkipsCavity` | ALREADY-FIXED | no | `expectVolume` helper, target 8000.0 |
-| `Issue443FirstOfNTests.swift:170` | `solidFromMulticonnex` | ALREADY-FIXED | no | `expectVolume` helper, target 2000.0 |
-| `Issue443FirstOfNTests.swift:210` | `sewnHollowIsOneBody` | ALREADY-FIXED | no | loop calls `expectVolume(result, 8000.0, ...)` for both code paths |
-| `Issue443FirstOfNTests.swift:232` | `sewnAndUnsewnHollowAgree` | ALREADY-FIXED | no | two `expectVolume` calls, both target 8000.0 |
-| `Issue443FirstOfNTests.swift:281` | `touchingBodiesNotPruned` | ALREADY-FIXED | no | `expectVolume` helper, target 2000.0 |
-| `Issue443FirstOfNTests.swift:303` | `solidWithHistoryMultiBody` | ALREADY-FIXED | no | `expectVolume` helper, target 2000.0 |
-| `Issue443FirstOfNTests.swift:335` | `solidWithHistoryQueryableForEveryBody` | LOW-RISK | yes | every face of both boxes is individually checked `!isDeleted` in the shared history, stronger than a count |
-| `Issue443FirstOfNTests.swift:379` | `solidWithHistoryKeepsOpenBody` | LOW-RISK | yes | same open-shell reasoning as `solidFromKeepsOpenBody`: face count 11 rules out a dropped body |
-| `Issue443FirstOfNTests.swift:464` | `upgradedHollow` | ALREADY-FIXED | no | two `expectVolume` calls (input 7000.0, result 8000.0) |
-| `Issue443FirstOfNTests.swift:482` | `upgradedNestedBody` | ALREADY-FIXED | no | `expectVolume` helper, target 8512.0 |
-| `Issue484ConnectedFacesTests.swift:87` | `genuinelyDisconnectedFacesGetConnected` | ALREADY-FIXED | yes | also checks `connected.edgeCount == 7` (down from a confirmed 8); `edgeCount` is not one of `VERIFICATION`'s ten nouns |
-| `Issue484FaceFixContextTests.swift:21` | `periodicConicalFaceSurvivesFaceFix` | LOW-RISK | yes | fixing one face deterministically yields one face; the #317 regression concern was a crash, not a miscount |
-| `Issue484FaceFixContextTests.swift:59` | `unhealedPeriodicConicalUVFaceSurvivesFaceFix` | LOW-RISK | yes | the doc's own claim is "completes and returns a face"; `count == 1` states exactly that |
-| `Issue484FaceFixContextTests.swift:82` | `wellFormedBoxFacesUnaffected` | LOW-RISK | yes | box face count (6) is deterministic; per-face `fixed().count == 1` is a structural invariant of the operation |
+| `FixSolidMultiBodyTests.swift:64` | `fixSolidMultiBody` | ALREADY-FIXED | no | calls the private `expectVolume(healed, 2000.0, ...)` helper |
+| `FixSolidMultiBodyTests.swift:83` | `fixSolidSingleBody` | ALREADY-FIXED | no | `expectVolume` helper, target 1000.0 |
+| `FixSolidMultiBodyTests.swift:99` | `fixSolidHollow` | ALREADY-FIXED | no | `expectVolume` helper, target 7000.0 |
+| `FixSolidMultiBodyTests.swift:115` | `fixSolidMulticonnex` | ALREADY-FIXED | no | `expectVolume` helper, target 2000.0 |
+| `FixSolidMultiBodyTests.swift:182` | `solidFromShellSkipsCavity` | ALREADY-FIXED | no | `expectVolume` helper, target 8000.0 |
+| `FixSolidMultiBodyTests.swift:201` | `solidFromShellMulticonnex` | ALREADY-FIXED | no | `expectVolume` helper, target 2000.0 |
+| `FixSolidMultiBodyTests.swift:223` | `solidFromShellCavityWithWiderSibling` | ALREADY-FIXED | no | `expectVolume` helper, target 35000.0 |
+| `FixSolidMultiBodyTests.swift:251` | `solidFromShellFreeShells` | ALREADY-FIXED | no | `expectVolume` helper, target 2000.0 |
+| `FixSolidMultiBodyTests.swift:273` | `solidFromShellDeduplicates` | ALREADY-FIXED | no | `expectVolume` helper, target 1000.0 |
+| `FixSolidMultiBodyTests.swift:314` | `documentedUnclosedCheck` | LOW-RISK | yes | reuses `twoBoxes().fixSolid()`, already volume-verified by the companion `fixSolidMultiBody` in the same file |
+| `FixSolidMultiBodyTests.swift:390` | `reproducerTable` | ALREADY-FIXED | no | the loop body calls `expectVolume(shape, 2000.0, label)` for every row |
+| `SolidFromUpgradedEveryBodyTests.swift:69` | `solidFromSewnMultiBody` | ALREADY-FIXED | no | private `expectVolume` helper (same pattern), target 2000.0 |
+| `SolidFromUpgradedEveryBodyTests.swift:89` | `solidFromAgreesWithSibling` | ALREADY-FIXED | no | two `expectVolume` calls, one per code path, both target 2000.0 |
+| `SolidFromUpgradedEveryBodyTests.swift:107` | `solidFromSingleShell` | ALREADY-FIXED | no | `expectVolume` helper, target 1000.0 |
+| `SolidFromUpgradedEveryBodyTests.swift:134` | `solidFromKeepsOpenBody` | LOW-RISK | yes | face count 11 = 6+5 is derived from the fixture's own explicit face slicing; rules out a dropped body |
+| `SolidFromUpgradedEveryBodyTests.swift:151` | `solidFromSkipsCavity` | ALREADY-FIXED | no | `expectVolume` helper, target 8000.0 |
+| `SolidFromUpgradedEveryBodyTests.swift:170` | `solidFromMulticonnex` | ALREADY-FIXED | no | `expectVolume` helper, target 2000.0 |
+| `SolidFromUpgradedEveryBodyTests.swift:210` | `sewnHollowIsOneBody` | ALREADY-FIXED | no | loop calls `expectVolume(result, 8000.0, ...)` for both code paths |
+| `SolidFromUpgradedEveryBodyTests.swift:232` | `sewnAndUnsewnHollowAgree` | ALREADY-FIXED | no | two `expectVolume` calls, both target 8000.0 |
+| `SolidFromUpgradedEveryBodyTests.swift:281` | `touchingBodiesNotPruned` | ALREADY-FIXED | no | `expectVolume` helper, target 2000.0 |
+| `SolidFromUpgradedEveryBodyTests.swift:303` | `solidWithHistoryMultiBody` | ALREADY-FIXED | no | `expectVolume` helper, target 2000.0 |
+| `SolidFromUpgradedEveryBodyTests.swift:335` | `solidWithHistoryQueryableForEveryBody` | LOW-RISK | yes | every face of both boxes is individually checked `!isDeleted` in the shared history, stronger than a count |
+| `SolidFromUpgradedEveryBodyTests.swift:379` | `solidWithHistoryKeepsOpenBody` | LOW-RISK | yes | same open-shell reasoning as `solidFromKeepsOpenBody`: face count 11 rules out a dropped body |
+| `SolidFromUpgradedEveryBodyTests.swift:464` | `upgradedHollow` | ALREADY-FIXED | no | two `expectVolume` calls (input 7000.0, result 8000.0) |
+| `SolidFromUpgradedEveryBodyTests.swift:482` | `upgradedNestedBody` | ALREADY-FIXED | no | `expectVolume` helper, target 8512.0 |
+| `ConnectedFacesTests.swift:87` | `genuinelyDisconnectedFacesGetConnected` | ALREADY-FIXED | yes | also checks `connected.edgeCount == 7` (down from a confirmed 8); `edgeCount` is not one of `VERIFICATION`'s ten nouns |
+| `FaceFixReShapeContextTests.swift:21` | `periodicConicalFaceSurvivesFaceFix` | LOW-RISK | yes | fixing one face deterministically yields one face; the #317 regression concern was a crash, not a miscount |
+| `FaceFixReShapeContextTests.swift:59` | `unhealedPeriodicConicalUVFaceSurvivesFaceFix` | LOW-RISK | yes | the doc's own claim is "completes and returns a face"; `count == 1` states exactly that |
+| `FaceFixReShapeContextTests.swift:82` | `wellFormedBoxFacesUnaffected` | LOW-RISK | yes | box face count (6) is deterministic; per-face `fixed().count == 1` is a structural invariant of the operation |
 | `OCCTSurfaceTests.swift:5667` | `coaxialDedup` | NEEDS-FOLLOWUP | yes | nothing confirms both a cylindrical and a toroidal face actually survive the union before dedup is asserted to 1 axis |
 | `OuterShellTests.swift:42` | `innerShells` | ALREADY-FIXED | yes | a bounding-box check (`bb.max.x - bb.min.x` around 8.0) confirms the found shell is the cavity, not the outer body; bbox spans are not a `VERIFICATION` noun |
 | `OuterShellMultiSolidTests.swift:68` | `multiSolidInnerShellsEmpty` | LOW-RISK | yes | subtracting one fully-enclosed cavity from a box deterministically gives exactly 1 cavity shell |

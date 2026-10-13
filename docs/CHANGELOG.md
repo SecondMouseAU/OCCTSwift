@@ -21,6 +21,24 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### `circularPattern(angle:)` with a partial angle spans the angle, stepping `angle / (count - 1)` (#3356)
+
+A partial `angle` passed to `circularPattern(axisPoint:axisDirection:count:angle:)`, `circularPatternCut(tool:axisPoint:axisDirection:count:angle:timeout:)` and `circularPatternWithFullHistory(axisPoint:axisDirection:count:angle:)` now runs from the original to the last copy, as its documentation says: three copies over `.pi / 2` sit at 0, 45 and 90 degrees (they used to sit at 0, 30 and 60 because the step was `angle / count`). A full circle, `angle: 0` or an explicit `2 * .pi`, is unchanged and steps by `2 * .pi / count`, since another copy would coincide with the original. A `count` of 1 returns just the original. Callers who relied on the old `angle / count` spacing for a partial angle should pass `angle * Double(count - 1) / Double(count)`.
+
+### `Shape.orientClosedSolid()` reorients an inward solid in place (#3357)
+
+- `Shape.orientClosedSolid()` reported `true` for a solid whose shell pointed inward and left it unchanged (signed volume stayed negative). It now writes the reversed solid back, so the receiver reads the positive volume afterwards.
+
+Transforming the triangulation-only face returned by `Shape.readSTL(from:)` (translate, rotate, scale, mirror and the point/axis variants) now moves it. Before, the call returned a shape whose bounds were unchanged.
+
+### `CoordinateSystem3D.direction` is the unit main direction of the `gp_Ax3`, not the caller's vector (#3371)
+
+`CoordinateSystem3D(origin:direction:)` and `CoordinateSystem3D(origin:direction:xDirection:)` stored the `direction` they were given, so a non-unit vector such as `SIMD3(1, 2, 2)` was reported back as `(1, 2, 2)` while `xDirection` and `yDirection` were the unit axes of the system and `cross(xDirection, yDirection)` was `(1/3, 2/3, 2/3)`. `direction` is now `gp_Ax3::Direction()`, always a unit vector, so the three axes agree. A construction that fails (a zero-length `direction`, or `direction` parallel to `xDirection`) now reports `direction == .zero` alongside the existing zero `xDirection`/`yDirection` and `isDirect == false`. `mirrored(about:)`, `rotated(about:axisDirection:angle:)` and `translated(by:)` inherit the unit direction.
+
+### `Shape.connectedEdges` leaves the receiver untouched and valid (#3354)
+
+- `Shape.connectedEdges` no longer edits the receiver in place and no longer returns an invalid shape for a valid input (a box, a cylinder and a box fused with a sphere all came back invalid). It works on a copy and returns an unchanged copy when connecting would make a valid shape invalid, the same as `fixEdgeConnect()`.
+
 `Shape.faceRestrictAlgo(faceIndex:)` now returns the number of result faces. It returned 0 for every face, because the bridge counted into a zero-capacity buffer.
 
 ### `Document.loadOCAF(from:)` no longer crashes or hangs on a damaged file (#3318)

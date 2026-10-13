@@ -143,7 +143,7 @@ int main()
 
   // #318: the fixture, read out of the Swift test file.
   {
-    std::ifstream in("Tests/OCCTShapeHealingTests/ShapeAnalysis/Issue318DegenerateCurveOnSurfaceEdgeTests.swift");
+    std::ifstream in("Tests/OCCTShapeHealingTests/ShapeAnalysis/DegenerateCurveOnSurfaceEdgeTests.swift");
     std::string   all((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
     size_t        a = all.find("static let fixtureBREP = \"\"\"\n");
     size_t        z = all.find("\"\"\"", a + 30);

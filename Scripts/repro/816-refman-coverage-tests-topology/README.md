@@ -165,10 +165,10 @@ class's own behaviour that this project's docs/tests do not already carry eviden
 | `BRep_Tool::MaxTolerance` returns 0 for `TopAbs_SOLID` (`ToleranceTypeEncodingTests.swift`) | pinned source, `BRep_Tool.cxx:1830-1862` | confirmed -- the function branches on FACE/EDGE/VERTEX only; SOLID falls through every arm with the accumulator at its initial 0.0 |
 | `BRepFilletAPI_MakeFillet::Add` silently skips an unfilletable edge (`FilletDeclinedEdgeReportTests.swift`) | `occt-refman@8.0.1` | not a refman claim: the comment says "measured" and cites its own probe; the refman's `Add()` entries document only what a successful call builds, contradicting nothing |
 | `BRepGProp::SurfaceProperties`'s `Eps > 0.001` triggers non-adaptive integration (`TotalAreaDivergenceTests.swift`) | `occt-refman@8.0.1` | confirmed, verbatim: "WARNING: if Eps > 0.001 algorithm performs non-adaptive integration" |
-| `ShapeAnalysis_FreeBounds.hxx:98`'s `checkinternaledges` defaults `false` (`Issue655FreeBoundsInternalOrientationTests.swift`) | pinned header, line 98 | confirmed, exact line |
-| `ShapeFix_Shape::FixFreeFaceMode()` defaults to on (`Issue837FixDetailedModeFlagsTests.swift`) | pinned header | confirmed: "Returns (modifiable) the mode for applying fixes of ShapeFix_Face, by default True" |
+| `ShapeAnalysis_FreeBounds.hxx:98`'s `checkinternaledges` defaults `false` (`FreeBoundsInternalOrientationTests.swift`) | pinned header, line 98 | confirmed, exact line |
+| `ShapeFix_Shape::FixFreeFaceMode()` defaults to on (`FixDetailedModeFlagsTests.swift`) | pinned header | confirmed: "Returns (modifiable) the mode for applying fixes of ShapeFix_Face, by default True" |
 | `BRepFeat_HoleTooLong` is set in exactly two places in the kernel (`CylindricalHoleContractTests.swift`) | pinned source, `BRepFeat_MakeCylindricalHole.cxx` | confirmed, lines 526 and 667 |
-| `BRep_Tool::CurveOnSurface` projects onto a plane with no stored pcurve (`Issue1058OuterBoundRefusalTests.swift`) | the file's own cited probe, `Scripts/repro/1058-outer-bound-refusal/` | backed by its own investigation (a guard-by-guard prove-the-test-fails table sits in the same file); not re-derived here |
+| `BRep_Tool::CurveOnSurface` projects onto a plane with no stored pcurve (`OuterBoundRefusalTests.swift`) | the file's own cited probe, `Scripts/repro/1058-outer-bound-refusal/` | backed by its own investigation (a guard-by-guard prove-the-test-fails table sits in the same file); not re-derived here |
 
 Three of these (`ContinuityOfFaces`, `MaxTolerance`, `FixFreeFaceMode`) came back **empty** from
 `occt-refman@8.0.1` via the `context` MCP -- static-utility-style methods with thin or no indexed
@@ -179,7 +179,7 @@ order.
 **The other 29 are historical narrative**, each describing an already-fixed bug in this project's
 own bridge code, a Swift struct field, or a test fixture (most cite their own issue number and/or a
 `Scripts/repro/` probe directly), not a claim that OCCT's refman promises something. Read in full
-context, not matched by keyword alone -- e.g. `Issue772SelfIntersectionAnalysisTests.swift`'s "was
+context, not matched by keyword alone -- e.g. `SelfIntersectionAnalysisTests.swift`'s "was
 always 0 and never computed" is about `ShapeAnalysisResult.selfIntersectionCount`, this project's
 OWN struct field, not an OCCT method; `SelfIntersectingProfileGuard263.swift`'s "OCC_CATCH_SIGNALS
 is inert" restates CLAUDE.md's own standing note rather than asserting anything new. None of the 29
