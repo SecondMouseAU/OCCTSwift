@@ -2502,7 +2502,7 @@ public final class Shape: @unchecked Sendable {
     /// ```
     ///
     /// - Parameters:
-    ///   - spine: Path wire to sweep along
+    ///   - spine: Path to sweep along: a wire or a planar face; any other shape type returns nil
     ///   - profile: Profile wire to sweep
     ///   - joinType: How to join offset edges (default: .arc; the only join OCCT implements)
     ///   - axeProf: If true, the profile is in the global frame; if false, in a frame computed
