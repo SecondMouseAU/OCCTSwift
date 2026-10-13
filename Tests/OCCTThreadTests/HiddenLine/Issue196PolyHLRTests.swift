@@ -30,7 +30,13 @@ struct Issue196PolyHLRTests {
         }
         let edges = t.hlrPolyEdges(direction: SIMD3(1, 0, 0), category: .visibleSharp)
         #expect(edges != nil)
-        if let edges { #expect(edges.subShapes(ofType: .edge).count > 0) }
+        // At the default deflection (0.1) the thread viewed along +X has 1741 visible sharp edges
+        // (the table in `deflectionControlsDetail` below, and `HLRBRep_PolyAlgo` driven directly
+        // on the same shape). Within 1 percent, because a BREP round trip moves it slightly.
+        if let edges {
+            let n = edges.subShapes(ofType: .edge).count
+            #expect(abs(Double(n) - 1741) <= 1741 * 0.01, "got \(n) visible sharp edges")
+        }
     }
 
     // NB: each deflection is exercised on its OWN fresh thread. BRepMesh_IncrementalMesh is

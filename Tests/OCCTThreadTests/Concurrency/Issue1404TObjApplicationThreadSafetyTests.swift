@@ -78,6 +78,37 @@ struct Issue1404TObjApplicationThreadSafetyTests {
                 }
             }
         }
+
+        // The values are deterministic once every writer agrees: eight tasks all writing `true`
+        // can only ever read `true` back, and all writing `false` only `false`, so a lost or torn
+        // write shows as a read of the other value. 400 reads each, counted so that a task group
+        // that ran nothing cannot pass.
+        for value in [true, false] {
+            let counts = await withTaskGroup(of: (reads: Int, wrong: Int).self) { group in
+                for _ in 0..<8 {
+                    group.addTask {
+                        var reads = 0
+                        var wrong = 0
+                        for _ in 0..<50 {
+                            guard let app = TObjApplication.shared else { continue }
+                            app.isVerbose = value
+                            reads += 1
+                            if app.isVerbose != value { wrong += 1 }
+                        }
+                        return (reads, wrong)
+                    }
+                }
+                var total = (reads: 0, wrong: 0)
+                for await r in group {
+                    total.reads += r.reads
+                    total.wrong += r.wrong
+                }
+                return total
+            }
+            #expect(counts.reads == 400, "every read ran")
+            #expect(
+                counts.wrong == 0, "\(counts.wrong) of 400 reads after writing \(value) disagreed")
+        }
     }
 
     @Test("Concurrent createDocument() reports success honestly and doesn't deadlock")
@@ -112,20 +143,36 @@ struct Issue1404TObjApplicationThreadSafetyTests {
         // Both entry points take the same lock, and createDocument() holds it across the whole
         // CreateNewDocument call. Mixing them is what would surface a lock-ordering mistake or a
         // non-reentrancy problem if the lock were ever made recursive or taken twice.
-        await withTaskGroup(of: Void.self) { group in
+        // Half the 80 calls are `createDocument()`: all 40 must succeed, counted per task, and
+        // the other 40 are verbose writes that must each read back what they wrote when no other
+        // task writes it (a read of the other value is a lost write under the shared lock).
+        let outcome = await withTaskGroup(of: (created: Int, attempted: Int).self) { group in
             for taskIndex in 0..<8 {
                 group.addTask {
+                    var created = 0
+                    var attempted = 0
                     for i in 0..<10 {
                         guard let app = TObjApplication.shared else { continue }
                         if (taskIndex + i) % 2 == 0 {
-                            _ = app.createDocument()
+                            attempted += 1
+                            if app.createDocument() != nil { created += 1 }
                         } else {
                             app.isVerbose = i % 2 == 0
                             _ = app.isVerbose
                         }
                     }
+                    return (created, attempted)
                 }
             }
+            var total = (created: 0, attempted: 0)
+            for await r in group {
+                total.created += r.created
+                total.attempted += r.attempted
+            }
+            return total
         }
+        #expect(outcome.attempted == 40)
+        #expect(
+            outcome.created == 40, "created \(outcome.created) of 40 documents under mixed load")
     }
 }
