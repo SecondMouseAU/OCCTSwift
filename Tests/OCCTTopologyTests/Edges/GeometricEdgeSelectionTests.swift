@@ -25,8 +25,8 @@ struct GeometricEdgeSelectionTests {
     }
 
     @Test("edges(where:) filters by predicate and keeps indices")
-    func edgesWherePredicate() {
-        let box = Shape.box(width: 10, height: 20, depth: 30)!
+    func edgesWherePredicate() throws {
+        let box = try #require(Shape.box(width: 10, height: 20, depth: 30))
         let long = box.edges(where: { $0.length > 25 })
         // A 10×20×30 box has 4 edges of length 30.
         #expect(long.count == 4)
@@ -59,8 +59,8 @@ struct GeometricEdgeSelectionTests {
     }
 
     @Test("convexEdges returns the outer edges of a box")
-    func convexEdgesBox() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func convexEdgesBox() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let convex = box.convexEdges()
         // All 12 edges of a box are convex.
         #expect(convex.count == 12)
@@ -68,8 +68,8 @@ struct GeometricEdgeSelectionTests {
     }
 
     @Test("edges(parallelTo:) selects the vertical edges of a prism")
-    func edgesParallelToAxis() {
-        let box = Shape.box(width: 10, height: 20, depth: 30)!
+    func edgesParallelToAxis() throws {
+        let box = try #require(Shape.box(width: 10, height: 20, depth: 30))
         let vertical = box.edges(parallelTo: SIMD3(0, 0, 1))
         // 4 edges run along Z (the depth, length 30).
         #expect(vertical.count == 4)
@@ -79,14 +79,14 @@ struct GeometricEdgeSelectionTests {
     }
 
     @Test("edges(inBounds:) selects edges within a region")
-    func edgesInBounds() {
+    func edgesInBounds() throws {
         // Shape.box is centred at the origin, so a 10-cube spans [-5, 5].
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         // A region hugging the bottom (z = -5) face contains its 4 edges.
         let bottom = box.edges(inBounds: SIMD3(-6, -6, -5.1), SIMD3(6, 6, -4.9))
         #expect(bottom.count == 4)
         for e in bottom {
-            #expect(e.bounds!.max.z < -4.9)
+            #expect(try #require(e.bounds).max.z < -4.9)
         }
         // A region covering the whole box contains every edge.
         let all = box.edges(inBounds: SIMD3(-6, -6, -6), SIMD3(6, 6, 6))

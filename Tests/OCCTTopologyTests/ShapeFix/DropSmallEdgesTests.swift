@@ -7,8 +7,8 @@ import Testing
 @Suite("Drop Small Edges")
 struct DropSmallEdgesTests {
     @Test("Drop small edges on clean box")
-    func cleanBoxNoChange() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func cleanBoxNoChange() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let result = box.droppingSmallEdges(tolerance: 1e-6)
         #expect(result != nil)
         if let r = result {

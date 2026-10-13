@@ -41,9 +41,9 @@ struct Issue614FaceOrientationTests {
     /// `split(by:)` hands the pieces back separately; re-compounding preserves the sharing,
     /// because both came out of the same BOP and reference the same cut face. Returns nil rather
     /// than recording an issue so callers can skip cleanly if the kernel stops sharing.
-    static func splitBoxCompound() -> Shape? {
+    static func splitBoxCompound() throws -> Shape? {
         guard let block = Shape.box(origin: .zero, width: 20, height: 10, depth: 10),
-            let plate = Shape.face(from: Wire.rectangle(width: 60, height: 60)!),
+            let plate = try Shape.face(from: #require(Wire.rectangle(width: 60, height: 60))),
             let upright = plate.rotated(axis: SIMD3(0, 1, 0), angle: .pi / 2),
             let knife = upright.translated(by: SIMD3(10, 0, 0)),
             let pieces = block.split(by: knife),
@@ -92,8 +92,8 @@ struct Issue614FaceOrientationTests {
 
     /// The two enumerations differ exactly by the shared wall's second occurrence.
     @Test("a split compound has one more face occurrence than it has distinct faces")
-    func occurrenceCountExceedsDistinctCount() {
-        guard let compound = Self.splitBoxCompound() else {
+    func occurrenceCountExceedsDistinctCount() throws {
+        guard let compound = try Self.splitBoxCompound() else {
             Issue.record("could not build the split-box compound")
             return
         }
@@ -117,8 +117,8 @@ struct Issue614FaceOrientationTests {
 
     /// The defect itself: the shared wall must be able to face out of BOTH owners.
     @Test("the shared wall's normal points out of each owning solid")
-    func sharedWallFacesOutOfBothSolids() {
-        guard let compound = Self.splitBoxCompound() else {
+    func sharedWallFacesOutOfBothSolids() throws {
+        guard let compound = try Self.splitBoxCompound() else {
             Issue.record("could not build the split-box compound")
             return
         }
@@ -170,8 +170,8 @@ struct Issue614FaceOrientationTests {
     /// whose normal points out of it. Under the deduplicated walk the single surviving entry
     /// points out of one solid and into the other, so this fails on the normal itself.
     @Test("the shared wall, located geometrically, faces out of each solid")
-    func sharedWallFacesOutwardLocatedByGeometry() {
-        guard let compound = Self.splitBoxCompound() else {
+    func sharedWallFacesOutwardLocatedByGeometry() throws {
+        guard let compound = try Self.splitBoxCompound() else {
             Issue.record("could not build the split-box compound")
             return
         }
@@ -221,8 +221,8 @@ struct Issue614FaceOrientationTests {
     ///
     /// Pins that so the compound-level fix cannot regress it.
     @Test("enumerated per solid, every face already points outward")
-    func perSolidEnumerationIsOutward() {
-        guard let compound = Self.splitBoxCompound() else {
+    func perSolidEnumerationIsOutward() throws {
+        guard let compound = try Self.splitBoxCompound() else {
             Issue.record("could not build the split-box compound")
             return
         }
@@ -420,8 +420,8 @@ struct Issue614FaceOrientationTests {
     /// makes the threshold non-positive and admits faces that do not point up at all, including
     /// both sides of a *vertical* shared wall, whose normals have `n.z == 0`.
     @Test("a tolerance past pi/2 admits both sides of a vertical shared wall")
-    func upwardFacesRepeatsAtDegenerateTolerance() {
-        guard let compound = Self.splitBoxCompound() else {
+    func upwardFacesRepeatsAtDegenerateTolerance() throws {
+        guard let compound = try Self.splitBoxCompound() else {
             Issue.record("could not build the split-box compound")
             return
         }
@@ -443,8 +443,8 @@ struct Issue614FaceOrientationTests {
     /// `Face.orientation` is the flag the normal reverses on, so a caller can tell the two sides
     /// of a shared wall apart without re-deriving them.
     @Test("Face.orientation reports the flag the normal reverses on")
-    func orientationMatchesNormalFlip() {
-        guard let compound = Self.splitBoxCompound() else {
+    func orientationMatchesNormalFlip() throws {
+        guard let compound = try Self.splitBoxCompound() else {
             Issue.record("could not build the split-box compound")
             return
         }
