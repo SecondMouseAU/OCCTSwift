@@ -25,14 +25,13 @@ struct Curve2DProjectionParityTests {
         // #1979: the five spellings share one bridge path, so comparing them with each other
         // passed a wrong projection they all returned. Each case now also carries the
         // Geom2dAPI_ProjectPointOnCurve answer (Scripts/repro/766-geom2d-projection-simplify-transform/).
+        let segment = try #require(Self.segment)
+        let circle = try #require(Curve2D.circle(center: .zero, radius: 5))
         let cases: [(Curve2D, SIMD2<Double>, Double, Double)] = [
-            (try #require(Self.segment), SIMD2(5, 3), 5, 3),
-            (try #require(Self.segment), SIMD2(0.5, -2), 0.5, 2),
-            (try #require(Curve2D.circle(center: .zero, radius: 5)), SIMD2(10, 0), 0, 5),
-            (
-                try #require(Curve2D.circle(center: .zero, radius: 5)), SIMD2(3, 4),
-                atan2(4.0, 3.0), 0
-            ),
+            (segment, SIMD2(5, 3), 5, 3),
+            (segment, SIMD2(0.5, -2), 0.5, 2),
+            (circle, SIMD2(10, 0), 0, 5),
+            (circle, SIMD2(3, 4), atan2(4.0, 3.0), 0),
         ]
         for (curve, p, param, dist) in cases {
             guard let point2D = Point2D(x: p.x, y: p.y) else { continue }
@@ -73,12 +72,14 @@ struct Curve2DProjectionParityTests {
     /// only because the other four were asking the extrema question too.
     @Test("The four nearest-point entry points agree where there is no perpendicular foot")
     func noPerpendicularFootAgreesAcrossTheFour() throws {
+        let segment = try #require(Self.segment)
+        let circle = try #require(Curve2D.circle(center: .zero, radius: 5))
         let cases: [(Curve2D, SIMD2<Double>, Double)] = [
-            (try #require(Self.segment), SIMD2(100, 0), 90),  // past the end, nearest is (10, 0)
+            (segment, SIMD2(100, 0), 90),  // past the end, nearest is (10, 0)
             // Before the start, nearest is (0, 0)
-            (try #require(Self.segment), SIMD2(-50, 3), 2509.0.squareRoot()),
+            (segment, SIMD2(-50, 3), 2509.0.squareRoot()),
             // Centre: tied at r
-            (try #require(Curve2D.circle(center: .zero, radius: 5)), SIMD2(0, 0), 5),
+            (circle, SIMD2(0, 0), 5),
         ]
         for (curve, p, truth) in cases {
             let point2D = try #require(Point2D(x: p.x, y: p.y))

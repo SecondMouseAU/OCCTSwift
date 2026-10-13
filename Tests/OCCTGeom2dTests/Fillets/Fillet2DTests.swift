@@ -9,8 +9,8 @@ import Testing
 struct Fillet2DTests {
     @Test("Fillet single vertex of rectangular face")
     func filletSingleVertex() throws {
-        let unwrapped1 = try #require(Wire.rectangle(width: 20, height: 20))
-        let face = try #require(Shape.face(from: unwrapped1))
+        let wire = try #require(Wire.rectangle(width: 20, height: 20))
+        let face = try #require(Shape.face(from: wire))
         let result = try #require(face.fillet2D(vertexIndices: [0], radii: [3.0]))
         // Original rectangle has 4 edges, fillet adds 1 arc replacing corner
         #expect(result.edgeCount == 5)
@@ -22,8 +22,8 @@ struct Fillet2DTests {
 
     @Test("Fillet multiple vertices")
     func filletMultipleVertices() throws {
-        let unwrapped2 = try #require(Wire.rectangle(width: 20, height: 20))
-        let face = try #require(Shape.face(from: unwrapped2))
+        let wire = try #require(Wire.rectangle(width: 20, height: 20))
+        let face = try #require(Shape.face(from: wire))
         let result = try #require(
             face.fillet2D(vertexIndices: [0, 1, 2, 3], radii: [2.0, 2.0, 2.0, 2.0]))
         // 4 original edges + 4 fillet arcs = 8 edges, each corner losing 4 - pi.
@@ -34,16 +34,16 @@ struct Fillet2DTests {
 
     @Test("Fillet with zero count returns nil")
     func filletEmptyReturnsNil() throws {
-        let unwrapped3 = try #require(Wire.rectangle(width: 20, height: 20))
-        let face = try #require(Shape.face(from: unwrapped3))
+        let wire = try #require(Wire.rectangle(width: 20, height: 20))
+        let face = try #require(Shape.face(from: wire))
         let result = face.fillet2D(vertexIndices: [], radii: [])
         #expect(result == nil)
     }
 
     @Test("Chamfer between adjacent edges")
     func chamferAdjacentEdges() throws {
-        let unwrapped4 = try #require(Wire.rectangle(width: 20, height: 20))
-        let face = try #require(Shape.face(from: unwrapped4))
+        let wire = try #require(Wire.rectangle(width: 20, height: 20))
+        let face = try #require(Shape.face(from: wire))
         let result = try #require(face.chamfer2D(edgePairs: [(0, 1)], distances: [2.0]))
         // 4 edges + 1 chamfer = 5 edges, cutting off a triangle of area 2.
         #expect(result.edgeCount == 5)
@@ -53,8 +53,8 @@ struct Fillet2DTests {
 
     @Test("Chamfer mismatched arrays returns nil")
     func chamferMismatchedReturnsNil() throws {
-        let unwrapped5 = try #require(Wire.rectangle(width: 20, height: 20))
-        let face = try #require(Shape.face(from: unwrapped5))
+        let wire = try #require(Wire.rectangle(width: 20, height: 20))
+        let face = try #require(Shape.face(from: wire))
         let result = face.chamfer2D(edgePairs: [(0, 1)], distances: [])
         #expect(result == nil)
     }
