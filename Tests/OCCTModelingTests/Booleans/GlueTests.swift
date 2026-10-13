@@ -6,19 +6,20 @@ import Testing
 struct GlueTests {
 
     @Test("Glue two boxes")
-    func glueTwoBoxes() {
+    func glueTwoBoxes() throws {
         // Create two boxes that share a face
-        let box1 = Shape.box(width: 10, height: 10, depth: 10)!
-        let box2 = Shape.box(width: 10, height: 10, depth: 10)!
-            .translated(by: SIMD3(10, 0, 0))!
+        let box1 = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let box2 = try #require(
+            Shape.box(width: 10, height: 10, depth: 10)?
+                .translated(by: SIMD3(10, 0, 0)))
 
         let glued = Shape.glue(box1, box2, tolerance: 1e-6)
 
         #expect(glued != nil)
-        #expect(glued!.isValid)
+        #expect(try #require(glued).isValid)
 
         // Volume should be sum of both
-        let gluedVolume = glued!.volume ?? 0
+        let gluedVolume = try #require(glued).volume ?? 0
         let expectedVolume = 10.0 * 10.0 * 10.0 * 2
         #expect(abs(gluedVolume - expectedVolume) < 1.0)
     }
@@ -39,14 +40,15 @@ struct GlueTests {
     /// coincidence just as well as glue mode does, which is exactly why the original bug
     /// shipped with a passing test suite.
     @Test("Glue applies the caller's tolerance to a near-coincident face")
-    func glueAppliesTolerance() {
-        let box1 = Shape.box(origin: .zero, width: 10, height: 10, depth: 10)!
+    func glueAppliesTolerance() throws {
+        let box1 = try #require(Shape.box(origin: .zero, width: 10, height: 10, depth: 10))
         // A gap inside `tolerance` (1e-3) but outside OCCT's default confusion precision
         // (~1e-7), so only a boolean that actually applies the caller's tolerance treats
         // the two boxes as touching.
         let gap = 5e-5
-        let box2 = Shape.box(
-            origin: SIMD3(10 + gap, 0, 0), width: 10, height: 10, depth: 10)!
+        let box2 = try #require(
+            Shape.box(
+                origin: SIMD3(10 + gap, 0, 0), width: 10, height: 10, depth: 10))
 
         let glued = Shape.glue(box1, box2, tolerance: 1e-3)
 

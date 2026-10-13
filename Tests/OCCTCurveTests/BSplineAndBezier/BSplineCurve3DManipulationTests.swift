@@ -94,7 +94,7 @@ struct BSplineCurve3DManipulationTests {
         // The midpoint of the range IS the third knot, so inserting it there raises that knot's
         // multiplicity to 2 and adds a pole; the knot count does not change. The old
         // `knotCount >= nkBefore` was true for every outcome including "did nothing".
-        let mid = (Self.knots.first! + Self.knots.last!) / 2.0
+        let mid = try (#require(Self.knots.first) + #require(Self.knots.last)) / 2.0
         #expect(bsp.bspline.insertKnot(u: mid))
         #expect(bsp.bspline.knotCount == 5)
         #expect(bsp.bspline.multiplicities == [4, 1, 2, 1, 4])
@@ -148,7 +148,7 @@ struct BSplineCurve3DManipulationTests {
         // Insert a knot first (the third knot goes to multiplicity 2), then remove knot 2
         // entirely: the curve does not move by more than the 1.0 tolerance, so the kernel
         // accepts it. The old test discarded the result.
-        let mid = (Self.knots.first! + Self.knots.last!) / 2.0
+        let mid = try (#require(Self.knots.first) + #require(Self.knots.last)) / 2.0
         #expect(bsp.bspline.insertKnot(u: mid))
         #expect(bsp.bspline.removeKnot(at: 2, multiplicity: 0, tolerance: 1.0))
         #expect(bsp.bspline.knotCount == 4)

@@ -5,8 +5,8 @@ import Testing
 @Suite("Split by Angle")
 struct SplitByAngleTests {
     @Test("Split cylinder by 90 degrees")
-    func splitCylinder90() {
-        let cyl = Shape.cylinder(radius: 5, height: 10)!
+    func splitCylinder90() throws {
+        let cyl = try #require(Shape.cylinder(radius: 5, height: 10))
         let result = cyl.splitByAngle(90)
         #expect(result != nil)
         if let r = result {
@@ -17,8 +17,8 @@ struct SplitByAngleTests {
     }
 
     @Test("Split sphere by 90 degrees")
-    func splitSphere90() {
-        let sphere = Shape.sphere(radius: 5)!
+    func splitSphere90() throws {
+        let sphere = try #require(Shape.sphere(radius: 5))
         let result = sphere.splitByAngle(90)
         #expect(result != nil)
         if let r = result {
@@ -38,8 +38,8 @@ struct SplitByAngleTests {
     }
 
     @Test("Split cone by 180 degrees")
-    func splitCone180() {
-        let cone = Shape.cone(bottomRadius: 5, topRadius: 2, height: 10)!
+    func splitCone180() throws {
+        let cone = try #require(Shape.cone(bottomRadius: 5, topRadius: 2, height: 10))
         let result = cone.splitByAngle(180)
         #expect(result != nil)
         if let r = result {

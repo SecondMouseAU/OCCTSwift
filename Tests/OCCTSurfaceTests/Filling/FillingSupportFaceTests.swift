@@ -32,20 +32,20 @@ struct FillingSupportFaceTests {
     }
 
     /// The rim is the topmost closed edge of the truncated sphere.
-    private func rimEdge(of shape: Shape) -> Edge? {
-        shape.edges()
+    private func rimEdge(of shape: Shape) throws -> Edge? {
+        try shape.edges()
             .filter { $0.isClosed3D }
-            .max(by: { $0.bounds!.max.z < $1.bounds!.max.z })
+            .max(by: { try #require($0.bounds).max.z < #require($1.bounds).max.z })
     }
 
-    private func rimWire(of shape: Shape) -> Wire? {
-        guard let rim = rimEdge(of: shape) else { return nil }
+    private func rimWire(of shape: Shape) throws -> Wire? {
+        guard let rim = try rimEdge(of: shape) else { return nil }
         return Wire.wireFromEdges([rim])
     }
 
     @Test("Default parameters on a curved boundary return a surface instead of crashing")
     func defaultParametersOnCurvedBoundarySurvive() throws {
-        guard let bowl = bowl(), let rim = rimWire(of: bowl) else {
+        guard let bowl = bowl(), let rim = try rimWire(of: bowl) else {
             Issue.record("Failed to build the truncated-sphere fixture")
             return
         }
@@ -62,8 +62,8 @@ struct FillingSupportFaceTests {
     }
 
     @Test("Tangent fill against a support shape is not flat")
-    func tangentFillWithSupportIsNotFlat() {
-        guard let bowl = bowl(), let rim = rimWire(of: bowl) else {
+    func tangentFillWithSupportIsNotFlat() throws {
+        guard let bowl = bowl(), let rim = try rimWire(of: bowl) else {
             Issue.record("Failed to build the truncated-sphere fixture")
             return
         }
@@ -92,8 +92,8 @@ struct FillingSupportFaceTests {
     }
 
     @Test("Explicit per-edge constraint with a support face is tangent")
-    func explicitConstraintWithSupportFaceIsTangent() {
-        guard let bowl = bowl(), let rim = rimEdge(of: bowl) else {
+    func explicitConstraintWithSupportFaceIsTangent() throws {
+        guard let bowl = bowl(), let rim = try rimEdge(of: bowl) else {
             Issue.record("Failed to build the truncated-sphere fixture")
             return
         }
@@ -115,8 +115,8 @@ struct FillingSupportFaceTests {
     }
 
     @Test("Curvature continuity is accepted and differs from tangency")
-    func curvatureContinuityIsAccepted() {
-        guard let bowl = bowl(), let rim = rimWire(of: bowl) else {
+    func curvatureContinuityIsAccepted() throws {
+        guard let bowl = bowl(), let rim = try rimWire(of: bowl) else {
             Issue.record("Failed to build the truncated-sphere fixture")
             return
         }
@@ -143,8 +143,8 @@ struct FillingSupportFaceTests {
     }
 
     @Test("maxDegree caps the degree of the resulting surface (#431)")
-    func maxDegreeCapsResultingSurfaceDegree() {
-        guard let bowl = bowl(), let rim = rimWire(of: bowl) else {
+    func maxDegreeCapsResultingSurfaceDegree() throws {
+        guard let bowl = bowl(), let rim = try rimWire(of: bowl) else {
             Issue.record("Failed to build the truncated-sphere fixture")
             return
         }
@@ -178,7 +178,7 @@ struct FillingSupportFaceTests {
     @Test("The support shape, not the rim's own wall, supplies the tangent reference (#766)")
     func supportShapeOverridesTheRimsOwnWall() throws {
         let bowlShape = try #require(bowl(), "Failed to build the truncated-sphere fixture")
-        let rimEdgeOfBowl = try #require(rimEdge(of: bowlShape))
+        let rimEdgeOfBowl = try #require(try rimEdge(of: bowlShape))
         let rim = try #require(Wire.wireFromEdges([rimEdgeOfBowl]))
         let tangent = FillingParameters(continuity: .g1)
 
@@ -204,8 +204,8 @@ struct FillingSupportFaceTests {
     }
 
     @Test("A boundary edge absent from the support shape falls back rather than failing")
-    func edgeNotInSupportShapeFallsBack() {
-        guard let bowl = bowl(), let rim = rimWire(of: bowl) else {
+    func edgeNotInSupportShapeFallsBack() throws {
+        guard let bowl = bowl(), let rim = try rimWire(of: bowl) else {
             Issue.record("Failed to build the truncated-sphere fixture")
             return
         }
@@ -293,8 +293,8 @@ struct FillingSupportFaceTests {
     }
 
     @Test("An internal constraint pulls the surface without bounding it")
-    func internalConstraintIsNotABoundary() {
-        guard let bowl = bowl(), let rim = rimEdge(of: bowl) else {
+    func internalConstraintIsNotABoundary() throws {
+        guard let bowl = bowl(), let rim = try rimEdge(of: bowl) else {
             Issue.record("Failed to build the truncated-sphere fixture")
             return
         }
@@ -363,8 +363,8 @@ struct FillingSupportFaceTests {
     }
 
     @Test("A nominated support face that cannot serve is a failure, not a substitution")
-    func nominatedSupportFaceIsNotSilentlySubstituted() {
-        guard let bowl = bowl(), let rim = rimEdge(of: bowl) else {
+    func nominatedSupportFaceIsNotSilentlySubstituted() throws {
+        guard let bowl = bowl(), let rim = try rimEdge(of: bowl) else {
             Issue.record("Failed to build the truncated-sphere fixture")
             return
         }
@@ -403,8 +403,8 @@ struct FillingSupportFaceTests {
     }
 
     @Test("FillingSurface honours maxDegree instead of retargeting the iteration count (#431)")
-    func fillingSurfaceMaxDegreeIsHonoured() {
-        guard let bowl = bowl(), let rim = rimEdge(of: bowl) else {
+    func fillingSurfaceMaxDegreeIsHonoured() throws {
+        guard let bowl = bowl(), let rim = try rimEdge(of: bowl) else {
             Issue.record("Failed to build the truncated-sphere fixture")
             return
         }
@@ -425,7 +425,7 @@ struct FillingSupportFaceTests {
 
     @Test("FillingSurface survives a curved boundary above positional continuity (#432)")
     func fillingSurfaceCurvedBoundarySurvives() throws {
-        guard let bowl = bowl(), let rim = rimEdge(of: bowl) else {
+        guard let bowl = bowl(), let rim = try rimEdge(of: bowl) else {
             Issue.record("Failed to build the truncated-sphere fixture")
             return
         }
@@ -444,8 +444,8 @@ struct FillingSupportFaceTests {
     }
 
     @Test("FillingSurface maps .g1 to tangency and .g2 to curvature, not the reverse (#433)")
-    func fillingSurfaceContinuityMappingIsCorrect() {
-        guard let bowl = bowl(), let rim = rimEdge(of: bowl) else {
+    func fillingSurfaceContinuityMappingIsCorrect() throws {
+        guard let bowl = bowl(), let rim = try rimEdge(of: bowl) else {
             Issue.record("Failed to build the truncated-sphere fixture")
             return
         }
@@ -480,8 +480,8 @@ struct FillingSupportFaceTests {
     }
 
     @Test("add(edge:support:continuity:) rejects a support face that cannot serve (#434)")
-    func fillingSurfaceNominatedSupportFaceIsNotSilentlySubstituted() {
-        guard let bowl = bowl(), let rim = rimEdge(of: bowl) else {
+    func fillingSurfaceNominatedSupportFaceIsNotSilentlySubstituted() throws {
+        guard let bowl = bowl(), let rim = try rimEdge(of: bowl) else {
             Issue.record("Failed to build the truncated-sphere fixture")
             return
         }
@@ -505,8 +505,8 @@ struct FillingSupportFaceTests {
     @Test(
         "add(edge:support:continuity:) defaults to .g1, not .g0, so its default call validates support (#434 review)"
     )
-    func fillingSurfaceAddWithSupportDefaultsToG1() {
-        guard let bowl = bowl(), let rim = rimEdge(of: bowl) else {
+    func fillingSurfaceAddWithSupportDefaultsToG1() throws {
+        guard let bowl = bowl(), let rim = try rimEdge(of: bowl) else {
             Issue.record("Failed to build the truncated-sphere fixture")
             return
         }
@@ -542,8 +542,8 @@ struct FillingSupportFaceTests {
     }
 
     @Test("A refused add poisons build(), matching Shape.fill(constraints:) (#482)")
-    func fillingSurfaceRefusedConstraintPoisonsBuild() {
-        guard let bowl = bowl(), let rim = rimEdge(of: bowl) else {
+    func fillingSurfaceRefusedConstraintPoisonsBuild() throws {
+        guard let bowl = bowl(), let rim = try rimEdge(of: bowl) else {
             Issue.record("Failed to build the truncated-sphere fixture")
             return
         }
@@ -590,8 +590,8 @@ struct FillingSupportFaceTests {
     }
 
     @Test("Refusals accumulate and stay sticky across later successful adds (#482)")
-    func fillingSurfaceRefusalIsStickyAndCounted() {
-        guard let bowl = bowl(), let rim = rimEdge(of: bowl) else {
+    func fillingSurfaceRefusalIsStickyAndCounted() throws {
+        guard let bowl = bowl(), let rim = try rimEdge(of: bowl) else {
             Issue.record("Failed to build the truncated-sphere fixture")
             return
         }

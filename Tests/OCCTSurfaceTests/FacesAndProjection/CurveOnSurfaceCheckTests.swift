@@ -6,8 +6,8 @@ import Testing
 struct CurveOnSurfaceCheckTests {
 
     @Test("Box has consistent edge curves")
-    func boxConsistency() {
-        let box = Shape.box(width: 10, height: 20, depth: 30)!
+    func boxConsistency() throws {
+        let box = try #require(Shape.box(width: 10, height: 20, depth: 30))
         let check = box.curveOnSurfaceCheck
         #expect(check != nil)
         if let check {
@@ -17,8 +17,8 @@ struct CurveOnSurfaceCheckTests {
     }
 
     @Test("Sphere has consistent edge curves")
-    func sphereConsistency() {
-        let sphere = Shape.sphere(radius: 10)!
+    func sphereConsistency() throws {
+        let sphere = try #require(Shape.sphere(radius: 10))
         let check = sphere.curveOnSurfaceCheck
         #expect(check != nil)
         if let check {
@@ -27,8 +27,8 @@ struct CurveOnSurfaceCheckTests {
     }
 
     @Test("Cylinder has consistent edge curves")
-    func cylinderConsistency() {
-        let cyl = Shape.cylinder(radius: 5, height: 10)!
+    func cylinderConsistency() throws {
+        let cyl = try #require(Shape.cylinder(radius: 5, height: 10))
         let check = cyl.curveOnSurfaceCheck
         #expect(check != nil)
         if let check {
@@ -37,9 +37,9 @@ struct CurveOnSurfaceCheckTests {
     }
 
     @Test("Fused shapes have consistent curves")
-    func fusedConsistency() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
-        let sphere = Shape.sphere(radius: 7)!
+    func fusedConsistency() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let sphere = try #require(Shape.sphere(radius: 7))
         let fused = box.union(sphere)
         #expect(fused != nil)
         if let fused {

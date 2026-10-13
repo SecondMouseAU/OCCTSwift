@@ -9,9 +9,9 @@ import Testing
 struct TDataStdIntegerArrayTests {
 
     @Test("Initialize and use integer array")
-    func initAndUse() {
-        let doc = Document.create()!
-        let label = doc.createLabel()!
+    func initAndUse() throws {
+        let doc = try #require(Document.create())
+        let label = try #require(doc.createLabel())
         let ok = label.initIntegerArray(lower: 1, upper: 5)
         #expect(ok)
 
@@ -30,9 +30,9 @@ struct TDataStdIntegerArrayTests {
     }
 
     @Test("Out of bounds returns nil")
-    func outOfBounds() {
-        let doc = Document.create()!
-        let label = doc.createLabel()!
+    func outOfBounds() throws {
+        let doc = try #require(Document.create())
+        let label = try #require(doc.createLabel())
         label.initIntegerArray(lower: 0, upper: 2)
         #expect(label.integerArrayValue(at: 99) == nil)
     }

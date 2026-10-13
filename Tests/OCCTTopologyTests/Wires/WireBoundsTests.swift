@@ -6,10 +6,10 @@ import Testing
 
 @Suite("Wire.bounds property") struct WireBoundsTests {
     @Test("Wire rectangle has correct bounds")
-    func rectangleBounds() {
+    func rectangleBounds() throws {
         let wire = Wire.rectangle(width: 10, height: 6)
         if let wire {
-            let b = wire.bounds!
+            let b = try #require(wire.bounds)
             #expect(b.min.x < b.max.x)
             #expect(b.min.y < b.max.y)
             #expect(abs(b.max.x - b.min.x - 10) < 0.01)
@@ -18,10 +18,10 @@ import Testing
     }
 
     @Test("Wire circle has correct bounds")
-    func circleBounds() {
+    func circleBounds() throws {
         let wire = Wire.circle(radius: 5)
         if let wire {
-            let b = wire.bounds!
+            let b = try #require(wire.bounds)
             #expect(abs(b.max.x - b.min.x - 10) < 0.01)
             #expect(abs(b.max.y - b.min.y - 10) < 0.01)
         }

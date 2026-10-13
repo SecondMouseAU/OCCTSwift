@@ -9,8 +9,8 @@ import Testing
 struct TNamingCopyShapeTests {
 
     @Test("Deep copy a box shape")
-    func deepCopyBox() {
-        let box = Shape.box(width: 10, height: 20, depth: 30)!
+    func deepCopyBox() throws {
+        let box = try #require(Shape.box(width: 10, height: 20, depth: 30))
         if let copy = box.deepCopy() {
             #expect(copy.isValid)
             #expect(copy !== box)

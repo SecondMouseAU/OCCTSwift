@@ -25,17 +25,17 @@ struct SelectorSubShapeTests {
     }
 
     @Test("Mode 0 (shape) is active by default")
-    func defaultMode() {
+    func defaultMode() throws {
         let selector = Selector()
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         selector.add(shape: box, id: 1)
         #expect(selector.isModeActive(.shape, for: 1) == true)
     }
 
     @Test("Activate face mode")
-    func activateFaceMode() {
+    func activateFaceMode() throws {
         let selector = Selector()
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         selector.add(shape: box, id: 1)
 
         selector.activateMode(.face, for: 1)
@@ -43,9 +43,9 @@ struct SelectorSubShapeTests {
     }
 
     @Test("Deactivate mode")
-    func deactivateMode() {
+    func deactivateMode() throws {
         let selector = Selector()
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         selector.add(shape: box, id: 1)
 
         selector.activateMode(.face, for: 1)
@@ -56,8 +56,8 @@ struct SelectorSubShapeTests {
     }
 
     @Test("Face mode pick returns face sub-shape type")
-    func faceModePick() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func faceModePick() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let cam = makeCamera()
 
         let selector = Selector()
@@ -83,8 +83,8 @@ struct SelectorSubShapeTests {
     }
 
     @Test("Edge mode pick returns edge sub-shape type")
-    func edgeModePick() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func edgeModePick() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let cam = makeCamera()
 
         let selector = Selector()
@@ -123,8 +123,8 @@ struct SelectorSubShapeTests {
     }
 
     @Test("Shape mode pick returns the whole-shape sentinel, not an index")
-    func shapeModePick() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func shapeModePick() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let cam = makeCamera()
 
         let selector = Selector()

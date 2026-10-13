@@ -7,8 +7,8 @@ import Testing
 struct SelectorTests {
 
     @Test("Add and pick box at center")
-    func pickBoxAtCenter() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func pickBoxAtCenter() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let cam = Camera()
         cam.eye = SIMD3(0, 0, 50)
         cam.center = SIMD3(0, 0, 0)
@@ -39,10 +39,11 @@ struct SelectorTests {
     }
 
     @Test("Nearest shape along the ray is reported first")
-    func nearestShapeFirst() {
-        let near = Shape.box(width: 10, height: 10, depth: 10)!
-        let far = Shape.box(width: 10, height: 10, depth: 10)!
-            .translated(by: SIMD3(0, 0, -30))!
+    func nearestShapeFirst() throws {
+        let near = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let far = try #require(
+            Shape.box(width: 10, height: 10, depth: 10)?
+                .translated(by: SIMD3(0, 0, -30)))
 
         let cam = Camera()
         cam.eye = SIMD3(0, 0, 50)
@@ -73,8 +74,8 @@ struct SelectorTests {
     }
 
     @Test("Pick miss at far corner")
-    func pickMiss() {
-        let box = Shape.box(width: 1, height: 1, depth: 1)!
+    func pickMiss() throws {
+        let box = try #require(Shape.box(width: 1, height: 1, depth: 1))
         let cam = Camera()
         cam.eye = SIMD3(0, 0, 50)
         cam.center = SIMD3(0, 0, 0)
@@ -103,11 +104,13 @@ struct SelectorTests {
     }
 
     @Test("Multiple shapes return correct IDs")
-    func multipleShapes() {
-        let box1 = Shape.box(width: 10, height: 10, depth: 10)!
-            .translated(by: SIMD3(-20, 0, 0))!
-        let box2 = Shape.box(width: 10, height: 10, depth: 10)!
-            .translated(by: SIMD3(20, 0, 0))!
+    func multipleShapes() throws {
+        let box1 = try #require(
+            Shape.box(width: 10, height: 10, depth: 10)?
+                .translated(by: SIMD3(-20, 0, 0)))
+        let box2 = try #require(
+            Shape.box(width: 10, height: 10, depth: 10)?
+                .translated(by: SIMD3(20, 0, 0)))
 
         let cam = Camera()
         cam.eye = SIMD3(0, 0, 100)
@@ -136,8 +139,8 @@ struct SelectorTests {
     }
 
     @Test("Remove shape then pick returns miss")
-    func removeShape() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func removeShape() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
 
         let selector = Selector()
         selector.add(shape: box, id: 99)
@@ -170,8 +173,8 @@ struct SelectorTests {
     }
 
     @Test("Rectangle pick covers geometry")
-    func rectanglePick() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func rectanglePick() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
 
         let cam = Camera()
         cam.eye = SIMD3(0, 0, 50)
@@ -199,9 +202,9 @@ struct SelectorTests {
     }
 
     @Test("Clear all removes everything")
-    func clearAll() {
+    func clearAll() throws {
         let selector = Selector()
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         selector.add(shape: box, id: 1)
         selector.add(shape: box, id: 2)
 
