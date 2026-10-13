@@ -668,9 +668,8 @@ OCCTShapeRef OCCTShapeCircularPattern(OCCTShapeRef shape,
     gp_Dir axisDir(axisDirX, axisDirY, axisDirZ);
     gp_Ax1 axis(axisPoint, axisDir);
 
-    // If angle is 0, use full circle
-    double totalAngle = (angle == 0) ? (2.0 * M_PI) : angle;
-    double stepAngle  = totalAngle / count;
+    // `angle` is the total span, the last copy sits at `angle` (#3356); 0 is a full circle.
+    const double stepAngle = occtCircularPatternStep(angle, count);
 
     for (int32_t i = 0; i < count; i++)
     {

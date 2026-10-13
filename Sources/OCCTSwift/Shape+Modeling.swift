@@ -1718,6 +1718,9 @@ extension Shape {
     ///, see ``circularPattern(axisPoint:axisDirection:count:angle:)`` for what
     /// "duplicates the whole body" means for feature-cut use cases.
     ///
+    /// `angle` is the total span from the original to the last copy (`0` for a full circle), with
+    /// the same spacing as ``circularPattern(axisPoint:axisDirection:count:angle:)``.
+    ///
     /// - Returns: `(result, history)` where `result` is a compound of all copies.
     public func circularPatternWithFullHistory(
         axisPoint: SIMD3<Double>, axisDirection: SIMD3<Double>,

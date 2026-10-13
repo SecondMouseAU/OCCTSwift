@@ -1,3 +1,4 @@
+import Foundation
 import Testing
 
 @testable import OCCTSwift
@@ -106,6 +107,28 @@ struct TransformPatternFullHistoryTests {
             #expect(
                 rec.modified.count == count,
                 "expected \(count) pattern-instance faces, got \(rec.modified.count)")
+        }
+    }
+
+    @Test("Circular pattern history steps a partial angle by angle / (count - 1)")
+    func circularPatternHistoryPartialAngle() throws {
+        // #3356: the same step as `circularPattern`, since both bridge functions share it.
+        let box = try #require(
+            Shape.box(width: 5, height: 5, depth: 5)?.translated(by: SIMD3(15, 0, 0)))
+        let r = try #require(
+            box.circularPatternWithFullHistory(
+                axisPoint: .zero, axisDirection: SIMD3(0, 0, 1), count: 3, angle: .pi / 2))
+        var angles: [Double] = []
+        for solid in r.result.subShapes(ofType: .solid) {
+            let c = try #require(solid.center)
+            angles.append(atan2(c.y, c.x) * 180 / Double.pi)
+        }
+        angles.sort()
+        #expect(angles.count == 3)
+        if angles.count == 3 {
+            #expect(abs(angles[0]) < 1e-6)
+            #expect(abs(angles[1] - 45) < 1e-6)
+            #expect(abs(angles[2] - 90) < 1e-6)
         }
     }
 
