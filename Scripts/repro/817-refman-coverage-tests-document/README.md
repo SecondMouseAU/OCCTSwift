@@ -313,7 +313,7 @@ one of three buckets, none of them "asserts a contract the refman doesn't suppor
   `BRepGraphAttributeTests.swift` determinism claims, about OCCTSwift's own wrapper object model,
   not an OCCT class at all — `BRepGraph`/`NodeRef` are this project's own abstraction).
 - **Self-verifying regression tests for already-fixed, already-documented bugs**
-  (`Issue970TransactionAPITests.swift:111`'s "never greater than 1" restates #970's own correction,
+  (`TransactionNamingTests.swift:111`'s "never greater than 1" restates #970's own correction,
   already in #810's `KNOWN_OVER_FINDINGS`; `XDEColorToolByShapeTests.swift:49` and
   `STEPWriterCAFCorruptionTests.swift:41` both restate already-filed, already-fixed bugs, #763 and
   #280 respectively, with a test that would fail loudly if OCCT's behaviour ever changed, which is

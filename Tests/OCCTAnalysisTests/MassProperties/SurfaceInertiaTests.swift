@@ -7,7 +7,7 @@ import Testing
 struct SurfaceInertiaTests {
     @Test("Box surface inertia")
     func boxSurfaceInertia() throws {
-        let box = Shape.box(width: 10, height: 20, depth: 30)!
+        let box = try #require(Shape.box(width: 10, height: 20, depth: 30))
         let inertia = box.surfaceInertia
         #expect(inertia != nil)
         if let inertia {
@@ -70,7 +70,7 @@ struct SurfaceInertiaTests {
 
     @Test("Surface inertia symmetry agrees with legacy surfaceInertiaProperties")
     func surfaceInertiaMatchesLegacySymmetry() throws {
-        let sphere = Shape.sphere(radius: 5)!
+        let sphere = try #require(Shape.sphere(radius: 5))
         let legacy = sphere.surfaceInertiaProperties()
         let modern = sphere.surfaceInertia
         #expect(legacy != nil)
