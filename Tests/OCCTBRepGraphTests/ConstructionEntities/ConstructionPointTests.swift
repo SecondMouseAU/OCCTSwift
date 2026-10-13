@@ -54,6 +54,17 @@ struct ConstructionPointTests {
         } else {
             Issue.record("expected degenerate")
         }
+
+        // The control: turn the axis to run through the plane and the same call resolves, to the
+        // axis's own foot on it, so `.degenerate` is the parallel case and not every answer.
+        let crossing = ConstructionAxis.absolute(origin: SIMD3(2, 3, 5), direction: SIMD3(0, 0, 1))
+        switch graph.resolve(ConstructionPoint.intersectionOfAxisAndPlane(crossing, plane)) {
+        case .success(let p):
+            #expect(abs(p.x - 2) < 1e-9, "x of \(p)")
+            #expect(abs(p.y - 3) < 1e-9, "y of \(p)")
+            #expect(abs(p.z) < 1e-9, "z of \(p)")
+        case .failure(let e): Issue.record("crossing axis failed: \(e)")
+        }
     }
 
     @Test("intersectionOfAxisAndPlane computes correct intersection")
