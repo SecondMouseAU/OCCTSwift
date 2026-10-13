@@ -27,19 +27,21 @@ struct Issue1477Geom2dCurvesTests {
     ///
     /// Ground-truthed standalone (`clang++` against the pinned kernel, bypassing the bridge):
     /// 11 pieces at tolerance 0.1 / angleTolerance 0.1, reliably more than a small buffer.
-    private func manySegmentCurve() -> Curve2D {
-        let l1 = Curve2D.segment(from: SIMD2(0, 0), to: SIMD2(10, 0))!
-        let arc1 = Curve2D.arcOfCircle(
-            center: SIMD2(10, 5), radius: 5, startAngle: -.pi / 2, endAngle: .pi / 2)!
-        let l2 = Curve2D.segment(from: SIMD2(10, 10), to: SIMD2(0, 10))!
-        let arc2 = Curve2D.arcOfCircle(
-            center: SIMD2(0, 5), radius: 5, startAngle: .pi / 2, endAngle: 3 * .pi / 2)!
-        return Curve2D.join([l1, arc1, l2, arc2], tolerance: 1e-6)!
+    private func manySegmentCurve() throws -> Curve2D {
+        let l1 = try #require(Curve2D.segment(from: SIMD2(0, 0), to: SIMD2(10, 0)))
+        let arc1 = try #require(
+            Curve2D.arcOfCircle(
+                center: SIMD2(10, 5), radius: 5, startAngle: -.pi / 2, endAngle: .pi / 2))
+        let l2 = try #require(Curve2D.segment(from: SIMD2(10, 10), to: SIMD2(0, 10)))
+        let arc2 = try #require(
+            Curve2D.arcOfCircle(
+                center: SIMD2(0, 5), radius: 5, startAngle: .pi / 2, endAngle: 3 * .pi / 2))
+        return try #require(Curve2D.join([l1, arc1, l2, arc2], tolerance: 1e-6))
     }
 
     @Test("returned count never exceeds a small buffer's capacity, and matches what was written")
     func returnedCountMatchesWritten() throws {
-        let curve = manySegmentCurve()
+        let curve = try manySegmentCurve()
 
         // First, measure the true (unclipped) piece count with a generously sized buffer, so the
         // test doesn't depend on a hardcoded OCCT-version-specific number.
@@ -91,22 +93,22 @@ struct Issue1477Geom2dCurvesTests {
     // MARK: - Finding 2: silently-dropped curve on a failed Add
 
     @Test("join fails (returns nil) when a curve cannot attach, rather than silently dropping it")
-    func joinFailsOnGappedCurve() {
-        let c1 = Curve2D.segment(from: SIMD2(0, 0), to: SIMD2(1, 0))!
+    func joinFailsOnGappedCurve() throws {
+        let c1 = try #require(Curve2D.segment(from: SIMD2(0, 0), to: SIMD2(1, 0)))
         // Disjoint from c1: no shared endpoint within tolerance, so Add() must return false.
-        let c2 = Curve2D.segment(from: SIMD2(50, 50), to: SIMD2(51, 50))!
+        let c2 = try #require(Curve2D.segment(from: SIMD2(50, 50), to: SIMD2(51, 50)))
 
         let joined = Curve2D.join([c1, c2], tolerance: 1e-6)
         #expect(joined == nil, "a gapped curve must fail the whole join, not be silently dropped")
     }
 
     @Test("join fails when curves are out of order and don't chain end-to-end")
-    func joinFailsOnOutOfOrderCurves() {
+    func joinFailsOnOutOfOrderCurves() throws {
         // Three curves that DO chain (0,0)-(1,0)-(1,1)-(0,1), but supplied in a scrambled order
         // so no two consecutive entries in the array share an endpoint.
-        let a = Curve2D.segment(from: SIMD2(0, 0), to: SIMD2(1, 0))!
-        let b = Curve2D.segment(from: SIMD2(1, 0), to: SIMD2(1, 1))!
-        let c = Curve2D.segment(from: SIMD2(1, 1), to: SIMD2(0, 1))!
+        let a = try #require(Curve2D.segment(from: SIMD2(0, 0), to: SIMD2(1, 0)))
+        let b = try #require(Curve2D.segment(from: SIMD2(1, 0), to: SIMD2(1, 1)))
+        let c = try #require(Curve2D.segment(from: SIMD2(1, 1), to: SIMD2(0, 1)))
 
         let joined = Curve2D.join([a, c, b], tolerance: 1e-6)
         #expect(
@@ -116,8 +118,8 @@ struct Issue1477Geom2dCurvesTests {
 
     @Test("join still succeeds for genuinely continuous curves")
     func joinSucceedsOnContinuousCurves() throws {
-        let c1 = Curve2D.segment(from: SIMD2(0, 0), to: SIMD2(5, 5))!
-        let c2 = Curve2D.segment(from: SIMD2(5, 5), to: SIMD2(10, 0))!
+        let c1 = try #require(Curve2D.segment(from: SIMD2(0, 0), to: SIMD2(5, 5)))
+        let c2 = try #require(Curve2D.segment(from: SIMD2(5, 5), to: SIMD2(10, 0)))
         // #1979: `!= nil` only. The joined B-spline runs (0, 0) to (10, 0), as
         // Geom2dConvert_CompCurveToBSplineCurve gives (Scripts/repro/766-geom2d-issue-regressions-a/).
         let joined = try #require(Curve2D.join([c1, c2]))

@@ -82,17 +82,18 @@ struct Curve2DBSplineTests {
     }
 
     @Test("Pole count query")
-    func poleCountQuery() {
-        let bez = Curve2D.bezier(poles: [SIMD2(0, 0), SIMD2(5, 10), SIMD2(10, 5), SIMD2(15, 0)])!
+    func poleCountQuery() throws {
+        let bez = try #require(
+            Curve2D.bezier(poles: [SIMD2(0, 0), SIMD2(5, 10), SIMD2(10, 5), SIMD2(15, 0)]))
         #expect(bez.poleCount == 4)
         #expect(bez.degree == 3)
     }
 
     @Test("Poles roundtrip")
-    func polesRoundtrip() {
+    func polesRoundtrip() throws {
         let original: [SIMD2<Double>] = [SIMD2(0, 0), SIMD2(5, 10), SIMD2(10, 0)]
-        let bez = Curve2D.bezier(poles: original)!
-        let retrieved = bez.poles!
+        let bez = try #require(Curve2D.bezier(poles: original))
+        let retrieved = try #require(bez.poles)
         #expect(retrieved.count == 3)
         for i in 0..<3 {
             #expect(abs(retrieved[i].x - original[i].x) < 1e-10)
@@ -102,9 +103,10 @@ struct Curve2DBSplineTests {
 
     @Test("Draw interpolated curve")
     func drawInterpolated() throws {
-        let curve = Curve2D.interpolate(through: [
-            SIMD2(0, 0), SIMD2(5, 5), SIMD2(10, 0),
-        ])!
+        let curve = try #require(
+            Curve2D.interpolate(through: [
+                SIMD2(0, 0), SIMD2(5, 5), SIMD2(10, 0),
+            ]))
         let points = curve.drawAdaptive()
         // #1979: `count >= 3` passed a sampler that returned almost nothing. GCPnts_TangentialDeflection
         // at the default (0.1, 0.01) gives 30 points from (0, 0) to (10, 0).

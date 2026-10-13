@@ -111,8 +111,8 @@ struct Curve2DTests {
     }
 
     @Test("Evaluate segment midpoint")
-    func evaluateSegmentMidpoint() {
-        let seg = Curve2D.segment(from: SIMD2(0, 0), to: SIMD2(10, 0))!
+    func evaluateSegmentMidpoint() throws {
+        let seg = try #require(Curve2D.segment(from: SIMD2(0, 0), to: SIMD2(10, 0)))
         let domain = seg.domain
         let mid = (domain.lowerBound + domain.upperBound) / 2
         let p = seg.point(at: mid)
@@ -121,8 +121,8 @@ struct Curve2DTests {
     }
 
     @Test("Circle point at 0 and pi/2")
-    func circlePoints() {
-        let circle = Curve2D.circle(center: .zero, radius: 5)!
+    func circlePoints() throws {
+        let circle = try #require(Curve2D.circle(center: .zero, radius: 5))
         let p0 = circle.point(at: 0)
         let pHalfPi = circle.point(at: .pi / 2)
         #expect(abs(p0.x - 5) < 1e-10)
@@ -132,8 +132,8 @@ struct Curve2DTests {
     }
 
     @Test("D1 returns non-zero tangent")
-    func d1Tangent() {
-        let seg = Curve2D.segment(from: SIMD2(0, 0), to: SIMD2(10, 5))!
+    func d1Tangent() throws {
+        let seg = try #require(Curve2D.segment(from: SIMD2(0, 0), to: SIMD2(10, 5)))
         let result = seg.d1(at: seg.domain.lowerBound)
         let tangentLen = sqrt(
             result.tangent.x * result.tangent.x + result.tangent.y * result.tangent.y)
@@ -148,8 +148,8 @@ struct Curve2DTests {
     // picks as the circle's own parametric origin: an exact, refman-groundable relationship
     // rather than a magic-number pin.
     @Test("D2 second derivative of a circle points from the curve back to its own center")
-    func d2SecondDerivative() {
-        let circle = Curve2D.circle(center: SIMD2(0, 0), radius: 5)!
+    func d2SecondDerivative() throws {
+        let circle = try #require(Curve2D.circle(center: SIMD2(0, 0), radius: 5))
         let u = circle.domain.lowerBound
         let result = circle.d2(at: u)
         #expect(abs(result.d2.x - (-result.point.x)) < 1e-9)
@@ -157,16 +157,16 @@ struct Curve2DTests {
     }
 
     @Test("Adaptive draw on circle produces at least 10 points")
-    func adaptiveDrawCircle() {
-        let circle = Curve2D.circle(center: .zero, radius: 5)!
+    func adaptiveDrawCircle() throws {
+        let circle = try #require(Curve2D.circle(center: .zero, radius: 5))
         let points = circle.drawAdaptive()
         #expect(points.count >= 10)
         #expect(points.count == 64)  // GCPnts_TangentialDeflection(0.1, 0.01)
     }
 
     @Test("Uniform draw produces exact count")
-    func uniformDraw() {
-        let circle = Curve2D.circle(center: .zero, radius: 5)!
+    func uniformDraw() throws {
+        let circle = try #require(Curve2D.circle(center: .zero, radius: 5))
         let points = circle.drawUniform(pointCount: 32)
         #expect(points.count == 32)
     }
@@ -224,24 +224,24 @@ struct Curve2DTests {
     }
 
     @Test("Uniform draw rejects counts below two")
-    func uniformDrawRejectsCountsBelowTwo() {
-        let circle = Curve2D.circle(center: .zero, radius: 5)!
+    func uniformDrawRejectsCountsBelowTwo() throws {
+        let circle = try #require(Curve2D.circle(center: .zero, radius: 5))
         for count in [0, 1] {
             #expect(circle.drawUniform(pointCount: count).isEmpty)
         }
     }
 
     @Test("Deflection draw produces points")
-    func deflectionDraw() {
-        let circle = Curve2D.circle(center: .zero, radius: 5)!
+    func deflectionDraw() throws {
+        let circle = try #require(Curve2D.circle(center: .zero, radius: 5))
         let points = circle.drawDeflection(deflection: 0.1)
         #expect(points.count >= 4)
         #expect(points.count == 17)  // GCPnts_UniformDeflection(0.1)
     }
 
     @Test("Adaptive draw on segment produces at least 2 points")
-    func adaptiveDrawSegment() {
-        let seg = Curve2D.segment(from: SIMD2(0, 0), to: SIMD2(10, 5))!
+    func adaptiveDrawSegment() throws {
+        let seg = try #require(Curve2D.segment(from: SIMD2(0, 0), to: SIMD2(10, 5)))
         let points = seg.drawAdaptive()
         #expect(points.count == 2)  // a straight segment needs only its ends
     }
