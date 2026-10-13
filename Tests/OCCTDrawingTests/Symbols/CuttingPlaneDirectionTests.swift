@@ -22,7 +22,7 @@ import Testing
 //
 // Ground truth: the same `nearDegenerate` viewDirection and OCCT `gp_Ax2`-verified
 // `expectedRight`/`expectedUp` as `Issue881DrawingPerpendicularBasisTests`
-// (`Issue881PerpendicularBasisTests.swift`), confirmed there to equal `perpendicularBasis(to:
+// (`ProjectionPerpendicularBasisTests.swift`), confirmed there to equal `perpendicularBasis(to:
 // nearDegenerate)`'s own `(right, up)` exactly. Every expected value below is derived from those
 // two constants with plain vector algebra (`cross`/`dot`, verified independently in Python before
 // writing this file), never by calling `projectDirectionToPlane`, `projectPointToPlane`, or
