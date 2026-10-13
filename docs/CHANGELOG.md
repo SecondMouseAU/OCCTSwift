@@ -21,6 +21,8 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+`BRepGraph.edgeAddInternalVertex(_:vertexIndex:)` and `BRepGraph.faceAddVertex(_:vertexIndex:)` now return nil for a vertex index the graph does not have. Before, such an index was read past the vertex table and could crash the process.
+
 ### `Document.loadOCAF(from:)` no longer crashes or hangs on a damaged file (#3318)
 
 `Document.loadOCAF(from:)` no longer crashes or hangs the process on an empty file, a non-OCAF text file, a valid binary magic number followed by garbage, an XML file naming a binary format, or an XML file with an unterminated declaration. An XML file that OCCT can load (any prolog size, BOM, DOCTYPE, no declaration) still loads; one that is not an OCAF document now returns `(nil, .driverFailure)` instead of an empty document. A missing file still returns `.unknownDocument`. The faults are in OCCT and the guard sits in the bridge; the kernel follow-up is #3330. (#3318)
