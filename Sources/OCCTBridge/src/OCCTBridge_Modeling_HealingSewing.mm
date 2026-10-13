@@ -830,7 +830,7 @@ struct OcctPerFaceOffset
 //
 // The groups are computed with the same BRepOffset_Analyse, tolerance angle and AddFaces calls
 // UpdateFaceOffset makes (TolAngle from :882-884, Analyse::Perform at :890, AddFaces at
-// :2366-2374), so the answer cannot differ from the kernel's own propagation.
+// :2368-2375), so the answer cannot differ from the kernel's own propagation.
 static bool occtPerFaceOffsetsConflict(const TopoDS_Shape&                   shape,
                                        double                                defaultOffset,
                                        double                                tolerance,
