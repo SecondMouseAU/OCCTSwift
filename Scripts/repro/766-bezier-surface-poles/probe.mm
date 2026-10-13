@@ -1,4 +1,4 @@
-// Epic #766, BezierSurfaceCompletionsTests.swift, BezierSurfaceCompletionsV129Tests.swift and
+// Epic #766, BezierSurfaceCompletionsTests.swift, BezierSurfacePoleEditingTests.swift and
 // BezierSurfaceWeightTests.swift: kernel parity for the nine pole/weight editing tests. The same
 // Geom_BezierSurface edits the bridge makes (InsertPoleCol/RowAfter/Before, RemovePoleCol/Row,
 // Increase, U/VReverse, SetPoleCol/Row with and without weights, SetWeightCol/Row), on the same

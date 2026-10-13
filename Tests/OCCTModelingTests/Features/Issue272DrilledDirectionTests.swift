@@ -23,14 +23,16 @@ struct Issue272DrilledDirectionTests {
 
     // Block centered at origin: X[-30,30] (60 wide), Y[-10,10] (20), Z[-6,6] (12 thick).
     // X extent (60) >> Z extent (12), so an X-bore and a Z-bore remove very different volumes.
-    private func makeBlock() -> Shape { Shape.box(width: 60, height: 20, depth: 12)! }
+    private func makeBlock() throws -> Shape {
+        try #require(Shape.box(width: 60, height: 20, depth: 12))
+    }
     private let radius = 3.0
 
     /// Drilling +X through the wide axis removes material along X, proving the bore follows the
     /// requested direction rather than +Z. Under the old bug this removed ~nothing.
     @Test("Drilling +X bores along X (not Z): removes the full X-extent of material")
-    func drillsAlongXNotZ() {
-        let block = makeBlock()
+    func drillsAlongXNotZ() throws {
+        let block = try makeBlock()
         let original = block.volume ?? 0
 
         // Enter from just outside the -X face, bore along +X, through-hole (depth 0).
@@ -64,15 +66,15 @@ struct Issue272DrilledDirectionTests {
     /// With the old hardcoded-Z bridge both directions bored
     /// up Z, so this discrimination was impossible.
     @Test("Drilling +X vs +Z on the same block removes different material")
-    func xAndZBoresDiffer() {
-        let original = makeBlock().volume ?? 0
+    func xAndZBoresDiffer() throws {
+        let original = try makeBlock().volume ?? 0
 
         guard
-            let drilledX = makeBlock().drilled(
+            let drilledX = try makeBlock().drilled(
                 at: SIMD3(-31, 0, 0),
                 direction: SIMD3(1, 0, 0),
                 radius: radius, depth: 0),
-            let drilledZ = makeBlock().drilled(
+            let drilledZ = try makeBlock().drilled(
                 at: SIMD3(0, 0, 7),
                 direction: SIMD3(0, 0, -1),
                 radius: radius, depth: 0)

@@ -8,7 +8,7 @@ import Testing
 @Suite("Integration: Thickness Analysis")
 struct IntegrationThicknessAnalysisTests {
 
-    @Test func shelledBoxWallThickness() {
+    @Test func shelledBoxWallThickness() throws {
         let wallThickness = 2.0
         guard let box = Shape.box(width: 40, height: 40, depth: 40) else {
             #expect(false, "Failed to create box")
@@ -72,7 +72,7 @@ struct IntegrationThicknessAnalysisTests {
                 if len < 1e-10 { continue }
                 let normalized = n.normalized
 
-                let fb = face.bounds!
+                let fb = try #require(face.bounds)
                 let centroid = (fb.min + fb.max) / 2.0
 
                 // Cast ray inward (opposite of outward normal)

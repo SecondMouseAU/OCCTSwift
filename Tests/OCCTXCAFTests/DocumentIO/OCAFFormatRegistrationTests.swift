@@ -17,8 +17,8 @@ struct OCAFFormatRegistrationTests {
     ]
 
     @Test("Register all format drivers")
-    func registerFormats() {
-        let doc = Document.create()!
+    func registerFormats() throws {
+        let doc = try #require(Document.create())
         // Nothing is registered until defineAllFormats runs, so the assertion
         // below is about that call and not about an application that arrives
         // pre-populated.
@@ -31,8 +31,8 @@ struct OCAFFormatRegistrationTests {
     }
 
     @Test("Reading and writing formats")
-    func readWriteFormats() {
-        let doc = Document.create()!
+    func readWriteFormats() throws {
+        let doc = try #require(Document.create())
         doc.defineAllFormats()
         let reading = doc.readingFormats
         let writing = doc.writingFormats

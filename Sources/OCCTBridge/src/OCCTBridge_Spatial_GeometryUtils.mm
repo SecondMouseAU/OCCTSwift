@@ -263,6 +263,9 @@ void OCCTAx3Create(double px,
                    double xDirY,
                    double xDirZ,
                    bool* _Nonnull isDirect,
+                   double* _Nonnull nDx,
+                   double* _Nonnull nDy,
+                   double* _Nonnull nDz,
                    double* _Nonnull xDx,
                    double* _Nonnull xDy,
                    double* _Nonnull xDz,
@@ -272,8 +275,13 @@ void OCCTAx3Create(double px,
 {
   try
   {
-    gp_Ax3 ax3       = ax3OrRaise(gp_Pnt(px, py, pz), nx, ny, nz, xDirX, xDirY, xDirZ);
-    *isDirect        = ax3.Direct();
+    gp_Ax3 ax3 = ax3OrRaise(gp_Pnt(px, py, pz), nx, ny, nz, xDirX, xDirY, xDirZ);
+    *isDirect  = ax3.Direct();
+    // The unit main direction, not the caller's vector (#3371).
+    const gp_Dir& nd = ax3.Direction();
+    *nDx             = nd.X();
+    *nDy             = nd.Y();
+    *nDz             = nd.Z();
     const gp_Dir& xd = ax3.XDirection();
     *xDx             = xd.X();
     *xDy             = xd.Y();
@@ -291,6 +299,7 @@ void OCCTAx3Create(double px,
     // plus an all-zero xDirection/yDirection is unambiguous, since a genuine gp_Ax3's
     // XDirection()/YDirection() are always unit vectors and can never be all-zero.
     *isDirect = false;
+    *nDx = *nDy = *nDz = 0;
     *xDx = *xDy = *xDz = 0;
     *yDx = *yDy = *yDz = 0;
   }
@@ -303,6 +312,9 @@ void OCCTAx3CreateFromNormal(double px,
                              double ny,
                              double nz,
                              bool* _Nonnull isDirect,
+                             double* _Nonnull nDx,
+                             double* _Nonnull nDy,
+                             double* _Nonnull nDz,
                              double* _Nonnull xDx,
                              double* _Nonnull xDy,
                              double* _Nonnull xDz,
@@ -313,7 +325,12 @@ void OCCTAx3CreateFromNormal(double px,
   try
   {
     gp_Ax3 ax3(gp_Pnt(px, py, pz), gp_Dir(nx, ny, nz));
-    *isDirect        = ax3.Direct();
+    *isDirect = ax3.Direct();
+    // The unit main direction, not the caller's vector (#3371).
+    const gp_Dir& nd = ax3.Direction();
+    *nDx             = nd.X();
+    *nDy             = nd.Y();
+    *nDz             = nd.Z();
     const gp_Dir& xd = ax3.XDirection();
     *xDx             = xd.X();
     *xDy             = xd.Y();
@@ -330,6 +347,7 @@ void OCCTAx3CreateFromNormal(double px,
     // no xDirection so the parallel case doesn't apply). Same unambiguous fallback as
     // OCCTAx3Create's catch.
     *isDirect = false;
+    *nDx = *nDy = *nDz = 0;
     *xDx = *xDy = *xDz = 0;
     *yDx = *yDy = *yDz = 0;
   }

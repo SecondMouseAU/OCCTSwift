@@ -9,16 +9,16 @@ import Testing
 struct TDataXtdGeometricAttrTests {
 
     @Test("Set point attribute")
-    func setPoint() {
-        let doc = Document.create()!
-        let label = doc.createLabel()!
+    func setPoint() throws {
+        let doc = try #require(Document.create())
+        let label = try #require(doc.createLabel())
         #expect(label.setPointAttribute(x: 5.0, y: 10.0, z: 15.0))
     }
 
     @Test("Set axis attribute")
-    func setAxis() {
-        let doc = Document.create()!
-        let label = doc.createLabel()!
+    func setAxis() throws {
+        let doc = try #require(Document.create())
+        let label = try #require(doc.createLabel())
         #expect(
             label.setAxisAttribute(
                 originX: 0, originY: 0, originZ: 0,
@@ -26,9 +26,9 @@ struct TDataXtdGeometricAttrTests {
     }
 
     @Test("Set plane attribute")
-    func setPlane() {
-        let doc = Document.create()!
-        let label = doc.createLabel()!
+    func setPlane() throws {
+        let doc = try #require(Document.create())
+        let label = try #require(doc.createLabel())
         #expect(
             label.setPlaneAttribute(
                 originX: 0, originY: 0, originZ: 0,
