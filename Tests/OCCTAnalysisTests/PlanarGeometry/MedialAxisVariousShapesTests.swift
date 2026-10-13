@@ -10,9 +10,9 @@ import Testing
 struct MedialAxisVariousShapesTests {
 
     @Test("Square medial axis has symmetric structure")
-    func squareMedialAxis() {
-        let wire = Wire.rectangle(width: 6, height: 6)!
-        let face = Shape.face(from: wire)!
+    func squareMedialAxis() throws {
+        let wire = try #require(Wire.rectangle(width: 6, height: 6))
+        let face = try #require(Shape.face(from: wire))
         guard let ma = MedialAxis(of: face) else {
             Issue.record("Failed to compute medial axis for square")
             return
@@ -28,13 +28,14 @@ struct MedialAxisVariousShapesTests {
     }
 
     @Test("L-shaped polygon produces medial axis")
-    func lShapedMedialAxis() {
-        let wire = Wire.polygon(
-            [
-                SIMD2(0, 0), SIMD2(10, 0), SIMD2(10, 4),
-                SIMD2(4, 4), SIMD2(4, 8), SIMD2(0, 8),
-            ], closed: true)!
-        let face = Shape.face(from: wire)!
+    func lShapedMedialAxis() throws {
+        let wire = try #require(
+            Wire.polygon(
+                [
+                    SIMD2(0, 0), SIMD2(10, 0), SIMD2(10, 4),
+                    SIMD2(4, 4), SIMD2(4, 8), SIMD2(0, 8),
+                ], closed: true))
+        let face = try #require(Shape.face(from: wire))
         guard let ma = MedialAxis(of: face) else {
             Issue.record("Failed to compute medial axis for L-shape")
             return
@@ -51,9 +52,9 @@ struct MedialAxisVariousShapesTests {
     @Test(
         "Circle face produces medial axis with single central node",
         .disabled("BRepMAT2d_BisectingLocus segfaults on a single-circle boundary"))
-    func circleMedialAxis() {
-        let wire = Wire.circle(radius: 5)!
-        let face = Shape.face(from: wire)!
+    func circleMedialAxis() throws {
+        let wire = try #require(Wire.circle(radius: 5))
+        let face = try #require(Shape.face(from: wire))
         let ma = MedialAxis(of: face)
         // Circle medial axis is a single point (center), may compute as degenerate
         if let ma = ma {
@@ -64,9 +65,9 @@ struct MedialAxisVariousShapesTests {
     }
 
     @Test("Narrow rectangle has small min thickness")
-    func narrowRectangle() {
-        let wire = Wire.rectangle(width: 20, height: 1)!
-        let face = Shape.face(from: wire)!
+    func narrowRectangle() throws {
+        let wire = try #require(Wire.rectangle(width: 20, height: 1))
+        let face = try #require(Shape.face(from: wire))
         guard let ma = MedialAxis(of: face) else {
             Issue.record("Failed to compute medial axis for narrow rectangle")
             return
@@ -77,12 +78,13 @@ struct MedialAxisVariousShapesTests {
     }
 
     @Test("Triangle produces medial axis")
-    func triangleMedialAxis() {
-        let wire = Wire.polygon(
-            [
-                SIMD2(0, 0), SIMD2(10, 0), SIMD2(5, 8),
-            ], closed: true)!
-        let face = Shape.face(from: wire)!
+    func triangleMedialAxis() throws {
+        let wire = try #require(
+            Wire.polygon(
+                [
+                    SIMD2(0, 0), SIMD2(10, 0), SIMD2(5, 8),
+                ], closed: true))
+        let face = try #require(Shape.face(from: wire))
         guard let ma = MedialAxis(of: face) else {
             Issue.record("Failed to compute medial axis for triangle")
             return
@@ -93,17 +95,17 @@ struct MedialAxisVariousShapesTests {
     }
 
     @Test("Nil for shape without faces")
-    func noFaceFails() {
-        let wire = Wire.rectangle(width: 5, height: 5)!
-        let wireShape = Shape.fromWire(wire)!
+    func noFaceFails() throws {
+        let wire = try #require(Wire.rectangle(width: 5, height: 5))
+        let wireShape = try #require(Shape.fromWire(wire))
         let ma = MedialAxis(of: wireShape)
         #expect(ma == nil, "Medial axis should fail for wireframe shape")
     }
 
     @Test("Node accessor out of bounds returns nil")
     func nodeOutOfBounds() throws {
-        let wire = Wire.rectangle(width: 10, height: 4)!
-        let face = Shape.face(from: wire)!
+        let wire = try #require(Wire.rectangle(width: 10, height: 4))
+        let face = try #require(Shape.face(from: wire))
         let ma = try #require(MedialAxis(of: face))
         #expect(ma.node(at: 0) == nil, "Index 0 should be out of bounds (1-based)")
         #expect(ma.node(at: ma.nodeCount + 1) == nil, "Past-end index should be nil")
@@ -111,8 +113,8 @@ struct MedialAxisVariousShapesTests {
 
     @Test("Arc accessor out of bounds returns nil")
     func arcOutOfBounds() throws {
-        let wire = Wire.rectangle(width: 10, height: 4)!
-        let face = Shape.face(from: wire)!
+        let wire = try #require(Wire.rectangle(width: 10, height: 4))
+        let face = try #require(Shape.face(from: wire))
         let ma = try #require(MedialAxis(of: face))
         #expect(ma.arc(at: 0) == nil, "Index 0 should be out of bounds (1-based)")
         #expect(ma.arc(at: ma.arcCount + 1) == nil, "Past-end index should be nil")
@@ -120,8 +122,8 @@ struct MedialAxisVariousShapesTests {
 
     @Test("Distance on arc with invalid index returns -1")
     func distanceInvalidArc() throws {
-        let wire = Wire.rectangle(width: 10, height: 4)!
-        let face = Shape.face(from: wire)!
+        let wire = try #require(Wire.rectangle(width: 10, height: 4))
+        let face = try #require(Shape.face(from: wire))
         let ma = try #require(MedialAxis(of: face))
         #expect(ma.distanceToBoundary(arcIndex: 0, parameter: 0.5) == -1.0)
         #expect(ma.distanceToBoundary(arcIndex: ma.arcCount + 1, parameter: 0.5) == -1.0)
@@ -129,8 +131,8 @@ struct MedialAxisVariousShapesTests {
 
     @Test("Draw arc with invalid index returns empty")
     func drawArcInvalidIndex() throws {
-        let wire = Wire.rectangle(width: 10, height: 4)!
-        let face = Shape.face(from: wire)!
+        let wire = try #require(Wire.rectangle(width: 10, height: 4))
+        let face = try #require(Shape.face(from: wire))
         let ma = try #require(MedialAxis(of: face))
         #expect(ma.drawArc(at: 0).isEmpty)
         #expect(ma.drawArc(at: ma.arcCount + 1).isEmpty)
@@ -138,8 +140,8 @@ struct MedialAxisVariousShapesTests {
 
     @Test("Medial axis nodes lie inside the shape boundary")
     func nodesInsideBoundary() throws {
-        let wire = Wire.rectangle(width: 10, height: 4)!
-        let face = Shape.face(from: wire)!
+        let wire = try #require(Wire.rectangle(width: 10, height: 4))
+        let face = try #require(Shape.face(from: wire))
         guard let ma = MedialAxis(of: face) else {
             Issue.record("Failed to compute medial axis")
             return

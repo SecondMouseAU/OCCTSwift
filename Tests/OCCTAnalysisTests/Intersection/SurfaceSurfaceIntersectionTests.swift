@@ -22,10 +22,10 @@ struct SurfaceSurfaceIntersectionTests {
     }
 
     @Test("Plane-plane intersection produces line (intersectionCurves method)")
-    func planePlaneIntersection() {
+    func planePlaneIntersection() throws {
         // Two planes intersecting at 90 degrees
-        let plane1 = Surface.plane(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1))!
-        let plane2 = Surface.plane(origin: SIMD3(0, 0, 0), normal: SIMD3(1, 0, 0))!
+        let plane1 = try #require(Surface.plane(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1)))
+        let plane2 = try #require(Surface.plane(origin: SIMD3(0, 0, 0), normal: SIMD3(1, 0, 0)))
         let curves = plane1.intersectionCurves(with: plane2)
         #expect(curves.count == 1)
     }
