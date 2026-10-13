@@ -10,10 +10,9 @@ struct NonUniformScaleTests {
     @Test("Scale box non-uniformly")
     func scaleBox() throws {
         let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
-        let scaled = box.nonUniformScaled(sx: 2, sy: 1, sz: 0.5)
-        #expect(scaled != nil)
-        #expect(try #require(scaled).isValid)
-        let size = try #require(scaled?.size)
+        let scaled = try #require(box.nonUniformScaled(sx: 2, sy: 1, sz: 0.5))
+        #expect(scaled.isValid)
+        let size = try #require(scaled.size)
         #expect(abs(size.x - 20) < 0.1)
         #expect(abs(size.y - 10) < 0.1)
         #expect(abs(size.z - 5) < 0.1)
