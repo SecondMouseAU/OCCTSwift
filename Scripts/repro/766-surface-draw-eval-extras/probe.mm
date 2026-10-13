@@ -1,5 +1,5 @@
 // Epic #766, SurfaceDrawTests.swift, SurfaceEvalTests.swift, SurfaceExtrasTests.swift and
-// SurfaceExtrasV112Tests.swift: kernel parity for the eleven tests.
+// SurfaceTypeQueriesTests.swift: kernel parity for the eleven tests.
 //  - drawGrid / drawMesh on the radius-5 Geom_SphericalSurface: D0 on the uniform sweep over
 //    Bounds that OCCTSurfaceDrawGrid / OCCTSurfaceDrawMesh use (u-isos then v-isos).
 //  - BRep_Tool::Surface of face 1 of BRepPrimAPI_MakeSphere(5) and of the centred 10-box

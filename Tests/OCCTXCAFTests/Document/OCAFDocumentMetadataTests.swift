@@ -9,30 +9,30 @@ import Testing
 struct OCAFDocumentMetadataTests {
 
     @Test("Document storage format")
-    func storageFormat() {
-        let doc = Document.create(format: "BinOcaf")!
+    func storageFormat() throws {
+        let doc = try #require(Document.create(format: "BinOcaf"))
         #expect(doc.storageFormat == "BinOcaf")
     }
 
     @Test("Change storage format")
-    func changeFormat() {
-        let doc = Document.create(format: "BinOcaf")!
+    func changeFormat() throws {
+        let doc = try #require(Document.create(format: "BinOcaf"))
         #expect(doc.setStorageFormat("XmlOcaf"))
         #expect(doc.storageFormat == "XmlOcaf")
     }
 
     @Test("Document not saved initially")
-    func notSavedInitially() {
-        let doc = Document.create(format: "BinOcaf")!
+    func notSavedInitially() throws {
+        let doc = try #require(Document.create(format: "BinOcaf"))
         #expect(!doc.isSaved)
     }
 
     @Test("Document count")
-    func documentCount() {
+    func documentCount() throws {
         // Since #371 each Document owns a private TDocStd_Application; a freshly
         // created document is the only one ever opened through it, so this is
         // exactly 1, not merely a lower bound on a shared session's total.
-        let doc = Document.create(format: "BinOcaf")!
+        let doc = try #require(Document.create(format: "BinOcaf"))
         #expect(doc.documentCount == 1)
     }
 

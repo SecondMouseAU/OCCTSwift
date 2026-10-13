@@ -6,8 +6,8 @@ Tests/OCCTSurfaceTests/ApproxCurveOnSurfaceTests.swift	Tests/OCCTSurfaceTests/Fa
 Tests/OCCTSurfaceTests/BRepFillPipeTests.swift	Tests/OCCTSurfaceTests/SweepsAndLofts/BRepFillPipeTests.swift	SweepsAndLofts	-	BRepFill_Pipe along a straight spine
 Tests/OCCTSurfaceTests/BRepLibFindSurfaceTests.swift	Tests/OCCTSurfaceTests/FacesAndProjection/BRepLibFindSurfaceTests.swift	FacesAndProjection	-	BRepLib_FindSurface from a box face wire, tolerance and existed flag
 Tests/OCCTSurfaceTests/BSplineSurfaceCompletionsTests.swift	Tests/OCCTSurfaceTests/BSplineAndBezier/BSplineSurfaceCompletionsTests.swift	BSplineAndBezier	-	multiplicities and reverse on a NURBS-converted face
-Tests/OCCTSurfaceTests/BSplineSurfaceCompletionsV121Tests.swift	Tests/OCCTSurfaceTests/BSplineAndBezier/BSplineSurfaceCompletionsV121Tests.swift	BSplineAndBezier	-	setNotPeriodic, increaseMultiplicity, setKnot, insertKnots on a BSpline surface
-Tests/OCCTSurfaceTests/BSplineSurfaceCompletionsV129Tests.swift	Tests/OCCTSurfaceTests/BSplineAndBezier/BSplineSurfaceCompletionsV129Tests.swift	BSplineAndBezier	-	setWeightColRow, incrementMultiplicity, knot indices, segment on a BSpline surface
+Tests/OCCTSurfaceTests/BSplineSurfaceCompletionsV121Tests.swift	Tests/OCCTSurfaceTests/BSplineAndBezier/BSplineSurfaceModificationTests.swift	BSplineAndBezier	-	setNotPeriodic, increaseMultiplicity, setKnot, insertKnots on a BSpline surface
+Tests/OCCTSurfaceTests/BSplineSurfaceCompletionsV129Tests.swift	Tests/OCCTSurfaceTests/BSplineAndBezier/BSplineSurfaceWeightAndKnotQueriesTests.swift	BSplineAndBezier	-	setWeightColRow, incrementMultiplicity, knot indices, segment on a BSpline surface
 Tests/OCCTSurfaceTests/BSplineSurfaceExtrasTests.swift	Tests/OCCTSurfaceTests/BSplineAndBezier/BSplineSurfaceExtrasTests.swift	BSplineAndBezier	-	resolution, getWeight and periodic setters on a BSpline surface
 Tests/OCCTSurfaceTests/BSplineSurfaceFillTests.swift	Tests/OCCTSurfaceTests/GeomFill/BSplineSurfaceFillTests.swift	GeomFill	-	BSpline surface fill from two or four boundary curves, including Coons and stretch
 Tests/OCCTSurfaceTests/BSplineSurfaceIsoTests.swift	Tests/OCCTSurfaceTests/BSplineAndBezier/BSplineSurfaceIsoTests.swift	BSplineAndBezier	-	u-iso and v-iso curves of a BSpline surface
@@ -20,7 +20,7 @@ Tests/OCCTSurfaceTests/BSplineSurfaceRemoveVKnotTests.swift	Tests/OCCTSurfaceTes
 Tests/OCCTSurfaceTests/BatchSurfaceTests.swift	Tests/OCCTSurfaceTests/Core/BatchSurfaceTests.swift	Core	-	evaluateGrid on a plane and sphere, and its u-major/v-major layout against drawMesh
 Tests/OCCTSurfaceTests/BezierSurfaceCompletionTests.swift	Tests/OCCTSurfaceTests/BSplineAndBezier/BezierSurfaceCompletionTests.swift	BSplineAndBezier	-	iso curves, closed and periodic queries, continuity and isCN of a Bezier surface
 Tests/OCCTSurfaceTests/BezierSurfaceCompletionsTests.swift	Tests/OCCTSurfaceTests/BSplineAndBezier/BezierSurfaceCompletionsTests.swift	BSplineAndBezier	-	insert and remove pole column or row, increase degree, reverse on a Bezier surface
-Tests/OCCTSurfaceTests/BezierSurfaceCompletionsV129Tests.swift	Tests/OCCTSurfaceTests/BSplineAndBezier/BezierSurfaceCompletionsV129Tests.swift	BSplineAndBezier	-	insert-before, setPoleColRow, setWeightColRow on a Bezier surface
+Tests/OCCTSurfaceTests/BezierSurfaceCompletionsV129Tests.swift	Tests/OCCTSurfaceTests/BSplineAndBezier/BezierSurfacePoleEditingTests.swift	BSplineAndBezier	-	insert-before, setPoleColRow, setWeightColRow on a Bezier surface
 Tests/OCCTSurfaceTests/BezierSurfaceFillTests.swift	Tests/OCCTSurfaceTests/GeomFill/BezierSurfaceFillTests.swift	GeomFill	-	Bezier surface fill from two or four boundary curves and its styles
 Tests/OCCTSurfaceTests/BezierSurfaceResolutionTests.swift	Tests/OCCTSurfaceTests/BSplineAndBezier/BezierSurfaceResolutionTests.swift	BSplineAndBezier	-	Bezier surface resolution
 Tests/OCCTSurfaceTests/BezierSurfaceWeightTests.swift	Tests/OCCTSurfaceTests/BSplineAndBezier/BezierSurfaceWeightTests.swift	BSplineAndBezier	-	setPoleCol and setPoleRow with weights on a rational Bezier surface
@@ -70,45 +70,45 @@ Tests/OCCTSurfaceTests/GeomPlateSurfaceTests.swift	Tests/OCCTSurfaceTests/Plate/
 Tests/OCCTSurfaceTests/GeomToolsSurfaceSetTests.swift	Tests/OCCTSurfaceTests/Core/GeomToolsSurfaceSetTests.swift	Core	-	GeomTools_SurfaceSet serialise and deserialise, and the duplicate-handle refusal
 Tests/OCCTSurfaceTests/HelixGeomEvalTests.swift	Tests/OCCTSurfaceTests/GeomEval/HelixGeomEvalTests.swift	GeomEval	-	HelixGeom curve evaluation, D1, D2 and BSpline approximation
 Tests/OCCTSurfaceTests/IntegrationUVSurfaceEvaluationTests.swift	Tests/OCCTSurfaceTests/Core/IntegrationUVSurfaceEvaluationTests.swift	Core	-	cylinder points over a UV grid sit at constant radius
-Tests/OCCTSurfaceTests/Issue1017NLPlateResolutionOrderTests.swift	Tests/OCCTSurfaceTests/Plate/Issue1017NLPlateResolutionOrderTests.swift	Plate	-	NLPlate resolution order is bounded and load-bearing
-Tests/OCCTSurfaceTests/Issue1049NLPlateBaseSurfaceTests.swift	Tests/OCCTSurfaceTests/Plate/Issue1049NLPlateBaseSurfaceTests.swift	Plate	-	NLPlate keeps the input surface position and parametrisation
-Tests/OCCTSurfaceTests/Issue1433GPropFaceKnotSizingTests.swift	Tests/OCCTSurfaceTests/FacesAndProjection/Issue1433GPropFaceKnotSizingTests.swift	FacesAndProjection	-	BRepGProp_Face knot arrays are sized N not N-1
-Tests/OCCTSurfaceTests/Issue1460PlatePointG1Tests.swift	Tests/OCCTSurfaceTests/Plate/Issue1460PlatePointG1Tests.swift	Plate	-	a point constraint refuses G1
-Tests/OCCTSurfaceTests/Issue1502DarbouxTrihedronTests.swift	Tests/OCCTSurfaceTests/GeomFill/Issue1502DarbouxTrihedronTests.swift	GeomFill	-	Darboux trihedron on a curve-on-surface built from the edge's pcurve
-Tests/OCCTSurfaceTests/Issue1515CoonsPatchUParameterTests.swift	Tests/OCCTSurfaceTests/GeomFill/Issue1515CoonsPatchUParameterTests.swift	GeomFill	-	Coons algebraic patch samples its U boundaries at U
-Tests/OCCTSurfaceTests/Issue1669GeomEval3DRefusalTests.swift	Tests/OCCTSurfaceTests/GeomEval/Issue1669GeomEval3DRefusalTests.swift	GeomEval	-	the 3D GeomEval evaluators distinguish a refusal from the origin
-Tests/OCCTSurfaceTests/Issue233FaceFromSurfaceWireTests.swift	Tests/OCCTSurfaceTests/FacesAndProjection/Issue233FaceFromSurfaceWireTests.swift	FacesAndProjection	-	face from a surface bounded by a UV polygon or a 3D wire
-Tests/OCCTSurfaceTests/Issue244PointGridDegreeTests.swift	Tests/OCCTSurfaceTests/Conversion/Issue244PointGridDegreeTests.swift	Conversion	-	fromPointGrid clamps degree so a 7x7 grid fit stays meshable
-Tests/OCCTSurfaceTests/Issue266FaceAnalysisFollowupTests.swift	Tests/OCCTSurfaceTests/FacesAndProjection/Issue266FaceAnalysisFollowupTests.swift	FacesAndProjection	-	ShapeAnalysis_Surface iso, singularity, degenerated projection and BRepGProp_Face integration introspection
-Tests/OCCTSurfaceTests/Issue266FaceWithHolesTests.swift	Tests/OCCTSurfaceTests/FacesAndProjection/Issue266FaceWithHolesTests.swift	FacesAndProjection	-	face from a surface with outer wire and interior hole wires
-Tests/OCCTSurfaceTests/Issue2829GeomFillBoundaryJoinTests.swift	Tests/OCCTSurfaceTests/GeomFill/Issue2829GeomFillBoundaryJoinTests.swift	GeomFill	-	GeomFill_BSplineCurves and BezierCurves arrange or refuse four boundaries
-Tests/OCCTSurfaceTests/Issue2841GeomFillThreeCurveTests.swift	Tests/OCCTSurfaceTests/GeomFill/Issue2841GeomFillThreeCurveTests.swift	GeomFill	-	the three-curve constructors of GeomFill_BSplineCurves and BezierCurves
-Tests/OCCTSurfaceTests/Issue2843StretchFillArrangementTests.swift	Tests/OCCTSurfaceTests/GeomFill/Issue2843StretchFillArrangementTests.swift	GeomFill	-	which boundary goes in which slot of Surface.stretchFill
-Tests/OCCTSurfaceTests/Issue2859BezierSurfacePoleBoundsTests.swift	Tests/OCCTSurfaceTests/BSplineAndBezier/Issue2859BezierSurfacePoleBoundsTests.swift	BSplineAndBezier	-	Bezier surface pole index bounds are refused in Swift
-Tests/OCCTSurfaceTests/Issue2861ConvertElementaryRangeTests.swift	Tests/OCCTSurfaceTests/Conversion/Issue2861ConvertElementaryRangeTests.swift	Conversion	-	cylinder and cone converters refuse an out-of-range parameter span
-Tests/OCCTSurfaceTests/Issue2862NegativeContinuityOrderSurfaceTests.swift	Tests/OCCTSurfaceTests/Continuity/Issue2862NegativeContinuityOrderSurfaceTests.swift	Continuity	-	isCNu and isCNv refuse a negative order on Surface
-Tests/OCCTSurfaceTests/Issue2884GeomFillProfilerBoundsTests.swift	Tests/OCCTSurfaceTests/GeomFill/Issue2884GeomFillProfilerBoundsTests.swift	GeomFill	-	GeomFill_Profiler index and empty-profiler bounds
-Tests/OCCTSurfaceTests/Issue317PeriodicConicalSingleWireTests.swift	Tests/OCCTSurfaceTests/FacesAndProjection/Issue317PeriodicConicalSingleWireTests.swift	FacesAndProjection	-	healing a face whose single closed wire belts a conical surface
-Tests/OCCTSurfaceTests/Issue398ContinuityTests.swift	Tests/OCCTSurfaceTests/Continuity/Issue398ContinuityTests.swift	Continuity	-	continuity vocabulary enums keep their raw values and are not substitutable
-Tests/OCCTSurfaceTests/Issue403SurfaceKnotSplitParamsTests.swift	Tests/OCCTSurfaceTests/BSplineAndBezier/Issue403SurfaceKnotSplitParamsTests.swift	BSplineAndBezier	-	knotSplitting reports split parameter values, not only counts
-Tests/OCCTSurfaceTests/Issue437PlatePointG2Tests.swift	Tests/OCCTSurfaceTests/Plate/Issue437PlatePointG2Tests.swift	Plate	-	a point constraint refuses G2
-Tests/OCCTSurfaceTests/Issue480SurfaceKnotSplitContinuityTests.swift	Tests/OCCTSurfaceTests/BSplineAndBezier/Issue480SurfaceKnotSplitContinuityTests.swift	BSplineAndBezier	-	knotSplitting continuity range on bicubic geometry
-Tests/OCCTSurfaceTests/Issue485SurfaceContinuityTests.swift	Tests/OCCTSurfaceTests/Continuity/Issue485SurfaceContinuityTests.swift	Continuity	-	measured Surface.continuity class and its mirror of GeomAbs_Shape
-Tests/OCCTSurfaceTests/Issue486SurfaceGridTests.swift	Tests/OCCTSurfaceTests/Core/Issue486SurfaceGridTests.swift	Core	-	evaluateGrid and drawMesh share one UV grid layout
-Tests/OCCTSurfaceTests/Issue491SurfaceApproxParityTests.swift	Tests/OCCTSurfaceTests/Conversion/Issue491SurfaceApproxParityTests.swift	Conversion	-	approximated and approxWithDetails return the same fit
-Tests/OCCTSurfaceTests/Issue495AnalysisOrderTests.swift	Tests/OCCTSurfaceTests/Continuity/Issue495AnalysisOrderTests.swift	Continuity	-	analysis order selects what LocalAnalysis_SurfaceContinuity measures
-Tests/OCCTSurfaceTests/Issue522ApproxC0CollapseTests.swift	Tests/OCCTSurfaceTests/Conversion/Issue522ApproxC0CollapseTests.swift	Conversion	-	approximation at C0 does not collapse or misreport its error
-Tests/OCCTSurfaceTests/Issue562SurfaceKnotSplitDuplicateTests.swift	Tests/OCCTSurfaceTests/BSplineAndBezier/Issue562SurfaceKnotSplitDuplicateTests.swift	BSplineAndBezier	-	knot-table indices from the deprecated knot-split trio resolve to the canonical params
-Tests/OCCTSurfaceTests/Issue571PlateApproxTests.swift	Tests/OCCTSurfaceTests/Plate/Issue571PlateApproxTests.swift	Plate	-	plate approximation honours its tolerance
-Tests/OCCTSurfaceTests/Issue572ApproxConsumerTests.swift	Tests/OCCTSurfaceTests/Conversion/Issue572ApproxConsumerTests.swift	Conversion	-	Surface.toBSpline of an offset surface goes through the corrected approximator
-Tests/OCCTSurfaceTests/Issue619SurfaceContinuityEncodingTests.swift	Tests/OCCTSurfaceTests/Continuity/Issue619SurfaceContinuityEncodingTests.swift	Continuity	-	surfaceContinuityOrder reports the real GeomAbs_Shape ordinal
-Tests/OCCTSurfaceTests/Issue620DrawMeshCountContractTests.swift	Tests/OCCTSurfaceTests/Core/Issue620DrawMeshCountContractTests.swift	Core	-	drawMesh honours a count of one sample per direction
-Tests/OCCTSurfaceTests/Issue623ContinuityFloorTests.swift	Tests/OCCTSurfaceTests/Continuity/Issue623ContinuityFloorTests.swift	Continuity	-	ContinuityClass.satisfies agrees with the class ordering across the matrix
-Tests/OCCTSurfaceTests/Issue748NetworkSurfaceCornersTests.swift	Tests/OCCTSurfaceTests/GeomFill/Issue748NetworkSurfaceCornersTests.swift	GeomFill	-	networkSurface places each corner where its input curves say
-Tests/OCCTSurfaceTests/Issue791ConvertSphereHelperTests.swift	Tests/OCCTSurfaceTests/Conversion/Issue791ConvertSphereHelperTests.swift	Conversion	-	sphere to BSpline helper keeps its baseline poles after consolidation
-Tests/OCCTSurfaceTests/Issue838FindSurfaceConsolidationTests.swift	Tests/OCCTSurfaceTests/FacesAndProjection/Issue838FindSurfaceConsolidationTests.swift	FacesAndProjection	-	three findSurface entry points agree after bridge consolidation
-Tests/OCCTSurfaceTests/Issue965SurfacePropertyLifetimeTests.swift	Tests/OCCTSurfaceTests/Core/Issue965SurfacePropertyLifetimeTests.swift	Core	-	Surface *Properties views retain their parent surface handle
-Tests/OCCTSurfaceTests/Issue999NLPlateParametersTests.swift	Tests/OCCTSurfaceTests/Plate/Issue999NLPlateParametersTests.swift	Plate	-	NLPlate G2 and G3 parameters are live
+Tests/OCCTSurfaceTests/Issue1017NLPlateResolutionOrderTests.swift	Tests/OCCTSurfaceTests/Plate/NLPlateResolutionOrderTests.swift	Plate	-	NLPlate resolution order is bounded and load-bearing
+Tests/OCCTSurfaceTests/Issue1049NLPlateBaseSurfaceTests.swift	Tests/OCCTSurfaceTests/Plate/NLPlateBaseSurfaceTests.swift	Plate	-	NLPlate keeps the input surface position and parametrisation
+Tests/OCCTSurfaceTests/Issue1433GPropFaceKnotSizingTests.swift	Tests/OCCTSurfaceTests/FacesAndProjection/GPropFaceKnotSizingTests.swift	FacesAndProjection	-	BRepGProp_Face knot arrays are sized N not N-1
+Tests/OCCTSurfaceTests/Issue1460PlatePointG1Tests.swift	Tests/OCCTSurfaceTests/Plate/PlatePointG1Tests.swift	Plate	-	a point constraint refuses G1
+Tests/OCCTSurfaceTests/Issue1502DarbouxTrihedronTests.swift	Tests/OCCTSurfaceTests/GeomFill/DarbouxTrihedronTests.swift	GeomFill	-	Darboux trihedron on a curve-on-surface built from the edge's pcurve
+Tests/OCCTSurfaceTests/Issue1515CoonsPatchUParameterTests.swift	Tests/OCCTSurfaceTests/GeomFill/CoonsPatchUParameterTests.swift	GeomFill	-	Coons algebraic patch samples its U boundaries at U
+Tests/OCCTSurfaceTests/Issue1669GeomEval3DRefusalTests.swift	Tests/OCCTSurfaceTests/GeomEval/GeomEval3DRefusalTests.swift	GeomEval	-	the 3D GeomEval evaluators distinguish a refusal from the origin
+Tests/OCCTSurfaceTests/Issue233FaceFromSurfaceWireTests.swift	Tests/OCCTSurfaceTests/FacesAndProjection/FaceFromSurfaceWireTests.swift	FacesAndProjection	-	face from a surface bounded by a UV polygon or a 3D wire
+Tests/OCCTSurfaceTests/Issue244PointGridDegreeTests.swift	Tests/OCCTSurfaceTests/Conversion/PointGridDegreeTests.swift	Conversion	-	fromPointGrid clamps degree so a 7x7 grid fit stays meshable
+Tests/OCCTSurfaceTests/Issue266FaceAnalysisFollowupTests.swift	Tests/OCCTSurfaceTests/FacesAndProjection/SurfaceAnalysisExtrasTests.swift	FacesAndProjection	-	ShapeAnalysis_Surface iso, singularity, degenerated projection and BRepGProp_Face integration introspection
+Tests/OCCTSurfaceTests/Issue266FaceWithHolesTests.swift	Tests/OCCTSurfaceTests/FacesAndProjection/FaceFromSurfaceWithHolesTests.swift	FacesAndProjection	-	face from a surface with outer wire and interior hole wires
+Tests/OCCTSurfaceTests/Issue2829GeomFillBoundaryJoinTests.swift	Tests/OCCTSurfaceTests/GeomFill/GeomFillBoundaryJoinTests.swift	GeomFill	-	GeomFill_BSplineCurves and BezierCurves arrange or refuse four boundaries
+Tests/OCCTSurfaceTests/Issue2841GeomFillThreeCurveTests.swift	Tests/OCCTSurfaceTests/GeomFill/GeomFillThreeCurveTests.swift	GeomFill	-	the three-curve constructors of GeomFill_BSplineCurves and BezierCurves
+Tests/OCCTSurfaceTests/Issue2843StretchFillArrangementTests.swift	Tests/OCCTSurfaceTests/GeomFill/StretchFillArrangementTests.swift	GeomFill	-	which boundary goes in which slot of Surface.stretchFill
+Tests/OCCTSurfaceTests/Issue2859BezierSurfacePoleBoundsTests.swift	Tests/OCCTSurfaceTests/BSplineAndBezier/BezierSurfacePoleBoundsTests.swift	BSplineAndBezier	-	Bezier surface pole index bounds are refused in Swift
+Tests/OCCTSurfaceTests/Issue2861ConvertElementaryRangeTests.swift	Tests/OCCTSurfaceTests/Conversion/ConvertElementaryRangeTests.swift	Conversion	-	cylinder and cone converters refuse an out-of-range parameter span
+Tests/OCCTSurfaceTests/Issue2862NegativeContinuityOrderSurfaceTests.swift	Tests/OCCTSurfaceTests/Continuity/NegativeContinuityOrderSurfaceTests.swift	Continuity	-	isCNu and isCNv refuse a negative order on Surface
+Tests/OCCTSurfaceTests/Issue2884GeomFillProfilerBoundsTests.swift	Tests/OCCTSurfaceTests/GeomFill/GeomFillProfilerBoundsTests.swift	GeomFill	-	GeomFill_Profiler index and empty-profiler bounds
+Tests/OCCTSurfaceTests/Issue317PeriodicConicalSingleWireTests.swift	Tests/OCCTSurfaceTests/FacesAndProjection/PeriodicConicalSingleWireTests.swift	FacesAndProjection	-	healing a face whose single closed wire belts a conical surface
+Tests/OCCTSurfaceTests/Issue398ContinuityTests.swift	Tests/OCCTSurfaceTests/Continuity/ContinuityVocabularyTests.swift	Continuity	-	continuity vocabulary enums keep their raw values and are not substitutable
+Tests/OCCTSurfaceTests/Issue403SurfaceKnotSplitParamsTests.swift	Tests/OCCTSurfaceTests/BSplineAndBezier/SurfaceKnotSplitParametersTests.swift	BSplineAndBezier	-	knotSplitting reports split parameter values, not only counts
+Tests/OCCTSurfaceTests/Issue437PlatePointG2Tests.swift	Tests/OCCTSurfaceTests/Plate/PlatePointG2Tests.swift	Plate	-	a point constraint refuses G2
+Tests/OCCTSurfaceTests/Issue480SurfaceKnotSplitContinuityTests.swift	Tests/OCCTSurfaceTests/BSplineAndBezier/SurfaceKnotSplitContinuityTests.swift	BSplineAndBezier	-	knotSplitting continuity range on bicubic geometry
+Tests/OCCTSurfaceTests/Issue485SurfaceContinuityTests.swift	Tests/OCCTSurfaceTests/Continuity/SurfaceMeasuredContinuityTests.swift	Continuity	-	measured Surface.continuity class and its mirror of GeomAbs_Shape
+Tests/OCCTSurfaceTests/Issue486SurfaceGridTests.swift	Tests/OCCTSurfaceTests/Core/SurfaceGridLayoutTests.swift	Core	-	evaluateGrid and drawMesh share one UV grid layout
+Tests/OCCTSurfaceTests/Issue491SurfaceApproxParityTests.swift	Tests/OCCTSurfaceTests/Conversion/SurfaceApproxParityTests.swift	Conversion	-	approximated and approxWithDetails return the same fit
+Tests/OCCTSurfaceTests/Issue495AnalysisOrderTests.swift	Tests/OCCTSurfaceTests/Continuity/SurfaceAnalysisOrderTests.swift	Continuity	-	analysis order selects what LocalAnalysis_SurfaceContinuity measures
+Tests/OCCTSurfaceTests/Issue522ApproxC0CollapseTests.swift	Tests/OCCTSurfaceTests/Conversion/ApproxC0CollapseTests.swift	Conversion	-	approximation at C0 does not collapse or misreport its error
+Tests/OCCTSurfaceTests/Issue562SurfaceKnotSplitDuplicateTests.swift	Tests/OCCTSurfaceTests/BSplineAndBezier/SurfaceKnotSplitDuplicateTests.swift	BSplineAndBezier	-	knot-table indices from the deprecated knot-split trio resolve to the canonical params
+Tests/OCCTSurfaceTests/Issue571PlateApproxTests.swift	Tests/OCCTSurfaceTests/Plate/PlateApproxToleranceTests.swift	Plate	-	plate approximation honours its tolerance
+Tests/OCCTSurfaceTests/Issue572ApproxConsumerTests.swift	Tests/OCCTSurfaceTests/Conversion/ApproxConsumerConversionTests.swift	Conversion	-	Surface.toBSpline of an offset surface goes through the corrected approximator
+Tests/OCCTSurfaceTests/Issue619SurfaceContinuityEncodingTests.swift	Tests/OCCTSurfaceTests/Continuity/SurfaceContinuityEncodingTests.swift	Continuity	-	surfaceContinuityOrder reports the real GeomAbs_Shape ordinal
+Tests/OCCTSurfaceTests/Issue620DrawMeshCountContractTests.swift	Tests/OCCTSurfaceTests/Core/DrawMeshCountContractTests.swift	Core	-	drawMesh honours a count of one sample per direction
+Tests/OCCTSurfaceTests/Issue623ContinuityFloorTests.swift	Tests/OCCTSurfaceTests/Continuity/ContinuityFloorTests.swift	Continuity	-	ContinuityClass.satisfies agrees with the class ordering across the matrix
+Tests/OCCTSurfaceTests/Issue748NetworkSurfaceCornersTests.swift	Tests/OCCTSurfaceTests/GeomFill/NetworkSurfaceCornersTests.swift	GeomFill	-	networkSurface places each corner where its input curves say
+Tests/OCCTSurfaceTests/Issue791ConvertSphereHelperTests.swift	Tests/OCCTSurfaceTests/Conversion/ConvertSphereBSplineHelperTests.swift	Conversion	-	sphere to BSpline helper keeps its baseline poles after consolidation
+Tests/OCCTSurfaceTests/Issue838FindSurfaceConsolidationTests.swift	Tests/OCCTSurfaceTests/FacesAndProjection/FindSurfaceConsolidationTests.swift	FacesAndProjection	-	three findSurface entry points agree after bridge consolidation
+Tests/OCCTSurfaceTests/Issue965SurfacePropertyLifetimeTests.swift	Tests/OCCTSurfaceTests/Core/SurfacePropertyLifetimeTests.swift	Core	-	Surface *Properties views retain their parent surface handle
+Tests/OCCTSurfaceTests/Issue999NLPlateParametersTests.swift	Tests/OCCTSurfaceTests/Plate/NLPlateParametersTests.swift	Plate	-	NLPlate G2 and G3 parameters are live
 Tests/OCCTSurfaceTests/JoinBezierPatchesTests.swift	Tests/OCCTSurfaceTests/BSplineAndBezier/JoinBezierPatchesTests.swift	BSplineAndBezier	-	GeomConvert_CompBezierSurfacesToBSplineSurface joins patches
 Tests/OCCTSurfaceTests/LocOpePipeTests.swift	Tests/OCCTSurfaceTests/SweepsAndLofts/LocOpePipeTests.swift	SweepsAndLofts	-	LocOpe_Pipe from a planar face profile
 Tests/OCCTSurfaceTests/LocOpeRevolutionFormTests.swift	Tests/OCCTSurfaceTests/SweepsAndLofts/LocOpeRevolutionFormTests.swift	SweepsAndLofts	-	LocOpe_RevolutionForm
@@ -150,7 +150,7 @@ Tests/OCCTSurfaceTests/SurfaceCurveProjectionTests.swift	Tests/OCCTSurfaceTests/
 Tests/OCCTSurfaceTests/SurfaceDrawTests.swift	Tests/OCCTSurfaceTests/Core/SurfaceDrawTests.swift	Core	-	drawGrid and drawMesh sample points lie on the surface
 Tests/OCCTSurfaceTests/SurfaceEvalTests.swift	Tests/OCCTSurfaceTests/Core/SurfaceEvalTests.swift	Core	-	D0, D1 and D2 evaluation on a sphere and a box face
 Tests/OCCTSurfaceTests/SurfaceExtrasTests.swift	Tests/OCCTSurfaceTests/Core/SurfaceExtrasTests.swift	Core	-	surface bounds, plane continuity class and copying a surface
-Tests/OCCTSurfaceTests/SurfaceExtrasV112Tests.swift	Tests/OCCTSurfaceTests/Core/SurfaceExtrasV112Tests.swift	Core	-	surfaceType for a plane and a sphere
+Tests/OCCTSurfaceTests/SurfaceExtrasV112Tests.swift	Tests/OCCTSurfaceTests/Core/SurfaceTypeQueriesTests.swift	Core	-	surfaceType for a plane and a sphere
 Tests/OCCTSurfaceTests/SurfaceFillingTests.swift	Tests/OCCTSurfaceTests/Filling/SurfaceFillingTests.swift	Filling	-	filling a closed wire or polygon boundary
 Tests/OCCTSurfaceTests/SurfaceFreeformTests.swift	Tests/OCCTSurfaceTests/BSplineAndBezier/SurfaceFreeformTests.swift	BSplineAndBezier	-	building Bezier and BSpline surfaces from poles and reading the poles back
 Tests/OCCTSurfaceTests/SurfaceFromGridTests.swift	Tests/OCCTSurfaceTests/Core/SurfaceFromGridTests.swift	Core	-	sphere normal and curvatures through the Surface API, plus fromPointGrid being non-nil
@@ -158,7 +158,7 @@ Tests/OCCTSurfaceTests/SurfaceKnotSplittingTests.swift	Tests/OCCTSurfaceTests/BS
 Tests/OCCTSurfaceTests/SurfaceNormalParityTests.swift	Tests/OCCTSurfaceTests/Core/SurfaceNormalParityTests.swift	Core	-	the two Surface normal entry points agree, including at a cone apex
 Tests/OCCTSurfaceTests/SurfaceOperationsTests.swift	Tests/OCCTSurfaceTests/Core/SurfaceOperationsTests.swift	Core	-	trim, offset, translate, scale and mirror a Surface
 Tests/OCCTSurfaceTests/SurfacePipeTests.swift	Tests/OCCTSurfaceTests/SweepsAndLofts/SurfacePipeTests.swift	SweepsAndLofts	-	Surface pipe with a circular or sectioned profile
-Tests/OCCTSurfaceTests/SurfaceQueriesV123Tests.swift	Tests/OCCTSurfaceTests/Core/SurfaceQueriesV123Tests.swift	Core	-	u and v period of a cylinder and a plane
+Tests/OCCTSurfaceTests/SurfaceQueriesV123Tests.swift	Tests/OCCTSurfaceTests/Core/SurfacePeriodQueriesTests.swift	Core	-	u and v period of a cylinder and a plane
 Tests/OCCTSurfaceTests/SurfaceSingularityTests.swift	Tests/OCCTSurfaceTests/Core/SurfaceSingularityTests.swift	Core	-	singularity and degeneration detection at sphere poles and cone apexes
 Tests/OCCTSurfaceTests/SurfaceSweptTests.swift	Tests/OCCTSurfaceTests/SweepsAndLofts/SurfaceSweptTests.swift	SweepsAndLofts	-	linear extrusion and revolution surfaces
 Tests/OCCTSurfaceTests/SurfaceTestFixtures.swift	Tests/OCCTSurfaceTests/SurfaceTestFixtures.swift	(stays)	-	shared fixtures used by several areas (Gordon network, BSpline fixtures); stays at the target root so every area sees it

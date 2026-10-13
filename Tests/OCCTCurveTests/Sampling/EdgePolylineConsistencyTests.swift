@@ -7,7 +7,7 @@ import Testing
 struct EdgePolylineConsistencyTests {
 
     @Test("Lofted shape edge polylines match edge count")
-    func loftedShapeEdgePolylines() {
+    func loftedShapeEdgePolylines() throws {
         // Two circles at different Z heights
         guard let circle1 = Wire.circle(radius: 10),
             let circle2 = Wire.circle(radius: 5)
@@ -16,7 +16,7 @@ struct EdgePolylineConsistencyTests {
             return
         }
         // Loft between the two circles
-        let lofted = Shape.loft(profiles: [circle1, circle2], solid: true)!
+        let lofted = try #require(Shape.loft(profiles: [circle1, circle2], solid: true))
         #expect(lofted.isValid)
 
         let edgeCount = lofted.edgeCount
@@ -36,12 +36,12 @@ struct EdgePolylineConsistencyTests {
     }
 
     @Test("Extruded rectangle all 12 edges recovered")
-    func extrudedRectangleEdges() {
+    func extrudedRectangleEdges() throws {
         guard let rect = Wire.rectangle(width: 10, height: 5) else {
             Issue.record("Failed to create rectangle wire")
             return
         }
-        let solid = Shape.extrude(profile: rect, direction: SIMD3(0, 0, 1), length: 8)!
+        let solid = try #require(Shape.extrude(profile: rect, direction: SIMD3(0, 0, 1), length: 8))
         #expect(solid.isValid)
 
         // A box-like extrusion has 12 edges
@@ -54,12 +54,13 @@ struct EdgePolylineConsistencyTests {
     }
 
     @Test("Extruded circle seam edges handled")
-    func extrudedCircleEdges() {
+    func extrudedCircleEdges() throws {
         guard let circle = Wire.circle(radius: 5) else {
             Issue.record("Failed to create circle wire")
             return
         }
-        let solid = Shape.extrude(profile: circle, direction: SIMD3(0, 0, 1), length: 10)!
+        let solid = try #require(
+            Shape.extrude(profile: circle, direction: SIMD3(0, 0, 1), length: 10))
         #expect(solid.isValid)
 
         let edgeCount = solid.edgeCount
@@ -78,10 +79,10 @@ struct EdgePolylineConsistencyTests {
     }
 
     @Test("allEdgePolylines count matches edgeCount for various shapes")
-    func consistencyAcrossShapes() {
+    func consistencyAcrossShapes() throws {
         let shapes: [(String, Shape)] = [
-            ("box", Shape.box(width: 5, height: 5, depth: 5)!),
-            ("cylinder", Shape.cylinder(radius: 3, height: 6)!),
+            ("box", try #require(Shape.box(width: 5, height: 5, depth: 5))),
+            ("cylinder", try #require(Shape.cylinder(radius: 3, height: 6))),
         ]
 
         for (name, shape) in shapes {
@@ -93,7 +94,7 @@ struct EdgePolylineConsistencyTests {
         }
 
         // Sphere has degenerate edges (poles) that are correctly skipped
-        let sphere = Shape.sphere(radius: 4)!
+        let sphere = try #require(Shape.sphere(radius: 4))
         let spherePolylines = sphere.allEdgePolylines(deflection: 0.1)
         #expect(spherePolylines.count >= 1, "Sphere should have at least the equator edge")
         #expect(spherePolylines.count <= sphere.edgeCount)

@@ -114,12 +114,13 @@ struct TransformExpansionTests {
         // A matrix with no accidental symmetry in either its rotation or its translation, so a
         // shuffled index would move the box to the wrong place rather than coincidentally the
         // right one.
-        let grouped = Matrix12Grouped([
-            1, 0, 0,
-            0, 1, 0,
-            0, 0, 1,
-            5, 10, 15,
-        ])!
+        let grouped = try #require(
+            Matrix12Grouped([
+                1, 0, 0,
+                0, 1, 0,
+                0, 0, 1,
+                5, 10, 15,
+            ]))
         let box = try #require(Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10))
         let viaGrouped = try #require(box.transformed(matrix: grouped))
         let viaInterleaved = try #require(box.transformed(byMatrix: grouped.interleaved))

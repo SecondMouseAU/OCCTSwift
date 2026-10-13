@@ -24,21 +24,21 @@ struct ShapeAnalysisTests {
     }
 
     @Test("Analyze shape for small features")
-    func analyzeForSmallFeatures() {
+    func analyzeForSmallFeatures() throws {
         // Create a box - should have no small features
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
 
         let analysis = box.analyze(tolerance: 0.001)
 
         #expect(analysis != nil)
-        #expect(analysis!.smallEdgeCount == 0)
-        #expect(analysis!.smallFaceCount == 0)
+        #expect(try #require(analysis).smallEdgeCount == 0)
+        #expect(try #require(analysis).smallFaceCount == 0)
     }
 
     @Test("Analysis result properties")
-    func analysisResultProperties() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
-        let analysis = box.analyze()!
+    func analysisResultProperties() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let analysis = try #require(box.analyze())
 
         #expect(analysis.totalProblems >= 0)
         // Check that totalProblems is consistent with component counts. freeFaceCount is

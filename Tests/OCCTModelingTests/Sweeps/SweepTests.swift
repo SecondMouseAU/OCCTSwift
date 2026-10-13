@@ -117,8 +117,8 @@ struct SweepTests {
 
     // Issue #170: orientedForward() flips a reversed solid; leaves a good one.
     @Test("orientedForward normalises a reversed solid")
-    func orientedForwardNormalises() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func orientedForwardNormalises() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         #expect(box.signedVolume > 0)
 
         guard let reversed = box.reversed else {

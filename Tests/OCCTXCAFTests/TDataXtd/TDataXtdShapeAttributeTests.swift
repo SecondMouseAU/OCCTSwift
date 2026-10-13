@@ -27,9 +27,9 @@ struct TDataXtdShapeAttributeTests {
     }
 
     @Test("Label without shape attribute")
-    func noShapeAttribute() {
-        let doc = Document.create()!
-        let label = doc.createLabel()!
+    func noShapeAttribute() throws {
+        let doc = try #require(Document.create())
+        let label = try #require(doc.createLabel())
         #expect(!label.hasShapeAttribute)
         #expect(label.shapeAttribute() == nil)
     }
