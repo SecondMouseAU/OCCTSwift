@@ -64,8 +64,8 @@ struct BRepFillGeneratorTests {
     }
 
     @Test("Returns nil with fewer than 2 wires")
-    func needsAtLeastTwo() {
-        let w1 = Wire.rectangle(width: 10, height: 10)!
+    func needsAtLeastTwo() throws {
+        let w1 = try #require(Wire.rectangle(width: 10, height: 10))
         let result = Shape.ruledShell(from: [w1])
         #expect(result == nil)
     }

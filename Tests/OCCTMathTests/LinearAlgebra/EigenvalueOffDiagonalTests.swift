@@ -1,5 +1,5 @@
 //
-//  Issue1643EigenvalueOffDiagonalTests.swift
+//  EigenvalueOffDiagonalTests.swift
 //  OCCTSwift
 //
 //  #1643: `MathSolver.eigenvalues`/`.eigenvaluesAndVectors` used to take an n-element

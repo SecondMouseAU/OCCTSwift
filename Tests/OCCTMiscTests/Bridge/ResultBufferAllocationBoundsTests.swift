@@ -56,20 +56,26 @@ struct Issue622AllocationBounds {
     // assertion made twice, not a case lost.
     private static let pastInt32 = Int.bitWidth > 32 ? Int(Int32.max) + 1 : Int.max
 
-    private func box() -> Shape { Shape.box(width: 10, height: 10, depth: 10)! }
-    private func sphere() -> Shape { Shape.sphere(radius: 5)! }
-    private func segment3D() -> Curve3D { Curve3D.segment(from: .zero, to: SIMD3(10, 0, 0))! }
-    private func segment2D() -> Curve2D { Curve2D.segment(from: .zero, to: SIMD2(10, 0))! }
-    private func plane() -> Surface { Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1))! }
-    private func tree() -> KDTree {
-        KDTree(points: [SIMD3(0, 0, 0), SIMD3(1, 1, 1), SIMD3(2, 2, 2)])!
+    private func box() throws -> Shape { try #require(Shape.box(width: 10, height: 10, depth: 10)) }
+    private func sphere() throws -> Shape { try #require(Shape.sphere(radius: 5)) }
+    private func segment3D() throws -> Curve3D {
+        try #require(Curve3D.segment(from: .zero, to: SIMD3(10, 0, 0)))
+    }
+    private func segment2D() throws -> Curve2D {
+        try #require(Curve2D.segment(from: .zero, to: SIMD2(10, 0)))
+    }
+    private func plane() throws -> Surface {
+        try #require(Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1)))
+    }
+    private func tree() throws -> KDTree {
+        try #require(KDTree(points: [SIMD3(0, 0, 0), SIMD3(1, 1, 1), SIMD3(2, 2, 2)]))
     }
 
     // MARK: - Shape.raycast, the entry point #622 was filed about
 
     @Test("Shape.raycast clamps maxHits instead of allocating ~880 GB and trapping")
-    func raycastCapacity() {
-        let b = box()
+    func raycastCapacity() throws {
+        let b = try box()
         let origin = SIMD3(0.0, 0, 20)
         let direction = SIMD3(0.0, 0, -1)
 
@@ -92,23 +98,23 @@ struct Issue622AllocationBounds {
     // MARK: - Curve and surface capacities
 
     @Test("Curve3D extrema/intersection/split capacities clamp rather than trap")
-    func curve3DCapacities() {
-        let a = segment3D()
+    func curve3DCapacities() throws {
+        let a = try segment3D()
         // Deliberately skew rather than parallel. `GeomAPI_ExtremaCurveCurve` SIGSEGVs
         // (uncatchable) on two parallel lines at *any* capacity, measured here at maxCount 2, 20,
         // 100, 1e4, 1e6, 1e7 and Int32.max + 1, all EXIT -11, including the method's own default
         // of 20. That is the documented `BRepExtrema_ExtCC` parallel hazard on the
         // `GeomAPI_ExtremaCurveCurve` path, entirely independent of the count bound this suite is
         // about; a parallel fixture here would test the crash, not the bound.
-        let b = Curve3D.segment(from: SIMD3(5, -5, 1), to: SIMD3(5, 5, 1))!
+        let b = try #require(Curve3D.segment(from: SIMD3(5, -5, 1), to: SIMD3(5, 5, 1)))
         #expect(
             a.extrema(with: b, maxCount: Self.pastInt32).count
                 == a.extrema(with: b).count)
         #expect(a.extrema(with: b, maxCount: 0).count == 0)
         #expect(a.extrema(with: b, maxCount: -1).count == 0)
 
-        let through = Curve3D.segment(from: SIMD3(0, 0, -20), to: SIMD3(0, 0, 20))!
-        let p = plane()
+        let through = try #require(Curve3D.segment(from: SIMD3(0, 0, -20), to: SIMD3(0, 0, 20)))
+        let p = try plane()
         #expect(
             through.intersections(with: p, maxHits: Self.pastInt32).count
                 == through.intersections(with: p).count)
@@ -123,8 +129,8 @@ struct Issue622AllocationBounds {
     }
 
     @Test("Curve2D.splitAtContinuity clamps maxSegments rather than trapping")
-    func curve2DSplitCapacity() {
-        let c = segment2D()
+    func curve2DSplitCapacity() throws {
+        let c = try segment2D()
         #expect(
             c.splitAtContinuity(maxSegments: Self.pastInt32).count
                 == c.splitAtContinuity().count)
@@ -133,9 +139,9 @@ struct Issue622AllocationBounds {
     }
 
     @Test("Surface.intersections clamps maxCurves rather than trapping")
-    func surfaceIntersectionCapacity() {
-        let a = plane()
-        let b = Surface.plane(origin: .zero, normal: SIMD3(0, 1, 0))!
+    func surfaceIntersectionCapacity() throws {
+        let a = try plane()
+        let b = try #require(Surface.plane(origin: .zero, normal: SIMD3(0, 1, 0)))
         #expect(
             a.intersections(with: b, maxCurves: Self.pastInt32).count
                 == a.intersections(with: b).count)
@@ -144,8 +150,8 @@ struct Issue622AllocationBounds {
     }
 
     @Test("point projection capacities clamp rather than trap")
-    func projectionCapacities() {
-        let c = segment3D()
+    func projectionCapacities() throws {
+        let c = try segment3D()
         let q = SIMD3(5.0, 5, 0)
         #expect(
             c.projectPointAll(q, maxResults: Self.pastInt32).count
@@ -153,7 +159,7 @@ struct Issue622AllocationBounds {
         #expect(c.projectPointAll(q, maxResults: 0).count == 0)
         #expect(c.projectPointAll(q, maxResults: -1).count == 0)
 
-        let s = plane()
+        let s = try plane()
         let r = SIMD3(1.0, 1, 5)
         #expect(
             s.projectPointAll(r, maxResults: Self.pastInt32).count
@@ -165,9 +171,9 @@ struct Issue622AllocationBounds {
     // MARK: - Shape capacities
 
     @Test("Shape.allDistanceSolutions clamps maxSolutions rather than trapping")
-    func allDistanceSolutionsCapacity() {
-        let b = box()
-        let s = sphere()
+    func allDistanceSolutionsCapacity() throws {
+        let b = try box()
+        let s = try sphere()
         #expect(
             b.allDistanceSolutions(to: s, maxSolutions: Self.pastInt32)?.count
                 == b.allDistanceSolutions(to: s)?.count)
@@ -182,8 +188,8 @@ struct Issue622AllocationBounds {
     }
 
     @Test("Shape.selfIntersectionPairs clamps maxPairs rather than trapping")
-    func selfIntersectionPairsCapacity() {
-        let b = box()
+    func selfIntersectionPairsCapacity() throws {
+        let b = try box()
         #expect(
             b.selfIntersectionPairs(maxPairs: Self.pastInt32).count
                 == b.selfIntersectionPairs().count)
@@ -194,8 +200,8 @@ struct Issue622AllocationBounds {
     // MARK: - Spatial search capacities
 
     @Test("KDTree search capacities clamp rather than trap")
-    func kdTreeCapacities() {
-        let t = tree()
+    func kdTreeCapacities() throws {
+        let t = try tree()
         #expect(t.kNearest(to: .zero, k: 3).count == 3)
         #expect(t.kNearest(to: .zero, k: Self.pastInt32).count == 3)
         #expect(t.kNearest(to: .zero, k: 0).count == 0)
@@ -215,9 +221,9 @@ struct Issue622AllocationBounds {
     }
 
     @Test("all three Selector.pick overloads clamp maxResults rather than trapping")
-    func selectorPickCapacities() {
+    func selectorPickCapacities() throws {
         let selector = Selector()
-        selector.add(shape: box(), id: 1)
+        selector.add(shape: try box(), id: 1)
         let camera = Camera()
         let viewSize = SIMD2(800.0, 600.0)
         let pixel = SIMD2(400.0, 300.0)

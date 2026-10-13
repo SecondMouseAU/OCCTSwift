@@ -8,8 +8,8 @@ import Testing
 struct EdgeConnectTests {
 
     @Test("Box edge connectivity")
-    func boxConnectivity() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func boxConnectivity() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let connected = box.connectedEdges
         // Box edges are already connected, should still succeed
         #expect(connected != nil)

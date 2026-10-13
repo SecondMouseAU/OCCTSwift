@@ -27,14 +27,14 @@ struct StressFilletBuilderLifecycleTests {
     // With no edges added BRepFilletAPI_MakeFillet::Build throws "There are no suitable edges
     // for chamfer or fillet", which the bridge reports as nil.
     @Test func buildEmpty() throws {
-        let box = standardBox()
+        let box = try standardBox()
         let builder = try #require(FilletBuilder(shape: box))
         let result = builder.build()
         #expect(result == nil)
     }
 
     @Test func normalCycle() throws {
-        let box = standardBox()
+        let box = try standardBox()
         let edges = box.edges()
         try #require(!edges.isEmpty)
         let builder = try #require(FilletBuilder(shape: box))
@@ -61,7 +61,7 @@ struct StressFilletBuilderLifecycleTests {
     // contour, and nothing was built, so a builder that dropped its edge, or reported a result it
     // never computed, fails here and not only in `normalCycle`.
     @Test func destroyWithoutBuild() throws {
-        let box = standardBox()
+        let box = try standardBox()
         let edges = box.edges()
         try #require(!edges.isEmpty)
         let builder = try #require(FilletBuilder(shape: box))
@@ -72,7 +72,7 @@ struct StressFilletBuilderLifecycleTests {
     }
 
     @Test func invalidInput() throws {
-        let box = standardBox()
+        let box = try standardBox()
         let builder = try #require(FilletBuilder(shape: box))
         let edges = box.edges()
         try #require(!edges.isEmpty)
@@ -88,7 +88,7 @@ struct StressFilletBuilderLifecycleTests {
     // unrounded (volume 1000, not 997.854); the probe shows the kernel doing the same, so this
     // pins OCCT's behaviour rather than a bridge defect.
     @Test func doubleBuild() throws {
-        let box = standardBox()
+        let box = try standardBox()
         let edges = box.edges()
         try #require(!edges.isEmpty)
         let builder = try #require(FilletBuilder(shape: box))
@@ -102,7 +102,7 @@ struct StressFilletBuilderLifecycleTests {
     }
 
     @Test func queryContourDetails() throws {
-        let box = standardBox()
+        let box = try standardBox()
         let edges = box.edges()
         try #require(edges.count >= 2)
         let builder = try #require(FilletBuilder(shape: box))
@@ -135,14 +135,14 @@ struct StressChamferBuilderLifecycleTests {
 
     // As for FilletBuilder: with no edges Build throws, and the bridge reports nil.
     @Test func buildEmpty() throws {
-        let box = standardBox()
+        let box = try standardBox()
         let builder = try #require(ChamferBuilder(shape: box))
         let result = builder.build()
         #expect(result == nil)
     }
 
     @Test func normalCycleSymmetric() throws {
-        let box = standardBox()
+        let box = try standardBox()
         let edges = box.edges()
         try #require(!edges.isEmpty)
         let builder = try #require(ChamferBuilder(shape: box))
@@ -157,7 +157,7 @@ struct StressChamferBuilderLifecycleTests {
     // As for FilletBuilder.destroyWithoutBuild: the builder is required so the release runs, and the
     // edge it holds when it goes is pinned (#2983).
     @Test func destroyWithoutBuild() throws {
-        let box = standardBox()
+        let box = try standardBox()
         let builder = try #require(ChamferBuilder(shape: box))
         let edges = box.edges()
         try #require(!edges.isEmpty)
@@ -166,7 +166,7 @@ struct StressChamferBuilderLifecycleTests {
     }
 
     @Test func invalidInput() throws {
-        let box = standardBox()
+        let box = try standardBox()
         let builder = try #require(ChamferBuilder(shape: box))
         let edges = box.edges()
         try #require(!edges.isEmpty)
@@ -179,7 +179,7 @@ struct StressChamferBuilderLifecycleTests {
     // Same kernel behaviour as FilletBuilder.doubleBuild: the second Build() returns the box
     // unchanged (1000, not 995), in OCCT as well as through the bridge.
     @Test func doubleBuild() throws {
-        let box = standardBox()
+        let box = try standardBox()
         let edges = box.edges()
         try #require(!edges.isEmpty)
         let builder = try #require(ChamferBuilder(shape: box))
@@ -194,7 +194,7 @@ struct StressChamferBuilderLifecycleTests {
 
     // One symmetric contour (all three flags were read into `_` before).
     @Test func queryContourDetails() throws {
-        let box = standardBox()
+        let box = try standardBox()
         let edges = box.edges()
         try #require(!edges.isEmpty)
         let builder = try #require(ChamferBuilder(shape: box))
@@ -329,7 +329,7 @@ struct StressSewingBuilderLifecycleTests {
     // Sewing a closed box gives back its closed shell, enclosing 1000.
     @Test func normalCycle() throws {
         let sewing = try #require(SewingBuilder(tolerance: 1e-6))
-        let box = standardBox()
+        let box = try standardBox()
         sewing.add(box)
         sewing.perform()
         let result = try #require(sewing.result)
@@ -340,8 +340,8 @@ struct StressSewingBuilderLifecycleTests {
 
     @Test func twoShapes() throws {
         let sewing = try #require(SewingBuilder(tolerance: 1e-3))
-        let b1 = Shape.box(width: 10, height: 10, depth: 10)!
-        let b2 = Shape.box(origin: SIMD3(10, 0, 0), width: 10, height: 10, depth: 10)!
+        let b1 = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let b2 = try #require(Shape.box(origin: SIMD3(10, 0, 0), width: 10, height: 10, depth: 10))
         sewing.add(b1)
         sewing.add(b2)
         sewing.perform()
@@ -353,13 +353,13 @@ struct StressSewingBuilderLifecycleTests {
     // #2983: a shape was added and nothing performed, so there is no result to hand back yet.
     @Test func destroyWithoutPerform() throws {
         let sewing = try #require(SewingBuilder(tolerance: 1e-6))
-        sewing.add(standardBox())
+        sewing.add(try standardBox())
         #expect(sewing.result == nil)
     }
 
     @Test func extendedQueries() throws {
         let sewing = try #require(SewingBuilder(tolerance: 1e-3))
-        sewing.add(standardBox())
+        sewing.add(try standardBox())
         sewing.setNonManifoldMode(false)
         sewing.perform()
         // No face is deleted sewing a clean box (the count was read into `_` before).
@@ -385,7 +385,7 @@ struct StressWireBuilderLifecycleTests {
     // The first four edges of the box in explorer order form one connected wire.
     @Test func normalCycle() throws {
         let builder = WireBuilder()
-        let box = standardBox()
+        let box = try standardBox()
         let edges = box.subShapes(ofType: .edge)
         for edge in edges.prefix(4) {
             builder.addEdge(edge)
@@ -400,7 +400,7 @@ struct StressWireBuilderLifecycleTests {
     // in. The wire itself is the getter this test exists not to call.
     @Test func destroyWithoutGettingWire() throws {
         let builder = WireBuilder()
-        let box = standardBox()
+        let box = try standardBox()
         let edges = box.subShapes(ofType: .edge)
         let edge = try #require(edges.first)
         #expect(!builder.isDone)
@@ -410,7 +410,7 @@ struct StressWireBuilderLifecycleTests {
 
     @Test func addWireShape() throws {
         let builder = WireBuilder()
-        let wires = standardBox().subShapes(ofType: .wire)
+        let wires = try standardBox().subShapes(ofType: .wire)
         let wire = try #require(wires.first)
         builder.addWire(wire)
         // One of the box's four-edge face wires, taken whole.
@@ -456,8 +456,8 @@ struct StressHatchBuilderLifecycleTests {
 struct StressUnifySameDomainBuilderLifecycleTests {
 
     @Test func normalCycle() throws {
-        let b1 = Shape.box(width: 10, height: 10, depth: 10)!
-        let b2 = Shape.box(origin: SIMD3(10, 0, 0), width: 10, height: 10, depth: 10)!
+        let b1 = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let b2 = try #require(Shape.box(origin: SIMD3(10, 0, 0), width: 10, height: 10, depth: 10))
         let fused = try #require(b1.union(b2))
         let unifier = UnifySameDomainBuilder(shape: fused)
         unifier.build()
@@ -470,7 +470,7 @@ struct StressUnifySameDomainBuilderLifecycleTests {
     }
 
     @Test func buildWithoutModification() throws {
-        let box = standardBox()
+        let box = try standardBox()
         let unifier = UnifySameDomainBuilder(shape: box)
         unifier.build()
         let result = try #require(unifier.shape)
@@ -483,7 +483,7 @@ struct StressUnifySameDomainBuilderLifecycleTests {
     // build() `shape` already is that copy: the box's six faces and its 1000 of volume, which is
     // what OCCT's own `Shape()` answers before `Build()` too (#2983: this asserted nothing).
     @Test func destroyWithoutBuild() throws {
-        let box = standardBox()
+        let box = try standardBox()
         let unifier = UnifySameDomainBuilder(shape: box)
         let held = try #require(unifier.shape)
         #expect(held.subShapeCount(ofType: .face) == 6)
@@ -491,7 +491,7 @@ struct StressUnifySameDomainBuilderLifecycleTests {
     }
 
     @Test func withTolerances() throws {
-        let box = standardBox()
+        let box = try standardBox()
         let unifier = UnifySameDomainBuilder(
             shape: box, unifyEdges: true, unifyFaces: true, concatBSplines: false)
         unifier.setLinearTolerance(1e-4)
@@ -895,8 +895,8 @@ struct StressThruSectionsBuilderLifecycleTests {
 struct StressCellsBuilderLifecycleTests {
 
     @Test func normalCycle() throws {
-        let box = Shape.box(width: 20, height: 20, depth: 20)!
-        let sphere = Shape.sphere(radius: 10)!
+        let box = try #require(Shape.box(width: 20, height: 20, depth: 20))
+        let sphere = try #require(Shape.sphere(radius: 10))
         let builder = try #require(CellsBuilder(shapes: [box, sphere]))
         builder.addAllToResult()
         let result = try #require(builder.result())
@@ -914,8 +914,8 @@ struct StressCellsBuilderLifecycleTests {
 
     // Everything taken back out leaves an empty result, not nil.
     @Test func removeAll() throws {
-        let box = standardBox()
-        let sphere = standardSphere()
+        let box = try standardBox()
+        let sphere = try standardSphere()
         let builder = try #require(CellsBuilder(shapes: [box, sphere]))
         builder.addAllToResult()
         builder.removeAllFromResult()
@@ -929,7 +929,7 @@ struct StressCellsBuilderLifecycleTests {
     // shapes and requires the builder, so the release it is about actually happens.
     // #2983: what the builder holds when it goes is the two cells the sphere splits the box into.
     @Test func destroyWithoutResult() throws {
-        let box = standardBox()
+        let box = try standardBox()
         let builder = try #require(CellsBuilder(shapes: [box, standardSphere()]))
         builder.addAllToResult()
         let parts = try #require(builder.allParts())
@@ -951,8 +951,8 @@ struct StressSectionBuilderLifecycleTests {
 
     // The inscribed sphere touches the box at six points: six vertices, no edge.
     @Test func normalCycleTwoShapes() throws {
-        let box = standardBox()
-        let sphere = standardSphere()
+        let box = try standardBox()
+        let sphere = try standardSphere()
         let builder = try #require(SectionBuilder(shape1: box, shape2: sphere))
         let result = try #require(builder.build())
         #expect(result.isValid)
@@ -961,8 +961,8 @@ struct StressSectionBuilderLifecycleTests {
 
     @Test func initThenSetShapes() throws {
         let builder = try #require(SectionBuilder())
-        builder.init1(shape: standardBox())
-        builder.init2(shape: standardSphere())
+        builder.init1(shape: try standardBox())
+        builder.init2(shape: try standardSphere())
         let result = try #require(builder.build())
         #expect(result.isValid)
         #expect(result.subShapeCount(ofType: .vertex) == 6)
@@ -971,7 +971,7 @@ struct StressSectionBuilderLifecycleTests {
     // The z = 0 plane cuts the box in a 10 × 10 square: four edges.
     @Test func sectionWithPlane() throws {
         let builder = try #require(SectionBuilder())
-        builder.init1(shape: standardBox())
+        builder.init1(shape: try standardBox())
         builder.init2(plane: 0, 0, 1, 0)  // XY plane at Z=0
         let result = try #require(builder.build())
         #expect(result.isValid)
@@ -1047,7 +1047,7 @@ struct StressSectionBuilderLifecycleTests {
         // again. The section's internal BOPAlgo data still belongs to the FIRST build, before the
         // #916 fix, `built` stayed true and ancestorFaceOn1 kept answering from that stale data
         // despite no longer matching the builder's current arguments.
-        builder.init1(shape: standardSphere())
+        builder.init1(shape: try standardSphere())
         #expect(builder.ancestorFaceOn1(edge: edge) == nil)
         #expect(builder.ancestorFaceOn2(edge: edge) == nil)
     }
@@ -1059,7 +1059,7 @@ struct StressSectionBuilderLifecycleTests {
 struct StressWireAnalyzerLifecycleTests {
 
     @Test func normalCycle() throws {
-        let box = standardBox()
+        let box = try standardBox()
         let faces = box.subShapes(ofType: .face)
         let wires = box.subShapes(ofType: .wire)
         let face = try #require(faces.first)
@@ -1078,7 +1078,7 @@ struct StressWireAnalyzerLifecycleTests {
     }
 
     @Test func checkMethods() throws {
-        let box = standardBox()
+        let box = try standardBox()
         let faces = box.subShapes(ofType: .face)
         let sectionWires = box.sectionWiresAtZ(0.0)
         let face = try #require(faces.first)
@@ -1129,7 +1129,7 @@ struct StressWireAnalyzerLifecycleTests {
     // #2983: before perform() the analyzer already holds the section's four edges and reports itself
     // loaded.
     @Test func destroyWithoutPerform() throws {
-        let box = standardBox()
+        let box = try standardBox()
         let faces = box.subShapes(ofType: .face)
         let sectionWires = box.sectionWiresAtZ(0.0)
         let face = try #require(faces.first)
@@ -1146,7 +1146,7 @@ struct StressWireAnalyzerLifecycleTests {
 struct StressWireFixerLifecycleTests {
 
     @Test func normalCycle() throws {
-        let box = standardBox()
+        let box = try standardBox()
         let faces = box.subShapes(ofType: .face)
         let wires = box.subShapes(ofType: .wire)
         let face = try #require(faces.first)
@@ -1187,7 +1187,7 @@ struct StressWireFixerLifecycleTests {
     // is the getter this test exists not to call, so nothing is observable here beyond the fixer
     // existing when it is let go (#2983: said, not assumed).
     @Test func destroyWithoutGettingResult() throws {
-        let box = standardBox()
+        let box = try standardBox()
         let faces = box.subShapes(ofType: .face)
         let wires = box.subShapes(ofType: .wire)
         let face = try #require(faces.first)
@@ -1202,7 +1202,7 @@ struct StressWireFixerLifecycleTests {
 struct StressFaceFixerLifecycleTests {
 
     @Test func normalCycle() throws {
-        let box = standardBox()
+        let box = try standardBox()
         let faces = box.subShapes(ofType: .face)
         let faceShape = try #require(faces.first)
         let fixer = try #require(FaceFixer(face: faceShape))
@@ -1217,7 +1217,7 @@ struct StressFaceFixerLifecycleTests {
 
     // #2983: before perform() the fixer holds the face it was given, the box's 100.
     @Test func destroyWithoutPerform() throws {
-        let box = standardBox()
+        let box = try standardBox()
         let faces = box.subShapes(ofType: .face)
         let faceShape = try #require(faces.first)
         let fixer = try #require(FaceFixer(face: faceShape))
@@ -1232,7 +1232,7 @@ struct StressFaceFixerLifecycleTests {
 struct StressShapeFixerLifecycleTests {
 
     @Test func normalCycle() throws {
-        let box = standardBox()
+        let box = try standardBox()
         let fixer = ShapeFixer(shape: box)
         fixer.setPrecision(1e-6)
         // ShapeFix_Shape finds nothing to fix on a clean box: Perform reports false.
@@ -1242,7 +1242,7 @@ struct StressShapeFixerLifecycleTests {
     }
 
     @Test func fixAlreadyGoodShape() throws {
-        let box = standardBox()
+        let box = try standardBox()
         let fixer = ShapeFixer(shape: box)
         fixer.perform()
         let result = try #require(fixer.shape)
@@ -1259,7 +1259,7 @@ struct StressShapeFixerLifecycleTests {
     // #2983: before perform() nothing has been fixed, so the status is OK and not DONE, and the
     // fixer holds the shape it was given: the box's six faces.
     @Test func destroyWithoutPerform() throws {
-        let box = standardBox()
+        let box = try standardBox()
         let fixer = ShapeFixer(shape: box)
         #expect(fixer.status(.ok))
         #expect(!fixer.status(.done))

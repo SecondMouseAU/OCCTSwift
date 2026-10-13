@@ -52,7 +52,7 @@ struct STEPReaderRootsTests {
 
     @Test("Import with system length unit (millimeters, unscaled)")
     func importWithUnit() throws {
-        let box = Shape.box(width: 10, height: 20, depth: 30)!
+        let box = try #require(Shape.box(width: 10, height: 20, depth: 30))
         let tmpPath = NSTemporaryDirectory() + "swift_test_v58_unit.step"
         let url = URL(fileURLWithPath: tmpPath)
         try box.writeSTEP(to: url)
@@ -82,7 +82,7 @@ struct STEPReaderRootsTests {
     // direction is correct (0.001 for mm / 1.0 for meters, not the reverse).
     @Test("Import with system length unit scales geometry into meters")
     func importWithUnitScalesToMeters() throws {
-        let box = Shape.box(width: 10, height: 20, depth: 30)!
+        let box = try #require(Shape.box(width: 10, height: 20, depth: 30))
         let tmpPath = NSTemporaryDirectory() + "swift_test_v58_unit_meters.step"
         let url = URL(fileURLWithPath: tmpPath)
         try box.writeSTEP(to: url)

@@ -301,7 +301,7 @@ rather than bookkeeping, and all four now ship:
 | `0029` (#1022) | An uncatchable SIGSEGV on `Document.datums` for any OCAF document whose datum has a point and no annotation plane. **The bridge guard added for #1030 is retired**, in all six files that carried it, since it was refusing a shape the kernel can read. |
 | `0030` (#1154) | A live data race on `TopoDS_TShape::myState` under ordinary concurrent use of a boolean result, invisible to `swift test`. Its `Scripts/tsan.supp` suppressions were removed at this repin, and `check-inventory-prose.py` is what caught them (#1409). |
 | `0031` (#1153) | The same shape in `BSplCLib_Cache`/`GeomAdaptor_*` for any consumer sharing an adaptor across threads. No suppression existed, so nothing to retire. **The patch itself was retired at v4.0.0-kernel.6 (#3065).** |
-| `0034` (#1515) | `Shape.coonsAlgPatch` returning a surface collapsed onto its `u == v` diagonal for every off-diagonal sample, silently. The Swift test that asserts the correct surface was impossible before the repin, because `build-and-test` resolved the unpatched asset; it exists now, in `Tests/OCCTSurfaceTests/GeomFill/Issue1515CoonsPatchUParameterTests.swift`. |
+| `0034` (#1515) | `Shape.coonsAlgPatch` returning a surface collapsed onto its `u == v` diagonal for every off-diagonal sample, silently. The Swift test that asserts the correct surface was impossible before the repin, because `build-and-test` resolved the unpatched asset; it exists now, in `Tests/OCCTSurfaceTests/GeomFill/CoonsPatchUParameterTests.swift`. |
 
 The other eight (`0028`, `0033`, `0036`-`0041`) were either unreachable from the bridge (`0028`'s
 only reader was deleted by #999) or masked by the bridge's own `igesMutex()`, which serialises the
@@ -321,7 +321,7 @@ retired**, each with a regression test that fails if it comes back:
   `0021`. Retired on measurement: the loop was instrumented to report any convergence past `n=2`
   or any exhaustion and the full suite run, **6,384 tests and zero reports**.
 
-`Tests/OCCTXCAFTests/GDT/Issue1030DatumLookupGuardTests.swift` kept its name and fixtures and flipped
+`Tests/OCCTXCAFTests/GDT/DatumLookupPointWithoutPlaneTests.swift` kept its name and fixtures and flipped
 its assertions, which is the only way a guard's retirement can be regression tested: a test that
 merely stops existing proves nothing.
 

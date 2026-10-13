@@ -24,8 +24,8 @@ struct Issue367FuseMultiThreadSafetyTests {
 
     @Test("Concurrent fuseAll calls all match the single-threaded baseline face count")
     func concurrentFuseAllMatchesBaseline() async throws {
-        let baselineBox = Shape.box(width: 10, height: 10, depth: 10)!
-        let baselineSphere = Shape.sphere(center: SIMD3(5, 5, 5), radius: 6)!
+        let baselineBox = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let baselineSphere = try #require(Shape.sphere(center: SIMD3(5, 5, 5), radius: 6))
         let baseline = try #require(Shape.fuseAll([baselineBox, baselineSphere]))
         let baselineFaceCount = baseline.subShapeCount(ofType: .face)
 
@@ -39,8 +39,13 @@ struct Issue367FuseMultiThreadSafetyTests {
                 group.addTask {
                     var o = Outcome()
                     for _ in 0..<50 {
-                        let box = Shape.box(width: 10, height: 10, depth: 10)!
-                        let sphere = Shape.sphere(center: SIMD3(5, 5, 5), radius: 6)!
+                        guard let box = Shape.box(width: 10, height: 10, depth: 10),
+                            let sphere = Shape.sphere(center: SIMD3(5, 5, 5), radius: 6)
+                        else {
+                            // A nil fixture is counted into an asserted-zero tally, so it fails the test.
+                            o.failures += 1
+                            continue
+                        }
                         guard let result = Shape.fuseAll([box, sphere]) else {
                             o.failures += 1
                             continue

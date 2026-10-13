@@ -62,8 +62,8 @@ struct Issue859IsHorizontalSingleFetchTests {
     /// including through the degenerate tolerance where `upwardFaces`/`downwardFaces` start
     /// admitting faces that do not point up/down at all.
     @Test("isHorizontal agrees on the split-box compound's shared wall, both orientations")
-    func agreesOnSharedWall() {
-        guard let compound = Issue614FaceOrientationTests.splitBoxCompound() else {
+    func agreesOnSharedWall() throws {
+        guard let compound = try Issue614FaceOrientationTests.splitBoxCompound() else {
             Issue.record("could not build the split-box compound")
             return
         }

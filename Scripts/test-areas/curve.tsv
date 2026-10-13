@@ -57,7 +57,7 @@ Tests/OCCTCurveTests/CurveToAnaCurveTests.swift	Tests/OCCTCurveTests/Conversion/
 Tests/OCCTCurveTests/CuttingPlaneLineTests.swift	Tests/OCCTDrawingTests/Symbols/CuttingPlaneLineTests.swift	Symbols	-	DrawingAnnotation.cuttingPlaneLine, beside the cutting-plane direction tests
 Tests/OCCTCurveTests/EdgeCurve3DTests.swift	Tests/OCCTCurveTests/Curve3DCore/EdgeCurve3DTests.swift	Curve3DCore	-	Edge.curve3D accessor and its circleProperties
 Tests/OCCTCurveTests/EdgePolylineConsistencyTests.swift	Tests/OCCTCurveTests/Sampling/EdgePolylineConsistencyTests.swift	Sampling	-	edge polylines of lofted and extruded shapes match the edges (weak fit)
-Tests/OCCTCurveTests/EditorViewV162Tests.swift	Tests/OCCTBRepGraphTests/Mutation/EditorViewV162Tests.swift	Mutation	-	BRepGraph editor regularity, PCurve and triangulation setters
+Tests/OCCTCurveTests/EditorViewV162Tests.swift	Tests/OCCTBRepGraphTests/Mutation/EditorViewGeometricSettersTests.swift	Mutation	-	BRepGraph editor regularity, PCurve and triangulation setters
 Tests/OCCTCurveTests/EllipseArcTests.swift	Tests/OCCTCurveTests/Conics/EllipseArcTests.swift	Conics	-	arc of an ellipse from angles or points
 Tests/OCCTCurveTests/FairCurveBattenTests.swift	Tests/OCCTCurveTests/Fitting/FairCurveBattenTests.swift	Fitting	-	FairCurve_Batten
 Tests/OCCTCurveTests/FairCurveMinimalVariationTests.swift	Tests/OCCTCurveTests/Fitting/FairCurveMinimalVariationTests.swift	Fitting	-	FairCurve_MinimalVariation

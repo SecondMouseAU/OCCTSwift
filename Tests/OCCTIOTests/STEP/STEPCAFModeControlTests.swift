@@ -90,7 +90,7 @@ struct STEPCAFModeControlTests {
     @Test("Write STEP with model type")
     func writeWithModelType() throws {
         // Load a STEP file to get a document with shapes
-        let box = Shape.box(width: 10, height: 20, depth: 30)!
+        let box = try #require(Shape.box(width: 10, height: 20, depth: 30))
         let srcPath = NSTemporaryDirectory() + "swift_test_v58_caf_src.step"
         try box.writeSTEP(to: URL(fileURLWithPath: srcPath))
         let doc = try Document.load(from: URL(fileURLWithPath: srcPath))
@@ -106,7 +106,7 @@ struct STEPCAFModeControlTests {
 
     @Test("Write STEP with custom modes")
     func writeWithCustomModes() throws {
-        let box = Shape.box(width: 10, height: 20, depth: 30)!
+        let box = try #require(Shape.box(width: 10, height: 20, depth: 30))
         let srcPath = NSTemporaryDirectory() + "swift_test_v58_caf_src2.step"
         try box.writeSTEP(to: URL(fileURLWithPath: srcPath))
         let doc = try Document.load(from: URL(fileURLWithPath: srcPath))
