@@ -2291,15 +2291,29 @@ extension Shape {
 
     // MARK: - BRepFill_OffsetWire
 
-    /// Offset a planar wire on its face.
+    /// Offset the wires of a planar face.
     ///
-    /// Creates a new wire offset from the edges of the given face.
-    /// Positive offset expands outward, negative shrinks inward.
+    /// Creates a new wire offset from the edges of the given face. Positive offset expands
+    /// outward, negative shrinks inward, as `BRepOffsetAPI_MakeOffset` (and
+    /// ``offsetWireOnPlane(distance:joinType:)``) define the sign (#3364). The result is trimmed:
+    /// a closed wire for a rectangle, with rounded (arc-join) corners when it expands.
+    ///
+    /// A face whose wires are a mix of closed and open ones is refused (nil): a face with holes,
+    /// whose wires are all closed, is offset, but the open wires of a mixed face have no domain
+    /// to be offset in.
+    ///
+    /// ```swift
+    /// let rect = Wire.rectangle(width: 20, height: 20)!
+    /// let face = Shape.face(from: rect)!.faces().first!
+    /// let grown = Shape.offsetWire(face: face, offset: 3)      // 26 x 26, rounded corners
+    /// let shrunk = Shape.offsetWire(face: face, offset: -3)    // 14 x 14
+    /// ```
     ///
     /// - Parameters:
     ///   - face: Face containing the wire to offset
-    ///   - offset: Signed offset distance
-    /// - Returns: Offset wire shape, or nil on failure
+    ///   - offset: Signed offset distance (positive outward, negative inward)
+    /// - Returns: Offset wire shape, or nil on failure, including an inward offset that collapses
+    ///   the face (OCCT reports done with an empty compound there; no wire is returned for it).
     public static func offsetWire(face: Face, offset: Double) -> Shape? {
         guard let h = OCCTBRepFillOffsetWire(face.handle, offset) else { return nil }
         return Shape(handle: h)

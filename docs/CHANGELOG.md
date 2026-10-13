@@ -21,6 +21,17 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### `Shape.offsetWire(face:offset:)` offsets outward for a positive offset and inward for a negative one (#3364)
+
+`Shape.offsetWire(face:offset:)` now follows `BRepOffsetAPI_MakeOffset`: a positive offset expands the face's wires outward (an Arc join rounds the corners) and a negative offset shrinks them inward, both as trimmed closed wires. It used to shrink for a positive offset and return four untrimmed crossing segments for a negative one. An inward offset that collapses the face, and a non-finite offset, return `nil` instead of an empty compound.
+
+```swift
+let rect = Wire.rectangle(width: 20, height: 20)!
+let face = Shape.face(from: rect)!.faces().first!
+let grown = Shape.offsetWire(face: face, offset: 3)    // 8 edges, half-width 13
+let shrunk = Shape.offsetWire(face: face, offset: -3)  // 4 edges, half-width 7
+```
+
 ### `circularPattern(angle:)` with a partial angle spans the angle, stepping `angle / (count - 1)` (#3356)
 
 A partial `angle` passed to `circularPattern(axisPoint:axisDirection:count:angle:)`, `circularPatternCut(tool:axisPoint:axisDirection:count:angle:timeout:)` and `circularPatternWithFullHistory(axisPoint:axisDirection:count:angle:)` now runs from the original to the last copy, as its documentation says: three copies over `.pi / 2` sit at 0, 45 and 90 degrees (they used to sit at 0, 30 and 60 because the step was `angle / count`). A full circle, `angle: 0` or an explicit `2 * .pi`, is unchanged and steps by `2 * .pi / count`, since another copy would coincide with the original. A `count` of 1 returns just the original. Callers who relied on the old `angle / count` spacing for a partial angle should pass `angle * Double(count - 1) / Double(count)`.
