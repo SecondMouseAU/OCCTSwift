@@ -5,6 +5,6 @@ Tests/OCCTAnalysisTests/ShapeAnalysis/PlaneDetectionTests.swift
 Tests/OCCTBRepGraphTests/Assembly/EditorViewProductOpsTests.swift
 Tests/OCCTBRepGraphTests/Mutation/EditorViewAddRemoveTests.swift
 Tests/OCCTBRepGraphTests/Mutation/EditorViewSettersTests.swift
-Tests/OCCTBRepGraphTests/Mutation/EditorViewV164Tests.swift
+Tests/OCCTBRepGraphTests/Mutation/EditorViewCacheInspectionTests.swift
 Tests/OCCTIntegrationTests/Workflows/IntegrationAssemblyInterferenceTests.swift
 Tests/OCCTModelingTests/BOPAlgo/MakeVolumeTests.swift

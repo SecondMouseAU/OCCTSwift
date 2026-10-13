@@ -8,7 +8,7 @@ struct StepTidyTests {
 
     @Test("Optimize STEP file round-trip")
     func optimizeRoundTrip() throws {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let tempDir = FileManager.default.temporaryDirectory
         let inputURL = tempDir.appendingPathComponent("tidy_input.step")
         let outputURL = tempDir.appendingPathComponent("tidy_output.step")

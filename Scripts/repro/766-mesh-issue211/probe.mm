@@ -1,4 +1,4 @@
-// Epic #766, Issue211MeshParamTests.swift: kernel parity for all three tests.
+// Epic #766, AllowQualityDecreaseTests.swift: kernel parity for all three tests.
 // Same inputs as the Swift tests, straight to OCCT: IMeshTools_Parameters filled the way
 // OCCTShapeCreateMeshWithParams fills it from MeshParameters.default, BRepMesh_IncrementalMesh
 // on BRepPrimAPI_MakeSphere(5), node and triangle counts summed over every face (what

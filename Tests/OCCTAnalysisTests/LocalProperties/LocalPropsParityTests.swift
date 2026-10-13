@@ -24,18 +24,20 @@ struct LocalPropsParityTests {
 
     /// A cone with `radius: 0`: the apex sits at `v = 0` and the tangent magnitude falls off
     /// linearly with `v`, so sampling `v` sweeps smoothly through both resolutions' thresholds.
-    private static func apexCone() -> Surface {
-        Surface.cone(origin: .zero, axis: SIMD3(0, 0, 1), radius: 0, semiAngle: .pi / 6)!
+    private static func apexCone() throws -> Surface {
+        try #require(
+            Surface.cone(origin: .zero, axis: SIMD3(0, 0, 1), radius: 0, semiAngle: .pi / 6))
     }
 
     /// A cubic Bezier whose first two poles sit `spacing` apart, so `|D1(0)| = 3 * spacing`.
     ///
     /// At `spacing == 0` the point is a cusp: the first significant derivative has order 2.
-    private static func cuspBezier(spacing: Double) -> Curve3D {
-        Curve3D.bezier(poles: [
-            SIMD3(0, 0, 0), SIMD3(spacing, 0, 0),
-            SIMD3(1, 1, 0), SIMD3(2, 0, 0),
-        ])!
+    private static func cuspBezier(spacing: Double) throws -> Curve3D {
+        try #require(
+            Curve3D.bezier(poles: [
+                SIMD3(0, 0, 0), SIMD3(spacing, 0, 0),
+                SIMD3(1, 1, 0), SIMD3(2, 0, 0),
+            ]))
     }
 
     // MARK: Surface
@@ -69,10 +71,11 @@ struct LocalPropsParityTests {
     }
 
     @Test("Well-conditioned surface points agree")
-    func wellConditionedSurfacesAgree() {
-        let sphere = Surface.sphere(center: .zero, radius: 5)!
-        let cylinder = Surface.cylinder(origin: .zero, axis: SIMD3(0, 0, 1), radius: 3)!
-        let cone = Self.apexCone()
+    func wellConditionedSurfacesAgree() throws {
+        let sphere = try #require(Surface.sphere(center: .zero, radius: 5))
+        let cylinder = try #require(
+            Surface.cylinder(origin: .zero, axis: SIMD3(0, 0, 1), radius: 3))
+        let cone = try Self.apexCone()
 
         for (u, v) in [(0.0, 0.3), (Double.pi / 3, 0.4), (1.2, -0.8)] {
             expectSurfaceAgreement(sphere, u: u, v: v, "sphere u=\(u) v=\(v)")
@@ -94,7 +97,7 @@ struct LocalPropsParityTests {
         // umbilic at v = 0, 0.3, 0.5 and -0.7, but not at v = 1, where they differ by exactly one
         // ULP (5.55e-17). Nothing in #494 changed this, IsUmbilic() takes no resolution, but it
         // is why no test here asserts a sphere is detected as umbilic.
-        let plane = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1))!
+        let plane = try #require(Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1)))
         #expect(plane.localCurvatures(u: 1, v: 2) != nil)
         #expect(plane.localCurvatureDirections(u: 1, v: 2) == nil)
         #expect(cylinder.localCurvatureDirections(u: 0, v: 0.3) != nil)
@@ -106,27 +109,27 @@ struct LocalPropsParityTests {
     /// `Precision::Confusion()`, so pre-fix `localCurvatures` returned a value and every canonical
     /// entry point returned nil/zero for the identical point.
     @Test("Inside the old 1e-10 window the two Surface families agree")
-    func surfaceToleranceWindowAgrees() {
-        let cone = Self.apexCone()
+    func surfaceToleranceWindowAgrees() throws {
+        let cone = try Self.apexCone()
         for v in [1e-9, 1e-8, 1e-7, 3e-7, 1e-6] {
             expectSurfaceAgreement(cone, u: 0, v: v, "cone v=\(v)")
         }
 
         // The sphere pole approached from just inside: same window, different degeneracy.
-        let sphere = Surface.sphere(center: .zero, radius: 3)!
+        let sphere = try #require(Surface.sphere(center: .zero, radius: 3))
         for delta in [1e-9, 1e-8, 1e-7] {
             expectSurfaceAgreement(sphere, u: 0, v: .pi / 2 - delta, "sphere pole -\(delta)")
         }
     }
 
     @Test("Genuinely degenerate surface points are undefined for both families")
-    func degenerateSurfacePointsAgree() {
-        let cone = Self.apexCone()
+    func degenerateSurfacePointsAgree() throws {
+        let cone = try Self.apexCone()
         #expect(cone.localCurvatures(u: 0, v: 0) == nil)
         #expect(cone.principalCurvatures(atU: 0, v: 0) == nil)
         #expect(cone.localCurvatureDirections(u: 0, v: 0) == nil)
 
-        let sphere = Surface.sphere(center: .zero, radius: 3)!
+        let sphere = try #require(Surface.sphere(center: .zero, radius: 3))
         for v in [Double.pi / 2, -.pi / 2] {
             expectSurfaceAgreement(sphere, u: 0, v: v, "sphere pole v=\(v)")
         }
@@ -158,18 +161,18 @@ struct LocalPropsParityTests {
     }
 
     @Test("Well-conditioned curve parameters agree")
-    func wellConditionedCurvesAgree() {
-        let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5)!
+    func wellConditionedCurvesAgree() throws {
+        let circle = try #require(Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5))
         for u in [0.0, 0.7, Double.pi, 2.0] {
             expectCurveAgreement(circle, at: u, "circle u=\(u)")
         }
 
-        let line = Curve3D.line(through: .zero, direction: SIMD3(1, 0, 0))!
+        let line = try #require(Curve3D.line(through: .zero, direction: SIMD3(1, 0, 0)))
         for u in [0.0, 1.0, -3.0] {
             expectCurveAgreement(line, at: u, "line u=\(u)")
         }
 
-        let bezier = Self.cuspBezier(spacing: 1.0)
+        let bezier = try Self.cuspBezier(spacing: 1.0)
         for u in [0.0, 0.25, 0.5, 1.0] {
             expectCurveAgreement(bezier, at: u, "bezier u=\(u)")
         }
@@ -188,10 +191,10 @@ struct LocalPropsParityTests {
     ///   - `localCentreOfCurvature(at: 0)` returned `(0, 1.5e-16, 0)` where
     ///     `centerOfCurvature(at: 0)` returned `(nan, inf, nan)`.
     @Test("Inside the old 1e-10 window the two Curve3D families agree")
-    func curveToleranceWindowAgrees() {
+    func curveToleranceWindowAgrees() throws {
         for spacing in [1e-12, 1e-10, 1e-9, 1e-8, 1e-7, 1e-6, 1e-3] {
             expectCurveAgreement(
-                Self.cuspBezier(spacing: spacing), at: 0,
+                try Self.cuspBezier(spacing: spacing), at: 0,
                 "cusp bezier spacing=\(spacing)")
         }
     }
@@ -249,7 +252,7 @@ struct LocalPropsParityTests {
     @Test("Shape.curveLocalProps agrees with Edge on a cusped edge")
     func curveLocalPropsAgreesOnCusp() throws {
         for spacing in [0.0, 1e-12, 1e-9, 1e-8, 1e-7] {
-            let curve = Self.cuspBezier(spacing: spacing)
+            let curve = try Self.cuspBezier(spacing: spacing)
             let edgeShape = try #require(Shape.edgeFromCurve(curve))
             let edge = try #require(Edge(edgeShape))
             let props = edgeShape.curveLocalProps(at: 0)
@@ -334,9 +337,9 @@ struct LocalPropsParityTests {
     /// the curvature field `CentreOfCurvature()` then divides by, so the caller got
     /// `(nan, inf, nan)` reported as a successfully computed point. Both halves of the pair did it.
     @Test("A cusp's infinite curvature yields no centre of curvature, not a NaN one")
-    func cuspCentreOfCurvatureIsUndefined() {
+    func cuspCentreOfCurvatureIsUndefined() throws {
         for spacing in [0.0, 1e-14, 1e-12, 1e-11] {
-            let curve = Self.cuspBezier(spacing: spacing)
+            let curve = try Self.cuspBezier(spacing: spacing)
             let label: Comment = "cusp bezier spacing=\(spacing)"
 
             // The sentinel really is what OCCT reports here, otherwise this test proves nothing.
@@ -351,13 +354,16 @@ struct LocalPropsParityTests {
     /// a returned value is a real number. `nil`/zero means "undefined"; NaN and infinity are never
     /// answers.
     @Test("No local-properties entry point returns a non-finite number")
-    func localPropsNeverReturnNonFinite() {
+    func localPropsNeverReturnNonFinite() throws {
         let curves: [(String, Curve3D)] = [
-            ("cusp d=0", Self.cuspBezier(spacing: 0)),
-            ("cusp d=1e-12", Self.cuspBezier(spacing: 1e-12)),
-            ("cusp d=1e-8", Self.cuspBezier(spacing: 1e-8)),
-            ("circle", Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5)!),
-            ("line", Curve3D.line(through: .zero, direction: SIMD3(1, 0, 0))!),
+            ("cusp d=0", try Self.cuspBezier(spacing: 0)),
+            ("cusp d=1e-12", try Self.cuspBezier(spacing: 1e-12)),
+            ("cusp d=1e-8", try Self.cuspBezier(spacing: 1e-8)),
+            (
+                "circle",
+                try #require(Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5))
+            ),
+            ("line", try #require(Curve3D.line(through: .zero, direction: SIMD3(1, 0, 0)))),
         ]
         for (name, curve) in curves {
             for u in [0.0, 1e-9, 0.5, 1.0] {
@@ -377,8 +383,8 @@ struct LocalPropsParityTests {
         }
 
         let surfaces: [(String, Surface)] = [
-            ("apex cone", Self.apexCone()),
-            ("sphere", Surface.sphere(center: .zero, radius: 3)!),
+            ("apex cone", try Self.apexCone()),
+            ("sphere", try #require(Surface.sphere(center: .zero, radius: 3))),
         ]
         for (name, surface) in surfaces {
             for v in [0.0, 1e-9, 1e-8, 1e-7, .pi / 2, 1.0] {

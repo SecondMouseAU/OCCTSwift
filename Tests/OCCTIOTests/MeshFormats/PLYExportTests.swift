@@ -10,7 +10,7 @@ struct PLYExportTests {
 
     @Test("Export PLY creates file")
     func exportPLYCreatesFile() throws {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let tempURL = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString)
             .appendingPathExtension("ply")
@@ -29,7 +29,7 @@ struct PLYExportTests {
         // `[Shape]` array went unused, and the export it actually ran was a valid box), so it
         // passed without exercising the guard its name claims (#1226). A bowtie (self-intersecting)
         // polygon face is deterministically invalid instead.
-        let invalid = invalidBowtieShape()
+        let invalid = try invalidBowtieShape()
         #expect(!invalid.isValid)
 
         let tempURL = FileManager.default.temporaryDirectory

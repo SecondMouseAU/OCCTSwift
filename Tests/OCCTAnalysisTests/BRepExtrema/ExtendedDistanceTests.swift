@@ -8,9 +8,9 @@ import Testing
 @Suite("Extended Distance Solutions")
 struct ExtendedDistanceTests {
     @Test("Multiple distance solutions between spheres")
-    func sphereDistanceSolutions() {
-        let sphere1 = Shape.sphere(radius: 5)!
-        let sphere2 = Shape.sphere(radius: 5)!.translated(by: SIMD3(20, 0, 0))!
+    func sphereDistanceSolutions() throws {
+        let sphere1 = try #require(Shape.sphere(radius: 5))
+        let sphere2 = try #require(Shape.sphere(radius: 5)?.translated(by: SIMD3(20, 0, 0)))
         let solutions = sphere1.allDistanceSolutions(to: sphere2)
         #expect(solutions != nil)
         if let solutions {
@@ -21,9 +21,10 @@ struct ExtendedDistanceTests {
     }
 
     @Test("Box distance solutions")
-    func boxDistanceSolutions() {
-        let box1 = Shape.box(width: 10, height: 10, depth: 10)!
-        let box2 = Shape.box(width: 10, height: 10, depth: 10)!.translated(by: SIMD3(20, 0, 0))!
+    func boxDistanceSolutions() throws {
+        let box1 = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let box2 = try #require(
+            Shape.box(width: 10, height: 10, depth: 10)?.translated(by: SIMD3(20, 0, 0)))
         let solutions = box1.allDistanceSolutions(to: box2)
         #expect(solutions != nil)
         if let solutions {
@@ -34,9 +35,10 @@ struct ExtendedDistanceTests {
     }
 
     @Test("Inner distance detection, non-overlapping shapes")
-    func notInner() {
-        let box1 = Shape.box(width: 10, height: 10, depth: 10)!
-        let box2 = Shape.box(width: 10, height: 10, depth: 10)!.translated(by: SIMD3(20, 0, 0))!
+    func notInner() throws {
+        let box1 = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let box2 = try #require(
+            Shape.box(width: 10, height: 10, depth: 10)?.translated(by: SIMD3(20, 0, 0)))
         let isInner = box1.isInside(box2)
         #expect(isInner == false)
     }

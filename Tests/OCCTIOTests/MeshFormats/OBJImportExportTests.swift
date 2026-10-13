@@ -10,7 +10,7 @@ struct OBJImportExportTests {
 
     @Test("OBJ roundtrip: box export then import")
     func objRoundtrip() throws {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let tempURL = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString)
             .appendingPathExtension("obj")
@@ -22,7 +22,7 @@ struct OBJImportExportTests {
         let imported = try Shape.loadOBJ(from: tempURL)
         // OBJ imports as a compound of triangulated faces, which may not pass strict BRep validity
         // but should have valid bounds
-        let importSize = imported.size!
+        let importSize = try #require(imported.size)
         #expect(importSize.x > 0)
         #expect(importSize.y > 0)
         #expect(importSize.z > 0)
@@ -30,7 +30,7 @@ struct OBJImportExportTests {
 
     @Test("Export OBJ creates file")
     func exportOBJCreatesFile() throws {
-        let sphere = Shape.sphere(radius: 5)!
+        let sphere = try #require(Shape.sphere(radius: 5))
         let tempURL = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString)
             .appendingPathExtension("obj")
