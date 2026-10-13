@@ -49,23 +49,33 @@ struct Issue234DegenerateHoleTests {
 
     /// A valid (non-degenerate) hole still works and heals without crashing, regression guard.
     @Test("Valid hole still produces a healable solid")
-    func validHoleStillWorks() {
-        guard
-            let outer = Wire.polygon3D(
-                [SIMD3(0, 0, 0), SIMD3(10, 0, 0), SIMD3(10, 10, 0), SIMD3(0, 10, 0)], closed: true),
-            let face = Shape.face(from: outer, planar: true),
-            let hw = Wire.polygon3D(
-                [SIMD3(3, 3, 0), SIMD3(7, 3, 0), SIMD3(5, 7, 0)], closed: true),  // real triangle
-            let hs = Shape.fromWire(hw),
-            let holed = Shape.faceAddHole(face: face, wire: hs)
-        else {
-            Issue.record("valid hole rejected by the guard (over-rejection regression)")
-            return
-        }
-        // The fix didn't break the accept-path: a real triangular hole is still added (non-nil above),
-        // and the downstream extrude + heal complete without crashing (the heal may return nil).
-        let prism = holed.extruded(by: SIMD3(0, 0, 2))
-        _ = prism?.healed()  // must not SIGSEGV
-        #expect(prism != nil)
+    func validHoleStillWorks() throws {
+        let outer = try #require(
+            Wire.polygon3D(
+                [SIMD3(0, 0, 0), SIMD3(10, 0, 0), SIMD3(10, 10, 0), SIMD3(0, 10, 0)], closed: true))
+        let face = try #require(Shape.face(from: outer, planar: true))
+        // A real triangle: base 4, height 4, so area 8.
+        let hw = try #require(
+            Wire.polygon3D(
+                [SIMD3(3, 3, 0), SIMD3(7, 3, 0), SIMD3(5, 7, 0)], closed: true))
+        let hs = try #require(Shape.fromWire(hw))
+        let holed = try #require(
+            Shape.faceAddHole(face: face, wire: hs),
+            "valid hole rejected by the guard (over-rejection regression)")
+
+        // The accept-path still adds the hole: 100 - 8 = 92, with the triangle's three edges
+        // joining the square's four.
+        #expect(abs((holed.surfaceArea ?? -1) - 92.0) < 1e-6)
+        #expect(holed.edges().count == 7)
+
+        // The downstream extrude + heal complete without crashing: 92 * 2 = 184, nine faces
+        // (two caps, four outer walls, three hole walls), and the heal keeps all of it.
+        let prism = try #require(holed.extruded(by: SIMD3(0, 0, 2)))
+        #expect(prism.isValid)
+        #expect(abs((prism.volume ?? -1) - 184.0) < 1e-6)
+        #expect(prism.faces().count == 9)
+        let healed = try #require(prism.healed())
+        #expect(healed.isValid)
+        #expect(abs((healed.volume ?? -1) - 184.0) < 1e-6)
     }
 }

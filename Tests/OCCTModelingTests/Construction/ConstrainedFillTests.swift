@@ -17,13 +17,20 @@ struct ConstrainedFillTests {
     @Test("Fill with box edges")
     func fillWithBoxEdges() throws {
         let edges = boxTopEdges()
-        #expect(edges.count >= 4)
-        // Use 4 edges from the box
-        _ = Shape.constrainedFill(
-            edge1: edges[0], edge2: edges[1],
-            edge3: edges[2], edge4: edges[3])
-        // May or may not succeed depending on edge connectivity
-        // The important thing is it doesn't crash
+        try #require(edges.count == 4)
+        // The four top edges of the cube bound the plane z = 5, so the filling surface is that
+        // 10 x 10 patch: one face, four edges, area 100, flat at z = 5 (measured on kernel.6).
+        let filled = try #require(
+            Shape.constrainedFill(
+                edge1: edges[0], edge2: edges[1],
+                edge3: edges[2], edge4: edges[3]))
+        #expect(filled.shapeType == .face)
+        #expect(filled.edges().count == 4)
+        #expect(abs((filled.surfaceArea ?? -1) - 100.0) < 1e-6)
+        let bounds = try #require(filled.boundingBox)
+        #expect(abs(bounds.min.z - 5) < 1e-5 && abs(bounds.max.z - 5) < 1e-5)
+        #expect(abs(bounds.min.x + 5) < 1e-5 && abs(bounds.max.x - 5) < 1e-5)
+        #expect(abs(bounds.min.y + 5) < 1e-5 && abs(bounds.max.y - 5) < 1e-5)
     }
 
     @Test("Fill info on box face")
