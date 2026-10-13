@@ -26,7 +26,7 @@ struct BRepLibUtilitiesTests {
         let inwardShell = try #require(shell.oriented(1))
         let inward = try #require(Shape.builderMakeSolid())
         inward.builderAdd(inwardShell)
-        // The fixture really is inward before the call, so the check below is about the call.
+        // The fixture is inward before the call, so the check below is about the call.
         #expect(abs(inward.signedVolume + 1000) < 1e-6)
         #expect(inward.orientClosedSolid())
         #expect(abs(inward.signedVolume - 1000) < 1e-6)
