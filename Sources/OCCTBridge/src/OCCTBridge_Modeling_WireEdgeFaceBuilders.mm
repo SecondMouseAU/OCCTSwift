@@ -44,6 +44,7 @@
 #include <BRep_Builder.hxx>
 #include <BRepLib_FindSurface.hxx>
 #include <BRepLib.hxx>
+#include <BRepClass3d_SolidClassifier.hxx>
 #include <Geom_Plane.hxx>
 #include <BRepAdaptor_CompCurve.hxx>
 #include <BRepAlgoAPI_Defeaturing.hxx>
@@ -1865,7 +1866,8 @@ OCCTWireRef OCCTWireJoin(const OCCTWireRef* wires, int32_t count)
 
 // #443 audit: each argument contributes only its FIRST shell. The outer-versus-cavity
 // contract is the caller's to state (that is what the argument order means), but which shell
-// of a multi-shell argument gets used is not. Documented on Shape.solidFromShells rather
+// of a multi-shell argument gets used is not. The orientation of a cavity shell is not the
+// caller's to state: it is normalised here (#3359). Documented on Shape.solidFromShells rather
 // than changed, since widening it would make the argument order stop meaning anything.
 OCCTShapeRef OCCTSolidFromShells(OCCTShapeRef* shells, int32_t count)
 {
@@ -1889,7 +1891,25 @@ OCCTShapeRef OCCTSolidFromShells(OCCTShapeRef* shells, int32_t count)
       TopExp_Explorer exp2(shells[i]->shape, TopAbs_SHELL);
       if (exp2.More())
       {
-        maker.Add(TopoDS::Shell(exp2.Current()));
+        // #3359: a cavity shell must point out of the material, that is into the cavity. The
+        // caller passes a plain closed shell, which points outward, so the cavity would read as
+        // a second outer shell (invalid, volume the sum). Classify the shell on its own with the
+        // infinite point and reverse it when it points outward, exactly what ShapeFix_Solid's
+        // CreateSolids does with each hole shell. An open shell cannot be classified and is
+        // added as given.
+        TopoDS_Shell cavity = TopoDS::Shell(exp2.Current());
+        if (BRep_Tool::IsClosed(cavity))
+        {
+          BRep_Builder builder;
+          TopoDS_Solid probe;
+          builder.MakeSolid(probe);
+          builder.Add(probe, cavity);
+          BRepClass3d_SolidClassifier classifier(probe);
+          classifier.PerformInfinitePoint(Precision::Confusion());
+          if (classifier.State() == TopAbs_OUT)
+            cavity.Reverse();
+        }
+        maker.Add(cavity);
       }
     }
 
@@ -2308,15 +2328,19 @@ OCCTShapeRef OCCTMakeFaceFromSurfaceWire(OCCTSurfaceRef surface, OCCTShapeRef wi
 
 OCCTShapeRef OCCTMakeFaceCopy(OCCTShapeRef face)
 {
-  if (!face)
+  if (!occtShapeIsType(face, TopAbs_FACE))
     return nullptr;
   try
   {
+    // #3358: BRepBuilderAPI_MakeFace(F) loads F through BRepLib_MakeFace::Init(F), which sets
+    // the error to FaceDone and never calls Done(), so IsDone() is false for every face and
+    // Shape() would try to Build(). The loaded face is read with Face(), as BRepLib_MakeFace's
+    // own two-argument (F, W) constructor does after Init(F).
     BRepBuilderAPI_MakeFace mf(TopoDS::Face(face->shape));
-    if (!mf.IsDone())
+    if (mf.Error() != BRepBuilderAPI_FaceDone)
       return nullptr;
     auto result   = new OCCTShape();
-    result->shape = mf.Shape();
+    result->shape = mf.Face();
     return result;
   }
   catch (...)

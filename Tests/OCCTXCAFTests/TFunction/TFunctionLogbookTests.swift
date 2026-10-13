@@ -9,11 +9,11 @@ import Testing
 struct TFunctionLogbookTests {
 
     @Test("Create logbook and mark labels")
-    func logbookBasic() {
-        let doc = Document.create()!
-        let logLabel = doc.createLabel()!
-        let target1 = doc.createLabel()!
-        let target2 = doc.createLabel()!
+    func logbookBasic() throws {
+        let doc = try #require(Document.create())
+        let logLabel = try #require(doc.createLabel())
+        let target1 = try #require(doc.createLabel())
+        let target2 = try #require(doc.createLabel())
 
         #expect(logLabel.setLogbook())
         #expect(logLabel.logbookIsEmpty)

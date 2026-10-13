@@ -17,8 +17,9 @@ struct SurfaceCurvatureParityTests {
 
     /// A cone with `radius: 0` at the origin: its apex is at `v = 0`, and the tangent magnitude
     /// falls off linearly with `v`, so it sweeps through the resolution threshold smoothly.
-    private static func apexCone() -> Surface {
-        Surface.cone(origin: .zero, axis: SIMD3(0, 0, 1), radius: 0, semiAngle: .pi / 6)!
+    private static func apexCone() throws -> Surface {
+        try #require(
+            Surface.cone(origin: .zero, axis: SIMD3(0, 0, 1), radius: 0, semiAngle: .pi / 6))
     }
 
     private func expectAgreement(
@@ -33,11 +34,12 @@ struct SurfaceCurvatureParityTests {
     }
 
     @Test("Well-conditioned points agree across all three entry points")
-    func wellConditionedPointsAgree() {
-        let sphere = Surface.sphere(center: .zero, radius: 5)!
-        let plane = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1))!
-        let cylinder = Surface.cylinder(origin: .zero, axis: SIMD3(0, 0, 1), radius: 3)!
-        let cone = Self.apexCone()
+    func wellConditionedPointsAgree() throws {
+        let sphere = try #require(Surface.sphere(center: .zero, radius: 5))
+        let plane = try #require(Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1)))
+        let cylinder = try #require(
+            Surface.cylinder(origin: .zero, axis: SIMD3(0, 0, 1), radius: 3))
+        let cone = try Self.apexCone()
 
         for (u, v) in [(0.0, 0.0), (Double.pi / 3, 0.4), (1.2, -0.8)] {
             expectAgreement(sphere, u: u, v: v)
@@ -57,8 +59,8 @@ struct SurfaceCurvatureParityTests {
     /// `curvatures(u:v:)` returned (0, 0) for a point where `meanCurvature(atU:v:)` returned
     /// -866025.4.
     @Test("Inside the old tolerance window the two entry points no longer disagree")
-    func toleranceWindowAgrees() {
-        let cone = Self.apexCone()
+    func toleranceWindowAgrees() throws {
+        let cone = try Self.apexCone()
         for v in [2e-6, 1e-6, 5e-7, 3e-7] {
             expectAgreement(cone, u: 0, v: v, "cone v=\(v)")
         }
@@ -74,8 +76,8 @@ struct SurfaceCurvatureParityTests {
     }
 
     @Test("Genuinely undefined points return nil from all three entry points")
-    func undefinedPointsAgree() {
-        let cone = Self.apexCone()
+    func undefinedPointsAgree() throws {
+        let cone = try Self.apexCone()
         // #595: was `== 0` on all four, which a plane also satisfies with the curvature defined.
         let pair = cone.curvatures(u: 0, v: 0)  // exactly at the apex
         #expect(pair == nil)
@@ -83,7 +85,7 @@ struct SurfaceCurvatureParityTests {
         #expect(cone.meanCurvature(atU: 0, v: 0) == nil)
 
         // Sphere pole: curvature (unlike the normal) is undefined there for both.
-        let sphere = Surface.sphere(center: .zero, radius: 5)!
+        let sphere = try #require(Surface.sphere(center: .zero, radius: 5))
         expectAgreement(sphere, u: 0, v: .pi / 2)
         expectAgreement(sphere, u: 0, v: -.pi / 2)
     }

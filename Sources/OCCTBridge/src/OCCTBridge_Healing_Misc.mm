@@ -685,10 +685,12 @@ int32_t OCCTShapeFaceRestrictAlgo(OCCTShapeRef  shape,
     if (!restrictor.IsDone())
       return -1;
 
+    // #3361: count every result face, and store only as many as the buffer holds. Bounding the
+    // loop by maxFaces made a count-only call (nil buffer, capacity 0) answer 0 for every face.
     int count = 0;
-    for (; restrictor.More() && count < maxFaces; restrictor.Next())
+    for (; restrictor.More(); restrictor.Next())
     {
-      if (outFaces)
+      if (outFaces && count < maxFaces)
       {
         OCCTShape* result = new OCCTShape();
         result->shape     = restrictor.Current();

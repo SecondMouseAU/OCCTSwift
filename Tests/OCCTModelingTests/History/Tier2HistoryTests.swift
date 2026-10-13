@@ -7,8 +7,8 @@ import Testing
 @Suite("Tier 2 modification history")
 struct Tier2HistoryTests {
     @Test("Filleted edges → input edge appears in history (modified or generated)")
-    func filletedEdgesWithHistory() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func filletedEdgesWithHistory() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let edges = box.subShapes(ofType: .edge)
         guard !edges.isEmpty else {
             Issue.record("box has no edges")
@@ -30,7 +30,7 @@ struct Tier2HistoryTests {
             Issue.record("no edge accepted a uniform 1.0 fillet")
             return
         }
-        #expect(r.result.volume! > 0)
+        #expect(try #require(r.result.volume) > 0)
 
         // The filleted edge itself: typically deleted + a generated fillet face.
         let inputEdge = edges[workingEdgeIdx]
@@ -41,8 +41,8 @@ struct Tier2HistoryTests {
     }
 
     @Test("Chamfered edges → result smaller volume, history queryable")
-    func chamferedEdgesWithHistory() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func chamferedEdgesWithHistory() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let edges = box.subShapes(ofType: .edge)
         var workingResult: (result: Shape, history: ShapeHistoryRef)?
         for i in 0..<min(edges.count, 6) {
@@ -55,8 +55,8 @@ struct Tier2HistoryTests {
             Issue.record("no edge accepted a 1.0 chamfer")
             return
         }
-        #expect(r.result.volume! > 0)
-        #expect(r.result.volume! < box.volume!)
+        #expect(try #require(r.result.volume) > 0)
+        #expect(try #require(r.result.volume) < #require(box.volume))
         // History must answer queries on every input subshape without crashing.
         for face in box.subShapes(ofType: .face) {
             _ = r.history.record(of: face)
@@ -64,8 +64,8 @@ struct Tier2HistoryTests {
     }
 
     @Test("Shelled with history: removed face is deleted, surrounding faces modified or generated")
-    func shelledWithHistory() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func shelledWithHistory() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let faces = box.subShapes(ofType: .face)
         guard !faces.isEmpty else {
             Issue.record("box has no faces")
@@ -76,7 +76,7 @@ struct Tier2HistoryTests {
             Issue.record("shell failed for first face")
             return
         }
-        #expect(r.result.volume! > 0)
+        #expect(try #require(r.result.volume) > 0)
         // Removed face should be deleted in the result.
         let removedFace = faces[0]
         let rec = r.history.record(of: removedFace)

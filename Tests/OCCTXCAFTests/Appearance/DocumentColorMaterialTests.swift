@@ -8,7 +8,7 @@ struct DocumentColorMaterialTests {
 
     @Test("Set and get label color")
     func setLabelColor() throws {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let tempURL = FileManager.default.temporaryDirectory
             .appendingPathComponent("color_test.step")
         defer { try? FileManager.default.removeItem(at: tempURL) }
@@ -37,7 +37,7 @@ struct DocumentColorMaterialTests {
         // OCCTDocumentGetColorAttr read it back via .Red()/.Green()/.Blue(), which return the raw
         // internal value with no conversion. Set-then-get returned a different color than was
         // set: (0.5, 0.25, 0.75) in, (0.214041, 0.050876, 0.522522) out, before the fix.
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let tempURL = FileManager.default.temporaryDirectory
             .appendingPathComponent("color_attr_roundtrip_test.step")
         defer { try? FileManager.default.removeItem(at: tempURL) }
@@ -65,7 +65,7 @@ struct DocumentColorMaterialTests {
     func colorRGBAAttrRoundTrips() throws {
         // Same defect as colorAttrRoundTrips, on the RGBA sibling pair
         // (OCCTDocumentSetColorRGBAAttr / OCCTDocumentGetColorRGBAAttr).
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let tempURL = FileManager.default.temporaryDirectory
             .appendingPathComponent("color_rgba_attr_roundtrip_test.step")
         defer { try? FileManager.default.removeItem(at: tempURL) }
@@ -92,7 +92,7 @@ struct DocumentColorMaterialTests {
 
     @Test("Set and get label material")
     func setLabelMaterial() throws {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let tempURL = FileManager.default.temporaryDirectory
             .appendingPathComponent("material_test.step")
         defer { try? FileManager.default.removeItem(at: tempURL) }

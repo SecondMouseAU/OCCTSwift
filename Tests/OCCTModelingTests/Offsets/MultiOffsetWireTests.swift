@@ -7,9 +7,10 @@ import Testing
 @Suite("Multi-Offset Wire")
 struct MultiOffsetWireTests {
     @Test("Multiple inward offsets from face")
-    func multipleInwardOffsets() {
+    func multipleInwardOffsets() throws {
         // Create a planar face from a rectangle
-        let face = Shape.face(from: Wire.rectangle(width: 20, height: 20)!)!
+        let unwrapped1 = try #require(Wire.rectangle(width: 20, height: 20))
+        let face = try #require(Shape.face(from: unwrapped1))
         let wires = face.multiOffsetWires(offsets: [-1.0, -2.0, -3.0])
         #expect(wires.count >= 3)
         // Each inward offset should produce a smaller contour

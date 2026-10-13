@@ -28,12 +28,12 @@ struct DocumentModifiedTests {
     }
 
     @Test("Clear modified")
-    func clearModified() {
-        let doc = Document.create()!
+    func clearModified() throws {
+        let doc = try #require(Document.create())
         doc.setUndoLimit(10)
 
         doc.openTransaction()
-        let label = doc.createLabel()!
+        let label = try #require(doc.createLabel())
         label.setName("Part1")
         doc.commitTransaction()
 

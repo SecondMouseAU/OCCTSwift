@@ -26,8 +26,8 @@ struct Issue520FilletContractTests {
     /// The headline defect: `filletedVariable` produced the constant-radius shape for the first
     /// profile point and discarded the rest.
     @Test("A variable profile removes more material than its smallest radius alone")
-    func variableProfileIsNotConstant() {
-        let box = Shape.box(width: 20, height: 20, depth: 20)!
+    func variableProfileIsNotConstant() throws {
+        let box = try #require(Shape.box(width: 20, height: 20, depth: 20))
         guard let edge = box.edge(at: 0) else {
             Issue.record("no edge 0")
             return
@@ -55,8 +55,8 @@ struct Issue520FilletContractTests {
 
     /// Three points, so OCCT's two-point shortcut is not taken and the interior point matters.
     @Test("An interior profile point changes the result")
-    func variableProfileInteriorPointHonoured() {
-        let box = Shape.box(width: 30, height: 30, depth: 30)!
+    func variableProfileInteriorPointHonoured() throws {
+        let box = try #require(Shape.box(width: 30, height: 30, depth: 30))
         guard let edge = box.edge(at: 0) else {
             Issue.record("no edge 0")
             return
@@ -78,8 +78,8 @@ struct Issue520FilletContractTests {
     /// The two radius-law entry points reach the same OCCT overload with the same profile, so the
     /// same request must give the same shape through either one.
     @Test("Both radius-law entry points agree on the same profile")
-    func radiusLawEntryPointsAgree() {
-        let box = Shape.box(width: 20, height: 20, depth: 20)!
+    func radiusLawEntryPointsAgree() throws {
+        let box = try #require(Shape.box(width: 20, height: 20, depth: 20))
         guard let edge = box.edge(at: 0) else {
             Issue.record("no edge 0")
             return
@@ -106,8 +106,8 @@ struct Issue520FilletContractTests {
     ///
     /// While `EvolvingFilletEdge` was 1-based this comparison was off by one edge.
     @Test("The evolving entry point fillets the same edge the per-edge one does")
-    func evolvingUsesTheSameEdgeIndexAsBlend() {
-        let box = Shape.box(width: 20, height: 20, depth: 20)!
+    func evolvingUsesTheSameEdgeIndexAsBlend() throws {
+        let box = try #require(Shape.box(width: 20, height: 20, depth: 20))
         guard let edge = box.edge(at: 0) else {
             Issue.record("no edge 0")
             return
@@ -129,8 +129,8 @@ struct Issue520FilletContractTests {
     ///
     /// Under the 1-based contract it named nothing and the call failed.
     @Test("Edge index 0 is accepted by the evolving entry point")
-    func evolvingAcceptsIndexZero() {
-        let box = Shape.box(width: 20, height: 20, depth: 20)!
+    func evolvingAcceptsIndexZero() throws {
+        let box = try #require(Shape.box(width: 20, height: 20, depth: 20))
         guard let edge = box.edge(at: 0) else {
             Issue.record("no edge 0")
             return
@@ -145,8 +145,8 @@ struct Issue520FilletContractTests {
     // MARK: - An unresolvable index rejects the call (item 2)
 
     @Test("Per-edge blend rejects an out-of-range index")
-    func blendRejectsOutOfRangeIndex() {
-        let box = Shape.box(width: 20, height: 20, depth: 20)!
+    func blendRejectsOutOfRangeIndex() throws {
+        let box = try #require(Shape.box(width: 20, height: 20, depth: 20))
         #expect(box.edges().count < 99_999)
         #expect(box.blendedEdges([(0, 2.0), (99_999, 2.0)]) == nil)
         #expect(box.blendedEdges([(-1, 2.0)]) == nil)
@@ -155,11 +155,12 @@ struct Issue520FilletContractTests {
     /// `filleted(edges:radius:)` takes `Edge` objects, so the way to hand it an index that does not
     /// resolve is to pass an edge belonging to a different, larger shape.
     @Test("Uniform fillet rejects an edge that is not this shape's")
-    func uniformFilletRejectsForeignEdge() {
-        let box = Shape.box(width: 20, height: 20, depth: 20)!
+    func uniformFilletRejectsForeignEdge() throws {
+        let box = try #require(Shape.box(width: 20, height: 20, depth: 20))
         let cut = box.subtracting(
-            Shape.box(width: 20, height: 20, depth: 20)!
-                .translated(by: SIMD3(10, 10, 10))!)
+            try #require(
+                Shape.box(width: 20, height: 20, depth: 20)?
+                    .translated(by: SIMD3(10, 10, 10))))
         guard let cut, cut.edges().count > box.edges().count else {
             Issue.record("cut did not produce more edges than the box")
             return
@@ -179,14 +180,14 @@ struct Issue520FilletContractTests {
     }
 
     @Test("History fillet rejects an out-of-range index")
-    func historyFilletRejectsOutOfRangeIndex() {
-        let box = Shape.box(width: 20, height: 20, depth: 20)!
+    func historyFilletRejectsOutOfRangeIndex() throws {
+        let box = try #require(Shape.box(width: 20, height: 20, depth: 20))
         #expect(box.filletedWithFullHistory(radius: 1.0, edges: [0, 99_999]) == nil)
     }
 
     @Test("Both radius-law entry points reject an out-of-range index")
-    func radiusLawEntryPointsRejectOutOfRangeIndex() {
-        let box = Shape.box(width: 20, height: 20, depth: 20)!
+    func radiusLawEntryPointsRejectOutOfRangeIndex() throws {
+        let box = try #require(Shape.box(width: 20, height: 20, depth: 20))
         guard let edge = box.edge(at: 0) else {
             Issue.record("no edge 0")
             return
@@ -208,8 +209,8 @@ struct Issue520FilletContractTests {
     // MARK: - Radius validation on the radius-law entry points (item 3)
 
     @Test("Variable fillet rejects a non-positive radius anywhere in the profile")
-    func variableRejectsNonPositiveRadius() {
-        let box = Shape.box(width: 20, height: 20, depth: 20)!
+    func variableRejectsNonPositiveRadius() throws {
+        let box = try #require(Shape.box(width: 20, height: 20, depth: 20))
         #expect(box.filletedVariable(edgeIndex: 0, radiusProfile: [(0.0, 1.0), (1.0, 0.0)]) == nil)
         #expect(
             box.filletedVariable(edgeIndex: 0, radiusProfile: [(0.0, 1.0), (1.0, -3.0)]) == nil)
@@ -223,8 +224,8 @@ struct Issue520FilletContractTests {
     /// radius reported `IsDone() == 1` and handed back a shape `BRepCheck_Analyzer` rejects, so the
     /// caller received an invalid shape presented as success.
     @Test("Evolving fillet rejects a non-positive radius anywhere in the profile")
-    func evolvingRejectsNonPositiveRadius() {
-        let box = Shape.box(width: 20, height: 20, depth: 20)!
+    func evolvingRejectsNonPositiveRadius() throws {
+        let box = try #require(Shape.box(width: 20, height: 20, depth: 20))
         guard let edge = box.edge(at: 0) else {
             Issue.record("no edge 0")
             return
@@ -246,8 +247,8 @@ struct Issue520FilletContractTests {
     // MARK: - Parameter validation on the radius-law entry points (item 3)
 
     @Test("A profile parameter outside 0...1 rejects the call")
-    func parametersOutsideUnitRangeRejected() {
-        let box = Shape.box(width: 20, height: 20, depth: 20)!
+    func parametersOutsideUnitRangeRejected() throws {
+        let box = try #require(Shape.box(width: 20, height: 20, depth: 20))
         guard let edge = box.edge(at: 0) else {
             Issue.record("no edge 0")
             return
@@ -276,8 +277,8 @@ struct Issue520FilletContractTests {
     /// Neither is what
     /// the caller wrote, so both are rejected.
     @Test("Profile parameters must strictly increase")
-    func nonIncreasingParametersRejected() {
-        let box = Shape.box(width: 20, height: 20, depth: 20)!
+    func nonIncreasingParametersRejected() throws {
+        let box = try #require(Shape.box(width: 20, height: 20, depth: 20))
         guard let edge = box.edge(at: 0) else {
             Issue.record("no edge 0")
             return
@@ -304,8 +305,8 @@ struct Issue520FilletContractTests {
     /// an OS signal, so the bridge's `catch (...)` never saw it: this test used to take the whole
     /// test process down rather than fail.
     @Test("An empty radius law is rejected rather than crashing the build")
-    func emptyRadiusLawRejected() {
-        let box = Shape.box(width: 20, height: 20, depth: 20)!
+    func emptyRadiusLawRejected() throws {
+        let box = try #require(Shape.box(width: 20, height: 20, depth: 20))
         guard let edge = box.edge(at: 0) else {
             Issue.record("no edge 0")
             return

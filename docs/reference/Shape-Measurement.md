@@ -1005,6 +1005,8 @@ public static func solidFromShells(_ shells: [Shape]) -> Shape?
 
 The first shape provides the outer shell; additional shapes provide cavity (inner) shells.
 
+The orientation of each cavity shell is normalised: a closed shell is classified on its own (`BRepClass3d_SolidClassifier`, infinite point, as `ShapeFix_Solid` does for a hole shell) and reversed when it points outward, so a plain box passed as the second shape gives the same valid hollow solid as an already reversed one (#3359). An open cavity shell cannot be classified and is added as given. The shapes passed in are never edited.
+
 - **Parameters:** `shells`, Array of shapes containing shells; must not be empty.
 - **Returns:** Solid shape, or `nil` on failure.
 - **OCCT:** `BRepBuilderAPI_MakeSolid` (via `OCCTSolidFromShells`).
@@ -1312,6 +1314,8 @@ public var connectedEdges: Shape? { get }
 ```
 
 Identifies edges that share geometric positions and merges their vertices. Useful for healing imported geometry where topologically disconnected edges actually meet at the same point.
+
+The work is done on a copy, so the receiver is never edited. If the connected copy fails `BRepCheck` while the receiver passes it (the class does this to a box, whose vertices are already shared), the result is a copy of the receiver unchanged (#3354, twin of #3252). Same operation as `fixEdgeConnect()`.
 
 - **Returns:** Shape with connected edges, or `nil` on failure.
 - **OCCT:** `ShapeFix_EdgeConnect` (via `OCCTShapeConnectEdges`).

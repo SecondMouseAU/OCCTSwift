@@ -14,7 +14,7 @@ import Testing
 /// Reachability is low, as the issue itself notes: `Curve2D`'s `curve` parameter is `_Nonnull`
 /// with no "nullified" concept, so this fallback is close to unreachable dead code through the
 /// public Swift API today. Follows the #1424/#1476 `unsafeBitCast` precedent
-/// (`Tests/OCCTAnalysisTests/Bounding/Issue1424BndLibFaceNullGuardTests.swift`,
+/// (`Tests/OCCTAnalysisTests/Bounding/BndLibFaceNullGuardTests.swift`,
 /// `Tests/OCCTCurveTests/Curve3DCore/Issue1476CurveTypeOtherCurveFallbackTests.swift`) to synthesize a
 /// genuinely-null `OCCTCurve2DRef` and call the bridge function directly, since the parameter is
 /// `_Nonnull` and Swift refuses to pass `nil` literally.

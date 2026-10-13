@@ -7,9 +7,9 @@ import Testing
 struct TDataStdCommentTests {
 
     @Test("Set and get comment")
-    func setGetComment() {
-        let doc = Document.create()!
-        let label = doc.createLabel()!
+    func setGetComment() throws {
+        let doc = try #require(Document.create())
+        let label = try #require(doc.createLabel())
         let ok = label.setComment("my comment")
         #expect(ok)
         #expect(label.comment == "my comment")
