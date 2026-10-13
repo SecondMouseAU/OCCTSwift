@@ -32,8 +32,8 @@ struct Issue638EdgeOrientationContractTests {
     /// plain box. `contents.edges` is the independent, already-documented (#541) occurrence
     /// oracle: it does not go through `edges()`/`edgeCount` at all, so it is not circular.
     @Test("a plain box: 12 distinct edges, 24 occurrences")
-    func plainBoxEdgeCollapse() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func plainBoxEdgeCollapse() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
 
         #expect(box.edgeCount == 12)
         #expect(box.edges().count == 12)
@@ -45,8 +45,8 @@ struct Issue638EdgeOrientationContractTests {
     /// fixture, reused rather than re-derived. `edges()` must stay at the dedup count (20), not
     /// drift toward the per-occurrence count.
     @Test("a split-box compound: edges() stays on the dedup count")
-    func splitCompoundEdgeCollapse() {
-        guard let compound = Issue614FaceOrientationTests.splitBoxCompound() else {
+    func splitCompoundEdgeCollapse() throws {
+        guard let compound = try Issue614FaceOrientationTests.splitBoxCompound() else {
             Issue.record("could not build the split-box compound")
             return
         }
@@ -63,8 +63,8 @@ struct Issue638EdgeOrientationContractTests {
     /// the same indexing guarantee `faces()`/`faceCount` carry (#541), stated here for edges so a
     /// future change cannot quietly break it while this suite is green.
     @Test("every entry in edges() is addressable by its own index")
-    func edgesAreAddressableByIndex() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func edgesAreAddressableByIndex() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let edges = box.edges()
         #expect(edges.count == box.edgeCount)
         for (i, edge) in edges.enumerated() {
@@ -83,8 +83,8 @@ struct Issue638EdgeOrientationContractTests {
     /// test that catches it. The pair below is guaranteed opposite by construction
     /// (`Shape.reversed`), not by hoping a fixture's topology happens to produce two orientations.
     @Test("Edge's per-instance accessors do not depend on TopAbs_Orientation")
-    func edgeAccessorsAreOrientationIndependent() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func edgeAccessorsAreOrientationIndependent() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         guard let forwardShape = box.subShapes(ofType: .edge).first,
             let reversedShape = forwardShape.reversed,
             let forwardEdge = Edge(forwardShape),
@@ -141,15 +141,15 @@ struct Issue638EdgeOrientationContractTests {
         // endpoints/bounds/points(count:) are whole-edge queries; still must agree.
         #expect(forwardEdge.endpoints.start == reversedEdge.endpoints.start)
         #expect(forwardEdge.endpoints.end == reversedEdge.endpoints.end)
-        #expect(forwardEdge.bounds!.min == reversedEdge.bounds!.min)
-        #expect(forwardEdge.bounds!.max == reversedEdge.bounds!.max)
+        #expect(try #require(forwardEdge.bounds).min == #require(reversedEdge.bounds).min)
+        #expect(try #require(forwardEdge.bounds).max == #require(reversedEdge.bounds).max)
     }
 
     /// Same comparison, on a circular edge rather than a straight one, so the claim isn't
     /// accidentally true only for lines (whose tangent direction some implementations special-case).
     @Test("Edge's accessors are orientation-independent on a circular edge too")
-    func edgeAccessorsAreOrientationIndependentOnACircle() {
-        let cyl = Shape.cylinder(radius: 5, height: 10)!
+    func edgeAccessorsAreOrientationIndependentOnACircle() throws {
+        let cyl = try #require(Shape.cylinder(radius: 5, height: 10))
         guard
             let circleShape = cyl.subShapes(ofType: .edge).first(where: { shape in
                 guard let e = Edge(shape) else { return false }
@@ -187,8 +187,8 @@ struct Issue638EdgeOrientationContractTests {
     /// Pin that it too resolves the same pair of faces regardless of which
     /// orientation the caller's `Edge` happens to carry.
     @Test("adjacentFaces(in:) does not depend on the edge's own orientation")
-    func adjacentFacesIsOrientationIndependent() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func adjacentFacesIsOrientationIndependent() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         guard let forwardShape = box.subShapes(ofType: .edge).first,
             let reversedShape = forwardShape.reversed,
             let forwardEdge = Edge(forwardShape),
@@ -217,14 +217,14 @@ struct Issue638EdgeOrientationContractTests {
         //
         // Bounding boxes are enough to identify a box's planar faces and are cheap. Order is not
         // guaranteed, so compare as sets.
-        func fingerprint(_ face: Face) -> String {
-            let b = face.bounds!
+        func fingerprint(_ face: Face) throws -> String {
+            let b = try #require(face.bounds)
             return String(
                 format: "%.6f,%.6f,%.6f/%.6f,%.6f,%.6f",
                 b.min.x, b.min.y, b.min.z, b.max.x, b.max.y, b.max.z)
         }
-        let forwardFaces = Set([f1, f2].map(fingerprint))
-        let reversedFaces = Set([r1, r2].map(fingerprint))
+        let forwardFaces = Set(try [f1, f2].map(fingerprint))
+        let reversedFaces = Set(try [r1, r2].map(fingerprint))
 
         // Without this the comparison could pass on two empty sets, which is the same vacuity in
         // a different coat.

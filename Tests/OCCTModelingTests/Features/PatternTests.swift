@@ -7,25 +7,26 @@ import Testing
 struct PatternTests {
 
     @Test("Linear pattern of cylinders")
-    func linearPatternOfCylinders() {
-        let cylinder = Shape.cylinder(radius: 5, height: 10)!
+    func linearPatternOfCylinders() throws {
+        let cylinder = try #require(Shape.cylinder(radius: 5, height: 10))
 
         // Create a row of 4 cylinders spaced 20mm apart
         let pattern = cylinder.linearPattern(direction: SIMD3(1, 0, 0), spacing: 20, count: 4)
 
         #expect(pattern != nil)
-        #expect(pattern!.isValid)
+        #expect(try #require(pattern).isValid)
 
         // The pattern should have approximately 4x the volume
         let singleVolume = cylinder.volume ?? 0
-        let patternVolume = pattern!.volume ?? 0
+        let patternVolume = try #require(pattern).volume ?? 0
         #expect(abs(patternVolume - singleVolume * 4) < 1.0)
     }
 
     @Test("Circular pattern of holes")
-    func circularPatternOfHoles() {
-        let cylinder = Shape.cylinder(radius: 3, height: 10)!
-            .translated(by: SIMD3(20, 0, 0))!
+    func circularPatternOfHoles() throws {
+        let cylinder = try #require(
+            Shape.cylinder(radius: 3, height: 10)?
+                .translated(by: SIMD3(20, 0, 0)))
 
         // Create 6 cylinders in a circle around Z axis
         let pattern = cylinder.circularPattern(
@@ -36,11 +37,11 @@ struct PatternTests {
         )
 
         #expect(pattern != nil)
-        #expect(pattern!.isValid)
+        #expect(try #require(pattern).isValid)
 
         // The pattern should have 6x the volume
         let singleVolume = cylinder.volume ?? 0
-        let patternVolume = pattern!.volume ?? 0
+        let patternVolume = try #require(pattern).volume ?? 0
         #expect(abs(patternVolume - singleVolume * 6) < 1.0)
     }
 
@@ -182,13 +183,14 @@ struct PatternTests {
 
     // Issue #169: feature-level circular pattern (bolt circle).
     @Test("Circular pattern cut drills a bolt circle")
-    func circularPatternCutBoltCircle() {
+    func circularPatternCutBoltCircle() throws {
         // A flange blank: a disc 60mm dia, 10mm thick, centred on the Z axis.
-        let blank = Shape.cylinder(radius: 30, height: 10)!
+        let blank = try #require(Shape.cylinder(radius: 30, height: 10))
 
         // One bolt hole on a 40mm bolt-circle diameter (radius 20).
-        let hole = Shape.cylinder(radius: 3, height: 30)!
-            .translated(by: SIMD3(20, 0, -10))!
+        let hole = try #require(
+            Shape.cylinder(radius: 3, height: 30)?
+                .translated(by: SIMD3(20, 0, -10)))
 
         let count = 8
         let drilled = blank.circularPatternCut(

@@ -10,11 +10,12 @@ import Testing
 struct ShapeProximityTests {
 
     @Test("Two boxes with small gap detect proximity")
-    func twoBoxesProximity() {
+    func twoBoxesProximity() throws {
         // box1 centered at origin: -5..5 on each axis
-        let box1 = Shape.box(width: 10, height: 10, depth: 10)!
+        let box1 = try #require(Shape.box(width: 10, height: 10, depth: 10))
         // box2 corner at (5.05, -5, -5) → gap of 0.05 from box1's +X face
-        let box2 = Shape.box(origin: SIMD3(5.05, -5, -5), width: 10, height: 10, depth: 10)!
+        let box2 = try #require(
+            Shape.box(origin: SIMD3(5.05, -5, -5), width: 10, height: 10, depth: 10))
 
         let pairs = box1.proximityFaces(with: box2, tolerance: 1.0)
         // BRepExtrema_ShapeProximity should detect the close face pair
@@ -48,8 +49,8 @@ struct ShapeProximityTests {
     // warning that would otherwise fire on every build.
     @available(*, deprecated)
     @Test("Box does not self-intersect")
-    func boxNoSelfIntersection() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func boxNoSelfIntersection() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         #expect(!box.selfIntersects)
     }
 
@@ -68,8 +69,8 @@ struct ShapeProximityTests {
     /// raw, non-deduplicated position instead of the shared face's actual index in
     /// `Shape.face(at:)`'s enumeration, naming an entirely different, distant face on that solid.
     @Test("proximityFaces indices address the shared-face enumeration face(at:) does (#1550)")
-    func proximityFacesIndicesMatchFaceAt() {
-        guard let compound = Issue614FaceOrientationTests.splitBoxCompound(),
+    func proximityFacesIndicesMatchFaceAt() throws {
+        guard let compound = try Issue614FaceOrientationTests.splitBoxCompound(),
             let probe = Shape.box(origin: SIMD3(9.5, 4.5, 4.5), width: 1, height: 1, depth: 1)
         else {
             Issue.record("could not build the shared-face fixture")

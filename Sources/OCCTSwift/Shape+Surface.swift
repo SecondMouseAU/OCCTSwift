@@ -1215,7 +1215,7 @@ extension Shape {
     /// with `u == v` were coincidentally correct, which is why it read as a valid surface.
     ///
     /// Carried patch `0034` fixes it, and the pinned asset carries it from `v4.0.0-kernel.1`
-    /// onward. `Tests/OCCTSurfaceTests/GeomFill/Issue1515CoonsPatchUParameterTests.swift` asserts the
+    /// onward. `Tests/OCCTSurfaceTests/GeomFill/CoonsPatchUParameterTests.swift` asserts the
     /// bilinear surface over a flat square, which is the assertion the unpatched asset made
     /// impossible. Measurement and probe in `Scripts/repro/1515-coons-value-u-parameter/`.
     ///

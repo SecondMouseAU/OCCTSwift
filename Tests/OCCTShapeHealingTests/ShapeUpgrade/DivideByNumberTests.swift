@@ -18,8 +18,8 @@ struct DivideByNumberTests {
     /// box's 6 square faces splits into `parts` (4) sub-faces, all landing on one parametric axis
     /// since `dividedByNumber` always passes `nbV: 1` -- 6 * 4 = 24.
     @Test("Divide box into parts")
-    func divideBox() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func divideBox() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         #expect(box.faces().count == 6, "premise: a box has 6 faces")
         let result = box.dividedByNumber(4)
         #expect(
@@ -29,8 +29,8 @@ struct DivideByNumberTests {
     }
 
     @Test("Divide with 1 part returns nil")
-    func divideOnePart() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func divideOnePart() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let result = box.dividedByNumber(1)
         #expect(result == nil)
     }
@@ -41,8 +41,8 @@ struct DivideByNumberTests {
     /// Net:
     /// 3 original faces -> 2 unchanged + 4 split = 6, confirmed with a ground-truth probe.
     @Test("Divide cylinder into parts")
-    func divideCylinder() {
-        let cyl = Shape.cylinder(radius: 5, height: 10)!
+    func divideCylinder() throws {
+        let cyl = try #require(Shape.cylinder(radius: 5, height: 10))
         #expect(cyl.faces().count == 3, "premise: a cylinder has 3 faces (2 caps + 1 lateral)")
         let result = cyl.dividedByNumber(4)
         #expect(

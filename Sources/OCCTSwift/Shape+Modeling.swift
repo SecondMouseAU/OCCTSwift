@@ -3370,8 +3370,15 @@ extension Shape {
 extension Shape {
 
     /// Restrict a face to its wires using BRepAlgo_FaceRestrictor.
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// box.faceRestrictAlgo(faceIndex: 0)   // 1
+    /// ```
+    ///
     /// - Parameter faceIndex: Index of the face (0-based)
-    /// - Returns: Number of result faces
+    /// - Returns: Number of result faces, or -1 when `faceIndex` names no face or the restrictor
+    ///   does not finish.
     public func faceRestrictAlgo(faceIndex: Int) -> Int {
         Int(OCCTShapeFaceRestrictAlgo(handle, Int32(faceIndex), nil, 0))
     }

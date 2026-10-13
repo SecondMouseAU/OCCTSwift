@@ -7,8 +7,8 @@ import Testing
 @Suite("Shape Contents")
 struct ShapeContentsTests {
     @Test("Box contents")
-    func boxContents() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func boxContents() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let c = box.contents
         #expect(c.solids == 1)
         #expect(c.shells == 1)
@@ -21,8 +21,8 @@ struct ShapeContentsTests {
     }
 
     @Test("Cylinder contents")
-    func cylinderContents() {
-        let cyl = Shape.cylinder(radius: 5, height: 10)!
+    func cylinderContents() throws {
+        let cyl = try #require(Shape.cylinder(radius: 5, height: 10))
         let c = cyl.contents
         #expect(c.solids == 1)
         #expect(c.faces == 3)  // top, bottom, lateral
