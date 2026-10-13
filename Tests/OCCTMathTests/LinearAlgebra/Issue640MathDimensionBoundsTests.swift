@@ -563,7 +563,7 @@ struct Issue640MathDimensionBounds {
 // (or, for rows/cols, "the flat array is exactly their product") check was hand-duplicated
 // at 18 call sites with no shared validator, unlike `Sampling`'s own family. `MathDimension`
 // (Sources/OCCTSwift/MathDimension.swift) factors it out; these tests exercise it directly,
-// the same way Issue558SamplingCountBoundsTests.swift exercises `Sampling.requested`/
+// the same way SamplingCountBoundsTests.swift exercises `Sampling.requested`/
 // `capacity`/`gridTotal` directly, rather than only indirectly through the 18 call sites
 // that now share it.
 @Suite("Issue #640 review finding 9: MathDimension is the one shared validator")

@@ -6,7 +6,7 @@ import Testing
 /// Regression cover for #965 on `Curve2D`, the second of the three parents whose `*Properties`
 /// accessors handed back a value storing the parent's native handle without retaining it. The
 /// defect and its measurement are identical to `Curve3D`'s; see
-/// `Tests/OCCTCurveTests/Curve3DCore/Issue965Curve3DPropertyLifetimeTests.swift` and
+/// `Tests/OCCTCurveTests/Curve3DCore/Curve3DPropertyLifetimeTests.swift` and
 /// `Scripts/repro/965-properties-use-after-free/`.
 @Suite("Curve2D *Properties views keep their parent alive (#965)")
 struct Issue965Curve2DPropertyLifetimeTests {

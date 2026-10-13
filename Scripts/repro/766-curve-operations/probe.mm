@@ -1,4 +1,4 @@
-// Epic #766 (#1978), kernel parity for Curve3DExtrasTests.swift, Curve3DExtrasV112Tests.swift,
+// Epic #766 (#1978), kernel parity for Curve3DExtrasTests.swift, Curve3DTypeAndNearestParameterTests.swift,
 // Curve3DInterpolateTangentToleranceParityTests.swift and Curve3DOperationsTests.swift. Same inputs
 // as the tests: Geom_Curve::Reverse/Copy/Transform, GeomAdaptor_Curve::GetType,
 // GeomAPI_ProjectPointOnCurve, GeomAPI_Interpolate with tangents, GCPnts_AbscissaPoint.

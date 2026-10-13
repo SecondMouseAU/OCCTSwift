@@ -1,4 +1,4 @@
-// Epic #766 (#1978), kernel parity for Issue558SamplingCountBoundsTests.swift. The count bounds
+// Epic #766 (#1978), kernel parity for SamplingCountBoundsTests.swift. The count bounds
 // themselves are Swift-side (Sampling), refused before any kernel call, so this probes only the
 // kernel facts the rewritten coneSphereRequest control depends on: IntAna_IntQuadQuad on the
 // cone (semi-angle 0.5, reference radius 5) against the suite's original sphere, centred on the

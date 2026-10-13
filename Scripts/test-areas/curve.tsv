@@ -6,7 +6,7 @@ Tests/OCCTCurveTests/ApproxSameParameterTests.swift	Tests/OCCTCurveTests/Fitting
 Tests/OCCTCurveTests/BRepAdaptorPCurveTests.swift	Tests/OCCTCurveTests/Adaptors/BRepAdaptorPCurveTests.swift	Adaptors	-	BRepAdaptor_Curve2d pcurve parameters and values on a box face
 Tests/OCCTCurveTests/BSplineApproxInterpContractTests.swift	Tests/OCCTCurveTests/Fitting/BSplineApproxInterpContractTests.swift	Fitting	-	BSplineApproxInterp documented no-op and advisory contracts
 Tests/OCCTCurveTests/BSplineApproxInterpTests.swift	Tests/OCCTCurveTests/Fitting/BSplineApproxInterpTests.swift	Fitting	-	BSplineApproxInterp constrained least-squares fitting
-Tests/OCCTCurveTests/BSplineCurve3DCompletionsV121Tests.swift	Tests/OCCTCurveTests/BSplineAndBezier/BSplineCurve3DCompletionsV121Tests.swift	BSplineAndBezier	-	setNotPeriodic, increaseMultiplicity, incrementMultiplicity on a BSpline curve
+Tests/OCCTCurveTests/BSplineCurve3DCompletionsV121Tests.swift	Tests/OCCTCurveTests/BSplineAndBezier/BSplineCurve3DModificationTests.swift	BSplineAndBezier	-	setNotPeriodic, increaseMultiplicity, incrementMultiplicity on a BSpline curve
 Tests/OCCTCurveTests/BSplineCurve3DLocalDTests.swift	Tests/OCCTCurveTests/BSplineAndBezier/BSplineCurve3DLocalDTests.swift	BSplineAndBezier	-	localD0 to localDN evaluation on a span of a BSpline curve
 Tests/OCCTCurveTests/BSplineCurve3DManipulationTests.swift	Tests/OCCTCurveTests/BSplineAndBezier/BSplineCurve3DManipulationTests.swift	BSplineAndBezier	-	BSpline curve poles, knots, weights and degree queries and edits
 Tests/OCCTCurveTests/BSplineCurveCompletionsTests.swift	Tests/OCCTCurveTests/BSplineAndBezier/BSplineCurveCompletionsTests.swift	BSplineAndBezier	-	periodic normalisation and isG1 on a BSpline curve
@@ -37,12 +37,12 @@ Tests/OCCTCurveTests/Curve3DConversionTests.swift	Tests/OCCTCurveTests/Conversio
 Tests/OCCTCurveTests/Curve3DDrawTests.swift	Tests/OCCTCurveTests/Sampling/Curve3DDrawTests.swift	Sampling	-	drawAdaptive, uniform and deflection drawing of a Curve3D
 Tests/OCCTCurveTests/Curve3DEvalTests.swift	Tests/OCCTCurveTests/Curve3DCore/Curve3DEvalTests.swift	Curve3DCore	-	evalD0 to evalD3 on an interpolated BSpline curve
 Tests/OCCTCurveTests/Curve3DExtrasTests.swift	Tests/OCCTCurveTests/Curve3DCore/Curve3DExtrasTests.swift	Curve3DCore	-	reverse, copy and independence of a copied Curve3D
-Tests/OCCTCurveTests/Curve3DExtrasV112Tests.swift	Tests/OCCTCurveTests/Curve3DCore/Curve3DExtrasV112Tests.swift	Curve3DCore	-	curveType and nearestParameter on a line and a circle
+Tests/OCCTCurveTests/Curve3DExtrasV112Tests.swift	Tests/OCCTCurveTests/Curve3DCore/Curve3DTypeAndNearestParameterTests.swift	Curve3DCore	-	curveType and nearestParameter on a line and a circle
 Tests/OCCTCurveTests/Curve3DInterpolateTangentToleranceParityTests.swift	Tests/OCCTCurveTests/Fitting/Curve3DInterpolateTangentToleranceParityTests.swift	Fitting	-	Curve3D.interpolate tangent tolerance is reachable and governs spacing
 Tests/OCCTCurveTests/Curve3DOperationsTests.swift	Tests/OCCTCurveTests/Curve3DCore/Curve3DOperationsTests.swift	Curve3DCore	-	trim, reverse, translate and other whole-curve operations
 Tests/OCCTCurveTests/Curve3DPlaneProjectionTests.swift	Tests/OCCTCurveTests/Projection/Curve3DPlaneProjectionTests.swift	Projection	-	project a Curve3D onto a plane along a direction
 Tests/OCCTCurveTests/Curve3DPrimitiveTests.swift	Tests/OCCTCurveTests/Curve3DCore/Curve3DPrimitiveTests.swift	Curve3DCore	-	Curve3D line, segment and circle creation, degenerate input, queries
-Tests/OCCTCurveTests/Curve3DQueriesV123Tests.swift	Tests/OCCTCurveTests/Curve3DCore/Curve3DQueriesV123Tests.swift	Curve3DCore	-	period, first and last parameter of a Curve3D
+Tests/OCCTCurveTests/Curve3DQueriesV123Tests.swift	Tests/OCCTCurveTests/Curve3DCore/Curve3DPeriodAndParameterRangeTests.swift	Curve3DCore	-	period, first and last parameter of a Curve3D
 Tests/OCCTCurveTests/Curve3DTransformFamilyParityTests.swift	Tests/OCCTCurveTests/Curve3DCore/Curve3DTransformFamilyParityTests.swift	Curve3DCore	-	translate vs translated and the rest of the transform family agree
 Tests/OCCTCurveTests/CurveApproximationTests.swift	Tests/OCCTCurveTests/Fitting/CurveApproximationTests.swift	Fitting	-	approximate an edge as a BSpline and read the approximation info
 Tests/OCCTCurveTests/CurveDNTests.swift	Tests/OCCTCurveTests/Curve3DCore/CurveDNTests.swift	Curve3DCore	-	Nth derivative of Curve3D, Curve2D and a sphere surface (weak fit: the surface case)
@@ -75,41 +75,41 @@ Tests/OCCTCurveTests/HelixTests.swift	Tests/OCCTCurveTests/Curve3DCore/HelixTest
 Tests/OCCTCurveTests/IntegrationGeodesicPathApproximationTests.swift	Tests/OCCTIntegrationTests/Measurements/IntegrationGeodesicPathApproximationTests.swift	Measurements	-	path length on a sphere through the public API
 Tests/OCCTCurveTests/IntegrationGoldenShapeBaselineTests.swift	Tests/OCCTIntegrationTests/Measurements/IntegrationGoldenShapeBaselineTests.swift	Measurements	-	known measurements of a box
 Tests/OCCTCurveTests/IntegrationInvoluteGearApproximationTests.swift	Tests/OCCTIntegrationTests/Workflows/IntegrationInvoluteGearApproximationTests.swift	Workflows	-	a gear with slots and a bore built from primitives
-Tests/OCCTCurveTests/Issue1020ExtremaBoundsTests.swift	Tests/OCCTCurveTests/Projection/Issue1020ExtremaBoundsTests.swift	Projection	-	unbounded elementary curves are not clipped when finding extrema
-Tests/OCCTCurveTests/Issue1399LawKnotSplitFactoryReachTests.swift	Tests/OCCTCurveTests/Laws/Issue1399LawKnotSplitFactoryReachTests.swift	Laws	-	every Law_BSpFunc-derived factory reports its end knots
-Tests/OCCTCurveTests/Issue1476CurveTypeOtherCurveFallbackTests.swift	Tests/OCCTCurveTests/Curve3DCore/Issue1476CurveTypeOtherCurveFallbackTests.swift	Curve3DCore	-	Curve3D curve type for a null handle and for a line
-Tests/OCCTCurveTests/Issue1513UniformDeflectionNullGuardTests.swift	Tests/OCCTCurveTests/Sampling/Issue1513UniformDeflectionNullGuardTests.swift	Sampling	-	CPnts_UniformDeflection on a nullified shape returns nil
-Tests/OCCTCurveTests/Issue1675DocSnippetArcTests.swift	Tests/OCCTCurveTests/Conics/Issue1675DocSnippetArcTests.swift	Conics	-	the arc the doc snippets construct, its curvature and centre of curvature
-Tests/OCCTCurveTests/Issue211WireCurveTests.swift	Tests/OCCTCurveTests/ArcLength/Issue211WireCurveTests.swift	ArcLength	-	WireCurve arc-length adaptor across edges
-Tests/OCCTCurveTests/Issue2765ConvertToBezierTests.swift	Tests/OCCTCurveTests/Conversion/Issue2765ConvertToBezierTests.swift	Conversion	-	convertedToBezier on a shape with nothing left to convert
-Tests/OCCTCurveTests/Issue2861TangentialDeflectionTests.swift	Tests/OCCTCurveTests/Sampling/Issue2861TangentialDeflectionTests.swift	Sampling	-	tangential deflection bounds for edges and drawAdaptive
-Tests/OCCTCurveTests/Issue2862NegativeContinuityOrderTests.swift	Tests/OCCTCurveTests/Continuity/Issue2862NegativeContinuityOrderTests.swift	Continuity	-	isCN and bezierIsCN refuse a negative order
-Tests/OCCTCurveTests/Issue398KnotSplittingTests.swift	Tests/OCCTCurveTests/BSplineAndBezier/Issue398KnotSplittingTests.swift	BSplineAndBezier	-	BSpline knot splitting continuity range and the 256-split limit
-Tests/OCCTCurveTests/Issue403LawKnotSplitParamsTests.swift	Tests/OCCTCurveTests/Laws/Issue403LawKnotSplitParamsTests.swift	Laws	-	LawFunction knot-splitting parameters
-Tests/OCCTCurveTests/Issue477ArcLengthAccuracyTests.swift	Tests/OCCTCurveTests/ArcLength/Issue477ArcLengthAccuracyTests.swift	ArcLength	-	arc length of multi-span curves against an independent reference
-Tests/OCCTCurveTests/Issue479SampleCountBoundTests.swift	Tests/OCCTCurveTests/Sampling/Issue479SampleCountBoundTests.swift	Sampling	-	arc-length sampling rejects counts it cannot allocate
-Tests/OCCTCurveTests/Issue480LawKnotSplitContinuityTests.swift	Tests/OCCTCurveTests/Laws/Issue480LawKnotSplitContinuityTests.swift	Laws	-	Law knot-splitting continuity range
-Tests/OCCTCurveTests/Issue481LawKnotSplittingTruncationTests.swift	Tests/OCCTCurveTests/Laws/Issue481LawKnotSplittingTruncationTests.swift	Laws	-	LawFunction knot splitting past the old 100-entry buffer
-Tests/OCCTCurveTests/Issue485Curve3DContinuityTests.swift	Tests/OCCTCurveTests/Continuity/Issue485Curve3DContinuityTests.swift	Continuity	-	measured continuity class from knot multiplicity
-Tests/OCCTCurveTests/Issue486Curve3DBatchTests.swift	Tests/OCCTCurveTests/Curve3DCore/Issue486Curve3DBatchTests.swift	Curve3DCore	-	Curve3D batch-evaluation spellings agree on empty input
-Tests/OCCTCurveTests/Issue490ContinuityDecoderTests.swift	Tests/OCCTCurveTests/Continuity/Issue490ContinuityDecoderTests.swift	Continuity	-	continuity vocabulary domains across the curve families
-Tests/OCCTCurveTests/Issue491Curve3DApproxParityTests.swift	Tests/OCCTCurveTests/Conversion/Issue491Curve3DApproxParityTests.swift	Conversion	-	Curve3D.approximated vs approxWithDetails over GeomConvert_ApproxCurve
-Tests/OCCTCurveTests/Issue493InterpolatePeriodicParityTests.swift	Tests/OCCTCurveTests/Fitting/Issue493InterpolatePeriodicParityTests.swift	Fitting	-	the two periodic interpolation entry points agree
-Tests/OCCTCurveTests/Issue495AnalysisOrderTests.swift	Tests/OCCTCurveTests/Continuity/Issue495AnalysisOrderTests.swift	Continuity	-	analysis order selects which continuity branch is measured
-Tests/OCCTCurveTests/Issue500Curve3DNearestParameterTests.swift	Tests/OCCTCurveTests/Projection/Issue500Curve3DNearestParameterTests.swift	Projection	-	nearest-parameter entry points agree
-Tests/OCCTCurveTests/Issue506ArcLengthBridgeContractTests.swift	Tests/OCCTCurveTests/ArcLength/Issue506ArcLengthBridgeContractTests.swift	ArcLength	-	ranged arc-length contract: reversed, clamped and outside ranges
-Tests/OCCTCurveTests/Issue539NearestPointOnCurveTests.swift	Tests/OCCTCurveTests/Projection/Issue539NearestPointOnCurveTests.swift	Projection	-	the nearest point is on the curve, not on its basis
-Tests/OCCTCurveTests/Issue548NonFiniteLengthBoundTests.swift	Tests/OCCTCurveTests/ArcLength/Issue548NonFiniteLengthBoundTests.swift	ArcLength	-	NaN and infinite arc-length bounds report failure
-Tests/OCCTCurveTests/Issue554Conic3dDegenerateTests.swift	Tests/OCCTCurveTests/Conics/Issue554Conic3dDegenerateTests.swift	Conics	-	3D ellipse, hyperbola and parabola arcs with degenerate dimensions
-Tests/OCCTCurveTests/Issue558SamplingCountBoundsTests.swift	Tests/OCCTCurveTests/Sampling/Issue558SamplingCountBoundsTests.swift	Sampling	-	every sampling entry point bounds the count a caller supplies
-Tests/OCCTCurveTests/Issue600OutOfDomainRangeTests.swift	Tests/OCCTCurveTests/ArcLength/Issue600OutOfDomainRangeTests.swift	ArcLength	-	an out-of-domain range measures the curve, not its extrapolation
-Tests/OCCTCurveTests/Issue603SingleSpanQuadratureTests.swift	Tests/OCCTCurveTests/ArcLength/Issue603SingleSpanQuadratureTests.swift	ArcLength	-	arc length of ellipse, parabola and hyperbola over wide ranges
-Tests/OCCTCurveTests/Issue615NearestParameterRangeTests.swift	Tests/OCCTCurveTests/Projection/Issue615NearestParameterRangeTests.swift	Projection	-	nearestParameter over a range
-Tests/OCCTCurveTests/Issue619ContinuityEncodingTests.swift	Tests/OCCTCurveTests/Continuity/Issue619ContinuityEncodingTests.swift	Continuity	-	measured continuity encoding (CN as ordinal 6)
-Tests/OCCTCurveTests/Issue636ExtremaParallelCurvesTests.swift	Tests/OCCTCurveTests/Projection/Issue636ExtremaParallelCurvesTests.swift	Projection	-	Curve3D.extrema on parallel curves returns empty
-Tests/OCCTCurveTests/Issue853UniformAbscissaDistanceCeilingTests.swift	Tests/OCCTCurveTests/Sampling/Issue853UniformAbscissaDistanceCeilingTests.swift	Sampling	-	uniformAbscissa(distance:) point-count ceiling
-Tests/OCCTCurveTests/Issue965Curve3DPropertyLifetimeTests.swift	Tests/OCCTCurveTests/Curve3DCore/Issue965Curve3DPropertyLifetimeTests.swift	Curve3DCore	-	Curve3D *Properties views keep their parent alive
-Tests/OCCTCurveTests/Issue995BuildTrsf3DTests.swift	Tests/OCCTCurveTests/Curve3DCore/Issue995BuildTrsf3DTests.swift	Curve3DCore	-	one gp_Trsf builder behind Curve3D and Surface transforms (weak fit: Surface is the secondary case)
+Tests/OCCTCurveTests/Issue1020ExtremaBoundsTests.swift	Tests/OCCTCurveTests/Projection/ExtremaUnboundedCurveBoundsTests.swift	Projection	-	unbounded elementary curves are not clipped when finding extrema
+Tests/OCCTCurveTests/Issue1399LawKnotSplitFactoryReachTests.swift	Tests/OCCTCurveTests/Laws/LawKnotSplitFactoryReachTests.swift	Laws	-	every Law_BSpFunc-derived factory reports its end knots
+Tests/OCCTCurveTests/Issue1476CurveTypeOtherCurveFallbackTests.swift	Tests/OCCTCurveTests/Curve3DCore/Curve3DCurveTypeFallbackTests.swift	Curve3DCore	-	Curve3D curve type for a null handle and for a line
+Tests/OCCTCurveTests/Issue1513UniformDeflectionNullGuardTests.swift	Tests/OCCTCurveTests/Sampling/UniformDeflectionNullGuardTests.swift	Sampling	-	CPnts_UniformDeflection on a nullified shape returns nil
+Tests/OCCTCurveTests/Issue1675DocSnippetArcTests.swift	Tests/OCCTCurveTests/Conics/DocSnippetArcTests.swift	Conics	-	the arc the doc snippets construct, its curvature and centre of curvature
+Tests/OCCTCurveTests/Issue211WireCurveTests.swift	Tests/OCCTCurveTests/ArcLength/ArcLengthAdaptorTests.swift	ArcLength	-	WireCurve arc-length adaptor across edges
+Tests/OCCTCurveTests/Issue2765ConvertToBezierTests.swift	Tests/OCCTCurveTests/Conversion/ConvertToBezierTests.swift	Conversion	-	convertedToBezier on a shape with nothing left to convert
+Tests/OCCTCurveTests/Issue2861TangentialDeflectionTests.swift	Tests/OCCTCurveTests/Sampling/TangentialDeflectionBoundsTests.swift	Sampling	-	tangential deflection bounds for edges and drawAdaptive
+Tests/OCCTCurveTests/Issue2862NegativeContinuityOrderTests.swift	Tests/OCCTCurveTests/Continuity/NegativeContinuityOrderTests.swift	Continuity	-	isCN and bezierIsCN refuse a negative order
+Tests/OCCTCurveTests/Issue398KnotSplittingTests.swift	Tests/OCCTCurveTests/BSplineAndBezier/BSplineKnotSplittingContinuityTests.swift	BSplineAndBezier	-	BSpline knot splitting continuity range and the 256-split limit
+Tests/OCCTCurveTests/Issue403LawKnotSplitParamsTests.swift	Tests/OCCTCurveTests/Laws/LawKnotSplitParametersTests.swift	Laws	-	LawFunction knot-splitting parameters
+Tests/OCCTCurveTests/Issue477ArcLengthAccuracyTests.swift	Tests/OCCTCurveTests/ArcLength/ArcLengthAccuracyTests.swift	ArcLength	-	arc length of multi-span curves against an independent reference
+Tests/OCCTCurveTests/Issue479SampleCountBoundTests.swift	Tests/OCCTCurveTests/Sampling/ArcLengthSampleCountBoundTests.swift	Sampling	-	arc-length sampling rejects counts it cannot allocate
+Tests/OCCTCurveTests/Issue480LawKnotSplitContinuityTests.swift	Tests/OCCTCurveTests/Laws/LawKnotSplitContinuityTests.swift	Laws	-	Law knot-splitting continuity range
+Tests/OCCTCurveTests/Issue481LawKnotSplittingTruncationTests.swift	Tests/OCCTCurveTests/Laws/LawKnotSplittingTruncationTests.swift	Laws	-	LawFunction knot splitting past the old 100-entry buffer
+Tests/OCCTCurveTests/Issue485Curve3DContinuityTests.swift	Tests/OCCTCurveTests/Continuity/Curve3DMeasuredContinuityTests.swift	Continuity	-	measured continuity class from knot multiplicity
+Tests/OCCTCurveTests/Issue486Curve3DBatchTests.swift	Tests/OCCTCurveTests/Curve3DCore/Curve3DBatchEvaluationTests.swift	Curve3DCore	-	Curve3D batch-evaluation spellings agree on empty input
+Tests/OCCTCurveTests/Issue490ContinuityDecoderTests.swift	Tests/OCCTCurveTests/Continuity/CurveContinuityDecoderTests.swift	Continuity	-	continuity vocabulary domains across the curve families
+Tests/OCCTCurveTests/Issue491Curve3DApproxParityTests.swift	Tests/OCCTCurveTests/Conversion/Curve3DApproxParityTests.swift	Conversion	-	Curve3D.approximated vs approxWithDetails over GeomConvert_ApproxCurve
+Tests/OCCTCurveTests/Issue493InterpolatePeriodicParityTests.swift	Tests/OCCTCurveTests/Fitting/InterpolatePeriodicParityTests.swift	Fitting	-	the two periodic interpolation entry points agree
+Tests/OCCTCurveTests/Issue495AnalysisOrderTests.swift	Tests/OCCTCurveTests/Continuity/CurveAnalysisOrderTests.swift	Continuity	-	analysis order selects which continuity branch is measured
+Tests/OCCTCurveTests/Issue500Curve3DNearestParameterTests.swift	Tests/OCCTCurveTests/Projection/Curve3DNearestParameterTests.swift	Projection	-	nearest-parameter entry points agree
+Tests/OCCTCurveTests/Issue506ArcLengthBridgeContractTests.swift	Tests/OCCTCurveTests/ArcLength/ArcLengthRangedContractTests.swift	ArcLength	-	ranged arc-length contract: reversed, clamped and outside ranges
+Tests/OCCTCurveTests/Issue539NearestPointOnCurveTests.swift	Tests/OCCTCurveTests/Projection/NearestPointOnCurveTests.swift	Projection	-	the nearest point is on the curve, not on its basis
+Tests/OCCTCurveTests/Issue548NonFiniteLengthBoundTests.swift	Tests/OCCTCurveTests/ArcLength/NonFiniteLengthBoundTests.swift	ArcLength	-	NaN and infinite arc-length bounds report failure
+Tests/OCCTCurveTests/Issue554Conic3dDegenerateTests.swift	Tests/OCCTCurveTests/Conics/Conic3dDegenerateTests.swift	Conics	-	3D ellipse, hyperbola and parabola arcs with degenerate dimensions
+Tests/OCCTCurveTests/Issue558SamplingCountBoundsTests.swift	Tests/OCCTCurveTests/Sampling/SamplingCountBoundsTests.swift	Sampling	-	every sampling entry point bounds the count a caller supplies
+Tests/OCCTCurveTests/Issue600OutOfDomainRangeTests.swift	Tests/OCCTCurveTests/ArcLength/OutOfDomainRangeTests.swift	ArcLength	-	an out-of-domain range measures the curve, not its extrapolation
+Tests/OCCTCurveTests/Issue603SingleSpanQuadratureTests.swift	Tests/OCCTCurveTests/ArcLength/ArcLengthQuadratureTests.swift	ArcLength	-	arc length of ellipse, parabola and hyperbola over wide ranges
+Tests/OCCTCurveTests/Issue615NearestParameterRangeTests.swift	Tests/OCCTCurveTests/Projection/NearestParameterRangeTests.swift	Projection	-	nearestParameter over a range
+Tests/OCCTCurveTests/Issue619ContinuityEncodingTests.swift	Tests/OCCTCurveTests/Continuity/ContinuityEncodingTests.swift	Continuity	-	measured continuity encoding (CN as ordinal 6)
+Tests/OCCTCurveTests/Issue636ExtremaParallelCurvesTests.swift	Tests/OCCTCurveTests/Projection/ExtremaParallelCurvesTests.swift	Projection	-	Curve3D.extrema on parallel curves returns empty
+Tests/OCCTCurveTests/Issue853UniformAbscissaDistanceCeilingTests.swift	Tests/OCCTCurveTests/Sampling/UniformAbscissaDistanceCeilingTests.swift	Sampling	-	uniformAbscissa(distance:) point-count ceiling
+Tests/OCCTCurveTests/Issue965Curve3DPropertyLifetimeTests.swift	Tests/OCCTCurveTests/Curve3DCore/Curve3DPropertyLifetimeTests.swift	Curve3DCore	-	Curve3D *Properties views keep their parent alive
+Tests/OCCTCurveTests/Issue995BuildTrsf3DTests.swift	Tests/OCCTCurveTests/Curve3DCore/BuildTrsf3DTests.swift	Curve3DCore	-	one gp_Trsf builder behind Curve3D and Surface transforms (weak fit: Surface is the secondary case)
 Tests/OCCTCurveTests/LawCompositeTests.swift	Tests/OCCTCurveTests/Laws/LawCompositeTests.swift	Laws	-	Law_Composite
 Tests/OCCTCurveTests/LawFunctionTests.swift	Tests/OCCTCurveTests/Laws/LawFunctionTests.swift	Laws	-	constant, linear and other Law_Function laws
 Tests/OCCTCurveTests/LawInterpolateTests.swift	Tests/OCCTCurveTests/Laws/LawInterpolateTests.swift	Laws	-	Law_Interpolate
