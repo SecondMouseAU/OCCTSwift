@@ -76,7 +76,7 @@ The four questions above were all answerable before the suites ran. Three more t
 they are worth recording because they are the same lesson #2997 left: the measurement that mattered
 was running the thing.
 
-- **A sixth `Int32.max` file.** `Tests/OCCTMiscTests/Bridge/Issue622AllocationBoundsTests.swift` carries the
+- **A sixth `Int32.max` file.** `Tests/OCCTMiscTests/Bridge/ResultBufferAllocationBoundsTests.swift` carries the
   same `private static let pastInt32 = Int(Int32.max) + 1` as the five #2793 listed. It was on no
   list, because the whole of `OCCTMiscTests` was excluded for an unrelated reason
   (`autoreleasepool`), so nothing had ever run it. It trapped the module on the first run that
