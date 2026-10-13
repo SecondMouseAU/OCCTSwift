@@ -9,9 +9,9 @@ import Testing
 struct TDataStdNamedDataTests {
 
     @Test("Named integer")
-    func namedInteger() {
-        let doc = Document.create()!
-        let label = doc.createLabel()!
+    func namedInteger() throws {
+        let doc = try #require(Document.create())
+        let label = try #require(doc.createLabel())
 
         let ok = label.setNamedInteger("count", value: 42)
         #expect(ok)
@@ -21,9 +21,9 @@ struct TDataStdNamedDataTests {
     }
 
     @Test("Named real")
-    func namedReal() {
-        let doc = Document.create()!
-        let label = doc.createLabel()!
+    func namedReal() throws {
+        let doc = try #require(Document.create())
+        let label = try #require(doc.createLabel())
 
         label.setNamedReal("pi", value: 3.14159)
         #expect(label.hasNamedReal("pi"))
@@ -33,9 +33,9 @@ struct TDataStdNamedDataTests {
     }
 
     @Test("Named string")
-    func namedString() {
-        let doc = Document.create()!
-        let label = doc.createLabel()!
+    func namedString() throws {
+        let doc = try #require(Document.create())
+        let label = try #require(doc.createLabel())
 
         label.setNamedString("partName", value: "MyPart")
         #expect(label.hasNamedString("partName"))
@@ -44,9 +44,9 @@ struct TDataStdNamedDataTests {
     }
 
     @Test("Multiple named values on same label")
-    func multipleValues() {
-        let doc = Document.create()!
-        let label = doc.createLabel()!
+    func multipleValues() throws {
+        let doc = try #require(Document.create())
+        let label = try #require(doc.createLabel())
 
         label.setNamedInteger("count", value: 5)
         label.setNamedReal("weight", value: 12.5)

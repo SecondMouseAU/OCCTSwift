@@ -7,7 +7,7 @@ import Testing
 struct VolumeInertiaTests {
     @Test("Box volume inertia")
     func boxVolumeInertia() throws {
-        let box = Shape.box(width: 10, height: 20, depth: 30)!
+        let box = try #require(Shape.box(width: 10, height: 20, depth: 30))
         let inertia = box.volumeInertia
         #expect(inertia != nil)
         if let inertia {
@@ -36,8 +36,8 @@ struct VolumeInertiaTests {
 
     @Test("Inertia tensor has 9 elements")
     func inertiaTensorSize() throws {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
-        let inertia = box.volumeInertia!
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let inertia = try #require(box.volumeInertia)
         #expect(inertia.inertiaTensor.count == 9)
     }
 
@@ -61,7 +61,7 @@ struct VolumeInertiaTests {
 
     @Test("Sphere volume inertia")
     func sphereVolumeInertia() throws {
-        let sphere = Shape.sphere(radius: 5)!
+        let sphere = try #require(Shape.sphere(radius: 5))
         let inertia = sphere.volumeInertia
         #expect(inertia != nil)
         if let inertia {
@@ -117,7 +117,7 @@ struct VolumeInertiaTests {
     // volumeInertia had no symmetry fields to compare before #848.
     @Test("Volume inertia symmetry agrees with legacy inertiaProperties")
     func volumeInertiaMatchesLegacySymmetry() throws {
-        let cyl = Shape.cylinder(radius: 5, height: 20)!
+        let cyl = try #require(Shape.cylinder(radius: 5, height: 20))
         let legacy = cyl.inertiaProperties()
         let modern = cyl.volumeInertia
         #expect(legacy != nil)

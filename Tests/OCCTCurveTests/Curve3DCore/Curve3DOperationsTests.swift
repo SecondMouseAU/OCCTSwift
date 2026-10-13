@@ -11,8 +11,8 @@ struct Curve3DOperationsTests {
     // GCPnts_AbscissaPoint give the same values (Scripts/repro/766-curve-operations/).
 
     @Test("Trim circle to quarter arc")
-    func trimCircle() {
-        let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5)!
+    func trimCircle() throws {
+        let circle = try #require(Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5))
         let arc = circle.trimmed(from: 0, to: .pi / 2)
         #expect(arc != nil)
         if let arc = arc {
@@ -25,9 +25,9 @@ struct Curve3DOperationsTests {
     }
 
     @Test("Reverse segment swaps endpoints")
-    func reverseSegment() {
-        let seg = Curve3D.segment(from: SIMD3(0, 0, 0), to: SIMD3(10, 5, 3))!
-        let rev = seg.reversed()!
+    func reverseSegment() throws {
+        let seg = try #require(Curve3D.segment(from: SIMD3(0, 0, 0), to: SIMD3(10, 5, 3)))
+        let rev = try #require(seg.reversed())
         let revStart = rev.startPoint
         let revEnd = rev.endPoint
         #expect(vectorDistance(revStart, SIMD3(10, 5, 3)) < 1e-12)
@@ -35,18 +35,19 @@ struct Curve3DOperationsTests {
     }
 
     @Test("Translate segment")
-    func translateSegment() {
-        let seg = Curve3D.segment(from: SIMD3(0, 0, 0), to: SIMD3(10, 0, 0))!
-        let moved = seg.translated(by: SIMD3(5, 5, 5))!
+    func translateSegment() throws {
+        let seg = try #require(Curve3D.segment(from: SIMD3(0, 0, 0), to: SIMD3(10, 0, 0)))
+        let moved = try #require(seg.translated(by: SIMD3(5, 5, 5)))
         let start = moved.startPoint
         #expect(vectorDistance(start, SIMD3(5, 5, 5)) < 1e-12)
         #expect(vectorDistance(moved.endPoint, SIMD3(15, 5, 5)) < 1e-12)
     }
 
     @Test("Rotate segment around Z axis")
-    func rotateSegment() {
-        let seg = Curve3D.segment(from: SIMD3(5, 0, 0), to: SIMD3(10, 0, 0))!
-        let rotated = seg.rotated(around: .zero, direction: SIMD3(0, 0, 1), angle: .pi / 2)!
+    func rotateSegment() throws {
+        let seg = try #require(Curve3D.segment(from: SIMD3(5, 0, 0), to: SIMD3(10, 0, 0)))
+        let rotated = try #require(
+            seg.rotated(around: .zero, direction: SIMD3(0, 0, 1), angle: .pi / 2))
         let start = rotated.startPoint
         // A quarter turn about Z takes (5, 0, 0) to (0, 5, 0) and (10, 0, 0) to (0, 10, 0).
         #expect(vectorDistance(start, SIMD3(0, 5, 0)) < 1e-12)
@@ -54,9 +55,9 @@ struct Curve3DOperationsTests {
     }
 
     @Test("Scale segment")
-    func scaleSegment() {
-        let seg = Curve3D.segment(from: SIMD3(1, 0, 0), to: SIMD3(2, 0, 0))!
-        let scaled = seg.scaled(from: .zero, factor: 3)!
+    func scaleSegment() throws {
+        let seg = try #require(Curve3D.segment(from: SIMD3(1, 0, 0), to: SIMD3(2, 0, 0)))
+        let scaled = try #require(seg.scaled(from: .zero, factor: 3))
         let start = scaled.startPoint
         let end = scaled.endPoint
         #expect(abs(start.x - 3) < 1e-10)
@@ -64,17 +65,17 @@ struct Curve3DOperationsTests {
     }
 
     @Test("Mirror across XY plane")
-    func mirrorPlane() {
-        let seg = Curve3D.segment(from: SIMD3(0, 0, 1), to: SIMD3(10, 0, 1))!
-        let mirrored = seg.mirrored(acrossPlane: .zero, normal: SIMD3(0, 0, 1))!
+    func mirrorPlane() throws {
+        let seg = try #require(Curve3D.segment(from: SIMD3(0, 0, 1), to: SIMD3(10, 0, 1)))
+        let mirrored = try #require(seg.mirrored(acrossPlane: .zero, normal: SIMD3(0, 0, 1)))
         #expect(vectorDistance(mirrored.startPoint, SIMD3(0, 0, -1)) < 1e-12)
         #expect(vectorDistance(mirrored.endPoint, SIMD3(10, 0, -1)) < 1e-12)
     }
 
     // #416: mirrored(acrossPoint:) had zero test coverage anywhere in Tests/.
     @Test("Mirror across a point")
-    func mirrorAcrossPoint() {
-        let seg = Curve3D.segment(from: SIMD3(1, 0, 0), to: SIMD3(2, 0, 0))!
+    func mirrorAcrossPoint() throws {
+        let seg = try #require(Curve3D.segment(from: SIMD3(1, 0, 0), to: SIMD3(2, 0, 0)))
         let mirrored = seg.mirrored(acrossPoint: .zero)
         #expect(mirrored != nil)
         if let mirrored = mirrored {
@@ -88,8 +89,8 @@ struct Curve3DOperationsTests {
 
     // #416: mirrored(acrossAxis:direction:) had zero test coverage anywhere in Tests/.
     @Test("Mirror across an axis")
-    func mirrorAcrossAxis() {
-        let seg = Curve3D.segment(from: SIMD3(1, 1, 0), to: SIMD3(2, 1, 0))!
+    func mirrorAcrossAxis() throws {
+        let seg = try #require(Curve3D.segment(from: SIMD3(1, 1, 0), to: SIMD3(2, 1, 0)))
         let mirrored = seg.mirrored(acrossAxis: .zero, direction: SIMD3(1, 0, 0))
         #expect(mirrored != nil)
         if let mirrored = mirrored {
@@ -105,7 +106,7 @@ struct Curve3DOperationsTests {
 
     @Test("Length of segment")
     func segmentLength() throws {
-        let seg = Curve3D.segment(from: SIMD3(0, 0, 0), to: SIMD3(3, 4, 0))!
+        let seg = try #require(Curve3D.segment(from: SIMD3(0, 0, 0), to: SIMD3(3, 4, 0)))
         let len = try #require(seg.length)
         #expect(abs(len - 5.0) < 1e-12)
     }
@@ -113,14 +114,15 @@ struct Curve3DOperationsTests {
     @Test("Length of circle")
     func circleLength() throws {
         let radius = 5.0
-        let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: radius)!
+        let circle = try #require(
+            Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: radius))
         let len = try #require(circle.length)
         #expect(abs(len - 2 * .pi * radius) < 1e-9)
     }
 
     @Test("Partial length")
     func partialLength() throws {
-        let seg = Curve3D.segment(from: SIMD3(0, 0, 0), to: SIMD3(10, 0, 0))!
+        let seg = try #require(Curve3D.segment(from: SIMD3(0, 0, 0), to: SIMD3(10, 0, 0)))
         let d = seg.domain
         let halfLen = try #require(
             seg.length(from: d.lowerBound, to: (d.lowerBound + d.upperBound) / 2))

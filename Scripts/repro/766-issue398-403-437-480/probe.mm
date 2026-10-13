@@ -1,5 +1,5 @@
-// Epic #766, Issue398ContinuityTests.swift, Issue403SurfaceKnotSplitParamsTests.swift,
-// Issue437PlatePointG2Tests.swift and Issue480SurfaceKnotSplitContinuityTests.swift: kernel parity.
+// Epic #766, ContinuityVocabularyTests.swift, SurfaceKnotSplitParametersTests.swift,
+// PlatePointG2Tests.swift and SurfaceKnotSplitContinuityTests.swift: kernel parity.
 //  - GeomConvert_BSplineSurfaceKnotSplitting on the BSpline of GC_MakeTrimmedCylinder(r 5, h 10)
 //    and on the #480 fixtures, as OCCTSurfaceKnotSplitting calls it (split params are knot values).
 //  - GeomPlate_PointConstraint: order 2 on a bare point throws (the kernel side of #437), order 1

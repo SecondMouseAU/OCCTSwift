@@ -7,7 +7,7 @@ import Testing
 struct AssemblyNodeIdentityTests {
     @Test("AssemblyNode.labelId is public and round-trips via Document.node(at:)")
     func labelIdRoundTrip() throws {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let tempURL = FileManager.default.temporaryDirectory
             .appendingPathComponent("assembly_node_identity_test.step")
         defer { try? FileManager.default.removeItem(at: tempURL) }
@@ -42,7 +42,7 @@ struct AssemblyNodeIdentityTests {
 
     @Test("Document.node(at:) resolves root labelIds without a prior rootNodes walk (issue #95)")
     func nodeAtFreshDocumentDoesNotRequireWarmup() throws {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let tempURL = FileManager.default.temporaryDirectory
             .appendingPathComponent("node_at_warmup_test.step")
         defer { try? FileManager.default.removeItem(at: tempURL) }

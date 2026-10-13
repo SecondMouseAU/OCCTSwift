@@ -8,23 +8,23 @@ import Testing
 struct ShapeSplittingTests {
 
     @Test("Split box by horizontal plane")
-    func splitByHorizontalPlane() {
+    func splitByHorizontalPlane() throws {
         // Box is centered at origin: X[-10,10], Y[-10,10], Z[-10,10]
-        let box = Shape.box(width: 20, height: 20, depth: 20)!
+        let box = try #require(Shape.box(width: 20, height: 20, depth: 20))
 
         // Split at Z=0 (middle of the box)
         let halves = box.split(atPlane: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1))
 
         #expect(halves != nil)
-        #expect(halves!.count == 2)
+        #expect(try #require(halves).count == 2)
 
         // Each half should be valid
-        for half in halves! {
+        for half in try #require(halves) {
             #expect(half.isValid)
         }
 
         // Total volume should equal original
-        let totalVolume = halves!.reduce(0.0) { $0 + ($1.volume ?? 0) }
+        let totalVolume = try #require(halves).reduce(0.0) { $0 + ($1.volume ?? 0) }
         let originalVolume = box.volume ?? 0
         #expect(abs(totalVolume - originalVolume) < 1.0)
     }

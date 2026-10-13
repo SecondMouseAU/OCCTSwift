@@ -8,8 +8,8 @@ import Testing
 struct BRepToolExtrasV128Tests {
 
     @Test("IsClosedOnFace")
-    func isClosedOnFace() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func isClosedOnFace() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let faces = box.subShapes(ofType: .face)
         let edges = box.subShapes(ofType: .edge)
 

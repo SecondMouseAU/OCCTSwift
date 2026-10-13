@@ -8,7 +8,7 @@ struct BREPTests {
 
     @Test("Export shape to BREP")
     func exportBREP() throws {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
 
         let tempURL = FileManager.default.temporaryDirectory
             .appendingPathComponent("test_export.brep")
@@ -33,7 +33,7 @@ struct BREPTests {
         //, BRepCheck flags the self-intersection, standing in for the "loose /
         // invalid but dimensionally real" reconstruction the gate must let through.
         // Uses shared IOTestFixtures.invalidBowtieShape() helper.
-        let invalid = invalidBowtieShape()
+        let invalid = try invalidBowtieShape()
         #expect(!invalid.isValid)
 
         let tempURL = FileManager.default.temporaryDirectory
@@ -54,7 +54,7 @@ struct BREPTests {
 
     @Test("BREP roundtrip preserves geometry exactly")
     func brepRoundtrip() throws {
-        let original = Shape.box(width: 20, height: 15, depth: 10)!
+        let original = try #require(Shape.box(width: 20, height: 15, depth: 10))
         let originalVolume = original.volume ?? 0
         let originalArea = original.surfaceArea ?? 0
 
@@ -170,7 +170,7 @@ struct BREPTests {
 
     @Test("Get BREP data")
     func getBREPData() throws {
-        let cone = Shape.cone(bottomRadius: 10, topRadius: 5, height: 15)!
+        let cone = try #require(Shape.cone(bottomRadius: 10, topRadius: 5, height: 15))
 
         let data = try cone.brepData()
         #expect(data.count > 0)

@@ -58,7 +58,7 @@ struct ShapeMeasurementsTests {
         }
     }
 
-    @Test func boxFaceCentroidsLieInsideFaceBounds() {
+    @Test func boxFaceCentroidsLieInsideFaceBounds() throws {
         guard let box = Shape.box(width: 2, height: 3, depth: 5) else {
             Issue.record("Shape.box returned nil")
             return
@@ -73,7 +73,7 @@ struct ShapeMeasurementsTests {
                 Issue.record("face \(i) of a box has an area, so it has a centroid")
                 continue
             }
-            let b = faceList[i].bounds!
+            let b = try #require(faceList[i].bounds)
             #expect(
                 c.x >= b.min.x - 1e-6 && c.x <= b.max.x + 1e-6,
                 "face \(i) centroid X=\(c.x) outside [\(b.min.x), \(b.max.x)]")

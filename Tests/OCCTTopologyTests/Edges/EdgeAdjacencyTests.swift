@@ -10,8 +10,8 @@ import Testing
 struct EdgeAdjacencyTests {
 
     @Test("Box edge has two adjacent faces")
-    func boxEdgeAdjacentFaces() {
-        let box = Shape.box(width: 10, height: 20, depth: 30)!
+    func boxEdgeAdjacentFaces() throws {
+        let box = try #require(Shape.box(width: 10, height: 20, depth: 30))
         let edges = box.edges()
         #expect(edges.count == 12)
 
@@ -25,8 +25,8 @@ struct EdgeAdjacencyTests {
     }
 
     @Test("Box edge dihedral angle is 90 degrees")
-    func boxDihedralAngle() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func boxDihedralAngle() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let edges = box.edges()
 
         // Find an edge with two adjacent faces

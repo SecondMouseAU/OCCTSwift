@@ -6,9 +6,9 @@ import Testing
 @Suite("Surface Bounding Box")
 struct SurfaceBoundingBoxTests {
     @Test("Sphere bounding box")
-    func sphereBoundingBox() {
+    func sphereBoundingBox() throws {
         let r: Double = 5
-        let sphere = Surface.sphere(center: SIMD3(10, 0, 0), radius: r)!
+        let sphere = try #require(Surface.sphere(center: SIMD3(10, 0, 0), radius: r))
         let bb = sphere.boundingBox
         #expect(bb != nil)
         if let bb = bb {
@@ -20,12 +20,12 @@ struct SurfaceBoundingBoxTests {
     }
 
     @Test("Bezier surface bounding box")
-    func bezierBoundingBox() {
+    func bezierBoundingBox() throws {
         let poles: [[SIMD3<Double>]] = [
             [SIMD3(0, 0, 0), SIMD3(10, 0, 0)],
             [SIMD3(0, 10, 5), SIMD3(10, 10, 5)],
         ]
-        let bez = Surface.bezier(poles: poles)!
+        let bez = try #require(Surface.bezier(poles: poles))
         let bb = bez.boundingBox
         #expect(bb != nil)
         if let bb = bb {

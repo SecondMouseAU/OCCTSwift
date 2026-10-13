@@ -9,9 +9,9 @@ import Testing
 struct TDataStdTreeNodeTests {
 
     @Test("Create tree node")
-    func createTreeNode() {
-        let doc = Document.create()!
-        let label = doc.createLabel()!
+    func createTreeNode() throws {
+        let doc = try #require(Document.create())
+        let label = try #require(doc.createLabel())
         let ok = label.setTreeNode()
         #expect(ok)
         #expect(!label.treeNodeHasFather)
@@ -19,11 +19,11 @@ struct TDataStdTreeNodeTests {
     }
 
     @Test("Parent-child tree structure")
-    func parentChild() {
-        let doc = Document.create()!
-        let root = doc.createLabel()!
-        let child1 = doc.createLabel()!
-        let child2 = doc.createLabel()!
+    func parentChild() throws {
+        let doc = try #require(Document.create())
+        let root = try #require(doc.createLabel())
+        let child1 = try #require(doc.createLabel())
+        let child2 = try #require(doc.createLabel())
 
         root.setTreeNode()
         child1.setTreeNode()

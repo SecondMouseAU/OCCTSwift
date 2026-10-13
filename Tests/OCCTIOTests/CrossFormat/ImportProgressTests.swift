@@ -10,7 +10,7 @@ struct ImportProgressTests {
 
     @Test("STEP import calls progress callback at least once")
     func stepProgressCallbackFires() throws {
-        let box = Shape.box(width: 10, height: 5, depth: 3)!
+        let box = try #require(Shape.box(width: 10, height: 5, depth: 3))
         let tempURL = FileManager.default.temporaryDirectory
             .appendingPathComponent("progress_test_\(UUID()).step")
         defer { try? FileManager.default.removeItem(at: tempURL) }
