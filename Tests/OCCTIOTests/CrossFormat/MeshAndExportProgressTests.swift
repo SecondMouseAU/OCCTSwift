@@ -190,7 +190,7 @@ struct MeshAndExportProgressTests {
         "Exporter.writeSTEP(progress:) rejects an invalid shape, matching every other STEP overload"
     )
     func exportSTEPWithProgressInvalidShape() throws {
-        let invalid = invalidBowtieShape()
+        let invalid = try invalidBowtieShape()
         let url = FileManager.default.temporaryDirectory
             .appendingPathComponent("export_step_progress_invalid_\(UUID()).step")
         defer { try? FileManager.default.removeItem(at: url) }
@@ -217,7 +217,7 @@ struct MeshAndExportProgressTests {
         "Exporter.writeIGES(progress:) rejects an invalid shape, matching every other IGES overload"
     )
     func exportIGESWithProgressInvalidShape() throws {
-        let invalid = invalidBowtieShape()
+        let invalid = try invalidBowtieShape()
         let url = FileManager.default.temporaryDirectory
             .appendingPathComponent("export_iges_progress_invalid_\(UUID()).iges")
         defer { try? FileManager.default.removeItem(at: url) }

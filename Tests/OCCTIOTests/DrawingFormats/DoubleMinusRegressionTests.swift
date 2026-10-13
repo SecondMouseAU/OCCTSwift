@@ -91,7 +91,7 @@ struct DoubleMinusRegressionTests {
         "No XML attribute value in SVGWriter's golden-drawing output contains a double minus sign")
     func svgGoldenHasNoDoubleMinus() throws {
         let writer = SVGWriter()
-        writer.collectFromDrawing(makeGolden795Drawing())
+        writer.collectFromDrawing(try makeGolden795Drawing())
         let url = URL(fileURLWithPath: NSTemporaryDirectory())
             .appendingPathComponent("800_svg_golden_scan_\(UUID()).svg")
         defer { try? FileManager.default.removeItem(at: url) }
@@ -112,7 +112,7 @@ struct DoubleMinusRegressionTests {
     @Test("No numeric operand in PDFWriter's content stream contains a double minus sign")
     func pdfGoldenHasNoDoubleMinus() throws {
         let writer = PDFWriter()
-        writer.collectFromDrawing(makeGolden795Drawing())
+        writer.collectFromDrawing(try makeGolden795Drawing())
         let url = URL(fileURLWithPath: NSTemporaryDirectory())
             .appendingPathComponent("800_pdf_golden_scan_\(UUID()).pdf")
         defer { try? FileManager.default.removeItem(at: url) }
@@ -128,7 +128,7 @@ struct DoubleMinusRegressionTests {
     @Test("No numeric value in DXFWriter's golden-drawing output contains a double minus sign")
     func dxfGoldenHasNoDoubleMinus() throws {
         let writer = DXFWriter()
-        writer.collectFromDrawing(makeGolden795Drawing())
+        writer.collectFromDrawing(try makeGolden795Drawing())
         let url = URL(fileURLWithPath: NSTemporaryDirectory())
             .appendingPathComponent("800_dxf_golden_scan_\(UUID()).dxf")
         defer { try? FileManager.default.removeItem(at: url) }
