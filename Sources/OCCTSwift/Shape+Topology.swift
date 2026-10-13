@@ -684,6 +684,19 @@ extension Shape {
     /// the given shapes. The first shape provides the outer shell, and additional shapes
     /// provide cavity (inner) shells.
     ///
+    /// The orientation of each cavity shell is normalised: a closed shell is classified on its own
+    /// and reversed when it points outward, so a plain box passed as the second shape gives the
+    /// hollow block (valid, volume outer less cavity) the same as an already reversed one (#3359).
+    /// An open cavity shell cannot be classified and is added as given. The shapes passed in are
+    /// never edited.
+    ///
+    /// ```swift
+    /// let outer = Shape.box(width: 20, height: 20, depth: 20)!
+    /// let inner = Shape.box(width: 10, height: 10, depth: 10)!
+    /// let hollow = Shape.solidFromShells([outer, inner])!
+    /// print(hollow.isValid, hollow.signedVolume)  // true 7000.0
+    /// ```
+    ///
     /// - Note: Each element contributes only the **first** shell found in it, so pass one
     ///   shape per shell rather than a compound of several. An element holding no shell is
     ///   skipped silently, except the first, which fails the whole call.
@@ -792,6 +805,17 @@ extension Shape {
     /// Uses ShapeFix_EdgeConnect to identify edges that share geometric positions
     /// and merges their vertices. Useful for healing imported geometry where
     /// topologically disconnected edges actually meet at the same point.
+    ///
+    /// The work is done on a copy, so the receiver is never edited. If the connected copy fails
+    /// `BRepCheck` while the receiver passes it (the class does this to a box, whose vertices are
+    /// already shared), the result is a copy of the receiver unchanged (#3354, twin of #3252).
+    /// Same operation as ``fixEdgeConnect()``.
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// let connected = box.connectedEdges
+    /// print(connected?.isValid ?? false, box.isValid)  // true true
+    /// ```
     ///
     /// - Returns: Shape with connected edges, or nil on failure
     public var connectedEdges: Shape? {
@@ -2702,7 +2726,22 @@ extension Shape {
         return Shape(handle: ref)
     }
 
-    /// Copy a face.
+    /// Copy a face's top-level shape, sharing its geometry and boundary.
+    ///
+    /// The result is a new face with its own `TopoDS_TShape` that carries the same surface,
+    /// location, tolerance and orientation, and the same wires as the input: this is
+    /// `BRepBuilderAPI_MakeFace(F)`, which is how OCCT loads a face to add wires to. It is not an
+    /// independent deep copy; use ``deepCopy(_:copyGeometry:copyMesh:)`` for that.
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// let face = box.subShapes(ofType: .face).first!
+    /// let copy = Shape.faceCopy(face)!
+    /// copy.surfaceArea   // 100
+    /// ```
+    ///
+    /// - Parameter face: A shape of type `.face`.
+    /// - Returns: The copied face, or nil if `face` is not a face.
     public static func faceCopy(_ face: Shape) -> Shape? {
         guard let ref = OCCTMakeFaceCopy(face.handle) else { return nil }
         return Shape(handle: ref)
@@ -3300,6 +3339,21 @@ extension Shape {
 extension Shape {
 
     /// Orient a closed solid so that face normals point outward.
+    ///
+    /// An inward solid (negative `signedVolume`) is reversed in place, so the receiver reads the
+    /// positive volume afterwards (#3357). A solid that is already outward is left alone.
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// let shell = box.subShapes(ofType: .shell)[0].oriented(1)!
+    /// let solid = Shape.builderMakeSolid()!
+    /// solid.builderAdd(shell)
+    /// solid.orientClosedSolid()
+    /// print(solid.signedVolume)  // 1000
+    /// ```
+    ///
+    /// - Returns: `true` if the solid is now outward, `false` if it is not a solid or is open or
+    ///   incoherent (OCCT cannot classify it).
     @discardableResult
     public func orientClosedSolid() -> Bool {
         OCCTBRepLibOrientClosedSolid(handle)

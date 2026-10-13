@@ -1125,7 +1125,8 @@ bool OCCTIntfToolEndParam(OCCTIntfToolRef _Nonnull tool,
 
 // MARK: - gp_Ax3 (v0.116.0)
 
-/// Create Ax3 from point + main direction + X direction. isDirect reports handedness.
+/// Create Ax3 from point + main direction + X direction. isDirect reports handedness. nDx/nDy/nDz
+/// receive the unit main direction (gp_Ax3::Direction()), not the input vector (#3371).
 void OCCTAx3Create(double px,
                    double py,
                    double pz,
@@ -1136,6 +1137,9 @@ void OCCTAx3Create(double px,
                    double xDirY,
                    double xDirZ,
                    bool* _Nonnull isDirect,
+                   double* _Nonnull nDx,
+                   double* _Nonnull nDy,
+                   double* _Nonnull nDz,
                    double* _Nonnull xDx,
                    double* _Nonnull xDy,
                    double* _Nonnull xDz,
@@ -1143,7 +1147,8 @@ void OCCTAx3Create(double px,
                    double* _Nonnull yDy,
                    double* _Nonnull yDz);
 
-/// Create Ax3 from point + main direction only (X/Y auto-computed).
+/// Create Ax3 from point + main direction only (X/Y auto-computed). nDx/nDy/nDz receive the unit
+/// main direction (gp_Ax3::Direction()), not the input vector (#3371).
 void OCCTAx3CreateFromNormal(double px,
                              double py,
                              double pz,
@@ -1151,6 +1156,9 @@ void OCCTAx3CreateFromNormal(double px,
                              double ny,
                              double nz,
                              bool* _Nonnull isDirect,
+                             double* _Nonnull nDx,
+                             double* _Nonnull nDy,
+                             double* _Nonnull nDz,
                              double* _Nonnull xDx,
                              double* _Nonnull xDy,
                              double* _Nonnull xDz,

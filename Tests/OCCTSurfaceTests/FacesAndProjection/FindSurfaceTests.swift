@@ -5,9 +5,9 @@ import Testing
 @Suite("Find Surface")
 struct FindSurfaceTests {
     @Test("Find plane from flat wire")
-    func findPlaneFromWire() {
-        let rect = Wire.rectangle(width: 10, height: 5)!
-        let face = Shape.face(from: rect)!
+    func findPlaneFromWire() throws {
+        let rect = try #require(Wire.rectangle(width: 10, height: 5))
+        let face = try #require(Shape.face(from: rect))
         let surface = face.findSurface()
         #expect(surface != nil)
         // #766: was non-nil only. The plane found is z = 0 (BRepLib_FindSurface, see

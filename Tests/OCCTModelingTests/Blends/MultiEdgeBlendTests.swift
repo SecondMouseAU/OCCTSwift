@@ -44,8 +44,8 @@ struct MultiEdgeBlendTests {
     }
 
     @Test("Blend with empty array returns nil")
-    func blendEmptyArray() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func blendEmptyArray() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
 
         let blended = box.blendedEdges([])
 

@@ -6,8 +6,8 @@ import Testing
 @Suite("Free Boundary Analysis")
 struct FreeBoundsTests {
     @Test("Closed solid has no free boundaries")
-    func closedSolidNoFreeBounds() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func closedSolidNoFreeBounds() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let result = box.freeBounds()
         // A watertight solid should have no free boundaries
         #expect(result == nil)
@@ -17,11 +17,13 @@ struct FreeBoundsTests {
     func compoundFacesHasFreeBounds() throws {
         // ShapeAnalysis_FreeBounds finds boundaries between separate faces in a compound,
         // not edges of a single face. Use two adjacent faces sharing an edge.
-        let face1 = Shape.face(from: Wire.rectangle(width: 10, height: 10)!)!
-        let face2 = Shape.face(from: Wire.rectangle(width: 10, height: 10)!)!
+        let unwrapped1 = try #require(Wire.rectangle(width: 10, height: 10))
+        let face1 = try #require(Shape.face(from: unwrapped1))
+        let unwrapped2 = try #require(Wire.rectangle(width: 10, height: 10))
+        let face2 = try #require(Shape.face(from: unwrapped2))
         // Translate second face to be adjacent
-        let moved = face2.translated(by: SIMD3(10, 0, 0))!
-        let compound = Shape.compound([face1, moved])!
+        let moved = try #require(face2.translated(by: SIMD3(10, 0, 0)))
+        let compound = try #require(Shape.compound([face1, moved]))
         // #766: kernel (Scripts/repro/766-healing-freebounds-geomconv): one closed wire of six
         // edges around the joined 20x10 outline, no open wires. Was `closedCount >= 1`.
         let result = try #require(compound.freeBounds())
@@ -31,8 +33,8 @@ struct FreeBoundsTests {
     }
 
     @Test("Free bounds analysis callable on sphere")
-    func freeBoundsSphere() {
-        let sphere = Shape.sphere(radius: 5)!
+    func freeBoundsSphere() throws {
+        let sphere = try #require(Shape.sphere(radius: 5))
         let result = sphere.freeBounds()
         // A closed sphere should have no free boundaries
         #expect(result == nil)
@@ -62,11 +64,14 @@ struct FreeBoundsTests {
     // it). No #expect needed for the crash itself: a regression
     // would abort the whole test process; reaching the assertions below is the real assertion.
     @Test("Disjoint faces in a compound don't crash free-bounds analysis")
-    func issue310DisjointFacesFreeBounds() {
-        let face1 = Shape.face(from: Wire.rectangle(width: 1, height: 1)!)!
-        let face2 = Shape.face(from: Wire.rectangle(width: 1, height: 1)!)!.translated(
-            by: SIMD3(5, 5, 0))!
-        let compound = Shape.compound([face1, face2])!
+    func issue310DisjointFacesFreeBounds() throws {
+        let unwrapped3 = try #require(Wire.rectangle(width: 1, height: 1))
+        let face1 = try #require(Shape.face(from: unwrapped3))
+        let unwrapped4 = try #require(Wire.rectangle(width: 1, height: 1))
+        let face2 = try #require(
+            Shape.face(from: unwrapped4)?.translated(
+                by: SIMD3(5, 5, 0)))
+        let compound = try #require(Shape.compound([face1, face2]))
 
         let closedWires = compound.freeBoundsClosedWires(tolerance: 0.01)
         #expect(compound.freeBoundsClosedCount(tolerance: 0.01) == 2)

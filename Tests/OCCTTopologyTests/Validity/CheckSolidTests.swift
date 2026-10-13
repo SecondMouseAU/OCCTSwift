@@ -19,7 +19,11 @@ struct Issue1392CheckSolidTests {
             let outerShell = outer.subShapes(ofType: .shell).first,
             let innerShell = inner.subShapes(ofType: .shell).first
         else { return nil }
-        return Shape.solidFromShells([outerShell, innerShell])
+        // Built with the raw builder: Shape.solidFromShells orients a cavity shell as a void
+        // (#3359), which would make this fixture valid.
+        guard let solid = Shape.builderMakeSolid() else { return nil }
+        guard solid.builderAdd(outerShell), solid.builderAdd(innerShell) else { return nil }
+        return solid
     }
 
     @Test("A well-formed box solid passes checkSolid")

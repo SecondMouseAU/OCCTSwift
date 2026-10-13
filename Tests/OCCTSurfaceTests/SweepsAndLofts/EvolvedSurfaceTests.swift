@@ -6,12 +6,13 @@ import Testing
 struct EvolvedSurfaceTests {
 
     @Test("Simple evolved shape")
-    func simpleEvolved() {
+    func simpleEvolved() throws {
         // Create a simple spine (quarter circle)
-        let spine = Wire.arc(center: SIMD3(0, 0, 0), radius: 20, startAngle: 0, endAngle: .pi / 2)!
+        let spine = try #require(
+            Wire.arc(center: SIMD3(0, 0, 0), radius: 20, startAngle: 0, endAngle: .pi / 2))
 
         // Create a small profile
-        let profile = Wire.rectangle(width: 2, height: 2)!
+        let profile = try #require(Wire.rectangle(width: 2, height: 2))
 
         let evolved = Shape.evolved(spine: spine, profile: profile)
         // #766: this was `if let evolved { #expect(evolved.isValid) }`, and for this input the
