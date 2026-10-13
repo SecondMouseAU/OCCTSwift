@@ -1666,8 +1666,10 @@ OCCTOffsetAncestorsRef OCCTBRepFillOffsetAncestorsCreate(OCCTShapeRef _Nonnull f
       jt = GeomAbs_Intersection;
 
     // The same domains, and the same sign, as OCCTBRepFillOffsetWire: the ancestry of the wire
-    // that call returns. BRepFill_OffsetAncestors::Perform reads each BRepFill_OffsetWire it is
-    // handed, so each domain's ancestry is computed on the algo that built that domain's wire.
+    // that call returns. OCCT's own caller does the same: BRepFill_Evolved.cxx:1312 and :1459
+    // `OffAnc.Perform(Paral)` on the BRepFill_OffsetWire that built the wire, then walks
+    // `Paral.Shape()`'s edges, so each domain's ancestry is computed on the algo that built
+    // that domain's wire and is keyed on that wire's edges.
     auto* opaque = new OcctOffsetAncestors();
     if (!occtBuildOffsetDomains(face, offset > 0.0, jt, opaque->domains))
     {
