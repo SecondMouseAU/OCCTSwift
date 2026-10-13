@@ -8,8 +8,8 @@ import Testing
 struct EdgeConnectTests {
 
     @Test("Box edge connectivity")
-    func boxConnectivity() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func boxConnectivity() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let connected = box.connectedEdges
         // Box edges are already connected, should still succeed
         #expect(connected != nil)
@@ -37,12 +37,11 @@ struct EdgeConnectTests {
         #expect(abs(try #require(connected.volume) - before) < 1e-5)
 
         // ShapeFix_EdgeConnect rewrites the vertices it is given in place, and on a shape whose
-        // vertices are already shared it leaves the shape invalid (#3354, twin of #3252). The
-        // receiver and the result are the same TShape, so both read invalid.
-        withKnownIssue("#3354: connectedEdges edits the receiver and leaves it invalid") {
-            #expect(connected.isValid)
-            #expect(fused.isValid)
-        }
+        // vertices are already shared it leaves the shape invalid. connectedEdges works on a copy
+        // and keeps the input when the result is worse (#3354, twin of #3252), so the receiver
+        // is untouched and the result is valid.
+        #expect(connected.isValid)
+        #expect(fused.isValid)
     }
 
     @Test("Cylinder edge connectivity")
@@ -55,8 +54,26 @@ struct EdgeConnectTests {
         #expect(connected.subShapeCount(ofType: .edge) == 3)
         #expect(abs(try #require(connected.volume) - 250 * .pi) < 1e-9)
 
-        withKnownIssue("#3354: connectedEdges edits the receiver and leaves it invalid") {
-            #expect(connected.isValid)
-        }
+        #expect(connected.isValid)
+        #expect(cyl.isValid)
+    }
+
+    /// The receiver must never be edited.
+    ///
+    /// On a box the class rewrites two vertices to tolerance 8.66 when run on the caller's shape. Reading the vertex tolerances before and after is
+    /// independent of `isValid`.
+    @Test("connectedEdges leaves the receiver's vertices untouched")
+    func receiverIsNotEdited() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let before = box.vertices().count
+        let tolBefore = box.maxVertexTolerance
+        #expect(box.isValid)
+        let connected = try #require(box.connectedEdges)
+        #expect(box.maxVertexTolerance == tolBefore)
+        #expect(box.isValid)
+        #expect(connected.isValid)
+        #expect(box.vertices().count == before)
+        #expect(connected.vertices().count == 8)
+        #expect(abs(try #require(box.volume) - 1000) < 1e-9)
     }
 }

@@ -6,8 +6,8 @@ import Testing
 @Suite("Batch Curve3D Evaluation")
 struct BatchCurve3DTests {
     @Test("Evaluate grid on circle")
-    func evalGrid() {
-        let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5)!
+    func evalGrid() throws {
+        let circle = try #require(Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5))
         let params = stride(from: 0.0, to: 2 * Double.pi, by: Double.pi / 4).map { $0 }
         let points = circle.evaluateGrid(params)
         #expect(points.count == params.count)
@@ -16,8 +16,8 @@ struct BatchCurve3DTests {
     }
 
     @Test("Evaluate grid D1 on circle")
-    func evalGridD1() {
-        let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5)!
+    func evalGridD1() throws {
+        let circle = try #require(Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5))
         let params = [0.0, Double.pi / 2]
         let results = circle.evaluateGridD1(params)
         #expect(results.count == 2)
@@ -27,8 +27,8 @@ struct BatchCurve3DTests {
     }
 
     @Test("Grid matches individual evaluation")
-    func gridMatchesIndividual() {
-        let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 3)!
+    func gridMatchesIndividual() throws {
+        let circle = try #require(Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 3))
         let params = stride(from: 0.0, to: 2 * Double.pi, by: 0.5).map { $0 }
         let gridPoints = circle.evaluateGrid(params)
         let individualPoints = params.map { circle.point(at: $0) }

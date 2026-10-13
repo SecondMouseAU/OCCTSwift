@@ -6,8 +6,8 @@ import Testing
 @Suite("Surface Operations")
 struct SurfaceOperationsTests {
     @Test("Trim sphere surface")
-    func trimSurface() {
-        let sphere = Surface.sphere(center: .zero, radius: 5)!
+    func trimSurface() throws {
+        let sphere = try #require(Surface.sphere(center: .zero, radius: 5))
         let dom = sphere.domain
         let uMid = (dom.uMin + dom.uMax) / 2
         let vMid = (dom.vMin + dom.vMax) / 2
@@ -23,8 +23,8 @@ struct SurfaceOperationsTests {
     }
 
     @Test("Offset surface")
-    func offsetSurface() {
-        let sphere = Surface.sphere(center: .zero, radius: 5)!
+    func offsetSurface() throws {
+        let sphere = try #require(Surface.sphere(center: .zero, radius: 5))
         let offset = sphere.offset(distance: 2)
         #expect(offset != nil)
         if let offset = offset {
@@ -36,8 +36,8 @@ struct SurfaceOperationsTests {
     }
 
     @Test("Translate surface")
-    func translateSurface() {
-        let sphere = Surface.sphere(center: .zero, radius: 5)!
+    func translateSurface() throws {
+        let sphere = try #require(Surface.sphere(center: .zero, radius: 5))
         let shifted = sphere.translated(by: SIMD3(10, 0, 0))
         #expect(shifted != nil)
         if let shifted = shifted {
@@ -48,8 +48,8 @@ struct SurfaceOperationsTests {
     }
 
     @Test("Scale surface")
-    func scaleSurface() {
-        let sphere = Surface.sphere(center: .zero, radius: 5)!
+    func scaleSurface() throws {
+        let sphere = try #require(Surface.sphere(center: .zero, radius: 5))
         let scaled = sphere.scaled(center: .zero, factor: 2)
         #expect(scaled != nil)
         if let scaled = scaled {
@@ -60,8 +60,8 @@ struct SurfaceOperationsTests {
     }
 
     @Test("Mirror surface across XY plane")
-    func mirrorSurface() {
-        let sphere = Surface.sphere(center: SIMD3(0, 0, 5), radius: 2)!
+    func mirrorSurface() throws {
+        let sphere = try #require(Surface.sphere(center: SIMD3(0, 0, 5), radius: 2))
         let mirrored = sphere.mirrored(planeOrigin: .zero, planeNormal: SIMD3(0, 0, 1))
         #expect(mirrored != nil)
         if let mirrored = mirrored {
@@ -76,11 +76,11 @@ struct SurfaceOperationsTests {
     }
 
     @Test("Rotate surface around an axis")
-    func rotateSurface() {
+    func rotateSurface() throws {
         // No existing test coverage for the copy-returning `rotated(axisOrigin:axisDirection:angle:)`
         // overload prior to #414; verify against the known rotation applied to the *measured*
         // original point rather than assuming the sphere's internal U/V parametrization.
-        let sphere = Surface.sphere(center: SIMD3(10, 0, 5), radius: 5)!
+        let sphere = try #require(Surface.sphere(center: SIMD3(10, 0, 5), radius: 5))
         let angle = Double.pi / 2
         let axisOrigin = SIMD3<Double>.zero
         let axisDirection = SIMD3<Double>(0, 0, 1)
@@ -106,11 +106,11 @@ struct SurfaceOperationsTests {
     }
 
     @Test("Mirror surface across a point")
-    func mirrorPointSurfaceCopyReturning() {
+    func mirrorPointSurfaceCopyReturning() throws {
         // #414: Surface's copy-returning family was missing mirrored(acrossPoint:)/(acrossAxis:direction:)
         // even though the in-place mirrorPoint(_:)/mirrorAxis(origin:direction:) and the Curve3D/Curve2D
         // copy-returning siblings both already have them.
-        let sphere = Surface.sphere(center: SIMD3(0, 0, 5), radius: 2)!
+        let sphere = try #require(Surface.sphere(center: SIMD3(0, 0, 5), radius: 2))
         let mirrorPoint = SIMD3<Double>(1, 2, 3)
 
         let mirrored = sphere.mirrored(acrossPoint: mirrorPoint)
@@ -133,9 +133,9 @@ struct SurfaceOperationsTests {
     }
 
     @Test("Mirror surface across an axis")
-    func mirrorAxisSurfaceCopyReturning() {
+    func mirrorAxisSurfaceCopyReturning() throws {
         // #414: same gap as mirrorPointSurfaceCopyReturning, for the axis (line) overload.
-        let sphere = Surface.sphere(center: SIMD3(5, 0, 0), radius: 2)!
+        let sphere = try #require(Surface.sphere(center: SIMD3(5, 0, 0), radius: 2))
 
         // Mirror through the Z axis (through the origin): (x, y, z) -> (-x, -y, z)
         let mirrored = sphere.mirrored(acrossAxis: .zero, direction: SIMD3(0, 0, 1))

@@ -20,23 +20,23 @@ struct FeatureReconstructorInputBodyTests {
     }
 
     @Test("Empty specs + inputBody returns the input as the result")
-    func emptySpecsWithInput() {
-        let box = Shape.box(width: 20, height: 20, depth: 10)!
+    func emptySpecsWithInput() throws {
+        let box = try #require(Shape.box(width: 20, height: 20, depth: 10))
         let result = FeatureReconstructor.build(from: [], inputBody: box)
         #expect(result.shape != nil)
         // Volume preserved, no features applied.
         if let s = result.shape {
-            let box1 = box.bounds!
-            let box2 = s.bounds!
+            let box1 = try #require(box.bounds)
+            let box2 = try #require(s.bounds)
             #expect(abs(box1.min.x - box2.min.x) < 1e-9)
             #expect(abs(box1.max.x - box2.max.x) < 1e-9)
         }
     }
 
     @Test("Hole subtracts from inputBody without an additive seed")
-    func holeOnInputBody() {
-        let plate = Shape.box(width: 50, height: 50, depth: 5)!
-        let plateBoundsBefore = plate.bounds!
+    func holeOnInputBody() throws {
+        let plate = try #require(Shape.box(width: 50, height: 50, depth: 5))
+        let plateBoundsBefore = try #require(plate.bounds)
         let h = FeatureSpec.Hole(
             axisPoint: SIMD3(25, 25, 0),
             axisDirection: SIMD3(0, 0, 1),
@@ -46,15 +46,15 @@ struct FeatureReconstructorInputBodyTests {
         #expect(result.shape != nil)
         // Outer bbox unchanged (hole is internal).
         if let s = result.shape {
-            let after = s.bounds!
+            let after = try #require(s.bounds)
             #expect(abs(plateBoundsBefore.min.x - after.min.x) < 1e-6)
             #expect(abs(plateBoundsBefore.max.z - after.max.z) < 1e-6)
         }
     }
 
     @Test("@input sentinel resolves in boolean leftID")
-    func sentinelResolvesInBoolean() {
-        let plate = Shape.box(width: 30, height: 30, depth: 3)!
+    func sentinelResolvesInBoolean() throws {
+        let plate = try #require(Shape.box(width: 30, height: 30, depth: 3))
         // Build a slot solid via extrude, then subtract it from @input.
         let slot = FeatureSpec.Extrude(
             profilePoints2D: [SIMD2(10, 10), SIMD2(20, 10), SIMD2(20, 20), SIMD2(10, 20)],
@@ -147,8 +147,9 @@ struct FeatureReconstructorInputBodyTests {
 
     @Test("buildJSON forwards inputBody through to build")
     func buildJSONForwardsInput() throws {
-        let plate = Shape.box(width: 20, height: 20, depth: 4)!
-        let json = """
+        let plate = try #require(Shape.box(width: 20, height: 20, depth: 4))
+        let json = try #require(
+            """
             {
               "features": [
                 {
@@ -161,15 +162,15 @@ struct FeatureReconstructorInputBodyTests {
                 }
               ]
             }
-            """.data(using: .utf8)!
+            """.data(using: .utf8))
         let result = try FeatureReconstructor.buildJSON(json, inputBody: plate)
         #expect(result.fulfilled.contains("h"))
         #expect(result.shape != nil)
     }
 
     @Test("Additive feature unions onto inputBody")
-    func additiveOntoInputBody() {
-        let baseplate = Shape.box(width: 30, height: 30, depth: 5)!
+    func additiveOntoInputBody() throws {
+        let baseplate = try #require(Shape.box(width: 30, height: 30, depth: 5))
         // Add a tab on top via extrude.
         let tab = FeatureSpec.Extrude(
             profilePoints2D: [SIMD2(5, 5), SIMD2(15, 5), SIMD2(15, 15), SIMD2(5, 15)],

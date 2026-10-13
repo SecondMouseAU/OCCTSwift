@@ -32,11 +32,11 @@ struct SurfaceToBezierTests {
     }
 
     @Test("Bezier surface to patches returns single patch")
-    func bezierSinglePatch() {
+    func bezierSinglePatch() throws {
         // A simple bezier surface should convert to itself (1 patch)
         // #766: same defect, an infinite plane that toBSpline() refused. Trimmed to [-5, 5]^2 it
         // is a single Bezier patch.
-        let plane = Surface.plane(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1))!
+        let plane = try #require(Surface.plane(origin: SIMD3(0, 0, 0), normal: SIMD3(0, 0, 1)))
         let bspline = plane.trimmed(u1: -5, u2: 5, v1: -5, v2: 5)?.toBSpline()
         #expect(bspline != nil)
         if let bs = bspline {

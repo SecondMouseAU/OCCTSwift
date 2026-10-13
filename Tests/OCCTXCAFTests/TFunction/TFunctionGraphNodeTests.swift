@@ -9,9 +9,9 @@ import Testing
 struct TFunctionGraphNodeTests {
 
     @Test("Create graph node and set status")
-    func graphNodeStatus() {
-        let doc = Document.create()!
-        let label = doc.createLabel()!
+    func graphNodeStatus() throws {
+        let doc = try #require(Document.create())
+        let label = try #require(doc.createLabel())
 
         #expect(label.setGraphNode())
         #expect(label.setGraphNodeStatus(.notExecuted))
@@ -22,10 +22,10 @@ struct TFunctionGraphNodeTests {
     }
 
     @Test("Graph node dependencies")
-    func graphNodeDeps() {
-        let doc = Document.create()!
-        let node1 = doc.createLabel()!
-        let node2 = doc.createLabel()!
+    func graphNodeDeps() throws {
+        let doc = try #require(Document.create())
+        let node1 = try #require(doc.createLabel())
+        let node2 = try #require(doc.createLabel())
 
         node1.setGraphNode()
         node2.setGraphNode()
@@ -40,13 +40,13 @@ struct TFunctionGraphNodeTests {
     }
 
     @Test("All execution statuses")
-    func allStatuses() {
-        let doc = Document.create()!
+    func allStatuses() throws {
+        let doc = try #require(Document.create())
         let statuses: [ExecutionStatus] = [
             .wrongDefinition, .notExecuted, .executing, .succeeded, .failed,
         ]
         for status in statuses {
-            let label = doc.createLabel()!
+            let label = try #require(doc.createLabel())
             label.setGraphNode()
             #expect(label.setGraphNodeStatus(status))
             #expect(label.graphNodeStatus() == status)

@@ -7,8 +7,8 @@ import Testing
 @Suite("Edge Analysis")
 struct EdgeAnalysisTests {
     @Test("Box edges have 3D curves")
-    func boxEdgesHaveCurves() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func boxEdgesHaveCurves() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let edges = box.edges()
         #expect(edges.count == 12)
         for edge in edges {
@@ -17,8 +17,8 @@ struct EdgeAnalysisTests {
     }
 
     @Test("Box edges are not closed")
-    func boxEdgesNotClosed() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func boxEdgesNotClosed() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         for edge in box.edges() {
             #expect(!edge.isClosed3D)
         }
