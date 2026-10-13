@@ -97,6 +97,7 @@
 #include <Precision.hxx>
 #include <gp_Ax1.hxx>
 #include <gp_Dir.hxx>
+#include <gp_Ax3.hxx>
 #include <gp_Pnt.hxx>
 #include <TopExp.hxx>
 #include <TopExp_Explorer.hxx> // #613: occtForEachOrientedFace's per-occurrence walk
@@ -1460,6 +1461,43 @@ inline bool occtIsUsableAxis(double ox, double oy, double oz, double dx, double 
 {
   return std::isfinite(ox) && std::isfinite(oy) && std::isfinite(oz)
          && occtIsUsableVector(dx, dy, dz);
+}
+
+/// A frame whose origin and three axes are all finite (#3368).
+///
+/// `BRepFill::Axe` leaves its `gp_Ax3` with a NaN X direction when no profile vertex has a minimum
+/// distance to the spine (a profile through the centre of a circular spine: every point of the
+/// circle is equally near, the extremum search finds no minimum, and the tangent stays the zero
+/// vector `gp_Ax3(Loc, Normal, Tang)` is then built from). `gp_Ax3`'s constructor does not check
+/// (this kernel is built Release, okf/policies/occt-validation-is-compiled-out.md), and
+/// `BRepFill_Evolved::PrepareProfile` then transforms the profile by the NaN frame:
+/// `GeomProjLib::ProjectOnPlane` builds a `Geom_TrimmedCurve` with NaN bounds, whose `SetTrim`
+/// reverses forever (`!(U1 < U2)` is true for NaN, and `Reverse()` calls `SetTrim` again with the
+/// still-NaN reversed bounds). Same loop, same place, as the #3100 draft-prism hang.
+///
+/// A caller-supplied frame (`BRepFill_Evolved::Perform`'s `AxeProf`) reaches the same loop through
+/// `gp_Dir`s built from NaN or parallel vectors, so it is checked with this too.
+inline bool occtIsFiniteFrame(const gp_Ax3& frame)
+{
+  const gp_Pnt& o = frame.Location();
+  const gp_Dir& x = frame.XDirection();
+  const gp_Dir& y = frame.YDirection();
+  const gp_Dir& z = frame.Direction();
+  return std::isfinite(o.X()) && std::isfinite(o.Y()) && std::isfinite(o.Z())
+         && std::isfinite(x.X()) && std::isfinite(x.Y()) && std::isfinite(x.Z())
+         && std::isfinite(y.X()) && std::isfinite(y.Y()) && std::isfinite(y.Z())
+         && std::isfinite(z.X()) && std::isfinite(z.Y()) && std::isfinite(z.Z());
+}
+
+/// Whether a shape built by an evolved/sweep builder has at least one face (#3368).
+///
+/// `BRepFill_Evolved` and `BRepFill_AdvancedEvolved` report done with an empty compound when the
+/// profile offsets the spine to nothing (a lateral offset at or past the spine's inradius) or lies
+/// in the spine's own plane. That is no sweep, and `isValid` accepts it, so it reads as a result.
+/// Same shape of failure as #3061 and #726.
+inline bool occtHasFaces(const TopoDS_Shape& shape)
+{
+  return !shape.IsNull() && TopExp_Explorer(shape, TopAbs_FACE).More();
 }
 
 /// The deflection precondition every `GCPnts_TangentialDeflection` entry point has to apply itself.

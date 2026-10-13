@@ -348,16 +348,26 @@ public static func evolvedAdvanced(spine: Shape, profile: Wire,
                                    tolerance: Double = 1e-4) -> Shape?
 ```
 
+The profile is placed in a frame R and projected onto R's YOZ plane: Y is the lateral offset from the spine in the spine's plane (positive to the left of the spine's direction, the inside of a counter-clockwise rectangle), Z the height above it, and X, along the spine, is dropped. A profile drawn in the XZ plane projects onto the Z axis and builds nothing. R is the global frame when `axeProf` is `true`; when `false` it is computed by `BRepFill::Axe`: origin at the point of the spine nearest the profile, X along the spine's tangent there, Z the spine plane's normal.
+
 - **Parameters:**
-  - `spine`: spine shape (any topology accepted).
+  - `spine`: spine shape (a wire or a planar face; anything else returns `nil`).
   - `profile`: profile wire.
-  - `joinType`: how to join offset edges at corners (default `.arc`).
-  - `axeProf`: if `true`, profile is in global coordinates; if `false`, local to the spine.
+  - `joinType`: how to join offset edges at corners (default `.arc`). OCCT implements only the arc join: `BRepFill_Evolved` throws `Standard_NotImplemented` for `.tangent` and `.intersection`, so those return `nil` (except in `volume` mode, which does not use the join).
+  - `axeProf`: if `true`, profile is in global coordinates; if `false`, in a frame computed from the nearest point of the spine.
   - `solid`: produce a solid result when `true`.
   - `volume`: use volume mode (removes self-intersections) when `true`.
   - `tolerance`: construction tolerance.
-- **Returns:** Evolved shape, or `nil` on failure.
+- **Returns:** Evolved shape, or `nil` on failure. `nil` rather than an empty compound when the profile offsets the spine to nothing, and when `axeProf` is `false` and the profile has no nearest point on the spine (a profile through the centre of a circular spine: OCCT never returned from this, #3368).
 - **OCCT:** `BRepOffsetAPI_MakeEvolved`.
+- **Example:**
+  ```swift
+  let circle = Wire.circle(radius: 20)!
+  let line = Wire.polygon3D([SIMD3(20, 0, 0), SIMD3(20, 0, 3)], closed: false)!
+  // A profile standing on the circle: the 3 mm wall, area 2 pi 20 3.
+  let wall = Shape.evolvedAdvanced(spine: Shape.fromWire(circle)!, profile: line,
+                                    axeProf: false, solid: false)
+  ```
 
 ---
 

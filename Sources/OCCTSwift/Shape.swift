@@ -2475,11 +2475,38 @@ public final class Shape: @unchecked Sendable {
     /// Extends the basic `evolved` method with control over join type, coordinate
     /// system, solid/volume mode, and tolerance.
     ///
+    /// The profile is placed in a frame R and projected onto R's YOZ plane: Y is the lateral
+    /// offset from the spine in the spine's plane (positive to the left of the spine's
+    /// direction, the inside of a counter-clockwise rectangle), Z the height above the spine's
+    /// plane, and X, along the spine, is dropped. A profile drawn in the XZ plane therefore
+    /// projects onto the Z axis and builds nothing. R is the global frame when `axeProf` is
+    /// true. When it is false, R is computed (`BRepFill::Axe`): its origin is the point of the
+    /// spine nearest the profile, its X axis the spine's tangent there and its Z axis the
+    /// spine plane's normal.
+    ///
+    /// Only the arc join is implemented by OCCT (`BRepFill_Evolved` throws
+    /// `Standard_NotImplemented` for the tangent and intersection joins), so those return nil
+    /// unless `volume` is true, which does not use the join.
+    ///
+    /// Returns nil, never an empty shape, when the profile offsets the spine to nothing (a
+    /// lateral offset at or past its inradius), and for `axeProf: false` when the profile has
+    /// no nearest point on the spine (a profile through the centre of a circular spine: the
+    /// frame is undefined, and OCCT never returned from this, #3368).
+    ///
+    /// ```swift
+    /// let circle = Wire.circle(radius: 20)!
+    /// let line = Wire.polygon3D([SIMD3(20, 0, 0), SIMD3(20, 0, 3)], closed: false)!
+    /// // A profile standing on the circle: the 3 mm wall, area 2 pi 20 3.
+    /// let wall = Shape.evolvedAdvanced(
+    ///     spine: Shape.fromWire(circle)!, profile: line, axeProf: false, solid: false)
+    /// ```
+    ///
     /// - Parameters:
     ///   - spine: Path wire to sweep along
     ///   - profile: Profile wire to sweep
-    ///   - joinType: How to join offset edges (default: .arc)
-    ///   - axeProf: If true, profile is in global coordinates; if false, local to spine
+    ///   - joinType: How to join offset edges (default: .arc; the only join OCCT implements)
+    ///   - axeProf: If true, the profile is in the global frame; if false, in a frame computed
+    ///     from the nearest point of the spine
     ///   - solid: If true, produce a solid result
     ///   - volume: If true, use volume mode (removes self-intersections)
     ///   - tolerance: Tolerance for evolved shape creation
