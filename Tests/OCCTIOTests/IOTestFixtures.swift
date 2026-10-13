@@ -63,10 +63,11 @@ func withoutConcurrentOCCTCapture<T>(_ body: () throws -> T) rethrows -> T {
 ///
 /// Same construction as `BREPTests.writeBREPAllowInvalid`, reused here for the export-guard
 /// regression tests added for #1226.
-func invalidBowtieShape() -> Shape {
-    let bowtie = Wire.polygon(
-        [SIMD2(0, 0), SIMD2(1, 1), SIMD2(1, 0), SIMD2(0, 1)], closed: true)!
-    return Shape.face(from: bowtie)!
+func invalidBowtieShape() throws -> Shape {
+    let bowtie = try #require(
+        Wire.polygon(
+            [SIMD2(0, 0), SIMD2(1, 1), SIMD2(1, 0), SIMD2(0, 1)], closed: true))
+    return try #require(Shape.face(from: bowtie))
 }
 
 // MARK: - #1281: robust-import cancellation fixtures
@@ -158,9 +159,9 @@ final class ProgressRecorder: ImportProgress, @unchecked Sendable {
 // emitDimension cover. All edges come from a plain box's straight sides, so the fixture's
 // geometry is immune to any HLR-deflection nondeterminism a curved edge would introduce.
 
-func makeGolden795Drawing() -> Drawing {
-    let box = Shape.box(width: 40, height: 25, depth: 15)!
-    let drawing = Drawing.frontView(of: box)!
+func makeGolden795Drawing() throws -> Drawing {
+    let box = try #require(Shape.box(width: 40, height: 25, depth: 15))
+    let drawing = try #require(Drawing.frontView(of: box))
 
     drawing.addCentreLine(from: SIMD2(-5, 12.5), to: SIMD2(45, 12.5))
     drawing.addCentermark(centre: SIMD2(20, 12.5), extent: 6)
