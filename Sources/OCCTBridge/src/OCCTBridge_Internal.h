@@ -99,7 +99,10 @@
 #include <gp_Dir.hxx>
 #include <gp_Pnt.hxx>
 #include <TopExp.hxx>
-#include <TopExp_Explorer.hxx> // #613: occtForEachOrientedFace's per-occurrence walk
+#include <TopExp_Explorer.hxx>          // #613: occtForEachOrientedFace's per-occurrence walk
+#include <BRepBuilderAPI_Transform.hxx> // #3388: occtTransformShape
+#include <TopLoc_Location.hxx>
+#include <gp_Trsf.hxx>
 #include <TopoDS.hxx>
 #include <TopTools_IndexedMapOfShape.hxx>
 #include <TopTools_ListOfShape.hxx>
@@ -2523,6 +2526,31 @@ inline TopoDS_Face occtFaceAt(const TopoDS_Shape& shape, int32_t index)
   if (sub.IsNull() || sub.ShapeType() != TopAbs_FACE)
     return TopoDS_Face();
   return TopoDS::Face(sub);
+}
+
+/// `shape` transformed by `trsf` as a new shape, or a null shape when OCCT does not finish.
+///
+/// #3388: `BRepBuilderAPI_Transform(shape, trsf, Copy = true)` hands back a face that has no
+/// surface (what `Shape.readSTL` builds: a `Poly_Triangulation` on a bare `TopoDS_Face`)
+/// untouched, because `BRepTools_Modifier` only rebuilds a face through its surface. Measured in
+/// `Scripts/repro/3388/probe.mm`: translate and scale both return the input's own TShape with the
+/// triangulation unmoved, and `Copy = false` moves a translation but not a scale. Such a shape is
+/// placed with `TopoDS_Shape::Moved` instead, which carries the transformation in the shape's
+/// location and so applies to the triangulation when it is read. Every other shape keeps the
+/// `Copy = true` path, so a box, a compound of faces with surfaces and so on come back as before.
+inline TopoDS_Shape occtTransformShape(const TopoDS_Shape& shape, const gp_Trsf& trsf)
+{
+  if (shape.IsNull())
+    return TopoDS_Shape();
+  for (TopExp_Explorer ex(shape, TopAbs_FACE); ex.More(); ex.Next())
+  {
+    if (BRep_Tool::Surface(TopoDS::Face(ex.Current())).IsNull())
+      return shape.Moved(TopLoc_Location(trsf));
+  }
+  BRepBuilderAPI_Transform transformer(shape, trsf, Standard_True);
+  if (!transformer.IsDone())
+    return TopoDS_Shape();
+  return transformer.Shape();
 }
 
 /// The edge at 0-based `index` in `shape`'s edge enumeration, or a null edge when the index is

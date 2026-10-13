@@ -1094,6 +1094,16 @@ public final class Shape: @unchecked Sendable {
     // MARK: - Transformations
 
     /// Translate the shape.
+    ///
+    /// A shape with a face that has no surface, such as the triangulation-only face
+    /// ``readSTL(from:)`` returns, is placed by location (`TopoDS_Shape::Moved`) and shares its
+    /// TShapes with the input; every other shape is copied by `BRepBuilderAPI_Transform`. The same
+    /// holds for ``rotated(axis:angle:)``, ``scaled(by:)`` and ``mirrored(planeNormal:planeOrigin:)``.
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// box.translated(by: SIMD3(100, 0, 0))!.bounds!.min.x   // 95
+    /// ```
     public func translated(by offset: SIMD3<Double>) -> Shape? {
         guard let handle = OCCTShapeTranslate(self.handle, offset.x, offset.y, offset.z) else {
             return nil
