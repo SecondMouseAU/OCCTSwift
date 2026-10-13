@@ -81,7 +81,7 @@ struct CoordinateSystem3DTests {
     // #1443: `init(origin:direction:xDirection:)` is neither failable nor throwing, so a genuinely
     // invalid gp_Ax3 construction (parallel direction/xDirection, or a zero-length direction) has
     // to signal through the ordinary output fields. These document the fixed, Swift-API-level
-    // contract using the issue's own concrete inputs; see `Issue1443Ax3EmptyCatchTests.swift` for
+    // contract using the issue's own concrete inputs; see `Ax3DegenerateInputSentinelTests.swift` for
     // the sentinel-buffer tests that actually distinguish this fix from the pre-fix empty catch
     // (which, for these two initializers specifically, coincidentally produced the same
     // Swift-visible zeros -- see that file's own doc comment for why).

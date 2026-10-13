@@ -4,7 +4,7 @@ import Testing
 @testable import OCCTSwift
 
 //
-//  Issue2860MathGuardTests.swift
+//  MathValueGuardTests.swift
 //  #2860: MathMatrix.invert/determinant/transpose/value, MathSolver.uzawa,
 //  Shape.scaledAboutPoint and Shape.trsfModification refuse the inputs whose validity checks
 //  are compiled out of the kernel this package ships.
