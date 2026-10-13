@@ -3311,6 +3311,21 @@ extension Shape {
 extension Shape {
 
     /// Orient a closed solid so that face normals point outward.
+    ///
+    /// An inward solid (negative `signedVolume`) is reversed in place, so the receiver reads the
+    /// positive volume afterwards (#3357). A solid that is already outward is left alone.
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// let shell = box.subShapes(ofType: .shell)[0].oriented(1)!
+    /// let solid = Shape.builderMakeSolid()!
+    /// solid.builderAdd(shell)
+    /// solid.orientClosedSolid()
+    /// print(solid.signedVolume)  // 1000
+    /// ```
+    ///
+    /// - Returns: `true` if the solid is now outward, `false` if it is not a solid or is open or
+    ///   incoherent (OCCT cannot classify it).
     @discardableResult
     public func orientClosedSolid() -> Bool {
         OCCTBRepLibOrientClosedSolid(handle)

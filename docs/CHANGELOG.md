@@ -21,6 +21,10 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### `Shape.orientClosedSolid()` reorients an inward solid in place (#3357)
+
+- `Shape.orientClosedSolid()` reported `true` for a solid whose shell pointed inward and left it unchanged (signed volume stayed negative). It now writes the reversed solid back, so the receiver reads the positive volume afterwards.
+
 Transforming the triangulation-only face returned by `Shape.readSTL(from:)` (translate, rotate, scale, mirror and the point/axis variants) now moves it. Before, the call returned a shape whose bounds were unchanged.
 
 ### `CoordinateSystem3D.direction` is the unit main direction of the `gp_Ax3`, not the caller's vector (#3371)
