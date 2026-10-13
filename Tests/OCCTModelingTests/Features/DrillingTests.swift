@@ -6,9 +6,9 @@ import Testing
 struct DrillingTests {
 
     @Test("Drill hole into box")
-    func drillHoleIntoBox() {
+    func drillHoleIntoBox() throws {
         // Box is centered at origin: X[-25,25], Y[-25,25], Z[-10,10]
-        let box = Shape.box(width: 50, height: 50, depth: 20)!
+        let box = try #require(Shape.box(width: 50, height: 50, depth: 20))
         let originalVolume = box.volume ?? 0
 
         // Drill from slightly above top surface (Z=10), at center (X=0, Y=0)
@@ -16,19 +16,19 @@ struct DrillingTests {
             at: SIMD3(0, 0, 11), direction: SIMD3(0, 0, -1), radius: 5, depth: 11)
 
         #expect(drilled != nil)
-        #expect(drilled!.isValid)
+        #expect(try #require(drilled).isValid)
 
         // Volume should decrease by cylinder volume
-        let newVolume = drilled!.volume ?? 0
+        let newVolume = try #require(drilled).volume ?? 0
         let holeVolume = Double.pi * 25 * 10  // π * r² * h (only 10mm inside the box)
         #expect(newVolume < originalVolume)
         #expect(abs(newVolume - (originalVolume - holeVolume)) < 2.0)  // Allow some tolerance
     }
 
     @Test("Drill through hole")
-    func drillThroughHole() {
+    func drillThroughHole() throws {
         // Box is centered at origin: X[-25,25], Y[-25,25], Z[-10,10]
-        let box = Shape.box(width: 50, height: 50, depth: 20)!
+        let box = try #require(Shape.box(width: 50, height: 50, depth: 20))
         let originalVolume = box.volume ?? 0
 
         // Drill through (depth = 0 means through) starting above top surface
@@ -36,10 +36,10 @@ struct DrillingTests {
             at: SIMD3(0, 0, 15), direction: SIMD3(0, 0, -1), radius: 5, depth: 0)
 
         #expect(drilled != nil)
-        #expect(drilled!.isValid)
+        #expect(try #require(drilled).isValid)
 
         // Volume should decrease by full cylinder volume through the box
-        let newVolume = drilled!.volume ?? 0
+        let newVolume = try #require(drilled).volume ?? 0
         let holeVolume = Double.pi * 25 * 20  // π * r² * box_depth
         #expect(newVolume < originalVolume)
         #expect(abs(newVolume - (originalVolume - holeVolume)) < 2.0)

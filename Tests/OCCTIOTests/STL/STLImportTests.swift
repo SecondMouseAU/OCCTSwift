@@ -33,7 +33,7 @@ struct STLImportTests {
 
     @Test("STL roundtrip: box export then import")
     func stlRoundtrip() throws {
-        let box = Shape.box(width: 10, height: 5, depth: 3)!
+        let box = try #require(Shape.box(width: 10, height: 5, depth: 3))
         let tempURL = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString)
             .appendingPathExtension("stl")
@@ -44,8 +44,8 @@ struct STLImportTests {
         #expect(imported.isValid)
 
         // Verify bounds are roughly the same
-        let origBounds = box.bounds!
-        let importBounds = imported.bounds!
+        let origBounds = try #require(box.bounds)
+        let importBounds = try #require(imported.bounds)
         let origSize = origBounds.max - origBounds.min
         let importSize = importBounds.max - importBounds.min
         // STL is tessellated so dimensions should be close but not exact

@@ -60,11 +60,17 @@ struct Issue558SamplingCountBounds {
     /// `int32_t` boundary itself, and use ``pastInt32``.
     private static let unservableCapacity: Int = pastInt32 ?? Int.max
 
-    private func box() -> Shape { Shape.box(width: 10, height: 10, depth: 10)! }
-    private func segment3D() -> Curve3D { Curve3D.segment(from: .zero, to: SIMD3(10, 0, 0))! }
-    private func segment2D() -> Curve2D { Curve2D.segment(from: .zero, to: SIMD2(10, 0))! }
-    private func plane() -> Surface {
-        Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1))!.trimmed(u1: 0, u2: 10, v1: 0, v2: 10)!
+    private func box() throws -> Shape { try #require(Shape.box(width: 10, height: 10, depth: 10)) }
+    private func segment3D() throws -> Curve3D {
+        try #require(Curve3D.segment(from: .zero, to: SIMD3(10, 0, 0)))
+    }
+    private func segment2D() throws -> Curve2D {
+        try #require(Curve2D.segment(from: .zero, to: SIMD2(10, 0)))
+    }
+    private func plane() throws -> Surface {
+        try #require(
+            Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1))?.trimmed(
+                u1: 0, u2: 10, v1: 0, v2: 10))
     }
 
     // MARK: - The shared ceiling
@@ -125,8 +131,8 @@ struct Issue558SamplingCountBounds {
     // MARK: - Requests: empty/nil outside 2...ceiling, exact inside it
 
     @Test("Curve3D request samplers reject a count they cannot serve")
-    func curve3DRequests() {
-        let c = segment3D()
+    func curve3DRequests() throws {
+        let c = try segment3D()
         #expect(c.drawUniform(pointCount: 11).count == 11)
         #expect(c.quasiUniformParameters(count: 8).count == 8)
         for n in [-1, 0, 1, Self.pastCeiling, Int.max] + Self.pastInt32List {
@@ -136,8 +142,8 @@ struct Issue558SamplingCountBounds {
     }
 
     @Test("Curve2D.drawUniform rejects a count it cannot serve")
-    func curve2DRequests() {
-        let c = segment2D()
+    func curve2DRequests() throws {
+        let c = try segment2D()
         #expect(c.drawUniform(pointCount: 11).count == 11)
         for n in [-1, 0, 1, Self.pastCeiling, Int.max] + Self.pastInt32List {
             #expect(c.drawUniform(pointCount: n).count == 0, "drawUniform(\(n))")
@@ -145,8 +151,8 @@ struct Issue558SamplingCountBounds {
     }
 
     @Test("Edge request samplers reject a count they cannot serve")
-    func edgeRequests() {
-        guard let e = box().edges().first else {
+    func edgeRequests() throws {
+        guard let e = try box().edges().first else {
             #expect(Bool(false))
             return
         }
@@ -161,8 +167,8 @@ struct Issue558SamplingCountBounds {
     }
 
     @Test("Shape.uniformAbscissa rejects a count it cannot serve, both overloads")
-    func uniformAbscissaRequests() {
-        guard let edge = box().subShapes(ofType: .edge).first else {
+    func uniformAbscissaRequests() throws {
+        guard let edge = try box().subShapes(ofType: .edge).first else {
             #expect(Bool(false))
             return
         }
@@ -176,8 +182,8 @@ struct Issue558SamplingCountBounds {
     }
 
     @Test("Shape iso-curve evaluators reject a count they cannot serve")
-    func isoCurveRequests() {
-        guard let face = box().subShapes(ofType: .face).first else {
+    func isoCurveRequests() throws {
+        guard let face = try box().subShapes(ofType: .face).first else {
             #expect(Bool(false))
             return
         }
@@ -190,8 +196,8 @@ struct Issue558SamplingCountBounds {
     }
 
     @Test("BRepGraph.sampleEdgeCurve rejects a count it cannot serve")
-    func graphEdgeSampleRequest() {
-        guard let graph = BRepGraph(shape: box()) else {
+    func graphEdgeSampleRequest() throws {
+        guard let graph = BRepGraph(shape: try box()) else {
             #expect(Bool(false))
             return
         }
@@ -203,8 +209,8 @@ struct Issue558SamplingCountBounds {
     }
 
     @Test("Shape.allEdgePolylines keeps its own lower bound and gains the ceiling")
-    func allEdgePolylinesRequest() {
-        let b = box()
+    func allEdgePolylinesRequest() throws {
+        let b = try box()
         #expect(!b.allEdgePolylines(maxPointsPerEdge: 10).isEmpty)
         for n in [-1, 0, 1, Self.pastCeiling, Int.max] + Self.pastInt32List {
             #expect(b.allEdgePolylines(maxPointsPerEdge: n).count == 0, "allEdgePolylines(\(n))")
@@ -251,9 +257,9 @@ struct Issue558SamplingCountBounds {
     // MARK: - Capacities: clamped, so an absurd capacity still returns the real answer
 
     @Test("an adaptive sampler's capacity is clamped, not rejected: the answer is unchanged")
-    func adaptiveCapacitiesAreClamped() {
-        let c3 = segment3D()
-        let c2 = segment2D()
+    func adaptiveCapacitiesAreClamped() throws {
+        let c3 = try segment3D()
+        let c2 = try segment2D()
         // A straight segment is two points however much room it is offered. The point of clamping
         // rather than rejecting: the caller gets the correct sampling, not an empty array.
         let baseline3D = c3.drawAdaptive(maxPoints: 4096).count
@@ -272,10 +278,10 @@ struct Issue558SamplingCountBounds {
     }
 
     @Test("a capacity of zero or less yields the entry point's own empty value")
-    func nonPositiveCapacitiesAreEmpty() {
-        let c3 = segment3D()
-        let c2 = segment2D()
-        let b = box()
+    func nonPositiveCapacitiesAreEmpty() throws {
+        let c3 = try segment3D()
+        let c2 = try segment2D()
+        let b = try box()
         for n in [-1, 0, Int.min] {
             #expect(c3.drawAdaptive(maxPoints: n).count == 0, "3D drawAdaptive(\(n))")
             #expect(c3.drawDeflection(maxPoints: n).count == 0, "3D drawDeflection(\(n))")
@@ -293,8 +299,8 @@ struct Issue558SamplingCountBounds {
     }
 
     @Test("Shape's own capacity samplers clamp and still answer")
-    func shapeCapacitiesAreClamped() {
-        let b = box()
+    func shapeCapacitiesAreClamped() throws {
+        let b = try box()
         #expect(b.edgePolyline(at: 0, maxPoints: Self.unservableCapacity) != nil)
         // Both of these are bounded by the shape, not by the capacity: the bridge caps edgePoints
         // at 20 internally, and contourPoints emits one point per edge.
@@ -322,8 +328,8 @@ struct Issue558SamplingCountBounds {
     // MARK: - Grids: the bound is on the product, and on each factor
 
     @Test("Surface.drawMesh bounds the product, and each factor on its own")
-    func drawMeshGrid() {
-        let s = plane()
+    func drawMeshGrid() throws {
+        let s = try plane()
         #expect(!s.drawMesh(uCount: 20, vCount: 20).isEmpty)
         // Exactly the ceiling is refused only past it, not at it, but 1e7 points is 45 s of
         // sampling, so the boundary itself is checked on `Sampling.gridTotal` above, not here.
@@ -341,8 +347,8 @@ struct Issue558SamplingCountBounds {
     }
 
     @Test("Surface.drawGrid bounds the total, and each line count on its own")
-    func drawGridTotal() {
-        let s = plane()
+    func drawGridTotal() throws {
+        let s = try plane()
         #expect(!s.drawGrid(uLineCount: 4, vLineCount: 4, pointsPerLine: 10).isEmpty)
         #expect(s.drawGrid(uLineCount: 4, vLineCount: 4, pointsPerLine: 2_000_000).count == 0)
         #expect(s.drawGrid(uLineCount: -1, vLineCount: -1, pointsPerLine: 10).count == 0)
@@ -357,8 +363,8 @@ struct Issue558SamplingCountBounds {
     }
 
     @Test("BRepGraph.sampleFaceUVGrid bounds the product, and each factor on its own")
-    func faceUVGrid() {
-        guard let graph = BRepGraph(shape: box()) else {
+    func faceUVGrid() throws {
+        guard let graph = BRepGraph(shape: try box()) else {
             #expect(Bool(false))
             return
         }
@@ -375,8 +381,8 @@ struct Issue558SamplingCountBounds {
     }
 
     @Test("Shape.coonsAlgPatch bounds the product, and each factor on its own")
-    func coonsPatchGrid() {
-        guard let e = box().subShapes(ofType: .edge).first else {
+    func coonsPatchGrid() throws {
+        guard let e = try box().subShapes(ofType: .edge).first else {
             #expect(Bool(false))
             return
         }

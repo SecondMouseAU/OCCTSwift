@@ -9,9 +9,9 @@ import Testing
 struct OCAFSaveLoadXmlTests {
 
     @Test("Save and load XmlOcaf document")
-    func saveLoadXmlOcaf() {
-        let doc = Document.create(format: "XmlOcaf")!
-        let label = doc.createLabel()!
+    func saveLoadXmlOcaf() throws {
+        let doc = try #require(Document.create(format: "XmlOcaf"))
+        let label = try #require(doc.createLabel())
         let tag = label.tag
         #expect(label.setName("TestXml"))
         #expect(label.setReal(3.14))

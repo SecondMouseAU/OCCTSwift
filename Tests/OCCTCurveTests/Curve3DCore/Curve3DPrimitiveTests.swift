@@ -52,8 +52,8 @@ struct Curve3DPrimitiveTests {
     }
 
     @Test("Circle point at 0 and pi/2")
-    func circlePoints() {
-        let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5)!
+    func circlePoints() throws {
+        let circle = try #require(Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5))
         let p0 = circle.point(at: 0)
         let pHalfPi = circle.point(at: .pi / 2)
         #expect(abs(p0.x - 5) < 1e-10)
@@ -112,8 +112,8 @@ struct Curve3DPrimitiveTests {
     }
 
     @Test("Evaluate segment midpoint")
-    func evaluateSegmentMidpoint() {
-        let seg = Curve3D.segment(from: SIMD3(0, 0, 0), to: SIMD3(10, 0, 0))!
+    func evaluateSegmentMidpoint() throws {
+        let seg = try #require(Curve3D.segment(from: SIMD3(0, 0, 0), to: SIMD3(10, 0, 0)))
         let d = seg.domain
         let mid = (d.lowerBound + d.upperBound) / 2
         let p = seg.point(at: mid)
@@ -122,8 +122,8 @@ struct Curve3DPrimitiveTests {
     }
 
     @Test("D1 returns non-zero tangent")
-    func d1Tangent() {
-        let seg = Curve3D.segment(from: SIMD3(0, 0, 0), to: SIMD3(10, 5, 3))!
+    func d1Tangent() throws {
+        let seg = try #require(Curve3D.segment(from: SIMD3(0, 0, 0), to: SIMD3(10, 5, 3)))
         let result = seg.d1(at: seg.domain.lowerBound)
         // The segment is parameterised by length, so D1 is the unit direction (10, 5, 3)/|.|.
         #expect(vectorDistance(result.tangent, normalizedVector(SIMD3(10, 5, 3))) < 1e-12)
@@ -135,8 +135,8 @@ struct Curve3DPrimitiveTests {
     // independent of which in-plane direction OCCT picks as the circle's own parametric origin.
     // That makes it a genuine, exact, refman-groundable check rather than a magic-number pin.
     @Test("D2 second derivative of a circle points from the curve back to its own center")
-    func d2SecondDerivative() {
-        let circle = Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5)!
+    func d2SecondDerivative() throws {
+        let circle = try #require(Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5))
         let u = circle.domain.lowerBound
         let result = circle.d2(at: u)
         #expect(abs(result.d2.x - (-result.point.x)) < 1e-9)

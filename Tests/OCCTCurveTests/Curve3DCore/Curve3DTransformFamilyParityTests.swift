@@ -33,8 +33,8 @@ struct Curve3DTransformFamilyParityTests {
     }
 
     @Test("translate vs translated")
-    func translateParity() {
-        let base = Curve3D.segment(from: SIMD3(0, 0, 0), to: SIMD3(10, 0, 0))!
+    func translateParity() throws {
+        let base = try #require(Curve3D.segment(from: SIMD3(0, 0, 0), to: SIMD3(10, 0, 0)))
         let copy = base.translated(by: SIMD3(3, -2, 1.5))
         let ok = base.translate(dx: 3, dy: -2, dz: 1.5)
         #expect(ok)
@@ -45,8 +45,8 @@ struct Curve3DTransformFamilyParityTests {
     }
 
     @Test("rotate vs rotated")
-    func rotateParity() {
-        let base = Curve3D.segment(from: SIMD3(5, 0, 0), to: SIMD3(10, 0, 0))!
+    func rotateParity() throws {
+        let base = try #require(Curve3D.segment(from: SIMD3(5, 0, 0), to: SIMD3(10, 0, 0)))
         let axisOrigin = SIMD3<Double>(0, 0, 0)
         let axisDirection = SIMD3<Double>(0, 0, 1)
         let angle = Double.pi / 3
@@ -60,8 +60,8 @@ struct Curve3DTransformFamilyParityTests {
     }
 
     @Test("scale vs scaled")
-    func scaleParity() {
-        let base = Curve3D.segment(from: SIMD3(1, 0, 0), to: SIMD3(2, 0, 0))!
+    func scaleParity() throws {
+        let base = try #require(Curve3D.segment(from: SIMD3(1, 0, 0), to: SIMD3(2, 0, 0)))
         let center = SIMD3<Double>(0, 0, 0)
         let copy = base.scaled(from: center, factor: 2.5)
         let ok = base.scale(center: center, factor: 2.5)
@@ -73,8 +73,8 @@ struct Curve3DTransformFamilyParityTests {
     }
 
     @Test("mirrorPoint vs mirrored(acrossPoint:)")
-    func mirrorPointParity() {
-        let base = Curve3D.segment(from: SIMD3(1, 2, 3), to: SIMD3(4, 5, 6))!
+    func mirrorPointParity() throws {
+        let base = try #require(Curve3D.segment(from: SIMD3(1, 2, 3), to: SIMD3(4, 5, 6)))
         let point = SIMD3<Double>(1, 1, 1)
         let copy = base.mirrored(acrossPoint: point)
         let ok = base.mirrorPoint(point)
@@ -86,8 +86,8 @@ struct Curve3DTransformFamilyParityTests {
     }
 
     @Test("mirrorAxis vs mirrored(acrossAxis:direction:)")
-    func mirrorAxisParity() {
-        let base = Curve3D.segment(from: SIMD3(1, 1, 0), to: SIMD3(2, 1, 0))!
+    func mirrorAxisParity() throws {
+        let base = try #require(Curve3D.segment(from: SIMD3(1, 1, 0), to: SIMD3(2, 1, 0)))
         let origin = SIMD3<Double>(0, 0, 0)
         let direction = SIMD3<Double>(1, 0, 0)
         let copy = base.mirrored(acrossAxis: origin, direction: direction)
@@ -100,8 +100,8 @@ struct Curve3DTransformFamilyParityTests {
     }
 
     @Test("mirrorPlane vs mirrored(acrossPlane:normal:)")
-    func mirrorPlaneParity() {
-        let base = Curve3D.segment(from: SIMD3(1, 0, 5), to: SIMD3(2, 0, 5))!
+    func mirrorPlaneParity() throws {
+        let base = try #require(Curve3D.segment(from: SIMD3(1, 0, 5), to: SIMD3(2, 0, 5)))
         let origin = SIMD3<Double>(0, 0, 0)
         let normal = SIMD3<Double>(0, 0, 1)
         let copy = base.mirrored(acrossPlane: origin, normal: normal)

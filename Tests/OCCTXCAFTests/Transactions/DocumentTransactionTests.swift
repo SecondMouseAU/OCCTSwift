@@ -9,15 +9,15 @@ import Testing
 struct DocumentTransactionTests {
 
     @Test("Open and commit transaction")
-    func openCommit() {
-        let doc = Document.create()!
+    func openCommit() throws {
+        let doc = try #require(Document.create())
         doc.setUndoLimit(10)
 
         #expect(!doc.hasOpenTransaction)
         doc.openTransaction()
         #expect(doc.hasOpenTransaction)
 
-        let label = doc.createLabel()!
+        let label = try #require(doc.createLabel())
         label.setName("InTransaction")
 
         let ok = doc.commitTransaction()
@@ -26,14 +26,14 @@ struct DocumentTransactionTests {
     }
 
     @Test("Open and abort transaction")
-    func openAbort() {
-        let doc = Document.create()!
+    func openAbort() throws {
+        let doc = try #require(Document.create())
         doc.setUndoLimit(10)
 
         doc.openTransaction()
         #expect(doc.hasOpenTransaction)
 
-        let label = doc.createLabel()!
+        let label = try #require(doc.createLabel())
         label.setName("WillBeAborted")
 
         doc.abortTransaction()
@@ -41,8 +41,8 @@ struct DocumentTransactionTests {
     }
 
     @Test("Has open transaction")
-    func hasOpenTransaction() {
-        let doc = Document.create()!
+    func hasOpenTransaction() throws {
+        let doc = try #require(Document.create())
         doc.setUndoLimit(10)
         #expect(!doc.hasOpenTransaction, "No transaction initially")
 

@@ -329,7 +329,7 @@ ADJUDICATED_CLAIMS = {
         "(Scripts/repro/cluster-b-fillet-edge-contract/), and occt-refman@8.0.1's Add() entries "
         "document only what a call BUILDS, saying nothing about a declined edge either way, so "
         "the comment does not misattribute anything to the refman."),
-    ("OCCTAnalysisTests/Issue885TotalAreaDivergenceTests.swift", "own header documents"): (
+    ("OCCTAnalysisTests/TotalAreaDivergenceTests.swift", "own header documents"): (
         "confirmed, verbatim. occt-refman@8.0.1's BRepGProp::SurfaceProperties entry: 'WARNING: "
         "if Eps > 0.001 algorithm performs non-adaptive integration', matching the test's quote "
         "exactly."),

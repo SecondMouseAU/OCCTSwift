@@ -9,9 +9,9 @@ import Testing
 struct TDataXtdPositionAttributeTests {
 
     @Test("Set and get position attribute")
-    func setGetPosition() {
-        let doc = Document.create()!
-        let label = doc.createLabel()!
+    func setGetPosition() throws {
+        let doc = try #require(Document.create())
+        let label = try #require(doc.createLabel())
 
         #expect(label.setPositionAttribute(x: 1.0, y: 2.0, z: 3.0))
         #expect(label.hasPositionAttribute)
@@ -23,9 +23,9 @@ struct TDataXtdPositionAttributeTests {
     }
 
     @Test("Label without position attribute")
-    func noPositionAttribute() {
-        let doc = Document.create()!
-        let label = doc.createLabel()!
+    func noPositionAttribute() throws {
+        let doc = try #require(Document.create())
+        let label = try #require(doc.createLabel())
         #expect(!label.hasPositionAttribute)
         #expect(label.positionAttribute() == nil)
     }

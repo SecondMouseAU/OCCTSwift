@@ -10,7 +10,7 @@ struct IGESTests {
 
     @Test("Export shape to IGES")
     func exportIGES() throws {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
 
         let tempURL = FileManager.default.temporaryDirectory
             .appendingPathComponent("test_export.igs")
@@ -31,7 +31,7 @@ struct IGESTests {
 
     @Test("IGES roundtrip")
     func igesRoundtrip() throws {
-        let original = Shape.box(width: 20, height: 15, depth: 10)!
+        let original = try #require(Shape.box(width: 20, height: 15, depth: 10))
         let originalVolume = original.volume ?? 0
 
         let tempURL = FileManager.default.temporaryDirectory
@@ -61,7 +61,7 @@ struct IGESTests {
 
     @Test("Get IGES data")
     func getIGESData() throws {
-        let cylinder = Shape.cylinder(radius: 5, height: 20)!
+        let cylinder = try #require(Shape.cylinder(radius: 5, height: 20))
 
         let data = try cylinder.igesData()
 

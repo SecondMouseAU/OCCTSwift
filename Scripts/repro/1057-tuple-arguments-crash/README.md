@@ -355,7 +355,7 @@ The 9 `unknown` rows, adjudicated by opening each type:
 
 | site | named type | why it is clean |
 |---|---|---|
-| `Issue522ApproxC0CollapseTests.swift:80` | `ParametricContinuity` | `enum ...: Int32`, no payload |
+| `ApproxC0CollapseTests.swift:80` | `ParametricContinuity` | `enum ...: Int32`, no payload |
 | `Issue490ContinuityDecoderTests.swift:37` | `ParametricContinuity` | same |
 | `HealingApproximationErrorTests.swift:121` | `ParametricContinuity` | same |
 | `DivideContinuityUnificationTests.swift:58` | `Shape.ContinuityLevel` | `enum ...: Int32`, no payload |

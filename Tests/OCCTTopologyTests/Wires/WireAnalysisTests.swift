@@ -7,8 +7,8 @@ import Testing
 @Suite("Wire Topology Analysis")
 struct WireAnalysisTests {
     @Test("Analyze closed rectangle wire")
-    func analyzeRectangle() {
-        let rect = Wire.rectangle(width: 10, height: 5)!
+    func analyzeRectangle() throws {
+        let rect = try #require(Wire.rectangle(width: 10, height: 5))
         let analysis = rect.analyze()
         #expect(analysis != nil)
         if let a = analysis {

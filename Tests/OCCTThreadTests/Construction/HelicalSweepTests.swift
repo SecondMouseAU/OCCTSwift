@@ -23,7 +23,7 @@ struct Issue185HelicalSweepTests {
     @Test(
         "helicalSweep builds a valid, radial worm helicoid (not nil), both handedness",
         arguments: [false, true])
-    func helicalSweepIsValidAndRadial(clockwise: Bool) {
+    func helicalSweepIsValidAndRadial(clockwise: Bool) throws {
         guard let rib = wormRib() else {
             Issue.record("no rib")
             return
@@ -42,7 +42,7 @@ struct Issue185HelicalSweepTests {
             // envelope is ~radius 7. The point of this bound is to catch the CATASTROPHIC
             // failure mode (radius ~8–11) seen with narrow / fine-pitch profiles, while
             // documenting the mild bulge that helicalSweep does have. See #187.
-            let b = worm.bounds!
+            let b = try #require(worm.bounds)
             let maxR = 7.0
             #expect(b.max.x <= maxR)
             #expect(b.min.x >= -maxR)

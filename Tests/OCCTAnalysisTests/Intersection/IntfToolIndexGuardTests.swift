@@ -4,7 +4,7 @@ import Testing
 @testable import OCCTSwift
 
 //
-//  Issue2857IntfToolIndexGuardTests.swift
+//  IntfToolIndexGuardTests.swift
 //  #2857: IntfTool.beginParam / endParam refuse an out-of-range segment index, and
 //  IntfTool.segmentCount exists so a caller can stay inside the valid range.
 //
