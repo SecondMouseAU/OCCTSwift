@@ -1095,8 +1095,8 @@ public func faceRestrictAlgo(faceIndex: Int) -> Int
 ```
 
 - **Parameters:** `faceIndex`, 0-based index of the face to restrict.
-- **Returns:** Number of result faces produced by the restrictor.
-- **OCCT:** `BRepAlgo_FaceRestrictor::Perform / NbFaces` (via `OCCTShapeFaceRestrictAlgo`).
+- **Returns:** Number of result faces produced by the restrictor (1 for a face with one outer wire, with or without holes), or -1 when `faceIndex` names no face or the restrictor does not finish.
+- **OCCT:** `BRepAlgo_FaceRestrictor` `Init` / `Add` / `Perform`, then `More` / `Next` counted (via `OCCTShapeFaceRestrictAlgo`).
 - **Example:**
   ```swift
   let n = shape.faceRestrictAlgo(faceIndex: 0)

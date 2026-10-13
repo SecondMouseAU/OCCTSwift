@@ -22,14 +22,14 @@ import Testing
 @Suite("Issue #853: uniformAbscissa(distance:) gains the ceiling its pointCount sibling always had")
 struct Issue853UniformAbscissaDistanceCeiling {
 
-    private func boxEdge() -> Shape {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
-        return box.subShapes(ofType: .edge).first!
+    private func boxEdge() throws -> Shape {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        return try #require(box.subShapes(ofType: .edge).first)
     }
 
     @Test("a distance implying more points than the ceiling returns nil, both overloads")
-    func distancePastCeilingIsNil() {
-        let edge = boxEdge()
+    func distancePastCeilingIsNil() throws {
+        let edge = try boxEdge()
         // Whole-edge spacing: length 10, so ceiling+~1000 points is rejected before OCCT runs.
         let wholeLength = edge.edgeArcLength
         let tinySpacing = wholeLength / Double(Sampling.maximumSampleCount + 1_000)
@@ -45,8 +45,8 @@ struct Issue853UniformAbscissaDistanceCeiling {
     }
 
     @Test("a non-positive or non-finite distance returns nil without reaching the ceiling check")
-    func nonPositiveDistanceIsNil() {
-        let edge = boxEdge()
+    func nonPositiveDistanceIsNil() throws {
+        let edge = try boxEdge()
         #expect(edge.uniformAbscissa(distance: 0) == nil)
         #expect(edge.uniformAbscissa(distance: -1) == nil)
         #expect(edge.uniformAbscissa(distance: .nan) == nil)
@@ -55,8 +55,8 @@ struct Issue853UniformAbscissaDistanceCeiling {
     }
 
     @Test("a plausible distance is unaffected by the new ceiling check, both overloads")
-    func ordinaryDistanceStillWorks() {
-        let edge = boxEdge()
+    func ordinaryDistanceStillWorks() throws {
+        let edge = try boxEdge()
         let params = edge.uniformAbscissa(distance: 3.0)
         #expect(params != nil)
         if let params = params { #expect(params.count >= 2) }
@@ -70,8 +70,8 @@ struct Issue853UniformAbscissaDistanceCeiling {
     }
 
     @Test("pointCount and its range sibling are unaffected by sharing the new helper")
-    func pointCountOverloadsUnaffected() {
-        let edge = boxEdge()
+    func pointCountOverloadsUnaffected() throws {
+        let edge = try boxEdge()
         #expect(edge.uniformAbscissa(pointCount: 5)?.count == 5)
         #expect(edge.uniformAbscissa(pointCount: 3, u1: 0, u2: 1)?.count == 3)
         #expect(edge.uniformAbscissa(pointCount: 1) == nil)

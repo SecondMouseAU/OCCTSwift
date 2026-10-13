@@ -10,8 +10,8 @@ import Testing
 struct SubShapeExtractionTests {
 
     @Test("Box has one solid")
-    func boxOneSolid() {
-        let box = Shape.box(width: 10, height: 5, depth: 3)!
+    func boxOneSolid() throws {
+        let box = try #require(Shape.box(width: 10, height: 5, depth: 3))
         #expect(box.solidCount == 1)
         #expect(box.solids.count == 1)
     }
@@ -47,8 +47,8 @@ struct SubShapeExtractionTests {
     }
 
     @Test("Box wires")
-    func boxWires() {
-        let box = Shape.box(width: 10, height: 5, depth: 3)!
+    func boxWires() throws {
+        let box = try #require(Shape.box(width: 10, height: 5, depth: 3))
         // A box has 6 faces, each with 1 wire = 6 wires
         #expect(box.wireCount == 6)
         #expect(box.wires.count == 6)
@@ -68,9 +68,9 @@ struct SubShapeExtractionTests {
     }
 
     @Test("Empty shape returns empty arrays")
-    func emptyShape() {
+    func emptyShape() throws {
         // A single vertex has no solids, shells, or wires
-        let vertex = Shape.vertex(at: SIMD3(0, 0, 0))!
+        let vertex = try #require(Shape.vertex(at: SIMD3(0, 0, 0)))
         #expect(vertex.solidCount == 0)
         #expect(vertex.solids.isEmpty)
         #expect(vertex.shellCount == 0)

@@ -35,8 +35,8 @@ struct EdgeDiscretizationTests {
     }
 
     @Test("Edge polyline from curved shape")
-    func edgePolylineFromCylinder() {
-        let cylinder = Shape.cylinder(radius: 10, height: 20)!
+    func edgePolylineFromCylinder() throws {
+        let cylinder = try #require(Shape.cylinder(radius: 10, height: 20))
 
         // Cylinder has curved edges
         let polyline = cylinder.edgePolyline(at: 0, deflection: 0.1)
@@ -48,16 +48,16 @@ struct EdgeDiscretizationTests {
     }
 
     @Test("All edge polylines")
-    func allEdgePolylines() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func allEdgePolylines() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
 
         let polylines = box.allEdgePolylines(deflection: 0.1)
         #expect(polylines.count == box.edgeCount)
     }
 
     @Test("Edge polyline invalid index")
-    func edgePolylineInvalidIndex() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func edgePolylineInvalidIndex() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
 
         // Box has 12 edges, index 100 should fail
         let polyline = box.edgePolyline(at: 100, deflection: 0.1)
@@ -69,12 +69,12 @@ struct EdgeDiscretizationTests {
     /// The bulk path must agree point-for-point with the per-index accessor it replaced,
     /// same edge ordering, same discretisation, same skip behaviour.
     @Test("Bulk allEdgePolylines matches the per-index accessor exactly")
-    func bulkEdgePolylinesMatchPerIndex() {
+    func bulkEdgePolylinesMatchPerIndex() throws {
         // A box (planar edges) and a cylinder (curved edges + the seam) cover both the
         // BRepAdaptor_Curve path and multi-point discretisation.
         for shape in [
-            Shape.box(width: 10, height: 10, depth: 10)!,
-            Shape.cylinder(radius: 5, height: 20)!,
+            try #require(Shape.box(width: 10, height: 10, depth: 10)),
+            try #require(Shape.cylinder(radius: 5, height: 20)),
         ] {
             let bulk = shape.allEdgePolylines(deflection: 0.1)
 
@@ -106,19 +106,20 @@ struct EdgeDiscretizationTests {
     /// with the edge count. The bound is deliberately loose (8x) so this asserts the
     /// complexity class, not wall-clock, it should not go red on a slow or busy machine.
     @Test("allEdgePolylines scales linearly, not quadratically, in edge count")
-    func allEdgePolylinesScalesLinearly() {
-        func perEdgeCost(gridSide: Int) -> (cost: Double, edges: Int) {
+    func allEdgePolylinesScalesLinearly() throws {
+        func perEdgeCost(gridSide: Int) throws -> (cost: Double, edges: Int) {
             // A compound of many small boxes: edge count scales with the box count, and
             // every edge is independent, so total work should be linear in edges.
             var boxes: [Shape] = []
             for i in 0..<gridSide {
                 for j in 0..<gridSide {
                     boxes.append(
-                        Shape.box(width: 1, height: 1, depth: 1)!
-                            .translated(by: SIMD3(Double(i) * 2, Double(j) * 2, 0))!)
+                        try #require(
+                            Shape.box(width: 1, height: 1, depth: 1)?
+                                .translated(by: SIMD3(Double(i) * 2, Double(j) * 2, 0))))
                 }
             }
-            let compound = Shape.compound(boxes)!
+            let compound = try #require(Shape.compound(boxes))
             let edges = compound.edgeCount
 
             // REPEATED UNTIL THE CLOCK CAN SEE IT, because on a fast runtime it cannot. The 108-edge
@@ -147,8 +148,8 @@ struct EdgeDiscretizationTests {
             return (elapsed / Double(edges * passes), edges)
         }
 
-        let small = perEdgeCost(gridSide: 3)  // 9 boxes   → 108 edges
-        let large = perEdgeCost(gridSide: 10)  // 100 boxes → 1200 edges
+        let small = try perEdgeCost(gridSide: 3)  // 9 boxes   → 108 edges
+        let large = try perEdgeCost(gridSide: 10)  // 100 boxes → 1200 edges
 
         // Sanity: the large case really is ~10x the edges, or the guard proves nothing.
         #expect(large.edges > small.edges * 5)
@@ -166,8 +167,8 @@ struct EdgeDiscretizationTests {
     /// drift out of the `edgePolyline(at:)` index space exactly there. The indexed variant
     /// exists for consumers (wireframe pick identity) that can't tolerate that drift.
     @Test("allEdgePolylinesIndexed preserves the edgePolyline(at:) index space across skips")
-    func indexedEdgePolylinesSurviveSkips() {
-        let sphere = Shape.sphere(radius: 5)!
+    func indexedEdgePolylinesSurviveSkips() throws {
+        let sphere = try #require(Shape.sphere(radius: 5))
         let indexed = sphere.allEdgePolylinesIndexed(deflection: 0.1)
 
         // Something must actually be skipped for this fixture to prove anything.

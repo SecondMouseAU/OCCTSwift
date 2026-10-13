@@ -5,24 +5,24 @@ import Testing
 @Suite("Offset by Join")
 struct OffsetByJoinTests {
     @Test("Offset box outward with arc join")
-    func offsetArc() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func offsetArc() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let offset = box.offset(by: 1.0, joinType: .arc)
         #expect(offset != nil)
         if let o = offset {
             #expect(o.isValid)
-            #expect(o.volume! > box.volume!)
+            #expect(try #require(o.volume) > #require(box.volume))
         }
     }
 
     @Test("Offset box inward")
-    func offsetInward() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func offsetInward() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let offset = box.offset(by: -1.0, joinType: .arc)
         #expect(offset != nil)
         if let o = offset {
             #expect(o.isValid)
-            #expect(o.volume! < box.volume!)
+            #expect(try #require(o.volume) < #require(box.volume))
         }
     }
 

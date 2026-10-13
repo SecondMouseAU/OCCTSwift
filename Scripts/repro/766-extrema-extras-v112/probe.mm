@@ -1,4 +1,4 @@
-// Kernel parity probe for Tests/OCCTAnalysisTests/Extrema/ExtremaExtrasV112Tests.swift (#766).
+// Kernel parity probe for Tests/OCCTAnalysisTests/Extrema/ExtremaLocateAndProjectTests.swift (#766).
 //
 // Same inputs and the same OCCT calls as the four bridge functions the tests reach:
 //   locateOnCurve         -> OCCTExtremaLocateOnCurve   (GeomAPI_ProjectPointOnCurve on a +/-10%

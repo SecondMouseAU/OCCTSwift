@@ -15,9 +15,9 @@ struct RevolutionFeatureTests {
         [SIMD3(-25, -50, 100), SIMD3(25, -50, 100), SIMD3(25, 50, 100), SIMD3(-25, 50, 100)],
         closed: true)
     @Test("Revolved boss on box")
-    func revolvedBoss() {
-        let box = Shape.box(width: 200, height: 200, depth: 200)!
-        let profile = topProfile!
+    func revolvedBoss() throws {
+        let box = try #require(Shape.box(width: 200, height: 200, depth: 200))
+        let profile = try #require(topProfile)
         let result = box.addingRevolvedFeature(
             profile: profile,
             sketchFaceIndex: 5,
@@ -33,9 +33,9 @@ struct RevolutionFeatureTests {
     }
 
     @Test("Revolved feature thru all (360)")
-    func revolvedThruAll() {
-        let box = Shape.box(width: 200, height: 200, depth: 200)!
-        let profile = topProfile!
+    func revolvedThruAll() throws {
+        let box = try #require(Shape.box(width: 200, height: 200, depth: 200))
+        let profile = try #require(topProfile)
         let result = box.addingRevolvedFeatureThruAll(
             profile: profile,
             sketchFaceIndex: 5,

@@ -8,13 +8,13 @@ import Testing
 struct PerFaceVariableOffsetTests {
 
     @Test("Uniform per-face offset matches default offset")
-    func uniformPerFace() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func uniformPerFace() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let result = box.offsetPerFace(defaultOffset: 1.0, faceOffsets: [:])
         #expect(result != nil)
         if let r = result {
             #expect(r.isValid)
-            #expect(r.volume! > 1000.0)
+            #expect(try #require(r.volume) > 1000.0)
         }
     }
 

@@ -13,10 +13,10 @@ struct FillingSurfaceTests {
     // is that 10 x 10 square. Pinned values are BRepOffsetAPI_MakeFilling's own with the same
     // defaults, see Scripts/repro/766-filling-surface/.
     /// Helper to get 4 coplanar edges from a box face.
-    private func getFaceEdges() -> [Edge] {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    private func getFaceEdges() throws -> [Edge] {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let face = box.faces()[0]
-        let wire = face.outerWire!
+        let wire = try #require(face.outerWire)
         // Get edges from the shape that belong to this face's wire
         let allEdges = box.edges()
         // Use first 4 edges (a box face has 4 edges)
@@ -25,7 +25,7 @@ struct FillingSurfaceTests {
 
     @Test("Basic 4-edge filling creates a face")
     func basicFilling() throws {
-        let edges = getFaceEdges()
+        let edges = try getFaceEdges()
         #expect(edges.count == 4)
 
         let filling = FillingSurface()
@@ -41,7 +41,7 @@ struct FillingSurfaceTests {
 
     @Test("G0 error is small for planar fill")
     func g0Error() throws {
-        let edges = getFaceEdges()
+        let edges = try getFaceEdges()
 
         let filling = FillingSurface()
         for edge in edges {
@@ -58,7 +58,7 @@ struct FillingSurfaceTests {
 
     @Test("Filling with point constraint")
     func fillingWithPoint() throws {
-        let edges = getFaceEdges()
+        let edges = try getFaceEdges()
 
         let filling = FillingSurface()
         for edge in edges {
@@ -79,7 +79,7 @@ struct FillingSurfaceTests {
 
     @Test("G1 and G2 errors are available after build")
     func g1g2Errors() throws {
-        let edges = getFaceEdges()
+        let edges = try getFaceEdges()
 
         let filling = FillingSurface()
         for edge in edges {
@@ -96,7 +96,7 @@ struct FillingSurfaceTests {
 
     @Test("Filling with free edge constraint")
     func freeEdgeConstraint() throws {
-        let edges = getFaceEdges()
+        let edges = try getFaceEdges()
 
         let filling = FillingSurface()
         // Add 3 boundary edges and 1 free edge

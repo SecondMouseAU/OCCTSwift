@@ -59,8 +59,8 @@ struct Issue541FaceIndexContractTests {
     /// The half the issue did not report, and the more serious one: on a shape whose duplicate is
     /// not the last occurrence, the two schemes named *different* faces at the same index.
     @Test("faces() and face(at:) name the same face at every index")
-    func facesArrayAndIndexedAccessNameTheSameFace() {
-        guard let split = Issue614FaceOrientationTests.splitBoxCompound() else {
+    func facesArrayAndIndexedAccessNameTheSameFace() throws {
+        guard let split = try Issue614FaceOrientationTests.splitBoxCompound() else {
             Issue.record("could not build the split-box compound")
             return
         }
@@ -85,8 +85,8 @@ struct Issue541FaceIndexContractTests {
     /// `subShape(type:index:)` is the generic spelling of the same enumeration; it must not be a
     /// fourth answer.
     @Test("The generic sub-shape spelling agrees with the face spellings")
-    func genericSpellingAgrees() {
-        guard let split = Issue614FaceOrientationTests.splitBoxCompound() else {
+    func genericSpellingAgrees() throws {
+        guard let split = try Issue614FaceOrientationTests.splitBoxCompound() else {
             Issue.record("could not build the split-box compound")
             return
         }
@@ -105,11 +105,11 @@ struct Issue541FaceIndexContractTests {
     /// The control: on shapes that share no face, which is every shape the rest of the suite
     /// builds, converging the enumerations moves nothing.
     @Test("Ordinary shapes are unaffected")
-    func ordinaryShapesUnaffected() {
+    func ordinaryShapesUnaffected() throws {
         let fixtures: [(String, Shape)] = [
-            ("box", Shape.box(width: 10, height: 5, depth: 3)!),
-            ("cylinder", Shape.cylinder(radius: 3, height: 8)!),
-            ("sphere", Shape.sphere(radius: 5)!),
+            ("box", try #require(Shape.box(width: 10, height: 5, depth: 3))),
+            ("cylinder", try #require(Shape.cylinder(radius: 3, height: 8))),
+            ("sphere", try #require(Shape.sphere(radius: 5))),
         ]
         for (name, shape) in fixtures {
             #expect(shape.faces().count == shape.faceCount, "\(name) count")
@@ -123,7 +123,7 @@ struct Issue541FaceIndexContractTests {
                 #expect(a.isSame(as: b), "\(name): index \(face.index) moved")
             }
         }
-        #expect(Shape.box(width: 10, height: 10, depth: 10)!.faceCount == 6)
+        #expect(try #require(Shape.box(width: 10, height: 10, depth: 10)).faceCount == 6)
     }
 
     // MARK: - Face indices are 0-based everywhere
@@ -134,8 +134,8 @@ struct Issue541FaceIndexContractTests {
     /// Feeding one straight to `face(at:)` named the wrong face, and the
     /// face at index 0 could never be returned at all.
     @Test("adjacentFaces(forEdge:) returns indices face(at:) can use")
-    func adjacentFaceIndicesAreZeroBased() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func adjacentFaceIndicesAreZeroBased() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let edges = box.subShapes(ofType: .edge)
         guard let edge = edges.first else {
             Issue.record("box has no edges")
@@ -158,8 +158,8 @@ struct Issue541FaceIndexContractTests {
 
     /// The sibling accessor, same defect, same map.
     @Test("adjacentEdges(forVertex:) returns indices edge(at:) can use")
-    func adjacentEdgeIndicesAreZeroBased() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func adjacentEdgeIndicesAreZeroBased() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         guard let vertex = box.subShapes(ofType: .vertex).first else {
             Issue.record("box has no vertices")
             return
@@ -213,8 +213,8 @@ struct Issue541FaceIndexContractTests {
     ///
     /// The sentinel is now `-1`, so every face is addressable.
     @Test("buildWires addresses face 0, and -1 still means every edge")
-    func buildWiresSentinelDoesNotCollideWithFaceZero() {
-        let box = Shape.box(origin: .zero, width: 10, height: 10, depth: 10)!
+    func buildWiresSentinelDoesNotCollideWithFaceZero() throws {
+        let box = try #require(Shape.box(origin: .zero, width: 10, height: 10, depth: 10))
 
         guard let allEdges = box.buildWires(faceIndex: -1) else {
             Issue.record("buildWires(-1) failed")
@@ -245,8 +245,8 @@ struct Issue541FaceIndexContractTests {
     /// quad, so the check is edge *identity*: the edges `edgesInFace(at:)` reports must be the
     /// very edges of the face at that index.
     @Test("Index consumers answer about the face face(at:) names")
-    func indexConsumersAgreeWithFaceAt() {
-        guard let split = Issue614FaceOrientationTests.splitBoxCompound() else {
+    func indexConsumersAgreeWithFaceAt() throws {
+        guard let split = try Issue614FaceOrientationTests.splitBoxCompound() else {
             Issue.record("could not build the split-box compound")
             return
         }
@@ -279,8 +279,8 @@ struct Issue541FaceIndexContractTests {
     /// These pin the contract its docs now state, so
     /// "a complexity metric, not an index bound" does not quietly become untrue.
     @Test("Shape.contents counts occurrences, not addressable sub-shapes")
-    func contentsCountsOccurrences() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func contentsCountsOccurrences() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         // A box shares no face, so the two agree there.
         #expect(box.contents.faces == box.faceCount)
         // Every edge is visited once per adjacent face, so these must NOT agree.
@@ -315,8 +315,8 @@ struct Issue541FaceIndexContractTests {
 
     /// Past the end must be nil or empty on every spelling, not the last face or a crash.
     @Test("Out-of-range face indices are rejected consistently")
-    func outOfRangeIndicesRejected() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func outOfRangeIndicesRejected() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let past = box.faceCount
         #expect(box.face(at: past) == nil)
         #expect(box.face(at: -1) == nil)

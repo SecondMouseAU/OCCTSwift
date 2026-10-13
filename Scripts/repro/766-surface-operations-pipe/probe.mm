@@ -1,4 +1,4 @@
-// Epic #766, SurfaceOperationsTests.swift, SurfacePipeTests.swift, SurfaceQueriesV123Tests.swift,
+// Epic #766, SurfaceOperationsTests.swift, SurfacePipeTests.swift, SurfacePeriodQueriesTests.swift,
 // SurfaceSingularityTests.swift, SurfaceSweptTests.swift and SurfaceToBezierTests.swift: kernel
 // parity for the twenty tests. Also ShapeAnalysis_Surface NbSingularities / IsDegenerated,
 // Geom_SurfaceOfLinearExtrusion / Geom_SurfaceOfRevolution, and

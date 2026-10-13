@@ -22,15 +22,15 @@ struct Issue1580AAGNegativeIndexGuardTests {
     /// crashes the whole test run instead of merely failing one assertion, which is the correct
     /// signal for a trap that a `#expect` cannot express.
     @Test("neighbors(of:) rejects a negative index instead of trapping")
-    func neighborsRejectsNegativeIndex() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func neighborsRejectsNegativeIndex() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let aag = box.buildAAG()
         #expect(aag.neighbors(of: -1) == [])
     }
 
     @Test("edge(between:and:) rejects a negative first index instead of trapping")
-    func edgeBetweenRejectsNegativeFirstIndex() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func edgeBetweenRejectsNegativeFirstIndex() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let aag = box.buildAAG()
         #expect(aag.edge(between: -1, and: 0) == nil)
     }
@@ -43,22 +43,22 @@ struct Issue1580AAGNegativeIndexGuardTests {
     /// anyway, per the issue, for symmetry with `face1` and so a future change to how `face2` is
     /// resolved doesn't quietly reopen this.
     @Test("edge(between:and:) rejects a negative second index instead of trapping")
-    func edgeBetweenRejectsNegativeSecondIndex() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func edgeBetweenRejectsNegativeSecondIndex() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let aag = box.buildAAG()
         #expect(aag.edge(between: 0, and: -1) == nil)
     }
 
     @Test("concaveNeighbors(of:) rejects a negative index instead of trapping")
-    func concaveNeighborsRejectsNegativeIndex() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func concaveNeighborsRejectsNegativeIndex() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let aag = box.buildAAG()
         #expect(aag.concaveNeighbors(of: -1) == [])
     }
 
     @Test("convexNeighbors(of:) rejects a negative index instead of trapping")
-    func convexNeighborsRejectsNegativeIndex() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func convexNeighborsRejectsNegativeIndex() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let aag = box.buildAAG()
         #expect(aag.convexNeighbors(of: -1) == [])
     }
