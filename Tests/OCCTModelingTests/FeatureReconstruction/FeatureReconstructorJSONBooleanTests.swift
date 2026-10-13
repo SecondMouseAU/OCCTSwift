@@ -9,9 +9,10 @@ struct FeatureReconstructorJSONBooleanTests {
 
     @Test("JSON boolean subtract referencing @input cuts the input body")
     func jsonBooleanSubtractAtInput() throws {
-        let plate = Shape.box(width: 40, height: 40, depth: 5)!
-        let plateBoundsBefore = plate.bounds!
-        let json = """
+        let plate = try #require(Shape.box(width: 40, height: 40, depth: 5))
+        let plateBoundsBefore = try #require(plate.bounds)
+        let json = try #require(
+            """
             {
               "features": [
                 {
@@ -31,7 +32,7 @@ struct FeatureReconstructorJSONBooleanTests {
                 }
               ]
             }
-            """.data(using: .utf8)!
+            """.data(using: .utf8))
         let result = try FeatureReconstructor.buildJSON(json, inputBody: plate)
         #expect(result.fulfilled.contains("slot"))
         #expect(
@@ -47,7 +48,8 @@ struct FeatureReconstructorJSONBooleanTests {
 
     @Test("JSON boolean union of two extruded profiles")
     func jsonBooleanUnion() throws {
-        let json = """
+        let json = try #require(
+            """
             {
               "features": [
                 {
@@ -75,15 +77,16 @@ struct FeatureReconstructorJSONBooleanTests {
                 }
               ]
             }
-            """.data(using: .utf8)!
+            """.data(using: .utf8))
         let result = try FeatureReconstructor.buildJSON(json)
         #expect(result.fulfilled.contains("ab_union"))
     }
 
     @Test("JSON boolean with bad op rawValue is reported as unsupported skip")
     func jsonBooleanBadOpReported() throws {
-        let plate = Shape.box(width: 20, height: 20, depth: 5)!
-        let json = """
+        let plate = try #require(Shape.box(width: 20, height: 20, depth: 5))
+        let json = try #require(
+            """
             {
               "features": [
                 {
@@ -95,7 +98,7 @@ struct FeatureReconstructorJSONBooleanTests {
                 }
               ]
             }
-            """.data(using: .utf8)!
+            """.data(using: .utf8))
         let result = try FeatureReconstructor.buildJSON(json, inputBody: plate)
         let skip = result.skipped.first { $0.featureID == "bad_op" }
         #expect(skip != nil)
@@ -108,7 +111,8 @@ struct FeatureReconstructorJSONBooleanTests {
 
     @Test("Unknown JSON kind with id is reported as unsupported skip")
     func unknownKindReported() throws {
-        let json = """
+        let json = try #require(
+            """
             {
               "features": [
                 {
@@ -125,7 +129,7 @@ struct FeatureReconstructorJSONBooleanTests {
                 }
               ]
             }
-            """.data(using: .utf8)!
+            """.data(using: .utf8))
         let result = try FeatureReconstructor.buildJSON(json)
         #expect(result.fulfilled.contains("good"))
         let skip = result.skipped.first { $0.featureID == "ni" }
@@ -139,13 +143,14 @@ struct FeatureReconstructorJSONBooleanTests {
 
     @Test("Unknown JSON kind without id is silently ignored (matches kernel policy)")
     func unknownKindWithoutIdIgnored() throws {
-        let json = """
+        let json = try #require(
+            """
             {
               "features": [
                 { "kind": "shrubbery" }
               ]
             }
-            """.data(using: .utf8)!
+            """.data(using: .utf8))
         let result = try FeatureReconstructor.buildJSON(json)
         #expect(result.fulfilled.isEmpty)
         #expect(result.skipped.isEmpty)

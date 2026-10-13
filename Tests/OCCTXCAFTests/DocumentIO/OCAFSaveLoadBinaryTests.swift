@@ -9,9 +9,9 @@ import Testing
 struct OCAFSaveLoadBinaryTests {
 
     @Test("Save and load BinOcaf document")
-    func saveLoadBinOcaf() {
-        let doc = Document.create(format: "BinOcaf")!
-        let label = doc.createLabel()!
+    func saveLoadBinOcaf() throws {
+        let doc = try #require(Document.create(format: "BinOcaf"))
+        let label = try #require(doc.createLabel())
         let tag = label.tag
         #expect(label.setName("TestBin"))
         #expect(label.setInteger(42))
@@ -46,10 +46,10 @@ struct OCAFSaveLoadBinaryTests {
     }
 
     @Test("Save and load BinXCAF with shapes")
-    func saveLoadBinXCAF() {
-        let doc = Document.create(format: "BinXCAF")!
-        let box = Shape.box(width: 10, height: 20, depth: 30)!
-        let label = doc.createLabel()!
+    func saveLoadBinXCAF() throws {
+        let doc = try #require(Document.create(format: "BinXCAF"))
+        let box = try #require(Shape.box(width: 10, height: 20, depth: 30))
+        let label = try #require(doc.createLabel())
         let tag = label.tag
         #expect(label.setName("MyBox"))
         #expect(label.setShapeAttribute(box))

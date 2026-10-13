@@ -12,7 +12,7 @@ struct BRepExtremaExtPCTests {
     /// `solutionCount > 0`, which the guard it was testing made unfalsifiable. See #580.
     @Test("Point to edge distance on box")
     func pointToEdge() throws {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let edgeCount = box.edges().count
         #expect(edgeCount == 12)
 

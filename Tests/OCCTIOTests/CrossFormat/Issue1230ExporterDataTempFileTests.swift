@@ -26,7 +26,7 @@ struct Issue1230ExporterDataTempFileTests {
 
     @Test("Get STL data has the binary STL structure")
     func getSTLData() throws {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let data = try box.stlData(deflection: 0.5)
 
         // Binary STL: an 80-byte header, then a little-endian uint32 triangle count, then exactly
@@ -41,7 +41,7 @@ struct Issue1230ExporterDataTempFileTests {
 
     @Test("Get STEP data has the STEP ASCII signature")
     func getSTEPData() throws {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let data = try box.stepData(name: "Issue1230Box")
 
         #expect(data.count > 0)
@@ -208,7 +208,7 @@ struct Issue1230ExporterDataTempFileTests {
     /// propagates the original error) on the failure path, not only the happy one.
     @Test("A failed *Data export still cleans up and still throws (#1230)")
     func failedDataExportStillCleansUpAndThrows() throws {
-        let invalid = invalidBowtieShape()
+        let invalid = try invalidBowtieShape()
         #expect(!invalid.isValid)
 
         // #3073: the same lifetime rule as the leak checks above. The old check counted the whole

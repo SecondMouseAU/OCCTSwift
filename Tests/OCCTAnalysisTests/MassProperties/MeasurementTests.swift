@@ -11,8 +11,8 @@ struct MeasurementTests {
     // MARK: - Volume Tests
 
     @Test("Volume of box")
-    func volumeOfBox() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func volumeOfBox() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         guard let volume = box.volume else {
             Issue.record("Failed to compute volume")
             return
@@ -22,8 +22,8 @@ struct MeasurementTests {
     }
 
     @Test("Volume of cylinder")
-    func volumeOfCylinder() {
-        let cylinder = Shape.cylinder(radius: 5, height: 10)!
+    func volumeOfCylinder() throws {
+        let cylinder = try #require(Shape.cylinder(radius: 5, height: 10))
         guard let volume = cylinder.volume else {
             Issue.record("Failed to compute volume")
             return
@@ -34,8 +34,8 @@ struct MeasurementTests {
     }
 
     @Test("Volume of sphere")
-    func volumeOfSphere() {
-        let sphere = Shape.sphere(radius: 5)!
+    func volumeOfSphere() throws {
+        let sphere = try #require(Shape.sphere(radius: 5))
         guard let volume = sphere.volume else {
             Issue.record("Failed to compute volume")
             return
@@ -48,8 +48,8 @@ struct MeasurementTests {
     // MARK: - Surface Area Tests
 
     @Test("Surface area of box")
-    func surfaceAreaOfBox() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func surfaceAreaOfBox() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         guard let area = box.surfaceArea else {
             Issue.record("Failed to compute surface area")
             return
@@ -59,8 +59,8 @@ struct MeasurementTests {
     }
 
     @Test("Surface area of sphere")
-    func surfaceAreaOfSphere() {
-        let sphere = Shape.sphere(radius: 5)!
+    func surfaceAreaOfSphere() throws {
+        let sphere = try #require(Shape.sphere(radius: 5))
         guard let area = sphere.surfaceArea else {
             Issue.record("Failed to compute surface area")
             return
@@ -73,8 +73,8 @@ struct MeasurementTests {
     // MARK: - Center of Mass Tests
 
     @Test("Center of mass of box at origin")
-    func centerOfMassBox() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func centerOfMassBox() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         guard let center = box.centerOfMass else {
             Issue.record("Failed to compute center of mass")
             return
@@ -86,9 +86,10 @@ struct MeasurementTests {
     }
 
     @Test("Center of mass of translated box")
-    func centerOfMassTranslatedBox() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
-            .translated(by: SIMD3(100, 200, 300))!
+    func centerOfMassTranslatedBox() throws {
+        let box = try #require(
+            Shape.box(width: 10, height: 10, depth: 10)?
+                .translated(by: SIMD3(100, 200, 300)))
         guard let center = box.centerOfMass else {
             Issue.record("Failed to compute center of mass")
             return
@@ -102,8 +103,8 @@ struct MeasurementTests {
     // MARK: - Full Properties Test
 
     @Test("Full shape properties")
-    func fullShapeProperties() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func fullShapeProperties() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         guard let props = box.properties(density: 2.5) else {
             Issue.record("Failed to compute properties")
             return
@@ -122,10 +123,11 @@ struct MeasurementTests {
     // MARK: - Distance Tests
 
     @Test("Distance between separated boxes")
-    func distanceBetweenBoxes() {
-        let box1 = Shape.box(width: 10, height: 10, depth: 10)!
-        let box2 = Shape.box(width: 10, height: 10, depth: 10)!
-            .translated(by: SIMD3(20, 0, 0))!
+    func distanceBetweenBoxes() throws {
+        let box1 = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let box2 = try #require(
+            Shape.box(width: 10, height: 10, depth: 10)?
+                .translated(by: SIMD3(20, 0, 0)))
 
         guard let result = box1.distance(to: box2) else {
             Issue.record("Failed to compute distance")
@@ -136,10 +138,11 @@ struct MeasurementTests {
     }
 
     @Test("Distance between touching boxes")
-    func distanceBetweenTouchingBoxes() {
-        let box1 = Shape.box(width: 10, height: 10, depth: 10)!
-        let box2 = Shape.box(width: 10, height: 10, depth: 10)!
-            .translated(by: SIMD3(10, 0, 0))!
+    func distanceBetweenTouchingBoxes() throws {
+        let box1 = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let box2 = try #require(
+            Shape.box(width: 10, height: 10, depth: 10)?
+                .translated(by: SIMD3(10, 0, 0)))
 
         guard let result = box1.distance(to: box2) else {
             Issue.record("Failed to compute distance")
@@ -150,9 +153,9 @@ struct MeasurementTests {
     }
 
     @Test("Min distance convenience method")
-    func minDistanceConvenience() {
-        let sphere1 = Shape.sphere(radius: 5)!
-        let sphere2 = Shape.sphere(radius: 3)!.translated(by: SIMD3(15, 0, 0))!
+    func minDistanceConvenience() throws {
+        let sphere1 = try #require(Shape.sphere(radius: 5))
+        let sphere2 = try #require(Shape.sphere(radius: 3)?.translated(by: SIMD3(15, 0, 0)))
 
         guard let dist = sphere1.minDistance(to: sphere2) else {
             Issue.record("Failed to compute min distance")
@@ -165,9 +168,9 @@ struct MeasurementTests {
     // MARK: - Intersection Tests
 
     @Test("Intersects - overlapping shapes")
-    func intersectsOverlapping() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
-        let sphere = Shape.sphere(radius: 3)!  // At origin, inside box
+    func intersectsOverlapping() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let sphere = try #require(Shape.sphere(radius: 3))  // At origin, inside box
 
         #expect(box.intersects(sphere))
         // Symmetric: the answer does not depend on which operand is asked.
@@ -175,27 +178,29 @@ struct MeasurementTests {
 
         // The same sphere, once it has been moved clear of the box (its surface 2 past the face
         // at x = 5), is the control that makes "always true" fail here.
-        let moved = sphere.translated(by: SIMD3(10, 0, 0))!
+        let moved = try #require(sphere.translated(by: SIMD3(10, 0, 0)))
         #expect(!box.intersects(moved))
         #expect(!moved.intersects(box))
     }
 
     @Test("Intersects - separated shapes")
-    func intersectsSeparated() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
-        let sphere = Shape.sphere(radius: 3)!
-            .translated(by: SIMD3(50, 0, 0))!  // Far away
+    func intersectsSeparated() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let sphere = try #require(
+            Shape.sphere(radius: 3)?
+                .translated(by: SIMD3(50, 0, 0)))  // Far away
 
         #expect(!box.intersects(sphere))
     }
 
     @Test("Intersects - touching shapes")
-    func intersectsTouching() {
+    func intersectsTouching() throws {
         // Box from -5 to +5 in each axis (centered at origin)
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         // Sphere of radius 5 centered at (10, 0, 0) touches box at x=5
-        let sphere = Shape.sphere(radius: 5)!
-            .translated(by: SIMD3(10, 0, 0))!
+        let sphere = try #require(
+            Shape.sphere(radius: 5)?
+                .translated(by: SIMD3(10, 0, 0)))
 
         // Should be touching or very close
         #expect(box.intersects(sphere, tolerance: 0.1))
@@ -204,8 +209,8 @@ struct MeasurementTests {
     // MARK: - Vertex Tests
 
     @Test("Vertex count of box")
-    func vertexCountBox() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func vertexCountBox() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         #expect(box.vertexCount == 8)
     }
 
@@ -257,8 +262,8 @@ struct MeasurementTests {
     }
 
     @Test("Vertex out of bounds")
-    func vertexOutOfBounds() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func vertexOutOfBounds() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let vertex = box.vertex(at: 100)  // Invalid index
         #expect(vertex == nil)
     }

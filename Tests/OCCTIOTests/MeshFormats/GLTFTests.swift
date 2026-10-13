@@ -76,7 +76,7 @@ struct GLTFTests {
     // #1226 regression: writeGLTF had no guard of any kind, Swift-side or bridge-side, unlike
     // every other exporter in this file.
     @Test func exportGLTFRejectsInvalidShape() throws {
-        let invalid = invalidBowtieShape()
+        let invalid = try invalidBowtieShape()
         #expect(!invalid.isValid)
         let tmpPath = NSTemporaryDirectory() + "test_v121_invalid.glb"
         let url = URL(fileURLWithPath: tmpPath)

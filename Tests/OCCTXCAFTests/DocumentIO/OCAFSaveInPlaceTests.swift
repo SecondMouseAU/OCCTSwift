@@ -9,9 +9,9 @@ import Testing
 struct OCAFSaveInPlaceTests {
 
     @Test("Save in-place after initial save")
-    func saveInPlace() {
-        let doc = Document.create(format: "BinOcaf")!
-        let label = doc.createLabel()!
+    func saveInPlace() throws {
+        let doc = try #require(Document.create(format: "BinOcaf"))
+        let label = try #require(doc.createLabel())
         let tag = label.tag
         #expect(label.setName("Initial"))
 
@@ -41,8 +41,8 @@ struct OCAFSaveInPlaceTests {
     }
 
     @Test("Save in-place fails without prior save")
-    func saveInPlaceFailsWithoutSave() {
-        let doc = Document.create(format: "BinOcaf")!
+    func saveInPlaceFailsWithoutSave() throws {
+        let doc = try #require(Document.create(format: "BinOcaf"))
         let status = doc.saveOCAFInPlace()
         #expect(status != .ok)
     }

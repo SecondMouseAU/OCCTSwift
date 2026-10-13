@@ -21,11 +21,11 @@ struct Issue502SubShapeTraversalTests {
     ///
     /// It is the control: it says the fix did not move the answer for shapes anyone actually has.
     @Test("Typed and generic spellings agree on primitives")
-    func typedAndGenericAgreeOnPrimitives() {
+    func typedAndGenericAgreeOnPrimitives() throws {
         let fixtures: [(String, Shape)] = [
-            ("box", Shape.box(width: 10, height: 5, depth: 3)!),
-            ("sphere", Shape.sphere(radius: 5)!),
-            ("cylinder", Shape.cylinder(radius: 3, height: 8)!),
+            ("box", try #require(Shape.box(width: 10, height: 5, depth: 3))),
+            ("sphere", try #require(Shape.sphere(radius: 5))),
+            ("cylinder", try #require(Shape.cylinder(radius: 3, height: 8))),
         ]
         for (name, shape) in fixtures {
             #expect(shape.solidCount == shape.subShapeCount(ofType: .solid), "\(name) solids")
@@ -58,8 +58,8 @@ struct Issue502SubShapeTraversalTests {
     /// The explorer walk reported two
     /// solids for one body at one location; the map walk reported one. Now both report one.
     @Test("A body compounded with itself counts once")
-    func bodyCompoundedWithItselfCountsOnce() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func bodyCompoundedWithItselfCountsOnce() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         guard let doubled = Shape.compound([box, box]) else {
             Issue.record("compound failed")
             return
@@ -77,8 +77,8 @@ struct Issue502SubShapeTraversalTests {
     /// solids are distinct objects, so the solid count stays 2; it is the shell that is one
     /// shell, seen from two parents.
     @Test("A shell reused by two solids counts once, and the solids still count twice")
-    func shellReusedByTwoSolidsCountsOnce() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func shellReusedByTwoSolidsCountsOnce() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         guard let shell = box.shells.first,
             let s1 = Shape.solidFromShells([shell]),
             let s2 = Shape.solidFromShells([shell]),
@@ -96,11 +96,11 @@ struct Issue502SubShapeTraversalTests {
     /// The wire case, which needs two faces built over one wire, since a face's wire is otherwise
     /// never shared with a second face.
     @Test("A wire reused by two faces counts once")
-    func wireReusedByTwoFacesCountsOnce() {
+    func wireReusedByTwoFacesCountsOnce() throws {
         guard let wire = Wire.rectangle(width: 10, height: 10),
             let planar = Shape.face(from: wire),
             let onPlane = Shape.face(
-                from: Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1))!,
+                from: try #require(Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1))),
                 boundary: wire),
             let both = Shape.compound([planar, onPlane])
         else {
@@ -121,8 +121,8 @@ struct Issue502SubShapeTraversalTests {
     /// Two placements of one body are therefore two solids, not one; without this,
     /// the fix would silently break every assembly that instances a part.
     @Test("Two placements of one body count twice")
-    func twoPlacementsOfOneBodyCountTwice() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func twoPlacementsOfOneBodyCountTwice() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         guard let moved = box.translated(by: SIMD3(50, 0, 0)),
             let assembly = Shape.compound([box, moved])
         else {
@@ -138,9 +138,9 @@ struct Issue502SubShapeTraversalTests {
 
     /// Two genuinely different bodies, so nothing to collapse.
     @Test("Two distinct bodies count twice")
-    func twoDistinctBodiesCountTwice() {
-        let a = Shape.box(width: 10, height: 10, depth: 10)!
-        let b = Shape.box(origin: SIMD3(50, 0, 0), width: 4, height: 4, depth: 4)!
+    func twoDistinctBodiesCountTwice() throws {
+        let a = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let b = try #require(Shape.box(origin: SIMD3(50, 0, 0), width: 4, height: 4, depth: 4))
         guard let compound = Shape.compound([a, b]) else {
             Issue.record("compound failed")
             return
@@ -159,9 +159,11 @@ struct Issue502SubShapeTraversalTests {
     /// Both spellings must
     /// therefore hand back the same sub-shapes in the same order, element by element.
     @Test("Both spellings enumerate in the same order")
-    func bothSpellingsEnumerateInTheSameOrder() {
+    func bothSpellingsEnumerateInTheSameOrder() throws {
         guard let hollow = Issue211OuterShell.hollowSolid(),
-            let assembly = Shape.compound([hollow, hollow.translated(by: SIMD3(40, 0, 0))!])
+            let assembly = try Shape.compound([
+                hollow, #require(hollow.translated(by: SIMD3(40, 0, 0))),
+            ])
         else {
             Issue.record("fixture failed")
             return
@@ -184,8 +186,8 @@ struct Issue502SubShapeTraversalTests {
 
     /// The indexed accessor reads out of the same enumeration as the array accessor.
     @Test("Indexed and array access return the same sub-shape")
-    func indexedAndArrayAccessMatch() {
-        let hollow = Issue211OuterShell.hollowSolid()!
+    func indexedAndArrayAccessMatch() throws {
+        let hollow = try #require(Issue211OuterShell.hollowSolid())
         let shells = hollow.shells
         #expect(shells.count == 2)
         for i in 0..<shells.count {
@@ -207,8 +209,8 @@ struct Issue502SubShapeTraversalTests {
     /// is the reason #502 resolves toward deduplication rather than away from it: a box has 12
     /// edges, not the 24 edge *occurrences* an explorer walk yields.
     @Test("A box has 12 edges and 8 vertices under every spelling")
-    func boxEdgeAndVertexCountsAreDeduplicated() {
-        let box = Shape.box(width: 10, height: 5, depth: 3)!
+    func boxEdgeAndVertexCountsAreDeduplicated() throws {
+        let box = try #require(Shape.box(width: 10, height: 5, depth: 3))
         #expect(box.edgeCount == 12)
         #expect(box.subShapeCount(ofType: .edge) == 12)
         #expect(box.vertexCount == 8)
@@ -219,8 +221,8 @@ struct Issue502SubShapeTraversalTests {
     /// An out-of-domain `ShapeType` raw value reaches `TopAbs_ShapeEnum` as a cast; it must
     /// answer 0 rather than throw or crash.
     @Test("Unknown shape type counts zero")
-    func unknownShapeTypeCountsZero() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func unknownShapeTypeCountsZero() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         #expect(box.subShapeCount(ofType: .unknown) == 0)
         #expect(box.subShapes(ofType: .unknown).isEmpty)
         #expect(box.subShape(type: .unknown, index: 0) == nil)
@@ -229,8 +231,8 @@ struct Issue502SubShapeTraversalTests {
 
     /// A shape with none of the requested type, on both spellings.
     @Test("A vertex has no solids, shells or wires")
-    func vertexHasNoSolidsShellsOrWires() {
-        let vertex = Shape.vertex(at: SIMD3(0, 0, 0))!
+    func vertexHasNoSolidsShellsOrWires() throws {
+        let vertex = try #require(Shape.vertex(at: SIMD3(0, 0, 0)))
         #expect(vertex.solidCount == 0)
         #expect(vertex.solids.isEmpty)
         #expect(vertex.shellCount == 0)

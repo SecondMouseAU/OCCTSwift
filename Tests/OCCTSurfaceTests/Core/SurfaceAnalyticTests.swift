@@ -12,8 +12,8 @@ struct SurfaceAnalyticTests {
     // Geom_ surfaces (GC_MakePlane, Geom_Spherical/Cylindrical/Conical/ToroidalSurface), see
     // Scripts/repro/766-surface-analytic/.
     @Test("Create plane and evaluate point")
-    func planeEvaluation() {
-        let plane = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1))!
+    func planeEvaluation() throws {
+        let plane = try #require(Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1)))
         let dom = plane.domain
         // Plane is infinite, domain should be very large
         #expect(dom.uMin < -1e5)
@@ -28,8 +28,8 @@ struct SurfaceAnalyticTests {
     }
 
     @Test("Plane normal is consistent")
-    func planeNormal() {
-        let plane = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1))!
+    func planeNormal() throws {
+        let plane = try #require(Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1)))
         let n = plane.normal(atU: 0, v: 0)
         #expect(n != nil)
         if let n = n {
@@ -40,8 +40,8 @@ struct SurfaceAnalyticTests {
     }
 
     @Test("Create sphere and check properties")
-    func sphereProperties() {
-        let sphere = Surface.sphere(center: .zero, radius: 5)!
+    func sphereProperties() throws {
+        let sphere = try #require(Surface.sphere(center: .zero, radius: 5))
         // Sphere is U-periodic (wraps around). It is NOT V-closed in OCCT's own technical sense
         // (`Geom_SphericalSurface::IsVClosed()` returns False, per its own header comment): the
         // poles at V = -pi/2 and V = +pi/2 are DEGENERATE points, not a matching pair of points at
@@ -64,8 +64,8 @@ struct SurfaceAnalyticTests {
     // (`IsUClosed`/`IsVClosed`, each documented as an unconditional `Returns True.`/`Returns
     // False.`), not values measured from this bridge.
     @Test("Closure flags (isUClosed/isVClosed) match each analytic surface's own documented answer")
-    func closureFlags() {
-        let plane = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1))!
+    func closureFlags() throws {
+        let plane = try #require(Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1)))
         #expect(plane.isUClosed == false)
         #expect(plane.isVClosed == false)
 
@@ -76,7 +76,7 @@ struct SurfaceAnalyticTests {
             #expect(cyl.isVClosed == false)
         }
 
-        let sphere = Surface.sphere(center: .zero, radius: 5)!
+        let sphere = try #require(Surface.sphere(center: .zero, radius: 5))
         #expect(sphere.isUClosed == true)
         #expect(sphere.isVClosed == false)
 
@@ -90,9 +90,9 @@ struct SurfaceAnalyticTests {
     }
 
     @Test("Sphere point evaluation")
-    func sphereEvaluation() {
+    func sphereEvaluation() throws {
         let r: Double = 5
-        let sphere = Surface.sphere(center: .zero, radius: r)!
+        let sphere = try #require(Surface.sphere(center: .zero, radius: r))
         // At u=0, v=0 → should be on equator at (r, 0, 0) in standard parametrization
         let p = sphere.point(atU: 0, v: 0)
         let dist = vectorLength(p)
@@ -144,18 +144,18 @@ struct SurfaceAnalyticTests {
     }
 
     @Test("Sphere Gaussian curvature = 1/r²")
-    func sphereGaussianCurvature() {
+    func sphereGaussianCurvature() throws {
         let r: Double = 5
-        let sphere = Surface.sphere(center: .zero, radius: r)!
+        let sphere = try #require(Surface.sphere(center: .zero, radius: r))
         let gc = sphere.gaussianCurvature(atU: 0.5, v: 0.3)
         let expected: Double = 1.0 / (r * r)
         if let gc { #expect(abs(gc - expected) < 1e-10) } else { Issue.record("no curvature") }
     }
 
     @Test("Sphere mean curvature = 1/r")
-    func sphereMeanCurvature() {
+    func sphereMeanCurvature() throws {
         let r: Double = 5
-        let sphere = Surface.sphere(center: .zero, radius: r)!
+        let sphere = try #require(Surface.sphere(center: .zero, radius: r))
         let mc = sphere.meanCurvature(atU: 0.5, v: 0.3)
         let expected: Double = 1.0 / r
         // The kernel's mean curvature is signed: -1/r with the sphere's outward normal.
@@ -168,8 +168,8 @@ struct SurfaceAnalyticTests {
     }
 
     @Test("Plane Gaussian curvature = 0")
-    func planeGaussianCurvature() {
-        let plane = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1))!
+    func planeGaussianCurvature() throws {
+        let plane = try #require(Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1)))
         // #595: a plane's Gaussian curvature is 0 and defined, so this asserts a reported 0, not nil.
         let gc = plane.gaussianCurvature(atU: 0, v: 0)
         if let gc {
@@ -180,9 +180,9 @@ struct SurfaceAnalyticTests {
     }
 
     @Test("Cylinder principal curvatures = (0, 1/r)")
-    func cylinderPrincipalCurvatures() {
+    func cylinderPrincipalCurvatures() throws {
         let r: Double = 4.0
-        let cyl = Surface.cylinder(origin: .zero, axis: SIMD3(0, 0, 1), radius: r)!
+        let cyl = try #require(Surface.cylinder(origin: .zero, axis: SIMD3(0, 0, 1), radius: r))
         let pc = cyl.principalCurvatures(atU: 0.5, v: 1.0)
         #expect(pc != nil)
         if let pc = pc {

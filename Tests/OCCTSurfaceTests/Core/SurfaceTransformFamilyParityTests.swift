@@ -21,8 +21,8 @@ struct SurfaceTransformFamilyParityTests {
 
     /// Bounded on both parameters, so sampling its own domain is well defined
     /// (a plane's or cylinder's domain runs to ±1e100 and cannot be gridded).
-    private func sphere() -> Surface {
-        Surface.sphere(center: SIMD3(1, 2, 3), radius: 4)!
+    private func sphere() throws -> Surface {
+        try #require(Surface.sphere(center: SIMD3(1, 2, 3), radius: 4))
     }
 
     private func points(on surface: Surface, steps: Int = 4) -> [SIMD3<Double>] {
@@ -50,8 +50,8 @@ struct SurfaceTransformFamilyParityTests {
     }
 
     @Test("translate vs translated(by:)")
-    func translateParity() {
-        let base = sphere()
+    func translateParity() throws {
+        let base = try sphere()
         let copy = base.translated(by: SIMD3(3, -2, 1.5))
         let ok = base.translate(dx: 3, dy: -2, dz: 1.5)
         #expect(ok)
@@ -62,8 +62,8 @@ struct SurfaceTransformFamilyParityTests {
     }
 
     @Test("rotate vs rotated(axisOrigin:axisDirection:angle:)")
-    func rotateParity() {
-        let base = sphere()
+    func rotateParity() throws {
+        let base = try sphere()
         let axisOrigin = SIMD3<Double>(0, 0, 0)
         let axisDirection = SIMD3<Double>(0, 0, 1)
         let angle = Double.pi / 3
@@ -77,8 +77,8 @@ struct SurfaceTransformFamilyParityTests {
     }
 
     @Test("scale vs scaled(center:factor:)")
-    func scaleParity() {
-        let base = sphere()
+    func scaleParity() throws {
+        let base = try sphere()
         let center = SIMD3<Double>(0, 0, 0)
         let copy = base.scaled(center: center, factor: 2.5)
         let ok = base.scale(center: center, factor: 2.5)
@@ -90,8 +90,8 @@ struct SurfaceTransformFamilyParityTests {
     }
 
     @Test("mirrorPoint vs mirrored(acrossPoint:)")
-    func mirrorPointParity() {
-        let base = sphere()
+    func mirrorPointParity() throws {
+        let base = try sphere()
         let point = SIMD3<Double>(1, 1, 1)
         let copy = base.mirrored(acrossPoint: point)
         let ok = base.mirrorPoint(point)
@@ -103,8 +103,8 @@ struct SurfaceTransformFamilyParityTests {
     }
 
     @Test("mirrorAxis vs mirrored(acrossAxis:direction:)")
-    func mirrorAxisParity() {
-        let base = sphere()
+    func mirrorAxisParity() throws {
+        let base = try sphere()
         let origin = SIMD3<Double>(0, 0, 0)
         let direction = SIMD3<Double>(1, 0, 0)
         let copy = base.mirrored(acrossAxis: origin, direction: direction)
@@ -117,8 +117,8 @@ struct SurfaceTransformFamilyParityTests {
     }
 
     @Test("mirrorPlane vs mirrored(planeOrigin:planeNormal:)")
-    func mirrorPlaneParity() {
-        let base = sphere()
+    func mirrorPlaneParity() throws {
+        let base = try sphere()
         let origin = SIMD3<Double>(0, 0, 0)
         let normal = SIMD3<Double>(0, 0, 1)
         let copy = base.mirrored(planeOrigin: origin, planeNormal: normal)

@@ -24,7 +24,7 @@ struct Issue1504IGESFormatDefectsTests {
     private static let sentinel = -987_654.5
 
     private static func makeIGESFile() throws -> URL {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let url = FileManager.default.temporaryDirectory
             .appendingPathComponent("occt1504_source.iges")
         try box.writeIGES(to: url)
@@ -75,7 +75,7 @@ struct Issue1504IGESFormatDefectsTests {
     /// still rejects it (its 3D-curve transfer produces a null IGES entity), the narrower gap
     /// #1504 identifies as still live after #1226.
     private static func degenerateApexEdgeShape() throws -> Shape {
-        let cone = Shape.cone(bottomRadius: 10, topRadius: 0, height: 20)!
+        let cone = try #require(Shape.cone(bottomRadius: 10, topRadius: 0, height: 20))
         guard let degenerateEdge = cone.edges().first(where: { !$0.hasCurve3D }) else {
             throw TestFailure.setup("expected the cone to have a degenerate apex edge")
         }
@@ -100,7 +100,7 @@ struct Issue1504IGESFormatDefectsTests {
         let degenerate = try Self.degenerateApexEdgeShape()
         #expect(degenerate.isValid)  // passes #1226's client-side filter
 
-        let box = Shape.box(width: 10, height: 20, depth: 30)!
+        let box = try #require(Shape.box(width: 10, height: 20, depth: 30))
         let tmpPath = NSTemporaryDirectory() + "swift_test_1504_iges_multi_addshape_reject.iges"
         let url = URL(fileURLWithPath: tmpPath)
         defer { try? FileManager.default.removeItem(atPath: tmpPath) }
@@ -118,8 +118,8 @@ struct Issue1504IGESFormatDefectsTests {
 
     @Test("A batch of only AddShape-acceptable shapes still exports normally (#1504 control)")
     func exportMultiShapeStillSucceedsForOrdinaryShapes() throws {
-        let box = Shape.box(width: 10, height: 20, depth: 30)!
-        let sphere = Shape.sphere(radius: 5)!
+        let box = try #require(Shape.box(width: 10, height: 20, depth: 30))
+        let sphere = try #require(Shape.sphere(radius: 5))
         let tmpPath = NSTemporaryDirectory() + "swift_test_1504_iges_multi_ok.iges"
         let url = URL(fileURLWithPath: tmpPath)
         defer { try? FileManager.default.removeItem(atPath: tmpPath) }

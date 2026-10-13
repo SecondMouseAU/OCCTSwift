@@ -1,6 +1,6 @@
 # #1057: `@Test(arguments:)` over a mixed tuple corrupts the Swift task allocator
 
-`Tests/OCCTThreadTests/Construction/Issue990ThreadAxisBasisTests.swift` used to carry a comment attributing a
+`Tests/OCCTThreadTests/Construction/ThreadAxisBasisTests.swift` used to carry a comment attributing a
 SIGSEGV to OCCT and linking it to #344/#345. It is not OCCT. It is a toolchain defect, it needs no
 OCCT, no bridge and no `OCCT.xcframework`, and it reproduces in a package with nothing in it.
 
@@ -347,7 +347,7 @@ those five phantom rows reads **AT RISK**, since the same paragraph names `SIMD3
 and `Array` while explaining the rule.
 
 One row the script answers on its own is worth naming:
-`Tests/OCCTBRepGraphTests/ConstructionEntities/Issue881PerpendicularBasisTests.swift:76`, the only site writing SIMD
+`Tests/OCCTBRepGraphTests/ConstructionEntities/ConstructionPerpendicularBasisTests.swift:76`, the only site writing SIMD
 types out in full, element `(SIMD3<Double>, SIMD3<Double>, SIMD3<Double>)`, no reference-counted
 member, matching clean cell C.
 
@@ -355,7 +355,7 @@ The 9 `unknown` rows, adjudicated by opening each type:
 
 | site | named type | why it is clean |
 |---|---|---|
-| `Issue522ApproxC0CollapseTests.swift:80` | `ParametricContinuity` | `enum ...: Int32`, no payload |
+| `ApproxC0CollapseTests.swift:80` | `ParametricContinuity` | `enum ...: Int32`, no payload |
 | `Issue490ContinuityDecoderTests.swift:37` | `ParametricContinuity` | same |
 | `Issue570HealingApproxTests.swift:121` | `ParametricContinuity` | same |
 | `Issue438DivideContinuityUnificationTests.swift:58` | `Shape.ContinuityLevel` | `enum ...: Int32`, no payload |
@@ -363,7 +363,7 @@ The 9 `unknown` rows, adjudicated by opening each type:
 | `ThreadFormsTests.swift:66` | `ThreadForm` | `enum ...: String`, no payload, a tag byte |
 | `ThreadFormsTests.swift:84` | `ThreadForm` | same |
 | `ThreadFormsTests.swift:17` | `ThreadFormsTests.smoothForms` | a `[ThreadForm]`, same as above |
-| `Issue991ThreadProfileFlatWidthTests.swift:20` | `ThreadProfile` | one stored property, `[Vertex]`: reference-counted, but no vector and nothing wider than a word |
+| `ThreadProfileFlatWidthTests.swift:20` | `ThreadProfile` | one stored property, `[Vertex]`: reference-counted, but no vector and nothing wider than a word |
 
 `Issue991ThreadProfileFlatWidthTests` is the nearest miss in the tree, since it genuinely pairs a
 `String` with a struct. The struct is what saves it.

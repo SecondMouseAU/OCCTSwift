@@ -8,13 +8,14 @@ import Testing
 struct FuseAndBlendTests {
 
     @Test("Fuse two overlapping boxes with blend")
-    func fuseBlendBoxes() {
-        let box1 = Shape.box(width: 10, height: 10, depth: 10)!
-        let box2 = Shape.box(width: 10, height: 10, depth: 10)!.translated(by: SIMD3(5, 0, 0))!
+    func fuseBlendBoxes() throws {
+        let box1 = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let box2 = try #require(
+            Shape.box(width: 10, height: 10, depth: 10)?.translated(by: SIMD3(5, 0, 0)))
         let result = box1.fusedAndBlended(with: box2, radius: 1.0)
         #expect(result != nil)
         if let r = result {
-            #expect(r.volume! > 1000.0)
+            #expect(try #require(r.volume) > 1000.0)
             #expect(r.isValid)
         }
     }
@@ -44,14 +45,15 @@ struct FuseAndBlendTests {
     }
 
     @Test("Cut and blend")
-    func cutBlend() {
-        let box = Shape.box(width: 20, height: 20, depth: 20)!.translated(by: SIMD3(-10, -10, 0))!
-        let cyl = Shape.cylinder(radius: 5, height: 25)!
+    func cutBlend() throws {
+        let box = try #require(
+            Shape.box(width: 20, height: 20, depth: 20)?.translated(by: SIMD3(-10, -10, 0)))
+        let cyl = try #require(Shape.cylinder(radius: 5, height: 25))
         let result = box.cutAndBlended(with: cyl, radius: 1.0)
         #expect(result != nil)
         if let r = result {
             #expect(r.isValid)
-            #expect(r.volume! < 8000.0)
+            #expect(try #require(r.volume) < 8000.0)
         }
     }
 }

@@ -28,7 +28,7 @@
 // 341's shared_adaptor_cache and obj_roundtrip_shared modes are excluded there: a mode that is
 // expected to race gates nothing. The FIX is bridge-side (tobjApplicationMutex), and the thing
 // that verifies it is `Scripts/tsan-stress.sh swift` over
-// Tests/OCCTThreadTests/Concurrency/Issue1404TObjApplicationThreadSafetyTests.swift, which reaches the
+// Tests/OCCTThreadTests/Concurrency/TObjApplicationThreadSafetyTests.swift, which reaches the
 // singleton the way a consumer actually does.
 //
 // Usage: occt_1404_stress <mode> <threads> <iterations>

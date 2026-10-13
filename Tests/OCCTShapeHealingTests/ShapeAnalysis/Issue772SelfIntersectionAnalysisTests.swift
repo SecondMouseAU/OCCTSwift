@@ -47,15 +47,15 @@ struct Issue772SelfIntersectionAnalysis {
     /// self-intersection check is already known to resolve quickly and conclusively for, rather
     /// than the #319 pathological artifact (which takes ~30s and belongs in the timing harness,
     /// not the test suite).
-    func overlappingCompound() -> Shape {
-        let a = Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10)!
-        let b = Shape.box(origin: SIMD3(5, 0, 0), width: 10, height: 10, depth: 10)!
-        return Shape.compound([a, b])!
+    func overlappingCompound() throws -> Shape {
+        let a = try #require(Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10))
+        let b = try #require(Shape.box(origin: SIMD3(5, 0, 0), width: 10, height: 10, depth: 10))
+        return try #require(Shape.compound([a, b]))
     }
 
     @Test("default analyze() does not check self-intersection: hasSelfIntersection is nil")
     func defaultDoesNotCheck() throws {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let analysis = try #require(box.analyze(tolerance: 0.001))
         #expect(analysis.hasSelfIntersection == nil)
 
@@ -67,14 +67,14 @@ struct Issue772SelfIntersectionAnalysis {
 
     @Test("a non-nil selfIntersectionTimeout on a clean shape populates false")
     func nonNilTimeoutOnCleanShapePopulatesFalse() throws {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let analysis = try #require(box.analyze(tolerance: 0.001, selfIntersectionTimeout: 30))
         #expect(analysis.hasSelfIntersection == false)
     }
 
     @Test("a non-nil selfIntersectionTimeout on a self-intersecting shape populates true")
     func nonNilTimeoutOnSelfIntersectingShapePopulatesTrue() throws {
-        let overlapping = overlappingCompound()
+        let overlapping = try overlappingCompound()
         let analysis = try #require(
             overlapping.analyze(tolerance: 0.001, selfIntersectionTimeout: 30))
         #expect(analysis.hasSelfIntersection == true)
@@ -82,7 +82,7 @@ struct Issue772SelfIntersectionAnalysis {
 
     @Test("totalProblems includes self-intersection only when it was actually checked and found")
     func totalProblemsReflectsOnlyWhatWasChecked() throws {
-        let overlapping = overlappingCompound()
+        let overlapping = try overlappingCompound()
 
         let unchecked = try #require(overlapping.analyze(tolerance: 0.001))
         let checked = try #require(
@@ -108,7 +108,7 @@ struct Issue772SelfIntersectionAnalysis {
     /// exist as a spelling on the new one (there is no `hardTimeout:` label on `analyze` at all).
     @Test("supplying a timeout IS opting in; there is no separate flag left to forget")
     func timeoutAloneCannotBeSuppliedWithoutOptingIn() throws {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         // Old, no-longer-expressible footgun: box.analyze(tolerance: 0.001, hardTimeout: 5)
         // would compile, run, and silently return hasSelfIntersection == nil.
         let analysis = try #require(box.analyze(tolerance: 0.001, selfIntersectionTimeout: 5))

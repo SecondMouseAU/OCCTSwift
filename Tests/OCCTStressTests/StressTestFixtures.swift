@@ -29,28 +29,28 @@ import Testing
 // MARK: - Shape Fixtures
 
 /// Fresh 10×10×10 box centered at origin.
-func standardBox() -> Shape {
-    Shape.box(width: 10, height: 10, depth: 10)!
+func standardBox() throws -> Shape {
+    try #require(Shape.box(width: 10, height: 10, depth: 10))
 }
 
 /// Fresh cylinder r=5, h=10.
-func standardCylinder() -> Shape {
-    Shape.cylinder(radius: 5, height: 10)!
+func standardCylinder() throws -> Shape {
+    try #require(Shape.cylinder(radius: 5, height: 10))
 }
 
 /// Fresh sphere r=5.
-func standardSphere() -> Shape {
-    Shape.sphere(radius: 5)!
+func standardSphere() throws -> Shape {
+    try #require(Shape.sphere(radius: 5))
 }
 
 /// Fresh cone r1=5, r2=2, h=10.
-func standardCone() -> Shape {
-    Shape.cone(bottomRadius: 5, topRadius: 2, height: 10)!
+func standardCone() throws -> Shape {
+    try #require(Shape.cone(bottomRadius: 5, topRadius: 2, height: 10))
 }
 
 /// Fresh torus R=10, r=3.
-func standardTorus() -> Shape {
-    Shape.torus(majorRadius: 10, minorRadius: 3)!
+func standardTorus() throws -> Shape {
+    try #require(Shape.torus(majorRadius: 10, minorRadius: 3))
 }
 
 /// Box with r=1 fillet on all edges.
@@ -61,7 +61,7 @@ func standardTorus() -> Shape {
 /// face-count check is the cheap structural delta that proves the fillet did something, which
 /// `#require`'s non-nil alone does not.
 func filletedBox() throws -> Shape {
-    let box = standardBox()
+    let box = try standardBox()
     let filleted = try #require(
         box.filleted(radius: 1.0), "filletedBox fixture could not be built")
     // A fillet replaces each target edge with at least one new face, so the count has to rise.
@@ -76,7 +76,7 @@ func filletedBox() throws -> Shape {
 ///
 /// Throws rather than returning the undrilled plate, for the reason on ``filletedBox()``.
 func drilledPlate() throws -> Shape {
-    let plate = Shape.box(width: 50, height: 50, depth: 5)!
+    let plate = try #require(Shape.box(width: 50, height: 50, depth: 5))
     let drilled = try #require(
         plate.drilled(at: SIMD3(0, 0, 5), direction: SIMD3(0, 0, -1), radius: 3, depth: 0),
         "drilledPlate fixture could not be built")
@@ -96,8 +96,8 @@ func drilledPlate() throws -> Shape {
 ///
 /// Throws rather than returning the bare box, for the reason on ``filletedBox()``.
 func standardCompound() throws -> Shape {
-    let box = standardBox()
-    let cyl = standardCylinder()
+    let box = try standardBox()
+    let cyl = try standardCylinder()
     let fused = try #require(box.union(cyl), "compound fixture could not be built")
     // The fuse has to have added the cylinder, or the fixture is the box under another name.
     let boxVolume = try #require(box.volume)
@@ -127,7 +127,7 @@ func standardCompound() throws -> Shape {
 /// `FilletTestFixtures.openShell()` and `makeOpenShellFromBox()` in the Modeling and Analysis
 /// targets; each test target is its own module, so the helper is repeated rather than shared.
 func openShell() throws -> Shape {
-    let box = standardBox()
+    let box = try standardBox()
     let faces = box.faces().compactMap { Shape.fromFace($0) }
     try #require(faces.count == 6, "standardBox() should offer 6 faces, got \(faces.count)")
     let shell = try #require(
@@ -172,54 +172,55 @@ func loftedSolid() throws -> Shape {
 // MARK: - Wire Fixtures
 
 /// 10×10 rectangle wire.
-func standardWire() -> Wire {
-    Wire.rectangle(width: 10, height: 10)!
+func standardWire() throws -> Wire {
+    try #require(Wire.rectangle(width: 10, height: 10))
 }
 
 // MARK: - Curve Fixtures
 
 /// Circle curve in XY plane, r=5.
-func standardCurve3D() -> Curve3D {
-    Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5)!
+func standardCurve3D() throws -> Curve3D {
+    try #require(Curve3D.circle(center: .zero, normal: SIMD3(0, 0, 1), radius: 5))
 }
 
 /// Circle curve in 2D, r=5.
-func standardCurve2D() -> Curve2D {
-    Curve2D.circle(center: SIMD2(0, 0), radius: 5)!
+func standardCurve2D() throws -> Curve2D {
+    try #require(Curve2D.circle(center: SIMD2(0, 0), radius: 5))
 }
 
 /// Interpolated 5-point cubic BSpline.
-func standardBSplineCurve() -> Curve3D {
-    Curve3D.interpolate(points: [
-        SIMD3(0, 0, 0), SIMD3(3, 4, 0), SIMD3(8, 3, 0),
-        SIMD3(12, 6, 0), SIMD3(15, 0, 0),
-    ])!
+func standardBSplineCurve() throws -> Curve3D {
+    try #require(
+        Curve3D.interpolate(points: [
+            SIMD3(0, 0, 0), SIMD3(3, 4, 0), SIMD3(8, 3, 0),
+            SIMD3(12, 6, 0), SIMD3(15, 0, 0),
+        ]))
 }
 
 // MARK: - Surface Fixtures
 
 /// Plane through origin with Z-up normal.
-func standardSurface() -> Surface {
-    Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1))!
+func standardSurface() throws -> Surface {
+    try #require(Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1)))
 }
 
 /// 4×4 Bezier surface patch.
-func standardBezierSurface() -> Surface {
+func standardBezierSurface() throws -> Surface {
     let poles: [[SIMD3<Double>]] = [
         [SIMD3(0, 0, 0), SIMD3(5, 0, 0), SIMD3(10, 0, 0), SIMD3(15, 0, 0)],
         [SIMD3(0, 5, 0), SIMD3(5, 5, 2), SIMD3(10, 5, 2), SIMD3(15, 5, 0)],
         [SIMD3(0, 10, 0), SIMD3(5, 10, 2), SIMD3(10, 10, 2), SIMD3(15, 10, 0)],
         [SIMD3(0, 15, 0), SIMD3(5, 15, 0), SIMD3(10, 15, 0), SIMD3(15, 15, 0)],
     ]
-    return Surface.bezier(poles: poles)!
+    return try #require(Surface.bezier(poles: poles))
 }
 
 // MARK: - Document Fixtures
 
 /// XDE document with one box.
-func standardDocument() -> Document {
-    let doc = Document.create()!
-    let box = standardBox()
+func standardDocument() throws -> Document {
+    let doc = try #require(Document.create())
+    let box = try standardBox()
     doc.addShape(box)
     return doc
 }
@@ -263,11 +264,11 @@ let standardShapeNames = [
 /// ```
 func allStandardShapes() throws -> [(String, Shape)] {
     let shapes: [(String, Shape)] = [
-        ("box", standardBox()),
-        ("cylinder", standardCylinder()),
-        ("sphere", standardSphere()),
-        ("cone", standardCone()),
-        ("torus", standardTorus()),
+        ("box", try standardBox()),
+        ("cylinder", try standardCylinder()),
+        ("sphere", try standardSphere()),
+        ("cone", try standardCone()),
+        ("torus", try standardTorus()),
         ("filletedBox", try filletedBox()),
         ("drilledPlate", try drilledPlate()),
         ("compound", try standardCompound()),

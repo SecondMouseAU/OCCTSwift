@@ -203,9 +203,9 @@ struct StressRoundTripBREPStringTests {
     /// only through the other fixtures' figures, never by saying that the strings coincide.
     @Test func distinctShapesWriteDistinctStrings() throws {
         let fixtures: [(String, Shape)] = [
-            ("box", standardBox()), ("cylinder", standardCylinder()),
-            ("sphere", standardSphere()), ("cone", standardCone()),
-            ("torus", standardTorus()), ("filletedBox", try filletedBox()),
+            ("box", try standardBox()), ("cylinder", try standardCylinder()),
+            ("sphere", try standardSphere()), ("cone", try standardCone()),
+            ("torus", try standardTorus()), ("filletedBox", try filletedBox()),
             ("drilledPlate", try drilledPlate()), ("compound", try standardCompound()),
         ]
         var strings: [String] = []
@@ -231,8 +231,8 @@ struct StressRoundTripSTLTests {
         let reimported = try Shape.loadSTL(from: url)
         #expect(reimported.isValid, "STL round-trip failed for \(name)")
         // STL loses topology, just verify bounding box roughly matches
-        let origBounds = shape.bounds!
-        let reimBounds = reimported.bounds!
+        let origBounds = try #require(shape.bounds)
+        let reimBounds = try #require(reimported.bounds)
         let origSize = origBounds.max - origBounds.min
         let reimSize = reimBounds.max - reimBounds.min
         // Size should be within 10% (STL mesh approximation)
@@ -322,7 +322,7 @@ struct StressRoundTripIGESTests {
 struct StressCrossFormatConsistencyTests {
 
     @Test func boxAllBRepFormats() throws {
-        let box = standardBox()
+        let box = try standardBox()
         let origVol = box.volume ?? 0
 
         // STEP
@@ -362,8 +362,8 @@ struct StressCrossFormatConsistencyTests {
     }
 
     @Test func cylinderSTEPvsBREP() throws {
-        let cyl = standardCylinder()
-        let origVol = cyl.volume!
+        let cyl = try standardCylinder()
+        let origVol = try #require(cyl.volume)
 
         let stepURL = tempURL("step")
         let brepURL = tempURL("brep")
