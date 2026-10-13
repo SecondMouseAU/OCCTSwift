@@ -22,8 +22,8 @@ struct PolylinePickTests {
     }
 
     @Test("Polygon enclosing shape returns hit")
-    func polygonHit() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func polygonHit() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let cam = makeCamera()
         let selector = Selector()
         selector.add(shape: box, id: 1)
@@ -46,8 +46,8 @@ struct PolylinePickTests {
     }
 
     @Test("Polygon missing shape returns empty")
-    func polygonMiss() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func polygonMiss() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let cam = makeCamera()
         let selector = Selector()
         selector.add(shape: box, id: 1)
@@ -77,8 +77,8 @@ struct PolylinePickTests {
     }
 
     @Test("Triangular polygon selects shape")
-    func triangularPolygon() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func triangularPolygon() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let cam = makeCamera()
         let selector = Selector()
         selector.add(shape: box, id: 42)

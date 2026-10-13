@@ -31,7 +31,7 @@ struct DrawingTests {
 
     @Test("Create 2D projection of box")
     func project2DBox() throws {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         guard let drawing = Drawing.project(box, direction: SIMD3(0, 0, 1)) else {
             Issue.record("Failed to create projection")
             return
@@ -43,7 +43,7 @@ struct DrawingTests {
 
     @Test("Get visible edges from projection")
     func visibleEdges() throws {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         guard let drawing = Drawing.isometricView(of: box) else {
             Issue.record("Failed to create projection")
             return
@@ -57,7 +57,7 @@ struct DrawingTests {
 
     @Test("Get hidden edges from isometric view")
     func hiddenEdgesIsometric() throws {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         guard let drawing = Drawing.isometricView(of: box) else {
             Issue.record("Failed to create isometric view")
             return
@@ -78,8 +78,8 @@ struct DrawingTests {
     // directly against the unfixed bridge before this test was written: `edges(ofType: .hidden)`
     // returned a non-nil `Shape` with `edgeCount == 0`, for both directions below.
     @Test("Hidden edges are nil for a convex shape with no self-occlusion (#1421)")
-    func hiddenEdgesNilForConvexShapeWithNoSelfOcclusion() {
-        let sphere = Shape.sphere(radius: 10)!
+    func hiddenEdgesNilForConvexShapeWithNoSelfOcclusion() throws {
+        let sphere = try #require(Shape.sphere(radius: 10))
 
         guard let drawing = Drawing.project(sphere, direction: SIMD3(0, 0, 1)) else {
             Issue.record("Failed to create projection")
@@ -105,8 +105,8 @@ struct DrawingTests {
     // (visibleEdges), never from outline. Confirmed against the unfixed bridge the same way as
     // above: `edges(ofType: .outline)` returned a non-nil `Shape` with `edgeCount == 0`.
     @Test("Outline edges are nil for a shape with no curved surfaces (#1421)")
-    func outlineEdgesNilForShapeWithNoSilhouette() {
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+    func outlineEdgesNilForShapeWithNoSilhouette() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         guard let drawing = Drawing.project(box, direction: SIMD3(0, 0, 1)) else {
             Issue.record("Failed to create projection")
             return
@@ -117,7 +117,7 @@ struct DrawingTests {
 
     @Test("Standard views")
     func standardViews() throws {
-        let box = Shape.box(width: 10, height: 20, depth: 30)!
+        let box = try #require(Shape.box(width: 10, height: 20, depth: 30))
 
         // Each view is the box's rectangle in that view's gp_Ax2 frame: 10 x 20 from the top,
         // 30 x 10 from the front, 30 x 20 from the side.
