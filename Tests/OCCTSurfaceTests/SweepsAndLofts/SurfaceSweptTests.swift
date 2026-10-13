@@ -6,8 +6,8 @@ import Testing
 @Suite("Surface Swept")
 struct SurfaceSweptTests {
     @Test("Extrusion of line creates ruled surface")
-    func linearExtrusion() {
-        let line = Curve3D.segment(from: SIMD3(0, 0, 0), to: SIMD3(10, 0, 0))!
+    func linearExtrusion() throws {
+        let line = try #require(Curve3D.segment(from: SIMD3(0, 0, 0), to: SIMD3(10, 0, 0)))
         let ext = Surface.extrusion(profile: line, direction: SIMD3(0, 0, 5))
         #expect(ext != nil)
         if let ext = ext {
@@ -21,9 +21,9 @@ struct SurfaceSweptTests {
     }
 
     @Test("Revolution of line creates cylinder-like surface")
-    func revolution() {
+    func revolution() throws {
         // Line at x=5, parallel to Z axis → revolve around Z → cylinder r=5
-        let line = Curve3D.segment(from: SIMD3(5, 0, 0), to: SIMD3(5, 0, 10))!
+        let line = try #require(Curve3D.segment(from: SIMD3(5, 0, 0), to: SIMD3(5, 0, 10)))
         let rev = Surface.revolution(
             meridian: line,
             axisOrigin: .zero,

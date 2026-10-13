@@ -12,10 +12,10 @@ struct PipeFeatureTests {
 
     @Test("Pipe feature API is callable")
     func pipeFeatureCallable() throws {
-        let box = Shape.box(width: 20, height: 20, depth: 20)!
-        let circle = Wire.circle(radius: 2)!
-        let profile = Shape.face(from: circle)!
-        let spine = Wire.line(from: SIMD3(0, 0, 10), to: SIMD3(0, 0, -10))!
+        let box = try #require(Shape.box(width: 20, height: 20, depth: 20))
+        let circle = try #require(Wire.circle(radius: 2))
+        let profile = try #require(Shape.face(from: circle))
+        let spine = try #require(Wire.line(from: SIMD3(0, 0, 10), to: SIMD3(0, 0, -10)))
         // Pipe feature on top face (5), may not work on all geometry
         let resultOpt = box.pipeFeature(
             profile: profile, sketchFaceIndex: 5,
@@ -28,11 +28,11 @@ struct PipeFeatureTests {
 
     @Test("Pipe feature with different spine")
     func pipeFeatureCurvedSpine() throws {
-        let box = Shape.box(width: 30, height: 30, depth: 30)!
-        let rect = Wire.rectangle(width: 2, height: 2)!
-        let profile = Shape.face(from: rect)!
+        let box = try #require(Shape.box(width: 30, height: 30, depth: 30))
+        let rect = try #require(Wire.rectangle(width: 2, height: 2))
+        let profile = try #require(Shape.face(from: rect))
         // Simple straight spine along Z
-        let spine = Wire.line(from: SIMD3(0, 0, 15), to: SIMD3(0, 0, -15))!
+        let spine = try #require(Wire.line(from: SIMD3(0, 0, 15), to: SIMD3(0, 0, -15)))
         let resultOpt = box.pipeFeature(
             profile: profile, sketchFaceIndex: 5,
             spine: spine, fuse: false

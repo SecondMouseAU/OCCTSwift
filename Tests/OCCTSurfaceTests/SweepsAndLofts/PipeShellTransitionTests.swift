@@ -17,8 +17,8 @@ struct PipeShellTransitionTests {
         let p1 = SIMD3<Double>(0, 0, 0)
         let p2 = SIMD3<Double>(10, 0, 0)
         let p3 = SIMD3<Double>(10, 10, 0)
-        let spine = Wire.path([p1, p2, p3])!
-        let profile = Wire.circle(origin: .zero, normal: SIMD3(1, 0, 0), radius: 1)!
+        let spine = try #require(Wire.path([p1, p2, p3]))
+        let profile = try #require(Wire.circle(origin: .zero, normal: SIMD3(1, 0, 0), radius: 1))
         let resultOpt = Shape.pipeShell(
             spine: spine, profile: profile,
             transition: .transformed, solid: true
@@ -33,8 +33,8 @@ struct PipeShellTransitionTests {
     func pipeRightCorner() throws {
         // Spine goes along Z first, so default XY-plane circle profile
         // is perpendicular to the spine tangent (required for RightCorner)
-        let spine = Wire.path([SIMD3(0, 0, 0), SIMD3(0, 0, 10), SIMD3(0, 10, 10)])!
-        let profile = Wire.circle(radius: 2)!
+        let spine = try #require(Wire.path([SIMD3(0, 0, 0), SIMD3(0, 0, 10), SIMD3(0, 10, 10)]))
+        let profile = try #require(Wire.circle(radius: 2))
         let resultOpt = Shape.pipeShell(
             spine: spine, profile: profile,
             transition: .rightCorner, solid: true
@@ -48,8 +48,8 @@ struct PipeShellTransitionTests {
     func pipeRoundCorner() throws {
         // Spine goes along Z first, so default XY-plane circle profile
         // is perpendicular to the spine tangent (required for RoundCorner)
-        let spine = Wire.path([SIMD3(0, 0, 0), SIMD3(0, 0, 10), SIMD3(0, 10, 10)])!
-        let profile = Wire.circle(radius: 2)!
+        let spine = try #require(Wire.path([SIMD3(0, 0, 0), SIMD3(0, 0, 10), SIMD3(0, 10, 10)]))
+        let profile = try #require(Wire.circle(radius: 2))
         let resultOpt = Shape.pipeShell(
             spine: spine, profile: profile,
             transition: .roundCorner, solid: true
