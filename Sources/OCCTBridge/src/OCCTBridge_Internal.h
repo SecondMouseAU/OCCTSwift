@@ -99,7 +99,11 @@
 #include <gp_Dir.hxx>
 #include <gp_Pnt.hxx>
 #include <TopExp.hxx>
-#include <TopExp_Explorer.hxx> // #613: occtForEachOrientedFace's per-occurrence walk
+#include <TopExp_Explorer.hxx>          // #613: occtForEachOrientedFace's per-occurrence walk
+#include <BRepBuilderAPI_Transform.hxx> // #3388: occtTransformShape
+#include <BRepTools_ReShape.hxx>        // #3388: occtTransformShape, mixed shapes
+#include <TopLoc_Location.hxx>
+#include <gp_Trsf.hxx>
 #include <TopoDS.hxx>
 #include <TopTools_IndexedMapOfShape.hxx>
 #include <TopTools_ListOfShape.hxx>
@@ -1426,6 +1430,33 @@ inline bool occtIsUsableAngle(double angle)
   return std::isfinite(angle);
 }
 
+/// The rotation step, in radians, between consecutive copies of a circular pattern (#3356).
+///
+/// `angle` is the TOTAL angle the pattern spans and `count` includes the original, so a partial
+/// angle puts the last copy AT `angle`: `count - 1` steps of `angle / (count - 1)`. This is the
+/// convention of every parametric CAD polar pattern (FreeCAD's PolarPattern, SolidWorks and
+/// Fusion's circular pattern), and what the Swift doc comment promised; OCCT itself has no
+/// circular-pattern algorithm for a call site to follow.
+///
+/// A full circle is the one place the step is `2 pi / count`, because copy `count` would land on
+/// the original: `angle == 0` means a full turn, and so does an explicit `+-2 pi`, which is what
+/// callers passing the span literally got before this helper and still get (no coincident
+/// duplicate). A single copy has no step to take.
+///
+/// Shared by `OCCTShapeCircularPattern` (Transform.mm) and `OCCTShapeHistoryFromCircularPattern`
+/// (Boolean.mm), per `okf/policies/helper-placement-by-reach.md`.
+inline double occtCircularPatternStep(double angle, int32_t count)
+{
+  if (count < 1)
+    return 0.0;
+  const double aFullTurn = 2.0 * M_PI;
+  if (angle == 0.0)
+    return aFullTurn / count;
+  if (std::fabs(std::fabs(angle) - aFullTurn) <= 1e-9)
+    return std::copysign(aFullTurn, angle) / count;
+  return count > 1 ? angle / (count - 1) : 0.0;
+}
+
 /// The largest sweep angle, in radians, a revolve builder is handed (#3109): `1e4`, about 1591
 /// turns.
 ///
@@ -2523,6 +2554,49 @@ inline TopoDS_Face occtFaceAt(const TopoDS_Shape& shape, int32_t index)
   if (sub.IsNull() || sub.ShapeType() != TopAbs_FACE)
     return TopoDS_Face();
   return TopoDS::Face(sub);
+}
+
+/// `shape` transformed by `trsf` as a new shape, or a null shape when OCCT does not finish.
+///
+/// #3388: `BRepBuilderAPI_Transform(shape, trsf, Copy = true)` hands back a face that has no
+/// surface (what `Shape.readSTL` builds: a `Poly_Triangulation` on a bare `TopoDS_Face`)
+/// untouched, because `BRepTools_Modifier` only rebuilds a face through its surface. Measured in
+/// `Scripts/repro/3388/probe.mm`: translate and scale both return the input's own TShape with the
+/// triangulation unmoved, and `Copy = false` moves a translation but not a scale. Such a shape is
+/// placed with `TopoDS_Shape::Moved` instead, which carries the transformation in the shape's
+/// location and so applies to the triangulation when it is read. A shape with no such face keeps
+/// the `Copy = true` path, so a box, a compound of faces with surfaces and so on come back as
+/// before.
+///
+/// A shape that mixes the two (a compound of a box and an STL face) takes the `Copy = true` path
+/// and then has each triangulation-only face replaced by its `Moved` self. `Moved` on the whole
+/// shape would also put a scale or a mirror into the location of every face that has a surface,
+/// which OCCT forbids there (`TopoDS_Shape::Move`, `theRaiseExc`) and which downstream algorithms
+/// do not expect; `BRepBuilderAPI_Transform` rebuilds those faces instead.
+inline TopoDS_Shape occtTransformShape(const TopoDS_Shape& shape, const gp_Trsf& trsf)
+{
+  if (shape.IsNull())
+    return TopoDS_Shape();
+  std::vector<TopoDS_Shape> bare;
+  bool                      anySurface = false;
+  for (TopExp_Explorer ex(shape, TopAbs_FACE); ex.More(); ex.Next())
+  {
+    if (BRep_Tool::Surface(TopoDS::Face(ex.Current())).IsNull())
+      bare.push_back(ex.Current());
+    else
+      anySurface = true;
+  }
+  if (!bare.empty() && !anySurface)
+    return shape.Moved(TopLoc_Location(trsf));
+  BRepBuilderAPI_Transform transformer(shape, trsf, Standard_True);
+  if (!transformer.IsDone())
+    return TopoDS_Shape();
+  if (bare.empty())
+    return transformer.Shape();
+  occ::handle<BRepTools_ReShape> reshape = new BRepTools_ReShape();
+  for (const TopoDS_Shape& face : bare)
+    reshape->Replace(face, face.Moved(TopLoc_Location(trsf)));
+  return reshape->Apply(transformer.Shape());
 }
 
 /// The edge at 0-based `index` in `shape`'s edge enumeration, or a null edge when the index is

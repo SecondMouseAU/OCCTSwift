@@ -32,10 +32,11 @@ struct Issue568IndexSkipTests {
     ///
     /// This is how an out-of-range index reaches the entry points that
     /// take `Face` values rather than raw integers.
-    private func cutBox() -> Shape? {
-        let box = Shape.box(width: 20, height: 20, depth: 20)!
-        let offset = Shape.box(width: 20, height: 20, depth: 20)!
-            .translated(by: SIMD3(10, 10, 10))!
+    private func cutBox() throws -> Shape? {
+        let box = try #require(Shape.box(width: 20, height: 20, depth: 20))
+        let offset = try #require(
+            Shape.box(width: 20, height: 20, depth: 20)?
+                .translated(by: SIMD3(10, 10, 10)))
         return box.subtracting(offset)
     }
 
@@ -47,9 +48,9 @@ struct Issue568IndexSkipTests {
     /// return the shape unchanged, because `BRepOffsetAPI_DraftAngle` treats an empty request as a
     /// finished one.
     @Test("A draft naming no face of this shape is refused, not answered with the input")
-    func draftRejectsWhollyForeignFaceList() {
-        let box = Shape.box(width: 20, height: 20, depth: 30)!
-        guard let cut = cutBox(), cut.faces().count > box.faces().count,
+    func draftRejectsWhollyForeignFaceList() throws {
+        let box = try #require(Shape.box(width: 20, height: 20, depth: 30))
+        guard let cut = try cutBox(), cut.faces().count > box.faces().count,
             let foreign = cut.faces().last
         else {
             Issue.record("cut did not produce more faces than the box")
@@ -66,9 +67,9 @@ struct Issue568IndexSkipTests {
     }
 
     @Test("A draft mixing a real face with an out-of-range one is refused")
-    func draftRejectsPartiallyForeignFaceList() {
-        let box = Shape.box(width: 20, height: 20, depth: 30)!
-        guard let cut = cutBox(), cut.faces().count > box.faces().count,
+    func draftRejectsPartiallyForeignFaceList() throws {
+        let box = try #require(Shape.box(width: 20, height: 20, depth: 30))
+        guard let cut = try cutBox(), cut.faces().count > box.faces().count,
             let foreign = cut.faces().last
         else {
             Issue.record("cut did not produce more faces than the box")
@@ -93,8 +94,8 @@ struct Issue568IndexSkipTests {
     ///
     /// This is the pre-existing "Draft vertical faces" case restated as a volume comparison.
     @Test("A draft naming only this shape's faces still drafts them")
-    func draftAcceptsOwnFaces() {
-        let box = Shape.box(width: 20, height: 20, depth: 30)!
+    func draftAcceptsOwnFaces() throws {
+        let box = try #require(Shape.box(width: 20, height: 20, depth: 30))
         let vertical = box.faces().filter { $0.isVertical() }
         #expect(vertical.count == 4)
 
@@ -116,9 +117,9 @@ struct Issue568IndexSkipTests {
     // MARK: - Shell with open faces (OCCTShapeShellWithOpenFaces)
 
     @Test("A shell mixing a real open face with an out-of-range one is refused")
-    func shellRejectsPartiallyForeignFaceList() {
-        let box = Shape.box(width: 20, height: 20, depth: 20)!
-        guard let cut = cutBox(), cut.faces().count > box.faces().count,
+    func shellRejectsPartiallyForeignFaceList() throws {
+        let box = try #require(Shape.box(width: 20, height: 20, depth: 20))
+        guard let cut = try cutBox(), cut.faces().count > box.faces().count,
             let foreign = cut.faces().last
         else {
             Issue.record("cut did not produce more faces than the box")
@@ -135,8 +136,8 @@ struct Issue568IndexSkipTests {
     }
 
     @Test("A shell naming only this shape's faces still opens them")
-    func shellAcceptsOwnFaces() {
-        let box = Shape.box(width: 20, height: 20, depth: 20)!
+    func shellAcceptsOwnFaces() throws {
+        let box = try #require(Shape.box(width: 20, height: 20, depth: 20))
         let top = box.upwardFaces()
         #expect(!top.isEmpty)
         let shelled = box.shelled(thickness: 2.0, openFaces: top)
@@ -149,8 +150,8 @@ struct Issue568IndexSkipTests {
     /// The direct counterpart of #520's `historyFilletRejectsOutOfRangeIndex`: the same call shape
     /// on the chamfer builder rather than the fillet one.
     @Test("History chamfer rejects an out-of-range edge index")
-    func historyChamferRejectsOutOfRangeIndex() {
-        let box = Shape.box(width: 20, height: 20, depth: 20)!
+    func historyChamferRejectsOutOfRangeIndex() throws {
+        let box = try #require(Shape.box(width: 20, height: 20, depth: 20))
         #expect(box.edges().count < 99_999)
         #expect(box.chamferedWithFullHistory(distance: 1.0, edges: [0, 99_999]) == nil)
         #expect(box.chamferedWithFullHistory(distance: 1.0, edges: [-1]) == nil)
@@ -161,8 +162,8 @@ struct Issue568IndexSkipTests {
     ///
     /// Two resolvable indices must still chamfer two.
     @Test("History chamfer with resolvable indices chamfers all of them")
-    func historyChamferAcceptsResolvableIndices() {
-        let box = Shape.box(width: 20, height: 20, depth: 20)!
+    func historyChamferAcceptsResolvableIndices() throws {
+        let box = try #require(Shape.box(width: 20, height: 20, depth: 20))
         guard let both = box.chamferedWithFullHistory(distance: 1.0, edges: [0, 1]),
             let one = box.chamferedWithFullHistory(distance: 1.0, edges: [0])
         else {
@@ -181,16 +182,18 @@ struct Issue568IndexSkipTests {
     // MARK: - 2D fillet (OCCTFace2DFillet)
 
     @Test("A 2D fillet naming a vertex the face does not have is refused")
-    func fillet2DRejectsOutOfRangeVertex() {
-        let face = Shape.face(from: Wire.rectangle(width: 20, height: 20)!)!
+    func fillet2DRejectsOutOfRangeVertex() throws {
+        let unwrapped1 = try #require(Wire.rectangle(width: 20, height: 20))
+        let face = try #require(Shape.face(from: unwrapped1))
         #expect(face.vertices().count < 99_999)
         #expect(face.fillet2D(vertexIndices: [0, 99_999], radii: [3.0, 3.0]) == nil)
         #expect(face.fillet2D(vertexIndices: [-1], radii: [3.0]) == nil)
     }
 
     @Test("A 2D fillet naming only real vertices still rounds all of them")
-    func fillet2DAcceptsResolvableVertices() {
-        let face = Shape.face(from: Wire.rectangle(width: 20, height: 20)!)!
+    func fillet2DAcceptsResolvableVertices() throws {
+        let unwrapped2 = try #require(Wire.rectangle(width: 20, height: 20))
+        let face = try #require(Shape.face(from: unwrapped2))
         let result = face.fillet2D(vertexIndices: [0, 1, 2, 3], radii: [2.0, 2.0, 2.0, 2.0])
         #expect(result != nil)
         // 4 straight edges plus 4 arcs. A dropped index used to show up only here.
@@ -201,8 +204,9 @@ struct Issue568IndexSkipTests {
 
     /// Each entry names two edges, so either half being unresolvable used to drop the pair.
     @Test("A 2D chamfer is refused when either edge of a pair is out of range")
-    func chamfer2DRejectsOutOfRangePairMember() {
-        let face = Shape.face(from: Wire.rectangle(width: 20, height: 20)!)!
+    func chamfer2DRejectsOutOfRangePairMember() throws {
+        let unwrapped3 = try #require(Wire.rectangle(width: 20, height: 20))
+        let face = try #require(Shape.face(from: unwrapped3))
         #expect(face.edgeCount < 99_999)
         #expect(face.chamfer2D(edgePairs: [(0, 1), (2, 99_999)], distances: [2.0, 2.0]) == nil)
         #expect(face.chamfer2D(edgePairs: [(0, 1), (99_999, 3)], distances: [2.0, 2.0]) == nil)
@@ -210,8 +214,9 @@ struct Issue568IndexSkipTests {
     }
 
     @Test("A 2D chamfer naming only real edges still cuts every pair")
-    func chamfer2DAcceptsResolvablePairs() {
-        let face = Shape.face(from: Wire.rectangle(width: 20, height: 20)!)!
+    func chamfer2DAcceptsResolvablePairs() throws {
+        let unwrapped4 = try #require(Wire.rectangle(width: 20, height: 20))
+        let face = try #require(Shape.face(from: unwrapped4))
         let result = face.chamfer2D(edgePairs: [(0, 1), (2, 3)], distances: [2.0, 2.0])
         #expect(result != nil)
         // 4 edges, two corners cut off: each chamfer adds one edge.
@@ -228,8 +233,9 @@ struct Issue568IndexSkipTests {
     /// behaviour, matching the "ordinary, safe" half of that instruction. The pair is order
     /// independent: `(0, 1)` and `(1, 0)` name the same two edges and both are refused.
     @Test("A 2D chamfer is refused when the same edge pair is named twice")
-    func chamfer2DRejectsDuplicatePair() {
-        let face = Shape.face(from: Wire.rectangle(width: 20, height: 20)!)!
+    func chamfer2DRejectsDuplicatePair() throws {
+        let unwrapped5 = try #require(Wire.rectangle(width: 20, height: 20))
+        let face = try #require(Shape.face(from: unwrapped5))
         #expect(face.chamfer2D(edgePairs: [(0, 1), (0, 1)], distances: [1.0, 2.0]) == nil)
         #expect(face.chamfer2D(edgePairs: [(0, 1), (1, 0)], distances: [1.0, 2.0]) == nil)
         #expect(
@@ -243,8 +249,9 @@ struct Issue568IndexSkipTests {
     /// Measured safe before this fix and
     /// must stay safe after it.
     @Test("A 2D chamfer still cuts every corner when adjacent pairs share an edge")
-    func chamfer2DAcceptsSharedEdgeAcrossDifferentPairs() {
-        let face = Shape.face(from: Wire.rectangle(width: 20, height: 20)!)!
+    func chamfer2DAcceptsSharedEdgeAcrossDifferentPairs() throws {
+        let unwrapped6 = try #require(Wire.rectangle(width: 20, height: 20))
+        let face = try #require(Shape.face(from: unwrapped6))
         let result = face.chamfer2D(
             edgePairs: [(0, 1), (1, 2), (2, 3), (3, 0)],
             distances: [1.0, 1.0, 1.0, 1.0])

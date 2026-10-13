@@ -5,10 +5,10 @@ import Testing
 @Suite("Half-Space")
 struct HalfSpaceTests {
     @Test("Create half-space from face")
-    func halfSpaceFromFace() {
+    func halfSpaceFromFace() throws {
         // Create a planar face to use as the dividing surface
-        let rect = Wire.rectangle(width: 20, height: 20)!
-        let faceShape = Shape.face(from: rect)!
+        let rect = try #require(Wire.rectangle(width: 20, height: 20))
+        let faceShape = try #require(Shape.face(from: rect))
         guard let halfSpace = Shape.halfSpace(face: faceShape, referencePoint: SIMD3(0, 0, 5))
         else {
             Issue.record("halfSpace(face:referencePoint:) returned nil")

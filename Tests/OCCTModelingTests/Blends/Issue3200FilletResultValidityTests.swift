@@ -19,7 +19,7 @@ struct Issue3200FilletResultValidityTests {
     // MARK: - Fixtures
 
     /// The edge whose midpoint is nearest `rel` (fractions of the shape's bounding box).
-    private func edge(_ shape: Shape, _ rel: (Double, Double, Double)) -> Edge? {
+    private func edge(_ shape: Shape, _ rel: (Double, Double, Double)) throws -> Edge? {
         guard let box = shape.bounds else { return nil }
         let target = SIMD3(
             box.min.x + rel.0 * (box.max.x - box.min.x),
@@ -29,7 +29,7 @@ struct Issue3200FilletResultValidityTests {
         for candidate in shape.edges() {
             guard let b = candidate.bounds else { continue }
             let d = vectorLengthSquared((b.min + b.max) / 2 - target)
-            if best == nil || d < best!.distance { best = (d, candidate) }
+            if try best == nil || d < #require(best).distance { best = (d, candidate) }
         }
         return best?.edge
     }
@@ -40,8 +40,8 @@ struct Issue3200FilletResultValidityTests {
     ]
     private let topPair: [(Double, Double, Double)] = [(0, 0.5, 1), (1, 0.5, 1)]
 
-    private func edges(_ shape: Shape, _ rel: [(Double, Double, Double)]) -> [Edge] {
-        rel.compactMap { edge(shape, $0) }
+    private func edges(_ shape: Shape, _ rel: [(Double, Double, Double)]) throws -> [Edge] {
+        try rel.compactMap { try edge(shape, $0) }
     }
 
     /// 4 x 10 x 6: the box of #3200.
@@ -62,7 +62,7 @@ struct Issue3200FilletResultValidityTests {
     @Test("A 4-edge frame of overlapping fillets never answers an invalid shape")
     func frameOnSlab() throws {
         let box = try slab()
-        let frame = edges(box, topFrame)
+        let frame = try edges(box, topFrame)
         #expect(frame.count == 4)
         for r in [2.0 + 1e-8, 2.0001, 2.001, 3.0, 3.0 + 1e-8, 2.9999, 3.001] {
             expectNilOrValid(box.filleted(edges: frame, radius: r), "slab frame r=\(r)")
@@ -75,7 +75,7 @@ struct Issue3200FilletResultValidityTests {
     @Test("The same frame on a 4 mm cube")
     func frameOnCube() throws {
         let box = try cube()
-        let frame = edges(box, topFrame)
+        let frame = try edges(box, topFrame)
         #expect(frame.count == 4)
         for r in [2.0 + 1e-8, 2.001, 3.0] {
             expectNilOrValid(box.filleted(edges: frame, radius: r), "cube frame r=\(r)")
@@ -108,7 +108,7 @@ struct Issue3200FilletResultValidityTests {
     @Test("FilletBuilder.build answers nil for an invalid frame, and reports the build as it was")
     func filletBuilderFrame() throws {
         let box = try cube()
-        let frame = edges(box, topFrame)
+        let frame = try edges(box, topFrame)
         let builder = try #require(FilletBuilder(shape: box))
         for e in frame { builder.addEdge(e, radius: 3.0) }
         #expect(builder.build() == nil)
@@ -119,7 +119,7 @@ struct Issue3200FilletResultValidityTests {
     @Test("A builder with valid radii still builds")
     func filletBuilderValid() throws {
         let box = try slab()
-        let pair = edges(box, topPair)
+        let pair = try edges(box, topPair)
         let builder = try #require(FilletBuilder(shape: box))
         for e in pair { builder.addEdge(e, radius: 1.0) }
         let result = try #require(builder.build())
@@ -129,7 +129,7 @@ struct Issue3200FilletResultValidityTests {
     @Test("ChamferBuilder.build never answers an invalid shape for a frame of overlapping chamfers")
     func chamferBuilderFrame() throws {
         let box = try cube()
-        let frame = edges(box, topFrame)
+        let frame = try edges(box, topFrame)
         for d in [2.0 + 1e-4, 3.0, 4.5] {
             let builder = try #require(ChamferBuilder(shape: box))
             for e in frame { builder.addEdge(e, distance: d) }
@@ -140,7 +140,7 @@ struct Issue3200FilletResultValidityTests {
     @Test("The with-history variants share the guard")
     func historyVariants() throws {
         let box = try slab()
-        let frame = edges(box, topFrame)
+        let frame = try edges(box, topFrame)
         let indices = frame.map(\.index)
         if let r = box.filletedWithFullHistory(radius: 3.0 + 1e-8, edges: indices) {
             #expect(r.result.isValid)
@@ -159,7 +159,7 @@ struct Issue3200FilletResultValidityTests {
     @Test("A valid pair of fillets keeps its analytic volume")
     func validPairVolume() throws {
         let box = try slab()
-        let pair = edges(box, topPair)
+        let pair = try edges(box, topPair)
         #expect(pair.count == 2)
         // 1.999 is the largest radius the pair accepts on a 4 mm face short of 1e-9 from half-width.
         for r in [0.5, 1.0, 1.999, 1.9999, 1.99999999] {
@@ -175,8 +175,8 @@ struct Issue3200FilletResultValidityTests {
     func validBattery() throws {
         let box = try slab()
         let cb = try cube()
-        let frameBox = edges(box, topFrame)
-        let frameCube = edges(cb, topFrame)
+        let frameBox = try edges(box, topFrame)
+        let frameCube = try edges(cb, topFrame)
         let cases: [(String, Shape?, Double)] = [
             ("slab frame r=1", box.filleted(edges: frameBox, radius: 1.0), 234.374629926),
             ("slab frame r=1.999", box.filleted(edges: frameBox, radius: 1.999), 219.051875066),

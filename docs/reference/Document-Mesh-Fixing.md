@@ -3244,7 +3244,9 @@ Orient a closed solid so that face normals point consistently outward.
 public func orientClosedSolid() -> Bool
 ```
 
-- **Returns:** `true` if the orientation was fixed.
+An inward solid (negative `signedVolume`) is reversed in place, so the receiver reads the positive volume afterwards (#3357); a solid that is already outward is left alone.
+
+- **Returns:** `true` if the solid is now outward, `false` if it is not a solid or is open or incoherent.
 - **OCCT:** `BRepLib::OrientClosedSolid` (via `OCCTBRepLibOrientClosedSolid`).
 
 ---

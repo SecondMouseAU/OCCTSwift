@@ -12,7 +12,7 @@ struct ShapeScaleAboutPointTests {
         #expect(scaled != nil)
         if let s = scaled {
             #expect(s.isValid)
-            let size = s.size!
+            let size = try #require(s.size)
             #expect(abs(size.x - 20) < 0.5)
             #expect(abs(size.y - 20) < 0.5)
             #expect(abs(size.z - 20) < 0.5)
@@ -26,7 +26,7 @@ struct ShapeScaleAboutPointTests {
         #expect(scaled != nil)
         if let s = scaled {
             #expect(s.isValid)
-            let size = s.size!
+            let size = try #require(s.size)
             #expect(abs(size.x - 10) < 0.5)
         }
     }

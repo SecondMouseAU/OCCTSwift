@@ -20,7 +20,7 @@ struct Issue211OuterShell {
     }
 
     @Test("a hollow solid has multiple shells and a recoverable outer shell")
-    func hollowOuterShell() {
+    func hollowOuterShell() throws {
         guard let hollow = Self.hollowSolid() else {
             #expect(Bool(false))
             return
@@ -31,7 +31,7 @@ struct Issue211OuterShell {
             return
         }
         // The outer shell spans the full 20-cube, not the 8-cube cavity.
-        let bb = outer.bounds!
+        let bb = try #require(outer.bounds)
         #expect(abs((bb.max.x - bb.min.x) - 20.0) < 1e-3)
     }
 
@@ -60,7 +60,7 @@ struct Issue211OuterShell {
     }
 
     @Test("innerShells returns the cavity shells, empty for a plain solid")
-    func innerShells() {
+    func innerShells() throws {
         guard let hollow = Self.hollowSolid() else {
             #expect(Bool(false))
             return
@@ -69,7 +69,7 @@ struct Issue211OuterShell {
         #expect(inner.count == 1)  // exactly one cavity
         // the cavity shell spans the 8-cube, not the 20-cube
         if let cavity = inner.first {
-            let bb = cavity.bounds!
+            let bb = try #require(cavity.bounds)
             #expect(abs((bb.max.x - bb.min.x) - 8.0) < 1e-3)
         }
         // a plain solid has no inner shells

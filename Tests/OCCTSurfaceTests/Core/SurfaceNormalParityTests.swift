@@ -18,15 +18,16 @@ import Testing
 struct SurfaceNormalParityTests {
 
     /// A cone with `radius: 0` at the origin has its apex exactly at `v = 0`.
-    private static func apexCone() -> Surface {
-        Surface.cone(origin: .zero, axis: SIMD3(0, 0, 1), radius: 0, semiAngle: .pi / 6)!
+    private static func apexCone() throws -> Surface {
+        try #require(
+            Surface.cone(origin: .zero, axis: SIMD3(0, 0, 1), radius: 0, semiAngle: .pi / 6))
     }
 
     @Test("Regular points: both entry points return the same unit normal")
-    func regularPointsAgree() {
-        let sphere = Surface.sphere(center: .zero, radius: 5)!
-        let plane = Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1))!
-        let cone = Self.apexCone()
+    func regularPointsAgree() throws {
+        let sphere = try #require(Surface.sphere(center: .zero, radius: 5))
+        let plane = try #require(Surface.plane(origin: .zero, normal: SIMD3(0, 0, 1)))
+        let cone = try Self.apexCone()
 
         let samples: [(Surface, Double, Double)] = [
             (sphere, 0, 0), (sphere, .pi / 3, .pi / 4), (sphere, 1.2, -0.8),
@@ -45,8 +46,8 @@ struct SurfaceNormalParityTests {
     }
 
     @Test("Cone apex: nil from the optional entry point, zero vector from the plain one")
-    func coneApexIsUndefinedInBoth() {
-        let cone = Self.apexCone()
+    func coneApexIsUndefinedInBoth() throws {
+        let cone = try Self.apexCone()
         #expect(cone.normal(atU: 0, v: 0) == nil)
         #expect(vectorLength(cone.normal(u: 0, v: 0)) < 1e-12)
     }
@@ -59,8 +60,8 @@ struct SurfaceNormalParityTests {
     /// `IsNormalDefined()` resolves a perfectly good normal there, the same one every other point
     /// on that generatrix has.
     @Test("Near-apex: a defined normal is no longer reported as a zero vector")
-    func nearApexNormalIsNotSpuriouslyZero() {
-        let cone = Self.apexCone()
+    func nearApexNormalIsNotSpuriouslyZero() throws {
+        let cone = try Self.apexCone()
         let v = 1e-16  // |d1u x d1v| ≈ 5e-17, under the old 1e-15 epsilon
 
         let (_, d1u, d1v) = cone.d1(atU: 0, v: v)
@@ -82,8 +83,8 @@ struct SurfaceNormalParityTests {
     ///
     /// Pinned because the finding assumed otherwise.
     @Test("Sphere pole is not a normal singularity")
-    func spherePoleStillHasANormal() {
-        let sphere = Surface.sphere(center: .zero, radius: 5)!
+    func spherePoleStillHasANormal() throws {
+        let sphere = try #require(Surface.sphere(center: .zero, radius: 5))
         for v in [Double.pi / 2, -Double.pi / 2] {
             let optional = sphere.normal(atU: 0, v: v)
             #expect(optional != nil)

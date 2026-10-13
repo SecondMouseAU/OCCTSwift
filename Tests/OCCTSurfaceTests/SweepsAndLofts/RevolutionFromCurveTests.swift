@@ -10,9 +10,9 @@ struct RevolutionFromCurveTests {
     // BRepGProp volume is NEGATIVE (-1776.53, the torus 2 pi^2 * 10 * 9 with reversed orientation),
     // which `Shape.volume` turns into nil; that nil and the area are pinned.
     @Test("Revolve segment into cylinder")
-    func revolveSegment() {
+    func revolveSegment() throws {
         // Segment at x=5 from z=0 to z=10, revolve around Z axis → cylinder
-        let seg = Curve3D.segment(from: SIMD3(5, 0, 0), to: SIMD3(5, 0, 10))!
+        let seg = try #require(Curve3D.segment(from: SIMD3(5, 0, 0), to: SIMD3(5, 0, 10)))
         let solid = Shape.revolution(meridian: seg)
         #expect(solid != nil)
         // pi * 5^2 * 10
@@ -20,9 +20,10 @@ struct RevolutionFromCurveTests {
     }
 
     @Test("Revolve circle into torus-like shape")
-    func revolveCircle() {
+    func revolveCircle() throws {
         // Circle at (10,0,0) in XZ plane, revolve around Z axis → torus
-        let circle = Curve3D.circle(center: SIMD3(10, 0, 0), normal: SIMD3(0, 1, 0), radius: 3)!
+        let circle = try #require(
+            Curve3D.circle(center: SIMD3(10, 0, 0), normal: SIMD3(0, 1, 0), radius: 3))
         let solid = Shape.revolution(meridian: circle)
         #expect(solid != nil)
         // The kernel's solid is inside out (BRepGProp volume -1776.53), and Shape.volume reports
@@ -42,8 +43,8 @@ struct RevolutionFromCurveTests {
     }
 
     @Test("Partial revolution")
-    func partialRevolution() {
-        let seg = Curve3D.segment(from: SIMD3(5, 0, 0), to: SIMD3(5, 0, 10))!
+    func partialRevolution() throws {
+        let seg = try #require(Curve3D.segment(from: SIMD3(5, 0, 0), to: SIMD3(5, 0, 10)))
         let solid = Shape.revolution(meridian: seg, angle: .pi / 2)
         #expect(solid != nil)
         // A quarter of the full cylinder.

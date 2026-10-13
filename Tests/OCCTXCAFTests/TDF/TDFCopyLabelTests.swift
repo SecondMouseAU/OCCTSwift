@@ -9,12 +9,12 @@ import Testing
 struct TDFCopyLabelTests {
 
     @Test("Copy label with name")
-    func copyLabelWithName() {
-        let doc = Document.create()!
-        let source = doc.createLabel()!
+    func copyLabelWithName() throws {
+        let doc = try #require(Document.create())
+        let source = try #require(doc.createLabel())
         source.setName("Original")
 
-        let dest = doc.createLabel()!
+        let dest = try #require(doc.createLabel())
         let ok = doc.copyLabel(from: source, to: dest)
         #expect(ok, "Copy should succeed")
         #expect(dest.name == "Original", "Destination should have copied name")

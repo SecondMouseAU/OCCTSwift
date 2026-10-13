@@ -9,18 +9,18 @@ import Testing
 struct TDFLabelNameTests {
 
     @Test("Set and get label name")
-    func setGetName() {
-        let doc = Document.create()!
-        let label = doc.createLabel()!
+    func setGetName() throws {
+        let doc = try #require(Document.create())
+        let label = try #require(doc.createLabel())
         let ok = label.setName("MyPart")
         #expect(ok, "Setting name should succeed")
         #expect(label.name == "MyPart", "Name should match")
     }
 
     @Test("Rename label")
-    func renameLabel() {
-        let doc = Document.create()!
-        let label = doc.createLabel()!
+    func renameLabel() throws {
+        let doc = try #require(Document.create())
+        let label = try #require(doc.createLabel())
         label.setName("Original")
         #expect(label.name == "Original")
 

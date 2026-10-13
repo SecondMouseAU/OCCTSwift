@@ -1,4 +1,4 @@
-// Epic #766, BSplineSurfaceCompletionsV121Tests.swift and BSplineSurfaceCompletionsV129Tests.swift:
+// Epic #766, BSplineSurfaceModificationTests.swift and BSplineSurfaceWeightAndKnotQueriesTests.swift:
 // kernel parity for the twelve tests. The V121 fixture is makeExplicitPoleBSplineSurface() (a
 // hand-written 4x4 cubic, knots {0, 1} x4 each way); the V129 surface is
 // GeomConvert::SurfaceToBSplineSurface of a radius-5 Geom_SphericalSurface (OCCTSurfaceToBSpline).

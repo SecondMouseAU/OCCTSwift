@@ -90,7 +90,7 @@ struct Issue439OuterShellMultiSolid {
     }
 
     @Test("outerShells answers for every solid of a multi-solid compound")
-    func outerShellsPerSolid() {
+    func outerShellsPerSolid() throws {
         guard let comp = twoBoxCompound() else {
             #expect(Bool(false), "two-box compound")
             return
@@ -99,7 +99,7 @@ struct Issue439OuterShellMultiSolid {
         #expect(shells.count == 2)
         #expect(shells.allSatisfy { $0.subShapes(ofType: .face).count == 6 })
         // Together they span the full compound, unlike the single-shell answer.
-        let spans = shells.map { $0.bounds! }.sorted { $0.min.x < $1.min.x }
+        let spans = try shells.map { try #require($0.bounds) }.sorted { $0.min.x < $1.min.x }
         if spans.count == 2 {
             #expect(abs(spans[0].min.x - 0.0) < 1e-6)
             #expect(abs(spans[1].max.x - 30.0) < 1e-6)
