@@ -9,9 +9,8 @@ struct TextLabelAndPointCloudTests {
 
     @Test("Create text label")
     func createTextLabel() throws {
-        let label = TextLabel(text: "Hello", position: SIMD3(1, 2, 3))
-        #expect(label != nil)
-        #expect(try #require(label).text == "Hello")
+        let label = try #require(TextLabel(text: "Hello", position: SIMD3(1, 2, 3)))
+        #expect(label.text == "Hello")
     }
 
     @Test("Text label position")
@@ -61,9 +60,8 @@ struct TextLabelAndPointCloudTests {
     @Test("Create point cloud")
     func createPointCloud() throws {
         let pts = [SIMD3<Double>(0, 0, 0), SIMD3(1, 0, 0), SIMD3(0, 1, 0)]
-        let cloud = PointCloud(points: pts)
-        #expect(cloud != nil)
-        #expect(try #require(cloud).count == 3)
+        let cloud = try #require(PointCloud(points: pts))
+        #expect(cloud.count == 3)
     }
 
     @Test("Point cloud bounds")
@@ -94,10 +92,9 @@ struct TextLabelAndPointCloudTests {
     func coloredPointCloud() throws {
         let pts = [SIMD3<Double>(0, 0, 0), SIMD3(1, 1, 1)]
         let cols = [SIMD3<Float>(1, 0, 0), SIMD3(0, 1, 0)]
-        let cloud = PointCloud(points: pts, colors: cols)
-        #expect(cloud != nil)
-        #expect(try #require(cloud).count == 2)
-        let retrievedColors = try #require(cloud).colors
+        let cloud = try #require(PointCloud(points: pts, colors: cols))
+        #expect(cloud.count == 2)
+        let retrievedColors = cloud.colors
         #expect(retrievedColors.count == 2)
         #expect(abs(retrievedColors[0].x - 1.0) < 1e-4, "First color should be red")
         #expect(abs(retrievedColors[1].y - 1.0) < 1e-4, "Second color should be green")
