@@ -50,16 +50,22 @@ struct FreeBoundsPropsTests {
     }
 
     // Two stacked rectangles: two disjoint closed free bounds, no open ones.
-    private func twoRects(_ w: Double, _ h: Double) -> Shape {
-        let lower = Shape.face(
-            from: Wire.polygon3D([
+    private func twoRects(_ w: Double, _ h: Double) throws -> Shape {
+        let unwrapped1 = try #require(
+            Wire.polygon3D([
                 SIMD3(0, 0, 0), SIMD3(w, 0, 0), SIMD3(w, h, 0), SIMD3(0, h, 0),
-            ])!)!
-        let upper = Shape.face(
-            from: Wire.polygon3D([
+            ]))
+        let lower = try #require(
+            Shape.face(
+                from: unwrapped1))
+        let unwrapped2 = try #require(
+            Wire.polygon3D([
                 SIMD3(0, 0, 5), SIMD3(w, 0, 5), SIMD3(w, h, 5), SIMD3(0, h, 5),
-            ])!)!
-        return Shape.compound([lower, upper])!
+            ]))
+        let upper = try #require(
+            Shape.face(
+                from: unwrapped2))
+        return try #require(Shape.compound([lower, upper]))
     }
 
     // #504: OCCT's own Perform() appends to its result sequences and never clears them, and
@@ -144,19 +150,26 @@ struct FreeBoundsPropsTests {
     // #504: notchCount was only reachable through Shape's family, which is gone; it is part of
     // info(_:at:) now. A narrow V cut into the contour is what OCCT counts as a notch.
     @Test func notchesAreCounted() throws {
-        let notched = Shape.face(
-            from: Wire.polygon3D([
+        let unwrapped3 = try #require(
+            Wire.polygon3D([
                 SIMD3(0, 0, 0), SIMD3(10, 0, 0), SIMD3(10, 10, 0),
                 SIMD3(5.05, 10, 0), SIMD3(5.0, 1, 0), SIMD3(4.95, 10, 0),
                 SIMD3(0, 10, 0),
-            ])!)!
-        let plain = Shape.face(
-            from: Wire.polygon3D([
+            ]))
+        let notched = try #require(
+            Shape.face(
+                from: unwrapped3))
+        let unwrapped4 = try #require(
+            Wire.polygon3D([
                 SIMD3(0, 0, 5), SIMD3(10, 0, 5), SIMD3(10, 10, 5), SIMD3(0, 10, 5),
-            ])!)!
+            ]))
+        let plain = try #require(
+            Shape.face(
+                from: unwrapped4))
+        let unwrapped5 = try #require(Shape.compound([notched, plain]))
         let props = try #require(
             FreeBoundsProperties(
-                shape: Shape.compound([notched, plain])!,
+                shape: unwrapped5,
                 tolerance: 0.01))
         let counts = (0..<props.closedCount).compactMap { props.info(.closed, at: $0)?.notchCount }
         #expect(counts.contains(1))  // the slit

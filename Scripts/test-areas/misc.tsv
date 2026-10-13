@@ -1,13 +1,13 @@
 # current_path	proposed_path	area	pending_prs	reason
-Tests/OCCTMiscTests/Issue1565SheetMetalBendDefectsTests.swift	Tests/OCCTMiscTests/SheetMetal/Issue1565SheetMetalBendDefectsTests.swift	SheetMetal	-	bend direction override and diagonal seam fallback
-Tests/OCCTMiscTests/Issue2972DiagonalSteppedSeamTests.swift	Tests/OCCTMiscTests/SheetMetal/Issue2972DiagonalSteppedSeamTests.swift	SheetMetal	-	stepped seam diagonal to the flange axes
-Tests/OCCTMiscTests/Issue3019ConvexBendOnSplitFlangeTests.swift	Tests/OCCTMiscTests/SheetMetal/Issue3019ConvexBendOnSplitFlangeTests.swift	SheetMetal	-	convex bend on a flange another bend split
-Tests/OCCTMiscTests/Issue3045SteppedConcaveBendTests.swift	Tests/OCCTMiscTests/SheetMetal/Issue3045SteppedConcaveBendTests.swift	SheetMetal	-	stepped concave bend validity and volume
-Tests/OCCTMiscTests/Issue972LiftingTests.swift	Tests/OCCTMiscTests/Sketch/Issue972LiftingTests.swift	Sketch	-	Placement.lift 2D-to-3D lifting shared by Sketch and Flange
+Tests/OCCTMiscTests/Issue1565SheetMetalBendDefectsTests.swift	Tests/OCCTMiscTests/SheetMetal/SheetMetalBendDefectsTests.swift	SheetMetal	-	bend direction override and diagonal seam fallback
+Tests/OCCTMiscTests/Issue2972DiagonalSteppedSeamTests.swift	Tests/OCCTMiscTests/SheetMetal/DiagonalSteppedSeamTests.swift	SheetMetal	-	stepped seam diagonal to the flange axes
+Tests/OCCTMiscTests/Issue3019ConvexBendOnSplitFlangeTests.swift	Tests/OCCTMiscTests/SheetMetal/ConvexBendOnSplitFlangeTests.swift	SheetMetal	-	convex bend on a flange another bend split
+Tests/OCCTMiscTests/Issue3045SteppedConcaveBendTests.swift	Tests/OCCTMiscTests/SheetMetal/SteppedConcaveBendTests.swift	SheetMetal	-	stepped concave bend validity and volume
+Tests/OCCTMiscTests/Issue972LiftingTests.swift	Tests/OCCTMiscTests/Sketch/SketchLiftingTests.swift	Sketch	-	Placement.lift 2D-to-3D lifting shared by Sketch and Flange
 Tests/OCCTMiscTests/ConstructionContextConcurrencyTests.swift	Tests/OCCTMiscTests/ConstructionContext/ConstructionContextConcurrencyTests.swift	ConstructionContext	-	ConstructionContext cross-store atomicity and lazy-init race
 Tests/OCCTMiscTests/BridgeExceptionDiagnosticsTests.swift	Tests/OCCTMiscTests/Bridge/BridgeExceptionDiagnosticsTests.swift	Bridge	-	bridge exception capture reaching Swift with the OCCT type name and message
-Tests/OCCTMiscTests/Issue1009Matrix12GroupedTests.swift	Tests/OCCTMiscTests/Bridge/Issue1009Matrix12GroupedTests.swift	Bridge	-	one grouped 12-double matrix reader shared by Shape, Curve3D and Document call sites
-Tests/OCCTMiscTests/Issue622AllocationBoundsTests.swift	Tests/OCCTMiscTests/Bridge/Issue622AllocationBoundsTests.swift	Bridge	-	result-buffer capacities clamped before allocation across Shape, Curve and Surface
+Tests/OCCTMiscTests/Issue1009Matrix12GroupedTests.swift	Tests/OCCTMiscTests/Bridge/Matrix12GroupedReaderTests.swift	Bridge	-	one grouped 12-double matrix reader shared by Shape, Curve3D and Document call sites
+Tests/OCCTMiscTests/Issue622AllocationBoundsTests.swift	Tests/OCCTMiscTests/Bridge/ResultBufferAllocationBoundsTests.swift	Bridge	-	result-buffer capacities clamped before allocation across Shape, Curve and Surface
 Tests/OCCTMiscTests/OCCTMiscTests.swift	Tests/OCCTMiscTests/OCCTMiscTests.swift	(stays)	-	mixed monolith (ConstructionContext, Sketch, SheetMetal, ISO 5457 sheets, Interpolation, Angle helpers); splitting it is a content change, so it stays at the root
 Tests/OCCTMiscTests/SIMDTestHelpers.swift	Tests/OCCTMiscTests/SIMDTestHelpers.swift	(stays)	-	shared helper with no tests; stays at the target root so every area sees it
 Tests/OCCTMiscTests/WASIAutoreleasepoolShim.swift	Tests/OCCTMiscTests/WASIAutoreleasepoolShim.swift	(stays)	-	wasm autoreleasepool shim with no tests; stays at the target root
