@@ -21,6 +21,10 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### `CoordinateSystem3D.direction` is the unit main direction of the `gp_Ax3`, not the caller's vector (#3371)
+
+`CoordinateSystem3D(origin:direction:)` and `CoordinateSystem3D(origin:direction:xDirection:)` stored the `direction` they were given, so a non-unit vector such as `SIMD3(1, 2, 2)` was reported back as `(1, 2, 2)` while `xDirection` and `yDirection` were the unit axes of the system and `cross(xDirection, yDirection)` was `(1/3, 2/3, 2/3)`. `direction` is now `gp_Ax3::Direction()`, always a unit vector, so the three axes agree. A construction that fails (a zero-length `direction`, or `direction` parallel to `xDirection`) now reports `direction == .zero` alongside the existing zero `xDirection`/`yDirection` and `isDirect == false`. `mirrored(about:)`, `rotated(about:axisDirection:angle:)` and `translated(by:)` inherit the unit direction.
+
 ### `Document.loadOCAF(from:)` no longer crashes or hangs on a damaged file (#3318)
 
 `Document.loadOCAF(from:)` no longer crashes or hangs the process on an empty file, a non-OCAF text file, a valid binary magic number followed by garbage, an XML file naming a binary format, or an XML file with an unterminated declaration. An XML file that OCCT can load (any prolog size, BOM, DOCTYPE, no declaration) still loads; one that is not an OCAF document now returns `(nil, .driverFailure)` instead of an empty document. A missing file still returns `.unknownDocument`. The faults are in OCCT and the guard sits in the bridge; the kernel follow-up is #3330. (#3318)
