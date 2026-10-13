@@ -236,7 +236,7 @@ verification exists that the detector cannot see, inline or through a helper).
 
 | Site | Function | Verdict | Still flagged | Why |
 |---|---|---|---|---|
-| `Issue617FaceGridLayoutTests.swift:254` | `squareAndSingleGridsStillWork` | LOW-RISK | yes | count is `uSamples x vSamples`, deterministic, and cross-checked against a computed expected point |
+| `FaceGridLayoutTests.swift:254` | `squareAndSingleGridsStillWork` | LOW-RISK | yes | count is `uSamples x vSamples`, deterministic, and cross-checked against a computed expected point |
 | `OCCTBRepGraphTests.swift:717` | `shellSolids` | LOW-RISK | yes | plain box trivially has 1 shell / 1 solid by construction, no risky op involved |
 | `OCCTCurveTests.swift:20` | `loftedShapeEdgePolylines` | NEEDS-FOLLOWUP | yes | both profile circles default to z=0 despite a comment claiming different Z heights; the loft may be a degenerate, coplanar shape |
 | `OCCTIOTests.swift:1757` | `stepProgressCallbackFires` | LOW-RISK | yes | companion `stepRoundTripPreservesGeometry` (same file) already verifies STEP roundtrip volume/area/face/edge fidelity |
