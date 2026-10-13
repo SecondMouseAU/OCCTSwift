@@ -7,8 +7,8 @@ import Testing
 struct BatchCurve2DTests {
 
     @Test("Evaluate grid on circle")
-    func evalGridCircle() {
-        let circle = Curve2D.circle(center: .zero, radius: 5)!
+    func evalGridCircle() throws {
+        let circle = try #require(Curve2D.circle(center: .zero, radius: 5))
         let params = stride(from: 0.0, to: 2 * Double.pi, by: Double.pi / 4).map { $0 }
         let points = circle.evaluateGrid(params)
         #expect(points.count == params.count)
@@ -19,8 +19,8 @@ struct BatchCurve2DTests {
     }
 
     @Test("Evaluate grid D1 on circle")
-    func evalGridD1Circle() {
-        let circle = Curve2D.circle(center: .zero, radius: 5)!
+    func evalGridD1Circle() throws {
+        let circle = try #require(Curve2D.circle(center: .zero, radius: 5))
         let params = [0.0, Double.pi / 2, Double.pi]
         let results = circle.evaluateGridD1(params)
         #expect(results.count == 3)
@@ -33,8 +33,8 @@ struct BatchCurve2DTests {
     }
 
     @Test("Empty parameters returns empty")
-    func emptyParams() {
-        let line = Curve2D.segment(from: .zero, to: SIMD2(10, 0))!
+    func emptyParams() throws {
+        let line = try #require(Curve2D.segment(from: .zero, to: SIMD2(10, 0)))
         #expect(line.evaluateGrid([]).isEmpty)
         #expect(line.evaluateGridD1([]).isEmpty)
 
@@ -56,8 +56,8 @@ struct BatchCurve2DTests {
     }
 
     @Test("Grid evaluation matches individual evaluation")
-    func gridMatchesIndividual() {
-        let circle = Curve2D.circle(center: .zero, radius: 3)!
+    func gridMatchesIndividual() throws {
+        let circle = try #require(Curve2D.circle(center: .zero, radius: 3))
         let params = stride(from: 0.0, to: 2 * Double.pi, by: 0.5).map { $0 }
 
         let gridPoints = circle.evaluateGrid(params)
@@ -71,8 +71,8 @@ struct BatchCurve2DTests {
     }
 
     @Test("Grid D1 matches individual D1")
-    func gridD1MatchesIndividual() {
-        let circle = Curve2D.circle(center: .zero, radius: 3)!
+    func gridD1MatchesIndividual() throws {
+        let circle = try #require(Curve2D.circle(center: .zero, radius: 3))
         let params = [0.0, 1.0, 2.0, 3.0]
 
         let gridResults = circle.evaluateGridD1(params)
@@ -88,8 +88,8 @@ struct BatchCurve2DTests {
     }
 
     @Test("Segment batch evaluation")
-    func segmentBatchEval() {
-        let segment = Curve2D.segment(from: SIMD2(0, 0), to: SIMD2(10, 5))!
+    func segmentBatchEval() throws {
+        let segment = try #require(Curve2D.segment(from: SIMD2(0, 0), to: SIMD2(10, 5)))
         let domain = segment.domain
         let params = [
             domain.lowerBound, (domain.lowerBound + domain.upperBound) / 2, domain.upperBound,

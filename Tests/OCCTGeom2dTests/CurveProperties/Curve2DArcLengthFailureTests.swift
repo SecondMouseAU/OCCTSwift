@@ -21,33 +21,35 @@ import Testing
 @Suite("Curve2D.arcLength(from:to:) distinguishes failure from zero (#409)")
 struct Curve2DArcLengthFailureTests {
 
-    private static let bezier = Curve2D.bezier(poles: [SIMD2(0, 0), SIMD2(5, 5), SIMD2(10, 0)])!
+    private static let bezier = Curve2D.bezier(poles: [SIMD2(0, 0), SIMD2(5, 5), SIMD2(10, 0)])
 
     @Test("A genuine failure is reported as -1.0, not 0.0")
-    func genuineFailureIsNotZero() {
+    func genuineFailureIsNotZero() throws {
         // A NaN bound poisons the quadrature on a single-span curve; before #409 the bridge
         // reported that as 0.0, the same value a zero-width interval reports.
-        let len = Self.bezier.arcLength(from: 0, to: .nan)
+        let len = try #require(Self.bezier).arcLength(from: 0, to: .nan)
         #expect(len == -1.0)
         #expect(len != 0.0)
     }
 
     @Test("Equal bounds are a genuine zero-length result, not the failure sentinel")
-    func equalBoundsAreGenuinelyZero() {
-        let len = Self.bezier.arcLength(from: 0.3, to: 0.3)
+    func equalBoundsAreGenuinelyZero() throws {
+        let len = try #require(Self.bezier).arcLength(from: 0.3, to: 0.3)
         #expect(abs(len) < 1e-9)
         #expect(len != -1.0)
     }
 
     @Test("Both spellings tolerate a reversed range and agree on it")
     func bothSpellingsTolerateReversedRange() throws {
-        let forward = try #require(Self.bezier.length(from: 0.2, to: 0.8))
-        let reversed = try #require(Self.bezier.length(from: 0.8, to: 0.2))
+        let unwrapped1 = try #require(Self.bezier)
+        let forward = try #require(unwrapped1.length(from: 0.2, to: 0.8))
+        let unwrapped2 = try #require(Self.bezier)
+        let reversed = try #require(unwrapped2.length(from: 0.8, to: 0.2))
         // #1979: agreement alone passed a length both spellings got wrong the same way.
         // GCPnts_AbscissaPoint::Length gives 6.34269563057 for [0.2, 0.8]
         // (Scripts/repro/766-geom2d-approx-arclength-arctypes/).
         #expect(abs(forward - 6.34269563057) < 1e-9)
         #expect(abs(forward - reversed) < 1e-9)
-        #expect(abs(Self.bezier.arcLength(from: 0.8, to: 0.2) - reversed) < 1e-9)
+        #expect(try abs(#require(Self.bezier).arcLength(from: 0.8, to: 0.2) - reversed) < 1e-9)
     }
 }

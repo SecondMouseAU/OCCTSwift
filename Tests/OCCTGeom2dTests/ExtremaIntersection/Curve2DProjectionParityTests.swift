@@ -18,18 +18,20 @@ import Testing
 @Suite("Curve2D projection entry points agree (#413)")
 struct Curve2DProjectionParityTests {
 
-    private static let segment = Curve2D.segment(from: SIMD2(0, 0), to: SIMD2(10, 0))!
+    private static let segment = Curve2D.segment(from: SIMD2(0, 0), to: SIMD2(10, 0))
 
     @Test("All five entry points agree for an ordinary projection")
-    func successAgreesAcrossAllFive() {
+    func successAgreesAcrossAllFive() throws {
         // #1979: the five spellings share one bridge path, so comparing them with each other
         // passed a wrong projection they all returned. Each case now also carries the
         // Geom2dAPI_ProjectPointOnCurve answer (Scripts/repro/766-geom2d-projection-simplify-transform/).
+        let segment = try #require(Self.segment)
+        let circle = try #require(Curve2D.circle(center: .zero, radius: 5))
         let cases: [(Curve2D, SIMD2<Double>, Double, Double)] = [
-            (Self.segment, SIMD2(5, 3), 5, 3),
-            (Self.segment, SIMD2(0.5, -2), 0.5, 2),
-            (Curve2D.circle(center: .zero, radius: 5)!, SIMD2(10, 0), 0, 5),
-            (Curve2D.circle(center: .zero, radius: 5)!, SIMD2(3, 4), atan2(4.0, 3.0), 0),
+            (segment, SIMD2(5, 3), 5, 3),
+            (segment, SIMD2(0.5, -2), 0.5, 2),
+            (circle, SIMD2(10, 0), 0, 5),
+            (circle, SIMD2(3, 4), atan2(4.0, 3.0), 0),
         ]
         for (curve, p, param, dist) in cases {
             guard let point2D = Point2D(x: p.x, y: p.y) else { continue }
@@ -70,11 +72,14 @@ struct Curve2DProjectionParityTests {
     /// only because the other four were asking the extrema question too.
     @Test("The four nearest-point entry points agree where there is no perpendicular foot")
     func noPerpendicularFootAgreesAcrossTheFour() throws {
+        let segment = try #require(Self.segment)
+        let circle = try #require(Curve2D.circle(center: .zero, radius: 5))
         let cases: [(Curve2D, SIMD2<Double>, Double)] = [
-            (Self.segment, SIMD2(100, 0), 90),  // past the end, nearest is (10, 0)
+            (segment, SIMD2(100, 0), 90),  // past the end, nearest is (10, 0)
             // Before the start, nearest is (0, 0)
-            (Self.segment, SIMD2(-50, 3), 2509.0.squareRoot()),
-            (Curve2D.circle(center: .zero, radius: 5)!, SIMD2(0, 0), 5),  // centre: tied at r
+            (segment, SIMD2(-50, 3), 2509.0.squareRoot()),
+            // Centre: tied at r
+            (circle, SIMD2(0, 0), 5),
         ]
         for (curve, p, truth) in cases {
             let point2D = try #require(Point2D(x: p.x, y: p.y))
@@ -110,13 +115,14 @@ struct Curve2DProjectionParityTests {
     func parameterZeroIsASuccess() throws {
         // #1979: `guard ... else { return }` and `if let` let a nil pass; now required.
         let start = try #require(Point2D(x: 0, y: 0))
-        let asTuple = try #require(Self.segment.project(start))
+        let unwrapped1 = try #require(Self.segment)
+        let asTuple = try #require(unwrapped1.project(start))
         #expect(asTuple.parameter == 0)
         #expect(asTuple.distance == 0)
-        let nearest = Self.segment.project(point: SIMD2(0, 0))
+        let nearest = try #require(Self.segment).project(point: SIMD2(0, 0))
         #expect(nearest?.parameter == 0)
         #expect(nearest?.distance == 0)
-        #expect(start.distance(to: Self.segment) == 0)
-        #expect(Self.segment.nearestParameter(to: SIMD2(0, 0)) == 0)
+        #expect(try start.distance(to: #require(Self.segment)) == 0)
+        #expect(try #require(Self.segment).nearestParameter(to: SIMD2(0, 0)) == 0)
     }
 }

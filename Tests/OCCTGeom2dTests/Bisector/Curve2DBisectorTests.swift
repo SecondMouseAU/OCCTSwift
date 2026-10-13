@@ -13,9 +13,9 @@ import Testing
 struct Curve2DBisectorTests {
 
     @Test("Bisector between two lines")
-    func bisectorTwoLines() {
-        let l1 = Curve2D.segment(from: SIMD2(0, 0), to: SIMD2(10, 0))!
-        let l2 = Curve2D.segment(from: SIMD2(0, 0), to: SIMD2(0, 10))!
+    func bisectorTwoLines() throws {
+        let l1 = try #require(Curve2D.segment(from: SIMD2(0, 0), to: SIMD2(10, 0)))
+        let l2 = try #require(Curve2D.segment(from: SIMD2(0, 0), to: SIMD2(0, 10)))
         let bis = l1.bisector(with: l2, origin: SIMD2(0, 0), side: true)
         // Two segments that only share their start point give Bisector_BisecCC nothing to
         // bisect from that origin: IsEmpty() is true, so the bridge returns nil.
@@ -24,7 +24,7 @@ struct Curve2DBisectorTests {
 
     @Test("Bisector between point and line")
     func bisectorPointCurve() throws {
-        let line = Curve2D.segment(from: SIMD2(-10, 0), to: SIMD2(10, 0))!
+        let line = try #require(Curve2D.segment(from: SIMD2(-10, 0), to: SIMD2(10, 0)))
         let bis = try #require(line.bisector(withPoint: SIMD2(0, 5), maxDistance: 100, side: true))
         // Bisector of a point and a line = parabola, here y = (x^2 + 25) / 10 over the
         // segment's x range, parametrised on [0, 20].
