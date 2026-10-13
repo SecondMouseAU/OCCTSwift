@@ -58,12 +58,12 @@ struct SurfaceFreeformTests {
     }
 
     @Test("Bezier surface poles round-trip")
-    func bezierPolesRoundTrip() {
+    func bezierPolesRoundTrip() throws {
         let poles: [[SIMD3<Double>]] = [
             [SIMD3(0, 0, 0), SIMD3(5, 0, 1)],
             [SIMD3(0, 5, 1), SIMD3(5, 5, 0)],
         ]
-        let bez = Surface.bezier(poles: poles)!
+        let bez = try #require(Surface.bezier(poles: poles))
         let retrieved = bez.poles
         #expect(retrieved.count == 2)
         #expect(retrieved[0].count == 2)
