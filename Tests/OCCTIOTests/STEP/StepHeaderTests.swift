@@ -6,10 +6,11 @@ import Testing
 @Suite("APIHeaderSection_MakeHeader Tests")
 struct StepHeaderTests {
 
-    @Test func createHeader() {
-        if let header = StepHeader(filename: "test.stp") {
-            #expect(header.isDone)
-        }
+    @Test func createHeader() throws {
+        let header = try #require(StepHeader(filename: "test.stp"))
+        #expect(header.isDone)
+        // The file name the header was made with is the one it reports.
+        #expect(header.name == "test.stp")
     }
 
     @Test func setAndGetName() {

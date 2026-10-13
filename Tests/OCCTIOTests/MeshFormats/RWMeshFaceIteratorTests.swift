@@ -8,21 +8,33 @@ import Testing
 @Suite("RWMesh FaceIterator v0.112")
 struct RWMeshFaceIteratorTests {
 
-    @Test func iterateFaces() {
-        if let sphere = Shape.sphere(radius: 5) {
-            let _ = sphere.mesh(linearDeflection: 0.5)
-            if let iter = MeshFaceIterator(shape: sphere) {
-                var faceCount = 0
-                var totalTris = 0
-                while iter.hasMore {
-                    totalTris += iter.triangleCount
-                    faceCount += 1
-                    iter.next()
-                }
-                #expect(faceCount >= 1)
-                #expect(totalTris > 0)
-            }
+    /// A radius-5 sphere meshed at 0.5, which is one face with 168 nodes and 306 triangles on the
+    /// pinned kernel (wasm-sensitive: the counts come from the mesher, so a platform with a
+    /// different libm may count differently while keeping every relation these tests check).
+    private func meshedSphere() throws -> Shape {
+        let sphere = try #require(Shape.sphere(radius: 5))
+        _ = try #require(sphere.mesh(linearDeflection: 0.5))
+        return sphere
+    }
+
+    @Test func iterateFaces() throws {
+        // Control: nothing has meshed this sphere, so there is no triangulation to iterate.
+        let bare = try #require(Shape.sphere(radius: 5))
+        let bareIter = try #require(MeshFaceIterator(shape: bare))
+        #expect(!bareIter.hasMore)
+
+        let sphere = try meshedSphere()
+        let iter = try #require(MeshFaceIterator(shape: sphere))
+        var faceCount = 0
+        var totalTris = 0
+        while iter.hasMore {
+            totalTris += iter.triangleCount
+            faceCount += 1
+            iter.next()
         }
+        // A sphere is a single face, and its triangulation is what the iterator reports.
+        #expect(faceCount == 1)
+        #expect(totalTris == 306)
     }
 
     @Test func nodeAccess() {
@@ -51,40 +63,42 @@ struct RWMeshFaceIteratorTests {
         }
     }
 
-    @Test func triangleAccess() {
-        if let sphere = Shape.sphere(radius: 5) {
-            let _ = sphere.mesh(linearDeflection: 0.5)
-            if let iter = MeshFaceIterator(shape: sphere) {
-                if iter.hasMore && iter.triangleCount > 0 {
-                    let tri = iter.triangle(at: 1)
-                    #expect(tri.n1 >= 1)
-                    #expect(tri.n2 >= 1)
-                    #expect(tri.n3 >= 1)
-                }
-            }
+    @Test func triangleAccess() throws {
+        let sphere = try meshedSphere()
+        let iter = try #require(MeshFaceIterator(shape: sphere))
+        #expect(iter.hasMore)
+        let nodeCount = iter.nodeCount
+        let triangleCount = iter.triangleCount
+        #expect(nodeCount == 168)
+        #expect(triangleCount == 306)
+
+        // Every triangle names three distinct nodes of this face (the indices are 1-based), and
+        // the nodes it names lie on the sphere.
+        for t in 1...triangleCount {
+            let tri = iter.triangle(at: t)
+            let ids = [Int(tri.n1), Int(tri.n2), Int(tri.n3)]
+            #expect(ids.allSatisfy { $0 >= 1 && $0 <= nodeCount }, "triangle \(t): \(ids)")
+            #expect(Set(ids).count == 3, "triangle \(t) repeats a node: \(ids)")
+        }
+        for id in 1...nodeCount {
+            let p = iter.node(at: id)
+            #expect(abs(vectorLength(p) - 5) < 1e-9, "node \(id) at \(p)")
         }
     }
 
-    @Test func nodeCountPositive() {
-        if let sphere = Shape.sphere(radius: 5) {
-            let _ = sphere.mesh(linearDeflection: 0.5)
-            if let iter = MeshFaceIterator(shape: sphere) {
-                if iter.hasMore {
-                    #expect(iter.nodeCount > 0)
-                }
-            }
-        }
+    @Test func nodeCountPositive() throws {
+        let sphere = try meshedSphere()
+        let iter = try #require(MeshFaceIterator(shape: sphere))
+        #expect(iter.hasMore)
+        // 168 on the pinned kernel; the triangulation of one face, not zero and not a sum.
+        #expect(iter.nodeCount == 168)
     }
 
-    @Test func triangleCountPositive() {
-        if let sphere = Shape.sphere(radius: 5) {
-            let _ = sphere.mesh(linearDeflection: 0.5)
-            if let iter = MeshFaceIterator(shape: sphere) {
-                if iter.hasMore {
-                    #expect(iter.triangleCount > 0)
-                }
-            }
-        }
+    @Test func triangleCountPositive() throws {
+        let sphere = try meshedSphere()
+        let iter = try #require(MeshFaceIterator(shape: sphere))
+        #expect(iter.hasMore)
+        #expect(iter.triangleCount == 306)
     }
 
     @Test func multipleNextCalls() {
@@ -101,14 +115,18 @@ struct RWMeshFaceIteratorTests {
         }
     }
 
-    @Test func hasNormalsTrue() {
-        if let sphere = Shape.sphere(radius: 5) {
-            let _ = sphere.mesh(linearDeflection: 0.5)
-            if let iter = MeshFaceIterator(shape: sphere) {
-                if iter.hasMore {
-                    #expect(iter.hasNormals)
-                }
-            }
+    @Test func hasNormalsTrue() throws {
+        let sphere = try meshedSphere()
+        let iter = try #require(MeshFaceIterator(shape: sphere))
+        #expect(iter.hasMore)
+        #expect(iter.hasNormals)
+
+        // The normals are the sphere's: unit length and pointing away from the centre.
+        for id in 1...iter.nodeCount {
+            let n = iter.normal(at: id)
+            let outward = iter.node(at: id) / 5
+            #expect(abs(vectorLength(n) - 1) < 1e-6, "normal \(id) is \(n)")
+            #expect(dotProduct(n, outward) > 0.999, "normal \(id) is \(n) at \(outward * 5)")
         }
     }
 
