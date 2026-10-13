@@ -40,12 +40,18 @@ struct BRepToolQueryTests {
         }
     }
 
-    @Test func isClosedShape() {
-        if let box = Shape.box(width: 10, height: 10, depth: 10) {
-            let shells = box.subShapes(ofType: .shell)
-            if shells.count > 0 {
-                #expect(shells[0].isClosedShape)
-            }
-        }
+    @Test func isClosedShape() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let shell = try #require(box.subShapes(ofType: .shell).first)
+        #expect(shell.isClosedShape)
+
+        // Controls: six faces collected into a shell without sewing are not a closed shell, and
+        // neither is a sewn shell missing a face.
+        let faces = box.subShapes(ofType: .face)
+        let loose = try #require(Shape.shellFromFaces(faces))
+        #expect(!loose.isClosedShape)
+        let sewn = try #require(Shape.sew(shapes: Array(faces.prefix(5))))
+        let openShell = try #require(sewn.subShapes(ofType: .shell).first)
+        #expect(!openShell.isClosedShape)
     }
 }
