@@ -2308,15 +2308,19 @@ OCCTShapeRef OCCTMakeFaceFromSurfaceWire(OCCTSurfaceRef surface, OCCTShapeRef wi
 
 OCCTShapeRef OCCTMakeFaceCopy(OCCTShapeRef face)
 {
-  if (!face)
+  if (!occtShapeIsType(face, TopAbs_FACE))
     return nullptr;
   try
   {
+    // #3358: BRepBuilderAPI_MakeFace(F) loads F through BRepLib_MakeFace::Init(F), which sets
+    // the error to FaceDone and never calls Done(), so IsDone() is false for every face and
+    // Shape() would try to Build(). The loaded face is read with Face(), as BRepLib_MakeFace's
+    // own two-argument (F, W) constructor does after Init(F).
     BRepBuilderAPI_MakeFace mf(TopoDS::Face(face->shape));
-    if (!mf.IsDone())
+    if (mf.Error() != BRepBuilderAPI_FaceDone)
       return nullptr;
     auto result   = new OCCTShape();
-    result->shape = mf.Shape();
+    result->shape = mf.Face();
     return result;
   }
   catch (...)

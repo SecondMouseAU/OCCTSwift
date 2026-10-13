@@ -49,21 +49,33 @@ struct MakeFaceExtrasTests {
         #expect(abs((face.surfaceArea ?? 0) - 100) < 1e-6)
     }
 
-    /// `faceCopy` answers nil for every face it is given (#3358).
-    ///
-    /// Measured on kernel.6 for a box face, a planar face and the three cylinder faces.
-    /// `OCCTMakeFaceCopy` guards on `BRepBuilderAPI_MakeFace(face).IsDone()`, which that
-    /// constructor never sets.
+    /// `faceCopy` used to answer nil for every face it was given (#3358): `OCCTMakeFaceCopy`
+    /// guarded on `BRepBuilderAPI_MakeFace(face).IsDone()`, which that constructor never sets.
     @Test func faceCopy() throws {
         let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let face = try #require(box.subShapes(ofType: .face).first)
         #expect(abs((face.surfaceArea ?? 0) - 100) < 1e-6)
-        let copy = Shape.faceCopy(face)
-        withKnownIssue("faceCopy returns nil for every face (#3358)") {
-            #expect(copy != nil)
-            #expect(abs((copy?.surfaceArea ?? 0) - 100) < 1e-6)
-            #expect(copy?.isValid == true)
+
+        let copy = try #require(Shape.faceCopy(face))
+        #expect(copy.shapeType == .face)
+        #expect(copy.isValid)
+        #expect(abs((copy.surfaceArea ?? 0) - 100) < 1e-6)
+        #expect(copy.edges().count == 4)
+        // A new face, not the input handed back.
+        #expect(!copy.isSame(as: face))
+
+        // A curved face copies too (the issue measured all three cylinder faces).
+        let cylinder = try #require(Shape.cylinder(radius: 3, height: 8))
+        let faces = cylinder.subShapes(ofType: .face)
+        #expect(faces.count == 3)
+        for f in faces {
+            let c = try #require(Shape.faceCopy(f))
+            #expect(c.shapeType == .face)
+            #expect(abs((c.surfaceArea ?? 0) - (f.surfaceArea ?? -1)) < 1e-6)
         }
+
+        // A shape that is not a face is refused.
+        #expect(Shape.faceCopy(box) == nil)
     }
 
     @Test func faceAddHole() throws {
