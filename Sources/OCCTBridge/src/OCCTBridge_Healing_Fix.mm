@@ -1017,9 +1017,8 @@ OCCTShapeRef OCCTShapeConnectEdges(OCCTShapeRef shape)
     return nullptr;
   try
   {
-    auto* ref  = new OCCTShape();
-    ref->shape = occtEdgeConnectOnCopy(shape->shape);
-    return ref;
+    // The copy and its Build can throw: allocate only after they have returned.
+    return new OCCTShape(occtEdgeConnectOnCopy(shape->shape));
   }
   catch (...)
   {
@@ -1572,9 +1571,8 @@ OCCTShapeRef OCCTShapeFixEdgeConnect(OCCTShapeRef shape)
     return nullptr;
   try
   {
-    auto* ref  = new OCCTShape();
-    ref->shape = occtEdgeConnectOnCopy(shape->shape);
-    return ref;
+    // The copy and its Build can throw: allocate only after they have returned.
+    return new OCCTShape(occtEdgeConnectOnCopy(shape->shape));
   }
   catch (...)
   {
