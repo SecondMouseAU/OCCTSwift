@@ -992,6 +992,8 @@ public static func solidFromShells(_ shells: [Shape]) -> Shape?
 
 The first shape provides the outer shell; additional shapes provide cavity (inner) shells.
 
+The orientation of each cavity shell is normalised: a closed shell is classified on its own (`BRepClass3d_SolidClassifier`, infinite point, as `ShapeFix_Solid` does for a hole shell) and reversed when it points outward, so a plain box passed as the second shape gives the same valid hollow solid as an already reversed one (#3359). An open cavity shell cannot be classified and is added as given. The shapes passed in are never edited.
+
 - **Parameters:** `shells`, Array of shapes containing shells; must not be empty.
 - **Returns:** Solid shape, or `nil` on failure.
 - **OCCT:** `BRepBuilderAPI_MakeSolid` (via `OCCTSolidFromShells`).
