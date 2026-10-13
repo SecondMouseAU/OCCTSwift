@@ -13,7 +13,7 @@ struct FaceFromSurfaceTests {
         if let f = face {
             #expect(try #require(f.surfaceArea) > 0)
             // 10x10 plane => area ~100
-            #expect(try abs(#require(f.surfaceArea) - 100.0) < 1e-6)
+            #expect(abs(try #require(f.surfaceArea) - 100.0) < 1e-6)
         }
     }
 
@@ -29,7 +29,7 @@ struct FaceFromSurfaceTests {
         #expect(face != nil)
         if let f = face {
             // Half-cylinder: area = π*r*h = π*5*10 ≈ 157.08
-            #expect(try abs(#require(f.surfaceArea) - Double.pi * 5 * 10) < 0.1)
+            #expect(abs(try #require(f.surfaceArea) - Double.pi * 5 * 10) < 0.1)
         }
     }
 
@@ -40,7 +40,7 @@ struct FaceFromSurfaceTests {
         #expect(face != nil)
         if let f = face {
             // Full sphere surface area = 4πr² = 4π*9 ≈ 113.1
-            #expect(try abs(#require(f.surfaceArea) - 4 * Double.pi * 9) < 0.5)
+            #expect(abs(try #require(f.surfaceArea) - 4 * Double.pi * 9) < 0.5)
         }
     }
 
@@ -52,7 +52,7 @@ struct FaceFromSurfaceTests {
         #expect(face != nil)
         if let f = face {
             // Upper hemisphere: 2πr² = 2π*9 ≈ 56.5
-            #expect(try abs(#require(f.surfaceArea) - 2 * Double.pi * 9) < 0.5)
+            #expect(abs(try #require(f.surfaceArea) - 2 * Double.pi * 9) < 0.5)
         }
     }
 }
