@@ -66,8 +66,19 @@ struct BRepGraphSupplementVertexTests {
         #expect(second != nil)
         if let uid, let second { #expect(second != uid) }
         #expect(graph.edgeAddInternalVertex(9999, vertexIndex: 0) == nil)
-        // An out-of-range vertex index is deliberately not exercised: it is not refused and
-        // reads past the vertex table, and the process died of SIGSEGV on it (#3394).
+
+        // A vertex index the graph does not have is refused, not read past the vertex table
+        // (#3394: it answered a uid on one run and died of SIGSEGV on the next). A box has 8.
+        #expect(graph.vertexCount == 8)
+        #expect(graph.edgeAddInternalVertex(0, vertexIndex: 9999) == nil)
+        #expect(graph.edgeAddInternalVertex(0, vertexIndex: 8) == nil)
+        #expect(graph.edgeAddInternalVertex(0, vertexIndex: -1) == nil)
+        #expect(graph.edgeAddInternalVertex(0, vertexIndex: 7) != nil)
+
+        // The face entry point shares the helper.
+        #expect(graph.faceAddVertex(0, vertexIndex: 9999) == nil)
+        #expect(graph.faceAddVertex(0, vertexIndex: -1) == nil)
+        #expect(graph.faceAddVertex(0, vertexIndex: 7) != nil)
     }
 
     // FaceIsNaturalRestriction: honest read of NbWires == 0. p1 normalizes natural-bound faces
