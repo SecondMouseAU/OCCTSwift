@@ -312,14 +312,14 @@ def find_over_coverage_candidates(lane_targets=None):
 # (`Libraries/occt-src/src/.../*.cxx`/`.hxx`). Keyed by (file, line-substring) rather than a full
 # line, since re-wrapping a comment shifts line numbers without changing its claim.
 ADJUDICATED_CLAIMS = {
-    ("OCCTTopologyTests/Issue495FaceContinuityTests.swift", "5 (C3) is a value"): (
+    ("OCCTTopologyTests/FaceContinuityClassTests.swift", "5 (C3) is a value"): (
         "confirmed, not a finding. Read BRepLib.cxx's ContinuityOfFaces (2197-2419): every "
         "explicit GeomAbs_Shape assignment in the function is C0/G1/C1/G2/C2, an elementary-seam "
         "early return is CN, and a trailing `if (isElementary && aCont == GeomAbs_C2) aCont = "
         "GeomAbs_CN;` promotion is the only other path -- C3 (ordinal 5) is never assigned "
         "anywhere. The test's own #expect is grounded in this read, not asserted from the "
         "refman (occt-refman@8.0.1 has no entry for this method at all)."),
-    ("OCCTTopologyTests/Issue833MaxToleranceEncodingTests.swift", "MaxTolerance` never measures"): (
+    ("OCCTTopologyTests/ToleranceTypeEncodingTests.swift", "MaxTolerance` never measures"): (
         "confirmed, not a finding. BRep_Tool.cxx's MaxTolerance(shape, subShape) (1830-1862) "
         "branches on FACE/EDGE/VERTEX only; TopAbs_SOLID (and anything else) falls through all "
         "three `if`/`else if` arms with aTol left at its initial 0.0, exactly the claimed 'returns "
@@ -347,7 +347,7 @@ ADJUDICATED_CLAIMS = {
         "list under neither name directly but covered by the #529 issue file), with its own probe "
         "directory (Scripts/repro/529-breplprop-resolution/); not a live claim needing re-checking "
         "here."),
-    ("OCCTTopologyTests/Issue495FaceContinuityTests.swift", "it casts the GeomAbs_Shape straight through"): (
+    ("OCCTTopologyTests/FaceContinuityClassTests.swift", "it casts the GeomAbs_Shape straight through"): (
         "same #495/ContinuityOfFaces finding as the entry above (one paragraph, two flagged "
         "lines); the 'no lookup table' phrase is what the source read (2197-2419) confirms: a "
         "direct GeomAbs_Shape assignment, never a value-mapping table that could introduce C3."),
@@ -378,7 +378,7 @@ ADJUDICATED_CLAIMS = {
     # number and/or a Scripts/repro/ probe), not a claim that OCCT's refman promises something.
     # Read in full context, not matched by keyword: none states or implies a refman-sourced
     # guarantee, so none needs an occt-refman/source check the way the eight above did.
-    ("OCCTTopologyTests/Issue1026NullShapeTypeGuardTests.swift", "gate's third walk cannot"): (
+    ("OCCTTopologyTests/NullShapeTypeGuardTests.swift", "gate's third walk cannot"): (
         "about this repo's own check-null-handle-guards.py gate, not OCCT."),
     ("OCCTModelingTests/BooleanExpansionTests.swift", "tolerance argument this test used to pass"): (
         "about this bridge's own historical API surface (a removed parameter), not OCCT."),
