@@ -21,6 +21,16 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### `Shape.offsetPerFace` refuses entries OCCT would merge into one offset but that disagree, and documents the Arc-join propagation (#3365)
+
+With the default `.arc` join, `BRepOffset_MakeOffset` gives each per-face entry to every face connected to it by a tangent or convex edge (concave for a negative offset), so on a convex solid a single entry is the whole shape's offset and `defaultOffset` is unused. `offsetPerFace` now documents that, and returns `nil` when two entries in one such group ask for different distances; before, one of them won and which one changed between processes (a cube with `[0: 2, 1: 3]` was uniform 3 in one run and uniform 2 in the next). Per-face distances that differ need `.intersection` or a negative offset, which are unchanged. `.tangent` is documented as not built by OCCT.
+
+```swift
+let cube = Shape.box(width: 10, height: 10, depth: 10)!
+cube.offsetPerFace(defaultOffset: 1, faceOffsets: [0: 2, 1: 3])                           // nil
+cube.offsetPerFace(defaultOffset: 1, faceOffsets: [0: 2, 1: 3], joinType: .intersection)  // x in [-7, 8]
+```
+
 ### `Document.loadOCAF(from:)` no longer crashes or hangs on a damaged file (#3318)
 
 `Document.loadOCAF(from:)` no longer crashes or hangs the process on an empty file, a non-OCAF text file, a valid binary magic number followed by garbage, an XML file naming a binary format, or an XML file with an unterminated declaration. An XML file that OCCT can load (any prolog size, BOM, DOCTYPE, no declaration) still loads; one that is not an OCAF document now returns `(nil, .driverFailure)` instead of an empty document. A missing file still returns `.unknownDocument`. The faults are in OCCT and the guard sits in the bridge; the kernel follow-up is #3330. (#3318)
