@@ -20,26 +20,26 @@ struct Issue489FilletRadiusTests {
     // MARK: - Per-edge radii (Shape.blendedEdges)
 
     @Test("Blend rejects a zero radius")
-    func blendZeroRadiusRejected() {
-        let box = Shape.box(width: 20, height: 20, depth: 20)!
+    func blendZeroRadiusRejected() throws {
+        let box = try #require(Shape.box(width: 20, height: 20, depth: 20))
         #expect(box.blendedEdges([(0, 0.0)]) == nil)
     }
 
     @Test("Blend rejects a negative radius")
-    func blendNegativeRadiusRejected() {
-        let box = Shape.box(width: 20, height: 20, depth: 20)!
+    func blendNegativeRadiusRejected() throws {
+        let box = try #require(Shape.box(width: 20, height: 20, depth: 20))
         #expect(box.blendedEdges([(0, -5.0)]) == nil)
     }
 
     @Test("Blend rejects a NaN radius")
-    func blendNaNRadiusRejected() {
-        let box = Shape.box(width: 20, height: 20, depth: 20)!
+    func blendNaNRadiusRejected() throws {
+        let box = try #require(Shape.box(width: 20, height: 20, depth: 20))
         #expect(box.blendedEdges([(0, Double.nan)]) == nil)
     }
 
     @Test("One bad radius rejects the whole blend batch")
-    func blendMixedRadiiRejected() {
-        let box = Shape.box(width: 20, height: 20, depth: 20)!
+    func blendMixedRadiiRejected() throws {
+        let box = try #require(Shape.box(width: 20, height: 20, depth: 20))
         #expect(box.blendedEdges([(0, 2.0), (1, 0.0)]) == nil)
         #expect(box.blendedEdges([(0, 2.0), (1, -3.0)]) == nil)
     }
@@ -48,8 +48,8 @@ struct Issue489FilletRadiusTests {
     /// bounds check skipped the (out-of-range index, bad radius) pair, so the batch built from the
     /// remaining edge and reported success for a request that was never fully honoured.
     @Test("A bad radius on an out-of-range index still rejects the batch")
-    func blendBadRadiusOnOutOfRangeIndexRejected() {
-        let box = Shape.box(width: 20, height: 20, depth: 20)!
+    func blendBadRadiusOnOutOfRangeIndexRejected() throws {
+        let box = try #require(Shape.box(width: 20, height: 20, depth: 20))
         #expect(box.edges().count < 99_999)
         #expect(box.blendedEdges([(0, 2.0), (99_999, -5.0)]) == nil)
     }
@@ -62,8 +62,8 @@ struct Issue489FilletRadiusTests {
     /// Pinned in
     /// `Issue520FilletContractTests`; kept here so the pair of #489 cases still reads as a pair.
     @Test("An out-of-range index rejects the batch whatever its radius")
-    func blendOutOfRangeIndexRejected() {
-        let box = Shape.box(width: 20, height: 20, depth: 20)!
+    func blendOutOfRangeIndexRejected() throws {
+        let box = try #require(Shape.box(width: 20, height: 20, depth: 20))
         #expect(box.blendedEdges([(0, 2.0), (99_999, 2.0)]) == nil)
     }
 
@@ -74,8 +74,8 @@ struct Issue489FilletRadiusTests {
     /// It existed in source on both sides of
     /// the FFI boundary but had no test, so nothing pinned it.
     @Test("Uniform fillet rejects a non-positive radius")
-    func uniformNonPositiveRadiusRejected() {
-        let box = Shape.box(width: 20, height: 20, depth: 20)!
+    func uniformNonPositiveRadiusRejected() throws {
+        let box = try #require(Shape.box(width: 20, height: 20, depth: 20))
         let edges = Array(box.edges().prefix(2))
         #expect(edges.count == 2)
         #expect(box.filleted(edges: edges, radius: 0.0) == nil)
@@ -86,8 +86,8 @@ struct Issue489FilletRadiusTests {
     // MARK: - Linear radius (Shape.filleted(edges:startRadius:endRadius:))
 
     @Test("Linear fillet rejects a non-positive radius at either end")
-    func linearNonPositiveRadiusRejected() {
-        let box = Shape.box(width: 30, height: 10, depth: 10)!
+    func linearNonPositiveRadiusRejected() throws {
+        let box = try #require(Shape.box(width: 30, height: 10, depth: 10))
         guard let edge = box.edge(at: 0) else {
             Issue.record("Could not get edge 0")
             return
@@ -101,16 +101,16 @@ struct Issue489FilletRadiusTests {
     // MARK: - History-retaining siblings (same loop, same precondition)
 
     @Test("History fillet rejects a non-positive radius")
-    func historyUniformNonPositiveRadiusRejected() {
-        let box = Shape.box(width: 20, height: 20, depth: 20)!
+    func historyUniformNonPositiveRadiusRejected() throws {
+        let box = try #require(Shape.box(width: 20, height: 20, depth: 20))
         #expect(box.filletedWithFullHistory(radius: 0.0, edges: [0]) == nil)
         #expect(box.filletedWithFullHistory(radius: -2.0, edges: [0]) == nil)
         #expect(box.filletedWithFullHistory(radius: Double.nan, edges: [0]) == nil)
     }
 
     @Test("History variable fillet rejects a non-positive radius at either end")
-    func historyLinearNonPositiveRadiusRejected() {
-        let box = Shape.box(width: 30, height: 10, depth: 10)!
+    func historyLinearNonPositiveRadiusRejected() throws {
+        let box = try #require(Shape.box(width: 30, height: 10, depth: 10))
         #expect(box.filletedWithFullHistory(edge: 0, startRadius: 0.0, endRadius: 3.0) == nil)
         #expect(box.filletedWithFullHistory(edge: 0, startRadius: 1.0, endRadius: 0.0) == nil)
         #expect(box.filletedWithFullHistory(edge: 0, startRadius: -1.0, endRadius: 3.0) == nil)
@@ -119,8 +119,8 @@ struct Issue489FilletRadiusTests {
     /// The history entry point moved onto the shared edge loop, so a valid request must still build
     /// and still report the input edge in its history.
     @Test("History fillet still builds and still records the input edge")
-    func historyFilletStillBuilds() {
-        let box = Shape.box(width: 20, height: 20, depth: 20)!
+    func historyFilletStillBuilds() throws {
+        let box = try #require(Shape.box(width: 20, height: 20, depth: 20))
         let edges = box.subShapes(ofType: .edge)
         #expect(!edges.isEmpty)
 
@@ -149,8 +149,8 @@ struct Issue489FilletRadiusTests {
     /// Both entry points now run the same loop over the same edge map, so a per-edge radius list
     /// where every radius is equal must produce exactly the shape the uniform entry point does.
     @Test("Uniform radii through the per-edge path match the uniform path")
-    func perEdgeUniformRadiiMatchUniformPath() {
-        let box = Shape.box(width: 20, height: 20, depth: 20)!
+    func perEdgeUniformRadiiMatchUniformPath() throws {
+        let box = try #require(Shape.box(width: 20, height: 20, depth: 20))
         let edges = Array(box.edges().prefix(3))
         #expect(edges.count == 3)
 
@@ -169,8 +169,8 @@ struct Issue489FilletRadiusTests {
 
     /// Distinct radii still reach OCCT individually rather than collapsing onto one value.
     @Test("Distinct per-edge radii remove more material than the smallest one alone")
-    func distinctPerEdgeRadiiHonoured() {
-        let box = Shape.box(width: 20, height: 20, depth: 20)!
+    func distinctPerEdgeRadiiHonoured() throws {
+        let box = try #require(Shape.box(width: 20, height: 20, depth: 20))
         let edges = Array(box.edges().prefix(3))
         #expect(edges.count == 3)
 

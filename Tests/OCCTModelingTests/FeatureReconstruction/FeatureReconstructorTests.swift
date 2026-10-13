@@ -155,7 +155,7 @@ struct FeatureReconstructorTests {
               ]
             }
             """
-        let data = json.data(using: .utf8)!
+        let data = try #require(json.data(using: .utf8))
         let result = try FeatureReconstructor.buildJSON(data)
         #expect(result.fulfilled == ["rev_1"])
         #expect(result.shape != nil)
