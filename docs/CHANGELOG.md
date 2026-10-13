@@ -21,6 +21,17 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### `Shape.offsetWire(face:offset:)` offsets outward for a positive offset and inward for a negative one (#3364)
+
+`Shape.offsetWire(face:offset:)` now follows `BRepOffsetAPI_MakeOffset`: a positive offset expands the face's wires outward (an Arc join rounds the corners) and a negative offset shrinks them inward, both as trimmed closed wires. It used to shrink for a positive offset and return four untrimmed crossing segments for a negative one. An inward offset that collapses the face, and a non-finite offset, return `nil` instead of an empty compound.
+
+```swift
+let rect = Wire.rectangle(width: 20, height: 20)!
+let face = Shape.face(from: rect)!.faces().first!
+let grown = Shape.offsetWire(face: face, offset: 3)    // 8 edges, half-width 13
+let shrunk = Shape.offsetWire(face: face, offset: -3)  // 4 edges, half-width 7
+```
+
 ### `Document.loadOCAF(from:)` no longer crashes or hangs on a damaged file (#3318)
 
 `Document.loadOCAF(from:)` no longer crashes or hangs the process on an empty file, a non-OCAF text file, a valid binary magic number followed by garbage, an XML file naming a binary format, or an XML file with an unterminated declaration. An XML file that OCCT can load (any prolog size, BOM, DOCTYPE, no declaration) still loads; one that is not an OCAF document now returns `(nil, .driverFailure)` instead of an empty document. A missing file still returns `.unknownDocument`. The faults are in OCCT and the guard sits in the bridge; the kernel follow-up is #3330. (#3318)
