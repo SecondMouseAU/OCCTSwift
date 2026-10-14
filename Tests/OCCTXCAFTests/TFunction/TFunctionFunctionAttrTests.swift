@@ -26,8 +26,7 @@ struct TFunctionFunctionAttrTests {
         label.setFunctionAttribute()
         #expect(label.setFunctionFailure(1))
         #expect(label.functionIsFailed)
-        if let failure = label.functionFailure {
-            #expect(failure == 1)
-        }
+        let failure = try #require(label.functionFailure)
+        #expect(failure == 1)
     }
 }

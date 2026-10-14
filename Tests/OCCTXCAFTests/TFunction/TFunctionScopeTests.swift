@@ -18,22 +18,22 @@ struct TFunctionScopeTests {
         #expect(!hasBefore)
     }
 
-    @Test func addAndHasFunction() {
-        guard let doc = Document.create() else { return }
+    @Test func addAndHasFunction() throws {
+        let doc = try #require(Document.create())
         doc.openTransaction()
         doc.setFunctionScope()
-        guard let node = doc.createLabel() else { return }
+        let node = try #require(doc.createLabel())
         let added = doc.functionScopeAdd(labelId: node.labelId)
         #expect(added)
         #expect(doc.functionScopeHas(labelId: node.labelId))
         doc.commitTransaction()
     }
 
-    @Test func removeFunction() {
-        guard let doc = Document.create() else { return }
+    @Test func removeFunction() throws {
+        let doc = try #require(Document.create())
         doc.openTransaction()
         doc.setFunctionScope()
-        guard let node = doc.createLabel() else { return }
+        let node = try #require(doc.createLabel())
         doc.functionScopeAdd(labelId: node.labelId)
         let removed = doc.functionScopeRemove(labelId: node.labelId)
         #expect(removed)
@@ -41,11 +41,12 @@ struct TFunctionScopeTests {
         doc.commitTransaction()
     }
 
-    @Test func removeAllFunctions() {
-        guard let doc = Document.create() else { return }
+    @Test func removeAllFunctions() throws {
+        let doc = try #require(Document.create())
         doc.openTransaction()
         doc.setFunctionScope()
-        guard let l1 = doc.createLabel(), let l2 = doc.createLabel() else { return }
+        let l1 = try #require(doc.createLabel())
+        let l2 = try #require(doc.createLabel())
         doc.functionScopeAdd(labelId: l1.labelId)
         doc.functionScopeAdd(labelId: l2.labelId)
         #expect(doc.functionScopeCount == 2)
@@ -54,13 +55,13 @@ struct TFunctionScopeTests {
         doc.commitTransaction()
     }
 
-    @Test func freeID() {
-        guard let doc = Document.create() else { return }
+    @Test func freeID() throws {
+        let doc = try #require(Document.create())
         doc.openTransaction()
         doc.setFunctionScope()
         let freeId = doc.functionScopeFreeID
         #expect(freeId >= 1)
-        guard let node = doc.createLabel() else { return }
+        let node = try #require(doc.createLabel())
         doc.functionScopeAdd(labelId: node.labelId)
         let freeId2 = doc.functionScopeFreeID
         #expect(freeId2 > freeId)

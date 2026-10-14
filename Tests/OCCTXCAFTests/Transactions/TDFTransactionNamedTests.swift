@@ -20,8 +20,8 @@ struct TDFTransactionNamedTests {
         #expect(doc.transactionNumber == 0)
     }
 
-    @Test func transactionNumber() {
-        guard let doc = Document.create() else { return }
+    @Test func transactionNumber() throws {
+        let doc = try #require(Document.create())
         doc.setUndoLimit(10)
         let before = doc.transactionNumber
         #expect(before == 0)
@@ -57,18 +57,14 @@ struct TDFTransactionNamedTests {
         #expect(second.attributeDeltaCount == 4)
     }
 
-    @Test func deltaName() {
-        guard let doc = Document.create() else { return }
+    @Test func deltaName() throws {
+        let doc = try #require(Document.create())
         doc.setUndoLimit(10)
         doc.openTransaction()
-        if let node = doc.createLabel() {
-            node.setInteger(99)
-        }
-        let delta = doc.commitWithDelta()
-        #expect(delta != nil)
-        if let delta {
-            delta.setName("MyDelta")
-            #expect(delta.name == "MyDelta")
-        }
+        let node = try #require(doc.createLabel())
+        node.setInteger(99)
+        let delta = try #require(doc.commitWithDelta())
+        delta.setName("MyDelta")
+        #expect(delta.name == "MyDelta")
     }
 }

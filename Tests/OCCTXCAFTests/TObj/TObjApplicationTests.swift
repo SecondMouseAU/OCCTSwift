@@ -18,18 +18,17 @@ struct TObjApplicationTests {
         }
     }
 
-    @Test func verboseFlag() {
+    @Test func verboseFlag() throws {
         // isVerbose mutates the shared singleton's plain field with no synchronization (see
         // TObjApplication's own doc comment, #1404); OCCTSerial.withLock is its documented
         // mitigation, needed here so this doesn't race Issue1588TObjApplicationReleaseTests'
         // own locked accesses to the same singleton under Swift Testing's parallel execution.
-        OCCTSerial.withLock {
-            if let app = TObjApplication.shared {
-                app.isVerbose = true
-                #expect(app.isVerbose)
-                app.isVerbose = false
-                #expect(!app.isVerbose)
-            }
+        try OCCTSerial.withLock {
+            let app = try #require(TObjApplication.shared)
+            app.isVerbose = true
+            #expect(app.isVerbose)
+            app.isVerbose = false
+            #expect(!app.isVerbose)
         }
     }
 

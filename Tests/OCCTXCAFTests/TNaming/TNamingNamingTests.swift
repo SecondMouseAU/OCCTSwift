@@ -18,10 +18,10 @@ struct TNamingNamingTests {
         #expect(doc.attributeCount(labelId: node.labelId) == 1)
     }
 
-    @Test func namingIsDefined() {
-        guard let doc = Document.create() else { return }
+    @Test func namingIsDefined() throws {
+        let doc = try #require(Document.create())
         doc.openTransaction()
-        guard let node = doc.createLabel() else { return }
+        let node = try #require(doc.createLabel())
         doc.insertNaming(labelId: node.labelId)
         doc.commitTransaction()
         // Newly inserted naming is not yet defined (no Name() called)
