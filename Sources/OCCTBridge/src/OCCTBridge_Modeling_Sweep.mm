@@ -736,7 +736,7 @@ OCCTShapeRef OCCTShapeCreateEvolvedAdvanced(OCCTShapeRef spine,
                                             bool         volume,
                                             double       tolerance)
 {
-  if (!spine || !profile)
+  if (!occtShapeIsPresent(spine) || !occtShapeIsPresent(profile))
     return nullptr;
   try
   {
@@ -745,6 +745,25 @@ OCCTShapeRef OCCTShapeCreateEvolvedAdvanced(OCCTShapeRef spine,
       join = GeomAbs_Tangent;
     else if (joinType == 2)
       join = GeomAbs_Intersection;
+    // #3368: a face spine must be planar. The non-volume path enforces it itself, with the test
+    // below (BRepFill_Evolved::FindLocation throws "The Face is not planar" when the surface is not
+    // a Geom_Plane and BRepLib_FindSurface, planar only, finds none). Volume mode skips that test
+    // and hands the face's first wire to BRepFill_AdvancedEvolved, which segfaulted in
+    // BRepFill_TrimShellCorner::Perform on a curved face. The test is applied to both modes.
+    if (spine->shape.ShapeType() == TopAbs_FACE)
+    {
+      TopLoc_Location           spineLoc;
+      occ::handle<Geom_Surface> spineSurf =
+        BRep_Tool::Surface(TopoDS::Face(spine->shape), spineLoc);
+      if (spineSurf.IsNull())
+        return nullptr;
+      if (!spineSurf->IsKind(STANDARD_TYPE(Geom_Plane)))
+      {
+        BRepLib_FindSurface planarCheck(spine->shape, -1, true);
+        if (!planarCheck.Found())
+          return nullptr;
+      }
+    }
     // #3368: with `axeProf` false the frame is computed by BRepFill::Axe, and a profile through
     // the centre of a circular spine leaves it NaN, after which BRepOffsetAPI_MakeEvolved never
     // returns (see occtIsFiniteFrame). The constructor calls Axe itself, with exactly these
@@ -1625,6 +1644,10 @@ OCCTShapeRef _Nullable OCCTBRepFillEvolved(OCCTShapeRef _Nonnull spineFaceRef,
                                            int    joinType,
                                            bool   makeSolid)
 {
+  // #3368 (Kilo): the casts below dereference both handles, so a null wrapper or a wrapper
+  // carrying a null shape is refused the way a wrong-typed one is.
+  if (!occtShapeIsPresent(spineFaceRef) || !occtShapeIsType(profileWireRef, TopAbs_WIRE))
+    return nullptr;
   try
   {
     const TopoDS_Shape& spineShape   = *(const TopoDS_Shape*)spineFaceRef;

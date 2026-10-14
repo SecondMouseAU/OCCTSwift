@@ -166,6 +166,78 @@ struct EvolvedAdvancedTests {
         #expect(control.faces().count == 4)
     }
 
+    // Kilo asked whether the spine may be any face. It may not: BRepFill_Evolved::FindLocation
+    // throws Standard_NoSuchObject ("The Face is not planar") when BRepLib_FindSurface finds no
+    // plane through the face, and the bridge's catch turns that into nil. Volume mode skips that
+    // test in OCCT and segfaults in BRepFill_TrimShellCorner::Perform on a curved face, so the
+    // bridge applies the same test to it. Measured on a cylinder's side face and a curved
+    // B-spline face, in every axeProf/volume mode and through `evolved(spineFace:)`. A sphere
+    // is deliberately not here: its single seam edge is collinear, so OCCT's own planarity test
+    // accepts the face and the non-volume build returns one valid face. The planar cylinder cap and a tilted planar face are the
+    // controls that build, and an edge, a shell and a compound of a wire are the other refused
+    // types.
+    @Test("A face on a curved surface and a non-wire non-face spine are refused")
+    func nonPlanarAndOtherSpinesAreRefused() throws {
+        let cylinder = try #require(Shape.cylinder(radius: 10, height: 5))
+        var poles: [[SIMD3<Double>]] = []
+        for i in 0..<4 {
+            var row: [SIMD3<Double>] = []
+            for j in 0..<4 {
+                let z: Double = (i + j) % 2 == 0 ? 3.0 : -3.0
+                row.append(SIMD3<Double>(Double(i) * 5.0, Double(j) * 5.0, z))
+            }
+            poles.append(row)
+        }
+        let surface = try #require(
+            Surface.bspline(
+                poles: poles, knotsU: [0, 1], multiplicitiesU: [4, 4], knotsV: [0, 1],
+                multiplicitiesV: [4, 4], degreeU: 3, degreeV: 3))
+        let wavy = try #require(surface.toFace())
+        let wireShape = try #require(Shape.fromWire(try rectangleWire()))
+        let box = try #require(Shape.box(width: 20, height: 20, depth: 5))
+
+        var refused: [String: Shape] = [:]
+        refused["cylinder side face"] = cylinder.subShapes(ofType: .face)[0]
+        refused["B-spline face"] = wavy
+        refused["edge"] = try #require(wireShape.subShapes(ofType: .edge).first)
+        refused["shell"] = try #require(box.subShapes(ofType: .shell).first)
+        refused["compound of a wire"] = try #require(Shape.compound([wireShape]))
+        for (name, spine) in refused.sorted(by: { $0.key < $1.key }) {
+            for axeProf in [true, false] {
+                for volume in [false, true] {
+                    #expect(
+                        Shape.evolvedAdvanced(
+                            spine: spine, profile: try segment(), axeProf: axeProf, solid: false,
+                            volume: volume) == nil,
+                        "\(name) axeProf \(axeProf) volume \(volume)")
+                }
+            }
+        }
+        for name in ["cylinder side face", "B-spline face"] {
+            if let spine = refused[name] {
+                #expect(
+                    Shape.evolved(spineFace: spine, profileWire: wireShape) == nil, "\(name)")
+            }
+        }
+
+        // Controls: planar faces build, including one that is not in the XY plane.
+        let cap = cylinder.subShapes(ofType: .face)[1]
+        let tilted = try #require(
+            Wire.polygon3D(
+                [SIMD3(0, 0, 0), SIMD3(20, 0, 0), SIMD3(20, 20, 10), SIMD3(0, 20, 10)],
+                closed: true))
+        for spine in [cap, try #require(Shape.face(from: tilted))] {
+            let built = Shape.evolvedAdvanced(
+                spine: spine, profile: try segment(), axeProf: true, solid: false)
+            if let built {
+                #expect(built.isValid)
+                #expect(built.faces().count >= 3)
+            } else {
+                Issue.record("a planar face spine returned nil")
+            }
+        }
+    }
+
     // The profile is placed in the frame R and projected onto its YOZ plane: Y is the lateral
     // offset from the spine in the spine's plane (positive to the left of the spine's direction,
     // which is the inside of a counter-clockwise rectangle), Z the height above it, and X, along
