@@ -102,9 +102,8 @@ struct Issue1588TObjApplicationReleaseTests {
             let again = try #require(OCCTTObjApplicationGetInstance())
             OCCTTObjApplicationSetVerbose(again, false)
             #expect(!OCCTTObjApplicationIsVerbose(again))
-            let doc = OCCTTObjApplicationCreateDocument(again)
-            #expect(doc != nil)
-            if let doc { OCCTDocumentRelease(doc) }
+            let doc = try #require(OCCTTObjApplicationCreateDocument(again))
+            OCCTDocumentRelease(doc)
             OCCTTObjApplicationRelease(again)
         }
     }
