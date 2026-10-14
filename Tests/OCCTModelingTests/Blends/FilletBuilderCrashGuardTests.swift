@@ -46,7 +46,7 @@ struct FilletBuilderCrashGuardTests {
     // follows runs on the default tolerances and succeeds.
     @Test("setParams ignores a non-positive or non-finite tolerance instead of crashing build")
     func setParamsRefusesBadTolerances() throws {
-        let bad: [Double] = [0, -1, .nan, .infinity]
+        let bad: [Double] = [0, -1, .nan, .infinity, -.infinity]
         for slot in 0..<6 {
             for value in bad {
                 var p: [Double] = [1e-4, 1e-3, 1e-5, 1e-4, 1e-5, 1e-3]
@@ -64,6 +64,23 @@ struct FilletBuilderCrashGuardTests {
                 }
             }
         }
+        // Previous tolerances stay in force: valid values are set, a bad call follows, and the
+        // build matches one that only ever saw the valid values.
+        func built(withBadCall: Bool) throws -> Double {
+            let box = try #require(Shape.box(width: 20, height: 20, depth: 20))
+            let fb = try #require(FilletBuilder(shape: box))
+            fb.setParams(
+                tang: 1e-3, tesp: 1e-3, t2d: 1e-4, tApp3d: 1e-3, tApp2d: 1e-4, fleche: 1e-2)
+            if withBadCall {
+                fb.setParams(
+                    tang: 1e-3, tesp: 1e-3, t2d: 1e-4, tApp3d: 0, tApp2d: 1e-4, fleche: 1e-2)
+            }
+            #expect(fb.addEdge(try #require(box.edges().first), radius: 2.0))
+            let result = try #require(fb.build())
+            return result.volume ?? -1
+        }
+        #expect(abs(try built(withBadCall: true) - built(withBadCall: false)) < 1e-9)
+
         // All-zero, the exact call from the report.
         let box = try #require(Shape.box(width: 20, height: 20, depth: 20))
         let fb = try #require(FilletBuilder(shape: box))

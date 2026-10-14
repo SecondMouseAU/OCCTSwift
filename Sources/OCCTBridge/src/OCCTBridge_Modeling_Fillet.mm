@@ -224,6 +224,7 @@
 #include <TopExp.hxx>
 #include <TopExp_Explorer.hxx>
 #include <TopLoc_Location.hxx>
+#include <Standard_DomainError.hxx>
 #include <TopoDS.hxx>
 #include <TopoDS_Compound.hxx>
 #include <TopTools_IndexedMapOfShape.hxx>
@@ -1146,15 +1147,19 @@ OCCTShapeRef OCCTFilletBuilderBuild(OCCTFilletBuilderRef builder)
       const int edgeCount = builder->fillet.NbEdges(c);
       for (int e = 1; e <= edgeCount; ++e)
       {
+        const TopoDS_Edge& edge = builder->fillet.Edge(c, e);
+        if (edge.IsNull())
+          return nullptr;
         double radius = 0.0;
         try
         {
-          radius = builder->fillet.Radius(c, builder->fillet.Edge(c, e));
+          radius = builder->fillet.Radius(c, edge);
         }
-        catch (...)
+        catch (const Standard_DomainError&)
         {
-          continue; // variable radius on this edge: it has a law
+          continue; // "Edge is not constant": a variable radius, it has a law
         }
+        // Any other exception leaves for the function-level catch, which records it.
         if (!(radius > 0.0))
           return nullptr; // a refusal is control flow, not a diagnostic
       }
