@@ -26,10 +26,7 @@ struct Issue173AssemblySTEP {
     @Test("geometry is shared: 1 BREP + N occurrences, size scales with unique parts")
     func instancedStructure() throws {
         let n = 20
-        guard let doc = makeInstancedDoc(n: n) else {
-            #expect(Bool(false))
-            return
-        }
+        let doc = try #require(makeInstancedDoc(n: n))
         let url = URL(fileURLWithPath: NSTemporaryDirectory())
             .appendingPathComponent("issue173_asm.step")
         defer { try? FileManager.default.removeItem(at: url) }
@@ -71,10 +68,7 @@ struct Issue173AssemblySTEP {
 
     @Test("empty path throws, not crashes")
     func emptyPathThrows() throws {
-        guard let doc = makeInstancedDoc(n: 2) else {
-            #expect(Bool(false))
-            return
-        }
+        let doc = try #require(makeInstancedDoc(n: 2))
         #expect(throws: Exporter.ExportError.self) {
             try Exporter.writeSTEPAssembly(doc, to: URL(fileURLWithPath: ""))
         }

@@ -6,8 +6,8 @@ import Testing
 @Suite("v0.126.0, XCAFDoc_ColorTool completions")
 struct ColorToolCompletionsTests {
     @Test("AddColor and FindColor")
-    func addAndFindColor() {
-        guard let doc = Document.create() else { return }
+    func addAndFindColor() throws {
+        let doc = try #require(Document.create())
         let tag = doc.colorToolAddColor(r: 1.0, g: 0.0, b: 0.0)
         #expect(tag >= 0)
         let found = doc.colorToolFindColor(r: 1.0, g: 0.0, b: 0.0)
@@ -24,8 +24,8 @@ struct ColorToolCompletionsTests {
     }
 
     @Test("RemoveColor removes a color")
-    func removeColor() {
-        guard let doc = Document.create() else { return }
+    func removeColor() throws {
+        let doc = try #require(Document.create())
         let tag = doc.colorToolAddColor(r: 0.0, g: 0.0, b: 1.0)
         let before = doc.colorToolColorCount
         let ok = doc.colorToolRemoveColor(labelId: tag)
@@ -54,16 +54,13 @@ struct ColorToolCompletionsTests {
     }
 
     @Test("ColorByLayer defaults to false")
-    func colorByLayer() {
-        guard let doc = Document.create() else { return }
-        let box = Shape.box(width: 10, height: 10, depth: 10)
-        if let box = box {
-            let labelId = doc.addShape(box)
-            if labelId >= 0 {
-                #expect(!doc.colorToolIsColorByLayer(labelId: labelId))
-                doc.colorToolSetColorByLayer(labelId: labelId, isByLayer: true)
-                #expect(doc.colorToolIsColorByLayer(labelId: labelId))
-            }
-        }
+    func colorByLayer() throws {
+        let doc = try #require(Document.create())
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        let labelId = doc.addShape(box)
+        try #require(labelId >= 0)
+        #expect(!doc.colorToolIsColorByLayer(labelId: labelId))
+        doc.colorToolSetColorByLayer(labelId: labelId, isByLayer: true)
+        #expect(doc.colorToolIsColorByLayer(labelId: labelId))
     }
 }
