@@ -23,8 +23,9 @@ struct FilletMergeWireRemovalTests {
         return try Shape.loadBREP(from: url)
     }
 
-    /// Gated on `OCCTSWIFT_LOCAL=1`: the fix, carried patch `0064`, is not in the pinned asset, and
-    /// an unguarded run against it is a SIGSEGV that takes the whole `build-and-test` process
+    /// Gated on `OCCTSWIFT_LOCAL=1` until carried patch `0064` is pinned.
+    ///
+    /// The fix is not in the pinned asset, and an unguarded run against it is a SIGSEGV that takes the whole `build-and-test` process
     /// down. `kernel-integration.yml` runs it against the patched build. Ungate it at the repin
     /// that pins `0064`, or the test stays skipped on every default run (#2983).
     @Test(
