@@ -15,11 +15,10 @@ struct TDataXtdPositionAttributeTests {
 
         #expect(label.setPositionAttribute(x: 1.0, y: 2.0, z: 3.0))
         #expect(label.hasPositionAttribute)
-        if let pos = label.positionAttribute() {
-            #expect(abs(pos.x - 1.0) < 1e-10)
-            #expect(abs(pos.y - 2.0) < 1e-10)
-            #expect(abs(pos.z - 3.0) < 1e-10)
-        }
+        let pos = try #require(label.positionAttribute())
+        #expect(abs(pos.x - 1.0) < 1e-10)
+        #expect(abs(pos.y - 2.0) < 1e-10)
+        #expect(abs(pos.z - 3.0) < 1e-10)
     }
 
     @Test("Label without position attribute")
