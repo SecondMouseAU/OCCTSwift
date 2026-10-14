@@ -86,38 +86,31 @@ struct GDTDimensionAccessorTests {
     @Test("Decimal places read back as written, and as nil when never written")
     func decimalPlacesDistinguishAbsenceFromZero() throws {
         let (doc, index) = try #require(documentWithDimension(), "document nil")
-        #expect(doc.dimension(at: index)?.decimalPlaces == nil)
+        let fresh = try #require(doc.dimension(at: index))
+        #expect(fresh.decimalPlaces == nil)
 
         #expect(doc.setDimensionDecimalPlaces(at: index, left: 2, right: 3))
-        if let places = doc.dimension(at: index)?.decimalPlaces {
-            // Asymmetric on purpose: 2 and 3 tell a correct pair from a swapped one.
-            #expect(places.left == 2)
-            #expect(places.right == 3)
-        } else {
-            Issue.record("decimalPlaces nil after writing (2, 3)")
-        }
+        let places = try #require(doc.dimension(at: index)?.decimalPlaces)
+        // Asymmetric on purpose: 2 and 3 tell a correct pair from a swapped one.
+        #expect(places.left == 2)
+        #expect(places.right == 3)
 
         // A zero on one side only is still a stored pair, since OCCT keeps it when either is
         // positive. This is the case a "nil when either is zero" rule would get wrong.
         #expect(doc.setDimensionDecimalPlaces(at: index, left: 0, right: 4))
-        if let places = doc.dimension(at: index)?.decimalPlaces {
-            #expect(places.left == 0)
-            #expect(places.right == 4)
-        } else {
-            Issue.record("decimalPlaces nil after writing (0, 4)")
-        }
+        let placesZeroLeft = try #require(doc.dimension(at: index)?.decimalPlaces)
+        #expect(placesZeroLeft.left == 0)
+        #expect(placesZeroLeft.right == 4)
 
         // And the mirror of it: a zero on the right only is stored too.
         #expect(doc.setDimensionDecimalPlaces(at: index, left: 3, right: 0))
-        if let places = doc.dimension(at: index)?.decimalPlaces {
-            #expect(places.left == 3)
-            #expect(places.right == 0)
-        } else {
-            Issue.record("decimalPlaces nil after writing (3, 0)")
-        }
+        let placesZeroRight = try #require(doc.dimension(at: index)?.decimalPlaces)
+        #expect(placesZeroRight.left == 3)
+        #expect(placesZeroRight.right == 0)
 
         #expect(doc.setDimensionDecimalPlaces(at: index, left: 0, right: 0))
-        #expect(doc.dimension(at: index)?.decimalPlaces == nil)
+        let cleared = try #require(doc.dimension(at: index))
+        #expect(cleared.decimalPlaces == nil)
     }
 
     @Test("A modifier sequence round-trips in order, and clears")

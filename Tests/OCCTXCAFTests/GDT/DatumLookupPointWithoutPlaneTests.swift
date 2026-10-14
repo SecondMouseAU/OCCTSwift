@@ -56,24 +56,15 @@ struct Issue1030DatumLookupGuardTests {
     }
 
     @Test("The crashing shape is authorable through the public label API")
-    func theCrashingShapeIsAuthorable() {
+    func theCrashingShapeIsAuthorable() throws {
         // Nothing on this path reaches XCAFDoc_Datum::GetObject, so it runs unfixed as well as
         // fixed. It exists because every other test here asserts a refusal, and a refusal is
         // indistinguishable from a fixture that never built what it claims to.
-        guard let doc = Document.create() else {
-            Issue.record("document nil")
-            return
-        }
+        let doc = try #require(Document.create())
         let name = "Datum1030"
-        guard let index = doc.createDatum(name: name) else {
-            Issue.record("createDatum nil")
-            return
-        }
+        let index = try #require(doc.createDatum(name: name))
         #expect(index == 0)
-        guard let label = datumLabel(doc, named: name) else {
-            Issue.record("datum label not found")
-            return
-        }
+        let label = try #require(datumLabel(doc, named: name))
         // Child existence proves nothing here: XCAFDoc_Datum::SetObject opens every child from
         // ChildLab_Begin to ChildLab_End and only forgets their attributes, so createDatum leaves
         // all nineteen present and empty. The array attribute is what both the kernel and the
@@ -94,11 +85,8 @@ struct Issue1030DatumLookupGuardTests {
     }
 
     @Test("A datum with a point and no plane location is read, where the guard refused it")
-    func pointWithoutPlaneLocationIsRead() {
-        guard let (doc, index) = documentWithPointDatum(withPlaneLocation: false) else {
-            Issue.record("fixture nil")
-            return
-        }
+    func pointWithoutPlaneLocationIsRead() throws {
+        let (doc, index) = try #require(documentWithPointDatum(withPlaneLocation: false))
         // Against a kernel without patch 0029 this line is a SIGSEGV inside GetObject rather than
         // a value, so the process dies here and nothing below reports. That it returns at all is
         // half the assertion.
@@ -111,11 +99,8 @@ struct Issue1030DatumLookupGuardTests {
     }
 
     @Test("A write path succeeds, where the shared lookup used to refuse it first")
-    func aWritePathSucceedsToo() {
-        guard let (doc, index) = documentWithPointDatum(withPlaneLocation: false) else {
-            Issue.record("fixture nil")
-            return
-        }
+    func aWritePathSucceedsToo() throws {
+        let (doc, index) = try #require(documentWithPointDatum(withPlaneLocation: false))
         // Five of the seven callers of the shared lookup are writes, and the lookup called
         // GetObject before any of them could look at what it returned, so a write that never
         // touches the point took the refusal too. All five are listed rather than sampled,
@@ -143,17 +128,11 @@ struct Issue1030DatumLookupGuardTests {
     }
 
     @Test("A plane location array too short for the point's own index is read, not refused")
-    func planeLocationTooShortForThePointIndexIsRead() {
-        guard let doc = Document.create() else {
-            Issue.record("document nil")
-            return
-        }
+    func planeLocationTooShortForThePointIndexIsRead() throws {
+        let doc = try #require(Document.create())
         let name = "Datum1030"
-        guard let index = doc.createDatum(name: name), let label = datumLabel(doc, named: name)
-        else {
-            Issue.record("fixture nil")
-            return
-        }
+        let index = try #require(doc.createDatum(name: name))
+        let label = try #require(datumLabel(doc, named: name))
         // The UNPATCHED kernel read aLoc->Value(aPnt->Lower()), so a plane location array that
         // existed was not sufficient: it had to hold the point array's own lower index. Here both
         // arrays have Length() == 3, so both of the kernel's own conditions passed and the read
@@ -163,10 +142,7 @@ struct Issue1030DatumLookupGuardTests {
         // whatever the point array's lower index is, so this shape is now as safe as any other and
         // the guard's index arm has nothing left to protect.
         #expect(writeTriple(label, tag: Self.planeLocationTag, 6))
-        guard let point = label.findChild(tag: Self.pointTag, create: true) else {
-            Issue.record("point child nil")
-            return
-        }
+        let point = try #require(label.findChild(tag: Self.pointTag, create: true))
         #expect(point.initRealArray(lower: 1_000_000, upper: 1_000_002))
         #expect(point.realArrayBounds?.lower == 1_000_000)
         #expect(label.findChild(tag: Self.planeLocationTag)?.realArrayBounds?.upper == 3)
@@ -174,11 +150,8 @@ struct Issue1030DatumLookupGuardTests {
     }
 
     @Test("A datum with both a point and a plane location still reads")
-    func pointWithPlaneLocationStillReads() {
-        guard let (doc, index) = documentWithPointDatum(withPlaneLocation: true) else {
-            Issue.record("fixture nil")
-            return
-        }
+    func pointWithPlaneLocationStillReads() throws {
+        let (doc, index) = try #require(documentWithPointDatum(withPlaneLocation: true))
         // The guard is only about the null handle. A plane location makes GetObject's aLoc
         // non-null, so the read completes, and the datum point OCCT then builds is wrong in its X
         // (#1022) but is not part of what the bridge reports.
@@ -189,24 +162,15 @@ struct Issue1030DatumLookupGuardTests {
     }
 
     @Test("A point array of the wrong length is not the kernel's point block, so it still reads")
-    func pointArrayOfTheWrongLengthStillReads() {
-        guard let doc = Document.create() else {
-            Issue.record("document nil")
-            return
-        }
+    func pointArrayOfTheWrongLengthStillReads() throws {
+        let doc = try #require(Document.create())
         let name = "Datum1030"
-        guard let index = doc.createDatum(name: name), let label = datumLabel(doc, named: name)
-        else {
-            Issue.record("fixture nil")
-            return
-        }
+        let index = try #require(doc.createDatum(name: name))
+        let label = try #require(datumLabel(doc, named: name))
         // The kernel enters its point block only on `aPnt->Length() == 3`, so a two-element array
         // never reaches the bad read and must not be refused. This is the control for the length
         // arm of the guard specifically: drop that arm and this datum stops reading.
-        guard let point = label.findChild(tag: Self.pointTag, create: true) else {
-            Issue.record("point child nil")
-            return
-        }
+        let point = try #require(label.findChild(tag: Self.pointTag, create: true))
         #expect(point.initRealArray(lower: 1, upper: 2))
         #expect(point.realArrayBounds?.upper == 2)
         #expect(label.findChild(tag: Self.planeLocationTag)?.realArrayBounds == nil)

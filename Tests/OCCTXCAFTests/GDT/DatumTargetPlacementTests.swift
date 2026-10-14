@@ -29,23 +29,18 @@ struct Issue1038DatumTargetPlacementTests {
     }
 
     @Test("A datum that is not a target refuses the placement instead of reporting success")
-    func placementOnANonTargetIsRefused() {
-        guard let (doc, index) = documentWithDatum() else {
-            Issue.record("document nil")
-            return
-        }
+    func placementOnANonTargetIsRefused() throws {
+        let (doc, index) = try #require(documentWithDatum())
         // No setDatumTarget first. Unfixed this returned true, and datum(at:).target stayed nil,
         // so the caller was told the length and width were stored and could then read back neither.
         #expect(!placement(doc, index, length: 30, width: 18))
-        #expect(doc.datum(at: index)?.target == nil)
+        let datum = try #require(doc.datum(at: index))
+        #expect(datum.target == nil)
     }
 
     @Test("An area target refuses the placement, because OCCT stores a shape there instead")
-    func placementOnAnAreaTargetIsRefused() {
-        guard let (doc, index) = documentWithDatum() else {
-            Issue.record("document nil")
-            return
-        }
+    func placementOnAnAreaTargetIsRefused() throws {
+        let (doc, index) = try #require(documentWithDatum())
         #expect(doc.setDatumTarget(at: index, type: .area, number: 1))
         // The Area branch of SetObject writes the target's own shape, never a placement, so length
         // and width have nowhere to land however well formed they are.
@@ -57,11 +52,8 @@ struct Issue1038DatumTargetPlacementTests {
     }
 
     @Test("A rectangle target in the documented order still stores length and width")
-    func placementOnARectangleTargetStillWorks() {
-        guard let (doc, index) = documentWithDatum() else {
-            Issue.record("document nil")
-            return
-        }
+    func placementOnARectangleTargetStillWorks() throws {
+        let (doc, index) = try #require(documentWithDatum())
         // The order the docs now prescribe: mark the target first, then place it. This is the
         // control that keeps the refusals above from passing by refusing everything.
         #expect(doc.setDatumTarget(at: index, type: .rectangle, number: 1))
@@ -74,16 +66,14 @@ struct Issue1038DatumTargetPlacementTests {
     }
 
     @Test("Clearing the target mark makes a later placement refuse again")
-    func placementAfterClearingTheTargetIsRefused() {
-        guard let (doc, index) = documentWithDatum() else {
-            Issue.record("document nil")
-            return
-        }
+    func placementAfterClearingTheTargetIsRefused() throws {
+        let (doc, index) = try #require(documentWithDatum())
         #expect(doc.setDatumTarget(at: index, type: .rectangle, number: 1))
         #expect(placement(doc, index, length: 30, width: 18))
         #expect(doc.clearDatumTarget(at: index))
         // The precondition is read from the stored object each call, not cached from the first one.
         #expect(!placement(doc, index, length: 44, width: 22))
-        #expect(doc.datum(at: index)?.target == nil)
+        let datum = try #require(doc.datum(at: index))
+        #expect(datum.target == nil)
     }
 }
