@@ -6,31 +6,30 @@ import Testing
 @Suite("TDataXtd PatternStd Tests")
 struct TDataXtdPatternStdTests {
 
-    @Test func setAndGetSignature() {
-        guard let doc = Document.create() else { return }
+    @Test func setAndGetSignature() throws {
+        let doc = try #require(Document.create())
         doc.openTransaction()
-        guard let node = doc.createLabel() else { return }
+        let node = try #require(doc.createLabel())
         doc.setPattern(labelId: node.labelId)
         doc.patternSetSignature(labelId: node.labelId, signature: .linear)
         doc.commitTransaction()
 
-        if let sig = doc.patternGetSignature(labelId: node.labelId) {
-            #expect(sig == .linear)
-        }
+        let sig = try #require(doc.patternGetSignature(labelId: node.labelId))
+        #expect(sig == .linear)
     }
 
-    @Test func hasPattern() {
-        guard let doc = Document.create() else { return }
+    @Test func hasPattern() throws {
+        let doc = try #require(Document.create())
         doc.openTransaction()
-        guard let node = doc.createLabel() else { return }
+        let node = try #require(doc.createLabel())
         doc.setPattern(labelId: node.labelId)
         doc.commitTransaction()
         #expect(doc.hasPattern(labelId: node.labelId))
     }
 
-    @Test func noPattern() {
-        guard let doc = Document.create() else { return }
-        guard let node = doc.createLabel() else { return }
+    @Test func noPattern() throws {
+        let doc = try #require(Document.create())
+        let node = try #require(doc.createLabel())
         #expect(!doc.hasPattern(labelId: node.labelId))
     }
 }

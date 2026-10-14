@@ -6,14 +6,13 @@ import Testing
 @Suite("TDF ComparisonTool Tests")
 struct TDFComparisonToolTests {
 
-    @Test func isSelfContained() {
-        guard let doc = Document.create() else { return }
+    @Test func isSelfContained() throws {
+        let doc = try #require(Document.create())
         doc.openTransaction()
-        if let node = doc.createLabel() {
-            node.setInteger(1)
-            doc.commitTransaction()
-            let result = doc.isSelfContained(labelId: node.labelId)
-            #expect(result == true)
-        }
+        let node = try #require(doc.createLabel())
+        node.setInteger(1)
+        doc.commitTransaction()
+        let result = doc.isSelfContained(labelId: node.labelId)
+        #expect(result == true)
     }
 }

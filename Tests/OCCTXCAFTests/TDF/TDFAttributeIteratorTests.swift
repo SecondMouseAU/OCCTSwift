@@ -31,9 +31,9 @@ struct TDFAttributeIteratorTests {
         #expect(doc.attributeCount(labelId: node.labelId) == 1)
     }
 
-    @Test func dataSetIsEmpty() {
-        guard let doc = Document.create() else { return }
-        guard let node = doc.createLabel() else { return }
+    @Test func dataSetIsEmpty() throws {
+        let doc = try #require(Document.create())
+        let node = try #require(doc.createLabel())
         let empty = doc.dataSetIsEmpty(labelId: node.labelId)
         #expect(!empty)
     }

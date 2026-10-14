@@ -7,22 +7,22 @@ import Testing
 
 @Suite("TDataStd_Tick Tests")
 struct TickTests {
-    @Test func setAndHas() {
-        guard let doc = Document.create() else { return }
+    @Test func setAndHas() throws {
+        let doc = try #require(Document.create())
         #expect(!doc.hasTick(tag: 500))
         #expect(doc.setTick(tag: 500))
         #expect(doc.hasTick(tag: 500))
     }
 
-    @Test func remove() {
-        guard let doc = Document.create() else { return }
+    @Test func remove() throws {
+        let doc = try #require(Document.create())
         _ = doc.setTick(tag: 501)
         #expect(doc.removeTick(tag: 501))
         #expect(!doc.hasTick(tag: 501))
     }
 
-    @Test func removeNonExistent() {
-        guard let doc = Document.create() else { return }
+    @Test func removeNonExistent() throws {
+        let doc = try #require(Document.create())
         #expect(!doc.removeTick(tag: 502))
     }
 }
