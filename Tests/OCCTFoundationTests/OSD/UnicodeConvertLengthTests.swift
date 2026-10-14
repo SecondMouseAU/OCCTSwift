@@ -16,8 +16,8 @@ import Testing
 // `.serialized` does NOT fix this. It orders tests WITHIN one suite; two separately-serialized
 // suites still run concurrently with each other, and the state here is shared across suites.
 // OCCTSerial.withLock is process-wide, which is the scope the state actually has.
-@Suite("UnicodeUtils.convertFromUnicode at any length (#1078)")
-struct Issue1078UnicodeConvertLengthTests {
+@Suite("UnicodeUtils.convertFromUnicode at any length")
+struct UnicodeConvertLengthTests {
 
     /// 5000 characters, which the old 4096 default buffer would cut.
     private static let longString = String(repeating: "漢", count: 5000)

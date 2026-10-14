@@ -8,7 +8,7 @@ import Testing
 /// This used to also pin a shared contract against `PathParser`,
 /// a `TDocStd_PathParser`-backed forwarder deprecated in favour of `OSDPath` and removed at
 /// v2.0.0 (#784); the comparison tests went with it.
-@Suite("Path Parsing Contract (#499)")
+@Suite("Path Parsing Contract")
 struct PathParsingContractTests {
 
     /// The `TCollection_ExtendedString(const char*)` the old `TDocStd_PathParser`-backed bridge
