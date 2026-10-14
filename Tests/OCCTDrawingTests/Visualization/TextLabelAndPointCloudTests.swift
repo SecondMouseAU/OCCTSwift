@@ -68,14 +68,11 @@ struct TextLabelAndPointCloudTests {
     func pointCloudBounds() throws {
         let pts = [SIMD3<Double>(1, 2, 3), SIMD3(4, 5, 6), SIMD3(-1, 0, 1)]
         let cloud = try #require(PointCloud(points: pts))
-        let bounds = cloud.bounds
-        #expect(bounds != nil)
-        if let b = bounds {
-            #expect(abs(b.min.x - (-1)) < 1e-6)
-            #expect(abs(b.max.x - 4) < 1e-6)
-            #expect(abs(b.min.y - 0) < 1e-6)
-            #expect(abs(b.max.y - 5) < 1e-6)
-        }
+        let b = try #require(cloud.bounds)
+        #expect(abs(b.min.x - (-1)) < 1e-6)
+        #expect(abs(b.max.x - 4) < 1e-6)
+        #expect(abs(b.min.y - 0) < 1e-6)
+        #expect(abs(b.max.y - 5) < 1e-6)
     }
 
     @Test("Point cloud retrieval")
