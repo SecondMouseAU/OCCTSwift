@@ -138,7 +138,7 @@ built without `0031`.
 
 | Unpinned | What it leaves exposed |
 |---|---|
-| `0064-TopOpeBRepBuild-CorrectUnclosedWire-collects-the-edges-before-removing-them-3335` | An uncatchable SIGSEGV in `BRepFilletAPI_MakeFillet::Build` on a model whose fillet ends meet in the merge (OCCT#1619, OCCT#1430): `Shape.filleted(edges:radius:)` kills the process on the pinned kernel. The Swift layer cannot guard it, the fault is inside `Build`. `FilletMergeWireRemovalTests` crashes against the pinned asset until the next repin. |
+| `0064-TopOpeBRepBuild-CorrectUnclosedWire-collects-the-edges-before-removing-them-3335` | An uncatchable SIGSEGV in `BRepFilletAPI_MakeFillet::Build` on a model whose fillet ends meet in the merge (OCCT#1619, OCCT#1430): `Shape.filleted(edges:radius:)` kills the process on the pinned kernel. The Swift layer cannot guard it, the fault is inside `Build`. `FilletMergeWireRemovalTests` is gated on `OCCTSWIFT_LOCAL=1` (it would SIGSEGV against the pinned asset) and runs in `kernel-integration.yml` until the next repin. |
 
 **The divergence that stood until v4.0.0-kernel.6 is closed.** `0058` and `0059` were merged after
 v4.0.0-kernel.5 and were live nowhere until the v4.0.0-kernel.6 rebuild pinned both. The table

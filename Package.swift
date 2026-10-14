@@ -505,8 +505,8 @@ let occtTarget: Target =
         //         removing them, so BRepFilletAPI_MakeFillet no longer reads the list node a
         //         BRep_Builder::Remove freed under its TopoDS_Iterator (an uncatchable SIGSEGV,
         //         20 of 20 runs on OCCT#1619's model). NOT in v4.0.0-kernel.6; the asset lacks it,
-        //         so FilletMergeWireRemovalTests crashes the process against the pinned kernel
-        //         until the next repin (#3335).
+        //         so FilletMergeWireRemovalTests is gated on OCCTSWIFT_LOCAL=1 until the next
+        //         repin (#3335).
         //
         // 0043 (#2827, BRepGProp_Gauss keeps the by-plane mass) was the one outstanding before it,
         // and it went the other way, which is the comparison worth keeping beside 0044: carried
