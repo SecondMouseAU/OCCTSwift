@@ -4,6 +4,6 @@ Tests/OCCTModelingTests/LocOpe/LocOpeGluerTests.swift
 Tests/OCCTModelingTests/LocOpe/LocOpeLinearFormTests.swift
 Tests/OCCTModelingTests/LocOpe/LocOpeSplitShapeTests.swift
 Tests/OCCTModelingTests/LocOpe/LocOpeSpliterTests.swift
-Tests/OCCTModelingTests/LocOpe/LocOpeSpliterV71Tests.swift
+Tests/OCCTModelingTests/LocOpe/LocOpeSpliterByWireTests.swift
 Tests/OCCTModelingTests/Lofts/LoftVertexEndpointTests.swift
 Tests/OCCTModelingTests/MissingShapeOpsTests.swift

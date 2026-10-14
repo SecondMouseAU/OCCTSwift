@@ -243,26 +243,26 @@ verification exists that the detector cannot see, inline or through a helper).
 | `OCCTIntegrationTests.swift:186` | `cylinderWithHolesSlicing` | LOW-RISK | yes | holes at r=10 are clearly inside the r=25 cylinder and drilled through; a no-op would give 1 wire, not 4 |
 | `OCCTIntegrationTests.swift:233` | `plateWithHolesSection` | LOW-RISK | yes | holes at (+-25, +-25) are clearly inside the 100x100 plate and drilled through; wire count of 5 follows by construction |
 | `OCCTIntegrationTests.swift:346` | `pocketSectionAndOffset` | ALREADY-FIXED | yes | the test already checks `pv < ov` (pocket volume less than outer volume); the abbreviated names defeat `VERIFICATION`'s keyword match |
-| `Issue497DefeaturingTests.swift:112` | `outOfRangeIndexFails` | LOW-RISK | yes | `realFaces.count == 6` is a plain box's deterministic face count, not a risky-op output |
-| `Issue497DefeaturingTests.swift:150` | `withoutSmallFacesKeepsEverything` | ALREADY-FIXED | yes | the same block also asserts `abs(v - 1000.0) < 1e-6`; the abbreviated `v` defeats the keyword match |
-| `Issue505FilletBuilderEdgeTypeTests.swift:64` | `edgeFromAnotherContourIsRejected` | LOW-RISK | yes | `edges.count == 12` is a box's deterministic edge count; the real guard logic is a nil/non-nil check |
-| `Issue578DefeatureFaceMembershipTests.swift:68` | `foreignFaceInMixedRequestFails` | LOW-RISK | yes | the fixture's face was chosen precisely because removing it restores the plain box's known volume |
-| `Issue612FilletContourSelectionTests.swift:81` | `fixtureHasATangentContinuousRim` | LOW-RISK | yes | extruding an explicit 2-line/2-arc profile deterministically gives matching top/bottom rim counts |
-| `Issue639FilletDeclinedEdgeReportTests.swift:40` | `filletedWithReportNamesDeclinedEdges` | LOW-RISK | yes | declined set matches an exact, pre-measured index set; `edges.count == 12` is the box's known count |
-| `Issue639FilletDeclinedEdgeReportTests.swift:149` | `historyRecordNamesDeclinedEdges` | LOW-RISK | yes | `Set(declined) == Set(declinedIndices)` is an exact match; accepted edges also independently checked |
-| `Issue639FilletDeclinedEdgeReportTests.swift:194` | `declinedEdgeNamedTwiceIsReportedTwice` | LOW-RISK | yes | `Set(declinedEdgeIndices) == [declined]` pins the specific edge; the count of 2 cannot pass by coincidence |
-| `Issue642AAGNodeIdentityTests.swift:55` | `detectPocketsAgreesAcrossOrder` | NEEDS-FOLLOWUP | yes | `detectPocketsAAG().count` pinned to 1 with no volume/area check that a real pocket exists |
-| `Issue642AAGNodeIdentityTests.swift:77` | `upwardHorizontalCountAgreesAcrossOrder` | NEEDS-FOLLOWUP | yes | an `isUpward && isHorizontal` node count pinned to 2 with no independent geometric confirmation |
-| `Issue642AAGNodeIdentityTests.swift:115` | `sharedWallNodesShareDistinctIndexAndOpposeUpward` | LOW-RISK | yes | exactly one shared face is deterministic for a single plane-split box; `isUpward`/`isHorizontal` checked directly |
-| `Issue655SectionWiresOrientationTests.swift:82` | `internalEdgeExcluded` | LOW-RISK | yes | explicit square plus a disjoint floating edge; also checks the surviving wire has 4 edges and is closed |
-| `Issue655SectionWiresOrientationTests.swift:98` | `forwardEdgeNotExcluded` | LOW-RISK | yes | contrast case for the row above; simple explicit coordinates make the wire count inspectable |
-| `Issue655SectionWiresOrientationTests.swift:112` | `externalEdgeExcluded` | LOW-RISK | yes | same explicit, inspectable fixture as the two rows above, only the orientation flag differs |
-| `Issue699AAGSolidScopedAdjacencyTests.swift:69` | `detectPocketsAgreesAcrossOrder` | NEEDS-FOLLOWUP | yes | same `detectPocketsAAG().count` pinning concern as the Issue642 version, on a vertical-cut fixture |
-| `Issue699AAGSolidScopedAdjacencyTests.swift:89` | `nodeCountUnaffected` | LOW-RISK | yes | split into exactly 2 pieces by an earlier guard; 12 nodes = 2 boxes x 6 faces is deterministic |
-| `Issue699AAGSolidScopedAdjacencyTests.swift:106` | `edgeCountIsTwoIndependentBoxGraphs` | LOW-RISK | yes | a companion test in the same file confirms no cross-solid adjacency via neighbor-set disjointness |
-| `Issue699AAGSolidScopedAdjacencyTests.swift:180` | `horizontalFixtureStillAgreesAtCorrectedCount` | NEEDS-FOLLOWUP | yes | same `detectPocketsAAG` count-pin concern, reused at the "corrected" value 1 |
-| `Issue699AAGSolidScopedAdjacencyTests.swift:225` | `countMismatchFallsBackToUnrestrictedComparison` | NEEDS-FOLLOWUP | yes | `detectPocketsAAG().count == 2` pinned on a fallback fixture; the test's own comment admits it proves little |
-| `Issue699AAGSolidScopedAdjacencyTests.swift:253` | `threeSolidCompoundPartitions` | LOW-RISK | yes | 3 disjoint, known boxes; `solids.count == 3` and `nodes == 18` (3x6) are deterministic construction facts |
+| `DefeaturingFamilyTests.swift:112` | `outOfRangeIndexFails` | LOW-RISK | yes | `realFaces.count == 6` is a plain box's deterministic face count, not a risky-op output |
+| `DefeaturingFamilyTests.swift:150` | `withoutSmallFacesKeepsEverything` | ALREADY-FIXED | yes | the same block also asserts `abs(v - 1000.0) < 1e-6`; the abbreviated `v` defeats the keyword match |
+| `FilletBuilderEdgeTypeTests.swift:64` | `edgeFromAnotherContourIsRejected` | LOW-RISK | yes | `edges.count == 12` is a box's deterministic edge count; the real guard logic is a nil/non-nil check |
+| `DefeatureFaceMembershipTests.swift:68` | `foreignFaceInMixedRequestFails` | LOW-RISK | yes | the fixture's face was chosen precisely because removing it restores the plain box's known volume |
+| `FilletContourSelectionTests.swift:81` | `fixtureHasATangentContinuousRim` | LOW-RISK | yes | extruding an explicit 2-line/2-arc profile deterministically gives matching top/bottom rim counts |
+| `FilletDeclinedEdgeReportTests.swift:40` | `filletedWithReportNamesDeclinedEdges` | LOW-RISK | yes | declined set matches an exact, pre-measured index set; `edges.count == 12` is the box's known count |
+| `FilletDeclinedEdgeReportTests.swift:149` | `historyRecordNamesDeclinedEdges` | LOW-RISK | yes | `Set(declined) == Set(declinedIndices)` is an exact match; accepted edges also independently checked |
+| `FilletDeclinedEdgeReportTests.swift:194` | `declinedEdgeNamedTwiceIsReportedTwice` | LOW-RISK | yes | `Set(declinedEdgeIndices) == [declined]` pins the specific edge; the count of 2 cannot pass by coincidence |
+| `AAGNodeIdentityTests.swift:55` | `detectPocketsAgreesAcrossOrder` | NEEDS-FOLLOWUP | yes | `detectPocketsAAG().count` pinned to 1 with no volume/area check that a real pocket exists |
+| `AAGNodeIdentityTests.swift:77` | `upwardHorizontalCountAgreesAcrossOrder` | NEEDS-FOLLOWUP | yes | an `isUpward && isHorizontal` node count pinned to 2 with no independent geometric confirmation |
+| `AAGNodeIdentityTests.swift:115` | `sharedWallNodesShareDistinctIndexAndOpposeUpward` | LOW-RISK | yes | exactly one shared face is deterministic for a single plane-split box; `isUpward`/`isHorizontal` checked directly |
+| `SectionWiresOrientationTests.swift:82` | `internalEdgeExcluded` | LOW-RISK | yes | explicit square plus a disjoint floating edge; also checks the surviving wire has 4 edges and is closed |
+| `SectionWiresOrientationTests.swift:98` | `forwardEdgeNotExcluded` | LOW-RISK | yes | contrast case for the row above; simple explicit coordinates make the wire count inspectable |
+| `SectionWiresOrientationTests.swift:112` | `externalEdgeExcluded` | LOW-RISK | yes | same explicit, inspectable fixture as the two rows above, only the orientation flag differs |
+| `AAGSolidScopedAdjacencyTests.swift:69` | `detectPocketsAgreesAcrossOrder` | NEEDS-FOLLOWUP | yes | same `detectPocketsAAG().count` pinning concern as the Issue642 version, on a vertical-cut fixture |
+| `AAGSolidScopedAdjacencyTests.swift:89` | `nodeCountUnaffected` | LOW-RISK | yes | split into exactly 2 pieces by an earlier guard; 12 nodes = 2 boxes x 6 faces is deterministic |
+| `AAGSolidScopedAdjacencyTests.swift:106` | `edgeCountIsTwoIndependentBoxGraphs` | LOW-RISK | yes | a companion test in the same file confirms no cross-solid adjacency via neighbor-set disjointness |
+| `AAGSolidScopedAdjacencyTests.swift:180` | `horizontalFixtureStillAgreesAtCorrectedCount` | NEEDS-FOLLOWUP | yes | same `detectPocketsAAG` count-pin concern, reused at the "corrected" value 1 |
+| `AAGSolidScopedAdjacencyTests.swift:225` | `countMismatchFallsBackToUnrestrictedComparison` | NEEDS-FOLLOWUP | yes | `detectPocketsAAG().count == 2` pinned on a fallback fixture; the test's own comment admits it proves little |
+| `AAGSolidScopedAdjacencyTests.swift:253` | `threeSolidCompoundPartitions` | LOW-RISK | yes | 3 disjoint, known boxes; `solids.count == 3` and `nodes == 18` (3x6) are deterministic construction facts |
 | `OCCTModelingTests.swift:1047` | `detectPocket` | **NEEDS-FOLLOWUP** | yes | the confirmed #726/#703 anchor bug, still live: the pocket tool's z-range never overlaps the box's own |
 | `OCCTModelingTests.swift:1199` | `loftedEdgePolylines` | NEEDS-FOLLOWUP | yes | bottom and top rectangles both default to z=0; the loft fixture may be coplanar/degenerate, unverified |
 | `OCCTModelingTests.swift:3053` | `splitSingleShell` | NEEDS-FOLLOWUP | yes | the sole assertion sits inside `if let`, so a nil/failed split silently skips all verification |
@@ -308,8 +308,8 @@ verification exists that the detector cannot see, inline or through a helper).
 **Follow-up recommendation:** file one issue per cluster among the 11 NEEDS-FOLLOWUP rows, not one
 issue per site: (1) the confirmed, still-live #726/#703 anchor at `OCCTModelingTests.swift:1047`
 `detectPocket()`, matching PR #720's own fix; (2) the `detectPocketsAAG()`/AAG-node-count family
-with no geometric backstop (`Issue642AAGNodeIdentityTests.swift:55,77`,
-`Issue699AAGSolidScopedAdjacencyTests.swift:69,180,225`, the last of which has a comment already
+with no geometric backstop (`AAGNodeIdentityTests.swift:55,77`,
+`AAGSolidScopedAdjacencyTests.swift:69,180,225`, the last of which has a comment already
 admitting it proves little); (3) two loft fixtures whose "different Z heights" intent is not
 actually in the code (`OCCTCurveTests.swift:20`, `OCCTModelingTests.swift:1199`); (4) three
 structurally weak assertions with no shared cause (`OCCTModelingTests.swift:3053`'s `if let`-gated

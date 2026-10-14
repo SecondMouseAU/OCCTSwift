@@ -8,7 +8,7 @@ import Testing
 /// It never answers a done-but-`BRepCheck`-invalid one. Lives here, beside `Issue2881FilletObstacleTests`,
 /// because the model is a `Fixtures/` file of this target and the wasm runner preopens only each
 /// target's own `Fixtures` directory. The Apple-and-wasm-neutral cases are in
-/// `Tests/OCCTModelingTests/Blends/Issue3200FilletResultValidityTests.swift`.
+/// `Tests/OCCTModelingTests/Blends/FilletResultValidityTests.swift`.
 @Suite("Fillet of the #2881 model is BRepCheck-valid or nil (#3200)")
 struct Issue3200FilletModelValidityTests {
 
