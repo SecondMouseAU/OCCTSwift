@@ -21,6 +21,16 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### Fillets whose ends meet in the merge no longer crash the process (#3335)
+
+`Shape.filleted(edges:radius:)` on a model whose fillet ends meet in `TopOpeBRepBuild`'s face merge died with an uncatchable SIGSEGV (20 of 20 runs on OCCT#1619's model, 3 of 3 on each of OCCT#1430's two cases). `CorrectUnclosedWire` removed edges from a wire while a `TopoDS_Iterator` stood on the list node the removal freed. Carried patch `0064` collects the edges first and removes them after the iteration, so the call returns a shape or `nil`.
+
+```swift
+let model = try Shape.loadBREP(fromPath: "fillet_uaf.brep")
+let edges = model.edges()
+model.filleted(edges: [edges[25], edges[34]], radius: 1.25)  // a shape or nil, was a SIGSEGV
+```
+
 ### Evolved builders refuse the inputs that never returned and the empty shapes they answered (#3368)
 
 `Shape.evolvedAdvanced(spine:profile:axeProf: false)` no longer hangs on a profile through the centre of a circular spine (OCCT's `BRepFill::Axe` leaves the frame NaN there and the sweep spun in `Geom_TrimmedCurve::SetTrim`); it returns `nil`, as does `Shape.evolved(spineFace:profileWire:axis...)` for a NaN, infinite or zero axis. `evolved`, `evolvedAdvanced`, `evolved(spineFace:)` and `advancedEvolved` return `nil` instead of an empty compound when the profile offsets the spine to nothing or lies in the spine's plane. The profile placement rule (Y lateral offset, Z height, X dropped), that only the arc join is implemented, and that `advancedEvolved` is a different algorithm from `evolved` are documented.
