@@ -30,8 +30,8 @@ import Testing
 /// `OCCTAx3Rotate` has a second, independent throw site -- the rotation axis's own `gp_Dir` --
 /// exercised here with the issue's own concrete "zero rotation axis" example on an otherwise
 /// perfectly valid input axis.
-@Suite("Issue #1443: gp_Ax3 bridge functions' empty catch")
-struct Issue1443Ax3EmptyCatchTests {
+@Suite("gp_Ax3 bridge functions' empty catch")
+struct Ax3EmptyCatchTests {
 
     @Test(
         "OCCTAx3Create: parallel direction/xDirection overwrites sentinel outputs, not left untouched"

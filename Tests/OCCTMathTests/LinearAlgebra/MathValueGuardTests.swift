@@ -37,8 +37,8 @@ import Testing
 //  Scripts/repro/2860-guard-preconditions/ (the thresholds and the guard predicates), both
 //  re-verified against the pinned v4.0.0-kernel.2 asset.
 //
-@Suite("#2860 math and transform value guards")
-struct Issue2860MathGuardTests {
+@Suite("Math and transform value guards")
+struct MathValueGuardTests {
 
     // MARK: - math_Matrix squareness
 

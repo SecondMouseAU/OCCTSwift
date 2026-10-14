@@ -50,8 +50,8 @@ struct GeomDirectionTests {
 //
 // These assert the VALUE, not just that a call returns: the old code returned a perfectly
 // well-formed `GeomDirection` for every input below.
-@Suite("GeomDirection refuses a vector it cannot normalise (#2331)")
-struct Issue2331GeomDirectionZeroVectorTests {
+@Suite("GeomDirection refuses a vector it cannot normalise")
+struct GeomDirectionZeroVectorTests {
 
     /// The zero vector itself, the case #2331 was filed on.
     @Test("The zero vector is refused, not turned into (0, 0, 1) or NaN")

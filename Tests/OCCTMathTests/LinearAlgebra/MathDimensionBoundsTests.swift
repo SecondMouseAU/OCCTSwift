@@ -85,8 +85,8 @@ import Testing
 // confirmed to trap, crash, or silently succeed with the wrong answer; after the fix, the
 // identical calls below return their documented `nil`/`0.0`/`[]` instead, which is what makes
 // it possible to assert them in-process at all.
-@Suite("Issue #640: math dimension arguments reject negative and mismatched input")
-struct Issue640MathDimensionBounds {
+@Suite("Math dimension arguments reject negative and mismatched input")
+struct MathDimensionBoundsTests {
 
     // MARK: - MathLibrary.swift: the three sites #634 named plus the two determinants it could not see
 
@@ -566,7 +566,7 @@ struct Issue640MathDimensionBounds {
 // the same way SamplingCountBoundsTests.swift exercises `Sampling.requested`/
 // `capacity`/`gridTotal` directly, rather than only indirectly through the 18 call sites
 // that now share it.
-@Suite("Issue #640 review finding 9: MathDimension is the one shared validator")
+@Suite("MathDimension is the one shared validator")
 struct MathDimensionTests {
 
     @Test("valid requires positivity and every given length to match exactly")

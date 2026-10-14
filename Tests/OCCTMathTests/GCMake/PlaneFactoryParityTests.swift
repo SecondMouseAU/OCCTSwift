@@ -16,7 +16,7 @@ import Testing
 /// `planeFromPoints`/`planeFromPointNormal` instead of calling `gce_MakePln`/`new Geom_Plane`
 /// independently, so this coverage is a regression guard, not a live bug fix. None of these four
 /// degenerate-input cases had any test coverage before #421.
-@Suite("Surface plane factory parity (#421)")
+@Suite("Surface plane factory parity")
 struct PlaneFactoryParityTests {
 
     private func expectSamePlane(_ a: Surface?, _ b: Surface?, _ comment: Comment? = nil) {

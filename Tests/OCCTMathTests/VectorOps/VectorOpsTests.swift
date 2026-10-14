@@ -7,8 +7,8 @@ import Testing
 ///
 /// They are plain Swift on every platform. These tests pin the one decision that mattered (a zero or non-finite vector normalises to
 /// NaNs, on both platforms) and the matrix indexing consumers rely on.
-@Suite("Issue 2759 vector operations")
-struct Issue2759VectorOpsTests {
+@Suite("Vector operations")
+struct VectorOpsTests {
 
     @Test("dot, cross, length and distance match hand-computed values")
     func basicOperations() {
@@ -36,7 +36,7 @@ struct Issue2759VectorOpsTests {
         #expect(f == SIMD2(0, -1))
     }
 
-    @Test("a zero vector normalises to NaNs, and so does a non-finite one (#2759)")
+    @Test("A zero vector normalises to NaNs, and so does a non-finite one")
     func normaliseZeroAndNonFinite() {
         // The decision: IEEE division, identical on every platform. Not the zero vector, which is
         // what the WASI stand-in returned before #2764, and not a platform-specific result.
