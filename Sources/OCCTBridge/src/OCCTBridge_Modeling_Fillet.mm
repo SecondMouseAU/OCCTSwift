@@ -874,7 +874,8 @@ OCCTShapeRef OCCTFace2DChamfer(OCCTShapeRef   shape,
     chamfer.Build();
     if (!chamfer.IsDone())
       return nullptr;
-    if (!occtBlendResultIsAnswer(shape->shape, chamfer.Shape())) // #3200
+    if (!occtBlendResultIsValid(chamfer.Shape())) // #3200, validity only: a 2D blend answers a face
+                                                  // (see OCCTFace2DFillet)
       return nullptr;
     return new OCCTShape(chamfer.Shape());
   }

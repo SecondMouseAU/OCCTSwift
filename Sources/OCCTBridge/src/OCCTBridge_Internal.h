@@ -2404,6 +2404,11 @@ inline void occtBlendRecordRefusal(const char* reason)
   }
 }
 
+// A null input or result returns TRUE: there is nothing to compare, and whether a null result is
+// acceptable is occtBlendResultIsValid's job (it refuses one), so this predicate adds no second
+// refusal for the same defect. Every in-bridge caller reaches it through occtBlendResultIsAnswer,
+// which runs validity first. The public wrapper OCCTBlendResultIsSane has the opposite null
+// contract on purpose, see OCCTBridge_Modeling.h.
 inline bool occtBlendResultIsSane(const TopoDS_Shape& input, const TopoDS_Shape& result)
 {
   if (input.IsNull() || result.IsNull())

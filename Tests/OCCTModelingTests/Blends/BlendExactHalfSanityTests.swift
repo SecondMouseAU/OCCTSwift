@@ -134,7 +134,9 @@ struct BlendExactHalfSanityTests {
 
     // MARK: - A blend that would split one body into two
 
-    /// The solid-count check refuses any blend that answers a different number of solids. A fillet
+    /// The solid-count check refuses any blend that answers a different number of solids.
+    ///
+    /// A fillet
     /// that legitimately severs a body needs a neck of zero width, which no radius on a valid
     /// neck reaches: filleting every edge of a thin plate at `r == thickness / 2` (the tie, as the
     /// cylinder above) answers either one solid or nil, never two, so the check costs no correct
@@ -146,5 +148,17 @@ struct BlendExactHalfSanityTests {
             #expect(result.solidCount == 1)
             #expect(result.isValid)
         }
+    }
+
+    /// The 2D blends take the first face of whatever they are given and answer that face alone, so
+    /// a solid input answering a face is correct and must not meet the solid-count check.
+    @Test("2D fillet and chamfer on a solid still answer their face")
+    func twoDimensionalBlendsOnASolid() throws {
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        #expect(box.solidCount == 1)
+        #expect(box.fillet2D(vertexIndices: [0], radii: [1]) != nil)
+        let pairs = [(0, 1), (1, 2), (2, 3), (3, 0)]
+        let built = pairs.contains { box.chamfer2D(edgePairs: [$0], distances: [1]) != nil }
+        #expect(built)
     }
 }
