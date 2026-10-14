@@ -28,27 +28,36 @@ CORR idx=1 U=69.8852 V=15.1952 param=0.80278 P=(70.8727,15.7654,49.0099) hguide 
 
 ## Fix and why there
 
-Carried patch `0065` returns from `BRepBlend_Walking::Perform` with `done = false` when the start
-parameter, end parameter or `Fleche` is not finite. Every caller tests `IsDone()` straight after.
+Carried patch `0065`, three changes in `src/ModelingAlgorithms/TKFillet/`:
 
-Skipping the infinite extension at its origin (`sinalpha > tolesp` before computing `tga`) was tried
-first and rejected: it also changes the 12 edges (1 to 12) that the pinned kernel declines into done
-chamfers that BRepCheck rejects (volume -754972). The infinite range is what made those decline.
+1. `ExtentSpineOnCommonFace`: a non-finite `d1plus` or `d2plus` is no extension (the origin).
+2. `BRepBlend_Walking::Perform` returns `done = false` when the start parameter, end parameter or
+   `Fleche` is not finite. Every caller tests `IsDone()` straight after.
+3. `BRepFilletAPI_MakeChamfer::Build` reports a result that is not a valid solid (or does not become
+   valid under the `SameParameter` pass) as not done, as `BRepFilletAPI_MakeFillet::Build` does in
+   the fillet series.
+
+Change 1 alone fixes the crashes and also turns edges 1 to 12, which the pinned kernel declines
+because the infinite range makes the walk fail, into done chamfers that BRepCheck rejects (volume
+-754972). Change 3 is what refuses them, and edge 15 (volume -775000, on the pinned kernel too).
+Change 3 alone leaves the crash. Either of 1 and 2 with 3 declines all 36 edges of this model.
 
 ## Measurement
 
 `results/edges-d1.txt`: d = 1, one edge at a time, raw `BRepFilletAPI_MakeChamfer` set up as DRAW's
-`chamf` is (`../fillet-open-set/dprobe.cxx`), pinned kernel (`v4.0.0-kernel.6`) against the same
-kernel with `BRepBlend_Walking.cxx` override-linked: 12 SIGSEGV become declined, the other 24 rows
-are unchanged. ("declined" there includes the "no suitable edges" exceptions; the sweep below keeps
-them apart.) Edge 15 stays a done chamfer that BRepCheck rejects with volume -775000, on `IR` too:
-a separate defect.
+`chamf` is (`../fillet-open-set/dprobe.cxx`), the pinned kernel (`v4.0.0-kernel.6`) and four
+override-linked variants, each with a different part removed.
 
-`results/sweep-r1.0-base-vs-patched.txt`: `../fillet-open-set/sweep-edges.py` over every reproducer
-model of that set, fillet and chamfer, every edge, radius 1.0, base against patched. One of the 36
-(model, operation) groups differs: 1576 chamfer, `crash=12 declined=12 done-invalid=1
-exception=11` becomes `declined=24 done-invalid=1 exception=11`. The `timeout` entries are the
-sweep's 20 s limit under load and are the same set on both sides.
+`results/sweep-r1.0-base-vs-patched.txt` and `results/sweep-r0.5-base-vs-patched.txt`:
+`../fillet-open-set/sweep-edges.py` over every reproducer model of that set, fillet and chamfer,
+every edge, base against all three changes. Only `chamf` groups change, and in each the change is
+`done-invalid` to `declined` (12 crashes to declined for 1576); the `valid` and `valid-bopfaulty`
+counts are equal on both sides in all 36 groups at both radii.
+
+Swift side (`ChamferParallelSpineTangentTests`, same build, archive members swapped): validity
+refusal alone fails the test (child ends by signal 11); finite extension with validity, walker
+guard with validity, walker guard with finite extension, and all three pass. The validity part is
+not observable from Swift because the bridge already refuses invalid blend results (#3200).
 
 ## Reproduce
 
@@ -60,5 +69,5 @@ probes/dprobe attachments/1576/model.brep chamf 1:14                     # SIGSE
 
 `backtrace-handler.cxx` is a constructor that installs a SIGSEGV handler printing
 `backtrace_symbols_fd`, linked into the probe because `lldb` cannot attach here. `instrument.diff`
-is applied to copies of the three `.cxx` files of the pinned tree and compiled into the probe ahead
+is applied to copies of three `.cxx` files of the pinned tree and compiled into the probe ahead
 of the library, so the linker prefers them to the archive members.

@@ -1,37 +1,40 @@
-edge  pinned-kernel.6  patched
-   1  declined         declined
-   2  declined         declined
-   3  declined         declined
-   4  declined         declined
-   5  declined         declined
-   6  declined         declined
-   7  declined         declined
-   8  declined         declined
-   9  declined         declined
-  10  declined         declined
-  11  declined         declined
-  12  declined         declined
-  13  declined         declined
-  14  SIGNAL 11        declined
-  15  done             done
-  16  SIGNAL 11        declined
-  17  SIGNAL 11        declined
-  18  SIGNAL 11        declined
-  19  SIGNAL 11        declined
-  20  SIGNAL 11        declined
-  21  SIGNAL 11        declined
-  22  SIGNAL 11        declined
-  23  SIGNAL 11        declined
-  24  SIGNAL 11        declined
-  25  SIGNAL 11        declined
-  26  SIGNAL 11        declined
-  27  declined         declined
-  28  declined         declined
-  29  declined         declined
-  30  declined         declined
-  31  declined         declined
-  32  declined         declined
-  33  declined         declined
-  34  declined         declined
-  35  declined         declined
-  36  declined         declined
+# d = 1, one edge at a time, OCCT#1576 model. dprobe = pinned kernel.6; p_novalid = walker guard + finite
+# extension; p_nowalker = finite extension + validity refusal; p_nofinite = walker guard + validity
+# refusal; p_full = all three (patch 0065).
+edge  dprobe        p_novalid     p_nowalker    p_nofinite    p_full      
+   1  declined      done-invalid  declined      declined      declined    
+   2  declined      done-invalid  declined      declined      declined    
+   3  declined      done-invalid  declined      declined      declined    
+   4  declined      done-invalid  declined      declined      declined    
+   5  declined      done-invalid  declined      declined      declined    
+   6  declined      done-invalid  declined      declined      declined    
+   7  declined      done-invalid  declined      declined      declined    
+   8  declined      done-invalid  declined      declined      declined    
+   9  declined      done-invalid  declined      declined      declined    
+  10  declined      done-invalid  declined      declined      declined    
+  11  declined      done-invalid  declined      declined      declined    
+  12  declined      done-invalid  declined      declined      declined    
+  13  declined      declined      declined      declined      declined    
+  14  SIGSEGV       declined      declined      declined      declined    
+  15  done-invalid  done-invalid  declined      declined      declined    
+  16  SIGSEGV       declined      declined      declined      declined    
+  17  SIGSEGV       declined      declined      declined      declined    
+  18  SIGSEGV       declined      declined      declined      declined    
+  19  SIGSEGV       declined      declined      declined      declined    
+  20  SIGSEGV       declined      declined      declined      declined    
+  21  SIGSEGV       declined      declined      declined      declined    
+  22  SIGSEGV       declined      declined      declined      declined    
+  23  SIGSEGV       declined      declined      declined      declined    
+  24  SIGSEGV       declined      declined      declined      declined    
+  25  SIGSEGV       declined      declined      declined      declined    
+  26  SIGSEGV       declined      declined      declined      declined    
+  27  declined      declined      declined      declined      declined    
+  28  declined      declined      declined      declined      declined    
+  29  declined      declined      declined      declined      declined    
+  30  declined      declined      declined      declined      declined    
+  31  declined      declined      declined      declined      declined    
+  32  declined      declined      declined      declined      declined    
+  33  declined      declined      declined      declined      declined    
+  34  declined      declined      declined      declined      declined    
+  35  declined      declined      declined      declined      declined    
+  36  declined      declined      declined      declined      declined    

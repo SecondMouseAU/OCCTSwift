@@ -278,7 +278,7 @@ let occtTarget: Target =
         // back rather than staying suppressed.
         //
         // The pinned asset lacks one of them: it holds forty-five and Scripts/patches/ holds forty-six.
-        // The one it lacks is 0065 (#3350, ChFi3d_ChBuilder::ExtentSpineOnCommonFace), carried after
+        // The one it lacks is 0065 (#3350, a chamfer with parallel spine tangents), carried after
         // v4.0.0-kernel.6 was built, so no CI job that resolves the asset exercises it until a rebuild
         // pins it; ChamferParallelSpineTangentTests (#3350) runs in kernel-integration.yml, gated on
         // OCCTSWIFT_LOCAL=1, until a rebuild carries 0065. The rows for 0053 through 0059

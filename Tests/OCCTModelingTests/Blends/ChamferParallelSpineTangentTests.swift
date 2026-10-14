@@ -11,9 +11,15 @@ import Testing
 /// parallel tangents `sin(alpha)` is 0 and the extension is `dis / 0`, infinity. The spine range
 /// `(-inf, +inf)` reached `BRepBlend_Walking`, which constructed `Extrema_ExtPC` on it with a NaN
 /// point, and `Extrema_GGExtPC::Perform` read out of range: an uncatchable SIGSEGV, since
-/// `OCC_CATCH_SIGNALS` is inert in this build. Carried kernel patch `0065` makes
-/// `BRepBlend_Walking::Perform` report "not done" for a start, end or flecheur that is not finite,
-/// so the chamfer is declined instead.
+/// `OCC_CATCH_SIGNALS` is inert in this build. Carried kernel patch `0065` treats a non-finite
+/// extension as none, makes `BRepBlend_Walking::Perform` report "not done" for a start, end or
+/// flecheur that is not finite, and makes `BRepFilletAPI_MakeChamfer::Build` refuse a result that
+/// is not a valid solid, so the chamfer is declined instead.
+///
+/// Observable here is the crash only: the Swift bridge already refuses an invalid blend result
+/// (#3200), so removing the validity part of the patch changes nothing in this test, and either
+/// of the other two parts alone is enough for this model (`Scripts/repro/3350-chamfer-extrema-sigsegv/`
+/// has the table with each part removed in turn).
 ///
 /// The model is the one attached to OCCT#1576: 36 edges, of which 12 (the issue's edges 14 and 16
 /// to 26) crashed at distance 1 on the kernel pinned before the patch.
@@ -81,9 +87,9 @@ struct ChamferParallelSpineTangentTests {
     /// gate must go with the repin, #2983).
     ///
     /// Unpatched, the child dies by SIGSEGV. Patched, all 36 edges answer, and the count below says
-    /// what: none returns a shape. 35 are declined by OCCT (`IsDone() == false`) and edge 15 builds
-    /// a result of negative volume that BRepCheck rejects (a separate defect, present on upstream
-    /// `IR` too), which the bridge refuses.
+    /// what: none returns a shape. OCCT itself declines all 36 (`IsDone() == false`), including
+    /// edge 15, which the unpatched kernel builds with a negative volume that BRepCheck rejects
+    /// (the bridge refuses that result either way).
     @Test(
         .enabled(
             if: !ChamferParallelSpineTangentTests.isChild

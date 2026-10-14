@@ -105,7 +105,7 @@
 # patch: 0057-GProp_SelGProps-GProp_VelGProps-cylinder-sphere-torus-inertia-3091 04a543f518b6
 # patch: 0058-BRepOffsetAPI_MiddlePath-Build-carries-a-vertex-path-forward-3105 3aa5e4f75495
 # patch: 0059-ChFi3d-Builder-fillets-that-meet-exactly-are-built-not-refused-3207 eb520b90a343
-# patch: 0065-BRepBlend_Walking-Perform-reports-not-done-for-a-non-finite-range-3350 594f8dcc3e0d
+# patch: 0065-BRepBlend_Walking-Perform-reports-not-done-for-a-non-finite-range-3350 89ab9a12f1fb
 #
 # totals: inline-raise       462 site(s) in  104 class(es)
 # totals: outofline-raise    828 site(s) in  284 class(es)
