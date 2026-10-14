@@ -402,6 +402,14 @@ marks as historical records. It is a dry run unless given `--apply`, refuses a d
 idempotent. Its `--self-test` is run by hand, as the 766 lift tools' are, because a script CI runs
 only as a `--self-test` is classified as a release check.
 
+`Scripts/number-out-test-names.py` is a third tool of the same kind and also not a gate (#3327's
+number-out series). For one test target it strips the `Issue<N>` prefix from type names and the issue
+number from `@Suite` and `@Test` titles, adds `/// Regression for #N.` where the comment above does not
+already cite it, and rewrites other mentions of the old names outside `CHANGELOG.md`. It is a dry run
+unless given `--apply`, and refuses, writing nothing, on a new name that is duplicated, is already a
+type under `Tests/`, or is not an identifier. It never touches a test body. Its `--self-test` is run
+by hand.
+
 A row may name a destination in another target (#3147). It stays in the SOURCE target's table, since
 column 1 is the path the v5 branch keeps and `--path-map` is given the source table of the lift. The
 `wasmExcludedTestFiles` entry of such a file leaves the source target's list for the destination's,
