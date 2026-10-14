@@ -97,7 +97,7 @@ struct PerfMeterTests {
 struct OSDDiskTests {
     // #1987: `size >= 0` and `free >= 0` passed a bridge returning 0. OSD_Disk::DiskSize() is
     // f_blocks * (f_frsize / 512) 512-byte blocks, which the bridge halves to KB; total size does
-    // not move between two reads, so it is compared exactly. Issue1442DiskUnicodeOSDUtilitiesTests
+    // not move between two reads, so it is compared exactly. DiskUnicodeOSDUtilitiesTests
     // holds the finer regression coverage for #1442.
     @Test func diskSize() {
         var vfs = statvfs()
@@ -225,8 +225,8 @@ struct OSDHostTests {
 // `DiskUnicodeOSDUtilitiesTests.swift` by #2928. The suite name is new because they were
 // two of six tests in one suite there, and the other four, the two UTF-8 encoding ones and the two
 // `DiskInfo.isValid` ones, need no host oracle and run for wasm.
-@Suite("#1442 disk size and free space are KB, against statvfs")
-struct Issue1442DiskKBAgainstStatvfsTests {
+@Suite("Disk size and free space are KB, against statvfs")
+struct DiskKBAgainstStatvfsTests {
 
     @Test("Disk total size is reported in KB, matching a direct statvfs computation")
     func diskSizeMatchesStatvfsInKB() throws {

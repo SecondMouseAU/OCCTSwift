@@ -81,7 +81,8 @@ struct MaterialTests {
     }
 }
 
-@Suite("OCCT signal handling (#175)")
+/// Regression for #175.
+@Suite("OCCT signal handling")
 struct OCCTSignalHandlingTests {
     /// Degenerate / incompatible loft profiles must FAIL GRACEFULLY (return nil) rather than
     /// SIGSEGV the process.

@@ -44,8 +44,8 @@ import Testing
 // `.serialized` does NOT fix this. It orders tests WITHIN one suite; two separately-serialized
 // suites still run concurrently with each other, and the state here is shared across suites.
 // OCCTSerial.withLock is process-wide, which is the scope the state actually has.
-@Suite("OCCTBridge_IO_OSDUtilities: disk size/free/valid + Unicode UTF-8 encoding (#1442)")
-struct Issue1442DiskUnicodeOSDUtilitiesTests {
+@Suite("OCCTBridge_IO_OSDUtilities: disk size/free/valid + Unicode UTF-8 encoding")
+struct DiskUnicodeOSDUtilitiesTests {
 
     // MARK: - Finding 2: non-ASCII code units are UTF-8 encoded, not dropped
 
