@@ -41,7 +41,8 @@ import Testing
 
 @testable import OCCTSwift
 
-@Suite("Stress: BRepCheck_Analyzer surface-less face guard (#2789)")
+/// Regression for #2789.
+@Suite("Stress: BRepCheck_Analyzer surface-less face guard")
 struct StressAnalyzerSurfacelessFaceGuardTests {
 
     /// A compound holding one face with no surface that carries the outer wire of a box face, so it

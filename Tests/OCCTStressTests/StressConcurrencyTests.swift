@@ -320,7 +320,7 @@ struct StressConcurrentCreationTests {
 // theAutoNaming fix, root-caused to two independent, unsynchronized races in GetApplication()'s
 // lazy singleton init and CDF_Directory::Add, fixed in the v1.15.6 kernel patch (0012). This
 // regression test exercises the same singleton from many concurrent tasks.
-@Suite("Stress: Concurrent Document Creation (#344)")
+@Suite("Stress: Concurrent Document Creation")
 struct StressConcurrentDocumentCreationTests {
 
     // Forty tasks each create a document through the process-wide application singleton. The

@@ -39,7 +39,8 @@ import Testing
 
 @testable import OCCTSwift
 
-@Suite("Stress: ShapeCustom converter surface-less face guard (#2790)")
+/// Regression for #2790.
+@Suite("Stress: ShapeCustom converter surface-less face guard")
 struct StressShapeCustomSurfacelessFaceGuardTests {
 
     /// A compound holding one face with no surface that DOES carry a wire.

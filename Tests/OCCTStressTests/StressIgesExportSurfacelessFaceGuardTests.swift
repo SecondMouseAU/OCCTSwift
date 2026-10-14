@@ -38,7 +38,8 @@ import Testing
 
 @testable import OCCTSwift
 
-@Suite("Stress: IGES export surface-less face guard (#2777)")
+/// Regression for #2777.
+@Suite("Stress: IGES export surface-less face guard")
 struct StressIgesExportSurfacelessFaceGuardTests {
 
     /// A compound holding one face with no surface that DOES carry a wire.

@@ -5,12 +5,12 @@ import Testing
 
 /// #3200 on the #2881 model (#3209): the vertex-snap window answers nil or a valid shape.
 ///
-/// It never answers a done-but-`BRepCheck`-invalid one. Lives here, beside `Issue2881FilletObstacleTests`,
+/// It never answers a done-but-`BRepCheck`-invalid one. Lives here, beside `FilletObstacleTests`,
 /// because the model is a `Fixtures/` file of this target and the wasm runner preopens only each
 /// target's own `Fixtures` directory. The Apple-and-wasm-neutral cases are in
 /// `Tests/OCCTModelingTests/Blends/FilletResultValidityTests.swift`.
-@Suite("Fillet of the #2881 model is BRepCheck-valid or nil (#3200)")
-struct Issue3200FilletModelValidityTests {
+@Suite("Fillet of the obstacle model is BRepCheck-valid or nil")
+struct FilletModelValidityTests {
 
     /// Whatever came back must be valid.
     private func expectNilOrValid(_ result: Shape?, _ context: String) {
@@ -27,7 +27,7 @@ struct Issue3200FilletModelValidityTests {
     }
 
     /// Edge 13 in DRAW's 1-based numbering is index 12 here.
-    @Test("The vertex-snap window of the #2881 model no longer answers an invalid shape")
+    @Test("The vertex-snap window of the obstacle model no longer answers an invalid shape")
     func vertexSnapWindow() throws {
         let m = try model()
         let e = m.edges()[12]
