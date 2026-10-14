@@ -32,7 +32,8 @@ import Testing
 
 @testable import OCCTSwift
 
-@Suite("Stress: ShapeUpgrade_ShapeDivide surface-less face guard (#2773)")
+/// Regression for #2773.
+@Suite("Stress: ShapeUpgrade_ShapeDivide surface-less face guard")
 struct StressShapeDivideSurfacelessFaceGuardTests {
 
     /// A compound holding one face with no surface and no edges, off disk.

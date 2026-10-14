@@ -631,7 +631,7 @@ the reproducer). What a bridge author needs without opening it:
   against `0021`). None of their tests could signal that they had outlived their fix, which is why
   this list existed; each now has a regression test that fails if the mitigation comes back.
 - **Retired at the `v4.0.0-kernel.5` repin**: the three `OCCTSWIFT_LOCAL=1` gates on
-  `Issue3003OffsetOrderTests` (`0053`), `Issue2881FilletObstacleTests` (`0054`) and
+  `Issue3003OffsetOrderTests` (`0053`), `FilletObstacleTests` (`0054`) and
   `Issue3039BRepLibPlaneFirstUseTests` (`0056`), which left each test skipped on every default run
   once the asset carried its fix, and the two `tolerance` declarations in the #766 probes
   `766-modeling-evidence-fix` and `766-modeling-issue568-index-skip` that allowed for `0053`'s

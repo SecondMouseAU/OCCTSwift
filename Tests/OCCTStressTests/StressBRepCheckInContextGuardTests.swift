@@ -43,7 +43,8 @@ import Testing
 
 @testable import OCCTSwift
 
-@Suite("Stress: BRepCheck_Analyzer InContext guard (#2750)")
+/// Regression for #2750.
+@Suite("Stress: BRepCheck_Analyzer InContext guard")
 struct StressBRepCheckInContextGuardTests {
 
     /// The box whose shared edge lost its 3D curve, written and read back as a `.brep`.

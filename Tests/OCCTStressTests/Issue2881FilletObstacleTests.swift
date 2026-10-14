@@ -15,8 +15,8 @@ import Testing
 /// The model is the one attached to OCCT#1568, 19 faces and 42 edges. The failing input is a single
 /// radius, 1.5, on eight of those edges; one ULP either side never reached the branch.
 /// `Scripts/repro/occt1568-fillet-opposite-edge/` holds the measurement.
-@Suite("Issue 2881: a fillet obstacle with no edge to follow")
-struct Issue2881FilletObstacleTests {
+@Suite("A fillet obstacle with no edge to follow")
+struct FilletObstacleTests {
 
     private func loadModel() throws -> Shape {
         let url = URL(fileURLWithPath: #filePath)

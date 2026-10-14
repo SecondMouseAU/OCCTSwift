@@ -596,7 +596,7 @@ struct StressUnusualInputTests {
 // `Scripts/repro/1498-solidprimitives-null-guards/repro_1498.mm`, which compiles the real
 // `OCCTBridge_Modeling_SolidPrimitives.mm` translation unit and drives
 // `OCCTShapeCreateRevolution` with a hand-constructed null-wire wrapper.
-@Suite("Stress: SolidPrimitives Null Handle Guards (#1498)")
+@Suite("Stress: SolidPrimitives Null Handle Guards")
 struct StressSolidPrimitivesNullGuardTests {
 
     @Test("occtShapePeriodicImpl: makePeriodic on a nullified shape does not crash")
