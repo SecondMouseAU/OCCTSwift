@@ -32,16 +32,13 @@ struct GDTToleranceDatumAccessorTests {
 
         // A tolerance nobody qualified. This also holds OCCTDocumentCreateGeomTolerance to handing
         // OCCT neutral values rather than whatever its uninitialised members happened to hold.
-        if let fresh = doc.geomTolerance(at: index) {
-            #expect(fresh.valueType == Document.GeomToleranceValueType.none)
-            #expect(fresh.materialRequirement == Document.MaterialRequirement.none)
-            #expect(fresh.zoneModifier == Document.GeomToleranceZoneModifier.none)
-            #expect(fresh.zoneModifierValue == nil)
-            #expect(fresh.maxValueModifier == nil)
-            #expect(fresh.modifiers.isEmpty)
-        } else {
-            Issue.record("tolerance nil before writes")
-        }
+        let fresh = try #require(doc.geomTolerance(at: index))
+        #expect(fresh.valueType == Document.GeomToleranceValueType.none)
+        #expect(fresh.materialRequirement == Document.MaterialRequirement.none)
+        #expect(fresh.zoneModifier == Document.GeomToleranceZoneModifier.none)
+        #expect(fresh.zoneModifierValue == nil)
+        #expect(fresh.maxValueModifier == nil)
+        #expect(fresh.modifiers.isEmpty)
 
         // Three members with three different raw values (1, 2 and 3): `.diameter`, `.m` and
         // `.projected` are all raw 1, and a trio of equal raw values cannot tell one member read
@@ -52,20 +49,17 @@ struct GDTToleranceDatumAccessorTests {
         #expect(doc.setGeomToleranceZoneModifier(at: index, .nonUniform, value: 15.0))
         #expect(doc.setGeomToleranceMaxValueModifier(at: index, 0.25))
 
-        if let tol = doc.geomTolerance(at: index) {
-            // Three separate OCCT members, all read in one call, so the trio proves none of the
-            // three accessors is reading another's storage.
-            #expect(tol.valueType == .diameter)
-            #expect(tol.materialRequirement == .l)
-            #expect(tol.zoneModifier == .nonUniform)
-            #expect(tol.zoneModifierValue == 15.0)
-            #expect(tol.maxValueModifier == 0.25)
-            // The tolerance's own value is untouched by any of them.
-            #expect(tol.value == 0.1)
-            #expect(tol.type == .position)
-        } else {
-            Issue.record("tolerance nil after writes")
-        }
+        let tol = try #require(doc.geomTolerance(at: index))
+        // Three separate OCCT members, all read in one call, so the trio proves none of the
+        // three accessors is reading another's storage.
+        #expect(tol.valueType == .diameter)
+        #expect(tol.materialRequirement == .l)
+        #expect(tol.zoneModifier == .nonUniform)
+        #expect(tol.zoneModifierValue == 15.0)
+        #expect(tol.maxValueModifier == 0.25)
+        // The tolerance's own value is untouched by any of them.
+        #expect(tol.value == 0.1)
+        #expect(tol.type == .position)
     }
 
     /// OCCT stores a zone value and a max value only when positive, so a zero is what an unstored
@@ -81,14 +75,11 @@ struct GDTToleranceDatumAccessorTests {
 
         #expect(doc.setGeomToleranceZoneModifier(at: index, .projected, value: 0))
         #expect(doc.setGeomToleranceMaxValueModifier(at: index, 0))
-        if let tol = doc.geomTolerance(at: index) {
-            #expect(tol.zoneModifierValue == nil)
-            #expect(tol.maxValueModifier == nil)
-            // The modifier itself is gated separately, on its own `_None` member, and survives.
-            #expect(tol.zoneModifier == .projected)
-        } else {
-            Issue.record("tolerance nil")
-        }
+        let tol = try #require(doc.geomTolerance(at: index))
+        #expect(tol.zoneModifierValue == nil)
+        #expect(tol.maxValueModifier == nil)
+        // The modifier itself is gated separately, on its own `_None` member, and survives.
+        #expect(tol.zoneModifier == .projected)
     }
 
     @Test("A tolerance modifier sequence round-trips in order, and clears")
@@ -115,45 +106,39 @@ struct GDTToleranceDatumAccessorTests {
     @Test("A datum position round-trips, and reads nil when it has no place in a frame")
     func datumPositionRoundTrips() throws {
         let (doc, index) = try #require(documentWithDatum(), "document nil")
-        #expect(doc.datum(at: index)?.position == nil)
+        let fresh = try #require(doc.datum(at: index))
+        #expect(fresh.position == nil)
 
         #expect(doc.setDatumPosition(at: index, 2))
-        #expect(doc.datum(at: index)?.position == 2)
+        let placed = try #require(doc.datum(at: index))
+        #expect(placed.position == 2)
 
         #expect(doc.setDatumPosition(at: index, 0))
-        #expect(doc.datum(at: index)?.position == nil)
+        let cleared = try #require(doc.datum(at: index))
+        #expect(cleared.position == nil)
     }
 
     @Test("A datum modifier sequence round-trips in order, and the valued modifier is separate")
     func datumModifiersRoundTrip() throws {
         let (doc, index) = try #require(documentWithDatum(), "document nil")
-        if let fresh = doc.datum(at: index) {
-            #expect(fresh.modifiers.isEmpty)
-            #expect(fresh.modifierWithValue == nil)
-        } else {
-            Issue.record("datum nil")
-        }
+        let fresh = try #require(doc.datum(at: index))
+        #expect(fresh.modifiers.isEmpty)
+        #expect(fresh.modifierWithValue == nil)
 
         let written: [Document.DatumModifier] = [.translation, .basic, .contactingFeature]
         #expect(doc.setDatumModifiers(at: index, written))
         #expect(doc.setDatumModifierWithValue(at: index, .projected, value: 12.5))
 
-        if let datum = doc.datum(at: index) {
-            #expect(datum.modifiers == written)
-            #expect(datum.modifierWithValue?.modifier == .projected)
-            #expect(datum.modifierWithValue?.value == 12.5)
-        } else {
-            Issue.record("datum nil")
-        }
+        let valued = try #require(doc.datum(at: index))
+        #expect(valued.modifiers == written)
+        #expect(valued.modifierWithValue?.modifier == .projected)
+        #expect(valued.modifierWithValue?.value == 12.5)
 
         // Clearing the valued modifier leaves the sequence alone: two separate OCCT members.
         #expect(doc.setDatumModifierWithValue(at: index, .none))
-        if let datum = doc.datum(at: index) {
-            #expect(datum.modifierWithValue == nil)
-            #expect(datum.modifiers == written)
-        } else {
-            Issue.record("datum nil")
-        }
+        let datum = try #require(doc.datum(at: index))
+        #expect(datum.modifierWithValue == nil)
+        #expect(datum.modifiers == written)
 
         #expect(doc.setDatumModifiers(at: index, []))
         #expect(doc.datum(at: index)?.modifiers.isEmpty == true)
@@ -167,7 +152,8 @@ struct GDTToleranceDatumAccessorTests {
     @Test("A datum target's length and width follow the target type, not the write")
     func datumTargetDimensionsFollowTheType() throws {
         let (doc, index) = try #require(documentWithDatum(name: "B"), "document nil")
-        #expect(doc.datum(at: index)?.target == nil)
+        let fresh = try #require(doc.datum(at: index))
+        #expect(fresh.target == nil)
 
         // Asymmetric length and width on purpose, so one reported as the other is visible.
         func placeTarget(_ type: Document.DatumTargetType) {
@@ -183,35 +169,27 @@ struct GDTToleranceDatumAccessorTests {
         }
 
         placeTarget(.rectangle)
-        if let target = doc.datum(at: index)?.target {
-            #expect(target.type == .rectangle)
-            #expect(target.number == 4)
-            #expect(target.length == 30)
-            #expect(target.width == 18)
-        } else {
-            Issue.record("rectangle target nil")
-        }
+        let rectangleTarget = try #require(doc.datum(at: index)?.target)
+        #expect(rectangleTarget.type == .rectangle)
+        #expect(rectangleTarget.number == 4)
+        #expect(rectangleTarget.length == 30)
+        #expect(rectangleTarget.width == 18)
 
         placeTarget(.line)
-        if let target = doc.datum(at: index)?.target {
-            #expect(target.type == .line)
-            #expect(target.length == 30)
-            #expect(target.width == nil)
-        } else {
-            Issue.record("line target nil")
-        }
+        let lineTarget = try #require(doc.datum(at: index)?.target)
+        #expect(lineTarget.type == .line)
+        #expect(lineTarget.length == 30)
+        #expect(lineTarget.width == nil)
 
         placeTarget(.point)
-        if let target = doc.datum(at: index)?.target {
-            #expect(target.type == .point)
-            #expect(target.length == nil)
-            #expect(target.width == nil)
-        } else {
-            Issue.record("point target nil")
-        }
+        let pointTarget = try #require(doc.datum(at: index)?.target)
+        #expect(pointTarget.type == .point)
+        #expect(pointTarget.length == nil)
+        #expect(pointTarget.width == nil)
 
         #expect(doc.clearDatumTarget(at: index))
-        #expect(doc.datum(at: index)?.target == nil)
+        let cleared = try #require(doc.datum(at: index))
+        #expect(cleared.target == nil)
     }
 
     /// The placement is one call because each of OCCT's three setters raises the same
@@ -231,7 +209,8 @@ struct GDTToleranceDatumAccessorTests {
                 length: 10,
                 width: 0))
         // Refused, so nothing was stored and the target reports no length.
-        #expect(doc.datum(at: index)?.target?.length == nil)
+        let datum = try #require(doc.datum(at: index))
+        #expect(datum.target?.length == nil)
     }
 
     // MARK: - Isolation and bounds

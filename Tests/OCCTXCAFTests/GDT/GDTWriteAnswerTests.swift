@@ -40,10 +40,7 @@ struct Issue1056GDTWriteAnswerTests {
             (Double.nan, Double.nan),
         ])
     func nonStorableToleranceRefusesTheCreate(lower: Double, upper: Double) throws {
-        guard let (doc, labelId) = documentWithBox() else {
-            Issue.record("fixture nil")
-            return
-        }
+        let (doc, labelId) = try #require(documentWithBox())
         let index = doc.createDimension(
             on: labelId, type: .sizeDiameter, value: 20.0,
             lowerTolerance: lower, upperTolerance: upper)
@@ -55,39 +52,23 @@ struct Issue1056GDTWriteAnswerTests {
     /// about `createDimension` having stopped creating anything.
     @Test("A storable tolerance pair still creates the dimension and applies both bounds")
     func storableToleranceStillApplies() throws {
-        guard let (doc, labelId) = documentWithBox() else {
-            Issue.record("fixture nil")
-            return
-        }
-        guard
-            let index = doc.createDimension(
+        let (doc, labelId) = try #require(documentWithBox())
+        let index = try #require(
+            doc.createDimension(
                 on: labelId, type: .sizeDiameter, value: 20.0,
-                lowerTolerance: -0.3, upperTolerance: 0.7)
-        else {
-            Issue.record("createDimension nil")
-            return
-        }
+                lowerTolerance: -0.3, upperTolerance: 0.7))
         #expect(doc.dimensionCount == 1)
-        if let dim = doc.dimension(at: index) {
-            #expect(dim.bounds == .plusMinus(lowerTolerance: -0.3, upperTolerance: 0.7))
-            #expect(dim.value == 20.0)
-        } else {
-            Issue.record("dimension nil")
-        }
+        let dim = try #require(doc.dimension(at: index))
+        #expect(dim.bounds == .plusMinus(lowerTolerance: -0.3, upperTolerance: 0.7))
+        #expect(dim.value == 20.0)
     }
 
     /// Omitting both bounds is the other half of the same signature and takes the path that never
     /// touches a tolerance at all, so it stays a `.simple` dimension.
     @Test("Omitting both bounds still creates a simple dimension")
     func noToleranceStillCreatesASimpleDimension() throws {
-        guard let (doc, labelId) = documentWithBox() else {
-            Issue.record("fixture nil")
-            return
-        }
-        guard let index = doc.createDimension(on: labelId, type: .sizeDiameter, value: 20.0) else {
-            Issue.record("createDimension nil")
-            return
-        }
+        let (doc, labelId) = try #require(documentWithBox())
+        let index = try #require(doc.createDimension(on: labelId, type: .sizeDiameter, value: 20.0))
         #expect(doc.dimensionCount == 1)
         #expect(doc.dimension(at: index)?.bounds == .simple)
     }
@@ -96,14 +77,8 @@ struct Issue1056GDTWriteAnswerTests {
     /// the two spellings of the operation now agree on the same refusal.
     @Test("The standalone setter refuses the same pair, and leaves the dimension alone")
     func standaloneSetterRefusesTheSamePair() throws {
-        guard let (doc, labelId) = documentWithBox() else {
-            Issue.record("fixture nil")
-            return
-        }
-        guard let index = doc.createDimension(on: labelId, type: .sizeDiameter, value: 20.0) else {
-            Issue.record("createDimension nil")
-            return
-        }
+        let (doc, labelId) = try #require(documentWithBox())
+        let index = try #require(doc.createDimension(on: labelId, type: .sizeDiameter, value: 20.0))
         #expect(doc.setDimensionTolerance(at: index, lower: .nan, upper: 0.5) == false)
         #expect(doc.dimension(at: index)?.bounds == .simple)
     }
@@ -121,17 +96,11 @@ struct Issue1056GDTWriteAnswerTests {
     /// The issue's own measurement: `.none` with a value, on a tolerance that never had a modifier.
     @Test("A value passed with .none is not stored")
     func noneModifierStoresNoValue() throws {
-        guard let (doc, index) = documentWithTolerance() else {
-            Issue.record("fixture nil")
-            return
-        }
+        let (doc, index) = try #require(documentWithTolerance())
         #expect(doc.setGeomToleranceZoneModifier(at: index, .none, value: 15.0) == true)
-        if let tol = doc.geomTolerance(at: index) {
-            #expect(tol.zoneModifier == Document.GeomToleranceZoneModifier.none)
-            #expect(tol.zoneModifierValue == nil)
-        } else {
-            Issue.record("geomTolerance nil")
-        }
+        let tol = try #require(doc.geomTolerance(at: index))
+        #expect(tol.zoneModifier == Document.GeomToleranceZoneModifier.none)
+        #expect(tol.zoneModifierValue == nil)
     }
 
     /// The same defect reached the other way: a real projected zone, then cleared.
@@ -142,41 +111,30 @@ struct Issue1056GDTWriteAnswerTests {
     /// guard rather than as a probe of the defect.
     @Test("Clearing a modifier clears its value, whether or not one is passed with the clear")
     func clearingAModifierClearsItsValue() throws {
-        guard let (doc, index) = documentWithTolerance() else {
-            Issue.record("fixture nil")
-            return
-        }
+        let (doc, index) = try #require(documentWithTolerance())
         #expect(doc.setGeomToleranceZoneModifier(at: index, .projected, value: 15.0) == true)
         #expect(doc.geomTolerance(at: index)?.zoneModifierValue == 15.0)
 
         #expect(doc.setGeomToleranceZoneModifier(at: index, .none, value: 7.5) == true)
-        if let tol = doc.geomTolerance(at: index) {
-            #expect(tol.zoneModifier == Document.GeomToleranceZoneModifier.none)
-            #expect(tol.zoneModifierValue == nil)
-        } else {
-            Issue.record("geomTolerance nil")
-        }
+        let tol = try #require(doc.geomTolerance(at: index))
+        #expect(tol.zoneModifier == Document.GeomToleranceZoneModifier.none)
+        #expect(tol.zoneModifierValue == nil)
 
         #expect(doc.setGeomToleranceZoneModifier(at: index, .projected, value: 15.0) == true)
         #expect(doc.setGeomToleranceZoneModifier(at: index, .none) == true)
-        #expect(doc.geomTolerance(at: index)?.zoneModifierValue == nil)
+        let cleared = try #require(doc.geomTolerance(at: index))
+        #expect(cleared.zoneModifierValue == nil)
     }
 
     /// The control: a modifier that is not `.none` keeps its value, so the clearing above is about
     /// `.none` and not about the setter having stopped storing anything.
     @Test("A real zone modifier still stores its value")
     func realModifierStillStoresItsValue() throws {
-        guard let (doc, index) = documentWithTolerance() else {
-            Issue.record("fixture nil")
-            return
-        }
+        let (doc, index) = try #require(documentWithTolerance())
         #expect(doc.setGeomToleranceZoneModifier(at: index, .projected, value: 15.0) == true)
-        if let tol = doc.geomTolerance(at: index) {
-            #expect(tol.zoneModifier == .projected)
-            #expect(tol.zoneModifierValue == 15.0)
-        } else {
-            Issue.record("geomTolerance nil")
-        }
+        let tol = try #require(doc.geomTolerance(at: index))
+        #expect(tol.zoneModifier == .projected)
+        #expect(tol.zoneModifierValue == 15.0)
     }
 
     /// The datum sibling's answer for the same call shape, which is the behaviour the tolerance

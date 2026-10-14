@@ -29,35 +29,23 @@ import Testing
 struct Issue1435DatumDocumentToolTableTests {
 
     @Test("A created datum is a real child of Main().FindChild(4), the DimTolTool label")
-    func datumIsUnderDocumentToolLabel() {
-        guard let doc = Document.create() else {
-            Issue.record("document creation failed")
-            return
-        }
-        guard let index = doc.createDatum(name: "A") else {
-            Issue.record("createDatum failed")
-            return
-        }
+    func datumIsUnderDocumentToolLabel() throws {
+        let doc = try #require(Document.create())
+        let index = try #require(doc.createDatum(name: "A"))
         #expect(index == 0)
 
-        guard let main = doc.mainLabel else {
-            Issue.record("mainLabel nil")
-            return
-        }
+        let main = try #require(doc.mainLabel)
 
         // create: false is deliberate. Nothing else touches tag 4 under Main() at document
         // creation (ShapeTool/ColorTool/VisMaterialTool live at tags 1/2/10), so this label only
         // exists at all if something actually called XCAFDoc_DocumentTool::DimTolTool. If the
         // datum instead landed directly on Main() (the #1435 regression), tag 4 is never created
         // and this comes back nil.
-        let dgts = main.findChild(tag: 4, create: false)
-        #expect(
-            dgts != nil,
+        let dgts = try #require(
+            main.findChild(tag: 4, create: false),
             Comment(
                 rawValue: "XCAFDoc_DocumentTool's 0:1:4 label was never created; the datum was "
-                    + "written somewhere else (Main() itself, the #1435 regression of #1051)")
-        )
-        guard let dgts else { return }
+                    + "written somewhere else (Main() itself, the #1435 regression of #1051)"))
 
         #expect(
             dgts.childCount == 1,
