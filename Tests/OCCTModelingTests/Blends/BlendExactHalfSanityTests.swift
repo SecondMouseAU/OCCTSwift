@@ -131,4 +131,20 @@ struct BlendExactHalfSanityTests {
         let after = try #require(result.volume)
         #expect(after > before, "a concave fillet fills the corner, so the volume grows")
     }
+
+    // MARK: - A blend that would split one body into two
+
+    /// The solid-count check refuses any blend that answers a different number of solids. A fillet
+    /// that legitimately severs a body needs a neck of zero width, which no radius on a valid
+    /// neck reaches: filleting every edge of a thin plate at `r == thickness / 2` (the tie, as the
+    /// cylinder above) answers either one solid or nil, never two, so the check costs no correct
+    /// answer here. Pinned so a future kernel that does answer two solids is a visible change.
+    @Test("a thin plate at r = thickness / 2 answers one solid or nil, never two")
+    func thinPlateNeverSplits() throws {
+        let plate = try #require(Shape.box(width: 10, height: 10, depth: 2))
+        if let result = plate.filleted(edges: plate.edges(), radius: 1) {
+            #expect(result.solidCount == 1)
+            #expect(result.isValid)
+        }
+    }
 }
