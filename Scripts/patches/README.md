@@ -21,7 +21,7 @@ retired 2026-09-02 (superseded by upstream's own fix, not shipped in our pin), a
 2026-09-20 (it reintroduced #280; see its [Retired patches](#retired-patches) entry), and
 `0031` retired 2026-10-10 at the `v4.0.0-kernel.6` repin (#3065: the supported pattern is one
 adaptor per worker, so the lock it added is not needed).
-The carried sequence now reads 0010–0012, 0014–0030, 0033–0034, 0036–0048, 0050–0059, 0065.
+The carried sequence now reads 0010–0012, 0014–0030, 0033–0034, 0036–0048, 0050–0059, 0064–0065.
 The gaps are the retirements, not missing files:
 the numbers are cited across `CLAUDE.md`, `docs/`, closed issues and `Scripts/repro/`, and
 renumbering would have silently repointed every one of those citations at a different fix.
@@ -3426,9 +3426,23 @@ Known limits: `Modified()`/`Generated()` return the faces from before `FixStripF
 
 Measured against the `v4.0.0-kernel.5` asset with the three changed files override-linked (`Scripts/repro/fillet-exact-meeting-fix/README.md`): 715 box cases before and after, none regressed and none newly invalid; 16 `IsDone` false now valid with the analytic volume.
 
+## 0064-TopOpeBRepBuild-CorrectUnclosedWire-collects-the-edges-before-removing-them-3335.patch
+
+**A fillet whose ends meet in the face merge no longer reads a freed list node** ([#3335](https://github.com/SecondMouseAU/OCCTSwift/issues/3335), upstream [OCCT#1619](https://github.com/Open-Cascade-SAS/OCCT/issues/1619), same site as OCCT#1430).
+
+`CorrectUnclosedWire` in `TopOpeBRepBuild_Merge.cxx`, called from `TopOpeBRepBuild_Builder::MakeFaces` during `ChFi3d_Builder::Compute` -> `MergeSolid`, calls `BRep_Builder::Remove(aWire, ed)` inside a `TopoDS_Iterator` loop over `aWire`. `Remove` frees the list node the iterator stands on and the next `Next()` reads freed memory: an uncatchable SIGSEGV, 20 of 20 runs on OCCT#1619's `fillet_uaf.brep` (r = 1.25 on explode edges 26 and 35) and 3 of 3 on each of OCCT#1430's two cases.
+
+The edges with at most one vertex are collected while iterating and removed after the loop ends. The second loop, over the vertex to edge map, walks a separate map and is unchanged.
+
+Measured by override-link of the patched object into a copy of the `v4.0.0-kernel.6` macOS slice: `FilletMergeWireRemovalTests` dies with signal 11 against the unpatched archive and passes against the patched one (the pair answers `nil`; the r = 1.0 control still answers a valid 32-face shape).
+
+**Upstream checked 2026-10-14:** OCCT#1619 is open with no PR and the loop is unchanged on master. **Not yet filed upstream**; it needs a GTest that fillets the model above.
+
+**Retire** once the bundled OCCT includes this fix.
+
 ## 0065-BRepBlend_Walking-Perform-reports-not-done-for-a-non-finite-range-3350.patch
 
-**A chamfer with parallel spine tangents is declined instead of killing the process, and a chamfer that is not a valid solid is not returned** ([#3350](https://github.com/SecondMouseAU/OCCTSwift/issues/3350), upstream [OCCT#1576](https://github.com/Open-Cascade-SAS/OCCT/issues/1576) and FreeCAD#21369), `src/ModelingAlgorithms/TKFillet/` (`BRepBlend/BRepBlend_Walking.cxx`, `ChFi3d/ChFi3d_ChBuilder.cxx`, `BRepFilletAPI/BRepFilletAPI_MakeChamfer.cxx`). **Candidate: no PR, nothing reported upstream.** The number is 0065: 0060 to 0063 are held by fillet branches that are not merged yet and 0064 by PR #3460 (#3335).
+**A chamfer with parallel spine tangents is declined instead of killing the process, and a chamfer that is not a valid solid is not returned** ([#3350](https://github.com/SecondMouseAU/OCCTSwift/issues/3350), upstream [OCCT#1576](https://github.com/Open-Cascade-SAS/OCCT/issues/1576) and FreeCAD#21369), `src/ModelingAlgorithms/TKFillet/` (`BRepBlend/BRepBlend_Walking.cxx`, `ChFi3d/ChFi3d_ChBuilder.cxx`, `BRepFilletAPI/BRepFilletAPI_MakeChamfer.cxx`). **Candidate: no PR, nothing reported upstream.** The number is 0065: 0060 to 0063 are held by fillet branches that are not merged yet and 0064 is #3335's (#3460).
 
 On the OCCT#1576 model (36 edges), `BRepFilletAPI_MakeChamfer` at d = 1 on each edge one at a time is a SIGSEGV on 12 of them (edges 14 and 16 to 26) on the pinned kernel. The stack is `Extrema_GGExtPC::Perform` under `BRepBlend_Walking::CorrectExtremityOnOneRst`, with the walk's `Pmax = -inf`, `Fleche = inf` and a NaN point. Override-linking `BRepBlend_Walking`, `ChFi3d_Builder_2` and `ChFi3d_ChBuilder` and printing at each stage gives the origin: `ExtentSpineOnCommonFace` (`ChFi3d_ChBuilder.cxx`, reached from `ExtentTwoCorner`) prints `cos=1 sin=0 dis1=1 dis2=1 d1plus=inf d2plus=inf`. For parallel spine tangents `tga = sinalpha / temp` is 0 and `d1plus = dis1 / tga` is infinity, which passes `if (d1plus > 0.)` into `Spine->SetFirstParameter(-inf)`. The ElSpine range `(-inf, +inf)` is then `wf` and `wl` in `PerformSetOfSurfOnElSpine`, and `Perform(..., Pmax, ..., Fleche)` is called with `Pmax = -inf` and `Fleche = inf`.
 

@@ -1,0 +1,51 @@
+From: OCCTSwift ecosystem <noreply@secondmouse.au>
+Subject: [PATCH] Modeling Algorithms - TopOpeBRepBuild CorrectUnclosedWire collects
+ the edges to remove before removing them
+
+CorrectUnclosedWire (TopOpeBRepBuild_Merge.cxx, called from TopOpeBRepBuild_Builder::MakeFaces)
+calls BRep_Builder::Remove(aWire, ed) inside a TopoDS_Iterator loop over aWire. Remove frees the
+list node the iterator stands on, and the next Next() reads freed memory. BRepFilletAPI_MakeFillet
+reaches it through ChFi3d_Builder::Compute -> MergeSolid whenever fillet ends meet in the merge,
+and the process dies with an uncatchable SIGSEGV: 20 of 20 runs on OCCT#1619's fillet_uaf.brep
+(r = 1.25 on explode edges 26 and 35), 3 of 3 on each of OCCT#1430's two cases.
+
+The edges with at most one vertex are now collected in a list while iterating and removed after
+the iteration ends. The second loop, over the vertex to edge map, is unchanged: it removes from
+the wire while walking a separate map, not the wire's own list.
+
+Reported upstream as OCCT#1619 (and OCCT#1430, same site). Tracked as
+SecondMouseAU/OCCTSwift#3335.
+
+---
+diff --git a/src/ModelingAlgorithms/TKBool/TopOpeBRepBuild/TopOpeBRepBuild_Merge.cxx b/src/ModelingAlgorithms/TKBool/TopOpeBRepBuild/TopOpeBRepBuild_Merge.cxx
+--- a/src/ModelingAlgorithms/TKBool/TopOpeBRepBuild/TopOpeBRepBuild_Merge.cxx
++++ b/src/ModelingAlgorithms/TKBool/TopOpeBRepBuild/TopOpeBRepBuild_Merge.cxx
+@@ -138,17 +138,20 @@
+ static void CorrectUnclosedWire(TopoDS_Shape& aWire)
+ {
+   //  std::cout << "-------CorrectUnclosedWire" << std::endl;
+-  BRep_Builder    BB;
+-  TopoDS_Iterator tdi(aWire, false, false);
+-  for (; tdi.More(); tdi.Next())
++  BRep_Builder BB;
++  // Collect first: BB.Remove frees the list node the iterator stands on.
++  NCollection_List<TopoDS_Shape> aBadEdges;
++  for (TopoDS_Iterator tdi(aWire, false, false); tdi.More(); tdi.Next())
+   {
+-    const TopoDS_Shape& ed  = tdi.Value();
+-    int                 nbv = ed.NbChildren();
+-    if (nbv <= 1)
++    const TopoDS_Shape& ed = tdi.Value();
++    if (ed.NbChildren() <= 1)
+     {
+-      //      std::cout << "Remove bad edge" << std::endl;
+-      BB.Remove(aWire, ed);
++      aBadEdges.Append(ed);
+     }
++  }
++  for (const TopoDS_Shape& aBadEdge : aBadEdges)
++  {
++    BB.Remove(aWire, aBadEdge);
+   }
+
+   NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>, TopTools_ShapeMapHasher>
