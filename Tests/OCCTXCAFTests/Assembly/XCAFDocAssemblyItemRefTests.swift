@@ -25,23 +25,22 @@ struct XCAFDocAssemblyItemRefTests {
         #expect(doc.assemblyItemRefIsOrphan(labelId: node.labelId))
     }
 
-    @Test func subshapeIndex() {
-        guard let doc = Document.create() else { return }
+    @Test func subshapeIndex() throws {
+        let doc = try #require(Document.create())
         doc.openTransaction()
-        guard let node = doc.createLabel() else { return }
+        let node = try #require(doc.createLabel())
         doc.setAssemblyItemRef(labelId: node.labelId, itemPath: "/0:1:1:1")
         doc.assemblyItemRefSetSubshape(labelId: node.labelId, index: 3)
         doc.commitTransaction()
         #expect(doc.assemblyItemRefHasExtra(labelId: node.labelId))
-        if let idx = doc.assemblyItemRefGetSubshape(labelId: node.labelId) {
-            #expect(idx == 3)
-        }
+        let idx = try #require(doc.assemblyItemRefGetSubshape(labelId: node.labelId))
+        #expect(idx == 3)
     }
 
-    @Test func clearExtra() {
-        guard let doc = Document.create() else { return }
+    @Test func clearExtra() throws {
+        let doc = try #require(Document.create())
         doc.openTransaction()
-        guard let node = doc.createLabel() else { return }
+        let node = try #require(doc.createLabel())
         doc.setAssemblyItemRef(labelId: node.labelId, itemPath: "/0:1:1:1")
         doc.assemblyItemRefSetSubshape(labelId: node.labelId, index: 5)
         doc.assemblyItemRefClearExtra(labelId: node.labelId)
@@ -49,10 +48,10 @@ struct XCAFDocAssemblyItemRefTests {
         #expect(!doc.assemblyItemRefHasExtra(labelId: node.labelId))
     }
 
-    @Test func isOrphan() {
-        guard let doc = Document.create() else { return }
+    @Test func isOrphan() throws {
+        let doc = try #require(Document.create())
         doc.openTransaction()
-        guard let node = doc.createLabel() else { return }
+        let node = try #require(doc.createLabel())
         doc.setAssemblyItemRef(labelId: node.labelId, itemPath: "/99:99:99")
         doc.commitTransaction()
         #expect(doc.assemblyItemRefIsOrphan(labelId: node.labelId))
