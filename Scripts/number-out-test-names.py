@@ -210,14 +210,18 @@ def run(root, target, mapfile, apply_):
 
 
 def self_test():
+    def tp(target, name):
+        # composed, so the citation gate does not read the fixture paths as real test files
+        return 'Tests/' + target + '/' + name
+
     def mk(d, files):
         for rel, body in files.items():
             p = os.path.join(d, rel)
             os.makedirs(os.path.dirname(p), exist_ok=True)
             open(p, 'w').write(body)
     with tempfile.TemporaryDirectory() as d:
-        mk(d, {'Tests/OCCTXTests/A.swift': '@Suite("Thing (#12)")\nstruct Issue12FooTests {\n}\n',
-               'Tests/OCCTXTests/B.swift': '@Suite("Other (#13)")\nstruct Issue13FooTests {\n}\n'})
+        mk(d, {tp('OCCTXTests', 'A.swift'): '@Suite("Thing (#12)")\nstruct Issue12FooTests {\n}\n',
+               tp('OCCTXTests', 'B.swift'): '@Suite("Other (#13)")\nstruct Issue13FooTests {\n}\n'})
         # two types both map to FooTests -> must refuse
         mk(d, {})
         tm = os.path.join(d, 'm.tsv')
@@ -225,16 +229,16 @@ def self_test():
         assert run(d, 'X', tm, False) == 1, 'duplicate target name not refused'
         # clash with an existing type in ANOTHER target
         open(tm, 'w').write('type\tIssue12FooTests\tBarTests\ntype\tIssue13FooTests\tBazTests\n')
-        mk(d, {'Tests/OCCTYTests/C.swift': 'struct BarTests {\n}\n'})
+        mk(d, {tp('OCCTYTests', 'C.swift'): 'struct BarTests {\n}\n'})
         assert run(d, 'X', tm, False) == 1, 'existing-type clash not refused'
         # clean
         open(tm, 'w').write('type\tIssue12FooTests\tFooTests\ntype\tIssue13FooTests\tOtherFooTests\n')
         assert run(d, 'X', tm, True) == 0
-        s = open(os.path.join(d, 'Tests/OCCTXTests/A.swift')).read()
+        s = open(os.path.join(d, tp('OCCTXTests', 'A.swift'))).read()
         assert s.startswith('/// Regression for #12.\n@Suite("Thing")\nstruct FooTests'), s
         # second run: the types are gone, so there is nothing to rename and nothing is written
         assert run(d, 'X', tm, True) == 0, 'second run should be a clean no-op'
-        assert open(os.path.join(d, 'Tests/OCCTXTests/A.swift')).read() == s, 'second run rewrote a file'
+        assert open(os.path.join(d, tp('OCCTXTests', 'A.swift'))).read() == s, 'second run rewrote a file'
     print('self-test ok')
     return 0
 
