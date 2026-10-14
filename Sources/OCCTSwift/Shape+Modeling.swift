@@ -2304,6 +2304,14 @@ extension Shape {
     /// The profile is swept along the spine, creating a solid. The profile is
     /// oriented perpendicular to the spine at each point.
     ///
+    /// This is a different OCCT algorithm from ``Shape/evolved(spine:profile:)``:
+    /// `BRepFill_AdvancedEvolved` sweeps the profile along the spine as a pipe (the profile keeps
+    /// its offset from the path, corners are arcs) and builds the volume from the sweeps with
+    /// `BOPAlgo_MakerVolume`, where `evolved` offsets the spine by the profile's lateral
+    /// distance. The same vertical segment through the centre of a 20 x 20 rectangle gives four
+    /// 20 x 3 walls from `evolved` and six faces of total area 214.25 from this. It returns nil,
+    /// not an empty shape, for a profile in the spine's own plane.
+    ///
     /// - Parameters:
     ///   - spine: Wire defining the sweep path
     ///   - profile: Wire defining the cross-section
@@ -3349,6 +3357,19 @@ extension Shape {
         return Shape(handle: ref)
     }
     /// Create an evolved shape from a face spine and wire profile.
+    ///
+    /// The profile is placed in the frame given by `axisOrigin`, `axisNormal` and `axisXDir` and
+    /// projected onto that frame's YOZ plane: Y is the lateral offset from the spine, Z the
+    /// height (see ``evolvedAdvanced(spine:profile:joinType:axeProf:solid:volume:tolerance:)``).
+    /// A non-finite or zero axis returns nil (#3368: OCCT never returned from it), as does a
+    /// profile that offsets the spine to nothing.
+    ///
+    /// ```swift
+    /// let spine = Shape.face(from: Wire.rectangle(width: 20, height: 20)!)!
+    /// let line = Shape.fromWire(
+    ///     Wire.polygon3D([SIMD3(0, 0, 0), SIMD3(0, 0, 3)], closed: false)!)!
+    /// let walls = Shape.evolved(spineFace: spine, profileWire: line)  // four 20 x 3 walls
+    /// ```
     public static func evolved(
         spineFace: Shape, profileWire: Shape,
         axisOrigin: SIMD3<Double> = SIMD3(0, 0, 0),

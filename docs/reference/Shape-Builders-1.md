@@ -503,10 +503,10 @@ public static func advancedEvolved(
 ) -> Shape?
 ```
 
-The profile is oriented perpendicular to the spine at each point and swept along it.
+The profile is oriented perpendicular to the spine at each point and swept along it. This is a different OCCT algorithm from `Shape.evolved(spine:profile:)`: `BRepFill_AdvancedEvolved` sweeps the profile along the spine as a pipe (the profile keeps its offset from the path, corners are arcs) and builds the volume from the sweeps with `BOPAlgo_MakerVolume`, where `evolved` offsets the spine by the profile's lateral distance. The same vertical segment through the centre of a 20 x 20 rectangle gives four 20 x 3 walls from `evolved` and six faces of total area 214.25 from this.
 
 - **Parameters:** `spine`, sweep path; `profile`, cross-section; `tolerance`, geometric tolerance; `solid`, produce a solid when `true`.
-- **Returns:** Evolved shape, or `nil` on failure.
+- **Returns:** Evolved shape, or `nil` on failure, including a profile in the spine's own plane (OCCT answers an empty compound there, which is refused).
 - **OCCT:** `BRepFill_AdvancedEvolved` via `OCCTBRepFillAdvancedEvolved`.
 
 ---

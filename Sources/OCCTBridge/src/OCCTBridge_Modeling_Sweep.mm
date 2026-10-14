@@ -736,7 +736,7 @@ OCCTShapeRef OCCTShapeCreateEvolvedAdvanced(OCCTShapeRef spine,
                                             bool         volume,
                                             double       tolerance)
 {
-  if (!spine || !profile)
+  if (!occtShapeIsPresent(spine) || !occtShapeIsPresent(profile))
     return nullptr;
   try
   {
@@ -745,12 +745,50 @@ OCCTShapeRef OCCTShapeCreateEvolvedAdvanced(OCCTShapeRef spine,
       join = GeomAbs_Tangent;
     else if (joinType == 2)
       join = GeomAbs_Intersection;
+    // #3368: a face spine must be planar. The non-volume path enforces it itself, with the test
+    // below (BRepFill_Evolved::FindLocation throws "The Face is not planar" when the surface is not
+    // a Geom_Plane and BRepLib_FindSurface, planar only, finds none). Volume mode skips that test
+    // and hands the face's first wire to BRepFill_AdvancedEvolved, which segfaulted in
+    // BRepFill_TrimShellCorner::Perform on a curved face. The test is applied to both modes.
+    if (spine->shape.ShapeType() == TopAbs_FACE)
+    {
+      TopLoc_Location           spineLoc;
+      occ::handle<Geom_Surface> spineSurf =
+        BRep_Tool::Surface(TopoDS::Face(spine->shape), spineLoc);
+      if (spineSurf.IsNull())
+        return nullptr;
+      if (!spineSurf->IsKind(STANDARD_TYPE(Geom_Plane)))
+      {
+        BRepLib_FindSurface planarCheck(spine->shape, -1, true);
+        if (!planarCheck.Found())
+          return nullptr;
+      }
+    }
+    // #3368: with `axeProf` false the frame is computed by BRepFill::Axe, and a profile through
+    // the centre of a circular spine leaves it NaN, after which BRepOffsetAPI_MakeEvolved never
+    // returns (see occtIsFiniteFrame). The constructor calls Axe itself, with exactly these
+    // arguments and only in this mode (BRepOffsetAPI_MakeEvolved.cxx:66-78), so the frame is
+    // computed here first and the call refused before it can reach the loop. Volume mode does
+    // not use the frame.
+    if (!volume && !axeProf)
+    {
+      gp_Ax3 frame(gp::Origin(), gp::DZ(), gp::DX());
+      bool   profileOnSpine = false;
+      BRepFill::Axe(spine->shape,
+                    profile->wire,
+                    frame,
+                    profileOnSpine,
+                    std::max(tolerance, Precision::Confusion()));
+      if (!occtIsFiniteFrame(frame))
+        return nullptr;
+    }
     BRepOffsetAPI_MakeEvolved
       evolved(spine->shape, profile->wire, join, axeProf, solid, false, tolerance, volume, false);
     if (!evolved.IsDone())
       return nullptr;
     TopoDS_Shape result = evolved.Shape();
-    if (result.IsNull())
+    // #3368: done with an empty compound is the offset collapsing to nothing; refused.
+    if (!occtHasFaces(result))
       return nullptr;
     return new OCCTShape(result);
   }
@@ -773,7 +811,8 @@ OCCTShapeRef OCCTShapeCreateEvolved(OCCTWireRef spine, OCCTWireRef profile)
       return nullptr;
 
     TopoDS_Shape result = evolved.Shape();
-    if (result.IsNull())
+    // #3368: done with an empty compound is the offset collapsing to nothing; refused.
+    if (!occtHasFaces(result))
       return nullptr;
 
     return new OCCTShape(result);
@@ -1238,7 +1277,8 @@ OCCTShapeRef _Nullable OCCTBRepFillAdvancedEvolved(OCCTWireRef spine,
     if (!ae.IsDone())
       return nullptr;
     TopoDS_Shape shape = ae.Shape();
-    if (shape.IsNull())
+    // #3368: a profile in the spine's own plane gives an empty compound that isValid accepts.
+    if (!occtHasFaces(shape))
       return nullptr;
     auto* result  = new OCCTShape();
     result->shape = shape;
@@ -1604,14 +1644,25 @@ OCCTShapeRef _Nullable OCCTBRepFillEvolved(OCCTShapeRef _Nonnull spineFaceRef,
                                            int    joinType,
                                            bool   makeSolid)
 {
+  // #3368 (Kilo): the casts below dereference both handles, so a null wrapper or a wrapper
+  // carrying a null shape is refused the way a wrong-typed one is.
+  if (!occtShapeIsPresent(spineFaceRef) || !occtShapeIsType(profileWireRef, TopAbs_WIRE))
+    return nullptr;
   try
   {
     const TopoDS_Shape& spineShape   = *(const TopoDS_Shape*)spineFaceRef;
     const TopoDS_Shape& profileShape = *(const TopoDS_Shape*)profileWireRef;
 
+    // #3368: a NaN or zero normal or X direction builds a NaN frame, and
+    // BRepFill_Evolved::PrepareProfile then never returns (see occtIsFiniteFrame).
+    if (!occtIsUsableAxis(axOriginX, axOriginY, axOriginZ, axNormalX, axNormalY, axNormalZ)
+        || !occtIsUsableVector(axXDirX, axXDirY, axXDirZ))
+      return nullptr;
     gp_Ax3 axe(gp_Pnt(axOriginX, axOriginY, axOriginZ),
                gp_Dir(axNormalX, axNormalY, axNormalZ),
                gp_Dir(axXDirX, axXDirY, axXDirZ));
+    if (!occtIsFiniteFrame(axe))
+      return nullptr;
 
     GeomAbs_JoinType jt = GeomAbs_Arc;
     if (joinType == 1)
@@ -1636,6 +1687,9 @@ OCCTShapeRef _Nullable OCCTBRepFillEvolved(OCCTShapeRef _Nonnull spineFaceRef,
     }
 
     if (!evolved.IsDone())
+      return nullptr;
+    // #3368: done with an empty compound is the offset collapsing to nothing; refused.
+    if (!occtHasFaces(evolved.Shape()))
       return nullptr;
     return (OCCTShapeRef) new TopoDS_Shape(evolved.Shape());
   }

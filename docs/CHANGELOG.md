@@ -21,6 +21,16 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### Evolved builders refuse the inputs that never returned and the empty shapes they answered (#3368)
+
+`Shape.evolvedAdvanced(spine:profile:axeProf: false)` no longer hangs on a profile through the centre of a circular spine (OCCT's `BRepFill::Axe` leaves the frame NaN there and the sweep spun in `Geom_TrimmedCurve::SetTrim`); it returns `nil`, as does `Shape.evolved(spineFace:profileWire:axis...)` for a NaN, infinite or zero axis. `evolved`, `evolvedAdvanced`, `evolved(spineFace:)` and `advancedEvolved` return `nil` instead of an empty compound when the profile offsets the spine to nothing or lies in the spine's plane. The profile placement rule (Y lateral offset, Z height, X dropped), that only the arc join is implemented, and that `advancedEvolved` is a different algorithm from `evolved` are documented.
+
+```swift
+let circle = Shape.fromWire(Wire.circle(radius: 20)!)!
+let centre = Wire.polygon3D([SIMD3(0, 0, 0), SIMD3(0, 0, 3)], closed: false)!
+Shape.evolvedAdvanced(spine: circle, profile: centre, axeProf: false, solid: false)  // nil, was a hang
+```
+
 ### `Shape.shell(from:)` returns nil for a half-infinite surface instead of crashing (#3360)
 
 - `Shape.shell(from:)` on an infinite `Surface.cylinder` or `Surface.cone` terminated the process (OCCT recursed approximating a +-1e100 seam edge). It now returns `nil` for any surface unbounded in exactly one direction. Bounded surfaces and the plane are unchanged; trim the surface first or use `shell(from:uRange:vRange:)`.

@@ -225,18 +225,17 @@ public static func evolved(spineFace: Shape, profileWire: Shape,
 - **Parameters:**
   - `spineFace`: planar face whose boundary edges define the sweep path.
   - `profileWire`: 2D wire cross-section to sweep.
-  - `axisOrigin`, `axisNormal`, `axisXDir`, coordinate system of the profile plane; defaults to the XY plane at the origin.
-  - `joinType`: join strategy between adjacent sweep segments: `0`=Arc (round), `1`=Tangent, `2`=Intersection.
+  - `axisOrigin`, `axisNormal`, `axisXDir`, coordinate system of the profile plane; defaults to the XY plane at the origin. The profile is projected onto this frame's YOZ plane: Y is the lateral offset from the spine, Z the height. A NaN, infinite or zero axis returns `nil` (OCCT never returned from it, #3368).
+  - `joinType`: join strategy between adjacent sweep segments: `0`=Arc (round). `1`=Tangent and `2`=Intersection are not implemented by OCCT and return `nil`.
   - `makeSolid`: `true` to cap the result into a solid.
-- **Returns:** The evolved `Shape`, or `nil` if the operation fails.
+- **Returns:** The evolved `Shape`, or `nil` if the operation fails, including a profile that offsets the spine to nothing (OCCT's empty compound is refused).
 - **OCCT:** `BRepFill_Evolved`.
 - **Example:**
   ```swift
-  let face = Shape.box(width: 20, height: 10, depth: 1)!
-  let profile = Shape.fromWire(Wire.rectangle(width: 2, height: 2)!)!
-  if let evo = Shape.evolved(spineFace: face, profileWire: profile) {
-      print(evo.isValid)
-  }
+  let spine = Shape.face(from: Wire.rectangle(width: 20, height: 20)!)!
+  let line = Shape.fromWire(
+      Wire.polygon3D([SIMD3(0, 0, 0), SIMD3(0, 0, 3)], closed: false)!)!
+  let walls = Shape.evolved(spineFace: spine, profileWire: line)  // four 20 x 3 walls
   ```
 
 ---
