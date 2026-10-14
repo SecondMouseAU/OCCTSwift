@@ -1,4 +1,4 @@
-// Epic #766 (#1978), kernel parity for Issue600OutOfDomainRangeTests.swift: the raw
+// Epic #766 (#1978), kernel parity for OutOfDomainRangeTests.swift: the raw
 // GCPnts_AbscissaPoint::Length(adaptor, u1, u2) on each fixture over the out-of-domain ranges the
 // suite uses, so the transcript shows what the bridge's confine-or-wind rule changes and what it
 // keeps. Whole lengths are the in-domain reference.

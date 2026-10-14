@@ -1,11 +1,11 @@
 Tests/OCCTBRepGraphTests/Mutation/EditorViewGeometricSettersTests.swift
 Tests/OCCTCurveTests/BSplineAndBezier/BSplineCurveCompletionsTests.swift
 Tests/OCCTCurveTests/Conics/Curve3DArcAliasParityTests.swift
-Tests/OCCTCurveTests/Continuity/Issue619ContinuityEncodingTests.swift
+Tests/OCCTCurveTests/Continuity/ContinuityEncodingTests.swift
 Tests/OCCTCurveTests/Conversion/CompBezierToBSplineTests.swift
 Tests/OCCTCurveTests/Conversion/CurveToAnaCurveTests.swift
-Tests/OCCTCurveTests/Curve3DCore/Curve3DExtrasV112Tests.swift
-Tests/OCCTCurveTests/Curve3DCore/Curve3DQueriesV123Tests.swift
+Tests/OCCTCurveTests/Curve3DCore/Curve3DTypeAndNearestParameterTests.swift
+Tests/OCCTCurveTests/Curve3DCore/Curve3DPeriodAndParameterRangeTests.swift
 Tests/OCCTCurveTests/Curve3DCore/CurveDNTests.swift
 Tests/OCCTCurveTests/Curve3DCore/CurveIsBoundedTests.swift
 Tests/OCCTCurveTests/Curve3DCore/GeomToolsCurveSetTests.swift

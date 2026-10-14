@@ -31,7 +31,7 @@ before choosing, not reasoned out. Every one of our call sites into these two cl
 `initialize()` (9 across the bridge, one of them a shared static helper with 2 further callers, so
 11 total) already wraps the construction in `catch (...)`, so a caller-visible degenerate-count
 result is identical whether the kernel throws or returns not-done: both options were safe for us.
-Our own tests (`Issue558SamplingCountBoundsTests.swift`) assert the not-done/empty-result contract
+Our own tests (`SamplingCountBoundsTests.swift`) assert the not-done/empty-result contract
 for a count of 1 across every one of those entry points, which is what a silent not-done produces
 directly and what a thrown exception produces once our own `catch (...)` converts it, so neither
 option changes an observable answer on our side.

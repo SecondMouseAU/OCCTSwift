@@ -266,7 +266,7 @@ assert-grade macro meant to compile away under `No_Exception`: (a) replace it wi
 degenerate count in our own build where it currently cannot, and (b) would not. Measured rather than
 guessed: every one of the 9 bridge call sites that construct either class with a caller-supplied count
 (one of them a shared static helper with 2 further callers, 11 total) already wraps the construction
-in `catch (...)`, and `Issue558SamplingCountBoundsTests.swift` asserts the not-done/empty-result
+in `catch (...)`, and `SamplingCountBoundsTests.swift` asserts the not-done/empty-result
 contract for exactly this input across every one of those entry points, so both options are
 observably identical for OCCTSwift's own contract. Chose **(b)**: it is the option that does not
 depend on a build flag, and it is what #555 argued for in the first place, a silent not-done rather
