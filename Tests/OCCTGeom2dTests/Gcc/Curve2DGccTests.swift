@@ -43,7 +43,7 @@ struct Curve2DGccTests {
 
     @Test("Circle tangent to curve with center")
     func circleTanCen() throws {
-        let line = Curve2D.line(through: SIMD2(0, 0), direction: SIMD2(1, 0))!
+        let line = try #require(Curve2D.line(through: SIMD2(0, 0), direction: SIMD2(1, 0)))
         let results = Curve2DGcc.circlesTangentWithCenter(
             line, .unqualified,
             center: SIMD2(5, 3), tolerance: 1e-6
@@ -56,7 +56,7 @@ struct Curve2DGccTests {
 
     @Test("Lines tangent to circle through point")
     func linesTangentToPoint() throws {
-        let circle = Curve2D.circle(center: .zero, radius: 5)!
+        let circle = try #require(Curve2D.circle(center: .zero, radius: 5))
         let results = Curve2DGcc.linesTangentToPoint(
             circle, .outside,
             point: SIMD2(10, 0), tolerance: 1e-6
@@ -72,7 +72,7 @@ struct Curve2DGccTests {
 
     @Test("Circles tangent to curve and point with radius")
     func circleTanPtRad() throws {
-        let line = Curve2D.line(through: SIMD2(0, 0), direction: SIMD2(1, 0))!
+        let line = try #require(Curve2D.line(through: SIMD2(0, 0), direction: SIMD2(1, 0)))
         let results = Curve2DGcc.circlesTangentToPointWithRadius(
             line, .unqualified,
             point: SIMD2(5, 5), radius: 5, tolerance: 1e-6

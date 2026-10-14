@@ -38,8 +38,8 @@ struct Issue361SharedSingletonThreadSafetyTests {
         let docA = try #require(Document.create())
         let docB = try #require(Document.create())
 
-        let boxA = Shape.box(width: 5, height: 5, depth: 5)!
-        let boxB = Shape.box(width: 7, height: 7, depth: 7)!
+        let boxA = try #require(Shape.box(width: 5, height: 5, depth: 5))
+        let boxB = try #require(Shape.box(width: 7, height: 7, depth: 7))
         let labelA = docA.addShape(boxA, makeAssembly: false)
         let labelB = docB.addShape(boxB, makeAssembly: false)
 

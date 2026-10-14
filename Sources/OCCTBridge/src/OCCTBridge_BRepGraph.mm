@@ -287,8 +287,16 @@ static BRepGraph_NodeId::Kind kindFromInt(int32_t k)
 //
 // The supplement layer stores TopoDS_Shapes, not graph vertex indices. To attach
 // "graph vertex v" we build a TopoDS_Vertex from that vertex def's point.
+//
+// #3394: BRepGraph_Tool::Vertex::Pnt does not range-check the id on the kernel we ship (see
+// okf/policies/occt-validation-is-compiled-out.md), so an index past the vertex table was read as
+// a point and BRepBuilderAPI_MakeVertex of it is never null, which made the callers' IsNull()
+// guard unreachable. The index is checked here and a null vertex returned, which both callers
+// turn into their -1 refusal.
 static TopoDS_Vertex bgVertexShapeFromIndex(OCCTBRepGraphRef g, int32_t vertexIndex)
 {
+  if (vertexIndex < 0 || vertexIndex >= g->graph.Topo().Vertices().Nb())
+    return TopoDS_Vertex();
   gp_Pnt p = BRepGraph_Tool::Vertex::Pnt(g->graph, BRepGraph_VertexId(vertexIndex));
   return BRepBuilderAPI_MakeVertex(p).Vertex();
 }

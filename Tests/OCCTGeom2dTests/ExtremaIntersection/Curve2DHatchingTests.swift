@@ -9,12 +9,12 @@ import Testing
 struct Curve2DHatchingTests {
 
     @Test("Hatch a rectangular boundary")
-    func hatchRectangle() {
+    func hatchRectangle() throws {
         // Create a rectangle boundary from 4 segments
-        let s1 = Curve2D.segment(from: SIMD2(0, 0), to: SIMD2(10, 0))!
-        let s2 = Curve2D.segment(from: SIMD2(10, 0), to: SIMD2(10, 10))!
-        let s3 = Curve2D.segment(from: SIMD2(10, 10), to: SIMD2(0, 10))!
-        let s4 = Curve2D.segment(from: SIMD2(0, 10), to: SIMD2(0, 0))!
+        let s1 = try #require(Curve2D.segment(from: SIMD2(0, 0), to: SIMD2(10, 0)))
+        let s2 = try #require(Curve2D.segment(from: SIMD2(10, 0), to: SIMD2(10, 10)))
+        let s3 = try #require(Curve2D.segment(from: SIMD2(10, 10), to: SIMD2(0, 10)))
+        let s4 = try #require(Curve2D.segment(from: SIMD2(0, 10), to: SIMD2(0, 0)))
 
         let segments = Curve2DGcc.hatch(
             boundaries: [s1, s2, s3, s4],
@@ -39,7 +39,7 @@ struct Curve2DHatchingTests {
     }
 
     @Test("Hatch output is not silently truncated at half the buffer's real capacity (#1420)")
-    func hatchNotTruncatedAtHalfCapacity() {
+    func hatchNotTruncatedAtHalfCapacity() throws {
         // Curve2DGcc.hatch sizes its buffer for 4096 segments (maxSegments * 4 doubles) and
         // passes maxSegments=4096 straight through to OCCTCurve2DHatch's `maxPoints`/`maxSegments`
         // parameter. Before #1420's fix, the C guard misread that parameter as a POINT count
@@ -54,10 +54,10 @@ struct Curve2DHatchingTests {
         // truncated" from "fits either way".
         let height = 3000.0
         let width = 10.0
-        let s1 = Curve2D.segment(from: SIMD2(0, 0), to: SIMD2(width, 0))!
-        let s2 = Curve2D.segment(from: SIMD2(width, 0), to: SIMD2(width, height))!
-        let s3 = Curve2D.segment(from: SIMD2(width, height), to: SIMD2(0, height))!
-        let s4 = Curve2D.segment(from: SIMD2(0, height), to: SIMD2(0, 0))!
+        let s1 = try #require(Curve2D.segment(from: SIMD2(0, 0), to: SIMD2(width, 0)))
+        let s2 = try #require(Curve2D.segment(from: SIMD2(width, 0), to: SIMD2(width, height)))
+        let s3 = try #require(Curve2D.segment(from: SIMD2(width, height), to: SIMD2(0, height)))
+        let s4 = try #require(Curve2D.segment(from: SIMD2(0, height), to: SIMD2(0, 0)))
 
         let segments = Curve2DGcc.hatch(
             boundaries: [s1, s2, s3, s4],
@@ -80,7 +80,7 @@ struct Curve2DHatchingTests {
     }
 
     @Test("Hatch result is independent of boundary winding direction (#1496)")
-    func hatchWindingDirectionIndependent() {
+    func hatchWindingDirectionIndependent() throws {
         // Geom2dHatch_Hatcher (the engine behind Curve2DGcc.hatch/OCCTCurve2DHatch) is
         // *oriented*: unlike OCCTHatchLines' unoriented Hatch_Hatcher, "inside" is defined
         // relative to each boundary element's own FORWARD/REVERSED sense. Before #1496's fix,
@@ -93,16 +93,16 @@ struct Curve2DHatchingTests {
         // counter-clockwise (that test's own point order) and once clockwise (the same four
         // corners, opposite traversal).
         let ccw = [
-            Curve2D.segment(from: SIMD2(0, 0), to: SIMD2(10, 0))!,
-            Curve2D.segment(from: SIMD2(10, 0), to: SIMD2(10, 10))!,
-            Curve2D.segment(from: SIMD2(10, 10), to: SIMD2(0, 10))!,
-            Curve2D.segment(from: SIMD2(0, 10), to: SIMD2(0, 0))!,
+            try #require(Curve2D.segment(from: SIMD2(0, 0), to: SIMD2(10, 0))),
+            try #require(Curve2D.segment(from: SIMD2(10, 0), to: SIMD2(10, 10))),
+            try #require(Curve2D.segment(from: SIMD2(10, 10), to: SIMD2(0, 10))),
+            try #require(Curve2D.segment(from: SIMD2(0, 10), to: SIMD2(0, 0))),
         ]
         let cw = [
-            Curve2D.segment(from: SIMD2(0, 0), to: SIMD2(0, 10))!,
-            Curve2D.segment(from: SIMD2(0, 10), to: SIMD2(10, 10))!,
-            Curve2D.segment(from: SIMD2(10, 10), to: SIMD2(10, 0))!,
-            Curve2D.segment(from: SIMD2(10, 0), to: SIMD2(0, 0))!,
+            try #require(Curve2D.segment(from: SIMD2(0, 0), to: SIMD2(0, 10))),
+            try #require(Curve2D.segment(from: SIMD2(0, 10), to: SIMD2(10, 10))),
+            try #require(Curve2D.segment(from: SIMD2(10, 10), to: SIMD2(10, 0))),
+            try #require(Curve2D.segment(from: SIMD2(10, 0), to: SIMD2(0, 0))),
         ]
 
         let ccwSegments = Curve2DGcc.hatch(

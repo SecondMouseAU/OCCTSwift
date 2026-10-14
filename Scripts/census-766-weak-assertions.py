@@ -296,7 +296,7 @@ def helpers_in(path: str) -> dict[str, dict[str, str]]:
 
     A test that delegates its assertions to a helper in the same file has none of its own, and a
     detector that stops at the test body reports it as having no assertions at all. Measured on
-    `Issue493InterpolatePeriodicParityTests.swift`: three of its five tests call one private
+    `InterpolatePeriodicParityTests.swift`: three of its five tests call one private
     `expectSameCurve` holding eleven assertions, and all three were reported SEVERE.
 
     The owner dimension is #2964. Keyed on the bare name alone, last one wins, so a test was

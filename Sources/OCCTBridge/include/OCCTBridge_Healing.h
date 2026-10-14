@@ -1293,7 +1293,9 @@ bool OCCTShapeFixEdgeProjAux(OCCTShapeRef _Nonnull shape,
 // MARK: - BRepAlgo_FaceRestrictor (v0.93.0)
 
 /// Restrict a face to its wires using BRepAlgo_FaceRestrictor and return result face count.
-/// @return Number of result faces, or -1 on error
+/// Every result face is counted; at most `maxFaces` are stored in `outFaces`. Pass a null
+/// `outFaces` to count only.
+/// @return Number of result faces (not capped by `maxFaces`), or -1 on error
 int32_t OCCTShapeFaceRestrictAlgo(OCCTShapeRef _Nonnull shape,
                                   int32_t faceIndex,
                                   OCCTShapeRef _Nullable* _Nullable outFaces,

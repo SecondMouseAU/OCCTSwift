@@ -123,8 +123,8 @@ script has is load-bearing for at least one fixture, which is the bar this polic
 
 The first full run of the sub-kind 2 detector reported 68 candidates. Reading every one of them by
 hand (see the per-site table below) found a single mechanism accounting for 21 of the 68, all in
-two files: `Tests/OCCTShapeHealingTests/ShapeFix/Issue442FixSolidMultiBodyTests.swift` and
-`Issue443FirstOfNTests.swift` both define a private helper,
+two files: `Tests/OCCTShapeHealingTests/ShapeFix/FixSolidMultiBodyTests.swift` and
+`SolidFromUpgradedEveryBodyTests.swift` both define a private helper,
 
 ```swift
 private func expectVolume(_ shape: Shape, _ expected: Double, _ what: String,
@@ -243,59 +243,59 @@ verification exists that the detector cannot see, inline or through a helper).
 | `OCCTIntegrationTests.swift:186` | `cylinderWithHolesSlicing` | LOW-RISK | yes | holes at r=10 are clearly inside the r=25 cylinder and drilled through; a no-op would give 1 wire, not 4 |
 | `OCCTIntegrationTests.swift:233` | `plateWithHolesSection` | LOW-RISK | yes | holes at (+-25, +-25) are clearly inside the 100x100 plate and drilled through; wire count of 5 follows by construction |
 | `OCCTIntegrationTests.swift:346` | `pocketSectionAndOffset` | ALREADY-FIXED | yes | the test already checks `pv < ov` (pocket volume less than outer volume); the abbreviated names defeat `VERIFICATION`'s keyword match |
-| `Issue497DefeaturingTests.swift:112` | `outOfRangeIndexFails` | LOW-RISK | yes | `realFaces.count == 6` is a plain box's deterministic face count, not a risky-op output |
-| `Issue497DefeaturingTests.swift:150` | `withoutSmallFacesKeepsEverything` | ALREADY-FIXED | yes | the same block also asserts `abs(v - 1000.0) < 1e-6`; the abbreviated `v` defeats the keyword match |
-| `Issue505FilletBuilderEdgeTypeTests.swift:64` | `edgeFromAnotherContourIsRejected` | LOW-RISK | yes | `edges.count == 12` is a box's deterministic edge count; the real guard logic is a nil/non-nil check |
-| `Issue578DefeatureFaceMembershipTests.swift:68` | `foreignFaceInMixedRequestFails` | LOW-RISK | yes | the fixture's face was chosen precisely because removing it restores the plain box's known volume |
-| `Issue612FilletContourSelectionTests.swift:81` | `fixtureHasATangentContinuousRim` | LOW-RISK | yes | extruding an explicit 2-line/2-arc profile deterministically gives matching top/bottom rim counts |
-| `Issue639FilletDeclinedEdgeReportTests.swift:40` | `filletedWithReportNamesDeclinedEdges` | LOW-RISK | yes | declined set matches an exact, pre-measured index set; `edges.count == 12` is the box's known count |
-| `Issue639FilletDeclinedEdgeReportTests.swift:149` | `historyRecordNamesDeclinedEdges` | LOW-RISK | yes | `Set(declined) == Set(declinedIndices)` is an exact match; accepted edges also independently checked |
-| `Issue639FilletDeclinedEdgeReportTests.swift:194` | `declinedEdgeNamedTwiceIsReportedTwice` | LOW-RISK | yes | `Set(declinedEdgeIndices) == [declined]` pins the specific edge; the count of 2 cannot pass by coincidence |
-| `Issue642AAGNodeIdentityTests.swift:55` | `detectPocketsAgreesAcrossOrder` | NEEDS-FOLLOWUP | yes | `detectPocketsAAG().count` pinned to 1 with no volume/area check that a real pocket exists |
-| `Issue642AAGNodeIdentityTests.swift:77` | `upwardHorizontalCountAgreesAcrossOrder` | NEEDS-FOLLOWUP | yes | an `isUpward && isHorizontal` node count pinned to 2 with no independent geometric confirmation |
-| `Issue642AAGNodeIdentityTests.swift:115` | `sharedWallNodesShareDistinctIndexAndOpposeUpward` | LOW-RISK | yes | exactly one shared face is deterministic for a single plane-split box; `isUpward`/`isHorizontal` checked directly |
-| `Issue655SectionWiresOrientationTests.swift:82` | `internalEdgeExcluded` | LOW-RISK | yes | explicit square plus a disjoint floating edge; also checks the surviving wire has 4 edges and is closed |
-| `Issue655SectionWiresOrientationTests.swift:98` | `forwardEdgeNotExcluded` | LOW-RISK | yes | contrast case for the row above; simple explicit coordinates make the wire count inspectable |
-| `Issue655SectionWiresOrientationTests.swift:112` | `externalEdgeExcluded` | LOW-RISK | yes | same explicit, inspectable fixture as the two rows above, only the orientation flag differs |
-| `Issue699AAGSolidScopedAdjacencyTests.swift:69` | `detectPocketsAgreesAcrossOrder` | NEEDS-FOLLOWUP | yes | same `detectPocketsAAG().count` pinning concern as the Issue642 version, on a vertical-cut fixture |
-| `Issue699AAGSolidScopedAdjacencyTests.swift:89` | `nodeCountUnaffected` | LOW-RISK | yes | split into exactly 2 pieces by an earlier guard; 12 nodes = 2 boxes x 6 faces is deterministic |
-| `Issue699AAGSolidScopedAdjacencyTests.swift:106` | `edgeCountIsTwoIndependentBoxGraphs` | LOW-RISK | yes | a companion test in the same file confirms no cross-solid adjacency via neighbor-set disjointness |
-| `Issue699AAGSolidScopedAdjacencyTests.swift:180` | `horizontalFixtureStillAgreesAtCorrectedCount` | NEEDS-FOLLOWUP | yes | same `detectPocketsAAG` count-pin concern, reused at the "corrected" value 1 |
-| `Issue699AAGSolidScopedAdjacencyTests.swift:225` | `countMismatchFallsBackToUnrestrictedComparison` | NEEDS-FOLLOWUP | yes | `detectPocketsAAG().count == 2` pinned on a fallback fixture; the test's own comment admits it proves little |
-| `Issue699AAGSolidScopedAdjacencyTests.swift:253` | `threeSolidCompoundPartitions` | LOW-RISK | yes | 3 disjoint, known boxes; `solids.count == 3` and `nodes == 18` (3x6) are deterministic construction facts |
+| `DefeaturingFamilyTests.swift:112` | `outOfRangeIndexFails` | LOW-RISK | yes | `realFaces.count == 6` is a plain box's deterministic face count, not a risky-op output |
+| `DefeaturingFamilyTests.swift:150` | `withoutSmallFacesKeepsEverything` | ALREADY-FIXED | yes | the same block also asserts `abs(v - 1000.0) < 1e-6`; the abbreviated `v` defeats the keyword match |
+| `FilletBuilderEdgeTypeTests.swift:64` | `edgeFromAnotherContourIsRejected` | LOW-RISK | yes | `edges.count == 12` is a box's deterministic edge count; the real guard logic is a nil/non-nil check |
+| `DefeatureFaceMembershipTests.swift:68` | `foreignFaceInMixedRequestFails` | LOW-RISK | yes | the fixture's face was chosen precisely because removing it restores the plain box's known volume |
+| `FilletContourSelectionTests.swift:81` | `fixtureHasATangentContinuousRim` | LOW-RISK | yes | extruding an explicit 2-line/2-arc profile deterministically gives matching top/bottom rim counts |
+| `FilletDeclinedEdgeReportTests.swift:40` | `filletedWithReportNamesDeclinedEdges` | LOW-RISK | yes | declined set matches an exact, pre-measured index set; `edges.count == 12` is the box's known count |
+| `FilletDeclinedEdgeReportTests.swift:149` | `historyRecordNamesDeclinedEdges` | LOW-RISK | yes | `Set(declined) == Set(declinedIndices)` is an exact match; accepted edges also independently checked |
+| `FilletDeclinedEdgeReportTests.swift:194` | `declinedEdgeNamedTwiceIsReportedTwice` | LOW-RISK | yes | `Set(declinedEdgeIndices) == [declined]` pins the specific edge; the count of 2 cannot pass by coincidence |
+| `AAGNodeIdentityTests.swift:55` | `detectPocketsAgreesAcrossOrder` | NEEDS-FOLLOWUP | yes | `detectPocketsAAG().count` pinned to 1 with no volume/area check that a real pocket exists |
+| `AAGNodeIdentityTests.swift:77` | `upwardHorizontalCountAgreesAcrossOrder` | NEEDS-FOLLOWUP | yes | an `isUpward && isHorizontal` node count pinned to 2 with no independent geometric confirmation |
+| `AAGNodeIdentityTests.swift:115` | `sharedWallNodesShareDistinctIndexAndOpposeUpward` | LOW-RISK | yes | exactly one shared face is deterministic for a single plane-split box; `isUpward`/`isHorizontal` checked directly |
+| `SectionWiresOrientationTests.swift:82` | `internalEdgeExcluded` | LOW-RISK | yes | explicit square plus a disjoint floating edge; also checks the surviving wire has 4 edges and is closed |
+| `SectionWiresOrientationTests.swift:98` | `forwardEdgeNotExcluded` | LOW-RISK | yes | contrast case for the row above; simple explicit coordinates make the wire count inspectable |
+| `SectionWiresOrientationTests.swift:112` | `externalEdgeExcluded` | LOW-RISK | yes | same explicit, inspectable fixture as the two rows above, only the orientation flag differs |
+| `AAGSolidScopedAdjacencyTests.swift:69` | `detectPocketsAgreesAcrossOrder` | NEEDS-FOLLOWUP | yes | same `detectPocketsAAG().count` pinning concern as the Issue642 version, on a vertical-cut fixture |
+| `AAGSolidScopedAdjacencyTests.swift:89` | `nodeCountUnaffected` | LOW-RISK | yes | split into exactly 2 pieces by an earlier guard; 12 nodes = 2 boxes x 6 faces is deterministic |
+| `AAGSolidScopedAdjacencyTests.swift:106` | `edgeCountIsTwoIndependentBoxGraphs` | LOW-RISK | yes | a companion test in the same file confirms no cross-solid adjacency via neighbor-set disjointness |
+| `AAGSolidScopedAdjacencyTests.swift:180` | `horizontalFixtureStillAgreesAtCorrectedCount` | NEEDS-FOLLOWUP | yes | same `detectPocketsAAG` count-pin concern, reused at the "corrected" value 1 |
+| `AAGSolidScopedAdjacencyTests.swift:225` | `countMismatchFallsBackToUnrestrictedComparison` | NEEDS-FOLLOWUP | yes | `detectPocketsAAG().count == 2` pinned on a fallback fixture; the test's own comment admits it proves little |
+| `AAGSolidScopedAdjacencyTests.swift:253` | `threeSolidCompoundPartitions` | LOW-RISK | yes | 3 disjoint, known boxes; `solids.count == 3` and `nodes == 18` (3x6) are deterministic construction facts |
 | `OCCTModelingTests.swift:1047` | `detectPocket` | **NEEDS-FOLLOWUP** | yes | the confirmed #726/#703 anchor bug, still live: the pocket tool's z-range never overlaps the box's own |
 | `OCCTModelingTests.swift:1199` | `loftedEdgePolylines` | NEEDS-FOLLOWUP | yes | bottom and top rectangles both default to z=0; the loft fixture may be coplanar/degenerate, unverified |
 | `OCCTModelingTests.swift:3053` | `splitSingleShell` | NEEDS-FOLLOWUP | yes | the sole assertion sits inside `if let`, so a nil/failed split silently skips all verification |
 | `OCCTModelingTests.swift:5160` | `modified` | NEEDS-FOLLOWUP | yes | `mod.count >= 0` is vacuously true for any array; it verifies nothing about whether the face was modified |
-| `Issue442FixSolidMultiBodyTests.swift:64` | `fixSolidMultiBody` | ALREADY-FIXED | no | calls the private `expectVolume(healed, 2000.0, ...)` helper |
-| `Issue442FixSolidMultiBodyTests.swift:83` | `fixSolidSingleBody` | ALREADY-FIXED | no | `expectVolume` helper, target 1000.0 |
-| `Issue442FixSolidMultiBodyTests.swift:99` | `fixSolidHollow` | ALREADY-FIXED | no | `expectVolume` helper, target 7000.0 |
-| `Issue442FixSolidMultiBodyTests.swift:115` | `fixSolidMulticonnex` | ALREADY-FIXED | no | `expectVolume` helper, target 2000.0 |
-| `Issue442FixSolidMultiBodyTests.swift:182` | `solidFromShellSkipsCavity` | ALREADY-FIXED | no | `expectVolume` helper, target 8000.0 |
-| `Issue442FixSolidMultiBodyTests.swift:201` | `solidFromShellMulticonnex` | ALREADY-FIXED | no | `expectVolume` helper, target 2000.0 |
-| `Issue442FixSolidMultiBodyTests.swift:223` | `solidFromShellCavityWithWiderSibling` | ALREADY-FIXED | no | `expectVolume` helper, target 35000.0 |
-| `Issue442FixSolidMultiBodyTests.swift:251` | `solidFromShellFreeShells` | ALREADY-FIXED | no | `expectVolume` helper, target 2000.0 |
-| `Issue442FixSolidMultiBodyTests.swift:273` | `solidFromShellDeduplicates` | ALREADY-FIXED | no | `expectVolume` helper, target 1000.0 |
-| `Issue442FixSolidMultiBodyTests.swift:314` | `documentedUnclosedCheck` | LOW-RISK | yes | reuses `twoBoxes().fixSolid()`, already volume-verified by the companion `fixSolidMultiBody` in the same file |
-| `Issue442FixSolidMultiBodyTests.swift:390` | `reproducerTable` | ALREADY-FIXED | no | the loop body calls `expectVolume(shape, 2000.0, label)` for every row |
-| `Issue443FirstOfNTests.swift:69` | `solidFromSewnMultiBody` | ALREADY-FIXED | no | private `expectVolume` helper (same pattern), target 2000.0 |
-| `Issue443FirstOfNTests.swift:89` | `solidFromAgreesWithSibling` | ALREADY-FIXED | no | two `expectVolume` calls, one per code path, both target 2000.0 |
-| `Issue443FirstOfNTests.swift:107` | `solidFromSingleShell` | ALREADY-FIXED | no | `expectVolume` helper, target 1000.0 |
-| `Issue443FirstOfNTests.swift:134` | `solidFromKeepsOpenBody` | LOW-RISK | yes | face count 11 = 6+5 is derived from the fixture's own explicit face slicing; rules out a dropped body |
-| `Issue443FirstOfNTests.swift:151` | `solidFromSkipsCavity` | ALREADY-FIXED | no | `expectVolume` helper, target 8000.0 |
-| `Issue443FirstOfNTests.swift:170` | `solidFromMulticonnex` | ALREADY-FIXED | no | `expectVolume` helper, target 2000.0 |
-| `Issue443FirstOfNTests.swift:210` | `sewnHollowIsOneBody` | ALREADY-FIXED | no | loop calls `expectVolume(result, 8000.0, ...)` for both code paths |
-| `Issue443FirstOfNTests.swift:232` | `sewnAndUnsewnHollowAgree` | ALREADY-FIXED | no | two `expectVolume` calls, both target 8000.0 |
-| `Issue443FirstOfNTests.swift:281` | `touchingBodiesNotPruned` | ALREADY-FIXED | no | `expectVolume` helper, target 2000.0 |
-| `Issue443FirstOfNTests.swift:303` | `solidWithHistoryMultiBody` | ALREADY-FIXED | no | `expectVolume` helper, target 2000.0 |
-| `Issue443FirstOfNTests.swift:335` | `solidWithHistoryQueryableForEveryBody` | LOW-RISK | yes | every face of both boxes is individually checked `!isDeleted` in the shared history, stronger than a count |
-| `Issue443FirstOfNTests.swift:379` | `solidWithHistoryKeepsOpenBody` | LOW-RISK | yes | same open-shell reasoning as `solidFromKeepsOpenBody`: face count 11 rules out a dropped body |
-| `Issue443FirstOfNTests.swift:464` | `upgradedHollow` | ALREADY-FIXED | no | two `expectVolume` calls (input 7000.0, result 8000.0) |
-| `Issue443FirstOfNTests.swift:482` | `upgradedNestedBody` | ALREADY-FIXED | no | `expectVolume` helper, target 8512.0 |
-| `Issue484ConnectedFacesTests.swift:87` | `genuinelyDisconnectedFacesGetConnected` | ALREADY-FIXED | yes | also checks `connected.edgeCount == 7` (down from a confirmed 8); `edgeCount` is not one of `VERIFICATION`'s ten nouns |
-| `Issue484FaceFixContextTests.swift:21` | `periodicConicalFaceSurvivesFaceFix` | LOW-RISK | yes | fixing one face deterministically yields one face; the #317 regression concern was a crash, not a miscount |
-| `Issue484FaceFixContextTests.swift:59` | `unhealedPeriodicConicalUVFaceSurvivesFaceFix` | LOW-RISK | yes | the doc's own claim is "completes and returns a face"; `count == 1` states exactly that |
-| `Issue484FaceFixContextTests.swift:82` | `wellFormedBoxFacesUnaffected` | LOW-RISK | yes | box face count (6) is deterministic; per-face `fixed().count == 1` is a structural invariant of the operation |
+| `FixSolidMultiBodyTests.swift:64` | `fixSolidMultiBody` | ALREADY-FIXED | no | calls the private `expectVolume(healed, 2000.0, ...)` helper |
+| `FixSolidMultiBodyTests.swift:83` | `fixSolidSingleBody` | ALREADY-FIXED | no | `expectVolume` helper, target 1000.0 |
+| `FixSolidMultiBodyTests.swift:99` | `fixSolidHollow` | ALREADY-FIXED | no | `expectVolume` helper, target 7000.0 |
+| `FixSolidMultiBodyTests.swift:115` | `fixSolidMulticonnex` | ALREADY-FIXED | no | `expectVolume` helper, target 2000.0 |
+| `FixSolidMultiBodyTests.swift:182` | `solidFromShellSkipsCavity` | ALREADY-FIXED | no | `expectVolume` helper, target 8000.0 |
+| `FixSolidMultiBodyTests.swift:201` | `solidFromShellMulticonnex` | ALREADY-FIXED | no | `expectVolume` helper, target 2000.0 |
+| `FixSolidMultiBodyTests.swift:223` | `solidFromShellCavityWithWiderSibling` | ALREADY-FIXED | no | `expectVolume` helper, target 35000.0 |
+| `FixSolidMultiBodyTests.swift:251` | `solidFromShellFreeShells` | ALREADY-FIXED | no | `expectVolume` helper, target 2000.0 |
+| `FixSolidMultiBodyTests.swift:273` | `solidFromShellDeduplicates` | ALREADY-FIXED | no | `expectVolume` helper, target 1000.0 |
+| `FixSolidMultiBodyTests.swift:314` | `documentedUnclosedCheck` | LOW-RISK | yes | reuses `twoBoxes().fixSolid()`, already volume-verified by the companion `fixSolidMultiBody` in the same file |
+| `FixSolidMultiBodyTests.swift:390` | `reproducerTable` | ALREADY-FIXED | no | the loop body calls `expectVolume(shape, 2000.0, label)` for every row |
+| `SolidFromUpgradedEveryBodyTests.swift:69` | `solidFromSewnMultiBody` | ALREADY-FIXED | no | private `expectVolume` helper (same pattern), target 2000.0 |
+| `SolidFromUpgradedEveryBodyTests.swift:89` | `solidFromAgreesWithSibling` | ALREADY-FIXED | no | two `expectVolume` calls, one per code path, both target 2000.0 |
+| `SolidFromUpgradedEveryBodyTests.swift:107` | `solidFromSingleShell` | ALREADY-FIXED | no | `expectVolume` helper, target 1000.0 |
+| `SolidFromUpgradedEveryBodyTests.swift:134` | `solidFromKeepsOpenBody` | LOW-RISK | yes | face count 11 = 6+5 is derived from the fixture's own explicit face slicing; rules out a dropped body |
+| `SolidFromUpgradedEveryBodyTests.swift:151` | `solidFromSkipsCavity` | ALREADY-FIXED | no | `expectVolume` helper, target 8000.0 |
+| `SolidFromUpgradedEveryBodyTests.swift:170` | `solidFromMulticonnex` | ALREADY-FIXED | no | `expectVolume` helper, target 2000.0 |
+| `SolidFromUpgradedEveryBodyTests.swift:210` | `sewnHollowIsOneBody` | ALREADY-FIXED | no | loop calls `expectVolume(result, 8000.0, ...)` for both code paths |
+| `SolidFromUpgradedEveryBodyTests.swift:232` | `sewnAndUnsewnHollowAgree` | ALREADY-FIXED | no | two `expectVolume` calls, both target 8000.0 |
+| `SolidFromUpgradedEveryBodyTests.swift:281` | `touchingBodiesNotPruned` | ALREADY-FIXED | no | `expectVolume` helper, target 2000.0 |
+| `SolidFromUpgradedEveryBodyTests.swift:303` | `solidWithHistoryMultiBody` | ALREADY-FIXED | no | `expectVolume` helper, target 2000.0 |
+| `SolidFromUpgradedEveryBodyTests.swift:335` | `solidWithHistoryQueryableForEveryBody` | LOW-RISK | yes | every face of both boxes is individually checked `!isDeleted` in the shared history, stronger than a count |
+| `SolidFromUpgradedEveryBodyTests.swift:379` | `solidWithHistoryKeepsOpenBody` | LOW-RISK | yes | same open-shell reasoning as `solidFromKeepsOpenBody`: face count 11 rules out a dropped body |
+| `SolidFromUpgradedEveryBodyTests.swift:464` | `upgradedHollow` | ALREADY-FIXED | no | two `expectVolume` calls (input 7000.0, result 8000.0) |
+| `SolidFromUpgradedEveryBodyTests.swift:482` | `upgradedNestedBody` | ALREADY-FIXED | no | `expectVolume` helper, target 8512.0 |
+| `ConnectedFacesTests.swift:87` | `genuinelyDisconnectedFacesGetConnected` | ALREADY-FIXED | yes | also checks `connected.edgeCount == 7` (down from a confirmed 8); `edgeCount` is not one of `VERIFICATION`'s ten nouns |
+| `FaceFixReShapeContextTests.swift:21` | `periodicConicalFaceSurvivesFaceFix` | LOW-RISK | yes | fixing one face deterministically yields one face; the #317 regression concern was a crash, not a miscount |
+| `FaceFixReShapeContextTests.swift:59` | `unhealedPeriodicConicalUVFaceSurvivesFaceFix` | LOW-RISK | yes | the doc's own claim is "completes and returns a face"; `count == 1` states exactly that |
+| `FaceFixReShapeContextTests.swift:82` | `wellFormedBoxFacesUnaffected` | LOW-RISK | yes | box face count (6) is deterministic; per-face `fixed().count == 1` is a structural invariant of the operation |
 | `OCCTSurfaceTests.swift:5667` | `coaxialDedup` | NEEDS-FOLLOWUP | yes | nothing confirms both a cylindrical and a toroidal face actually survive the union before dedup is asserted to 1 axis |
 | `OuterShellTests.swift:42` | `innerShells` | ALREADY-FIXED | yes | a bounding-box check (`bb.max.x - bb.min.x` around 8.0) confirms the found shell is the cavity, not the outer body; bbox spans are not a `VERIFICATION` noun |
 | `OuterShellMultiSolidTests.swift:68` | `multiSolidInnerShellsEmpty` | LOW-RISK | yes | subtracting one fully-enclosed cavity from a box deterministically gives exactly 1 cavity shell |
@@ -308,8 +308,8 @@ verification exists that the detector cannot see, inline or through a helper).
 **Follow-up recommendation:** file one issue per cluster among the 11 NEEDS-FOLLOWUP rows, not one
 issue per site: (1) the confirmed, still-live #726/#703 anchor at `OCCTModelingTests.swift:1047`
 `detectPocket()`, matching PR #720's own fix; (2) the `detectPocketsAAG()`/AAG-node-count family
-with no geometric backstop (`Issue642AAGNodeIdentityTests.swift:55,77`,
-`Issue699AAGSolidScopedAdjacencyTests.swift:69,180,225`, the last of which has a comment already
+with no geometric backstop (`AAGNodeIdentityTests.swift:55,77`,
+`AAGSolidScopedAdjacencyTests.swift:69,180,225`, the last of which has a comment already
 admitting it proves little); (3) two loft fixtures whose "different Z heights" intent is not
 actually in the code (`OCCTCurveTests.swift:20`, `OCCTModelingTests.swift:1199`); (4) three
 structurally weak assertions with no shared cause (`OCCTModelingTests.swift:3053`'s `if let`-gated

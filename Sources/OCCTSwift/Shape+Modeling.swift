@@ -1718,6 +1718,9 @@ extension Shape {
     ///, see ``circularPattern(axisPoint:axisDirection:count:angle:)`` for what
     /// "duplicates the whole body" means for feature-cut use cases.
     ///
+    /// `angle` is the total span from the original to the last copy (`0` for a full circle), with
+    /// the same spacing as ``circularPattern(axisPoint:axisDirection:count:angle:)``.
+    ///
     /// - Returns: `(result, history)` where `result` is a compound of all copies.
     public func circularPatternWithFullHistory(
         axisPoint: SIMD3<Double>, axisDirection: SIMD3<Double>,
@@ -1910,23 +1913,55 @@ extension Shape {
     }
     /// Offset a shape with different distances per face.
     ///
+    /// An entry in `faceOffsets` is not applied to its face alone. OCCT
+    /// (`BRepOffset_MakeOffset::UpdateFaceOffset`) gives that offset to every face connected to
+    /// the entry's face by a tangent edge and, with the `.arc` join, by an edge of the offset
+    /// direction's own concavity: a convex edge for a positive `defaultOffset`, a concave edge for
+    /// a negative one (#3365). On a convex solid with a positive offset that is every face, so a
+    /// single entry becomes the offset of the whole shape and `defaultOffset` is not used:
+    /// `[0: 2]` on a cube is the uniform offset 2, and `[0: 0.5]` the uniform offset 0.5.
+    ///
+    /// Per-face distances that differ between faces need a join that keeps the faces apart:
+    /// `.intersection` for a positive offset (only tangent-connected faces share an entry), or any
+    /// join for a negative offset on a convex shape.
+    ///
+    /// Two entries OCCT would merge into one offset but that ask for different distances are
+    /// refused with `nil`. OCCT applies them in the iteration order of a hash map keyed on object
+    /// addresses, so the result used to change from one process to the next.
+    ///
+    /// `.tangent` is not built by `BRepOffset_MakeOffset` (it implements `.arc` and
+    /// `.intersection`) and returns `nil`.
+    ///
+    /// ```swift
+    /// let cube = Shape.box(width: 10, height: 10, depth: 10)!
+    /// // Face 1 reaches x = 7, every other face 6: x in [-6, 7].
+    /// let moved = cube.offsetPerFace(
+    ///     defaultOffset: 1, faceOffsets: [1: 2], joinType: .intersection)
+    /// // The arc join applies the entry to every convex-connected face: uniform 2.
+    /// let uniform = cube.offsetPerFace(defaultOffset: 1, faceOffsets: [1: 2])
+    /// ```
+    ///
     /// - Parameters:
-    ///   - defaultOffset: Default offset distance for all faces.
+    ///   - defaultOffset: Default offset distance for faces the offset of an entry does not
+    ///     reach.
     ///   - faceOffsets: Dictionary mapping 0-based face indices, as ``face(at:)`` and
     ///     ``Face/index`` use, to custom offset distances. An index outside `0..<faceCount`
     ///     fails the call; it used to be skipped, which returned a shape offset by the default
     ///     everywhere and looked exactly like success (#541).
     ///   - tolerance: Offset tolerance (default: 1e-3).
     ///   - joinType: Join type for offset gaps (default: .arc).
-    /// - Returns: Offset shape, or nil on failure.
+    /// - Returns: Offset shape, or nil on failure, including entries OCCT would merge into one
+    ///   offset that ask for different distances.
     public func offsetPerFace(
         defaultOffset: Double,
         faceOffsets: [Int: Double],
         tolerance: Double = 1e-3,
         joinType: OffsetJoinType = .arc
     ) -> Shape? {
-        let indices = Array(faceOffsets.keys).map { Int32($0) }
-        let offsets = Array(faceOffsets.keys).map { faceOffsets[$0]! }
+        // Ascending face index: a dictionary's key order differs from one process to the next.
+        let keys = faceOffsets.keys.sorted()
+        let indices = keys.map { Int32($0) }
+        let offsets = keys.map { faceOffsets[$0]! }
 
         guard
             let h = OCCTShapeOffsetPerFace(
@@ -2296,15 +2331,29 @@ extension Shape {
 
     // MARK: - BRepFill_OffsetWire
 
-    /// Offset a planar wire on its face.
+    /// Offset the wires of a planar face.
     ///
-    /// Creates a new wire offset from the edges of the given face.
-    /// Positive offset expands outward, negative shrinks inward.
+    /// Creates a new wire offset from the edges of the given face. Positive offset expands
+    /// outward, negative shrinks inward, as `BRepOffsetAPI_MakeOffset` (and
+    /// ``offsetWireOnPlane(distance:joinType:)``) define the sign (#3364). The result is trimmed:
+    /// a closed wire for a rectangle, with rounded (arc-join) corners when it expands.
+    ///
+    /// A face whose wires are a mix of closed and open ones is refused (nil): a face with holes,
+    /// whose wires are all closed, is offset, but the open wires of a mixed face have no domain
+    /// to be offset in.
+    ///
+    /// ```swift
+    /// let rect = Wire.rectangle(width: 20, height: 20)!
+    /// let face = Shape.face(from: rect)!.faces().first!
+    /// let grown = Shape.offsetWire(face: face, offset: 3)      // 26 x 26, rounded corners
+    /// let shrunk = Shape.offsetWire(face: face, offset: -3)    // 14 x 14
+    /// ```
     ///
     /// - Parameters:
     ///   - face: Face containing the wire to offset
-    ///   - offset: Signed offset distance
-    /// - Returns: Offset wire shape, or nil on failure
+    ///   - offset: Signed offset distance (positive outward, negative inward)
+    /// - Returns: Offset wire shape, or nil on failure, including an inward offset that collapses
+    ///   the face (OCCT reports done with an empty compound there; no wire is returned for it).
     public static func offsetWire(face: Face, offset: Double) -> Shape? {
         guard let h = OCCTBRepFillOffsetWire(face.handle, offset) else { return nil }
         return Shape(handle: h)
@@ -3388,8 +3437,15 @@ extension Shape {
 extension Shape {
 
     /// Restrict a face to its wires using BRepAlgo_FaceRestrictor.
+    ///
+    /// ```swift
+    /// let box = Shape.box(width: 10, height: 10, depth: 10)!
+    /// box.faceRestrictAlgo(faceIndex: 0)   // 1
+    /// ```
+    ///
     /// - Parameter faceIndex: Index of the face (0-based)
-    /// - Returns: Number of result faces
+    /// - Returns: Number of result faces, or -1 when `faceIndex` names no face or the restrictor
+    ///   does not finish.
     public func faceRestrictAlgo(faceIndex: Int) -> Int {
         Int(OCCTShapeFaceRestrictAlgo(handle, Int32(faceIndex), nil, 0))
     }

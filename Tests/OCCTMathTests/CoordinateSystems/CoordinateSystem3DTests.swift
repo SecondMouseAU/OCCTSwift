@@ -32,15 +32,38 @@ struct CoordinateSystem3DTests {
         }
         check(cs, SIMD3(0, 0, 1), "+z")
 
-        // A non-unit normal. x and y are the unit axes of the system, so they are checked against
-        // the unit normal. `direction` itself is the caller's vector rather than the unit one
-        // (#3371), so that one assertion is a known issue.
+        // A non-unit normal. `direction` is gp_Ax3's unit main direction, not the caller's vector
+        // (#3371), so it agrees with x and y.
         let n = SIMD3(1.0, 2.0, 2.0) / 3.0
         let skew = CoordinateSystem3D(origin: SIMD3(4, 5, 6), direction: SIMD3(1, 2, 2))
         check(skew, n, "(1, 2, 2)")
-        withKnownIssue("#3371: direction is the caller's vector, not gp_Ax3's unit one") {
-            #expect(vectorLength(skew.direction - n) < 1e-12)
-        }
+        #expect(vectorLength(skew.direction - n) < 1e-12)
+    }
+
+    // #3371: the three-argument initialiser reports the unit main direction too, and
+    // the derived systems built from a scaled one keep a unit axis.
+    @Test func directionIsUnitFromBothInitialisers() {
+        let scaled = CoordinateSystem3D(
+            origin: .zero, direction: SIMD3(0, 0, 5), xDirection: SIMD3(3, 0, 0))
+        #expect(vectorLength(scaled.direction - SIMD3(0, 0, 1)) < 1e-12)
+        let axes = crossProduct(scaled.xDirection, scaled.yDirection)
+        #expect(vectorLength(axes - scaled.direction) < 1e-12)
+
+        let skew = CoordinateSystem3D(
+            origin: .zero, direction: SIMD3(1, 2, 2), xDirection: SIMD3(2, 0, -1))
+        #expect(abs(vectorLength(skew.direction) - 1) < 1e-12)
+
+        let moved = skew.translated(by: SIMD3(1, 1, 1))
+        #expect(abs(vectorLength(moved.direction) - 1) < 1e-12)
+    }
+
+    // A failed construction has no main direction either: zero, matching the zero x/y directions.
+    @Test func degenerateConstructionHasZeroDirection() {
+        let zero = CoordinateSystem3D(origin: .zero, direction: .zero)
+        #expect(zero.direction == .zero)
+        let parallel = CoordinateSystem3D(
+            origin: .zero, direction: SIMD3(0, 0, 2), xDirection: SIMD3(0, 0, 1))
+        #expect(parallel.direction == .zero)
     }
 
     @Test func angle() {

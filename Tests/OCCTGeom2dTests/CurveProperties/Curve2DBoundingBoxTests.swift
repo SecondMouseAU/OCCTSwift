@@ -13,7 +13,7 @@ struct Curve2DBoundingBoxTests {
 
     @Test("Bounding box of segment")
     func boundingBoxSegment() throws {
-        let seg = Curve2D.segment(from: SIMD2(1, 2), to: SIMD2(5, 8))!
+        let seg = try #require(Curve2D.segment(from: SIMD2(1, 2), to: SIMD2(5, 8)))
         let bb = try #require(seg.boundingBox)
         #expect(abs(bb.min.x - 1) < 1e-9)
         #expect(abs(bb.min.y - 2) < 1e-9)
@@ -24,7 +24,7 @@ struct Curve2DBoundingBoxTests {
     @Test("Bounding box of circle")
     func boundingBoxCircle() throws {
         let r = 5.0
-        let circle = Curve2D.circle(center: SIMD2(10, 10), radius: r)!
+        let circle = try #require(Curve2D.circle(center: SIMD2(10, 10), radius: r))
         let bb = try #require(circle.boundingBox)
         #expect(abs(bb.min.x - (10 - r)) < 1e-9)
         #expect(abs(bb.min.y - (10 - r)) < 1e-9)

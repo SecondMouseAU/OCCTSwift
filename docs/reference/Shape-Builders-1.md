@@ -513,17 +513,27 @@ The profile is oriented perpendicular to the spine at each point and swept along
 
 ### `Shape.offsetWire(face:offset:)`
 
-Offset a planar wire on its face.
+Offset the wires of a planar face.
 
 ```swift
 public static func offsetWire(face: Face, offset: Double) -> Shape?
 ```
 
-Positive offset expands outward; negative shrinks inward.
+Positive offset expands outward; negative shrinks inward. The sign and the domain each side is
+built on follow `BRepOffsetAPI_MakeOffset`, the one OCCT caller of `BRepFill_OffsetWire`: an
+outward offset runs on the face's complement domain (wires reversed), an inward one on the face
+itself. The Arc join rounds the corners of an outward offset.
 
-- **Parameters:** `face`, face containing the wire to offset; `offset`, signed offset distance.
-- **Returns:** Offset wire shape, or `nil` on failure.
-- **OCCT:** `BRepFill_OffsetWire` via `OCCTBRepFillOffsetWire`.
+```swift
+let rect = Wire.rectangle(width: 20, height: 20)!
+let face = Shape.face(from: rect)!.faces().first!
+let grown = Shape.offsetWire(face: face, offset: 3)    // 8 edges, half-width 13
+let shrunk = Shape.offsetWire(face: face, offset: -3)  // 4 edges, half-width 7
+```
+
+- **Parameters:** `face`, face containing the wire to offset; `offset`, signed offset distance (positive outward).
+- **Returns:** Offset wire shape, or `nil` on failure: a non-finite offset, a face with an open wire alongside closed ones, or an inward offset that collapses the face (OCCT reports done with an empty compound there).
+- **OCCT:** `BRepFill_OffsetWire` via `OCCTBRepFillOffsetWire`, driven as `BRepOffsetAPI_MakeOffset::Perform` drives it.
 
 ---
 

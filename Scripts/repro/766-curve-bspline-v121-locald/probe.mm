@@ -1,4 +1,4 @@
-// Epic #766 (#1978), kernel parity for BSplineCurve3DCompletionsV121Tests.swift and
+// Epic #766 (#1978), kernel parity for BSplineCurve3DModificationTests.swift and
 // BSplineCurve3DLocalDTests.swift. Same Geom_BSplineCurve inputs as the Swift tests, and the same
 // Geom_BSplineCurve methods the OCCTCurve3DBSpline* bridge functions call.
 #include <GeomAPI_Interpolate.hxx>

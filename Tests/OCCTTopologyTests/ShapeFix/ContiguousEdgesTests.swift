@@ -7,11 +7,11 @@ import Testing
 @Suite("Contiguous Edges")
 struct ContiguousEdgesTests {
     @Test("Find contiguous edges count on single solid")
-    func findContiguousCountOnSolid() {
+    func findContiguousCountOnSolid() throws {
         // FindContigousEdges returns 0 on a single solid because edges are
         // already topologically shared by construction. The API is designed
         // to find shared edges between separate shapes in a compound.
-        let box = Shape.box(width: 10, height: 10, depth: 10)!
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
         let count = box.contiguousEdgeCount()
         #expect(count == 0)
     }

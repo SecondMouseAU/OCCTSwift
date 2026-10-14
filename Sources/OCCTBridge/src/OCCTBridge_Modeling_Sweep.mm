@@ -75,6 +75,9 @@
 #include <BRepFill_Draft.hxx>
 #include <BRepFill_Generator.hxx>
 #include <BRepFill_OffsetWire.hxx>
+#include <BRepAlgo_FaceRestrictor.hxx>
+#include <cmath>
+#include <vector>
 #include <BRepFill_Pipe.hxx>
 #include <ChFi2d_AnaFilletAlgo.hxx>
 #include <ChFi2d_FilletAlgo.hxx>
@@ -391,11 +394,21 @@ struct OCCTCellsBuilder
 // MARK: - BOPTools NormalOnEdge / PointInFace / IsEmptyShape / IsOpenShell (v0.70)
 // MARK: - BRepFill_OffsetAncestors (v0.79)
 // --- BRepFill_OffsetAncestors ---
-struct OffsetAncestorsOpaque
+// The domains an offset runs on (#3364); see occtBuildOffsetDomains.
+struct OcctOffsetDomains
 {
-  BRepFill_OffsetWire      offsetWire;
-  BRepFill_OffsetAncestors ancestors;
-  bool                     isDone;
+  std::vector<BRepFill_OffsetWire> algos;
+  bool                             wasReversed = false;
+};
+
+struct OcctOffsetAncestors
+{
+  // One entry per domain BRepOffsetAPI_MakeOffset's own construction produces (#3364): an
+  // outward offset runs on the complement domain, a face with separate outer wires gives several.
+  OcctOffsetDomains                     domains;
+  std::vector<BRepFill_OffsetAncestors> ancestors;
+  TopoDS_Shape                          offsetShape;
+  bool                                  isDone = false;
 };
 
 // MARK: - BRepFill_NSections (v0.79)
@@ -1259,18 +1272,138 @@ OCCTShapeRef _Nullable OCCTBRepFillAdvancedEvolved(OCCTWireRef spine,
   }
 }
 
+// The domains BRepFill_OffsetWire has to be given, built the way OCCT's own caller builds them
+// (#3364). BRepFill_OffsetWire::Perform only offsets to the inside of the face it is handed
+// (BRepMAT2d_BisectingLocus is computed with MAT_Left), so an outward offset needs the
+// complement domain: a face whose wires are reversed. BRepOffsetAPI_MakeOffset::Perform does
+// exactly this, calling its static BuildDomains with `isPositive` false for offset <= 0 and true
+// for offset > 0, then Perform(abs(offset)) on each domain (BRepOffsetAPI_MakeOffset.cxx
+// :172-337 BuildDomains, :341-474 Perform), and reverses each result back when it reversed the
+// wires. Handing the face straight to Perform(+d), as this wrapper used to, shrinks it, and
+// Perform(-d) returns untrimmed bisector lines because there is no exterior locus to trim on.
+//
+// A face whose wires are not all closed is refused: BuildDomains' classification of open wires
+// into the closed domains serves BRepOffsetAPI_MakeOffset's wire-set input, which a face never
+// is.
+static bool occtBuildOffsetDomains(const TopoDS_Face& face,
+                                   bool               outward,
+                                   GeomAbs_JoinType   join,
+                                   OcctOffsetDomains& domains)
+{
+  NCollection_List<TopoDS_Shape> workWires;
+  for (TopExp_Explorer exp(face, TopAbs_WIRE); exp.More(); exp.Next())
+    workWires.Append(exp.Current());
+  if (workWires.IsEmpty())
+    return false;
+
+  // BuildDomains compares the first work wire with the face's first wire; they are the same
+  // wire here, so the reversal reduces to `outward`, kept in OCCT's form so the correspondence
+  // stays checkable.
+  TopExp_Explorer anExp(face, TopAbs_WIRE);
+  TopoDS_Shape    wire1 = workWires.First();
+  TopoDS_Shape    wire2 = anExp.Current();
+  if ((wire1.Orientation() == wire2.Orientation() && outward)
+      || (wire1.Orientation() == TopAbs::Complement(wire2.Orientation()) && !outward))
+  {
+    NCollection_List<TopoDS_Shape> reversed;
+    for (NCollection_List<TopoDS_Shape>::Iterator it(workWires); it.More(); it.Next())
+      reversed.Append(it.Value().Reversed());
+    domains.wasReversed = true;
+    workWires           = reversed;
+  }
+
+  BRepAlgo_FaceRestrictor        restrictor;
+  NCollection_List<TopoDS_Shape> openWires;
+  restrictor.Init(face, true);
+  for (NCollection_List<TopoDS_Shape>::Iterator it(workWires); it.More(); it.Next())
+  {
+    TopoDS_Wire& w = TopoDS::Wire(it.ChangeValue());
+    if (w.Closed())
+    {
+      restrictor.Add(w);
+      continue;
+    }
+    TopoDS_Vertex first, last;
+    TopExp::Vertices(w, first, last);
+    if (first.IsSame(last))
+      restrictor.Add(w);
+    else
+      openWires.Append(w);
+  }
+  restrictor.Perform();
+  if (!restrictor.IsDone())
+    return false;
+
+  NCollection_List<TopoDS_Shape> faces;
+  for (; restrictor.More(); restrictor.Next())
+    faces.Append(restrictor.Current());
+
+  if (faces.IsEmpty())
+  {
+    // No closed wire: one domain holding the open wires (BuildDomains "only one domain").
+    if (openWires.IsEmpty())
+      return false;
+    TopoDS_Face  domain = TopoDS::Face(face.EmptyCopied());
+    BRep_Builder builder;
+    for (NCollection_List<TopoDS_Shape>::Iterator it(openWires); it.More(); it.Next())
+      builder.Add(domain, it.Value());
+    domains.algos.push_back(BRepFill_OffsetWire(domain, join, false));
+    return true;
+  }
+  if (!openWires.IsEmpty())
+    return false;
+  for (NCollection_List<TopoDS_Shape>::Iterator it(faces); it.More(); it.Next())
+    domains.algos.push_back(BRepFill_OffsetWire(TopoDS::Face(it.Value()), join, false));
+  return true;
+}
+
+// The shape BRepOffsetAPI_MakeOffset::Perform hands back for the domains it ran: the one
+// domain's shape as it is, a compound when there are several (:449 `if (i > 2) myShape = Res`),
+// reversed back when the wires were (:411, :437). Null when no domain produced a shape.
+static TopoDS_Shape occtAssembleOffsetDomains(const OcctOffsetDomains& domains)
+{
+  TopoDS_Compound result;
+  BRep_Builder    builder;
+  builder.MakeCompound(result);
+  TopoDS_Shape first;
+  int          count = 0;
+  for (const BRepFill_OffsetWire& algo : domains.algos)
+  {
+    if (!algo.IsDone() || algo.Shape().IsNull())
+      continue;
+    TopoDS_Shape shape = domains.wasReversed ? algo.Shape().Reversed() : algo.Shape();
+    builder.Add(result, shape);
+    if (count == 0)
+      first = shape;
+    count++;
+  }
+  if (count == 0)
+    return TopoDS_Shape();
+  if (count == 1)
+    return first;
+  return result;
+}
+
 OCCTShapeRef _Nullable OCCTBRepFillOffsetWire(OCCTFaceRef faceRef, double offset)
 {
-  if (!faceRef)
+  if (!faceRef || faceRef->face.IsNull() || !std::isfinite(offset))
     return nullptr;
   try
   {
-    BRepFill_OffsetWire ow(faceRef->face, GeomAbs_Arc, false);
-    ow.Perform(offset);
-    if (!ow.IsDone())
+    OcctOffsetDomains domains;
+    // Positive is outward, negative inward, as BRepOffsetAPI_MakeOffset's `Offset <= 0` left
+    // branch and `Offset > 0` right branch define them; zero follows the left branch.
+    if (!occtBuildOffsetDomains(faceRef->face, offset > 0.0, GeomAbs_Arc, domains))
       return nullptr;
-    TopoDS_Shape shape = ow.Shape();
+    for (BRepFill_OffsetWire& algo : domains.algos)
+      algo.Perform(std::abs(offset));
+    TopoDS_Shape shape = occtAssembleOffsetDomains(domains);
     if (shape.IsNull())
+      return nullptr;
+    // BRepOffsetAPI_MakeOffset reports done with an empty compound when the offset collapses
+    // the face (an inward offset past the inradius). That is no wire, and it reads as a
+    // successful measurement of one, so it takes the refusal a failed build gets.
+    if (!TopExp_Explorer(shape, TopAbs_EDGE).More())
       return nullptr;
     auto* result  = new OCCTShape();
     result->shape = shape;
@@ -1548,10 +1681,14 @@ OCCTOffsetAncestorsRef OCCTBRepFillOffsetAncestorsCreate(OCCTShapeRef _Nonnull f
                                                          double offset,
                                                          int    joinType)
 {
+  if (!faceRef || !std::isfinite(offset))
+    return nullptr;
   try
   {
     const TopoDS_Shape& shape = *(const TopoDS_Shape*)faceRef;
-    TopoDS_Face         face  = TopoDS::Face(shape);
+    if (shape.IsNull() || shape.ShapeType() != TopAbs_FACE)
+      return nullptr;
+    TopoDS_Face face = TopoDS::Face(shape);
 
     GeomAbs_JoinType jt = GeomAbs_Arc;
     if (joinType == 1)
@@ -1559,18 +1696,42 @@ OCCTOffsetAncestorsRef OCCTBRepFillOffsetAncestorsCreate(OCCTShapeRef _Nonnull f
     else if (joinType == 2)
       jt = GeomAbs_Intersection;
 
-    auto* opaque = new OffsetAncestorsOpaque();
-    opaque->offsetWire.Init(face, jt);
-    opaque->offsetWire.Perform(offset);
-    if (opaque->offsetWire.IsDone())
-    {
-      opaque->ancestors.Perform(opaque->offsetWire);
-      opaque->isDone = opaque->ancestors.IsDone();
-    }
-    else
+    // The same domains, and the same sign, as OCCTBRepFillOffsetWire: the ancestry of the wire
+    // that call returns. OCCT's own caller does the same: BRepFill_Evolved.cxx:1312 and :1459
+    // `OffAnc.Perform(Paral)` on the BRepFill_OffsetWire that built the wire, then walks
+    // `Paral.Shape()`'s edges, so each domain's ancestry is computed on the algo that built
+    // that domain's wire and is keyed on that wire's edges.
+    auto* opaque = new OcctOffsetAncestors();
+    if (!occtBuildOffsetDomains(face, offset > 0.0, jt, opaque->domains))
     {
       opaque->isDone = false;
+      return opaque;
     }
+    bool allDone = true;
+    for (BRepFill_OffsetWire& algo : opaque->domains.algos)
+    {
+      algo.Perform(std::abs(offset));
+      allDone = allDone && algo.IsDone();
+    }
+    if (allDone)
+    {
+      for (BRepFill_OffsetWire& algo : opaque->domains.algos)
+      {
+        BRepFill_OffsetAncestors ancestors;
+        ancestors.Perform(algo);
+        allDone = allDone && ancestors.IsDone();
+        opaque->ancestors.push_back(ancestors);
+      }
+    }
+    opaque->offsetShape = occtAssembleOffsetDomains(opaque->domains);
+    // An offset that collapses the face is done with an empty compound, which is no wire and
+    // has no edge to be an ancestor of (the refusal OCCTBRepFillOffsetWire gives it too).
+    if (opaque->offsetShape.IsNull() || !TopExp_Explorer(opaque->offsetShape, TopAbs_EDGE).More())
+    {
+      opaque->offsetShape = TopoDS_Shape();
+      allDone             = false;
+    }
+    opaque->isDone = allDone;
     return opaque;
   }
   catch (...)
@@ -1582,17 +1743,45 @@ OCCTOffsetAncestorsRef OCCTBRepFillOffsetAncestorsCreate(OCCTShapeRef _Nonnull f
 
 bool OCCTBRepFillOffsetAncestorsIsDone(OCCTOffsetAncestorsRef _Nonnull ref)
 {
-  return ((OffsetAncestorsOpaque*)ref)->isDone;
+  return ref && ((OcctOffsetAncestors*)ref)->isDone;
+}
+
+OCCTShapeRef _Nullable OCCTBRepFillOffsetAncestorsOffsetWire(OCCTOffsetAncestorsRef _Nonnull ref)
+{
+  if (!ref)
+    return nullptr;
+  try
+  {
+    auto* opaque = (OcctOffsetAncestors*)ref;
+    if (!opaque->isDone || opaque->offsetShape.IsNull())
+      return nullptr;
+    return (OCCTShapeRef) new TopoDS_Shape(opaque->offsetShape);
+  }
+  catch (...)
+  {
+    occtRecordCaughtException(__func__);
+    return nullptr;
+  }
 }
 
 bool OCCTBRepFillOffsetAncestorsHasAncestor(OCCTOffsetAncestorsRef _Nonnull ref,
                                             OCCTShapeRef _Nonnull edgeRef)
 {
+  if (!ref || !edgeRef)
+    return false;
   try
   {
-    auto*               opaque    = (OffsetAncestorsOpaque*)ref;
+    auto*               opaque    = (OcctOffsetAncestors*)ref;
     const TopoDS_Shape& edgeShape = *(const TopoDS_Shape*)edgeRef;
-    return opaque->ancestors.HasAncestor(TopoDS::Edge(edgeShape));
+    if (!opaque->isDone || edgeShape.IsNull() || edgeShape.ShapeType() != TopAbs_EDGE)
+      return false;
+    const TopoDS_Edge& edge = TopoDS::Edge(edgeShape);
+    for (const BRepFill_OffsetAncestors& ancestors : opaque->ancestors)
+    {
+      if (ancestors.HasAncestor(edge))
+        return true;
+    }
+    return false;
   }
   catch (...)
   {
@@ -1604,14 +1793,21 @@ bool OCCTBRepFillOffsetAncestorsHasAncestor(OCCTOffsetAncestorsRef _Nonnull ref,
 OCCTShapeRef _Nullable OCCTBRepFillOffsetAncestorsGetAncestor(OCCTOffsetAncestorsRef _Nonnull ref,
                                                               OCCTShapeRef _Nonnull edgeRef)
 {
+  if (!ref || !edgeRef)
+    return nullptr;
   try
   {
-    auto*               opaque    = (OffsetAncestorsOpaque*)ref;
+    auto*               opaque    = (OcctOffsetAncestors*)ref;
     const TopoDS_Shape& edgeShape = *(const TopoDS_Shape*)edgeRef;
-    TopoDS_Edge         edge      = TopoDS::Edge(edgeShape);
-    if (!opaque->ancestors.HasAncestor(edge))
+    if (!opaque->isDone || edgeShape.IsNull() || edgeShape.ShapeType() != TopAbs_EDGE)
       return nullptr;
-    return (OCCTShapeRef) new TopoDS_Shape(opaque->ancestors.Ancestor(edge));
+    const TopoDS_Edge& edge = TopoDS::Edge(edgeShape);
+    for (const BRepFill_OffsetAncestors& ancestors : opaque->ancestors)
+    {
+      if (ancestors.HasAncestor(edge))
+        return (OCCTShapeRef) new TopoDS_Shape(ancestors.Ancestor(edge));
+    }
+    return nullptr;
   }
   catch (...)
   {
@@ -1622,7 +1818,7 @@ OCCTShapeRef _Nullable OCCTBRepFillOffsetAncestorsGetAncestor(OCCTOffsetAncestor
 
 void OCCTBRepFillOffsetAncestorsRelease(OCCTOffsetAncestorsRef _Nonnull ref)
 {
-  delete (OffsetAncestorsOpaque*)ref;
+  delete (OcctOffsetAncestors*)ref;
 }
 
 OCCTNSectionsRef OCCTBRepFillNSectionsCreate(const OCCTShapeRef _Nonnull* _Nonnull wireRefs,

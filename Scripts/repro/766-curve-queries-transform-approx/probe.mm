@@ -1,4 +1,4 @@
-// Epic #766 (#1978), kernel parity for Curve3DQueriesV123Tests.swift,
+// Epic #766 (#1978), kernel parity for Curve3DPeriodAndParameterRangeTests.swift,
 // Curve3DTransformFamilyParityTests.swift and CurveApproximationTests.swift. Same inputs as the
 // tests: Geom_Curve::Period/FirstParameter/LastParameter, Geom_Curve::Transform (the in-place and
 // copying families both call it with the same gp_Trsf), and Approx_Curve3d on BRepAdaptor_Curve

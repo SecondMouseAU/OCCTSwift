@@ -1,4 +1,4 @@
-// Epic #766 (#1978), kernel parity for Issue477ArcLengthAccuracyTests.swift: the zigzag and helix
+// Epic #766 (#1978), kernel parity for ArcLengthAccuracyTests.swift: the zigzag and helix
 // interpolations through GeomAPI_Interpolate, measured with GCPnts_AbscissaPoint::Length (the
 // composite integrator the bridge uses) and CPnts_AbscissaPoint::Length (the whole-domain one it
 // replaced), plus the segment and circle.

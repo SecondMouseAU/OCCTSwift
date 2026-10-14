@@ -20,8 +20,8 @@ struct SurfaceApproximateDefaultsParityTests {
     // same arguments occtApproxSurface passes, see Scripts/repro/766-surface-approx-defaults/.
 
     @Test("Default call succeeds and respects the shared maxDegree cap")
-    func defaultCallRespectsSharedMaxDegree() {
-        let sphere = Surface.sphere(center: .zero, radius: 5)!
+    func defaultCallRespectsSharedMaxDegree() throws {
+        let sphere = try #require(Surface.sphere(center: .zero, radius: 5))
         // No explicit tolerance/maxDegree: exercises the *default* values directly.
         let approx = sphere.approximated()
         #expect(approx != nil)
@@ -34,8 +34,8 @@ struct SurfaceApproximateDefaultsParityTests {
     }
 
     @Test("Default call is equivalent to an explicit tolerance: 1e-3, maxDegree: 8 call")
-    func defaultCallMatchesExplicitSharedValues() {
-        let sphere = Surface.sphere(center: .zero, radius: 5)!
+    func defaultCallMatchesExplicitSharedValues() throws {
+        let sphere = try #require(Surface.sphere(center: .zero, radius: 5))
         let byDefault = sphere.approximated()
         let explicit = sphere.approximated(tolerance: 1e-3, maxDegree: 8)
         #expect(byDefault != nil)
@@ -48,8 +48,8 @@ struct SurfaceApproximateDefaultsParityTests {
 
     @Test(
         "Tighter shared defaults still succeed on every primitive the old looser defaults handled")
-    func tighterDefaultsSucceedOnCommonSurfaces() {
-        let sphere = Surface.sphere(center: .zero, radius: 5)!
+    func tighterDefaultsSucceedOnCommonSurfaces() throws {
+        let sphere = try #require(Surface.sphere(center: .zero, radius: 5))
         #expect(sphere.approximated() != nil)
         // #766: the three `if let`s let a nil primitive skip its check. The kernel's pole
         // counts are 23 x 23 (torus) and 15 x 6 (cylinder, cone).

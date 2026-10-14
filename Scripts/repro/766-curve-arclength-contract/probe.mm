@@ -1,4 +1,4 @@
-// Epic #766 (#1978), kernel parity for Issue506ArcLengthBridgeContractTests.swift: re-measures the
+// Epic #766 (#1978), kernel parity for ArcLengthRangedContractTests.swift: re-measures the
 // suite's table on the pinned kernel. GCPnts_AbscissaPoint::Length over a pre-bounded
 // GeomAdaptor_Curve(c, u1, u2) (the deleted bridge form) against the ranged
 // GCPnts_AbscissaPoint::Length(adaptor, u1, u2) over the full adaptor, with the bridge's clamp

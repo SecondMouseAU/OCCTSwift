@@ -109,7 +109,7 @@ enclosure state regardless. Measured directly (`Sources/OCCTTest/main.swift` scr
 boss on a bare plate already reports `1 pocket, isOpen: true` before this fix; a filleted boss on
 the same plate reports the identical `1 pocket, isOpen: true` after it. Neither is a false
 *enclosed* pocket, which is the property that actually matters to a consumer. See
-`Tests/OCCTModelingTests/FeatureRecognition/Issue762FilletedPocketDetectionTests.swift`'s
+`Tests/OCCTModelingTests/FeatureRecognition/FilletedPocketDetectionTests.swift`'s
 `Issue762FilletedBossFalsePositiveTests` for the codified version of this measurement.
 
 ## `detectHoles()`: checked, not assumed, and found unaffected
@@ -355,7 +355,7 @@ Re-run in full after both fixes above, since crossability rules changed what eac
 reaches: the failure sets for A through D are unchanged in shape from the pre-round-4 matrix plus
 exactly the two new round-4 tests folding into B/D (their own mechanism is a fillet chain, so
 removing the Z-tolerance bypass breaks them the same way as every other chain-discovered wall).
-`Issue762FilletedPocketDetectionTests.swift`
+`FilletedPocketDetectionTests.swift`
 carries 15 `@Test` functions (unchanged this round; no new fixture was added, only the injection
 that isolates the existing gate), and all five injections (A through E) were re-run against the
 full `Issue762|Issue753|Issue735|Issue747` filter (34 tests), confirming no other, unrelated test

@@ -1,4 +1,4 @@
-// Epic #766 (#1978), kernel parity for Issue548NonFiniteLengthBoundTests.swift: what the unguarded
+// Epic #766 (#1978), kernel parity for NonFiniteLengthBoundTests.swift: what the unguarded
 // kernel answers for a non-finite bound, re-measured on the pinned kernel. GCPnts_AbscissaPoint::
 // Length(adaptor, u1, u2) on a segment, a circle and the 5-point multi-span interpolation (3D and
 // 2D), and BRepAdaptor_Curve on a straight edge. Complements Scripts/repro/548-nonfinite-length-bounds.

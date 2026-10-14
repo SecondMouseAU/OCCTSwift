@@ -6,8 +6,8 @@ import Testing
 @Suite("Surface Draw Methods")
 struct SurfaceDrawTests {
     @Test("Draw grid returns iso lines")
-    func drawGrid() {
-        let sphere = Surface.sphere(center: .zero, radius: 5)!
+    func drawGrid() throws {
+        let sphere = try #require(Surface.sphere(center: .zero, radius: 5))
         let grid = sphere.drawGrid(uLineCount: 5, vLineCount: 5, pointsPerLine: 20)
         #expect(grid.count == 10)  // 5 U-iso + 5 V-iso lines
         for line in grid {
@@ -21,8 +21,8 @@ struct SurfaceDrawTests {
     }
 
     @Test("Draw mesh returns grid points")
-    func drawMesh() {
-        let sphere = Surface.sphere(center: .zero, radius: 5)!
+    func drawMesh() throws {
+        let sphere = try #require(Surface.sphere(center: .zero, radius: 5))
         let mesh = sphere.drawMesh(uCount: 10, vCount: 10)
         #expect(mesh.uCount == 10)
         #expect(mesh.vCount == 10)
@@ -31,8 +31,8 @@ struct SurfaceDrawTests {
     }
 
     @Test("Draw mesh on an asymmetric grid indexes .at(u:v:) correctly")
-    func drawMeshAsymmetric() {
-        let sphere = Surface.sphere(center: .zero, radius: 5)!
+    func drawMeshAsymmetric() throws {
+        let sphere = try #require(Surface.sphere(center: .zero, radius: 5))
         let uCount = 6
         let vCount = 4
         let mesh = sphere.drawMesh(uCount: uCount, vCount: vCount)

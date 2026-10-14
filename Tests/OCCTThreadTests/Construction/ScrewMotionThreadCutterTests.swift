@@ -65,7 +65,7 @@ struct Issue187ScrewThreadTests {
         func run() -> Double? {
             shank.threadedShaft(
                 axisOrigin: .zero, axisDirection: SIMD3(0, 0, 1),
-                spec: spec, length: 16)?.bounds!.max.x
+                spec: spec, length: 16)?.bounds?.max.x
         }
         let a = run()
         let b = run()
@@ -97,7 +97,7 @@ struct Issue187ScrewThreadTests {
     }
 
     @Test("threadedHole cuts a valid in-envelope thread into a bore wall")
-    func threadedHoleValid() {
+    func threadedHoleValid() throws {
         let spec = ThreadSpec(form: .iso68, nominalDiameter: 12, pitch: 1.75)
         // Pre-bored to the MINOR diameter (#1578): a correctly-cut internal thread's crest sits
         // there, untouched, and its root reaches out to the major/nominal diameter.
@@ -115,7 +115,7 @@ struct Issue187ScrewThreadTests {
         if let tapped {
             #expect(tapped.isValid)
             // Tapping the bore wall only adds material toward the axis; outer Ø24 unchanged.
-            #expect(tapped.bounds!.max.x <= block.bounds!.max.x + 0.25)
+            #expect(try #require(tapped.bounds).max.x <= #require(block.bounds).max.x + 0.25)
         }
     }
 }

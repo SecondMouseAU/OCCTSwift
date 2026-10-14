@@ -7,18 +7,18 @@ import Testing
 struct TDataStdAsciiStringTests {
 
     @Test("Set and get ASCII string")
-    func setGetAsciiString() {
-        let doc = Document.create()!
-        let label = doc.createLabel()!
+    func setGetAsciiString() throws {
+        let doc = try #require(Document.create())
+        let label = try #require(doc.createLabel())
         let ok = label.setAsciiString("hello")
         #expect(ok)
         #expect(label.asciiString == "hello")
     }
 
     @Test("Change ASCII string")
-    func changeAsciiString() {
-        let doc = Document.create()!
-        let label = doc.createLabel()!
+    func changeAsciiString() throws {
+        let doc = try #require(Document.create())
+        let label = try #require(doc.createLabel())
         label.setAsciiString("hello")
         label.setAsciiString("world")
         #expect(label.asciiString == "world")

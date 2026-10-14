@@ -43,11 +43,12 @@ struct AngleDimensionTests {
     }
 
     @Test("Angle geometry has center point")
-    func angleGeometry() {
-        let dim = AngleDimension(
-            first: SIMD3(5, 0, 0),
-            vertex: SIMD3(0, 0, 0),
-            second: SIMD3(0, 5, 0))!
+    func angleGeometry() throws {
+        let dim = try #require(
+            AngleDimension(
+                first: SIMD3(5, 0, 0),
+                vertex: SIMD3(0, 0, 0),
+                second: SIMD3(0, 5, 0)))
         let geom = dim.geometry
         #expect(geom != nil)
         if let g = geom {
@@ -58,14 +59,15 @@ struct AngleDimensionTests {
     }
 
     @Test("Angle between perpendicular faces is 90 degrees")
-    func perpendicularFaces() {
+    func perpendicularFaces() throws {
         // Create two perpendicular planar faces
-        let wire1 = Wire.rectangle(width: 10, height: 10)!
-        let face1 = Shape.face(from: wire1)!  // XY plane
+        let wire1 = try #require(Wire.rectangle(width: 10, height: 10))
+        let face1 = try #require(Shape.face(from: wire1))  // XY plane
         // Rotate to get a face in the XZ plane
-        let wire2 = Wire.rectangle(width: 10, height: 10)!
-        let face2 = Shape.face(from: wire2)!.rotated(
-            axis: SIMD3(1, 0, 0), angle: .pi / 2)!
+        let wire2 = try #require(Wire.rectangle(width: 10, height: 10))
+        let face2 = try #require(
+            Shape.face(from: wire2)?.rotated(
+                axis: SIMD3(1, 0, 0), angle: .pi / 2))
         // #766: this used to be `if let dim`, so a nil from OCCTDimensionCreateAngleFromFaces
         // passed silently. PrsDim_AngleDimension(f1, f2) reports exactly 90 degrees here
         // (Scripts/repro/766-drawing-angle-centermarks/transcript.txt).
