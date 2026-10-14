@@ -1151,7 +1151,7 @@ OCCTBooleanHistoryRef OCCTShapeHistoryFromFilletEdges(OCCTShapeRef   shape,
     if (!op->IsDone())
       return nullptr;
     TopoDS_Shape result = op->Shape();
-    if (!occtBlendResultIsValid(result)) // #3200
+    if (!occtBlendResultIsAnswer(shape->shape, result)) // #3200
       return nullptr;
     if (outResult)
       *outResult = new OCCTShape(result);
@@ -1199,7 +1199,7 @@ OCCTBooleanHistoryRef OCCTShapeHistoryFromFilletEdgeVariable(OCCTShapeRef  shape
     if (!op->IsDone())
       return nullptr;
     TopoDS_Shape result = op->Shape();
-    if (!occtBlendResultIsValid(result)) // #3200
+    if (!occtBlendResultIsAnswer(shape->shape, result)) // #3200
       return nullptr;
     if (outResult)
       *outResult = new OCCTShape(result);
@@ -1241,7 +1241,7 @@ OCCTBooleanHistoryRef OCCTShapeHistoryFromChamferEdges(OCCTShapeRef   shape,
     if (!op->IsDone())
       return nullptr;
     TopoDS_Shape result = op->Shape();
-    if (!occtBlendResultIsValid(result)) // #3200
+    if (!occtBlendResultIsAnswer(shape->shape, result)) // #3200
       return nullptr;
     if (outResult)
       *outResult = new OCCTShape(result);
@@ -1435,7 +1435,7 @@ OCCTShapeRef OCCTShapeFuseAndBlend(OCCTShapeRef shape1, OCCTShapeRef shape2, dou
     fillet.Build();
     if (!fillet.IsDone())
       return nullptr;
-    if (!occtBlendResultIsValid(fillet.Shape())) // #3200
+    if (!occtBlendResultIsAnswer(fuseResult, fillet.Shape())) // #3200
       return nullptr;
     return new OCCTShape(fillet.Shape());
   }
@@ -1507,7 +1507,7 @@ OCCTShapeRef OCCTShapeCutAndBlend(OCCTShapeRef shape1, OCCTShapeRef shape2, doub
     fillet.Build();
     if (!fillet.IsDone())
       return nullptr;
-    if (!occtBlendResultIsValid(fillet.Shape())) // #3200
+    if (!occtBlendResultIsAnswer(cutResult, fillet.Shape())) // #3200
       return nullptr;
     return new OCCTShape(fillet.Shape());
   }

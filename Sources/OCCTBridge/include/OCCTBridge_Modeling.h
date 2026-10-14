@@ -3905,6 +3905,12 @@ bool OCCTFilletBuilderAddEdgeEvolving(OCCTFilletBuilderRef _Nonnull builder,
 /// Build the filleted result.
 OCCTShapeRef _Nullable OCCTFilletBuilderBuild(OCCTFilletBuilderRef _Nonnull builder);
 
+// #3297, #3298: whether `result` is an answer to a blend of `input`. False when it has a different
+// solid count than `input`, or is `input` unchanged (same face count and volume). The builder
+// types do not hold their input, so FilletBuilder and ChamferBuilder ask this after Build. The
+// reason is recorded as a caught-exception diagnostic.
+bool OCCTBlendResultIsSane(OCCTShapeRef _Nullable input, OCCTShapeRef _Nullable result);
+
 /// Number of contours.
 int32_t OCCTFilletBuilderNbContours(OCCTFilletBuilderRef _Nonnull builder);
 

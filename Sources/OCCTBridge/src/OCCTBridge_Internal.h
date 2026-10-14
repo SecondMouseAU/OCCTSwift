@@ -107,6 +107,8 @@
 #include <gp_Trsf.hxx>
 #include <TopoDS.hxx>
 #include <TopTools_IndexedMapOfShape.hxx>
+#include <GProp_GProps.hxx>
+#include <Standard_Failure.hxx>
 #include <TopTools_ListOfShape.hxx>
 #include <TColgp_Array1OfPnt2d.hxx>
 #include <gp_Pnt2d.hxx>
@@ -2364,6 +2366,80 @@ inline bool occtBlendResultIsValid(const TopoDS_Shape& result)
   }
 }
 
+// === #3297, #3298: a done, valid blend can still be the wrong shape ===
+//
+// BRepCheck cannot see two answers the kernel gives where blends (or a blend and the face it runs
+// along) meet exactly, because both are well-formed solids:
+//
+//   * #3297: a chamfer at d = edge/2 on a 10 cube is handed back as the unchanged cube (6 faces,
+//     volume 1000). A blend that was asked for and changed nothing is not an answer.
+//   * #3298: both rims of a cylinder at r = R = H/2 come back as TWO solids with twice the
+//     one-rim volume. A blend of one solid answers one solid.
+//
+// Both are measured through raw BRepFilletAPI_MakeFillet/MakeChamfer, so no bridge call is at
+// fault. A correct build is not reachable from here: the tie is a tolerance comparison inside the
+// kernel (compare #3207, OCCT#1177), the step below it (d = 4.9999) is the right answer and the
+// step above it is declined. So the result is refused, and the reason is recorded as an
+// OCCTFailure.
+//
+// The volume is NOT bounded above by the input's: a fillet or chamfer of a concave edge adds
+// material, so "a blend removes material" is false in general and is not tested. Only equality is,
+// and only when the face count is unchanged, so a normal blend pays two MapShapes per shape.
+inline int32_t occtBlendCount(const TopoDS_Shape& shape, TopAbs_ShapeEnum type)
+{
+  TopTools_IndexedMapOfShape map;
+  TopExp::MapShapes(shape, type, map);
+  return static_cast<int32_t>(map.Extent());
+}
+
+inline void occtBlendRecordRefusal(const char* reason)
+{
+  try
+  {
+    throw Standard_Failure(reason);
+  }
+  catch (...)
+  {
+    occtRecordCaughtException(reason);
+  }
+}
+
+inline bool occtBlendResultIsSane(const TopoDS_Shape& input, const TopoDS_Shape& result)
+{
+  if (input.IsNull() || result.IsNull())
+    return true; // nothing to compare against; validity is the other predicate's job
+  const int32_t inSolids = occtBlendCount(input, TopAbs_SOLID);
+  if (inSolids < 1)
+    return true; // a shell or face input has no volume to compare; 2D blends land here
+  if (occtBlendCount(result, TopAbs_SOLID) != inSolids)
+  {
+    occtBlendRecordRefusal("blend answered a different number of solids than it was given");
+    return false;
+  }
+  if (occtBlendCount(result, TopAbs_FACE) == occtBlendCount(input, TopAbs_FACE))
+  {
+    GProp_GProps before, after;
+    if (occtVolumeMassProperties(input, before) && occtVolumeMassProperties(result, after))
+    {
+      const double a = before.Mass();
+      const double b = after.Mass();
+      if (std::abs(a - b) <= 1.0e-9 * std::max(std::abs(a), std::abs(b)))
+      {
+        occtBlendRecordRefusal("blend answered its input unchanged");
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
+// The predicate every solid-blend entry point answers through: valid (#3200) and not one of the
+// two valid-but-wrong shapes above. `input` is the shape the blend was built on.
+inline bool occtBlendResultIsAnswer(const TopoDS_Shape& input, const TopoDS_Shape& result)
+{
+  return occtBlendResultIsValid(result) && occtBlendResultIsSane(input, result);
+}
+
 // === #2790: the same predicate, three more lines, and the two subclasses OCCT got right ===
 //
 // The pair above is the right one for the rest of the ShapeCustom family too, and that was measured
@@ -3148,7 +3224,7 @@ OCCTShapeRef occtShapeFilletEdgeList(OCCTShapeRef   shape,
       return nullptr;
 
     TopoDS_Shape result = fillet.Shape();
-    if (!occtBlendResultIsValid(result))
+    if (!occtBlendResultIsAnswer(shape->shape, result))
       return nullptr;
 
     return new OCCTShape(result);
