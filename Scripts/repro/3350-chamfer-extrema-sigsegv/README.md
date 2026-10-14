@@ -28,7 +28,7 @@ CORR idx=1 U=69.8852 V=15.1952 param=0.80278 P=(70.8727,15.7654,49.0099) hguide 
 
 ## Fix and why there
 
-Carried patch `0064` returns from `BRepBlend_Walking::Perform` with `done = false` when the start
+Carried patch `0065` returns from `BRepBlend_Walking::Perform` with `done = false` when the start
 parameter, end parameter or `Fleche` is not finite. Every caller tests `IsDone()` straight after.
 
 Skipping the infinite extension at its origin (`sinalpha > tolesp` before computing `tga`) was tried

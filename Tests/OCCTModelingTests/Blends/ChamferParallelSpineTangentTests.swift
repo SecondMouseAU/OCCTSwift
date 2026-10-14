@@ -11,7 +11,7 @@ import Testing
 /// parallel tangents `sin(alpha)` is 0 and the extension is `dis / 0`, infinity. The spine range
 /// `(-inf, +inf)` reached `BRepBlend_Walking`, which constructed `Extrema_ExtPC` on it with a NaN
 /// point, and `Extrema_GGExtPC::Perform` read out of range: an uncatchable SIGSEGV, since
-/// `OCC_CATCH_SIGNALS` is inert in this build. Carried kernel patch `0064` makes
+/// `OCC_CATCH_SIGNALS` is inert in this build. Carried kernel patch `0065` makes
 /// `BRepBlend_Walking::Perform` report "not done" for a start, end or flecheur that is not finite,
 /// so the chamfer is declined instead.
 ///
@@ -74,10 +74,10 @@ struct ChamferParallelSpineTangentTests {
     /// Chamfering each of the 36 edges at distance 1 returns for every edge instead of killing the
     /// process.
     ///
-    /// Gated on `OCCTSWIFT_LOCAL=1`: the fix, carried patch `0064`, is not in the pinned asset
+    /// Gated on `OCCTSWIFT_LOCAL=1`: the fix, carried patch `0065`, is not in the pinned asset
     /// (`v4.0.0-kernel.6`), so `ci.yml`'s `build-and-test` would fail on a crash it cannot fix, and
     /// `kernel-integration.yml` runs it against a kernel built with the patch. Ungate it at the
-    /// repin that pins `0064` (the skipped test and the passing one report alike, which is why the
+    /// repin that pins `0065` (the skipped test and the passing one report alike, which is why the
     /// gate must go with the repin, #2983).
     ///
     /// Unpatched, the child dies by SIGSEGV. Patched, all 36 edges answer, and the count below says
