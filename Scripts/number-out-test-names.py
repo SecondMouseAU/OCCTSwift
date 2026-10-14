@@ -29,6 +29,14 @@ ATTR_TITLE_RE = re.compile(r'(@(?:Suite|Test)\(\s*)"((?:[^"\\]|\\.)*)"')
 NUM_RE = re.compile(r'#(\d+)|\bIssue\s+(\d+)')
 
 
+def write_atomic(path, text):
+    """Write beside the target and rename, so a crash never leaves a truncated source file."""
+    tmp = '%s.tmp-%d' % (path, os.getpid())
+    with open(tmp, 'w', encoding='utf-8') as f:
+        f.write(text)
+    os.replace(tmp, path)
+
+
 def numbers_in(text):
     return [a or b for a, b in NUM_RE.findall(text)]
 
@@ -45,11 +53,14 @@ def default_title(t):
 def read_map(path):
     types, titles = {}, {}
     if path:
-        for ln in open(path, encoding='utf-8'):
+        for lineno, ln in enumerate(open(path, encoding='utf-8'), 1):
             ln = ln.rstrip('\n')
             if not ln or ln.startswith('#'):
                 continue
-            kind, old, new = ln.split('\t')
+            parts = ln.split('\t')
+            if len(parts) != 3 or parts[0] not in ('type', 'title'):
+                sys.exit('%s:%d: expected "type<TAB>old<TAB>new" or "title<TAB>old<TAB>new", got %r' % (path, lineno, ln))
+            kind, old, new = parts
             (types if kind == 'type' else titles)[old] = new
     return types, titles
 
@@ -80,7 +91,9 @@ def plan(root, target, tmap, title_map):
             if m and re.search(r'Issue\d+', m.group(3)):
                 old = m.group(3)
                 new = tmap.get(old) or re.sub(r'^Issue\d+', '', old)
-                if not re.match(r'^[A-Z]\w*$', new) or new == old or re.search(r'Issue\d+', new):
+                if not new:
+                    problems.append('%s: %s is only an issue number, give it a name with a "type" map row' % (p, old))
+                elif not re.match(r'^[A-Z]\w*$', new) or new == old or re.search(r'Issue\d+', new):
                     problems.append('%s: bad new name %r for %s' % (p, new, old))
                 renames[old] = new
     seen = {}
@@ -115,7 +128,7 @@ def plan(root, target, tmap, title_map):
             while k >= 0 and lines[k].lstrip().startswith('//'):
                 block.append(lines[k]); k -= 1
             btxt = '\n'.join(block)
-            missing = [n for n in nums if not re.search(r'#%s\b' % n, btxt)]
+            missing = [n for n in nums if not re.search(r'#%s\b' % re.escape(n), btxt)]
             edits.setdefault(p, []).append((first_attr, missing, bool(block) and block[0].lstrip().startswith('///')))
     return problems, renames, edits, texts
 
@@ -191,7 +204,7 @@ def run(root, target, mapfile, apply_):
         return 1
     if apply_:
         for p, t in out.items():
-            open(p, 'w', encoding='utf-8').write(t)
+            write_atomic(p, t)
         print('applied')
     return 0
 
@@ -219,7 +232,9 @@ def self_test():
         assert run(d, 'X', tm, True) == 0
         s = open(os.path.join(d, 'Tests/OCCTXTests/A.swift')).read()
         assert s.startswith('/// Regression for #12.\n@Suite("Thing")\nstruct FooTests'), s
-        assert run(d, 'X', tm, True) == 1 or True  # second run: types gone, nothing to do
+        # second run: the types are gone, so there is nothing to rename and nothing is written
+        assert run(d, 'X', tm, True) == 0, 'second run should be a clean no-op'
+        assert open(os.path.join(d, 'Tests/OCCTXTests/A.swift')).read() == s, 'second run rewrote a file'
     print('self-test ok')
     return 0
 
