@@ -917,7 +917,12 @@ let wasmExcludedTestFiles: [String: [String]] = [
         "Concurrency/SerialLockThreadSafetyTests.swift",
     ],
     "OCCTMiscTests": ["ConstructionContext/ConstructionContextConcurrencyTests.swift"],
-    "OCCTModelingTests": ["BOPAlgo/SelfIntersectionCheckTests.swift"],
+    // `ChamferParallelSpineTangentTests` spawns a child test runner with `Process`, which does not
+    // exist on wasm, so the file does not compile there (#3350).
+    "OCCTModelingTests": [
+        "BOPAlgo/SelfIntersectionCheckTests.swift",
+        "Blends/ChamferParallelSpineTangentTests.swift",
+    ],
     "OCCTShapeHealingTests": ["ShapeAnalysis/SelfIntersectionAnalysisTests.swift"],
     // One concurrency file. The seven that read a `.brep` out of `Fixtures/` by `#filePath` ran
     // here once, and failed with `.importFailed` because `#filePath` is an absolute HOST path and
