@@ -20,8 +20,9 @@ import Testing
 
 @testable import OCCTSwift
 
-@Suite("Issue #1643: eigenvalues take the n-1 real off-diagonal entries")
-struct Issue1643EigenvalueOffDiagonal {
+/// Regression for #1643.
+@Suite("Eigenvalues take the n-1 real off-diagonal entries")
+struct EigenvalueOffDiagonalTests {
 
     /// Dense symmetric matrix-vector product for a tridiagonal `(diagonal, offDiagonal)`
     /// pair, built from the arrays a caller passes, not from anything the API returns.
