@@ -31,10 +31,20 @@ NUM_RE = re.compile(r'#(\d+)|\bIssue\s+(\d+)')
 
 def write_atomic(path, text):
     """Write beside the target and rename, so a crash never leaves a truncated source file."""
-    tmp = '%s.tmp-%d' % (path, os.getpid())
-    with open(tmp, 'w', encoding='utf-8') as f:
-        f.write(text)
-    os.replace(tmp, path)
+    fd, tmp = tempfile.mkstemp(prefix='.nonum-', dir=os.path.dirname(path) or '.')
+    try:
+        with os.fdopen(fd, 'w', encoding='utf-8') as f:
+            f.write(text)
+        os.replace(tmp, path)
+    except BaseException:
+        if os.path.exists(tmp):
+            os.unlink(tmp)
+        raise
+
+
+def read_text(path):
+    with open(path, encoding='utf-8') as f:
+        return f.read()
 
 
 def numbers_in(text):
@@ -53,7 +63,7 @@ def default_title(t):
 def read_map(path):
     types, titles = {}, {}
     if path:
-        for lineno, ln in enumerate(open(path, encoding='utf-8'), 1):
+        for lineno, ln in enumerate(read_text(path).split('\n'), 1):
             ln = ln.rstrip('\n')
             if not ln or ln.startswith('#'):
                 continue
@@ -72,7 +82,7 @@ def swift_files(root, target):
 def all_type_names(root):
     names = {}
     for p in glob.glob(os.path.join(root, 'Tests', '**', '*.swift'), recursive=True):
-        for ln in open(p, encoding='utf-8'):
+        for ln in read_text(p).split('\n'):
             m = TYPE_RE.match(ln)
             if m:
                 names.setdefault(m.group(3), []).append(p)
@@ -84,7 +94,7 @@ def plan(root, target, tmap, title_map):
     existing = all_type_names(root)
     renames = {}
     files = swift_files(root, target)
-    texts = {p: open(p, encoding='utf-8').read() for p in files}
+    texts = {p: read_text(p) for p in files}
     for p, txt in texts.items():
         for ln in txt.split('\n'):
             m = TYPE_RE.match(ln)
@@ -139,6 +149,9 @@ def new_titles_for(txt, title_map, report, path):
         if not numbers_in(old):
             return m.group(0)
         new = title_map.get(old, default_title(old))
+        if not new.strip():
+            report.append('UNHANDLED %s: %r -> empty title, give it a "title" map row' % (path, old))
+            return m.group(0)
         if numbers_in(new):
             report.append('UNHANDLED %s: %r -> %r' % (path, old, new))
         else:
@@ -184,7 +197,7 @@ def run(root, target, mapfile, apply_):
         if p in texts or not os.path.isfile(p):
             continue
         try:
-            s = open(p, encoding='utf-8').read()
+            s = read_text(p)
         except Exception:
             continue
         t = s
@@ -218,27 +231,38 @@ def self_test():
         for rel, body in files.items():
             p = os.path.join(d, rel)
             os.makedirs(os.path.dirname(p), exist_ok=True)
-            open(p, 'w').write(body)
+            with open(p, 'w') as f:
+                f.write(body)
     with tempfile.TemporaryDirectory() as d:
         mk(d, {tp('OCCTXTests', 'A.swift'): '@Suite("Thing (#12)")\nstruct Issue12FooTests {\n}\n',
                tp('OCCTXTests', 'B.swift'): '@Suite("Other (#13)")\nstruct Issue13FooTests {\n}\n'})
         # two types both map to FooTests -> must refuse
         mk(d, {})
         tm = os.path.join(d, 'm.tsv')
-        open(tm, 'w').write('type\tIssue12FooTests\tFooTests\ntype\tIssue13FooTests\tFooTests\n')
+        write_atomic(tm, 'type\tIssue12FooTests\tFooTests\ntype\tIssue13FooTests\tFooTests\n')
         assert run(d, 'X', tm, False) == 1, 'duplicate target name not refused'
         # clash with an existing type in ANOTHER target
-        open(tm, 'w').write('type\tIssue12FooTests\tBarTests\ntype\tIssue13FooTests\tBazTests\n')
+        write_atomic(tm, 'type\tIssue12FooTests\tBarTests\ntype\tIssue13FooTests\tBazTests\n')
         mk(d, {tp('OCCTYTests', 'C.swift'): 'struct BarTests {\n}\n'})
         assert run(d, 'X', tm, False) == 1, 'existing-type clash not refused'
         # clean
-        open(tm, 'w').write('type\tIssue12FooTests\tFooTests\ntype\tIssue13FooTests\tOtherFooTests\n')
+        write_atomic(tm, 'type\tIssue12FooTests\tFooTests\ntype\tIssue13FooTests\tOtherFooTests\n')
         assert run(d, 'X', tm, True) == 0
-        s = open(os.path.join(d, tp('OCCTXTests', 'A.swift'))).read()
+        s = read_text(os.path.join(d, tp('OCCTXTests', 'A.swift')))
         assert s.startswith('/// Regression for #12.\n@Suite("Thing")\nstruct FooTests'), s
         # second run: the types are gone, so there is nothing to rename and nothing is written
         assert run(d, 'X', tm, True) == 0, 'second run should be a clean no-op'
-        assert open(os.path.join(d, tp('OCCTXTests', 'A.swift'))).read() == s, 'second run rewrote a file'
+        assert read_text(os.path.join(d, tp('OCCTXTests', 'A.swift'))) == s, 'second run rewrote a file'
+        # a malformed map row is a clear exit, not a ValueError
+        write_atomic(tm, 'type\tonly-two\n')
+        try:
+            run(d, 'X', tm, False)
+            raise AssertionError('malformed map row not refused')
+        except SystemExit as e:
+            assert 'expected' in str(e.code), e.code
+        # a title that is only an issue reference is reported, never written empty
+        mk(d, {tp('OCCTZTests', 'E.swift'): '@Suite("(#99)")\nstruct ZTests {\n}\n'})
+        assert run(d, 'Z', None, True) == 1, 'empty title not refused'
     print('self-test ok')
     return 0
 
