@@ -25,19 +25,17 @@ struct Issue232BoundsTests {
     }
 
     @Test("External boolean thread spans exactly [0, length]")
-    func externalBooleanExact() {
+    func externalBooleanExact() throws {
         let length = 60.0
         let pitch = 3.0
-        guard let rod = Shape.cylinder(radius: 6, height: length),
-            let t = rod.threadedShaft(
+        let rod = try #require(Shape.cylinder(radius: 6, height: length), "rod fixture failed")
+        let t = try #require(
+            rod.threadedShaft(
                 axisOrigin: .zero, axisDirection: SIMD3(0, 0, 1),
                 spec: ThreadSpec(form: .trapezoidal, nominalDiameter: 12, pitch: pitch),
                 length: length, build: .direct),
-            let z = Self.meshZExtent(t)
-        else {
-            Issue.record("build/mesh failed")
-            return
-        }
+            "threadedShaft returned nil")
+        let z = try #require(Self.meshZExtent(t), "the threaded shaft did not mesh")
         // Real geometry stays within the requested span (no overshoot past the faces)…
         #expect(z.min >= -0.05)
         #expect(z.max <= length + 0.05)
@@ -47,26 +45,24 @@ struct Issue232BoundsTests {
     }
 
     @Test("ISO-68 external boolean thread spans exactly [0, length]")
-    func iso68BooleanExact() {
+    func iso68BooleanExact() throws {
         let length = 30.0
         let pitch = 1.5
-        guard let rod = Shape.cylinder(radius: 5, height: length),
-            let t = rod.threadedShaft(
+        let rod = try #require(Shape.cylinder(radius: 5, height: length), "rod fixture failed")
+        let t = try #require(
+            rod.threadedShaft(
                 axisOrigin: .zero, axisDirection: SIMD3(0, 0, 1),
                 spec: ThreadSpec(form: .iso68, nominalDiameter: 10, pitch: pitch),
                 length: length, build: .direct),
-            let z = Self.meshZExtent(t)
-        else {
-            Issue.record("build/mesh failed")
-            return
-        }
+            "threadedShaft returned nil")
+        let z = try #require(Self.meshZExtent(t), "the threaded shaft did not mesh")
         #expect(z.min >= -0.05)
         #expect(z.max <= length + 0.05)
         #expect(z.max > length - pitch)
     }
 
     @Test("Internal threaded hole stays within the block faces")
-    func internalHoleExact() {
+    func internalHoleExact() throws {
         let depth = 8.4
         let r = 9.5 / 3.0.squareRoot()
         let pts = (0..<6).map { i -> SIMD2<Double> in
@@ -75,20 +71,22 @@ struct Issue232BoundsTests {
         }
         let spec = ThreadSpec(form: .iso68, nominalDiameter: 10, pitch: 1.5)
         // Pre-bored to the MINOR diameter (#1578): see Issue187ScrewThreadTests for why.
-        guard let hex = Wire.polygon(pts),
-            let prism = Shape.extrude(profile: hex, direction: SIMD3(0, 0, 1), length: depth),
-            let bore = Shape.cylinder(
+        let hex = try #require(Wire.polygon(pts), "hex profile failed")
+        let prism = try #require(
+            Shape.extrude(profile: hex, direction: SIMD3(0, 0, 1), length: depth),
+            "hex prism failed")
+        let bore = try #require(
+            Shape.cylinder(
                 at: SIMD3(0, 0, -1), direction: SIMD3(0, 0, 1),
                 radius: spec.minorDiameter / 2, height: depth + 2),
-            let block = prism.subtracting(bore),
-            let nut = block.threadedHole(
+            "bore fixture failed")
+        let block = try #require(prism.subtracting(bore), "bore subtraction failed")
+        let nut = try #require(
+            block.threadedHole(
                 axisOrigin: .zero, axisDirection: SIMD3(0, 0, 1),
                 spec: spec, depth: depth),
-            let z = Self.meshZExtent(nut)
-        else {
-            Issue.record("build/mesh failed")
-            return
-        }
+            "threadedHole returned nil")
+        let z = try #require(Self.meshZExtent(nut), "the threaded hole did not mesh")
         // The thread can't poke past the block's flat faces.
         #expect(z.min >= -0.05)
         #expect(z.max <= depth + 0.05)
