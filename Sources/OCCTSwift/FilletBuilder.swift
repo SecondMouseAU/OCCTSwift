@@ -203,6 +203,10 @@ extension FilletBuilder {
     // MARK: - FilletBuilder completions (v0.126.0)
 
     /// Set fillet tolerances.
+    ///
+    /// All six must be finite and positive. Otherwise the call changes nothing and the previous
+    /// tolerances stay in force: a zero or negative `tApp3d` crashes ``build()`` uncatchably, so
+    /// such values are refused here rather than stored.
     public func setParams(
         tang: Double, tesp: Double, t2d: Double,
         tApp3d: Double, tApp2d: Double, fleche: Double
