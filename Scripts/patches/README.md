@@ -21,7 +21,7 @@ retired 2026-09-02 (superseded by upstream's own fix, not shipped in our pin), a
 2026-09-20 (it reintroduced #280; see its [Retired patches](#retired-patches) entry), and
 `0031` retired 2026-10-10 at the `v4.0.0-kernel.6` repin (#3065: the supported pattern is one
 adaptor per worker, so the lock it added is not needed).
-The carried sequence now reads 0010–0012, 0014–0030, 0033–0034, 0036–0048, 0050–0059.
+The carried sequence now reads 0010–0012, 0014–0030, 0033–0034, 0036–0048, 0050–0059, 0064.
 The gaps are the retirements, not missing files:
 the numbers are cited across `CLAUDE.md`, `docs/`, closed issues and `Scripts/repro/`, and
 renumbering would have silently repointed every one of those citations at a different fix.
@@ -3425,6 +3425,22 @@ The change lets exactly that through: `ChFi3d_IsEndContact` (the caps only touch
 Known limits: `Modified()`/`Generated()` return the faces from before `FixStripFace`; a meeting exact only up to rounding noise (random rotations of the box) fails cleanly 18 times in 40; `BRepFilletAPI_MakeChamfer` at d = w/2 is still refused; `Generated` history for the removed top face reads as deleted.
 
 Measured against the `v4.0.0-kernel.5` asset with the three changed files override-linked (`Scripts/repro/fillet-exact-meeting-fix/README.md`): 715 box cases before and after, none regressed and none newly invalid; 16 `IsDone` false now valid with the analytic volume.
+
+## 0064-BRepBlend_Walking-Perform-reports-not-done-for-a-non-finite-range-3350.patch
+
+**A chamfer whose walk range is not finite is declined instead of killing the process** ([#3350](https://github.com/SecondMouseAU/OCCTSwift/issues/3350), upstream [OCCT#1576](https://github.com/Open-Cascade-SAS/OCCT/issues/1576) and FreeCAD#21369), `src/ModelingAlgorithms/TKFillet/BRepBlend/BRepBlend_Walking.cxx`. **Candidate: no PR, nothing reported upstream.** The number is 0064 and not 0060 because 0060 to 0063 are held by fillet branches that are not merged yet.
+
+On the OCCT#1576 model (36 edges), `BRepFilletAPI_MakeChamfer` at d = 1 on each edge one at a time is a SIGSEGV on 12 of them (edges 14 and 16 to 26) on the pinned kernel, and `IR` declines them. The stack is `Extrema_GGExtPC::Perform` under `BRepBlend_Walking::CorrectExtremityOnOneRst`, with the walk's `Pmax = -inf`, `Fleche = inf` and a NaN point. Override-linking `BRepBlend_Walking`, `ChFi3d_Builder_2` and `ChFi3d_ChBuilder` and printing at each stage gives the origin: `ExtentSpineOnCommonFace` (`ChFi3d_ChBuilder.cxx`, reached from `ExtentTwoCorner`) prints `cos=1 sin=0 dis1=1 dis2=1 d1plus=inf d2plus=inf`. For parallel spine tangents `tga = sinalpha / temp` is 0 and `d1plus = dis1 / tga` is infinity, which passes `if (d1plus > 0.)` into `Spine->SetFirstParameter(-inf)`. The ElSpine range `(-inf, +inf)` is then `wf` and `wl` in `PerformSetOfSurfOnElSpine`, and `Perform(..., Pmax, ..., Fleche)` is called with `Pmax = -inf` and `Fleche = inf`; `CorrectExtremityOnOneRst` builds an `Extrema_ExtPC` over a curve whose parameter range is infinite.
+
+The change returns from `BRepBlend_Walking::Perform` with `done = false` when `Pdep`, `Pmax` or `Fleche` is not finite. Every caller (`ChFi3d_Builder::ComputeData` and the three sibling `ComputeData` overloads) tests `IsDone()` straight after, which is the path a failed walk already takes.
+
+**Why the guard is at the walker and the extension is left alone.** Skipping the extension where `sinalpha` is 0 (`sinalpha > tolesp` before computing `tga`) removes the infinity at its origin, and was tried first: it fixes the 12 crashes and also turns the 12 edges that the pinned kernel declined (edges 1 to 12) into done chamfers that BRepCheck rejects, with a volume of -754972. The infinite range was what made those decline. The walker guard changes none of them.
+
+**What it does not do.** Edge 15 of the same model still answers a done chamfer that BRepCheck rejects and whose volume is negative (-775000), on `IR` too; that is a separate defect. A non-finite range from any other source is declined the same way, which is the intent.
+
+**Why not a bridge guard.** The range is only known inside `PerformSetOfSurfOnElSpine`; the bridge sees only edge indices, and `OCC_CATCH_SIGNALS` is inert in this build, so a bridge `catch (...)` cannot reach the signal.
+
+Measured against the `v4.0.0-kernel.6` asset with `BRepBlend_Walking.cxx` override-linked (`Scripts/repro/3350-chamfer-extrema-sigsegv/`): the 12 crashing edges report not done and the other 24 edges answer as before.
 
 # Retired patches
 

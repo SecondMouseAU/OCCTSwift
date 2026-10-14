@@ -1,0 +1,87 @@
+1568  blend base exception=22 valid=20
+1568  chamf base exception=22 valid=20
+1568  blend fix exception=22 valid=20
+1568  chamf fix exception=22 valid=20
+1421  blend base declined=10 exception=1 timeout=2 valid=18
+      timeout: edges [22, 23]
+1421  chamf base declined=12 done-invalid=2 exception=1 valid=16
+1421  blend fix declined=10 exception=1 timeout=2 valid=18
+      timeout: edges [22, 23]
+1421  chamf fix declined=12 done-invalid=2 exception=1 valid=16
+1576  blend base declined=1 done-invalid=24 exception=11
+1576  chamf base crash=12 declined=12 done-invalid=1 exception=11
+      crash: edges [14, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26]
+1576  blend fix declined=1 done-invalid=24 exception=11
+1576  chamf fix declined=24 done-invalid=1 exception=11
+1569  blend base exception=2 valid=13 valid-bopfaulty=1
+1569  chamf base done-invalid=1 exception=2 valid=13
+1569  blend fix exception=2 valid=13 valid-bopfaulty=1
+1569  chamf fix done-invalid=1 exception=2 valid=13
+1570  blend base valid=10
+1570  chamf base done-invalid=1 valid=9
+1570  blend fix valid=10
+1570  chamf fix done-invalid=1 valid=9
+1430  blend base declined=18 done-invalid=4 exception=18 timeout=6 valid=53
+      timeout: edges [8, 11, 19, 59, 62, 67]
+1430  chamf base declined=24 done-invalid=4 exception=18 valid=53
+1430  blend fix declined=18 done-invalid=4 exception=18 timeout=6 valid=53
+      timeout: edges [8, 11, 19, 59, 62, 67]
+1430  chamf fix declined=24 done-invalid=4 exception=18 valid=53
+1571  blend base done-invalid=5 exception=48 timeout=3 valid=4
+      timeout: edges [43, 57, 58]
+1571  chamf base declined=8 done-invalid=4 exception=48
+1571  blend fix done-invalid=5 exception=48 timeout=3 valid=4
+      timeout: edges [43, 57, 58]
+1571  chamf fix declined=8 done-invalid=4 exception=48
+1427  blend base declined=30 exception=25 valid=18
+1427  chamf base declined=20 done-invalid=10 exception=25 valid=18
+1427  blend fix declined=30 exception=25 valid=18
+1427  chamf fix declined=20 done-invalid=10 exception=25 valid=18
+736   blend base done-invalid=1 exception=9
+736   chamf base exception=9 valid=1
+736   blend fix done-invalid=1 exception=9
+736   chamf fix exception=9 valid=1
+737   blend base done-invalid=3 exception=4 valid=10
+737   chamf base done-invalid=2 exception=4 valid=10 valid-bopfaulty=1
+737   blend fix done-invalid=3 exception=4 valid=10
+737   chamf fix done-invalid=2 exception=4 valid=10 valid-bopfaulty=1
+691   blend base declined=1 done-invalid=3 exception=5 timeout=2 valid=14 valid-bopfaulty=1
+      timeout: edges [10, 26]
+691   chamf base declined=3 done-invalid=5 exception=5 valid=13
+691   blend fix declined=1 done-invalid=3 exception=5 timeout=2 valid=14 valid-bopfaulty=1
+      timeout: edges [10, 26]
+691   chamf fix declined=3 done-invalid=5 exception=5 valid=13
+692   blend base declined=2 done-invalid=3 exception=4 timeout=1 valid=13 valid-bopfaulty=1
+      timeout: edges [24]
+692   chamf base declined=4 done-invalid=4 exception=4 valid=12
+692   blend fix declined=2 done-invalid=3 exception=4 timeout=1 valid=13 valid-bopfaulty=1
+      timeout: edges [24]
+692   chamf fix declined=4 done-invalid=4 exception=4 valid=12
+694   blend base declined=2 exception=3 valid=16 valid-bopfaulty=2
+694   chamf base declined=2 exception=3 valid=16 valid-bopfaulty=2
+694   blend fix declined=2 exception=3 valid=16 valid-bopfaulty=2
+694   chamf fix declined=2 exception=3 valid=16 valid-bopfaulty=2
+899   blend base declined=1 done-invalid=4 exception=5 valid=14 valid-bopfaulty=2
+899   chamf base declined=3 done-invalid=5 exception=5 valid=13
+899   blend fix declined=1 done-invalid=4 exception=5 valid=14 valid-bopfaulty=2
+899   chamf fix declined=3 done-invalid=5 exception=5 valid=13
+900   blend base declined=1 done-invalid=2 exception=5 timeout=2 valid=18
+      timeout: edges [7, 8]
+900   chamf base declined=3 exception=5 timeout=2 valid=18
+      timeout: edges [7, 8]
+900   blend fix declined=1 done-invalid=2 exception=5 timeout=2 valid=18
+      timeout: edges [7, 8]
+900   chamf fix declined=3 exception=5 timeout=2 valid=18
+      timeout: edges [7, 8]
+1619  blend base declined=20 exception=20 valid=30
+1619  chamf base declined=10 done-invalid=10 exception=20 valid=30
+1619  blend fix declined=20 exception=20 valid=30
+1619  chamf fix declined=10 done-invalid=10 exception=20 valid=30
+1507  blend base declined=8 exception=26 valid=80
+1507  chamf base declined=12 exception=26 valid=76
+1507  blend fix declined=8 exception=26 valid=80
+1507  chamf fix declined=12 exception=26 valid=76
+1533  blend base declined=2 done-invalid=13 exception=20 valid=34 valid-bopfaulty=2
+1533  chamf base declined=6 done-invalid=13 exception=20 valid=30 valid-bopfaulty=2
+1533  blend fix declined=2 done-invalid=13 exception=20 valid=34 valid-bopfaulty=2
+1533  chamf fix declined=6 done-invalid=13 exception=20 valid=30 valid-bopfaulty=2

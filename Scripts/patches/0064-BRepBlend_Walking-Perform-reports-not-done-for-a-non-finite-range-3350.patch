@@ -1,0 +1,59 @@
+From: OCCTSwift ecosystem <noreply@secondmouse.au>
+Subject: [PATCH] Modeling Algorithms - BRepBlend_Walking::Perform reports not
+ done for a non-finite range instead of walking it
+
+BRepBlend_Walking::Perform takes the walk's start parameter, its end parameter and the flecheur
+Fleche, and every caller (ChFi3d_Builder::ComputeData and its siblings) tests IsDone() afterwards.
+Nothing checked that the three are finite.
+
+On the model attached to OCCT#1576 (FreeCAD#21369), BRepFilletAPI_MakeChamfer at distance 1 on any
+of 12 of its 36 edges calls it with Pmax = -inf and Fleche = inf. The origin is the extension that
+ChFi3d_ChBuilder's ExtentSpineOnCommonFace gives two chamfer spines meeting at a vertex: for spine
+tangents that are parallel (cosalpha = 1, sinalpha = 0) it computes tga = sinalpha / temp = 0 and
+d = dis / tga = +infinity, then calls Spine->SetFirstParameter(-inf). The ElSpine range
+(-inf, +inf) becomes wf and wl in ChFi3d_Builder::PerformSetOfSurfOnElSpine, and from them Pmax
+and Fleche = (wl - wf) * fleche.
+
+Inside the walk, CorrectExtremityOnOneRst builds Extrema_ExtPC(PntOnEnd, ElSpine) over that range
+with a NaN point, and Extrema_GGExtPC::Perform reads out of range: a SIGSEGV that no catch (...)
+in a bridge can reach, since OCC_CATCH_SIGNALS is inert in this build. Upstream IR declines the
+same 12 edges (IsDone() == false).
+
+The change returns from Perform with done = false when the start parameter, the end parameter or
+Fleche is not finite. That is the state every caller already handles for a walk that failed, and
+a finite range reaches exactly the code it reached before. The infinite extension itself is left
+alone: skipping it was tried and turns 12 formerly declined edges of the same model into done
+chamfers that BRepCheck rejects, which is worse than declining them.
+
+Found by instrumenting the pinned kernel with override-linked copies of BRepBlend_Walking.cxx,
+ChFi3d_Builder_2.cxx and ChFi3d_ChBuilder.cxx (Scripts/repro/3350-chamfer-extrema-sigsegv/): the
+first print is "cos=1 sin=0 dis1=1 dis2=1 d1plus=inf d2plus=inf" and everything downstream
+(Pmax=-inf, Fleche=inf, hguide first=-inf last=inf) follows from it. On the OCCT#1576 model,
+chamfer d = 1 on each of the 36 edges one at a time: 12 SIGSEGV before, 0 after; the 12 report
+IsDone() == false.
+
+Tracked as SecondMouseAU/OCCTSwift#3350.
+
+--- a/src/ModelingAlgorithms/TKFillet/BRepBlend/BRepBlend_Walking.cxx
++++ b/src/ModelingAlgorithms/TKFillet/BRepBlend/BRepBlend_Walking.cxx
+@@ -44,6 +44,7 @@
+ #include <NCollection_Array2.hxx>
+ #include <gce_MakePln.hxx>
+ #include <gp_Pnt2d.hxx>
++#include <cmath>
+ #include <math_FunctionSetRoot.hxx>
+ #include <math_Gauss.hxx>
+
+@@ -196,6 +197,12 @@
+     line->Clear();
+     doextremities = false;
+   }
++  // A walk over a non-finite range is undefined: CorrectExtremityOnOneRst would project a NaN
++  // point onto a guide of infinite parameter range. Report not done, as for any failed walk.
++  if (!std::isfinite(Pdep) || !std::isfinite(Pmax) || !std::isfinite(Fleche))
++  {
++    return;
++  }
+   tolpoint3d = Tol3d;
+   tolgui     = std::abs(TolGuide);
+   fleche     = std::abs(Fleche);

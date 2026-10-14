@@ -1,0 +1,9 @@
+0   dprobe_bt                           0x0000000104c89a68 h(int) + 52
+1   libsystem_platform.dylib            0x000000018a714144 _sigtramp + 56
+2   dprobe_bt                           0x0000000104ca6568 Extrema_GGExtPC<Adaptor3d_Curve, Extrema_CurveTool, Extrema_ExtPElC, gp_Pnt, gp_Vec, Extrema_POnCurv, NCollection_Sequence<Extrema_POnCurv>, Extrema_GGenExtPC<Adaptor3d_Cu
+3   dprobe_bt                           0x0000000104ca79c4 Extrema_GGExtPC<Adaptor3d_Curve, Extrema_CurveTool, Extrema_ExtPElC, gp_Pnt, gp_Vec, Extrema_POnCurv, NCollection_Sequence<Extrema_POnCurv>, Extrema_GGenExtPC<Adaptor3d_Cu
+4   dprobe_bt                           0x000000010506409c BRepBlend_Walking::CorrectExtremityOnOneRst(int, double, double, double, gp_Pnt const&, double&, double&, gp_Pnt&, double&) const + 568
+5   dprobe_bt                           0x0000000105060580 BRepBlend_Walking::InternalPerform(Blend_Function&, Blend_FuncInv&, double) + 3548
+6   dprobe_bt                           0x000000010505eb9c BRepBlend_Walking::Perform(Blend_Function&, Blend_FuncInv&, double, double, double, double, double, math_VectorBase<double> const&, double, bool) + 1228
+7   dprobe_bt                           0x0000000104fbc154 ChFi3d_Builder::ComputeData(opencascade::handle<ChFiDS_SurfData>&, opencascade::handle<ChFiDS_ElSpine> const&, opencascade::handle<ChFiDS_Spine> const&, opencascade::handl
+8   dprobe_bt                           0x0000000105009964 ChFi3d_ChBuilder::PerformSurf(NCollection_Sequence<opencascade::handle<ChFiDS_SurfData>>&, opencascade::handle<ChFiDS_ElSpine> const&, opencascade::handle<ChFiDS_Spine> co

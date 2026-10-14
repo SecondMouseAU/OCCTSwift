@@ -1,0 +1,61 @@
+--- BRepBlend_Walking.cxx
++++ BRepBlend_Walking.cxx
+@@ -1,3 +1,4 @@
++#include <cstdio>
+ // Copyright (c) 1993-1999 Matra Datavision
+ // Copyright (c) 1999-2024 OPEN CASCADE SAS
+ //
+@@ -183,6 +184,7 @@
+                                 const double       Fleche,
+                                 const bool         Appro)
+ {
++  fprintf(stderr,"WALK Perform Pdep=%g Pmax=%g MaxStep=%g Tol3d=%g TolGuide=%g Fleche=%g\n",Pdep,Pmax,MaxStep,Tol3d,TolGuide,Fleche);
+   done               = false;
+   iscomplete         = false;
+   comptra            = false;
+@@ -2617,6 +2619,7 @@
+                                                  double&       NewParam) const
+ {
+   const double TolAng = 0.001; // bug OCC25701
++  fprintf(stderr,"CORR idx=%d U=%g V=%g param=%g P=(%g,%g,%g) hguide first=%g last=%g\n",IndexOfRst,theU,theV,theParam,thePntOnRst.X(),thePntOnRst.Y(),thePntOnRst.Z(),hguide->FirstParameter(),hguide->LastParameter());
+ 
+   ChFiDS_ElSpine& theElSpine = *hguide;
+   if (theElSpine.NbVertices() == 0)
+--- ChFi3d_Builder_2.cxx
++++ ChFi3d_Builder_2.cxx
+@@ -1,3 +1,4 @@
++#include <cstdio>
+ // Created on: 1993-12-15
+ // Created by: Isabelle GRIGNON
+ // Copyright (c) 1993-1999 Matra Datavision
+@@ -2306,6 +2307,7 @@
+ 
+   double wf        = Guide.FirstParameter();
+   double wl        = Guide.LastParameter();
++  fprintf(stderr,"PSOES wf=%g wl=%g periodic=%d spineFirst=%g spineLast=%g nbed=%d\n",wf,wl,(int)Guide.IsPeriodic(),Spine->FirstParameter(),Spine->LastParameter(),Spine->NbEdges());
+   double locfleche = (wl - wf) * fleche;
+   double wfsav = wf, wlsav = wl;
+   if (!Guide.IsPeriodic())
+@@ -3341,6 +3343,7 @@
+   NCollection_List<occ::handle<ChFiDS_ElSpine>>::Iterator ILES(ll);
+   for (; ILES.More(); ILES.Next())
+   {
++    fprintf(stderr,"PES before first=%g last=%g\n",ILES.Value()->FirstParameter(),ILES.Value()->LastParameter());
+     ChFi3d_PerformElSpine(ILES.ChangeValue(), Spine, myConti, tolesp);
+   }
+   if (Spine->Mode() == ChFiDS_ConstThroatWithPenetrationChamfer)
+--- ChFi3d_ChBuilder.cxx
++++ ChFi3d_ChBuilder.cxx
+@@ -1,3 +1,4 @@
++#include <cstdio>
+ // Created on: 1995-04-26
+ // Created by: Flore Lantheaume
+ // Copyright (c) 1995-1999 Matra Datavision
+@@ -151,6 +152,7 @@
+     d2plus = dis2 / tga2;
+   }
+ 
++  fprintf(stderr,"EXT cos=%.17g sin=%.17g dis1=%g dis2=%g d1plus=%g d2plus=%g first1=%d first2=%d\n",cosalpha,sinalpha,dis1,dis2,d1plus,d2plus,(int)isfirst1,(int)isfirst2);
+   // extension by the calculated distance
+   if (d1plus > 0.)
+   {
