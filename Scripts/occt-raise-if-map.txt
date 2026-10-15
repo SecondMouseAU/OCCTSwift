@@ -116,7 +116,7 @@
 # totals: inherited-live    2587 site(s) in 2587 class(es)
 # totals: inline-dead-at-depth  9911 site(s) in  100 class(es)
 #
-# member attribution: 332 of 5040 row(s) carry at least one <file-scope> site, 265 name no member at all
+# member attribution: 332 of 5040 row(s) carry at least one <file-scope> site, 264 name no member at all
 #
 # packages examined: 404
 # packages: AIS,APIHeaderSection,Adaptor2d,Adaptor3d,AdvApp2Var,AdvApprox,AppBlend,AppCont,AppDef,AppParCurves,AppStd,AppStdL
