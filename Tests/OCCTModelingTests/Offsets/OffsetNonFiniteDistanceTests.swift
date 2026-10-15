@@ -35,6 +35,7 @@ struct OffsetNonFiniteDistanceTests {
         }
         #expect(box.offset(by: 1.0, tolerance: .nan, joinType: .arc) == nil)
         #expect(box.offset(by: 1.0, tolerance: .infinity, joinType: .arc) == nil)
+        #expect(box.offset(by: 1.0, tolerance: -.infinity, joinType: .arc) == nil)
     }
 
     @Test func simpleOffsetAndShellRefuseNonFiniteDistance() {

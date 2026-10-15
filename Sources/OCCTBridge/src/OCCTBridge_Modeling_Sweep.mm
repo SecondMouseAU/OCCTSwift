@@ -2802,6 +2802,7 @@ OCCTShapeRef OCCTShapeShell(OCCTShapeRef shape, double thickness)
 {
   if (!occtShapeIsPresent(shape))
     return nullptr;
+  // #3455: a NaN or infinite thickness is not a shell operation; refuse it before OCCT sees it.
   if (!std::isfinite(thickness))
     return nullptr;
   try
