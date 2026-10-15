@@ -21,6 +21,10 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### A chamfer with parallel spine tangents is declined instead of crashing, and an invalid chamfer is not returned (#3350)
+
+`Shape.chamferedWithFullHistory(distance:edges:)` (and the other chamfer entry points) no longer terminate the process when two chamfered edges leave a vertex along one direction. OCCT's `ChFi3d_ChBuilder` extended the spines by `dis / 0`, and the infinite range reached `Extrema_GGExtPC` as an uncatchable SIGSEGV; carried kernel patch `0065` treats a non-finite extension as none, makes `BRepBlend_Walking::Perform` report "not done" for a non-finite range, and makes `BRepFilletAPI_MakeChamfer::Build` refuse a result that is not a valid solid, so the call returns `nil`. On the OCCT#1576 model (FreeCAD#21369), 12 of 36 edges crashed at distance 1 and all 36 now return `nil`. The fix reaches consumers with the next kernel rebuild that pins `0065`.
+
 ### An arc-join thick solid that removes the floor of a blind hole is no longer inside out (#3464)
 
 `Shape.thickSolid(facesToRemove:offset:tolerance:joinType:)` with `.arc` on a block with blind holes, removing a hole floor, returned an invalid, inside-out solid in every build since carried patch `0053` fixed the face order, and in a fraction of builds before it (upstream OCCT#1600). Carried patch `0066` orients the splits of the cap against the offset faces in `BRepOffset_MakeLoops::BuildOnContext`, so the result no longer depends on which face `BRepTools_Quilt` sees first. Live at the next kernel repin.
