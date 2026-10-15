@@ -1168,6 +1168,12 @@ int32_t OCCTDocumentSaveOCAF(OCCTDocumentRef doc, const char* path);
 /// The outStatus receives PCDM_ReaderStatus (0=OK).
 OCCTDocumentRef OCCTDocumentLoadOCAF(const char* path, int32_t* outStatus);
 
+/// Open an OCAF file with the pre-open guard of OCCTDocumentLoadOCAF bypassed (#3330).
+///
+/// Exists so a test can reach the kernel's own readers with a malformed file. Against a kernel
+/// without carried patch 0069 that is an uncatchable SIGSEGV; there is no Swift wrapper.
+OCCTDocumentRef OCCTDocumentLoadOCAFUnguarded(const char* path, int32_t* outStatus);
+
 /// Save current OCAF document in-place (to previously saved path).
 /// Returns PCDM_StoreStatus (0=OK), or -1 if not previously saved.
 int32_t OCCTDocumentSaveOCAFInPlace(OCCTDocumentRef doc);
