@@ -1,0 +1,81 @@
+From: OCCTSwift ecosystem <noreply@secondmouse.au>
+Subject: [PATCH] Application Framework - OCAF binary readers report a damaged file through
+ the reader status instead of dereferencing a null or spinning
+
+TDocStd_Application::Open on a file that is not a well-formed binary OCAF document faulted in
+three places, all reached with nothing but a damaged file:
+
+ - BinLDrivers_DocumentRetrievalDriver::Read guards its first loop with aHeaderData.IsNull() and
+   then reads aHeaderData->StorageVersion() unconditionally. A file no storage reader recognises
+   (empty, text) leaves the Storage_Data null, so the header is null: SIGSEGV.
+ - PCDM_ReadWriter::FileFormat(filename) reads td.Types()->Value(1) when the header holds no
+   FILE_FORMAT line. Types() returns a new sequence, empty when the types section did not read,
+   and Value(1) of an empty sequence reads past it: SIGSEGV.
+ - FSD_BinaryFile::ReadCompleteInfo loops while the stream is good and the position is before the
+   end of the data section, and consumes input only in the branches for the four section starts.
+   A header whose offsets name no section start (truncated or overwritten) leaves the position
+   where it is, so the loop never ends.
+
+A null header is now reported as PCDM_RS_FormatFailure with a Message_Fail line, the same status
+and channel the "file has no format version" branch right after it uses. An empty types table
+leaves the format empty, which the caller already treats as an unrecognised file. The section
+loop ends at a position no section starts at.
+
+Measured on 1586 generated files (prefixes, header plus 0xFF or 0x00, byte flips, wrong
+extension) of saved BinOcaf and BinXCAF documents: 137 SIGSEGVs before, 0 after.
+
+Tracked as SecondMouseAU/OCCTSwift#3330, follow-up to #3318.
+
+---
+diff --git a/src/ApplicationFramework/TKBinL/BinLDrivers/BinLDrivers_DocumentRetrievalDriver.cxx b/src/ApplicationFramework/TKBinL/BinLDrivers/BinLDrivers_DocumentRetrievalDriver.cxx
+--- a/src/ApplicationFramework/TKBinL/BinLDrivers/BinLDrivers_DocumentRetrievalDriver.cxx
++++ b/src/ApplicationFramework/TKBinL/BinLDrivers/BinLDrivers_DocumentRetrievalDriver.cxx
+@@ -144,6 +144,14 @@
+         theDoc->SetModifications(aLine.Token(" ", 2).IntegerValue());
+       }
+     }
++  }
++
++  // A file the storage reader did not recognise (empty, text, XML) has no header at all.
++  if (aHeaderData.IsNull())
++  {
++    myMsgDriver->Send(aMethStr + "error: file has no header", Message_Fail);
++    myReaderStatus = PCDM_RS_FormatFailure;
++    return;
+   }
+
+   // 1.a Version of writer
+diff --git a/src/ApplicationFramework/TKCDF/PCDM/PCDM_ReadWriter.cxx b/src/ApplicationFramework/TKCDF/PCDM/PCDM_ReadWriter.cxx
+--- a/src/ApplicationFramework/TKCDF/PCDM/PCDM_ReadWriter.cxx
++++ b/src/ApplicationFramework/TKCDF/PCDM/PCDM_ReadWriter.cxx
+@@ -130,7 +130,12 @@
+     {
+       Storage_TypeData td;
+       td.Read(theFileDriver);
+-      theFormat = td.Types()->Value(1);
++      // A header with no FILE_FORMAT line and no readable types table leaves the table empty.
++      const occ::handle<NCollection_HSequence<TCollection_AsciiString>> aTypes = td.Types();
++      if (!aTypes.IsNull() && !aTypes->IsEmpty())
++      {
++        theFormat = aTypes->Value(1);
++      }
+     }
+   }
+   catch (Standard_Failure const&)
+diff --git a/src/FoundationClasses/TKernel/FSD/FSD_BinaryFile.cxx b/src/FoundationClasses/TKernel/FSD/FSD_BinaryFile.cxx
+--- a/src/FoundationClasses/TKernel/FSD/FSD_BinaryFile.cxx
++++ b/src/FoundationClasses/TKernel/FSD/FSD_BinaryFile.cxx
+@@ -740,9 +740,11 @@
+         }
+       }
+     }
+-    else if (aPos == aHeaderPos.bdata)
++    else
+     {
+-      //
++      // The data section, or a position no section of the header starts at (a damaged header):
++      // nothing is consumed here, so looping again would never end.
++      break;
+     }
+   }
+

@@ -3,6 +3,8 @@ import Testing
 
 @testable import OCCTSwift
 
+/// A circular spine with an on-axis profile returns nil instead of crashing the process.
+///
 /// #3449: `BRepFill_TrimSurfaceTool::IntersectWith` compares the length of the two intersection
 /// sequences with a `_Raise_if` macro, which a Release (`No_Exception`) kernel empties, and
 /// then indexes the second sequence by the first's length. On a circular spine with a profile that

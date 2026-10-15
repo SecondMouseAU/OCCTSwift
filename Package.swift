@@ -47,7 +47,7 @@ let useLocalXCFramework: Bool = {
         atPath: occtPackageDir + "/Libraries/OCCT.xcframework/Info.plist")
 }()
 
-// OCCT V8.0.1 plus the forty-seven carried patches are documented in Scripts/patches/README.md
+// OCCT V8.0.1 plus the forty-eight carried patches are documented in Scripts/patches/README.md
 // (patch list, verification status, and CI coverage gaps for maintainers).
 let occtTarget: Target =
     isWASI
@@ -277,8 +277,8 @@ let occtTarget: Target =
         // which is what they were built to do; if a later asset repeats either stray the finding comes
         // back rather than staying suppressed.
         //
-        // The pinned asset lacks two of them, 0064 and 0068: it holds forty-five and Scripts/patches/ holds forty-seven,
-        // so 0064 and 0068 are exercised by no CI job until the next repin, and the rows for 0053 through 0059 below are history in the way the rows for 0044
+        // The pinned asset lacks three of them, 0064, 0068 and 0069: it holds forty-five and Scripts/patches/ holds forty-eight,
+        // so 0064, 0068 and 0069 are exercised by no CI job until the next repin, and the rows for 0053 through 0059 below are history in the way the rows for 0044
         // through 0052 became at v4.0.0-kernel.4. kernel.6 also dropped 0031 (retired, #3065), which
         // is the one difference from kernel.5 besides 0058 and 0059.
         // If you rebuild and the checksum does not match the value below, that is a real difference to
@@ -324,8 +324,8 @@ let occtTarget: Target =
         // wrong: InitializeMissingParameters is also the REPAIR that re-sets DirectFaces on an actor a
         // STEPCAFControl_Reader has left with empty OperationsFlags, which is #280's exact mechanism.
         // kernel-integration.yml caught it on main. See Scripts/patches/README.md's retired 0035 entry.
-        // Scripts/patches/ holds forty-seven patches and the pinned asset holds forty-five of them,
-        // enumerated above. `ls Scripts/patches/*.patch | wc -l` answers 47 against a list of 47,
+        // Scripts/patches/ holds forty-eight patches and the pinned asset holds forty-five of them,
+        // enumerated above. `ls Scripts/patches/*.patch | wc -l` answers 48 against a list of 48,
         // and there is no divergence. The v4.0.0-kernel.4 rebuild closed the divergence that 0044 had
         // opened and that 0045 through 0052 widened, the v4.0.0-kernel.5 rebuild closed the one that
         // 0053 through 0057 opened, and the v4.0.0-kernel.6 rebuild closed the one that 0058 and 0059
@@ -515,6 +515,14 @@ let occtTarget: Target =
         //         on a circular spine with a profile leaving its axis). NOT in
         //         v4.0.0-kernel.6; EvolvedCircularSpineTests is gated on OCCTSWIFT_LOCAL=1
         //         until the next repin (#3449).
+        //
+        //   0069  OCAF binary readers report a damaged file through the reader status: a null
+        //         header in BinLDrivers_DocumentRetrievalDriver::Read, an empty types table in
+        //         PCDM_ReadWriter::FileFormat and a section loop in FSD_BinaryFile that never
+        //         ended on a header naming no section (137 SIGSEGVs of 1586 generated files).
+        //         NOT in v4.0.0-kernel.6; the asset lacks it, so OCAFMalformedKernelReadTests is
+        //         gated on OCCTSWIFT_LOCAL=1 until the next repin and the #3318 bridge guard
+        //         stays (#3330).
         //
         // 0043 (#2827, BRepGProp_Gauss keeps the by-plane mass) was the one outstanding before it,
         // and it went the other way, which is the comparison worth keeping beside 0044: carried
