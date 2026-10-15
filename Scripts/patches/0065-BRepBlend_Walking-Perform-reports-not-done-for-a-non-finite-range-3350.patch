@@ -1,0 +1,135 @@
+From: OCCTSwift ecosystem <noreply@secondmouse.au>
+Subject: [PATCH] Modeling Algorithms - a chamfer with parallel spine tangents is
+ declined: no infinite extension, no walk over a non-finite range, no invalid result
+
+BRepFilletAPI_MakeChamfer on the model attached to OCCT#1576 (FreeCAD#21369) at distance 1 on any
+of 12 of its 36 edges is a SIGSEGV in Extrema_GGExtPC::Perform, under
+BRepBlend_Walking::CorrectExtremityOnOneRst, with the walk's Pmax = -inf, Fleche = inf and a NaN
+point. Three changes, one defect chain.
+
+1. ChFi3d_ChBuilder.cxx, ExtentSpineOnCommonFace (reached from ExtentTwoCorner). It extends the two
+   chamfer spines meeting at a vertex by dis / tga, tga = sinalpha / (cosalpha + dis2 / dis1). For
+   parallel spine tangents (cosalpha = 1, sinalpha = 0) tga is 0 and the extension is +infinity,
+   which passes "if (d1plus > 0.)" into Spine->SetFirstParameter(-inf). A non-finite extension is
+   now no extension.
+
+2. BRepBlend_Walking.cxx, Perform. The infinite ElSpine range becomes wf and wl in
+   ChFi3d_Builder::PerformSetOfSurfOnElSpine and from them Pmax and Fleche; CorrectExtremityOnOneRst
+   then builds Extrema_ExtPC over that range with a NaN point. OCC_CATCH_SIGNALS is inert in this
+   build, so no bridge catch reaches the signal. Perform now returns with done = false when the
+   start, the end or Fleche is not finite, the state every caller (ComputeData and its siblings)
+   already tests with IsDone().
+
+3. BRepFilletAPI_MakeChamfer.cxx, Build. With only the first change, the 12 edges that crashed are
+   declined, but edges 1 to 12, which the pinned kernel declined because their infinite range made
+   the walk fail, are built as BRepCheck-invalid shapes of negative volume (-754972), like edge
+   15's -775000 on the pinned kernel. Build now reports a result that is not a valid solid,
+   or does not become valid under the SameParameter pass callers apply next, as not done, which is
+   what BRepFilletAPI_MakeFillet::Build does in the fillet series (the same isValidResult test).
+
+Found by instrumenting the pinned kernel with override-linked copies of BRepBlend_Walking.cxx,
+ChFi3d_Builder_2.cxx and ChFi3d_ChBuilder.cxx (Scripts/repro/3350-chamfer-extrema-sigsegv/): the
+first print is "cos=1 sin=0 dis1=1 dis2=1 d1plus=inf d2plus=inf" and everything downstream
+(Pmax=-inf, Fleche=inf, hguide first=-inf last=inf) follows from it. On the OCCT#1576 model,
+chamfer d = 1 on each of the 36 edges one at a time: 12 SIGSEGV before, all 36 declined after,
+including edge 15, which was a done chamfer of volume -775000 that BRepCheck rejects.
+
+Tracked as SecondMouseAU/OCCTSwift#3350.
+
+diff --git a/src/ModelingAlgorithms/TKFillet/BRepBlend/BRepBlend_Walking.cxx b/src/ModelingAlgorithms/TKFillet/BRepBlend/BRepBlend_Walking.cxx
+--- a/src/ModelingAlgorithms/TKFillet/BRepBlend/BRepBlend_Walking.cxx
++++ b/src/ModelingAlgorithms/TKFillet/BRepBlend/BRepBlend_Walking.cxx
+@@ -44,6 +44,7 @@
+ #include <NCollection_Array2.hxx>
+ #include <gce_MakePln.hxx>
+ #include <gp_Pnt2d.hxx>
++#include <cmath>
+ #include <math_FunctionSetRoot.hxx>
+ #include <math_Gauss.hxx>
+ 
+@@ -196,6 +197,12 @@
+     line->Clear();
+     doextremities = false;
+   }
++  // A walk over a non-finite range is undefined: CorrectExtremityOnOneRst would project a NaN
++  // point onto a guide of infinite parameter range. Report not done, as for any failed walk.
++  if (!std::isfinite(Pdep) || !std::isfinite(Pmax) || !std::isfinite(Fleche))
++  {
++    return;
++  }
+   tolpoint3d = Tol3d;
+   tolgui     = std::abs(TolGuide);
+   fleche     = std::abs(Fleche);
+diff --git a/src/ModelingAlgorithms/TKFillet/BRepFilletAPI/BRepFilletAPI_MakeChamfer.cxx b/src/ModelingAlgorithms/TKFillet/BRepFilletAPI/BRepFilletAPI_MakeChamfer.cxx
+--- a/src/ModelingAlgorithms/TKFillet/BRepFilletAPI/BRepFilletAPI_MakeChamfer.cxx
++++ b/src/ModelingAlgorithms/TKFillet/BRepFilletAPI/BRepFilletAPI_MakeChamfer.cxx
+@@ -15,6 +15,10 @@
+ // commercial license or contractual agreement.
+ 
+ #include <BRepFilletAPI_MakeChamfer.hxx>
++#include <BRepBuilderAPI_Copy.hxx>
++#include <BRepCheck_Analyzer.hxx>
++#include <BRepLib.hxx>
++#include <Precision.hxx>
+ #include <ChFiDS_Spine.hxx>
+ #include <TopExp_Explorer.hxx>
+ #include <TopoDS_Edge.hxx>
+@@ -271,11 +275,27 @@
+ }
+ 
+ //=================================================================================================
++
++namespace
++{
++//! True if the shape is valid, or becomes valid under the SameParameter pass callers apply next.
++bool isValidChamferResult(const TopoDS_Shape& theShape)
++{
++  if (BRepCheck_Analyzer(theShape).IsValid())
++  {
++    return true;
++  }
++  BRepBuilderAPI_Copy aCopy(theShape);
++  BRepLib::SameParameter(aCopy.Shape(), Precision::Confusion(), true);
++  return BRepCheck_Analyzer(aCopy.Shape()).IsValid();
++}
++} // namespace
+ 
+ void BRepFilletAPI_MakeChamfer::Build(const Message_ProgressRange& /*theRange*/)
+ {
+   myBuilder.Compute();
+-  if (myBuilder.IsDone())
++  // A result that is not a valid solid is a failure, as for BRepFilletAPI_MakeFillet.
++  if (myBuilder.IsDone() && isValidChamferResult(myBuilder.Shape()))
+   {
+     Done();
+     myShape = myBuilder.Shape();
+diff --git a/src/ModelingAlgorithms/TKFillet/ChFi3d/ChFi3d_ChBuilder.cxx b/src/ModelingAlgorithms/TKFillet/ChFi3d/ChFi3d_ChBuilder.cxx
+--- a/src/ModelingAlgorithms/TKFillet/ChFi3d/ChFi3d_ChBuilder.cxx
++++ b/src/ModelingAlgorithms/TKFillet/ChFi3d/ChFi3d_ChBuilder.cxx
+@@ -29,6 +29,7 @@
+ #include <ChFi3d.hxx>
+ #include <ChFi3d_Builder_0.hxx>
+ #include <ChFi3d_ChBuilder.hxx>
++#include <cmath>
+ #include <ChFiDS_ChamfSpine.hxx>
+ #include <ChFiDS_CircSection.hxx>
+ #include <ChFiDS_SurfData.hxx>
+@@ -149,7 +150,18 @@
+   {
+     tga2   = sinalpha / temp;
+     d2plus = dis2 / tga2;
++  }
++
++  // Parallel tangents (sinalpha = 0) have no crossing point: tga is 0 and the extension
++  // dis / tga is infinite. A non-finite extension is no extension.
++  if (!std::isfinite(d1plus))
++  {
++    d1plus = 0.;
+   }
++  if (!std::isfinite(d2plus))
++  {
++    d2plus = 0.;
++  }
+ 
+   // extension by the calculated distance
+   if (d1plus > 0.)

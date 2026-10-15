@@ -1,0 +1,4 @@
+EXT cos=1 sin=0 dis1=1 dis2=1 d1plus=inf d2plus=inf first1=1 first2=1
+PES before first=-inf last=459.527
+PSOES wf=-inf wl=459.527 periodic=0 spineFirst=-inf spineLast=459.527 nbed=12
+WALK Perform Pdep=12.8451 Pmax=-inf MaxStep=1.9147 Tol3d=0.0001 TolGuide=0.0001 Fleche=inf

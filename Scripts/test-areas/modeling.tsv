@@ -3,6 +3,7 @@ Tests/OCCTModelingTests/AAGTests.swift	Tests/OCCTModelingTests/FeatureRecognitio
 Tests/OCCTModelingTests/AdvancedModelingTests.swift	Tests/OCCTModelingTests/AdvancedModelingTests.swift	(stays)	#2654	fillet, draft, shell, pipe shell, wire curve and surface-construction grab bag; spans five areas
 Tests/OCCTModelingTests/BiTgteBlendTests.swift	Tests/OCCTModelingTests/Blends/BiTgteBlendTests.swift	Blends	#2666	BiTgte_Blend on box edges
 Tests/OCCTModelingTests/Blends/BlendExactHalfSanityTests.swift	Tests/OCCTModelingTests/Blends/BlendExactHalfSanityTests.swift	Blends	-	chamfer and fillet at an exact-half tie answer nil, not the unchanged input or two solids
+Tests/OCCTModelingTests/Blends/ChamferParallelSpineTangentTests.swift	Tests/OCCTModelingTests/Blends/ChamferParallelSpineTangentTests.swift	Blends	-	chamfer at a vertex with parallel spine tangents is declined, not a crash
 Tests/OCCTModelingTests/BooleanCheckTests.swift	Tests/OCCTModelingTests/Booleans/BooleanCheckTests.swift	Booleans	#2666	pre-validation of boolean operands against the booleans
 Tests/OCCTModelingTests/BooleanExpansionTests.swift	Tests/OCCTModelingTests/Booleans/BooleanExpansionTests.swift	Booleans	#2687	section with tolerance, multi split, cut with history, defeature on boolean entry points
 Tests/OCCTModelingTests/BooleanFullHistoryTests.swift	Tests/OCCTModelingTests/History/BooleanFullHistoryTests.swift	History	#2697	union, subtract, intersect and split with per-input full history

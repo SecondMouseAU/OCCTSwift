@@ -277,8 +277,13 @@ let occtTarget: Target =
         // which is what they were built to do; if a later asset repeats either stray the finding comes
         // back rather than staying suppressed.
         //
-        // The pinned asset lacks four of them, 0064, 0066, 0068 and 0069: it holds forty-five and Scripts/patches/ holds forty-nine,
-        // so 0064, 0066, 0068 and 0069 are exercised by no CI job until the next repin, and the rows for 0053 through 0059 below are history in the way the rows for 0044
+        // The pinned asset lacks five of them: it holds forty-five and Scripts/patches/ holds fifty.
+        // They are 0064 (#3335), 0065 (#3350, a chamfer with parallel spine tangents), 0066 (#3464),
+        // 0068 (#3449) and 0069 (#3330), carried after v4.0.0-kernel.6 was built, so no CI job that
+        // resolves the asset exercises them until a rebuild pins them;
+        // ChamferParallelSpineTangentTests (#3350) runs in kernel-integration.yml, gated on
+        // OCCTSWIFT_LOCAL=1, until a rebuild carries 0065. The rows for 0053 through 0059 below are
+        // history in the way the rows for 0044
         // through 0052 became at v4.0.0-kernel.4. kernel.6 also dropped 0031 (retired, #3065), which
         // is the one difference from kernel.5 besides 0058 and 0059.
         // If you rebuild and the checksum does not match the value below, that is a real difference to
@@ -324,9 +329,11 @@ let occtTarget: Target =
         // wrong: InitializeMissingParameters is also the REPAIR that re-sets DirectFaces on an actor a
         // STEPCAFControl_Reader has left with empty OperationsFlags, which is #280's exact mechanism.
         // kernel-integration.yml caught it on main. See Scripts/patches/README.md's retired 0035 entry.
-        // Scripts/patches/ holds forty-nine patches and the pinned asset holds forty-five of them,
-        // enumerated above. `ls Scripts/patches/*.patch | wc -l` answers 49 against a list of 49,
-        // and there is no divergence. The v4.0.0-kernel.4 rebuild closed the divergence that 0044 had
+        // Scripts/patches/ holds fifty patches and the pinned asset holds forty-five of them,
+        // enumerated above. `ls Scripts/patches/*.patch | wc -l` answers 50 against a list of 50,
+        // and the pinned asset lacks five of them: 0064 (#3335), 0065 (#3350), 0066 (#3464),
+        // 0068 (#3449) and 0069 (#3330), which no CI job exercises until a rebuild pins them. The
+        // v4.0.0-kernel.4 rebuild closed the divergence that 0044 had
         // opened and that 0045 through 0052 widened, the v4.0.0-kernel.5 rebuild closed the one that
         // 0053 through 0057 opened, and the v4.0.0-kernel.6 rebuild closed the one that 0058 and 0059
         // opened. The rows that follow are kept as the record of what each patch does and which
@@ -943,7 +950,12 @@ let wasmExcludedTestFiles: [String: [String]] = [
         "Concurrency/SerialLockThreadSafetyTests.swift",
     ],
     "OCCTMiscTests": ["ConstructionContext/ConstructionContextConcurrencyTests.swift"],
-    "OCCTModelingTests": ["BOPAlgo/SelfIntersectionCheckTests.swift"],
+    // `ChamferParallelSpineTangentTests` spawns a child test runner with `Process`, which does not
+    // exist on wasm, so the file does not compile there (#3350).
+    "OCCTModelingTests": [
+        "BOPAlgo/SelfIntersectionCheckTests.swift",
+        "Blends/ChamferParallelSpineTangentTests.swift",
+    ],
     "OCCTShapeHealingTests": ["ShapeAnalysis/SelfIntersectionAnalysisTests.swift"],
     // One concurrency file. The seven that read a `.brep` out of `Fixtures/` by `#filePath` ran
     // here once, and failed with `.importFailed` because `#filePath` is an absolute HOST path and

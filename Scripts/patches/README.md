@@ -21,7 +21,7 @@ retired 2026-09-02 (superseded by upstream's own fix, not shipped in our pin), a
 2026-09-20 (it reintroduced #280; see its [Retired patches](#retired-patches) entry), and
 `0031` retired 2026-10-10 at the `v4.0.0-kernel.6` repin (#3065: the supported pattern is one
 adaptor per worker, so the lock it added is not needed).
-The carried sequence now reads 0010–0012, 0014–0030, 0033–0034, 0036–0048, 0050–0059, 0064, 0066, 0068, 0069.
+The carried sequence now reads 0010–0012, 0014–0030, 0033–0034, 0036–0048, 0050–0059, 0064–0066, 0068–0069.
 The gaps are the retirements, not missing files:
 the numbers are cited across `CLAUDE.md`, `docs/`, closed issues and `Scripts/repro/`, and
 renumbering would have silently repointed every one of those citations at a different fix.
@@ -3439,6 +3439,26 @@ Measured by override-link of the patched object into a copy of the `v4.0.0-kerne
 **Upstream checked 2026-10-14:** OCCT#1619 is open with no PR and the loop is unchanged on master. **Not yet filed upstream**; it needs a GTest that fillets the model above.
 
 **Retire** once the bundled OCCT includes this fix.
+
+## 0065-BRepBlend_Walking-Perform-reports-not-done-for-a-non-finite-range-3350.patch
+
+**A chamfer with parallel spine tangents is declined instead of killing the process, and a chamfer that is not a valid solid is not returned** ([#3350](https://github.com/SecondMouseAU/OCCTSwift/issues/3350), upstream [OCCT#1576](https://github.com/Open-Cascade-SAS/OCCT/issues/1576) and FreeCAD#21369), `src/ModelingAlgorithms/TKFillet/` (`BRepBlend/BRepBlend_Walking.cxx`, `ChFi3d/ChFi3d_ChBuilder.cxx`, `BRepFilletAPI/BRepFilletAPI_MakeChamfer.cxx`). **Candidate: no PR, nothing reported upstream.** The number is 0065: 0060 to 0063 are held by fillet branches that are not merged yet and 0064 is #3335's (#3460).
+
+On the OCCT#1576 model (36 edges), `BRepFilletAPI_MakeChamfer` at d = 1 on each edge one at a time is a SIGSEGV on 12 of them (edges 14 and 16 to 26) on the pinned kernel. The stack is `Extrema_GGExtPC::Perform` under `BRepBlend_Walking::CorrectExtremityOnOneRst`, with the walk's `Pmax = -inf`, `Fleche = inf` and a NaN point. Override-linking `BRepBlend_Walking`, `ChFi3d_Builder_2` and `ChFi3d_ChBuilder` and printing at each stage gives the origin: `ExtentSpineOnCommonFace` (`ChFi3d_ChBuilder.cxx`, reached from `ExtentTwoCorner`) prints `cos=1 sin=0 dis1=1 dis2=1 d1plus=inf d2plus=inf`. For parallel spine tangents `tga = sinalpha / temp` is 0 and `d1plus = dis1 / tga` is infinity, which passes `if (d1plus > 0.)` into `Spine->SetFirstParameter(-inf)`. The ElSpine range `(-inf, +inf)` is then `wf` and `wl` in `PerformSetOfSurfOnElSpine`, and `Perform(..., Pmax, ..., Fleche)` is called with `Pmax = -inf` and `Fleche = inf`.
+
+Three changes, one defect chain:
+
+1. `ExtentSpineOnCommonFace`: a non-finite `d1plus` or `d2plus` is no extension (the origin).
+2. `BRepBlend_Walking::Perform`: returns with `done = false` when `Pdep`, `Pmax` or `Fleche` is not finite. Every caller (`ChFi3d_Builder::ComputeData` and its three sibling overloads) tests `IsDone()` straight after, which is the path a failed walk already takes. This stops the whole crash class at the walker whatever produced the range.
+3. `BRepFilletAPI_MakeChamfer::Build`: a result that is not a valid solid, or does not become valid under the `SameParameter` pass callers apply next, is reported not done. This is `BRepFilletAPI_MakeFillet::Build`'s `isValidResult` test from the fillet series, without the fallback.
+
+**Why all three.** Change 1 alone (measured, `results/edges-d1.txt`, column `p_novalid`) removes the 12 crashes and also turns edges 1 to 12, which the pinned kernel declines because the infinite range makes the walk fail, into done chamfers that BRepCheck rejects, with volume -754972: the same kind of result as edge 15's -775000 on the pinned kernel, which is what change 3 refuses. Change 3 alone leaves the crash. Each of 1 and 2 alone, with 3, declines all 36 edges of this model; they are kept together because 1 removes the cause and 2 holds for any other source of a non-finite range.
+
+**Measured.** Per-edge, d = 1, raw `BRepFilletAPI_MakeChamfer` as DRAW's `chamf` sets it up, against the `v4.0.0-kernel.6` asset with the three files override-linked: 12 SIGSEGV become declined and edge 15 (done, invalid, volume -775000) becomes declined; the other 23 rows were declined and are. The sweep over every reproducer model of `Scripts/repro/fillet-open-set/`, fillet and chamfer, every edge, at r = 1.0 and 0.5 (`results/sweep-r1.0-base-vs-patched.txt`, `results/sweep-r0.5-base-vs-patched.txt`): no `blend` group changes, and every `chamf` group that changes moves `done-invalid` cases to `declined` and nothing else (the `valid` and `valid-bopfaulty` counts are equal on both sides in all 36 groups), apart from 1576's 12 crashes becoming declined.
+
+**What it does not do.** A chamfer that BRepCheck rejects is no longer returned from `BRepFilletAPI_MakeChamfer` by any caller, including ones that would have repaired it themselves; a caller that depended on getting an invalid shape back to heal it gets "not done" now. The Swift bridge already refuses an invalid blend result (`occtBlendResultIsValid`, #3200), so no Swift API call changes by change 3. `OCCT's own chamfer test grid` (`tests/chamfer`) was not available to run here, and an earlier attempt to fail every invalid chamfer is reported to have broken four of its sequence cases (OCCT#1177 evaluation); this change keeps the series' `SameParameter` allowance for exactly that reason, but it has not been run against them.
+
+**Why not a bridge guard.** The range is only known inside `PerformSetOfSurfOnElSpine`; the bridge sees only edge indices, and `OCC_CATCH_SIGNALS` is inert in this build, so a bridge `catch (...)` cannot reach the signal.
 
 ## 0066-BRepOffset_MakeLoops-cap-splits-oriented-against-the-offset-faces-3464.patch
 
