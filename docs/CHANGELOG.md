@@ -30,6 +30,10 @@ Closes #3367
 
 Refs #3449 (measured and documented, not fixed; left open)
 
+### Fillets whose ends meet in the merge no longer crash the process (#3335)
+
+Fillets whose ends meet in the merge no longer crash the process (#3335). `Shape.filleted(edges:radius:)` on such a model died with an uncatchable SIGSEGV from a use-after-free in `CorrectUnclosedWire`; carried patch `0064` fixes it, so the call returns a shape or `nil`.
+
 ### Evolved builders refuse the inputs that never returned and the empty shapes they answered (#3368)
 
 `Shape.evolvedAdvanced(spine:profile:axeProf: false)` no longer hangs on a profile through the centre of a circular spine (OCCT's `BRepFill::Axe` leaves the frame NaN there and the sweep spun in `Geom_TrimmedCurve::SetTrim`); it returns `nil`, as does `Shape.evolved(spineFace:profileWire:axis...)` for a NaN, infinite or zero axis. `evolved`, `evolvedAdvanced`, `evolved(spineFace:)` and `advancedEvolved` return `nil` instead of an empty compound when the profile offsets the spine to nothing or lies in the spine's plane. The profile placement rule (Y lateral offset, Z height, X dropped), that only the arc join is implemented, and that `advancedEvolved` is a different algorithm from `evolved` are documented.

@@ -126,13 +126,19 @@ mistake the rest of this page is about.
 
 ### The xcframework
 
-`Scripts/patches/` holds forty-five patches, of which the pinned asset carries forty-five. **These
+`Scripts/patches/` holds forty-six patches, of which the pinned asset carries forty-five. **These
 are the counts `CLAUDE.md` used to restate and no longer does** (#2954); both are derived from
 `Scripts/patches/` and `Package.swift` by `check-inventory-prose.py`, which fails the PR that lets
-this page and the tree disagree. The v4.0.0-kernel.6 asset `Package.swift` pins lacks none of them, so **there is no native
-divergence**, per [Pinned kernel patch check](../policies/pinned-kernel-patch-check.md). It was
+this page and the tree disagree. The v4.0.0-kernel.6 asset `Package.swift` pins lacks one of them, `0064`, so **there is one native
+divergence**, written up below, per [Pinned kernel patch check](../policies/pinned-kernel-patch-check.md). It was
 built from a fresh `V8_0_1` clone with every patch on disk applied, and it is the first asset
 built without `0031`.
+
+**The one open divergence.**
+
+| Unpinned | What it leaves exposed |
+|---|---|
+| `0064-TopOpeBRepBuild-CorrectUnclosedWire-collects-the-edges-before-removing-them-3335` | An uncatchable SIGSEGV in `BRepFilletAPI_MakeFillet::Build` on a model whose fillet ends meet in the merge (OCCT#1619, OCCT#1430): `Shape.filleted(edges:radius:)` kills the process on the pinned kernel. The Swift layer cannot guard it, the fault is inside `Build`. `FilletMergeWireRemovalTests` is gated on `OCCTSWIFT_LOCAL=1` (it would SIGSEGV against the pinned asset) and runs in `kernel-integration.yml` until the next repin. |
 
 **The divergence that stood until v4.0.0-kernel.6 is closed.** `0058` and `0059` were merged after
 v4.0.0-kernel.5 and were live nowhere until the v4.0.0-kernel.6 rebuild pinned both. The table
@@ -199,7 +205,7 @@ older asset. `Package.swift`'s pin block records that exception against
 
 `libOCCT-wasm.a` and its header tree are a **second** pinned asset, recorded in
 `Scripts/wasm-kernel-pin.txt` rather than in `Package.swift`, because SwiftPM has no `binaryTarget`
-for a bare static library. Both kernels carry the same patches, `0010` to `0059`. As of this
+for a bare static library. Both kernels carry the same patches, `0010` to `0059`; `0064` is on neither. As of this
 writing the pinned native asset carries forty-five, and so does this one, plus the eleven in
 `Scripts/patches-wasi/` that only the wasm build applies. They were built from one tree in one
 sitting and published to one release tag, so **there is no divergence between the two platforms to
