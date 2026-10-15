@@ -1084,7 +1084,7 @@ public func offset(by distance: Double) -> Shape?
 ```
 
 - **Parameters:** `distance`, offset distance (positive = outward, negative = inward).
-- **Returns:** Offset shape, or `nil` on failure. A null result that OCCT reports as done is `nil` too ([#3061](https://github.com/SecondMouseAU/OCCTSwift/issues/3061)); it used to be a non-nil `Shape` with `isNull == true`.
+- **Returns:** Offset shape, or `nil` on failure. A null result that OCCT reports as done is `nil` too ([#3061](https://github.com/SecondMouseAU/OCCTSwift/issues/3061)); it used to be a non-nil `Shape` with `isNull == true`. A NaN or infinite `distance` is `nil` too ([#3455](https://github.com/SecondMouseAU/OCCTSwift/issues/3455)); it used to return a shape built on NaN geometry.
 - **OCCT:** `BRepOffsetAPI_MakeOffsetShape` (via `OCCTShapeOffset`).
 - **Example:**
   ```swift
@@ -1110,7 +1110,7 @@ More robust than the simple `offset(by:)` overload; handles gap-filling between 
   - `tolerance`: coincidence tolerance (default `1e-7`).
   - `joinType`: how to fill gaps between offset faces: `.arc` (smooth), `.tangent`, or `.intersection` (sharp).
   - `removeInternalEdges`: whether to clean up internal edges.
-- **Returns:** Offset shape, or `nil` on failure. A null result that OCCT reports as done is `nil` too ([#3061](https://github.com/SecondMouseAU/OCCTSwift/issues/3061)); it used to be a non-nil `Shape` with `isNull == true`. An inward offset deeper than the shape is thick is the deterministic case: a 10 mm cube offset by `-6` with `.arc` collapses.
+- **Returns:** Offset shape, or `nil` on failure. A null result that OCCT reports as done is `nil` too ([#3061](https://github.com/SecondMouseAU/OCCTSwift/issues/3061)); it used to be a non-nil `Shape` with `isNull == true`. An inward offset deeper than the shape is thick is the deterministic case: a 10 mm cube offset by `-6` with `.arc` collapses. A NaN or infinite `distance` or `tolerance` is `nil` as well ([#3455](https://github.com/SecondMouseAU/OCCTSwift/issues/3455)): the `.arc` join never returned on it for a box and faulted for a cylinder.
 - **OCCT:** `BRepOffsetAPI_MakeOffsetShape::PerformByJoin` (via `OCCTShapeOffsetByJoin`).
 - **Example:**
   ```swift

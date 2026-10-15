@@ -6,15 +6,14 @@ import Testing
 @Suite("MathCrout Tests")
 struct MathCroutTests {
 
-    @Test func symmetricSolve() {
+    @Test func symmetricSolve() throws {
         // [[4,2],[2,3]] x = [8,7] → x=1.25, y=1.5
         // swift-format-ignore: AlwaysUseLowerCamelCase
         let A = [4.0, 2.0, 2.0, 3.0]
         let b = [8.0, 7.0]
-        if let x = MathCrout.solve(matrix: A, rhs: b) {
-            #expect(abs(x[0] - 1.25) < 1e-10)
-            #expect(abs(x[1] - 1.5) < 1e-10)
-        }
+        let x = try #require(MathCrout.solve(matrix: A, rhs: b))
+        #expect(abs(x[0] - 1.25) < 1e-10)
+        #expect(abs(x[1] - 1.5) < 1e-10)
     }
 
     @Test func determinant() {

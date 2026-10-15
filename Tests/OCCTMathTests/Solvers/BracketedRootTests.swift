@@ -13,11 +13,11 @@ struct BracketedRootTests {
         if let r = result { #expect(abs(r.root - 2.0) < 1e-8) }
     }
 
-    @Test func findSinRoot() {
-        let result = MathSolver.bracketedRoot(in: 2...4) { x in
-            (value: sin(x), derivative: cos(x))
-        }
-        #expect(result != nil)
-        if let r = result { #expect(abs(r.root - .pi) < 1e-8) }
+    @Test func findSinRoot() throws {
+        let r = try #require(
+            MathSolver.bracketedRoot(in: 2...4) { x in
+                (value: sin(x), derivative: cos(x))
+            })
+        #expect(abs(r.root - .pi) < 1e-8)
     }
 }

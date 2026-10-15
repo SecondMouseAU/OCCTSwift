@@ -36,13 +36,11 @@ struct MathPolyRc4Tests {
         }
     }
 
-    @Test func quadraticNoRealRoots() {
-        // x^2 + 1 = 0 => no real roots
-        let roots = PolynomialSolver.quadraticRc4(a: 1, b: 0, c: 1)
-        #expect(roots != nil)
-        if let r = roots {
-            #expect(r.count == 0)
-        }
+    @Test func quadraticNoRealRoots() throws {
+        // x^2 + 1 = 0 => no real roots. The solver answers with an empty list; nil would be a
+        // refusal, which is a different answer.
+        let r = try #require(PolynomialSolver.quadraticRc4(a: 1, b: 0, c: 1))
+        #expect(r.count == 0)
     }
 
     @Test func cubic() {

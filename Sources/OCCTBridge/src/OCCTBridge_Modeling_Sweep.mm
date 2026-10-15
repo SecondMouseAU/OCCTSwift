@@ -645,6 +645,11 @@ OCCTShapeRef OCCTShapeOffsetByJoin(OCCTShapeRef shape,
 {
   if (!shape)
     return nullptr;
+  // #3455: a NaN or infinite distance is not an offset. The Arc join never returns on it for a
+  // box and faults for a cylinder, and the simple path returns a shape built on NaN geometry; the
+  // finite extremes (1e300) all return, so the guard is exactly the non-finite inputs.
+  if (!std::isfinite(distance) || !std::isfinite(tolerance))
+    return nullptr;
   try
   {
     BRepOffsetAPI_MakeOffsetShape offsetter;
@@ -2797,6 +2802,9 @@ OCCTShapeRef OCCTShapeShell(OCCTShapeRef shape, double thickness)
 {
   if (!occtShapeIsPresent(shape))
     return nullptr;
+  // #3455: a NaN or infinite thickness is not a shell operation; refuse it before OCCT sees it.
+  if (!std::isfinite(thickness))
+    return nullptr;
   try
   {
     BRepOffsetAPI_MakeThickSolid thickSolid;
@@ -2820,6 +2828,11 @@ OCCTShapeRef OCCTShapeShell(OCCTShapeRef shape, double thickness)
 OCCTShapeRef OCCTShapeOffset(OCCTShapeRef shape, double distance)
 {
   if (!shape)
+    return nullptr;
+  // #3455: a NaN or infinite distance is not an offset. The Arc join never returns on it for a
+  // box and faults for a cylinder, and the simple path returns a shape built on NaN geometry; the
+  // finite extremes (1e300) all return, so the guard is exactly the non-finite inputs.
+  if (!std::isfinite(distance))
     return nullptr;
   try
   {

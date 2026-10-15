@@ -2052,21 +2052,10 @@ static bool occtOcafFileIsRetrievable(const char* path)
   }
 }
 
-OCCTDocumentRef OCCTDocumentLoadOCAF(const char* path, int32_t* outStatus)
+// The open itself, with no pre-open guard: what OCCTDocumentLoadOCAF runs once a file has passed
+// occtOcafFileIsRetrievable, and what OCCTDocumentLoadOCAFUnguarded runs directly (#3330).
+static OCCTDocumentRef occtDocumentOpenOCAF(const char* path, int32_t* outStatus)
 {
-  if (!path)
-  {
-    if (outStatus)
-      *outStatus = -1;
-    return nullptr;
-  }
-  // #3318: refuse a file OCCT would crash on, with the status a corrupt file already gets.
-  if (!occtOcafFileIsRetrievable(path))
-  {
-    if (outStatus)
-      *outStatus = static_cast<int32_t>(PCDM_RS_DriverFailure);
-    return nullptr;
-  }
   OCCTDocument* document = nullptr;
   try
   {
@@ -2114,6 +2103,38 @@ OCCTDocumentRef OCCTDocumentLoadOCAF(const char* path, int32_t* outStatus)
       *outStatus = -1;
     return nullptr;
   }
+}
+
+OCCTDocumentRef OCCTDocumentLoadOCAF(const char* path, int32_t* outStatus)
+{
+  if (!path)
+  {
+    if (outStatus)
+      *outStatus = -1;
+    return nullptr;
+  }
+  // #3318: refuse a file OCCT would crash on, with the status a corrupt file already gets.
+  if (!occtOcafFileIsRetrievable(path))
+  {
+    if (outStatus)
+      *outStatus = static_cast<int32_t>(PCDM_RS_DriverFailure);
+    return nullptr;
+  }
+  return occtDocumentOpenOCAF(path, outStatus);
+}
+
+// #3330: the open with the #3318 guard bypassed, so a test can put a malformed file in front of the
+// kernel's own readers and see whether carried patch 0069 reports it through a status. Not wrapped
+// in Swift: against a kernel without the patch a malformed file is an uncatchable SIGSEGV.
+OCCTDocumentRef OCCTDocumentLoadOCAFUnguarded(const char* path, int32_t* outStatus)
+{
+  if (!path)
+  {
+    if (outStatus)
+      *outStatus = -1;
+    return nullptr;
+  }
+  return occtDocumentOpenOCAF(path, outStatus);
 }
 
 int32_t OCCTDocumentSaveOCAFInPlace(OCCTDocumentRef doc)

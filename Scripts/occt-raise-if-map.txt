@@ -58,7 +58,7 @@
 # the stray check in docs/guides/building-occt.md's "Shipping a rebuild" answers it.
 #
 # occt-version: 8.0.1
-# derived against: 47 carried patch(es) in Scripts/patches/, every one of them verified
+# derived against: 48 carried patch(es) in Scripts/patches/, every one of them verified
 # derived against: applied in the tree the rows below were derived from.
 # patch: 0010-Intf_Interference-O1-tangent-zone-checkpoint-breaker-319 79fe529c26ef
 # patch: 0011-XCAFDoc_ShapeTool-AutoNamingScope-341 76898e2438a2
@@ -107,6 +107,7 @@
 # patch: 0059-ChFi3d-Builder-fillets-that-meet-exactly-are-built-not-refused-3207 eb520b90a343
 # patch: 0064-TopOpeBRepBuild-CorrectUnclosedWire-collects-the-edges-before-removing-them-3335 944ae3ac3679
 # patch: 0065-BRepBlend_Walking-Perform-reports-not-done-for-a-non-finite-range-3350 89ab9a12f1fb
+# patch: 0069-OCAF-readers-report-a-damaged-file-through-the-reader-status-3330 f15a5e477e39
 #
 # totals: inline-raise       462 site(s) in  104 class(es)
 # totals: outofline-raise    828 site(s) in  284 class(es)

@@ -126,20 +126,21 @@ mistake the rest of this page is about.
 
 ### The xcframework
 
-`Scripts/patches/` holds forty-seven patches, of which the pinned asset carries forty-five. **These
+`Scripts/patches/` holds forty-eight patches, of which the pinned asset carries forty-five. **These
 are the counts `CLAUDE.md` used to restate and no longer does** (#2954); both are derived from
 `Scripts/patches/` and `Package.swift` by `check-inventory-prose.py`, which fails the PR that lets
-this page and the tree disagree. The v4.0.0-kernel.6 asset `Package.swift` pins lacks two of them, `0064` and `0065`, so **there are two native
+this page and the tree disagree. The v4.0.0-kernel.6 asset `Package.swift` pins lacks three of them, `0064`, `0065` and `0069`, so **there are three native
 divergences**, written up below, per [Pinned kernel patch check](../policies/pinned-kernel-patch-check.md). It was
 built from a fresh `V8_0_1` clone with every patch on disk applied, and it is the first asset
 built without `0031`.
 
-**The open divergences.**
+**The three open divergences.**
 
 | Unpinned | What it leaves exposed |
 |---|---|
 | `0064-TopOpeBRepBuild-CorrectUnclosedWire-collects-the-edges-before-removing-them-3335` | An uncatchable SIGSEGV in `BRepFilletAPI_MakeFillet::Build` on a model whose fillet ends meet in the merge (OCCT#1619, OCCT#1430): `Shape.filleted(edges:radius:)` kills the process on the pinned kernel. The Swift layer cannot guard it, the fault is inside `Build`. `FilletMergeWireRemovalTests` is gated on `OCCTSWIFT_LOCAL=1` (it would SIGSEGV against the pinned asset) and runs in `kernel-integration.yml` until the next repin. |
 | `0065-BRepBlend_Walking-Perform-reports-not-done-for-a-non-finite-range-3350` | An uncatchable SIGSEGV in `BRepFilletAPI_MakeChamfer::Build` when two chamfered edges leave a vertex along one direction: `ChFi3d_ChBuilder`'s spine extension `dis / tan(alpha)` is infinite for parallel tangents, `Pmax = -inf` and `Fleche = inf` reach `BRepBlend_Walking::Perform`, and `Extrema_GGExtPC::Perform` reads out of range on a NaN point. 12 of the 36 edges of the OCCT#1576 model (FreeCAD#21369) at distance 1. The patch also makes `MakeChamfer::Build` report a result that is not a valid solid as not done (the pinned kernel returns edge 15 of that model with volume -775000). The bridge has no refusal for the crash because the range is only known inside `PerformSetOfSurfOnElSpine`, and `OCC_CATCH_SIGNALS` is inert in this build; the bridge already refuses invalid blend results (#3200). With the patch all 36 edges report not done ([#3350](https://github.com/SecondMouseAU/OCCTSwift/issues/3350)). `ChamferParallelSpineTangentTests` runs in `kernel-integration.yml`, gated on `OCCTSWIFT_LOCAL=1`, and is ungated by the repin that pins `0065` |
+| `0069-OCAF-readers-report-a-damaged-file-through-the-reader-status-3330` | An uncatchable SIGSEGV, or a loop that never ends, in `TDocStd_Application::Open` on a damaged binary OCAF file (empty, text, truncated, a real header followed by garbage): 137 of 1586 generated files kill the process on the pinned kernel. `Document.loadOCAF(from:)` is safe only because the #3318 bridge guard refuses the file first; the guard stays until the repin that pins `0069`. `OCAFMalformedKernelReadTests` is gated on `OCCTSWIFT_LOCAL=1` (it would SIGSEGV against the pinned asset) and runs in `kernel-integration.yml` until then. |
 
 **The divergence that stood until v4.0.0-kernel.6 is closed.** `0058` and `0059` were merged after
 v4.0.0-kernel.5 and were live nowhere until the v4.0.0-kernel.6 rebuild pinned both. The table
@@ -206,7 +207,7 @@ older asset. `Package.swift`'s pin block records that exception against
 
 `libOCCT-wasm.a` and its header tree are a **second** pinned asset, recorded in
 `Scripts/wasm-kernel-pin.txt` rather than in `Package.swift`, because SwiftPM has no `binaryTarget`
-for a bare static library. Both kernels carry the same patches, `0010` to `0059`; `0064` and `0065` are in neither. As of this
+for a bare static library. Both kernels carry the same patches, `0010` to `0059`; `0064`, `0065` and `0069` are in neither. As of this
 writing the pinned native asset carries forty-five, and so does this one, plus the eleven in
 `Scripts/patches-wasi/` that only the wasm build applies. They were built from one tree in one
 sitting and published to one release tag, so **there is no divergence between the two platforms to
