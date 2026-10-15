@@ -21,6 +21,10 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### Opening a damaged binary OCAF file reports a status instead of crashing the kernel (#3330)
+
+Carried kernel patch `0069`. `BinLDrivers_DocumentRetrievalDriver::Read` dereferenced a null header, `PCDM_ReadWriter::FileFormat` read the first entry of an empty types table, and `FSD_BinaryFile::ReadCompleteInfo` looped for ever on a header naming no section. Of 1586 generated damaged files, 137 killed the process on the pinned kernel and none do with the patch. `Document.loadOCAF(from:)` was already safe through the #3318 bridge guard, which stays until the next repin pins this patch.
+
 ### Fillets whose ends meet in the merge no longer crash the process (#3335)
 
 Fillets whose ends meet in the merge no longer crash the process (#3335). `Shape.filleted(edges:radius:)` on such a model died with an uncatchable SIGSEGV from a use-after-free in `CorrectUnclosedWire`; carried patch `0064` fixes it, so the call returns a shape or `nil`.
