@@ -21,6 +21,10 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### `Shape.evolvedAdvanced` on a circular spine returns nil instead of crashing (#3449)
+
+A circle spine (a wire, or its disk face) with a profile that leaves the circle's axis, such as `(0,0,0)` to `(0,2,3)` with `axeProf: false`, terminated the process with SIGSEGV inside `BRepOffsetAPI_MakeEvolved`. The kernel's sequence-length check in `BRepFill_TrimSurfaceTool::IntersectWith` was compiled out of the Release build, so it read past a sequence. Carried patch `0068` makes it a real throw and the call returns `nil`. Takes effect at the next kernel repin.
+
 ### Non-finite offset and shell distances are refused instead of hanging (#3455)
 
 `Shape.offset(by:joinType:)` with a NaN or infinite distance used to never return for a box with the `.arc` join and fault for a cylinder; `Shape.offset(by:)` returned a shape built on NaN geometry. These, a non-finite `tolerance`, and `Shape.shelled(thickness:)` with a non-finite thickness now return `nil`.
