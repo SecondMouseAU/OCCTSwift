@@ -85,8 +85,8 @@ struct StressFilletBuilderLifecycleTests {
     }
 
     // A second Build() on the same BRepFilletAPI_MakeFillet is done but hands back the box
-    // unrounded (volume 1000, not 997.854); the probe shows the kernel doing the same, so this
-    // pins OCCT's behaviour rather than a bridge defect.
+    // unrounded (volume 1000, not 997.854); the probe shows the kernel doing the same. The bridge
+    // now refuses that answer (#3297).
     @Test func doubleBuild() throws {
         let box = try standardBox()
         let edges = box.edges()
@@ -94,11 +94,11 @@ struct StressFilletBuilderLifecycleTests {
         let builder = try #require(FilletBuilder(shape: box))
         builder.addEdge(edges[0], radius: 1.0)
         let r1 = try #require(builder.build())
-        let r2 = try #require(builder.build())
+        // The kernel's second Build() is done and valid but hands back the unrounded box. That is
+        // a blend that answered its input unchanged, which the builder now refuses (#3297).
+        #expect(builder.build() == nil)
         #expect(r1.isValid)
-        #expect(r2.isValid)
         #expect(abs((r1.volume ?? 0) - 997.8539816) < 1e-6)
-        #expect(abs((r2.volume ?? 0) - 1000) < 1e-6)
     }
 
     @Test func queryContourDetails() throws {
@@ -185,11 +185,10 @@ struct StressChamferBuilderLifecycleTests {
         let builder = try #require(ChamferBuilder(shape: box))
         builder.addEdge(edges[0], distance: 1.0)
         let r1 = try #require(builder.build())
-        let r2 = try #require(builder.build())
+        // Refused as the unchanged input (#3297), as FilletBuilder.doubleBuild.
+        #expect(builder.build() == nil)
         #expect(r1.isValid)
-        #expect(r2.isValid)
         #expect(abs((r1.volume ?? 0) - 995) < 1e-6)
-        #expect(abs((r2.volume ?? 0) - 1000) < 1e-6)
     }
 
     // One symmetric contour (all three flags were read into `_` before).

@@ -21,6 +21,27 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### A blend that answers the unchanged input, or a different number of solids, is nil (#3297, #3298)
+
+`Shape.chamfered(distance:)` on a cube at `d == edge / 2` answered the unchanged cube, and `Shape.filleted(edges:radius:)` / `ChamferBuilder` / `FilletBuilder` on both rims of a cylinder at `r == R == H / 2` answered two solids with twice the one-rim volume. Both are `BRepCheck`-valid, so the validity guard of #3200 passed them. Every solid-blend entry point now also answers `nil` when the result has a different solid count than its input, or is the input unchanged (same face count and volume), and records the reason as a caught-exception diagnostic. A correct build is not reachable at the tie: the kernel decides it with a tolerance comparison, builds the step below and declines the step above, so the step below (`d = 4.9999`, `r = 4.9`) is unchanged. The volume is deliberately not bounded by the input's, since a concave-edge blend adds material. A second `build()` on the same `FilletBuilder` or `ChamferBuilder` hands back the unrounded input; that is the same unchanged-input answer and is now `nil` too.
+
+```swift
+let cube = Shape.box(width: 10, height: 10, depth: 10)!
+cube.chamfered(distance: 5)        // nil, was the unchanged cube
+cube.chamfered(distance: 4.9999)   // 166.69, the octahedron
+let cyl = Shape.cylinder(radius: 5, height: 10)!
+cyl.filleted(edges: cyl.edges().filter { $0.isCircle }, radius: 5)  // nil, was two solids
+```
+
+### `FilletBuilder.build()` no longer crashes after `resetContour(_:)` or with a zero tolerance (#3367)
+
+- `FilletBuilder.build()` returns `nil` when a contour holds no radius, which is the state `resetContour(_:)` leaves behind. Giving the contour a radius again builds; variable-radius contours are unaffected.
+- `FilletBuilder.setParams` leaves the tolerances unchanged when any of the six is zero, negative or not finite.
+
+Closes #3367
+
+Refs #3449 (measured and documented, not fixed; left open)
+
 ### Fillets whose ends meet in the merge no longer crash the process (#3335)
 
 Fillets whose ends meet in the merge no longer crash the process (#3335). `Shape.filleted(edges:radius:)` on such a model died with an uncatchable SIGSEGV from a use-after-free in `CorrectUnclosedWire`; carried patch `0064` fixes it, so the call returns a shape or `nil`.

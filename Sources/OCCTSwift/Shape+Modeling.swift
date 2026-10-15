@@ -132,6 +132,14 @@ extension Shape {
     /// nil (#3208). `nil` carries no reason; ``FilletBuilder``
     /// exposes the builder's diagnostics (``FilletBuilder/faultyContourCount`` and friends).
     ///
+    /// Two valid-looking answers the kernel gives where blends meet exactly are refused too, because
+    /// `BRepCheck` cannot see them (#3297, #3298). A blend that answers a different number of solids
+    /// than it was given (both rims of a cylinder at `r == R == H / 2` answer two solids with twice
+    /// the volume) and a blend that answers its input unchanged (a cube chamfered at
+    /// `d == edge / 2`) both answer nil. A correct build is not reachable at the tie: the kernel
+    /// answers it with a tolerance comparison, builds the step below it and declines the step above.
+    /// The concave-edge case is unaffected: a blend may add material, so volume is not bounded.
+    ///
     /// ```swift
     /// let slab = Shape.box(width: 4, height: 10, depth: 6)!
     /// let zTop = slab.bounds!.max.z
