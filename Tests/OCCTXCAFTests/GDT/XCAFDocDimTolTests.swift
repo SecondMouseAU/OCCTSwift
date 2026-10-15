@@ -33,9 +33,9 @@ struct XCAFDocDimTolTests {
         }
     }
 
-    @Test func noDimTol() {
-        guard let doc = Document.create() else { return }
-        guard let node = doc.createLabel() else { return }
+    @Test func noDimTol() throws {
+        let doc = try #require(Document.create())
+        let node = try #require(doc.createLabel())
         #expect(doc.dimTolKind(labelId: node.labelId) == nil)
     }
 }

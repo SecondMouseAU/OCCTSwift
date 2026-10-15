@@ -34,26 +34,24 @@ struct TFunctionIFunctionTests {
         doc.commitTransaction()
     }
 
-    @Test func functionExecStatus() {
-        guard let doc = Document.create() else { return }
+    @Test func functionExecStatus() throws {
+        let doc = try #require(Document.create())
         doc.openTransaction()
-        guard let node = doc.createLabel() else { return }
+        let node = try #require(doc.createLabel())
         doc.newFunction(labelId: node.labelId, guid: "11111111-2222-3333-4444-555555555555")
 
-        if let status = doc.functionExecStatus(labelId: node.labelId) {
-            #expect(status == .wrongDefinition)
-        }
+        let before = try #require(doc.functionExecStatus(labelId: node.labelId))
+        #expect(before == .wrongDefinition)
 
         doc.setFunctionExecStatus(labelId: node.labelId, status: .succeeded)
-        if let status = doc.functionExecStatus(labelId: node.labelId) {
-            #expect(status == .succeeded)
-        }
+        let after = try #require(doc.functionExecStatus(labelId: node.labelId))
+        #expect(after == .succeeded)
         doc.commitTransaction()
     }
 
-    @Test func noFunction() {
-        guard let doc = Document.create() else { return }
-        guard let node = doc.createLabel() else { return }
+    @Test func noFunction() throws {
+        let doc = try #require(Document.create())
+        let node = try #require(doc.createLabel())
         let status = doc.functionExecStatus(labelId: node.labelId)
         #expect(status == nil)
     }

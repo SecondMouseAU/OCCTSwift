@@ -7,12 +7,9 @@ struct OffsetByJoinTests {
     @Test("Offset box outward with arc join")
     func offsetArc() throws {
         let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
-        let offset = box.offset(by: 1.0, joinType: .arc)
-        #expect(offset != nil)
-        if let o = offset {
-            #expect(o.isValid)
-            #expect(try #require(o.volume) > #require(box.volume))
-        }
+        let o = try #require(box.offset(by: 1.0, joinType: .arc))
+        #expect(o.isValid)
+        #expect(try #require(o.volume) > #require(box.volume))
     }
 
     @Test("Offset box inward")

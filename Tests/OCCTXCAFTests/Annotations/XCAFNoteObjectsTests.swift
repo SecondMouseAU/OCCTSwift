@@ -16,12 +16,11 @@ struct XCAFNoteObjectsTests {
         #expect(obj.presentation == nil)
     }
 
-    @Test func initiallyEmpty() {
-        if let obj = NoteObject() {
-            #expect(!obj.hasPlane)
-            #expect(!obj.hasPoint)
-            #expect(!obj.hasPointText)
-        }
+    @Test func initiallyEmpty() throws {
+        let obj = try #require(NoteObject())
+        #expect(!obj.hasPlane)
+        #expect(!obj.hasPoint)
+        #expect(!obj.hasPointText)
     }
 
     @Test func setPlane() {

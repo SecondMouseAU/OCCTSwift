@@ -113,7 +113,7 @@ struct Issue485Curve3DContinuityTests {
     }
 
     @Test("The retired encoding's sentinel values never appear")
-    func retiredSentinelValuesAreGone() {
+    func retiredSentinelValuesAreGone() throws {
         // Each fixture beside the ordinal it measures, so a fixture that failed to build is a
         // missing row rather than a shorter loop.
         let fixtures: [(String, Curve3D?, Int)] = [
@@ -122,11 +122,8 @@ struct Issue485Curve3DContinuityTests {
             ("line", Curve3D.line(through: .zero, direction: SIMD3(1, 0, 0)), 6),
             ("G1 offset", Self.offsetOfG1Basis(), 1),
         ]
-        for (name, curve, ordinal) in fixtures {
-            guard let curve else {
-                Issue.record("\(name) fixture did not build")
-                continue
-            }
+        for (name, built, ordinal) in fixtures {
+            let curve = try #require(built, "\(name) fixture did not build")
             #expect(curve.continuity == ordinal, "\(name)")
             #expect(curve.continuity != 99)  // was CN
             #expect(curve.continuity != -2)  // was G1

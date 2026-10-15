@@ -17,15 +17,12 @@ struct AssemblyNodeIdentityTests {
         let nodes = doc.rootNodes
         #expect(!nodes.isEmpty)
 
-        guard let original = nodes.first else { return }
+        let original = try #require(nodes.first)
         let id = original.labelId
         #expect(id >= 0)
 
         // Same labelId resolves back to a node referring to the same label.
-        guard let recovered = doc.node(at: id) else {
-            Issue.record("Document.node(at:) failed to resolve a known labelId")
-            return
-        }
+        let recovered = try #require(doc.node(at: id))
         #expect(recovered.labelId == id)
         #expect(recovered.name == original.name)
     }
@@ -56,10 +53,7 @@ struct AssemblyNodeIdentityTests {
         // until rootNodes had been walked. The fix eagerly registers root
         // labels inside node(at:), so labelId 0 (the first registered root)
         // resolves on a fresh doc.
-        let node = doc.node(at: 0)
-        #expect(node != nil)
-        if let node {
-            #expect(node.labelId == 0)
-        }
+        let node = try #require(doc.node(at: 0))
+        #expect(node.labelId == 0)
     }
 }

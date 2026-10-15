@@ -38,9 +38,8 @@ struct DocumentUndoRedoTests {
         doc.openTransaction()
         let label = try #require(doc.createLabel())
         label.setName("Box")
-        if let box = Shape.box(width: 10, height: 10, depth: 10) {
-            doc.recordNaming(on: label, evolution: .primitive, newShape: box)
-        }
+        let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
+        doc.recordNaming(on: label, evolution: .primitive, newShape: box)
         doc.commitTransaction()
 
         #expect(doc.availableUndos == 1)

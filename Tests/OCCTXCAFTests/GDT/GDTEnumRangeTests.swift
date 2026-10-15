@@ -44,11 +44,8 @@ struct Issue1037GDTEnumRangeTests {
     }
 
     @Test("A dimension modifier outside the enum is refused, and the sequence stays untouched")
-    func dimensionModifierOutOfRangeIsRefused() {
-        guard let (doc, index) = documentWithDimension() else {
-            Issue.record("document nil")
-            return
-        }
+    func dimensionModifierOutOfRangeIsRefused() throws {
+        let (doc, index) = try #require(documentWithDimension())
         // Seed a real sequence so the refusal has something to preserve. Unfixed, 9999 was stored
         // and `dimension(at:)` read it back through a failing DimensionModifier(rawValue:), so the
         // sequence silently lost the element instead of the call being refused.
@@ -81,11 +78,8 @@ struct Issue1037GDTEnumRangeTests {
     }
 
     @Test("A class of tolerance outside the enum is refused rather than reported as present")
-    func classOfToleranceOutOfRangeIsRefused() {
-        guard let (doc, index) = documentWithDimension() else {
-            Issue.record("document nil")
-            return
-        }
+    func classOfToleranceOutOfRangeIsRefused() throws {
+        let (doc, index) = try #require(documentWithDimension())
         // IsDimWithClassOfTolerance() is a bare test against _None, so an out-of-range formVariance
         // made it true: unfixed, the reader reported hasClassOfTolerance while classOfTolerance
         // decoded to nil, which is a dimension carrying a tolerance class nobody can name.
@@ -95,7 +89,8 @@ struct Issue1037GDTEnumRangeTests {
         #expect(!OCCTDocumentSetDimensionClassOfTolerance(doc.handle, Int32(index), true, -1, 7))
         #expect(!OCCTDocumentSetDimensionClassOfTolerance(doc.handle, Int32(index), true, 11, 20))
         #expect(!OCCTDocumentSetDimensionClassOfTolerance(doc.handle, Int32(index), true, 11, -1))
-        #expect(doc.dimension(at: index)?.classOfTolerance == nil)
+        let untouched = try #require(doc.dimension(at: index))
+        #expect(untouched.classOfTolerance == nil)
 
         // The in-range pair still works, so the guard rejects the regime rather than the feature.
         // Ordinal 11 of FormVariance is _H. Ordinal 7 of Grade is _IT6, not IT7: the enum opens
@@ -107,11 +102,8 @@ struct Issue1037GDTEnumRangeTests {
     }
 
     @Test("A geometric tolerance modifier outside the enum is refused")
-    func geomToleranceModifierOutOfRangeIsRefused() {
-        guard let (doc, index) = documentWithTolerance() else {
-            Issue.record("document nil")
-            return
-        }
+    func geomToleranceModifierOutOfRangeIsRefused() throws {
+        let (doc, index) = try #require(documentWithTolerance())
         let valid: [Int32] = [3, 15]
         let stored = valid.withUnsafeBufferPointer {
             OCCTDocumentSetGeomToleranceModifiers(
@@ -131,11 +123,8 @@ struct Issue1037GDTEnumRangeTests {
     }
 
     @Test("A datum modifier outside the enum is refused")
-    func datumModifierOutOfRangeIsRefused() {
-        guard let (doc, index) = documentWithDatum() else {
-            Issue.record("document nil")
-            return
-        }
+    func datumModifierOutOfRangeIsRefused() throws {
+        let (doc, index) = try #require(documentWithDatum())
         let valid: [Int32] = [2, 3]
         let stored = valid.withUnsafeBufferPointer {
             OCCTDocumentSetDatumModifiers(
@@ -155,11 +144,8 @@ struct Issue1037GDTEnumRangeTests {
     }
 
     @Test("Clearing a sequence with count 0 still works, so the guard did not break the empty case")
-    func emptyModifierArrayStillClears() {
-        guard let (doc, index) = documentWithDatum() else {
-            Issue.record("document nil")
-            return
-        }
+    func emptyModifierArrayStillClears() throws {
+        let (doc, index) = try #require(documentWithDatum())
         let valid: [Int32] = [2, 3]
         _ = valid.withUnsafeBufferPointer {
             OCCTDocumentSetDatumModifiers(

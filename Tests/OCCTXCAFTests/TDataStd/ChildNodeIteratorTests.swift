@@ -6,8 +6,8 @@ import Testing
 @Suite("ChildNodeIterator Tests")
 struct ChildNodeIteratorTests {
 
-    @Test func noTreeNode() {
-        guard let doc = Document.create() else { return }
+    @Test func noTreeNode() throws {
+        let doc = try #require(Document.create())
         // No tree node set, count should be 0
         #expect(doc.childNodeCount(tag: 400) == 0)
     }

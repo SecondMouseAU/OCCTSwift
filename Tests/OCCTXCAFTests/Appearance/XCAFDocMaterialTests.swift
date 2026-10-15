@@ -23,12 +23,11 @@ struct XCAFDocMaterialTests {
         }
     }
 
-    @Test func noMaterial() {
-        if let doc = Document.create(), let main = doc.mainLabel {
-            if let label = doc.createLabel(parent: main) {
-                #expect(!label.hasMaterialAttribute)
-                #expect(label.materialAttributeName == nil)
-            }
-        }
+    @Test func noMaterial() throws {
+        let doc = try #require(Document.create())
+        let main = try #require(doc.mainLabel)
+        let label = try #require(doc.createLabel(parent: main))
+        #expect(!label.hasMaterialAttribute)
+        #expect(label.materialAttributeName == nil)
     }
 }

@@ -5,8 +5,8 @@ import Testing
 @Suite("IntPackedMap Tests")
 struct IntPackedMapTests {
 
-    @Test func setAndAdd() {
-        guard let doc = Document.create() else { return }
+    @Test func setAndAdd() throws {
+        let doc = try #require(Document.create())
         #expect(doc.setIntPackedMap(tag: 100))
         #expect(doc.intPackedMapAdd(tag: 100, value: 42))
         #expect(doc.intPackedMapAdd(tag: 100, value: 100))
@@ -14,8 +14,8 @@ struct IntPackedMapTests {
         #expect(doc.intPackedMapContains(tag: 100, value: 100))
     }
 
-    @Test func extent() {
-        guard let doc = Document.create() else { return }
+    @Test func extent() throws {
+        let doc = try #require(Document.create())
         doc.setIntPackedMap(tag: 101)
         doc.intPackedMapAdd(tag: 101, value: 1)
         doc.intPackedMapAdd(tag: 101, value: 2)
@@ -23,8 +23,8 @@ struct IntPackedMapTests {
         #expect(doc.intPackedMapCount(tag: 101) == 3)
     }
 
-    @Test func remove() {
-        guard let doc = Document.create() else { return }
+    @Test func remove() throws {
+        let doc = try #require(Document.create())
         doc.setIntPackedMap(tag: 102)
         doc.intPackedMapAdd(tag: 102, value: 10)
         doc.intPackedMapAdd(tag: 102, value: 20)
@@ -33,8 +33,8 @@ struct IntPackedMapTests {
         #expect(doc.intPackedMapCount(tag: 102) == 1)
     }
 
-    @Test func clearAndEmpty() {
-        guard let doc = Document.create() else { return }
+    @Test func clearAndEmpty() throws {
+        let doc = try #require(Document.create())
         doc.setIntPackedMap(tag: 103)
         doc.intPackedMapAdd(tag: 103, value: 5)
         #expect(!doc.intPackedMapIsEmpty(tag: 103))
@@ -43,8 +43,8 @@ struct IntPackedMapTests {
         #expect(doc.intPackedMapCount(tag: 103) == 0)
     }
 
-    @Test func getValues() {
-        guard let doc = Document.create() else { return }
+    @Test func getValues() throws {
+        let doc = try #require(Document.create())
         doc.setIntPackedMap(tag: 104)
         doc.intPackedMapAdd(tag: 104, value: 7)
         doc.intPackedMapAdd(tag: 104, value: 42)
@@ -56,8 +56,8 @@ struct IntPackedMapTests {
         #expect(values.contains(99))
     }
 
-    @Test func changeValues() {
-        guard let doc = Document.create() else { return }
+    @Test func changeValues() throws {
+        let doc = try #require(Document.create())
         doc.setIntPackedMap(tag: 105)
         doc.intPackedMapAdd(tag: 105, value: 1)
         #expect(doc.intPackedMapSetValues(tag: 105, values: [10, 20, 30, 40, 50]))
