@@ -21,7 +21,7 @@ retired 2026-09-02 (superseded by upstream's own fix, not shipped in our pin), a
 2026-09-20 (it reintroduced #280; see its [Retired patches](#retired-patches) entry), and
 `0031` retired 2026-10-10 at the `v4.0.0-kernel.6` repin (#3065: the supported pattern is one
 adaptor per worker, so the lock it added is not needed).
-The carried sequence now reads 0010–0012, 0014–0030, 0033–0034, 0036–0048, 0050–0059, 0064, 0066.
+The carried sequence now reads 0010–0012, 0014–0030, 0033–0034, 0036–0048, 0050–0059, 0064, 0066, 0069.
 The gaps are the retirements, not missing files:
 the numbers are cited across `CLAUDE.md`, `docs/`, closed issues and `Scripts/repro/`, and
 renumbering would have silently repointed every one of those citations at a different fix.
@@ -3477,6 +3477,24 @@ slice, and the object was compiled with `-O2` rather than the kernel's own flags
 **Upstream:** the change is the second commit of OCCT#1600, with its GTests; the PR is open.
 
 **Retire** once the bundled OCCT includes OCCT#1600.
+
+## 0069-OCAF-readers-report-a-damaged-file-through-the-reader-status-3330.patch
+
+**Opening a damaged binary OCAF file reports a status instead of faulting** ([#3330](https://github.com/SecondMouseAU/OCCTSwift/issues/3330), follow-up to [#3318](https://github.com/SecondMouseAU/OCCTSwift/issues/3318)).
+
+`TDocStd_Application::Open` on a file that is not a well-formed binary OCAF document faulted in three places, each reachable with nothing but a damaged file:
+
+- `BinLDrivers_DocumentRetrievalDriver::Read` null-checks the header for its first loop and then calls `aHeaderData->StorageVersion()` unconditionally. A file no storage reader recognises (empty, text) leaves the `Storage_Data` null: SIGSEGV. A null header is now `PCDM_RS_FormatFailure` with a `Message_Fail` line, the status and channel the "file has no format version" branch beside it already uses.
+- `PCDM_ReadWriter::FileFormat(filename)` reads `td.Types()->Value(1)` when the header has no `FILE_FORMAT` line. `Types()` is empty when the types section did not read, so `Value(1)` reads past it: SIGSEGV. An empty table now leaves the format empty, which the caller treats as an unrecognised file.
+- `FSD_BinaryFile::ReadCompleteInfo` loops while the position is before the end of the data section and consumes input only in the four section-start branches. A damaged header whose offsets name no section start leaves the position unmoved and the loop never ends. The final branch is now an `else` that leaves the loop.
+
+Measured on 1586 generated files (every prefix of the first 400 bytes plus a stride, a real header followed by 0xFF or 0x00, byte flips, a document under the wrong extension) of saved `BinOcaf` and `BinXCAF` documents, through `TDocStd_Application::Open` with the bridge's pre-open guard absent (`Scripts/repro/3330/probe.mm`): 137 SIGSEGVs and 2 hangs against the `v4.0.0-kernel.6` macOS slice, 0 SIGSEGVs and 1 hang after. The remaining hang is a byte flip in the object count that makes `Storage_InternalData` allocate an array of billions of handles; it is not a null dereference and is left alone. An XML prefix that ends inside the XML declaration, or an XML file with garbage appended, still spins `LDOM_XmlReader` (12 of 144 such files); that is the hang #3318's bridge guard refuses, and not this patch's.
+
+The bridge's #3318 guard stays until a repin pins this patch: the pinned asset lacks it and a malformed file is a SIGSEGV there. `OCAFMalformedKernelReadTests` reaches the kernel through `OCCTDocumentLoadOCAFUnguarded` and is gated on `OCCTSWIFT_LOCAL=1` until then.
+
+**Upstream checked 2026-10-15:** `BinLDrivers_DocumentRetrievalDriver.cxx`, `PCDM_ReadWriter.cxx` and `FSD_BinaryFile.cxx` are unchanged on master at all three sites, and no open issue or PR names them. **Not yet filed upstream.**
+
+**Retire** once the bundled OCCT includes this fix.
 
 # Retired patches
 

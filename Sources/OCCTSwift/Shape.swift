@@ -940,6 +940,9 @@ public final class Shape: @unchecked Sendable {
     /// what a radius above half the width of any face gives (#3200). See
     /// ``filleted(edges:radius:)`` for the contract and the threshold.
     ///
+    /// Also nil when the kernel answers the exact tie with a different solid count than the input
+    /// or with the input unchanged (#3297, #3298), which `BRepCheck` passes.
+    ///
     /// ```swift
     /// let box = Shape.box(width: 10, height: 10, depth: 10)!
     /// let rounded = box.filleted(radius: 1)      // valid, every edge rounded
@@ -955,6 +958,11 @@ public final class Shape: @unchecked Sendable {
     ///
     /// Answers nil when the builder is not done or when its result is `BRepCheck`-invalid (#3200),
     /// as ``filleted(radius:)`` does for fillets.
+    ///
+    /// A cube chamfered at `distance == edge / 2` is also nil (#3297): the kernel reports done and
+    /// hands back the unchanged cube, which is valid. `distance` one step below builds the
+    /// octahedron-like solid and one step above is declined; no correct build is reachable at the
+    /// tie.
     ///
     /// ```swift
     /// let box = Shape.box(width: 10, height: 10, depth: 10)!
@@ -1053,7 +1061,7 @@ public final class Shape: @unchecked Sendable {
     /// Offset all faces by a distance (positive = outward).
     ///
     /// - Returns: The offset shape, or `nil` on failure, including when OCCT reports the offset as
-    ///   done but returns a null shape (#3061).
+    ///   done but returns a null shape (#3061) and when `distance` is NaN or infinite (#3455).
     public func offset(by distance: Double) -> Shape? {
         guard let handle = OCCTShapeOffset(self.handle, distance) else { return nil }
         return Shape(handle: handle)
@@ -1072,6 +1080,9 @@ public final class Shape: @unchecked Sendable {
     /// - Returns: Offset shape, or `nil` on failure, including when OCCT reports the offset as done
     ///   but returns a null shape (#3061), which is what an inward offset deeper than the shape is
     ///   thick does. It used to return a ``Shape`` for which ``isNull`` was `true`.
+    ///
+    /// A NaN or infinite `distance` or `tolerance` returns `nil` (#3455); the `.arc` join never
+    /// returned on one for a box and faulted for a cylinder.
     ///
     /// ```swift
     /// let box = Shape.box(width: 10, height: 10, depth: 10)!

@@ -4,11 +4,13 @@ import OCCTPlatform
 /// Builder for creating chamfers on edges of a shape, wrapping BRepFilletAPI_MakeChamfer.
 public final class ChamferBuilder: @unchecked Sendable {
     private let handle: OCCTChamferBuilderRef
+    private let input: Shape
 
     /// Create a chamfer builder on the given shape.
     public init?(shape: Shape) {
         guard let ref = OCCTChamferBuilderCreate(shape.handle) else { return nil }
         self.handle = ref
+        self.input = shape
     }
 
     deinit { OCCTChamferBuilderRelease(handle) }
@@ -34,10 +36,13 @@ public final class ChamferBuilder: @unchecked Sendable {
     /// Build the chamfered result.
     ///
     /// Answers nil when the builder is not done, and also when it is done but the result is
-    /// `BRepCheck`-invalid (#3200).
+    /// `BRepCheck`-invalid (#3200), has a different solid count than the input, or is the input
+    /// unchanged (#3297, #3298).
     public func build() -> Shape? {
         guard let ref = OCCTChamferBuilderBuild(handle) else { return nil }
-        return Shape(handle: ref)
+        let result = Shape(handle: ref)
+        guard OCCTBlendResultIsSane(input.handle, result.handle) else { return nil }
+        return result
     }
 
     /// Number of contours.

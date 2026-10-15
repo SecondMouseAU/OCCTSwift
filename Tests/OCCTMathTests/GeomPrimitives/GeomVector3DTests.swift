@@ -41,11 +41,10 @@ struct GeomVector3DTests {
     }
 
     @Test("normalized")
-    func normalized() {
+    func normalized() throws {
         let v = GeomVector3D(x: 0, y: 0, z: 10)
-        if let n = v.normalized() {
-            #expect(abs(n.magnitude - 1.0) < 1e-10)
-        }
+        let n = try #require(v.normalized())
+        #expect(abs(n.magnitude - 1.0) < 1e-10)
     }
 
     @Test("crossed")
