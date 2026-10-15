@@ -20,9 +20,10 @@ struct FilletMergeWireRemovalTests {
         return try Shape.loadBREP(from: url)
     }
 
-    /// Needs carried patch `0064`, which `v4.0.0-kernel.7` is the first asset to hold. On a kernel
-    /// without it this call is a SIGSEGV that takes the whole test process down. It was gated on
-    /// `OCCTSWIFT_LOCAL=1` until that repin (#2983).
+    /// Needs carried patch `0064`, which `v4.0.0-kernel.7` is the first asset to hold.
+    ///
+    /// On a kernel without it this call is a SIGSEGV that takes the whole test process down. It was
+    /// gated on `OCCTSWIFT_LOCAL=1` until that repin (#2983).
     @Test(
         "Two fillets whose ends meet in the merge return instead of crashing")
     func crashingPair() throws {

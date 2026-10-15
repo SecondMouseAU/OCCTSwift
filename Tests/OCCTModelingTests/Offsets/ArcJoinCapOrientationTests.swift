@@ -45,9 +45,10 @@ struct ArcJoinCapOrientationTests {
         return try #require(Shape.fromFace(face))
     }
 
-    /// Needs carried patch `0066`, which `v4.0.0-kernel.7` is the first asset to hold. Without it
-    /// the kernel answers an inside-out solid in every build. It was gated on `OCCTSWIFT_LOCAL=1`
-    /// until that repin (#2983).
+    /// Needs carried patch `0066`, which `v4.0.0-kernel.7` is the first asset to hold.
+    ///
+    /// Without it the kernel answers an inside-out solid in every build. It was gated on
+    /// `OCCTSWIFT_LOCAL=1` until that repin (#2983).
     ///
     /// Many fresh blocks rather than one: without `0053` the unpatched result depends on where the
     /// heap put the shapes, and a kernel that has `0053` but not `0066` must not be able to pass

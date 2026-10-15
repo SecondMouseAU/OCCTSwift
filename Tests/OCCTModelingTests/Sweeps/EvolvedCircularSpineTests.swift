@@ -20,8 +20,9 @@ struct EvolvedCircularSpineTests {
         return try #require(Shape.face(from: circle))
     }
 
-    /// Needs carried patch `0068`, which `v4.0.0-kernel.7` is the first asset to hold. Without it
-    /// this call is a SIGSEGV that takes the whole test process down. It was gated on
+    /// Needs carried patch `0068`, which `v4.0.0-kernel.7` is the first asset to hold.
+    ///
+    /// Without it this call is a SIGSEGV that takes the whole test process down. It was gated on
     /// `OCCTSWIFT_LOCAL=1` until that repin (#2983).
     @Test(
         "A profile leaving the circle's axis returns nil instead of crashing")
