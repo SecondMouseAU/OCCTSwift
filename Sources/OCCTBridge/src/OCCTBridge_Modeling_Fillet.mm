@@ -224,6 +224,7 @@
 #include <TopExp.hxx>
 #include <TopExp_Explorer.hxx>
 #include <TopLoc_Location.hxx>
+#include <Standard_DomainError.hxx>
 #include <TopoDS.hxx>
 #include <TopoDS_Compound.hxx>
 #include <TopTools_IndexedMapOfShape.hxx>
@@ -1136,6 +1137,33 @@ OCCTShapeRef OCCTFilletBuilderBuild(OCCTFilletBuilderRef builder)
     return nullptr;
   try
   {
+    // #3367: a contour that holds no radius makes Build() SIGSEGV (the #520 family), and
+    // ResetContour clears exactly that list. ChFiDS_FilSpine::Radius(edge) answers 0.0 without
+    // throwing when the list is empty and throws "Edge is not constant" for a variable-radius
+    // edge, which is the one case that must be let through.
+    const int contourCount = builder->fillet.NbContours();
+    for (int c = 1; c <= contourCount; ++c)
+    {
+      const int edgeCount = builder->fillet.NbEdges(c);
+      for (int e = 1; e <= edgeCount; ++e)
+      {
+        const TopoDS_Edge& edge = builder->fillet.Edge(c, e);
+        if (edge.IsNull())
+          return nullptr;
+        double radius = 0.0;
+        try
+        {
+          radius = builder->fillet.Radius(c, edge);
+        }
+        catch (const Standard_DomainError&)
+        {
+          continue; // "Edge is not constant": a variable radius, it has a law
+        }
+        // Any other exception leaves for the function-level catch, which records it.
+        if (!(radius > 0.0))
+          return nullptr; // a refusal is control flow, not a diagnostic
+      }
+    }
     builder->fillet.Build();
     if (!builder->fillet.IsDone())
       return nullptr;
@@ -1600,6 +1628,16 @@ void OCCTFilletBuilderSetParams(OCCTFilletBuilderRef builder,
 {
   if (!builder)
     return;
+  // #3367: a tolerance that is not a finite positive number is left unapplied. A zero or
+  // negative tApp3d makes Build() SIGSEGV (measured: 0 and -1 crash, 1e-15 and up build); the
+  // other five slots were measured to survive 0, but none has a meaning at zero either, and a
+  // NaN tApp3d did not return within the probe's time.
+  const double tolerances[] = {tang, tesp, t2d, tApp3d, tApp2d, fleche};
+  for (double t : tolerances)
+  {
+    if (!std::isfinite(t) || t <= 0.0)
+      return;
+  }
   try
   {
     builder->fillet.SetParams(tang, tesp, t2d, tApp3d, tApp2d, fleche);
