@@ -21,7 +21,7 @@ retired 2026-09-02 (superseded by upstream's own fix, not shipped in our pin), a
 2026-09-20 (it reintroduced #280; see its [Retired patches](#retired-patches) entry), and
 `0031` retired 2026-10-10 at the `v4.0.0-kernel.6` repin (#3065: the supported pattern is one
 adaptor per worker, so the lock it added is not needed).
-The carried sequence now reads 0010–0012, 0014–0030, 0033–0034, 0036–0048, 0050–0059, 0064.
+The carried sequence now reads 0010–0012, 0014–0030, 0033–0034, 0036–0048, 0050–0059, 0064, 0068.
 The gaps are the retirements, not missing files:
 the numbers are cited across `CLAUDE.md`, `docs/`, closed issues and `Scripts/repro/`, and
 renumbering would have silently repointed every one of those citations at a different fix.
@@ -3437,6 +3437,20 @@ The edges with at most one vertex are collected while iterating and removed afte
 Measured by override-link of the patched object into a copy of the `v4.0.0-kernel.6` macOS slice: `FilletMergeWireRemovalTests` dies with signal 11 against the unpatched archive and passes against the patched one (the pair answers `nil`; the r = 1.0 control still answers a valid 32-face shape).
 
 **Upstream checked 2026-10-14:** OCCT#1619 is open with no PR and the loop is unchanged on master. **Not yet filed upstream**; it needs a GTest that fillets the model above.
+
+**Retire** once the bundled OCCT includes this fix.
+
+## 0068-BRepFill_TrimSurfaceTool-IntersectWith-refuses-incoherent-intersection-3449.patch
+
+**`BRepOffsetAPI_MakeEvolved` on a circular spine reports not-done instead of reading past a sequence** ([#3449](https://github.com/SecondMouseAU/OCCTSwift/issues/3449)).
+
+`BRepFill_TrimSurfaceTool::IntersectWith` evaluates the bisector's intersection parameters against each of the two profile edges' parallel faces and requires the two sequences to have the same length, then indexes the second by the first's length. The requirement is `StdFail_NotDone_Raise_if`, which `No_Exception` (Release) empties, so the mismatch is unchecked and `Points2.Value(i)` reads past the shorter sequence. The result is an uncatchable SIGSEGV in the `BRepOffsetAPI_MakeEvolved` constructor for a circle spine (wire or disk) and a profile that leaves the circle's axis, e.g. `(0,0,0) -> (0,2,3)` with `axeProf` false.
+
+The check is a literal `throw StdFail_NotDone`, as the two other `StdFail_NotDone` sites in the file already are. The constructor now throws, the bridge's `catch (...)` turns it into `nil`, and no input that built before changes.
+
+Measured by override-link of the patched `BRepFill_TrimSurfaceTool.cxx` (`-O2 -DNo_Exception`) against the `v4.0.0-kernel.6` macOS slice: the circle-spine probes with the profile through the axis die with signal 11 unpatched and report `StdFail_NotDone: ... incoherent intersection` patched; the off-axis profile `(5,0,0) -> (5,2,3)`, the `axeProf` true case and a start 1 from the axis still build in both.
+
+**Upstream checked 2026-10-15:** no open issue or PR on Open-Cascade-SAS/OCCT names `BRepFill_TrimSurfaceTool`. **Not yet filed upstream**; the same compiled-out `_Raise_if` pattern is catalogued in `okf/policies/occt-validation-is-compiled-out.md`.
 
 **Retire** once the bundled OCCT includes this fix.
 
