@@ -99,6 +99,7 @@ Tests/OCCTModelingTests/Issue2739ShelledSingleArgumentTests.swift	Tests/OCCTMode
 Tests/OCCTModelingTests/Issue274HoleWireOrientationTests.swift	Tests/OCCTModelingTests/Construction/HoleWireOrientationTests.swift	Construction	-	faceAddHole hole-wire orientation correction
 Tests/OCCTModelingTests/Issue2769SplitAndClosedEdgeTests.swift	Tests/OCCTModelingTests/Splitting/SplitAndClosedEdgeNothingToSplitTests.swift	Splitting	-	split by angle and closed-edge split with nothing to split
 Tests/OCCTModelingTests/Issue3003OffsetOrderTests.swift	Tests/OCCTModelingTests/Offsets/ArcJoinOffsetOrderTests.swift	Offsets	-	arc-join offsets independent of allocation addresses
+Tests/OCCTModelingTests/Offsets/ArcJoinCapOrientationTests.swift	Tests/OCCTModelingTests/Offsets/ArcJoinCapOrientationTests.swift	Offsets	-	arc-join thick solid removing a blind-hole floor stays outward (carried patch 0066)
 Tests/OCCTModelingTests/Issue3061OffsetNullResultTests.swift	Tests/OCCTModelingTests/Offsets/OffsetNullResultTests.swift	Offsets	-	collapsing arc offset returns nil
 Tests/OCCTModelingTests/Issue3098MiddlePathGuardTests.swift	Tests/OCCTModelingTests/Sweeps/MiddlePathGuardTests.swift	Sweeps	-	middlePath refuses crashing inputs
 Tests/OCCTModelingTests/Issue3100BuilderHangTests.swift	Tests/OCCTModelingTests/Sweeps/BuilderHangTests.swift	Sweeps	-	extrude builders on zero, NaN and overflowing input
