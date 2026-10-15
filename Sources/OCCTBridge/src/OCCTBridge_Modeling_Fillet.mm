@@ -633,7 +633,7 @@ OCCTShapeRef OCCTShapeChamferTwoDistances(OCCTShapeRef   shape,
     chamfer.Build();
     if (!chamfer.IsDone())
       return nullptr;
-    if (!occtBlendResultIsValid(chamfer.Shape())) // #3200
+    if (!occtBlendResultIsAnswer(shape->shape, chamfer.Shape())) // #3200
       return nullptr;
     return new OCCTShape(chamfer.Shape());
   }
@@ -674,7 +674,7 @@ OCCTShapeRef OCCTShapeChamferDistAngle(OCCTShapeRef   shape,
     chamfer.Build();
     if (!chamfer.IsDone())
       return nullptr;
-    if (!occtBlendResultIsValid(chamfer.Shape())) // #3200
+    if (!occtBlendResultIsAnswer(shape->shape, chamfer.Shape())) // #3200
       return nullptr;
     return new OCCTShape(chamfer.Shape());
   }
@@ -750,7 +750,7 @@ OCCTShapeRef OCCTShapeFilletEvolving(OCCTShapeRef                 shape,
       return nullptr;
 
     TopoDS_Shape result = fillet.Shape();
-    if (!occtBlendResultIsValid(result)) // #3200
+    if (!occtBlendResultIsAnswer(shape->shape, result)) // #3200
       return nullptr;
     return new OCCTShape(result);
   }
@@ -875,7 +875,8 @@ OCCTShapeRef OCCTFace2DChamfer(OCCTShapeRef   shape,
     chamfer.Build();
     if (!chamfer.IsDone())
       return nullptr;
-    if (!occtBlendResultIsValid(chamfer.Shape())) // #3200
+    if (!occtBlendResultIsValid(chamfer.Shape())) // #3200, validity only: a 2D blend answers a face
+                                                  // (see OCCTFace2DFillet)
       return nullptr;
     return new OCCTShape(chamfer.Shape());
   }
@@ -1860,7 +1861,7 @@ OCCTShapeRef OCCTShapeFillet(OCCTShapeRef shape, double radius)
     fillet.Build();
     if (!fillet.IsDone())
       return nullptr;
-    if (!occtBlendResultIsValid(fillet.Shape())) // #3200
+    if (!occtBlendResultIsAnswer(shape->shape, fillet.Shape())) // #3200
       return nullptr;
     return new OCCTShape(fillet.Shape());
   }
@@ -1890,7 +1891,7 @@ OCCTShapeRef OCCTShapeChamfer(OCCTShapeRef shape, double distance)
     chamfer.Build();
     if (!chamfer.IsDone())
       return nullptr;
-    if (!occtBlendResultIsValid(chamfer.Shape())) // #3200
+    if (!occtBlendResultIsAnswer(shape->shape, chamfer.Shape())) // #3200
       return nullptr;
     return new OCCTShape(chamfer.Shape());
   }
@@ -1898,5 +1899,20 @@ OCCTShapeRef OCCTShapeChamfer(OCCTShapeRef shape, double distance)
   {
     occtRecordCaughtException(__func__);
     return nullptr;
+  }
+}
+
+bool OCCTBlendResultIsSane(OCCTShapeRef input, OCCTShapeRef result)
+{
+  if (!input || !result)
+    return false;
+  try
+  {
+    return occtBlendResultIsSane(input->shape, result->shape);
+  }
+  catch (...)
+  {
+    occtRecordCaughtException(__func__);
+    return false;
   }
 }
