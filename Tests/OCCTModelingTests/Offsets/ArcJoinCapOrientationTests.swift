@@ -21,9 +21,6 @@ import Testing
 @Suite("Arc-join thick solid keeps the outward orientation when a blind-hole floor is removed")
 struct ArcJoinCapOrientationTests {
 
-    private static let isLocalKernel =
-        ProcessInfo.processInfo.environment["OCCTSWIFT_LOCAL"] == "1"
-
     /// A freshly built block, every time: the defect is in how the allocator laid the shapes out,
     /// and one block offset again and again does not show it.
     private func drilledBlock() throws -> Shape {
@@ -48,19 +45,15 @@ struct ArcJoinCapOrientationTests {
         return try #require(Shape.fromFace(face))
     }
 
-    /// Gated on `OCCTSWIFT_LOCAL=1` until carried patch `0066` is pinned.
-    ///
-    /// The fix is not in the pinned asset, and the unpatched kernel answers an inside-out solid in
-    /// every build, so an unguarded run is red on every default `build-and-test`.
-    /// Ungate it at the repin that pins `0066`, or the test stays skipped on every default run
-    /// (#2983).
+    /// Needs carried patch `0066`, which `v4.0.0-kernel.7` is the first asset to hold. Without it
+    /// the kernel answers an inside-out solid in every build. It was gated on `OCCTSWIFT_LOCAL=1`
+    /// until that repin (#2983).
     ///
     /// Many fresh blocks rather than one: without `0053` the unpatched result depends on where the
     /// heap put the shapes, and a kernel that has `0053` but not `0066` must not be able to pass
     /// by luck either.
     @Test(
-        "Removing the floor of a blind hole gives a valid solid of the same volume every time",
-        .enabled(if: ArcJoinCapOrientationTests.isLocalKernel))
+        "Removing the floor of a blind hole gives a valid solid of the same volume every time")
     func floorRemovalIsValidAndOutward() throws {
         var held: [[UInt8]] = []
         var invalid: [Int] = []
