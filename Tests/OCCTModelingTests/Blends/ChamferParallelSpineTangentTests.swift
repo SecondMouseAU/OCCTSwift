@@ -80,7 +80,8 @@ struct ChamferParallelSpineTangentTests {
     /// process.
     ///
     /// Needs carried patch `0065`, which `v4.0.0-kernel.7` is the first asset to hold, so it runs
-    /// on the pinned kernel with no gate (it was gated on `OCCTSWIFT_LOCAL=1` until that repin, #2983).
+    /// on the pinned kernel with no gate (it was gated on `OCCTSWIFT_LOCAL=1` until that repin,
+    /// #2983).
     ///
     /// Unpatched, the child dies by SIGSEGV. Patched, all 36 edges answer, and the count below says
     /// what: none returns a shape. OCCT itself declines all 36 (`IsDone() == false`), including
