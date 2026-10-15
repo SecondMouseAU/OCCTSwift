@@ -47,7 +47,7 @@ let useLocalXCFramework: Bool = {
         atPath: occtPackageDir + "/Libraries/OCCT.xcframework/Info.plist")
 }()
 
-// OCCT V8.0.1 plus the forty-seven carried patches are documented in Scripts/patches/README.md
+// OCCT V8.0.1 plus the forty-eight carried patches are documented in Scripts/patches/README.md
 // (patch list, verification status, and CI coverage gaps for maintainers).
 let occtTarget: Target =
     isWASI
@@ -277,10 +277,10 @@ let occtTarget: Target =
         // which is what they were built to do; if a later asset repeats either stray the finding comes
         // back rather than staying suppressed.
         //
-        // The pinned asset lacks three of them: it holds forty-five and Scripts/patches/ holds forty-eight.
-        // They are 0064 (#3335), 0065 (#3350, a chamfer with parallel spine tangents) and 0069 (#3330),
-        // carried after v4.0.0-kernel.6 was built, so no CI job that resolves the asset exercises them
-        // until a rebuild pins them; ChamferParallelSpineTangentTests (#3350) runs in
+        // The pinned asset lacks four of them: it holds forty-five and Scripts/patches/ holds forty-nine.
+        // They are 0064 (#3335), 0065 (#3350, a chamfer with parallel spine tangents), 0068 (#3449) and
+        // 0069 (#3330), carried after v4.0.0-kernel.6 was built, so no CI job that resolves the asset
+        // exercises them until a rebuild pins them; ChamferParallelSpineTangentTests (#3350) runs in
         // kernel-integration.yml, gated on OCCTSWIFT_LOCAL=1, until a rebuild carries 0065. The rows
         // for 0053 through 0059 below are history in the way the rows for 0044
         // through 0052 became at v4.0.0-kernel.4. kernel.6 also dropped 0031 (retired, #3065), which
@@ -328,11 +328,11 @@ let occtTarget: Target =
         // wrong: InitializeMissingParameters is also the REPAIR that re-sets DirectFaces on an actor a
         // STEPCAFControl_Reader has left with empty OperationsFlags, which is #280's exact mechanism.
         // kernel-integration.yml caught it on main. See Scripts/patches/README.md's retired 0035 entry.
-        // Scripts/patches/ holds forty-eight patches and the pinned asset holds forty-five of them,
-        // enumerated above. `ls Scripts/patches/*.patch | wc -l` answers 48 against a list of 48,
-        // and the pinned asset lacks three of them: 0064 (#3335), 0065 (#3350) and 0069 (#3330),
-        // which no CI job exercises until a rebuild pins them. The v4.0.0-kernel.4 rebuild closed the
-        // divergence that 0044 had
+        // Scripts/patches/ holds forty-nine patches and the pinned asset holds forty-five of them,
+        // enumerated above. `ls Scripts/patches/*.patch | wc -l` answers 49 against a list of 49,
+        // and the pinned asset lacks four of them: 0064 (#3335), 0065 (#3350), 0068 (#3449) and
+        // 0069 (#3330), which no CI job exercises until a rebuild pins them. The v4.0.0-kernel.4
+        // rebuild closed the divergence that 0044 had
         // opened and that 0045 through 0052 widened, the v4.0.0-kernel.5 rebuild closed the one that
         // 0053 through 0057 opened, and the v4.0.0-kernel.6 rebuild closed the one that 0058 and 0059
         // opened. The rows that follow are kept as the record of what each patch does and which
@@ -513,6 +513,14 @@ let occtTarget: Target =
         //         20 of 20 runs on OCCT#1619's model). NOT in v4.0.0-kernel.6; the asset lacks it,
         //         so FilletMergeWireRemovalTests is gated on OCCTSWIFT_LOCAL=1 until the next
         //         repin (#3335).
+        //
+        //   0068  BRepFill_TrimSurfaceTool::IntersectWith checks that its two intersection
+        //         sequences have the same length with a literal throw, where the
+        //         StdFail_NotDone_Raise_if No_Exception empties let the loop index the shorter
+        //         one and read past it (an uncatchable SIGSEGV from BRepOffsetAPI_MakeEvolved
+        //         on a circular spine with a profile leaving its axis). NOT in
+        //         v4.0.0-kernel.6; EvolvedCircularSpineTests is gated on OCCTSWIFT_LOCAL=1
+        //         until the next repin (#3449).
         //
         //   0069  OCAF binary readers report a damaged file through the reader status: a null
         //         header in BinLDrivers_DocumentRetrievalDriver::Read, an empty types table in

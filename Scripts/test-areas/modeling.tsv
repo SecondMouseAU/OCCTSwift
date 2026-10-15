@@ -60,6 +60,7 @@ Tests/OCCTModelingTests/EdgePolylineTests.swift	Tests/OCCTModelingTests/EdgePoly
 Tests/OCCTModelingTests/EdgeSelectorWiredTests.swift	Tests/OCCTModelingTests/FeatureReconstruction/EdgeSelectorWiredTests.swift	FeatureReconstruction	-	EdgeSelector nearPoint and onFeature wired through the reconstructor
 Tests/OCCTModelingTests/EdgeSplitTests.swift	Tests/OCCTModelingTests/Splitting/EdgeSplitTests.swift	Splitting	-	edge split at a midpoint
 Tests/OCCTModelingTests/EvolvedAdvancedTests.swift	Tests/OCCTModelingTests/Sweeps/EvolvedAdvancedTests.swift	Sweeps	-	evolved advanced with arc and intersection joins
+Tests/OCCTModelingTests/Sweeps/EvolvedCircularSpineTests.swift	Tests/OCCTModelingTests/Sweeps/EvolvedCircularSpineTests.swift	Sweeps	-	evolved shape on a circular spine refuses an incoherent trim (carried patch 0068)
 Tests/OCCTModelingTests/EvolvingFilletTests.swift	Tests/OCCTModelingTests/Blends/EvolvingFilletTests.swift	Blends	-	evolving-radius fillet on single and multiple edges
 Tests/OCCTModelingTests/ExtendedExtrusionTests.swift	Tests/OCCTModelingTests/Sweeps/ExtendedExtrusionTests.swift	Sweeps	-	extrude a face or edge by a vector
 Tests/OCCTModelingTests/FeatureReconstructorInputBodyTests.swift	Tests/OCCTModelingTests/FeatureReconstruction/FeatureReconstructorInputBodyTests.swift	FeatureReconstruction	-	FeatureReconstructor with an input body
