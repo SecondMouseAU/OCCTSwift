@@ -21,7 +21,7 @@ retired 2026-09-02 (superseded by upstream's own fix, not shipped in our pin), a
 2026-09-20 (it reintroduced #280; see its [Retired patches](#retired-patches) entry), and
 `0031` retired 2026-10-10 at the `v4.0.0-kernel.6` repin (#3065: the supported pattern is one
 adaptor per worker, so the lock it added is not needed).
-The carried sequence now reads 0010–0012, 0014–0030, 0033–0034, 0036–0048, 0050–0059, 0064.
+The carried sequence now reads 0010–0012, 0014–0030, 0033–0034, 0036–0048, 0050–0059, 0064, 0066.
 The gaps are the retirements, not missing files:
 the numbers are cited across `CLAUDE.md`, `docs/`, closed issues and `Scripts/repro/`, and
 renumbering would have silently repointed every one of those citations at a different fix.
@@ -3439,6 +3439,44 @@ Measured by override-link of the patched object into a copy of the `v4.0.0-kerne
 **Upstream checked 2026-10-14:** OCCT#1619 is open with no PR and the loop is unchanged on master. **Not yet filed upstream**; it needs a GTest that fillets the model above.
 
 **Retire** once the bundled OCCT includes this fix.
+
+## 0066-BRepOffset_MakeLoops-cap-splits-oriented-against-the-offset-faces-3464.patch
+
+**An arc-join thick solid that removes the floor of a blind hole no longer comes back inside out**
+([#3464](https://github.com/SecondMouseAU/OCCTSwift/issues/3464), upstream
+[OCCT#1600](https://github.com/Open-Cascade-SAS/OCCT/pull/1600), found by eliasaronson).
+
+`BRepOffset_MakeLoops::BuildOnContext` rebuilds each cap, the face closing the opening a removed
+face leaves, by splitting it with `BRepAlgo_Loop` on the reversed face. The splits were registered
+as images of the cap in the orientation `BRepAlgo_Loop` built them, whatever the offset faces they
+share cut edges with looked like. `BRepOffset_MakeOffset::MakeShells` passes the roots of
+`myImageOffset` to `BRepTools_Quilt`, which keeps the orientation of the first face of each
+component, so a shell whose first root is a cap split came out inside out, and which root is first
+is the root order.
+
+That is why it is intermittent before `0053` (the order is the heap) and permanent after it (the
+order is the binding order, and for this block the cap is first). The block is 57.5 x 40 x 27.5
+with two d1.5 holes 40 deep, `MakeThickSolidByJoin` removing the floor of the second hole, offset
+-1.95, tolerance 1e-3, `GeomAbs_Arc`: 21 of 200 invalid on upstream IR with the roots in heap
+order, 200 of 200 with `0053` alone, 0 of 200 with this change, volume 19219.48 in all of them.
+
+The fix collects the orientation of every edge of the last images of each offset face that borders
+the cap, and reverses a split of the cap whose edges shared with those faces run the same way in
+it as in them. Seam edges (an edge twice in the split) and edges not shared with an offset face
+are not counted. `BRepOffset_MakeOffset.cxx` is untouched: upstream's first commit of #1600 is
+`0053` already.
+
+Measured by linking the patched `BRepOffset_MakeLoops.cxx` object into a copy of the
+`v4.0.0-kernel.6` macOS slice (which carries `0053`):
+`ArcJoinCapOrientationTests` builds the block afresh 100 times with a different amount of heap
+held before each and fails against the asset (100 of 100 invalid) and passes with the object
+linked (0 of 100, three runs). The offset, thick solid, shell, draft, fillet and pipe suites pass
+with it linked. The kernel with the object linked is not a rebuilt asset: no cmake build, no iOS
+slice, and the object was compiled with `-O2` rather than the kernel's own flags.
+
+**Upstream:** the change is the second commit of OCCT#1600, with its GTests; the PR is open.
+
+**Retire** once the bundled OCCT includes OCCT#1600.
 
 # Retired patches
 
