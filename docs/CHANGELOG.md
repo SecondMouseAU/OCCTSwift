@@ -33,6 +33,15 @@ let cyl = Shape.cylinder(radius: 5, height: 10)!
 cyl.filleted(edges: cyl.edges().filter { $0.isCircle }, radius: 5)  // nil, was two solids
 ```
 
+### `FilletBuilder.build()` no longer crashes after `resetContour(_:)` or with a zero tolerance (#3367)
+
+- `FilletBuilder.build()` returns `nil` when a contour holds no radius, which is the state `resetContour(_:)` leaves behind. Giving the contour a radius again builds; variable-radius contours are unaffected.
+- `FilletBuilder.setParams` leaves the tolerances unchanged when any of the six is zero, negative or not finite.
+
+Closes #3367
+
+Refs #3449 (measured and documented, not fixed; left open)
+
 ### Fillets whose ends meet in the merge no longer crash the process (#3335)
 
 Fillets whose ends meet in the merge no longer crash the process (#3335). `Shape.filleted(edges:radius:)` on such a model died with an uncatchable SIGSEGV from a use-after-free in `CorrectUnclosedWire`; carried patch `0064` fixes it, so the call returns a shape or `nil`.

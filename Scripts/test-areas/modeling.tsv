@@ -67,6 +67,7 @@ Tests/OCCTModelingTests/FeatureReconstructorTests.swift	Tests/OCCTModelingTests/
 Tests/OCCTModelingTests/FeatureSpecCodableTests.swift	Tests/OCCTModelingTests/FeatureReconstruction/FeatureSpecCodableTests.swift	FeatureReconstruction	-	FeatureSpec Codable round trips
 Tests/OCCTModelingTests/FilletBuilderCompletionsTests.swift	Tests/OCCTModelingTests/Blends/FilletBuilderCompletionsTests.swift	Blends	-	fillet builder parameters, continuity, reset and simulate
 Tests/OCCTModelingTests/FilletBuilderCompletionsV124Tests.swift	Tests/OCCTModelingTests/Blends/FilletBuilderContourQueryTests.swift	Blends	#2691	fillet builder contour, vertex and surface queries
+Tests/OCCTModelingTests/Blends/FilletBuilderCrashGuardTests.swift	Tests/OCCTModelingTests/Blends/FilletBuilderCrashGuardTests.swift	Blends	-	fillet builder refuses a radius-less contour and non-positive tolerances
 Tests/OCCTModelingTests/FilletBuilderHistoryTests.swift	Tests/OCCTModelingTests/Blends/FilletBuilderHistoryTests.swift	Blends	#2692	fillet builder bounds, law, generated and modified queries
 Tests/OCCTModelingTests/FilletBuilderV121Tests.swift	Tests/OCCTModelingTests/Blends/FilletBuilderRadiusModesTests.swift	Blends	#2694	fillet builder constant and evolving radius, diagnostics
 Tests/OCCTModelingTests/FilletSurfBuilderTests.swift	Tests/OCCTModelingTests/Blends/FilletSurfBuilderTests.swift	Blends	#2691	FilletSurf_Builder surface
