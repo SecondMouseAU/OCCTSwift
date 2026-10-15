@@ -16,39 +16,39 @@ struct MathSolverFunctionRootTests {
             (3.0, 2.0),
             (-3.0, -2.0),
         ] as [(Double, Double)])
-    func findRootNewton(near: Double, expected: Double) {
+    func findRootNewton(near: Double, expected: Double) throws {
         // f(x) = x^2 - 4, roots at x=+-2
-        if let root = MathSolver.findRoot(near: near) { x in
-            (value: x * x - 4, derivative: 2 * x)
-        } {
-            #expect(abs(root - expected) < 1e-6)
-        }
+        let root = try #require(
+            MathSolver.findRoot(near: near) { x in
+                (value: x * x - 4, derivative: 2 * x)
+            })
+        #expect(abs(root - expected) < 1e-6)
     }
 
-    @Test func findRootBounded() {
+    @Test func findRootBounded() throws {
         // f(x) = x^2 - 4, root at x=2 in [0, 5]
-        if let root = MathSolver.findRoot(near: 3.0, in: 0.0...5.0) { x in
-            (value: x * x - 4, derivative: 2 * x)
-        } {
-            #expect(abs(root - 2.0) < 1e-6)
-        }
+        let root = try #require(
+            MathSolver.findRoot(near: 3.0, in: 0.0...5.0) { x in
+                (value: x * x - 4, derivative: 2 * x)
+            })
+        #expect(abs(root - 2.0) < 1e-6)
     }
 
-    @Test func findRootBisection() {
+    @Test func findRootBisection() throws {
         // f(x) = x^2 - 4 on [0, 5], root at x=2
-        if let root = MathSolver.findRootBisection(in: 0.0...5.0) { x in
-            (value: x * x - 4, derivative: 2 * x)
-        } {
-            #expect(abs(root - 2.0) < 1e-6)
-        }
+        let root = try #require(
+            MathSolver.findRootBisection(in: 0.0...5.0) { x in
+                (value: x * x - 4, derivative: 2 * x)
+            })
+        #expect(abs(root - 2.0) < 1e-6)
     }
 
-    @Test func findRootCubic() {
+    @Test func findRootCubic() throws {
         // f(x) = x^3 - 8, root at x=2
-        if let root = MathSolver.findRoot(near: 3.0) { x in
-            (value: x * x * x - 8, derivative: 3 * x * x)
-        } {
-            #expect(abs(root - 2.0) < 1e-6)
-        }
+        let root = try #require(
+            MathSolver.findRoot(near: 3.0) { x in
+                (value: x * x * x - 8, derivative: 3 * x * x)
+            })
+        #expect(abs(root - 2.0) < 1e-6)
     }
 }

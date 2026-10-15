@@ -5,9 +5,8 @@ import Testing
 
 @Suite("BracketMinimum")
 struct BracketMinimumTests {
-    @Test func bracketQuadratic() {
-        let result = MathSolver.bracketMinimum(a: -5.0, b: 2.0) { x in x * x }
-        #expect(result != nil)
-        if let r = result { #expect(r.fb <= r.fa && r.fb <= r.fc) }
+    @Test func bracketQuadratic() throws {
+        let r = try #require(MathSolver.bracketMinimum(a: -5.0, b: 2.0) { x in x * x })
+        #expect(r.fb <= r.fa && r.fb <= r.fc)
     }
 }
