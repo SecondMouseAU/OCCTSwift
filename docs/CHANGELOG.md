@@ -21,6 +21,10 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### An arc-join thick solid that removes the floor of a blind hole is no longer inside out (#3464)
+
+`Shape.thickSolid(facesToRemove:offset:tolerance:joinType:)` with `.arc` on a block with blind holes, removing a hole floor, returned an invalid, inside-out solid in every build since carried patch `0053` fixed the face order, and in a fraction of builds before it (upstream OCCT#1600). Carried patch `0066` orients the splits of the cap against the offset faces in `BRepOffset_MakeLoops::BuildOnContext`, so the result no longer depends on which face `BRepTools_Quilt` sees first. Live at the next kernel repin.
+
 ### `Shape.evolvedAdvanced` on a circular spine returns nil instead of crashing (#3449)
 
 A circle spine (a wire, or its disk face) with a profile that leaves the circle's axis, such as `(0,0,0)` to `(0,2,3)` with `axeProf: false`, terminated the process with SIGSEGV inside `BRepOffsetAPI_MakeEvolved`. The kernel's sequence-length check in `BRepFill_TrimSurfaceTool::IntersectWith` was compiled out of the Release build, so it read past a sequence. Carried patch `0068` makes it a real throw and the call returns `nil`. Takes effect at the next kernel repin.
