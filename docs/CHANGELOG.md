@@ -21,6 +21,15 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### `FilletBuilder.build()` no longer crashes after `resetContour(_:)` or with a zero tolerance (#3367)
+
+- `FilletBuilder.build()` returns `nil` when a contour holds no radius, which is the state `resetContour(_:)` leaves behind. Giving the contour a radius again builds; variable-radius contours are unaffected.
+- `FilletBuilder.setParams` leaves the tolerances unchanged when any of the six is zero, negative or not finite.
+
+Closes #3367
+
+Refs #3449 (measured and documented, not fixed; left open)
+
 ### Evolved builders refuse the inputs that never returned and the empty shapes they answered (#3368)
 
 `Shape.evolvedAdvanced(spine:profile:axeProf: false)` no longer hangs on a profile through the centre of a circular spine (OCCT's `BRepFill::Axe` leaves the frame NaN there and the sweep spun in `Geom_TrimmedCurve::SetTrim`); it returns `nil`, as does `Shape.evolved(spineFace:profileWire:axis...)` for a NaN, infinite or zero axis. `evolved`, `evolvedAdvanced`, `evolved(spineFace:)` and `advancedEvolved` return `nil` instead of an empty compound when the profile offsets the spine to nothing or lies in the spine's plane. The profile placement rule (Y lateral offset, Z height, X dropped), that only the arc join is implemented, and that `advancedEvolved` is a different algorithm from `evolved` are documented.
