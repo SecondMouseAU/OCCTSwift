@@ -645,6 +645,20 @@ extension Document {
         return (Document(handle: ref), ReaderStatus(rawValue: statusRaw) ?? .ok)
     }
 
+    /// Open a file with the pre-open guard of ``loadOCAF(from:)`` bypassed.
+    ///
+    /// Internal and for tests only: it puts a malformed file in front of the kernel's own readers,
+    /// which is a process-killing fault on a kernel without carried patch `0069`.
+    static func loadOCAFSkippingPreOpenGuard(
+        from path: String
+    ) -> (document: Document?, status: ReaderStatus) {
+        var statusRaw: Int32 = -1
+        guard let ref = OCCTDocumentLoadOCAFUnguarded(path, &statusRaw) else {
+            return (nil, ReaderStatus(rawValue: statusRaw) ?? .openError)
+        }
+        return (Document(handle: ref), ReaderStatus(rawValue: statusRaw) ?? .ok)
+    }
+
     /// Create a new document with a specific OCAF format.
     ///
     /// Supported: "BinOcaf", "XmlOcaf", "BinLOcaf", "XmlLOcaf", "BinXCAF", "XmlXCAF".

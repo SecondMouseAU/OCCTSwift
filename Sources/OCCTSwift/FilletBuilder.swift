@@ -24,11 +24,13 @@ import OCCTPlatform
 /// ```
 public final class FilletBuilder: @unchecked Sendable {
     private let handle: OCCTFilletBuilderRef
+    private let input: Shape
 
     /// Create a fillet builder on the given shape.
     public init?(shape: Shape) {
         guard let ref = OCCTFilletBuilderCreate(shape.handle) else { return nil }
         self.handle = ref
+        self.input = shape
     }
 
     deinit { OCCTFilletBuilderRelease(handle) }
@@ -48,11 +50,14 @@ public final class FilletBuilder: @unchecked Sendable {
     /// Build the filleted result.
     ///
     /// Answers nil when the builder is not done, and also when it is done but the result is
-    /// `BRepCheck`-invalid (#3200); ``hasResult``, ``faultyContourCount`` and ``faultyVertexCount``
+    /// `BRepCheck`-invalid (#3200), has a different solid count than the input, or is the input
+    /// unchanged (#3297, #3298); ``hasResult``, ``faultyContourCount`` and ``faultyVertexCount``
     /// are the builder's own diagnostics and are not changed by that.
     public func build() -> Shape? {
         guard let ref = OCCTFilletBuilderBuild(handle) else { return nil }
-        return Shape(handle: ref)
+        let result = Shape(handle: ref)
+        guard OCCTBlendResultIsSane(input.handle, result.handle) else { return nil }
+        return result
     }
 
     /// Number of contours.
@@ -203,6 +208,10 @@ extension FilletBuilder {
     // MARK: - FilletBuilder completions (v0.126.0)
 
     /// Set fillet tolerances.
+    ///
+    /// All six must be finite and positive. Otherwise the call changes nothing and the previous
+    /// tolerances stay in force: a zero or negative `tApp3d` crashes ``build()`` uncatchably, so
+    /// such values are refused here rather than stored.
     public func setParams(
         tang: Double, tesp: Double, t2d: Double,
         tApp3d: Double, tApp2d: Double, fleche: Double

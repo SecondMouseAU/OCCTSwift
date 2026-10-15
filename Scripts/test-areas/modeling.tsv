@@ -2,6 +2,7 @@
 Tests/OCCTModelingTests/AAGTests.swift	Tests/OCCTModelingTests/FeatureRecognition/AAGTests.swift	FeatureRecognition	#2653	attributed adjacency graph: node normals, neighbours, edge between, pocket detection
 Tests/OCCTModelingTests/AdvancedModelingTests.swift	Tests/OCCTModelingTests/AdvancedModelingTests.swift	(stays)	#2654	fillet, draft, shell, pipe shell, wire curve and surface-construction grab bag; spans five areas
 Tests/OCCTModelingTests/BiTgteBlendTests.swift	Tests/OCCTModelingTests/Blends/BiTgteBlendTests.swift	Blends	#2666	BiTgte_Blend on box edges
+Tests/OCCTModelingTests/Blends/BlendExactHalfSanityTests.swift	Tests/OCCTModelingTests/Blends/BlendExactHalfSanityTests.swift	Blends	-	chamfer and fillet at an exact-half tie answer nil, not the unchanged input or two solids
 Tests/OCCTModelingTests/BooleanCheckTests.swift	Tests/OCCTModelingTests/Booleans/BooleanCheckTests.swift	Booleans	#2666	pre-validation of boolean operands against the booleans
 Tests/OCCTModelingTests/BooleanExpansionTests.swift	Tests/OCCTModelingTests/Booleans/BooleanExpansionTests.swift	Booleans	#2687	section with tolerance, multi split, cut with history, defeature on boolean entry points
 Tests/OCCTModelingTests/BooleanFullHistoryTests.swift	Tests/OCCTModelingTests/History/BooleanFullHistoryTests.swift	History	#2697	union, subtract, intersect and split with per-input full history
@@ -66,6 +67,7 @@ Tests/OCCTModelingTests/FeatureReconstructorTests.swift	Tests/OCCTModelingTests/
 Tests/OCCTModelingTests/FeatureSpecCodableTests.swift	Tests/OCCTModelingTests/FeatureReconstruction/FeatureSpecCodableTests.swift	FeatureReconstruction	-	FeatureSpec Codable round trips
 Tests/OCCTModelingTests/FilletBuilderCompletionsTests.swift	Tests/OCCTModelingTests/Blends/FilletBuilderCompletionsTests.swift	Blends	-	fillet builder parameters, continuity, reset and simulate
 Tests/OCCTModelingTests/FilletBuilderCompletionsV124Tests.swift	Tests/OCCTModelingTests/Blends/FilletBuilderContourQueryTests.swift	Blends	#2691	fillet builder contour, vertex and surface queries
+Tests/OCCTModelingTests/Blends/FilletBuilderCrashGuardTests.swift	Tests/OCCTModelingTests/Blends/FilletBuilderCrashGuardTests.swift	Blends	-	fillet builder refuses a radius-less contour and non-positive tolerances
 Tests/OCCTModelingTests/FilletBuilderHistoryTests.swift	Tests/OCCTModelingTests/Blends/FilletBuilderHistoryTests.swift	Blends	#2692	fillet builder bounds, law, generated and modified queries
 Tests/OCCTModelingTests/FilletBuilderV121Tests.swift	Tests/OCCTModelingTests/Blends/FilletBuilderRadiusModesTests.swift	Blends	#2694	fillet builder constant and evolving radius, diagnostics
 Tests/OCCTModelingTests/FilletSurfBuilderTests.swift	Tests/OCCTModelingTests/Blends/FilletSurfBuilderTests.swift	Blends	#2691	FilletSurf_Builder surface
