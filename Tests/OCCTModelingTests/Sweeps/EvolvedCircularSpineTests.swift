@@ -3,7 +3,7 @@ import Testing
 
 @testable import OCCTSwift
 
-/// A circular spine with an on-axis profile returns nil instead of crashing the process.
+/// A circular spine with a profile off its axis is refused instead of crashing.
 ///
 /// #3449: `BRepFill_TrimSurfaceTool::IntersectWith` compares the length of the two intersection
 /// sequences with a `_Raise_if` macro, which a Release (`No_Exception`) kernel empties, and
@@ -37,11 +37,8 @@ struct EvolvedCircularSpineTests {
         // Before the fix this call killed the test process.
         let result = Shape.evolvedAdvanced(
             spine: try disk(), profile: profile, axeProf: false, solid: false, volume: false)
-        // Measured: nil after the fix (the kernel reports NotDone). A shape is also acceptable,
-        // but never an invalid one.
-        if let result {
-            #expect(result.isValid)
-        }
+        // Measured: nil after the fix (the kernel reports NotDone).
+        #expect(result == nil)
     }
 
     @Test("An off-axis profile on the same spine still builds")
