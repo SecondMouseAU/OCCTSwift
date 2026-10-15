@@ -75,6 +75,7 @@ struct GeometryConstructionTests {
     func extrudeFace() throws {
         let rect = try #require(Wire.rectangle(width: 10, height: 5))
         let face = try #require(Shape.face(from: rect))
+        #expect(face.isValid)
 
         // Extrude the face to create a solid
         let solid = try #require(Shape.extrude(profile: rect, direction: SIMD3(0, 0, 1), length: 3))

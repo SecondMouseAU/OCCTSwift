@@ -110,9 +110,15 @@ struct Issue2857IntfToolIndexGuardTests {
         // such `Int` there: `Int.max` IS `Int32.max`, two entries above already cover the largest
         // index the platform can express, and `Int(Int32.max) + 1` would overflow on evaluation
         // (#2928). Appended rather than written into the literal so nothing about the 64-bit list
-        // changes, and written as a ternary rather than an `if` because the compiler folds
-        // `Int.bitWidth > 32` and warns `will never be executed` on the statement form.
-        badIndices += Int.bitWidth > 32 ? [Int(Int32.max) + 1] : []
+        // changes. Spelled through `Int(exactly:)` on an `Int64` sum: it is `nil` where `Int` is 32
+        // bits and nothing is evaluated that can overflow, with no `Int.bitWidth` branch for the
+        // compiler to fold and warn `will never be executed` on, which a ternary does not avoid
+        // (#3472).
+        let pastInt32: Int? = Int(exactly: Int64(Int32.max) + 1)
+        #expect(
+            (pastInt32 == nil) == (Int.bitWidth <= 32),
+            "the past-Int32 case must exist exactly where Int is 64 bits")
+        badIndices += pastInt32.map { [$0] } ?? []
         for index in badIndices {
             #expect(
                 tool.beginParam(segment: index) == nil, "beginParam(segment: \(index)) returned")

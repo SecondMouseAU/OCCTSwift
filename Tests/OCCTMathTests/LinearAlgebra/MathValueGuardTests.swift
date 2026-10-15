@@ -169,9 +169,14 @@ struct MathValueGuardTests {
         // than trap on the conversion. ABSENT rather than skipped where `Int` is 32 bits (wasm32),
         // because `Int.max` IS `Int32.max` there: the entry above already covers the largest index
         // the platform can express, and `Int(Int32.max) + 1` would overflow on evaluation (#2928).
-        // A ternary rather than an `if`, because the compiler folds `Int.bitWidth > 32` and warns
-        // `will never be executed` on the statement form.
-        bad += Int.bitWidth > 32 ? [(Int(Int32.max) + 1, 1)] : []
+        // Spelled through `Int(exactly:)` on an `Int64` sum, which is `nil` where `Int` is 32 bits
+        // and evaluates nothing that can overflow. A ternary on `Int.bitWidth` does not avoid the
+        // `will never be executed` warning, because the compiler folds the condition (#3472).
+        let pastInt32: Int? = Int(exactly: Int64(Int32.max) + 1)
+        #expect(
+            (pastInt32 == nil) == (Int.bitWidth <= 32),
+            "the past-Int32 case must exist exactly where Int is 64 bits")
+        bad += pastInt32.map { [($0, 1)] } ?? []
         for (row, col) in bad {
             #expect(m.value(row: row, col: col) == nil, "value(row: \(row), col: \(col)) returned")
             #expect(

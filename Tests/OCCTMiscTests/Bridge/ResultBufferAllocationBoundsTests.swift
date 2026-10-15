@@ -54,7 +54,7 @@ struct Issue622AllocationBounds {
     // One consequence, stated rather than left to be noticed: in the walked list at the end of this
     // file `Int.max` appears twice on wasm32, once as itself and once as this. That is the same
     // assertion made twice, not a case lost.
-    private static let pastInt32 = Int.bitWidth > 32 ? Int(Int32.max) + 1 : Int.max
+    private static let pastInt32 = Int(exactly: Int64(Int32.max) + 1) ?? Int.max
 
     private func box() throws -> Shape { try #require(Shape.box(width: 10, height: 10, depth: 10)) }
     private func sphere() throws -> Shape { try #require(Shape.sphere(radius: 5)) }
@@ -316,9 +316,11 @@ struct Issue622AllocationBounds {
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: dir) }
         for i in 0..<7 {
-            FileManager.default.createFile(
-                atPath: dir.appendingPathComponent("f\(i).txt").path,
-                contents: Data("x".utf8))
+            #expect(
+                FileManager.default.createFile(
+                    atPath: dir.appendingPathComponent("f\(i).txt").path,
+                    contents: Data("x".utf8)),
+                "setup: create f\(i).txt")
         }
         let path = dir.path
 

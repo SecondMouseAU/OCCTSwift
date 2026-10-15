@@ -62,7 +62,8 @@ struct OCAFMalformedKernelReadTests {
     private func open(_ bytes: [UInt8], ext: String) -> (loaded: Bool, status: ReaderStatus) {
         let p = path("case.\(ext)")
         defer { try? FileManager.default.removeItem(atPath: p) }
-        FileManager.default.createFile(atPath: p, contents: Data(bytes))
+        #expect(
+            FileManager.default.createFile(atPath: p, contents: Data(bytes)), "setup: write \(p)")
         let (doc, status) = Document.loadOCAFSkippingPreOpenGuard(from: p)
         return (doc != nil, status)
     }

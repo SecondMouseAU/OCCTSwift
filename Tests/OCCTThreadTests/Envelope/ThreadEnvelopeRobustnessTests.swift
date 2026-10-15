@@ -60,6 +60,6 @@ struct Issue181RobustnessTests {
         try box.writeSTEP(to: url)
         #expect(FileManager.default.fileExists(atPath: url.path))
         let size = (try? FileManager.default.attributesOfItem(atPath: url.path)[.size] as? Int) ?? 0
-        #expect((size ?? 0) > 0)
+        #expect(size > 0)
     }
 }

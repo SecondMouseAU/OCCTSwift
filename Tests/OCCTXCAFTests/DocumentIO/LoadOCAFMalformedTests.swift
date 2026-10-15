@@ -13,7 +13,10 @@ struct Issue3318LoadOCAFMalformedTests {
 
     private func write(_ bytes: [UInt8], name: String) -> String {
         let path = NSTemporaryDirectory() + "issue3318_\(name)"
-        FileManager.default.createFile(atPath: path, contents: Data(bytes))
+        // A failed write would make the malformed-file read below meaningless.
+        #expect(
+            FileManager.default.createFile(atPath: path, contents: Data(bytes)),
+            "setup: write \(name)")
         return path
     }
 
@@ -108,7 +111,9 @@ struct Issue3318LoadOCAFMalformedTests {
         // Prefixes that end inside the declaration used to hang LDOM. Only a prefix that reaches the
         // closing tag is a complete document; the complete file itself (length == count) is included.
         for length in 0...full.count {
-            FileManager.default.createFile(atPath: path, contents: full.prefix(length))
+            #expect(
+                FileManager.default.createFile(atPath: path, contents: full.prefix(length)),
+                "setup: write prefix of length \(length)")
             let text = String(decoding: full.prefix(length), as: UTF8.self)
             let complete = text.trimmingCharacters(in: .whitespacesAndNewlines).hasSuffix(
                 "</document>")

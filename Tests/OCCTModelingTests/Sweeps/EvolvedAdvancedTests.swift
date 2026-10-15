@@ -199,9 +199,16 @@ struct EvolvedAdvancedTests {
         var refused: [String: Shape] = [:]
         refused["cylinder side face"] = cylinder.subShapes(ofType: .face)[0]
         refused["B-spline face"] = wavy
-        refused["edge"] = try #require(wireShape.subShapes(ofType: .edge).first)
-        refused["shell"] = try #require(box.subShapes(ofType: .shell).first)
-        refused["compound of a wire"] = try #require(Shape.compound([wireShape]))
+        // Bound to locals first: `#require` on an expression assigned straight into a
+        // `[String: Shape]` subscript is promoted to `Shape??` and can never fail, so an empty
+        // `.first` silently dropped the key and the case vanished (#3474).
+        let edgeSpine = try #require(wireShape.subShapes(ofType: .edge).first)
+        let shellSpine = try #require(box.subShapes(ofType: .shell).first)
+        let compoundSpine = try #require(Shape.compound([wireShape]))
+        refused["edge"] = edgeSpine
+        refused["shell"] = shellSpine
+        refused["compound of a wire"] = compoundSpine
+        #expect(refused.count == 5, "all five refused spines must be present")
         for (name, spine) in refused.sorted(by: { $0.key < $1.key }) {
             for axeProf in [true, false] {
                 for volume in [false, true] {

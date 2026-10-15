@@ -494,7 +494,7 @@ struct MathDimensionBoundsTests {
         // `Int32.max` there, so no `Int` is past it, the case cannot be spelled rather than being
         // skipped, and spelling it anyway is an overflow trap that would end the whole test module
         // (#2928). `Int.max` is asserted on both platforms below, so neither is left with nothing.
-        let pastInt32: Int? = Int.bitWidth > 32 ? Int(Int32.max) + 1 : nil
+        let pastInt32: Int? = Int(exactly: Int64(Int32.max) + 1)
         #expect(MathSolver.findAllRoots(in: 0...10, samples: -1) { x in (x - 5, 1) }.count == 0)
         #expect(MathSolver.findAllRoots(in: 0...10, samples: 0) { x in (x - 5, 1) }.count == 0)
         #expect(

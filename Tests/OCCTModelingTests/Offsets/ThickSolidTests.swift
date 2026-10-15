@@ -9,8 +9,6 @@ struct ThickSolidTests {
     @Test("Hollow a box by removing top face")
     func hollowBox() throws {
         let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
-        // Find the top face index (Z=10 face)
-        let faces = box.faces()
         // Try hollowing with the first face as opening
         let result = box.hollowed(removingFaces: [0], thickness: -1.0, tolerance: 1e-3)
         #expect(result != nil)
