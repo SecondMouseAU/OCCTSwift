@@ -15,6 +15,9 @@ struct ShapeCustomSurfacePeriodicTests {
         #expect(surf.convertToPeriodic() == nil)
     }
 
+    // Pins the deprecated accessor's -1.0, so it must keep reading it; the test is itself
+    // deprecated so the reads sit in a deprecated context and raise no diagnostic (#3470).
+    @available(*, deprecated)
     @Test("conversion gap is deprecated and always -1.0 (#1510)")
     func conversionGapIsDeprecatedSentinel() throws {
         // A genuinely U-closed, non-periodic clamped BSpline surface: a full-revolution trimmed

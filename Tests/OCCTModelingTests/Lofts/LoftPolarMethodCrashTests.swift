@@ -77,6 +77,6 @@ struct LoftPolarMethodCrashTests {
         #expect(profiles.count == stations.count)
         // The call must return (nil or a shape) without aborting the process.
         _ = Shape.loft(profiles: profiles, solid: true)
-        #expect(true)  // reaching here means the polar-method crash did not fire
+        // Reaching the end of the test means the polar-method crash did not fire.
     }
 }

@@ -8,7 +8,7 @@ struct IntegrationBooleanChainStressTests {
 
     @Test func twentySubtractions() {
         guard var shape = Shape.box(width: 100, height: 100, depth: 100) else {
-            #expect(false, "Failed to create box")
+            Issue.record("Failed to create box")
             return
         }
         let origVolume = shape.volume ?? 0
