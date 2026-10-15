@@ -43,7 +43,7 @@ struct ArcJoinCapOrientationTests {
             guard let c = face.surfaceInertia.centerOfMass else { return false }
             return abs(c.x - centre.x) + abs(c.y - centre.y) + abs(c.z - centre.z) < 1e-3
         }
-        #expect(match.count == 1, "the hole floor at \(centre) must be one face")
+        try #require(match.count == 1, "the hole floor at \(centre) must be one face")
         let face = try #require(match.first)
         return try #require(Shape.fromFace(face))
     }
