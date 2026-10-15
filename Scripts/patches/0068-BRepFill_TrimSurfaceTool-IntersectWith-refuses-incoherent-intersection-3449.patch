@@ -1,0 +1,34 @@
+From: OCCTSwift ecosystem <noreply@secondmouse.au>
+Subject: [PATCH] Modeling Algorithms - BRepFill_TrimSurfaceTool::IntersectWith
+ throws NotDone on an incoherent intersection in a Release build
+
+IntersectWith evaluates the bisector's intersection parameters with each of the two profile
+edges' parallel faces and requires the two sequences to have the same length, then indexes the
+second by the first's length. The requirement is StdFail_NotDone_Raise_if, which No_Exception
+(set by CMAKE_BUILD_TYPE=Release) empties, so in a Release kernel the mismatch is unchecked and
+Points2.Value(i) reads past the end of a shorter sequence: an uncatchable SIGSEGV from
+BRepOffsetAPI_MakeEvolved on a circular spine with a profile that starts on the circle's axis.
+
+The check is now a literal throw, as the other two StdFail_NotDone sites in this file already are,
+so the constructor reports a catchable StdFail_NotDone as the source documents.
+---
+ .../TKBool/BRepFill/BRepFill_TrimSurfaceTool.cxx   | 8 ++++++--
+ 1 file changed, 6 insertions(+), 2 deletions(-)
+
+--- a/src/ModelingAlgorithms/TKBool/BRepFill/BRepFill_TrimSurfaceTool.cxx
++++ b/src/ModelingAlgorithms/TKBool/BRepFill/BRepFill_TrimSurfaceTool.cxx
+@@ -389,8 +389,12 @@
+   EvalParameters(EdgeOnF1, myFace1, myBis, Points);
+   EvalParameters(EdgeOnF2, myFace2, myBis, Points2);
+
+-  StdFail_NotDone_Raise_if(Points.Length() != Points2.Length(),
+-                           "BRepFill_TrimSurfaceTool::IntersectWith: incoherent intersection");
++  // A literal throw: the _Raise_if macro is empty in a Release (No_Exception) build, and the loop
++  // below indexes Points2 by Points' length.
++  if (Points.Length() != Points2.Length())
++  {
++    throw StdFail_NotDone("BRepFill_TrimSurfaceTool::IntersectWith: incoherent intersection");
++  }
+
+   gp_Pnt PSeq;
+   int    NbPoints = Points.Length();

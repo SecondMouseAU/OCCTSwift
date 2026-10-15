@@ -58,7 +58,7 @@
 # the stray check in docs/guides/building-occt.md's "Shipping a rebuild" answers it.
 #
 # occt-version: 8.0.1
-# derived against: 48 carried patch(es) in Scripts/patches/, every one of them verified
+# derived against: 49 carried patch(es) in Scripts/patches/, every one of them verified
 # derived against: applied in the tree the rows below were derived from.
 # patch: 0010-Intf_Interference-O1-tangent-zone-checkpoint-breaker-319 79fe529c26ef
 # patch: 0011-XCAFDoc_ShapeTool-AutoNamingScope-341 76898e2438a2
@@ -107,17 +107,18 @@
 # patch: 0059-ChFi3d-Builder-fillets-that-meet-exactly-are-built-not-refused-3207 eb520b90a343
 # patch: 0064-TopOpeBRepBuild-CorrectUnclosedWire-collects-the-edges-before-removing-them-3335 944ae3ac3679
 # patch: 0066-BRepOffset_MakeLoops-cap-splits-oriented-against-the-offset-faces-3464 56fd1014432b
+# patch: 0068-BRepFill_TrimSurfaceTool-IntersectWith-refuses-incoherent-intersection-3449 d0878c045c01
 # patch: 0069-OCAF-readers-report-a-damaged-file-through-the-reader-status-3330 f15a5e477e39
 #
 # totals: inline-raise       462 site(s) in  104 class(es)
-# totals: outofline-raise    828 site(s) in  284 class(es)
+# totals: outofline-raise    827 site(s) in  283 class(es)
 # totals: inline-throw       501 site(s) in  212 class(es)
-# totals: outofline-throw   3764 site(s) in  830 class(es)
+# totals: outofline-throw   3765 site(s) in  830 class(es)
 # totals: outofline-delegated  5947 site(s) in  924 class(es)
 # totals: inherited-live    2587 site(s) in 2587 class(es)
 # totals: inline-dead-at-depth  9911 site(s) in  100 class(es)
 #
-# member attribution: 332 of 5041 row(s) carry at least one <file-scope> site, 265 name no member at all
+# member attribution: 332 of 5040 row(s) carry at least one <file-scope> site, 264 name no member at all
 #
 # packages examined: 404
 # packages: AIS,APIHeaderSection,Adaptor2d,Adaptor3d,AdvApp2Var,AdvApprox,AppBlend,AppCont,AppDef,AppParCurves,AppStd,AppStdL
@@ -460,8 +461,7 @@ BRepFill_ShapeLaw inherited-live 1 Standard_ProgramError Standard_Transient
 BRepFill_Sweep outofline-throw 1 Standard_ConstructionError <file-scope>
 BRepFill_Sweep outofline-delegated 1 Standard_ConstructionError,Standard_OutOfRange gp_Dir
 BRepFill_TrimEdgeTool outofline-throw 2 StdFail_NotDone <file-scope>
-BRepFill_TrimSurfaceTool outofline-raise 1 StdFail_NotDone IntersectWith
-BRepFill_TrimSurfaceTool outofline-throw 3 Standard_NotImplemented,StdFail_NotDone <file-scope>
+BRepFill_TrimSurfaceTool outofline-throw 4 Standard_NotImplemented,StdFail_NotDone <file-scope>,IntersectWith
 BRepFill_TrimSurfaceTool outofline-delegated 1 Standard_ConstructionError,gp_VectorWithNullMagnitude gp_Vec
 BRepFilletAPI_LocalOperation inherited-live 1 StdFail_NotDone BRepBuilderAPI_Command
 BRepFilletAPI_MakeChamfer inherited-live 1 StdFail_NotDone BRepBuilderAPI_Command
