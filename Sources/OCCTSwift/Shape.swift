@@ -1061,7 +1061,7 @@ public final class Shape: @unchecked Sendable {
     /// Offset all faces by a distance (positive = outward).
     ///
     /// - Returns: The offset shape, or `nil` on failure, including when OCCT reports the offset as
-    ///   done but returns a null shape (#3061).
+    ///   done but returns a null shape (#3061) and when `distance` is NaN or infinite (#3455).
     public func offset(by distance: Double) -> Shape? {
         guard let handle = OCCTShapeOffset(self.handle, distance) else { return nil }
         return Shape(handle: handle)
@@ -1080,6 +1080,9 @@ public final class Shape: @unchecked Sendable {
     /// - Returns: Offset shape, or `nil` on failure, including when OCCT reports the offset as done
     ///   but returns a null shape (#3061), which is what an inward offset deeper than the shape is
     ///   thick does. It used to return a ``Shape`` for which ``isNull`` was `true`.
+    ///
+    /// A NaN or infinite `distance` or `tolerance` returns `nil` (#3455); the `.arc` join never
+    /// returned on one for a box and faulted for a cylinder.
     ///
     /// ```swift
     /// let box = Shape.box(width: 10, height: 10, depth: 10)!
