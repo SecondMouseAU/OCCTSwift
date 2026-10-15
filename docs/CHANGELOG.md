@@ -21,6 +21,10 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### Opening a damaged binary OCAF file reports a status instead of crashing the kernel (#3330)
+
+Carried kernel patch `0069`. `BinLDrivers_DocumentRetrievalDriver::Read` dereferenced a null header, `PCDM_ReadWriter::FileFormat` read the first entry of an empty types table, and `FSD_BinaryFile::ReadCompleteInfo` looped for ever on a header naming no section. Of 1586 generated damaged files, 137 killed the process on the pinned kernel and none do with the patch. `Document.loadOCAF(from:)` was already safe through the #3318 bridge guard, which stays until the next repin pins this patch.
+
 ### A blend that answers the unchanged input, or a different number of solids, is nil (#3297, #3298)
 
 `Shape.chamfered(distance:)` on a cube at `d == edge / 2` answered the unchanged cube, and `Shape.filleted(edges:radius:)` / `ChamferBuilder` / `FilletBuilder` on both rims of a cylinder at `r == R == H / 2` answered two solids with twice the one-rim volume. Both are `BRepCheck`-valid, so the validity guard of #3200 passed them. Every solid-blend entry point now also answers `nil` when the result has a different solid count than its input, or is the input unchanged (same face count and volume), and records the reason as a caught-exception diagnostic. A correct build is not reachable at the tie: the kernel decides it with a tolerance comparison, builds the step below and declines the step above, so the step below (`d = 4.9999`, `r = 4.9`) is unchanged. The volume is deliberately not bounded by the input's, since a concave-edge blend adds material. A second `build()` on the same `FilletBuilder` or `ChamferBuilder` hands back the unrounded input; that is the same unchanged-input answer and is now `nil` too.
