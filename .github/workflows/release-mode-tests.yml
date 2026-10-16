@@ -82,12 +82,10 @@ jobs:
         run: |
           sw_vers
           clang -O1 -g -o probe Scripts/repro/3479-threaded-rod-loft/malloc_scribble_probe.c -lpthread
-          echo "--- no malloc env"; ./probe 3 20 || echo "EXIT $?"
-          echo "--- MallocScribble 3 threads"; MallocScribble=1 ./probe 3 20 || echo "EXIT $?"
-          echo "--- MallocScribble 8 threads"; MallocScribble=1 ./probe 8 20 || echo "EXIT $?"
-          echo "--- MallocScribble small only"; MallocScribble=1 ./probe 3 20 8000 || echo "EXIT $?"
-          echo "--- MallocPreScribble"; MallocPreScribble=1 ./probe 3 20 || echo "EXIT $?"
-          echo "--- all four"; MallocScribble=1 MallocPreScribble=1 MallocGuardEdges=1 MallocErrorAbort=1 ./probe 3 20 || echo "EXIT $?"
+          echo "--- mix MallocScribble 3t"; MallocScribble=1 ./probe 3 30 120000 1 || echo "EXIT $?"
+          echo "--- mix MallocScribble 8t"; MallocScribble=1 ./probe 8 30 120000 1 || echo "EXIT $?"
+          echo "--- mix MallocScribble 3t 40k"; MallocScribble=1 ./probe 3 30 40000 1 || echo "EXIT $?"
+          echo "--- mix none 3t"; ./probe 3 30 120000 1 || echo "EXIT $?"
 
       # Its own key. A release build and a debug build do not share products, and a shared key would
       # have each job's save overwrite the other's: the debug job would restore a multi-gigabyte
