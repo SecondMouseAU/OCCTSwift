@@ -35,7 +35,6 @@ struct ChamferParallelSpineTangentTests {
     private static let childKey = "OCCTSWIFT_CHAMFER_PARALLEL_CHILD"
     private static let markKey = "OCCTSWIFT_CHAMFER_PARALLEL_MARK"
     private static let isChild = ProcessInfo.processInfo.environment[childKey] == "1"
-    private static let isLocalKernel = ProcessInfo.processInfo.environment["OCCTSWIFT_LOCAL"] == "1"
 
     private static func loadModel() throws -> Shape {
         let url = URL(fileURLWithPath: #filePath)
@@ -80,20 +79,15 @@ struct ChamferParallelSpineTangentTests {
     /// Chamfering each of the 36 edges at distance 1 returns for every edge instead of killing the
     /// process.
     ///
-    /// Gated on `OCCTSWIFT_LOCAL=1`: the fix, carried patch `0065`, is not in the pinned asset
-    /// (`v4.0.0-kernel.6`), so `ci.yml`'s `build-and-test` would fail on a crash it cannot fix, and
-    /// `kernel-integration.yml` runs it against a kernel built with the patch. Ungate it at the
-    /// repin that pins `0065` (the skipped test and the passing one report alike, which is why the
-    /// gate must go with the repin, #2983).
+    /// Needs carried patch `0065`, which `v4.0.0-kernel.7` is the first asset to hold, so it runs
+    /// on the pinned kernel with no gate (it was gated on `OCCTSWIFT_LOCAL=1` until that repin,
+    /// #2983).
     ///
     /// Unpatched, the child dies by SIGSEGV. Patched, all 36 edges answer, and the count below says
     /// what: none returns a shape. OCCT itself declines all 36 (`IsDone() == false`), including
     /// edge 15, which the unpatched kernel builds with a negative volume that BRepCheck rejects
     /// (the bridge refuses that result either way).
-    @Test(
-        .enabled(
-            if: !ChamferParallelSpineTangentTests.isChild
-                && ChamferParallelSpineTangentTests.isLocalKernel))
+    @Test(.enabled(if: !ChamferParallelSpineTangentTests.isChild))
     func everyEdgeAnswersInsteadOfCrashing() throws {
         var arguments: [String] = []
         var skipNext = false

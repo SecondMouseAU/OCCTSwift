@@ -9,7 +9,8 @@ import Testing
 // `TDocStd_Application::Open`. A fault is an uncatchable SIGSEGV or a loop that never ends, so
 // "the call returns" is the regression signal and the statuses pin the contract.
 //
-// Three defects sit behind it, all fixed by carried patch 0069:
+// Three defects sit behind it, all fixed by carried patch 0069 (which `v4.0.0-kernel.7` is the
+// first asset to hold; a kernel without it kills the test process):
 //  - `BinLDrivers_DocumentRetrievalDriver::Read` dereferenced the null header of a file no storage
 //    reader recognised (empty, text);
 //  - `PCDM_ReadWriter::FileFormat(filename)` read `Types()->Value(1)` of an empty types table;
@@ -25,13 +26,6 @@ import Testing
 // array of billions of handles.
 @Suite("OCAF readers report a damaged file instead of faulting")
 struct OCAFMalformedKernelReadTests {
-
-    /// Whether the kernel under test is the locally built one, which carries patch `0069`.
-    ///
-    /// The patch is not in the pinned asset, and an unpatched run is a SIGSEGV that takes the whole
-    /// process down. Ungate it at the repin that pins `0069` (#2983).
-    private static let isLocalKernel =
-        ProcessInfo.processInfo.environment["OCCTSWIFT_LOCAL"] == "1"
 
     private static let binaryFormats = ["BinOcaf", "BinXCAF"]
     private static let xmlFormats = ["XmlOcaf", "XmlXCAF"]
@@ -75,8 +69,7 @@ struct OCAFMalformedKernelReadTests {
     }
 
     @Test(
-        "An empty, text or magic-only file is refused with a status",
-        .enabled(if: OCAFMalformedKernelReadTests.isLocalKernel))
+        "An empty, text or magic-only file is refused with a status")
     func emptyAndText() {
         let cases: [(name: String, bytes: [UInt8])] = [
             ("empty", []),
@@ -99,8 +92,7 @@ struct OCAFMalformedKernelReadTests {
     }
 
     @Test(
-        "Every prefix of a saved binary document returns, and a short one is refused",
-        .enabled(if: OCAFMalformedKernelReadTests.isLocalKernel))
+        "Every prefix of a saved binary document returns, and a short one is refused")
     func truncations() throws {
         for format in Self.binaryFormats {
             let full = try savedBytes(format: format)
@@ -122,8 +114,7 @@ struct OCAFMalformedKernelReadTests {
     }
 
     @Test(
-        "A real header followed by garbage is refused",
-        .enabled(if: OCAFMalformedKernelReadTests.isLocalKernel))
+        "A real header followed by garbage is refused")
     func headerThenGarbage() throws {
         for format in Self.binaryFormats {
             let full = try savedBytes(format: format)
@@ -141,8 +132,7 @@ struct OCAFMalformedKernelReadTests {
     // whose `format` names a binary format. OCCT chooses the reader from the content, so the
     // first two load; the last reaches the binary reader with no header.
     @Test(
-        "A document under the wrong extension, or in the wrong format, returns",
-        .enabled(if: OCAFMalformedKernelReadTests.isLocalKernel))
+        "A document under the wrong extension, or in the wrong format, returns")
     func wrongFormat() throws {
         for format in Self.binaryFormats {
             let bytes = try savedBytes(format: format)
@@ -171,8 +161,7 @@ struct OCAFMalformedKernelReadTests {
     // so does one cut mid-element, so the contract is that the call returns and that a document is
     // handed back only with status ok.
     @Test(
-        "A prefix of a saved XML document that clears its declaration returns",
-        .enabled(if: OCAFMalformedKernelReadTests.isLocalKernel))
+        "A prefix of a saved XML document that clears its declaration returns")
     func xmlPrefixes() throws {
         for format in Self.xmlFormats {
             let full = try savedBytes(format: format)
@@ -189,8 +178,7 @@ struct OCAFMalformedKernelReadTests {
     }
 
     @Test(
-        "A valid saved document still loads in every format",
-        .enabled(if: OCAFMalformedKernelReadTests.isLocalKernel))
+        "A valid saved document still loads in every format")
     func validStillLoads() throws {
         for format in Self.binaryFormats {
             let (loaded, status) = open(try savedBytes(format: format), ext: "xbf")

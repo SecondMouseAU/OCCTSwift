@@ -15,22 +15,17 @@ import Testing
 @Suite("Evolved shapes on a circular spine refuse an incoherent trim")
 struct EvolvedCircularSpineTests {
 
-    private static let isLocalKernel =
-        ProcessInfo.processInfo.environment["OCCTSWIFT_LOCAL"] == "1"
-
     private func disk() throws -> Shape {
         let circle = try #require(Wire.circle(radius: 20))
         return try #require(Shape.face(from: circle))
     }
 
-    /// Gated on `OCCTSWIFT_LOCAL=1` until carried patch `0068` is pinned.
+    /// Needs carried patch `0068`, which `v4.0.0-kernel.7` is the first asset to hold.
     ///
-    /// The fix is not in the pinned asset, and an unguarded run against it is a SIGSEGV that takes
-    /// the whole `build-and-test` process down. Ungate it at the repin that pins `0068`, or the
-    /// test stays skipped on every default run (#2983).
+    /// Without it this call is a SIGSEGV that takes the whole test process down. It was gated on
+    /// `OCCTSWIFT_LOCAL=1` until that repin (#2983).
     @Test(
-        "A profile leaving the circle's axis returns nil instead of crashing",
-        .enabled(if: EvolvedCircularSpineTests.isLocalKernel))
+        "A profile leaving the circle's axis returns nil instead of crashing")
     func profileFromTheAxis() throws {
         let profile = try #require(
             Wire.polygon3D([SIMD3(0, 0, 0), SIMD3(0, 2, 3)], closed: false))

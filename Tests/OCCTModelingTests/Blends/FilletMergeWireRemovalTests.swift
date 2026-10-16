@@ -12,9 +12,6 @@ import Testing
 @Suite("Fillet merge removes edges from a wire without a use-after-free")
 struct FilletMergeWireRemovalTests {
 
-    private static let isLocalKernel =
-        ProcessInfo.processInfo.environment["OCCTSWIFT_LOCAL"] == "1"
-
     private func model() throws -> Shape {
         let url = URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent()
@@ -23,14 +20,12 @@ struct FilletMergeWireRemovalTests {
         return try Shape.loadBREP(from: url)
     }
 
-    /// Gated on `OCCTSWIFT_LOCAL=1` until carried patch `0064` is pinned.
+    /// Needs carried patch `0064`, which `v4.0.0-kernel.7` is the first asset to hold.
     ///
-    /// The fix is not in the pinned asset, and an unguarded run against it is a SIGSEGV that takes the whole `build-and-test` process
-    /// down. `kernel-integration.yml` runs it against the patched build. Ungate it at the repin
-    /// that pins `0064`, or the test stays skipped on every default run (#2983).
+    /// On a kernel without it this call is a SIGSEGV that takes the whole test process down. It was
+    /// gated on `OCCTSWIFT_LOCAL=1` until that repin (#2983).
     @Test(
-        "Two fillets whose ends meet in the merge return instead of crashing",
-        .enabled(if: FilletMergeWireRemovalTests.isLocalKernel))
+        "Two fillets whose ends meet in the merge return instead of crashing")
     func crashingPair() throws {
         let m = try model()
         let edges = m.edges()
