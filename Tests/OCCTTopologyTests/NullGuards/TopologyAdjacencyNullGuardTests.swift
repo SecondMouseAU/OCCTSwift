@@ -31,7 +31,10 @@ struct Issue1492TopologyAdjacencyNullGuardTests {
     }
 
     private static var nullInt32Ptr: UnsafeMutablePointer<Int32> {
-        unsafeBitCast(UInt(0), to: UnsafeMutablePointer<Int32>.self)
+        // `UnsafeMutablePointer(bitPattern: 0)` is `nil`, and the parameter is `_Nonnull`, so the
+        // null bit pattern has to be smuggled in by reinterpreting the empty optional (#3474).
+        unsafeBitCast(
+            Optional<UnsafeMutablePointer<Int32>>.none, to: UnsafeMutablePointer<Int32>.self)
     }
 
     // MARK: OCCTEdgeFaceAdjacency / OCCTVertexEdgeAdjacency (shape only)

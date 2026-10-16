@@ -187,7 +187,8 @@ struct OSDHostTests {
     @Test func hostName() throws {
         var buf = [CChar](repeating: 0, count: 256)
         #expect(gethostname(&buf, buf.count) == 0)
-        let expected = String(cString: buf)
+        let expected = String(
+            decoding: buf.prefix { $0 != 0 }.map { UInt8(bitPattern: $0) }, as: UTF8.self)
         #expect(!expected.isEmpty)
         func firstLabel(_ name: String) -> String {
             String(name.prefix { $0 != "." }).lowercased()

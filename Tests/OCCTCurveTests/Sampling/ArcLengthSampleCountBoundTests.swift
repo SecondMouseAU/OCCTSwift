@@ -24,7 +24,7 @@ struct Issue479SampleCountBound {
     /// `nil` where `Int` is 32 bits, which is `wasm32-unknown-wasip1`: no `Int` is past
     /// `Int32.max` there, so the case cannot be spelled rather than being skipped, and spelling it
     /// anyway is an overflow trap that would end the whole test module (#2928).
-    private static let pastInt32: Int? = Int.bitWidth > 32 ? Int(Int32.max) + 1 : nil
+    private static let pastInt32: Int? = Int(exactly: Int64(Int32.max) + 1)
 
     // An L-shaped open wire: (0,0,0)→(100,0,0)→(100,100,0). Two edges, total length 200.
     private func lWireCurve() throws -> WireCurve {

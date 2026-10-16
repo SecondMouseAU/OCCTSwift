@@ -15,9 +15,6 @@ struct FillingSurfaceTests {
     /// Helper to get 4 coplanar edges from a box face.
     private func getFaceEdges() throws -> [Edge] {
         let box = try #require(Shape.box(width: 10, height: 10, depth: 10))
-        let face = box.faces()[0]
-        let wire = try #require(face.outerWire)
-        // Get edges from the shape that belong to this face's wire
         let allEdges = box.edges()
         // Use first 4 edges (a box face has 4 edges)
         return Array(allEdges.prefix(4))

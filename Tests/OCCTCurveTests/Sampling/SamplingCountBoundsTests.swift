@@ -46,7 +46,7 @@ struct Issue558SamplingCountBounds {
     // than failing one test, which is why this file used to be excluded from the wasm suites
     // outright (#2928). Every list below therefore adds it as `pastInt32List` instead of naming it
     // inline, and nothing about the 64-bit cases changes.
-    private static let pastInt32: Int? = Int.bitWidth > 32 ? Int(Int32.max) + 1 : nil
+    private static let pastInt32: Int? = Int(exactly: Int64(Int32.max) + 1)
     private static let pastInt32List: [Int] = [pastInt32].compactMap { $0 }
     private static let pastCeiling = Sampling.maximumSampleCount + 1
 

@@ -38,11 +38,13 @@ struct XCAFDocNotesToolTests {
 
     @Test func deleteAllNotes() throws {
         let doc = try #require(Document.create())
-        doc.notesToolCreateComment(userName: "U", timeStamp: "T", comment: "C1")
-        doc.notesToolCreateBalloon(userName: "U", timeStamp: "T", comment: "C2")
-        doc.notesToolCreateBinData(
-            userName: "U", timeStamp: "T", title: "t",
-            mimeType: "m", data: [0])
+        // Each note must really exist before the delete, or the count of 3 proves nothing.
+        #expect(doc.notesToolCreateComment(userName: "U", timeStamp: "T", comment: "C1") != nil)
+        #expect(doc.notesToolCreateBalloon(userName: "U", timeStamp: "T", comment: "C2") != nil)
+        #expect(
+            doc.notesToolCreateBinData(
+                userName: "U", timeStamp: "T", title: "t",
+                mimeType: "m", data: [0]) != nil)
         #expect(doc.notesToolNoteCount == 3)
         let deleted = doc.notesToolDeleteAllNotes()
         #expect(deleted == 3)

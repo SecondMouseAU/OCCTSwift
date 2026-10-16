@@ -6,7 +6,7 @@ import Testing
 struct OffsetWireFaceTests {
 
     private func length(of shape: Shape) -> Double {
-        shape.edges().reduce(0.0) { $0 + ($1.length ?? 0) }
+        shape.edges().reduce(0.0) { $0 + $1.length }
     }
 
     // Arc join: four 10 mm edges and four quarter arcs of radius 2, so eight edges and
