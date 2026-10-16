@@ -54,6 +54,10 @@ on:
         description: 'DIAG malloc env (NONE for none)'
         type: string
         default: ''
+      diag_runner:
+        description: 'DIAG runner label'
+        type: string
+        default: ''
       diag_probe:
         description: 'DIAG run the malloc probe only'
         type: string
@@ -65,7 +69,7 @@ on:
 
 jobs:
   release-mode-tests:
-    runs-on: macos-15
+    runs-on: ${{ github.event.inputs.diag_runner || 'macos-15' }}
     # Measured on this runner: build 10 to 12 min (a restored cache did not shorten it), subset job
     # 13 min end to end. The full suite adds its test phase on top (see okf/policies/release-mode-tests.md),
     # so 45 leaves room for that and for a slow runner without letting a hung test hold a macOS
@@ -86,13 +90,13 @@ jobs:
         run: |
           sw_vers
           clang -O1 -g -o probe Scripts/repro/3479-threaded-rod-loft/malloc_scribble_probe.c -lpthread
-          echo "--- 1t mix0 4M"; MallocScribble=1 ./probe 1 20 4000000 0 || echo "EXIT $?"
-          echo "--- 1t mix1 4M"; MallocScribble=1 ./probe 1 20 4000000 1 || echo "EXIT $?"
-          echo "--- 3t mix0 4M"; MallocScribble=1 ./probe 3 20 4000000 0 || echo "EXIT $?"
-          echo "--- 3t mix1 4M"; MallocScribble=1 ./probe 3 20 4000000 1 || echo "EXIT $?"
-          for e in MallocMediumZone=0 MallocMediumZoneEnabled=0 MallocLargeCache=0 MallocNanoZone=0 MallocSpaceEfficient=1 MallocMaxMagazines=1 MallocMadvise=0 MallocMediumMadvise=0; do
-            echo "--- env $e 8t mix1 4M"; env MallocScribble=1 $e ./probe 8 20 4000000 1 || echo "EXIT $?"
-          done
+          swift --version; xcodebuild -version; uname -a
+          echo "--- 8t mix1 4M"; MallocScribble=1 ./probe 8 30 4000000 1 || echo "EXIT $?"
+          echo "--- 3t mix1 4M"; MallocScribble=1 ./probe 3 30 4000000 1 || echo "EXIT $?"
+          echo "--- 3t mix0 4M"; MallocScribble=1 ./probe 3 30 4000000 0 || echo "EXIT $?"
+          echo "--- 8t MediumZone=0"; MallocScribble=1 MallocMediumZone=0 ./probe 8 30 4000000 1 || echo "EXIT $?"
+          echo "--- 8t SpaceEfficient"; MallocScribble=1 MallocSpaceEfficient=1 ./probe 8 30 4000000 1 || echo "EXIT $?"
+          echo "--- 8t none"; ./probe 8 30 4000000 1 || echo "EXIT $?"
 
       # Its own key. A release build and a debug build do not share products, and a shared key would
       # have each job's save overwrite the other's: the debug job would restore a multi-gigabyte
