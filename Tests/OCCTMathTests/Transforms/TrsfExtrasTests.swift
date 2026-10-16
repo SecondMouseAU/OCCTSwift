@@ -88,8 +88,9 @@ struct TrsfExtrasTests {
     /// infers `[Double]`, not `TransformMatrix3D`), see
     /// `TransformExpansionTests.deprecatedArrayOverloadsStillWork` for the same coverage across
     /// all three methods.
-    // Pins the deprecated overloads' behaviour, so it must keep calling them; the test is itself
-    // deprecated so the call sites sit in a deprecated context and raise no diagnostic (#3470).
+    ///
+    /// Pins the deprecated overloads' behaviour, so it must keep calling them; the test is itself
+    /// deprecated so the call sites sit in a deprecated context and raise no diagnostic (#3470).
     @available(*, deprecated)
     @Test func invalidMatrixSize() throws {
         let b = try #require(Shape.box(width: 10, height: 10, depth: 10))

@@ -141,8 +141,9 @@ struct TransformExpansionTests {
     /// `TransformMatrix3D`'s own raw-array initializers are `nil`-returning too, so these
     /// deprecated overloads are no longer the *only* path to graceful failure, but they stay,
     /// unchanged, for source compatibility with existing `[Double]` call sites.
-    // Pins the deprecated overloads' behaviour, so it must keep calling them; the test is itself
-    // deprecated so the call sites sit in a deprecated context and raise no diagnostic (#3470).
+    ///
+    /// Pins the deprecated overloads' behaviour, so it must keep calling them; the test is itself
+    /// deprecated so the call sites sit in a deprecated context and raise no diagnostic (#3470).
     @available(*, deprecated)
     @Test func deprecatedArrayOverloadsStillWork() throws {
         let box = try #require(Shape.box(origin: SIMD3(0, 0, 0), width: 10, height: 10, depth: 10))
