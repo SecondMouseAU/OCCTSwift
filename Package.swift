@@ -977,6 +977,14 @@ let wasmExcludedTestFiles: [String: [String]] = [
         "Blends/ChamferParallelSpineTangentTests.swift",
     ],
     "OCCTShapeHealingTests": ["ShapeAnalysis/SelfIntersectionAnalysisTests.swift"],
+    // `OCAFMalformedKernelReadTests` (carried patch 0069) feeds the kernel's binary OCAF readers
+    // damaged files, and some of them (all 0xFF, "BINFILE" then 0xFF) make OCCT allocate by a size
+    // the file declares. A 32-bit linear memory cannot satisfy that: `Standard_MMgrRaw::Allocate()`
+    // reports `malloc failed` and every later allocation in the process fails too, so the saves of
+    // every following OCAF suite report `driverFailure` and the runner hangs until the 1800 s cap.
+    // Reproduced on the kernel.6 wasm archive as well, so it is the inputs on 32-bit and not the
+    // repin. Native 64-bit passes.
+    "OCCTXCAFTests": ["DocumentIO/OCAFMalformedKernelReadTests.swift"],
     // One concurrency file. The seven that read a `.brep` out of `Fixtures/` by `#filePath` ran
     // here once, and failed with `.importFailed` because `#filePath` is an absolute HOST path and
     // the in-memory filesystem had no such directory (#3026). `wasm-test-node-runner.mjs` now

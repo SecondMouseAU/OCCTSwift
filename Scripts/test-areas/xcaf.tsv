@@ -136,4 +136,4 @@ Tests/OCCTXCAFTests/BRepGraphAttributeTests.swift	Tests/OCCTBRepGraphTests/Attri
 Tests/OCCTXCAFTests/TextLabelAndPointCloudTests.swift	Tests/OCCTDrawingTests/Visualization/TextLabelAndPointCloudTests.swift	Visualization	-	TextLabel and PointCloud scene annotations
 Tests/OCCTXCAFTests/XCAFTestFixtures.swift	Tests/OCCTXCAFTests/XCAFTestFixtures.swift	(stays)	-	shared helpers used across areas; fixtures stay at the root
 Tests/OCCTXCAFTests/DocumentIO/Issue3318LoadOCAFMalformedTests.swift	Tests/OCCTXCAFTests/DocumentIO/LoadOCAFMalformedTests.swift	DocumentIO	-	loadOCAF on malformed files
-Tests/OCCTXCAFTests/DocumentIO/OCAFMalformedKernelReadTests.swift	Tests/OCCTXCAFTests/DocumentIO/OCAFMalformedKernelReadTests.swift	DocumentIO	-	damaged binary OCAF files reach the kernel readers and report a status (carried patch 0069)
+Tests/OCCTXCAFTests/DocumentIO/OCAFMalformedKernelReadTests.swift	Tests/OCCTXCAFTests/DocumentIO/OCAFMalformedKernelReadTests.swift	DocumentIO	-	damaged binary OCAF files reach the kernel readers and report a status (carried patch 0069); wasm-excluded
