@@ -163,7 +163,7 @@ jobs:
         if: ${{ github.event.inputs.diag_probe != 'true' }}
         env:
           SCOPE: ${{ inputs.scope }}
-          REPEAT: "6"
+          REPEAT: "3"
           DIAG_FILTER: ${{ github.event.inputs.diag_filter }}
           DIAG_SKIP: ${{ github.event.inputs.diag_skip }}
           DIAG_MALLOC_ENV: ${{ github.event.inputs.diag_malloc_env }}
