@@ -135,20 +135,30 @@ void occtEnsureSignals()
     OSD::SetSignal(Standard_False);
     // DIAGNOSTIC (#3479, not for merge): a handler installed after OCCT's wins, and prints a
     // symbolised backtrace of the faulting thread before the process dies.
-    struct sigaction sa;
+    static struct sigaction oldSegv, oldBus;
+    struct sigaction        sa;
     memset(&sa, 0, sizeof(sa));
-    sa.sa_flags     = SA_SIGINFO;
-    sa.sa_sigaction = [](int sig, siginfo_t* info, void*) {
-      char line[160];
-      int  n = snprintf(line, sizeof(line), "\nOCCTDIAG signal %d addr %p\n", sig, info->si_addr);
-      (void)!write(2, line, (size_t)n);
-      void* frames[96];
-      int   cnt = backtrace(frames, 96);
-      backtrace_symbols_fd(frames, cnt, 2);
-      _exit(134);
+    sa.sa_flags     = SA_SIGINFO | SA_NODEFER;
+    sa.sa_sigaction = [](int sig, siginfo_t* info, void* ctx) {
+      if ((uintptr_t)info->si_addr >= 0x100000)
+      {
+        char line[160];
+        int  n = snprintf(line, sizeof(line), "\nOCCTDIAG signal %d addr %p\n", sig, info->si_addr);
+        (void)!write(2, line, (size_t)n);
+        void* frames[96];
+        int   cnt = backtrace(frames, 96);
+        backtrace_symbols_fd(frames, cnt, 2);
+      }
+      const struct sigaction& old = (sig == SIGSEGV) ? oldSegv : oldBus;
+      if (old.sa_flags & SA_SIGINFO)
+        old.sa_sigaction(sig, info, ctx);
+      else if (old.sa_handler != SIG_DFL && old.sa_handler != SIG_IGN)
+        old.sa_handler(sig);
+      else
+        _exit(134);
     };
-    sigaction(SIGSEGV, &sa, nullptr);
-    sigaction(SIGBUS, &sa, nullptr);
+    sigaction(SIGSEGV, &sa, &oldSegv);
+    sigaction(SIGBUS, &sa, &oldBus);
   });
 }
 
