@@ -40,7 +40,7 @@ concurrency:
 jobs:
   build-kernel:
     name: build patched OCCT.xcframework (macOS)
-    runs-on: macos-15
+    runs-on: macos-latest
     # Measured 79 min for a cache-miss build (#727). 120 leaves a ~50% margin without also
     # masking a genuine hang the way a much larger number would.
     timeout-minutes: 120
@@ -141,7 +141,7 @@ jobs:
   swift-test:
     name: swift test against patched kernel (macOS)
     needs: build-kernel
-    runs-on: macos-15
+    runs-on: macos-latest
     # The equivalent suite takes 7-13 min in ci.yml, which downloads a prebuilt kernel rather than
     # restoring this job's cache; 30 min covers that plus checkout/restore overhead with margin,
     # without reintroducing the ~11-minute budget #727 measured.

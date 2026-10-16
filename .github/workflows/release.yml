@@ -32,7 +32,7 @@ jobs:
     # still allowed, so a kernel pre-release can be verified deliberately against a ref that
     # does carry the new pin. See docs/guides/building-occt.md step 4.
     if: github.event_name == 'workflow_dispatch' || !github.event.release.prerelease
-    runs-on: macos-15
+    runs-on: macos-latest
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7

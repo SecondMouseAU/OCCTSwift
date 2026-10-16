@@ -117,7 +117,7 @@ format-bridge: checked 33 file(s) against Sources/OCCTBridge/.clang-format with 
 
 `.github/workflows/code-style.yml` installs the pinned version from PyPI into a throwaway venv,
 prepends it to `PATH`, and asserts it with `Scripts/format-bridge.sh --print-version` before any
-check runs. It uses a venv rather than Route 1 only because the GitHub `macos-15` image has a
+check runs. It uses a venv rather than Route 1 only because the GitHub `macos-latest` image (macOS 26 since #3481) has a
 working one; on an image that does not, Route 1 is the drop-in replacement.
 
 ## Bumping the pin

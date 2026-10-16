@@ -35,8 +35,8 @@ into a failure in 7 of 8 runs (`Scripts/repro/3130-borrowed-handle/`).
 
 ## Why the split is where it is
 
-Measured on the CI runner (macos-15, Xcode default, Swift 6.2.4, pinned kernel from the release
-asset) and, for the whole-suite numbers, on one M-series Mac (10 cores, shared with other builds, so
+Measured on the CI runner (`macos-15`, Xcode default, Swift 6.2.4, pinned kernel from the release
+asset; every job runs on `macos-latest`, macOS 26 with Swift 6.3.3, since #3481, and these timings predate that move) and, for the whole-suite numbers, on one M-series Mac (10 cores, shared with other builds, so
 those are upper bounds):
 
 | step | wall time |

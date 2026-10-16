@@ -33,8 +33,15 @@ struct Issue3065EdgeCurvePerTaskTests {
     /// A cubic BSpline edge with many spans, so neighbouring parameters live in different spans and
     /// an evaluation cache has to be rebuilt as the parameter moves.
     private static func makeEdge() -> Edge? {
-        let controls: [SIMD3<Double>] = (0..<16).map { i in
-            SIMD3(Double(i) * 10.0, Double(i % 3) * 7.0, Double(i % 5) * 3.0)
+        // A loop with typed locals, not `(0..<16).map { SIMD3(...) }`: that closure's mixed
+        // `Double` arithmetic inside an untyped `SIMD3` initialiser does not type-check in
+        // reasonable time on Swift 6.3.3 (#3481), and it must also build on 6.2.4.
+        var controls: [SIMD3<Double>] = []
+        for i in 0..<16 {
+            let x: Double = Double(i) * 10.0
+            let y: Double = Double(i % 3) * 7.0
+            let z: Double = Double(i % 5) * 3.0
+            controls.append(SIMD3<Double>(x, y, z))
         }
         return Wire.bspline(controls)?.edges().first
     }
