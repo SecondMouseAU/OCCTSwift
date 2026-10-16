@@ -50,6 +50,10 @@ on:
         description: 'DIAG skip regex'
         type: string
         default: ''
+      diag_malloc_env:
+        description: 'DIAG malloc env (NONE for none)'
+        type: string
+        default: ''
 
 jobs:
   release-mode-tests:
@@ -134,6 +138,7 @@ jobs:
           REPEAT: "6"
           DIAG_FILTER: ${{ github.event.inputs.diag_filter }}
           DIAG_SKIP: ${{ github.event.inputs.diag_skip }}
+          DIAG_MALLOC_ENV: ${{ github.event.inputs.diag_malloc_env }}
         run: |
           case "$SCOPE" in
             subset | full) ;;

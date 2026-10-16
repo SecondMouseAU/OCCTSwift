@@ -101,7 +101,11 @@ mkdir -p .build
 rc=0
 for i in $(seq 1 "${REPEAT:-1}"); do
   echo "=== DIAG repeat $i ===" | tee -a .build/release-mode-test.log
-  MallocScribble=1 MallocPreScribble=1 MallocGuardEdges=1 MallocErrorAbort=1 \
+  menv="${DIAG_MALLOC_ENV:-MallocScribble=1 MallocPreScribble=1 MallocGuardEdges=1 MallocErrorAbort=1}"
+  if [ "$menv" = NONE ]; then menv="DIAG_NOMALLOCENV=1"; fi
+  echo "malloc env: $menv" | tee -a .build/release-mode-test.log
+  # shellcheck disable=SC2086
+  env $menv \
     swift test "${flags[@]}" --skip-build ${test_args[@]+"${test_args[@]}"} 2>&1 | tee -a .build/release-mode-test.log
   rc=${PIPESTATUS[0]}
   if [ "$rc" -ne 0 ]; then break; fi
