@@ -58,6 +58,10 @@ on:
         description: 'DIAG run the malloc probe only'
         type: string
         default: ''
+      diag_gmalloc:
+        description: 'DIAG run under libgmalloc'
+        type: string
+        default: ''
 
 jobs:
   release-mode-tests:
@@ -156,6 +160,7 @@ jobs:
           DIAG_FILTER: ${{ github.event.inputs.diag_filter }}
           DIAG_SKIP: ${{ github.event.inputs.diag_skip }}
           DIAG_MALLOC_ENV: ${{ github.event.inputs.diag_malloc_env }}
+          DIAG_GMALLOC: ${{ github.event.inputs.diag_gmalloc }}
         run: |
           case "$SCOPE" in
             subset | full) ;;

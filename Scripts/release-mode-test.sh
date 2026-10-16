@@ -98,6 +98,19 @@ fi
 mkdir -p .build
 # `set -o pipefail` keeps swift test's own exit status through the tee.
 : > .build/release-mode-test.log
+if [ -n "${DIAG_GMALLOC:-}" ]; then
+  helper="$(dirname "$(xcrun --find swift)")/../libexec/swift/pm/swiftpm-testing-helper"
+  cp "$helper" .build/helper-copy
+  bundle="$(find .build -maxdepth 4 -name 'OCCTSwiftPackageTests.xctest' | head -1)"
+  bin="$bundle/Contents/MacOS/OCCTSwiftPackageTests"
+  echo "gmalloc: helper=$helper bundle=$bundle" | tee -a .build/release-mode-test.log
+  menv="${DIAG_MALLOC_ENV:-DIAG_X=1}"
+  # shellcheck disable=SC2086
+  DYLD_INSERT_LIBRARIES=/usr/lib/libgmalloc.dylib env $menv \
+    .build/helper-copy --test-bundle-path "$bin" --filter "${DIAG_FILTER:-.}" "$bin" \
+    --testing-library swift-testing 2>&1 | tee -a .build/release-mode-test.log
+  exit 0
+fi
 rc=0
 for i in $(seq 1 "${REPEAT:-1}"); do
   echo "=== DIAG repeat $i ===" | tee -a .build/release-mode-test.log
