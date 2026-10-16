@@ -159,6 +159,19 @@ void occtEnsureSignals()
     };
     sigaction(SIGSEGV, &sa, &oldSegv);
     sigaction(SIGBUS, &sa, &oldBus);
+    struct sigaction sab;
+    memset(&sab, 0, sizeof(sab));
+    sab.sa_sigaction = [](int sig, siginfo_t*, void*) {
+      static const char hdr[] = "\nOCCTDIAG SIGABRT\n";
+      (void)!write(2, hdr, sizeof(hdr) - 1);
+      void* frames[96];
+      int   cnt = backtrace(frames, 96);
+      backtrace_symbols_fd(frames, cnt, 2);
+      signal(SIGABRT, SIG_DFL);
+      raise(SIGABRT);
+    };
+    sab.sa_flags = SA_SIGINFO;
+    sigaction(SIGABRT, &sab, nullptr);
   });
 }
 
