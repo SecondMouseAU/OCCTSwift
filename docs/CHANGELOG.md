@@ -21,6 +21,10 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### Kernel repin to v4.0.0-kernel.7: patches 0064, 0065, 0066, 0068 and 0069 pinned (#3335, #3350, #3464, #3449, #3330)
+
+The pinned kernel is now `v4.0.0-kernel.7`, OCCT `V8_0_1` plus 50 carried patches, for both the Apple and the wasm kernels. Five patches that were merged but not in the previous asset are now shipped: `0064`, so a fillet whose ends meet in the merge answers a shape or `nil` instead of killing the process (#3335); `0065`, so a chamfer whose two spine tangents are parallel answers `nil` instead of an uncatchable SIGSEGV (#3350); `0066`, so an arc-join `thickSolid` that removes the floor of a blind hole is no longer inside out (#3464); `0068`, so `evolvedAdvanced` on a circular spine with an off-axis profile answers `nil` instead of aborting (#3449); and `0069`, so a damaged binary OCAF file is reported through the reader status instead of faulting or looping (#3330).
+
 ### A chamfer with parallel spine tangents is declined instead of crashing, and an invalid chamfer is not returned (#3350)
 
 `Shape.chamferedWithFullHistory(distance:edges:)` (and the other chamfer entry points) no longer terminate the process when two chamfered edges leave a vertex along one direction. OCCT's `ChFi3d_ChBuilder` extended the spines by `dis / 0`, and the infinite range reached `Extrema_GGExtPC` as an uncatchable SIGSEGV; carried kernel patch `0065` treats a non-finite extension as none, makes `BRepBlend_Walking::Perform` report "not done" for a non-finite range, and makes `BRepFilletAPI_MakeChamfer::Build` refuse a result that is not a valid solid, so the call returns `nil`. On the OCCT#1576 model (FreeCAD#21369), 12 of 36 edges crashed at distance 1 and all 36 now return `nil`. The fix reaches consumers with the next kernel rebuild that pins `0065`.
