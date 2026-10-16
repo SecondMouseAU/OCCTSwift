@@ -42,6 +42,14 @@ on:
         type: choice
         options: [full, subset]
         default: 'full'
+      diag_filter:
+        description: 'DIAG filter regex'
+        type: string
+        default: ''
+      diag_skip:
+        description: 'DIAG skip regex'
+        type: string
+        default: ''
 
 jobs:
   release-mode-tests:
@@ -123,7 +131,9 @@ jobs:
       - name: swift build + test -c release, malloc scribbling and guard edges
         env:
           SCOPE: ${{ inputs.scope }}
-          REPEAT: "5"
+          REPEAT: "6"
+          DIAG_FILTER: ${{ github.event.inputs.diag_filter }}
+          DIAG_SKIP: ${{ github.event.inputs.diag_skip }}
         run: |
           case "$SCOPE" in
             subset | full) ;;

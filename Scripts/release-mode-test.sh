@@ -91,6 +91,10 @@ if [ -n "$known" ]; then
   test_args+=(--skip "$known")
 fi
 
+if [ -n "${DIAG_FILTER:-}" ]; then
+  test_args=(--filter "$DIAG_FILTER")
+  if [ -n "${DIAG_SKIP:-}" ]; then test_args+=(--skip "$DIAG_SKIP"); fi
+fi
 mkdir -p .build
 # `set -o pipefail` keeps swift test's own exit status through the tee.
 : > .build/release-mode-test.log
