@@ -54,6 +54,10 @@ on:
         description: 'DIAG malloc env (NONE for none)'
         type: string
         default: ''
+      diag_probe:
+        description: 'DIAG run the malloc probe only'
+        type: string
+        default: ''
 
 jobs:
   release-mode-tests:
@@ -73,10 +77,23 @@ jobs:
         with:
           xcode-version: latest-stable
 
+      - name: DIAG malloc probe
+        if: ${{ github.event.inputs.diag_probe == 'true' }}
+        run: |
+          sw_vers
+          clang -O1 -g -o probe Scripts/repro/3479-threaded-rod-loft/malloc_scribble_probe.c -lpthread
+          echo "--- no malloc env"; ./probe 3 20 || echo "EXIT $?"
+          echo "--- MallocScribble 3 threads"; MallocScribble=1 ./probe 3 20 || echo "EXIT $?"
+          echo "--- MallocScribble 8 threads"; MallocScribble=1 ./probe 8 20 || echo "EXIT $?"
+          echo "--- MallocScribble small only"; MallocScribble=1 ./probe 3 20 8000 || echo "EXIT $?"
+          echo "--- MallocPreScribble"; MallocPreScribble=1 ./probe 3 20 || echo "EXIT $?"
+          echo "--- all four"; MallocScribble=1 MallocPreScribble=1 MallocGuardEdges=1 MallocErrorAbort=1 ./probe 3 20 || echo "EXIT $?"
+
       # Its own key. A release build and a debug build do not share products, and a shared key would
       # have each job's save overwrite the other's: the debug job would restore a multi-gigabyte
       # release tree it never reads, and this one would rebuild from nothing every time.
       - name: Cache SwiftPM artifacts
+        if: ${{ github.event.inputs.diag_probe != 'true' }}
         uses: actions/cache@v6
         with:
           path: |
@@ -92,6 +109,7 @@ jobs:
       # comment there for the incident. The module/archive drop (#2867) is NOT copied: it protects
       # the doc-snippet gate, which this job does not run.
       - name: Drop objects whose source file no longer exists (restored from another branch's cache)
+        if: ${{ github.event.inputs.diag_probe != 'true' }}
         run: |
           python3 - <<'PY'
           import os, pathlib
@@ -133,6 +151,7 @@ jobs:
       # input cannot become shell. `workflow_dispatch` and a caller that omits it both land on
       # `full` through the input default.
       - name: swift build + test -c release, malloc scribbling and guard edges
+        if: ${{ github.event.inputs.diag_probe != 'true' }}
         env:
           SCOPE: ${{ inputs.scope }}
           REPEAT: "6"
