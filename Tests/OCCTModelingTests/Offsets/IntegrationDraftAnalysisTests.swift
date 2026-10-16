@@ -10,7 +10,7 @@ struct IntegrationDraftAnalysisTests {
 
     @Test func boxFaceNormalClassification() {
         guard let box = Shape.box(width: 20, height: 30, depth: 40) else {
-            #expect(false, "Failed to create box")
+            Issue.record("Failed to create box")
             return
         }
 

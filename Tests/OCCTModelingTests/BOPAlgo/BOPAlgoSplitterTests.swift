@@ -9,7 +9,7 @@ struct BOPAlgoSplitterTests {
         guard let box1 = Shape.box(width: 20, height: 20, depth: 20),
             let box2 = Shape.box(origin: SIMD3(10, 0, 0), width: 20, height: 20, depth: 20)
         else {
-            #expect(false, "Failed to create boxes")
+            Issue.record("Failed to create boxes")
             return
         }
         // #766: this asserted only inside `if let result`, so a split that returned nil passed.
@@ -30,7 +30,7 @@ struct BOPAlgoSplitterTests {
         guard let box1 = Shape.box(width: 20, height: 20, depth: 20),
             let box2 = Shape.box(origin: SIMD3(0, -10, -10), width: 20, height: 20, depth: 20)
         else {
-            #expect(false, "Failed to create boxes")
+            Issue.record("Failed to create boxes")
             return
         }
         // #766: this asserted only inside `if let result`, so a split that returned nil passed.

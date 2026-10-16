@@ -133,7 +133,7 @@ struct AAGTests {
             return
         }
         guard let resultVolume = result.volume, let boxVolume = box.volume else {
-            #expect(false, "volume computation failed; fixture proves nothing")
+            Issue.record("volume computation failed; fixture proves nothing")
             return
         }
         #expect(

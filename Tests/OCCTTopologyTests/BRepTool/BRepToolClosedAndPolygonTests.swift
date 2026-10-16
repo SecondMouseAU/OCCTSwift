@@ -32,13 +32,14 @@ struct BRepToolExtrasV128Tests {
                 for edge in faceEdges {
                     let closed = Shape.isClosedOnFace(edge: edge, face: face)
                     if closed {
-                        #expect(true)
+                        // Found one: the call returned a value and the test is done.
                         return
                     }
                 }
             }
-            // Even if we don't find a closed edge, that's ok
-            #expect(true)
+            // A cylinder's seam edge is closed on its lateral face, so falling through to here
+            // means none was found.
+            Issue.record("no edge of the cylinder was reported closed on its face")
         }
     }
 

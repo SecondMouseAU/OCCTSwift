@@ -11,7 +11,7 @@ struct IntegrationThicknessAnalysisTests {
     @Test func shelledBoxWallThickness() throws {
         let wallThickness = 2.0
         guard let box = Shape.box(width: 40, height: 40, depth: 40) else {
-            #expect(false, "Failed to create box")
+            Issue.record("Failed to create box")
             return
         }
 
@@ -48,7 +48,7 @@ struct IntegrationThicknessAnalysisTests {
                     depth: 40 - 2 * wallThickness),
                 let hollow = box.subtracting(innerBox)
             else {
-                #expect(false, "Failed to create hollow box via subtraction")
+                Issue.record("Failed to create hollow box via subtraction")
                 return
             }
             #expect(hollow.isValid)

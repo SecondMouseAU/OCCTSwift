@@ -18,7 +18,7 @@ struct BSplineSurfaceRemoveUKnotTests {
             // does: may legitimately fail (boundary knots carry full multiplicity), so this half
             // only proves the call doesn't crash, matching that precedent.
             let _ = s.bsplineRemoveUKnot(index: 1, multiplicity: 0, tolerance: 1.0)
-            #expect(true)  // no crash
+            // (reaching the next line is the no-crash evidence)
 
             // A genuinely removable case, so the boolean itself is checked too, not just survival:
             // insert a fresh interior U knot at multiplicity 1, then remove it back out at a
