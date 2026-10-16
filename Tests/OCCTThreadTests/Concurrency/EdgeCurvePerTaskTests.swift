@@ -33,8 +33,9 @@ struct Issue3065EdgeCurvePerTaskTests {
     /// A cubic BSpline edge with many spans, so neighbouring parameters live in different spans and
     /// an evaluation cache has to be rebuilt as the parameter moves.
     private static func makeEdge() -> Edge? {
-        let controls: [SIMD3<Double>] = (0..<16).map { i in
-            SIMD3(Double(i) * 10.0, Double(i % 3) * 7.0, Double(i % 5) * 3.0)
+        var controls: [SIMD3<Double>] = []
+        for i in 0..<16 {
+            controls.append(SIMD3<Double>(Double(i) * 10.0, Double(i % 3) * 7.0, Double(i % 5) * 3.0))
         }
         return Wire.bspline(controls)?.edges().first
     }
