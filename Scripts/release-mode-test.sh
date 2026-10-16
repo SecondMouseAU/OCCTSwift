@@ -93,5 +93,11 @@ fi
 
 mkdir -p .build
 # `set -o pipefail` keeps swift test's own exit status through the tee.
-MallocScribble=1 MallocPreScribble=1 MallocGuardEdges=1 MallocErrorAbort=1 \
+# MallocMediumZone=0 is not a hazard knob, it works around libmalloc (#3479): on macOS 15, free()
+# of a large block segfaults inside libmalloc itself under MallocScribble once three or more threads
+# allocate blocks of about a megabyte or more (a plain C program with no OCCT does it,
+# Scripts/repro/3479-libmalloc-scribble-medium-zone/). `GeomFill_AppSurf`'s least-squares matrices
+# are that size, so the smooth-loft thread tests died at 0x5555555555555555 on one run in two.
+# macOS 26 does not crash.
+MallocScribble=1 MallocPreScribble=1 MallocGuardEdges=1 MallocErrorAbort=1 MallocMediumZone=0 \
   swift test "${flags[@]}" --skip-build ${test_args[@]+"${test_args[@]}"} 2>&1 | tee .build/release-mode-test.log
