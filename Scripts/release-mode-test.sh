@@ -103,6 +103,12 @@ if [ -n "${DIAG_GMALLOC:-}" ]; then
   cp "$helper" .build/helper-copy
   bundle="$(find .build -maxdepth 4 -name 'OCCTSwiftPackageTests.xctest' | head -1)"
   bin="$bundle/Contents/MacOS/OCCTSwiftPackageTests"
+  plat="$(xcode-select -p)/Platforms/MacOSX.platform/Developer"
+  bdir="$(dirname "$bundle")"
+  ln -sf "$plat/Library/Frameworks/XCTest.framework" "$bdir/XCTest.framework"
+  ln -sf "$plat/Library/Frameworks/Testing.framework" "$bdir/Testing.framework"
+  ln -sf "$plat/usr/lib/libXCTestSwiftSupport.dylib" "$bdir/libXCTestSwiftSupport.dylib"
+  ln -sf "$plat/usr/lib/lib_TestingInterop.dylib" "$bdir/lib_TestingInterop.dylib"
   echo "gmalloc: helper=$helper bundle=$bundle" | tee -a .build/release-mode-test.log
   menv="${DIAG_MALLOC_ENV:-DIAG_X=1}"
   # shellcheck disable=SC2086
