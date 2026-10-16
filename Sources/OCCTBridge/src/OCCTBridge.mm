@@ -10,6 +10,11 @@
 
 // MARK: - Global Serial Lock for Thread Safety
 #include <mutex>
+#include <execinfo.h>
+#include <signal.h>
+#include <unistd.h>
+#include <string.h>
+#include <stdio.h>
 #include <unordered_set>
 
 #include <Standard_ProgramError.hxx>
@@ -126,7 +131,25 @@ int32_t OCCTBridgeRefusedReleaseCount(void)
 void occtEnsureSignals()
 {
   static std::once_flag once;
-  std::call_once(once, [] { OSD::SetSignal(Standard_False); });
+  std::call_once(once, [] {
+    OSD::SetSignal(Standard_False);
+    // DIAGNOSTIC (#3479, not for merge): a handler installed after OCCT's wins, and prints a
+    // symbolised backtrace of the faulting thread before the process dies.
+    struct sigaction sa;
+    memset(&sa, 0, sizeof(sa));
+    sa.sa_flags     = SA_SIGINFO;
+    sa.sa_sigaction = [](int sig, siginfo_t* info, void*) {
+      char line[160];
+      int  n = snprintf(line, sizeof(line), "\nOCCTDIAG signal %d addr %p\n", sig, info->si_addr);
+      (void)!write(2, line, (size_t)n);
+      void* frames[96];
+      int   cnt = backtrace(frames, 96);
+      backtrace_symbols_fd(frames, cnt, 2);
+      _exit(134);
+    };
+    sigaction(SIGSEGV, &sa, nullptr);
+    sigaction(SIGBUS, &sa, nullptr);
+  });
 }
 
 // MARK: - Caught-exception diagnostics (#1161)

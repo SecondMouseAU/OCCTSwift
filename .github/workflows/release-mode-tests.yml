@@ -50,7 +50,7 @@ jobs:
     # 13 min end to end. The full suite adds its test phase on top (see okf/policies/release-mode-tests.md),
     # so 45 leaves room for that and for a slow runner without letting a hung test hold a macOS
     # runner for an hour.
-    timeout-minutes: 45
+    timeout-minutes: 120
     steps:
       - uses: actions/checkout@v7
         with:
@@ -123,6 +123,7 @@ jobs:
       - name: swift build + test -c release, malloc scribbling and guard edges
         env:
           SCOPE: ${{ inputs.scope }}
+          REPEAT: "5"
         run: |
           case "$SCOPE" in
             subset | full) ;;
