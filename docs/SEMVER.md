@@ -48,12 +48,12 @@ The cohort moved to v1.0.0 on 2026-05-07 alongside [OCCT 8.0.0 GA](https://githu
 and to v2.0.0 under Rule 2, on the accumulated breaks recorded below. v3.0.0 is a further
 Rule 2 major on a much smaller set: the kernel does not move, and the breaks are listed
 below. v4.0.0 is a third Rule 2 major, on the breaks tabulated under it below, and is in
-pre-release as `v4.0.0-beta.5`.
+pre-release as `v4.0.0-beta.6`.
 
 #### v4.0.0
 
 **A major by Rule 2, on a much larger set than v3.0.0.** OCCT does not move: the kernel stays at
-`V8_0_1`, rebuilt as `v4.0.0-kernel.6` to carry every patch in `Scripts/patches/` where the v3.0.0
+`V8_0_1`, rebuilt as `v4.0.0-kernel.7` to carry every patch in `Scripts/patches/` where the v3.0.0
 asset carried seventeen. A kernel rebuild is a MINOR trigger at most and forces nothing on its own.
 What forces the major is Rule 2, carried by the breaking changes tabulated below.
 
@@ -68,6 +68,16 @@ kernel changes carry to a consumer is recorded under the headings below, not her
 `ls Scripts/patches/*.patch | wc -l` and that script re-derive it, and
 [`okf/references/carried-occt-patches.md`](../okf/references/carried-occt-patches.md) is where the
 inventory is kept.
+
+**The kernel pin of `v4.0.0-beta.6`, a frozen measurement of 2026-10-16.** `Package.swift` pins
+`v4.0.0-kernel.7` (#3469). That release carries fifty patches in the native asset and the same fifty
+in the wasm asset (`0010` to `0069`, the retired numbers absent), with the eleven WASI-only source
+changes on top of the wasm one, and `Scripts/check-wasm-kernel-parity.py` reports the two clean with
+no acknowledgement standing. Five patches are new since `v4.0.0-kernel.6`: `0064` (#3335), `0065`
+(#3350), `0066` (#3464), `0068` (#3449) and `0069` (#3330). The `url:` and `checksum:` in
+`Package.swift` are the `OCCT.xcframework.zip` asset of that release, whose published digest is the
+checksum recorded there. What each patch changes for a caller is recorded under "What
+`v4.0.0-beta.6` adds to the picture" below.
 
 Many of these breaks share one shape, and it is worth naming because it explains the release:
 **a function that could not fail, and did, gains the ability to say so.**
@@ -366,6 +376,126 @@ not under the required one, and it is recorded above as the `edgePolyline` refus
 Everything else in this release is internal: the bridge and Swift correctness sweeps (#1413,
 #1551), the data-exchange thread-safety series (#1403), the #766 test-quality lift, and the gate
 work. Read the entries in [`CHANGELOG.md`](CHANGELOG.md) marked "Internal only" as exactly that.
+
+**What `v4.0.0-beta.6` adds to the picture.** About 156 pull requests merged since
+`v4.0.0-beta.5`, of which 126 carry a `No-Changelog` trailer because they are tests, test
+reorganisation, tooling or documentation.
+The consumer-visible set is a kernel repin, one compile-breaking API change (#3291), two silent value
+changes and a group of correctness fixes in the Swift and bridge layers. Its breaks are in
+[their own table](#new-in-v400-beta6-every-break-and-what-a-caller-does) below, each with a
+migration. Nothing was removed. The other kinds of change are not compile errors and are listed here,
+because a consumer upgrading from beta.5 should read them.
+
+**Additive API, MINOR.**
+
+- `Matrix4x4F` and `Matrix3x3D`, plain column-major value types with `zero`, `identity`, `columns`,
+  `subscript`, `columnMajorElements` and `determinant` (#3291), which replace Apple's `simd` matrix
+  types on the public surface. They are the reason for the one compile break below.
+- `DrawingDimension.Angular.isValid` (#3291).
+- `OffsetAncestors.offsetWire`, the offset wire the ancestry is keyed on, so `hasAncestor(_:)` and
+  `ancestor(of:)` can be given an edge of it (#3436).
+- In the C bridge, `OCCTBRepFillOffsetAncestorsOffsetWire` (#3436), `OCCTBlendResultIsSane` (#3462)
+  and `OCCTDocumentLoadOCAFUnguarded` (#3468, a test seam with no Swift wrapper). `OCCTBridge` is not
+  a product, and the one C signature that changed is in the break table.
+
+**Values, MINOR: a wrong answer becomes the documented one.** No signature moves in any of these.
+
+- `CoordinateSystem3D.direction` is the unit main direction of the `gp_Ax3`, where it echoed the
+  caller's vector, and reads `.zero` for a failed construction (#3430).
+- `Shape.faceCopy(_:)` returns the copied face where it returned `nil` for every face (#3433), and
+  `Shape.faceRestrictAlgo(faceIndex:)` returns the number of result faces where it returned `0` for
+  every face (#3437).
+- `Shape.solidFromShells(_:)` orients an extra shell as a cavity, so a plain second shell gives the
+  valid hollow solid where it gave an invalid one (#3438).
+- A triangulation-only face (the result of `Shape.readSTL(from:)`) is moved by the transform family
+  where the call returned a shape whose bounds were unchanged (#3431).
+- `Shape.orientClosedSolid()` reorients an inward solid in the receiver, as documented, where the
+  reversed solid was never written back (#3434).
+- `Shape.connectedEdges` and `Shape.fixEdgeConnect()` leave the receiver untouched and valid, where
+  each could return, or leave behind, an invalid shape for a corrupted input (#3429, #3263).
+- `Selector.pick(at:camera:viewSize:)`, `pick(rect:...)` and `pick(polygon:...)` return the hits they
+  document, where the headless selectable's void bounding box made every pick answer `[]` (#3264).
+  Code that treated the empty answer as "nothing under the cursor" now sees non-empty arrays.
+- `isSelfIntersecting(hardTimeout:)` answers `nil` at once for a non-positive bound, where the call
+  raced its own deadline and sometimes answered (#3265).
+- Kernel changes that arrive with the repin to `v4.0.0-kernel.7`: an arc-join `thickSolid` that
+  removes the floor of a blind hole is a valid solid where it was inside out (patch `0066`, #3464,
+  #3466), and a chamfer is declined (`nil`) where its two spine tangents are parallel (patch `0065`,
+  #3350, #3461).
+
+**Refusals, MINOR: input that was answered with garbage is refused.** The return type already
+allowed the refusal in each case, so nothing stops compiling.
+
+- Every fillet and chamfer entry point answers `nil` for a result the kernel reported done and valid
+  but that is the input unchanged (a cube chamfered at `d == edge / 2`) or has a different solid
+  count (both rims of a cylinder at `r == R == H / 2`), and `FilletBuilder.build()` and
+  `ChamferBuilder.build()` apply the same check (#3462). It is a refusal and not a correction: the
+  kernel answers the tie with a tolerance comparison and cannot be made to build it.
+- `FilletBuilder.build()` returns `nil` after `resetContour(_:)` left a contour with no radius, and
+  `FilletBuilder.setParams` leaves the tolerances unchanged when any of the six is zero, negative or
+  not finite (#3463).
+- `Shape.offset(by:joinType:)` and `Shape.offset(by:)` return `nil` for a NaN or infinite distance or
+  tolerance, and `Shape.shelled(thickness:)` for a non-finite thickness (#3467).
+- `Shape.offsetPerFace` returns `nil` for entries OCCT would merge into one offset but that ask for
+  different distances, where the value depended on the process (#3440).
+- The evolved builders return `nil` for the inputs that never returned and for the empty compound
+  (zero faces, reported valid) they answered for others (#3442).
+- `Document.loadOCAF(from:)` returns `(nil, .driverFailure)` for an empty file, a non-OCAF file or a
+  damaged header (#3331), and a damaged binary OCAF file that gets past that guard reports a reader
+  status where the kernel faulted (patch `0069`, #3330, #3468).
+
+**Crash to refusal, PATCH.** Calls that killed the process on malformed input now return their
+documented failure value, so no caller can have depended on the old behaviour: `Shape.shell(from:)` on
+a half-infinite surface (#3441), the BRepGraph supplement vertex attach with an out-of-range index
+(#3439), `Shape.evolvedAdvanced` on a circular spine with a profile that leaves the circle's axis
+(patch `0068`, #3449, #3465), and fillets whose ends meet in the merge, which read a list node
+`BRep_Builder::Remove` had freed (patch `0064`, #3335, #3460). Raw-handle arrays are held across the
+OCCT call at 77 sites, which is an internal lifetime fix that also removes a release-build crash in
+threaded holes (#3266, #3274, #3267).
+
+**Internal.** The package no longer depends on Apple's `simd` anywhere in `Sources/OCCTSwift` or in
+`Tests/`, and the WASI stand-in for it is deleted (#3291 through #3296, #3328). The rest is the #766,
+#2983, #3332 and #3445 test-quality lift, test files named for what they cover, issue numbers taken
+out of test names, and CI and census tooling. None of it changes anything a consumer compiles
+against.
+
+**How the beta.6 set was checked.** Every `## SemVer impact` statement was read, and every statement
+of anything above NONE was read against its diff. The public declarations of
+`git diff v4.0.0-beta.5 HEAD -- Sources/OCCTSwift` (45 files) were compared line by line: the only
+changed or removed declarations are the five matrix-typed properties and the failable initialiser of
+#3291, which are the breaks below, and the additions are `Matrix4x4F`, `Matrix3x3D`,
+`DrawingDimension.Angular.isValid` and `OffsetAncestors.offsetWire`. The C headers under
+`Sources/OCCTBridge/include` were compared the same way: `OCCTAx3Create` and `OCCTAx3CreateFromNormal`
+gain three output parameters (#3430), three functions are added, and two doc comments describe a
+behaviour change (#3434, #3437). This is a screen over declarations and not a `swift-api-digester`
+run, and it cannot see a changed value behind an unchanged signature: those are the PRs' own
+statements, read against their diffs.
+
+**Where the assembly disagreed with a PR's own grade.**
+
+- #3432 and #3436 state MINOR for the `Shape.offsetWire(face:offset:)` and
+  `OffsetAncestors.create(face:offset:joinType:)` sign flip, and #3435 states MINOR for the changed
+  `circularPattern` spacing while asking the assembler to confirm it. All three are recorded MAJOR
+  and are in the break table. The result changes silently behind an unchanged signature, and a
+  caller who compensated (negated the offset, or passed `angle * (count - 1) / count`) now gets the
+  opposite wire or the wrong spacing. The rule is that a wrong MINOR costs a consumer's build.
+- #3430 states MINOR for `CoordinateSystem3D.direction`, and is kept MINOR. The old value was the
+  caller's own input echoed back, not a measurement, and a caller who needs the input keeps a copy.
+  The three-parameter change to `OCCTAx3Create` is in the bridge row of the table.
+- #3263, #3264, #3265, #3429, #3431, #3433, #3434, #3437, #3438 and #3469 state PATCH for a change a
+  caller can observe in a returned value or a refusal, and are recorded above as MINOR by the same
+  rule beta.5 used. #3331, #3439, #3441, #3461, #3266 and #3274 are crash-to-refusal or internal and
+  stay PATCH.
+
+**Pull requests with no `## SemVer impact` section.** Forty-three merged without the required
+heading: #3290, #3307, #3309 through #3315, #3317, #3328, #3333, #3363, #3373, #3376 through #3378,
+#3380, #3382, #3389, #3390, #3398, #3401, #3406, #3411, #3416, #3418 through #3427, #3460, #3462,
+#3463, #3465 through #3468. (#3331 carries a `## SemVer` heading with PATCH.) Each was read against
+its diff. All but seven change nothing a consumer can reach: tests, test fixtures, tooling, CI and
+documentation. The exceptions are #3462, #3463, #3467 and #3468, graded MINOR above, and the kernel
+patch PRs #3460, #3465 and #3466, whose effect reaches a consumer through the repin and is recorded
+there. #3415 states NONE and touches `Sources/OCCTSwift/Shape+Surface.swift`: the one hunk is a test path in a
+`///` comment renamed with its file, so no declaration changes.
 
 ##### Every break, and what a caller does
 
@@ -816,6 +946,79 @@ with its imported memberwise initialiser gains parameters.
 
 **Migration.** Read the new return and the out-parameter. The Swift wrappers in `Sources/OCCTSwift` are
 the worked examples.
+
+##### New in v4.0.0-beta.6: every break, and what a caller does
+
+Breaks recorded after beta.5. The tables above are unchanged. Each row links to its section.
+
+| Break | Kind | Detail |
+|---|---|---|
+| `AssemblyNode.transform`, `Camera.projectionMatrix` and `Camera.viewMatrix` are `Matrix4x4F`, not `simd_float4x4` | compile error | [#3291](#v400-the-package-stops-depending-on-apples-simd-3291) |
+| `GProps.matrixOfInertia`, `ShapeProperties.momentOfInertia` and its memberwise `init` are `Matrix3x3D`, not `simd_double3x3` | compile error | [#3291](#v400-the-package-stops-depending-on-apples-simd-3291) |
+| `DrawingAnnotation.CuttingPlaneLine.init` is failable | compile error where the result is not unwrapped | [#3291](#v400-the-package-stops-depending-on-apples-simd-3291) |
+| `Shape.offsetWire(face:offset:)` and `OffsetAncestors.create(face:offset:joinType:)` offset outward for a positive offset | silent value change | [#3364, #3366](#v400-shapeoffsetwire-and-offsetancestorscreate-offset-outward-for-a-positive-offset-3364-3366) |
+| `circularPattern` and `circularPatternWithFullHistory` step `angle / (count - 1)` for a partial angle | silent value change | [#3356](#v400-circularpattern-spans-a-partial-angle-3356) |
+| `OCCTAx3Create` and `OCCTAx3CreateFromNormal` gain three output parameters | compile error, direct callers of `OCCTBridge` only | [#3371](#v400-occtax3create-and-occtax3createfromnormal-return-the-unit-direction-3371) |
+
+##### v4.0.0: the package stops depending on Apple's simd (#3291)
+
+`Sources/OCCTSwift` no longer imports `simd`, so the package builds without Apple's framework on
+every platform (#2759). Four public declarations that were typed with a `simd` matrix take the
+package's own column-major value types, and one initialiser became failable. `SIMD3<Double>` and
+the other stdlib vector types are unchanged.
+
+| Declaration | Was | Is |
+|---|---|---|
+| `AssemblyNode.transform` | `simd_float4x4` | `Matrix4x4F` |
+| `Camera.projectionMatrix`, `Camera.viewMatrix` | `simd_float4x4` | `Matrix4x4F` |
+| `GProps.matrixOfInertia` | `simd_double3x3` | `Matrix3x3D` |
+| `ShapeProperties.momentOfInertia` and `ShapeProperties.init(volume:surfaceArea:mass:centerOfMass:momentOfInertia:)` | `simd_double3x3` | `Matrix3x3D` |
+| `DrawingAnnotation.CuttingPlaneLine.init` | non-failable | `init?`, `nil` for a zero or non-finite `arrowDirection` |
+
+**Migration.** `node.transform.columnMajorElements` is the flat `[Float]` of 16 elements the known
+callers wanted, and `simd_float4x4(t.column0, t.column1, t.column2, t.column3)` rebuilds the `simd`
+type for code that keeps it. `Matrix3x3D` has the same `column0` to `column2` and
+`columnMajorElements`. Matrix multiplication needs the consumer's own type, since neither new type
+defines it. A `.cuttingPlaneLine(.init(...))` unwraps first. Known sibling consumers are `OCCTMCP`
+(`AssemblyTools.flatten`) and `OCCTSwiftScripts` (`InspectAssembly.flatten4x4`,
+`Import.flatten4x4`); the rest of the ecosystem uses none of the five properties.
+
+Not a break, and recorded because the PR measured it: `normalizedVector` and `vectorLength` can
+differ from the old Apple build in the last bit, the drawing entry points that took a zero or
+non-finite vector return empty output where they returned NaN-valued geometry, and
+`BRepGraph.resolve` of an `.absolute` plane or axis with such a vector fails with `.degenerate`
+where it succeeded with NaNs.
+
+##### v4.0.0: `Shape.offsetWire` and `OffsetAncestors.create` offset outward for a positive offset (#3364, #3366)
+
+No signature moves, and the wire changes (PRs #3432 and #3436, both stated MINOR). The bridge
+function behind them gave the documented opposite sign: a positive `offset` offset inward and a
+negative one answered a compound of segments rather than a wire. A positive offset is now outward and
+a negative one inward, as the doc comment and header always said, and a negative offset is a real
+wire. `OffsetAncestors.create(face:offset:joinType:)` follows the same sign, and its `isDone` is
+`true` where it was `false`.
+
+**Migration.** A caller that compensated by negating the offset to get the outward wire should stop
+negating; left alone it now gets the inward wire. A caller that never set a sign and took whatever
+came back gets the other wire for the same call.
+
+##### v4.0.0: `circularPattern` spans a partial angle (#3356)
+
+For a partial `angle`, the copies were stepped by a spacing that put the last copy short of `angle`
+(PR #3435, stated MINOR, with a note that it is arguably MAJOR). The last copy now lands at `angle`:
+`count - 1` steps of `angle / (count - 1)`. `circularPatternWithFullHistory` follows. A full circle
+(`angle == 0`, the common case) is untouched.
+
+**Migration.** To keep the old positions, pass `angle * Double(count - 1) / Double(count)`.
+
+##### v4.0.0: `OCCTAx3Create` and `OCCTAx3CreateFromNormal` return the unit direction (#3371)
+
+`OCCTBridge` is a target and not a product, and it is reachable all the same. Both functions gain
+three trailing output parameters, `nDx`, `nDy` and `nDz`, which receive the unit main direction
+(`gp_Ax3::Direction()`). The Swift half is `CoordinateSystem3D.direction`, which is the unit vector
+where it echoed the caller's input, and `.zero` for a failed construction (graded MINOR, see above).
+**Migration.** Pass three `double*` and read the direction from them; the Swift wrapper in
+`Sources/OCCTSwift` is the worked example.
 
 #### v3.0.0
 
