@@ -46,7 +46,8 @@ import Testing
 // This suite's original ~8-18 blocking dispatches per test (two tests, so up to ~34 total) was a
 // much larger, and architecturally different, demand on that shared pool than the one existing
 // precedent in the repo (`OCCTFoundationTests.serializedConcurrentAccess`, 4 tasks), and CI's
-// `macos-15` runner has only 3 vCPUs, a far smaller pool than a developer machine, which is
+// `macos-15` runner (then; CI runs on `macos-latest` since #3481 and the vCPU count was not
+// re-measured there) had only 3 vCPUs, a far smaller pool than a developer machine, which is
 // consistent with why this didn't reproduce casually in local testing. See the investigation
 // writeup in this PR for the CI log evidence (both attempts: every suite starts within the same
 // ~100ms window, as expected for Swift Testing's eager parallel scheduling; then zero `passed`/
