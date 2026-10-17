@@ -1174,6 +1174,15 @@ OCCTDocumentRef OCCTDocumentLoadOCAF(const char* path, int32_t* outStatus);
 /// without carried patch 0069 that is an uncatchable SIGSEGV; there is no Swift wrapper.
 OCCTDocumentRef OCCTDocumentLoadOCAFUnguarded(const char* path, int32_t* outStatus);
 
+/// Whether every size a binary OCAF file declares fits in the file (#3477).
+///
+/// False when a string length or a section count in the storage sections is larger than the bytes
+/// that remain, which is what makes OCCT allocate by a number the file made up. True for anything
+/// else, including a file that is not binary storage or that ends early. OCCTDocumentLoadOCAF and
+/// OCCTDocumentLoadOCAFUnguarded both refuse a false file with PCDM_RS_DriverFailure before OCCT
+/// reads it; this exposes the predicate so a test can pin the limit without a 32-bit target.
+bool OCCTDocumentOCAFDeclaredSizesFit(const char* path);
+
 /// Save current OCAF document in-place (to previously saved path).
 /// Returns PCDM_StoreStatus (0=OK), or -1 if not previously saved.
 int32_t OCCTDocumentSaveOCAFInPlace(OCCTDocumentRef doc);

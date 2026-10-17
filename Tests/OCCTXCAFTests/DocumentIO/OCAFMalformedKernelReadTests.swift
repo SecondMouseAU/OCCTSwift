@@ -20,10 +20,18 @@ import Testing
 // The inputs are generated from a real saved document, not shipped as fixtures, so the suite also
 // runs wherever a document can be saved. No Process/Dispatch/Thread.
 //
+// A fourth is a size, not a fault (#3477): `FSD_BinaryFile::ReadString` allocates
+// `(length + 1) * unit` before it reads the bytes, so a binary header whose first string declares a
+// length the file made up (the bytes 0x38...0x3B after the object count) makes OCCT allocate about a
+// gigabyte. Native 64-bit absorbs that; a 32-bit wasm linear memory cannot, and
+// `Standard_MMgrRaw::Allocate()` then fails for every later allocation in the process. The bridge
+// now refuses such a file before OCCT reads it, bounded by the file's own length, and that check
+// runs on the `loadOCAFSkippingPreOpenGuard` path too, since it hides no null dereference. The
+// `declaredSize...` tests below pin the limit exactly, on any platform, through the predicate.
+//
 // Not covered, and not the same defect: an XML prefix that ends inside the XML declaration, or an
-// XML file with binary garbage appended, spins LDOM (the hang #3318's bridge guard refuses), and a
-// flipped byte in the object count of a binary header makes `Storage_InternalData` allocate an
-// array of billions of handles.
+// XML file with binary garbage appended, spins LDOM (the hang #3318's bridge guard refuses). The
+// document data past the storage sections (what BinLDrivers reads itself) is not walked either.
 @Suite("OCAF readers report a damaged file instead of faulting")
 struct OCAFMalformedKernelReadTests {
 
@@ -89,6 +97,146 @@ struct OCAFMalformedKernelReadTests {
         // The empty-file case is the null header: the reader's own status, not the guard's.
         let (_, status) = open([], ext: "xbf")
         #expect(status == .formatFailure, "empty .xbf: got \(status)")
+    }
+
+    // The byte offset of the first string's length in a binary storage file: the 7 byte "BINFILE"
+    // magic, thirteen header ints, then the object count (FSD_BinaryFile::ReadHeaderData).
+    private static let firstStringLengthOffset = 7 + 13 * 4 + 4
+
+    private func putInt(_ value: Int, in bytes: inout [UInt8], at offset: Int) {
+        var v = Int32(truncatingIfNeeded: value).littleEndian
+        withUnsafeBytes(of: &v) { raw in
+            for i in 0..<4 { bytes[offset + i] = raw[i] }
+        }
+    }
+
+    private func getInt(_ bytes: [UInt8], at offset: Int) -> Int {
+        var v: Int32 = 0
+        withUnsafeMutableBytes(of: &v) { raw in
+            for i in 0..<4 { raw[i] = bytes[offset + i] }
+        }
+        return Int(Int32(littleEndian: v))
+    }
+
+    /// The offsets of the seven string lengths of the info section, with each one's unit size.
+    private func infoStringOffsets(_ bytes: [UInt8]) -> [(offset: Int, unit: Int)] {
+        var result: [(offset: Int, unit: Int)] = []
+        var pos = Self.firstStringLengthOffset
+        for unit in [1, 1, 1, 1, 2, 1, 2] {
+            result.append((pos, unit))
+            pos += 4 + max(0, getInt(bytes, at: pos)) * unit
+        }
+        return result
+    }
+
+    private func fits(_ bytes: [UInt8]) -> Bool {
+        let p = path("fits.xbf")
+        defer { try? FileManager.default.removeItem(atPath: p) }
+        #expect(
+            FileManager.default.createFile(atPath: p, contents: Data(bytes)), "setup: write \(p)")
+        return Document.ocafDeclaredSizesFit(path: p)
+    }
+
+    @Test(
+        "A declared string length fits when it ends at the end of the file and not a byte later")
+    func declaredStringLengthLimit() throws {
+        for format in Self.binaryFormats {
+            let full = try savedBytes(format: format)
+            #expect(fits(full), "\(format): the saved file")
+            for (offset, unit) in infoStringOffsets(full) {
+                // After the length's own four bytes the file has `count - offset - 4` bytes left.
+                let room = (full.count - offset - 4) / unit
+                var atLimit = full
+                putInt(room, in: &atLimit, at: offset)
+                #expect(fits(atLimit), "\(format) string at \(offset): \(room) units of \(unit)")
+                var over = full
+                putInt(room + 1, in: &over, at: offset)
+                #expect(!fits(over), "\(format) string at \(offset): \(room + 1) units of \(unit)")
+                var huge = full
+                putInt(Int(Int32.max), in: &huge, at: offset)
+                #expect(!fits(huge), "\(format) string at \(offset): Int32.max units")
+            }
+        }
+    }
+
+    @Test(
+        "A declared count larger than the file could hold is refused")
+    func declaredCountLimit() throws {
+        for format in Self.binaryFormats {
+            let full = try savedBytes(format: format)
+            // The object count sizes an array of handles, one per object, and an object takes at
+            // least a byte of the file.
+            let nbObjOffset = Self.firstStringLengthOffset - 4
+            var atLimit = full
+            putInt(full.count, in: &atLimit, at: nbObjOffset)
+            #expect(fits(atLimit), "\(format): object count \(full.count)")
+            var over = full
+            putInt(full.count + 1, in: &over, at: nbObjOffset)
+            #expect(!fits(over), "\(format): object count \(full.count + 1)")
+
+            // The user-info line count: a line takes at least its own four byte length.
+            let lines =
+                (infoStringOffsets(full).last.map {
+                    $0.offset + 4 + max(0, getInt(full, at: $0.offset)) * $0.unit
+                })!
+            var tooMany = full
+            putInt((full.count - lines - 4) / 4 + 1, in: &tooMany, at: lines)
+            #expect(!fits(tooMany), "\(format): user-info line count")
+
+            // Each section named by the header starts with a count of records of a known minimum
+            // size. Overwrite the count at every offset the header names.
+            for headerIndex in [3, 5, 7, 9] {
+                let start = getInt(full, at: 7 + 4 * headerIndex)
+                guard start > 0, start + 4 <= full.count else { continue }
+                var bad = full
+                putInt(Int(Int32.max), in: &bad, at: start)
+                #expect(!fits(bad), "\(format): section count at \(start)")
+            }
+        }
+    }
+
+    @Test(
+        "A size the file made up never reaches the kernel through either entry point")
+    func declaredSizeRefusedBeforeTheKernel() throws {
+        // "BINFILE" then 0...255: the first string declares 0x3B3A3938 bytes, about a gigabyte, in a
+        // 263 byte file. This is the input that made a 32-bit wasm module lose its allocator.
+        let bytes = Array("BINFILE".utf8) + (0...255).map { UInt8($0) }
+        #expect(!fits(bytes), "the first string declares more than the file holds")
+        for ext in ["xbf", "cbf", "dat"] {
+            let (unguarded, unguardedStatus) = open(bytes, ext: ext)
+            #expect(
+                !unguarded && unguardedStatus == .driverFailure, ".\(ext): got \(unguardedStatus)")
+            let p = path("guarded.\(ext)")
+            defer { try? FileManager.default.removeItem(atPath: p) }
+            #expect(FileManager.default.createFile(atPath: p, contents: Data(bytes)))
+            let (doc, status) = Document.loadOCAF(from: p)
+            #expect(doc == nil && status == .driverFailure, "loadOCAF .\(ext): got \(status)")
+        }
+        // Inputs with no declared size at all are not this check's to refuse.
+        for bytes in [
+            [UInt8](), [UInt8](repeating: 0xFF, count: 400), [UInt8](repeating: 0, count: 400),
+        ] {
+            #expect(fits(bytes), "\(bytes.count) bytes of one value")
+        }
+    }
+
+    @Test(
+        "A large valid document is not refused for its size")
+    func largeValidDocumentFits() throws {
+        for format in Self.binaryFormats {
+            let doc = try #require(Document.create(format: format), "no \(format) document")
+            for i in 0..<300 {
+                let label = try #require(doc.createLabel(), "no label \(i)")
+                #expect(label.setInteger(Int32(i)))
+            }
+            let ext = format == "BinOcaf" ? "cbf" : "xbf"
+            let src = path("large_\(format).\(ext)")
+            defer { try? FileManager.default.removeItem(atPath: src) }
+            #expect(doc.saveOCAF(to: src) == .ok)
+            #expect(Document.ocafDeclaredSizesFit(path: src), "\(format): a valid file")
+            let (loaded, status) = Document.loadOCAF(from: src)
+            #expect(loaded != nil && status == .ok, "\(format): got \(status)")
+        }
     }
 
     @Test(
