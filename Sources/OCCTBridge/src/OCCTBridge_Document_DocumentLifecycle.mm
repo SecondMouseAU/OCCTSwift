@@ -30,6 +30,7 @@
 // === Area-specific OCCT headers ===
 
 #include <algorithm>
+#include <cstdlib>
 #include <cstring>
 #include <fstream>
 #include <FSD_BinaryFile.hxx>
@@ -104,6 +105,7 @@
 #include <TDF_Reference.hxx>
 #include <TDF_CopyLabel.hxx>
 #include <TDF_TagSource.hxx>
+#include <TDocStd_FormatVersion.hxx>
 #include <TDocStd_Modified.hxx>
 #include <TDataStd_Integer.hxx>
 #include <TDataStd_Real.hxx>
@@ -2063,17 +2065,44 @@ public:
   }
 
   // An int count of records of at least `theMinRecord` bytes each; the count is left in theCount.
+  //
+  // #3486: a negative count is not "no records". `new NCollection_HArray1(1, theCount)` (the type
+  // section) and `new NCollection_HArray1(1, NumberOfObjects())` (the comment section, theCount
+  // there is the object count, read separately) size an array whose `mySize` IS theCount when the
+  // lower bound is 1, so a negative count makes `mySize` negative, which the allocator reads as an
+  // enormous size_t: measured, `type_count_neg5` and `nbobj_neg5` in Scripts/repro/3486 both
+  // allocate `(size_t)-5` and crash. Treating negative as zero (what this used to do) let both
+  // through as "no records" instead of refusing them.
   OcafScan Count(const int64_t theMinRecord, int& theCount)
   {
     theCount       = 0;
     OcafScan aStep = Int(theCount);
-    if (aStep != OcafScan::Fits || theCount <= 0)
-    {
-      theCount = 0;
+    if (aStep != OcafScan::Fits)
       return aStep;
-    }
+    if (theCount < 0)
+      return OcafScan::Oversize;
+    if (theCount == 0)
+      return OcafScan::Fits;
     return static_cast<int64_t>(theCount) * theMinRecord > Remaining() ? OcafScan::Oversize
                                                                        : OcafScan::Fits;
+  }
+
+  // Reads theLength bytes into theText (they must fit) and moves past them.
+  OcafScan Text(const int64_t theLength, std::string& theText)
+  {
+    theText.clear();
+    if (theLength <= 0)
+      return OcafScan::Fits;
+    if (theLength > Remaining())
+      return OcafScan::Oversize;
+    theText.resize(static_cast<size_t>(theLength));
+    myStream.clear();
+    myStream.seekg(myPos, std::ios::beg);
+    myStream.read(&theText[0], static_cast<std::streamsize>(theLength));
+    if (myStream.gcount() != static_cast<std::streamsize>(theLength))
+      return OcafScan::Truncated;
+    myPos += theLength;
+    return OcafScan::Fits;
   }
 
   OcafScan Skip(const int64_t theBytes)
@@ -2145,10 +2174,29 @@ static bool occtOcafDeclaredSizesFit(const char* path)
 
     // FSD_BinaryFile::ReadHeaderData: object count, four strings, application name (extended),
     // application version, data type (extended), then a count of user-info lines.
+    //
+    // #3486: aNbObj sizes the comment section's `new HArray1(1, aNbObj)` the same way a section
+    // Count() does (mySize == aNbObj for a lower bound of 1), so a negative aNbObj is the same
+    // crash as a negative Count(), measured as `nbobj_neg5` / `nbobj_neg_big` in
+    // Scripts/repro/3486. It also bounds every reference the root and reference sections make
+    // into that array below.
     int aNbObj = 0;
     if (scan.Int(aNbObj) != OcafScan::Fits)
       return true;
-    const int64_t aUnits[] = {1, 1, 1, 1, 2, 1, 2};
+    if (aNbObj < 0 || static_cast<int64_t>(aNbObj) > aEnd)
+      return false; // an object occupies at least one byte of the file
+    // The first string is the storage version (Storage_HeaderData::StorageVersion), which decides
+    // the shape of the table of contents after `edata`.
+    std::string aVersionText;
+    {
+      int      aVersionLength = 0;
+      OcafScan aStep          = scan.Int(aVersionLength);
+      if (aStep == OcafScan::Fits && aVersionLength > 0)
+        aStep = scan.Text(aVersionLength, aVersionText);
+      if (aStep != OcafScan::Fits)
+        return aStep == OcafScan::Truncated;
+    }
+    const int64_t aUnits[] = {1, 1, 1, 2, 1, 2};
     for (const int64_t aUnit : aUnits)
     {
       const OcafScan aStep = scan.String(aUnit);
@@ -2166,6 +2214,19 @@ static bool occtOcafDeclaredSizesFit(const char* path)
         return aStep == OcafScan::Truncated;
     }
 
+    // #3486: whether the comment and type sections have been scanned, and the type section's own
+    // declared count. `iData->ReadArray()` (an HArray1(1, aNbObj)) is created only in the comment
+    // branch below, and `theCallBack` (an HArray1(1, aTypeSectionSize)) only in the type branch;
+    // the reference section dereferences both unconditionally
+    // (`theCallBack->Value(aTypeNum)->New()`, `iData->ReadArray()->ChangeValue(aRef)`), and the
+    // root section's `rData->UpdateRoot` (after this loop, in FSD_BinaryFile::ReadCompleteInfo)
+    // dereferences `iData->ReadArray()`. A file with a reference or root section but no comment
+    // section (`ref_no_comment` / `root_no_comment` in Scripts/repro/3486) reaches that through a
+    // null handle; one with a reference section but no type section (`ref_no_type`) reaches it
+    // through a null `theCallBack`.
+    bool aCommentSeen     = false;
+    int  aTypeSectionSize = -1; // -1: the type section has not been scanned
+
     // The section loop of FSD_BinaryFile::ReadCompleteInfo, which ends at `edata` or at a position
     // no section starts at (carried patch 0069).
     while (scan.Position() < aHeader[EData])
@@ -2175,33 +2236,46 @@ static bool occtOcafDeclaredSizesFit(const char* path)
       int           aCount = 0;
       if (aPos == aHeader[BComment])
       {
-        // ReadComment: a count of extended strings, then `new HArray1(1, NumberOfObjects())`.
+        // ReadComment: a count of extended strings, then `new HArray1(1, NumberOfObjects())`,
+        // which aNbObj has already bounded above.
         aStep = scan.Count(4, aCount);
         for (int i = 1; aStep == OcafScan::Fits && i <= aCount; i++)
           aStep = scan.String(2);
-        if (aStep == OcafScan::Fits && aNbObj > 0 && static_cast<int64_t>(aNbObj) > aEnd)
-          aStep = OcafScan::Oversize; // an object occupies at least one byte of the file
+        if (aStep == OcafScan::Fits)
+          aCommentSeen = true;
       }
       else if (aPos == aHeader[BType])
       {
-        // TypeSectionSize, `new HArray1(1, count)`, then per type an int number and a name.
+        // TypeSectionSize, `new HArray1(1, count)`, then per type an int number (the index
+        // `theCallBack->SetValue(aTypeNum, ...)` writes to, so it must be in [1, count]: measured
+        // as `type_num_268435456` in Scripts/repro/3486) and a name.
         aStep = scan.Count(8, aCount);
         for (int i = 1; aStep == OcafScan::Fits && i <= aCount; i++)
         {
           int aTypeNum = 0;
           aStep        = scan.Int(aTypeNum);
+          if (aStep == OcafScan::Fits && (aTypeNum < 1 || aTypeNum > aCount))
+            aStep = OcafScan::Oversize;
           if (aStep == OcafScan::Fits)
             aStep = scan.String(1);
         }
+        if (aStep == OcafScan::Fits)
+          aTypeSectionSize = aCount;
       }
       else if (aPos == aHeader[BRoot])
       {
-        // Per root an int reference and two names.
+        // Per root an int reference (the index `iData->ReadArray()->Value(...)` reads after this
+        // loop, so it must be in [1, aNbObj] and the comment section must have run: measured as
+        // `root_ref_out` / `root_ref_neg` / `root_ref_huge` / `root_no_comment`) and two names.
         aStep = scan.Count(12, aCount);
+        if (aStep == OcafScan::Fits && aCount > 0 && !aCommentSeen)
+          aStep = OcafScan::Oversize;
         for (int i = 1; aStep == OcafScan::Fits && i <= aCount; i++)
         {
           int aRef = 0;
           aStep    = scan.Int(aRef);
+          if (aStep == OcafScan::Fits && (aRef < 1 || aRef > aNbObj))
+            aStep = OcafScan::Oversize;
           if (aStep == OcafScan::Fits)
             aStep = scan.String(1);
           if (aStep == OcafScan::Fits)
@@ -2210,10 +2284,23 @@ static bool occtOcafDeclaredSizesFit(const char* path)
       }
       else if (aPos == aHeader[BRef])
       {
-        // Per reference two ints.
+        // Per reference an int reference and an int type number, into the same two arrays as
+        // above (`iData->ReadArray()->ChangeValue(aRef) = theCallBack->Value(aTypeNum)->New()`):
+        // measured as `ref_no_comment` / `ref_no_type` / `ref_type1` / `ref_type_out` /
+        // `ref_out_of_range` in Scripts/repro/3486.
         aStep = scan.Count(8, aCount);
-        if (aStep == OcafScan::Fits && aCount > 0)
-          aStep = scan.Skip(static_cast<int64_t>(aCount) * 8);
+        if (aStep == OcafScan::Fits && aCount > 0 && (!aCommentSeen || aTypeSectionSize < 0))
+          aStep = OcafScan::Oversize;
+        for (int i = 1; aStep == OcafScan::Fits && i <= aCount; i++)
+        {
+          int aRef = 0, aTypeNum = 0;
+          aStep = scan.Int(aRef);
+          if (aStep == OcafScan::Fits)
+            aStep = scan.Int(aTypeNum);
+          if (aStep == OcafScan::Fits
+              && (aRef < 1 || aRef > aNbObj || aTypeNum < 1 || aTypeNum > aTypeSectionSize))
+            aStep = OcafScan::Oversize;
+        }
       }
       else
       {
@@ -2225,6 +2312,45 @@ static bool occtOcafDeclaredSizesFit(const char* path)
       // only guards the loop against a stuck position).
       if (scan.Position() == aPos)
         break;
+    }
+
+    // #3486: the table of contents BinLDrivers_DocumentRetrievalDriver::Read reads next (from
+    // storage version 3), mirroring BinLDrivers_DocumentSection::ReadTOC. It copies a name of
+    // `aNameBufferSize` bytes into `char aBuf[512]` and then writes `aBuf[aNameBufferSize] = 0`
+    // after checking only `aNameBufferSize > 512`, so a size of exactly 512 writes one byte past
+    // the buffer: measured as `toc_512` in Scripts/repro/3486, an abort. The 512 is the reader's
+    // own buffer, not a limit of ours. A size above 512 makes ReadTOC stop with an error, which
+    // OCCT reports; so the walk ends there too.
+    char*      aVersionEnd = nullptr;
+    const long aVersion    = std::strtol(aVersionText.c_str(), &aVersionEnd, 10);
+    if (aVersionEnd != aVersionText.c_str() && *aVersionEnd == '\0'
+        && aVersion >= TDocStd_FormatVersion_VERSION_3 && aVersion <= TDocStd_FormatVersion_CURRENT)
+    {
+      const bool    aQuickPart = aVersion >= TDocStd_FormatVersion_VERSION_12;
+      const int64_t aValues =
+        (aVersion <= TDocStd_FormatVersion_VERSION_9 ? 3 * sizeof(int) : 3 * sizeof(uint64_t));
+      const std::string aTerminator = aQuickPart ? ":" : "SHAPE_SECTION_POS:";
+      for (;;)
+      {
+        int      aNameSize = 0;
+        OcafScan aStep     = scan.Int(aNameSize);
+        if (aStep != OcafScan::Fits)
+          return true; // the file ends inside the table: OCCT reports it
+        if (aNameSize == 512)
+          return false;
+        if (aNameSize > 512)
+          break;
+        if (aNameSize <= 0)
+          continue;
+        std::string aName;
+        aStep = scan.Text(aNameSize, aName);
+        if (aStep == OcafScan::Fits)
+          aStep = scan.Skip(aValues);
+        if (aStep != OcafScan::Fits)
+          return true;
+        if (aName.c_str() == aTerminator)
+          break;
+      }
     }
     return true;
   }
