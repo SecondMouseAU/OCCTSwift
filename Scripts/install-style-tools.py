@@ -85,7 +85,8 @@ def install_swift_format(dest_dir, workdir):
 
     # A leftover directory from a failed run or an older pin is discarded, never trusted.
     if checkout_head() != commit:
-        shutil.rmtree(src, ignore_errors=True)
+        if src.exists():
+            shutil.rmtree(src)
         work.mkdir(parents=True, exist_ok=True)
         subprocess.run(['git', 'clone', '--quiet', '--depth', '1', '--branch', version,
                         SWIFT_FORMAT_REPO, str(src)], check=True)
@@ -106,7 +107,7 @@ def verify(tool, path):
     proc = subprocess.run([str(path)] + pins.TOOLS[tool]['cmd'][1:],
                           capture_output=True, text=True)
     out = proc.stdout + proc.stderr
-    if pins.parse_version(out) != version:
+    if proc.returncode != 0 or pins.parse_version(out) != version:
         die(f'installed {path} but it reports {out.strip()!r}, not {version}')
     print(f'install-style-tools: {tool} {version}  ->  {path}')
 
