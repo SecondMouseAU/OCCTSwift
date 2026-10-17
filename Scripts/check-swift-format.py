@@ -76,6 +76,9 @@ import subprocess
 import sys
 import tempfile
 
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+import style_tool_pins  # noqa: E402
+
 REPO = pathlib.Path(__file__).resolve().parent.parent
 CONFIG = REPO / '.swift-format'
 
@@ -224,6 +227,13 @@ def main_check(args):
               'turns this into a refusal.')
         return 0
 
+    # The pin is Scripts/swift-format-version.txt. A different swift-format has different rules, so
+    # a mismatch is a refusal with the fix, never a lint run whose verdict CI would not share.
+    mismatch = style_tool_pins.check('swift-format')
+    if mismatch:
+        print(f'\nREFUSED: {mismatch}')
+        return 2
+
     try:
         diags = lint_with_canary(selected, REPO)
     except BlindRun as exc:
@@ -331,6 +341,15 @@ def self_test(require_swift_format=False):
     else:
         ran_tool_cases = False
 
+    # 8b. The version pin. A swift-format that is not the pinned one is refused, with the fix.
+    total += 1
+    pinned = style_tool_pins.read_pin('swift-format')[0]
+    ok_msg = style_tool_pins.check('swift-format', runner=lambda cmd: pinned + '\n')
+    bad_msg = style_tool_pins.check('swift-format', runner=lambda cmd: '999.0.0\n')
+    passed += _case('a swift-format other than the pinned version is refused with a one-line fix',
+                    ok_msg is None and bad_msg is not None and 'install-style-tools.py' in bad_msg
+                    and '\n' not in bad_msg, f'ok={ok_msg} bad={bad_msg}')
+
     # 9. The real tree's own accounting, which is the assertion that cannot be faked by a fixture.
     total += 1
     tracked = tracked_swift()
@@ -338,13 +357,13 @@ def self_test(require_swift_format=False):
     passed += _case('the real tree accounts for every tracked .swift file',
                     not problems, '; '.join(problems))
 
-    exists = 8
+    exists = 9
     print(f'\n{passed} passed, {total - passed} failed '
           f'({total} of {exists} cases ran)')
     if not ran_tool_cases:
         print()
         print('=' * 96)
-        print('WEAKENED RUN: 2 of 8 cases did not run. swift-format is not on PATH, so nothing')
+        print('WEAKENED RUN: 2 of 9 cases did not run. swift-format is not on PATH, so nothing')
         print('proved that the lint invocation and .swift-format actually report a violation.')
         print('=' * 96)
         if require_swift_format:
