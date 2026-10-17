@@ -12,7 +12,7 @@ name: Malloc-scribble stress loop (#2714 step 2)
 # being left readable, and an out-of-bounds write into a guarded allocation aborts immediately
 # instead of silently corrupting a neighboring block.
 #
-# The issue's own estimate is that a useful sample is 50 or more iterations on macos-15 runners;
+# The issue's own estimate is that a useful sample is 50 or more iterations on macos-latest runners;
 # default the count low and let the caller raise it, since a single iteration already runs the
 # whole suite. Step 1's crash-report collection (ci.yml's `build-and-test` job) is duplicated
 # here rather than shared, because this workflow has no build-and-test job to attach it to.
@@ -28,7 +28,7 @@ on:
 jobs:
   stress:
     name: swift test loop, malloc scribbling (macOS)
-    runs-on: macos-15
+    runs-on: macos-latest
     # GitHub-hosted runners hard-cap a job at 6 hours regardless of this value. A 50-plus
     # iteration campaign at this suite's size may not fit in one run; that is a reason to split
     # it across dispatches or lower the count, not a reason to raise this past the platform's own

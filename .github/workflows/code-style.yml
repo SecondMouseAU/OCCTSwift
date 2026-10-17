@@ -41,7 +41,7 @@ on:
 
 jobs:
   code-style:
-    runs-on: macos-15
+    runs-on: macos-latest
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7

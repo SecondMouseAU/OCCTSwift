@@ -544,7 +544,7 @@ jobs:
 
   build-and-test:
     name: swift build + test (macOS)
-    runs-on: macos-15
+    runs-on: macos-latest
     needs: changes
     if: needs.changes.outputs.build == 'true'
     timeout-minutes: 30
@@ -749,7 +749,7 @@ jobs:
 
   ios-simulator-build:
     name: swift build (iOS Simulator, smoke)
-    runs-on: macos-15
+    runs-on: macos-latest
     needs: changes
     if: needs.changes.outputs.build == 'true'
     timeout-minutes: 20

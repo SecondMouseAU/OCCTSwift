@@ -642,7 +642,7 @@ def module_arch(swiftmodule_path):
 
     SwiftPM names a bundle's members `<arch>-apple-macos.swiftmodule`. Derived rather than hardcoded
     because a `-target` naming an architecture the built module does not carry fails with "no such
-    module", which reads as a broken script rather than a mismatched flag: `macos-15` runners are
+    module", which reads as a broken script rather than a mismatched flag: `macos-latest` runners are
     arm64 today and were x86_64 not long ago.
 
     #2098: SwiftPM emits two shapes and this script meets both. A **directory** bundle holds one

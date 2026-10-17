@@ -35,8 +35,8 @@ into a failure in 7 of 8 runs (`Scripts/repro/3130-borrowed-handle/`).
 
 ## Why the split is where it is
 
-Measured on the CI runner (macos-15, Xcode default, Swift 6.2.4, pinned kernel from the release
-asset) and, for the whole-suite numbers, on one M-series Mac (10 cores, shared with other builds, so
+Measured on the CI runner (`macos-15`, Xcode default, Swift 6.2.4, pinned kernel from the release
+asset; every job runs on `macos-latest`, macOS 26 with Swift 6.3.3, since #3481, and these timings predate that move) and, for the whole-suite numbers, on one M-series Mac (10 cores, shared with other builds, so
 those are upper bounds):
 
 | step | wall time |
@@ -78,8 +78,9 @@ program with no OCCT crashes the same way on the macos-15 runner (15.7.9) once t
 free blocks of a megabyte or more under `MallocScribble`, and passes on macos-26 (26.6.2). The
 smooth loft's least-squares matrices are that size. `MallocMediumZone=0` and `MallocSpaceEfficient=1`
 both stop it; the run uses the first, which leaves scribbling, pre-scribbling and guard edges on.
-Measurements and the probe are in `Scripts/repro/3479-libmalloc-scribble-medium-zone/`. If the
-runner moves to macos-26, try dropping the variable; the probe's `run.sh` is the check.
+Measurements and the probe are in `Scripts/repro/3479-libmalloc-scribble-medium-zone/`. The
+runners moved to `macos-latest` (macos-26) in #3481 and the variable was kept there, where it is harmless;
+to try dropping it, the probe's `run.sh` is the check.
 
 ## What the first full runs found
 
