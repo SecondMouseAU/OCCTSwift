@@ -30,7 +30,9 @@
 // === Area-specific OCCT headers ===
 
 #include <algorithm>
+#include <cstring>
 #include <fstream>
+#include <FSD_BinaryFile.hxx>
 #include <PCDM.hxx>
 #include <PCDM_TypeOfFileDriver.hxx>
 #include <Storage_BaseDriver.hxx>
@@ -1994,6 +1996,245 @@ static bool occtOcafXmlHeaderIsRetrievable(std::ifstream& stream)
   return false;
 }
 
+// #3477: the sizes a binary storage file declares, checked against the bytes the file has.
+//
+// FSD_BinaryFile reads every string as an int length followed by that many units, and allocates
+// `(length + 1) * unit` BEFORE it reads the bytes (FSD_BinaryFile::ReadString /
+// ReadExtendedString, both the FILE* and the stream overload). A damaged length therefore makes
+// OCCT allocate by a number the file made up. The same is true of the section counts of
+// FSD_BinaryFile::ReadCompleteInfo (an NCollection_HArray1 of `count` handles for the types
+// section, and one of `NumberOfObjects()` handles at the comment section). Native 64-bit
+// absorbs it (a calloc of a gigabyte is lazy and the read that follows fails); a 32-bit wasm
+// linear memory cannot, and Standard_MMgrRaw::Allocate() then fails for the rest of the process.
+//
+// The bound is the file's own length: a string of n units occupies n * unit bytes after its
+// length, a section of `count` records at least `count * (smallest record)`, so a declared
+// quantity larger than what remains cannot be a well-formed file. This walks the same layout
+// ReadCompleteInfo walks (7 byte magic, 13 header ints, the info section, then the comment, type,
+// root and reference sections at the offsets the header names) and reads nothing but the length
+// fields. It refuses nothing a well-formed file contains. Everything past `edata` (the document
+// data BinLDrivers reads itself) is not walked here.
+namespace
+{
+enum class OcafScan
+{
+  Fits,
+  Truncated, // the file ends inside the layout; OCCT fails on the read without allocating
+  Oversize   // a declared size cannot fit in the rest of the file
+};
+
+class OcafStorageScanner
+{
+public:
+  OcafStorageScanner(std::ifstream& theStream, const int64_t theSize)
+      : myStream(theStream),
+        mySize(theSize)
+  {
+  }
+
+  int64_t Position() const { return myPos; }
+
+  int64_t Remaining() const { return mySize - myPos; }
+
+  OcafScan Int(int& theValue)
+  {
+    if (Remaining() < static_cast<int64_t>(sizeof(int)))
+      return OcafScan::Truncated;
+    myStream.clear();
+    myStream.seekg(myPos, std::ios::beg);
+    myStream.read(reinterpret_cast<char*>(&theValue), sizeof(int));
+    if (myStream.gcount() != static_cast<std::streamsize>(sizeof(int)))
+      return OcafScan::Truncated;
+    myPos += static_cast<int64_t>(sizeof(int));
+#if OCCT_BINARY_FILE_DO_INVERSE
+    theValue = FSD_BinaryFile::InverseInt(theValue);
+#endif
+    return OcafScan::Fits;
+  }
+
+  // An int length then `length` units of `theUnit` bytes.
+  OcafScan String(const int64_t theUnit)
+  {
+    int      aLength = 0;
+    OcafScan aStep   = Int(aLength);
+    if (aStep != OcafScan::Fits || aLength <= 0)
+      return aStep;
+    return Skip(static_cast<int64_t>(aLength) * theUnit);
+  }
+
+  // An int count of records of at least `theMinRecord` bytes each; the count is left in theCount.
+  OcafScan Count(const int64_t theMinRecord, int& theCount)
+  {
+    theCount       = 0;
+    OcafScan aStep = Int(theCount);
+    if (aStep != OcafScan::Fits || theCount <= 0)
+    {
+      theCount = 0;
+      return aStep;
+    }
+    return static_cast<int64_t>(theCount) * theMinRecord > Remaining() ? OcafScan::Oversize
+                                                                       : OcafScan::Fits;
+  }
+
+  OcafScan Skip(const int64_t theBytes)
+  {
+    if (theBytes > Remaining())
+      return OcafScan::Oversize;
+    myPos += theBytes;
+    return OcafScan::Fits;
+  }
+
+private:
+  std::ifstream& myStream;
+  int64_t        mySize;
+  int64_t        myPos = 0;
+};
+} // namespace
+
+// Returns false only when a declared size cannot fit in the file. A file that is not a binary
+// storage file, or that ends before the layout does, returns true: OCCT reports those itself.
+static bool occtOcafDeclaredSizesFit(const char* path)
+{
+  std::ifstream stream(path, std::ios::in | std::ios::binary);
+  if (!stream.is_open())
+    return true;
+  try
+  {
+    stream.seekg(0, std::ios::end);
+    const std::streamoff aEnd = stream.tellg();
+    if (aEnd < 0)
+      return true;
+    OcafStorageScanner scan(stream, static_cast<int64_t>(aEnd));
+
+    // FSD_BinaryFile::MagicNumber() is "BINFILE", 7 bytes; the other storage drivers are text.
+    static const char kMagic[]                   = "BINFILE";
+    char              aMagic[sizeof(kMagic) - 1] = {};
+    stream.seekg(0, std::ios::beg);
+    stream.read(aMagic, sizeof(aMagic));
+    if (stream.gcount() != static_cast<std::streamsize>(sizeof(aMagic))
+        || std::memcmp(aMagic, kMagic, sizeof(aMagic)) != 0)
+      return true;
+    if (scan.Skip(static_cast<int64_t>(sizeof(aMagic))) != OcafScan::Fits)
+      return true;
+
+    // FSD_FileHeader, thirteen ints.
+    enum
+    {
+      TestIndian,
+      BInfo,
+      EInfo,
+      BComment,
+      EComment,
+      BType,
+      EType,
+      BRoot,
+      ERoot,
+      BRef,
+      ERef,
+      BData,
+      EData,
+      HeaderInts
+    };
+
+    int aHeader[HeaderInts] = {};
+    for (int i = 0; i < HeaderInts; i++)
+    {
+      if (scan.Int(aHeader[i]) != OcafScan::Fits)
+        return true;
+    }
+
+    // FSD_BinaryFile::ReadHeaderData: object count, four strings, application name (extended),
+    // application version, data type (extended), then a count of user-info lines.
+    int aNbObj = 0;
+    if (scan.Int(aNbObj) != OcafScan::Fits)
+      return true;
+    const int64_t aUnits[] = {1, 1, 1, 1, 2, 1, 2};
+    for (const int64_t aUnit : aUnits)
+    {
+      const OcafScan aStep = scan.String(aUnit);
+      if (aStep != OcafScan::Fits)
+        return aStep == OcafScan::Truncated;
+    }
+    int            aLines = 0;
+    const OcafScan aInfo  = scan.Count(4, aLines);
+    if (aInfo != OcafScan::Fits)
+      return aInfo == OcafScan::Truncated;
+    for (int i = 1; i <= aLines; i++)
+    {
+      const OcafScan aStep = scan.String(1);
+      if (aStep != OcafScan::Fits)
+        return aStep == OcafScan::Truncated;
+    }
+
+    // The section loop of FSD_BinaryFile::ReadCompleteInfo, which ends at `edata` or at a position
+    // no section starts at (carried patch 0069).
+    while (scan.Position() < aHeader[EData])
+    {
+      const int64_t aPos   = scan.Position();
+      OcafScan      aStep  = OcafScan::Fits;
+      int           aCount = 0;
+      if (aPos == aHeader[BComment])
+      {
+        // ReadComment: a count of extended strings, then `new HArray1(1, NumberOfObjects())`.
+        aStep = scan.Count(4, aCount);
+        for (int i = 1; aStep == OcafScan::Fits && i <= aCount; i++)
+          aStep = scan.String(2);
+        if (aStep == OcafScan::Fits && aNbObj > 0 && static_cast<int64_t>(aNbObj) > aEnd)
+          aStep = OcafScan::Oversize; // an object occupies at least one byte of the file
+      }
+      else if (aPos == aHeader[BType])
+      {
+        // TypeSectionSize, `new HArray1(1, count)`, then per type an int number and a name.
+        aStep = scan.Count(8, aCount);
+        for (int i = 1; aStep == OcafScan::Fits && i <= aCount; i++)
+        {
+          int aTypeNum = 0;
+          aStep        = scan.Int(aTypeNum);
+          if (aStep == OcafScan::Fits)
+            aStep = scan.String(1);
+        }
+      }
+      else if (aPos == aHeader[BRoot])
+      {
+        // Per root an int reference and two names.
+        aStep = scan.Count(12, aCount);
+        for (int i = 1; aStep == OcafScan::Fits && i <= aCount; i++)
+        {
+          int aRef = 0;
+          aStep    = scan.Int(aRef);
+          if (aStep == OcafScan::Fits)
+            aStep = scan.String(1);
+          if (aStep == OcafScan::Fits)
+            aStep = scan.String(1);
+        }
+      }
+      else if (aPos == aHeader[BRef])
+      {
+        // Per reference two ints.
+        aStep = scan.Count(8, aCount);
+        if (aStep == OcafScan::Fits && aCount > 0)
+          aStep = scan.Skip(static_cast<int64_t>(aCount) * 8);
+      }
+      else
+      {
+        break;
+      }
+      if (aStep != OcafScan::Fits)
+        return aStep == OcafScan::Truncated;
+      // A section that consumed nothing (a count of zero or less still consumed its int, so this
+      // only guards the loop against a stuck position).
+      if (scan.Position() == aPos)
+        break;
+    }
+    return true;
+  }
+  catch (...)
+  {
+    occtRecordCaughtException(__func__);
+    return true;
+  }
+}
+
 // #3318: whether OCCT's retrieval can be handed this file without dereferencing a null.
 // Two uncatchable SIGSEGVs sit behind loadOCAF on a non-OCAF file (OCC_CATCH_SIGNALS is inert):
 //  - an empty or text file reaches BinLDrivers_DocumentRetrievalDriver::Read with a null
@@ -2113,6 +2354,14 @@ OCCTDocumentRef OCCTDocumentLoadOCAF(const char* path, int32_t* outStatus)
       *outStatus = -1;
     return nullptr;
   }
+  // #3477 first: occtOcafFileIsRetrievable reads the header through OCCT, which is the allocation
+  // the size check exists to prevent.
+  if (!occtOcafDeclaredSizesFit(path))
+  {
+    if (outStatus)
+      *outStatus = static_cast<int32_t>(PCDM_RS_DriverFailure);
+    return nullptr;
+  }
   // #3318: refuse a file OCCT would crash on, with the status a corrupt file already gets.
   if (!occtOcafFileIsRetrievable(path))
   {
@@ -2125,7 +2374,9 @@ OCCTDocumentRef OCCTDocumentLoadOCAF(const char* path, int32_t* outStatus)
 
 // #3330: the open with the #3318 guard bypassed, so a test can put a malformed file in front of the
 // kernel's own readers and see whether carried patch 0069 reports it through a status. Not wrapped
-// in Swift: against a kernel without the patch a malformed file is an uncatchable SIGSEGV.
+// in Swift: against a kernel without the patch a malformed file is an uncatchable SIGSEGV. The
+// #3477 size check still runs: it bounds an allocation, which on 32-bit wasm poisons the module,
+// and is not one of the null dereferences the #3318 guard hides.
 OCCTDocumentRef OCCTDocumentLoadOCAFUnguarded(const char* path, int32_t* outStatus)
 {
   if (!path)
@@ -2134,7 +2385,18 @@ OCCTDocumentRef OCCTDocumentLoadOCAFUnguarded(const char* path, int32_t* outStat
       *outStatus = -1;
     return nullptr;
   }
+  if (!occtOcafDeclaredSizesFit(path))
+  {
+    if (outStatus)
+      *outStatus = static_cast<int32_t>(PCDM_RS_DriverFailure);
+    return nullptr;
+  }
   return occtDocumentOpenOCAF(path, outStatus);
+}
+
+bool OCCTDocumentOCAFDeclaredSizesFit(const char* path)
+{
+  return path && occtOcafDeclaredSizesFit(path);
 }
 
 int32_t OCCTDocumentSaveOCAFInPlace(OCCTDocumentRef doc)

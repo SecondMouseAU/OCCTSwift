@@ -635,8 +635,11 @@ extension Document {
     /// An empty file, a non-OCAF file or a damaged header returns `(nil, .driverFailure)` instead of
     /// crashing. For XML that includes a root element other than `document`, a missing or non-`Xml*`
     /// `format` attribute (a `Bin*` format would reach the binary reader and fault), and an
-    /// unterminated declaration, comment or DOCTYPE (which would hang the parser). A missing file
-    /// returns `(nil, .unknownDocument)`.
+    /// unterminated declaration, comment or DOCTYPE (which would hang the parser). A binary file whose
+    /// storage sections declare a string length or a section count larger than the bytes the file has
+    /// left returns `(nil, .driverFailure)` too (#3477): OCCT allocates by that number before it reads
+    /// the bytes, which fails a 32-bit wasm module for the rest of the process. A missing file returns
+    /// `(nil, .unknownDocument)`.
     public static func loadOCAF(from path: String) -> (document: Document?, status: ReaderStatus) {
         var statusRaw: Int32 = -1
         guard let ref = OCCTDocumentLoadOCAF(path, &statusRaw) else {
@@ -645,10 +648,19 @@ extension Document {
         return (Document(handle: ref), ReaderStatus(rawValue: statusRaw) ?? .ok)
     }
 
+    /// Whether every size a binary OCAF file declares fits in the file (#3477).
+    ///
+    /// Internal and for tests only: the predicate ``loadOCAF(from:)`` applies before OCCT reads the
+    /// file.
+    static func ocafDeclaredSizesFit(path: String) -> Bool {
+        OCCTDocumentOCAFDeclaredSizesFit(path)
+    }
+
     /// Open a file with the pre-open guard of ``loadOCAF(from:)`` bypassed.
     ///
     /// Internal and for tests only: it puts a malformed file in front of the kernel's own readers,
-    /// which is a process-killing fault on a kernel without carried patch `0069`.
+    /// which is a process-killing fault on a kernel without carried patch `0069`. The declared-size
+    /// check of #3477 still runs, since it bounds an allocation and hides no null dereference.
     static func loadOCAFSkippingPreOpenGuard(
         from path: String
     ) -> (document: Document?, status: ReaderStatus) {

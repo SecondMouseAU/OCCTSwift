@@ -591,6 +591,16 @@ public static func loadOCAF(from path: String) -> (document: Document?, status: 
   returns `(nil, .driverFailure)` (#3318), as does an XML file that is not an OCAF document (a root other than `document`, a `format` that is not an `Xml*` format, or an unterminated declaration, comment or DOCTYPE); an XML file OCCT can load, whatever its prolog, still loads; a missing file returns `(nil, .unknownDocument)`. The
   bridge checks the file's header before OCCT sees it, because OCCT dereferences a null header on
   these inputs and the fault cannot be caught.
+- **Declared sizes (#3477):** a binary file whose storage sections declare more than the file holds
+  also returns `(nil, .driverFailure)`: a string whose length (times 1 byte, or 2 for the extended
+  strings) exceeds the bytes that remain after its length field, a count of user-info lines,
+  comments, types, roots or references that could not fit at its smallest record size, or an object
+  count larger than the file's length in bytes. OCCT allocates `(length + 1) * unit` before it reads
+  the bytes (`FSD_BinaryFile::ReadString`), so a damaged length asks for up to gigabytes; a 64-bit
+  process absorbs that, and a 32-bit wasm module cannot, after which `Standard_MMgrRaw::Allocate()`
+  fails for every later allocation in the process. The limit is the file's own length, not a
+  constant, so a large valid document is never refused for its size. The check reads only the
+  length fields of the sections before `edata`; the document data after them is not walked.
 - **Example:**
   ```swift
   let result = Document.loadOCAF(from: "/tmp/model.cbf")

@@ -21,6 +21,10 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### A binary OCAF file whose declared sizes exceed its length is refused before OCCT allocates by them (#3477)
+
+`Document.loadOCAF(from:)` now returns `(nil, .driverFailure)` for a binary OCAF file whose storage sections declare a string length or a section count larger than the bytes the file has left, or an object count larger than the file. OCCT allocated `(length + 1) * unit` before reading the bytes, which a 64-bit process absorbs and a 32-bit wasm module does not: `Standard_MMgrRaw::Allocate()` then failed for every later allocation in the process. The limit is the file's own length, so a large valid document is never refused for its size. `OCAFMalformedKernelReadTests` runs on wasm again.
+
 ### Kernel repin to v4.0.0-kernel.7: patches 0064, 0065, 0066, 0068 and 0069 pinned (#3335, #3350, #3464, #3449, #3330)
 
 The pinned kernel is now `v4.0.0-kernel.7`, OCCT `V8_0_1` plus 50 carried patches, for both the Apple and the wasm kernels. Five patches that were merged but not in the previous asset are now shipped: `0064`, so a fillet whose ends meet in the merge answers a shape or `nil` instead of killing the process (#3335); `0065`, so a chamfer whose two spine tangents are parallel answers `nil` instead of an uncatchable SIGSEGV (#3350); `0066`, so an arc-join `thickSolid` that removes the floor of a blind hole is no longer inside out (#3464); `0068`, so `evolvedAdvanced` on a circular spine with an off-axis profile answers `nil` instead of aborting (#3449); and `0069`, so a damaged binary OCAF file is reported through the reader status instead of faulting or looping (#3330).
