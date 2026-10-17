@@ -17,7 +17,7 @@ name: code-style
 # file: formatting has no judgment call in it once a file complies. A violation
 # that is deliberate is suppressed where it occurs, with swift-format's own
 # `// swift-format-ignore: <Rule>`, so `git grep swift-format-ignore` is the
-# complete list of exceptions. The version of clang-format is pinned below
+# complete list of exceptions. The versions of all three tools are pinned (clang-format below, the other two above)
 # because OCCT's consecutive-alignment rules put almost every hand-written
 # bridge addition in violation, and finding that out from a red PR costs a push
 # per attempt, which is also why the pre-commit hook runs
@@ -26,7 +26,7 @@ name: code-style
 #
 # Pure text analysis, no OCCT build needed: still a macOS runner, for the same
 # reason build-and-test needs one (swift-format/swiftlint/clang-format are all
-# readily available via Homebrew there), but with none of that job's build
+# readily available there), but with none of that job's build
 # time or its coupling to kernel-patch-pin drift.
 
 # Called from ci.yml, not triggered on its own. It used to be a separate workflow, and
@@ -42,14 +42,48 @@ on:
 jobs:
   code-style:
     runs-on: macos-latest
-    timeout-minutes: 15
+    # 30 for a cold swift-format build (about 8 minutes locally, no cache); a cache hit skips it.
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
 
-      - name: Install swift-format, SwiftLint
-        run: brew install swift-format swiftlint
+      # swift-format and SwiftLint are PINNED, for the reason clang-format is below: a Homebrew bump
+      # or a new runner image must not change a rule and turn `main` red with no code change (#3483).
+      # The pins are Scripts/swift-format-version.txt and Scripts/swiftlint-version.txt, read by
+      # Scripts/install-style-tools.py here and by Scripts/check-swift-format.py and
+      # Scripts/style_tool_pins.py everywhere, so CI and a developer machine agree. SwiftLint is the
+      # release's portable zip, sha256-verified. swift-format publishes no binaries, so it is built
+      # from the pinned tag (commit-verified) and the binary is cached by pin and toolchain.
+      - name: Toolchain fingerprint for the swift-format cache
+        id: toolchain
+        run: echo "swift=$(swift --version 2>&1 | head -1 | shasum | cut -c1-12)" >> "$GITHUB_OUTPUT"
 
-      # clang-format is PINNED, unlike the two above, and deliberately not installed from Homebrew:
+      - name: Cache pinned swift-format
+        id: sf-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/style-tools-bin/swift-format
+          key: swift-format-${{ runner.os }}-${{ runner.arch }}-${{ steps.toolchain.outputs.swift }}-${{ hashFiles('Scripts/swift-format-version.txt') }}
+
+      - name: Install pinned SwiftLint
+        run: python3 Scripts/install-style-tools.py --tool swiftlint --dest "$HOME/style-tools-bin"
+
+      - name: Build pinned swift-format
+        if: steps.sf-cache.outputs.cache-hit != 'true'
+        run: python3 Scripts/install-style-tools.py --tool swift-format --dest "$HOME/style-tools-bin" --workdir "$RUNNER_TEMP/swift-format-src"
+
+      # GITHUB_PATH prepends, so these win over the brew copies on the runner image.
+      - name: Put pinned style tools first on PATH
+        run: echo "$HOME/style-tools-bin" >> "$GITHUB_PATH"
+
+      # Exit 2 with a one-line fix on a mismatch, so a pin that stopped resolving is a red step.
+      - name: Style tool version assertions
+        run: |
+          python3 Scripts/style_tool_pins.py --check swift-format
+          python3 Scripts/style_tool_pins.py --check swiftlint
+          python3 Scripts/style_tool_pins.py --self-test
+
+      # clang-format is PINNED too, and deliberately not installed from Homebrew:
       # `brew install clang-format` takes whatever is current, and clang-format's output changes
       # between major versions, so a Homebrew bump can turn a green `main` red with no code change
       # and a contributor on a different major produces a diff this job rejects. OCCT's own CI pins

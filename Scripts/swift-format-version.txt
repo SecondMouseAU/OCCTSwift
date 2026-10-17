@@ -1,0 +1,15 @@
+# The swift-format version the repo is linted with, and the one CI installs.
+#
+# Single source of truth: read by .github/workflows/code-style.yml (through
+# Scripts/install-style-tools.py), by Scripts/check-swift-format.py, which refuses a different
+# version, and by Scripts/style_tool_pins.py. Comment lines and blank lines are ignored. Line 1
+# is the version, line 2 is the full git commit sha the release tag must resolve to.
+#
+# Why built from the tag: swiftlang/swift-format publishes no binary assets, and Homebrew's formula
+# is whatever is current. 604.x tracks the Swift 6.3 / Xcode 26.x line (swift-syntax 604). The
+# integrity check is the commit sha, not a file checksum: a moved or re-pushed tag fails the install.
+#
+# To bump: see okf/policies/code-style.md ("Bumping a pinned style tool"). Get the sha with
+# `git ls-remote https://github.com/swiftlang/swift-format.git refs/tags/<version>`.
+604.0.0
+15d7877c6b32926948f6520f0156657945955ea3

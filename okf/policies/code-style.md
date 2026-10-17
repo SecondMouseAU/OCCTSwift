@@ -3,7 +3,7 @@ type: policy
 title: Code style
 description: Swift naming/API shape follows the Swift API Design Guidelines, formatting follows Google's Swift Style Guide via swift-format, and the OCCTBridge C++ layer follows OCCT's own clang-format and terse comment style; docs/ is the single source of truth for design rationale, not a second copy of it. Rolled out gradually via an exemption manifest, not a big-bang sweep.
 tags: [policy, style, swift, cpp, docs, agents]
-timestamp: 2026-08-12
+timestamp: 2026-10-17
 ---
 
 # Code style
@@ -47,6 +47,28 @@ locally rather than letting you produce a diff CI will reject. OCCT's own CI pin
 library, for images with no working pip or venv;
 [`docs/guides/clang-format-setup.md`](../../docs/guides/clang-format-setup.md) covers every route
 and how to verify one.
+
+**swift-format and SwiftLint are pinned the same way** (#3483), because an unpinned `brew install`
+takes whatever Homebrew has and a `macos-latest` image changes about weekly. The pins are
+`Scripts/swift-format-version.txt` (version, then the commit the release tag must resolve to) and
+`Scripts/swiftlint-version.txt` (version, then the sha256 of `portable_swiftlint.zip`).
+`Scripts/install-style-tools.py` installs both with the standard library plus git and swift:
+SwiftLint from the checksum-verified release zip, swift-format built from the pinned tag, since
+swiftlang publishes no swift-format binaries (a cold build is minutes; CI caches the binary by pin
+and toolchain). `Scripts/check-swift-format.py` refuses a different swift-format (exit 2), and
+`python3 Scripts/style_tool_pins.py --check swiftlint` does the same for SwiftLint before CI's
+lint step; both messages are one line ending in the install command. swift-format's major tracks the
+Swift toolchain (604 is the Swift 6.3 / Xcode 26.x line), so a runner moving to a new Swift major is
+the cue to bump.
+
+**Bumping a pinned style tool.** Change the version and its integrity line in the tool's pin file
+(`git ls-remote https://github.com/swiftlang/swift-format.git refs/tags/<v>` for the commit, the
+release asset's digest from `gh release view` for SwiftLint), run
+`python3 Scripts/install-style-tools.py --tool <tool> --dest ~/.local/bin`, then run
+`python3 Scripts/check-swift-format.py` and `swiftlint lint --strict --config .swiftlint.yml` and
+fix everything the new version flags, in the SAME PR. Run
+`python3 Scripts/style_tool_pins.py --self-test`. Never bump the pin alone, and never write a
+version in the workflow: the pin files are the only place a version lives.
 
 **SwiftLint is scoped to `orphaned_doc_comment` only** (`.swiftlint.yml`, `only_rules`, not the
 default set). SwiftLint's defaults duplicate `swift-format`'s formatting opinions (can disagree
