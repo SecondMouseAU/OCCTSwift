@@ -386,6 +386,33 @@ struct OCAFMalformedKernelReadTests {
         }
     }
 
+    // Only a count that sizes an array is refused when negative. The comment, root and reference
+    // counts are loop bounds (`for (i = 1; i <= count; i++)`), so a negative one skips the loop
+    // and OCCT loads the file; refusing it would refuse a loadable file.
+    @Test(
+        "A negative count that only bounds a loop is not refused")
+    func negativeLoopCounts() throws {
+        for format in Self.binaryFormats {
+            let full = try savedBytes(format: format)
+            let negativeComment = withSections(
+                full, comment: le32(-1), type: nil, root: nil, ref: nil)
+            let negativeRoot = withSections(
+                full, comment: emptyCommentSection, type: nil,
+                root: rootSection(declaredCount: -1), ref: nil)
+            let negativeRef = withSections(
+                full, comment: emptyCommentSection,
+                type: typeSection(declaredCount: 1, entries: [1]), root: nil,
+                ref: refSection(declaredCount: -1))
+            for (name, bytes) in [
+                ("comment", negativeComment), ("root", negativeRoot), ("reference", negativeRef),
+            ] {
+                #expect(fits(bytes), "\(format): negative \(name) count")
+                let (loaded, status) = open(bytes, ext: "xbf")
+                #expect(loaded && status == .ok, "\(format): negative \(name) count: \(status)")
+            }
+        }
+    }
+
     @Test(
         "A negative object count is refused")
     func negativeObjectCount() throws {

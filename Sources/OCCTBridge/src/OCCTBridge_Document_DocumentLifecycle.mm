@@ -2066,21 +2066,26 @@ public:
 
   // An int count of records of at least `theMinRecord` bytes each; the count is left in theCount.
   //
-  // #3486: a negative count is not "no records". `new NCollection_HArray1(1, theCount)` (the type
-  // section) and `new NCollection_HArray1(1, NumberOfObjects())` (the comment section, theCount
-  // there is the object count, read separately) size an array whose `mySize` IS theCount when the
-  // lower bound is 1, so a negative count makes `mySize` negative, which the allocator reads as an
-  // enormous size_t: measured, `type_count_neg5` and `nbobj_neg5` in Scripts/repro/3486 both
-  // allocate `(size_t)-5` and crash. Treating negative as zero (what this used to do) let both
-  // through as "no records" instead of refusing them.
-  OcafScan Count(const int64_t theMinRecord, int& theCount)
+  // #3486: whether a negative count is safe depends on what OCCT does with it. Four of the counts
+  // are only loop bounds (`for (i = 1; i <= count; i++)`: the user-info lines, the comment strings,
+  // the root records, the reference records), so a negative value skips the loop and allocates
+  // nothing; it is read as "no records", as it always was here. The type section's count is
+  // different: `new NCollection_HArray1(1, count)` makes `mySize` equal to the count, a negative
+  // one reads as an enormous size_t, and the allocation fails (measured, `type_count_neg5` in
+  // Scripts/repro/3486, SIGSEGV). Pass theSizesArray for that one. The object count, which sizes
+  // the comment section's array the same way, is read separately and checked at its own site.
+  OcafScan Count(const int64_t theMinRecord, int& theCount, const bool theSizesArray = false)
   {
     theCount       = 0;
     OcafScan aStep = Int(theCount);
     if (aStep != OcafScan::Fits)
       return aStep;
     if (theCount < 0)
-      return OcafScan::Oversize;
+    {
+      const bool aSizesArray = theSizesArray;
+      theCount               = 0;
+      return aSizesArray ? OcafScan::Oversize : OcafScan::Fits;
+    }
     if (theCount == 0)
       return OcafScan::Fits;
     return static_cast<int64_t>(theCount) * theMinRecord > Remaining() ? OcafScan::Oversize
@@ -2249,7 +2254,7 @@ static bool occtOcafDeclaredSizesFit(const char* path)
         // TypeSectionSize, `new HArray1(1, count)`, then per type an int number (the index
         // `theCallBack->SetValue(aTypeNum, ...)` writes to, so it must be in [1, count]: measured
         // as `type_num_268435456` in Scripts/repro/3486) and a name.
-        aStep = scan.Count(8, aCount);
+        aStep = scan.Count(8, aCount, true);
         for (int i = 1; aStep == OcafScan::Fits && i <= aCount; i++)
         {
           int aTypeNum = 0;
