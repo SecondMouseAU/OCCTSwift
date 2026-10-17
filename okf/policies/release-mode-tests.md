@@ -78,8 +78,9 @@ program with no OCCT crashes the same way on the macos-15 runner (15.7.9) once t
 free blocks of a megabyte or more under `MallocScribble`, and passes on macos-26 (26.6.2). The
 smooth loft's least-squares matrices are that size. `MallocMediumZone=0` and `MallocSpaceEfficient=1`
 both stop it; the run uses the first, which leaves scribbling, pre-scribbling and guard edges on.
-Measurements and the probe are in `Scripts/repro/3479-libmalloc-scribble-medium-zone/`. If the
-runner moves to macos-26, try dropping the variable; the probe's `run.sh` is the check.
+Measurements and the probe are in `Scripts/repro/3479-libmalloc-scribble-medium-zone/`. The
+runners moved to `macos-latest` (macos-26) in #3481 and the variable was kept there, where it is harmless;
+to try dropping it, the probe's `run.sh` is the check.
 
 ## What the first full runs found
 
