@@ -557,9 +557,10 @@ let occtTarget: Target =
         //         Built into v4.0.0-kernel.7; OCAFMalformedKernelReadTests was gated on
         //         OCCTSWIFT_LOCAL=1 until the repin that pinned this, and is ungated by the same
         //         change. The #3318 bridge guard stays: the patch does not reach the XML-prefix
-        //         spin (#3330). The oversized object count and every other length a binary file
-        //         declares are bounded by the bridge against the file's own length (#3477), which
-        //         is also what lets the suite run on wasm.
+        //         spin (#3330). The oversized object count and every length the storage sections before
+        //         `edata` declare are bounded by the bridge against the file's own length (#3477),
+        //         which is also what lets the suite run on wasm; the document data after `edata`
+        //         is not walked.
         //
         // 0043 (#2827, BRepGProp_Gauss keeps the by-plane mass) was the one outstanding before it,
         // and it went the other way, which is the comparison worth keeping beside 0044: carried
