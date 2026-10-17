@@ -64,6 +64,11 @@ jobs:
           MallocPreScribble: '1'
           MallocGuardEdges: '1'
           MallocErrorAbort: '1'
+          # libmalloc on macOS 15 segfaults in free() under MallocScribble with three or more
+          # threads and blocks of a megabyte or more, with no OCCT in the program (#3479,
+          # Scripts/repro/3479-libmalloc-scribble-medium-zone/). Without this the loop reports
+          # the allocator, not the suite.
+          MallocMediumZone: '0'
           ITERATIONS: ${{ inputs.iterations }}
         run: |
           set +e
@@ -86,7 +91,7 @@ jobs:
           {
             echo '## Malloc-scribble stress loop (#2714 step 2)'
             echo
-            echo "\`MallocScribble=1 MallocPreScribble=1 MallocGuardEdges=1 MallocErrorAbort=1\`, ${ITERATIONS} iteration(s), commit \`${GITHUB_SHA}\`."
+            echo "\`MallocScribble=1 MallocPreScribble=1 MallocGuardEdges=1 MallocErrorAbort=1 MallocMediumZone=0\`, ${ITERATIONS} iteration(s), commit \`${GITHUB_SHA}\`."
             echo
             echo '| Iteration | Result | Notes |'
             echo '|---|---|---|'

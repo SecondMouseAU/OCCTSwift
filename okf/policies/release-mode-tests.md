@@ -70,6 +70,17 @@ those are upper bounds):
   write into an immediate abort. If a run is ever red with an abort in a suite that has nothing to
   do with lifetimes, drop those two in `Scripts/release-mode-test.sh` before suspecting the suite.
 
+## `MallocMediumZone=0`, and why (#3479)
+
+The scribbled run segfaulted on one attempt in two at `0x5555555555555555`, in the smooth-loft
+thread suites, inside libmalloc's own free-list scan. It is the allocator, not the program: a plain C
+program with no OCCT crashes the same way on the macos-15 runner (15.7.9) once three or more threads
+free blocks of a megabyte or more under `MallocScribble`, and passes on macos-26 (26.6.2). The
+smooth loft's least-squares matrices are that size. `MallocMediumZone=0` and `MallocSpaceEfficient=1`
+both stop it; the run uses the first, which leaves scribbling, pre-scribbling and guard edges on.
+Measurements and the probe are in `Scripts/repro/3479-libmalloc-scribble-medium-zone/`. If the
+runner moves to macos-26, try dropping the variable; the probe's `run.sh` is the check.
+
 ## What the first full runs found
 
 - **Seven `OCCTThreadTests` suites SIGSEGV in release on the CI runner** (#3261), each run alone, in
