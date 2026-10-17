@@ -75,12 +75,21 @@ def install_swift_format(dest_dir, workdir):
             die(f'{tool} is required to build swift-format {version} and is not on PATH')
     work = pathlib.Path(workdir or tempfile.mkdtemp(prefix='swift-format-build-'))
     src = work / f'swift-format-{version}'
-    if not src.exists():
+
+    def checkout_head():
+        if not (src / '.git').exists():
+            return None
+        probe = subprocess.run(['git', '-C', str(src), 'rev-parse', 'HEAD'],
+                               capture_output=True, text=True)
+        return probe.stdout.strip() if probe.returncode == 0 else None
+
+    # A leftover directory from a failed run or an older pin is discarded, never trusted.
+    if checkout_head() != commit:
+        shutil.rmtree(src, ignore_errors=True)
         work.mkdir(parents=True, exist_ok=True)
         subprocess.run(['git', 'clone', '--quiet', '--depth', '1', '--branch', version,
                         SWIFT_FORMAT_REPO, str(src)], check=True)
-    head = subprocess.run(['git', '-C', str(src), 'rev-parse', 'HEAD'],
-                          capture_output=True, text=True, check=True).stdout.strip()
+    head = checkout_head()
     if head != commit:
         die(f'swift-format tag {version} resolves to {head}, the pin says {commit}, '
             'refusing to build.')
@@ -94,8 +103,9 @@ def install_swift_format(dest_dir, workdir):
 
 def verify(tool, path):
     version = pins.read_pin(tool)[0]
-    out = subprocess.run([str(path)] + pins.TOOLS[tool]['cmd'][1:],
-                         capture_output=True, text=True).stdout
+    proc = subprocess.run([str(path)] + pins.TOOLS[tool]['cmd'][1:],
+                          capture_output=True, text=True)
+    out = proc.stdout + proc.stderr
     if pins.parse_version(out) != version:
         die(f'installed {path} but it reports {out.strip()!r}, not {version}')
     print(f'install-style-tools: {tool} {version}  ->  {path}')

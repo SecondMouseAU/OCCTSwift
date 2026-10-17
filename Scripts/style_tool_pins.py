@@ -48,7 +48,8 @@ def mismatch_message(tool, pinned, found):
 
 
 def _run(cmd):
-    return subprocess.run(cmd, capture_output=True, text=True).stdout
+    proc = subprocess.run(cmd, capture_output=True, text=True)
+    return proc.stdout + proc.stderr
 
 
 def check(tool, runner=None):
