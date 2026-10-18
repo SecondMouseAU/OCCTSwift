@@ -2028,6 +2028,13 @@ BREP is OCCT's native exact B-Rep format. It preserves full precision and is use
 - **Parameters:** `url`, URL to the `.brep` file.
 - **Returns:** Imported shape.
 - **Throws:** `ImportError.importFailed` on failure.
+- **Damaged files:** a file that is cut short, or that names a shape, location or curve basis it does
+  not hold, is refused through that error. Carried patch `0073`, which the pinned asset does not carry
+  yet, is what makes it so: `BRepTools::Read` otherwise indexed its shape table with the number a failed
+  extraction left behind (SIGSEGV), looped on a stale count (OCCT#1608), wrote a word of 255 bytes or
+  more past a `char[255]`, and read a number of 32 characters or more as two (OCCT#1560). A file that
+  loses only its trailing white space reads, since its last token still extracts. Not covered: a
+  structurally inconsistent shape the reader returns and `BRepCheck` then faults on.
 - **OCCT:** `BRep_Builder` / `BRepTools::Read` (via `OCCTImportBREP`).
 - **Example:**
   ```swift

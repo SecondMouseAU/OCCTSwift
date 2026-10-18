@@ -1950,6 +1950,11 @@ public static func fromBREPString(_ brep: String) -> Shape?
 ```
 
 - **Returns:** Deserialized shape, or `nil` if the string is invalid.
+- **Damaged strings:** a string that is cut short, or that names a shape, location or curve basis it
+  does not hold, returns `nil` once carried patch `0073` is in the kernel (the pinned asset does not
+  carry it yet). It also reads a number of 32 characters or more whole (OCCT#1560) and a string whose
+  trailing white space is gone. Not covered: a structurally inconsistent shape that is returned and
+  that `BRepCheck` then faults on.
 - **OCCT:** `OCCTShapeFromBREPString` → `BRepTools::Read` from string stream.
 - **Example:**
   ```swift

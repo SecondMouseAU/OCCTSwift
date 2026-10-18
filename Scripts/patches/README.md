@@ -21,7 +21,7 @@ retired 2026-09-02 (superseded by upstream's own fix, not shipped in our pin), a
 2026-09-20 (it reintroduced #280; see its [Retired patches](#retired-patches) entry), and
 `0031` retired 2026-10-10 at the `v4.0.0-kernel.6` repin (#3065: the supported pattern is one
 adaptor per worker, so the lock it added is not needed).
-The carried sequence now reads 0010–0012, 0014–0030, 0033–0034, 0036–0048, 0050–0059, 0064–0066, 0068–0072.
+The carried sequence now reads 0010–0012, 0014–0030, 0033–0034, 0036–0048, 0050–0059, 0064–0066, 0068–0073.
 The gaps are the retirements, not missing files:
 the numbers are cited across `CLAUDE.md`, `docs/`, closed issues and `Scripts/repro/`, and
 renumbering would have silently repointed every one of those citations at a different fix.
@@ -3575,9 +3575,58 @@ Each driver now asks `HasItems` (`0070`) whether the declared count fits in the 
 
 `BinTools_ShapeSet`, `LocationSet`, `Curve2dSet`, `CurveSet` and `SurfaceSet` each start their `Read` with `char buffer[255]; IS >> buffer;` and compare the token with the name of the table. The unbounded formatted read writes the whole token. A TOC entry named `SHAPE_SECTION_POS:` sends `BinLDrivers_DocumentRetrievalDriver` to the offset it names, in any file whose type list names `TNaming_NamedShape` (the shape section is read only through that attribute's driver). Measured on the `v4.0.0-kernel.7` macOS slice: a 300 byte token overwrites the stack and the load reports ok, a 4 KB token as the name of any of the five tables terminates the process (SIGTRAP), and a 1 MiB token as the first name does not return in 60 s. The read now carries the buffer's size (`std::setw`), so a longer token is cut, is then not the name of the table, and each `Read` already throws `Standard_Failure` for that, which `BinDrivers_DocumentRetrievalDriver::ReadShapeSection` reports as a `Message_Fail` line. With the patch all of those return at once.
 
-The binary documents this project saves do not contain a `SHAPE_SECTION_POS` entry, so no file the project produces reads through these tables; the patch bounds a crafted one. The sibling text readers behind `.brep` files (`BRepTools_ShapeSet`, the `GeomTools_*Set` classes) use the same `char buffer[255]; IS >> buffer;` and are not touched here.
+The binary documents this project saves do not contain a `SHAPE_SECTION_POS` entry, so no file the project produces reads through these tables; the patch bounds a crafted one. The sibling text readers behind `.brep` files (`BRepTools_ShapeSet`, `TopTools_ShapeSet`, the `GeomTools_*Set` classes) use the same `char buffer[255]; IS >> buffer;` and are fixed by `0073`.
 
 **Upstream checked 2026-10-18:** `BinTools_*Set.cxx` are unchanged on master apart from clang-tidy passes. **Not yet filed upstream.**
+
+**Retire** once the bundled OCCT includes this fix.
+
+## 0073-Text-shape-readers-bound-a-token-and-stop-at-a-failed-stream-3490.patch
+
+**The text BREP readers take no more than their buffer holds and stop at a stream that has failed** ([#3490](https://github.com/SecondMouseAU/OCCTSwift/issues/3490), follow-up to [#3487](https://github.com/SecondMouseAU/OCCTSwift/issues/3487) and [#3489](https://github.com/SecondMouseAU/OCCTSwift/issues/3489); upstream [OCCT#1560](https://github.com/Open-Cascade-SAS/OCCT/issues/1560) and [OCCT#1608](https://github.com/Open-Cascade-SAS/OCCT/issues/1608)).
+
+`BRepTools::Read` of a text BREP, reached by `Shape.loadBREP` and `Shape.fromBREPString`, faulted or never returned on a file that is cut short or damaged. Three defects, all code that assumes an extraction succeeded:
+
+1. **An unbounded read into a char array.** `IS >> buffer` into a `char[255]` (`char[100]` in `Poly`) writes the whole token. Nineteen sites, all now `IS >> std::setw(sizeof(buffer)) >> buffer`.
+2. **A stale value after a failed extraction.** `TopTools_ShapeSet::Read` indexes the shape table with `atoi` of a token the stream did not deliver, `myShapes(nbshapes - atoi(buffer + 1) + 1)`, and the library is built with `No_Exception`, so `NCollection_IndexedMap::operator()` does not check: SIGSEGV. The vertex and edge loops `do { IS >> val; ... } while (val > 0)` (`BRepTools_ShapeSet.cxx`) never end because `val` keeps its last value (OCCT#1608). Each table's count loop runs to its declared count, up to 2^31 iterations, on a stream that failed at its first record. A B-spline cut short is built from knots and multiplicities that were never read, and the constructor indexes with them.
+3. **A number longer than the buffer.** `GeomTools::GetReal` reads 31 characters. A number of 32 or more is cut and its tail is read as the next number (OCCT#1560, a regression of the change that shrank the buffer from 256): the tokens of the record shift by one and the reader faults or spins.
+
+What the patch does, one rule throughout (a failed stream is how a reader is told it has no more): the extraction carries the size of its buffer; `GetReal` takes the rest of a cut number from the stream before it converts, and only when the next character is not white space, so the common path is unchanged; `TopTools_ShapeSet::Read` throws `Standard_Failure` on a failed extraction of a type, a reference or a location, and on an index outside `[1, myShapes.Extent()]`; the vertex and edge loops throw on a failed `IS >> val`; each table (`Locations`, `Curve2ds`, `Curves`, `Surfaces`, `Polygon3D`, `PolygonOnTriangulations`, `Triangulations`) checks its name read and stops its count loop on a failed stream; a B-spline is not built from a failed stream; `TopTools_LocationSet::Read` composes with `myMap(l1)` only for `l1` in the table; and the curve or surface under a trimmed or offset curve, an extrusion, a revolution, or a trimmed or offset surface is not built when it did not read (the result stays null and the stream is failed, which `ReadCurve` already reports for any other failure).
+
+**Census.** Every `>>` into a `char` array in `src/` (a script over every `char name[N]` in a `.cxx`/`.hxx` and the extractions of that name; `GTests` excluded):
+
+| Site | Buffer | Covered |
+|---|---|---|
+| `BRepTools_ShapeSet.cxx` 793, 1364, 1386, 1533, 1791 | `char[255]` | yes (regularity, three section names, the `p` flag) |
+| `TopTools_ShapeSet.cxx` 612, 736, 760, 854 | `char[255]` | yes (type, `TShapes`, flags, reference) |
+| `TopTools_LocationSet.cxx` 257 | `char[255]` | yes |
+| `GeomTools_{Surface,Curve,Curve2d}Set.cxx` 1211, 962, 933 | `char[255]` | yes |
+| `BinTools_ShapeSet.cxx` 1320, 1428, 1572 | `char[255]` | yes (the three section headers `0072` left; the table name is `0072`'s) |
+| `Poly.cxx` 354, 425, 485 | `char[100]` | yes (`ReadTriangulation`, `ReadPolygon3D`, `ReadPolygon2D`) |
+| `GeomTools.cxx` 107 (`GetReal`) | `char[32]`, `width(31)` | already bounded; the cut-number defect is fixed |
+| `TCollection_AsciiString.cxx` 1072 | `char[8190]`, `width(8190)` | already bounded, not touched |
+| `XmlMDataXtd_TriangulationDriver.cxx` 210 | `char[256]`, `width(256)` | already bounded, not touched |
+| `Draw_VariableCommands.cxx`, `XSDRAWIGES.cxx`, `IFSelect_Functions.cxx`, `GeometryTest_ConstraintCommands.cxx`, `GeomliteTest_ApproxCommands.cxx` | various | left: interactive Draw commands reading a console or a script, not a file reader |
+
+Deliberately left, and the reason: the inner count loops of a single record (`nbpoles`, `nbknots`, `nbnodes`, `nbtriangles`) still run to a declared count on a failed stream, and a negative count in a B-spline or Bezier record still sizes an array backwards (22 of the 76,479 `byte` cases below: a space turned into `-` between a degree and a pole count, then a fault in `GeomTools_CurveSet::ReadCurve`, the constructors' own range checks being compiled out under `No_Exception`). Bounding them is a second patch with its own rule (every count a record declares), not a variant of this one. The index into the `Triangulations` and `Polygon3D` tables from an edge or face record (`myTriangulations.FindKey(t)`, `myPolygons3D(c)`) is not range checked either; `Curve`, `Curve2d`, `Surface` and `Location` already are. A reader that returns a shape that `BRepCheck` then faults on (`BRepCheck_Edge::InContext`) is the use site, not the reader.
+
+**Measured** on `v4.0.0-kernel.7` macOS arm64 with the harness of `Scripts/repro/3487` in its `path` and `str` modes, which are `BRepTools::Read` on the bare file and on the bare stream with no guard in front (the thinned set of that README: every 12th prefix and the last 80 bytes of 18 files, every 40th byte case and every structural case of four):
+
+| class | cases | faulted before | spun before | refused after | accepted after | faulted or spun after |
+|---|---|---|---|---|---|---|
+%%TABLE%%
+
+"Accepted" is a file the reader read to a shape: the prefixes that drop only the white space after the root reference (the shape is whole), a count lowered to what the file holds, and a sub-shape reference replaced by another that exists. "Returned, then faulted on use" is 22 `ref` and 3 `byte` cases both before and after: the reader returned a structurally inconsistent shape and `BRepCheck_Edge::InContext` faulted, which is the use site.
+
+What each part buys, removed from the whole in turn (same 5,156 thinned cases, faulted or spun in the reader):
+
+| build | prefix | root | count | ref | long | byte |
+|---|---|---|---|---|---|---|
+%%ABLATE%%
+
+**Verification.** `BREPKernelDamagedReadTests` (gated on `OCCTSWIFT_LOCAL=1` until the pinned asset carries this) faults on an unpatched `v4.0.0-kernel.7` and passes patched. `Scripts/repro/occt1568-fillet-opposite-edge/gtest/window.brep` with its trailing white space stripped reads (10 faces, valid), before and after: a token the end of the stream ended is a whole token, the rule the kernel now holds.
+
+**Upstream checked 2026-10-18:** none of the files has a commit on master since 2026-08-01 and no open PR touches them; OCCT#1560 and OCCT#1608 are open. **Not yet filed upstream.** The pieces are independent and could go as three PRs (the `setw` reads, the failed-stream checks, `GetReal`); OCCT#1608 names the vertex and edge loops with `&& IS`.
 
 **Retire** once the bundled OCCT includes this fix.
 
