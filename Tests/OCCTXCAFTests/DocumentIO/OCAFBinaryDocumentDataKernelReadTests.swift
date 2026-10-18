@@ -204,6 +204,9 @@ struct OCAFBinaryDocumentDataKernelReadTests {
         let retained: Int
     }
 
+    /// What a refused record may allocate: far below the 128 MiB or more every unpatched case holds.
+    private static let growthLimit = 64 << 20
+
     private static let spanCases: [SpanCase] = [
         SpanCase(
             kind: "TDataStd_IntegerArray", span: 1 << 26, retained: (1 << 26) * 4),
@@ -232,21 +235,31 @@ struct OCAFBinaryDocumentDataKernelReadTests {
     func declaredSpanIsBoundedByTheRecord() throws {
         for c in Self.spanCases {
             let bytes = Self.document(kind: c.kind, payload: Blob.ints(1, c.span))
+            var result: (document: Document?, status: ReaderStatus) = (nil, .ok)
             #if canImport(Darwin)
-                let before = heapInUse()
-            #endif
-            let (doc, status) = try load(bytes)
-            #if canImport(Darwin)
-                // Measured while the document is alive: an unpatched kernel holds `retained` bytes.
-                let grown = heapInUse() - before
+                // The malloc zones are shared with every suite running beside this one, and their
+                // allocations only ever add to the figure, so the smallest of three loads is the
+                // one that measures this file. An unpatched kernel holds `retained` bytes on each.
+                var smallest = Int.max
+                for _ in 0..<3 {
+                    result = (nil, .ok)  // release the last attempt's document before measuring
+                    let before = heapInUse()
+                    result = try load(bytes)
+                    smallest = min(smallest, heapInUse() - before)
+                    if smallest < Self.growthLimit { break }
+                }
                 #expect(
-                    grown < 64 << 20,
-                    "\(c.kind) span \(c.span): the load allocated \(grown) bytes (unpatched: \(c.retained))"
+                    smallest < Self.growthLimit,
+                    "\(c.kind) span \(c.span): the load allocated \(smallest) bytes (unpatched: \(c.retained))"
                 )
+            #else
+                result = try load(bytes)
             #endif
-            #expect(doc != nil, "\(c.kind): the file still loads (the attribute is skipped)")
-            #expect(status == .ok, "\(c.kind): got \(status)")
-            withExtendedLifetime(doc) {}
+            #expect(
+                result.document != nil, "\(c.kind): the file still loads (the attribute is skipped)"
+            )
+            #expect(result.status == .ok, "\(c.kind): got \(result.status)")
+            withExtendedLifetime(result.document) {}
         }
     }
 
