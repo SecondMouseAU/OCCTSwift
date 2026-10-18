@@ -3537,6 +3537,11 @@ extension Shape {
     }
 
     /// Deserialize a shape from a BREP format string.
+    ///
+    /// Returns `nil` for a string that ends early (#3487): every strict prefix of
+    /// ``toBREPString()``'s output is refused, as is a string whose trailing whitespace was
+    /// stripped. A complete string that refers to a shape or curve it does not hold is not
+    /// checked; see ``loadBREP(from:)``.
     public static func fromBREPString(_ brep: String) -> Shape? {
         guard let ref = OCCTShapeFromBREPString(brep) else { return nil }
         return Shape(handle: ref)

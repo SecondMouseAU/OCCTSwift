@@ -49,3 +49,4 @@ Tests/OCCTIOTests/StepHeaderTests.swift	Tests/OCCTIOTests/STEP/StepHeaderTests.s
 Tests/OCCTIOTests/StepModelTypeEnumTests.swift	Tests/OCCTIOTests/STEP/StepModelTypeEnumTests.swift	STEP	-	STEP reader and writer: roots, modes, header, model type, CAF mode control, optimisation, round trip and robust multibody import
 Tests/OCCTIOTests/StepTidyTests.swift	Tests/OCCTIOTests/STEP/StepTidyTests.swift	STEP	-	STEP reader and writer: roots, modes, header, model type, CAF mode control, optimisation, round trip and robust multibody import
 Tests/OCCTIOTests/VrmlWriterTests.swift	Tests/OCCTIOTests/MeshFormats/VrmlWriterTests.swift	MeshFormats	-	OBJ, PLY, glTF and VRML mesh exchange plus the RWMesh face and vertex iterators
+Tests/OCCTIOTests/BREP/BREPDamagedInputTests.swift	Tests/OCCTIOTests/BREP/BREPDamagedInputTests.swift	BREP	-	a BREP text that ends early is refused instead of faulting in BRepTools::Read (#3487)
