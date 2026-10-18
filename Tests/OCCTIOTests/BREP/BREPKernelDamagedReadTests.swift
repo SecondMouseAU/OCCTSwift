@@ -117,7 +117,7 @@ struct BREPKernelDamagedReadTests {
     @Test(.enabled(if: BREPKernelDamagedReadTests.isLocalKernel))
     func curvesWithoutABasisAreRefused() throws {
         let text = try #require(Self.boxText())
-        let curve3d = "1 0 0 0 0 0 1 "
+        let curve3d = "1 -5 -10 -15 0 0 1 "
         let curve2d = "1 0 0 1 0 \n"
         for record in ["9 1 0 0 1 99 ", "8 0 1 99 "] {
             let damaged = try #require(Self.edited(text, replacing: curve3d, with: record))
@@ -132,18 +132,17 @@ struct BREPKernelDamagedReadTests {
     /// A location built from others names them by index, and the index read the table unchecked.
     ///
     /// A table of two locations whose second is built from a first that is there reads; built from
-    /// an index that is not, it is refused.
+    /// an index that is not, it is refused. The box has no location of its own, so the table is
+    /// written in: one translation, then a location composed of it (`2 1 1 0`: entry 1, power 1).
     @Test(.enabled(if: BREPKernelDamagedReadTests.isLocalKernel))
     func aComposedLocationOutsideTheTableIsRefused() throws {
-        let box = try #require(Shape.box(width: 10, height: 20, depth: 30))
-        let moved = try #require(box.translated(by: [5, 6, 7]))
-        let text = try #require(moved.toBREPString())
-        let counted = try #require(
-            Self.edited(text, replacing: "Locations 1\n", with: "Locations 2\n"))
+        let text = try #require(Self.boxText())
+        let translation = "1\n1 0 0 5 \n0 1 0 0 \n0 0 1 0 \n"
         func withComposed(_ record: String) throws -> String {
-            try #require(Self.edited(counted, replacing: "Curve2ds", with: record + "Curve2ds"))
+            let table = "Locations 2\n" + translation + record
+            return try #require(Self.edited(text, replacing: "Locations 0\n", with: table))
         }
-        let inTable = try #require(Self.volume(of: try withComposed("2 1 2 0\n")))
+        let inTable = try #require(Self.volume(of: try withComposed("2 1 1 0\n")))
         #expect(abs(inTable - 6000) < 1e-6)
         #expect(Shape.fromBREPString(try withComposed("2 9999 1 0\n")) == nil)
         #expect(Shape.fromBREPString(try withComposed("2 -3 1 0\n")) == nil)
@@ -151,17 +150,17 @@ struct BREPKernelDamagedReadTests {
 
     /// OCCT#1560: a number of 32 characters or more was cut and its tail read as the next number.
     ///
-    /// The vertex at z = 30 is written with 44 characters, as a decimal and as an exponent; the box
+    /// The vertex at z = 15 is written with 43 characters, as a decimal and as an exponent; the box
     /// is the same box.
     @Test(.enabled(if: BREPKernelDamagedReadTests.isLocalKernel))
     func aNumberLongerThanTheBufferIsReadWhole() throws {
         let text = try #require(Self.boxText())
         for number in [
-            "30.0000000000000000000000000000000000000001",
-            "3.0000000000000000000000000000000000000001e1",
+            "15.0000000000000000000000000000000000000001",
+            "1.5000000000000000000000000000000000000001e1",
         ] {
             let longer = try #require(
-                Self.edited(text, replacing: "\n0 0 30\n", with: "\n0 0 \(number)\n"))
+                Self.edited(text, replacing: "\n-5 -10 15\n", with: "\n-5 -10 \(number)\n"))
             let volume = try #require(Self.volume(of: longer), "\(number)")
             #expect(abs(volume - 6000) < 1e-6, "\(number)")
         }
