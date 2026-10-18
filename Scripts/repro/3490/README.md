@@ -20,7 +20,8 @@ the stack applied, `-O2 -DNDEBUG -DNo_Exception`, the headers of the unzipped fr
 kernel build.
 
 What each part of the patch buys was measured by removing it from the whole in turn (the table is in
-the patch's README entry): the shape-table index range is the largest single part, the failed-stream
-checks and loop terminators the next, the basis checks catch one `byte` case in 355, and the
+the patch's README entry): the failed-stream checks and loop terminators do most of the work on cut files, the
+shape-table index range removes the rest of them and every `ref` fault, the basis checks catch one
+`byte` case in 355, and the
 composed-location range check catches none of the matrix's cases and is needed all the same: a
 `Locations` entry `2 9999 1 0` faults without it and is refused with it (`cases.py` writes `loc_composed_bad.brep`; the matrix's four files have no composed locations).
