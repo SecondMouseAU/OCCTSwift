@@ -47,7 +47,7 @@ let useLocalXCFramework: Bool = {
         atPath: occtPackageDir + "/Libraries/OCCT.xcframework/Info.plist")
 }()
 
-// OCCT V8.0.1 plus the forty-nine carried patches are documented in Scripts/patches/README.md
+// OCCT V8.0.1 plus the fifty-three carried patches are documented in Scripts/patches/README.md
 // (patch list, verification status, and CI coverage gaps for maintainers).
 let occtTarget: Target =
     isWASI
@@ -294,8 +294,9 @@ let occtTarget: Target =
         // which is what they were built to do; if a later asset repeats either stray the finding comes
         // back rather than staying suppressed.
         //
-        // The pinned asset lacks none of them: it holds fifty and Scripts/patches/ holds fifty, so
-        // there is no untested patch. 0064 (#3335), 0065 (#3350), 0066 (#3464), 0068 (#3449) and
+        // The pinned asset lacks three of them, 0070, 0071 and 0072: it holds fifty and Scripts/patches/
+        // holds fifty-three, so those three are exercised by no CI job until the next repin.
+        // 0064 (#3335), 0065 (#3350), 0066 (#3464), 0068 (#3449) and
         // 0069 (#3330) were carried after v4.0.0-kernel.6 and are pinned by v4.0.0-kernel.7; the
         // rows for 0053 through 0069 below are history in the way the rows for 0044 through 0052
         // became at v4.0.0-kernel.4. kernel.7 retired nothing: 0031 left at kernel.6.
@@ -342,9 +343,10 @@ let occtTarget: Target =
         // wrong: InitializeMissingParameters is also the REPAIR that re-sets DirectFaces on an actor a
         // STEPCAFControl_Reader has left with empty OperationsFlags, which is #280's exact mechanism.
         // kernel-integration.yml caught it on main. See Scripts/patches/README.md's retired 0035 entry.
-        // Scripts/patches/ holds fifty patches and the pinned asset holds the same fifty,
-        // enumerated above. `ls Scripts/patches/*.patch | wc -l` answers 50 against a list of 50,
-        // and there is no divergence. The v4.0.0-kernel.4 rebuild closed the divergence that 0044 had
+        // Scripts/patches/ holds fifty-three patches and the pinned asset holds fifty of them,
+        // enumerated above. `ls Scripts/patches/*.patch | wc -l` answers 53 against a list of 50,
+        // and the three that the list lacks are 0070, 0071 and 0072, written up below. The
+        // v4.0.0-kernel.4 rebuild closed the divergence that 0044 had
         // opened and that 0045 through 0052 widened, the v4.0.0-kernel.5 rebuild closed the one that
         // 0053 through 0057 opened, the v4.0.0-kernel.6 rebuild closed the one that 0058 and 0059
         // opened, and the v4.0.0-kernel.7 rebuild closed the one that 0064 through 0069 opened. The
@@ -563,7 +565,32 @@ let occtTarget: Target =
         //         reference indices those sections hold, bounded against the table sizes the file
         //         itself declares. The document data after `edata` is still not walked: array
         //         attribute spans, label-tag counts, label nesting depth and shape-section
-        //         tokens are measured, reachable and not mitigated (known-occt-bugs.md).
+        //         tokens are measured and were reachable; #3489 carries 0070 through 0072 for
+        //         all but the nesting depth (known-occt-bugs.md).
+        //
+        //   0070  BinObjMgt_Persistent::noMoreData(theSize) tested Position() + theSize > mySize
+        //         and GetLabel and the four Get...Array methods formed count * item size first,
+        //         both in int, so a tag count of 2^29 or more passed the room check and the loop
+        //         that follows ran past the data without returning. The comparison is now
+        //         theSize > mySize - Position(), and the multiplied callers ask the new
+        //         HasItems(count, itemSize), which divides. NOT in v4.0.0-kernel.7;
+        //         OCAFBinaryDocumentDataKernelReadTests is gated on OCCTSWIFT_LOCAL=1 until the
+        //         next repin (#3489).
+        //
+        //   0071  Fifteen binary attribute drivers (IntegerArray, RealArray, ByteArray,
+        //         BooleanArray, ExtStringArray, ReferenceArray, the Integer, Real and Boolean
+        //         lists, NamedData, DimTol, NoteBinData, VisMaterial, GraphNode, Scope)
+        //         allocated last - first + 1 elements, or a declared size, before they checked
+        //         the record holds them: 1 to 17 GiB from a ~400 byte file, and on a 32-bit
+        //         wasm module the allocator failure #3477 describes. Each now compares the span
+        //         with the bytes left in the record through HasItems, by division, so nothing
+        //         multiplies. NOT in v4.0.0-kernel.7; same gate (#3489).
+        //
+        //   0072  Five BinTools set readers extracted the name of their table into a
+        //         char[255] with an unbounded >>: a 4 KB token killed the process and a 1 MiB
+        //         token did not return, reached through a TOC entry named SHAPE_SECTION_POS at
+        //         any offset. The read now carries the buffer size. NOT in v4.0.0-kernel.7;
+        //         same gate (#3489).
         //
         // 0043 (#2827, BRepGProp_Gauss keeps the by-plane mass) was the one outstanding before it,
         // and it went the other way, which is the comparison worth keeping beside 0044: carried

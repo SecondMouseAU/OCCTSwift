@@ -45,9 +45,10 @@ import Testing
 // / `objectAndType...` tests below build such sections directly, since no OCCTSwift-saved file has
 // one to start from.
 //
-// Still not covered: the document data past `edata`, which BinLDrivers reads itself (attribute
-// counts, per-attribute array spans, and the label tree's own recursion depth). Measured in
-// Scripts/repro/3486 and not mitigated here: see the README there and the known-occt-bugs entry.
+// The document data past `edata`, which BinLDrivers reads itself (attribute spans, label-tag
+// counts, shape-section table names), is `OCAFBinaryDocumentDataKernelReadTests`, for carried
+// patches 0070 to 0072 (#3489). Label nesting depth is still not covered and not mitigated:
+// see `okf/references/known-occt-bugs.md` and `Scripts/repro/3489/README.md`.
 @Suite("OCAF readers report a damaged file instead of faulting")
 struct OCAFMalformedKernelReadTests {
 

@@ -21,7 +21,7 @@ retired 2026-09-02 (superseded by upstream's own fix, not shipped in our pin), a
 2026-09-20 (it reintroduced #280; see its [Retired patches](#retired-patches) entry), and
 `0031` retired 2026-10-10 at the `v4.0.0-kernel.6` repin (#3065: the supported pattern is one
 adaptor per worker, so the lock it added is not needed).
-The carried sequence now reads 0010–0012, 0014–0030, 0033–0034, 0036–0048, 0050–0059, 0064–0066, 0068–0069.
+The carried sequence now reads 0010–0012, 0014–0030, 0033–0034, 0036–0048, 0050–0059, 0064–0066, 0068–0072.
 The gaps are the retirements, not missing files:
 the numbers are cited across `CLAUDE.md`, `docs/`, closed issues and `Scripts/repro/`, and
 renumbering would have silently repointed every one of those citations at a different fix.
@@ -3527,6 +3527,57 @@ Measured on 1586 generated files (every prefix of the first 400 bytes plus a str
 `v4.0.0-kernel.7` is the first asset to hold this patch. The bridge's #3318 guard **stays** at that repin: it also refuses the XML prolog spin in LDOM, which this patch does not reach, so it still turns a hang into a status. `OCAFMalformedKernelReadTests` reaches the kernel through `OCCTDocumentLoadOCAFUnguarded` and was gated on `OCCTSWIFT_LOCAL=1` until that repin; it is ungated by the same change.
 
 **Upstream checked 2026-10-15:** `BinLDrivers_DocumentRetrievalDriver.cxx`, `PCDM_ReadWriter.cxx` and `FSD_BinaryFile.cxx` are unchanged on master at all three sites, and no open issue or PR names them. **Not yet filed upstream.**
+
+**Retire** once the bundled OCCT includes this fix.
+
+## 0070-BinObjMgt_Persistent-compares-a-size-from-the-file-without-overflow-3489.patch
+
+**A tag count read from a binary OCAF file no longer overflows the room check** ([#3489](https://github.com/SecondMouseAU/OCCTSwift/issues/3489), follow-up to [#3486](https://github.com/SecondMouseAU/OCCTSwift/issues/3486) and [#3477](https://github.com/SecondMouseAU/OCCTSwift/issues/3477)).
+
+`BinObjMgt_Persistent::GetLabel` reads a count of tags and asks `noMoreData(aLen * BP_INTSIZE)` whether that many ints are left. Both the product and `noMoreData`'s own `Position() + theSize > mySize` are `int` arithmetic on values from the file. A count of 2^29 makes the product `INT_MIN`, 2^30 makes it 0 and `INT_MAX` makes it -4, and each passes the test; the loop that follows then appends a tag list node per count and walks `myData` past its last piece. A `TDF_Reference` record whose payload is the single int 2^30 does not return in 60 s on the `v4.0.0-kernel.7` macOS slice (2^28, whose product fits, is refused at once). `GetIntArray`, `GetRealArray`, `GetShortRealArray` and `GetExtCharArray` form the same product, and `GetByteArray` and `GetCharArray` pass the length unscaled into the same `Position() + theSize`.
+
+The comparison is now `theSize > mySize - Position()` (a negative size is an error), and the four multiplied callers and `GetLabel` ask a new public `BinObjMgt_Persistent::HasItems(theNbItems, theItemSize)`, which divides what is left by the item size, so the count times the size is never formed. All of them leave the reader in the `IsError` state every caller already checks. `HasItems` is public so that `0071` can bound a count before it allocates for it.
+
+With the patch every tag count tried (2^20, 2^28, 2^29, 2^30, `INT_MAX`, -1) returns at once with the load's status unchanged.
+
+**Upstream checked 2026-10-18:** `BinObjMgt_Persistent.{cxx,hxx,lxx}` are unchanged on master apart from cleanups (the last commit touching the directory is `e521a4a7a`, dead headers), and no open issue or PR names them. **Not yet filed upstream.**
+
+**Retire** once the bundled OCCT includes this fix.
+
+## 0071-BinMDataStd-array-and-list-drivers-bound-a-declared-span-by-the-data-left-3489.patch
+
+**A declared array or list span is checked against the record before memory is allocated for it** ([#3489](https://github.com/SecondMouseAU/OCCTSwift/issues/3489)).
+
+The binary `Paste` of an array attribute reads a first and a last index and allocates `last - first + 1` elements before it reads the elements; the list drivers allocate a temporary array the same way and append what it holds. Nothing relates the span to the record. Measured through `TDocStd_Application::Open` on the `v4.0.0-kernel.7` macOS slice, with the #3477 interposer logging every request of 8 MiB or more (`Scripts/repro/3489/`):
+
+| Driver | Declared | Requested | Time |
+|---|---|---|---|
+| `IntegerArray` | 2^28 / `INT_MAX` | 1 GiB / 8 GiB | 0.1 s / 1.6 s |
+| `RealArray` | 2^29 | 4 GiB | 0.6 s |
+| `ByteArray` | `INT_MAX` | 2 GiB | 11.7 s |
+| `ExtStringArray` | 2^30 | 16 GiB | 16.0 s |
+| `ReferenceArray` | 2^30 | 8 GiB | 1.4 s |
+| `BooleanArray` | `INT_MAX` | 256 MiB | 0.7 s |
+| `IntegerList`, `RealList` | 2^22 | 16, 32 MiB (a 4M node list follows) | 0.1 s |
+| `NamedData` int / real array | 2^29 | 2 GiB / 4 GiB | 0.0 s |
+
+The status is ok in every row: a failed `Paste` is a `failure reading attribute` warning. `DimTol`, `NoteBinData`, `VisMaterial`, `GraphNode` and `Scope` allocate by a declared size in the same way and are patched on the same reading (they need the XCAF or Function drivers, which the harness's `BinOcaf` file does not name). A 64-bit process absorbs the request until a driver touches the pages. A 32-bit address space (wasm) cannot, and the failed allocation is the #3477 failure, where `Standard_MMgrRaw::Allocate()` fails for every later allocation of the process.
+
+Each driver now asks `HasItems` (`0070`) whether the declared count fits in the bytes left in the record, using the smallest size one element can occupy in it (4 and 8 for the numeric arrays, 1 for bytes and references, 2 for an extended string, whose terminator is a `char16_t`, and a bit per Boolean element), and returns `false` before it allocates. The check divides, so on a 32-bit `size_t` nothing overflows: the product `count * sizeof(T)` is never formed in this code. With the patch every row above requests nothing and returns in 0.0 s; a document saved with one attribute of every kind (`probe roundtrip`) reads back unchanged.
+
+**Upstream checked 2026-10-18:** the driver files are unchanged on master apart from cleanups. **Not yet filed upstream.** It depends on `0070`'s `HasItems`, so upstream would take the two together.
+
+**Retire** once the bundled OCCT includes this fix.
+
+## 0072-BinTools-Set-Read-cuts-the-table-name-token-at-the-buffer-3489.patch
+
+**A table name longer than the reader's buffer is cut, not written past it** ([#3489](https://github.com/SecondMouseAU/OCCTSwift/issues/3489)).
+
+`BinTools_ShapeSet`, `LocationSet`, `Curve2dSet`, `CurveSet` and `SurfaceSet` each start their `Read` with `char buffer[255]; IS >> buffer;` and compare the token with the name of the table. The unbounded formatted read writes the whole token. A TOC entry named `SHAPE_SECTION_POS:` sends `BinLDrivers_DocumentRetrievalDriver` to the offset it names, in any file whose type list names `TNaming_NamedShape` (the shape section is read only through that attribute's driver). Measured on the `v4.0.0-kernel.7` macOS slice: a 300 byte token overwrites the stack and the load reports ok, a 4 KB token as the name of any of the five tables terminates the process (SIGTRAP), and a 1 MiB token as the first name does not return in 60 s. The read now carries the buffer's size (`std::setw`), so a longer token is cut, is then not the name of the table, and each `Read` already throws `Standard_Failure` for that, which `BinDrivers_DocumentRetrievalDriver::ReadShapeSection` reports as a `Message_Fail` line. With the patch all of those return at once.
+
+The binary documents this project saves do not contain a `SHAPE_SECTION_POS` entry, so no file the project produces reads through these tables; the patch bounds a crafted one. The sibling text readers behind `.brep` files (`BRepTools_ShapeSet`, the `GeomTools_*Set` classes) use the same `char buffer[255]; IS >> buffer;` and are not touched here.
+
+**Upstream checked 2026-10-18:** `BinTools_*Set.cxx` are unchanged on master apart from clang-tidy passes. **Not yet filed upstream.**
 
 **Retire** once the bundled OCCT includes this fix.
 

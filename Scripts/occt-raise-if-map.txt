@@ -58,7 +58,7 @@
 # the stray check in docs/guides/building-occt.md's "Shipping a rebuild" answers it.
 #
 # occt-version: 8.0.1
-# derived against: 50 carried patch(es) in Scripts/patches/, every one of them verified
+# derived against: 53 carried patch(es) in Scripts/patches/, every one of them verified
 # derived against: applied in the tree the rows below were derived from.
 # patch: 0010-Intf_Interference-O1-tangent-zone-checkpoint-breaker-319 79fe529c26ef
 # patch: 0011-XCAFDoc_ShapeTool-AutoNamingScope-341 76898e2438a2
@@ -110,6 +110,9 @@
 # patch: 0066-BRepOffset_MakeLoops-cap-splits-oriented-against-the-offset-faces-3464 56fd1014432b
 # patch: 0068-BRepFill_TrimSurfaceTool-IntersectWith-refuses-incoherent-intersection-3449 d0878c045c01
 # patch: 0069-OCAF-readers-report-a-damaged-file-through-the-reader-status-3330 f15a5e477e39
+# patch: 0070-BinObjMgt_Persistent-compares-a-size-from-the-file-without-overflow-3489 42ae0243cea1
+# patch: 0071-BinMDataStd-array-and-list-drivers-bound-a-declared-span-by-the-data-left-3489 080d45a9cacd
+# patch: 0072-BinTools-Set-Read-cuts-the-table-name-token-at-the-buffer-3489 4be52ad597c1
 #
 # totals: inline-raise       462 site(s) in  104 class(es)
 # totals: outofline-raise    827 site(s) in  283 class(es)
