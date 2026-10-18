@@ -51,8 +51,10 @@ struct BREPKernelDamagedReadTests {
         #expect(abs(volume - 6000) < 1e-6)
     }
 
-    /// Every prefix the reader can be handed by a transfer that stopped early. Almost all are
-    /// refused; the few that drop only the white space after the root reference are the whole file.
+    /// Every prefix a transfer that stopped early can hand the reader.
+    ///
+    /// Almost all are refused; the few that drop only the white space after the root reference are
+    /// the whole file.
     @Test(.enabled(if: BREPKernelDamagedReadTests.isLocalKernel))
     func textCutAnywhereIsRefusedOrIsTheWholeShape() throws {
         let text = try #require(Self.boxText())
@@ -98,7 +100,8 @@ struct BREPKernelDamagedReadTests {
     func referencesOutsideTheTablesAreRefused() throws {
         let text = try #require(Self.boxText())
         // A sub-shape reference past the table, then roots past it, before it and far past it.
-        let subShape = try #require(Self.edited(text, replacing: "+20 0 +13 0 *", with: "+9999 0 +13 0 *"))
+        let subShape = try #require(
+            Self.edited(text, replacing: "+20 0 +13 0 *", with: "+9999 0 +13 0 *"))
         #expect(Shape.fromBREPString(subShape) == nil)
         let tail = try #require(text.range(of: "\n+1 0", options: .backwards))
         for root in ["+9999 0", "+0 0", "-9999 0", "+99999999999 0"] {
@@ -107,9 +110,10 @@ struct BREPKernelDamagedReadTests {
         }
     }
 
-    /// A trimmed or offset curve is built on the curve read after it. When that read gives nothing the
-    /// constructor dereferenced a null basis. Type 9 is an offset curve, 8 a trimmed one, 99 a type
-    /// nothing reads.
+    /// A trimmed or offset curve is built on the curve read after it.
+    ///
+    /// When that read gives nothing the constructor dereferenced a null basis. Type 9 is an offset
+    /// curve, 8 a trimmed one, 99 a type nothing reads.
     @Test(.enabled(if: BREPKernelDamagedReadTests.isLocalKernel))
     func curvesWithoutABasisAreRefused() throws {
         let text = try #require(Self.boxText())
@@ -125,14 +129,17 @@ struct BREPKernelDamagedReadTests {
         }
     }
 
-    /// A location built from others names them by index, and the index was used to read the table with no
-    /// range check. A table of two locations whose second is built from a first that is there reads;
-    /// built from an index that is not, it is refused.
+    /// A location built from others names them by index, and the index read the table unchecked.
+    ///
+    /// A table of two locations whose second is built from a first that is there reads; built from
+    /// an index that is not, it is refused.
     @Test(.enabled(if: BREPKernelDamagedReadTests.isLocalKernel))
     func aComposedLocationOutsideTheTableIsRefused() throws {
-        let moved = try #require(Shape.box(width: 10, height: 20, depth: 30)?.translated(by: [5, 6, 7]))
+        let box = try #require(Shape.box(width: 10, height: 20, depth: 30))
+        let moved = try #require(box.translated(by: [5, 6, 7]))
         let text = try #require(moved.toBREPString())
-        let counted = try #require(Self.edited(text, replacing: "Locations 1\n", with: "Locations 2\n"))
+        let counted = try #require(
+            Self.edited(text, replacing: "Locations 1\n", with: "Locations 2\n"))
         func withComposed(_ record: String) throws -> String {
             try #require(Self.edited(counted, replacing: "Curve2ds", with: record + "Curve2ds"))
         }
@@ -142,9 +149,10 @@ struct BREPKernelDamagedReadTests {
         #expect(Shape.fromBREPString(try withComposed("2 -3 1 0\n")) == nil)
     }
 
-    /// OCCT#1560: `GeomTools::GetReal` read 31 characters of a longer number and left the rest to be
-    /// read as the next one. The vertex at z = 30 is written with 44 characters, as a decimal and as an
-    /// exponent; the box is the same box.
+    /// OCCT#1560: a number of 32 characters or more was cut and its tail read as the next number.
+    ///
+    /// The vertex at z = 30 is written with 44 characters, as a decimal and as an exponent; the box
+    /// is the same box.
     @Test(.enabled(if: BREPKernelDamagedReadTests.isLocalKernel))
     func aNumberLongerThanTheBufferIsReadWhole() throws {
         let text = try #require(Self.boxText())
@@ -152,14 +160,17 @@ struct BREPKernelDamagedReadTests {
             "30.0000000000000000000000000000000000000001",
             "3.0000000000000000000000000000000000000001e1",
         ] {
-            let longer = try #require(Self.edited(text, replacing: "\n0 0 30\n", with: "\n0 0 \(number)\n"))
+            let longer = try #require(
+                Self.edited(text, replacing: "\n0 0 30\n", with: "\n0 0 \(number)\n"))
             let volume = try #require(Self.volume(of: longer), "\(number)")
             #expect(abs(volume - 6000) < 1e-6, "\(number)")
         }
     }
 
-    /// The root reference is the last token, and a file whose white space was stripped ends in the
-    /// middle of reading it. It is the whole shape: the extraction succeeded.
+    /// The root reference is the last token of the file.
+    ///
+    /// A file whose trailing white space was stripped ends as the reader extracts it, and it is the
+    /// whole shape: the extraction succeeded.
     @Test(.enabled(if: BREPKernelDamagedReadTests.isLocalKernel))
     func textWithoutTrailingWhiteSpaceReads() throws {
         let text = try #require(Self.boxText())
