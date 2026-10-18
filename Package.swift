@@ -559,8 +559,11 @@ let occtTarget: Target =
         //         change. The #3318 bridge guard stays: the patch does not reach the XML-prefix
         //         spin (#3330). The oversized object count and every length the storage sections before
         //         `edata` declare are bounded by the bridge against the file's own length (#3477),
-        //         which is also what lets the suite run on wasm; the document data after `edata`
-        //         is not walked.
+        //         which is also what lets the suite run on wasm; #3486 adds the type, root and
+        //         reference indices those sections hold, bounded against the table sizes the file
+        //         itself declares. The document data after `edata` is still not walked: array
+        //         attribute spans, label-tag counts, label nesting depth and shape-section
+        //         tokens are measured, reachable and not mitigated (known-occt-bugs.md).
         //
         // 0043 (#2827, BRepGProp_Gauss keeps the by-plane mass) was the one outstanding before it,
         // and it went the other way, which is the comparison worth keeping beside 0044: carried

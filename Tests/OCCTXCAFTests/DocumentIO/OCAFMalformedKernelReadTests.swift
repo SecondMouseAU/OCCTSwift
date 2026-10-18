@@ -30,8 +30,24 @@ import Testing
 // `declaredSize...` tests below pin the limit exactly, on any platform, through the predicate.
 //
 // Not covered, and not the same defect: an XML prefix that ends inside the XML declaration, or an
-// XML file with binary garbage appended, spins LDOM (the hang #3318's bridge guard refuses). The
-// document data past the storage sections (what BinLDrivers reads itself) is not walked either.
+// XML file with binary garbage appended, spins LDOM (the hang #3318's bridge guard refuses).
+//
+// A fifth, #3486, is in the same storage sections #3477 bounds by byte length: the type, root and
+// reference sections (always absent from a file BinLDrivers itself writes, since they belong to
+// the generic `Storage_Schema` persistence BinOcaf/BinXCAF never uses) read a declared type number
+// or object reference as an array index with no bound against the table it indexes
+// (`theCallBack->SetValue`, `iData->ReadArray()->ChangeValue`, both unchecked in this kernel build,
+// per the `Package.swift` manifest comment on `_Raise_if`), or dereference that table's handle
+// null when the section that creates it (comment, for the object array; type, for the type
+// callback array) is absent. `fits()` now refuses a type number outside [1, its own section's
+// declared count], a root or reference outside [1, the object count], and a root or reference
+// section with no comment section, or a reference section with no type section. The `typeNumber...`
+// / `objectAndType...` tests below build such sections directly, since no OCCTSwift-saved file has
+// one to start from.
+//
+// Still not covered: the document data past `edata`, which BinLDrivers reads itself (attribute
+// counts, per-attribute array spans, and the label tree's own recursion depth). Measured in
+// Scripts/repro/3486 and not mitigated here: see the README there and the known-occt-bugs entry.
 @Suite("OCAF readers report a damaged file instead of faulting")
 struct OCAFMalformedKernelReadTests {
 
@@ -192,6 +208,242 @@ struct OCAFMalformedKernelReadTests {
                 putInt(Int(Int32.max), in: &bad, at: start)
                 #expect(!fits(bad), "\(format): section count at \(start)")
             }
+        }
+    }
+
+    private func le32(_ value: Int) -> [UInt8] {
+        var v = Int32(truncatingIfNeeded: value).littleEndian
+        return withUnsafeBytes(of: &v) { Array($0) }
+    }
+
+    /// A type section: `declaredCount`, then per entry an int type number and an empty name.
+    ///
+    /// This is the layout the type-section branch of `FSD_BinaryFile::ReadCompleteInfo` reads.
+    private func typeSection(declaredCount: Int, entries: [Int] = []) -> [UInt8] {
+        le32(declaredCount) + entries.flatMap { le32($0) + le32(0) }
+    }
+
+    /// `declaredCount` then, for each entry, an int reference and two empty names.
+    private func rootSection(declaredCount: Int, refs: [Int] = []) -> [UInt8] {
+        le32(declaredCount) + refs.flatMap { le32($0) + le32(0) + le32(0) }
+    }
+
+    /// `declaredCount` then, for each entry, an int reference and an int type number.
+    private func refSection(declaredCount: Int, entries: [(ref: Int, typeNum: Int)] = []) -> [UInt8]
+    {
+        le32(declaredCount) + entries.flatMap { le32($0.ref) + le32($0.typeNum) }
+    }
+
+    /// Rebuilds `full` with the given storage sections (nil: absent, header offset -1) in place of
+    /// its own (always absent from a file BinLDrivers itself saves), keeping the info section and
+    /// the document data from `edata` on unchanged.
+    private func withSections(
+        _ full: [UInt8], comment: [UInt8]?, type: [UInt8]?, root: [UInt8]?, ref: [UInt8]?
+    ) -> [UInt8] {
+        let headerInts = (0..<13).map { getInt(full, at: 7 + 4 * $0) }
+        let einfo = headerInts[2]
+        let infoBytes = Array(full[(7 + 13 * 4)..<einfo])
+        let dataBytes = Array(full[headerInts[12]...])
+
+        var pos = einfo
+        var body: [UInt8] = []
+        var bounds: [Int] = []
+        for section in [comment, type, root, ref] {
+            if let bytes = section {
+                bounds.append(pos)
+                body += bytes
+                pos += bytes.count
+                bounds.append(pos)
+            } else {
+                bounds.append(-1)
+                bounds.append(-1)
+            }
+        }
+        var newHeader = headerInts
+        (newHeader[3], newHeader[4]) = (bounds[0], bounds[1])
+        (newHeader[5], newHeader[6]) = (bounds[2], bounds[3])
+        (newHeader[7], newHeader[8]) = (bounds[4], bounds[5])
+        (newHeader[9], newHeader[10]) = (bounds[6], bounds[7])
+        (newHeader[11], newHeader[12]) = (pos, pos)
+
+        var bytes = Array("BINFILE".utf8)
+        for v in newHeader { bytes += le32(v) }
+        bytes += infoBytes + body + dataBytes
+        return bytes
+    }
+
+    // An "empty" comment section: a declared count of zero extended strings. Present, it still
+    // creates `iData->ReadArray()`; the object count already read from the file sizes that array.
+    private let emptyCommentSection: [UInt8] = [0, 0, 0, 0]
+
+    @Test(
+        "A type number outside its own section's declared count is refused")
+    func typeNumberRange() throws {
+        for format in Self.binaryFormats {
+            let full = try savedBytes(format: format)
+            let inRange = withSections(
+                full, comment: emptyCommentSection,
+                type: typeSection(declaredCount: 1, entries: [1]), root: nil, ref: nil)
+            #expect(fits(inRange), "\(format): type number 1 of 1")
+            let (loaded, status) = open(inRange, ext: "xbf")
+            #expect(loaded && status == .ok, "\(format): type number 1 of 1: got \(status)")
+
+            for bad in [0, -1, 2, 268_435_456] {
+                let badType = withSections(
+                    full, comment: emptyCommentSection,
+                    type: typeSection(declaredCount: 1, entries: [bad]), root: nil, ref: nil)
+                #expect(!fits(badType), "\(format): type number \(bad) of 1")
+            }
+            let negativeCount = withSections(
+                full, comment: emptyCommentSection, type: typeSection(declaredCount: -5), root: nil,
+                ref: nil)
+            #expect(!fits(negativeCount), "\(format): a negative declared type count")
+        }
+    }
+
+    @Test(
+        "A root or reference needs its tables, and a reference in range")
+    func objectAndTypeRange() throws {
+        for format in Self.binaryFormats {
+            let full = try savedBytes(format: format)
+            let nbObjOffset = Self.firstStringLengthOffset - 4
+            var withOneObject = full
+            putInt(1, in: &withOneObject, at: nbObjOffset)
+
+            // Needs the comment section (it sizes the object array the root/reference index) and,
+            // for a reference, the type section too (it sizes the type callback array). Both are
+            // absent from a real saved file, which is why `withSections` can omit them outright.
+            #expect(
+                !fits(
+                    withSections(
+                        withOneObject, comment: nil,
+                        type: nil, root: rootSection(declaredCount: 1, refs: [1]), ref: nil)),
+                "\(format): root with no comment section")
+            #expect(
+                !fits(
+                    withSections(
+                        withOneObject, comment: nil, type: nil, root: nil,
+                        ref: refSection(declaredCount: 1, entries: [(ref: 1, typeNum: 1)]))),
+                "\(format): reference with no comment section")
+            #expect(
+                !fits(
+                    withSections(
+                        withOneObject, comment: emptyCommentSection, type: nil, root: nil,
+                        ref: refSection(declaredCount: 1, entries: [(ref: 1, typeNum: 1)]))),
+                "\(format): reference with no type section")
+
+            let inRangeRoot = withSections(
+                withOneObject, comment: emptyCommentSection,
+                type: nil, root: rootSection(declaredCount: 1, refs: [1]), ref: nil)
+            #expect(fits(inRangeRoot), "\(format): root reference 1 of 1 object")
+            let (loaded, status) = open(inRangeRoot, ext: "xbf")
+            #expect(loaded && status == .ok, "\(format): root reference 1 of 1: got \(status)")
+            for bad in [0, -1, 2, 1_073_741_824] {
+                #expect(
+                    !fits(
+                        withSections(
+                            withOneObject, comment: emptyCommentSection,
+                            type: nil, root: rootSection(declaredCount: 1, refs: [bad]), ref: nil)),
+                    "\(format): root reference \(bad) of 1 object")
+            }
+
+            let inRangeRef = withSections(
+                withOneObject, comment: emptyCommentSection,
+                type: typeSection(declaredCount: 1, entries: [1]), root: nil,
+                ref: refSection(declaredCount: 1, entries: [(ref: 1, typeNum: 1)]))
+            #expect(fits(inRangeRef), "\(format): reference (1, 1) of 1 object and 1 type")
+            for bad: (ref: Int, typeNum: Int) in [(0, 1), (2, 1), (1, 0), (1, 2)] {
+                #expect(
+                    !fits(
+                        withSections(
+                            withOneObject, comment: emptyCommentSection,
+                            type: typeSection(declaredCount: 1, entries: [1]), root: nil,
+                            ref: refSection(declaredCount: 1, entries: [bad]))),
+                    "\(format): reference \(bad) of 1 object and 1 type")
+            }
+        }
+    }
+
+    // `BinLDrivers_DocumentSection::ReadTOC` copies a name into `char aBuf[512]` and then writes
+    // `aBuf[size] = 0`, after rejecting only `size > 512`: a size of exactly 512 writes one byte
+    // past the buffer (an abort when measured). The table of contents starts at `edata`.
+    @Test(
+        "A table-of-contents name of exactly the reader's buffer size is refused")
+    func tocNameSize() throws {
+        for format in Self.binaryFormats {
+            let full = try savedBytes(format: format)
+            let edata = getInt(full, at: 7 + 4 * 12)
+            func withEntry(nameSize: Int) -> [UInt8] {
+                let entry =
+                    le32(nameSize) + [UInt8](repeating: 0x78, count: max(nameSize, 0))
+                    + [UInt8](repeating: 0, count: 24)
+                return Array(full.prefix(edata)) + entry + Array(full[edata...])
+            }
+            for ok in [1, 511, 513] {
+                #expect(fits(withEntry(nameSize: ok)), "\(format): name size \(ok)")
+            }
+            #expect(!fits(withEntry(nameSize: 512)), "\(format): name size 512")
+        }
+    }
+
+    // Only a count that sizes an array is refused when negative. The comment, root and reference
+    // counts are loop bounds (`for (i = 1; i <= count; i++)`), so a negative one skips the loop
+    // and OCCT loads the file; refusing it would refuse a loadable file.
+    @Test(
+        "A negative count that only bounds a loop is not refused")
+    func negativeLoopCounts() throws {
+        for format in Self.binaryFormats {
+            let full = try savedBytes(format: format)
+            let negativeComment = withSections(
+                full, comment: le32(-1), type: nil, root: nil, ref: nil)
+            let negativeRoot = withSections(
+                full, comment: emptyCommentSection, type: nil,
+                root: rootSection(declaredCount: -1), ref: nil)
+            let negativeRef = withSections(
+                full, comment: emptyCommentSection,
+                type: typeSection(declaredCount: 1, entries: [1]), root: nil,
+                ref: refSection(declaredCount: -1))
+            for (name, bytes) in [
+                ("comment", negativeComment), ("root", negativeRoot), ("reference", negativeRef),
+            ] {
+                #expect(fits(bytes), "\(format): negative \(name) count")
+                let (loaded, status) = open(bytes, ext: "xbf")
+                #expect(loaded && status == .ok, "\(format): negative \(name) count: \(status)")
+            }
+        }
+    }
+
+    // The user-info line count is the same kind of loop bound (`ReadHeaderData` appends to a
+    // Sequence), measured in Scripts/repro/3486 as `userinfo_count_neg1`: no allocation, no fault,
+    // and OCCT answers with a status because the type table in those lines is skipped. So the
+    // size check lets it through and the call returns, which is all there is to pin.
+    @Test(
+        "A negative user-info line count is not refused and does not fault")
+    func negativeUserInfoLineCount() throws {
+        for format in Self.binaryFormats {
+            let full = try savedBytes(format: format)
+            let lines =
+                (infoStringOffsets(full).last.map {
+                    $0.offset + 4 + max(0, getInt(full, at: $0.offset)) * $0.unit
+                })!
+            for count in [-1, Int(Int32.min)] {
+                var negative = full
+                putInt(count, in: &negative, at: lines)
+                #expect(fits(negative), "\(format): user-info line count \(count)")
+                let (loaded, status) = open(negative, ext: "xbf")
+                #expect(loaded == (status == .ok), "\(format): count \(count): got \(status)")
+            }
+        }
+    }
+
+    @Test(
+        "A negative object count is refused")
+    func negativeObjectCount() throws {
+        for format in Self.binaryFormats {
+            let full = try savedBytes(format: format)
+            var negative = full
+            putInt(-5, in: &negative, at: Self.firstStringLengthOffset - 4)
+            #expect(!fits(negative), "\(format): object count -5")
         }
     }
 
