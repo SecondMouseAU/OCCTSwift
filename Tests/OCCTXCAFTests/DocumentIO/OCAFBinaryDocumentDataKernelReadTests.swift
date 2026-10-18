@@ -254,7 +254,9 @@ struct OCAFBinaryDocumentDataKernelReadTests {
         "A span the record does hold loads, so the bound is not a refusal of every array",
         .enabled(if: OCAFBinaryDocumentDataKernelReadTests.isLocalKernel))
     func recordedSpanLoads() throws {
-        // The list and the byte array are read back through the document; the rest load.
+        // The list and the byte array are read back through the document; the rest load. Tag 0 is
+        // the document's Main label (`getLabelForTag`), 0:1, which is the child with tag 1 of the
+        // root that `document(records:)` writes the records on.
         let list = try load(
             Self.document(kind: "TDataStd_IntegerList", payload: Blob.ints(1, 2, 5, 6)))
         let listed = try #require(list.document)
