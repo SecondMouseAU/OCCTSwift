@@ -238,7 +238,7 @@ struct BREPDamagedInputTests {
         #expect(!past.file && !past.string, "a 255 byte word overflows the reader's buffer")
 
         // An overlong word wherever the reader takes one: a section name, a shape type and a flag
-        // word. The rule is about the file, not the position: an overlong word anywhere is refused.
+        // word. The position does not matter, only that the reader pulls the block it is in.
         for needle in ["Locations", "Curve2ds", "Curves", "Surfaces", "TShapes", "Ve", "0101000"] {
             let range = try #require(text.range(of: needle), "\(needle) is in the text")
             var copy = text

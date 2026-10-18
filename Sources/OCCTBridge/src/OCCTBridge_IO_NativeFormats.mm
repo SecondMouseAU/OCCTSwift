@@ -717,9 +717,11 @@ char* OCCTShapeToBREPString(OCCTShapeRef shape)
 // The same reader overflows a second way: every `IS >> buffer` extracts a whitespace-delimited word
 // into a `char[255]` with no width limit, so a word of 255 bytes or more is a stack overflow
 // (measured as SIGABRT and SIGBUS). A writer-produced BREP has no word near that long (a number is
-// at most 25 bytes), so the stream is read through a buffer that refuses one anywhere in the text,
-// read or not, and the check is
-// complete for that class.
+// at most 25 bytes), so the stream is read through a buffer that refuses one. The buffer reads
+// ahead in 64 KiB blocks and checks each whole block, so a long word is refused whether or not the
+// reader would have got as far as it, but only within the blocks the reader pulls: a long word in
+// trailing junk past the last block it needs is never seen. That is complete for the reader's own
+// words, which is the class that overflows.
 class OcctBrepWordLimitBuf : public std::streambuf
 {
 public:

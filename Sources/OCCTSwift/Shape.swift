@@ -1998,7 +1998,7 @@ public final class Shape: @unchecked Sendable {
     /// one, and neither is catchable, so the bridge reads through a stream that throws where the
     /// file ends: every strict prefix of a written BREP is refused, and so is a file whose
     /// trailing whitespace was stripped (a written BREP ends in a space), and so is a word of 255
-    /// bytes or more anywhere in the file.
+    /// bytes or more in the text the reader takes (the reader copies words into a 255 byte buffer).
     ///
     /// A file that is complete but wrong is not checked: a reference to a shape that is not in the
     /// file, or a count the body does not match, can still fault `BRepTools::Read`. Do not load a

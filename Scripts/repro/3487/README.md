@@ -112,8 +112,9 @@ buffer that refuses a word longer than 254 bytes.
   is the mark of a cut, and it is refused at the extraction, before the reader uses the value. The
   grammar is fixed, so every strict prefix stops inside some extraction.
 - The word limit is 254 because `char buffer[255]` holds a word and its terminator. It is checked in
-  64 KiB refills of the stream, so it is O(1) in memory and also refuses an overlong word that the
-  reader would never have read (trailing junk after the root).
+  64 KiB refills of the stream, so it is O(1) in memory. It checks each whole block it reads ahead, so
+  it refuses an overlong word the reader would not have reached within a block, but not one in
+  trailing junk past the last block the reader pulls.
 
 After (`bridge`, 109,801 cases, 2026-10-18):
 
@@ -162,6 +163,30 @@ rebuild and a decision; it is not authored here.
 
 `BinTools_ShapeReader::Read` (behind `OCCTBinToolsReadShape`), `probe read bin`, three files, every
 strict prefix and a byte corruption at every second offset (8,908 cases): all 2,623 prefixes throw,
-and no corruption faults inside the reader. Two corrupted files return a shape that spins (2) and
-seven that fault later, in `BRepCheck` on the returned shape; those are the use-site class above,
-not a reader fault.
+and no corruption faults inside the reader. Two corrupted files return a shape on which the
+validity check then spins, and five one on which it faults (`BRepCheck`); those are the use-site
+class above, not a reader fault.
+
+## Measured, unguarded, corruption
+
+`probe read str` (the bare `istringstream` reader), on four of the files (`box`, `bsplineloft`,
+`meshedbox`, `compound`) so the run stays affordable (`run-all.sh` lists the commands). The
+structural cases:
+
+| class | cases | refused | accepted | faulted in the reader | spun in the reader | returned, then faulted or spun on use |
+|---|---|---|---|---|---|---|
+| long | 12 | 4 | 0 | 8 | 0 | 0 |
+| header | 20 | 20 | 0 | 0 | 0 | 0 |
+| root | 36 | 4 | 16 | 16 | 0 | 0 |
+| count | 292 | 154 | 28 | 40 | 70 | 0 |
+| ref | 700 | 2 | 372 | 304 | 0 | 22 |
+
+and a byte replaced at every 40th case of the byte class (the guarded run above covers all of them):
+
+| class | cases | refused | accepted | faulted in the reader | spun in the reader | returned, then faulted or spun on use |
+|---|---|---|---|---|---|---|
+| byte | 355 | 62 | 200 | 69 | 21 | 3 |
+
+Against the guarded run's `count`, `ref` and `root` rows the unguarded reader additionally spins on
+a lowered or raised count (70 of 292) and faults on a long word (8 of 12), both of which the guard
+removes; the shape-table index faults are the same in both, since the guard does not touch them.
