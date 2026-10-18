@@ -39,7 +39,7 @@ def string(s, unit=1):
     return I(len(s) // unit) + s
 
 
-def info(types=("TDataStd_Integer",), nbobj=1, version="12", lines=None):
+def info(types=("TDataStd_Integer",), nbobj=1, version="12", lines=None, line_count=None):
     out = I(nbobj)
     for s in (version, "10/18/2026", "", "1"):
         out += string(s)
@@ -47,7 +47,7 @@ def info(types=("TDataStd_Integer",), nbobj=1, version="12", lines=None):
     if lines is None:
         lines = (["FILE_FORMAT: BinOcaf", "REFERENCE_COUNTER: 0", "MODIFICATION_COUNTER: 1",
                   "START_TYPES"] + list(types) + ["END_TYPES"])
-    out += I(len(lines))
+    out += I(len(lines) if line_count is None else line_count)
     for ln in lines:
         out += string(ln)
     return out

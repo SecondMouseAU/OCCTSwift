@@ -413,6 +413,29 @@ struct OCAFMalformedKernelReadTests {
         }
     }
 
+    // The user-info line count is the same kind of loop bound (`ReadHeaderData` appends to a
+    // Sequence), measured in Scripts/repro/3486 as `userinfo_count_neg1`: no allocation, no fault,
+    // and OCCT answers with a status because the type table in those lines is skipped. So the
+    // size check lets it through and the call returns, which is all there is to pin.
+    @Test(
+        "A negative user-info line count is not refused and does not fault")
+    func negativeUserInfoLineCount() throws {
+        for format in Self.binaryFormats {
+            let full = try savedBytes(format: format)
+            let lines =
+                (infoStringOffsets(full).last.map {
+                    $0.offset + 4 + max(0, getInt(full, at: $0.offset)) * $0.unit
+                })!
+            for count in [-1, Int(Int32.min)] {
+                var negative = full
+                putInt(count, in: &negative, at: lines)
+                #expect(fits(negative), "\(format): user-info line count \(count)")
+                let (loaded, status) = open(negative, ext: "xbf")
+                #expect(loaded == (status == .ok), "\(format): count \(count): got \(status)")
+            }
+        }
+    }
+
     @Test(
         "A negative object count is refused")
     func negativeObjectCount() throws {
