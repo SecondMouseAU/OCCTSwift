@@ -25,7 +25,7 @@ def edit(old, new):
     return box.replace(old, new, 1)
 
 
-# OCCT#1560: a vertex coordinate of 44 characters, as a decimal and as an exponent.
+# OCCT#1560: a vertex coordinate of 43 characters as a decimal, 44 as an exponent.
 put("long_number", edit("\n0 0 30\n", "\n0 0 30.0000000000000000000000000000000000000001\n"))
 put("long_exp", edit("\n0 0 30\n", "\n0 0 3.0000000000000000000000000000000000000001e1\n"))
 # OCCT#1608: the text ends inside an edge, and inside a vertex.

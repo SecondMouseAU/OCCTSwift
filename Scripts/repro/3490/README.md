@@ -9,7 +9,7 @@ Evidence for carried patch `0073` (`Scripts/patches/README.md` has the write-up,
   "before" runs are, so a patched kernel and an unpatched one compare case for case. Then
   `python3 Scripts/repro/3487/classtable.py <work-dir>/run-<name>/results-<mode>.tsv` prints each class.
 - `cases.py <box.brep> <out-dir>` writes the hand-made files `BREPKernelDamagedReadTests` builds in
-  Swift: a number of 44 characters (OCCT#1560), a text that ends inside an edge and inside a vertex
+  Swift: a number of 43 characters as a decimal and 44 as an exponent (OCCT#1560), a text that ends inside an edge and inside a vertex
   (OCCT#1608), an overlong word as a section name and as a shape type, a sub-shape and a root
   reference outside the table, and a trimmed and an offset curve whose basis is a type nothing reads.
 

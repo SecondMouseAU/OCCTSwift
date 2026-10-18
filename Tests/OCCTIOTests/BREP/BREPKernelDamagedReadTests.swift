@@ -150,7 +150,7 @@ struct BREPKernelDamagedReadTests {
 
     /// OCCT#1560: a number of 32 characters or more was cut and its tail read as the next number.
     ///
-    /// The vertex at z = 15 is written with 43 characters, as a decimal and as an exponent; the box
+    /// The vertex at z = 15 is written with 43 characters as a decimal and 44 as an exponent; the box
     /// is the same box.
     @Test(.enabled(if: BREPKernelDamagedReadTests.isLocalKernel))
     func aNumberLongerThanTheBufferIsReadWhole() throws {
