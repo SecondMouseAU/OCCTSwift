@@ -601,6 +601,24 @@ public static func loadOCAF(from path: String) -> (document: Document?, status: 
   fails for every later allocation in the process. The limit is the file's own length, not a
   constant, so a large valid document is never refused for its size. The check reads only the
   length fields of the sections before `edata`; the document data after them is not walked.
+- **Table indices (#3486):** the same sections also decide array indices. `FSD_BinaryFile::ReadCompleteInfo`
+  writes `theCallBack->SetValue(aTypeNum, ...)`, reads `iData->ReadArray()->Value(ref)` for each root,
+  and writes `ReadArray()->ChangeValue(ref) = theCallBack->Value(aTypeNum)->New()` for each reference,
+  with no range check (`_Raise_if` is inert in this kernel build). A file is refused with
+  `(nil, .driverFailure)` when a type number is outside `[1, the type section's own count]`, a root or
+  reference index is outside `[1, the object count]`, a type or object count is negative (the array
+  size becomes an enormous `size_t`), a root or reference section has no comment section (the object
+  array stays null), or a reference section has no type section. Files OCCT writes carry none of
+  these sections, so no real document is refused. The table of contents after `edata` is walked too:
+  an entry whose name size is exactly 512 is refused, because `BinLDrivers_DocumentSection::ReadTOC`
+  writes one byte past its 512 byte buffer for it.
+- **Not covered, measured and open (#3486):** the document data after `edata`. A crafted file can
+  make an array attribute (`TDataStd_IntegerArray`, `RealArray`, `ByteArray`, `ExtStringArray`,
+  `ReferenceArray`) allocate gigabytes from its two index ints before the payload is read, make
+  `BinObjMgt_Persistent::GetLabel` loop on an overflowing tag count, nest labels deep enough to
+  overflow the stack, and point a shape-section TOC entry at text that overflows a fixed buffer in
+  `BinTools`. Each needs per-attribute knowledge, an arbitrary limit or a kernel patch; see
+  `okf/references/known-occt-bugs.md` and `Scripts/repro/3486/README.md`.
 - **Example:**
   ```swift
   let result = Document.loadOCAF(from: "/tmp/model.cbf")

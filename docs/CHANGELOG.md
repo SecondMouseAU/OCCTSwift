@@ -27,6 +27,10 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 Not covered: a BREP that is complete but wrong (a reference to a shape that is not in the file) can still fault `BRepTools::Read`; do not load a BREP from an untrusted source. Tracked in #3490.
 
+### A binary OCAF file with an out-of-range type, root or reference index is refused before OCCT reads it (#3486)
+
+`Document.loadOCAF(from:)` now returns `(nil, .driverFailure)` for a binary OCAF file whose type number is outside its type section, whose root or reference index is outside the object count, whose type or object count is negative, whose root or reference section lacks the comment (or type) section it indexes, or whose table of contents has a name of exactly 512 bytes. OCCT used those numbers as array indices without a check, which crashed or read and wrote out of bounds. Documents OCCT writes carry none of these, so no loadable document is refused. Gaps that are measured and not mitigated (array attribute sizes, label nesting depth, shape-section tokens) are recorded in the known-bugs reference.
+
 ### A binary OCAF file whose declared sizes exceed its length is refused before OCCT allocates by them (#3477)
 
 `Document.loadOCAF(from:)` now returns `(nil, .driverFailure)` for a binary OCAF file whose storage sections declare a string length or a section count larger than the bytes the file has left, or an object count larger than the file. OCCT allocated `(length + 1) * unit` before reading the bytes, which a 64-bit process absorbs and a 32-bit wasm module does not: `Standard_MMgrRaw::Allocate()` then failed for every later allocation in the process. The limit is the file's own length, so a large valid document is never refused for its size. `OCAFMalformedKernelReadTests` runs on wasm again.
