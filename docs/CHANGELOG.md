@@ -21,6 +21,12 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### `Shape.loadBREP` and `Shape.fromBREPString` refuse a BREP text that ends early instead of crashing (#3487)
+
+`BRepTools::Read` faulted (SIGSEGV, uncatchable) or never returned on a BREP file or string that ended early, such as one cut short by an interrupted write. `Shape.loadBREP(from:)`, `Shape.loadBREP(fromPath:)` and `Shape.fromBREPString(_:)` now throw `ImportError.importFailed` or return `nil` for every strict prefix of a written BREP, and for a file with a word of 255 bytes or more, which overflowed the reader's buffer. A file whose trailing whitespace was stripped is refused with them, since a written BREP ends in a space.
+
+Not covered: a BREP that is complete but wrong (a reference to a shape that is not in the file) can still fault `BRepTools::Read`; do not load a BREP from an untrusted source. Tracked in #3490.
+
 ### A binary OCAF file whose declared sizes exceed its length is refused before OCCT allocates by them (#3477)
 
 `Document.loadOCAF(from:)` now returns `(nil, .driverFailure)` for a binary OCAF file whose storage sections declare a string length or a section count larger than the bytes the file has left, or an object count larger than the file. OCCT allocated `(length + 1) * unit` before reading the bytes, which a 64-bit process absorbs and a 32-bit wasm module does not: `Standard_MMgrRaw::Allocate()` then failed for every later allocation in the process. The limit is the file's own length, so a large valid document is never refused for its size. `OCAFMalformedKernelReadTests` runs on wasm again.
