@@ -1,0 +1,606 @@
+From: OCCTSwift ecosystem <noreply@secondmouse.au>
+Subject: [PATCH] Modeling Data - The text shape readers take no more than their buffer holds, and
+ stop at a stream that has failed
+
+BRepTools::Read of a text BREP that is cut short, or damaged, faulted or never returned. Three
+defects, all in code that assumes an extraction succeeded.
+
+An unbounded read into a char array. BRepTools_ShapeSet, TopTools_ShapeSet, TopTools_LocationSet,
+GeomTools_SurfaceSet, GeomTools_CurveSet, GeomTools_Curve2dSet, Poly and BinTools_ShapeSet each
+read a token with IS >> buffer into a char[255] (char[100] in Poly). The token is written whole,
+so a 400 byte word in place of a section name or a shape type overwrote the stack. The reads now
+carry the size of the buffer (std::setw), as BinTools already does for the name of a table.
+
+GeomTools::GetReal reads a number into 32 characters, since the change that shrank its buffer from
+256. A number of 32 characters or more was cut, and its tail was read as the next number: the
+tokens of the record moved by one, and BRepTools::Read faulted or never returned (OCCT#1560). The
+rest of a cut number is now taken from the stream before the value is converted.
+
+A stale value after a failed extraction. After a failed extraction a variable keeps what it held,
+or is uninitialised, and the readers went on to use it:
+ - TopTools_ShapeSet::Read indexed the shape table with atoi of the previous token,
+   myShapes(nbshapes - atoi(buffer + 1) + 1), unchecked (the library is built with No_Exception,
+   so the range check of NCollection_IndexedMap::operator() is gone). A reference the file made up
+   did the same. The token, the location after it and the type of a shape are now checked for a
+   failed stream, and the index for the range of the table.
+ - The vertex and edge loops of BRepTools_ShapeSet::ReadGeometry, do { IS >> val; ... } while
+   (val > 0), never ended when the stream failed, because val kept its last value (OCCT#1608).
+   They throw when the extraction fails.
+ - The count of each table (Locations, Curve2ds, Curves, Surfaces, Polygon3D,
+   PolygonOnTriangulations, Triangulations) ran to its declared count on a stream that had
+   failed, up to 2^31 iterations; each loop now stops, and the name of a table is checked for a
+   failed read before it is compared. TopTools_LocationSet::Read checked nothing of the location
+   it composes with (myMap(l1)): it is now looked up only when it is in the table.
+ - A B-spline curve or surface cut short was built from knots and multiplicities that were never
+   read, and the constructor indexed with them. It is not built when the stream has failed.
+ - The curve or surface under a trimmed or offset curve, an extrusion, a revolution or a trimmed
+   or offset surface was passed to the constructor when its own read had given nothing. The
+   result is left null and the stream failed.
+
+A well-formed file is read as before. Failure is reported the way these readers already report
+it: Standard_Failure from TopTools_ShapeSet::Read and BRepTools_ShapeSet::ReadGeometry, a null
+curve or surface from the Geom readers.
+
+Tracked as SecondMouseAU/OCCTSwift#3490, follow-up to #3487 and #3489. Upstream: OCCT#1560,
+OCCT#1608.
+
+---
+diff --git a/src/FoundationClasses/TKMath/Poly/Poly.cxx b/src/FoundationClasses/TKMath/Poly/Poly.cxx
+--- a/src/FoundationClasses/TKMath/Poly/Poly.cxx
++++ b/src/FoundationClasses/TKMath/Poly/Poly.cxx
+@@ -351,7 +351,8 @@ occ::handle<Poly_Triangulation> Poly::ReadTriangulation(Standard_IStream& IS)
+   // Read a triangulation
+ 
+   char line[100];
+-  IS >> line;
++  // a token longer than the buffer is cut, not written past it
++  IS >> std::setw(sizeof(line)) >> line;
+   if (strcmp(line, "Poly_Triangulation"))
+   {
+ #ifdef OCCT_DEBUG
+@@ -422,7 +423,8 @@ occ::handle<Poly_Polygon3D> Poly::ReadPolygon3D(Standard_IStream& IS)
+   // Read a 3d polygon
+ 
+   char line[100];
+-  IS >> line;
++  // a token longer than the buffer is cut, not written past it
++  IS >> std::setw(sizeof(line)) >> line;
+   if (strcmp(line, "Poly_Polygon3D"))
+   {
+ #ifdef OCCT_DEBUG
+@@ -482,7 +484,8 @@ occ::handle<Poly_Polygon2D> Poly::ReadPolygon2D(Standard_IStream& IS)
+   // Read a 2d polygon
+ 
+   char line[100];
+-  IS >> line;
++  // a token longer than the buffer is cut, not written past it
++  IS >> std::setw(sizeof(line)) >> line;
+   if (strcmp(line, "Poly_Polygon2D"))
+   {
+ #ifdef OCCT_DEBUG
+diff --git a/src/ModelingData/TKBRep/BRepTools/BRepTools_ShapeSet.cxx b/src/ModelingData/TKBRep/BRepTools/BRepTools_ShapeSet.cxx
+--- a/src/ModelingData/TKBRep/BRepTools/BRepTools_ShapeSet.cxx
++++ b/src/ModelingData/TKBRep/BRepTools/BRepTools_ShapeSet.cxx
+@@ -40,6 +40,7 @@
+ #include <Standard_Macro.hxx>
+ #include <iostream>
+ #include <iomanip>
++#include <Standard_Failure.hxx>
+ #include <fstream>
+ #include <Standard_Integer.hxx>
+ #include <NCollection_Array1.hxx>
+@@ -790,7 +791,8 @@ void BRepTools_ShapeSet::WriteGeometry(const TopoDS_Shape& S, Standard_OStream&
+ static GeomAbs_Shape ReadRegularity(Standard_IStream& IS)
+ {
+   char buffer[255];
+-  IS >> buffer;
++  // a token longer than the buffer is cut, not written past it
++  IS >> std::setw(sizeof(buffer)) >> buffer;
+   switch (buffer[0])
+   {
+ 
+@@ -869,6 +871,11 @@ void BRepTools_ShapeSet::ReadGeometry(const TopAbs_ShapeEnum T,
+       {
+         GeomTools::GetReal(IS, p1);
+         IS >> val;
++        // once the stream has failed val keeps its last value, and this loop never ends
++        if (IS.fail())
++        {
++          throw Standard_Failure("BRepTools_ShapeSet: The stream ended inside a vertex");
++        }
+ 
+         occ::handle<BRep_PointRepresentation> PR;
+         switch (val)
+@@ -960,6 +967,11 @@ void BRepTools_ShapeSet::ReadGeometry(const TopAbs_ShapeEnum T,
+         do
+         {
+           IS >> val;
++          // once the stream has failed val keeps its last value, and this loop never ends
++          if (IS.fail())
++          {
++            throw Standard_Failure("BRepTools_ShapeSet: The stream ended inside an edge");
++          }
+           switch (val)
+           {
+ 
+@@ -1361,8 +1373,9 @@ void BRepTools_ShapeSet::ReadPolygonOnTriangulation(Standard_IStream&
+                                                     const Message_ProgressRange& theProgress)
+ {
+   char buffer[255];
+-  IS >> buffer;
+-  if (strstr(buffer, "PolygonOnTriangulations") == nullptr)
++  // a token longer than the buffer is cut, not written past it
++  IS >> std::setw(sizeof(buffer)) >> buffer;
++  if (IS.fail() || strstr(buffer, "PolygonOnTriangulations") == nullptr)
+   {
+     return;
+   }
+@@ -1374,7 +1387,7 @@ void BRepTools_ShapeSet::ReadPolygonOnTriangulation(Standard_IStream&
+   IS >> nbpol;
+   // OCC19559
+   Message_ProgressScope aPS(theProgress, "Polygons On Triangulation", nbpol);
+-  for (i = 1; i <= nbpol && aPS.More(); i++, aPS.Next())
++  for (i = 1; i <= nbpol && aPS.More() && !IS.fail(); i++, aPS.Next())
+   {
+     IS >> nbnodes;
+     NCollection_Array1<int> Nodes(1, nbnodes);
+@@ -1383,7 +1396,8 @@ void BRepTools_ShapeSet::ReadPolygonOnTriangulation(Standard_IStream&
+       IS >> val;
+       Nodes(j) = val;
+     }
+-    IS >> buffer;
++    // a token longer than the buffer is cut, not written past it
++    IS >> std::setw(sizeof(buffer)) >> buffer;
+     //      if (!strcasecmp(buffer, "p")) {
+     double def;
+     GeomTools::GetReal(IS, def);
+@@ -1530,8 +1544,9 @@ void BRepTools_ShapeSet::ReadPolygon3D(Standard_IStream&            IS,
+   int    i, j, p, nbpol = 0, nbnodes = 0, hasparameters = false;
+   double d, x, y, z;
+ 
+-  IS >> buffer;
+-  if (strstr(buffer, "Polygon3D") == nullptr)
++  // a token longer than the buffer is cut, not written past it
++  IS >> std::setw(sizeof(buffer)) >> buffer;
++  if (IS.fail() || strstr(buffer, "Polygon3D") == nullptr)
+   {
+     return;
+   }
+@@ -1539,7 +1554,7 @@ void BRepTools_ShapeSet::ReadPolygon3D(Standard_IStream&            IS,
+   IS >> nbpol;
+   // OCC19559
+   Message_ProgressScope aPS(theProgress, "3D Polygons", nbpol);
+-  for (i = 1; i <= nbpol && aPS.More(); i++, aPS.Next())
++  for (i = 1; i <= nbpol && aPS.More() && !IS.fail(); i++, aPS.Next())
+   {
+     IS >> nbnodes;
+     IS >> hasparameters;
+@@ -1788,8 +1803,9 @@ void BRepTools_ShapeSet::ReadTriangulation(Standard_IStream&            IS,
+ 
+   occ::handle<Poly_Triangulation> T;
+ 
+-  IS >> buffer;
+-  if (strstr(buffer, "Triangulations") == nullptr)
++  // a token longer than the buffer is cut, not written past it
++  IS >> std::setw(sizeof(buffer)) >> buffer;
++  if (IS.fail() || strstr(buffer, "Triangulations") == nullptr)
+   {
+     return;
+   }
+@@ -1797,7 +1813,7 @@ void BRepTools_ShapeSet::ReadTriangulation(Standard_IStream&            IS,
+   IS >> nbtri;
+   // OCC19559
+   Message_ProgressScope aPS(theProgress, "Triangulations", nbtri);
+-  for (i = 1; i <= nbtri && aPS.More(); i++, aPS.Next())
++  for (i = 1; i <= nbtri && aPS.More() && !IS.fail(); i++, aPS.Next())
+   {
+ 
+     IS >> nbNodes >> nbTriangles >> hasUV;
+diff --git a/src/ModelingData/TKBRep/BinTools/BinTools_ShapeSet.cxx b/src/ModelingData/TKBRep/BinTools/BinTools_ShapeSet.cxx
+--- a/src/ModelingData/TKBRep/BinTools/BinTools_ShapeSet.cxx
++++ b/src/ModelingData/TKBRep/BinTools/BinTools_ShapeSet.cxx
+@@ -1317,7 +1317,8 @@ void BinTools_ShapeSet::ReadPolygonOnTriangulation(Standard_IStream&
+                                                    const Message_ProgressRange& theRange)
+ {
+   char aHeader[255];
+-  IS >> aHeader;
++  // a token longer than the buffer is cut, not written past it
++  IS >> std::setw(sizeof(aHeader)) >> aHeader;
+   if (IS.fail() || (strstr(aHeader, "PolygonOnTriangulations") == nullptr))
+   {
+     throw Standard_Failure(
+@@ -1425,7 +1426,8 @@ void BinTools_ShapeSet::WritePolygon3D(Standard_OStream&            OS,
+ void BinTools_ShapeSet::ReadPolygon3D(Standard_IStream& IS, const Message_ProgressRange& theRange)
+ {
+   char aHeader[255];
+-  IS >> aHeader;
++  // a token longer than the buffer is cut, not written past it
++  IS >> std::setw(sizeof(aHeader)) >> aHeader;
+ 
+   if (IS.fail() || strstr(aHeader, "Polygon3D") == nullptr)
+   {
+@@ -1569,7 +1571,8 @@ void BinTools_ShapeSet::ReadTriangulation(Standard_IStream&            IS,
+                                           const Message_ProgressRange& theRange)
+ {
+   char aHeader[255];
+-  IS >> aHeader;
++  // a token longer than the buffer is cut, not written past it
++  IS >> std::setw(sizeof(aHeader)) >> aHeader;
+   if (IS.fail() || (strstr(aHeader, "Triangulations") == nullptr))
+   {
+     throw Standard_Failure("BinTools_ShapeSet::Triangulation: Not a Triangulation section");
+diff --git a/src/ModelingData/TKBRep/TopTools/TopTools_LocationSet.cxx b/src/ModelingData/TKBRep/TopTools/TopTools_LocationSet.cxx
+--- a/src/ModelingData/TKBRep/TopTools/TopTools_LocationSet.cxx
++++ b/src/ModelingData/TKBRep/TopTools/TopTools_LocationSet.cxx
+@@ -19,6 +19,7 @@
+ #include <Standard_Macro.hxx>
+ #include <iostream>
+ #include <iomanip>
++#include <Standard_Failure.hxx>
+ #include <fstream>
+ #include <Message_ProgressScope.hxx>
+ #include <TopTools_LocationSet.hxx>
+@@ -254,8 +255,9 @@ void TopTools_LocationSet::Read(Standard_IStream& IS, const Message_ProgressRang
+   char buffer[255];
+   int  l1, p;
+ 
+-  IS >> buffer;
+-  if (strcmp(buffer, "Locations"))
++  // a token longer than the buffer is cut, not written past it
++  IS >> std::setw(sizeof(buffer)) >> buffer;
++  if (IS.fail() || strcmp(buffer, "Locations"))
+   {
+     std::cout << "Not a location table " << '\n';
+     return;
+@@ -269,7 +271,7 @@ void TopTools_LocationSet::Read(Standard_IStream& IS, const Message_ProgressRang
+ 
+   // OCC19559
+   Message_ProgressScope PS(theProgress, "Locations", nbLoc);
+-  for (i = 1; i <= nbLoc && PS.More(); i++, PS.Next())
++  for (i = 1; i <= nbLoc && PS.More() && !IS.fail(); i++, PS.Next())
+   {
+     int typLoc;
+     IS >> typLoc;
+@@ -287,6 +289,11 @@ void TopTools_LocationSet::Read(Standard_IStream& IS, const Message_ProgressRang
+       while (l1 != 0)
+       {
+         IS >> p;
++        // a location the file made up, or one after the stream failed, is not in the table
++        if (IS.fail() || l1 < 1 || l1 > myMap.Extent())
++        {
++          throw Standard_Failure("TopTools_LocationSet::Read: Not a location of the table");
++        }
+         TopLoc_Location L1 = myMap(l1);
+         L                  = L1.Powered(p) * L;
+         IS >> l1;
+diff --git a/src/ModelingData/TKBRep/TopTools/TopTools_ShapeSet.cxx b/src/ModelingData/TKBRep/TopTools/TopTools_ShapeSet.cxx
+--- a/src/ModelingData/TKBRep/TopTools/TopTools_ShapeSet.cxx
++++ b/src/ModelingData/TKBRep/TopTools/TopTools_ShapeSet.cxx
+@@ -22,6 +22,8 @@
+ //                authentication we cut last '\r' in the line (which will
+ //                be present if file is in DOS coding)
+ 
++#include <iomanip>
++#include <Standard_Failure.hxx>
+ #include <Message_ProgressScope.hxx>
+ #include <TCollection_AsciiString.hxx>
+ #include <TopoDS_Iterator.hxx>
+@@ -609,7 +611,12 @@ void TopTools_ShapeSet::Write(Standard_OStream& OS, const Message_ProgressRange&
+ static TopAbs_ShapeEnum ReadShapeEnum(Standard_IStream& IS)
+ {
+   char buffer[255];
+-  IS >> buffer;
++  // a token longer than the buffer is cut, not written past it
++  IS >> std::setw(sizeof(buffer)) >> buffer;
++  if (IS.fail())
++  {
++    throw Standard_Failure("TopTools_ShapeSet::Read: The stream ended inside the shape table");
++  }
+ 
+   switch (buffer[0])
+   {
+@@ -733,8 +740,9 @@ void TopTools_ShapeSet::Read(Standard_IStream& IS, const Message_ProgressRange&
+   //-----------------------------------------
+ 
+   char buffer[255];
+-  IS >> buffer;
+-  if (strcmp(buffer, "TShapes"))
++  // a token longer than the buffer is cut, not written past it
++  IS >> std::setw(sizeof(buffer)) >> buffer;
++  if (IS.fail() || strcmp(buffer, "TShapes"))
+   {
+     std::cout << "Not a TShape table" << '\n';
+     // restore LC_NUMERIC to the previous value
+@@ -757,7 +765,8 @@ void TopTools_ShapeSet::Read(Standard_IStream& IS, const Message_ProgressRange&
+     ReadGeometry(T, IS, S);
+ 
+     // Set the flags
+-    IS >> buffer;
++    // a token longer than the buffer is cut, not written past it
++    IS >> std::setw(sizeof(buffer)) >> buffer;
+ 
+     // sub-shapes
+     TopoDS_Shape SS;
+@@ -851,14 +860,25 @@ void TopTools_ShapeSet::Read(TopoDS_Shape& S, Standard_IStream& IS, const int nb
+     return;
+   }
+   char buffer[255];
+-  IS >> buffer;
++  // a token longer than the buffer is cut, not written past it
++  IS >> std::setw(sizeof(buffer)) >> buffer;
++  // after a failed extraction the buffer holds what an earlier one left
++  if (IS.fail())
++  {
++    throw Standard_Failure("TopTools_ShapeSet::Read: The stream ended inside the shape table");
++  }
+   if (buffer[0] == '*')
+   {
+     S = TopoDS_Shape();
+   }
+   else
+   {
+-    S = myShapes(nbshapes - atoi(buffer + 1) + 1);
++    const int anIndex = nbshapes - atoi(buffer + 1) + 1;
++    if (anIndex < 1 || anIndex > myShapes.Extent())
++    {
++      throw Standard_Failure("TopTools_ShapeSet::Read: Not a shape of the table");
++    }
++    S = myShapes(anIndex);
+     switch (buffer[0])
+     {
+ 
+@@ -881,6 +901,10 @@ void TopTools_ShapeSet::Read(TopoDS_Shape& S, Standard_IStream& IS, const int nb
+ 
+     int l;
+     IS >> l;
++    if (IS.fail())
++    {
++      throw Standard_Failure("TopTools_ShapeSet::Read: The stream ended inside the shape table");
++    }
+     S.Location(myLocations.Location(l), false);
+   }
+ }
+diff --git a/src/ModelingData/TKGeomBase/GeomTools/GeomTools.cxx b/src/ModelingData/TKGeomBase/GeomTools/GeomTools.cxx
+--- a/src/ModelingData/TKGeomBase/GeomTools/GeomTools.cxx
++++ b/src/ModelingData/TKGeomBase/GeomTools/GeomTools.cxx
+@@ -16,6 +16,9 @@
+ 
+ #include <GeomTools.hxx>
+ 
++#include <cctype>
++#include <string>
++
+ #include <Geom2d_Curve.hxx>
+ #include <Geom_Surface.hxx>
+ #include <GeomTools_Curve2dSet.hxx>
+@@ -106,5 +109,15 @@ void GeomTools::GetReal(Standard_IStream& IS, double& theValue)
+   std::streamsize anOldWide = IS.width(THE_BUFFER_SIZE - 1);
+   IS >> aBuffer;
+   IS.width(anOldWide);
++  // the rest of a number longer than the buffer, or it is read as the next number
++  const int aNext = IS.good() ? IS.rdbuf()->sgetc() : EOF;
++  if (aNext != EOF && !std::isspace(aNext))
++  {
++    std::string aRest;
++    IS >> aRest;
++    aRest.insert(0, aBuffer);
++    theValue = Strtod(aRest.c_str(), nullptr);
++    return;
++  }
+   theValue = Strtod(aBuffer, nullptr);
+ }
+diff --git a/src/ModelingData/TKGeomBase/GeomTools/GeomTools_Curve2dSet.cxx b/src/ModelingData/TKGeomBase/GeomTools/GeomTools_Curve2dSet.cxx
+--- a/src/ModelingData/TKGeomBase/GeomTools/GeomTools_Curve2dSet.cxx
++++ b/src/ModelingData/TKGeomBase/GeomTools/GeomTools_Curve2dSet.cxx
+@@ -794,6 +794,12 @@ static Standard_IStream& operator>>(Standard_IStream& IS, occ::handle<Geom2d_BSp
+     IS >> mults(i);
+   }
+ 
++  // a failed stream leaves knots and multiplicities unread, and the constructor reads them
++  if (IS.fail())
++  {
++    return IS;
++  }
++
+   if (rational)
+   {
+     B = new Geom2d_BSplineCurve(poles, weights, knots, mults, degree, periodic);
+@@ -814,6 +820,12 @@ static Standard_IStream& operator>>(Standard_IStream& IS, occ::handle<Geom2d_Tri
+   GeomTools::GetReal(IS, p1);
+   GeomTools::GetReal(IS, p2);
+   occ::handle<Geom2d_Curve> BC = GeomTools_Curve2dSet::ReadCurve2d(IS);
++  if (BC.IsNull())
++  {
++    // no basis was read: leave the result null, and the stream failed
++    IS.setstate(std::ios::failbit);
++    return IS;
++  }
+   C                            = new Geom2d_TrimmedCurve(BC, p1, p2);
+   return IS;
+ }
+@@ -825,6 +837,12 @@ static Standard_IStream& operator>>(Standard_IStream& IS, occ::handle<Geom2d_Off
+   double p = 0.;
+   GeomTools::GetReal(IS, p);
+   occ::handle<Geom2d_Curve> BC = GeomTools_Curve2dSet::ReadCurve2d(IS);
++  if (BC.IsNull())
++  {
++    // no basis was read: leave the result null, and the stream failed
++    IS.setstate(std::ios::failbit);
++    return IS;
++  }
+   C                            = new Geom2d_OffsetCurve(BC, p);
+   return IS;
+ }
+@@ -930,8 +948,9 @@ occ::handle<Geom2d_Curve> GeomTools_Curve2dSet::ReadCurve2d(Standard_IStream& IS
+ void GeomTools_Curve2dSet::Read(Standard_IStream& IS, const Message_ProgressRange& theProgress)
+ {
+   char buffer[255];
+-  IS >> buffer;
+-  if (strcmp(buffer, "Curve2ds"))
++  // a token longer than the buffer is cut, not written past it
++  IS >> std::setw(sizeof(buffer)) >> buffer;
++  if (IS.fail() || strcmp(buffer, "Curve2ds"))
+   {
+     std::cout << "Not a Curve2d table" << '\n';
+     return;
+@@ -940,7 +959,7 @@ void GeomTools_Curve2dSet::Read(Standard_IStream& IS, const Message_ProgressRang
+   int i, nbcurve;
+   IS >> nbcurve;
+   Message_ProgressScope aPS(theProgress, "2D Curves", nbcurve);
+-  for (i = 1; i <= nbcurve && aPS.More(); i++, aPS.Next())
++  for (i = 1; i <= nbcurve && aPS.More() && !IS.fail(); i++, aPS.Next())
+   {
+     occ::handle<Geom2d_Curve> C = GeomTools_Curve2dSet::ReadCurve2d(IS);
+     myMap.Add(C);
+diff --git a/src/ModelingData/TKGeomBase/GeomTools/GeomTools_CurveSet.cxx b/src/ModelingData/TKGeomBase/GeomTools/GeomTools_CurveSet.cxx
+--- a/src/ModelingData/TKGeomBase/GeomTools/GeomTools_CurveSet.cxx
++++ b/src/ModelingData/TKGeomBase/GeomTools/GeomTools_CurveSet.cxx
+@@ -822,6 +822,12 @@ static Standard_IStream& operator>>(Standard_IStream& IS, occ::handle<Geom_BSpli
+     IS >> mults(i);
+   }
+ 
++  // a failed stream leaves knots and multiplicities unread, and the constructor reads them
++  if (IS.fail())
++  {
++    return IS;
++  }
++
+   if (rational)
+   {
+     B = new Geom_BSplineCurve(poles, weights, knots, mults, degree, periodic);
+@@ -842,6 +848,12 @@ static Standard_IStream& operator>>(Standard_IStream& IS, occ::handle<Geom_Trimm
+   GeomTools::GetReal(IS, p1);
+   GeomTools::GetReal(IS, p2);
+   occ::handle<Geom_Curve> BC = GeomTools_CurveSet::ReadCurve(IS);
++  if (BC.IsNull())
++  {
++    // no basis was read: leave the result null, and the stream failed
++    IS.setstate(std::ios::failbit);
++    return IS;
++  }
+   C                          = new Geom_TrimmedCurve(BC, p1, p2);
+   return IS;
+ }
+@@ -855,6 +867,12 @@ static Standard_IStream& operator>>(Standard_IStream& IS, occ::handle<Geom_Offse
+   gp_Dir D(gp_Dir::D::X);
+   IS >> D;
+   occ::handle<Geom_Curve> BC = GeomTools_CurveSet::ReadCurve(IS);
++  if (BC.IsNull())
++  {
++    // no basis was read: leave the result null, and the stream failed
++    IS.setstate(std::ios::failbit);
++    return IS;
++  }
+   C                          = new Geom_OffsetCurve(BC, p, D);
+   return IS;
+ }
+@@ -959,8 +977,9 @@ occ::handle<Geom_Curve> GeomTools_CurveSet::ReadCurve(Standard_IStream& IS)
+ void GeomTools_CurveSet::Read(Standard_IStream& IS, const Message_ProgressRange& theProgress)
+ {
+   char buffer[255];
+-  IS >> buffer;
+-  if (strcmp(buffer, "Curves"))
++  // a token longer than the buffer is cut, not written past it
++  IS >> std::setw(sizeof(buffer)) >> buffer;
++  if (IS.fail() || strcmp(buffer, "Curves"))
+   {
+     std::cout << "Not a Curve table" << '\n';
+     return;
+@@ -969,7 +988,7 @@ void GeomTools_CurveSet::Read(Standard_IStream& IS, const Message_ProgressRange&
+   int i, nbcurve;
+   IS >> nbcurve;
+   Message_ProgressScope aPS(theProgress, "3D Curves", nbcurve);
+-  for (i = 1; i <= nbcurve && aPS.More(); i++, aPS.Next())
++  for (i = 1; i <= nbcurve && aPS.More() && !IS.fail(); i++, aPS.Next())
+   {
+     occ::handle<Geom_Curve> C = GeomTools_CurveSet::ReadCurve(IS);
+     myMap.Add(C);
+diff --git a/src/ModelingData/TKGeomBase/GeomTools/GeomTools_SurfaceSet.cxx b/src/ModelingData/TKGeomBase/GeomTools/GeomTools_SurfaceSet.cxx
+--- a/src/ModelingData/TKGeomBase/GeomTools/GeomTools_SurfaceSet.cxx
++++ b/src/ModelingData/TKGeomBase/GeomTools/GeomTools_SurfaceSet.cxx
+@@ -944,6 +944,12 @@ static Standard_IStream& operator>>(Standard_IStream&
+   gp_Dir D(gp_Dir::D::X);
+   IS >> D;
+   occ::handle<Geom_Curve> C = GeomTools_CurveSet::ReadCurve(IS);
++  if (C.IsNull())
++  {
++    // no basis was read: leave the result null, and the stream failed
++    IS.setstate(std::ios::failbit);
++    return IS;
++  }
+   S                         = new Geom_SurfaceOfLinearExtrusion(C, D);
+   return IS;
+ }
+@@ -956,6 +962,12 @@ static Standard_IStream& operator>>(Standard_IStream& IS, occ::handle<Geom_Surfa
+   gp_Dir D(gp_Dir::D::X);
+   IS >> P >> D;
+   occ::handle<Geom_Curve> C = GeomTools_CurveSet::ReadCurve(IS);
++  if (C.IsNull())
++  {
++    // no basis was read: leave the result null, and the stream failed
++    IS.setstate(std::ios::failbit);
++    return IS;
++  }
+   S                         = new Geom_SurfaceOfRevolution(C, gp_Ax1(P, D));
+   return IS;
+ }
+@@ -1039,6 +1051,12 @@ static Standard_IStream& operator>>(Standard_IStream& IS, occ::handle<Geom_BSpli
+     IS >> vmults(i);
+   }
+ 
++  // a failed stream leaves knots and multiplicities unread, and the constructor reads them
++  if (IS.fail())
++  {
++    return IS;
++  }
++
+   if (urational || vrational)
+   {
+     S = new Geom_BSplineSurface(poles,
+@@ -1078,6 +1096,12 @@ static Standard_IStream& operator>>(Standard_IStream&
+   GeomTools::GetReal(IS, V1);
+   GeomTools::GetReal(IS, V2);
+   occ::handle<Geom_Surface> BS = GeomTools_SurfaceSet::ReadSurface(IS);
++  if (BS.IsNull())
++  {
++    // no basis was read: leave the result null, and the stream failed
++    IS.setstate(std::ios::failbit);
++    return IS;
++  }
+   S                            = new Geom_RectangularTrimmedSurface(BS, U1, U2, V1, V2);
+   return IS;
+ }
+@@ -1089,6 +1113,12 @@ static Standard_IStream& operator>>(Standard_IStream& IS, occ::handle<Geom_Offse
+   double O = 0.;
+   GeomTools::GetReal(IS, O);
+   occ::handle<Geom_Surface> BS = GeomTools_SurfaceSet::ReadSurface(IS);
++  if (BS.IsNull())
++  {
++    // no basis was read: leave the result null, and the stream failed
++    IS.setstate(std::ios::failbit);
++    return IS;
++  }
+   S                            = new Geom_OffsetSurface(BS, O, true);
+   return IS;
+ }
+@@ -1208,8 +1238,9 @@ occ::handle<Geom_Surface> GeomTools_SurfaceSet::ReadSurface(Standard_IStream& IS
+ void GeomTools_SurfaceSet::Read(Standard_IStream& IS, const Message_ProgressRange& theProgress)
+ {
+   char buffer[255];
+-  IS >> buffer;
+-  if (strcmp(buffer, "Surfaces"))
++  // a token longer than the buffer is cut, not written past it
++  IS >> std::setw(sizeof(buffer)) >> buffer;
++  if (IS.fail() || strcmp(buffer, "Surfaces"))
+   {
+     std::cout << "Not a surface table" << '\n';
+     return;
+@@ -1218,7 +1249,7 @@ void GeomTools_SurfaceSet::Read(Standard_IStream& IS, const Message_ProgressRang
+   int i, nbsurf;
+   IS >> nbsurf;
+   Message_ProgressScope aPS(theProgress, "Surfaces", nbsurf);
+-  for (i = 1; i <= nbsurf && aPS.More(); i++, aPS.Next())
++  for (i = 1; i <= nbsurf && aPS.More() && !IS.fail(); i++, aPS.Next())
+   {
+     occ::handle<Geom_Surface> S = GeomTools_SurfaceSet::ReadSurface(IS);
+     myMap.Add(S);

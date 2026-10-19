@@ -47,7 +47,7 @@ let useLocalXCFramework: Bool = {
         atPath: occtPackageDir + "/Libraries/OCCT.xcframework/Info.plist")
 }()
 
-// OCCT V8.0.1 plus the fifty-three carried patches are documented in Scripts/patches/README.md
+// OCCT V8.0.1 plus the fifty-four carried patches are documented in Scripts/patches/README.md
 // (patch list, verification status, and CI coverage gaps for maintainers).
 let occtTarget: Target =
     isWASI
@@ -294,8 +294,9 @@ let occtTarget: Target =
         // which is what they were built to do; if a later asset repeats either stray the finding comes
         // back rather than staying suppressed.
         //
-        // The pinned asset lacks three of them, 0070, 0071 and 0072: it holds fifty and Scripts/patches/
-        // holds fifty-three, so those three are exercised by no CI job until the next repin.
+        // The pinned asset lacks four of them, 0070, 0071, 0072 and 0073: it holds fifty and
+        // Scripts/patches/ holds fifty-four, so those four are exercised by no CI job until the next
+        // repin.
         // 0064 (#3335), 0065 (#3350), 0066 (#3464), 0068 (#3449) and
         // 0069 (#3330) were carried after v4.0.0-kernel.6 and are pinned by v4.0.0-kernel.7; the
         // rows for 0053 through 0069 below are history in the way the rows for 0044 through 0052
@@ -343,9 +344,9 @@ let occtTarget: Target =
         // wrong: InitializeMissingParameters is also the REPAIR that re-sets DirectFaces on an actor a
         // STEPCAFControl_Reader has left with empty OperationsFlags, which is #280's exact mechanism.
         // kernel-integration.yml caught it on main. See Scripts/patches/README.md's retired 0035 entry.
-        // Scripts/patches/ holds fifty-three patches and the pinned asset holds fifty of them,
-        // enumerated above. `ls Scripts/patches/*.patch | wc -l` answers 53 against a list of 50,
-        // and the three that the list lacks are 0070, 0071 and 0072, written up below. The
+        // Scripts/patches/ holds fifty-four patches and the pinned asset holds fifty of them,
+        // enumerated above. `ls Scripts/patches/*.patch | wc -l` answers 54 against a list of 50,
+        // and the four that the list lacks are 0070, 0071, 0072 and 0073, written up below. The
         // v4.0.0-kernel.4 rebuild closed the divergence that 0044 had
         // opened and that 0045 through 0052 widened, the v4.0.0-kernel.5 rebuild closed the one that
         // 0053 through 0057 opened, the v4.0.0-kernel.6 rebuild closed the one that 0058 and 0059
@@ -591,6 +592,19 @@ let occtTarget: Target =
         //         token did not return, reached through a TOC entry named SHAPE_SECTION_POS at
         //         any offset. The read now carries the buffer size. NOT in v4.0.0-kernel.7;
         //         same gate (#3489).
+        //
+        //   0073  The text shape readers (BRepTools_ShapeSet, TopTools_ShapeSet,
+        //         TopTools_LocationSet, GeomTools_{Surface,Curve,Curve2d}Set, Poly, and the
+        //         BinTools_ShapeSet headers) extracted a token into a char[255] with an unbounded
+        //         >>, used the value a failed extraction left behind to index the shape table,
+        //         and looped on a stale count (OCCT#1608: do { IS >> val; } while (val > 0) never
+        //         ends at the end of the stream). GeomTools::GetReal cut a number of 32
+        //         characters or more and read its tail as the next number (OCCT#1560). The reads
+        //         carry the buffer size, a failed stream throws or stops each loop, a shape or
+        //         location index outside its table is refused, and a trimmed or offset curve or
+        //         surface whose basis did not read is not built. NOT in v4.0.0-kernel.7;
+        //         BREPKernelDamagedReadTests is gated on OCCTSWIFT_LOCAL=1 until the next repin
+        //         (#3490).
         //
         // 0043 (#2827, BRepGProp_Gauss keeps the by-plane mass) was the one outstanding before it,
         // and it went the other way, which is the comparison worth keeping beside 0044: carried

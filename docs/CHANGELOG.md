@@ -21,6 +21,10 @@ bounding-box accessors becoming Optional so a void shape stops fabricating `(0,0
 
 ## Unreleased
 
+### Text BREP readers: carried kernel patch 0073 stops them faulting or spinning on a cut or damaged file (#3490)
+
+`Shape.loadBREP` and `Shape.fromBREPString` no longer fault or spin on a text BREP that is cut short or damaged, once the kernel carries patch `0073` (not in `v4.0.0-kernel.7`; the Swift tests are gated on `OCCTSWIFT_LOCAL=1` until the repin). The readers took a word into a fixed buffer without a limit, used the value a failed extraction left behind to index the shape table, and looped on a stale count (OCCT#1608); `GeomTools::GetReal` cut a number of 32 characters or more and read its tail as the next number (OCCT#1560). On `v4.0.0-kernel.7`, 2,006 of 3,741 sampled prefixes of 18 files faulted and 414 spun; with the patch none does, and a file that loses only its trailing white space still reads. Open: a negative count in a B-spline record (22 of 76,479 byte-damaged files) and a structurally inconsistent shape that `BRepCheck` then faults on.
+
 ### Crafted binary OCAF files can no longer ask the kernel for gigabytes, loop on a label's tag count or overflow a table-name buffer (#3489)
 
 Carried kernel patches `0070` to `0072`, not in the pinned asset until the next repin. Fifteen binary attribute drivers allocated `last - first + 1` elements or a declared size before checking the record held them (1 to 17 GiB from a 400 byte file, the 32-bit wasm failure of #3477), `BinObjMgt_Persistent::GetLabel` tested an overflowing `tagCount * 4` and then looped past the data, and five `BinTools` set readers extracted a table name into a 255 byte buffer with an unbounded `>>` (a 4 KB token terminated the process). Each bound is now what the record, or the buffer, holds. Label nesting 20000 deep still overflows the stack of the recursive reader and is not mitigated.
