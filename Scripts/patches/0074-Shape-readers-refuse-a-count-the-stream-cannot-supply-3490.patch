@@ -8,10 +8,11 @@ and ShapeReader) size an array from a count the file declares, before the first 
 read, and trust the count. The library is built with No_Exception, so the range checks of
 NCollection_Array1, NCollection_Array2 and NCollection_IndexedMap are gone, and a damaged count
 is not refused anywhere:
- - a negative count sizes an array backwards: a B-spline curve, surface or polygon with a pole,
-   knot or node count of -1 (a '-' where a digit was) faulted in the constructor of the array, of
-   Poly_Triangulation or of Poly_Polygon3D. In 76,479 single byte replacements of the text
-   corpus 22 faulted this way after BRepTools::Read had been made to stop at a failed stream.
+ - a negative count sizes an array backwards: a pole, knot or node count of a B-spline curve or
+   surface, a triangulation or a polygon read as a negative number faulted in the constructor of
+   the array or of the object built from it (Geom_BSplineCurve, Geom_BSplineSurface,
+   Poly_Triangulation). In 76,479 single byte replacements of the text corpus, 22 did this, each a
+   '-' where a digit was (12 in a curve record, 8 in a surface record, 2 in a triangulation).
  - a count past the end of the stream sizes an array of that many elements (2^31 - 1 poles is a
    50 GB array) and then runs its loop to the end, though the stream failed at the first element.
  - the two counts of a pole grid are each fine and their product overflows an int: a Bezier or
