@@ -3730,7 +3730,7 @@ The classes of `Scripts/repro/3487` that `0073` was measured on, unthinned on `0
 
 **Left, and why.** (a) A trim parameter that is not a number faults the constructor of a trimmed curve or surface: a value hazard in `Geom_TrimmedCurve::SetTrim` and `Geom_RectangularTrimmedSurface::SetTrim` (periodic basis, `ElCLib::AdjustPeriodic` with `nan`), reachable from any caller and not a count. (b) The position references of `BinTools_ShapeReader` (`ReadReference`, `GoTo`) are not range checked and a cycle is not detected. (c) A structurally inconsistent shape the reader returns and `BRepCheck` then faults on: the use site, 2,209 cases of the text count class and 92 of the struct class, all coordinate or reference values. (d) On a stream that cannot be measured (the bridge's, `OcctBrepWordLimitBuf`, has no `seekoff`) a count up to 2^24 is allowed and sizes an array of at most about 400 MB that the failing stream then frees; the bridge guard throws at the end of the file in any case. **#3490 stays open** under (a) to (c).
 
-**Upstream checked 2026-10-19:** none of the 12 files has a commit on master since 2026-08-01, and no open PR touches them. **Not filed upstream.** The pieces are independent (`Standard_IStreamHasItems` with the text readers, the binary readers, the location power, the triangle and polygon node checks).
+**Upstream checked 2026-10-19:** none of the 13 files has a commit on master since 2026-08-01, and no open PR touches them. **Not filed upstream.** The pieces are independent (`Standard_IStreamHasItems` with the text readers, the binary readers, the location power, the triangle and polygon node checks).
 
 **Retire** once the bundled OCCT includes this fix.
 
