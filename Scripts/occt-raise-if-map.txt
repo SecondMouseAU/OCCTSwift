@@ -58,7 +58,7 @@
 # the stray check in docs/guides/building-occt.md's "Shipping a rebuild" answers it.
 #
 # occt-version: 8.0.1
-# derived against: 54 carried patch(es) in Scripts/patches/, every one of them verified
+# derived against: 55 carried patch(es) in Scripts/patches/, every one of them verified
 # derived against: applied in the tree the rows below were derived from.
 # patch: 0010-Intf_Interference-O1-tangent-zone-checkpoint-breaker-319 79fe529c26ef
 # patch: 0011-XCAFDoc_ShapeTool-AutoNamingScope-341 76898e2438a2
@@ -114,16 +114,17 @@
 # patch: 0071-BinMDataStd-array-and-list-drivers-bound-a-declared-span-by-the-data-left-3489 080d45a9cacd
 # patch: 0072-BinTools-Set-Read-cuts-the-table-name-token-at-the-buffer-3489 4be52ad597c1
 # patch: 0073-Text-shape-readers-bound-a-token-and-stop-at-a-failed-stream-3490 72cc40f22a5c
+# patch: 0074-Shape-readers-refuse-a-count-the-stream-cannot-supply-3490 24e264e809fb
 #
 # totals: inline-raise       462 site(s) in  104 class(es)
 # totals: outofline-raise    827 site(s) in  283 class(es)
 # totals: inline-throw       501 site(s) in  212 class(es)
-# totals: outofline-throw   3772 site(s) in  833 class(es)
+# totals: outofline-throw   3789 site(s) in  833 class(es)
 # totals: outofline-delegated  5947 site(s) in  924 class(es)
 # totals: inherited-live    2587 site(s) in 2587 class(es)
 # totals: inline-dead-at-depth  9911 site(s) in  100 class(es)
 #
-# member attribution: 333 of 5043 row(s) carry at least one <file-scope> site, 264 name no member at all
+# member attribution: 336 of 5043 row(s) carry at least one <file-scope> site, 264 name no member at all
 #
 # packages examined: 404
 # packages: AIS,APIHeaderSection,Adaptor2d,Adaptor3d,AdvApp2Var,AdvApprox,AppBlend,AppCont,AppDef,AppParCurves,AppStd,AppStdL
@@ -838,16 +839,16 @@ BinTObjDrivers_ReferenceDriver inherited-live 1 Standard_ProgramError Standard_T
 BinTObjDrivers_XYZDriver outofline-delegated 1 Standard_ConstructionError,Standard_OutOfRange gp_XYZ
 BinTObjDrivers_XYZDriver inherited-live 1 Standard_ProgramError Standard_Transient
 BinTools outofline-throw 4 Storage_StreamTypeMismatchError GetExtChar,GetInteger,GetReal,GetShortReal
-BinTools_Curve2dSet outofline-throw 5 Standard_Failure Read,ReadCurve2d,WriteCurve2d
-BinTools_CurveSet outofline-throw 5 Standard_Failure Read,ReadCurve,WriteCurve
+BinTools_Curve2dSet outofline-throw 6 Standard_Failure <file-scope>,Read,ReadCurve2d,WriteCurve2d
+BinTools_CurveSet outofline-throw 6 Standard_Failure <file-scope>,Read,ReadCurve,WriteCurve
 BinTools_IStream outofline-throw 4 Standard_Failure,Storage_StreamTypeMismatchError ReadReference,operator>>
-BinTools_LocationSet outofline-throw 4 Standard_Failure Read,Write
-BinTools_ShapeReader outofline-throw 4 Standard_Failure ReadShape
+BinTools_LocationSet outofline-throw 5 Standard_Failure Read,Write
+BinTools_ShapeReader outofline-throw 8 Standard_Failure ReadPolygon,ReadPolygon3d,ReadShape,ReadTriangulation
 BinTools_ShapeReader outofline-delegated 1 Standard_NullObject Poly_PolygonOnTriangulation
-BinTools_ShapeSet outofline-throw 15 Standard_Failure Read,ReadPolygon3D,ReadPolygonOnTriangulation,ReadShape,ReadTriangulation,WritePolygon3D,WritePolygonOnTriangulation,WriteShape,WriteTriangulation
+BinTools_ShapeSet outofline-throw 23 Standard_Failure Read,ReadPolygon3D,ReadPolygonOnTriangulation,ReadShape,ReadSubs,ReadTriangulation,WritePolygon3D,WritePolygonOnTriangulation,WriteShape,WriteTriangulation
 BinTools_ShapeSet outofline-delegated 2 Standard_NullObject,Standard_OutOfRange Poly_PolygonOnTriangulation,Poly_Triangle
 BinTools_ShapeWriter outofline-throw 2 Standard_Failure WriteLocation,WriteShape
-BinTools_SurfaceSet outofline-throw 5 Standard_Failure Read,ReadSurface,WriteSurface
+BinTools_SurfaceSet outofline-throw 7 Standard_Failure <file-scope>,Read,ReadSurface,WriteSurface
 BinXCAFDrivers outofline-throw 1 Standard_Failure Factory
 BinXCAFDrivers_DocumentRetrievalDriver inherited-live 1 Standard_NotImplemented BinDrivers_DocumentRetrievalDriver
 BinXCAFDrivers_DocumentStorageDriver inherited-live 1 Standard_NotImplemented BinDrivers_DocumentStorageDriver

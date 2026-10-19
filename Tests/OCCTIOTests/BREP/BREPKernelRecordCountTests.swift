@@ -6,7 +6,8 @@ import Testing
 // The BREP readers size an array from a count the file declares and trust it. A B-spline curve,
 // surface or polygon with a negative count sized an array backwards, a count past the end of the
 // file was looped over to its end, and a pole grid of 65536 by 65536 overflowed the product that
-// sizes it; a face or an edge named a triangulation, polygon or node the file did not have.
+// sizes it; a face or an edge named a triangulation, polygon or node the file did not have, and a
+// location raised to a power of 10^8 recursed to the end of the stack.
 // Carried patch `0074` refuses a count the stream cannot supply before an array is sized from it,
 // checks a reference against its table, and checks a triangle's nodes against the triangulation's.
 //
@@ -42,8 +43,10 @@ struct BREPKernelRecordCountTests {
         static let curve3dBSpline = "7 0 0  2 3 2  0 0 0  1 2 0  2 0 0 \n 0 3 1 3\n"
         static let surfaceBSpline =
             "9 0 0 0 0 2 2 3 3 2 2 1 1 0  1 2 1  1 3 0  \n2 1 1  2 2 0  2 3 1  \n3 1 0  3 2 1  3 3 0  \n\n0 3\n1 3\n\n0 3\n1 3\n"
-        static let surfaceBezier = "8 0 0 2 2 1 1 1  1 2 0  1 3 1  \n2 1 0  2 2 0  2 3 0  \n3 1 1  3 2 0  3 3 1  \n"
-        static let polygon3D = "5 1\n1\n4 0 0 3.82 1.18 0 3.3 2.25 0 2.48 3.13 0 1.44 3.72 0 \n0 0.3 0.6 0.9 1.2 \n"
+        static let surfaceBezier =
+            "8 0 0 2 2 1 1 1  1 2 0  1 3 1  \n2 1 0  2 2 0  2 3 0  \n3 1 1  3 2 0  3 3 1  \n"
+        static let polygon3D =
+            "5 1\n1\n4 0 0 3.82 1.18 0 3.3 2.25 0 2.48 3.13 0 1.44 3.72 0 \n0 0.3 0.6 0.9 1.2 \n"
         static let polygonOnTriangulation = "2 1 2 \np 10 1 0 4 \n"
         static let triangulation = "3 1 1 0 0\n0 0 0 4 0 0 0 3 0 -1.5 -1 2.5 -1 -1.5 2 2 3 1 \n"
     }
@@ -68,7 +71,9 @@ struct BREPKernelRecordCountTests {
             let lineEnd = text.range(of: "\n", range: header.upperBound..<text.endIndex),
             let count = Int(text[header.upperBound..<lineEnd.lowerBound])
         else { return nil }
-        guard let next = text.range(of: "\n\(order[index + 1])", range: lineEnd.lowerBound..<text.endIndex)
+        guard
+            let next = text.range(
+                of: "\n\(order[index + 1])", range: lineEnd.lowerBound..<text.endIndex)
         else { return nil }
         // The later edit first, so the earlier indices stay valid.
         text.insert(contentsOf: record, at: text.index(after: next.lowerBound))
@@ -172,6 +177,28 @@ struct BREPKernelRecordCountTests {
         }
     }
 
+    /// A location is built from others, each raised to a power.
+    ///
+    /// A composed location is raised one multiplication at a time and recursively, so a power of
+    /// 10^8 is the stack; a written file never raises a composed location (a composed entry names
+    /// single ones), so the table is written in: two translations, a location composed of both, and
+    /// a power of that (`2 3 5 0`: entry 3, power 5).
+    @Test(.enabled(if: BREPKernelRecordCountTests.isLocalKernel))
+    func aLargePowerOfAComposedLocationIsRefused() throws {
+        let text = try #require(Self.boxText())
+        let translation = "1\n1 0 0 5 \n0 1 0 0 \n0 0 1 0 \n"
+        let other = "1\n1 0 0 0 \n0 1 0 7 \n0 0 1 0 \n"
+        func withPower(_ power: Int) throws -> String {
+            let table = "Locations 4\n" + translation + other + "2 1 1 2 1 0\n2 3 \(power) 0\n"
+            return try #require(Self.edited(text, replacing: "Locations 0\n", with: table))
+        }
+        let small = try #require(Self.volume(of: try withPower(5)))
+        #expect(abs(small - 6000) < 1e-6)
+        for power in [100_000_000, -100_000_000, Int(Int32.max), Int(Int32.min)] {
+            #expect(Shape.fromBREPString(try withPower(power)) == nil, "power \(power)")
+        }
+    }
+
     /// A face that holds only a triangulation names it by index into the table.
     ///
     /// The box has no triangulations, so any index is outside the table. The face is left without a
@@ -179,7 +206,8 @@ struct BREPKernelRecordCountTests {
     @Test(.enabled(if: BREPKernelRecordCountTests.isLocalKernel))
     func aFaceNamingATriangulationOutsideTheTableDoesNotLookItUp() throws {
         let text = try #require(Self.boxText())
-        let damaged = try #require(Self.edited(text, replacing: "Fa\n0  1e-07 1 0\n", with: "Fa\n2  9999\n"))
+        let damaged = try #require(
+            Self.edited(text, replacing: "Fa\n0  1e-07 1 0\n", with: "Fa\n2  9999\n"))
         _ = Shape.fromBREPString(damaged)
     }
 }

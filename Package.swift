@@ -294,8 +294,8 @@ let occtTarget: Target =
         // which is what they were built to do; if a later asset repeats either stray the finding comes
         // back rather than staying suppressed.
         //
-        // The pinned asset lacks four of them, 0070, 0071, 0072 and 0073: it holds fifty and
-        // Scripts/patches/ holds fifty-four, so those four are exercised by no CI job until the next
+        // The pinned asset lacks five of them, 0070, 0071, 0072, 0073 and 0074: it holds fifty and
+        // Scripts/patches/ holds fifty-five, so those five are exercised by no CI job until the next
         // repin.
         // 0064 (#3335), 0065 (#3350), 0066 (#3464), 0068 (#3449) and
         // 0069 (#3330) were carried after v4.0.0-kernel.6 and are pinned by v4.0.0-kernel.7; the
@@ -344,9 +344,9 @@ let occtTarget: Target =
         // wrong: InitializeMissingParameters is also the REPAIR that re-sets DirectFaces on an actor a
         // STEPCAFControl_Reader has left with empty OperationsFlags, which is #280's exact mechanism.
         // kernel-integration.yml caught it on main. See Scripts/patches/README.md's retired 0035 entry.
-        // Scripts/patches/ holds fifty-four patches and the pinned asset holds fifty of them,
-        // enumerated above. `ls Scripts/patches/*.patch | wc -l` answers 54 against a list of 50,
-        // and the four that the list lacks are 0070, 0071, 0072 and 0073, written up below. The
+        // Scripts/patches/ holds fifty-five patches and the pinned asset holds fifty of them,
+        // enumerated above. `ls Scripts/patches/*.patch | wc -l` answers 55 against a list of 50,
+        // and the five that the list lacks are 0070, 0071, 0072, 0073 and 0074, written up below. The
         // v4.0.0-kernel.4 rebuild closed the divergence that 0044 had
         // opened and that 0045 through 0052 widened, the v4.0.0-kernel.5 rebuild closed the one that
         // 0053 through 0057 opened, the v4.0.0-kernel.6 rebuild closed the one that 0058 and 0059
@@ -605,6 +605,16 @@ let occtTarget: Target =
         //         surface whose basis did not read is not built. NOT in v4.0.0-kernel.7;
         //         BREPKernelDamagedReadTests is gated on OCCTSWIFT_LOCAL=1 until the next repin
         //         (#3490).
+        //
+        //   0074  The text and binary shape readers sized an array from a count the file
+        //         declared before reading the first element: a negative pole, knot or node count
+        //         faulted, a count past the end of the stream sized a 50 GB array, a pole grid of
+        //         65536 by 65536 overflowed its product, and a triangle or a polygon named nodes
+        //         its triangulation lacks. Standard_IStreamHasItems refuses a count the rest of
+        //         the stream cannot hold; a polygon, triangulation, curve, surface, location or
+        //         sub-shape reference outside its table is skipped or refused. NOT in
+        //         v4.0.0-kernel.7; BREPKernelRecordCountTests is gated on OCCTSWIFT_LOCAL=1 until
+        //         the next repin (#3490).
         //
         // 0043 (#2827, BRepGProp_Gauss keeps the by-plane mass) was the one outstanding before it,
         // and it went the other way, which is the comparison worth keeping beside 0044: carried

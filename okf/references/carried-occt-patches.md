@@ -126,21 +126,21 @@ mistake the rest of this page is about.
 
 ### The xcframework
 
-`Scripts/patches/` holds fifty-four patches, of which the pinned asset carries fifty. **These
+`Scripts/patches/` holds fifty-five patches, of which the pinned asset carries fifty. **These
 are the counts `CLAUDE.md` used to restate and no longer does** (#2954); both are derived from
 `Scripts/patches/` and `Package.swift` by `check-inventory-prose.py`, which fails the PR that lets
-this page and the tree disagree. The v4.0.0-kernel.7 asset `Package.swift` pins lacks four of them, `0070`, `0071`, `0072` and `0073`, so **there are four native
+this page and the tree disagree. The v4.0.0-kernel.7 asset `Package.swift` pins lacks five of them, `0070`, `0071`, `0072`, `0073` and `0074`, so **there are five native
 divergences**, written up below, per [Pinned kernel patch check](../policies/pinned-kernel-patch-check.md). It was
 built from a `V8_0_1` tree whose only modifications are the fifty patches it holds (the
 modified-file set was computed against the patches' own file lists, see `Package.swift`), so none of
 a retired patch's edits is in it.
 `0031` left at v4.0.0-kernel.6 and is not in either asset.
 
-**The four open divergences.** The first three are in the document data of a binary OCAF file, past
+**The five open divergences.** The first three are in the document data of a binary OCAF file, past
 the storage sections the bridge walks (#3489, follow-up to #3486 and #3477), and each is gated in
 `OCAFBinaryDocumentDataKernelReadTests` on `OCCTSWIFT_LOCAL=1`, which `kernel-integration.yml`
-runs, until the repin that pins it. The fourth is in the text BREP reader (#3490, follow-up to #3487),
-gated in `BREPKernelDamagedReadTests` the same way.
+runs, until the repin that pins it. The fourth and the fifth are in the BREP readers (#3490, follow-up
+to #3487), gated the same way, in `BREPKernelDamagedReadTests` and `BREPKernelRecordCountTests`.
 
 | Unpinned | What it leaves exposed |
 |---|---|
@@ -148,6 +148,7 @@ gated in `BREPKernelDamagedReadTests` the same way.
 | `0071-BinMDataStd-array-and-list-drivers-bound-a-declared-span-by-the-data-left-3489` | Fifteen binary attribute drivers allocate `last - first + 1` elements, or a declared size, before they check the record holds them: a file of about 400 bytes requests 1 to 17 GiB (`IntegerArray`, `RealArray`, `ByteArray`, `BooleanArray`, `ExtStringArray`, `ReferenceArray`, the three lists, `NamedData`; the `DimTol`, `NoteBinData`, `VisMaterial`, `GraphNode` and `Scope` sites by the same reading). Status ok on 64-bit after up to 26 s of page touching; on 32-bit wasm the allocation fails and takes every later allocation of the process with it (#3477). |
 | `0072-BinTools-Set-Read-cuts-the-table-name-token-at-the-buffer-3489` | Five `BinTools` set readers extract the name of their table into `char buffer[255]` with an unbounded `>>`. A TOC entry named `SHAPE_SECTION_POS` in a file whose type list names `TNaming_NamedShape` sends the reader to any offset; a 4 KB token terminates the process (SIGTRAP) in each of the five tables and a 1 MiB token does not return. |
 | `0073-Text-shape-readers-bound-a-token-and-stop-at-a-failed-stream-3490` | `BRepTools::Read` of a text BREP that is cut short or damaged, which `Shape.loadBREP` and `Shape.fromBREPString` reach with no guard in front of it: the sub-shape and root references index the shape table with the number a failed extraction left behind (`TopTools_ShapeSet.cxx`), the vertex and edge loops `do { IS >> val; } while (val > 0)` never end at the end of the stream (OCCT#1608), a word of 255 bytes or more overwrites a `char[255]` in the name of a table or the type of a shape, a table count of 2^31 - 1 runs 2^31 iterations on a failed stream, a B-spline cut short is built from knots it never read, a trimmed or offset curve or surface is built on a basis that did not read, and a number of 32 characters or more is cut by `GeomTools::GetReal` and its tail read as the next number (OCCT#1560). On `v4.0.0-kernel.7` 2,006 of 3,741 sampled prefixes of 18 files fault and 414 spin (`Scripts/repro/3487`). |
+| `0074-Shape-readers-refuse-a-count-the-stream-cannot-supply-3490` | The text and binary shape readers (`BRepTools_ShapeSet`, `GeomTools_{Curve,Curve2d,Surface}Set`, `Poly`, `BinTools_ShapeSet`, `BinTools_{Curve,Curve2d,Surface,Location}Set`, `BinTools_ShapeReader`) size an array from a count the file declares before reading its first element: a negative pole, knot or node count of a B-spline, a polygon or a triangulation sizes it backwards (a SIGSEGV in the constructor of the array), a count past the end of the stream sizes an array of that many elements (2^31 - 1 poles is 50 GB, 42 s to 2 minutes of page touching before the end of the stream is found) and loops to its end, and the product of two pole counts overflows an `int` (65536 by 65536). A triangle's nodes are not checked against its triangulation, nor a polygon's against the triangulation it is attached to (`BRepCheck_Edge::CheckPolygonOnTriangulation` then faults). A face that holds only a triangulation, and in the binary readers an edge's `Polygon3D`, `PolygonOnTriangulation` and `Triangulation`, a curve, a surface, a location and a sub-shape, index their table with the number the file gives, unchecked. Left by it: a trim parameter that is not a number (`nan`, or the bytes of one in a binary file) faults the constructor of a trimmed curve or surface; a structurally inconsistent shape that `BRepCheck` then faults on; the position references of `BinTools_ShapeReader`. |
 
 Label nesting is not patched: see [`known-occt-bugs.md`](known-occt-bugs.md).
 
@@ -229,7 +230,7 @@ older asset. `Package.swift`'s pin block records that exception against
 
 `libOCCT-wasm.a` and its header tree are a **second** pinned asset, recorded in
 `Scripts/wasm-kernel-pin.txt` rather than in `Package.swift`, because SwiftPM has no `binaryTarget`
-for a bare static library. Both kernels carry the same patches, `0010` to `0069`; `0070` to `0073` are on neither. As of this
+for a bare static library. Both kernels carry the same patches, `0010` to `0069`; `0070` to `0074` are on neither. As of this
 writing the pinned native asset carries fifty, and so does this one, plus the eleven in
 `Scripts/patches-wasi/` that only the wasm build applies. They were built from one tree in one
 sitting and published to one release tag, so **there is no divergence between the two platforms to

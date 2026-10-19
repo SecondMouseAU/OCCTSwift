@@ -56,6 +56,7 @@
 #include <TopoDS.hxx>
 #include <TopoDS_Compound.hxx>
 #include <fstream>
+#include <iterator>
 #include <sstream>
 #include <string>
 
@@ -342,6 +343,31 @@ static void tiny(const std::string& dir)
   emit(arc, dir, "tiny_polygon3d", true);
 }
 
+// x_located2: x_located with a sixth Locations entry, a power of the third (a composed one). A
+// written file never has one (a composed entry names single-datum entries), and the power of a
+// composed location is formed one multiplication at a time, so a power of 10^8 is the stack.
+static void located2(const std::string& dir)
+{
+  auto slurp = [](const std::string& path) {
+    std::ifstream in(path, std::ios::binary);
+    return std::string((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
+  };
+  const std::string text = slurp(dir + "/x_located.brep");
+  const std::string bset = slurp(dir + "/x_located.bset");
+  auto splice = [](std::string data, const std::string& entry) {
+    const size_t at = data.find("Curve2ds");
+    data.insert(at, entry);
+    const size_t count = data.find("Locations 5");
+    data.replace(count, 11, "Locations 6");
+    return data;
+  };
+  std::ofstream(dir + "/x_located2.brep", std::ios::binary) << splice(text, "2 3 1 0\n");
+  std::string entry(1, '\2');
+  for (int v : {3, 1, 0})
+    entry.append(reinterpret_cast<const char*>(&v), sizeof v);
+  std::ofstream(dir + "/x_located2.bset", std::ios::binary) << splice(bset, entry);
+}
+
 int main(int argc, char** argv)
 {
   if (argc < 2)
@@ -353,6 +379,7 @@ int main(int argc, char** argv)
   emit(polygons3d(), dir, "polygons3d", true);
   emit(meshes(), dir, "meshes", true);
   emit(located(), dir, "located", false);
+  located2(dir);
   tiny(dir);
   return 0;
 }
